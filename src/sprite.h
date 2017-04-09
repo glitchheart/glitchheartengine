@@ -19,67 +19,23 @@ static const struct
     { -0.5f, -0.5f, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f }
 };
 
-struct Sprite
+struct sprite
 {
     GLuint vertexBuffer;
-	GLuint vertexShader;
-	GLuint fragmentShader;
-	GLuint shaderProgram;
 	GLuint texture;
-
-	GLint mvpLocation;
-	GLint vposLocation;
-	GLint vcolLocation;
-	GLint texLocation;
-
 	vec2 position;
+    spriteshader shader;
+	GLint texLocation;
 };
 
-static GLuint load_sprite(const std::string texturePath, const std::string shaderPath, Sprite *spr)
+static GLuint load_sprite(const std::string texturePath, const std::string shaderPath, sprite *spr)
 {
 	//setup vertex buffer
 	glGenBuffers(1, &spr->vertexBuffer);
     glBindBuffer(GL_ARRAY_BUFFER, spr->vertexBuffer);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 	
-	//shaders
-    spr->vertexShader = glCreateShader(GL_VERTEX_SHADER);
-
-    const char* vertex_text = load_shader(shaderPath + std::string(".vert"));
-    glShaderSource(spr->vertexShader, 1, &vertex_text, NULL);
-    glCompileShader(spr->vertexShader);
-    
-    if(shader_compilation_error_checking(spr->vertexShader) == GL_FALSE)
-        return GL_FALSE;
-	
-    spr->fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-
-    const char* fragment_text = load_shader(shaderPath + std::string(".frag"));
-
-    glShaderSource(spr->fragmentShader, 1, &fragment_text, NULL);
-    glCompileShader(spr->fragmentShader);
-    
-    if(shader_compilation_error_checking(spr->fragmentShader) == GL_FALSE)
-        return GL_FALSE;
-
-    spr->shaderProgram = glCreateProgram();
-
-    glAttachShader(spr->shaderProgram, spr->vertexShader);
-    glAttachShader(spr->shaderProgram, spr->fragmentShader);
-    glLinkProgram(spr->shaderProgram);
-
-	spr->mvpLocation = glGetUniformLocation(spr->shaderProgram, "MVP");
-    spr->vposLocation = glGetAttribLocation(spr->shaderProgram, "vPos");
-    spr->vcolLocation = glGetAttribLocation(spr->shaderProgram, "vCol");
-
-    glEnableVertexAttribArray(spr->vposLocation);
-    glVertexAttribPointer(spr->vposLocation, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 7, 0);
-    glEnableVertexAttribArray(spr->vcolLocation);
-    glVertexAttribPointer(spr->vcolLocation, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 7, (void*) (sizeof(float) * 2));
-
-    spr->texLocation = glGetAttribLocation(spr->shaderProgram, "texcoord");
-    glEnableVertexAttribArray(spr->texLocation);
-    glVertexAttribPointer(spr->texLocation, 2, GL_FLOAT, GL_FALSE, 7 * sizeof(float), (void*)(5 * sizeof(float)));
+    load_shaders(shaderPath, &spr->shader);
 
 	//load and setup texture
     glEnable(GL_TEXTURE_2D);
@@ -91,7 +47,6 @@ static GLuint load_sprite(const std::string texturePath, const std::string shade
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    // glGenerateMipmap(GL_TEXTURE_2D);
 
     //enable alpha for textures
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); 
@@ -110,17 +65,16 @@ static GLuint load_sprite(const std::string texturePath, const std::string shade
     return GL_TRUE;
 }
 
-static void render_sprite(const Sprite &spr, mat4x4 p)
+static void render_sprite(const sprite &spr, mat4x4 p)
 {
+    glBindTexture(GL_TEXTURE_2D, spr.texture);
+
 	mat4x4 m, mvp;
 	mat4x4_identity(m);
 	mat4x4_translate(m, spr.position[0], spr.position[1], 0);
 	mat4x4_mul(mvp, p, m);
 
-	glUseProgram(spr.shaderProgram);
-	glUniformMatrix4fv(spr.mvpLocation, 1, GL_FALSE, (const GLfloat*) mvp);
-	glDrawArrays(GL_QUADS, 0, 4);
-	glDisable(GL_TEXTURE_2D);
+    use_shader(spr.shader, mvp);
 }
 
 #endif
