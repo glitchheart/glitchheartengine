@@ -1,14 +1,14 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include "linmath.h"
-#include <vector>
-#include <iostream>
-#include <fstream>
 #include "sprite.h"
 #include "shader.h"
 #include "keycontroller.h"
+#include "entity.h"
 
-Sprite sprite;
+entity player;
+entity idiot;
+
 double deltaTime;
 
 static void error_callback(int error, const char* description)
@@ -17,7 +17,7 @@ static void error_callback(int error, const char* description)
 }
 
 int main(void)
-{
+{    
     GLFWwindow* window;
 
     glfwSetErrorCallback(error_callback);
@@ -33,7 +33,7 @@ int main(void)
     //center window on screen
     const GLFWvidmode* mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
     int width, height;
-    
+
     glfwGetFramebufferSize(window, &width, &height);
     glfwSetWindowPos(window, mode->width / 2 - width / 2, mode->height / 2 - height / 2);
 
@@ -48,7 +48,10 @@ int main(void)
     gladLoadGLLoader((GLADloadproc) glfwGetProcAddress);
     glfwSwapInterval(1);
 
-    load_sprite("./assets/textures/palm_tree.png", "./assets/shaders/spriteshader", &sprite);
+    load_sprite("./assets/textures/palm_tree.png", "./assets/shaders/spriteshader", &player.Player.spr);
+    load_sprite("./assets/textures/it_works.png", "./assets/shaders/spriteshader", &idiot.Player.spr);
+
+    idiot.Player.spr.position[0] -= 0.5f;
 
     double lastFrame = glfwGetTime();
     double currentFrame = 0.0;
@@ -64,14 +67,14 @@ int main(void)
             glfwSetWindowShouldClose(window, GLFW_TRUE);
     
         if(is_key_down(GLFW_KEY_LEFT))
-            sprite.position[0] += -2.0f * deltaTime;
+            player.Player.spr.position[0] += -2.0f * deltaTime;
         else if(is_key_down(GLFW_KEY_RIGHT))
-            sprite.position[0] += 2.0f * deltaTime;
+            player.Player.spr.position[0] += 2.0f * deltaTime;
 
         if(is_key_down(GLFW_KEY_UP))
-            sprite.position[1] += 2.0f * deltaTime;
+            player.Player.spr.position[1] += 2.0f * deltaTime;
         else if(is_key_down(GLFW_KEY_DOWN))
-            sprite.position[1] += -2.0f * deltaTime;
+            player.Player.spr.position[1] += -2.0f * deltaTime;
 
         float ratio;
         int width, height;
@@ -86,7 +89,8 @@ int main(void)
         mat4x4 projectionMatrix;
         mat4x4_ortho(projectionMatrix, -ratio, ratio, -1.f, 1.f, 1.f, -1.f);
         
-        render_sprite(sprite, projectionMatrix);
+        render_sprite(player.Player.spr, projectionMatrix);
+        render_sprite(idiot.Player.spr, projectionMatrix);
         
         glfwSwapBuffers(window);
         glfwPollEvents();
