@@ -38,8 +38,6 @@ static GLint shader_compilation_error_checking(GLuint shader)
         for (std::vector<GLchar>::const_iterator i = errorLog.begin(); i != errorLog.end(); ++i)
             std::cout << *i;
 
-        // Provide the infolog in whatever manor you deem best.
-        // Exit with failure.
         glDeleteShader(shader); // Don't leak the shader.
     }
     return isCompiled;

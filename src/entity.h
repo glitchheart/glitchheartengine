@@ -1,12 +1,8 @@
 #ifndef ENTITY_H
 #define ENTITY_H
 
+#include "types.h"
 #include "sprite.h"
-
-struct player
-{
-	sprite spr;
-};
 
 struct entity
 {
@@ -14,26 +10,12 @@ struct entity
 	{
 		struct
 		{
-			sprite spr;
+			uint16 spriteHandle;
 		} Player;
-
 		struct
 		{
-			int shit;
-			bool crap;
-		} SecondType;
-
-		struct
-		{
-			int shit;
-			bool crap;
-		} ThirdType;
-
-		struct
-		{
-			int shit;
-			bool crap;
-		} FourthType;
+			uint16 spriteHandle;
+		} Enemy;
 	};
 };
 

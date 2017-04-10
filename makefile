@@ -25,4 +25,5 @@ all: $(TARGET)
 $(TARGET): $(objects)
 		$(CXX) -o $@ $^ $(LDFLAGS)
 
-clean : -rm $(TARGET) $(objects)
+clean :
+		del "$(TARGET)"
