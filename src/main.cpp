@@ -1,15 +1,11 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include "linmath.h"
+#include "types.h"
 #include "sprite.h"
 #include "shader.h"
 #include "keycontroller.h"
 #include "entity.h"
-
-entity player;
-entity idiot;
-
-double deltaTime;
 
 static void error_callback(int error, const char* description)
 {
@@ -40,6 +36,13 @@ std::map<std::string,std::string> load_config(std::string filename)
 
 int main(void)
 {   
+    sprite_manager SpriteManager;
+
+    entity player;
+    entity idiot;
+
+    double deltaTime;
+        
     //load config file
     std::string title;
     std::string version;
@@ -87,10 +90,11 @@ int main(void)
     gladLoadGLLoader((GLADloadproc) glfwGetProcAddress);
     glfwSwapInterval(1);
 
-    load_sprite("./assets/textures/player.png", "./assets/shaders/spriteshader", &player.Player.spr);
-    load_sprite("./assets/textures/it_works.png", "./assets/shaders/spriteshader", &idiot.Player.spr);
+    load_sprite("./assets/textures/player.png", "./assets/shaders/spriteshader", &player.Player.spriteHandle, &SpriteManager);
+    load_sprite("./assets/textures/it_works.png", "./assets/shaders/spriteshader", &idiot.Player.spriteHandle, &SpriteManager);
 
-    idiot.Player.spr.position[0] -= 0.5f;
+    
+    SpriteManager.Sprites[1].position[0] -= 0.5f;
 
     double lastFrame = glfwGetTime();
     double currentFrame = 0.0;
@@ -105,15 +109,18 @@ int main(void)
         if (is_key_down(GLFW_KEY_ESCAPE))
             glfwSetWindowShouldClose(window, GLFW_TRUE);
     
+        auto PlayerSprite = SpriteManager.Sprites[player.Player.spriteHandle];
+        auto IdiotSprite = SpriteManager.Sprites[idiot.Player.spriteHandle];
+
         if(is_key_down(GLFW_KEY_LEFT))
-            player.Player.spr.position[0] += -2.0f * deltaTime;
+            PlayerSprite.position[0] += -2.0f * deltaTime;
         else if(is_key_down(GLFW_KEY_RIGHT))
-            player.Player.spr.position[0] += 2.0f * deltaTime;
+            PlayerSprite.position[0] += 2.0f * deltaTime;
 
         if(is_key_down(GLFW_KEY_UP))
-            player.Player.spr.position[1] += 2.0f * deltaTime;
+            PlayerSprite.position[1] += 2.0f * deltaTime;
         else if(is_key_down(GLFW_KEY_DOWN))
-            player.Player.spr.position[1] += -2.0f * deltaTime;
+            PlayerSprite.position[1] += -2.0f * deltaTime;
 
         float ratio;    
         int width, height;
@@ -127,8 +134,8 @@ int main(void)
 
         mat4x4 projectionMatrix;
         mat4x4_ortho(projectionMatrix, -ratio, ratio, -1.f, 1.f, 1.f, -1.f);
-        render_sprite(player.Player.spr, projectionMatrix);
-        render_sprite(idiot.Player.spr, projectionMatrix);
+        render_sprite(PlayerSprite, projectionMatrix);
+        render_sprite(IdiotSprite, projectionMatrix);
         
         glfwSwapBuffers(window);
         glfwPollEvents();

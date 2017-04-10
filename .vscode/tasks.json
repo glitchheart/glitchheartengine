@@ -1,0 +1,19 @@
+{
+	"version": "0.1.0",
+	"windows": {
+		"command": "make"
+	},
+	"command": "echo",
+	"isShellCommand": true,
+	"showOutput": "always",
+	"tasks": [
+		{
+			"taskName": "all",
+			"args": ["all"]
+		},
+			{
+			"taskName": "clean",
+			"args": ["clean"]
+		}
+	]
+}
