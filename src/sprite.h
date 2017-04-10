@@ -14,7 +14,7 @@ static const struct
     float x, y;
     float r, g, b;
     float u, v;
-} vertices[4] =
+} Vertices[4] =
 {      //pos        //color        //texcoords
     { -0.5f,  0.5f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f },
     {  0.5f,  0.5f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f },
@@ -26,11 +26,11 @@ static const struct
 
 struct sprite
 {
-    GLuint vertexBuffer;
-	GLuint texture;
-	vec2 position;
-    spriteshader shader;
-	GLint texLocation;
+    GLuint VertexBuffer;
+	GLuint Texture;
+	vec2 Position;
+    sprite_shader Shader;
+	GLint TexLocation;
 };
 
 struct sprite_manager
@@ -40,21 +40,21 @@ struct sprite_manager
 };
 
 
-static GLuint load_sprite(const std::string texturePath, const std::string shaderPath, uint16 *spriteHandle, sprite_manager *spriteManager)
+static GLuint LoadSprite(const std::string TexturePath, const std::string ShaderPath, uint16 *SpriteHandle, sprite_manager *SpriteManager)
 {
-    sprite spr = {};
+    sprite Spr = {};
 	//setup vertex buffer
-	glGenBuffers(1, &spr.vertexBuffer);
-    glBindBuffer(GL_ARRAY_BUFFER, spr.vertexBuffer);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+	glGenBuffers(1, &Spr.VertexBuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, Spr.VertexBuffer);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(Vertices), Vertices, GL_STATIC_DRAW);
 	
-    load_shaders(shaderPath, &spr.shader);
+    LoadShaders(ShaderPath, &Spr.Shader);
 
 	//load and setup texture
     glEnable(GL_TEXTURE_2D);
 
-    glGenTextures(1, &spr.texture);
-    glBindTexture(GL_TEXTURE_2D, spr.texture);
+    glGenTextures(1, &Spr.Texture);
+    glBindTexture(GL_TEXTURE_2D, Spr.Texture);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
@@ -65,31 +65,31 @@ static GLuint load_sprite(const std::string texturePath, const std::string shade
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); 
     glEnable(GL_BLEND);
 
-    int width, height;
-    unsigned char* image = SOIL_load_image(texturePath.c_str(), &width, &height, 0, SOIL_LOAD_RGBA);
+    int Width, Height;
+    unsigned char* Image = SOIL_load_image(TexturePath.c_str(), &Width, &Height, 0, SOIL_LOAD_RGBA);
 
-    if(!image)
+    if(!Image)
         return GL_FALSE;
 
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA,
-              GL_UNSIGNED_BYTE, image);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, Width, Height, 0, GL_RGBA,
+              GL_UNSIGNED_BYTE, Image);
     
-    SOIL_free_image_data(image);
+    SOIL_free_image_data(Image);
 
-    *spriteHandle = spriteManager->Count;
-    spriteManager->Sprites[spriteManager->Count++] = spr;
+    *SpriteHandle = SpriteManager->Count;
+    SpriteManager->Sprites[SpriteManager->Count++] = Spr;
 
     return GL_TRUE;
 }
 
-static void render_sprite(const sprite &spr, mat4x4 p)
+static void RenderSprite(const sprite &Spr, mat4x4 P)
 {
-    glBindTexture(GL_TEXTURE_2D, spr.texture);
+    glBindTexture(GL_TEXTURE_2D, Spr.Texture);
 
-	mat4x4 m, mvp;
+	mat4x4 M, MVP;
 
-	mat4x4_identity(m);
-	mat4x4_translate(m, spr.position[0], spr.position[1], 0);
+	mat4x4_identity(M);
+	mat4x4_translate(M, Spr.Position[0], Spr.Position[1], 0);
 
     // vec2 res = { mouseX - spr.position[0], mouseY - spr.position[1] };
     
@@ -97,10 +97,9 @@ static void render_sprite(const sprite &spr, mat4x4 p)
 
     // mat4x4_rotate_Z(m, m, angle);
     
-    
-	mat4x4_mul(mvp, p, m);
+	mat4x4_mul(MVP, P, M);
 
-    use_shader(spr.shader, mvp);
+    UseShader(Spr.Shader, MVP);
 }
 
 #endif

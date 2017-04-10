@@ -7,31 +7,31 @@
 #include "keycontroller.h"
 #include "entity.h"
 
-static void error_callback(int error, const char* description)
+static void ErrorCallback(int Error, const char* Description)
 {
-    fprintf(stderr, "Error: %s\n", description);
+    fprintf(stderr, "Error: %s\n", Description);
 }
 
-std::map<std::string,std::string> load_config(std::string filename)
+std::map<std::string,std::string> LoadConfig(std::string Filename)
 {
-    std::ifstream input(filename); //The input stream
-    std::map<std::string,std::string> ans; //A map of key-value pairs in the file
-    while(input) //Keep on going as long as the file stream is good
+    std::ifstream Input(Filename); //The input stream
+    std::map<std::string,std::string> Ans; //A map of key-value pairs in the file
+    while(Input) //Keep on going as long as the file stream is good
     {
-        std::string key; //The key
-        std::string value; //The value
-        std::getline(input, key, ':'); //Read up to the : delimiter into key
-        std::getline(input, value, '\n'); //Read up to the newline into value
-        std::string::size_type pos1 = value.find_first_of("\""); //Find the first quote in the value
-        std::string::size_type pos2 = value.find_last_of("\""); //Find the last quote in the value
-        if(pos1 != std::string::npos && pos2 != std::string::npos && pos2 > pos1) //Check if the found positions are all valid
+        std::string Key; //The key
+        std::string Value; //The value
+        std::getline(Input, Key, ':'); //Read up to the : delimiter into key
+        std::getline(Input, Value, '\n'); //Read up to the newline into value
+        std::string::size_type Pos1 = Value.find_first_of("\""); //Find the first quote in the value
+        std::string::size_type Pos2 = Value.find_last_of("\""); //Find the last quote in the value
+        if(Pos1 != std::string::npos && Pos2 != std::string::npos && Pos2 > Pos1) //Check if the found positions are all valid
         {
-            value = value.substr(pos1+1,pos2-pos1-1); //Take a substring of the part between the quotes
-            ans[key] = value; //Store the result in the map
+            Value = Value.substr(Pos1+1,Pos2-Pos1-1); //Take a substring of the part between the quotes
+            Ans[Key] = Value; //Store the result in the map
         }
     }
-    input.close(); //Close the file stream
-    return ans; //And return the result
+    Input.close(); //Close the file stream
+    return Ans; //And return the result
 }
 
 int main(void)
@@ -50,7 +50,7 @@ int main(void)
     int ScreenHeight;
     bool Fullscreen;
 
-    auto Map = load_config("./assets/.config");
+    auto Map = LoadConfig("./assets/.config");
 
     Title = Map["title"];
     Version = Map["version"];
@@ -60,7 +60,7 @@ int main(void)
 
     GLFWwindow* Window;
 
-    glfwSetErrorCallback(error_callback);
+    glfwSetErrorCallback(ErrorCallback);
 
     if (!glfwInit())
         exit(EXIT_FAILURE);
@@ -83,15 +83,15 @@ int main(void)
         exit(EXIT_FAILURE);
     }
 
-    glfwSetKeyCallback(Window, key_callback);
-    glfwSetCursorPosCallback(Window, cursor_position_callback);
+    glfwSetKeyCallback(Window, KeyCallback);
+    glfwSetCursorPosCallback(Window, CursorPositionCallback);
 
     glfwMakeContextCurrent(Window);
     gladLoadGLLoader((GLADloadproc) glfwGetProcAddress);
     glfwSwapInterval(1);
 
-    load_sprite("./assets/textures/player.png", "./assets/shaders/spriteshader", &Player.Player.spriteHandle, &SpriteManager);
-    load_sprite("./assets/textures/it_works.png", "./assets/shaders/spriteshader", &Enemy.Player.spriteHandle, &SpriteManager);
+    LoadSprite("./assets/textures/player.png", "./assets/shaders/spriteshader", &Player.Player.spriteHandle, &SpriteManager);
+    LoadSprite("./assets/textures/it_works.png", "./assets/shaders/spriteshader", &Enemy.Player.spriteHandle, &SpriteManager);
     
     // SpriteManager.Sprites[1].position[0] -= 0.5f;
 
@@ -105,21 +105,21 @@ int main(void)
         DeltaTime = CurrentFrame - LastFrame;
         LastFrame = CurrentFrame;
 
-        if (is_key_down(GLFW_KEY_ESCAPE))
+        if (IsKeyDown(GLFW_KEY_ESCAPE))
             glfwSetWindowShouldClose(Window, GLFW_TRUE);
     
         auto PlayerSprite = &SpriteManager.Sprites[Player.Player.spriteHandle];
         auto EnemySprite = &SpriteManager.Sprites[Enemy.Player.spriteHandle];
 
-        if(is_key_down(GLFW_KEY_LEFT))
-            PlayerSprite->position[0] += -2.0f * DeltaTime;
-        else if(is_key_down(GLFW_KEY_RIGHT))
-            PlayerSprite->position[0] += 2.0f * DeltaTime;
+        if(IsKeyDown(GLFW_KEY_LEFT))
+            PlayerSprite->Position[0] += -2.0f * DeltaTime;
+        else if(IsKeyDown(GLFW_KEY_RIGHT))
+            PlayerSprite->Position[0] += 2.0f * DeltaTime;
 
-        if(is_key_down(GLFW_KEY_UP))
-            PlayerSprite->position[1] += 2.0f * DeltaTime;
-        else if(is_key_down(GLFW_KEY_DOWN))
-            PlayerSprite->position[1] += -2.0f * DeltaTime;
+        if(IsKeyDown(GLFW_KEY_UP))
+            PlayerSprite->Position[1] += 2.0f * DeltaTime;
+        else if(IsKeyDown(GLFW_KEY_DOWN))
+            PlayerSprite->Position[1] += -2.0f * DeltaTime;
 
         float Ratio;    
 
@@ -132,8 +132,9 @@ int main(void)
 
         mat4x4 ProjectionMatrix;
         mat4x4_ortho(ProjectionMatrix, -Ratio, Ratio, -1.f, 1.f, 1.f, -1.f);
-        render_sprite(*PlayerSprite, ProjectionMatrix);
-        render_sprite(*EnemySprite, ProjectionMatrix);
+        
+        RenderSprite(*PlayerSprite, ProjectionMatrix);
+        RenderSprite(*EnemySprite, ProjectionMatrix);
         
         glfwSwapBuffers(Window);
         glfwPollEvents();
