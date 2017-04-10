@@ -36,29 +36,29 @@ std::map<std::string,std::string> load_config(std::string filename)
 
 int main(void)
 {   
-    sprite_manager SpriteManager;
+    sprite_manager SpriteManager = {};
 
-    entity player;
-    entity idiot;
+    entity Player = {};
+    entity Enemy = {};
 
-    double deltaTime;
+    double DeltaTime;
         
     //load config file
-    std::string title;
-    std::string version;
-    int screenWidth;
-    int screenHeight;
-    bool fullscreen;
+    std::string Title;
+    std::string Version;
+    int ScreenWidth;
+    int ScreenHeight;
+    bool Fullscreen;
 
-    auto map = load_config("./assets/.config");
+    auto Map = load_config("./assets/.config");
 
-    title = map["title"];
-    version = map["version"];
-    screenWidth = std::stoi(map["screen_width"]);
-    screenHeight = std::stoi(map["screen_height"]);
-    fullscreen = strcmp("true", map["fullscreen"].c_str()) == 0;
+    Title = Map["title"];
+    Version = Map["version"];
+    ScreenWidth = std::stoi(Map["screen_width"]);
+    ScreenHeight = std::stoi(Map["screen_height"]);
+    Fullscreen = strcmp("true", Map["fullscreen"].c_str()) == 0;
 
-    GLFWwindow* window;
+    GLFWwindow* Window;
 
     glfwSetErrorCallback(error_callback);
 
@@ -68,80 +68,78 @@ int main(void)
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
 
-    window = glfwCreateWindow(screenWidth, screenHeight, (title + std::string(" ") + version).c_str(), fullscreen ? glfwGetPrimaryMonitor() : NULL, NULL);
+    Window = glfwCreateWindow(ScreenWidth, ScreenHeight, (Title + std::string(" ") + Version).c_str(), Fullscreen ? glfwGetPrimaryMonitor() : NULL, NULL);
 
     //center window on screen
-    const GLFWvidmode* mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
-    int width, height;
+    const GLFWvidmode* Mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
+    int Width, Height;
 
-    glfwGetFramebufferSize(window, &width, &height);
-    glfwSetWindowPos(window, mode->width / 2 - width / 2, mode->height / 2 - height / 2);
+    glfwGetFramebufferSize(Window, &Width, &Height);
+    glfwSetWindowPos(Window, Mode->width / 2 - Width / 2, Mode->height / 2 - Height / 2);
 
-    if (!window)
+    if (!Window)
     {
         glfwTerminate();
         exit(EXIT_FAILURE);
     }
 
-    glfwSetKeyCallback(window, key_callback);
-    glfwSetCursorPosCallback(window, cursor_position_callback);
+    glfwSetKeyCallback(Window, key_callback);
+    glfwSetCursorPosCallback(Window, cursor_position_callback);
 
-    glfwMakeContextCurrent(window);
+    glfwMakeContextCurrent(Window);
     gladLoadGLLoader((GLADloadproc) glfwGetProcAddress);
     glfwSwapInterval(1);
 
-    load_sprite("./assets/textures/player.png", "./assets/shaders/spriteshader", &player.Player.spriteHandle, &SpriteManager);
-    load_sprite("./assets/textures/it_works.png", "./assets/shaders/spriteshader", &idiot.Player.spriteHandle, &SpriteManager);
-
+    load_sprite("./assets/textures/player.png", "./assets/shaders/spriteshader", &Player.Player.spriteHandle, &SpriteManager);
+    load_sprite("./assets/textures/it_works.png", "./assets/shaders/spriteshader", &Enemy.Player.spriteHandle, &SpriteManager);
     
-    SpriteManager.Sprites[1].position[0] -= 0.5f;
+    // SpriteManager.Sprites[1].position[0] -= 0.5f;
 
-    double lastFrame = glfwGetTime();
-    double currentFrame = 0.0;
+    double LastFrame = glfwGetTime();
+    double CurrentFrame = 0.0;
 
-    while (!glfwWindowShouldClose(window))
+    while (!glfwWindowShouldClose(Window))
     {
         //calculate deltatime
-        currentFrame = glfwGetTime();
-        deltaTime = currentFrame - lastFrame;
-        lastFrame = currentFrame;
+        CurrentFrame = glfwGetTime();
+        DeltaTime = CurrentFrame - LastFrame;
+        LastFrame = CurrentFrame;
 
         if (is_key_down(GLFW_KEY_ESCAPE))
-            glfwSetWindowShouldClose(window, GLFW_TRUE);
+            glfwSetWindowShouldClose(Window, GLFW_TRUE);
     
-        auto PlayerSprite = SpriteManager.Sprites[player.Player.spriteHandle];
-        auto IdiotSprite = SpriteManager.Sprites[idiot.Player.spriteHandle];
+        auto PlayerSprite = &SpriteManager.Sprites[Player.Player.spriteHandle];
+        auto EnemySprite = &SpriteManager.Sprites[Enemy.Player.spriteHandle];
 
         if(is_key_down(GLFW_KEY_LEFT))
-            PlayerSprite.position[0] += -2.0f * deltaTime;
+            PlayerSprite->position[0] += -2.0f * DeltaTime;
         else if(is_key_down(GLFW_KEY_RIGHT))
-            PlayerSprite.position[0] += 2.0f * deltaTime;
+            PlayerSprite->position[0] += 2.0f * DeltaTime;
 
         if(is_key_down(GLFW_KEY_UP))
-            PlayerSprite.position[1] += 2.0f * deltaTime;
+            PlayerSprite->position[1] += 2.0f * DeltaTime;
         else if(is_key_down(GLFW_KEY_DOWN))
-            PlayerSprite.position[1] += -2.0f * deltaTime;
+            PlayerSprite->position[1] += -2.0f * DeltaTime;
 
-        float ratio;    
-        int width, height;
+        float Ratio;    
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glClearColor(0, 0, 1.0f, 1.0f);
 
-        glfwGetFramebufferSize(window, &width, &height);
-        ratio = width / (float) height;
-        glViewport(0, 0, width, height);
+        glfwGetFramebufferSize(Window, &Width, &Height);
+        Ratio = Width / (float) Height;
+        glViewport(0, 0, Width, Height);
 
-        mat4x4 projectionMatrix;
-        mat4x4_ortho(projectionMatrix, -ratio, ratio, -1.f, 1.f, 1.f, -1.f);
-        render_sprite(PlayerSprite, projectionMatrix);
-        render_sprite(IdiotSprite, projectionMatrix);
+        mat4x4 ProjectionMatrix;
+        mat4x4_ortho(ProjectionMatrix, -Ratio, Ratio, -1.f, 1.f, 1.f, -1.f);
+        render_sprite(*PlayerSprite, ProjectionMatrix);
+        render_sprite(*EnemySprite, ProjectionMatrix);
         
-        glfwSwapBuffers(window);
+        glfwSwapBuffers(Window);
         glfwPollEvents();
     }
 
-    glfwDestroyWindow(window);
+    glfwDestroyWindow(Window);
     glfwTerminate();
     exit(EXIT_SUCCESS);
 }
