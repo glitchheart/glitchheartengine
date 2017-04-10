@@ -81,11 +81,13 @@ int main(void)
     }
 
     glfwSetKeyCallback(window, key_callback);
+    glfwSetCursorPosCallback(window, cursor_position_callback);
+
     glfwMakeContextCurrent(window);
     gladLoadGLLoader((GLADloadproc) glfwGetProcAddress);
     glfwSwapInterval(1);
 
-    load_sprite("./assets/textures/palm_tree.png", "./assets/shaders/spriteshader", &player.Player.spr);
+    load_sprite("./assets/textures/player.png", "./assets/shaders/spriteshader", &player.Player.spr);
     load_sprite("./assets/textures/it_works.png", "./assets/shaders/spriteshader", &idiot.Player.spr);
 
     idiot.Player.spr.position[0] -= 0.5f;
@@ -113,7 +115,7 @@ int main(void)
         else if(is_key_down(GLFW_KEY_DOWN))
             player.Player.spr.position[1] += -2.0f * deltaTime;
 
-        float ratio;
+        float ratio;    
         int width, height;
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -125,7 +127,6 @@ int main(void)
 
         mat4x4 projectionMatrix;
         mat4x4_ortho(projectionMatrix, -ratio, ratio, -1.f, 1.f, 1.f, -1.f);
-        
         render_sprite(player.Player.spr, projectionMatrix);
         render_sprite(idiot.Player.spr, projectionMatrix);
         
