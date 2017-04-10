@@ -5,6 +5,8 @@
 #include <GLFW/glfw3.h>
 #include <SOIL/SOIL.h>
 #include "shader.h"
+#include "keycontroller.h"
+#include <math.h>
 
 static const struct
 {
@@ -70,8 +72,20 @@ static void render_sprite(const sprite &spr, mat4x4 p)
     glBindTexture(GL_TEXTURE_2D, spr.texture);
 
 	mat4x4 m, mvp;
+
 	mat4x4_identity(m);
 	mat4x4_translate(m, spr.position[0], spr.position[1], 0);
+
+    //this stuff should be done in an update method maybe?
+//      var v3 = v3B - v3A;
+//  var angle = Mathf.Atan2(v3.y, v3.x);
+    
+    vec2 res = { mouseX - spr.position[0], mouseY - spr.position[1] };
+    
+    auto angle = atan2((double)res[1], (double)res[0]);
+
+    mat4x4_rotate_Z(m, m, angle);
+    
 	mat4x4_mul(mvp, p, m);
 
     use_shader(spr.shader, mvp);
