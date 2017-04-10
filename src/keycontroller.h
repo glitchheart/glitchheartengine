@@ -4,10 +4,10 @@
 #include <GLFW/glfw3.h>
 #include <map>
 
-static double mouseX;
-static double mouseY;
+static double MouseX;
+static double MouseY;
 
-static std::map<int, bool> keysDown =
+static std::map<int, bool> KeysDown =
 {
 	{ GLFW_KEY_LEFT, false },
 	{ GLFW_KEY_RIGHT, false },
@@ -16,22 +16,22 @@ static std::map<int, bool> keysDown =
 	{ GLFW_KEY_ESCAPE, false }
 };
 
-static void cursor_position_callback(GLFWwindow* window, double xpos, double ypos)
+static void CursorPositionCallback(GLFWwindow* Window, double XPos, double YPos)
 {
-	mouseX = xpos;
-	mouseY = ypos;
+	MouseX = XPos;
+	MouseY = YPos;
 }
 
-static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
+static void KeyCallback(GLFWwindow* Window, int Key, int Scancode, int Action, int Mods)
 {
-	if(action == GLFW_PRESS)
-		keysDown[key] = true;
-	else if(action == GLFW_RELEASE)
-		keysDown[key] = false;
+	if(Action == GLFW_PRESS)
+		KeysDown[Key] = true;
+	else if(Action == GLFW_RELEASE)
+		KeysDown[Key] = false;
 }
 
-static bool is_key_down(int key)
+static bool IsKeyDown(int Key)
 {
-	return keysDown[key];
+	return KeysDown[Key];
 }
 #endif
