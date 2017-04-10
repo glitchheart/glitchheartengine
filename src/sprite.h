@@ -67,6 +67,7 @@ static GLuint load_sprite(const std::string texturePath, const std::string shade
 
     int width, height;
     unsigned char* image = SOIL_load_image(texturePath.c_str(), &width, &height, 0, SOIL_LOAD_RGBA);
+
     if(!image)
         return GL_FALSE;
 
@@ -76,8 +77,8 @@ static GLuint load_sprite(const std::string texturePath, const std::string shade
     SOIL_free_image_data(image);
 
     *spriteHandle = spriteManager->Count;
-    spriteManager->Sprites[spriteManager->Count++];
-    
+    spriteManager->Sprites[spriteManager->Count++] = spr;
+
     return GL_TRUE;
 }
 
