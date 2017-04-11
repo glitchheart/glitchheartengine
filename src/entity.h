@@ -10,11 +10,12 @@ struct entity
 	{
 		struct
 		{
-			uint16 spriteHandle;
+			real32 WalkingSpeed;
+			uint16 SpriteHandle;
 		} Player;
 		struct
 		{
-			uint16 spriteHandle;
+			uint16 SpriteHandle;
 		} Enemy;
 	};
 };

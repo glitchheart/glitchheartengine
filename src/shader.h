@@ -5,7 +5,9 @@
 #include <vector>
 #include <iostream>
 #include <fstream>
-#include "linmath.h"
+#include <glm/glm.hpp>
+#include "glm/gtc/matrix_transform.hpp"
+#include <glm/gtc/type_ptr.hpp>
 
 struct sprite_shader
 {
@@ -104,10 +106,10 @@ static GLuint LoadShaders(const std::string FilePath, sprite_shader* Shd)
     return GL_TRUE;
 }
 
-static void UseShader(sprite_shader Shader, const mat4x4 MVP)
+static void UseShader(sprite_shader Shader, const glm::mat4 Model, const glm::mat4 View, const glm::mat4 Projection)
 {
 	glUseProgram(Shader.Program);
-    glUniformMatrix4fv(Shader.MVPLocation, 1, GL_FALSE, (const GLfloat*) MVP);
-	glDrawArrays(GL_QUADS, 0, 4);
+    glm::mat4 MVP = Projection * View * Model;
+    glUniformMatrix4fv(Shader.MVPLocation, 1, GL_FALSE, &MVP[0][0]);
 }
 #endif

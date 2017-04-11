@@ -1,6 +1,5 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
-#include "linmath.h"
 #include "types.h"
 #include "sprite.h"
 #include "shader.h"
@@ -38,8 +37,8 @@ int main(void)
 {   
     sprite_manager SpriteManager = {};
 
-    entity Player = {};
-    entity Enemy = {};
+    entity PlayerEntity = {};
+    PlayerEntity.Player.WalkingSpeed = 200.0f;
 
     double DeltaTime;
         
@@ -90,10 +89,7 @@ int main(void)
     gladLoadGLLoader((GLADloadproc) glfwGetProcAddress);
     glfwSwapInterval(1);
 
-    LoadSprite("./assets/textures/player.png", "./assets/shaders/spriteshader", &Player.Player.spriteHandle, &SpriteManager);
-    LoadSprite("./assets/textures/it_works.png", "./assets/shaders/spriteshader", &Enemy.Player.spriteHandle, &SpriteManager);
-    
-    // SpriteManager.Sprites[1].position[0] -= 0.5f;
+    LoadSprite("./assets/textures/player.png", "./assets/shaders/spriteshader", &PlayerEntity.Player.SpriteHandle, &SpriteManager);
 
     double LastFrame = glfwGetTime();
     double CurrentFrame = 0.0;
@@ -108,33 +104,27 @@ int main(void)
         if (IsKeyDown(GLFW_KEY_ESCAPE))
             glfwSetWindowShouldClose(Window, GLFW_TRUE);
     
-        auto PlayerSprite = &SpriteManager.Sprites[Player.Player.spriteHandle];
-        auto EnemySprite = &SpriteManager.Sprites[Enemy.Player.spriteHandle];
+        auto PlayerSprite = &SpriteManager.Sprites[PlayerEntity.Player.SpriteHandle];
 
         if(IsKeyDown(GLFW_KEY_LEFT))
-            PlayerSprite->Position[0] += -2.0f * DeltaTime;
+            PlayerSprite->Position.x += -PlayerEntity.Player.WalkingSpeed * DeltaTime;
         else if(IsKeyDown(GLFW_KEY_RIGHT))
-            PlayerSprite->Position[0] += 2.0f * DeltaTime;
+            PlayerSprite->Position.x += PlayerEntity.Player.WalkingSpeed * DeltaTime;
 
         if(IsKeyDown(GLFW_KEY_UP))
-            PlayerSprite->Position[1] += 2.0f * DeltaTime;
+            PlayerSprite->Position.y += -PlayerEntity.Player.WalkingSpeed * DeltaTime;
         else if(IsKeyDown(GLFW_KEY_DOWN))
-            PlayerSprite->Position[1] += -2.0f * DeltaTime;
-
-        float Ratio;    
-
+            PlayerSprite->Position.y += PlayerEntity.Player.WalkingSpeed * DeltaTime;
+        
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glClearColor(0, 0, 1.0f, 1.0f);
 
         glfwGetFramebufferSize(Window, &Width, &Height);
-        Ratio = Width / (float) Height;
-        glViewport(0, 0, Width, Height);
 
-        mat4x4 ProjectionMatrix;
-        mat4x4_ortho(ProjectionMatrix, -Ratio, Ratio, -1.f, 1.f, 1.f, -1.f);
+        glViewport(0, 0, Width, Height);
+        glm::mat4 ProjectionMatrix = glm::ortho(0.0f, static_cast<GLfloat>(Width), static_cast<GLfloat>(Height), 0.0f, -1.0f, 1.0f);
         
         RenderSprite(*PlayerSprite, ProjectionMatrix);
-        RenderSprite(*EnemySprite, ProjectionMatrix);
         
         glfwSwapBuffers(Window);
         glfwPollEvents();
