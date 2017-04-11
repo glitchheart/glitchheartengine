@@ -1,10 +1,9 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include "types.h"
-#include "sprite.h"
-#include "shader.h"
 #include "keycontroller.h"
 #include "entity.h"
+#include "rendering.cpp"
 
 static void ErrorCallback(int Error, const char* Description)
 {
@@ -35,13 +34,6 @@ std::map<std::string,std::string> LoadConfig(std::string Filename)
 
 int main(void)
 {   
-    sprite_manager SpriteManager = {};
-
-    entity PlayerEntity = {};
-    PlayerEntity.Player.WalkingSpeed = 200.0f;
-
-    double DeltaTime;
-        
     //load config file
     std::string Title;
     std::string Version;
@@ -89,10 +81,25 @@ int main(void)
     gladLoadGLLoader((GLADloadproc) glfwGetProcAddress);
     glfwSwapInterval(1);
 
-    LoadSprite("./assets/textures/player.png", "./assets/shaders/spriteshader", &PlayerEntity.Player.SpriteHandle, &SpriteManager);
+    //load render_state
+    render_state RenderState = {};
+    LoadAllShaders(&RenderState);
+
+    std::cout << "Loaded shaders" << std::endl;
+
+    entity_manager EntityManager = {}; //TODO(danieL) Do something useful with this. And remember the texture_manager
+
+    entity PlayerEntity = {};
+    PlayerEntity.Type = Entity_Player;
+    PlayerEntity.player.WalkingSpeed = 200.0f;
+    PlayerEntity.ShaderIndex = 0; //TODO(danieL) TextureShader - Should have an enumeration for this
+    PlayerEntity.TextureHandle = LoadTexture("./assets/textures/player.png");
+
+    entity PalmTreeEntity = {};
 
     double LastFrame = glfwGetTime();
     double CurrentFrame = 0.0;
+    double DeltaTime;
 
     while (!glfwWindowShouldClose(Window))
     {
@@ -103,18 +110,16 @@ int main(void)
 
         if (IsKeyDown(GLFW_KEY_ESCAPE))
             glfwSetWindowShouldClose(Window, GLFW_TRUE);
-    
-        auto PlayerSprite = &SpriteManager.Sprites[PlayerEntity.Player.SpriteHandle];
 
         if(IsKeyDown(GLFW_KEY_LEFT))
-            PlayerSprite->Position.x += -PlayerEntity.Player.WalkingSpeed * DeltaTime;
+            PlayerEntity.Position.x += -PlayerEntity.player.WalkingSpeed * DeltaTime;
         else if(IsKeyDown(GLFW_KEY_RIGHT))
-            PlayerSprite->Position.x += PlayerEntity.Player.WalkingSpeed * DeltaTime;
+            PlayerEntity.Position.x += PlayerEntity.player.WalkingSpeed * DeltaTime;
 
         if(IsKeyDown(GLFW_KEY_UP))
-            PlayerSprite->Position.y += -PlayerEntity.Player.WalkingSpeed * DeltaTime;
+            PlayerEntity.Position.y += -PlayerEntity.player.WalkingSpeed * DeltaTime;
         else if(IsKeyDown(GLFW_KEY_DOWN))
-            PlayerSprite->Position.y += PlayerEntity.Player.WalkingSpeed * DeltaTime;
+            PlayerEntity.Position.y += PlayerEntity.player.WalkingSpeed * DeltaTime;
         
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glClearColor(0, 0, 1.0f, 1.0f);
@@ -124,7 +129,7 @@ int main(void)
         glViewport(0, 0, Width, Height);
         glm::mat4 ProjectionMatrix = glm::ortho(0.0f, static_cast<GLfloat>(Width), static_cast<GLfloat>(Height), 0.0f, -1.0f, 1.0f);
         
-        RenderSprite(*PlayerSprite, ProjectionMatrix);
+        Render(&RenderState, PlayerEntity, ProjectionMatrix);
         
         glfwSwapBuffers(Window);
         glfwPollEvents();
@@ -133,4 +138,9 @@ int main(void)
     glfwDestroyWindow(Window);
     glfwTerminate();
     exit(EXIT_SUCCESS);
+}
+
+static Update(double DeltaTime, entity Entity)
+{
+
 }
