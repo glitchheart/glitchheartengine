@@ -1,7 +1,6 @@
 #ifndef SPRITE_H
 #define SPRITE_H
 
-#include "linmath.h"
 #include <GLFW/glfw3.h>
 #include <SOIL/SOIL.h>
 #include "shader.h"
@@ -28,7 +27,8 @@ struct sprite
 {
     GLuint VertexBuffer;
 	GLuint Texture;
-	vec2 Position;
+	glm::vec2 Position;
+    glm::vec3 Rotation;
     sprite_shader Shader;
 	GLint TexLocation;
 };
@@ -82,24 +82,17 @@ static GLuint LoadSprite(const std::string TexturePath, const std::string Shader
     return GL_TRUE;
 }
 
-static void RenderSprite(const sprite &Spr, mat4x4 P)
+static void RenderSprite(const sprite &Spr, glm::mat4 ProjectionMatrix)
 {
     glBindTexture(GL_TEXTURE_2D, Spr.Texture);
 
-	mat4x4 M, MVP;
-
-	mat4x4_identity(M);
-	mat4x4_translate(M, Spr.Position[0], Spr.Position[1], 0);
-
-    // vec2 res = { mouseX - spr.position[0], mouseY - spr.position[1] };
+	glm::mat4 Model(1.0f);
+    glm::mat4 View(1.0f);
+    Model = glm::translate(Model, glm::vec3(Spr.Position.x, Spr.Position.y, 0.0f)); 
+    Model = glm::scale(Model, glm::vec3(250.0f, 250.0f, 1.0f));
     
-    // auto angle = atan2((double)res[1], (double)res[0]);
-
-    // mat4x4_rotate_Z(m, m, angle);
-    
-	mat4x4_mul(MVP, P, M);
-
-    UseShader(Spr.Shader, MVP);
+    UseShader(Spr.Shader, Model, View, ProjectionMatrix);
+    glDrawArrays(GL_QUADS, 0, 4);
 }
 
 #endif
