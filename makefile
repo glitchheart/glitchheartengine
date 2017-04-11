@@ -18,12 +18,29 @@ LDFLAGS = $(LIBRARIES) -lglfw3 -lopengl32 -lglu32 -lgdi32
 TARGET = main.exe
 cpp_files = src/main.cpp
 objects = $(cpp_files:.cpp=.o) src/glad.o
-headers =
+OBJDIR = obj
+BUILDDIR = build
+
+compile: clean
+	mkdir obj
+	mkdir build
+	$(CXX) $(CXXLAGS) $(INCLUDES) -c src/main.cpp -o obj/main.o
+	$(CC) $(CXXFLAGS) $(INCLUDES) -c src/glad.c -o obj/glad.o
+	$(CXX) -o $(BUILDDIR)/$(TARGET) obj/main.o obj/glad.o $(LIBRARIES) $(LDFLAGS) 
+
+clean :
+ifneq ($(wildcard $(OBJDIR)),)
+	rm -r $(OBJDIR) 
+endif
+ifneq ($(wildcard $(BUILDDIR)),)
+	rm -r $(BUILDDIR)
+endif
 
 all: $(TARGET)
 
 $(TARGET): $(objects)
 		$(CXX) -o $@ $^ $(LDFLAGS)
 
-clean :
-		del "$(TARGET)"
+run:
+	./build/main.exe
+
