@@ -25,12 +25,12 @@ static const struct
 
 struct sprite
 {
+	glm::vec2 Position;
+	glm::vec3 Rotation;
     GLuint VertexBuffer;
 	GLuint Texture;
-	glm::vec2 Position;
-    glm::vec3 Rotation;
-    sprite_shader Shader;
 	GLint TexLocation;
+    sprite_shader Shader;
 };
 
 struct sprite_manager

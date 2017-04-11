@@ -1,5 +1,19 @@
 {
 	"files.associations": {
-		"system_error": "cpp"
+		"system_error": "cpp",
+		"fstream": "cpp",
+		"cstdarg": "cpp",
+		"ctime": "cpp",
+		"functional": "cpp",
+		"iomanip": "cpp",
+		"locale": "cpp",
+		"string": "cpp",
+		"tuple": "cpp",
+		"xfunctional": "cpp",
+		"xlocbuf": "cpp",
+		"xlocmes": "cpp",
+		"xlocmon": "cpp",
+		"xloctime": "cpp",
+		"xutility": "cpp"
 	}
 }
