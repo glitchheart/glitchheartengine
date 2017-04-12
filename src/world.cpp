@@ -3,7 +3,7 @@
 #define STB_PERLIN_IMPLEMENTATION
 #include <stb/stb_perlin.h>
 
-static void GenerateWorldChunk(perlin_noise Noise, world_chunk *Chunk)
+static void GenerateWorldChunk(const perlin_noise &Noise, world_chunk *Chunk)
 {
 	Chunk->Tiles = (Tile_Type**)malloc(sizeof(Tile_Type*) * Noise.Width);
  
