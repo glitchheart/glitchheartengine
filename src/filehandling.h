@@ -1,23 +1,29 @@
 #include <iostream>
 #include <fstream>
+#include <sstream>
 
-static const char* LoadFile(const std::string Path)
+static GLchar* LoadShaderFromFile(const std::string Path)
 {
-    std::string Content;
-    std::ifstream FileStream(Path, std::ios::in);
+	GLchar *Source = {};
 
-    if(!FileStream.is_open()) {
-        std::cerr << "Could not read file " << Path << ". File does not exist." << std::endl;
-        return "";
-    }
+	FILE *File;
+	File = fopen(Path.c_str(), "rb");
+	if(File)
+	{
+		fseek(File, 0, SEEK_END);
+		uint32 Size = ftell(File);
+		fseek(File, 0, SEEK_SET);
 
-    std::string Line = "";
-    while(!FileStream.eof()) {
-        std::getline(FileStream, Line);
-        Content.append(Line + "\n");
-    }
+		Source = (GLchar *)malloc(Size+1);
+		fread(Source, Size, 1, File); 
+		Source[Size] = '\0';
 
-    FileStream.close();
+		fclose(File);
+	}
+	else
+	{
+		std::cerr << "Could not read file " << Path << ". File does not exist." << std::endl;
+	}	
 
-    return Content.c_str();
+	return Source;
 }
