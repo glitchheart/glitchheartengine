@@ -19,6 +19,7 @@
 		"istream": "cpp",
 		"xlocale": "cpp",
 		"xstring": "cpp",
-		"xmemory0": "cpp"
+		"xmemory0": "cpp",
+		"iostream": "cpp"
 	}
 }

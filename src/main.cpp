@@ -4,7 +4,6 @@
 #include "keycontroller.h"
 #include "entity.h"
 #include "rendering.cpp"
-#include "world.cpp"
 
 static void ErrorCallback(int Error, const char* Description)
 {
@@ -90,33 +89,35 @@ int main(void)
 
     entity PlayerEntity = {};
     PlayerEntity.Type = Entity_Player;
-    PlayerEntity.player.WalkingSpeed = 200.0f;
+    PlayerEntity.player.WalkingSpeed = 10.0f;
     PlayerEntity.ShaderIndex = 0; //TODO(danieL) TextureShader - Should have an enumeration for this
     PlayerEntity.TextureHandle = LoadTexture("./assets/textures/player.png");
 
     //TODO(daniel) Move to texture_manager
+    GLuint TileAtlasTexture = LoadTexture("./assets/textures/tiles.png");
     GLuint SandTextureHandle = LoadTexture("./assets/textures/tile_sand.png");
     GLuint GrassTextureHandle = LoadTexture("./assets/textures/tile_grass.png");
     GLuint DarkGrassTextureHandle = LoadTexture("./assets/textures/tile_darkgrass.png");
     GLuint StoneTextureHandle = LoadTexture("./assets/textures/tile_stone.png");
 
     //@TESTCODE
+    int TileMapSize = 100;
     perlin_noise PerlinNoise;
-    GenerateNoise(&PerlinNoise, 10, 10);
+    GenerateNoise(&PerlinNoise, TileMapSize, TileMapSize);
 
     world_chunk Chunk;
     GenerateWorldChunk(PerlinNoise, &Chunk);
 
-    entity TileEntities[10][10];
+    entity TileEntities[TileMapSize][TileMapSize];
     
-    for(int i = 0; i < 10; i++)
+    for(int i = 0; i < TileMapSize; i++)
     {
-        for(int j = 0; j < 10; j++)
+        for(int j = 0; j < TileMapSize; j++)
         {
             entity TileEntity = {};
             TileEntity.Type = Entity_Tile;
             TileEntity.ShaderIndex = 0; 
-            TileEntity.Position = glm::vec2(i * 10, j * 10);
+            TileEntity.Position = glm::vec2(i, j);
 
             switch(Chunk.Tiles[i][j])
             {
@@ -167,18 +168,18 @@ int main(void)
         glfwGetFramebufferSize(Window, &Width, &Height);
 
         glViewport(-10, 0, Width, Height);
-        glm::mat4 ProjectionMatrix = glm::ortho(0.0f, static_cast<GLfloat>(Width), static_cast<GLfloat>(Height), 0.0f, -1.0f, 1.0f);
+        glm::mat4 ProjectionMatrix = glm::ortho(0.0f, static_cast<GLfloat>(Width / 30), static_cast<GLfloat>(Height / 30), 0.0f, -1.0f, 1.0f);
         
-        Render(&RenderState, PlayerEntity, ProjectionMatrix);
-
         //@TESTCODE
-        // for(int i = 0; i < 10; i++)
-        // {
-        //     for(int j = 0; i < 10; j++)
-        //     {
-        //         Render(&RenderState, TileEntities[i][j], ProjectionMatrix);
-        //     }
-        // }
+        for(int i = 0; i < TileMapSize; i++)
+        {
+            for(int j = 0; j < TileMapSize; j++)
+            {
+                RenderEntity(&RenderState, TileEntities[i][j], ProjectionMatrix);
+            }
+        }
+
+        RenderEntity(&RenderState, PlayerEntity, ProjectionMatrix);
         
         glfwSwapBuffers(Window);
         glfwPollEvents();

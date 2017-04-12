@@ -18,7 +18,8 @@ struct entity
 {
 	Entity_Enum Type;
 	glm::vec2 Position;
-	glm::vec2 Rotation;
+	glm::vec3 Rotation;
+	glm::vec3 Scale;
 	uint32 TextureHandle;
 	uint32 ShaderIndex;
 	union

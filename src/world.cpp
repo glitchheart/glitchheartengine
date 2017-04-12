@@ -19,22 +19,18 @@ static void GenerateWorldChunk(const perlin_noise &Noise, world_chunk *Chunk)
 			if(N < -0.2f)
 			{
 				Chunk->Tiles[i][j] = Tile_Sand;
-				std::cout << "SAND" << std::endl;
 			}
 			else if(N < -0.1f)
 			{
 				Chunk->Tiles[i][j] = Tile_Grass;
-				std::cout << "GRASS" << std::endl;
 			}
 			else if(N < 0)
 			{
 				Chunk->Tiles[i][j] = Tile_DarkGrass;
-				std::cout << "DARKGRASS" << std::endl;
 			}
 			else
 			{
 				Chunk->Tiles[i][j] = Tile_Stone;
-				std::cout << "STONE" << std::endl;
 			}
 		}
 	}
@@ -54,7 +50,6 @@ static void GenerateNoise(perlin_noise *PerlinNoise, int Width, int Height)
 		for(int j = 0; j < Height; j++)
 		{
 			PerlinNoise->Noise[i][j] = stb_perlin_noise3((real32)i / 100.0f, (real32)j / 100.0f, 0, 0, 0, 0);
-			printf("Noise: %f\n", PerlinNoise->Noise[i][j]);
 		}
 	}
 }
