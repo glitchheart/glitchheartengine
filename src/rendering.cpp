@@ -3,6 +3,7 @@
 #include <SOIL/SOIL.h>
 #include "glm/gtc/matrix_transform.hpp"
 #include <vector>
+#include "world.cpp"
 
 static GLint ShaderCompilationErrorChecking(GLuint Shader)
 {
@@ -70,11 +71,11 @@ static BindRenderStateBuffer(render_state *RenderState)
     glBufferData(GL_ARRAY_BUFFER, sizeof(RenderState->QuadVertices), RenderState->QuadVertices, GL_STATIC_DRAW);
 }
 
-static void LoadAllShaders(render_state *State)
+static void LoadAllShaders(render_state *RenderState)
 {
-	glGenBuffers(1, &State->QuadVertexBuffer);
-	BindRenderStateBuffer(&*State);
-	LoadShader("./assets/shaders/textureshader", &State->TextureShader);
+	glGenBuffers(1, &RenderState->QuadVertexBuffer);
+	BindRenderStateBuffer(&*RenderState);
+	LoadShader("./assets/shaders/textureshader", &RenderState->TextureShader);
 }
 
 static GLuint LoadTexture(const char* FilePath)
@@ -128,15 +129,19 @@ static void SetMat4Uniform(GLuint ShaderHandle, const char* UniformName, glm::ma
 	glUniformMatrix4fv(glGetUniformLocation(ShaderHandle, UniformName), 1, GL_FALSE, &Value[0][0]);
 }
 
-static Render(render_state* RenderState, entity entity, glm::mat4 ProjectionMatrix)
+static RenderEntity(render_state* RenderState, entity entity, glm::mat4 ProjectionMatrix)
 {
-    glBindTexture(GL_TEXTURE_2D, entity.TextureHandle);
+    if(RenderState->CurrentBoundTexture != entity.TextureHandle) //never bind the same texture if it's already bound
+    {
+        glBindTexture(GL_TEXTURE_2D, entity.TextureHandle);
+        RenderState->CurrentBoundTexture = entity.TextureHandle;
+    }
 
 	glm::mat4 Model(1.0f);
     glm::mat4 View(1.0f);
 
     Model = glm::translate(Model, glm::vec3(entity.Position.x, entity.Position.y, 0.0f)); 
-    Model = glm::scale(Model, glm::vec3(250.0f, 250.0f, 1.0f));
+    // Model = glm::scale(Model, glm::vec3(250.0f, 250.0f, 1.0f));
     
 	auto Shader = RenderState->Shaders[entity.ShaderIndex];
 
@@ -145,4 +150,9 @@ static Render(render_state* RenderState, entity entity, glm::mat4 ProjectionMatr
 	glUseProgram(Shader.Program);
 	SetMat4Uniform(Shader.Program, "MVP", MVP);
     glDrawArrays(GL_QUADS, 0, 4);
+}
+
+static RenderTilemap(render_state* RenderState, const tile_chunk &TileChunk)
+{
+
 }

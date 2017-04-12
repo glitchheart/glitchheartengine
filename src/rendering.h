@@ -12,6 +12,7 @@ struct shader
 
 struct render_state
 {
+	GLuint CurrentBoundTexture;
 	const struct
 	{
 		float x, y;

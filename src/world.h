@@ -19,6 +19,18 @@ enum Tile_Type
 	Tile_Stone
 };
 
+struct tile_data
+{
+	Tile_Type Type;
+	glm::vec2 TextureOffset;
+};
+
+//tile chunks are 32 x 32 tiles
+struct tile_chunk
+{
+	tile_data Data[32][32];
+};
+
 struct world_chunk
 {
 	Tile_Type** Tiles;
