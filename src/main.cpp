@@ -4,6 +4,7 @@
 #include "keycontroller.h"
 #include "entity.h"
 #include "rendering.cpp"
+#include "world.cpp"
 
 static void ErrorCallback(int Error, const char* Description)
 {
@@ -124,7 +125,7 @@ int main(void)
 
         glfwGetFramebufferSize(Window, &Width, &Height);
 
-        glViewport(0, 0, Width, Height);
+        glViewport(-10, 0, Width, Height);
         glm::mat4 ProjectionMatrix = glm::ortho(0.0f, static_cast<GLfloat>(Width), static_cast<GLfloat>(Height), 0.0f, -1.0f, 1.0f);
         
         Render(&RenderState, PlayerEntity, ProjectionMatrix);
