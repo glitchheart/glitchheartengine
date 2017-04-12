@@ -8,12 +8,12 @@
 	"showOutput": "always",
 	"tasks": [
 		{
-			"taskName": "all",
-			"args": ["all"]
+			"taskName": "compile",
+			"args": ["compile"]
 		},
 			{
-			"taskName": "clean",
-			"args": ["clean"]
+			"taskName": "run",
+			"args": ["run"]
 		}
 	]
 }

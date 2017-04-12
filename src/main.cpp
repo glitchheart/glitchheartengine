@@ -85,8 +85,6 @@ int main(void)
     render_state RenderState = {};
     LoadAllShaders(&RenderState);
 
-    std::cout << "Loaded shaders" << std::endl;
-
     entity_manager EntityManager = {}; //TODO(danieL) Do something useful with this. And remember the texture_manager
 
     entity PlayerEntity = {};

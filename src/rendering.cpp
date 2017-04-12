@@ -30,7 +30,7 @@ static GLint ShaderCompilationErrorChecking(GLuint Shader)
 static GLuint LoadShader(const std::string FilePath, shader* Shd)
 {
     Shd->VertexShader = glCreateShader(GL_VERTEX_SHADER);
-    const char* VertexText = LoadFile(FilePath + std::string(".vert"));
+    GLchar* VertexText = LoadShaderFromFile(FilePath + std::string(".vert"));
     glShaderSource(Shd->VertexShader, 1, &VertexText, NULL);
     glCompileShader(Shd->VertexShader);
     
@@ -38,7 +38,7 @@ static GLuint LoadShader(const std::string FilePath, shader* Shd)
         return GL_FALSE;
         
     Shd->FragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    const char* FragmentText = LoadFile(FilePath + std::string(".frag"));
+    GLchar* FragmentText = LoadShaderFromFile(FilePath + std::string(".frag"));
     glShaderSource(Shd->FragmentShader, 1, &FragmentText, NULL);
     glCompileShader(Shd->FragmentShader);
     
