@@ -94,7 +94,48 @@ int main(void)
     PlayerEntity.ShaderIndex = 0; //TODO(danieL) TextureShader - Should have an enumeration for this
     PlayerEntity.TextureHandle = LoadTexture("./assets/textures/player.png");
 
-    entity PalmTreeEntity = {};
+    //TODO(daniel) Move to texture_manager
+    GLuint SandTextureHandle = LoadTexture("./assets/textures/tile_sand.png");
+    GLuint GrassTextureHandle = LoadTexture("./assets/textures/tile_grass.png");
+    GLuint DarkGrassTextureHandle = LoadTexture("./assets/textures/tile_darkgrass.png");
+    GLuint StoneTextureHandle = LoadTexture("./assets/textures/tile_stone.png");
+
+    //@TESTCODE
+    perlin_noise PerlinNoise;
+    GenerateNoise(&PerlinNoise, 10, 10);
+
+    world_chunk Chunk;
+    GenerateWorldChunk(PerlinNoise, &Chunk);
+
+    entity TileEntities[10][10];
+    
+    for(int i = 0; i < 10; i++)
+    {
+        for(int j = 0; j < 10; j++)
+        {
+            entity TileEntity = {};
+            TileEntity.Type = Entity_Tile;
+            TileEntity.ShaderIndex = 0; 
+            TileEntity.Position = glm::vec2(i * 10, j * 10);
+
+            switch(Chunk.Tiles[i][j])
+            {
+                case Tile_Sand:
+                TileEntity.TextureHandle = SandTextureHandle;
+                break;
+                case Tile_Grass:
+                TileEntity.TextureHandle = GrassTextureHandle;
+                break;
+                case Tile_DarkGrass:
+                TileEntity.TextureHandle = DarkGrassTextureHandle;
+                break;
+                case Tile_Stone:
+                TileEntity.TextureHandle = StoneTextureHandle;
+                break;
+            }
+            TileEntities[i][j] = TileEntity;
+        }
+    }
 
     double LastFrame = glfwGetTime();
     double CurrentFrame = 0.0;
@@ -129,6 +170,15 @@ int main(void)
         glm::mat4 ProjectionMatrix = glm::ortho(0.0f, static_cast<GLfloat>(Width), static_cast<GLfloat>(Height), 0.0f, -1.0f, 1.0f);
         
         Render(&RenderState, PlayerEntity, ProjectionMatrix);
+
+        //@TESTCODE
+        // for(int i = 0; i < 10; i++)
+        // {
+        //     for(int j = 0; i < 10; j++)
+        //     {
+        //         Render(&RenderState, TileEntities[i][j], ProjectionMatrix);
+        //     }
+        // }
         
         glfwSwapBuffers(Window);
         glfwPollEvents();

@@ -7,6 +7,7 @@
 enum Entity_Enum
 {
 	Entity_Player,
+	Entity_Tile,
 	Entity_PalmTree,
 	Entity_Enemy,
 
