@@ -18,6 +18,7 @@
 		"sstream": "cpp",
 		"istream": "cpp",
 		"xlocale": "cpp",
-		"xstring": "cpp"
+		"xstring": "cpp",
+		"xmemory0": "cpp"
 	}
 }
