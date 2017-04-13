@@ -157,7 +157,7 @@ int main(void)
 
         int maxX = (int)std::min((real32)TILEMAP_SIZE, PlayerEntity.Position.x + ViewportWidth / 2.0f + 2);
         int maxY = (int)std::min((real32)TILEMAP_SIZE, PlayerEntity.Position.y + ViewportHeight / 2.0f + 2);
-
+        
         RenderTilemap(&RenderState, Data, TileAtlasTexture, ProjectionMatrix, View, minX, minY, maxX, maxY);
 
         RenderEntity(&RenderState, PlayerEntity, ProjectionMatrix, View);
