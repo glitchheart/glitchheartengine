@@ -25,10 +25,11 @@ struct tile_data
 	glm::vec2 TextureOffset;
 };
 
-//tile chunks are 32 x 32 tiles
+#define TILE_CHUNK_SIZE 32
+
 struct tile_chunk
 {
-	tile_data Data[32][32];
+	tile_data Data[TILE_CHUNK_SIZE][TILE_CHUNK_SIZE];
 };
 
 struct world_chunk
