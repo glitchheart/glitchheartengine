@@ -119,7 +119,7 @@ int main(void)
         CurrentFrame = glfwGetTime();
         DeltaTime = CurrentFrame - LastFrame;
         LastFrame = CurrentFrame;
-
+        
         if (IsKeyDown(GLFW_KEY_ESCAPE))
             glfwSetWindowShouldClose(Window, GLFW_TRUE);
 
@@ -141,9 +141,10 @@ int main(void)
         glViewport(0, 0, Width, Height);
 
         glm::mat4 ProjectionMatrix = glm::ortho(0.0f, static_cast<GLfloat>(Width / 20), static_cast<GLfloat>(Height / 20), 0.0f, -1.0f, 1.0f);
-        
+
         glm::mat4 View(1.0f);
-        
+        View = glm::translate(View, glm::vec3(-PlayerEntity.Position.x + Width / 40, -PlayerEntity.Position.y + Height / 40, 0));    
+
         //@TESTCODE
         RenderTileChunk(&RenderState, Chunk, TileAtlasTexture, ProjectionMatrix, View);
 
