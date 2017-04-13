@@ -32,10 +32,10 @@ struct render_state
 
 	GLfloat SpriteQuadVertices[16] =
 	{      //pos        //texcoords
-		-1.0f,  0.0f, 0.0f, 0.0f,
-		 0.0f,  0.0f, 1.0f, 0.0f,
-		 0.0f, -1.0f, 1.0f, 1.0f,
-		-1.0f, -1.0f, 0.0f, 1.0f
+		-1.0f,  0.0f, 0.0625f, 0.0625f,
+		 0.0f,  0.0f, 0.9375f, 0.0625f,
+		 0.0f, -1.0f, 0.9375f, 0.9375f,
+		-1.0f, -1.0f, 0.0625f, 0.9375f
 	};
 	GLuint SpriteVAO;
 	GLuint SpriteQuadVBO;
