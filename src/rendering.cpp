@@ -4,6 +4,7 @@
 #include "glm/gtc/matrix_transform.hpp"
 #include <vector>
 #include "world.cpp"
+#include "game.cpp"
 
 static GLint ShaderCompilationErrorChecking(GLuint Shader)
 {
@@ -161,7 +162,11 @@ static void RenderEntity(render_state *RenderState, const entity &entity, glm::m
     glm::mat4 Model(1.0f);
 
     Model = glm::translate(Model, glm::vec3(entity.Position.x, entity.Position.y, 0.0f));
-    Model = glm::rotate(Model, entity.Rotation.z, glm::vec3(0, 0, 1));
+    
+    Model = glm::translate(Model, glm::vec3(1, 1, 0.0f)); 
+    Model = glm::rotate(Model, entity.Rotation.z + 1.56f, glm::vec3(0, 0, 1));
+    Model = glm::translate(Model, glm::vec3(-1, -1, 0.0f)); 
+
     Model = glm::scale(Model, entity.Scale);
 
     auto Shader = RenderState->Shaders[entity.ShaderIndex];
@@ -206,4 +211,23 @@ static void RenderTilemap(render_state *RenderState, const tilemap_data &Tilemap
         }
     }
     glBindVertexArray(0);
+}
+
+static void Render(game_state* GameState)
+{
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glClearColor(99.0f / 255.0f, 155.0f / 255.0f, 255.0f / 255.0f, 1.0f);
+
+    //find the visible chunks
+    int minX = (int)std::max(0.0f, GameState->Player.Position.x - GameState->Camera.ViewportWidth / 2);
+    int minY = (int)std::max(0.0f, GameState->Player.Position.y - GameState->Camera.ViewportHeight / 2);
+
+    int maxX = (int)std::min((real32)TILEMAP_SIZE, GameState->Player.Position.x + GameState->Camera.ViewportWidth / 2.0f + 2);
+    int maxY = (int)std::min((real32)TILEMAP_SIZE, GameState->Player.Position.y + GameState->Camera.ViewportHeight / 2.0f + 2);
+    
+    RenderTilemap(&GameState->RenderState, GameState->TilemapData, GameState->TilemapData.TileAtlasTexture, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix, minX, minY, maxX, maxY);
+
+    RenderEntity(&GameState->RenderState, GameState->Player,  GameState->Camera.ProjectionMatrix,  GameState->Camera.ViewMatrix);
+    
+    glfwSwapBuffers(GameState->RenderState.Window);
 }
