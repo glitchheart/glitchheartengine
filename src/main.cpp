@@ -10,6 +10,12 @@ static void ErrorCallback(int Error, const char* Description)
     fprintf(stderr, "Error: %s\n", Description);
 }
 
+static void HandleError(char const* File, int32 LineNum, char const* msg)
+{
+    fprintf(stderr, "Error on in file %s on line %d\n",File,LineNum);
+    fprintf(stderr,"%s\n",msg);
+}
+
 std::map<std::string,std::string> LoadConfig(std::string Filename)
 {
     std::ifstream Input(Filename); //The input stream
@@ -67,7 +73,7 @@ int main(void)
 
     glfwGetFramebufferSize(Window, &Width, &Height);
     glfwSetWindowPos(Window, Mode->width / 2 - Width / 2, Mode->height / 2 - Height / 2);
-
+    HandleError(__FILE__,__LINE__,"TEST");
     if (!Window)
     {
         glfwTerminate();
