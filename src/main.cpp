@@ -105,10 +105,10 @@ int main(void)
 
     // //@TESTCODE
     perlin_noise PerlinNoise2;
-    GenerateNoise(&PerlinNoise2, WORLD_SIZE * TILE_CHUNK_SIZE, WORLD_SIZE * TILE_CHUNK_SIZE);
+    GenerateNoise(&PerlinNoise2, TILEMAP_SIZE, TILEMAP_SIZE);
 
-    world_data Data;
-    GenerateWorld(PerlinNoise2, &Data);
+    tilemap_data Data;
+    GenerateTilemap(PerlinNoise2, &Data);
 
     double LastFrame = glfwGetTime();   
     double CurrentFrame = 0.0;
@@ -136,8 +136,6 @@ int main(void)
         else if(IsKeyDown(GLFW_KEY_S))
             PlayerEntity.Position.y += PlayerEntity.player.WalkingSpeed * DeltaTime;
         
-        printf("Player pos: x: %f, y: %f\n", PlayerEntity.Position.x, PlayerEntity.Position.y);
-
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glClearColor(99.0f / 255.0f, 155.0f / 255.0f, 255.0f / 255.0f, 1.0f);
 
@@ -153,27 +151,14 @@ int main(void)
         glm::mat4 View(1.0f);
         View = glm::translate(View, glm::vec3(-PlayerEntity.Position.x + ViewportWidth / 2, -PlayerEntity.Position.y + ViewportHeight / 2, 0));    
 
-        //@TESTCODE
-
-        printf("%f", PlayerEntity.Position.x - ViewportWidth / 2);
-        
         //find the visible chunks
-        int minX = (int)std::max(0.0f, (PlayerEntity.Position.x - ViewportWidth / 2) / Data.Width);
-        int minY = (int)std::max(0.0f, (PlayerEntity.Position.y - ViewportHeight / 2) / Data.Height);
+        int minX = (int)std::max(0.0f, PlayerEntity.Position.x - ViewportWidth / 2);
+        int minY = (int)std::max(0.0f, PlayerEntity.Position.y - ViewportHeight / 2);
 
-        int maxX = (int)std::min((real32)Data.Width, (PlayerEntity.Position.x + (real32)ViewportWidth / 2.0f) / (real32)Data.Width);
-        int maxY = (int)std::min((real32)Data.Height, (PlayerEntity.Position.y + (real32)ViewportHeight / 2.0f) / (real32)Data.Height);
+        int maxX = (int)std::min((real32)TILEMAP_SIZE, PlayerEntity.Position.x + ViewportWidth / 2.0f + 2);
+        int maxY = (int)std::min((real32)TILEMAP_SIZE, PlayerEntity.Position.y + ViewportHeight / 2.0f + 2);
 
-        // printf("minX: %d minY: %d, maxX: %d maxY: %d\n", minX, minY, maxX, maxY);
-
-        for(int i = minX; i < maxX; i++)
-        {
-            for(int j = minY; j < maxY; j++)
-            {   
-                auto Chunk = Data.TileChunks[i][j];
-                RenderTileChunk(&RenderState, Chunk, TileAtlasTexture, ProjectionMatrix, View);
-            }
-        }
+        RenderTilemap(&RenderState, Data, TileAtlasTexture, ProjectionMatrix, View, minX, minY, maxX, maxY);
 
         RenderEntity(&RenderState, PlayerEntity, ProjectionMatrix, View);
         
