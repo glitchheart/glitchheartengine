@@ -36,6 +36,34 @@ static void GenerateWorldChunk(const perlin_noise &Noise, world_chunk *Chunk)
 	}
 }
 
+static void GenerateTileChunk(const perlin_noise &Noise, tile_chunk *Chunk)
+{
+	for(int i = 0; i < TILE_CHUNK_SIZE; i++)
+	{
+		for(int j = 0; j < TILE_CHUNK_SIZE; j++)
+		{
+			real32 N = Noise.Noise[i][j];
+
+			if(N < -0.2f)
+			{
+				Chunk->Data[i][j] = { Tile_Sand, glm::vec2(0.6f, 0) };
+			}
+			else if(N < -0.1f)
+			{
+				Chunk->Data[i][j] = { Tile_Grass, glm::vec2(0, 0) };;
+			}
+			else if(N < 0)
+			{
+				Chunk->Data[i][j] = { Tile_DarkGrass, glm::vec2(0.4f, 0) };
+			}
+			else
+			{
+				Chunk->Data[i][j] = { Tile_Stone, glm::vec2(0.8f, 0) };
+			}
+		}
+	}
+}
+
 static void GenerateNoise(perlin_noise *PerlinNoise, int Width, int Height)
 {
 	PerlinNoise->Width = Width;

@@ -95,48 +95,19 @@ int main(void)
 
     //TODO(daniel) Move to texture_manager
     GLuint TileAtlasTexture = LoadTexture("./assets/textures/tiles.png");
+
     GLuint SandTextureHandle = LoadTexture("./assets/textures/tile_sand.png");
     GLuint GrassTextureHandle = LoadTexture("./assets/textures/tile_grass.png");
     GLuint DarkGrassTextureHandle = LoadTexture("./assets/textures/tile_darkgrass.png");
     GLuint StoneTextureHandle = LoadTexture("./assets/textures/tile_stone.png");
 
     //@TESTCODE
-    int TileMapSize = 100;
+    int TileMapSize = TILE_CHUNK_SIZE;
     perlin_noise PerlinNoise;
     GenerateNoise(&PerlinNoise, TileMapSize, TileMapSize);
 
-    world_chunk Chunk;
-    GenerateWorldChunk(PerlinNoise, &Chunk);
-
-    entity TileEntities[TileMapSize][TileMapSize];
-    
-    for(int i = 0; i < TileMapSize; i++)
-    {
-        for(int j = 0; j < TileMapSize; j++)
-        {
-            entity TileEntity = {};
-            TileEntity.Type = Entity_Tile;
-            TileEntity.ShaderIndex = 0; 
-            TileEntity.Position = glm::vec2(i, j);
-
-            switch(Chunk.Tiles[i][j])
-            {
-                case Tile_Sand:
-                TileEntity.TextureHandle = SandTextureHandle;
-                break;
-                case Tile_Grass:
-                TileEntity.TextureHandle = GrassTextureHandle;
-                break;
-                case Tile_DarkGrass:
-                TileEntity.TextureHandle = DarkGrassTextureHandle;
-                break;
-                case Tile_Stone:
-                TileEntity.TextureHandle = StoneTextureHandle;
-                break;
-            }
-            TileEntities[i][j] = TileEntity;
-        }
-    }
+    tile_chunk Chunk;
+    GenerateTileChunk(PerlinNoise, &Chunk);
 
     double LastFrame = glfwGetTime();
     double CurrentFrame = 0.0;
@@ -163,23 +134,20 @@ int main(void)
             PlayerEntity.Position.y += PlayerEntity.player.WalkingSpeed * DeltaTime;
         
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glClearColor(0, 0, 1.0f, 1.0f);
+        glClearColor(99.0f / 255.0f, 155.0f / 255.0f, 255.0f / 255.0f, 1.0f);
 
         glfwGetFramebufferSize(Window, &Width, &Height);
 
-        glViewport(-10, 0, Width, Height);
-        glm::mat4 ProjectionMatrix = glm::ortho(0.0f, static_cast<GLfloat>(Width / 30), static_cast<GLfloat>(Height / 30), 0.0f, -1.0f, 1.0f);
+        glViewport(0, 0, Width, Height);
+
+        glm::mat4 ProjectionMatrix = glm::ortho(0.0f, static_cast<GLfloat>(Width / 20), static_cast<GLfloat>(Height / 20), 0.0f, -1.0f, 1.0f);
+        
+        glm::mat4 View(1.0f);
         
         //@TESTCODE
-        for(int i = 0; i < TileMapSize; i++)
-        {
-            for(int j = 0; j < TileMapSize; j++)
-            {
-                RenderEntity(&RenderState, TileEntities[i][j], ProjectionMatrix);
-            }
-        }
+        RenderTileChunk(&RenderState, Chunk, TileAtlasTexture, ProjectionMatrix, View);
 
-        RenderEntity(&RenderState, PlayerEntity, ProjectionMatrix);
+        RenderEntity(&RenderState, PlayerEntity, ProjectionMatrix, View);
         
         glfwSwapBuffers(Window);
         glfwPollEvents();
