@@ -175,7 +175,7 @@ static void RenderEntity(render_state *RenderState, const entity &entity, glm::m
     glBindVertexArray(0);
 }
 
-static void RenderTileChunk(render_state *RenderState, const tile_chunk &Chunk, GLuint TilesetTextureHandle, glm::mat4 ProjectionMatrix, glm::mat4 View)
+static void RenderTilemap(render_state *RenderState, const tilemap_data &TilemapData, GLuint TilesetTextureHandle, glm::mat4 ProjectionMatrix, glm::mat4 View, int StartX, int StartY, int EndX, int EndY)
 {
     real32 scale = 1.0f;
     
@@ -191,16 +191,16 @@ static void RenderTileChunk(render_state *RenderState, const tile_chunk &Chunk, 
 
     UseShader(&Shader);
 
-    for (int i = 0; i < TILE_CHUNK_SIZE; i++)
+    for (int i = StartX; i < EndX; i++)
     {
-        for (int j = 0; j < TILE_CHUNK_SIZE; j++)
+        for (int j = StartY; j < EndY; j++)
         {
             glm::mat4 Model(1.0f);
-            Model = glm::translate(Model, glm::vec3((Chunk.Offset.x + i) * scale, (Chunk.Offset.y + j) * scale, 0.0f));
+            Model = glm::translate(Model, glm::vec3(i * scale, j * scale, 0.0f));
             Model = glm::scale(Model, glm::vec3(scale, scale, 1.0f));
             glm::mat4 MVP = ProjectionMatrix * View * Model;
 
-            SetVec2Attribute(Shader.Program, "textureOffset", Chunk.Data[i][j].TextureOffset);
+            SetVec2Attribute(Shader.Program, "textureOffset", TilemapData.Data[i][j].TextureOffset);
             SetMat4Uniform(Shader.Program, "MVP", MVP);
             glDrawArrays(GL_QUADS, 0, 4);
         }
