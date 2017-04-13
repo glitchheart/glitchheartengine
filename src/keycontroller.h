@@ -13,7 +13,11 @@ static std::map<int, bool> KeysDown =
 	{ GLFW_KEY_RIGHT, false },
 	{ GLFW_KEY_UP, false },
 	{ GLFW_KEY_DOWN, false },
-	{ GLFW_KEY_ESCAPE, false }
+	{ GLFW_KEY_ESCAPE, false },
+	{ GLFW_KEY_W, false },
+	{ GLFW_KEY_A, false },
+	{ GLFW_KEY_S, false },
+	{ GLFW_KEY_D, false }
 };
 
 static void CursorPositionCallback(GLFWwindow* Window, double XPos, double YPos)

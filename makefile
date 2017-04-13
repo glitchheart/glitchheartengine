@@ -25,7 +25,7 @@ compile: clean
 	mkdir obj
 	mkdir build
 	$(CXX) $(CXXLAGS) $(INCLUDES) -c src/main.cpp -g -o obj/main.o
-	$(CC) $(CXXFLAGS) $(INCLUDES) -c src/glad.c -o obj/glad.o
+	$(CC) $(CXXFLAGS) $(INCLUDES) -c libs/glad/glad.c -o obj/glad.o
 	$(CXX) -o $(BUILDDIR)/$(TARGET) obj/main.o obj/glad.o $(LIBRARIES) $(LDFLAGS) 
 
 clean :

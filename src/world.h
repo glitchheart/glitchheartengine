@@ -25,21 +25,22 @@ struct tile_data
 	glm::vec2 TextureOffset;
 };
 
+#define WORLD_SIZE 10
 #define TILE_CHUNK_SIZE 32
 
 struct tile_chunk
 {
+	GLuint VAO;
+	GLuint VBO;
+	glm::vec2 Offset;
 	tile_data Data[TILE_CHUNK_SIZE][TILE_CHUNK_SIZE];
 };
 
-struct world_chunk
+struct world_data
 {
-	Tile_Type** Tiles;
-};
-
-struct world
-{
-	world_chunk Chunks[10];
+	uint32 Width = WORLD_SIZE;
+	uint32 Height = WORLD_SIZE;
+	tile_chunk TileChunks[WORLD_SIZE][WORLD_SIZE];
 };
 
 #endif

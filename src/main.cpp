@@ -4,6 +4,7 @@
 #include "keycontroller.h"
 #include "entity.h"
 #include "rendering.cpp"
+#include <algorithm>
 
 static void ErrorCallback(int Error, const char* Description)
 {
@@ -66,7 +67,6 @@ int main(void)
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
 
     Window = glfwCreateWindow(ScreenWidth, ScreenHeight, (Title + std::string(" ") + Version).c_str(), Fullscreen ? glfwGetPrimaryMonitor() : NULL, NULL);
-    
 
     //center window on screen
     const GLFWvidmode* Mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
@@ -80,7 +80,6 @@ int main(void)
         glfwTerminate();
         exit(EXIT_FAILURE);
     }
-
 
     glfwSetKeyCallback(Window, KeyCallback);
     glfwSetCursorPosCallback(Window, CursorPositionCallback);
@@ -100,28 +99,22 @@ int main(void)
     PlayerEntity.player.WalkingSpeed = 10.0f;
     PlayerEntity.ShaderIndex = 0; //TODO(danieL) TextureShader - Should have an enumeration for this
     PlayerEntity.TextureHandle = LoadTexture("./assets/textures/player.png");
-
-    //TODO(daniel) Move to texture_manager
+    PlayerEntity.Rotation = glm::vec3(0, 0, 0.3f);
+    PlayerEntity.Scale = glm::vec3(2, 2, 0);
     GLuint TileAtlasTexture = LoadTexture("./assets/textures/tiles.png");
 
-    GLuint SandTextureHandle = LoadTexture("./assets/textures/tile_sand.png");
-    GLuint GrassTextureHandle = LoadTexture("./assets/textures/tile_grass.png");
-    GLuint DarkGrassTextureHandle = LoadTexture("./assets/textures/tile_darkgrass.png");
-    GLuint StoneTextureHandle = LoadTexture("./assets/textures/tile_stone.png");
+    // //@TESTCODE
+    perlin_noise PerlinNoise2;
+    GenerateNoise(&PerlinNoise2, WORLD_SIZE * TILE_CHUNK_SIZE, WORLD_SIZE * TILE_CHUNK_SIZE);
 
-    //@TESTCODE
-    int TileMapSize = TILE_CHUNK_SIZE;
-    perlin_noise PerlinNoise;
-    GenerateNoise(&PerlinNoise, TileMapSize, TileMapSize);
+    world_data Data;
+    GenerateWorld(PerlinNoise2, &Data);
 
-    tile_chunk Chunk;
-    GenerateTileChunk(PerlinNoise, &Chunk);
-
-    double LastFrame = glfwGetTime();
+    double LastFrame = glfwGetTime();   
     double CurrentFrame = 0.0;
     double DeltaTime;
+
     printf("%s",glGetString(GL_VERSION));
-    
 
     while (!glfwWindowShouldClose(Window))
     {
@@ -133,16 +126,18 @@ int main(void)
         if (IsKeyDown(GLFW_KEY_ESCAPE))
             glfwSetWindowShouldClose(Window, GLFW_TRUE);
 
-        if(IsKeyDown(GLFW_KEY_LEFT))
+        if(IsKeyDown(GLFW_KEY_A))
             PlayerEntity.Position.x += -PlayerEntity.player.WalkingSpeed * DeltaTime;
-        else if(IsKeyDown(GLFW_KEY_RIGHT))
+        else if(IsKeyDown(GLFW_KEY_D))
             PlayerEntity.Position.x += PlayerEntity.player.WalkingSpeed * DeltaTime;
 
-        if(IsKeyDown(GLFW_KEY_UP))
+        if(IsKeyDown(GLFW_KEY_W))
             PlayerEntity.Position.y += -PlayerEntity.player.WalkingSpeed * DeltaTime;
-        else if(IsKeyDown(GLFW_KEY_DOWN))
+        else if(IsKeyDown(GLFW_KEY_S))
             PlayerEntity.Position.y += PlayerEntity.player.WalkingSpeed * DeltaTime;
         
+        printf("Player pos: x: %f, y: %f\n", PlayerEntity.Position.x, PlayerEntity.Position.y);
+
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glClearColor(99.0f / 255.0f, 155.0f / 255.0f, 255.0f / 255.0f, 1.0f);
 
@@ -150,13 +145,35 @@ int main(void)
 
         glViewport(0, 0, Width, Height);
 
-        glm::mat4 ProjectionMatrix = glm::ortho(0.0f, static_cast<GLfloat>(Width / 20), static_cast<GLfloat>(Height / 20), 0.0f, -1.0f, 1.0f);
+        int ViewportWidth = Width / 20;
+        int ViewportHeight = Height / 20;
+
+        glm::mat4 ProjectionMatrix = glm::ortho(0.0f, static_cast<GLfloat>(ViewportWidth), static_cast<GLfloat>(ViewportHeight), 0.0f, -1.0f, 1.0f);
 
         glm::mat4 View(1.0f);
-        View = glm::translate(View, glm::vec3(-PlayerEntity.Position.x + Width / 40, -PlayerEntity.Position.y + Height / 40, 0));    
+        View = glm::translate(View, glm::vec3(-PlayerEntity.Position.x + ViewportWidth / 2, -PlayerEntity.Position.y + ViewportHeight / 2, 0));    
 
         //@TESTCODE
-        RenderTileChunk(&RenderState, Chunk, TileAtlasTexture, ProjectionMatrix, View);
+
+        printf("%f", PlayerEntity.Position.x - ViewportWidth / 2);
+        
+        //find the visible chunks
+        int minX = (int)std::max(0.0f, (PlayerEntity.Position.x - ViewportWidth / 2) / Data.Width);
+        int minY = (int)std::max(0.0f, (PlayerEntity.Position.y - ViewportHeight / 2) / Data.Height);
+
+        int maxX = (int)std::min((real32)Data.Width, (PlayerEntity.Position.x + (real32)ViewportWidth / 2.0f) / (real32)Data.Width);
+        int maxY = (int)std::min((real32)Data.Height, (PlayerEntity.Position.y + (real32)ViewportHeight / 2.0f) / (real32)Data.Height);
+
+        // printf("minX: %d minY: %d, maxX: %d maxY: %d\n", minX, minY, maxX, maxY);
+
+        for(int i = minX; i < maxX; i++)
+        {
+            for(int j = minY; j < maxY; j++)
+            {   
+                auto Chunk = Data.TileChunks[i][j];
+                RenderTileChunk(&RenderState, Chunk, TileAtlasTexture, ProjectionMatrix, View);
+            }
+        }
 
         RenderEntity(&RenderState, PlayerEntity, ProjectionMatrix, View);
         

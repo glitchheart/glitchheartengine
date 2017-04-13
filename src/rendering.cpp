@@ -51,38 +51,22 @@ static GLuint LoadShader(const std::string FilePath, shader *Shd)
     glAttachShader(Shd->Program, Shd->VertexShader);
     glAttachShader(Shd->Program, Shd->FragmentShader);
     glLinkProgram(Shd->Program);
+   
+    return GL_TRUE;
+}
 
-    // switch(Shd->Type)
-    // {
-    //     case Shader_Texture:
-    //         {
-    auto PositionLocation = glGetAttribLocation(Shd->Program, "pos");
-    auto TexcoordLocation = glGetAttribLocation(Shd->Program, "texcoord");
+static void UseShader(shader *Shader)
+{
+    auto PositionLocation = glGetAttribLocation(Shader->Program, "pos");
+    auto TexcoordLocation = glGetAttribLocation(Shader->Program, "texcoord");
 
     glEnableVertexAttribArray(PositionLocation);
     glVertexAttribPointer(PositionLocation, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
 
     glEnableVertexAttribArray(TexcoordLocation);
     glVertexAttribPointer(TexcoordLocation, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *)(2 * sizeof(float)));
-    //     }
-    //     break;
-    // case Shader_Tile:
-    //     {
-    //         auto PositionLocation = glGetAttribLocation(Shd->Program, "pos");
 
-    //         glEnableVertexAttribArray(PositionLocation);
-    //         glVertexAttribPointer(PositionLocation, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(GLfloat), 0);
-    //     }
-    //     break;
-    // }
-
-    return GL_TRUE;
-}
-
-static BindRenderStateBuffer(render_state *RenderState, GLuint VertexBuffer, GLfloat *Vertices, size_t VerticesSize)
-{
-    glBindBuffer(GL_ARRAY_BUFFER, VertexBuffer);
-    glBufferData(GL_ARRAY_BUFFER, VerticesSize, Vertices, GL_STATIC_DRAW);
+    glUseProgram(Shader->Program);
 }
 
 static void LoadAllShaders(render_state *RenderState)
@@ -162,14 +146,11 @@ static void SetMat4Uniform(GLuint ShaderHandle, const char *UniformName, glm::ma
     glUniformMatrix4fv(glGetUniformLocation(ShaderHandle, UniformName), 1, GL_FALSE, &Value[0][0]);
 }
 
+static GLuint BoundVAO;
+
 static void RenderEntity(render_state *RenderState, const entity &entity, glm::mat4 ProjectionMatrix, glm::mat4 View)
 {
     glBindVertexArray(RenderState->SpriteVAO);
-    // if(RenderState->BoundVertexBuffer != RenderState->SpriteQuadVBO)
-    // {
-    //     BindRenderStateBuffer(RenderState, RenderState->SpriteQuadVBO, RenderState->SpriteQuadVertices, RenderState->SpriteQuadVerticesSize);
-    //     RenderState->BoundVertexBuffer = RenderState->SpriteQuadVBO;
-    // }
 
     if (RenderState->BoundTexture != entity.TextureHandle) //never bind the same texture if it's already bound
     {
@@ -178,16 +159,16 @@ static void RenderEntity(render_state *RenderState, const entity &entity, glm::m
     }
 
     glm::mat4 Model(1.0f);
-    // glm::mat4 View(1.0f);
 
     Model = glm::translate(Model, glm::vec3(entity.Position.x, entity.Position.y, 0.0f));
-    // Model = glm::scale(Model, glm::vec3(250.0f, 250.0f, 1.0f));
+    Model = glm::rotate(Model, entity.Rotation.z, glm::vec3(0, 0, 1));
+    Model = glm::scale(Model, entity.Scale);
 
     auto Shader = RenderState->Shaders[entity.ShaderIndex];
 
     glm::mat4 MVP = ProjectionMatrix * View * Model;
 
-    glUseProgram(Shader.Program);
+    UseShader(&Shader);
 
     SetMat4Uniform(Shader.Program, "MVP", MVP);
     glDrawArrays(GL_QUADS, 0, 4);
@@ -197,6 +178,7 @@ static void RenderEntity(render_state *RenderState, const entity &entity, glm::m
 static void RenderTileChunk(render_state *RenderState, const tile_chunk &Chunk, GLuint TilesetTextureHandle, glm::mat4 ProjectionMatrix, glm::mat4 View)
 {
     real32 scale = 1.0f;
+    
     glBindVertexArray(RenderState->TileVAO);
 
     if (RenderState->BoundTexture != TilesetTextureHandle) //never bind the same texture if it's already bound
@@ -207,18 +189,14 @@ static void RenderTileChunk(render_state *RenderState, const tile_chunk &Chunk, 
 
     auto Shader = RenderState->TileShader;
 
-    glUseProgram(Shader.Program);
+    UseShader(&Shader);
 
     for (int i = 0; i < TILE_CHUNK_SIZE; i++)
     {
         for (int j = 0; j < TILE_CHUNK_SIZE; j++)
         {
             glm::mat4 Model(1.0f);
-            // glm::mat4 View(1.0f);
-
-            // View = glm::translate(View, glm::vec3(-0.00001f, 0.0f, 0.0f, 0.0f));
-            // View = glm::translate(View, CameraPosition);
-            Model = glm::translate(Model, glm::vec3(i * 2 * scale + 10, j * 2 * scale + 10, 0.0f));
+            Model = glm::translate(Model, glm::vec3((Chunk.Offset.x + i) * scale, (Chunk.Offset.y + j) * scale, 0.0f));
             Model = glm::scale(Model, glm::vec3(scale, scale, 1.0f));
             glm::mat4 MVP = ProjectionMatrix * View * Model;
 
