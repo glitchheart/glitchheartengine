@@ -62,10 +62,11 @@ int main(void)
     if (!glfwInit())
         exit(EXIT_FAILURE);
 
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
 
     Window = glfwCreateWindow(ScreenWidth, ScreenHeight, (Title + std::string(" ") + Version).c_str(), Fullscreen ? glfwGetPrimaryMonitor() : NULL, NULL);
+    
 
     //center window on screen
     const GLFWvidmode* Mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
@@ -73,12 +74,13 @@ int main(void)
 
     glfwGetFramebufferSize(Window, &Width, &Height);
     glfwSetWindowPos(Window, Mode->width / 2 - Width / 2, Mode->height / 2 - Height / 2);
-    HandleError(__FILE__,__LINE__,"TEST");
+
     if (!Window)
     {
         glfwTerminate();
         exit(EXIT_FAILURE);
     }
+
 
     glfwSetKeyCallback(Window, KeyCallback);
     glfwSetCursorPosCallback(Window, CursorPositionCallback);
@@ -118,6 +120,8 @@ int main(void)
     double LastFrame = glfwGetTime();
     double CurrentFrame = 0.0;
     double DeltaTime;
+    printf("%s",glGetString(GL_VERSION));
+    
 
     while (!glfwWindowShouldClose(Window))
     {
