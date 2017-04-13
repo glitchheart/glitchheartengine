@@ -56,7 +56,8 @@ int main(void)
     ScreenHeight = std::stoi(Map["screen_height"]);
     Fullscreen = strcmp("true", Map["fullscreen"].c_str()) == 0;
 
-    GLFWwindow* Window;
+
+    // GameState.RenderState = RendersState;
 
     glfwSetErrorCallback(ErrorCallback);
 
@@ -66,49 +67,50 @@ int main(void)
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
 
-    Window = glfwCreateWindow(ScreenWidth, ScreenHeight, (Title + std::string(" ") + Version).c_str(), Fullscreen ? glfwGetPrimaryMonitor() : NULL, NULL);
+    game_state GameState = {};
+    render_state RenderState = {};
+    GameState.RenderState = RenderState;
+    GameState.RenderState.Window = glfwCreateWindow(ScreenWidth, ScreenHeight, (Title + std::string(" ") + Version).c_str(), Fullscreen ? glfwGetPrimaryMonitor() : NULL, NULL);
 
     //center window on screen
     const GLFWvidmode* Mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
     int Width, Height;
 
-    glfwGetFramebufferSize(Window, &Width, &Height);
-    glfwSetWindowPos(Window, Mode->width / 2 - Width / 2, Mode->height / 2 - Height / 2);
+    glfwGetFramebufferSize(GameState.RenderState.Window, &Width, &Height);
+    glfwSetWindowPos(GameState.RenderState.Window, Mode->width / 2 - Width / 2, Mode->height / 2 - Height / 2);
 
-    if (!Window)
+    if (!GameState.RenderState.Window)
     {
         glfwTerminate();
         exit(EXIT_FAILURE);
     }
 
-    glfwSetKeyCallback(Window, KeyCallback);
-    glfwSetCursorPosCallback(Window, CursorPositionCallback);
+    glfwSetKeyCallback(GameState.RenderState.Window, KeyCallback);
+    glfwSetCursorPosCallback(GameState.RenderState.Window, CursorPositionCallback);
 
-    glfwMakeContextCurrent(Window);
+    glfwMakeContextCurrent(GameState.RenderState.Window);
     gladLoadGLLoader((GLADloadproc) glfwGetProcAddress);
     glfwSwapInterval(1);
 
     //load render_state
-    render_state RenderState = {};
-    LoadAllShaders(&RenderState);
+    LoadAllShaders(&GameState.RenderState);
 
-    entity_manager EntityManager = {}; //TODO(danieL) Do something useful with this. And remember the texture_manager
+    entity_manager EntityManager = {}; //TODO(Daniel) Do something useful with this. And remember the texture_manager
 
-    entity PlayerEntity = {};
-    PlayerEntity.Type = Entity_Player;
-    PlayerEntity.player.WalkingSpeed = 10.0f;
-    PlayerEntity.ShaderIndex = 0; //TODO(danieL) TextureShader - Should have an enumeration for this
-    PlayerEntity.TextureHandle = LoadTexture("./assets/textures/player.png");
-    PlayerEntity.Rotation = glm::vec3(0, 0, 0.3f);
-    PlayerEntity.Scale = glm::vec3(2, 2, 0);
-    GLuint TileAtlasTexture = LoadTexture("./assets/textures/tiles.png");
+    GameState.Player = {};
+    GameState.Player.Type = Entity_Player;
+    GameState.Player.player.WalkingSpeed = 10.0f;
+    GameState.Player.ShaderIndex = 0; //TODO(Daniel) TextureShader - Should have an enumeration for this
+    GameState.Player.TextureHandle = LoadTexture("./assets/textures/player.png");
+    GameState.Player.Rotation = glm::vec3(0, 0, 0.3f);
+    GameState.Player.Scale = glm::vec3(2, 2, 0);
 
     // //@TESTCODE
     perlin_noise PerlinNoise2;
     GenerateNoise(&PerlinNoise2, TILEMAP_SIZE, TILEMAP_SIZE);
 
-    tilemap_data Data;
-    GenerateTilemap(PerlinNoise2, &Data);
+    GenerateTilemap(PerlinNoise2, &GameState.TilemapData);
+    GameState.TilemapData.TileAtlasTexture = LoadTexture("./assets/textures/tiles.png");
 
     double LastFrame = glfwGetTime();   
     double CurrentFrame = 0.0;
@@ -116,7 +118,13 @@ int main(void)
 
     printf("%s",glGetString(GL_VERSION));
 
-    while (!glfwWindowShouldClose(Window))
+	glfwGetFramebufferSize(GameState.RenderState.Window, &GameState.RenderState.WindowWidth, &GameState.RenderState.WindowHeight);
+	glViewport(0, 0, GameState.RenderState.WindowWidth, GameState.RenderState.WindowHeight);
+
+	GameState.Camera.ViewportWidth = Width / 20;
+	GameState.Camera.ViewportHeight = Height / 20;
+
+    while (!glfwWindowShouldClose(GameState.RenderState.Window))
     {
         //calculate deltatime
         CurrentFrame = glfwGetTime();
@@ -124,54 +132,14 @@ int main(void)
         LastFrame = CurrentFrame;
         
         if (IsKeyDown(GLFW_KEY_ESCAPE))
-            glfwSetWindowShouldClose(Window, GLFW_TRUE);
+            glfwSetWindowShouldClose(GameState.RenderState.Window, GLFW_TRUE);
 
-        if(IsKeyDown(GLFW_KEY_A))
-            PlayerEntity.Position.x += -PlayerEntity.player.WalkingSpeed * DeltaTime;
-        else if(IsKeyDown(GLFW_KEY_D))
-            PlayerEntity.Position.x += PlayerEntity.player.WalkingSpeed * DeltaTime;
-
-        if(IsKeyDown(GLFW_KEY_W))
-            PlayerEntity.Position.y += -PlayerEntity.player.WalkingSpeed * DeltaTime;
-        else if(IsKeyDown(GLFW_KEY_S))
-            PlayerEntity.Position.y += PlayerEntity.player.WalkingSpeed * DeltaTime;
-        
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glClearColor(99.0f / 255.0f, 155.0f / 255.0f, 255.0f / 255.0f, 1.0f);
-
-        glfwGetFramebufferSize(Window, &Width, &Height);
-
-        glViewport(0, 0, Width, Height);
-
-        int ViewportWidth = Width / 20;
-        int ViewportHeight = Height / 20;
-
-        glm::mat4 ProjectionMatrix = glm::ortho(0.0f, static_cast<GLfloat>(ViewportWidth), static_cast<GLfloat>(ViewportHeight), 0.0f, -1.0f, 1.0f);
-
-        glm::mat4 View(1.0f);
-        View = glm::translate(View, glm::vec3(-PlayerEntity.Position.x + ViewportWidth / 2, -PlayerEntity.Position.y + ViewportHeight / 2, 0));    
-
-        //find the visible chunks
-        int minX = (int)std::max(0.0f, PlayerEntity.Position.x - ViewportWidth / 2);
-        int minY = (int)std::max(0.0f, PlayerEntity.Position.y - ViewportHeight / 2);
-
-        int maxX = (int)std::min((real32)TILEMAP_SIZE, PlayerEntity.Position.x + ViewportWidth / 2.0f + 2);
-        int maxY = (int)std::min((real32)TILEMAP_SIZE, PlayerEntity.Position.y + ViewportHeight / 2.0f + 2);
-        
-        RenderTilemap(&RenderState, Data, TileAtlasTexture, ProjectionMatrix, View, minX, minY, maxX, maxY);
-
-        RenderEntity(&RenderState, PlayerEntity, ProjectionMatrix, View);
-        
-        glfwSwapBuffers(Window);
+        Update(DeltaTime, &GameState);
+        Render(&GameState);
         glfwPollEvents();
     }
 
-    glfwDestroyWindow(Window);
+    glfwDestroyWindow(GameState.RenderState.Window);
     glfwTerminate();
     exit(EXIT_SUCCESS);
-}
-
-static Update(double DeltaTime, entity Entity)
-{
-
 }

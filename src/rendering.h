@@ -19,23 +19,21 @@ struct shader
 
 struct render_state
 {
-	const size_t SpriteQuadVerticesSize = 16 * sizeof(GLfloat);
-	const size_t TileQuadVerticesSize = 8 * sizeof(GLfloat);
+	GLFWwindow* Window;
+	int WindowWidth;
+	int WindowHeight;
+	
+	size_t SpriteQuadVerticesSize = 16 * sizeof(GLfloat);
+	size_t TileQuadVerticesSize = 8 * sizeof(GLfloat);
 	GLuint BoundVertexBuffer;
 	GLuint BoundTexture;
 	//sprites
-	const struct
-	{
-		float x, y;
-		float u, v;
-	};
-
 	GLfloat SpriteQuadVertices[16] =
 	{      //pos        //texcoords
-		-1.0f,  0.0f, 0.0625f, 0.0625f,
-		 0.0f,  0.0f, 0.9375f, 0.0625f,
-		 0.0f, -1.0f, 0.9375f, 0.9375f,
-		-1.0f, -1.0f, 0.0625f, 0.9375f
+		 0.0f,  1.0f, 0.0625f, 0.0625f,
+		 1.0f,  1.0f, 0.9375f, 0.0625f,
+		 1.0f,  0.0f, 0.9375f, 0.9375f,
+	     0.0f,  0.0f, 0.0625f, 0.9375f
 	};
 	GLuint SpriteVAO;
 	GLuint SpriteQuadVBO;

@@ -29,6 +29,7 @@ struct tile_data
 
 struct tilemap_data
 {
+	GLuint TileAtlasTexture;
 	tile_data Data[TILEMAP_SIZE][TILEMAP_SIZE];
 };
 
