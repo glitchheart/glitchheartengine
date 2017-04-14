@@ -52,7 +52,10 @@
 		"xtree": "cpp",
 		"algorithm": "cpp",
 		"filesystem": "cpp",
-		"thread": "cpp"
+		"thread": "cpp",
+		"chrono": "cpp",
+		"memory": "cpp",
+		"ratio": "cpp"
 	},
 	 "todohighlight.isEnable": true, //toggle the highlight, default is true
     "todohighlight.isCaseSensitive": true, //whether the keywords are case sensitive or not
