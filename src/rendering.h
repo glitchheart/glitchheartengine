@@ -6,7 +6,9 @@
 enum Shader_Type
 {
 	Shader_Texture,
-	Shader_Tile
+	Shader_Tile,
+
+	Shader_Count
 };
 
 struct shader
@@ -48,20 +50,16 @@ struct render_state
 	};
 	GLuint TileVAO;
 	GLuint TileQuadVBO;
+
 	union
 	{
-		shader Shaders[2];
+		shader Shaders[Shader_Count];
 		struct 
 		{
 			shader TextureShader;
 			shader TileShader;
 		};
 	};
-};
-
-struct texture_manager
-{
-
 };
 
 #endif

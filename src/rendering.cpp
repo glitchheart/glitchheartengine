@@ -56,6 +56,38 @@ static GLuint LoadShader(const std::string FilePath, shader *Shd)
     return GL_TRUE;
 }
 
+static GLuint LoadVertexShader(const std::string FilePath, shader *Shd)
+{
+    Shd->VertexShader = glCreateShader(GL_VERTEX_SHADER);
+    GLchar *VertexText = LoadShaderFromFile(FilePath + std::string(".vert"));
+    glShaderSource(Shd->VertexShader, 1, &VertexText, NULL);
+    glCompileShader(Shd->VertexShader);
+
+    if (!ShaderCompilationErrorChecking(Shd->VertexShader))
+        return GL_FALSE;
+
+    glAttachShader(Shd->Program, Shd->VertexShader);
+    glLinkProgram(Shd->Program);
+   
+    return GL_TRUE;
+}
+
+static GLuint LoadFragmentShader(const std::string FilePath, shader *Shd)
+{
+    Shd->FragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+    GLchar *FragmentText = LoadShaderFromFile(FilePath + std::string(".frag"));
+    glShaderSource(Shd->FragmentShader, 1, &FragmentText, NULL);
+    glCompileShader(Shd->FragmentShader);
+
+    if (!ShaderCompilationErrorChecking(Shd->FragmentShader))
+        return GL_FALSE;
+   
+    glAttachShader(Shd->Program, Shd->FragmentShader);
+    glLinkProgram(Shd->Program);
+   
+    return GL_TRUE;
+}
+
 static void UseShader(shader *Shader)
 {
     auto PositionLocation = glGetAttribLocation(Shader->Program, "pos");
@@ -94,6 +126,72 @@ static void LoadAllShaders(render_state *RenderState)
     RenderState->TileShader.Type = Shader_Tile;
     LoadShader("./assets/shaders/tileshader", &RenderState->TileShader);
     glBindVertexArray(0);
+}
+
+static void ReloadShaders(render_state* RenderState)
+{
+    glDeleteShader(RenderState->TextureShader.VertexShader);
+    glDeleteShader(RenderState->TextureShader.FragmentShader);
+    glDeleteProgram(RenderState->TextureShader.Program);
+
+    glDeleteShader(RenderState->TileShader.VertexShader);
+    glDeleteShader(RenderState->TileShader.FragmentShader);
+    glDeleteProgram(RenderState->TileShader.Program);
+    
+    LoadShader("./assets/shaders/textureshader", &RenderState->TextureShader);
+    LoadShader("./assets/shaders/tileshader", &RenderState->TileShader);
+}
+
+static void ReloadVertexShader(uint32 Index, render_state* RenderState)
+{
+    switch(Index)
+    {
+        case Shader_Texture:
+            LoadShader("./assets/shaders/textureshader", &RenderState->TextureShader);
+            // glDeleteShader(RenderState->TextureShader.VertexShader);
+            // LoadVertexShader("./assets/shaders/textureshader", &RenderState->TextureShader);
+            break;
+        case Shader_Tile:
+            LoadShader("./assets/shaders/tileshader", &RenderState->TileShader);
+            // glDeleteShader(RenderState->TileShader.VertexShader);
+            // LoadVertexShader("./assets/shaders/tileshader", &RenderState->TileShader);
+            break;
+    }
+}
+
+static void ReloadFragmentShader(uint32 Index, render_state* RenderState)
+{
+    switch(Index)
+    {
+        case Shader_Texture:
+            LoadShader("./assets/shaders/textureshader", &RenderState->TextureShader);
+            // glDeleteShader(RenderState->TextureShader.FragmentShader);
+            // LoadFragmentShader("./assets/shaders/textureshader", &RenderState->TextureShader);
+            break;
+        case Shader_Tile:
+            LoadShader("./assets/shaders/tileshader", &RenderState->TileShader);
+            // glDeleteShader(RenderState->TileShader.FragmentShader);
+            // LoadFragmentShader("./assets/shaders/tileshader", &RenderState->TileShader);
+            break;
+    }
+}
+
+static void ReloadAssets(asset_manager *AssetManager, render_state* RenderState)
+{
+    for(int i = 0; i < 2; i++)
+    {
+        if(AssetManager->DirtyVertexShaderIndices[i] == 1)
+        {
+            ReloadVertexShader(i, RenderState);
+            AssetManager->DirtyVertexShaderIndices[i] = 0;
+        }
+
+        if(AssetManager->DirtyFragmentShaderIndices[i] == 1)
+        {
+            ReloadFragmentShader(i, RenderState);
+            AssetManager->DirtyFragmentShaderIndices[i] = 0;
+        }
+    }
 }
 
 static GLuint LoadTexture(const char *FilePath)
