@@ -42,17 +42,24 @@ std::map<std::string, std::string> LoadConfig(std::string Filename)
 struct game_code
 {
     HMODULE GameCodeDLL;
+    FILETIME LastDllWriteTime;
     update *Update;
 
     bool32 IsValid;
+    const char* DllPath = "build/game.dll";
+    const char* TempDllPath = "build/game_temp.dll";
 };
 
 static game_code LoadGameCode()
 {
     game_code Result = {};
-    CopyFile("game.dll","game_temp.dll",false);
+
+    CopyFile(Result.DllPath, Result.TempDllPath,false);
     Result.Update = UpdateStub;
-    Result.GameCodeDLL = LoadLibraryA("game.dll");
+    Result.GameCodeDLL = LoadLibraryA(Result.DllPath);
+    
+    Result.LastDllWriteTime = GetLastWriteTime(Result.DllPath);
+
     if (Result.GameCodeDLL)
     {
         Result.Update = (update *)GetProcAddress(Result.GameCodeDLL, "Update");
@@ -83,6 +90,17 @@ static void ReloadGameCode(game_code* GameCode)
 {
     UnloadGameCode(GameCode);
     *GameCode = LoadGameCode();
+}
+
+static void ReloadDlls(game_code* Game)
+{
+    FILETIME LastWriteTime = GetLastWriteTime(Game->DllPath);
+    
+    if(CompareFileTime(&Game->LastDllWriteTime, &LastWriteTime) != 0)
+    {
+        std::cout << "RELOAD" << std::endl;
+        ReloadGameCode(Game);
+    }
 }
 
 int main(void)
@@ -173,39 +191,31 @@ int main(void)
     GameState.Camera.ViewportWidth = Width / 20;
     GameState.Camera.ViewportHeight = Height / 20;
 
-    //setup asset reloading
-    asset_manager AssetManager = {};
-    std::thread t(&ListenToFileChanges, &AssetManager);
-    
     game_code Game = LoadGameCode();
     uint32 LoadCounter = 0;
 
+    //setup asset reloading
+    // asset_manager AssetManager = {};
+    // std::thread t(&ListenToFileChanges, &AssetManager);
+    
     while (!glfwWindowShouldClose(GameState.RenderState.Window))
     {
         //calculate deltatime
         CurrentFrame = glfwGetTime();
-        DeltaTime = CurrentFrame - LastFrame;
+        DeltaTime = CurrentFrame - LastFrame;   
         LastFrame = CurrentFrame;
 
         if (IsKeyDown(GLFW_KEY_ESCAPE,&GameState))
             glfwSetWindowShouldClose(GameState.RenderState.Window, GLFW_TRUE);
 
-        if (IsKeyDown(GLFW_KEY_F10,&GameState))
-        {
-            ReloadShaders(&GameState.RenderState);
-        }
-
-        reload_result Result = ReloadAssets(&AssetManager, &GameState.RenderState);
-        
-        if(Result.ReloadGameDll == 1)
-        {
-            printf("RELOAD");
-            ReloadGameCode(&Game);
-        }
+        // ReloadAssets(&AssetManager, &GameState.RenderState);
+        ReloadDlls(&Game);
 
         GLint Viewport[4];
         glGetIntegerv(GL_VIEWPORT,Viewport);
-        memcpy(GameState.RenderState.Viewport,Viewport,sizeof(GLint) * 4);
+        
+        memcpy(GameState.RenderState.Viewport, Viewport,sizeof(GLint) * 4);
+
         Game.Update(DeltaTime, &GameState);
         Render(&GameState);
         glfwPollEvents();
