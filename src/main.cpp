@@ -1,46 +1,86 @@
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
-#include "types.h"
-#include "keycontroller.h"
-#include "entity.h"
+#include "main.h"
+#include "game.h"
 #include "rendering.cpp"
+#include "world.cpp"
+#include "entity.cpp"
+#include "keycontroller.cpp"
 #include <algorithm>
 
-static void ErrorCallback(int Error, const char* Description)
+static void ErrorCallback(int Error, const char *Description)
 {
     fprintf(stderr, "Error: %s\n", Description);
 }
 
-static void HandleError(char const* File, int32 LineNum, char const* msg)
+static void HandleError(char const *File, int32 LineNum, char const *msg)
 {
-    fprintf(stderr, "Error on in file %s on line %d\n",File,LineNum);
-    fprintf(stderr,"%s\n",msg);
+    fprintf(stderr, "Error on in file %s on line %d\n", File, LineNum);
+    fprintf(stderr, "%s\n", msg);
 }
 
-std::map<std::string,std::string> LoadConfig(std::string Filename)
+std::map<std::string, std::string> LoadConfig(std::string Filename)
 {
-    std::ifstream Input(Filename); //The input stream
-    std::map<std::string,std::string> Ans; //A map of key-value pairs in the file
-    while(Input) //Keep on going as long as the file stream is good
+    std::ifstream Input(Filename);          //The input stream
+    std::map<std::string, std::string> Ans; //A map of key-value pairs in the file
+    while (Input)                           //Keep on going as long as the file stream is good
     {
-        std::string Key; //The key
-        std::string Value; //The value
-        std::getline(Input, Key, ':'); //Read up to the : delimiter into key
-        std::getline(Input, Value, '\n'); //Read up to the newline into value
-        std::string::size_type Pos1 = Value.find_first_of("\""); //Find the first quote in the value
-        std::string::size_type Pos2 = Value.find_last_of("\""); //Find the last quote in the value
-        if(Pos1 != std::string::npos && Pos2 != std::string::npos && Pos2 > Pos1) //Check if the found positions are all valid
+        std::string Key;                                                           //The key
+        std::string Value;                                                         //The value
+        std::getline(Input, Key, ':');                                             //Read up to the : delimiter into key
+        std::getline(Input, Value, '\n');                                          //Read up to the newline into value
+        std::string::size_type Pos1 = Value.find_first_of("\"");                   //Find the first quote in the value
+        std::string::size_type Pos2 = Value.find_last_of("\"");                    //Find the last quote in the value
+        if (Pos1 != std::string::npos && Pos2 != std::string::npos && Pos2 > Pos1) //Check if the found positions are all valid
         {
-            Value = Value.substr(Pos1+1,Pos2-Pos1-1); //Take a substring of the part between the quotes
-            Ans[Key] = Value; //Store the result in the map
+            Value = Value.substr(Pos1 + 1, Pos2 - Pos1 - 1); //Take a substring of the part between the quotes
+            Ans[Key] = Value;                                //Store the result in the map
         }
     }
     Input.close(); //Close the file stream
-    return Ans; //And return the result
+    return Ans;    //And return the result
+}
+
+struct game_code
+{
+    HMODULE GameCodeDLL;
+    update *Update;
+
+    bool32 IsValid;
+};
+
+static game_code LoadGameCode()
+{
+    game_code Result = {};
+    CopyFile("game.dll","game_temp.dll",false);
+    Result.Update = UpdateStub;
+    Result.GameCodeDLL = LoadLibraryA("game.dll");
+    if (Result.GameCodeDLL)
+    {
+        Result.Update = (update *)GetProcAddress(Result.GameCodeDLL, "Update");
+        Result.IsValid = Result.Update != 0;
+    }
+
+    if (!Result.IsValid)
+    {
+        Result.Update = UpdateStub;
+    }
+
+    return Result;
+}
+
+static void UnloadGameCode(game_code *GameCode)
+{
+    if (GameCode->GameCodeDLL)
+    {
+        FreeLibrary(GameCode->GameCodeDLL);
+        GameCode->GameCodeDLL = 0;
+    }
+
+    GameCode->IsValid = false;
+    GameCode->Update = UpdateStub;
 }
 
 int main(void)
-{   
+{
     //load config file
     std::string Title;
     std::string Version;
@@ -55,7 +95,6 @@ int main(void)
     ScreenWidth = std::stoi(Map["screen_width"]);
     ScreenHeight = std::stoi(Map["screen_height"]);
     Fullscreen = strcmp("true", Map["fullscreen"].c_str()) == 0;
-
 
     // GameState.RenderState = RendersState;
 
@@ -73,7 +112,7 @@ int main(void)
     GameState.RenderState.Window = glfwCreateWindow(ScreenWidth, ScreenHeight, (Title + std::string(" ") + Version).c_str(), Fullscreen ? glfwGetPrimaryMonitor() : NULL, NULL);
 
     //center window on screen
-    const GLFWvidmode* Mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
+    const GLFWvidmode *Mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
     int Width, Height;
 
     glfwGetFramebufferSize(GameState.RenderState.Window, &Width, &Height);
@@ -85,11 +124,15 @@ int main(void)
         exit(EXIT_FAILURE);
     }
 
+    input_controller Input = {};
+    GameState.InputController = Input;
+
+    glfwSetWindowUserPointer(GameState.RenderState.Window,&GameState);
     glfwSetKeyCallback(GameState.RenderState.Window, KeyCallback);
     glfwSetCursorPosCallback(GameState.RenderState.Window, CursorPositionCallback);
 
     glfwMakeContextCurrent(GameState.RenderState.Window);
-    gladLoadGLLoader((GLADloadproc) glfwGetProcAddress);
+    gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
     glfwSwapInterval(1);
 
     //load render_state
@@ -112,43 +155,54 @@ int main(void)
     GenerateTilemap(PerlinNoise2, &GameState.TilemapData);
     GameState.TilemapData.TileAtlasTexture = LoadTexture("./assets/textures/tiles.png");
 
-    double LastFrame = glfwGetTime();   
+    double LastFrame = glfwGetTime();
     double CurrentFrame = 0.0;
     double DeltaTime;
 
-    printf("%s",glGetString(GL_VERSION));
+    printf("%s", glGetString(GL_VERSION));
 
-	glfwGetFramebufferSize(GameState.RenderState.Window, &GameState.RenderState.WindowWidth, &GameState.RenderState.WindowHeight);
-	glViewport(0, 0, GameState.RenderState.WindowWidth, GameState.RenderState.WindowHeight);
+    glfwGetFramebufferSize(GameState.RenderState.Window, &GameState.RenderState.WindowWidth, &GameState.RenderState.WindowHeight);
+    glViewport(0, 0, GameState.RenderState.WindowWidth, GameState.RenderState.WindowHeight);
 
-	GameState.Camera.ViewportWidth = Width / 20;
-	GameState.Camera.ViewportHeight = Height / 20;
-
+    GameState.Camera.ViewportWidth = Width / 20;
+    GameState.Camera.ViewportHeight = Height / 20;
 
     //setup asset reloading
     asset_manager AssetManager = {};
     std::thread t(&ListenToFileChanges, &AssetManager);
+    game_code Game = LoadGameCode();
+    uint32 LoadCounter = 0;
 
     while (!glfwWindowShouldClose(GameState.RenderState.Window))
     {
+        if (LoadCounter++ > 120)
+        {
+            UnloadGameCode(&Game);
+            Game = LoadGameCode();
+            LoadCounter = 0;
+        }
         //calculate deltatime
         CurrentFrame = glfwGetTime();
         DeltaTime = CurrentFrame - LastFrame;
         LastFrame = CurrentFrame;
-        
-        if (IsKeyDown(GLFW_KEY_ESCAPE))
+
+        if (IsKeyDown(GLFW_KEY_ESCAPE,&GameState))
             glfwSetWindowShouldClose(GameState.RenderState.Window, GLFW_TRUE);
 
-        if(IsKeyDown(GLFW_KEY_F10))
+        if (IsKeyDown(GLFW_KEY_F10,&GameState))
         {
             ReloadShaders(&GameState.RenderState);
         }
 
         ReloadAssets(&AssetManager, &GameState.RenderState);
 
-        Update(DeltaTime, &GameState);
+        GLint Viewport[4];
+        glGetIntegerv(GL_VIEWPORT,Viewport);
+        memcpy(GameState.RenderState.Viewport,Viewport,sizeof(GLint) * 4);
+        Game.Update(DeltaTime, &GameState);
         Render(&GameState);
         glfwPollEvents();
+        
     }
 
     glfwDestroyWindow(GameState.RenderState.Window);

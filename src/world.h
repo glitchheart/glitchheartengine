@@ -1,8 +1,6 @@
 #ifndef WORLD_H
 #define WORLD
 
-#include "types.h"
-
 struct perlin_noise
 {
 	real32 **Noise;

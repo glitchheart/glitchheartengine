@@ -1,10 +1,3 @@
-#include "rendering.h"
-#include "filehandling.h"
-#include <SOIL/SOIL.h>
-#include "glm/gtc/matrix_transform.hpp"
-#include <vector>
-#include "world.cpp"
-#include "game.cpp"
 
 static GLint ShaderCompilationErrorChecking(GLuint Shader)
 {

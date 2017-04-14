@@ -1,9 +1,6 @@
 #ifndef ENTITY_H
 #define ENTITY_H
 
-#include "types.h"
-#include <glm/glm.hpp>
-
 enum Entity_Enum
 {
 	Entity_Player,

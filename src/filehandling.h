@@ -1,13 +1,3 @@
-#include <iostream>
-#include <fstream>
-#include <sstream>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <unistd.h>
-#include <chrono>
-#include <thread>
-#include <mingwthreads/mingw.thread.h>
-
 static GLchar* LoadShaderFromFile(const std::string Path)
 {
 	GLchar *Source = {};
