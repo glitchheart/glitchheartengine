@@ -169,15 +169,8 @@ static void ReloadFragmentShader(uint32 Index, render_state* RenderState)
     }
 }
 
-struct reload_result
+static void ReloadAssets(asset_manager *AssetManager, render_state* RenderState)
 {
-    uint32 ReloadGameDll;
-};
-
-static reload_result ReloadAssets(asset_manager *AssetManager, render_state* RenderState)
-{
-    reload_result Result = {};
-
     for(int i = 0; i < 2; i++)
     {
         if(AssetManager->DirtyVertexShaderIndices[i] == 1)
@@ -192,14 +185,6 @@ static reload_result ReloadAssets(asset_manager *AssetManager, render_state* Ren
             AssetManager->DirtyFragmentShaderIndices[i] = 0;
         }
     }
-
-    if(AssetManager->DirtyGameDll == 1)
-    {
-        Result.ReloadGameDll = AssetManager->DirtyGameDll;
-        AssetManager->DirtyGameDll = 0;
-    }
-    
-    return Result;
 }
 
 static GLuint LoadTexture(const char *FilePath)

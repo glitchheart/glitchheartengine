@@ -1,3 +1,5 @@
+#include <Windows.h>
+
 static GLchar* LoadShaderFromFile(const std::string Path)
 {
 	GLchar *Source = {};
@@ -37,11 +39,25 @@ struct asset_manager
 	time_t FragmentShaderTimes[2];
 
 	//dll's
-	const char* GameDllPath = "test.txt";
+	const char* DllPaths[1] = { "game.dll" };
 	uint32 DirtyGameDll;
-	time_t GameDllTime;
+	FILETIME GameDllTime;
 };
 
+static FILETIME GetLastWriteTime(const char* FilePath)
+{
+	FILETIME LastWriteTime = {};
+
+	WIN32_FIND_DATA FindData;
+	HANDLE FindHandle = FindFirstFileA(FilePath, &FindData);
+
+	if(FindHandle != INVALID_HANDLE_VALUE)
+	{
+		LastWriteTime = FindData.ftLastWriteTime;
+		FindClose(FindHandle);
+	}
+	return LastWriteTime;
+}
 
 static void ListenToFileChanges(asset_manager* AssetManager)
 {
@@ -57,14 +73,11 @@ static void ListenToFileChanges(asset_manager* AssetManager)
 			struct stat sb;
 			stat(AssetManager->VertexShaderPaths[i], &sb);
 
-			// Check the last time the file was written
 			time_t time = sb.st_mtime;
 			auto last_time = AssetManager->VertexShaderTimes[i];
 
-			// And compare it with the known time. 
 			if (last_time != 0 && last_time < time)
 			{
-				// If they do not match, mark the program as needing a reload
 				AssetManager->DirtyVertexShaderIndices[i] = 1;
 			}
 			AssetManager->VertexShaderTimes[i] = time;
@@ -75,37 +88,16 @@ static void ListenToFileChanges(asset_manager* AssetManager)
 			struct stat sb;
 			stat(AssetManager->FragmentShaderPaths[i], &sb);
 
-			// Check the last time the file was written
 			time_t time = sb.st_mtime;
 			auto last_time = AssetManager->FragmentShaderTimes[i];
 
-			// And compare it with the known time. 
 			if (last_time != 0 && last_time < time)
 			{
-				// If they do not match, mark the program as needing a reload
 				AssetManager->DirtyFragmentShaderIndices[i] = 1;
 			}
 			AssetManager->FragmentShaderTimes[i] = time;
 		}
 
-		struct stat sb;
-		stat(AssetManager->GameDllPath, &sb);
-
-		// Check the last time the file was written
-		time_t time = sb.st_mtime;
-		auto last_time = AssetManager->GameDllTime;
-		printf("TIME %s LAST TIME %s\n", time, last_time);
-
-		// And compare it with the known time. 
-		if (last_time != 0 && last_time < time)
-		{
-			// If they do not match, mark the program as needing a reload
-			AssetManager->DirtyGameDll = 1;
-		}
-		
-		AssetManager->GameDllTime = time;
-
-		// Just run this code once every second
 		std::this_thread::sleep_for(1s);
 	}
 }
