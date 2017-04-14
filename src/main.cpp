@@ -124,6 +124,11 @@ int main(void)
 	GameState.Camera.ViewportWidth = Width / 20;
 	GameState.Camera.ViewportHeight = Height / 20;
 
+
+    //setup asset reloading
+    asset_manager AssetManager = {};
+    std::thread t(&ListenToFileChanges, &AssetManager);
+
     while (!glfwWindowShouldClose(GameState.RenderState.Window))
     {
         //calculate deltatime
@@ -133,6 +138,13 @@ int main(void)
         
         if (IsKeyDown(GLFW_KEY_ESCAPE))
             glfwSetWindowShouldClose(GameState.RenderState.Window, GLFW_TRUE);
+
+        if(IsKeyDown(GLFW_KEY_F10))
+        {
+            ReloadShaders(&GameState.RenderState);
+        }
+
+        ReloadAssets(&AssetManager, &GameState.RenderState);
 
         Update(DeltaTime, &GameState);
         Render(&GameState);
