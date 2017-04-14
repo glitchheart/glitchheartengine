@@ -28,13 +28,18 @@ struct asset_manager
 {
 	bool ListenForChanges;
 
+	//shaders
 	const char* VertexShaderPaths[2] = { "./assets/shaders/textureshader.vert", "./assets/shaders/tileshader.vert" };
 	const char* FragmentShaderPaths[2] = { "./assets/shaders/textureshader.frag", "./assets/shaders/tileshader.frag" };
 	uint32 DirtyVertexShaderIndices[2]; //2 is the number of shaders, set to 1 if they should be reloaded
 	uint32 DirtyFragmentShaderIndices[2];
-
 	time_t VertexShaderTimes[2];
 	time_t FragmentShaderTimes[2];
+
+	//dll's
+	const char* GameDllPath = "test.txt";
+	uint32 DirtyGameDll;
+	time_t GameDllTime;
 };
 
 
@@ -57,7 +62,8 @@ static void ListenToFileChanges(asset_manager* AssetManager)
 			auto last_time = AssetManager->VertexShaderTimes[i];
 
 			// And compare it with the known time. 
-			if (last_time != 0 && last_time < time) {
+			if (last_time != 0 && last_time < time)
+			{
 				// If they do not match, mark the program as needing a reload
 				AssetManager->DirtyVertexShaderIndices[i] = 1;
 			}
@@ -74,12 +80,30 @@ static void ListenToFileChanges(asset_manager* AssetManager)
 			auto last_time = AssetManager->FragmentShaderTimes[i];
 
 			// And compare it with the known time. 
-			if (last_time != 0 && last_time < time) {
+			if (last_time != 0 && last_time < time)
+			{
 				// If they do not match, mark the program as needing a reload
 				AssetManager->DirtyFragmentShaderIndices[i] = 1;
 			}
 			AssetManager->FragmentShaderTimes[i] = time;
 		}
+
+		struct stat sb;
+		stat(AssetManager->GameDllPath, &sb);
+
+		// Check the last time the file was written
+		time_t time = sb.st_mtime;
+		auto last_time = AssetManager->GameDllTime;
+		printf("TIME %s LAST TIME %s\n", time, last_time);
+
+		// And compare it with the known time. 
+		if (last_time != 0 && last_time < time)
+		{
+			// If they do not match, mark the program as needing a reload
+			AssetManager->DirtyGameDll = 1;
+		}
+		
+		AssetManager->GameDllTime = time;
 
 		// Just run this code once every second
 		std::this_thread::sleep_for(1s);

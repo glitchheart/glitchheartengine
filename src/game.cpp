@@ -11,17 +11,21 @@ extern "C" UPDATE(Update)
     //player movement
     if (IsKeyDown(GLFW_KEY_A,GameState))
     {
-	GameState->Player.Position.x += -GameState->Player.player.WalkingSpeed * DeltaTime;
+	    GameState->Player.Position.x += -GameState->Player.player.WalkingSpeed * 2 * DeltaTime;
     }
     else if (IsKeyDown(GLFW_KEY_D,GameState))
-	GameState->Player.Position.x += GameState->Player.player.WalkingSpeed * DeltaTime;
+	{ 
+        GameState->Player.Position.x += GameState->Player.player.WalkingSpeed * 2 * DeltaTime;
+    }
 
     if (IsKeyDown(GLFW_KEY_W,GameState))
     {
-	GameState->Player.Position.y += -GameState->Player.player.WalkingSpeed * DeltaTime;
+	    GameState->Player.Position.y += -GameState->Player.player.WalkingSpeed * 2  * DeltaTime;
     }
     else if (IsKeyDown(GLFW_KEY_S,GameState))
-	GameState->Player.Position.y += GameState->Player.player.WalkingSpeed * DeltaTime;
+	{
+        GameState->Player.Position.y += GameState->Player.player.WalkingSpeed * 2  * DeltaTime;
+    }
 
     //player rotation
     //NOTE(THIS IS FOR NIELS)

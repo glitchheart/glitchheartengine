@@ -79,6 +79,12 @@ static void UnloadGameCode(game_code *GameCode)
     GameCode->Update = UpdateStub;
 }
 
+static void ReloadGameCode(game_code* GameCode)
+{
+    UnloadGameCode(GameCode);
+    *GameCode = LoadGameCode();
+}
+
 int main(void)
 {
     //load config file
@@ -170,17 +176,12 @@ int main(void)
     //setup asset reloading
     asset_manager AssetManager = {};
     std::thread t(&ListenToFileChanges, &AssetManager);
+    
     game_code Game = LoadGameCode();
     uint32 LoadCounter = 0;
 
     while (!glfwWindowShouldClose(GameState.RenderState.Window))
     {
-        if (LoadCounter++ > 120)
-        {
-            UnloadGameCode(&Game);
-            Game = LoadGameCode();
-            LoadCounter = 0;
-        }
         //calculate deltatime
         CurrentFrame = glfwGetTime();
         DeltaTime = CurrentFrame - LastFrame;
@@ -194,7 +195,13 @@ int main(void)
             ReloadShaders(&GameState.RenderState);
         }
 
-        ReloadAssets(&AssetManager, &GameState.RenderState);
+        reload_result Result = ReloadAssets(&AssetManager, &GameState.RenderState);
+        
+        if(Result.ReloadGameDll == 1)
+        {
+            printf("RELOAD");
+            ReloadGameCode(&Game);
+        }
 
         GLint Viewport[4];
         glGetIntegerv(GL_VIEWPORT,Viewport);
