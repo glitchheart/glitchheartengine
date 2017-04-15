@@ -7,12 +7,18 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <SOIL/SOIL.h>
+#include "al.h"
+#include "alc.h"
 #include <time.h> 
+#include <stdio.h>
 
+
+#include "error.h"
 #include "entity.h"
 #include "world.h"
 #include "keycontroller.h"
 #include "rendering.h"
+#include "sound.h"
 
 #define STB_PERLIN_IMPLEMENTATION
 #include <stb/stb_perlin.h>
@@ -40,6 +46,7 @@ struct game_state
 	entity Player;
 	tilemap_data TilemapData;
 	input_controller InputController;
+	sound_manager SoundManager;
 };
 
 #define UPDATE(name)void name(double DeltaTime, game_state* GameState) 
