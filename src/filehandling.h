@@ -31,10 +31,10 @@ struct asset_manager
 	bool ListenForChanges;
 
 	//shaders
-	uint32 DirtyVertexShaderIndices[3]; //2 is the number of shaders, set to 1 if they should be reloaded
-	uint32 DirtyFragmentShaderIndices[3];
-	time_t VertexShaderTimes[3];
-	time_t FragmentShaderTimes[3];
+	uint32 DirtyVertexShaderIndices[Shader_Count]; //2 is the number of shaders, set to 1 if they should be reloaded
+	uint32 DirtyFragmentShaderIndices[Shader_Count];
+	time_t VertexShaderTimes[Shader_Count];
+	time_t FragmentShaderTimes[Shader_Count];
 
 	//textures
 	const char* TilesetTexturePath = "./assets/textures/tiles.png";
@@ -84,23 +84,37 @@ static char* CombineStrings(const char * str1, const char* str2)
 	return str3;
 }
 
-static void ListenToFileChanges(asset_manager* AssetManager)
+static void StartupFileTimeChecks(asset_manager* AssetManager)
 {
-	AssetManager->ListenForChanges = true;
-	
 	struct stat sb;
 	stat(AssetManager->TilesetTexturePath, &sb);
 	AssetManager->TilesetTime =  sb.st_mtime;
 
+	for (int i = 0; i < Shader_Count; i++) 
+	{
+		struct stat sb1;
+		stat(CombineStrings(ShaderPaths[i], ".vert"), &sb1);
+		AssetManager->VertexShaderTimes[i] =  sb1.st_mtime;
+
+		struct stat sb2;
+		stat(CombineStrings(ShaderPaths[i], ".frag"), &sb2);
+		AssetManager->FragmentShaderTimes[i] =  sb2.st_mtime;
+	}
+}
+
+static void ListenToFileChanges(asset_manager* AssetManager)
+{
+	AssetManager->ListenForChanges = true;
+	
 	using namespace std::chrono_literals;
 
 	while (AssetManager->ListenForChanges) 
 	{
-		for (int i = 0; i < Shader_Count; i++) 
+		for (int i = 0; i < Shader_Count; i++)
+		{
 			CheckDirty(CombineStrings(ShaderPaths[i], ".vert"), AssetManager->VertexShaderTimes[i], &AssetManager->DirtyVertexShaderIndices[i], &AssetManager->VertexShaderTimes[i]);
-
-		for (int i = 0; i < Shader_Count; i++) 
 			CheckDirty(CombineStrings(ShaderPaths[i], ".frag"), AssetManager->FragmentShaderTimes[i], &AssetManager->DirtyFragmentShaderIndices[i], &AssetManager->FragmentShaderTimes[i]);
+		}
 
 		CheckDirty(AssetManager->TilesetTexturePath, AssetManager->TilesetTime, &AssetManager->DirtyTileset, &AssetManager->TilesetTime);	
 		
