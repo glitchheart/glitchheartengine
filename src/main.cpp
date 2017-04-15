@@ -173,10 +173,8 @@ int main(void)
     GameState.Player.Scale = glm::vec3(2, 2, 0);
 
     // //@TESTCODE
-    perlin_noise PerlinNoise2;
-    GenerateNoise(&PerlinNoise2, TILEMAP_SIZE, TILEMAP_SIZE);
 
-    GenerateTilemap(PerlinNoise2, &GameState.TilemapData);
+    GenerateTilemap(&GameState.TilemapData);
     GameState.TilemapData.TileAtlasTexture = LoadTexture("./assets/textures/tiles.png");
 
     double LastFrame = glfwGetTime();
@@ -195,8 +193,8 @@ int main(void)
     uint32 LoadCounter = 0;
 
     //setup asset reloading
-    // asset_manager AssetManager = {};
-    // std::thread t(&ListenToFileChanges, &AssetManager);
+    asset_manager AssetManager = {};
+    std::thread t(&ListenToFileChanges, &AssetManager);
     
     while (!glfwWindowShouldClose(GameState.RenderState.Window))
     {
@@ -208,7 +206,7 @@ int main(void)
         if (IsKeyDown(GLFW_KEY_ESCAPE,&GameState))
             glfwSetWindowShouldClose(GameState.RenderState.Window, GLFW_TRUE);
 
-        // ReloadAssets(&AssetManager, &GameState.RenderState);
+        ReloadAssets(&AssetManager, &GameState.RenderState);
         ReloadDlls(&Game);
 
         GLint Viewport[4];
