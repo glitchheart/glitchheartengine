@@ -2,10 +2,42 @@
 #include "world.cpp"
 #include "entity.cpp"
 #include "keycontroller.cpp"
+#include "sound.cpp"
 
 extern "C" UPDATE(Update)
 {
-    if(IsKeyDown(GLFW_KEY_TAB, GameState))
+
+    if (IsKeyDown(GLFW_KEY_ENTER, GameState))
+    {
+        PlaySound(&GameState->SoundManager.LoadedSounds[0]);
+    }
+
+    if(IsKeyDown(GLFW_KEY_2,GameState))
+    {
+        PlaySound(&GameState->SoundManager.LoadedSounds[1]);
+    }
+
+    if(IsKeyDown(GLFW_KEY_1,GameState))
+    {
+        PlaySound(&GameState->SoundManager.LoadedSounds[2]);  
+    }
+
+    if(IsKeyDown(GLFW_KEY_3,GameState))
+    {
+        PlaySound(&GameState->SoundManager.LoadedSounds[3]);
+    }
+
+    if(IsKeyDown(GLFW_KEY_4,GameState))
+    {
+        PlaySound(&GameState->SoundManager.LoadedSounds[4]);
+    }
+
+    if(IsKeyDown(GLFW_KEY_5,GameState))
+    {
+        PlaySound(&GameState->SoundManager.LoadedSounds[5]);
+    }
+
+    if (IsKeyDown(GLFW_KEY_TAB, GameState))
     {
         printf("CONSOLE");
         GameState->Console.Open = true;
@@ -14,19 +46,19 @@ extern "C" UPDATE(Update)
     //player movement
     if (IsKeyDown(GLFW_KEY_A, GameState))
     {
-	    GameState->Player.Position.x += -GameState->Player.player.WalkingSpeed * DeltaTime;
+        GameState->Player.Position.x += -GameState->Player.player.WalkingSpeed * DeltaTime;
     }
     else if (IsKeyDown(GLFW_KEY_D, GameState))
-	{
+    {
         GameState->Player.Position.x += GameState->Player.player.WalkingSpeed * DeltaTime;
     }
-    
+
     if (IsKeyDown(GLFW_KEY_W, GameState))
     {
-	    GameState->Player.Position.y += -GameState->Player.player.WalkingSpeed * DeltaTime;
+        GameState->Player.Position.y += -GameState->Player.player.WalkingSpeed * DeltaTime;
     }
     else if (IsKeyDown(GLFW_KEY_S, GameState))
-	{
+    {
         GameState->Player.Position.y += GameState->Player.player.WalkingSpeed * DeltaTime;
     }
 
