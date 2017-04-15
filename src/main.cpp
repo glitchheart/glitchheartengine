@@ -11,12 +11,6 @@ static void ErrorCallback(int Error, const char *Description)
     fprintf(stderr, "Error: %s\n", Description);
 }
 
-static void HandleError(char const *File, int32 LineNum, char const *msg)
-{
-    fprintf(stderr, "Error on in file %s on line %d\n", File, LineNum);
-    fprintf(stderr, "%s\n", msg);
-}
-
 std::map<std::string, std::string> LoadConfig(std::string Filename)
 {
     std::ifstream Input(Filename);          //The input stream
@@ -46,18 +40,18 @@ struct game_code
     update *Update;
 
     bool32 IsValid;
-    const char* DllPath = "build/game.dll";
-    const char* TempDllPath = "build/game_temp.dll";
+    const char *DllPath = "build/game.dll";
+    const char *TempDllPath = "build/game_temp.dll";
 };
 
 static game_code LoadGameCode()
 {
     game_code Result = {};
 
-    CopyFile(Result.DllPath, Result.TempDllPath,false);
+    CopyFile(Result.DllPath, Result.TempDllPath, false);
     Result.Update = UpdateStub;
     Result.GameCodeDLL = LoadLibraryA(Result.DllPath);
-    
+
     Result.LastDllWriteTime = GetLastWriteTime(Result.DllPath);
 
     if (Result.GameCodeDLL)
@@ -86,34 +80,24 @@ static void UnloadGameCode(game_code *GameCode)
     GameCode->Update = UpdateStub;
 }
 
-static void ReloadGameCode(game_code* GameCode)
+static void ReloadGameCode(game_code *GameCode)
 {
     UnloadGameCode(GameCode);
     *GameCode = LoadGameCode();
 }
 
-static void ReloadDlls(game_code* Game)
+static void ReloadDlls(game_code *Game)
 {
     FILETIME LastWriteTime = GetLastWriteTime(Game->DllPath);
-    
-    if(CompareFileTime(&Game->LastDllWriteTime, &LastWriteTime) != 0)
+
+    if (CompareFileTime(&Game->LastDllWriteTime, &LastWriteTime) != 0)
     {
         std::cout << "RELOAD" << std::endl;
         ReloadGameCode(Game);
     }
 }
 
-struct sound_manager
-{
-
-};
-
-static void LoadXAudio2(sound_manager* SoundManager)
-{
-    
-}
-
-void FramebufferSizeCallback(GLFWwindow* Window, int Width, int Height)
+void FramebufferSizeCallback(GLFWwindow *Window, int Width, int Height)
 {
     glfwSetWindowAspectRatio(Window, 16, 9);
     glViewport(0, 0, Width, Height);
@@ -136,8 +120,6 @@ int main(void)
     ScreenHeight = std::stoi(Map["screen_height"]);
     Fullscreen = strcmp("true", Map["fullscreen"].c_str()) == 0;
 
-    // GameState.RenderState = RendersState;
-
     glfwSetErrorCallback(ErrorCallback);
 
     if (!glfwInit())
@@ -153,7 +135,7 @@ int main(void)
 
     glfwSetFramebufferSizeCallback(GameState.RenderState.Window, FramebufferSizeCallback);
     // glfwSetWindowSizeCallback(GameState.RenderState.Window, WindowSizeCallback);
-    
+
     //center window on screen
     const GLFWvidmode *Mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
     int Width, Height;
@@ -170,7 +152,7 @@ int main(void)
     input_controller Input = {};
     GameState.InputController = Input;
 
-    glfwSetWindowUserPointer(GameState.RenderState.Window,&GameState);
+    glfwSetWindowUserPointer(GameState.RenderState.Window, &GameState);
     glfwSetKeyCallback(GameState.RenderState.Window, KeyCallback);
     glfwSetCursorPosCallback(GameState.RenderState.Window, CursorPositionCallback);
 
@@ -215,14 +197,24 @@ int main(void)
 
     GameState.Console = {};
 
+    sound_manager SoundManager = {};
+    InitAudio(&SoundManager);
+    LoadSounds(&SoundManager);
+
+    if (SoundManager.IsInitialized)
+    {
+        GameState.SoundManager = SoundManager;
+    }
+
     while (!glfwWindowShouldClose(GameState.RenderState.Window))
     {
+
         //calculate deltatime
         CurrentFrame = glfwGetTime();
-        DeltaTime = CurrentFrame - LastFrame;   
+        DeltaTime = CurrentFrame - LastFrame;
         LastFrame = CurrentFrame;
 
-        if (GetKey(GLFW_KEY_ESCAPE,&GameState))
+        if (GetKey(GLFW_KEY_ESCAPE, &GameState))
             glfwSetWindowShouldClose(GameState.RenderState.Window, GLFW_TRUE);
 
         ReloadAssets(&AssetManager, &GameState);
@@ -230,8 +222,8 @@ int main(void)
 
         GLint Viewport[4];
         glGetIntegerv(GL_VIEWPORT, Viewport);
-        
-        memcpy(GameState.RenderState.Viewport, Viewport,sizeof(GLint) * 4);
+
+        memcpy(GameState.RenderState.Viewport, Viewport, sizeof(GLint) * 4);
 
         Game.Update(DeltaTime, &GameState);
         Render(&GameState);
@@ -239,6 +231,18 @@ int main(void)
         SetInvalidKeys(&GameState.InputController);
         glfwPollEvents();
     }
+
+    for (uint32 LoadedSoundIndex = 0;
+         LoadedSoundIndex < GameState.SoundManager.LoadedSoundCount;
+         LoadedSoundIndex++)
+    {
+        alDeleteSources(1, &GameState.SoundManager.LoadedSounds[LoadedSoundIndex].Source);
+        alDeleteBuffers(1, &GameState.SoundManager.LoadedSounds[LoadedSoundIndex].Buffer);
+    }
+    GameState.SoundManager.Device = alcGetContextsDevice(GameState.SoundManager.Context);
+    alcMakeContextCurrent(0);
+    alcDestroyContext(GameState.SoundManager.Context);
+    alcCloseDevice(GameState.SoundManager.Device);
 
     glfwDestroyWindow(GameState.RenderState.Window);
     glfwTerminate();
