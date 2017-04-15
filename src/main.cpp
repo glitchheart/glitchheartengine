@@ -103,6 +103,16 @@ static void ReloadDlls(game_code* Game)
     }
 }
 
+struct sound_manager
+{
+
+};
+
+static void LoadXAudio2(sound_manager* SoundManager)
+{
+    
+}
+
 int main(void)
 {
     //load config file
@@ -188,7 +198,6 @@ int main(void)
     GameState.Camera.ViewportHeight = Height / 20;
 
     game_code Game = LoadGameCode();
-    uint32 LoadCounter = 0;
 
     //setup asset reloading
     asset_manager AssetManager = {};

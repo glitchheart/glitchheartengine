@@ -376,8 +376,6 @@ static void RenderTileChunk(render_state* RenderState, const tile_chunk &TileChu
 
 static void RenderTilemap(render_state *RenderState, const tilemap_data &TilemapData, GLuint TilesetTextureHandle, glm::mat4 ProjectionMatrix, glm::mat4 View, int StartX, int StartY, int EndX, int EndY)
 {
-    real32 scale = 1.0f;
-    
     glBindVertexArray(RenderState->TileVAO);
 
     if (RenderState->BoundTexture != TilesetTextureHandle) //never bind the same texture if it's already bound
