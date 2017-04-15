@@ -1,6 +1,16 @@
 #ifndef SOUND_H
 #define SOUND_H
 
+enum sound_effects
+{
+    THEME_MUSIC = 0;
+    SOUND_02 = 1;
+    SOUND_03 = 2;
+    SOUND_04 = 3;
+    SOUND_05 = 4;
+    SOUND_06 = 5;
+};
+
 struct sound_info
 {
     real32 Pitch;
@@ -28,7 +38,7 @@ struct sound_manager
 {
     ALCdevice *Device;
     ALCcontext *Context;
-    loaded_sound LoadedSounds[128];
+    loaded_sound LoadedSounds[32];
     uint32 LoadedSoundCount;
 
     bool32 IsInitialized;
@@ -210,7 +220,7 @@ static void LoadSound(const char *filename, sound_manager *SoundManager, sound_i
     LoadWavFile(filename, &LoadedSound);
     alSourcei(LoadedSound.Source, AL_BUFFER, LoadedSound.Buffer);
     LoadedSound.AssetIndex = SoundManager->LoadedSoundCount++;
-    LoadedSound.SoundInfo = SoundInfo; 
+    LoadedSound.SoundInfo = SoundInfo;
     SoundManager->LoadedSounds[LoadedSound.AssetIndex] = LoadedSound;
 }
 
@@ -219,10 +229,10 @@ static void LoadSounds(sound_manager *SoundManager)
     sound_info DefaultSoundInfo = {};
     DefaultSoundInfo.Pitch = 1;
     DefaultSoundInfo.Gain = 1;
-    real32 Position[3] = {0,0,0};
-    memcpy(DefaultSoundInfo.Position,Position,3);
-    real32 Velocity[3] = {0,0,0};
-    memcpy(DefaultSoundInfo.Velocity,Velocity,3);
+    real32 Position[3] = {0, 0, 0};
+    memcpy(DefaultSoundInfo.Position, Position, 3);
+    real32 Velocity[3] = {0, 0, 0};
+    memcpy(DefaultSoundInfo.Velocity, Velocity, 3);
     DefaultSoundInfo.Loop = AL_FALSE;
 
     LoadSound("./assets/audio/Deadliners Track 1.wav", SoundManager, DefaultSoundInfo);
