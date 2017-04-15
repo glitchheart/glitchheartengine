@@ -1,11 +1,15 @@
 #ifndef RENDERING_H
 #define RENDERING_H
 
+#include <ft2build.h>
+#include FT_FREETYPE_H
+
 enum Shader_Type
 {
     Shader_Texture,
     Shader_Tile,
     Shader_Console,
+    Shader_StandardFont,
 
     Shader_Count
 };
@@ -14,7 +18,8 @@ const char* ShaderPaths[Shader_Count] =
 {
     "./assets/shaders/textureshader",
     "./assets/shaders/tileshader",
-    "./assets/shaders/consoleshader"
+    "./assets/shaders/consoleshader",
+    "./assets/shaders/standardfontshader"
 };
 
 struct shader
@@ -23,6 +28,30 @@ struct shader
     GLuint Program;
     GLuint VertexShader;
     GLuint FragmentShader;
+};
+
+struct render_font
+{
+    FT_Face Face;
+    GLuint VAO;
+    GLuint VBO;
+    GLuint Texture;
+    uint32 AtlasWidth;
+    uint32 AtlasHeight;
+
+    struct character_info 
+    {
+        float AX; // advance.x
+        float AY; // advance.y
+        
+        float BW; // bitmap.width;
+        float BH; // bitmap.rows;
+        
+        float BL; // bitmap_left;
+        float BT; // bitmap_top;
+        
+        float TX;
+    } CharacterInfo[128];
 };
 
 struct render_state
@@ -68,8 +97,13 @@ struct render_state
             shader TextureShader;
             shader TileShader;
             shader ConsoleShader;
+            shader StandardFontShader;
         };
     };
+
+    //freetype
+    FT_Library FTLibrary;
+    render_font InconsolataFont;
 };
 
 #endif

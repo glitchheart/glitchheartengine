@@ -1,8 +1,8 @@
 CC = gcc
 CXX = g++
 
-INCLUDES = -I$(glfw_inc) -I$(glad_inc)
-LIBRARIES = -L$(glfw_lib) ./libs/SOIL/libSoil.a -L./build
+INCLUDES = -I$(glfw_inc) -I$(glad_inc) -I$(freetype_inc)
+LIBRARIES = -L$(glfw_lib) ./libs/SOIL/libSoil.a ./libs/FreeType/lib/freetype.a -L./build
 
 glfw = ./libs/glfw
 glfw_inc = $(glfw)/include
@@ -10,6 +10,8 @@ glfw_lib = $(glfw)/lib-mingw-w64
 
 glad = ./libs
 glad_inc = $(glad)
+
+freetype_inc = ./libs/FreeType/include
 
 CFLAGS = -Wall -ggdb -O3 $(INCLUDES)
 CXXFLAGS = -Wall -ggdb -O3 $(INCLUDES)

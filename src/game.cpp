@@ -7,26 +7,26 @@ extern "C" UPDATE(Update)
 {
     glfwGetFramebufferSize(GameState->RenderState.Window, &GameState->RenderState.WindowWidth, &GameState->RenderState.WindowHeight);
 
-    if(IsKeyDown(GLFW_KEY_TAB, GameState))
+    if(GetKeyDown(GLFW_KEY_TAB, GameState))
     {
-        GameState->Console.Open = true;
+        GameState->Console.Open = !GameState->Console.Open;
     }
 
     //player movement
-    if (IsKeyDown(GLFW_KEY_A, GameState))
+    if (GetKey(GLFW_KEY_A, GameState))
     {
 	    GameState->Player.Position.x += -GameState->Player.player.WalkingSpeed * DeltaTime;
     }
-    else if (IsKeyDown(GLFW_KEY_D, GameState))
+    else if (GetKey(GLFW_KEY_D, GameState))
 	{
         GameState->Player.Position.x += GameState->Player.player.WalkingSpeed * DeltaTime;
     }
     
-    if (IsKeyDown(GLFW_KEY_W, GameState))
+    if (GetKey(GLFW_KEY_W, GameState))
     {
 	    GameState->Player.Position.y += -GameState->Player.player.WalkingSpeed * DeltaTime;
     }
-    else if (IsKeyDown(GLFW_KEY_S, GameState))
+    else if (GetKey(GLFW_KEY_S, GameState))
 	{
         GameState->Player.Position.y += GameState->Player.player.WalkingSpeed * DeltaTime;
     }

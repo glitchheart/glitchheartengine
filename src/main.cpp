@@ -198,7 +198,7 @@ int main(void)
     double CurrentFrame = 0.0;
     double DeltaTime;
 
-    printf("%s", glGetString(GL_VERSION));
+    printf("%s\n", glGetString(GL_VERSION));
 
     glfwGetFramebufferSize(GameState.RenderState.Window, &GameState.RenderState.WindowWidth, &GameState.RenderState.WindowHeight);
     glViewport(0, 0, GameState.RenderState.WindowWidth, GameState.RenderState.WindowHeight);
@@ -210,6 +210,7 @@ int main(void)
 
     //setup asset reloading
     asset_manager AssetManager = {};
+    StartupFileTimeChecks(&AssetManager);
     std::thread t(&ListenToFileChanges, &AssetManager);
 
     GameState.Console = {};
@@ -221,7 +222,7 @@ int main(void)
         DeltaTime = CurrentFrame - LastFrame;   
         LastFrame = CurrentFrame;
 
-        if (IsKeyDown(GLFW_KEY_ESCAPE,&GameState))
+        if (GetKey(GLFW_KEY_ESCAPE,&GameState))
             glfwSetWindowShouldClose(GameState.RenderState.Window, GLFW_TRUE);
 
         ReloadAssets(&AssetManager, &GameState);
@@ -234,8 +235,9 @@ int main(void)
 
         Game.Update(DeltaTime, &GameState);
         Render(&GameState);
+
+        SetInvalidKeys(&GameState.InputController);
         glfwPollEvents();
-        
     }
 
     glfwDestroyWindow(GameState.RenderState.Window);

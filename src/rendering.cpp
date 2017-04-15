@@ -95,59 +95,172 @@ static void UseShader(shader *Shader)
     {
         case Shader_Console:
         {
-            auto PositionLocation = glGetAttribLocation(Shader->Program, "pos");
-            glEnableVertexAttribArray(PositionLocation);
-            glVertexAttribPointer(PositionLocation, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), 0);
+           
         }
-            break;
+        break;
+        case Shader_StandardFont:
+        {
+            // auto TexcoordLocation = glGetAttribLocation(Shader->Program, "coord");
+            // glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, 0);
+            // glEnableVertexAttribArray(0);
+        }
+        break;
         default:
         {
-            auto PositionLocation = glGetAttribLocation(Shader->Program, "pos");
-            auto TexcoordLocation = glGetAttribLocation(Shader->Program, "texcoord");
-
-            glEnableVertexAttribArray(PositionLocation);
-            glVertexAttribPointer(PositionLocation, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
-
-            glEnableVertexAttribArray(TexcoordLocation);
-            glVertexAttribPointer(TexcoordLocation, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *)(2 * sizeof(float)));
+            
         }
-            break;
+        break;
     }
 
     glUseProgram(Shader->Program);
 }
 
+static void InitializeFreeTypeFont(FT_Library Library, render_font* Font, shader* Shader)
+{
+    if(FT_New_Face(Library, "./assets/fonts/inconsolata/Inconsolata-Regular.ttf", 0, &Font->Face)) 
+    {
+        fprintf(stderr, "Could not open font\n");
+    }
+
+    FT_Set_Pixel_Sizes(Font->Face, 0, 30);
+
+    //Find the atlas width and height
+    FT_GlyphSlot G = Font->Face->glyph;
+
+    uint32 W = 0;
+    uint32 H = 0;
+
+    for(int i = 32; i < 128; i++) 
+    {
+        if(FT_Load_Char(Font->Face, i, FT_LOAD_RENDER))
+        {
+            fprintf(stderr, "Loading character %c failed!\n", i);
+            continue;
+        }
+
+        W += G->bitmap.width;
+        H = std::max(H, G->bitmap.rows);
+    }
+
+    Font->AtlasWidth = W;
+    Font->AtlasHeight = H;
+
+    glActiveTexture(GL_TEXTURE0);
+    glGenTextures(1, &Font->Texture);
+    glBindTexture(GL_TEXTURE_2D, Font->Texture);
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, Font->AtlasWidth, Font->AtlasHeight, 0, GL_ALPHA, GL_UNSIGNED_BYTE, 0);
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+
+    /* Clamping to edges is important to prevent artifacts when scaling */
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    /* Linear filtering usually looks best for text */
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    uint32 X = 0;
+
+    for(int i = 32; i < 128; i++) 
+    {
+        if(FT_Load_Char(Font->Face, i, FT_LOAD_RENDER))
+            continue;
+
+        glTexSubImage2D(GL_TEXTURE_2D, 0, X, 0, G->bitmap.width, G->bitmap.rows, GL_ALPHA, GL_UNSIGNED_BYTE, G->bitmap.buffer);
+
+        X += G->bitmap.width;
+
+        Font->CharacterInfo[i].AX = G->advance.x >> 6;
+        Font->CharacterInfo[i].AY = G->advance.y >> 6;
+
+        Font->CharacterInfo[i].BW = G->bitmap.width;
+        Font->CharacterInfo[i].BH = G->bitmap.rows;
+
+        Font->CharacterInfo[i].BL = G->bitmap_left;
+        Font->CharacterInfo[i].BT = G->bitmap_top;
+
+        Font->CharacterInfo[i].TX = (float)X / Font->AtlasWidth;
+    }
+
+    glGenVertexArrays(1, &Font->VAO);
+    glBindVertexArray(Font->VAO);
+
+    glGenBuffers(1, &Font->VBO);
+    glBindBuffer(GL_ARRAY_BUFFER, Font->VBO);
+    auto TexcoordLocation = glGetAttribLocation(Shader->Program, "coord");
+    glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, 0);
+    glEnableVertexAttribArray(0);
+    glBindVertexArray(0);
+}
+
 static void RenderSetup(render_state *RenderState)
 {
+    if(FT_Init_FreeType(&RenderState->FTLibrary)) 
+    {
+        fprintf(stderr, "Could not init freetype library\n");
+    }
+
+    //Sprite
     glGenVertexArrays(1, &RenderState->SpriteVAO);
     glBindVertexArray(RenderState->SpriteVAO);
     glGenBuffers(1, &RenderState->SpriteQuadVBO);
     glBindBuffer(GL_ARRAY_BUFFER, RenderState->SpriteQuadVBO);
     glBufferData(GL_ARRAY_BUFFER, RenderState->SpriteQuadVerticesSize, RenderState->SpriteQuadVertices, GL_DYNAMIC_DRAW);
+
+    RenderState->TextureShader.Type = Shader_Texture;
+    LoadShader("./assets/shaders/textureshader", &RenderState->TextureShader);
+
+    auto PositionLocation = glGetAttribLocation(RenderState->TextureShader.Program, "pos");
+    auto TexcoordLocation = glGetAttribLocation(RenderState->TextureShader.Program, "texcoord");
+
+    glEnableVertexAttribArray(PositionLocation);
+    glVertexAttribPointer(PositionLocation, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
+    glEnableVertexAttribArray(TexcoordLocation);
+    glVertexAttribPointer(TexcoordLocation, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *)(2 * sizeof(float)));
     glBindVertexArray(0);
 
+    //tile
     glGenVertexArrays(1, &RenderState->TileVAO);
     glBindVertexArray(RenderState->TileVAO);
     glGenBuffers(1, &RenderState->TileQuadVBO);
     glBindBuffer(GL_ARRAY_BUFFER, RenderState->TileQuadVBO);
     glBufferData(GL_ARRAY_BUFFER, RenderState->SpriteQuadVerticesSize, RenderState->SpriteQuadVertices, GL_DYNAMIC_DRAW);
+    
+    RenderState->TileShader.Type = Shader_Tile;
+    LoadShader("./assets/shaders/tileshader", &RenderState->TileShader);
+
+    auto PositionLocation2 = glGetAttribLocation(RenderState->TileShader.Program, "pos");
+    auto TexcoordLocation2 = glGetAttribLocation(RenderState->TileShader.Program, "texcoord");
+
+    glEnableVertexAttribArray(PositionLocation2);
+    glVertexAttribPointer(PositionLocation2, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
+    glEnableVertexAttribArray(TexcoordLocation2);
+    glVertexAttribPointer(TexcoordLocation2, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *)(2 * sizeof(float)));
     glBindVertexArray(0);
 
+    //console
     glGenVertexArrays(1, &RenderState->ConsoleVAO);
     glBindVertexArray(RenderState->ConsoleVAO);
     glGenBuffers(1, &RenderState->ConsoleQuadVBO);
     glBindBuffer(GL_ARRAY_BUFFER, RenderState->ConsoleQuadVBO);
     glBufferData(GL_ARRAY_BUFFER, RenderState->TileQuadVerticesSize, RenderState->TileQuadVertices, GL_DYNAMIC_DRAW);
-    glBindVertexArray(0);
-
-    RenderState->TextureShader.Type = Shader_Texture;
-    LoadShader("./assets/shaders/textureshader", &RenderState->TextureShader);
-
-    RenderState->TileShader.Type = Shader_Tile;
-    LoadShader("./assets/shaders/tileshader", &RenderState->TileShader);
-
+    
     RenderState->ConsoleShader.Type = Shader_Console;
     LoadShader("./assets/shaders/consoleshader", &RenderState->ConsoleShader);
+
+    auto PositionLocation3 = glGetAttribLocation(RenderState->ConsoleShader.Program, "pos");
+    glEnableVertexAttribArray(PositionLocation3);
+    glVertexAttribPointer(PositionLocation3, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), 0);
+
+    glBindVertexArray(0);
+
+    //font
+    RenderState->StandardFontShader.Type = Shader_StandardFont;
+    LoadShader("./assets/shaders/standardfontshader", &RenderState->StandardFontShader);
+
+    RenderState->InconsolataFont = {};
+    InitializeFreeTypeFont(RenderState->FTLibrary, &RenderState->InconsolataFont, &RenderState->StandardFontShader);
 }
 
 static void ReloadShaders(render_state* RenderState)
@@ -162,11 +275,15 @@ static void ReloadShaders(render_state* RenderState)
     
     glDeleteShader(RenderState->ConsoleShader.VertexShader);
     glDeleteShader(RenderState->ConsoleShader.FragmentShader);
-    glDeleteProgram(RenderState->ConsoleShader.Program);
+    
+    glDeleteShader(RenderState->StandardFontShader.VertexShader);
+    glDeleteShader(RenderState->StandardFontShader.FragmentShader);
+    glDeleteProgram(RenderState->StandardFontShader.Program);
     
     LoadShader("./assets/shaders/textureshader", &RenderState->TextureShader);
     LoadShader("./assets/shaders/tileshader", &RenderState->TileShader);
     LoadShader("./assets/shaders/consoleshader", &RenderState->ConsoleShader);
+    LoadShader("./assets/shaders/standardfontshader", &RenderState->StandardFontShader);
 }
 
 static void ReloadVertexShader(uint32 Index, render_state* RenderState)
@@ -188,12 +305,17 @@ static void ReloadVertexShader(uint32 Index, render_state* RenderState)
             glDeleteShader(RenderState->ConsoleShader.VertexShader);
             LoadVertexShader(ShaderPaths[Shader_Console], &RenderState->ConsoleShader);
             break;
+        case Shader_StandardFont:
+            glDeleteProgram(RenderState->StandardFontShader.Program);
+            glDeleteShader(RenderState->StandardFontShader.VertexShader);
+            LoadVertexShader(ShaderPaths[Shader_StandardFont], &RenderState->StandardFontShader);
+            break;
     }
 }
 
 static void ReloadFragmentShader(uint32 Index, render_state* RenderState)
 {
-    std::cout << "RELOAD SHADER" << std::endl;
+    std::cout << "RELOAD SHADER\n" << std::endl;
     switch(Index)
     {
         case Shader_Texture:
@@ -210,6 +332,11 @@ static void ReloadFragmentShader(uint32 Index, render_state* RenderState)
             glDeleteProgram(RenderState->ConsoleShader.Program);
             glDeleteShader(RenderState->ConsoleShader.FragmentShader);
             LoadFragmentShader(ShaderPaths[Shader_Console], &RenderState->ConsoleShader);
+            break;
+        case Shader_StandardFont:
+            glDeleteProgram(RenderState->StandardFontShader.Program);
+            glDeleteShader(RenderState->StandardFontShader.FragmentShader);
+            LoadFragmentShader(ShaderPaths[Shader_StandardFont], &RenderState->StandardFontShader);
             break;
     }
 }
@@ -289,7 +416,58 @@ static void SetMat4Uniform(GLuint ShaderHandle, const char *UniformName, glm::ma
     glUniformMatrix4fv(glGetUniformLocation(ShaderHandle, UniformName), 1, GL_FALSE, &Value[0][0]);
 }
 
-static GLuint BoundVAO;
+//rendering methods
+static void RenderText(render_state* RenderState, const render_font& Font, const char *Text, float X, float Y, float SX, float SY) 
+{
+    auto Shader = RenderState->Shaders[Shader_StandardFont];
+
+    if (RenderState->BoundTexture != Font.Texture) //never bind the same texture if it's already bound
+    {
+        glBindTexture(GL_TEXTURE_2D, Font.Texture);
+        RenderState->BoundTexture = Font.Texture;
+    }
+
+    struct point
+    {
+        GLfloat X;
+        GLfloat Y;
+        GLfloat S;
+        GLfloat T;
+    } Coords[6 * strlen(Text)];
+
+    int N = 0;
+
+    for(const char *P = Text; *P; P++) 
+    { 
+        float X2 =  X + Font.CharacterInfo[*P].BL * SX;
+        float Y2 = -Y - Font.CharacterInfo[*P].BT * SY;
+        float W = Font.CharacterInfo[*P].BW * SX;
+        float H = Font.CharacterInfo[*P].BH * SY;
+
+        /* Advance the cursor to the start of the next character */
+        X += Font.CharacterInfo[*P].AX * SX;
+        Y += Font.CharacterInfo[*P].AY * SY;
+
+        /* Skip glyphs that have no pixels */
+        if(!W || !H)
+            continue;
+            
+        Coords[N++] = (point){X2,     -Y2    , Font.CharacterInfo[*P].TX, 0};
+        Coords[N++] = (point){X2 + W, -Y2    , Font.CharacterInfo[*P].TX + Font.CharacterInfo[*P].BW / Font.AtlasWidth, 0};
+        Coords[N++] = (point){X2,     -Y2 - H, Font.CharacterInfo[*P].TX, Font.CharacterInfo[*P].BH / Font.AtlasHeight}; //remember: each glyph occupies a different amount of vertical space
+        Coords[N++] = (point){X2 + W, -Y2    , Font.CharacterInfo[*P].TX + Font.CharacterInfo[*P].BW / Font.AtlasWidth,  0};
+        Coords[N++] = (point){X2,     -Y2 - H, Font.CharacterInfo[*P].TX, Font.CharacterInfo[*P].BH / Font.AtlasHeight};
+        Coords[N++] = (point){X2 + W, -Y2 - H, Font.CharacterInfo[*P].TX + Font.CharacterInfo[*P].BW / Font.AtlasWidth, Font.CharacterInfo[*P].BH / Font.AtlasHeight};
+    }
+
+    glBindVertexArray(Font.VAO);
+    glBindBuffer(GL_ARRAY_BUFFER, Font.VBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof Coords, Coords, GL_DYNAMIC_DRAW);
+
+    UseShader(&Shader);
+    
+    glDrawArrays(GL_TRIANGLES, 0, N);
+}
 
 static void RenderConsole(render_state* RenderState, console* Console, glm::mat4 ProjectionMatrix, glm::mat4 View)
 {
@@ -307,52 +485,39 @@ static void RenderConsole(render_state* RenderState, console* Console, glm::mat4
 
     SetMat4Uniform(Shader.Program, "M", Model);
     glDrawArrays(GL_QUADS, 0, 4);
-
-    glBindVertexArray(0);
 }
 
 static void RenderEntity(render_state *RenderState, const entity &entity, glm::mat4 ProjectionMatrix, glm::mat4 View)
-{
-    glBindVertexArray(RenderState->SpriteVAO);
-    glBindBuffer(GL_ARRAY_BUFFER, RenderState->SpriteQuadVBO);
-    
+{ 
+    auto Shader = RenderState->Shaders[entity.ShaderIndex];
+    UseShader(&Shader);
+
+    glm::mat4 Model(1.0f);
+    Model = glm::translate(Model, glm::vec3(entity.Position.x, entity.Position.y, 0.0f));
+    Model = glm::translate(Model, glm::vec3(1, 1, 0.0f)); 
+    Model = glm::rotate(Model, entity.Rotation.z + 1.56f, glm::vec3(0, 0, 1)); //NOTE(Daniel) 1.56 is approximately 90 degrees in radians
+    Model = glm::translate(Model, glm::vec3(-1, -1, 0.0f)); 
+    Model = glm::scale(Model, entity.Scale);
+    glm::mat4 MVP = ProjectionMatrix * View * Model;
+   
+    SetMat4Uniform(Shader.Program, "MVP", MVP);
+
     if (RenderState->BoundTexture != entity.TextureHandle) //never bind the same texture if it's already bound
     {
         glBindTexture(GL_TEXTURE_2D, entity.TextureHandle);
         RenderState->BoundTexture = entity.TextureHandle;
     }
 
-    glm::mat4 Model(1.0f);
+    glBindVertexArray(RenderState->SpriteVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, RenderState->SpriteQuadVBO);
 
-    Model = glm::translate(Model, glm::vec3(entity.Position.x, entity.Position.y, 0.0f));
-    
-    Model = glm::translate(Model, glm::vec3(1, 1, 0.0f)); 
-    Model = glm::rotate(Model, entity.Rotation.z + 1.56f, glm::vec3(0, 0, 1)); //NOTE(Daniel) 1.56 is approximately 90 degrees in radians
-    Model = glm::translate(Model, glm::vec3(-1, -1, 0.0f)); 
-
-    Model = glm::scale(Model, entity.Scale);
-
-    auto Shader = RenderState->Shaders[entity.ShaderIndex];
-
-    glm::mat4 MVP = ProjectionMatrix * View * Model;
-
-    UseShader(&Shader);
-
-    SetMat4Uniform(Shader.Program, "MVP", MVP);
     glDrawArrays(GL_QUADS, 0, 4);
     glBindVertexArray(0);
 }
 
-static void RenderTileChunk(render_state* RenderState, const tile_chunk &TileChunk,  GLuint TilesetTextureHandle, glm::mat4 ProjectionMatrix, glm::mat4 View, int StartX, int StartY, int EndX, int EndY)
+static void RenderTileChunk(render_state* RenderState, const tile_chunk &TileChunk, shader* Shader, GLuint TilesetTextureHandle, glm::mat4 ProjectionMatrix, glm::mat4 View, int StartX, int StartY, int EndX, int EndY)
 {
-    glBindVertexArray(RenderState->SpriteVAO);
-    glBindBuffer(GL_ARRAY_BUFFER, RenderState->SpriteQuadVBO);
-
     real32 Scale = 1.0f;
-    
-    auto Shader = RenderState->TileShader;
-
-    UseShader(&Shader);
 
     // for (int i = StartX; i < EndX; i++) //TODO(Daniel) this has to be added again
     // {
@@ -369,8 +534,8 @@ static void RenderTileChunk(render_state* RenderState, const tile_chunk &TileChu
                 Model = glm::scale(Model, glm::vec3(Scale, Scale, 1.0f));
                 glm::mat4 MVP = ProjectionMatrix * View * Model;
 
-                SetVec2Attribute(Shader.Program, "textureOffset", TileChunk.Data[i][j].TextureOffset);
-                SetMat4Uniform(Shader.Program, "MVP", MVP);
+                SetVec2Attribute(Shader->Program, "textureOffset", TileChunk.Data[i][j].TextureOffset);
+                SetMat4Uniform(Shader->Program, "MVP", MVP);
                 glDrawArrays(GL_QUADS, 0, 4);
             }
         }
@@ -380,40 +545,24 @@ static void RenderTileChunk(render_state* RenderState, const tile_chunk &TileChu
 
 static void RenderTilemap(render_state *RenderState, const tilemap_data &TilemapData, GLuint TilesetTextureHandle, glm::mat4 ProjectionMatrix, glm::mat4 View, int StartX, int StartY, int EndX, int EndY)
 {
-    glBindVertexArray(RenderState->TileVAO);
-
     if (RenderState->BoundTexture != TilesetTextureHandle) //never bind the same texture if it's already bound
     {
         glBindTexture(GL_TEXTURE_2D, TilesetTextureHandle);
         RenderState->BoundTexture = TilesetTextureHandle;
     }
 
+    glBindVertexArray(RenderState->TileVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, RenderState->SpriteQuadVBO);
+    auto Shader = RenderState->TileShader;
+    UseShader(&Shader);
+
     for(int i = 0; i < TILEMAP_SIZE; i++)
     {
         for(int j = 0; j < TILEMAP_SIZE; j++)
         {
-            RenderTileChunk(RenderState, TilemapData.Chunks[i][j], TilesetTextureHandle, ProjectionMatrix, View, StartX, StartY, EndX, EndY);
+            RenderTileChunk(RenderState, TilemapData.Chunks[i][j], &Shader, TilesetTextureHandle, ProjectionMatrix, View, StartX, StartY, EndX, EndY);
         }
     }
-    
-    // for (int i = StartX; i < EndX; i++)
-    // {
-    //     for (int j = StartY; j < EndY; j++)
-    //     {
-    //         if(TilemapData.Data[i][j].Type != Tile_None)
-    //         {
-    //             glm::mat4 Model(1.0f);
-    //             Model = glm::translate(Model, glm::vec3(i * scale, j * scale, 0.0f));
-    //             Model = glm::scale(Model, glm::vec3(scale, scale, 1.0f));
-    //             glm::mat4 MVP = ProjectionMatrix * View * Model;
-
-    //             SetVec2Attribute(Shader.Program, "textureOffset", TilemapData.Data[i][j].TextureOffset);
-    //             SetMat4Uniform(Shader.Program, "MVP", MVP);
-    //             glDrawArrays(GL_QUADS, 0, 4);
-    //         }
-    //     }
-    // }
-    glBindVertexArray(0);
 }
 
 static void Render(game_state* GameState)
@@ -434,6 +583,10 @@ static void Render(game_state* GameState)
     
     if(GameState->Console.Open)
         RenderConsole(&GameState->RenderState, &GameState->Console, GameState->Camera.ProjectionMatrix,  GameState->Camera.ViewMatrix);
+
+    const GLFWvidmode *Mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
+
+    RenderText(&GameState->RenderState, GameState->RenderState.InconsolataFont, "IFK", 0, 0, 0.01, 0.01);
 
     glfwSwapBuffers(GameState->RenderState.Window);
 }
