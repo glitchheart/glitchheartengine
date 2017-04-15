@@ -47,6 +47,14 @@ static bool GetKeyDown(int Key, game_state* GameState)
 
 static void SetInvalidKeys(input_controller* InputController)
 {
+    for(auto const &Pair : InputController->KeysJustPressed)
+    {
+        if(Pair.second == Key_JustPressed)
+        {
+            InputController->KeysJustPressed[Pair.first] = Key_Invalid;
+        }
+    }
+
     if(InputController->KeysJustPressed[GLFW_KEY_TAB] == Key_JustPressed)
     {
         InputController->KeysJustPressed[GLFW_KEY_TAB] = Key_Invalid;
