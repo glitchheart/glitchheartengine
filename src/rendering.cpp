@@ -35,8 +35,6 @@ static GLuint LoadShader(const std::string FilePath, shader *Shd)
     Shd->FragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
     GLchar *FragmentText = LoadShaderFromFile(FilePath + std::string(".frag"));
     
-    printf(FragmentText);
-
     glShaderSource(Shd->FragmentShader, 1, &FragmentText, NULL);
     glCompileShader(Shd->FragmentShader);
 
@@ -125,22 +123,22 @@ static void RenderSetup(render_state *RenderState)
     glBindVertexArray(RenderState->SpriteVAO);
     glGenBuffers(1, &RenderState->SpriteQuadVBO);
     glBindBuffer(GL_ARRAY_BUFFER, RenderState->SpriteQuadVBO);
-    glBufferData(GL_ARRAY_BUFFER, RenderState->SpriteQuadVerticesSize, RenderState->SpriteQuadVertices, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, RenderState->SpriteQuadVerticesSize, RenderState->SpriteQuadVertices, GL_DYNAMIC_DRAW);
     glBindVertexArray(0);
 
     glGenVertexArrays(1, &RenderState->TileVAO);
     glBindVertexArray(RenderState->TileVAO);
     glGenBuffers(1, &RenderState->TileQuadVBO);
     glBindBuffer(GL_ARRAY_BUFFER, RenderState->TileQuadVBO);
-    glBufferData(GL_ARRAY_BUFFER, RenderState->SpriteQuadVerticesSize, RenderState->SpriteQuadVertices, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, RenderState->SpriteQuadVerticesSize, RenderState->SpriteQuadVertices, GL_DYNAMIC_DRAW);
     glBindVertexArray(0);
 
-    // glGenVertexArrays(1, &RenderState->ConsoleVAO);
-    // glBindVertexArray(RenderState->ConsoleVAO);
-    // glGenBuffers(1, &RenderState->ConsoleQuadVBO);
-    // glBindBuffer(GL_ARRAY_BUFFER, RenderState->ConsoleQuadVBO);
-    // glBufferData(GL_ARRAY_BUFFER, RenderState->TileQuadVerticesSize, RenderState->TileQuadVertices, GL_STATIC_DRAW);
-    // glBindVertexArray(0);
+    glGenVertexArrays(1, &RenderState->ConsoleVAO);
+    glBindVertexArray(RenderState->ConsoleVAO);
+    glGenBuffers(1, &RenderState->ConsoleQuadVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, RenderState->ConsoleQuadVBO);
+    glBufferData(GL_ARRAY_BUFFER, RenderState->TileQuadVerticesSize, RenderState->TileQuadVertices, GL_DYNAMIC_DRAW);
+    glBindVertexArray(0);
 
     RenderState->TextureShader.Type = Shader_Texture;
     LoadShader("./assets/shaders/textureshader", &RenderState->TextureShader);
@@ -178,39 +176,40 @@ static void ReloadVertexShader(uint32 Index, render_state* RenderState)
         case Shader_Texture:
             glDeleteProgram(RenderState->TextureShader.Program);
             glDeleteShader(RenderState->TextureShader.VertexShader);
-            LoadVertexShader("./assets/shaders/textureshader", &RenderState->TextureShader);
+            LoadVertexShader(ShaderPaths[Shader_Texture], &RenderState->TextureShader);
             break;
         case Shader_Tile:
             glDeleteProgram(RenderState->TileShader.Program);
             glDeleteShader(RenderState->TileShader.VertexShader);
-            LoadVertexShader("./assets/shaders/tileshader", &RenderState->TileShader);
+            LoadVertexShader(ShaderPaths[Shader_Tile], &RenderState->TileShader);
             break;
         case Shader_Console:
             glDeleteProgram(RenderState->ConsoleShader.Program);
             glDeleteShader(RenderState->ConsoleShader.VertexShader);
-            LoadVertexShader("./assets/shaders/consoleshader", &RenderState->ConsoleShader);
+            LoadVertexShader(ShaderPaths[Shader_Console], &RenderState->ConsoleShader);
             break;
     }
 }
 
 static void ReloadFragmentShader(uint32 Index, render_state* RenderState)
 {
+    std::cout << "RELOAD SHADER" << std::endl;
     switch(Index)
     {
         case Shader_Texture:
             glDeleteProgram(RenderState->TextureShader.Program);
             glDeleteShader(RenderState->TextureShader.FragmentShader);
-            LoadFragmentShader("./assets/shaders/textureshader", &RenderState->TextureShader);
+            LoadFragmentShader(ShaderPaths[Shader_Texture], &RenderState->TextureShader);
             break;
         case Shader_Tile:
             glDeleteProgram(RenderState->TileShader.Program);
             glDeleteShader(RenderState->TileShader.FragmentShader);
-            LoadFragmentShader("./assets/shaders/tileshader", &RenderState->TileShader);
+            LoadFragmentShader(ShaderPaths[Shader_Tile], &RenderState->TileShader);
             break;
         case Shader_Console:
             glDeleteProgram(RenderState->ConsoleShader.Program);
             glDeleteShader(RenderState->ConsoleShader.FragmentShader);
-            LoadFragmentShader("./assets/shaders/consoleshader", &RenderState->ConsoleShader);
+            LoadFragmentShader(ShaderPaths[Shader_Console], &RenderState->ConsoleShader);
             break;
     }
 }
@@ -248,7 +247,7 @@ static GLuint LoadTexture(const char *FilePath)
 
 static void ReloadAssets(asset_manager *AssetManager, game_state* GameState)
 {
-    for(int i = 0; i < 2; i++)
+    for(int i = 0; i < Shader_Count; i++)
     {
         if(AssetManager->DirtyVertexShaderIndices[i] == 1)
         {
@@ -295,18 +294,18 @@ static GLuint BoundVAO;
 static void RenderConsole(render_state* RenderState, console* Console, glm::mat4 ProjectionMatrix, glm::mat4 View)
 {
     glBindVertexArray(RenderState->ConsoleVAO); //TODO(Daniel) Create a vertex array buffer + object for console
+    glBindBuffer(GL_ARRAY_BUFFER, RenderState->ConsoleQuadVBO);
 
     glm::mat4 Model(1.0f);
-    Model = glm::scale(Model, glm::vec3(10, 10, 1));
 
-    glm::mat4 MVP = ProjectionMatrix * View * Model;
+    Model = glm::translate(Model, glm::vec3(-1, 0.5, 0));
+    Model = glm::scale(Model, glm::vec3(2, 0.5, 1));
 
     auto Shader = RenderState->Shaders[Shader_Console];
 
     UseShader(&Shader);
 
-    SetVec4Attribute(Shader.Program, "inColor", Console->Color);
-    SetMat4Uniform(Shader.Program, "MVP", MVP);
+    SetMat4Uniform(Shader.Program, "M", Model);
     glDrawArrays(GL_QUADS, 0, 4);
 
     glBindVertexArray(0);
@@ -315,7 +314,8 @@ static void RenderConsole(render_state* RenderState, console* Console, glm::mat4
 static void RenderEntity(render_state *RenderState, const entity &entity, glm::mat4 ProjectionMatrix, glm::mat4 View)
 {
     glBindVertexArray(RenderState->SpriteVAO);
-
+    glBindBuffer(GL_ARRAY_BUFFER, RenderState->SpriteQuadVBO);
+    
     if (RenderState->BoundTexture != entity.TextureHandle) //never bind the same texture if it's already bound
     {
         glBindTexture(GL_TEXTURE_2D, entity.TextureHandle);
@@ -345,6 +345,9 @@ static void RenderEntity(render_state *RenderState, const entity &entity, glm::m
 
 static void RenderTileChunk(render_state* RenderState, const tile_chunk &TileChunk,  GLuint TilesetTextureHandle, glm::mat4 ProjectionMatrix, glm::mat4 View, int StartX, int StartY, int EndX, int EndY)
 {
+    glBindVertexArray(RenderState->SpriteVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, RenderState->SpriteQuadVBO);
+
     real32 Scale = 1.0f;
     
     auto Shader = RenderState->TileShader;
@@ -372,6 +375,7 @@ static void RenderTileChunk(render_state* RenderState, const tile_chunk &TileChu
             }
         }
     }
+    glBindVertexArray(0);
 }
 
 static void RenderTilemap(render_state *RenderState, const tilemap_data &TilemapData, GLuint TilesetTextureHandle, glm::mat4 ProjectionMatrix, glm::mat4 View, int StartX, int StartY, int EndX, int EndY)

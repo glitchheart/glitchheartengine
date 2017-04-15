@@ -5,9 +5,10 @@
 
 extern "C" UPDATE(Update)
 {
+    glfwGetFramebufferSize(GameState->RenderState.Window, &GameState->RenderState.WindowWidth, &GameState->RenderState.WindowHeight);
+
     if(IsKeyDown(GLFW_KEY_TAB, GameState))
     {
-        printf("CONSOLE");
         GameState->Console.Open = true;
     }
 

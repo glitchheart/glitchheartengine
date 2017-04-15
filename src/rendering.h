@@ -10,6 +10,13 @@ enum Shader_Type
     Shader_Count
 };
 
+const char* ShaderPaths[Shader_Count] =
+{
+    "./assets/shaders/textureshader",
+    "./assets/shaders/tileshader",
+    "./assets/shaders/consoleshader"
+};
+
 struct shader
 {
     Shader_Type Type;
@@ -45,7 +52,8 @@ struct render_state
 	    0.0f, 1.0f,
 	    1.0f, 1.0f,
 	    1.0f, 0.0f,
-	    0.0f, 0.0f};
+	    0.0f, 0.0f };
+
     GLuint TileVAO;
     GLuint TileQuadVBO;
 

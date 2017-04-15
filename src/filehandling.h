@@ -31,12 +31,10 @@ struct asset_manager
 	bool ListenForChanges;
 
 	//shaders
-	const char* VertexShaderPaths[2] = { "./assets/shaders/textureshader.vert", "./assets/shaders/tileshader.vert" };
-	const char* FragmentShaderPaths[2] = { "./assets/shaders/textureshader.frag", "./assets/shaders/tileshader.frag" };
-	uint32 DirtyVertexShaderIndices[2]; //2 is the number of shaders, set to 1 if they should be reloaded
-	uint32 DirtyFragmentShaderIndices[2];
-	time_t VertexShaderTimes[2];
-	time_t FragmentShaderTimes[2];
+	uint32 DirtyVertexShaderIndices[3]; //2 is the number of shaders, set to 1 if they should be reloaded
+	uint32 DirtyFragmentShaderIndices[3];
+	time_t VertexShaderTimes[3];
+	time_t FragmentShaderTimes[3];
 
 	//textures
 	const char* TilesetTexturePath = "./assets/textures/tiles.png";
@@ -78,6 +76,14 @@ static void CheckDirty(const char* FilePath, time_t LastTime, uint32* DirtyId, t
 	*Time = time;
 }
 
+static char* CombineStrings(const char * str1, const char* str2)
+{
+	char * str3 = (char *) malloc(1 + strlen(str1) + strlen(str2));
+	strcpy(str3, str1);
+	strcat(str3, str2);
+	return str3;
+}
+
 static void ListenToFileChanges(asset_manager* AssetManager)
 {
 	AssetManager->ListenForChanges = true;
@@ -90,14 +96,14 @@ static void ListenToFileChanges(asset_manager* AssetManager)
 
 	while (AssetManager->ListenForChanges) 
 	{
-		for (int i = 0; i < 2; i++) 
-			CheckDirty(AssetManager->VertexShaderPaths[i], AssetManager->VertexShaderTimes[i], &AssetManager->DirtyVertexShaderIndices[i], &AssetManager->VertexShaderTimes[i]);
+		for (int i = 0; i < Shader_Count; i++) 
+			CheckDirty(CombineStrings(ShaderPaths[i], ".vert"), AssetManager->VertexShaderTimes[i], &AssetManager->DirtyVertexShaderIndices[i], &AssetManager->VertexShaderTimes[i]);
 
-		for (int i = 0; i < 2; i++) 
-			CheckDirty(AssetManager->FragmentShaderPaths[i], AssetManager->FragmentShaderTimes[i], &AssetManager->DirtyFragmentShaderIndices[i], &AssetManager->FragmentShaderTimes[i]);
+		for (int i = 0; i < Shader_Count; i++) 
+			CheckDirty(CombineStrings(ShaderPaths[i], ".frag"), AssetManager->FragmentShaderTimes[i], &AssetManager->DirtyFragmentShaderIndices[i], &AssetManager->FragmentShaderTimes[i]);
 
 		CheckDirty(AssetManager->TilesetTexturePath, AssetManager->TilesetTime, &AssetManager->DirtyTileset, &AssetManager->TilesetTime);	
 		
-		std::this_thread::sleep_for(1s);
+		std::this_thread::sleep_for(0.5s);
 	}
 }
