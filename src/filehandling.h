@@ -64,7 +64,7 @@ static FILETIME GetLastWriteTime(const char* FilePath)
 	return LastWriteTime;
 }
 
-static CheckDirty(const char* FilePath, time_t LastTime, uint32* DirtyId, time_t* Time)
+static void CheckDirty(const char* FilePath, time_t LastTime, uint32* DirtyId, time_t* Time)
 {
 	struct stat sb;
 	stat(FilePath, &sb);

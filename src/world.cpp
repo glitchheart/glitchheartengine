@@ -35,9 +35,9 @@ static void __GenerateIsland(tile_chunk* Chunk, glm::vec2 Position, uint32 Width
 	perlin_noise PerlinNoise;
 	GenerateNoise(&PerlinNoise, Width, Height, Chunk->Seed);
 
-	for(int i = 0; i < Width; i++)
+	for(uint32 i = 0; i < Width; i++)
 	{
-		for(int j = 0; j < Height; j++)
+		for(uint32 j = 0; j < Height; j++)
 		{
 			real32 elevation = PerlinNoise.Noise[i][j];
 			

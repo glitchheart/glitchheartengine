@@ -27,7 +27,7 @@ compile: clean
 	$(CC) $(CXXFLAGS)  -c libs/glad/glad.c -o obj/glad.o	
 	$(CXX) $(CXXFLAGS)  -c src/game.cpp -g -o obj/game.o
 	$(CXX) -shared -L./libs/glfw/lib-mingw-w64 ./libs/SOIL/libSoil.a -L./build -o build/game.dll obj/game.o obj/glad.o -Wl,--out-implib,libgame.a -lglfw3 -lopengl32 -lglu32 -lgdi32
-	$(CXX) $(CXXLAGS) $(INCLUDES) -c src/main.cpp -g -o obj/main.o
+	$(CXX) $(CXXFLAGS) $(INCLUDES) -c src/main.cpp -g -o obj/main.o
 	$(CXX) -o $(BUILDDIR)/$(TARGET) obj/main.o obj/glad.o $(LIBRARIES) $(LDFLAGS) build/game.dll
 
 clean :
