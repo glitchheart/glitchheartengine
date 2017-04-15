@@ -23,12 +23,22 @@ struct tile_data
 	glm::vec2 TextureOffset;
 };
 
-#define TILEMAP_SIZE 200
+#define TILEMAP_SIZE 3
+
+#define CHUNK_SIZE 100
+
+struct tile_chunk
+{
+	uint32 Seed;
+	uint32 X;
+	uint32 Y;
+	tile_data Data[CHUNK_SIZE][CHUNK_SIZE];
+};
 
 struct tilemap_data
 {
 	GLuint TileAtlasTexture;
-	tile_data Data[TILEMAP_SIZE][TILEMAP_SIZE];
+	tile_chunk Chunks[TILEMAP_SIZE][TILEMAP_SIZE];
 };
 
 #endif

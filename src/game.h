@@ -3,9 +3,11 @@
 
 #include "types.h"
 #include "glm/gtc/matrix_transform.hpp"
+#include <glm/gtc/noise.hpp>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <SOIL/SOIL.h>
+#include <time.h> 
 
 #include "entity.h"
 #include "world.h"
@@ -19,6 +21,7 @@ struct camera
 {
 	uint32 ViewportWidth;
 	uint32 ViewportHeight;
+	real32 Zoom = 0.1f;
 	glm::mat4 ViewMatrix;
 	glm::mat4 ProjectionMatrix;
 };

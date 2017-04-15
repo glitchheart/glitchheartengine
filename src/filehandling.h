@@ -63,7 +63,6 @@ static void ListenToFileChanges(asset_manager* AssetManager)
 {
 	AssetManager->ListenForChanges = true;
 
-	// Available with VS2015, Recent GCC and Clang have it too
 	using namespace std::chrono_literals;
 
 	while (AssetManager->ListenForChanges) 

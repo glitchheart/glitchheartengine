@@ -55,7 +55,10 @@
 		"thread": "cpp",
 		"chrono": "cpp",
 		"memory": "cpp",
-		"ratio": "cpp"
+		"ratio": "cpp",
+		"atomic": "cpp",
+		"codecvt": "cpp",
+		"list": "cpp"
 	},
 	 "todohighlight.isEnable": true, //toggle the highlight, default is true
     "todohighlight.isCaseSensitive": true, //whether the keywords are case sensitive or not
