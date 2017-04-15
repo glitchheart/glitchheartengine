@@ -1,14 +1,14 @@
 #ifndef SOUND_H
 #define SOUND_H
 
-enum sound_effects
+enum Sound_Effects
 {
-    THEME_MUSIC = 0;
-    SOUND_02 = 1;
-    SOUND_03 = 2;
-    SOUND_04 = 3;
-    SOUND_05 = 4;
-    SOUND_06 = 5;
+    THEME_MUSIC = 0,
+    SOUND_02 = 1,
+    SOUND_03 = 2,
+    SOUND_04 = 3,
+    SOUND_05 = 4,
+    SOUND_06 = 5
 };
 
 struct sound_info
@@ -161,23 +161,6 @@ static void LoadWavFile(const char *Filename, loaded_sound *LoadedSound)
     }
 }
 
-static void list_audio_devices(const ALCchar *devices)
-{
-    const ALCchar *device = devices, *next = devices + 1;
-    size_t len = 0;
-
-    fprintf(stdout, "Devices list:\n");
-    fprintf(stdout, "----------\n");
-    while (device && *device != '\0' && next && *next != '\0')
-    {
-        fprintf(stdout, "%s\n", device);
-        len = strlen(device);
-        device += (len + 1);
-        next += (len + 2);
-    }
-    fprintf(stdout, "----------\n");
-}
-
 static void InitAudio(sound_manager *SoundManager)
 {
     SoundManager->Device = alcOpenDevice(0);
@@ -197,8 +180,6 @@ static void InitAudio(sound_manager *SoundManager)
         HandleError(__FILE__, __LINE__, "Enumeration extension not supported");
         exit(EXIT_FAILURE);
     }
-
-    list_audio_devices(alcGetString(NULL, ALC_DEVICE_SPECIFIER));
 
     SoundManager->Context = alcCreateContext(SoundManager->Device, 0);
     alcMakeContextCurrent(SoundManager->Context);
