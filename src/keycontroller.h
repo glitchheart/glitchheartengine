@@ -15,11 +15,10 @@ struct input_controller
 	    {GLFW_KEY_W, false},
 	    {GLFW_KEY_A, false},
 	    {GLFW_KEY_S, false},
-	    {GLFW_KEY_D, false}};
+	    {GLFW_KEY_D, false},
+	    {GLFW_KEY_TAB, false} };
     double MouseX;
     double MouseY;
 };
-
-
 
 #endif
