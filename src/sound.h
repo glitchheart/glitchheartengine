@@ -1,6 +1,15 @@
 #ifndef SOUND_H
 #define SOUND_H
 
+struct sound_info
+{
+    real32 Pitch;
+    real32 Gain;
+    real32 Position[3];
+    real32 Velocity[3];
+    bool32 Loop;
+};
+
 struct loaded_sound
 {
     uint32 AssetIndex;
@@ -11,8 +20,8 @@ struct loaded_sound
     ALsizei Size;
     ALsizei Frequency;
     ALvoid *Data;
-    ALboolean Loop = AL_FALSE;
     ALint SourceState;
+    sound_info SoundInfo;
 };
 
 struct sound_manager
@@ -21,7 +30,7 @@ struct sound_manager
     ALCcontext *Context;
     loaded_sound LoadedSounds[128];
     uint32 LoadedSoundCount;
-    
+
     bool32 IsInitialized;
 };
 
@@ -194,26 +203,35 @@ static void InitAudio(sound_manager *SoundManager)
     SoundManager->IsInitialized = SoundManager->Device && SoundManager->Context;
 }
 
-static void LoadSound(const char *filename, sound_manager *SoundManager)
+static void LoadSound(const char *filename, sound_manager *SoundManager, sound_info SoundInfo)
 {
     loaded_sound LoadedSound = {};
     alGenSources((ALuint)1, &LoadedSound.Source);
     LoadWavFile(filename, &LoadedSound);
     alSourcei(LoadedSound.Source, AL_BUFFER, LoadedSound.Buffer);
     LoadedSound.AssetIndex = SoundManager->LoadedSoundCount++;
+    LoadedSound.SoundInfo = SoundInfo; 
     SoundManager->LoadedSounds[LoadedSound.AssetIndex] = LoadedSound;
 }
 
 static void LoadSounds(sound_manager *SoundManager)
 {
-    LoadSound("./assets/audio/Deadliners Track 1.wav", SoundManager);
-    LoadSound("./assets/audio/Countdown_1.wav", SoundManager);
-    LoadSound("./assets/audio/Countdown_2.wav", SoundManager);
-    LoadSound("./assets/audio/Countdown_3.wav", SoundManager);
-    LoadSound("./assets/audio/Countdown_4.wav", SoundManager);
-    LoadSound("./assets/audio/Countdown_5.wav", SoundManager);
+    sound_info DefaultSoundInfo = {};
+    DefaultSoundInfo.Pitch = 1;
+    DefaultSoundInfo.Gain = 1;
+    real32 Position[3] = {0,0,0};
+    memcpy(DefaultSoundInfo.Position,Position,3);
+    real32 Velocity[3] = {0,0,0};
+    memcpy(DefaultSoundInfo.Velocity,Velocity,3);
+    DefaultSoundInfo.Loop = AL_FALSE;
+
+    LoadSound("./assets/audio/Deadliners Track 1.wav", SoundManager, DefaultSoundInfo);
+    LoadSound("./assets/audio/Countdown_1.wav", SoundManager, DefaultSoundInfo);
+    LoadSound("./assets/audio/Countdown_2.wav", SoundManager, DefaultSoundInfo);
+    LoadSound("./assets/audio/Countdown_3.wav", SoundManager, DefaultSoundInfo);
+    LoadSound("./assets/audio/Countdown_4.wav", SoundManager, DefaultSoundInfo);
+    LoadSound("./assets/audio/Countdown_5.wav", SoundManager, DefaultSoundInfo);
     // Add more sounds here if necessary
 }
-
 
 #endif

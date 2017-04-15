@@ -15,8 +15,10 @@ al = ./libs/openal
 al_inc = $(al)/include
 al_lib = $(al)/libs/Win64/
 
-CFLAGS = -Wall -ggdb -O3 $(INCLUDES)
-CXXFLAGS = -Wall -ggdb -O3 $(INCLUDES)
+suppress = -Wno-unused-function
+
+CFLAGS = -Wall $(suppress) -ggdb -O3 $(INCLUDES)
+CXXFLAGS = -Wall $(suppress) -ggdb -O3 $(INCLUDES)
 LDFLAGS = $(LIBRARIES) -lglfw3 -lopengl32 -lglu32 -lgdi32 -lopenal32 build/OpenAL32.dll
 
 TARGET = main.exe
