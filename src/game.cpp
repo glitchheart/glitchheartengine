@@ -8,12 +8,10 @@ extern "C" UPDATE(Update)
 {
     glfwGetFramebufferSize(GameState->RenderState.Window, &GameState->RenderState.WindowWidth, &GameState->RenderState.WindowHeight);
 
-    if (GetKeyDown(GLFW_KEY_TAB, GameState))
-
-        if (GetKeyDown(GLFW_KEY_ENTER, GameState))
-        {
-            PlaySoundOnce(&GameState->SoundManager.LoadedSounds[0]);
-        }
+    if (GetKeyDown(GLFW_KEY_ENTER, GameState))
+    {
+        PlaySoundOnce(&GameState->SoundManager.LoadedSounds[0]);
+    }
 
     if (GetKeyDown(GLFW_KEY_2, GameState))
     {
