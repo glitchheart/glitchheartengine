@@ -50,6 +50,8 @@ static GLuint LoadShader(const std::string FilePath, shader *Shd)
 
 static GLuint LoadVertexShader(const std::string FilePath, shader *Shd)
 {
+    Shd->Program = glCreateProgram();
+
     Shd->VertexShader = glCreateShader(GL_VERTEX_SHADER);
     GLchar *VertexText = LoadShaderFromFile(FilePath + std::string(".vert"));
     glShaderSource(Shd->VertexShader, 1, &VertexText, NULL);
@@ -59,6 +61,8 @@ static GLuint LoadVertexShader(const std::string FilePath, shader *Shd)
         return GL_FALSE;
 
     glAttachShader(Shd->Program, Shd->VertexShader);
+    glAttachShader(Shd->Program, Shd->FragmentShader);
+
     glLinkProgram(Shd->Program);
    
     return GL_TRUE;
@@ -66,6 +70,8 @@ static GLuint LoadVertexShader(const std::string FilePath, shader *Shd)
 
 static GLuint LoadFragmentShader(const std::string FilePath, shader *Shd)
 {
+    Shd->Program = glCreateProgram();
+    
     Shd->FragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
     GLchar *FragmentText = LoadShaderFromFile(FilePath + std::string(".frag"));
     glShaderSource(Shd->FragmentShader, 1, &FragmentText, NULL);
@@ -74,6 +80,7 @@ static GLuint LoadFragmentShader(const std::string FilePath, shader *Shd)
     if (!ShaderCompilationErrorChecking(Shd->FragmentShader))
         return GL_FALSE;
    
+    glAttachShader(Shd->Program, Shd->VertexShader);
     glAttachShader(Shd->Program, Shd->FragmentShader);
     glLinkProgram(Shd->Program);
    
@@ -94,7 +101,7 @@ static void UseShader(shader *Shader)
     glUseProgram(Shader->Program);
 }
 
-static void LoadAllShaders(render_state *RenderState)
+static void RenderSetup(render_state *RenderState)
 {
     glGenVertexArrays(1, &RenderState->SpriteVAO);
     glBindVertexArray(RenderState->SpriteVAO);
@@ -139,14 +146,16 @@ static void ReloadVertexShader(uint32 Index, render_state* RenderState)
     switch(Index)
     {
         case Shader_Texture:
-            LoadShader("./assets/shaders/textureshader", &RenderState->TextureShader);
-            // glDeleteShader(RenderState->TextureShader.VertexShader);
-            // LoadVertexShader("./assets/shaders/textureshader", &RenderState->TextureShader);
+            // LoadShader("./assets/shaders/textureshader", &RenderState->TextureShader);
+            glDeleteProgram(RenderState->TextureShader.Program);
+            glDeleteShader(RenderState->TextureShader.VertexShader);
+            LoadVertexShader("./assets/shaders/textureshader", &RenderState->TextureShader);
             break;
         case Shader_Tile:
-            LoadShader("./assets/shaders/tileshader", &RenderState->TileShader);
-            // glDeleteShader(RenderState->TileShader.VertexShader);
-            // LoadVertexShader("./assets/shaders/tileshader", &RenderState->TileShader);
+            // LoadShader("./assets/shaders/tileshader", &RenderState->TileShader);
+            glDeleteProgram(RenderState->TileShader.Program);
+            glDeleteShader(RenderState->TileShader.VertexShader);
+            LoadVertexShader("./assets/shaders/tileshader", &RenderState->TileShader);
             break;
     }
 }
@@ -156,33 +165,17 @@ static void ReloadFragmentShader(uint32 Index, render_state* RenderState)
     switch(Index)
     {
         case Shader_Texture:
-            LoadShader("./assets/shaders/textureshader", &RenderState->TextureShader);
-            // glDeleteShader(RenderState->TextureShader.FragmentShader);
-            // LoadFragmentShader("./assets/shaders/textureshader", &RenderState->TextureShader);
+            // LoadShader("./assets/shaders/textureshader", &RenderState->TextureShader);
+            glDeleteProgram(RenderState->TextureShader.Program);
+            glDeleteShader(RenderState->TextureShader.FragmentShader);
+            LoadFragmentShader("./assets/shaders/textureshader", &RenderState->TextureShader);
             break;
         case Shader_Tile:
-            LoadShader("./assets/shaders/tileshader", &RenderState->TileShader);
-            // glDeleteShader(RenderState->TileShader.FragmentShader);
-            // LoadFragmentShader("./assets/shaders/tileshader", &RenderState->TileShader);
+            // LoadShader("./assets/shaders/tileshader", &RenderState->TileShader);
+            glDeleteProgram(RenderState->TileShader.Program);
+            glDeleteShader(RenderState->TileShader.FragmentShader);
+            LoadFragmentShader("./assets/shaders/tileshader", &RenderState->TileShader);
             break;
-    }
-}
-
-static void ReloadAssets(asset_manager *AssetManager, render_state* RenderState)
-{
-    for(int i = 0; i < 2; i++)
-    {
-        if(AssetManager->DirtyVertexShaderIndices[i] == 1)
-        {
-            ReloadVertexShader(i, RenderState);
-            AssetManager->DirtyVertexShaderIndices[i] = 0;
-        }
-
-        if(AssetManager->DirtyFragmentShaderIndices[i] == 1)
-        {
-            ReloadFragmentShader(i, RenderState);
-            AssetManager->DirtyFragmentShaderIndices[i] = 0;
-        }
     }
 }
 
@@ -215,6 +208,30 @@ static GLuint LoadTexture(const char *FilePath)
     SOIL_free_image_data(Image);
 
     return TextureHandle;
+}
+
+static void ReloadAssets(asset_manager *AssetManager, game_state* GameState)
+{
+    for(int i = 0; i < 2; i++)
+    {
+        if(AssetManager->DirtyVertexShaderIndices[i] == 1)
+        {
+            ReloadVertexShader(i, &GameState->RenderState);
+            AssetManager->DirtyVertexShaderIndices[i] = 0;
+        }
+
+        if(AssetManager->DirtyFragmentShaderIndices[i] == 1)
+        {
+            ReloadFragmentShader(i, &GameState->RenderState);
+            AssetManager->DirtyFragmentShaderIndices[i] = 0;
+        }
+    }
+
+    if(AssetManager->DirtyTileset == 1)
+    {
+       GameState->TilemapData.TileAtlasTexture = LoadTexture("./assets/textures/tiles.png");
+       AssetManager->DirtyTileset = 0;
+    }
 }
 
 static void SetVec2Attribute(GLuint ShaderHandle, const char *UniformName, glm::vec2 Value)
@@ -254,7 +271,7 @@ static void RenderEntity(render_state *RenderState, const entity &entity, glm::m
     Model = glm::translate(Model, glm::vec3(entity.Position.x, entity.Position.y, 0.0f));
     
     Model = glm::translate(Model, glm::vec3(1, 1, 0.0f)); 
-    Model = glm::rotate(Model, entity.Rotation.z + 1.56f, glm::vec3(0, 0, 1));
+    Model = glm::rotate(Model, entity.Rotation.z + 1.56f, glm::vec3(0, 0, 1)); //NOTE(Daniel) 1.56 is approximately 90 degrees in radians
     Model = glm::translate(Model, glm::vec3(-1, -1, 0.0f)); 
 
     Model = glm::scale(Model, entity.Scale);
@@ -278,7 +295,7 @@ static void RenderTileChunk(render_state* RenderState, const tile_chunk &TileChu
 
     UseShader(&Shader);
 
-    // for (int i = StartX; i < EndX; i++)
+    // for (int i = StartX; i < EndX; i++) //TODO(Daniel) this has to be added again
     // {
     //     for (int j = StartY; j < EndY; j++)
     //     {
