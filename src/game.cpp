@@ -5,21 +5,27 @@
 
 extern "C" UPDATE(Update)
 {
+    if(IsKeyDown(GLFW_KEY_TAB, GameState))
+    {
+        printf("CONSOLE");
+        GameState->Console.Open = true;
+    }
+
     //player movement
-    if (IsKeyDown(GLFW_KEY_A,GameState))
+    if (IsKeyDown(GLFW_KEY_A, GameState))
     {
 	    GameState->Player.Position.x += -GameState->Player.player.WalkingSpeed * DeltaTime;
     }
-    else if (IsKeyDown(GLFW_KEY_D,GameState))
+    else if (IsKeyDown(GLFW_KEY_D, GameState))
 	{
         GameState->Player.Position.x += GameState->Player.player.WalkingSpeed * DeltaTime;
     }
     
-    if (IsKeyDown(GLFW_KEY_W,GameState))
+    if (IsKeyDown(GLFW_KEY_W, GameState))
     {
 	    GameState->Player.Position.y += -GameState->Player.player.WalkingSpeed * DeltaTime;
     }
-    else if (IsKeyDown(GLFW_KEY_S,GameState))
+    else if (IsKeyDown(GLFW_KEY_S, GameState))
 	{
         GameState->Player.Position.y += GameState->Player.player.WalkingSpeed * DeltaTime;
     }

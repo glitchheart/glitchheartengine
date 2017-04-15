@@ -193,7 +193,9 @@ int main(void)
     //setup asset reloading
     asset_manager AssetManager = {};
     std::thread t(&ListenToFileChanges, &AssetManager);
-    
+
+    GameState.Console = {};
+
     while (!glfwWindowShouldClose(GameState.RenderState.Window))
     {
         //calculate deltatime

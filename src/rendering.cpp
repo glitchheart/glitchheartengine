@@ -25,6 +25,7 @@ static GLuint LoadShader(const std::string FilePath, shader *Shd)
 {
     Shd->VertexShader = glCreateShader(GL_VERTEX_SHADER);
     GLchar *VertexText = LoadShaderFromFile(FilePath + std::string(".vert"));
+    
     glShaderSource(Shd->VertexShader, 1, &VertexText, NULL);
     glCompileShader(Shd->VertexShader);
 
@@ -33,6 +34,9 @@ static GLuint LoadShader(const std::string FilePath, shader *Shd)
 
     Shd->FragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
     GLchar *FragmentText = LoadShaderFromFile(FilePath + std::string(".frag"));
+    
+    printf(FragmentText);
+
     glShaderSource(Shd->FragmentShader, 1, &FragmentText, NULL);
     glCompileShader(Shd->FragmentShader);
 
@@ -89,14 +93,28 @@ static GLuint LoadFragmentShader(const std::string FilePath, shader *Shd)
 
 static void UseShader(shader *Shader)
 {
-    auto PositionLocation = glGetAttribLocation(Shader->Program, "pos");
-    auto TexcoordLocation = glGetAttribLocation(Shader->Program, "texcoord");
+    switch(Shader->Type)
+    {
+        case Shader_Console:
+        {
+            auto PositionLocation = glGetAttribLocation(Shader->Program, "pos");
+            glEnableVertexAttribArray(PositionLocation);
+            glVertexAttribPointer(PositionLocation, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), 0);
+        }
+            break;
+        default:
+        {
+            auto PositionLocation = glGetAttribLocation(Shader->Program, "pos");
+            auto TexcoordLocation = glGetAttribLocation(Shader->Program, "texcoord");
 
-    glEnableVertexAttribArray(PositionLocation);
-    glVertexAttribPointer(PositionLocation, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
+            glEnableVertexAttribArray(PositionLocation);
+            glVertexAttribPointer(PositionLocation, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
 
-    glEnableVertexAttribArray(TexcoordLocation);
-    glVertexAttribPointer(TexcoordLocation, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *)(2 * sizeof(float)));
+            glEnableVertexAttribArray(TexcoordLocation);
+            glVertexAttribPointer(TexcoordLocation, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *)(2 * sizeof(float)));
+        }
+            break;
+    }
 
     glUseProgram(Shader->Program);
 }
@@ -105,26 +123,33 @@ static void RenderSetup(render_state *RenderState)
 {
     glGenVertexArrays(1, &RenderState->SpriteVAO);
     glBindVertexArray(RenderState->SpriteVAO);
-
     glGenBuffers(1, &RenderState->SpriteQuadVBO);
-
     glBindBuffer(GL_ARRAY_BUFFER, RenderState->SpriteQuadVBO);
     glBufferData(GL_ARRAY_BUFFER, RenderState->SpriteQuadVerticesSize, RenderState->SpriteQuadVertices, GL_STATIC_DRAW);
-
-    RenderState->TextureShader.Type = Shader_Texture;
-    LoadShader("./assets/shaders/textureshader", &RenderState->TextureShader);
     glBindVertexArray(0);
 
     glGenVertexArrays(1, &RenderState->TileVAO);
     glBindVertexArray(RenderState->TileVAO);
-
     glGenBuffers(1, &RenderState->TileQuadVBO);
     glBindBuffer(GL_ARRAY_BUFFER, RenderState->TileQuadVBO);
     glBufferData(GL_ARRAY_BUFFER, RenderState->SpriteQuadVerticesSize, RenderState->SpriteQuadVertices, GL_STATIC_DRAW);
+    glBindVertexArray(0);
+
+    // glGenVertexArrays(1, &RenderState->ConsoleVAO);
+    // glBindVertexArray(RenderState->ConsoleVAO);
+    // glGenBuffers(1, &RenderState->ConsoleQuadVBO);
+    // glBindBuffer(GL_ARRAY_BUFFER, RenderState->ConsoleQuadVBO);
+    // glBufferData(GL_ARRAY_BUFFER, RenderState->TileQuadVerticesSize, RenderState->TileQuadVertices, GL_STATIC_DRAW);
+    // glBindVertexArray(0);
+
+    RenderState->TextureShader.Type = Shader_Texture;
+    LoadShader("./assets/shaders/textureshader", &RenderState->TextureShader);
 
     RenderState->TileShader.Type = Shader_Tile;
     LoadShader("./assets/shaders/tileshader", &RenderState->TileShader);
-    glBindVertexArray(0);
+
+    RenderState->ConsoleShader.Type = Shader_Console;
+    LoadShader("./assets/shaders/consoleshader", &RenderState->ConsoleShader);
 }
 
 static void ReloadShaders(render_state* RenderState)
@@ -137,8 +162,13 @@ static void ReloadShaders(render_state* RenderState)
     glDeleteShader(RenderState->TileShader.FragmentShader);
     glDeleteProgram(RenderState->TileShader.Program);
     
+    glDeleteShader(RenderState->ConsoleShader.VertexShader);
+    glDeleteShader(RenderState->ConsoleShader.FragmentShader);
+    glDeleteProgram(RenderState->ConsoleShader.Program);
+    
     LoadShader("./assets/shaders/textureshader", &RenderState->TextureShader);
     LoadShader("./assets/shaders/tileshader", &RenderState->TileShader);
+    LoadShader("./assets/shaders/consoleshader", &RenderState->ConsoleShader);
 }
 
 static void ReloadVertexShader(uint32 Index, render_state* RenderState)
@@ -146,16 +176,19 @@ static void ReloadVertexShader(uint32 Index, render_state* RenderState)
     switch(Index)
     {
         case Shader_Texture:
-            // LoadShader("./assets/shaders/textureshader", &RenderState->TextureShader);
             glDeleteProgram(RenderState->TextureShader.Program);
             glDeleteShader(RenderState->TextureShader.VertexShader);
             LoadVertexShader("./assets/shaders/textureshader", &RenderState->TextureShader);
             break;
         case Shader_Tile:
-            // LoadShader("./assets/shaders/tileshader", &RenderState->TileShader);
             glDeleteProgram(RenderState->TileShader.Program);
             glDeleteShader(RenderState->TileShader.VertexShader);
             LoadVertexShader("./assets/shaders/tileshader", &RenderState->TileShader);
+            break;
+        case Shader_Console:
+            glDeleteProgram(RenderState->ConsoleShader.Program);
+            glDeleteShader(RenderState->ConsoleShader.VertexShader);
+            LoadVertexShader("./assets/shaders/consoleshader", &RenderState->ConsoleShader);
             break;
     }
 }
@@ -165,16 +198,19 @@ static void ReloadFragmentShader(uint32 Index, render_state* RenderState)
     switch(Index)
     {
         case Shader_Texture:
-            // LoadShader("./assets/shaders/textureshader", &RenderState->TextureShader);
             glDeleteProgram(RenderState->TextureShader.Program);
             glDeleteShader(RenderState->TextureShader.FragmentShader);
             LoadFragmentShader("./assets/shaders/textureshader", &RenderState->TextureShader);
             break;
         case Shader_Tile:
-            // LoadShader("./assets/shaders/tileshader", &RenderState->TileShader);
             glDeleteProgram(RenderState->TileShader.Program);
             glDeleteShader(RenderState->TileShader.FragmentShader);
             LoadFragmentShader("./assets/shaders/tileshader", &RenderState->TileShader);
+            break;
+        case Shader_Console:
+            glDeleteProgram(RenderState->ConsoleShader.Program);
+            glDeleteShader(RenderState->ConsoleShader.FragmentShader);
+            LoadFragmentShader("./assets/shaders/consoleshader", &RenderState->ConsoleShader);
             break;
     }
 }
@@ -255,6 +291,26 @@ static void SetMat4Uniform(GLuint ShaderHandle, const char *UniformName, glm::ma
 }
 
 static GLuint BoundVAO;
+
+static void RenderConsole(render_state* RenderState, console* Console, glm::mat4 ProjectionMatrix, glm::mat4 View)
+{
+    glBindVertexArray(RenderState->ConsoleVAO); //TODO(Daniel) Create a vertex array buffer + object for console
+
+    glm::mat4 Model(1.0f);
+    Model = glm::scale(Model, glm::vec3(10, 10, 1));
+
+    glm::mat4 MVP = ProjectionMatrix * View * Model;
+
+    auto Shader = RenderState->Shaders[Shader_Console];
+
+    UseShader(&Shader);
+
+    SetVec4Attribute(Shader.Program, "inColor", Console->Color);
+    SetMat4Uniform(Shader.Program, "MVP", MVP);
+    glDrawArrays(GL_QUADS, 0, 4);
+
+    glBindVertexArray(0);
+}
 
 static void RenderEntity(render_state *RenderState, const entity &entity, glm::mat4 ProjectionMatrix, glm::mat4 View)
 {
@@ -372,7 +428,10 @@ static void Render(game_state* GameState)
     
     RenderTilemap(&GameState->RenderState, GameState->TilemapData, GameState->TilemapData.TileAtlasTexture, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix, minX, minY, maxX, maxY);
 
-    RenderEntity(&GameState->RenderState, GameState->Player,  GameState->Camera.ProjectionMatrix,  GameState->Camera.ViewMatrix);
+    RenderEntity(&GameState->RenderState, GameState->Player, GameState->Camera.ProjectionMatrix,  GameState->Camera.ViewMatrix);
     
+    if(GameState->Console.Open)
+        RenderConsole(&GameState->RenderState, &GameState->Console, GameState->Camera.ProjectionMatrix,  GameState->Camera.ViewMatrix);
+
     glfwSwapBuffers(GameState->RenderState.Window);
 }

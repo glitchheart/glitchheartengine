@@ -21,15 +21,23 @@ struct camera
 {
 	uint32 ViewportWidth;
 	uint32 ViewportHeight;
-	real32 Zoom = 0.1f;
+	real32 Zoom = 1.0f; //NOTE(Daniel) 1.0 is normal zoom. The higher the number the closer you are zoomed in
 	glm::mat4 ViewMatrix;
 	glm::mat4 ProjectionMatrix;
+};
+
+struct console
+{
+	bool Open;
+	uint32 MaxHeight;
+	glm::vec4 Color = glm::vec4(0.2, 0.2, 0.2, 0.2);
 };
 
 struct game_state
 {
 	render_state RenderState;
 	camera Camera;
+	console Console;
 	entity Player;
 	tilemap_data TilemapData;
 	input_controller InputController;

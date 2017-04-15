@@ -5,6 +5,8 @@ enum Shader_Type
 {
     Shader_Texture,
     Shader_Tile,
+    Shader_Console,
+
     Shader_Count
 };
 
@@ -40,20 +42,25 @@ struct render_state
     //tiles
     GLfloat TileQuadVertices[8] =
 	{
-	    -1.0f, 1.0f,
+	    0.0f, 1.0f,
 	    1.0f, 1.0f,
-	    1.0f, -1.0f,
-	    -1.0f, -1.0f};
+	    1.0f, 0.0f,
+	    0.0f, 0.0f};
     GLuint TileVAO;
     GLuint TileQuadVBO;
 
-    union {
-	shader Shaders[Shader_Count];
-	struct
-	{
-	    shader TextureShader;
-	    shader TileShader;
-	};
+    GLuint ConsoleVAO;
+    GLuint ConsoleQuadVBO;
+
+    union 
+    {
+        shader Shaders[Shader_Count];
+        struct
+        {
+            shader TextureShader;
+            shader TileShader;
+            shader ConsoleShader;
+        };
     };
 };
 
