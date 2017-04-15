@@ -23,9 +23,9 @@ struct tile_data
 	glm::vec2 TextureOffset;
 };
 
-#define TILEMAP_SIZE 3
+#define TILEMAP_SIZE 2
 
-#define CHUNK_SIZE 100
+#define CHUNK_SIZE 200
 
 struct tile_chunk
 {

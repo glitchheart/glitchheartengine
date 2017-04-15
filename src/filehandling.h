@@ -38,6 +38,11 @@ struct asset_manager
 	time_t VertexShaderTimes[2];
 	time_t FragmentShaderTimes[2];
 
+	//textures
+	const char* TilesetTexturePath = "./assets/textures/tiles.png";
+	uint32 DirtyTileset;
+	time_t TilesetTime;
+
 	//dll's
 	const char* DllPaths[1] = { "game.dll" };
 	uint32 DirtyGameDll;
@@ -59,44 +64,40 @@ static FILETIME GetLastWriteTime(const char* FilePath)
 	return LastWriteTime;
 }
 
+static CheckDirty(const char* FilePath, time_t LastTime, uint32* DirtyId, time_t* Time)
+{
+	struct stat sb;
+	stat(FilePath, &sb);
+
+	time_t time = sb.st_mtime;
+
+	if (LastTime != 0 && LastTime < time)
+	{
+		*DirtyId = 1;
+	}
+	*Time = time;
+}
+
 static void ListenToFileChanges(asset_manager* AssetManager)
 {
 	AssetManager->ListenForChanges = true;
+	
+	struct stat sb;
+	stat(AssetManager->TilesetTexturePath, &sb);
+	AssetManager->TilesetTime =  sb.st_mtime;
 
 	using namespace std::chrono_literals;
 
 	while (AssetManager->ListenForChanges) 
 	{
 		for (int i = 0; i < 2; i++) 
-		{
-			struct stat sb;
-			stat(AssetManager->VertexShaderPaths[i], &sb);
-
-			time_t time = sb.st_mtime;
-			auto last_time = AssetManager->VertexShaderTimes[i];
-
-			if (last_time != 0 && last_time < time)
-			{
-				AssetManager->DirtyVertexShaderIndices[i] = 1;
-			}
-			AssetManager->VertexShaderTimes[i] = time;
-		}
+			CheckDirty(AssetManager->VertexShaderPaths[i], AssetManager->VertexShaderTimes[i], &AssetManager->DirtyVertexShaderIndices[i], &AssetManager->VertexShaderTimes[i]);
 
 		for (int i = 0; i < 2; i++) 
-		{
-			struct stat sb;
-			stat(AssetManager->FragmentShaderPaths[i], &sb);
+			CheckDirty(AssetManager->FragmentShaderPaths[i], AssetManager->FragmentShaderTimes[i], &AssetManager->DirtyFragmentShaderIndices[i], &AssetManager->FragmentShaderTimes[i]);
 
-			time_t time = sb.st_mtime;
-			auto last_time = AssetManager->FragmentShaderTimes[i];
-
-			if (last_time != 0 && last_time < time)
-			{
-				AssetManager->DirtyFragmentShaderIndices[i] = 1;
-			}
-			AssetManager->FragmentShaderTimes[i] = time;
-		}
-
+		CheckDirty(AssetManager->TilesetTexturePath, AssetManager->TilesetTime, &AssetManager->DirtyTileset, &AssetManager->TilesetTime);	
+		
 		std::this_thread::sleep_for(1s);
 	}
 }

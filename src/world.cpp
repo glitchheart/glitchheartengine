@@ -41,7 +41,7 @@ static void __GenerateIsland(tile_chunk* Chunk, glm::vec2 Position, uint32 Width
 		{
 			real32 elevation = PerlinNoise.Noise[i][j];
 			
-			printf("%g\n", elevation);
+			// printf("%g\n", elevation);
 
 			if(elevation >= 0.4)
 				Chunk->Data[i][j] = { Tile_Stone, glm::vec2(0.8f, 0) };

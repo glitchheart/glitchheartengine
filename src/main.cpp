@@ -160,19 +160,17 @@ int main(void)
     glfwSwapInterval(1);
 
     //load render_state
-    LoadAllShaders(&GameState.RenderState);
+    RenderSetup(&GameState.RenderState);
 
     entity_manager EntityManager = {}; //TODO(Daniel) Do something useful with this. And remember the texture_manager
 
     GameState.Player = {};
     GameState.Player.Type = Entity_Player;
     GameState.Player.player.WalkingSpeed = 10.0f;
-    GameState.Player.ShaderIndex = 0; //TODO(Daniel) TextureShader - Should have an enumeration for this
+    GameState.Player.ShaderIndex = Shader_Texture;
     GameState.Player.TextureHandle = LoadTexture("./assets/textures/player.png");
     GameState.Player.Rotation = glm::vec3(0, 0, 0.3f);
     GameState.Player.Scale = glm::vec3(2, 2, 0);
-
-    // //@TESTCODE
 
     GenerateTilemap(&GameState.TilemapData);
     GameState.TilemapData.TileAtlasTexture = LoadTexture("./assets/textures/tiles.png");
@@ -206,7 +204,7 @@ int main(void)
         if (IsKeyDown(GLFW_KEY_ESCAPE,&GameState))
             glfwSetWindowShouldClose(GameState.RenderState.Window, GLFW_TRUE);
 
-        ReloadAssets(&AssetManager, &GameState.RenderState);
+        ReloadAssets(&AssetManager, &GameState);
         ReloadDlls(&Game);
 
         GLint Viewport[4];

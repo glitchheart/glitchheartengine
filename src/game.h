@@ -35,8 +35,6 @@ struct game_state
 	input_controller InputController;
 };
 
-
-
 #define UPDATE(name)void name(double DeltaTime, game_state* GameState) 
 typedef UPDATE(update);
 UPDATE(UpdateStub)
