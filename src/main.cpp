@@ -113,6 +113,12 @@ static void LoadXAudio2(sound_manager* SoundManager)
     
 }
 
+void FramebufferSizeCallback(GLFWwindow* Window, int Width, int Height)
+{
+    glfwSetWindowAspectRatio(Window, 16, 9);
+    glViewport(0, 0, Width, Height);
+}
+
 int main(void)
 {
     //load config file
@@ -145,6 +151,9 @@ int main(void)
     GameState.RenderState = RenderState;
     GameState.RenderState.Window = glfwCreateWindow(ScreenWidth, ScreenHeight, (Title + std::string(" ") + Version).c_str(), Fullscreen ? glfwGetPrimaryMonitor() : NULL, NULL);
 
+    glfwSetFramebufferSizeCallback(GameState.RenderState.Window, FramebufferSizeCallback);
+    // glfwSetWindowSizeCallback(GameState.RenderState.Window, WindowSizeCallback);
+    
     //center window on screen
     const GLFWvidmode *Mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
     int Width, Height;
@@ -219,7 +228,7 @@ int main(void)
         ReloadDlls(&Game);
 
         GLint Viewport[4];
-        glGetIntegerv(GL_VIEWPORT,Viewport);
+        glGetIntegerv(GL_VIEWPORT, Viewport);
         
         memcpy(GameState.RenderState.Viewport, Viewport,sizeof(GLint) * 4);
 

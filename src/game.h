@@ -30,7 +30,6 @@ struct console
 {
 	bool Open;
 	uint32 MaxHeight;
-	glm::vec4 Color = glm::vec4(0.2, 0.2, 0.2, 0.2);
 };
 
 struct game_state
