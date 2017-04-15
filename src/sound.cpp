@@ -12,3 +12,15 @@ static void PlaySound(loaded_sound *LoadedSound)
         alGetSourcei(LoadedSound->Source, AL_SOURCE_STATE, &LoadedSound->SourceState);
     }
 }
+
+static void PlaySoundOnce(loaded_sound *LoadedSound)
+{
+    if (LoadedSound)
+    {
+        alGetSourcei(LoadedSound->Source, AL_SOURCE_STATE, &LoadedSound->SourceState);
+        if (LoadedSound->SourceState != AL_PLAYING)
+        {
+            PlaySound(LoadedSound);
+        }
+    }
+}
