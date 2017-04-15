@@ -9,32 +9,32 @@ extern "C" UPDATE(Update)
 
     if (IsKeyDown(GLFW_KEY_ENTER, GameState))
     {
-        PlaySound(&GameState->SoundManager.LoadedSounds[0]);
+        PlaySoundOnce(&GameState->SoundManager.LoadedSounds[0]);
     }
 
-    if(IsKeyDown(GLFW_KEY_2,GameState))
+    if (IsKeyDown(GLFW_KEY_2, GameState))
     {
-        PlaySound(&GameState->SoundManager.LoadedSounds[1]);
+        PlaySoundOnce(&GameState->SoundManager.LoadedSounds[1]);
     }
 
-    if(IsKeyDown(GLFW_KEY_1,GameState))
+    if (IsKeyDown(GLFW_KEY_1, GameState))
     {
-        PlaySound(&GameState->SoundManager.LoadedSounds[2]);  
+        PlaySoundOnce(&GameState->SoundManager.LoadedSounds[2]);
     }
 
-    if(IsKeyDown(GLFW_KEY_3,GameState))
+    if (IsKeyDown(GLFW_KEY_3, GameState))
     {
-        PlaySound(&GameState->SoundManager.LoadedSounds[3]);
+        PlaySoundOnce(&GameState->SoundManager.LoadedSounds[3]);
     }
 
-    if(IsKeyDown(GLFW_KEY_4,GameState))
+    if (IsKeyDown(GLFW_KEY_4, GameState))
     {
-        PlaySound(&GameState->SoundManager.LoadedSounds[4]);
+        PlaySoundOnce(&GameState->SoundManager.LoadedSounds[4]);
     }
 
-    if(IsKeyDown(GLFW_KEY_5,GameState))
+    if (IsKeyDown(GLFW_KEY_5, GameState))
     {
-        PlaySound(&GameState->SoundManager.LoadedSounds[5]);
+        PlaySoundOnce(&GameState->SoundManager.LoadedSounds[5]);
     }
 
     if (IsKeyDown(GLFW_KEY_TAB, GameState))
