@@ -10,7 +10,7 @@ extern "C" UPDATE(Update)
 
     if (GetKeyDown(GLFW_KEY_ENTER, GameState))
     {
-        PlaySoundOnce(&GameState->SoundManager.LoadedSounds[0]);
+        PlaySoundOnce(&GameState->SoundManager.LoadedSounds[THEME_MUSIC]);
     }
 
     if (GetKeyDown(GLFW_KEY_2, GameState))
