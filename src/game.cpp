@@ -13,29 +13,29 @@ extern "C" UPDATE(Update)
         PlaySoundOnce(&GameState->SoundManager.LoadedSounds[THEME_MUSIC]);
     }
 
-    if (GetKeyDown(GLFW_KEY_2, GameState))
-    {
-        PlaySoundOnce(&GameState->SoundManager.LoadedSounds[1]);
-    }
-
     if (GetKeyDown(GLFW_KEY_1, GameState))
     {
-        PlaySoundOnce(&GameState->SoundManager.LoadedSounds[2]);
+        PlaySoundOnce(&GameState->SoundManager.LoadedSounds[SOUND_02]);
+    }
+
+    if (GetKeyDown(GLFW_KEY_2, GameState))
+    {
+        PlaySoundOnce(&GameState->SoundManager.LoadedSounds[SOUND_03]);
     }
 
     if (GetKeyDown(GLFW_KEY_3, GameState))
     {
-        PlaySoundOnce(&GameState->SoundManager.LoadedSounds[3]);
+        PlaySoundOnce(&GameState->SoundManager.LoadedSounds[SOUND_04]);
     }
 
     if (GetKeyDown(GLFW_KEY_4, GameState))
     {
-        PlaySoundOnce(&GameState->SoundManager.LoadedSounds[4]);
+        PlaySoundOnce(&GameState->SoundManager.LoadedSounds[SOUND_05]);
     }
 
     if (GetKeyDown(GLFW_KEY_5, GameState))
     {
-        PlaySoundOnce(&GameState->SoundManager.LoadedSounds[5]);
+        PlaySoundOnce(&GameState->SoundManager.LoadedSounds[SOUND_06]);
     }
 
     if (GetKeyDown(GLFW_KEY_TAB, GameState))
