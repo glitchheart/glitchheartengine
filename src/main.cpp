@@ -1,10 +1,44 @@
 #include "main.h"
+
+#include "glm/gtc/matrix_transform.hpp"
+#include <glad/glad.h>
+#include <GLFW/glfw3.h>
+#include "al.h"
+#include "alc.h"
+#include "windows.h"
+#include <SOIL/SOIL.h>
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <chrono>
+#include <thread>
+#include <mingwthreads/mingw.thread.h>
+#include <vector>
+#include <stdio.h>
+#include <stdlib.h>
+
 #include "game.h"
+#include "filehandling.h"
+
 #include "rendering.cpp"
 #include "world.cpp"
 #include "entity.cpp"
 #include "keycontroller.cpp"
 #include <algorithm>
+
+struct game_code
+{
+    HMODULE GameCodeDLL;
+    FILETIME LastDllWriteTime;
+    update *Update;
+
+    bool32 IsValid;
+    const char *DllPath = "build/game.dll";
+    const char *TempDllPath = "build/game_temp.dll";
+};
 
 static void ErrorCallback(int Error, const char *Description)
 {
@@ -32,17 +66,6 @@ std::map<std::string, std::string> LoadConfig(std::string Filename)
     Input.close(); //Close the file stream
     return Ans;    //And return the result
 }
-
-struct game_code
-{
-    HMODULE GameCodeDLL;
-    FILETIME LastDllWriteTime;
-    update *Update;
-
-    bool32 IsValid;
-    const char *DllPath = "build/game.dll";
-    const char *TempDllPath = "build/game_temp.dll";
-};
 
 static game_code LoadGameCode()
 {
