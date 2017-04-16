@@ -32,20 +32,30 @@ cpp_files = src/main.cpp
 objects = $(cpp_files:.cpp=.o) src/glad.o
 OBJDIR = obj
 BUILDDIR = build
+GAMEDLL = $(BUILDDIR)/game.dll
+TEMPGAMEDLL = $(BUILDDIR)/game_temp.dll
 
 compile: clean
 	mkdir obj
 ifeq ($(wildcard $(BUILDDIR)),)
 	mkdir build
 endif
-	$(CXX) $(CXXFLAGS)  -c src/game.cpp -g -o obj/game.o
-	$(CXX) -shared -o build/game.dll obj/game.o  $(glad_obj) -Wl,--out-implib,libgame.a $(LDFLAGS)
+	$(CXX) $(CXXFLAGS) -shared -o build/game.dll  $(glad_obj) src/game.cpp -Wl,--out-implib,libgame.a $(LDFLAGS)
 	$(CXX) $(CXXFLAGS)  -o $(BUILDDIR)/$(TARGET)  $(glad_obj) src/main.cpp $(LIBRARIES) $(LDFLAGS) build/game.dll 
 
 
 clean :
 ifneq ($(wildcard $(OBJDIR)),)
 	rm -r $(OBJDIR) 
+endif
+ifneq ($(wildcard $(GAMEDLL)),)
+	rm $(GAMEDLL)
+endif
+ifneq ($(wildcard $(TEMPGAMEDLL)),)
+	rm $(TEMPGAMEDLL)
+endif
+ifneq ($(wildcard $(BUILDDIR)/$(TARGET)),)
+	rm $(BUILDDIR)/$(TARGET)
 endif
 
 all: $(TARGET)
