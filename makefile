@@ -20,7 +20,7 @@ al = ./libs/openal
 al_inc = $(al)/include
 al_lib = $(al)/libs/Win64/
 
-suppress = -Wno-unused-function
+suppress = -Wno-unused-function -Wno-char-subscripts
 
 CFLAGS = -Wall $(suppress) -ggdb -O3 $(INCLUDES)
 CXXFLAGS = -Wall $(suppress) -ggdb -O3 $(INCLUDES)
