@@ -43,11 +43,10 @@ FT_BEGIN_HEADER
 
   typedef struct  FT_RFork_Ref_
   {
-    FT_Short  res_id;
-    FT_Long   offset;
+    FT_UShort  res_id;
+    FT_Long    offset;
 
   } FT_RFork_Ref;
-
 
 #ifdef FT_CONFIG_OPTION_GUESSING_EMBEDDED_RFORK
   typedef FT_Error
