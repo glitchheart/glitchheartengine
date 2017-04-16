@@ -1,5 +1,5 @@
 
-static void PlaySound(loaded_sound *LoadedSound)
+void PlaySound(loaded_sound *LoadedSound)
 {
     if (LoadedSound)
     {
@@ -13,7 +13,7 @@ static void PlaySound(loaded_sound *LoadedSound)
     }
 }
 
-static void PlaySoundOnce(loaded_sound *LoadedSound)
+void PlaySoundOnce(loaded_sound *LoadedSound)
 {
     if (LoadedSound)
     {
@@ -25,7 +25,7 @@ static void PlaySoundOnce(loaded_sound *LoadedSound)
     }
 }
 
-static void PauseSound(loaded_sound *LoadedSound)
+void PauseSound(loaded_sound *LoadedSound)
 {
     if (LoadedSound)
     {
@@ -33,7 +33,7 @@ static void PauseSound(loaded_sound *LoadedSound)
     }
 }
 
-static void StopSound(loaded_sound *LoadedSound)
+void StopSound(loaded_sound *LoadedSound)
 {
     if (LoadedSound)
     {

@@ -3,7 +3,7 @@
 #include "sound.cpp"
 
 //CONSOLE STUFF TODO(Daniel) MOOOOOOOOOOOOOOOOOOVE
-static void ExecuteCommand(game_state *GameState)
+void ExecuteCommand(game_state *GameState)
 {
     if (strcmp(GameState->Console.Buffer, "exit") == 0)
     {

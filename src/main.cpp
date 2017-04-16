@@ -200,10 +200,6 @@ int main(void)
     GenerateTilemap(&GameState.TilemapData);
     GameState.TilemapData.TileAtlasTexture = LoadTexture("./assets/textures/tiles.png");
 
-    double LastFrame = glfwGetTime();
-    double CurrentFrame = 0.0;
-    double DeltaTime;
-
     printf("%s\n", glGetString(GL_VERSION));
 
     glfwGetFramebufferSize(GameState.RenderState.Window, &GameState.RenderState.WindowWidth, &GameState.RenderState.WindowHeight);
@@ -229,6 +225,10 @@ int main(void)
     {
         GameState.SoundManager = SoundManager;
     }
+
+    double LastFrame = glfwGetTime();
+    double CurrentFrame = 0.0;
+    double DeltaTime;
 
     while (!glfwWindowShouldClose(GameState.RenderState.Window))
     {
