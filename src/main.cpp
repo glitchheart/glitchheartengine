@@ -154,6 +154,7 @@ int main(void)
 
     glfwSetWindowUserPointer(GameState.RenderState.Window, &GameState);
     glfwSetKeyCallback(GameState.RenderState.Window, KeyCallback);
+    glfwSetCharCallback(GameState.RenderState.Window, CharacterCallback);
     glfwSetCursorPosCallback(GameState.RenderState.Window, CursorPositionCallback);
 
     glfwMakeContextCurrent(GameState.RenderState.Window);
@@ -208,7 +209,6 @@ int main(void)
 
     while (!glfwWindowShouldClose(GameState.RenderState.Window))
     {
-
         //calculate deltatime
         CurrentFrame = glfwGetTime();
         DeltaTime = CurrentFrame - LastFrame;
@@ -228,7 +228,7 @@ int main(void)
         Game.Update(DeltaTime, &GameState);
         Render(&GameState);
 
-        SetInvalidKeys(&GameState.InputController);
+        SetInvalidKeys(&GameState.InputController); //TODO(Daniel) Move this out of the main loop and into the key_controller.cpp somehow
         glfwPollEvents();
     }
 
@@ -239,6 +239,7 @@ int main(void)
         alDeleteSources(1, &GameState.SoundManager.LoadedSounds[LoadedSoundIndex].Source);
         alDeleteBuffers(1, &GameState.SoundManager.LoadedSounds[LoadedSoundIndex].Buffer);
     }
+
     GameState.SoundManager.Device = alcGetContextsDevice(GameState.SoundManager.Context);
     alcMakeContextCurrent(0);
     alcDestroyContext(GameState.SoundManager.Context);

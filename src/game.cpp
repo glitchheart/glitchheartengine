@@ -4,13 +4,31 @@
 #include "keycontroller.cpp"
 #include "sound.cpp"
 
+//CONSOLE STUFF TODO(Daniel) MOOOOOOOOOOOOOOOOOOVE
+static void ExecuteCommand(game_state* GameState)
+{
+	if(strcmp(GameState->Console.Buffer, "exit") == 0)
+	{
+		glfwDestroyWindow(GameState->RenderState.Window);
+		glfwTerminate();
+		exit(EXIT_SUCCESS);
+	}
+}
+
 extern "C" UPDATE(Update)
 {
     glfwGetFramebufferSize(GameState->RenderState.Window, &GameState->RenderState.WindowWidth, &GameState->RenderState.WindowHeight);
 
     if (GetKeyDown(GLFW_KEY_ENTER, GameState))
     {
-        PlaySoundOnce(&GameState->SoundManager.LoadedSounds[0]);
+        if(GameState->Console.Open)
+        {
+            ExecuteCommand(GameState);
+        }
+        else
+        {
+            PlaySoundOnce(&GameState->SoundManager.LoadedSounds[0]);
+        }
     }
 
     if (GetKeyDown(GLFW_KEY_2, GameState))

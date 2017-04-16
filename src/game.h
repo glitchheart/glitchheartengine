@@ -12,7 +12,6 @@
 #include <time.h> 
 #include <stdio.h>
 
-
 #include "error.h"
 #include "entity.h"
 #include "world.h"
@@ -32,10 +31,14 @@ struct camera
 	glm::mat4 ProjectionMatrix;
 };
 
+#define CONSOLE_BUFFER_SIZE 100
+
 struct console
 {
 	bool Open;
 	uint32 MaxHeight;
+	uint32 BufferIndex;
+	char Buffer[CONSOLE_BUFFER_SIZE];
 };
 
 struct game_state
