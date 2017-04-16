@@ -1,30 +1,29 @@
 CC = gcc
 CXX = g++
 
-INCLUDES = -I$(glfw_inc) -I$(glad_inc) -I$(al_inc) -I$(freetype_inc)
-LIBRARIES = -L$(glfw_lib) -L$(al_lib) ./libs/SOIL/libSoil.a ./libs/FreeType/lib/freetype.a -L./build
 
-glfw = ./libs/glfw
+LIBDIR = ./libs
+INCLUDES = -I$(glfw_inc) -I$(glad_inc) -I$(al_inc) -I$(freetype_inc)
+LIBRARIES = -L$(glfw_lib) -L$(al_lib) $(LIBDIR)/SOIL/libSoil.a $(LIBDIR)/FreeType/lib/freetype.a 
+
+glfw = $(LIBDIR)/glfw
 glfw_inc = $(glfw)/include
 glfw_lib = $(glfw)/lib-mingw-w64
 
-glad = ./libs
+glad = $(LIBDIR)
 glad_inc = $(glad)
 glad_obj = build/glad.o
 
-freetype_inc = ./libs/FreeType/include
+freetype_inc = $(LIBDIR)/FreeType/include
 
-CFLAGS = -Wall -ggdb -O3 $(INCLUDES)
-CXXFLAGS = -Wall -ggdb -O3 $(INCLUDES)
-LDFLAGS = $(LIBRARIES) -lglfw3 -lopengl32 -lglu32 -lgdi32
-al = ./libs/openal
+al = $(LIBDIR)/openal
 al_inc = $(al)/include
 al_lib = $(al)/libs/Win64/
 
 suppress = -Wno-unused-function -Wno-char-subscripts
 
-CFLAGS = -Wall $(suppress) -ggdb -O3 $(INCLUDES)
-CXXFLAGS = -Wall $(suppress) -ggdb -O3 $(INCLUDES)
+CFLAGS = -Wall $(suppress) -g -O3 $(INCLUDES)
+CXXFLAGS = -Wall $(suppress) -g -O3 $(INCLUDES)
 LDFLAGS = $(LIBRARIES) -lglfw3 -lopengl32 -lglu32 -lgdi32 -lopenal32 build/OpenAL32.dll
 
 TARGET = main.exe
@@ -40,9 +39,8 @@ compile: clean
 ifeq ($(wildcard $(BUILDDIR)),)
 	mkdir build
 endif
-	$(CXX) $(CXXFLAGS) -shared -o build/game.dll  src/game.cpp -Wl,--out-implib,libgame.a $(LDFLAGS)
-	$(CXX) $(CXXFLAGS)  -o $(BUILDDIR)/$(TARGET)  $(glad_obj) src/main.cpp $(LIBRARIES) $(LDFLAGS) build/game.dll 
-
+	$(CXX) $(CXXFLAGS) -shared -o build/game.dll src/game.cpp -Wl,--out-implib,libgame.a $(LDFLAGS)
+	$(CXX) $(CXXFLAGS)  -o $(BUILDDIR)/$(TARGET) $(glad_obj) src/main.cpp  $(LDFLAGS) 
 
 clean :
 ifneq ($(wildcard $(OBJDIR)),)
