@@ -4,7 +4,7 @@ set Libdir=.\libs
 set glfw_inc=%Libdir%\glfw\include
 set glfw_lib=%Libdir%\glfw\lib-vc2015\
 
-REM call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" x64
+call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" x64
 set INCLUDE=%INCLUDE%
 set WERROR=
 
@@ -18,6 +18,6 @@ pushd build
 
 REM 64-bit build
 del *.pdb > NUL 2> NUL
-cl %CommonCompilerFlags% ..\src\game.cpp -Fmgame.map -LD /link -incremental:no -opt:ref -PDB:game%random%.pdb -EXPORT:Update %CommonLinkerFlags%
-cl %CommonCompilerFlags% ..\src\main.cpp -Fmmain.map /link %CommonLinkerFlags% game.lib 
+cl %CommonCompilerFlags% ..\src\game.cpp -Fmgame.map -LD /DLL /link -incremental:no -opt:ref -PDB:game%random%.pdb -EXPORT:Update %CommonLinkerFlags%
+cl %CommonCompilerFlags% ..\src\main.cpp -Fmmain.map /link %CommonLinkerFlags% 
 popd
