@@ -27,7 +27,7 @@ extern "C" UPDATE(Update)
         }
         else
         {
-            PlaySoundOnce(&GameState->SoundManager.LoadedSounds[0]);
+            PlaySoundOnce(&GameState->SoundManager.LoadedSounds[THEME_MUSIC]);
         }
     }
 
