@@ -40,8 +40,9 @@ ifeq ($(wildcard $(BUILDDIR)),)
 endif
 	$(CXX) $(CXXFLAGS)  -c src/game.cpp -g -o obj/game.o
 	$(CXX) -shared -o build/game.dll obj/game.o  $(glad_obj)	 -Wl,--out-implib,libgame.a $(LDFLAGS)
-	$(CXX) $(CXXFLAGS) $(INCLUDES) -c src/main.cpp -g -o obj/main.o
+	$(CXX) $(CXXFLAGS) -c src/main.cpp -g -o obj/main.o
 	$(CXX) -o $(BUILDDIR)/$(TARGET) obj/main.o  $(glad_obj)	 $(LIBRARIES) $(LDFLAGS) build/game.dll 
+
 
 clean :
 ifneq ($(wildcard $(OBJDIR)),)
