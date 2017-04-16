@@ -194,13 +194,14 @@ static void InitAudio(sound_manager *SoundManager)
     SoundManager->IsInitialized = SoundManager->Device && SoundManager->Context;
 }
 
-static void LoadSound(const char *filename, sound_manager *SoundManager, sound_info SoundInfo)
+static void LoadSound(const char *filename, sound_manager *SoundManager, sound_info SoundInfo, Sound_Effects SoundEffect)
 {
     loaded_sound LoadedSound = {};
     alGenSources((ALuint)1, &LoadedSound.Source);
     LoadWavFile(filename, &LoadedSound);
     alSourcei(LoadedSound.Source, AL_BUFFER, LoadedSound.Buffer);
-    LoadedSound.AssetIndex = SoundManager->LoadedSoundCount++;
+    SoundManager->LoadedSoundCount++;
+    LoadedSound.AssetIndex = SoundEffect;
     LoadedSound.SoundInfo = SoundInfo;
     SoundManager->LoadedSounds[LoadedSound.AssetIndex] = LoadedSound;
 }
@@ -216,12 +217,12 @@ static void LoadSounds(sound_manager *SoundManager)
     memcpy(DefaultSoundInfo.Velocity, Velocity, 3);
     DefaultSoundInfo.Loop = AL_FALSE;
 
-    LoadSound("./assets/audio/Deadliners Track 1.wav", SoundManager, DefaultSoundInfo);
-    LoadSound("./assets/audio/Countdown_1.wav", SoundManager, DefaultSoundInfo);
-    LoadSound("./assets/audio/Countdown_2.wav", SoundManager, DefaultSoundInfo);
-    LoadSound("./assets/audio/Countdown_3.wav", SoundManager, DefaultSoundInfo);
-    LoadSound("./assets/audio/Countdown_4.wav", SoundManager, DefaultSoundInfo);
-    LoadSound("./assets/audio/Countdown_5.wav", SoundManager, DefaultSoundInfo);
+    LoadSound("./assets/audio/Deadliners Track 1.wav", SoundManager, DefaultSoundInfo, THEME_MUSIC);
+    LoadSound("./assets/audio/Countdown_1.wav", SoundManager, DefaultSoundInfo, SOUND_02);
+    LoadSound("./assets/audio/Countdown_2.wav", SoundManager, DefaultSoundInfo, SOUND_03);
+    LoadSound("./assets/audio/Countdown_3.wav", SoundManager, DefaultSoundInfo, SOUND_04);
+    LoadSound("./assets/audio/Countdown_4.wav", SoundManager, DefaultSoundInfo, SOUND_05);
+    LoadSound("./assets/audio/Countdown_5.wav", SoundManager, DefaultSoundInfo, SOUND_06);
     // Add more sounds here if necessary
 }
 
