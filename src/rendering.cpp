@@ -127,8 +127,8 @@ static void InitializeFreeTypeFont(FT_Library Library, render_font* Font, shader
     //Find the atlas width and height
     FT_GlyphSlot G = Font->Face->glyph;
 
-    uint32 W = 0;
-    uint32 H = 0;
+    unsigned int W = 0;
+    unsigned int H = 0;
 
     for(int i = 32; i < 128; i++) 
     {
@@ -166,10 +166,8 @@ static void InitializeFreeTypeFont(FT_Library Library, render_font* Font, shader
     {
         if(FT_Load_Char(Font->Face, i, FT_LOAD_RENDER))
             continue;
-
+        
         glTexSubImage2D(GL_TEXTURE_2D, 0, X, 0, G->bitmap.width, G->bitmap.rows, GL_ALPHA, GL_UNSIGNED_BYTE, G->bitmap.buffer);
-
-        X += G->bitmap.width;
 
         Font->CharacterInfo[i].AX = G->advance.x >> 6;
         Font->CharacterInfo[i].AY = G->advance.y >> 6;
@@ -181,6 +179,8 @@ static void InitializeFreeTypeFont(FT_Library Library, render_font* Font, shader
         Font->CharacterInfo[i].BT = G->bitmap_top;
 
         Font->CharacterInfo[i].TX = (float)X / Font->AtlasWidth;
+
+        X += G->bitmap.width;
     }
 
     glGenVertexArrays(1, &Font->VAO);
@@ -420,6 +420,8 @@ static void SetMat4Uniform(GLuint ShaderHandle, const char *UniformName, glm::ma
 static void RenderText(render_state* RenderState, const render_font& Font, const char *Text, float X, float Y, float SX, float SY) 
 {
     auto Shader = RenderState->Shaders[Shader_StandardFont];
+    UseShader(&Shader);
+    SetVec4Attribute(Shader.Program, "color", Font.Color);
 
     if (RenderState->BoundTexture != Font.Texture) //never bind the same texture if it's already bound
     {
@@ -439,8 +441,8 @@ static void RenderText(render_state* RenderState, const render_font& Font, const
 
     for(const char *P = Text; *P; P++) 
     { 
-        float X2 =  X + Font.CharacterInfo[*P].BL * SX;
-        float Y2 = -Y - Font.CharacterInfo[*P].BT * SY;
+        float X2 =  X + Font.CharacterInfo[*P ].BL * SX;
+        float Y2 = -Y - Font.CharacterInfo[*P ].BT * SY;
         float W = Font.CharacterInfo[*P].BW * SX;
         float H = Font.CharacterInfo[*P].BH * SY;
 
@@ -452,39 +454,42 @@ static void RenderText(render_state* RenderState, const render_font& Font, const
         if(!W || !H)
             continue;
             
-        Coords[N++] = (point){X2,     -Y2    , Font.CharacterInfo[*P].TX, 0};
-        Coords[N++] = (point){X2 + W, -Y2    , Font.CharacterInfo[*P].TX + Font.CharacterInfo[*P].BW / Font.AtlasWidth, 0};
-        Coords[N++] = (point){X2,     -Y2 - H, Font.CharacterInfo[*P].TX, Font.CharacterInfo[*P].BH / Font.AtlasHeight}; //remember: each glyph occupies a different amount of vertical space
-        Coords[N++] = (point){X2 + W, -Y2    , Font.CharacterInfo[*P].TX + Font.CharacterInfo[*P].BW / Font.AtlasWidth,  0};
-        Coords[N++] = (point){X2,     -Y2 - H, Font.CharacterInfo[*P].TX, Font.CharacterInfo[*P].BH / Font.AtlasHeight};
-        Coords[N++] = (point){X2 + W, -Y2 - H, Font.CharacterInfo[*P].TX + Font.CharacterInfo[*P].BW / Font.AtlasWidth, Font.CharacterInfo[*P].BH / Font.AtlasHeight};
+        Coords[N++] = (point){ X2, -Y2, Font.CharacterInfo[*P].TX, 0 };
+        Coords[N++] = (point){ X2 + W, -Y2, Font.CharacterInfo[*P].TX + Font.CharacterInfo[*P].BW / Font.AtlasWidth, 0 };
+        Coords[N++] = (point){ X2, -Y2 - H, Font.CharacterInfo[*P].TX, Font.CharacterInfo[*P].BH / Font.AtlasHeight };
+        Coords[N++] = (point){ X2 + W, -Y2, Font.CharacterInfo[*P].TX + Font.CharacterInfo[*P].BW / Font.AtlasWidth,  0 };
+        Coords[N++] = (point){ X2, -Y2 - H, Font.CharacterInfo[*P].TX, Font.CharacterInfo[*P].BH / Font.AtlasHeight };
+        Coords[N++] = (point){ X2 + W, -Y2 - H, Font.CharacterInfo[*P].TX + Font.CharacterInfo[*P].BW / Font.AtlasWidth, Font.CharacterInfo[*P].BH / Font.AtlasHeight };
     }
 
     glBindVertexArray(Font.VAO);
     glBindBuffer(GL_ARRAY_BUFFER, Font.VBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof Coords, Coords, GL_DYNAMIC_DRAW);
 
-    UseShader(&Shader);
-    
     glDrawArrays(GL_TRIANGLES, 0, N);
 }
 
 static void RenderConsole(render_state* RenderState, console* Console, glm::mat4 ProjectionMatrix, glm::mat4 View)
 {
-    glBindVertexArray(RenderState->ConsoleVAO); //TODO(Daniel) Create a vertex array buffer + object for console
-    glBindBuffer(GL_ARRAY_BUFFER, RenderState->ConsoleQuadVBO);
-
-    glm::mat4 Model(1.0f);
-
-    Model = glm::translate(Model, glm::vec3(-1, 0.5, 0));
-    Model = glm::scale(Model, glm::vec3(2, 0.5, 1));
-
     auto Shader = RenderState->Shaders[Shader_Console];
 
     UseShader(&Shader);
-
+    glm::mat4 Model(1.0f);
+    Model = glm::translate(Model, glm::vec3(-1, 0.5, 0));
+    Model = glm::scale(Model, glm::vec3(2, 0.5, 1));
     SetMat4Uniform(Shader.Program, "M", Model);
+
+    glBindVertexArray(RenderState->ConsoleVAO); //TODO(Daniel) Create a vertex array buffer + object for console
+    glBindBuffer(GL_ARRAY_BUFFER, RenderState->ConsoleQuadVBO);
     glDrawArrays(GL_QUADS, 0, 4);
+
+    const GLFWvidmode *Mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
+
+    float SX = 2.0f / Mode->width;
+    float SY = 2.0f / Mode->height;
+
+    RenderText(RenderState, RenderState->InconsolataFont, ">", -1 + 8 * SX, 1.02 - 50 * SY, SX, SY);
+    RenderText(RenderState, RenderState->InconsolataFont, &Console->Buffer[0], -0.98 + 8 * SX, 1.02 - 50 * SY, SX, SY);
 }
 
 static void RenderEntity(render_state *RenderState, const entity &entity, glm::mat4 ProjectionMatrix, glm::mat4 View)
@@ -499,7 +504,6 @@ static void RenderEntity(render_state *RenderState, const entity &entity, glm::m
     Model = glm::translate(Model, glm::vec3(-1, -1, 0.0f)); 
     Model = glm::scale(Model, entity.Scale);
     glm::mat4 MVP = ProjectionMatrix * View * Model;
-   
     SetMat4Uniform(Shader.Program, "MVP", MVP);
 
     if (RenderState->BoundTexture != entity.TextureHandle) //never bind the same texture if it's already bound
@@ -553,6 +557,7 @@ static void RenderTilemap(render_state *RenderState, const tilemap_data &Tilemap
 
     glBindVertexArray(RenderState->TileVAO);
     glBindBuffer(GL_ARRAY_BUFFER, RenderState->SpriteQuadVBO);
+
     auto Shader = RenderState->TileShader;
     UseShader(&Shader);
 
@@ -583,10 +588,6 @@ static void Render(game_state* GameState)
     
     if(GameState->Console.Open)
         RenderConsole(&GameState->RenderState, &GameState->Console, GameState->Camera.ProjectionMatrix,  GameState->Camera.ViewMatrix);
-
-    const GLFWvidmode *Mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
-
-    RenderText(&GameState->RenderState, GameState->RenderState.InconsolataFont, "IFK", 0, 0, 0.01, 0.01);
 
     glfwSwapBuffers(GameState->RenderState.Window);
 }

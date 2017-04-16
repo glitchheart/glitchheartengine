@@ -10,6 +10,7 @@ glfw_lib = $(glfw)/lib-mingw-w64
 
 glad = ./libs
 glad_inc = $(glad)
+glad_obj = build/glad.o
 
 freetype_inc = ./libs/FreeType/include
 
@@ -20,7 +21,7 @@ al = ./libs/openal
 al_inc = $(al)/include
 al_lib = $(al)/libs/Win64/
 
-suppress = -Wno-unused-function
+suppress = -Wno-unused-function -Wno-char-subscripts
 
 CFLAGS = -Wall $(suppress) -ggdb -O3 $(INCLUDES)
 CXXFLAGS = -Wall $(suppress) -ggdb -O3 $(INCLUDES)
@@ -37,11 +38,10 @@ compile: clean
 ifeq ($(wildcard $(BUILDDIR)),)
 	mkdir build
 endif
-	$(CC) $(CXXFLAGS)  -c libs/glad/glad.c -o obj/glad.o	
 	$(CXX) $(CXXFLAGS)  -c src/game.cpp -g -o obj/game.o
-	$(CXX) -shared -o build/game.dll obj/game.o obj/glad.o -Wl,--out-implib,libgame.a $(LDFLAGS)
+	$(CXX) -shared -o build/game.dll obj/game.o  $(glad_obj)	 -Wl,--out-implib,libgame.a $(LDFLAGS)
 	$(CXX) $(CXXFLAGS) $(INCLUDES) -c src/main.cpp -g -o obj/main.o
-	$(CXX) -o $(BUILDDIR)/$(TARGET) obj/main.o obj/glad.o $(LIBRARIES) $(LDFLAGS) build/game.dll 
+	$(CXX) -o $(BUILDDIR)/$(TARGET) obj/main.o  $(glad_obj)	 $(LIBRARIES) $(LDFLAGS) build/game.dll 
 
 clean :
 ifneq ($(wildcard $(OBJDIR)),)
