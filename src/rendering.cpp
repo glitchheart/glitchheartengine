@@ -435,7 +435,7 @@ static void RenderText(render_state* RenderState, const render_font& Font, const
         GLfloat Y;
         GLfloat S;
         GLfloat T;
-    } Coords[6 * strlen(Text)];
+    } *Coords = (point*)malloc(6 * strlen(Text));
 
     int N = 0;
 
@@ -454,12 +454,12 @@ static void RenderText(render_state* RenderState, const render_font& Font, const
         if(!W || !H)
             continue;
             
-        Coords[N++] = (point){ X2, -Y2, Font.CharacterInfo[*P].TX, 0 };
-        Coords[N++] = (point){ X2 + W, -Y2, Font.CharacterInfo[*P].TX + Font.CharacterInfo[*P].BW / Font.AtlasWidth, 0 };
-        Coords[N++] = (point){ X2, -Y2 - H, Font.CharacterInfo[*P].TX, Font.CharacterInfo[*P].BH / Font.AtlasHeight };
-        Coords[N++] = (point){ X2 + W, -Y2, Font.CharacterInfo[*P].TX + Font.CharacterInfo[*P].BW / Font.AtlasWidth,  0 };
-        Coords[N++] = (point){ X2, -Y2 - H, Font.CharacterInfo[*P].TX, Font.CharacterInfo[*P].BH / Font.AtlasHeight };
-        Coords[N++] = (point){ X2 + W, -Y2 - H, Font.CharacterInfo[*P].TX + Font.CharacterInfo[*P].BW / Font.AtlasWidth, Font.CharacterInfo[*P].BH / Font.AtlasHeight };
+        Coords[N++] = { X2, -Y2, Font.CharacterInfo[*P].TX, 0 };
+        Coords[N++] = { X2 + W, -Y2, Font.CharacterInfo[*P].TX + Font.CharacterInfo[*P].BW / Font.AtlasWidth, 0 };
+        Coords[N++] = { X2, -Y2 - H, Font.CharacterInfo[*P].TX, Font.CharacterInfo[*P].BH / Font.AtlasHeight };
+        Coords[N++] = { X2 + W, -Y2, Font.CharacterInfo[*P].TX + Font.CharacterInfo[*P].BW / Font.AtlasWidth,  0 };
+        Coords[N++] = { X2, -Y2 - H, Font.CharacterInfo[*P].TX, Font.CharacterInfo[*P].BH / Font.AtlasHeight };
+        Coords[N++] = { X2 + W, -Y2 - H, Font.CharacterInfo[*P].TX + Font.CharacterInfo[*P].BW / Font.AtlasWidth, Font.CharacterInfo[*P].BH / Font.AtlasHeight };
     }
 
     glBindVertexArray(Font.VAO);

@@ -56,11 +56,11 @@ static void KeyCallback(GLFWwindow *Window, int Key, int Scancode, int Action, i
 
 void CharacterCallback(GLFWwindow *Window, unsigned int Codepoint)
 {
-    game_state *GameState = (game_state *)glfwGetWindowUserPointer(Window);
-    if (GameState->Console.Open)
-    {
-        GameState->Console.Buffer[GameState->Console.BufferIndex++] = (char)Codepoint;
-    }
+    // game_state *GameState = (game_state *)glfwGetWindowUserPointer(Window);
+    // if (GameState->Console.Open)
+    // {
+    //     GameState->Console.Buffer[GameState->Console.BufferIndex++] = (char)Codepoint;
+    // }
 }
 
 static bool GetKey(int Key, game_state *GameState)

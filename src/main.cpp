@@ -1,7 +1,7 @@
 #include "main.h"
 
-#include "glm/gtc/matrix_transform.hpp"
 #include <glad/glad.h>
+#include "glm/gtc/matrix_transform.hpp"
 #include <GLFW/glfw3.h>
 #include "al.h"
 #include "alc.h"
@@ -12,13 +12,15 @@
 #include <sstream>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <unistd.h>
 #include <chrono>
 #include <thread>
+#ifdef MINGW
 #include <mingwthreads/mingw.thread.h>
+#endif
 #include <vector>
 #include <stdio.h>
 #include <stdlib.h>
+#include <algorithm>
 
 #include "game.h"
 #include "filehandling.h"
@@ -27,7 +29,6 @@
 #include "world.cpp"
 #include "entity.cpp"
 #include "keycontroller.cpp"
-#include <algorithm>
 
 struct game_code
 {
