@@ -40,7 +40,7 @@ compile: clean
 ifeq ($(wildcard $(BUILDDIR)),)
 	mkdir build
 endif
-	$(CXX) $(CXXFLAGS) -shared -o build/game.dll  $(glad_obj) src/game.cpp -Wl,--out-implib,libgame.a $(LDFLAGS)
+	$(CXX) $(CXXFLAGS) -shared -o build/game.dll  src/game.cpp -Wl,--out-implib,libgame.a $(LDFLAGS)
 	$(CXX) $(CXXFLAGS)  -o $(BUILDDIR)/$(TARGET)  $(glad_obj) src/main.cpp $(LIBRARIES) $(LDFLAGS) build/game.dll 
 
 
