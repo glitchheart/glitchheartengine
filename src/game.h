@@ -22,32 +22,32 @@
 
 struct camera
 {
-	uint32 ViewportWidth;
-	uint32 ViewportHeight;
-	real32 Zoom = 1.0f; //NOTE(Daniel) 1.0 is normal zoom. The higher the number the closer you are zoomed in
-	glm::mat4 ViewMatrix;
-	glm::mat4 ProjectionMatrix;
+    uint32 ViewportWidth;
+    uint32 ViewportHeight;
+    real32 Zoom = 1.0f; //NOTE(Daniel) 1.0 is normal zoom. The higher the number the closer you are zoomed in
+    glm::mat4 ViewMatrix;
+    glm::mat4 ProjectionMatrix;
 };
 
 #define CONSOLE_BUFFER_SIZE 100
 
 struct console
 {
-	bool Open;
-	uint32 MaxHeight;
-	uint32 BufferIndex;
-	char Buffer[CONSOLE_BUFFER_SIZE];
+    bool Open;
+    uint32 MaxHeight;
+    uint32 BufferIndex;
+    char Buffer[CONSOLE_BUFFER_SIZE];
 };
 
 struct game_state
 {
-	render_state RenderState;
-	camera Camera;
-	console Console;
-	entity Player;
-	tilemap_data TilemapData;
-	input_controller InputController;
-	sound_manager SoundManager;
+    render_state RenderState;
+    camera Camera;
+    console Console;
+    entity Player;
+    tilemap_data TilemapData;
+    input_controller InputController;
+    sound_manager SoundManager;
 };
 
 #define UPDATE(name)void name(double DeltaTime, game_state* GameState) 

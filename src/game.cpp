@@ -28,6 +28,11 @@ void ExecuteCommand(game_state *GameState)
     {
         system("..\\build.bat");
     }
+
+    for(int i = 0; i <= GameState->Console.BufferIndex; i++)
+        GameState->Console.Buffer[i] = '\0';
+
+    GameState->Console.BufferIndex = 0;
 }
 
 extern "C" UPDATE(Update)
