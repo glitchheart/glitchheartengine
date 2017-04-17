@@ -62,20 +62,20 @@ extern "C" UPDATE(Update)
     //player movement
     if (GetKey(GLFW_KEY_A, GameState))
     {
-        GameState->Player.Position.x += -GameState->Player.player.WalkingSpeed * DeltaTime;
+        GameState->Player.Position.x += -GameState->Player.player.WalkingSpeed * (real32)DeltaTime;
     }   
     else if (GetKey(GLFW_KEY_D, GameState))
     {
-        GameState->Player.Position.x += GameState->Player.player.WalkingSpeed * DeltaTime;
+        GameState->Player.Position.x += GameState->Player.player.WalkingSpeed * (real32)DeltaTime;
     }
 
     if (GetKey(GLFW_KEY_W, GameState))
     {
-        GameState->Player.Position.y += -GameState->Player.player.WalkingSpeed * DeltaTime;
+        GameState->Player.Position.y += -GameState->Player.player.WalkingSpeed * (real32)DeltaTime;
     }
     else if (GetKey(GLFW_KEY_S, GameState))
     {
-        GameState->Player.Position.y += GameState->Player.player.WalkingSpeed * DeltaTime;
+        GameState->Player.Position.y += GameState->Player.player.WalkingSpeed * (real32)DeltaTime;
     }
 
     auto pos = glm::unProject(glm::vec3(GameState->InputController.MouseX, GameState->RenderState.Viewport[3] - GameState->InputController.MouseY, 0), GameState->Camera.ViewMatrix, GameState->Camera.ProjectionMatrix, glm::vec4(0, 0, GameState->RenderState.Viewport[2], GameState->RenderState.Viewport[3]));

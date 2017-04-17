@@ -24,7 +24,7 @@ struct camera
 {
 	uint32 ViewportWidth;
 	uint32 ViewportHeight;
-	real32 Zoom = 0.1f; //NOTE(Daniel) 1.0 is normal zoom. The higher the number the closer you are zoomed in
+	real32 Zoom = 1.0f; //NOTE(Daniel) 1.0 is normal zoom. The higher the number the closer you are zoomed in
 	glm::mat4 ViewMatrix;
 	glm::mat4 ProjectionMatrix;
 };
@@ -55,5 +55,6 @@ typedef UPDATE(update);
 UPDATE(UpdateStub)
 {
 }
+
 
 #endif

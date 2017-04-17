@@ -169,16 +169,16 @@ static void InitializeFreeTypeFont(FT_Library Library, render_font* Font, shader
         
         glTexSubImage2D(GL_TEXTURE_2D, 0, X, 0, G->bitmap.width, G->bitmap.rows, GL_ALPHA, GL_UNSIGNED_BYTE, G->bitmap.buffer);
         
-        Font->CharacterInfo[i].AX = G->advance.x >> 6;
-        Font->CharacterInfo[i].AY = G->advance.y >> 6;
+        Font->CharacterInfo[i].AX = (real32)(G->advance.x >> 6);
+        Font->CharacterInfo[i].AY = (real32)(G->advance.y >> 6);
         
-        Font->CharacterInfo[i].BW = G->bitmap.width;
-        Font->CharacterInfo[i].BH = G->bitmap.rows;
+        Font->CharacterInfo[i].BW = (real32)G->bitmap.width;
+        Font->CharacterInfo[i].BH = (real32)G->bitmap.rows;
         
-        Font->CharacterInfo[i].BL = G->bitmap_left;
-        Font->CharacterInfo[i].BT = G->bitmap_top;
+        Font->CharacterInfo[i].BL = (real32)G->bitmap_left;
+        Font->CharacterInfo[i].BT = (real32)G->bitmap_top;
         
-        Font->CharacterInfo[i].TX = (float)X / Font->AtlasWidth;
+        Font->CharacterInfo[i].TX = (real32)X / Font->AtlasWidth;
         
         X += G->bitmap.width;
     }
@@ -419,7 +419,7 @@ static void SetMat4Uniform(GLuint ShaderHandle, const char *UniformName, glm::ma
 }
 
 //rendering methods
-static void RenderText(render_state* RenderState, const render_font& Font, const char *Text, float X, float Y, float SX, float SY) 
+static void RenderText(render_state* RenderState, const render_font& Font, const char *Text, real32 X, real32 Y, real32 SX, real32 SY) 
 {
     auto Shader = RenderState->Shaders[Shader_StandardFont];
     UseShader(&Shader);
@@ -488,11 +488,11 @@ static void RenderConsole(render_state* RenderState, console* Console, glm::mat4
     
     const GLFWvidmode *Mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
     
-    float SX = 2.0f / Mode->width;
-    float SY = 2.0f / Mode->height;
+    real32 SX = 2.0f / Mode->width;
+    real32 SY = 2.0f / Mode->height;
     
-    RenderText(RenderState, RenderState->InconsolataFont, ">", -1 + 8 * SX, 1.02 - 50 * SY, SX, SY);
-    RenderText(RenderState, RenderState->InconsolataFont, &Console->Buffer[0], -0.98 + 8 * SX, 1.02 - 50 * SY, SX, SY);
+    RenderText(RenderState, RenderState->InconsolataFont, ">", -1 + 8 * SX, 1.02f - 50 * SY, SX, SY);
+    RenderText(RenderState, RenderState->InconsolataFont, &Console->Buffer[0], -0.98f + 8 * SX, 1.02f - 50 * SY, SX, SY);
 }
 
 static void RenderEntity(render_state *RenderState, const entity &entity, glm::mat4 ProjectionMatrix, glm::mat4 View)
