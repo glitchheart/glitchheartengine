@@ -75,7 +75,7 @@ static game_code LoadGameCode()
 
     CopyFile(Result.DllPath, Result.TempDllPath, false);
     Result.Update = UpdateStub;
-    Result.GameCodeDLL = LoadLibraryA(Result.DllPath);
+    Result.GameCodeDLL = LoadLibraryA(Result.TempDllPath);
 
     Result.LastDllWriteTime = GetLastWriteTime(Result.DllPath);
 
