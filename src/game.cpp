@@ -24,6 +24,10 @@ void ExecuteCommand(game_state *GameState)
         glfwTerminate();
         exit(EXIT_SUCCESS);
     }
+    else if(strcmp(GameState->Console.Buffer, "build") == 0)
+    {
+        system("..\\build.bat");
+    }
 }
 
 extern "C" UPDATE(Update)
