@@ -37,7 +37,7 @@ struct asset_manager
     time_t FragmentShaderTimes[Shader_Count];
     
     //textures
-    const char* TilesetTexturePath = "'./assets/textures/tiles.png";
+    const char* TilesetTexturePath = "'../assets/textures/tiles.png";
     uint32 DirtyTileset;
     time_t TilesetTime;
     

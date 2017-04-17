@@ -16,10 +16,10 @@ enum Shader_Type
 
 const char* ShaderPaths[Shader_Count] =
 {
-    "./assets/shaders/textureshader",
-    "./assets/shaders/tileshader",
-    "./assets/shaders/consoleshader",
-    "./assets/shaders/standardfontshader"
+    "../assets/shaders/textureshader",
+    "../assets/shaders/tileshader",
+    "../assets/shaders/consoleshader",
+    "../assets/shaders/standardfontshader"
 };
 
 struct shader
