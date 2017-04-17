@@ -4,7 +4,6 @@ set Libdir=.\libs
 set glfw_inc=%Libdir%\glfw\include
 set glfw_lib=%Libdir%\glfw\lib-vc2015\
 
-REM call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" x64
 set INCLUDE=%INCLUDE%
 set WERROR=
 
