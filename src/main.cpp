@@ -6,7 +6,8 @@
 #include "al.h"
 #include "alc.h"
 #include "windows.h"
-#include <SOIL/SOIL.h>
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb/stb_image.h>
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -27,7 +28,7 @@
 
 #include "rendering.cpp"
 #include "world.cpp"
-#include "entity.cpp"
+#include "entity.h"
 #include "keycontroller.cpp"
 
 struct game_code
@@ -140,8 +141,8 @@ int main(void)
 
     Title = Map["title"];
     Version = Map["version"];
-    ScreenWidth = std::stoi(Map["screen_width"]);
-    ScreenHeight = std::stoi(Map["screen_height"]);
+    ScreenWidth = 1080; //std::stoi(Map["screen_width"]);
+    ScreenHeight = 720; //std::stoi(Map["screen_height"]);
     Fullscreen = strcmp("true", Map["fullscreen"].c_str()) == 0;
 
     glfwSetErrorCallback(ErrorCallback);

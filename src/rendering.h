@@ -10,7 +10,7 @@ enum Shader_Type
     Shader_Tile,
     Shader_Console,
     Shader_StandardFont,
-
+    
     Shader_Count
 };
 
@@ -39,7 +39,7 @@ struct render_font
     uint32 AtlasWidth;
     uint32 AtlasHeight;
     glm::vec4 Color = glm::vec4(1, 1, 1, 1);
-
+    
     struct character_info 
     {
         float AX; // advance.x
@@ -61,35 +61,35 @@ struct render_state
     int WindowWidth;
     int WindowHeight;
     GLint Viewport[4];
-
+    
     size_t SpriteQuadVerticesSize = 16 * sizeof(GLfloat);
     size_t TileQuadVerticesSize = 8 * sizeof(GLfloat);
     GLuint BoundVertexBuffer;
     GLuint BoundTexture;
     //sprites
     GLfloat SpriteQuadVertices[16] =
-	{ //pos        //texcoords
-	    0.0f, 1.0f, 0.0625f, 0.0625f,
-	    1.0f, 1.0f, 0.9375f, 0.0625f,
-	    1.0f, 0.0f, 0.9375f, 0.9375f,
-	    0.0f, 0.0f, 0.0625f, 0.9375f};
+    { //pos        //texcoords
+        0.0f, 1.0f, 0.0625f, 0.0625f,
+        1.0f, 1.0f, 0.9375f, 0.0625f,
+        1.0f, 0.0f, 0.9375f, 0.9375f,
+        0.0f, 0.0f, 0.0625f, 0.9375f};
     GLuint SpriteVAO;
     GLuint SpriteQuadVBO;
-
+    
     //tiles
     GLfloat TileQuadVertices[8] =
-	{
-	    0.0f, 1.0f,
-	    1.0f, 1.0f,
-	    1.0f, 0.0f,
-	    0.0f, 0.0f };
-
+    {
+        0.0f, 1.0f,
+        1.0f, 1.0f,
+        1.0f, 0.0f,
+        0.0f, 0.0f };
+    
     GLuint TileVAO;
     GLuint TileQuadVBO;
-
+    
     GLuint ConsoleVAO;
     GLuint ConsoleQuadVBO;
-
+    
     union 
     {
         shader Shaders[Shader_Count];
@@ -101,7 +101,7 @@ struct render_state
             shader StandardFontShader;
         };
     };
-
+    
     //freetype
     FT_Library FTLibrary;
     render_font InconsolataFont;

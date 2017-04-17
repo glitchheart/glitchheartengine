@@ -5,7 +5,6 @@
 #include "glm/gtc/matrix_transform.hpp"
 #include <glm/gtc/noise.hpp>
 #include <GLFW/glfw3.h>
-#include <SOIL/SOIL.h>
 #include "al.h"
 #include "alc.h"
 #include <time.h> 
@@ -25,7 +24,7 @@ struct camera
 {
 	uint32 ViewportWidth;
 	uint32 ViewportHeight;
-	real32 Zoom = 1.0f; //NOTE(Daniel) 1.0 is normal zoom. The higher the number the closer you are zoomed in
+	real32 Zoom = 0.1f; //NOTE(Daniel) 1.0 is normal zoom. The higher the number the closer you are zoomed in
 	glm::mat4 ViewMatrix;
 	glm::mat4 ProjectionMatrix;
 };
