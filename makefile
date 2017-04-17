@@ -1,7 +1,6 @@
 CC = gcc
 CXX = g++
 
-
 LIBDIR = ./libs
 INCLUDES = -I$(glfw_inc) -I$(glad_inc) -I$(al_inc) -I$(freetype_inc)
 LIBRARIES = -L$(glfw_lib) -L$(al_lib) $(LIBDIR)/SOIL/libSoil.a $(LIBDIR)/FreeType/lib/freetype.a 
