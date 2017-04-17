@@ -8,8 +8,10 @@ REM call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" 
 set INCLUDE=%INCLUDE%
 set WERROR=
 
-set CommonCompilerFlags=-MT -nologo -Gm- -GR- -EHa- -Od -Oi %WERROR% -W4  -wd4201 -wd4100 -wd4189 -wd4530 -wd4577 -wd4996 -FC -Z7 /I..\libs /I..\libs\glfw\include /I..\libs\openal\include /I..\libs\FreeType\include /I..\libs\SOIL 
-set CommonLinkerFlags= /NODEFAULTLIB:"MSVCRTD" /ignore:4217 /ignore:4049 /ignore:4099 -incremental:no -opt:ref /LIBPATH:..\libs user32.lib gdi32.lib winmm.lib opengl32.lib glu32.lib ..\libs\openal\libs\Win64\OpenAL32.lib ..\libs\glfw\lib-vc2015\glfw3dll.lib glad.obj ..\libs\SOIL\SOIL.lib ..\libs\FreeType\objs\freetype.a
+REM OLD set CommonCompilerFlags=-MT -nologo -Gm- -GR- -EHa- -Od -Oi %WERROR% -W4  -wd4201 -wd4100 -wd4189 -wd4530 -wd4577 -wd4996 -FC -Z7 /I..\libs /I..\libs\glfw\include /I..\libs\openal\include /I..\libs\freetype\include
+
+set CommonCompilerFlags=-Od -MTd -nologo -fp:fast -fp:except- -Gm- -GR- -EHa- -Zo -Oi -W4 %WERROR% -W4  -wd4201 -wd4100 -wd4189 -wd4530 -wd4577 -wd4996 -FC -Z7 /I..\libs /I..\libs\glfw\include /I..\libs\openal\include /I..\libs\freetype\include
+set CommonLinkerFlags=  /NODEFAULTLIB:"MSVCRTD" /ignore:4217 /ignore:4049 /ignore:4099 -incremental:no -opt:ref /LIBPATH:..\libs kernel32.lib user32.lib gdi32.lib winmm.lib opengl32.lib glu32.lib ..\libs\openal\libs\Win64\OpenAL32.lib ..\libs\glfw\glfw3.lib glad.obj ..\libs\freetype\lib\freetype271d.lib
 
 REM TODO - can we just build both with one exe?
 

@@ -3,19 +3,19 @@
 #include "sound.cpp"
 
 //CONSOLE STUFF TODO(Daniel) MOOOOOOOOOOOOOOOOOOVE
-// void ExecuteCommand(game_state *GameState)
-// {
-//     if (strcmp(GameState->Console.Buffer, "exit") == 0)
-//     {
-//         glfwDestroyWindow(GameState->RenderState.Window);
-//         glfwTerminate();
-//         exit(EXIT_SUCCESS);
-//     }
-// }
+void ExecuteCommand(game_state *GameState)
+{
+    if (strcmp(GameState->Console.Buffer, "exit") == 0)
+    {
+        glfwDestroyWindow(GameState->RenderState.Window);
+        glfwTerminate();
+        exit(EXIT_SUCCESS);
+    }
+}
 
 extern "C" UPDATE(Update)
 {
-//    glfwGetFramebufferSize(GameState->RenderState.Window, &GameState->RenderState.WindowWidth, &GameState->RenderState.WindowHeight);
+   glfwGetFramebufferSize(GameState->RenderState.Window, &GameState->RenderState.WindowWidth, &GameState->RenderState.WindowHeight);
 
     if (GetKeyDown(GLFW_KEY_ENTER, GameState))
     {
@@ -63,7 +63,7 @@ extern "C" UPDATE(Update)
     if (GetKey(GLFW_KEY_A, GameState))
     {
         GameState->Player.Position.x += -GameState->Player.player.WalkingSpeed * DeltaTime;
-    }
+    }   
     else if (GetKey(GLFW_KEY_D, GameState))
     {
         GameState->Player.Position.x += GameState->Player.player.WalkingSpeed * DeltaTime;
@@ -71,11 +71,11 @@ extern "C" UPDATE(Update)
 
     if (GetKey(GLFW_KEY_W, GameState))
     {
-        GameState->Player.Position.y += GameState->Player.player.WalkingSpeed * DeltaTime;
+        GameState->Player.Position.y += -GameState->Player.player.WalkingSpeed * DeltaTime;
     }
     else if (GetKey(GLFW_KEY_S, GameState))
     {
-        GameState->Player.Position.y += -GameState->Player.player.WalkingSpeed * DeltaTime;
+        GameState->Player.Position.y += GameState->Player.player.WalkingSpeed * DeltaTime;
     }
 
     auto pos = glm::unProject(glm::vec3(GameState->InputController.MouseX, GameState->RenderState.Viewport[3] - GameState->InputController.MouseY, 0), GameState->Camera.ViewMatrix, GameState->Camera.ProjectionMatrix, glm::vec4(0, 0, GameState->RenderState.Viewport[2], GameState->RenderState.Viewport[3]));

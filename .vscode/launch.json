@@ -3,69 +3,21 @@
 	"configurations": [
 
 		{
-			"name": "C++ Launch",
-			"type": "cppdbg",
+			"name": "C++ Launch (Windows)",
+			"type": "cppvsdbg",
 			"request": "launch",
 			"program": "${workspaceRoot}/build/main.exe",
 			"args": [],
 			"stopAtEntry": false,
 			"cwd": "${workspaceRoot}",
 			"environment": [],
-			"externalConsole": true,
-			"linux": {
-				"MIMode": "gdb",
-				"setupCommands": [
-					{
-						"description": "Enable pretty-printing for gdb",
-						"text": "-enable-pretty-printing",
-						"ignoreFailures": false
-					}
-				]
-			},
-			"osx": {
-				"MIMode": "lldb"
-			},
-			"windows": {
-				"MIMode": "gdb",
-				"miDebuggerPath" : "C:/MinGW/bin/gdb.exe",
-				"setupCommands": [
-					{
-						"description": "Enable pretty-printing for gdb",
-						"text": "-enable-pretty-printing",
-						"ignoreFailures": false
-					}
-				]
-			}
+			"externalConsole": false
 		},
 		{
-			"name": "C++ Attach",
-			"type": "cppdbg",
+			"name": "C++ Attach (Windows)",
+			"type": "cppvsdbg",
 			"request": "attach",
-			"program": "enter program name, for example ${workspaceRoot}/a.out",
-			"processId": "${command:pickProcess}",
-			"linux": {
-				"MIMode": "gdb",
-				"setupCommands": [
-					{
-						"description": "Enable pretty-printing for gdb",
-						"text": "-enable-pretty-printing",
-						"ignoreFailures": false
-					}
-				]
-			},
-			"osx": {
-				"MIMode": "lldb"
-			},
-			"windows": {
-				"MIMode": "gdb",
-				"setupCommands": [
-					{
-						"description": "Enable pretty-printing for gdb",
-						"text": "-enable-pretty-printing",
-						"ignoreFailures": true
-					}
-				]
-			}
+			"processId": "${command:pickProcess}"
 		}
 	]
 }
