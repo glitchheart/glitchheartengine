@@ -138,7 +138,7 @@ int main(void)
     int ScreenHeight;
     bool Fullscreen;
 
-    auto Map = LoadConfig("./assets/.config");
+    auto Map = LoadConfig("../assets/.config");
 
     Title = Map["title"];
     Version = Map["version"];
@@ -196,12 +196,12 @@ int main(void)
     GameState.Player.Type = Entity_Player;
     GameState.Player.player.WalkingSpeed = 10.0f;
     GameState.Player.ShaderIndex = Shader_Texture;
-    GameState.Player.TextureHandle = LoadTexture("./assets/textures/player.png");
+    GameState.Player.TextureHandle = LoadTexture("../assets/textures/player.png");
     GameState.Player.Rotation = glm::vec3(0, 0, 0.3f);
     GameState.Player.Scale = glm::vec3(2, 2, 0);
 
     GenerateTilemap(&GameState.TilemapData);
-    GameState.TilemapData.TileAtlasTexture = LoadTexture("./assets/textures/tiles.png");
+    GameState.TilemapData.TileAtlasTexture = LoadTexture("../assets/textures/tiles.png");
 
     printf("%s\n", glGetString(GL_VERSION));
 

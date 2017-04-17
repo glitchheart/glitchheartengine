@@ -117,7 +117,7 @@ static void UseShader(shader *Shader)
 
 static void InitializeFreeTypeFont(FT_Library Library, render_font* Font, shader* Shader)
 {
-    if(FT_New_Face(Library, "./assets/fonts/inconsolata/Inconsolata-Regular.ttf", 0, &Font->Face)) 
+    if(FT_New_Face(Library, "../assets/fonts/inconsolata/Inconsolata-Regular.ttf", 0, &Font->Face)) 
     {
         fprintf(stderr, "Could not open font\n");
     }
@@ -160,7 +160,7 @@ static void InitializeFreeTypeFont(FT_Library Library, render_font* Font, shader
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     
-    uint32 X = 0;
+    unsigned int X = 0;
     
     for(int i = 32; i < 128; i++) 
     {
@@ -209,7 +209,7 @@ static void RenderSetup(render_state *RenderState)
     glBufferData(GL_ARRAY_BUFFER, RenderState->SpriteQuadVerticesSize, RenderState->SpriteQuadVertices, GL_DYNAMIC_DRAW);
     
     RenderState->TextureShader.Type = Shader_Texture;
-    LoadShader("./assets/shaders/textureshader", &RenderState->TextureShader);
+    LoadShader(ShaderPaths[Shader_Texture], &RenderState->TextureShader);
     
     auto PositionLocation = glGetAttribLocation(RenderState->TextureShader.Program, "pos");
     auto TexcoordLocation = glGetAttribLocation(RenderState->TextureShader.Program, "texcoord");
@@ -228,7 +228,7 @@ static void RenderSetup(render_state *RenderState)
     glBufferData(GL_ARRAY_BUFFER, RenderState->SpriteQuadVerticesSize, RenderState->SpriteQuadVertices, GL_DYNAMIC_DRAW);
     
     RenderState->TileShader.Type = Shader_Tile;
-    LoadShader("./assets/shaders/tileshader", &RenderState->TileShader);
+    LoadShader(ShaderPaths[Shader_Tile], &RenderState->TileShader);
     
     auto PositionLocation2 = glGetAttribLocation(RenderState->TileShader.Program, "pos");
     auto TexcoordLocation2 = glGetAttribLocation(RenderState->TileShader.Program, "texcoord");
@@ -247,7 +247,7 @@ static void RenderSetup(render_state *RenderState)
     glBufferData(GL_ARRAY_BUFFER, RenderState->TileQuadVerticesSize, RenderState->TileQuadVertices, GL_DYNAMIC_DRAW);
     
     RenderState->ConsoleShader.Type = Shader_Console;
-    LoadShader("./assets/shaders/consoleshader", &RenderState->ConsoleShader);
+    LoadShader(ShaderPaths[Shader_Console], &RenderState->ConsoleShader);
     
     auto PositionLocation3 = glGetAttribLocation(RenderState->ConsoleShader.Program, "pos");
     glEnableVertexAttribArray(PositionLocation3);
@@ -257,7 +257,7 @@ static void RenderSetup(render_state *RenderState)
     
     //font
     RenderState->StandardFontShader.Type = Shader_StandardFont;
-    LoadShader("./assets/shaders/standardfontshader", &RenderState->StandardFontShader);
+    LoadShader(ShaderPaths[Shader_StandardFont], &RenderState->StandardFontShader);
     
     RenderState->InconsolataFont = {};
     InitializeFreeTypeFont(RenderState->FTLibrary, &RenderState->InconsolataFont, &RenderState->StandardFontShader);
@@ -361,8 +361,6 @@ static GLuint LoadTexture(const char *FilePath)
     int Width, Height;
     unsigned char* Image = stbi_load(FilePath, &Width, &Height, 0, STBI_rgb_alpha);
     
-    // unsigned char *Image = stb_load_image(FilePath, &Width, &Height, 0, SOIL_LOAD_RGBA);
-    
     if (!Image)
         return GL_FALSE;
     
@@ -417,6 +415,13 @@ static void SetMat4Uniform(GLuint ShaderHandle, const char *UniformName, glm::ma
 {
     glUniformMatrix4fv(glGetUniformLocation(ShaderHandle, UniformName), 1, GL_FALSE, &Value[0][0]);
 }
+ struct Point
+{
+    GLfloat X;
+    GLfloat Y;
+    GLfloat S;
+    GLfloat T;
+}; 
 
 //rendering methods
 static void RenderText(render_state* RenderState, const render_font& Font, const char *Text, real32 X, real32 Y, real32 SX, real32 SY) 
@@ -431,13 +436,7 @@ static void RenderText(render_state* RenderState, const render_font& Font, const
         RenderState->BoundTexture = Font.Texture;
     }
     
-    struct point
-    {
-        GLfloat X;
-        GLfloat Y;
-        GLfloat S;
-        GLfloat T;
-    } *Coords = (point*)malloc(6 * strlen(Text));
+    Point* Coords = new Point[6 * strlen(Text)]; //TODO change this back to the C way (malloc)
     
     int N = 0;
     
@@ -455,18 +454,24 @@ static void RenderText(render_state* RenderState, const render_font& Font, const
         /* Skip glyphs that have no pixels */
         if(!W || !H)
             continue;
-        
-        Coords[N++] = { X2, -Y2, Font.CharacterInfo[*P].TX, 0 };
-        Coords[N++] = { X2 + W, -Y2, Font.CharacterInfo[*P].TX + Font.CharacterInfo[*P].BW / Font.AtlasWidth, 0 };
-        Coords[N++] = { X2, -Y2 - H, Font.CharacterInfo[*P].TX, Font.CharacterInfo[*P].BH / Font.AtlasHeight };
-        Coords[N++] = { X2 + W, -Y2, Font.CharacterInfo[*P].TX + Font.CharacterInfo[*P].BW / Font.AtlasWidth,  0 };
-        Coords[N++] = { X2, -Y2 - H, Font.CharacterInfo[*P].TX, Font.CharacterInfo[*P].BH / Font.AtlasHeight };
-        Coords[N++] = { X2 + W, -Y2 - H, Font.CharacterInfo[*P].TX + Font.CharacterInfo[*P].BW / Font.AtlasWidth, Font.CharacterInfo[*P].BH / Font.AtlasHeight };
+        Point Point1 = { X2, -Y2, Font.CharacterInfo[*P].TX, 0 };
+        Point Point2 = { X2 + W, -Y2, Font.CharacterInfo[*P].TX + Font.CharacterInfo[*P].BW / Font.AtlasWidth, 0 };
+        Point Point3 = { X2, -Y2 - H, Font.CharacterInfo[*P].TX, Font.CharacterInfo[*P].BH / Font.AtlasHeight };
+        Point Point4 = { X2 + W, -Y2, Font.CharacterInfo[*P].TX + Font.CharacterInfo[*P].BW / Font.AtlasWidth,  0 };
+        Point Point5 = { X2, -Y2 - H, Font.CharacterInfo[*P].TX, Font.CharacterInfo[*P].BH / Font.AtlasHeight };
+        Point Point6 = { X2 + W, -Y2 - H, Font.CharacterInfo[*P].TX + Font.CharacterInfo[*P].BW / Font.AtlasWidth, Font.CharacterInfo[*P].BH / Font.AtlasHeight };
+
+        Coords[N++] = Point1; //{ X2, -Y2, Font.CharacterInfo[*P].TX, 0 };
+        Coords[N++] = Point2; //{ X2 + W, -Y2, Font.CharacterInfo[*P].TX + Font.CharacterInfo[*P].BW / Font.AtlasWidth, 0 };
+        Coords[N++] = Point3; //{ X2, -Y2 - H, Font.CharacterInfo[*P].TX, Font.CharacterInfo[*P].BH / Font.AtlasHeight };
+        Coords[N++] = Point4; //{ X2 + W, -Y2, Font.CharacterInfo[*P].TX + Font.CharacterInfo[*P].BW / Font.AtlasWidth,  0 };
+        Coords[N++] = Point5; //{ X2, -Y2 - H, Font.CharacterInfo[*P].TX, Font.CharacterInfo[*P].BH / Font.AtlasHeight };
+        Coords[N++] = Point6; //{ X2 + W, -Y2 - H, Font.CharacterInfo[*P].TX + Font.CharacterInfo[*P].BW / Font.AtlasWidth, Font.CharacterInfo[*P].BH / Font.AtlasHeight };
     }
     
     glBindVertexArray(Font.VAO);
     glBindBuffer(GL_ARRAY_BUFFER, Font.VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof Coords, Coords, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, 6 * strlen(Text) * sizeof(Point), Coords, GL_DYNAMIC_DRAW);
     
     glDrawArrays(GL_TRIANGLES, 0, N);
 }
@@ -591,6 +596,8 @@ static void Render(game_state* GameState)
     
     if(GameState->Console.Open)
         RenderConsole(&GameState->RenderState, &GameState->Console, GameState->Camera.ProjectionMatrix,  GameState->Camera.ViewMatrix);
+    
+    const GLFWvidmode *Mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
     
     glfwSwapBuffers(GameState->RenderState.Window);
 }
