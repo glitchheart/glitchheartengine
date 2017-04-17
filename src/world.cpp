@@ -63,7 +63,7 @@ static void __GenerateIsland(tile_chunk* Chunk, glm::vec2 Position, uint32 Width
 
 static void GenerateTilemap(tilemap_data *TilemapData)
 {
-	srand (time(NULL));
+	srand ((unsigned int)time(NULL));
 
 	for(int i = 0; i < TILEMAP_SIZE; i++)
 	{

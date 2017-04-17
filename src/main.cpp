@@ -38,8 +38,8 @@ struct game_code
     update *Update;
 
     bool32 IsValid;
-    const char *DllPath = "build/game.dll";
-    const char *TempDllPath = "build/game_temp.dll";
+    const char *DllPath = "game.dll";
+    const char *TempDllPath = "game_temp.dll";
 };
 
 static void ErrorCallback(int Error, const char *Description)
@@ -87,6 +87,7 @@ static game_code LoadGameCode()
 
     if (!Result.IsValid)
     {
+        printf("Invalid\n");
         Result.Update = UpdateStub;
     }
 
@@ -231,6 +232,10 @@ int main(void)
     double LastFrame = glfwGetTime();
     double CurrentFrame = 0.0;
     double DeltaTime;
+    GLint Viewport[4];
+    glGetIntegerv(GL_VIEWPORT, Viewport);
+
+    memcpy(GameState.RenderState.Viewport, Viewport, sizeof(GLint) * 4);
 
     while (!glfwWindowShouldClose(GameState.RenderState.Window))
     {
@@ -244,11 +249,6 @@ int main(void)
 
         ReloadAssets(&AssetManager, &GameState);
         ReloadDlls(&Game);
-
-        GLint Viewport[4];
-        glGetIntegerv(GL_VIEWPORT, Viewport);
-
-        memcpy(GameState.RenderState.Viewport, Viewport, sizeof(GLint) * 4);
 
         Game.Update(DeltaTime, &GameState);
         Render(&GameState);

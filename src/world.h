@@ -25,7 +25,7 @@ struct tile_data
 
 #define TILEMAP_SIZE 1
 
-#define CHUNK_SIZE 200
+#define CHUNK_SIZE 50
 
 struct tile_chunk
 {
