@@ -31,15 +31,16 @@ struct camera
 };
 
 #define CONSOLE_BUFFER_SIZE 100
-#define HISTORY_BUFFER_SIZE 500
+#define HISTORY_BUFFER_LINES 7
 
 struct console
 {
     bool Open;
     uint32 MaxHeight;
     uint32 BufferIndex;
+	uint32 HistoryBufferIndex;
     char Buffer[CONSOLE_BUFFER_SIZE];
-    char HistoryBuffer[HISTORY_BUFFER_SIZE];
+    char HistoryBuffer[HISTORY_BUFFER_LINES][CONSOLE_BUFFER_SIZE];
 };
 
 struct game_state
