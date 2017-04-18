@@ -496,8 +496,10 @@ static void RenderConsole(render_state* RenderState, console* Console, glm::mat4
     real32 SX = 2.0f / Mode->width;
     real32 SY = 2.0f / Mode->height;
     
-    RenderText(RenderState, RenderState->InconsolataFont, ">", -1 + 8 * SX, 1.02f - 50 * SY, SX, SY);
-    RenderText(RenderState, RenderState->InconsolataFont, &Console->Buffer[0], -0.98f + 8 * SX, 1.02f - 50 * SY, SX, SY);
+    RenderText(RenderState, RenderState->InconsolataFont, ">", -1 + 8 * SX, 0.61f - 50 * SY, SX, SY);
+    RenderText(RenderState, RenderState->InconsolataFont, &Console->Buffer[0], -0.98f + 8 * SX, 0.61f - 50 * SY, SX, SY);
+    
+    RenderText(RenderState, RenderState->InconsolataFont, &Console->HistoryBuffer[0], -1 + 8 * SX, 0.66f - 50 * SY, SX, SY);
 }
 
 static void RenderEntity(render_state *RenderState, const entity &entity, glm::mat4 ProjectionMatrix, glm::mat4 View)
