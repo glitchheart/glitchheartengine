@@ -37,16 +37,12 @@ void ExecuteCommand(game_state *GameState)
     }
 
     //NOTE(Daniel) Copy the command into the history buffer
-	
 	for(int i = HISTORY_BUFFER_LINES - 1; i > 0; i--)
 	{
 		sprintf(GameState->Console.HistoryBuffer[i], GameState->Console.HistoryBuffer[i - 1]);
 	}
 	
 	sprintf(GameState->Console.HistoryBuffer[0], Result);
-	
-	if(GameState->Console.HistoryBufferIndex == HISTORY_BUFFER_LINES)
-		GameState->Console.HistoryBufferIndex = 0;
 	
     for(int i = 0; i <= GameState->Console.BufferIndex; i++)
         GameState->Console.Buffer[i] = '\0';
