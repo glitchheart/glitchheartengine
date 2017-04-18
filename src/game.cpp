@@ -5,11 +5,13 @@
 //CONSOLE STUFF TODO(Daniel) MOOOOOOOOOOOOOOOOOOVE
 void ExecuteCommand(game_state *GameState)
 {
+    char* Result = &GameState->Console.Buffer[0];
+
     if (strcmp(GameState->Console.Buffer, "exit") == 0)
     {
         for (uint32 LoadedSoundIndex = 0;
-         LoadedSoundIndex < GameState->SoundManager.LoadedSoundCount;
-         LoadedSoundIndex++)
+             LoadedSoundIndex < GameState->SoundManager.LoadedSoundCount;
+             LoadedSoundIndex++)
         {
             alDeleteSources(1, &GameState->SoundManager.LoadedSounds[LoadedSoundIndex].Source);
             alDeleteBuffers(1, &GameState->SoundManager.LoadedSounds[LoadedSoundIndex].Buffer);
@@ -28,7 +30,14 @@ void ExecuteCommand(game_state *GameState)
     {
         system("..\\build.bat");
     }
+    else
+    {
+        Result = CombineStrings(Result, ": Command not found");
+    }
+    
+    sprintf(GameState->Console.HistoryBuffer, CombineStrings(&GameState->Console.HistoryBuffer[0], Result));
 
+    //NOTE(Daniel) Copy the command into the history buffer
     for(int i = 0; i <= GameState->Console.BufferIndex; i++)
         GameState->Console.Buffer[i] = '\0';
 
@@ -37,7 +46,7 @@ void ExecuteCommand(game_state *GameState)
 
 extern "C" UPDATE(Update)
 {
-   glfwGetFramebufferSize(GameState->RenderState.Window, &GameState->RenderState.WindowWidth, &GameState->RenderState.WindowHeight);
+    glfwGetFramebufferSize(GameState->RenderState.Window, &GameState->RenderState.WindowWidth, &GameState->RenderState.WindowHeight);
 
     if (GetKeyDown(GLFW_KEY_TAB, GameState))
     {
@@ -93,7 +102,7 @@ extern "C" UPDATE(Update)
         if (GetKey(GLFW_KEY_A, GameState))
         {
             GameState->Player.Position.x += -GameState->Player.player.WalkingSpeed * (real32)DeltaTime;
-        }   
+        }
         else if (GetKey(GLFW_KEY_D, GameState))
         {
             GameState->Player.Position.x += GameState->Player.player.WalkingSpeed * (real32)DeltaTime;

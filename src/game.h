@@ -10,6 +10,7 @@
 #include <time.h> 
 #include <stdio.h>
 
+#include "util.h"
 #include "error.h"
 #include "entity.h"
 #include "world.h"
@@ -30,6 +31,7 @@ struct camera
 };
 
 #define CONSOLE_BUFFER_SIZE 100
+#define HISTORY_BUFFER_SIZE 500
 
 struct console
 {
@@ -37,6 +39,7 @@ struct console
     uint32 MaxHeight;
     uint32 BufferIndex;
     char Buffer[CONSOLE_BUFFER_SIZE];
+    char HistoryBuffer[HISTORY_BUFFER_SIZE];
 };
 
 struct game_state

@@ -1,3 +1,6 @@
+#ifndef FILEHANDLING_H
+#define FILEHANDLING_H
+
 #include <Windows.h>
 
 static GLchar* LoadShaderFromFile(const std::string Path)
@@ -76,14 +79,6 @@ static void CheckDirty(const char* FilePath, time_t LastTime, uint32* DirtyId, t
     *Time = time;
 }
 
-static char* CombineStrings(const char * str1, const char* str2)
-{
-    char * str3 = (char *) malloc(1 + strlen(str1) + strlen(str2));
-    strcpy(str3, str1);
-    strcat(str3, str2);
-    return str3;
-}
-
 static void StartupFileTimeChecks(asset_manager* AssetManager)
 {
     struct stat sb;
@@ -121,3 +116,5 @@ static void ListenToFileChanges(asset_manager* AssetManager)
         std::this_thread::sleep_for(0.5s);
     }
 }
+
+#endif
