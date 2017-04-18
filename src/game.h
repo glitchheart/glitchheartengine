@@ -38,7 +38,6 @@ struct console
     bool Open;
     uint32 MaxHeight;
     uint32 BufferIndex;
-	uint32 HistoryBufferIndex;
     char Buffer[CONSOLE_BUFFER_SIZE];
     char HistoryBuffer[HISTORY_BUFFER_LINES][CONSOLE_BUFFER_SIZE];
 };
