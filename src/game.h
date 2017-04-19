@@ -16,6 +16,7 @@
 #include "world.h"
 #include "keycontroller.h"
 #include "rendering.h"
+#include "platform_sound.h"
 #include "sound.h"
 
 #define STB_PERLIN_IMPLEMENTATION
