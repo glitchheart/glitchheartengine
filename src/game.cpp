@@ -15,7 +15,7 @@ void ExecuteCommand(game_state *GameState)
             //TODO(niels): Need to find a way to call this from here
             //             This should probably be in platform code anyway?
             //             Doesn't really make sense to have it in game code
-            CleanupSound(GameState);
+            //CleanupSound(GameState);
             glfwDestroyWindow(GameState->RenderState.Window);
             glfwTerminate();
             exit(EXIT_SUCCESS);
