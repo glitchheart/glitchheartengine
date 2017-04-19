@@ -5,7 +5,8 @@
 //CONSOLE STUFF TODO(Daniel) MOOOOOOOOOOOOOOOOOOVE
 void ExecuteCommand(game_state *GameState)
 {
-	if(strcmp(" ",  GameState->Console.Buffer) != 0) //NOTE(Daniel) if the command isn't an empty string
+	if(strcmp(" ",  GameState->Console.Buffer) != 0
+	   && strcmp("",  GameState->Console.Buffer) != 0) //NOTE(Daniel) if the command isn't an empty string
 	{
 		char* Result = &GameState->Console.Buffer[0];
     
@@ -59,6 +60,38 @@ void ExecuteCommand(game_state *GameState)
 
 			Result = CombineStrings("Zoom set to ", StrZoomAmount);
 		}
+		else if(strstr(GameState->Console.Buffer, "jump"))
+		{
+			//NOTE(Daniel) copy the string before splitting it. The call to strtok manipulates it.
+			char ResultCopy[40];
+			strcpy(&ResultCopy[0], Result);
+			
+			char* Pointer;
+			char* StrX;
+			char* StrY;
+			
+			Pointer = strtok(&ResultCopy[0], " "); //skip only spaces
+
+			int Count = 0;
+		
+			while(Pointer != NULL && Count < 2)
+			{
+				if(Count == 0)
+					StrX  = strtok(NULL, " ");
+				else if(Count == 1)
+					StrY = strtok(NULL, " ");
+				else
+					strtok(NULL, " ");
+				Count++;
+			}
+			
+			real32 X = (real32) strtod(StrX, NULL);
+			real32 Y = (real32) strtod(StrY, NULL);
+			
+			GameState->Player.Position = glm::vec2(X, Y);
+
+			sprintf(Result, "Jumped to position %.2f %.2f", X, Y);
+		}
 		else
 		{
 			Result = CombineStrings(Result, ": Command not found");
@@ -72,7 +105,7 @@ void ExecuteCommand(game_state *GameState)
 	
 		sprintf(GameState->Console.HistoryBuffer[0], Result);
 	
-		for(int i = 0; i <= GameState->Console.BufferIndex; i++)
+		for(int i = 0; i < CONSOLE_BUFFER_SIZE; i++)
 			GameState->Console.Buffer[i] = '\0';
     
 		GameState->Console.BufferIndex = 0;

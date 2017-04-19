@@ -39,7 +39,7 @@ struct console
     uint32 MaxHeight;
     uint32 BufferIndex;
     char Buffer[CONSOLE_BUFFER_SIZE];
-    char HistoryBuffer[HISTORY_BUFFER_LINES][CONSOLE_BUFFER_SIZE];
+    char HistoryBuffer[HISTORY_BUFFER_LINES][CONSOLE_BUFFER_SIZE + 20]; //NOTE(Daniel) + 20 to make room for : command not found
 };
 
 struct game_state
