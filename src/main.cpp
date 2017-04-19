@@ -25,6 +25,8 @@
 #include <algorithm>
 
 #include "game.h"
+#include "platform_sound.h"
+#include "platform_sound.cpp"
 #include "filehandling.h"
 #include "rendering.cpp"
 #include "world.cpp"
@@ -253,23 +255,13 @@ int main(void)
         
         Game.Update(DeltaTime, &GameState);
         Render(&GameState);
+        PlaySounds(&GameState);
         
         SetInvalidKeys(&GameState.InputController); //TODO(Daniel) Move this out of the main loop and into the key_controller.cpp somehow
         glfwPollEvents();
     }
     
-    for (uint32 LoadedSoundIndex = 0;
-         LoadedSoundIndex < GameState.SoundManager.LoadedSoundCount;
-         LoadedSoundIndex++)
-    {
-        alDeleteSources(1, &GameState.SoundManager.LoadedSounds[LoadedSoundIndex].Source);
-        alDeleteBuffers(1, &GameState.SoundManager.LoadedSounds[LoadedSoundIndex].Buffer);
-    }
-    
-    GameState.SoundManager.Device = alcGetContextsDevice(GameState.SoundManager.Context);
-    alcMakeContextCurrent(0);
-    alcDestroyContext(GameState.SoundManager.Context);
-    alcCloseDevice(GameState.SoundManager.Device);
+    CleanupSound(&GameState);
     
     glfwDestroyWindow(GameState.RenderState.Window);
     glfwTerminate();
