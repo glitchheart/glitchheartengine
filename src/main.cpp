@@ -207,7 +207,8 @@ int main(void)
     
     glfwGetFramebufferSize(GameState.RenderState.Window, &GameState.RenderState.WindowWidth, &GameState.RenderState.WindowHeight);
     glViewport(0, 0, GameState.RenderState.WindowWidth, GameState.RenderState.WindowHeight);
-    
+
+	GameState.Camera.Zoom = 1.0f; //TODO(Daniel) For some reason this became necessary although Zoom has a default value in the struct
     GameState.Camera.ViewportWidth = Width / 20;
     GameState.Camera.ViewportHeight = Height / 20;
     

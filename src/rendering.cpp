@@ -130,7 +130,7 @@ static void InitializeFreeTypeFont(FT_Library Library, render_font* Font, shader
     unsigned int W = 0;
     unsigned int H = 0;
     
-    for(int i = 32; i < 128; i++) 
+    for(int i = 32; i < 255; i++) 
     {
         if(FT_Load_Char(Font->Face, i, FT_LOAD_RENDER))
         {
@@ -162,7 +162,7 @@ static void InitializeFreeTypeFont(FT_Library Library, render_font* Font, shader
     
     unsigned int X = 0;
     
-    for(int i = 32; i < 128; i++) 
+    for(int i = 32; i < 255; i++) 
     {
         if(FT_Load_Char(Font->Face, i, FT_LOAD_RENDER))
             continue;
@@ -499,7 +499,7 @@ static void RenderConsole(render_state* RenderState, console* Console, glm::mat4
 	RenderState->InconsolataFont.Color = glm::vec4(1, 1, 1, 1);
 	
     RenderText(RenderState, RenderState->InconsolataFont, ">", -1 + 8 * SX, 0.61f - 50 * SY, SX, SY);
-	RenderText(RenderState, RenderState->InconsolataFont, CombineStrings(&Console->Buffer[0], "_"), -0.98f + 8 * SX, 0.61f - 50 * SY, SX, SY);
+	RenderText(RenderState, RenderState->InconsolataFont, CombineStrings(&Console->Buffer[0], "_"), -0.98f + 8 * SX, 0.61f - 50 * SY, SX, SY); //TODO(Daniel) Find out how to render a █
 
 	RenderState->InconsolataFont.Color = glm::vec4(0.8, 0.8, 0.8, 1);
 
