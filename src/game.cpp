@@ -5,49 +5,78 @@
 //CONSOLE STUFF TODO(Daniel) MOOOOOOOOOOOOOOOOOOVE
 void ExecuteCommand(game_state *GameState)
 {
-    char* Result = &GameState->Console.Buffer[0];
-    
-    if (strcmp(GameState->Console.Buffer, "exit") == 0)
-    {
-        for (uint32 LoadedSoundIndex = 0;
-             LoadedSoundIndex < GameState->SoundManager.LoadedSoundCount;
-             LoadedSoundIndex++)
-        {
-            alDeleteSources(1, &GameState->SoundManager.LoadedSounds[LoadedSoundIndex].Source);
-            alDeleteBuffers(1, &GameState->SoundManager.LoadedSounds[LoadedSoundIndex].Buffer);
-        }
-        
-        GameState->SoundManager.Device = alcGetContextsDevice(GameState->SoundManager.Context);
-        alcMakeContextCurrent(0);
-        alcDestroyContext(GameState->SoundManager.Context);
-        alcCloseDevice(GameState->SoundManager.Device);
-        
-        glfwDestroyWindow(GameState->RenderState.Window);
-        glfwTerminate();
-        exit(EXIT_SUCCESS);
-    }
-    else if(strcmp(GameState->Console.Buffer, "build") == 0)
-    {
-		Result = "Building...";
-		system("..\\build.bat");
-    }
-    else
-    {
-        Result = CombineStrings(Result, ": Command not found");
-    }
-
-    //NOTE(Daniel) Copy the command into the history buffer
-	for(int i = HISTORY_BUFFER_LINES - 1; i > 0; i--)
+	if(strcmp(" ",  GameState->Console.Buffer) != 0) //NOTE(Daniel) if the command isn't an empty string
 	{
-		sprintf(GameState->Console.HistoryBuffer[i], GameState->Console.HistoryBuffer[i - 1]);
-	}
-	
-	sprintf(GameState->Console.HistoryBuffer[0], Result);
-	
-    for(int i = 0; i <= GameState->Console.BufferIndex; i++)
-        GameState->Console.Buffer[i] = '\0';
+		char* Result = &GameState->Console.Buffer[0];
     
-    GameState->Console.BufferIndex = 0;
+		if (strcmp(GameState->Console.Buffer, "exit") == 0)
+		{
+			for (uint32 LoadedSoundIndex = 0;
+				 LoadedSoundIndex < GameState->SoundManager.LoadedSoundCount;
+				 LoadedSoundIndex++)
+			{
+				alDeleteSources(1, &GameState->SoundManager.LoadedSounds[LoadedSoundIndex].Source);
+				alDeleteBuffers(1, &GameState->SoundManager.LoadedSounds[LoadedSoundIndex].Buffer);
+			}
+        
+			GameState->SoundManager.Device = alcGetContextsDevice(GameState->SoundManager.Context);
+			alcMakeContextCurrent(0);
+			alcDestroyContext(GameState->SoundManager.Context);
+			alcCloseDevice(GameState->SoundManager.Device);
+        
+			glfwDestroyWindow(GameState->RenderState.Window);
+			glfwTerminate();
+			exit(EXIT_SUCCESS);
+		}
+		else if(strcmp(GameState->Console.Buffer, "build") == 0)
+		{
+			Result = "Building...";
+			system("..\\build.bat"); //TODO(Daniel) separate thread
+		}
+		else if(strstr(GameState->Console.Buffer, "zoom") != NULL)
+		{
+			//NOTE(Daniel) copy the string before splitting it. The call to strtok manipulates it.
+			char ResultCopy[40];
+			strcpy(&ResultCopy[0], Result);
+			
+			char* Pointer;
+			char* StrZoomAmount;
+			
+			Pointer = strtok(&ResultCopy[0], " "); //skip only spaces
+
+			int Count = 0;
+		
+			while(Pointer != NULL && Count < 1)
+			{
+				if(Count == 0)
+					StrZoomAmount  = strtok(NULL, " ");
+				else
+					strtok(NULL, " ");
+				Count++;
+			}
+			real32 ZoomAmount = (real32) strtod(StrZoomAmount, NULL);
+			GameState->Camera.Zoom = ZoomAmount;
+
+			Result = CombineStrings("Zoom set to ", StrZoomAmount);
+		}
+		else
+		{
+			Result = CombineStrings(Result, ": Command not found");
+		}
+	
+		//NOTE(Daniel) Copy the command into the history buffer
+		for(int i = HISTORY_BUFFER_LINES - 1; i > 0; i--)
+		{
+			sprintf(GameState->Console.HistoryBuffer[i], GameState->Console.HistoryBuffer[i - 1]);
+		}
+	
+		sprintf(GameState->Console.HistoryBuffer[0], Result);
+	
+		for(int i = 0; i <= GameState->Console.BufferIndex; i++)
+			GameState->Console.Buffer[i] = '\0';
+    
+		GameState->Console.BufferIndex = 0;
+	}    
 }
 
 extern "C" UPDATE(Update)
