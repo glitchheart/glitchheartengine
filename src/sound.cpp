@@ -1,42 +1,44 @@
 
-void PlaySound(loaded_sound *LoadedSound)
+void PlaySoundEffect(game_state *GameState, loaded_sound *LoadedSound)
 {
-    if (LoadedSound)
-    {
-        alSourcef(LoadedSound->Source, AL_PITCH, LoadedSound->SoundInfo.Pitch);
-        alSourcef(LoadedSound->Source, AL_GAIN, LoadedSound->SoundInfo.Gain);
-        alSource3f(LoadedSound->Source, AL_POSITION, LoadedSound->SoundInfo.Position[0], LoadedSound->SoundInfo.Position[1], LoadedSound->SoundInfo.Position[2]);
-        alSource3f(LoadedSound->Source, AL_VELOCITY, LoadedSound->SoundInfo.Velocity[0], LoadedSound->SoundInfo.Velocity[1], LoadedSound->SoundInfo.Velocity[2]);
-        alSourcei(LoadedSound->Source, AL_LOOPING, LoadedSound->SoundInfo.Loop);
-        alSourcePlay(LoadedSound->Source);
-        alGetSourcei(LoadedSound->Source, AL_SOURCE_STATE, &LoadedSound->SourceState);
-    }
+    sound_effect SoundEffect = {};
+    SoundEffect.Buffer = LoadedSound->Buffer;
+    SoundEffect.Source = LoadedSound->Source;
+    SoundEffect.SoundInfo = LoadedSound->SoundInfo;
+    SoundEffect.SourceState = LoadedSound->SourceState;
+    GameState->SoundManager.SoundQueue.Sounds[GameState->SoundManager.SoundQueue.SoundCount++] = SoundEffect;
 }
 
-void PlaySoundOnce(loaded_sound *LoadedSound)
+void PlaySoundEffectOnce(game_state *GameState, loaded_sound *LoadedSound)
 {
-    if (LoadedSound)
-    {
-        alGetSourcei(LoadedSound->Source, AL_SOURCE_STATE, &LoadedSound->SourceState);
-        if (LoadedSound->SourceState != AL_PLAYING)
-        {
-            PlaySound(LoadedSound);
-        }
-    }
+    sound_effect SoundEffect = {};
+    SoundEffect.PlayOnce = true;
+    SoundEffect.Buffer = LoadedSound->Buffer;
+    SoundEffect.Source = LoadedSound->Source;
+    SoundEffect.SoundInfo = LoadedSound->SoundInfo;
+    SoundEffect.SourceState = LoadedSound->SourceState;
+    GameState->SoundManager.SoundQueue.Sounds[GameState->SoundManager.SoundQueue.SoundCount++] = SoundEffect;
 }
 
-void PauseSound(loaded_sound *LoadedSound)
+void StopSoundEffect(game_state *GameState, loaded_sound *LoadedSound)
 {
-    if (LoadedSound)
-    {
-        alSourcePause(LoadedSound->Source);
-    }
+    sound_effect SoundEffect = {};
+    SoundEffect.PlayOnce = true;
+    SoundEffect.Buffer = LoadedSound->Buffer;
+    SoundEffect.Source = LoadedSound->Source;
+    SoundEffect.SoundInfo = LoadedSound->SoundInfo;
+    SoundEffect.SourceState = LoadedSound->SourceState;
+    GameState->SoundManager.SoundQueue.StoppedSounds[GameState->SoundManager.SoundQueue.StoppedSoundCount++] = SoundEffect;
 }
 
-void StopSound(loaded_sound *LoadedSound)
+void PauseSoundEffect(game_state *GameState, loaded_sound *LoadedSound)
 {
-    if (LoadedSound)
-    {
-        alSourceStop(LoadedSound->Source);
-    }
+    sound_effect SoundEffect = {};
+    SoundEffect.PlayOnce = true;
+    SoundEffect.Buffer = LoadedSound->Buffer;
+    SoundEffect.Source = LoadedSound->Source;
+    SoundEffect.SoundInfo = LoadedSound->SoundInfo;
+    SoundEffect.SourceState = LoadedSound->SourceState;
+    GameState->SoundManager.SoundQueue.PausedSounds[GameState->SoundManager.SoundQueue.PausedSoundCount++] = SoundEffect;
+    
 }
