@@ -23,22 +23,22 @@ struct tile_data
 	glm::vec2 TextureOffset;
 };
 
-#define TILEMAP_SIZE 4
+#define NUM_ISLANDS 1
+#define ISLAND_SIZE 100
+#define REGION_SIZE = 1000
 
-#define CHUNK_SIZE 50
-
-struct tile_chunk
+struct island_chunk
 {
 	uint32 Seed;
 	uint32 X;
 	uint32 Y;
-	tile_data Data[CHUNK_SIZE][CHUNK_SIZE];
+	tile_data Data[ISLAND_SIZE][ISLAND_SIZE];
 };
 
 struct tilemap_data
 {
 	GLuint TileAtlasTexture;
-	tile_chunk Chunks[TILEMAP_SIZE][TILEMAP_SIZE];
+	island_chunk Chunks[NUM_ISLANDS];
 };
 
 #endif
