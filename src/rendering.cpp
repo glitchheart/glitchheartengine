@@ -538,31 +538,28 @@ static void RenderEntity(render_state *RenderState, const entity &entity, glm::m
     glBindVertexArray(0);
 }
 
-static void RenderTileChunk(render_state* RenderState, const tile_chunk &TileChunk, shader* Shader, GLuint TilesetTextureHandle, glm::mat4 ProjectionMatrix, glm::mat4 View, int StartX, int StartY, int EndX, int EndY)
+static void RenderTileChunk(render_state* RenderState, const island_chunk &IslandChunk, shader* Shader, GLuint TilesetTextureHandle, glm::mat4 ProjectionMatrix, glm::mat4 View, int StartX, int StartY, int EndX, int EndY)
 {
     real32 Scale = 1.0f;
     
-    // for (int i = StartX; i < EndX; i++) //TODO(Daniel) this has to be added again
-    // {
-    //     for (int j = StartY; j < EndY; j++)
-    //     {
-    for (int i = 0; i < CHUNK_SIZE; i++)
+	for (int i = 0; i < ISLAND_SIZE; i++)
     {
-        for (int j = 0; j < CHUNK_SIZE; j++)
+        for (int j = 0; j < ISLAND_SIZE; j++)
         {
-            if(TileChunk.Data[i][j].Type != Tile_None)
+            if(IslandChunk.Data[i][j].Type != Tile_None)
             {
                 glm::mat4 Model(1.0f);
-                Model = glm::translate(Model, glm::vec3(TileChunk.X * CHUNK_SIZE + i * Scale, TileChunk.Y * CHUNK_SIZE + j * Scale, 0.0f));
+                Model = glm::translate(Model, glm::vec3(i * Scale, j * Scale, 0.0f));
                 Model = glm::scale(Model, glm::vec3(Scale, Scale, 1.0f));
                 glm::mat4 MVP = ProjectionMatrix * View * Model;
                 
-                SetVec2Attribute(Shader->Program, "textureOffset", TileChunk.Data[i][j].TextureOffset);
+                SetVec2Attribute(Shader->Program, "textureOffset", IslandChunk.Data[i][j].TextureOffset);
                 SetMat4Uniform(Shader->Program, "MVP", MVP);
                 glDrawArrays(GL_QUADS, 0, 4);
             }
         }
     }
+
     glBindVertexArray(0);
 }
 
@@ -580,12 +577,9 @@ static void RenderTilemap(render_state *RenderState, const tilemap_data &Tilemap
     auto Shader = RenderState->TileShader;
     UseShader(&Shader);
     
-    for(int i = 0; i < TILEMAP_SIZE; i++)
+    for(int i = 0; i < NUM_ISLANDS; i++)
     {
-        for(int j = 0; j < TILEMAP_SIZE; j++)
-        {
-            RenderTileChunk(RenderState, TilemapData.Chunks[i][j], &Shader, TilesetTextureHandle, ProjectionMatrix, View, StartX, StartY, EndX, EndY);
-        }
+		RenderTileChunk(RenderState, TilemapData.Chunks[i], &Shader, TilesetTextureHandle, ProjectionMatrix, View, StartX, StartY, EndX, EndY);
     }
 }
 
@@ -595,13 +589,13 @@ static void Render(game_state* GameState)
     glClearColor(99.0f / 255.0f, 155.0f / 255.0f, 255.0f / 255.0f, 1.0f);
     
     //find the visible chunks
-    int minX = (int)std::max(0.0f, GameState->Player.Position.x - GameState->Camera.ViewportWidth / GameState->Camera.Zoom / 2);
-    int minY = (int)std::max(0.0f, GameState->Player.Position.y - GameState->Camera.ViewportHeight / GameState->Camera.Zoom / 2);
+    //int minX = (int)std::max(0.0f, GameState->Player.Position.x - GameState->Camera.ViewportWidth / GameState->Camera.Zoom / 2);
+    //int minY = (int)std::max(0.0f, GameState->Player.Position.y - GameState->Camera.ViewportHeight / GameState->Camera.Zoom / 2);
     
-    int maxX = (int)std::min((real32)TILEMAP_SIZE * CHUNK_SIZE, GameState->Player.Position.x + GameState->Camera.ViewportWidth / GameState->Camera.Zoom / 2.0f + 2);
-    int maxY = (int)std::min((real32)TILEMAP_SIZE * CHUNK_SIZE, GameState->Player.Position.y + GameState->Camera.ViewportHeight / GameState->Camera.Zoom / 2.0f + 2);
+    //int maxX = (int)std::min((real32)TILEMAP_SIZE * CHUNK_SIZE, GameState->Player.Position.x + GameState->Camera.ViewportWidth / GameState->Camera.Zoom / 2.0f + 2);
+    //int maxY = (int)std::min((real32)TILEMAP_SIZE * CHUNK_SIZE, GameState->Player.Position.y + GameState->Camera.ViewportHeight / GameState->Camera.Zoom / 2.0f + 2);
     
-    RenderTilemap(&GameState->RenderState, GameState->TilemapData, GameState->TilemapData.TileAtlasTexture, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix, minX, minY, maxX, maxY);
+    RenderTilemap(&GameState->RenderState, GameState->TilemapData, GameState->TilemapData.TileAtlasTexture, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix, 0, 0, 0, 0);
     
     RenderEntity(&GameState->RenderState, GameState->Player, GameState->Camera.ProjectionMatrix,  GameState->Camera.ViewMatrix);
     
