@@ -12,15 +12,11 @@ void ExecuteCommand(game_state *GameState)
     
 		if (strcmp(GameState->Console.Buffer, "exit") == 0)
 		{
-			for (uint32 LoadedSoundIndex = 0;
-				 LoadedSoundIndex < GameState->SoundManager.LoadedSoundCount;
-				 LoadedSoundIndex++)
-			{
-				alDeleteSources(1, &GameState->SoundManager.LoadedSounds[LoadedSoundIndex].Source);
-				alDeleteBuffers(1, &GameState->SoundManager.LoadedSounds[LoadedSoundIndex].Buffer);
-			}
-        
-			GameState->SoundManager.Device = alcGetContextsDevice(GameState->SoundManager.Context);
+			//TODO(niels): Need to find a way to call this from here
+            //             This should probably be in platform code anyway?
+            //             Doesn't really make sense to have it in game code
+            //CleanupSound(GameState);
+
 			alcMakeContextCurrent(0);
 			alcDestroyContext(GameState->SoundManager.Context);
 			alcCloseDevice(GameState->SoundManager.Device);
