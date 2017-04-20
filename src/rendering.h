@@ -38,7 +38,8 @@ struct render_font
     GLuint Texture;
     uint32 AtlasWidth;
     uint32 AtlasHeight;
-    glm::vec4 Color = glm::vec4(1, 1, 1, 1);
+	GLfloat GlyphWidth;
+	glm::vec4 Color = glm::vec4(1, 1, 1, 1);
     
     struct character_info 
     {

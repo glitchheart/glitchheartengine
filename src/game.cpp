@@ -2,137 +2,13 @@
 #include "keycontroller.cpp"
 #include "sound.cpp"
 
-//CONSOLE STUFF TODO(Daniel) MOOOOOOOOOOOOOOOOOOVE
-void ExecuteCommand(game_state *GameState)
-{
-	if(strcmp(" ",  GameState->Console.Buffer) != 0
-	   && strcmp("",  GameState->Console.Buffer) != 0) //NOTE(Daniel) if the command isn't an empty string
-	{
-		char* Result = &GameState->Console.Buffer[0];
-    
-		if (strcmp(GameState->Console.Buffer, "exit") == 0)
-		{
-			//TODO(niels): Need to find a way to call this from here
-            //             This should probably be in platform code anyway?
-            //             Doesn't really make sense to have it in game code
-            //CleanupSound(GameState);
-
-			alcMakeContextCurrent(0);
-			alcDestroyContext(GameState->SoundManager.Context);
-			alcCloseDevice(GameState->SoundManager.Device);
-        
-			glfwDestroyWindow(GameState->RenderState.Window);
-			glfwTerminate();
-			exit(EXIT_SUCCESS);
-		}
-		else if(strcmp(GameState->Console.Buffer, "build") == 0)
-		{
-			Result = "Building...";
-			system("..\\build.bat"); //TODO(Daniel) separate thread
-		}
-		else if(strstr(GameState->Console.Buffer, "zoom") != NULL)
-		{
-			//NOTE(Daniel) copy the string before splitting it. The call to strtok manipulates it.
-			char ResultCopy[40];
-			strcpy(&ResultCopy[0], Result);
-			
-			char* Pointer;
-			char* StrZoomAmount;
-			
-			Pointer = strtok(&ResultCopy[0], " "); //skip only spaces
-
-			int Count = 0;
-		
-			while(Pointer != NULL && Count < 1)
-			{
-				if(Count == 0)
-					StrZoomAmount  = strtok(NULL, " ");
-				else
-					strtok(NULL, " ");
-				Count++;
-			}
-			real32 ZoomAmount = (real32) strtod(StrZoomAmount, NULL);
-			GameState->Camera.Zoom = ZoomAmount;
-
-			Result = CombineStrings("Zoom set to ", StrZoomAmount);
-		}
-		else if(strstr(GameState->Console.Buffer, "jump"))
-		{
-			//NOTE(Daniel) copy the string before splitting it. The call to strtok manipulates it.
-			char ResultCopy[40];
-			strcpy(&ResultCopy[0], Result);
-			
-			char* Pointer;
-			char* StrX;
-			char* StrY;
-			
-			Pointer = strtok(&ResultCopy[0], " "); //skip only spaces
-
-			int Count = 0;
-		
-			while(Pointer != NULL && Count < 2)
-			{
-				if(Count == 0)
-					StrX  = strtok(NULL, " ");
-				else if(Count == 1)
-					StrY = strtok(NULL, " ");
-				else
-					strtok(NULL, " ");
-				Count++;
-			}
-			
-			real32 X = (real32) strtod(StrX, NULL);
-			real32 Y = (real32) strtod(StrY, NULL);
-			
-			GameState->Player.Position = glm::vec2(X, Y);
-
-			sprintf(Result, "Jumped to position %.2f %.2f", X, Y);
-		}
-		else
-		{
-			Result = CombineStrings(Result, ": Command not found");
-		}
-	
-		//NOTE(Daniel) Copy the command into the history buffer
-		for(int i = HISTORY_BUFFER_LINES - 1; i > 0; i--)
-		{
-			sprintf(GameState->Console.HistoryBuffer[i], GameState->Console.HistoryBuffer[i - 1]);
-		}
-	
-		sprintf(GameState->Console.HistoryBuffer[0], Result);
-	
-		for(int i = 0; i < CONSOLE_BUFFER_SIZE; i++)
-			GameState->Console.Buffer[i] = '\0';
-    
-		GameState->Console.BufferIndex = 0;
-	}    
-}
-
 extern "C" UPDATE(Update)
 {
     glfwGetFramebufferSize(GameState->RenderState.Window, &GameState->RenderState.WindowWidth, &GameState->RenderState.WindowHeight);
 
-    if (GetKeyDown(GLFW_KEY_TAB, GameState))
+    if (GetKeyDown(GLFW_KEY_ENTER, GameState) && !GameState->Console.Open)
     {
-        GameState->Console.Open = !GameState->Console.Open;
-    }
-
-    if (GetKeyDown(GLFW_KEY_BACKSPACE, GameState) && GameState->Console.Open)
-    {
-        if (GameState->Console.BufferIndex > 0)
-            GameState->Console.Buffer[--GameState->Console.BufferIndex] = '\0';
-    }
-
-    if (GetKeyDown(GLFW_KEY_ENTER, GameState))
-    {
-        if (GameState->Console.Open)
-        {
-            ExecuteCommand(GameState);
-        }
-        else
-        {
-            PlaySoundEffectOnce(GameState, &GameState->SoundManager.Track01);
-        }
+		PlaySoundEffectOnce(GameState, &GameState->SoundManager.Track01);
     }
 
     if (!GameState->Console.Open)
@@ -157,7 +33,11 @@ extern "C" UPDATE(Update)
         }
     }
 
-    auto pos = glm::unProject(glm::vec3(GameState->InputController.MouseX, GameState->RenderState.Viewport[3] - GameState->InputController.MouseY, 0), GameState->Camera.ViewMatrix, GameState->Camera.ProjectionMatrix, glm::vec4(0, 0, GameState->RenderState.Viewport[2], GameState->RenderState.Viewport[3]));
+    auto pos = glm::unProject(glm::vec3(GameState->InputController.MouseX,GameState->RenderState.Viewport[3] - GameState->InputController.MouseY, 0),
+							  GameState->Camera.ViewMatrix,
+							  GameState->Camera.ProjectionMatrix,
+							  glm::vec4(0, 0, GameState->RenderState.Viewport[2], GameState->RenderState.Viewport[3]));
+	
     auto direction = glm::vec2(pos.x, pos.y) - GameState->Player.Position;
     direction = glm::normalize(direction);
     float degrees = atan2(direction.y, direction.x);

@@ -37,7 +37,9 @@ struct camera
 struct console
 {
     bool Open;
-    uint32 MaxHeight;
+	glm::vec4 Color;
+	glm::vec3 CursorColor;
+	uint32 MaxHeight;
     uint32 BufferIndex;
     char Buffer[CONSOLE_BUFFER_SIZE];
     char HistoryBuffer[HISTORY_BUFFER_LINES][CONSOLE_BUFFER_SIZE + 20]; //NOTE(Daniel) + 20 to make room for : command not found
