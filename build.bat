@@ -1,6 +1,6 @@
 @echo off
 
-REM "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" x64
+REM call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" x64
 set WERROR=
 
 REM OLD set CommonCompilerFlags=-MT -nologo -Gm- -GR- -EHa- -Od -Oi %WERROR% -W4  -wd4201 -wd4100 -wd4189 -wd4530 -wd4577 -wd4996 -FC -Z7 /I..\libs /I..\libs\glfw\include /I..\libs\openal\include /I..\libs\freetype\include
@@ -22,3 +22,5 @@ cl %CommonCompilerFlags% ..\src\game.cpp -Fmgame.map -LD /DLL /link %CommonLinke
 cl %CommonCompilerFlags% ..\src\main.cpp -Fmmain.map /link %ExtraLinkerFlags% %CommonLinkerFlags% glad.obj
 echo Compilation finished on: %time%
 popd
+
+
