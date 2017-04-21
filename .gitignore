@@ -4,3 +4,11 @@
 libgame.a
 build/game_temp.dll
 build/game.dll
+build/game.obj
+build/game.lib
+build/game.exp
+build/game.map
+build/main.obj
+build/main.exe
+build/main.exp
+build/main.obj
