@@ -144,7 +144,7 @@ static void InitializeFreeTypeFont(FT_Library Library, render_font* Font, shader
     
     Font->AtlasWidth = W;
     Font->AtlasHeight = H;
-    
+	Font->GlyphWidth = G->bitmap.width;
     glActiveTexture(GL_TEXTURE0);
     glGenTextures(1, &Font->Texture);
     glBindTexture(GL_TEXTURE_2D, Font->Texture);
@@ -161,7 +161,7 @@ static void InitializeFreeTypeFont(FT_Library Library, render_font* Font, shader
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     
     unsigned int X = 0;
-    
+
     for(int i = 32; i < 255; i++) 
     {
         if(FT_Load_Char(Font->Face, i, FT_LOAD_RENDER))
@@ -415,13 +415,16 @@ static void SetMat4Uniform(GLuint ShaderHandle, const char *UniformName, glm::ma
 {
     glUniformMatrix4fv(glGetUniformLocation(ShaderHandle, UniformName), 1, GL_FALSE, &Value[0][0]);
 }
- struct Point
+
+struct Point
 {
     GLfloat X;
     GLfloat Y;
     GLfloat S;
     GLfloat T;
 }; 
+
+//TODO(Daniel) there's a weird bug when rendering special characters. The cursor just slowly jumps up for every character pressed
 
 //rendering methods
 static void RenderText(render_state* RenderState, const render_font& Font, const char *Text, real32 X, real32 Y, real32 SX, real32 SY) 
@@ -482,32 +485,52 @@ static void RenderConsole(render_state* RenderState, console* Console, glm::mat4
     
     UseShader(&Shader);
 
+	//draw upper part
     glm::mat4 Model(1.0f);
     Model = glm::translate(Model, glm::vec3(-1, 0.5, 0));
     Model = glm::scale(Model, glm::vec3(2, 0.5, 1));
     SetMat4Uniform(Shader.Program, "M", Model);
+	SetVec4Attribute(Shader.Program, "color", glm::vec4(0, 0.4, 0.3, 0.6));
     
     glBindVertexArray(RenderState->ConsoleVAO); //TODO(Daniel) Create a vertex array buffer + object for console
     glBindBuffer(GL_ARRAY_BUFFER, RenderState->ConsoleQuadVBO);
     glDrawArrays(GL_QUADS, 0, 4);
-    
+
+	//draw lower bar
+	glm::mat4 SecondModel(1.0f);
+    SecondModel = glm::translate(SecondModel, glm::vec3(-1, 0.5, 0));
+    SecondModel = glm::scale(SecondModel, glm::vec3(2, 0.08, 1));
+    SetMat4Uniform(Shader.Program, "M", SecondModel);
+	SetVec4Attribute(Shader.Program, "color", glm::vec4(0, 0.2, 0.2, 0.6));
+
+	glDrawArrays(GL_QUADS, 0, 4);
+	
     const GLFWvidmode *Mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
-    
     real32 SX = 2.0f / Mode->width;
     real32 SY = 2.0f / Mode->height;
-
-	RenderState->InconsolataFont.Color = glm::vec4(1, 1, 1, 1);
 	
+	// auto CursorShader = RenderState->Shaders[Shader_ConsoleCursor];
+	glm::mat4 CursorModel(1.0f);
+    CursorModel = glm::translate(CursorModel, glm::vec3(-0.97 + strlen(Console->Buffer) * RenderState->InconsolataFont.GlyphWidth * SX * 1.155, 0.51, 0));
+    CursorModel = glm::scale(CursorModel, glm::vec3(0.015, 0.06, 1));
+    SetMat4Uniform(Shader.Program, "M", CursorModel);
+	GLfloat TimeValue = glfwGetTime();
+    GLfloat AlphaValue = (sin(TimeValue * 6) / 2) + 0.5;
+	SetVec4Attribute(Shader.Program, "color", glm::vec4(0, 1.0, 0.5, AlphaValue));
+	glDrawArrays(GL_QUADS, 0, 4);
+	
+	RenderState->InconsolataFont.Color = glm::vec4(1, 1, 1, 1);
+
     RenderText(RenderState, RenderState->InconsolataFont, ">", -1 + 8 * SX, 0.61f - 50 * SY, SX, SY);
-	RenderText(RenderState, RenderState->InconsolataFont, CombineStrings(&Console->Buffer[0], "_"), -0.98f + 8 * SX, 0.61f - 50 * SY, SX, SY); //TODO(Daniel) Find out how to render a █
-
+	RenderText(RenderState, RenderState->InconsolataFont, &Console->Buffer[0], -0.98f + 8 * SX, 0.61f - 50 * SY, SX, SY); //TODO(Daniel) Find out how to render a █
+	
 	RenderState->InconsolataFont.Color = glm::vec4(0.8, 0.8, 0.8, 1);
-
+	
 	int index = 0;
 
 	for(int i = 0; i < HISTORY_BUFFER_LINES; i++)
 	{
-		RenderText(RenderState, RenderState->InconsolataFont, &Console->HistoryBuffer[i][0], -1 + 8 * SX, 0.67f + i * 0.06f - 50 * SY, SX, SY);
+		RenderText(RenderState, RenderState->InconsolataFont, &Console->HistoryBuffer[i][0], -1 + 8 * SX, 0.69f + i * 0.06f - 50 * SY, SX, SY);
 	}
 }
 
@@ -538,31 +561,28 @@ static void RenderEntity(render_state *RenderState, const entity &entity, glm::m
     glBindVertexArray(0);
 }
 
-static void RenderTileChunk(render_state* RenderState, const tile_chunk &TileChunk, shader* Shader, GLuint TilesetTextureHandle, glm::mat4 ProjectionMatrix, glm::mat4 View, int StartX, int StartY, int EndX, int EndY)
+static void RenderTileChunk(render_state* RenderState, const island_chunk &IslandChunk, shader* Shader, GLuint TilesetTextureHandle, glm::mat4 ProjectionMatrix, glm::mat4 View, int StartX, int StartY, int EndX, int EndY)
 {
     real32 Scale = 1.0f;
     
-    // for (int i = StartX; i < EndX; i++) //TODO(Daniel) this has to be added again
-    // {
-    //     for (int j = StartY; j < EndY; j++)
-    //     {
-    for (int i = 0; i < CHUNK_SIZE; i++)
+	for (int i = 0; i < ISLAND_SIZE; i++)
     {
-        for (int j = 0; j < CHUNK_SIZE; j++)
+        for (int j = 0; j < ISLAND_SIZE; j++)
         {
-            if(TileChunk.Data[i][j].Type != Tile_None)
+            if(IslandChunk.Data[i][j].Type != Tile_None)
             {
                 glm::mat4 Model(1.0f);
-                Model = glm::translate(Model, glm::vec3(TileChunk.X * CHUNK_SIZE + i * Scale, TileChunk.Y * CHUNK_SIZE + j * Scale, 0.0f));
+                Model = glm::translate(Model, glm::vec3(i * Scale, j * Scale, 0.0f));
                 Model = glm::scale(Model, glm::vec3(Scale, Scale, 1.0f));
                 glm::mat4 MVP = ProjectionMatrix * View * Model;
                 
-                SetVec2Attribute(Shader->Program, "textureOffset", TileChunk.Data[i][j].TextureOffset);
+                SetVec2Attribute(Shader->Program, "textureOffset", IslandChunk.Data[i][j].TextureOffset);
                 SetMat4Uniform(Shader->Program, "MVP", MVP);
                 glDrawArrays(GL_QUADS, 0, 4);
             }
         }
     }
+
     glBindVertexArray(0);
 }
 
@@ -580,12 +600,9 @@ static void RenderTilemap(render_state *RenderState, const tilemap_data &Tilemap
     auto Shader = RenderState->TileShader;
     UseShader(&Shader);
     
-    for(int i = 0; i < TILEMAP_SIZE; i++)
+    for(int i = 0; i < NUM_ISLANDS; i++)
     {
-        for(int j = 0; j < TILEMAP_SIZE; j++)
-        {
-            RenderTileChunk(RenderState, TilemapData.Chunks[i][j], &Shader, TilesetTextureHandle, ProjectionMatrix, View, StartX, StartY, EndX, EndY);
-        }
+		RenderTileChunk(RenderState, TilemapData.Chunks[i], &Shader, TilesetTextureHandle, ProjectionMatrix, View, StartX, StartY, EndX, EndY);
     }
 }
 
@@ -595,13 +612,13 @@ static void Render(game_state* GameState)
     glClearColor(99.0f / 255.0f, 155.0f / 255.0f, 255.0f / 255.0f, 1.0f);
     
     //find the visible chunks
-    int minX = (int)std::max(0.0f, GameState->Player.Position.x - GameState->Camera.ViewportWidth / GameState->Camera.Zoom / 2);
-    int minY = (int)std::max(0.0f, GameState->Player.Position.y - GameState->Camera.ViewportHeight / GameState->Camera.Zoom / 2);
+    //int minX = (int)std::max(0.0f, GameState->Player.Position.x - GameState->Camera.ViewportWidth / GameState->Camera.Zoom / 2);
+    //int minY = (int)std::max(0.0f, GameState->Player.Position.y - GameState->Camera.ViewportHeight / GameState->Camera.Zoom / 2);
     
-    int maxX = (int)std::min((real32)TILEMAP_SIZE * CHUNK_SIZE, GameState->Player.Position.x + GameState->Camera.ViewportWidth / GameState->Camera.Zoom / 2.0f + 2);
-    int maxY = (int)std::min((real32)TILEMAP_SIZE * CHUNK_SIZE, GameState->Player.Position.y + GameState->Camera.ViewportHeight / GameState->Camera.Zoom / 2.0f + 2);
+    //int maxX = (int)std::min((real32)TILEMAP_SIZE * CHUNK_SIZE, GameState->Player.Position.x + GameState->Camera.ViewportWidth / GameState->Camera.Zoom / 2.0f + 2);
+    //int maxY = (int)std::min((real32)TILEMAP_SIZE * CHUNK_SIZE, GameState->Player.Position.y + GameState->Camera.ViewportHeight / GameState->Camera.Zoom / 2.0f + 2);
     
-    RenderTilemap(&GameState->RenderState, GameState->TilemapData, GameState->TilemapData.TileAtlasTexture, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix, minX, minY, maxX, maxY);
+    RenderTilemap(&GameState->RenderState, GameState->TilemapData, GameState->TilemapData.TileAtlasTexture, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix, 0, 0, 0, 0);
     
     RenderEntity(&GameState->RenderState, GameState->Player, GameState->Camera.ProjectionMatrix,  GameState->Camera.ViewMatrix);
     
