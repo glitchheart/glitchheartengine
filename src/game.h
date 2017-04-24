@@ -37,6 +37,9 @@ struct camera
 struct console
 {
     bool Open;
+	glm::vec3 EndPosition = glm::vec3(-1, 0.5, 0);
+	real32 TimeToAnimate = 0.3f;
+	real32 CurrentTime;
 	glm::vec4 Color;
 	glm::vec3 CursorColor;
 	uint32 MaxHeight;
