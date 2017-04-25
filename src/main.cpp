@@ -129,6 +129,7 @@ void ExecuteCommand(game_state *GameState)
             }
             
             real32 X = (real32) strtod(StrX, NULL);
+            
             real32 Y = (real32) strtod(StrY, NULL);
             
             GameState->Player.Position = glm::vec2(X, Y);
