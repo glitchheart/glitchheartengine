@@ -3,6 +3,9 @@
 REM call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" x64
 set WERROR=
 
+WHERE cl
+IF %ERRORLEVEL% NEQ 0 call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" x64
+
 REM OLD set CommonCompilerFlags=-MT -nologo -Gm- -GR- -EHa- -Od -Oi %WERROR% -W4  -wd4201 -wd4100 -wd4189 -wd4530 -wd4577 -wd4996 -FC -Z7 /I..\libs /I..\libs\glfw\include /I..\libs\openal\include /I..\libs\freetype\include
 
 set CommonCompilerFlags=/MD -nologo -Od -Oi -W4 -Gm- -EHsc -wd4201 -wd4100 -wd4189 -wd4530 -wd4577 -wd4996 -wd4456 -FC -Z7 /I..\libs /I..\libs\glfw\include /I..\libs\openal\include /I..\libs\freetype\include /I..\libs\glad\include 
