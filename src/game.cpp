@@ -41,7 +41,21 @@ extern "C" UPDATE(Update)
     float degrees = atan2(direction.y, direction.x);
     
     GameState->Player.Rotation = glm::vec3(0, 0, degrees);
+<<<<<<< HEAD
     
     GameState->Camera.ProjectionMatrix = glm::ortho(0.0f, static_cast<GLfloat>(GameState->Camera.ViewportWidth / GameState->Camera.Zoom), static_cast<GLfloat>(GameState->Camera.ViewportHeight / GameState->Camera.Zoom), 0.0f, -1.0f, 1.0f);
     GameState->Camera.ViewMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(-GameState->Player.Position.x + GameState->Camera.ViewportWidth / GameState->Camera.Zoom / 2, -GameState->Player.Position.y + GameState->Camera.ViewportHeight / GameState->Camera.Zoom / 2, 0));
+=======
+
+    GameState->Camera.ProjectionMatrix = glm::ortho(0.0f,
+													static_cast<GLfloat>(GameState->Camera.ViewportWidth / GameState->Camera.Zoom),
+													static_cast<GLfloat>(GameState->Camera.ViewportHeight / GameState->Camera.Zoom),
+													0.0f,
+													-1.0f,
+													1.0f);
+    GameState->Camera.ViewMatrix = glm::translate(glm::mat4(1.0f),
+												  glm::vec3(-GameState->Player.Position.x + GameState->Camera.ViewportWidth / GameState->Camera.Zoom / 2,
+															-GameState->Player.Position.y + GameState->Camera.ViewportHeight / GameState->Camera.Zoom / 2,
+															0));
+>>>>>>> 485705b0583df9204804fdab203c9bd82e1f4358
 }

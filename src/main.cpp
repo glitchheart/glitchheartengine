@@ -156,12 +156,18 @@ void ExecuteCommand(game_state *GameState)
 }
 
 //console stuff
-static void CheckConsoleInput(game_state* GameState)
+static void CheckConsoleInput(game_state* GameState, real32 DeltaTime)
 {
+	if(GameState->Console.Open && GameState->Console.CurrentTime < GameState->Console.TimeToAnimate)
+	{
+		GameState->Console.CurrentTime += DeltaTime;
+	}
+	
     if (GetKeyDown(GLFW_KEY_TAB, GameState))
     {
         GameState->Console.Open = !GameState->Console.Open;
-    }
+		GameState->Console.CurrentTime = 0.0f;
+	}
 
     if (GetKeyDown(GLFW_KEY_BACKSPACE, GameState) && GameState->Console.Open)
     {
@@ -380,7 +386,7 @@ int main(void)
         ReloadDlls(&Game);
         
         Game.Update(DeltaTime, &GameState);
-		CheckConsoleInput(&GameState);
+		CheckConsoleInput(&GameState, DeltaTime);
 		Render(&GameState);
         PlaySounds(&GameState);
         

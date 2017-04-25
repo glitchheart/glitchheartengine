@@ -485,9 +485,11 @@ static void RenderConsole(render_state* RenderState, console* Console, glm::mat4
     
     UseShader(&Shader);
 
+	real32 PercentAnimated = 1.0f + 1.0 - Console->CurrentTime / Console->TimeToAnimate;
+	
 	//draw upper part
     glm::mat4 Model(1.0f);
-    Model = glm::translate(Model, glm::vec3(-1, 0.5, 0));
+    Model = glm::translate(Model, glm::vec3(-1, 0.5 * PercentAnimated, 0));
     Model = glm::scale(Model, glm::vec3(2, 0.5, 1));
     SetMat4Uniform(Shader.Program, "M", Model);
 	SetVec4Attribute(Shader.Program, "color", glm::vec4(0, 0.4, 0.3, 0.6));
@@ -498,7 +500,7 @@ static void RenderConsole(render_state* RenderState, console* Console, glm::mat4
 
 	//draw lower bar
 	glm::mat4 SecondModel(1.0f);
-    SecondModel = glm::translate(SecondModel, glm::vec3(-1, 0.5, 0));
+    SecondModel = glm::translate(SecondModel, glm::vec3(-1, 0.5 * PercentAnimated, 0));
     SecondModel = glm::scale(SecondModel, glm::vec3(2, 0.08, 1));
     SetMat4Uniform(Shader.Program, "M", SecondModel);
 	SetVec4Attribute(Shader.Program, "color", glm::vec4(0, 0.2, 0.2, 0.6));
@@ -509,9 +511,9 @@ static void RenderConsole(render_state* RenderState, console* Console, glm::mat4
     real32 SX = 2.0f / Mode->width;
     real32 SY = 2.0f / Mode->height;
 	
-	// auto CursorShader = RenderState->Shaders[Shader_ConsoleCursor];
+    // auto CursorShader = RenderState->Shaders[Shader_ConsoleCursor];
 	glm::mat4 CursorModel(1.0f);
-    CursorModel = glm::translate(CursorModel, glm::vec3(-0.97 + strlen(Console->Buffer) * RenderState->InconsolataFont.GlyphWidth * SX * 1.155, 0.51, 0));
+    CursorModel = glm::translate(CursorModel, glm::vec3(-0.97 + strlen(Console->Buffer) * RenderState->InconsolataFont.GlyphWidth * SX * 1.155, 0.51 * PercentAnimated, 0));
     CursorModel = glm::scale(CursorModel, glm::vec3(0.015, 0.06, 1));
     SetMat4Uniform(Shader.Program, "M", CursorModel);
 	GLfloat TimeValue = glfwGetTime();
@@ -521,8 +523,8 @@ static void RenderConsole(render_state* RenderState, console* Console, glm::mat4
 	
 	RenderState->InconsolataFont.Color = glm::vec4(1, 1, 1, 1);
 
-    RenderText(RenderState, RenderState->InconsolataFont, ">", -1 + 8 * SX, 0.61f - 50 * SY, SX, SY);
-	RenderText(RenderState, RenderState->InconsolataFont, &Console->Buffer[0], -0.98f + 8 * SX, 0.61f - 50 * SY, SX, SY); //TODO(Daniel) Find out how to render a █
+    RenderText(RenderState, RenderState->InconsolataFont, ">", -1 + 8 * SX, 0.61f  - 50 * -PercentAnimated * SY, SX, SY);
+	RenderText(RenderState, RenderState->InconsolataFont, &Console->Buffer[0], -0.98f + 8 * SX, 0.61f * PercentAnimated - 50 * PercentAnimated * SY, SX, SY); //TODO(Daniel) Find out how to render a █
 	
 	RenderState->InconsolataFont.Color = glm::vec4(0.8, 0.8, 0.8, 1);
 	
@@ -530,8 +532,9 @@ static void RenderConsole(render_state* RenderState, console* Console, glm::mat4
 
 	for(int i = 0; i < HISTORY_BUFFER_LINES; i++)
 	{
-		RenderText(RenderState, RenderState->InconsolataFont, &Console->HistoryBuffer[i][0], -1 + 8 * SX, 0.69f + i * 0.06f - 50 * SY, SX, SY);
+		RenderText(RenderState, RenderState->InconsolataFont, &Console->HistoryBuffer[i][0], -1 + 8 * SX, 0.69f + i * 0.06f - 50 * PercentAnimated * SY, SX, SY);
 	}
+
 }
 
 static void RenderEntity(render_state *RenderState, const entity &entity, glm::mat4 ProjectionMatrix, glm::mat4 View)
