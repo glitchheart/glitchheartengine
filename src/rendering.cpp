@@ -89,6 +89,74 @@ static GLuint LoadFragmentShader(const std::string FilePath, shader *Shd)
     return GL_TRUE;
 }
 
+static GLuint LoadModel(const char * FilePath)
+{
+    std::vector<unsigned int> VertexIndices, UVIndices, NormalIndices;
+    std::vector<glm::vec3> TempVertices;
+    std::vector<glm::vec2> TempUVs;
+    std::vector<glm::vec3> TempNormals;
+    
+    FILE * File = fopen(FilePath, "r");
+    
+    if(File == NULL )
+    {
+        printf("Impossible to open the file !\n");
+        return false;
+    }
+    
+    while(1)
+    {
+        char LineHeader[128];
+        // read the first word of the line
+        int Res = fscanf(File, "%s", LineHeader);
+        if (Res == EOF)
+            break;
+        
+        if (strcmp(LineHeader, "v" ) == 0 )
+        {
+            glm::vec3 Vertex;
+            fscanf(File, "%f %f %f\n", &Vertex.x, &Vertex.y, &Vertex.z );
+            TempVertices.push_back(Vertex);
+        }
+        else if (strcmp(LineHeader, "vt" ) == 0 )
+        {
+            glm::vec2 UV;
+            fscanf(File, "%f %f\n", &UV.x, &UV.y );
+            TempUVs.push_back(UV);
+        }
+        else if (strcmp(LineHeader, "vn" ) == 0 )
+        {
+            glm::vec3 Normal;
+            fscanf(File, "%f %f %f\n", &Normal.x, &Normal.y, &Normal.z );
+            TempNormals.push_back(Normal);
+        }
+        else if (strcmp(LineHeader, "f" ) == 0 )
+        {
+            std::string Vertex1, Vertex2, Vertex3;
+            unsigned int VertexIndex[3], UVIndex[3], NormalIndex[3];
+            
+            int Matches = fscanf(File, "%d/%d/%d %d/%d/%d %d/%d/%d\n", &VertexIndex[0], &UVIndex[0], &NormalIndex[0], &VertexIndex[1], &UVIndex[1], &NormalIndex[1], &VertexIndex[2], &UVIndex[2], &NormalIndex[2]);
+            
+            if (Matches != 9)
+            {
+                printf("File can't be read by our simple parser : ( Try exporting with other options\n");
+                return false;
+            }
+            
+            VertexIndices.push_back(VertexIndex[0]);
+            VertexIndices.push_back(VertexIndex[1]);
+            VertexIndices.push_back(VertexIndex[2]);
+            UVIndices    .push_back(UVIndex[0]);
+            UVIndices    .push_back(UVIndex[1]);
+            UVIndices    .push_back(UVIndex[2]);
+            NormalIndices.push_back(NormalIndex[0]);
+            NormalIndices.push_back(NormalIndex[1]);
+            NormalIndices.push_back(NormalIndex[2]);
+        }
+    }
+    return GL_TRUE;
+}
+
 static void UseShader(shader *Shader)
 {
     switch(Shader->Type)
@@ -144,7 +212,7 @@ static void InitializeFreeTypeFont(FT_Library Library, render_font* Font, shader
     
     Font->AtlasWidth = W;
     Font->AtlasHeight = H;
-	Font->GlyphWidth = G->bitmap.width;
+    Font->GlyphWidth = G->bitmap.width;
     glActiveTexture(GL_TEXTURE0);
     glGenTextures(1, &Font->Texture);
     glBindTexture(GL_TEXTURE_2D, Font->Texture);
@@ -161,7 +229,7 @@ static void InitializeFreeTypeFont(FT_Library Library, render_font* Font, shader
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     
     unsigned int X = 0;
-
+    
     for(int i = 32; i < 255; i++) 
     {
         if(FT_Load_Char(Font->Face, i, FT_LOAD_RENDER))
@@ -457,19 +525,13 @@ static void RenderText(render_state* RenderState, const render_font& Font, const
         /* Skip glyphs that have no pixels */
         if(!W || !H)
             continue;
-        Point Point1 = { X2, -Y2, Font.CharacterInfo[*P].TX, 0 };
-        Point Point2 = { X2 + W, -Y2, Font.CharacterInfo[*P].TX + Font.CharacterInfo[*P].BW / Font.AtlasWidth, 0 };
-        Point Point3 = { X2, -Y2 - H, Font.CharacterInfo[*P].TX, Font.CharacterInfo[*P].BH / Font.AtlasHeight };
-        Point Point4 = { X2 + W, -Y2, Font.CharacterInfo[*P].TX + Font.CharacterInfo[*P].BW / Font.AtlasWidth,  0 };
-        Point Point5 = { X2, -Y2 - H, Font.CharacterInfo[*P].TX, Font.CharacterInfo[*P].BH / Font.AtlasHeight };
-        Point Point6 = { X2 + W, -Y2 - H, Font.CharacterInfo[*P].TX + Font.CharacterInfo[*P].BW / Font.AtlasWidth, Font.CharacterInfo[*P].BH / Font.AtlasHeight };
-
-        Coords[N++] = Point1; //{ X2, -Y2, Font.CharacterInfo[*P].TX, 0 };
-        Coords[N++] = Point2; //{ X2 + W, -Y2, Font.CharacterInfo[*P].TX + Font.CharacterInfo[*P].BW / Font.AtlasWidth, 0 };
-        Coords[N++] = Point3; //{ X2, -Y2 - H, Font.CharacterInfo[*P].TX, Font.CharacterInfo[*P].BH / Font.AtlasHeight };
-        Coords[N++] = Point4; //{ X2 + W, -Y2, Font.CharacterInfo[*P].TX + Font.CharacterInfo[*P].BW / Font.AtlasWidth,  0 };
-        Coords[N++] = Point5; //{ X2, -Y2 - H, Font.CharacterInfo[*P].TX, Font.CharacterInfo[*P].BH / Font.AtlasHeight };
-        Coords[N++] = Point6; //{ X2 + W, -Y2 - H, Font.CharacterInfo[*P].TX + Font.CharacterInfo[*P].BW / Font.AtlasWidth, Font.CharacterInfo[*P].BH / Font.AtlasHeight };
+        
+        Coords[N++] = { X2, -Y2, Font.CharacterInfo[*P].TX, 0 };
+        Coords[N++] = { X2 + W, -Y2, Font.CharacterInfo[*P].TX + Font.CharacterInfo[*P].BW / Font.AtlasWidth, 0 };
+        Coords[N++] = { X2, -Y2 - H, Font.CharacterInfo[*P].TX, Font.CharacterInfo[*P].BH / Font.AtlasHeight };
+        Coords[N++] = { X2 + W, -Y2, Font.CharacterInfo[*P].TX + Font.CharacterInfo[*P].BW / Font.AtlasWidth,  0 };
+        Coords[N++] = { X2, -Y2 - H, Font.CharacterInfo[*P].TX, Font.CharacterInfo[*P].BH / Font.AtlasHeight };
+        Coords[N++] = { X2 + W, -Y2 - H, Font.CharacterInfo[*P].TX + Font.CharacterInfo[*P].BW / Font.AtlasWidth, Font.CharacterInfo[*P].BH / Font.AtlasHeight };
     }
     
     glBindVertexArray(Font.VAO);
@@ -484,57 +546,60 @@ static void RenderConsole(render_state* RenderState, console* Console, glm::mat4
     auto Shader = RenderState->Shaders[Shader_Console];
     
     UseShader(&Shader);
-
-	real32 PercentAnimated = 1.0f + 1.0 - Console->CurrentTime / Console->TimeToAnimate;
-	
-	//draw upper part
+    
+    real32 PercentAnimated = 1.0f + 1.0 - Console->CurrentTime / Console->TimeToAnimate;
+    
+    //draw upper part
     glm::mat4 Model(1.0f);
-    Model = glm::translate(Model, glm::vec3(-1, 0.5 * PercentAnimated, 0));
+    Model = glm::translate(Model, glm::vec3(-1, 0.52f * PercentAnimated, 0));
     Model = glm::scale(Model, glm::vec3(2, 0.5, 1));
     SetMat4Uniform(Shader.Program, "M", Model);
-	SetVec4Attribute(Shader.Program, "color", glm::vec4(0, 0.4, 0.3, 0.6));
+    SetVec4Attribute(Shader.Program, "color", glm::vec4(0, 0.4, 0.3, 0.6));
     
     glBindVertexArray(RenderState->ConsoleVAO); //TODO(Daniel) Create a vertex array buffer + object for console
     glBindBuffer(GL_ARRAY_BUFFER, RenderState->ConsoleQuadVBO);
     glDrawArrays(GL_QUADS, 0, 4);
-
-	//draw lower bar
-	glm::mat4 SecondModel(1.0f);
-    SecondModel = glm::translate(SecondModel, glm::vec3(-1, 0.5 * PercentAnimated, 0));
+    
+    //draw lower bar
+    glm::mat4 SecondModel(1.0f);
+    SecondModel = glm::translate(SecondModel, glm::vec3(-1, 0.5f * PercentAnimated, 0));
     SecondModel = glm::scale(SecondModel, glm::vec3(2, 0.08, 1));
     SetMat4Uniform(Shader.Program, "M", SecondModel);
-	SetVec4Attribute(Shader.Program, "color", glm::vec4(0, 0.2, 0.2, 0.6));
-
-	glDrawArrays(GL_QUADS, 0, 4);
-	
+    SetVec4Attribute(Shader.Program, "color", glm::vec4(0, 0.2, 0.2, 0.6));
+    
+    glDrawArrays(GL_QUADS, 0, 4);
+    
     const GLFWvidmode *Mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
     real32 SX = 2.0f / Mode->width;
     real32 SY = 2.0f / Mode->height;
-	
+    
     // auto CursorShader = RenderState->Shaders[Shader_ConsoleCursor];
-	glm::mat4 CursorModel(1.0f);
+    glm::mat4 CursorModel(1.0f);
     CursorModel = glm::translate(CursorModel, glm::vec3(-0.97 + strlen(Console->Buffer) * RenderState->InconsolataFont.GlyphWidth * SX * 1.155, 0.51 * PercentAnimated, 0));
     CursorModel = glm::scale(CursorModel, glm::vec3(0.015, 0.06, 1));
+    
     SetMat4Uniform(Shader.Program, "M", CursorModel);
-	GLfloat TimeValue = glfwGetTime();
+    
+    GLfloat TimeValue = glfwGetTime();
     GLfloat AlphaValue = (sin(TimeValue * 6) / 2) + 0.5;
-	SetVec4Attribute(Shader.Program, "color", glm::vec4(0, 1.0, 0.5, AlphaValue));
-	glDrawArrays(GL_QUADS, 0, 4);
-	
-	RenderState->InconsolataFont.Color = glm::vec4(1, 1, 1, 1);
-
-    RenderText(RenderState, RenderState->InconsolataFont, ">", -1 + 8 * SX, 0.61f  - 50 * -PercentAnimated * SY, SX, SY);
-	RenderText(RenderState, RenderState->InconsolataFont, &Console->Buffer[0], -0.98f + 8 * SX, 0.61f * PercentAnimated - 50 * PercentAnimated * SY, SX, SY); //TODO(Daniel) Find out how to render a █
-	
-	RenderState->InconsolataFont.Color = glm::vec4(0.8, 0.8, 0.8, 1);
-	
-	int index = 0;
-
-	for(int i = 0; i < HISTORY_BUFFER_LINES; i++)
-	{
-		RenderText(RenderState, RenderState->InconsolataFont, &Console->HistoryBuffer[i][0], -1 + 8 * SX, 0.69f + i * 0.06f - 50 * PercentAnimated * SY, SX, SY);
-	}
-
+    
+    SetVec4Attribute(Shader.Program, "color", glm::vec4(0, 1.0, 0.5, AlphaValue));
+    
+    glDrawArrays(GL_QUADS, 0, 4);
+    
+    RenderState->InconsolataFont.Color = glm::vec4(1, 1, 1, 1);
+    
+    RenderText(RenderState, RenderState->InconsolataFont, ">", -1 + 8 * SX, 0.61f * PercentAnimated - 50 * PercentAnimated * SY, SX, SY);
+    RenderText(RenderState, RenderState->InconsolataFont, &Console->Buffer[0], -0.98f + 8 * SX, 0.61f * PercentAnimated - 50 * PercentAnimated * SY, SX, SY); //TODO(Daniel) Find out how to render a █
+    
+    RenderState->InconsolataFont.Color = glm::vec4(0.8, 0.8, 0.8, 1);
+    
+    int index = 0;
+    
+    for(int i = 0; i < HISTORY_BUFFER_LINES; i++)
+    {
+        RenderText(RenderState, RenderState->InconsolataFont, &Console->HistoryBuffer[i][0], -1 + 8 * SX, 0.69f * PercentAnimated + i * 0.06f - 50 * PercentAnimated * SY, SX, SY);
+    }
 }
 
 static void RenderEntity(render_state *RenderState, const entity &entity, glm::mat4 ProjectionMatrix, glm::mat4 View)
@@ -568,7 +633,7 @@ static void RenderTileChunk(render_state* RenderState, const island_chunk &Islan
 {
     real32 Scale = 1.0f;
     
-	for (int i = 0; i < ISLAND_SIZE; i++)
+    for (int i = 0; i < ISLAND_SIZE; i++)
     {
         for (int j = 0; j < ISLAND_SIZE; j++)
         {
@@ -585,7 +650,7 @@ static void RenderTileChunk(render_state* RenderState, const island_chunk &Islan
             }
         }
     }
-
+    
     glBindVertexArray(0);
 }
 
@@ -605,7 +670,7 @@ static void RenderTilemap(render_state *RenderState, const tilemap_data &Tilemap
     
     for(int i = 0; i < NUM_ISLANDS; i++)
     {
-		RenderTileChunk(RenderState, TilemapData.Chunks[i], &Shader, TilesetTextureHandle, ProjectionMatrix, View, StartX, StartY, EndX, EndY);
+        RenderTileChunk(RenderState, TilemapData.Chunks[i], &Shader, TilesetTextureHandle, ProjectionMatrix, View, StartX, StartY, EndX, EndY);
     }
 }
 
@@ -625,7 +690,7 @@ static void Render(game_state* GameState)
     
     RenderEntity(&GameState->RenderState, GameState->Player, GameState->Camera.ProjectionMatrix,  GameState->Camera.ViewMatrix);
     
-    if(GameState->Console.Open)
+    if(GameState->Console.CurrentTime > 0)
         RenderConsole(&GameState->RenderState, &GameState->Console, GameState->Camera.ProjectionMatrix,  GameState->Camera.ViewMatrix);
     
     const GLFWvidmode *Mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
