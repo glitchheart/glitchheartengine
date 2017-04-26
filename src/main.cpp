@@ -29,7 +29,7 @@
 #include "platform_sound.cpp"
 #include "filehandling.h"
 #include "rendering.cpp"
-#include "world.cpp"
+#include "level.cpp"
 #include "entity.h"
 #include "keycontroller.cpp"
 
@@ -171,6 +171,7 @@ static void CheckConsoleInput(game_state* GameState, real32 DeltaTime)
     if (GetKeyDown(GLFW_KEY_TAB, GameState))
     {
         GameState->Console.Open = !GameState->Console.Open;
+        
         if(GameState->Console.Open)
             GameState->Console.CurrentTime = 0.0f;
         else
@@ -335,6 +336,7 @@ int main(void)
     entity_manager EntityManager = {}; //TODO(Daniel) Do something useful with this. And remember the texture_manager
     
     GameState.Player = {};
+    GameState.Camera.Zoom = 2.5f;
     GameState.Player.Type = Entity_Player;
     GameState.Player.player.WalkingSpeed = 10.0f;
     GameState.Player.ShaderIndex = Shader_Texture;
@@ -342,15 +344,15 @@ int main(void)
     GameState.Player.Rotation = glm::vec3(0, 0, 0.3f);
     GameState.Player.Scale = glm::vec3(2, 2, 0);
     
-    GenerateTilemap(&GameState.TilemapData);
-    GameState.TilemapData.TileAtlasTexture = LoadTexture("../assets/textures/tiles.png");
+    GenerateRoom(ROOM_WIDTH, ROOM_HEIGHT, &GameState.Room);
+    
+    GameState.Room.TileAtlasTexture = LoadTexture("../assets/textures/tiles.png");
     
     printf("%s\n", glGetString(GL_VERSION));
     
     glfwGetFramebufferSize(GameState.RenderState.Window, &GameState.RenderState.WindowWidth, &GameState.RenderState.WindowHeight);
     glViewport(0, 0, GameState.RenderState.WindowWidth, GameState.RenderState.WindowHeight);
     
-    GameState.Camera.Zoom = 1.0f; //TODO(Daniel) For some reason this became necessary although Zoom has a default value in the struct
     GameState.Camera.ViewportWidth = Width / 20;
     GameState.Camera.ViewportHeight = Height / 20;
     
