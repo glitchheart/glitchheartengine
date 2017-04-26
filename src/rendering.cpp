@@ -89,97 +89,8 @@ static GLuint LoadFragmentShader(const std::string FilePath, shader *Shd)
     return GL_TRUE;
 }
 
-static GLuint LoadModel(const char * FilePath)
-{
-    std::vector<unsigned int> VertexIndices, UVIndices, NormalIndices;
-    std::vector<glm::vec3> TempVertices;
-    std::vector<glm::vec2> TempUVs;
-    std::vector<glm::vec3> TempNormals;
-    
-    FILE * File = fopen(FilePath, "r");
-    
-    if(File == NULL )
-    {
-        printf("Impossible to open the file !\n");
-        return false;
-    }
-    
-    while(1)
-    {
-        char LineHeader[128];
-        // read the first word of the line
-        int Res = fscanf(File, "%s", LineHeader);
-        if (Res == EOF)
-            break;
-        
-        if (strcmp(LineHeader, "v" ) == 0 )
-        {
-            glm::vec3 Vertex;
-            fscanf(File, "%f %f %f\n", &Vertex.x, &Vertex.y, &Vertex.z );
-            TempVertices.push_back(Vertex);
-        }
-        else if (strcmp(LineHeader, "vt" ) == 0 )
-        {
-            glm::vec2 UV;
-            fscanf(File, "%f %f\n", &UV.x, &UV.y );
-            TempUVs.push_back(UV);
-        }
-        else if (strcmp(LineHeader, "vn" ) == 0 )
-        {
-            glm::vec3 Normal;
-            fscanf(File, "%f %f %f\n", &Normal.x, &Normal.y, &Normal.z );
-            TempNormals.push_back(Normal);
-        }
-        else if (strcmp(LineHeader, "f" ) == 0 )
-        {
-            std::string Vertex1, Vertex2, Vertex3;
-            unsigned int VertexIndex[3], UVIndex[3], NormalIndex[3];
-            
-            int Matches = fscanf(File, "%d/%d/%d %d/%d/%d %d/%d/%d\n", &VertexIndex[0], &UVIndex[0], &NormalIndex[0], &VertexIndex[1], &UVIndex[1], &NormalIndex[1], &VertexIndex[2], &UVIndex[2], &NormalIndex[2]);
-            
-            if (Matches != 9)
-            {
-                printf("File can't be read by our simple parser : ( Try exporting with other options\n");
-                return false;
-            }
-            
-            VertexIndices.push_back(VertexIndex[0]);
-            VertexIndices.push_back(VertexIndex[1]);
-            VertexIndices.push_back(VertexIndex[2]);
-            UVIndices    .push_back(UVIndex[0]);
-            UVIndices    .push_back(UVIndex[1]);
-            UVIndices    .push_back(UVIndex[2]);
-            NormalIndices.push_back(NormalIndex[0]);
-            NormalIndices.push_back(NormalIndex[1]);
-            NormalIndices.push_back(NormalIndex[2]);
-        }
-    }
-    return GL_TRUE;
-}
-
 static void UseShader(shader *Shader)
 {
-    switch(Shader->Type)
-    {
-        case Shader_Console:
-        {
-            
-        }
-        break;
-        case Shader_StandardFont:
-        {
-            // auto TexcoordLocation = glGetAttribLocation(Shader->Program, "coord");
-            // glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, 0);
-            // glEnableVertexAttribArray(0);
-        }
-        break;
-        default:
-        {
-            
-        }
-        break;
-    }
-    
     glUseProgram(Shader->Program);
 }
 
@@ -459,7 +370,7 @@ static void ReloadAssets(asset_manager *AssetManager, game_state* GameState)
     
     if(AssetManager->DirtyTileset == 1)
     {
-        GameState->TilemapData.TileAtlasTexture = LoadTexture("./assets/textures/tiles.png");
+        GameState->Room.TileAtlasTexture = LoadTexture("./assets/textures/tiles.png");
         AssetManager->DirtyTileset = 0;
     }
 }
@@ -629,6 +540,46 @@ static void RenderEntity(render_state *RenderState, const entity &entity, glm::m
     glBindVertexArray(0);
 }
 
+
+static void RenderRoom(render_state* RenderState, const room& Room, GLuint TilesetTextureHandle, glm::mat4 ProjectionMatrix, glm::mat4 View, int StartX, int StartY, int EndX, int EndY)
+{
+    if (RenderState->BoundTexture != TilesetTextureHandle) //never bind the same texture if it's already bound
+    {
+        glBindTexture(GL_TEXTURE_2D, TilesetTextureHandle);
+        RenderState->BoundTexture = TilesetTextureHandle;
+    }
+    
+    glBindVertexArray(RenderState->TileVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, RenderState->SpriteQuadVBO);
+    
+    auto Shader = RenderState->TileShader;
+    UseShader(&Shader);
+    
+    real32 Scale = 1.0f;
+    
+    for (int i = 0; i < ROOM_WIDTH; i++)
+    {
+        for (int j = 0; j < ROOM_HEIGHT; j++)
+        {
+            if(Room.Data[i][j].Type != Tile_None)
+            {
+                glm::mat4 Model(1.0f);
+                Model = glm::translate(Model, glm::vec3(i * Scale, j * Scale, 0.0f));
+                Model = glm::scale(Model, glm::vec3(Scale, Scale, 1.0f));
+                glm::mat4 MVP = ProjectionMatrix * View * Model;
+                
+                SetVec2Attribute(Shader.Program, "textureOffset", Room.Data[i][j].TextureOffset);
+                SetMat4Uniform(Shader.Program, "MVP", MVP);
+                glDrawArrays(GL_QUADS, 0, 4);
+            }
+        }
+    }
+    
+    glBindVertexArray(0);
+}
+
+
+/*
 static void RenderTileChunk(render_state* RenderState, const island_chunk &IslandChunk, shader* Shader, GLuint TilesetTextureHandle, glm::mat4 ProjectionMatrix, glm::mat4 View, int StartX, int StartY, int EndX, int EndY)
 {
     real32 Scale = 1.0f;
@@ -653,7 +604,8 @@ static void RenderTileChunk(render_state* RenderState, const island_chunk &Islan
     
     glBindVertexArray(0);
 }
-
+*/
+/*
 static void RenderTilemap(render_state *RenderState, const tilemap_data &TilemapData, GLuint TilesetTextureHandle, glm::mat4 ProjectionMatrix, glm::mat4 View, int StartX, int StartY, int EndX, int EndY)
 {
     if (RenderState->BoundTexture != TilesetTextureHandle) //never bind the same texture if it's already bound
@@ -673,11 +625,12 @@ static void RenderTilemap(render_state *RenderState, const tilemap_data &Tilemap
         RenderTileChunk(RenderState, TilemapData.Chunks[i], &Shader, TilesetTextureHandle, ProjectionMatrix, View, StartX, StartY, EndX, EndY);
     }
 }
+*/
 
 static void Render(game_state* GameState)
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glClearColor(99.0f / 255.0f, 155.0f / 255.0f, 255.0f / 255.0f, 1.0f);
+    glClearColor(0, 0, 0, 1.0f);
     
     //find the visible chunks
     //int minX = (int)std::max(0.0f, GameState->Player.Position.x - GameState->Camera.ViewportWidth / GameState->Camera.Zoom / 2);
@@ -686,7 +639,11 @@ static void Render(game_state* GameState)
     //int maxX = (int)std::min((real32)TILEMAP_SIZE * CHUNK_SIZE, GameState->Player.Position.x + GameState->Camera.ViewportWidth / GameState->Camera.Zoom / 2.0f + 2);
     //int maxY = (int)std::min((real32)TILEMAP_SIZE * CHUNK_SIZE, GameState->Player.Position.y + GameState->Camera.ViewportHeight / GameState->Camera.Zoom / 2.0f + 2);
     
+    RenderRoom(&GameState->RenderState, GameState->Room, GameState->Room.TileAtlasTexture, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix, 0, 0, 0, 0);
+    
+    /*
     RenderTilemap(&GameState->RenderState, GameState->TilemapData, GameState->TilemapData.TileAtlasTexture, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix, 0, 0, 0, 0);
+    */
     
     RenderEntity(&GameState->RenderState, GameState->Player, GameState->Camera.ProjectionMatrix,  GameState->Camera.ViewMatrix);
     

@@ -13,7 +13,7 @@
 #include "util.h"
 #include "error.h"
 #include "entity.h"
-#include "world.h"
+#include "level.h"
 #include "keycontroller.h"
 #include "rendering.h"
 #include "platform_sound.h"
@@ -26,7 +26,7 @@ struct camera
 {
     uint32 ViewportWidth;
     uint32 ViewportHeight;
-    real32 Zoom = 1.0f; //NOTE(Daniel) 1.0 is normal zoom. The higher the number the closer you are zoomed in
+    real32 Zoom; //NOTE(Daniel) The higher the number the closer you are zoomed in. 1.0f is NORMAL
     glm::mat4 ViewMatrix;
     glm::mat4 ProjectionMatrix;
 };
@@ -37,12 +37,12 @@ struct camera
 struct console
 {
     bool Open;
-	glm::vec3 EndPosition = glm::vec3(-1, 0.5, 0);
-	real32 TimeToAnimate = 0.3f;
-	real32 CurrentTime;
-	glm::vec4 Color;
-	glm::vec3 CursorColor;
-	uint32 MaxHeight;
+    glm::vec3 EndPosition = glm::vec3(-1, 0.5, 0);
+    real32 TimeToAnimate = 0.3f;
+    real32 CurrentTime;
+    glm::vec4 Color;
+    glm::vec3 CursorColor;
+    uint32 MaxHeight;
     uint32 BufferIndex;
     char Buffer[CONSOLE_BUFFER_SIZE];
     char HistoryBuffer[HISTORY_BUFFER_LINES][CONSOLE_BUFFER_SIZE + 20]; //NOTE(Daniel) + 20 to make room for : command not found
@@ -54,7 +54,7 @@ struct game_state
     camera Camera;
     console Console;
     entity Player;
-    tilemap_data TilemapData;
+    room Room;
     input_controller InputController;
     sound_manager SoundManager;
 };
