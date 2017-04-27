@@ -32,6 +32,8 @@
 #include "level.cpp"
 #include "entity.h"
 #include "keycontroller.cpp"
+#include "keys_glfw.h"
+
 
 struct game_code
 {
@@ -168,7 +170,7 @@ static void CheckConsoleInput(game_state* GameState, real32 DeltaTime)
         GameState->Console.CurrentTime -= DeltaTime;
     }
     
-    if (GetKeyDown(GLFW_KEY_TAB, GameState))
+    if (GetKeyDown(Key_Tab, GameState))
     {
         GameState->Console.Open = !GameState->Console.Open;
         
@@ -178,13 +180,13 @@ static void CheckConsoleInput(game_state* GameState, real32 DeltaTime)
             GameState->Console.CurrentTime = GameState->Console.TimeToAnimate;
     }
     
-    if (GetKeyDown(GLFW_KEY_BACKSPACE, GameState) && GameState->Console.Open)
+    if (GetKeyDown(Key_Backspace, GameState) && GameState->Console.Open)
     {
         if (GameState->Console.BufferIndex > 0)
             GameState->Console.Buffer[--GameState->Console.BufferIndex] = '\0';
     }
     
-    if (GetKeyDown(GLFW_KEY_ENTER, GameState) && GameState->Console.Open)
+    if (GetKeyDown(Key_Enter, GameState) && GameState->Console.Open)
     {
         ExecuteCommand(GameState);
     }
@@ -389,7 +391,7 @@ int main(void)
         DeltaTime = CurrentFrame - LastFrame;
         LastFrame = CurrentFrame;
         
-        if (GetKey(GLFW_KEY_ESCAPE, &GameState))
+        if (GetKey(Key_Escape, &GameState))
             glfwSetWindowShouldClose(GameState.RenderState.Window, GLFW_TRUE);
         
         ReloadAssets(&AssetManager, &GameState);
