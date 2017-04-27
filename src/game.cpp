@@ -42,7 +42,7 @@ extern "C" UPDATE(Update)
     float degrees = atan2(direction.y, direction.x);
     
     GameState->Player.Rotation = glm::vec3(0, 0, degrees);
-    
+    GameState->Crosshair.Position = glm::vec2(pos.x - 0.5f, pos.y - 0.5f);
     
     GameState->Camera.ProjectionMatrix = glm::ortho(0.0f,
                                                     static_cast<GLfloat>(GameState->Camera.ViewportWidth / GameState->Camera.Zoom),

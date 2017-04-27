@@ -338,6 +338,13 @@ int main(void)
     entity_manager EntityManager = {}; //TODO(Daniel) Do something useful with this. And remember the texture_manager
     
     GameState.Player = {};
+    GameState.Crosshair = {};
+    GameState.Crosshair.Type = Entity_Crosshair;
+    GameState.Crosshair.ShaderIndex = Shader_Texture;
+    GameState.Crosshair.TextureHandle = LoadTexture("../assets/textures/crosshair2.png");
+    GameState.Crosshair.Rotation = glm::vec3(0, 0, 0);
+    GameState.Crosshair.Scale = glm::vec3(1, 1, 0);
+    
     GameState.Camera.Zoom = 2.5f;
     GameState.Player.Type = Entity_Player;
     GameState.Player.player.WalkingSpeed = 10.0f;

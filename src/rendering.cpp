@@ -206,7 +206,7 @@ static void RenderSetup(render_state *RenderState)
     glBindVertexArray(RenderState->TileVAO);
     glGenBuffers(1, &RenderState->TileQuadVBO);
     glBindBuffer(GL_ARRAY_BUFFER, RenderState->TileQuadVBO);
-    glBufferData(GL_ARRAY_BUFFER, RenderState->SpriteQuadVerticesSize, RenderState->SpriteQuadVertices, GL_DYNAMIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, RenderState->TileQuadVerticesSize, RenderState->TileQuadVertices, GL_DYNAMIC_DRAW);
     
     RenderState->TileShader.Type = Shader_Tile;
     LoadShader(ShaderPaths[Shader_Tile], &RenderState->TileShader);
@@ -225,7 +225,7 @@ static void RenderSetup(render_state *RenderState)
     glBindVertexArray(RenderState->ConsoleVAO);
     glGenBuffers(1, &RenderState->ConsoleQuadVBO);
     glBindBuffer(GL_ARRAY_BUFFER, RenderState->ConsoleQuadVBO);
-    glBufferData(GL_ARRAY_BUFFER, RenderState->TileQuadVerticesSize, RenderState->TileQuadVertices, GL_DYNAMIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, RenderState->ConsoleQuadVerticesSize, RenderState->ConsoleQuadVertices, GL_DYNAMIC_DRAW);
     
     RenderState->ConsoleShader.Type = Shader_Console;
     LoadShader(ShaderPaths[Shader_Console], &RenderState->ConsoleShader);
@@ -564,7 +564,7 @@ static void RenderEntity(render_state *RenderState, const entity &entity, glm::m
     glm::mat4 Model(1.0f);
     Model = glm::translate(Model, glm::vec3(entity.Position.x, entity.Position.y, 0.0f));
     Model = glm::translate(Model, glm::vec3(1, 1, 0.0f)); 
-    Model = glm::rotate(Model, entity.Rotation.z + 1.56f, glm::vec3(0, 0, 1)); //NOTE(Daniel) 1.56 is approximately 90 degrees in radians
+    Model = glm::rotate(Model, entity.Rotation.z, glm::vec3(0, 0, 1)); //NOTE(Daniel) 1.56 is approximately 90 degrees in radians
     Model = glm::translate(Model, glm::vec3(-1, -1, 0.0f)); 
     Model = glm::scale(Model, entity.Scale);
     glm::mat4 MVP = ProjectionMatrix * View * Model;
@@ -688,7 +688,8 @@ static void Render(game_state* GameState)
     RenderTilemap(&GameState->RenderState, GameState->TilemapData, GameState->TilemapData.TileAtlasTexture, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix, 0, 0, 0, 0);
     */
     
-    RenderEntity(&GameState->RenderState, GameState->Player, GameState->Camera.ProjectionMatrix,  GameState->Camera.ViewMatrix);
+    RenderEntity(&GameState->RenderState, GameState->Player, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
+    RenderEntity(&GameState->RenderState, GameState->Crosshair, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
     
     if(GameState->Console.CurrentTime > 0)
         RenderConsole(&GameState->RenderState, &GameState->Console, GameState->Camera.ProjectionMatrix,  GameState->Camera.ViewMatrix);
