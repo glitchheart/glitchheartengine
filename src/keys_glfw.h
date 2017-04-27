@@ -29,6 +29,7 @@ std::map<uint32, Key_Code> KeyMappings =
     { GLFW_KEY_T, Key_T },
     { GLFW_KEY_U, Key_U },
     { GLFW_KEY_V, Key_V },
+    { GLFW_KEY_W, Key_W },
     { GLFW_KEY_X, Key_X },
     { GLFW_KEY_Y, Key_Y },
     { GLFW_KEY_Z, Key_Z }
@@ -80,7 +81,7 @@ void CharacterCallback(GLFWwindow *Window, unsigned int Codepoint)
     game_state *GameState = (game_state *)glfwGetWindowUserPointer(Window);
     if (GameState->Console.Open)
     {
-        if(GameState->Console.BufferIndex < CONSOLE_BUFFER_SIZE)
+        if(GameState->Console.BufferIndex < CONSOLE_BUFFER_SIZE - 1)
             GameState->Console.Buffer[GameState->Console.BufferIndex++] = (char)Codepoint;
     }
 }

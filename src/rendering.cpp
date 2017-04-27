@@ -103,13 +103,15 @@ static void InitializeFreeTypeFont(FT_Library Library, render_font* Font, shader
     
     FT_Set_Pixel_Sizes(Font->Face, 0, 30);
     
+    FT_Select_Charmap(Font->Face , ft_encoding_unicode);
+    
     //Find the atlas width and height
     FT_GlyphSlot G = Font->Face->glyph;
     
     unsigned int W = 0;
     unsigned int H = 0;
     
-    for(int i = 32; i < 255; i++) 
+    for(int i = 0; i < 255; i++) 
     {
         if(FT_Load_Char(Font->Face, i, FT_LOAD_RENDER))
         {
@@ -141,7 +143,7 @@ static void InitializeFreeTypeFont(FT_Library Library, render_font* Font, shader
     
     unsigned int X = 0;
     
-    for(int i = 32; i < 255; i++) 
+    for(int i = 0; i < 255; i++) 
     {
         if(FT_Load_Char(Font->Face, i, FT_LOAD_RENDER))
             continue;
@@ -452,6 +454,43 @@ static void RenderText(render_state* RenderState, const render_font& Font, const
     glDrawArrays(GL_TRIANGLES, 0, N);
 }
 
+static void MeasureText(render_font* Font, const char* Text, float* Width, float* Height)
+{
+    int Count, C;
+    
+    if (!Text) 
+    {
+        return;
+    }
+    
+    if (Width) 
+    {
+        /* Width of a text rectangle is a sum advances for every glyph in a string */
+        *Width = 0.0f;
+        
+        for(Count = 0; Count < strlen(Text); ++Count) 
+        {
+            C= Text[Count];
+            *Width += Font->CharacterInfo[C].AX;
+        }
+    }
+    
+    if (Height)
+    {
+        *Height = 0.0f;
+        
+        for(Count = 0; Count < strlen(Text); ++Count) 
+        {
+            C= Text[Count];
+            
+            if (*Height < Font->CharacterInfo[C].AY) 
+            {
+                *Height = Font->CharacterInfo[C].AY;
+            }
+        }
+    }
+}
+
 static void RenderConsole(render_state* RenderState, console* Console, glm::mat4 ProjectionMatrix, glm::mat4 View)
 {
     auto Shader = RenderState->Shaders[Shader_Console];
@@ -486,7 +525,11 @@ static void RenderConsole(render_state* RenderState, console* Console, glm::mat4
     
     // auto CursorShader = RenderState->Shaders[Shader_ConsoleCursor];
     glm::mat4 CursorModel(1.0f);
-    CursorModel = glm::translate(CursorModel, glm::vec3(-0.97 + strlen(Console->Buffer) * RenderState->InconsolataFont.GlyphWidth * SX * 1.155, 0.51 * PercentAnimated, 0));
+    real32 Width;
+    real32 Height;
+    MeasureText(&RenderState->InconsolataFont, &Console->Buffer[0], &Width, &Height);
+    
+    CursorModel = glm::translate(CursorModel, glm::vec3(-0.97 + Width * SX, 0.51 * PercentAnimated, 0));
     CursorModel = glm::scale(CursorModel, glm::vec3(0.015, 0.06, 1));
     
     SetMat4Uniform(Shader.Program, "M", CursorModel);
@@ -501,7 +544,7 @@ static void RenderConsole(render_state* RenderState, console* Console, glm::mat4
     RenderState->InconsolataFont.Color = glm::vec4(1, 1, 1, 1);
     
     RenderText(RenderState, RenderState->InconsolataFont, ">", -1 + 8 * SX, 0.61f * PercentAnimated - 50 * PercentAnimated * SY, SX, SY);
-    RenderText(RenderState, RenderState->InconsolataFont, &Console->Buffer[0], -0.98f + 8 * SX, 0.61f * PercentAnimated - 50 * PercentAnimated * SY, SX, SY); //TODO(Daniel) Find out how to render a █
+    RenderText(RenderState, RenderState->InconsolataFont, &Console->Buffer[0], -0.98f + 8 * SX, 0.61f * PercentAnimated - 50 * PercentAnimated * SY, SX, SY); //TODO(Daniel) UNICODE
     
     RenderState->InconsolataFont.Color = glm::vec4(0.8, 0.8, 0.8, 1);
     
@@ -582,48 +625,48 @@ static void RenderRoom(render_state* RenderState, const room& Room, GLuint Tiles
 /*
 static void RenderTileChunk(render_state* RenderState, const island_chunk &IslandChunk, shader* Shader, GLuint TilesetTextureHandle, glm::mat4 ProjectionMatrix, glm::mat4 View, int StartX, int StartY, int EndX, int EndY)
 {
-    real32 Scale = 1.0f;
+real32 Scale = 1.0f;
+
+for (int i = 0; i < ISLAND_SIZE; i++)
+{
+for (int j = 0; j < ISLAND_SIZE; j++)
+{
+if(IslandChunk.Data[i][j].Type != Tile_None)
+{
+    glm::mat4 Model(1.0f);
+    Model = glm::translate(Model, glm::vec3(i * Scale, j * Scale, 0.0f));
+    Model = glm::scale(Model, glm::vec3(Scale, Scale, 1.0f));
+    glm::mat4 MVP = ProjectionMatrix * View * Model;
     
-    for (int i = 0; i < ISLAND_SIZE; i++)
-    {
-        for (int j = 0; j < ISLAND_SIZE; j++)
-        {
-            if(IslandChunk.Data[i][j].Type != Tile_None)
-            {
-                glm::mat4 Model(1.0f);
-                Model = glm::translate(Model, glm::vec3(i * Scale, j * Scale, 0.0f));
-                Model = glm::scale(Model, glm::vec3(Scale, Scale, 1.0f));
-                glm::mat4 MVP = ProjectionMatrix * View * Model;
-                
-                SetVec2Attribute(Shader->Program, "textureOffset", IslandChunk.Data[i][j].TextureOffset);
-                SetMat4Uniform(Shader->Program, "MVP", MVP);
-                glDrawArrays(GL_QUADS, 0, 4);
-            }
-        }
-    }
-    
-    glBindVertexArray(0);
+    SetVec2Attribute(Shader->Program, "textureOffset", IslandChunk.Data[i][j].TextureOffset);
+    SetMat4Uniform(Shader->Program, "MVP", MVP);
+    glDrawArrays(GL_QUADS, 0, 4);
+}
+}
+}
+
+glBindVertexArray(0);
 }
 */
 /*
 static void RenderTilemap(render_state *RenderState, const tilemap_data &TilemapData, GLuint TilesetTextureHandle, glm::mat4 ProjectionMatrix, glm::mat4 View, int StartX, int StartY, int EndX, int EndY)
 {
-    if (RenderState->BoundTexture != TilesetTextureHandle) //never bind the same texture if it's already bound
-    {
-        glBindTexture(GL_TEXTURE_2D, TilesetTextureHandle);
-        RenderState->BoundTexture = TilesetTextureHandle;
-    }
-    
-    glBindVertexArray(RenderState->TileVAO);
-    glBindBuffer(GL_ARRAY_BUFFER, RenderState->SpriteQuadVBO);
-    
-    auto Shader = RenderState->TileShader;
-    UseShader(&Shader);
-    
-    for(int i = 0; i < NUM_ISLANDS; i++)
-    {
-        RenderTileChunk(RenderState, TilemapData.Chunks[i], &Shader, TilesetTextureHandle, ProjectionMatrix, View, StartX, StartY, EndX, EndY);
-    }
+if (RenderState->BoundTexture != TilesetTextureHandle) //never bind the same texture if it's already bound
+{
+glBindTexture(GL_TEXTURE_2D, TilesetTextureHandle);
+RenderState->BoundTexture = TilesetTextureHandle;
+}
+
+glBindVertexArray(RenderState->TileVAO);
+glBindBuffer(GL_ARRAY_BUFFER, RenderState->SpriteQuadVBO);
+
+auto Shader = RenderState->TileShader;
+UseShader(&Shader);
+
+for(int i = 0; i < NUM_ISLANDS; i++)
+{
+RenderTileChunk(RenderState, TilemapData.Chunks[i], &Shader, TilesetTextureHandle, ProjectionMatrix, View, StartX, StartY, EndX, EndY);
+}
 }
 */
 
