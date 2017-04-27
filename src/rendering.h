@@ -64,29 +64,39 @@ struct render_state
     GLint Viewport[4];
     
     size_t SpriteQuadVerticesSize = 16 * sizeof(GLfloat);
-    size_t TileQuadVerticesSize = 8 * sizeof(GLfloat);
+    size_t TileQuadVerticesSize = 16 * sizeof(GLfloat);
+    size_t ConsoleQuadVerticesSize = 8 * sizeof(GLfloat);
     GLuint BoundVertexBuffer;
     GLuint BoundTexture;
     //sprites
     GLfloat SpriteQuadVertices[16] =
     { //pos        //texcoords
-        0.0f, 1.0f, 0.0625f, 0.0625f,
-        1.0f, 1.0f, 0.9375f, 0.0625f,
-        1.0f, 0.0f, 0.9375f, 0.9375f,
-        0.0f, 0.0f, 0.0625f, 0.9375f};
+        0.0f, 1.0f, 0,    0,
+        1.0f, 1.0f, 1.0f, 0,
+        1.0f, 0.0f, 1.0f, 1.0f,
+        0.0f, 0.0f, 0,    1.0f};
     GLuint SpriteVAO;
     GLuint SpriteQuadVBO;
     
     //tiles
-    GLfloat TileQuadVertices[8] =
+    GLfloat TileQuadVertices[16] =
+    {
+        //pos        //texcoords
+        0.0f, 1.0f, 0.0625f, 0.0625f,
+        1.0f, 1.0f, 0.9375f, 0.0625f,
+        1.0f, 0.0f, 0.9375f, 0.9375f,
+        0.0f, 0.0f, 0.0625f, 0.9375f
+    };
+    
+    GLuint TileVAO;
+    GLuint TileQuadVBO;
+    
+    GLfloat ConsoleQuadVertices[8] =
     {
         0.0f, 1.0f,
         1.0f, 1.0f,
         1.0f, 0.0f,
-        0.0f, 0.0f };
-    
-    GLuint TileVAO;
-    GLuint TileQuadVBO;
+        0.0f, 0.0f }; 
     
     GLuint ConsoleVAO;
     GLuint ConsoleQuadVBO;

@@ -54,6 +54,7 @@ struct game_state
     camera Camera;
     console Console;
     entity Player;
+    entity Crosshair;
     room Room;
     input_controller InputController;
     sound_manager SoundManager;
