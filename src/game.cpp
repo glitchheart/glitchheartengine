@@ -1,10 +1,11 @@
 #include "game.h"
 #include "keycontroller.cpp"
+#include "keys_glfw.h"
 #include "sound.cpp"
 
 extern "C" UPDATE(Update)
 {
-    if (GetKeyDown(GLFW_KEY_ENTER, GameState) && !GameState->Console.Open)
+    if (GetKeyDown(Key_Enter, GameState) && !GameState->Console.Open)
     {
         PlaySoundEffectOnce(GameState, &GameState->SoundManager.Track01);
     }
@@ -12,20 +13,20 @@ extern "C" UPDATE(Update)
     if (!GameState->Console.Open)
     {
         //player movement
-        if (GetKey(GLFW_KEY_A, GameState))
+        if (GetKey(Key_A, GameState))
         {
             GameState->Player.Position.x += -GameState->Player.player.WalkingSpeed * (real32)DeltaTime;
         }
-        else if (GetKey(GLFW_KEY_D, GameState))
+        else if (GetKey(Key_D, GameState))
         {
             GameState->Player.Position.x += GameState->Player.player.WalkingSpeed * (real32)DeltaTime;
         }
         
-        if (GetKey(GLFW_KEY_W, GameState))
+        if (GetKey(Key_W, GameState))
         {
             GameState->Player.Position.y += -GameState->Player.player.WalkingSpeed * (real32)DeltaTime;
         }
-        else if (GetKey(GLFW_KEY_S, GameState))
+        else if (GetKey(Key_S, GameState))
         {
             GameState->Player.Position.y += GameState->Player.player.WalkingSpeed * (real32)DeltaTime;
         }
