@@ -265,82 +265,18 @@ static void RenderSetup(render_state *RenderState)
     InitializeFreeTypeFont(RenderState->FTLibrary, &RenderState->InconsolataFont, &RenderState->StandardFontShader);
 }
 
-static void ReloadShaders(render_state* RenderState)
+static void ReloadVertexShader(Shader_Type Type, render_state* RenderState)
 {
-    glDeleteShader(RenderState->TextureShader.VertexShader);
-    glDeleteShader(RenderState->TextureShader.FragmentShader);
-    glDeleteProgram(RenderState->TextureShader.Program);
-    
-    glDeleteShader(RenderState->TileShader.VertexShader);
-    glDeleteShader(RenderState->TileShader.FragmentShader);
-    glDeleteProgram(RenderState->TileShader.Program);
-    
-    glDeleteShader(RenderState->ConsoleShader.VertexShader);
-    glDeleteShader(RenderState->ConsoleShader.FragmentShader);
-    
-    glDeleteShader(RenderState->StandardFontShader.VertexShader);
-    glDeleteShader(RenderState->StandardFontShader.FragmentShader);
-    glDeleteProgram(RenderState->StandardFontShader.Program);
-    
-    LoadShader("./assets/shaders/textureshader", &RenderState->TextureShader);
-    LoadShader("./assets/shaders/tileshader", &RenderState->TileShader);
-    LoadShader("./assets/shaders/consoleshader", &RenderState->ConsoleShader);
-    LoadShader("./assets/shaders/standardfontshader", &RenderState->StandardFontShader);
+    glDeleteProgram(RenderState->Shaders[Type].Program);
+    glDeleteShader(RenderState->Shaders[Type].VertexShader);
+    LoadVertexShader(ShaderPaths[Type], &RenderState->Shaders[Type]);
 }
 
-static void ReloadVertexShader(uint32 Index, render_state* RenderState)
+static void ReloadFragmentShader(Shader_Type Type, render_state* RenderState)
 {
-    switch(Index)
-    {
-        case Shader_Texture:
-        glDeleteProgram(RenderState->TextureShader.Program);
-        glDeleteShader(RenderState->TextureShader.VertexShader);
-        LoadVertexShader(ShaderPaths[Shader_Texture], &RenderState->TextureShader);
-        break;
-        case Shader_Tile:
-        glDeleteProgram(RenderState->TileShader.Program);
-        glDeleteShader(RenderState->TileShader.VertexShader);
-        LoadVertexShader(ShaderPaths[Shader_Tile], &RenderState->TileShader);
-        break;
-        case Shader_Console:
-        glDeleteProgram(RenderState->ConsoleShader.Program);
-        glDeleteShader(RenderState->ConsoleShader.VertexShader);
-        LoadVertexShader(ShaderPaths[Shader_Console], &RenderState->ConsoleShader);
-        break;
-        case Shader_StandardFont:
-        glDeleteProgram(RenderState->StandardFontShader.Program);
-        glDeleteShader(RenderState->StandardFontShader.VertexShader);
-        LoadVertexShader(ShaderPaths[Shader_StandardFont], &RenderState->StandardFontShader);
-        break;
-    }
-}
-
-static void ReloadFragmentShader(uint32 Index, render_state* RenderState)
-{
-    std::cout << "RELOAD SHADER\n" << std::endl;
-    switch(Index)
-    {
-        case Shader_Texture:
-        glDeleteProgram(RenderState->TextureShader.Program);
-        glDeleteShader(RenderState->TextureShader.FragmentShader);
-        LoadFragmentShader(ShaderPaths[Shader_Texture], &RenderState->TextureShader);
-        break;
-        case Shader_Tile:
-        glDeleteProgram(RenderState->TileShader.Program);
-        glDeleteShader(RenderState->TileShader.FragmentShader);
-        LoadFragmentShader(ShaderPaths[Shader_Tile], &RenderState->TileShader);
-        break;
-        case Shader_Console:
-        glDeleteProgram(RenderState->ConsoleShader.Program);
-        glDeleteShader(RenderState->ConsoleShader.FragmentShader);
-        LoadFragmentShader(ShaderPaths[Shader_Console], &RenderState->ConsoleShader);
-        break;
-        case Shader_StandardFont:
-        glDeleteProgram(RenderState->StandardFontShader.Program);
-        glDeleteShader(RenderState->StandardFontShader.FragmentShader);
-        LoadFragmentShader(ShaderPaths[Shader_StandardFont], &RenderState->StandardFontShader);
-        break;
-    }
+    glDeleteProgram(RenderState->Shaders[Type].Program);
+    glDeleteShader(RenderState->Shaders[Type].FragmentShader);
+    LoadFragmentShader(ShaderPaths[Type], &RenderState->Shaders[Type]);
 }
 
 static GLuint LoadTexture(const char *FilePath)
@@ -380,13 +316,15 @@ static void ReloadAssets(asset_manager *AssetManager, game_state* GameState)
     {
         if(AssetManager->DirtyVertexShaderIndices[i] == 1)
         {
-            ReloadVertexShader(i, &GameState->RenderState);
+            printf("Reloading vertex shader type: %d\n", i);
+            ReloadVertexShader((Shader_Type)i, &GameState->RenderState);
             AssetManager->DirtyVertexShaderIndices[i] = 0;
         }
         
         if(AssetManager->DirtyFragmentShaderIndices[i] == 1)
         {
-            ReloadFragmentShader(i, &GameState->RenderState);
+            printf("Reloading fragment shader type: %d\n", i);
+            ReloadFragmentShader((Shader_Type)i, &GameState->RenderState);
             AssetManager->DirtyFragmentShaderIndices[i] = 0;
         }
     }
