@@ -31,7 +31,6 @@ extern "C" UPDATE(Update)
             GameState->Player.Position.y += GameState->Player.player.WalkingSpeed * (real32)DeltaTime;
         }
         
-        
         if(GetKey(Key_A,GameState))
         {
             printf("Key\n");

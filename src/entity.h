@@ -18,8 +18,7 @@ struct entity
     glm::vec2 Position;
     glm::vec3 Rotation;
     glm::vec3 Scale = glm::vec3(1, 1, 1);
-    uint32 TextureHandle;
-    uint32 ShaderIndex;
+    render_entity RenderEntity;
     union
     {
         struct

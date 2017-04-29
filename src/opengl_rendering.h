@@ -22,6 +22,12 @@ const char* ShaderPaths[Shader_Count] =
     "../assets/shaders/standardfontshader"
 };
 
+struct render_entity
+{
+    uint32 TextureHandle;
+    uint32 ShaderIndex;
+};
+
 struct shader
 {
     Shader_Type Type;
