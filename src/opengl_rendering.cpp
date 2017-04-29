@@ -201,6 +201,27 @@ static void RenderSetup(render_state *RenderState)
     glVertexAttribPointer(TexcoordLocation, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *)(2 * sizeof(float)));
     glBindVertexArray(0);
     
+    //Animation
+    //Sprite
+    glGenVertexArrays(1, &RenderState->SpriteSheetVAO);
+    glBindVertexArray(RenderState->SpriteSheetVAO);
+    glGenBuffers(1, &RenderState->SpriteQuadVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, RenderState->SpriteQuadVBO);
+    glBufferData(GL_ARRAY_BUFFER, RenderState->SpriteQuadVerticesSize, RenderState->SpriteQuadVertices, GL_DYNAMIC_DRAW);
+    
+    RenderState->TextureShader.Type = Shader_SpriteSheetShader;
+    LoadShader(ShaderPaths[Shader_SpriteSheetShader], &RenderState->SpriteSheetShader);
+    
+    PositionLocation = glGetAttribLocation(RenderState->SpriteSheetShader.Program, "pos");
+    TexcoordLocation = glGetAttribLocation(RenderState->SpriteSheetShader.Program, "texcoord");
+    
+    glEnableVertexAttribArray(PositionLocation);
+    glVertexAttribPointer(PositionLocation, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
+    glEnableVertexAttribArray(TexcoordLocation);
+    glVertexAttribPointer(TexcoordLocation, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *)(2 * sizeof(float)));
+    glBindVertexArray(0);
+    
+    
     //tile
     glGenVertexArrays(1, &RenderState->TileVAO);
     glBindVertexArray(RenderState->TileVAO);
@@ -556,38 +577,58 @@ static void RenderConsole(render_state* RenderState, console* Console, glm::mat4
     }
 }
 
-static void RenderEntity(render_state *RenderState, const entity &entity, glm::mat4 ProjectionMatrix, glm::mat4 View)
+static void RenderEntity(render_state *RenderState, const entity &Entity, glm::mat4 ProjectionMatrix, glm::mat4 View)
 { 
-    auto Shader = RenderState->Shaders[entity.RenderEntity.ShaderIndex];
+    auto Shader = RenderState->Shaders[Entity.RenderEntity.ShaderIndex];
     UseShader(&Shader);
     
-    switch(entity.Type)
+    switch(Entity.Type)
     {
         case Entity_Crosshair:
         case Entity_Player:
         {
             glm::mat4 Model(1.0f);
-            Model = glm::translate(Model, glm::vec3(entity.Position.x, entity.Position.y, 0.0f));
+            Model = glm::translate(Model, glm::vec3(Entity.Position.x, Entity.Position.y, 0.0f));
             Model = glm::translate(Model, glm::vec3(1, 1, 0.0f)); 
-            Model = glm::rotate(Model, entity.Rotation.z, glm::vec3(0, 0, 1)); //NOTE(Daniel) 1.56 is approximately 90 degrees in radians
+            Model = glm::rotate(Model, Entity.Rotation.z, glm::vec3(0, 0, 1)); //NOTE(Daniel) 1.56 is approximately 90 degrees in radians
             Model = glm::translate(Model, glm::vec3(-1, -1, 0.0f)); 
-            Model = glm::scale(Model, entity.Scale);
+            Model = glm::scale(Model, Entity.Scale);
             
+            if(Entity.Animations) 
+            {
+                if (RenderState->BoundTexture != Entity.Animations[0].TextureHandle) //never bind the same texture if it's already bound
+                {
+                    glBindTexture(GL_TEXTURE_2D, Entity.Animations[0].TextureHandle);
+                    RenderState->BoundTexture = Entity.Animations[0].TextureHandle;
+                }
+                
+                glBindVertexArray(RenderState->SpriteSheetVAO);
+                
+                
+                auto Frame = Entity.Animations[0].Frames[Entity.Animations[0].FrameIndex];
+                SetVec2Attribute(Shader.Program,"textureOffset",glm::vec2(Frame.X,Frame.Y));
+                
+                SetVec2Attribute(Shader.Program,"sheetSize",
+                                 glm::vec2(Entity.Animations[0].Rows,Entity.Animations[0].Columns));
+                printf("X: %f, Y: %f\n",Frame.X,Frame.Y);
+            } 
+            else 
+            {
+                if (RenderState->BoundTexture != Entity.RenderEntity.TextureHandle) //never bind the same texture if it's already bound
+                {
+                    glBindTexture(GL_TEXTURE_2D, Entity.RenderEntity.TextureHandle);
+                    RenderState->BoundTexture = Entity.RenderEntity.TextureHandle;
+                }
+                
+                glBindVertexArray(RenderState->SpriteVAO);
+            }
             glm::mat4 MVP = ProjectionMatrix * View * Model;
             SetMat4Uniform(Shader.Program, "MVP", MVP);
             break;
         }
     }
     
-    if (RenderState->BoundTexture != entity.RenderEntity.TextureHandle) //never bind the same texture if it's already bound
-    {
-        glBindTexture(GL_TEXTURE_2D, entity.RenderEntity.TextureHandle);
-        RenderState->BoundTexture = entity.RenderEntity.TextureHandle;
-    }
-    
-    glBindVertexArray(RenderState->SpriteVAO);
     glBindBuffer(GL_ARRAY_BUFFER, RenderState->SpriteQuadVBO);
-    
     glDrawArrays(GL_QUADS, 0, 4);
     glBindVertexArray(0);
 }

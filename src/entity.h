@@ -18,6 +18,7 @@ struct entity
     glm::vec2 Position;
     glm::vec3 Rotation;
     glm::vec3 Scale = glm::vec3(1, 1, 1);
+    animation* Animations;
     render_entity RenderEntity;
     union
     {
@@ -32,6 +33,8 @@ struct entity
         {
         } enemy;
     };
+    
+    
 };
 
 #define NUM_ENTITIES 10

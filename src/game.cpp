@@ -2,6 +2,7 @@
 #include "keycontroller.cpp"
 #include "keys_glfw.h"
 #include "sound.cpp"
+#include "animation.cpp"
 
 extern "C" UPDATE(Update)
 {
@@ -30,25 +31,9 @@ extern "C" UPDATE(Update)
         {
             GameState->Player.Position.y += GameState->Player.player.WalkingSpeed * (real32)DeltaTime;
         }
-        
-        if(GetKey(Key_A,GameState))
-        {
-            printf("Key\n");
-        }
-        if(GetKeyDown(Key_A,GameState))
-        {
-            printf("Key Down\n");
-        }
-        
-        if(GetJoystickKey(JOYSTICK_1,GameState))
-        {
-            printf("Joystick Key\n");
-        }
-        if(GetJoystickKeyDown(JOYSTICK_1,GameState))
-        {
-            printf("Joystick Key Down\n");
-        }
     }
+    
+    TickAnimation(&GameState->Player.Animations[0],DeltaTime);
     
     auto pos = glm::unProject(glm::vec3(GameState->InputController.MouseX,GameState->RenderState.Viewport[3] - GameState->InputController.MouseY, 0),
                               GameState->Camera.ViewMatrix,

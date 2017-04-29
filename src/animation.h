@@ -1,10 +1,27 @@
+#ifndef ANIMATION_H
+#define ANIMATION_H
+
+struct sprite_sheet_frame
+{
+    real32 X;
+    real32 Y;
+};
 
 struct animation
 {
-    uint32 FrameRate;
+    real32 TimePerFrame;
+    uint32 TextureHandle;
+    uint32 FrameIndex;
+    real32 CurrentTime;
+    uint32 FrameCount;
+    uint32 Rows;
+    uint32 Columns;
+    bool32 Loop;
+    bool32 Playing;
     
+    // TODO(niels): Maybe create union for sprite and transform animations?
+    sprite_sheet_frame* Frames;
 };
-
 
 struct animation_manager
 {
@@ -13,7 +30,9 @@ struct animation_manager
         animation Animation[16];
         struct
         {
+            animation PlayerRunAnimation;
         };
     };
 };
 
+#endif

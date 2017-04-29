@@ -30,6 +30,8 @@
 #include "filehandling.h"
 #include "opengl_rendering.cpp"
 #include "level.cpp"
+#include "animation.h"
+#include "animation.cpp"
 #include "entity.h"
 #include "keycontroller.cpp"
 #include "keys_glfw.h"
@@ -358,9 +360,19 @@ int main(void)
     GameState.Camera.Zoom = 2.5f;
     GameState.Player.Type = Entity_Player;
     GameState.Player.player.WalkingSpeed = 10.0f;
+    /*animation Animation = {};
+    LoadAnimation(LoadTexture("../assets/textures/spritesheets/player.png"),&Animation,10,1,0.1);
+    
+    GameState.Player.Animations = &Animation;
+    PlayAnimation(&GameState.Player.Animations[0]);
+    */
+    animation Animation = {};
+    Animation.TextureHandle =LoadTexture("../assets/textures/spritesheets/player.png");
+    LoadAnimations(&Animation,&GameState);
+    GameState.Player.Animations = &Animation;
     
     render_entity PlayerRenderEntity = { };
-    PlayerRenderEntity.ShaderIndex = Shader_Texture;
+    PlayerRenderEntity.ShaderIndex = Shader_SpriteSheetShader;
     PlayerRenderEntity.TextureHandle = LoadTexture("../assets/textures/player.png");
     
     GameState.Player.RenderEntity = PlayerRenderEntity;

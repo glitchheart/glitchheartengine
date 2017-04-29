@@ -13,11 +13,13 @@
 #include "util.h"
 #include "error.h"
 #include "opengl_rendering.h"
+#include "animation.h"
 #include "entity.h"
 #include "level.h"
 #include "keycontroller.h"
 #include "platform_sound.h"
 #include "sound.h"
+
 
 #define STB_PERLIN_IMPLEMENTATION
 #include <stb/stb_perlin.h>
