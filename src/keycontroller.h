@@ -55,6 +55,26 @@ enum Key_Code
     Key_7,
 };
 
+enum Controller_Code
+{
+    JOYSTICK_1,
+    JOYSTICK_2,
+    JOYSTICK_3,
+    JOYSTICK_4,
+    JOYSTICK_5,
+    JOYSTICK_6,
+    JOYSTICK_7,
+    JOYSTICK_8,
+    JOYSTICK_9,
+    JOYSTICK_10,
+    JOYSTICK_11,
+    JOYSTICK_12,
+    JOYSTICK_13,
+    JOYSTICK_14,
+    JOYSTICK_15,
+    JOYSTICK_16
+};
+
 struct input_controller
 {
     std::map<int, bool> KeysDown =
@@ -90,6 +110,47 @@ struct input_controller
         { Key_X, false },
         { Key_Y, false },
         { Key_Z, false }
+    };
+    
+    
+    std::map<int, bool> JoystickKeysDown =
+    {
+        {JOYSTICK_1, false},
+        {JOYSTICK_2, false},
+        {JOYSTICK_3, false},
+        {JOYSTICK_4, false},
+        {JOYSTICK_5, false},
+        {JOYSTICK_6, false},
+        {JOYSTICK_7, false},
+        {JOYSTICK_8, false},
+        {JOYSTICK_9, false},
+        {JOYSTICK_10, false},
+        {JOYSTICK_11, false},
+        {JOYSTICK_12, false},
+        {JOYSTICK_13, false},
+        {JOYSTICK_14, false},
+        {JOYSTICK_15, false},
+        {JOYSTICK_16, false}
+    };
+    
+    std::map<int, uint32> JoystickKeysJustPressed = 
+    {
+        {JOYSTICK_1, Key_NotPressed},
+        {JOYSTICK_2, Key_NotPressed},
+        {JOYSTICK_3, Key_NotPressed},
+        {JOYSTICK_4, Key_NotPressed},
+        {JOYSTICK_5, Key_NotPressed},
+        {JOYSTICK_6, Key_NotPressed},
+        {JOYSTICK_7, Key_NotPressed},
+        {JOYSTICK_8, Key_NotPressed},
+        {JOYSTICK_9, Key_NotPressed},
+        {JOYSTICK_10, Key_NotPressed},
+        {JOYSTICK_11, Key_NotPressed},
+        {JOYSTICK_12, Key_NotPressed},
+        {JOYSTICK_13, Key_NotPressed},
+        {JOYSTICK_14, Key_NotPressed},
+        {JOYSTICK_15, Key_NotPressed},
+        {JOYSTICK_16, Key_NotPressed}
     };
     
     std::map<int, uint32> KeysJustPressed =
@@ -129,6 +190,7 @@ struct input_controller
     
     double MouseX;
     double MouseY;
+    bool32 ControllerPresent;
 };
 
 #endif

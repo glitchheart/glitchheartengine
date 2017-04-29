@@ -1,8 +1,8 @@
 static void GenerateRoom(uint32 Width, uint32 Height, room *Room)
 {
-    for(int i = 0; i < Width; i++)
+    for(uint32 i = 0; i < Width; i++)
     {
-        for(int j = 0; j < Height; j++)
+        for(uint32 j = 0; j < Height; j++)
         {
             if(i == 0 || j == 0 || i == Width - 1 || j == Height - 1)
                 Room->Data[i][j] = { Tile_Stone, glm::vec2(0.2f, 0) };

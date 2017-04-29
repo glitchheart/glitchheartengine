@@ -30,6 +30,25 @@ extern "C" UPDATE(Update)
         {
             GameState->Player.Position.y += GameState->Player.player.WalkingSpeed * (real32)DeltaTime;
         }
+        
+        
+        if(GetKey(Key_A,GameState))
+        {
+            printf("Key\n");
+        }
+        if(GetKeyDown(Key_A,GameState))
+        {
+            printf("Key Down\n");
+        }
+        
+        if(GetJoystickKey(JOYSTICK_1,GameState))
+        {
+            printf("Joystick Key\n");
+        }
+        if(GetJoystickKeyDown(JOYSTICK_1,GameState))
+        {
+            printf("Joystick Key Down\n");
+        }
     }
     
     auto pos = glm::unProject(glm::vec3(GameState->InputController.MouseX,GameState->RenderState.Viewport[3] - GameState->InputController.MouseY, 0),
