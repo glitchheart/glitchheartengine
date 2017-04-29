@@ -10,6 +10,7 @@ enum Shader_Type
     Shader_Tile,
     Shader_Console,
     Shader_StandardFont,
+    Shader_SpriteSheetShader,
     
     Shader_Count
 };
@@ -19,7 +20,7 @@ const char* ShaderPaths[Shader_Count] =
     "../assets/shaders/textureshader",
     "../assets/shaders/tileshader",
     "../assets/shaders/consoleshader",
-    "../assets/shaders/standardfontshader"
+    "../assets/shaders/standardfontshader","../assets/shaders/spritesheetanimationshader"
 };
 
 struct render_entity
@@ -84,6 +85,8 @@ struct render_state
     GLuint SpriteVAO;
     GLuint SpriteQuadVBO;
     
+    GLuint SpriteSheetVAO;
+    
     //tiles
     GLfloat TileQuadVertices[16] =
     {
@@ -116,6 +119,7 @@ struct render_state
             shader TileShader;
             shader ConsoleShader;
             shader StandardFontShader;
+            shader SpriteSheetShader;
         };
     };
     

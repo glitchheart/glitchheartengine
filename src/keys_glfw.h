@@ -55,11 +55,6 @@ std::map<uint32, Controller_Code> ControllerMappings =
     {GLFW_JOYSTICK_16, JOYSTICK_16},
 };
 
-/* PS4 Controller  
-* Joystick_1 X
- * Joystick_0
-*/
-
 static void ControllerKeyCallback(game_state* GameState, int Key, int Action)
 {
     if(GameState)
@@ -67,6 +62,7 @@ static void ControllerKeyCallback(game_state* GameState, int Key, int Action)
         // NOTE(niels): This didn't seem to do anything? SetInvalidKeys(&GameState->InputController);
         if (Action == GLFW_PRESS)
         {
+            printf("Key: %d\n",Key);
             if (GameState->InputController.JoystickKeysJustPressed[ControllerMappings[Key]] == Key_NotPressed)
             {
                 GameState->InputController.JoystickKeysJustPressed[ControllerMappings[Key]] = Key_JustPressed;
