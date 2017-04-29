@@ -35,6 +35,68 @@ std::map<uint32, Key_Code> KeyMappings =
     { GLFW_KEY_Z, Key_Z }
 };
 
+std::map<uint32, Controller_Code> ControllerMappings =
+{
+    {GLFW_JOYSTICK_1, JOYSTICK_1},
+    {GLFW_JOYSTICK_2, JOYSTICK_2},
+    {GLFW_JOYSTICK_3, JOYSTICK_3},
+    {GLFW_JOYSTICK_4, JOYSTICK_4},
+    {GLFW_JOYSTICK_5, JOYSTICK_5},
+    {GLFW_JOYSTICK_6, JOYSTICK_6},
+    {GLFW_JOYSTICK_7, JOYSTICK_7},
+    {GLFW_JOYSTICK_8, JOYSTICK_8},
+    {GLFW_JOYSTICK_9, JOYSTICK_9},
+    {GLFW_JOYSTICK_10, JOYSTICK_10},
+    {GLFW_JOYSTICK_11, JOYSTICK_11},
+    {GLFW_JOYSTICK_12, JOYSTICK_12},
+    {GLFW_JOYSTICK_13, JOYSTICK_13},
+    {GLFW_JOYSTICK_14, JOYSTICK_14},
+    {GLFW_JOYSTICK_15, JOYSTICK_15},
+    {GLFW_JOYSTICK_16, JOYSTICK_16},
+};
+
+/* PS4 Controller  
+* Joystick_1 X
+ * Joystick_0
+*/
+
+static void ControllerKeyCallback(game_state* GameState, int Key, int Action)
+{
+    if(GameState)
+    {
+        // NOTE(niels): This didn't seem to do anything? SetInvalidKeys(&GameState->InputController);
+        if (Action == GLFW_PRESS)
+        {
+            if (GameState->InputController.JoystickKeysJustPressed[ControllerMappings[Key]] == Key_NotPressed)
+            {
+                GameState->InputController.JoystickKeysJustPressed[ControllerMappings[Key]] = Key_JustPressed;
+            }
+            else if(GameState->InputController.JoystickKeysJustPressed[ControllerMappings[Key]] == Key_JustPressed)
+            {
+                // NOTE(niels): Do we ever even get in here???
+                GameState->InputController.JoystickKeysJustPressed[ControllerMappings[Key]] = Key_Invalid;
+                
+            }
+            GameState->InputController.JoystickKeysDown[ControllerMappings[Key]] = true;
+        }
+        else if (Action == GLFW_RELEASE)
+        {
+            GameState->InputController.JoystickKeysJustPressed[ControllerMappings[Key]] = Key_NotPressed;
+            GameState->InputController.JoystickKeysDown[ControllerMappings[Key]] = false;
+        }
+    }
+}
+
+static void ControllerKeys(game_state* GameState, uint32 Joystick)
+{
+    int count;
+    const unsigned char* ButtonState = glfwGetJoystickButtons(Joystick,&count);
+    for(uint32 i = 0; i < count; i++)
+    {
+        ControllerKeyCallback(GameState,i,ButtonState[i]);
+    }
+}
+
 
 static void CursorPositionCallback(GLFWwindow *Window, double XPos, double YPos)
 {
@@ -50,7 +112,6 @@ static void CursorPositionCallback(GLFWwindow *Window, double XPos, double YPos)
 static void KeyCallback(GLFWwindow *Window, int Key, int Scancode, int Action, int Mods)
 {
     game_state *GameState = (game_state *)glfwGetWindowUserPointer(Window);
-    
     SetInvalidKeys(&GameState->InputController);
     
     if (GameState)
@@ -63,6 +124,7 @@ static void KeyCallback(GLFWwindow *Window, int Key, int Scancode, int Action, i
             }
             else if (GameState->InputController.KeysJustPressed[KeyMappings[Key]] == Key_JustPressed)
             {
+                // NOTE(niels): Do we ever even get in here???
                 GameState->InputController.KeysJustPressed[KeyMappings[Key]] = Key_Invalid;
             }
             

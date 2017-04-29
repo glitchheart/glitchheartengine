@@ -86,7 +86,7 @@ void ExecuteCommand(game_state *GameState)
             strcpy(&ResultCopy[0], Result);
             
             char* Pointer;
-            char* StrZoomAmount;
+            char* StrZoomAmount = 0;
             
             Pointer = strtok(&ResultCopy[0], " "); //skip only spaces
             
@@ -112,8 +112,8 @@ void ExecuteCommand(game_state *GameState)
             strcpy(&ResultCopy[0], Result);
             
             char* Pointer;
-            char* StrX;
-            char* StrY;
+            char* StrX = 0;
+            char* StrY = 0;
             
             Pointer = strtok(&ResultCopy[0], " "); //skip only spaces
             
@@ -321,6 +321,14 @@ int main(void)
     }
     
     input_controller Input = {};
+    
+    int present = glfwJoystickPresent(GLFW_JOYSTICK_1);
+    if(present)
+    {
+        Input.ControllerPresent = true;
+        printf("Controller present\n");
+    }
+    
     GameState.InputController = Input;
     
     glfwSetWindowUserPointer(GameState.RenderState.Window, &GameState);
@@ -405,10 +413,14 @@ int main(void)
         ReloadDlls(&Game);
         
         Game.Update(DeltaTime, &GameState);
-        CheckConsoleInput(&GameState, DeltaTime);
+        CheckConsoleInput(&GameState, (real32)DeltaTime);
         Render(&GameState);
         PlaySounds(&GameState);
         
+        if(GameState.InputController.ControllerPresent) {
+            ControllerKeys(&GameState,GLFW_JOYSTICK_1);
+        }
+        SetControllerInvalidKeys(&GameState.InputController);
         SetInvalidKeys(&GameState.InputController); //TODO(Daniel) Move this out of the main loop and into the key_controller.cpp somehow
         glfwPollEvents();
     }

@@ -125,7 +125,7 @@ static void InitializeFreeTypeFont(FT_Library Library, render_font* Font, shader
     
     Font->AtlasWidth = W;
     Font->AtlasHeight = H;
-    Font->GlyphWidth = G->bitmap.width;
+    Font->GlyphWidth = (GLfloat)G->bitmap.width;
     glActiveTexture(GL_TEXTURE0);
     glGenTextures(1, &Font->Texture);
     glBindTexture(GL_TEXTURE_2D, Font->Texture);
@@ -497,7 +497,7 @@ static void RenderConsole(render_state* RenderState, console* Console, glm::mat4
     
     UseShader(&Shader);
     
-    real32 PercentAnimated = 1.0f + 1.0 - Console->CurrentTime / Console->TimeToAnimate;
+    real32 PercentAnimated = 1.0f + 1.0f - Console->CurrentTime / Console->TimeToAnimate;
     
     //draw upper part
     glm::mat4 Model(1.0f);
@@ -534,8 +534,8 @@ static void RenderConsole(render_state* RenderState, console* Console, glm::mat4
     
     SetMat4Uniform(Shader.Program, "M", CursorModel);
     
-    GLfloat TimeValue = glfwGetTime();
-    GLfloat AlphaValue = (sin(TimeValue * 6) / 2) + 0.5;
+    GLfloat TimeValue = (real32)glfwGetTime();
+    GLfloat AlphaValue = (real32)((sin(TimeValue * 6) / 2) + 0.5);
     
     SetVec4Attribute(Shader.Program, "color", glm::vec4(0, 1.0, 0.5, AlphaValue));
     
