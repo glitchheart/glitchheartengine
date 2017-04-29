@@ -610,7 +610,6 @@ static void RenderEntity(render_state *RenderState, const entity &Entity, glm::m
                 
                 SetVec2Attribute(Shader.Program,"sheetSize",
                                  glm::vec2(Entity.Animations[0].Rows,Entity.Animations[0].Columns));
-                printf("X: %f, Y: %f\n",Frame.X,Frame.Y);
             } 
             else 
             {

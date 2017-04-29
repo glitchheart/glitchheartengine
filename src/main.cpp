@@ -336,6 +336,7 @@ int main(void)
     glfwSetKeyCallback(GameState.RenderState.Window, KeyCallback);
     glfwSetCharCallback(GameState.RenderState.Window, CharacterCallback);
     glfwSetCursorPosCallback(GameState.RenderState.Window, CursorPositionCallback);
+    glfwSetInputMode(GameState.RenderState.Window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     
     glfwMakeContextCurrent(GameState.RenderState.Window);
     gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
@@ -439,6 +440,7 @@ int main(void)
         
         SetControllerInvalidKeys(&GameState.InputController);
         SetInvalidKeys(&GameState.InputController); //TODO(Daniel) Move this out of the main loop and into the key_controller.cpp somehow
+        
         glfwPollEvents();
         
         if(GameState.InputController.ControllerPresent)
