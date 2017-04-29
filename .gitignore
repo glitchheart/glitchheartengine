@@ -2,4 +2,4 @@
 *.exe
 
 libgame.a
-*/build
+*\build\
