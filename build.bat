@@ -22,7 +22,7 @@ del *.pdb > NUL 2> NUL
 
 echo Compilation started on: %time%
 cl %CommonCompilerFlags% ..\src\game.cpp -Fmgame.map -LD /DLL /link %CommonLinkerFlags% %ExtraLinkerFlags% -PDB:game%random%.pdb -EXPORT:Update  
-cl %CommonCompilerFlags% ..\src\main.cpp -Fmmain.map /link %ExtraLinkerFlags% %CommonLinkerFlags% glad.obj
+cl %CommonCompilerFlags% ..\src\main.cpp -Fmmain.map /link %ExtraLinkerFlags% %CommonLinkerFlags% ..\libs\glad\glad.obj
 echo Compilation finished on: %time%
 popd
 
