@@ -2,6 +2,7 @@
 *.exe
 
 libgame.a
+*/build
 build/game_temp.dll
 build/game.dll
 build/game.obj

@@ -28,7 +28,7 @@
 #include "platform_sound.h"
 #include "platform_sound.cpp"
 #include "filehandling.h"
-#include "rendering.cpp"
+#include "opengl_rendering.cpp"
 #include "level.cpp"
 #include "entity.h"
 #include "keycontroller.cpp"
@@ -348,16 +348,23 @@ int main(void)
     GameState.Player = {};
     GameState.Crosshair = {};
     GameState.Crosshair.Type = Entity_Crosshair;
-    GameState.Crosshair.ShaderIndex = Shader_Texture;
-    GameState.Crosshair.TextureHandle = LoadTexture("../assets/textures/crosshair2.png");
+    
+    render_entity CrosshairRenderEntity = { };
+    CrosshairRenderEntity.ShaderIndex = Shader_Texture;
+    CrosshairRenderEntity.TextureHandle = LoadTexture("../assets/textures/crosshair.png");
+    GameState.Crosshair.RenderEntity = CrosshairRenderEntity;
     GameState.Crosshair.Rotation = glm::vec3(0, 0, 0);
     GameState.Crosshair.Scale = glm::vec3(1, 1, 0);
     
     GameState.Camera.Zoom = 2.5f;
     GameState.Player.Type = Entity_Player;
     GameState.Player.player.WalkingSpeed = 10.0f;
-    GameState.Player.ShaderIndex = Shader_Texture;
-    GameState.Player.TextureHandle = LoadTexture("../assets/textures/player.png");
+    
+    render_entity PlayerRenderEntity = { };
+    PlayerRenderEntity.ShaderIndex = Shader_Texture;
+    PlayerRenderEntity.TextureHandle = LoadTexture("../assets/textures/player.png");
+    
+    GameState.Player.RenderEntity = PlayerRenderEntity;
     GameState.Player.Rotation = glm::vec3(0, 0, 0.3f);
     GameState.Player.Scale = glm::vec3(2, 2, 0);
     
@@ -417,12 +424,14 @@ int main(void)
         Render(&GameState);
         PlaySounds(&GameState);
         
-        if(GameState.InputController.ControllerPresent) {
-            ControllerKeys(&GameState,GLFW_JOYSTICK_1);
-        }
         SetControllerInvalidKeys(&GameState.InputController);
         SetInvalidKeys(&GameState.InputController); //TODO(Daniel) Move this out of the main loop and into the key_controller.cpp somehow
         glfwPollEvents();
+        
+        if(GameState.InputController.ControllerPresent)
+        {
+            ControllerKeys(&GameState,GLFW_JOYSTICK_1);
+        }
     }
     
     CleanupSound(&GameState);

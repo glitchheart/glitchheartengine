@@ -558,7 +558,7 @@ static void RenderConsole(render_state* RenderState, console* Console, glm::mat4
 
 static void RenderEntity(render_state *RenderState, const entity &entity, glm::mat4 ProjectionMatrix, glm::mat4 View)
 { 
-    auto Shader = RenderState->Shaders[entity.ShaderIndex];
+    auto Shader = RenderState->Shaders[entity.RenderEntity.ShaderIndex];
     UseShader(&Shader);
     
     glm::mat4 Model(1.0f);
@@ -570,10 +570,10 @@ static void RenderEntity(render_state *RenderState, const entity &entity, glm::m
     glm::mat4 MVP = ProjectionMatrix * View * Model;
     SetMat4Uniform(Shader.Program, "MVP", MVP);
     
-    if (RenderState->BoundTexture != entity.TextureHandle) //never bind the same texture if it's already bound
+    if (RenderState->BoundTexture != entity.RenderEntity.TextureHandle) //never bind the same texture if it's already bound
     {
-        glBindTexture(GL_TEXTURE_2D, entity.TextureHandle);
-        RenderState->BoundTexture = entity.TextureHandle;
+        glBindTexture(GL_TEXTURE_2D, entity.RenderEntity.TextureHandle);
+        RenderState->BoundTexture = entity.RenderEntity.TextureHandle;
     }
     
     glBindVertexArray(RenderState->SpriteVAO);
