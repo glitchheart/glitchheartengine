@@ -287,8 +287,8 @@ int main(void)
     
     Title = Map["title"];
     Version = Map["version"];
-    ScreenWidth = 1080; //std::stoi(Map["screen_width"]);
-    ScreenHeight = 720; //std::stoi(Map["screen_height"]);
+    ScreenWidth = std::stoi(Map["screen_width"]);
+    ScreenHeight = std::stoi(Map["screen_height"]);
     Fullscreen = strcmp("true", Map["fullscreen"].c_str()) == 0;
     
     glfwSetErrorCallback(ErrorCallback);
@@ -305,7 +305,6 @@ int main(void)
     GameState.RenderState.Window = glfwCreateWindow(ScreenWidth, ScreenHeight, (Title + std::string(" ") + Version).c_str(), Fullscreen ? glfwGetPrimaryMonitor() : NULL, NULL);
     
     glfwSetFramebufferSizeCallback(GameState.RenderState.Window, FramebufferSizeCallback);
-    // glfwSetWindowSizeCallback(GameState.RenderState.Window, WindowSizeCallback);
     
     //center window on screen
     const GLFWvidmode *Mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
@@ -370,7 +369,9 @@ int main(void)
     
     GenerateRoom(ROOM_WIDTH, ROOM_HEIGHT, &GameState.Room);
     
-    GameState.Room.TileAtlasTexture = LoadTexture("../assets/textures/tiles.png");
+    GameState.Room.RenderEntity = {};
+    GameState.Room.RenderEntity.ShaderIndex = Shader_Tile;
+    GameState.Room.RenderEntity.TextureHandle = LoadTexture("../assets/textures/tiles.png");
     
     printf("%s\n", glGetString(GL_VERSION));
     

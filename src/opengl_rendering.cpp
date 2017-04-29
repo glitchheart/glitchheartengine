@@ -372,7 +372,7 @@ static void ReloadAssets(asset_manager *AssetManager, game_state* GameState)
     
     if(AssetManager->DirtyTileset == 1)
     {
-        GameState->Room.TileAtlasTexture = LoadTexture("./assets/textures/tiles.png");
+        GameState->Room.RenderEntity.TextureHandle = LoadTexture("./assets/textures/tiles.png");
         AssetManager->DirtyTileset = 0;
     }
 }
@@ -561,14 +561,23 @@ static void RenderEntity(render_state *RenderState, const entity &entity, glm::m
     auto Shader = RenderState->Shaders[entity.RenderEntity.ShaderIndex];
     UseShader(&Shader);
     
-    glm::mat4 Model(1.0f);
-    Model = glm::translate(Model, glm::vec3(entity.Position.x, entity.Position.y, 0.0f));
-    Model = glm::translate(Model, glm::vec3(1, 1, 0.0f)); 
-    Model = glm::rotate(Model, entity.Rotation.z, glm::vec3(0, 0, 1)); //NOTE(Daniel) 1.56 is approximately 90 degrees in radians
-    Model = glm::translate(Model, glm::vec3(-1, -1, 0.0f)); 
-    Model = glm::scale(Model, entity.Scale);
-    glm::mat4 MVP = ProjectionMatrix * View * Model;
-    SetMat4Uniform(Shader.Program, "MVP", MVP);
+    switch(entity.Type)
+    {
+        case Entity_Crosshair:
+        case Entity_Player:
+        {
+            glm::mat4 Model(1.0f);
+            Model = glm::translate(Model, glm::vec3(entity.Position.x, entity.Position.y, 0.0f));
+            Model = glm::translate(Model, glm::vec3(1, 1, 0.0f)); 
+            Model = glm::rotate(Model, entity.Rotation.z, glm::vec3(0, 0, 1)); //NOTE(Daniel) 1.56 is approximately 90 degrees in radians
+            Model = glm::translate(Model, glm::vec3(-1, -1, 0.0f)); 
+            Model = glm::scale(Model, entity.Scale);
+            
+            glm::mat4 MVP = ProjectionMatrix * View * Model;
+            SetMat4Uniform(Shader.Program, "MVP", MVP);
+            break;
+        }
+    }
     
     if (RenderState->BoundTexture != entity.RenderEntity.TextureHandle) //never bind the same texture if it's already bound
     {
@@ -584,18 +593,18 @@ static void RenderEntity(render_state *RenderState, const entity &entity, glm::m
 }
 
 
-static void RenderRoom(render_state* RenderState, const room& Room, GLuint TilesetTextureHandle, glm::mat4 ProjectionMatrix, glm::mat4 View, int StartX, int StartY, int EndX, int EndY)
+static void RenderRoom(render_state* RenderState, const room& Room,  glm::mat4 ProjectionMatrix, glm::mat4 View, int StartX, int StartY, int EndX, int EndY)
 {
-    if (RenderState->BoundTexture != TilesetTextureHandle) //never bind the same texture if it's already bound
+    if (RenderState->BoundTexture != Room.RenderEntity.TextureHandle) //never bind the same texture if it's already bound
     {
-        glBindTexture(GL_TEXTURE_2D, TilesetTextureHandle);
-        RenderState->BoundTexture = TilesetTextureHandle;
+        glBindTexture(GL_TEXTURE_2D, Room.RenderEntity.TextureHandle);
+        RenderState->BoundTexture = Room.RenderEntity.TextureHandle;
     }
     
     glBindVertexArray(RenderState->TileVAO);
     glBindBuffer(GL_ARRAY_BUFFER, RenderState->SpriteQuadVBO);
     
-    auto Shader = RenderState->TileShader;
+    auto Shader = RenderState->Shaders[Room.RenderEntity.ShaderIndex];
     UseShader(&Shader);
     
     real32 Scale = 1.0f;
@@ -621,72 +630,12 @@ static void RenderRoom(render_state* RenderState, const room& Room, GLuint Tiles
     glBindVertexArray(0);
 }
 
-
-/*
-static void RenderTileChunk(render_state* RenderState, const island_chunk &IslandChunk, shader* Shader, GLuint TilesetTextureHandle, glm::mat4 ProjectionMatrix, glm::mat4 View, int StartX, int StartY, int EndX, int EndY)
-{
-real32 Scale = 1.0f;
-
-for (int i = 0; i < ISLAND_SIZE; i++)
-{
-for (int j = 0; j < ISLAND_SIZE; j++)
-{
-if(IslandChunk.Data[i][j].Type != Tile_None)
-{
-    glm::mat4 Model(1.0f);
-    Model = glm::translate(Model, glm::vec3(i * Scale, j * Scale, 0.0f));
-    Model = glm::scale(Model, glm::vec3(Scale, Scale, 1.0f));
-    glm::mat4 MVP = ProjectionMatrix * View * Model;
-    
-    SetVec2Attribute(Shader->Program, "textureOffset", IslandChunk.Data[i][j].TextureOffset);
-    SetMat4Uniform(Shader->Program, "MVP", MVP);
-    glDrawArrays(GL_QUADS, 0, 4);
-}
-}
-}
-
-glBindVertexArray(0);
-}
-*/
-/*
-static void RenderTilemap(render_state *RenderState, const tilemap_data &TilemapData, GLuint TilesetTextureHandle, glm::mat4 ProjectionMatrix, glm::mat4 View, int StartX, int StartY, int EndX, int EndY)
-{
-if (RenderState->BoundTexture != TilesetTextureHandle) //never bind the same texture if it's already bound
-{
-glBindTexture(GL_TEXTURE_2D, TilesetTextureHandle);
-RenderState->BoundTexture = TilesetTextureHandle;
-}
-
-glBindVertexArray(RenderState->TileVAO);
-glBindBuffer(GL_ARRAY_BUFFER, RenderState->SpriteQuadVBO);
-
-auto Shader = RenderState->TileShader;
-UseShader(&Shader);
-
-for(int i = 0; i < NUM_ISLANDS; i++)
-{
-RenderTileChunk(RenderState, TilemapData.Chunks[i], &Shader, TilesetTextureHandle, ProjectionMatrix, View, StartX, StartY, EndX, EndY);
-}
-}
-*/
-
 static void Render(game_state* GameState)
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glClearColor(0, 0, 0, 1.0f);
     
-    //find the visible chunks
-    //int minX = (int)std::max(0.0f, GameState->Player.Position.x - GameState->Camera.ViewportWidth / GameState->Camera.Zoom / 2);
-    //int minY = (int)std::max(0.0f, GameState->Player.Position.y - GameState->Camera.ViewportHeight / GameState->Camera.Zoom / 2);
-    
-    //int maxX = (int)std::min((real32)TILEMAP_SIZE * CHUNK_SIZE, GameState->Player.Position.x + GameState->Camera.ViewportWidth / GameState->Camera.Zoom / 2.0f + 2);
-    //int maxY = (int)std::min((real32)TILEMAP_SIZE * CHUNK_SIZE, GameState->Player.Position.y + GameState->Camera.ViewportHeight / GameState->Camera.Zoom / 2.0f + 2);
-    
-    RenderRoom(&GameState->RenderState, GameState->Room, GameState->Room.TileAtlasTexture, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix, 0, 0, 0, 0);
-    
-    /*
-    RenderTilemap(&GameState->RenderState, GameState->TilemapData, GameState->TilemapData.TileAtlasTexture, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix, 0, 0, 0, 0);
-    */
+    RenderRoom(&GameState->RenderState, GameState->Room, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix, 0, 0, 0, 0);
     
     RenderEntity(&GameState->RenderState, GameState->Player, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
     RenderEntity(&GameState->RenderState, GameState->Crosshair, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);

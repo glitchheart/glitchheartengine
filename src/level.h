@@ -21,7 +21,7 @@ struct tile_data
 
 struct room
 {
-    GLuint TileAtlasTexture;
+    render_entity RenderEntity;
     tile_data Data[ROOM_WIDTH][ROOM_HEIGHT];
 };
 
