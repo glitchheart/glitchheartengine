@@ -3,9 +3,18 @@
 #include "keys_glfw.h"
 #include "sound.cpp"
 #include "animation.cpp"
+#include "collision.cpp"
 
 extern "C" UPDATE(Update)
 {
+    collision_rect Collider1 = { 0, 0, 10, 10};
+    collision_rect Collider2 = {0, 5, 10, 10 };
+    
+    if(CheckCollision(&Collider1, &Collider2))
+    {
+        printf("COLLIDING\n");
+    }
+    
     if (GetKeyDown(Key_Enter, GameState) && !GameState->Console.Open)
     {
         PlaySoundEffectOnce(GameState, &GameState->SoundManager.Track01);

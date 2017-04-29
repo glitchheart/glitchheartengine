@@ -32,6 +32,8 @@
 #include "level.cpp"
 #include "animation.h"
 #include "animation.cpp"
+#include "collision.h"
+#include "collision.cpp"
 #include "entity.h"
 #include "keycontroller.cpp"
 #include "keys_glfw.h"
