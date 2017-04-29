@@ -19,7 +19,7 @@
 #include "keycontroller.h"
 #include "platform_sound.h"
 #include "sound.h"
-
+#include "collision.h"
 
 #define STB_PERLIN_IMPLEMENTATION
 #include <stb/stb_perlin.h>

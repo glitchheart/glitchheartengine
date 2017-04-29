@@ -1,12 +1,12 @@
-static void CheckCollision(box_collider* Collider1, box_collider* Collider2)
+#ifndef COLLISION_H
+#define COLLISION_H
+
+struct collision_rect
 {
-    if (Collider1->X < Collider2->X + Collider2->Width &&
-        Collider1->X + Collider1->Width > Collider2->X &&
-        Collider1->Y < Collider2->Y + Collider2->Height &&
-        Collider1->Height + Collider1->Y > Collider2->Y) 
-    {
-        // collision detected!
-    }
-    
-    // filling in the values =>
-}
+    real32 X;
+    real32 Y;
+    real32 Width;
+    real32 Height;
+};
+
+#endif
