@@ -369,7 +369,7 @@ int main(void)
     GameState.Player.player.WalkingSpeed = 10.0f;
     
     animation WalkingAnimation = {};
-    LoadAnimationFromFile("../assets/animations/player_anim.pownim", &WalkingAnimation, &GameState.RenderState);
+    LoadAnimationFromFile("../assets/animations/player_anim_walk.pownim", &WalkingAnimation, &GameState.RenderState);
     GameState.Player.Animations.insert(std::pair<char*, animation>(WalkingAnimation.Name, WalkingAnimation));
     
     animation AttackingAnimation = {};

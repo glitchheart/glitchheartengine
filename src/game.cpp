@@ -42,7 +42,7 @@ extern "C" UPDATE(Update)
         }
     }
     
-    if(!GameState->Player.IsAttacking && GetKeyDown(Key_Ctrl, GameState))
+    if(!GameState->Player.player.IsAttacking && GetKeyDown(Key_LeftCtrl, GameState))
     {
         PlayAnimation(&GameState->Player, "player_attack");
         GameState->Player.player.IsAttacking = true;
