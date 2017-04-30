@@ -370,9 +370,10 @@ int main(void)
     PlayAnimation(&GameState.Player.Animations[0]);
     */
     animation Animation = {};
-    Animation.TextureHandle =LoadTexture("../assets/textures/spritesheets/player.png");
+    Animation.TextureHandle = LoadTexture("../assets/textures/spritesheets/player.png");
     LoadAnimations(&Animation,&GameState);
-    GameState.Player.Animations = &Animation;
+    GameState.Player.Animations.insert(std::pair<char*, animation>("player_run", Animation));
+    GameState.Player.CurrentAnimation = "player_run";
     
     render_entity PlayerRenderEntity = { };
     PlayerRenderEntity.ShaderIndex = Shader_SpriteSheetShader;

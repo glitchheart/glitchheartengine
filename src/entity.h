@@ -1,3 +1,4 @@
+#include <map>
 #ifndef ENTITY_H
 #define ENTITY_H
 
@@ -12,13 +13,25 @@ enum Entity_Enum
     Entity_Max
 };
 
+//TODO(Daniel) move this somewhere else
+struct CompareCStrings 
+{
+    bool operator()(const char* lhs, const char* rhs) const {
+        return std::strcmp(lhs, rhs) < 0;
+    }
+};
+
 struct entity
 {
     Entity_Enum Type;
     glm::vec2 Position;
     glm::vec3 Rotation;
     glm::vec3 Scale = glm::vec3(1, 1, 1);
-    animation* Animations;
+    
+    char* CurrentAnimation;
+    
+    std::map<char*, animation, CompareCStrings> Animations;
+    
     render_entity RenderEntity;
     union
     {

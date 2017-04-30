@@ -42,7 +42,7 @@ extern "C" UPDATE(Update)
         }
     }
     
-    TickAnimation(&GameState->Player.Animations[0],DeltaTime);
+    TickAnimation(&GameState->Player.Animations[GameState->Player.CurrentAnimation],DeltaTime);
     
     auto pos = glm::unProject(glm::vec3(GameState->InputController.MouseX,GameState->RenderState.Viewport[3] - GameState->InputController.MouseY, 0),
                               GameState->Camera.ViewMatrix,
