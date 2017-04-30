@@ -1,4 +1,3 @@
-
 void PlaySoundEffect(game_state *GameState, loaded_sound *LoadedSound)
 {
     sound_effect SoundEffect = {};

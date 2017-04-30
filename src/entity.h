@@ -1,4 +1,3 @@
-#include <map>
 #ifndef ENTITY_H
 #define ENTITY_H
 
@@ -11,14 +10,6 @@ enum Entity_Enum
     Entity_Enemy,
     
     Entity_Max
-};
-
-//TODO(Daniel) move this somewhere else
-struct CompareCStrings 
-{
-    bool operator()(const char* lhs, const char* rhs) const {
-        return std::strcmp(lhs, rhs) < 0;
-    }
 };
 
 struct entity
@@ -37,6 +28,7 @@ struct entity
     {
         struct
         {
+            bool32 IsAttacking;
             real32 WalkingSpeed;
         } player;
         struct

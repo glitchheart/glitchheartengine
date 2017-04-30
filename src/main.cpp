@@ -23,13 +23,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <algorithm>
+#include <map>
 
 #include "game.h"
 #include "platform_sound.h"
 #include "platform_sound.cpp"
 #include "filehandling.h"
+#include "opengl_rendering.h"
 #include "opengl_rendering.cpp"
 #include "level.cpp"
+
+#define ANIMATION_LOADING
 #include "animation.h"
 #include "animation.cpp"
 #include "collision.h"
@@ -198,20 +202,20 @@ static void CheckConsoleInput(game_state* GameState, real32 DeltaTime)
 
 std::map<std::string, std::string> LoadConfig(std::string Filename)
 {
-    std::ifstream Input(Filename);          //The input stream
-    std::map<std::string, std::string> Ans; //A map of key-value pairs in the file
-    while (Input)                           //Keep on going as long as the file stream is good
+    std::ifstream Input(Filename);          
+    std::map<std::string, std::string> Ans;
+    while (Input)                           
     {
-        std::string Key;                                                           //The key
-        std::string Value;                                                         //The value
-        std::getline(Input, Key, ':');                                             //Read up to the : delimiter into key
-        std::getline(Input, Value, '\n');                                          //Read up to the newline into value
-        std::string::size_type Pos1 = Value.find_first_of("\"");                   //Find the first quote in the value
-        std::string::size_type Pos2 = Value.find_last_of("\"");                    //Find the last quote in the value
-        if (Pos1 != std::string::npos && Pos2 != std::string::npos && Pos2 > Pos1) //Check if the found positions are all valid
+        std::string Key;                                                           
+        std::string Value;                                                         
+        std::getline(Input, Key, ':');                                             
+        std::getline(Input, Value, '\n');                                          
+        std::string::size_type Pos1 = Value.find_first_of("\"");                   
+        std::string::size_type Pos2 = Value.find_last_of("\"");                    
+        if (Pos1 != std::string::npos && Pos2 != std::string::npos && Pos2 > Pos1) 
         {
-            Value = Value.substr(Pos1 + 1, Pos2 - Pos1 - 1); //Take a substring of the part between the quotes
-            Ans[Key] = Value;                                //Store the result in the map
+            Value = Value.substr(Pos1 + 1, Pos2 - Pos1 - 1);
+            Ans[Key] = Value;                                
         }
     }
     Input.close(); //Close the file stream
@@ -363,17 +367,17 @@ int main(void)
     GameState.Camera.Zoom = 2.5f;
     GameState.Player.Type = Entity_Player;
     GameState.Player.player.WalkingSpeed = 10.0f;
-    /*animation Animation = {};
-    LoadAnimation(LoadTexture("../assets/textures/spritesheets/player.png"),&Animation,10,1,0.1);
     
-    GameState.Player.Animations = &Animation;
-    PlayAnimation(&GameState.Player.Animations[0]);
-    */
-    animation Animation = {};
-    Animation.TextureHandle = LoadTexture("../assets/textures/spritesheets/player.png");
-    LoadAnimations(&Animation,&GameState);
-    GameState.Player.Animations.insert(std::pair<char*, animation>("player_run", Animation));
-    GameState.Player.CurrentAnimation = "player_run";
+    animation WalkingAnimation = {};
+    LoadAnimationFromFile("../assets/animations/player_anim.pownim", &WalkingAnimation, &GameState.RenderState);
+    GameState.Player.Animations.insert(std::pair<char*, animation>(WalkingAnimation.Name, WalkingAnimation));
+    
+    animation AttackingAnimation = {};
+    LoadAnimationFromFile("../assets/animations/player_anim_attack.pownim", &AttackingAnimation, &GameState.RenderState);
+    
+    GameState.Player.Animations.insert(std::pair<char*, animation>(AttackingAnimation.Name, AttackingAnimation));
+    
+    PlayAnimation(&GameState.Player, "player_walk");
     
     render_entity PlayerRenderEntity = { };
     PlayerRenderEntity.ShaderIndex = Shader_SpriteSheetShader;

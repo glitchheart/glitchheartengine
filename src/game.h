@@ -9,7 +9,8 @@
 #include "alc.h"
 #include <time.h> 
 #include <stdio.h>
-
+#include <stdlib.h>
+#include <map>
 #include "util.h"
 #include "error.h"
 #include "opengl_rendering.h"

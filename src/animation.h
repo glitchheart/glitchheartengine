@@ -9,6 +9,7 @@ struct sprite_sheet_frame
 
 struct animation
 {
+    char Name[255];
     real32 TimePerFrame;
     uint32 TextureHandle;
     uint32 FrameIndex;

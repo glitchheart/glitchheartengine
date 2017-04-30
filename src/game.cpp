@@ -12,7 +12,7 @@ extern "C" UPDATE(Update)
     
     if(CheckCollision(&Collider1, &Collider2))
     {
-        printf("COLLIDING\n");
+        //printf("COLLIDING\n");
     }
     
     if (GetKeyDown(Key_Enter, GameState) && !GameState->Console.Open)
@@ -40,6 +40,18 @@ extern "C" UPDATE(Update)
         {
             GameState->Player.Position.y += GameState->Player.player.WalkingSpeed * (real32)DeltaTime;
         }
+    }
+    
+    if(!GameState->Player.IsAttacking && GetKeyDown(Key_Ctrl, GameState))
+    {
+        PlayAnimation(&GameState->Player, "player_attack");
+        GameState->Player.player.IsAttacking = true;
+    }
+    
+    if(GameState->Player.player.IsAttacking && !GameState->Player.Animations[GameState->Player.CurrentAnimation].Playing)
+    {
+        PlayAnimation(&GameState->Player, "player_walk");
+        GameState->Player.player.IsAttacking = false;
     }
     
     TickAnimation(&GameState->Player.Animations[GameState->Player.CurrentAnimation],DeltaTime);
