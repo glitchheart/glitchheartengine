@@ -36,6 +36,13 @@ std::map<uint32, Key_Code> KeyMappings =
     { GLFW_KEY_Z, Key_Z }
 };
 
+std::map<uint32, Mouse_Code> MouseButtonMappings = 
+{
+    { GLFW_MOUSE_BUTTON_LEFT, Mouse_Left },
+    { GLFW_MOUSE_BUTTON_RIGHT, Mouse_Right },
+    { GLFW_MOUSE_BUTTON_MIDDLE, Mouse_Middle }
+};
+
 std::map<uint32, Controller_Code> ControllerMappings =
 {
     {GLFW_JOYSTICK_1, JOYSTICK_1},
@@ -131,6 +138,35 @@ static void KeyCallback(GLFWwindow *Window, int Key, int Scancode, int Action, i
         {
             GameState->InputController.KeysJustPressed[KeyMappings[Key]] = Key_NotPressed;
             GameState->InputController.KeysDown[KeyMappings[Key]] = false;
+        }
+    }
+}
+
+static void MouseButtonCallback(GLFWwindow *Window, int Button, int Action, int Mods)
+{
+    game_state *GameState = (game_state *)glfwGetWindowUserPointer(Window);
+    SetMouseInvalidKeys(&GameState->InputController);
+    
+    if (GameState)
+    {
+        if (Action == GLFW_PRESS)
+        {
+            if (GameState->InputController.MouseButtonJustPressed[MouseButtonMappings[Button]] == Key_NotPressed)
+            {
+                GameState->InputController.MouseButtonJustPressed[MouseButtonMappings[Button]] = Key_JustPressed;
+            }
+            else if (GameState->InputController.MouseButtonJustPressed[MouseButtonMappings[Button]] == Key_JustPressed)
+            {
+                // NOTE(niels): Do we ever even get in here???
+                GameState->InputController.MouseButtonJustPressed[MouseButtonMappings[Button]] = Key_Invalid;
+            }
+            
+            GameState->InputController.MouseButtonDown[MouseButtonMappings[Button]] = true;
+        }
+        else if (Action == GLFW_RELEASE)
+        {
+            GameState->InputController.MouseButtonJustPressed[MouseButtonMappings[Button]] = Key_NotPressed;
+            GameState->InputController.MouseButtonDown[MouseButtonMappings[Button]] = false;
         }
     }
 }

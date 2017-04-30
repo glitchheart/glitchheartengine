@@ -40,9 +40,10 @@ extern "C" UPDATE(Update)
         {
             GameState->Player.Position.y += GameState->Player.player.WalkingSpeed * (real32)DeltaTime;
         }
+        
     }
     
-    if(!GameState->Player.player.IsAttacking && GetKeyDown(Key_LeftCtrl, GameState))
+    if(!GameState->Player.player.IsAttacking && GetMouseButtonDown(Mouse_Left, GameState))
     {
         PlayAnimation(&GameState->Player, "player_attack");
         GameState->Player.player.IsAttacking = true;

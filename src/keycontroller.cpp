@@ -25,6 +25,18 @@ static void SetControllerInvalidKeys(input_controller *InputController)
     }
 }
 
+static void SetMouseInvalidKeys(input_controller *InputController)
+{
+    for (auto const &Pair : InputController->MouseButtonJustPressed)
+    {
+        if (Pair.second == Key_JustPressed)
+        {
+            InputController->MouseButtonJustPressed[Pair.first] = Key_Invalid;
+        }
+    }
+}
+
+
 static bool GetKey(Key_Code Key, game_state *GameState)
 {
     return GameState->InputController.KeysDown[Key];
@@ -43,4 +55,14 @@ static bool GetJoystickKey(Controller_Code Key, game_state* GameState)
 static bool GetJoystickKeyDown(Controller_Code Key, game_state* GameState)
 {
     return GameState->InputController.JoystickKeysJustPressed[Key] == Key_JustPressed;
+}
+
+static bool GetMouseButton(Mouse_Code Key, game_state* GameState)
+{
+    return GameState->InputController.MouseButtonDown[Key];
+}
+
+static bool GetMouseButtonDown(Mouse_Code Key, game_state* GameState)
+{
+    return GameState->InputController.MouseButtonJustPressed[Key] == Key_JustPressed;
 }
