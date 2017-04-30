@@ -56,6 +56,13 @@ enum Key_Code
     Key_7,
 };
 
+enum Mouse_Code
+{
+    Mouse_Left,
+    Mouse_Right,
+    Mouse_Middle
+};
+
 enum Controller_Code
 {
     JOYSTICK_1,
@@ -114,6 +121,13 @@ struct input_controller
         { Key_Z, false }
     };
     
+    std::map<int, bool> MouseButtonDown = 
+    {
+        {Mouse_Left, false},
+        {Mouse_Right, false},
+        {Mouse_Middle, false}
+    };
+    
     
     std::map<int, bool> JoystickKeysDown =
     {
@@ -153,6 +167,13 @@ struct input_controller
         {JOYSTICK_14, Key_NotPressed},
         {JOYSTICK_15, Key_NotPressed},
         {JOYSTICK_16, Key_NotPressed}
+    };
+    
+    std::map<int, uint32> MouseButtonJustPressed =
+    {
+        {Mouse_Left, Key_NotPressed},
+        {Mouse_Right, Key_NotPressed},
+        {Mouse_Middle, Key_NotPressed}
     };
     
     std::map<int, uint32> KeysJustPressed =
