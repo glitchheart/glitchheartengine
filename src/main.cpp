@@ -420,9 +420,9 @@ int main(void)
         GameState.SoundManager = SoundManager;
     }
     
-    double LastFrame = glfwGetTime();
-    double CurrentFrame = 0.0;
-    double DeltaTime;
+    real64 LastFrame = glfwGetTime();
+    real64 CurrentFrame = 0.0;
+    real64 DeltaTime;
     GLint Viewport[4];
     glGetIntegerv(GL_VIEWPORT, Viewport);
     

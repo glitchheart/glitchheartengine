@@ -93,9 +93,9 @@ static void ControllerKeyCallback(game_state* GameState, int Key, int Action)
 
 static void ControllerKeys(game_state* GameState, uint32 Joystick)
 {
-    int Count;
+    int32 Count;
     const unsigned char* ButtonState = glfwGetJoystickButtons(Joystick,&Count);
-    for(uint32 i = 0; i < Count; i++)
+    for(int32 i = 0; i < Count; i++)
     {
         ControllerKeyCallback(GameState,i,ButtonState[i]);
     }

@@ -13,7 +13,7 @@ struct animation
     real32 TimePerFrame;
     uint32 TextureHandle;
     uint32 FrameIndex;
-    real32 CurrentTime;
+    real64 CurrentTime;
     uint32 FrameCount;
     uint32 Rows;
     uint32 Columns;
