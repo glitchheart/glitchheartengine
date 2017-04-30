@@ -1,10 +1,15 @@
-
+name player_walk
+type sprite
 framecount 5
-loop 0
+loop 1
 timeperframe 0.1
 rows 10
 columns 1
-
-frames {0.0,0.0} , {0.1,0.0} , {0.2,0.0} , {0.3,0.0} , {0.4,0.0}
+frames
+{0.0,0.0}
+{0.1,0.0}
+{0.2,0.0}
+{0.3,0.0}
+{0.4,0.0}
 texturepath ../assets/textures/spritesheets/player.png
 

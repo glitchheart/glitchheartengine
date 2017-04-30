@@ -544,7 +544,6 @@ static void RenderEntity(render_state *RenderState, entity &Entity, glm::mat4 Pr
                 
                 glBindVertexArray(RenderState->SpriteSheetVAO);
                 
-                
                 auto Frame = Animation.Frames[Animation.FrameIndex];
                 SetVec2Attribute(Shader.Program,"textureOffset", glm::vec2(Frame.X,Frame.Y));
                 

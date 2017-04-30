@@ -4,6 +4,7 @@
 #include <ft2build.h>
 #include FT_FREETYPE_H
 
+
 enum Shader_Type
 {
     Shader_Texture,
@@ -61,6 +62,14 @@ struct render_font
         
         float TX;
     } CharacterInfo[255];
+};
+
+//TODO(Daniel) move this somewhere else
+struct CompareCStrings 
+{
+    bool operator()(const char* lhs, const char* rhs) const {
+        return std::strcmp(lhs, rhs) < 0;
+    }
 };
 
 struct render_state
@@ -126,6 +135,9 @@ struct render_state
     //freetype
     FT_Library FTLibrary;
     render_font InconsolataFont;
+    
+    //animations
+    std::map<char*, uint32, CompareCStrings> LoadedTextureHandles;
 };
 
 #endif
