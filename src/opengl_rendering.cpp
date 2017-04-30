@@ -515,7 +515,7 @@ static void RenderConsole(render_state* RenderState, console* Console, glm::mat4
     }
 }
 
-static void RenderEntity(render_state *RenderState, const entity &Entity, glm::mat4 ProjectionMatrix, glm::mat4 View)
+static void RenderEntity(render_state *RenderState, entity &Entity, glm::mat4 ProjectionMatrix, glm::mat4 View)
 { 
     auto Shader = RenderState->Shaders[Entity.RenderEntity.ShaderIndex];
     UseShader(&Shader);
@@ -532,22 +532,24 @@ static void RenderEntity(render_state *RenderState, const entity &Entity, glm::m
             Model = glm::translate(Model, glm::vec3(-1, -1, 0.0f)); 
             Model = glm::scale(Model, Entity.Scale);
             
-            if(Entity.Animations) 
+            if(Entity.CurrentAnimation) 
             {
-                if (RenderState->BoundTexture != Entity.Animations[0].TextureHandle) //never bind the same texture if it's already bound
+                auto Animation = Entity.Animations[Entity.CurrentAnimation];
+                
+                if (RenderState->BoundTexture != Animation.TextureHandle) //never bind the same texture if it's already bound
                 {
-                    glBindTexture(GL_TEXTURE_2D, Entity.Animations[0].TextureHandle);
-                    RenderState->BoundTexture = Entity.Animations[0].TextureHandle;
+                    glBindTexture(GL_TEXTURE_2D, Animation.TextureHandle);
+                    RenderState->BoundTexture = Animation.TextureHandle;
                 }
                 
                 glBindVertexArray(RenderState->SpriteSheetVAO);
                 
                 
-                auto Frame = Entity.Animations[0].Frames[Entity.Animations[0].FrameIndex];
-                SetVec2Attribute(Shader.Program,"textureOffset",glm::vec2(Frame.X,Frame.Y));
+                auto Frame = Animation.Frames[Animation.FrameIndex];
+                SetVec2Attribute(Shader.Program,"textureOffset", glm::vec2(Frame.X,Frame.Y));
                 
                 SetVec2Attribute(Shader.Program,"sheetSize",
-                                 glm::vec2(Entity.Animations[0].Rows,Entity.Animations[0].Columns));
+                                 glm::vec2(Animation.Rows, Animation.Columns));
             } 
             else 
             {
