@@ -93,7 +93,6 @@ static void PlayAnimation(animation* Animation)
     Animation->Playing = true;
 }
 
-
 static void PlayAnimation(entity* Entity, char* AnimationName)
 {
     if(!Entity->CurrentAnimation || strcmp(Entity->CurrentAnimation, AnimationName) != 0)

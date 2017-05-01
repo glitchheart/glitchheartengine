@@ -5,8 +5,21 @@
 #include "animation.cpp"
 #include "collision.cpp"
 
+#define DEBUG
+
 extern "C" UPDATE(Update)
 {
+#ifdef DEBUG
+    if(GetKeyDown(Key_F1, GameState))
+    {
+        if(GameState->RenderState.RenderColliders == 0)
+            GameState->RenderState.RenderColliders = 1;
+        else
+            GameState->RenderState.RenderColliders = 0;
+    }
+    
+#endif
+    
     collision_rect Collider1 = { 0, 0, 10, 10};
     collision_rect Collider2 = {0, 5, 10, 10 };
     
@@ -61,6 +74,7 @@ extern "C" UPDATE(Update)
         GameState->Player.Position.y += VelY;
     }
     
+    //attacking
     if(!GameState->Player.player.IsAttacking && GetMouseButtonDown(Mouse_Left, GameState))
     {
         PlayAnimation(&GameState->Player, "player_attack");
@@ -92,5 +106,4 @@ extern "C" UPDATE(Update)
                                                   glm::vec3(-GameState->Player.Position.x + GameState->Camera.ViewportWidth / GameState->Camera.Zoom / 2,
                                                             -GameState->Player.Position.y + GameState->Camera.ViewportHeight / GameState->Camera.Zoom / 2,
                                                             0));
-    
 }
