@@ -12,6 +12,7 @@ enum Shader_Type
     Shader_Console,
     Shader_StandardFont,
     Shader_SpriteSheetShader,
+    Shader_Wireframe,
     
     Shader_Count
 };
@@ -21,7 +22,9 @@ const char* ShaderPaths[Shader_Count] =
     "../assets/shaders/textureshader",
     "../assets/shaders/tileshader",
     "../assets/shaders/consoleshader",
-    "../assets/shaders/standardfontshader","../assets/shaders/spritesheetanimationshader"
+    "../assets/shaders/standardfontshader",
+    "../assets/shaders/spritesheetanimationshader",
+    "../assets/shaders/wireframeshader"
 };
 
 struct render_entity
@@ -79,9 +82,12 @@ struct render_state
     int WindowHeight;
     GLint Viewport[4];
     
+    bool32 RenderColliders;
+    
     size_t SpriteQuadVerticesSize = 16 * sizeof(GLfloat);
     size_t TileQuadVerticesSize = 16 * sizeof(GLfloat);
-    size_t ConsoleQuadVerticesSize = 8 * sizeof(GLfloat);
+    size_t NormalQuadVerticesSize = 8 * sizeof(GLfloat);
+    size_t WireframeQuadVerticesSize = 10 * sizeof(GLfloat);
     GLuint BoundVertexBuffer;
     GLuint BoundTexture;
     //sprites
@@ -109,15 +115,28 @@ struct render_state
     GLuint TileVAO;
     GLuint TileQuadVBO;
     
-    GLfloat ConsoleQuadVertices[8] =
+    GLfloat NormalQuadVertices[8] =
     {
         0.0f, 1.0f,
         1.0f, 1.0f,
         1.0f, 0.0f,
-        0.0f, 0.0f }; 
+        0.0f, 0.0f
+    };
+    
+    GLfloat WireframeQuadVertices[10] =
+    {
+        0.0f, 1.0f,
+        1.0f, 1.0f,
+        1.0f, 0.0f,
+        0.0f, 0.0f,
+        0.0f, 1.0f
+    };
+    
+    GLuint WireframeVAO;
+    GLuint WireframeQuadVBO;
     
     GLuint ConsoleVAO;
-    GLuint ConsoleQuadVBO;
+    GLuint NormalQuadVBO;
     
     union 
     {
@@ -129,6 +148,7 @@ struct render_state
             shader ConsoleShader;
             shader StandardFontShader;
             shader SpriteSheetShader;
+            shader WireframeShader;
         };
     };
     

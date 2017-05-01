@@ -42,7 +42,6 @@
 #include "keycontroller.cpp"
 #include "keys_glfw.h"
 
-
 struct game_code
 {
     HMODULE GameCodeDLL;
@@ -369,6 +368,13 @@ int main(void)
     GameState.Player.Type = Entity_Player;
     GameState.Player.player.WalkingSpeed = 10.0f;
     
+    collision_rect CollisionRect;
+    CollisionRect.X = 10;
+    CollisionRect.Y = 10;
+    CollisionRect.Width = 20;
+    CollisionRect.Height = 20;
+    
+    GameState.Player.player.CollisionRect = CollisionRect;
     animation IdleAnimation = {};
     LoadAnimationFromFile("../assets/animations/player_anim_idle.pownim", &IdleAnimation, &GameState.RenderState);
     GameState.Player.Animations.insert(std::pair<char*, animation>(IdleAnimation.Name, IdleAnimation));

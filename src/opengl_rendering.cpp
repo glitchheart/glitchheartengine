@@ -244,14 +244,30 @@ static void RenderSetup(render_state *RenderState)
     //console
     glGenVertexArrays(1, &RenderState->ConsoleVAO);
     glBindVertexArray(RenderState->ConsoleVAO);
-    glGenBuffers(1, &RenderState->ConsoleQuadVBO);
-    glBindBuffer(GL_ARRAY_BUFFER, RenderState->ConsoleQuadVBO);
-    glBufferData(GL_ARRAY_BUFFER, RenderState->ConsoleQuadVerticesSize, RenderState->ConsoleQuadVertices, GL_DYNAMIC_DRAW);
+    glGenBuffers(1, &RenderState->NormalQuadVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, RenderState->NormalQuadVBO);
+    glBufferData(GL_ARRAY_BUFFER, RenderState->NormalQuadVerticesSize, RenderState->NormalQuadVertices, GL_DYNAMIC_DRAW);
     
     RenderState->ConsoleShader.Type = Shader_Console;
     LoadShader(ShaderPaths[Shader_Console], &RenderState->ConsoleShader);
     
     auto PositionLocation3 = glGetAttribLocation(RenderState->ConsoleShader.Program, "pos");
+    glEnableVertexAttribArray(PositionLocation3);
+    glVertexAttribPointer(PositionLocation3, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), 0);
+    
+    glBindVertexArray(0);
+    
+    //wireframe
+    glGenVertexArrays(1, &RenderState->WireframeVAO);
+    glBindVertexArray(RenderState->WireframeVAO);
+    glGenBuffers(1, &RenderState->WireframeQuadVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, RenderState->WireframeQuadVBO);
+    glBufferData(GL_ARRAY_BUFFER, RenderState->WireframeQuadVerticesSize, RenderState->WireframeQuadVertices, GL_DYNAMIC_DRAW);
+    
+    RenderState->ConsoleShader.Type = Shader_Wireframe;
+    LoadShader(ShaderPaths[Shader_Wireframe], &RenderState->WireframeShader);
+    
+    PositionLocation3 = glGetAttribLocation(RenderState->WireframeShader.Program, "pos");
     glEnableVertexAttribArray(PositionLocation3);
     glVertexAttribPointer(PositionLocation3, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), 0);
     
@@ -452,8 +468,9 @@ static void MeasureText(render_font* Font, const char* Text, float* Width, float
 
 static void RenderConsole(render_state* RenderState, console* Console, glm::mat4 ProjectionMatrix, glm::mat4 View)
 {
-    auto Shader = RenderState->Shaders[Shader_Console];
+    glBindVertexArray(RenderState->ConsoleVAO); //TODO(Daniel) Create a vertex array buffer + object for console
     
+    auto Shader = RenderState->Shaders[Shader_Console];
     UseShader(&Shader);
     
     real32 PercentAnimated = 1.0f + 1.0f - Console->CurrentTime / Console->TimeToAnimate;
@@ -465,8 +482,6 @@ static void RenderConsole(render_state* RenderState, console* Console, glm::mat4
     SetMat4Uniform(Shader.Program, "M", Model);
     SetVec4Attribute(Shader.Program, "color", glm::vec4(0, 0.4, 0.3, 0.6));
     
-    glBindVertexArray(RenderState->ConsoleVAO); //TODO(Daniel) Create a vertex array buffer + object for console
-    glBindBuffer(GL_ARRAY_BUFFER, RenderState->ConsoleQuadVBO);
     glDrawArrays(GL_QUADS, 0, 4);
     
     //draw lower bar
@@ -571,17 +586,40 @@ static void RenderEntity(render_state *RenderState, entity &Entity, glm::mat4 Pr
     glBindVertexArray(0);
 }
 
+static void RenderColliderWireframe(render_state* RenderState, const collision_rect& CollisionRectToDraw, glm::mat4 ProjectionMatrix, glm::mat4 View)
+{
+    glm::mat4 Model(1.0f);
+    Model = glm::translate(Model, glm::vec3(CollisionRectToDraw.X, CollisionRectToDraw.Y, 0.0f));
+    
+    /*Model = glm::translate(Model, glm::vec3(1, 1, 0.0f)); 
+    Model = glm::rotate(Model, Entity.Rotation.z, glm::vec3(0, 0, 1)); //NOTE(Daniel) 1.56 is approximately 90 degrees in radians
+    Model = glm::translate(Model, glm::vec3(-1, -1, 0.0f)); 
+    */
+    
+    Model = glm::scale(Model, glm::vec3(2, 2, 1));
+    
+    glBindVertexArray(RenderState->WireframeVAO);
+    
+    auto Shader = RenderState->Shaders[Shader_Wireframe];
+    UseShader(&Shader);
+    
+    glm::mat4 MVP = ProjectionMatrix * View * Model;
+    SetMat4Uniform(Shader.Program, "MVP", MVP);
+    SetVec4Attribute(Shader.Program, "color", glm::vec4(0.0, 1.0, 0.0, 1.0));
+    
+    glDrawArrays(GL_LINE_STRIP, 0, 6);
+    glBindVertexArray(0);
+}
 
 static void RenderRoom(render_state* RenderState, const room& Room,  glm::mat4 ProjectionMatrix, glm::mat4 View, int StartX, int StartY, int EndX, int EndY)
 {
+    glBindVertexArray(RenderState->TileVAO);
+    
     if (RenderState->BoundTexture != Room.RenderEntity.TextureHandle) //never bind the same texture if it's already bound
     {
         glBindTexture(GL_TEXTURE_2D, Room.RenderEntity.TextureHandle);
         RenderState->BoundTexture = Room.RenderEntity.TextureHandle;
     }
-    
-    glBindVertexArray(RenderState->TileVAO);
-    glBindBuffer(GL_ARRAY_BUFFER, RenderState->SpriteQuadVBO);
     
     auto Shader = RenderState->Shaders[Room.RenderEntity.ShaderIndex];
     UseShader(&Shader);
@@ -618,6 +656,12 @@ static void Render(game_state* GameState)
     
     RenderEntity(&GameState->RenderState, GameState->Player, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
     RenderEntity(&GameState->RenderState, GameState->Crosshair, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
+    
+    GameState->Player.player.CollisionRect.X = GameState->Player.Position.x;
+    GameState->Player.player.CollisionRect.Y = GameState->Player.Position.y;
+    
+    if(GameState->RenderState.RenderColliders)
+        RenderColliderWireframe(&GameState->RenderState, GameState->Player.player.CollisionRect, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
     
     if(GameState->Console.CurrentTime > 0)
         RenderConsole(&GameState->RenderState, &GameState->Console, GameState->Camera.ProjectionMatrix,  GameState->Camera.ViewMatrix);
