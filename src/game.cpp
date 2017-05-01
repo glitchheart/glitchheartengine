@@ -22,25 +22,43 @@ extern "C" UPDATE(Update)
     
     if (!GameState->Console.Open)
     {
+        float VelX = 0.0f;
+        float VelY = 0.0f;
+        
         //player movement
         if (GetKey(Key_A, GameState))
         {
-            GameState->Player.Position.x += -GameState->Player.player.WalkingSpeed * (real32)DeltaTime;
+            VelX = -GameState->Player.player.WalkingSpeed * (real32)DeltaTime;
         }
         else if (GetKey(Key_D, GameState))
         {
-            GameState->Player.Position.x += GameState->Player.player.WalkingSpeed * (real32)DeltaTime;
+            VelX =GameState->Player.player.WalkingSpeed * (real32)DeltaTime;
         }
         
         if (GetKey(Key_W, GameState))
         {
-            GameState->Player.Position.y += -GameState->Player.player.WalkingSpeed * (real32)DeltaTime;
+            VelY = -GameState->Player.player.WalkingSpeed * (real32)DeltaTime;
         }
         else if (GetKey(Key_S, GameState))
         {
-            GameState->Player.Position.y += GameState->Player.player.WalkingSpeed * (real32)DeltaTime;
+            VelY = GameState->Player.player.WalkingSpeed * (real32)DeltaTime;
         }
         
+        if(GameState->Player.player.IsAttacking && !GameState->Player.Animations[GameState->Player.CurrentAnimation].Playing)
+        {
+            GameState->Player.player.IsAttacking = false;
+        }
+        
+        if(!GameState->Player.player.IsAttacking)
+        {
+            if(VelX != 0.0f || VelY != 0.0f)
+                PlayAnimation(&GameState->Player, "player_walk");
+            else
+                PlayAnimation(&GameState->Player, "player_idle");
+        }
+        
+        GameState->Player.Position.x += VelX;
+        GameState->Player.Position.y += VelY;
     }
     
     if(!GameState->Player.player.IsAttacking && GetMouseButtonDown(Mouse_Left, GameState))
@@ -49,13 +67,8 @@ extern "C" UPDATE(Update)
         GameState->Player.player.IsAttacking = true;
     }
     
-    if(GameState->Player.player.IsAttacking && !GameState->Player.Animations[GameState->Player.CurrentAnimation].Playing)
-    {
-        PlayAnimation(&GameState->Player, "player_walk");
-        GameState->Player.player.IsAttacking = false;
-    }
-    
-    TickAnimation(&GameState->Player.Animations[GameState->Player.CurrentAnimation],DeltaTime);
+    if(GameState->Player.CurrentAnimation)
+        TickAnimation(&GameState->Player.Animations[GameState->Player.CurrentAnimation],DeltaTime);
     
     auto pos = glm::unProject(glm::vec3(GameState->InputController.MouseX,GameState->RenderState.Viewport[3] - GameState->InputController.MouseY, 0),
                               GameState->Camera.ViewMatrix,

@@ -96,14 +96,15 @@ static void PlayAnimation(animation* Animation)
 
 static void PlayAnimation(entity* Entity, char* AnimationName)
 {
-    animation* Animation = &Entity->Animations[AnimationName];
-    Animation->Playing = true;
-    Animation->FrameIndex = 0;
-    Animation->CurrentTime = 0.0;
-    Entity->CurrentAnimation = AnimationName;
-    
+    if(!Entity->CurrentAnimation || strcmp(Entity->CurrentAnimation, AnimationName) != 0)
+    {
+        animation* Animation = &Entity->Animations[AnimationName];
+        Animation->Playing = true;
+        Animation->FrameIndex = 0;
+        Animation->CurrentTime = 0.0;
+        Entity->CurrentAnimation = AnimationName;
+    }
 }
-
 static void StopAnimation(animation* Animation)
 {
     Animation->Playing = false;
@@ -111,23 +112,25 @@ static void StopAnimation(animation* Animation)
 
 static void TickAnimation(animation* Animation, real64 DeltaTime)
 {
-    if(Animation->CurrentTime >= Animation->TimePerFrame)
+    if(Animation->Playing)
     {
-        Animation->FrameIndex++;
-        Animation->CurrentTime = 0.0;
-        if(Animation->FrameIndex == Animation->FrameCount)
+        if(Animation->CurrentTime >= Animation->TimePerFrame)
         {
-            Animation->FrameIndex = 0;
-            if(Animation->Loop == 0)
+            Animation->FrameIndex++;
+            Animation->CurrentTime = 0.0;
+            if(Animation->FrameIndex == Animation->FrameCount)
             {
-                printf("STOP\n");
-                StopAnimation(Animation);
+                Animation->FrameIndex = 0;
+                
+                if(Animation->Loop == 0)
+                {
+                    StopAnimation(Animation);
+                }
             }
         }
+        Animation->CurrentTime += DeltaTime;
     }
-    Animation->CurrentTime += DeltaTime;
 }
-
 
 
 

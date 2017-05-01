@@ -369,13 +369,16 @@ int main(void)
     GameState.Player.Type = Entity_Player;
     GameState.Player.player.WalkingSpeed = 10.0f;
     
+    animation IdleAnimation = {};
+    LoadAnimationFromFile("../assets/animations/player_anim_idle.pownim", &IdleAnimation, &GameState.RenderState);
+    GameState.Player.Animations.insert(std::pair<char*, animation>(IdleAnimation.Name, IdleAnimation));
+    
     animation WalkingAnimation = {};
     LoadAnimationFromFile("../assets/animations/player_anim_walk.pownim", &WalkingAnimation, &GameState.RenderState);
     GameState.Player.Animations.insert(std::pair<char*, animation>(WalkingAnimation.Name, WalkingAnimation));
     
     animation AttackingAnimation = {};
     LoadAnimationFromFile("../assets/animations/player_anim_attack.pownim", &AttackingAnimation, &GameState.RenderState);
-    
     GameState.Player.Animations.insert(std::pair<char*, animation>(AttackingAnimation.Name, AttackingAnimation));
     
     PlayAnimation(&GameState.Player, "player_walk");

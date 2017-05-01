@@ -36,7 +36,6 @@ static void SetMouseInvalidKeys(input_controller *InputController)
     }
 }
 
-
 static bool GetKey(Key_Code Key, game_state *GameState)
 {
     return GameState->InputController.KeysDown[Key];
