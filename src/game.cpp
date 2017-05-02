@@ -20,10 +20,6 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
     {
         entity* Entity = &GameState->Entities[EntityIndex];
         
-        AABBMin(&Entity->CollisionAABB);
-        AABBMax(&Entity->CollisionAABB);
-        AABBSize(&Entity->CollisionAABB);
-        
         Entity->IsColliding = false;
         switch(Entity->Type) {
             case Entity_Player: 
@@ -75,7 +71,7 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                         {
                             if(OtherEntity != Entity->EntityIndex) {
                                 collision_AABB Md = {};
-                                MinkowskiDifference(Entity->CollisionAABB, GameState->Entities[OtherEntity].CollisionAABB,&Md);
+                                MinkowskiDifference(&Entity->CollisionAABB, &GameState->Entities[OtherEntity].CollisionAABB,&Md);
                                 glm::vec2 PenetrationVector;
                                 if(Md.Min.x <= 0 &&
                                    Md.Max.x >= 0 &&
