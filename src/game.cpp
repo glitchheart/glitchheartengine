@@ -21,6 +21,7 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
         entity* Entity = &GameState->Entities[EntityIndex];
         
         Entity->IsColliding = false;
+        
         switch(Entity->Type) {
             case Entity_Player: 
             {
@@ -123,7 +124,13 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
             {
                 Entity->Position = glm::vec2(pos.x - 0.5f, pos.y - 0.5f);
                 Entity->CollisionAABB.Center = glm::vec2(Entity->Position.x, Entity->Position.y);
-            }break;
+            }
+            break;
+            case Entity_Enemy:
+            {
+                Entity->CollisionAABB.Center = glm::vec2(Entity->Position.x, Entity->Position.y);
+            }
+            break;
         }
     }
 }
