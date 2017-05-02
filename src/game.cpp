@@ -20,14 +20,14 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
     {
         entity* Entity = &GameState->Entities[EntityIndex];
         
+        AABBMin(&Entity->CollisionAABB);
+        AABBMax(&Entity->CollisionAABB);
+        AABBSize(&Entity->CollisionAABB);
+        
+        Entity->IsColliding = false;
         switch(Entity->Type) {
             case Entity_Player: 
             {
-                Entity->CollisionRect.Left = false;
-                Entity->CollisionRect.Right = false;
-                Entity->CollisionRect.Top = false;
-                Entity->CollisionRect.Bottom = false;
-                
                 if (!GameState->Console.Open)
                 {
                     float VelX = 0.0f;
@@ -64,35 +64,36 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                         else
                             PlayAnimation(Entity, "player_idle");
                     }
-                    bool32 Colliding = false;
+                    Entity->Position.x += VelX;
+                    Entity->Position.y += VelY;
+                    Entity->CollisionAABB.Center = glm::vec2(Entity->Position.x, Entity->Position.y);
                     if(!Entity->IsKinematic) {
                         
                         for(uint32 OtherEntity = 0;
                             OtherEntity < GameState->EntityCount;
                             OtherEntity++)
                         {
-                            if(OtherEntity != Entity->EntityIndex &&
-                               !GameState->Entities[OtherEntity].IsKinematic && CheckCollision(Entity,&GameState->Entities[OtherEntity]))
-                            {
-                                Colliding = true;
+                            if(OtherEntity != Entity->EntityIndex) {
+                                collision_AABB Md = {};
+                                MinkowskiDifference(Entity->CollisionAABB, GameState->Entities[OtherEntity].CollisionAABB,&Md);
+                                glm::vec2 PenetrationVector;
+                                if(Md.Min.x <= 0 &&
+                                   Md.Max.x >= 0 &&
+                                   Md.Min.y <= 0 &&
+                                   Md.Max.y >= 0)
+                                {
+                                    Entity->IsColliding = true;
+                                    GameState->Entities[OtherEntity].IsColliding = true;
+                                    printf("Other: %d\n", OtherEntity);
+                                    ClosestPointsOnBoundsToPoint(&Md,glm::vec2(0,0),&PenetrationVector);
+                                    Entity->CollisionAABB.Center.x += PenetrationVector.x;
+                                    Entity->CollisionAABB.Center.y += PenetrationVector.y;
+                                    Entity->Position = glm::vec2(Entity->CollisionAABB.Center.x, Entity->CollisionAABB.Center.y);
+                                }
                             }
                         }
                     }
-                    if(!Colliding) {
-                        if(VelX > 0 && !Entity->CollisionRect.Right ||
-                           VelX < 0 && !Entity->CollisionRect.Left)
-                        {
-                            Entity->Position.x += VelX;
-                        }
-                        
-                        if(VelY > 0 && !Entity->CollisionRect.Top ||
-                           VelY < 0 && !Entity->CollisionRect.Bottom)
-                        {
-                            Entity->Position.y += VelY;
-                        }
-                    }
                 }
-                
                 
                 //attacking
                 if(!Entity->Player.IsAttacking && GetMouseButtonDown(Mouse_Left, GameState))
@@ -125,6 +126,7 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
             case Entity_Crosshair:
             {
                 Entity->Position = glm::vec2(pos.x - 0.5f, pos.y - 0.5f);
+                Entity->CollisionAABB.Center = glm::vec2(Entity->Position.x, Entity->Position.y);
             }break;
         }
     }
