@@ -351,51 +351,67 @@ int main(void)
     //load render_state
     RenderSetup(&GameState.RenderState);
     
-    entity_manager EntityManager = {}; //TODO(Daniel) Do something useful with this. And remember the texture_manager
+    //TODO(Daniel) Do something useful with this. And remember the texture_manager
+    entity Player = {};
     
-    GameState.Player = {};
-    GameState.Crosshair = {};
-    GameState.Crosshair.Type = Entity_Crosshair;
-    
-    render_entity CrosshairRenderEntity = { };
-    CrosshairRenderEntity.ShaderIndex = Shader_Texture;
-    CrosshairRenderEntity.TextureHandle = LoadTexture("../assets/textures/crosshair.png");
-    GameState.Crosshair.RenderEntity = CrosshairRenderEntity;
-    GameState.Crosshair.Rotation = glm::vec3(0, 0, 0);
-    GameState.Crosshair.Scale = glm::vec3(1, 1, 0);
-    
-    GameState.Camera.Zoom = 2.5f;
-    GameState.Player.Type = Entity_Player;
-    GameState.Player.player.WalkingSpeed = 10.0f;
+    Player.Type = Entity_Player;
+    Player.Player.WalkingSpeed = 10.0f;
     
     collision_rect CollisionRect;
-    CollisionRect.X = 0;
-    CollisionRect.Y = 0;
-    CollisionRect.Width = 0.5;
-    CollisionRect.Height = 0.5;
+    CollisionRect.X = 0.6f;
+    CollisionRect.Y = 0.6f;
+    CollisionRect.Width = 0.8f;
+    CollisionRect.Height = 0.8f;
     
-    GameState.Player.CollisionRect = CollisionRect;
+    Player.CollisionRect = CollisionRect;
     animation IdleAnimation = {};
     LoadAnimationFromFile("../assets/animations/player_anim_idle.pownim", &IdleAnimation, &GameState.RenderState);
-    GameState.Player.Animations.insert(std::pair<char*, animation>(IdleAnimation.Name, IdleAnimation));
+    Player.Animations.insert(std::pair<char*, animation>(IdleAnimation.Name, IdleAnimation));
     
     animation WalkingAnimation = {};
     LoadAnimationFromFile("../assets/animations/player_anim_walk.pownim", &WalkingAnimation, &GameState.RenderState);
-    GameState.Player.Animations.insert(std::pair<char*, animation>(WalkingAnimation.Name, WalkingAnimation));
+    Player.Animations.insert(std::pair<char*, animation>(WalkingAnimation.Name, WalkingAnimation));
     
     animation AttackingAnimation = {};
     LoadAnimationFromFile("../assets/animations/player_anim_attack.pownim", &AttackingAnimation, &GameState.RenderState);
-    GameState.Player.Animations.insert(std::pair<char*, animation>(AttackingAnimation.Name, AttackingAnimation));
+    Player.Animations.insert(std::pair<char*, animation>(AttackingAnimation.Name, AttackingAnimation));
     
-    PlayAnimation(&GameState.Player, "player_walk");
+    PlayAnimation(&Player, "player_idle");
     
     render_entity PlayerRenderEntity = { };
     PlayerRenderEntity.ShaderIndex = Shader_SpriteSheetShader;
     PlayerRenderEntity.TextureHandle = LoadTexture("../assets/textures/player.png");
     
-    GameState.Player.RenderEntity = PlayerRenderEntity;
-    GameState.Player.Rotation = glm::vec3(0, 0, 0.3f);
-    GameState.Player.Scale = glm::vec3(2, 2, 0);
+    Player.RenderEntity = PlayerRenderEntity;
+    Player.Rotation = glm::vec3(0, 0, 0.3f);
+    Player.Scale = glm::vec3(2, 2, 0);
+    
+    Player.EntityIndex = GameState.EntityCount;
+    GameState.Entities[GameState.EntityCount++] = Player;
+    
+    entity Crosshair = {};
+    Crosshair.Type = Entity_Crosshair;
+    
+    
+    collision_rect CollisionRect2;
+    CollisionRect2.X = 0.6f;
+    CollisionRect2.Y = 0.6f;
+    CollisionRect2.Width = 0.8f;
+    CollisionRect2.Height = 0.8f;
+    Crosshair.CollisionRect = CollisionRect2;
+    
+    render_entity CrosshairRenderEntity = { };
+    CrosshairRenderEntity.ShaderIndex = Shader_Texture;
+    CrosshairRenderEntity.TextureHandle = LoadTexture("../assets/textures/crosshair.png");
+    Crosshair.RenderEntity = CrosshairRenderEntity;
+    Crosshair.Rotation = glm::vec3(0, 0, 0);
+    Crosshair.Scale = glm::vec3(1, 1, 0);
+    
+    Crosshair.EntityIndex = GameState.EntityCount;
+    GameState.Entities[GameState.EntityCount++] = Crosshair;
+    
+    
+    GameState.Camera.Zoom = 2.5f;
     
     GenerateRoom(ROOM_WIDTH, ROOM_HEIGHT, &GameState.Room);
     

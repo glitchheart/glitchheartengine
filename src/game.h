@@ -61,6 +61,9 @@ struct game_state
     room Room;
     input_controller InputController;
     sound_manager SoundManager;
+    uint16 EntityCount;
+    entity Entities[NUM_ENTITIES]; // entity.h NUM_ENTITIES
+    
 };
 
 #define UPDATE(name)void name(real64 DeltaTime, game_state* GameState) 

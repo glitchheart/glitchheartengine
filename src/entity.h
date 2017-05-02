@@ -15,6 +15,7 @@ enum Entity_Enum
 struct entity
 {
     Entity_Enum Type;
+    uint32 EntityIndex;
     glm::vec2 Position;
     glm::vec3 Rotation;
     glm::vec3 Scale = glm::vec3(1, 1, 1);
@@ -24,31 +25,27 @@ struct entity
     std::map<char*, animation, CompareCStrings> Animations;
     render_entity RenderEntity;
     collision_rect CollisionRect;
+    bool32 IsKinematic;
     union
     {
         struct
         {
             bool32 IsAttacking;
             real32 WalkingSpeed;
-        } player;
+        } Player;
         struct
         {
-        } palm_tree;
+        } PalmTree;
         struct
         {
-        } enemy;
+        } Enemy;
     };
     
     
 };
 
-#define NUM_ENTITIES 10
+#define NUM_ENTITIES 16
 
 //TODO(daniel) Put this to use
-struct entity_manager
-{
-    uint16 Count;
-    entity Entities[NUM_ENTITIES];
-};
 
 #endif
