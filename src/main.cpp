@@ -369,10 +369,10 @@ int main(void)
     GameState.Player.player.WalkingSpeed = 10.0f;
     
     collision_rect CollisionRect;
-    CollisionRect.X = 10;
-    CollisionRect.Y = 10;
-    CollisionRect.Width = 20;
-    CollisionRect.Height = 20;
+    CollisionRect.X = 0;
+    CollisionRect.Y = 0;
+    CollisionRect.Width = 0.5;
+    CollisionRect.Height = 0.5;
     
     GameState.Player.CollisionRect = CollisionRect;
     animation IdleAnimation = {};
