@@ -9,6 +9,7 @@
 
 extern "C" UPDATE(Update)
 {
+    
 #ifdef DEBUG
     if(GetKeyDown(Key_F1, GameState))
     {
@@ -19,14 +20,6 @@ extern "C" UPDATE(Update)
     }
     
 #endif
-    
-    collision_rect Collider1 = { 0, 0, 10, 10};
-    collision_rect Collider2 = {0, 5, 10, 10 };
-    
-    if(CheckCollision(&Collider1, &Collider2))
-    {
-        //printf("COLLIDING\n");
-    }
     
     if (GetKeyDown(Key_Enter, GameState) && !GameState->Console.Open)
     {

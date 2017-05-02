@@ -590,8 +590,8 @@ static void RenderColliderWireframe(render_state* RenderState, entity* EntityWit
 {
     glm::mat4 Model(1.0f);
     
-    Model = glm::translate(Model, glm::vec3(EntityWithCollider->CollisionRect.X, EntityWithCollider->CollisionRect.Y , 0.0f));
-    Model = glm::scale(Model, glm::vec3(2, 2, 1));
+    Model = glm::translate(Model, glm::vec3(EntityWithCollider->Position.x + EntityWithCollider->CollisionRect.X, EntityWithCollider->Position.y + EntityWithCollider->CollisionRect.Y, 0.0f));
+    Model = glm::scale(Model, glm::vec3(2, EntityWithCollider->CollisionRect.Width, EntityWithCollider->CollisionRect.Height));
     
     glBindVertexArray(RenderState->WireframeVAO);
     
@@ -651,9 +651,6 @@ static void Render(game_state* GameState)
     
     RenderEntity(&GameState->RenderState, GameState->Player, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
     RenderEntity(&GameState->RenderState, GameState->Crosshair, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
-    
-    GameState->Player.CollisionRect.X = GameState->Player.Position.x;
-    GameState->Player.CollisionRect.Y = GameState->Player.Position.y;
     
     if(GameState->RenderState.RenderColliders)
         RenderColliderWireframe(&GameState->RenderState, &GameState->Player, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
