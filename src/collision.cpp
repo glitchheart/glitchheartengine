@@ -38,4 +38,21 @@ static bool32 CheckCollision(entity* Entity1, entity* Entity2)
     return 0;
 }
 
+static void InitAABB(collision_AABB* Coll)
+{
+    Coll->Min = glm::vec2(Coll->Center.x - Coll->Extents.x, Coll->Center.y - Coll->Extents.y);
+    Coll->Max = glm::vec2(Coll->Center.x + Coll->Extents.x, Coll->Center.y + Coll->Extents.y);
+    Coll->Size = glm::vec2(Coll->Extents.x * 2, Coll->Extents.y * 2);
+}
+
+static void MinkowskiDifference(collision_AABB Coll, collision_AABB Other, collision_AABB* Out)
+{
+    glm::vec2 TopLeft = glm::vec2(Coll.Min.x - Other.Max.x,Coll.Min.y - Other.Min.y);
+    glm::vec2 FullSize = glm::vec2(Coll.Size.x + Other.Size.x, Coll.Size.y + Other.Size.y);
+    glm::vec2 Center = glm::vec2(TopLeft.x + (FullSize.x / 2), TopLeft.y + (FullSize.y /2));
+    glm::vec2 Extents = glm::vec2(FullSize.x / 2, FullSize.y / 2);
+    Out->Center = Center;
+    Out->Extents = Extents;
+}
+
 
