@@ -530,6 +530,28 @@ static void RenderConsole(render_state* RenderState, console* Console, glm::mat4
     }
 }
 
+
+static void RenderColliderWireframe(render_state* RenderState, entity* EntityWithCollider, glm::mat4 ProjectionMatrix, glm::mat4 View)
+{
+    glm::mat4 Model(1.0f);
+    
+    Model = glm::translate(Model, glm::vec3(EntityWithCollider->Position.x + EntityWithCollider->CollisionRect.X, EntityWithCollider->Position.y + EntityWithCollider->CollisionRect.Y, 0.0f));
+    Model = glm::scale(Model, glm::vec3(EntityWithCollider->CollisionRect.Width, EntityWithCollider->CollisionRect.Height,1));
+    
+    glBindVertexArray(RenderState->WireframeVAO);
+    
+    auto Shader = RenderState->Shaders[Shader_Wireframe];
+    UseShader(&Shader);
+    
+    glm::mat4 MVP = ProjectionMatrix * View * Model;
+    SetMat4Uniform(Shader.Program, "MVP", MVP);
+    SetVec4Attribute(Shader.Program, "color", glm::vec4(0.0, 1.0, 0.0, 1.0));
+    
+    glDrawArrays(GL_LINE_STRIP, 0, 6);
+    glBindVertexArray(0);
+}
+
+
 static void RenderEntity(render_state *RenderState, entity &Entity, glm::mat4 ProjectionMatrix, glm::mat4 View)
 { 
     auto Shader = RenderState->Shaders[Entity.RenderEntity.ShaderIndex];
@@ -584,26 +606,10 @@ static void RenderEntity(render_state *RenderState, entity &Entity, glm::mat4 Pr
     glBindBuffer(GL_ARRAY_BUFFER, RenderState->SpriteQuadVBO);
     glDrawArrays(GL_QUADS, 0, 4);
     glBindVertexArray(0);
-}
-
-static void RenderColliderWireframe(render_state* RenderState, entity* EntityWithCollider, glm::mat4 ProjectionMatrix, glm::mat4 View)
-{
-    glm::mat4 Model(1.0f);
     
-    Model = glm::translate(Model, glm::vec3(EntityWithCollider->Position.x + EntityWithCollider->CollisionRect.X, EntityWithCollider->Position.y + EntityWithCollider->CollisionRect.Y, 0.0f));
-    Model = glm::scale(Model, glm::vec3(2, EntityWithCollider->CollisionRect.Width, EntityWithCollider->CollisionRect.Height));
+    if(RenderState->RenderColliders)
+        RenderColliderWireframe(RenderState, &Entity, ProjectionMatrix, View);
     
-    glBindVertexArray(RenderState->WireframeVAO);
-    
-    auto Shader = RenderState->Shaders[Shader_Wireframe];
-    UseShader(&Shader);
-    
-    glm::mat4 MVP = ProjectionMatrix * View * Model;
-    SetMat4Uniform(Shader.Program, "MVP", MVP);
-    SetVec4Attribute(Shader.Program, "color", glm::vec4(0.0, 1.0, 0.0, 1.0));
-    
-    glDrawArrays(GL_LINE_STRIP, 0, 6);
-    glBindVertexArray(0);
 }
 
 static void RenderRoom(render_state* RenderState, const room& Room,  glm::mat4 ProjectionMatrix, glm::mat4 View, int StartX, int StartY, int EndX, int EndY)
@@ -649,11 +655,12 @@ static void Render(game_state* GameState)
     
     RenderRoom(&GameState->RenderState, GameState->Room, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix, 0, 0, 0, 0);
     
-    RenderEntity(&GameState->RenderState, GameState->Player, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
-    RenderEntity(&GameState->RenderState, GameState->Crosshair, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
-    
-    if(GameState->RenderState.RenderColliders)
-        RenderColliderWireframe(&GameState->RenderState, &GameState->Player, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
+    for(uint32 EntityIndex = 0;
+        EntityIndex < GameState->EntityCount;
+        EntityIndex++) 
+    {
+        RenderEntity(&GameState->RenderState, GameState->Entities[EntityIndex], GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
+    }
     
     if(GameState->Console.CurrentTime > 0)
         RenderConsole(&GameState->RenderState, &GameState->Console, GameState->Camera.ProjectionMatrix,  GameState->Camera.ViewMatrix);
