@@ -23,11 +23,11 @@ struct entity
     
     std::map<char*, animation, CompareCStrings> Animations;
     render_entity RenderEntity;
+    collision_rect CollisionRect;
     union
     {
         struct
         {
-            collision_rect CollisionRect;
             bool32 IsAttacking;
             real32 WalkingSpeed;
         } player;

@@ -104,6 +104,7 @@ static void PlayAnimation(entity* Entity, char* AnimationName)
         Entity->CurrentAnimation = AnimationName;
     }
 }
+
 static void StopAnimation(animation* Animation)
 {
     Animation->Playing = false;
