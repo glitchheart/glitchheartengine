@@ -586,16 +586,11 @@ static void RenderEntity(render_state *RenderState, entity &Entity, glm::mat4 Pr
     glBindVertexArray(0);
 }
 
-static void RenderColliderWireframe(render_state* RenderState, const collision_rect& CollisionRectToDraw, glm::mat4 ProjectionMatrix, glm::mat4 View)
+static void RenderColliderWireframe(render_state* RenderState, entity* EntityWithCollider, glm::mat4 ProjectionMatrix, glm::mat4 View)
 {
     glm::mat4 Model(1.0f);
-    Model = glm::translate(Model, glm::vec3(CollisionRectToDraw.X, CollisionRectToDraw.Y, 0.0f));
     
-    /*Model = glm::translate(Model, glm::vec3(1, 1, 0.0f)); 
-    Model = glm::rotate(Model, Entity.Rotation.z, glm::vec3(0, 0, 1)); //NOTE(Daniel) 1.56 is approximately 90 degrees in radians
-    Model = glm::translate(Model, glm::vec3(-1, -1, 0.0f)); 
-    */
-    
+    Model = glm::translate(Model, glm::vec3(EntityWithCollider->CollisionRect.X, EntityWithCollider->CollisionRect.Y , 0.0f));
     Model = glm::scale(Model, glm::vec3(2, 2, 1));
     
     glBindVertexArray(RenderState->WireframeVAO);
@@ -657,11 +652,11 @@ static void Render(game_state* GameState)
     RenderEntity(&GameState->RenderState, GameState->Player, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
     RenderEntity(&GameState->RenderState, GameState->Crosshair, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
     
-    GameState->Player.player.CollisionRect.X = GameState->Player.Position.x;
-    GameState->Player.player.CollisionRect.Y = GameState->Player.Position.y;
+    GameState->Player.CollisionRect.X = GameState->Player.Position.x;
+    GameState->Player.CollisionRect.Y = GameState->Player.Position.y;
     
     if(GameState->RenderState.RenderColliders)
-        RenderColliderWireframe(&GameState->RenderState, GameState->Player.player.CollisionRect, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
+        RenderColliderWireframe(&GameState->RenderState, &GameState->Player, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
     
     if(GameState->Console.CurrentTime > 0)
         RenderConsole(&GameState->RenderState, &GameState->Console, GameState->Camera.ProjectionMatrix,  GameState->Camera.ViewMatrix);

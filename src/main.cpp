@@ -374,7 +374,7 @@ int main(void)
     CollisionRect.Width = 20;
     CollisionRect.Height = 20;
     
-    GameState.Player.player.CollisionRect = CollisionRect;
+    GameState.Player.CollisionRect = CollisionRect;
     animation IdleAnimation = {};
     LoadAnimationFromFile("../assets/animations/player_anim_idle.pownim", &IdleAnimation, &GameState.RenderState);
     GameState.Player.Animations.insert(std::pair<char*, animation>(IdleAnimation.Name, IdleAnimation));
@@ -452,12 +452,14 @@ int main(void)
         
         Game.Update(DeltaTime, &GameState);
         CheckConsoleInput(&GameState, (real32)DeltaTime);
+        
         Render(&GameState);
         PlaySounds(&GameState);
         
         SetControllerInvalidKeys(&GameState.InputController);
         SetInvalidKeys(&GameState.InputController);
         SetMouseInvalidKeys(&GameState.InputController);
+        
         //TODO(Daniel) Move this out of the main loop and into the key_controller.cpp somehow
         
         glfwPollEvents();

@@ -84,7 +84,7 @@ extern "C" UPDATE(Update)
     if(GameState->Player.CurrentAnimation)
         TickAnimation(&GameState->Player.Animations[GameState->Player.CurrentAnimation],DeltaTime);
     
-    auto pos = glm::unProject(glm::vec3(GameState->InputController.MouseX,GameState->RenderState.Viewport[3] - GameState->InputController.MouseY, 0),
+    auto pos = glm::unProject(glm::vec3(GameState->InputController.MouseX, GameState->RenderState.Viewport[3] - GameState->InputController.MouseY, 0),
                               GameState->Camera.ViewMatrix,
                               GameState->Camera.ProjectionMatrix,
                               glm::vec4(0, 0, GameState->RenderState.Viewport[2], GameState->RenderState.Viewport[3]));
