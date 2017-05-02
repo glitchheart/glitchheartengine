@@ -397,7 +397,6 @@ int main(void)
     entity Crosshair = {};
     Crosshair.Type = Entity_Crosshair;
     
-    
     collision_rect CollisionRect2;
     CollisionRect2.X = 0.6f;
     CollisionRect2.Y = 0.6f;
@@ -420,6 +419,30 @@ int main(void)
     Crosshair.EntityIndex = GameState.EntityCount;
     GameState.Entities[GameState.EntityCount++] = Crosshair;
     
+    entity Enemy = {};
+    Enemy.Type = Entity_Enemy;
+    
+    collision_rect CollisionRect3;
+    CollisionRect3.X = 0.6f;
+    CollisionRect3.Y = 0.6f;
+    CollisionRect3.Width = 0.8f;
+    CollisionRect3.Height = 0.8f;
+    Enemy.CollisionRect = CollisionRect3;
+    
+    collision_AABB CollisionAABB3;
+    CollisionAABB3.Center = glm::vec2(0,0);
+    CollisionAABB3.Extents = glm::vec2(0.5f,0.5f);
+    Enemy.CollisionAABB = CollisionAABB3;
+    
+    render_entity EnemyRenderEntity = { };
+    EnemyRenderEntity.ShaderIndex = Shader_Texture;
+    EnemyRenderEntity.TextureHandle = LoadTexture("../assets/textures/enemy.png");
+    Enemy.RenderEntity = EnemyRenderEntity;
+    Enemy.Rotation = glm::vec3(0, 0, 0);
+    Enemy.Scale = glm::vec3(2, 2, 0);
+    
+    Enemy.EntityIndex = GameState.EntityCount;
+    GameState.Entities[GameState.EntityCount++] = Enemy;
     
     GameState.Camera.Zoom = 2.5f;
     

@@ -572,6 +572,7 @@ static void RenderEntity(render_state *RenderState, entity &Entity, glm::mat4 Pr
     switch(Entity.Type)
     {
         case Entity_Crosshair:
+        case Entity_Enemy:
         case Entity_Player:
         {
             glm::mat4 Model(1.0f);
