@@ -531,12 +531,15 @@ static void RenderConsole(render_state* RenderState, console* Console, glm::mat4
 }
 
 
-static void RenderColliderWireframe(render_state* RenderState, entity* EntityWithCollider, glm::mat4 ProjectionMatrix, glm::mat4 View)
+static void RenderColliderWireframe(render_state* RenderState, entity* Entity, glm::mat4 ProjectionMatrix, glm::mat4 View)
 {
     glm::mat4 Model(1.0f);
     
-    Model = glm::translate(Model, glm::vec3(EntityWithCollider->Position.x + EntityWithCollider->CollisionRect.X, EntityWithCollider->Position.y + EntityWithCollider->CollisionRect.Y, 0.0f));
-    Model = glm::scale(Model, glm::vec3(EntityWithCollider->CollisionRect.Width, EntityWithCollider->CollisionRect.Height,1));
+    Model = glm::translate(Model, glm::vec3(Entity->Position.x + Entity->CollisionAABB.Extents.x, Entity->Position.y + Entity->CollisionAABB.Extents.y, 0.0f));
+    
+    
+    
+    Model = glm::scale(Model, glm::vec3(Entity->CollisionAABB.Extents.x * 2, Entity->CollisionAABB.Extents.y * 2,1));
     
     glBindVertexArray(RenderState->WireframeVAO);
     
@@ -545,7 +548,16 @@ static void RenderColliderWireframe(render_state* RenderState, entity* EntityWit
     
     glm::mat4 MVP = ProjectionMatrix * View * Model;
     SetMat4Uniform(Shader.Program, "MVP", MVP);
-    SetVec4Attribute(Shader.Program, "color", glm::vec4(0.0, 1.0, 0.0, 1.0));
+    glm::vec4 color;
+    if(Entity->IsColliding)
+    {
+        color = glm::vec4(1.0,0.0,0.0,1.0);
+    }
+    else 
+    {
+        color = glm::vec4(0.0,1.0,0.0,1.0);
+    }
+    SetVec4Attribute(Shader.Program, "color", color);
     
     glDrawArrays(GL_LINE_STRIP, 0, 6);
     glBindVertexArray(0);

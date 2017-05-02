@@ -363,7 +363,12 @@ int main(void)
     CollisionRect.Width = 0.8f;
     CollisionRect.Height = 0.8f;
     
+    collision_AABB CollisionAABB;
+    CollisionAABB.Center = glm::vec2(0,0);
+    CollisionAABB.Extents = glm::vec2(0.5f,0.5f);
+    
     Player.CollisionRect = CollisionRect;
+    Player.CollisionAABB = CollisionAABB;
     animation IdleAnimation = {};
     LoadAnimationFromFile("../assets/animations/player_anim_idle.pownim", &IdleAnimation, &GameState.RenderState);
     Player.Animations.insert(std::pair<char*, animation>(IdleAnimation.Name, IdleAnimation));
@@ -399,6 +404,11 @@ int main(void)
     CollisionRect2.Width = 0.8f;
     CollisionRect2.Height = 0.8f;
     Crosshair.CollisionRect = CollisionRect2;
+    
+    collision_AABB CollisionAABB2;
+    CollisionAABB2.Center = glm::vec2(0,0);
+    CollisionAABB2.Extents = glm::vec2(0.5f,0.5f);
+    Crosshair.CollisionAABB = CollisionAABB2;
     
     render_entity CrosshairRenderEntity = { };
     CrosshairRenderEntity.ShaderIndex = Shader_Texture;

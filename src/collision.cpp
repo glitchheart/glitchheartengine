@@ -38,10 +38,18 @@ static bool32 CheckCollision(entity* Entity1, entity* Entity2)
     return 0;
 }
 
-static void InitAABB(collision_AABB* Coll)
+static void AABBMin(collision_AABB* Coll)
 {
     Coll->Min = glm::vec2(Coll->Center.x - Coll->Extents.x, Coll->Center.y - Coll->Extents.y);
+}
+
+static void AABBMax(collision_AABB* Coll)
+{
     Coll->Max = glm::vec2(Coll->Center.x + Coll->Extents.x, Coll->Center.y + Coll->Extents.y);
+}
+
+static void AABBSize(collision_AABB* Coll)
+{
     Coll->Size = glm::vec2(Coll->Extents.x * 2, Coll->Extents.y * 2);
 }
 
@@ -53,6 +61,30 @@ static void MinkowskiDifference(collision_AABB Coll, collision_AABB Other, colli
     glm::vec2 Extents = glm::vec2(FullSize.x / 2, FullSize.y / 2);
     Out->Center = Center;
     Out->Extents = Extents;
+    AABBMin(Out);
+    AABBMax(Out);
+    AABBSize(Out);
+}
+
+static void ClosestPointsOnBoundsToPoint(collision_AABB* Coll, glm::vec2 Point, glm::vec2* Out)
+{
+    real32 MinDist = glm::abs(Point.x - Coll->Min.x);
+    *Out = glm::vec2(Coll->Min.x, Point.y);
+    if(glm::abs(Coll->Max.x - Point.x) < MinDist)
+    {
+        MinDist = glm::abs(Coll->Max.x - Point.x);
+        *Out= glm::vec2(Coll->Max.x, Point.y);
+    }
+    if(glm::abs(Coll->Max.y - Point.y) < MinDist)
+    {
+        MinDist = glm::abs(Coll->Max.x - Point.y);
+        *Out= glm::vec2(Point.x, Coll->Max.y);
+    }
+    if(glm::abs(Coll->Min.y - Point.y) < MinDist)
+    {
+        MinDist = glm::abs(Coll->Min.y - Point.y);
+        *Out= glm::vec2(Point.x, Coll->Min.y);
+    }
 }
 
 
