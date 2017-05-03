@@ -22,7 +22,8 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
         
         Entity->IsColliding = false;
         
-        switch(Entity->Type) {
+        switch(Entity->Type)
+        {
             case Entity_Player: 
             {
                 if (!GameState->Console.Open)
@@ -63,16 +64,19 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                     }
                     Entity->Position.x += VelX;
                     Entity->Position.y += VelY;
+                    
                     Entity->CollisionAABB.Center = glm::vec2(Entity->Position.x, Entity->Position.y);
-                    if(!Entity->IsKinematic) {
+                    
+                    if(!Entity->IsKinematic)
+                    {
                         
-                        for(uint32 OtherEntity = 0;
-                            OtherEntity < GameState->EntityCount;
-                            OtherEntity++)
+                        for(uint32 OtherEntityIndex = 0;
+                            OtherEntityIndex < GameState->EntityCount;
+                            OtherEntityIndex++)
                         {
-                            if(OtherEntity != Entity->EntityIndex) {
+                            if(OtherEntityIndex != Entity->EntityIndex && !GameState->Entities[OtherEntityIndex].IsKinematic) {
                                 collision_AABB Md = {};
-                                MinkowskiDifference(&Entity->CollisionAABB, &GameState->Entities[OtherEntity].CollisionAABB,&Md);
+                                MinkowskiDifference(&Entity->CollisionAABB, &GameState->Entities[OtherEntityIndex].CollisionAABB,&Md);
                                 glm::vec2 PenetrationVector;
                                 if(Md.Min.x <= 0 &&
                                    Md.Max.x >= 0 &&
@@ -80,8 +84,8 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                                    Md.Max.y >= 0)
                                 {
                                     Entity->IsColliding = true;
-                                    GameState->Entities[OtherEntity].IsColliding = true;
-                                    printf("Other: %d\n", OtherEntity);
+                                    GameState->Entities[OtherEntityIndex].IsColliding = true;
+                                    printf("Other: %d\n", OtherEntityIndex);
                                     ClosestPointsOnBoundsToPoint(&Md,glm::vec2(0,0),&PenetrationVector);
                                     Entity->CollisionAABB.Center.x += PenetrationVector.x;
                                     Entity->CollisionAABB.Center.y += PenetrationVector.y;
@@ -148,14 +152,10 @@ extern "C" UPDATE(Update)
     
 #endif
     
-    collision_rect Collider1 = { 0, 0, 10, 10};
-    collision_rect Collider2 = {0, 5, 10, 10 };
-    
     if (GetKeyDown(Key_Enter, GameState) && !GameState->Console.Open)
     {
         PlaySoundEffectOnce(GameState, &GameState->SoundManager.Track01);
     }
     
     UpdateEntities(GameState, DeltaTime);
-    
 }
