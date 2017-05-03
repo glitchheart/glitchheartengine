@@ -518,7 +518,7 @@ static void RenderConsole(render_state* RenderState, console* Console, glm::mat4
     RenderState->InconsolataFont.Color = glm::vec4(1, 1, 1, 1);
     
     RenderText(RenderState, RenderState->InconsolataFont, ">", -1 + 8 * SX, 0.61f * PercentAnimated - 50 * PercentAnimated * SY, SX, SY);
-    RenderText(RenderState, RenderState->InconsolataFont, &Console->Buffer[0], -0.98f + 8 * SX, 0.61f * PercentAnimated - 50 * PercentAnimated * SY, SX, SY); //TODO(Daniel) UNICODE
+    RenderText(RenderState, RenderState->InconsolataFont, &Console->Buffer[0], -0.98f + 8 * SX, 0.61f * PercentAnimated - 50 * PercentAnimated * SY, SX, SY); //TODO(Daniel) UNICODE RENDERING
     
     RenderState->InconsolataFont.Color = glm::vec4(0.8, 0.8, 0.8, 1);
     
@@ -530,14 +530,16 @@ static void RenderConsole(render_state* RenderState, console* Console, glm::mat4
     }
 }
 
+static void RenderUI(render_state* RenderState)
+{
+    
+}
 
 static void RenderColliderWireframe(render_state* RenderState, entity* Entity, glm::mat4 ProjectionMatrix, glm::mat4 View)
 {
     glm::mat4 Model(1.0f);
     
     Model = glm::translate(Model, glm::vec3(Entity->Position.x + Entity->CollisionAABB.Extents.x, Entity->Position.y + Entity->CollisionAABB.Extents.y, 0.0f));
-    
-    
     
     Model = glm::scale(Model, glm::vec3(Entity->CollisionAABB.Extents.x * 2, Entity->CollisionAABB.Extents.y * 2,1));
     
@@ -620,7 +622,7 @@ static void RenderEntity(render_state *RenderState, entity &Entity, glm::mat4 Pr
     glDrawArrays(GL_QUADS, 0, 4);
     glBindVertexArray(0);
     
-    if(RenderState->RenderColliders)
+    if(RenderState->RenderColliders && !Entity.IsKinematic)
         RenderColliderWireframe(RenderState, &Entity, ProjectionMatrix, View);
     
 }
