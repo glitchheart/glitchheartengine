@@ -15,6 +15,7 @@ enum Entity_Enum
 struct entity
 {
     Entity_Enum Type;
+    char* Name;
     uint32 EntityIndex;
     glm::vec2 Position;
     glm::vec3 Rotation;

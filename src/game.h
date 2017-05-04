@@ -22,6 +22,7 @@
 #include "platform_sound.h"
 #include "sound.h"
 #include "console.h"
+#include "editor_ui.h"
 
 #define STB_PERLIN_IMPLEMENTATION
 #include <stb/stb_perlin.h>
@@ -39,15 +40,15 @@ struct game_state
 {
     render_state RenderState;
     camera Camera;
-    console Console;
-    entity Player;
-    entity Crosshair;
+    uint32 PlayerIndex;
     room Room;
     input_controller InputController;
     sound_manager SoundManager;
     uint16 EntityCount;
     entity Entities[NUM_ENTITIES]; // entity.h NUM_ENTITIES
     
+    console Console;
+    editor_ui EditorUI;
 };
 
 #define UPDATE(name)void name(real64 DeltaTime, game_state* GameState) 
@@ -55,6 +56,5 @@ typedef UPDATE(update);
 UPDATE(UpdateStub)
 {
 }
-
 
 #endif

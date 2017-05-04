@@ -6,11 +6,13 @@ static void AddCommand(char* Name, char* (*FunctionPointer)(game_state*, char*))
     Commands[CommandCount++] = Info;
 }
 
+//call this before using the console
 static void InitCommands()
 {
     AddCommand("zoom", &Zoom);
     AddCommand("jump", &Jump);
     AddCommand("exit", &Exit);
+    AddCommand("editor", &TriggerEditor);
 }
 
 void ExecuteCommand(game_state *GameState)
