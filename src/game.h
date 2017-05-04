@@ -32,6 +32,7 @@ struct camera
     uint32 ViewportWidth;
     uint32 ViewportHeight;
     real32 Zoom; //NOTE(Daniel) The higher the number the closer you are zoomed in. 1.0f is NORMAL
+    glm::vec2 Center;
     glm::mat4 ViewMatrix;
     glm::mat4 ProjectionMatrix;
 };

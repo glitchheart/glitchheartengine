@@ -536,21 +536,19 @@ static void RenderEditorUI(game_state* GameState, const editor_ui& EditorUI, ren
     real32 SX = 2.0f / Mode->width;
     real32 SY = 2.0f / Mode->height;
     
-    int index = 0;
-    
-    for(int i = 0; i < GameState->EntityCount + 1; i++)
+    for(int i = -1; i < GameState->EntityCount; i++)
     {
-        if(i == GameState->EntityCount)
+        if(i == -1 || i == GameState->EditorUI.SelectedIndex)
             RenderState->InconsolataFont.Color = glm::vec4(1, 0, 0, 1);
         else
             RenderState->InconsolataFont.Color = glm::vec4(0.8, 0.8, 0.8, 1);
         
-        char* EntityName = i == GameState->EntityCount ? "Entities:" : GameState->Entities[i].Name;
+        char* EntityName = i == -1 ? "Entities:" : GameState->Entities[i].Name;
         
         if(!EntityName)
             EntityName = "NO_NAME";
         
-        RenderText(RenderState, RenderState->InconsolataFont, EntityName, -1 + 8 * SX, 0.3f + i * 0.06f - 50 * SY, SX, SY);
+        RenderText(RenderState, RenderState->InconsolataFont, EntityName, -1 + 8 * SX, 0.3f + (GameState->EntityCount - (i)) * 0.06f - 50 * SY, SX, SY);
     }
 }
 
