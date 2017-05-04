@@ -14,7 +14,7 @@ static char* Jump(game_state* GameState, char* Arguments)
     real32 Y = (real32) strtod(&Arguments[1], NULL);
     
     //@Cleanup this should be changed to access the entities array instead
-    GameState->Player.Position = glm::vec2(X, Y);
+    GameState->Entities[GameState->PlayerIndex].Position = glm::vec2(X, Y);
     
     char* Result;
     sprintf(Result, "Jumped to position %.2f %.2f", X, Y);
@@ -35,6 +35,20 @@ static char* Exit(game_state* GameState, char* Arguments)
     glfwDestroyWindow(GameState->RenderState.Window);
     glfwTerminate();
     exit(EXIT_SUCCESS);
+}
+
+static char* TriggerEditor(game_state* GameState, char* Arguments)
+{
+    if(strcmp(&Arguments[0], "entity_list") == 0)
+    {
+        GameState->EditorUI.State = State_ShowEntityList;
+        return "Toggled entity list";
+    }
+    else if(strcmp(&Arguments[0], "off") == 0)
+    {
+        GameState->EditorUI.State = State_Off;
+        return "Toggled editor off";
+    }
 }
 
 #endif

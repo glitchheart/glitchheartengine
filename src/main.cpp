@@ -43,7 +43,8 @@
 #include "keys_glfw.h"
 #include "console.h"
 #include "console.cpp"
-
+#include "editor_ui.h"
+#include "editor_ui.cpp"
 
 struct game_code
 {
@@ -215,7 +216,7 @@ int main(void)
     
     //TODO(Daniel) Do something useful with this. And remember the texture_manager
     entity Player = {};
-    
+    Player.Name = "Player";
     Player.Type = Entity_Player;
     Player.Player.WalkingSpeed = 10.0f;
     
@@ -257,6 +258,7 @@ int main(void)
     GameState.Entities[GameState.EntityCount++] = Player;
     
     entity Crosshair = {};
+    Crosshair.Name = "Crosshair";
     Crosshair.Type = Entity_Crosshair;
     
     collision_rect CollisionRect2;
@@ -282,6 +284,7 @@ int main(void)
     GameState.Entities[GameState.EntityCount++] = Crosshair;
     
     entity Enemy = {};
+    Enemy.Name = "enemy";
     Enemy.Type = Entity_Enemy;
     
     collision_rect CollisionRect3;
@@ -330,6 +333,7 @@ int main(void)
     std::thread t(&ListenToFileChanges, &AssetManager);
     
     GameState.Console = {};
+    GameState.EditorUI = {};
     
     sound_manager SoundManager = {};
     InitAudio(&SoundManager);
@@ -365,7 +369,7 @@ int main(void)
         
         Game.Update(DeltaTime, &GameState);
         CheckConsoleInput(&GameState, (real32)DeltaTime);
-        
+        CheckEditorUIInput(&GameState, (real32)DeltaTime);
         Render(&GameState);
         PlaySounds(&GameState);
         

@@ -85,7 +85,7 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                                 {
                                     Entity->IsColliding = true;
                                     GameState->Entities[OtherEntityIndex].IsColliding = true;
-                                    printf("Other: %d\n", OtherEntityIndex);
+                                    
                                     ClosestPointsOnBoundsToPoint(&Md,glm::vec2(0,0),&PenetrationVector);
                                     Entity->CollisionAABB.Center.x += PenetrationVector.x;
                                     Entity->CollisionAABB.Center.y += PenetrationVector.y;
@@ -126,8 +126,11 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
             break;
             case Entity_Crosshair:
             {
-                Entity->Position = glm::vec2(pos.x - 0.5f, pos.y - 0.5f);
-                Entity->CollisionAABB.Center = glm::vec2(Entity->Position.x, Entity->Position.y);
+                if(GameState->EditorUI.State == State_Off)
+                {
+                    Entity->Position = glm::vec2(pos.x - 0.5f, pos.y - 0.5f);
+                    Entity->CollisionAABB.Center = glm::vec2(Entity->Position.x, Entity->Position.y);
+                }
             }
             break;
             case Entity_Enemy:

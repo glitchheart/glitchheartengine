@@ -530,9 +530,28 @@ static void RenderConsole(render_state* RenderState, console* Console, glm::mat4
     }
 }
 
-static void RenderUI(render_state* RenderState)
+static void RenderEditorUI(game_state* GameState, const editor_ui& EditorUI, render_state* RenderState)
 {
+    const GLFWvidmode *Mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
+    real32 SX = 2.0f / Mode->width;
+    real32 SY = 2.0f / Mode->height;
     
+    int index = 0;
+    
+    for(int i = 0; i < GameState->EntityCount + 1; i++)
+    {
+        if(i == GameState->EntityCount)
+            RenderState->InconsolataFont.Color = glm::vec4(1, 0, 0, 1);
+        else
+            RenderState->InconsolataFont.Color = glm::vec4(0.8, 0.8, 0.8, 1);
+        
+        char* EntityName = i == GameState->EntityCount ? "Entities:" : GameState->Entities[i].Name;
+        
+        if(!EntityName)
+            EntityName = "NO_NAME";
+        
+        RenderText(RenderState, RenderState->InconsolataFont, EntityName, -1 + 8 * SX, 0.3f + i * 0.06f - 50 * SY, SX, SY);
+    }
 }
 
 static void RenderColliderWireframe(render_state* RenderState, entity* Entity, glm::mat4 ProjectionMatrix, glm::mat4 View)
@@ -551,6 +570,7 @@ static void RenderColliderWireframe(render_state* RenderState, entity* Entity, g
     glm::mat4 MVP = ProjectionMatrix * View * Model;
     SetMat4Uniform(Shader.Program, "MVP", MVP);
     glm::vec4 color;
+    
     if(Entity->IsColliding)
     {
         color = glm::vec4(1.0,0.0,0.0,1.0);
@@ -559,6 +579,7 @@ static void RenderColliderWireframe(render_state* RenderState, entity* Entity, g
     {
         color = glm::vec4(0.0,1.0,0.0,1.0);
     }
+    
     SetVec4Attribute(Shader.Program, "color", color);
     
     glDrawArrays(GL_LINE_STRIP, 0, 6);
@@ -679,6 +700,21 @@ static void Render(game_state* GameState)
     
     if(GameState->Console.CurrentTime > 0)
         RenderConsole(&GameState->RenderState, &GameState->Console, GameState->Camera.ProjectionMatrix,  GameState->Camera.ViewMatrix);
+    
+    switch(GameState->EditorUI.State)
+    {
+        case State_Off:
+        {
+            glfwSetInputMode(GameState->RenderState.Window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+        }
+        break;
+        case State_ShowEntityList:
+        {
+            glfwSetInputMode(GameState->RenderState.Window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+            RenderEditorUI(GameState, GameState->EditorUI, &GameState->RenderState);
+        }
+        break;
+    }
     
     const GLFWvidmode *Mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
     
