@@ -112,16 +112,8 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                 
                 Entity->Rotation = glm::vec3(0, 0, Degrees);
                 
-                GameState->Camera.ProjectionMatrix = glm::ortho(0.0f,
-                                                                static_cast<GLfloat>(GameState->Camera.ViewportWidth / GameState->Camera.Zoom),
-                                                                static_cast<GLfloat>(GameState->Camera.ViewportHeight / GameState->Camera.Zoom),
-                                                                0.0f,
-                                                                -1.0f,
-                                                                1.0f);
-                GameState->Camera.ViewMatrix = glm::translate(glm::mat4(1.0f),
-                                                              glm::vec3(-Entity->Position.x + GameState->Camera.ViewportWidth / GameState->Camera.Zoom / 2,
-                                                                        -Entity->Position.y + GameState->Camera.ViewportHeight / GameState->Camera.Zoom / 2,
-                                                                        0));
+                if(GameState->EditorUI.State == State_Off)
+                    GameState->Camera.Center = glm::vec2(Entity->Position.x, Entity->Position.y);
             }
             break;
             case Entity_Crosshair:
@@ -140,6 +132,27 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
             break;
         }
     }
+    
+    switch(GameState->EditorUI.State)
+    {
+        case State_ShowEntityList:
+        {
+            auto entity = GameState->Entities[GameState->EditorUI.SelectedIndex];
+            GameState->Camera.Center = glm::vec2(entity.Position.x, entity.Position.y);
+        }
+        break;
+    }
+    
+    GameState->Camera.ProjectionMatrix = glm::ortho(0.0f,
+                                                    static_cast<GLfloat>(GameState->Camera.ViewportWidth / GameState->Camera.Zoom),
+                                                    static_cast<GLfloat>(GameState->Camera.ViewportHeight / GameState->Camera.Zoom),
+                                                    0.0f,
+                                                    -1.0f,
+                                                    1.0f);
+    GameState->Camera.ViewMatrix = glm::translate(glm::mat4(1.0f),
+                                                  glm::vec3(-GameState->Camera.Center.x + GameState->Camera.ViewportWidth / GameState->Camera.Zoom / 2,
+                                                            -GameState->Camera.Center.y + GameState->Camera.ViewportHeight / GameState->Camera.Zoom / 2,
+                                                            0));
 }
 
 extern "C" UPDATE(Update)
