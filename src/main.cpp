@@ -348,6 +348,8 @@ int main(void)
     
     memcpy(GameState.RenderState.Viewport, Viewport, sizeof(GLint) * 4);
     
+    InitCommands();
+    
     while (!glfwWindowShouldClose(GameState.RenderState.Window))
     {
         //calculate deltatime
