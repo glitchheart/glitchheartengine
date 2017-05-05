@@ -59,21 +59,19 @@ void ExecuteCommand(game_state *GameState)
         {
             Result = CombineStrings(Result, ": Command not found");
         }
-        else
+        
+        //Copy the command into the history buffer
+        for(int i = HISTORY_BUFFER_LINES - 1; i > 0; i--)
         {
-            //Copy the command into the history buffer
-            for(int i = HISTORY_BUFFER_LINES - 1; i > 0; i--)
-            {
-                sprintf(GameState->Console.HistoryBuffer[i], GameState->Console.HistoryBuffer[i - 1]);
-            }
-            
-            sprintf(GameState->Console.HistoryBuffer[0], Result);
-            
-            for(int i = 0; i < CONSOLE_BUFFER_SIZE; i++)
-                GameState->Console.Buffer[i] = '\0';
-            
-            GameState->Console.BufferIndex = 0;
+            sprintf(GameState->Console.HistoryBuffer[i], GameState->Console.HistoryBuffer[i - 1]);
         }
+        
+        sprintf(GameState->Console.HistoryBuffer[0], Result);
+        
+        for(int i = 0; i < CONSOLE_BUFFER_SIZE; i++)
+            GameState->Console.Buffer[i] = '\0';
+        
+        GameState->Console.BufferIndex = 0;
     }
 }
 
@@ -98,11 +96,22 @@ static void CheckConsoleInput(game_state* GameState, real32 DeltaTime)
             GameState->Console.CurrentTime = GameState->Console.TimeToAnimate;
     }
     
-    if (GetKeyDown(Key_Backspace, GameState) && GameState->Console.Open)
+    if (GetKey(Key_Backspace, GameState) && GameState->Console.Open)
     {
-        if (GameState->Console.BufferIndex > 0)
-            GameState->Console.Buffer[--GameState->Console.BufferIndex] = '\0';
+        if(GameState->Console.DeleteTime < 0.05) //character delete delay
+        {
+            GameState->Console.DeleteTime += DeltaTime;
+        }
+        else
+        {
+            GameState->Console.DeleteTime = 0;
+            if (GameState->Console.BufferIndex > 0)
+                GameState->Console.Buffer[--GameState->Console.BufferIndex] = '\0';
+        }
     }
+    
+    if(GetKeyUp(Key_Backspace, GameState))
+        GameState->Console.DeleteTime = 0;
     
     if (GetKeyDown(Key_Enter, GameState) && GameState->Console.Open)
     {
