@@ -96,6 +96,7 @@ static void CheckConsoleInput(game_state* GameState, real64 DeltaTime)
             GameState->Console.CurrentTime = GameState->Console.TimeToAnimate;
     }
     
+    //@Fix there could still be some issues with deleting too many characters at once.
     if (GetKey(Key_Backspace, GameState) && GameState->Console.Open)
     {
         if(GameState->Console.DeleteTime >= 0.1 || GameState->Console.DeleteTime == 0) //character delete delay
