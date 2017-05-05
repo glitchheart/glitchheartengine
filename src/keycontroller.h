@@ -123,6 +123,43 @@ struct input_controller
         { Key_Z, false }
     };
     
+    std::map<int, bool> KeysUp =
+    {
+        { Key_Left, false },
+        { Key_Right, false  },
+        { Key_Up, false },
+        { Key_Down, false },
+        { Key_Escape, false },
+        { Key_Tab, false },
+        { Key_Enter, false },
+        { Key_LeftCtrl, false },
+        { Key_F1, false },
+        { Key_A, false },
+        { Key_B, false },
+        { Key_C, false },
+        { Key_D, false },
+        { Key_E, false },
+        { Key_F, false },
+        { Key_G, false },
+        { Key_H, false },
+        { Key_I, false },
+        { Key_J, false },
+        { Key_K, false },
+        { Key_L, false },
+        { Key_M, false },
+        { Key_N, false },
+        { Key_O, false },
+        { Key_Q, false },
+        { Key_R, false },
+        { Key_S, false },
+        { Key_T, false },
+        { Key_U, false },
+        { Key_V, false },
+        { Key_X, false },
+        { Key_Y, false },
+        { Key_Z, false }
+    };
+    
     std::map<int, bool> MouseButtonDown = 
     {
         {Mouse_Left, false},

@@ -388,7 +388,7 @@ static void RenderText(render_state* RenderState, const render_font& Font, const
     auto Shader = RenderState->Shaders[Shader_StandardFont];
     UseShader(&Shader);
     SetVec4Attribute(Shader.Program, "color", Font.Color);
-    
+    SetVec4Attribute(Shader.Program, "alphaColor", Font.AlphaColor);
     if (RenderState->BoundTexture != Font.Texture) //never bind the same texture if it's already bound
     {
         glBindTexture(GL_TEXTURE_2D, Font.Texture);
@@ -539,9 +539,13 @@ static void RenderEditorUI(game_state* GameState, const editor_ui& EditorUI, ren
     for(int i = -1; i < GameState->EntityCount; i++)
     {
         if(i == -1 || i == GameState->EditorUI.SelectedIndex)
-            RenderState->InconsolataFont.Color = glm::vec4(1, 0, 0, 1);
+        {
+            RenderState->InconsolataFont.Color = glm::vec4(0, 0, 0, 1);
+        }
         else
+        {
             RenderState->InconsolataFont.Color = glm::vec4(0.8, 0.8, 0.8, 1);
+        }
         
         char* EntityName = i == -1 ? "Entities:" : GameState->Entities[i].Name;
         
