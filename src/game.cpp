@@ -20,7 +20,7 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
     {
         entity* Entity = &GameState->Entities[EntityIndex];
         
-        Entity->IsColliding = false;
+        
         
         switch(Entity->Type)
         {
@@ -75,7 +75,6 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                             if(OtherEntityIndex != Entity->EntityIndex && !GameState->Entities[OtherEntityIndex].IsKinematic) {
                                 collision_AABB Md = {};
                                 MinkowskiDifference(&Entity->CollisionAABB, &GameState->Entities[OtherEntityIndex].CollisionAABB,&Md);
-                                glm::vec2 PenetrationVector;
                                 if(Md.Min.x <= 0 &&
                                    Md.Max.x >= 0 &&
                                    Md.Min.y <= 0 &&
@@ -84,15 +83,12 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                                     Entity->IsColliding = true;
                                     GameState->Entities[OtherEntityIndex].IsColliding = true;
                                     
-                                    ClosestPointsOnBoundsToPoint(&Md,Entity->CollisionAABB.Center,&PenetrationVector);
                                     Entity->CollisionAABB.Center = Entity->Position;
-                                    /*
-                                    Entity->Position.x += PenetrationVector.x * 0.5f;
-                                    Entity->Position.y += PenetrationVector.y * 0.5f;*/
-                                    
                                 } 
                                 else
                                 {
+                                    Entity->IsColliding = false;
+                                    GameState->Entities[OtherEntityIndex].IsColliding = false;
                                     Entity->Position.x += VelX;
                                     Entity->Position.y += VelY;
                                 }
