@@ -75,7 +75,7 @@ void ExecuteCommand(game_state *GameState)
     }
 }
 
-static void CheckConsoleInput(game_state* GameState, real32 DeltaTime)
+static void CheckConsoleInput(game_state* GameState, real64 DeltaTime)
 {
     if(GameState->Console.Open && GameState->Console.CurrentTime < GameState->Console.TimeToAnimate)
     {
@@ -98,16 +98,13 @@ static void CheckConsoleInput(game_state* GameState, real32 DeltaTime)
     
     if (GetKey(Key_Backspace, GameState) && GameState->Console.Open)
     {
-        if(GameState->Console.DeleteTime < 0.05) //character delete delay
-        {
-            GameState->Console.DeleteTime += DeltaTime;
-        }
-        else
+        if(GameState->Console.DeleteTime >= 0.1 || GameState->Console.DeleteTime == 0) //character delete delay
         {
             GameState->Console.DeleteTime = 0;
             if (GameState->Console.BufferIndex > 0)
                 GameState->Console.Buffer[--GameState->Console.BufferIndex] = '\0';
         }
+        GameState->Console.DeleteTime += DeltaTime;
     }
     
     if(GetKeyUp(Key_Backspace, GameState))

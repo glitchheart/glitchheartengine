@@ -369,8 +369,8 @@ int main(void)
         ReloadDlls(&Game);
         
         Game.Update(DeltaTime, &GameState);
-        CheckConsoleInput(&GameState, (real32)DeltaTime);
-        CheckEditorUIInput(&GameState, (real32)DeltaTime);
+        CheckConsoleInput(&GameState, DeltaTime);
+        CheckEditorUIInput(&GameState, DeltaTime);
         Render(&GameState);
         PlaySounds(&GameState);
         

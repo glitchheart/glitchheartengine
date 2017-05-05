@@ -382,6 +382,23 @@ struct Point
 
 //TODO(Daniel) there's a weird bug when rendering special characters. The cursor just slowly jumps up for every character pressed
 
+static void RenderRect(render_state* RenderState, glm::vec4 Color, real32 X, real32 Y, real32 Width, real32 Height)
+{
+    glBindVertexArray(RenderState->ConsoleVAO); //TODO(Daniel) Create a vertex array buffer + object for console
+    
+    auto Shader = RenderState->Shaders[Shader_Console];
+    UseShader(&Shader);
+    
+    //draw upper part
+    glm::mat4 Model(1.0f);
+    Model = glm::translate(Model, glm::vec3(X, Y, 0));
+    Model = glm::scale(Model, glm::vec3(Width, Height, 1));
+    SetMat4Uniform(Shader.Program, "M", Model);
+    SetVec4Attribute(Shader.Program, "color", Color);
+    glDrawArrays(GL_QUADS, 0, 4);
+    
+}
+
 //rendering methods
 static void RenderText(render_state* RenderState, const render_font& Font, const char *Text, real32 X, real32 Y, real32 SX, real32 SY) 
 {
@@ -473,7 +490,7 @@ static void RenderConsole(render_state* RenderState, console* Console, glm::mat4
     auto Shader = RenderState->Shaders[Shader_Console];
     UseShader(&Shader);
     
-    real32 PercentAnimated = 1.0f + 1.0f - Console->CurrentTime / Console->TimeToAnimate;
+    real64 PercentAnimated = 1.0f + 1.0f - Console->CurrentTime / Console->TimeToAnimate;
     
     //draw upper part
     glm::mat4 Model(1.0f);
@@ -538,19 +555,29 @@ static void RenderEditorUI(game_state* GameState, const editor_ui& EditorUI, ren
     
     for(int i = -1; i < GameState->EntityCount; i++)
     {
+        char* EntityName = i == -1 ? "Entities:" : GameState->Entities[i].Name;
+        
+        if(!EntityName)
+            EntityName = "NO_NAME";
+        
+        //TODO(Daniel) measure text
         if(i == -1 || i == GameState->EditorUI.SelectedIndex)
         {
+            if(i != -1)
+            {
+                //real32 Width;
+                //real32 Height;
+                //MeasureText(&RenderState->InconsolataFont, EntityName, &Width, &Height);
+                
+                RenderRect(RenderState, glm::vec4(1, 1, 1, 1), -1 + 8 * SX, 0.29f + (GameState->EntityCount - (i)) * 0.06f - 50 * SY, 0.3, 0.05);
+            }
+            
             RenderState->InconsolataFont.Color = glm::vec4(0, 0, 0, 1);
         }
         else
         {
             RenderState->InconsolataFont.Color = glm::vec4(0.8, 0.8, 0.8, 1);
         }
-        
-        char* EntityName = i == -1 ? "Entities:" : GameState->Entities[i].Name;
-        
-        if(!EntityName)
-            EntityName = "NO_NAME";
         
         RenderText(RenderState, RenderState->InconsolataFont, EntityName, -1 + 8 * SX, 0.3f + (GameState->EntityCount - (i)) * 0.06f - 50 * SY, SX, SY);
     }
