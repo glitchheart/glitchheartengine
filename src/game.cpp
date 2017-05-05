@@ -62,10 +62,8 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                         else
                             PlayAnimation(Entity, "player_idle");
                     }
-                    Entity->Position.x += VelX;
-                    Entity->Position.y += VelY;
                     
-                    Entity->CollisionAABB.Center = glm::vec2(Entity->Position.x, Entity->Position.y);
+                    Entity->CollisionAABB.Center = glm::vec2(Entity->Position.x + VelX, Entity->Position.y + VelY);
                     
                     if(!Entity->IsKinematic)
                     {
@@ -86,10 +84,17 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                                     Entity->IsColliding = true;
                                     GameState->Entities[OtherEntityIndex].IsColliding = true;
                                     
-                                    ClosestPointsOnBoundsToPoint(&Md,glm::vec2(0,0),&PenetrationVector);
-                                    Entity->CollisionAABB.Center.x += PenetrationVector.x;
-                                    Entity->CollisionAABB.Center.y += PenetrationVector.y;
-                                    Entity->Position = glm::vec2(Entity->CollisionAABB.Center.x, Entity->CollisionAABB.Center.y);
+                                    ClosestPointsOnBoundsToPoint(&Md,Entity->CollisionAABB.Center,&PenetrationVector);
+                                    Entity->CollisionAABB.Center = Entity->Position;
+                                    /*
+                                    Entity->Position.x += PenetrationVector.x * 0.5f;
+                                    Entity->Position.y += PenetrationVector.y * 0.5f;*/
+                                    
+                                } 
+                                else
+                                {
+                                    Entity->Position.x += VelX;
+                                    Entity->Position.y += VelY;
                                 }
                             }
                         }

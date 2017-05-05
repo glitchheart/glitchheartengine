@@ -304,6 +304,7 @@ int main(void)
     EnemyRenderEntity.TextureHandle = LoadTexture("../assets/textures/enemy.png");
     Enemy.RenderEntity = EnemyRenderEntity;
     Enemy.Rotation = glm::vec3(0, 0, 0);
+    Enemy.Position = glm::vec2(5,0);
     Enemy.Scale = glm::vec3(2, 2, 0);
     
     Enemy.EntityIndex = GameState.EntityCount;
