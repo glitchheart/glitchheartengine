@@ -61,7 +61,7 @@ static void MinkowskiDifference(collision_AABB* Coll, collision_AABB* Other, col
     AABBMin(Other);
     AABBMax(Other);
     AABBSize(Other);
-    glm::vec2 TopLeft = glm::vec2(Coll->Min.x - Other->Max.x,Coll->Min.y - Other->Min.y);
+    glm::vec2 TopLeft = glm::vec2(Coll->Min.x - Other->Max.x,Coll->Min.y - Other->Max.y);
     glm::vec2 FullSize = glm::vec2(Coll->Size.x + Other->Size.x, Coll->
                                    Size.y + Other->Size.y);
     glm::vec2 Center = glm::vec2(TopLeft.x + (FullSize.x / 2), TopLeft.y + (FullSize.y /2));
