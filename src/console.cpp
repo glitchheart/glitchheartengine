@@ -12,7 +12,8 @@ static void InitCommands()
     AddCommand("zoom", &Zoom);
     AddCommand("jump", &Jump);
     AddCommand("exit", &Exit);
-    AddCommand("editor", &TriggerEditor);
+    AddCommand("view", &View);
+    AddCommand("editor", &Editor);
 }
 
 void ExecuteCommand(game_state *GameState)
@@ -50,7 +51,7 @@ void ExecuteCommand(game_state *GameState)
             if(strcmp(CommandName, Commands[i].Name) == 0)
             {
                 Found = true;
-                Commands[i].FunctionPointer(GameState, ArgumentBuffer[0]);
+                Result = Commands[i].FunctionPointer(GameState, ArgumentBuffer[0]);
                 break;
             }
         }
@@ -63,10 +64,11 @@ void ExecuteCommand(game_state *GameState)
         //Copy the command into the history buffer
         for(int i = HISTORY_BUFFER_LINES - 1; i > 0; i--)
         {
-            sprintf(GameState->Console.HistoryBuffer[i], GameState->Console.HistoryBuffer[i - 1]);
+            sprintf(GameState->Console.HistoryBuffer[i], GameState->Console.HistoryBuffer[i - 2]);
         }
         
         sprintf(GameState->Console.HistoryBuffer[0], Result);
+        sprintf(GameState->Console.HistoryBuffer[1], &GameState->Console.Buffer[0]);
         
         for(int i = 0; i < CONSOLE_BUFFER_SIZE; i++)
             GameState->Console.Buffer[i] = '\0';

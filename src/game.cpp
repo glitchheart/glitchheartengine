@@ -113,13 +113,13 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                 
                 Entity->Rotation = glm::vec3(0, 0, Degrees);
                 
-                if(GameState->EditorUI.State == State_Off)
+                if(!GameState->EditorUI.On)
                     GameState->Camera.Center = glm::vec2(Entity->Position.x, Entity->Position.y);
             }
             break;
             case Entity_Crosshair:
             {
-                if(GameState->EditorUI.State == State_Off)
+                if(!GameState->EditorUI.On)
                 {
                     Entity->Position = glm::vec2(pos.x - 0.5f, pos.y - 0.5f);
                     Entity->CollisionAABB.Center = glm::vec2(Entity->Position.x, Entity->Position.y);
@@ -136,7 +136,7 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
     
     switch(GameState->EditorUI.State)
     {
-        case State_ShowEntityList:
+        case State_EntityList:
         {
             auto entity = GameState->Entities[GameState->EditorUI.SelectedIndex];
             GameState->Camera.Center = glm::vec2(entity.Position.x, entity.Position.y);
