@@ -86,6 +86,8 @@ struct render_state
     GLFWwindow *Window;
     int WindowWidth;
     int WindowHeight;
+    GLfloat ScaleX;
+    GLfloat ScaleY;
     GLint Viewport[4];
     
     bool32 RenderColliders;
