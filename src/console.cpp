@@ -82,6 +82,8 @@ static void CheckConsoleInput(game_state* GameState, real64 DeltaTime)
     if(GameState->Console.Open && GameState->Console.CurrentTime < GameState->Console.TimeToAnimate)
     {
         GameState->Console.CurrentTime += DeltaTime;
+        if(GameState->Console.CurrentTime > GameState->Console.TimeToAnimate)
+            GameState->Console.CurrentTime = GameState->Console.TimeToAnimate;
     }
     else if(!GameState->Console.Open && GameState->Console.CurrentTime > 0)
     {
