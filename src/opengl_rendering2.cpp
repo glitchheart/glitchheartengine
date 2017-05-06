@@ -130,7 +130,7 @@ static void InitializeFreeTypeFont(FT_Library Library, render_font* Font, shader
     glGenTextures(1, &Font->Texture);
     glBindTexture(GL_TEXTURE_2D, Font->Texture);
     
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_R8, Font->AtlasWidth, Font->AtlasHeight, 0, GL_RED, GL_UNSIGNED_BYTE, 0);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, Font->AtlasWidth, Font->AtlasHeight, 0, GL_ALPHA, GL_UNSIGNED_BYTE, 0);
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     
     /* Clamping to edges is important to prevent artifacts when scaling */
@@ -148,7 +148,7 @@ static void InitializeFreeTypeFont(FT_Library Library, render_font* Font, shader
         if(FT_Load_Char(Font->Face, i, FT_LOAD_RENDER))
             continue;
         
-        glTexSubImage2D(GL_TEXTURE_2D, 0, X, 0, G->bitmap.width, G->bitmap.rows, GL_RED, GL_UNSIGNED_BYTE, G->bitmap.buffer);
+        glTexSubImage2D(GL_TEXTURE_2D, 0, X, 0, G->bitmap.width, G->bitmap.rows, GL_ALPHA, GL_UNSIGNED_BYTE, G->bitmap.buffer);
         
         Font->CharacterInfo[i].AX = (real32)(G->advance.x >> 6);
         Font->CharacterInfo[i].AY = (real32)(G->advance.y >> 6);
@@ -430,18 +430,12 @@ static void RenderRect(Render_Mode Mode, render_state* RenderState, glm::vec4 Co
 }
 
 //rendering methods
-static void RenderText(render_state* RenderState, const render_font& Font, const char *Text, real64 X, real64 Y, real64 Scale) 
+static void RenderText(render_state* RenderState, const render_font& Font, const char *Text, real32 X, real32 Y, real32 SX, real32 SY) 
 {
-    X *= RenderState->ScaleX;
-    X -= 1;
-    Y *= RenderState->ScaleY;
-    Y = 1 - Y;
-    
     auto Shader = RenderState->Shaders[Shader_StandardFont];
     UseShader(&Shader);
     SetVec4Attribute(Shader.Program, "color", Font.Color);
     SetVec4Attribute(Shader.Program, "alphaColor", Font.AlphaColor);
-    
     if (RenderState->BoundTexture != Font.Texture) //never bind the same texture if it's already bound
     {
         glBindTexture(GL_TEXTURE_2D, Font.Texture);
@@ -454,15 +448,14 @@ static void RenderText(render_state* RenderState, const render_font& Font, const
     
     for(const char *P = Text; *P; P++) 
     { 
-        float W = Font.CharacterInfo[*P].BW * RenderState->ScaleX;
-        float H = Font.CharacterInfo[*P].BH * RenderState->ScaleY;
-        
-        float X2 =  X + Font.CharacterInfo[*P ].BL * RenderState->ScaleX;
-        float Y2 = -Y - Font.CharacterInfo[*P ].BT * RenderState->ScaleY;
+        float X2 =  X + Font.CharacterInfo[*P ].BL * SX;
+        float Y2 = -Y - Font.CharacterInfo[*P ].BT * SY;
+        float W = Font.CharacterInfo[*P].BW * SX;
+        float H = Font.CharacterInfo[*P].BH * SY;
         
         /* Advance the cursor to the start of the next character */
-        X += Font.CharacterInfo[*P].AX * RenderState->ScaleX;
-        Y += Font.CharacterInfo[*P].AY * RenderState->ScaleY;
+        X += Font.CharacterInfo[*P].AX * SX;
+        Y += Font.CharacterInfo[*P].AY * SY;
         
         /* Skip glyphs that have no pixels */
         if(!W || !H)
@@ -479,6 +472,7 @@ static void RenderText(render_state* RenderState, const render_font& Font, const
     glBindVertexArray(Font.VAO);
     glBindBuffer(GL_ARRAY_BUFFER, Font.VBO);
     glBufferData(GL_ARRAY_BUFFER, 6 * strlen(Text) * sizeof(Point), Coords, GL_DYNAMIC_DRAW);
+    
     glDrawArrays(GL_TRIANGLES, 0, N);
 }
 
@@ -546,13 +540,17 @@ static void RenderConsole(render_state* RenderState, console* Console, glm::mat4
     
     glDrawArrays(GL_QUADS, 0, 4);
     
+    const GLFWvidmode *Mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
+    real32 SX = 2.0f / Mode->width;
+    real32 SY = 2.0f / Mode->height;
+    
     // auto CursorShader = RenderState->Shaders[Shader_ConsoleCursor];
     glm::mat4 CursorModel(1.0f);
     real32 Width;
     real32 Height;
     MeasureText(&RenderState->InconsolataFont, &Console->Buffer[0], &Width, &Height);
     
-    CursorModel = glm::translate(CursorModel, glm::vec3(-0.97 + Width, 0.51 * PercentAnimated, 0));
+    CursorModel = glm::translate(CursorModel, glm::vec3(-0.97 + Width * SX, 0.51 * PercentAnimated, 0));
     CursorModel = glm::scale(CursorModel, glm::vec3(0.015, 0.06, 1));
     
     SetMat4Uniform(Shader.Program, "M", CursorModel);
@@ -566,10 +564,8 @@ static void RenderConsole(render_state* RenderState, console* Console, glm::mat4
     
     RenderState->InconsolataFont.Color = glm::vec4(1, 1, 1, 1);
     
-    printf("Window w %d h %d\n", RenderState->WindowWidth, RenderState->WindowHeight);
-    
-    RenderText(RenderState, RenderState->InconsolataFont, ">", 0, RenderState->WindowHeight / 2.6 * PercentAnimated, 1);
-    RenderText(RenderState, RenderState->InconsolataFont, &Console->Buffer[0], 20, RenderState->WindowHeight / 2.6  * PercentAnimated, 1); //TODO(Daniel) UNICODE RENDERING
+    RenderText(RenderState, RenderState->InconsolataFont, ">", -1 + 8 * SX, 0.61f * PercentAnimated - 50 * PercentAnimated * SY, SX, SY);
+    RenderText(RenderState, RenderState->InconsolataFont, &Console->Buffer[0], -0.98f + 8 * SX, 0.61f * PercentAnimated - 50 * PercentAnimated * SY, SX, SY); //TODO(Daniel) UNICODE RENDERING
     
     RenderState->InconsolataFont.Color = glm::vec4(0.8, 0.8, 0.8, 1);
     
@@ -577,7 +573,46 @@ static void RenderConsole(render_state* RenderState, console* Console, glm::mat4
     
     for(int i = 0; i < HISTORY_BUFFER_LINES; i++)
     {
-        RenderText(RenderState, RenderState->InconsolataFont, &Console->HistoryBuffer[i][0], -1 + 8, 0.69f * PercentAnimated + i * 0.06f - 50 * PercentAnimated, 1);
+        RenderText(RenderState, RenderState->InconsolataFont, &Console->HistoryBuffer[i][0], -1 + 8 * SX, 0.69f * PercentAnimated + i * 0.06f - 50 * PercentAnimated * SY, SX, SY);
+    }
+}
+
+static void RenderEditorUI(game_state* GameState, const editor_ui& EditorUI, render_state* RenderState)
+{
+    const GLFWvidmode *Mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
+    real32 SX = 2.0f / Mode->width;
+    real32 SY = 2.0f / Mode->height;
+    
+    RenderRect(Outlined, RenderState, glm::vec4(0.2, 0.2, 0.2, 1), -1 + 8 * SX, 0.34f - 50 * SY, 0.3, 0.05 * (GameState->EntityCount + 2));
+    
+    for(int i = -1; i < GameState->EntityCount; i++)
+    {
+        char* EntityName = i == -1 ? "Entities:" : GameState->Entities[i].Name;
+        
+        if(!EntityName)
+            EntityName = "NO_NAME";
+        
+        //TODO(Daniel) measure text
+        if(i == -1 || i == GameState->EditorUI.SelectedIndex)
+        {
+            if(i != -1)
+            {
+                //real32 Width;
+                //real32 Height;
+                //MeasureText(&RenderState->InconsolataFont, EntityName, &Width, &Height);
+                
+                RenderRect(Fill, RenderState, glm::vec4(1, 1, 1, 1), -1 + 8 * SX, 0.29f + (GameState->EntityCount - (i)) * 0.06f - 50 * SY, 0.3, 0.05);
+                RenderState->InconsolataFont.Color = glm::vec4(0, 0, 0, 1);
+            }
+            else
+                RenderState->InconsolataFont.Color = glm::vec4(1, 1, 1, 1);
+        }
+        else
+        {
+            RenderState->InconsolataFont.Color = glm::vec4(1, 1, 1, 1);
+        }
+        
+        RenderText(RenderState, RenderState->InconsolataFont, EntityName, -1 + 8 * SX, 0.3f + (GameState->EntityCount - (i)) * 0.06f - 50 * SY, SX, SY);
     }
 }
 
@@ -723,80 +758,45 @@ static void RenderGame(game_state* GameState)
     }
 }
 
-static void RenderEditorUI(game_state* GameState, const editor_ui& EditorUI, render_state* RenderState)
-{
-    switch(GameState->EditorUI.State)
-    {
-        case State_Selection:
-        {
-            glfwSetInputMode(GameState->RenderState.Window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-            
-            RenderRect(Outlined, &GameState->RenderState, glm::vec4(0.2, 0.2, 0.2, 1), -0.2, -0.3, 0.4, 0.6);
-            
-            for(int Index = 0; Index < MENU_OPTIONS_COUNT; Index++)
-            {
-                RenderText(&GameState->RenderState, GameState->RenderState.InconsolataFont, GameState->EditorUI.MenuOptions[Index], -0.21, 0 + (MENU_OPTIONS_COUNT - (Index)) * 0.06f, 1);
-            }
-        }
-        break;
-        case State_Animations:
-        {}
-        break;
-        case State_Collision:
-        {}
-        break;
-        case State_EntityList:
-        {
-            glfwSetInputMode(GameState->RenderState.Window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-            RenderGame(GameState);
-            RenderRect(Outlined,  RenderState, glm::vec4(0.2, 0.2, 0.2, 1), -1 + 8, 0.34f - 50, 0.3, 0.05 * (GameState->EntityCount + 2));
-            
-            for(int i = -1; i < GameState->EntityCount; i++)
-            {
-                char* EntityName = i == -1 ? "Entities:" : GameState->Entities[i].Name;
-                
-                if(!EntityName)
-                    EntityName = "NO_NAME";
-                
-                //TODO(Daniel) measure text
-                if(i == -1 || i == GameState->EditorUI.SelectedIndex)
-                {
-                    if(i != -1)
-                    {
-                        //real32 Width;
-                        //real32 Height;
-                        //MeasureText(&RenderState->InconsolataFont, EntityName, &Width, &Height);
-                        
-                        RenderRect(Fill, RenderState, glm::vec4(1, 1, 1, 1), -1 + 8, 0.29f + (GameState->EntityCount - (i)) * 0.06f - 50, 0.3, 0.05);
-                        RenderState->InconsolataFont.Color = glm::vec4(0, 0, 0, 1);
-                    }
-                    else
-                        RenderState->InconsolataFont.Color = glm::vec4(1, 1, 1, 1);
-                }
-                else
-                {
-                    RenderState->InconsolataFont.Color = glm::vec4(1, 1, 1, 1);
-                }
-                
-                RenderText(RenderState, RenderState->InconsolataFont, EntityName, -1 + 8, 0.3f + (GameState->EntityCount - (i)) * 0.06f - 50, 1);
-            }
-        }
-        break;
-    }
-}
-
 static void Render(game_state* GameState)
 {
-    const GLFWvidmode *Mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
-    GameState->RenderState.ScaleX = 2.0f / Mode->width;
-    GameState->RenderState.ScaleY= 2.0f / Mode->height;
-    
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glClearColor(0, 0, 0, 1.0f);
     
     if(GameState->EditorUI.On)
     {
-        RenderEditorUI(GameState, GameState->EditorUI, &GameState->RenderState);
+        switch(GameState->EditorUI.State)
+        {
+            case State_Selection:
+            {
+                glfwSetInputMode(GameState->RenderState.Window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+                
+                const GLFWvidmode *Mode = glfwGetVideoMode(glfwGetPrimaryMonitor()); //TODO(Daniel) do this only once every frame instead of a million times
+                real32 SX = 2.0f / Mode->width;
+                real32 SY = 2.0f / Mode->height;
+                
+                RenderRect(Outlined, &GameState->RenderState, glm::vec4(0.2, 0.2, 0.2, 1), -0.2, -0.3, 0.4, 0.6);
+                
+                for(int Index = 0; Index < MENU_OPTIONS_COUNT; Index++)
+                {
+                    RenderText(&GameState->RenderState, GameState->RenderState.InconsolataFont, GameState->EditorUI.MenuOptions[Index], -0.21, 0 + (MENU_OPTIONS_COUNT - (Index)) * 0.06f, SX, SY);
+                }
+            }
+            break;
+            case State_Animations:
+            {}
+            break;
+            case State_Collision:
+            {}
+            break;
+            case State_EntityList:
+            {
+                glfwSetInputMode(GameState->RenderState.Window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+                RenderGame(GameState);
+                RenderEditorUI(GameState, GameState->EditorUI, &GameState->RenderState);
+            }
+            break;
+        }
     }
     else
     {
@@ -807,7 +807,6 @@ static void Render(game_state* GameState)
     if(GameState->Console.CurrentTime > 0)
         RenderConsole(&GameState->RenderState, &GameState->Console, GameState->Camera.ProjectionMatrix,  GameState->Camera.ViewMatrix);
     
-    RenderText(&GameState->RenderState, GameState->RenderState.InconsolataFont, "DAMN SON", -800, 100, 1);
-    
+    const GLFWvidmode *Mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
     glfwSwapBuffers(GameState->RenderState.Window);
 }

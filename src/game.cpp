@@ -148,6 +148,7 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                                                     0.0f,
                                                     -1.0f,
                                                     1.0f);
+    
     GameState->Camera.ViewMatrix = glm::translate(glm::mat4(1.0f),
                                                   glm::vec3(-GameState->Camera.Center.x + GameState->Camera.ViewportWidth / GameState->Camera.Zoom / 2,
                                                             -GameState->Camera.Center.y + GameState->Camera.ViewportHeight / GameState->Camera.Zoom / 2,
