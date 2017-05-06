@@ -27,6 +27,11 @@ const char* ShaderPaths[Shader_Count] =
     "../assets/shaders/wireframeshader"
 };
 
+enum Render_Mode
+{
+    Fill, Outlined
+};
+
 struct render_entity
 {
     uint32 TextureHandle;

@@ -352,6 +352,11 @@ static void ReloadAssets(asset_manager *AssetManager, game_state* GameState)
     }
 }
 
+static void SetFloatAttribute(GLuint ShaderHandle, const char* UniformName, real64 Value)
+{
+    glUniform1f(glGetUniformLocation(ShaderHandle, UniformName), Value);
+}
+
 static void SetVec2Attribute(GLuint ShaderHandle, const char *UniformName, glm::vec2 Value)
 {
     glUniform2f(glGetUniformLocation(ShaderHandle, UniformName), Value.x, Value.y);
@@ -381,22 +386,47 @@ struct Point
 }; 
 
 //TODO(Daniel) there's a weird bug when rendering special characters. The cursor just slowly jumps up for every character pressed
-
-static void RenderRect(render_state* RenderState, glm::vec4 Color, real32 X, real32 Y, real32 Width, real32 Height)
+static void RenderRect(Render_Mode Mode, render_state* RenderState, glm::vec4 Color, real32 X, real32 Y, real32 Width, real32 Height)
 {
-    glBindVertexArray(RenderState->ConsoleVAO); //TODO(Daniel) Create a vertex array buffer + object for console
-    
-    auto Shader = RenderState->Shaders[Shader_Console];
-    UseShader(&Shader);
-    
-    //draw upper part
-    glm::mat4 Model(1.0f);
-    Model = glm::translate(Model, glm::vec3(X, Y, 0));
-    Model = glm::scale(Model, glm::vec3(Width, Height, 1));
-    SetMat4Uniform(Shader.Program, "M", Model);
-    SetVec4Attribute(Shader.Program, "color", Color);
-    glDrawArrays(GL_QUADS, 0, 4);
-    
+    switch(Mode)
+    {
+        case Fill:
+        {
+            glBindVertexArray(RenderState->ConsoleVAO); //TODO(Daniel) Create a vertex array buffer + object for simple rect / just change name
+            
+            auto Shader = RenderState->Shaders[Shader_Console];
+            UseShader(&Shader);
+            
+            //draw upper part
+            glm::mat4 Model(1.0f);
+            Model = glm::translate(Model, glm::vec3(X, Y, 0));
+            Model = glm::scale(Model, glm::vec3(Width, Height, 1));
+            SetMat4Uniform(Shader.Program, "M", Model);
+            SetVec4Attribute(Shader.Program, "color", Color);
+            
+            glDrawArrays(GL_QUADS, 0, 4);
+        }
+        break;
+        case Outlined:
+        {
+            glm::mat4 Model(1.0f);
+            Model = glm::translate(Model, glm::vec3(X, Y, 0));
+            Model = glm::scale(Model, glm::vec3(Width, Height, 1));
+            
+            glBindVertexArray(RenderState->WireframeVAO);
+            
+            auto Shader = RenderState->Shaders[Shader_Wireframe];
+            UseShader(&Shader);
+            
+            SetMat4Uniform(Shader.Program, "MVP", Model);
+            
+            SetVec4Attribute(Shader.Program, "color", glm::vec4(1, 1, 1, 1));
+            
+            glDrawArrays(GL_LINE_STRIP, 0, 6);
+            glBindVertexArray(0);
+        }
+        break;
+    }
 }
 
 //rendering methods
@@ -553,6 +583,8 @@ static void RenderEditorUI(game_state* GameState, const editor_ui& EditorUI, ren
     real32 SX = 2.0f / Mode->width;
     real32 SY = 2.0f / Mode->height;
     
+    RenderRect(Outlined, RenderState, glm::vec4(0.2, 0.2, 0.2, 1), -1 + 8 * SX, 0.34f - 50 * SY, 0.3, 0.05 * (GameState->EntityCount + 2));
+    
     for(int i = -1; i < GameState->EntityCount; i++)
     {
         char* EntityName = i == -1 ? "Entities:" : GameState->Entities[i].Name;
@@ -569,14 +601,15 @@ static void RenderEditorUI(game_state* GameState, const editor_ui& EditorUI, ren
                 //real32 Height;
                 //MeasureText(&RenderState->InconsolataFont, EntityName, &Width, &Height);
                 
-                RenderRect(RenderState, glm::vec4(1, 1, 1, 1), -1 + 8 * SX, 0.29f + (GameState->EntityCount - (i)) * 0.06f - 50 * SY, 0.3, 0.05);
+                RenderRect(Fill, RenderState, glm::vec4(1, 1, 1, 1), -1 + 8 * SX, 0.29f + (GameState->EntityCount - (i)) * 0.06f - 50 * SY, 0.3, 0.05);
+                RenderState->InconsolataFont.Color = glm::vec4(0, 0, 0, 1);
             }
-            
-            RenderState->InconsolataFont.Color = glm::vec4(0, 0, 0, 1);
+            else
+                RenderState->InconsolataFont.Color = glm::vec4(1, 1, 1, 1);
         }
         else
         {
-            RenderState->InconsolataFont.Color = glm::vec4(0.8, 0.8, 0.8, 1);
+            RenderState->InconsolataFont.Color = glm::vec4(1, 1, 1, 1);
         }
         
         RenderText(RenderState, RenderState->InconsolataFont, EntityName, -1 + 8 * SX, 0.3f + (GameState->EntityCount - (i)) * 0.06f - 50 * SY, SX, SY);
@@ -730,22 +763,32 @@ static void Render(game_state* GameState)
     if(GameState->Console.CurrentTime > 0)
         RenderConsole(&GameState->RenderState, &GameState->Console, GameState->Camera.ProjectionMatrix,  GameState->Camera.ViewMatrix);
     
-    switch(GameState->EditorUI.State)
+    if(GameState->EditorUI.On)
     {
-        case State_Off:
+        switch(GameState->EditorUI.State)
         {
-            glfwSetInputMode(GameState->RenderState.Window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+            case State_Selection:
+            {}
+            break;
+            case State_Animations:
+            {}
+            break;
+            case State_Collision:
+            {}
+            break;
+            case State_EntityList:
+            {
+                glfwSetInputMode(GameState->RenderState.Window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+                RenderEditorUI(GameState, GameState->EditorUI, &GameState->RenderState);
+            }
+            break;
         }
-        break;
-        case State_ShowEntityList:
-        {
-            glfwSetInputMode(GameState->RenderState.Window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-            RenderEditorUI(GameState, GameState->EditorUI, &GameState->RenderState);
-        }
-        break;
+    }
+    else
+    {
+        glfwSetInputMode(GameState->RenderState.Window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     }
     
     const GLFWvidmode *Mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
-    
     glfwSwapBuffers(GameState->RenderState.Window);
 }

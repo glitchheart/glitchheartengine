@@ -3,14 +3,22 @@
 
 enum Editor_UI_State
 {
-    State_Off,
-    State_ShowEntityList
+    State_Selection,
+    State_Animations,
+    State_Collision,
+    State_EntityList
 };
 
 struct editor_ui
 {
+    bool32 On;
     Editor_UI_State State;
     uint32 SelectedIndex;
+    char* MenuOptions[2] = 
+    {
+        "Animations",
+        "Collision",
+    };
 };
 
 #endif
