@@ -746,11 +746,8 @@ static void RenderRoom(render_state* RenderState, const room& Room,  glm::mat4 P
     glBindVertexArray(0);
 }
 
-static void Render(game_state* GameState)
+static void RenderGame(game_state* GameState)
 {
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glClearColor(0, 0, 0, 1.0f);
-    
     RenderRoom(&GameState->RenderState, GameState->Room, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix, 0, 0, 0, 0);
     
     for(uint32 EntityIndex = 0;
@@ -759,16 +756,32 @@ static void Render(game_state* GameState)
     {
         RenderEntity(&GameState->RenderState, GameState->Entities[EntityIndex], GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
     }
-    
-    if(GameState->Console.CurrentTime > 0)
-        RenderConsole(&GameState->RenderState, &GameState->Console, GameState->Camera.ProjectionMatrix,  GameState->Camera.ViewMatrix);
+}
+
+static void Render(game_state* GameState)
+{
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glClearColor(0, 0, 0, 1.0f);
     
     if(GameState->EditorUI.On)
     {
         switch(GameState->EditorUI.State)
         {
             case State_Selection:
-            {}
+            {
+                glfwSetInputMode(GameState->RenderState.Window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+                
+                const GLFWvidmode *Mode = glfwGetVideoMode(glfwGetPrimaryMonitor()); //TODO(Daniel) do this only once every frame instead of a million times
+                real32 SX = 2.0f / Mode->width;
+                real32 SY = 2.0f / Mode->height;
+                
+                RenderRect(Outlined, &GameState->RenderState, glm::vec4(0.2, 0.2, 0.2, 1), -0.2, -0.3, 0.4, 0.6);
+                
+                for(int Index = 0; Index < MENU_OPTIONS_COUNT; Index++)
+                {
+                    RenderText(&GameState->RenderState, GameState->RenderState.InconsolataFont, GameState->EditorUI.MenuOptions[Index], -0.21, 0 + (MENU_OPTIONS_COUNT - (Index)) * 0.06f, SX, SY);
+                }
+            }
             break;
             case State_Animations:
             {}
@@ -779,6 +792,7 @@ static void Render(game_state* GameState)
             case State_EntityList:
             {
                 glfwSetInputMode(GameState->RenderState.Window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+                RenderGame(GameState);
                 RenderEditorUI(GameState, GameState->EditorUI, &GameState->RenderState);
             }
             break;
@@ -787,7 +801,11 @@ static void Render(game_state* GameState)
     else
     {
         glfwSetInputMode(GameState->RenderState.Window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+        RenderGame(GameState);
     }
+    
+    if(GameState->Console.CurrentTime > 0)
+        RenderConsole(&GameState->RenderState, &GameState->Console, GameState->Camera.ProjectionMatrix,  GameState->Camera.ViewMatrix);
     
     const GLFWvidmode *Mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
     glfwSwapBuffers(GameState->RenderState.Window);
