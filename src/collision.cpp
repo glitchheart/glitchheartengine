@@ -1,51 +1,12 @@
-//TODO(daniel) doesn't take rotations into account. need SAT for this
-static bool32 CheckCollision(entity* Entity1, entity* Entity2)
-{
-    collision_rect Collider1 = Entity1->CollisionRect;
-    collision_rect Collider2 = Entity2->CollisionRect;
-    if (Collider1.X + Entity1->Position.x < Collider2.X + Entity2->Position.x + Collider2.Width &&
-        Collider1.X + Entity1->Position.x + Collider1.Width > Collider2.X + Entity2->Position.x &&
-        Collider1.Y + Entity1->Position.y < Collider2.Y + Entity2->Position.y + Collider2.Height &&
-        Collider1.Height + Collider1.Y + Entity1->Position.y > Collider2.Y + Entity2->Position.y) 
-    {
-        auto ColliderDir = glm::vec2((Entity1->Position.x + Collider1.X + Collider1.Width) - (Entity2->Position.x + Collider2.X + Collider2.Width),
-                                     (Entity1->Position.y + Collider1.Y + Collider1.Height) - (Entity2->Position.y + Collider2.Y + Collider2.Height));
-        
-        if(ColliderDir.x > 0)
-        {
-            Entity1->CollisionRect.Left = true;
-            Entity2->CollisionRect.Right = true;
-        } 
-        else
-        {
-            Entity1->CollisionRect.Right = true;
-            Entity2->CollisionRect.Left = true;
-        }
-        
-        if(ColliderDir.y > 0)
-        {
-            Entity1->CollisionRect.Top = true;
-            Entity2->CollisionRect.Bottom = true;
-        }
-        else
-        {
-            Entity1->CollisionRect.Bottom = true;
-            Entity2->CollisionRect.Top = true;
-        }
-        
-        return 1;
-    }
-    return 0;
-}
 
 static void AABBMin(collision_AABB* Coll)
 {
-    Coll->Min = glm::vec2(Coll->Center.x - Coll->Extents.x, Coll->Center.y - Coll->Extents.y);
+    Coll->Min = Coll->Center - Coll->Extents;
 }
 
 static void AABBMax(collision_AABB* Coll)
 {
-    Coll->Max = glm::vec2(Coll->Center.x + Coll->Extents.x, Coll->Center.y + Coll->Extents.y);
+    Coll->Max = Coll->Center + Coll->Extents;
 }
 
 static void AABBSize(collision_AABB* Coll)
@@ -61,9 +22,8 @@ static void MinkowskiDifference(collision_AABB* Coll, collision_AABB* Other, col
     AABBMin(Other);
     AABBMax(Other);
     AABBSize(Other);
-    glm::vec2 TopLeft = glm::vec2(Coll->Min.x - Other->Max.x,Coll->Min.y - Other->Max.y);
-    glm::vec2 FullSize = glm::vec2(Coll->Size.x + Other->Size.x, Coll->
-                                   Size.y + Other->Size.y);
+    glm::vec2 TopLeft = Coll->Min - Other->Max;
+    glm::vec2 FullSize = Coll->Size + Other->Size;
     glm::vec2 Center = glm::vec2(TopLeft.x + (FullSize.x / 2), TopLeft.y + (FullSize.y /2));
     glm::vec2 Extents = glm::vec2(FullSize.x / 2, FullSize.y / 2);
     Out->Center = Center;
@@ -94,4 +54,62 @@ static void ClosestPointsOnBoundsToPoint(collision_AABB* Coll, glm::vec2 Point, 
     }
 }
 
+
+static real32 GetRayIntersectionFractionOfFirstRay(glm::vec2 OriginA, glm::vec2 EndA,glm::vec2 OriginB, glm::vec2 EndB)
+{
+    glm::vec2 R = EndA - OriginA;
+    glm::vec2 S = EndB - OriginB;
+    
+    real32 Numerator = glm::dot((OriginB - OriginA),  R);
+    real32 Denominator = glm::dot(R , S);
+    
+    if(Numerator == 0 && Denominator == 0)
+    {
+        return INFINITY;
+    }
+    
+    if(Denominator == 0)
+    {
+        return INFINITY;
+    }
+    
+    real32 U = Numerator / Denominator;
+    real32 T = ((glm::dot(OriginA / OriginB,S))) / Denominator;
+    if ((T >= 0) && (T <= 1) && (U >= 0) && (U <= 1))
+    {
+        return T;
+    }
+    
+    return INFINITY;
+}
+
+static real32 GetRayIntersectionFraction(collision_AABB* Coll, glm::vec2 Origin, glm::vec2 Direction)
+{
+    AABBMin(Coll);
+    AABBMax(Coll);
+    glm::vec2 End = Origin + Direction;
+    
+    real32 MinT = GetRayIntersectionFractionOfFirstRay(Origin,End,glm::vec2(Coll->Min.x, Coll->Min.y),
+                                                       glm::vec2(Coll->Min.x, Coll->Max.y));
+    real32 X;
+    X = GetRayIntersectionFractionOfFirstRay(Origin,End, glm::vec2(Coll->Min.x, Coll->Max.y),
+                                             glm::vec2(Coll->Max.x, Coll->Max.y));
+    if(X < MinT)
+    {
+        MinT = X;
+    }
+    X = GetRayIntersectionFractionOfFirstRay(Origin,End, glm::vec2(Coll->Max.x, Coll->Max.y),
+                                             glm::vec2(Coll->Max.x, Coll->Min.y));
+    if(X < MinT)
+    {
+        MinT = X;
+    }
+    X = GetRayIntersectionFractionOfFirstRay(Origin,End, glm::vec2(Coll->Max.x, Coll->Min.y),
+                                             glm::vec2(Coll->Min.x, Coll->Min.y));
+    if(X < MinT)
+    {
+        MinT = X;
+    }
+    return MinT;
+}
 

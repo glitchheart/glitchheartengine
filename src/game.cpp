@@ -65,6 +65,7 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                     
                     Entity->CollisionAABB.Center = glm::vec2(Entity->Position.x + VelX, Entity->Position.y + VelY);
                     
+                    //Entity->CollisionAABB.Center = Entity->Position;
                     if(!Entity->IsKinematic)
                     {
                         
@@ -83,8 +84,21 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                                     Entity->IsColliding = true;
                                     GameState->Entities[OtherEntityIndex].IsColliding = true;
                                     
+                                    /*glm::vec2 PenetrationVector;
+                                    ClosestPointsOnBoundsToPoint(&Entity->CollisionAABB,GameState->Entities[OtherEntityIndex].Position,
+                                                                 &PenetrationVector);
+                                                                 
+                                    if(PenetrationVector.x != 0 && PenetrationVector.y != 0)
+                                    {
+                                        glm::vec2 Normalized = glm::normalize(PenetrationVector);
+                                        glm::vec2 Tangent = glm::tan(Normalized);
+                                        VelX = Tangent.x;
+                                        VelY = Tangent.y;
+                                    }*/
+                                    
                                     Entity->CollisionAABB.Center = Entity->Position;
                                 } 
+                                
                                 else
                                 {
                                     Entity->IsColliding = false;
@@ -92,6 +106,7 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                                     Entity->Position.x += VelX;
                                     Entity->Position.y += VelY;
                                 }
+                                
                             }
                         }
                     }
