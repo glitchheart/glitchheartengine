@@ -37,8 +37,8 @@
 #include "animation.h"
 #include "animation.cpp"
 #include "collision.h"
-#include "collision.cpp"
 #include "entity.h"
+#define KEY_INIT
 #include "keycontroller.cpp"
 #include "keys_glfw.h"
 #include "console.h"
@@ -220,17 +220,10 @@ int main(void)
     Player.Type = Entity_Player;
     Player.Player.WalkingSpeed = 10.0f;
     
-    collision_rect CollisionRect;
-    CollisionRect.X = 0.6f;
-    CollisionRect.Y = 0.6f;
-    CollisionRect.Width = 0.8f;
-    CollisionRect.Height = 0.8f;
-    
     collision_AABB CollisionAABB;
     CollisionAABB.Center = glm::vec2(0,0);
     CollisionAABB.Extents = glm::vec2(0.5f,0.5f);
     
-    Player.CollisionRect = CollisionRect;
     Player.CollisionAABB = CollisionAABB;
     animation IdleAnimation = {};
     LoadAnimationFromFile("../assets/animations/player_anim_idle.pownim", &IdleAnimation, &GameState.RenderState);
@@ -243,8 +236,6 @@ int main(void)
     animation AttackingAnimation = {};
     LoadAnimationFromFile("../assets/animations/player_anim_attack.pownim", &AttackingAnimation, &GameState.RenderState);
     Player.Animations.insert(std::pair<char*, animation>(AttackingAnimation.Name, AttackingAnimation));
-    
-    PlayAnimation(&Player, "player_idle");
     
     render_entity PlayerRenderEntity = { };
     PlayerRenderEntity.ShaderIndex = Shader_SpriteSheetShader;
@@ -261,12 +252,6 @@ int main(void)
     Crosshair.Name = "Crosshair";
     Crosshair.Type = Entity_Crosshair;
     
-    collision_rect CollisionRect2;
-    CollisionRect2.X = 0.6f;
-    CollisionRect2.Y = 0.6f;
-    CollisionRect2.Width = 0.8f;
-    CollisionRect2.Height = 0.8f;
-    Crosshair.CollisionRect = CollisionRect2;
     Crosshair.IsKinematic = true;
     collision_AABB CollisionAABB2;
     CollisionAABB2.Center = glm::vec2(0,0);
@@ -286,13 +271,6 @@ int main(void)
     entity Enemy = {};
     Enemy.Name = "enemy";
     Enemy.Type = Entity_Enemy;
-    
-    collision_rect CollisionRect3;
-    CollisionRect3.X = 0.6f;
-    CollisionRect3.Y = 0.6f;
-    CollisionRect3.Width = 0.8f;
-    CollisionRect3.Height = 0.8f;
-    Enemy.CollisionRect = CollisionRect3;
     
     collision_AABB CollisionAABB3;
     CollisionAABB3.Center = glm::vec2(0,0);

@@ -16,7 +16,7 @@ static char* Jump(game_state* GameState, char* Arguments)
     //@Cleanup this should be changed to access the entities array instead
     GameState->Entities[GameState->PlayerIndex].Position = glm::vec2(X, Y);
     
-    char* Result;
+    char* Result = 0;
     sprintf(Result, "Jumped to position %.2f %.2f", X, Y);
     return Result;
 }
@@ -39,31 +39,40 @@ static char* Exit(game_state* GameState, char* Arguments)
 
 static char* View(game_state* GameState, char* Arguments)
 {
-    if(strcmp(&Arguments[0], "entity_list") == 0)
+    if(Arguments) 
     {
-        GameState->EditorUI.On = true;
-        GameState->EditorUI.State = State_EntityList;
-        return "Toggled entity list";
+        if(strcmp(&Arguments[0], "entity_list") == 0)
+        {
+            GameState->EditorUI.On = true;
+            GameState->EditorUI.State = State_EntityList;
+            return "Toggled entity list";
+        }
+        else if(strcmp(&Arguments[0], "normal") == 0)
+        {
+            GameState->EditorUI.On = false;
+            return "Toggled view to normal mode";
+        }
     }
-    else if(strcmp(&Arguments[0], "normal") == 0)
-    {
-        GameState->EditorUI.On = false;
-        return "Toggled view to normal mode";
-    }
+    return "Error: No arguments provided";
 }
 
 static char* Editor(game_state* GameState, char* Arguments)
 {
-    if(strcmp(&Arguments[0], "off") == 0)
+    if(Arguments)
     {
-        GameState->EditorUI.On = false;
-        return "Toggled editor off";
+        if(strcmp(&Arguments[0], "off") == 0)
+        {
+            GameState->EditorUI.On = false;
+            return "Toggled editor off";
+        }
+        else if(strcmp(&Arguments[0], "on") == 0)
+        {
+            GameState->EditorUI.On = true;
+            return "Toggled editor on";
+            
+        }
     }
-    else if(strcmp(&Arguments[0], "on") == 0)
-    {
-        GameState->EditorUI.On = true;
-        return "Toggled editor on";
-    }
+    return "Error: No arguments provided";
 }
 
 #endif

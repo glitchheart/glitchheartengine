@@ -44,9 +44,9 @@ void ExecuteCommand(game_state *GameState)
             Count++;
         }
         
-        bool32 Found;
+        bool32 Found = false;
         
-        for(int i = 0; i < CommandCount; i++)
+        for(uint32 i = 0; i < CommandCount; i++)
         {
             if(strcmp(CommandName, Commands[i].Name) == 0)
             {

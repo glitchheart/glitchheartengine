@@ -87,7 +87,7 @@ static void LoadAnimationFromFile(const char* FilePath, animation* Animation, re
 }
 
 #endif
-
+#ifdef ANIMATION_GAME
 static void PlayAnimation(animation* Animation)
 {
     Animation->Playing = true;
@@ -131,6 +131,4 @@ static void TickAnimation(animation* Animation, real64 DeltaTime)
         Animation->CurrentTime += DeltaTime;
     }
 }
-
-
-
+#endif

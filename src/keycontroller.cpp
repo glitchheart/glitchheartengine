@@ -1,3 +1,4 @@
+#ifdef KEY_INIT
 static void SetInvalidKeys(input_controller *InputController)
 {
     for (auto const &Pair : InputController->KeysJustPressed)
@@ -37,6 +38,7 @@ static void SetMouseInvalidKeys(input_controller *InputController)
         }
     }
 }
+#endif
 
 static bool GetKey(Key_Code Key, game_state *GameState)
 {
