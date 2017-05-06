@@ -4,14 +4,14 @@ static void LoadWavFile(const char *Filename, loaded_sound *LoadedSound)
     wave_format WaveFormat;
     RIFF_header RiffHeader;
     wave_data WaveData;
-
+    
     SoundFile = fopen(Filename, "rb");
     printf("Buffer: %d\n", LoadedSound->Buffer);
-
+    
     if (SoundFile)
     {
         fread(&RiffHeader, sizeof(RIFF_header), 1, SoundFile);
-
+        
         if ((RiffHeader.ChunkID[0] != 'R' ||
              RiffHeader.ChunkID[1] != 'I' ||
              RiffHeader.ChunkID[2] != 'F' ||
@@ -23,9 +23,9 @@ static void LoadWavFile(const char *Filename, loaded_sound *LoadedSound)
         {
             HandleError(__FILE__, __LINE__, "Riff header malformed");
         }
-
+        
         fread(&WaveFormat, sizeof(wave_format), 1, SoundFile);
-
+        
         if (WaveFormat.SubChunkID[0] != 'f' ||
             WaveFormat.SubChunkID[1] != 'm' ||
             WaveFormat.SubChunkID[2] != 't' ||
@@ -33,14 +33,14 @@ static void LoadWavFile(const char *Filename, loaded_sound *LoadedSound)
         {
             HandleError(__FILE__, __LINE__, "Wave info malformed");
         }
-
+        
         if (WaveFormat.SubChunkSize > 16)
         {
             fseek(SoundFile, sizeof(short), SEEK_CUR);
         }
-
+        
         fread(&WaveData, sizeof(wave_data), 1, SoundFile);
-
+        
         if (WaveData.SubChunkID[0] != 'd' ||
             WaveData.SubChunkID[1] != 'a' ||
             WaveData.SubChunkID[2] != 't' ||
@@ -49,17 +49,17 @@ static void LoadWavFile(const char *Filename, loaded_sound *LoadedSound)
             HandleError(__FILE__, __LINE__, "Wave data malformed");
             printf("ChunkID: %c %c %c %c \n", WaveData.SubChunkID[0], WaveData.SubChunkID[1], WaveData.SubChunkID[2], WaveData.SubChunkID[3]);
         }
-
+        
         unsigned char *Data = (unsigned char *)malloc(WaveData.SubChunk2Size);
-
+        
         if (!fread(Data, WaveData.SubChunk2Size, 1, SoundFile))
         {
             HandleError(__FILE__, __LINE__, "Error loading Wave data");
         }
-
+        
         LoadedSound->Size = WaveData.SubChunk2Size;
         LoadedSound->Frequency = WaveFormat.SampleRate;
-
+        
         if (WaveFormat.NumChannels == 1)
         {
             if (WaveFormat.BitsPerSample == 8)
@@ -82,12 +82,12 @@ static void LoadWavFile(const char *Filename, loaded_sound *LoadedSound)
                 LoadedSound->Format = AL_FORMAT_STEREO16;
             }
         }
-
+        
         alGenBuffers(1, &LoadedSound->Buffer);
         alBufferData(LoadedSound->Buffer, LoadedSound->Format, (void *)Data, LoadedSound->Size, LoadedSound->Frequency);
         fclose(SoundFile);
         LoadedSound->Data = Data;
-
+        
         printf("Samplerate: %d, Size: %d\n", LoadedSound->Frequency, LoadedSound->Size);
     }
 }
@@ -110,17 +110,17 @@ static void InitAudio(sound_manager *SoundManager)
         HandleError(__FILE__, __LINE__, "Could not load Sound device");
         exit(EXIT_FAILURE);
     }
-
+    
     ALboolean Enumeration;
     ALfloat ListenerOrientation[] = {0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f};
-
+    
     Enumeration = alcIsExtensionPresent(0, "ALC_ENUMERATION_EXT");
     if (!Enumeration)
     {
         HandleError(__FILE__, __LINE__, "Enumeration extension not supported");
         exit(EXIT_FAILURE);
     }
-
+    
     SoundManager->Context = alcCreateContext(SoundManager->Device, 0);
     alcMakeContextCurrent(SoundManager->Context);
     if (!SoundManager->Context)
@@ -128,10 +128,10 @@ static void InitAudio(sound_manager *SoundManager)
         HandleError(__FILE__, __LINE__, "Could not set sound context");
         SoundManager->Context = 0;
     }
-
+    
     alListenerfv(AL_ORIENTATION, ListenerOrientation);
     ResetSoundQueue(SoundManager);
-
+    
     SoundManager->IsInitialized = SoundManager->Device && SoundManager->Context;
 }
 
@@ -153,9 +153,9 @@ static void LoadSounds(sound_manager *SoundManager)
     real32 Velocity[3] = {0, 0, 0};
     memcpy(DefaultSoundInfo.Velocity, Velocity, 3);
     DefaultSoundInfo.Loop = AL_FALSE;
-
-    LoadSound("./assets/audio/Deadliners Track 1.wav", SoundManager, DefaultSoundInfo, &SoundManager->Track01);
-    LoadSound("./assets/audio/Countdown_1.wav", SoundManager, DefaultSoundInfo, &SoundManager->Effect01);
+    
+    LoadSound("../assets/audio/Deadliners Track 1.wav", SoundManager, DefaultSoundInfo, &SoundManager->Track01);
+    LoadSound("../assets/audio/Countdown_1.wav", SoundManager, DefaultSoundInfo, &SoundManager->Effect01);
     // LoadSound("./assets/audio/Countdown_1.wav", SoundManager, DefaultSoundInfo, SOUND_02);
     // LoadSound("./assets/audio/Countdown_2.wav", SoundManager, DefaultSoundInfo, SOUND_03);
     // LoadSound("./assets/audio/Countdown_3.wav", SoundManager, DefaultSoundInfo, SOUND_04);
@@ -168,7 +168,7 @@ static void CleanupSound(game_state *GameState)
 {
     alDeleteSources(1, &GameState->SoundManager.Track01.Source);
     alDeleteBuffers(1, &GameState->SoundManager.Track01.Buffer);
-
+    
     GameState->SoundManager.Device = alcGetContextsDevice(GameState->SoundManager.Context);
     alcMakeContextCurrent(0);
     alcDestroyContext(GameState->SoundManager.Context);
@@ -239,20 +239,20 @@ static void PlaySounds(game_state *GameState)
             PlaySound(&GameState->SoundManager.SoundQueue.Sounds[Sound]);
         }
     }
-
+    
     for (uint32 Sound = 0;
          Sound < GameState->SoundManager.SoundQueue.StoppedSoundCount;
          Sound++)
     {
-
+        
         StopSound(&GameState->SoundManager.SoundQueue.StoppedSounds[Sound]);
     }
-
+    
     for (uint32 Sound = 0;
          Sound < GameState->SoundManager.SoundQueue.PausedSoundCount;
          Sound++)
     {
-
+        
         PauseSound(&GameState->SoundManager.SoundQueue.PausedSounds[Sound]);
     }
     ResetSoundQueue(&GameState->SoundManager);
