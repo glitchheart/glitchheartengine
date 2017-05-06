@@ -6,6 +6,8 @@ static void SetInvalidKeys(input_controller *InputController)
         {
             InputController->KeysJustPressed[Pair.first] = Key_Invalid;
         }
+        
+        InputController->KeysUp[Pair.first] = false;
     }
     
     if (InputController->KeysJustPressed[Key_Tab] == Key_JustPressed)
@@ -44,6 +46,11 @@ static bool GetKey(Key_Code Key, game_state *GameState)
 static bool GetKeyDown(Key_Code Key, game_state *GameState)
 {
     return GameState->InputController.KeysJustPressed[Key] == Key_JustPressed;
+}
+
+static bool GetKeyUp(Key_Code Key, game_state *GameState)
+{
+    return GameState->InputController.KeysUp[Key];
 }
 
 static bool GetJoystickKey(Controller_Code Key, game_state* GameState)

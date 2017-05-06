@@ -352,6 +352,11 @@ static void ReloadAssets(asset_manager *AssetManager, game_state* GameState)
     }
 }
 
+static void SetFloatAttribute(GLuint ShaderHandle, const char* UniformName, real64 Value)
+{
+    glUniform1f(glGetUniformLocation(ShaderHandle, UniformName), Value);
+}
+
 static void SetVec2Attribute(GLuint ShaderHandle, const char *UniformName, glm::vec2 Value)
 {
     glUniform2f(glGetUniformLocation(ShaderHandle, UniformName), Value.x, Value.y);
@@ -381,6 +386,48 @@ struct Point
 }; 
 
 //TODO(Daniel) there's a weird bug when rendering special characters. The cursor just slowly jumps up for every character pressed
+static void RenderRect(Render_Mode Mode, render_state* RenderState, glm::vec4 Color, real32 X, real32 Y, real32 Width, real32 Height)
+{
+    switch(Mode)
+    {
+        case Fill:
+        {
+            glBindVertexArray(RenderState->ConsoleVAO); //TODO(Daniel) Create a vertex array buffer + object for simple rect / just change name
+            
+            auto Shader = RenderState->Shaders[Shader_Console];
+            UseShader(&Shader);
+            
+            //draw upper part
+            glm::mat4 Model(1.0f);
+            Model = glm::translate(Model, glm::vec3(X, Y, 0));
+            Model = glm::scale(Model, glm::vec3(Width, Height, 1));
+            SetMat4Uniform(Shader.Program, "M", Model);
+            SetVec4Attribute(Shader.Program, "color", Color);
+            
+            glDrawArrays(GL_QUADS, 0, 4);
+        }
+        break;
+        case Outlined:
+        {
+            glm::mat4 Model(1.0f);
+            Model = glm::translate(Model, glm::vec3(X, Y, 0));
+            Model = glm::scale(Model, glm::vec3(Width, Height, 1));
+            
+            glBindVertexArray(RenderState->WireframeVAO);
+            
+            auto Shader = RenderState->Shaders[Shader_Wireframe];
+            UseShader(&Shader);
+            
+            SetMat4Uniform(Shader.Program, "MVP", Model);
+            
+            SetVec4Attribute(Shader.Program, "color", glm::vec4(1, 1, 1, 1));
+            
+            glDrawArrays(GL_LINE_STRIP, 0, 6);
+            glBindVertexArray(0);
+        }
+        break;
+    }
+}
 
 //rendering methods
 static void RenderText(render_state* RenderState, const render_font& Font, const char *Text, real32 X, real32 Y, real32 SX, real32 SY) 
@@ -388,7 +435,7 @@ static void RenderText(render_state* RenderState, const render_font& Font, const
     auto Shader = RenderState->Shaders[Shader_StandardFont];
     UseShader(&Shader);
     SetVec4Attribute(Shader.Program, "color", Font.Color);
-    
+    SetVec4Attribute(Shader.Program, "alphaColor", Font.AlphaColor);
     if (RenderState->BoundTexture != Font.Texture) //never bind the same texture if it's already bound
     {
         glBindTexture(GL_TEXTURE_2D, Font.Texture);
@@ -473,7 +520,7 @@ static void RenderConsole(render_state* RenderState, console* Console, glm::mat4
     auto Shader = RenderState->Shaders[Shader_Console];
     UseShader(&Shader);
     
-    real32 PercentAnimated = 1.0f + 1.0f - Console->CurrentTime / Console->TimeToAnimate;
+    real64 PercentAnimated = 1.0f + 1.0f - Console->CurrentTime / Console->TimeToAnimate;
     
     //draw upper part
     glm::mat4 Model(1.0f);
@@ -536,17 +583,34 @@ static void RenderEditorUI(game_state* GameState, const editor_ui& EditorUI, ren
     real32 SX = 2.0f / Mode->width;
     real32 SY = 2.0f / Mode->height;
     
+    RenderRect(Outlined, RenderState, glm::vec4(0.2, 0.2, 0.2, 1), -1 + 8 * SX, 0.34f - 50 * SY, 0.3, 0.05 * (GameState->EntityCount + 2));
+    
     for(int i = -1; i < GameState->EntityCount; i++)
     {
-        if(i == -1 || i == GameState->EditorUI.SelectedIndex)
-            RenderState->InconsolataFont.Color = glm::vec4(1, 0, 0, 1);
-        else
-            RenderState->InconsolataFont.Color = glm::vec4(0.8, 0.8, 0.8, 1);
-        
         char* EntityName = i == -1 ? "Entities:" : GameState->Entities[i].Name;
         
         if(!EntityName)
             EntityName = "NO_NAME";
+        
+        //TODO(Daniel) measure text
+        if(i == -1 || i == GameState->EditorUI.SelectedIndex)
+        {
+            if(i != -1)
+            {
+                //real32 Width;
+                //real32 Height;
+                //MeasureText(&RenderState->InconsolataFont, EntityName, &Width, &Height);
+                
+                RenderRect(Fill, RenderState, glm::vec4(1, 1, 1, 1), -1 + 8 * SX, 0.29f + (GameState->EntityCount - (i)) * 0.06f - 50 * SY, 0.3, 0.05);
+                RenderState->InconsolataFont.Color = glm::vec4(0, 0, 0, 1);
+            }
+            else
+                RenderState->InconsolataFont.Color = glm::vec4(1, 1, 1, 1);
+        }
+        else
+        {
+            RenderState->InconsolataFont.Color = glm::vec4(1, 1, 1, 1);
+        }
         
         RenderText(RenderState, RenderState->InconsolataFont, EntityName, -1 + 8 * SX, 0.3f + (GameState->EntityCount - (i)) * 0.06f - 50 * SY, SX, SY);
     }
@@ -682,11 +746,8 @@ static void RenderRoom(render_state* RenderState, const room& Room,  glm::mat4 P
     glBindVertexArray(0);
 }
 
-static void Render(game_state* GameState)
+static void RenderGame(game_state* GameState)
 {
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glClearColor(0, 0, 0, 1.0f);
-    
     RenderRoom(&GameState->RenderState, GameState->Room, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix, 0, 0, 0, 0);
     
     for(uint32 EntityIndex = 0;
@@ -695,26 +756,57 @@ static void Render(game_state* GameState)
     {
         RenderEntity(&GameState->RenderState, GameState->Entities[EntityIndex], GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
     }
+}
+
+static void Render(game_state* GameState)
+{
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glClearColor(0, 0, 0, 1.0f);
+    
+    if(GameState->EditorUI.On)
+    {
+        switch(GameState->EditorUI.State)
+        {
+            case State_Selection:
+            {
+                glfwSetInputMode(GameState->RenderState.Window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+                
+                const GLFWvidmode *Mode = glfwGetVideoMode(glfwGetPrimaryMonitor()); //TODO(Daniel) do this only once every frame instead of a million times
+                real32 SX = 2.0f / Mode->width;
+                real32 SY = 2.0f / Mode->height;
+                
+                RenderRect(Outlined, &GameState->RenderState, glm::vec4(0.2, 0.2, 0.2, 1), -0.2, -0.3, 0.4, 0.6);
+                
+                for(int Index = 0; Index < MENU_OPTIONS_COUNT; Index++)
+                {
+                    RenderText(&GameState->RenderState, GameState->RenderState.InconsolataFont, GameState->EditorUI.MenuOptions[Index], -0.21, 0 + (MENU_OPTIONS_COUNT - (Index)) * 0.06f, SX, SY);
+                }
+            }
+            break;
+            case State_Animations:
+            {}
+            break;
+            case State_Collision:
+            {}
+            break;
+            case State_EntityList:
+            {
+                glfwSetInputMode(GameState->RenderState.Window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+                RenderGame(GameState);
+                RenderEditorUI(GameState, GameState->EditorUI, &GameState->RenderState);
+            }
+            break;
+        }
+    }
+    else
+    {
+        glfwSetInputMode(GameState->RenderState.Window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+        RenderGame(GameState);
+    }
     
     if(GameState->Console.CurrentTime > 0)
         RenderConsole(&GameState->RenderState, &GameState->Console, GameState->Camera.ProjectionMatrix,  GameState->Camera.ViewMatrix);
     
-    switch(GameState->EditorUI.State)
-    {
-        case State_Off:
-        {
-            glfwSetInputMode(GameState->RenderState.Window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-        }
-        break;
-        case State_ShowEntityList:
-        {
-            glfwSetInputMode(GameState->RenderState.Window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-            RenderEditorUI(GameState, GameState->EditorUI, &GameState->RenderState);
-        }
-        break;
-    }
-    
     const GLFWvidmode *Mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
-    
     glfwSwapBuffers(GameState->RenderState.Window);
 }
