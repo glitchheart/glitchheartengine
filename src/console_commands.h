@@ -45,6 +45,11 @@ static char* View(game_state* GameState, char* Arguments)
         GameState->EditorUI.State = State_EntityList;
         return "Toggled entity list";
     }
+    else if(strcmp(&Arguments[0], "normal") == 0)
+    {
+        GameState->EditorUI.On = false;
+        return "Toggled view to normal mode";
+    }
 }
 
 static char* Editor(game_state* GameState, char* Arguments)
