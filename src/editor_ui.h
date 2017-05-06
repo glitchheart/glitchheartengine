@@ -9,6 +9,8 @@ enum Editor_UI_State
     State_EntityList
 };
 
+#define MENU_OPTIONS_COUNT 2
+
 struct editor_ui
 {
     bool32 On;

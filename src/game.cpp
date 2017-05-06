@@ -20,8 +20,6 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
     {
         entity* Entity = &GameState->Entities[EntityIndex];
         
-        
-        
         switch(Entity->Type)
         {
             case Entity_Player: 
