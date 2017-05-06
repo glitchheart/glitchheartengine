@@ -20,8 +20,8 @@ static command_info Commands[COMMAND_ARRAY_SIZE];
 struct console
 {
     bool Open;
-    glm::vec3 EndPosition = glm::vec3(-1, 0.5, 0);
-    real64 TimeToAnimate = 0.3f;
+    glm::vec3 EndPosition = glm::vec3(-1, 0.5f, 0);
+    real32 TimeToAnimate = 0.3f;
     real64 CurrentTime;
     real64 DeleteTime;
     glm::vec4 Color;

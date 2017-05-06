@@ -1,4 +1,4 @@
-static void CheckEditorUIInput(game_state* GameState, real32 DeltaTime)
+static void CheckEditorUIInput(game_state* GameState, real64 DeltaTime)
 {
     real32 SX = 2.0f / GameState->RenderState.WindowWidth;
     real32 SY = 2.0f / GameState->RenderState.WindowHeight;

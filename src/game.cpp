@@ -1,7 +1,8 @@
 #include "game.h"
 #include "keycontroller.cpp"
-#include "keys_glfw.h"
+
 #include "sound.cpp"
+#define ANIMATION_GAME
 #include "animation.cpp"
 #include "collision.cpp"
 

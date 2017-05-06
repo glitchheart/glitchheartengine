@@ -60,16 +60,16 @@ struct render_font
     
     struct character_info 
     {
-        float AX; // advance.x
-        float AY; // advance.y
+        real32 AX; // advance.x
+        real32 AY; // advance.y
         
-        float BW; // bitmap.width;
-        float BH; // bitmap.rows;
+        real32 BW; // bitmap.width;
+        real32 BH; // bitmap.rows;
         
-        float BL; // bitmap_left;
-        float BT; // bitmap_top;
+        real32 BL; // bitmap_left;
+        real32 BT; // bitmap_top;
         
-        float TX;
+        real32 TX;
     } CharacterInfo[255];
 };
 
