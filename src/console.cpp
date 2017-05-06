@@ -12,7 +12,8 @@ static void InitCommands()
     AddCommand("zoom", &Zoom);
     AddCommand("jump", &Jump);
     AddCommand("exit", &Exit);
-    AddCommand("editor", &TriggerEditor);
+    AddCommand("view", &View);
+    AddCommand("editor", &Editor);
 }
 
 void ExecuteCommand(game_state *GameState)
@@ -50,7 +51,7 @@ void ExecuteCommand(game_state *GameState)
             if(strcmp(CommandName, Commands[i].Name) == 0)
             {
                 Found = true;
-                Commands[i].FunctionPointer(GameState, ArgumentBuffer[0]);
+                Result = Commands[i].FunctionPointer(GameState, ArgumentBuffer[0]);
                 break;
             }
         }
@@ -59,25 +60,24 @@ void ExecuteCommand(game_state *GameState)
         {
             Result = CombineStrings(Result, ": Command not found");
         }
-        else
+        
+        //Copy the command into the history buffer
+        for(int i = HISTORY_BUFFER_LINES - 1; i > 0; i--)
         {
-            //Copy the command into the history buffer
-            for(int i = HISTORY_BUFFER_LINES - 1; i > 0; i--)
-            {
-                sprintf(GameState->Console.HistoryBuffer[i], GameState->Console.HistoryBuffer[i - 1]);
-            }
-            
-            sprintf(GameState->Console.HistoryBuffer[0], Result);
-            
-            for(int i = 0; i < CONSOLE_BUFFER_SIZE; i++)
-                GameState->Console.Buffer[i] = '\0';
-            
-            GameState->Console.BufferIndex = 0;
+            sprintf(GameState->Console.HistoryBuffer[i], GameState->Console.HistoryBuffer[i - 2]);
         }
+        
+        sprintf(GameState->Console.HistoryBuffer[0], Result);
+        sprintf(GameState->Console.HistoryBuffer[1], &GameState->Console.Buffer[0]);
+        
+        for(int i = 0; i < CONSOLE_BUFFER_SIZE; i++)
+            GameState->Console.Buffer[i] = '\0';
+        
+        GameState->Console.BufferIndex = 0;
     }
 }
 
-static void CheckConsoleInput(game_state* GameState, real32 DeltaTime)
+static void CheckConsoleInput(game_state* GameState, real64 DeltaTime)
 {
     if(GameState->Console.Open && GameState->Console.CurrentTime < GameState->Console.TimeToAnimate)
     {
@@ -98,11 +98,20 @@ static void CheckConsoleInput(game_state* GameState, real32 DeltaTime)
             GameState->Console.CurrentTime = GameState->Console.TimeToAnimate;
     }
     
-    if (GetKeyDown(Key_Backspace, GameState) && GameState->Console.Open)
+    //@Fix there could still be some issues with deleting too many characters at once.
+    if (GetKey(Key_Backspace, GameState) && GameState->Console.Open)
     {
-        if (GameState->Console.BufferIndex > 0)
-            GameState->Console.Buffer[--GameState->Console.BufferIndex] = '\0';
+        if(GameState->Console.DeleteTime >= 0.1 || GameState->Console.DeleteTime == 0) //character delete delay
+        {
+            GameState->Console.DeleteTime = 0;
+            if (GameState->Console.BufferIndex > 0)
+                GameState->Console.Buffer[--GameState->Console.BufferIndex] = '\0';
+        }
+        GameState->Console.DeleteTime += DeltaTime;
     }
+    
+    if(GetKeyUp(Key_Backspace, GameState))
+        GameState->Console.DeleteTime = 0;
     
     if (GetKeyDown(Key_Enter, GameState) && GameState->Console.Open)
     {

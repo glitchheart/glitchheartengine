@@ -27,6 +27,11 @@ const char* ShaderPaths[Shader_Count] =
     "../assets/shaders/wireframeshader"
 };
 
+enum Render_Mode
+{
+    Fill, Outlined
+};
+
 struct render_entity
 {
     uint32 TextureHandle;
@@ -51,6 +56,7 @@ struct render_font
     uint32 AtlasHeight;
     GLfloat GlyphWidth;
     glm::vec4 Color = glm::vec4(1, 1, 1, 1);
+    glm::vec4 AlphaColor = glm::vec4(1, 1, 1, 1);
     
     struct character_info 
     {
