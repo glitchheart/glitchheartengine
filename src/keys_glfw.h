@@ -34,7 +34,8 @@ std::map<uint32, Key_Code> KeyMappings =
     { GLFW_KEY_X, Key_X },
     { GLFW_KEY_Y, Key_Y },
     { GLFW_KEY_Z, Key_Z },
-    { GLFW_KEY_F1, Key_F1 }
+    { GLFW_KEY_F1, Key_F1 },
+    { GLFW_KEY_F2, Key_F2 }
 };
 
 std::map<uint32, Mouse_Code> MouseButtonMappings = 

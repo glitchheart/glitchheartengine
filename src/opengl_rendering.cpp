@@ -590,8 +590,9 @@ static void RenderColliderWireframe(render_state* RenderState, entity* Entity, g
     auto Shader = RenderState->Shaders[Shader_Wireframe];
     UseShader(&Shader);
     
-    glm::mat4 MVP = ProjectionMatrix * View * Model;
-    SetMat4Uniform(Shader.Program, "MVP", MVP);
+    SetMat4Uniform(Shader.Program, "Projection", ProjectionMatrix);
+    SetMat4Uniform(Shader.Program, "View", View);
+    SetMat4Uniform(Shader.Program, "Model", Model);
     glm::vec4 color;
     
     if(Entity->IsColliding)
@@ -620,6 +621,7 @@ static void RenderEntity(render_state *RenderState, entity &Entity, glm::mat4 Pr
         case Entity_Crosshair:
         case Entity_Enemy:
         case Entity_Player:
+        case Entity_Barrel:
         {
             glm::mat4 Model(1.0f);
             Model = glm::translate(Model, glm::vec3(Entity.Position.x, Entity.Position.y, 0.0f));
@@ -656,8 +658,10 @@ static void RenderEntity(render_state *RenderState, entity &Entity, glm::mat4 Pr
                 
                 glBindVertexArray(RenderState->SpriteVAO);
             }
-            glm::mat4 MVP = ProjectionMatrix * View * Model;
-            SetMat4Uniform(Shader.Program, "MVP", MVP);
+            
+            SetMat4Uniform(Shader.Program, "Projection", ProjectionMatrix);
+            SetMat4Uniform(Shader.Program, "View", View);
+            SetMat4Uniform(Shader.Program, "Model", Model);
             break;
         }
     }
@@ -668,7 +672,11 @@ static void RenderEntity(render_state *RenderState, entity &Entity, glm::mat4 Pr
     
     if(RenderState->RenderColliders && !Entity.IsKinematic)
         RenderColliderWireframe(RenderState, &Entity, ProjectionMatrix, View);
-    
+    if(RenderState->RenderFPS) {
+        char FPS[32];
+        sprintf(FPS, "%4.0f",RenderState->FPS);
+        RenderText(RenderState,RenderState->InconsolataFont, glm::vec4(1,1,1,1),FPS, RenderState->WindowWidth/2,20,1,Alignment_Center);
+    }
 }
 
 static void RenderRoom(render_state* RenderState, const room& Room,  glm::mat4 ProjectionMatrix, glm::mat4 View, int StartX, int StartY, int EndX, int EndY)
@@ -695,14 +703,17 @@ static void RenderRoom(render_state* RenderState, const room& Room,  glm::mat4 P
                 glm::mat4 Model(1.0f);
                 Model = glm::translate(Model, glm::vec3(i * Scale, j * Scale, 0.0f));
                 Model = glm::scale(Model, glm::vec3(Scale, Scale, 1.0f));
-                glm::mat4 MVP = ProjectionMatrix * View * Model;
                 
                 SetVec2Attribute(Shader.Program, "textureOffset", Room.Data[i][j].TextureOffset);
-                SetMat4Uniform(Shader.Program, "MVP", MVP);
+                
+                SetMat4Uniform(Shader.Program, "Projection", ProjectionMatrix);
+                SetMat4Uniform(Shader.Program, "View", View);
+                SetMat4Uniform(Shader.Program, "Model", Model);
                 glDrawArrays(GL_QUADS, 0, 4);
             }
         }
     }
+    
     
     glBindVertexArray(0);
 }
@@ -740,6 +751,7 @@ static void RenderGame(game_state* GameState)
                 EntityIndex++) 
             {
                 RenderEntity(&GameState->RenderState, GameState->Entities[EntityIndex], GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
+                
             }
         }
         break;

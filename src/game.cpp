@@ -10,6 +10,7 @@
 
 void CheckCollision(game_state* GameState, entity* Entity)
 {
+    Entity->IsColliding = false;
     if(!Entity->IsKinematic)
     {
         Entity->CollisionAABB.Center = glm::vec2(Entity->Position.x + Entity->Velocity.x, Entity->Position.y + Entity->Velocity.y);
@@ -31,8 +32,14 @@ void CheckCollision(game_state* GameState, entity* Entity)
                 } 
                 else
                 {
-                    Entity->IsColliding = false;
-                    GameState->Entities[OtherEntityIndex].IsColliding = false;
+                    if(!Entity->IsColliding) 
+                    {
+                        Entity->IsColliding = false;
+                    }
+                    if(!GameState->Entities[OtherEntityIndex].IsColliding) 
+                    {
+                        GameState->Entities[OtherEntityIndex].IsColliding = false;
+                    }
                 }
                 
             }
@@ -92,8 +99,6 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                             PlayAnimation(Entity, "player_idle");
                     }
                     
-                    
-                    
                     //Entity->CollisionAABB.Center = Entity->Position;
                     CheckCollision(GameState,Entity);
                     if(!Entity->IsColliding) {
@@ -135,13 +140,17 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
             case Entity_Enemy:
             {
                 Entity->Velocity = glm::vec2(0,0);
-                //Check collision
                 
                 CheckCollision(GameState,Entity);
                 if(!Entity->IsColliding) {
                     Entity->Position.x += Entity->Velocity.x;
                     Entity->Position.y += Entity->Velocity.y;
                 }
+            }
+            break;
+            case Entity_Barrel:
+            {
+                CheckCollision(GameState,Entity);
             }
             break;
         }
@@ -175,10 +184,12 @@ extern "C" UPDATE(Update)
 #ifdef DEBUG
     if(GetKeyDown(Key_F1, GameState))
     {
-        if(GameState->RenderState.RenderColliders == 0)
-            GameState->RenderState.RenderColliders = 1;
-        else
-            GameState->RenderState.RenderColliders = 0;
+        GameState->RenderState.RenderColliders = !GameState->RenderState.RenderColliders;
+    }
+    
+    if(GetKeyDown(Key_F2, GameState))
+    {
+        GameState->RenderState.RenderFPS = !GameState->RenderState.RenderFPS;
     }
     
 #endif

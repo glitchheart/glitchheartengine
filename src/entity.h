@@ -8,6 +8,7 @@ enum Entity_Enum
     Entity_Tile,
     Entity_PalmTree,
     Entity_Enemy,
+    Entity_Barrel,
     
     Entity_Max
 };
@@ -47,8 +48,6 @@ struct entity
     
 };
 
-#define NUM_ENTITIES 16
-
-//TODO(daniel) Put this to use
+#define NUM_ENTITIES 2048
 
 #endif

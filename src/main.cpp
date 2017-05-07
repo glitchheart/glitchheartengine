@@ -144,6 +144,36 @@ void FramebufferSizeCallback(GLFWwindow *Window, int Width, int Height)
     glViewport(0, 0, Width, Height);
 }
 
+void SpawnMillionBarrels(game_state* GameState)
+{
+    int OneMillion = 10;
+    for(uint32 i = 0; i < OneMillion; i++) {
+        for(uint32 j = 0; j < OneMillion; j++) {
+            entity Barrel = {};
+            Barrel.Name = "barrel";
+            Barrel.Type = Entity_Barrel;
+            
+            render_entity BarrelRenderEntity = { };
+            BarrelRenderEntity.ShaderIndex = Shader_Texture;
+            BarrelRenderEntity.TextureHandle = LoadTexture("../assets/textures/barrel_nigga.png");
+            Barrel.RenderEntity = BarrelRenderEntity;
+            Barrel.Rotation = glm::vec3(0, 0, 0);
+            Barrel.Position = glm::vec2(2 + i,j);
+            Barrel.Scale = glm::vec3(2, 2, 0);
+            Barrel.Velocity = glm::vec2(0,0);
+            //Barrel.IsKinematic = true;
+            
+            collision_AABB CollisionAABB4;
+            CollisionAABB4.Center = Barrel.Position;
+            CollisionAABB4.Extents = glm::vec2(0.5f,0.5f);
+            Barrel.CollisionAABB = CollisionAABB4;
+            
+            Barrel.EntityIndex = GameState->EntityCount;
+            GameState->Entities[GameState->EntityCount++] = Barrel;
+        }
+    }
+}
+
 int main(void)
 {
     //load config file
@@ -209,7 +239,7 @@ int main(void)
     
     glfwMakeContextCurrent(GameState.RenderState.Window);
     gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
-    glfwSwapInterval(1);
+    glfwSwapInterval(0);
     
     //load render_state
     RenderSetup(&GameState.RenderState);
@@ -220,11 +250,8 @@ int main(void)
     Player.Type = Entity_Player;
     Player.Player.WalkingSpeed = 10.0f;
     
-    collision_AABB CollisionAABB;
-    CollisionAABB.Center = glm::vec2(0,0);
-    CollisionAABB.Extents = glm::vec2(0.5f,0.5f);
     
-    Player.CollisionAABB = CollisionAABB;
+    
     animation IdleAnimation = {};
     LoadAnimationFromFile("../assets/animations/player_anim_idle.pownim", &IdleAnimation, &GameState.RenderState);
     Player.Animations.insert(std::pair<char*, animation>(IdleAnimation.Name, IdleAnimation));
@@ -245,6 +272,11 @@ int main(void)
     Player.Rotation = glm::vec3(0, 0, 0.3f);
     Player.Scale = glm::vec3(2, 2, 0);
     Player.Velocity = glm::vec2(0,0);
+    
+    collision_AABB CollisionAABB;
+    CollisionAABB.Center = Player.Position;
+    CollisionAABB.Extents = glm::vec2(0.5f,0.5f);
+    Player.CollisionAABB = CollisionAABB;
     
     Player.EntityIndex = GameState.EntityCount;
     GameState.Entities[GameState.EntityCount++] = Player;
@@ -273,11 +305,6 @@ int main(void)
     Enemy.Name = "enemy";
     Enemy.Type = Entity_Enemy;
     
-    collision_AABB CollisionAABB3;
-    CollisionAABB3.Center = glm::vec2(0,0);
-    CollisionAABB3.Extents = glm::vec2(0.5f,0.5f);
-    Enemy.CollisionAABB = CollisionAABB3;
-    
     render_entity EnemyRenderEntity = { };
     EnemyRenderEntity.ShaderIndex = Shader_Texture;
     EnemyRenderEntity.TextureHandle = LoadTexture("../assets/textures/enemy.png");
@@ -287,8 +314,15 @@ int main(void)
     Enemy.Scale = glm::vec3(2, 2, 0);
     Enemy.Velocity = glm::vec2(-2,0);
     
+    collision_AABB CollisionAABB3;
+    CollisionAABB3.Center = Enemy.Position;
+    CollisionAABB3.Extents = glm::vec2(0.5f,0.5f);
+    Enemy.CollisionAABB = CollisionAABB3;
+    
     Enemy.EntityIndex = GameState.EntityCount;
     GameState.Entities[GameState.EntityCount++] = Enemy;
+    
+    SpawnMillionBarrels(&GameState);
     
     GameState.Camera.Zoom = 2.5f;
     
@@ -341,6 +375,8 @@ int main(void)
         CurrentFrame = glfwGetTime();
         DeltaTime = CurrentFrame - LastFrame;
         LastFrame = CurrentFrame;
+        real64 FPS = 1.0/DeltaTime;
+        GameState.RenderState.FPS = FPS;
         
         if(GameState.GameMode == Mode_Exit || GetKeyDown(Key_Q, &GameState) && GetKey(Key_LeftCtrl, &GameState))
             glfwSetWindowShouldClose(GameState.RenderState.Window, GLFW_TRUE);
