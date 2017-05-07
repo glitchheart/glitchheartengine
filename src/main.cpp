@@ -244,6 +244,7 @@ int main(void)
     Player.RenderEntity = PlayerRenderEntity;
     Player.Rotation = glm::vec3(0, 0, 0.3f);
     Player.Scale = glm::vec3(2, 2, 0);
+    Player.Velocity = glm::vec2(0,0);
     
     Player.EntityIndex = GameState.EntityCount;
     GameState.Entities[GameState.EntityCount++] = Player;
@@ -284,6 +285,7 @@ int main(void)
     Enemy.Rotation = glm::vec3(0, 0, 0);
     Enemy.Position = glm::vec2(5,0);
     Enemy.Scale = glm::vec3(2, 2, 0);
+    Enemy.Velocity = glm::vec2(-2,0);
     
     Enemy.EntityIndex = GameState.EntityCount;
     GameState.Entities[GameState.EntityCount++] = Enemy;
