@@ -18,12 +18,13 @@ static void InitCommands()
 
 void ExecuteCommand(game_state *GameState)
 {
+    
     if(strcmp(" ",  GameState->Console.Buffer) != 0
        && strcmp("",  GameState->Console.Buffer) != 0) //NOTE(Daniel) if the command isn't an empty string
     {
         char* Result = &GameState->Console.Buffer[0];
         
-        char ResultCopy[40];
+        char ResultCopy[CONSOLE_BUFFER_SIZE + 20];
         strcpy(&ResultCopy[0], Result);
         
         char* Pointer;
@@ -46,6 +47,7 @@ void ExecuteCommand(game_state *GameState)
         
         bool32 Found = false;
         
+        
         for(uint32 i = 0; i < CommandCount; i++)
         {
             if(strcmp(CommandName, Commands[i].Name) == 0)
@@ -62,6 +64,7 @@ void ExecuteCommand(game_state *GameState)
         }
         
         //Copy the command into the history buffer
+        
         for(int i = HISTORY_BUFFER_LINES - 1; i > 0; i--)
         {
             sprintf(GameState->Console.HistoryBuffer[i], GameState->Console.HistoryBuffer[i - 2]);
@@ -74,6 +77,7 @@ void ExecuteCommand(game_state *GameState)
             GameState->Console.Buffer[i] = '\0';
         
         GameState->Console.BufferIndex = 0;
+        
     }
 }
 
