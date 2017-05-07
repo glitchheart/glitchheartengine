@@ -36,10 +36,10 @@ struct sound_queue
 {
     uint32 SoundCount;
     sound_effect Sounds[32];
-
+    
     uint32 StoppedSoundCount;
     sound_effect StoppedSounds[32];
-
+    
     uint32 PausedSoundCount;
     sound_effect PausedSounds[32];
 };
@@ -48,20 +48,23 @@ struct sound_manager
 {
     ALCdevice *Device;
     ALCcontext *Context;
-
-    union {
+    
+    union 
+    {
         loaded_sound SoundEffects[64];
         struct
         {
             loaded_sound Effect01;
         };
     };
-
-    union {
+    
+    union 
+    {
         loaded_sound MusicTracks[32];
         struct
         {
             loaded_sound Track01;
+            loaded_sound MainMenuTrack;
         };
     };
     sound_queue SoundQueue;

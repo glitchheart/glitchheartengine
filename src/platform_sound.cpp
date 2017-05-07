@@ -156,11 +156,7 @@ static void LoadSounds(sound_manager *SoundManager)
     
     LoadSound("../assets/audio/Deadliners Track 1.wav", SoundManager, DefaultSoundInfo, &SoundManager->Track01);
     LoadSound("../assets/audio/Countdown_1.wav", SoundManager, DefaultSoundInfo, &SoundManager->Effect01);
-    // LoadSound("./assets/audio/Countdown_1.wav", SoundManager, DefaultSoundInfo, SOUND_02);
-    // LoadSound("./assets/audio/Countdown_2.wav", SoundManager, DefaultSoundInfo, SOUND_03);
-    // LoadSound("./assets/audio/Countdown_3.wav", SoundManager, DefaultSoundInfo, SOUND_04);
-    // LoadSound("./assets/audio/Countdown_4.wav", SoundManager, DefaultSoundInfo, SOUND_05);
-    // LoadSound("./assets/audio/Countdown_5.wav", SoundManager, DefaultSoundInfo, SOUND_06);
+    LoadSound("../assets/audio/mainmenu.wav", SoundManager, DefaultSoundInfo,  &SoundManager->MainMenuTrack);
     // // Add more sounds here if necessary
 }
 
