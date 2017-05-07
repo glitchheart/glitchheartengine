@@ -565,15 +565,15 @@ static void RenderConsole(render_state* RenderState, console* Console, glm::mat4
     MeasureText(&RenderState->InconsolataFont, &Console->Buffer[0], &Width, &Height);
     
     //draw cursor
-    RenderRect(Render_Fill, RenderState, glm::vec4(AlphaValue, 1, AlphaValue, 1), -0.96f + Width * RenderState->ScaleX, 0.53f * PercentAnimated, 0.02f, 0.05f);
+    RenderRect(Render_Fill, RenderState, glm::vec4(AlphaValue, 1, AlphaValue, 1), 25 / 1920.0f * (real32)RenderState->WindowWidth + Width, RenderState->WindowHeight * 0.77f * PercentAnimated, 10, 20);
     
-    RenderText(RenderState, RenderState->InconsolataFont, glm::vec4(1, 1, 1, 1), ">", 20 / 1920 * (real32)RenderState->WindowWidth, (real32)RenderState->WindowHeight * 0.775f * PercentAnimated, 1);
-    RenderText(RenderState, RenderState->InconsolataFont, glm::vec4(1, 1, 1, 1),  &Console->Buffer[0], 20, (real32)RenderState->WindowHeight * 0.775f * PercentAnimated, 1);
+    RenderText(RenderState, RenderState->InconsolataFont, glm::vec4(1, 1, 1, 1), ">", 5 / 1920.0f * (real32)RenderState->WindowWidth, (real32)RenderState->WindowHeight * 0.775f * PercentAnimated, 1);
+    RenderText(RenderState, RenderState->InconsolataFont, glm::vec4(1, 1, 1, 1),  &Console->Buffer[0], 25 / 1920.0f * (real32)RenderState->WindowWidth, (real32)RenderState->WindowHeight * 0.775f * PercentAnimated, 1);
     
     int index = 0;
     for(int i = 0; i < HISTORY_BUFFER_LINES; i++)
     {
-        RenderText(RenderState, RenderState->InconsolataFont, glm::vec4(0.8, 0.8, 0.8, 1), &Console->HistoryBuffer[i][0], 20 / 1920 * (real32)RenderState->WindowWidth, (real32)RenderState->WindowHeight * 0.78f * PercentAnimated + (i + 1) * 20 * PercentAnimated, 1);
+        RenderText(RenderState, RenderState->InconsolataFont, glm::vec4(0.8, 0.8, 0.8, 1), &Console->HistoryBuffer[i][0], 20 / 1920.0f * (real32)RenderState->WindowWidth, (real32)RenderState->WindowHeight * 0.78f * PercentAnimated + (i + 1) * 20 * PercentAnimated, 1);
     }
 }
 
@@ -776,7 +776,13 @@ static void RenderEditorUI(game_state* GameState, const editor_ui& EditorUI, ren
         {
             glfwSetInputMode(GameState->RenderState.Window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
             RenderGame(GameState);
-            RenderRect(Render_Outline,  RenderState, glm::vec4(0.2, 0.2, 0.2, 1), -1, 0, 0.5, 0.5);
+            RenderRect(Render_Outline, 
+                       RenderState, 
+                       glm::vec4(0.2, 0.2, 0.2, 1), 
+                       1, 
+                       -2 + RenderState->WindowHeight / 2 - 20 * (1 + GameState->EntityCount) / 2, 
+                       120, 
+                       20 * (1 + GameState->EntityCount));
             
             for(int i = -1; i < GameState->EntityCount; i++)
             {
@@ -801,7 +807,7 @@ static void RenderEditorUI(game_state* GameState, const editor_ui& EditorUI, ren
                     Color = glm::vec4(1, 1, 1, 1);
                 }
                 
-                RenderText(RenderState, RenderState->InconsolataFont, Color, EntityName, 0, (real32)(500 + (GameState->EntityCount - (i)) * 20), 1);
+                RenderText(RenderState, RenderState->InconsolataFont, Color, EntityName, 2, RenderState->WindowHeight / 2 - 20 * i, 1);
             }
         }
         break;
