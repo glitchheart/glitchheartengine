@@ -94,14 +94,14 @@ static void UseShader(shader *Shader)
     glUseProgram(Shader->Program);
 }
 
-static void InitializeFreeTypeFont(FT_Library Library, render_font* Font, shader* Shader)
+static void InitializeFreeTypeFont(char* FontPath, int FontSize, FT_Library Library, render_font* Font, shader* Shader)
 {
-    if(FT_New_Face(Library, "../assets/fonts/inconsolata/Inconsolata-Regular.ttf", 0, &Font->Face)) 
+    if(FT_New_Face(Library, FontPath, 0, &Font->Face)) 
     {
         fprintf(stderr, "Could not open font\n");
     }
     
-    FT_Set_Pixel_Sizes(Font->Face, 0, 18);
+    FT_Set_Pixel_Sizes(Font->Face, 0, FontSize);
     
     FT_Select_Charmap(Font->Face , ft_encoding_unicode);
     
@@ -278,7 +278,10 @@ static void RenderSetup(render_state *RenderState)
     LoadShader(ShaderPaths[Shader_StandardFont], &RenderState->StandardFontShader);
     
     RenderState->InconsolataFont = {};
-    InitializeFreeTypeFont(RenderState->FTLibrary, &RenderState->InconsolataFont, &RenderState->StandardFontShader);
+    InitializeFreeTypeFont("../assets/fonts/inconsolata/Inconsolata-Regular.ttf", 18, RenderState->FTLibrary, &RenderState->InconsolataFont, &RenderState->StandardFontShader);
+    
+    RenderState->MenuFont = {};
+    InitializeFreeTypeFont("../assets/fonts/inconsolata/Inconsolata-Regular.ttf", 40, RenderState->FTLibrary, &RenderState->MenuFont, &RenderState->StandardFontShader);
 }
 
 static void ReloadVertexShader(Shader_Type Type, render_state* RenderState)
@@ -388,9 +391,16 @@ struct Point
 //TODO(Daniel) there's a weird bug when rendering special characters. The cursor just slowly jumps up for every character pressed
 static void RenderRect(Render_Mode Mode, render_state* RenderState, glm::vec4 Color, real32 X, real32 Y, real32 Width, real32 Height)
 {
+    X *= RenderState->ScaleX;
+    X -= 1;
+    Y *= RenderState->ScaleY;
+    Y -= 1;
+    Width *= RenderState->ScaleX;
+    Height *= RenderState->ScaleY;
+    
     switch(Mode)
     {
-        case Fill:
+        case Render_Fill:
         {
             glBindVertexArray(RenderState->ConsoleVAO); //TODO(Daniel) Create a vertex array buffer + object for simple rect / just change name
             
@@ -407,7 +417,7 @@ static void RenderRect(Render_Mode Mode, render_state* RenderState, glm::vec4 Co
             glDrawArrays(GL_QUADS, 0, 4);
         }
         break;
-        case Outline:
+        case Render_Outline:
         {
             glm::mat4 Model(1.0f);
             Model = glm::translate(Model, glm::vec3(X, Y, 0));
@@ -429,60 +439,7 @@ static void RenderRect(Render_Mode Mode, render_state* RenderState, glm::vec4 Co
     }
 }
 
-//rendering methods
-static void RenderText(render_state* RenderState, const render_font& Font, const char *Text, real32 X, real32 Y, real32 Scale) 
-{
-    X *= RenderState->ScaleX;
-    X -= 1;
-    Y *= RenderState->ScaleY;
-    Y -= 1;
-    
-    auto Shader = RenderState->Shaders[Shader_StandardFont];
-    UseShader(&Shader);
-    SetVec4Attribute(Shader.Program, "color", Font.Color);
-    SetVec4Attribute(Shader.Program, "alphaColor", Font.AlphaColor);
-    
-    if (RenderState->BoundTexture != Font.Texture) //never bind the same texture if it's already bound
-    {
-        glBindTexture(GL_TEXTURE_2D, Font.Texture);
-        RenderState->BoundTexture = Font.Texture;
-    }
-    
-    Point* Coords = new Point[6 * strlen(Text)]; //TODO change this back to the C way (malloc)
-    
-    int N = 0;
-    
-    for(const char *P = Text; *P; P++) 
-    { 
-        real32 W = Font.CharacterInfo[*P].BW * RenderState->ScaleX;
-        real32 H = Font.CharacterInfo[*P].BH * RenderState->ScaleY;
-        
-        real32 X2 =  X + Font.CharacterInfo[*P ].BL * RenderState->ScaleX;
-        real32 Y2 = -Y - Font.CharacterInfo[*P ].BT * RenderState->ScaleY;
-        
-        /* Advance the cursor to the start of the next character */
-        X += Font.CharacterInfo[*P].AX * RenderState->ScaleX;
-        Y += Font.CharacterInfo[*P].AY * RenderState->ScaleY;
-        
-        /* Skip glyphs that have no pixels */
-        if(!W || !H)
-            continue;
-        
-        Coords[N++] = { X2, -Y2, Font.CharacterInfo[*P].TX, 0 };
-        Coords[N++] = { X2 + W, -Y2, Font.CharacterInfo[*P].TX + Font.CharacterInfo[*P].BW / Font.AtlasWidth, 0 };
-        Coords[N++] = { X2, -Y2 - H, Font.CharacterInfo[*P].TX, Font.CharacterInfo[*P].BH / Font.AtlasHeight };
-        Coords[N++] = { X2 + W, -Y2, Font.CharacterInfo[*P].TX + Font.CharacterInfo[*P].BW / Font.AtlasWidth,  0 };
-        Coords[N++] = { X2, -Y2 - H, Font.CharacterInfo[*P].TX, Font.CharacterInfo[*P].BH / Font.AtlasHeight };
-        Coords[N++] = { X2 + W, -Y2 - H, Font.CharacterInfo[*P].TX + Font.CharacterInfo[*P].BW / Font.AtlasWidth, Font.CharacterInfo[*P].BH / Font.AtlasHeight };
-    }
-    
-    glBindVertexArray(Font.VAO);
-    glBindBuffer(GL_ARRAY_BUFFER, Font.VBO);
-    glBufferData(GL_ARRAY_BUFFER, 6 * strlen(Text) * sizeof(Point), Coords, GL_DYNAMIC_DRAW);
-    glDrawArrays(GL_TRIANGLES, 0, N);
-}
-
-static void MeasureText(render_font* Font, const char* Text, float* Width, float* Height)
+static void MeasureText(const render_font* Font, const char* Text, float* Width, float* Height)
 {
     int Count, C;
     
@@ -519,6 +476,76 @@ static void MeasureText(render_font* Font, const char* Text, float* Width, float
     }
 }
 
+//rendering methods
+static void RenderText(render_state* RenderState, const render_font& Font, const glm::vec4& Color, const char* Text, real32 X, real32 Y, real32 Scale, Alignment Alignment = Alignment_Left) 
+{
+    X *= RenderState->ScaleX;
+    X -= 1;
+    Y *= RenderState->ScaleY;
+    Y -= 1;
+    
+    auto Shader = RenderState->Shaders[Shader_StandardFont];
+    UseShader(&Shader);
+    SetVec4Attribute(Shader.Program, "color", Color);
+    SetVec4Attribute(Shader.Program, "alphaColor", Font.AlphaColor);
+    
+    if (RenderState->BoundTexture != Font.Texture) //never bind the same texture if it's already bound
+    {
+        glBindTexture(GL_TEXTURE_2D, Font.Texture);
+        RenderState->BoundTexture = Font.Texture;
+    }
+    
+    Point* Coords = new Point[6 * strlen(Text)]; //TODO change this back to the C way (malloc)
+    
+    int N = 0;
+    
+    switch(Alignment)
+    {
+        case Alignment_Left:
+        break;
+        case Alignment_Right:
+        break;
+        case Alignment_Center:
+        {
+            real32 Width;
+            real32 Height;
+            MeasureText(&Font, Text, &Width, &Height);
+            X -= RenderState->ScaleX * Width / 2;
+        }
+        break;
+    }
+    
+    for(const char *P = Text; *P; P++) 
+    { 
+        real32 W = Font.CharacterInfo[*P].BW * RenderState->ScaleX;
+        real32 H = Font.CharacterInfo[*P].BH * RenderState->ScaleY;
+        
+        real32 X2 =  X + Font.CharacterInfo[*P ].BL * RenderState->ScaleX;
+        real32 Y2 = -Y - Font.CharacterInfo[*P ].BT * RenderState->ScaleY;
+        
+        
+        /* Advance the cursor to the start of the next character */
+        X += Font.CharacterInfo[*P].AX * RenderState->ScaleX;
+        Y += Font.CharacterInfo[*P].AY * RenderState->ScaleY;
+        
+        /* Skip glyphs that have no pixels */
+        if(!W || !H)
+            continue;
+        
+        Coords[N++] = { X2, -Y2, Font.CharacterInfo[*P].TX, 0 };
+        Coords[N++] = { X2 + W, -Y2, Font.CharacterInfo[*P].TX + Font.CharacterInfo[*P].BW / Font.AtlasWidth, 0 };
+        Coords[N++] = { X2, -Y2 - H, Font.CharacterInfo[*P].TX, Font.CharacterInfo[*P].BH / Font.AtlasHeight };
+        Coords[N++] = { X2 + W, -Y2, Font.CharacterInfo[*P].TX + Font.CharacterInfo[*P].BW / Font.AtlasWidth,  0 };
+        Coords[N++] = { X2, -Y2 - H, Font.CharacterInfo[*P].TX, Font.CharacterInfo[*P].BH / Font.AtlasHeight };
+        Coords[N++] = { X2 + W, -Y2 - H, Font.CharacterInfo[*P].TX + Font.CharacterInfo[*P].BW / Font.AtlasWidth, Font.CharacterInfo[*P].BH / Font.AtlasHeight };
+    }
+    
+    glBindVertexArray(Font.VAO);
+    glBindBuffer(GL_ARRAY_BUFFER, Font.VBO);
+    glBufferData(GL_ARRAY_BUFFER, 6 * strlen(Text) * sizeof(Point), Coords, GL_DYNAMIC_DRAW);
+    glDrawArrays(GL_TRIANGLES, 0, N);
+}
+
 static void RenderConsole(render_state* RenderState, console* Console, glm::mat4 ProjectionMatrix, glm::mat4 View)
 {
     glBindVertexArray(RenderState->ConsoleVAO);
@@ -526,10 +553,10 @@ static void RenderConsole(render_state* RenderState, console* Console, glm::mat4
     real32 PercentAnimated = 1.0f + 1.0f - (real32)Console->CurrentTime / (real32)Console->TimeToAnimate;
     
     //draw upper part
-    RenderRect(Fill, RenderState, glm::vec4(0, 0.4f, 0.3f, 0.6f), -1, 0.52f * PercentAnimated, 2, 1);
+    RenderRect(Render_Fill, RenderState, glm::vec4(0, 0.4f, 0.3f, 0.6f), 0, RenderState->WindowHeight * 0.77f * PercentAnimated, RenderState->WindowWidth, RenderState->WindowHeight * 0.23f);
     
     //draw lower bar
-    RenderRect(Fill, RenderState, glm::vec4(0, 0.2f, 0.2f, 0.6f), -1, 0.52f * PercentAnimated, 2, 0.08f);  
+    RenderRect(Render_Fill, RenderState, glm::vec4(0, 0.2f, 0.2f, 0.6f), 0, RenderState->WindowHeight * 0.77f * PercentAnimated, RenderState->WindowWidth, 20);  
     
     GLfloat TimeValue = (real32)glfwGetTime();
     GLfloat AlphaValue = (real32)((sin(TimeValue * 4) / 2) + 0.5f);
@@ -538,19 +565,15 @@ static void RenderConsole(render_state* RenderState, console* Console, glm::mat4
     MeasureText(&RenderState->InconsolataFont, &Console->Buffer[0], &Width, &Height);
     
     //draw cursor
-    RenderRect(Fill, RenderState, glm::vec4(AlphaValue, 1, AlphaValue, 1), -0.96f + Width * RenderState->ScaleX, 0.53f * PercentAnimated, 0.02f, 0.05f);
+    RenderRect(Render_Fill, RenderState, glm::vec4(AlphaValue, 1, AlphaValue, 1), -0.96f + Width * RenderState->ScaleX, 0.53f * PercentAnimated, 0.02f, 0.05f);
     
-    RenderState->InconsolataFont.Color = glm::vec4(1, 1, 1, 1);
-    
-    RenderText(RenderState, RenderState->InconsolataFont, ">", 20 / 1920 * (real32)RenderState->WindowWidth, (real32)RenderState->WindowHeight * 0.77f * PercentAnimated, 1);
-    RenderText(RenderState, RenderState->InconsolataFont, &Console->Buffer[0], 20, (real32)RenderState->WindowHeight * 0.77f * PercentAnimated, 1); 
-    
-    RenderState->InconsolataFont.Color = glm::vec4(0.8, 0.8, 0.8, 1);
+    RenderText(RenderState, RenderState->InconsolataFont, glm::vec4(1, 1, 1, 1), ">", 20 / 1920 * (real32)RenderState->WindowWidth, (real32)RenderState->WindowHeight * 0.775f * PercentAnimated, 1);
+    RenderText(RenderState, RenderState->InconsolataFont, glm::vec4(1, 1, 1, 1),  &Console->Buffer[0], 20, (real32)RenderState->WindowHeight * 0.775f * PercentAnimated, 1);
     
     int index = 0;
     for(int i = 0; i < HISTORY_BUFFER_LINES; i++)
     {
-        RenderText(RenderState, RenderState->InconsolataFont, &Console->HistoryBuffer[i][0], 20 / 1920 * (real32)RenderState->WindowWidth, (real32)RenderState->WindowHeight * 0.78f * PercentAnimated + (i + 1) * 20 * PercentAnimated, 1);
+        RenderText(RenderState, RenderState->InconsolataFont, glm::vec4(0.8, 0.8, 0.8, 1), &Console->HistoryBuffer[i][0], 20 / 1920 * (real32)RenderState->WindowWidth, (real32)RenderState->WindowHeight * 0.78f * PercentAnimated + (i + 1) * 20 * PercentAnimated, 1);
     }
 }
 
@@ -690,6 +713,24 @@ static void RenderGame(game_state* GameState)
     {
         case Mode_MainMenu:
         {
+            RenderRect(Render_Outline, &GameState->RenderState, glm::vec4(0.2f, 0.2f, 0.2f, 1), 1, 1, 200, 200);
+            
+            glm::vec4 TextColor;
+            
+            for(int Index = 0; Index < GameState->MainMenu.OptionCount; Index++)
+            {
+                if(Index == GameState->MainMenu.SelectedIndex)
+                {
+                    RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(1, 1, 1, 1), (real32)GameState->RenderState.WindowWidth / 2 - 200, (real32)GameState->RenderState.WindowHeight / 2 - 10 - 40 * Index, 400, 40);
+                    TextColor = glm::vec4(0, 0, 0, 1);
+                }
+                else
+                {
+                    TextColor = glm::vec4(1, 1, 1, 1);
+                }
+                RenderText(&GameState->RenderState, GameState->RenderState.MenuFont, TextColor, GameState->MainMenu.Options[Index], (real32)GameState->RenderState.WindowWidth / 2, (real32)GameState->RenderState.WindowHeight / 2 - 40 * Index, 1, Alignment_Center);
+                
+            }
         }
         break;
         case Mode_InGame:
@@ -715,11 +756,11 @@ static void RenderEditorUI(game_state* GameState, const editor_ui& EditorUI, ren
         {
             glfwSetInputMode(GameState->RenderState.Window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
             
-            RenderRect(Outline, &GameState->RenderState, glm::vec4(0.2f, 0.2f, 0.2f, 1), -0.2f, -0.3f, 0.4f, 0.6f);
+            RenderRect(Render_Outline, &GameState->RenderState, glm::vec4(0.2f, 0.2f, 0.2f, 1), -0.2f, -0.3f, 0.4f, 0.6f);
             
             for(int Index = 0; Index < MENU_OPTIONS_COUNT; Index++)
             {
-                RenderText(&GameState->RenderState, GameState->RenderState.InconsolataFont, GameState->EditorUI.MenuOptions[Index], -0.21f, 0 + (MENU_OPTIONS_COUNT - (Index)) * 0.06f, 1);
+                RenderText(&GameState->RenderState, GameState->RenderState.InconsolataFont, glm::vec4(1, 1, 1, 1), GameState->EditorUI.MenuOptions[Index], -0.21f, 0 + (MENU_OPTIONS_COUNT - (Index)) * 0.06f, 1);
             }
         }
         break;
@@ -735,7 +776,7 @@ static void RenderEditorUI(game_state* GameState, const editor_ui& EditorUI, ren
         {
             glfwSetInputMode(GameState->RenderState.Window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
             RenderGame(GameState);
-            RenderRect(Outline,  RenderState, glm::vec4(0.2, 0.2, 0.2, 1), -1, 0, 0.5, 0.5);
+            RenderRect(Render_Outline,  RenderState, glm::vec4(0.2, 0.2, 0.2, 1), -1, 0, 0.5, 0.5);
             
             for(int i = -1; i < GameState->EntityCount; i++)
             {
@@ -744,21 +785,23 @@ static void RenderEditorUI(game_state* GameState, const editor_ui& EditorUI, ren
                 if(!EntityName)
                     EntityName = "NO_NAME";
                 
+                glm::vec4 Color;
+                
                 if(i == -1 || i == (int32)GameState->EditorUI.SelectedIndex)
                 {
                     if(i != -1)
                     {
-                        RenderState->InconsolataFont.Color = glm::vec4(0, 0, 0, 1);
+                        Color = glm::vec4(0, 0, 0, 1);
                     }
                     else
-                        RenderState->InconsolataFont.Color = glm::vec4(1, 1, 1, 1);
+                        Color = glm::vec4(1, 1, 1, 1);
                 }
                 else
                 {
-                    RenderState->InconsolataFont.Color = glm::vec4(1, 1, 1, 1);
+                    Color = glm::vec4(1, 1, 1, 1);
                 }
                 
-                RenderText(RenderState, RenderState->InconsolataFont, EntityName, 0, (real32)(500 + (GameState->EntityCount - (i)) * 20), 1);
+                RenderText(RenderState, RenderState->InconsolataFont, Color, EntityName, 0, (real32)(500 + (GameState->EntityCount - (i)) * 20), 1);
             }
         }
         break;
@@ -786,7 +829,7 @@ static void Render(game_state* GameState)
     if(GameState->Console.CurrentTime > 0)
         RenderConsole(&GameState->RenderState, &GameState->Console, GameState->Camera.ProjectionMatrix,  GameState->Camera.ViewMatrix);
     
-    RenderText(&GameState->RenderState, GameState->RenderState.InconsolataFont, "DAMN SON", -800, 100, 1);
+    RenderText(&GameState->RenderState, GameState->RenderState.InconsolataFont, glm::vec4(1, 1, 1, 1), "DAMN SON", -800, 100, 1);
     
     glfwSwapBuffers(GameState->RenderState.Window);
 }

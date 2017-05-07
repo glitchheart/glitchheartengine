@@ -3,10 +3,12 @@
 
 struct main_menu
 {
-    uint32 SelectedIndex;
+    int32 SelectedIndex;
+    uint32 OptionCount = 3;
+    
     char* Options[3] = 
     {
-        "Start game",
+        "Continue",
         "Settings",
         "Exit"
     };

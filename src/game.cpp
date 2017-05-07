@@ -184,10 +184,10 @@ extern "C" UPDATE(Update)
     
 #endif
     
-    if (GetKeyDown(Key_Enter, GameState) && !GameState->Console.Open)
-    {
-        PlaySoundEffectOnce(GameState, &GameState->SoundManager.Track01);
-    }
+    //if (GetKeyDown(Key_Enter, GameState) && !GameState->Console.Open)
+    //{
+    //PlaySoundEffectOnce(GameState, &GameState->SoundManager.Track01);
+    //}
     
     if (GetKeyDown(Key_Escape, GameState) && !GameState->Console.Open)
     {
@@ -203,6 +203,34 @@ extern "C" UPDATE(Update)
                 GameState->GameMode = Mode_MainMenu;
             }
             break;
+        }
+    }
+    
+    if(GameState->GameMode == Mode_MainMenu)
+    {
+        if(GetKeyDown(Key_Up, GameState))
+            GameState->MainMenu.SelectedIndex -= 1;
+        else if(GetKeyDown(Key_Down, GameState))
+            GameState->MainMenu.SelectedIndex += 1;
+        
+        if(GameState->MainMenu.SelectedIndex < 0)
+            GameState->MainMenu.SelectedIndex = GameState->MainMenu.OptionCount - 1;
+        else if(GameState->MainMenu.SelectedIndex == GameState->MainMenu.OptionCount)
+            GameState->MainMenu.SelectedIndex = 0;
+        
+        if(GetKeyDown(Key_Enter, GameState))
+        {
+            char* Selection = GameState->MainMenu.Options[GameState->MainMenu.SelectedIndex];
+            
+            if(strcmp(Selection, "Exit") == 0) //TODO(Daniel) do an enumeration instead
+            {
+                GameState->GameMode = Mode_Exit;
+            }
+            else if(strcmp(Selection, "Continue") == 0)
+            {
+                GameState->GameMode = Mode_InGame;
+            }
+            GameState->MainMenu.SelectedIndex = 0;
         }
     }
     

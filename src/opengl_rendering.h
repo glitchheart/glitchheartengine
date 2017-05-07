@@ -29,7 +29,7 @@ const char* ShaderPaths[Shader_Count] =
 
 enum Render_Mode
 {
-    Fill, Outline
+    Render_Fill, Render_Outline
 };
 
 struct render_entity
@@ -44,6 +44,13 @@ struct shader
     GLuint Program;
     GLuint VertexShader;
     GLuint FragmentShader;
+};
+
+enum Alignment
+{
+    Alignment_Left,
+    Alignment_Right,
+    Alignment_Center
 };
 
 struct render_font
@@ -163,6 +170,7 @@ struct render_state
     //freetype
     FT_Library FTLibrary;
     render_font InconsolataFont;
+    render_font MenuFont;
     
     //animations
     std::map<char*, uint32, CompareCStrings> LoadedTextureHandles;
