@@ -626,7 +626,9 @@ static void RenderEntity(render_state *RenderState, entity &Entity, glm::mat4 Pr
             glm::mat4 Model(1.0f);
             Model = glm::translate(Model, glm::vec3(Entity.Position.x, Entity.Position.y, 0.0f));
             Model = glm::translate(Model, glm::vec3(1, 1, 0.0f)); 
-            Model = glm::rotate(Model, Entity.Rotation.z, glm::vec3(0, 0, 1)); //NOTE(Daniel) 1.56 is approximately 90 degrees in radians
+            Model = glm::rotate(Model, Entity.Rotation.z, glm::vec3(0, 0, 1)); 
+            
+            //NOTE(Daniel) 1.57079633 is 90 degrees in radians
             Model = glm::translate(Model, glm::vec3(-1, -1, 0.0f)); 
             Model = glm::scale(Model, Entity.Scale);
             
@@ -694,9 +696,9 @@ static void RenderRoom(render_state* RenderState, const room& Room,  glm::mat4 P
     
     real32 Scale = 1.0f;
     
-    for (int i = 0; i < ROOM_WIDTH; i++)
+    for (int i = 0; i < Room.Width; i++)
     {
-        for (int j = 0; j < ROOM_HEIGHT; j++)
+        for (int j = 0; j < Room.Height; j++)
         {
             if(Room.Data[i][j].Type != Tile_None)
             {
