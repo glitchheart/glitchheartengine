@@ -98,6 +98,8 @@ struct render_state
     GLint Viewport[4];
     
     bool32 RenderColliders;
+    bool32 RenderFPS;
+    real64 FPS;
     
     size_t SpriteQuadVerticesSize = 16 * sizeof(GLfloat);
     size_t TileQuadVerticesSize = 16 * sizeof(GLfloat);
@@ -108,10 +110,10 @@ struct render_state
     //sprites
     GLfloat SpriteQuadVertices[16] =
     { //pos        //texcoords
-        0.0f, 1.0f, 0,    0,
-        1.0f, 1.0f, 1.0f, 0,
-        1.0f, 0.0f, 1.0f, 1.0f,
-        0.0f, 0.0f, 0,    1.0f};
+        0.0f, 1.0f, 0, 1.0f,
+        1.0f, 1.0f, 1.0f, 1.0f,
+        1.0f, 0.0f, 1.0f,    0,
+        0.0f, 0.0f, 0,  0};
     GLuint SpriteVAO;
     GLuint SpriteQuadVBO;
     
@@ -121,10 +123,10 @@ struct render_state
     GLfloat TileQuadVertices[16] =
     {
         //pos        //texcoords
-        0.0f, 1.0f, 0.0625f, 0.0625f,
-        1.0f, 1.0f, 0.9375f, 0.0625f,
-        1.0f, 0.0f, 0.9375f, 0.9375f,
-        0.0f, 0.0f, 0.0625f, 0.9375f
+        0.0f, 1.0f, 0.0625f, 0.9375f,
+        1.0f, 1.0f, 0.9375f, 0.9375f,
+        1.0f, 0.0f, 0.9375f, 0.0625f,
+        0.0f, 0.0f, 0.0625f, 0.0625f
     };
     
     GLuint TileVAO;

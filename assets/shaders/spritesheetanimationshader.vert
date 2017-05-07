@@ -1,5 +1,7 @@
 #version 150
-uniform mat4 MVP;
+uniform mat4 Projection;
+uniform mat4 View;
+uniform mat4 Model;
 uniform vec2 textureOffset;
 uniform vec2 sheetSize; // Smells like shit
 
@@ -11,5 +13,5 @@ out vec2 Texcoord;
 void main()
 {
     Texcoord = vec2(texcoord.x / sheetSize.x + textureOffset.x, texcoord.y / sheetSize.y + textureOffset.y);
-    gl_Position = MVP * vec4(pos.xy, 0.0, 1.0);
+    gl_Position = Projection * View * Model * vec4(pos.xy, 0.0, 1.0);
 }
