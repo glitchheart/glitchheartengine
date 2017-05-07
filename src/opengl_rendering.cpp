@@ -509,7 +509,7 @@ static void MeasureText(render_font* Font, const char* Text, float* Width, float
         
         for(Count = 0; Count < strlen(Text); ++Count) 
         {
-            C= Text[Count];
+            C = Text[Count];
             
             if (*Height < Font->CharacterInfo[C].AY) 
             {
@@ -539,7 +539,7 @@ static void RenderConsole(render_state* RenderState, console* Console, glm::mat4
     
     //draw lower bar
     glm::mat4 SecondModel(1.0f);
-    SecondModel = glm::translate(SecondModel, glm::vec3(-1, 0.5f * PercentAnimated, 0));
+    SecondModel = glm::translate(SecondModel, glm::vec3(-1, 0.52f * PercentAnimated, 0));
     SecondModel = glm::scale(SecondModel, glm::vec3(2, 0.08f, 1));
     SetMat4Uniform(Shader.Program, "M", SecondModel);
     SetVec4Attribute(Shader.Program, "color", glm::vec4(0, 0.2f, 0.2f, 0.6f));
@@ -552,24 +552,25 @@ static void RenderConsole(render_state* RenderState, console* Console, glm::mat4
     real32 Height;
     MeasureText(&RenderState->InconsolataFont, &Console->Buffer[0], &Width, &Height);
     
-    CursorModel = glm::translate(CursorModel, glm::vec3(-0.97f + Width, 0.51f * PercentAnimated, 0));
-    CursorModel = glm::scale(CursorModel, glm::vec3(0.015f, 0.06, 1));
+    CursorModel = glm::translate(CursorModel, glm::vec3(-0.96f + Width * RenderState->ScaleX, 0.53f * PercentAnimated, 0));
+    CursorModel = glm::scale(CursorModel, glm::vec3(0.02f, 0.05, 1));
     
     SetMat4Uniform(Shader.Program, "M", CursorModel);
     
     GLfloat TimeValue = (real32)glfwGetTime();
-    GLfloat AlphaValue = (real32)((sin(TimeValue * 6) / 2) + 0.5f);
+    GLfloat AlphaValue = (real32)((sin(TimeValue * 4) / 2) + 0.5f);
     
-    SetVec4Attribute(Shader.Program, "color", glm::vec4(0, 1.0f, 0.5f, AlphaValue));
+    SetVec4Attribute(Shader.Program, "color", glm::vec4(AlphaValue, 1, AlphaValue, 1));
     
     glDrawArrays(GL_QUADS, 0, 4);
     
     RenderState->InconsolataFont.Color = glm::vec4(1, 1, 1, 1);
     
     printf("Window w %d h %d\n", RenderState->WindowWidth, RenderState->WindowHeight);
+    printf("Text measure w %f h %f\n", Width, Height);
     
-    RenderText(RenderState, RenderState->InconsolataFont, ">", 20 / 1920 * (real32)RenderState->WindowWidth, (real32)RenderState->WindowHeight * 0.76f * PercentAnimated, 1);
-    RenderText(RenderState, RenderState->InconsolataFont, &Console->Buffer[0], 20, (real32)RenderState->WindowHeight * 0.76f * PercentAnimated, 1); //TODO(Daniel) UNICODE RENDERING
+    RenderText(RenderState, RenderState->InconsolataFont, ">", 20 / 1920 * (real32)RenderState->WindowWidth, (real32)RenderState->WindowHeight * 0.77f * PercentAnimated, 1);
+    RenderText(RenderState, RenderState->InconsolataFont, &Console->Buffer[0], 20, (real32)RenderState->WindowHeight * 0.77f * PercentAnimated, 1); //TODO(Daniel) UNICODE RENDERING
     
     RenderState->InconsolataFont.Color = glm::vec4(0.8, 0.8, 0.8, 1);
     
