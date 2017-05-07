@@ -340,7 +340,7 @@ int main(void)
         DeltaTime = CurrentFrame - LastFrame;
         LastFrame = CurrentFrame;
         
-        if(GetKeyDown(Key_Q, &GameState) && GetKey(Key_LeftCtrl, &GameState))
+        if(GameState.GameMode == Mode_Exit || GetKeyDown(Key_Q, &GameState) && GetKey(Key_LeftCtrl, &GameState))
             glfwSetWindowShouldClose(GameState.RenderState.Window, GLFW_TRUE);
         
         ReloadAssets(&AssetManager, &GameState);

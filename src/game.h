@@ -23,6 +23,7 @@
 #include "sound.h"
 #include "console.h"
 #include "editor_ui.h"
+#include "menu.h"
 
 #define STB_PERLIN_IMPLEMENTATION
 #include <stb/stb_perlin.h>
@@ -41,12 +42,14 @@ enum Game_Mode
 {
     Mode_MainMenu,
     Mode_InGame,
-    Mode_Paused
+    Mode_Paused,
+    Mode_Exit
 };
 
 struct game_state
 {
     Game_Mode GameMode;
+    main_menu MainMenu;
     render_state RenderState;
     camera Camera;
     uint32 PlayerIndex;
