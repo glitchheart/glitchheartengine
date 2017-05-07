@@ -713,8 +713,6 @@ static void RenderGame(game_state* GameState)
     {
         case Mode_MainMenu:
         {
-            RenderRect(Render_Outline, &GameState->RenderState, glm::vec4(0.2f, 0.2f, 0.2f, 1), 1, 1, 200, 200);
-            
             glm::vec4 TextColor;
             
             for(int Index = 0; Index < GameState->MainMenu.OptionCount; Index++)
@@ -798,6 +796,13 @@ static void RenderEditorUI(game_state* GameState, const editor_ui& EditorUI, ren
                     if(i != -1)
                     {
                         Color = glm::vec4(0, 0, 0, 1);
+                        RenderRect(Render_Fill, 
+                                   RenderState, 
+                                   glm::vec4(1, 1, 1, 1), 
+                                   1,
+                                   -2 + RenderState->WindowHeight / 2 - 20 * i, 
+                                   120, 
+                                   20); 
                     }
                     else
                         Color = glm::vec4(1, 1, 1, 1);
@@ -834,8 +839,6 @@ static void Render(game_state* GameState)
     
     if(GameState->Console.CurrentTime > 0)
         RenderConsole(&GameState->RenderState, &GameState->Console, GameState->Camera.ProjectionMatrix,  GameState->Camera.ViewMatrix);
-    
-    RenderText(&GameState->RenderState, GameState->RenderState.InconsolataFont, glm::vec4(1, 1, 1, 1), "DAMN SON", -800, 100, 1);
     
     glfwSwapBuffers(GameState->RenderState.Window);
 }
