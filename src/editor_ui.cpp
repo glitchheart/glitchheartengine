@@ -6,15 +6,15 @@ static void CheckEditorUIInput(game_state* GameState, real64 DeltaTime)
     auto MouseX = GameState->InputController.MouseX;
     auto MouseY = GameState->InputController.MouseY;
     
-    if(MouseX < GameState->RenderState.WindowWidth / 12)
+    int ListRectWidth = 120;
+    
+    if(MouseX <= ListRectWidth)
     {
-        auto Y = (MouseY / GameState->RenderState.WindowHeight) - 0.3 + 50 * SY;
+        auto Y = GameState->RenderState.WindowHeight - MouseY;
         
-        uint32 YAsIndex = (uint32) ((Y - 0.03) / 0.06);
+        auto Index = (int32)floor(((real32)GameState->RenderState.WindowHeight / 2.0f - (real32)Y) / 20.0f + 1.0f);
         
-        if(YAsIndex < GameState->EntityCount)
-        {
-            GameState->EditorUI.SelectedIndex = YAsIndex;
-        }
+        if(Index >= 0 && Index < GameState->EntityCount)
+            GameState->EditorUI.SelectedIndex = Index;
     }
 }
