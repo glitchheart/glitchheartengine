@@ -29,7 +29,7 @@ const char* ShaderPaths[Shader_Count] =
 
 enum Render_Mode
 {
-    Fill, Outlined
+    Fill, Outline
 };
 
 struct render_entity
