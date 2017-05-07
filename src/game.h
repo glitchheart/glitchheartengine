@@ -7,7 +7,7 @@
 #include <GLFW/glfw3.h>
 #include "al.h"
 #include "alc.h"
-#include <time.h> 
+#include <time.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <map>

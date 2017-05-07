@@ -774,9 +774,9 @@ static void RenderEditorUI(game_state* GameState, const editor_ui& EditorUI, ren
         {
             glfwSetInputMode(GameState->RenderState.Window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
             RenderGame(GameState);
-            RenderRect(Render_Outline, 
+            RenderRect(Render_Fill, 
                        RenderState, 
-                       glm::vec4(0.2, 0.2, 0.2, 1), 
+                       glm::vec4(0, 0.4f, 0.3f, 0.6f), 
                        1, 
                        -2 + RenderState->WindowHeight / 2 - 20 * (1 + GameState->EntityCount) / 2, 
                        120, 

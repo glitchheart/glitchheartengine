@@ -67,7 +67,6 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                     //Entity->CollisionAABB.Center = Entity->Position;
                     if(!Entity->IsKinematic)
                     {
-                        
                         for(uint32 OtherEntityIndex = 0;
                             OtherEntityIndex < GameState->EntityCount;
                             OtherEntityIndex++)
@@ -82,19 +81,6 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                                 {
                                     Entity->IsColliding = true;
                                     GameState->Entities[OtherEntityIndex].IsColliding = true;
-                                    
-                                    /*glm::vec2 PenetrationVector;
-                                    ClosestPointsOnBoundsToPoint(&Entity->CollisionAABB,GameState->Entities[OtherEntityIndex].Position,
-                                                                 &PenetrationVector);
-                                                                 
-                                    if(PenetrationVector.x != 0 && PenetrationVector.y != 0)
-                                    {
-                                        glm::vec2 Normalized = glm::normalize(PenetrationVector);
-                                        glm::vec2 Tangent = glm::tan(Normalized);
-                                        VelX = Tangent.x;
-                                        VelY = Tangent.y;
-                                    }*/
-                                    
                                     Entity->CollisionAABB.Center = Entity->Position;
                                 } 
                                 
@@ -184,22 +170,19 @@ extern "C" UPDATE(Update)
     
 #endif
     
-    //if (GetKeyDown(Key_Enter, GameState) && !GameState->Console.Open)
-    //{
-    //PlaySoundEffectOnce(GameState, &GameState->SoundManager.Track01);
-    //}
-    
     if (GetKeyDown(Key_Escape, GameState) && !GameState->Console.Open)
     {
         switch(GameState->GameMode)
         {
             case Mode_MainMenu:
             {
+                //StopSoundEffect(GameState, &GameState->SoundManager.MainMenuTrack);
                 GameState->GameMode = Mode_InGame;
             }
             break;
             case Mode_InGame:
             {
+                //PlaySoundEffect(GameState, &GameState->SoundManager.MainMenuTrack);
                 GameState->GameMode = Mode_MainMenu;
             }
             break;
