@@ -8,6 +8,38 @@
 
 #define DEBUG
 
+void CheckCollision(game_state* GameState, entity* Entity)
+{
+    if(!Entity->IsKinematic)
+    {
+        Entity->CollisionAABB.Center = glm::vec2(Entity->Position.x + Entity->Velocity.x, Entity->Position.y + Entity->Velocity.y);
+        for(uint32 OtherEntityIndex = 0;
+            OtherEntityIndex < GameState->EntityCount;
+            OtherEntityIndex++)
+        {
+            if(OtherEntityIndex != Entity->EntityIndex && !GameState->Entities[OtherEntityIndex].IsKinematic) {
+                collision_AABB Md = {};
+                MinkowskiDifference(&Entity->CollisionAABB, &GameState->Entities[OtherEntityIndex].CollisionAABB,&Md);
+                if(Md.Min.x <= 0 &&
+                   Md.Max.x >= 0 &&
+                   Md.Min.y <= 0 &&
+                   Md.Max.y >= 0)
+                {
+                    Entity->IsColliding = true;
+                    GameState->Entities[OtherEntityIndex].IsColliding = true;
+                    Entity->CollisionAABB.Center = Entity->Position;
+                } 
+                else
+                {
+                    Entity->IsColliding = false;
+                    GameState->Entities[OtherEntityIndex].IsColliding = false;
+                }
+                
+            }
+        }
+    }
+}
+
 void UpdateEntities(game_state* GameState, real64 DeltaTime)
 {
     auto pos = glm::unProject(glm::vec3(GameState->InputController.MouseX,GameState->RenderState.Viewport[3] - GameState->InputController.MouseY, 0),
@@ -27,26 +59,24 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
             {
                 if (!GameState->Console.Open)
                 {
-                    float VelX = 0.0f;
-                    float VelY = 0.0f;
-                    
+                    Entity->Velocity = glm::vec2(0,0);
                     //player movement
                     if (GetKey(Key_A, GameState))
                     {
-                        VelX = -Entity->Player.WalkingSpeed * (real32)DeltaTime;
+                        Entity->Velocity.x = -Entity->Player.WalkingSpeed * (real32)DeltaTime;
                     }
                     else if (GetKey(Key_D, GameState))
                     {
-                        VelX = Entity->Player.WalkingSpeed * (real32)DeltaTime;
+                        Entity->Velocity.x = Entity->Player.WalkingSpeed * (real32)DeltaTime;
                     }
                     
                     if (GetKey(Key_W, GameState))
                     {
-                        VelY = -Entity->Player.WalkingSpeed * (real32)DeltaTime;
+                        Entity->Velocity.y = -Entity->Player.WalkingSpeed * (real32)DeltaTime;
                     }
                     else if (GetKey(Key_S, GameState))
                     {
-                        VelY = Entity->Player.WalkingSpeed * (real32)DeltaTime;
+                        Entity->Velocity.y = Entity->Player.WalkingSpeed * (real32)DeltaTime;
                     }
                     
                     if(Entity->Player.IsAttacking && !Entity->Animations[Entity->CurrentAnimation].Playing)
@@ -56,45 +86,21 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                     
                     if(!Entity->Player.IsAttacking)
                     {
-                        if(VelX != 0.0f || VelY != 0.0f)
+                        if(Entity->Velocity.x != 0.0f || Entity->Velocity.y != 0.0f)
                             PlayAnimation(Entity, "player_walk");
                         else
                             PlayAnimation(Entity, "player_idle");
                     }
                     
-                    Entity->CollisionAABB.Center = glm::vec2(Entity->Position.x + VelX, Entity->Position.y + VelY);
+                    
                     
                     //Entity->CollisionAABB.Center = Entity->Position;
-                    if(!Entity->IsKinematic)
-                    {
-                        for(uint32 OtherEntityIndex = 0;
-                            OtherEntityIndex < GameState->EntityCount;
-                            OtherEntityIndex++)
-                        {
-                            if(OtherEntityIndex != Entity->EntityIndex && !GameState->Entities[OtherEntityIndex].IsKinematic) {
-                                collision_AABB Md = {};
-                                MinkowskiDifference(&Entity->CollisionAABB, &GameState->Entities[OtherEntityIndex].CollisionAABB,&Md);
-                                if(Md.Min.x <= 0 &&
-                                   Md.Max.x >= 0 &&
-                                   Md.Min.y <= 0 &&
-                                   Md.Max.y >= 0)
-                                {
-                                    Entity->IsColliding = true;
-                                    GameState->Entities[OtherEntityIndex].IsColliding = true;
-                                    Entity->CollisionAABB.Center = Entity->Position;
-                                } 
-                                
-                                else
-                                {
-                                    Entity->IsColliding = false;
-                                    GameState->Entities[OtherEntityIndex].IsColliding = false;
-                                    Entity->Position.x += VelX;
-                                    Entity->Position.y += VelY;
-                                }
-                                
-                            }
-                        }
+                    CheckCollision(GameState,Entity);
+                    if(!Entity->IsColliding) {
+                        Entity->Position.x += Entity->Velocity.x;
+                        Entity->Position.y += Entity->Velocity.y;
                     }
+                    
                 }
                 
                 //attacking
@@ -128,7 +134,14 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
             break;
             case Entity_Enemy:
             {
-                Entity->CollisionAABB.Center = glm::vec2(Entity->Position.x, Entity->Position.y);
+                Entity->Velocity = glm::vec2(0,0);
+                //Check collision
+                
+                CheckCollision(GameState,Entity);
+                if(!Entity->IsColliding) {
+                    Entity->Position.x += Entity->Velocity.x;
+                    Entity->Position.y += Entity->Velocity.y;
+                }
             }
             break;
         }

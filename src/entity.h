@@ -25,7 +25,7 @@ struct entity
     
     std::map<char*, animation, CompareCStrings> Animations;
     render_entity RenderEntity;
-    collision_rect CollisionRect;
+    
     collision_AABB CollisionAABB;
     bool32 IsKinematic;
     bool32 IsColliding;
@@ -43,7 +43,7 @@ struct entity
         {
         } Enemy;
     };
-    
+    glm::vec2 Velocity;
     
 };
 
