@@ -37,8 +37,16 @@ struct camera
     glm::mat4 ProjectionMatrix;
 };
 
+enum Game_Mode
+{
+    Mode_MainMenu,
+    Mode_InGame,
+    Mode_Paused
+};
+
 struct game_state
 {
+    Game_Mode GameMode;
     render_state RenderState;
     camera Camera;
     uint32 PlayerIndex;

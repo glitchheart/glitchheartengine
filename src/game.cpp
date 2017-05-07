@@ -189,5 +189,22 @@ extern "C" UPDATE(Update)
         PlaySoundEffectOnce(GameState, &GameState->SoundManager.Track01);
     }
     
+    if (GetKeyDown(Key_Escape, GameState) && !GameState->Console.Open)
+    {
+        switch(GameState->GameMode)
+        {
+            case Mode_MainMenu:
+            {
+                GameState->GameMode = Mode_InGame;
+            }
+            break;
+            case Mode_InGame:
+            {
+                GameState->GameMode = Mode_MainMenu;
+            }
+            break;
+        }
+    }
+    
     UpdateEntities(GameState, DeltaTime);
 }

@@ -303,7 +303,7 @@ int main(void)
     
     GameState.Camera.ViewportWidth = Width / 20;
     GameState.Camera.ViewportHeight = Height / 20;
-    
+    GameState.GameMode = Mode_InGame;
     game_code Game = LoadGameCode();
     
     //setup asset reloading
@@ -340,7 +340,7 @@ int main(void)
         DeltaTime = CurrentFrame - LastFrame;
         LastFrame = CurrentFrame;
         
-        if (GetKey(Key_Escape, &GameState))
+        if(GetKeyDown(Key_Q, &GameState) && GetKey(Key_LeftCtrl, &GameState))
             glfwSetWindowShouldClose(GameState.RenderState.Window, GLFW_TRUE);
         
         ReloadAssets(&AssetManager, &GameState);

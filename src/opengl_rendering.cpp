@@ -543,12 +543,11 @@ static void RenderConsole(render_state* RenderState, console* Console, glm::mat4
     RenderState->InconsolataFont.Color = glm::vec4(1, 1, 1, 1);
     
     RenderText(RenderState, RenderState->InconsolataFont, ">", 20 / 1920 * (real32)RenderState->WindowWidth, (real32)RenderState->WindowHeight * 0.77f * PercentAnimated, 1);
-    RenderText(RenderState, RenderState->InconsolataFont, &Console->Buffer[0], 20, (real32)RenderState->WindowHeight * 0.77f * PercentAnimated, 1); //TODO(Daniel) UNICODE RENDERING
+    RenderText(RenderState, RenderState->InconsolataFont, &Console->Buffer[0], 20, (real32)RenderState->WindowHeight * 0.77f * PercentAnimated, 1); 
     
     RenderState->InconsolataFont.Color = glm::vec4(0.8, 0.8, 0.8, 1);
     
     int index = 0;
-    
     for(int i = 0; i < HISTORY_BUFFER_LINES; i++)
     {
         RenderText(RenderState, RenderState->InconsolataFont, &Console->HistoryBuffer[i][0], 20 / 1920 * (real32)RenderState->WindowWidth, (real32)RenderState->WindowHeight * 0.78f * PercentAnimated + (i + 1) * 20 * PercentAnimated, 1);
@@ -687,13 +686,24 @@ static void RenderRoom(render_state* RenderState, const room& Room,  glm::mat4 P
 
 static void RenderGame(game_state* GameState)
 {
-    RenderRoom(&GameState->RenderState, GameState->Room, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix, 0, 0, 0, 0);
-    
-    for(uint32 EntityIndex = 0;
-        EntityIndex < GameState->EntityCount;
-        EntityIndex++) 
+    switch(GameState->GameMode)
     {
-        RenderEntity(&GameState->RenderState, GameState->Entities[EntityIndex], GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
+        case Mode_MainMenu:
+        {
+        }
+        break;
+        case Mode_InGame:
+        {
+            RenderRoom(&GameState->RenderState, GameState->Room, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix, 0, 0, 0, 0);
+            
+            for(uint32 EntityIndex = 0;
+                EntityIndex < GameState->EntityCount;
+                EntityIndex++) 
+            {
+                RenderEntity(&GameState->RenderState, GameState->Entities[EntityIndex], GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
+            }
+        }
+        break;
     }
 }
 
