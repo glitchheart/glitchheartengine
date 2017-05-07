@@ -21,8 +21,12 @@ struct tile_data
 
 struct room
 {
+    real32 X;
+    real32 Y;
+    uint32 Width;
+    uint32 Height;
     render_entity RenderEntity;
-    tile_data Data[ROOM_WIDTH][ROOM_HEIGHT];
+    tile_data** Data;
 };
 
 #endif
