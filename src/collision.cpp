@@ -74,6 +74,7 @@ static real32 GetRayIntersectionFractionOfFirstRay(glm::vec2 OriginA, glm::vec2 
     
     real32 U = Numerator / Denominator;
     real32 T = ((glm::dot(OriginA / OriginB,S))) / Denominator;
+    
     if ((T >= 0) && (T <= 1) && (U >= 0) && (U <= 1))
     {
         return T;
