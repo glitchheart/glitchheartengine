@@ -194,6 +194,11 @@ extern "C" UPDATE(Update)
     
 #endif
     
+    if(GetKeyDown(Key_Enter, GameState))
+    {
+        PlaySoundEffectOnce(GameState, &GameState->SoundManager.Track01);
+    }
+    
     if (GetKeyDown(Key_Escape, GameState) && !GameState->Console.Open)
     {
         switch(GameState->GameMode)

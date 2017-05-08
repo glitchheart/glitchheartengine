@@ -352,11 +352,13 @@ int main(void)
     GameState.Console = {};
     GameState.EditorUI = {};
     
+    sound_device SoundDevice = {};
     sound_manager SoundManager = {};
-    InitAudio(&SoundManager);
+    InitAudio(&SoundDevice);
     LoadSounds(&SoundManager);
+    ResetSoundQueue(&SoundManager);
     
-    if (SoundManager.IsInitialized)
+    if (SoundDevice.IsInitialized)
     {
         GameState.SoundManager = SoundManager;
     }
@@ -406,7 +408,7 @@ int main(void)
         }
     }
     
-    CleanupSound(&GameState);
+    CleanupSound(&SoundDevice,&GameState.SoundManager);
     
     glfwDestroyWindow(GameState.RenderState.Window);
     glfwTerminate();
