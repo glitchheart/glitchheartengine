@@ -553,10 +553,10 @@ static void RenderConsole(render_state* RenderState, console* Console, glm::mat4
     real32 PercentAnimated = 1.0f + 1.0f - (real32)Console->CurrentTime / (real32)Console->TimeToAnimate;
     
     //draw upper part
-    RenderRect(Render_Fill, RenderState, glm::vec4(0, 0.4f, 0.3f, 0.6f), 0, RenderState->WindowHeight * 0.77f * PercentAnimated, RenderState->WindowWidth, RenderState->WindowHeight * 0.23f);
+    RenderRect(Render_Fill, RenderState, glm::vec4(0.0f, 0.4f, 0.3f, 0.6f), 0.0f, (real32)RenderState->WindowHeight * 0.77f * PercentAnimated, (real32)RenderState->WindowWidth, (real32)RenderState->WindowHeight * 0.23f);
     
     //draw lower bar
-    RenderRect(Render_Fill, RenderState, glm::vec4(0, 0.2f, 0.2f, 0.6f), 0, RenderState->WindowHeight * 0.77f * PercentAnimated, RenderState->WindowWidth, 20);  
+    RenderRect(Render_Fill, RenderState, glm::vec4(0.0f, 0.2f, 0.2f, 0.6f), 0.0f, (real32)RenderState->WindowHeight * 0.77f * PercentAnimated, (real32)RenderState->WindowWidth, 20);  
     
     GLfloat TimeValue = (real32)glfwGetTime();
     GLfloat AlphaValue = (real32)((sin(TimeValue * 4) / 2) + 0.5f);
@@ -677,7 +677,7 @@ static void RenderEntity(render_state *RenderState, entity &Entity, glm::mat4 Pr
     if(RenderState->RenderFPS) {
         char FPS[32];
         sprintf(FPS, "%4.0f",RenderState->FPS);
-        RenderText(RenderState,RenderState->InconsolataFont, glm::vec4(1,1,1,1),FPS, RenderState->WindowWidth/2,20,1,Alignment_Center);
+        RenderText(RenderState,RenderState->InconsolataFont, glm::vec4(1,1,1,1),FPS, RenderState->WindowWidth/2.0f,20.0f,1.0f,Alignment_Center);
     }
 }
 
@@ -696,9 +696,9 @@ static void RenderRoom(render_state* RenderState, const room& Room,  glm::mat4 P
     
     real32 Scale = 1.0f;
     
-    for (int i = 0; i < Room.Width; i++)
+    for (uint32 i = 0; i < Room.Width; i++)
     {
-        for (int j = 0; j < Room.Height; j++)
+        for (uint32 j = 0; j < Room.Height; j++)
         {
             if(Room.Data[i][j].Type != Tile_None)
             {
@@ -728,9 +728,9 @@ static void RenderGame(game_state* GameState)
         {
             glm::vec4 TextColor;
             
-            for(int Index = 0; Index < GameState->MainMenu.OptionCount; Index++)
+            for(uint32 Index = 0; Index < GameState->MainMenu.OptionCount; Index++)
             {
-                if(Index == GameState->MainMenu.SelectedIndex)
+                if((int32)Index == GameState->MainMenu.SelectedIndex)
                 {
                     RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(1, 1, 1, 1), (real32)GameState->RenderState.WindowWidth / 2 - 200, (real32)GameState->RenderState.WindowHeight / 2 - 10 - 40 * Index, 400, 40);
                     TextColor = glm::vec4(0, 0, 0, 1);
@@ -791,10 +791,10 @@ static void RenderEditorUI(game_state* GameState, const editor_ui& EditorUI, ren
             RenderRect(Render_Fill, 
                        RenderState, 
                        glm::vec4(0, 0.4f, 0.3f, 0.6f), 
-                       1, 
-                       -2 + RenderState->WindowHeight / 2 - 20 * (1 + GameState->EntityCount) / 2, 
-                       120, 
-                       20 * (1 + GameState->EntityCount));
+                       1.0f, 
+                       -2.0f + (real32)RenderState->WindowHeight / 2.0f - 20.0f * (1.0f + GameState->EntityCount) / 2.0f, 
+                       120.0f, 
+                       20.0f * (1.0f + GameState->EntityCount));
             
             for(int i = -1; i < GameState->EntityCount; i++)
             {
@@ -813,10 +813,10 @@ static void RenderEditorUI(game_state* GameState, const editor_ui& EditorUI, ren
                         RenderRect(Render_Fill, 
                                    RenderState, 
                                    glm::vec4(1, 1, 1, 1), 
-                                   1,
-                                   -2 + RenderState->WindowHeight / 2 - 20 * i, 
-                                   120, 
-                                   20); 
+                                   1.0f,
+                                   -2.0f + (real32)RenderState->WindowHeight / 2.0f - 20.0f * i, 
+                                   120.0f, 
+                                   20.0f); 
                     }
                     else
                         Color = glm::vec4(1, 1, 1, 1);
@@ -826,7 +826,7 @@ static void RenderEditorUI(game_state* GameState, const editor_ui& EditorUI, ren
                     Color = glm::vec4(1, 1, 1, 1);
                 }
                 
-                RenderText(RenderState, RenderState->InconsolataFont, Color, EntityName, 2, RenderState->WindowHeight / 2 - 20 * i, 1);
+                RenderText(RenderState, RenderState->InconsolataFont, Color, EntityName, 2.0f, (real32)RenderState->WindowHeight / 2.0f - 20.0f * i, 1.0f);
             }
         }
         break;
