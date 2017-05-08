@@ -8,9 +8,10 @@
 
 #define DEBUG
 
-void CheckCollision(game_state* GameState, entity* Entity)
+void CheckCollision(game_state* GameState, entity* Entity, collision_info* CollisionInfo)
 {
     Entity->IsColliding = false;
+    
     if(!Entity->IsKinematic)
     {
         Entity->CollisionAABB.Center = glm::vec2(Entity->Position.x + Entity->Velocity.x, Entity->Position.y + Entity->Velocity.y);
@@ -20,7 +21,7 @@ void CheckCollision(game_state* GameState, entity* Entity)
         {
             if(OtherEntityIndex != Entity->EntityIndex && !GameState->Entities[OtherEntityIndex].IsKinematic) {
                 collision_AABB Md = {};
-                MinkowskiDifference(&Entity->CollisionAABB, &GameState->Entities[OtherEntityIndex].CollisionAABB,&Md);
+                MinkowskiDifference(&Entity->CollisionAABB, &GameState->Entities[OtherEntityIndex].CollisionAABB, &Md);
                 if(Md.Min.x <= 0 &&
                    Md.Max.x >= 0 &&
                    Md.Min.y <= 0 &&
@@ -28,7 +29,49 @@ void CheckCollision(game_state* GameState, entity* Entity)
                 {
                     Entity->IsColliding = true;
                     GameState->Entities[OtherEntityIndex].IsColliding = true;
-                    Entity->CollisionAABB.Center = Entity->Position;
+                    
+                    //calculate what side is colliding
+                    auto OtherPosition = GameState->Entities[OtherEntityIndex].Position;
+                    auto Position = Entity->Position;
+                    
+                    if(OtherPosition.x < Position.x)
+                    {
+                        CollisionInfo->Side = Side_Left;
+                    }
+                    else if(OtherPosition.x >= Position.x)
+                    {
+                        CollisionInfo->Side = Side_Right;
+                    }
+                    else if(OtherPosition.y >= Position.y)
+                    {
+                        CollisionInfo->Side = Side_Top;
+                    }
+                    else
+                    {
+                        CollisionInfo->Side = Side_Bottom;
+                    }
+                    /*
+                    switch(CollisionInfo->Side)
+                    {
+                        case Side_Left:
+                        case Side_Right:
+                        {
+                            Entity->CollisionAABB.Center = glm::vec2(0, Entity->Position.y);
+                        }
+                        break;
+                        case Side_Top:
+                        case Side_Bottom:
+                        {
+                            Entity->CollisionAABB.Center = glm::vec2(Entity->Position.x, 0);
+                        }
+                        break;
+                        case Side_None:
+                        {
+                            Entity->CollisionAABB.Center = glm::vec2(Entity->Position.x, Entity->Position.y);
+                        }
+                        break;
+                    }
+                    */
                 } 
                 else
                 {
@@ -67,6 +110,7 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                 if (!GameState->Console.Open)
                 {
                     Entity->Velocity = glm::vec2(0,0);
+                    
                     //player movement
                     if (GetKey(Key_A, GameState))
                     {
@@ -99,33 +143,58 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                             PlayAnimation(Entity, "player_idle");
                     }
                     
-                    //Entity->CollisionAABB.Center = Entity->Position;
-                    CheckCollision(GameState,Entity);
-                    if(!Entity->IsColliding) {
+                    collision_info CollisionInfo;
+                    CheckCollision(GameState, Entity, &CollisionInfo);
+                    
+                    if(Entity->IsColliding)
+                    {
+                        switch(CollisionInfo.Side)
+                        {
+                            case Side_Left:
+                            case Side_Right:
+                            {
+                                Entity->Position.y += Entity->Velocity.y;
+                            }
+                            break;
+                            case Side_Top:
+                            case Side_Bottom:
+                            {
+                                Entity->Position.x += Entity->Velocity.x;
+                            }
+                            break;
+                            case Side_None:
+                            {
+                                Entity->Position.x += Entity->Velocity.x;
+                                Entity->Position.y += Entity->Velocity.y;
+                            }
+                            break;
+                        }
+                    }
+                    else
+                    {
                         Entity->Position.x += Entity->Velocity.x;
                         Entity->Position.y += Entity->Velocity.y;
                     }
                     
+                    //attacking
+                    if(!Entity->Player.IsAttacking && GetMouseButtonDown(Mouse_Left, GameState))
+                    {
+                        PlayAnimation(Entity, "player_attack");
+                        Entity->Player.IsAttacking = true;
+                    }
+                    
+                    if(Entity->CurrentAnimation)
+                        TickAnimation(&Entity->Animations[Entity->CurrentAnimation],DeltaTime);
+                    
+                    auto Direction = glm::vec2(pos.x, pos.y) - Entity->Position;
+                    Direction = glm::normalize(Direction);
+                    float Degrees = atan2(Direction.y, Direction.x);
+                    
+                    Entity->Rotation = glm::vec3(0, 0, Degrees + 1.37079633);
+                    
+                    if(!GameState->EditorUI.On)
+                        GameState->Camera.Center = glm::vec2(Entity->Position.x, Entity->Position.y);
                 }
-                
-                //attacking
-                if(!Entity->Player.IsAttacking && GetMouseButtonDown(Mouse_Left, GameState))
-                {
-                    PlayAnimation(Entity, "player_attack");
-                    Entity->Player.IsAttacking = true;
-                }
-                
-                if(Entity->CurrentAnimation)
-                    TickAnimation(&Entity->Animations[Entity->CurrentAnimation],DeltaTime);
-                
-                auto Direction = glm::vec2(pos.x, pos.y) - Entity->Position;
-                Direction = glm::normalize(Direction);
-                float Degrees = atan2(Direction.y, Direction.x);
-                
-                Entity->Rotation = glm::vec3(0, 0, Degrees + 1.37079633);
-                
-                if(!GameState->EditorUI.On)
-                    GameState->Camera.Center = glm::vec2(Entity->Position.x, Entity->Position.y);
             }
             break;
             case Entity_Crosshair:
@@ -141,8 +210,11 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
             {
                 Entity->Velocity = glm::vec2(0,0);
                 
-                CheckCollision(GameState,Entity);
-                if(!Entity->IsColliding) {
+                collision_info CollisionInfo;
+                CheckCollision(GameState, Entity, &CollisionInfo);
+                
+                if(!Entity->IsColliding)
+                {
                     Entity->Position.x += Entity->Velocity.x;
                     Entity->Position.y += Entity->Velocity.y;
                 }
@@ -150,9 +222,9 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
             break;
             case Entity_Barrel:
             {
-                CheckCollision(GameState,Entity);
+                collision_info CollisionInfo;
+                CheckCollision(GameState, Entity, &CollisionInfo);
             }
-            break;
         }
     }
     
