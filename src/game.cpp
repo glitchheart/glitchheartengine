@@ -118,11 +118,11 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                 if(Entity->CurrentAnimation)
                     TickAnimation(&Entity->Animations[Entity->CurrentAnimation],DeltaTime);
                 
-                auto Direction = glm::vec2(pos.x, pos.y) - Entity->Position + glm::vec2(0.5, 0.5);
+                auto Direction = glm::vec2(pos.x, pos.y) - Entity->Position;
                 Direction = glm::normalize(Direction);
                 float Degrees = atan2(Direction.y, Direction.x);
                 
-                Entity->Rotation = glm::vec3(0, 0, Degrees + 0.05);
+                Entity->Rotation = glm::vec3(0, 0, Degrees + 1.37079633);
                 
                 if(!GameState->EditorUI.On)
                     GameState->Camera.Center = glm::vec2(Entity->Position.x, Entity->Position.y);

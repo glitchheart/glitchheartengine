@@ -7,7 +7,7 @@ static void GenerateRoom(real32 X, real32 Y, uint32 Width, uint32 Height, room *
     
     Room->Data = (tile_data**)malloc(Width * sizeof(tile_data*));
     
-    for (int Index = 0; Index < Width; Index++) 
+    for (uint32 Index = 0; Index < Width; Index++) 
     {
         Room->Data[Index] = (tile_data*)malloc(Height * sizeof(tile_data));
     }
