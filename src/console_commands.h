@@ -27,11 +27,11 @@ static char* Exit(game_state* GameState, char* Arguments)
     //             This should probably be in platform code anyway?
     //             Doesn't really make sense to have it in game code
     //CleanupSound(GameState);
-    
+    /*
     alcMakeContextCurrent(0);
     alcDestroyContext(GameState->SoundManager.Context);
     alcCloseDevice(GameState->SoundManager.Device);
-    
+    */
     glfwDestroyWindow(GameState->RenderState.Window);
     glfwTerminate();
     exit(EXIT_SUCCESS);

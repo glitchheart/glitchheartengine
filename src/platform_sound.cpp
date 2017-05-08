@@ -1,4 +1,4 @@
-static void LoadWavFile(const char *Filename, loaded_sound *LoadedSound)
+static void LoadWavFile(const char *Filename, sound_effect *LoadedSound)
 {
     FILE *SoundFile = 0;
     wave_format WaveFormat;
@@ -57,38 +57,38 @@ static void LoadWavFile(const char *Filename, loaded_sound *LoadedSound)
             HandleError(__FILE__, __LINE__, "Error loading Wave data");
         }
         
-        LoadedSound->Size = WaveData.SubChunk2Size;
-        LoadedSound->Frequency = WaveFormat.SampleRate;
+        ALsizei Size = WaveData.SubChunk2Size;
+        ALsizei Frequency = WaveFormat.SampleRate;
+        ALenum Format = 0;
         
         if (WaveFormat.NumChannels == 1)
         {
             if (WaveFormat.BitsPerSample == 8)
             {
-                LoadedSound->Format = AL_FORMAT_MONO8;
+                Format = AL_FORMAT_MONO8;
             }
             else if (WaveFormat.BitsPerSample == 16)
             {
-                LoadedSound->Format = AL_FORMAT_MONO16;
+                Format = AL_FORMAT_MONO16;
             }
         }
         else if (WaveFormat.NumChannels == 2)
         {
             if (WaveFormat.BitsPerSample == 8)
             {
-                LoadedSound->Format = AL_FORMAT_STEREO8;
+                Format = AL_FORMAT_STEREO8;
             }
             else if (WaveFormat.BitsPerSample == 16)
             {
-                LoadedSound->Format = AL_FORMAT_STEREO16;
+                Format = AL_FORMAT_STEREO16;
             }
         }
         
         alGenBuffers(1, &LoadedSound->Buffer);
-        alBufferData(LoadedSound->Buffer, LoadedSound->Format, (void *)Data, LoadedSound->Size, LoadedSound->Frequency);
+        alBufferData(LoadedSound->Buffer, Format, (void*)Data, Size, Frequency);
         fclose(SoundFile);
-        LoadedSound->Data = Data;
         
-        printf("Samplerate: %d, Size: %d\n", LoadedSound->Frequency, LoadedSound->Size);
+        printf("Samplerate: %d, Size: %d\n", Frequency, Size);
     }
 }
 
@@ -101,12 +101,12 @@ static void ResetSoundQueue(sound_manager *SoundManager)
     SoundManager->SoundQueue = SoundQueue;
 }
 
-static void InitAudio(sound_manager *SoundManager)
+static void InitAudio(sound_device *SoundDevice)
 {
-    SoundManager->Device = alcOpenDevice(0);
-    if (!SoundManager->Device)
+    SoundDevice->Device = alcOpenDevice(0);
+    if (!SoundDevice->Device)
     {
-        SoundManager->Device = 0;
+        SoundDevice->Device = 0;
         HandleError(__FILE__, __LINE__, "Could not load Sound device");
         exit(EXIT_FAILURE);
     }
@@ -121,21 +121,20 @@ static void InitAudio(sound_manager *SoundManager)
         exit(EXIT_FAILURE);
     }
     
-    SoundManager->Context = alcCreateContext(SoundManager->Device, 0);
-    alcMakeContextCurrent(SoundManager->Context);
-    if (!SoundManager->Context)
+    SoundDevice->Context = alcCreateContext(SoundDevice->Device, 0);
+    alcMakeContextCurrent(SoundDevice->Context);
+    if (!SoundDevice->Context)
     {
         HandleError(__FILE__, __LINE__, "Could not set sound context");
-        SoundManager->Context = 0;
+        SoundDevice->Context = 0;
     }
     
     alListenerfv(AL_ORIENTATION, ListenerOrientation);
-    ResetSoundQueue(SoundManager);
     
-    SoundManager->IsInitialized = SoundManager->Device && SoundManager->Context;
+    SoundDevice->IsInitialized = SoundDevice->Device && SoundDevice->Context;
 }
 
-static void LoadSound(const char *filename, sound_manager *SoundManager, sound_info SoundInfo, loaded_sound *LoadedSound)
+static void LoadSound(const char *filename,  sound_info SoundInfo, sound_effect *LoadedSound)
 {
     alGenSources((ALuint)1, &LoadedSound->Source);
     LoadWavFile(filename, LoadedSound);
@@ -154,21 +153,21 @@ static void LoadSounds(sound_manager *SoundManager)
     memcpy(DefaultSoundInfo.Velocity, Velocity, 3);
     DefaultSoundInfo.Loop = AL_FALSE;
     
-    LoadSound("../assets/audio/Deadliners Track 1.wav", SoundManager, DefaultSoundInfo, &SoundManager->Track01);
-    LoadSound("../assets/audio/Countdown_1.wav", SoundManager, DefaultSoundInfo, &SoundManager->Effect01);
-    LoadSound("../assets/audio/mainmenu.wav", SoundManager, DefaultSoundInfo,  &SoundManager->MainMenuTrack);
+    LoadSound("../assets/audio/Deadliners Track 1.wav", DefaultSoundInfo, &SoundManager->Track01);
+    LoadSound("../assets/audio/Countdown_1.wav", DefaultSoundInfo, &SoundManager->Effect01);
+    LoadSound("../assets/audio/mainmenu.wav", DefaultSoundInfo,  &SoundManager->MainMenuTrack);
     // // Add more sounds here if necessary
 }
 
-static void CleanupSound(game_state *GameState)
+static void CleanupSound(sound_device* SoundDevice, sound_manager* SoundManager)
 {
-    alDeleteSources(1, &GameState->SoundManager.Track01.Source);
-    alDeleteBuffers(1, &GameState->SoundManager.Track01.Buffer);
+    alDeleteSources(1, &SoundManager->Track01.Source);
+    alDeleteBuffers(1, &SoundManager->Track01.Buffer);
     
-    GameState->SoundManager.Device = alcGetContextsDevice(GameState->SoundManager.Context);
+    SoundDevice->Device = alcGetContextsDevice(SoundDevice->Context);
     alcMakeContextCurrent(0);
-    alcDestroyContext(GameState->SoundManager.Context);
-    alcCloseDevice(GameState->SoundManager.Device);
+    alcDestroyContext(SoundDevice->Context);
+    alcCloseDevice(SoundDevice->Device);
 }
 
 static void PlaySound(sound_effect *SoundEffect)

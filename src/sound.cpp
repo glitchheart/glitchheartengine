@@ -1,4 +1,4 @@
-void PlaySoundEffect(game_state *GameState, loaded_sound *LoadedSound)
+void PlaySoundEffect(game_state *GameState, sound_effect* LoadedSound)
 {
     sound_effect SoundEffect = {};
     SoundEffect.Buffer = LoadedSound->Buffer;
@@ -8,7 +8,7 @@ void PlaySoundEffect(game_state *GameState, loaded_sound *LoadedSound)
     GameState->SoundManager.SoundQueue.Sounds[GameState->SoundManager.SoundQueue.SoundCount++] = SoundEffect;
 }
 
-void PlaySoundEffectOnce(game_state *GameState, loaded_sound *LoadedSound)
+void PlaySoundEffectOnce(game_state *GameState, sound_effect* LoadedSound)
 {
     sound_effect SoundEffect = {};
     SoundEffect.PlayOnce = true;
@@ -19,7 +19,7 @@ void PlaySoundEffectOnce(game_state *GameState, loaded_sound *LoadedSound)
     GameState->SoundManager.SoundQueue.Sounds[GameState->SoundManager.SoundQueue.SoundCount++] = SoundEffect;
 }
 
-void StopSoundEffect(game_state *GameState, loaded_sound *LoadedSound)
+void StopSoundEffect(game_state *GameState, sound_effect* LoadedSound)
 {
     sound_effect SoundEffect = {};
     SoundEffect.PlayOnce = true;
@@ -30,7 +30,7 @@ void StopSoundEffect(game_state *GameState, loaded_sound *LoadedSound)
     GameState->SoundManager.SoundQueue.StoppedSounds[GameState->SoundManager.SoundQueue.StoppedSoundCount++] = SoundEffect;
 }
 
-void PauseSoundEffect(game_state *GameState, loaded_sound *LoadedSound)
+void PauseSoundEffect(game_state *GameState, sound_effect* LoadedSound)
 {
     sound_effect SoundEffect = {};
     SoundEffect.PlayOnce = true;
