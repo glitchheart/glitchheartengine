@@ -31,47 +31,30 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
                     GameState->Entities[OtherEntityIndex].IsColliding = true;
                     
                     //calculate what side is colliding
-                    auto OtherPosition = GameState->Entities[OtherEntityIndex].Position;
-                    auto Position = Entity->Position;
+                    auto OtherPosition = GameState->Entities[OtherEntityIndex].CollisionAABB.Center;
+                    auto OtherExtents = GameState->Entities[OtherEntityIndex].CollisionAABB.Extents;
+                    auto Position = Entity->CollisionAABB.Center;
+                    auto Extents = Entity->CollisionAABB.Extents;
                     
-                    if(OtherPosition.x < Position.x)
+                    // NOTE(niels): This offset helps, but breaks a bunch of other stuff such as walking through walls...
+                    real32 Offset = 0.0030f;
+                    
+                    if(OtherPosition.x + OtherExtents.x - Offset < Position.x - Extents.x + Offset)
                     {
                         CollisionInfo->Side = Side_Left;
                     }
-                    else if(OtherPosition.x >= Position.x)
+                    else if(OtherPosition.x - OtherExtents.x + Offset >= Position.x + Extents.x - Offset)
                     {
                         CollisionInfo->Side = Side_Right;
                     }
-                    else if(OtherPosition.y >= Position.y)
+                    else if(OtherPosition.y - OtherExtents.y + Offset>= Position.y + Extents.y - Offset)
                     {
                         CollisionInfo->Side = Side_Top;
                     }
-                    else
+                    else if(OtherPosition.y + OtherExtents.y -Offset < Position.y - Extents.y + Offset)
                     {
                         CollisionInfo->Side = Side_Bottom;
                     }
-                    /*
-                    switch(CollisionInfo->Side)
-                    {
-                        case Side_Left:
-                        case Side_Right:
-                        {
-                            Entity->CollisionAABB.Center = glm::vec2(0, Entity->Position.y);
-                        }
-                        break;
-                        case Side_Top:
-                        case Side_Bottom:
-                        {
-                            Entity->CollisionAABB.Center = glm::vec2(Entity->Position.x, 0);
-                        }
-                        break;
-                        case Side_None:
-                        {
-                            Entity->CollisionAABB.Center = glm::vec2(Entity->Position.x, Entity->Position.y);
-                        }
-                        break;
-                    }
-                    */
                 } 
                 else
                 {
@@ -153,12 +136,14 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                             case Side_Left:
                             case Side_Right:
                             {
+                                printf("Leftright\n");
                                 Entity->Position.y += Entity->Velocity.y;
                             }
                             break;
                             case Side_Top:
                             case Side_Bottom:
                             {
+                                printf("Topbottom\n");
                                 Entity->Position.x += Entity->Velocity.x;
                             }
                             break;
