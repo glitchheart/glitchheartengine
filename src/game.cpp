@@ -37,7 +37,7 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
                     auto Extents = Entity->CollisionAABB.Extents;
                     
                     // NOTE(niels): This offset helps, but breaks a bunch of other stuff such as walking through walls...
-                    real32 Offset = 0.0030f;
+                    real32 Offset = 0.01f;
                     
                     if(OtherPosition.x + OtherExtents.x - Offset < Position.x - Extents.x + Offset)
                     {
@@ -136,14 +136,12 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                             case Side_Left:
                             case Side_Right:
                             {
-                                printf("Leftright\n");
                                 Entity->Position.y += Entity->Velocity.y;
                             }
                             break;
                             case Side_Top:
                             case Side_Bottom:
                             {
-                                printf("Topbottom\n");
                                 Entity->Position.x += Entity->Velocity.x;
                             }
                             break;
