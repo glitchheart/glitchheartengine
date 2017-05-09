@@ -158,7 +158,7 @@ void SpawnMillionBarrels(game_state* GameState)
             BarrelRenderEntity.TextureHandle = LoadTexture("../assets/textures/barrel_nigga.png");
             Barrel.RenderEntity = BarrelRenderEntity;
             Barrel.Rotation = glm::vec3(0, 0, 0);
-            Barrel.Position = glm::vec2(2 + i,j);
+            Barrel.Position = glm::vec2(2 + i,2 + j);
             Barrel.Scale = glm::vec3(2, 2, 0);
             Barrel.Velocity = glm::vec2(0,0);
             //Barrel.IsKinematic = true;
