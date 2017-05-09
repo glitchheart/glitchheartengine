@@ -36,24 +36,34 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
                     auto Position = Entity->CollisionAABB.Center;
                     auto Extents = Entity->CollisionAABB.Extents;
                     
-                    // NOTE(niels): This offset helps, but breaks a bunch of other stuff such as walking through walls...
-                    real32 Offset = 0.01f;
+                    real32 Left = Position.x - Extents.x;
+                    real32 Right = Position.x + Extents.x;
+                    real32 Top = Position.y - Extents.y;
+                    real32 Bottom = Position.y + Extents.y;
+                    real32 OtherLeft = OtherPosition.x - OtherExtents.x;
+                    real32 OtherRight = OtherPosition.x + OtherExtents.x;
+                    real32 OtherTop = OtherPosition.y - OtherExtents.y;
+                    real32 OtherBottom = OtherPosition.y + OtherExtents.y;
                     
-                    if(OtherPosition.x + OtherExtents.x - Offset < Position.x - Extents.x + Offset)
+                    if(Right > OtherLeft && Left < OtherLeft && Right-OtherLeft < Bottom - OtherTop && Right - OtherLeft < OtherBottom - Top)
                     {
-                        CollisionInfo->Side = Side_Left;
+                        //Player collides from left side of the object
+                        CollisionInfo->Side = CollisionInfo->Side | Side_Left;
                     }
-                    else if(OtherPosition.x - OtherExtents.x + Offset >= Position.x + Extents.x - Offset)
+                    else if(Left < OtherRight && Right > OtherRight && OtherRight-Left < Bottom-OtherTop && OtherRight-Left < OtherBottom-Top)
                     {
-                        CollisionInfo->Side = Side_Right;
+                        //Player collides from right side of the object
+                        CollisionInfo->Side = CollisionInfo->Side | Side_Right;
                     }
-                    else if(OtherPosition.y - OtherExtents.y + Offset>= Position.y + Extents.y - Offset)
+                    else if(Bottom > OtherTop && Top < OtherTop)
                     {
-                        CollisionInfo->Side = Side_Top;
+                        //Player collides from top side of the object
+                        CollisionInfo->Side = CollisionInfo->Side | Side_Top;
                     }
-                    else if(OtherPosition.y + OtherExtents.y -Offset < Position.y - Extents.y + Offset)
+                    else if(Top < OtherBottom && Bottom > OtherBottom)
                     {
-                        CollisionInfo->Side = Side_Bottom;
+                        //Player collides from bottom side of the object
+                        CollisionInfo->Side = CollisionInfo->Side | Side_Bottom;
                     }
                 } 
                 else
@@ -131,26 +141,18 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                     
                     if(Entity->IsColliding)
                     {
-                        switch(CollisionInfo.Side)
+                        if(CollisionInfo.Side & Side_Left || CollisionInfo.Side & Side_Right)
                         {
-                            case Side_Left:
-                            case Side_Right:
-                            {
-                                Entity->Position.y += Entity->Velocity.y;
-                            }
-                            break;
-                            case Side_Top:
-                            case Side_Bottom:
-                            {
-                                Entity->Position.x += Entity->Velocity.x;
-                            }
-                            break;
-                            case Side_None:
-                            {
-                                Entity->Position.x += Entity->Velocity.x;
-                                Entity->Position.y += Entity->Velocity.y;
-                            }
-                            break;
+                            Entity->Position.y += Entity->Velocity.y;
+                        }
+                        else if(CollisionInfo.Side & Side_Top || CollisionInfo.Side & Side_Bottom)
+                        {
+                            Entity->Position.x += Entity->Velocity.x;
+                        }
+                        else
+                        {
+                            Entity->Position.x += Entity->Velocity.x;
+                            Entity->Position.y += Entity->Velocity.y;
                         }
                     }
                     else

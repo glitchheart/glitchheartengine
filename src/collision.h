@@ -3,8 +3,15 @@
 
 enum Collision_Side
 {
-    Side_None, Side_Top, Side_Bottom, Side_Left, Side_Right
+    Side_None = 1 << 0, 
+    Side_Top = 1 << 1, 
+    Side_Bottom = 1 << 2, 
+    Side_Left = 1 << 3, 
+    Side_Right = 1 << 4
 };
+
+inline Collision_Side operator|(Collision_Side a, Collision_Side b)
+{return static_cast<Collision_Side>(static_cast<int>(a) | static_cast<int>(b));}
 
 struct collision_info
 {
