@@ -65,7 +65,9 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
                         //Player collides from bottom side of the object
                         CollisionInfo->Side = CollisionInfo->Side | Side_Bottom;
                     }*/
-                    if(Entity->EntityIndex == 0) {
+                    
+                    if(Entity->EntityIndex == 0) 
+                    {
                         AABBMin(&Md);
                         AABBMax(&Md);
                         AABBSize(&Md);
@@ -77,11 +79,20 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
                         
                         if(glm::abs(PenetrationVector.x) > glm::abs(PenetrationVector.y))
                         {
-                            PenetrationVector = glm::vec2(PenetrationVector.x,0);
+                            PenetrationVector = glm::vec2(PenetrationVector.x, 0);
+                            if(PenetrationVector.x < 0)
+                                CollisionInfo->Side = CollisionInfo->Side | Side_Left;
+                            else
+                                CollisionInfo->Side = CollisionInfo->Side | Side_Right;
                         }
                         else
                         {
-                            PenetrationVector = glm::vec2(0,PenetrationVector.y);
+                            PenetrationVector = glm::vec2(0, PenetrationVector.y);
+                            
+                            if(PenetrationVector.y < 0)
+                                CollisionInfo->Side = CollisionInfo->Side | Side_Bottom;
+                            else
+                                CollisionInfo->Side = CollisionInfo->Side | Side_Top;
                         }
                         
                         Entity->Position += glm::vec2(PenetrationVector.x/Divider,PenetrationVector.y/Divider);
