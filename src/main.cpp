@@ -155,7 +155,7 @@ void SpawnMillionBarrels(game_state* GameState)
             
             render_entity BarrelRenderEntity = { };
             BarrelRenderEntity.ShaderIndex = Shader_Texture;
-            BarrelRenderEntity.TextureHandle = LoadTexture("../assets/textures/barrel_nigga.png");
+            BarrelRenderEntity.TextureHandle = LoadTexture("../assets/textures/barrel.png");
             Barrel.RenderEntity = BarrelRenderEntity;
             Barrel.Rotation = glm::vec3(0, 0, 0);
             Barrel.Position = glm::vec2(2 + i,2 + j);
@@ -250,26 +250,25 @@ int main(void)
     Player.Type = Entity_Player;
     Player.Player.WalkingSpeed = 10.0f;
     
-    
-    
     animation IdleAnimation = {};
-    LoadAnimationFromFile("../assets/animations/player_anim_idle.pownim", &IdleAnimation, &GameState.RenderState);
+    LoadAnimationFromFile("../assets/animations/player_anim_idle_new.pownim", &IdleAnimation, &GameState.RenderState);
     Player.Animations.insert(std::pair<char*, animation>(IdleAnimation.Name, IdleAnimation));
     
     animation WalkingAnimation = {};
-    LoadAnimationFromFile("../assets/animations/player_anim_walk.pownim", &WalkingAnimation, &GameState.RenderState);
+    LoadAnimationFromFile("../assets/animations/player_anim_walk_new.pownim", &WalkingAnimation, &GameState.RenderState);
     Player.Animations.insert(std::pair<char*, animation>(WalkingAnimation.Name, WalkingAnimation));
     
     animation AttackingAnimation = {};
-    LoadAnimationFromFile("../assets/animations/player_anim_attack.pownim", &AttackingAnimation, &GameState.RenderState);
+    LoadAnimationFromFile("../assets/animations/player_anim_attack_new.pownim", &AttackingAnimation, &GameState.RenderState);
     Player.Animations.insert(std::pair<char*, animation>(AttackingAnimation.Name, AttackingAnimation));
     
     render_entity PlayerRenderEntity = { };
     PlayerRenderEntity.ShaderIndex = Shader_SpriteSheetShader;
-    PlayerRenderEntity.TextureHandle = LoadTexture("../assets/textures/player.png");
+    
+    PlayerRenderEntity.TextureHandle = LoadTexture("../assets/textures/new_player.png");
     
     Player.RenderEntity = PlayerRenderEntity;
-    Player.Rotation = glm::vec3(0, 0, 0.3f);
+    Player.Rotation = glm::vec3(0, 0, 0);
     Player.Scale = glm::vec3(2, 2, 0);
     Player.Velocity = glm::vec2(0,0);
     

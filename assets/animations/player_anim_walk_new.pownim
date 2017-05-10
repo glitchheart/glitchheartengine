@@ -1,12 +1,19 @@
 name player_walk
 type sprite
-framecount 1
+framecount 8
 loop 1
 timeperframe 0.05
-rows 1
+rows 8
 columns 1
 frames
 {0.0,0.0}
+{0.125,0.0}
+{0.250,0.0}
+{0.375,0.0}
+{0.5,0.0}
+{0.625,0.0}
+{0.750,0.0}
+{0.875,0.0}
 texturepath ../assets/textures/spritesheets/new_player.png
 
 

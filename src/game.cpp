@@ -44,8 +44,8 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
                         glm::vec2 PenetrationVector;
                         ClosestPointsOnBoundsToPoint(&Md,glm::vec2(0,0),&PenetrationVector);
                         
-                        real32 Divider = 0.5f;
-                        printf("Penetration vector: (%f,%f)\n",PenetrationVector.x/Divider,PenetrationVector.y/Divider);
+                        real32 Divider = 1.0f;
+                        //printf("Penetration vector: (%f,%f)\n",PenetrationVector.x/Divider,PenetrationVector.y/Divider);
                         
                         if(glm::abs(PenetrationVector.x) > glm::abs(PenetrationVector.y))
                         {
@@ -112,10 +112,12 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                     if (GetKey(Key_A, GameState))
                     {
                         Entity->Velocity.x = -Entity->Player.WalkingSpeed * (real32)DeltaTime;
+                        Entity->RenderEntity.IsFlipped = true;
                     }
                     else if (GetKey(Key_D, GameState))
                     {
                         Entity->Velocity.x = Entity->Player.WalkingSpeed * (real32)DeltaTime;
+                        Entity->RenderEntity.IsFlipped = false;
                     }
                     
                     if (GetKey(Key_W, GameState))
@@ -168,6 +170,7 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                         Entity->Position.y += Entity->Velocity.y;
                     }
                     */
+                    
                     //attacking
                     if(!Entity->Player.IsAttacking && GetMouseButtonDown(Mouse_Left, GameState))
                     {
@@ -181,8 +184,6 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                     auto Direction = glm::vec2(pos.x, pos.y) - Entity->Position;
                     Direction = glm::normalize(Direction);
                     float Degrees = atan2(Direction.y, Direction.x);
-                    
-                    Entity->Rotation = glm::vec3(0, 0, Degrees + 1.37079633);
                     
                     if(!GameState->EditorUI.On)
                         GameState->Camera.Center = glm::vec2(Entity->Position.x, Entity->Position.y);
