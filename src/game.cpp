@@ -14,7 +14,7 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
     
     if(!Entity->IsKinematic)
     {
-        Entity->CollisionAABB.Center = glm::vec2(Entity->Position.x + Entity->Velocity.x, Entity->Position.y + Entity->Velocity.y);
+        Entity->CollisionAABB.Center = glm::vec2(Entity->Position.x + Entity->CollisionAABB.Extents.x + Entity->Velocity.x, Entity->Position.y + Entity->CollisionAABB.Extents.y + Entity->Velocity.y);
         for(uint32 OtherEntityIndex = 0;
             OtherEntityIndex < GameState->EntityCount;
             OtherEntityIndex++)
@@ -35,36 +35,6 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
                     auto OtherExtents = GameState->Entities[OtherEntityIndex].CollisionAABB.Extents;
                     auto Position = Entity->CollisionAABB.Center;
                     auto Extents = Entity->CollisionAABB.Extents;
-                    /*
-                    real32 Left = Position.x - Extents.x;
-                    real32 Right = Position.x + Extents.x;
-                    real32 Top = Position.y - Extents.y;
-                    real32 Bottom = Position.y + Extents.y;
-                    real32 OtherLeft = OtherPosition.x - OtherExtents.x;
-                    real32 OtherRight = OtherPosition.x + OtherExtents.x;
-                    real32 OtherTop = OtherPosition.y - OtherExtents.y;
-                    real32 OtherBottom = OtherPosition.y + OtherExtents.y;
-                    
-                    if(Right > OtherLeft && Left < OtherLeft && Right-OtherLeft < Bottom - OtherTop && Right - OtherLeft < OtherBottom - Top)
-                    {
-                        //Player collides from left side of the object
-                        CollisionInfo->Side = CollisionInfo->Side | Side_Left;
-                    }
-                    else if(Left < OtherRight && Right > OtherRight && OtherRight-Left < Bottom-OtherTop && OtherRight-Left < OtherBottom-Top)
-                    {
-                        //Player collides from right side of the object
-                        CollisionInfo->Side = CollisionInfo->Side | Side_Right;
-                    }
-                    else if(Bottom > OtherTop && Top < OtherTop)
-                    {
-                        //Player collides from top side of the object
-                        CollisionInfo->Side = CollisionInfo->Side | Side_Top;
-                    }
-                    else if(Top < OtherBottom && Bottom > OtherBottom)
-                    {
-                        //Player collides from bottom side of the object
-                        CollisionInfo->Side = CollisionInfo->Side | Side_Bottom;
-                    }*/
                     
                     if(Entity->EntityIndex == 0) 
                     {
@@ -96,7 +66,7 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
                         }
                         
                         Entity->Position += glm::vec2(PenetrationVector.x/Divider,PenetrationVector.y/Divider);
-                        Entity->CollisionAABB.Center = Entity->Position;
+                        Entity->CollisionAABB.Center = glm::vec2(Entity->Position.x + Entity->CollisionAABB.Extents.x, Entity->Position.y + Entity->CollisionAABB.Extents.y);
                         Entity->Velocity = glm::vec2(0,0);
                     } 
                 }
@@ -170,9 +140,13 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                             PlayAnimation(Entity, "player_idle");
                     }
                     
+                    Entity->Position.x += Entity->Velocity.x;
+                    Entity->Position.y += Entity->Velocity.y;
+                    
                     collision_info CollisionInfo;
                     CheckCollision(GameState, Entity, &CollisionInfo);
                     
+                    /*
                     if(Entity->IsColliding)
                     {
                         if(CollisionInfo.Side & Side_Left || CollisionInfo.Side & Side_Right)
@@ -182,10 +156,10 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                         else if(CollisionInfo.Side & Side_Top || CollisionInfo.Side & Side_Bottom)
                         {
                             Entity->Position.x += Entity->Velocity.x;
-                        } else
+                        } 
+                        else
                         {
-                            Entity->Position.x += Entity->Velocity.x;
-                            Entity->Position.y += Entity->Velocity.y;
+                        
                         }
                     }
                     else
@@ -193,7 +167,7 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                         Entity->Position.x += Entity->Velocity.x;
                         Entity->Position.y += Entity->Velocity.y;
                     }
-                    
+                    */
                     //attacking
                     if(!Entity->Player.IsAttacking && GetMouseButtonDown(Mouse_Left, GameState))
                     {
@@ -283,11 +257,6 @@ extern "C" UPDATE(Update)
     }
     
 #endif
-    
-    if(GetKeyDown(Key_Enter, GameState))
-    {
-        PlaySoundEffectOnce(GameState, &GameState->SoundManager.Track01);
-    }
     
     if (GetKeyDown(Key_Escape, GameState) && !GameState->Console.Open)
     {
