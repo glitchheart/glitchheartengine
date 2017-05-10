@@ -34,9 +34,7 @@ static void MinkowskiDifference(collision_AABB* Coll, collision_AABB* Other, col
 }
 
 static void ClosestPointsOnBoundsToPoint(collision_AABB* Coll, glm::vec2 Point, glm::vec2* Out)
-{
-    printf("ColliderXY: (%f,%f)\n",Coll->Center.x,Coll->Center.y);
-    
+{  
     real32 MinDist = glm::abs(Point.x - Coll->Min.x);
     
     *Out = glm::vec2(Coll->Min.x, Point.y);

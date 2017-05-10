@@ -42,9 +42,9 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
                         AABBMax(&Md);
                         AABBSize(&Md);
                         glm::vec2 PenetrationVector;
-                        ClosestPointsOnBoundsToPoint(&Md,OtherPosition,&PenetrationVector);
+                        ClosestPointsOnBoundsToPoint(&Md,glm::vec2(0,0),&PenetrationVector);
                         
-                        real32 Divider = 100;
+                        real32 Divider = 1;
                         printf("Penetration vector: (%f,%f)\n",PenetrationVector.x/Divider,PenetrationVector.y/Divider);
                         
                         if(glm::abs(PenetrationVector.x) > glm::abs(PenetrationVector.y))
