@@ -14,12 +14,14 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
     
     if(!Entity->IsKinematic)
     {
-        Entity->CollisionAABB.Center = glm::vec2(Entity->Position.x + Entity->CollisionAABB.Extents.x + Entity->Velocity.x, Entity->Position.y + Entity->CollisionAABB.Extents.y + Entity->Velocity.y);
+        Entity->CollisionAABB.Center = glm::vec2(Entity->Position.x + Entity->Center.x * Entity->Scale.x + Entity->Velocity.x, Entity->Position.y + Entity->Center.y * Entity->Scale.y + Entity->Velocity.y);
         for(uint32 OtherEntityIndex = 0;
             OtherEntityIndex < GameState->EntityCount;
             OtherEntityIndex++)
         {
-            if(OtherEntityIndex != Entity->EntityIndex && !GameState->Entities[OtherEntityIndex].IsKinematic) {
+            entity OtherEntity = GameState->Entities[OtherEntityIndex];
+            
+            if(!(OtherEntity.Layer & Entity->IgnoreLayers) && OtherEntityIndex != Entity->EntityIndex && !GameState->Entities[OtherEntityIndex].IsKinematic) {
                 collision_AABB Md = {};
                 MinkowskiDifference(&GameState->Entities[OtherEntityIndex].CollisionAABB,&Entity->CollisionAABB, &Md);
                 if(Md.Min.x <= 0 &&
