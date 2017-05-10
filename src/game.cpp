@@ -21,7 +21,7 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
         {
             if(OtherEntityIndex != Entity->EntityIndex && !GameState->Entities[OtherEntityIndex].IsKinematic) {
                 collision_AABB Md = {};
-                MinkowskiDifference(&Entity->CollisionAABB, &GameState->Entities[OtherEntityIndex].CollisionAABB, &Md);
+                MinkowskiDifference(&GameState->Entities[OtherEntityIndex].CollisionAABB,&Entity->CollisionAABB, &Md);
                 if(Md.Min.x <= 0 &&
                    Md.Max.x >= 0 &&
                    Md.Min.y <= 0 &&
@@ -70,10 +70,19 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
                         AABBMax(&Md);
                         AABBSize(&Md);
                         glm::vec2 PenetrationVector;
-                        ClosestPointsOnBoundsToPoint(&Md,Md.Center,&PenetrationVector);
+                        ClosestPointsOnBoundsToPoint(&Md,OtherPosition,&PenetrationVector);
                         
                         real32 Divider = 100;
                         printf("Penetration vector: (%f,%f)\n",PenetrationVector.x/Divider,PenetrationVector.y/Divider);
+                        
+                        if(glm::abs(PenetrationVector.x) > glm::abs(PenetrationVector.y))
+                        {
+                            PenetrationVector = glm::vec2(PenetrationVector.x,0);
+                        }
+                        else
+                        {
+                            PenetrationVector = glm::vec2(0,PenetrationVector.y);
+                        }
                         
                         Entity->Position += glm::vec2(PenetrationVector.x/Divider,PenetrationVector.y/Divider);
                         Entity->CollisionAABB.Center = Entity->Position;
