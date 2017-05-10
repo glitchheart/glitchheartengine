@@ -1,6 +1,13 @@
 #ifndef ENTITY_H
 #define ENTITY_H
 
+enum Entity_Layer
+{
+    Layer_Player = 1 << 0,
+    Layer_Environment = 1 << 1,
+    Layer_Enemy = 1 << 2,
+};
+
 enum Entity_Enum
 {
     Entity_Player,
@@ -19,8 +26,12 @@ struct entity
     char* Name;
     uint32 EntityIndex;
     glm::vec2 Position;
+    glm::vec2 Center = glm::vec2(0.5, 0.5);
     glm::vec3 Rotation;
     glm::vec3 Scale = glm::vec3(1, 1, 1);
+    
+    Entity_Layer Layer;
+    Entity_Layer IgnoreLayers;
     
     char* CurrentAnimation;
     

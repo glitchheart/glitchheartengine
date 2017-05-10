@@ -581,8 +581,7 @@ static void RenderColliderWireframe(render_state* RenderState, entity* Entity, g
 {
     glm::mat4 Model(1.0f);
     
-    Model = glm::translate(Model, glm::vec3(Entity->Position.x + Entity->CollisionAABB.Extents.x, Entity->Position.y + Entity->CollisionAABB.Extents.y, 0.0f));
-    
+    Model = glm::translate(Model, glm::vec3(Entity->Position.x + Entity->Center.x * Entity->Scale.x - Entity->CollisionAABB.Extents.x, Entity->Position.y + Entity->Center.y * Entity->Scale.y - Entity->CollisionAABB.Extents.y, 0.0f));
     Model = glm::scale(Model, glm::vec3(Entity->CollisionAABB.Extents.x * 2, Entity->CollisionAABB.Extents.y * 2,1));
     
     glBindVertexArray(RenderState->WireframeVAO);

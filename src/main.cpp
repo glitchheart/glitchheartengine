@@ -152,7 +152,8 @@ void SpawnMillionBarrels(game_state* GameState)
             entity Barrel = {};
             Barrel.Name = "barrel";
             Barrel.Type = Entity_Barrel;
-            
+            Barrel.Layer = Layer_Environment;
+            Barrel.IgnoreLayers = Layer_Environment;
             render_entity BarrelRenderEntity = { };
             BarrelRenderEntity.ShaderIndex = Shader_Texture;
             BarrelRenderEntity.TextureHandle = LoadTexture("../assets/textures/barrel.png");
@@ -161,6 +162,7 @@ void SpawnMillionBarrels(game_state* GameState)
             Barrel.Position = glm::vec2(2 + i,2 + j);
             Barrel.Scale = glm::vec3(2, 2, 0);
             Barrel.Velocity = glm::vec2(0,0);
+            Barrel.Center = glm::vec2(0.5, 0.5);
             //Barrel.IsKinematic = true;
             
             collision_AABB CollisionAABB4;
@@ -274,9 +276,9 @@ int main(void)
     
     collision_AABB CollisionAABB;
     CollisionAABB.Center = Player.Position;
-    CollisionAABB.Extents = glm::vec2(0.5f,0.5f);
+    CollisionAABB.Extents = glm::vec2(0.5f,1.0f);
     Player.CollisionAABB = CollisionAABB;
-    
+    Player.Center = glm::vec2(0.5f, 0.5f);
     Player.EntityIndex = GameState.EntityCount;
     GameState.Entities[GameState.EntityCount++] = Player;
     
