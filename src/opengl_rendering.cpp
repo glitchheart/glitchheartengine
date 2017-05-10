@@ -610,7 +610,6 @@ static void RenderColliderWireframe(render_state* RenderState, entity* Entity, g
     glBindVertexArray(0);
 }
 
-
 static void RenderEntity(render_state *RenderState, entity &Entity, glm::mat4 ProjectionMatrix, glm::mat4 View)
 { 
     auto Shader = RenderState->Shaders[Entity.RenderEntity.ShaderIndex];
@@ -627,10 +626,19 @@ static void RenderEntity(render_state *RenderState, entity &Entity, glm::mat4 Pr
             Model = glm::translate(Model, glm::vec3(Entity.Position.x, Entity.Position.y, 0.0f));
             Model = glm::translate(Model, glm::vec3(1, 1, 0.0f)); 
             Model = glm::rotate(Model, Entity.Rotation.z, glm::vec3(0, 0, 1)); 
+            Model = glm::translate(Model, glm::vec3(-1, -1, 0.0f));
             
-            //NOTE(Daniel) 1.57079633 is 90 degrees in radians
-            Model = glm::translate(Model, glm::vec3(-1, -1, 0.0f)); 
-            Model = glm::scale(Model, Entity.Scale);
+            glm::vec3 Scale;
+            
+            if(Entity.RenderEntity.IsFlipped)
+            {
+                Scale = glm::vec3(-Entity.Scale.x, Entity.Scale.y, Entity.Scale.z);
+                Model = glm::translate(Model, glm::vec3(Entity.Scale.x, 0, 0));
+            }
+            else
+                Scale = Entity.Scale;
+            
+            Model = glm::scale(Model, Scale);
             
             if(Entity.CurrentAnimation) 
             {

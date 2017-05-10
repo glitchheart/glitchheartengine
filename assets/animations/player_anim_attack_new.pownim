@@ -1,7 +1,7 @@
-name player_walk
+name player_attack
 type sprite
 framecount 1
-loop 1
+loop 0
 timeperframe 0.05
 rows 1
 columns 1

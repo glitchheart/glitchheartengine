@@ -36,6 +36,7 @@ struct render_entity
 {
     uint32 TextureHandle;
     uint32 ShaderIndex;
+    bool32 IsFlipped;
 };
 
 struct shader
