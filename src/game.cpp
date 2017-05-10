@@ -35,7 +35,7 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
                     auto OtherExtents = GameState->Entities[OtherEntityIndex].CollisionAABB.Extents;
                     auto Position = Entity->CollisionAABB.Center;
                     auto Extents = Entity->CollisionAABB.Extents;
-                    
+                    /*
                     real32 Left = Position.x - Extents.x;
                     real32 Right = Position.x + Extents.x;
                     real32 Top = Position.y - Extents.y;
@@ -64,8 +64,22 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
                     {
                         //Player collides from bottom side of the object
                         CollisionInfo->Side = CollisionInfo->Side | Side_Bottom;
-                    }
-                } 
+                    }*/
+                    if(Entity->EntityIndex == 0) {
+                        AABBMin(&Md);
+                        AABBMax(&Md);
+                        AABBSize(&Md);
+                        glm::vec2 PenetrationVector;
+                        ClosestPointsOnBoundsToPoint(&Md,Md.Center,&PenetrationVector);
+                        
+                        real32 Divider = 100;
+                        printf("Penetration vector: (%f,%f)\n",PenetrationVector.x/Divider,PenetrationVector.y/Divider);
+                        
+                        Entity->Position += glm::vec2(PenetrationVector.x/Divider,PenetrationVector.y/Divider);
+                        Entity->CollisionAABB.Center = Entity->Position;
+                        Entity->Velocity = glm::vec2(0,0);
+                    } 
+                }
                 else
                 {
                     if(!Entity->IsColliding) 
@@ -148,8 +162,7 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                         else if(CollisionInfo.Side & Side_Top || CollisionInfo.Side & Side_Bottom)
                         {
                             Entity->Position.x += Entity->Velocity.x;
-                        }
-                        else
+                        } else
                         {
                             Entity->Position.x += Entity->Velocity.x;
                             Entity->Position.y += Entity->Velocity.y;

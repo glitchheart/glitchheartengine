@@ -44,7 +44,7 @@ static void ClosestPointsOnBoundsToPoint(collision_AABB* Coll, glm::vec2 Point, 
     }
     if(glm::abs(Coll->Max.y - Point.y) < MinDist)
     {
-        MinDist = glm::abs(Coll->Max.x - Point.y);
+        MinDist = glm::abs(Coll->Max.y - Point.y);
         *Out = glm::vec2(Point.x, Coll->Max.y);
     }
     if(glm::abs(Coll->Min.y - Point.y) < MinDist)

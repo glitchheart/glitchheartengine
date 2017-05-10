@@ -30,6 +30,7 @@ struct entity
     collision_AABB CollisionAABB;
     bool32 IsKinematic;
     bool32 IsColliding;
+    bool32 IsStatic; // For stuff that can't be moved by collision
     union
     {
         struct
