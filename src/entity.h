@@ -43,6 +43,7 @@ struct entity
     bool32 IsColliding;
     bool32 IsStatic; // For stuff that can't be moved by collision
     bool32 IsTrigger;
+    bool32 Pickup;
     union
     {
         struct
