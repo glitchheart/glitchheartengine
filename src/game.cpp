@@ -38,39 +38,40 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
                     auto Position = Entity->CollisionAABB.Center;
                     auto Extents = Entity->CollisionAABB.Extents;
                     
-                    if(Entity->EntityIndex == 0) 
+                    
+                    AABBMin(&Md);
+                    AABBMax(&Md);
+                    AABBSize(&Md);
+                    glm::vec2 PenetrationVector;
+                    ClosestPointsOnBoundsToPoint(&Md,glm::vec2(0,0),&PenetrationVector);
+                    
+                    real32 Divider = 0.8f;
+                    
+                    if(glm::abs(PenetrationVector.x) > glm::abs(PenetrationVector.y))
                     {
-                        AABBMin(&Md);
-                        AABBMax(&Md);
-                        AABBSize(&Md);
-                        glm::vec2 PenetrationVector;
-                        ClosestPointsOnBoundsToPoint(&Md,glm::vec2(0,0),&PenetrationVector);
-                        
-                        real32 Divider = 1.0f;
-                        //printf("Penetration vector: (%f,%f)\n",PenetrationVector.x/Divider,PenetrationVector.y/Divider);
-                        
-                        if(glm::abs(PenetrationVector.x) > glm::abs(PenetrationVector.y))
-                        {
-                            PenetrationVector = glm::vec2(PenetrationVector.x, 0);
-                            if(PenetrationVector.x < 0)
-                                CollisionInfo->Side = CollisionInfo->Side | Side_Left;
-                            else
-                                CollisionInfo->Side = CollisionInfo->Side | Side_Right;
-                        }
+                        PenetrationVector = glm::vec2(PenetrationVector.x, 0);
+                        if(PenetrationVector.x < 0)
+                            CollisionInfo->Side = CollisionInfo->Side | Side_Left;
                         else
-                        {
-                            PenetrationVector = glm::vec2(0, PenetrationVector.y);
-                            
-                            if(PenetrationVector.y < 0)
-                                CollisionInfo->Side = CollisionInfo->Side | Side_Bottom;
-                            else
-                                CollisionInfo->Side = CollisionInfo->Side | Side_Top;
-                        }
+                            CollisionInfo->Side = CollisionInfo->Side | Side_Right;
+                    }
+                    else
+                    {
+                        PenetrationVector = glm::vec2(0, PenetrationVector.y);
                         
+                        if(PenetrationVector.y < 0)
+                            CollisionInfo->Side = CollisionInfo->Side | Side_Bottom;
+                        else
+                            CollisionInfo->Side = CollisionInfo->Side | Side_Top;
+                    }
+                    
+                    if(!GameState->Entities[OtherEntityIndex].IsTrigger &&
+                       !Entity->IsTrigger)
+                    {
                         Entity->Position += glm::vec2(PenetrationVector.x/Divider,PenetrationVector.y/Divider);
                         Entity->CollisionAABB.Center = glm::vec2(Entity->Position.x + Entity->CollisionAABB.Extents.x, Entity->Position.y + Entity->CollisionAABB.Extents.y);
                         Entity->Velocity = glm::vec2(0,0);
-                    } 
+                    }
                 }
                 else
                 {
@@ -153,23 +154,23 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                     /*
                     if(Entity->IsColliding)
                     {
-                        if(CollisionInfo.Side & Side_Left || CollisionInfo.Side & Side_Right)
-                        {
-                            Entity->Position.y += Entity->Velocity.y;
-                        }
-                        else if(CollisionInfo.Side & Side_Top || CollisionInfo.Side & Side_Bottom)
-                        {
-                            Entity->Position.x += Entity->Velocity.x;
-                        } 
-                        else
-                        {
-                        
-                        }
+                    if(CollisionInfo.Side & Side_Left || CollisionInfo.Side & Side_Right)
+                    {
+                    Entity->Position.y += Entity->Velocity.y;
+                    }
+                    else if(CollisionInfo.Side & Side_Top || CollisionInfo.Side & Side_Bottom)
+                    {
+                    Entity->Position.x += Entity->Velocity.x;
+                    } 
+                    else
+                    {
+                    
+                    }
                     }
                     else
                     {
-                        Entity->Position.x += Entity->Velocity.x;
-                        Entity->Position.y += Entity->Velocity.y;
+                    Entity->Position.x += Entity->Velocity.x;
+                    Entity->Position.y += Entity->Velocity.y;
                     }
                     */
                     

@@ -42,6 +42,7 @@ struct entity
     bool32 IsKinematic;
     bool32 IsColliding;
     bool32 IsStatic; // For stuff that can't be moved by collision
+    bool32 IsTrigger;
     union
     {
         struct
