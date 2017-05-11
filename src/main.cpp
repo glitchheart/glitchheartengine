@@ -163,12 +163,14 @@ void SpawnMillionBarrels(game_state* GameState)
             Barrel.Scale = glm::vec3(2, 2, 0);
             Barrel.Velocity = glm::vec2(0,0);
             Barrel.Center = glm::vec2(0.5, 0.5);
+            Barrel.IsTrigger = true;
             //Barrel.IsKinematic = true;
             
-            collision_AABB CollisionAABB4;
-            CollisionAABB4.Center = Barrel.Position;
-            CollisionAABB4.Extents = glm::vec2(0.5f,0.5f);
-            Barrel.CollisionAABB = CollisionAABB4;
+            collision_AABB CollisionAABB;
+            
+            CollisionAABB.Extents = glm::vec2(0.5f,0.5f);
+            CollisionAABB.Center = glm::vec2(0.5f,0.5f);
+            Barrel.CollisionAABB = CollisionAABB;
             
             Barrel.EntityIndex = GameState->EntityCount;
             GameState->Entities[GameState->EntityCount++] = Barrel;
@@ -246,7 +248,6 @@ int main(void)
     //load render_state
     RenderSetup(&GameState.RenderState);
     
-    //TODO(Daniel) Do something useful with this. And remember the texture_manager
     entity Player = {};
     Player.Name = "Player";
     Player.Type = Entity_Player;
@@ -281,6 +282,7 @@ int main(void)
     Player.Center = glm::vec2(0.5f, 0.5f);
     Player.EntityIndex = GameState.EntityCount;
     GameState.Entities[GameState.EntityCount++] = Player;
+    
     
     entity Crosshair = {};
     Crosshair.Name = "Crosshair";
@@ -354,13 +356,13 @@ int main(void)
     GameState.EditorUI = {};
     
     sound_device SoundDevice = {};
-    sound_manager SoundManager = {};
     InitAudio(&SoundDevice);
-    LoadSounds(&SoundManager);
-    ResetSoundQueue(&SoundManager);
     
     if (SoundDevice.IsInitialized)
     {
+        sound_manager SoundManager = {};
+        LoadSounds(&SoundManager);
+        ResetSoundQueue(&SoundManager);
         GameState.SoundManager = SoundManager;
     }
     
