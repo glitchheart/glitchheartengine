@@ -146,7 +146,7 @@ void FramebufferSizeCallback(GLFWwindow *Window, int Width, int Height)
 
 void SpawnMillionBarrels(game_state* GameState)
 {
-    uint32 OneMillion = 10;
+    uint32 OneMillion = 1;
     for(uint32 i = 0; i < OneMillion; i++) {
         for(uint32 j = 0; j < OneMillion; j++) {
             entity Barrel = {};
@@ -163,8 +163,7 @@ void SpawnMillionBarrels(game_state* GameState)
             Barrel.Scale = glm::vec3(2, 2, 0);
             Barrel.Velocity = glm::vec2(0,0);
             Barrel.Center = glm::vec2(0.5, 0.5);
-            Barrel.IsTrigger = true;
-            //Barrel.IsKinematic = true;
+            Barrel.IsStatic = true;
             
             collision_AABB CollisionAABB;
             
