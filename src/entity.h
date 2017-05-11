@@ -49,6 +49,8 @@ struct entity
         {
             bool32 IsAttacking;
             real32 WalkingSpeed;
+            entity* Pickup;
+            real64 PickupCooldown;
         } Player;
         struct
         {

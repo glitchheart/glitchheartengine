@@ -38,7 +38,6 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
                     auto Position = Entity->CollisionAABB.Center;
                     auto Extents = Entity->CollisionAABB.Extents;
                     
-                    
                     AABBMin(&Md);
                     AABBMax(&Md);
                     AABBSize(&Md);
@@ -65,8 +64,31 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
                             CollisionInfo->Side = CollisionInfo->Side | Side_Top;
                     }
                     
+                    switch(Entity->Type)
+                    {
+                        case Entity_Player:
+                        {
+                            if(GameState->Entities[OtherEntityIndex].Type == Entity_Barrel &&
+                               GetKeyDown(Key_E,GameState) && Entity->Player.PickupCooldown <= 0.0)
+                            {
+                                Entity->Player.Pickup = &GameState->Entities[OtherEntityIndex];
+                                Entity->Player.Pickup->Position = Entity->Position;
+                                // NOTE(niels): Need to make it kinematic, otherwise
+                                // there will be an overlap when pressing E to drop
+                                Entity->Player.Pickup->IsKinematic = true;
+                                Entity->Player.PickupCooldown = 0.5;
+                            }
+                            
+                        }
+                        break;
+                        case Entity_Barrel:
+                        case Entity_Crosshair:
+                        case Entity_Enemy:
+                        break;
+                    }
+                    
                     if(!GameState->Entities[OtherEntityIndex].IsTrigger &&
-                       !Entity->IsTrigger)
+                       !Entity->IsTrigger && !Entity->IsStatic)
                     {
                         Entity->Position += glm::vec2(PenetrationVector.x/Divider,PenetrationVector.y/Divider);
                         Entity->CollisionAABB.Center = glm::vec2(Entity->Position.x + Entity->CollisionAABB.Extents.x, Entity->Position.y + Entity->CollisionAABB.Extents.y);
@@ -145,11 +167,32 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                             PlayAnimation(Entity, "player_idle");
                     }
                     
+                    if(GetKeyDown(Key_E,GameState) && Entity->Player.Pickup)
+                    {
+                        entity* Pickup = Entity->Player.Pickup;
+                        Pickup->Position = Entity->Position + glm::vec2(1.0f,0);
+                        Pickup->IsKinematic = false;
+                        Entity->Player.Pickup = NULL;
+                        Entity->Player.PickupCooldown = 0.5;
+                    }
+                    
+                    if(Entity->Player.PickupCooldown > 0.0)
+                    {
+                        Entity->Player.PickupCooldown -= DeltaTime;
+                    }
+                    
                     Entity->Position.x += Entity->Velocity.x;
                     Entity->Position.y += Entity->Velocity.y;
                     
+                    
                     collision_info CollisionInfo;
                     CheckCollision(GameState, Entity, &CollisionInfo);
+                    
+                    if(Entity->Player.Pickup)
+                    {
+                        Entity->Player.Pickup->Position.x += Entity->Velocity.x;
+                        Entity->Player.Pickup->Position.y += Entity->Velocity.y;
+                    }
                     
                     /*
                     if(Entity->IsColliding)
