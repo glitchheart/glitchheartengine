@@ -164,6 +164,7 @@ void SpawnMillionBarrels(game_state* GameState)
             Barrel.Velocity = glm::vec2(0,0);
             Barrel.Center = glm::vec2(0.5, 0.5);
             Barrel.IsStatic = true;
+            Barrel.Pickup = true;
             
             collision_AABB CollisionAABB;
             

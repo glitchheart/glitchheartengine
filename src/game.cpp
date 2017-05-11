@@ -68,7 +68,7 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
                     {
                         case Entity_Player:
                         {
-                            if(GameState->Entities[OtherEntityIndex].Type == Entity_Barrel &&
+                            if(GameState->Entities[OtherEntityIndex].Pickup &&
                                GetKeyDown(Key_E,GameState) && Entity->Player.PickupCooldown <= 0.0)
                             {
                                 Entity->Player.Pickup = &GameState->Entities[OtherEntityIndex];
@@ -170,8 +170,8 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                     if(GetKeyDown(Key_E,GameState) && Entity->Player.Pickup)
                     {
                         entity* Pickup = Entity->Player.Pickup;
-                        Pickup->Position = Entity->Position + glm::vec2(1.0f,0);
-                        Pickup->IsKinematic = false;
+                        Entity->Player.Pickup->Position = Entity->Position + glm::vec2(1.0f,0);
+                        Entity->Player.Pickup->IsKinematic = false;
                         Entity->Player.Pickup = NULL;
                         Entity->Player.PickupCooldown = 0.5;
                     }
@@ -183,7 +183,6 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                     
                     Entity->Position.x += Entity->Velocity.x;
                     Entity->Position.y += Entity->Velocity.y;
-                    
                     
                     collision_info CollisionInfo;
                     CheckCollision(GameState, Entity, &CollisionInfo);
