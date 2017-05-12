@@ -146,7 +146,7 @@ void FramebufferSizeCallback(GLFWwindow *Window, int Width, int Height)
 
 void SpawnMillionBarrels(game_state* GameState)
 {
-    uint32 OneMillion = 1;
+    uint32 OneMillion = 10;
     for(uint32 i = 0; i < OneMillion; i++) {
         for(uint32 j = 0; j < OneMillion; j++) {
             entity Barrel = {};
@@ -165,12 +165,14 @@ void SpawnMillionBarrels(game_state* GameState)
             Barrel.Center = glm::vec2(0.5, 0.5);
             Barrel.IsStatic = true;
             Barrel.Pickup = true;
-            Barrel.IsTrigger = true;
+            Barrel.IsTrigger = false;
             
             collision_AABB CollisionAABB;
             
             CollisionAABB.Extents = glm::vec2(0.5f,0.5f);
-            CollisionAABB.Center = glm::vec2(0.5f,0.5f);
+            CollisionAABB.Center = glm::vec2(Barrel.Position.x + Barrel.Center.x * Barrel.Scale.x,
+                                             Barrel.Position.y + Barrel.Center.y * Barrel.Scale.y);
+            //CollisionAABB.Center = glm::vec2(0.5f,0.5f);
             Barrel.CollisionAABB = CollisionAABB;
             
             Barrel.EntityIndex = GameState->EntityCount;
@@ -277,7 +279,8 @@ int main(void)
     Player.Velocity = glm::vec2(0,0);
     
     collision_AABB CollisionAABB;
-    CollisionAABB.Center = Player.Position;
+    CollisionAABB.Center = glm::vec2(Player.Position.x + Player.Center.x * Player.Scale.x,
+                                     Player.Position.y + Player.Center.y * Player.Scale.y);
     CollisionAABB.Extents = glm::vec2(0.5f,1.0f);
     Player.CollisionAABB = CollisionAABB;
     Player.Center = glm::vec2(0.5f, 0.5f);
