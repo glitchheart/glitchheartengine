@@ -53,7 +53,7 @@ struct game_state
     render_state RenderState;
     camera Camera;
     uint32 PlayerIndex;
-    room Room;
+    level CurrentLevel;
     input_controller InputController;
     sound_manager SoundManager;
     uint16 EntityCount;

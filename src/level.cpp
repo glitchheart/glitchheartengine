@@ -24,7 +24,7 @@ static void GenerateRoom(real32 X, real32 Y, uint32 Width, uint32 Height, room *
     }*/
 }
 
-static void LoadTilemap(char* FilePath, tilemap* Tilemap)
+static void LoadLevelFromFile(char* FilePath, level* Level)
 {
     //read the file manmain
     FILE* File;
@@ -33,11 +33,15 @@ static void LoadTilemap(char* FilePath, tilemap* Tilemap)
     
     uint32 MapWidth;
     uint32 MapHeight;
-    uint32** TempMap;
-    int Ch;
+    
+    Level->Tilemap.RenderEntity.ShaderIndex = Shader_Tile;
+    Level->Tilemap.RenderEntity.TextureHandle = LoadTexture("../assets/textures/tiles.png");
     
     if(File)
     {
+        if(fgets(LineBuffer, 255, File))
+            sscanf(LineBuffer, "%s", &Level->Name);
+        
         if(fgets(LineBuffer, 255, File))
             sscanf(LineBuffer, "%d", &MapWidth);
         
@@ -45,56 +49,66 @@ static void LoadTilemap(char* FilePath, tilemap* Tilemap)
         if(fgets(LineBuffer, 255, File))
             sscanf(LineBuffer, "%d", &MapHeight);
         
-        Tilemap->Data = (tile_data**)malloc(MapWidth * sizeof(tile_data*));
+        Level->Tilemap.Width = MapWidth;
+        Level->Tilemap.Height = MapHeight;
+        
+        Level->Tilemap.Data = (tile_data**)malloc(MapWidth * sizeof(tile_data*));
         
         for(int I = 0; I < MapWidth; I++)
         {
-            Tilemap->Data[I] = (tile_data *)malloc(MapHeight * sizeof(tile_data));;
-            for(int J = 0; J < MapHeight; J++)
+            Level->Tilemap.Data[I] = (tile_data *)malloc(MapHeight * sizeof(tile_data));
+        }
+        
+        char Line[256];
+        int IndexHeight = 0;
+        
+        while (IndexHeight < MapHeight)
+        {
+            fgets(Line, sizeof(Line), File);
+            for(int IndexWidth = 0; IndexWidth < MapWidth; ++IndexWidth) 
             {
-                Ch = getc(File);
                 collision_AABB CollisionAABB;
                 CollisionAABB.Center = glm::vec2(0,0);
                 CollisionAABB.Extents = glm::vec2(0.5f,0.5f);
                 tile_data Data;
                 
-                switch(Ch)
+                switch(Line[IndexWidth])
                 {
                     case '0':
-                    Data.Type = Tile_None;
-                    
-                    //{ Tile_None, 0, glm::vec2(0,0), false, glm::vec2(0.5, 0.5), CollisionAABB }
-                    //Tilemap->Data[I][J] = ;
+                    Data.Type = Tile_Grass;
+                    Data.TextureOffset = glm::vec2(0, 0);
+                    Data.IsSolid = false;
+                    Data.CollisionAABB = CollisionAABB;
                     break;
                     case '1':
-                    //Tilemap->Data[I][J] = { Tile_Stone, 0, glm::vec2(0.8, 0), false, glm::vec2(0.5, 0.5), CollisionAABB };
+                    Data.Type = Tile_Stone;
+                    Data.TextureOffset = glm::vec2(0.8f, 0);
+                    Data.IsSolid = true;
+                    Data.CollisionAABB = CollisionAABB;
                     break;
                     case '2':
-                    Tilemap->Data[I][J] = {};
                     break;
                     case '3':
-                    Tilemap->Data[I][J] = {};
                     break;
                     case '4':
-                    Tilemap->Data[I][J] = {};
                     break;
                     case '5':
-                    Tilemap->Data[I][J] = {};
                     break;
                     case '6':
-                    Tilemap->Data[I][J] = {};
                     break;
                     case '7':
-                    Tilemap->Data[I][J] = {};
                     break;
                     case '8':
-                    Tilemap->Data[I][J] = {};
+                    
                     break;
                 }
                 
+                Level->Tilemap.Data[IndexWidth][IndexHeight] = Data;
+                //printf("IndexWidth %d IndexHeight %d\n", IndexWidth, IndexHeight);
             }
-            
-            Ch = getc(File);
+            IndexHeight++;
         }
+        
+        printf("DAMN\n");
     }
 }

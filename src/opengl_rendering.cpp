@@ -350,7 +350,7 @@ static void ReloadAssets(asset_manager *AssetManager, game_state* GameState)
     
     if(AssetManager->DirtyTileset == 1)
     {
-        GameState->Room.RenderEntity.TextureHandle = LoadTexture("./assets/textures/tiles.png");
+        GameState->CurrentLevel.Tilemap.RenderEntity.TextureHandle = LoadTexture("./assets/textures/tiles.png");
         AssetManager->DirtyTileset = 0;
     }
 }
@@ -727,6 +727,47 @@ static void RenderRoom(render_state* RenderState, const room& Room,  glm::mat4 P
     glBindVertexArray(0);
 }
 
+
+static void RenderTilemap(render_state* RenderState, const tilemap& Tilemap, glm::mat4 ProjectionMatrix, glm::mat4 View)
+{
+    glBindVertexArray(RenderState->TileVAO);
+    
+    if (RenderState->BoundTexture != Tilemap.RenderEntity.TextureHandle) //never bind the same texture if it's already bound
+    {
+        glBindTexture(GL_TEXTURE_2D, Tilemap.RenderEntity.TextureHandle);
+        RenderState->BoundTexture = Tilemap.RenderEntity.TextureHandle;
+    }
+    
+    auto Shader = RenderState->Shaders[Tilemap.RenderEntity.ShaderIndex];
+    UseShader(&Shader);
+    
+    real32 Scale = 1.0f;
+    
+    for (uint32 i = 0; i < Tilemap.Width; i++)
+    {
+        for (uint32 j = 0; j < Tilemap.Height; j++)
+        {
+            if(Tilemap.Data[i][j].Type != Tile_None)
+            {
+                glm::mat4 Model(1.0f);
+                Model = glm::translate(Model, glm::vec3(i * Scale, j * Scale, 0.0f));
+                Model = glm::scale(Model, glm::vec3(Scale, Scale, 1.0f));
+                
+                SetVec2Attribute(Shader.Program, "textureOffset", Tilemap.Data[i][j].TextureOffset);
+                
+                SetMat4Uniform(Shader.Program, "Projection", ProjectionMatrix);
+                SetMat4Uniform(Shader.Program, "View", View);
+                SetMat4Uniform(Shader.Program, "Model", Model);
+                glDrawArrays(GL_QUADS, 0, 4);
+            }
+        }
+    }
+    
+    
+    glBindVertexArray(0);
+}
+
+
 static void RenderGame(game_state* GameState)
 {
     switch(GameState->GameMode)
@@ -753,7 +794,7 @@ static void RenderGame(game_state* GameState)
         break;
         case Mode_InGame:
         {
-            RenderRoom(&GameState->RenderState, GameState->Room, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix, 0, 0, 0, 0);
+            RenderTilemap(&GameState->RenderState, GameState->CurrentLevel.Tilemap, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
             
             for(uint32 EntityIndex = 0;
                 EntityIndex < GameState->EntityCount;
