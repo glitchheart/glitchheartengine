@@ -44,7 +44,8 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
                     glm::vec2 PenetrationVector;
                     ClosestPointsOnBoundsToPoint(&Md,glm::vec2(0,0),&PenetrationVector);
                     
-                    real32 Divider = 0.8f;
+                    real32 XDivider = 2.0f;
+                    real32 YDivider = 1.5f;
                     
                     if(glm::abs(PenetrationVector.x) > glm::abs(PenetrationVector.y))
                     {
@@ -90,9 +91,10 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
                     if(!GameState->Entities[OtherEntityIndex].IsTrigger &&
                        !Entity->IsTrigger && !Entity->IsStatic)
                     {
-                        Entity->Position += glm::vec2(PenetrationVector.x/Divider,PenetrationVector.y/Divider);
-                        Entity->CollisionAABB.Center = glm::vec2(Entity->Position.x + Entity->CollisionAABB.Extents.x, Entity->Position.y + Entity->CollisionAABB.Extents.y);
-                        Entity->Velocity = glm::vec2(0,0);
+                        /*
+                        Entity->Position += glm::vec2(PenetrationVector.x/XDivider,PenetrationVector.y/YDivider);
+                        Entity->CollisionAABB.Center = glm::vec2(Entity->Position.x + Entity->Center.x * Entity->Scale.x + Entity->Velocity.x, Entity->Position.y + Entity->Center.y * Entity->Scale.y + Entity->Velocity.y);
+                        Entity->Velocity = glm::vec2(0,0);*/
                     }
                 }
                 else
@@ -169,7 +171,6 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                     if(GetKeyDown(Key_E,GameState) && Entity->Player.Pickup)
                     {
                         entity* Pickup = Entity->Player.Pickup;
-                        /*Entity->Player.Pickup->Position = Entity->Position + glm::vec2(1.0f,0);*/
                         Entity->Player.Pickup->IsKinematic = false;
                         real32 ThrowDir = Entity->RenderEntity.IsFlipped ? -80.0f : 80.0f;
                         Entity->Player.Pickup->Velocity = glm::vec2(ThrowDir * DeltaTime,0);
@@ -182,11 +183,21 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                         Entity->Player.PickupCooldown -= DeltaTime;
                     }
                     
-                    Entity->Position.x += Entity->Velocity.x;
-                    Entity->Position.y += Entity->Velocity.y;
+                    
                     
                     collision_info CollisionInfo;
                     CheckCollision(GameState, Entity, &CollisionInfo);
+                    
+                    if(!(CollisionInfo.Side & Side_Left) &&!(CollisionInfo.Side & Side_Right))
+                    {
+                        Entity->Position.x += Entity->Velocity.x;
+                    }
+                    
+                    
+                    if(!(CollisionInfo.Side & Side_Top) &&!(CollisionInfo.Side & Side_Bottom))
+                    {
+                        Entity->Position.y += Entity->Velocity.y;
+                    }
                     
                     if(Entity->Player.Pickup)
                     {
