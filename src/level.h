@@ -42,5 +42,11 @@ struct tilemap
     tile_data** Data;
 };
 
+struct level
+{
+    char* Name;
+    tilemap Tilemap;
+};
+
 #endif
 
