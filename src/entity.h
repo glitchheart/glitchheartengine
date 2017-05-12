@@ -61,7 +61,6 @@ struct entity
         } Enemy;
     };
     glm::vec2 Velocity;
-    
 };
 
 #define NUM_ENTITIES 2048

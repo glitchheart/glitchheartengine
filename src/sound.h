@@ -1,7 +1,6 @@
 #ifndef SOUND_H
 #define SOUND_H
 
-
 struct sound_info
 {
     real32 Pitch;
