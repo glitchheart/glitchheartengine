@@ -170,8 +170,10 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                     if(GetKeyDown(Key_E,GameState) && Entity->Player.Pickup)
                     {
                         entity* Pickup = Entity->Player.Pickup;
-                        Entity->Player.Pickup->Position = Entity->Position + glm::vec2(1.0f,0);
+                        /*Entity->Player.Pickup->Position = Entity->Position + glm::vec2(1.0f,0);*/
                         Entity->Player.Pickup->IsKinematic = false;
+                        real32 ThrowDir = Entity->RenderEntity.IsFlipped ? -80.0f : 80.0f;
+                        Entity->Player.Pickup->Velocity = glm::vec2(ThrowDir * DeltaTime,0);
                         Entity->Player.Pickup = NULL;
                         Entity->Player.PickupCooldown = 0.5;
                     }
@@ -262,6 +264,20 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
             {
                 collision_info CollisionInfo;
                 CheckCollision(GameState, Entity, &CollisionInfo);
+                if(Entity->Velocity.x > 0.7f * DeltaTime) {
+                    
+                    Entity->Position += Entity->Velocity;
+                    Entity->Velocity.x -= 0.7f * DeltaTime;
+                }
+                else if(Entity->Velocity.x < -0.7f * DeltaTime)
+                {
+                    Entity->Position += Entity->Velocity;
+                    Entity->Velocity.x += 0.7f * DeltaTime;
+                }
+                else 
+                {
+                    Entity->Velocity = glm::vec2(0.0f,0.0f);
+                }
             }
         }
     }
