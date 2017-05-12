@@ -330,9 +330,10 @@ int main(void)
     
     GameState.Camera.Zoom = 2.5f;
     
+    tilemap Tilemap;
+    LoadTilemap("../assets/scenes/scene_01.psc", &Tilemap);
+    
     GenerateRoom(0, 0, 10, 10, &GameState.Room);
-    
-    
     
     GameState.Room.RenderEntity = {};
     GameState.Room.RenderEntity.ShaderIndex = Shader_Tile;

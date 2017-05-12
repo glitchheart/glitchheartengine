@@ -106,7 +106,6 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
                         GameState->Entities[OtherEntityIndex].IsColliding = false;
                     }
                 }
-                
             }
         }
     }
