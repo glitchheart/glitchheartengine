@@ -1,6 +1,6 @@
 #include "console_commands.h"
 
-static void AddCommand(char* Name, char* (*FunctionPointer)(game_state*, char*))
+static void AddCommand(char* Name, char* (*FunctionPointer)(game_state*, char**))
 {
     command_info Info = { Name, FunctionPointer };
     Commands[CommandCount++] = Info;
@@ -14,6 +14,7 @@ static void InitCommands()
     AddCommand("exit", &Exit);
     AddCommand("view", &View);
     AddCommand("editor", &Editor);
+    AddCommand("reset", &Reset);
 }
 
 void ExecuteCommand(game_state *GameState)
@@ -35,14 +36,17 @@ void ExecuteCommand(game_state *GameState)
         
         int Count = 0;
         
-        char* ArgumentBuffer[10];
+        char** ArgumentBuffer = (char**)malloc(10 * sizeof(char*));
         
         while(Pointer != NULL)
         {
             Pointer = strtok(NULL, " ");
-            ArgumentBuffer[Count] = Pointer;
-            printf("%d\n", Count);
-            Count++;
+            if(Pointer)
+            {
+                ArgumentBuffer[Count] = Pointer;
+                printf("%d\n", Count);
+                Count++;
+            }
         }
         
         bool32 Found = false;
@@ -53,7 +57,7 @@ void ExecuteCommand(game_state *GameState)
             if(strcmp(CommandName, Commands[i].Name) == 0)
             {
                 Found = true;
-                Result = Commands[i].FunctionPointer(GameState, ArgumentBuffer[0]);
+                Result = Commands[i].FunctionPointer(GameState, ArgumentBuffer);
                 break;
             }
         }

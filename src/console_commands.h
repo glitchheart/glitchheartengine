@@ -1,17 +1,17 @@
 #ifndef CONSOLE_COMMANDS_H
 #define CONSOLE_COMMANDS_H
 
-static char* Zoom(game_state* GameState, char* Arguments)
+static char* Zoom(game_state* GameState, char** Arguments)
 {
-    real32 ZoomAmount = (real32) strtod(&Arguments[0], NULL);
+    real32 ZoomAmount = (real32) strtod(Arguments[0], NULL);
     GameState->Camera.Zoom = ZoomAmount;
-    return CombineStrings("Zoom set to ", &Arguments[0]);
+    return CombineStrings("Zoom set to ", Arguments[0]);
 }
 
-static char* Jump(game_state* GameState, char* Arguments)
+static char* Jump(game_state* GameState, char** Arguments)
 {
-    real32 X = (real32) strtod(&Arguments[0], NULL);
-    real32 Y = (real32) strtod(&Arguments[1], NULL);
+    real32 X = (real32) strtod(Arguments[0], NULL);
+    real32 Y = (real32) strtod(Arguments[1], NULL);
     
     //@Cleanup this should be changed to access the entities array instead
     GameState->Entities[GameState->PlayerIndex].Position = glm::vec2(X, Y);
@@ -21,7 +21,16 @@ static char* Jump(game_state* GameState, char* Arguments)
     return Result;
 }
 
-static char* Exit(game_state* GameState, char* Arguments)
+static char* Reset(game_state* GameState, char** Arguments)
+{
+    GameState->Entities[GameState->PlayerIndex].Position = glm::vec2(0, 0); //TODO(Daniel) still needs to reset a lot more
+    printf("reset\n");
+    char* Result = (char*)malloc(12 * sizeof(char));
+    sprintf(Result, "Reset level");
+    return Result;
+}
+
+static char* Exit(game_state* GameState, char** Arguments)
 {
     //TODO(niels): Need to find a way to call this from here
     //             This should probably be in platform code anyway?
@@ -37,17 +46,17 @@ static char* Exit(game_state* GameState, char* Arguments)
     exit(EXIT_SUCCESS);
 }
 
-static char* View(game_state* GameState, char* Arguments)
+static char* View(game_state* GameState, char** Arguments)
 {
     if(Arguments) 
     {
-        if(strcmp(&Arguments[0], "entity_list") == 0)
+        if(strcmp(Arguments[0], "entity_list") == 0)
         {
             GameState->EditorUI.On = true;
             GameState->EditorUI.State = State_EntityList;
             return "Toggled entity list";
         }
-        else if(strcmp(&Arguments[0], "normal") == 0)
+        else if(strcmp(Arguments[0], "normal") == 0)
         {
             GameState->EditorUI.On = false;
             return "Toggled view to normal mode";
@@ -56,16 +65,16 @@ static char* View(game_state* GameState, char* Arguments)
     return "Error: No arguments provided";
 }
 
-static char* Editor(game_state* GameState, char* Arguments)
+static char* Editor(game_state* GameState, char** Arguments)
 {
     if(Arguments)
     {
-        if(strcmp(&Arguments[0], "off") == 0)
+        if(strcmp(Arguments[0], "off") == 0)
         {
             GameState->EditorUI.On = false;
             return "Toggled editor off";
         }
-        else if(strcmp(&Arguments[0], "on") == 0)
+        else if(strcmp(Arguments[0], "on") == 0)
         {
             GameState->EditorUI.On = true;
             return "Toggled editor on";
