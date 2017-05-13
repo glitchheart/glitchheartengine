@@ -13,7 +13,6 @@ static char* Jump(game_state* GameState, char** Arguments)
     real32 X = (real32) strtod(Arguments[0], NULL);
     real32 Y = (real32) strtod(Arguments[1], NULL);
     
-    //@Cleanup this should be changed to access the entities array instead
     GameState->Entities[GameState->PlayerIndex].Position = glm::vec2(X, Y);
     char* Result = (char*)malloc(40 * sizeof(char));
     sprintf(Result, "Jumped to position %.2f %.2f", X, Y);
@@ -24,7 +23,6 @@ static char* Reset(game_state* GameState, char** Arguments)
 {
     GameState->Entities[GameState->PlayerIndex].Position = glm::vec2(0, 0); //TODO(Daniel) still needs to reset a lot more
     GameState->Camera.Center = glm::vec2(GameState->Entities[GameState->PlayerIndex].Position.x, GameState->Entities[GameState->PlayerIndex].Position.y);
-    printf("reset\n");
     char* Result = (char*)malloc(12 * sizeof(char));
     sprintf(Result, "Reset level");
     return Result;
@@ -45,6 +43,14 @@ static char* LoadLevel(game_state* GameState, char** Arguments)
     
     if(LoadLevelFromFile(Path, &Level))
     {
+        level* CurrentLevel = & GameState->CurrentLevel;
+        
+        for(int X = 0; X < CurrentLevel->Tilemap.Width; X++)
+        {
+            free(CurrentLevel->Tilemap.Data[X]);
+        }
+        free(CurrentLevel->Tilemap.Data);
+        
         GameState->CurrentLevel = Level;
         sprintf(Result, "Loaded level");
     }
