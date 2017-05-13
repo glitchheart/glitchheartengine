@@ -24,7 +24,7 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
         {
             entity OtherEntity = GameState->Entities[OtherEntityIndex];
             
-            if(!(OtherEntity.Layer & Entity->IgnoreLayers) &&GameState->Entities[OtherEntityIndex].EntityIndex != Entity->EntityIndex && !GameState->Entities[OtherEntityIndex].IsKinematic)
+            if(!(OtherEntity.Layer & Entity->IgnoreLayers) && OtherEntity.EntityIndex != Entity->EntityIndex && !OtherEntity.IsKinematic && !OtherEntity.CollisionAABB.IsTrigger)
             {
                 collision_AABB Md;
                 MinkowskiDifference(&GameState->Entities[OtherEntityIndex].CollisionAABB, &Entity->CollisionAABB, &Md);
@@ -34,43 +34,47 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
                    Md.Max.y >= 0)
                 {
                     Entity->IsColliding = true;
-                    GameState->Entities[OtherEntityIndex].IsColliding = true;
                     
-                    //calculate what side is colliding
-                    auto OtherPosition = GameState->Entities[OtherEntityIndex].CollisionAABB.Center;
-                    auto OtherExtents = GameState->Entities[OtherEntityIndex].CollisionAABB.Extents;
-                    auto Position = Entity->CollisionAABB.Center;
-                    auto Extents = Entity->CollisionAABB.Extents;
-                    
-                    AABBMin(&Md);
-                    AABBMax(&Md);
-                    AABBSize(&Md);
-                    glm::vec2 PenetrationVector;
-                    ClosestPointsOnBoundsToPoint(&Md, glm::vec2(0,0), &PenetrationVector);
-                    
-                    if(glm::abs(PenetrationVector.x) > glm::abs(PenetrationVector.y))
+                    if(!Entity->CollisionAABB.IsTrigger)
                     {
-                        if(PenetrationVector.x > 0)
-                            CollisionInfo->Side = CollisionInfo->Side | Side_Left;
-                        else if(PenetrationVector.x < 0)
-                            CollisionInfo->Side = CollisionInfo->Side | Side_Right;
-                    }
-                    else
-                    {
-                        if(PenetrationVector.y > 0)
-                            CollisionInfo->Side = CollisionInfo->Side | Side_Bottom;
-                        else if(PenetrationVector.y < 0) 
-                            CollisionInfo->Side = CollisionInfo->Side | Side_Top;
-                    }
-                    
-                    if(PenetrationVector.x != 0)
-                    {
-                        PV.x = PenetrationVector.x;
-                    }
-                    
-                    if(PenetrationVector.y != 0)
-                    {
-                        PV.y = PenetrationVector.y;
+                        GameState->Entities[OtherEntityIndex].IsColliding = true;
+                        
+                        //calculate what side is colliding
+                        auto OtherPosition = GameState->Entities[OtherEntityIndex].CollisionAABB.Center;
+                        auto OtherExtents = GameState->Entities[OtherEntityIndex].CollisionAABB.Extents;
+                        auto Position = Entity->CollisionAABB.Center;
+                        auto Extents = Entity->CollisionAABB.Extents;
+                        
+                        AABBMin(&Md);
+                        AABBMax(&Md);
+                        AABBSize(&Md);
+                        glm::vec2 PenetrationVector;
+                        ClosestPointsOnBoundsToPoint(&Md, glm::vec2(0,0), &PenetrationVector);
+                        
+                        if(glm::abs(PenetrationVector.x) > glm::abs(PenetrationVector.y))
+                        {
+                            if(PenetrationVector.x > 0)
+                                CollisionInfo->Side = CollisionInfo->Side | Side_Left;
+                            else if(PenetrationVector.x < 0)
+                                CollisionInfo->Side = CollisionInfo->Side | Side_Right;
+                        }
+                        else
+                        {
+                            if(PenetrationVector.y > 0)
+                                CollisionInfo->Side = CollisionInfo->Side | Side_Bottom;
+                            else if(PenetrationVector.y < 0) 
+                                CollisionInfo->Side = CollisionInfo->Side | Side_Top;
+                        }
+                        
+                        if(PenetrationVector.x != 0)
+                        {
+                            PV.x = PenetrationVector.x;
+                        }
+                        
+                        if(PenetrationVector.y != 0)
+                        {
+                            PV.y = PenetrationVector.y;
+                        }
                     }
                     
                     switch(Entity->Type)
@@ -96,8 +100,8 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
                         break;
                     }
                     
-                    if(!GameState->Entities[OtherEntityIndex].IsTrigger &&
-                       !Entity->IsTrigger && !Entity->IsStatic)
+                    if(!GameState->Entities[OtherEntityIndex].CollisionAABB.IsTrigger &&
+                       !Entity->CollisionAABB.IsTrigger && !Entity->IsStatic)
                     {
                         /*
                         Entity->Position += glm::vec2(PenetrationVector.x/XDivider,PenetrationVector.y/YDivider);
@@ -141,41 +145,44 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
                         {
                             Entity->IsColliding = true;
                             
-                            //calculate what side is colliding
-                            auto OtherPosition = Tile.CollisionAABB.Center;
-                            auto OtherExtents = Tile.CollisionAABB.Extents;
-                            auto Position = Entity->CollisionAABB.Center;
-                            auto Extents = Entity->CollisionAABB.Extents;
-                            
-                            AABBMin(&Md);
-                            AABBMax(&Md);
-                            AABBSize(&Md);
-                            glm::vec2 PenetrationVector;
-                            ClosestPointsOnBoundsToPoint(&Md, glm::vec2(0,0), &PenetrationVector);
-                            
-                            if(glm::abs(PenetrationVector.x) > glm::abs(PenetrationVector.y))
+                            if(!Entity->CollisionAABB.IsTrigger)
                             {
-                                if(PenetrationVector.x > 0)
-                                    CollisionInfo->Side = CollisionInfo->Side | Side_Left;
-                                else if(PenetrationVector.x < 0)
-                                    CollisionInfo->Side = CollisionInfo->Side | Side_Right;
-                            }
-                            else
-                            {
-                                if(PenetrationVector.y > 0)
-                                    CollisionInfo->Side = CollisionInfo->Side | Side_Bottom;
-                                else if(PenetrationVector.y < 0) 
-                                    CollisionInfo->Side = CollisionInfo->Side | Side_Top;
-                            }
-                            
-                            if(PenetrationVector.x != 0)
-                            {
-                                PV.x = PenetrationVector.x;
-                            }
-                            
-                            if(PenetrationVector.y != 0)
-                            {
-                                PV.y = PenetrationVector.y;
+                                //calculate what side is colliding
+                                auto OtherPosition = Tile.CollisionAABB.Center;
+                                auto OtherExtents = Tile.CollisionAABB.Extents;
+                                auto Position = Entity->CollisionAABB.Center;
+                                auto Extents = Entity->CollisionAABB.Extents;
+                                
+                                AABBMin(&Md);
+                                AABBMax(&Md);
+                                AABBSize(&Md);
+                                glm::vec2 PenetrationVector;
+                                ClosestPointsOnBoundsToPoint(&Md, glm::vec2(0,0), &PenetrationVector);
+                                
+                                if(glm::abs(PenetrationVector.x) > glm::abs(PenetrationVector.y))
+                                {
+                                    if(PenetrationVector.x > 0)
+                                        CollisionInfo->Side = CollisionInfo->Side | Side_Left;
+                                    else if(PenetrationVector.x < 0)
+                                        CollisionInfo->Side = CollisionInfo->Side | Side_Right;
+                                }
+                                else
+                                {
+                                    if(PenetrationVector.y > 0)
+                                        CollisionInfo->Side = CollisionInfo->Side | Side_Bottom;
+                                    else if(PenetrationVector.y < 0) 
+                                        CollisionInfo->Side = CollisionInfo->Side | Side_Top;
+                                }
+                                
+                                if(PenetrationVector.x != 0)
+                                {
+                                    PV.x = PenetrationVector.x;
+                                }
+                                
+                                if(PenetrationVector.y != 0)
+                                {
+                                    PV.y = PenetrationVector.y;
+                                }
                             }
                         }
                     }
@@ -183,7 +190,8 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
             }
         }
         
-        Entity->Position += PV;
+        if(!Entity->CollisionAABB.IsTrigger)
+            Entity->Position += PV;
     }
 }
 
@@ -283,19 +291,6 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                     collision_info CollisionInfo;
                     CheckCollision(GameState, Entity, &CollisionInfo);
                     
-                    /*
-                    if((Entity->Velocity.x < 0 && !(CollisionInfo.Side & Side_Left)) 
-                    || (Entity->Velocity.x > 0 && !(CollisionInfo.Side & Side_Right)))
-                    {
-                    Entity->Position.x += Entity->Velocity.x;
-                    }
-                    
-                    if((Entity->Velocity.y > 0 && !(CollisionInfo.Side & Side_Top)) || (Entity->Velocity.y < 0 && !(CollisionInfo.Side & Side_Bottom)))
-                    {
-                    Entity->Position.y += Entity->Velocity.y;
-                    }
-                    */
-                    
                     if(Entity->Player.Pickup)
                     {
                         Entity->Player.Pickup->Position.x += Entity->Velocity.x;
@@ -319,6 +314,19 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                     if(!GameState->EditorUI.On)
                         GameState->Camera.Center = glm::vec2(Entity->Position.x, Entity->Position.y);
                 }
+            }
+            break;
+            case Entity_PlayerWeapon:
+            {
+                glm::vec2 Pos = GameState->Entities[GameState->PlayerIndex].Position;
+                
+                if(GameState->Entities[GameState->PlayerIndex].RenderEntity.IsFlipped)
+                    Entity->Position = glm::vec2(Pos.x - 0.25f, Pos.y + 0.6f);
+                else
+                    Entity->Position = glm::vec2(Pos.x + 1.2f, Pos.y + 0.6f);
+                
+                Entity->CollisionAABB.Center = glm::vec2(Entity->Position.x + Entity->Center.x * Entity->Scale.x, Entity->Position.y + Entity->Center.y * Entity->Scale.y);
+                
             }
             break;
             case Entity_Crosshair:

@@ -167,7 +167,6 @@ void SpawnMillionBarrels(game_state* GameState)
             Barrel.Center = glm::vec2(0.5, 0.5);
             Barrel.IsStatic = true;
             Barrel.Pickup = true;
-            Barrel.IsTrigger = false;
             
             collision_AABB CollisionAABB;
             
@@ -289,6 +288,22 @@ int main(void)
     Player.EntityIndex = GameState.EntityCount;
     GameState.Entities[GameState.EntityCount++] = Player;
     
+    entity PlayerWeapon;
+    PlayerWeapon.RenderEntity.Rendered = false;
+    PlayerWeapon.Name = "Player weapon";
+    PlayerWeapon.Type = Entity_PlayerWeapon;
+    
+    collision_AABB CollisionAABB3;
+    CollisionAABB3.Center = glm::vec2(0.5, 0.5);
+    CollisionAABB3.Extents = glm::vec2(0.5f,0.5f);
+    CollisionAABB3.IsTrigger = true;
+    PlayerWeapon.CollisionAABB = CollisionAABB3;
+    PlayerWeapon.Rotation = glm::vec3(0, 0, 0);
+    PlayerWeapon.Scale = glm::vec3(1, 1, 0);
+    
+    PlayerWeapon.EntityIndex = GameState.EntityCount;
+    GameState.Entities[GameState.EntityCount++] = PlayerWeapon;
+    
     entity Crosshair = {};
     Crosshair.Name = "Crosshair";
     Crosshair.Type = Entity_Crosshair;
@@ -322,10 +337,10 @@ int main(void)
     Enemy.Scale = glm::vec3(2, 2, 0);
     Enemy.Velocity = glm::vec2(-2,0);
     
-    collision_AABB CollisionAABB3;
-    CollisionAABB3.Center = Enemy.Position;
-    CollisionAABB3.Extents = glm::vec2(0.5f,0.5f);
-    Enemy.CollisionAABB = CollisionAABB3;
+    collision_AABB CollisionAABB4;
+    CollisionAABB4.Center = Enemy.Position;
+    CollisionAABB4.Extents = glm::vec2(0.5f,0.5f);
+    Enemy.CollisionAABB = CollisionAABB4;
     
     Enemy.EntityIndex = GameState.EntityCount;
     GameState.Entities[GameState.EntityCount++] = Enemy;

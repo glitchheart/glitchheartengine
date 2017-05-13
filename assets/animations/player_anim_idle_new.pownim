@@ -3,7 +3,7 @@ type sprite
 framecount 1
 loop 1
 timeperframe 0.05
-rows 8
+rows 10
 columns 1
 frames
 {0.0,0.0}
