@@ -358,7 +358,8 @@ int main(void)
     Enemy.Enemy.WalkingSpeed = 5;
     Enemy.Enemy.MaxAlertDistance = 10;
     Enemy.Enemy.MinDistance = 1;
-    Enemy.Enemy.AIState = AI_Watching;
+    Enemy.Enemy.AttackCooldown = 1.0f;
+    Enemy.Enemy.AIState = AI_Idle;
     
     Enemy.EntityIndex = GameState.EntityCount;
     GameState.Entities[GameState.EntityCount++] = Enemy;
