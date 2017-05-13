@@ -39,6 +39,7 @@ struct entity
     std::map<char*, animation, CompareCStrings> Animations;
     render_entity RenderEntity;
     
+    bool32 IsDead;
     collision_AABB CollisionAABB;
     bool32 IsKinematic;
     bool32 IsColliding;

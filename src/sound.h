@@ -40,6 +40,8 @@ struct sound_manager
         struct
         {
             sound_effect Effect01;
+            sound_effect SwordSlash01;
+            sound_effect SwordHit01;
         };
     };
     
