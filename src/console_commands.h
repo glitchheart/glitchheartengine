@@ -30,6 +30,32 @@ static char* Reset(game_state* GameState, char** Arguments)
     return Result;
 }
 
+static char* LoadLevel(game_state* GameState, char** Arguments)
+{
+    level Level;
+    
+    char* PathPrefix = "../assets/levels/";
+    char* PathSuffix = ".plv";
+    char * Path = (char *) malloc(1 + strlen(PathPrefix) + strlen(Arguments[0] + strlen(PathSuffix)) );
+    strcpy(Path, PathPrefix);
+    strcat(Path, Arguments[0]);
+    strcat(Path, PathSuffix);
+    
+    char* Result = (char*)malloc(25 * sizeof(char));
+    
+    if(LoadLevelFromFile(Path, &Level))
+    {
+        GameState->CurrentLevel = Level;
+        sprintf(Result, "Loaded level");
+    }
+    else
+    {
+        sprintf(Result, "Level not found: %s.plv", Arguments[0]);
+    }
+    
+    return Result;
+}
+
 static char* Exit(game_state* GameState, char** Arguments)
 {
     //TODO(niels): Need to find a way to call this from here

@@ -289,7 +289,6 @@ int main(void)
     Player.EntityIndex = GameState.EntityCount;
     GameState.Entities[GameState.EntityCount++] = Player;
     
-    
     entity Crosshair = {};
     Crosshair.Name = "Crosshair";
     Crosshair.Type = Entity_Crosshair;
