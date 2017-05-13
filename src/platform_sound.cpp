@@ -155,7 +155,9 @@ static void LoadSounds(sound_manager *SoundManager)
     
     LoadSound("../assets/audio/Deadliners Track 1.wav", DefaultSoundInfo, &SoundManager->Track01);
     LoadSound("../assets/audio/Countdown_1.wav", DefaultSoundInfo, &SoundManager->Effect01);
-    LoadSound("../assets/audio/mainmenu.wav", DefaultSoundInfo,  &SoundManager->MainMenuTrack);
+    LoadSound("../assets/audio/mainmenu.wav", DefaultSoundInfo, &SoundManager->MainMenuTrack);
+    LoadSound("../assets/audio/sword_slash_01.wav", DefaultSoundInfo, &SoundManager->SwordSlash01);
+    LoadSound("../assets/audio/sword_hit_01.wav", DefaultSoundInfo, &SoundManager->SwordHit01);
     // // Add more sounds here if necessary
 }
 

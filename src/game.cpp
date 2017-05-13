@@ -11,6 +11,7 @@
 void Kill(entity* Entity)
 {
     Entity->RenderEntity.Rendered = false;
+    Entity->IsDead = true;
 }
 
 void CheckCollision(game_state* GameState, entity* Entity, collision_info* CollisionInfo)
@@ -45,8 +46,9 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
                     
                     if(OtherEntity->Type == Entity_Enemy && Entity->Type == Entity_PlayerWeapon)
                     {
-                        if(GameState->Entities[GameState->PlayerIndex].Player.IsAttacking)
+                        if(!OtherEntity->IsDead && GameState->Entities[GameState->PlayerIndex].Player.IsAttacking)
                         {
+                            PlaySoundEffect(GameState, &GameState->SoundManager.SwordHit01);
                             Kill(OtherEntity);
                         }
                     }
@@ -315,6 +317,7 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                     {
                         PlayAnimation(Entity, "player_attack");
                         Entity->Player.IsAttacking = true;
+                        PlaySoundEffect(GameState, &GameState->SoundManager.SwordSlash01);
                     }
                     
                     if(Entity->CurrentAnimation)
