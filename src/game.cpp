@@ -358,7 +358,7 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
             case Entity_Enemy:
             {
                 entity Player = GameState->Entities[GameState->PlayerIndex];
-                
+                real64 DistanceToPlayer = glm::distance(Entity->Position, Player.Position);
                 switch(Entity->Enemy.AIState)
                 {
                     case AI_Sleeping:
@@ -366,10 +366,10 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                         PlayAnimation(Entity, "player_idle");
                     }
                     break;
-                    case AI_Watching:
+                    case AI_Idle:
                     {
                         PlayAnimation(Entity, "player_idle");
-                        if(glm::distance(Entity->Position, Player.Position) <= Entity->Enemy.MaxAlertDistance)
+                        if(DistanceToPlayer <= Entity->Enemy.MaxAlertDistance)
                         {
                             Entity->Enemy.AIState = AI_Following;
                             PlayAnimation(Entity, "player_walk");
@@ -381,11 +381,14 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                     break;
                     case AI_Following:
                     {
-                        real64 DistanceToPlayer = glm::distance(Entity->Position, Player.Position);
-                        if(DistanceToPlayer > Entity->Enemy.MaxAlertDistance 
-                           || DistanceToPlayer < Entity->Enemy.MinDistance)
+                        //TODO(Daniel) here the pathfinding should happen
+                        if(DistanceToPlayer > Entity->Enemy.MaxAlertDistance)
                         {
-                            Entity->Enemy.AIState = AI_Watching;
+                            Entity->Enemy.AIState = AI_Idle;
+                        }
+                        else if(DistanceToPlayer < Entity->Enemy.MinDistance)
+                        {
+                            Entity->Enemy.AIState = AI_Attacking;
                         }
                         else
                         {
@@ -398,8 +401,41 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                     }
                     break;
                     case AI_Attacking:
-                    {}
+                    {
+                        if(Entity->Enemy.AttackCooldownCounter == 0)
+                        {
+                            Entity->Enemy.IsAttacking = true;
+                            PlayAnimation(Entity, "player_attack");
+                            PlaySoundEffect(GameState, &GameState->SoundManager.SwordSlash01);
+                        }
+                        else if(DistanceToPlayer > Entity->Enemy.MinDistance)
+                        {
+                            Entity->Enemy.IsAttacking = false;
+                            Entity->Enemy.AIState = AI_Idle;
+                        }
+                        else if(!Entity->Animations[Entity->CurrentAnimation].Playing)
+                        {
+                            PlayAnimation(Entity, "player_idle");
+                        }
+                        
+                        Entity->Enemy.AttackCooldownCounter += DeltaTime;
+                        
+                        if(Entity->Enemy.AttackCooldownCounter >= Entity->Enemy.AttackCooldown)
+                        {
+                            Entity->Enemy.AttackCooldownCounter = 0;
+                            Entity->Enemy.IsAttacking = true;
+                        }
+                    }
                     break;
+                }
+                
+                //Finish the cooldown although we are not in attack-mode. This prevents the enemy from attacking
+                //too quickly after the previous attack if switching between states quickly.
+                if(Entity->Enemy.AIState != AI_Attacking && Entity->Enemy.AttackCooldownCounter != 0)
+                {
+                    Entity->Enemy.AttackCooldownCounter += DeltaTime;
+                    if(Entity->Enemy.AttackCooldownCounter >= Entity->Enemy.AttackCooldown)
+                        Entity->Enemy.AttackCooldownCounter = 0;
                 }
                 
                 Entity->Position.x += Entity->Velocity.x;

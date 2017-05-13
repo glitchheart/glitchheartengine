@@ -11,7 +11,7 @@ enum Entity_Layer
 enum AI_State
 {
     AI_Sleeping,
-    AI_Watching,
+    AI_Idle,
     AI_Alerted,
     AI_Following,
     AI_Attacking
@@ -70,8 +70,10 @@ struct entity
         {
             bool32 IsAttacking;
             real32 WalkingSpeed;
-            real64 MaxAlertDistance;
-            real64 MinDistance;
+            real32 MaxAlertDistance;
+            real32 MinDistance;
+            real64 AttackCooldown;
+            real64 AttackCooldownCounter;
             AI_State AIState;
         } Enemy;
     };
