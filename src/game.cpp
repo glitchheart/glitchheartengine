@@ -108,61 +108,75 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
             }
         }
         
-        level* Level = &GameState->CurrentLevel;
         
-        //check tile collision
-        for(int X = 0; X < Level->Tilemap.Width; X++)
+        if(Entity->Type == Entity_Player)
         {
-            for(int Y = 0; Y < Level->Tilemap.Height; Y++)
+            level* Level = &GameState->CurrentLevel;
+            
+            int32 XPos = (int32)(Entity->Position.x + Entity->Center.x * Entity->Scale.x);
+            int32 YPos = (int32)(Entity->Position.y + Entity->Center.y * Entity->Scale.y);
+            
+            //@Improvement Is it necessary to go 2 tiles out?
+            uint32 MinX = max(0, XPos - 2);
+            uint32 MaxX = min(Level->Tilemap.Width, XPos + 2);
+            uint32 MinY = max(0, YPos - 2);
+            uint32 MaxY = min(Level->Tilemap.Height, YPos + 2);
+            
+            //check tile collision
+            for(int X = MinX; X < MaxX; X++)
             {
-                tile_data Tile = Level->Tilemap.Data[X][Y];
-                
-                if(Tile.IsSolid)
+                for(int Y = MinY; Y < MaxY; Y++)
                 {
-                    collision_AABB Md;
-                    MinkowskiDifference(&Tile.CollisionAABB, &Entity->CollisionAABB, &Md);
-                    if(Md.Min.x <= 0 &&
-                       Md.Max.x >= 0 &&
-                       Md.Min.y <= 0 &&
-                       Md.Max.y >= 0)
+                    tile_data Tile = Level->Tilemap.Data[X][Y];
+                    
+                    if(Tile.IsSolid)
                     {
-                        Entity->IsColliding = true;
-                        
-                        //calculate what side is colliding
-                        auto OtherPosition = Tile.CollisionAABB.Center;
-                        auto OtherExtents = Tile.CollisionAABB.Extents;
-                        auto Position = Entity->CollisionAABB.Center;
-                        auto Extents = Entity->CollisionAABB.Extents;
-                        
-                        AABBMin(&Md);
-                        AABBMax(&Md);
-                        AABBSize(&Md);
-                        glm::vec2 PenetrationVector;
-                        ClosestPointsOnBoundsToPoint(&Md, glm::vec2(0,0), &PenetrationVector);
-                        
-                        if(glm::abs(PenetrationVector.x) > glm::abs(PenetrationVector.y))
+                        //@Cleanup we have to move this to a separate function, because it is used in entity collision and tile collision
+                        collision_AABB Md;
+                        MinkowskiDifference(&Tile.CollisionAABB, &Entity->CollisionAABB, &Md);
+                        if(Md.Min.x <= 0 &&
+                           Md.Max.x >= 0 &&
+                           Md.Min.y <= 0 &&
+                           Md.Max.y >= 0)
                         {
-                            if(PenetrationVector.x > 0)
-                                CollisionInfo->Side = CollisionInfo->Side | Side_Left;
-                            else if(PenetrationVector.x < 0)
-                                CollisionInfo->Side = CollisionInfo->Side | Side_Right;
-                        }
-                        else
-                        {
-                            if(PenetrationVector.y > 0)
-                                CollisionInfo->Side = CollisionInfo->Side | Side_Bottom;
-                            else if(PenetrationVector.y < 0) 
-                                CollisionInfo->Side = CollisionInfo->Side | Side_Top;
-                        }
-                        
-                        if(PenetrationVector.x != 0)
-                        {
-                            PV.x = PenetrationVector.x;
-                        }
-                        
-                        if(PenetrationVector.y != 0)
-                        {
-                            PV.y = PenetrationVector.y;
+                            Entity->IsColliding = true;
+                            
+                            //calculate what side is colliding
+                            auto OtherPosition = Tile.CollisionAABB.Center;
+                            auto OtherExtents = Tile.CollisionAABB.Extents;
+                            auto Position = Entity->CollisionAABB.Center;
+                            auto Extents = Entity->CollisionAABB.Extents;
+                            
+                            AABBMin(&Md);
+                            AABBMax(&Md);
+                            AABBSize(&Md);
+                            glm::vec2 PenetrationVector;
+                            ClosestPointsOnBoundsToPoint(&Md, glm::vec2(0,0), &PenetrationVector);
+                            
+                            if(glm::abs(PenetrationVector.x) > glm::abs(PenetrationVector.y))
+                            {
+                                if(PenetrationVector.x > 0)
+                                    CollisionInfo->Side = CollisionInfo->Side | Side_Left;
+                                else if(PenetrationVector.x < 0)
+                                    CollisionInfo->Side = CollisionInfo->Side | Side_Right;
+                            }
+                            else
+                            {
+                                if(PenetrationVector.y > 0)
+                                    CollisionInfo->Side = CollisionInfo->Side | Side_Bottom;
+                                else if(PenetrationVector.y < 0) 
+                                    CollisionInfo->Side = CollisionInfo->Side | Side_Top;
+                            }
+                            
+                            if(PenetrationVector.x != 0)
+                            {
+                                PV.x = PenetrationVector.x;
+                            }
+                            
+                            if(PenetrationVector.y != 0)
+                            {
+                                PV.y = PenetrationVector.y;
+                            }
                         }
                     }
                 }
