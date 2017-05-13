@@ -14,16 +14,20 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
     
     if(!Entity->IsKinematic)
     {
-        Entity->CollisionAABB.Center = glm::vec2(Entity->Position.x + Entity->Center.x * Entity->Scale.x + Entity->Velocity.x, Entity->Position.y + Entity->Center.y * Entity->Scale.y + Entity->Velocity.y);
+        Entity->CollisionAABB.Center = glm::vec2(Entity->Position.x + Entity->Center.x * Entity->Scale.x, Entity->Position.y + Entity->Center.y * Entity->Scale.y);
+        
+        glm::vec2 PV;
+        
         for(uint32 OtherEntityIndex = 0;
             OtherEntityIndex < GameState->EntityCount;
             OtherEntityIndex++)
         {
             entity OtherEntity = GameState->Entities[OtherEntityIndex];
             
-            if(!(OtherEntity.Layer & Entity->IgnoreLayers) && OtherEntityIndex != Entity->EntityIndex && !GameState->Entities[OtherEntityIndex].IsKinematic) {
+            if(!(OtherEntity.Layer & Entity->IgnoreLayers) && OtherEntityIndex != Entity->EntityIndex && !GameState->Entities[OtherEntityIndex].IsKinematic)
+            {
                 collision_AABB Md = {};
-                MinkowskiDifference(&GameState->Entities[OtherEntityIndex].CollisionAABB,&Entity->CollisionAABB, &Md);
+                MinkowskiDifference(&GameState->Entities[OtherEntityIndex].CollisionAABB, &Entity->CollisionAABB, &Md);
                 if(Md.Min.x <= 0 &&
                    Md.Max.x >= 0 &&
                    Md.Min.y <= 0 &&
@@ -42,28 +46,35 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
                     AABBMax(&Md);
                     AABBSize(&Md);
                     glm::vec2 PenetrationVector;
-                    ClosestPointsOnBoundsToPoint(&Md,glm::vec2(0,0),&PenetrationVector);
-                    
-                    real32 XDivider = 2.0f;
-                    real32 YDivider = 1.5f;
+                    ClosestPointsOnBoundsToPoint(&Md, glm::vec2(0,0), &PenetrationVector);
                     
                     if(glm::abs(PenetrationVector.x) > glm::abs(PenetrationVector.y))
                     {
-                        PenetrationVector = glm::vec2(PenetrationVector.x, 0);
-                        if(PenetrationVector.x < 0)
+                        if(PenetrationVector.x > 0)
                             CollisionInfo->Side = CollisionInfo->Side | Side_Left;
-                        else
+                        else if(PenetrationVector.x < 0)
                             CollisionInfo->Side = CollisionInfo->Side | Side_Right;
                     }
                     else
                     {
-                        PenetrationVector = glm::vec2(0, PenetrationVector.y);
-                        
-                        if(PenetrationVector.y < 0)
+                        if(PenetrationVector.y > 0)
                             CollisionInfo->Side = CollisionInfo->Side | Side_Bottom;
-                        else
+                        else if(PenetrationVector.y < 0) 
                             CollisionInfo->Side = CollisionInfo->Side | Side_Top;
                     }
+                    
+                    if(PenetrationVector.x != 0)
+                    {
+                        PV.x = PenetrationVector.x;
+                    }
+                    
+                    if(PenetrationVector.y != 0)
+                    {
+                        PV.y = PenetrationVector.y;
+                    }
+                    
+                    printf("Penetration vector %f %f\n", PV.x, PV.y);
+                    //Entity->Position += PenetrationVector;
                     
                     switch(Entity->Type)
                     {
@@ -110,6 +121,7 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
                 }
             }
         }
+        Entity->Position += PV;
     }
 }
 
@@ -119,7 +131,6 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                               GameState->Camera.ViewMatrix,
                               GameState->Camera.ProjectionMatrix,
                               glm::vec4(0, 0, GameState->RenderState.Viewport[2], GameState->RenderState.Viewport[3]));
-    
     for(uint32 EntityIndex = 0;
         EntityIndex < GameState->EntityCount;
         EntityIndex++)
@@ -183,50 +194,29 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                         Entity->Player.PickupCooldown -= DeltaTime;
                     }
                     
-                    
+                    Entity->Position += Entity->Velocity;
                     
                     collision_info CollisionInfo;
                     CheckCollision(GameState, Entity, &CollisionInfo);
                     
-                    if(!(CollisionInfo.Side & Side_Left) &&!(CollisionInfo.Side & Side_Right))
+                    /*
+                    if((Entity->Velocity.x < 0 && !(CollisionInfo.Side & Side_Left)) 
+                    || (Entity->Velocity.x > 0 && !(CollisionInfo.Side & Side_Right)))
                     {
-                        Entity->Position.x += Entity->Velocity.x;
+                    Entity->Position.x += Entity->Velocity.x;
                     }
                     
-                    
-                    if(!(CollisionInfo.Side & Side_Top) &&!(CollisionInfo.Side & Side_Bottom))
+                    if((Entity->Velocity.y > 0 && !(CollisionInfo.Side & Side_Top)) || (Entity->Velocity.y < 0 && !(CollisionInfo.Side & Side_Bottom)))
                     {
-                        Entity->Position.y += Entity->Velocity.y;
+                    Entity->Position.y += Entity->Velocity.y;
                     }
+                    */
                     
                     if(Entity->Player.Pickup)
                     {
                         Entity->Player.Pickup->Position.x += Entity->Velocity.x;
                         Entity->Player.Pickup->Position.y += Entity->Velocity.y;
                     }
-                    
-                    /*
-                    if(Entity->IsColliding)
-                    {
-                    if(CollisionInfo.Side & Side_Left || CollisionInfo.Side & Side_Right)
-                    {
-                    Entity->Position.y += Entity->Velocity.y;
-                    }
-                    else if(CollisionInfo.Side & Side_Top || CollisionInfo.Side & Side_Bottom)
-                    {
-                    Entity->Position.x += Entity->Velocity.x;
-                    } 
-                    else
-                    {
-                    
-                    }
-                    }
-                    else
-                    {
-                    Entity->Position.x += Entity->Velocity.x;
-                    Entity->Position.y += Entity->Velocity.y;
-                    }
-                    */
                     
                     //attacking
                     if(!Entity->Player.IsAttacking && GetMouseButtonDown(Mouse_Left, GameState))
@@ -273,8 +263,10 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
             case Entity_Barrel:
             {
                 collision_info CollisionInfo;
-                CheckCollision(GameState, Entity, &CollisionInfo);
-                if(Entity->Velocity.x > 0.7f * DeltaTime) {
+                //CheckCollision(GameState, Entity, &CollisionInfo);
+                
+                if(Entity->Velocity.x > 0.7f * DeltaTime)
+                {
                     
                     Entity->Position += Entity->Velocity;
                     Entity->Velocity.x -= 0.7f * DeltaTime;

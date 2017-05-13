@@ -15,8 +15,8 @@ static char* Jump(game_state* GameState, char** Arguments)
     
     //@Cleanup this should be changed to access the entities array instead
     GameState->Entities[GameState->PlayerIndex].Position = glm::vec2(X, Y);
-    
-    char* Result = 0;
+    GameState->Camera.Center = glm::vec2(GameState->Entities[GameState->PlayerIndex].Position.x, GameState->Entities[GameState->PlayerIndex].Position.y);
+    char* Result = (char*)malloc(40 * sizeof(char));
     sprintf(Result, "Jumped to position %.2f %.2f", X, Y);
     return Result;
 }
