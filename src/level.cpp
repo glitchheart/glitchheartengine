@@ -68,8 +68,8 @@ static void LoadLevelFromFile(char* FilePath, level* Level)
             for(int IndexWidth = 0; IndexWidth < MapWidth; ++IndexWidth) 
             {
                 collision_AABB CollisionAABB;
-                CollisionAABB.Center = glm::vec2(0,0);
-                CollisionAABB.Extents = glm::vec2(0.5f,0.5f);
+                CollisionAABB.Center = glm::vec2(IndexWidth + 0.5f, IndexHeight + 0.5f);
+                CollisionAABB.Extents = glm::vec2(0.5, 0.5);
                 tile_data Data;
                 
                 switch(Line[IndexWidth])
