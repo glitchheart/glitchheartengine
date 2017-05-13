@@ -188,8 +188,8 @@ static void PlaySound(sound_effect *SoundEffect)
         alSourcei(SoundEffect->Source, AL_LOOPING, SoundEffect->SoundInfo.Loop);
         alSourcePlay(SoundEffect->Source);
         alGetSourcei(SoundEffect->Source, AL_SOURCE_STATE, &SoundEffect->SourceState);
-        printf("Source: %d\n", SoundEffect->Source);
-        printf("Buffer: %d\n", SoundEffect->Buffer);
+        //printf("Source: %d\n", SoundEffect->Source);
+        //printf("Buffer: %d\n", SoundEffect->Buffer);
     }
 }
 

@@ -8,6 +8,15 @@ enum Entity_Layer
     Layer_Enemy = 1 << 2,
 };
 
+enum AI_State
+{
+    AI_Sleeping,
+    AI_Watching,
+    AI_Alerted,
+    AI_Following,
+    AI_Attacking
+};
+
 enum Entity_Enum
 {
     Entity_Player,
@@ -59,6 +68,11 @@ struct entity
         } PalmTree;
         struct
         {
+            bool32 IsAttacking;
+            real32 WalkingSpeed;
+            real64 MaxAlertDistance;
+            real64 MinDistance;
+            AI_State AIState;
         } Enemy;
     };
     glm::vec2 Velocity;

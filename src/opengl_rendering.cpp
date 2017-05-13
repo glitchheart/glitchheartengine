@@ -614,7 +614,7 @@ static void RenderEntity(render_state *RenderState, entity &Entity, glm::mat4 Pr
     auto Shader = RenderState->Shaders[Entity.RenderEntity.ShaderIndex];
     UseShader(&Shader);
     
-    if(Entity.RenderEntity.Rendered)
+    if(Entity.RenderEntity.Rendered && !Entity.IsDead)
     {
         switch(Entity.Type)
         {

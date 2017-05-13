@@ -43,9 +43,11 @@ static bool32 LoadLevelFromFile(char* FilePath, level* Level)
             sscanf(LineBuffer, "%s", &Level->Name);
         
         if(fgets(LineBuffer, 255, File))
+            sscanf(LineBuffer, "%f %f", &Level->PlayerStartPosition.x, &Level->PlayerStartPosition.y);
+        
+        if(fgets(LineBuffer, 255, File))
             sscanf(LineBuffer, "%d", &MapWidth);
         
-        //type
         if(fgets(LineBuffer, 255, File))
             sscanf(LineBuffer, "%d", &MapHeight);
         
@@ -74,32 +76,26 @@ static bool32 LoadLevelFromFile(char* FilePath, level* Level)
                 
                 switch(Line[IndexWidth])
                 {
-                    case '0':
+                    case '0': //empty
+                    Data.Type = Tile_None;
+                    break;
+                    case 'g': //grass
                     Data.Type = Tile_Grass;
                     Data.TextureOffset = glm::vec2(0, 0);
                     Data.IsSolid = false;
                     Data.CollisionAABB = CollisionAABB;
                     break;
-                    case '1':
+                    case 'w': //stone wall
                     Data.Type = Tile_Stone;
                     Data.TextureOffset = glm::vec2(0.8f, 0);
                     Data.IsSolid = true;
                     Data.CollisionAABB = CollisionAABB;
                     break;
-                    case '2':
-                    break;
-                    case '3':
-                    break;
-                    case '4':
-                    break;
-                    case '5':
-                    break;
-                    case '6':
-                    break;
-                    case '7':
-                    break;
-                    case '8':
-                    
+                    case 's':
+                    Data.Type = Tile_Sand;
+                    Data.TextureOffset = glm::vec2(0.6f, 0);
+                    Data.IsSolid = false;
+                    Data.CollisionAABB = CollisionAABB;
                     break;
                 }
                 

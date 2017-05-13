@@ -357,9 +357,57 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
             break;
             case Entity_Enemy:
             {
+                entity Player = GameState->Entities[GameState->PlayerIndex];
+                
+                switch(Entity->Enemy.AIState)
+                {
+                    case AI_Sleeping:
+                    {
+                        PlayAnimation(Entity, "player_idle");
+                    }
+                    break;
+                    case AI_Watching:
+                    {
+                        PlayAnimation(Entity, "player_idle");
+                        if(glm::distance(Entity->Position, Player.Position) <= Entity->Enemy.MaxAlertDistance)
+                        {
+                            Entity->Enemy.AIState = AI_Following;
+                            PlayAnimation(Entity, "player_walk");
+                        }
+                    }
+                    break;
+                    case AI_Alerted:
+                    {}
+                    break;
+                    case AI_Following:
+                    {
+                        real64 DistanceToPlayer = glm::distance(Entity->Position, Player.Position);
+                        if(DistanceToPlayer > Entity->Enemy.MaxAlertDistance 
+                           || DistanceToPlayer < Entity->Enemy.MinDistance)
+                        {
+                            Entity->Enemy.AIState = AI_Watching;
+                        }
+                        else
+                        {
+                            glm::vec2 Direction = Player.Position - Entity->Position;
+                            Direction = glm::normalize(Direction);
+                            Entity->Velocity = glm::vec2(Direction.x * Entity->Enemy.WalkingSpeed * DeltaTime, Direction.y * Entity->Enemy.WalkingSpeed * DeltaTime);
+                            
+                            Entity->RenderEntity.IsFlipped = Entity->Velocity.x < 0;
+                        }
+                    }
+                    break;
+                    case AI_Attacking:
+                    {}
+                    break;
+                }
+                
+                Entity->Position.x += Entity->Velocity.x;
+                Entity->Position.y += Entity->Velocity.y;
+                
                 //@Cleanup move this somewhere else, maybe out of switch
-                PlayAnimation(Entity, "player_idle");
                 Entity->RenderEntity.Color = glm::vec4(0, 1, 0, 1);
+                
                 if(Entity->CurrentAnimation)
                     TickAnimation(&Entity->Animations[Entity->CurrentAnimation], DeltaTime);
                 
@@ -370,8 +418,7 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                 
                 if(!Entity->IsColliding)
                 {
-                    Entity->Position.x += Entity->Velocity.x;
-                    Entity->Position.y += Entity->Velocity.y;
+                    
                 }
             }
             break;

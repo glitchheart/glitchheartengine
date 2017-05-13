@@ -355,6 +355,11 @@ int main(void)
     CollisionAABB4.Extents = glm::vec2(0.5f,0.5f);
     Enemy.CollisionAABB = CollisionAABB4;
     
+    Enemy.Enemy.WalkingSpeed = 5;
+    Enemy.Enemy.MaxAlertDistance = 10;
+    Enemy.Enemy.MinDistance = 1;
+    Enemy.Enemy.AIState = AI_Watching;
+    
     Enemy.EntityIndex = GameState.EntityCount;
     GameState.Entities[GameState.EntityCount++] = Enemy;
     
@@ -363,8 +368,10 @@ int main(void)
     GameState.Camera.Zoom = 2.5f;
     
     level Level;
-    LoadLevelFromFile("../assets/levels/level_01.plv", &Level);
+    LoadLevelFromFile("../assets/levels/level_02.plv", &Level);
     GameState.CurrentLevel = Level;
+    
+    GameState.Entities[GameState.PlayerIndex].Position = Level.PlayerStartPosition;
     
     printf("%s\n", glGetString(GL_VERSION));
     
