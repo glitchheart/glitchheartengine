@@ -45,6 +45,7 @@ struct tilemap
 struct level
 {
     char* Name;
+    glm::vec2 PlayerStartPosition;
     tilemap Tilemap;
 };
 
