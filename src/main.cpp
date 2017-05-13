@@ -282,27 +282,11 @@ int main(void)
     collision_AABB CollisionAABB;
     CollisionAABB.Center = glm::vec2(Player.Position.x + Player.Center.x * Player.Scale.x,
                                      Player.Position.y + Player.Center.y * Player.Scale.y);
-    CollisionAABB.Extents = glm::vec2(0.3f, 0.05f);
+    CollisionAABB.Extents = glm::vec2(0.3f, 0.1f);
     Player.CollisionAABB = CollisionAABB;
     Player.Center = glm::vec2(0.53f, 0.975f);
     Player.EntityIndex = GameState.EntityCount;
     GameState.Entities[GameState.EntityCount++] = Player;
-    
-    entity PlayerWeapon;
-    PlayerWeapon.RenderEntity.Rendered = false;
-    PlayerWeapon.Name = "Player weapon";
-    PlayerWeapon.Type = Entity_PlayerWeapon;
-    
-    collision_AABB CollisionAABB3;
-    CollisionAABB3.Center = glm::vec2(0.5, 0.5);
-    CollisionAABB3.Extents = glm::vec2(0.5f,0.5f);
-    CollisionAABB3.IsTrigger = true;
-    PlayerWeapon.CollisionAABB = CollisionAABB3;
-    PlayerWeapon.Rotation = glm::vec3(0, 0, 0);
-    PlayerWeapon.Scale = glm::vec3(1, 1, 0);
-    
-    PlayerWeapon.EntityIndex = GameState.EntityCount;
-    GameState.Entities[GameState.EntityCount++] = PlayerWeapon;
     
     entity Crosshair = {};
     Crosshair.Name = "Crosshair";

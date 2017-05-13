@@ -24,7 +24,10 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
         {
             entity OtherEntity = GameState->Entities[OtherEntityIndex];
             
-            if(!(OtherEntity.Layer & Entity->IgnoreLayers) && OtherEntity.EntityIndex != Entity->EntityIndex && !OtherEntity.IsKinematic && !OtherEntity.CollisionAABB.IsTrigger)
+            if(!(OtherEntity.Layer & Entity->IgnoreLayers) 
+               && GameState->Entities[OtherEntityIndex].EntityIndex != Entity->EntityIndex 
+               && !GameState->Entities[OtherEntityIndex].IsKinematic 
+               && !OtherEntity.CollisionAABB.IsTrigger)
             {
                 collision_AABB Md;
                 MinkowskiDifference(&GameState->Entities[OtherEntityIndex].CollisionAABB, &Entity->CollisionAABB, &Md);
@@ -145,44 +148,41 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
                         {
                             Entity->IsColliding = true;
                             
-                            if(!Entity->CollisionAABB.IsTrigger)
+                            //calculate what side is colliding
+                            auto OtherPosition = Tile.CollisionAABB.Center;
+                            auto OtherExtents = Tile.CollisionAABB.Extents;
+                            auto Position = Entity->CollisionAABB.Center;
+                            auto Extents = Entity->CollisionAABB.Extents;
+                            
+                            AABBMin(&Md);
+                            AABBMax(&Md);
+                            AABBSize(&Md);
+                            glm::vec2 PenetrationVector;
+                            ClosestPointsOnBoundsToPoint(&Md, glm::vec2(0,0), &PenetrationVector);
+                            
+                            if(glm::abs(PenetrationVector.x) > glm::abs(PenetrationVector.y))
                             {
-                                //calculate what side is colliding
-                                auto OtherPosition = Tile.CollisionAABB.Center;
-                                auto OtherExtents = Tile.CollisionAABB.Extents;
-                                auto Position = Entity->CollisionAABB.Center;
-                                auto Extents = Entity->CollisionAABB.Extents;
-                                
-                                AABBMin(&Md);
-                                AABBMax(&Md);
-                                AABBSize(&Md);
-                                glm::vec2 PenetrationVector;
-                                ClosestPointsOnBoundsToPoint(&Md, glm::vec2(0,0), &PenetrationVector);
-                                
-                                if(glm::abs(PenetrationVector.x) > glm::abs(PenetrationVector.y))
-                                {
-                                    if(PenetrationVector.x > 0)
-                                        CollisionInfo->Side = CollisionInfo->Side | Side_Left;
-                                    else if(PenetrationVector.x < 0)
-                                        CollisionInfo->Side = CollisionInfo->Side | Side_Right;
-                                }
-                                else
-                                {
-                                    if(PenetrationVector.y > 0)
-                                        CollisionInfo->Side = CollisionInfo->Side | Side_Bottom;
-                                    else if(PenetrationVector.y < 0) 
-                                        CollisionInfo->Side = CollisionInfo->Side | Side_Top;
-                                }
-                                
-                                if(PenetrationVector.x != 0)
-                                {
-                                    PV.x = PenetrationVector.x;
-                                }
-                                
-                                if(PenetrationVector.y != 0)
-                                {
-                                    PV.y = PenetrationVector.y;
-                                }
+                                if(PenetrationVector.x > 0)
+                                    CollisionInfo->Side = CollisionInfo->Side | Side_Left;
+                                else if(PenetrationVector.x < 0)
+                                    CollisionInfo->Side = CollisionInfo->Side | Side_Right;
+                            }
+                            else
+                            {
+                                if(PenetrationVector.y > 0)
+                                    CollisionInfo->Side = CollisionInfo->Side | Side_Bottom;
+                                else if(PenetrationVector.y < 0) 
+                                    CollisionInfo->Side = CollisionInfo->Side | Side_Top;
+                            }
+                            
+                            if(PenetrationVector.x != 0)
+                            {
+                                PV.x = PenetrationVector.x;
+                            }
+                            
+                            if(PenetrationVector.y != 0)
+                            {
+                                PV.y = PenetrationVector.y;
                             }
                         }
                     }
@@ -190,8 +190,8 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
             }
         }
         
-        if(!Entity->CollisionAABB.IsTrigger)
-            Entity->Position += PV;
+        //if(Entity->CollisionAABB.IsTrigger)
+        Entity->Position += PV;
     }
 }
 
@@ -355,6 +355,7 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
             case Entity_Barrel:
             {
                 collision_info CollisionInfo;
+                Entity->IsColliding = false;
                 //CheckCollision(GameState, Entity, &CollisionInfo); //TODO(Daniel) this makes it bug out
                 
                 if(Entity->Velocity.x > 0.7f * DeltaTime)
