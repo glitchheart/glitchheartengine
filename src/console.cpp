@@ -69,7 +69,6 @@ void ExecuteCommand(game_state *GameState)
         }
         
         //Copy the command into the history buffer
-        
         for(int i = HISTORY_BUFFER_LINES - 1; i > 0; i--)
         {
             sprintf(GameState->Console.HistoryBuffer[i], GameState->Console.HistoryBuffer[i - 2]);
@@ -78,11 +77,14 @@ void ExecuteCommand(game_state *GameState)
         sprintf(GameState->Console.HistoryBuffer[0], Result);
         sprintf(GameState->Console.HistoryBuffer[1], &GameState->Console.Buffer[0]);
         
+        free(Result);
+        
         for(int i = 0; i < CONSOLE_BUFFER_SIZE; i++)
             GameState->Console.Buffer[i] = '\0';
         
         GameState->Console.BufferIndex = 0;
         
+        //free(ResultCopy); //TODO(Daniel) this crashes the program. Find out why
     }
 }
 

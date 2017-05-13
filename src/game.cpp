@@ -24,7 +24,7 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
         {
             entity OtherEntity = GameState->Entities[OtherEntityIndex];
             
-            if(!(OtherEntity.Layer & Entity->IgnoreLayers) && OtherEntityIndex != Entity->EntityIndex && !GameState->Entities[OtherEntityIndex].IsKinematic)
+            if(!(OtherEntity.Layer & Entity->IgnoreLayers) &&GameState->Entities[OtherEntityIndex].EntityIndex != Entity->EntityIndex && !GameState->Entities[OtherEntityIndex].IsKinematic)
             {
                 collision_AABB Md;
                 MinkowskiDifference(&GameState->Entities[OtherEntityIndex].CollisionAABB, &Entity->CollisionAABB, &Md);
@@ -187,12 +187,31 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
     }
 }
 
+int CompareFunction(const void* a, const void* b)
+{
+    entity APtr = *(entity*)a;
+    entity BPtr = *(entity*)b;
+    
+    collision_AABB BoxA = APtr.CollisionAABB;
+    collision_AABB BoxB = BPtr.CollisionAABB;
+    
+    if(BoxA.Center.y - BoxA.Extents.y > BoxB.Center.y - BoxB.Extents.y)
+        return 1;
+    if(BoxA.Center.y  - BoxA.Extents.y < BoxB.Center.y - BoxB.Extents.y)
+        return -1;
+    return 0;
+}
+
 void UpdateEntities(game_state* GameState, real64 DeltaTime)
 {
+    //@Fix this is buggy
+    qsort(GameState->Entities, GameState->EntityCount, sizeof(entity), CompareFunction);
+    
     auto pos = glm::unProject(glm::vec3(GameState->InputController.MouseX,GameState->RenderState.Viewport[3] - GameState->InputController.MouseY, 0),
                               GameState->Camera.ViewMatrix,
                               GameState->Camera.ProjectionMatrix,
                               glm::vec4(0, 0, GameState->RenderState.Viewport[2], GameState->RenderState.Viewport[3]));
+    
     for(uint32 EntityIndex = 0;
         EntityIndex < GameState->EntityCount;
         EntityIndex++)
@@ -203,6 +222,9 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
         {
             case Entity_Player: 
             {
+                //Note(Daniel) this has to be updated after every qsort call
+                GameState->PlayerIndex = EntityIndex;
+                
                 if (!GameState->Console.Open)
                 {
                     Entity->Velocity = glm::vec2(0,0);
