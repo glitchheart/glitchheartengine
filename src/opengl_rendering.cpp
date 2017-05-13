@@ -767,7 +767,6 @@ static void RenderTilemap(render_state* RenderState, const tilemap& Tilemap, glm
     glBindVertexArray(0);
 }
 
-
 static void RenderGame(game_state* GameState)
 {
     switch(GameState->GameMode)
@@ -794,14 +793,18 @@ static void RenderGame(game_state* GameState)
         break;
         case Mode_InGame:
         {
+            //sort
             RenderTilemap(&GameState->RenderState, GameState->CurrentLevel.Tilemap, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
             
             for(uint32 EntityIndex = 0;
                 EntityIndex < GameState->EntityCount;
                 EntityIndex++) 
             {
-                RenderEntity(&GameState->RenderState, GameState->Entities[EntityIndex], GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
+                if(GameState->Entities[EntityIndex].Type == Entity_Player)
+                    GameState->PlayerIndex = EntityIndex;
                 
+                //if(EntityIndex != GameState->PlayerIndex)
+                RenderEntity(&GameState->RenderState, GameState->Entities[EntityIndex], GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
             }
         }
         break;

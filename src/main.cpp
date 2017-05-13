@@ -230,8 +230,8 @@ int main(void)
     
     input_controller Input = {};
     
-    int present = glfwJoystickPresent(GLFW_JOYSTICK_1);
-    if(present)
+    int Present = glfwJoystickPresent(GLFW_JOYSTICK_1);
+    if(Present)
     {
         Input.ControllerPresent = true;
         printf("Controller present\n");
@@ -283,9 +283,9 @@ int main(void)
     collision_AABB CollisionAABB;
     CollisionAABB.Center = glm::vec2(Player.Position.x + Player.Center.x * Player.Scale.x,
                                      Player.Position.y + Player.Center.y * Player.Scale.y);
-    CollisionAABB.Extents = glm::vec2(0.3f, 0.8f);
+    CollisionAABB.Extents = glm::vec2(0.3f, 0.05f);
     Player.CollisionAABB = CollisionAABB;
-    Player.Center = glm::vec2(0.53f, 0.6f);
+    Player.Center = glm::vec2(0.53f, 0.975f);
     Player.EntityIndex = GameState.EntityCount;
     GameState.Entities[GameState.EntityCount++] = Player;
     
