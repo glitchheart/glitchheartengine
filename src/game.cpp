@@ -8,6 +8,11 @@
 
 #define DEBUG
 
+void CheckTilemapCollision(game_state* GameState, entity* Entity, collision_info* CollisionInfo)
+{
+    
+}
+
 void CheckCollision(game_state* GameState, entity* Entity, collision_info* CollisionInfo)
 {
     Entity->IsColliding = false;
@@ -73,9 +78,6 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
                         PV.y = PenetrationVector.y;
                     }
                     
-                    printf("Penetration vector %f %f\n", PV.x, PV.y);
-                    //Entity->Position += PenetrationVector;
-                    
                     switch(Entity->Type)
                     {
                         case Entity_Player:
@@ -106,17 +108,6 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
                         Entity->Position += glm::vec2(PenetrationVector.x/XDivider,PenetrationVector.y/YDivider);
                         Entity->CollisionAABB.Center = glm::vec2(Entity->Position.x + Entity->Center.x * Entity->Scale.x + Entity->Velocity.x, Entity->Position.y + Entity->Center.y * Entity->Scale.y + Entity->Velocity.y);
                         Entity->Velocity = glm::vec2(0,0);*/
-                    }
-                }
-                else
-                {
-                    if(!Entity->IsColliding) 
-                    {
-                        Entity->IsColliding = false;
-                    }
-                    if(!GameState->Entities[OtherEntityIndex].IsColliding) 
-                    {
-                        GameState->Entities[OtherEntityIndex].IsColliding = false;
                     }
                 }
             }
@@ -263,7 +254,7 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
             case Entity_Barrel:
             {
                 collision_info CollisionInfo;
-                //CheckCollision(GameState, Entity, &CollisionInfo);
+                //CheckCollision(GameState, Entity, &CollisionInfo); //TODO(Daniel) this makes it bug out
                 
                 if(Entity->Velocity.x > 0.7f * DeltaTime)
                 {
