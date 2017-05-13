@@ -8,6 +8,7 @@
 
 #define DEBUG
 
+//@Cleanup move this
 void Kill(entity* Entity)
 {
     Entity->RenderEntity.Rendered = false;
@@ -48,6 +49,7 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
                     {
                         if(!OtherEntity->IsDead && GameState->Entities[GameState->PlayerIndex].Player.IsAttacking)
                         {
+                            printf("Killed by %s\n", GameState->Entities[GameState->PlayerIndex].Name);
                             PlaySoundEffect(GameState, &GameState->SoundManager.SwordHit01);
                             Kill(OtherEntity);
                         }
@@ -235,6 +237,7 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                               GameState->Camera.ProjectionMatrix,
                               glm::vec4(0, 0, GameState->RenderState.Viewport[2], GameState->RenderState.Viewport[3]));
     
+    //@Incomplete it has to be possible to make this more efficient
     for(uint32 EntityIndex = 0;
         EntityIndex < GameState->EntityCount;
         EntityIndex++)
@@ -247,6 +250,24 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
             {
                 //Note(Daniel) this has to be updated after every qsort call
                 GameState->PlayerIndex = EntityIndex;
+                
+            }
+            break;
+        }
+    }
+    
+    for(uint32 EntityIndex = 0;
+        EntityIndex < GameState->EntityCount;
+        EntityIndex++)
+    {
+        entity* Entity = &GameState->Entities[EntityIndex];
+        
+        switch(Entity->Type)
+        {
+            case Entity_Player: 
+            {
+                //Note(Daniel) this has to be updated after every qsort call
+                //GameState->PlayerIndex = EntityIndex;
                 
                 if (!GameState->Console.Open)
                 {
@@ -357,78 +378,80 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
             break;
             case Entity_Enemy:
             {
-                entity Player = GameState->Entities[GameState->PlayerIndex];
-                real64 DistanceToPlayer = glm::distance(Entity->Position, Player.Position);
-                switch(Entity->Enemy.AIState)
+                if(!Entity->IsDead)
                 {
-                    case AI_Sleeping:
+                    entity Player = GameState->Entities[GameState->PlayerIndex];
+                    real64 DistanceToPlayer = glm::distance(Entity->Position, Player.Position);
+                    switch(Entity->Enemy.AIState)
                     {
-                        PlayAnimation(Entity, "player_idle");
-                    }
-                    break;
-                    case AI_Idle:
-                    {
-                        PlayAnimation(Entity, "player_idle");
-                        if(DistanceToPlayer <= Entity->Enemy.MaxAlertDistance)
-                        {
-                            Entity->Enemy.AIState = AI_Following;
-                            PlayAnimation(Entity, "player_walk");
-                        }
-                    }
-                    break;
-                    case AI_Alerted:
-                    {}
-                    break;
-                    case AI_Following:
-                    {
-                        //TODO(Daniel) here the pathfinding should happen
-                        if(DistanceToPlayer > Entity->Enemy.MaxAlertDistance)
-                        {
-                            Entity->Enemy.AIState = AI_Idle;
-                        }
-                        else if(DistanceToPlayer < Entity->Enemy.MinDistance)
-                        {
-                            Entity->Enemy.AIState = AI_Attacking;
-                        }
-                        else
-                        {
-                            glm::vec2 Direction = Player.Position - Entity->Position;
-                            Direction = glm::normalize(Direction);
-                            Entity->Velocity = glm::vec2(Direction.x * Entity->Enemy.WalkingSpeed * DeltaTime, Direction.y * Entity->Enemy.WalkingSpeed * DeltaTime);
-                            
-                            Entity->RenderEntity.IsFlipped = Entity->Velocity.x < 0;
-                        }
-                    }
-                    break;
-                    case AI_Attacking:
-                    {
-                        if(Entity->Enemy.AttackCooldownCounter == 0)
-                        {
-                            Entity->Enemy.IsAttacking = true;
-                            PlayAnimation(Entity, "player_attack");
-                            PlaySoundEffect(GameState, &GameState->SoundManager.SwordSlash01);
-                        }
-                        else if(DistanceToPlayer > Entity->Enemy.MinDistance)
-                        {
-                            Entity->Enemy.IsAttacking = false;
-                            Entity->Enemy.AIState = AI_Idle;
-                        }
-                        else if(!Entity->Animations[Entity->CurrentAnimation].Playing)
+                        case AI_Sleeping:
                         {
                             PlayAnimation(Entity, "player_idle");
                         }
-                        
-                        Entity->Enemy.AttackCooldownCounter += DeltaTime;
-                        
-                        if(Entity->Enemy.AttackCooldownCounter >= Entity->Enemy.AttackCooldown)
+                        break;
+                        case AI_Idle:
                         {
-                            Entity->Enemy.AttackCooldownCounter = 0;
-                            Entity->Enemy.IsAttacking = true;
+                            PlayAnimation(Entity, "player_idle");
+                            if(DistanceToPlayer <= Entity->Enemy.MaxAlertDistance)
+                            {
+                                Entity->Enemy.AIState = AI_Following;
+                                PlayAnimation(Entity, "player_walk");
+                            }
                         }
+                        break;
+                        case AI_Alerted:
+                        {}
+                        break;
+                        case AI_Following:
+                        {
+                            //TODO(Daniel) here the pathfinding should happen
+                            if(DistanceToPlayer > Entity->Enemy.MaxAlertDistance)
+                            {
+                                Entity->Enemy.AIState = AI_Idle;
+                            }
+                            else if(DistanceToPlayer < Entity->Enemy.MinDistance)
+                            {
+                                Entity->Enemy.AIState = AI_Attacking;
+                            }
+                            else
+                            {
+                                glm::vec2 Direction = Player.Position - Entity->Position;
+                                Direction = glm::normalize(Direction);
+                                Entity->Velocity = glm::vec2(Direction.x * Entity->Enemy.WalkingSpeed * DeltaTime, Direction.y * Entity->Enemy.WalkingSpeed * DeltaTime);
+                                
+                                Entity->RenderEntity.IsFlipped = Entity->Velocity.x < 0;
+                            }
+                        }
+                        break;
+                        case AI_Attacking:
+                        {
+                            if(Entity->Enemy.AttackCooldownCounter == 0)
+                            {
+                                Entity->Enemy.IsAttacking = true;
+                                PlayAnimation(Entity, "player_attack");
+                                PlaySoundEffect(GameState, &GameState->SoundManager.SwordSlash01);
+                            }
+                            else if(DistanceToPlayer > Entity->Enemy.MinDistance)
+                            {
+                                Entity->Enemy.IsAttacking = false;
+                                Entity->Enemy.AIState = AI_Idle;
+                            }
+                            else if(!Entity->Animations[Entity->CurrentAnimation].Playing)
+                            {
+                                PlayAnimation(Entity, "player_idle");
+                            }
+                            
+                            Entity->Enemy.AttackCooldownCounter += DeltaTime;
+                            
+                            if(Entity->Enemy.AttackCooldownCounter >= Entity->Enemy.AttackCooldown)
+                            {
+                                Entity->Enemy.AttackCooldownCounter = 0;
+                                Entity->Enemy.IsAttacking = true;
+                            }
+                        }
+                        break;
                     }
-                    break;
                 }
-                
                 //Finish the cooldown although we are not in attack-mode. This prevents the enemy from attacking
                 //too quickly after the previous attack if switching between states quickly.
                 if(Entity->Enemy.AIState != AI_Attacking && Entity->Enemy.AttackCooldownCounter != 0)

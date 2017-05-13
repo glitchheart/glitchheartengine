@@ -41,7 +41,7 @@ static char* LoadLevel(game_state* GameState, char** Arguments)
     
     char* Result = (char*)malloc(25 * sizeof(char));
     
-    if(LoadLevelFromFile(Path, &Level))
+    if(LoadLevelFromFile(Path, &Level, GameState))
     {
         level* CurrentLevel = &GameState->CurrentLevel;
         

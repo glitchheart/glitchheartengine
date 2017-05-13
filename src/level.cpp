@@ -1,30 +1,46 @@
-static void GenerateRoom(real32 X, real32 Y, uint32 Width, uint32 Height, room *Room)
+static void SpawnEnemy(game_state* GameState, glm::vec2 Position, entity* Enemy)
 {
-    Room->X = X;
-    Room->Y = Y;
-    Room->Width = Width;
-    Room->Height = Height;
+    Enemy->Name = "enemy";
+    Enemy->Type = Entity_Enemy;
     
-    Room->Data = (tile_data**)malloc(Width * sizeof(tile_data*));
+    animation* EnemyIdleAnimation = (animation*)malloc(sizeof(animation));
     
-    for (uint32 Index = 0; Index < Width; Index++) 
-    {
-        Room->Data[Index] = (tile_data*)malloc(Height * sizeof(tile_data));
-    }
-    /*
-    for(uint32 i = 0; i < Width; i++)
-    {
-        for(uint32 j = 0; j < Height; j++)
-        {
-            if(i == 0 || j == 0 || i == Width - 1 || j == Height - 1)
-                Room->Data[i][j] = { Tile_Stone, 0, glm::vec2(0.8,0), false, 0 };
-            else
-                Room->Data[i][j] = { Tile_Sand, 0, glm::vec2(0, 0), false, 0 };
-        }
-    }*/
+    LoadAnimationFromFile("../assets/animations/player_anim_idle_new.pownim", EnemyIdleAnimation, &GameState->RenderState);
+    Enemy->Animations.insert(std::pair<char*, animation>(EnemyIdleAnimation->Name, *EnemyIdleAnimation));
+    
+    animation* EnemyWalkingAnimation = (animation*)malloc(sizeof(animation));
+    LoadAnimationFromFile("../assets/animations/player_anim_walk_new.pownim", EnemyWalkingAnimation, &GameState->RenderState);
+    Enemy->Animations.insert(std::pair<char*, animation>(EnemyWalkingAnimation->Name, *EnemyWalkingAnimation));
+    
+    animation* EnemyAttackingAnimation = (animation*)malloc(sizeof(animation));
+    
+    LoadAnimationFromFile("../assets/animations/player_anim_attack_new.pownim", EnemyAttackingAnimation, &GameState->RenderState);
+    Enemy->Animations.insert(std::pair<char*, animation>(EnemyAttackingAnimation->Name, *EnemyAttackingAnimation));
+    
+    render_entity EnemyRenderEntity = { };
+    EnemyRenderEntity.ShaderIndex = Shader_SpriteSheetShader;
+    EnemyRenderEntity.TextureHandle = LoadTexture("../assets/textures/new_player.png");
+    Enemy->RenderEntity = EnemyRenderEntity;
+    Enemy->Rotation = glm::vec3(0, 0, 0);
+    Enemy->Position = Position;
+    Enemy->Scale = glm::vec3(2, 2, 0);
+    Enemy->Velocity = glm::vec2(-2,0);
+    
+    collision_AABB CollisionAABB4;
+    CollisionAABB4.Center = Enemy->Position;
+    CollisionAABB4.Extents = glm::vec2(0.5f,0.5f);
+    Enemy->CollisionAABB = CollisionAABB4;
+    
+    Enemy->Enemy.WalkingSpeed = 5;
+    Enemy->Enemy.MaxAlertDistance = 10;
+    Enemy->Enemy.MinDistance = 1;
+    Enemy->Enemy.AttackCooldown = 1.0f;
+    Enemy->Enemy.AIState = AI_Idle;
+    
+    Enemy->EntityIndex = GameState->EntityCount;
 }
 
-static bool32 LoadLevelFromFile(char* FilePath, level* Level)
+static bool32 LoadLevelFromFile(char* FilePath, level* Level, game_state* GameState)
 {
     //read the file manmain
     FILE* File;
@@ -102,6 +118,15 @@ static bool32 LoadLevelFromFile(char* FilePath, level* Level)
                 Level->Tilemap.Data[IndexWidth][IndexHeight] = Data;
             }
             IndexHeight++;
+        }
+        
+        while(fgets(LineBuffer, 255, File))
+        {
+            glm::vec2 Pos;
+            sscanf(LineBuffer, "enemy %f %f", &Pos.x, &Pos.y);
+            SpawnEnemy(GameState, Pos, &GameState->Entities[GameState->EntityCount]);
+            GameState->EntityCount++;
+            printf("ONE MORE TIME\n");
         }
         fclose(File);
         return true;
