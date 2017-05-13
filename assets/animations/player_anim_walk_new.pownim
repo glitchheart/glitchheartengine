@@ -3,15 +3,15 @@ type sprite
 framecount 8
 loop 1
 timeperframe 0.05
-rows 8
+rows 10
 columns 1
 frames
 {0.0,0.0}
-{0.125,0.0}
-{0.250,0.0}
-{0.375,0.0}
+{0.1,0.0}
+{0.2,0.0}
+{0.3,0.0}
+{0.4,0.0}
 {0.5,0.0}
-{0.625,0.0}
-{0.750,0.0}
-{0.875,0.0}
+{0.6,0.0}
+{0.7,0.0}
 texturepath ../assets/textures/spritesheets/new_player.png

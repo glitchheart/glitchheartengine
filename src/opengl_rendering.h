@@ -34,6 +34,7 @@ enum Render_Mode
 
 struct render_entity
 {
+    bool32 Rendered = true;
     uint32 TextureHandle;
     uint32 ShaderIndex;
     bool32 IsFlipped;

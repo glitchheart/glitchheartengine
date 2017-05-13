@@ -614,74 +614,79 @@ static void RenderEntity(render_state *RenderState, entity &Entity, glm::mat4 Pr
     auto Shader = RenderState->Shaders[Entity.RenderEntity.ShaderIndex];
     UseShader(&Shader);
     
-    switch(Entity.Type)
+    if(Entity.RenderEntity.Rendered)
     {
-        case Entity_Crosshair:
-        case Entity_Enemy:
-        case Entity_Player:
-        case Entity_Barrel:
+        switch(Entity.Type)
         {
-            glm::mat4 Model(1.0f);
-            Model = glm::translate(Model, glm::vec3(Entity.Position.x, Entity.Position.y, 0.0f));
-            Model = glm::translate(Model, glm::vec3(1, 1, 0.0f)); 
-            Model = glm::rotate(Model, Entity.Rotation.z, glm::vec3(0, 0, 1)); 
-            Model = glm::translate(Model, glm::vec3(-1, -1, 0.0f));
-            
-            glm::vec3 Scale;
-            
-            if(Entity.RenderEntity.IsFlipped)
+            case Entity_Crosshair:
+            case Entity_Enemy:
+            case Entity_Player:
+            case Entity_Barrel:
             {
-                Scale = glm::vec3(-Entity.Scale.x, Entity.Scale.y, Entity.Scale.z);
-                Model = glm::translate(Model, glm::vec3(Entity.Scale.x, 0, 0));
-            }
-            else
-                Scale = Entity.Scale;
-            
-            Model = glm::scale(Model, Scale);
-            
-            if(Entity.CurrentAnimation) 
-            {
-                auto Animation = Entity.Animations[Entity.CurrentAnimation];
+                glm::mat4 Model(1.0f);
+                Model = glm::translate(Model, glm::vec3(Entity.Position.x, Entity.Position.y, 0.0f));
+                Model = glm::translate(Model, glm::vec3(1, 1, 0.0f)); 
+                Model = glm::rotate(Model, Entity.Rotation.z, glm::vec3(0, 0, 1)); 
+                Model = glm::translate(Model, glm::vec3(-1, -1, 0.0f));
                 
-                if (RenderState->BoundTexture != Animation.TextureHandle) //never bind the same texture if it's already bound
+                glm::vec3 Scale;
+                
+                if(Entity.RenderEntity.IsFlipped)
                 {
-                    glBindTexture(GL_TEXTURE_2D, Animation.TextureHandle);
-                    RenderState->BoundTexture = Animation.TextureHandle;
+                    Scale = glm::vec3(-Entity.Scale.x, Entity.Scale.y, Entity.Scale.z);
+                    Model = glm::translate(Model, glm::vec3(Entity.Scale.x, 0, 0));
+                }
+                else
+                    Scale = Entity.Scale;
+                
+                Model = glm::scale(Model, Scale);
+                
+                if(Entity.CurrentAnimation) 
+                {
+                    auto Animation = Entity.Animations[Entity.CurrentAnimation];
+                    
+                    if (RenderState->BoundTexture != Animation.TextureHandle) //never bind the same texture if it's already bound
+                    {
+                        glBindTexture(GL_TEXTURE_2D, Animation.TextureHandle);
+                        RenderState->BoundTexture = Animation.TextureHandle;
+                    }
+                    
+                    glBindVertexArray(RenderState->SpriteSheetVAO);
+                    
+                    auto Frame = Animation.Frames[Animation.FrameIndex];
+                    SetVec2Attribute(Shader.Program,"textureOffset", glm::vec2(Frame.X,Frame.Y));
+                    
+                    SetVec2Attribute(Shader.Program,"sheetSize",
+                                     glm::vec2(Animation.Rows, Animation.Columns));
+                } 
+                else 
+                {
+                    if (RenderState->BoundTexture != Entity.RenderEntity.TextureHandle) //never bind the same texture if it's already bound
+                    {
+                        glBindTexture(GL_TEXTURE_2D, Entity.RenderEntity.TextureHandle);
+                        RenderState->BoundTexture = Entity.RenderEntity.TextureHandle;
+                    }
+                    
+                    glBindVertexArray(RenderState->SpriteVAO);
                 }
                 
-                glBindVertexArray(RenderState->SpriteSheetVAO);
-                
-                auto Frame = Animation.Frames[Animation.FrameIndex];
-                SetVec2Attribute(Shader.Program,"textureOffset", glm::vec2(Frame.X,Frame.Y));
-                
-                SetVec2Attribute(Shader.Program,"sheetSize",
-                                 glm::vec2(Animation.Rows, Animation.Columns));
-            } 
-            else 
-            {
-                if (RenderState->BoundTexture != Entity.RenderEntity.TextureHandle) //never bind the same texture if it's already bound
-                {
-                    glBindTexture(GL_TEXTURE_2D, Entity.RenderEntity.TextureHandle);
-                    RenderState->BoundTexture = Entity.RenderEntity.TextureHandle;
-                }
-                
-                glBindVertexArray(RenderState->SpriteVAO);
+                SetMat4Uniform(Shader.Program, "Projection", ProjectionMatrix);
+                SetMat4Uniform(Shader.Program, "View", View);
+                SetMat4Uniform(Shader.Program, "Model", Model);
+                break;
             }
-            
-            SetMat4Uniform(Shader.Program, "Projection", ProjectionMatrix);
-            SetMat4Uniform(Shader.Program, "View", View);
-            SetMat4Uniform(Shader.Program, "Model", Model);
-            break;
         }
+        
+        glBindBuffer(GL_ARRAY_BUFFER, RenderState->SpriteQuadVBO);
+        glDrawArrays(GL_QUADS, 0, 4);
+        glBindVertexArray(0);
     }
-    
-    glBindBuffer(GL_ARRAY_BUFFER, RenderState->SpriteQuadVBO);
-    glDrawArrays(GL_QUADS, 0, 4);
-    glBindVertexArray(0);
     
     if(RenderState->RenderColliders && !Entity.IsKinematic)
         RenderColliderWireframe(RenderState, &Entity, ProjectionMatrix, View);
-    if(RenderState->RenderFPS) {
+    
+    if(RenderState->RenderFPS)
+    {
         char FPS[32];
         sprintf(FPS, "%4.0f",RenderState->FPS);
         RenderText(RenderState,RenderState->InconsolataFont, glm::vec4(1,1,1,1),FPS, RenderState->WindowWidth/2.0f,20.0f,1.0f,Alignment_Center);
@@ -800,10 +805,6 @@ static void RenderGame(game_state* GameState)
                 EntityIndex < GameState->EntityCount;
                 EntityIndex++) 
             {
-                if(GameState->Entities[EntityIndex].Type == Entity_Player)
-                    GameState->PlayerIndex = EntityIndex;
-                
-                //if(EntityIndex != GameState->PlayerIndex)
                 RenderEntity(&GameState->RenderState, GameState->Entities[EntityIndex], GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
             }
         }
