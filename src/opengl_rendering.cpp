@@ -350,7 +350,7 @@ static void ReloadAssets(asset_manager *AssetManager, game_state* GameState)
     
     if(AssetManager->DirtyTileset == 1)
     {
-        GameState->CurrentLevel.Tilemap.RenderEntity.TextureHandle = LoadTexture("./assets/textures/tiles.png");
+        GameState->CurrentLevel.Tilemap.RenderEntity.TextureHandle = LoadTexture("../assets/textures/tiles.png");
         AssetManager->DirtyTileset = 0;
     }
 }

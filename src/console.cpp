@@ -15,6 +15,7 @@ static void InitCommands()
     AddCommand("view", &View);
     AddCommand("editor", &Editor);
     AddCommand("reset", &Reset);
+    AddCommand("loadlevel", &LoadLevel);
 }
 
 void ExecuteCommand(game_state *GameState)

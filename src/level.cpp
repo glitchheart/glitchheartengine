@@ -24,7 +24,7 @@ static void GenerateRoom(real32 X, real32 Y, uint32 Width, uint32 Height, room *
     }*/
 }
 
-static void LoadLevelFromFile(char* FilePath, level* Level)
+static bool32 LoadLevelFromFile(char* FilePath, level* Level)
 {
     //read the file manmain
     FILE* File;
@@ -104,11 +104,11 @@ static void LoadLevelFromFile(char* FilePath, level* Level)
                 }
                 
                 Level->Tilemap.Data[IndexWidth][IndexHeight] = Data;
-                //printf("IndexWidth %d IndexHeight %d\n", IndexWidth, IndexHeight);
             }
             IndexHeight++;
         }
-        
-        printf("DAMN\n");
+        fclose(File);
+        return true;
     }
+    return false;
 }
