@@ -329,9 +329,21 @@ int main(void)
     Enemy.Name = "enemy";
     Enemy.Type = Entity_Enemy;
     
+    animation EnemyIdleAnimation = {};
+    LoadAnimationFromFile("../assets/animations/player_anim_idle_new.pownim", &EnemyIdleAnimation, &GameState.RenderState);
+    Enemy.Animations.insert(std::pair<char*, animation>(EnemyIdleAnimation.Name, EnemyIdleAnimation));
+    
+    animation EnemyWalkingAnimation = {};
+    LoadAnimationFromFile("../assets/animations/player_anim_walk_new.pownim", &EnemyWalkingAnimation, &GameState.RenderState);
+    Enemy.Animations.insert(std::pair<char*, animation>(EnemyWalkingAnimation.Name, EnemyWalkingAnimation));
+    
+    animation EnemyAttackingAnimation = {};
+    LoadAnimationFromFile("../assets/animations/player_anim_attack_new.pownim", &EnemyAttackingAnimation, &GameState.RenderState);
+    Enemy.Animations.insert(std::pair<char*, animation>(EnemyAttackingAnimation.Name, EnemyAttackingAnimation));
+    
     render_entity EnemyRenderEntity = { };
-    EnemyRenderEntity.ShaderIndex = Shader_Texture;
-    EnemyRenderEntity.TextureHandle = LoadTexture("../assets/textures/enemy.png");
+    EnemyRenderEntity.ShaderIndex = Shader_SpriteSheetShader;
+    EnemyRenderEntity.TextureHandle = LoadTexture("../assets/textures/new_player.png");
     Enemy.RenderEntity = EnemyRenderEntity;
     Enemy.Rotation = glm::vec3(0, 0, 0);
     Enemy.Position = glm::vec2(5,0);

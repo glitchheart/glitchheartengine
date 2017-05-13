@@ -655,7 +655,7 @@ static void RenderEntity(render_state *RenderState, entity &Entity, glm::mat4 Pr
                     
                     auto Frame = Animation.Frames[Animation.FrameIndex];
                     SetVec2Attribute(Shader.Program,"textureOffset", glm::vec2(Frame.X,Frame.Y));
-                    
+                    SetVec4Attribute(Shader.Program, "color", Entity.RenderEntity.Color);
                     SetVec2Attribute(Shader.Program,"sheetSize",
                                      glm::vec2(Animation.Rows, Animation.Columns));
                 } 
@@ -905,6 +905,7 @@ static void Render(game_state* GameState)
     
     if(GameState->Console.CurrentTime > 0)
         RenderConsole(&GameState->RenderState, &GameState->Console, GameState->Camera.ProjectionMatrix,  GameState->Camera.ViewMatrix);
+    
     
     glfwSwapBuffers(GameState->RenderState.Window);
 }

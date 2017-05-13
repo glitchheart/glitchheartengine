@@ -8,6 +8,11 @@
 
 #define DEBUG
 
+void Kill(entity* Entity)
+{
+    Entity->RenderEntity.Rendered = false;
+}
+
 void CheckCollision(game_state* GameState, entity* Entity, collision_info* CollisionInfo)
 {
     Entity->IsColliding = false;
@@ -22,15 +27,15 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
             OtherEntityIndex < GameState->EntityCount;
             OtherEntityIndex++)
         {
-            entity OtherEntity = GameState->Entities[OtherEntityIndex];
+            entity* OtherEntity = &GameState->Entities[OtherEntityIndex];
             
-            if(!(OtherEntity.Layer & Entity->IgnoreLayers) 
-               && GameState->Entities[OtherEntityIndex].EntityIndex != Entity->EntityIndex 
-               && !GameState->Entities[OtherEntityIndex].IsKinematic 
-               && !OtherEntity.CollisionAABB.IsTrigger)
+            if(!(OtherEntity->Layer & Entity->IgnoreLayers) 
+               && OtherEntity->EntityIndex != Entity->EntityIndex 
+               && !OtherEntity->IsKinematic 
+               && !OtherEntity->CollisionAABB.IsTrigger)
             {
                 collision_AABB Md;
-                MinkowskiDifference(&GameState->Entities[OtherEntityIndex].CollisionAABB, &Entity->CollisionAABB, &Md);
+                MinkowskiDifference(&OtherEntity->CollisionAABB, &Entity->CollisionAABB, &Md);
                 if(Md.Min.x <= 0 &&
                    Md.Max.x >= 0 &&
                    Md.Min.y <= 0 &&
@@ -38,13 +43,21 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
                 {
                     Entity->IsColliding = true;
                     
+                    if(OtherEntity->Type == Entity_Enemy && Entity->Type == Entity_PlayerWeapon)
+                    {
+                        if(GameState->Entities[GameState->PlayerIndex].Player.IsAttacking)
+                        {
+                            Kill(OtherEntity);
+                        }
+                    }
+                    
                     if(!Entity->CollisionAABB.IsTrigger)
                     {
-                        GameState->Entities[OtherEntityIndex].IsColliding = true;
+                        OtherEntity->IsColliding = true;
                         
                         //calculate what side is colliding
-                        auto OtherPosition = GameState->Entities[OtherEntityIndex].CollisionAABB.Center;
-                        auto OtherExtents = GameState->Entities[OtherEntityIndex].CollisionAABB.Extents;
+                        auto OtherPosition = OtherEntity->CollisionAABB.Center;
+                        auto OtherExtents = OtherEntity->CollisionAABB.Extents;
                         auto Position = Entity->CollisionAABB.Center;
                         auto Extents = Entity->CollisionAABB.Extents;
                         
@@ -84,7 +97,7 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
                     {
                         case Entity_Player:
                         {
-                            if(GameState->Entities[OtherEntityIndex].Pickup &&
+                            if(OtherEntity->Pickup &&
                                GetKeyDown(Key_E,GameState) && Entity->Player.PickupCooldown <= 0.0)
                             {
                                 Entity->Player.Pickup = &GameState->Entities[OtherEntityIndex];
@@ -103,7 +116,7 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
                         break;
                     }
                     
-                    if(!GameState->Entities[OtherEntityIndex].CollisionAABB.IsTrigger &&
+                    if(!OtherEntity->CollisionAABB.IsTrigger &&
                        !Entity->CollisionAABB.IsTrigger && !Entity->IsStatic)
                     {
                         /*
@@ -190,8 +203,8 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
             }
         }
         
-        //if(Entity->CollisionAABB.IsTrigger)
-        Entity->Position += PV;
+        if(!Entity->CollisionAABB.IsTrigger)
+            Entity->Position += PV;
     }
 }
 
@@ -319,7 +332,6 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
             case Entity_PlayerWeapon:
             {
                 glm::vec2 Pos = GameState->Entities[GameState->PlayerIndex].Position;
-                
                 if(GameState->Entities[GameState->PlayerIndex].RenderEntity.IsFlipped)
                     Entity->Position = glm::vec2(Pos.x - 0.25f, Pos.y + 0.6f);
                 else
@@ -327,6 +339,8 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                 
                 Entity->CollisionAABB.Center = glm::vec2(Entity->Position.x + Entity->Center.x * Entity->Scale.x, Entity->Position.y + Entity->Center.y * Entity->Scale.y);
                 
+                collision_info CollisionInfo;
+                CheckCollision(GameState, Entity, &CollisionInfo);
             }
             break;
             case Entity_Crosshair:
@@ -340,6 +354,12 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
             break;
             case Entity_Enemy:
             {
+                //@Cleanup move this somewhere else, maybe out of switch
+                PlayAnimation(Entity, "player_idle");
+                Entity->RenderEntity.Color = glm::vec4(0, 1, 0, 1);
+                if(Entity->CurrentAnimation)
+                    TickAnimation(&Entity->Animations[Entity->CurrentAnimation], DeltaTime);
+                
                 Entity->Velocity = glm::vec2(0,0);
                 
                 collision_info CollisionInfo;
@@ -356,7 +376,7 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
             {
                 collision_info CollisionInfo;
                 Entity->IsColliding = false;
-                //CheckCollision(GameState, Entity, &CollisionInfo); //TODO(Daniel) this makes it bug out
+                //CheckCollision(GameState, Entity, &CollisionInfo); //TODO(Daniel) this makes it bug out, since it pushes the barrel away
                 
                 if(Entity->Velocity.x > 0.7f * DeltaTime)
                 {

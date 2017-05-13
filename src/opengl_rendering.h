@@ -38,6 +38,7 @@ struct render_entity
     uint32 TextureHandle;
     uint32 ShaderIndex;
     bool32 IsFlipped;
+    glm::vec4 Color = glm::vec4(1, 1, 1, 1);
 };
 
 struct shader
