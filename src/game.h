@@ -3,10 +3,9 @@
 
 #include "types.h"
 #include "glm/gtc/matrix_transform.hpp"
-#include <glm/gtc/noise.hpp>
+
 #include <GLFW/glfw3.h>
-#include "al.h"
-#include "alc.h"
+
 #include <time.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -19,14 +18,11 @@
 #include "entity.h"
 #include "level.h"
 #include "keycontroller.h"
-#include "platform_sound.h"
+
 #include "sound.h"
 #include "console.h"
 #include "editor_ui.h"
 #include "menu.h"
-
-#define STB_PERLIN_IMPLEMENTATION
-#include <stb/stb_perlin.h>
 
 struct camera
 {
