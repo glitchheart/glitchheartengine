@@ -31,13 +31,13 @@
 #include "filehandling.h"
 #include "opengl_rendering.h"
 #include "opengl_rendering.cpp"
-#include "level.cpp"
 
 #define ANIMATION_LOADING
 #include "animation.h"
 #include "animation.cpp"
 #include "collision.h"
 #include "entity.h"
+#include "level.cpp"
 #define KEY_INIT
 #include "keycontroller.cpp"
 #include "keys_glfw.h"
@@ -146,7 +146,7 @@ void FramebufferSizeCallback(GLFWwindow *Window, int Width, int Height)
 
 void SpawnMillionBarrels(game_state* GameState)
 {
-    uint32 OneMillion = 10;
+    uint32 OneMillion = 2;
     for(uint32 i = 0; i < OneMillion; i++)
     {
         for(uint32 j = 0; j < OneMillion; j++)
@@ -324,7 +324,7 @@ int main(void)
     
     Crosshair.EntityIndex = GameState.EntityCount;
     GameState.Entities[GameState.EntityCount++] = Crosshair;
-    
+    /*
     entity Enemy = {};
     Enemy.Name = "enemy";
     Enemy.Type = Entity_Enemy;
@@ -361,15 +361,15 @@ int main(void)
     Enemy.Enemy.AttackCooldown = 1.0f;
     Enemy.Enemy.AIState = AI_Idle;
     
-    Enemy.EntityIndex = GameState.EntityCount;
+    Enemy.EntityIndex = GameState.EntityCount;,
     GameState.Entities[GameState.EntityCount++] = Enemy;
-    
+    */
     SpawnMillionBarrels(&GameState);
     
     GameState.Camera.Zoom = 2.5f;
     
     level Level;
-    LoadLevelFromFile("../assets/levels/level_02.plv", &Level);
+    LoadLevelFromFile("../assets/levels/level_02.plv", &Level, &GameState);
     GameState.CurrentLevel = Level;
     
     GameState.Entities[GameState.PlayerIndex].Position = Level.PlayerStartPosition;
