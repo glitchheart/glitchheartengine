@@ -8,11 +8,6 @@
 
 #define DEBUG
 
-void CheckTilemapCollision(game_state* GameState, entity* Entity, collision_info* CollisionInfo)
-{
-    
-}
-
 void CheckCollision(game_state* GameState, entity* Entity, collision_info* CollisionInfo)
 {
     Entity->IsColliding = false;
@@ -31,7 +26,7 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
             
             if(!(OtherEntity.Layer & Entity->IgnoreLayers) && OtherEntityIndex != Entity->EntityIndex && !GameState->Entities[OtherEntityIndex].IsKinematic)
             {
-                collision_AABB Md = {};
+                collision_AABB Md;
                 MinkowskiDifference(&GameState->Entities[OtherEntityIndex].CollisionAABB, &Entity->CollisionAABB, &Md);
                 if(Md.Min.x <= 0 &&
                    Md.Max.x >= 0 &&
@@ -112,6 +107,68 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
                 }
             }
         }
+        
+        level* Level = &GameState->CurrentLevel;
+        
+        //check tile collision
+        for(int X = 0; X < Level->Tilemap.Width; X++)
+        {
+            for(int Y = 0; Y < Level->Tilemap.Height; Y++)
+            {
+                tile_data Tile = Level->Tilemap.Data[X][Y];
+                
+                if(Tile.IsSolid)
+                {
+                    collision_AABB Md;
+                    MinkowskiDifference(&Tile.CollisionAABB, &Entity->CollisionAABB, &Md);
+                    if(Md.Min.x <= 0 &&
+                       Md.Max.x >= 0 &&
+                       Md.Min.y <= 0 &&
+                       Md.Max.y >= 0)
+                    {
+                        Entity->IsColliding = true;
+                        
+                        //calculate what side is colliding
+                        auto OtherPosition = Tile.CollisionAABB.Center;
+                        auto OtherExtents = Tile.CollisionAABB.Extents;
+                        auto Position = Entity->CollisionAABB.Center;
+                        auto Extents = Entity->CollisionAABB.Extents;
+                        
+                        AABBMin(&Md);
+                        AABBMax(&Md);
+                        AABBSize(&Md);
+                        glm::vec2 PenetrationVector;
+                        ClosestPointsOnBoundsToPoint(&Md, glm::vec2(0,0), &PenetrationVector);
+                        
+                        if(glm::abs(PenetrationVector.x) > glm::abs(PenetrationVector.y))
+                        {
+                            if(PenetrationVector.x > 0)
+                                CollisionInfo->Side = CollisionInfo->Side | Side_Left;
+                            else if(PenetrationVector.x < 0)
+                                CollisionInfo->Side = CollisionInfo->Side | Side_Right;
+                        }
+                        else
+                        {
+                            if(PenetrationVector.y > 0)
+                                CollisionInfo->Side = CollisionInfo->Side | Side_Bottom;
+                            else if(PenetrationVector.y < 0) 
+                                CollisionInfo->Side = CollisionInfo->Side | Side_Top;
+                        }
+                        
+                        if(PenetrationVector.x != 0)
+                        {
+                            PV.x = PenetrationVector.x;
+                        }
+                        
+                        if(PenetrationVector.y != 0)
+                        {
+                            PV.y = PenetrationVector.y;
+                        }
+                    }
+                }
+            }
+        }
+        
         Entity->Position += PV;
     }
 }

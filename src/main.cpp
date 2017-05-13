@@ -147,8 +147,10 @@ void FramebufferSizeCallback(GLFWwindow *Window, int Width, int Height)
 void SpawnMillionBarrels(game_state* GameState)
 {
     uint32 OneMillion = 10;
-    for(uint32 i = 0; i < OneMillion; i++) {
-        for(uint32 j = 0; j < OneMillion; j++) {
+    for(uint32 i = 0; i < OneMillion; i++)
+    {
+        for(uint32 j = 0; j < OneMillion; j++)
+        {
             entity Barrel = {};
             Barrel.Name = "barrel";
             Barrel.Type = Entity_Barrel;
