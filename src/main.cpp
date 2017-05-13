@@ -281,9 +281,9 @@ int main(void)
     collision_AABB CollisionAABB;
     CollisionAABB.Center = glm::vec2(Player.Position.x + Player.Center.x * Player.Scale.x,
                                      Player.Position.y + Player.Center.y * Player.Scale.y);
-    CollisionAABB.Extents = glm::vec2(0.5f,1.0f);
+    CollisionAABB.Extents = glm::vec2(0.3f, 0.8f);
     Player.CollisionAABB = CollisionAABB;
-    Player.Center = glm::vec2(0.5f, 0.5f);
+    Player.Center = glm::vec2(0.53f, 0.6f);
     Player.EntityIndex = GameState.EntityCount;
     GameState.Entities[GameState.EntityCount++] = Player;
     
