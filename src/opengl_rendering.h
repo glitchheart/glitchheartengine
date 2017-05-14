@@ -17,6 +17,15 @@ enum Shader_Type
     Shader_Count
 };
 
+enum Texture_Type
+{
+    Texture_Tiles,
+    Texture_Player,
+    Texture_Barrel,
+    
+    Texture_Count
+};
+
 const char* ShaderPaths[Shader_Count] =
 {
     "../assets/shaders/textureshader",
@@ -25,6 +34,13 @@ const char* ShaderPaths[Shader_Count] =
     "../assets/shaders/standardfontshader",
     "../assets/shaders/spritesheetanimationshader",
     "../assets/shaders/wireframeshader"
+};
+
+const char* TexturePaths[Texture_Count] =
+{
+    "../assets/textures/tiles.png",
+    "../assets/textures/spritesheets/new_player.png",
+    "../assets/textures/barrel.png"
 };
 
 enum Render_Mode
@@ -81,14 +97,6 @@ struct render_font
         
         real32 TX;
     } CharacterInfo[255];
-};
-
-//TODO(Daniel) move this somewhere else
-struct CompareCStrings 
-{
-    bool operator()(const char* lhs, const char* rhs) const {
-        return std::strcmp(lhs, rhs) < 0;
-    }
 };
 
 struct render_state
@@ -172,6 +180,16 @@ struct render_state
         };
     };
     
+    union
+    {
+        uint32 Textures[Texture_Count];
+        struct
+        {
+            uint32 TileTexture;
+            uint32 PlayerTexture;
+            uint32 BarrelTexture;
+        };
+    };
     //freetype
     FT_Library FTLibrary;
     render_font InconsolataFont;

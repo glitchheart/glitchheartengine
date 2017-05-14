@@ -7,6 +7,6 @@ rows 10
 columns 1
 frames
 {0.0,0.0}
-texturepath ../assets/textures/spritesheets/new_player.png
+texture 1
 
 

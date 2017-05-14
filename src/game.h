@@ -12,6 +12,7 @@
 #include <map>
 #include "util.h"
 #include "error.h"
+#include "platform.h"
 #include "opengl_rendering.h"
 #include "animation.h"
 #include "collision.h"
@@ -44,6 +45,7 @@ enum Game_Mode
 
 struct game_state
 {
+    bool32 IsInitialized;
     Game_Mode GameMode;
     main_menu MainMenu;
     render_state RenderState;

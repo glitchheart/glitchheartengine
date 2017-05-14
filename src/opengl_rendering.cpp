@@ -1,3 +1,14 @@
+static void ErrorCallback(int Error, const char *Description)
+{
+    fprintf(stderr, "Error: %s\n", Description);
+}
+
+void FramebufferSizeCallback(GLFWwindow *Window, int Width, int Height)
+{
+    glfwSetWindowAspectRatio(Window, 16, 9);
+    glViewport(0, 0, Width, Height);
+}
+
 static GLint ShaderCompilationErrorChecking(GLuint Shader)
 {
     GLint IsCompiled = 0;
@@ -284,20 +295,6 @@ static void RenderSetup(render_state *RenderState)
     InitializeFreeTypeFont("../assets/fonts/inconsolata/Inconsolata-Regular.ttf", 40, RenderState->FTLibrary, &RenderState->MenuFont, &RenderState->StandardFontShader);
 }
 
-static void ReloadVertexShader(Shader_Type Type, render_state* RenderState)
-{
-    glDeleteProgram(RenderState->Shaders[Type].Program);
-    glDeleteShader(RenderState->Shaders[Type].VertexShader);
-    LoadVertexShader(ShaderPaths[Type], &RenderState->Shaders[Type]);
-}
-
-static void ReloadFragmentShader(Shader_Type Type, render_state* RenderState)
-{
-    glDeleteProgram(RenderState->Shaders[Type].Program);
-    glDeleteShader(RenderState->Shaders[Type].FragmentShader);
-    LoadFragmentShader(ShaderPaths[Type], &RenderState->Shaders[Type]);
-}
-
 static GLuint LoadTexture(const char *FilePath)
 {
     GLuint TextureHandle;
@@ -327,6 +324,83 @@ static GLuint LoadTexture(const char *FilePath)
     stbi_image_free(Image);
     
     return TextureHandle;
+}
+
+static void LoadTextures(render_state* RenderState)
+{
+    for(uint32 TextureIndex = 0; TextureIndex < Texture_Count; TextureIndex++)
+    {
+        RenderState->Textures[TextureIndex] = LoadTexture(TexturePaths[TextureIndex]);
+    }
+}
+
+static void InitializeOpenGL(game_state* GameState, render_state* RenderState)
+{
+    config_data ConfigData;
+    
+    LoadConfig("../assets/.config", &ConfigData);
+    printf("Config loaded\n");
+    if (!glfwInit())
+        exit(EXIT_FAILURE);
+    
+    RenderState->Window = glfwCreateWindow(ConfigData.ScreenWidth, ConfigData.ScreenHeight, CombineStrings(ConfigData.Title, ConfigData.Version), ConfigData.Fullscreen ? glfwGetPrimaryMonitor() : NULL, NULL);
+    
+    if (!RenderState->Window)
+    {
+        glfwTerminate();
+        exit(EXIT_FAILURE);
+    }
+    
+    //center window on screen
+    const GLFWvidmode *Mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
+    int Width, Height;
+    
+    glfwGetFramebufferSize(RenderState->Window, &Width, &Height);
+    glfwSetWindowPos(RenderState->Window, Mode->width / 2 - Width / 2, Mode->height / 2 - Height / 2);
+    
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+    glfwSetErrorCallback(ErrorCallback);
+    glfwSetFramebufferSizeCallback(RenderState->Window, FramebufferSizeCallback);
+    
+    glfwMakeContextCurrent(RenderState->Window);
+    gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
+    glfwSwapInterval(0);
+    
+    glfwGetFramebufferSize(RenderState->Window, &RenderState->WindowWidth, &RenderState->WindowHeight);
+    glViewport(0, 0, RenderState->WindowWidth, RenderState->WindowHeight);
+    
+    printf("%s\n", glGetString(GL_VERSION));
+    
+    glfwSetWindowUserPointer(RenderState->Window, GameState);
+    glfwSetKeyCallback(RenderState->Window, KeyCallback);
+    glfwSetCharCallback(RenderState->Window, CharacterCallback);
+    glfwSetCursorPosCallback(RenderState->Window, CursorPositionCallback);
+    glfwSetMouseButtonCallback(RenderState->Window,MouseButtonCallback);
+    glfwSetInputMode(RenderState->Window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    
+    int Present = glfwJoystickPresent(GLFW_JOYSTICK_1);
+    if(Present)
+    {
+        GameState->InputController.ControllerPresent = true;
+        printf("Controller present\n");
+    }
+    LoadTextures(RenderState);
+    RenderSetup(RenderState);
+}
+
+static void ReloadVertexShader(Shader_Type Type, render_state* RenderState)
+{
+    glDeleteProgram(RenderState->Shaders[Type].Program);
+    glDeleteShader(RenderState->Shaders[Type].VertexShader);
+    LoadVertexShader(ShaderPaths[Type], &RenderState->Shaders[Type]);
+}
+
+static void ReloadFragmentShader(Shader_Type Type, render_state* RenderState)
+{
+    glDeleteProgram(RenderState->Shaders[Type].Program);
+    glDeleteShader(RenderState->Shaders[Type].FragmentShader);
+    LoadFragmentShader(ShaderPaths[Type], &RenderState->Shaders[Type]);
 }
 
 static void ReloadAssets(asset_manager *AssetManager, game_state* GameState)
@@ -404,7 +478,7 @@ static void RenderRect(Render_Mode Mode, render_state* RenderState, glm::vec4 Co
         {
             glBindVertexArray(RenderState->ConsoleVAO); //TODO(Daniel) Create a vertex array buffer + object for simple rect / just change name
             
-            auto Shader = RenderState->Shaders[Shader_Console];
+            auto Shader = RenderState->ConsoleShader;
             UseShader(&Shader);
             
             //draw upper part

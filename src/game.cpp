@@ -5,6 +5,7 @@
 #define ANIMATION_GAME
 #include "animation.cpp"
 #include "collision.cpp"
+#include "entity.cpp"
 
 #define DEBUG
 
@@ -530,6 +531,11 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
 
 extern "C" UPDATE(Update)
 {
+    if(!GameState->IsInitialized)
+    {
+        InitPlayer(GameState, &GameState->Entities[GameState->EntityCount]);
+        GameState->IsInitialized = true;
+    }
 #ifdef DEBUG
     if(GetKeyDown(Key_F1, GameState))
     {
