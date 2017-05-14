@@ -29,6 +29,9 @@
 #include "platform_sound.h"
 #include "platform_sound.cpp"
 #include "filehandling.h"
+#define KEY_INIT
+#include "keycontroller.cpp"
+#include "keys_glfw.h"
 #include "opengl_rendering.h"
 #include "opengl_rendering.cpp"
 
@@ -38,9 +41,6 @@
 #include "collision.h"
 #include "entity.h"
 #include "level.cpp"
-#define KEY_INIT
-#include "keycontroller.cpp"
-#include "keys_glfw.h"
 #include "console.h"
 #include "console.cpp"
 #include "editor_ui.h"
@@ -56,33 +56,6 @@ struct game_code
     const char *DllPath = "game.dll";
     const char *TempDllPath = "game_temp.dll";
 };
-
-static void ErrorCallback(int Error, const char *Description)
-{
-    fprintf(stderr, "Error: %s\n", Description);
-}
-
-std::map<std::string, std::string> LoadConfig(std::string Filename)
-{
-    std::ifstream Input(Filename);          
-    std::map<std::string, std::string> Ans;
-    while (Input)                           
-    {
-        std::string Key;                                                           
-        std::string Value;                                                         
-        std::getline(Input, Key, ':');                                             
-        std::getline(Input, Value, '\n');                                          
-        std::string::size_type Pos1 = Value.find_first_of("\"");                   
-        std::string::size_type Pos2 = Value.find_last_of("\"");                    
-        if (Pos1 != std::string::npos && Pos2 != std::string::npos && Pos2 > Pos1) 
-        {
-            Value = Value.substr(Pos1 + 1, Pos2 - Pos1 - 1);
-            Ans[Key] = Value;                                
-        }
-    }
-    Input.close(); //Close the file stream
-    return Ans;    //And return the result
-}
 
 static game_code LoadGameCode()
 {
@@ -138,12 +111,6 @@ static void ReloadDlls(game_code *Game)
     }
 }
 
-void FramebufferSizeCallback(GLFWwindow *Window, int Width, int Height)
-{
-    glfwSetWindowAspectRatio(Window, 16, 9);
-    glViewport(0, 0, Width, Height);
-}
-
 void SpawnMillionBarrels(game_state* GameState)
 {
     uint32 OneMillion = 2;
@@ -158,7 +125,7 @@ void SpawnMillionBarrels(game_state* GameState)
             Barrel.IgnoreLayers = Layer_Environment;
             render_entity BarrelRenderEntity = { };
             BarrelRenderEntity.ShaderIndex = Shader_Texture;
-            BarrelRenderEntity.TextureHandle = LoadTexture("../assets/textures/barrel.png");
+            BarrelRenderEntity.TextureHandle = GameState->RenderState.BarrelTexture;
             Barrel.RenderEntity = BarrelRenderEntity;
             Barrel.Rotation = glm::vec3(0, 0, 0);
             Barrel.Position = glm::vec2(2 + i,2 + j);
@@ -185,126 +152,13 @@ void SpawnMillionBarrels(game_state* GameState)
 
 int main(void)
 {
-    //load config file
-    std::string Title;
-    std::string Version;
-    int ScreenWidth;
-    int ScreenHeight;
-    bool Fullscreen;
-    
-    auto Map = LoadConfig("../assets/.config");
-    
-    Title = Map["title"];
-    Version = Map["version"];
-    ScreenWidth = std::stoi(Map["screen_width"]);
-    ScreenHeight = std::stoi(Map["screen_height"]);
-    Fullscreen = strcmp("true", Map["fullscreen"].c_str()) == 0;
-    
-    glfwSetErrorCallback(ErrorCallback);
-    
-    if (!glfwInit())
-        exit(EXIT_FAILURE);
-    
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
-    
     game_state GameState = {};
-    render_state RenderState = {};
+    GameState.InputController = {};
+    render_state RenderState;
+    
+    InitializeOpenGL(&GameState, &RenderState);
+    
     GameState.RenderState = RenderState;
-    GameState.RenderState.Window = glfwCreateWindow(ScreenWidth, ScreenHeight, (Title + std::string(" ") + Version).c_str(), Fullscreen ? glfwGetPrimaryMonitor() : NULL, NULL);
-    
-    glfwSetFramebufferSizeCallback(GameState.RenderState.Window, FramebufferSizeCallback);
-    
-    //center window on screen
-    const GLFWvidmode *Mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
-    int Width, Height;
-    
-    glfwGetFramebufferSize(GameState.RenderState.Window, &Width, &Height);
-    glfwSetWindowPos(GameState.RenderState.Window, Mode->width / 2 - Width / 2, Mode->height / 2 - Height / 2);
-    
-    if (!GameState.RenderState.Window)
-    {
-        glfwTerminate();
-        exit(EXIT_FAILURE);
-    }
-    
-    input_controller Input = {};
-    
-    int Present = glfwJoystickPresent(GLFW_JOYSTICK_1);
-    if(Present)
-    {
-        Input.ControllerPresent = true;
-        printf("Controller present\n");
-    }
-    
-    GameState.InputController = Input;
-    
-    glfwSetWindowUserPointer(GameState.RenderState.Window, &GameState);
-    glfwSetKeyCallback(GameState.RenderState.Window, KeyCallback);
-    glfwSetCharCallback(GameState.RenderState.Window, CharacterCallback);
-    glfwSetCursorPosCallback(GameState.RenderState.Window, CursorPositionCallback);
-    glfwSetMouseButtonCallback(GameState.RenderState.Window,MouseButtonCallback);
-    glfwSetInputMode(GameState.RenderState.Window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-    
-    glfwMakeContextCurrent(GameState.RenderState.Window);
-    gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
-    glfwSwapInterval(0);
-    
-    //load render_state
-    RenderSetup(&GameState.RenderState);
-    
-    entity Player = {};
-    Player.Name = "Player";
-    Player.Type = Entity_Player;
-    Player.Player.WalkingSpeed = 10.0f;
-    
-    animation IdleAnimation = {};
-    LoadAnimationFromFile("../assets/animations/player_anim_idle_new.pownim", &IdleAnimation, &GameState.RenderState);
-    Player.Animations.insert(std::pair<char*, animation>(IdleAnimation.Name, IdleAnimation));
-    
-    animation WalkingAnimation = {};
-    LoadAnimationFromFile("../assets/animations/player_anim_walk_new.pownim", &WalkingAnimation, &GameState.RenderState);
-    Player.Animations.insert(std::pair<char*, animation>(WalkingAnimation.Name, WalkingAnimation));
-    
-    animation AttackingAnimation = {};
-    LoadAnimationFromFile("../assets/animations/player_anim_attack_new.pownim", &AttackingAnimation, &GameState.RenderState);
-    Player.Animations.insert(std::pair<char*, animation>(AttackingAnimation.Name, AttackingAnimation));
-    
-    render_entity PlayerRenderEntity = { };
-    PlayerRenderEntity.ShaderIndex = Shader_SpriteSheetShader;
-    
-    PlayerRenderEntity.TextureHandle = LoadTexture("../assets/textures/new_player.png");
-    
-    Player.RenderEntity = PlayerRenderEntity;
-    Player.Rotation = glm::vec3(0, 0, 0);
-    Player.Scale = glm::vec3(2, 2, 0);
-    Player.Velocity = glm::vec2(0,0);
-    
-    collision_AABB CollisionAABB;
-    Player.Center = glm::vec2(0.5f, 0.950f);
-    CollisionAABB.Center = glm::vec2(Player.Position.x + Player.Center.x * Player.Scale.x,
-                                     Player.Position.y + Player.Center.y * Player.Scale.y);
-    CollisionAABB.Extents = glm::vec2(0.3f, 0.15f);
-    Player.CollisionAABB = CollisionAABB;
-    
-    Player.EntityIndex = GameState.EntityCount;
-    GameState.Entities[GameState.EntityCount++] = Player;
-    
-    entity PlayerWeapon;
-    PlayerWeapon.RenderEntity.Rendered = false;
-    PlayerWeapon.Name = "Player weapon";
-    PlayerWeapon.Type = Entity_PlayerWeapon;
-    
-    collision_AABB CollisionAABB3;
-    CollisionAABB3.Center = glm::vec2(0.5, 0.5);
-    CollisionAABB3.Extents = glm::vec2(0.5f,0.5f);
-    CollisionAABB3.IsTrigger = true;
-    PlayerWeapon.CollisionAABB = CollisionAABB3;
-    PlayerWeapon.Rotation = glm::vec3(0, 0, 0);
-    PlayerWeapon.Scale = glm::vec3(1, 1, 0);
-    
-    PlayerWeapon.EntityIndex = GameState.EntityCount;
-    GameState.Entities[GameState.EntityCount++] = PlayerWeapon;
     
     entity Crosshair = {};
     Crosshair.Name = "Crosshair";
@@ -336,13 +190,8 @@ int main(void)
     
     GameState.Entities[GameState.PlayerIndex].Position = Level.PlayerStartPosition;
     
-    printf("%s\n", glGetString(GL_VERSION));
-    
-    glfwGetFramebufferSize(GameState.RenderState.Window, &GameState.RenderState.WindowWidth, &GameState.RenderState.WindowHeight);
-    glViewport(0, 0, GameState.RenderState.WindowWidth, GameState.RenderState.WindowHeight);
-    
-    GameState.Camera.ViewportWidth = Width / 20;
-    GameState.Camera.ViewportHeight = Height / 20;
+    GameState.Camera.ViewportWidth = RenderState.WindowWidth / 20;
+    GameState.Camera.ViewportHeight = RenderState.WindowHeight / 20;
     GameState.GameMode = Mode_InGame;
     game_code Game = LoadGameCode();
     

@@ -19,7 +19,7 @@ static void SpawnEnemy(game_state* GameState, glm::vec2 Position, entity* Enemy)
     
     render_entity EnemyRenderEntity = { };
     EnemyRenderEntity.ShaderIndex = Shader_SpriteSheetShader;
-    EnemyRenderEntity.TextureHandle = LoadTexture("../assets/textures/new_player.png");
+    EnemyRenderEntity.TextureHandle = GameState->RenderState.PlayerTexture;
     Enemy->RenderEntity = EnemyRenderEntity;
     Enemy->Rotation = glm::vec3(0, 0, 0);
     Enemy->Position = Position;
@@ -43,6 +43,7 @@ static void SpawnEnemy(game_state* GameState, glm::vec2 Position, entity* Enemy)
     Enemy->Enemy.AIState = AI_Idle;
     
     Enemy->EntityIndex = GameState->EntityCount;
+    GameState->EntityCount++;
 }
 
 static bool32 LoadLevelFromFile(char* FilePath, level* Level, game_state* GameState)
@@ -56,7 +57,7 @@ static bool32 LoadLevelFromFile(char* FilePath, level* Level, game_state* GameSt
     uint32 MapHeight;
     
     Level->Tilemap.RenderEntity.ShaderIndex = Shader_Tile;
-    Level->Tilemap.RenderEntity.TextureHandle = LoadTexture("../assets/textures/tiles.png");
+    Level->Tilemap.RenderEntity.TextureHandle = GameState->RenderState.TileTexture;
     
     if(File)
     {
@@ -130,7 +131,6 @@ static bool32 LoadLevelFromFile(char* FilePath, level* Level, game_state* GameSt
             glm::vec2 Pos;
             sscanf(LineBuffer, "enemy %f %f", &Pos.x, &Pos.y);
             SpawnEnemy(GameState, Pos, &GameState->Entities[GameState->EntityCount]);
-            GameState->EntityCount++;
         }
         fclose(File);
         return true;

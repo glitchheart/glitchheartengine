@@ -1,4 +1,3 @@
-#ifdef ANIMATION_LOADING
 static void LoadAnimationFromFile(const char* FilePath, animation* Animation, render_state* RenderState)
 {
     FILE* File;
@@ -67,27 +66,17 @@ static void LoadAnimationFromFile(const char* FilePath, animation* Animation, re
             }
         }
         
-        char TexturePathBuffer[255];
+        uint32 TextureIndex;
         
         //texturepath
         if(fgets(LineBuffer, 255, File))
         {
-            sscanf(LineBuffer, "texturepath %s", TexturePathBuffer);
-            
-            if(RenderState->LoadedTextureHandles.find(&TexturePathBuffer[0]) != RenderState->LoadedTextureHandles.end())
-            {
-                Animation->TextureHandle = RenderState->LoadedTextureHandles[TexturePathBuffer];
-            }
-            else
-            {
-                Animation->TextureHandle = LoadTexture(&TexturePathBuffer[0]);
-            }
+            sscanf(LineBuffer, "texture %d", &TextureIndex);
+            Animation->TextureHandle = RenderState->Textures[TextureIndex];
         }
     }
 }
 
-#endif
-#ifdef ANIMATION_GAME
 static void PlayAnimation(animation* Animation)
 {
     Animation->Playing = true;
@@ -131,4 +120,3 @@ static void TickAnimation(animation* Animation, real64 DeltaTime)
         Animation->CurrentTime += DeltaTime;
     }
 }
-#endif
