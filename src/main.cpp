@@ -141,20 +141,16 @@ int main(void)
         GameState.SoundManager = SoundManager;
     }
     
-    real64 LastFrame = glfwGetTime();
+    real64 LastFrame = GetTime();
     real64 CurrentFrame = 0.0;
     real64 DeltaTime;
-    GLint Viewport[4];
-    glGetIntegerv(GL_VIEWPORT, Viewport);
-    
-    memcpy(GameState.RenderState.Viewport, Viewport, sizeof(GLint) * 4);
     
     InitCommands();
     
-    while (!glfwWindowShouldClose(GameState.RenderState.Window))
+    while (!ShouldCloseWindow(&GameState.RenderState))
     {
         //calculate deltatime
-        CurrentFrame = glfwGetTime();
+        CurrentFrame = GetTime();
         DeltaTime = CurrentFrame - LastFrame;
         LastFrame = CurrentFrame;
         real64 FPS = 1.0/DeltaTime;
@@ -178,7 +174,7 @@ int main(void)
         
         //TODO(Daniel) Move this out of the main loop and into the key_controller.cpp somehow
         
-        glfwPollEvents();
+        PollEvents();
         
         if(GameState.InputController.ControllerPresent)
         {
@@ -187,8 +183,5 @@ int main(void)
     }
     
     CleanupSound(&SoundDevice,&GameState.SoundManager);
-    
-    glfwDestroyWindow(GameState.RenderState.Window);
-    glfwTerminate();
-    exit(EXIT_SUCCESS);
+    CloseWindow(&GameState);
 }

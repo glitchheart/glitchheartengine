@@ -9,6 +9,28 @@ void FramebufferSizeCallback(GLFWwindow *Window, int Width, int Height)
     glViewport(0, 0, Width, Height);
 }
 
+inline static real64 GetTime()
+{
+    return glfwGetTime();
+}
+
+inline static void PollEvents()
+{
+    glfwPollEvents();
+}
+
+static void CloseWindow(game_state* GameState)
+{
+    glfwDestroyWindow(GameState->RenderState.Window);
+    glfwTerminate();
+    exit(EXIT_SUCCESS);
+}
+
+static bool32 ShouldCloseWindow(render_state* RenderState)
+{
+    return glfwWindowShouldClose(RenderState->Window); 
+}
+
 static GLint ShaderCompilationErrorChecking(GLuint Shader)
 {
     GLint IsCompiled = 0;
@@ -378,6 +400,10 @@ static void InitializeOpenGL(game_state* GameState, render_state* RenderState)
     glfwSetCursorPosCallback(RenderState->Window, CursorPositionCallback);
     glfwSetMouseButtonCallback(RenderState->Window,MouseButtonCallback);
     glfwSetInputMode(RenderState->Window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    
+    GLint Viewport[4];
+    glGetIntegerv(GL_VIEWPORT, Viewport);
+    memcpy(RenderState->Viewport, Viewport, sizeof(GLint) * 4);
     
     int Present = glfwJoystickPresent(GLFW_JOYSTICK_1);
     if(Present)
