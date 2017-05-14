@@ -6,6 +6,7 @@
 #include "animation.cpp"
 #include "collision.cpp"
 #include "entity.cpp"
+#include "level.cpp"
 
 #define DEBUG
 
@@ -533,7 +534,19 @@ extern "C" UPDATE(Update)
 {
     if(!GameState->IsInitialized)
     {
-        InitPlayer(GameState, &GameState->Entities[GameState->EntityCount]);
+        InitPlayer(GameState);
+        InitCrosshair(GameState);
+        
+        LoadLevelFromFile("../assets/levels/level_02.plv", &GameState->CurrentLevel, GameState);
+        
+        //@Cleanup this should be in the level file
+        SpawnMillionBarrels(GameState);
+        
+        GameState->Camera.Zoom = 2.5f;
+        GameState->Camera.ViewportWidth = GameState->RenderState.WindowWidth / 20;
+        GameState->Camera.ViewportHeight = GameState->RenderState.WindowHeight / 20;
+        
+        GameState->GameMode = Mode_InGame;
         GameState->IsInitialized = true;
     }
 #ifdef DEBUG

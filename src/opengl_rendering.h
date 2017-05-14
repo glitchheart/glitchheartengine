@@ -22,7 +22,7 @@ enum Texture_Type
     Texture_Tiles,
     Texture_Player,
     Texture_Barrel,
-    
+    Texture_Crosshair,
     Texture_Count
 };
 
@@ -40,7 +40,8 @@ const char* TexturePaths[Texture_Count] =
 {
     "../assets/textures/tiles.png",
     "../assets/textures/spritesheets/new_player.png",
-    "../assets/textures/barrel.png"
+    "../assets/textures/barrel.png",
+    "../assets/textures/crosshair.png"
 };
 
 enum Render_Mode
@@ -188,6 +189,7 @@ struct render_state
             uint32 TileTexture;
             uint32 PlayerTexture;
             uint32 BarrelTexture;
+            uint32 CrosshairTexture;
         };
     };
     //freetype

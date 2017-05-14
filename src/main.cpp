@@ -111,88 +111,15 @@ static void ReloadDlls(game_code *Game)
     }
 }
 
-void SpawnMillionBarrels(game_state* GameState)
-{
-    uint32 OneMillion = 2;
-    for(uint32 i = 0; i < OneMillion; i++)
-    {
-        for(uint32 j = 0; j < OneMillion; j++)
-        {
-            entity Barrel = {};
-            Barrel.Name = "barrel";
-            Barrel.Type = Entity_Barrel;
-            Barrel.Layer = Layer_Environment;
-            Barrel.IgnoreLayers = Layer_Environment;
-            render_entity BarrelRenderEntity = { };
-            BarrelRenderEntity.ShaderIndex = Shader_Texture;
-            BarrelRenderEntity.TextureHandle = GameState->RenderState.BarrelTexture;
-            Barrel.RenderEntity = BarrelRenderEntity;
-            Barrel.Rotation = glm::vec3(0, 0, 0);
-            Barrel.Position = glm::vec2(2 + i,2 + j);
-            Barrel.Scale = glm::vec3(2, 2, 0);
-            Barrel.Velocity = glm::vec2(0,0);
-            Barrel.Center = glm::vec2(0.5, 0.5);
-            Barrel.IsStatic = true;
-            Barrel.IsKinematic = false;
-            Barrel.Pickup = true;
-            
-            collision_AABB CollisionAABB;
-            
-            CollisionAABB.Extents = glm::vec2(0.5f,0.5f);
-            CollisionAABB.Center = glm::vec2(Barrel.Position.x + Barrel.Center.x * Barrel.Scale.x,
-                                             Barrel.Position.y + Barrel.Center.y * Barrel.Scale.y);
-            //CollisionAABB.Center = glm::vec2(0.5f,0.5f);
-            Barrel.CollisionAABB = CollisionAABB;
-            
-            Barrel.EntityIndex = GameState->EntityCount;
-            GameState->Entities[GameState->EntityCount++] = Barrel;
-        }
-    }
-}
-
 int main(void)
 {
     game_state GameState = {};
     GameState.InputController = {};
+    
     render_state RenderState;
-    
     InitializeOpenGL(&GameState, &RenderState);
-    
     GameState.RenderState = RenderState;
     
-    entity Crosshair = {};
-    Crosshair.Name = "Crosshair";
-    Crosshair.Type = Entity_Crosshair;
-    
-    Crosshair.IsKinematic = true;
-    collision_AABB CollisionAABB2;
-    CollisionAABB2.Center = glm::vec2(0,0);
-    CollisionAABB2.Extents = glm::vec2(0.5f,0.5f);
-    Crosshair.CollisionAABB = CollisionAABB2;
-    
-    render_entity CrosshairRenderEntity = { };
-    CrosshairRenderEntity.ShaderIndex = Shader_Texture;
-    CrosshairRenderEntity.TextureHandle = LoadTexture("../assets/textures/crosshair.png");
-    Crosshair.RenderEntity = CrosshairRenderEntity;
-    Crosshair.Rotation = glm::vec3(0, 0, 0);
-    Crosshair.Scale = glm::vec3(1, 1, 0);
-    
-    Crosshair.EntityIndex = GameState.EntityCount;
-    GameState.Entities[GameState.EntityCount++] = Crosshair;
-    
-    SpawnMillionBarrels(&GameState);
-    
-    GameState.Camera.Zoom = 2.5f;
-    
-    level Level;
-    LoadLevelFromFile("../assets/levels/level_02.plv", &Level, &GameState);
-    GameState.CurrentLevel = Level;
-    
-    GameState.Entities[GameState.PlayerIndex].Position = Level.PlayerStartPosition;
-    
-    GameState.Camera.ViewportWidth = RenderState.WindowWidth / 20;
-    GameState.Camera.ViewportHeight = RenderState.WindowHeight / 20;
-    GameState.GameMode = Mode_InGame;
     game_code Game = LoadGameCode();
     
     //setup asset reloading
