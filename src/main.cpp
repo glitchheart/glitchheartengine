@@ -324,46 +324,7 @@ int main(void)
     
     Crosshair.EntityIndex = GameState.EntityCount;
     GameState.Entities[GameState.EntityCount++] = Crosshair;
-    /*
-    entity Enemy = {};
-    Enemy.Name = "enemy";
-    Enemy.Type = Entity_Enemy;
     
-    animation EnemyIdleAnimation = {};
-    LoadAnimationFromFile("../assets/animations/player_anim_idle_new.pownim", &EnemyIdleAnimation, &GameState.RenderState);
-    Enemy.Animations.insert(std::pair<char*, animation>(EnemyIdleAnimation.Name, EnemyIdleAnimation));
-    
-    animation EnemyWalkingAnimation = {};
-    LoadAnimationFromFile("../assets/animations/player_anim_walk_new.pownim", &EnemyWalkingAnimation, &GameState.RenderState);
-    Enemy.Animations.insert(std::pair<char*, animation>(EnemyWalkingAnimation.Name, EnemyWalkingAnimation));
-    
-    animation EnemyAttackingAnimation = {};
-    LoadAnimationFromFile("../assets/animations/player_anim_attack_new.pownim", &EnemyAttackingAnimation, &GameState.RenderState);
-    Enemy.Animations.insert(std::pair<char*, animation>(EnemyAttackingAnimation.Name, EnemyAttackingAnimation));
-    
-    render_entity EnemyRenderEntity = { };
-    EnemyRenderEntity.ShaderIndex = Shader_SpriteSheetShader;
-    EnemyRenderEntity.TextureHandle = LoadTexture("../assets/textures/new_player.png");
-    Enemy.RenderEntity = EnemyRenderEntity;
-    Enemy.Rotation = glm::vec3(0, 0, 0);
-    Enemy.Position = glm::vec2(5,0);
-    Enemy.Scale = glm::vec3(2, 2, 0);
-    Enemy.Velocity = glm::vec2(-2,0);
-    
-    collision_AABB CollisionAABB4;
-    CollisionAABB4.Center = Enemy.Position;
-    CollisionAABB4.Extents = glm::vec2(0.5f,0.5f);
-    Enemy.CollisionAABB = CollisionAABB4;
-    
-    Enemy.Enemy.WalkingSpeed = 5;
-    Enemy.Enemy.MaxAlertDistance = 10;
-    Enemy.Enemy.MinDistance = 1;
-    Enemy.Enemy.AttackCooldown = 1.0f;
-    Enemy.Enemy.AIState = AI_Idle;
-    
-    Enemy.EntityIndex = GameState.EntityCount;,
-    GameState.Entities[GameState.EntityCount++] = Enemy;
-    */
     SpawnMillionBarrels(&GameState);
     
     GameState.Camera.Zoom = 2.5f;
