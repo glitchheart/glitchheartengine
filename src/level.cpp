@@ -26,6 +26,9 @@ static void SpawnEnemy(game_state* GameState, glm::vec2 Position, entity* Enemy)
     Enemy->Scale = glm::vec3(2, 2, 0);
     Enemy->Velocity = glm::vec2(-2,0);
     
+    Enemy->Layer = Layer_Enemy;
+    //Enemy->IgnoreLayers = Layer_Enemy;
+    
     collision_AABB CollisionAABB4;
     CollisionAABB4.Center = Enemy->Position;
     CollisionAABB4.Extents = glm::vec2(0.5f,0.5f);

@@ -49,7 +49,6 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
                     {
                         if(!OtherEntity->IsDead && GameState->Entities[GameState->PlayerIndex].Player.IsAttacking)
                         {
-                            printf("Killed by %s\n", GameState->Entities[GameState->PlayerIndex].Name);
                             PlaySoundEffect(GameState, &GameState->SoundManager.SwordHit01);
                             Kill(OtherEntity);
                         }
