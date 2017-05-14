@@ -81,7 +81,7 @@ static void InitCrosshair(game_state* GameState)
 
 void SpawnMillionBarrels(game_state* GameState)
 {
-    uint32 OneMillion = 2;
+    uint32 OneMillion = 1;
     for(uint32 i = 0; i < OneMillion; i++)
     {
         for(uint32 j = 0; j < OneMillion; j++)
@@ -104,12 +104,14 @@ void SpawnMillionBarrels(game_state* GameState)
             Barrel->IsKinematic = false;
             Barrel->Pickup = true;
             
+            
             collision_AABB CollisionAABB;
             
             CollisionAABB.Extents = glm::vec2(0.5f,0.5f);
             CollisionAABB.Center = glm::vec2(Barrel->Position.x + Barrel->Center.x * Barrel->Scale.x,
                                              Barrel->Position.y + Barrel->Center.y * Barrel->Scale.y);
             //CollisionAABB.Center = glm::vec2(0.5f,0.5f);
+            CollisionAABB.IsTrigger = true;
             Barrel->CollisionAABB = CollisionAABB;
             
             Barrel->EntityIndex = GameState->EntityCount;

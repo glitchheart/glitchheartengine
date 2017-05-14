@@ -710,6 +710,39 @@ static void RenderColliderWireframe(render_state* RenderState, entity* Entity, g
     
     glDrawArrays(GL_LINE_STRIP, 0, 6);
     glBindVertexArray(0);
+    
+    if(Entity->HitTrigger)
+    {
+        glm::mat4 Model(1.0f);
+        
+        Model = glm::translate(Model, glm::vec3(Entity->Position.x + Entity->Center.x * Entity->Scale.x - Entity->HitTrigger->Extents.x, Entity->Position.y + Entity->Center.y * Entity->Scale.y - Entity->HitTrigger->Extents.y, 0.0f));
+        Model = glm::scale(Model, glm::vec3(Entity->HitTrigger->Extents.x * 2, Entity->HitTrigger->Extents.y * 2,1));
+        
+        glBindVertexArray(RenderState->WireframeVAO);
+        
+        auto Shader = RenderState->Shaders[Shader_Wireframe];
+        UseShader(&Shader);
+        
+        SetMat4Uniform(Shader.Program, "Projection", ProjectionMatrix);
+        SetMat4Uniform(Shader.Program, "View", View);
+        SetMat4Uniform(Shader.Program, "Model", Model);
+        glm::vec4 color;
+        
+        if(Entity->HitTrigger->IsColliding)
+        {
+            color = glm::vec4(1.0,0.0,0.0,1.0);
+        }
+        else 
+        {
+            color = glm::vec4(0.0,1.0,0.0,1.0);
+        }
+        
+        SetVec4Attribute(Shader.Program, "color", color);
+        
+        glDrawArrays(GL_LINE_STRIP, 0, 6);
+        glBindVertexArray(0);
+        
+    }
 }
 
 static void RenderEntity(render_state *RenderState, entity &Entity, glm::mat4 ProjectionMatrix, glm::mat4 View)

@@ -36,10 +36,6 @@
 #include "opengl_rendering.cpp"
 
 #define ANIMATION_LOADING
-#include "animation.h"
-#include "animation.cpp"
-
-#include "level.cpp"
 
 #include "editor_ui.h"
 #include "editor_ui.cpp"

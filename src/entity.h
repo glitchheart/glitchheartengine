@@ -54,6 +54,7 @@ struct entity
     bool32 IsColliding;
     bool32 IsStatic; // For stuff that can't be moved by collision
     bool32 Pickup;
+    collision_AABB* HitTrigger;
     union
     {
         struct
