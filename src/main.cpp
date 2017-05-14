@@ -38,11 +38,9 @@
 #define ANIMATION_LOADING
 #include "animation.h"
 #include "animation.cpp"
-#include "collision.h"
-#include "entity.h"
+
 #include "level.cpp"
-#include "console.h"
-#include "console.cpp"
+
 #include "editor_ui.h"
 #include "editor_ui.cpp"
 
@@ -145,7 +143,7 @@ int main(void)
     real64 CurrentFrame = 0.0;
     real64 DeltaTime;
     
-    InitCommands();
+    
     
     while (!ShouldCloseWindow(&GameState.RenderState))
     {
@@ -163,7 +161,7 @@ int main(void)
         ReloadDlls(&Game);
         
         Game.Update(DeltaTime, &GameState);
-        CheckConsoleInput(&GameState, DeltaTime);
+        
         CheckEditorUIInput(&GameState, DeltaTime);
         Render(&GameState);
         PlaySounds(&GameState);
