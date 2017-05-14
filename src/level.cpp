@@ -1,5 +1,6 @@
-static void SpawnEnemy(game_state* GameState, glm::vec2 Position, entity* Enemy)
+static void SpawnEnemy(game_state* GameState, glm::vec2 Position)
 {
+    entity* Enemy = &GameState->Entities[GameState->EntityCount];
     Enemy->Name = "enemy";
     Enemy->Type = Entity_Enemy;
     
@@ -130,7 +131,7 @@ static bool32 LoadLevelFromFile(char* FilePath, level* Level, game_state* GameSt
         {
             glm::vec2 Pos;
             sscanf(LineBuffer, "enemy %f %f", &Pos.x, &Pos.y);
-            SpawnEnemy(GameState, Pos, &GameState->Entities[GameState->EntityCount]);
+            SpawnEnemy(GameState, Pos);
         }
         fclose(File);
         return true;
