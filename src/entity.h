@@ -39,6 +39,7 @@ struct entity
     glm::vec2 Center = glm::vec2(0.5, 0.5);
     glm::vec3 Rotation;
     glm::vec3 Scale = glm::vec3(1, 1, 1);
+    bool32 IsFlipped;
     
     Entity_Layer Layer;
     Entity_Layer IgnoreLayers;
@@ -46,7 +47,8 @@ struct entity
     char* CurrentAnimation;
     
     std::map<char*, animation, CompareCStrings> Animations;
-    render_entity RenderEntity;
+    
+    uint32 RenderEntityHandle;
     
     bool32 IsDead;
     collision_AABB CollisionAABB;

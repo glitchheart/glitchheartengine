@@ -747,10 +747,11 @@ static void RenderColliderWireframe(render_state* RenderState, entity* Entity, g
 
 static void RenderEntity(render_state *RenderState, entity &Entity, glm::mat4 ProjectionMatrix, glm::mat4 View)
 { 
-    auto Shader = RenderState->Shaders[Entity.RenderEntity.ShaderIndex];
+    render_entity* RenderEntity = &RenderState->RenderEntities[Entity.RenderEntityHandle];
+    auto Shader = RenderState->Shaders[RenderEntity->ShaderIndex];
     UseShader(&Shader);
     
-    if(Entity.RenderEntity.Rendered && !Entity.IsDead)
+    if(RenderEntity->Rendered && !Entity.IsDead)
     {
         switch(Entity.Type)
         {
@@ -767,7 +768,7 @@ static void RenderEntity(render_state *RenderState, entity &Entity, glm::mat4 Pr
                 
                 glm::vec3 Scale;
                 
-                if(Entity.RenderEntity.IsFlipped)
+                if(Entity.IsFlipped)
                 {
                     Scale = glm::vec3(-Entity.Scale.x, Entity.Scale.y, Entity.Scale.z);
                     Model = glm::translate(Model, glm::vec3(Entity.Scale.x, 0, 0));
@@ -791,16 +792,16 @@ static void RenderEntity(render_state *RenderState, entity &Entity, glm::mat4 Pr
                     
                     auto Frame = Animation.Frames[Animation.FrameIndex];
                     SetVec2Attribute(Shader.Program,"textureOffset", glm::vec2(Frame.X,Frame.Y));
-                    SetVec4Attribute(Shader.Program, "color", Entity.RenderEntity.Color);
+                    SetVec4Attribute(Shader.Program, "color", RenderEntity->Color);
                     SetVec2Attribute(Shader.Program,"sheetSize",
                                      glm::vec2(Animation.Rows, Animation.Columns));
                 } 
                 else 
                 {
-                    if (RenderState->BoundTexture != Entity.RenderEntity.TextureHandle) //never bind the same texture if it's already bound
+                    if (RenderState->BoundTexture != RenderEntity->TextureHandle) //never bind the same texture if it's already bound
                     {
-                        glBindTexture(GL_TEXTURE_2D, Entity.RenderEntity.TextureHandle);
-                        RenderState->BoundTexture = Entity.RenderEntity.TextureHandle;
+                        glBindTexture(GL_TEXTURE_2D, RenderEntity->TextureHandle);
+                        RenderState->BoundTexture = RenderEntity->TextureHandle;
                     }
                     
                     glBindVertexArray(RenderState->SpriteVAO);
@@ -908,6 +909,21 @@ static void RenderTilemap(render_state* RenderState, const tilemap& Tilemap, glm
     glBindVertexArray(0);
 }
 
+int CompareFunction(const void* a, const void* b)
+{
+    render_entity APtr = *(render_entity*)a;
+    render_entity BPtr = *(render_entity*)b;
+    
+    collision_AABB BoxA = APtr.Entity->CollisionAABB;
+    collision_AABB BoxB = BPtr.Entity->CollisionAABB;
+    
+    if(BoxA.Center.y - BoxA.Extents.y > BoxB.Center.y - BoxB.Extents.y)
+        return 1;
+    if(BoxA.Center.y  - BoxA.Extents.y < BoxB.Center.y - BoxB.Extents.y)
+        return -1;
+    return 0;
+}
+
 static void RenderGame(game_state* GameState)
 {
     switch(GameState->GameMode)
@@ -934,14 +950,21 @@ static void RenderGame(game_state* GameState)
         break;
         case Mode_InGame:
         {
-            //sort
             RenderTilemap(&GameState->RenderState, GameState->CurrentLevel.Tilemap, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
             
-            for(uint32 EntityIndex = 0;
-                EntityIndex < GameState->EntityCount;
-                EntityIndex++) 
+            //@Fix this is buggy
+            qsort(GameState->RenderState.RenderEntities, GameState->RenderState.RenderEntityCount, sizeof(render_entity), CompareFunction);
+            
+            
+            for(uint32 Index = 0;
+                Index < GameState->RenderState.RenderEntityCount;
+                Index++) 
             {
-                RenderEntity(&GameState->RenderState, GameState->Entities[EntityIndex], GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
+                render_entity* Render = &GameState->RenderState.RenderEntities[Index];
+                
+                Render->Entity->RenderEntityHandle = Index;
+                
+                RenderEntity(&GameState->RenderState, *Render->Entity, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
             }
         }
         break;

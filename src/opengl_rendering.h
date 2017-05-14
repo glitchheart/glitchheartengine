@@ -48,12 +48,17 @@ enum Render_Mode
     Render_Fill, Render_Outline
 };
 
+
+#define NUM_ENTITIES 2048
+
+struct entity;
+
 struct render_entity
 {
+    entity* Entity;
     bool32 Rendered = true;
     uint32 TextureHandle;
     uint32 ShaderIndex;
-    bool32 IsFlipped;
     glm::vec4 Color = glm::vec4(1, 1, 1, 1);
 };
 
@@ -107,6 +112,9 @@ struct render_state
     GLfloat ScaleX;
     GLfloat ScaleY;
     GLint Viewport[4];
+    
+    render_entity RenderEntities[NUM_ENTITIES];
+    uint32 RenderEntityCount;
     
     bool32 RenderColliders;
     bool32 RenderFPS;
