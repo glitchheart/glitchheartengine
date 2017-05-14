@@ -4,7 +4,6 @@
 #include <ft2build.h>
 #include FT_FREETYPE_H
 
-
 enum Shader_Type
 {
     Shader_Texture,
@@ -111,6 +110,7 @@ struct render_state
     
     bool32 RenderColliders;
     bool32 RenderFPS;
+    bool32 ShouldClose;
     real64 FPS;
     
     size_t SpriteQuadVerticesSize = 16 * sizeof(GLfloat);

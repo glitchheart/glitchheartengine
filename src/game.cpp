@@ -552,6 +552,7 @@ extern "C" UPDATE(Update)
         InitCommands();
         GameState->IsInitialized = true;
     }
+    printf("FIRST\n");
 #ifdef DEBUG
     if(GetKeyDown(Key_F1, GameState))
     {
