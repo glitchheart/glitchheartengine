@@ -13,9 +13,9 @@
 #define DEBUG
 
 //@Cleanup move this
-void Kill(entity* Entity)
+void Kill(game_state* GameState, entity* Entity)
 {
-    Entity->RenderEntity.Rendered = false;
+    GameState->RenderState.RenderEntities[Entity->RenderEntityHandle].Rendered = false;
     Entity->IsDead = true;
 }
 
@@ -55,7 +55,7 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
                         if(!OtherEntity->IsDead && GameState->Entities[GameState->PlayerIndex].Player.IsAttacking)
                         {
                             PlaySoundEffect(GameState, &GameState->SoundManager.SwordHit01);
-                            Kill(OtherEntity);
+                            Kill(GameState, OtherEntity);
                         }
                     }
                     else 
@@ -79,7 +79,7 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
                         if(!OtherEntity->IsDead && GameState->Entities[GameState->PlayerIndex].Player.IsAttacking)
                         {
                             PlaySoundEffect(GameState, &GameState->SoundManager.SwordHit01);
-                            Kill(OtherEntity);
+                            Kill(GameState, OtherEntity);
                         }
                     }
                     
@@ -252,21 +252,6 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
     }
 }
 
-int CompareFunction(const void* a, const void* b)
-{
-    entity APtr = *(entity*)a;
-    entity BPtr = *(entity*)b;
-    
-    collision_AABB BoxA = APtr.CollisionAABB;
-    collision_AABB BoxB = BPtr.CollisionAABB;
-    
-    if(BoxA.Center.y - BoxA.Extents.y > BoxB.Center.y - BoxB.Extents.y)
-        return 1;
-    if(BoxA.Center.y  - BoxA.Extents.y < BoxB.Center.y - BoxB.Extents.y)
-        return -1;
-    return 0;
-}
-
 void UpdateEntities(game_state* GameState, real64 DeltaTime)
 {
     //@Fix this is buggy
@@ -317,12 +302,12 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                     if (GetKey(Key_A, GameState))
                     {
                         Entity->Velocity.x = -Entity->Player.WalkingSpeed * (real32)DeltaTime;
-                        Entity->RenderEntity.IsFlipped = true;
+                        Entity->IsFlipped = true;
                     }
                     else if (GetKey(Key_D, GameState))
                     {
                         Entity->Velocity.x = Entity->Player.WalkingSpeed * (real32)DeltaTime;
-                        Entity->RenderEntity.IsFlipped = false;
+                        Entity->IsFlipped = false;
                     }
                     
                     if (GetKey(Key_W, GameState))
@@ -350,7 +335,7 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                     if(GetKeyDown(Key_E,GameState) && Entity->Player.Pickup)
                     {
                         Entity->Player.Pickup->IsKinematic = false;
-                        real32 ThrowDir = Entity->RenderEntity.IsFlipped ? -1.0f : 1.0f;
+                        real32 ThrowDir = Entity->IsFlipped ? -1.0f : 1.0f;
                         glm::vec2 Throw = glm::normalize(Entity->Velocity);
                         if(Entity->Velocity.x == 0.0f && Entity->Velocity.y == 0.0f)
                         {
@@ -402,7 +387,7 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
             case Entity_PlayerWeapon:
             {
                 glm::vec2 Pos = GameState->Entities[GameState->PlayerIndex].Position;
-                if(GameState->Entities[GameState->PlayerIndex].RenderEntity.IsFlipped)
+                if(GameState->Entities[GameState->PlayerIndex].IsFlipped)
                     Entity->Position = glm::vec2(Pos.x - 0.25f, Pos.y + 0.6f);
                 else
                     Entity->Position = glm::vec2(Pos.x + 1.2f, Pos.y + 0.6f);
@@ -465,7 +450,7 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                                 Direction = glm::normalize(Direction);
                                 Entity->Velocity = glm::vec2(Direction.x * Entity->Enemy.WalkingSpeed * DeltaTime, Direction.y * Entity->Enemy.WalkingSpeed * DeltaTime);
                                 
-                                Entity->RenderEntity.IsFlipped = Entity->Velocity.x < 0;
+                                Entity->IsFlipped = Entity->Velocity.x < 0;
                             }
                         }
                         break;
@@ -511,7 +496,8 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                 Entity->Position.y += Entity->Velocity.y;
                 
                 //@Cleanup move this somewhere else, maybe out of switch
-                Entity->RenderEntity.Color = glm::vec4(0, 1, 0, 1);
+                render_entity* RenderEntity = &GameState->RenderState.RenderEntities[Entity->RenderEntityHandle];
+                RenderEntity->Color = glm::vec4(0, 1, 0, 1);
                 
                 if(Entity->CurrentAnimation)
                     TickAnimation(&Entity->Animations[Entity->CurrentAnimation], DeltaTime);

@@ -19,12 +19,13 @@ static void InitPlayer(game_state* GameState)
     LoadAnimationFromFile("../assets/animations/player_anim_attack_new.pownim", AttackingAnimation, &GameState->RenderState);
     Player->Animations.insert(std::pair<char*, animation>(AttackingAnimation->Name, *AttackingAnimation));
     
-    render_entity PlayerRenderEntity = { };
-    PlayerRenderEntity.ShaderIndex = Shader_SpriteSheetShader;
+    render_entity* PlayerRenderEntity = &GameState->RenderState.RenderEntities[GameState->RenderState.RenderEntityCount];
+    PlayerRenderEntity->ShaderIndex = Shader_SpriteSheetShader;
+    PlayerRenderEntity->TextureHandle = GameState->RenderState.PlayerTexture;
     
-    PlayerRenderEntity.TextureHandle = GameState->RenderState.PlayerTexture;
+    PlayerRenderEntity->Entity = &*Player;
+    Player->RenderEntityHandle = GameState->RenderState.RenderEntityCount++;
     
-    Player->RenderEntity = PlayerRenderEntity;
     Player->Rotation = glm::vec3(0, 0, 0);
     Player->Scale = glm::vec3(2, 2, 0);
     Player->Velocity = glm::vec2(0,0);
@@ -40,7 +41,16 @@ static void InitPlayer(game_state* GameState)
     GameState->EntityCount++;
     
     entity* PlayerWeapon = &GameState->Entities[GameState->EntityCount];
-    PlayerWeapon->RenderEntity.Rendered = false;
+    
+    PlayerWeapon->Name = "Player weapon";
+    PlayerWeapon->Type = Entity_PlayerWeapon;
+    
+    render_entity* PlayerWeaponRenderEntity = &GameState->RenderState.RenderEntities[GameState->RenderState.RenderEntityCount];
+    
+    PlayerWeaponRenderEntity->Rendered = false;
+    PlayerWeaponRenderEntity->Entity = &*PlayerWeapon;
+    PlayerWeapon->RenderEntityHandle = GameState->RenderState.RenderEntityCount++;
+    
     PlayerWeapon->Name = "Player weapon";
     PlayerWeapon->Type = Entity_PlayerWeapon;
     
@@ -68,10 +78,13 @@ static void InitCrosshair(game_state* GameState)
     CollisionAABB2.Extents = glm::vec2(0.5f,0.5f);
     Crosshair->CollisionAABB = CollisionAABB2;
     
-    render_entity CrosshairRenderEntity = { };
-    CrosshairRenderEntity.ShaderIndex = Shader_Texture;
-    CrosshairRenderEntity.TextureHandle = GameState->RenderState.CrosshairTexture;
-    Crosshair->RenderEntity = CrosshairRenderEntity;
+    render_entity* CrosshairRenderEntity = &GameState->RenderState.RenderEntities[GameState->RenderState.RenderEntityCount];
+    CrosshairRenderEntity->ShaderIndex = Shader_Texture;
+    CrosshairRenderEntity->TextureHandle = GameState->RenderState.CrosshairTexture;
+    
+    CrosshairRenderEntity->Entity = &*Crosshair;
+    Crosshair->RenderEntityHandle = GameState->RenderState.RenderEntityCount++;
+    
     Crosshair->Rotation = glm::vec3(0, 0, 0);
     Crosshair->Scale = glm::vec3(1, 1, 0);
     
@@ -91,10 +104,15 @@ void SpawnMillionBarrels(game_state* GameState)
             Barrel->Type = Entity_Barrel;
             Barrel->Layer = Layer_Environment;
             Barrel->IgnoreLayers = Layer_Environment;
-            render_entity BarrelRenderEntity = { };
-            BarrelRenderEntity.ShaderIndex = Shader_Texture;
-            BarrelRenderEntity.TextureHandle = GameState->RenderState.BarrelTexture;
-            Barrel->RenderEntity = BarrelRenderEntity;
+            
+            render_entity* BarrelRenderEntity = &GameState->RenderState.RenderEntities[GameState->RenderState.RenderEntityCount];
+            
+            BarrelRenderEntity->ShaderIndex = Shader_Texture;
+            BarrelRenderEntity->TextureHandle = GameState->RenderState.BarrelTexture;
+            
+            BarrelRenderEntity->Entity = &*Barrel;
+            Barrel->RenderEntityHandle = GameState->RenderState.RenderEntityCount++;
+            
             Barrel->Rotation = glm::vec3(0, 0, 0);
             Barrel->Position = glm::vec2(2 + i,2 + j);
             Barrel->Scale = glm::vec3(2, 2, 0);

@@ -18,10 +18,14 @@ static void SpawnEnemy(game_state* GameState, glm::vec2 Position)
     LoadAnimationFromFile("../assets/animations/player_anim_attack_new.pownim", EnemyAttackingAnimation, &GameState->RenderState);
     Enemy->Animations.insert(std::pair<char*, animation>(EnemyAttackingAnimation->Name, *EnemyAttackingAnimation));
     
-    render_entity EnemyRenderEntity = { };
-    EnemyRenderEntity.ShaderIndex = Shader_SpriteSheetShader;
-    EnemyRenderEntity.TextureHandle = GameState->RenderState.PlayerTexture;
-    Enemy->RenderEntity = EnemyRenderEntity;
+    render_entity* EnemyRenderEntity = &GameState->RenderState.RenderEntities[GameState->RenderState.RenderEntityCount];
+    
+    EnemyRenderEntity->ShaderIndex = Shader_SpriteSheetShader;
+    EnemyRenderEntity->TextureHandle = GameState->RenderState.PlayerTexture;
+    
+    EnemyRenderEntity->Entity = &*Enemy;
+    Enemy->RenderEntityHandle = GameState->RenderState.RenderEntityCount++;
+    
     Enemy->Rotation = glm::vec3(0, 0, 0);
     Enemy->Position = Position;
     Enemy->Scale = glm::vec3(2, 2, 0);
