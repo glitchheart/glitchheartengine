@@ -365,7 +365,10 @@ static void InitializeOpenGL(game_state* GameState, render_state* RenderState)
     if (!glfwInit())
         exit(EXIT_FAILURE);
     
-    RenderState->Window = glfwCreateWindow(ConfigData.ScreenWidth, ConfigData.ScreenHeight, CombineStrings(ConfigData.Title, ConfigData.Version), ConfigData.Fullscreen ? glfwGetPrimaryMonitor() : NULL, NULL);
+    char WindowTitle[100];
+    sprintf(WindowTitle, "%s %s", ConfigData.Title, ConfigData.Version);
+    
+    RenderState->Window = glfwCreateWindow(ConfigData.ScreenWidth, ConfigData.ScreenHeight, &WindowTitle[0], ConfigData.Fullscreen ? glfwGetPrimaryMonitor() : NULL, NULL);
     
     if (!RenderState->Window)
     {

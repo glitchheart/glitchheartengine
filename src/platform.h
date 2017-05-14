@@ -1,5 +1,3 @@
-
-
 struct CompareCStrings 
 {
     bool operator()(const char* lhs, const char* rhs) const
