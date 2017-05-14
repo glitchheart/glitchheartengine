@@ -21,11 +21,13 @@ void Kill(entity* Entity)
 
 void CheckCollision(game_state* GameState, entity* Entity, collision_info* CollisionInfo)
 {
-    Entity->IsColliding = false;
-    
-    if(!Entity->IsKinematic)
+    if(!Entity->IsKinematic && !Entity->IsDead)
     {
         Entity->CollisionAABB.Center = glm::vec2(Entity->Position.x + Entity->Center.x * Entity->Scale.x, Entity->Position.y + Entity->Center.y * Entity->Scale.y);
+        if(Entity->HitTrigger)
+        {
+            Entity->HitTrigger->Center = glm::vec2(Entity->Position.x + Entity->Center.x * Entity->Scale.x, Entity->Position.y + Entity->Center.y * Entity->Scale.y);
+        }
         
         glm::vec2 PV;
         
@@ -37,9 +39,31 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
             
             if(!(OtherEntity->Layer & Entity->IgnoreLayers) 
                && OtherEntity->EntityIndex != Entity->EntityIndex 
-               && !OtherEntity->IsKinematic 
-               && !OtherEntity->CollisionAABB.IsTrigger)
+               && !OtherEntity->IsKinematic && !OtherEntity->IsDead)
             {
+                if(OtherEntity->HitTrigger && OtherEntity->Type == Entity_Enemy && Entity->Type == Entity_PlayerWeapon)
+                {
+                    
+                    collision_AABB MdHit;
+                    MinkowskiDifference(OtherEntity->HitTrigger, &Entity->CollisionAABB, &MdHit);
+                    if(MdHit.Min.x <= 0 &&
+                       MdHit.Max.x >= 0 &&
+                       MdHit.Min.y <= 0 &&
+                       MdHit.Max.y >= 0)
+                    {
+                        OtherEntity->HitTrigger->IsColliding = true;
+                        if(!OtherEntity->IsDead && GameState->Entities[GameState->PlayerIndex].Player.IsAttacking)
+                        {
+                            PlaySoundEffect(GameState, &GameState->SoundManager.SwordHit01);
+                            Kill(OtherEntity);
+                        }
+                    }
+                    else 
+                    {
+                        OtherEntity->HitTrigger->IsColliding = false;
+                    }
+                }
+                
                 collision_AABB Md;
                 MinkowskiDifference(&OtherEntity->CollisionAABB, &Entity->CollisionAABB, &Md);
                 if(Md.Min.x <= 0 &&
@@ -48,6 +72,7 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
                    Md.Max.y >= 0)
                 {
                     Entity->IsColliding = true;
+                    Entity->CollisionAABB.IsColliding = true;
                     
                     if(OtherEntity->Type == Entity_Enemy && Entity->Type == Entity_PlayerWeapon)
                     {
@@ -58,9 +83,10 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
                         }
                     }
                     
-                    if(!Entity->CollisionAABB.IsTrigger)
+                    if(!Entity->CollisionAABB.IsTrigger && !OtherEntity->CollisionAABB.IsTrigger)
                     {
                         OtherEntity->IsColliding = true;
+                        OtherEntity->CollisionAABB.IsColliding = true;
                         
                         //calculate what side is colliding
                         auto OtherPosition = OtherEntity->CollisionAABB.Center;
@@ -132,11 +158,16 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
                         Entity->Velocity = glm::vec2(0,0);*/
                     }
                 }
+                else 
+                {
+                    Entity->IsColliding = false;
+                    Entity->CollisionAABB.IsColliding = false;
+                }
             }
         }
         
         
-        if(Entity->Type == Entity_Player || Entity->Type == Entity_Enemy)
+        if(Entity->Type == Entity_Player || Entity->Type == Entity_Enemy || Entity->Type == Entity_Barrel)
         {
             level* Level = &GameState->CurrentLevel;
             
@@ -167,6 +198,7 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
                            Md.Max.y >= 0)
                         {
                             Entity->IsColliding = true;
+                            Entity->CollisionAABB.IsColliding = true;
                             
                             //calculate what side is colliding
                             auto OtherPosition = Tile.CollisionAABB.Center;
@@ -204,6 +236,11 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
                             {
                                 PV.y = PenetrationVector.y;
                             }
+                            
+                            if(Entity->Type == Entity_Barrel)
+                            {
+                                Entity->Velocity = glm::vec2(0.0f,0.0f);
+                            }
                         }
                     }
                 }
@@ -233,7 +270,7 @@ int CompareFunction(const void* a, const void* b)
 void UpdateEntities(game_state* GameState, real64 DeltaTime)
 {
     //@Fix this is buggy
-    qsort(GameState->Entities, GameState->EntityCount, sizeof(entity), CompareFunction);
+    //qsort(GameState->Entities, GameState->EntityCount, sizeof(entity), CompareFunction);
     
     auto pos = glm::unProject(glm::vec3(GameState->InputController.MouseX,GameState->RenderState.Viewport[3] - GameState->InputController.MouseY, 0),
                               GameState->Camera.ViewMatrix,
@@ -241,7 +278,7 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                               glm::vec4(0, 0, GameState->RenderState.Viewport[2], GameState->RenderState.Viewport[3]));
     
     //@Incomplete it has to be possible to make this more efficient
-    for(uint32 EntityIndex = 0;
+    /*for(uint32 EntityIndex = 0;
         EntityIndex < GameState->EntityCount;
         EntityIndex++)
     {
@@ -258,7 +295,7 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
             break;
         }
     }
-    
+    */
     for(uint32 EntityIndex = 0;
         EntityIndex < GameState->EntityCount;
         EntityIndex++)
@@ -312,10 +349,17 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                     
                     if(GetKeyDown(Key_E,GameState) && Entity->Player.Pickup)
                     {
-                        entity* Pickup = Entity->Player.Pickup;
                         Entity->Player.Pickup->IsKinematic = false;
-                        real32 ThrowDir = Entity->RenderEntity.IsFlipped ? -80.0f : 80.0f;
-                        Entity->Player.Pickup->Velocity = glm::vec2(ThrowDir * DeltaTime,0);
+                        real32 ThrowDir = Entity->RenderEntity.IsFlipped ? -1.0f : 1.0f;
+                        glm::vec2 Throw = glm::normalize(Entity->Velocity);
+                        if(Entity->Velocity.x == 0.0f && Entity->Velocity.y == 0.0f)
+                        {
+                            printf("Dix\n");
+                            Throw.x = ThrowDir;
+                            Throw.y = 0.0f;
+                        }
+                        printf("(%f,%f)\n",Throw.x * DeltaTime * 40.0f,Throw.y * DeltaTime * 40.0f);
+                        Entity->Player.Pickup->Velocity = glm::vec2(Throw.x * DeltaTime * 40.0f,Throw.y * DeltaTime * 40.0f);
                         Entity->Player.Pickup = NULL;
                         Entity->Player.PickupCooldown = 0.5;
                     }
@@ -332,8 +376,7 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                     
                     if(Entity->Player.Pickup)
                     {
-                        Entity->Player.Pickup->Position.x += Entity->Velocity.x;
-                        Entity->Player.Pickup->Position.y += Entity->Velocity.y;
+                        Entity->Player.Pickup->Position += Entity->Velocity;
                     }
                     
                     //attacking
@@ -488,23 +531,45 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
             {
                 collision_info CollisionInfo;
                 Entity->IsColliding = false;
-                //CheckCollision(GameState, Entity, &CollisionInfo); //TODO(Daniel) this makes it bug out, since it pushes the barrel away
+                Entity->CollisionAABB.IsColliding = false;
+                CheckCollision(GameState, Entity, &CollisionInfo);
+                //TODO(Daniel) this makes it bug out, since it pushes the barrel away
+                
+                real32 XVel = 0.0f;
+                real32 YVel = 0.0f;
                 
                 if(Entity->Velocity.x > 0.7f * DeltaTime)
                 {
-                    
                     Entity->Position += Entity->Velocity;
-                    Entity->Velocity.x -= 0.7f * DeltaTime;
+                    XVel = Entity->Velocity.x - 0.7f * DeltaTime;
                 }
                 else if(Entity->Velocity.x < -0.7f * DeltaTime)
                 {
                     Entity->Position += Entity->Velocity;
-                    Entity->Velocity.x += 0.7f * DeltaTime;
+                    XVel = Entity->Velocity.x - 0.7f * DeltaTime;
                 }
                 else 
                 {
-                    Entity->Velocity = glm::vec2(0.0f,0.0f);
+                    XVel = 0.0f;
                 }
+                
+                if(Entity->Velocity.y > 0.7f * DeltaTime)
+                {
+                    Entity->Position += Entity->Velocity;
+                    YVel = Entity->Velocity.y - 0.7f * DeltaTime;
+                }
+                else if(Entity->Velocity.y < -0.7f * DeltaTime)
+                {
+                    Entity->Position += Entity->Velocity;
+                    YVel = Entity->Velocity.y - 0.7f * DeltaTime;
+                }
+                else 
+                {
+                    YVel = 0.0f;
+                }
+                
+                Entity->Velocity = glm::vec2(XVel,YVel);
+                
             }
         }
     }
@@ -552,7 +617,6 @@ extern "C" UPDATE(Update)
         InitCommands();
         GameState->IsInitialized = true;
     }
-    printf("FIRST\n");
 #ifdef DEBUG
     if(GetKeyDown(Key_F1, GameState))
     {

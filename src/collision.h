@@ -27,6 +27,7 @@ struct collision_AABB
     glm::vec2 Max;
     glm::vec2 Size;
     bool32 IsTrigger = false;
+    bool32 IsColliding;
 };
 
 #endif

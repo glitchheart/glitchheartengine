@@ -37,6 +37,14 @@ static void SpawnEnemy(game_state* GameState, glm::vec2 Position)
     CollisionAABB.Extents = glm::vec2(0.3f, 0.15f);
     Enemy->CollisionAABB = CollisionAABB;
     
+    collision_AABB* HitTrigger = (collision_AABB*)malloc(sizeof(collision_AABB));
+    
+    HitTrigger->Center = glm::vec2(Enemy->Position.x + Enemy->Center.x * Enemy->Scale.x,
+                                   Enemy->Position.y + Enemy->Center.y * Enemy->Scale.y);
+    HitTrigger->Extents = glm::vec2(0.5f, 0.7f);
+    HitTrigger->IsTrigger;
+    Enemy->HitTrigger = HitTrigger;
+    
     Enemy->Enemy.WalkingSpeed = 5;
     Enemy->Enemy.MaxAlertDistance = 10;
     Enemy->Enemy.MinDistance = 1;
@@ -62,8 +70,9 @@ static bool32 LoadLevelFromFile(char* FilePath, level* Level, game_state* GameSt
     
     if(File)
     {
+        Level->Name = (char*)malloc(sizeof(char) * 30);
         if(fgets(LineBuffer, 255, File))
-            sscanf(LineBuffer, "%s", &Level->Name);
+            sscanf(LineBuffer, "%s", Level->Name);
         
         if(fgets(LineBuffer, 255, File))
             sscanf(LineBuffer, "%f %f", &Level->PlayerStartPosition.x, &Level->PlayerStartPosition.y);
@@ -79,7 +88,7 @@ static bool32 LoadLevelFromFile(char* FilePath, level* Level, game_state* GameSt
         
         Level->Tilemap.Data = (tile_data**)malloc(MapWidth * sizeof(tile_data*));
         
-        for(int I = 0; I < MapWidth; I++)
+        for(uint32 I = 0; I < MapWidth; I++)
         {
             Level->Tilemap.Data[I] = (tile_data *)malloc(MapHeight * sizeof(tile_data));
         }
@@ -90,7 +99,7 @@ static bool32 LoadLevelFromFile(char* FilePath, level* Level, game_state* GameSt
         while (IndexHeight < MapHeight)
         {
             fgets(Line, sizeof(Line), File);
-            for(int IndexWidth = 0; IndexWidth < MapWidth; ++IndexWidth) 
+            for(uint32 IndexWidth = 0; IndexWidth < MapWidth; ++IndexWidth) 
             {
                 collision_AABB CollisionAABB;
                 CollisionAABB.Center = glm::vec2(IndexWidth + 0.5f, IndexHeight + 0.5f);
