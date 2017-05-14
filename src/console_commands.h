@@ -52,7 +52,6 @@ static char* LoadLevel(game_state* GameState, char** Arguments)
         free(CurrentLevel->Tilemap.Data);
         
         //@Incomplete remove all entities added from previous level
-        
         GameState->CurrentLevel = Level;
         GameState->Entities[GameState->PlayerIndex].Position = Level.PlayerStartPosition;
         sprintf(Result, "Loaded level");

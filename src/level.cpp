@@ -29,10 +29,12 @@ static void SpawnEnemy(game_state* GameState, glm::vec2 Position, entity* Enemy)
     Enemy->Layer = Layer_Enemy;
     //Enemy->IgnoreLayers = Layer_Enemy;
     
-    collision_AABB CollisionAABB4;
-    CollisionAABB4.Center = Enemy->Position;
-    CollisionAABB4.Extents = glm::vec2(0.5f,0.5f);
-    Enemy->CollisionAABB = CollisionAABB4;
+    collision_AABB CollisionAABB;
+    Enemy->Center = glm::vec2(0.5f, 0.950f);
+    CollisionAABB.Center = glm::vec2(Enemy->Position.x + Enemy->Center.x * Enemy->Scale.x,
+                                     Enemy->Position.y + Enemy->Center.y * Enemy->Scale.y);
+    CollisionAABB.Extents = glm::vec2(0.3f, 0.15f);
+    Enemy->CollisionAABB = CollisionAABB;
     
     Enemy->Enemy.WalkingSpeed = 5;
     Enemy->Enemy.MaxAlertDistance = 10;
@@ -129,7 +131,6 @@ static bool32 LoadLevelFromFile(char* FilePath, level* Level, game_state* GameSt
             sscanf(LineBuffer, "enemy %f %f", &Pos.x, &Pos.y);
             SpawnEnemy(GameState, Pos, &GameState->Entities[GameState->EntityCount]);
             GameState->EntityCount++;
-            printf("ONE MORE TIME\n");
         }
         fclose(File);
         return true;
