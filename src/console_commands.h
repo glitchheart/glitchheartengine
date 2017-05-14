@@ -79,8 +79,8 @@ static char* Exit(game_state* GameState, char** Arguments)
     alcDestroyContext(GameState->SoundManager.Context);
     alcCloseDevice(GameState->SoundManager.Device);
     */
-    glfwDestroyWindow(GameState->RenderState.Window);
-    glfwTerminate();
+    CloseWindow(GameState);
+    
     exit(EXIT_SUCCESS);
 }
 

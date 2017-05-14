@@ -8,6 +8,8 @@
 #include "entity.cpp"
 #include "level.cpp"
 
+#include "console.cpp"
+
 #define DEBUG
 
 //@Cleanup move this
@@ -547,6 +549,7 @@ extern "C" UPDATE(Update)
         GameState->Camera.ViewportHeight = GameState->RenderState.WindowHeight / 20;
         
         GameState->GameMode = Mode_InGame;
+        InitCommands();
         GameState->IsInitialized = true;
     }
 #ifdef DEBUG
@@ -610,4 +613,5 @@ extern "C" UPDATE(Update)
     }
     
     UpdateEntities(GameState, DeltaTime);
+    CheckConsoleInput(GameState, DeltaTime);
 }
