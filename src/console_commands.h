@@ -41,9 +41,16 @@ static char* LoadLevel(game_state* GameState, char** Arguments)
     
     char* Result = (char*)malloc(25 * sizeof(char));
     
+    //@Incomplete still needs to respawn the player
+    GameState->PlayerIndex = 0;
+    GameState->EntityCount = 0;
+    
     if(LoadLevelFromFile(Path, &Level, GameState))
     {
         level* CurrentLevel = &GameState->CurrentLevel;
+        
+        GameState->CurrentLevel = Level;
+        GameState->Entities[GameState->PlayerIndex].Position = Level.PlayerStartPosition;
         
         for(int X = 0; X < CurrentLevel->Tilemap.Width; X++)
         {
@@ -51,9 +58,6 @@ static char* LoadLevel(game_state* GameState, char** Arguments)
         }
         free(CurrentLevel->Tilemap.Data);
         
-        //@Incomplete remove all entities added from previous level
-        GameState->CurrentLevel = Level;
-        GameState->Entities[GameState->PlayerIndex].Position = Level.PlayerStartPosition;
         sprintf(Result, "Loaded level");
     }
     else
