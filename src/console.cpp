@@ -90,6 +90,7 @@ void ExecuteCommand(game_state *GameState)
 
 static void CheckConsoleInput(game_state* GameState, real64 DeltaTime)
 {
+    printf("CHECK CONSOLE\n");
     if(GameState->Console.Open && GameState->Console.CurrentTime < GameState->Console.TimeToAnimate)
     {
         GameState->Console.CurrentTime += DeltaTime;

@@ -70,18 +70,8 @@ static char* LoadLevel(game_state* GameState, char** Arguments)
 
 static char* Exit(game_state* GameState, char** Arguments)
 {
-    //TODO(niels): Need to find a way to call this from here
-    //             This should probably be in platform code anyway?
-    //             Doesn't really make sense to have it in game code
-    //CleanupSound(GameState);
-    /*
-    alcMakeContextCurrent(0);
-    alcDestroyContext(GameState->SoundManager.Context);
-    alcCloseDevice(GameState->SoundManager.Device);
-    */
-    CloseWindow(GameState);
-    
-    exit(EXIT_SUCCESS);
+    GameState->RenderState.ShouldClose = true;
+    return "Exited";
 }
 
 static char* View(game_state* GameState, char** Arguments)

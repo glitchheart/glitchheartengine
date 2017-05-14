@@ -143,9 +143,7 @@ int main(void)
     real64 CurrentFrame = 0.0;
     real64 DeltaTime;
     
-    
-    
-    while (!ShouldCloseWindow(&GameState.RenderState))
+    while (!ShouldCloseWindow(&GameState.RenderState) && !GameState.RenderState.ShouldClose)
     {
         //calculate deltatime
         CurrentFrame = GetTime();
