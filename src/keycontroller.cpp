@@ -64,6 +64,5 @@ static bool32 GetMouseButton(Mouse_Code Key, game_state* GameState)
 
 static bool32 GetMouseButtonDown(Mouse_Code Key, game_state* GameState)
 {
-    //printf("LEFT %d\n", Mouse_Left);///printf("KEY %d and zero %d", GameState->InputController.MouseButtonJustPressed[0], GameState->InputController.MouseButtonJustPressed[Key]);
     return GameState->InputController.MouseButtonDown[Key] == Key_JustPressed;
 }
