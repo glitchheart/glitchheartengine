@@ -6,9 +6,6 @@
 
 #include <GLFW/glfw3.h>
 
-#include <time.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <map>
 #include "platform.h"
 #include "opengl_rendering.h"

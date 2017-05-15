@@ -12,7 +12,7 @@
 
 #define Min(A,B) ((A < B) ? (A) : (B))
 #define Max(A,B) ((A > B) ? (A) : (B))
-
+#define Abs(x) ((x) < 0 ? -(x) : (x))
 
 #include "stdint.h"
 
@@ -37,15 +37,13 @@ static void HandleError(char const *File, int32 LineNum, char const *msg)
     fprintf(stderr, "%s\n", msg);
 }
 
-
 struct CompareCStrings 
 {
     bool operator()(const char* lhs, const char* rhs) const
     {
-        return std::strcmp(lhs, rhs) < 0;
+        return strcmp(lhs, rhs) < 0;
     }
 };
-
 
 static char* CombineStrings(const char * str1, const char* str2)
 {
