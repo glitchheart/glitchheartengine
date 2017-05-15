@@ -1,7 +1,7 @@
 #ifndef GAMESTATE_H
 #define GAMESTATE_H
 
-#include "types.h"
+
 #include "glm/gtc/matrix_transform.hpp"
 
 #include <GLFW/glfw3.h>
@@ -10,8 +10,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <map>
-#include "util.h"
-#include "error.h"
 #include "platform.h"
 #include "opengl_rendering.h"
 #include "animation.h"

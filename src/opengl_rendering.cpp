@@ -41,23 +41,26 @@ static GLint ShaderCompilationErrorChecking(GLuint Shader)
         glGetShaderiv(Shader, GL_INFO_LOG_LENGTH, &MaxLength);
         
         // The maxLength includes the NULL character
-        std::vector<GLchar> ErrorLog(MaxLength);
-        glGetShaderInfoLog(Shader, MaxLength, &MaxLength, &ErrorLog[0]);
+        GLchar* ErrorLog = (GLchar*)malloc(MaxLength);
+        glGetShaderInfoLog(Shader, MaxLength, &MaxLength, ErrorLog);
         
-        std::cout << "SHADER Compilation error" << std::endl;
+        printf("SHADER Compilation error\n");
         
-        for (std::vector<GLchar>::const_iterator i = ErrorLog.begin(); i != ErrorLog.end(); ++i)
-            std::cout << *i;
+        for(uint32 ErrorIndex = 0; ErrorIndex < MaxLength; ErrorIndex++)
+        {
+            printf("%d\n",ErrorLog[ErrorIndex]);
+        }
         
         glDeleteShader(Shader); // Don't leak the shader.
     }
     return IsCompiled;
 }
 
-static GLuint LoadShader(const std::string FilePath, shader *Shd)
+static GLuint LoadShader(const char* FilePath, shader *Shd)
 {
     Shd->VertexShader = glCreateShader(GL_VERTEX_SHADER);
-    GLchar *VertexText = LoadShaderFromFile(FilePath + std::string(".vert"));
+    char* VertexString = CombineStrings(FilePath,".vert");
+    GLchar *VertexText = LoadShaderFromFile(VertexString);
     
     glShaderSource(Shd->VertexShader, 1, &VertexText, NULL);
     glCompileShader(Shd->VertexShader);
@@ -66,7 +69,8 @@ static GLuint LoadShader(const std::string FilePath, shader *Shd)
         return GL_FALSE;
     
     Shd->FragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    GLchar *FragmentText = LoadShaderFromFile(FilePath + std::string(".frag"));
+    char* FragmentString = CombineStrings(FilePath,".frag");
+    GLchar *FragmentText = LoadShaderFromFile(FragmentString);
     
     glShaderSource(Shd->FragmentShader, 1, &FragmentText, NULL);
     glCompileShader(Shd->FragmentShader);
@@ -83,12 +87,13 @@ static GLuint LoadShader(const std::string FilePath, shader *Shd)
     return GL_TRUE;
 }
 
-static GLuint LoadVertexShader(const std::string FilePath, shader *Shd)
+static GLuint LoadVertexShader(const char* FilePath, shader *Shd)
 {
     Shd->Program = glCreateProgram();
     
     Shd->VertexShader = glCreateShader(GL_VERTEX_SHADER);
-    GLchar *VertexText = LoadShaderFromFile(FilePath + std::string(".vert"));
+    char* VertexString = CombineStrings(FilePath,".vert");
+    GLchar *VertexText = LoadShaderFromFile(VertexString);
     glShaderSource(Shd->VertexShader, 1, &VertexText, NULL);
     glCompileShader(Shd->VertexShader);
     
@@ -103,12 +108,13 @@ static GLuint LoadVertexShader(const std::string FilePath, shader *Shd)
     return GL_TRUE;
 }
 
-static GLuint LoadFragmentShader(const std::string FilePath, shader *Shd)
+static GLuint LoadFragmentShader(const char* FilePath, shader *Shd)
 {
     Shd->Program = glCreateProgram();
     
     Shd->FragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    GLchar *FragmentText = LoadShaderFromFile(FilePath + std::string(".frag"));
+    char* FragmentString = CombineStrings(FilePath,".frag");
+    GLchar *FragmentText = LoadShaderFromFile(FragmentString);
     glShaderSource(Shd->FragmentShader, 1, &FragmentText, NULL);
     glCompileShader(Shd->FragmentShader);
     
@@ -153,7 +159,7 @@ static void InitializeFreeTypeFont(char* FontPath, int FontSize, FT_Library Libr
         }
         
         W += G->bitmap.width;
-        H = std::max(H, G->bitmap.rows);
+        H = Max(H, G->bitmap.rows);
     }
     
     Font->AtlasWidth = W;

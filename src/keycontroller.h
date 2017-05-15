@@ -1,8 +1,6 @@
 #ifndef KEYCONTROLLER_H
 #define KEYCONTROLLER_H
 
-#include <map>
-
 enum Key_Mode
 {
     Key_NotPressed,
@@ -56,13 +54,15 @@ enum Key_Code
     Key_5,
     Key_6,
     Key_7,
+    Key_Count
 };
 
 enum Mouse_Code
 {
     Mouse_Left,
     Mouse_Right,
-    Mouse_Middle
+    Mouse_Middle,
+    Mouse_Count
 };
 
 enum Controller_Code
@@ -82,182 +82,25 @@ enum Controller_Code
     JOYSTICK_13,
     JOYSTICK_14,
     JOYSTICK_15,
-    JOYSTICK_16
+    JOYSTICK_16,
+    Joystick_Count
 };
+
 
 struct input_controller
 {
-    std::map<int, bool> KeysDown =
-    {
-        { Key_Left, false },
-        { Key_Right, false  },
-        { Key_Up, false },
-        { Key_Down, false },
-        { Key_Escape, false },
-        { Key_Tab, false },
-        { Key_Enter, false },
-        { Key_LeftCtrl, false },
-        { Key_F1, false },
-        { Key_F2, false},
-        { Key_A, false },
-        { Key_B, false },
-        { Key_C, false },
-        { Key_D, false },
-        { Key_E, false },
-        { Key_F, false },
-        { Key_G, false },
-        { Key_H, false },
-        { Key_I, false },
-        { Key_J, false },
-        { Key_K, false },
-        { Key_L, false },
-        { Key_M, false },
-        { Key_N, false },
-        { Key_O, false },
-        { Key_Q, false },
-        { Key_R, false },
-        { Key_S, false },
-        { Key_T, false },
-        { Key_U, false },
-        { Key_V, false },
-        { Key_X, false },
-        { Key_Y, false },
-        { Key_Z, false }
-    };
+    bool32 KeysDown[Key_Count];
+    bool32 KeysUp[Key_Count];
+    Key_Mode KeysJustPressed[Key_Count];
     
-    std::map<int, bool> KeysUp =
-    {
-        { Key_Left, false },
-        { Key_Right, false  },
-        { Key_Up, false },
-        { Key_Down, false },
-        { Key_Escape, false },
-        { Key_Tab, false },
-        { Key_Enter, false },
-        { Key_LeftCtrl, false },
-        { Key_F1, false },
-        { Key_F2, false},
-        { Key_A, false },
-        { Key_B, false },
-        { Key_C, false },
-        { Key_D, false },
-        { Key_E, false },
-        { Key_F, false },
-        { Key_G, false },
-        { Key_H, false },
-        { Key_I, false },
-        { Key_J, false },
-        { Key_K, false },
-        { Key_L, false },
-        { Key_M, false },
-        { Key_N, false },
-        { Key_O, false },
-        { Key_Q, false },
-        { Key_R, false },
-        { Key_S, false },
-        { Key_T, false },
-        { Key_U, false },
-        { Key_V, false },
-        { Key_X, false },
-        { Key_Y, false },
-        { Key_Z, false }
-    };
+    bool32 MouseButtonDown[Mouse_Count];
+    Key_Mode MouseButtonJustPressed[Mouse_Count];
     
-    std::map<int, bool> MouseButtonDown = 
-    {
-        {Mouse_Left, false},
-        {Mouse_Right, false},
-        {Mouse_Middle, false}
-    };
+    bool32 JoystickKeysDown[Joystick_Count];
+    Key_Mode JoystickKeysJustPressed[Joystick_Count];
     
-    
-    std::map<int, bool> JoystickKeysDown =
-    {
-        {JOYSTICK_1, false},
-        {JOYSTICK_2, false},
-        {JOYSTICK_3, false},
-        {JOYSTICK_4, false},
-        {JOYSTICK_5, false},
-        {JOYSTICK_6, false},
-        {JOYSTICK_7, false},
-        {JOYSTICK_8, false},
-        {JOYSTICK_9, false},
-        {JOYSTICK_10, false},
-        {JOYSTICK_11, false},
-        {JOYSTICK_12, false},
-        {JOYSTICK_13, false},
-        {JOYSTICK_14, false},
-        {JOYSTICK_15, false},
-        {JOYSTICK_16, false}
-    };
-    
-    std::map<int, uint32> JoystickKeysJustPressed = 
-    {
-        {JOYSTICK_1, Key_NotPressed},
-        {JOYSTICK_2, Key_NotPressed},
-        {JOYSTICK_3, Key_NotPressed},
-        {JOYSTICK_4, Key_NotPressed},
-        {JOYSTICK_5, Key_NotPressed},
-        {JOYSTICK_6, Key_NotPressed},
-        {JOYSTICK_7, Key_NotPressed},
-        {JOYSTICK_8, Key_NotPressed},
-        {JOYSTICK_9, Key_NotPressed},
-        {JOYSTICK_10, Key_NotPressed},
-        {JOYSTICK_11, Key_NotPressed},
-        {JOYSTICK_12, Key_NotPressed},
-        {JOYSTICK_13, Key_NotPressed},
-        {JOYSTICK_14, Key_NotPressed},
-        {JOYSTICK_15, Key_NotPressed},
-        {JOYSTICK_16, Key_NotPressed}
-    };
-    
-    std::map<int, uint32> MouseButtonJustPressed =
-    {
-        {Mouse_Left, Key_NotPressed},
-        {Mouse_Right, Key_NotPressed},
-        {Mouse_Middle, Key_NotPressed}
-    };
-    
-    std::map<int, uint32> KeysJustPressed =
-    {
-        { Key_Left, Key_NotPressed },
-        { Key_Right, Key_NotPressed  },
-        { Key_Up, Key_NotPressed },
-        { Key_Down, Key_NotPressed },
-        { Key_Escape, Key_NotPressed },
-        { Key_Tab, Key_NotPressed },
-        { Key_Enter, Key_NotPressed },
-        { Key_LeftCtrl, Key_NotPressed },
-        { Key_F1, Key_NotPressed },
-        { Key_F2, Key_NotPressed},
-        { Key_A, Key_NotPressed },
-        { Key_B, Key_NotPressed },
-        { Key_C, Key_NotPressed },
-        { Key_D, Key_NotPressed },
-        { Key_E, Key_NotPressed },
-        { Key_F, Key_NotPressed },
-        { Key_G, Key_NotPressed },
-        { Key_H, Key_NotPressed },
-        { Key_I, Key_NotPressed },
-        { Key_J, Key_NotPressed },
-        { Key_K, Key_NotPressed },
-        { Key_L, Key_NotPressed },
-        { Key_M, Key_NotPressed },
-        { Key_N, Key_NotPressed },
-        { Key_O, Key_NotPressed },
-        { Key_Q, Key_NotPressed },
-        { Key_R, Key_NotPressed },
-        { Key_S, Key_NotPressed },
-        { Key_T, Key_NotPressed },
-        { Key_U, Key_NotPressed },
-        { Key_V, Key_NotPressed },
-        { Key_X, Key_NotPressed },
-        { Key_Y, Key_NotPressed },
-        { Key_Z, Key_NotPressed }
-    };
-    
-    double MouseX;
-    double MouseY;
+    real64 MouseX;
+    real64 MouseY;
     bool32 ControllerPresent;
 };
 

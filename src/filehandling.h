@@ -3,12 +3,12 @@
 
 #include <Windows.h>
 
-static GLchar* LoadShaderFromFile(const std::string Path)
+static GLchar* LoadShaderFromFile(const char* Path)
 {
     GLchar *Source = {};
     
     FILE *File;
-    File = fopen(Path.c_str(), "rb");
+    File = fopen(Path, "rb");
     if(File)
     {
         fseek(File, 0, SEEK_END);
@@ -23,7 +23,7 @@ static GLchar* LoadShaderFromFile(const std::string Path)
     }
     else
     {
-        std::cerr << "Could not read file " << Path << ". File does not exist." << std::endl;
+        fprintf(stderr, "Could not read file %s. File does not exist.\n",Path);
     }	
     
     return Source;

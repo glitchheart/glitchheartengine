@@ -66,8 +66,8 @@ static bool32 LoadLevelFromFile(char* FilePath, level* Level, game_state* GameSt
     File = fopen(FilePath, "r");
     char LineBuffer[255];
     
-    uint32 MapWidth;
-    uint32 MapHeight;
+    uint32 MapWidth = 0;
+    uint32 MapHeight = 0;
     
     Level->Tilemap.RenderEntity.ShaderIndex = Shader_Tile;
     Level->Tilemap.RenderEntity.TextureHandle = GameState->RenderState.TileTexture;
@@ -86,6 +86,7 @@ static bool32 LoadLevelFromFile(char* FilePath, level* Level, game_state* GameSt
         
         if(fgets(LineBuffer, 255, File))
             sscanf(LineBuffer, "%d", &MapHeight);
+        Assert(MapWidth > 0 && MapHeight > 0);
         
         Level->Tilemap.Width = MapWidth;
         Level->Tilemap.Height = MapHeight;
@@ -98,7 +99,7 @@ static bool32 LoadLevelFromFile(char* FilePath, level* Level, game_state* GameSt
         }
         
         char Line[256];
-        int IndexHeight = 0;
+        uint32 IndexHeight = 0;
         
         while (IndexHeight < MapHeight)
         {

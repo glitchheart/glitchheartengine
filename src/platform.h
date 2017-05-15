@@ -1,3 +1,43 @@
+#define ArrayCount(Array) (sizeof(Array) / sizeof(Array[0])) 
+
+#ifdef POWDER_DEBUG
+#define Assert(Expression) if(!(Expression)) {printf("Assertion failed in: %s on line %d\n",__FILE__,__LINE__); exit(EXIT_FAILURE);}
+#else
+#define Assert(Expression)
+#endif
+
+#define NUM_JOYSTICK_KEYS Joystick_Count
+#define NUM_KEYS Key_Count
+#define NUM_MOUSE_BUTTONS Mouse_Count
+
+#define Min(A,B) ((A < B) ? (A) : (B))
+#define Max(A,B) ((A > B) ? (A) : (B))
+
+
+#include "stdint.h"
+
+typedef uint8_t uint8;
+typedef uint16_t uint16;
+typedef uint32_t uint32;
+typedef uint64_t uint64;
+
+typedef int8_t int8;
+typedef int16_t int16;
+typedef int32_t int32;
+typedef int64_t int64;
+typedef int32 bool32;
+
+typedef float real32;
+typedef double real64;
+
+
+static void HandleError(char const *File, int32 LineNum, char const *msg)
+{
+    fprintf(stderr, "Error on in file %s on line %d\n", File, LineNum);
+    fprintf(stderr, "%s\n", msg);
+}
+
+
 struct CompareCStrings 
 {
     bool operator()(const char* lhs, const char* rhs) const
@@ -5,6 +45,16 @@ struct CompareCStrings
         return std::strcmp(lhs, rhs) < 0;
     }
 };
+
+
+static char* CombineStrings(const char * str1, const char* str2)
+{
+    char * str3 = (char *) malloc(1 + strlen(str1) + strlen(str2));
+    strcpy(str3, str1);
+    strcat(str3, str2);
+    return str3;
+}
+
 
 struct config_data
 {

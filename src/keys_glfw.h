@@ -1,3 +1,4 @@
+
 std::map<uint32, Key_Code> KeyMappings = 
 {
     { GLFW_KEY_LEFT, Key_Left },

@@ -175,15 +175,15 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
             int32 YPos = (int32)(Entity->Position.y + Entity->Center.y * Entity->Scale.y);
             
             //@Improvement Is it necessary to go 2 tiles out?
-            uint32 MinX = max(0, XPos - 2);
-            uint32 MaxX = min(Level->Tilemap.Width, XPos + 2);
-            uint32 MinY = max(0, YPos - 2);
-            uint32 MaxY = min(Level->Tilemap.Height, YPos + 2);
+            uint32 MinX = Max(0, XPos - 2);
+            uint32 MaxX = Min((int32)Level->Tilemap.Width, XPos + 2);
+            uint32 MinY = Max(0, YPos - 2);
+            uint32 MaxY = Min((int32)Level->Tilemap.Height, YPos + 2);
             
             //check tile collision
-            for(int X = MinX; X < MaxX; X++)
+            for(uint32 X = MinX; X < MaxX; X++)
             {
-                for(int Y = MinY; Y < MaxY; Y++)
+                for(uint32 Y = MinY; Y < MaxY; Y++)
                 {
                     tile_data Tile = Level->Tilemap.Data[X][Y];
                     
@@ -527,12 +527,12 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                 if(Entity->Velocity.x > 0.7f * DeltaTime)
                 {
                     Entity->Position += Entity->Velocity;
-                    XVel = Entity->Velocity.x - 0.7f * DeltaTime;
+                    XVel = Entity->Velocity.x - 0.7f * (real32)DeltaTime;
                 }
-                else if(Entity->Velocity.x < -0.7f * DeltaTime)
+                else if(Entity->Velocity.x < -0.7f * (real32)DeltaTime)
                 {
                     Entity->Position += Entity->Velocity;
-                    XVel = Entity->Velocity.x - 0.7f * DeltaTime;
+                    XVel = Entity->Velocity.x - 0.7f * (real32)DeltaTime;
                 }
                 else 
                 {
@@ -542,12 +542,12 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                 if(Entity->Velocity.y > 0.7f * DeltaTime)
                 {
                     Entity->Position += Entity->Velocity;
-                    YVel = Entity->Velocity.y - 0.7f * DeltaTime;
+                    YVel = Entity->Velocity.y - 0.7f * (real32)DeltaTime;
                 }
-                else if(Entity->Velocity.y < -0.7f * DeltaTime)
+                else if(Entity->Velocity.y < -0.7f * (real32)DeltaTime)
                 {
                     Entity->Position += Entity->Velocity;
-                    YVel = Entity->Velocity.y - 0.7f * DeltaTime;
+                    YVel = Entity->Velocity.y - 0.7f * (real32)DeltaTime;
                 }
                 else 
                 {
@@ -644,7 +644,7 @@ extern "C" UPDATE(Update)
         
         if(GameState->MainMenu.SelectedIndex < 0)
             GameState->MainMenu.SelectedIndex = GameState->MainMenu.OptionCount - 1;
-        else if(GameState->MainMenu.SelectedIndex == GameState->MainMenu.OptionCount)
+        else if(GameState->MainMenu.SelectedIndex == (int32)GameState->MainMenu.OptionCount)
             GameState->MainMenu.SelectedIndex = 0;
         
         if(GetKeyDown(Key_Enter, GameState))
