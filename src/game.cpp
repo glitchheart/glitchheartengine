@@ -369,6 +369,7 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                     //attacking
                     if(!Entity->Player.IsAttacking && GetMouseButtonDown(Mouse_Left, GameState))
                     {
+                        printf("HOT DAMN\n");
                         PlayAnimation(Entity, "player_attack");
                         Entity->Player.IsAttacking = true;
                         PlaySoundEffect(GameState, &GameState->SoundManager.SwordSlash01);
