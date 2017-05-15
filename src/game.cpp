@@ -281,6 +281,8 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
         }
     }
     */
+    
+    
     for(uint32 EntityIndex = 0;
         EntityIndex < GameState->EntityCount;
         EntityIndex++)
