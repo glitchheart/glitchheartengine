@@ -52,7 +52,7 @@ static char* LoadLevel(game_state* GameState, char** Arguments)
         GameState->CurrentLevel = Level;
         GameState->Entities[GameState->PlayerIndex].Position = Level.PlayerStartPosition;
         
-        for(int X = 0; X < CurrentLevel->Tilemap.Width; X++)
+        for(uint32 X = 0; X < CurrentLevel->Tilemap.Width; X++)
         {
             free(CurrentLevel->Tilemap.Data[X]);
         }

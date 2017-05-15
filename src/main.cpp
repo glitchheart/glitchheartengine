@@ -8,21 +8,14 @@
 #include "windows.h"
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb/stb_image.h>
-#include <iostream>
-#include <fstream>
-#include <sstream>
-#include <sys/types.h>
-#include <sys/stat.h>
+
 #include <chrono>
 #ifdef MINGW
 #include <mingwthreads/mingw.thread.h>
 #else
 #include <thread>
 #endif
-#include <vector>
-#include <stdio.h>
-#include <stdlib.h>
-#include <algorithm>
+
 #include <map>
 
 #include "game.h"
@@ -100,7 +93,7 @@ static void ReloadDlls(game_code *Game)
     
     if (CompareFileTime(&Game->LastDllWriteTime, &LastWriteTime) != 0)
     {
-        std::cout << "RELOAD" << std::endl;
+        printf("RELOAD\n");
         ReloadGameCode(Game);
     }
 }
