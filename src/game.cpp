@@ -254,34 +254,10 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
 
 void UpdateEntities(game_state* GameState, real64 DeltaTime)
 {
-    //@Fix this is buggy
-    //qsort(GameState->Entities, GameState->EntityCount, sizeof(entity), CompareFunction);
-    
     auto pos = glm::unProject(glm::vec3(GameState->InputController.MouseX,GameState->RenderState.Viewport[3] - GameState->InputController.MouseY, 0),
                               GameState->Camera.ViewMatrix,
                               GameState->Camera.ProjectionMatrix,
                               glm::vec4(0, 0, GameState->RenderState.Viewport[2], GameState->RenderState.Viewport[3]));
-    
-    //@Incomplete it has to be possible to make this more efficient
-    /*for(uint32 EntityIndex = 0;
-        EntityIndex < GameState->EntityCount;
-        EntityIndex++)
-    {
-        entity* Entity = &GameState->Entities[EntityIndex];
-        
-        switch(Entity->Type)
-        {
-            case Entity_Player: 
-            {
-                //Note(Daniel) this has to be updated after every qsort call
-                GameState->PlayerIndex = EntityIndex;
-                
-            }
-            break;
-        }
-    }
-    */
-    
     
     for(uint32 EntityIndex = 0;
         EntityIndex < GameState->EntityCount;
@@ -293,9 +269,6 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
         {
             case Entity_Player: 
             {
-                //Note(Daniel) this has to be updated after every qsort call
-                //GameState->PlayerIndex = EntityIndex;
-                
                 if (!GameState->Console.Open)
                 {
                     Entity->Velocity = glm::vec2(0,0);
@@ -321,7 +294,7 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                         Entity->Velocity.y = Entity->Player.WalkingSpeed * (real32)DeltaTime;
                     }
                     
-                    if(Entity->Player.IsAttacking && !Entity->CurrentAnimation.Playing)
+                    if(Entity->Player.IsAttacking && !Entity->AnimationInfo.Playing)
                     {
                         Entity->Player.IsAttacking = false;
                     }
@@ -341,11 +314,9 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                         glm::vec2 Throw = glm::normalize(Entity->Velocity);
                         if(Entity->Velocity.x == 0.0f && Entity->Velocity.y == 0.0f)
                         {
-                            printf("Dix\n");
                             Throw.x = ThrowDir;
                             Throw.y = 0.0f;
                         }
-                        printf("(%f,%f)\n",Throw.x * DeltaTime * 40.0f,Throw.y * DeltaTime * 40.0f);
                         Entity->Player.Pickup->Velocity = glm::vec2(Throw.x * DeltaTime * 40.0f,Throw.y * DeltaTime * 40.0f);
                         Entity->Player.Pickup = NULL;
                         Entity->Player.PickupCooldown = 0.5;
@@ -374,8 +345,8 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                         PlaySoundEffect(GameState, &GameState->SoundManager.SwordSlash01);
                     }
                     
-                    if(Entity->CurrentAnimation.Playing)
-                        TickAnimation(&Entity->CurrentAnimation,DeltaTime);
+                    if(Entity->AnimationInfo.Playing)
+                        TickAnimation(&Entity->AnimationInfo, Entity->CurrentAnimation,DeltaTime);
                     
                     auto Direction = glm::vec2(pos.x, pos.y) - Entity->Position;
                     Direction = glm::normalize(Direction);
@@ -469,7 +440,7 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                                 Entity->Enemy.IsAttacking = false;
                                 Entity->Enemy.AIState = AI_Idle;
                             }
-                            else if(!Entity->CurrentAnimation.Playing)
+                            else if(!Entity->AnimationInfo.Playing)
                             {
                                 PlayAnimation(Entity, &GameState->PlayerIdleAnimation);
                             }
@@ -501,8 +472,8 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                 render_entity* RenderEntity = &GameState->RenderState.RenderEntities[Entity->RenderEntityHandle];
                 RenderEntity->Color = glm::vec4(0, 1, 0, 1);
                 
-                if(Entity->CurrentAnimation.Playing)
-                    TickAnimation(&Entity->CurrentAnimation, DeltaTime);
+                if(Entity->AnimationInfo.Playing)
+                    TickAnimation(&Entity->AnimationInfo, Entity->CurrentAnimation, DeltaTime);
                 
                 Entity->Velocity = glm::vec2(0,0);
                 
@@ -589,6 +560,8 @@ extern "C" UPDATE(Update)
 {
     if(!GameState->IsInitialized)
     {
+        LoadAnimations(GameState);
+        
         InitPlayer(GameState);
         InitCrosshair(GameState);
         
@@ -605,6 +578,7 @@ extern "C" UPDATE(Update)
         InitCommands();
         GameState->IsInitialized = true;
     }
+    
 #ifdef DEBUG
     if(GetKeyDown(Key_F1, GameState))
     {

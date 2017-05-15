@@ -91,6 +91,8 @@ static void ReloadDlls(game_code *Game)
 
 int main(void)
 {
+    printf("Initializing gamestate\n");
+    
     game_state GameState = {};
     GameState.InputController = {};
     

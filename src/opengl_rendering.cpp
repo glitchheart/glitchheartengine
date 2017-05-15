@@ -367,7 +367,7 @@ static void InitializeOpenGL(game_state* GameState, render_state* RenderState)
     config_data ConfigData;
     
     LoadConfig("../assets/.config", &ConfigData);
-    printf("Config loaded\n");
+    
     if (!glfwInit())
         exit(EXIT_FAILURE);
     
@@ -784,22 +784,22 @@ static void RenderEntity(render_state *RenderState, entity &Entity, glm::mat4 Pr
                 
                 Model = glm::scale(Model, Scale);
                 
-                if(Entity.CurrentAnimation.Playing) 
+                if(Entity.AnimationInfo.Playing) 
                 {
-                    animation Animation = Entity.CurrentAnimation;
+                    animation* Animation = Entity.CurrentAnimation;
                     
-                    if (RenderState->BoundTexture != Animation.TextureHandle) //never bind the same texture if it's already bound
+                    if (RenderState->BoundTexture != Animation->TextureHandle) //never bind the same texture if it's already bound
                     {
-                        glBindTexture(GL_TEXTURE_2D, Animation.TextureHandle);
-                        RenderState->BoundTexture = Animation.TextureHandle;
+                        glBindTexture(GL_TEXTURE_2D, Animation->TextureHandle);
+                        RenderState->BoundTexture = Animation->TextureHandle;
                     }
                     
                     glBindVertexArray(RenderState->SpriteSheetVAO);
-                    auto Frame = Animation.Frames[Animation.FrameIndex];
+                    auto Frame = Animation->Frames[Entity.AnimationInfo.FrameIndex];
                     SetVec2Attribute(Shader.Program,"textureOffset", glm::vec2(Frame.X,Frame.Y));
                     SetVec4Attribute(Shader.Program, "color", RenderEntity->Color);
                     SetVec2Attribute(Shader.Program,"sheetSize",
-                                     glm::vec2(Animation.Rows, Animation.Columns));
+                                     glm::vec2(Animation->Rows, Animation->Columns));
                 } 
                 else 
                 {

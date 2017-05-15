@@ -4,6 +4,8 @@ static void LoadAnimationFromFile(const char* FilePath, animation* Animation, re
     File = fopen(FilePath, "r");
     char LineBuffer[255];
     
+    Animation->Name = (char*)malloc(sizeof(char) * 30);
+    
     if(File)
     {
         //name
@@ -53,8 +55,7 @@ static void LoadAnimationFromFile(const char* FilePath, animation* Animation, re
         fgets(LineBuffer, 255, File);
         
         Animation->Frames = (sprite_sheet_frame*)malloc(sizeof(sprite_sheet_frame) * Animation->FrameCount);
-        printf("Name: %s", Animation->Name);
-        printf("FrameCount: %d\n",Animation->FrameCount);
+        
         for(uint32 i = 0; i < Animation->FrameCount; i++)
         {
             real32 OffsetX;
@@ -78,49 +79,54 @@ static void LoadAnimationFromFile(const char* FilePath, animation* Animation, re
     }
 }
 
+static void LoadAnimations(game_state* GameState)
+{
+    LoadAnimationFromFile("../assets/animations/player_anim_idle_new.pownim", &GameState->EnemyIdleAnimation, &GameState->RenderState);
+    LoadAnimationFromFile("../assets/animations/player_anim_walk_new.pownim", &GameState->EnemyWalkAnimation, &GameState->RenderState);
+    LoadAnimationFromFile("../assets/animations/player_anim_attack_new.pownim", &GameState->EnemyAttackAnimation, &GameState->RenderState);
+    LoadAnimationFromFile("../assets/animations/player_anim_idle_new.pownim", &GameState->PlayerIdleAnimation, &GameState->RenderState);
+    LoadAnimationFromFile("../assets/animations/player_anim_walk_new.pownim", &GameState->PlayerWalkAnimation, &GameState->RenderState);
+    LoadAnimationFromFile("../assets/animations/player_anim_attack_new.pownim", &GameState->PlayerAttackAnimation, &GameState->RenderState);
+}
+
 static void PlayAnimation(entity* Entity, animation* Animation)
 {
-    animation NewAnimation = {};
-    NewAnimation.TimePerFrame = Animation->TimePerFrame;
-    NewAnimation.TextureHandle = Animation->TextureHandle;
-    NewAnimation.FrameCount = Animation->FrameCount;
-    NewAnimation.Rows = Animation->Rows;
-    NewAnimation.Columns = Animation->Columns;
-    NewAnimation.Loop = Animation->Loop;
-    NewAnimation.Frames = Animation->Frames;
-    NewAnimation.Playing = true;
-    NewAnimation.FrameIndex = 0;
-    NewAnimation.CurrentTime = 0.0;
-    Entity->CurrentAnimation = NewAnimation;
+    if(!Entity->CurrentAnimation ||  strcmp(Entity->CurrentAnimation->Name, Animation->Name) != 0)
+    {
+        Entity->CurrentAnimation = Animation;
+        Entity->AnimationInfo.Playing = true;
+        Entity->AnimationInfo.FrameIndex = 0;
+        Entity->AnimationInfo.CurrentTime = 0.0;
+    }
 }
 
-static void StopAnimation(animation* Animation)
+static void StopAnimation(animation_info* Info)
 {
-    Animation->Playing = false;
+    Info->Playing = false;
 }
 
-static void TickAnimation(animation* Animation, real64 DeltaTime)
+static void TickAnimation(animation_info* Info, animation* Animation, real64 DeltaTime)
 {
-    if(Animation) {
-        if(Animation->Playing)
+    if(Animation) 
+    {
+        if(Info->Playing)
         {
-            if(Animation->CurrentTime >= Animation->TimePerFrame)
+            if(Info->CurrentTime >= Animation->TimePerFrame)
             {
-                Animation->FrameIndex++;
-                Animation->CurrentTime = 0.0;
+                Info->FrameIndex++;
+                Info->CurrentTime = 0.0;
                 
-                if(Animation->FrameIndex == Animation->FrameCount)
+                if(Info->FrameIndex == Animation->FrameCount)
                 {
-                    Animation->FrameIndex = 0;
+                    Info->FrameIndex = 0;
                     
                     if(!Animation->Loop)
                     {
-                        printf("Stopping\n");
-                        StopAnimation(Animation);
+                        StopAnimation(Info);
                     }
                 }
             }
-            Animation->CurrentTime += DeltaTime;
+            Info->CurrentTime += DeltaTime;
         }
     }
 }

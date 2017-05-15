@@ -6,12 +6,6 @@ static void InitPlayer(game_state* GameState)
     Player->Type = Entity_Player;
     Player->Player.WalkingSpeed = 10.0f;
     
-    LoadAnimationFromFile("../assets/animations/player_anim_idle_new.pownim", &GameState->PlayerIdleAnimation, &GameState->RenderState);
-    
-    LoadAnimationFromFile("../assets/animations/player_anim_walk_new.pownim", &GameState->PlayerWalkAnimation, &GameState->RenderState);
-    
-    LoadAnimationFromFile("../assets/animations/player_anim_attack_new.pownim", &GameState->PlayerAttackAnimation, &GameState->RenderState);
-    
     render_entity* PlayerRenderEntity = &GameState->RenderState.RenderEntities[GameState->RenderState.RenderEntityCount];
     PlayerRenderEntity->ShaderIndex = Shader_SpriteSheetShader;
     PlayerRenderEntity->TextureHandle = GameState->RenderState.PlayerTexture;
