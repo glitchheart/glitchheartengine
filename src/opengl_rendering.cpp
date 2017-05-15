@@ -418,7 +418,7 @@ static void InitializeOpenGL(game_state* GameState, render_state* RenderState)
     if(Present)
     {
         GameState->InputController.ControllerPresent = true;
-        printf("Controller present\n");
+        printf("%s present\n",glfwGetJoystickName(GLFW_JOYSTICK_1));
     }
     LoadTextures(RenderState);
     RenderSetup(RenderState);

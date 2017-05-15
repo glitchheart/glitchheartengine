@@ -86,6 +86,16 @@ enum Controller_Code
     Joystick_Count
 };
 
+enum Controller_Axis_Code
+{
+    Axis_1, // Left stick X (PS4 W10)
+    Axis_2, // Left stick Y (PS4 W10)
+    Axis_3, // Right stick X (PS4 W10)
+    Axis_4, // Right stick Y (PS4 W10)
+    Axis_5, // Left trigger (PS4 W10)
+    Axis_6  // Right trigger (PS4 W10)
+};
+
 
 struct input_controller
 {
@@ -98,6 +108,8 @@ struct input_controller
     
     bool32 JoystickKeysDown[Joystick_Count];
     Key_Mode JoystickKeysJustPressed[Joystick_Count];
+    
+    
     
     real64 MouseX;
     real64 MouseY;
