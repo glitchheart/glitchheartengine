@@ -99,9 +99,7 @@ static void ListenToFileChanges(asset_manager* AssetManager)
 {
     AssetManager->ListenForChanges = true;
     
-    using namespace std::chrono_literals;
-    
-    while (AssetManager->ListenForChanges) 
+    if(AssetManager->ListenForChanges) 
     {
         for (int i = 0; i < Shader_Count; i++)
         {
@@ -110,8 +108,6 @@ static void ListenToFileChanges(asset_manager* AssetManager)
         }
         
         CheckDirty(AssetManager->TilesetTexturePath, AssetManager->TilesetTime, &AssetManager->DirtyTileset, &AssetManager->TilesetTime);	
-        
-        std::this_thread::sleep_for(0.5s);
     }
 }
 

@@ -9,13 +9,6 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb/stb_image.h>
 
-#include <chrono>
-#ifdef MINGW
-#include <mingwthreads/mingw.thread.h>
-#else
-#include <thread>
-#endif
-
 #include <map>
 
 #include "game.h"
@@ -110,7 +103,7 @@ int main(void)
     //setup asset reloading
     asset_manager AssetManager = {};
     StartupFileTimeChecks(&AssetManager);
-    std::thread t(&ListenToFileChanges, &AssetManager);
+    uint32 FrameCounterForAssetCheck = 0;
     
     GameState.Console = {};
     GameState.EditorUI = {};
@@ -162,6 +155,12 @@ int main(void)
         if(GameState.InputController.ControllerPresent)
         {
             ControllerKeys(&GameState,GLFW_JOYSTICK_1);
+        }
+        
+        FrameCounterForAssetCheck++;
+        if(FrameCounterForAssetCheck = 10)
+        {
+            ListenToFileChanges(&AssetManager);
         }
     }
     
