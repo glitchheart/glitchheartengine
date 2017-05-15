@@ -784,9 +784,9 @@ static void RenderEntity(render_state *RenderState, entity &Entity, glm::mat4 Pr
                 
                 Model = glm::scale(Model, Scale);
                 
-                if(Entity.CurrentAnimation) 
+                if(Entity.CurrentAnimation.Playing) 
                 {
-                    auto Animation = Entity.Animations[Entity.CurrentAnimation];
+                    animation Animation = Entity.CurrentAnimation;
                     
                     if (RenderState->BoundTexture != Animation.TextureHandle) //never bind the same texture if it's already bound
                     {
@@ -795,7 +795,6 @@ static void RenderEntity(render_state *RenderState, entity &Entity, glm::mat4 Pr
                     }
                     
                     glBindVertexArray(RenderState->SpriteSheetVAO);
-                    
                     auto Frame = Animation.Frames[Animation.FrameIndex];
                     SetVec2Attribute(Shader.Program,"textureOffset", glm::vec2(Frame.X,Frame.Y));
                     SetVec4Attribute(Shader.Program, "color", RenderEntity->Color);

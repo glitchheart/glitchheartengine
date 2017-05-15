@@ -6,18 +6,11 @@ static void InitPlayer(game_state* GameState)
     Player->Type = Entity_Player;
     Player->Player.WalkingSpeed = 10.0f;
     
-    animation* IdleAnimation = (animation*)malloc(sizeof(animation));
+    LoadAnimationFromFile("../assets/animations/player_anim_idle_new.pownim", &GameState->PlayerIdleAnimation, &GameState->RenderState);
     
-    LoadAnimationFromFile("../assets/animations/player_anim_idle_new.pownim", IdleAnimation, &GameState->RenderState);
-    Player->Animations.insert(std::pair<char*, animation>(IdleAnimation->Name, *IdleAnimation));
+    LoadAnimationFromFile("../assets/animations/player_anim_walk_new.pownim", &GameState->PlayerWalkAnimation, &GameState->RenderState);
     
-    animation* WalkingAnimation = (animation*)malloc(sizeof(animation));
-    LoadAnimationFromFile("../assets/animations/player_anim_walk_new.pownim", WalkingAnimation, &GameState->RenderState);
-    Player->Animations.insert(std::pair<char*, animation>(WalkingAnimation->Name, *WalkingAnimation));
-    
-    animation* AttackingAnimation = (animation*)malloc(sizeof(animation));
-    LoadAnimationFromFile("../assets/animations/player_anim_attack_new.pownim", AttackingAnimation, &GameState->RenderState);
-    Player->Animations.insert(std::pair<char*, animation>(AttackingAnimation->Name, *AttackingAnimation));
+    LoadAnimationFromFile("../assets/animations/player_anim_attack_new.pownim", &GameState->PlayerAttackAnimation, &GameState->RenderState);
     
     render_entity* PlayerRenderEntity = &GameState->RenderState.RenderEntities[GameState->RenderState.RenderEntityCount];
     PlayerRenderEntity->ShaderIndex = Shader_SpriteSheetShader;

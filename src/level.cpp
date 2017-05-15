@@ -4,19 +4,11 @@ static void SpawnEnemy(game_state* GameState, glm::vec2 Position)
     Enemy->Name = "enemy";
     Enemy->Type = Entity_Enemy;
     
-    animation* EnemyIdleAnimation = (animation*)malloc(sizeof(animation));
+    LoadAnimationFromFile("../assets/animations/player_anim_idle_new.pownim", &GameState->EnemyIdleAnimation, &GameState->RenderState);
     
-    LoadAnimationFromFile("../assets/animations/player_anim_idle_new.pownim", EnemyIdleAnimation, &GameState->RenderState);
-    Enemy->Animations.insert(std::pair<char*, animation>(EnemyIdleAnimation->Name, *EnemyIdleAnimation));
+    LoadAnimationFromFile("../assets/animations/player_anim_walk_new.pownim", &GameState->EnemyWalkAnimation, &GameState->RenderState);
     
-    animation* EnemyWalkingAnimation = (animation*)malloc(sizeof(animation));
-    LoadAnimationFromFile("../assets/animations/player_anim_walk_new.pownim", EnemyWalkingAnimation, &GameState->RenderState);
-    Enemy->Animations.insert(std::pair<char*, animation>(EnemyWalkingAnimation->Name, *EnemyWalkingAnimation));
-    
-    animation* EnemyAttackingAnimation = (animation*)malloc(sizeof(animation));
-    
-    LoadAnimationFromFile("../assets/animations/player_anim_attack_new.pownim", EnemyAttackingAnimation, &GameState->RenderState);
-    Enemy->Animations.insert(std::pair<char*, animation>(EnemyAttackingAnimation->Name, *EnemyAttackingAnimation));
+    LoadAnimationFromFile("../assets/animations/player_anim_attack_new.pownim", &GameState->EnemyAttackAnimation, &GameState->RenderState);
     
     render_entity* EnemyRenderEntity = &GameState->RenderState.RenderEntities[GameState->RenderState.RenderEntityCount];
     

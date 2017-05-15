@@ -53,7 +53,8 @@ static void LoadAnimationFromFile(const char* FilePath, animation* Animation, re
         fgets(LineBuffer, 255, File);
         
         Animation->Frames = (sprite_sheet_frame*)malloc(sizeof(sprite_sheet_frame) * Animation->FrameCount);
-        
+        printf("Name: %s", Animation->Name);
+        printf("FrameCount: %d\n",Animation->FrameCount);
         for(uint32 i = 0; i < Animation->FrameCount; i++)
         {
             real32 OffsetX;
@@ -77,21 +78,20 @@ static void LoadAnimationFromFile(const char* FilePath, animation* Animation, re
     }
 }
 
-static void PlayAnimation(animation* Animation)
+static void PlayAnimation(entity* Entity, animation* Animation)
 {
-    Animation->Playing = true;
-}
-
-static void PlayAnimation(entity* Entity, char* AnimationName)
-{
-    if(!Entity->CurrentAnimation || strcmp(Entity->CurrentAnimation, AnimationName) != 0)
-    {
-        animation* Animation = &Entity->Animations[AnimationName];
-        Animation->Playing = true;
-        Animation->FrameIndex = 0;
-        Animation->CurrentTime = 0.0;
-        Entity->CurrentAnimation = AnimationName;
-    }
+    animation NewAnimation = {};
+    NewAnimation.TimePerFrame = Animation->TimePerFrame;
+    NewAnimation.TextureHandle = Animation->TextureHandle;
+    NewAnimation.FrameCount = Animation->FrameCount;
+    NewAnimation.Rows = Animation->Rows;
+    NewAnimation.Columns = Animation->Columns;
+    NewAnimation.Loop = Animation->Loop;
+    NewAnimation.Frames = Animation->Frames;
+    NewAnimation.Playing = true;
+    NewAnimation.FrameIndex = 0;
+    NewAnimation.CurrentTime = 0.0;
+    Entity->CurrentAnimation = NewAnimation;
 }
 
 static void StopAnimation(animation* Animation)
@@ -101,22 +101,26 @@ static void StopAnimation(animation* Animation)
 
 static void TickAnimation(animation* Animation, real64 DeltaTime)
 {
-    if(Animation->Playing)
-    {
-        if(Animation->CurrentTime >= Animation->TimePerFrame)
+    if(Animation) {
+        if(Animation->Playing)
         {
-            Animation->FrameIndex++;
-            Animation->CurrentTime = 0.0;
-            if(Animation->FrameIndex == Animation->FrameCount)
+            if(Animation->CurrentTime >= Animation->TimePerFrame)
             {
-                Animation->FrameIndex = 0;
+                Animation->FrameIndex++;
+                Animation->CurrentTime = 0.0;
                 
-                if(Animation->Loop == 0)
+                if(Animation->FrameIndex == Animation->FrameCount)
                 {
-                    StopAnimation(Animation);
+                    Animation->FrameIndex = 0;
+                    
+                    if(!Animation->Loop)
+                    {
+                        printf("Stopping\n");
+                        StopAnimation(Animation);
+                    }
                 }
             }
+            Animation->CurrentTime += DeltaTime;
         }
-        Animation->CurrentTime += DeltaTime;
     }
 }
