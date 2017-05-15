@@ -44,7 +44,7 @@ struct entity
     Entity_Layer Layer;
     Entity_Layer IgnoreLayers;
     
-    char* CurrentAnimation;
+    animation CurrentAnimation;
     
     std::map<char*, animation, CompareCStrings> Animations;
     

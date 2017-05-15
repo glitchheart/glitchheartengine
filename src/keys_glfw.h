@@ -165,7 +165,6 @@ static void MouseButtonCallback(GLFWwindow *Window, int Button, int Action, int 
                 GameState->InputController.MouseButtonJustPressed[MouseButtonMappings[Button]] = Key_Invalid;
             }
             
-            printf("MOUSE BUTTON %d\n", Button);
             GameState->InputController.MouseButtonDown[MouseButtonMappings[Button]] = true;
         }
         else if (Action == GLFW_RELEASE)

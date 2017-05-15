@@ -54,6 +54,20 @@ struct game_state
     
     console Console;
     editor_ui EditorUI;
+    
+    union
+    {
+        animation Animation[16];
+        struct
+        {
+            animation PlayerIdleAnimation;
+            animation PlayerWalkAnimation;
+            animation PlayerAttackAnimation;
+            animation EnemyIdleAnimation;
+            animation EnemyWalkAnimation;
+            animation EnemyAttackAnimation;
+        };
+    };
 };
 
 #define UPDATE(name)void name(real64 DeltaTime, game_state* GameState) 

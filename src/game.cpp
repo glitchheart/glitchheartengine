@@ -321,7 +321,7 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                         Entity->Velocity.y = Entity->Player.WalkingSpeed * (real32)DeltaTime;
                     }
                     
-                    if(Entity->Player.IsAttacking && !Entity->Animations[Entity->CurrentAnimation].Playing)
+                    if(Entity->Player.IsAttacking && !Entity->CurrentAnimation.Playing)
                     {
                         Entity->Player.IsAttacking = false;
                     }
@@ -329,9 +329,9 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                     if(!Entity->Player.IsAttacking)
                     {
                         if(Entity->Velocity.x != 0.0f || Entity->Velocity.y != 0.0f)
-                            PlayAnimation(Entity, "player_walk");
+                            PlayAnimation(Entity, &GameState->PlayerWalkAnimation);
                         else
-                            PlayAnimation(Entity, "player_idle");
+                            PlayAnimation(Entity, &GameState->PlayerIdleAnimation);
                     }
                     
                     if(GetKeyDown(Key_E,GameState) && Entity->Player.Pickup)
@@ -369,14 +369,13 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                     //attacking
                     if(!Entity->Player.IsAttacking && GetMouseButtonDown(Mouse_Left, GameState))
                     {
-                        printf("HOT DAMN\n");
-                        PlayAnimation(Entity, "player_attack");
+                        PlayAnimation(Entity, &GameState->PlayerAttackAnimation);
                         Entity->Player.IsAttacking = true;
                         PlaySoundEffect(GameState, &GameState->SoundManager.SwordSlash01);
                     }
                     
-                    if(Entity->CurrentAnimation)
-                        TickAnimation(&Entity->Animations[Entity->CurrentAnimation],DeltaTime);
+                    if(Entity->CurrentAnimation.Playing)
+                        TickAnimation(&Entity->CurrentAnimation,DeltaTime);
                     
                     auto Direction = glm::vec2(pos.x, pos.y) - Entity->Position;
                     Direction = glm::normalize(Direction);
@@ -420,16 +419,16 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                     {
                         case AI_Sleeping:
                         {
-                            PlayAnimation(Entity, "player_idle");
+                            PlayAnimation(Entity, &GameState->PlayerIdleAnimation);
                         }
                         break;
                         case AI_Idle:
                         {
-                            PlayAnimation(Entity, "player_idle");
+                            PlayAnimation(Entity, &GameState->PlayerIdleAnimation);
                             if(DistanceToPlayer <= Entity->Enemy.MaxAlertDistance)
                             {
                                 Entity->Enemy.AIState = AI_Following;
-                                PlayAnimation(Entity, "player_walk");
+                                PlayAnimation(Entity, &GameState->PlayerWalkAnimation);
                             }
                         }
                         break;
@@ -462,7 +461,7 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                             if(Entity->Enemy.AttackCooldownCounter == 0)
                             {
                                 Entity->Enemy.IsAttacking = true;
-                                PlayAnimation(Entity, "player_attack");
+                                PlayAnimation(Entity, &GameState->PlayerAttackAnimation);
                                 PlaySoundEffect(GameState, &GameState->SoundManager.SwordSlash01);
                             }
                             else if(DistanceToPlayer > Entity->Enemy.MinDistance)
@@ -470,9 +469,9 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                                 Entity->Enemy.IsAttacking = false;
                                 Entity->Enemy.AIState = AI_Idle;
                             }
-                            else if(!Entity->Animations[Entity->CurrentAnimation].Playing)
+                            else if(!Entity->CurrentAnimation.Playing)
                             {
-                                PlayAnimation(Entity, "player_idle");
+                                PlayAnimation(Entity, &GameState->PlayerIdleAnimation);
                             }
                             
                             Entity->Enemy.AttackCooldownCounter += DeltaTime;
@@ -502,8 +501,8 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                 render_entity* RenderEntity = &GameState->RenderState.RenderEntities[Entity->RenderEntityHandle];
                 RenderEntity->Color = glm::vec4(0, 1, 0, 1);
                 
-                if(Entity->CurrentAnimation)
-                    TickAnimation(&Entity->Animations[Entity->CurrentAnimation], DeltaTime);
+                if(Entity->CurrentAnimation.Playing)
+                    TickAnimation(&Entity->CurrentAnimation, DeltaTime);
                 
                 Entity->Velocity = glm::vec2(0,0);
                 
