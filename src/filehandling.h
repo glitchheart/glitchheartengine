@@ -1,8 +1,6 @@
 #ifndef FILEHANDLING_H
 #define FILEHANDLING_H
 
-#include <Windows.h>
-
 static GLchar* LoadShaderFromFile(const char* Path)
 {
     GLchar *Source = {};

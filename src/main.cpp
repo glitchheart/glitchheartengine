@@ -28,8 +28,6 @@
 #include "opengl_rendering.h"
 #include "opengl_rendering.cpp"
 
-#define ANIMATION_LOADING
-
 #include "editor_ui.h"
 #include "editor_ui.cpp"
 
