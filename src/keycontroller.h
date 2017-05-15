@@ -109,8 +109,6 @@ struct input_controller
     bool32 JoystickKeysDown[Joystick_Count];
     Key_Mode JoystickKeysJustPressed[Joystick_Count];
     
-    
-    
     real64 MouseX;
     real64 MouseY;
     bool32 ControllerPresent;
