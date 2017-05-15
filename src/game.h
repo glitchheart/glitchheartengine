@@ -57,7 +57,7 @@ struct game_state
     
     union
     {
-        animation Animation[16];
+        animation Animation[6];
         struct
         {
             animation PlayerIdleAnimation;

@@ -4,12 +4,6 @@ static void SpawnEnemy(game_state* GameState, glm::vec2 Position)
     Enemy->Name = "enemy";
     Enemy->Type = Entity_Enemy;
     
-    LoadAnimationFromFile("../assets/animations/player_anim_idle_new.pownim", &GameState->EnemyIdleAnimation, &GameState->RenderState);
-    
-    LoadAnimationFromFile("../assets/animations/player_anim_walk_new.pownim", &GameState->EnemyWalkAnimation, &GameState->RenderState);
-    
-    LoadAnimationFromFile("../assets/animations/player_anim_attack_new.pownim", &GameState->EnemyAttackAnimation, &GameState->RenderState);
-    
     render_entity* EnemyRenderEntity = &GameState->RenderState.RenderEntities[GameState->RenderState.RenderEntityCount];
     
     EnemyRenderEntity->ShaderIndex = Shader_SpriteSheetShader;
