@@ -158,9 +158,10 @@ int main(void)
         }
         
         FrameCounterForAssetCheck++;
-        if(FrameCounterForAssetCheck = 10)
+        if(FrameCounterForAssetCheck == 10)
         {
             ListenToFileChanges(&AssetManager);
+            FrameCounterForAssetCheck = 0;
         }
     }
     
