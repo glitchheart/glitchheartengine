@@ -133,3 +133,11 @@ void SpawnMillionBarrels(game_state* GameState)
         }
     }
 }
+
+
+//@Cleanup move this
+void Kill(game_state* GameState, entity* Entity)
+{
+    GameState->RenderState.RenderEntities[Entity->RenderEntityHandle].Rendered = false;
+    Entity->IsDead = true;
+}
