@@ -131,6 +131,13 @@ struct render_state
     GLuint BoundVertexBuffer;
     GLuint BoundTexture;
     //sprites
+    //GLfloat SpriteQuadVertices[16] =
+    //{ //pos        //texcoords
+    //0.0f, 1.0f, 0, 1.0f,
+    //1.0f, 1.0f, 1.0f,  1.0f,
+    //1.0f, 0.0f, 1.0f,  0,
+    //0.0f, 0.0f, 0,  0};
+    
     GLfloat SpriteQuadVertices[16] =
     { //pos        //texcoords
         0.0f, 1.0f, 0.00625f, 0.9375f,
