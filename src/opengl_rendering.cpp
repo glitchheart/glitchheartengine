@@ -764,6 +764,7 @@ static void RenderEntity(render_state *RenderState, entity &Entity, glm::mat4 Pr
             case Entity_Crosshair:
             case Entity_Enemy:
             case Entity_Player:
+            case Entity_PlayerWeapon:
             case Entity_Barrel:
             {
                 glm::mat4 Model(1.0f);
@@ -799,7 +800,7 @@ static void RenderEntity(render_state *RenderState, entity &Entity, glm::mat4 Pr
                     SetVec2Attribute(Shader.Program,"textureOffset", glm::vec2(Frame.X,Frame.Y));
                     SetVec4Attribute(Shader.Program, "color", RenderEntity->Color);
                     SetVec2Attribute(Shader.Program,"sheetSize",
-                                     glm::vec2(Animation->Rows, Animation->Columns));
+                                     glm::vec2(Animation->Columns, Animation->Rows));
                 } 
                 else 
                 {

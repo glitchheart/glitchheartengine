@@ -34,7 +34,9 @@ static void InitPlayer(game_state* GameState)
     
     render_entity* PlayerWeaponRenderEntity = &GameState->RenderState.RenderEntities[GameState->RenderState.RenderEntityCount];
     
-    PlayerWeaponRenderEntity->Rendered = false;
+    PlayerWeaponRenderEntity->Rendered = true;
+    PlayerWeaponRenderEntity->ShaderIndex = Shader_SpriteSheetShader;
+    PlayerWeaponRenderEntity->TextureHandle = GameState->RenderState.SwordTopRightTexture;
     PlayerWeaponRenderEntity->Entity = &*PlayerWeapon;
     PlayerWeapon->RenderEntityHandle = GameState->RenderState.RenderEntityCount++;
     
@@ -47,7 +49,7 @@ static void InitPlayer(game_state* GameState)
     CollisionAABB3.IsTrigger = true;
     PlayerWeapon->CollisionAABB = CollisionAABB3;
     PlayerWeapon->Rotation = glm::vec3(0, 0, 0);
-    PlayerWeapon->Scale = glm::vec3(1, 1, 0);
+    PlayerWeapon->Scale = glm::vec3(4, 4, 0);
     
     PlayerWeapon->EntityIndex = GameState->EntityCount;
     GameState->EntityCount++;
