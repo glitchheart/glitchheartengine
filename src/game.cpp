@@ -274,22 +274,22 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                     Entity->Velocity = glm::vec2(0,0);
                     
                     //player movement
-                    if (GetKey(Key_A, GameState))
+                    if (GetKey(Key_Left, GameState))
                     {
                         Entity->Velocity.x = -Entity->Player.WalkingSpeed * (real32)DeltaTime;
                         Entity->IsFlipped = true;
                     }
-                    else if (GetKey(Key_D, GameState))
+                    else if (GetKey(Key_Right, GameState))
                     {
                         Entity->Velocity.x = Entity->Player.WalkingSpeed * (real32)DeltaTime;
                         Entity->IsFlipped = false;
                     }
                     
-                    if (GetKey(Key_W, GameState))
+                    if (GetKey(Key_Up, GameState))
                     {
                         Entity->Velocity.y = -Entity->Player.WalkingSpeed * (real32)DeltaTime;
                     }
-                    else if (GetKey(Key_S, GameState))
+                    else if (GetKey(Key_Down, GameState))
                     {
                         Entity->Velocity.y = Entity->Player.WalkingSpeed * (real32)DeltaTime;
                     }
@@ -338,7 +338,7 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                     }
                     
                     //attacking
-                    if(!Entity->Player.IsAttacking && GetMouseButtonDown(Mouse_Left, GameState))
+                    if(!Entity->Player.IsAttacking && GetKeyDown(Key_Z, GameState))
                     {
                         PlayAnimation(Entity, &GameState->PlayerAttackAnimation);
                         Entity->Player.IsAttacking = true;
@@ -563,7 +563,7 @@ extern "C" UPDATE(Update)
         LoadAnimations(GameState);
         
         InitPlayer(GameState);
-        InitCrosshair(GameState);
+        //InitCrosshair(GameState);
         
         LoadLevelFromFile("../assets/levels/level_02.plv", &GameState->CurrentLevel, GameState);
         
