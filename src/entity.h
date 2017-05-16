@@ -64,6 +64,7 @@ struct entity
             real32 WalkingSpeed;
             entity* Pickup;
             real64 PickupCooldown;
+            real32 ThrowingSpeed;
         } Player;
         struct
         {
