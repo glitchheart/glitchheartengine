@@ -35,23 +35,23 @@ static void MinkowskiDifference(collision_AABB* Coll, collision_AABB* Other, col
 
 static void ClosestPointsOnBoundsToPoint(collision_AABB* Coll, glm::vec2 Point, glm::vec2* Out)
 {  
-    real32 MinDist = glm::abs(Point.x - Coll->Min.x);
+    real32 MinDist = Abs(Point.x - Coll->Min.x);
     
     *Out = glm::vec2(Coll->Min.x, Point.y);
     
-    if(glm::abs(Coll->Max.x - Point.x) < MinDist)
+    if(Abs(Coll->Max.x - Point.x) < MinDist)
     {
-        MinDist = glm::abs(Coll->Max.x - Point.x);
+        MinDist = Abs(Coll->Max.x - Point.x);
         *Out = glm::vec2(Coll->Max.x, Point.y);
     }
-    if(glm::abs(Coll->Max.y - Point.y) < MinDist)
+    if(Abs(Coll->Max.y - Point.y) < MinDist)
     {
-        MinDist = glm::abs(Coll->Max.y - Point.y);
+        MinDist = Abs(Coll->Max.y - Point.y);
         *Out = glm::vec2(Point.x, Coll->Max.y);
     }
-    if(glm::abs(Coll->Min.y - Point.y) < MinDist)
+    if(Abs(Coll->Min.y - Point.y) < MinDist)
     {
-        MinDist = glm::abs(Coll->Min.y - Point.y);
+        MinDist = Abs(Coll->Min.y - Point.y);
         *Out = glm::vec2(Point.x, Coll->Min.y);
     }
 }
