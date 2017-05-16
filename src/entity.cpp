@@ -51,7 +51,7 @@ static void InitPlayer(game_state* GameState)
     
     collision_AABB CollisionAABB3;
     CollisionAABB3.Center = glm::vec2(0.5, 0.5);
-    CollisionAABB3.Extents = glm::vec2(0.5f,0.5f);
+    CollisionAABB3.Extents = glm::vec2(0.5f,1.0f);
     CollisionAABB3.IsTrigger = true;
     PlayerWeapon->CollisionAABB = CollisionAABB3;
     PlayerWeapon->Rotation = glm::vec3(0, 0, 0);
