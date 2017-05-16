@@ -355,9 +355,6 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                         PlaySoundEffect(GameState, &GameState->SoundManager.SwordSlash01);
                     }
                     
-                    if(Entity->AnimationInfo.Playing)
-                        TickAnimation(&Entity->AnimationInfo, Entity->CurrentAnimation,DeltaTime);
-                    
                     auto Direction = glm::vec2(pos.x, pos.y) - Entity->Position;
                     Direction = glm::normalize(Direction);
                     float Degrees = atan2(Direction.y, Direction.x);
@@ -369,8 +366,13 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
             break;
             case Entity_PlayerWeapon:
             {
-                glm::vec2 Pos = GameState->Entities[GameState->PlayerIndex].Position;
-                if(GameState->Entities[GameState->PlayerIndex].IsFlipped)
+                entity* Player = &GameState->Entities[GameState->PlayerIndex];
+                render_entity* RenderEntity = &GameState->RenderState.RenderEntities[Entity->RenderEntityHandle];
+                
+                RenderEntity->Color = glm::vec4(1, 1, 1, 1);
+                
+                glm::vec2 Pos = Player->Position;
+                if(Player->IsFlipped)
                     Entity->Position = glm::vec2(Pos.x - 0.25f, Pos.y + 0.6f);
                 else
                     Entity->Position = glm::vec2(Pos.x + 1.2f, Pos.y + 0.6f);
@@ -379,6 +381,16 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                 
                 collision_info CollisionInfo;
                 CheckCollision(GameState, Entity, &CollisionInfo);
+                
+                if(Player->Player.IsAttacking && !Entity->AnimationInfo.Playing)
+                {
+                    PlayAnimation(Entity, &GameState->SwordTopRightAnimation);
+                    RenderEntity->Rendered = true;
+                }
+                else if(!Entity->AnimationInfo.Playing)
+                {
+                    RenderEntity->Rendered = false;
+                }
             }
             break;
             case Entity_Crosshair:
@@ -482,9 +494,6 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                 render_entity* RenderEntity = &GameState->RenderState.RenderEntities[Entity->RenderEntityHandle];
                 RenderEntity->Color = glm::vec4(0, 1, 0, 1);
                 
-                if(Entity->AnimationInfo.Playing)
-                    TickAnimation(&Entity->AnimationInfo, Entity->CurrentAnimation, DeltaTime);
-                
                 Entity->Velocity = glm::vec2(0,0);
                 
                 collision_info CollisionInfo;
@@ -541,6 +550,10 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                 
             }
         }
+        
+        if(Entity->CurrentAnimation && Entity->AnimationInfo.Playing)
+            TickAnimation(&Entity->AnimationInfo, Entity->CurrentAnimation, DeltaTime);
+        
     }
     
     switch(GameState->EditorUI.State)
