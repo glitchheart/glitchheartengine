@@ -124,7 +124,9 @@ static void CheckConsoleInput(game_state* GameState, real64 DeltaTime)
     }
     
     if(GetKeyUp(Key_Backspace, GameState))
+    {
         GameState->Console.DeleteTime = 0;
+    }
     
     if (GetKeyDown(Key_Enter, GameState) && GameState->Console.Open)
     {

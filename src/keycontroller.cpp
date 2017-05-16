@@ -7,6 +7,7 @@ static void SetInvalidKeys(input_controller *InputController)
         {
             InputController->KeysJustPressed[KeyCode] = Key_Invalid;
         }
+        InputController->KeysUp[KeyCode] = false;
     }
     
     if (InputController->KeysJustPressed[Key_Tab] == Key_JustPressed)
