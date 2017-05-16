@@ -100,7 +100,7 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
                         glm::vec2 PenetrationVector;
                         ClosestPointsOnBoundsToPoint(&Md, glm::vec2(0,0), &PenetrationVector);
                         
-                        if(glm::abs(PenetrationVector.x) > glm::abs(PenetrationVector.y))
+                        if(Abs(PenetrationVector.x) > Abs(PenetrationVector.y))
                         {
                             if(PenetrationVector.x > 0)
                                 CollisionInfo->Side = CollisionInfo->Side | Side_Left;
@@ -213,7 +213,7 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
                             glm::vec2 PenetrationVector;
                             ClosestPointsOnBoundsToPoint(&Md, glm::vec2(0,0), &PenetrationVector);
                             
-                            if(glm::abs(PenetrationVector.x) > glm::abs(PenetrationVector.y))
+                            if(Abs(PenetrationVector.x) > Abs(PenetrationVector.y))
                             {
                                 if(PenetrationVector.x > 0)
                                     CollisionInfo->Side = CollisionInfo->Side | Side_Left;
@@ -336,8 +336,8 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                             Throw.y = -Entity->Player.ThrowingSpeed;
                         }
                         
-                        Throw.x = glm::abs(Throw.y) > 0 ? 0.5f * Throw.x : Throw.x;
-                        Throw.y = glm::abs(Throw.x) > 0 ? 0.5f * Throw.y : Throw.y;
+                        Throw.x = Abs(Throw.y) > 0 ? 0.5f * Throw.x : Throw.x;
+                        Throw.y = Abs(Throw.x) > 0 ? 0.5f * Throw.y : Throw.y;
                         Entity->Player.Pickup->Velocity = glm::vec2(Throw.x,Throw.y);
                         printf("Throw.x: %f, Throw.y: %f\n",Throw.x,Throw.y);
                         Entity->Player.Pickup = NULL;
@@ -562,7 +562,7 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                     YVel = 0.0f;
                 }
                 
-                if(glm::abs(XVel) > 0 || glm::abs(YVel) > 0) {
+                if(Abs(XVel) > 0 || Abs(YVel) > 0) {
                     printf("Vel.x: %f, Vel.y: %f\n",XVel, YVel);
                 }
                 
