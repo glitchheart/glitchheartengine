@@ -688,6 +688,7 @@ static void RenderConsole(render_state* RenderState, console* Console, glm::mat4
 
 static void RenderColliderWireframe(render_state* RenderState, entity* Entity, glm::mat4 ProjectionMatrix, glm::mat4 View)
 {
+    //@Incomplete: Set a different position of the collider for PlayerWeapon
     glm::mat4 Model(1.0f);
     
     Model = glm::translate(Model, glm::vec3(Entity->Position.x + Entity->Center.x * Entity->Scale.x - Entity->CollisionAABB.Extents.x, Entity->Position.y + Entity->Center.y * Entity->Scale.y - Entity->CollisionAABB.Extents.y, 0.0f));
