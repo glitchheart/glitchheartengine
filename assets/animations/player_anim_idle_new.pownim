@@ -3,8 +3,8 @@ type sprite
 framecount 1
 loop 1
 timeperframe 0.05
-rows 10
-columns 1
+rows 1
+columns 10
 frames
 {0.0,0.0}
 texture 1

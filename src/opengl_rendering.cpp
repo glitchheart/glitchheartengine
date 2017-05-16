@@ -764,11 +764,12 @@ static void RenderEntity(render_state *RenderState, entity &Entity, glm::mat4 Pr
             case Entity_Crosshair:
             case Entity_Enemy:
             case Entity_Player:
+            case Entity_PlayerWeapon:
             case Entity_Barrel:
             {
                 glm::mat4 Model(1.0f);
                 Model = glm::translate(Model, glm::vec3(Entity.Position.x, Entity.Position.y, 0.0f));
-                Model = glm::translate(Model, glm::vec3(1, 1, 0.0f)); 
+                Model = glm::translate(Model, glm::vec3(1, 1, 0.0f));
                 Model = glm::rotate(Model, Entity.Rotation.z, glm::vec3(0, 0, 1)); 
                 Model = glm::translate(Model, glm::vec3(-1, -1, 0.0f));
                 
@@ -784,7 +785,10 @@ static void RenderEntity(render_state *RenderState, entity &Entity, glm::mat4 Pr
                 
                 Model = glm::scale(Model, Scale);
                 
-                if(Entity.AnimationInfo.Playing) 
+                //if(Entity.Type == Entity_Enemy)
+                //printf("Entity: Name %s, position x %f y %f, rotation x %f y %f z %f\n", Entity.Name, Entity.Position.x, Entity.Position.y, Entity.Rotation.x, Entity.Rotation.y, Entity.Rotation.z);//PrintEntityInfo(Entity);
+                
+                if(Entity.CurrentAnimation) 
                 {
                     animation* Animation = Entity.CurrentAnimation;
                     
@@ -799,7 +803,7 @@ static void RenderEntity(render_state *RenderState, entity &Entity, glm::mat4 Pr
                     SetVec2Attribute(Shader.Program,"textureOffset", glm::vec2(Frame.X,Frame.Y));
                     SetVec4Attribute(Shader.Program, "color", RenderEntity->Color);
                     SetVec2Attribute(Shader.Program,"sheetSize",
-                                     glm::vec2(Animation->Rows, Animation->Columns));
+                                     glm::vec2(Animation->Columns, Animation->Rows));
                 } 
                 else 
                 {
@@ -831,11 +835,11 @@ static void RenderEntity(render_state *RenderState, entity &Entity, glm::mat4 Pr
     {
         char FPS[32];
         sprintf(FPS, "%4.0f",RenderState->FPS);
-        RenderText(RenderState,RenderState->InconsolataFont, glm::vec4(1,1,1,1),FPS, RenderState->WindowWidth/2.0f,20.0f,1.0f,Alignment_Center);
+        RenderText(RenderState, RenderState->InconsolataFont, glm::vec4(1, 1, 1, 1), FPS, RenderState->WindowWidth / 2.0f, 20.0f, 1.0f, Alignment_Center);
     }
 }
 
-static void RenderRoom(render_state* RenderState, const room& Room,  glm::mat4 ProjectionMatrix, glm::mat4 View, int StartX, int StartY, int EndX, int EndY)
+static void RenderRoom(render_state* RenderState, const room& Room, glm::mat4 ProjectionMatrix, glm::mat4 View, int StartX, int StartY, int EndX, int EndY)
 {
     glBindVertexArray(RenderState->TileVAO);
     
@@ -961,9 +965,7 @@ static void RenderGame(game_state* GameState)
             qsort(GameState->RenderState.RenderEntities, GameState->RenderState.RenderEntityCount, sizeof(render_entity), CompareFunction);
             
             
-            for(uint32 Index = 0;
-                Index < GameState->RenderState.RenderEntityCount;
-                Index++) 
+            for(uint32 Index = 0; Index < GameState->RenderState.RenderEntityCount; Index++) 
             {
                 render_entity* Render = &GameState->RenderState.RenderEntities[Index];
                 

@@ -22,6 +22,8 @@ enum Texture_Type
     Texture_Player,
     Texture_Barrel,
     Texture_Crosshair,
+    Texture_SwordTopRight,
+    
     Texture_Count
 };
 
@@ -40,7 +42,8 @@ const char* TexturePaths[Texture_Count] =
     "../assets/textures/tiles.png",
     "../assets/textures/spritesheets/new_player.png",
     "../assets/textures/barrel.png",
-    "../assets/textures/crosshair.png"
+    "../assets/textures/crosshair.png",
+    "../assets/textures/spritesheets/sword_attack_top_right.png"
 };
 
 enum Render_Mode
@@ -128,6 +131,13 @@ struct render_state
     GLuint BoundVertexBuffer;
     GLuint BoundTexture;
     //sprites
+    //GLfloat SpriteQuadVertices[16] =
+    //{ //pos        //texcoords
+    //0.0f, 1.0f, 0, 1.0f,
+    //1.0f, 1.0f, 1.0f,  1.0f,
+    //1.0f, 0.0f, 1.0f,  0,
+    //0.0f, 0.0f, 0,  0};
+    
     GLfloat SpriteQuadVertices[16] =
     { //pos        //texcoords
         0.0f, 1.0f, 0.00625f, 0.9375f,
@@ -198,6 +208,7 @@ struct render_state
             uint32 PlayerTexture;
             uint32 BarrelTexture;
             uint32 CrosshairTexture;
+            uint32 SwordTopRightTexture;
         };
     };
     //freetype

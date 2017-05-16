@@ -3,7 +3,7 @@ uniform mat4 Projection;
 uniform mat4 View;
 uniform mat4 Model;
 uniform vec2 textureOffset;
-uniform vec2 sheetSize; // Smells like shit
+uniform vec2 sheetSize;
 uniform vec4 color;
 
 in vec2 texcoord;
