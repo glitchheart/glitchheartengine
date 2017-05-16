@@ -5,6 +5,7 @@ static void InitPlayer(game_state* GameState)
     Player->Name = "Player";
     Player->Type = Entity_Player;
     Player->Player.WalkingSpeed = 10.0f;
+    Player->Player.ThrowingSpeed = 32.0f;
     
     render_entity* PlayerRenderEntity = &GameState->RenderState.RenderEntities[GameState->RenderState.RenderEntityCount];
     PlayerRenderEntity->ShaderIndex = Shader_SpriteSheetShader;
@@ -48,6 +49,7 @@ static void InitPlayer(game_state* GameState)
     PlayerWeapon->CollisionAABB = CollisionAABB3;
     PlayerWeapon->Rotation = glm::vec3(0, 0, 0);
     PlayerWeapon->Scale = glm::vec3(1, 1, 0);
+    
     
     PlayerWeapon->EntityIndex = GameState->EntityCount;
     GameState->EntityCount++;

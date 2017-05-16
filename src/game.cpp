@@ -135,10 +135,11 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
                             {
                                 Entity->Player.Pickup = &GameState->Entities[OtherEntityIndex];
                                 Entity->Player.Pickup->Position = Entity->Position;
+                                Entity->Player.Pickup->Velocity = glm::vec2(0.0f,0.0f);
                                 // NOTE(niels): Need to make it kinematic, otherwise
                                 // there will be an overlap when pressing E to drop
                                 Entity->Player.Pickup->IsKinematic = true;
-                                Entity->Player.PickupCooldown = 0.5;
+                                Entity->Player.PickupCooldown = 0.8;
                             }
                             
                         }
@@ -221,9 +222,9 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
                             }
                             else
                             {
-                                if(PenetrationVector.y > 0)
+                                if(PenetrationVector.y < 0)
                                     CollisionInfo->Side = CollisionInfo->Side | Side_Bottom;
-                                else if(PenetrationVector.y < 0) 
+                                else if(PenetrationVector.y > 0) 
                                     CollisionInfo->Side = CollisionInfo->Side | Side_Top;
                             }
                             
@@ -310,16 +311,37 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                     if(GetKeyDown(Key_E,GameState) && Entity->Player.Pickup)
                     {
                         Entity->Player.Pickup->IsKinematic = false;
-                        real32 ThrowDir = Entity->IsFlipped ? -1.0f : 1.0f;
-                        glm::vec2 Throw = glm::normalize(Entity->Velocity);
+                        real32 ThrowingDir = Entity->IsFlipped ? -1.0f : 1.0f;
+                        glm::vec2 Throw;
                         if(Entity->Velocity.x == 0.0f && Entity->Velocity.y == 0.0f)
                         {
-                            Throw.x = ThrowDir;
+                            Throw.x = Entity->Player.ThrowingSpeed * ThrowingDir;
                             Throw.y = 0.0f;
                         }
-                        Entity->Player.Pickup->Velocity = glm::vec2(Throw.x * DeltaTime * 40.0f,Throw.y * DeltaTime * 40.0f);
+                        if(Entity->Velocity.x > 0)
+                        {
+                            Throw.x = Entity->Player.ThrowingSpeed;
+                        } 
+                        else if(Entity->Velocity.x < 0)
+                        {
+                            Throw.x = -Entity->Player.ThrowingSpeed;
+                        }
+                        
+                        if(Entity->Velocity.y > 0)
+                        {
+                            Throw.y = Entity->Player.ThrowingSpeed;
+                        }
+                        else if(Entity->Velocity.y < 0)
+                        {
+                            Throw.y = -Entity->Player.ThrowingSpeed;
+                        }
+                        
+                        Throw.x = glm::abs(Throw.y) > 0 ? 0.5f * Throw.x : Throw.x;
+                        Throw.y = glm::abs(Throw.x) > 0 ? 0.5f * Throw.y : Throw.y;
+                        Entity->Player.Pickup->Velocity = glm::vec2(Throw.x,Throw.y);
+                        printf("Throw.x: %f, Throw.y: %f\n",Throw.x,Throw.y);
                         Entity->Player.Pickup = NULL;
-                        Entity->Player.PickupCooldown = 0.5;
+                        Entity->Player.PickupCooldown = 0.8;
                     }
                     
                     if(Entity->Player.PickupCooldown > 0.0)
@@ -334,17 +356,7 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                     
                     if(Entity->Player.Pickup)
                     {
-                        glm::vec2 PickupVelocity = Entity->Velocity;
-                        if(CollisionInfo.Side & Side_Left || CollisionInfo.Side & Side_Right)
-                        {
-                            PickupVelocity.x = 0.0f;
-                        }
-                        
-                        if(CollisionInfo.Side & Side_Top || CollisionInfo.Side & Side_Bottom)
-                        {
-                            PickupVelocity.y = 0.0f;
-                        }
-                        Entity->Player.Pickup->Position += PickupVelocity;
+                        Entity->Player.Pickup->Position = Entity->Position;
                     }
                     
                     //attacking
@@ -502,39 +514,43 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                 Entity->IsColliding = false;
                 Entity->CollisionAABB.IsColliding = false;
                 CheckCollision(GameState, Entity, &CollisionInfo);
-                //TODO(Daniel) this makes it bug out, since it pushes the barrel away
                 
                 real32 XVel = 0.0f;
                 real32 YVel = 0.0f;
                 
-                if(Entity->Velocity.x > 0.7f * DeltaTime)
+                real32 ThrowDiff = 0.2f;
+                if(Entity->Velocity.x > ThrowDiff)
                 {
-                    Entity->Position += Entity->Velocity;
-                    XVel = Entity->Velocity.x - 0.7f * (real32)DeltaTime;
+                    Entity->Position += glm::vec2(Entity->Velocity.x * DeltaTime,Entity->Velocity.y * DeltaTime);
+                    XVel = Entity->Velocity.x - ThrowDiff;
                 }
-                else if(Entity->Velocity.x < -0.7f * (real32)DeltaTime)
+                else if(Entity->Velocity.x < -ThrowDiff)
                 {
-                    Entity->Position += Entity->Velocity;
-                    XVel = Entity->Velocity.x - 0.7f * (real32)DeltaTime;
+                    Entity->Position +=glm::vec2(Entity->Velocity.x * DeltaTime,Entity->Velocity.y * DeltaTime);
+                    XVel = Entity->Velocity.x + ThrowDiff;
                 }
                 else 
                 {
                     XVel = 0.0f;
                 }
                 
-                if(Entity->Velocity.y > 0.7f * DeltaTime)
+                if(Entity->Velocity.y > ThrowDiff)
                 {
-                    Entity->Position += Entity->Velocity;
-                    YVel = Entity->Velocity.y - 0.7f * (real32)DeltaTime;
+                    Entity->Position +=glm::vec2(Entity->Velocity.x * DeltaTime,Entity->Velocity.y * DeltaTime);
+                    YVel = Entity->Velocity.y - ThrowDiff;
                 }
-                else if(Entity->Velocity.y < -0.7f * (real32)DeltaTime)
+                else if(Entity->Velocity.y < -ThrowDiff)
                 {
-                    Entity->Position += Entity->Velocity;
-                    YVel = Entity->Velocity.y - 0.7f * (real32)DeltaTime;
+                    Entity->Position +=glm::vec2(Entity->Velocity.x * DeltaTime,Entity->Velocity.y * DeltaTime);
+                    YVel = Entity->Velocity.y + ThrowDiff;
                 }
                 else 
                 {
                     YVel = 0.0f;
+                }
+                
+                if(glm::abs(XVel) > 0 || glm::abs(YVel) > 0) {
+                    printf("Vel.x: %f, Vel.y: %f\n",XVel, YVel);
                 }
                 
                 Entity->Velocity = glm::vec2(XVel,YVel);
