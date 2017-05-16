@@ -45,12 +45,15 @@ static char* LoadLevel(game_state* GameState, char** Arguments)
     GameState->PlayerIndex = 0;
     GameState->EntityCount = 0;
     
+    GameState->RenderState.RenderEntityCount = 0;
+    
     if(LoadLevelFromFile(Path, &Level, GameState))
     {
+        printf("Level loaded\n");
         level* CurrentLevel = &GameState->CurrentLevel;
         
         GameState->CurrentLevel = Level;
-        GameState->Entities[GameState->PlayerIndex].Position = Level.PlayerStartPosition;
+        //GameState->Entities[GameState->PlayerIndex].Position = Level.PlayerStartPosition;
         
         for(uint32 X = 0; X < CurrentLevel->Tilemap.Width; X++)
         {
