@@ -204,9 +204,6 @@ struct render_state
     FT_Library FTLibrary;
     render_font InconsolataFont;
     render_font MenuFont;
-    
-    //animations
-    std::map<char*, uint32, CompareCStrings> LoadedTextureHandles;
 };
 
 #endif
