@@ -84,6 +84,7 @@ static void LoadAnimations(game_state* GameState)
     LoadAnimationFromFile("../assets/animations/player_anim_idle_new.pownim", &GameState->EnemyIdleAnimation, &GameState->RenderState);
     LoadAnimationFromFile("../assets/animations/player_anim_walk_new.pownim", &GameState->EnemyWalkAnimation, &GameState->RenderState);
     LoadAnimationFromFile("../assets/animations/player_anim_attack_new.pownim", &GameState->EnemyAttackAnimation, &GameState->RenderState);
+    LoadAnimationFromFile("../assets/animations/player_anim_sword_top_right.pownim", &GameState->SwordTopRightAnimation, &GameState->RenderState);
     LoadAnimationFromFile("../assets/animations/player_anim_idle_new.pownim", &GameState->PlayerIdleAnimation, &GameState->RenderState);
     LoadAnimationFromFile("../assets/animations/player_anim_walk_new.pownim", &GameState->PlayerWalkAnimation, &GameState->RenderState);
     LoadAnimationFromFile("../assets/animations/player_anim_attack_new.pownim", &GameState->PlayerAttackAnimation, &GameState->RenderState);
@@ -91,7 +92,7 @@ static void LoadAnimations(game_state* GameState)
 
 static void PlayAnimation(entity* Entity, animation* Animation)
 {
-    if(!Entity->CurrentAnimation ||  strcmp(Entity->CurrentAnimation->Name, Animation->Name) != 0)
+    if(!Entity->CurrentAnimation || strcmp(Entity->CurrentAnimation->Name, Animation->Name) != 0)
     {
         Entity->CurrentAnimation = Animation;
         Entity->AnimationInfo.Playing = true;
@@ -111,6 +112,7 @@ static void TickAnimation(animation_info* Info, animation* Animation, real64 Del
     {
         if(Info->Playing)
         {
+            Info->CurrentTime += DeltaTime;
             if(Info->CurrentTime >= Animation->TimePerFrame)
             {
                 Info->FrameIndex++;
@@ -126,7 +128,6 @@ static void TickAnimation(animation_info* Info, animation* Animation, real64 Del
                     }
                 }
             }
-            Info->CurrentTime += DeltaTime;
         }
     }
 }
