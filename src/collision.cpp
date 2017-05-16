@@ -115,3 +115,237 @@ static real32 GetRayIntersectionFraction(collision_AABB* Coll, glm::vec2 Origin,
     return MinT;
 }
 
+
+void CheckCollision(game_state* GameState, entity* Entity, collision_info* CollisionInfo)
+{
+    if(!Entity->IsKinematic && !Entity->IsDead)
+    {
+        Entity->CollisionAABB.Center = glm::vec2(Entity->Position.x + Entity->Center.x * Entity->Scale.x, Entity->Position.y + Entity->Center.y * Entity->Scale.y);
+        if(Entity->HitTrigger)
+        {
+            Entity->HitTrigger->Center = glm::vec2(Entity->Position.x + Entity->Center.x * Entity->Scale.x, Entity->Position.y + Entity->Center.y * Entity->Scale.y);
+        }
+        
+        glm::vec2 PV;
+        
+        for(uint32 OtherEntityIndex = 0;
+            OtherEntityIndex < GameState->EntityCount;
+            OtherEntityIndex++)
+        {
+            entity* OtherEntity = &GameState->Entities[OtherEntityIndex];
+            
+            if(!(OtherEntity->Layer & Entity->IgnoreLayers) 
+               && OtherEntity->EntityIndex != Entity->EntityIndex 
+               && !OtherEntity->IsKinematic && !OtherEntity->IsDead)
+            {
+                if(OtherEntity->HitTrigger && OtherEntity->Type == Entity_Enemy && Entity->Type == Entity_PlayerWeapon)
+                {
+                    
+                    collision_AABB MdHit;
+                    MinkowskiDifference(OtherEntity->HitTrigger, &Entity->CollisionAABB, &MdHit);
+                    if(MdHit.Min.x <= 0 &&
+                       MdHit.Max.x >= 0 &&
+                       MdHit.Min.y <= 0 &&
+                       MdHit.Max.y >= 0)
+                    {
+                        OtherEntity->HitTrigger->IsColliding = true;
+                        if(!OtherEntity->IsDead && GameState->Entities[GameState->PlayerIndex].Player.IsAttacking)
+                        {
+                            PlaySoundEffect(GameState, &GameState->SoundManager.SwordHit01);
+                            Kill(GameState, OtherEntity);
+                        }
+                    }
+                    else 
+                    {
+                        OtherEntity->HitTrigger->IsColliding = false;
+                    }
+                }
+                
+                collision_AABB Md;
+                MinkowskiDifference(&OtherEntity->CollisionAABB, &Entity->CollisionAABB, &Md);
+                if(Md.Min.x <= 0 &&
+                   Md.Max.x >= 0 &&
+                   Md.Min.y <= 0 &&
+                   Md.Max.y >= 0)
+                {
+                    Entity->IsColliding = true;
+                    Entity->CollisionAABB.IsColliding = true;
+                    
+                    if(OtherEntity->Type == Entity_Enemy && Entity->Type == Entity_PlayerWeapon)
+                    {
+                        if(!OtherEntity->IsDead && GameState->Entities[GameState->PlayerIndex].Player.IsAttacking)
+                        {
+                            PlaySoundEffect(GameState, &GameState->SoundManager.SwordHit01);
+                            Kill(GameState, OtherEntity);
+                        }
+                    }
+                    
+                    if(!Entity->CollisionAABB.IsTrigger && !OtherEntity->CollisionAABB.IsTrigger)
+                    {
+                        OtherEntity->IsColliding = true;
+                        OtherEntity->CollisionAABB.IsColliding = true;
+                        
+                        //calculate what side is colliding
+                        auto OtherPosition = OtherEntity->CollisionAABB.Center;
+                        auto OtherExtents = OtherEntity->CollisionAABB.Extents;
+                        auto Position = Entity->CollisionAABB.Center;
+                        auto Extents = Entity->CollisionAABB.Extents;
+                        
+                        AABBMin(&Md);
+                        AABBMax(&Md);
+                        AABBSize(&Md);
+                        glm::vec2 PenetrationVector;
+                        ClosestPointsOnBoundsToPoint(&Md, glm::vec2(0,0), &PenetrationVector);
+                        
+                        if(Abs(PenetrationVector.x) > Abs(PenetrationVector.y))
+                        {
+                            if(PenetrationVector.x > 0)
+                                CollisionInfo->Side = CollisionInfo->Side | Side_Left;
+                            else if(PenetrationVector.x < 0)
+                                CollisionInfo->Side = CollisionInfo->Side | Side_Right;
+                        }
+                        else
+                        {
+                            if(PenetrationVector.y > 0)
+                                CollisionInfo->Side = CollisionInfo->Side | Side_Bottom;
+                            else if(PenetrationVector.y < 0) 
+                                CollisionInfo->Side = CollisionInfo->Side | Side_Top;
+                        }
+                        
+                        if(PenetrationVector.x != 0)
+                        {
+                            PV.x = PenetrationVector.x;
+                        }
+                        
+                        if(PenetrationVector.y != 0)
+                        {
+                            PV.y = PenetrationVector.y;
+                        }
+                    }
+                    
+                    switch(Entity->Type)
+                    {
+                        case Entity_Player:
+                        {
+                            if(OtherEntity->Pickup &&
+                               GetKeyDown(Key_E,GameState) && Entity->Player.PickupCooldown <= 0.0)
+                            {
+                                Entity->Player.Pickup = &GameState->Entities[OtherEntityIndex];
+                                Entity->Player.Pickup->Position = Entity->Position;
+                                Entity->Player.Pickup->Velocity = glm::vec2(0.0f,0.0f);
+                                // NOTE(niels): Need to make it kinematic, otherwise
+                                // there will be an overlap when pressing E to drop
+                                Entity->Player.Pickup->IsKinematic = true;
+                                Entity->Player.PickupCooldown = 0.8;
+                            }
+                            
+                        }
+                        break;
+                        case Entity_Barrel:
+                        case Entity_Crosshair:
+                        case Entity_Enemy:
+                        break;
+                    }
+                    
+                    if(!OtherEntity->CollisionAABB.IsTrigger &&
+                       !Entity->CollisionAABB.IsTrigger && !Entity->IsStatic)
+                    {
+                        /*
+                        Entity->Position += glm::vec2(PenetrationVector.x/XDivider,PenetrationVector.y/YDivider);
+                        Entity->CollisionAABB.Center = glm::vec2(Entity->Position.x + Entity->Center.x * Entity->Scale.x + Entity->Velocity.x, Entity->Position.y + Entity->Center.y * Entity->Scale.y + Entity->Velocity.y);
+                        Entity->Velocity = glm::vec2(0,0);*/
+                    }
+                }
+                else 
+                {
+                    Entity->IsColliding = false;
+                    Entity->CollisionAABB.IsColliding = false;
+                }
+            }
+        }
+        
+        
+        if(Entity->Type == Entity_Player || Entity->Type == Entity_Enemy || Entity->Type == Entity_Barrel)
+        {
+            level* Level = &GameState->CurrentLevel;
+            
+            int32 XPos = (int32)(Entity->Position.x + Entity->Center.x * Entity->Scale.x);
+            int32 YPos = (int32)(Entity->Position.y + Entity->Center.y * Entity->Scale.y);
+            
+            //@Improvement Is it necessary to go 2 tiles out?
+            uint32 MinX = Max(0, XPos - 2);
+            uint32 MaxX = Min((int32)Level->Tilemap.Width, XPos + 2);
+            uint32 MinY = Max(0, YPos - 2);
+            uint32 MaxY = Min((int32)Level->Tilemap.Height, YPos + 2);
+            
+            //check tile collision
+            for(uint32 X = MinX; X < MaxX; X++)
+            {
+                for(uint32 Y = MinY; Y < MaxY; Y++)
+                {
+                    tile_data Tile = Level->Tilemap.Data[X][Y];
+                    
+                    if(Tile.IsSolid)
+                    {
+                        //@Cleanup we have to move this to a separate function, because it is used in entity collision and tile collision
+                        collision_AABB Md;
+                        MinkowskiDifference(&Tile.CollisionAABB, &Entity->CollisionAABB, &Md);
+                        if(Md.Min.x <= 0 &&
+                           Md.Max.x >= 0 &&
+                           Md.Min.y <= 0 &&
+                           Md.Max.y >= 0)
+                        {
+                            Entity->IsColliding = true;
+                            Entity->CollisionAABB.IsColliding = true;
+                            
+                            //calculate what side is colliding
+                            auto OtherPosition = Tile.CollisionAABB.Center;
+                            auto OtherExtents = Tile.CollisionAABB.Extents;
+                            auto Position = Entity->CollisionAABB.Center;
+                            auto Extents = Entity->CollisionAABB.Extents;
+                            
+                            AABBMin(&Md);
+                            AABBMax(&Md);
+                            AABBSize(&Md);
+                            glm::vec2 PenetrationVector;
+                            ClosestPointsOnBoundsToPoint(&Md, glm::vec2(0,0), &PenetrationVector);
+                            
+                            if(Abs(PenetrationVector.x) > Abs(PenetrationVector.y))
+                            {
+                                if(PenetrationVector.x > 0)
+                                    CollisionInfo->Side = CollisionInfo->Side | Side_Left;
+                                else if(PenetrationVector.x < 0)
+                                    CollisionInfo->Side = CollisionInfo->Side | Side_Right;
+                            }
+                            else
+                            {
+                                if(PenetrationVector.y < 0)
+                                    CollisionInfo->Side = CollisionInfo->Side | Side_Bottom;
+                                else if(PenetrationVector.y > 0) 
+                                    CollisionInfo->Side = CollisionInfo->Side | Side_Top;
+                            }
+                            
+                            if(PenetrationVector.x != 0)
+                            {
+                                PV.x = PenetrationVector.x;
+                            }
+                            
+                            if(PenetrationVector.y != 0)
+                            {
+                                PV.y = PenetrationVector.y;
+                            }
+                            
+                            if(Entity->Type == Entity_Barrel)
+                            {
+                                Entity->Velocity = glm::vec2(0.0f,0.0f);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        if(!Entity->CollisionAABB.IsTrigger)
+            Entity->Position += PV;
+    }
+}
