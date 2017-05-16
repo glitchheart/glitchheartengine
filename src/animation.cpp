@@ -92,7 +92,7 @@ static void LoadAnimations(game_state* GameState)
 
 static void PlayAnimation(entity* Entity, animation* Animation)
 {
-    if(!Entity->CurrentAnimation ||  strcmp(Entity->CurrentAnimation->Name, Animation->Name) != 0)
+    if(!Entity->CurrentAnimation || strcmp(Entity->CurrentAnimation->Name, Animation->Name) != 0)
     {
         Entity->CurrentAnimation = Animation;
         Entity->AnimationInfo.Playing = true;
@@ -112,6 +112,7 @@ static void TickAnimation(animation_info* Info, animation* Animation, real64 Del
     {
         if(Info->Playing)
         {
+            Info->CurrentTime += DeltaTime;
             if(Info->CurrentTime >= Animation->TimePerFrame)
             {
                 Info->FrameIndex++;
@@ -127,7 +128,6 @@ static void TickAnimation(animation_info* Info, animation* Animation, real64 Del
                     }
                 }
             }
-            Info->CurrentTime += DeltaTime;
         }
     }
 }

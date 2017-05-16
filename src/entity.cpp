@@ -1,3 +1,8 @@
+static void PrintEntityInfo(const entity& Entity)
+{
+    printf("Entity: Name %s, position x %f y %f, rotation x %f y %f z %f\n", Entity.Name, Entity.Position.x, Entity.Position.y, Entity.Rotation.x, Entity.Rotation.y, Entity.Rotation.z);
+}
+
 static void InitPlayer(game_state* GameState)
 {
     entity* Player = &GameState->Entities[GameState->EntityCount];

@@ -384,6 +384,7 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                 
                 if(Player->Player.IsAttacking && !Entity->AnimationInfo.Playing)
                 {
+                    Entity->CurrentAnimation = 0;
                     PlayAnimation(Entity, &GameState->SwordTopRightAnimation);
                     RenderEntity->Rendered = true;
                 }
