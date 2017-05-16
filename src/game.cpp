@@ -334,7 +334,17 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                     
                     if(Entity->Player.Pickup)
                     {
-                        Entity->Player.Pickup->Position += Entity->Velocity;
+                        glm::vec2 PickupVelocity = Entity->Velocity;
+                        if(CollisionInfo.Side & Side_Left || CollisionInfo.Side & Side_Right)
+                        {
+                            PickupVelocity.x = 0.0f;
+                        }
+                        
+                        if(CollisionInfo.Side & Side_Top || CollisionInfo.Side & Side_Bottom)
+                        {
+                            PickupVelocity.y = 0.0f;
+                        }
+                        Entity->Player.Pickup->Position += PickupVelocity;
                     }
                     
                     //attacking

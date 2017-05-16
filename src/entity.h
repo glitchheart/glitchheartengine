@@ -47,8 +47,6 @@ struct entity
     animation_info AnimationInfo;
     animation* CurrentAnimation;
     
-    std::map<char*, animation, CompareCStrings> Animations;
-    
     uint32 RenderEntityHandle;
     
     bool32 IsDead;
