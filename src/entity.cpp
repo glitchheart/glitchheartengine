@@ -51,6 +51,7 @@ static void InitPlayer(game_state* GameState)
     
     collision_AABB CollisionAABB3;
     CollisionAABB3.Center = glm::vec2(0.5, 0.5);
+    CollisionAABB3.Offset = glm::vec2(0.7, 0);
     CollisionAABB3.Extents = glm::vec2(0.5f,1.0f);
     CollisionAABB3.IsTrigger = true;
     PlayerWeapon->CollisionAABB = CollisionAABB3;
@@ -61,6 +62,55 @@ static void InitPlayer(game_state* GameState)
     PlayerWeapon->EntityIndex = GameState->EntityCount;
     GameState->EntityCount++;
 }
+
+static void SpawnEnemy(game_state* GameState, glm::vec2 Position)
+{
+    entity* Enemy = &GameState->Entities[GameState->EntityCount];
+    Enemy->Name = "enemy";
+    Enemy->Type = Entity_Enemy;
+    
+    render_entity* EnemyRenderEntity = &GameState->RenderState.RenderEntities[GameState->RenderState.RenderEntityCount];
+    
+    EnemyRenderEntity->ShaderIndex = Shader_SpriteSheetShader;
+    EnemyRenderEntity->TextureHandle = GameState->RenderState.PlayerTexture;
+    
+    EnemyRenderEntity->Entity = &*Enemy;
+    Enemy->RenderEntityHandle = GameState->RenderState.RenderEntityCount++;
+    
+    Enemy->Rotation = glm::vec3(0, 0, 0);
+    Enemy->Position = Position;
+    Enemy->Scale = glm::vec3(2, 2, 0);
+    Enemy->Velocity = glm::vec2(-2,0);
+    
+    Enemy->Layer = Layer_Enemy;
+    //Enemy->IgnoreLayers = Layer_Enemy;
+    
+    collision_AABB CollisionAABB;
+    Enemy->Center = glm::vec2(0.5f, 0.5f);
+    CollisionAABB.Center = glm::vec2(Enemy->Position.x + Enemy->Center.x * Enemy->Scale.x,
+                                     Enemy->Position.y + Enemy->Center.y * Enemy->Scale.y);
+    CollisionAABB.Offset = glm::vec2(0, 0.9);
+    CollisionAABB.Extents = glm::vec2(0.3f, 0.15f);
+    Enemy->CollisionAABB = CollisionAABB;
+    
+    collision_AABB* HitTrigger = (collision_AABB*)malloc(sizeof(collision_AABB));
+    
+    HitTrigger->Center = glm::vec2(Enemy->Position.x + Enemy->Center.x * Enemy->Scale.x,
+                                   Enemy->Position.y + Enemy->Center.y * Enemy->Scale.y);
+    HitTrigger->Extents = glm::vec2(0.5f, 0.7f);
+    HitTrigger->IsTrigger;
+    Enemy->HitTrigger = HitTrigger;
+    
+    Enemy->Enemy.WalkingSpeed = 5;
+    Enemy->Enemy.MaxAlertDistance = 10;
+    Enemy->Enemy.MinDistance = 1;
+    Enemy->Enemy.AttackCooldown = 1.0f;
+    Enemy->Enemy.AIState = AI_Idle;
+    
+    Enemy->EntityIndex = GameState->EntityCount;
+    GameState->EntityCount++;
+}
+
 
 static void InitCrosshair(game_state* GameState)
 {

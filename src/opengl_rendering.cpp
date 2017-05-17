@@ -408,7 +408,7 @@ static void InitializeOpenGL(game_state* GameState, render_state* RenderState)
     glfwSetCharCallback(RenderState->Window, CharacterCallback);
     glfwSetCursorPosCallback(RenderState->Window, CursorPositionCallback);
     glfwSetMouseButtonCallback(RenderState->Window,MouseButtonCallback);
-    glfwSetInputMode(RenderState->Window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    //glfwSetInputMode(RenderState->Window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     
     GLint Viewport[4];
     glGetIntegerv(GL_VIEWPORT, Viewport);
@@ -691,7 +691,9 @@ static void RenderColliderWireframe(render_state* RenderState, entity* Entity, g
     //@Incomplete: Set a different position of the collider for PlayerWeapon
     glm::mat4 Model(1.0f);
     
-    Model = glm::translate(Model, glm::vec3(Entity->Position.x + Entity->Center.x * Entity->Scale.x - Entity->CollisionAABB.Extents.x, Entity->Position.y + Entity->Center.y * Entity->Scale.y - Entity->CollisionAABB.Extents.y, 0.0f));
+    printf("Offset: %f\n", Entity->CollisionAABB.Offset.x);
+    
+    Model = glm::translate(Model, glm::vec3(Entity->CollisionAABB.Center.x - Entity->CollisionAABB.Extents.x, Entity->CollisionAABB.Center.y - Entity->CollisionAABB.Extents.y, 0.0f));
     Model = glm::scale(Model, glm::vec3(Entity->CollisionAABB.Extents.x * 2, Entity->CollisionAABB.Extents.y * 2,1));
     
     glBindVertexArray(RenderState->WireframeVAO);
@@ -1066,7 +1068,7 @@ static void Render(game_state* GameState)
     }
     else
     {
-        glfwSetInputMode(GameState->RenderState.Window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+        //glfwSetInputMode(GameState->RenderState.Window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
         RenderGame(GameState);
     }
     

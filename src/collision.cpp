@@ -120,7 +120,7 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
 {
     if(!Entity->IsKinematic && !Entity->IsDead)
     {
-        Entity->CollisionAABB.Center = glm::vec2(Entity->Position.x + Entity->Center.x * Entity->Scale.x, Entity->Position.y + Entity->Center.y * Entity->Scale.y);
+        Entity->CollisionAABB.Center = glm::vec2(Entity->Position.x + Entity->Center.x * Entity->Scale.x + Entity->CollisionAABB.Offset.x, Entity->Position.y + Entity->Center.y * Entity->Scale.y + Entity->CollisionAABB.Offset.y);
         if(Entity->HitTrigger)
         {
             Entity->HitTrigger->Center = glm::vec2(Entity->Position.x + Entity->Center.x * Entity->Scale.x, Entity->Position.y + Entity->Center.y * Entity->Scale.y);

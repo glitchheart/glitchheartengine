@@ -22,6 +22,7 @@ struct collision_info
 struct collision_AABB
 {
     glm::vec2 Center;
+    glm::vec2 Offset;
     glm::vec2 Extents;
     glm::vec2 Min;
     glm::vec2 Max;
