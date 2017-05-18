@@ -11,7 +11,8 @@ static void InitPlayer(game_state* GameState)
     Player->Type = Entity_Player;
     Player->Player.WalkingSpeed = 10.0f;
     Player->Player.ThrowingSpeed = 32.0f;
-    
+    Player->Player.MaxDashTime = 0.2;
+    Player->Player.DashSpeed = 30;
     render_entity* PlayerRenderEntity = &GameState->RenderState.RenderEntities[GameState->RenderState.RenderEntityCount];
     PlayerRenderEntity->ShaderIndex = Shader_SpriteSheetShader;
     PlayerRenderEntity->TextureHandle = GameState->RenderState.PlayerTexture;
@@ -25,6 +26,8 @@ static void InitPlayer(game_state* GameState)
     
     collision_AABB CollisionAABB;
     Player->Center = glm::vec2(0.5f, 0.950f);
+    Player->Layer = Layer_Player;
+    Player->IgnoreLayers = Layer_Enemy;
     CollisionAABB.Center = glm::vec2(Player->Position.x + Player->Center.x * Player->Scale.x,
                                      Player->Position.y + Player->Center.y * Player->Scale.y);
     CollisionAABB.Extents = glm::vec2(0.3f, 0.15f);
@@ -57,7 +60,6 @@ static void InitPlayer(game_state* GameState)
     PlayerWeapon->CollisionAABB = CollisionAABB3;
     PlayerWeapon->Rotation = glm::vec3(0, 0, 0);
     PlayerWeapon->Scale = glm::vec3(4, 4, 0);
-    
     
     PlayerWeapon->EntityIndex = GameState->EntityCount;
     GameState->EntityCount++;

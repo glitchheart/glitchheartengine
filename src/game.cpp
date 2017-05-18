@@ -31,76 +31,106 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
             {
                 if (!GameState->Console.Open)
                 {
-                    Entity->Velocity = glm::vec2(0,0);
-                    
-                    //player movement
-                    if (GetKey(Key_Left, GameState))
+                    // Set the last know direction for dash direction later
+                    if(Entity->Velocity.x != 0 || Entity->Velocity.y != 0)
                     {
-                        Entity->Velocity.x = -Entity->Player.WalkingSpeed * (real32)DeltaTime;
-                        Entity->IsFlipped = true;
-                    }
-                    else if (GetKey(Key_Right, GameState))
-                    {
-                        Entity->Velocity.x = Entity->Player.WalkingSpeed * (real32)DeltaTime;
-                        Entity->IsFlipped = false;
+                        glm::vec2 Direction = glm::normalize(Entity->Velocity);
+                        Entity->Player.LastKnownDirectionX = Direction.x;
+                        Entity->Player.LastKnownDirectionY = Direction.y;
                     }
                     
-                    if (GetKey(Key_Up, GameState))
+                    if(GetKeyDown(Key_LeftShift, GameState))
                     {
-                        Entity->Velocity.y = -Entity->Player.WalkingSpeed * (real32)DeltaTime;
-                    }
-                    else if (GetKey(Key_Down, GameState))
-                    {
-                        Entity->Velocity.y = Entity->Player.WalkingSpeed * (real32)DeltaTime;
+                        Entity->Player.IsDashing = true;
                     }
                     
-                    if(Entity->Player.IsAttacking && !Entity->AnimationInfo.Playing)
+                    if(!Entity->Player.IsDashing)
                     {
-                        Entity->Player.IsAttacking = false;
-                    }
-                    
-                    if(!Entity->Player.IsAttacking)
-                    {
-                        if(Entity->Velocity.x != 0.0f || Entity->Velocity.y != 0.0f)
-                            PlayAnimation(Entity, &GameState->PlayerWalkAnimation);
+                        //player movement
+                        if (GetKey(Key_Left, GameState))
+                        {
+                            Entity->Velocity.x = -Entity->Player.WalkingSpeed * (real32)DeltaTime;
+                            Entity->IsFlipped = true;
+                        }
+                        else if (GetKey(Key_Right, GameState))
+                        {
+                            Entity->Velocity.x = Entity->Player.WalkingSpeed * (real32)DeltaTime;
+                            Entity->IsFlipped = false;
+                        }
                         else
-                            PlayAnimation(Entity, &GameState->PlayerIdleAnimation);
+                            Entity->Velocity.x = 0;
+                        
+                        if (GetKey(Key_Up, GameState))
+                        {
+                            Entity->Velocity.y = -Entity->Player.WalkingSpeed * (real32)DeltaTime;
+                        }
+                        else if (GetKey(Key_Down, GameState))
+                        {
+                            Entity->Velocity.y = Entity->Player.WalkingSpeed * (real32)DeltaTime;
+                        }
+                        else
+                            Entity->Velocity.y = 0;
+                        
+                        if(Entity->Player.IsAttacking && !Entity->AnimationInfo.Playing)
+                        {
+                            Entity->Player.IsAttacking = false;
+                        }
+                        
+                        if(!Entity->Player.IsAttacking)
+                        {
+                            if(Entity->Velocity.x != 0.0f || Entity->Velocity.y != 0.0f)
+                                PlayAnimation(Entity, &GameState->PlayerWalkAnimation);
+                            else
+                                PlayAnimation(Entity, &GameState->PlayerIdleAnimation);
+                        }
+                        
+                        if(GetKeyDown(Key_E,GameState) && Entity->Player.Pickup)
+                        {
+                            Entity->Player.Pickup->IsKinematic = false;
+                            real32 ThrowingDir = Entity->IsFlipped ? -1.0f : 1.0f;
+                            glm::vec2 Throw;
+                            if(Entity->Velocity.x == 0.0f && Entity->Velocity.y == 0.0f)
+                            {
+                                Throw.x = Entity->Player.ThrowingSpeed * ThrowingDir;
+                                Throw.y = 0.0f;
+                            }
+                            if(Entity->Velocity.x > 0)
+                            {
+                                Throw.x = Entity->Player.ThrowingSpeed;
+                            } 
+                            else if(Entity->Velocity.x < 0)
+                            {
+                                Throw.x = -Entity->Player.ThrowingSpeed;
+                            }
+                            
+                            if(Entity->Velocity.y > 0)
+                            {
+                                Throw.y = Entity->Player.ThrowingSpeed;
+                            }
+                            else if(Entity->Velocity.y < 0)
+                            {
+                                Throw.y = -Entity->Player.ThrowingSpeed;
+                            }
+                            
+                            Throw.x = Abs(Throw.y) > 0 ? 0.5f * Throw.x : Throw.x;
+                            Throw.y = Abs(Throw.x) > 0 ? 0.5f * Throw.y : Throw.y;
+                            Entity->Player.Pickup->Velocity = glm::vec2(Throw.x,Throw.y);
+                            Entity->Player.Pickup = NULL;
+                            Entity->Player.PickupCooldown = 0.8;
+                        }
                     }
-                    
-                    if(GetKeyDown(Key_E,GameState) && Entity->Player.Pickup)
+                    else
                     {
-                        Entity->Player.Pickup->IsKinematic = false;
-                        real32 ThrowingDir = Entity->IsFlipped ? -1.0f : 1.0f;
-                        glm::vec2 Throw;
-                        if(Entity->Velocity.x == 0.0f && Entity->Velocity.y == 0.0f)
+                        if(Entity->Player.CurrentDashTime < Entity->Player.MaxDashTime)
                         {
-                            Throw.x = Entity->Player.ThrowingSpeed * ThrowingDir;
-                            Throw.y = 0.0f;
+                            Entity->Velocity = glm::vec2(Entity->Player.LastKnownDirectionX *Entity->Player.DashSpeed * DeltaTime, Entity->Player.LastKnownDirectionY *Entity->Player.DashSpeed * DeltaTime);
+                            Entity->Player.CurrentDashTime += DeltaTime;
                         }
-                        if(Entity->Velocity.x > 0)
+                        else
                         {
-                            Throw.x = Entity->Player.ThrowingSpeed;
-                        } 
-                        else if(Entity->Velocity.x < 0)
-                        {
-                            Throw.x = -Entity->Player.ThrowingSpeed;
+                            Entity->Player.CurrentDashTime = 0;
+                            Entity->Player.IsDashing = false;
                         }
-                        
-                        if(Entity->Velocity.y > 0)
-                        {
-                            Throw.y = Entity->Player.ThrowingSpeed;
-                        }
-                        else if(Entity->Velocity.y < 0)
-                        {
-                            Throw.y = -Entity->Player.ThrowingSpeed;
-                        }
-                        
-                        Throw.x = Abs(Throw.y) > 0 ? 0.5f * Throw.x : Throw.x;
-                        Throw.y = Abs(Throw.x) > 0 ? 0.5f * Throw.y : Throw.y;
-                        Entity->Player.Pickup->Velocity = glm::vec2(Throw.x,Throw.y);
-                        printf("Throw.x: %f, Throw.y: %f\n",Throw.x,Throw.y);
-                        Entity->Player.Pickup = NULL;
-                        Entity->Player.PickupCooldown = 0.8;
                     }
                     
                     if(Entity->Player.PickupCooldown > 0.0)
