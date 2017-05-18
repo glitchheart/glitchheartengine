@@ -26,8 +26,10 @@ static void InitPlayer(game_state* GameState)
     
     collision_AABB CollisionAABB;
     Player->Center = glm::vec2(0.5f, 0.950f);
+    
     Player->Layer = Layer_Player;
-    Player->IgnoreLayers = Layer_Enemy;
+    //Player->IgnoreLayers = Layer_Enemy;
+    
     CollisionAABB.Center = glm::vec2(Player->Position.x + Player->Center.x * Player->Scale.x,
                                      Player->Position.y + Player->Center.y * Player->Scale.y);
     CollisionAABB.Extents = glm::vec2(0.3f, 0.15f);

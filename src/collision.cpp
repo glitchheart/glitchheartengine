@@ -134,7 +134,7 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
         {
             entity* OtherEntity = &GameState->Entities[OtherEntityIndex];
             
-            if(!(OtherEntity->Layer & Entity->IgnoreLayers) 
+            if(!(OtherEntity->Layer & Entity->IgnoreLayers) && !(Entity->Layer & OtherEntity->IgnoreLayers) 
                && OtherEntity->EntityIndex != Entity->EntityIndex 
                && !OtherEntity->IsKinematic && !OtherEntity->IsDead)
             {
@@ -246,15 +246,6 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
                         case Entity_Enemy:
                         break;
                     }
-                    
-                    if(!OtherEntity->CollisionAABB.IsTrigger &&
-                       !Entity->CollisionAABB.IsTrigger && !Entity->IsStatic)
-                    {
-                        /*
-                        Entity->Position += glm::vec2(PenetrationVector.x/XDivider,PenetrationVector.y/YDivider);
-                        Entity->CollisionAABB.Center = glm::vec2(Entity->Position.x + Entity->Center.x * Entity->Scale.x + Entity->Velocity.x, Entity->Position.y + Entity->Center.y * Entity->Scale.y + Entity->Velocity.y);
-                        Entity->Velocity = glm::vec2(0,0);*/
-                    }
                 }
                 else 
                 {
@@ -346,6 +337,9 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
         }
         
         if(!Entity->CollisionAABB.IsTrigger)
+        {
             Entity->Position += PV;
+            Entity->CollisionAABB.Center = glm::vec2(Entity->Position.x + Entity->Center.x * Entity->Scale.x + Entity->CollisionAABB.Offset.x, Entity->Position.y + Entity->Center.y * Entity->Scale.y + Entity->CollisionAABB.Offset.y);
+        }
     }
 }

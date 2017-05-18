@@ -158,6 +158,7 @@ static void LoadSounds(sound_manager *SoundManager)
     LoadSound("../assets/audio/mainmenu.wav", DefaultSoundInfo, &SoundManager->MainMenuTrack);
     LoadSound("../assets/audio/sword_slash_01.wav", DefaultSoundInfo, &SoundManager->SwordSlash01);
     LoadSound("../assets/audio/sword_hit_01.wav", DefaultSoundInfo, &SoundManager->SwordHit01);
+    LoadSound("../assets/audio/dash.wav", DefaultSoundInfo, &SoundManager->Dash);
     // // Add more sounds here if necessary
 }
 
