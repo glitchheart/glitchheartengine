@@ -48,7 +48,7 @@ static GLint ShaderCompilationErrorChecking(GLuint Shader)
         
         for(uint32 ErrorIndex = 0; ErrorIndex < MaxLength; ErrorIndex++)
         {
-            printf("%d\n",ErrorLog[ErrorIndex]);
+            printf("%d\n", ErrorLog[ErrorIndex]);
         }
         
         glDeleteShader(Shader); // Don't leak the shader.

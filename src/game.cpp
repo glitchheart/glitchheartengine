@@ -39,8 +39,9 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                         Entity->Player.LastKnownDirectionY = Direction.y;
                     }
                     
-                    if(GetKeyDown(Key_LeftShift, GameState))
+                    if(!Entity->Player.IsDashing && GetKeyDown(Key_X, GameState))
                     {
+                        PlaySoundEffect(GameState, &GameState->SoundManager.Dash);
                         Entity->Player.IsDashing = true;
                     }
                     
