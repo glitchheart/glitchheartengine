@@ -61,10 +61,16 @@ struct entity
         struct
         {
             bool32 IsAttacking;
+            bool32 IsDashing;
+            real64 CurrentDashTime;
+            real32 DashSpeed;
+            real64 MaxDashTime;
             real32 WalkingSpeed;
             entity* Pickup;
             real64 PickupCooldown;
             real32 ThrowingSpeed;
+            real32 LastKnownDirectionX;
+            real32 LastKnownDirectionY;
         } Player;
         struct
         {

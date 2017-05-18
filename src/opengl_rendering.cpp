@@ -260,7 +260,6 @@ static void RenderSetup(render_state *RenderState)
     glVertexAttribPointer(TexcoordLocation, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *)(2 * sizeof(float)));
     glBindVertexArray(0);
     
-    
     //tile
     glGenVertexArrays(1, &RenderState->TileVAO);
     glBindVertexArray(RenderState->TileVAO);
@@ -682,16 +681,13 @@ static void RenderConsole(render_state* RenderState, console* Console, glm::mat4
     int index = 0;
     for(int i = 0; i < HISTORY_BUFFER_LINES; i++)
     {
-        RenderText(RenderState, RenderState->InconsolataFont, glm::vec4(0.8, 0.8, 0.8, 1), &Console->HistoryBuffer[i][0], 20 / 1920.0f * (real32)RenderState->WindowWidth, (real32)RenderState->WindowHeight * 0.78f * PercentAnimated + (i + 1) * 20 * PercentAnimated, 1);
+        RenderText(RenderState, RenderState->InconsolataFont, glm::vec4(1, 1, 1, 1), &Console->HistoryBuffer[i][0], 25 / 1920.0f * (real32)RenderState->WindowWidth, (real32)RenderState->WindowHeight * 0.78f * PercentAnimated + (i + 1) * 25 * PercentAnimated, 1);
     }
 }
 
 static void RenderColliderWireframe(render_state* RenderState, entity* Entity, glm::mat4 ProjectionMatrix, glm::mat4 View)
 {
-    //@Incomplete: Set a different position of the collider for PlayerWeapon
     glm::mat4 Model(1.0f);
-    
-    printf("Offset: %f\n", Entity->CollisionAABB.Offset.x);
     
     Model = glm::translate(Model, glm::vec3(Entity->CollisionAABB.Center.x - Entity->CollisionAABB.Extents.x, Entity->CollisionAABB.Center.y - Entity->CollisionAABB.Extents.y, 0.0f));
     Model = glm::scale(Model, glm::vec3(Entity->CollisionAABB.Extents.x * 2, Entity->CollisionAABB.Extents.y * 2,1));

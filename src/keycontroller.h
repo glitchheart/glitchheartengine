@@ -46,6 +46,7 @@ enum Key_Code
     Key_Tab,
     Key_Enter,
     Key_Backspace,
+    Key_LeftShift,
     Key_LeftCtrl,
     Key_1,
     Key_2,
