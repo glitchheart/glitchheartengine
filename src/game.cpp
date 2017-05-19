@@ -39,7 +39,7 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                         Entity->Player.LastKnownDirectionY = Direction.y;
                     }
                     
-                    if(!Entity->Player.IsDashing && GetKeyDown(Key_X, GameState))
+                    if(!Entity->Player.IsAttacking && !Entity->Player.IsDashing && GetKeyDown(Key_X, GameState))
                     {
                         PlaySoundEffect(GameState, &GameState->SoundManager.Dash);
                         Entity->Player.IsDashing = true;
@@ -75,6 +75,7 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                         if(Entity->Player.IsAttacking && !Entity->AnimationInfo.Playing)
                         {
                             Entity->Player.IsAttacking = false;
+                            Entity->Player.CurrentAttackCooldownTime = Entity->Player.AttackCooldown;
                         }
                         
                         if(!Entity->Player.IsAttacking)
@@ -150,12 +151,15 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                     }
                     
                     //attacking
-                    if(!Entity->Player.IsAttacking && GetKeyDown(Key_Z, GameState))
+                    if(Entity->Player.CurrentAttackCooldownTime <= 0 && !Entity->Player.IsAttacking && GetKeyDown(Key_Z, GameState))
                     {
                         PlayAnimation(Entity, &GameState->PlayerAttackAnimation);
                         Entity->Player.IsAttacking = true;
                         PlaySoundEffect(GameState, &GameState->SoundManager.SwordSlash01);
                     }
+                    
+                    if(!Entity->Player.IsAttacking && Entity->Player.CurrentAttackCooldownTime > 0)
+                        Entity->Player.CurrentAttackCooldownTime -= DeltaTime;
                     
                     auto Direction = glm::vec2(pos.x, pos.y) - Entity->Position;
                     Direction = glm::normalize(Direction);

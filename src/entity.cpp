@@ -13,6 +13,8 @@ static void InitPlayer(game_state* GameState)
     Player->Player.ThrowingSpeed = 32.0f;
     Player->Player.MaxDashTime = 0.2;
     Player->Player.DashSpeed = 30;
+    Player->Player.AttackCooldown = 0.5;
+    
     render_entity* PlayerRenderEntity = &GameState->RenderState.RenderEntities[GameState->RenderState.RenderEntityCount];
     PlayerRenderEntity->ShaderIndex = Shader_SpriteSheetShader;
     PlayerRenderEntity->TextureHandle = GameState->RenderState.PlayerTexture;
