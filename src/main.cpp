@@ -150,8 +150,6 @@ int main(void)
         SetInvalidKeys(&GameState.InputController);
         SetMouseInvalidKeys(&GameState.InputController);
         
-        //TODO(Daniel) Move this out of the main loop and into the key_controller.cpp somehow
-        
         PollEvents();
         
         if(GameState.InputController.ControllerPresent)

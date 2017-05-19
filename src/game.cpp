@@ -1,13 +1,11 @@
 #include "game.h"
 #include "keycontroller.cpp"
-
 #include "sound.cpp"
 #define ANIMATION_GAME
 #include "animation.cpp"
 #include "entity.cpp"
 #include "collision.cpp"
 #include "level.cpp"
-
 #include "console.cpp"
 
 #define DEBUG
@@ -39,7 +37,7 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                         Entity->Player.LastKnownDirectionY = Direction.y;
                     }
                     
-                    if(!Entity->Player.IsAttacking && !Entity->Player.IsDashing && GetKeyDown(Key_X, GameState))
+                    if(!Entity->Player.IsAttacking && !Entity->Player.IsDashing && GetActionButtonDown(Action_Dash, GameState))
                     {
                         PlaySoundEffect(GameState, &GameState->SoundManager.Dash);
                         Entity->Player.IsDashing = true;
@@ -48,29 +46,9 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                     if(!Entity->Player.IsDashing)
                     {
                         //player movement
-                        if (GetKey(Key_Left, GameState))
-                        {
-                            Entity->Velocity.x = -Entity->Player.WalkingSpeed * (real32)DeltaTime;
-                            Entity->IsFlipped = true;
-                        }
-                        else if (GetKey(Key_Right, GameState))
-                        {
-                            Entity->Velocity.x = Entity->Player.WalkingSpeed * (real32)DeltaTime;
-                            Entity->IsFlipped = false;
-                        }
-                        else
-                            Entity->Velocity.x = 0;
-                        
-                        if (GetKey(Key_Up, GameState))
-                        {
-                            Entity->Velocity.y = -Entity->Player.WalkingSpeed * (real32)DeltaTime;
-                        }
-                        else if (GetKey(Key_Down, GameState))
-                        {
-                            Entity->Velocity.y = Entity->Player.WalkingSpeed * (real32)DeltaTime;
-                        }
-                        else
-                            Entity->Velocity.y = 0;
+                        // Controller
+                        Entity->Velocity.x = GetInputX(GameState) * Entity->Player.WalkingSpeed * (real32)DeltaTime;
+                        Entity->Velocity.y = GetInputY(GameState) * Entity->Player.WalkingSpeed * (real32)DeltaTime;
                         
                         if(Entity->Player.IsAttacking && !Entity->AnimationInfo.Playing)
                         {
@@ -86,7 +64,10 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                                 PlayAnimation(Entity, &GameState->PlayerIdleAnimation);
                         }
                         
-                        if(GetKeyDown(Key_E,GameState) && Entity->Player.Pickup)
+                        if(Entity->Velocity.x != 0)
+                            Entity->IsFlipped = Entity->Velocity.x < 0;
+                        
+                        if(GetActionButtonDown(Action_Interact, GameState) && Entity->Player.Pickup)
                         {
                             Entity->Player.Pickup->IsKinematic = false;
                             real32 ThrowingDir = Entity->IsFlipped ? -1.0f : 1.0f;
@@ -145,13 +126,36 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                     collision_info CollisionInfo;
                     CheckCollision(GameState, Entity, &CollisionInfo);
                     
+                    entity* OtherEntity;
+                    
+                    for(int Index = 0; Index < CollisionInfo.OtherCount; Index++)
+                    {
+                        if(CollisionInfo.Other[Index]->Pickup)
+                        {
+                            OtherEntity = CollisionInfo.Other[Index];
+                            break;
+                        }
+                    }
+                    
+                    if(OtherEntity &&
+                       GetActionButtonDown(Action_Interact, GameState) && Entity->Player.PickupCooldown <= 0.0)
+                    {
+                        Entity->Player.Pickup = OtherEntity;
+                        Entity->Player.Pickup->Position = Entity->Position;
+                        Entity->Player.Pickup->Velocity = glm::vec2(0.0f,0.0f);
+                        // NOTE(niels): Need to make it kinematic, otherwise
+                        // there will be an overlap when pressing E to drop
+                        Entity->Player.Pickup->IsKinematic = true;
+                        Entity->Player.PickupCooldown = 0.8;
+                    }
+                    
                     if(Entity->Player.Pickup)
                     {
                         Entity->Player.Pickup->Position = Entity->Position;
                     }
                     
                     //attacking
-                    if(Entity->Player.CurrentAttackCooldownTime <= 0 && !Entity->Player.IsAttacking && GetKeyDown(Key_Z, GameState))
+                    if(Entity->Player.CurrentAttackCooldownTime <= 0 && !Entity->Player.IsAttacking && (GetActionButtonDown(Action_Attack, GameState) || GetJoystickKeyDown(Joystick_3, GameState)))
                     {
                         PlayAnimation(Entity, &GameState->PlayerAttackAnimation);
                         Entity->Player.IsAttacking = true;
@@ -313,11 +317,6 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                 
                 collision_info CollisionInfo;
                 CheckCollision(GameState, Entity, &CollisionInfo);
-                
-                if(!Entity->IsColliding)
-                {
-                    
-                }
             }
             break;
             case Entity_Barrel:
@@ -361,18 +360,12 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                     YVel = 0.0f;
                 }
                 
-                if(Abs(XVel) > 0 || Abs(YVel) > 0) {
-                    printf("Vel.x: %f, Vel.y: %f\n",XVel, YVel);
-                }
-                
                 Entity->Velocity = glm::vec2(XVel,YVel);
-                
             }
         }
         
         if(Entity->CurrentAnimation && Entity->AnimationInfo.Playing)
             TickAnimation(&Entity->AnimationInfo, Entity->CurrentAnimation, DeltaTime);
-        
     }
     
     switch(GameState->EditorUI.State)
