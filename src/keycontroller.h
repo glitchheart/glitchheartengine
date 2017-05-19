@@ -68,23 +68,32 @@ enum Mouse_Code
 
 enum Controller_Code
 {
-    JOYSTICK_1,
-    JOYSTICK_2,
-    JOYSTICK_3,
-    JOYSTICK_4,
-    JOYSTICK_5,
-    JOYSTICK_6,
-    JOYSTICK_7,
-    JOYSTICK_8,
-    JOYSTICK_9,
-    JOYSTICK_10,
-    JOYSTICK_11,
-    JOYSTICK_12,
-    JOYSTICK_13,
-    JOYSTICK_14,
-    JOYSTICK_15,
-    JOYSTICK_16,
+    Joystick_1,
+    Joystick_2,
+    Joystick_3,
+    Joystick_4,
+    Joystick_5,
+    Joystick_6,
+    Joystick_7,
+    Joystick_8,
+    Joystick_9,
+    Joystick_10,
+    Joystick_11,
+    Joystick_12,
+    Joystick_13,
+    Joystick_14,
+    Joystick_15,
+    Joystick_16,
     Joystick_Count
+};
+
+enum Action_Button
+{
+    Action_Attack,
+    Action_Dash,
+    Action_Interact,
+    
+    Action_Count
 };
 
 enum Controller_Axis_Code
@@ -97,9 +106,37 @@ enum Controller_Axis_Code
     Axis_6  // Right trigger (PS4 W10)
 };
 
+#define NUM_AXES 6
+
+enum Controller_Type
+{
+    Controller_Xbox,
+    Controller_PS4
+};
 
 struct input_controller
 {
+    Key_Code ActionButtonKeyboardBindings[Action_Count] = 
+    {
+        Key_Z,
+        Key_X,
+        Key_E
+    };
+    
+    Controller_Code ActionButtonXboxControllerBindings[Action_Count] = 
+    {
+        Joystick_3,
+        Joystick_1,
+        Joystick_2
+    };
+    
+    Controller_Code ActionButtonPS4ControllerBindings[Action_Count] = 
+    {
+        Joystick_1,
+        Joystick_2,
+        Joystick_1
+    };
+    
     bool32 KeysDown[Key_Count];
     bool32 KeysUp[Key_Count];
     Key_Mode KeysJustPressed[Key_Count];
@@ -110,9 +147,13 @@ struct input_controller
     bool32 JoystickKeysDown[Joystick_Count];
     Key_Mode JoystickKeysJustPressed[Joystick_Count];
     
+    real32 Axes[NUM_AXES];
+    
     real64 MouseX;
     real64 MouseY;
+    real32 ControllerDeadzone = 0.1f;
     bool32 ControllerPresent;
+    Controller_Type ControllerType;
 };
 
 #endif

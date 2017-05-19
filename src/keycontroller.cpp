@@ -8,19 +8,17 @@ static void SetInvalidKeys(input_controller *InputController)
             InputController->KeysJustPressed[KeyCode] = Key_Invalid;
         }
         InputController->KeysUp[KeyCode] = false;
-    }
-    
-    if (InputController->KeysJustPressed[Key_Tab] == Key_JustPressed)
-    {
-        InputController->KeysJustPressed[Key_Tab] = Key_Invalid;
-    }
+    } 
 }
 
 static void SetControllerInvalidKeys(input_controller *InputController)
 {
     for(uint32 KeyCode = 0; KeyCode < Joystick_Count; KeyCode++)
     {
-        InputController->JoystickKeysJustPressed[KeyCode] = Key_Invalid;
+        if(InputController->JoystickKeysJustPressed[KeyCode] == Key_JustPressed)
+        {
+            InputController->JoystickKeysJustPressed[KeyCode] = Key_Invalid;
+        }
     }
 }
 
@@ -66,4 +64,79 @@ static bool32 GetMouseButton(Mouse_Code Key, game_state* GameState)
 static bool32 GetMouseButtonDown(Mouse_Code Key, game_state* GameState)
 {
     return GameState->InputController.MouseButtonDown[Key] == Key_JustPressed;
+}
+
+static bool32 GetActionButtonDown(Action_Button ActionButton, game_state* GameState)
+{
+    if(GameState->InputController.ControllerPresent)
+    {
+        switch(GameState->InputController.ControllerType)
+        {
+            case Controller_Xbox:
+            return GetJoystickKeyDown(GameState->InputController.ActionButtonXboxControllerBindings[ActionButton], GameState);
+            break;
+            case Controller_PS4:
+            return GetJoystickKeyDown(GameState->InputController.ActionButtonPS4ControllerBindings[ActionButton], GameState);
+            break;
+        }
+    }
+    else
+    {
+        return GetKeyDown(GameState->InputController.ActionButtonKeyboardBindings[ActionButton], GameState);
+    }
+}
+
+static float GetInputX(game_state* GameState)
+{
+    if(GameState->InputController.ControllerPresent)
+    {
+        if(Abs(GameState->InputController.Axes[0]) < GameState->InputController.ControllerDeadzone)
+            return 0;
+        return GameState->InputController.Axes[0]; // Might be another axis index for other controllers
+    }
+    else
+    {
+        if (GetKey(Key_Left, GameState))
+        {
+            return -1;
+        }
+        else if (GetKey(Key_Right, GameState))
+        {
+            return 1;
+        }
+        else
+            return 0;
+    }
+}
+
+static float GetInputY(game_state* GameState)
+{
+    if(GameState->InputController.ControllerPresent)
+    {
+        if(Abs(GameState->InputController.Axes[1]) < GameState->InputController.ControllerDeadzone)
+            return 0;
+        
+        switch(GameState->InputController.ControllerType)
+        {
+            case Controller_Xbox:
+            return -1 * GameState->InputController.Axes[1]; // Might be another axis index for other controllers
+            break;
+            case Controller_PS4:
+            return GameState->InputController.Axes[1]; // Might be another axis index for other controllers
+            break;
+        }
+    }
+    else
+    {
+        if (GetKey(Key_Up, GameState))
+        {
+            return -1;
+        }
+        else if (GetKey(Key_Down, GameState))
+        {
+            return 1;
+        }
+        else
+            return 0;
+    }
 }

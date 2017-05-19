@@ -45,7 +45,6 @@ void ExecuteCommand(game_state *GameState)
             if(Pointer)
             {
                 ArgumentBuffer[Count] = Pointer;
-                printf("%d\n", Count);
                 Count++;
             }
         }

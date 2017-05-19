@@ -1,4 +1,3 @@
-
 static void AABBMin(collision_AABB* Coll)
 {
     Coll->Min = Coll->Center - Coll->Extents;
@@ -44,6 +43,7 @@ static void ClosestPointsOnBoundsToPoint(collision_AABB* Coll, glm::vec2 Point, 
         MinDist = Abs(Coll->Max.x - Point.x);
         *Out = glm::vec2(Coll->Max.x, Point.y);
     }
+    
     if(Abs(Coll->Max.y - Point.y) < MinDist)
     {
         MinDist = Abs(Coll->Max.y - Point.y);
@@ -115,7 +115,6 @@ static real32 GetRayIntersectionFraction(collision_AABB* Coll, glm::vec2 Origin,
     return MinT;
 }
 
-
 void CheckCollision(game_state* GameState, entity* Entity, collision_info* CollisionInfo)
 {
     if(!Entity->IsKinematic && !Entity->IsDead)
@@ -138,9 +137,9 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
                && OtherEntity->EntityIndex != Entity->EntityIndex 
                && !OtherEntity->IsKinematic && !OtherEntity->IsDead)
             {
+                
                 if(OtherEntity->HitTrigger && OtherEntity->Type == Entity_Enemy && Entity->Type == Entity_PlayerWeapon)
                 {
-                    
                     collision_AABB MdHit;
                     MinkowskiDifference(OtherEntity->HitTrigger, &Entity->CollisionAABB, &MdHit);
                     if(MdHit.Min.x <= 0 &&
@@ -149,6 +148,7 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
                        MdHit.Max.y >= 0)
                     {
                         OtherEntity->HitTrigger->IsColliding = true;
+                        
                         if(!OtherEntity->IsDead && GameState->Entities[GameState->PlayerIndex].Player.IsAttacking)
                         {
                             PlaySoundEffect(GameState, &GameState->SoundManager.SwordHit01);
@@ -168,6 +168,8 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
                    Md.Min.y <= 0 &&
                    Md.Max.y >= 0)
                 {
+                    CollisionInfo->Other[CollisionInfo->OtherCount++] = OtherEntity;
+                    
                     Entity->IsColliding = true;
                     Entity->CollisionAABB.IsColliding = true;
                     
@@ -221,30 +223,6 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
                         {
                             PV.y = PenetrationVector.y;
                         }
-                    }
-                    
-                    switch(Entity->Type)
-                    {
-                        case Entity_Player:
-                        {
-                            if(OtherEntity->Pickup &&
-                               GetKeyDown(Key_E,GameState) && Entity->Player.PickupCooldown <= 0.0)
-                            {
-                                Entity->Player.Pickup = &GameState->Entities[OtherEntityIndex];
-                                Entity->Player.Pickup->Position = Entity->Position;
-                                Entity->Player.Pickup->Velocity = glm::vec2(0.0f,0.0f);
-                                // NOTE(niels): Need to make it kinematic, otherwise
-                                // there will be an overlap when pressing E to drop
-                                Entity->Player.Pickup->IsKinematic = true;
-                                Entity->Player.PickupCooldown = 0.8;
-                            }
-                            
-                        }
-                        break;
-                        case Entity_Barrel:
-                        case Entity_Crosshair:
-                        case Entity_Enemy:
-                        break;
                     }
                 }
                 else 

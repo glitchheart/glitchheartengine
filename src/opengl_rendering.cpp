@@ -417,7 +417,18 @@ static void InitializeOpenGL(game_state* GameState, render_state* RenderState)
     if(Present)
     {
         GameState->InputController.ControllerPresent = true;
-        printf("%s present\n",glfwGetJoystickName(GLFW_JOYSTICK_1));
+        const char* Name = glfwGetJoystickName(GLFW_JOYSTICK_1);
+        
+        if(strstr(Name, "Xbox") != 0)
+        {
+            GameState->InputController.ControllerType = Controller_Xbox;
+        }
+        else if(strstr(Name, "PS4") != 0 || strstr(Name, "Wireless") != 0)
+        {
+            GameState->InputController.ControllerType = Controller_PS4;
+        }
+        
+        printf("type %d\n", GameState->InputController.ControllerType);
     }
     LoadTextures(RenderState);
     RenderSetup(RenderState);
