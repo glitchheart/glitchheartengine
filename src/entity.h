@@ -61,6 +61,8 @@ struct entity
         struct
         {
             bool32 IsAttacking;
+            real64 CurrentAttackCooldownTime;
+            real64 AttackCooldown;
             bool32 IsDashing;
             real64 CurrentDashTime;
             real32 DashSpeed;
