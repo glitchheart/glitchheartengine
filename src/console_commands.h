@@ -52,6 +52,12 @@ static char* LoadLevel(game_state* GameState, char** Arguments)
     }
     free(GameState->CurrentLevel.Tilemap.Data);
     
+    for(uint32 Index = 0; Index < GameState->EntityCount; Index++)
+        GameState->Entities[Index] = {};
+    
+    for(uint32 Index = 0; Index < GameState->RenderState.RenderEntityCount; Index++)
+        GameState->RenderState.RenderEntities[Index] = {};
+    
     GameState->EntityCount = 0;
     GameState->RenderState.RenderEntityCount = 0;
     
