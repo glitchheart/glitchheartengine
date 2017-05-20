@@ -107,6 +107,14 @@ struct render_font
     } CharacterInfo[255];
 };
 
+struct point
+{
+    GLfloat X;
+    GLfloat Y;
+    GLfloat S;
+    GLfloat T;
+}; 
+
 struct render_state
 {
     GLFWwindow *Window;

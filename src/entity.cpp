@@ -32,7 +32,7 @@ static void InitPlayer(game_state* GameState)
     Player->Rotation = glm::vec3(0, 0, 0);
     Player->Scale = glm::vec3(2, 2, 0);
     Player->Velocity = glm::vec2(0,0);
-    
+    PlayAnimation(Player, &GameState->PlayerIdleAnimation);
     collision_AABB CollisionAABB;
     Player->Center = glm::vec2(0.5f, 0.950f);
     
@@ -97,7 +97,7 @@ static void SpawnEnemy(game_state* GameState, glm::vec2 Position)
     Enemy->AnimationInfo.Playing = false;
     Enemy->AnimationInfo.FrameIndex = 0;
     Enemy->AnimationInfo.CurrentTime = 0;
-    
+    PlayAnimation(Enemy, &GameState->EnemyIdleAnimation);
     Enemy->Rotation = glm::vec3(0, 0, 0);
     Enemy->Position = Position;
     Enemy->Scale = glm::vec3(2, 2, 0);

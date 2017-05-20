@@ -143,6 +143,7 @@ int main(void)
         Game.Update(DeltaTime, &GameState);
         
         CheckEditorUIInput(&GameState, DeltaTime);
+
         Render(&GameState);
         PlaySounds(&GameState);
         

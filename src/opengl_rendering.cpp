@@ -499,14 +499,6 @@ static void SetMat4Uniform(GLuint ShaderHandle, const char *UniformName, glm::ma
     glUniformMatrix4fv(glGetUniformLocation(ShaderHandle, UniformName), 1, GL_FALSE, &Value[0][0]);
 }
 
-struct Point
-{
-    GLfloat X;
-    GLfloat Y;
-    GLfloat S;
-    GLfloat T;
-}; 
-
 //TODO(Daniel) there's a weird bug when rendering special characters. The cursor just slowly jumps up for every character pressed
 static void RenderRect(Render_Mode Mode, render_state* RenderState, glm::vec4 Color, real32 X, real32 Y, real32 Width, real32 Height)
 {
@@ -614,7 +606,7 @@ static void RenderText(render_state* RenderState, const render_font& Font, const
         RenderState->BoundTexture = Font.Texture;
     }
     
-    Point* Coords = new Point[6 * strlen(Text)]; //TODO change this back to the C way (malloc)
+    point* Coords = (point*)malloc(sizeof(point) * 6 * strlen(Text));
     
     int N = 0;
     
@@ -661,8 +653,9 @@ static void RenderText(render_state* RenderState, const render_font& Font, const
     
     glBindVertexArray(Font.VAO);
     glBindBuffer(GL_ARRAY_BUFFER, Font.VBO);
-    glBufferData(GL_ARRAY_BUFFER, 6 * strlen(Text) * sizeof(Point), Coords, GL_DYNAMIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, 6 * strlen(Text) * sizeof(point), Coords, GL_DYNAMIC_DRAW);
     glDrawArrays(GL_TRIANGLES, 0, N);
+    free(Coords);
 }
 
 static void RenderConsole(render_state* RenderState, console* Console, glm::mat4 ProjectionMatrix, glm::mat4 View)
@@ -1075,7 +1068,7 @@ static void Render(game_state* GameState)
     }
     else
     {
-		//glfwSetInputMode(GameState->RenderState.Window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+        //glfwSetInputMode(GameState->RenderState.Window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
         RenderGame(GameState);
     }
     
