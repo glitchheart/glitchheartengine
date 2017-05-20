@@ -404,7 +404,6 @@ extern "C" UPDATE(Update)
             GameState->LevelPath = "../assets/levels/level_02.plv";
         }
         
-        
         InitPlayer(GameState);
         
         LoadLevelFromFile(GameState->LevelPath, &GameState->CurrentLevel, GameState);
