@@ -156,13 +156,13 @@ int main(void)
         {
             ControllerKeys(&GameState,GLFW_JOYSTICK_1);
         }
-        
+        /*
         FrameCounterForAssetCheck++;
         if(FrameCounterForAssetCheck == 10)
         {
             ListenToFileChanges(&AssetManager);
             FrameCounterForAssetCheck = 0;
-        }
+        }*/
     }
     
     CleanupSound(&SoundDevice,&GameState.SoundManager);

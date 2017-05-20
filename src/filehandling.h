@@ -32,7 +32,7 @@ struct asset_manager
     bool ListenForChanges;
     
     //shaders
-    uint32 DirtyVertexShaderIndices[Shader_Count]; //2 is the number of shaders, set to 1 if they should be reloaded
+    uint32 DirtyVertexShaderIndices[Shader_Count]; //set to 1 if they should be reloaded
     uint32 DirtyFragmentShaderIndices[Shader_Count];
     time_t VertexShaderTimes[Shader_Count];
     time_t FragmentShaderTimes[Shader_Count];

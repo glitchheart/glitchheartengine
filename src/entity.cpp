@@ -14,14 +14,21 @@ static void InitPlayer(game_state* GameState)
     Player->Player.MaxDashTime = 0.2;
     Player->Player.DashSpeed = 30;
     Player->Player.AttackCooldown = 0.3;
+    Player->IsKinematic = false;
+    Player->CurrentAnimation = 0;
+    Player->AnimationInfo.Playing = false;
+    Player->AnimationInfo.FrameIndex = 0;
+    Player->AnimationInfo.CurrentTime = 0;
     
     render_entity* PlayerRenderEntity = &GameState->RenderState.RenderEntities[GameState->RenderState.RenderEntityCount];
     PlayerRenderEntity->ShaderIndex = Shader_SpriteSheetShader;
     PlayerRenderEntity->TextureHandle = GameState->RenderState.PlayerTexture;
-    
+    PlayerRenderEntity->Rendered = true;
     PlayerRenderEntity->Entity = &*Player;
     Player->RenderEntityHandle = GameState->RenderState.RenderEntityCount++;
+    PlayerRenderEntity->Color = glm::vec4(1, 1, 1, 1);
     
+    Player->Position = glm::vec2(0, 0);
     Player->Rotation = glm::vec3(0, 0, 0);
     Player->Scale = glm::vec3(2, 2, 0);
     Player->Velocity = glm::vec2(0,0);
@@ -52,6 +59,10 @@ static void InitPlayer(game_state* GameState)
     PlayerWeaponRenderEntity->TextureHandle = GameState->RenderState.SwordTopRightTexture;
     PlayerWeaponRenderEntity->Entity = &*PlayerWeapon;
     PlayerWeapon->RenderEntityHandle = GameState->RenderState.RenderEntityCount++;
+    PlayerWeapon->CurrentAnimation = 0;
+    PlayerWeapon->AnimationInfo.Playing = false;
+    PlayerWeapon->AnimationInfo.FrameIndex = 0;
+    PlayerWeapon->AnimationInfo.CurrentTime = 0;
     
     PlayerWeapon->Name = "Player weapon";
     PlayerWeapon->Type = Entity_PlayerWeapon;
@@ -82,12 +93,17 @@ static void SpawnEnemy(game_state* GameState, glm::vec2 Position)
     
     EnemyRenderEntity->Entity = &*Enemy;
     Enemy->RenderEntityHandle = GameState->RenderState.RenderEntityCount++;
+    Enemy->CurrentAnimation = 0;
+    Enemy->AnimationInfo.Playing = false;
+    Enemy->AnimationInfo.FrameIndex = 0;
+    Enemy->AnimationInfo.CurrentTime = 0;
     
     Enemy->Rotation = glm::vec3(0, 0, 0);
     Enemy->Position = Position;
     Enemy->Scale = glm::vec3(2, 2, 0);
     Enemy->Velocity = glm::vec2(-2,0);
-    
+    Enemy->IsDead = false;
+    Enemy->IsKinematic = false;
     Enemy->Layer = Layer_Enemy;
     //Enemy->IgnoreLayers = Layer_Enemy;
     
@@ -114,33 +130,6 @@ static void SpawnEnemy(game_state* GameState, glm::vec2 Position)
     Enemy->Enemy.AIState = AI_Idle;
     
     Enemy->EntityIndex = GameState->EntityCount;
-    GameState->EntityCount++;
-}
-
-
-static void InitCrosshair(game_state* GameState)
-{
-    entity* Crosshair = &GameState->Entities[GameState->EntityCount];
-    Crosshair->Name = "Crosshair";
-    Crosshair->Type = Entity_Crosshair;
-    
-    Crosshair->IsKinematic = true;
-    collision_AABB CollisionAABB2;
-    CollisionAABB2.Center = glm::vec2(0,0);
-    CollisionAABB2.Extents = glm::vec2(0.5f,0.5f);
-    Crosshair->CollisionAABB = CollisionAABB2;
-    
-    render_entity* CrosshairRenderEntity = &GameState->RenderState.RenderEntities[GameState->RenderState.RenderEntityCount];
-    CrosshairRenderEntity->ShaderIndex = Shader_Texture;
-    CrosshairRenderEntity->TextureHandle = GameState->RenderState.CrosshairTexture;
-    
-    CrosshairRenderEntity->Entity = &*Crosshair;
-    Crosshair->RenderEntityHandle = GameState->RenderState.RenderEntityCount++;
-    
-    Crosshair->Rotation = glm::vec3(0, 0, 0);
-    Crosshair->Scale = glm::vec3(1, 1, 0);
-    
-    Crosshair->EntityIndex = GameState->EntityCount;
     GameState->EntityCount++;
 }
 
