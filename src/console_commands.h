@@ -50,10 +50,8 @@ static char* LoadLevel(game_state* GameState, char** Arguments)
     {
         free(GameState->CurrentLevel.Tilemap.Data[X]);
     }
-    
     free(GameState->CurrentLevel.Tilemap.Data);
     
-    GameState->PlayerIndex = 0;
     GameState->EntityCount = 0;
     GameState->RenderState.RenderEntityCount = 0;
     
@@ -65,7 +63,6 @@ static char* LoadLevel(game_state* GameState, char** Arguments)
     //}
     
     return Result;
-    
 }
 
 static char* Exit(game_state* GameState, char** Arguments)

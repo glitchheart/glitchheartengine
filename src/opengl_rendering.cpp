@@ -1075,7 +1075,7 @@ static void Render(game_state* GameState)
     }
     else
     {
-        //glfwSetInputMode(GameState->RenderState.Window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+		//glfwSetInputMode(GameState->RenderState.Window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
         RenderGame(GameState);
     }
     

@@ -130,13 +130,6 @@ struct render_state
     size_t WireframeQuadVerticesSize = 10 * sizeof(GLfloat);
     GLuint BoundVertexBuffer;
     GLuint BoundTexture;
-    //sprites
-    //GLfloat SpriteQuadVertices[16] =
-    //{ //pos        //texcoords
-    //0.0f, 1.0f, 0, 1.0f,
-    //1.0f, 1.0f, 1.0f,  1.0f,
-    //1.0f, 0.0f, 1.0f,  0,
-    //0.0f, 0.0f, 0,  0};
     
     GLfloat SpriteQuadVertices[16] =
     { //pos        //texcoords

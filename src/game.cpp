@@ -393,17 +393,21 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
 
 extern "C" UPDATE(Update)
 {
+    CheckConsoleInput(GameState, DeltaTime);
+    
     if(!GameState->IsInitialized)
     {
         if(!GameState->ShouldReload)
         {
             LoadAnimations(GameState);
             InitCommands();
+            GameState->LevelPath = "../assets/levels/level_02.plv";
         }
+        
         
         InitPlayer(GameState);
         
-        LoadLevelFromFile(GameState->LevelPath ? GameState->LevelPath :"../assets/levels/level_02.plv", &GameState->CurrentLevel, GameState);
+        LoadLevelFromFile(GameState->LevelPath, &GameState->CurrentLevel, GameState);
         
         //@Cleanup this should be in the level file
         SpawnMillionBarrels(GameState);
@@ -416,9 +420,6 @@ extern "C" UPDATE(Update)
         
         GameState->IsInitialized = true;
         GameState->ShouldReload = false;
-        
-        printf("Initialized player\n");
-        
     }
     
 #ifdef DEBUG
@@ -482,5 +483,4 @@ extern "C" UPDATE(Update)
     }
     
     UpdateEntities(GameState, DeltaTime);
-    CheckConsoleInput(GameState, DeltaTime);
 }
