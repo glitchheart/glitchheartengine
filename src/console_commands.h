@@ -42,33 +42,30 @@ static char* LoadLevel(game_state* GameState, char** Arguments)
     char* Result = (char*)malloc(25 * sizeof(char));
     
     //@Incomplete still needs to respawn the player
+    GameState->LevelPath = Path;
+    GameState->IsInitialized = false;
+    GameState->ShouldReload = true;
+    
+    for(uint32 X = 0; X < GameState->CurrentLevel.Tilemap.Width; X++)
+    {
+        free(GameState->CurrentLevel.Tilemap.Data[X]);
+    }
+    
+    free(GameState->CurrentLevel.Tilemap.Data);
+    
     GameState->PlayerIndex = 0;
     GameState->EntityCount = 0;
-    
     GameState->RenderState.RenderEntityCount = 0;
     
-    if(LoadLevelFromFile(Path, &Level, GameState))
-    {
-        printf("Level loaded\n");
-        level* CurrentLevel = &GameState->CurrentLevel;
-        
-        GameState->CurrentLevel = Level;
-        //GameState->Entities[GameState->PlayerIndex].Position = Level.PlayerStartPosition;
-        
-        for(uint32 X = 0; X < CurrentLevel->Tilemap.Width; X++)
-        {
-            free(CurrentLevel->Tilemap.Data[X]);
-        }
-        free(CurrentLevel->Tilemap.Data);
-        
-        sprintf(Result, "Loaded level");
-    }
-    else
-    {
-        sprintf(Result, "Level not found: '%s.plv'", Arguments[0]);
-    }
+    sprintf(Result, "Loaded level");
+    
+    //else
+    //{
+    //sprintf(Result, "Level not found: '%s.plv'", Arguments[0]);
+    //}
     
     return Result;
+    
 }
 
 static char* Exit(game_state* GameState, char** Arguments)

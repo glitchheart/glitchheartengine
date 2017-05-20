@@ -395,12 +395,15 @@ extern "C" UPDATE(Update)
 {
     if(!GameState->IsInitialized)
     {
-        LoadAnimations(GameState);
+        if(!GameState->ShouldReload)
+        {
+            LoadAnimations(GameState);
+            InitCommands();
+        }
         
         InitPlayer(GameState);
-        //InitCrosshair(GameState);
         
-        LoadLevelFromFile("../assets/levels/level_02.plv", &GameState->CurrentLevel, GameState);
+        LoadLevelFromFile(GameState->LevelPath ? GameState->LevelPath :"../assets/levels/level_02.plv", &GameState->CurrentLevel, GameState);
         
         //@Cleanup this should be in the level file
         SpawnMillionBarrels(GameState);
@@ -410,8 +413,12 @@ extern "C" UPDATE(Update)
         GameState->Camera.ViewportHeight = GameState->RenderState.WindowHeight / 20;
         
         GameState->GameMode = Mode_InGame;
-        InitCommands();
+        
         GameState->IsInitialized = true;
+        GameState->ShouldReload = false;
+        
+        printf("Initialized player\n");
+        
     }
     
 #ifdef DEBUG
