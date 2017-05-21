@@ -34,6 +34,7 @@ struct sound_queue
 
 struct sound_manager
 {
+    bool32 Muted;
     union 
     {
         sound_effect SoundEffects[64];
