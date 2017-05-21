@@ -296,12 +296,12 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
                             
                             if(PenetrationVector.x != 0)
                             {
-                                PV.x = PenetrationVector.x * 1.0001;
+                                PV.x = PenetrationVector.x * 1.0001; // This is necessary to prevent the player from getting stuck
                             }
                             
                             if(PenetrationVector.y != 0)
                             {
-                                PV.y = PenetrationVector.y * 1.0001;
+                                PV.y = PenetrationVector.y * 1.0001; // This is necessary to prevent the player from getting stuck
                             }
                             
                             if(Entity->Type == Entity_Barrel)
