@@ -4,9 +4,9 @@ framecount 1
 loop 1
 timeperframe 0.05
 rows 1
-columns 10
+columns 11
 frames
-{0.0,0.0}
+0 0
 texture 1
 
 

@@ -190,7 +190,6 @@ void Hit(game_state* GameState, entity* Entity)
     
     if(Entity->Type == Entity_Enemy)
     {
-        Entity->Enemy.LastAIState = Entity->Enemy.AIState;
         Entity->Enemy.AIState = AI_Hit;
         PlayAnimation(Entity, &GameState->EnemyIdleAnimation);
     }

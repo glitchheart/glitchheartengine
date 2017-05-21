@@ -91,7 +91,6 @@ struct entity
             real64 AttackCooldown;
             real64 AttackCooldownCounter;
             AI_State AIState;
-            AI_State LastAIState;
         } Enemy;
     };
     glm::vec2 Velocity;

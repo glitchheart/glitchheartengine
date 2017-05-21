@@ -50,8 +50,7 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                     
                     if(!Entity->Player.IsDashing)
                     {
-                        //player movement
-                        // Controller
+                        // Player movement
                         Entity->Velocity.x = GetInputX(GameState) * Entity->Player.WalkingSpeed * (real32)DeltaTime;
                         Entity->Velocity.y = GetInputY(GameState) * Entity->Player.WalkingSpeed * (real32)DeltaTime;
                         
@@ -273,6 +272,7 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                             }
                             else if(DistanceToPlayer < Entity->Enemy.MinDistance)
                             {
+                                printf("ATTACK!\n");
                                 Entity->Enemy.AIState = AI_Attacking;
                             }
                             else
@@ -289,6 +289,7 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                         {
                             if(Entity->Enemy.AttackCooldownCounter == 0)
                             {
+                                printf("SHIT BOI\n");
                                 Entity->Enemy.IsAttacking = true;
                                 PlayAnimation(Entity, &GameState->PlayerAttackAnimation);
                                 PlaySoundEffect(GameState, &GameState->SoundManager.SwordSlash01);
@@ -311,17 +312,18 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                                 Entity->Enemy.IsAttacking = true;
                             }
                         }
+                        break;
                         case AI_Hit:
                         {
+                            PlayAnimation(Entity, &GameState->EnemyHitAnimation);
                             if(Entity->HitCooldownLeft <= 0)
                             {
                                 Entity->HitCooldownLeft = 0;
-                                Entity->Enemy.AIState = Entity->Enemy.LastAIState;
-                                if(Entity->Enemy.AIState == AI_Following)
-                                    PlayAnimation(Entity, &GameState->EnemyWalkAnimation);
+                                Entity->Enemy.AIState = AI_Idle;
+                                
+                                PlayAnimation(Entity, &GameState->EnemyIdleAnimation);
                             }
                         }
-                        break;
                         break;
                     }
                 }
