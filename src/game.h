@@ -11,9 +11,11 @@
 #include "opengl_rendering.h"
 #include "animation.h"
 #include "collision.h"
+#include "ai.h"
 #include "entity.h"
 #include "level.h"
 #include "keycontroller.h"
+
 
 #include "sound.h"
 #include "console.h"

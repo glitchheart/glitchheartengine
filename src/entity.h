@@ -86,10 +86,15 @@ struct entity
             real64 AttackCooldown;
             real64 AttackCooldownCounter;
             AI_State AIState;
+            real32 AStarCooldown;
+            real32 AStarInterval;
         } Enemy;
     };
+    glm::vec2* AStarPath;
+    uint32 AStarPathLength;
     glm::vec2 Velocity;
 };
+
 
 #define NUM_ENTITIES 2048
 

@@ -128,12 +128,14 @@ static void SpawnEnemy(game_state* GameState, glm::vec2 Position)
     Enemy->Enemy.MinDistance = 1;
     Enemy->Enemy.AttackCooldown = 1.0f;
     Enemy->Enemy.AIState = AI_Idle;
+    Enemy->Enemy.AStarCooldown = 0.0f;
+    Enemy->Enemy.AStarInterval = 2.0f;
     
     Enemy->EntityIndex = GameState->EntityCount;
     GameState->EntityCount++;
 }
 
-void SpawnMillionBarrels(game_state* GameState)
+static void SpawnMillionBarrels(game_state* GameState)
 {
     uint32 OneMillion = 1;
     for(uint32 i = 0; i < OneMillion; i++)
@@ -181,7 +183,7 @@ void SpawnMillionBarrels(game_state* GameState)
 
 
 //@Cleanup move this
-void Kill(game_state* GameState, entity* Entity)
+static void Kill(game_state* GameState, entity* Entity)
 {
     GameState->RenderState.RenderEntities[Entity->RenderEntityHandle].Rendered = false;
     Entity->IsDead = true;

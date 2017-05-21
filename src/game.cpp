@@ -7,6 +7,7 @@
 #include "collision.cpp"
 #include "level.cpp"
 #include "console.cpp"
+#include "ai.cpp"
 
 #define DEBUG
 
@@ -265,6 +266,16 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                                 Entity->Velocity = glm::vec2(Direction.x * Entity->Enemy.WalkingSpeed * DeltaTime, Direction.y * Entity->Enemy.WalkingSpeed * DeltaTime);
                                 
                                 Entity->IsFlipped = Entity->Velocity.x < 0;
+                                
+                                if(Entity->Enemy.AStarCooldown <= 0.0f)
+                                {
+                                    AStar(Entity, GameState, Entity->Position, Player.Position);
+                                    Entity->Enemy.AStarCooldown = Entity->Enemy.AStarInterval;
+                                }
+                                else
+                                {
+                                    Entity->Enemy.AStarCooldown -= DeltaTime;
+                                }
                             }
                         }
                         break;
@@ -401,7 +412,7 @@ extern "C" UPDATE(Update)
         {
             LoadAnimations(GameState);
             InitCommands();
-            GameState->LevelPath = "../assets/levels/level_02.plv";
+            GameState->LevelPath = "../assets/levels/level_03.plv";
         }
         
         
