@@ -56,6 +56,9 @@ static void LoadAnimationFromFile(const char* FilePath, animation* Animation, re
         
         Animation->Frames = (sprite_sheet_frame*)malloc(sizeof(sprite_sheet_frame) * Animation->FrameCount);
         
+        real32 FrameWidth = 1.0 / Animation->Columns;
+        real32 FrameHeight = 1.0 / Animation->Rows;
+        
         for(uint32 i = 0; i < Animation->FrameCount; i++)
         {
             real32 OffsetX;
@@ -63,8 +66,8 @@ static void LoadAnimationFromFile(const char* FilePath, animation* Animation, re
             
             if(fgets(LineBuffer, 255, File))
             {
-                sscanf(LineBuffer, "{%f,%f}", &OffsetX, &OffsetY);
-                Animation->Frames[i] = { OffsetX, OffsetY };
+                sscanf(LineBuffer, "%f %f", &OffsetX, &OffsetY);
+                Animation->Frames[i] = { OffsetX * FrameWidth, OffsetY * FrameHeight };
             }
         }
         
@@ -84,10 +87,12 @@ static void LoadAnimations(game_state* GameState)
     LoadAnimationFromFile("../assets/animations/player_anim_idle_new.pownim", &GameState->EnemyIdleAnimation, &GameState->RenderState);
     LoadAnimationFromFile("../assets/animations/player_anim_walk_new.pownim", &GameState->EnemyWalkAnimation, &GameState->RenderState);
     LoadAnimationFromFile("../assets/animations/player_anim_attack_new.pownim", &GameState->EnemyAttackAnimation, &GameState->RenderState);
+    LoadAnimationFromFile("../assets/animations/player_anim_hit.pownim", &GameState->EnemyHitAnimation, &GameState->RenderState);
     LoadAnimationFromFile("../assets/animations/player_anim_sword_top_right.pownim", &GameState->SwordTopRightAnimation, &GameState->RenderState);
     LoadAnimationFromFile("../assets/animations/player_anim_idle_new.pownim", &GameState->PlayerIdleAnimation, &GameState->RenderState);
     LoadAnimationFromFile("../assets/animations/player_anim_walk_new.pownim", &GameState->PlayerWalkAnimation, &GameState->RenderState);
     LoadAnimationFromFile("../assets/animations/player_anim_attack_new.pownim", &GameState->PlayerAttackAnimation, &GameState->RenderState);
+    LoadAnimationFromFile("../assets/animations/player_anim_hit.pownim", &GameState->PlayerHitAnimation, &GameState->RenderState);
 }
 
 static void PlayAnimation(entity* Entity, animation* Animation)
