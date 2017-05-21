@@ -128,7 +128,8 @@ static void SpawnEnemy(game_state* GameState, glm::vec2 Position)
     Enemy->Enemy.MinDistance = 1;
     Enemy->Enemy.AttackCooldown = 1.0f;
     Enemy->Enemy.AIState = AI_Idle;
-    
+    Enemy->Health = 2;
+    Enemy->HitCooldownTime = 0.4;
     Enemy->EntityIndex = GameState->EntityCount;
     GameState->EntityCount++;
 }
@@ -179,10 +180,24 @@ void SpawnMillionBarrels(game_state* GameState)
     }
 }
 
-
-//@Cleanup move this
-void Kill(game_state* GameState, entity* Entity)
+//@Incomplete: Maybe we will add a weapon type or damage amount
+void Hit(game_state* GameState, entity* Entity)
 {
-    GameState->RenderState.RenderEntities[Entity->RenderEntityHandle].Rendered = false;
-    Entity->IsDead = true;
+    Entity->Health -= 1;
+    Entity->HitCooldownLeft = Entity->HitCooldownTime;
+    
+    printf("Health %d Time left %f\n", Entity->Health, Entity->HitCooldownLeft); 
+    
+    if(Entity->Type == Entity_Enemy)
+    {
+        Entity->Enemy.LastAIState = Entity->Enemy.AIState;
+        Entity->Enemy.AIState = AI_Hit;
+        PlayAnimation(Entity, &GameState->EnemyIdleAnimation);
+    }
+    
+    if(Entity->Health <= 0)
+    {
+        GameState->RenderState.RenderEntities[Entity->RenderEntityHandle].Rendered = false;
+        Entity->IsDead = true;
+    }
 }

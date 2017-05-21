@@ -14,7 +14,8 @@ enum AI_State
     AI_Idle,
     AI_Alerted,
     AI_Following,
-    AI_Attacking
+    AI_Attacking,
+    AI_Hit
 };
 
 enum Entity_Enum
@@ -56,6 +57,10 @@ struct entity
     bool32 IsStatic; // For stuff that can't be moved by collision
     bool32 Pickup;
     collision_AABB* HitTrigger;
+    
+    int32 Health = -1;
+    real64 HitCooldownLeft;
+    real64 HitCooldownTime;
     union
     {
         struct
@@ -86,6 +91,7 @@ struct entity
             real64 AttackCooldown;
             real64 AttackCooldownCounter;
             AI_State AIState;
+            AI_State LastAIState;
         } Enemy;
     };
     glm::vec2 Velocity;

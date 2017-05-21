@@ -23,6 +23,11 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
     {
         entity* Entity = &GameState->Entities[EntityIndex];
         
+        if(Entity->HitCooldownLeft > 0)
+        {
+            Entity->HitCooldownLeft -= DeltaTime;
+        }
+        
         switch(Entity->Type)
         {
             case Entity_Player: 
@@ -200,6 +205,18 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                 collision_info CollisionInfo;
                 CheckCollision(GameState, Entity, &CollisionInfo);
                 
+                if(GameState->Entities[GameState->PlayerIndex].Player.IsAttacking)
+                {
+                    for(uint32 Index = 0; Index < CollisionInfo.OtherCount; Index++)
+                    {
+                        if(CollisionInfo.Other[Index]->Type == Entity_Enemy && CollisionInfo.Other[Index]->Enemy.AIState != AI_Hit)
+                        {
+                            PlaySoundEffect(GameState, &GameState->SoundManager.SwordHit01);
+                            Hit(GameState, CollisionInfo.Other[Index]);
+                        }
+                    }
+                }
+                
                 if(Player->Player.IsAttacking && !Entity->AnimationInfo.Playing)
                 {
                     Entity->CurrentAnimation = 0;
@@ -294,6 +311,17 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                                 Entity->Enemy.IsAttacking = true;
                             }
                         }
+                        case AI_Hit:
+                        {
+                            if(Entity->HitCooldownLeft <= 0)
+                            {
+                                Entity->HitCooldownLeft = 0;
+                                Entity->Enemy.AIState = Entity->Enemy.LastAIState;
+                                if(Entity->Enemy.AIState == AI_Following)
+                                    PlayAnimation(Entity, &GameState->EnemyWalkAnimation);
+                            }
+                        }
+                        break;
                         break;
                     }
                 }
