@@ -25,7 +25,6 @@ static void InitCommands()
 
 void ExecuteCommand(game_state *GameState)
 {
-    
     if(strcmp(" ",  GameState->Console.Buffer) != 0
        && strcmp("",  GameState->Console.Buffer) != 0) //NOTE(Daniel) if the command isn't an empty string
     {
@@ -63,10 +62,11 @@ void ExecuteCommand(game_state *GameState)
             if(strcmp(CommandName, Commands[i].Name) == 0)
             {
                 Found = true;
-                Result = Commands[i].FunctionPointer(GameState, ArgumentBuffer);
+                Result = Commands[i].FunctionPointer(GameState, Count > 0 ? ArgumentBuffer : 0);
                 break;
             }
         }
+        
         free(ArgumentBuffer);
         
         if(!Found)

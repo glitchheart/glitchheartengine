@@ -5,7 +5,7 @@ static char* Zoom(game_state* GameState, char** Arguments)
 {
     real32 ZoomAmount = (real32) strtod(Arguments[0], NULL);
     GameState->Camera.Zoom = ZoomAmount;
-    return CombineStrings("Zoom set to ", Arguments[0]);
+    return Concat("Zoom set to ", Arguments[0]);
 }
 
 static char* Jump(game_state* GameState, char** Arguments)
@@ -21,55 +21,61 @@ static char* Jump(game_state* GameState, char** Arguments)
 
 static char* LoadLevel(game_state* GameState, char** Arguments)
 {
-    printf("Ready to load level\n");
-    level Level;
-    
-    char* PathPrefix = "../assets/levels/";
-    char* PathSuffix = ".plv";
-    
-    char* Path = Concat(Concat(PathPrefix, Arguments[0]), PathSuffix);
-    
-    printf("String allocation\n");
-    
     char* Result = (char*)malloc(25 * sizeof(char));
     
-    FILE* File;
-    File = fopen(Path, "r");
-    
-    if(File)
+    if(Arguments)
     {
-        printf("adasd\n");
-        fclose(File);
-        GameState->LevelPath = Path;
-        GameState->IsInitialized = false;
-        GameState->ShouldReload = true;
+        printf("Ready to load level\n");
+        level Level;
         
-        for(uint32 X = 0; X < GameState->CurrentLevel.Tilemap.Width; X++)
+        char* PathPrefix = "../assets/levels/";
+        char* PathSuffix = ".plv";
+        
+        char* Path = Concat(Concat(PathPrefix, Arguments[0]), PathSuffix);
+        
+        printf("String allocation\n");
+        
+        FILE* File;
+        File = fopen(Path, "r");
+        
+        if(File)
         {
-            free(GameState->CurrentLevel.Tilemap.Data[X]);
+            printf("adasd\n");
+            fclose(File);
+            GameState->LevelPath = Path;
+            GameState->IsInitialized = false;
+            GameState->ShouldReload = true;
+            
+            for(uint32 X = 0; X < GameState->CurrentLevel.Tilemap.Width; X++)
+            {
+                free(GameState->CurrentLevel.Tilemap.Data[X]);
+            }
+            free(GameState->CurrentLevel.Tilemap.Data);
+            
+            GameState->CurrentLevel = {};
+            
+            for(uint32 Index = 0; Index < GameState->EntityCount; Index++)
+                GameState->Entities[Index] = {};
+            
+            for(uint32 Index = 0; Index < GameState->RenderState.RenderEntityCount; Index++)
+                GameState->RenderState.RenderEntities[Index] = {};
+            
+            GameState->EntityCount = 0;
+            GameState->RenderState.RenderEntityCount = 0;
+            
+            sprintf(Result, "Loaded level");
+            
+            printf("End of LoadLevel\n");
         }
-        free(GameState->CurrentLevel.Tilemap.Data);
-        
-        GameState->CurrentLevel = {};
-        
-        for(uint32 Index = 0; Index < GameState->EntityCount; Index++)
-            GameState->Entities[Index] = {};
-        
-        for(uint32 Index = 0; Index < GameState->RenderState.RenderEntityCount; Index++)
-            GameState->RenderState.RenderEntities[Index] = {};
-        
-        GameState->EntityCount = 0;
-        GameState->RenderState.RenderEntityCount = 0;
-        
-        sprintf(Result, "Loaded level");
-        
-        printf("End of LoadLevel\n");
+        else
+        {
+            sprintf(Result, "'%s' could not be loaded", Path);
+        }
     }
     else
     {
-        sprintf(Result, "'%s' could not be loaded", Path);
+        sprintf(Result, "Level name is expected as argument.");
     }
-    
     return Result;
 }
 

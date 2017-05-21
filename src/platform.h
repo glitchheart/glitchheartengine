@@ -44,23 +44,13 @@ struct CompareCStrings
     }
 };
 
-char* Concat(const char *s1, const char *s2)
+static char* Concat(const char *s1, const char *s2)
 {
     char *result = (char*)malloc(strlen(s1)+strlen(s2)+1);//+1 for the zero-terminator
-    //in real code you would check for errors in malloc here
     strcpy(result, s1);
     strcat(result, s2);
     return result;
 }
-
-static char* CombineStrings(const char * str1, const char* str2)
-{
-    char * str3 = (char *) malloc(1 + strlen(str1) + strlen(str2));
-    strcpy(str3, str1);
-    strcat(str3, str2);
-    return str3;
-}
-
 
 struct config_data
 {

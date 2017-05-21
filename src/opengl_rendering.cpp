@@ -59,7 +59,7 @@ static GLint ShaderCompilationErrorChecking(GLuint Shader)
 static GLuint LoadShader(const char* FilePath, shader *Shd)
 {
     Shd->VertexShader = glCreateShader(GL_VERTEX_SHADER);
-    char* VertexString = CombineStrings(FilePath,".vert");
+    char* VertexString = Concat(FilePath,".vert");
     GLchar *VertexText = LoadShaderFromFile(VertexString);
     
     glShaderSource(Shd->VertexShader, 1, &VertexText, NULL);
@@ -69,7 +69,7 @@ static GLuint LoadShader(const char* FilePath, shader *Shd)
         return GL_FALSE;
     
     Shd->FragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    char* FragmentString = CombineStrings(FilePath,".frag");
+    char* FragmentString = Concat(FilePath,".frag");
     GLchar *FragmentText = LoadShaderFromFile(FragmentString);
     
     glShaderSource(Shd->FragmentShader, 1, &FragmentText, NULL);
@@ -92,7 +92,7 @@ static GLuint LoadVertexShader(const char* FilePath, shader *Shd)
     Shd->Program = glCreateProgram();
     
     Shd->VertexShader = glCreateShader(GL_VERTEX_SHADER);
-    char* VertexString = CombineStrings(FilePath,".vert");
+    char* VertexString = Concat(FilePath,".vert");
     GLchar *VertexText = LoadShaderFromFile(VertexString);
     glShaderSource(Shd->VertexShader, 1, &VertexText, NULL);
     glCompileShader(Shd->VertexShader);
@@ -113,7 +113,7 @@ static GLuint LoadFragmentShader(const char* FilePath, shader *Shd)
     Shd->Program = glCreateProgram();
     
     Shd->FragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    char* FragmentString = CombineStrings(FilePath,".frag");
+    char* FragmentString = Concat(FilePath,".frag");
     GLchar *FragmentText = LoadShaderFromFile(FragmentString);
     glShaderSource(Shd->FragmentShader, 1, &FragmentText, NULL);
     glCompileShader(Shd->FragmentShader);
@@ -176,9 +176,8 @@ static void InitializeFreeTypeFont(char* FontPath, int FontSize, FT_Library Libr
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     
-    /* Linear filtering usually looks best for text */
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     
     unsigned int X = 0;
     
@@ -683,9 +682,17 @@ static void RenderConsole(render_state* RenderState, console* Console, glm::mat4
     RenderText(RenderState, RenderState->InconsolataFont, glm::vec4(1, 1, 1, 1),  &Console->Buffer[0], 25 / 1920.0f * (real32)RenderState->WindowWidth, (real32)RenderState->WindowHeight * 0.775f * PercentAnimated, 1);
     
     int index = 0;
-    for(int i = 0; i < HISTORY_BUFFER_LINES; i++)
+    
+    glm::vec4 Color;
+    
+    for(int Index = 0; Index < HISTORY_BUFFER_LINES; Index++)
     {
-        RenderText(RenderState, RenderState->InconsolataFont, glm::vec4(1, 1, 1, 1), &Console->HistoryBuffer[i][0], 25 / 1920.0f * (real32)RenderState->WindowWidth, (real32)RenderState->WindowHeight * 0.78f * PercentAnimated + (i + 1) * 25 * PercentAnimated, 1);
+        if(Index % 2 != 0)
+            Color = glm::vec4(0, 1, 0, 1);
+        else
+            Color = glm::vec4(1, 1, 1, 1);
+        
+        RenderText(RenderState, RenderState->InconsolataFont, Color, &Console->HistoryBuffer[Index][0], 25 / 1920.0f * (real32)RenderState->WindowWidth, (real32)RenderState->WindowHeight * 0.78f * PercentAnimated + (Index + 1) * 25 * PercentAnimated, 1);
     }
 }
 
