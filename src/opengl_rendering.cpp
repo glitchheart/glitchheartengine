@@ -672,10 +672,9 @@ static void RenderConsole(render_state* RenderState, console* Console, glm::mat4
     MeasureText(&RenderState->InconsolataFont, &Console->Buffer[0], &Width, &Height);
     
     //draw cursor
-    RenderRect(Render_Fill, RenderState, glm::vec4(AlphaValue, 1, AlphaValue, 1), 25 / 1920.0f * (real32)RenderState->WindowWidth + Width, RenderState->WindowHeight * 0.77f * PercentAnimated, 10, 20);
+    RenderRect(Render_Fill, RenderState, glm::vec4(AlphaValue, 1, AlphaValue, 1), 5 / 1920.0f * (real32)RenderState->WindowWidth + Width, RenderState->WindowHeight * 0.77f * PercentAnimated, 10, 20);
     
-    RenderText(RenderState, RenderState->InconsolataFont, glm::vec4(1, 1, 1, 1), ">", 5 / 1920.0f * (real32)RenderState->WindowWidth, (real32)RenderState->WindowHeight * 0.775f * PercentAnimated, 1);
-    RenderText(RenderState, RenderState->InconsolataFont, glm::vec4(1, 1, 1, 1),  &Console->Buffer[0], 25 / 1920.0f * (real32)RenderState->WindowWidth, (real32)RenderState->WindowHeight * 0.775f * PercentAnimated, 1);
+    RenderText(RenderState, RenderState->InconsolataFont, glm::vec4(0, 0.8, 0, 1),  &Console->Buffer[0], 5 / 1920.0f * (real32)RenderState->WindowWidth, (real32)RenderState->WindowHeight * 0.775f * PercentAnimated, 1);
     
     int index = 0;
     
@@ -688,7 +687,7 @@ static void RenderConsole(render_state* RenderState, console* Console, glm::mat4
         else
             Color = glm::vec4(1, 1, 1, 1);
         
-        RenderText(RenderState, RenderState->InconsolataFont, Color, &Console->HistoryBuffer[Index][0], 25 / 1920.0f * (real32)RenderState->WindowWidth, (real32)RenderState->WindowHeight * 0.78f * PercentAnimated + (Index + 1) * 25 * PercentAnimated, 1);
+        RenderText(RenderState, RenderState->InconsolataFont, Color, &Console->HistoryBuffer[Index][0], 5 / 1920.0f * (real32)RenderState->WindowWidth, (real32)RenderState->WindowHeight * 0.78f * PercentAnimated + (Index + 1) * 25 * PercentAnimated, 1);
     }
 }
 
