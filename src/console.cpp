@@ -71,7 +71,7 @@ void ExecuteCommand(game_state *GameState)
         
         if(!Found)
         {
-            Result = CombineStrings(Result, ": Command not found");
+            Result = Concat(Result, ": Command not found");
         }
         
         //Copy the command into the history buffer
