@@ -143,7 +143,6 @@ int main(void)
         Game.Update(DeltaTime, &GameState);
         
         CheckEditorUIInput(&GameState, DeltaTime);
-
         Render(&GameState);
         PlaySounds(&GameState);
         
@@ -157,13 +156,13 @@ int main(void)
         {
             ControllerKeys(&GameState,GLFW_JOYSTICK_1);
         }
-        /*
+        
         FrameCounterForAssetCheck++;
         if(FrameCounterForAssetCheck == 10)
         {
             ListenToFileChanges(&AssetManager);
             FrameCounterForAssetCheck = 0;
-        }*/
+        }
     }
     
     CleanupSound(&SoundDevice,&GameState.SoundManager);

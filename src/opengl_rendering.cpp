@@ -595,6 +595,7 @@ static void RenderText(render_state* RenderState, const render_font& Font, const
     Y *= RenderState->ScaleY;
     Y -= 1;
     
+    glBindVertexArray(Font.VAO);
     auto Shader = RenderState->Shaders[Shader_StandardFont];
     UseShader(&Shader);
     SetVec4Attribute(Shader.Program, "color", Color);
@@ -634,7 +635,6 @@ static void RenderText(render_state* RenderState, const render_font& Font, const
         real32 X2 =  X + Font.CharacterInfo[*P ].BL * RenderState->ScaleX;
         real32 Y2 = -Y - Font.CharacterInfo[*P ].BT * RenderState->ScaleY;
         
-        
         /* Advance the cursor to the start of the next character */
         X += Font.CharacterInfo[*P].AX * RenderState->ScaleX;
         Y += Font.CharacterInfo[*P].AY * RenderState->ScaleY;
@@ -651,11 +651,11 @@ static void RenderText(render_state* RenderState, const render_font& Font, const
         Coords[N++] = { X2 + W, -Y2 - H, Font.CharacterInfo[*P].TX + Font.CharacterInfo[*P].BW / Font.AtlasWidth, Font.CharacterInfo[*P].BH / Font.AtlasHeight };
     }
     
-    glBindVertexArray(Font.VAO);
     glBindBuffer(GL_ARRAY_BUFFER, Font.VBO);
     glBufferData(GL_ARRAY_BUFFER, 6 * strlen(Text) * sizeof(point), Coords, GL_DYNAMIC_DRAW);
     glDrawArrays(GL_TRIANGLES, 0, N);
     free(Coords);
+    glBindVertexArray(0);
 }
 
 static void RenderConsole(render_state* RenderState, console* Console, glm::mat4 ProjectionMatrix, glm::mat4 View)
@@ -1074,7 +1074,6 @@ static void Render(game_state* GameState)
     
     if(GameState->Console.CurrentTime > 0)
         RenderConsole(&GameState->RenderState, &GameState->Console, GameState->Camera.ProjectionMatrix,  GameState->Camera.ViewMatrix);
-    
     
     glfwSwapBuffers(GameState->RenderState.Window);
 }
