@@ -360,19 +360,15 @@ static void LoadTextures(render_state* RenderState)
     }
 }
 
-static void InitializeOpenGL(game_state* GameState, render_state* RenderState)
+static void InitializeOpenGL(game_state* GameState, render_state* RenderState, config_data* ConfigData)
 {
-    config_data ConfigData;
-    
-    LoadConfig("../assets/.config", &ConfigData);
-    
     if (!glfwInit())
         exit(EXIT_FAILURE);
     
     char WindowTitle[100];
-    sprintf(WindowTitle, "%s %s", ConfigData.Title, ConfigData.Version);
+    sprintf(WindowTitle, "%s %s", ConfigData->Title, ConfigData->Version);
     
-    RenderState->Window = glfwCreateWindow(ConfigData.ScreenWidth, ConfigData.ScreenHeight, &WindowTitle[0], ConfigData.Fullscreen ? glfwGetPrimaryMonitor() : NULL, NULL);
+    RenderState->Window = glfwCreateWindow(ConfigData->ScreenWidth, ConfigData->ScreenHeight, &WindowTitle[0], ConfigData->Fullscreen ? glfwGetPrimaryMonitor() : NULL, NULL);
     
     if (!RenderState->Window)
     {

@@ -96,8 +96,11 @@ int main(void)
     game_state GameState = {};
     GameState.InputController = {};
     
+    config_data ConfigData;
+    LoadConfig("../assets/.config", &ConfigData);
+    
     render_state RenderState;
-    InitializeOpenGL(&GameState, &RenderState);
+    InitializeOpenGL(&GameState, &RenderState, &ConfigData);
     GameState.RenderState = RenderState;
     
     game_code Game = LoadGameCode();
@@ -116,6 +119,7 @@ int main(void)
     if (SoundDevice.IsInitialized)
     {
         sound_manager SoundManager = {};
+        SoundManager.Muted = ConfigData.Muted;
         LoadSounds(&SoundManager);
         ResetSoundQueue(&SoundManager);
         GameState.SoundManager = SoundManager;

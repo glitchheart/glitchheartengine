@@ -59,6 +59,7 @@ struct config_data
     uint32 ScreenWidth;
     uint32 ScreenHeight;
     bool32 Fullscreen;
+    bool32 Muted;
 };
 
 static void LoadConfig(const char* FilePath, config_data* ConfigData)
@@ -72,6 +73,7 @@ static void LoadConfig(const char* FilePath, config_data* ConfigData)
     
     if(File)
     {
+        //@Cleanup: Should be changed to check for each property every line.
         if(fgets(LineBuffer, 255, File))
         {
             sscanf(LineBuffer, "title %s", ConfigData->Title);
@@ -95,6 +97,11 @@ static void LoadConfig(const char* FilePath, config_data* ConfigData)
         if(fgets(LineBuffer, 255, File))
         {
             sscanf(LineBuffer, "fullscreen %d", &ConfigData->Fullscreen);
+        }
+        
+        if(fgets(LineBuffer, 255, File))
+        {
+            sscanf(LineBuffer, "muted %d", &ConfigData->Muted);
         }
         fclose(File);
     }

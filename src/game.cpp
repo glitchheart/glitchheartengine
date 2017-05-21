@@ -426,6 +426,11 @@ extern "C" UPDATE(Update)
         GameState->RenderState.RenderColliders = !GameState->RenderState.RenderColliders;
     }
     
+    if(GetKeyDown(Key_F3, GameState))
+    {
+        GameState->SoundManager.Muted = !GameState->SoundManager.Muted;
+    }
+    
     if(GetKeyDown(Key_F2, GameState))
     {
         GameState->RenderState.RenderFPS = !GameState->RenderState.RenderFPS;
