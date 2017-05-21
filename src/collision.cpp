@@ -137,8 +137,7 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
                && OtherEntity->EntityIndex != Entity->EntityIndex 
                && !OtherEntity->IsKinematic && !OtherEntity->IsDead)
             {
-                
-                if(OtherEntity->HitTrigger && OtherEntity->Type == Entity_Enemy && Entity->Type == Entity_PlayerWeapon)
+                if(OtherEntity->HitTrigger)
                 {
                     collision_AABB MdHit;
                     MinkowskiDifference(OtherEntity->HitTrigger, &Entity->CollisionAABB, &MdHit);
@@ -147,13 +146,8 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
                        MdHit.Min.y <= 0 &&
                        MdHit.Max.y >= 0)
                     {
+                        CollisionInfo->Other[CollisionInfo->OtherCount++] = OtherEntity;
                         OtherEntity->HitTrigger->IsColliding = true;
-                        
-                        if(!OtherEntity->IsDead && GameState->Entities[GameState->PlayerIndex].Player.IsAttacking)
-                        {
-                            PlaySoundEffect(GameState, &GameState->SoundManager.SwordHit01);
-                            Kill(GameState, OtherEntity);
-                        }
                     }
                     else 
                     {
@@ -172,15 +166,6 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
                     
                     Entity->IsColliding = true;
                     Entity->CollisionAABB.IsColliding = true;
-                    
-                    if(OtherEntity->Type == Entity_Enemy && Entity->Type == Entity_PlayerWeapon)
-                    {
-                        if(!OtherEntity->IsDead && GameState->Entities[GameState->PlayerIndex].Player.IsAttacking)
-                        {
-                            PlaySoundEffect(GameState, &GameState->SoundManager.SwordHit01);
-                            Kill(GameState, OtherEntity);
-                        }
-                    }
                     
                     if(!Entity->CollisionAABB.IsTrigger && !OtherEntity->CollisionAABB.IsTrigger)
                     {
@@ -296,12 +281,12 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
                             
                             if(PenetrationVector.x != 0)
                             {
-                                PV.x = PenetrationVector.x * 1.0001; // This is necessary to prevent the player from getting stuck
+                                PV.x = PenetrationVector.x * 1.001; // This is necessary to prevent the player from getting stuck
                             }
                             
                             if(PenetrationVector.y != 0)
                             {
-                                PV.y = PenetrationVector.y * 1.0001; // This is necessary to prevent the player from getting stuck
+                                PV.y = PenetrationVector.y * 1.001; // This is necessary to prevent the player from getting stuck
                             }
                             
                             if(Entity->Type == Entity_Barrel)

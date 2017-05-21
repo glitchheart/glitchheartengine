@@ -790,8 +790,13 @@ static void RenderEntity(render_state *RenderState, entity &Entity, glm::mat4 Pr
                 
                 Model = glm::scale(Model, Scale);
                 
-                //if(Entity.Type == Entity_Enemy)
-                //printf("Entity: Name %s, position x %f y %f, rotation x %f y %f z %f\n", Entity.Name, Entity.Position.x, Entity.Position.y, Entity.Rotation.x, Entity.Rotation.y, Entity.Rotation.z);//PrintEntityInfo(Entity);
+                if(Entity.Type == Entity_Enemy)
+                {
+                    if(Entity.Enemy.AIState == AI_Hit)
+                        RenderEntity->Color = glm::vec4(1, 0, 0, 1);
+                    else
+                        RenderEntity->Color = glm::vec4(0, 1, 0, 1); //@Cleanup: This is just placeholder before we get a real enemy sprite that is different from the player
+                }
                 
                 if(Entity.CurrentAnimation) 
                 {
