@@ -1,7 +1,6 @@
 #ifndef GAMESTATE_H
 #define GAMESTATE_H
 
-
 #include "glm/gtc/matrix_transform.hpp"
 
 #include <GLFW/glfw3.h>

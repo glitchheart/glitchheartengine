@@ -1,5 +1,10 @@
 #include "console_commands.h"
 
+static void ReloadLevel(game_state* GameState)
+{
+    ReloadCurrentLevel(GameState);
+}
+
 static void AddCommand(char* Name, char* (*FunctionPointer)(game_state*, char**))
 {
     command_info Info = { Name, FunctionPointer };
@@ -51,6 +56,7 @@ void ExecuteCommand(game_state *GameState)
         
         bool32 Found = false;
         
+        char * ReturnedResult;
         
         for(uint32 i = 0; i < CommandCount; i++)
         {
@@ -61,6 +67,7 @@ void ExecuteCommand(game_state *GameState)
                 break;
             }
         }
+        free(ArgumentBuffer);
         
         if(!Found)
         {
@@ -79,11 +86,9 @@ void ExecuteCommand(game_state *GameState)
         free(Result);
         
         for(int i = 0; i < CONSOLE_BUFFER_SIZE; i++)
-            GameState->Console.Buffer[i] = '\0';
+            GameState->Console.Buffer[i] = 0;
         
         GameState->Console.BufferIndex = 0;
-        
-        //free(ResultCopy); //TODO(Daniel) this crashes the program. Find out why
     }
 }
 

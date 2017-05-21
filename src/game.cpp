@@ -395,6 +395,9 @@ extern "C" UPDATE(Update)
 {
     CheckConsoleInput(GameState, DeltaTime);
     
+    if(GetKeyDown(Key_T, GameState))
+        ReloadLevel(GameState);
+    
     if(!GameState->IsInitialized)
     {
         if(!GameState->ShouldReload)
@@ -405,7 +408,6 @@ extern "C" UPDATE(Update)
         }
         
         InitPlayer(GameState);
-        
         LoadLevelFromFile(GameState->LevelPath, &GameState->CurrentLevel, GameState);
         
         //@Cleanup this should be in the level file
