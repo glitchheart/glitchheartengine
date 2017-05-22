@@ -272,7 +272,6 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                             }
                             else if(DistanceToPlayer < Entity->Enemy.MinDistance)
                             {
-                                printf("ATTACK!\n");
                                 Entity->Enemy.AIState = AI_Attacking;
                             }
                             else
@@ -287,9 +286,11 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                         break;
                         case AI_Attacking:
                         {
+                            if(Entity->Enemy.IsAttacking)
+                                Entity->Enemy.AttackCooldownCounter += DeltaTime;
+                            
                             if(Entity->Enemy.AttackCooldownCounter == 0)
                             {
-                                printf("SHIT BOI\n");
                                 Entity->Enemy.IsAttacking = true;
                                 PlayAnimation(Entity, &GameState->PlayerAttackAnimation);
                                 PlaySoundEffect(GameState, &GameState->SoundManager.SwordSlash01);
@@ -304,12 +305,10 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                                 PlayAnimation(Entity, &GameState->PlayerIdleAnimation);
                             }
                             
-                            Entity->Enemy.AttackCooldownCounter += DeltaTime;
-                            
                             if(Entity->Enemy.AttackCooldownCounter >= Entity->Enemy.AttackCooldown)
                             {
                                 Entity->Enemy.AttackCooldownCounter = 0;
-                                Entity->Enemy.IsAttacking = true;
+                                Entity->Enemy.IsAttacking = false;
                             }
                         }
                         break;
@@ -347,6 +346,62 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                 
                 collision_info CollisionInfo;
                 CheckCollision(GameState, Entity, &CollisionInfo);
+            }
+            break;
+            case Entity_EnemyWeapon:
+            {
+                //@Cleanup: This attack code is the almost identical to the player. Do something about it!
+                entity* Enemy = &GameState->Entities[Entity->Weapon.EntityHandle];
+                render_entity* RenderEntity = &GameState->RenderState.RenderEntities[Entity->RenderEntityHandle];
+                
+                RenderEntity->Color = glm::vec4(1, 1, 1, 1);
+                
+                glm::vec2 Pos = Enemy->Position;
+                
+                Entity->IsFlipped = Enemy->IsFlipped;
+                
+                if(Enemy->IsFlipped)
+                {
+                    Entity->CollisionAABB.Offset = glm::vec2(-0.8, 0);
+                    Entity->Position = glm::vec2(Pos.x - 1.3f, Pos.y - 1.5f);
+                }
+                else
+                {
+                    Entity->CollisionAABB.Offset = glm::vec2(0.7, 0);
+                    Entity->Position = glm::vec2(Pos.x - 0.5f, Pos.y - 1.5f);
+                }
+                
+                Entity->CollisionAABB.Center = glm::vec2(Entity->Position.x + Entity->Center.x * Entity->Scale.x + Entity->CollisionAABB.Offset.x, Entity->Position.y + Entity->Center.y * Entity->Scale.y + Entity->CollisionAABB.Offset.y);
+                
+                collision_info CollisionInfo;
+                CheckCollision(GameState, Entity, &CollisionInfo);
+                
+                if(Enemy->Enemy.IsAttacking)
+                {
+                    for(uint32 Index = 0; Index < CollisionInfo.OtherCount; Index++)
+                    {
+                        if(CollisionInfo.Other[Index]->Type == Entity_Player && !CollisionInfo.Other[Index]->Player.IsDashing)
+                        {
+                            PlaySoundEffect(GameState, &GameState->SoundManager.SwordHit01);
+                            Hit(GameState, CollisionInfo.Other[Index]);
+                        }
+                    }
+                }
+                
+                if(Enemy->Enemy.IsAttacking)
+                {
+                    if(Enemy->Enemy.AttackCooldownCounter == 0)
+                    {
+                        Entity->CurrentAnimation = 0;
+                        PlayAnimation(Entity, &GameState->SwordTopRightAnimation);
+                        RenderEntity->Rendered = true;
+                    }
+                }
+                
+                if(!Entity->AnimationInfo.Playing)
+                {
+                    RenderEntity->Rendered = false;
+                }
             }
             break;
             case Entity_Barrel:

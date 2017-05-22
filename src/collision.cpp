@@ -126,6 +126,7 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
         }
         
         glm::vec2 PV;
+        CollisionInfo->OtherCount = 0;
         
         for(uint32 OtherEntityIndex = 0;
             OtherEntityIndex < GameState->EntityCount;
@@ -147,6 +148,7 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
                        MdHit.Max.y >= 0)
                     {
                         CollisionInfo->Other[CollisionInfo->OtherCount++] = OtherEntity;
+                        
                         OtherEntity->HitTrigger->IsColliding = true;
                     }
                     else 
