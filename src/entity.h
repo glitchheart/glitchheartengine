@@ -26,6 +26,7 @@ enum Entity_Enum
     Entity_Tile,
     Entity_PalmTree,
     Entity_Enemy,
+    Entity_EnemyWeapon,
     Entity_Barrel,
     
     Entity_Max
@@ -92,6 +93,11 @@ struct entity
             real64 AttackCooldownCounter;
             AI_State AIState;
         } Enemy;
+        struct
+        {
+            uint32 EntityHandle;
+        } Weapon;
+        
     };
     glm::vec2 Velocity;
 };

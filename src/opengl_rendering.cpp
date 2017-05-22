@@ -769,6 +769,7 @@ static void RenderEntity(render_state *RenderState, entity &Entity, glm::mat4 Pr
             case Entity_Crosshair:
             case Entity_Enemy:
             case Entity_Player:
+            case Entity_EnemyWeapon:
             case Entity_PlayerWeapon:
             case Entity_Barrel:
             {
