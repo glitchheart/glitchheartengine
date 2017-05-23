@@ -2,7 +2,7 @@ name player_sword_top_right
 type sprite
 framecount 4
 loop 0
-timeperframe 0.08
+timeperframe 0.05
 rows 1
 columns 4
 frames

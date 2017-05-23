@@ -51,23 +51,28 @@ struct game_state
     input_controller InputController;
     sound_manager SoundManager;
     uint16 EntityCount;
-    entity Entities[NUM_ENTITIES]; // entity.h NUM_ENTITIES
+    entity Entities[NUM_ENTITIES];
     
     console Console;
     editor_ui EditorUI;
     
     union
     {
-        animation Animation[9];
+        animation Animation[13];
         struct
         {
             animation PlayerIdleAnimation;
             animation PlayerWalkAnimation;
+            animation PlayerWalkDownAnimation;
+            animation PlayerWalkUpAnimation;
             animation PlayerAttackAnimation;
             animation PlayerHitAnimation;
             animation EnemyIdleAnimation;
             animation EnemyWalkAnimation;
+            animation EnemyWalkUpAnimation;
+            animation EnemyWalkDownAnimation;
             animation EnemyAttackAnimation;
+            
             animation EnemyHitAnimation;
             animation SwordTopRightAnimation;
         };

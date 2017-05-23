@@ -195,12 +195,12 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                     if(Player->IsFlipped)
                     {
                         Entity->CollisionAABB.Offset = glm::vec2(-0.8, 0);
-                        Entity->Position = glm::vec2(Pos.x - 1.3f, Pos.y - 1.5f);
+                        Entity->Position = glm::vec2(Pos.x - 1.3f, Pos.y);
                     }
                     else
                     {
                         Entity->CollisionAABB.Offset = glm::vec2(0.7, 0);
-                        Entity->Position = glm::vec2(Pos.x - 0.5f, Pos.y - 1.5f);
+                        Entity->Position = glm::vec2(Pos.x - 0.5f, Pos.y);
                     }
                     Entity->CollisionAABB.Center = glm::vec2(Entity->Position.x + Entity->Center.x * Entity->Scale.x + Entity->CollisionAABB.Offset.x, Entity->Position.y + Entity->Center.y * Entity->Scale.y + Entity->CollisionAABB.Offset.y);
                     

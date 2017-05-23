@@ -4,7 +4,7 @@ framecount 8
 loop 1
 timeperframe 0.05
 rows 1
-columns 11
+columns 21
 frames
 0 0
 1 0
