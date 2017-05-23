@@ -15,6 +15,7 @@ static void InitPlayer(game_state* GameState)
     Player->Player.MaxDashTime = 0.2;
     Player->Player.DashSpeed = 30;
     Player->Player.AttackCooldown = 0.3;
+    Player->Active = true;
     Player->IsKinematic = false;
     Player->CurrentAnimation = 0;
     Player->AnimationInfo.Playing = false;
@@ -51,6 +52,7 @@ static void InitPlayer(game_state* GameState)
     entity* PlayerWeapon = &GameState->Entities[GameState->EntityCount];
     PlayerWeapon->Name = "Player weapon";
     PlayerWeapon->Type = Entity_PlayerWeapon;
+    PlayerWeapon->Active = true;
     
     render_entity* PlayerWeaponRenderEntity = &GameState->RenderState.RenderEntities[GameState->RenderState.RenderEntityCount];
     PlayerWeaponRenderEntity->Rendered = true;
@@ -98,7 +100,7 @@ static void SpawnEnemy(game_state* GameState, glm::vec2 Position)
     Enemy->Position = Position;
     Enemy->Scale = glm::vec3(2, 2, 0);
     Enemy->Velocity = glm::vec2(-2,0);
-    Enemy->IsDead = false;
+    Enemy->Active = true;
     Enemy->IsKinematic = false;
     Enemy->Layer = Layer_Enemy;
     //Enemy->IgnoreLayers = Layer_Enemy;
@@ -166,6 +168,7 @@ void SpawnMillionBarrels(game_state* GameState)
         {
             entity* Barrel = &GameState->Entities[GameState->EntityCount];
             Barrel->Name = "barrel";
+            Barrel->Active = true;
             Barrel->Type = Entity_Barrel;
             Barrel->Layer = Layer_Environment;
             Barrel->IgnoreLayers = Layer_Environment;
@@ -220,6 +223,6 @@ void Hit(game_state* GameState, entity* Entity)
     if(Entity->Health <= 0)
     {
         GameState->RenderState.RenderEntities[Entity->RenderEntityHandle].Rendered = false;
-        Entity->IsDead = true;
+        Entity->Active = false;
     }
 }

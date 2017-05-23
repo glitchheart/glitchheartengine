@@ -51,7 +51,7 @@ struct entity
     
     uint32 RenderEntityHandle;
     
-    bool32 IsDead;
+    bool32 Active;
     collision_AABB CollisionAABB;
     bool32 IsKinematic;
     bool32 IsColliding;
