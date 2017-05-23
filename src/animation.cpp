@@ -80,6 +80,8 @@ static void LoadAnimationFromFile(const char* FilePath, animation* Animation, re
             Animation->TextureHandle = RenderState->Textures[TextureIndex];
         }
     }
+    else
+        printf("Animation-file not loaded: '%s'\n", FilePath);
 }
 
 static void LoadAnimations(game_state* GameState)

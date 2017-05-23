@@ -508,7 +508,7 @@ extern "C" UPDATE(Update)
         //@Cleanup this should be in the level file
         SpawnMillionBarrels(GameState);
         
-        GameState->Camera.Zoom = 2.5f;
+        GameState->Camera.Zoom = 3.0f;
         GameState->Camera.ViewportWidth = GameState->RenderState.WindowWidth / 20;
         GameState->Camera.ViewportHeight = GameState->RenderState.WindowHeight / 20;
         

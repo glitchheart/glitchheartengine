@@ -393,7 +393,7 @@ static void InitializeOpenGL(game_state* GameState, render_state* RenderState, c
     
     glfwGetFramebufferSize(RenderState->Window, &RenderState->WindowWidth, &RenderState->WindowHeight);
     glViewport(0, 0, RenderState->WindowWidth, RenderState->WindowHeight);
-    
+    glDisable(GL_DITHER);
     printf("%s\n", glGetString(GL_VERSION));
     
     glfwSetWindowUserPointer(RenderState->Window, GameState);
