@@ -366,7 +366,6 @@ static void InitializeOpenGL(game_state* GameState, render_state* RenderState, c
         exit(EXIT_FAILURE);
     
     char WindowTitle[100];
-    sprintf(WindowTitle, "%s %s", ConfigData->Title, ConfigData->Version);
     
     RenderState->Window = glfwCreateWindow(ConfigData->ScreenWidth, ConfigData->ScreenHeight, &WindowTitle[0], ConfigData->Fullscreen ? glfwGetPrimaryMonitor() : NULL, NULL);
     

@@ -1,8 +1,8 @@
 name player_walk_down
 type sprite
-framecount 5
+framecount 4
 loop 1
-timeperframe 0.03
+timeperframe 0.1
 rows 1
 columns 21
 frames
@@ -10,5 +10,4 @@ frames
 12 0
 13 0
 12 0
-11 0
 texture 1
