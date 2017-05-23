@@ -64,9 +64,21 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                                 Entity->Velocity.y = GetInputY(GameState) * Entity->Player.WalkingSpeed * (real32)DeltaTime;
                                 
                                 if(Entity->Velocity.x != 0.0f || Entity->Velocity.y != 0.0f)
-                                    PlayAnimation(Entity, &GameState->PlayerWalkAnimation);
+                                {
+                                    if(Entity->Velocity.x < 0.02 && Entity->Velocity.x > -0.02)
+                                    {
+                                        if(Entity->Velocity.y < 0)
+                                            PlayAnimation(Entity, &GameState->PlayerWalkUpAnimation);
+                                        else
+                                            PlayAnimation(Entity, &GameState->PlayerWalkDownAnimation);
+                                    }
+                                    else
+                                        PlayAnimation(Entity, &GameState->PlayerWalkAnimation);
+                                }
                                 else
+                                {
                                     PlayAnimation(Entity, &GameState->PlayerIdleAnimation);
+                                }
                                 
                                 if(Entity->Velocity.x != 0)
                                     Entity->IsFlipped = Entity->Velocity.x < 0;
