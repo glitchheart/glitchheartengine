@@ -1,0 +1,10 @@
+name player_hit
+type sprite
+framecount 1
+loop 1
+timeperframe 0.05
+rows 1
+columns 21
+frames
+10 0
+texture 1

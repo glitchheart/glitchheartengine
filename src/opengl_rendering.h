@@ -52,7 +52,7 @@ enum Render_Mode
 };
 
 
-#define NUM_ENTITIES 2048
+#define NUM_ENTITIES 20
 
 struct entity;
 
@@ -107,6 +107,14 @@ struct render_font
     } CharacterInfo[255];
 };
 
+struct point
+{
+    GLfloat X;
+    GLfloat Y;
+    GLfloat S;
+    GLfloat T;
+}; 
+
 struct render_state
 {
     GLFWwindow *Window;
@@ -131,12 +139,21 @@ struct render_state
     GLuint BoundVertexBuffer;
     GLuint BoundTexture;
     
+    //GLfloat SpriteQuadVertices[16] =
+    //{ //pos        //texcoords
+    //0.0f, 1.0f, 0.00625f, 0.9375f,
+    //1.0f, 1.0f, 0.9375f,  0.9375f,
+    //1.0f, 0.0f, 0.9375f,  0.0625f,
+    //0.0f, 0.0f, 0.0625f,  0.0625};
+    
     GLfloat SpriteQuadVertices[16] =
     { //pos        //texcoords
-        0.0f, 1.0f, 0.00625f, 0.9375f,
-        1.0f, 1.0f, 0.9375f,  0.9375f,
-        1.0f, 0.0f, 0.9375f,  0.0625f,
-        0.0f, 0.0f, 0.0625f,  0.0625};
+        0.0f, 1.0f, 0, 1.0f,
+        1.0f, 1.0f, 1.0f,  1.0f,
+        1.0f, 0.0f, 1.0f,  0,
+        0.0f, 0.0f, 0,  0};
+    
+    
     GLuint SpriteVAO;
     GLuint SpriteQuadVBO;
     

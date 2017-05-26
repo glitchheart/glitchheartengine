@@ -24,207 +24,236 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
     {
         entity* Entity = &GameState->Entities[EntityIndex];
         
-        switch(Entity->Type)
+        if(Entity->Active)
         {
-            case Entity_Player: 
+            if(Entity->HitCooldownLeft > 0)
             {
-                if (!GameState->Console.Open)
+                Entity->HitCooldownLeft -= DeltaTime;
+            }
+            
+            switch(Entity->Type)
+            {
+                case Entity_Player: 
                 {
-                    // Set the last know direction for dash direction later
-                    if(Entity->Velocity.x != 0 || Entity->Velocity.y != 0)
+                    if (!GameState->Console.Open)
                     {
-                        glm::vec2 Direction = glm::normalize(Entity->Velocity);
-                        Entity->Player.LastKnownDirectionX = Direction.x;
-                        Entity->Player.LastKnownDirectionY = Direction.y;
-                    }
-                    
-                    if(!Entity->Player.IsAttacking && !Entity->Player.IsDashing && GetActionButtonDown(Action_Dash, GameState))
-                    {
-                        PlaySoundEffect(GameState, &GameState->SoundManager.Dash);
-                        Entity->Player.IsDashing = true;
-                    }
-                    
-                    if(!Entity->Player.IsDashing)
-                    {
-                        //player movement
-                        // Controller
-                        Entity->Velocity.x = GetInputX(GameState) * Entity->Player.WalkingSpeed * (real32)DeltaTime;
-                        Entity->Velocity.y = GetInputY(GameState) * Entity->Player.WalkingSpeed * (real32)DeltaTime;
-                        
-                        if(Entity->Player.IsAttacking && !Entity->AnimationInfo.Playing)
+                        // Set the last know direction for dash direction later
+                        if(Entity->Velocity.x != 0 || Entity->Velocity.y != 0)
                         {
-                            Entity->Player.IsAttacking = false;
-                            Entity->Player.CurrentAttackCooldownTime = Entity->Player.AttackCooldown;
+                            glm::vec2 Direction = glm::normalize(Entity->Velocity);
+                            Entity->Player.LastKnownDirectionX = Direction.x;
+                            Entity->Player.LastKnownDirectionY = Direction.y;
                         }
                         
-                        if(!Entity->Player.IsAttacking)
+                        if(!Entity->Player.IsAttacking && !Entity->Player.IsDashing && GetActionButtonDown(Action_Dash, GameState))
                         {
-                            if(Entity->Velocity.x != 0.0f || Entity->Velocity.y != 0.0f)
-                                PlayAnimation(Entity, &GameState->PlayerWalkAnimation);
+                            PlaySoundEffect(GameState, &GameState->SoundManager.Dash);
+                            Entity->Player.IsDashing = true;
+                        }
+                        
+                        if(!Entity->Player.IsDashing)
+                        {
+                            if(Entity->Player.IsAttacking && !Entity->AnimationInfo.Playing)
+                            {
+                                Entity->Player.IsAttacking = false;
+                                Entity->Player.CurrentAttackCooldownTime = Entity->Player.AttackCooldown;
+                            }
+                            
+                            if(!Entity->Player.IsAttacking)
+                            {
+                                Entity->Velocity.x = GetInputX(GameState) * Entity->Player.WalkingSpeed * (real32)DeltaTime;
+                                Entity->Velocity.y = GetInputY(GameState) * Entity->Player.WalkingSpeed * (real32)DeltaTime;
+                                
+                                if(Entity->Velocity.x != 0.0f || Entity->Velocity.y != 0.0f)
+                                {
+                                    if(Entity->Velocity.x < 0.02 && Entity->Velocity.x > -0.02)
+                                    {
+                                        if(Entity->Velocity.y < 0)
+                                            PlayAnimation(Entity, &GameState->PlayerWalkUpAnimation);
+                                        else
+                                            PlayAnimation(Entity, &GameState->PlayerWalkDownAnimation);
+                                    }
+                                    else
+                                        PlayAnimation(Entity, &GameState->PlayerWalkAnimation);
+                                }
+                                else
+                                {
+                                    PlayAnimation(Entity, &GameState->PlayerIdleAnimation);
+                                }
+                                
+                                if(Entity->Velocity.x != 0)
+                                    Entity->IsFlipped = Entity->Velocity.x < 0;
+                            }
                             else
-                                PlayAnimation(Entity, &GameState->PlayerIdleAnimation);
+                                Entity->Velocity = glm::vec2(0,0);
+                            
+                            if(GetActionButtonDown(Action_Interact, GameState) && Entity->Player.Pickup)
+                            {
+                                Entity->Player.Pickup->IsKinematic = false;
+                                real32 ThrowingDir = Entity->IsFlipped ? -1.0f : 1.0f;
+                                glm::vec2 Throw;
+                                if(Entity->Velocity.x == 0.0f && Entity->Velocity.y == 0.0f)
+                                {
+                                    Throw.x = Entity->Player.ThrowingSpeed * ThrowingDir;
+                                    Throw.y = 0.0f;
+                                }
+                                if(Entity->Velocity.x > 0)
+                                {
+                                    Throw.x = Entity->Player.ThrowingSpeed;
+                                } 
+                                else if(Entity->Velocity.x < 0)
+                                {
+                                    Throw.x = -Entity->Player.ThrowingSpeed;
+                                }
+                                
+                                if(Entity->Velocity.y > 0)
+                                {
+                                    Throw.y = Entity->Player.ThrowingSpeed;
+                                }
+                                else if(Entity->Velocity.y < 0)
+                                {
+                                    Throw.y = -Entity->Player.ThrowingSpeed;
+                                }
+                                
+                                Throw.x = Abs(Throw.y) > 0 ? 0.5f * Throw.x : Throw.x;
+                                Throw.y = Abs(Throw.x) > 0 ? 0.5f * Throw.y : Throw.y;
+                                Entity->Player.Pickup->Velocity = glm::vec2(Throw.x,Throw.y);
+                                Entity->Player.Pickup = NULL;
+                                Entity->Player.PickupCooldown = 0.8;
+                            }
+                        }
+                        else if(Entity->Player.IsDashing)
+                        {
+                            if(Entity->Player.CurrentDashTime < Entity->Player.MaxDashTime)
+                            {
+                                Entity->Velocity = glm::vec2(Entity->Player.LastKnownDirectionX * Entity->Player.DashSpeed * DeltaTime, Entity->Player.LastKnownDirectionY * Entity->Player.DashSpeed * DeltaTime);
+                                Entity->Player.CurrentDashTime += DeltaTime;
+                            }
+                            else
+                            {
+                                Entity->Player.CurrentDashTime = 0;
+                                Entity->Player.IsDashing = false;
+                            }
                         }
                         
-                        if(Entity->Velocity.x != 0)
-                            Entity->IsFlipped = Entity->Velocity.x < 0;
-                        
-                        if(GetActionButtonDown(Action_Interact, GameState) && Entity->Player.Pickup)
+                        if(Entity->Player.PickupCooldown > 0.0)
                         {
-                            Entity->Player.Pickup->IsKinematic = false;
-                            real32 ThrowingDir = Entity->IsFlipped ? -1.0f : 1.0f;
-                            glm::vec2 Throw;
-                            if(Entity->Velocity.x == 0.0f && Entity->Velocity.y == 0.0f)
+                            Entity->Player.PickupCooldown -= DeltaTime;
+                        }
+                        
+                        Entity->Position += Entity->Velocity;
+                        
+                        collision_info CollisionInfo;
+                        CheckCollision(GameState, Entity, &CollisionInfo);
+                        
+                        entity* OtherEntity;
+                        
+                        for(int Index = 0; Index < CollisionInfo.OtherCount; Index++)
+                        {
+                            if(CollisionInfo.Other[Index]->Pickup)
                             {
-                                Throw.x = Entity->Player.ThrowingSpeed * ThrowingDir;
-                                Throw.y = 0.0f;
+                                OtherEntity = CollisionInfo.Other[Index];
+                                break;
                             }
-                            if(Entity->Velocity.x > 0)
-                            {
-                                Throw.x = Entity->Player.ThrowingSpeed;
-                            } 
-                            else if(Entity->Velocity.x < 0)
-                            {
-                                Throw.x = -Entity->Player.ThrowingSpeed;
-                            }
-                            
-                            if(Entity->Velocity.y > 0)
-                            {
-                                Throw.y = Entity->Player.ThrowingSpeed;
-                            }
-                            else if(Entity->Velocity.y < 0)
-                            {
-                                Throw.y = -Entity->Player.ThrowingSpeed;
-                            }
-                            
-                            Throw.x = Abs(Throw.y) > 0 ? 0.5f * Throw.x : Throw.x;
-                            Throw.y = Abs(Throw.x) > 0 ? 0.5f * Throw.y : Throw.y;
-                            Entity->Player.Pickup->Velocity = glm::vec2(Throw.x,Throw.y);
-                            Entity->Player.Pickup = NULL;
+                        }
+                        
+                        if(OtherEntity &&
+                           GetActionButtonDown(Action_Interact, GameState) && Entity->Player.PickupCooldown <= 0.0)
+                        {
+                            Entity->Player.Pickup = OtherEntity;
+                            Entity->Player.Pickup->Position = Entity->Position;
+                            Entity->Player.Pickup->Velocity = glm::vec2(0.0f,0.0f);
+                            // NOTE(niels): Need to make it kinematic, otherwise
+                            // there will be an overlap when pressing E to drop
+                            Entity->Player.Pickup->IsKinematic = true;
                             Entity->Player.PickupCooldown = 0.8;
                         }
+                        
+                        if(Entity->Player.Pickup)
+                        {
+                            Entity->Player.Pickup->Position = Entity->Position;
+                        }
+                        
+                        //attacking
+                        if(Entity->Player.CurrentAttackCooldownTime <= 0 && !Entity->Player.IsAttacking && (GetActionButtonDown(Action_Attack, GameState) || GetJoystickKeyDown(Joystick_3, GameState)))
+                        {
+                            PlayAnimation(Entity, &GameState->PlayerAttackAnimation);
+                            Entity->Player.IsAttacking = true;
+                            PlaySoundEffect(GameState, &GameState->SoundManager.SwordSlash01);
+                        }
+                        
+                        if(!Entity->Player.IsAttacking && Entity->Player.CurrentAttackCooldownTime > 0)
+                            Entity->Player.CurrentAttackCooldownTime -= DeltaTime;
+                        
+                        auto Direction = glm::vec2(pos.x, pos.y) - Entity->Position;
+                        Direction = glm::normalize(Direction);
+                        float Degrees = atan2(Direction.y, Direction.x);
+                        
+                        if(!GameState->EditorUI.On)
+                            GameState->Camera.Center = glm::vec2(Entity->Position.x, Entity->Position.y);
+                    }
+                }
+                break;
+                case Entity_PlayerWeapon:
+                {
+                    entity* Player = &GameState->Entities[GameState->PlayerIndex];
+                    render_entity* RenderEntity = &GameState->RenderState.RenderEntities[Entity->RenderEntityHandle];
+                    
+                    RenderEntity->Color = glm::vec4(1, 1, 1, 1);
+                    
+                    glm::vec2 Pos = Player->Position;
+                    
+                    Entity->IsFlipped = Player->IsFlipped;
+                    
+                    if(Player->IsFlipped)
+                    {
+                        Entity->CollisionAABB.Offset = glm::vec2(-0.8, 0);
+                        Entity->Position = glm::vec2(Pos.x - 1.3f, Pos.y);
                     }
                     else
                     {
-                        if(Entity->Player.CurrentDashTime < Entity->Player.MaxDashTime)
-                        {
-                            Entity->Velocity = glm::vec2(Entity->Player.LastKnownDirectionX *Entity->Player.DashSpeed * DeltaTime, Entity->Player.LastKnownDirectionY *Entity->Player.DashSpeed * DeltaTime);
-                            Entity->Player.CurrentDashTime += DeltaTime;
-                        }
-                        else
-                        {
-                            Entity->Player.CurrentDashTime = 0;
-                            Entity->Player.IsDashing = false;
-                        }
+                        Entity->CollisionAABB.Offset = glm::vec2(0.7, 0);
+                        Entity->Position = glm::vec2(Pos.x - 0.5f, Pos.y);
                     }
-                    
-                    if(Entity->Player.PickupCooldown > 0.0)
-                    {
-                        Entity->Player.PickupCooldown -= DeltaTime;
-                    }
-                    
-                    Entity->Position += Entity->Velocity;
+                    Entity->CollisionAABB.Center = glm::vec2(Entity->Position.x + Entity->Center.x * Entity->Scale.x + Entity->CollisionAABB.Offset.x, Entity->Position.y + Entity->Center.y * Entity->Scale.y + Entity->CollisionAABB.Offset.y);
                     
                     collision_info CollisionInfo;
                     CheckCollision(GameState, Entity, &CollisionInfo);
                     
-                    entity* OtherEntity;
-                    
-                    for(int Index = 0; Index < CollisionInfo.OtherCount; Index++)
+                    if(GameState->Entities[GameState->PlayerIndex].Player.IsAttacking)
                     {
-                        if(CollisionInfo.Other[Index]->Pickup)
+                        for(uint32 Index = 0; Index < CollisionInfo.OtherCount; Index++)
                         {
-                            OtherEntity = CollisionInfo.Other[Index];
-                            break;
+                            if(CollisionInfo.Other[Index]->Type == Entity_Enemy && CollisionInfo.Other[Index]->Enemy.AIState != AI_Hit)
+                            {
+                                PlaySoundEffect(GameState, &GameState->SoundManager.SwordHit01);
+                                Hit(GameState, CollisionInfo.Other[Index]);
+                            }
                         }
                     }
                     
-                    if(OtherEntity &&
-                       GetActionButtonDown(Action_Interact, GameState) && Entity->Player.PickupCooldown <= 0.0)
+                    if(Player->Player.IsAttacking && !Entity->AnimationInfo.Playing)
                     {
-                        Entity->Player.Pickup = OtherEntity;
-                        Entity->Player.Pickup->Position = Entity->Position;
-                        Entity->Player.Pickup->Velocity = glm::vec2(0.0f,0.0f);
-                        // NOTE(niels): Need to make it kinematic, otherwise
-                        // there will be an overlap when pressing E to drop
-                        Entity->Player.Pickup->IsKinematic = true;
-                        Entity->Player.PickupCooldown = 0.8;
+                        Entity->CurrentAnimation = 0;
+                        PlayAnimation(Entity, &GameState->SwordTopRightAnimation);
+                        RenderEntity->Rendered = true;
                     }
-                    
-                    if(Entity->Player.Pickup)
+                    else if(!Entity->AnimationInfo.Playing)
                     {
-                        Entity->Player.Pickup->Position = Entity->Position;
+                        RenderEntity->Rendered = false;
                     }
-                    
-                    //attacking
-                    if(Entity->Player.CurrentAttackCooldownTime <= 0 && !Entity->Player.IsAttacking && (GetActionButtonDown(Action_Attack, GameState) || GetJoystickKeyDown(Joystick_3, GameState)))
-                    {
-                        PlayAnimation(Entity, &GameState->PlayerAttackAnimation);
-                        Entity->Player.IsAttacking = true;
-                        PlaySoundEffect(GameState, &GameState->SoundManager.SwordSlash01);
-                    }
-                    
-                    if(!Entity->Player.IsAttacking && Entity->Player.CurrentAttackCooldownTime > 0)
-                        Entity->Player.CurrentAttackCooldownTime -= DeltaTime;
-                    
-                    auto Direction = glm::vec2(pos.x, pos.y) - Entity->Position;
-                    Direction = glm::normalize(Direction);
-                    float Degrees = atan2(Direction.y, Direction.x);
-                    
+                }
+                break;
+                case Entity_Crosshair:
+                {
                     if(!GameState->EditorUI.On)
-                        GameState->Camera.Center = glm::vec2(Entity->Position.x, Entity->Position.y);
+                    {
+                        Entity->Position = glm::vec2(pos.x - 0.5f, pos.y - 0.5f);
+                        Entity->CollisionAABB.Center = glm::vec2(Entity->Position.x, Entity->Position.y);
+                    }
                 }
-            }
-            break;
-            case Entity_PlayerWeapon:
-            {
-                entity* Player = &GameState->Entities[GameState->PlayerIndex];
-                render_entity* RenderEntity = &GameState->RenderState.RenderEntities[Entity->RenderEntityHandle];
-                
-                RenderEntity->Color = glm::vec4(1, 1, 1, 1);
-                
-                glm::vec2 Pos = Player->Position;
-                
-                Entity->IsFlipped = Player->IsFlipped;
-                
-                if(Player->IsFlipped)
-                {
-                    Entity->CollisionAABB.Offset = glm::vec2(-0.8, 0);
-                    Entity->Position = glm::vec2(Pos.x - 1.3f, Pos.y - 1.5f);
-                }
-                else
-                {
-                    Entity->CollisionAABB.Offset = glm::vec2(0.7, 0);
-                    Entity->Position = glm::vec2(Pos.x - 0.5f, Pos.y - 1.5f);
-                }
-                Entity->CollisionAABB.Center = glm::vec2(Entity->Position.x + Entity->Center.x * Entity->Scale.x + Entity->CollisionAABB.Offset.x, Entity->Position.y + Entity->Center.y * Entity->Scale.y + Entity->CollisionAABB.Offset.y);
-                
-                collision_info CollisionInfo;
-                CheckCollision(GameState, Entity, &CollisionInfo);
-                
-                if(Player->Player.IsAttacking && !Entity->AnimationInfo.Playing)
-                {
-                    Entity->CurrentAnimation = 0;
-                    PlayAnimation(Entity, &GameState->SwordTopRightAnimation);
-                    RenderEntity->Rendered = true;
-                }
-                else if(!Entity->AnimationInfo.Playing)
-                {
-                    RenderEntity->Rendered = false;
-                }
-            }
-            break;
-            case Entity_Crosshair:
-            {
-                if(!GameState->EditorUI.On)
-                {
-                    Entity->Position = glm::vec2(pos.x - 0.5f, pos.y - 0.5f);
-                    Entity->CollisionAABB.Center = glm::vec2(Entity->Position.x, Entity->Position.y);
-                }
-            }
-            break;
-            case Entity_Enemy:
-            {
-                if(!Entity->IsDead)
+                break;
+                case Entity_Enemy:
                 {
                     entity Player = GameState->Entities[GameState->PlayerIndex];
                     real64 DistanceToPlayer = glm::distance(Entity->Position, Player.Position);
@@ -267,20 +296,17 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                                 
                                 Entity->IsFlipped = Entity->Velocity.x < 0;
                                 
-                                if(Entity->Enemy.AStarCooldown <= 0.0f)
-                                {
-                                    AStar(Entity, GameState, Entity->Position, Player.Position);
-                                    Entity->Enemy.AStarCooldown = Entity->Enemy.AStarInterval;
-                                }
-                                else
-                                {
-                                    Entity->Enemy.AStarCooldown -= DeltaTime;
-                                }
+                                
+                                AStar(Entity,GameState,Entity->Position,Player.Position);
+                                
                             }
                         }
                         break;
                         case AI_Attacking:
                         {
+                            if(Entity->Enemy.IsAttacking)
+                                Entity->Enemy.AttackCooldownCounter += DeltaTime;
+                            
                             if(Entity->Enemy.AttackCooldownCounter == 0)
                             {
                                 Entity->Enemy.IsAttacking = true;
@@ -297,86 +323,152 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                                 PlayAnimation(Entity, &GameState->PlayerIdleAnimation);
                             }
                             
-                            Entity->Enemy.AttackCooldownCounter += DeltaTime;
-                            
                             if(Entity->Enemy.AttackCooldownCounter >= Entity->Enemy.AttackCooldown)
                             {
                                 Entity->Enemy.AttackCooldownCounter = 0;
-                                Entity->Enemy.IsAttacking = true;
+                                Entity->Enemy.IsAttacking = false;
+                            }
+                        }
+                        break;
+                        case AI_Hit:
+                        {
+                            PlayAnimation(Entity, &GameState->EnemyHitAnimation);
+                            if(Entity->HitCooldownLeft <= 0)
+                            {
+                                Entity->HitCooldownLeft = 0;
+                                Entity->Enemy.AIState = AI_Idle;
+                                
+                                PlayAnimation(Entity, &GameState->EnemyIdleAnimation);
                             }
                         }
                         break;
                     }
+                    //Finish the cooldown although we are not in attack-mode. This prevents the enemy from attacking
+                    //too quickly after the previous attack if switching between states quickly.
+                    if(Entity->Enemy.AIState != AI_Attacking && Entity->Enemy.AttackCooldownCounter != 0)
+                    {
+                        Entity->Enemy.AttackCooldownCounter += DeltaTime;
+                        if(Entity->Enemy.AttackCooldownCounter >= Entity->Enemy.AttackCooldown)
+                            Entity->Enemy.AttackCooldownCounter = 0;
+                    }
+                    
+                    Entity->Position.x += Entity->Velocity.x;
+                    Entity->Position.y += Entity->Velocity.y;
+                    
+                    //@Cleanup move this somewhere else, maybe out of switch
+                    render_entity* RenderEntity = &GameState->RenderState.RenderEntities[Entity->RenderEntityHandle];
+                    RenderEntity->Color = glm::vec4(0, 1, 0, 1);
+                    
+                    Entity->Velocity = glm::vec2(0,0);
+                    
+                    collision_info CollisionInfo;
+                    CheckCollision(GameState, Entity, &CollisionInfo);
                 }
-                //Finish the cooldown although we are not in attack-mode. This prevents the enemy from attacking
-                //too quickly after the previous attack if switching between states quickly.
-                if(Entity->Enemy.AIState != AI_Attacking && Entity->Enemy.AttackCooldownCounter != 0)
+                break;
+                case Entity_EnemyWeapon:
                 {
-                    Entity->Enemy.AttackCooldownCounter += DeltaTime;
-                    if(Entity->Enemy.AttackCooldownCounter >= Entity->Enemy.AttackCooldown)
-                        Entity->Enemy.AttackCooldownCounter = 0;
+                    //@Cleanup: This attack code is the almost identical to the player. Do something about it!
+                    entity* Enemy = &GameState->Entities[Entity->Weapon.EntityHandle];
+                    render_entity* RenderEntity = &GameState->RenderState.RenderEntities[Entity->RenderEntityHandle];
+                    
+                    RenderEntity->Color = glm::vec4(1, 1, 1, 1);
+                    
+                    glm::vec2 Pos = Enemy->Position;
+                    
+                    Entity->IsFlipped = Enemy->IsFlipped;
+                    
+                    if(Enemy->IsFlipped)
+                    {
+                        Entity->CollisionAABB.Offset = glm::vec2(-0.8, 0);
+                        Entity->Position = glm::vec2(Pos.x - 1.3f, Pos.y - 1.5f);
+                    }
+                    else
+                    {
+                        Entity->CollisionAABB.Offset = glm::vec2(0.7, 0);
+                        Entity->Position = glm::vec2(Pos.x - 0.5f, Pos.y - 1.5f);
+                    }
+                    
+                    Entity->CollisionAABB.Center = glm::vec2(Entity->Position.x + Entity->Center.x * Entity->Scale.x + Entity->CollisionAABB.Offset.x, Entity->Position.y + Entity->Center.y * Entity->Scale.y + Entity->CollisionAABB.Offset.y);
+                    
+                    collision_info CollisionInfo;
+                    CheckCollision(GameState, Entity, &CollisionInfo);
+                    
+                    if(Enemy->Enemy.IsAttacking)
+                    {
+                        for(uint32 Index = 0; Index < CollisionInfo.OtherCount; Index++)
+                        {
+                            if(CollisionInfo.Other[Index]->Type == Entity_Player && !CollisionInfo.Other[Index]->Player.IsDashing)
+                            {
+                                PlaySoundEffect(GameState, &GameState->SoundManager.SwordHit01);
+                                Hit(GameState, CollisionInfo.Other[Index]);
+                            }
+                        }
+                    }
+                    
+                    if(Enemy->Enemy.IsAttacking)
+                    {
+                        if(Enemy->Enemy.AttackCooldownCounter == 0)
+                        {
+                            Entity->CurrentAnimation = 0;
+                            PlayAnimation(Entity, &GameState->SwordTopRightAnimation);
+                            RenderEntity->Rendered = true;
+                        }
+                    }
+                    
+                    if(!Entity->AnimationInfo.Playing)
+                    {
+                        RenderEntity->Rendered = false;
+                    }
                 }
-                
-                Entity->Position.x += Entity->Velocity.x;
-                Entity->Position.y += Entity->Velocity.y;
-                
-                //@Cleanup move this somewhere else, maybe out of switch
-                render_entity* RenderEntity = &GameState->RenderState.RenderEntities[Entity->RenderEntityHandle];
-                RenderEntity->Color = glm::vec4(0, 1, 0, 1);
-                
-                Entity->Velocity = glm::vec2(0,0);
-                
-                collision_info CollisionInfo;
-                CheckCollision(GameState, Entity, &CollisionInfo);
+                break;
+                case Entity_Barrel:
+                {
+                    collision_info CollisionInfo;
+                    Entity->IsColliding = false;
+                    Entity->CollisionAABB.IsColliding = false;
+                    CheckCollision(GameState, Entity, &CollisionInfo);
+                    
+                    real32 XVel = 0.0f;
+                    real32 YVel = 0.0f;
+                    
+                    real32 ThrowDiff = 0.2f;
+                    if(Entity->Velocity.x > ThrowDiff)
+                    {
+                        Entity->Position += glm::vec2(Entity->Velocity.x * DeltaTime,Entity->Velocity.y * DeltaTime);
+                        XVel = Entity->Velocity.x - ThrowDiff;
+                    }
+                    else if(Entity->Velocity.x < -ThrowDiff)
+                    {
+                        Entity->Position +=glm::vec2(Entity->Velocity.x * DeltaTime,Entity->Velocity.y * DeltaTime);
+                        XVel = Entity->Velocity.x + ThrowDiff;
+                    }
+                    else 
+                    {
+                        XVel = 0.0f;
+                    }
+                    
+                    if(Entity->Velocity.y > ThrowDiff)
+                    {
+                        Entity->Position +=glm::vec2(Entity->Velocity.x * DeltaTime,Entity->Velocity.y * DeltaTime);
+                        YVel = Entity->Velocity.y - ThrowDiff;
+                    }
+                    else if(Entity->Velocity.y < -ThrowDiff)
+                    {
+                        Entity->Position +=glm::vec2(Entity->Velocity.x * DeltaTime,Entity->Velocity.y * DeltaTime);
+                        YVel = Entity->Velocity.y + ThrowDiff;
+                    }
+                    else 
+                    {
+                        YVel = 0.0f;
+                    }
+                    
+                    Entity->Velocity = glm::vec2(XVel,YVel);
+                }
             }
-            break;
-            case Entity_Barrel:
-            {
-                collision_info CollisionInfo;
-                Entity->IsColliding = false;
-                Entity->CollisionAABB.IsColliding = false;
-                CheckCollision(GameState, Entity, &CollisionInfo);
-                
-                real32 XVel = 0.0f;
-                real32 YVel = 0.0f;
-                
-                real32 ThrowDiff = 0.2f;
-                if(Entity->Velocity.x > ThrowDiff)
-                {
-                    Entity->Position += glm::vec2(Entity->Velocity.x * DeltaTime,Entity->Velocity.y * DeltaTime);
-                    XVel = Entity->Velocity.x - ThrowDiff;
-                }
-                else if(Entity->Velocity.x < -ThrowDiff)
-                {
-                    Entity->Position +=glm::vec2(Entity->Velocity.x * DeltaTime,Entity->Velocity.y * DeltaTime);
-                    XVel = Entity->Velocity.x + ThrowDiff;
-                }
-                else 
-                {
-                    XVel = 0.0f;
-                }
-                
-                if(Entity->Velocity.y > ThrowDiff)
-                {
-                    Entity->Position +=glm::vec2(Entity->Velocity.x * DeltaTime,Entity->Velocity.y * DeltaTime);
-                    YVel = Entity->Velocity.y - ThrowDiff;
-                }
-                else if(Entity->Velocity.y < -ThrowDiff)
-                {
-                    Entity->Position +=glm::vec2(Entity->Velocity.x * DeltaTime,Entity->Velocity.y * DeltaTime);
-                    YVel = Entity->Velocity.y + ThrowDiff;
-                }
-                else 
-                {
-                    YVel = 0.0f;
-                }
-                
-                Entity->Velocity = glm::vec2(XVel,YVel);
-            }
+            
+            if(Entity->CurrentAnimation && Entity->AnimationInfo.Playing)
+                TickAnimation(&Entity->AnimationInfo, Entity->CurrentAnimation, DeltaTime);
         }
-        
-        if(Entity->CurrentAnimation && Entity->AnimationInfo.Playing)
-            TickAnimation(&Entity->AnimationInfo, Entity->CurrentAnimation, DeltaTime);
     }
     
     switch(GameState->EditorUI.State)
@@ -415,15 +507,13 @@ extern "C" UPDATE(Update)
             GameState->LevelPath = "../assets/levels/level_03.plv";
         }
         
-        
         InitPlayer(GameState);
-        
         LoadLevelFromFile(GameState->LevelPath, &GameState->CurrentLevel, GameState);
         
         //@Cleanup this should be in the level file
         SpawnMillionBarrels(GameState);
         
-        GameState->Camera.Zoom = 2.5f;
+        GameState->Camera.Zoom = 3.0f;
         GameState->Camera.ViewportWidth = GameState->RenderState.WindowWidth / 20;
         GameState->Camera.ViewportHeight = GameState->RenderState.WindowHeight / 20;
         
@@ -437,6 +527,11 @@ extern "C" UPDATE(Update)
     if(GetKeyDown(Key_F1, GameState))
     {
         GameState->RenderState.RenderColliders = !GameState->RenderState.RenderColliders;
+    }
+    
+    if(GetKeyDown(Key_F3, GameState))
+    {
+        GameState->SoundManager.Muted = !GameState->SoundManager.Muted;
     }
     
     if(GetKeyDown(Key_F2, GameState))

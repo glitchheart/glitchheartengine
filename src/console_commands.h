@@ -5,7 +5,7 @@ static char* Zoom(game_state* GameState, char** Arguments)
 {
     real32 ZoomAmount = (real32) strtod(Arguments[0], NULL);
     GameState->Camera.Zoom = ZoomAmount;
-    return CombineStrings("Zoom set to ", Arguments[0]);
+    return Concat("Zoom set to ", Arguments[0]);
 }
 
 static char* Jump(game_state* GameState, char** Arguments)
@@ -19,30 +19,72 @@ static char* Jump(game_state* GameState, char** Arguments)
     return Result;
 }
 
-static char* Reset(game_state* GameState, char** Arguments)
+static char* LoadLevel(game_state* GameState, char** Arguments)
 {
-    GameState->Entities[GameState->PlayerIndex].Position = glm::vec2(0, 0); //TODO(Daniel) still needs to reset a lot more
-    GameState->Camera.Center = glm::vec2(GameState->Entities[GameState->PlayerIndex].Position.x, GameState->Entities[GameState->PlayerIndex].Position.y);
-    char* Result = (char*)malloc(12 * sizeof(char));
-    sprintf(Result, "Reset level");
+    char* Result = (char*)malloc(25 * sizeof(char));
+    
+    if(Arguments)
+    {
+        printf("Ready to load level\n");
+        level Level;
+        
+        char* PathPrefix = "../assets/levels/";
+        char* PathSuffix = ".plv";
+        
+        char* Path = Concat(Concat(PathPrefix, Arguments[0]), PathSuffix);
+        
+        printf("String allocation\n");
+        
+        FILE* File;
+        File = fopen(Path, "r");
+        
+        if(File)
+        {
+            printf("adasd\n");
+            fclose(File);
+            GameState->LevelPath = Path;
+            GameState->IsInitialized = false;
+            GameState->ShouldReload = true;
+            
+            for(uint32 X = 0; X < GameState->CurrentLevel.Tilemap.Width; X++)
+            {
+                free(GameState->CurrentLevel.Tilemap.Data[X]);
+            }
+            free(GameState->CurrentLevel.Tilemap.Data);
+            
+            GameState->CurrentLevel = {};
+            
+            for(uint32 Index = 0; Index < GameState->EntityCount; Index++)
+                GameState->Entities[Index] = {};
+            
+            for(uint32 Index = 0; Index < GameState->RenderState.RenderEntityCount; Index++)
+                GameState->RenderState.RenderEntities[Index] = {};
+            
+            GameState->EntityCount = 0;
+            GameState->RenderState.RenderEntityCount = 0;
+            
+            sprintf(Result, "Loaded level");
+            
+            printf("End of LoadLevel\n");
+        }
+        else
+        {
+            sprintf(Result, "'%s' could not be loaded", Path);
+        }
+    }
+    else
+    {
+        sprintf(Result, "Level name is expected as argument.");
+    }
     return Result;
 }
 
-static char* LoadLevel(game_state* GameState, char** Arguments)
+
+static void ReloadCurrentLevel(game_state* GameState)
 {
     level Level;
     
-    char* PathPrefix = "../assets/levels/";
-    char* PathSuffix = ".plv";
-    char * Path = (char *) malloc(1 + strlen(PathPrefix) + strlen(Arguments[0] + strlen(PathSuffix)) );
-    strcpy(Path, PathPrefix);
-    strcat(Path, Arguments[0]);
-    strcat(Path, PathSuffix);
-    
-    char* Result = (char*)malloc(25 * sizeof(char));
-    
     //@Incomplete still needs to respawn the player
-    GameState->LevelPath = Path;
     GameState->IsInitialized = false;
     GameState->ShouldReload = true;
     
@@ -60,14 +102,14 @@ static char* LoadLevel(game_state* GameState, char** Arguments)
     
     GameState->EntityCount = 0;
     GameState->RenderState.RenderEntityCount = 0;
-    
-    sprintf(Result, "Loaded level");
-    
-    //else
-    //{
-    //sprintf(Result, "Level not found: '%s.plv'", Arguments[0]);
-    //}
-    
+}
+
+
+static char* Reset(game_state* GameState, char** Arguments)
+{
+    ReloadCurrentLevel(GameState);
+    char* Result = (char*)malloc(12 * sizeof(char));
+    sprintf(Result, "Reset level");
     return Result;
 }
 

@@ -9,11 +9,13 @@ static void InitPlayer(game_state* GameState)
     
     Player->Name = "Player";
     Player->Type = Entity_Player;
+    Player->Health = 5;
     Player->Player.WalkingSpeed = 10.0f;
     Player->Player.ThrowingSpeed = 32.0f;
     Player->Player.MaxDashTime = 0.2;
     Player->Player.DashSpeed = 30;
     Player->Player.AttackCooldown = 0.3;
+    Player->Active = true;
     Player->IsKinematic = false;
     Player->CurrentAnimation = 0;
     Player->AnimationInfo.Playing = false;
@@ -32,7 +34,7 @@ static void InitPlayer(game_state* GameState)
     Player->Rotation = glm::vec3(0, 0, 0);
     Player->Scale = glm::vec3(2, 2, 0);
     Player->Velocity = glm::vec2(0,0);
-    
+    PlayAnimation(Player, &GameState->PlayerIdleAnimation);
     collision_AABB CollisionAABB;
     Player->Center = glm::vec2(0.5f, 0.950f);
     
@@ -48,12 +50,11 @@ static void InitPlayer(game_state* GameState)
     GameState->EntityCount++;
     
     entity* PlayerWeapon = &GameState->Entities[GameState->EntityCount];
-    
     PlayerWeapon->Name = "Player weapon";
     PlayerWeapon->Type = Entity_PlayerWeapon;
+    PlayerWeapon->Active = true;
     
     render_entity* PlayerWeaponRenderEntity = &GameState->RenderState.RenderEntities[GameState->RenderState.RenderEntityCount];
-    
     PlayerWeaponRenderEntity->Rendered = true;
     PlayerWeaponRenderEntity->ShaderIndex = Shader_SpriteSheetShader;
     PlayerWeaponRenderEntity->TextureHandle = GameState->RenderState.SwordTopRightTexture;
@@ -64,9 +65,6 @@ static void InitPlayer(game_state* GameState)
     PlayerWeapon->AnimationInfo.FrameIndex = 0;
     PlayerWeapon->AnimationInfo.CurrentTime = 0;
     
-    PlayerWeapon->Name = "Player weapon";
-    PlayerWeapon->Type = Entity_PlayerWeapon;
-    
     collision_AABB CollisionAABB3;
     CollisionAABB3.Center = glm::vec2(0.5, 0.5);
     CollisionAABB3.Offset = glm::vec2(0.7, 0);
@@ -75,13 +73,13 @@ static void InitPlayer(game_state* GameState)
     PlayerWeapon->CollisionAABB = CollisionAABB3;
     PlayerWeapon->Rotation = glm::vec3(0, 0, 0);
     PlayerWeapon->Scale = glm::vec3(4, 4, 0);
-    
     PlayerWeapon->EntityIndex = GameState->EntityCount;
     GameState->EntityCount++;
 }
 
 static void SpawnEnemy(game_state* GameState, glm::vec2 Position)
 {
+    // Enemy
     entity* Enemy = &GameState->Entities[GameState->EntityCount];
     Enemy->Name = "enemy";
     Enemy->Type = Entity_Enemy;
@@ -97,12 +95,12 @@ static void SpawnEnemy(game_state* GameState, glm::vec2 Position)
     Enemy->AnimationInfo.Playing = false;
     Enemy->AnimationInfo.FrameIndex = 0;
     Enemy->AnimationInfo.CurrentTime = 0;
-    
+    PlayAnimation(Enemy, &GameState->EnemyIdleAnimation);
     Enemy->Rotation = glm::vec3(0, 0, 0);
     Enemy->Position = Position;
     Enemy->Scale = glm::vec3(2, 2, 0);
     Enemy->Velocity = glm::vec2(-2,0);
-    Enemy->IsDead = false;
+    Enemy->Active = true;
     Enemy->IsKinematic = false;
     Enemy->Layer = Layer_Enemy;
     //Enemy->IgnoreLayers = Layer_Enemy;
@@ -116,7 +114,6 @@ static void SpawnEnemy(game_state* GameState, glm::vec2 Position)
     Enemy->CollisionAABB = CollisionAABB;
     
     collision_AABB* HitTrigger = (collision_AABB*)malloc(sizeof(collision_AABB));
-    
     HitTrigger->Center = glm::vec2(Enemy->Position.x + Enemy->Center.x * Enemy->Scale.x,
                                    Enemy->Position.y + Enemy->Center.y * Enemy->Scale.y);
     HitTrigger->Extents = glm::vec2(0.5f, 0.7f);
@@ -131,7 +128,37 @@ static void SpawnEnemy(game_state* GameState, glm::vec2 Position)
     Enemy->Enemy.AStarCooldown = 0.0f;
     Enemy->Enemy.AStarInterval = 2.0f;
     
-    Enemy->EntityIndex = GameState->EntityCount;
+    Enemy->Health = 2;
+    Enemy->HitCooldownTime = 0.4;
+    Enemy->EntityIndex = GameState->EntityCount++;
+    
+    // Weapon
+    
+    entity* EnemyWeapon = &GameState->Entities[GameState->EntityCount];
+    EnemyWeapon->Name = "Enemy weapon";
+    EnemyWeapon->Type = Entity_EnemyWeapon;
+    
+    render_entity* EnemyWeaponRenderEntity = &GameState->RenderState.RenderEntities[GameState->RenderState.RenderEntityCount];
+    EnemyWeaponRenderEntity->Rendered = true;
+    EnemyWeaponRenderEntity->ShaderIndex = Shader_SpriteSheetShader;
+    EnemyWeaponRenderEntity->TextureHandle = GameState->RenderState.SwordTopRightTexture;
+    EnemyWeaponRenderEntity->Entity = &*EnemyWeapon;
+    EnemyWeapon->RenderEntityHandle = GameState->RenderState.RenderEntityCount++;
+    EnemyWeapon->CurrentAnimation = 0;
+    EnemyWeapon->AnimationInfo.Playing = false;
+    EnemyWeapon->AnimationInfo.FrameIndex = 0;
+    EnemyWeapon->AnimationInfo.CurrentTime = 0;
+    EnemyWeapon->Weapon.EntityHandle = Enemy->EntityIndex;
+    
+    collision_AABB CollisionAABB3;
+    CollisionAABB3.Center = glm::vec2(0.5, 0.5);
+    CollisionAABB3.Offset = glm::vec2(0.7, 0);
+    CollisionAABB3.Extents = glm::vec2(0.5f,1.0f);
+    CollisionAABB3.IsTrigger = true;
+    EnemyWeapon->CollisionAABB = CollisionAABB3;
+    EnemyWeapon->Rotation = glm::vec3(0, 0, 0);
+    EnemyWeapon->Scale = glm::vec3(4, 4, 0);
+    EnemyWeapon->EntityIndex = GameState->EntityCount;
     GameState->EntityCount++;
 }
 
@@ -144,6 +171,7 @@ static void SpawnMillionBarrels(game_state* GameState)
         {
             entity* Barrel = &GameState->Entities[GameState->EntityCount];
             Barrel->Name = "barrel";
+            Barrel->Active = true;
             Barrel->Type = Entity_Barrel;
             Barrel->Layer = Layer_Environment;
             Barrel->IgnoreLayers = Layer_Environment;
@@ -181,10 +209,24 @@ static void SpawnMillionBarrels(game_state* GameState)
     }
 }
 
+//@Incomplete: Maybe we will add a weapon type or damage amount
+void Hit(game_state* GameState, entity* Entity)
 
-//@Cleanup move this
-static void Kill(game_state* GameState, entity* Entity)
 {
-    GameState->RenderState.RenderEntities[Entity->RenderEntityHandle].Rendered = false;
-    Entity->IsDead = true;
+    Entity->Health -= 1;
+    Entity->HitCooldownLeft = Entity->HitCooldownTime;
+    
+    printf("Health %d Time left %f\n", Entity->Health, Entity->HitCooldownLeft); 
+    
+    if(Entity->Type == Entity_Enemy)
+    {
+        Entity->Enemy.AIState = AI_Hit;
+        PlayAnimation(Entity, &GameState->EnemyIdleAnimation);
+    }
+    
+    if(Entity->Health <= 0)
+    {
+        GameState->RenderState.RenderEntities[Entity->RenderEntityHandle].Rendered = false;
+        Entity->Active = false;
+    }
 }

@@ -1,12 +1,15 @@
 name player_attack
 type sprite
-framecount 2
+framecount 6
 loop 0
-timeperframe 0.05
+timeperframe 0.03
 rows 1
-columns 10
+columns 21
 frames
-{0.8,0.0}
-{0.9,0.0}
+8 0
+9 0
+9 0
+9 0
+9 0
+9 0
 texture 1
-

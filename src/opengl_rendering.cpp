@@ -59,7 +59,7 @@ static GLint ShaderCompilationErrorChecking(GLuint Shader)
 static GLuint LoadShader(const char* FilePath, shader *Shd)
 {
     Shd->VertexShader = glCreateShader(GL_VERTEX_SHADER);
-    char* VertexString = CombineStrings(FilePath,".vert");
+    char* VertexString = Concat(FilePath,".vert");
     GLchar *VertexText = LoadShaderFromFile(VertexString);
     
     glShaderSource(Shd->VertexShader, 1, &VertexText, NULL);
@@ -69,7 +69,7 @@ static GLuint LoadShader(const char* FilePath, shader *Shd)
         return GL_FALSE;
     
     Shd->FragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    char* FragmentString = CombineStrings(FilePath,".frag");
+    char* FragmentString = Concat(FilePath,".frag");
     GLchar *FragmentText = LoadShaderFromFile(FragmentString);
     
     glShaderSource(Shd->FragmentShader, 1, &FragmentText, NULL);
@@ -92,7 +92,7 @@ static GLuint LoadVertexShader(const char* FilePath, shader *Shd)
     Shd->Program = glCreateProgram();
     
     Shd->VertexShader = glCreateShader(GL_VERTEX_SHADER);
-    char* VertexString = CombineStrings(FilePath,".vert");
+    char* VertexString = Concat(FilePath,".vert");
     GLchar *VertexText = LoadShaderFromFile(VertexString);
     glShaderSource(Shd->VertexShader, 1, &VertexText, NULL);
     glCompileShader(Shd->VertexShader);
@@ -113,7 +113,7 @@ static GLuint LoadFragmentShader(const char* FilePath, shader *Shd)
     Shd->Program = glCreateProgram();
     
     Shd->FragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    char* FragmentString = CombineStrings(FilePath,".frag");
+    char* FragmentString = Concat(FilePath,".frag");
     GLchar *FragmentText = LoadShaderFromFile(FragmentString);
     glShaderSource(Shd->FragmentShader, 1, &FragmentText, NULL);
     glCompileShader(Shd->FragmentShader);
@@ -176,9 +176,8 @@ static void InitializeFreeTypeFont(char* FontPath, int FontSize, FT_Library Libr
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     
-    /* Linear filtering usually looks best for text */
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     
     unsigned int X = 0;
     
@@ -361,19 +360,14 @@ static void LoadTextures(render_state* RenderState)
     }
 }
 
-static void InitializeOpenGL(game_state* GameState, render_state* RenderState)
+static void InitializeOpenGL(game_state* GameState, render_state* RenderState, config_data* ConfigData)
 {
-    config_data ConfigData;
-    
-    LoadConfig("../assets/.config", &ConfigData);
-    
     if (!glfwInit())
         exit(EXIT_FAILURE);
     
     char WindowTitle[100];
-    sprintf(WindowTitle, "%s %s", ConfigData.Title, ConfigData.Version);
     
-    RenderState->Window = glfwCreateWindow(ConfigData.ScreenWidth, ConfigData.ScreenHeight, &WindowTitle[0], ConfigData.Fullscreen ? glfwGetPrimaryMonitor() : NULL, NULL);
+    RenderState->Window = glfwCreateWindow(ConfigData->ScreenWidth, ConfigData->ScreenHeight, &WindowTitle[0], ConfigData->Fullscreen ? glfwGetPrimaryMonitor() : NULL, NULL);
     
     if (!RenderState->Window)
     {
@@ -399,7 +393,7 @@ static void InitializeOpenGL(game_state* GameState, render_state* RenderState)
     
     glfwGetFramebufferSize(RenderState->Window, &RenderState->WindowWidth, &RenderState->WindowHeight);
     glViewport(0, 0, RenderState->WindowWidth, RenderState->WindowHeight);
-    
+    glDisable(GL_DITHER);
     printf("%s\n", glGetString(GL_VERSION));
     
     glfwSetWindowUserPointer(RenderState->Window, GameState);
@@ -499,14 +493,6 @@ static void SetMat4Uniform(GLuint ShaderHandle, const char *UniformName, glm::ma
     glUniformMatrix4fv(glGetUniformLocation(ShaderHandle, UniformName), 1, GL_FALSE, &Value[0][0]);
 }
 
-struct Point
-{
-    GLfloat X;
-    GLfloat Y;
-    GLfloat S;
-    GLfloat T;
-}; 
-
 //TODO(Daniel) there's a weird bug when rendering special characters. The cursor just slowly jumps up for every character pressed
 static void RenderRect(Render_Mode Mode, render_state* RenderState, glm::vec4 Color, real32 X, real32 Y, real32 Width, real32 Height)
 {
@@ -603,6 +589,7 @@ static void RenderText(render_state* RenderState, const render_font& Font, const
     Y *= RenderState->ScaleY;
     Y -= 1;
     
+    glBindVertexArray(Font.VAO);
     auto Shader = RenderState->Shaders[Shader_StandardFont];
     UseShader(&Shader);
     SetVec4Attribute(Shader.Program, "color", Color);
@@ -614,7 +601,7 @@ static void RenderText(render_state* RenderState, const render_font& Font, const
         RenderState->BoundTexture = Font.Texture;
     }
     
-    Point* Coords = new Point[6 * strlen(Text)]; //TODO change this back to the C way (malloc)
+    point* Coords = (point*)malloc(sizeof(point) * 6 * strlen(Text));
     
     int N = 0;
     
@@ -642,7 +629,6 @@ static void RenderText(render_state* RenderState, const render_font& Font, const
         real32 X2 =  X + Font.CharacterInfo[*P ].BL * RenderState->ScaleX;
         real32 Y2 = -Y - Font.CharacterInfo[*P ].BT * RenderState->ScaleY;
         
-        
         /* Advance the cursor to the start of the next character */
         X += Font.CharacterInfo[*P].AX * RenderState->ScaleX;
         Y += Font.CharacterInfo[*P].AY * RenderState->ScaleY;
@@ -659,10 +645,11 @@ static void RenderText(render_state* RenderState, const render_font& Font, const
         Coords[N++] = { X2 + W, -Y2 - H, Font.CharacterInfo[*P].TX + Font.CharacterInfo[*P].BW / Font.AtlasWidth, Font.CharacterInfo[*P].BH / Font.AtlasHeight };
     }
     
-    glBindVertexArray(Font.VAO);
     glBindBuffer(GL_ARRAY_BUFFER, Font.VBO);
-    glBufferData(GL_ARRAY_BUFFER, 6 * strlen(Text) * sizeof(Point), Coords, GL_DYNAMIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, 6 * strlen(Text) * sizeof(point), Coords, GL_DYNAMIC_DRAW);
     glDrawArrays(GL_TRIANGLES, 0, N);
+    free(Coords);
+    glBindVertexArray(0);
 }
 
 static void RenderConsole(render_state* RenderState, console* Console, glm::mat4 ProjectionMatrix, glm::mat4 View)
@@ -684,55 +671,33 @@ static void RenderConsole(render_state* RenderState, console* Console, glm::mat4
     MeasureText(&RenderState->InconsolataFont, &Console->Buffer[0], &Width, &Height);
     
     //draw cursor
-    RenderRect(Render_Fill, RenderState, glm::vec4(AlphaValue, 1, AlphaValue, 1), 25 / 1920.0f * (real32)RenderState->WindowWidth + Width, RenderState->WindowHeight * 0.77f * PercentAnimated, 10, 20);
+    RenderRect(Render_Fill, RenderState, glm::vec4(AlphaValue, 1, AlphaValue, 1), 5 / 1920.0f * (real32)RenderState->WindowWidth + Width, RenderState->WindowHeight * 0.77f * PercentAnimated, 10, 20);
     
-    RenderText(RenderState, RenderState->InconsolataFont, glm::vec4(1, 1, 1, 1), ">", 5 / 1920.0f * (real32)RenderState->WindowWidth, (real32)RenderState->WindowHeight * 0.775f * PercentAnimated, 1);
-    RenderText(RenderState, RenderState->InconsolataFont, glm::vec4(1, 1, 1, 1),  &Console->Buffer[0], 25 / 1920.0f * (real32)RenderState->WindowWidth, (real32)RenderState->WindowHeight * 0.775f * PercentAnimated, 1);
+    RenderText(RenderState, RenderState->InconsolataFont, glm::vec4(0, 0.8, 0, 1),  &Console->Buffer[0], 5 / 1920.0f * (real32)RenderState->WindowWidth, (real32)RenderState->WindowHeight * 0.775f * PercentAnimated, 1);
     
     int index = 0;
-    for(int i = 0; i < HISTORY_BUFFER_LINES; i++)
+    
+    glm::vec4 Color;
+    
+    for(int Index = 0; Index < HISTORY_BUFFER_LINES; Index++)
     {
-        RenderText(RenderState, RenderState->InconsolataFont, glm::vec4(1, 1, 1, 1), &Console->HistoryBuffer[i][0], 25 / 1920.0f * (real32)RenderState->WindowWidth, (real32)RenderState->WindowHeight * 0.78f * PercentAnimated + (i + 1) * 25 * PercentAnimated, 1);
+        if(Index % 2 != 0)
+            Color = glm::vec4(0, 1, 0, 1);
+        else
+            Color = glm::vec4(1, 1, 1, 1);
+        
+        RenderText(RenderState, RenderState->InconsolataFont, Color, &Console->HistoryBuffer[Index][0], 5 / 1920.0f * (real32)RenderState->WindowWidth, (real32)RenderState->WindowHeight * 0.78f * PercentAnimated + (Index + 1) * 20 * PercentAnimated, 1);
     }
 }
 
 static void RenderColliderWireframe(render_state* RenderState, entity* Entity, glm::mat4 ProjectionMatrix, glm::mat4 View)
 {
-    glm::mat4 Model(1.0f);
-    
-    Model = glm::translate(Model, glm::vec3(Entity->CollisionAABB.Center.x - Entity->CollisionAABB.Extents.x, Entity->CollisionAABB.Center.y - Entity->CollisionAABB.Extents.y, 0.0f));
-    Model = glm::scale(Model, glm::vec3(Entity->CollisionAABB.Extents.x * 2, Entity->CollisionAABB.Extents.y * 2,1));
-    
-    glBindVertexArray(RenderState->WireframeVAO);
-    
-    auto Shader = RenderState->Shaders[Shader_Wireframe];
-    UseShader(&Shader);
-    
-    SetMat4Uniform(Shader.Program, "Projection", ProjectionMatrix);
-    SetMat4Uniform(Shader.Program, "View", View);
-    SetMat4Uniform(Shader.Program, "Model", Model);
-    glm::vec4 color;
-    
-    if(Entity->IsColliding)
-    {
-        color = glm::vec4(1.0,0.0,0.0,1.0);
-    }
-    else 
-    {
-        color = glm::vec4(0.0,1.0,0.0,1.0);
-    }
-    
-    SetVec4Attribute(Shader.Program, "color", color);
-    
-    glDrawArrays(GL_LINE_STRIP, 0, 6);
-    glBindVertexArray(0);
-    
-    if(Entity->HitTrigger)
+    if(Entity->Active)
     {
         glm::mat4 Model(1.0f);
         
-        Model = glm::translate(Model, glm::vec3(Entity->Position.x + Entity->Center.x * Entity->Scale.x - Entity->HitTrigger->Extents.x, Entity->Position.y + Entity->Center.y * Entity->Scale.y - Entity->HitTrigger->Extents.y, 0.0f));
-        Model = glm::scale(Model, glm::vec3(Entity->HitTrigger->Extents.x * 2, Entity->HitTrigger->Extents.y * 2,1));
+        Model = glm::translate(Model, glm::vec3(Entity->CollisionAABB.Center.x - Entity->CollisionAABB.Extents.x, Entity->CollisionAABB.Center.y - Entity->CollisionAABB.Extents.y, 0.0f));
+        Model = glm::scale(Model, glm::vec3(Entity->CollisionAABB.Extents.x * 2, Entity->CollisionAABB.Extents.y * 2,1));
         
         glBindVertexArray(RenderState->WireframeVAO);
         
@@ -744,7 +709,7 @@ static void RenderColliderWireframe(render_state* RenderState, entity* Entity, g
         SetMat4Uniform(Shader.Program, "Model", Model);
         glm::vec4 color;
         
-        if(Entity->HitTrigger->IsColliding)
+        if(Entity->IsColliding)
         {
             color = glm::vec4(1.0,0.0,0.0,1.0);
         }
@@ -758,6 +723,38 @@ static void RenderColliderWireframe(render_state* RenderState, entity* Entity, g
         glDrawArrays(GL_LINE_STRIP, 0, 6);
         glBindVertexArray(0);
         
+        if(Entity->HitTrigger)
+        {
+            glm::mat4 Model(1.0f);
+            
+            Model = glm::translate(Model, glm::vec3(Entity->Position.x + Entity->Center.x * Entity->Scale.x - Entity->HitTrigger->Extents.x, Entity->Position.y + Entity->Center.y * Entity->Scale.y - Entity->HitTrigger->Extents.y, 0.0f));
+            Model = glm::scale(Model, glm::vec3(Entity->HitTrigger->Extents.x * 2, Entity->HitTrigger->Extents.y * 2,1));
+            
+            glBindVertexArray(RenderState->WireframeVAO);
+            
+            auto Shader = RenderState->Shaders[Shader_Wireframe];
+            UseShader(&Shader);
+            
+            SetMat4Uniform(Shader.Program, "Projection", ProjectionMatrix);
+            SetMat4Uniform(Shader.Program, "View", View);
+            SetMat4Uniform(Shader.Program, "Model", Model);
+            glm::vec4 color;
+            
+            if(Entity->HitTrigger->IsColliding)
+            {
+                color = glm::vec4(1.0,0.0,0.0,1.0);
+            }
+            else 
+            {
+                color = glm::vec4(0.0,1.0,0.0,1.0);
+            }
+            
+            SetVec4Attribute(Shader.Program, "color", color);
+            
+            glDrawArrays(GL_LINE_STRIP, 0, 6);
+            glBindVertexArray(0);
+            
+        }
     }
 }
 
@@ -767,13 +764,14 @@ static void RenderEntity(render_state *RenderState, entity &Entity, glm::mat4 Pr
     auto Shader = RenderState->Shaders[RenderEntity->ShaderIndex];
     UseShader(&Shader);
     
-    if(RenderEntity->Rendered && !Entity.IsDead)
+    if(RenderEntity->Rendered && Entity.Active)
     {
         switch(Entity.Type)
         {
             case Entity_Crosshair:
             case Entity_Enemy:
             case Entity_Player:
+            case Entity_EnemyWeapon:
             case Entity_PlayerWeapon:
             case Entity_Barrel:
             {
@@ -795,8 +793,13 @@ static void RenderEntity(render_state *RenderState, entity &Entity, glm::mat4 Pr
                 
                 Model = glm::scale(Model, Scale);
                 
-                //if(Entity.Type == Entity_Enemy)
-                //printf("Entity: Name %s, position x %f y %f, rotation x %f y %f z %f\n", Entity.Name, Entity.Position.x, Entity.Position.y, Entity.Rotation.x, Entity.Rotation.y, Entity.Rotation.z);//PrintEntityInfo(Entity);
+                if(Entity.Type == Entity_Enemy)
+                {
+                    if(Entity.Enemy.AIState == AI_Hit)
+                        RenderEntity->Color = glm::vec4(1, 0, 0, 1);
+                    else
+                        RenderEntity->Color = glm::vec4(0, 1, 0, 1); //@Cleanup: This is just placeholder before we get a real enemy sprite that is different from the player
+                }
                 
                 if(Entity.CurrentAnimation) 
                 {
@@ -1075,13 +1078,12 @@ static void Render(game_state* GameState)
     }
     else
     {
-		//glfwSetInputMode(GameState->RenderState.Window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+        //glfwSetInputMode(GameState->RenderState.Window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
         RenderGame(GameState);
     }
     
     if(GameState->Console.CurrentTime > 0)
         RenderConsole(&GameState->RenderState, &GameState->Console, GameState->Camera.ProjectionMatrix,  GameState->Camera.ViewMatrix);
-    
     
     glfwSwapBuffers(GameState->RenderState.Window);
 }

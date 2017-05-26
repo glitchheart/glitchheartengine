@@ -14,7 +14,8 @@ enum AI_State
     AI_Idle,
     AI_Alerted,
     AI_Following,
-    AI_Attacking
+    AI_Attacking,
+    AI_Hit
 };
 
 enum Entity_Enum
@@ -25,6 +26,7 @@ enum Entity_Enum
     Entity_Tile,
     Entity_PalmTree,
     Entity_Enemy,
+    Entity_EnemyWeapon,
     Entity_Barrel,
     
     Entity_Max
@@ -49,13 +51,17 @@ struct entity
     
     uint32 RenderEntityHandle;
     
-    bool32 IsDead;
+    bool32 Active;
     collision_AABB CollisionAABB;
     bool32 IsKinematic;
     bool32 IsColliding;
     bool32 IsStatic; // For stuff that can't be moved by collision
     bool32 Pickup;
     collision_AABB* HitTrigger;
+    
+    int32 Health = -1;
+    real64 HitCooldownLeft;
+    real64 HitCooldownTime;
     union
     {
         struct
@@ -88,14 +94,19 @@ struct entity
             AI_State AIState;
             real32 AStarCooldown;
             real32 AStarInterval;
+            bool32 Path;
         } Enemy;
+        struct
+        {
+            uint32 EntityHandle;
+        } Weapon;
+        
     };
     glm::vec2* AStarPath;
     uint32 AStarPathLength;
     glm::vec2 Velocity;
 };
 
-
-#define NUM_ENTITIES 2048
+#define NUM_ENTITIES 20
 
 #endif

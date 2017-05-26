@@ -17,6 +17,7 @@ enum Key_Code
     Key_Escape,
     Key_F1,
     Key_F2,
+    Key_F3,
     Key_A,
     Key_B,
     Key_C,

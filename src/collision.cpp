@@ -117,7 +117,7 @@ static real32 GetRayIntersectionFraction(collision_AABB* Coll, glm::vec2 Origin,
 
 void CheckCollision(game_state* GameState, entity* Entity, collision_info* CollisionInfo)
 {
-    if(!Entity->IsKinematic && !Entity->IsDead)
+    if(!Entity->IsKinematic && Entity->Active)
     {
         Entity->CollisionAABB.Center = glm::vec2(Entity->Position.x + Entity->Center.x * Entity->Scale.x + Entity->CollisionAABB.Offset.x, Entity->Position.y + Entity->Center.y * Entity->Scale.y + Entity->CollisionAABB.Offset.y);
         if(Entity->HitTrigger)
@@ -126,6 +126,7 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
         }
         
         glm::vec2 PV;
+        CollisionInfo->OtherCount = 0;
         
         for(uint32 OtherEntityIndex = 0;
             OtherEntityIndex < GameState->EntityCount;
@@ -135,10 +136,9 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
             
             if(!(OtherEntity->Layer & Entity->IgnoreLayers) && !(Entity->Layer & OtherEntity->IgnoreLayers) 
                && OtherEntity->EntityIndex != Entity->EntityIndex 
-               && !OtherEntity->IsKinematic && !OtherEntity->IsDead)
+               && !OtherEntity->IsKinematic && OtherEntity->Active)
             {
-                
-                if(OtherEntity->HitTrigger && OtherEntity->Type == Entity_Enemy && Entity->Type == Entity_PlayerWeapon)
+                if(OtherEntity->HitTrigger)
                 {
                     collision_AABB MdHit;
                     MinkowskiDifference(OtherEntity->HitTrigger, &Entity->CollisionAABB, &MdHit);
@@ -147,13 +147,9 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
                        MdHit.Min.y <= 0 &&
                        MdHit.Max.y >= 0)
                     {
-                        OtherEntity->HitTrigger->IsColliding = true;
+                        CollisionInfo->Other[CollisionInfo->OtherCount++] = OtherEntity;
                         
-                        if(!OtherEntity->IsDead && GameState->Entities[GameState->PlayerIndex].Player.IsAttacking)
-                        {
-                            PlaySoundEffect(GameState, &GameState->SoundManager.SwordHit01);
-                            Kill(GameState, OtherEntity);
-                        }
+                        OtherEntity->HitTrigger->IsColliding = true;
                     }
                     else 
                     {
@@ -172,15 +168,6 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
                     
                     Entity->IsColliding = true;
                     Entity->CollisionAABB.IsColliding = true;
-                    
-                    if(OtherEntity->Type == Entity_Enemy && Entity->Type == Entity_PlayerWeapon)
-                    {
-                        if(!OtherEntity->IsDead && GameState->Entities[GameState->PlayerIndex].Player.IsAttacking)
-                        {
-                            PlaySoundEffect(GameState, &GameState->SoundManager.SwordHit01);
-                            Kill(GameState, OtherEntity);
-                        }
-                    }
                     
                     if(!Entity->CollisionAABB.IsTrigger && !OtherEntity->CollisionAABB.IsTrigger)
                     {
@@ -242,10 +229,10 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
             int32 YPos = (int32)(Entity->Position.y + Entity->Center.y * Entity->Scale.y);
             
             //@Improvement Is it necessary to go 2 tiles out?
-            uint32 MinX = Max(0, XPos - 2);
-            uint32 MaxX = Min((int32)Level->Tilemap.Width, XPos + 2);
-            uint32 MinY = Max(0, YPos - 2);
-            uint32 MaxY = Min((int32)Level->Tilemap.Height, YPos + 2);
+            int32 MinX = Max(0, XPos - 2);
+            int32 MaxX = Max(0, Min((int32)Level->Tilemap.Width, XPos + 2));
+            int32 MinY = Max(0, YPos - 2);
+            int32 MaxY = Max(0, Min((int32)Level->Tilemap.Height, YPos + 2));
             
             //check tile collision
             for(uint32 X = MinX; X < MaxX; X++)
@@ -296,12 +283,12 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
                             
                             if(PenetrationVector.x != 0)
                             {
-                                PV.x = PenetrationVector.x;
+                                PV.x = PenetrationVector.x * 1.001; // This is necessary to prevent the player from getting stuck
                             }
                             
                             if(PenetrationVector.y != 0)
                             {
-                                PV.y = PenetrationVector.y;
+                                PV.y = PenetrationVector.y * 1.001; // This is necessary to prevent the player from getting stuck
                             }
                             
                             if(Entity->Type == Entity_Barrel)

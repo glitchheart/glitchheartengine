@@ -45,14 +45,13 @@ struct CompareCStrings
     }
 };
 
-static char* CombineStrings(const char * str1, const char* str2)
+static char* Concat(const char *s1, const char *s2)
 {
-    char * str3 = (char *) malloc(1 + strlen(str1) + strlen(str2));
-    strcpy(str3, str1);
-    strcat(str3, str2);
-    return str3;
+    char *result = (char*)malloc(strlen(s1)+strlen(s2)+1);//+1 for the zero-terminator
+    strcpy(result, s1);
+    strcat(result, s2);
+    return result;
 }
-
 
 struct config_data
 {
@@ -61,6 +60,7 @@ struct config_data
     uint32 ScreenWidth;
     uint32 ScreenHeight;
     bool32 Fullscreen;
+    bool32 Muted;
 };
 
 static void LoadConfig(const char* FilePath, config_data* ConfigData)
@@ -74,6 +74,7 @@ static void LoadConfig(const char* FilePath, config_data* ConfigData)
     
     if(File)
     {
+        //@Cleanup: Should be changed to check for each property every line.
         if(fgets(LineBuffer, 255, File))
         {
             sscanf(LineBuffer, "title %s", ConfigData->Title);
@@ -97,6 +98,11 @@ static void LoadConfig(const char* FilePath, config_data* ConfigData)
         if(fgets(LineBuffer, 255, File))
         {
             sscanf(LineBuffer, "fullscreen %d", &ConfigData->Fullscreen);
+        }
+        
+        if(fgets(LineBuffer, 255, File))
+        {
+            sscanf(LineBuffer, "muted %d", &ConfigData->Muted);
         }
         fclose(File);
     }
