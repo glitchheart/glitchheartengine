@@ -3,9 +3,9 @@
 // This is calculated with some heuristic
 static void AStarComputeHCost(astar_node* Node, astar_node TargetNode)
 {
-    int32 XDist = Abs(TargetNode.X - Node->X);
-    int32 YDist = Abs(TargetNode.Y - Node->Y);
-    Node->HCost = (XDist + YDist) * 10;
+    int32 Dx = Abs(Node->X - TargetNode.X);
+    int32 Dy = Abs(Node->Y - TargetNode.Y);
+    Node->HCost = 10 * (Dx + Dy) + (14 - 2 * 10) * Min(Dx,Dy);
 }
 
 static bool32 IsClosed(int32 X, int32 Y, astar_node ClosedSet[], uint32 ClosedSetCount)
@@ -93,6 +93,10 @@ static void HandleNeighbour(astar_node* Current, astar_node* TargetNode,game_sta
 */
 static void AStar(entity* Enemy, game_state* GameState, glm::vec2 StartPos, glm::vec2 TargetPos)
 {
+    if(Enemy->AStarPath)
+    {
+        free(Enemy->AStarPath);
+    }
     astar_working_data AStarWorkingData = {};
     tile_data StartTile = GameState->CurrentLevel.Tilemap.Data[(uint32)StartPos.x][(uint32)StartPos.y];
     tile_data TargetTile = GameState->CurrentLevel.Tilemap.Data[(uint32)TargetPos.x][(uint32)TargetPos.y];
@@ -166,10 +170,7 @@ static void AStar(entity* Enemy, game_state* GameState, glm::vec2 StartPos, glm:
                 
                 if(Length > 0) 
                 {
-                    if(Enemy->AStarPath)
-                    {
-                        free(Enemy->AStarPath);
-                    }
+                    
                     Enemy->AStarPath = (glm::vec2*)malloc(sizeof(glm::vec2) * Length);
                     Enemy->AStarPath[Length] = glm::vec2(AStarWorkingData.WorkingList[Current.WorkingListIndex].X,AStarWorkingData.WorkingList[Current.WorkingListIndex].Y);
                     uint32 Index = Length - 1;
@@ -181,6 +182,7 @@ static void AStar(entity* Enemy, game_state* GameState, glm::vec2 StartPos, glm:
                     }
                     Enemy->AStarPath[0] = glm::vec2(PathNode.X,PathNode.Y);
                     Enemy->AStarPathLength = Length;
+                    Enemy->Enemy.Path = true;
                 }
                 
             }

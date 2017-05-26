@@ -1,5 +1,10 @@
 #include "console_commands.h"
 
+static void ReloadLevel(game_state* GameState)
+{
+    ReloadCurrentLevel(GameState);
+}
+
 static void AddCommand(char* Name, char* (*FunctionPointer)(game_state*, char**))
 {
     command_info Info = { Name, FunctionPointer };
@@ -20,7 +25,6 @@ static void InitCommands()
 
 void ExecuteCommand(game_state *GameState)
 {
-    
     if(strcmp(" ",  GameState->Console.Buffer) != 0
        && strcmp("",  GameState->Console.Buffer) != 0) //NOTE(Daniel) if the command isn't an empty string
     {
@@ -51,20 +55,23 @@ void ExecuteCommand(game_state *GameState)
         
         bool32 Found = false;
         
+        char * ReturnedResult;
         
         for(uint32 i = 0; i < CommandCount; i++)
         {
             if(strcmp(CommandName, Commands[i].Name) == 0)
             {
                 Found = true;
-                Result = Commands[i].FunctionPointer(GameState, ArgumentBuffer);
+                Result = Commands[i].FunctionPointer(GameState, Count > 0 ? ArgumentBuffer : 0);
                 break;
             }
         }
         
+        free(ArgumentBuffer);
+        
         if(!Found)
         {
-            Result = CombineStrings(Result, ": Command not found");
+            Result = Concat(Result, ": Command not found");
         }
         
         //Copy the command into the history buffer
@@ -79,11 +86,9 @@ void ExecuteCommand(game_state *GameState)
         free(Result);
         
         for(int i = 0; i < CONSOLE_BUFFER_SIZE; i++)
-            GameState->Console.Buffer[i] = '\0';
+            GameState->Console.Buffer[i] = 0;
         
         GameState->Console.BufferIndex = 0;
-        
-        //free(ResultCopy); //TODO(Daniel) this crashes the program. Find out why
     }
 }
 

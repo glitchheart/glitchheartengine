@@ -14,9 +14,9 @@ struct astar_node
 
 struct astar_working_data
 {
-    astar_node OpenSet[128];
-    astar_node ClosedSet[128];
-    astar_node WorkingList[128];
+    astar_node OpenSet[96];
+    astar_node ClosedSet[96];
+    astar_node WorkingList[256];
 };
 
 

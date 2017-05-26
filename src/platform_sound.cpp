@@ -224,34 +224,37 @@ static void StopSound(sound_effect *SoundEffect)
 
 static void PlaySounds(game_state *GameState)
 {
-    for (uint32 Sound = 0;
-         Sound < GameState->SoundManager.SoundQueue.SoundCount;
-         Sound++)
+    if(!GameState->SoundManager.Muted)
     {
-        if (GameState->SoundManager.SoundQueue.Sounds[Sound].PlayOnce)
+        for (uint32 Sound = 0;
+             Sound < GameState->SoundManager.SoundQueue.SoundCount;
+             Sound++)
         {
-            PlaySoundOnce(&GameState->SoundManager.SoundQueue.Sounds[Sound]);
+            if (GameState->SoundManager.SoundQueue.Sounds[Sound].PlayOnce)
+            {
+                PlaySoundOnce(&GameState->SoundManager.SoundQueue.Sounds[Sound]);
+            }
+            else
+            {
+                PlaySound(&GameState->SoundManager.SoundQueue.Sounds[Sound]);
+            }
         }
-        else
+        
+        for (uint32 Sound = 0;
+             Sound < GameState->SoundManager.SoundQueue.StoppedSoundCount;
+             Sound++)
         {
-            PlaySound(&GameState->SoundManager.SoundQueue.Sounds[Sound]);
+            
+            StopSound(&GameState->SoundManager.SoundQueue.StoppedSounds[Sound]);
         }
-    }
-    
-    for (uint32 Sound = 0;
-         Sound < GameState->SoundManager.SoundQueue.StoppedSoundCount;
-         Sound++)
-    {
         
-        StopSound(&GameState->SoundManager.SoundQueue.StoppedSounds[Sound]);
-    }
-    
-    for (uint32 Sound = 0;
-         Sound < GameState->SoundManager.SoundQueue.PausedSoundCount;
-         Sound++)
-    {
-        
-        PauseSound(&GameState->SoundManager.SoundQueue.PausedSounds[Sound]);
+        for (uint32 Sound = 0;
+             Sound < GameState->SoundManager.SoundQueue.PausedSoundCount;
+             Sound++)
+        {
+            
+            PauseSound(&GameState->SoundManager.SoundQueue.PausedSounds[Sound]);
+        }
     }
     ResetSoundQueue(&GameState->SoundManager);
 }

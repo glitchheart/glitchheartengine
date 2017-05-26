@@ -86,11 +86,11 @@ static void StartupFileTimeChecks(asset_manager* AssetManager)
     for (int i = 0; i < Shader_Count; i++) 
     {
         struct stat sb1;
-        stat(CombineStrings(ShaderPaths[i], ".vert"), &sb1);
+        stat(Concat(ShaderPaths[i], ".vert"), &sb1);
         AssetManager->VertexShaderTimes[i] =  sb1.st_mtime;
         
         struct stat sb2;
-        stat(CombineStrings(ShaderPaths[i], ".frag"), &sb2);
+        stat(Concat(ShaderPaths[i], ".frag"), &sb2);
         AssetManager->FragmentShaderTimes[i] =  sb2.st_mtime;
     }
 }
@@ -103,8 +103,8 @@ static void ListenToFileChanges(asset_manager* AssetManager)
     {
         for (int i = 0; i < Shader_Count; i++)
         {
-            CheckDirty(CombineStrings(ShaderPaths[i], ".vert"), AssetManager->VertexShaderTimes[i], &AssetManager->DirtyVertexShaderIndices[i], &AssetManager->VertexShaderTimes[i]);
-            CheckDirty(CombineStrings(ShaderPaths[i], ".frag"), AssetManager->FragmentShaderTimes[i], &AssetManager->DirtyFragmentShaderIndices[i], &AssetManager->FragmentShaderTimes[i]);
+            CheckDirty(Concat(ShaderPaths[i], ".vert"), AssetManager->VertexShaderTimes[i], &AssetManager->DirtyVertexShaderIndices[i], &AssetManager->VertexShaderTimes[i]);
+            CheckDirty(Concat(ShaderPaths[i], ".frag"), AssetManager->FragmentShaderTimes[i], &AssetManager->DirtyFragmentShaderIndices[i], &AssetManager->FragmentShaderTimes[i]);
         }
         
         CheckDirty(AssetManager->TilesetTexturePath, AssetManager->TilesetTime, &AssetManager->DirtyTileset, &AssetManager->TilesetTime);	

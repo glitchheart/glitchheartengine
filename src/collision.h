@@ -19,7 +19,7 @@ struct collision_info
 {
     Collision_Side Side;
     entity* Other[NUM_OTHERS]; 
-    uint32 OtherCount = 0;
+    int32 OtherCount = 0;
 };
 
 struct collision_AABB
