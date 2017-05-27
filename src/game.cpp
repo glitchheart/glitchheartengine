@@ -205,34 +205,36 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                     
                     Entity->IsFlipped = Player->IsFlipped;
                     
-                    if(Player->Velocity.x == 0 && Player->Velocity.y != 0)
+                    Entity->Scale = glm::vec3(4, 4, 0);
+                    
+                    if(Player->Player.LastKnownDirectionX == 0 && Player->Player.LastKnownDirectionY != 0)
                     {
                         Entity->CollisionAABB.Extents = glm::vec2(1.2f, 0.6f);
-                        if(Player->Velocity.y < 0)
+                        if(Player->Player.LastKnownDirectionY < 0)
                         {
                             Entity->CollisionAABB.Offset = glm::vec2(0, 0.2f);
-                            Entity->Position = glm::vec2(Pos.x - 1.3f, Pos.y - 2.0f);
+                            Entity->Position = glm::vec2(Pos.x + 2.8f, Pos.y + 3);
+                            Entity->Scale = glm::vec3(-4, -4, 0);
                         }
-                        else if(Player->Velocity.y > 0)
+                        else if(Player->Player.LastKnownDirectionY > 0)
                         {
-                            
                             Entity->CollisionAABB.Offset = glm::vec2(0, 0.7f);
                             Entity->Position = glm::vec2(Pos.x - 1.3f, Pos.y);
                         }
                     }
                     else
                     {
-                        Entity->CollisionAABB.Extents = glm::vec2(0.5f,1.0f);
+                        Entity->CollisionAABB.Extents = glm::vec2(0.8f, 1.2f);
                         
                         if(Player->IsFlipped)
                         {
-                            Entity->CollisionAABB.Offset = glm::vec2(-0.8, -0.2f);
+                            Entity->CollisionAABB.Offset = glm::vec2(-0.8, -0.8f);
                             Entity->Position = glm::vec2(Pos.x - 1.8f, Pos.y);
                         }
                         else
                         {
-                            Entity->CollisionAABB.Offset = glm::vec2(0.7, -0.2f);
-                            Entity->Position = glm::vec2(Pos.x, Pos.y);
+                            Entity->CollisionAABB.Offset = glm::vec2(0.2, -0.8f);
+                            Entity->Position = glm::vec2(Pos.x - 0.1, Pos.y);
                         }
                     }
                     
@@ -257,13 +259,13 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                     {
                         Entity->CurrentAnimation = 0;
                         
-                        if(Player->Velocity.x == 0)
+                        if(Player->Player.LastKnownDirectionX == 0)
                         {
-                            if(Player->Velocity.y < 0)
+                            if(Player->Player.LastKnownDirectionY < 0)
                             {
                                 PlayAnimation(Entity, &GameState->SwordDownAnimation);
                             }
-                            else if(Player->Velocity.y > 0)
+                            else if(Player->Player.LastKnownDirectionY > 0)
                             {
                                 PlayAnimation(Entity, &GameState->SwordUpAnimation);
                             }
