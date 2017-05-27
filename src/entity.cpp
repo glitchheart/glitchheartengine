@@ -15,6 +15,7 @@ static void InitPlayer(game_state* GameState)
     Player->Player.MaxDashTime = 0.2;
     Player->Player.DashSpeed = 30;
     Player->Player.AttackCooldown = 0.3;
+    Player->Player.DashCooldown = 0.6;
     Player->Active = true;
     Player->IsKinematic = false;
     Player->CurrentAnimation = 0;

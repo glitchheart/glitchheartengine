@@ -69,8 +69,8 @@ static void LoadConfig(const char* FilePath, config_data* ConfigData)
     File = fopen(FilePath, "r");
     char LineBuffer[255];
     
-    ConfigData->Title = (char*)malloc(sizeof(char) * 30);
-    ConfigData->Version = (char*)malloc(sizeof(char) * 30);
+    ConfigData->Title = (char*)malloc(sizeof(char) * 40);
+    ConfigData->Version = (char*)malloc(sizeof(char) * 40);
     
     if(File)
     {

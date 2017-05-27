@@ -35,6 +35,9 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
             {
                 case Entity_Player: 
                 {
+                    if(Entity->Player.CurrentDashCooldownTime > 0)
+                        Entity->Player.CurrentDashCooldownTime -= DeltaTime;
+                    
                     if (!GameState->Console.Open)
                     {
                         // Set the last know direction for dash direction later
@@ -45,7 +48,7 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                             Entity->Player.LastKnownDirectionY = Direction.y;
                         }
                         
-                        if(!Entity->Player.IsAttacking && !Entity->Player.IsDashing && GetActionButtonDown(Action_Dash, GameState))
+                        if(!Entity->Player.IsAttacking && Entity->Player.CurrentDashCooldownTime <= 0 && !Entity->Player.IsDashing && GetActionButtonDown(Action_Dash, GameState))
                         {
                             PlaySoundEffect(GameState, &GameState->SoundManager.Dash);
                             Entity->Player.IsDashing = true;
@@ -125,6 +128,9 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                         }
                         else if(Entity->Player.IsDashing)
                         {
+                            if(Entity->Player.CurrentDashTime == 0)
+                                Entity->Player.CurrentDashCooldownTime = Entity->Player.DashCooldown;
+                            
                             if(Entity->Player.CurrentDashTime < Entity->Player.MaxDashTime)
                             {
                                 Entity->Velocity = glm::vec2(Entity->Player.LastKnownDirectionX * Entity->Player.DashSpeed * DeltaTime, Entity->Player.LastKnownDirectionY * Entity->Player.DashSpeed * DeltaTime);
@@ -148,17 +154,19 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                         CheckCollision(GameState, Entity, &CollisionInfo);
                         
                         entity* OtherEntity;
+                        bool32 OtherFound = false;
                         
                         for(int Index = 0; Index < CollisionInfo.OtherCount; Index++)
                         {
                             if(CollisionInfo.Other[Index]->Pickup)
                             {
                                 OtherEntity = CollisionInfo.Other[Index];
+                                OtherFound = true;
                                 break;
                             }
                         }
                         
-                        if(OtherEntity &&
+                        if(OtherFound && OtherEntity->Pickup &&
                            GetActionButtonDown(Action_Interact, GameState) && Entity->Player.PickupCooldown <= 0.0)
                         {
                             Entity->Player.Pickup = OtherEntity;
@@ -206,34 +214,36 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                     
                     Entity->IsFlipped = Player->IsFlipped;
                     
-                    if(Player->Velocity.x == 0 && Player->Velocity.y != 0)
+                    Entity->Scale = glm::vec3(4, 4, 0);
+                    
+                    if(Player->Player.LastKnownDirectionX == 0 && Player->Player.LastKnownDirectionY != 0)
                     {
                         Entity->CollisionAABB.Extents = glm::vec2(1.2f, 0.6f);
-                        if(Player->Velocity.y < 0)
+                        if(Player->Player.LastKnownDirectionY < 0)
                         {
-                            Entity->CollisionAABB.Offset = glm::vec2(0, 0.2f);
-                            Entity->Position = glm::vec2(Pos.x - 1.3f, Pos.y - 2.0f);
+                            Entity->CollisionAABB.Offset = glm::vec2(0, -0.6f);
+                            Entity->Position = glm::vec2(Pos.x + 2.8f, Pos.y + 3);
+                            Entity->Scale = glm::vec3(-4, -4, 0);
                         }
-                        else if(Player->Velocity.y > 0)
+                        else if(Player->Player.LastKnownDirectionY > 0)
                         {
-                            
                             Entity->CollisionAABB.Offset = glm::vec2(0, 0.7f);
                             Entity->Position = glm::vec2(Pos.x - 1.3f, Pos.y);
                         }
                     }
                     else
                     {
-                        Entity->CollisionAABB.Extents = glm::vec2(0.5f,1.0f);
+                        Entity->CollisionAABB.Extents = glm::vec2(0.8f, 1.2f);
                         
                         if(Player->IsFlipped)
                         {
-                            Entity->CollisionAABB.Offset = glm::vec2(-0.8, -0.2f);
+                            Entity->CollisionAABB.Offset = glm::vec2(-0.8, -0.8f);
                             Entity->Position = glm::vec2(Pos.x - 1.8f, Pos.y);
                         }
                         else
                         {
-                            Entity->CollisionAABB.Offset = glm::vec2(0.7, -0.2f);
-                            Entity->Position = glm::vec2(Pos.x, Pos.y);
+                            Entity->CollisionAABB.Offset = glm::vec2(0.2, -0.8f);
+                            Entity->Position = glm::vec2(Pos.x - 0.1, Pos.y);
                         }
                     }
                     
@@ -258,13 +268,13 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                     {
                         Entity->CurrentAnimation = 0;
                         
-                        if(Player->Velocity.x == 0)
+                        if(Player->Player.LastKnownDirectionX == 0)
                         {
-                            if(Player->Velocity.y < 0)
+                            if(Player->Player.LastKnownDirectionY < 0)
                             {
                                 PlayAnimation(Entity, &GameState->SwordDownAnimation);
                             }
-                            else if(Player->Velocity.y > 0)
+                            else if(Player->Player.LastKnownDirectionY > 0)
                             {
                                 PlayAnimation(Entity, &GameState->SwordUpAnimation);
                             }
