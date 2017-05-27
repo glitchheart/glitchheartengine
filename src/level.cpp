@@ -82,9 +82,12 @@ static bool32 LoadLevelFromFile(char* FilePath, level* Level, game_state* GameSt
         
         while(fgets(LineBuffer, 255, File))
         {
-            glm::vec2 Pos;
-            sscanf(LineBuffer, "enemy %f %f", &Pos.x, &Pos.y);
-            SpawnEnemy(GameState, Pos);
+            if(strcmp(LineBuffer,"\n") != 0) 
+            {
+                glm::vec2 Pos;
+                sscanf(LineBuffer, "enemy %f %f", &Pos.x, &Pos.y);
+                SpawnEnemy(GameState, Pos);
+            }
         }
         fclose(File);
         return true;

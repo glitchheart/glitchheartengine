@@ -129,6 +129,7 @@ struct render_state
     
     bool32 RenderColliders;
     bool32 RenderFPS;
+    bool32 RenderPaths;
     bool32 ShouldClose;
     real64 FPS;
     
