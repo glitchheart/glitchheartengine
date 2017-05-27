@@ -72,7 +72,7 @@ static void InitPlayer(game_state* GameState)
     CollisionAABB3.IsTrigger = true;
     PlayerWeapon->CollisionAABB = CollisionAABB3;
     PlayerWeapon->Rotation = glm::vec3(0, 0, 0);
-    PlayerWeapon->Scale = glm::vec3(4, 4, 0);
+    PlayerWeapon->Scale = glm::vec3(4, 4, 0); 
     PlayerWeapon->EntityIndex = GameState->EntityCount;
     GameState->EntityCount++;
 }

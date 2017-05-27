@@ -92,6 +92,7 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                                 Entity->Player.Pickup->IsKinematic = false;
                                 real32 ThrowingDir = Entity->IsFlipped ? -1.0f : 1.0f;
                                 glm::vec2 Throw;
+                                
                                 if(Entity->Velocity.x == 0.0f && Entity->Velocity.y == 0.0f)
                                 {
                                     Throw.x = Entity->Player.ThrowingSpeed * ThrowingDir;
@@ -205,16 +206,37 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                     
                     Entity->IsFlipped = Player->IsFlipped;
                     
-                    if(Player->IsFlipped)
+                    if(Player->Velocity.x == 0 && Player->Velocity.y != 0)
                     {
-                        Entity->CollisionAABB.Offset = glm::vec2(-0.8, 0);
-                        Entity->Position = glm::vec2(Pos.x - 1.3f, Pos.y);
+                        Entity->CollisionAABB.Extents = glm::vec2(1.2f, 0.6f);
+                        if(Player->Velocity.y < 0)
+                        {
+                            Entity->CollisionAABB.Offset = glm::vec2(0, 0.2f);
+                            Entity->Position = glm::vec2(Pos.x - 1.3f, Pos.y - 2.0f);
+                        }
+                        else if(Player->Velocity.y > 0)
+                        {
+                            
+                            Entity->CollisionAABB.Offset = glm::vec2(0, 0.7f);
+                            Entity->Position = glm::vec2(Pos.x - 1.3f, Pos.y);
+                        }
                     }
                     else
                     {
-                        Entity->CollisionAABB.Offset = glm::vec2(0.7, 0);
-                        Entity->Position = glm::vec2(Pos.x - 0.5f, Pos.y);
+                        Entity->CollisionAABB.Extents = glm::vec2(0.5f,1.0f);
+                        
+                        if(Player->IsFlipped)
+                        {
+                            Entity->CollisionAABB.Offset = glm::vec2(-0.8, -0.2f);
+                            Entity->Position = glm::vec2(Pos.x - 1.8f, Pos.y);
+                        }
+                        else
+                        {
+                            Entity->CollisionAABB.Offset = glm::vec2(0.7, -0.2f);
+                            Entity->Position = glm::vec2(Pos.x, Pos.y);
+                        }
                     }
+                    
                     Entity->CollisionAABB.Center = glm::vec2(Entity->Position.x + Entity->Center.x * Entity->Scale.x + Entity->CollisionAABB.Offset.x, Entity->Position.y + Entity->Center.y * Entity->Scale.y + Entity->CollisionAABB.Offset.y);
                     
                     collision_info CollisionInfo;
@@ -235,7 +257,27 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                     if(Player->Player.IsAttacking && !Entity->AnimationInfo.Playing)
                     {
                         Entity->CurrentAnimation = 0;
-                        PlayAnimation(Entity, &GameState->SwordTopRightAnimation);
+                        
+                        if(Player->Velocity.x == 0)
+                        {
+                            if(Player->Velocity.y < 0)
+                            {
+                                PlayAnimation(Entity, &GameState->SwordDownAnimation);
+                            }
+                            else if(Player->Velocity.y > 0)
+                            {
+                                PlayAnimation(Entity, &GameState->SwordUpAnimation);
+                            }
+                            else
+                            {
+                                PlayAnimation(Entity, &GameState->SwordTopRightAnimation);
+                            }
+                        }
+                        else
+                        {
+                            PlayAnimation(Entity, &GameState->SwordTopRightAnimation);
+                        }
+                        
                         RenderEntity->Rendered = true;
                     }
                     else if(!Entity->AnimationInfo.Playing)

@@ -1,13 +1,12 @@
-name player_sword_top_right
+name player_sword_down
 type sprite
-framecount 4
+framecount 3
 loop 0
 timeperframe 0.05
 rows 1
 columns 7
 frames
-0 0
-1 0
-2 0
-3 0
+4 0
+5 0
+6 0
 texture 4
