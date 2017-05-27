@@ -191,7 +191,7 @@ static void AStar(entity* Enemy, game_state* GameState, glm::vec2 StartPos, glm:
                         Enemy->AStarPath[0] = glm::vec2(PathNode.X,PathNode.Y);
                         Enemy->AStarPathLength = Length + 1;
                         Enemy->Enemy.Path = true;
-                        printf("Found a path of length: %d\n", Length);
+                        //printf("Found a path of length: %d\n", Length);
                         Enemy->PathIndex = 1;
                     }
                     
