@@ -157,7 +157,7 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                             }
                         }
                         
-                        if(OtherEntity &&
+                        if(OtherEntity && OtherEntity->Pickup &&
                            GetActionButtonDown(Action_Interact, GameState) && Entity->Player.PickupCooldown <= 0.0)
                         {
                             Entity->Player.Pickup = OtherEntity;
@@ -212,7 +212,7 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                         Entity->CollisionAABB.Extents = glm::vec2(1.2f, 0.6f);
                         if(Player->Player.LastKnownDirectionY < 0)
                         {
-                            Entity->CollisionAABB.Offset = glm::vec2(0, 0.2f);
+                            Entity->CollisionAABB.Offset = glm::vec2(0, -0.6f);
                             Entity->Position = glm::vec2(Pos.x + 2.8f, Pos.y + 3);
                             Entity->Scale = glm::vec3(-4, -4, 0);
                         }
