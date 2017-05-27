@@ -104,6 +104,7 @@ struct entity
     };
     glm::vec2* AStarPath;
     uint32 AStarPathLength;
+    uint32 PathIndex;
     glm::vec2 Velocity;
 };
 

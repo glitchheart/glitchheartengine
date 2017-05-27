@@ -51,7 +51,7 @@ static void HandleNeighbour(astar_node* Current, astar_node* TargetNode,game_sta
             AStarComputeHCost(&NeighbourNode,*TargetNode);
             NeighbourNode.FCost = NeighbourNode.GCost + NeighbourNode.HCost;
             
-            if(*OpenSetCount < 512) {
+            if(*OpenSetCount < OPENSET_COUNT) {
                 OpenSet[*OpenSetCount] = NeighbourNode;
                 *OpenSetCount = *OpenSetCount + 1;
                 OpenSet[*OpenSetCount - 1].WorkingListIndex = *WorkingListCount;
@@ -93,149 +93,162 @@ static void HandleNeighbour(astar_node* Current, astar_node* TargetNode,game_sta
 */
 static void AStar(entity* Enemy, game_state* GameState, glm::vec2 StartPos, glm::vec2 TargetPos)
 {
-    if(Enemy->AStarPath)
+    if(StartPos.x < GameState->CurrentLevel.Tilemap.Width && StartPos.y < GameState->CurrentLevel.Tilemap.Height &&
+       StartPos.x >= 0 && StartPos.y >= 0 && TargetPos.x < GameState->CurrentLevel.Tilemap.Width && TargetPos.y < GameState->CurrentLevel.Tilemap.Height &&
+       TargetPos.x >= 0 && TargetPos.y >= 0)
     {
-        free(Enemy->AStarPath);
-    }
-    astar_working_data AStarWorkingData = {};
-    tile_data StartTile = GameState->CurrentLevel.Tilemap.Data[(uint32)StartPos.x][(uint32)StartPos.y];
-    tile_data TargetTile = GameState->CurrentLevel.Tilemap.Data[(uint32)TargetPos.x][(uint32)TargetPos.y];
-    glm::vec2 CurrentPos = StartPos;
-    
-    uint32 WorkingListCount = 0;
-    uint32 ClosedSetCount = 0;
-    astar_node StartNode = {};
-    StartNode.X = (uint32)StartPos.x;
-    StartNode.Y = (uint32)StartPos.y;
-    
-    astar_node TargetNode = {};
-    TargetNode.X = (uint32)TargetPos.x;
-    TargetNode.Y = (uint32)TargetPos.y;
-    
-    uint32 OpenSetCount = 0;
-    StartNode.WorkingListIndex = 0;
-    AStarWorkingData.WorkingList[WorkingListCount++] = StartNode;
-    AStarWorkingData.WorkingList[WorkingListCount++] = TargetNode;
-    TargetNode.WorkingListIndex = 1;
-    AStarWorkingData.OpenSet[OpenSetCount++] = StartNode;
-    AStarComputeHCost(&StartNode,TargetNode);
-    
-    int32 WorkingIndex = 0;
-    uint32 LowestFcost = StartNode.FCost;
-    
-    while(OpenSetCount > 0)
-    {
-        for(uint32 OpenIndex = 0; OpenIndex < OpenSetCount; OpenIndex++)
+        if(Enemy->AStarPath)
         {
-            if(AStarWorkingData.OpenSet[OpenIndex].FCost < LowestFcost)
-            {
-                LowestFcost = AStarWorkingData.OpenSet[OpenIndex].FCost;
-                WorkingIndex = OpenIndex;
-            }
+            //free(Enemy->AStarPath);
         }
+        astar_working_data* AStarWorkingData = (astar_working_data*)malloc(sizeof(astar_working_data));
+        tile_data StartTile = GameState->CurrentLevel.Tilemap.Data[(uint32)StartPos.x][(uint32)StartPos.y];
+        tile_data TargetTile = GameState->CurrentLevel.Tilemap.Data[(uint32)TargetPos.x][(uint32)TargetPos.y];
+        glm::vec2 CurrentPos = StartPos;
         
-        astar_node LastNode = AStarWorkingData.OpenSet[OpenSetCount - 1];
-        astar_node Current = AStarWorkingData.OpenSet[WorkingIndex];
+        uint32 WorkingListCount = 0;
+        uint32 ClosedSetCount = 0;
+        astar_node StartNode = {};
+        StartNode.X = (uint32)StartPos.x;
+        StartNode.Y = (uint32)StartPos.y;
         
+        astar_node TargetNode = {};
+        TargetNode.X = (uint32)TargetPos.x;
+        TargetNode.Y = (uint32)TargetPos.y;
         
-        if(LastNode.X != AStarWorkingData.OpenSet[WorkingIndex].X || LastNode.Y != AStarWorkingData.OpenSet[WorkingIndex].Y)
+        uint32 OpenSetCount = 0;
+        StartNode.WorkingListIndex = 0;
+        AStarWorkingData->WorkingList[WorkingListCount++] = StartNode;
+        AStarWorkingData->WorkingList[WorkingListCount++] = TargetNode;
+        TargetNode.WorkingListIndex = 1;
+        AStarWorkingData->OpenSet[OpenSetCount++] = StartNode;
+        AStarComputeHCost(&StartNode,TargetNode);
+        
+        int32 WorkingIndex = 0;
+        uint32 LowestFcost = StartNode.FCost;
+        
+        while(OpenSetCount > 0 && OpenSetCount < OPENSET_COUNT - 8 && WorkingListCount < WORKING_LIST_COUNT - 8)
         {
-            AStarWorkingData.OpenSet[WorkingIndex] = LastNode;
-        } // Else AStarWorkingData.OpenSet[WorkingIndex] == LastNode
-        
-        
-        AStarWorkingData.OpenSet[OpenSetCount - 1].X = -1;
-        AStarWorkingData.OpenSet[OpenSetCount - 1].Y = -1;
-        AStarWorkingData.OpenSet[OpenSetCount - 1].IsClosed = false;
-        AStarWorkingData.OpenSet[OpenSetCount - 1].FCost = 0;
-        AStarWorkingData.OpenSet[OpenSetCount - 1].GCost = 0;
-        AStarWorkingData.OpenSet[OpenSetCount - 1].HCost = 0;
-        AStarWorkingData.OpenSet[OpenSetCount - 1].ParentIndex = -1;
-        AStarWorkingData.OpenSet[OpenSetCount - 1].WorkingListIndex = -1;
-        
-        OpenSetCount--;
-        AStarWorkingData.ClosedSet[ClosedSetCount++] = Current;
-        
-        if(Current.X == TargetNode.X && Current.Y == TargetNode.Y)
-        {
-            astar_node PathNode;
-            if(Current.ParentIndex >= 0) {
-                PathNode = AStarWorkingData.WorkingList[Current.ParentIndex];
-                uint32 Length = 1;
-                while(PathNode.ParentIndex >= 0 && (PathNode.X != StartNode.X || PathNode.Y != StartNode.Y))
+            for(uint32 OpenIndex = 0; OpenIndex < OpenSetCount; OpenIndex++)
+            {
+                if(AStarWorkingData->OpenSet[OpenIndex].FCost < LowestFcost)
                 {
-                    Length++;
-                    PathNode = AStarWorkingData.WorkingList[PathNode.ParentIndex];
+                    LowestFcost = AStarWorkingData->OpenSet[OpenIndex].FCost;
+                    WorkingIndex = OpenIndex;
                 }
+            }
+            
+            astar_node LastNode = AStarWorkingData->OpenSet[OpenSetCount - 1];
+            astar_node Current = AStarWorkingData->OpenSet[WorkingIndex];
+            
+            
+            if(LastNode.X != AStarWorkingData->OpenSet[WorkingIndex].X || LastNode.Y != AStarWorkingData->OpenSet[WorkingIndex].Y)
+            {
+                AStarWorkingData->OpenSet[WorkingIndex] = LastNode;
+            } // Else AStarWorkingData->OpenSet[WorkingIndex] == LastNode
+            
+            
+            AStarWorkingData->OpenSet[OpenSetCount - 1].X = -1;
+            AStarWorkingData->OpenSet[OpenSetCount - 1].Y = -1;
+            AStarWorkingData->OpenSet[OpenSetCount - 1].IsClosed = false;
+            AStarWorkingData->OpenSet[OpenSetCount - 1].FCost = 0;
+            AStarWorkingData->OpenSet[OpenSetCount - 1].GCost = 0;
+            AStarWorkingData->OpenSet[OpenSetCount - 1].HCost = 0;
+            AStarWorkingData->OpenSet[OpenSetCount - 1].ParentIndex = -1;
+            AStarWorkingData->OpenSet[OpenSetCount - 1].WorkingListIndex = -1;
+            
+            OpenSetCount--;
+            AStarWorkingData->ClosedSet[ClosedSetCount++] = Current;
+            
+            if(Current.X == TargetNode.X && Current.Y == TargetNode.Y)
+            {
+                astar_node PathNode;
                 
-                if(Length > 0) 
-                {
-                    
-                    Enemy->AStarPath = (glm::vec2*)malloc(sizeof(glm::vec2) * Length);
-                    Enemy->AStarPath[Length] = glm::vec2(AStarWorkingData.WorkingList[Current.WorkingListIndex].X,AStarWorkingData.WorkingList[Current.WorkingListIndex].Y);
-                    uint32 Index = Length - 1;
-                    PathNode = AStarWorkingData.WorkingList[Current.ParentIndex];
-                    while(PathNode.ParentIndex >= 0 && PathNode.X != StartNode.X && PathNode.Y != StartNode.Y)
+                if(Current.ParentIndex >= 0) {
+                    PathNode = AStarWorkingData->WorkingList[Current.ParentIndex];
+                    uint32 Length = 1;
+                    while(PathNode.ParentIndex >= 0 && (PathNode.X != StartNode.X || PathNode.Y != StartNode.Y))
                     {
-                        Enemy->AStarPath[Index--] = glm::vec2(PathNode.X,PathNode.Y);
-                        PathNode = AStarWorkingData.WorkingList[PathNode.ParentIndex];
+                        Length++;
+                        PathNode = AStarWorkingData->WorkingList[PathNode.ParentIndex];
                     }
-                    Enemy->AStarPath[0] = glm::vec2(PathNode.X,PathNode.Y);
-                    Enemy->AStarPathLength = Length;
-                    Enemy->Enemy.Path = true;
+                    
+                    if(Length > 0) 
+                    {
+                        if(Enemy->AStarPath)
+                        {
+                            free(Enemy->AStarPath);
+                        }
+                        Enemy->AStarPath = (glm::vec2*)malloc(sizeof(glm::vec2) * Length+1);
+                        Enemy->AStarPath[Length] = glm::vec2(AStarWorkingData->WorkingList[Current.WorkingListIndex].X,AStarWorkingData->WorkingList[Current.WorkingListIndex].Y);
+                        uint32 Index = Length - 1;
+                        PathNode = AStarWorkingData->WorkingList[Current.ParentIndex];
+                        while(PathNode.ParentIndex >= 0 && (PathNode.X != StartNode.X || PathNode.Y != StartNode.Y))
+                        {
+                            Enemy->AStarPath[Index--] = glm::vec2(PathNode.X,PathNode.Y);
+                            PathNode = AStarWorkingData->WorkingList[PathNode.ParentIndex];
+                        }
+                        Enemy->AStarPath[0] = glm::vec2(PathNode.X,PathNode.Y);
+                        Enemy->AStarPathLength = Length + 1;
+                        Enemy->Enemy.Path = true;
+                        printf("Found a path of length: %d\n", Length);
+                        Enemy->PathIndex = 1;
+                    }
+                    
+                }
+                // We're done with the path
+                free(AStarWorkingData);
+                return;
+            }
+            
+            if(Current.X != -1 && Current.Y != -1) {
+                if(Current.X > 0 && Current.Y > 0)
+                {
+                    HandleNeighbour(&Current, &TargetNode,GameState,Current.X - 1, Current.Y - 1,AStarWorkingData->OpenSet,&OpenSetCount,AStarWorkingData->ClosedSet,ClosedSetCount,14,AStarWorkingData->WorkingList,&WorkingListCount);
                 }
                 
+                if(Current.X > 0)
+                {
+                    HandleNeighbour(&Current, &TargetNode,GameState,Current.X - 1, Current.Y,AStarWorkingData->OpenSet,&OpenSetCount,AStarWorkingData->ClosedSet,ClosedSetCount,10,AStarWorkingData->WorkingList,&WorkingListCount);
+                }
+                
+                if(Current.Y > 0)
+                {
+                    HandleNeighbour(&Current, &TargetNode,GameState,Current.X, Current.Y - 1,AStarWorkingData->OpenSet,&OpenSetCount,AStarWorkingData->ClosedSet,ClosedSetCount,10,AStarWorkingData->WorkingList,&WorkingListCount);
+                }
+                
+                if(Current.X < (int32)GameState->CurrentLevel.Tilemap.Width - 1)
+                {
+                    HandleNeighbour(&Current, &TargetNode,GameState,Current.X + 1, Current.Y,AStarWorkingData->OpenSet,&OpenSetCount,AStarWorkingData->ClosedSet,ClosedSetCount,10,AStarWorkingData->WorkingList,&WorkingListCount);
+                }
+                
+                
+                if(Current.Y < (int32)GameState->CurrentLevel.Tilemap.Height - 1)
+                {
+                    HandleNeighbour(&Current, &TargetNode,GameState,Current.X, Current.Y + 1,AStarWorkingData->OpenSet,&OpenSetCount,AStarWorkingData->ClosedSet,ClosedSetCount,10,AStarWorkingData->WorkingList,&WorkingListCount);
+                }
+                
+                if(Current.X < (int32)GameState->CurrentLevel.Tilemap.Width - 1 && Current.Y < (int32)GameState->CurrentLevel.Tilemap.Height - 1)
+                {
+                    HandleNeighbour(&Current, &TargetNode,GameState,Current.X + 1, Current.Y + 1,AStarWorkingData->OpenSet,&OpenSetCount,AStarWorkingData->ClosedSet,ClosedSetCount,14,AStarWorkingData->WorkingList,&WorkingListCount);
+                }
+                
+                if(Current.X > 0 && Current.Y < (int32)GameState->CurrentLevel.Tilemap.Height - 1)
+                {
+                    HandleNeighbour(&Current, &TargetNode,GameState,Current.X - 1, Current.Y + 1,AStarWorkingData->OpenSet,&OpenSetCount,AStarWorkingData->ClosedSet,ClosedSetCount,14,AStarWorkingData->WorkingList,&WorkingListCount);
+                }
+                
+                
+                if(Current.X < (int32)GameState->CurrentLevel.Tilemap.Width - 1 && Current.Y > 0)
+                {
+                    HandleNeighbour(&Current, &TargetNode,GameState,Current.X + 1, Current.Y - 1,AStarWorkingData->OpenSet,&OpenSetCount,AStarWorkingData->ClosedSet,ClosedSetCount,14,AStarWorkingData->WorkingList,&WorkingListCount);
+                } 
             }
-            // We're done with the path
-            return;
+            
+            LowestFcost = 10000000;
+            WorkingIndex = -1;
         }
-        
-        if(Current.X != -1 && Current.Y != -1) {
-            if(Current.X > 0 && Current.Y > 0)
-            {
-                HandleNeighbour(&Current, &TargetNode,GameState,Current.X - 1, Current.Y - 1,AStarWorkingData.OpenSet,&OpenSetCount,AStarWorkingData.ClosedSet,ClosedSetCount,14,AStarWorkingData.WorkingList,&WorkingListCount);
-            }
-            
-            if(Current.X > 0)
-            {
-                HandleNeighbour(&Current, &TargetNode,GameState,Current.X - 1, Current.Y,AStarWorkingData.OpenSet,&OpenSetCount,AStarWorkingData.ClosedSet,ClosedSetCount,10,AStarWorkingData.WorkingList,&WorkingListCount);
-            }
-            
-            if(Current.Y > 0)
-            {
-                HandleNeighbour(&Current, &TargetNode,GameState,Current.X, Current.Y - 1,AStarWorkingData.OpenSet,&OpenSetCount,AStarWorkingData.ClosedSet,ClosedSetCount,10,AStarWorkingData.WorkingList,&WorkingListCount);
-            }
-            
-            if(Current.X < (int32)GameState->CurrentLevel.Tilemap.Width - 1)
-            {
-                HandleNeighbour(&Current, &TargetNode,GameState,Current.X + 1, Current.Y,AStarWorkingData.OpenSet,&OpenSetCount,AStarWorkingData.ClosedSet,ClosedSetCount,10,AStarWorkingData.WorkingList,&WorkingListCount);
-            }
-            
-            
-            if(Current.Y < (int32)GameState->CurrentLevel.Tilemap.Height - 1)
-            {
-                HandleNeighbour(&Current, &TargetNode,GameState,Current.X, Current.Y + 1,AStarWorkingData.OpenSet,&OpenSetCount,AStarWorkingData.ClosedSet,ClosedSetCount,10,AStarWorkingData.WorkingList,&WorkingListCount);
-            }
-            
-            if(Current.X < (int32)GameState->CurrentLevel.Tilemap.Width - 1 && Current.Y < (int32)GameState->CurrentLevel.Tilemap.Height - 1)
-            {
-                HandleNeighbour(&Current, &TargetNode,GameState,Current.X + 1, Current.Y + 1,AStarWorkingData.OpenSet,&OpenSetCount,AStarWorkingData.ClosedSet,ClosedSetCount,14,AStarWorkingData.WorkingList,&WorkingListCount);
-            }
-            
-            if(Current.X > 0 && Current.Y < (int32)GameState->CurrentLevel.Tilemap.Height - 1)
-            {
-                HandleNeighbour(&Current, &TargetNode,GameState,Current.X - 1, Current.Y + 1,AStarWorkingData.OpenSet,&OpenSetCount,AStarWorkingData.ClosedSet,ClosedSetCount,14,AStarWorkingData.WorkingList,&WorkingListCount);
-            }
-            
-            
-            if(Current.X < (int32)GameState->CurrentLevel.Tilemap.Width - 1 && Current.Y > 0)
-            {
-                HandleNeighbour(&Current, &TargetNode,GameState,Current.X + 1, Current.Y - 1,AStarWorkingData.OpenSet,&OpenSetCount,AStarWorkingData.ClosedSet,ClosedSetCount,14,AStarWorkingData.WorkingList,&WorkingListCount);
-            } 
-        }
-        
-        LowestFcost = 10000000;
-        WorkingIndex = -1;
+        free(AStarWorkingData);
     }
 }
 

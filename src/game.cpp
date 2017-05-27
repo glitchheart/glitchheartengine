@@ -297,6 +297,7 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                 break;
                 case Entity_Enemy:
                 {
+                    Entity->Velocity = glm::vec2(0,0);
                     entity Player = GameState->Entities[GameState->PlayerIndex];
                     real64 DistanceToPlayer = glm::distance(Entity->Position, Player.Position);
                     switch(Entity->Enemy.AIState)
@@ -332,15 +333,43 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                             }
                             else
                             {
-                                glm::vec2 Direction = Player.Position - Entity->Position;
-                                Direction = glm::normalize(Direction);
-                                Entity->Velocity = glm::vec2(Direction.x * Entity->Enemy.WalkingSpeed * DeltaTime, Direction.y * Entity->Enemy.WalkingSpeed * DeltaTime);
+                                if(Entity->Enemy.AStarCooldown < Entity->Enemy.AStarInterval || !Entity->AStarPath || (Entity->AStarPathLength <= Entity->PathIndex && DistanceToPlayer > 2.0f)) 
+                                {
+                                    Entity->PathIndex = Entity->AStarPathLength;
+                                    Entity->Enemy.AStarCooldown = 2.0f;
+                                    glm::vec2 TargetPosition = glm::vec2(Player.Position.x + Player.Center.x * Player.Scale.x,
+                                                                         Player.Position.y + Player.Center.y * Player.Scale.y);
+                                    AStar(Entity,GameState,Entity->Position,TargetPosition);
+                                }
+                                else
+                                {
+                                    Entity->Enemy.AStarCooldown -= DeltaTime;
+                                }
+                                
+                                if(Entity->AStarPath && Entity->PathIndex < Entity->AStarPathLength)
+                                {
+                                    glm::vec2 NewPos = Entity->AStarPath[Entity->PathIndex];
+                                    real64 DistanceToNode = glm::distance(Entity->Position, NewPos);
+                                    if(DistanceToNode > 0.8f) 
+                                    {
+                                        glm::vec2 Direction = NewPos - Entity->Position;
+                                        Direction = glm::normalize(Direction);
+                                        Entity->Velocity = glm::vec2(Direction.x * Entity->Enemy.WalkingSpeed * DeltaTime, Direction.y * Entity->Enemy.WalkingSpeed * DeltaTime);
+                                    }
+                                    else
+                                    {
+                                        Entity->PathIndex++;
+                                    }
+                                }
+                                if(DistanceToPlayer > Entity->Enemy.MinDistance && DistanceToPlayer < 2.0f)
+                                {
+                                    glm::vec2 Direction = Player.Position - Entity->Position;
+                                    Direction = glm::normalize(Direction);
+                                    Entity->Velocity =glm::vec2(Direction.x * Entity->Enemy.WalkingSpeed * DeltaTime,
+                                                                Direction.y * Entity->Enemy.WalkingSpeed * DeltaTime);
+                                }
                                 
                                 Entity->IsFlipped = Entity->Velocity.x < 0;
-                                
-                                
-                                AStar(Entity,GameState,Entity->Position,Player.Position);
-                                
                             }
                         }
                         break;
@@ -546,7 +575,7 @@ extern "C" UPDATE(Update)
         {
             LoadAnimations(GameState);
             InitCommands();
-            GameState->LevelPath = "../assets/levels/level_03.plv";
+            GameState->LevelPath = "../assets/levels/level1.plv";
         }
         
         InitPlayer(GameState);
@@ -579,6 +608,11 @@ extern "C" UPDATE(Update)
     if(GetKeyDown(Key_F2, GameState))
     {
         GameState->RenderState.RenderFPS = !GameState->RenderState.RenderFPS;
+    }
+    
+    if(GetKeyDown(Key_F4, GameState))
+    {
+        GameState->RenderState.RenderPaths = !GameState->RenderState.RenderPaths;
     }
     
 #endif

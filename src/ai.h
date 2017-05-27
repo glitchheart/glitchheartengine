@@ -12,11 +12,15 @@ struct astar_node
     int32 ParentIndex = -1;
 };
 
+#define OPENSET_COUNT 512
+#define CLOSEDSET_COUNT 512
+#define WORKING_LIST_COUNT 1024
+
 struct astar_working_data
 {
-    astar_node OpenSet[96];
-    astar_node ClosedSet[96];
-    astar_node WorkingList[256];
+    astar_node OpenSet[OPENSET_COUNT];
+    astar_node ClosedSet[CLOSEDSET_COUNT];
+    astar_node WorkingList[WORKING_LIST_COUNT];
 };
 
 
