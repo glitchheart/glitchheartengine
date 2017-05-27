@@ -13,7 +13,7 @@ enum Collision_Side
 inline Collision_Side operator|(Collision_Side a, Collision_Side b)
 {return static_cast<Collision_Side>(static_cast<int>(a) | static_cast<int>(b));}
 
-#define NUM_OTHERS 4
+#define NUM_OTHERS 10 //@Improvement: We need a more dynamic way for this. This gives us bugs, when we try to write to more than the size allows.
 
 struct collision_info
 {

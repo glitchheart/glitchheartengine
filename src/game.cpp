@@ -112,12 +112,15 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
         else if(Entity->Player.IsDashing)
         {
             if(Entity->Player.CurrentDashTime == 0)
+            {
                 Entity->Player.CurrentDashCooldownTime = Entity->Player.DashCooldown;
+                Entity->Player.CurrentDashTime = Entity->Player.MaxDashTime;
+            }
             
-            if(Entity->Player.CurrentDashTime < Entity->Player.MaxDashTime)
+            if(Entity->Player.CurrentDashTime > 0)
             {
                 Entity->Velocity = glm::vec2(Entity->Player.LastKnownDirectionX * Entity->Player.DashSpeed * DeltaTime, Entity->Player.LastKnownDirectionY * Entity->Player.DashSpeed * DeltaTime);
-                Entity->Player.CurrentDashTime += DeltaTime;
+                Entity->Player.CurrentDashTime -= DeltaTime;
             }
             else
             {
@@ -522,8 +525,6 @@ void UpdateBarrel(entity* Entity, game_state* GameState, real64 DeltaTime)
 
 void UpdateEntities(game_state* GameState, real64 DeltaTime)
 {
-    
-    
     for(uint32 EntityIndex = 0;
         EntityIndex < GameState->EntityCount;
         EntityIndex++)
