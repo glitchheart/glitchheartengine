@@ -34,6 +34,9 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
             {
                 case Entity_Player: 
                 {
+                    if(Entity->Player.CurrentDashCooldownTime > 0)
+                        Entity->Player.CurrentDashCooldownTime -= DeltaTime;
+                    
                     if (!GameState->Console.Open)
                     {
                         // Set the last know direction for dash direction later
@@ -44,7 +47,7 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                             Entity->Player.LastKnownDirectionY = Direction.y;
                         }
                         
-                        if(!Entity->Player.IsAttacking && !Entity->Player.IsDashing && GetActionButtonDown(Action_Dash, GameState))
+                        if(!Entity->Player.IsAttacking && Entity->Player.CurrentDashCooldownTime <= 0 && !Entity->Player.IsDashing && GetActionButtonDown(Action_Dash, GameState))
                         {
                             PlaySoundEffect(GameState, &GameState->SoundManager.Dash);
                             Entity->Player.IsDashing = true;
@@ -124,6 +127,9 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                         }
                         else if(Entity->Player.IsDashing)
                         {
+                            if(Entity->Player.CurrentDashTime == 0)
+                                Entity->Player.CurrentDashCooldownTime = Entity->Player.DashCooldown;
+                            
                             if(Entity->Player.CurrentDashTime < Entity->Player.MaxDashTime)
                             {
                                 Entity->Velocity = glm::vec2(Entity->Player.LastKnownDirectionX * Entity->Player.DashSpeed * DeltaTime, Entity->Player.LastKnownDirectionY * Entity->Player.DashSpeed * DeltaTime);
@@ -147,17 +153,19 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                         CheckCollision(GameState, Entity, &CollisionInfo);
                         
                         entity* OtherEntity;
+                        bool32 OtherFound = false;
                         
                         for(int Index = 0; Index < CollisionInfo.OtherCount; Index++)
                         {
                             if(CollisionInfo.Other[Index]->Pickup)
                             {
                                 OtherEntity = CollisionInfo.Other[Index];
+                                OtherFound = true;
                                 break;
                             }
                         }
                         
-                        if(OtherEntity && OtherEntity->Pickup &&
+                        if(OtherFound && OtherEntity->Pickup &&
                            GetActionButtonDown(Action_Interact, GameState) && Entity->Player.PickupCooldown <= 0.0)
                         {
                             Entity->Player.Pickup = OtherEntity;

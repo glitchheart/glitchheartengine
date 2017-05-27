@@ -73,6 +73,8 @@ struct entity
             real64 CurrentDashTime;
             real32 DashSpeed;
             real64 MaxDashTime;
+            real64 CurrentDashCooldownTime;
+            real64 DashCooldown;
             real32 WalkingSpeed;
             entity* Pickup;
             real64 PickupCooldown;
