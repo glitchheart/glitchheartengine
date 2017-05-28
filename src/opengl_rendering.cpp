@@ -381,6 +381,24 @@ static void RenderSetup(render_state *RenderState)
     
     glBindVertexArray(0);
     
+    //astar tile
+    glGenVertexArrays(1, &RenderState->AStarPathVAO);
+    glBindVertexArray(RenderState->AStarPathVAO);
+    glGenBuffers(1, &RenderState->AStarPathQuadVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, RenderState->AStarPathQuadVBO);
+    glBufferData(GL_ARRAY_BUFFER, RenderState->AStarPathQuadVerticesSize,
+                 RenderState->AStarPathQuadVertices,GL_DYNAMIC_DRAW);
+    
+    LoadShader(ShaderPaths[Shader_AStarPath], &RenderState->AStarPathShader);
+    
+    PositionLocation3 = glGetAttribLocation(RenderState->AStarPathShader.Program, "pos");
+    glEnableVertexAttribArray(PositionLocation3);
+    glVertexAttribPointer(PositionLocation3, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), 0);
+    
+    
+    glBindVertexArray(0);
+    
+    
     //font
     RenderState->StandardFontShader.Type = Shader_StandardFont;
     LoadShader(ShaderPaths[Shader_StandardFont], &RenderState->StandardFontShader);
@@ -834,18 +852,17 @@ static void RenderColliderWireframe(render_state* RenderState, entity* Entity, g
 
 static void RenderAStarPath(render_state* RenderState, entity* Entity, glm::mat4 ProjectionMatrix, glm::mat4 View)
 {
-    glm::mat4 Model(1.0f);
+    
     if(Entity->AStarPath) 
     {
-        
+        glBindVertexArray(RenderState->AStarPathVAO);
         for(uint32 PathIndex = 0; PathIndex < Entity->AStarPathLength; PathIndex++)
         {
-            Model = glm::translate(Model, glm::vec3(Entity->AStarPath[PathIndex].x * 1.0f, Entity->AStarPath[PathIndex].y * 1.0f, 0.0f));
+            glm::mat4 Model(1.0f);
+            Model = glm::translate(Model, glm::vec3(Entity->AStarPath[PathIndex].x, Entity->AStarPath[PathIndex].y, 0.0f));
             Model = glm::scale(Model, glm::vec3(1, 1, 1));
             
-            glBindVertexArray(RenderState->WireframeVAO);
-            
-            auto Shader = RenderState->Shaders[Shader_Wireframe];
+            auto Shader = RenderState->Shaders[Shader_AStarPath];
             UseShader(&Shader);
             
             SetMat4Uniform(Shader.Program, "Projection", ProjectionMatrix);
@@ -853,13 +870,15 @@ static void RenderAStarPath(render_state* RenderState, entity* Entity, glm::mat4
             SetMat4Uniform(Shader.Program, "Model", Model);
             glm::vec4 color;
             
-            color = glm::vec4(1.0,0.0,0.0,1.0);
+            color = glm::vec4(0.0,0.0,1.0,0.4);
             
             SetVec4Attribute(Shader.Program, "color", color);
+            glDrawArrays(GL_QUADS, 0, 6);
             
-            glDrawArrays(GL_LINE_STRIP, 0, 6);
-            glBindVertexArray(0);
+            
+            
         }
+        glBindVertexArray(0);
     }
 }
 
