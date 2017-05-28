@@ -10,8 +10,8 @@ static void InitPlayer(game_state* GameState)
     Player->Name = "Player";
     Player->Type = Entity_Player;
     Player->Health = 3;
-    Player->Player.WalkingSpeed = 10.0f;
-    Player->Player.ThrowingSpeed = 32.0f;
+    Player->Player.WalkingSpeed = 8.5f;
+    Player->Player.ThrowingSpeed = 18.0f;
     Player->Player.MaxDashTime = 0.2;
     Player->Player.DashSpeed = 30;
     Player->Player.AttackCooldown = 0.3;
@@ -122,7 +122,7 @@ static void SpawnEnemy(game_state* GameState, glm::vec2 Position)
     Enemy->HitTrigger = HitTrigger;
     
     Enemy->Enemy.WalkingSpeed = 5;
-    Enemy->Enemy.MaxAlertDistance = 10;
+    Enemy->Enemy.MaxAlertDistance = 12;
     Enemy->Enemy.MinDistance = 1;
     Enemy->Enemy.AttackCooldown = 1.0f;
     Enemy->Enemy.AIState = AI_Idle;
@@ -152,11 +152,11 @@ static void SpawnEnemy(game_state* GameState, glm::vec2 Position)
     EnemyWeapon->Weapon.EntityHandle = Enemy->EntityIndex;
     
     collision_AABB CollisionAABB3;
-    CollisionAABB3.Center = glm::vec2(0.5, 0.5);
-    CollisionAABB3.Offset = glm::vec2(0.7, 0);
-    CollisionAABB3.Extents = glm::vec2(0.5f,1.0f);
-    CollisionAABB3.IsTrigger = true;
-    EnemyWeapon->CollisionAABB = CollisionAABB3;
+    CollisionAABB.Center = glm::vec2(0.5, 0.5);
+    CollisionAABB.Offset = glm::vec2(0.7, 0);
+    CollisionAABB.Extents = glm::vec2(0.5f,1.0f);
+    CollisionAABB.IsTrigger = true;
+    EnemyWeapon->CollisionAABB = CollisionAABB;
     EnemyWeapon->Rotation = glm::vec3(0, 0, 0);
     EnemyWeapon->Scale = glm::vec3(4, 4, 0);
     EnemyWeapon->EntityIndex = GameState->EntityCount;

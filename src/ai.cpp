@@ -169,7 +169,6 @@ static void AStar(entity* Enemy, game_state* GameState, glm::vec2 StartPos, glm:
                         Length++;
                         PathNode = AStarWorkingData->WorkingList[PathNode.ParentIndex];
                     }
-                    
                     if(Length > 0) 
                     {
                         if(Enemy->AStarPath)
@@ -177,8 +176,8 @@ static void AStar(entity* Enemy, game_state* GameState, glm::vec2 StartPos, glm:
                             free(Enemy->AStarPath);
                         }
                         Enemy->AStarPath = (glm::vec2*)malloc(sizeof(glm::vec2) * Length+1);
-                        Enemy->AStarPath[Length] = glm::vec2(AStarWorkingData->WorkingList[Current.WorkingListIndex].X,AStarWorkingData->WorkingList[Current.WorkingListIndex].Y);
-                        uint32 Index = Length - 1;
+                        
+                        uint32 Index = Length - 1;Enemy->AStarPath[Length] = glm::vec2(AStarWorkingData->WorkingList[Current.WorkingListIndex].X,AStarWorkingData->WorkingList[Current.WorkingListIndex].Y);
                         PathNode = AStarWorkingData->WorkingList[Current.ParentIndex];
                         while(PathNode.ParentIndex >= 0 && (PathNode.X != StartNode.X || PathNode.Y != StartNode.Y))
                         {
@@ -186,8 +185,7 @@ static void AStar(entity* Enemy, game_state* GameState, glm::vec2 StartPos, glm:
                             PathNode = AStarWorkingData->WorkingList[PathNode.ParentIndex];
                         }
                         Enemy->AStarPath[0] = glm::vec2(PathNode.X,PathNode.Y);
-                        Enemy->AStarPathLength = Length + 1;
-                        Enemy->Enemy.Path = true;
+                        Enemy->AStarPathLength = Length;
                         
                         Enemy->PathIndex = 1;
                     }
