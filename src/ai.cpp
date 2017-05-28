@@ -1,6 +1,7 @@
 
 
 // This is calculated with some heuristic
+// In this case we use diagonal distance (http://theory.stanford.edu/~amitp/GameProgramming/Heuristics.html)
 static void AStarComputeHCost(astar_node* Node, astar_node TargetNode)
 {
     int32 Dx = Abs(Node->X - TargetNode.X);
@@ -44,22 +45,19 @@ static void HandleNeighbour(astar_node* Current, astar_node* TargetNode,game_sta
             astar_node NeighbourNode  = {};
             NeighbourNode.X = X;
             NeighbourNode.Y = Y;
-            NeighbourNode.IsClosed = false;
             
             NeighbourNode.GCost = Current->GCost + Cost;
-            
             AStarComputeHCost(&NeighbourNode,*TargetNode);
             NeighbourNode.FCost = NeighbourNode.GCost + NeighbourNode.HCost;
+            NeighbourNode.WorkingListIndex = *WorkingListCount;
+            NeighbourNode.ParentIndex = Current->WorkingListIndex;
             
-            if(*OpenSetCount < OPENSET_COUNT) {
+            if(*OpenSetCount < OPENSET_COUNT) 
+            {
                 OpenSet[*OpenSetCount] = NeighbourNode;
                 *OpenSetCount = *OpenSetCount + 1;
-                OpenSet[*OpenSetCount - 1].WorkingListIndex = *WorkingListCount;
-                NeighbourNode.WorkingListIndex = *WorkingListCount;
-                NeighbourNode.ParentIndex = Current->WorkingListIndex;
                 WorkingList[*WorkingListCount] = NeighbourNode;
                 *WorkingListCount = *WorkingListCount + 1;
-                OpenSet[*OpenSetCount - 1].ParentIndex = Current->WorkingListIndex;
             }
         }
         else 
@@ -150,7 +148,6 @@ static void AStar(entity* Enemy, game_state* GameState, glm::vec2 StartPos, glm:
             
             AStarWorkingData->OpenSet[OpenSetCount - 1].X = -1;
             AStarWorkingData->OpenSet[OpenSetCount - 1].Y = -1;
-            AStarWorkingData->OpenSet[OpenSetCount - 1].IsClosed = false;
             AStarWorkingData->OpenSet[OpenSetCount - 1].FCost = 0;
             AStarWorkingData->OpenSet[OpenSetCount - 1].GCost = 0;
             AStarWorkingData->OpenSet[OpenSetCount - 1].HCost = 0;
@@ -191,7 +188,7 @@ static void AStar(entity* Enemy, game_state* GameState, glm::vec2 StartPos, glm:
                         Enemy->AStarPath[0] = glm::vec2(PathNode.X,PathNode.Y);
                         Enemy->AStarPathLength = Length + 1;
                         Enemy->Enemy.Path = true;
-                        //printf("Found a path of length: %d\n", Length);
+                        
                         Enemy->PathIndex = 1;
                     }
                     

@@ -15,6 +15,7 @@ enum Shader_Type
     Shader_UISprite,
     Shader_ErrorSprite,
     Shader_ErrorUI,
+    Shader_AStarPath,
     
     Shader_Count
 };
@@ -45,7 +46,8 @@ const char* ShaderPaths[Shader_Count] =
     "../assets/shaders/wireframeshader",
     "../assets/shaders/spriteuishader",
     "../assets/shaders/errorshadersprite",
-    "../assets/shaders/errorshaderui"
+    "../assets/shaders/errorshaderui",
+    "../assets/shaders/astarpathshader",
 };
 
 const char* TexturePaths[Texture_Count] =
@@ -165,6 +167,7 @@ struct render_state
     size_t TileQuadVerticesSize = 16 * sizeof(GLfloat);
     size_t NormalQuadVerticesSize = 8 * sizeof(GLfloat);
     size_t WireframeQuadVerticesSize = 10 * sizeof(GLfloat);
+    size_t AStarPathQuadVerticesSize = 10 * sizeof(GLfloat);
     GLuint BoundVertexBuffer;
     GLuint BoundTexture;
     
@@ -217,6 +220,18 @@ struct render_state
     GLuint WireframeVAO;
     GLuint WireframeQuadVBO;
     
+    GLfloat AStarPathQuadVertices[10] =
+    {
+        0.0f, 1.0f,
+        1.0f, 1.0f,
+        1.0f, 0.0f,
+        0.0f, 0.0f,
+        0.0f, 1.0f
+    };
+    
+    GLuint AStarPathVAO;
+    GLuint AStarPathQuadVBO;
+    
     GLuint ConsoleVAO;
     GLuint NormalQuadVBO;
     
@@ -234,6 +249,7 @@ struct render_state
             shader UISpriteShader;
             shader ErrorShaderSprite;
             shader ErrorShaderUI;
+            shader AStarPathShader;
         };
     };
     

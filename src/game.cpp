@@ -332,7 +332,9 @@ void UpdateEnemy(entity* Entity, game_state* GameState, real64 DeltaTime)
                                                 Direction.y * Entity->Enemy.WalkingSpeed * DeltaTime);
                 }
                 
-                Entity->IsFlipped = Entity->Velocity.x < 0;
+                Entity->IsFlipped = Abs(Entity->Velocity.x) > 1.0f * DeltaTime;
+                
+                
             }
         }
         break;
