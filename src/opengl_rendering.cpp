@@ -31,7 +31,7 @@ static bool32 ShouldCloseWindow(render_state* RenderState)
     return glfwWindowShouldClose(RenderState->Window); 
 }
 
-static GLint ShaderCompilationErrorChecking(GLuint Shader)
+static GLint ShaderCompilationErrorChecking(const char* ShaderName, GLuint Shader)
 {
     GLint IsCompiled = 0;
     glGetShaderiv(Shader, GL_COMPILE_STATUS, &IsCompiled);
@@ -44,7 +44,7 @@ static GLint ShaderCompilationErrorChecking(GLuint Shader)
         GLchar* ErrorLog = (GLchar*)malloc(MaxLength);
         glGetShaderInfoLog(Shader, MaxLength, &MaxLength, ErrorLog);
         
-        printf("SHADER Compilation error\n");
+        printf("SHADER Compilation error - %s\n", ShaderName);
         
         for(uint32 ErrorIndex = 0; ErrorIndex < MaxLength; ErrorIndex++)
         {
@@ -65,8 +65,11 @@ static GLuint LoadShader(const char* FilePath, shader *Shd)
     glShaderSource(Shd->VertexShader, 1, &VertexText, NULL);
     glCompileShader(Shd->VertexShader);
     
-    if (!ShaderCompilationErrorChecking(Shd->VertexShader))
+    if (!ShaderCompilationErrorChecking(FilePath, Shd->VertexShader))
+    {
+        Shd->Program = 0;
         return GL_FALSE;
+    }
     
     Shd->FragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
     char* FragmentString = Concat(FilePath,".frag");
@@ -75,8 +78,11 @@ static GLuint LoadShader(const char* FilePath, shader *Shd)
     glShaderSource(Shd->FragmentShader, 1, &FragmentText, NULL);
     glCompileShader(Shd->FragmentShader);
     
-    if (!ShaderCompilationErrorChecking(Shd->FragmentShader))
+    if (!ShaderCompilationErrorChecking(FilePath, Shd->FragmentShader))
+    {
+        Shd->Program = 0;
         return GL_FALSE;
+    }
     
     Shd->Program = glCreateProgram();
     
@@ -97,8 +103,11 @@ static GLuint LoadVertexShader(const char* FilePath, shader *Shd)
     glShaderSource(Shd->VertexShader, 1, &VertexText, NULL);
     glCompileShader(Shd->VertexShader);
     
-    if (!ShaderCompilationErrorChecking(Shd->VertexShader))
+    if (!ShaderCompilationErrorChecking(FilePath, Shd->VertexShader))
+    {
+        Shd->Program = 0;
         return GL_FALSE;
+    }
     
     glAttachShader(Shd->Program, Shd->VertexShader);
     glAttachShader(Shd->Program, Shd->FragmentShader);
@@ -118,9 +127,11 @@ static GLuint LoadFragmentShader(const char* FilePath, shader *Shd)
     glShaderSource(Shd->FragmentShader, 1, &FragmentText, NULL);
     glCompileShader(Shd->FragmentShader);
     
-    if (!ShaderCompilationErrorChecking(Shd->FragmentShader))
+    if (!ShaderCompilationErrorChecking(FilePath, Shd->FragmentShader))
+    {
+        Shd->Program = 0;
         return GL_FALSE;
-    
+    }
     glAttachShader(Shd->Program, Shd->VertexShader);
     glAttachShader(Shd->Program, Shd->FragmentShader);
     glLinkProgram(Shd->Program);
@@ -259,6 +270,26 @@ static void RenderSetup(render_state *RenderState)
     glVertexAttribPointer(TexcoordLocation, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *)(2 * sizeof(float)));
     glBindVertexArray(0);
     
+    //error sprite
+    glGenVertexArrays(1, &RenderState->SpriteErrorVAO);
+    glBindVertexArray(RenderState->SpriteErrorVAO);
+    glGenBuffers(1, &RenderState->SpriteQuadVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, RenderState->SpriteQuadVBO);
+    glBufferData(GL_ARRAY_BUFFER, RenderState->SpriteQuadVerticesSize, RenderState->SpriteQuadVertices, GL_DYNAMIC_DRAW);
+    
+    RenderState->ErrorShaderSprite.Type = Shader_ErrorSprite;
+    LoadShader(ShaderPaths[Shader_ErrorSprite], &RenderState->ErrorShaderSprite);
+    
+    PositionLocation = glGetAttribLocation(RenderState->ErrorShaderSprite.Program, "pos");
+    TexcoordLocation = glGetAttribLocation(RenderState->ErrorShaderSprite.Program, "texcoord");
+    
+    glEnableVertexAttribArray(PositionLocation);
+    glVertexAttribPointer(PositionLocation, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
+    glEnableVertexAttribArray(TexcoordLocation);
+    glVertexAttribPointer(TexcoordLocation, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *)(2 * sizeof(float)));
+    glBindVertexArray(0);
+    
+    
     //ui sprite
     glGenVertexArrays(1, &RenderState->UISpriteVAO);
     glBindVertexArray(RenderState->UISpriteVAO);
@@ -266,7 +297,7 @@ static void RenderSetup(render_state *RenderState)
     glBindBuffer(GL_ARRAY_BUFFER, RenderState->SpriteQuadVBO);
     glBufferData(GL_ARRAY_BUFFER, RenderState->SpriteQuadVerticesSize, RenderState->SpriteQuadVertices, GL_DYNAMIC_DRAW);
     
-    RenderState->TextureShader.Type = Shader_UISprite;
+    RenderState->UISpriteShader.Type = Shader_UISprite;
     LoadShader(ShaderPaths[Shader_UISprite], &RenderState->UISpriteShader);
     
     PositionLocation = glGetAttribLocation(RenderState->UISpriteShader.Program, "pos");
@@ -277,6 +308,27 @@ static void RenderSetup(render_state *RenderState)
     glEnableVertexAttribArray(TexcoordLocation);
     glVertexAttribPointer(TexcoordLocation, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *)(2 * sizeof(float)));
     glBindVertexArray(0);
+    
+    //ui error shader
+    glGenVertexArrays(1, &RenderState->UIErrorVAO);
+    glBindVertexArray(RenderState->UIErrorVAO);
+    glGenBuffers(1, &RenderState->SpriteQuadVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, RenderState->SpriteQuadVBO);
+    glBufferData(GL_ARRAY_BUFFER, RenderState->SpriteQuadVerticesSize, RenderState->SpriteQuadVertices, GL_DYNAMIC_DRAW);
+    
+    //error shader
+    RenderState->ErrorShaderUI.Type = Shader_ErrorUI;
+    LoadShader(ShaderPaths[Shader_ErrorUI], &RenderState->ErrorShaderUI);
+    
+    PositionLocation = glGetAttribLocation(RenderState->ErrorShaderUI.Program, "pos");
+    TexcoordLocation = glGetAttribLocation(RenderState->ErrorShaderUI.Program, "texcoord");
+    
+    glEnableVertexAttribArray(PositionLocation);
+    glVertexAttribPointer(PositionLocation, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
+    glEnableVertexAttribArray(TexcoordLocation);
+    glVertexAttribPointer(TexcoordLocation, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *)(2 * sizeof(float)));
+    glBindVertexArray(0);
+    
     
     //tile
     glGenVertexArrays(1, &RenderState->TileVAO);
@@ -813,78 +865,87 @@ static void RenderEntity(render_state *RenderState, entity &Entity, glm::mat4 Pr
 { 
     render_entity* RenderEntity = &RenderState->RenderEntities[Entity.RenderEntityHandle];
     auto Shader = RenderState->Shaders[RenderEntity->ShaderIndex];
-    UseShader(&Shader);
     
     if(RenderEntity->Rendered && Entity.Active)
     {
-        switch(Entity.Type)
+        glm::mat4 Model(1.0f);
+        Model = glm::translate(Model, glm::vec3(Entity.Position.x, Entity.Position.y, 0.0f));
+        Model = glm::translate(Model, glm::vec3(1, 1, 0.0f));
+        Model = glm::rotate(Model, Entity.Rotation.z, glm::vec3(0, 0, 1)); 
+        Model = glm::translate(Model, glm::vec3(-1, -1, 0.0f));
+        
+        glm::vec3 Scale;
+        
+        if(Entity.IsFlipped)
         {
-            case Entity_Enemy:
-            case Entity_Player:
-            case Entity_EnemyWeapon:
-            case Entity_PlayerWeapon:
-            case Entity_Barrel:
-            {
-                glm::mat4 Model(1.0f);
-                Model = glm::translate(Model, glm::vec3(Entity.Position.x, Entity.Position.y, 0.0f));
-                Model = glm::translate(Model, glm::vec3(1, 1, 0.0f));
-                Model = glm::rotate(Model, Entity.Rotation.z, glm::vec3(0, 0, 1)); 
-                Model = glm::translate(Model, glm::vec3(-1, -1, 0.0f));
-                
-                glm::vec3 Scale;
-                
-                if(Entity.IsFlipped)
-                {
-                    Scale = glm::vec3(-Entity.Scale.x, Entity.Scale.y, Entity.Scale.z);
-                    Model = glm::translate(Model, glm::vec3(Entity.Scale.x, 0, 0));
-                }
-                else
-                    Scale = Entity.Scale;
-                
-                Model = glm::scale(Model, Scale);
-                
-                if(Entity.Type == Entity_Enemy)
-                {
-                    if(Entity.Enemy.AIState == AI_Hit)
-                        RenderEntity->Color = glm::vec4(1, 0, 0, 1);
-                    else
-                        RenderEntity->Color = glm::vec4(0, 1, 0, 1); //@Cleanup: This is just placeholder before we get a real enemy sprite that is different from the player
-                }
-                
-                if(Entity.CurrentAnimation) 
-                {
-                    animation* Animation = Entity.CurrentAnimation;
-                    
-                    if (RenderState->BoundTexture != Animation->TextureHandle) //never bind the same texture if it's already bound
-                    {
-                        glBindTexture(GL_TEXTURE_2D, Animation->TextureHandle);
-                        RenderState->BoundTexture = Animation->TextureHandle;
-                    }
-                    
-                    glBindVertexArray(RenderState->SpriteSheetVAO);
-                    auto Frame = Animation->Frames[Entity.AnimationInfo.FrameIndex];
-                    SetVec2Attribute(Shader.Program,"textureOffset", glm::vec2(Frame.X,Frame.Y));
-                    SetVec4Attribute(Shader.Program, "color", RenderEntity->Color);
-                    SetVec2Attribute(Shader.Program,"sheetSize",
-                                     glm::vec2(Animation->Columns, Animation->Rows));
-                } 
-                else 
-                {
-                    if (RenderState->BoundTexture != RenderEntity->TextureHandle) //never bind the same texture if it's already bound
-                    {
-                        glBindTexture(GL_TEXTURE_2D, RenderEntity->TextureHandle);
-                        RenderState->BoundTexture = RenderEntity->TextureHandle;
-                    }
-                    
-                    glBindVertexArray(RenderState->SpriteVAO);
-                }
-                
-                SetMat4Uniform(Shader.Program, "Projection", ProjectionMatrix);
-                SetMat4Uniform(Shader.Program, "View", View);
-                SetMat4Uniform(Shader.Program, "Model", Model);
-                break;
-            }
+            Scale = glm::vec3(-Entity.Scale.x, Entity.Scale.y, Entity.Scale.z);
+            Model = glm::translate(Model, glm::vec3(Entity.Scale.x, 0, 0));
         }
+        else
+            Scale = Entity.Scale;
+        
+        Model = glm::scale(Model, Scale);
+        
+        if(Entity.Type == Entity_Enemy)
+        {
+            if(Entity.Enemy.AIState == AI_Hit)
+                RenderEntity->Color = glm::vec4(1, 0, 0, 1);
+            else
+                RenderEntity->Color = glm::vec4(0, 1, 0, 1); //@Cleanup: This is just placeholder before we get a real enemy sprite that is different from the player
+        }
+        
+        if(Entity.CurrentAnimation) 
+        {
+            if(Entity.Type == Entity_Barrel)
+                printf("asdasd\n");
+            animation* Animation = Entity.CurrentAnimation;
+            
+            if (RenderState->BoundTexture != Animation->TextureHandle) //never bind the same texture if it's already bound
+            {
+                glBindTexture(GL_TEXTURE_2D, Animation->TextureHandle);
+                RenderState->BoundTexture = Animation->TextureHandle;
+            }
+            
+            if(Shader.Program == 0)
+            {
+                Shader = RenderState->ErrorShaderSprite;
+                glBindVertexArray(RenderState->SpriteErrorVAO);
+            }
+            else
+            {
+                //Shader = RenderState->SpriteSheetShader;
+                glBindVertexArray(RenderState->SpriteSheetVAO);
+            }
+            UseShader(&Shader);
+            auto Frame = Animation->Frames[Entity.AnimationInfo.FrameIndex];
+            SetVec2Attribute(Shader.Program,"textureOffset", glm::vec2(Frame.X,Frame.Y));
+            SetVec4Attribute(Shader.Program, "color", RenderEntity->Color);
+            SetVec2Attribute(Shader.Program,"sheetSize",
+                             glm::vec2(Animation->Columns, Animation->Rows));
+        } 
+        else 
+        {
+            if (RenderState->BoundTexture != RenderEntity->TextureHandle) //never bind the same texture if it's already bound
+            {
+                glBindTexture(GL_TEXTURE_2D, RenderEntity->TextureHandle);
+                RenderState->BoundTexture = RenderEntity->TextureHandle;
+            }
+            
+            if(Shader.Program == 0)
+            {
+                Shader = RenderState->ErrorShaderSprite;
+                glBindVertexArray(RenderState->SpriteErrorVAO);
+            }
+            else
+            {
+                glBindVertexArray(RenderState->SpriteVAO);
+            }
+            UseShader(&Shader);
+        }
+        
+        SetMat4Uniform(Shader.Program, "Projection", ProjectionMatrix);
+        SetMat4Uniform(Shader.Program, "View", View);
+        SetMat4Uniform(Shader.Program, "Model", Model);
         
         glBindBuffer(GL_ARRAY_BUFFER, RenderState->SpriteQuadVBO);
         glDrawArrays(GL_QUADS, 0, 4);
@@ -1124,15 +1185,25 @@ static void RenderPlayerUI(health_bar* HealthBar, render_state* RenderState)
     real32 Y = HealthBar->Position.y * RenderState->ScaleY;
     Y -= 1;
     
-    glBindVertexArray(RenderState->UISpriteVAO);
-    glBindTexture(GL_TEXTURE_2D, HealthBar->RenderInfo.TextureHandle);
-    
     auto Shader = RenderState->UISpriteShader;
+    
+    if(Shader.Program == 0)
+    {
+        Shader = RenderState->ErrorShaderUI;
+        glBindVertexArray(RenderState->UIErrorVAO);
+    }
+    else
+    {
+        glBindVertexArray(RenderState->UISpriteVAO);
+        glBindTexture(GL_TEXTURE_2D, HealthBar->RenderInfo.TextureHandle);
+    }
+    
     UseShader(&Shader);
     
     glm::mat4 Model(1.0f);
     Model = glm::translate(Model, glm::vec3(X, Y, 0));
     Model = glm::scale(Model, glm::vec3(1, 1, 1));
+    
     SetMat4Uniform(Shader.Program, "M", Model);
     SetVec4Attribute(Shader.Program, "color", glm::vec4(1, 1, 1, 1)); 
     

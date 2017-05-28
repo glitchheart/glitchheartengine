@@ -6,5 +6,5 @@ out vec4 outColor;
 
 void main()
 {
-    outColor = vec4(1, 0, 0, 1); //texture(tex, Texcoord);
+    outColor = texture(tex, Texcoord);
 }

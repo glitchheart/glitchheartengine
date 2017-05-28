@@ -13,6 +13,8 @@ enum Shader_Type
     Shader_SpriteSheetShader,
     Shader_Wireframe,
     Shader_UISprite,
+    Shader_ErrorSprite,
+    Shader_ErrorUI,
     
     Shader_Count
 };
@@ -41,7 +43,9 @@ const char* ShaderPaths[Shader_Count] =
     "../assets/shaders/standardfontshader",
     "../assets/shaders/spritesheetanimationshader",
     "../assets/shaders/wireframeshader",
-    "../assets/shaders/spriteuishader"
+    "../assets/shaders/spriteuishader",
+    "../assets/shaders/errorshadersprite",
+    "../assets/shaders/errorshaderui"
 };
 
 const char* TexturePaths[Texture_Count] =
@@ -176,6 +180,9 @@ struct render_state
     GLuint UISpriteVAO;
     GLuint SpriteSheetVAO;
     
+    GLuint SpriteErrorVAO;
+    GLuint UIErrorVAO;
+    
     //tiles
     GLfloat TileQuadVertices[16] =
     {
@@ -224,6 +231,8 @@ struct render_state
             shader SpriteSheetShader;
             shader WireframeShader;
             shader UISpriteShader;
+            shader ErrorShaderSprite;
+            shader ErrorShaderUI;
         };
     };
     
