@@ -3,7 +3,7 @@ uniform mat4 M;
 uniform vec4 color;
 in vec2 pos;
 in vec2 texcoord;
-out vec3 Color;
+out vec4 Color;
 out vec2 Texcoord;
 
 void main()
