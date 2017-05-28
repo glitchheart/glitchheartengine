@@ -22,7 +22,6 @@ enum Entity_Enum
 {
     Entity_Player,
     Entity_PlayerWeapon,
-    Entity_Crosshair,
     Entity_Tile,
     Entity_PalmTree,
     Entity_Enemy,

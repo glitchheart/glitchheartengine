@@ -200,36 +200,32 @@ void UpdatePlayerWeapon(entity* Entity, game_state* GameState, real64 DeltaTime)
     
     Entity->IsFlipped = Player->IsFlipped;
     
-    Entity->Scale = glm::vec3(4, 4, 0);
+    Entity->CollisionAABB.Extents = glm::vec2(0.7f, 0.7f);
     
     if(Player->Player.LastKnownDirectionX == 0 && Player->Player.LastKnownDirectionY != 0)
     {
-        Entity->CollisionAABB.Extents = glm::vec2(1.2f, 0.6f);
         if(Player->Player.LastKnownDirectionY < 0)
         {
-            Entity->CollisionAABB.Offset = glm::vec2(0, -0.6f);
-            Entity->Position = glm::vec2(Pos.x + 2.8f, Pos.y + 3);
-            Entity->Scale = glm::vec3(-4, -4, 0);
+            Entity->CollisionAABB.Offset = glm::vec2(0, -0.2f);
+            Entity->Position = glm::vec2(Pos.x, Pos.y - 1.2f);
         }
         else if(Player->Player.LastKnownDirectionY > 0)
         {
-            Entity->CollisionAABB.Offset = glm::vec2(0, 0.7f);
-            Entity->Position = glm::vec2(Pos.x - 1.3f, Pos.y);
+            Entity->CollisionAABB.Offset = glm::vec2(0, 0.2f);
+            Entity->Position = glm::vec2(Pos.x, Pos.y + 1.4f);
         }
     }
     else
     {
-        Entity->CollisionAABB.Extents = glm::vec2(0.8f, 1.2f);
-        
         if(Player->IsFlipped)
         {
-            Entity->CollisionAABB.Offset = glm::vec2(-0.8, -0.8f);
-            Entity->Position = glm::vec2(Pos.x - 1.8f, Pos.y);
+            Entity->CollisionAABB.Offset = glm::vec2(-0.2f, 0);
+            Entity->Position = glm::vec2(Pos.x - 1.2f, Pos.y);
         }
         else
         {
-            Entity->CollisionAABB.Offset = glm::vec2(0.2, -0.8f);
-            Entity->Position = glm::vec2(Pos.x - 0.1, Pos.y);
+            Entity->CollisionAABB.Offset = glm::vec2(0.2f, 0);
+            Entity->Position = glm::vec2(Pos.x + 1.2f, Pos.y);
         }
     }
     
@@ -253,30 +249,10 @@ void UpdatePlayerWeapon(entity* Entity, game_state* GameState, real64 DeltaTime)
     if(Player->Player.IsAttacking && !Entity->AnimationInfo.Playing)
     {
         Entity->CurrentAnimation = 0;
-        
-        if(Player->Player.LastKnownDirectionX == 0)
-        {
-            if(Player->Player.LastKnownDirectionY < 0)
-            {
-                PlayAnimation(Entity, &GameState->SwordDownAnimation);
-            }
-            else if(Player->Player.LastKnownDirectionY > 0)
-            {
-                PlayAnimation(Entity, &GameState->SwordUpAnimation);
-            }
-            else
-            {
-                PlayAnimation(Entity, &GameState->SwordTopRightAnimation);
-            }
-        }
-        else
-        {
-            PlayAnimation(Entity, &GameState->SwordTopRightAnimation);
-        }
-        
+        PlayAnimation(Entity, &GameState->SwordAttackAnimation);
         RenderEntity->Rendered = true;
     }
-    else if(!Entity->AnimationInfo.Playing)
+    else if(!Player->Player.IsAttacking || !Entity->AnimationInfo.Playing)
     {
         RenderEntity->Rendered = false;
     }
@@ -694,4 +670,5 @@ extern "C" UPDATE(Update)
     }
     
     UpdateEntities(GameState, DeltaTime);
+    GameState->HealthBar.Position = glm::vec2(100, 100);
 }

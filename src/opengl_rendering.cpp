@@ -259,6 +259,25 @@ static void RenderSetup(render_state *RenderState)
     glVertexAttribPointer(TexcoordLocation, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *)(2 * sizeof(float)));
     glBindVertexArray(0);
     
+    //ui sprite
+    glGenVertexArrays(1, &RenderState->UISpriteVAO);
+    glBindVertexArray(RenderState->UISpriteVAO);
+    glGenBuffers(1, &RenderState->SpriteQuadVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, RenderState->SpriteQuadVBO);
+    glBufferData(GL_ARRAY_BUFFER, RenderState->SpriteQuadVerticesSize, RenderState->SpriteQuadVertices, GL_DYNAMIC_DRAW);
+    
+    RenderState->TextureShader.Type = Shader_UISprite;
+    LoadShader(ShaderPaths[Shader_UISprite], &RenderState->UISpriteShader);
+    
+    PositionLocation = glGetAttribLocation(RenderState->UISpriteShader.Program, "pos");
+    TexcoordLocation = glGetAttribLocation(RenderState->UISpriteShader.Program, "texcoord");
+    
+    glEnableVertexAttribArray(PositionLocation);
+    glVertexAttribPointer(PositionLocation, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
+    glEnableVertexAttribArray(TexcoordLocation);
+    glVertexAttribPointer(TexcoordLocation, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *)(2 * sizeof(float)));
+    glBindVertexArray(0);
+    
     //tile
     glGenVertexArrays(1, &RenderState->TileVAO);
     glBindVertexArray(RenderState->TileVAO);
@@ -424,6 +443,9 @@ static void InitializeOpenGL(game_state* GameState, render_state* RenderState, c
     }
     LoadTextures(RenderState);
     RenderSetup(RenderState);
+    
+    GameState->HealthBar = {};
+    GameState->HealthBar.RenderInfo.TextureHandle = RenderState->Textures[Texture_Health1];
 }
 
 static void ReloadVertexShader(Shader_Type Type, render_state* RenderState)
@@ -650,7 +672,7 @@ static void RenderText(render_state* RenderState, const render_font& Font, const
     glBindVertexArray(0);
 }
 
-static void RenderConsole(render_state* RenderState, console* Console, glm::mat4 ProjectionMatrix, glm::mat4 View)
+static void RenderConsole(render_state* RenderState, console* Console)
 {
     glBindVertexArray(RenderState->ConsoleVAO);
     
@@ -765,7 +787,7 @@ static void RenderAStarPath(render_state* RenderState, entity* Entity, glm::mat4
         for(uint32 PathIndex = 0; PathIndex < Entity->AStarPathLength; PathIndex++)
         {
             Model = glm::translate(Model, glm::vec3(Entity->AStarPath[PathIndex].x * 1.0f, Entity->AStarPath[PathIndex].y * 1.0f, 0.0f));
-            Model = glm::scale(Model, glm::vec3(1,1,1));
+            Model = glm::scale(Model, glm::vec3(1, 1, 1));
             
             glBindVertexArray(RenderState->WireframeVAO);
             
@@ -797,7 +819,6 @@ static void RenderEntity(render_state *RenderState, entity &Entity, glm::mat4 Pr
     {
         switch(Entity.Type)
         {
-            case Entity_Crosshair:
             case Entity_Enemy:
             case Entity_Player:
             case Entity_EnemyWeapon:
@@ -1096,6 +1117,29 @@ static void RenderEditorUI(game_state* GameState, const editor_ui& EditorUI, ren
     }
 }
 
+static void RenderPlayerUI(health_bar* HealthBar, render_state* RenderState)
+{
+    real32 X = HealthBar->Position.x * RenderState->ScaleX;
+    X -= 1;
+    real32 Y = HealthBar->Position.y * RenderState->ScaleY;
+    Y -= 1;
+    
+    glBindVertexArray(RenderState->UISpriteVAO);
+    glBindTexture(GL_TEXTURE_2D, HealthBar->RenderInfo.TextureHandle);
+    
+    auto Shader = RenderState->UISpriteShader;
+    UseShader(&Shader);
+    
+    glm::mat4 Model(1.0f);
+    Model = glm::translate(Model, glm::vec3(X, Y, 0));
+    Model = glm::scale(Model, glm::vec3(1, 1, 1));
+    SetMat4Uniform(Shader.Program, "M", Model);
+    SetVec4Attribute(Shader.Program, "color", glm::vec4(1, 1, 1, 1)); 
+    
+    glDrawArrays(GL_QUADS, 0, 4);
+    glBindVertexArray(0);
+}
+
 static void Render(game_state* GameState)
 {
     GameState->RenderState.ScaleX = 2.0f / GameState->RenderState.WindowWidth;
@@ -1114,8 +1158,10 @@ static void Render(game_state* GameState)
         RenderGame(GameState);
     }
     
+    RenderPlayerUI(&GameState->HealthBar, &GameState->RenderState);
+    
     if(GameState->Console.CurrentTime > 0)
-        RenderConsole(&GameState->RenderState, &GameState->Console, GameState->Camera.ProjectionMatrix,  GameState->Camera.ViewMatrix);
+        RenderConsole(&GameState->RenderState, &GameState->Console);
     
     glfwSwapBuffers(GameState->RenderState.Window);
 }
