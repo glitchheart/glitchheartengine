@@ -101,6 +101,7 @@ static void LoadAnimations(game_state* GameState)
     LoadAnimationFromFile("../assets/animations/player_anim_sword_up.pownim", &GameState->SwordUpAnimation, &GameState->RenderState);
     LoadAnimationFromFile("../assets/animations/player_anim_sword_down.pownim", &GameState->SwordDownAnimation, &GameState->RenderState);
     LoadAnimationFromFile("../assets/animations/player_anim_hit.pownim", &GameState->PlayerHitAnimation, &GameState->RenderState);
+    LoadAnimationFromFile("../assets/animations/sword_attack.pownim", &GameState->SwordAttackAnimation, &GameState->RenderState);
 }
 
 static void PlayAnimation(entity* Entity, animation* Animation)

@@ -12,6 +12,7 @@ enum Shader_Type
     Shader_StandardFont,
     Shader_SpriteSheetShader,
     Shader_Wireframe,
+    Shader_UISprite,
     
     Shader_Count
 };
@@ -23,6 +24,11 @@ enum Texture_Type
     Texture_Barrel,
     Texture_Crosshair,
     Texture_SwordTopRight,
+    Texture_SwordSimple,
+    Texture_HealthFull,
+    Texture_Health2,
+    Texture_Health1,
+    Texture_HealthEmpty,
     
     Texture_Count
 };
@@ -34,7 +40,8 @@ const char* ShaderPaths[Shader_Count] =
     "../assets/shaders/consoleshader",
     "../assets/shaders/standardfontshader",
     "../assets/shaders/spritesheetanimationshader",
-    "../assets/shaders/wireframeshader"
+    "../assets/shaders/wireframeshader",
+    "../assets/shaders/spriteuishader"
 };
 
 const char* TexturePaths[Texture_Count] =
@@ -43,7 +50,13 @@ const char* TexturePaths[Texture_Count] =
     "../assets/textures/spritesheets/new_player.png",
     "../assets/textures/barrel.png",
     "../assets/textures/crosshair.png",
-    "../assets/textures/spritesheets/sword_attack_top_right.png"
+    "../assets/textures/spritesheets/sword_attack_top_right.png",
+    "../assets/textures/spritesheets/sword_simple.png",
+    
+    "../assets/textures/spritesheets/health_full.png",
+    "../assets/textures/spritesheets/health_2.png",
+    "../assets/textures/spritesheets/health_1.png",
+    "../assets/textures/spritesheets/health_empty.png"
 };
 
 enum Render_Mode
@@ -55,6 +68,16 @@ enum Render_Mode
 #define NUM_ENTITIES 20
 
 struct entity;
+
+struct ui_render_info
+{
+    bool32 Rendered = true;
+    
+    uint32 TextureHandle;
+    
+    uint32 ShaderIndex;
+    glm::vec4 Color = glm::vec4(1, 1, 1, 1);
+};
 
 struct render_entity
 {
@@ -140,13 +163,6 @@ struct render_state
     GLuint BoundVertexBuffer;
     GLuint BoundTexture;
     
-    //GLfloat SpriteQuadVertices[16] =
-    //{ //pos        //texcoords
-    //0.0f, 1.0f, 0.00625f, 0.9375f,
-    //1.0f, 1.0f, 0.9375f,  0.9375f,
-    //1.0f, 0.0f, 0.9375f,  0.0625f,
-    //0.0f, 0.0f, 0.0625f,  0.0625};
-    
     GLfloat SpriteQuadVertices[16] =
     { //pos        //texcoords
         0.0f, 1.0f, 0, 1.0f,
@@ -157,7 +173,7 @@ struct render_state
     
     GLuint SpriteVAO;
     GLuint SpriteQuadVBO;
-    
+    GLuint UISpriteVAO;
     GLuint SpriteSheetVAO;
     
     //tiles
@@ -207,6 +223,7 @@ struct render_state
             shader StandardFontShader;
             shader SpriteSheetShader;
             shader WireframeShader;
+            shader UISpriteShader;
         };
     };
     

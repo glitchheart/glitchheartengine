@@ -20,6 +20,7 @@
 #include "console.h"
 #include "editor_ui.h"
 #include "menu.h"
+#include "ui.h"
 
 struct camera
 {
@@ -58,9 +59,11 @@ struct game_state
     console Console;
     editor_ui EditorUI;
     
+    health_bar HealthBar;
+    
     union
     {
-        animation Animation[15];
+        animation Animation[16];
         struct
         {
             animation PlayerIdleAnimation;
@@ -80,6 +83,7 @@ struct game_state
             animation SwordTopRightAnimation;
             animation SwordUpAnimation;
             animation SwordDownAnimation;
+            animation SwordAttackAnimation;
         };
     };
 };
