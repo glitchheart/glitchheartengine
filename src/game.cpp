@@ -670,5 +670,4 @@ extern "C" UPDATE(Update)
     }
     
     UpdateEntities(GameState, DeltaTime);
-    GameState->HealthBar.Position = glm::vec2(100, 100);
 }
