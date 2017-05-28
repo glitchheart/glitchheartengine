@@ -79,32 +79,20 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
                 real32 ThrowingDir = Entity->IsFlipped ? -1.0f : 1.0f;
                 glm::vec2 Throw;
                 
+                glm::vec2 Dir = glm::normalize(Entity->Velocity);
+                
                 if(Entity->Velocity.x == 0.0f && Entity->Velocity.y == 0.0f)
                 {
                     Throw.x = Entity->Player.ThrowingSpeed * ThrowingDir;
                     Throw.y = 0.0f;
                 }
-                if(Entity->Velocity.x > 0)
+                else
                 {
-                    Throw.x = Entity->Player.ThrowingSpeed;
-                } 
-                else if(Entity->Velocity.x < 0)
-                {
-                    Throw.x = -Entity->Player.ThrowingSpeed;
+                    Throw.x = Dir.x * Entity->Player.ThrowingSpeed;
+                    Throw.y = Dir.y * Entity->Player.ThrowingSpeed;
                 }
                 
-                if(Entity->Velocity.y > 0)
-                {
-                    Throw.y = Entity->Player.ThrowingSpeed;
-                }
-                else if(Entity->Velocity.y < 0)
-                {
-                    Throw.y = -Entity->Player.ThrowingSpeed;
-                }
-                
-                Throw.x = Abs(Throw.y) > 0 ? 0.5f * Throw.x : Throw.x;
-                Throw.y = Abs(Throw.x) > 0 ? 0.5f * Throw.y : Throw.y;
-                Entity->Player.Pickup->Velocity = glm::vec2(Throw.x,Throw.y);
+                Entity->Player.Pickup->Velocity = Throw;
                 Entity->Player.Pickup = NULL;
                 Entity->Player.PickupCooldown = 0.8;
             }
@@ -296,13 +284,14 @@ void UpdateEnemy(entity* Entity, game_state* GameState, real64 DeltaTime)
             }
             else
             {
-                if(Entity->Enemy.AStarCooldown < Entity->Enemy.AStarInterval || !Entity->AStarPath || (Entity->AStarPathLength <= Entity->PathIndex && DistanceToPlayer > 2.0f)) 
+                if(Entity->Enemy.AStarCooldown < Entity->Enemy.AStarInterval || !Entity->AStarPath || (Entity->AStarPathLength <= Entity->PathIndex && DistanceToPlayer >= 2.0f)) 
                 {
                     Entity->PathIndex = Entity->AStarPathLength;
                     Entity->Enemy.AStarCooldown = 2.0f;
+                    glm::vec2 StartPosition = glm::vec2(Entity->Position.x + Entity->Center.x * Entity->Scale.x,Entity->Position.y + Entity->Center.y * Entity->Scale.y);
                     glm::vec2 TargetPosition = glm::vec2(Player.Position.x + Player.Center.x * Player.Scale.x,
                                                          Player.Position.y + Player.Center.y * Player.Scale.y);
-                    AStar(Entity,GameState,Entity->Position,TargetPosition);
+                    AStar(Entity,GameState,StartPosition,TargetPosition);
                 }
                 else
                 {
