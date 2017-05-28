@@ -80,6 +80,7 @@ struct ui_render_info
     uint32 TextureHandle;
     
     uint32 ShaderIndex;
+    glm::vec2 Size = glm::vec3(1, 1, 1);
     glm::vec4 Color = glm::vec4(1, 1, 1, 1);
 };
 

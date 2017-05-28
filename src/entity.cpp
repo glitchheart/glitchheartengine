@@ -9,7 +9,7 @@ static void InitPlayer(game_state* GameState)
     
     Player->Name = "Player";
     Player->Type = Entity_Player;
-    Player->Health = 5;
+    Player->Health = 3;
     Player->Player.WalkingSpeed = 10.0f;
     Player->Player.ThrowingSpeed = 32.0f;
     Player->Player.MaxDashTime = 0.2;

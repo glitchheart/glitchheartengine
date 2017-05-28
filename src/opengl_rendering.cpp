@@ -497,7 +497,9 @@ static void InitializeOpenGL(game_state* GameState, render_state* RenderState, c
     RenderSetup(RenderState);
     
     GameState->HealthBar = {};
-    GameState->HealthBar.RenderInfo.TextureHandle = RenderState->Textures[Texture_Health1];
+    GameState->HealthBar.Position = glm::vec2(RenderState->WindowWidth / 2, RenderState->WindowHeight - 50);
+    GameState->HealthBar.RenderInfo.Size = glm::vec3(2, 1, 1);
+    GameState->HealthBar.RenderInfo.TextureHandle = RenderState->Textures[Texture_HealthFull];
 }
 
 static void ReloadVertexShader(Shader_Type Type, render_state* RenderState)
@@ -1202,7 +1204,7 @@ static void RenderPlayerUI(health_bar* HealthBar, render_state* RenderState)
     
     glm::mat4 Model(1.0f);
     Model = glm::translate(Model, glm::vec3(X, Y, 0));
-    Model = glm::scale(Model, glm::vec3(1, 1, 1));
+    Model = glm::scale(Model, glm::vec3(0.1, 0.075, 1));
     
     SetMat4Uniform(Shader.Program, "M", Model);
     SetVec4Attribute(Shader.Program, "color", glm::vec4(1, 1, 1, 1)); 
