@@ -870,7 +870,14 @@ static void RenderAStarPath(render_state* RenderState, entity* Entity, glm::mat4
             SetMat4Uniform(Shader.Program, "Model", Model);
             glm::vec4 color;
             
-            color = glm::vec4(0.0,0.0,1.0,0.4);
+            if(Entity->PathIndex == PathIndex)
+            {
+                color = glm::vec4(0.0,1.0,0.0,0.4);
+            }
+            else 
+            {
+                color = glm::vec4(0.0,0.0,1.0,0.4);
+            }
             
             SetVec4Attribute(Shader.Program, "color", color);
             glDrawArrays(GL_QUADS, 0, 6);
