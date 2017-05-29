@@ -127,7 +127,7 @@ static void SpawnEnemy(game_state* GameState, glm::vec2 Position)
     Enemy->Enemy.AttackCooldown = 1.0f;
     Enemy->Enemy.AIState = AI_Idle;
     Enemy->Enemy.AStarCooldown = 0.0f;
-    Enemy->Enemy.AStarInterval = 2.0f;
+    Enemy->Enemy.AStarInterval = 0.5f;
     
     Enemy->Health = 2;
     Enemy->HitCooldownTime = 0.4;

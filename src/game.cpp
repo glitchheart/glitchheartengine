@@ -285,11 +285,11 @@ void UpdateEnemy(entity* Entity, game_state* GameState, real64 DeltaTime)
             else
             {
                 glm::vec2 EntityPosition = glm::vec2(Entity->Position.x + Entity->Center.x * Entity->Scale.x,Entity->Position.y + Entity->Center.y * Entity->Scale.y);
-                if(Entity->Enemy.AStarCooldown < Entity->Enemy.AStarInterval || !Entity->AStarPath || (Entity->AStarPathLength <= Entity->PathIndex && DistanceToPlayer >= 2.0f)) 
+                if(Entity->Enemy.AStarCooldown <= 0.0f || !Entity->AStarPath || (Entity->AStarPathLength <= Entity->PathIndex && DistanceToPlayer >= 2.0f)) 
                 {
                     Entity->PathIndex = Entity->AStarPathLength;
-                    Entity->Enemy.AStarCooldown = 2.0f;
-                    glm::vec2 StartPosition = Entity->Position;
+                    Entity->Enemy.AStarCooldown = Entity->Enemy.AStarInterval;
+                    glm::vec2 StartPosition = EntityPosition;
                     glm::vec2 TargetPosition = glm::vec2(Player.Position.x + Player.Center.x * Player.Scale.x,
                                                          Player.Position.y + Player.Center.y * Player.Scale.y);
                     AStar(Entity,GameState,StartPosition,TargetPosition);
@@ -303,7 +303,7 @@ void UpdateEnemy(entity* Entity, game_state* GameState, real64 DeltaTime)
                 {
                     glm::vec2 NewPos = Entity->AStarPath[Entity->PathIndex];
                     real64 DistanceToNode = glm::distance(Entity->Position, NewPos);
-                    if(DistanceToNode > 0.3f) 
+                    if(DistanceToNode > 0.1f) 
                     {
                         glm::vec2 Direction = NewPos - Entity->Position;
                         Direction = glm::normalize(Direction);
