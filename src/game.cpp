@@ -572,7 +572,7 @@ extern "C" UPDATE(Update)
         {
             LoadAnimations(GameState);
             InitCommands();
-            GameState->LevelPath = "../assets/levels/level1.plv";
+            GameState->LevelPath = "../assets/levels/level2.plv";
         }
         
         InitPlayer(GameState);
