@@ -71,7 +71,7 @@ enum Render_Mode
 };
 
 
-#define NUM_ENTITIES 20
+#define NUM_ENTITIES 40
 
 struct entity;
 
