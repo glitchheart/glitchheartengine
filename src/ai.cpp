@@ -84,8 +84,7 @@ static void HandleNeighbour(astar_node* Current, astar_node* TargetNode,game_sta
 * GCost: Cost from starting tile to current tile
 * HCost: Heuristic cost from current tile to target. Can be calculated differently
 *        but how do we best do this?
-*        - Directly: Just calculate horizontally until X reached and then same for 
-*          vertical
+*        -  In this case we use diagonal distance (http://theory.stanford.edu/~amitp/GameProgramming/Heuristics.html)
 * Horizontal cost: 10
 * Diagonal cost  : 14 (normally sqrt of 2 * 10, but we like ints!)
 */
@@ -196,48 +195,24 @@ static void AStar(entity* Enemy, game_state* GameState, glm::vec2 StartPos, glm:
                 return;
             }
             
-            if(Current.X != -1 && Current.Y != -1) {
-                if(Current.X > 0 && Current.Y > 0)
+            if(Current.X != -1 && Current.Y != -1 && Current.X > 0 && Current.Y > 0 && Current.X < (int32)GameState->CurrentLevel.Tilemap.Width - 1 && Current.Y < (int32)GameState->CurrentLevel.Tilemap.Height - 1) {
+                
+                for(uint32 X = Current.X - 1; X < Current.X + 2; X++)
                 {
-                    HandleNeighbour(&Current, &TargetNode,GameState,Current.X - 1, Current.Y - 1,AStarWorkingData->OpenSet,&OpenSetCount,AStarWorkingData->ClosedSet,ClosedSetCount,14,AStarWorkingData->WorkingList,&WorkingListCount);
+                    for(uint32 Y = Current.Y - 1; Y < Current.Y + 2; Y++)
+                    {
+                        
+                        int32 Cost = 10;
+                        if(Current.X != X && Current.Y != Y)
+                        {
+                            Cost = 14;
+                        }
+                        if(!GameState->CurrentLevel.Tilemap.Data[X][Current.Y].IsSolid)
+                        {
+                            HandleNeighbour(&Current, &TargetNode,GameState,X, Y,AStarWorkingData->OpenSet,&OpenSetCount,AStarWorkingData->ClosedSet,ClosedSetCount,Cost,AStarWorkingData->WorkingList,&WorkingListCount);
+                        }
+                    }
                 }
-                
-                if(Current.X > 0)
-                {
-                    HandleNeighbour(&Current, &TargetNode,GameState,Current.X - 1, Current.Y,AStarWorkingData->OpenSet,&OpenSetCount,AStarWorkingData->ClosedSet,ClosedSetCount,10,AStarWorkingData->WorkingList,&WorkingListCount);
-                }
-                
-                if(Current.Y > 0)
-                {
-                    HandleNeighbour(&Current, &TargetNode,GameState,Current.X, Current.Y - 1,AStarWorkingData->OpenSet,&OpenSetCount,AStarWorkingData->ClosedSet,ClosedSetCount,10,AStarWorkingData->WorkingList,&WorkingListCount);
-                }
-                
-                if(Current.X < (int32)GameState->CurrentLevel.Tilemap.Width - 1)
-                {
-                    HandleNeighbour(&Current, &TargetNode,GameState,Current.X + 1, Current.Y,AStarWorkingData->OpenSet,&OpenSetCount,AStarWorkingData->ClosedSet,ClosedSetCount,10,AStarWorkingData->WorkingList,&WorkingListCount);
-                }
-                
-                
-                if(Current.Y < (int32)GameState->CurrentLevel.Tilemap.Height - 1)
-                {
-                    HandleNeighbour(&Current, &TargetNode,GameState,Current.X, Current.Y + 1,AStarWorkingData->OpenSet,&OpenSetCount,AStarWorkingData->ClosedSet,ClosedSetCount,10,AStarWorkingData->WorkingList,&WorkingListCount);
-                }
-                
-                if(Current.X < (int32)GameState->CurrentLevel.Tilemap.Width - 1 && Current.Y < (int32)GameState->CurrentLevel.Tilemap.Height - 1)
-                {
-                    HandleNeighbour(&Current, &TargetNode,GameState,Current.X + 1, Current.Y + 1,AStarWorkingData->OpenSet,&OpenSetCount,AStarWorkingData->ClosedSet,ClosedSetCount,14,AStarWorkingData->WorkingList,&WorkingListCount);
-                }
-                
-                if(Current.X > 0 && Current.Y < (int32)GameState->CurrentLevel.Tilemap.Height - 1)
-                {
-                    HandleNeighbour(&Current, &TargetNode,GameState,Current.X - 1, Current.Y + 1,AStarWorkingData->OpenSet,&OpenSetCount,AStarWorkingData->ClosedSet,ClosedSetCount,14,AStarWorkingData->WorkingList,&WorkingListCount);
-                }
-                
-                
-                if(Current.X < (int32)GameState->CurrentLevel.Tilemap.Width - 1 && Current.Y > 0)
-                {
-                    HandleNeighbour(&Current, &TargetNode,GameState,Current.X + 1, Current.Y - 1,AStarWorkingData->OpenSet,&OpenSetCount,AStarWorkingData->ClosedSet,ClosedSetCount,14,AStarWorkingData->WorkingList,&WorkingListCount);
-                } 
             }
             
             LowestFcost = 10000000;

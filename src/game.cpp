@@ -302,10 +302,10 @@ void UpdateEnemy(entity* Entity, game_state* GameState, real64 DeltaTime)
                 if(Entity->Enemy.AStarPath && Entity->Enemy.PathIndex < Entity->Enemy.AStarPathLength)
                 {
                     glm::vec2 NewPos = Entity->Enemy.AStarPath[Entity->Enemy.PathIndex];
-                    real64 DistanceToNode = glm::distance(Entity->Position, NewPos);
-                    if(DistanceToNode > 0.1f) 
+                    real64 DistanceToNode = glm::distance(EntityPosition + glm::vec2(0.0,0.1f), NewPos);
+                    if(DistanceToNode > 1.0f) 
                     {
-                        glm::vec2 Direction = NewPos - Entity->Position;
+                        glm::vec2 Direction = NewPos - EntityPosition;
                         Direction = glm::normalize(Direction);
                         Entity->Velocity = glm::vec2(Direction.x * Entity->Enemy.WalkingSpeed * DeltaTime, Direction.y * Entity->Enemy.WalkingSpeed * DeltaTime);
                     }
@@ -597,14 +597,15 @@ extern "C" UPDATE(Update)
         GameState->RenderState.RenderColliders = !GameState->RenderState.RenderColliders;
     }
     
-    if(GetKeyDown(Key_F3, GameState))
-    {
-        GameState->SoundManager.Muted = !GameState->SoundManager.Muted;
-    }
-    
     if(GetKeyDown(Key_F2, GameState))
     {
         GameState->RenderState.RenderFPS = !GameState->RenderState.RenderFPS;
+    }
+    
+    
+    if(GetKeyDown(Key_F3, GameState))
+    {
+        GameState->SoundManager.Muted = !GameState->SoundManager.Muted;
     }
     
     if(GetKeyDown(Key_F4, GameState))
