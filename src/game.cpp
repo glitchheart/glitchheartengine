@@ -285,9 +285,9 @@ void UpdateEnemy(entity* Entity, game_state* GameState, real64 DeltaTime)
             else
             {
                 glm::vec2 EntityPosition = glm::vec2(Entity->Position.x + Entity->Center.x * Entity->Scale.x,Entity->Position.y + Entity->Center.y * Entity->Scale.y);
-                if(Entity->Enemy.AStarCooldown <= 0.0f || !Entity->AStarPath || (Entity->AStarPathLength <= Entity->PathIndex && DistanceToPlayer >= 2.0f)) 
+                if(Entity->Enemy.AStarCooldown <= 0.0f || !Entity->Enemy.AStarPath || (Entity->Enemy.AStarPathLength <= Entity->Enemy.PathIndex && DistanceToPlayer >= 2.0f)) 
                 {
-                    Entity->PathIndex = Entity->AStarPathLength;
+                    Entity->Enemy.PathIndex = Entity->Enemy.AStarPathLength;
                     Entity->Enemy.AStarCooldown = Entity->Enemy.AStarInterval;
                     glm::vec2 StartPosition = EntityPosition;
                     glm::vec2 TargetPosition = glm::vec2(Player.Position.x + Player.Center.x * Player.Scale.x,
@@ -299,9 +299,9 @@ void UpdateEnemy(entity* Entity, game_state* GameState, real64 DeltaTime)
                     Entity->Enemy.AStarCooldown -= DeltaTime;
                 }
                 
-                if(Entity->AStarPath && Entity->PathIndex < Entity->AStarPathLength)
+                if(Entity->Enemy.AStarPath && Entity->Enemy.PathIndex < Entity->Enemy.AStarPathLength)
                 {
-                    glm::vec2 NewPos = Entity->AStarPath[Entity->PathIndex];
+                    glm::vec2 NewPos = Entity->Enemy.AStarPath[Entity->Enemy.PathIndex];
                     real64 DistanceToNode = glm::distance(Entity->Position, NewPos);
                     if(DistanceToNode > 0.1f) 
                     {
@@ -311,7 +311,7 @@ void UpdateEnemy(entity* Entity, game_state* GameState, real64 DeltaTime)
                     }
                     else
                     {
-                        Entity->PathIndex++;
+                        Entity->Enemy.PathIndex++;
                     }
                 }
                 if(DistanceToPlayer > Entity->Enemy.MinDistance && DistanceToPlayer < 3.0f)
