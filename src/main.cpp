@@ -21,8 +21,8 @@
 #include "opengl_rendering.h"
 #include "opengl_rendering.cpp"
 
-#include "editor_ui.h"
-#include "editor_ui.cpp"
+#include "editor.h"
+#include "editor.cpp"
 
 struct game_code
 {

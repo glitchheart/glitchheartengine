@@ -164,8 +164,10 @@ static void MouseButtonCallback(GLFWwindow *Window, int Button, int Action, int 
     {
         if (Action == GLFW_PRESS)
         {
+            printf("DAMN BOY button %d %d\n", Button, GameState->InputController.MouseButtonJustPressed[MouseButtonMappings[Button]]);
             if (GameState->InputController.MouseButtonJustPressed[MouseButtonMappings[Button]] == Key_NotPressed)
             {
+                printf("JUST PRESSED IT\n");
                 GameState->InputController.MouseButtonJustPressed[MouseButtonMappings[Button]] = Key_JustPressed;
             }
             else if (GameState->InputController.MouseButtonJustPressed[MouseButtonMappings[Button]] == Key_JustPressed)
