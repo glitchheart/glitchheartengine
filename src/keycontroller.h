@@ -154,6 +154,9 @@ struct input_controller
     
     real64 MouseX;
     real64 MouseY;
+    real64 ScrollX;
+    real64 ScrollY;
+    
     real32 ControllerDeadzone = 0.1f;
     bool32 ControllerPresent;
     Controller_Type ControllerType;
