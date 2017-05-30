@@ -1,5 +1,5 @@
-#ifndef EDITOR_UI_H
-#define EDITOR_UI_H
+#ifndef EDITOR_H
+#define EDITOR_H
 
 enum Editor_UI_State
 {
@@ -10,6 +10,11 @@ enum Editor_UI_State
 };
 
 #define MENU_OPTIONS_COUNT 2
+
+struct editor_state
+{
+    entity* SelectedEntity;
+};
 
 struct editor_ui
 {

@@ -178,7 +178,6 @@ struct render_state
         1.0f, 0.0f, 1.0f,  0,
         0.0f, 0.0f, 0,  0};
     
-    
     GLuint SpriteVAO;
     GLuint SpriteQuadVBO;
     GLuint UISpriteVAO;

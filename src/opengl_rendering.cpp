@@ -487,7 +487,8 @@ static void InitializeOpenGL(game_state* GameState, render_state* RenderState, c
     glfwSetKeyCallback(RenderState->Window, KeyCallback);
     glfwSetCharCallback(RenderState->Window, CharacterCallback);
     glfwSetCursorPosCallback(RenderState->Window, CursorPositionCallback);
-    glfwSetMouseButtonCallback(RenderState->Window,MouseButtonCallback);
+    glfwSetMouseButtonCallback(RenderState->Window, MouseButtonCallback);
+    glfwSetScrollCallback(RenderState->Window, ScrollCallback);
     //glfwSetInputMode(RenderState->Window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     
     GLint Viewport[4];
@@ -1089,6 +1090,24 @@ int CompareFunction(const void* a, const void* b)
     return 0;
 }
 
+static void RenderInGameMode(game_state* GameState)
+{
+    RenderTilemap(&GameState->RenderState, GameState->CurrentLevel.Tilemap, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
+    
+    //@Fix this is buggy
+    qsort(GameState->RenderState.RenderEntities, GameState->RenderState.RenderEntityCount, sizeof(render_entity), CompareFunction);
+    
+    
+    for(uint32 Index = 0; Index < GameState->RenderState.RenderEntityCount; Index++) 
+    {
+        render_entity* Render = &GameState->RenderState.RenderEntities[Index];
+        
+        Render->Entity->RenderEntityHandle = Index;
+        
+        RenderEntity(&GameState->RenderState, *Render->Entity, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
+    }
+}
+
 static void RenderGame(game_state* GameState)
 {
     switch(GameState->GameMode)
@@ -1115,20 +1134,12 @@ static void RenderGame(game_state* GameState)
         break;
         case Mode_InGame:
         {
-            RenderTilemap(&GameState->RenderState, GameState->CurrentLevel.Tilemap, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
-            
-            //@Fix this is buggy
-            qsort(GameState->RenderState.RenderEntities, GameState->RenderState.RenderEntityCount, sizeof(render_entity), CompareFunction);
-            
-            
-            for(uint32 Index = 0; Index < GameState->RenderState.RenderEntityCount; Index++) 
-            {
-                render_entity* Render = &GameState->RenderState.RenderEntities[Index];
-                
-                Render->Entity->RenderEntityHandle = Index;
-                
-                RenderEntity(&GameState->RenderState, *Render->Entity, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
-            }
+            RenderInGameMode(GameState);
+        }
+        break;
+        case Mode_Editor:
+        {
+            RenderInGameMode(GameState);
         }
         break;
     }

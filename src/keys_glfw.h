@@ -126,6 +126,17 @@ static void CursorPositionCallback(GLFWwindow *Window, double XPos, double YPos)
     }
 }
 
+void ScrollCallback(GLFWwindow* Window, double XOffset, double YOffset)
+{
+    game_state *GameState = (game_state *)glfwGetWindowUserPointer(Window);
+    if (GameState)
+    {
+        printf("ScrollX %f ScrollY %f\n", XOffset, YOffset); 
+        GameState->InputController.ScrollX = XOffset;
+        GameState->InputController.ScrollY = YOffset;
+    }
+}
+
 static void KeyCallback(GLFWwindow *Window, int Key, int Scancode, int Action, int Mods)
 {
     game_state *GameState = (game_state *)glfwGetWindowUserPointer(Window);
@@ -165,8 +176,10 @@ static void MouseButtonCallback(GLFWwindow *Window, int Button, int Action, int 
     {
         if (Action == GLFW_PRESS)
         {
+            printf("DAMN BOY button %d %d\n", Button, GameState->InputController.MouseButtonJustPressed[MouseButtonMappings[Button]]);
             if (GameState->InputController.MouseButtonJustPressed[MouseButtonMappings[Button]] == Key_NotPressed)
             {
+                printf("JUST PRESSED IT\n");
                 GameState->InputController.MouseButtonJustPressed[MouseButtonMappings[Button]] = Key_JustPressed;
             }
             else if (GameState->InputController.MouseButtonJustPressed[MouseButtonMappings[Button]] == Key_JustPressed)

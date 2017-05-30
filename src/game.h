@@ -18,7 +18,7 @@
 
 #include "sound.h"
 #include "console.h"
-#include "editor_ui.h"
+#include "editor.h"
 #include "menu.h"
 #include "ui.h"
 
@@ -37,6 +37,7 @@ enum Game_Mode
     Mode_MainMenu,
     Mode_InGame,
     Mode_Paused,
+    Mode_Editor,
     Mode_Exit
 };
 
@@ -53,13 +54,17 @@ struct game_state
     level CurrentLevel;
     input_controller InputController;
     sound_manager SoundManager;
+    
     uint16 EntityCount;
     entity Entities[NUM_ENTITIES];
     
+    health_bar HealthBar;
+    
+    // Editor
     console Console;
     editor_ui EditorUI;
-    
-    health_bar HealthBar;
+    camera EditorCamera;
+    editor_state EditorState;
     
     union
     {

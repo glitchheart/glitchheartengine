@@ -26,7 +26,10 @@ static void SetMouseInvalidKeys(input_controller *InputController)
 {
     for(uint32 KeyCode = 0; KeyCode < Mouse_Count; KeyCode++)
     {
-        InputController->MouseButtonJustPressed[KeyCode] = Key_Invalid;
+        if(InputController->MouseButtonJustPressed[KeyCode] == Key_JustPressed)
+        {
+            InputController->MouseButtonJustPressed[KeyCode] = Key_Invalid;
+        }
     }
 }
 #endif
@@ -63,7 +66,7 @@ static bool32 GetMouseButton(Mouse_Code Key, game_state* GameState)
 
 static bool32 GetMouseButtonDown(Mouse_Code Key, game_state* GameState)
 {
-    return GameState->InputController.MouseButtonDown[Key] == Key_JustPressed;
+    return GameState->InputController.MouseButtonJustPressed[Key] == Key_JustPressed;
 }
 
 static bool32 GetActionButtonDown(Action_Button ActionButton, game_state* GameState)

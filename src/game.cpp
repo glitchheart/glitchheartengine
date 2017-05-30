@@ -562,6 +562,39 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                                                             0));
 }
 
+static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
+{
+    auto Pos = glm::unProject(glm::vec3(GameState->InputController.MouseX,GameState->RenderState.Viewport[3] - GameState->InputController.MouseY, 0),
+                              GameState->Camera.ViewMatrix,
+                              GameState->Camera.ProjectionMatrix,
+                              glm::vec4(0, 0, GameState->RenderState.Viewport[2], GameState->RenderState.Viewport[3]));
+    if(GetMouseButtonDown(Mouse_Left, GameState))
+    {
+        entity* Selected = 0;
+        
+        for(uint32 EntityIndex = 0;
+            EntityIndex < GameState->EntityCount;
+            EntityIndex++)
+        {
+            entity* Entity = &GameState->Entities[EntityIndex];
+            
+            if(Entity->Type != Entity_PlayerWeapon && Entity->Type != Entity_EnemyWeapon && Pos.x >= Entity->Position.x && Pos.y >= Entity->Position.y && Pos.x < Entity->Position.x + Entity->Scale.x && Pos.y < Entity->Position.y + Entity->Scale.y)
+            {
+                Selected = Entity;
+                printf("SELECTED %s!\n", Entity->Name);
+                break;
+            }
+        }
+        
+        GameState->EditorState.SelectedEntity = Selected;
+    }
+    
+    if(GameState->EditorState.SelectedEntity && GetMouseButton(Mouse_Left, GameState))
+    {
+        GameState->EditorState.SelectedEntity->Position = glm::vec2(Pos.x - GameState->EditorState.SelectedEntity->Scale.x / 2, Pos.y -  GameState->EditorState.SelectedEntity->Scale.y / 2);
+    }
+}
+
 extern "C" UPDATE(Update)
 {
     CheckConsoleInput(GameState, DeltaTime);
@@ -584,6 +617,10 @@ extern "C" UPDATE(Update)
         GameState->Camera.Zoom = 3.0f;
         GameState->Camera.ViewportWidth = GameState->RenderState.WindowWidth / 20;
         GameState->Camera.ViewportHeight = GameState->RenderState.WindowHeight / 20;
+        
+        GameState->EditorCamera.Zoom = 3.0f;
+        GameState->EditorCamera.ViewportWidth = GameState->RenderState.WindowWidth / 20;
+        GameState->EditorCamera.ViewportHeight = GameState->RenderState.WindowHeight / 20;
         
         GameState->GameMode = Mode_InGame;
         
@@ -614,6 +651,19 @@ extern "C" UPDATE(Update)
     }
     
 #endif
+    
+    if(GetKey(Key_LeftCtrl, GameState) && GetKeyDown(Key_E, GameState))
+    {
+        if(GameState->GameMode == Mode_InGame)
+        {
+            GameState->GameMode = Mode_Editor;
+            printf("EDIT MODE\n");
+        }
+        else
+        {
+            GameState->GameMode = Mode_InGame;
+        }
+    }
     
     if (GetKeyDown(Key_Escape, GameState) && !GameState->Console.Open)
     {
@@ -662,5 +712,18 @@ extern "C" UPDATE(Update)
         }
     }
     
-    UpdateEntities(GameState, DeltaTime);
+    switch(GameState->GameMode)
+    {
+        case Mode_InGame:
+        case Mode_MainMenu:
+        {
+            UpdateEntities(GameState, DeltaTime);
+        }
+        break;
+        case Mode_Editor:
+        {
+            EditorUpdateEntities(GameState, DeltaTime);
+        }
+        break;
+    }
 }
