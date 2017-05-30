@@ -618,6 +618,10 @@ extern "C" UPDATE(Update)
         GameState->Camera.ViewportWidth = GameState->RenderState.WindowWidth / 20;
         GameState->Camera.ViewportHeight = GameState->RenderState.WindowHeight / 20;
         
+        GameState->EditorCamera.Zoom = 3.0f;
+        GameState->EditorCamera.ViewportWidth = GameState->RenderState.WindowWidth / 20;
+        GameState->EditorCamera.ViewportHeight = GameState->RenderState.WindowHeight / 20;
+        
         GameState->GameMode = Mode_InGame;
         
         GameState->IsInitialized = true;

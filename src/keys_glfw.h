@@ -125,6 +125,17 @@ static void CursorPositionCallback(GLFWwindow *Window, double XPos, double YPos)
     }
 }
 
+void ScrollCallback(GLFWwindow* Window, double XOffset, double YOffset)
+{
+    game_state *GameState = (game_state *)glfwGetWindowUserPointer(Window);
+    if (GameState)
+    {
+        printf("ScrollX %f ScrollY %f\n", XOffset, YOffset); 
+        GameState->InputController.ScrollX = XOffset;
+        GameState->InputController.ScrollY = YOffset;
+    }
+}
+
 static void KeyCallback(GLFWwindow *Window, int Key, int Scancode, int Action, int Mods)
 {
     game_state *GameState = (game_state *)glfwGetWindowUserPointer(Window);
