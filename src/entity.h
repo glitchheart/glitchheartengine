@@ -96,6 +96,9 @@ struct entity
             real32 AStarCooldown;
             real32 AStarInterval;
             bool32 Path;
+            glm::vec2* AStarPath;
+            uint32 AStarPathLength;
+            uint32 PathIndex;
         } Enemy;
         struct
         {
@@ -103,9 +106,7 @@ struct entity
         } Weapon;
         
     };
-    glm::vec2* AStarPath;
-    uint32 AStarPathLength;
-    uint32 PathIndex;
+    
     glm::vec2 Velocity;
 };
 
