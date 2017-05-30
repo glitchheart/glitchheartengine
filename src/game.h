@@ -63,6 +63,7 @@ struct game_state
     // Editor
     console Console;
     editor_ui EditorUI;
+    camera EditorCamera;
     editor_state EditorState;
     
     union

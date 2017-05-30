@@ -487,7 +487,8 @@ static void InitializeOpenGL(game_state* GameState, render_state* RenderState, c
     glfwSetKeyCallback(RenderState->Window, KeyCallback);
     glfwSetCharCallback(RenderState->Window, CharacterCallback);
     glfwSetCursorPosCallback(RenderState->Window, CursorPositionCallback);
-    glfwSetMouseButtonCallback(RenderState->Window,MouseButtonCallback);
+    glfwSetMouseButtonCallback(RenderState->Window, MouseButtonCallback);
+    glfwSetScrollCallback(RenderState->Window, ScrollCallback);
     //glfwSetInputMode(RenderState->Window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     
     GLint Viewport[4];
