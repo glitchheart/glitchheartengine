@@ -611,6 +611,22 @@ extern "C" UPDATE(Update)
 {
     CheckConsoleInput(GameState, DeltaTime);
     
+    if((GetKey(Key_LeftCtrl, GameState) || GetKey(Key_RightCtrl, GameState)) && GetKeyDown(Key_E, GameState))
+    {
+        if(GameState->GameMode == Mode_InGame)
+        {
+            ReloadCurrentLevel(GameState);
+            GameState->GameMode = Mode_Editor;
+            GameState->Paused = false;
+            GameState->EditorCamera.Center = GameState->GameCamera.Center;
+        }
+        else
+        {
+            ReloadCurrentLevel(GameState);
+            GameState->GameMode = Mode_InGame;
+        }
+    }
+    
     if(!GameState->IsInitialized)
     {
         if(!GameState->ShouldReload)
@@ -618,6 +634,12 @@ extern "C" UPDATE(Update)
             LoadAnimations(GameState);
             InitCommands();
             GameState->LevelPath = "../assets/levels/level2.plv";
+            
+            GameState->EditorCamera.Zoom = 3.0f; // @Cleanup: We might not want to reset these values every time we load a level
+            GameState->EditorCamera.ViewportWidth = GameState->RenderState.WindowWidth / 20;
+            GameState->EditorCamera.ViewportHeight = GameState->RenderState.WindowHeight / 20;
+            
+            GameState->GameMode = Mode_InGame;
         }
         
         InitPlayer(GameState);
@@ -629,12 +651,6 @@ extern "C" UPDATE(Update)
         GameState->GameCamera.Zoom = 3.0f;
         GameState->GameCamera.ViewportWidth = GameState->RenderState.WindowWidth / 20;
         GameState->GameCamera.ViewportHeight = GameState->RenderState.WindowHeight / 20;
-        
-        GameState->EditorCamera.Zoom = 3.0f; // @Cleanup: We might not want to reset these values every time we load a level
-        GameState->EditorCamera.ViewportWidth = GameState->RenderState.WindowWidth / 20;
-        GameState->EditorCamera.ViewportHeight = GameState->RenderState.WindowHeight / 20;
-        
-        GameState->GameMode = Mode_InGame;
         
         GameState->IsInitialized = true;
         GameState->ShouldReload = false;
@@ -668,20 +684,6 @@ extern "C" UPDATE(Update)
     }
     
 #endif
-    
-    if((GetKey(Key_LeftCtrl, GameState) || GetKey(Key_RightCtrl, GameState)) && GetKeyDown(Key_E, GameState))
-    {
-        if(GameState->GameMode == Mode_InGame)
-        {
-            GameState->GameMode = Mode_Editor;
-            GameState->Paused = false;
-            GameState->EditorCamera.Center = GameState->GameCamera.Center;
-        }
-        else
-        {
-            GameState->GameMode = Mode_InGame;
-        }
-    }
     
     if (GetKeyDown(Key_Escape, GameState) && !GameState->Console.Open)
     {
