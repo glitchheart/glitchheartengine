@@ -82,15 +82,47 @@ static bool32 LoadLevelFromFile(char* FilePath, level* Level, game_state* GameSt
         
         while(fgets(LineBuffer, 255, File))
         {
-            if(strcmp(LineBuffer,"\n") != 0) 
+            if(StartsWith(&LineBuffer[0], "enemy"))
             {
                 glm::vec2 Pos;
                 sscanf(LineBuffer, "enemy %f %f", &Pos.x, &Pos.y);
                 SpawnEnemy(GameState, Pos);
             }
+            
+            /*
+            if(strcmp(LineBuffer,"\n") != 0) 
+            {
+                glm::vec2 Pos;
+                sscanf(LineBuffer, "enemy %f %f", &Pos.x, &Pos.y);
+                SpawnEnemy(GameState, Pos);
+            }*/
         }
         fclose(File);
         return true;
     }
     return false;
+}
+
+static void SaveLevelToFile(const char* FilePath, level* Level, game_state* GameState)
+{
+    FILE* File;
+    File = fopen("../assets/levels/temp.plv", "a");
+    if(File)
+    {
+        fprintf(File, "%s\n", Level->Name);
+        entity* Player = &GameState->Entities[GameState->PlayerIndex];
+        fprintf(File, "%f %f\n", Player->Position.x, Player->Position.y);
+        fprintf(File, "%d\n", Level->Tilemap.Width);
+        fprintf(File, "%d\n", Level->Tilemap.Height);
+        
+        for(uint32 X = 0; X < Level->Tilemap.Width; X++)
+        {
+            for(uint32 Y = 0; Y < Level->Tilemap.Height; Y++)
+            {
+                // @Incomplete: Level file saving code not done
+            }
+        }
+        
+        fclose(File);
+    }
 }

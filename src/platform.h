@@ -106,7 +106,12 @@ static void LoadConfig(const char* FilePath, config_data* ConfigData)
         }
         fclose(File);
     }
-    
+}
+
+static bool32 StartsWith(const char *A, const char *B)
+{
+    if(strncmp(A, B, strlen(B)) == 0) return 1;
+    return 0;
 }
 
 
