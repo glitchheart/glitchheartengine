@@ -323,8 +323,6 @@ void UpdateEnemy(entity* Entity, game_state* GameState, real64 DeltaTime)
                 }
                 
                 Entity->IsFlipped = Abs(Entity->Velocity.x) > 1.0f * DeltaTime;
-                
-                
             }
         }
         break;
@@ -644,7 +642,7 @@ extern "C" UPDATE(Update)
         
         InitPlayer(GameState);
         LoadLevelFromFile(GameState->LevelPath, &GameState->CurrentLevel, GameState);
-        
+        SaveLevelToFile(GameState->LevelPath, &GameState->CurrentLevel, GameState);
         //@Cleanup this should be in the level file
         SpawnMillionBarrels(GameState);
         
