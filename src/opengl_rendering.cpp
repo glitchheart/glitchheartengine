@@ -1091,6 +1091,7 @@ static void RenderTilemap(render_state* RenderState, const tilemap& Tilemap, glm
                 SetMat4Uniform(Shader.Program, "Projection", ProjectionMatrix);
                 SetMat4Uniform(Shader.Program, "View", View);
                 SetMat4Uniform(Shader.Program, "Model", Model);
+                
                 glDrawArrays(GL_QUADS, 0, 4);
             }
         }
