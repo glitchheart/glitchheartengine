@@ -1161,6 +1161,8 @@ static void RenderGame(game_state* GameState)
         case Mode_InGame:
         {
             RenderInGameMode(GameState);
+            if(GameState->Paused)
+                RenderText(&GameState->RenderState, GameState->RenderState.MenuFont, glm::vec4(0.5, 1, 1, 1), "PAUSED", (real32)GameState->RenderState.WindowWidth / 2, 40, 1, Alignment_Center);
         }
         break;
         case Mode_Editor:
@@ -1168,6 +1170,7 @@ static void RenderGame(game_state* GameState)
             RenderInGameMode(GameState);
             if(GameState->EditorState.SelectedEntity)
                 RenderWireframe(&GameState->RenderState, GameState->EditorState.SelectedEntity, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
+            RenderText(&GameState->RenderState, GameState->RenderState.MenuFont, glm::vec4(1, 1, 1, 1), "Editor", (real32)GameState->RenderState.WindowWidth / 2, GameState->RenderState.WindowHeight - 100, 1, Alignment_Center);
         }
         break;
     }

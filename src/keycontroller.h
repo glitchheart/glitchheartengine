@@ -51,6 +51,8 @@ enum Key_Code
     Key_Backspace,
     Key_LeftShift,
     Key_LeftCtrl,
+    Key_RightCtrl,
+    Key_RightShift,
     Key_1,
     Key_2,
     Key_3,

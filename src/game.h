@@ -44,6 +44,7 @@ enum Game_Mode
 struct game_state
 {
     bool32 IsInitialized;
+    bool32 Paused;
     bool32 ShouldReload;
     Game_Mode GameMode;
     main_menu MainMenu;
