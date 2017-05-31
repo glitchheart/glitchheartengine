@@ -48,7 +48,11 @@ struct game_state
     Game_Mode GameMode;
     main_menu MainMenu;
     render_state RenderState;
+    
     camera Camera;
+    camera GameCamera;
+    camera EditorCamera;
+    
     uint32 PlayerIndex;
     char * LevelPath;
     level CurrentLevel;
@@ -63,7 +67,6 @@ struct game_state
     // Editor
     console Console;
     editor_ui EditorUI;
-    camera EditorCamera;
     editor_state EditorState;
     
     union

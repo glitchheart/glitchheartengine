@@ -14,6 +14,10 @@ enum Editor_UI_State
 struct editor_state
 {
     entity* SelectedEntity;
+    real32 LastKnownMouseX;
+    real32 LastKnownMouseY;
+    real32 ZoomingSpeed = 12;
+    real32 PanningSpeed = 6;
 };
 
 struct editor_ui
