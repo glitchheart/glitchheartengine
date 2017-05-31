@@ -662,13 +662,19 @@ extern "C" UPDATE(Update)
         GameState->RenderState.RenderPaths = !GameState->RenderState.RenderPaths;
     }
     
+    if(GameState->GameMode == Mode_InGame && GetKey(Key_LeftCtrl, GameState) && GetKeyDown(Key_P, GameState))
+    {
+        GameState->Paused = !GameState->Paused;
+    }
+    
 #endif
     
-    if(GetKey(Key_LeftCtrl, GameState) && GetKeyDown(Key_E, GameState))
+    if((GetKey(Key_LeftCtrl, GameState) || GetKey(Key_RightCtrl, GameState)) && GetKeyDown(Key_E, GameState))
     {
         if(GameState->GameMode == Mode_InGame)
         {
             GameState->GameMode = Mode_Editor;
+            GameState->Paused = false;
             GameState->EditorCamera.Center = GameState->GameCamera.Center;
         }
         else
@@ -729,7 +735,8 @@ extern "C" UPDATE(Update)
         case Mode_InGame:
         case Mode_MainMenu:
         {
-            UpdateEntities(GameState, DeltaTime);
+            if(!GameState->Paused)
+                UpdateEntities(GameState, DeltaTime);
             GameState->Camera = GameState->GameCamera;
         }
         break;
