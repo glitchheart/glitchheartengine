@@ -14,8 +14,8 @@
 void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
 {
     auto pos = glm::unProject(glm::vec3(GameState->InputController.MouseX,GameState->RenderState.Viewport[3] - GameState->InputController.MouseY, 0),
-                              GameState->Camera.ViewMatrix,
-                              GameState->Camera.ProjectionMatrix,
+                              GameState->GameCamera.ViewMatrix,
+                              GameState->GameCamera.ProjectionMatrix,
                               glm::vec4(0, 0, GameState->RenderState.Viewport[2], GameState->RenderState.Viewport[3]));
     
     if(Entity->Player.CurrentDashCooldownTime > 0)
@@ -173,7 +173,7 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
         float Degrees = atan2(Direction.y, Direction.x);
         
         if(!GameState->EditorUI.On)
-            GameState->Camera.Center = glm::vec2(Entity->Position.x, Entity->Position.y);
+            GameState->GameCamera.Center = glm::vec2(Entity->Position.x, Entity->Position.y);
     }
 }
 
@@ -544,22 +544,10 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
         case State_EntityList:
         {
             auto entity = GameState->Entities[GameState->EditorUI.SelectedIndex];
-            GameState->Camera.Center = glm::vec2(entity.Position.x, entity.Position.y);
+            GameState->GameCamera.Center = glm::vec2(entity.Position.x, entity.Position.y);
         }
         break;
     }
-    
-    GameState->Camera.ProjectionMatrix = glm::ortho(0.0f,
-                                                    static_cast<GLfloat>(GameState->Camera.ViewportWidth / GameState->Camera.Zoom),
-                                                    static_cast<GLfloat>(GameState->Camera.ViewportHeight / GameState->Camera.Zoom),
-                                                    0.0f,
-                                                    -1.0f,
-                                                    1.0f);
-    
-    GameState->Camera.ViewMatrix = glm::translate(glm::mat4(1.0f),
-                                                  glm::vec3(-GameState->Camera.Center.x + GameState->Camera.ViewportWidth / GameState->Camera.Zoom / 2,
-                                                            -GameState->Camera.Center.y + GameState->Camera.ViewportHeight / GameState->Camera.Zoom / 2,
-                                                            0));
 }
 
 static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
@@ -568,6 +556,7 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
                               GameState->Camera.ViewMatrix,
                               GameState->Camera.ProjectionMatrix,
                               glm::vec4(0, 0, GameState->RenderState.Viewport[2], GameState->RenderState.Viewport[3]));
+    
     if(GetMouseButtonDown(Mouse_Left, GameState))
     {
         entity* Selected = 0;
@@ -581,7 +570,6 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
             if(Entity->Type != Entity_PlayerWeapon && Entity->Type != Entity_EnemyWeapon && Pos.x >= Entity->Position.x && Pos.y >= Entity->Position.y && Pos.x < Entity->Position.x + Entity->Scale.x && Pos.y < Entity->Position.y + Entity->Scale.y)
             {
                 Selected = Entity;
-                printf("SELECTED %s!\n", Entity->Name);
                 break;
             }
         }
@@ -592,6 +580,30 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
     if(GameState->EditorState.SelectedEntity && GetMouseButton(Mouse_Left, GameState))
     {
         GameState->EditorState.SelectedEntity->Position = glm::vec2(Pos.x - GameState->EditorState.SelectedEntity->Scale.x / 2, Pos.y -  GameState->EditorState.SelectedEntity->Scale.y / 2);
+    }
+    
+    // View translation
+    GameState->EditorCamera.Zoom += GameState->InputController.ScrollY * GameState->EditorState.ZoomingSpeed * DeltaTime;
+    
+    if(GetMouseButton(Mouse_Right, GameState))
+    {
+        if(GameState->EditorState.LastKnownMouseX == 0 && GameState->EditorState.LastKnownMouseY == 0)
+        {
+            GameState->EditorState.LastKnownMouseX = GameState->InputController.MouseX;
+            GameState->EditorState.LastKnownMouseY = GameState->InputController.MouseY;
+        }
+        
+        glm::vec2 Direction = glm::vec2(GameState->InputController.MouseX - GameState->EditorState.LastKnownMouseX, GameState->InputController.MouseY - GameState->EditorState.LastKnownMouseY);
+        
+        GameState->EditorCamera.Center -= glm::vec2(Direction.x / GameState->EditorCamera.Zoom * GameState->EditorState.PanningSpeed * DeltaTime, Direction.y / GameState->EditorCamera.Zoom * GameState->EditorState.PanningSpeed * DeltaTime);
+        
+        GameState->EditorState.LastKnownMouseX = GameState->InputController.MouseX;
+        GameState->EditorState.LastKnownMouseY = GameState->InputController.MouseY;
+    }
+    else
+    {
+        GameState->EditorState.LastKnownMouseX = 0;
+        GameState->EditorState.LastKnownMouseY = 0;
     }
 }
 
@@ -614,11 +626,11 @@ extern "C" UPDATE(Update)
         //@Cleanup this should be in the level file
         SpawnMillionBarrels(GameState);
         
-        GameState->Camera.Zoom = 3.0f;
-        GameState->Camera.ViewportWidth = GameState->RenderState.WindowWidth / 20;
-        GameState->Camera.ViewportHeight = GameState->RenderState.WindowHeight / 20;
+        GameState->GameCamera.Zoom = 3.0f;
+        GameState->GameCamera.ViewportWidth = GameState->RenderState.WindowWidth / 20;
+        GameState->GameCamera.ViewportHeight = GameState->RenderState.WindowHeight / 20;
         
-        GameState->EditorCamera.Zoom = 3.0f;
+        GameState->EditorCamera.Zoom = 3.0f; // @Cleanup: We might not want to reset these values every time we load a level
         GameState->EditorCamera.ViewportWidth = GameState->RenderState.WindowWidth / 20;
         GameState->EditorCamera.ViewportHeight = GameState->RenderState.WindowHeight / 20;
         
@@ -656,7 +668,7 @@ extern "C" UPDATE(Update)
         if(GameState->GameMode == Mode_InGame)
         {
             GameState->GameMode = Mode_Editor;
-            printf("EDIT MODE\n");
+            GameState->EditorCamera.Center = GameState->GameCamera.Center;
         }
         else
         {
@@ -717,12 +729,26 @@ extern "C" UPDATE(Update)
         case Mode_MainMenu:
         {
             UpdateEntities(GameState, DeltaTime);
+            GameState->Camera = GameState->GameCamera;
         }
         break;
         case Mode_Editor:
         {
             EditorUpdateEntities(GameState, DeltaTime);
+            GameState->Camera = GameState->EditorCamera;
         }
         break;
     }
+    
+    GameState->Camera.ProjectionMatrix = glm::ortho(0.0f,
+                                                    static_cast<GLfloat>(GameState->Camera.ViewportWidth / GameState->Camera.Zoom),
+                                                    static_cast<GLfloat>(GameState->Camera.ViewportHeight / GameState->Camera.Zoom),
+                                                    0.0f,
+                                                    -1.0f,
+                                                    1.0f);
+    
+    GameState->Camera.ViewMatrix = glm::translate(glm::mat4(1.0f),
+                                                  glm::vec3(-GameState->Camera.Center.x + GameState->Camera.ViewportWidth / GameState->Camera.Zoom / 2,
+                                                            -GameState->Camera.Center.y + GameState->Camera.ViewportHeight / GameState->Camera.Zoom / 2,
+                                                            0));
 }

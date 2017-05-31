@@ -846,8 +846,34 @@ static void RenderColliderWireframe(render_state* RenderState, entity* Entity, g
             
             glDrawArrays(GL_LINE_STRIP, 0, 6);
             glBindVertexArray(0);
-            
         }
+    }
+}
+
+
+static void RenderWireframe(render_state* RenderState, entity* Entity, glm::mat4 ProjectionMatrix, glm::mat4 View)
+{
+    if(Entity->Active)
+    {
+        glm::mat4 Model(1.0f);
+        
+        Model = glm::translate(Model, glm::vec3(Entity->Position.x, Entity->Position.y, 0.0f));
+        Model = glm::scale(Model, glm::vec3(Entity->Scale.x, Entity->Scale.y, 1));
+        
+        glBindVertexArray(RenderState->WireframeVAO);
+        
+        auto Shader = RenderState->Shaders[Shader_Wireframe];
+        UseShader(&Shader);
+        
+        SetMat4Uniform(Shader.Program, "Projection", ProjectionMatrix);
+        SetMat4Uniform(Shader.Program, "View", View);
+        SetMat4Uniform(Shader.Program, "Model", Model);
+        glm::vec4 color(0.0,1.0,0.0,1.0);
+        
+        SetVec4Attribute(Shader.Program, "color", color);
+        
+        glDrawArrays(GL_LINE_STRIP, 0, 6);
+        glBindVertexArray(0);
     }
 }
 
@@ -1139,6 +1165,8 @@ static void RenderGame(game_state* GameState)
         case Mode_Editor:
         {
             RenderInGameMode(GameState);
+            if(GameState->EditorState.SelectedEntity)
+                RenderWireframe(&GameState->RenderState, GameState->EditorState.SelectedEntity, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
         }
         break;
     }

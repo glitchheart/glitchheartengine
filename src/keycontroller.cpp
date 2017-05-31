@@ -31,6 +31,8 @@ static void SetMouseInvalidKeys(input_controller *InputController)
             InputController->MouseButtonJustPressed[KeyCode] = Key_Invalid;
         }
     }
+    InputController->ScrollX = 0;
+    InputController->ScrollY = 0;
 }
 #endif
 
