@@ -11,9 +11,19 @@ enum Editor_UI_State
 
 #define MENU_OPTIONS_COUNT 2
 
+enum Editor_Placement_Mode
+{
+    Editor_Placement_Entity,
+    Editor_Placement_Tile
+};
+
 struct editor_state
 {
+    Editor_Placement_Mode PlacementMode = Editor_Placement_Tile;
+    
     entity* SelectedEntity;
+    Tile_Type SelectedTileType = Tile_Grass;
+    
     real32 LastKnownMouseX;
     real32 LastKnownMouseY;
     real32 ZoomingSpeed = 12;

@@ -289,7 +289,6 @@ static void RenderSetup(render_state *RenderState)
     glVertexAttribPointer(TexcoordLocation, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *)(2 * sizeof(float)));
     glBindVertexArray(0);
     
-    
     //ui sprite
     glGenVertexArrays(1, &RenderState->UISpriteVAO);
     glBindVertexArray(RenderState->UISpriteVAO);
@@ -315,6 +314,7 @@ static void RenderSetup(render_state *RenderState)
     glGenBuffers(1, &RenderState->SpriteQuadVBO);
     glBindBuffer(GL_ARRAY_BUFFER, RenderState->SpriteQuadVBO);
     glBufferData(GL_ARRAY_BUFFER, RenderState->SpriteQuadVerticesSize, RenderState->SpriteQuadVertices, GL_DYNAMIC_DRAW);
+    glBindVertexArray(0);
     
     //error shader
     RenderState->ErrorShaderUI.Type = Shader_ErrorUI;
@@ -328,7 +328,6 @@ static void RenderSetup(render_state *RenderState)
     glEnableVertexAttribArray(TexcoordLocation);
     glVertexAttribPointer(TexcoordLocation, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *)(2 * sizeof(float)));
     glBindVertexArray(0);
-    
     
     //tile
     glGenVertexArrays(1, &RenderState->TileVAO);
@@ -350,18 +349,35 @@ static void RenderSetup(render_state *RenderState)
     glBindVertexArray(0);
     
     //console
-    glGenVertexArrays(1, &RenderState->ConsoleVAO);
-    glBindVertexArray(RenderState->ConsoleVAO);
+    glGenVertexArrays(1, &RenderState->RectVAO);
+    glBindVertexArray(RenderState->RectVAO);
     glGenBuffers(1, &RenderState->NormalQuadVBO);
     glBindBuffer(GL_ARRAY_BUFFER, RenderState->NormalQuadVBO);
     glBufferData(GL_ARRAY_BUFFER, RenderState->NormalQuadVerticesSize, RenderState->NormalQuadVertices, GL_DYNAMIC_DRAW);
     
-    RenderState->ConsoleShader.Type = Shader_Console;
-    LoadShader(ShaderPaths[Shader_Console], &RenderState->ConsoleShader);
+    RenderState->RectShader.Type = Shader_Rect;
+    LoadShader(ShaderPaths[Shader_Rect], &RenderState->RectShader);
     
-    auto PositionLocation3 = glGetAttribLocation(RenderState->ConsoleShader.Program, "pos");
+    auto PositionLocation3 = glGetAttribLocation(RenderState->RectShader.Program, "pos");
     glEnableVertexAttribArray(PositionLocation3);
     glVertexAttribPointer(PositionLocation3, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), 0);
+    
+    glBindVertexArray(0);
+    
+    glGenVertexArrays(1, &RenderState->TextureRectVAO);
+    glBindVertexArray(RenderState->TextureRectVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, RenderState->SpriteQuadVBO);
+    
+    RenderState->TextureRectShader.Type = Shader_TextureRect;
+    LoadShader(ShaderPaths[Shader_TextureRect], &RenderState->TextureRectShader);
+    
+    PositionLocation2 = glGetAttribLocation(RenderState->TextureRectShader.Program, "pos");
+    TexcoordLocation2 = glGetAttribLocation(RenderState->TextureRectShader.Program, "texcoord");
+    
+    glEnableVertexAttribArray(PositionLocation2);
+    glVertexAttribPointer(PositionLocation2, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
+    glEnableVertexAttribArray(TexcoordLocation2);
+    glVertexAttribPointer(TexcoordLocation2, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *)(2 * sizeof(float)));
     
     glBindVertexArray(0);
     
@@ -372,7 +388,7 @@ static void RenderSetup(render_state *RenderState)
     glBindBuffer(GL_ARRAY_BUFFER, RenderState->WireframeQuadVBO);
     glBufferData(GL_ARRAY_BUFFER, RenderState->WireframeQuadVerticesSize, RenderState->WireframeQuadVertices, GL_DYNAMIC_DRAW);
     
-    RenderState->ConsoleShader.Type = Shader_Wireframe;
+    RenderState->RectShader.Type = Shader_Wireframe;
     LoadShader(ShaderPaths[Shader_Wireframe], &RenderState->WireframeShader);
     
     PositionLocation3 = glGetAttribLocation(RenderState->WireframeShader.Program, "pos");
@@ -587,7 +603,7 @@ static void SetMat4Uniform(GLuint ShaderHandle, const char *UniformName, glm::ma
 }
 
 //TODO(Daniel) there's a weird bug when rendering special characters. The cursor just slowly jumps up for every character pressed
-static void RenderRect(Render_Mode Mode, render_state* RenderState, glm::vec4 Color, real32 X, real32 Y, real32 Width, real32 Height)
+static void RenderRect(Render_Mode Mode, render_state* RenderState, glm::vec4 Color, real32 X, real32 Y, real32 Width, real32 Height, uint32 TextureHandle = 0)
 {
     X *= RenderState->ScaleX;
     X -= 1;
@@ -600,15 +616,25 @@ static void RenderRect(Render_Mode Mode, render_state* RenderState, glm::vec4 Co
     {
         case Render_Fill:
         {
-            glBindVertexArray(RenderState->ConsoleVAO); //TODO(Daniel) Create a vertex array buffer + object for simple rect / just change name
+            auto Shader = RenderState->RectShader;
+            if(TextureHandle)
+            {
+                glBindVertexArray(RenderState->TextureRectVAO);
+                glBindTexture(GL_TEXTURE_2D, TextureHandle);
+                Shader = RenderState->TextureRectShader;
+            }
+            else
+            {
+                glBindVertexArray(RenderState->RectVAO);
+            }
             
-            auto Shader = RenderState->ConsoleShader;
             UseShader(&Shader);
             
             //draw upper part
             glm::mat4 Model(1.0f);
             Model = glm::translate(Model, glm::vec3(X, Y, 0));
             Model = glm::scale(Model, glm::vec3(Width, Height, 1));
+            
             SetMat4Uniform(Shader.Program, "M", Model);
             SetVec4Attribute(Shader.Program, "color", Color);
             
@@ -747,7 +773,7 @@ static void RenderText(render_state* RenderState, const render_font& Font, const
 
 static void RenderConsole(render_state* RenderState, console* Console)
 {
-    glBindVertexArray(RenderState->ConsoleVAO);
+    glBindVertexArray(RenderState->RectVAO);
     
     real32 PercentAnimated = 1.0f + 1.0f - (real32)Console->CurrentTime / (real32)Console->TimeToAnimate;
     
@@ -879,7 +905,6 @@ static void RenderWireframe(render_state* RenderState, entity* Entity, glm::mat4
 
 static void RenderAStarPath(render_state* RenderState, entity* Entity, glm::mat4 ProjectionMatrix, glm::mat4 View)
 {
-    
     if(Entity->Enemy.AStarPath) 
     {
         glBindVertexArray(RenderState->AStarPathVAO);
@@ -914,6 +939,39 @@ static void RenderAStarPath(render_state* RenderState, entity* Entity, glm::mat4
         }
         glBindVertexArray(0);
     }
+}
+
+static void RenderUISprite(render_state* RenderState, uint32 TextureHandle, glm::vec2 ScreenPosition, glm::vec3 Scale)
+{
+    real32 X = ScreenPosition.x * RenderState->ScaleX;
+    X -= 1;
+    real32 Y = ScreenPosition.y * RenderState->ScaleY;
+    Y -= 1;
+    
+    auto Shader = RenderState->UISpriteShader;
+    
+    if(Shader.Program == 0)
+    {
+        Shader = RenderState->ErrorShaderUI;
+        glBindVertexArray(RenderState->UIErrorVAO);
+    }
+    else
+    {
+        glBindVertexArray(RenderState->UISpriteVAO);
+        glBindTexture(GL_TEXTURE_2D, TextureHandle);
+    }
+    
+    UseShader(&Shader);
+    
+    glm::mat4 Model(1.0f);
+    Model = glm::translate(Model, glm::vec3(X, Y, 0));
+    Model = glm::scale(Model, Scale);
+    
+    SetMat4Uniform(Shader.Program, "M", Model);
+    SetVec4Attribute(Shader.Program, "color", glm::vec4(1, 1, 1, 1)); 
+    
+    glDrawArrays(GL_QUADS, 0, 4);
+    glBindVertexArray(0);
 }
 
 static void RenderEntity(render_state *RenderState, entity &Entity, glm::mat4 ProjectionMatrix, glm::mat4 View)
@@ -1171,6 +1229,27 @@ static void RenderGame(game_state* GameState)
             if(GameState->EditorState.SelectedEntity)
                 RenderWireframe(&GameState->RenderState, GameState->EditorState.SelectedEntity, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
             RenderText(&GameState->RenderState, GameState->RenderState.MenuFont, glm::vec4(1, 1, 1, 1), "Editor", (real32)GameState->RenderState.WindowWidth / 2, GameState->RenderState.WindowHeight - 100, 1, Alignment_Center);
+            
+            RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(1, 1, 1, 0.7f), GameState->RenderState.WindowWidth - 100, 0, 100, GameState->RenderState.WindowHeight);
+            
+            for(uint32 TileIndex = 1; TileIndex < Tile_Count; TileIndex++)
+            {
+                switch(TileIndex)
+                {
+                    case Tile_Sand:
+                    RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(1, 1, 1, 0.7f), GameState->RenderState.WindowWidth - 80, (TileIndex - 1) * 65, 60, 60, GameState->RenderState.SandTileTexture);
+                    break;
+                    case Tile_Grass:
+                    
+                    RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(1, 1, 1, 0.7f), GameState->RenderState.WindowWidth - 80, (TileIndex - 1) * 65, 60, 60, GameState->RenderState.GrassTileTexture);
+                    break;
+                    //case Tile_DarkGrass: //@Incomplete
+                    //break;
+                    case Tile_Stone:
+                    RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(1, 1, 1, 0.7f), GameState->RenderState.WindowWidth - 80, (TileIndex - 1) * 65, 60, 60, GameState->RenderState.StoneTileTexture);
+                    break;
+                }
+            }
         }
         break;
     }
@@ -1251,35 +1330,7 @@ static void RenderEditorUI(game_state* GameState, const editor_ui& EditorUI, ren
 
 static void RenderPlayerUI(health_bar* HealthBar, render_state* RenderState)
 {
-    real32 X = HealthBar->Position.x * RenderState->ScaleX;
-    X -= 1;
-    real32 Y = HealthBar->Position.y * RenderState->ScaleY;
-    Y -= 1;
-    
-    auto Shader = RenderState->UISpriteShader;
-    
-    if(Shader.Program == 0)
-    {
-        Shader = RenderState->ErrorShaderUI;
-        glBindVertexArray(RenderState->UIErrorVAO);
-    }
-    else
-    {
-        glBindVertexArray(RenderState->UISpriteVAO);
-        glBindTexture(GL_TEXTURE_2D, HealthBar->RenderInfo.TextureHandle);
-    }
-    
-    UseShader(&Shader);
-    
-    glm::mat4 Model(1.0f);
-    Model = glm::translate(Model, glm::vec3(X, Y, 0));
-    Model = glm::scale(Model, glm::vec3(0.1, 0.075, 1));
-    
-    SetMat4Uniform(Shader.Program, "M", Model);
-    SetVec4Attribute(Shader.Program, "color", glm::vec4(1, 1, 1, 1)); 
-    
-    glDrawArrays(GL_QUADS, 0, 4);
-    glBindVertexArray(0);
+    RenderUISprite(RenderState, HealthBar->RenderInfo.TextureHandle, HealthBar->Position, glm::vec3(0.1, 0.1f, 1));
 }
 
 static void Render(game_state* GameState)

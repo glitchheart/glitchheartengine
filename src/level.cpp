@@ -20,11 +20,14 @@ static bool32 LoadLevelFromFile(char* FilePath, level* Level, game_state* GameSt
         if(fgets(LineBuffer, 255, File))
             sscanf(LineBuffer, "%f %f", &Level->PlayerStartPosition.x, &Level->PlayerStartPosition.y);
         
+        InitPlayer(GameState, Level->PlayerStartPosition);
+        
         if(fgets(LineBuffer, 255, File))
             sscanf(LineBuffer, "%d", &MapWidth);
         
         if(fgets(LineBuffer, 255, File))
             sscanf(LineBuffer, "%d", &MapHeight);
+        
         Assert(MapWidth > 0 && MapHeight > 0);
         
         Level->Tilemap.Width = MapWidth;
@@ -88,14 +91,12 @@ static bool32 LoadLevelFromFile(char* FilePath, level* Level, game_state* GameSt
                 sscanf(LineBuffer, "enemy %f %f", &Pos.x, &Pos.y);
                 SpawnEnemy(GameState, Pos);
             }
-            
-            /*
-            if(strcmp(LineBuffer,"\n") != 0) 
+            else if(StartsWith(&LineBuffer[0], "barrel"))
             {
                 glm::vec2 Pos;
-                sscanf(LineBuffer, "enemy %f %f", &Pos.x, &Pos.y);
-                SpawnEnemy(GameState, Pos);
-            }*/
+                sscanf(LineBuffer, "barrel %f %f", &Pos.x, &Pos.y);
+                SpawnBarrel(GameState, Pos);
+            }
         }
         fclose(File);
         return true;
@@ -106,20 +107,62 @@ static bool32 LoadLevelFromFile(char* FilePath, level* Level, game_state* GameSt
 static void SaveLevelToFile(const char* FilePath, level* Level, game_state* GameState)
 {
     FILE* File;
-    File = fopen("../assets/levels/temp.plv", "a");
+    File = fopen(FilePath, "w");
     if(File)
     {
         fprintf(File, "%s\n", Level->Name);
+        
         entity* Player = &GameState->Entities[GameState->PlayerIndex];
         fprintf(File, "%f %f\n", Player->Position.x, Player->Position.y);
+        
         fprintf(File, "%d\n", Level->Tilemap.Width);
         fprintf(File, "%d\n", Level->Tilemap.Height);
         
-        for(uint32 X = 0; X < Level->Tilemap.Width; X++)
+        for(uint32 Y = 0; Y < Level->Tilemap.Height; Y++)
         {
-            for(uint32 Y = 0; Y < Level->Tilemap.Height; Y++)
+            for(uint32 X = 0; X < Level->Tilemap.Width; X++)
             {
-                // @Incomplete: Level file saving code not done
+                char Character;
+                
+                switch(Level->Tilemap.Data[X][Y].Type)
+                {
+                    case Tile_None:
+                    Character = '0';
+                    break;
+                    case Tile_Grass:
+                    Character = 'g';
+                    break;
+                    case Tile_Stone:
+                    Character = 'w';
+                    break;
+                    case Tile_Sand:
+                    Character = 's';
+                    break;
+                }
+                
+                fprintf(File, "%c", Character);
+            }
+            fprintf(File, "\n");
+        }
+        
+        for(uint32 Index = 0; Index < GameState->EntityCount; Index++)
+        {
+            if(Index != GameState->PlayerIndex)
+            {
+                const entity* Entity = &GameState->Entities[Index];
+                char* TypeName = 0;
+                switch(Entity->Type)
+                {
+                    case Entity_Enemy:
+                    TypeName = "enemy";
+                    break;
+                    case Entity_Barrel:
+                    TypeName = "barrel";
+                    break;
+                }
+                
+                if(TypeName)
+                    fprintf(File, "%s %f %f\n", TypeName, Entity->Position.x, Entity->Position.y);
             }
         }
         

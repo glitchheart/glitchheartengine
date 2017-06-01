@@ -8,7 +8,8 @@ enum Shader_Type
 {
     Shader_Texture,
     Shader_Tile,
-    Shader_Console,
+    Shader_Rect,
+    Shader_TextureRect,
     Shader_StandardFont,
     Shader_SpriteSheetShader,
     Shader_Wireframe,
@@ -33,6 +34,11 @@ enum Texture_Type
     Texture_Health1,
     Texture_HealthEmpty,
     
+    Texture_SandTile,
+    Texture_GrassTile,
+    Texture_DarkGrassTile,
+    Texture_StoneTile,
+    
     Texture_Count
 };
 
@@ -40,7 +46,8 @@ const char* ShaderPaths[Shader_Count] =
 {
     "../assets/shaders/textureshader",
     "../assets/shaders/tileshader",
-    "../assets/shaders/consoleshader",
+    "../assets/shaders/rectshader",
+    "../assets/shaders/texturerectshader",
     "../assets/shaders/standardfontshader",
     "../assets/shaders/spritesheetanimationshader",
     "../assets/shaders/wireframeshader",
@@ -62,7 +69,12 @@ const char* TexturePaths[Texture_Count] =
     "../assets/textures/spritesheets/health_full.png",
     "../assets/textures/spritesheets/health_2.png",
     "../assets/textures/spritesheets/health_1.png",
-    "../assets/textures/spritesheets/health_empty.png"
+    "../assets/textures/spritesheets/health_empty.png",
+    
+    "../assets/textures/tiles_1.png",
+    "../assets/textures/tiles_2.png",
+    "../assets/textures/tiles_3.png",
+    "../assets/textures/tiles_4.png"
 };
 
 enum Render_Mode
@@ -231,7 +243,8 @@ struct render_state
     GLuint AStarPathVAO;
     GLuint AStarPathQuadVBO;
     
-    GLuint ConsoleVAO;
+    GLuint RectVAO;
+    GLuint TextureRectVAO;
     GLuint NormalQuadVBO;
     
     union 
@@ -241,7 +254,8 @@ struct render_state
         {
             shader TextureShader;
             shader TileShader;
-            shader ConsoleShader;
+            shader RectShader;
+            shader TextureRectShader;
             shader StandardFontShader;
             shader SpriteSheetShader;
             shader WireframeShader;
@@ -262,8 +276,20 @@ struct render_state
             uint32 BarrelTexture;
             uint32 CrosshairTexture;
             uint32 SwordTopRightTexture;
+            uint32 SwordSimpleTexture;
+            
+            uint32 HealthFullTexture;
+            uint32 Health2Texture;
+            uint32 Health1Texture;
+            uint32 HealthEmptyTexture;
+            
+            uint32 SandTileTexture;
+            uint32 GrassTileTexture;
+            uint32 DarkGrassTileTexture;
+            uint32 StoneTileTexture;
         };
     };
+    
     //freetype
     FT_Library FTLibrary;
     render_font InconsolataFont;
