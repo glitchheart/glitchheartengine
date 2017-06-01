@@ -7,7 +7,9 @@ enum Tile_Type
     Tile_Sand, 
     Tile_Grass, 
     Tile_DarkGrass, 
-    Tile_Stone
+    Tile_Stone,
+    
+    Tile_Count
 };
 
 enum Tile_Layer //TODO(Daniel) use this for making different tile layers later

@@ -3,7 +3,7 @@ static void PrintEntityInfo(const entity& Entity)
     printf("Entity: Name %s, position x %f y %f, rotation x %f y %f z %f\n", Entity.Name, Entity.Position.x, Entity.Position.y, Entity.Rotation.x, Entity.Rotation.y, Entity.Rotation.z);
 }
 
-static void InitPlayer(game_state* GameState)
+static void InitPlayer(game_state* GameState, glm::vec2 Position)
 {
     entity* Player = &GameState->Entities[GameState->EntityCount];
     
@@ -31,7 +31,7 @@ static void InitPlayer(game_state* GameState)
     Player->RenderEntityHandle = GameState->RenderState.RenderEntityCount++;
     PlayerRenderEntity->Color = glm::vec4(1, 1, 1, 1);
     
-    Player->Position = glm::vec2(0, 0);
+    Player->Position = Position;
     Player->Rotation = glm::vec3(0, 0, 0);
     Player->Scale = glm::vec3(2, 2, 0);
     Player->Velocity = glm::vec2(0,0);
@@ -134,7 +134,6 @@ static void SpawnEnemy(game_state* GameState, glm::vec2 Position)
     Enemy->EntityIndex = GameState->EntityCount++;
     
     // Weapon
-    
     entity* EnemyWeapon = &GameState->Entities[GameState->EntityCount];
     EnemyWeapon->Name = "Enemy weapon";
     EnemyWeapon->Type = Entity_EnemyWeapon;
@@ -163,51 +162,43 @@ static void SpawnEnemy(game_state* GameState, glm::vec2 Position)
     GameState->EntityCount++;
 }
 
-static void SpawnMillionBarrels(game_state* GameState)
+static void SpawnBarrel(game_state* GameState, glm::vec2 Position)
 {
-    uint32 OneMillion = 1;
-    for(uint32 i = 0; i < OneMillion; i++)
-    {
-        for(uint32 j = 0; j < OneMillion; j++)
-        {
-            entity* Barrel = &GameState->Entities[GameState->EntityCount];
-            Barrel->Name = "barrel";
-            Barrel->Active = true;
-            Barrel->Type = Entity_Barrel;
-            Barrel->Layer = Layer_Environment;
-            Barrel->IgnoreLayers = Layer_Environment;
-            
-            render_entity* BarrelRenderEntity = &GameState->RenderState.RenderEntities[GameState->RenderState.RenderEntityCount];
-            
-            BarrelRenderEntity->ShaderIndex = Shader_Texture;
-            BarrelRenderEntity->TextureHandle = GameState->RenderState.BarrelTexture;
-            
-            BarrelRenderEntity->Entity = &*Barrel;
-            Barrel->RenderEntityHandle = GameState->RenderState.RenderEntityCount++;
-            
-            Barrel->Rotation = glm::vec3(0, 0, 0);
-            Barrel->Position = glm::vec2(2 + i,2 + j);
-            Barrel->Scale = glm::vec3(2, 2, 0);
-            Barrel->Velocity = glm::vec2(0,0);
-            Barrel->Center = glm::vec2(0.5, 0.5);
-            Barrel->IsStatic = true;
-            Barrel->IsKinematic = false;
-            Barrel->Pickup = true;
-            
-            
-            collision_AABB CollisionAABB;
-            
-            CollisionAABB.Extents = glm::vec2(0.5f,0.5f);
-            CollisionAABB.Center = glm::vec2(Barrel->Position.x + Barrel->Center.x * Barrel->Scale.x,
-                                             Barrel->Position.y + Barrel->Center.y * Barrel->Scale.y);
-            //CollisionAABB.Center = glm::vec2(0.5f,0.5f);
-            CollisionAABB.IsTrigger = true;
-            Barrel->CollisionAABB = CollisionAABB;
-            
-            Barrel->EntityIndex = GameState->EntityCount;
-            GameState->EntityCount++;
-        }
-    }
+    entity* Barrel = &GameState->Entities[GameState->EntityCount];
+    Barrel->Name = "barrel";
+    Barrel->Active = true;
+    Barrel->Type = Entity_Barrel;
+    Barrel->Layer = Layer_Environment;
+    Barrel->IgnoreLayers = Layer_Environment;
+    
+    render_entity* BarrelRenderEntity = &GameState->RenderState.RenderEntities[GameState->RenderState.RenderEntityCount];
+    
+    BarrelRenderEntity->ShaderIndex = Shader_Texture;
+    BarrelRenderEntity->TextureHandle = GameState->RenderState.BarrelTexture;
+    
+    BarrelRenderEntity->Entity = &*Barrel;
+    Barrel->RenderEntityHandle = GameState->RenderState.RenderEntityCount++;
+    
+    Barrel->Rotation = glm::vec3(0, 0, 0);
+    Barrel->Position = Position;
+    Barrel->Scale = glm::vec3(2, 2, 0);
+    Barrel->Velocity = glm::vec2(0,0);
+    Barrel->Center = glm::vec2(0.5, 0.5);
+    Barrel->IsStatic = true;
+    Barrel->IsKinematic = false;
+    Barrel->Pickup = true;
+    
+    collision_AABB CollisionAABB;
+    
+    CollisionAABB.Extents = glm::vec2(0.5f,0.5f);
+    CollisionAABB.Center = glm::vec2(Barrel->Position.x + Barrel->Center.x * Barrel->Scale.x,
+                                     Barrel->Position.y + Barrel->Center.y * Barrel->Scale.y);
+    //CollisionAABB.Center = glm::vec2(0.5f,0.5f);
+    CollisionAABB.IsTrigger = true;
+    Barrel->CollisionAABB = CollisionAABB;
+    
+    Barrel->EntityIndex = GameState->EntityCount;
+    GameState->EntityCount++;
 }
 
 //@Incomplete: Maybe we will add a weapon type or damage amount

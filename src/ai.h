@@ -1,4 +1,3 @@
-
 struct astar_node
 {
     int32 X = -1;
