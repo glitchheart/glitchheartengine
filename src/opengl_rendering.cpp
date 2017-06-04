@@ -894,7 +894,7 @@ static void RenderWireframe(render_state* RenderState, entity* Entity, glm::mat4
         glm::mat4 Model(1.0f);
         
         Model = glm::translate(Model, glm::vec3(Entity->Position.x, Entity->Position.y, 0.0f));
-        Model = glm::scale(Model, glm::vec3(Entity->Scale.x, Entity->Scale.y, 1));
+        Model = glm::scale(Model, glm::vec3(Entity->Scale.x, -Entity->Scale.y, 1));
         
         glBindVertexArray(RenderState->WireframeVAO);
         

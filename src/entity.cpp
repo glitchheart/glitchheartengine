@@ -37,7 +37,7 @@ static void InitPlayer(game_state* GameState, glm::vec2 Position)
     Player->Velocity = glm::vec2(0,0);
     PlayAnimation(Player, &GameState->PlayerIdleAnimation);
     collision_AABB CollisionAABB;
-    Player->Center = glm::vec2(0.5f, 0.950f);
+    Player->Center = glm::vec2(0.5f,-0.9f);
     
     Player->Layer = Layer_Player;
     //Player->IgnoreLayers = Layer_Enemy;
@@ -107,10 +107,10 @@ static void SpawnEnemy(game_state* GameState, glm::vec2 Position)
     //Enemy->IgnoreLayers = Layer_Enemy;
     
     collision_AABB CollisionAABB;
-    Enemy->Center = glm::vec2(0.5f, 0.5f);
+    Enemy->Center = glm::vec2(0.5f, -0.5f);
     CollisionAABB.Center = glm::vec2(Enemy->Position.x + Enemy->Center.x * Enemy->Scale.x,
                                      Enemy->Position.y + Enemy->Center.y * Enemy->Scale.y);
-    CollisionAABB.Offset = glm::vec2(0, 0.9);
+    CollisionAABB.Offset = glm::vec2(0, -0.9);
     CollisionAABB.Extents = glm::vec2(0.3f, 0.15f);
     Enemy->CollisionAABB = CollisionAABB;
     

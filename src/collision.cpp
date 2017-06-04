@@ -221,13 +221,12 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
             }
         }
         
-        
         if(Entity->Type == Entity_Player || Entity->Type == Entity_Enemy || Entity->Type == Entity_Barrel)
         {
             level* Level = &GameState->CurrentLevel;
             
             int32 XPos = (int32)(Entity->Position.x + Entity->Center.x * Entity->Scale.x);
-            int32 YPos = (int32)(Entity->Position.y + Entity->Center.y * Entity->Scale.y);
+            int32 YPos = Level->Tilemap.Height - (int32)(Entity->Position.y + Entity->Center.y * Entity->Scale.y);
             
             //@Improvement Is it necessary to go 2 tiles out?
             int32 MinX = Max(0, XPos - 2);
