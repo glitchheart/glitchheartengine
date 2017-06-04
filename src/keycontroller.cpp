@@ -135,11 +135,11 @@ static float GetInputY(game_state* GameState)
     {
         if (GetKey(Key_Up, GameState))
         {
-            return -1;
+            return 1;
         }
         else if (GetKey(Key_Down, GameState))
         {
-            return 1;
+            return -1;
         }
         else
             return 0;

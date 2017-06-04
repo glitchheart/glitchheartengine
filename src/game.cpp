@@ -603,9 +603,9 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
         case Editor_Placement_Tile:
         {
             int32 X = glm::floor(Pos.x);
-            int32 Y = glm::floor(Pos.y);
+            int32 Y = GameState->CurrentLevel.Tilemap.Height - glm::floor(Pos.y);
             GameState->EditorState.TileX = X;
-            GameState->EditorState.TileY = Y;
+            GameState->EditorState.TileY = glm::floor(Pos.y);
             
             if(GetMouseButton(Mouse_Left, GameState))
             {
@@ -672,7 +672,7 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
         
         glm::vec2 Direction = glm::vec2(GameState->InputController.MouseX - GameState->EditorState.LastKnownMouseX, GameState->InputController.MouseY - GameState->EditorState.LastKnownMouseY);
         
-        GameState->EditorCamera.Center -= glm::vec2(Direction.x / GameState->EditorCamera.Zoom * GameState->EditorState.PanningSpeed * DeltaTime, Direction.y / GameState->EditorCamera.Zoom * GameState->EditorState.PanningSpeed * DeltaTime);
+        GameState->EditorCamera.Center -= glm::vec2(Direction.x / GameState->EditorCamera.Zoom * GameState->EditorState.PanningSpeed * DeltaTime, Direction.y / GameState->EditorCamera.Zoom * -GameState->EditorState.PanningSpeed * DeltaTime);
         
         GameState->EditorState.LastKnownMouseX = GameState->InputController.MouseX;
         GameState->EditorState.LastKnownMouseY = GameState->InputController.MouseY;
@@ -826,8 +826,8 @@ extern "C" UPDATE(Update)
     
     GameState->Camera.ProjectionMatrix = glm::ortho(0.0f,
                                                     static_cast<GLfloat>(GameState->Camera.ViewportWidth / GameState->Camera.Zoom),
-                                                    static_cast<GLfloat>(GameState->Camera.ViewportHeight / GameState->Camera.Zoom),
                                                     0.0f,
+                                                    static_cast<GLfloat>(GameState->Camera.ViewportHeight / GameState->Camera.Zoom),
                                                     -1.0f,
                                                     1.0f);
     

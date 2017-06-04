@@ -1006,7 +1006,7 @@ static void RenderEntity(render_state *RenderState, entity &Entity, glm::mat4 Pr
         else
             Scale = Entity.Scale;
         
-        Model = glm::scale(Model, Scale);
+        Model = glm::scale(Model, glm::vec3(Scale.x, -Scale.y, Scale.z));
         
         if(Entity.Type == Entity_Enemy)
         {
@@ -1169,7 +1169,7 @@ static void RenderTilemap(render_state* RenderState, const tilemap& Tilemap, glm
             if(Tilemap.Data[i][j].Type != Tile_None)
             {
                 glm::mat4 Model(1.0f);
-                Model = glm::translate(Model, glm::vec3(i * Scale, j * Scale, 0.0f));
+                Model = glm::translate(Model, glm::vec3(i * Scale, (Tilemap.Height - j) * Scale, 0.0f));
                 Model = glm::scale(Model, glm::vec3(Scale, Scale, 1.0f));
                 
                 SetVec2Attribute(Shader.Program, "textureOffset", Tilemap.Data[i][j].TextureOffset);
@@ -1253,6 +1253,9 @@ static void RenderGame(game_state* GameState)
         case Mode_Editor:
         {
             RenderInGameMode(GameState);
+            
+            RenderRect(Render_Outline, GameState, glm::vec4(1, 0, 0, 1), 0, 0, GameState->CurrentLevel.Tilemap.Width * 50, GameState->CurrentLevel.Tilemap.Height * 50);
+            
             if(GameState->EditorState.SelectedEntity)
                 RenderWireframe(&GameState->RenderState, GameState->EditorState.SelectedEntity, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
             
