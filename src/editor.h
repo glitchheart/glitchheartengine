@@ -28,6 +28,14 @@ struct editor_state
     real32 LastKnownMouseY;
     real32 ZoomingSpeed = 12;
     real32 PanningSpeed = 6;
+    
+    real32 TileX;
+    real32 TileY;
+    
+    real32 ToolbarX;
+    real32 ToolbarY;
+    real32 ToolbarWidth;
+    real32 ToolbarHeight;
 };
 
 struct editor_ui

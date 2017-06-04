@@ -411,9 +411,7 @@ static void RenderSetup(render_state *RenderState)
     glEnableVertexAttribArray(PositionLocation3);
     glVertexAttribPointer(PositionLocation3, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), 0);
     
-    
     glBindVertexArray(0);
-    
     
     //font
     RenderState->StandardFontShader.Type = Shader_StandardFont;
@@ -535,6 +533,12 @@ static void InitializeOpenGL(game_state* GameState, render_state* RenderState, c
     GameState->HealthBar.Position = glm::vec2(RenderState->WindowWidth / 2, RenderState->WindowHeight - 50);
     GameState->HealthBar.RenderInfo.Size = glm::vec3(2, 1, 1);
     GameState->HealthBar.RenderInfo.TextureHandle = RenderState->Textures[Texture_HealthFull];
+    
+    // @Incomplete: These values need to be updated when the window size is changed
+    GameState->EditorState.ToolbarX = RenderState->WindowWidth - 100;
+    GameState->EditorState.ToolbarY = 0;
+    GameState->EditorState.ToolbarWidth = 100;
+    GameState->EditorState.ToolbarHeight = RenderState->WindowHeight;
 }
 
 static void ReloadVertexShader(Shader_Type Type, render_state* RenderState)
@@ -603,8 +607,10 @@ static void SetMat4Uniform(GLuint ShaderHandle, const char *UniformName, glm::ma
 }
 
 //TODO(Daniel) there's a weird bug when rendering special characters. The cursor just slowly jumps up for every character pressed
-static void RenderRect(Render_Mode Mode, render_state* RenderState, glm::vec4 Color, real32 X, real32 Y, real32 Width, real32 Height, uint32 TextureHandle = 0)
+static void RenderRect(Render_Mode Mode, game_state* GameState, glm::vec4 Color, real32 X, real32 Y, real32 Width, real32 Height, uint32 TextureHandle = 0)
 {
+    render_state* RenderState = &GameState->RenderState;
+    
     X *= RenderState->ScaleX;
     X -= 1;
     Y *= RenderState->ScaleY;
@@ -652,9 +658,10 @@ static void RenderRect(Render_Mode Mode, render_state* RenderState, glm::vec4 Co
             auto Shader = RenderState->Shaders[Shader_Wireframe];
             UseShader(&Shader);
             
-            SetMat4Uniform(Shader.Program, "MVP", Model);
-            
-            SetVec4Attribute(Shader.Program, "color", glm::vec4(1, 1, 1, 1));
+            SetMat4Uniform(Shader.Program, "Model", Model);
+            SetMat4Uniform(Shader.Program, "Projection", GameState->Camera.ProjectionMatrix);
+            SetMat4Uniform(Shader.Program, "View", GameState->Camera.ViewMatrix);
+            SetVec4Attribute(Shader.Program, "color", Color);
             
             glDrawArrays(GL_LINE_STRIP, 0, 6);
             glBindVertexArray(0);
@@ -768,20 +775,23 @@ static void RenderText(render_state* RenderState, const render_font& Font, const
     glBufferData(GL_ARRAY_BUFFER, 6 * strlen(Text) * sizeof(point), Coords, GL_DYNAMIC_DRAW);
     glDrawArrays(GL_TRIANGLES, 0, N);
     free(Coords);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
 }
 
-static void RenderConsole(render_state* RenderState, console* Console)
+static void RenderConsole(game_state* GameState, console* Console)
 {
+    render_state* RenderState = &GameState->RenderState;
+    
     glBindVertexArray(RenderState->RectVAO);
     
     real32 PercentAnimated = 1.0f + 1.0f - (real32)Console->CurrentTime / (real32)Console->TimeToAnimate;
     
     //draw upper part
-    RenderRect(Render_Fill, RenderState, glm::vec4(0.0f, 0.4f, 0.3f, 0.6f), 0.0f, (real32)RenderState->WindowHeight * 0.77f * PercentAnimated, (real32)RenderState->WindowWidth, (real32)RenderState->WindowHeight * 0.23f);
+    RenderRect(Render_Fill, GameState, glm::vec4(0.0f, 0.4f, 0.3f, 0.6f), 0.0f, (real32)RenderState->WindowHeight * 0.77f * PercentAnimated, (real32)RenderState->WindowWidth, (real32)RenderState->WindowHeight * 0.23f);
     
     //draw lower bar
-    RenderRect(Render_Fill, RenderState, glm::vec4(0.0f, 0.2f, 0.2f, 0.6f), 0.0f, (real32)RenderState->WindowHeight * 0.77f * PercentAnimated, (real32)RenderState->WindowWidth, 20);  
+    RenderRect(Render_Fill, GameState, glm::vec4(0.0f, 0.2f, 0.2f, 0.6f), 0.0f, (real32)RenderState->WindowHeight * 0.77f * PercentAnimated, (real32)RenderState->WindowWidth, 20);  
     
     GLfloat TimeValue = (real32)glfwGetTime();
     GLfloat AlphaValue = (real32)((sin(TimeValue * 4) / 2) + 0.5f);
@@ -790,7 +800,7 @@ static void RenderConsole(render_state* RenderState, console* Console)
     MeasureText(&RenderState->InconsolataFont, &Console->Buffer[0], &Width, &Height);
     
     //draw cursor
-    RenderRect(Render_Fill, RenderState, glm::vec4(AlphaValue, 1, AlphaValue, 1), 5 / 1920.0f * (real32)RenderState->WindowWidth + Width, RenderState->WindowHeight * 0.77f * PercentAnimated, 10, 20);
+    RenderRect(Render_Fill, GameState, glm::vec4(AlphaValue, 1, AlphaValue, 1), 5 / 1920.0f * (real32)RenderState->WindowWidth + Width, RenderState->WindowHeight * 0.77f * PercentAnimated, 10, 20);
     
     RenderText(RenderState, RenderState->InconsolataFont, glm::vec4(0, 0.8, 0, 1),  &Console->Buffer[0], 5 / 1920.0f * (real32)RenderState->WindowWidth, (real32)RenderState->WindowHeight * 0.775f * PercentAnimated, 1);
     
@@ -934,9 +944,8 @@ static void RenderAStarPath(render_state* RenderState, entity* Entity, glm::mat4
             SetVec4Attribute(Shader.Program, "color", color);
             glDrawArrays(GL_QUADS, 0, 6);
             
-            
-            
         }
+        
         glBindVertexArray(0);
     }
 }
@@ -1026,7 +1035,6 @@ static void RenderEntity(render_state *RenderState, entity &Entity, glm::mat4 Pr
             }
             else
             {
-                //Shader = RenderState->SpriteSheetShader;
                 glBindVertexArray(RenderState->SpriteSheetVAO);
             }
             UseShader(&Shader);
@@ -1114,10 +1122,30 @@ static void RenderRoom(render_state* RenderState, const room& Room, glm::mat4 Pr
         }
     }
     
-    
     glBindVertexArray(0);
 }
 
+static void RenderTile(render_state* RenderState, uint32 X, uint32 Y, uint32 TextureHandle, glm::vec4 Color,  glm::mat4 ProjectionMatrix, glm::mat4 View)
+{
+    glBindVertexArray(RenderState->SpriteVAO);
+    auto Shader = RenderState->TextureShader;
+    glm::mat4 Model(1.0f);
+    Model = glm::translate(Model, glm::vec3(X, Y, 0.0f));
+    Model = glm::scale(Model, glm::vec3(1, 1, 1));
+    
+    glBindTexture(GL_TEXTURE_2D, TextureHandle);
+    
+    UseShader(&Shader);
+    
+    SetMat4Uniform(Shader.Program, "Projection", ProjectionMatrix);
+    SetMat4Uniform(Shader.Program, "View", View);
+    SetMat4Uniform(Shader.Program, "Model", Model);
+    SetVec4Attribute(Shader.Program, "Color", Color);
+    
+    glBindBuffer(GL_ARRAY_BUFFER, RenderState->SpriteQuadVBO);
+    glDrawArrays(GL_QUADS, 0, 4);
+    glBindVertexArray(0);
+}
 
 static void RenderTilemap(render_state* RenderState, const tilemap& Tilemap, glm::mat4 ProjectionMatrix, glm::mat4 View)
 {
@@ -1154,7 +1182,6 @@ static void RenderTilemap(render_state* RenderState, const tilemap& Tilemap, glm
             }
         }
     }
-    
     
     glBindVertexArray(0);
 }
@@ -1204,7 +1231,7 @@ static void RenderGame(game_state* GameState)
             {
                 if((int32)Index == GameState->MainMenu.SelectedIndex)
                 {
-                    RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(1, 1, 1, 1), (real32)GameState->RenderState.WindowWidth / 2 - 200, (real32)GameState->RenderState.WindowHeight / 2 - 10 - 40 * Index, 400, 40);
+                    RenderRect(Render_Fill, GameState, glm::vec4(1, 1, 1, 1), (real32)GameState->RenderState.WindowWidth / 2 - 200, (real32)GameState->RenderState.WindowHeight / 2 - 10 - 40 * Index, 400, 40);
                     TextColor = glm::vec4(0, 0, 0, 1);
                 }
                 else
@@ -1228,28 +1255,64 @@ static void RenderGame(game_state* GameState)
             RenderInGameMode(GameState);
             if(GameState->EditorState.SelectedEntity)
                 RenderWireframe(&GameState->RenderState, GameState->EditorState.SelectedEntity, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
-            RenderText(&GameState->RenderState, GameState->RenderState.MenuFont, glm::vec4(1, 1, 1, 1), "Editor", (real32)GameState->RenderState.WindowWidth / 2, GameState->RenderState.WindowHeight - 100, 1, Alignment_Center);
             
-            RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(1, 1, 1, 0.7f), GameState->RenderState.WindowWidth - 100, 0, 100, GameState->RenderState.WindowHeight);
+            uint32 SelectedTextureHandle = 0;
             
-            for(uint32 TileIndex = 1; TileIndex < Tile_Count; TileIndex++)
+            switch(GameState->EditorState.SelectedTileType)
             {
+                case Tile_None:
+                SelectedTextureHandle = GameState->RenderState.EmptyTileTexture;
+                break;
+                case Tile_Sand:
+                SelectedTextureHandle = GameState->RenderState.SandTileTexture;
+                break;
+                case Tile_Grass:
+                SelectedTextureHandle = GameState->RenderState.GrassTileTexture;
+                break;
+                case Tile_Stone:
+                SelectedTextureHandle = GameState->RenderState.StoneTileTexture;
+                break;
+            }
+            
+            RenderTile(&GameState->RenderState, GameState->EditorState.TileX, GameState->EditorState.TileY, SelectedTextureHandle, glm::vec4(1, 1, 1, 0.5f),  GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
+            
+            RenderRect(Render_Fill, GameState, glm::vec4(0, 0, 0, 1), GameState->EditorState.ToolbarX, GameState->EditorState.ToolbarY, GameState->EditorState.ToolbarWidth, GameState->EditorState.ToolbarHeight);
+            
+            for(uint32 TileIndex = 0; TileIndex < Tile_Count; TileIndex++)
+            {
+                uint32 TextureHandle = 0;
+                
                 switch(TileIndex)
                 {
+                    case Tile_None:
+                    TextureHandle = GameState->RenderState.EmptyTileTexture;
+                    break;
                     case Tile_Sand:
-                    RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(1, 1, 1, 0.7f), GameState->RenderState.WindowWidth - 80, (TileIndex - 1) * 65, 60, 60, GameState->RenderState.SandTileTexture);
+                    TextureHandle = GameState->RenderState.SandTileTexture;
                     break;
                     case Tile_Grass:
-                    
-                    RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(1, 1, 1, 0.7f), GameState->RenderState.WindowWidth - 80, (TileIndex - 1) * 65, 60, 60, GameState->RenderState.GrassTileTexture);
+                    TextureHandle = GameState->RenderState.GrassTileTexture;
                     break;
                     //case Tile_DarkGrass: //@Incomplete
                     //break;
                     case Tile_Stone:
-                    RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(1, 1, 1, 0.7f), GameState->RenderState.WindowWidth - 80, (TileIndex - 1) * 65, 60, 60, GameState->RenderState.StoneTileTexture);
+                    TextureHandle = GameState->RenderState.StoneTileTexture;
                     break;
                 }
+                
+                RenderRect(Render_Fill, GameState, glm::vec4(1, 1, 1, 1), GameState->RenderState.WindowWidth - 80,
+                           GameState->RenderState.WindowHeight - (TileIndex + 1) * 65, 60, 60, TextureHandle);
+                if(TileIndex == GameState->EditorState.SelectedTileType)
+                    RenderRect(Render_Fill, GameState, glm::vec4(1, 0, 0, 1), GameState->RenderState.WindowWidth - 80,
+                               GameState->RenderState.WindowHeight - (TileIndex + 1) * 65, 60, 60, GameState->RenderState.SelectedTileTexture);
             }
+            
+            RenderText(&GameState->RenderState, GameState->RenderState.MenuFont, glm::vec4(1, 1, 1, 1), "Editor", (real32)GameState->RenderState.WindowWidth / 2, GameState->RenderState.WindowHeight - 100, 1, Alignment_Center);
+            
+            if(GameState->EditorState.PlacementMode == Editor_Placement_Tile)
+                RenderText(&GameState->RenderState, GameState->RenderState.MenuFont, glm::vec4(0.6f, 0.6f, 0.6f, 1), "Tile-mode", (real32)GameState->RenderState.WindowWidth / 2, GameState->RenderState.WindowHeight - 150, 1, Alignment_Center);
+            else
+                RenderText(&GameState->RenderState, GameState->RenderState.MenuFont, glm::vec4(0.6f, 0.6f, 0.6f, 1), "Entity-mode", (real32)GameState->RenderState.WindowWidth / 2, GameState->RenderState.WindowHeight - 150, 1, Alignment_Center);
         }
         break;
     }
@@ -1263,7 +1326,7 @@ static void RenderEditorUI(game_state* GameState, const editor_ui& EditorUI, ren
         {
             glfwSetInputMode(GameState->RenderState.Window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
             
-            RenderRect(Render_Outline, &GameState->RenderState, glm::vec4(0.2f, 0.2f, 0.2f, 1), -0.2f, -0.3f, 0.4f, 0.6f);
+            RenderRect(Render_Outline, GameState, glm::vec4(0.2f, 0.2f, 0.2f, 1), -0.2f, -0.3f, 0.4f, 0.6f);
             
             for(int Index = 0; Index < MENU_OPTIONS_COUNT; Index++)
             {
@@ -1284,7 +1347,7 @@ static void RenderEditorUI(game_state* GameState, const editor_ui& EditorUI, ren
             glfwSetInputMode(GameState->RenderState.Window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
             RenderGame(GameState);
             RenderRect(Render_Fill, 
-                       RenderState, 
+                       GameState, 
                        glm::vec4(0, 0.4f, 0.3f, 0.6f), 
                        1.0f, 
                        -2.0f + (real32)RenderState->WindowHeight / 2.0f - 20.0f * (1.0f + GameState->EntityCount) / 2.0f, 
@@ -1306,7 +1369,7 @@ static void RenderEditorUI(game_state* GameState, const editor_ui& EditorUI, ren
                     {
                         Color = glm::vec4(0, 0, 0, 1);
                         RenderRect(Render_Fill, 
-                                   RenderState, 
+                                   GameState, 
                                    glm::vec4(1, 1, 1, 1), 
                                    1.0f,
                                    -2.0f + (real32)RenderState->WindowHeight / 2.0f - 20.0f * i, 
@@ -1354,7 +1417,7 @@ static void Render(game_state* GameState)
     RenderPlayerUI(&GameState->HealthBar, &GameState->RenderState);
     
     if(GameState->Console.CurrentTime > 0)
-        RenderConsole(&GameState->RenderState, &GameState->Console);
+        RenderConsole(GameState, &GameState->Console);
     
     glfwSwapBuffers(GameState->RenderState.Window);
 }
