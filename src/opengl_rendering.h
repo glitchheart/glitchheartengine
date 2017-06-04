@@ -34,10 +34,12 @@ enum Texture_Type
     Texture_Health1,
     Texture_HealthEmpty,
     
+    Texture_EmptyTile,
     Texture_SandTile,
     Texture_GrassTile,
     Texture_DarkGrassTile,
     Texture_StoneTile,
+    Texture_SelectedTile,
     
     Texture_Count
 };
@@ -71,10 +73,12 @@ const char* TexturePaths[Texture_Count] =
     "../assets/textures/spritesheets/health_1.png",
     "../assets/textures/spritesheets/health_empty.png",
     
+    "../assets/textures/tile_empty.png",
     "../assets/textures/tiles_1.png",
     "../assets/textures/tiles_2.png",
     "../assets/textures/tiles_3.png",
-    "../assets/textures/tiles_4.png"
+    "../assets/textures/tiles_4.png",
+    "../assets/textures/selected_tile.png"
 };
 
 enum Render_Mode
@@ -283,10 +287,12 @@ struct render_state
             uint32 Health1Texture;
             uint32 HealthEmptyTexture;
             
+            uint32 EmptyTileTexture;
             uint32 SandTileTexture;
             uint32 GrassTileTexture;
             uint32 DarkGrassTileTexture;
             uint32 StoneTileTexture;
+            uint32 SelectedTileTexture;
         };
     };
     

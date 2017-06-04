@@ -550,6 +550,14 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
 
 static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
 {
+    if(GetKeyDown(Key_M, GameState))
+    {
+        if(GameState->EditorState.PlacementMode == Editor_Placement_Tile)
+            GameState->EditorState.PlacementMode = Editor_Placement_Entity;
+        else
+            GameState->EditorState.PlacementMode = Editor_Placement_Tile;
+    }
+    
     auto Pos = glm::unProject(glm::vec3(GameState->InputController.MouseX, GameState->RenderState.Viewport[3] - GameState->InputController.MouseY, 0),
                               GameState->Camera.ViewMatrix,
                               GameState->Camera.ProjectionMatrix,
@@ -560,22 +568,30 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
         {
             if(GetMouseButtonDown(Mouse_Left, GameState))
             {
-                entity* Selected = 0;
-                
-                for(uint32 EntityIndex = 0;
-                    EntityIndex < GameState->EntityCount;
-                    EntityIndex++)
+                if(GameState->InputController.MouseX >= GameState->EditorState.ToolbarX)
                 {
-                    entity* Entity = &GameState->Entities[EntityIndex];
-                    
-                    if(Entity->Type != Entity_PlayerWeapon && Entity->Type != Entity_EnemyWeapon && Pos.x >= Entity->Position.x && Pos.y >= Entity->Position.y && Pos.x < Entity->Position.x + Entity->Scale.x && Pos.y < Entity->Position.y + Entity->Scale.y)
-                    {
-                        Selected = Entity;
-                        break;
-                    }
+                    uint32 Selected = (uint32)(GameState->InputController.MouseY / 65.0f);
+                    GameState->EditorState.SelectedTileType = (Tile_Type)Selected;
                 }
-                
-                GameState->EditorState.SelectedEntity = Selected;
+                else
+                {
+                    entity* Selected = 0;
+                    
+                    for(uint32 EntityIndex = 0;
+                        EntityIndex < GameState->EntityCount;
+                        EntityIndex++)
+                    {
+                        entity* Entity = &GameState->Entities[EntityIndex];
+                        
+                        if(Entity->Type != Entity_PlayerWeapon && Entity->Type != Entity_EnemyWeapon && Pos.x >= Entity->Position.x && Pos.y >= Entity->Position.y && Pos.x < Entity->Position.x + Entity->Scale.x && Pos.y < Entity->Position.y + Entity->Scale.y)
+                        {
+                            Selected = Entity;
+                            break;
+                        }
+                    }
+                    
+                    GameState->EditorState.SelectedEntity = Selected;
+                }
             }
             
             if(GameState->EditorState.SelectedEntity && GetMouseButton(Mouse_Left, GameState))
@@ -586,42 +602,56 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
         break;
         case Editor_Placement_Tile:
         {
+            int32 X = glm::floor(Pos.x);
+            int32 Y = glm::floor(Pos.y);
+            GameState->EditorState.TileX = X;
+            GameState->EditorState.TileY = Y;
+            
             if(GetMouseButton(Mouse_Left, GameState))
             {
-                int32 X = glm::floor(Pos.x);
-                int32 Y = glm::floor(Pos.y);
-                
-                if(X >= 0 && X < GameState->CurrentLevel.Tilemap.Width 
-                   && Y >= 0 && Y < GameState->CurrentLevel.Tilemap.Height)
+                if(GameState->InputController.MouseX >= GameState->EditorState.ToolbarX)
                 {
-                    tilemap* Tilemap = &GameState->CurrentLevel.Tilemap;
-                    
-                    collision_AABB CollisionAABB;
-                    CollisionAABB.Center = glm::vec2(X + 0.5f, Y + 0.5f);
-                    CollisionAABB.Extents = glm::vec2(0.5, 0.5);
-                    
-                    switch(GameState->EditorState.SelectedTileType)
+                    uint32 Selected = (uint32)(GameState->InputController.MouseY / 65.0f);
+                    GameState->EditorState.SelectedTileType = (Tile_Type)Selected;
+                }
+                
+                else
+                {
+                    if(X >= 0 && X < GameState->CurrentLevel.Tilemap.Width 
+                       && Y >= 0 && Y < GameState->CurrentLevel.Tilemap.Height)
                     {
-                        case Tile_None:
-                        break;
-                        case Tile_Grass:
-                        Tilemap->Data[X][Y].Type = Tile_Grass;
-                        Tilemap->Data[X][Y].TextureOffset = glm::vec2(0, 0);
-                        Tilemap->Data[X][Y].IsSolid = false;
-                        Tilemap->Data[X][Y].CollisionAABB = CollisionAABB;
-                        break;
-                        case Tile_Stone:
-                        Tilemap->Data[X][Y].Type = Tile_Stone;
-                        Tilemap->Data[X][Y].TextureOffset = glm::vec2(0.8f, 0);
-                        Tilemap->Data[X][Y].IsSolid = true;
-                        Tilemap->Data[X][Y].CollisionAABB = CollisionAABB;
-                        break;
-                        case Tile_Sand:
-                        Tilemap->Data[X][Y].Type = Tile_Sand;
-                        Tilemap->Data[X][Y].TextureOffset = glm::vec2(0.6f, 0);
-                        Tilemap->Data[X][Y].IsSolid = false;
-                        Tilemap->Data[X][Y].CollisionAABB = CollisionAABB;
-                        break;
+                        tilemap* Tilemap = &GameState->CurrentLevel.Tilemap;
+                        
+                        collision_AABB CollisionAABB;
+                        CollisionAABB.Center = glm::vec2(X + 0.5f, Y + 0.5f);
+                        CollisionAABB.Extents = glm::vec2(0.5, 0.5);
+                        
+                        switch(GameState->EditorState.SelectedTileType)
+                        {
+                            case Tile_None:
+                            Tilemap->Data[X][Y].Type = Tile_None;
+                            Tilemap->Data[X][Y].TextureOffset = glm::vec2(0, 0);
+                            Tilemap->Data[X][Y].IsSolid = false;
+                            break;
+                            case Tile_Grass:
+                            Tilemap->Data[X][Y].Type = Tile_Grass;
+                            Tilemap->Data[X][Y].TextureOffset = glm::vec2(0, 0);
+                            Tilemap->Data[X][Y].IsSolid = false;
+                            Tilemap->Data[X][Y].CollisionAABB = CollisionAABB;
+                            break;
+                            case Tile_Stone:
+                            Tilemap->Data[X][Y].Type = Tile_Stone;
+                            Tilemap->Data[X][Y].TextureOffset = glm::vec2(0.8f, 0);
+                            Tilemap->Data[X][Y].IsSolid = true;
+                            Tilemap->Data[X][Y].CollisionAABB = CollisionAABB;
+                            break;
+                            case Tile_Sand:
+                            Tilemap->Data[X][Y].Type = Tile_Sand;
+                            Tilemap->Data[X][Y].TextureOffset = glm::vec2(0.6f, 0);
+                            Tilemap->Data[X][Y].IsSolid = false;
+                            Tilemap->Data[X][Y].CollisionAABB = CollisionAABB;
+                            break;
+                        }
                     }
                 }
             }
