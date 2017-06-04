@@ -1078,13 +1078,6 @@ static void RenderEntity(render_state *RenderState, entity &Entity, glm::mat4 Pr
     
     if(RenderState->RenderPaths && Entity.Enemy.AStarPath)
         RenderAStarPath(RenderState,&Entity,ProjectionMatrix,View);
-    
-    if(RenderState->RenderFPS)
-    {
-        char FPS[32];
-        sprintf(FPS, "%4.0f",RenderState->FPS);
-        RenderText(RenderState, RenderState->InconsolataFont, glm::vec4(1, 1, 1, 1), FPS, RenderState->WindowWidth / 2.0f, 20.0f, 1.0f, Alignment_Center);
-    }
 }
 
 static void RenderRoom(render_state* RenderState, const room& Room, glm::mat4 ProjectionMatrix, glm::mat4 View, int StartX, int StartY, int EndX, int EndY)
@@ -1421,6 +1414,14 @@ static void Render(game_state* GameState)
     
     if(GameState->Console.CurrentTime > 0)
         RenderConsole(GameState, &GameState->Console);
+    
+    
+    if(RenderState->RenderFPS)
+    {
+        char FPS[32];
+        sprintf(FPS, "%4.0f",RenderState->FPS);
+        RenderText(RenderState, RenderState->InconsolataFont, glm::vec4(1, 1, 1, 1), FPS, RenderState->WindowWidth / 2.0f, 20.0f, 1.0f, Alignment_Center);
+    }
     
     glfwSwapBuffers(GameState->RenderState.Window);
 }
