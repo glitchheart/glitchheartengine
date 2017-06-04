@@ -54,7 +54,7 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
                 {
                     if(Entity->Velocity.x < 0.02 && Entity->Velocity.x > -0.02)
                     {
-                        if(Entity->Velocity.y < 0)
+                        if(Entity->Velocity.y > 0)
                             PlayAnimation(Entity, &GameState->PlayerWalkUpAnimation);
                         else
                             PlayAnimation(Entity, &GameState->PlayerWalkDownAnimation);
@@ -184,36 +184,34 @@ void UpdatePlayerWeapon(entity* Entity, game_state* GameState, real64 DeltaTime)
     
     RenderEntity->Color = glm::vec4(1, 1, 1, 1);
     
-    glm::vec2 Pos = Player->Position;
+    glm::vec2 Pos = glm::vec2(Player->Position.x, Player->Position.y);
     
     Entity->IsFlipped = Player->IsFlipped;
     
     Entity->CollisionAABB.Extents = glm::vec2(0.7f, 0.7f);
+    Entity->CollisionAABB.Offset = glm::vec2(0, -2);
     
     if(Player->Player.LastKnownDirectionX == 0 && Player->Player.LastKnownDirectionY != 0)
     {
         if(Player->Player.LastKnownDirectionY < 0)
         {
-            Entity->CollisionAABB.Offset = glm::vec2(0, -0.2f);
             Entity->Position = glm::vec2(Pos.x, Pos.y - 1.2f);
+            Entity->CollisionAABB.Offset = glm::vec2(0, -2);
         }
         else if(Player->Player.LastKnownDirectionY > 0)
         {
-            Entity->CollisionAABB.Offset = glm::vec2(0, 0.2f);
-            Entity->Position = glm::vec2(Pos.x, Pos.y + 1.4f);
+            Entity->Position = glm::vec2(Pos.x, Pos.y + 1.2f);
         }
     }
     else
     {
         if(Player->IsFlipped)
         {
-            Entity->CollisionAABB.Offset = glm::vec2(-0.2f, 0);
-            Entity->Position = glm::vec2(Pos.x - 1.2f, Pos.y);
+            Entity->Position = glm::vec2(Pos.x - 1.3, Pos.y);
         }
         else
         {
-            Entity->CollisionAABB.Offset = glm::vec2(0.2f, 0);
-            Entity->Position = glm::vec2(Pos.x + 1.2f, Pos.y);
+            Entity->Position = glm::vec2(Pos.x + 1, Pos.y);
         }
     }
     
@@ -583,7 +581,7 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
                     {
                         entity* Entity = &GameState->Entities[EntityIndex];
                         
-                        if(Entity->Type != Entity_PlayerWeapon && Entity->Type != Entity_EnemyWeapon && Pos.x >= Entity->Position.x && Pos.y >= Entity->Position.y && Pos.x < Entity->Position.x + Entity->Scale.x && Pos.y < Entity->Position.y + Entity->Scale.y)
+                        if(Entity->Type != Entity_PlayerWeapon && Entity->Type != Entity_EnemyWeapon && Pos.x >= Entity->Position.x && Pos.y >= Entity->Position.y - Entity->Scale.y && Pos.x < Entity->Position.x + Entity->Scale.x && Pos.y < Entity->Position.y)
                         {
                             Selected = Entity;
                             break;
@@ -596,7 +594,7 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
             
             if(GameState->EditorState.SelectedEntity && GetMouseButton(Mouse_Left, GameState))
             {
-                GameState->EditorState.SelectedEntity->Position = glm::vec2(Pos.x - GameState->EditorState.SelectedEntity->Scale.x / 2, Pos.y -  GameState->EditorState.SelectedEntity->Scale.y / 2);
+                GameState->EditorState.SelectedEntity->Position = glm::vec2(Pos.x - GameState->EditorState.SelectedEntity->Scale.x / 2, Pos.y + GameState->EditorState.SelectedEntity->Scale.y / 2);
             }
         }
         break;

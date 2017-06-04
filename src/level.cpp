@@ -49,7 +49,7 @@ static bool32 LoadLevelFromFile(char* FilePath, level* Level, game_state* GameSt
             for(uint32 IndexWidth = 0; IndexWidth < MapWidth; ++IndexWidth) 
             {
                 collision_AABB CollisionAABB;
-                CollisionAABB.Center = glm::vec2(IndexWidth + 0.5f, IndexHeight + 0.5f);
+                CollisionAABB.Center = glm::vec2(IndexWidth + 0.5f, MapHeight - IndexHeight + 0.5f);
                 CollisionAABB.Extents = glm::vec2(0.5, 0.5);
                 tile_data Data;
                 
