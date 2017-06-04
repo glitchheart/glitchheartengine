@@ -124,10 +124,10 @@ static float GetInputY(game_state* GameState)
         switch(GameState->InputController.ControllerType)
         {
             case Controller_Xbox:
-            return -1 * GameState->InputController.Axes[1]; // Might be another axis index for other controllers
+            return GameState->InputController.Axes[1]; // Might be another axis index for other controllers
             break;
             case Controller_PS4:
-            return GameState->InputController.Axes[1]; // Might be another axis index for other controllers
+            return -1 * GameState->InputController.Axes[1]; // Might be another axis index for other controllers
             break;
         }
     }
