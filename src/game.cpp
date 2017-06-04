@@ -52,7 +52,7 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
                 
                 if(Entity->Velocity.x != 0.0f || Entity->Velocity.y != 0.0f)
                 {
-                    if(Entity->Velocity.x < 0.02 && Entity->Velocity.x > -0.02)
+                    if(Entity->Velocity.x < 0.04 && Entity->Velocity.x > -0.04)
                     {
                         if(Entity->Velocity.y > 0)
                             PlayAnimation(Entity, &GameState->PlayerWalkUpAnimation);
@@ -71,7 +71,7 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
                     Entity->IsFlipped = Entity->Velocity.x < 0;
             }
             else
-                Entity->Velocity = glm::vec2(0,0);
+                Entity->Velocity = glm::vec2(0, 0);
             
             if(GetActionButtonDown(Action_Interact, GameState) && Entity->Player.Pickup)
             {
@@ -312,15 +312,16 @@ void UpdateEnemy(entity* Entity, game_state* GameState, real64 DeltaTime)
                         Entity->Enemy.PathIndex++;
                     }
                 }
+                
+                glm::vec2 Direction = Player.Position - Entity->Position;
                 if(DistanceToPlayer > Entity->Enemy.MinDistance && DistanceToPlayer < 3.0f)
                 {
-                    glm::vec2 Direction = Player.Position - Entity->Position;
                     Direction = glm::normalize(Direction);
                     Entity->Velocity =glm::vec2(Direction.x * Entity->Enemy.WalkingSpeed * DeltaTime,
                                                 Direction.y * Entity->Enemy.WalkingSpeed * DeltaTime);
                 }
                 
-                Entity->IsFlipped = Abs(Entity->Velocity.x) > 1.0f * DeltaTime;
+                Entity->IsFlipped = Direction.x < 0;
             }
         }
         break;
