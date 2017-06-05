@@ -22,11 +22,10 @@ enum AI_State
 enum Entity_Enum
 {
     Entity_Player,
-    Entity_PlayerWeapon,
     Entity_Tile,
     Entity_PalmTree,
     Entity_Enemy,
-    Entity_EnemyWeapon, // @Cleanup: We should just make a weapon and check whether the carrier is an enemy or a player
+    Entity_Weapon,
     Entity_Barrel,
     
     Entity_Max
