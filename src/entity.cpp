@@ -29,6 +29,10 @@ static void InitPlayer(game_state* GameState, glm::vec2 Position)
     Player->Player.PickupCooldownTimer->TimerHandle = -1;
     Player->Player.PickupCooldownTimer->TimerMax = 0.3;
     
+    Player->HitCooldownTimer = (timer*)malloc(sizeof(timer));
+    Player->HitCooldownTimer->TimerHandle = -1;
+    Player->HitCooldownTimer->TimerMax = 0.4;
+    
     Player->Player.DashSpeed = 30;
     Player->Active = true;
     Player->IsKinematic = false;
@@ -149,7 +153,7 @@ static void SpawnEnemy(game_state* GameState, glm::vec2 Position)
     
     Enemy->Enemy.AttackCooldownTimer = (timer*)malloc(sizeof(timer));
     Enemy->Enemy.AttackCooldownTimer->TimerHandle = -1;
-    Enemy->Enemy.AttackCooldownTimer->TimerMax = 1.0;
+    Enemy->Enemy.AttackCooldownTimer->TimerMax = 0.4;
     
     Enemy->Enemy.ChargingTimer = (timer*)malloc(sizeof(timer));
     Enemy->Enemy.ChargingTimer->TimerHandle = -1;
@@ -159,8 +163,11 @@ static void SpawnEnemy(game_state* GameState, glm::vec2 Position)
     Enemy->Enemy.AStarCooldownTimer->TimerHandle = -1;
     Enemy->Enemy.AStarCooldownTimer->TimerMax = 0.7;
     
+    Enemy->HitCooldownTimer = (timer*)malloc(sizeof(timer));
+    Enemy->HitCooldownTimer->TimerHandle = -1;
+    Enemy->HitCooldownTimer->TimerMax = 0.4;
+    
     Enemy->Health = 2;
-    Enemy->HitCooldownTime = 0.4;
     Enemy->EntityIndex = GameState->EntityCount++;
     
     // Weapon
@@ -232,14 +239,36 @@ static void SpawnBarrel(game_state* GameState, glm::vec2 Position)
     GameState->EntityCount++;
 }
 
+static void StartTimer(game_state* GameState, timer* Timer)
+{
+    Timer->TimerHandle = GameState->TimerCount;
+    printf("TimerHandle %d\n", Timer->TimerHandle);
+    GameState->Timers[Timer->TimerHandle] = Timer->TimerMax;
+    
+    GameState->TimerCount++;
+    if(GameState->TimerCount == NUM_TIMERS)
+        GameState->TimerCount = 0;
+}
+
+static bool32 TimerDone(game_state* GameState, timer* Timer)
+{
+    if(Timer->TimerHandle != -1 && 
+       GameState->Timers[Timer->TimerHandle] <= 0)
+    {
+        Timer->TimerHandle = -1;
+    }
+    
+    return Timer->TimerHandle == -1;
+}
+
 //@Incomplete: Maybe we will add a weapon type or damage amount
 void Hit(game_state* GameState, entity* Entity)
 
 {
     Entity->Health -= 1;
-    Entity->HitCooldownLeft = Entity->HitCooldownTime;
+    StartTimer(GameState, Entity->HitCooldownTimer);
     
-    printf("%s health %d Time left %f\n", Entity->Name, Entity->Health, Entity->HitCooldownLeft); 
+    printf("%s health %d\n", Entity->Name, Entity->Health); 
     
     if(Entity->Type == Entity_Enemy)
     {

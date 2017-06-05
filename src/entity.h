@@ -59,8 +59,7 @@ struct entity
     collision_AABB* HitTrigger;
     
     int32 Health = -1;
-    real64 HitCooldownLeft;
-    real64 HitCooldownTime;
+    timer* HitCooldownTimer;
     union
     {
         struct

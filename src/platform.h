@@ -14,7 +14,6 @@
 #define Max(A,B) ((A > B) ? (A) : (B))
 #define Abs(x) ((x) < 0 ? -(x) : (x))
 
-
 #include "stdint.h"
 
 typedef uint8_t uint8;
