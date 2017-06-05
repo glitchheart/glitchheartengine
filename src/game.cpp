@@ -301,8 +301,8 @@ void UpdateEnemy(entity* Entity, game_state* GameState, real64 DeltaTime)
             else if(DistanceToPlayer < Entity->Enemy.MinDistance)
             {
                 PlayAnimation(Entity, &GameState->PlayerIdleAnimation);
-                StartTimer(GameState, Entity->Enemy.ChargingTimer);
-                Entity->Enemy.AIState = AI_Charging;
+                //StartTimer(GameState, Entity->Enemy.ChargingTimer);
+                Entity->Enemy.AIState = AI_Attacking;
                 render_entity* RenderEntity = &GameState->RenderState.RenderEntities[Entity->RenderEntityHandle];
                 RenderEntity->Color = glm::vec4(0, 0, 1, 1);
             }
@@ -363,6 +363,7 @@ void UpdateEnemy(entity* Entity, game_state* GameState, real64 DeltaTime)
                 Entity->Enemy.IsAttacking = true;
                 PlayAnimation(Entity, &GameState->PlayerAttackAnimation);
                 PlaySoundEffect(GameState, &GameState->SoundManager.SwordSlash01);
+                StartTimer(GameState, Entity->Enemy.AttackCooldownTimer);
             }
             else if(DistanceToPlayer > Entity->Enemy.MinDistance)
             {
