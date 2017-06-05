@@ -14,16 +14,17 @@ enum Tile_Type
 
 enum Tile_Layer //TODO(Daniel) use this for making different tile layers later
 {
+    Tile_Layer_None
 };
 
 struct tile_data
 {
     Tile_Type Type;
-    Tile_Layer Layer;
     glm::vec2 TextureOffset;
     bool32 IsSolid;
-    glm::vec2 Center = glm::vec2(0.5, 0.5);
+    glm::vec2 Center;
     collision_AABB CollisionAABB;
+    Tile_Layer Layer;
 };
 
 struct room
@@ -36,11 +37,31 @@ struct room
     tile_data** Data;
 };
 
+
 struct tilemap
 {
     uint32 Width;
     uint32 Height;
     render_entity RenderEntity;
+    
+    tile_data Tiles[3] = {
+        {Tile_Grass,
+            glm::vec2(0,0), 
+            false,
+            glm::vec2(0.5f,0.5f),
+            {}},
+        {Tile_Stone,
+            glm::vec2(0.8f,0.0f),
+            true,
+            glm::vec2(0.5f,0.5f),
+            {}},
+        {Tile_Sand,
+            glm::vec2(0.6f,0.0f),
+            false,
+            glm::vec2(0.5f,0.5f),
+            {}}
+    };
+    
     tile_data** Data;
 };
 

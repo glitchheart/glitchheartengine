@@ -51,6 +51,7 @@ static bool32 LoadLevelFromFile(char* FilePath, level* Level, game_state* GameSt
                 collision_AABB CollisionAABB;
                 CollisionAABB.Center = glm::vec2(IndexWidth + 0.5f, MapHeight - IndexHeight + 0.5f);
                 CollisionAABB.Extents = glm::vec2(0.5, 0.5);
+                CollisionAABB.IsTrigger = false;
                 tile_data Data;
                 
                 switch(Line[IndexWidth])
@@ -59,21 +60,15 @@ static bool32 LoadLevelFromFile(char* FilePath, level* Level, game_state* GameSt
                     Data.Type = Tile_None;
                     break;
                     case 'g': //grass
-                    Data.Type = Tile_Grass;
-                    Data.TextureOffset = glm::vec2(0, 0);
-                    Data.IsSolid = false;
+                    Data = Level->Tilemap.Tiles[0];
                     Data.CollisionAABB = CollisionAABB;
                     break;
                     case 'w': //stone wall
-                    Data.Type = Tile_Stone;
-                    Data.TextureOffset = glm::vec2(0.8f, 0);
-                    Data.IsSolid = true;
+                    Data = Level->Tilemap.Tiles[1];
                     Data.CollisionAABB = CollisionAABB;
                     break;
                     case 's':
-                    Data.Type = Tile_Sand;
-                    Data.TextureOffset = glm::vec2(0.6f, 0);
-                    Data.IsSolid = false;
+                    Data = Level->Tilemap.Tiles[2];
                     Data.CollisionAABB = CollisionAABB;
                     break;
                 }
