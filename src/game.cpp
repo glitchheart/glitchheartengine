@@ -370,11 +370,6 @@ void UpdateEnemy(entity* Entity, game_state* GameState, real64 DeltaTime)
                 PlaySoundEffect(GameState, &GameState->SoundManager.SwordSlash01);
                 StartTimer(GameState, Entity->Enemy.AttackCooldownTimer);
             }
-            else if(DistanceToPlayer > Entity->Enemy.MinDistance)
-            {
-                Entity->Enemy.IsAttacking = false;
-                Entity->Enemy.AIState = AI_Idle;
-            }
             else if(!Entity->AnimationInfo.Playing)
             {
                 PlayAnimation(Entity, &GameState->PlayerIdleAnimation);
@@ -382,9 +377,17 @@ void UpdateEnemy(entity* Entity, game_state* GameState, real64 DeltaTime)
             
             if(TimerDone(GameState, Entity->Enemy.AttackCooldownTimer))
             {
-                Entity->Enemy.IsAttacking = false;
-                Entity->Enemy.AIState = AI_Charging;
-                StartTimer(GameState, Entity->Enemy.ChargingTimer);
+                if(DistanceToPlayer > Entity->Enemy.MinDistance)
+                {
+                    Entity->Enemy.IsAttacking = false;
+                    Entity->Enemy.AIState = AI_Idle;
+                }
+                else
+                {
+                    Entity->Enemy.IsAttacking = false;
+                    Entity->Enemy.AIState = AI_Charging;
+                    StartTimer(GameState, Entity->Enemy.ChargingTimer);
+                }
             }
         }
         break;
