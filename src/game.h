@@ -15,7 +15,6 @@
 #include "level.h"
 #include "keycontroller.h"
 
-
 #include "sound.h"
 #include "console.h"
 #include "editor.h"
@@ -41,6 +40,8 @@ enum Game_Mode
     Mode_Exit
 };
 
+#define NUM_TIMERS 128
+
 struct game_state
 {
     bool32 IsInitialized;
@@ -64,6 +65,9 @@ struct game_state
     entity Entities[NUM_ENTITIES];
     
     health_bar HealthBar;
+    
+    uint32 TimerCount;
+    real64 Timers[NUM_TIMERS];
     
     // Editor
     console Console;

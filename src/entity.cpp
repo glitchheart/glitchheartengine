@@ -12,7 +12,25 @@ static void InitPlayer(game_state* GameState, glm::vec2 Position)
     Player->Health = 3;
     Player->Player.WalkingSpeed = 8.5f;
     Player->Player.ThrowingSpeed = 18.0f;
-    Player->Player.MaxDashTime = 0.2;
+    
+    Player->Player.AttackCooldownTimer = (timer*)malloc(sizeof(timer));
+    Player->Player.AttackCooldownTimer->TimerHandle = -1;
+    Player->Player.AttackCooldownTimer->TimerMax = 0.3;
+    
+    Player->Player.DashTimer = (timer*)malloc(sizeof(timer));
+    Player->Player.DashTimer->TimerHandle = -1;
+    Player->Player.DashTimer->TimerMax = 0.2;
+    
+    Player->Player.DashCooldownTimer = (timer*)malloc(sizeof(timer));
+    Player->Player.DashCooldownTimer->TimerHandle = -1;
+    Player->Player.DashCooldownTimer->TimerMax = 0.6;
+    
+    Player->Player.PickupCooldownTimer = (timer*)malloc(sizeof(timer));
+    Player->Player.PickupCooldownTimer->TimerHandle = -1;
+    Player->Player.PickupCooldownTimer->TimerMax = 0.3;
+    
+    
+    //Player->Player.MaxDashTime = 0.2;
     Player->Player.DashSpeed = 30;
     Player->Player.AttackCooldown = 0.3;
     Player->Player.DashCooldown = 0.6;
@@ -123,11 +141,20 @@ static void SpawnEnemy(game_state* GameState, glm::vec2 Position)
     
     Enemy->Enemy.WalkingSpeed = 5;
     Enemy->Enemy.MaxAlertDistance = 12;
-    Enemy->Enemy.MinDistance = 1;
-    Enemy->Enemy.AttackCooldown = 1.0f;
+    Enemy->Enemy.MinDistance = 2;
     Enemy->Enemy.AIState = AI_Idle;
-    Enemy->Enemy.AStarCooldown = 0.0f;
-    Enemy->Enemy.AStarInterval = 0.7f;
+    
+    Enemy->Enemy.AttackCooldownTimer = (timer*)malloc(sizeof(timer));
+    Enemy->Enemy.AttackCooldownTimer->TimerHandle = -1;
+    Enemy->Enemy.AttackCooldownTimer->TimerMax = 1.0;
+    
+    Enemy->Enemy.ChargingTimer = (timer*)malloc(sizeof(timer));
+    Enemy->Enemy.ChargingTimer->TimerHandle = -1;
+    Enemy->Enemy.ChargingTimer->TimerMax = 1.5f;
+    
+    Enemy->Enemy.AStarCooldownTimer = (timer*)malloc(sizeof(timer));
+    Enemy->Enemy.AStarCooldownTimer->TimerHandle = -1;
+    Enemy->Enemy.AStarCooldownTimer->TimerMax = 0.7;
     
     Enemy->Health = 2;
     Enemy->HitCooldownTime = 0.4;
@@ -183,7 +210,7 @@ static void SpawnBarrel(game_state* GameState, glm::vec2 Position)
     Barrel->Position = Position;
     Barrel->Scale = glm::vec3(2, 2, 0);
     Barrel->Velocity = glm::vec2(0,0);
-    Barrel->Center = glm::vec2(0.5, 0.5);
+    Barrel->Center = glm::vec2(0.5, -0.5);
     Barrel->IsStatic = true;
     Barrel->IsKinematic = false;
     Barrel->Pickup = true;

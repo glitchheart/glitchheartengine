@@ -14,6 +14,7 @@ enum AI_State
     AI_Idle,
     AI_Alerted,
     AI_Following,
+    AI_Charging,
     AI_Attacking,
     AI_Hit
 };
@@ -66,16 +67,28 @@ struct entity
         struct
         {
             bool32 IsAttacking;
+            
+            timer* AttackCooldownTimer;
+            timer* DashTimer;
+            timer* DashCooldownTimer;
+            timer* PickupCooldownTimer;
+            
             real64 CurrentAttackCooldownTime;
             real64 AttackCooldown;
+            
             bool32 IsDashing;
+            
             real64 CurrentDashTime;
-            real32 DashSpeed;
             real64 MaxDashTime;
+            
+            real32 DashSpeed;
+            
             real64 CurrentDashCooldownTime;
             real64 DashCooldown;
+            
             real32 WalkingSpeed;
             entity* Pickup;
+            
             real64 PickupCooldown;
             real32 ThrowingSpeed;
             real32 LastKnownDirectionX;
@@ -90,11 +103,12 @@ struct entity
             real32 WalkingSpeed;
             real32 MaxAlertDistance;
             real32 MinDistance;
-            real64 AttackCooldown;
-            real64 AttackCooldownCounter;
+            
+            timer* AttackCooldownTimer;
+            timer* ChargingTimer;
+            timer* AStarCooldownTimer;
+            
             AI_State AIState;
-            real32 AStarCooldown;
-            real32 AStarInterval;
             bool32 Path;
             glm::vec2* AStarPath;
             uint32 AStarPathLength;

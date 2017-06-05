@@ -915,7 +915,7 @@ static void RenderWireframe(render_state* RenderState, entity* Entity, glm::mat4
 
 static void RenderAStarPath(render_state* RenderState, entity* Entity, glm::mat4 ProjectionMatrix, glm::mat4 View)
 {
-    if(Entity->Enemy.AStarPath) 
+    if(Entity->Type == Entity_Enemy && Entity->Enemy.AStarPath) 
     {
         glBindVertexArray(RenderState->AStarPathVAO);
         for(uint32 PathIndex = 0; PathIndex < Entity->Enemy.AStarPathLength; PathIndex++)
@@ -938,7 +938,7 @@ static void RenderAStarPath(render_state* RenderState, entity* Entity, glm::mat4
             }
             else 
             {
-                color = glm::vec4(0.0,0.0,1.0,0.4);
+                color = glm::vec4(0.0, 0.0, 1.0, 0.4);
             }
             
             SetVec4Attribute(Shader.Program, "color", color);
@@ -1012,14 +1012,14 @@ static void RenderEntity(render_state *RenderState, entity &Entity, glm::mat4 Pr
         {
             if(Entity.Enemy.AIState == AI_Hit)
                 RenderEntity->Color = glm::vec4(1, 0, 0, 1);
+            else if(Entity.Enemy.AIState == AI_Charging)
+                RenderEntity->Color = glm::vec4(0, 0, 1, 1);
             else
                 RenderEntity->Color = glm::vec4(0, 1, 0, 1); //@Cleanup: This is just placeholder before we get a real enemy sprite that is different from the player
         }
         
         if(Entity.CurrentAnimation) 
         {
-            if(Entity.Type == Entity_Barrel)
-                printf("asdasd\n");
             animation* Animation = Entity.CurrentAnimation;
             
             if (RenderState->BoundTexture != Animation->TextureHandle) //never bind the same texture if it's already bound
@@ -1270,7 +1270,7 @@ static void RenderGame(game_state* GameState)
                 break;
             }
             
-            RenderTile(&GameState->RenderState, GameState->EditorState.TileX, GameState->EditorState.TileY, SelectedTextureHandle, glm::vec4(1, 1, 1, 0.5f),  GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
+            RenderTile(&GameState->RenderState, GameState->EditorState.TileX, GameState->EditorState.TileY, SelectedTextureHandle, glm::vec4(1, 1, 1, 1),  GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
             
             RenderRect(Render_Fill, GameState, glm::vec4(0, 0, 0, 1), GameState->EditorState.ToolbarX, GameState->EditorState.ToolbarY, GameState->EditorState.ToolbarWidth, GameState->EditorState.ToolbarHeight);
             
@@ -1416,11 +1416,11 @@ static void Render(game_state* GameState)
         RenderConsole(GameState, &GameState->Console);
     
     
-    if(RenderState->RenderFPS)
+    if(GameState->RenderState.RenderFPS)
     {
         char FPS[32];
-        sprintf(FPS, "%4.0f",RenderState->FPS);
-        RenderText(RenderState, RenderState->InconsolataFont, glm::vec4(1, 1, 1, 1), FPS, RenderState->WindowWidth / 2.0f, 20.0f, 1.0f, Alignment_Center);
+        sprintf(FPS, "%4.0f",GameState->RenderState.FPS);
+        RenderText(&GameState->RenderState, GameState->RenderState.InconsolataFont, glm::vec4(1, 1, 1, 1), FPS, GameState->RenderState.WindowWidth / 2.0f, 20.0f, 1.0f, Alignment_Center);
     }
     
     glfwSwapBuffers(GameState->RenderState.Window);
