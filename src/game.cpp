@@ -11,6 +11,39 @@
 
 #define DEBUG
 
+static void StartTimer(game_state* GameState, timer* Timer)
+{
+    Timer->TimerHandle = GameState->TimerCount;
+    printf("TimerHandle %d\n", Timer->TimerHandle);
+    GameState->Timers[Timer->TimerHandle] = Timer->TimerMax;
+    
+    GameState->TimerCount++;
+    if(GameState->TimerCount == NUM_TIMERS)
+        GameState->TimerCount = 0;
+}
+
+static bool32 TimerDone(game_state* GameState, timer* Timer)
+{
+    if(Timer->TimerHandle != -1 && 
+       GameState->Timers[Timer->TimerHandle] <= 0)
+    {
+        Timer->TimerHandle = -1;
+    }
+    
+    return Timer->TimerHandle == -1;
+}
+
+static void TickTimers(game_state* GameState, real64 DeltaTime)
+{
+    for(uint32 Index = 0; Index < 20; Index++)
+    {
+        if(GameState->Timers[Index] > 0)
+            GameState->Timers[Index] -= DeltaTime;
+        else
+            GameState->Timers[Index] = 0;
+    }
+}
+
 void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
 {
     auto pos = glm::unProject(glm::vec3(GameState->InputController.MouseX,GameState->RenderState.Viewport[3] - GameState->InputController.MouseY, 0),
@@ -31,10 +64,11 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
             Entity->Player.LastKnownDirectionY = Direction.y;
         }
         
-        if(!Entity->Player.IsAttacking && Entity->Player.CurrentDashCooldownTime <= 0 && !Entity->Player.IsDashing && GetActionButtonDown(Action_Dash, GameState))
+        if(!Entity->Player.IsAttacking && TimerDone(GameState, Entity->Player.DashCooldownTimer) && !Entity->Player.IsDashing && GetActionButtonDown(Action_Dash, GameState))
         {
             PlaySoundEffect(GameState, &GameState->SoundManager.Dash);
             Entity->Player.IsDashing = true;
+            StartTimer(GameState, Entity->Player.DashTimer);
         }
         
         if(!Entity->Player.IsDashing)
@@ -42,7 +76,8 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
             if(Entity->Player.IsAttacking && !Entity->AnimationInfo.Playing)
             {
                 Entity->Player.IsAttacking = false;
-                Entity->Player.CurrentAttackCooldownTime = Entity->Player.AttackCooldown;
+                printf("ATTACKING FALSE\n");
+                StartTimer(GameState, Entity->Player.AttackCooldownTimer);
             }
             
             if(!Entity->Player.IsAttacking)
@@ -94,32 +129,24 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
                 
                 Entity->Player.Pickup->Velocity = Throw;
                 Entity->Player.Pickup = NULL;
-                Entity->Player.PickupCooldown = 0.8;
+                StartTimer(GameState, Entity->Player.PickupCooldownTimer);
             }
         }
         else if(Entity->Player.IsDashing)
         {
-            if(Entity->Player.CurrentDashTime == 0)
+            if(TimerDone(GameState, Entity->Player.DashTimer))
             {
-                Entity->Player.CurrentDashCooldownTime = Entity->Player.DashCooldown;
-                Entity->Player.CurrentDashTime = Entity->Player.MaxDashTime;
+                StartTimer(GameState, Entity->Player.DashCooldownTimer);
             }
             
-            if(Entity->Player.CurrentDashTime > 0)
+            if(!TimerDone(GameState, Entity->Player.DashTimer))
             {
                 Entity->Velocity = glm::vec2(Entity->Player.LastKnownDirectionX * Entity->Player.DashSpeed * DeltaTime, Entity->Player.LastKnownDirectionY * Entity->Player.DashSpeed * DeltaTime);
-                Entity->Player.CurrentDashTime -= DeltaTime;
             }
             else
             {
-                Entity->Player.CurrentDashTime = 0;
                 Entity->Player.IsDashing = false;
             }
-        }
-        
-        if(Entity->Player.PickupCooldown > 0.0)
-        {
-            Entity->Player.PickupCooldown -= DeltaTime;
         }
         
         Entity->Position += Entity->Velocity;
@@ -141,7 +168,7 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
         }
         
         if(OtherFound && OtherEntity->Pickup &&
-           GetActionButtonDown(Action_Interact, GameState) && Entity->Player.PickupCooldown <= 0.0)
+           GetActionButtonDown(Action_Interact, GameState) && TimerDone(GameState, Entity->Player.PickupCooldownTimer))
         {
             Entity->Player.Pickup = OtherEntity;
             Entity->Player.Pickup->Position = Entity->Position;
@@ -149,7 +176,6 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
             // NOTE(niels): Need to make it kinematic, otherwise
             // there will be an overlap when pressing E to drop
             Entity->Player.Pickup->IsKinematic = true;
-            Entity->Player.PickupCooldown = 0.8;
         }
         
         if(Entity->Player.Pickup)
@@ -158,15 +184,12 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
         }
         
         //attacking
-        if(Entity->Player.CurrentAttackCooldownTime <= 0 && !Entity->Player.IsAttacking && (GetActionButtonDown(Action_Attack, GameState) || GetJoystickKeyDown(Joystick_3, GameState)))
+        if(TimerDone(GameState, Entity->Player.AttackCooldownTimer) && !Entity->Player.IsAttacking && (GetActionButtonDown(Action_Attack, GameState) || GetJoystickKeyDown(Joystick_3, GameState)))
         {
             PlayAnimation(Entity, &GameState->PlayerAttackAnimation);
             Entity->Player.IsAttacking = true;
             PlaySoundEffect(GameState, &GameState->SoundManager.SwordSlash01);
         }
-        
-        if(!Entity->Player.IsAttacking && Entity->Player.CurrentAttackCooldownTime > 0)
-            Entity->Player.CurrentAttackCooldownTime -= DeltaTime;
         
         auto Direction = glm::vec2(pos.x, pos.y) - Entity->Position;
         Direction = glm::normalize(Direction);
@@ -271,30 +294,29 @@ void UpdateEnemy(entity* Entity, game_state* GameState, real64 DeltaTime)
         break;
         case AI_Following:
         {
-            //TODO(Daniel) here the pathfinding should happen
             if(DistanceToPlayer > Entity->Enemy.MaxAlertDistance)
             {
                 Entity->Enemy.AIState = AI_Idle;
             }
             else if(DistanceToPlayer < Entity->Enemy.MinDistance)
             {
-                Entity->Enemy.AIState = AI_Attacking;
+                PlayAnimation(Entity, &GameState->PlayerIdleAnimation);
+                StartTimer(GameState, Entity->Enemy.ChargingTimer);
+                Entity->Enemy.AIState = AI_Charging;
+                render_entity* RenderEntity = &GameState->RenderState.RenderEntities[Entity->RenderEntityHandle];
+                RenderEntity->Color = glm::vec4(0, 0, 1, 1);
             }
             else
             {
                 glm::vec2 EntityPosition = glm::vec2(Entity->Position.x + Entity->Center.x * Entity->Scale.x,Entity->Position.y + Entity->Center.y * Entity->Scale.y);
-                if(Entity->Enemy.AStarCooldown <= 0.0f || !Entity->Enemy.AStarPath || (Entity->Enemy.AStarPathLength <= Entity->Enemy.PathIndex && DistanceToPlayer >= 2.0f)) 
+                if(!Entity->Enemy.AStarPath || (Entity->Enemy.AStarPathLength <= Entity->Enemy.PathIndex && DistanceToPlayer >= 2.0f)) 
                 {
                     Entity->Enemy.PathIndex = Entity->Enemy.AStarPathLength;
-                    Entity->Enemy.AStarCooldown = Entity->Enemy.AStarInterval;
+                    //StartTimer(GameState, Entity->Enemy.AStarCooldownTimer);
                     glm::vec2 StartPosition = EntityPosition;
                     glm::vec2 TargetPosition = glm::vec2(Player.Position.x + Player.Center.x * Player.Scale.x,
                                                          Player.Position.y + Player.Center.y * Player.Scale.y);
                     AStar(Entity,GameState,StartPosition,TargetPosition);
-                }
-                else
-                {
-                    Entity->Enemy.AStarCooldown -= DeltaTime;
                 }
                 
                 if(Entity->Enemy.AStarPath && Entity->Enemy.PathIndex < Entity->Enemy.AStarPathLength)
@@ -325,12 +347,18 @@ void UpdateEnemy(entity* Entity, game_state* GameState, real64 DeltaTime)
             }
         }
         break;
+        case AI_Charging:
+        {
+            if(TimerDone(GameState, Entity->Enemy.ChargingTimer))
+            {
+                Entity->Enemy.AIState = AI_Attacking;
+                StartTimer(GameState, Entity->Enemy.AttackCooldownTimer);
+            }
+        }
+        break;
         case AI_Attacking:
         {
-            if(Entity->Enemy.IsAttacking)
-                Entity->Enemy.AttackCooldownCounter += DeltaTime;
-            
-            if(Entity->Enemy.AttackCooldownCounter == 0)
+            if(TimerDone(GameState, Entity->Enemy.AttackCooldownTimer))
             {
                 Entity->Enemy.IsAttacking = true;
                 PlayAnimation(Entity, &GameState->PlayerAttackAnimation);
@@ -346,9 +374,8 @@ void UpdateEnemy(entity* Entity, game_state* GameState, real64 DeltaTime)
                 PlayAnimation(Entity, &GameState->PlayerIdleAnimation);
             }
             
-            if(Entity->Enemy.AttackCooldownCounter >= Entity->Enemy.AttackCooldown)
+            if(TimerDone(GameState, Entity->Enemy.AttackCooldownTimer))
             {
-                Entity->Enemy.AttackCooldownCounter = 0;
                 Entity->Enemy.IsAttacking = false;
             }
         }
@@ -366,21 +393,17 @@ void UpdateEnemy(entity* Entity, game_state* GameState, real64 DeltaTime)
         }
         break;
     }
-    //Finish the cooldown although we are not in attack-mode. This prevents the enemy from attacking
-    //too quickly after the previous attack if switching between states quickly.
-    if(Entity->Enemy.AIState != AI_Attacking && Entity->Enemy.AttackCooldownCounter != 0)
-    {
-        Entity->Enemy.AttackCooldownCounter += DeltaTime;
-        if(Entity->Enemy.AttackCooldownCounter >= Entity->Enemy.AttackCooldown)
-            Entity->Enemy.AttackCooldownCounter = 0;
-    }
     
     Entity->Position.x += Entity->Velocity.x;
     Entity->Position.y += Entity->Velocity.y;
     
     //@Cleanup move this somewhere else, maybe out of switch
     render_entity* RenderEntity = &GameState->RenderState.RenderEntities[Entity->RenderEntityHandle];
-    RenderEntity->Color = glm::vec4(0, 1, 0, 1);
+    
+    if(Entity->Enemy.AIState == AI_Charging)
+        RenderEntity->Color = glm::vec4(0, 0, 1, 1);
+    else
+        RenderEntity->Color = glm::vec4(0, 1, 0, 1);
     
     Entity->Velocity = glm::vec2(0,0);
     
@@ -430,7 +453,7 @@ void UpdateEnemyWeapon(entity* Entity, game_state* GameState, real64 DeltaTime)
     
     if(Enemy->Enemy.IsAttacking)
     {
-        if(Enemy->Enemy.AttackCooldownCounter == 0)
+        if(TimerDone(GameState, Entity->Enemy.AttackCooldownTimer))
         {
             Entity->CurrentAnimation = 0;
             PlayAnimation(Entity, &GameState->SwordTopRightAnimation);
@@ -834,4 +857,5 @@ extern "C" UPDATE(Update)
                                                   glm::vec3(-GameState->Camera.Center.x + GameState->Camera.ViewportWidth / GameState->Camera.Zoom / 2,
                                                             -GameState->Camera.Center.y + GameState->Camera.ViewportHeight / GameState->Camera.Zoom / 2,
                                                             0));
+    TickTimers(GameState, DeltaTime);
 }
