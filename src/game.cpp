@@ -11,31 +11,9 @@
 
 #define DEBUG
 
-static void StartTimer(game_state* GameState, timer* Timer)
-{
-    Timer->TimerHandle = GameState->TimerCount;
-    printf("TimerHandle %d\n", Timer->TimerHandle);
-    GameState->Timers[Timer->TimerHandle] = Timer->TimerMax;
-    
-    GameState->TimerCount++;
-    if(GameState->TimerCount == NUM_TIMERS)
-        GameState->TimerCount = 0;
-}
-
-static bool32 TimerDone(game_state* GameState, timer* Timer)
-{
-    if(Timer->TimerHandle != -1 && 
-       GameState->Timers[Timer->TimerHandle] <= 0)
-    {
-        Timer->TimerHandle = -1;
-    }
-    
-    return Timer->TimerHandle == -1;
-}
-
 static void TickTimers(game_state* GameState, real64 DeltaTime)
 {
-    for(uint32 Index = 0; Index < 20; Index++)
+    for(uint32 Index = 0; Index < NUM_TIMERS; Index++)
     {
         if(GameState->Timers[Index] > 0)
             GameState->Timers[Index] -= DeltaTime;
@@ -132,20 +110,16 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
                 StartTimer(GameState, Entity->Player.PickupCooldownTimer);
             }
         }
-        else if(Entity->Player.IsDashing)
+        else
         {
             if(TimerDone(GameState, Entity->Player.DashTimer))
             {
                 StartTimer(GameState, Entity->Player.DashCooldownTimer);
-            }
-            
-            if(!TimerDone(GameState, Entity->Player.DashTimer))
-            {
-                Entity->Velocity = glm::vec2(Entity->Player.LastKnownDirectionX * Entity->Player.DashSpeed * DeltaTime, Entity->Player.LastKnownDirectionY * Entity->Player.DashSpeed * DeltaTime);
+                Entity->Player.IsDashing = false;
             }
             else
             {
-                Entity->Player.IsDashing = false;
+                Entity->Velocity = glm::vec2(Entity->Player.LastKnownDirectionX * Entity->Player.DashSpeed * DeltaTime, Entity->Player.LastKnownDirectionY * Entity->Player.DashSpeed * DeltaTime);
             }
         }
         
@@ -278,7 +252,7 @@ void UpdateWeapon(entity* Entity, game_state* GameState, real64 DeltaTime)
         for(uint32 Index = 0; Index < CollisionInfo.OtherCount; Index++)
         {
             if((UsingEntity->Type == Entity_Player && CollisionInfo.Other[Index]->Type == Entity_Enemy && CollisionInfo.Other[Index]->Enemy.AIState != AI_Hit) ||
-               (UsingEntity->Type == Entity_Enemy && CollisionInfo.Other[Index]->Type == Entity_Player && !CollisionInfo.Other[Index]->Player.IsDashing))
+               (UsingEntity->Type == Entity_Enemy && CollisionInfo.Other[Index]->Type == Entity_Player && !CollisionInfo.Other[Index]->Player.IsDashing && TimerDone(GameState, CollisionInfo.Other[Index]->HitCooldownTimer)))
             {
                 PlaySoundEffect(GameState, &GameState->SoundManager.SwordHit01);
                 Hit(GameState, CollisionInfo.Other[Index]);
@@ -417,11 +391,10 @@ void UpdateEnemy(entity* Entity, game_state* GameState, real64 DeltaTime)
         case AI_Hit:
         {
             PlayAnimation(Entity, &GameState->EnemyHitAnimation);
-            if(Entity->HitCooldownLeft <= 0)
+            
+            if(TimerDone(GameState, Entity->HitCooldownTimer))
             {
-                Entity->HitCooldownLeft = 0;
                 Entity->Enemy.AIState = AI_Idle;
-                
                 PlayAnimation(Entity, &GameState->EnemyIdleAnimation);
             }
         }
@@ -499,11 +472,6 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
         
         if(Entity->Active)
         {
-            if(Entity->HitCooldownLeft > 0)
-            {
-                Entity->HitCooldownLeft -= DeltaTime;
-            }
-            
             switch(Entity->Type)
             {
                 case Entity_Player: 
