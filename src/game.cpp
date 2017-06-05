@@ -202,40 +202,70 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
 
 void UpdateWeapon(entity* Entity, game_state* GameState, real64 DeltaTime)
 {
-    entity* Player = &GameState->Entities[Entity->Weapon.EntityHandle];
+    entity* UsingEntity = &GameState->Entities[Entity->Weapon.EntityHandle];
     render_entity* RenderEntity = &GameState->RenderState.RenderEntities[Entity->RenderEntityHandle];
     
     RenderEntity->Color = glm::vec4(1, 1, 1, 1);
     
-    glm::vec2 Pos = glm::vec2(Player->Position.x, Player->Position.y);
+    glm::vec2 Pos = glm::vec2(UsingEntity->Position.x, UsingEntity->Position.y);
     
-    Entity->IsFlipped = Player->IsFlipped;
+    Entity->IsFlipped = UsingEntity->IsFlipped;
     
     Entity->CollisionAABB.Extents = glm::vec2(0.7f, 0.7f);
     Entity->CollisionAABB.Offset = glm::vec2(0, -2);
     
-    if(Player->Player.LastKnownDirectionX == 0 && Player->Player.LastKnownDirectionY != 0)
+    bool32 IsAttacking = false;
+    
+    switch(UsingEntity->Type)
     {
-        if(Player->Player.LastKnownDirectionY < 0)
+        case Entity_Player:
         {
-            Entity->Position = glm::vec2(Pos.x, Pos.y - 1.2f);
-            Entity->CollisionAABB.Offset = glm::vec2(0, -2);
+            IsAttacking = UsingEntity->Player.IsAttacking;
+            
+            if(UsingEntity->Player.LastKnownDirectionX == 0 && UsingEntity->Player.LastKnownDirectionY != 0)
+            {
+                if(UsingEntity->Player.LastKnownDirectionY < 0)
+                {
+                    Entity->Position = glm::vec2(Pos.x, Pos.y - 1.2f);
+                    Entity->CollisionAABB.Offset = glm::vec2(0, -2);
+                }
+                else if(UsingEntity->Player.LastKnownDirectionY > 0)
+                {
+                    Entity->Position = glm::vec2(Pos.x, Pos.y + 1.2f);
+                }
+            }
+            else
+            {
+                if(UsingEntity->IsFlipped)
+                {
+                    Entity->Position = glm::vec2(Pos.x - 1.3, Pos.y);
+                }
+                else
+                {
+                    Entity->Position = glm::vec2(Pos.x + 1, Pos.y);
+                }
+            }
+            
         }
-        else if(Player->Player.LastKnownDirectionY > 0)
+        break;
+        case Entity_Enemy:
         {
-            Entity->Position = glm::vec2(Pos.x, Pos.y + 1.2f);
+            // @Incomplete: This has to be changed to use the offset
+            IsAttacking = UsingEntity->Enemy.IsAttacking;
+            
+            if(UsingEntity->IsFlipped)
+            {
+                //Entity->CollisionAABB.Offset = glm::vec2(-0.8, 0);
+                Entity->Position = glm::vec2(Pos.x - 1.3f, Pos.y - 1.5f);
+            }
+            else
+            {
+                //Entity->CollisionAABB.Offset = glm::vec2(0.7, 0);
+                Entity->Position = glm::vec2(Pos.x - 0.5f, Pos.y - 1.5f);
+            }
+            
         }
-    }
-    else
-    {
-        if(Player->IsFlipped)
-        {
-            Entity->Position = glm::vec2(Pos.x - 1.3, Pos.y);
-        }
-        else
-        {
-            Entity->Position = glm::vec2(Pos.x + 1, Pos.y);
-        }
+        break;
     }
     
     Entity->CollisionAABB.Center = glm::vec2(Entity->Position.x + Entity->Center.x * Entity->Scale.x + Entity->CollisionAABB.Offset.x, Entity->Position.y + Entity->Center.y * Entity->Scale.y + Entity->CollisionAABB.Offset.y);
@@ -243,11 +273,12 @@ void UpdateWeapon(entity* Entity, game_state* GameState, real64 DeltaTime)
     collision_info CollisionInfo;
     CheckCollision(GameState, Entity, &CollisionInfo);
     
-    if(GameState->Entities[GameState->PlayerIndex].Player.IsAttacking)
+    if(IsAttacking)
     {
         for(uint32 Index = 0; Index < CollisionInfo.OtherCount; Index++)
         {
-            if(CollisionInfo.Other[Index]->Type == Entity_Enemy && CollisionInfo.Other[Index]->Enemy.AIState != AI_Hit)
+            if((UsingEntity->Type == Entity_Player && CollisionInfo.Other[Index]->Type == Entity_Enemy && CollisionInfo.Other[Index]->Enemy.AIState != AI_Hit) ||
+               (UsingEntity->Type == Entity_Enemy && CollisionInfo.Other[Index]->Type == Entity_Player && !CollisionInfo.Other[Index]->Player.IsDashing))
             {
                 PlaySoundEffect(GameState, &GameState->SoundManager.SwordHit01);
                 Hit(GameState, CollisionInfo.Other[Index]);
@@ -255,13 +286,13 @@ void UpdateWeapon(entity* Entity, game_state* GameState, real64 DeltaTime)
         }
     }
     
-    if(Player->Player.IsAttacking && !Entity->AnimationInfo.Playing)
+    if(IsAttacking && !Entity->AnimationInfo.Playing)
     {
         Entity->CurrentAnimation = 0;
         PlayAnimation(Entity, &GameState->SwordAttackAnimation);
         RenderEntity->Rendered = true;
     }
-    else if(!Player->Player.IsAttacking || !Entity->AnimationInfo.Playing)
+    else if(!IsAttacking || !Entity->AnimationInfo.Playing)
     {
         RenderEntity->Rendered = false;
     }
@@ -412,62 +443,6 @@ void UpdateEnemy(entity* Entity, game_state* GameState, real64 DeltaTime)
     
     collision_info CollisionInfo;
     CheckCollision(GameState, Entity, &CollisionInfo);
-}
-
-void UpdateEnemyWeapon(entity* Entity, game_state* GameState, real64 DeltaTime)
-{
-    //@Cleanup: This attack code is the almost identical to the player. Do something about it!
-    entity* Enemy = &GameState->Entities[Entity->Weapon.EntityHandle];
-    render_entity* RenderEntity = &GameState->RenderState.RenderEntities[Entity->RenderEntityHandle];
-    
-    RenderEntity->Color = glm::vec4(1, 1, 1, 1);
-    
-    glm::vec2 Pos = Enemy->Position;
-    
-    Entity->IsFlipped = Enemy->IsFlipped;
-    
-    if(Enemy->IsFlipped)
-    {
-        //Entity->CollisionAABB.Offset = glm::vec2(-0.8, 0);
-        Entity->Position = glm::vec2(Pos.x - 1.3f, Pos.y - 1.5f);
-    }
-    else
-    {
-        //Entity->CollisionAABB.Offset = glm::vec2(0.7, 0);
-        Entity->Position = glm::vec2(Pos.x - 0.5f, Pos.y - 1.5f);
-    }
-    
-    Entity->CollisionAABB.Center = glm::vec2(Entity->Position.x + Entity->Center.x * Entity->Scale.x + Entity->CollisionAABB.Offset.x, Entity->Position.y + Entity->Center.y * Entity->Scale.y + Entity->CollisionAABB.Offset.y);
-    
-    collision_info CollisionInfo;
-    CheckCollision(GameState, Entity, &CollisionInfo);
-    
-    if(Enemy->Enemy.IsAttacking)
-    {
-        for(uint32 Index = 0; Index < CollisionInfo.OtherCount; Index++)
-        {
-            if(CollisionInfo.Other[Index]->Type == Entity_Player && !CollisionInfo.Other[Index]->Player.IsDashing)
-            {
-                PlaySoundEffect(GameState, &GameState->SoundManager.SwordHit01);
-                Hit(GameState, CollisionInfo.Other[Index]);
-            }
-        }
-    }
-    
-    if(Enemy->Enemy.IsAttacking)
-    {
-        if(TimerDone(GameState, Entity->Enemy.AttackCooldownTimer))
-        {
-            Entity->CurrentAnimation = 0;
-            PlayAnimation(Entity, &GameState->SwordTopRightAnimation);
-            RenderEntity->Rendered = true;
-        }
-    }
-    
-    if(!Entity->AnimationInfo.Playing)
-    {
-        RenderEntity->Rendered = false;
-    }
 }
 
 void UpdateBarrel(entity* Entity, game_state* GameState, real64 DeltaTime)
