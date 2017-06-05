@@ -301,8 +301,8 @@ void UpdateEnemy(entity* Entity, game_state* GameState, real64 DeltaTime)
             else if(DistanceToPlayer < Entity->Enemy.MinDistance)
             {
                 PlayAnimation(Entity, &GameState->PlayerIdleAnimation);
-                //StartTimer(GameState, Entity->Enemy.ChargingTimer);
-                Entity->Enemy.AIState = AI_Attacking;
+                StartTimer(GameState, Entity->Enemy.ChargingTimer);
+                Entity->Enemy.AIState = AI_Charging;
                 render_entity* RenderEntity = &GameState->RenderState.RenderEntities[Entity->RenderEntityHandle];
                 RenderEntity->Color = glm::vec4(0, 0, 1, 1);
             }
@@ -352,13 +352,12 @@ void UpdateEnemy(entity* Entity, game_state* GameState, real64 DeltaTime)
             if(TimerDone(GameState, Entity->Enemy.ChargingTimer))
             {
                 Entity->Enemy.AIState = AI_Attacking;
-                StartTimer(GameState, Entity->Enemy.AttackCooldownTimer);
             }
         }
         break;
         case AI_Attacking:
         {
-            if(TimerDone(GameState, Entity->Enemy.AttackCooldownTimer))
+            if(!Entity->Enemy.IsAttacking)
             {
                 Entity->Enemy.IsAttacking = true;
                 PlayAnimation(Entity, &GameState->PlayerAttackAnimation);
@@ -378,6 +377,8 @@ void UpdateEnemy(entity* Entity, game_state* GameState, real64 DeltaTime)
             if(TimerDone(GameState, Entity->Enemy.AttackCooldownTimer))
             {
                 Entity->Enemy.IsAttacking = false;
+                Entity->Enemy.AIState = AI_Charging;
+                StartTimer(GameState, Entity->Enemy.ChargingTimer);
             }
         }
         break;
