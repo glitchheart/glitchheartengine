@@ -54,7 +54,6 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
             if(Entity->Player.IsAttacking && !Entity->AnimationInfo.Playing)
             {
                 Entity->Player.IsAttacking = false;
-                printf("ATTACKING FALSE\n");
                 StartTimer(GameState, Entity->Player.AttackCooldownTimer);
             }
             
@@ -224,9 +223,9 @@ void UpdateWeapon(entity* Entity, game_state* GameState, real64 DeltaTime)
         break;
         case Entity_Enemy:
         {
-            // @Incomplete: This has to be changed to use the offset
             IsAttacking = UsingEntity->Enemy.IsAttacking;
             
+            // @Incomplete: This has to be changed to use the offset
             if(UsingEntity->IsFlipped)
             {
                 //Entity->CollisionAABB.Offset = glm::vec2(-0.8, 0);
@@ -302,6 +301,7 @@ void UpdateEnemy(entity* Entity, game_state* GameState, real64 DeltaTime)
         {
             if(DistanceToPlayer > Entity->Enemy.MaxAlertDistance)
             {
+                PlayAnimation(Entity, &GameState->PlayerIdleAnimation);
                 Entity->Enemy.AIState = AI_Idle;
             }
             else if(DistanceToPlayer < Entity->Enemy.MinDistance)
@@ -776,7 +776,10 @@ extern "C" UPDATE(Update)
         case Mode_MainMenu:
         {
             if(!GameState->Paused)
+            {
                 UpdateEntities(GameState, DeltaTime);
+                TickTimers(GameState, DeltaTime);
+            }
             GameState->Camera = GameState->GameCamera;
         }
         break;
@@ -799,5 +802,4 @@ extern "C" UPDATE(Update)
                                                   glm::vec3(-GameState->Camera.Center.x + GameState->Camera.ViewportWidth / GameState->Camera.Zoom / 2,
                                                             -GameState->Camera.Center.y + GameState->Camera.ViewportHeight / GameState->Camera.Zoom / 2,
                                                             0));
-    TickTimers(GameState, DeltaTime);
 }

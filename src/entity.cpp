@@ -153,7 +153,7 @@ static void SpawnEnemy(game_state* GameState, glm::vec2 Position)
     
     Enemy->Enemy.AttackCooldownTimer = (timer*)malloc(sizeof(timer));
     Enemy->Enemy.AttackCooldownTimer->TimerHandle = -1;
-    Enemy->Enemy.AttackCooldownTimer->TimerMax = 0.4;
+    Enemy->Enemy.AttackCooldownTimer->TimerMax = 0.5;
     
     Enemy->Enemy.ChargingTimer = (timer*)malloc(sizeof(timer));
     Enemy->Enemy.ChargingTimer->TimerHandle = -1;
