@@ -29,17 +29,20 @@ static void InitPlayer(game_state* GameState, glm::vec2 Position)
     Player->Player.PickupCooldownTimer->TimerHandle = -1;
     Player->Player.PickupCooldownTimer->TimerMax = 0.3;
     
-    
-    //Player->Player.MaxDashTime = 0.2;
     Player->Player.DashSpeed = 30;
-    Player->Player.AttackCooldown = 0.3;
-    Player->Player.DashCooldown = 0.6;
     Player->Active = true;
     Player->IsKinematic = false;
     Player->CurrentAnimation = 0;
     Player->AnimationInfo.Playing = false;
     Player->AnimationInfo.FrameIndex = 0;
     Player->AnimationInfo.CurrentTime = 0;
+    
+    collision_AABB* HitTrigger = (collision_AABB*)malloc(sizeof(collision_AABB));
+    HitTrigger->Center = glm::vec2(Player->Position.x + Player->Center.x * Player->Scale.x,
+                                   Player->Position.y + Player->Center.y * Player->Scale.y);
+    HitTrigger->Extents = glm::vec2(0.5f, 0.7f);
+    HitTrigger->IsTrigger;
+    Player->HitTrigger = HitTrigger;
     
     render_entity* PlayerRenderEntity = &GameState->RenderState.RenderEntities[GameState->RenderState.RenderEntityCount];
     PlayerRenderEntity->ShaderIndex = Shader_SpriteSheetShader;
@@ -70,7 +73,7 @@ static void InitPlayer(game_state* GameState, glm::vec2 Position)
     
     entity* PlayerWeapon = &GameState->Entities[GameState->EntityCount];
     PlayerWeapon->Name = "Player weapon";
-    PlayerWeapon->Type = Entity_PlayerWeapon;
+    PlayerWeapon->Type = Entity_Weapon;
     PlayerWeapon->Active = true;
     
     render_entity* PlayerWeaponRenderEntity = &GameState->RenderState.RenderEntities[GameState->RenderState.RenderEntityCount];
@@ -140,7 +143,7 @@ static void SpawnEnemy(game_state* GameState, glm::vec2 Position)
     Enemy->HitTrigger = HitTrigger;
     
     Enemy->Enemy.WalkingSpeed = 5;
-    Enemy->Enemy.MaxAlertDistance = 12;
+    Enemy->Enemy.MaxAlertDistance = 5;
     Enemy->Enemy.MinDistance = 2;
     Enemy->Enemy.AIState = AI_Idle;
     
@@ -163,7 +166,7 @@ static void SpawnEnemy(game_state* GameState, glm::vec2 Position)
     // Weapon
     entity* EnemyWeapon = &GameState->Entities[GameState->EntityCount];
     EnemyWeapon->Name = "Enemy weapon";
-    EnemyWeapon->Type = Entity_EnemyWeapon;
+    EnemyWeapon->Type = Entity_Weapon;
     
     render_entity* EnemyWeaponRenderEntity = &GameState->RenderState.RenderEntities[GameState->RenderState.RenderEntityCount];
     EnemyWeaponRenderEntity->Rendered = true;
@@ -176,15 +179,16 @@ static void SpawnEnemy(game_state* GameState, glm::vec2 Position)
     EnemyWeapon->AnimationInfo.FrameIndex = 0;
     EnemyWeapon->AnimationInfo.CurrentTime = 0;
     EnemyWeapon->Weapon.EntityHandle = Enemy->EntityIndex;
+    EnemyWeapon->Active = true;
     
     collision_AABB CollisionAABB3;
-    CollisionAABB.Center = glm::vec2(0.5, 0.5);
-    CollisionAABB.Offset = glm::vec2(0.7, 0);
-    CollisionAABB.Extents = glm::vec2(0.5f,1.0f);
-    CollisionAABB.IsTrigger = true;
-    EnemyWeapon->CollisionAABB = CollisionAABB;
+    CollisionAABB3.Center = glm::vec2(0.5, 0.5);
+    CollisionAABB3.Offset = glm::vec2(0.7, 0);
+    CollisionAABB3.Extents = glm::vec2(0.5f,1.0f);
+    CollisionAABB3.IsTrigger = true;
+    EnemyWeapon->CollisionAABB = CollisionAABB3;
     EnemyWeapon->Rotation = glm::vec3(0, 0, 0);
-    EnemyWeapon->Scale = glm::vec3(4, 4, 0);
+    EnemyWeapon->Scale = glm::vec3(2, 2, 0); 
     EnemyWeapon->EntityIndex = GameState->EntityCount;
     GameState->EntityCount++;
 }
@@ -235,7 +239,7 @@ void Hit(game_state* GameState, entity* Entity)
     Entity->Health -= 1;
     Entity->HitCooldownLeft = Entity->HitCooldownTime;
     
-    printf("Health %d Time left %f\n", Entity->Health, Entity->HitCooldownLeft); 
+    printf("%s health %d Time left %f\n", Entity->Name, Entity->Health, Entity->HitCooldownLeft); 
     
     if(Entity->Type == Entity_Enemy)
     {

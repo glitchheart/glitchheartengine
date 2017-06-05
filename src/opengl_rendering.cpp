@@ -1188,9 +1188,9 @@ int CompareFunction(const void* a, const void* b)
     collision_AABB BoxB = BPtr.Entity->CollisionAABB;
     
     if(BoxA.Center.y - BoxA.Extents.y > BoxB.Center.y - BoxB.Extents.y)
-        return 1;
-    if(BoxA.Center.y  - BoxA.Extents.y < BoxB.Center.y - BoxB.Extents.y)
         return -1;
+    if(BoxA.Center.y  - BoxA.Extents.y < BoxB.Center.y - BoxB.Extents.y)
+        return 1;
     return 0;
 }
 
@@ -1201,13 +1201,11 @@ static void RenderInGameMode(game_state* GameState)
     //@Fix this is buggy
     qsort(GameState->RenderState.RenderEntities, GameState->RenderState.RenderEntityCount, sizeof(render_entity), CompareFunction);
     
-    
     for(uint32 Index = 0; Index < GameState->RenderState.RenderEntityCount; Index++) 
     {
         render_entity* Render = &GameState->RenderState.RenderEntities[Index];
-        
+        // @Incomplete: Only render if in view
         Render->Entity->RenderEntityHandle = Index;
-        
         RenderEntity(&GameState->RenderState, *Render->Entity, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
     }
 }
@@ -1270,7 +1268,10 @@ static void RenderGame(game_state* GameState)
                 break;
             }
             
-            RenderTile(&GameState->RenderState, GameState->EditorState.TileX, GameState->EditorState.TileY, SelectedTextureHandle, glm::vec4(1, 1, 1, 1),  GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
+            if(GameState->EditorState.TileX >= 0 && GameState->EditorState.TileX < GameState->CurrentLevel.Tilemap.Width && GameState->EditorState.TileY > 0 && GameState->EditorState.TileY <= GameState->CurrentLevel.Tilemap.Height)
+            {
+                RenderTile(&GameState->RenderState, GameState->EditorState.TileX, GameState->EditorState.TileY, SelectedTextureHandle, glm::vec4(1, 1, 1, 1),  GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
+            }
             
             RenderRect(Render_Fill, GameState, glm::vec4(0, 0, 0, 1), GameState->EditorState.ToolbarX, GameState->EditorState.ToolbarY, GameState->EditorState.ToolbarWidth, GameState->EditorState.ToolbarHeight);
             

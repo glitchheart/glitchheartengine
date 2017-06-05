@@ -118,9 +118,11 @@ static real32 GetRayIntersectionFraction(collision_AABB* Coll, glm::vec2 Origin,
 void CheckCollision(game_state* GameState, entity* Entity, collision_info* CollisionInfo)
 {
     CollisionInfo->OtherCount = -1;
+    
     if(!Entity->IsKinematic && Entity->Active)
     {
         Entity->CollisionAABB.Center = glm::vec2(Entity->Position.x + Entity->Center.x * Entity->Scale.x + Entity->CollisionAABB.Offset.x, Entity->Position.y + Entity->Center.y * Entity->Scale.y + Entity->CollisionAABB.Offset.y);
+        
         if(Entity->HitTrigger)
         {
             Entity->HitTrigger->Center = glm::vec2(Entity->Position.x + Entity->Center.x * Entity->Scale.x, Entity->Position.y + Entity->Center.y * Entity->Scale.y);

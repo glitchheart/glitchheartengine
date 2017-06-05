@@ -200,9 +200,9 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
     }
 }
 
-void UpdatePlayerWeapon(entity* Entity, game_state* GameState, real64 DeltaTime)
+void UpdateWeapon(entity* Entity, game_state* GameState, real64 DeltaTime)
 {
-    entity* Player = &GameState->Entities[GameState->PlayerIndex];
+    entity* Player = &GameState->Entities[Entity->Weapon.EntityHandle];
     render_entity* RenderEntity = &GameState->RenderState.RenderEntities[Entity->RenderEntityHandle];
     
     RenderEntity->Color = glm::vec4(1, 1, 1, 1);
@@ -271,7 +271,8 @@ void UpdateEnemy(entity* Entity, game_state* GameState, real64 DeltaTime)
 {
     Entity->Velocity = glm::vec2(0,0);
     entity Player = GameState->Entities[GameState->PlayerIndex];
-    real64 DistanceToPlayer = glm::distance(Entity->Position, Player.Position);
+    real64 DistanceToPlayer = abs(glm::distance(Entity->Position, Player.Position));
+    
     switch(Entity->Enemy.AIState)
     {
         case AI_Sleeping:
@@ -427,12 +428,12 @@ void UpdateEnemyWeapon(entity* Entity, game_state* GameState, real64 DeltaTime)
     
     if(Enemy->IsFlipped)
     {
-        Entity->CollisionAABB.Offset = glm::vec2(-0.8, 0);
+        //Entity->CollisionAABB.Offset = glm::vec2(-0.8, 0);
         Entity->Position = glm::vec2(Pos.x - 1.3f, Pos.y - 1.5f);
     }
     else
     {
-        Entity->CollisionAABB.Offset = glm::vec2(0.7, 0);
+        //Entity->CollisionAABB.Offset = glm::vec2(0.7, 0);
         Entity->Position = glm::vec2(Pos.x - 0.5f, Pos.y - 1.5f);
     }
     
@@ -535,19 +536,14 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                     UpdatePlayer(Entity, GameState, DeltaTime);
                 }
                 break;
-                case Entity_PlayerWeapon:
+                case Entity_Weapon:
                 {
-                    UpdatePlayerWeapon(Entity, GameState, DeltaTime);
+                    UpdateWeapon(Entity, GameState, DeltaTime);
                 }
                 break;
                 case Entity_Enemy:
                 {
                     UpdateEnemy(Entity, GameState, DeltaTime);
-                }
-                break;
-                case Entity_EnemyWeapon:
-                {
-                    UpdateEnemyWeapon(Entity, GameState, DeltaTime);
                 }
                 break;
                 case Entity_Barrel:
@@ -586,6 +582,7 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
                               GameState->Camera.ViewMatrix,
                               GameState->Camera.ProjectionMatrix,
                               glm::vec4(0, 0, GameState->RenderState.Viewport[2], GameState->RenderState.Viewport[3]));
+    
     switch(GameState->EditorState.PlacementMode)
     {
         case Editor_Placement_Entity:
@@ -607,7 +604,7 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
                     {
                         entity* Entity = &GameState->Entities[EntityIndex];
                         
-                        if(Entity->Type != Entity_PlayerWeapon && Entity->Type != Entity_EnemyWeapon && Pos.x >= Entity->Position.x && Pos.y >= Entity->Position.y - Entity->Scale.y && Pos.x < Entity->Position.x + Entity->Scale.x && Pos.y < Entity->Position.y)
+                        if(Entity->Type != Entity_Weapon && Pos.x >= Entity->Position.x && Pos.y >= Entity->Position.y - Entity->Scale.y && Pos.x < Entity->Position.x + Entity->Scale.x && Pos.y < Entity->Position.y)
                         {
                             Selected = Entity;
                             break;
