@@ -424,7 +424,7 @@ static void RenderSetup(render_state *RenderState)
     InitializeFreeTypeFont("../assets/fonts/inconsolata/Inconsolata-Regular.ttf", 40, RenderState->FTLibrary, &RenderState->MenuFont, &RenderState->StandardFontShader);
 }
 
-static GLuint LoadTexture(const char *FilePath)
+static GLuint LoadTexture(const char *FilePath, texture* Texture)
 {
     GLuint TextureHandle;
     
@@ -442,24 +442,25 @@ static GLuint LoadTexture(const char *FilePath)
     glEnable(GL_BLEND);
     
     int Width, Height;
-    unsigned char* Image = stbi_load(FilePath, &Width, &Height, 0, STBI_rgb_alpha);
+    unsigned char* Image = stbi_load(FilePath, &Texture->Width, &Texture->Height, 0, STBI_rgb_alpha);
     
     if (!Image)
         return GL_FALSE;
     
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, Width, Height, 0, GL_RGBA,
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, Texture->Width, Texture->Height, 0, GL_RGBA,
                  GL_UNSIGNED_BYTE, Image);
-    
+    Texture->TextureHandle = TextureHandle;
     stbi_image_free(Image);
-    
-    return TextureHandle;
+    return GL_TRUE;
 }
 
 static void LoadTextures(render_state* RenderState)
 {
     for(uint32 TextureIndex = 0; TextureIndex < Texture_Count; TextureIndex++)
     {
-        RenderState->Textures[TextureIndex] = LoadTexture(TexturePaths[TextureIndex]);
+        texture Texture = {};
+        LoadTexture(TexturePaths[TextureIndex],&Texture);
+        RenderState->Textures[TextureIndex] = Texture;
     }
 }
 
@@ -532,7 +533,7 @@ static void InitializeOpenGL(game_state* GameState, render_state* RenderState, c
     GameState->HealthBar = {};
     GameState->HealthBar.Position = glm::vec2(RenderState->WindowWidth / 2, RenderState->WindowHeight - 50);
     GameState->HealthBar.RenderInfo.Size = glm::vec3(2, 1, 1);
-    GameState->HealthBar.RenderInfo.TextureHandle = RenderState->Textures[Texture_HealthFull];
+    GameState->HealthBar.RenderInfo.Texture = &RenderState->Textures[Texture_HealthFull];
     
     // @Incomplete: These values need to be updated when the window size is changed
     GameState->EditorState.ToolbarX = RenderState->WindowWidth - 100;
@@ -573,12 +574,12 @@ static void ReloadAssets(asset_manager *AssetManager, game_state* GameState)
             AssetManager->DirtyFragmentShaderIndices[i] = 0;
         }
     }
-    
+    /*
     if(AssetManager->DirtyTileset == 1)
     {
-        GameState->CurrentLevel.Tilemap.RenderEntity.TextureHandle = LoadTexture("../assets/textures/tiles.png");
+        GameState->CurrentLevel.Tilemap.RenderEntity.Texture = LoadTexture("../assets/textures/tiles.png");
         AssetManager->DirtyTileset = 0;
-    }
+    }*/
 }
 
 static void SetFloatAttribute(GLuint ShaderHandle, const char* UniformName, real32 Value)
@@ -1022,10 +1023,10 @@ static void RenderEntity(render_state *RenderState, entity &Entity, glm::mat4 Pr
         {
             animation* Animation = Entity.CurrentAnimation;
             
-            if (RenderState->BoundTexture != Animation->TextureHandle) //never bind the same texture if it's already bound
+            if (RenderState->BoundTexture != Animation->Texture->TextureHandle) //never bind the same texture if it's already bound
             {
-                glBindTexture(GL_TEXTURE_2D, Animation->TextureHandle);
-                RenderState->BoundTexture = Animation->TextureHandle;
+                glBindTexture(GL_TEXTURE_2D, Animation->Texture->TextureHandle);
+                RenderState->BoundTexture = Animation->Texture->TextureHandle;
             }
             
             if(Shader.Program == 0)
@@ -1046,10 +1047,10 @@ static void RenderEntity(render_state *RenderState, entity &Entity, glm::mat4 Pr
         } 
         else 
         {
-            if (RenderState->BoundTexture != RenderEntity->TextureHandle) //never bind the same texture if it's already bound
+            if (RenderState->BoundTexture != RenderEntity->Texture->TextureHandle) //never bind the same texture if it's already bound
             {
-                glBindTexture(GL_TEXTURE_2D, RenderEntity->TextureHandle);
-                RenderState->BoundTexture = RenderEntity->TextureHandle;
+                glBindTexture(GL_TEXTURE_2D, RenderEntity->Texture->TextureHandle);
+                RenderState->BoundTexture = RenderEntity->Texture->TextureHandle;
             }
             
             if(Shader.Program == 0)
@@ -1084,10 +1085,10 @@ static void RenderRoom(render_state* RenderState, const room& Room, glm::mat4 Pr
 {
     glBindVertexArray(RenderState->TileVAO);
     
-    if (RenderState->BoundTexture != Room.RenderEntity.TextureHandle) //never bind the same texture if it's already bound
+    if (RenderState->BoundTexture != Room.RenderEntity.Texture->TextureHandle) //never bind the same texture if it's already bound
     {
-        glBindTexture(GL_TEXTURE_2D, Room.RenderEntity.TextureHandle);
-        RenderState->BoundTexture = Room.RenderEntity.TextureHandle;
+        glBindTexture(GL_TEXTURE_2D, Room.RenderEntity.Texture->TextureHandle);
+        RenderState->BoundTexture = Room.RenderEntity.Texture->TextureHandle;
     }
     
     auto Shader = RenderState->Shaders[Room.RenderEntity.ShaderIndex];
@@ -1144,10 +1145,10 @@ static void RenderTilemap(render_state* RenderState, const tilemap& Tilemap, glm
 {
     glBindVertexArray(RenderState->TileVAO);
     
-    if (RenderState->BoundTexture != Tilemap.RenderEntity.TextureHandle) //never bind the same texture if it's already bound
+    if (RenderState->BoundTexture != Tilemap.RenderEntity.Texture->TextureHandle) //never bind the same texture if it's already bound
     {
-        glBindTexture(GL_TEXTURE_2D, Tilemap.RenderEntity.TextureHandle);
-        RenderState->BoundTexture = Tilemap.RenderEntity.TextureHandle;
+        glBindTexture(GL_TEXTURE_2D, Tilemap.RenderEntity.Texture->TextureHandle);
+        RenderState->BoundTexture = Tilemap.RenderEntity.Texture->TextureHandle;
     }
     
     auto Shader = RenderState->Shaders[Tilemap.RenderEntity.ShaderIndex];
@@ -1255,16 +1256,16 @@ static void RenderGame(game_state* GameState)
             switch(GameState->EditorState.SelectedTileType)
             {
                 case Tile_None:
-                SelectedTextureHandle = GameState->RenderState.EmptyTileTexture;
+                SelectedTextureHandle = GameState->RenderState.EmptyTileTexture.TextureHandle;
                 break;
                 case Tile_Sand:
-                SelectedTextureHandle = GameState->RenderState.SandTileTexture;
+                SelectedTextureHandle = GameState->RenderState.SandTileTexture.TextureHandle;
                 break;
                 case Tile_Grass:
-                SelectedTextureHandle = GameState->RenderState.GrassTileTexture;
+                SelectedTextureHandle = GameState->RenderState.GrassTileTexture.TextureHandle;
                 break;
                 case Tile_Stone:
-                SelectedTextureHandle = GameState->RenderState.StoneTileTexture;
+                SelectedTextureHandle = GameState->RenderState.StoneTileTexture.TextureHandle;
                 break;
             }
             
@@ -1282,18 +1283,18 @@ static void RenderGame(game_state* GameState)
                 switch(TileIndex)
                 {
                     case Tile_None:
-                    TextureHandle = GameState->RenderState.EmptyTileTexture;
+                    TextureHandle = GameState->RenderState.EmptyTileTexture.TextureHandle;
                     break;
                     case Tile_Sand:
-                    TextureHandle = GameState->RenderState.SandTileTexture;
+                    TextureHandle = GameState->RenderState.SandTileTexture.TextureHandle;
                     break;
                     case Tile_Grass:
-                    TextureHandle = GameState->RenderState.GrassTileTexture;
+                    TextureHandle = GameState->RenderState.GrassTileTexture.TextureHandle;
                     break;
                     //case Tile_DarkGrass: //@Incomplete
                     //break;
                     case Tile_Stone:
-                    TextureHandle = GameState->RenderState.StoneTileTexture;
+                    TextureHandle = GameState->RenderState.StoneTileTexture.TextureHandle;
                     break;
                 }
                 
@@ -1301,7 +1302,7 @@ static void RenderGame(game_state* GameState)
                            GameState->RenderState.WindowHeight - (TileIndex + 1) * 65, 60, 60, TextureHandle);
                 if(TileIndex == GameState->EditorState.SelectedTileType)
                     RenderRect(Render_Fill, GameState, glm::vec4(1, 0, 0, 1), GameState->RenderState.WindowWidth - 80,
-                               GameState->RenderState.WindowHeight - (TileIndex + 1) * 65, 60, 60, GameState->RenderState.SelectedTileTexture);
+                               GameState->RenderState.WindowHeight - (TileIndex + 1) * 65, 60, 60, GameState->RenderState.SelectedTileTexture.TextureHandle);
             }
             
             RenderText(&GameState->RenderState, GameState->RenderState.MenuFont, glm::vec4(1, 1, 1, 1), "Editor", (real32)GameState->RenderState.WindowWidth / 2, GameState->RenderState.WindowHeight - 100, 1, Alignment_Center);
@@ -1390,7 +1391,7 @@ static void RenderEditorUI(game_state* GameState, const editor_ui& EditorUI, ren
 
 static void RenderPlayerUI(health_bar* HealthBar, render_state* RenderState)
 {
-    RenderUISprite(RenderState, HealthBar->RenderInfo.TextureHandle, HealthBar->Position, glm::vec3(0.1, 0.1f, 1));
+    RenderUISprite(RenderState, HealthBar->RenderInfo.Texture->TextureHandle, HealthBar->Position, glm::vec3(0.1, 0.1f, 1));
 }
 
 static void Render(game_state* GameState)

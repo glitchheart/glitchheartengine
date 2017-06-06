@@ -77,7 +77,8 @@ static void LoadAnimationFromFile(const char* FilePath, animation* Animation, re
         if(fgets(LineBuffer, 255, File))
         {
             sscanf(LineBuffer, "texture %d", &TextureIndex);
-            Animation->TextureHandle = RenderState->Textures[TextureIndex];
+            
+            Animation->Texture = &RenderState->Textures[TextureIndex];
         }
     }
     else

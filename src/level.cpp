@@ -9,7 +9,7 @@ static bool32 LoadLevelFromFile(char* FilePath, level* Level, game_state* GameSt
     uint32 MapHeight = 0;
     
     Level->Tilemap.RenderEntity.ShaderIndex = Shader_Tile;
-    Level->Tilemap.RenderEntity.TextureHandle = GameState->RenderState.TileTexture;
+    Level->Tilemap.RenderEntity.Texture = &GameState->RenderState.TileTexture;
     
     if(File)
     {
