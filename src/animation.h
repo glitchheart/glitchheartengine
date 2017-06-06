@@ -18,7 +18,7 @@ struct animation
 {
     char* Name;
     real32 TimePerFrame;
-    uint32 TextureHandle;
+    texture* Texture;
     uint32 FrameCount;
     uint32 Rows;
     uint32 Columns;

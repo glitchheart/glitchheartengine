@@ -50,7 +50,7 @@ static void InitPlayer(game_state* GameState, glm::vec2 Position)
     
     render_entity* PlayerRenderEntity = &GameState->RenderState.RenderEntities[GameState->RenderState.RenderEntityCount];
     PlayerRenderEntity->ShaderIndex = Shader_SpriteSheetShader;
-    PlayerRenderEntity->TextureHandle = GameState->RenderState.PlayerTexture;
+    PlayerRenderEntity->Texture = &GameState->RenderState.PlayerTexture;
     PlayerRenderEntity->Rendered = true;
     PlayerRenderEntity->Entity = &*Player;
     Player->RenderEntityHandle = GameState->RenderState.RenderEntityCount++;
@@ -71,7 +71,6 @@ static void InitPlayer(game_state* GameState, glm::vec2 Position)
                                      Player->Position.y + Player->Center.y * Player->Scale.y);
     CollisionAABB.Extents = glm::vec2(0.3f, 0.15f);
     CollisionAABB.IsTrigger = false;
-    
     Player->CollisionAABB = CollisionAABB;
     
     Player->EntityIndex = GameState->EntityCount;
@@ -85,7 +84,7 @@ static void InitPlayer(game_state* GameState, glm::vec2 Position)
     render_entity* PlayerWeaponRenderEntity = &GameState->RenderState.RenderEntities[GameState->RenderState.RenderEntityCount];
     PlayerWeaponRenderEntity->Rendered = true;
     PlayerWeaponRenderEntity->ShaderIndex = Shader_SpriteSheetShader;
-    PlayerWeaponRenderEntity->TextureHandle = GameState->RenderState.SwordTopRightTexture;
+    PlayerWeaponRenderEntity->Texture = &GameState->RenderState.SwordTopRightTexture;
     PlayerWeaponRenderEntity->Entity = &*PlayerWeapon;
     PlayerWeapon->RenderEntityHandle = GameState->RenderState.RenderEntityCount++;
     PlayerWeapon->CurrentAnimation = 0;
@@ -115,7 +114,7 @@ static void SpawnEnemy(game_state* GameState, glm::vec2 Position)
     render_entity* EnemyRenderEntity = &GameState->RenderState.RenderEntities[GameState->RenderState.RenderEntityCount];
     
     EnemyRenderEntity->ShaderIndex = Shader_SpriteSheetShader;
-    EnemyRenderEntity->TextureHandle = GameState->RenderState.PlayerTexture;
+    EnemyRenderEntity->Texture = &GameState->RenderState.PlayerTexture;
     
     EnemyRenderEntity->Entity = &*Enemy;
     Enemy->RenderEntityHandle = GameState->RenderState.RenderEntityCount++;
@@ -181,8 +180,8 @@ static void SpawnEnemy(game_state* GameState, glm::vec2 Position)
     render_entity* EnemyWeaponRenderEntity = &GameState->RenderState.RenderEntities[GameState->RenderState.RenderEntityCount];
     EnemyWeaponRenderEntity->Rendered = true;
     EnemyWeaponRenderEntity->ShaderIndex = Shader_SpriteSheetShader;
-    EnemyWeaponRenderEntity->TextureHandle = GameState->RenderState.SwordTopRightTexture;
-    EnemyWeaponRenderEntity->Entity = &*EnemyWeapon;
+    EnemyWeaponRenderEntity->Texture = &GameState->RenderState.SwordTopRightTexture;
+    EnemyWeaponRenderEntity->Entity = EnemyWeapon;
     EnemyWeapon->RenderEntityHandle = GameState->RenderState.RenderEntityCount++;
     EnemyWeapon->CurrentAnimation = 0;
     EnemyWeapon->AnimationInfo.Playing = false;
@@ -215,7 +214,7 @@ static void SpawnBarrel(game_state* GameState, glm::vec2 Position)
     render_entity* BarrelRenderEntity = &GameState->RenderState.RenderEntities[GameState->RenderState.RenderEntityCount];
     
     BarrelRenderEntity->ShaderIndex = Shader_Texture;
-    BarrelRenderEntity->TextureHandle = GameState->RenderState.BarrelTexture;
+    BarrelRenderEntity->Texture = &GameState->RenderState.BarrelTexture;
     
     BarrelRenderEntity->Entity = &*Barrel;
     Barrel->RenderEntityHandle = GameState->RenderState.RenderEntityCount++;

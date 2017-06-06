@@ -91,27 +91,32 @@ enum Render_Mode
 
 struct entity;
 
+
+struct texture 
+{
+    GLuint TextureHandle;
+    int32 Width;
+    int32 Height;
+};
+
+
 struct ui_render_info
 {
     bool32 Rendered = true;
     
-    uint32 TextureHandle;
+    texture* Texture;
     
     uint32 ShaderIndex;
     glm::vec2 Size = glm::vec3(1, 1, 1);
     glm::vec4 Color = glm::vec4(1, 1, 1, 1);
 };
 
-struct texture 
-{
-    
-};
-
 struct render_entity
 {
     entity* Entity;
     bool32 Rendered = true;
-    uint32 TextureHandle;
+    //uint32 TextureHandle;
+    texture* Texture;
     uint32 ShaderIndex;
     glm::vec4 Color = glm::vec4(1, 1, 1, 1);
 };
@@ -277,27 +282,27 @@ struct render_state
     
     union
     {
-        uint32 Textures[Texture_Count];
+        texture Textures[Texture_Count];
         struct
         {
-            uint32 TileTexture;
-            uint32 PlayerTexture;
-            uint32 BarrelTexture;
-            uint32 CrosshairTexture;
-            uint32 SwordTopRightTexture;
-            uint32 SwordSimpleTexture;
+            texture TileTexture;
+            texture PlayerTexture;
+            texture BarrelTexture;
+            texture CrosshairTexture;
+            texture SwordTopRightTexture;
+            texture SwordSimpleTexture;
             
-            uint32 HealthFullTexture;
-            uint32 Health2Texture;
-            uint32 Health1Texture;
-            uint32 HealthEmptyTexture;
+            texture HealthFullTexture;
+            texture Health2Texture;
+            texture Health1Texture;
+            texture HealthEmptyTexture;
             
-            uint32 EmptyTileTexture;
-            uint32 SandTileTexture;
-            uint32 GrassTileTexture;
-            uint32 DarkGrassTileTexture;
-            uint32 StoneTileTexture;
-            uint32 SelectedTileTexture;
+            texture EmptyTileTexture;
+            texture SandTileTexture;
+            texture GrassTileTexture;
+            texture DarkGrassTileTexture;
+            texture StoneTileTexture;
+            texture SelectedTileTexture;
         };
     };
     
