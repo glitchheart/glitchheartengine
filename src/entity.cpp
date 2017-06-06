@@ -70,6 +70,8 @@ static void InitPlayer(game_state* GameState, glm::vec2 Position)
     CollisionAABB.Center = glm::vec2(Player->Position.x + Player->Center.x * Player->Scale.x,
                                      Player->Position.y + Player->Center.y * Player->Scale.y);
     CollisionAABB.Extents = glm::vec2(0.3f, 0.15f);
+    CollisionAABB.IsTrigger = false;
+    
     Player->CollisionAABB = CollisionAABB;
     
     Player->EntityIndex = GameState->EntityCount;
@@ -137,6 +139,7 @@ static void SpawnEnemy(game_state* GameState, glm::vec2 Position)
                                      Enemy->Position.y + Enemy->Center.y * Enemy->Scale.y);
     CollisionAABB.Offset = glm::vec2(0, -0.9);
     CollisionAABB.Extents = glm::vec2(0.3f, 0.15f);
+    CollisionAABB.IsTrigger = false;
     Enemy->CollisionAABB = CollisionAABB;
     
     collision_AABB* HitTrigger = (collision_AABB*)malloc(sizeof(collision_AABB));
