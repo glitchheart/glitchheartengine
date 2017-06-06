@@ -45,11 +45,7 @@ static GLint ShaderCompilationErrorChecking(const char* ShaderName, GLuint Shade
         glGetShaderInfoLog(Shader, MaxLength, &MaxLength, ErrorLog);
         
         printf("SHADER Compilation error - %s\n", ShaderName);
-        
-        for(uint32 ErrorIndex = 0; ErrorIndex < MaxLength; ErrorIndex++)
-        {
-            printf("%d\n", ErrorLog[ErrorIndex]);
-        }
+        printf(ErrorLog);
         
         glDeleteShader(Shader); // Don't leak the shader.
     }
@@ -1167,7 +1163,7 @@ static void RenderTilemap(render_state* RenderState, const tilemap& Tilemap, glm
                 Model = glm::scale(Model, glm::vec3(Scale, Scale, 1.0f));
                 
                 SetVec2Attribute(Shader.Program, "textureOffset", Tilemap.Data[i][j].TextureOffset);
-                SetVec2Attribute(Shader.Program, "sheetSize", glm::vec2(Tilemap.RenderEntity.Texture->Width,Tilemap.RenderEntity.Texture->Height));
+                SetVec2Attribute(Shader.Program, "sheetSize", glm::vec2(Tilemap.RenderEntity->Texture.Width., Tilemap.RenderEntity->Texture.Height));
                 
                 SetMat4Uniform(Shader.Program, "Projection", ProjectionMatrix);
                 SetMat4Uniform(Shader.Program, "View", View);
