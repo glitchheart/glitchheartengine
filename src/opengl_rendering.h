@@ -102,6 +102,11 @@ struct ui_render_info
     glm::vec4 Color = glm::vec4(1, 1, 1, 1);
 };
 
+struct texture 
+{
+    
+};
+
 struct render_entity
 {
     entity* Entity;
