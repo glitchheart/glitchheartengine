@@ -21,6 +21,7 @@ struct tile_data
 {
     Tile_Type Type;
     glm::vec2 TextureOffset;
+    glm::vec2 TextureSize;
     bool32 IsSolid;
     glm::vec2 Center;
     collision_AABB CollisionAABB;
@@ -47,16 +48,19 @@ struct tilemap
     tile_data Tiles[3] = {
         {Tile_Grass,
             glm::vec2(0,0), 
+            glm::vec2(32,32),
             false,
             glm::vec2(0.5f,0.5f),
             {}},
         {Tile_Stone,
-            glm::vec2(0.8f,0.0f),
+            glm::vec2(128,0.0f),
+            glm::vec2(32,32),
             true,
             glm::vec2(0.5f,0.5f),
             {}},
         {Tile_Sand,
-            glm::vec2(0.6f,0.0f),
+            glm::vec2(96,0.0f),
+            glm::vec2(32,32),
             false,
             glm::vec2(0.5f,0.5f),
             {}}
