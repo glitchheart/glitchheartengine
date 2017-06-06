@@ -1167,6 +1167,7 @@ static void RenderTilemap(render_state* RenderState, const tilemap& Tilemap, glm
                 Model = glm::scale(Model, glm::vec3(Scale, Scale, 1.0f));
                 
                 SetVec2Attribute(Shader.Program, "textureOffset", Tilemap.Data[i][j].TextureOffset);
+                SetVec2Attribute(Shader.Program, "sheetSize", glm::vec2(Tilemap.RenderEntity.Texture->Width,Tilemap.RenderEntity.Texture->Height));
                 
                 SetMat4Uniform(Shader.Program, "Projection", ProjectionMatrix);
                 SetMat4Uniform(Shader.Program, "View", View);
