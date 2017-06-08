@@ -696,6 +696,7 @@ extern "C" UPDATE(Update)
         GameState->IsInitialized = true;
         GameState->ShouldReload = false;
     }
+    else
     
 #ifdef DEBUG
     if(GetKeyDown(Key_F1, GameState))

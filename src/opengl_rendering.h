@@ -111,11 +111,15 @@ struct ui_render_info
     glm::vec4 Color = glm::vec4(1, 1, 1, 1);
 };
 
+struct tilemap_render_info
+{
+    GLuint VAO;
+};
+
 struct render_entity
 {
     entity* Entity;
     bool32 Rendered = true;
-    //uint32 TextureHandle;
     texture* Texture;
     uint32 ShaderIndex;
     glm::vec4 Color = glm::vec4(1, 1, 1, 1);
