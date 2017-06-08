@@ -226,39 +226,47 @@ static void LoadTilemapBuffer(render_state* RenderState, tilemap_render_info& Ti
     
     int32 Current = 0;
     
-    auto SheetWidth = 32.0f / 160.0f;
-    auto SheetHeight = 32.0f / 32.0f;
+    real32 Width = (real32)Tilemap.RenderEntity.Texture->Width;
+    real32 Height = (real32)Tilemap.RenderEntity.Texture->Height;
+    
+    real32 SheetWidth = (real32)Tilemap.TileSize / Width;
+    real32 SheetHeight = (real32)Tilemap.TileSize / Height;
     
     for(uint32 X = 0; X < Tilemap.Width; X++)
     {
         for(uint32 Y = 0; Y < Tilemap.Height; Y++)
         {
             tile_data* Tile = &Tilemap.Data[X][Y];
-            real32 CorrectY = Tilemap.Height - Y;
-            VertexBuffer[Current++] = (GLfloat)X;
-            VertexBuffer[Current++] = (GLfloat)CorrectY + 1.0f;
-            VertexBuffer[Current++] = (GLfloat)1.0f / 160.0 * Tile->TextureOffset.x + 0.0625f * SheetWidth;
-            VertexBuffer[Current++] =  (GLfloat)1.0f / 32.0 * Tile->TextureOffset.y + 0.9375f * SheetHeight;
-            VertexBuffer[Current++] = (GLfloat)X + 1;
-            VertexBuffer[Current++] = (GLfloat)CorrectY + 1;
-            VertexBuffer[Current++] = (GLfloat)1.0f / 160.0 * Tile->TextureOffset.x + 0.9375f * SheetWidth;
-            VertexBuffer[Current++] =  (GLfloat)1.0f / 32.0 * Tile->TextureOffset.y + 0.9375f * SheetHeight;
-            VertexBuffer[Current++] = (GLfloat)X + 1;
-            VertexBuffer[Current++] = (GLfloat)CorrectY;
-            VertexBuffer[Current++] = (GLfloat)1.0f / 160.0 * Tile->TextureOffset.x + 0.9375f * SheetWidth;
-            VertexBuffer[Current++] = (GLfloat)1.0f / 32.0 * Tile->TextureOffset.y + 0.0625f * SheetHeight;
-            VertexBuffer[Current++] = (GLfloat)X;
-            VertexBuffer[Current++] = (GLfloat)CorrectY;
-            VertexBuffer[Current++] =(GLfloat)1.0f / 160.0 *Tile->TextureOffset.x + 0.0625f * SheetWidth;
-            VertexBuffer[Current++] = (GLfloat)1.0f / 32.0 * Tile->TextureOffset.y + 0.0625f * SheetHeight;
+            if(Tile->Type != Tile_None)
+            {
+                real32 CorrectY = Tilemap.Height - Y;
+                VertexBuffer[Current++] = (GLfloat)X;
+                VertexBuffer[Current++] = (GLfloat)CorrectY + 1.0f;
+                VertexBuffer[Current++] = (GLfloat)1.0f / Width * Tile->TextureOffset.x + 0.0625f * SheetWidth;
+                VertexBuffer[Current++] =  (GLfloat)1.0f / Height * Tile->TextureOffset.y + 0.9375f * SheetHeight;
+                VertexBuffer[Current++] = (GLfloat)X + 1;
+                VertexBuffer[Current++] = (GLfloat)CorrectY + 1;
+                VertexBuffer[Current++] = (GLfloat)1.0f / Width * Tile->TextureOffset.x + 0.9375f * SheetWidth;
+                VertexBuffer[Current++] =  (GLfloat)1.0f / Height * Tile->TextureOffset.y + 0.9375f * SheetHeight;
+                VertexBuffer[Current++] = (GLfloat)X + 1;
+                VertexBuffer[Current++] = (GLfloat)CorrectY;
+                VertexBuffer[Current++] = (GLfloat)1.0f / Width * Tile->TextureOffset.x + 0.9375f * SheetWidth;
+                VertexBuffer[Current++] = (GLfloat)1.0f / Height * Tile->TextureOffset.y + 0.0625f * SheetHeight;
+                VertexBuffer[Current++] = (GLfloat)X;
+                VertexBuffer[Current++] = (GLfloat)CorrectY;
+                VertexBuffer[Current++] =(GLfloat)1.0f / Width *Tile->TextureOffset.x + 0.0625f * SheetWidth;
+                VertexBuffer[Current++] = (GLfloat)1.0f / Height * Tile->TextureOffset.y + 0.0625f * SheetHeight;
+            }
         }
     }
+    
+    TilemapRenderInfo.VBOSize = Current;
     
     if(TilemapRenderInfo.VBO == 0)
         glGenBuffers(1, &TilemapRenderInfo.VBO);
     
     glBindBuffer(GL_ARRAY_BUFFER, TilemapRenderInfo.VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 16 * Tilemap.Width * Tilemap.Height, VertexBuffer, GL_DYNAMIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * TilemapRenderInfo.VBOSize, VertexBuffer, GL_DYNAMIC_DRAW);
     
     if(RenderState->TileShader.Type != Shader_Tile)
     {
@@ -275,6 +283,7 @@ static void LoadTilemapBuffer(render_state* RenderState, tilemap_render_info& Ti
     glVertexAttribPointer(TexcoordLocation, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *)(2 * sizeof(float)));
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     TilemapRenderInfo.Dirty = false;
+    free(VertexBuffer);
 }
 
 static void CreateTilemapVAO(render_state* RenderState, const tilemap& Tilemap, tilemap_render_info* TilemapRenderInfo)
@@ -1226,7 +1235,7 @@ static void NEW_RenderTilemap(render_state* RenderState, const tilemap& Tilemap,
     SetMat4Uniform(Shader.Program, "View", View);
     SetMat4Uniform(Shader.Program, "Model", Model);
     
-    glDrawArrays(GL_QUADS, 0, 16 * Tilemap.Width * Tilemap.Height);
+    glDrawArrays(GL_QUADS, 0, Tilemap.RenderInfo.VBOSize / 4);
     glBindVertexArray(0);
 }
 

@@ -116,6 +116,7 @@ struct tilemap_render_info
     bool32 Dirty = true;
     GLuint VAO;
     GLuint VBO;
+    int32 VBOSize;
 };
 
 struct render_entity

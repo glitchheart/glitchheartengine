@@ -601,21 +601,16 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
                             Tilemap->Data[X][Y].IsSolid = false;
                             break;
                             case Tile_Grass:
-                            Tilemap->Data[X][Y].Type = Tile_Grass;
-                            Tilemap->Data[X][Y].TextureOffset = glm::vec2(0, 0);
-                            Tilemap->Data[X][Y].IsSolid = false;
+                            Tilemap->Data[X][Y] = Tilemap->Tiles[0];
                             Tilemap->Data[X][Y].CollisionAABB = CollisionAABB;
                             break;
                             case Tile_Stone:
-                            Tilemap->Data[X][Y].Type = Tile_Stone;
-                            Tilemap->Data[X][Y].TextureOffset = glm::vec2(0.8f, 0);
-                            Tilemap->Data[X][Y].IsSolid = true;
+                            Tilemap->Data[X][Y] = Tilemap->Tiles[1];
+                            Tilemap->Data[X][Y].CollisionAABB = CollisionAABB;
                             Tilemap->Data[X][Y].CollisionAABB = CollisionAABB;
                             break;
                             case Tile_Sand:
-                            Tilemap->Data[X][Y].Type = Tile_Sand;
-                            Tilemap->Data[X][Y].TextureOffset = glm::vec2(0.6f, 0);
-                            Tilemap->Data[X][Y].IsSolid = false;
+                            Tilemap->Data[X][Y] = Tilemap->Tiles[2];
                             Tilemap->Data[X][Y].CollisionAABB = CollisionAABB;
                             break;
                         }
@@ -629,7 +624,9 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
     }
     
     // View translation
-    GameState->EditorCamera.Zoom += GameState->InputController.ScrollY * GameState->EditorState.ZoomingSpeed * DeltaTime;
+    
+    GameState->EditorCamera.Zoom += GameState->InputController.ScrollY * GameState->EditorState.ZoomingSpeed * DeltaTime * GameState->EditorCamera.Zoom;
+    GameState->EditorCamera.Zoom = Max(Min(GameState->EditorCamera.Zoom, GameState->EditorState.MaxZoom), GameState->EditorState.MinZoom);
     
     if(GetMouseButton(Mouse_Right, GameState))
     {
