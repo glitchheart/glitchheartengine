@@ -28,6 +28,8 @@ struct editor_state
     real32 LastKnownMouseY;
     real32 ZoomingSpeed = 50;
     real32 PanningSpeed = 30;
+    real32 MinZoom = 0.1;
+    real32 MaxZoom = 10;
     
     real32 TileX;
     real32 TileY;
