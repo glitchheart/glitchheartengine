@@ -220,7 +220,7 @@ static void InitializeFreeTypeFont(char* FontPath, int FontSize, FT_Library Libr
     glBindVertexArray(0);
 }
 
-static void CreateTilemapVAO(render_state* RenderState, const tilemap& Tilemap, tilemap_render_info* TilemapRenderInfo)
+static void LoadTilemapBuffer(render_state* RenderState, tilemap_render_info& TilemapRenderInfo, const tilemap& Tilemap)
 {
     GLfloat* VertexBuffer = (GLfloat*)malloc(sizeof(GLfloat) * 16 * Tilemap.Width * Tilemap.Height);
     
@@ -234,47 +234,58 @@ static void CreateTilemapVAO(render_state* RenderState, const tilemap& Tilemap, 
         for(uint32 Y = 0; Y < Tilemap.Height; Y++)
         {
             tile_data* Tile = &Tilemap.Data[X][Y];
-            if(Tile->Type != Tile_None)
-            {
-                VertexBuffer[Current++] = (GLfloat)X;
-                VertexBuffer[Current++] = (GLfloat)Y + 1.0f;
-                VertexBuffer[Current++] = (GLfloat)1.0f / 160.0 * Tile->TextureOffset.x + 0.0625f * SheetWidth;
-                VertexBuffer[Current++] =  (GLfloat)1.0f / 32.0 * Tile->TextureOffset.y + 0.9375f * SheetHeight;
-                VertexBuffer[Current++] = (GLfloat)X + 1;
-                VertexBuffer[Current++] = (GLfloat)Y + 1;
-                VertexBuffer[Current++] = (GLfloat)1.0f / 160.0 * Tile->TextureOffset.x + 0.9375f * SheetWidth;
-                VertexBuffer[Current++] =  (GLfloat)1.0f / 32.0 * Tile->TextureOffset.y + 0.9375f * SheetHeight;
-                VertexBuffer[Current++] = (GLfloat)X + 1;
-                VertexBuffer[Current++] = (GLfloat)Y;
-                VertexBuffer[Current++] = (GLfloat)1.0f / 160.0 * Tile->TextureOffset.x + 0.9375f * SheetWidth;
-                VertexBuffer[Current++] = (GLfloat)1.0f / 32.0 * Tile->TextureOffset.y + 0.0625f * SheetHeight;
-                VertexBuffer[Current++] = (GLfloat)X;
-                VertexBuffer[Current++] = (GLfloat)Y;
-                VertexBuffer[Current++] =(GLfloat)1.0f / 160.0 *Tile->TextureOffset.x + 0.0625f * SheetWidth;
-                VertexBuffer[Current++] = (GLfloat)1.0f / 32.0 * Tile->TextureOffset.y + 0.0625f * SheetHeight;
-            }
+            real32 CorrectY = Tilemap.Height - Y;
+            VertexBuffer[Current++] = (GLfloat)X;
+            VertexBuffer[Current++] = (GLfloat)CorrectY + 1.0f;
+            VertexBuffer[Current++] = (GLfloat)1.0f / 160.0 * Tile->TextureOffset.x + 0.0625f * SheetWidth;
+            VertexBuffer[Current++] =  (GLfloat)1.0f / 32.0 * Tile->TextureOffset.y + 0.9375f * SheetHeight;
+            VertexBuffer[Current++] = (GLfloat)X + 1;
+            VertexBuffer[Current++] = (GLfloat)CorrectY + 1;
+            VertexBuffer[Current++] = (GLfloat)1.0f / 160.0 * Tile->TextureOffset.x + 0.9375f * SheetWidth;
+            VertexBuffer[Current++] =  (GLfloat)1.0f / 32.0 * Tile->TextureOffset.y + 0.9375f * SheetHeight;
+            VertexBuffer[Current++] = (GLfloat)X + 1;
+            VertexBuffer[Current++] = (GLfloat)CorrectY;
+            VertexBuffer[Current++] = (GLfloat)1.0f / 160.0 * Tile->TextureOffset.x + 0.9375f * SheetWidth;
+            VertexBuffer[Current++] = (GLfloat)1.0f / 32.0 * Tile->TextureOffset.y + 0.0625f * SheetHeight;
+            VertexBuffer[Current++] = (GLfloat)X;
+            VertexBuffer[Current++] = (GLfloat)CorrectY;
+            VertexBuffer[Current++] =(GLfloat)1.0f / 160.0 *Tile->TextureOffset.x + 0.0625f * SheetWidth;
+            VertexBuffer[Current++] = (GLfloat)1.0f / 32.0 * Tile->TextureOffset.y + 0.0625f * SheetHeight;
         }
     }
     
-    //tile
-    glGenVertexArrays(1, &TilemapRenderInfo->VAO);
-    glBindVertexArray(TilemapRenderInfo->VAO);
-    uint32 VBO = 0;
-    glGenBuffers(1, &VBO);
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, 16 * Tilemap.Width * Tilemap.Height, VertexBuffer, GL_DYNAMIC_DRAW);
+    if(TilemapRenderInfo.VBO == 0)
+        glGenBuffers(1, &TilemapRenderInfo.VBO);
     
-    RenderState->TileShader.Type = Shader_Tile;
-    LoadShader(ShaderPaths[Shader_Tile], &RenderState->TileShader);
+    glBindBuffer(GL_ARRAY_BUFFER, TilemapRenderInfo.VBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 16 * Tilemap.Width * Tilemap.Height, VertexBuffer, GL_DYNAMIC_DRAW);
+    
+    if(RenderState->TileShader.Type != Shader_Tile)
+    {
+        RenderState->TileShader.Type = Shader_Tile;
+        LoadShader(ShaderPaths[Shader_Tile], &RenderState->TileShader);
+    }
     
     auto PositionLocation = glGetAttribLocation(RenderState->TileShader.Program, "pos");
     auto TexcoordLocation = glGetAttribLocation(RenderState->TileShader.Program, "texcoord");
-    
     
     glEnableVertexAttribArray(PositionLocation);
     glVertexAttribPointer(PositionLocation, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
     glEnableVertexAttribArray(TexcoordLocation);
     glVertexAttribPointer(TexcoordLocation, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *)(2 * sizeof(float)));
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    TilemapRenderInfo.Dirty = false;
+}
+
+static void CreateTilemapVAO(render_state* RenderState, const tilemap& Tilemap, tilemap_render_info* TilemapRenderInfo)
+{
+    //tile
+    glGenVertexArrays(1, &TilemapRenderInfo->VAO);
+    glBindVertexArray(TilemapRenderInfo->VAO);
+    
+    TilemapRenderInfo->VBO = 0;
+    LoadTilemapBuffer(RenderState, *TilemapRenderInfo, Tilemap);
+    
     glBindVertexArray(0);
 }
 
@@ -290,7 +301,7 @@ static void RenderSetup(render_state *RenderState)
     glBindVertexArray(RenderState->SpriteVAO);
     glGenBuffers(1, &RenderState->SpriteQuadVBO);
     glBindBuffer(GL_ARRAY_BUFFER, RenderState->SpriteQuadVBO);
-    glBufferData(GL_ARRAY_BUFFER, RenderState->SpriteQuadVerticesSize, RenderState->SpriteQuadVertices, GL_DYNAMIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, RenderState->SpriteQuadVerticesSize, RenderState->SpriteQuadVertices, GL_STATIC_DRAW);
     
     RenderState->TextureShader.Type = Shader_Texture;
     LoadShader(ShaderPaths[Shader_Texture], &RenderState->TextureShader);
@@ -310,7 +321,7 @@ static void RenderSetup(render_state *RenderState)
     glBindVertexArray(RenderState->SpriteSheetVAO);
     glGenBuffers(1, &RenderState->SpriteQuadVBO);
     glBindBuffer(GL_ARRAY_BUFFER, RenderState->SpriteQuadVBO);
-    glBufferData(GL_ARRAY_BUFFER, RenderState->SpriteQuadVerticesSize, RenderState->SpriteQuadVertices, GL_DYNAMIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, RenderState->SpriteQuadVerticesSize, RenderState->SpriteQuadVertices, GL_STATIC_DRAW);
     
     RenderState->TextureShader.Type = Shader_SpriteSheetShader;
     LoadShader(ShaderPaths[Shader_SpriteSheetShader], &RenderState->SpriteSheetShader);
@@ -329,7 +340,7 @@ static void RenderSetup(render_state *RenderState)
     glBindVertexArray(RenderState->SpriteErrorVAO);
     glGenBuffers(1, &RenderState->SpriteQuadVBO);
     glBindBuffer(GL_ARRAY_BUFFER, RenderState->SpriteQuadVBO);
-    glBufferData(GL_ARRAY_BUFFER, RenderState->SpriteQuadVerticesSize, RenderState->SpriteQuadVertices, GL_DYNAMIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, RenderState->SpriteQuadVerticesSize, RenderState->SpriteQuadVertices, GL_STATIC_DRAW);
     
     RenderState->ErrorShaderSprite.Type = Shader_ErrorSprite;
     LoadShader(ShaderPaths[Shader_ErrorSprite], &RenderState->ErrorShaderSprite);
@@ -348,7 +359,7 @@ static void RenderSetup(render_state *RenderState)
     glBindVertexArray(RenderState->UISpriteVAO);
     glGenBuffers(1, &RenderState->SpriteQuadVBO);
     glBindBuffer(GL_ARRAY_BUFFER, RenderState->SpriteQuadVBO);
-    glBufferData(GL_ARRAY_BUFFER, RenderState->SpriteQuadVerticesSize, RenderState->SpriteQuadVertices, GL_DYNAMIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, RenderState->SpriteQuadVerticesSize, RenderState->SpriteQuadVertices, GL_STATIC_DRAW);
     
     RenderState->UISpriteShader.Type = Shader_UISprite;
     LoadShader(ShaderPaths[Shader_UISprite], &RenderState->UISpriteShader);
@@ -367,7 +378,7 @@ static void RenderSetup(render_state *RenderState)
     glBindVertexArray(RenderState->UIErrorVAO);
     glGenBuffers(1, &RenderState->SpriteQuadVBO);
     glBindBuffer(GL_ARRAY_BUFFER, RenderState->SpriteQuadVBO);
-    glBufferData(GL_ARRAY_BUFFER, RenderState->SpriteQuadVerticesSize, RenderState->SpriteQuadVertices, GL_DYNAMIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, RenderState->SpriteQuadVerticesSize, RenderState->SpriteQuadVertices, GL_STATIC_DRAW);
     glBindVertexArray(0);
     
     //error shader
@@ -388,7 +399,7 @@ static void RenderSetup(render_state *RenderState)
     glBindVertexArray(RenderState->TileVAO);
     glGenBuffers(1, &RenderState->TileQuadVBO);
     glBindBuffer(GL_ARRAY_BUFFER, RenderState->TileQuadVBO);
-    glBufferData(GL_ARRAY_BUFFER, RenderState->TileQuadVerticesSize, RenderState->TileQuadVertices, GL_DYNAMIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, RenderState->TileQuadVerticesSize, RenderState->TileQuadVertices, GL_STATIC_DRAW);
     
     RenderState->TileShader.Type = Shader_Tile;
     LoadShader(ShaderPaths[Shader_Tile], &RenderState->TileShader);
@@ -1215,7 +1226,7 @@ static void NEW_RenderTilemap(render_state* RenderState, const tilemap& Tilemap,
     SetMat4Uniform(Shader.Program, "View", View);
     SetMat4Uniform(Shader.Program, "Model", Model);
     
-    glDrawArrays(GL_QUADS, 0, 4 * Tilemap.Width * Tilemap.Height * 2);
+    glDrawArrays(GL_QUADS, 0, 16 * Tilemap.Width * Tilemap.Height);
     glBindVertexArray(0);
 }
 
@@ -1485,6 +1496,11 @@ static void CheckLevelVAO(game_state* GameState)
 
 static void Render(game_state* GameState)
 {
+    if(GameState->CurrentLevel.Tilemap.RenderInfo.Dirty)
+    {
+        LoadTilemapBuffer(&GameState->RenderState, GameState->CurrentLevel.Tilemap.RenderInfo, GameState->CurrentLevel.Tilemap); 
+    }
+    
     GameState->RenderState.ScaleX = 2.0f / GameState->RenderState.WindowWidth;
     GameState->RenderState.ScaleY = 2.0f / GameState->RenderState.WindowHeight;
     

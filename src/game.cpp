@@ -619,6 +619,8 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
                             Tilemap->Data[X][Y].CollisionAABB = CollisionAABB;
                             break;
                         }
+                        
+                        Tilemap->RenderInfo.Dirty = true;
                     }
                 }
             }
@@ -689,7 +691,7 @@ extern "C" UPDATE(Update)
         
         LoadLevelFromFile(GameState->LevelPath, &GameState->CurrentLevel, GameState);
         
-        GameState->GameCamera.Zoom = 3.0f;
+        GameState->GameCamera.Zoom = 0.2f;
         GameState->GameCamera.ViewportWidth = GameState->RenderState.WindowWidth / 20;
         GameState->GameCamera.ViewportHeight = GameState->RenderState.WindowHeight / 20;
         

@@ -113,7 +113,9 @@ struct ui_render_info
 
 struct tilemap_render_info
 {
+    bool32 Dirty = true;
     GLuint VAO;
+    GLuint VBO;
 };
 
 struct render_entity
