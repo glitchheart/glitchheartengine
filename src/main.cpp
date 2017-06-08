@@ -147,6 +147,7 @@ int main(void)
         Game.Update(DeltaTime, &GameState);
         
         CheckEditorUIInput(&GameState, DeltaTime);
+        CheckLevelVAO(&GameState);
         Render(&GameState);
         PlaySounds(&GameState);
         

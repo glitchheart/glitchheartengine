@@ -94,6 +94,9 @@ static bool32 LoadLevelFromFile(char* FilePath, level* Level, game_state* GameSt
             }
         }
         fclose(File);
+        
+        Level->Tilemap.RenderInfo.VAO = 0;
+        
         return true;
     }
     return false;

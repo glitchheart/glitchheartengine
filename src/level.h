@@ -43,6 +43,7 @@ struct tilemap
 {
     uint32 Width;
     uint32 Height;
+    tilemap_render_info RenderInfo;
     render_entity RenderEntity;
     
     tile_data Tiles[3] = {

@@ -220,6 +220,64 @@ static void InitializeFreeTypeFont(char* FontPath, int FontSize, FT_Library Libr
     glBindVertexArray(0);
 }
 
+static void CreateTilemapVAO(render_state* RenderState, const tilemap& Tilemap, tilemap_render_info* TilemapRenderInfo)
+{
+    GLfloat* VertexBuffer = (GLfloat*)malloc(sizeof(GLfloat) * 16 * Tilemap.Width * Tilemap.Height);
+    
+    int32 Current = 0;
+    
+    auto SheetWidth = 32.0f / 160.0f;
+    auto SheetHeight = 32.0f / 32.0f;
+    
+    for(uint32 X = 0; X < Tilemap.Width; X++)
+    {
+        for(uint32 Y = 0; Y < Tilemap.Height; Y++)
+        {
+            tile_data* Tile = &Tilemap.Data[X][Y];
+            if(Tile->Type != Tile_None)
+            {
+                VertexBuffer[Current++] = (GLfloat)X;
+                VertexBuffer[Current++] = (GLfloat)Y + 1.0f;
+                VertexBuffer[Current++] = (GLfloat)1.0f / 160.0 * Tile->TextureOffset.x + 0.0625f * SheetWidth;
+                VertexBuffer[Current++] =  (GLfloat)1.0f / 32.0 * Tile->TextureOffset.y + 0.9375f * SheetHeight;
+                VertexBuffer[Current++] = (GLfloat)X + 1;
+                VertexBuffer[Current++] = (GLfloat)Y + 1;
+                VertexBuffer[Current++] = (GLfloat)1.0f / 160.0 * Tile->TextureOffset.x + 0.9375f * SheetWidth;
+                VertexBuffer[Current++] =  (GLfloat)1.0f / 32.0 * Tile->TextureOffset.y + 0.9375f * SheetHeight;
+                VertexBuffer[Current++] = (GLfloat)X + 1;
+                VertexBuffer[Current++] = (GLfloat)Y;
+                VertexBuffer[Current++] = (GLfloat)1.0f / 160.0 * Tile->TextureOffset.x + 0.9375f * SheetWidth;
+                VertexBuffer[Current++] = (GLfloat)1.0f / 32.0 * Tile->TextureOffset.y + 0.0625f * SheetHeight;
+                VertexBuffer[Current++] = (GLfloat)X;
+                VertexBuffer[Current++] = (GLfloat)Y;
+                VertexBuffer[Current++] =(GLfloat)1.0f / 160.0 *Tile->TextureOffset.x + 0.0625f * SheetWidth;
+                VertexBuffer[Current++] = (GLfloat)1.0f / 32.0 * Tile->TextureOffset.y + 0.0625f * SheetHeight;
+            }
+        }
+    }
+    
+    //tile
+    glGenVertexArrays(1, &TilemapRenderInfo->VAO);
+    glBindVertexArray(TilemapRenderInfo->VAO);
+    uint32 VBO = 0;
+    glGenBuffers(1, &VBO);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferData(GL_ARRAY_BUFFER, 16 * Tilemap.Width * Tilemap.Height, VertexBuffer, GL_DYNAMIC_DRAW);
+    
+    RenderState->TileShader.Type = Shader_Tile;
+    LoadShader(ShaderPaths[Shader_Tile], &RenderState->TileShader);
+    
+    auto PositionLocation = glGetAttribLocation(RenderState->TileShader.Program, "pos");
+    auto TexcoordLocation = glGetAttribLocation(RenderState->TileShader.Program, "texcoord");
+    
+    
+    glEnableVertexAttribArray(PositionLocation);
+    glVertexAttribPointer(PositionLocation, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
+    glEnableVertexAttribArray(TexcoordLocation);
+    glVertexAttribPointer(TexcoordLocation, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *)(2 * sizeof(float)));
+    glBindVertexArray(0);
+}
+
 static void RenderSetup(render_state *RenderState)
 {
     if(FT_Init_FreeType(&RenderState->FTLibrary)) 
@@ -573,8 +631,8 @@ static void ReloadAssets(asset_manager *AssetManager, game_state* GameState)
     /*
     if(AssetManager->DirtyTileset == 1)
     {
-        GameState->CurrentLevel.Tilemap.RenderEntity.Texture = LoadTexture("../assets/textures/tiles.png");
-        AssetManager->DirtyTileset = 0;
+    GameState->CurrentLevel.Tilemap.RenderEntity.Texture = LoadTexture("../assets/textures/tiles.png");
+    AssetManager->DirtyTileset = 0;
     }*/
 }
 
@@ -1137,6 +1195,30 @@ static void RenderTile(render_state* RenderState, uint32 X, uint32 Y, uint32 Tex
     glBindVertexArray(0);
 }
 
+static void NEW_RenderTilemap(render_state* RenderState, const tilemap& Tilemap, glm::mat4 ProjectionMatrix, glm::mat4 View)
+{
+    glBindVertexArray(Tilemap.RenderInfo.VAO);
+    
+    if (RenderState->BoundTexture != Tilemap.RenderEntity.Texture->TextureHandle)
+    {
+        glBindTexture(GL_TEXTURE_2D, Tilemap.RenderEntity.Texture->TextureHandle);
+        RenderState->BoundTexture = Tilemap.RenderEntity.Texture->TextureHandle;
+    }
+    
+    auto Shader = RenderState->TileShader;
+    UseShader(&Shader);
+    
+    glm::mat4 Model(1.0f);
+    Model = glm::scale(Model, glm::vec3(1, 1, 1.0f));
+    
+    SetMat4Uniform(Shader.Program, "Projection", ProjectionMatrix);
+    SetMat4Uniform(Shader.Program, "View", View);
+    SetMat4Uniform(Shader.Program, "Model", Model);
+    
+    glDrawArrays(GL_QUADS, 0, 4 * Tilemap.Width * Tilemap.Height * 2);
+    glBindVertexArray(0);
+}
+
 static void RenderTilemap(render_state* RenderState, const tilemap& Tilemap, glm::mat4 ProjectionMatrix, glm::mat4 View)
 {
     glBindVertexArray(RenderState->TileVAO);
@@ -1163,7 +1245,7 @@ static void RenderTilemap(render_state* RenderState, const tilemap& Tilemap, glm
                 Model = glm::scale(Model, glm::vec3(Scale, Scale, 1.0f));
                 
                 SetVec2Attribute(Shader.Program, "textureOffset", Tilemap.Data[i][j].TextureOffset);
-                SetVec2Attribute(Shader.Program, "sheetSize", glm::vec2(Tilemap.RenderEntity->Texture.Width., Tilemap.RenderEntity->Texture.Height));
+                SetVec2Attribute(Shader.Program, "sheetSize", glm::vec2(Tilemap.RenderEntity.Texture->Width, Tilemap.RenderEntity.Texture->Height));
                 
                 SetMat4Uniform(Shader.Program, "Projection", ProjectionMatrix);
                 SetMat4Uniform(Shader.Program, "View", View);
@@ -1194,7 +1276,9 @@ int CompareFunction(const void* a, const void* b)
 
 static void RenderInGameMode(game_state* GameState)
 {
-    RenderTilemap(&GameState->RenderState, GameState->CurrentLevel.Tilemap, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
+    NEW_RenderTilemap(&GameState->RenderState, GameState->CurrentLevel.Tilemap, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
+    
+    //RenderTilemap(&GameState->RenderState, GameState->CurrentLevel.Tilemap, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
     
     //@Fix this is buggy
     qsort(GameState->RenderState.RenderEntities, GameState->RenderState.RenderEntityCount, sizeof(render_entity), CompareFunction);
@@ -1389,6 +1473,14 @@ static void RenderEditorUI(game_state* GameState, const editor_ui& EditorUI, ren
 static void RenderPlayerUI(health_bar* HealthBar, render_state* RenderState)
 {
     RenderUISprite(RenderState, HealthBar->RenderInfo.Texture->TextureHandle, HealthBar->Position, glm::vec3(0.1, 0.1f, 1));
+}
+
+static void CheckLevelVAO(game_state* GameState)
+{
+    if(GameState->CurrentLevel.Tilemap.RenderInfo.VAO == 0)
+    {
+        CreateTilemapVAO(&GameState->RenderState, GameState->CurrentLevel.Tilemap, &GameState->CurrentLevel.Tilemap.RenderInfo);
+    }
 }
 
 static void Render(game_state* GameState)
