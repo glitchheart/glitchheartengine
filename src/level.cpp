@@ -52,26 +52,10 @@ static bool32 LoadLevelFromFile(char* FilePath, level* Level, game_state* GameSt
                 CollisionAABB.Center = glm::vec2(IndexWidth + 0.5f, MapHeight - IndexHeight + 0.5f);
                 CollisionAABB.Extents = glm::vec2(0.5, 0.5);
                 CollisionAABB.IsTrigger = false;
-                tile_data Data;
+                int TypeIndex = Line[IndexWidth] - '0';
                 
-                switch(Line[IndexWidth])
-                {
-                    case '0': //empty
-                    Data.Type = Tile_None;
-                    break;
-                    case 'g': //grass
-                    Data = Level->Tilemap.Tiles[0];
-                    Data.CollisionAABB = CollisionAABB;
-                    break;
-                    case 'w': //stone wall
-                    Data = Level->Tilemap.Tiles[1];
-                    Data.CollisionAABB = CollisionAABB;
-                    break;
-                    case 's':
-                    Data = Level->Tilemap.Tiles[2];
-                    Data.CollisionAABB = CollisionAABB;
-                    break;
-                }
+                tile_data Data = Level->Tilemap.Tiles[TypeIndex];
+                Data.CollisionAABB = CollisionAABB;
                 
                 Level->Tilemap.Data[IndexWidth][IndexHeight] = Data;
             }
@@ -128,13 +112,13 @@ static void SaveLevelToFile(const char* FilePath, level* Level, game_state* Game
                     Character = '0';
                     break;
                     case Tile_Grass:
-                    Character = 'g';
+                    Character = '1';
                     break;
                     case Tile_Stone:
-                    Character = 'w';
+                    Character = '2';
                     break;
                     case Tile_Sand:
-                    Character = 's';
+                    Character = '3';
                     break;
                 }
                 

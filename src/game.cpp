@@ -380,6 +380,11 @@ void UpdateEnemy(entity* Entity, game_state* GameState, real64 DeltaTime)
                 if(DistanceToPlayer > Entity->Enemy.MinDistance)
                 {
                     Entity->Enemy.IsAttacking = false;
+                    Entity->Enemy.AIState = AI_Following;
+                }
+                else if(DistanceToPlayer > Entity->Enemy.MaxAlertDistance)
+                {
+                    Entity->Enemy.IsAttacking = false;
                     Entity->Enemy.AIState = AI_Idle;
                 }
                 else
@@ -596,21 +601,21 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
                         switch(GameState->EditorState.SelectedTileType)
                         {
                             case Tile_None:
-                            Tilemap->Data[X][Y].Type = Tile_None;
+                            Tilemap->Data[X][Y] = Tilemap->Tiles[0];
                             Tilemap->Data[X][Y].TextureOffset = glm::vec2(0, 0);
                             Tilemap->Data[X][Y].IsSolid = false;
                             break;
                             case Tile_Grass:
-                            Tilemap->Data[X][Y] = Tilemap->Tiles[0];
+                            Tilemap->Data[X][Y] = Tilemap->Tiles[1];
                             Tilemap->Data[X][Y].CollisionAABB = CollisionAABB;
                             break;
                             case Tile_Stone:
-                            Tilemap->Data[X][Y] = Tilemap->Tiles[1];
+                            Tilemap->Data[X][Y] = Tilemap->Tiles[2];
                             Tilemap->Data[X][Y].CollisionAABB = CollisionAABB;
                             Tilemap->Data[X][Y].CollisionAABB = CollisionAABB;
                             break;
                             case Tile_Sand:
-                            Tilemap->Data[X][Y] = Tilemap->Tiles[2];
+                            Tilemap->Data[X][Y] = Tilemap->Tiles[3];
                             Tilemap->Data[X][Y].CollisionAABB = CollisionAABB;
                             break;
                         }
@@ -677,7 +682,7 @@ extern "C" UPDATE(Update)
         {
             LoadAnimations(GameState);
             InitCommands();
-            GameState->LevelPath = "../assets/levels/lvl_02.plv";
+            GameState->LevelPath = "../assets/levels/level_03.plv";
             
             GameState->EditorCamera.Zoom = 3.0f; // @Cleanup: We might not want to reset these values every time we load a level
             GameState->EditorCamera.ViewportWidth = GameState->RenderState.WindowWidth / 20;
@@ -688,7 +693,7 @@ extern "C" UPDATE(Update)
         
         LoadLevelFromFile(GameState->LevelPath, &GameState->CurrentLevel, GameState);
         
-        GameState->GameCamera.Zoom = 0.2f;
+        GameState->GameCamera.Zoom = 2.0f;
         GameState->GameCamera.ViewportWidth = GameState->RenderState.WindowWidth / 20;
         GameState->GameCamera.ViewportHeight = GameState->RenderState.WindowHeight / 20;
         
