@@ -59,27 +59,6 @@ const char* ShaderPaths[Shader_Count] =
     "../assets/shaders/astarpathshader",
 };
 
-const char* TexturePaths[Texture_Count] =
-{
-    "../assets/textures/tiles.png",
-    "../assets/textures/spritesheets/new_player.png",
-    "../assets/textures/barrel.png",
-    "../assets/textures/crosshair.png",
-    "../assets/textures/spritesheets/sword_attack_top_right.png",
-    "../assets/textures/spritesheets/sword_simple.png",
-    
-    "../assets/textures/spritesheets/health_full.png",
-    "../assets/textures/spritesheets/health_2.png",
-    "../assets/textures/spritesheets/health_1.png",
-    "../assets/textures/spritesheets/health_empty.png",
-    
-    "../assets/textures/tile_empty.png",
-    "../assets/textures/tiles_1.png",
-    "../assets/textures/tiles_2.png",
-    "../assets/textures/tiles_3.png",
-    "../assets/textures/tiles_4.png",
-    "../assets/textures/selected_tile.png"
-};
 
 enum Render_Mode
 {
@@ -311,6 +290,29 @@ struct render_state
             texture StoneTileTexture;
             texture SelectedTileTexture;
         };
+    };
+    
+    
+    const char* TexturePaths[Texture_Count] =
+    {
+        "../assets/textures/tiles.png",
+        "../assets/textures/spritesheets/new_player.png",
+        "../assets/textures/barrel.png",
+        "../assets/textures/crosshair.png",
+        "../assets/textures/spritesheets/sword_attack_top_right.png",
+        "../assets/textures/spritesheets/sword_simple.png",
+        
+        "../assets/textures/spritesheets/health_full.png",
+        "../assets/textures/spritesheets/health_2.png",
+        "../assets/textures/spritesheets/health_1.png",
+        "../assets/textures/spritesheets/health_empty.png",
+        
+        "../assets/textures/tile_empty.png",
+        "../assets/textures/tiles_1.png",
+        "../assets/textures/tiles_2.png",
+        "../assets/textures/tiles_3.png",
+        "../assets/textures/tiles_4.png",
+        "../assets/textures/selected_tile.png"
     };
     
     //freetype

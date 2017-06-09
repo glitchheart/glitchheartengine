@@ -298,6 +298,28 @@ static void CreateTilemapVAO(render_state* RenderState, const tilemap& Tilemap, 
     glBindVertexArray(0);
 }
 
+
+static void LoadTilesheetPath(const char* FilePath, render_state* RenderState)
+{
+    FILE* File;
+    File = fopen(FilePath, "r");
+    if(File) 
+    {
+        char LineBuffer[255];
+        
+        if(fgets(LineBuffer, 255, File))
+        {
+            printf("%s",LineBuffer);
+            char* TilesheetPath = (char*)malloc(sizeof(char) * 255);
+            sscanf(LineBuffer, "%s", TilesheetPath);
+            RenderState->TexturePaths[0] = TilesheetPath;
+            free(TilesheetPath);
+        }
+        fclose(File);
+    }
+}
+
+
 static void RenderSetup(render_state *RenderState)
 {
     if(FT_Init_FreeType(&RenderState->FTLibrary)) 
@@ -532,7 +554,7 @@ static void LoadTextures(render_state* RenderState)
     for(uint32 TextureIndex = 0; TextureIndex < Texture_Count; TextureIndex++)
     {
         texture Texture = {};
-        LoadTexture(TexturePaths[TextureIndex],&Texture);
+        LoadTexture(RenderState->TexturePaths[TextureIndex],&Texture);
         RenderState->Textures[TextureIndex] = Texture;
     }
 }
@@ -600,6 +622,7 @@ static void InitializeOpenGL(game_state* GameState, render_state* RenderState, c
         
         printf("type %d\n", GameState->InputController.ControllerType);
     }
+    LoadTilesheetPath("../assets/levels/sheet.tm",RenderState);
     LoadTextures(RenderState);
     RenderSetup(RenderState);
     
