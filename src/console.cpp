@@ -55,8 +55,6 @@ void ExecuteCommand(game_state *GameState)
         
         bool32 Found = false;
         
-        char * ReturnedResult;
-        
         for(uint32 i = 0; i < CommandCount; i++)
         {
             if(strcmp(CommandName, Commands[i].Name) == 0)

@@ -237,9 +237,9 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
             int32 MaxY = Max(0, Min((int32)Level->Tilemap.Height, YPos + 2));
             
             //check tile collision
-            for(uint32 X = MinX; X < MaxX; X++)
+            for(int32 X = MinX; X < MaxX; X++)
             {
-                for(uint32 Y = MinY; Y < MaxY; Y++)
+                for(int32 Y = MinY; Y < MaxY; Y++)
                 {
                     tile_data Tile = Level->Tilemap.Data[X][Y];
                     
@@ -285,12 +285,12 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
                             
                             if(PenetrationVector.x != 0)
                             {
-                                PV.x = PenetrationVector.x * 1.001; // This is necessary to prevent the player from getting stuck
+                                PV.x = PenetrationVector.x * 1.001f; // This is necessary to prevent the player from getting stuck
                             }
                             
                             if(PenetrationVector.y != 0)
                             {
-                                PV.y = PenetrationVector.y * 1.001; // This is necessary to prevent the player from getting stuck
+                                PV.y = PenetrationVector.y * 1.001f; // This is necessary to prevent the player from getting stuck
                             }
                             
                             if(Entity->Type == Entity_Barrel)

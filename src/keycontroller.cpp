@@ -78,17 +78,20 @@ static bool32 GetActionButtonDown(Action_Button ActionButton, game_state* GameSt
         switch(GameState->InputController.ControllerType)
         {
             case Controller_Xbox:
-            return GetJoystickKeyDown(GameState->InputController.ActionButtonXboxControllerBindings[ActionButton], GameState);
-            break;
+            {
+                return GetJoystickKeyDown(GameState->InputController.ActionButtonXboxControllerBindings[ActionButton], GameState);
+            }
             case Controller_PS4:
-            return GetJoystickKeyDown(GameState->InputController.ActionButtonPS4ControllerBindings[ActionButton], GameState);
-            break;
+            {
+                return GetJoystickKeyDown(GameState->InputController.ActionButtonPS4ControllerBindings[ActionButton], GameState);
+            }
         }
     }
     else
     {
         return GetKeyDown(GameState->InputController.ActionButtonKeyboardBindings[ActionButton], GameState);
     }
+    return 0;
 }
 
 static float GetInputX(game_state* GameState)
@@ -141,7 +144,6 @@ static float GetInputY(game_state* GameState)
         {
             return -1;
         }
-        else
-            return 0;
     }
+    return 0;
 }

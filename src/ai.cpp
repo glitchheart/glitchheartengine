@@ -197,9 +197,9 @@ static void AStar(entity* Enemy, game_state* GameState, glm::vec2 StartPos, glm:
             
             if(Current.X != -1 && Current.Y != -1 && Current.X > 0 && Current.Y > 0 && Current.X < (int32)GameState->CurrentLevel.Tilemap.Width - 1 && Current.Y < (int32)GameState->CurrentLevel.Tilemap.Height - 1) {
                 
-                for(uint32 X = Current.X - 1; X < Current.X + 2; X++)
+                for(int32 X = Current.X - 1; X < Current.X + 2; X++)
                 {
-                    for(uint32 Y = Current.Y - 1; Y < Current.Y + 2; Y++)
+                    for(int32 Y = Current.Y - 1; Y < Current.Y + 2; Y++)
                     {
                         
                         int32 Cost = 10;

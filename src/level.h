@@ -47,32 +47,7 @@ struct tilemap
     tilemap_render_info RenderInfo;
     render_entity RenderEntity;
     
-    tile_data Tiles[4] = {
-        {Tile_None,
-            glm::vec2(0,0), 
-            glm::vec2(32,32),
-            false,
-            glm::vec2(0.5f,0.5f),
-            {}},
-        {Tile_Grass,
-            glm::vec2(0,0), 
-            glm::vec2(32,32),
-            false,
-            glm::vec2(0.5f,0.5f),
-            {}},
-        {Tile_Stone,
-            glm::vec2(128,0.0f),
-            glm::vec2(32,32),
-            true,
-            glm::vec2(0.5f,0.5f),
-            {}},
-        {Tile_Sand,
-            glm::vec2(96,0.0f),
-            glm::vec2(32,32),
-            false,
-            glm::vec2(0.5f,0.5f),
-            {}}
-    };
+    tile_data* Tiles;
     
     tile_data** Data;
 };

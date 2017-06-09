@@ -56,8 +56,8 @@ static void LoadAnimationFromFile(const char* FilePath, animation* Animation, re
         
         Animation->Frames = (sprite_sheet_frame*)malloc(sizeof(sprite_sheet_frame) * Animation->FrameCount);
         
-        real32 FrameWidth = 1.0 / Animation->Columns;
-        real32 FrameHeight = 1.0 / Animation->Rows;
+        real32 FrameWidth = 1.0f / Animation->Columns;
+        real32 FrameHeight = 1.0f / Animation->Rows;
         
         for(uint32 i = 0; i < Animation->FrameCount; i++)
         {

@@ -1,3 +1,42 @@
+static void LoadTilesheetMetaFile(char* FilePath, tilemap* Tilemap, game_state* GameState)
+{
+    FILE* File;
+    File = fopen(FilePath, "r");
+    char LineBuffer[255];
+    
+    if(File)
+    {
+        // Load texture path
+        if(fgets(LineBuffer,255,File))
+        {
+        }
+        // Get number of tiles for array allocation
+        int NumTiles;
+        if(fgets(LineBuffer, 255,File))
+        {
+            NumTiles = LineBuffer[0] - '0';
+            Tilemap->Tiles = (tile_data*)malloc(sizeof(tile_data) * 4);
+        }
+        
+        int TileIndex = 0;
+        // Get each tile
+        while(fgets(LineBuffer, 255, File))
+        {
+            tile_data Data = {};
+            glm::vec2 TextureOffset;
+            glm::vec2 TextureSize;
+            glm::vec2 Center;
+            
+            sscanf(LineBuffer,"%d %f %f %f %f %d %f %f",&Data.Type,&TextureOffset.x,&TextureOffset.y,&TextureSize.x,&TextureSize.y,&Data.IsSolid,&Center.x,&Center.y);
+            Data.TextureOffset = TextureOffset;
+            Data.TextureSize = TextureSize;
+            Data.Center = Center;
+            Tilemap->Tiles[TileIndex++] = Data;
+        }
+        fclose(File);
+    }
+}
+
 static bool32 LoadLevelFromFile(char* FilePath, level* Level, game_state* GameState)
 {
     //read the file manmain
@@ -104,23 +143,7 @@ static void SaveLevelToFile(const char* FilePath, level* Level, game_state* Game
         {
             for(uint32 X = 0; X < Level->Tilemap.Width; X++)
             {
-                char Character;
-                
-                switch(Level->Tilemap.Data[X][Y].Type)
-                {
-                    case Tile_None:
-                    Character = '0';
-                    break;
-                    case Tile_Grass:
-                    Character = '1';
-                    break;
-                    case Tile_Stone:
-                    Character = '2';
-                    break;
-                    case Tile_Sand:
-                    Character = '3';
-                    break;
-                }
+                char Character = (char)Level->Tilemap.Data[X][Y].Type + '0';
                 
                 fprintf(File, "%c", Character);
             }
