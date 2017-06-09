@@ -127,7 +127,7 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
         collision_info CollisionInfo;
         CheckCollision(GameState, Entity, &CollisionInfo);
         
-        entity* OtherEntity;
+        entity* OtherEntity = 0;
         bool32 OtherFound = false;
         
         for(int Index = 0; Index < CollisionInfo.OtherCount; Index++)
@@ -248,7 +248,7 @@ void UpdateWeapon(entity* Entity, game_state* GameState, real64 DeltaTime)
     
     if(IsAttacking)
     {
-        for(uint32 Index = 0; Index < CollisionInfo.OtherCount; Index++)
+        for(int32 Index = 0; Index < CollisionInfo.OtherCount; Index++)
         {
             if((UsingEntity->Type == Entity_Player && CollisionInfo.Other[Index]->Type == Entity_Enemy && CollisionInfo.Other[Index]->Enemy.AIState != AI_Hit) ||
                (UsingEntity->Type == Entity_Enemy && CollisionInfo.Other[Index]->Type == Entity_Player && !CollisionInfo.Other[Index]->Player.IsDashing && TimerDone(GameState, CollisionInfo.Other[Index]->HitCooldownTimer)))
@@ -574,10 +574,10 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
         break;
         case Editor_Placement_Tile:
         {
-            int32 X = glm::floor(Pos.x);
-            int32 Y = GameState->CurrentLevel.Tilemap.Height - glm::floor(Pos.y);
-            GameState->EditorState.TileX = X;
-            GameState->EditorState.TileY = glm::floor(Pos.y);
+            int32 X = (int32)glm::floor(Pos.x);
+            int32 Y = (int32)GameState->CurrentLevel.Tilemap.Height - (int32)glm::floor(Pos.y);
+            GameState->EditorState.TileX = (real32)X;
+            GameState->EditorState.TileY = (real32)glm::floor(Pos.y);
             
             if(GetMouseButton(Mouse_Left, GameState))
             {
@@ -589,8 +589,8 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
                 
                 else
                 {
-                    if(X >= 0 && X < GameState->CurrentLevel.Tilemap.Width 
-                       && Y >= 0 && Y < GameState->CurrentLevel.Tilemap.Height)
+                    if(X >= 0 && X < (int32)GameState->CurrentLevel.Tilemap.Width 
+                       && Y >= 0 && Y < (int32)GameState->CurrentLevel.Tilemap.Height)
                     {
                         tilemap* Tilemap = &GameState->CurrentLevel.Tilemap;
                         
@@ -598,6 +598,8 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
                         CollisionAABB.Center = glm::vec2(X + 0.5f, Y + 0.5f);
                         CollisionAABB.Extents = glm::vec2(0.5, 0.5);
                         
+                        Tilemap->Data[X][Y] = Tilemap->Tiles[GameState->EditorState.SelectedTileType];
+                        /*
                         switch(GameState->EditorState.SelectedTileType)
                         {
                             case Tile_None:
@@ -619,7 +621,7 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
                             Tilemap->Data[X][Y].CollisionAABB = CollisionAABB;
                             break;
                         }
-                        
+                        */
                         Tilemap->RenderInfo.Dirty = true;
                     }
                 }
@@ -630,23 +632,23 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
     
     // View translation
     
-    GameState->EditorCamera.Zoom += GameState->InputController.ScrollY * GameState->EditorState.ZoomingSpeed * DeltaTime * GameState->EditorCamera.Zoom;
+    GameState->EditorCamera.Zoom += (real32)GameState->InputController.ScrollY * GameState->EditorState.ZoomingSpeed * (real32)DeltaTime * GameState->EditorCamera.Zoom;
     GameState->EditorCamera.Zoom = Max(Min(GameState->EditorCamera.Zoom, GameState->EditorState.MaxZoom), GameState->EditorState.MinZoom);
     
     if(GetMouseButton(Mouse_Right, GameState))
     {
         if(GameState->EditorState.LastKnownMouseX == 0 && GameState->EditorState.LastKnownMouseY == 0)
         {
-            GameState->EditorState.LastKnownMouseX = GameState->InputController.MouseX;
-            GameState->EditorState.LastKnownMouseY = GameState->InputController.MouseY;
+            GameState->EditorState.LastKnownMouseX = (real32)GameState->InputController.MouseX;
+            GameState->EditorState.LastKnownMouseY = (real32)GameState->InputController.MouseY;
         }
         
         glm::vec2 Direction = glm::vec2(GameState->InputController.MouseX - GameState->EditorState.LastKnownMouseX, GameState->InputController.MouseY - GameState->EditorState.LastKnownMouseY);
         
         GameState->EditorCamera.Center -= glm::vec2(Direction.x / GameState->EditorCamera.Zoom * GameState->EditorState.PanningSpeed * DeltaTime, Direction.y / GameState->EditorCamera.Zoom * -GameState->EditorState.PanningSpeed * DeltaTime);
         
-        GameState->EditorState.LastKnownMouseX = GameState->InputController.MouseX;
-        GameState->EditorState.LastKnownMouseY = GameState->InputController.MouseY;
+        GameState->EditorState.LastKnownMouseX = (real32)GameState->InputController.MouseX;
+        GameState->EditorState.LastKnownMouseY = (real32)GameState->InputController.MouseY;
     }
     else
     {
@@ -691,6 +693,7 @@ extern "C" UPDATE(Update)
             GameState->GameMode = Mode_InGame;
         }
         
+        LoadTilesheetMetaFile("../assets/levels/sheet.tm",&GameState->CurrentLevel.Tilemap,GameState);
         LoadLevelFromFile(GameState->LevelPath, &GameState->CurrentLevel, GameState);
         
         GameState->GameCamera.Zoom = 2.0f;
