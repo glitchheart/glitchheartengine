@@ -244,7 +244,6 @@ static void SpawnBarrel(game_state* GameState, glm::vec2 Position)
 static void StartTimer(game_state* GameState, timer* Timer)
 {
     Timer->TimerHandle = GameState->TimerCount;
-    printf("TimerHandle %d\n", Timer->TimerHandle);
     GameState->Timers[Timer->TimerHandle] = Timer->TimerMax;
     
     GameState->TimerCount++;
