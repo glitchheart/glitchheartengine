@@ -90,6 +90,14 @@ struct ui_render_info
     glm::vec4 Color = glm::vec4(1, 1, 1, 1);
 };
 
+struct editor_render_info
+{
+    bool32 Dirty = false;
+    GLuint VAO;
+    GLuint VBO;
+    int32 VBOSize;
+};
+
 struct tilemap_render_info
 {
     bool32 Dirty = true;

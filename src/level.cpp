@@ -15,7 +15,7 @@ static void LoadTilesheetMetaFile(char* FilePath, tilemap* Tilemap, game_state* 
         if(fgets(LineBuffer, 255,File))
         {
             NumTiles = LineBuffer[0] - '0';
-            Tilemap->Tiles = (tile_data*)malloc(sizeof(tile_data) * 4);
+            Tilemap->Tiles = (tile_data*)malloc(sizeof(tile_data) * NumTiles);
         }
         
         int TileIndex = 0;
@@ -27,12 +27,13 @@ static void LoadTilesheetMetaFile(char* FilePath, tilemap* Tilemap, game_state* 
             glm::vec2 TextureSize;
             glm::vec2 Center;
             
-            sscanf(LineBuffer,"%d %f %f %f %f %d %f %f",&Data.Type,&TextureOffset.x,&TextureOffset.y,&TextureSize.x,&TextureSize.y,&Data.IsSolid,&Center.x,&Center.y);
+            sscanf(LineBuffer,"%d %f %f %f %f %d %f %f", &Data.TypeIndex, &TextureOffset.x, &TextureOffset.y, &TextureSize.x, &TextureSize.y, &Data.IsSolid, &Center.x, &Center.y);
             Data.TextureOffset = TextureOffset;
             Data.TextureSize = TextureSize;
             Data.Center = Center;
             Tilemap->Tiles[TileIndex++] = Data;
         }
+        Tilemap->TileCount = TileIndex;
         fclose(File);
     }
 }
@@ -143,7 +144,7 @@ static void SaveLevelToFile(const char* FilePath, level* Level, game_state* Game
         {
             for(uint32 X = 0; X < Level->Tilemap.Width; X++)
             {
-                char Character = (char)Level->Tilemap.Data[X][Y].Type + '0';
+                char Character = (char)Level->Tilemap.Data[X][Y].TypeIndex + '0';
                 
                 fprintf(File, "%c", Character);
             }
