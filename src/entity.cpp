@@ -11,7 +11,7 @@ static void InitPlayer(game_state* GameState, glm::vec2 Position)
     Player->Type = Entity_Player;
     Player->Health = 3;
     Player->Player.WalkingSpeed = 8.5f;
-    Player->Player.ThrowingSpeed = 18.0f;
+    Player->Player.ThrowingSpeed = 25.0f;
     
     Player->Player.AttackCooldownTimer = (timer*)malloc(sizeof(timer));
     Player->Player.AttackCooldownTimer->TimerHandle = -1;

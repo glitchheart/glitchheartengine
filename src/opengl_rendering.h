@@ -293,7 +293,7 @@ struct render_state
     };
     
     
-    const char* TexturePaths[Texture_Count] =
+    char* TexturePaths[Texture_Count] =
     {
         "../assets/textures/tiles.png",
         "../assets/textures/spritesheets/new_player.png",
