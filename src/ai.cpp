@@ -94,10 +94,6 @@ static void AStar(entity* Enemy, game_state* GameState, glm::vec2 StartPos, glm:
        StartPos.x >= 0 && StartPos.y >= 0 && TargetPos.x < GameState->CurrentLevel.Tilemap.Width && TargetPos.y < GameState->CurrentLevel.Tilemap.Height &&
        TargetPos.x >= 0 && TargetPos.y >= 0)
     {
-        if(Enemy->Enemy.AStarPath)
-        {
-            //free(Enemy->AStarPath);
-        }
         astar_working_data* AStarWorkingData = (astar_working_data*)malloc(sizeof(astar_working_data));
         tile_data StartTile = GameState->CurrentLevel.Tilemap.Data[(uint32)StartPos.x][(uint32)StartPos.y];
         tile_data TargetTile = GameState->CurrentLevel.Tilemap.Data[(uint32)TargetPos.x][(uint32)TargetPos.y];
