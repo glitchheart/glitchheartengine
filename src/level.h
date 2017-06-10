@@ -1,17 +1,6 @@
 #ifndef LEVEL_H
 #define LEVEL_H
 
-enum Tile_Type
-{
-    Tile_None,
-    Tile_Sand, 
-    Tile_Grass, 
-    Tile_DarkGrass, 
-    Tile_Stone,
-    
-    Tile_Count
-};
-
 enum Tile_Layer //TODO(Daniel) use this for making different tile layers later
 {
     Tile_Layer_None
@@ -19,7 +8,7 @@ enum Tile_Layer //TODO(Daniel) use this for making different tile layers later
 
 struct tile_data
 {
-    Tile_Type Type;
+    int32 TypeIndex;
     glm::vec2 TextureOffset;
     glm::vec2 TextureSize;
     bool32 IsSolid;
@@ -45,10 +34,11 @@ struct tilemap
     uint32 Height;
     uint32 TileSize = 16;
     tilemap_render_info RenderInfo;
+    editor_render_info EditorRenderInfo;
     render_entity RenderEntity;
     
     tile_data* Tiles;
-    
+    uint32 TileCount;
     tile_data** Data;
 };
 

@@ -543,7 +543,7 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
                 if(GameState->InputController.MouseX >= GameState->EditorState.ToolbarX)
                 {
                     uint32 Selected = (uint32)(GameState->InputController.MouseY / 65.0f);
-                    GameState->EditorState.SelectedTileType = (Tile_Type)Selected;
+                    GameState->EditorState.SelectedTileType = Selected;
                 }
                 else
                 {
@@ -577,14 +577,14 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
             int32 X = (int32)glm::floor(Pos.x);
             int32 Y = (int32)GameState->CurrentLevel.Tilemap.Height - (int32)glm::floor(Pos.y);
             GameState->EditorState.TileX = (real32)X;
-            GameState->EditorState.TileY = (real32)glm::floor(Pos.y);
+            GameState->EditorState.TileY = (real32)glm::ceil(Pos.y);
             
             if(GetMouseButton(Mouse_Left, GameState))
             {
                 if(GameState->InputController.MouseX >= GameState->EditorState.ToolbarX)
                 {
-                    uint32 Selected = (uint32)(GameState->InputController.MouseY / 65.0f);
-                    GameState->EditorState.SelectedTileType = (Tile_Type)Selected;
+                    uint32 Selected = (uint32)((GameState->RenderState.WindowHeight - GameState->InputController.MouseY) / 60.0f);
+                    GameState->EditorState.SelectedTileType = Selected;
                 }
                 
                 else

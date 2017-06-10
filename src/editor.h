@@ -22,7 +22,7 @@ struct editor_state
     Editor_Placement_Mode PlacementMode = Editor_Placement_Tile;
     
     entity* SelectedEntity;
-    Tile_Type SelectedTileType = Tile_Grass;
+    uint32 SelectedTileType = 1;
     
     real32 LastKnownMouseX;
     real32 LastKnownMouseY;

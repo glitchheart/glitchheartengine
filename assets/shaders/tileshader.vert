@@ -1,6 +1,9 @@
 #version 150
 uniform mat4 Projection;
 uniform mat4 View;
+uniform mat4 Model;
+uniform float isUI;
+uniform float Scale;
 
 in vec2 pos;
 in vec2 texcoord;
@@ -9,12 +12,10 @@ out vec2 Texcoord;
 
 void main()
 {
-	//float OffsetX = 1.0 / sheetSize.x * textureOffset.x;
-	//float RelativeTexCoordX = texcoord.x * 32.0 / sheetSize.x;
-
-//	float OffsetY = 1.0 / sheetSize.y * textureOffset.y;
-	//float RelativeTexCoordY = texcoord.y * 32.0 / sheetSize.y;
-
 	Texcoord = vec2(texcoord.x, texcoord.y);
-	gl_Position = Projection * View * vec4(pos.xy, 0.0, 1.0);
+	
+	if(isUI == 1)
+		gl_Position = Model * vec4(pos.xy, 0.0, 1.0);
+	else
+		gl_Position = Projection * View * vec4(pos.xy, 0.0, 1.0);
 }

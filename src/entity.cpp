@@ -233,7 +233,6 @@ static void SpawnBarrel(game_state* GameState, glm::vec2 Position)
     CollisionAABB.Extents = glm::vec2(0.5f,0.5f);
     CollisionAABB.Center = glm::vec2(Barrel->Position.x + Barrel->Center.x * Barrel->Scale.x,
                                      Barrel->Position.y + Barrel->Center.y * Barrel->Scale.y);
-    //CollisionAABB.Center = glm::vec2(0.5f,0.5f);
     CollisionAABB.IsTrigger = true;
     Barrel->CollisionAABB = CollisionAABB;
     

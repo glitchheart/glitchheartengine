@@ -4,7 +4,7 @@
 static char* Zoom(game_state* GameState, char** Arguments)
 {
     real32 ZoomAmount = (real32) strtod(Arguments[0], NULL);
-    GameState->Camera.Zoom = ZoomAmount;
+    GameState->GameCamera.Zoom = ZoomAmount;
     return Concat("Zoom set to ", Arguments[0]);
 }
 
@@ -25,7 +25,6 @@ static char* LoadLevel(game_state* GameState, char** Arguments)
     
     if(Arguments)
     {
-        printf("Ready to load level\n");
         level Level;
         
         char* PathPrefix = "../assets/levels/";

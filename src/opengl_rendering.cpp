@@ -229,33 +229,35 @@ static void LoadTilemapBuffer(render_state* RenderState, tilemap_render_info& Ti
     real32 Width = (real32)Tilemap.RenderEntity.Texture->Width;
     real32 Height = (real32)Tilemap.RenderEntity.Texture->Height;
     
-    real32 SheetWidth = (real32)Tilemap.TileSize / Width;
-    real32 SheetHeight = (real32)Tilemap.TileSize / Height;
-    
     for(uint32 X = 0; X < Tilemap.Width; X++)
     {
         for(uint32 Y = 0; Y < Tilemap.Height; Y++)
         {
             tile_data* Tile = &Tilemap.Data[X][Y];
-            if(Tile->Type != Tile_None)
+            if(Tile->TypeIndex != 0)
             {
+                real32 TexCoordX = (Tile->TextureOffset.x) / Width;
+                real32 TexCoordY = (Tile->TextureOffset.y) / Height; 
+                real32 TexCoordXHigh = (Tile->TextureOffset.x + Tilemap.TileSize) / Width;
+                real32 TexCoordYHigh = (Tile->TextureOffset.y + Tilemap.TileSize) / Height; 
+                
                 real32 CorrectY = (real32)Tilemap.Height - Y;
                 VertexBuffer[Current++] = (GLfloat)X;
                 VertexBuffer[Current++] = (GLfloat)CorrectY + 1.0f;
-                VertexBuffer[Current++] = (GLfloat)1.0f / Width * Tile->TextureOffset.x + 0.0625f * SheetWidth;
-                VertexBuffer[Current++] =  (GLfloat)1.0f / Height * Tile->TextureOffset.y + 0.9375f * SheetHeight;
+                VertexBuffer[Current++] = (GLfloat)TexCoordX;
+                VertexBuffer[Current++] =  (GLfloat)TexCoordY;
                 VertexBuffer[Current++] = (GLfloat)X + 1;
                 VertexBuffer[Current++] = (GLfloat)CorrectY + 1;
-                VertexBuffer[Current++] = (GLfloat)1.0f / Width * Tile->TextureOffset.x + 0.9375f * SheetWidth;
-                VertexBuffer[Current++] =  (GLfloat)1.0f / Height * Tile->TextureOffset.y + 0.9375f * SheetHeight;
+                VertexBuffer[Current++] = (GLfloat)TexCoordXHigh;
+                VertexBuffer[Current++] =  (GLfloat)TexCoordY;
                 VertexBuffer[Current++] = (GLfloat)X + 1;
                 VertexBuffer[Current++] = (GLfloat)CorrectY;
-                VertexBuffer[Current++] = (GLfloat)1.0f / Width * Tile->TextureOffset.x + 0.9375f * SheetWidth;
-                VertexBuffer[Current++] = (GLfloat)1.0f / Height * Tile->TextureOffset.y + 0.0625f * SheetHeight;
+                VertexBuffer[Current++] = (GLfloat)TexCoordXHigh;
+                VertexBuffer[Current++] = (GLfloat)TexCoordYHigh;
                 VertexBuffer[Current++] = (GLfloat)X;
                 VertexBuffer[Current++] = (GLfloat)CorrectY;
-                VertexBuffer[Current++] =(GLfloat)1.0f / Width *Tile->TextureOffset.x + 0.0625f * SheetWidth;
-                VertexBuffer[Current++] = (GLfloat)1.0f / Height * Tile->TextureOffset.y + 0.0625f * SheetHeight;
+                VertexBuffer[Current++] =(GLfloat)TexCoordX;
+                VertexBuffer[Current++] = (GLfloat)TexCoordYHigh;
             }
         }
     }
@@ -286,7 +288,71 @@ static void LoadTilemapBuffer(render_state* RenderState, tilemap_render_info& Ti
     free(VertexBuffer);
 }
 
-static void CreateTilemapVAO(render_state* RenderState, const tilemap& Tilemap, tilemap_render_info* TilemapRenderInfo)
+
+static void LoadEditorTileBuffer(render_state* RenderState, editor_render_info& EditorRenderInfo, const tilemap& Tilemap)
+{
+    GLfloat* VertexBuffer = (GLfloat*)malloc(sizeof(GLfloat) * 16 * Tilemap.TileCount);
+    
+    int32 Current = 0;
+    
+    real32 Width = (real32)Tilemap.RenderEntity.Texture->Width;
+    real32 Height = (real32)Tilemap.RenderEntity.Texture->Height;
+    
+    for(uint32 Index = 0; Index < Tilemap.TileCount; Index++)
+    {
+        tile_data* Tile = &Tilemap.Tiles[Index];
+        
+        real32 TexCoordX = (Tile->TextureOffset.x) / Width;
+        real32 TexCoordY = (Tile->TextureOffset.y) / Height; 
+        real32 TexCoordXHigh = (Tile->TextureOffset.x + Tilemap.TileSize) / Width;
+        real32 TexCoordYHigh = (Tile->TextureOffset.y + Tilemap.TileSize) / Height; 
+        
+        real32 CorrectY = (real32)Tilemap.Height - Index;
+        VertexBuffer[Current++] = (GLfloat)0;
+        VertexBuffer[Current++] = (GLfloat)Index + 1.0f;
+        VertexBuffer[Current++] = (GLfloat)TexCoordX;
+        VertexBuffer[Current++] =  (GLfloat)TexCoordY;
+        VertexBuffer[Current++] = (GLfloat)1;
+        VertexBuffer[Current++] = (GLfloat)Index + 1;
+        VertexBuffer[Current++] = (GLfloat)TexCoordXHigh;
+        VertexBuffer[Current++] =  (GLfloat)TexCoordY;
+        VertexBuffer[Current++] = (GLfloat)1;
+        VertexBuffer[Current++] = (GLfloat)Index;
+        VertexBuffer[Current++] = (GLfloat)TexCoordXHigh;
+        VertexBuffer[Current++] = (GLfloat)TexCoordYHigh;
+        VertexBuffer[Current++] = (GLfloat)0;
+        VertexBuffer[Current++] = (GLfloat)Index;
+        VertexBuffer[Current++] =(GLfloat)TexCoordX;
+        VertexBuffer[Current++] = (GLfloat)TexCoordYHigh;
+    }
+    
+    EditorRenderInfo.VBOSize = Current;
+    
+    if(EditorRenderInfo.VBO == 0)
+        glGenBuffers(1, &EditorRenderInfo.VBO);
+    
+    glBindBuffer(GL_ARRAY_BUFFER, EditorRenderInfo.VBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * EditorRenderInfo.VBOSize, VertexBuffer, GL_STATIC_DRAW);
+    
+    if(RenderState->TileShader.Type != Shader_Tile)
+    {
+        RenderState->TileShader.Type = Shader_Tile;
+        LoadShader(ShaderPaths[Shader_Tile], &RenderState->TileShader);
+    }
+    
+    auto PositionLocation = glGetAttribLocation(RenderState->TileShader.Program, "pos");
+    auto TexcoordLocation = glGetAttribLocation(RenderState->TileShader.Program, "texcoord");
+    
+    glEnableVertexAttribArray(PositionLocation);
+    glVertexAttribPointer(PositionLocation, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
+    glEnableVertexAttribArray(TexcoordLocation);
+    glVertexAttribPointer(TexcoordLocation, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *)(2 * sizeof(float)));
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    EditorRenderInfo.Dirty = false;
+    free(VertexBuffer);
+}
+
+static void CreateTilemapVAO(render_state* RenderState, const tilemap& Tilemap, editor_render_info* EditorRenderInfo, tilemap_render_info* TilemapRenderInfo)
 {
     //tile
     glGenVertexArrays(1, &TilemapRenderInfo->VAO);
@@ -296,6 +362,12 @@ static void CreateTilemapVAO(render_state* RenderState, const tilemap& Tilemap, 
     LoadTilemapBuffer(RenderState, *TilemapRenderInfo, Tilemap);
     
     glBindVertexArray(0);
+    
+    glGenVertexArrays(1, &EditorRenderInfo->VAO);
+    glBindVertexArray(EditorRenderInfo->VAO);
+    
+    EditorRenderInfo->VBO = 0;
+    LoadEditorTileBuffer(RenderState, *EditorRenderInfo, Tilemap);
 }
 
 
@@ -678,22 +750,22 @@ static void ReloadAssets(asset_manager *AssetManager, game_state* GameState)
     }*/
 }
 
-static void SetFloatAttribute(GLuint ShaderHandle, const char* UniformName, real32 Value)
+static void SetFloatUniform(GLuint ShaderHandle, const char* UniformName, real32 Value)
 {
     glUniform1f(glGetUniformLocation(ShaderHandle, UniformName), Value);
 }
 
-static void SetVec2Attribute(GLuint ShaderHandle, const char *UniformName, glm::vec2 Value)
+static void SetVec2Uniform(GLuint ShaderHandle, const char *UniformName, glm::vec2 Value)
 {
     glUniform2f(glGetUniformLocation(ShaderHandle, UniformName), Value.x, Value.y);
 }
 
-static void SetVec3Attribute(GLuint ShaderHandle, const char *UniformName, glm::vec3 Value)
+static void SetVec3Uniform(GLuint ShaderHandle, const char *UniformName, glm::vec3 Value)
 {
     glUniform3f(glGetUniformLocation(ShaderHandle, UniformName), Value.x, Value.y, Value.z);
 }
 
-static void SetVec4Attribute(GLuint ShaderHandle, const char *UniformName, glm::vec4 Value)
+static void SetVec4Uniform(GLuint ShaderHandle, const char *UniformName, glm::vec4 Value)
 {
     glUniform4f(glGetUniformLocation(ShaderHandle, UniformName), Value.x, Value.y, Value.z, Value.w);
 }
@@ -712,6 +784,7 @@ static void RenderRect(Render_Mode Mode, game_state* GameState, glm::vec4 Color,
     X -= 1;
     Y *= RenderState->ScaleY;
     Y -= 1;
+    
     Width *= RenderState->ScaleX;
     Height *= RenderState->ScaleY;
     
@@ -739,7 +812,7 @@ static void RenderRect(Render_Mode Mode, game_state* GameState, glm::vec4 Color,
             Model = glm::scale(Model, glm::vec3(Width, Height, 1));
             
             SetMat4Uniform(Shader.Program, "M", Model);
-            SetVec4Attribute(Shader.Program, "color", Color);
+            SetVec4Uniform(Shader.Program, "color", Color);
             
             glDrawArrays(GL_QUADS, 0, 4);
         }
@@ -758,7 +831,7 @@ static void RenderRect(Render_Mode Mode, game_state* GameState, glm::vec4 Color,
             SetMat4Uniform(Shader.Program, "Model", Model);
             SetMat4Uniform(Shader.Program, "Projection", GameState->Camera.ProjectionMatrix);
             SetMat4Uniform(Shader.Program, "View", GameState->Camera.ViewMatrix);
-            SetVec4Attribute(Shader.Program, "color", Color);
+            SetVec4Uniform(Shader.Program, "color", Color);
             
             glDrawArrays(GL_LINE_STRIP, 0, 6);
             glBindVertexArray(0);
@@ -815,8 +888,8 @@ static void RenderText(render_state* RenderState, const render_font& Font, const
     glBindVertexArray(Font.VAO);
     auto Shader = RenderState->Shaders[Shader_StandardFont];
     UseShader(&Shader);
-    SetVec4Attribute(Shader.Program, "color", Color);
-    SetVec4Attribute(Shader.Program, "alphaColor", Font.AlphaColor);
+    SetVec4Uniform(Shader.Program, "color", Color);
+    SetVec4Uniform(Shader.Program, "alphaColor", Font.AlphaColor);
     
     if (RenderState->BoundTexture != Font.Texture) //never bind the same texture if it's already bound
     {
@@ -944,7 +1017,7 @@ static void RenderColliderWireframe(render_state* RenderState, entity* Entity, g
             color = glm::vec4(0.0,1.0,0.0,1.0);
         }
         
-        SetVec4Attribute(Shader.Program, "color", color);
+        SetVec4Uniform(Shader.Program, "color", color);
         
         glDrawArrays(GL_LINE_STRIP, 0, 6);
         glBindVertexArray(0);
@@ -975,7 +1048,7 @@ static void RenderColliderWireframe(render_state* RenderState, entity* Entity, g
                 color = glm::vec4(0.0,1.0,0.0,1.0);
             }
             
-            SetVec4Attribute(Shader.Program, "color", color);
+            SetVec4Uniform(Shader.Program, "color", color);
             
             glDrawArrays(GL_LINE_STRIP, 0, 6);
             glBindVertexArray(0);
@@ -1003,7 +1076,7 @@ static void RenderWireframe(render_state* RenderState, entity* Entity, glm::mat4
         SetMat4Uniform(Shader.Program, "Model", Model);
         glm::vec4 color(0.0,1.0,0.0,1.0);
         
-        SetVec4Attribute(Shader.Program, "color", color);
+        SetVec4Uniform(Shader.Program, "color", color);
         
         glDrawArrays(GL_LINE_STRIP, 0, 6);
         glBindVertexArray(0);
@@ -1038,7 +1111,7 @@ static void RenderAStarPath(render_state* RenderState, entity* Entity, glm::mat4
                 color = glm::vec4(0.0, 0.0, 1.0, 0.4);
             }
             
-            SetVec4Attribute(Shader.Program, "color", color);
+            SetVec4Uniform(Shader.Program, "color", color);
             glDrawArrays(GL_QUADS, 0, 6);
             
         }
@@ -1074,7 +1147,7 @@ static void RenderUISprite(render_state* RenderState, uint32 TextureHandle, glm:
     Model = glm::scale(Model, Scale);
     
     SetMat4Uniform(Shader.Program, "M", Model);
-    SetVec4Attribute(Shader.Program, "color", glm::vec4(1, 1, 1, 1)); 
+    SetVec4Uniform(Shader.Program, "color", glm::vec4(1, 1, 1, 1)); 
     
     glDrawArrays(GL_QUADS, 0, 4);
     glBindVertexArray(0);
@@ -1136,10 +1209,10 @@ static void RenderEntity(render_state *RenderState, entity &Entity, glm::mat4 Pr
             }
             UseShader(&Shader);
             auto Frame = Animation->Frames[Entity.AnimationInfo.FrameIndex];
-            SetVec2Attribute(Shader.Program,"textureOffset", glm::vec2(Frame.X,Frame.Y));
-            SetVec4Attribute(Shader.Program, "color", RenderEntity->Color);
-            SetVec2Attribute(Shader.Program,"sheetSize",
-                             glm::vec2(Animation->Columns, Animation->Rows));
+            SetVec2Uniform(Shader.Program,"textureOffset", glm::vec2(Frame.X,Frame.Y));
+            SetVec4Uniform(Shader.Program, "color", RenderEntity->Color);
+            SetVec2Uniform(Shader.Program,"sheetSize",
+                           glm::vec2(Animation->Columns, Animation->Rows));
         } 
         else 
         {
@@ -1177,62 +1250,24 @@ static void RenderEntity(render_state *RenderState, entity &Entity, glm::mat4 Pr
         RenderAStarPath(RenderState,&Entity,ProjectionMatrix,View);
 }
 
-static void RenderRoom(render_state* RenderState, const room& Room, glm::mat4 ProjectionMatrix, glm::mat4 View, int StartX, int StartY, int EndX, int EndY)
+static void RenderTile(render_state* RenderState, uint32 X, uint32 Y, glm::vec2 TextureOffset, glm::vec2 SheetSize, glm::vec4 Color,  glm::mat4 ProjectionMatrix, glm::mat4 View)
 {
-    glBindVertexArray(RenderState->TileVAO);
-    
-    if (RenderState->BoundTexture != Room.RenderEntity.Texture->TextureHandle) //never bind the same texture if it's already bound
-    {
-        glBindTexture(GL_TEXTURE_2D, Room.RenderEntity.Texture->TextureHandle);
-        RenderState->BoundTexture = Room.RenderEntity.Texture->TextureHandle;
-    }
-    
-    auto Shader = RenderState->Shaders[Room.RenderEntity.ShaderIndex];
-    UseShader(&Shader);
-    
-    real32 Scale = 1.0f;
-    
-    for (uint32 i = 0; i < Room.Width; i++)
-    {
-        for (uint32 j = 0; j < Room.Height; j++)
-        {
-            if(Room.Data[i][j].Type != Tile_None)
-            {
-                glm::mat4 Model(1.0f);
-                Model = glm::translate(Model, glm::vec3(i * Scale, j * Scale, 0.0f));
-                Model = glm::scale(Model, glm::vec3(Scale, Scale, 1.0f));
-                
-                SetVec2Attribute(Shader.Program, "textureOffset", Room.Data[i][j].TextureOffset);
-                
-                SetMat4Uniform(Shader.Program, "Projection", ProjectionMatrix);
-                SetMat4Uniform(Shader.Program, "View", View);
-                SetMat4Uniform(Shader.Program, "Model", Model);
-                glDrawArrays(GL_QUADS, 0, 4);
-            }
-        }
-    }
-    
-    glBindVertexArray(0);
-}
-
-static void RenderTile(render_state* RenderState, uint32 X, uint32 Y, uint32 TextureHandle, glm::vec4 Color,  glm::mat4 ProjectionMatrix, glm::mat4 View)
-{
-    glBindVertexArray(RenderState->SpriteVAO);
-    auto Shader = RenderState->TextureShader;
+    glBindVertexArray(RenderState->SpriteSheetVAO);
     glm::mat4 Model(1.0f);
     Model = glm::translate(Model, glm::vec3(X, Y, 0.0f));
-    Model = glm::scale(Model, glm::vec3(1, 1, 1));
+    Model = glm::scale(Model, glm::vec3(1, -1, 1));
     
-    glBindTexture(GL_TEXTURE_2D, TextureHandle);
+    glBindTexture(GL_TEXTURE_2D, RenderState->TileTexture.TextureHandle);
     
+    shader Shader = RenderState->SpriteSheetShader;
     UseShader(&Shader);
     
     SetMat4Uniform(Shader.Program, "Projection", ProjectionMatrix);
     SetMat4Uniform(Shader.Program, "View", View);
     SetMat4Uniform(Shader.Program, "Model", Model);
-    SetVec4Attribute(Shader.Program, "Color", Color);
-    
-    glBindBuffer(GL_ARRAY_BUFFER, RenderState->SpriteQuadVBO);
+    SetVec4Uniform(Shader.Program, "color", Color);
+    SetVec2Uniform(Shader.Program, "textureOffset", TextureOffset);
+    SetVec2Uniform(Shader.Program, "sheetSize", SheetSize);
     glDrawArrays(GL_QUADS, 0, 4);
     glBindVertexArray(0);
 }
@@ -1253,6 +1288,7 @@ static void NEW_RenderTilemap(render_state* RenderState, const tilemap& Tilemap,
     glm::mat4 Model(1.0f);
     Model = glm::scale(Model, glm::vec3(1, 1, 1.0f));
     
+    SetFloatUniform(Shader.Program, "isUI", 0);
     SetMat4Uniform(Shader.Program, "Projection", ProjectionMatrix);
     SetMat4Uniform(Shader.Program, "View", View);
     SetMat4Uniform(Shader.Program, "Model", Model);
@@ -1261,43 +1297,31 @@ static void NEW_RenderTilemap(render_state* RenderState, const tilemap& Tilemap,
     glBindVertexArray(0);
 }
 
-static void RenderTilemap(render_state* RenderState, const tilemap& Tilemap, glm::mat4 ProjectionMatrix, glm::mat4 View)
+static void EditorRenderTilemap(glm::vec2 ScreenPosition, real32 Size, render_state* RenderState, const tilemap& Tilemap)
 {
-    glBindVertexArray(RenderState->TileVAO);
+    real32 X = ScreenPosition.x * RenderState->ScaleX;
+    X -= 1;
+    real32 Y = ScreenPosition.y * RenderState->ScaleY;
+    Y -= 1;
     
-    if (RenderState->BoundTexture != Tilemap.RenderEntity.Texture->TextureHandle) //never bind the same texture if it's already bound
+    glBindVertexArray(Tilemap.EditorRenderInfo.VAO);
+    
+    if (RenderState->BoundTexture != Tilemap.RenderEntity.Texture->TextureHandle)
     {
         glBindTexture(GL_TEXTURE_2D, Tilemap.RenderEntity.Texture->TextureHandle);
         RenderState->BoundTexture = Tilemap.RenderEntity.Texture->TextureHandle;
     }
     
-    auto Shader = RenderState->Shaders[Tilemap.RenderEntity.ShaderIndex];
+    auto Shader = RenderState->TileShader;
     UseShader(&Shader);
     
-    real32 Scale = 1.0f;
+    glm::mat4 Model(1.0f);
+    Model = glm::translate(Model, glm::vec3(X, Y, 0));
+    Model = glm::scale(Model, glm::vec3(Size * RenderState->ScaleX, Size * RenderState->ScaleY, 0.1));
+    SetFloatUniform(Shader.Program, "isUI", 1);
+    SetMat4Uniform(Shader.Program, "Model", Model);
     
-    for (uint32 i = 0; i < Tilemap.Width; i++)
-    {
-        for (uint32 j = 0; j < Tilemap.Height; j++)
-        {
-            if(Tilemap.Data[i][j].Type != Tile_None)
-            {
-                glm::mat4 Model(1.0f);
-                Model = glm::translate(Model, glm::vec3(i * Scale, (Tilemap.Height - j) * Scale, 0.0f));
-                Model = glm::scale(Model, glm::vec3(Scale, Scale, 1.0f));
-                
-                SetVec2Attribute(Shader.Program, "textureOffset", Tilemap.Data[i][j].TextureOffset);
-                SetVec2Attribute(Shader.Program, "sheetSize", glm::vec2(Tilemap.RenderEntity.Texture->Width, Tilemap.RenderEntity.Texture->Height));
-                
-                SetMat4Uniform(Shader.Program, "Projection", ProjectionMatrix);
-                SetMat4Uniform(Shader.Program, "View", View);
-                SetMat4Uniform(Shader.Program, "Model", Model);
-                
-                glDrawArrays(GL_QUADS, 0, 4);
-            }
-        }
-    }
-    
+    glDrawArrays(GL_QUADS, 0, Tilemap.EditorRenderInfo.VBOSize / 4);
     glBindVertexArray(0);
 }
 
@@ -1374,59 +1398,23 @@ static void RenderGame(game_state* GameState)
             if(GameState->EditorState.SelectedEntity)
                 RenderWireframe(&GameState->RenderState, GameState->EditorState.SelectedEntity, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
             
-            uint32 SelectedTextureHandle = 0;
-            
-            switch(GameState->EditorState.SelectedTileType)
-            {
-                case Tile_None:
-                SelectedTextureHandle = GameState->RenderState.EmptyTileTexture.TextureHandle;
-                break;
-                case Tile_Sand:
-                SelectedTextureHandle = GameState->RenderState.SandTileTexture.TextureHandle;
-                break;
-                case Tile_Grass:
-                SelectedTextureHandle = GameState->RenderState.GrassTileTexture.TextureHandle;
-                break;
-                case Tile_Stone:
-                SelectedTextureHandle = GameState->RenderState.StoneTileTexture.TextureHandle;
-                break;
-            }
+            glm::vec2 TextureOffset = GameState->CurrentLevel.Tilemap.Tiles[GameState->EditorState.SelectedTileType].TextureOffset;
+            TextureOffset = glm::vec2(TextureOffset.x / (real32)GameState->CurrentLevel.Tilemap.RenderEntity.Texture->Width, TextureOffset.y / (real32)GameState->CurrentLevel.Tilemap.RenderEntity.Texture->Height);
             
             if(GameState->EditorState.TileX >= 0 && GameState->EditorState.TileX < GameState->CurrentLevel.Tilemap.Width && GameState->EditorState.TileY > 0 && GameState->EditorState.TileY <= GameState->CurrentLevel.Tilemap.Height)
             {
-                RenderTile(&GameState->RenderState, (uint32)GameState->EditorState.TileX, (uint32)GameState->EditorState.TileY, SelectedTextureHandle, glm::vec4(1, 1, 1, 1),  GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
+                glm::vec2 SheetSize(5, 1);
+                RenderTile(&GameState->RenderState, (uint32)GameState->EditorState.TileX, (uint32)GameState->EditorState.TileY, TextureOffset, SheetSize, glm::vec4(1, 1, 1, 1),  GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
             }
             
             RenderRect(Render_Fill, GameState, glm::vec4(0, 0, 0, 1), GameState->EditorState.ToolbarX, GameState->EditorState.ToolbarY, GameState->EditorState.ToolbarWidth, GameState->EditorState.ToolbarHeight);
             
-            for(uint32 TileIndex = 0; TileIndex < Tile_Count; TileIndex++)
-            {
-                uint32 TextureHandle = 0;
-                
-                switch(TileIndex)
-                {
-                    case Tile_None:
-                    TextureHandle = GameState->RenderState.EmptyTileTexture.TextureHandle;
-                    break;
-                    case Tile_Sand:
-                    TextureHandle = GameState->RenderState.SandTileTexture.TextureHandle;
-                    break;
-                    case Tile_Grass:
-                    TextureHandle = GameState->RenderState.GrassTileTexture.TextureHandle;
-                    break;
-                    //case Tile_DarkGrass: //@Incomplete
-                    //break;
-                    case Tile_Stone:
-                    TextureHandle = GameState->RenderState.StoneTileTexture.TextureHandle;
-                    break;
-                }
-                
-                RenderRect(Render_Fill, GameState, glm::vec4(1, 1, 1, 1), (real32)GameState->RenderState.WindowWidth - 80,
-                           (real32)GameState->RenderState.WindowHeight - (TileIndex + 1) * 65, 60, 60, TextureHandle);
-                if(TileIndex == (uint32)GameState->EditorState.SelectedTileType)
-                    RenderRect(Render_Fill, GameState, glm::vec4(1, 0, 0, 1), (real32)GameState->RenderState.WindowWidth - 80,
-                               (real32)GameState->RenderState.WindowHeight - (TileIndex + 1) * 65, 60, 60, GameState->RenderState.SelectedTileTexture.TextureHandle);
-            }
+            EditorRenderTilemap(glm::vec2((real32)GameState->RenderState.WindowWidth - 80, 5), 60, &GameState->RenderState, GameState->CurrentLevel.Tilemap);
+            
+            printf("SELECTED TILE %d\n", GameState->EditorState.SelectedTileType);
+            RenderRect(Render_Fill, GameState, glm::vec4(1, 0, 0, 1), (real32)GameState->RenderState.WindowWidth - 80,
+                       GameState->EditorState.SelectedTileType * 60 + 5, 60, 60, GameState->RenderState.SelectedTileTexture.TextureHandle);
+            
             
             RenderText(&GameState->RenderState, GameState->RenderState.MenuFont, glm::vec4(1, 1, 1, 1), "Editor", (real32)GameState->RenderState.WindowWidth / 2, (real32)GameState->RenderState.WindowHeight - 100, 1, Alignment_Center);
             
@@ -1521,7 +1509,8 @@ static void CheckLevelVAO(game_state* GameState)
 {
     if(GameState->CurrentLevel.Tilemap.RenderInfo.VAO == 0)
     {
-        CreateTilemapVAO(&GameState->RenderState, GameState->CurrentLevel.Tilemap, &GameState->CurrentLevel.Tilemap.RenderInfo);
+        CreateTilemapVAO(&GameState->RenderState, GameState->CurrentLevel.Tilemap,
+                         &GameState->CurrentLevel.Tilemap.EditorRenderInfo, &GameState->CurrentLevel.Tilemap.RenderInfo);
     }
 }
 
@@ -1552,7 +1541,6 @@ static void Render(game_state* GameState)
     
     if(GameState->Console.CurrentTime > 0)
         RenderConsole(GameState, &GameState->Console);
-    
     
     if(GameState->RenderState.RenderFPS)
     {
