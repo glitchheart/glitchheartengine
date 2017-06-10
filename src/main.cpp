@@ -101,6 +101,7 @@ int main(void)
     
     render_state RenderState;
     InitializeOpenGL(&GameState, &RenderState, &ConfigData);
+    LoadTilesheetTextures(&GameState, &RenderState);
     GameState.RenderState = RenderState;
     
     game_code Game = LoadGameCode();

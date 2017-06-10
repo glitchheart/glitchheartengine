@@ -583,7 +583,7 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
             {
                 if(GameState->InputController.MouseX >= GameState->EditorState.ToolbarX)
                 {
-                    uint32 Selected = (uint32)((GameState->RenderState.WindowHeight - GameState->InputController.MouseY) / 60.0f);
+                    uint32 Selected = (uint32)((GameState->RenderState.WindowHeight - GameState->InputController.MouseY + abs(GameState->EditorState.ToolbarScrollOffsetY)) / 60.0f);
                     GameState->EditorState.SelectedTileType = Selected;
                 }
                 
@@ -631,9 +631,20 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
     }
     
     // View translation
-    
-    GameState->EditorCamera.Zoom += (real32)GameState->InputController.ScrollY * GameState->EditorState.ZoomingSpeed * (real32)DeltaTime * GameState->EditorCamera.Zoom;
-    GameState->EditorCamera.Zoom = Max(Min(GameState->EditorCamera.Zoom, GameState->EditorState.MaxZoom), GameState->EditorState.MinZoom);
+    if(GameState->InputController.MouseX >= GameState->EditorState.ToolbarX)
+    {
+        GameState->EditorState.ToolbarScrollOffsetY += (real32)GameState->InputController.ScrollY * GameState->EditorState.ToolbarScrollSpeed * (real32)DeltaTime;
+        
+        if(GameState->EditorState.ToolbarScrollOffsetY > 0)
+            GameState->EditorState.ToolbarScrollOffsetY = 0.0f;
+        else if(GameState->EditorState.ToolbarScrollOffsetY < -((real32)GameState->CurrentLevel.Tilemap.TileCount) * 60)
+            GameState->EditorState.ToolbarScrollOffsetY = -((real32)GameState->CurrentLevel.Tilemap.TileCount) * 60;
+    }
+    else
+    {
+        GameState->EditorCamera.Zoom += (real32)GameState->InputController.ScrollY * GameState->EditorState.ZoomingSpeed * (real32)DeltaTime * GameState->EditorCamera.Zoom;
+        GameState->EditorCamera.Zoom = Max(Min(GameState->EditorCamera.Zoom, GameState->EditorState.MaxZoom), GameState->EditorState.MinZoom);
+    }
     
     if(GetMouseButton(Mouse_Right, GameState))
     {
@@ -684,7 +695,7 @@ extern "C" UPDATE(Update)
         {
             LoadAnimations(GameState);
             InitCommands();
-            GameState->LevelPath = "../assets/levels/level_03.plv";
+            GameState->LevelPath = "../assets/levels/level_new.plv";
             
             GameState->EditorCamera.Zoom = 3.0f; // @Cleanup: We might not want to reset these values every time we load a level
             GameState->EditorCamera.ViewportWidth = GameState->RenderState.WindowWidth / 20;
@@ -693,7 +704,6 @@ extern "C" UPDATE(Update)
             GameState->GameMode = Mode_InGame;
         }
         
-        LoadTilesheetMetaFile("../assets/levels/sheet.tm",&GameState->CurrentLevel.Tilemap,GameState);
         LoadLevelFromFile(GameState->LevelPath, &GameState->CurrentLevel, GameState);
         
         GameState->GameCamera.Zoom = 2.0f;

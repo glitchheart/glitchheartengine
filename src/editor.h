@@ -34,6 +34,8 @@ struct editor_state
     real32 TileX;
     real32 TileY;
     
+    real32 ToolbarScrollSpeed = 30000;
+    real32 ToolbarScrollOffsetY = 0.0f;
     real32 ToolbarX;
     real32 ToolbarY;
     real32 ToolbarWidth;
