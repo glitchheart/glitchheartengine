@@ -23,10 +23,8 @@ enum Shader_Type
 
 enum Texture_Type
 {
-    Texture_Tiles,
     Texture_Player,
     Texture_Barrel,
-    Texture_Crosshair,
     Texture_SwordTopRight,
     Texture_SwordSimple,
     Texture_HealthFull,
@@ -34,11 +32,6 @@ enum Texture_Type
     Texture_Health1,
     Texture_HealthEmpty,
     
-    Texture_EmptyTile,
-    Texture_SandTile,
-    Texture_GrassTile,
-    Texture_DarkGrassTile,
-    Texture_StoneTile,
     Texture_SelectedTile,
     
     Texture_Count
@@ -78,6 +71,11 @@ struct texture
     int32 Height;
 };
 
+struct tilesheet
+{
+    char* Name;
+    texture Texture;
+};
 
 struct ui_render_info
 {
@@ -255,6 +253,9 @@ struct render_state
     GLuint TextureRectVAO;
     GLuint NormalQuadVBO;
     
+    tilesheet* Tilesheets;
+    uint32 TilesheetCount;
+    
     union 
     {
         shader Shaders[Shader_Count];
@@ -279,10 +280,8 @@ struct render_state
         texture Textures[Texture_Count];
         struct
         {
-            texture TileTexture;
             texture PlayerTexture;
             texture BarrelTexture;
-            texture CrosshairTexture;
             texture SwordTopRightTexture;
             texture SwordSimpleTexture;
             
@@ -291,11 +290,6 @@ struct render_state
             texture Health1Texture;
             texture HealthEmptyTexture;
             
-            texture EmptyTileTexture;
-            texture SandTileTexture;
-            texture GrassTileTexture;
-            texture DarkGrassTileTexture;
-            texture StoneTileTexture;
             texture SelectedTileTexture;
         };
     };
@@ -303,10 +297,8 @@ struct render_state
     
     char* TexturePaths[Texture_Count] =
     {
-        "../assets/textures/tiles.png",
         "../assets/textures/spritesheets/new_player.png",
         "../assets/textures/barrel.png",
-        "../assets/textures/crosshair.png",
         "../assets/textures/spritesheets/sword_attack_top_right.png",
         "../assets/textures/spritesheets/sword_simple.png",
         
@@ -314,12 +306,6 @@ struct render_state
         "../assets/textures/spritesheets/health_2.png",
         "../assets/textures/spritesheets/health_1.png",
         "../assets/textures/spritesheets/health_empty.png",
-        
-        "../assets/textures/tile_empty.png",
-        "../assets/textures/tiles_1.png",
-        "../assets/textures/tiles_2.png",
-        "../assets/textures/tiles_3.png",
-        "../assets/textures/tiles_4.png",
         "../assets/textures/selected_tile.png"
     };
     

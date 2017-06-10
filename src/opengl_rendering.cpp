@@ -626,8 +626,44 @@ static void LoadTextures(render_state* RenderState)
     for(uint32 TextureIndex = 0; TextureIndex < Texture_Count; TextureIndex++)
     {
         texture Texture = {};
-        LoadTexture(RenderState->TexturePaths[TextureIndex],&Texture);
+        LoadTexture(RenderState->TexturePaths[TextureIndex], &Texture);
         RenderState->Textures[TextureIndex] = Texture;
+    }
+}
+
+static void LoadTilesheetTextures(game_state* GameState, render_state* RenderState)
+{
+    char* TempNames[30];
+    
+    FILE* File;
+    File = fopen("../assets/textures/tilesheets/.tilesheets", "r");
+    char LineBuffer[255];
+    
+    if(File)
+    {
+        uint32 Index = 0;
+        
+        while(fgets(LineBuffer, 255, File))
+        {
+            TempNames[Index] = (char*)malloc(sizeof(char) * 20);
+            sscanf(LineBuffer, "%s", TempNames[Index++]);
+        }
+        
+        fclose(File);
+        
+        RenderState->TilesheetCount = Index;
+        RenderState->Tilesheets = (tilesheet*)malloc(sizeof(tilesheet) * Index);
+        
+        for(uint32 I = 0; I < Index; I++)
+        {
+            RenderState->Tilesheets[I] = {};
+            RenderState->Tilesheets[I].Name = (char*)malloc(sizeof(char) * 20);
+            
+            strcpy(RenderState->Tilesheets[I].Name, TempNames[I]);
+            LoadTexture(Concat(Concat("../assets/textures/tilesheets/", TempNames[I]), ".png"), &RenderState->Tilesheets[I].Texture);
+            free(TempNames[I]);
+        }
+        
     }
 }
 
@@ -671,7 +707,6 @@ static void InitializeOpenGL(game_state* GameState, render_state* RenderState, c
     glfwSetCursorPosCallback(RenderState->Window, CursorPositionCallback);
     glfwSetMouseButtonCallback(RenderState->Window, MouseButtonCallback);
     glfwSetScrollCallback(RenderState->Window, ScrollCallback);
-    //glfwSetInputMode(RenderState->Window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     
     GLint Viewport[4];
     glGetIntegerv(GL_VIEWPORT, Viewport);
@@ -694,7 +729,7 @@ static void InitializeOpenGL(game_state* GameState, render_state* RenderState, c
         
         printf("type %d\n", GameState->InputController.ControllerType);
     }
-    LoadTilesheetPath("../assets/levels/sheet.tm",RenderState);
+    
     LoadTextures(RenderState);
     RenderSetup(RenderState);
     
@@ -705,7 +740,7 @@ static void InitializeOpenGL(game_state* GameState, render_state* RenderState, c
     
     // @Incomplete: These values need to be updated when the window size is changed
     GameState->EditorState.ToolbarX = (real32)RenderState->WindowWidth - 100;
-    GameState->EditorState.ToolbarY = 0.0f;
+    GameState->EditorState.ToolbarY = 0;
     GameState->EditorState.ToolbarWidth = 100.0f;
     GameState->EditorState.ToolbarHeight = (real32)RenderState->WindowHeight;
 }
@@ -1250,14 +1285,14 @@ static void RenderEntity(render_state *RenderState, entity &Entity, glm::mat4 Pr
         RenderAStarPath(RenderState,&Entity,ProjectionMatrix,View);
 }
 
-static void RenderTile(render_state* RenderState, uint32 X, uint32 Y, glm::vec2 TextureOffset, glm::vec2 SheetSize, glm::vec4 Color,  glm::mat4 ProjectionMatrix, glm::mat4 View)
+static void RenderTile(render_state* RenderState, uint32 X, uint32 Y, uint32 TilesheetIndex, glm::vec2 TextureOffset, glm::vec2 SheetSize, glm::vec4 Color,  glm::mat4 ProjectionMatrix, glm::mat4 View)
 {
     glBindVertexArray(RenderState->SpriteSheetVAO);
     glm::mat4 Model(1.0f);
     Model = glm::translate(Model, glm::vec3(X, Y, 0.0f));
     Model = glm::scale(Model, glm::vec3(1, -1, 1));
     
-    glBindTexture(GL_TEXTURE_2D, RenderState->TileTexture.TextureHandle);
+    glBindTexture(GL_TEXTURE_2D, RenderState->Tilesheets[TilesheetIndex].Texture.TextureHandle);
     
     shader Shader = RenderState->SpriteSheetShader;
     UseShader(&Shader);
@@ -1344,9 +1379,6 @@ static void RenderInGameMode(game_state* GameState)
 {
     NEW_RenderTilemap(&GameState->RenderState, GameState->CurrentLevel.Tilemap, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
     
-    //RenderTilemap(&GameState->RenderState, GameState->CurrentLevel.Tilemap, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
-    
-    //@Fix this is buggy
     qsort(GameState->RenderState.RenderEntities, GameState->RenderState.RenderEntityCount, sizeof(render_entity), CompareFunction);
     
     for(uint32 Index = 0; Index < GameState->RenderState.RenderEntityCount; Index++) 
@@ -1403,17 +1435,19 @@ static void RenderGame(game_state* GameState)
             
             if(GameState->EditorState.TileX >= 0 && GameState->EditorState.TileX < GameState->CurrentLevel.Tilemap.Width && GameState->EditorState.TileY > 0 && GameState->EditorState.TileY <= GameState->CurrentLevel.Tilemap.Height)
             {
-                glm::vec2 SheetSize(5, 1);
-                RenderTile(&GameState->RenderState, (uint32)GameState->EditorState.TileX, (uint32)GameState->EditorState.TileY, TextureOffset, SheetSize, glm::vec4(1, 1, 1, 1),  GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
+                const tilesheet& Tilesheet = GameState->RenderState.Tilesheets[GameState->CurrentLevel.TilesheetIndex];
+                
+                glm::vec2 SheetSize(Tilesheet.Texture.Width / GameState->CurrentLevel.Tilemap.TileSize, Tilesheet.Texture.Height / GameState->CurrentLevel.Tilemap.TileSize);
+                
+                RenderTile(&GameState->RenderState, (uint32)GameState->EditorState.TileX, (uint32)GameState->EditorState.TileY, GameState->CurrentLevel.TilesheetIndex, TextureOffset, SheetSize, glm::vec4(1, 1, 1, 1),  GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
             }
             
             RenderRect(Render_Fill, GameState, glm::vec4(0, 0, 0, 1), GameState->EditorState.ToolbarX, GameState->EditorState.ToolbarY, GameState->EditorState.ToolbarWidth, GameState->EditorState.ToolbarHeight);
             
-            EditorRenderTilemap(glm::vec2((real32)GameState->RenderState.WindowWidth - 80, 5), 60, &GameState->RenderState, GameState->CurrentLevel.Tilemap);
+            EditorRenderTilemap(glm::vec2((real32)GameState->RenderState.WindowWidth - 80, 5 + GameState->EditorState.ToolbarScrollOffsetY), 60, &GameState->RenderState, GameState->CurrentLevel.Tilemap);
             
-            printf("SELECTED TILE %d\n", GameState->EditorState.SelectedTileType);
             RenderRect(Render_Fill, GameState, glm::vec4(1, 0, 0, 1), (real32)GameState->RenderState.WindowWidth - 80,
-                       GameState->EditorState.SelectedTileType * 60 + 5, 60, 60, GameState->RenderState.SelectedTileTexture.TextureHandle);
+                       GameState->EditorState.SelectedTileType * 60 + 5 + GameState->EditorState.ToolbarScrollOffsetY, 60, 60, GameState->RenderState.SelectedTileTexture.TextureHandle);
             
             
             RenderText(&GameState->RenderState, GameState->RenderState.MenuFont, glm::vec4(1, 1, 1, 1), "Editor", (real32)GameState->RenderState.WindowWidth / 2, (real32)GameState->RenderState.WindowHeight - 100, 1, Alignment_Center);
