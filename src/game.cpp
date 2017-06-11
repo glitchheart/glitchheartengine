@@ -689,6 +689,11 @@ extern "C" UPDATE(Update)
         }
     }
     
+    if(GetKeyDown(Key_Enter,GameState))
+    {
+        PlaySoundEffect(GameState, &GameState->SoundManager.Track01);
+    }
+    
     if(!GameState->IsInitialized)
     {
         if(!GameState->ShouldReload)
@@ -729,13 +734,26 @@ extern "C" UPDATE(Update)
     
     if(GetKeyDown(Key_F3, GameState))
     {
-        GameState->SoundManager.Muted = !GameState->SoundManager.Muted;
+        ToggleMuteSound(GameState);
     }
     
     if(GetKeyDown(Key_F4, GameState))
     {
         GameState->RenderState.RenderPaths = !GameState->RenderState.RenderPaths;
     }
+    
+    
+    if(GetKeyDown(Key_F5, GameState))
+    {
+        TogglePauseSound(GameState);
+    }
+    
+    
+    if(GetKeyDown(Key_F6, GameState))
+    {
+        StopSound(GameState);
+    }
+    
     
     if(GameState->GameMode == Mode_InGame && GetKey(Key_LeftCtrl, GameState) && GetKeyDown(Key_P, GameState))
     {

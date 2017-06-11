@@ -1,11 +1,20 @@
 #ifndef PLATFORM_SOUND_H
 #define PLATFORM_SOUND_H
 
+#define SOURCES 64
+#define SOUNDS 64
+
 struct sound_device
 {
     ALCdevice *Device;
     ALCcontext *Context;
     bool32 IsInitialized;
+    ALuint Sources[SOURCES];
+    ALuint Buffers[SOUNDS];
+    uint32 BufferCount;
+    bool32 Muted;
+    bool32 Paused;
+    bool32 Stopped;
 };
 
 struct RIFF_header
