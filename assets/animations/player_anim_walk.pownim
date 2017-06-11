@@ -3,7 +3,7 @@ type sprite
 framecount 2
 framesize 16
 loop 1
-timeperframe 0.05
+timeperframe 0.1
 frames
 144 0
 144 16
