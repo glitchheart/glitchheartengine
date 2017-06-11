@@ -1219,8 +1219,6 @@ static void RenderEntity(render_state *RenderState, entity &Entity, glm::mat4 Pr
                 RenderEntity->Color = glm::vec4(1, 0, 0, 1);
             else if(Entity.Enemy.AIState == AI_Charging)
                 RenderEntity->Color = glm::vec4(0, 0, 1, 1);
-            else
-                RenderEntity->Color = glm::vec4(0, 1, 0, 1); //@Cleanup: This is just placeholder before we get a real enemy sprite that is different from the player
         }
         
         if(Entity.CurrentAnimation) 
@@ -1242,12 +1240,14 @@ static void RenderEntity(render_state *RenderState, entity &Entity, glm::mat4 Pr
             {
                 glBindVertexArray(RenderState->SpriteSheetVAO);
             }
+            
             UseShader(&Shader);
             auto Frame = Animation->Frames[Entity.AnimationInfo.FrameIndex];
-            SetVec2Uniform(Shader.Program,"textureOffset", glm::vec2(Frame.X,Frame.Y));
+            SetVec2Uniform(Shader.Program,"textureOffset", glm::vec2(Frame.X, Frame.Y));
+            SetFloatUniform(Shader.Program, "frameSize", Animation->FrameSize);
             SetVec4Uniform(Shader.Program, "color", RenderEntity->Color);
             SetVec2Uniform(Shader.Program,"sheetSize",
-                           glm::vec2(Animation->Columns, Animation->Rows));
+                           glm::vec2(Animation->Texture->Width, Animation->Texture->Height));
         } 
         else 
         {

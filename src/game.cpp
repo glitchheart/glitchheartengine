@@ -281,16 +281,16 @@ void UpdateEnemy(entity* Entity, game_state* GameState, real64 DeltaTime)
     {
         case AI_Sleeping:
         {
-            PlayAnimation(Entity, &GameState->PlayerIdleAnimation);
+            PlayAnimation(Entity, &GameState->EnemyIdleAnimation);
         }
         break;
         case AI_Idle:
         {
-            PlayAnimation(Entity, &GameState->PlayerIdleAnimation);
+            PlayAnimation(Entity, &GameState->EnemyIdleAnimation);
             if(DistanceToPlayer <= Entity->Enemy.MaxAlertDistance)
             {
                 Entity->Enemy.AIState = AI_Following;
-                PlayAnimation(Entity, &GameState->PlayerWalkAnimation);
+                PlayAnimation(Entity, &GameState->EnemyWalkAnimation);
             }
         }
         break;
@@ -301,12 +301,12 @@ void UpdateEnemy(entity* Entity, game_state* GameState, real64 DeltaTime)
         {
             if(DistanceToPlayer > Entity->Enemy.MaxAlertDistance)
             {
-                PlayAnimation(Entity, &GameState->PlayerIdleAnimation);
+                PlayAnimation(Entity, &GameState->EnemyIdleAnimation);
                 Entity->Enemy.AIState = AI_Idle;
             }
             else if(DistanceToPlayer < Entity->Enemy.MinDistance)
             {
-                PlayAnimation(Entity, &GameState->PlayerIdleAnimation);
+                PlayAnimation(Entity, &GameState->EnemyIdleAnimation);
                 StartTimer(GameState, Entity->Enemy.ChargingTimer);
                 Entity->Enemy.AIState = AI_Charging;
                 render_entity* RenderEntity = &GameState->RenderState.RenderEntities[Entity->RenderEntityHandle];
@@ -366,13 +366,13 @@ void UpdateEnemy(entity* Entity, game_state* GameState, real64 DeltaTime)
             if(!Entity->Enemy.IsAttacking)
             {
                 Entity->Enemy.IsAttacking = true;
-                PlayAnimation(Entity, &GameState->PlayerAttackAnimation);
+                PlayAnimation(Entity, &GameState->EnemyAttackAnimation);
                 PlaySoundEffect(GameState, &GameState->SoundManager.SwordSlash01);
                 StartTimer(GameState, Entity->Enemy.AttackCooldownTimer);
             }
             else if(!Entity->AnimationInfo.Playing)
             {
-                PlayAnimation(Entity, &GameState->PlayerIdleAnimation);
+                PlayAnimation(Entity, &GameState->EnemyIdleAnimation);
             }
             
             if(TimerDone(GameState, Entity->Enemy.AttackCooldownTimer))
@@ -418,7 +418,7 @@ void UpdateEnemy(entity* Entity, game_state* GameState, real64 DeltaTime)
     if(Entity->Enemy.AIState == AI_Charging)
         RenderEntity->Color = glm::vec4(0, 0, 1, 1);
     else
-        RenderEntity->Color = glm::vec4(0, 1, 0, 1);
+        RenderEntity->Color = glm::vec4(1, 1, 1, 1);
     
     Entity->Velocity = glm::vec2(0,0);
     

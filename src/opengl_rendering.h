@@ -23,9 +23,8 @@ enum Shader_Type
 
 enum Texture_Type
 {
-    Texture_Player,
+    Texture_Entity,
     Texture_Barrel,
-    Texture_SwordTopRight,
     Texture_SwordSimple,
     Texture_HealthFull,
     Texture_Health2,
@@ -280,9 +279,8 @@ struct render_state
         texture Textures[Texture_Count];
         struct
         {
-            texture PlayerTexture;
+            texture EntityTexture;
             texture BarrelTexture;
-            texture SwordTopRightTexture;
             texture SwordSimpleTexture;
             
             texture HealthFullTexture;
@@ -297,9 +295,8 @@ struct render_state
     
     char* TexturePaths[Texture_Count] =
     {
-        "../assets/textures/spritesheets/new_player.png",
+        "../assets/textures/spritesheets/entities.png",
         "../assets/textures/barrel.png",
-        "../assets/textures/spritesheets/sword_attack_top_right.png",
         "../assets/textures/spritesheets/sword_simple.png",
         
         "../assets/textures/spritesheets/health_full.png",

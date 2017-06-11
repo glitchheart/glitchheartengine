@@ -50,7 +50,7 @@ static void InitPlayer(game_state* GameState, glm::vec2 Position)
     
     render_entity* PlayerRenderEntity = &GameState->RenderState.RenderEntities[GameState->RenderState.RenderEntityCount];
     PlayerRenderEntity->ShaderIndex = Shader_SpriteSheetShader;
-    PlayerRenderEntity->Texture = &GameState->RenderState.PlayerTexture;
+    PlayerRenderEntity->Texture = &GameState->RenderState.EntityTexture;
     PlayerRenderEntity->Rendered = true;
     PlayerRenderEntity->Entity = &*Player;
     Player->RenderEntityHandle = GameState->RenderState.RenderEntityCount++;
@@ -84,7 +84,7 @@ static void InitPlayer(game_state* GameState, glm::vec2 Position)
     render_entity* PlayerWeaponRenderEntity = &GameState->RenderState.RenderEntities[GameState->RenderState.RenderEntityCount];
     PlayerWeaponRenderEntity->Rendered = true;
     PlayerWeaponRenderEntity->ShaderIndex = Shader_SpriteSheetShader;
-    PlayerWeaponRenderEntity->Texture = &GameState->RenderState.SwordTopRightTexture;
+    PlayerWeaponRenderEntity->Texture = &GameState->RenderState.SwordSimpleTexture;
     PlayerWeaponRenderEntity->Entity = &*PlayerWeapon;
     PlayerWeapon->RenderEntityHandle = GameState->RenderState.RenderEntityCount++;
     PlayerWeapon->CurrentAnimation = 0;
@@ -114,7 +114,7 @@ static void SpawnEnemy(game_state* GameState, glm::vec2 Position)
     render_entity* EnemyRenderEntity = &GameState->RenderState.RenderEntities[GameState->RenderState.RenderEntityCount];
     
     EnemyRenderEntity->ShaderIndex = Shader_SpriteSheetShader;
-    EnemyRenderEntity->Texture = &GameState->RenderState.PlayerTexture;
+    EnemyRenderEntity->Texture = &GameState->RenderState.EntityTexture;
     
     EnemyRenderEntity->Entity = &*Enemy;
     Enemy->RenderEntityHandle = GameState->RenderState.RenderEntityCount++;
@@ -180,7 +180,7 @@ static void SpawnEnemy(game_state* GameState, glm::vec2 Position)
     render_entity* EnemyWeaponRenderEntity = &GameState->RenderState.RenderEntities[GameState->RenderState.RenderEntityCount];
     EnemyWeaponRenderEntity->Rendered = true;
     EnemyWeaponRenderEntity->ShaderIndex = Shader_SpriteSheetShader;
-    EnemyWeaponRenderEntity->Texture = &GameState->RenderState.SwordTopRightTexture;
+    EnemyWeaponRenderEntity->Texture = &GameState->RenderState.SwordSimpleTexture;
     EnemyWeaponRenderEntity->Entity = EnemyWeapon;
     EnemyWeapon->RenderEntityHandle = GameState->RenderState.RenderEntityCount++;
     EnemyWeapon->CurrentAnimation = 0;

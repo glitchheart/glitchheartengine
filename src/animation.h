@@ -20,8 +20,7 @@ struct animation
     real32 TimePerFrame;
     texture* Texture;
     uint32 FrameCount;
-    uint32 Rows;
-    uint32 Columns;
+    real32 FrameSize;
     bool32 Loop;
     
     // TODO(niels): Maybe create union for sprite and transform animations?

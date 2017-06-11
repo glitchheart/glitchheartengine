@@ -1,16 +1,11 @@
 name player_attack
 type sprite
-framecount 4
+framecount 1
+framesize 16
 loop 0
 timeperframe 0.05
-rows 10
-columns 1
 frames
-{0.6,0.0}
-{0.7,0.0}
-{0.8,0.0}
-{0.9,0.0}
-texturepath ../assets/textures/spritesheets/player.png
-
+144 16
+texture 0
 
 
