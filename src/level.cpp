@@ -235,7 +235,6 @@ static void SaveLevelToFile(const char* FilePath, level* Level, game_state* Game
                     fprintf(File, "%s %f %f\n", TypeName, Entity->Position.x, Entity->Position.y);
             }
         }
-        
         fclose(File);
     }
 }

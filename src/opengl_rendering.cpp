@@ -1449,6 +1449,9 @@ static void RenderGame(game_state* GameState)
             RenderRect(Render_Fill, GameState, glm::vec4(1, 0, 0, 1), (real32)GameState->RenderState.WindowWidth - 80,
                        GameState->EditorState.SelectedTileType * 60 + 5 + GameState->EditorState.ToolbarScrollOffsetY, 60, 60, GameState->RenderState.SelectedTileTexture.TextureHandle);
             
+            char Text[255]; sprintf(Text,"Type index: %d Is solid: %d",GameState->CurrentLevel.Tilemap.Tiles[GameState->EditorState.SelectedTileType].TypeIndex,GameState->CurrentLevel.Tilemap.Tiles[GameState->EditorState.SelectedTileType].IsSolid);
+            
+            RenderText(&GameState->RenderState, GameState->RenderState.MenuFont, glm::vec4(1, 1, 1, 1), Text, (real32)GameState->RenderState.WindowWidth / 2, (real32)GameState->RenderState.WindowHeight - 200, 1, Alignment_Center);
             
             RenderText(&GameState->RenderState, GameState->RenderState.MenuFont, glm::vec4(1, 1, 1, 1), "Editor", (real32)GameState->RenderState.WindowWidth / 2, (real32)GameState->RenderState.WindowHeight - 100, 1, Alignment_Center);
             
