@@ -1,12 +1,9 @@
-name player_walk_up
+name enemy_attack
 type sprite
-framecount 2
+framecount 1
 framesize 16
 loop 1
 timeperframe 0.05
 frames
-160 0
-160 16
+144 496
 texture 0
-
-

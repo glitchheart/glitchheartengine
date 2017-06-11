@@ -1,15 +1,13 @@
 name sword_attack
 type sprite
 framecount 5
+framesize 64
 loop 0
 timeperframe 0.05
-rows 1
-columns 1
 frames
 0 0
 0 0
 0 0
 0 0
 0 0
-texture 4
-
+texture 2
