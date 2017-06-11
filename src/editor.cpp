@@ -17,4 +17,9 @@ static void CheckEditorUIInput(game_state* GameState, real64 DeltaTime)
         if(Index >= 0 && Index < GameState->EntityCount)
             GameState->EditorUI.SelectedIndex = Index;
     }
+    
+    if((GetKey(Key_LeftCtrl, GameState) || GetKey(Key_RightCtrl, GameState)) && GetKeyDown(Key_I, GameState))
+    {
+        GameState->CurrentLevel.Tilemap.Tiles[GameState->EditorUI.SelectedIndex].IsSolid = !GameState->CurrentLevel.Tilemap.Tiles[GameState->EditorUI.SelectedIndex].IsSolid; 
+    }
 }
