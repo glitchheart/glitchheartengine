@@ -20,6 +20,7 @@ enum Key_Code
     Key_F3,
     Key_F4,
     Key_F5,
+    Key_F6,
     Key_A,
     Key_B,
     Key_C,

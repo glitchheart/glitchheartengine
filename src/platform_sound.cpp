@@ -96,8 +96,6 @@ static void ResetSoundQueue(sound_manager *SoundManager)
 {
     sound_queue SoundQueue = {};
     SoundQueue.SoundCount = 0;
-    SoundQueue.StoppedSoundCount = 0;
-    SoundQueue.PausedSoundCount = 0;
     SoundManager->SoundQueue = SoundQueue;
 }
 
@@ -131,18 +129,19 @@ static void InitAudio(sound_device *SoundDevice)
     
     alListenerfv(AL_ORIENTATION, ListenerOrientation);
     
+    alGenSources((ALuint)SOURCES,SoundDevice->Sources);
+    
     SoundDevice->IsInitialized = SoundDevice->Device && SoundDevice->Context;
 }
 
-static void LoadSound(const char *filename,  sound_info SoundInfo, sound_effect *LoadedSound)
+static void LoadSound(const char *filename,  sound_info SoundInfo, sound_effect *LoadedSound, sound_device* SoundDevice)
 {
-    alGenSources((ALuint)1, &LoadedSound->Source);
     LoadWavFile(filename, LoadedSound);
-    alSourcei(LoadedSound->Source, AL_BUFFER, LoadedSound->Buffer);
     LoadedSound->SoundInfo = SoundInfo;
+    SoundDevice->Buffers[SoundDevice->BufferCount++] = LoadedSound->Buffer;
 }
 
-static void LoadSounds(sound_manager *SoundManager)
+static void LoadSounds(sound_manager *SoundManager, sound_device* SoundDevice)
 {
     sound_info DefaultSoundInfo = {};
     DefaultSoundInfo.Pitch = 1;
@@ -153,19 +152,20 @@ static void LoadSounds(sound_manager *SoundManager)
     memcpy(DefaultSoundInfo.Velocity, Velocity, 3);
     DefaultSoundInfo.Loop = AL_FALSE;
     
-    LoadSound("../assets/audio/Deadliners Track 1.wav", DefaultSoundInfo, &SoundManager->Track01);
-    LoadSound("../assets/audio/Countdown_1.wav", DefaultSoundInfo, &SoundManager->Effect01);
-    LoadSound("../assets/audio/mainmenu.wav", DefaultSoundInfo, &SoundManager->MainMenuTrack);
-    LoadSound("../assets/audio/sword_slash_01.wav", DefaultSoundInfo, &SoundManager->SwordSlash01);
-    LoadSound("../assets/audio/sword_hit_01.wav", DefaultSoundInfo, &SoundManager->SwordHit01);
-    LoadSound("../assets/audio/dash.wav", DefaultSoundInfo, &SoundManager->Dash);
+    LoadSound("../assets/audio/Deadliners Track 1.wav", DefaultSoundInfo, &SoundManager->Track01,SoundDevice);
+    LoadSound("../assets/audio/Countdown_1.wav", DefaultSoundInfo, &SoundManager->Effect01,SoundDevice);
+    LoadSound("../assets/audio/mainmenu.wav", DefaultSoundInfo, &SoundManager->MainMenuTrack,SoundDevice);
+    LoadSound("../assets/audio/sword_slash_01.wav", DefaultSoundInfo, &SoundManager->SwordSlash01,SoundDevice);
+    LoadSound("../assets/audio/sword_hit_01.wav", DefaultSoundInfo, &SoundManager->SwordHit01,SoundDevice);
+    LoadSound("../assets/audio/dash.wav", DefaultSoundInfo, &SoundManager->Dash,SoundDevice);
+    
     // // Add more sounds here if necessary
 }
 
 static void CleanupSound(sound_device* SoundDevice, sound_manager* SoundManager)
 {
-    alDeleteSources(1, &SoundManager->Track01.Source);
-    alDeleteBuffers(1, &SoundManager->Track01.Buffer);
+    alDeleteSources(SOURCES, SoundDevice->Sources);
+    alDeleteBuffers(SoundDevice->BufferCount, SoundDevice->Buffers);
     
     SoundDevice->Device = alcGetContextsDevice(SoundDevice->Context);
     alcMakeContextCurrent(0);
@@ -173,85 +173,117 @@ static void CleanupSound(sound_device* SoundDevice, sound_manager* SoundManager)
     alcCloseDevice(SoundDevice->Device);
 }
 
-static void PlaySound(sound_effect *SoundEffect)
+static void PlaySound(sound_effect *SoundEffect,sound_device* Device)
 {
     if (SoundEffect)
     {
-        if (!SoundEffect->PlayOnce && SoundEffect->SourceState != AL_PLAYING)
+        ALuint Source;
+        
+        int32 SourceState;
+        for(uint32 SourceIndex = 0; SourceIndex < SOURCES; SourceIndex++)
         {
-            alGenSources((ALuint)1, &SoundEffect->Source);
+            alGetSourcei(Device->Sources[SourceIndex],AL_SOURCE_STATE,&SourceState);
+            if(SourceState != AL_PLAYING)
+            {
+                Source = Device->Sources[SourceIndex];
+                break;
+            }
         }
-        alSourcei(SoundEffect->Source, AL_BUFFER, SoundEffect->Buffer);
-        alSourcef(SoundEffect->Source, AL_PITCH, SoundEffect->SoundInfo.Pitch);
-        alSourcef(SoundEffect->Source, AL_GAIN, SoundEffect->SoundInfo.Gain);
-        alSource3f(SoundEffect->Source, AL_POSITION, SoundEffect->SoundInfo.Position[0], SoundEffect->SoundInfo.Position[1], SoundEffect->SoundInfo.Position[2]);
-        alSource3f(SoundEffect->Source, AL_VELOCITY, SoundEffect->SoundInfo.Velocity[0], SoundEffect->SoundInfo.Velocity[1], SoundEffect->SoundInfo.Velocity[2]);
-        alSourcei(SoundEffect->Source, AL_LOOPING, SoundEffect->SoundInfo.Loop);
-        alSourcePlay(SoundEffect->Source);
+        alSourcei(Source, AL_BUFFER, SoundEffect->Buffer);
+        alSourcef(Source, AL_PITCH, SoundEffect->SoundInfo.Pitch);
+        alSourcef(Source, AL_GAIN, Device->Muted ? 0 : SoundEffect->SoundInfo.Gain);
+        alSource3f(Source, AL_POSITION, SoundEffect->SoundInfo.Position[0], SoundEffect->SoundInfo.Position[1], SoundEffect->SoundInfo.Position[2]);
+        alSource3f(Source, AL_VELOCITY, SoundEffect->SoundInfo.Velocity[0], SoundEffect->SoundInfo.Velocity[1], SoundEffect->SoundInfo.Velocity[2]);
+        alSourcei(Source, AL_LOOPING, SoundEffect->SoundInfo.Loop);
+        alSourcePlay(Source);
         alGetSourcei(SoundEffect->Source, AL_SOURCE_STATE, &SoundEffect->SourceState);
-        //printf("Source: %d\n", SoundEffect->Source);
-        //printf("Buffer: %d\n", SoundEffect->Buffer);
     }
 }
 
-static void PlaySoundOnce(sound_effect *SoundEffect)
+static void StopSound(game_state* GameState, sound_device* SoundDevice)
 {
-    if (SoundEffect)
+    
+    for(uint32 SourceIndex = 0; SourceIndex < SOURCES; SourceIndex++)
     {
-        alGetSourcei(SoundEffect->Source, AL_SOURCE_STATE, &SoundEffect->SourceState);
-        if (SoundEffect->SourceState != AL_PLAYING)
+        alSourcef(SoundDevice->Sources[SourceIndex],AL_GAIN,0);
+        alSourceStop(SoundDevice->Sources[SourceIndex]);
+        alSourcei(SoundDevice->Sources[SourceIndex],AL_BUFFER,0);
+        if(!SoundDevice->Muted)
         {
-            PlaySound(SoundEffect);
+            alSourcef(SoundDevice->Sources[SourceIndex],AL_GAIN,1);
         }
     }
+    
+    ResetSoundQueue(&GameState->SoundManager);
 }
 
-static void PauseSound(sound_effect *SoundEffect)
+static void PauseSound(game_state* GameState, sound_device* SoundDevice)
 {
-    if (SoundEffect)
+    for(uint32 SourceIndex = 0; SourceIndex < SOURCES; SourceIndex++)
     {
-        alSourcePause(SoundEffect->Source);
-    }
-}
-
-static void StopSound(sound_effect *SoundEffect)
-{
-    if (SoundEffect)
-    {
-        alSourceStop(SoundEffect->Source);
-    }
-}
-
-static void PlaySounds(game_state *GameState)
-{
-    for (uint32 Sound = 0;
-         Sound < GameState->SoundManager.SoundQueue.SoundCount;
-         Sound++)
-    {
-        if (GameState->SoundManager.SoundQueue.Sounds[Sound].PlayOnce)
+        alSourcef(SoundDevice->Sources[SourceIndex],AL_GAIN,0);
+        ALint SourceState;
+        alGetSourcei(SoundDevice->Sources[SourceIndex],AL_SOURCE_STATE,&SourceState);
+        if(SourceState == AL_PLAYING)
         {
-            PlaySoundOnce(&GameState->SoundManager.SoundQueue.Sounds[Sound]);
+            
+            alSourcePause(SoundDevice->Sources[SourceIndex]);
         }
         else
         {
-            PlaySound(&GameState->SoundManager.SoundQueue.Sounds[Sound]);
+            alSourcei(SoundDevice->Sources[SourceIndex],AL_BUFFER,0);
+        }
+        if(!SoundDevice->Muted)
+        {
+            alSourcef(SoundDevice->Sources[SourceIndex],AL_GAIN,1);
         }
     }
-    
-    for (uint32 Sound = 0;
-         Sound < GameState->SoundManager.SoundQueue.StoppedSoundCount;
-         Sound++)
+}
+
+
+static void PlaySounds(game_state *GameState, sound_device* Device)
+{
+    if(GameState->SoundManager.Muted && !Device->Muted)
     {
-        
-        StopSound(&GameState->SoundManager.SoundQueue.StoppedSounds[Sound]);
+        for(uint32 SourceIndex = 0; SourceIndex < SOURCES; SourceIndex++)
+        {
+            alSourcef(Device->Sources[SourceIndex],AL_GAIN,0);
+        }
+        Device->Muted = true;
+    }
+    else if(!GameState->SoundManager.Muted)
+    {
+        for(uint32 SourceIndex = 0; SourceIndex < SOURCES; SourceIndex++)
+        {
+            alSourcef(Device->Sources[SourceIndex],AL_GAIN,1);
+        }
+        Device->Muted = false;
     }
     
-    for (uint32 Sound = 0;
-         Sound < GameState->SoundManager.SoundQueue.PausedSoundCount;
-         Sound++)
+    if(GameState->SoundManager.Stopped)
     {
-        
-        PauseSound(&GameState->SoundManager.SoundQueue.PausedSounds[Sound]);
+        StopSound(GameState,Device);
+        GameState->SoundManager.Stopped = false;
     }
-    ResetSoundQueue(&GameState->SoundManager);
+    else 
+    {
+        for (uint32 Sound = 0;
+             Sound < GameState->SoundManager.SoundQueue.SoundCount;
+             Sound++)
+        {
+            PlaySound(&GameState->SoundManager.SoundQueue.Sounds[Sound],Device);
+        }
+        
+        ResetSoundQueue(&GameState->SoundManager);
+    }
+    if(GameState->SoundManager.Paused)
+    {
+        PauseSound(GameState,Device);
+        Device->Paused = true;
+    }
+    else if(!GameState->SoundManager.Paused && Device->Paused)
+    {
+        alSourcePlayv(SOURCES,Device->Sources);
+        Device->Paused = false;
+    }
 }

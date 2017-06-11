@@ -2,42 +2,21 @@
  {
      sound_effect SoundEffect = {};
      SoundEffect.Buffer = LoadedSound->Buffer;
-     SoundEffect.Source = LoadedSound->Source;
      SoundEffect.SoundInfo = LoadedSound->SoundInfo;
-     SoundEffect.SourceState = LoadedSound->SourceState;
      GameState->SoundManager.SoundQueue.Sounds[GameState->SoundManager.SoundQueue.SoundCount++] = SoundEffect;
  }
  
- void PlaySoundEffectOnce(game_state *GameState, sound_effect* LoadedSound)
+ void TogglePauseSound(game_state* GameState)
  {
-     sound_effect SoundEffect = {};
-     SoundEffect.PlayOnce = true;
-     SoundEffect.Buffer = LoadedSound->Buffer;
-     SoundEffect.Source = LoadedSound->Source;
-     SoundEffect.SoundInfo = LoadedSound->SoundInfo;
-     SoundEffect.SourceState = LoadedSound->SourceState;
-     GameState->SoundManager.SoundQueue.Sounds[GameState->SoundManager.SoundQueue.SoundCount++] = SoundEffect;
+     GameState->SoundManager.Paused = !GameState->SoundManager.Paused;
  }
  
- void StopSoundEffect(game_state *GameState, sound_effect* LoadedSound)
+ void ToggleMuteSound(game_state* GameState)
  {
-     sound_effect SoundEffect = {};
-     SoundEffect.PlayOnce = true;
-     SoundEffect.Buffer = LoadedSound->Buffer;
-     SoundEffect.Source = LoadedSound->Source;
-     SoundEffect.SoundInfo = LoadedSound->SoundInfo;
-     SoundEffect.SourceState = LoadedSound->SourceState;
-     GameState->SoundManager.SoundQueue.StoppedSounds[GameState->SoundManager.SoundQueue.StoppedSoundCount++] = SoundEffect;
+     GameState->SoundManager.Muted = !GameState->SoundManager.Muted;
  }
  
- void PauseSoundEffect(game_state *GameState, sound_effect* LoadedSound)
+ void StopSound(game_state* GameState)
  {
-     sound_effect SoundEffect = {};
-     SoundEffect.PlayOnce = true;
-     SoundEffect.Buffer = LoadedSound->Buffer;
-     SoundEffect.Source = LoadedSound->Source;
-     SoundEffect.SoundInfo = LoadedSound->SoundInfo;
-     SoundEffect.SourceState = LoadedSound->SourceState;
-     GameState->SoundManager.SoundQueue.PausedSounds[GameState->SoundManager.SoundQueue.PausedSoundCount++] = SoundEffect;
-     
-}
+     GameState->SoundManager.Stopped = true;
+ }

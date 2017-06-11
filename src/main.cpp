@@ -121,7 +121,7 @@ int main(void)
     {
         sound_manager SoundManager = {};
         SoundManager.Muted = ConfigData.Muted;
-        LoadSounds(&SoundManager);
+        LoadSounds(&SoundManager,&SoundDevice);
         ResetSoundQueue(&SoundManager);
         GameState.SoundManager = SoundManager;
     }
@@ -150,7 +150,7 @@ int main(void)
         CheckEditorUIInput(&GameState, DeltaTime);
         CheckLevelVAO(&GameState);
         Render(&GameState);
-        PlaySounds(&GameState);
+        PlaySounds(&GameState,&SoundDevice);
         
         SetControllerInvalidKeys(&GameState.InputController);
         SetInvalidKeys(&GameState.InputController);
