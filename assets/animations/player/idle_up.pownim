@@ -1,0 +1,10 @@
+name player_idle_up
+type sprite
+framecount 1
+framesize 84
+loop 1
+timeperframe 0.1
+frames
+420 252
+texture 3
+

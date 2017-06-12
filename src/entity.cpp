@@ -60,7 +60,7 @@ static void InitPlayer(game_state* GameState, glm::vec2 Position)
     Player->Rotation = glm::vec3(0, 0, 0);
     Player->Scale = glm::vec3(2, 2, 0);
     Player->Velocity = glm::vec2(0,0);
-    PlayAnimation(Player, &GameState->PlayerIdleAnimation);
+    PlayAnimation(Player, &GameState->PlayerIdleDownAnimation);
     collision_AABB CollisionAABB;
     Player->Center = glm::vec2(0.5f,-0.9f);
     

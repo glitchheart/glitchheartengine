@@ -1,0 +1,10 @@
+name player_idle_right
+type sprite
+framecount 1
+framesize 84
+loop 1
+timeperframe 0.1
+frames
+252 336
+texture 3
+
