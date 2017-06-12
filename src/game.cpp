@@ -67,12 +67,12 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
                     if(Entity->Velocity.x == 0)
                     {
                         if(Entity->Velocity.y > 0)
-                            PlayAnimation(Entity, &GameState->PlayerWalkUpAnimation);
+                            PlayAnimation(Entity, &GameState->PlayerRunUpAnimation);
                         else
-                            PlayAnimation(Entity, &GameState->PlayerWalkDownAnimation);
+                            PlayAnimation(Entity, &GameState->PlayerRunDownAnimation);
                     }
                     else
-                        PlayAnimation(Entity, &GameState->PlayerWalkAnimation);
+                        PlayAnimation(Entity, &GameState->PlayerRunRightAnimation);
                 }
                 else
                 {
@@ -159,7 +159,16 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
         //attacking
         if(TimerDone(GameState, Entity->Player.AttackCooldownTimer) && !Entity->Player.IsAttacking && (GetActionButtonDown(Action_Attack, GameState) || GetJoystickKeyDown(Joystick_3, GameState)))
         {
-            PlayAnimation(Entity, &GameState->PlayerAttackAnimation);
+            if(Entity->Velocity.x == 0)
+            {
+                if(Entity->Velocity.y > 0)
+                    PlayAnimation(Entity, &GameState->PlayerAttackUpAnimation);
+                else
+                    PlayAnimation(Entity, &GameState->PlayerAttackDownAnimation);
+            }
+            else
+                PlayAnimation(Entity, &GameState->PlayerAttackRightAnimation);
+            
             Entity->Player.IsAttacking = true;
             PlaySoundEffect(GameState, &GameState->SoundManager.SwordSlash01);
         }
@@ -697,7 +706,7 @@ extern "C" UPDATE(Update)
         
         LoadLevelFromFile(GameState->LevelPath, &GameState->CurrentLevel, GameState);
         
-        GameState->GameCamera.Zoom = 2.0f;
+        GameState->GameCamera.Zoom = 4.0f;
         GameState->GameCamera.ViewportWidth = GameState->RenderState.WindowWidth / 20;
         GameState->GameCamera.ViewportHeight = GameState->RenderState.WindowHeight / 20;
         

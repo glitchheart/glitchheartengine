@@ -84,12 +84,19 @@ static void LoadAnimations(game_state* GameState)
     LoadAnimationFromFile("../assets/animations/enemy_anim_walk_down.pownim", &GameState->EnemyWalkDownAnimation, &GameState->RenderState);
     LoadAnimationFromFile("../assets/animations/enemy_anim_attack.pownim", &GameState->EnemyAttackAnimation, &GameState->RenderState);
     LoadAnimationFromFile("../assets/animations/enemy_anim_hit.pownim", &GameState->EnemyHitAnimation, &GameState->RenderState);
-    LoadAnimationFromFile("../assets/animations/player_anim_idle.pownim", &GameState->PlayerIdleAnimation, &GameState->RenderState);
-    LoadAnimationFromFile("../assets/animations/player_anim_walk.pownim", &GameState->PlayerWalkAnimation, &GameState->RenderState);
-    LoadAnimationFromFile("../assets/animations/player_anim_walk_up.pownim", &GameState->PlayerWalkUpAnimation, &GameState->RenderState);
-    LoadAnimationFromFile("../assets/animations/player_anim_walk_down.pownim", &GameState->PlayerWalkDownAnimation, &GameState->RenderState);
-    LoadAnimationFromFile("../assets/animations/player_anim_attack.pownim", &GameState->PlayerAttackAnimation, &GameState->RenderState);
-    LoadAnimationFromFile("../assets/animations/player_anim_hit.pownim", &GameState->PlayerHitAnimation, &GameState->RenderState);
+    
+    LoadAnimationFromFile("../assets/animations/player/idle.pownim", &GameState->PlayerIdleAnimation, &GameState->RenderState);
+    
+    LoadAnimationFromFile("../assets/animations/player/run_up.pownim", &GameState->PlayerRunUpAnimation, &GameState->RenderState);
+    LoadAnimationFromFile("../assets/animations/player/run_down.pownim", &GameState->PlayerRunDownAnimation, &GameState->RenderState);
+    LoadAnimationFromFile("../assets/animations/player/run_left.pownim", &GameState->PlayerRunLeftAnimation, &GameState->RenderState);
+    LoadAnimationFromFile("../assets/animations/player/run_right.pownim", &GameState->PlayerRunRightAnimation, &GameState->RenderState);
+    
+    LoadAnimationFromFile("../assets/animations/player/attack_up.pownim", &GameState->PlayerAttackUpAnimation, &GameState->RenderState);
+    LoadAnimationFromFile("../assets/animations/player/attack_down.pownim", &GameState->PlayerAttackDownAnimation, &GameState->RenderState);
+    LoadAnimationFromFile("../assets/animations/player/attack_left.pownim", &GameState->PlayerAttackLeftAnimation, &GameState->RenderState);
+    LoadAnimationFromFile("../assets/animations/player/attack_right.pownim", &GameState->PlayerAttackRightAnimation, &GameState->RenderState);
+    
     LoadAnimationFromFile("../assets/animations/sword_attack.pownim", &GameState->SwordAttackAnimation, &GameState->RenderState);
 }
 

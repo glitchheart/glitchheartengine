@@ -26,6 +26,7 @@ enum Texture_Type
     Texture_Entity,
     Texture_Barrel,
     Texture_SwordSimple,
+    Texture_Player,
     Texture_HealthFull,
     Texture_Health2,
     Texture_Health1,
@@ -282,6 +283,7 @@ struct render_state
             texture EntityTexture;
             texture BarrelTexture;
             texture SwordSimpleTexture;
+            texture PlayerTexture;
             
             texture HealthFullTexture;
             texture Health2Texture;
@@ -298,6 +300,7 @@ struct render_state
         "../assets/textures/spritesheets/entities.png",
         "../assets/textures/barrel.png",
         "../assets/textures/spritesheets/sword_simple.png",
+        "../assets/textures/spritesheets/knight_player.png",
         
         "../assets/textures/spritesheets/health_full.png",
         "../assets/textures/spritesheets/health_2.png",
