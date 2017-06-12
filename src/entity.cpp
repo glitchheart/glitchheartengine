@@ -50,7 +50,7 @@ static void InitPlayer(game_state* GameState, glm::vec2 Position)
     
     render_entity* PlayerRenderEntity = &GameState->RenderState.RenderEntities[GameState->RenderState.RenderEntityCount];
     PlayerRenderEntity->ShaderIndex = Shader_SpriteSheetShader;
-    PlayerRenderEntity->Texture = &GameState->RenderState.EntityTexture;
+    PlayerRenderEntity->Texture = &GameState->RenderState.PlayerTexture;
     PlayerRenderEntity->Rendered = true;
     PlayerRenderEntity->Entity = &*Player;
     Player->RenderEntityHandle = GameState->RenderState.RenderEntityCount++;
@@ -125,7 +125,7 @@ static void SpawnEnemy(game_state* GameState, glm::vec2 Position)
     PlayAnimation(Enemy, &GameState->EnemyIdleAnimation);
     Enemy->Rotation = glm::vec3(0, 0, 0);
     Enemy->Position = Position;
-    Enemy->Scale = glm::vec3(2, 2, 0);
+    Enemy->Scale = glm::vec3(1, 1, 1);
     Enemy->Velocity = glm::vec2(-2,0);
     Enemy->Active = true;
     Enemy->IsKinematic = false;
