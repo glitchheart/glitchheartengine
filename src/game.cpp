@@ -59,20 +59,31 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
             
             if(!Entity->Player.IsAttacking)
             {
-                Entity->Velocity.x = GetInputX(GameState) * Entity->Player.WalkingSpeed * (real32)DeltaTime;
-                Entity->Velocity.y = GetInputY(GameState) * Entity->Player.WalkingSpeed * (real32)DeltaTime;
+                real32 InputX = GetInputX(GameState);
+                real32 InputY = GetInputY(GameState);
+                Entity->Velocity.x = InputX * Entity->Player.WalkingSpeed * (real32)DeltaTime;
+                Entity->Velocity.y = InputY * Entity->Player.WalkingSpeed * (real32)DeltaTime;
                 
                 if(Entity->Velocity.x != 0.0f || Entity->Velocity.y != 0.0f)
                 {
-                    if(Entity->Velocity.x == 0)
+                    if(Abs(InputX) < 0.3)
                     {
                         if(Entity->Velocity.y > 0)
+                        {
+                            Entity->LookDirection = Up;
                             PlayAnimation(Entity, &GameState->PlayerRunUpAnimation);
+                        }
                         else
+                        {
+                            Entity->LookDirection = Down;
                             PlayAnimation(Entity, &GameState->PlayerRunDownAnimation);
+                        }
                     }
                     else
+                    {
+                        Entity->LookDirection = Right;
                         PlayAnimation(Entity, &GameState->PlayerRunRightAnimation);
+                    }
                 }
                 else
                 {
@@ -88,7 +99,12 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
                 }
                 
                 if(Entity->Velocity.x != 0)
+                {
                     Entity->IsFlipped = Entity->Velocity.x < 0;
+                    
+                    if(Entity->LookDirection == Right && Entity->IsFlipped)
+                        Entity->LookDirection = Left;
+                }
             }
             else
                 Entity->Velocity = glm::vec2(0, 0);
@@ -167,15 +183,25 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
         //attacking
         if(TimerDone(GameState, Entity->Player.AttackCooldownTimer) && !Entity->Player.IsAttacking && (GetActionButtonDown(Action_Attack, GameState) || GetJoystickKeyDown(Joystick_3, GameState)))
         {
-            if(Entity->Player.LastKnownDirectionX == 0)
+            switch(Entity->LookDirection)
             {
-                if(Entity->Player.LastKnownDirectionY > 0)
+                case Up:
+                {
                     PlayAnimation(Entity, &GameState->PlayerAttackUpAnimation);
-                else
+                }
+                break;
+                case Down:
+                {
                     PlayAnimation(Entity, &GameState->PlayerAttackDownAnimation);
+                }
+                break;
+                case Left:
+                case Right:
+                {
+                    PlayAnimation(Entity, &GameState->PlayerAttackRightAnimation);
+                }
+                break;
             }
-            else
-                PlayAnimation(Entity, &GameState->PlayerAttackRightAnimation);
             
             Entity->Player.IsAttacking = true;
             PlaySoundEffect(GameState, &GameState->SoundManager.SwordSlash01);
@@ -212,28 +238,29 @@ void UpdateWeapon(entity* Entity, game_state* GameState, real64 DeltaTime)
         {
             IsAttacking = UsingEntity->Player.IsAttacking;
             
-            if(UsingEntity->Player.LastKnownDirectionX == 0 && UsingEntity->Player.LastKnownDirectionY != 0)
+            switch(UsingEntity->LookDirection)
             {
-                if(UsingEntity->Player.LastKnownDirectionY < 0)
+                case Up:
+                {
+                    Entity->Position = glm::vec2(Pos.x, Pos.y + 1.2f);
+                }
+                break;
+                case Down:
                 {
                     Entity->Position = glm::vec2(Pos.x, Pos.y - 1.2f);
                     Entity->CollisionAABB.Offset = glm::vec2(0, -2);
                 }
-                else if(UsingEntity->Player.LastKnownDirectionY > 0)
-                {
-                    Entity->Position = glm::vec2(Pos.x, Pos.y + 1.2f);
-                }
-            }
-            else
-            {
-                if(UsingEntity->IsFlipped)
+                break;
+                case Left:
                 {
                     Entity->Position = glm::vec2(Pos.x - 1.3, Pos.y);
                 }
-                else
+                break;
+                case Right:
                 {
                     Entity->Position = glm::vec2(Pos.x + 1, Pos.y);
                 }
+                break;
             }
             
         }

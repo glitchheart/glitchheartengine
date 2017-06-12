@@ -31,6 +31,11 @@ enum Entity_Enum
     Entity_Max
 };
 
+enum Look_Direction
+{
+    Up, Down, Left, Right
+};
+
 struct entity
 {
     Entity_Enum Type;
@@ -42,6 +47,7 @@ struct entity
     glm::vec3 Scale = glm::vec3(1, 1, 1);
     bool32 IsFlipped;
     
+    Look_Direction LookDirection = Down;
     Entity_Layer Layer;
     Entity_Layer IgnoreLayers;
     
