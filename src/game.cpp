@@ -76,7 +76,15 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
                 }
                 else
                 {
-                    PlayAnimation(Entity, &GameState->PlayerIdleAnimation);
+                    if(Entity->Player.LastKnownDirectionX == 0)
+                    {
+                        if(Entity->Player.LastKnownDirectionY > 0)
+                            PlayAnimation(Entity, &GameState->PlayerIdleUpAnimation);
+                        else
+                            PlayAnimation(Entity, &GameState->PlayerIdleDownAnimation);
+                    }
+                    else
+                        PlayAnimation(Entity, &GameState->PlayerIdleRightAnimation);
                 }
                 
                 if(Entity->Velocity.x != 0)
@@ -159,9 +167,9 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
         //attacking
         if(TimerDone(GameState, Entity->Player.AttackCooldownTimer) && !Entity->Player.IsAttacking && (GetActionButtonDown(Action_Attack, GameState) || GetJoystickKeyDown(Joystick_3, GameState)))
         {
-            if(Entity->Velocity.x == 0)
+            if(Entity->Player.LastKnownDirectionX == 0)
             {
-                if(Entity->Velocity.y > 0)
+                if(Entity->Player.LastKnownDirectionY > 0)
                     PlayAnimation(Entity, &GameState->PlayerAttackUpAnimation);
                 else
                     PlayAnimation(Entity, &GameState->PlayerAttackDownAnimation);

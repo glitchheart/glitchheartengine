@@ -85,7 +85,10 @@ static void LoadAnimations(game_state* GameState)
     LoadAnimationFromFile("../assets/animations/enemy_anim_attack.pownim", &GameState->EnemyAttackAnimation, &GameState->RenderState);
     LoadAnimationFromFile("../assets/animations/enemy_anim_hit.pownim", &GameState->EnemyHitAnimation, &GameState->RenderState);
     
-    LoadAnimationFromFile("../assets/animations/player/idle.pownim", &GameState->PlayerIdleAnimation, &GameState->RenderState);
+    LoadAnimationFromFile("../assets/animations/player/idle.pownim", &GameState->PlayerIdleDownAnimation, &GameState->RenderState);
+    LoadAnimationFromFile("../assets/animations/player/idle_up.pownim", &GameState->PlayerIdleUpAnimation, &GameState->RenderState);
+    LoadAnimationFromFile("../assets/animations/player/idle_left.pownim", &GameState->PlayerIdleLeftAnimation, &GameState->RenderState);
+    LoadAnimationFromFile("../assets/animations/player/idle_right.pownim", &GameState->PlayerIdleRightAnimation, &GameState->RenderState);
     
     LoadAnimationFromFile("../assets/animations/player/run_up.pownim", &GameState->PlayerRunUpAnimation, &GameState->RenderState);
     LoadAnimationFromFile("../assets/animations/player/run_down.pownim", &GameState->PlayerRunDownAnimation, &GameState->RenderState);

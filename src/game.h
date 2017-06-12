@@ -76,10 +76,14 @@ struct game_state
     
     union
     {
-        animation Animation[16];
+        animation Animation[19];
         struct
         {
-            animation PlayerIdleAnimation;
+            animation PlayerIdleUpAnimation;
+            animation PlayerIdleDownAnimation;
+            animation PlayerIdleLeftAnimation;
+            animation PlayerIdleRightAnimation;
+            
             animation PlayerRunUpAnimation;
             animation PlayerRunDownAnimation;
             animation PlayerRunLeftAnimation;
