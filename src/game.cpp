@@ -600,31 +600,16 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
                         CollisionAABB.Extents = glm::vec2(0.5, 0.5);
                         
                         Tilemap->Data[X][Y] = Tilemap->Tiles[GameState->EditorState.SelectedTileType];
-                        /*
-                        switch(GameState->EditorState.SelectedTileType)
-                        {
-                            case Tile_None:
-                            Tilemap->Data[X][Y] = Tilemap->Tiles[0];
-                            Tilemap->Data[X][Y].TextureOffset = glm::vec2(0, 0);
-                            Tilemap->Data[X][Y].IsSolid = false;
-                            break;
-                            case Tile_Grass:
-                            Tilemap->Data[X][Y] = Tilemap->Tiles[1];
-                            Tilemap->Data[X][Y].CollisionAABB = CollisionAABB;
-                            break;
-                            case Tile_Stone:
-                            Tilemap->Data[X][Y] = Tilemap->Tiles[2];
-                            Tilemap->Data[X][Y].CollisionAABB = CollisionAABB;
-                            Tilemap->Data[X][Y].CollisionAABB = CollisionAABB;
-                            break;
-                            case Tile_Sand:
-                            Tilemap->Data[X][Y] = Tilemap->Tiles[3];
-                            Tilemap->Data[X][Y].CollisionAABB = CollisionAABB;
-                            break;
-                        }
-                        */
+                        
                         Tilemap->RenderInfo.Dirty = true;
                     }
+                }
+            }
+            if(GetMouseButton(Mouse_Left,GameState) && GetKey(Key_LeftShift,GameState))
+            {
+                if(X >= 0 && X < (int32)GameState->CurrentLevel.Tilemap.Width && Y >= 0 && Y < (int32)GameState->CurrentLevel.Tilemap.Height)
+                {
+                    GameState->CurrentLevel.Tilemap.Data[X][Y] = GameState->CurrentLevel.Tilemap.Tiles[0];
                 }
             }
         }
