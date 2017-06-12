@@ -43,7 +43,14 @@ std::map<uint32, Key_Code> KeyMappings =
     { GLFW_KEY_F3, Key_F3 },
     { GLFW_KEY_F4, Key_F4},
     { GLFW_KEY_F5, Key_F5},
-    { GLFW_KEY_F6, Key_F6}
+    { GLFW_KEY_F6, Key_F6},
+    { GLFW_KEY_F7, Key_F7},
+    { GLFW_KEY_F8, Key_F8},
+    { GLFW_KEY_F9, Key_F9},
+    { GLFW_KEY_F10, Key_F10},
+    { GLFW_KEY_F11, Key_F11},
+    { GLFW_KEY_F12, Key_F12},
+    { GLFW_KEY_DELETE, Key_Delete}
 };
 
 std::map<uint32, Mouse_Code> MouseButtonMappings = 

@@ -570,6 +570,7 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
             {
                 GameState->EditorState.SelectedEntity->Position = glm::vec2(Pos.x - GameState->EditorState.SelectedEntity->Scale.x / 2, Pos.y + GameState->EditorState.SelectedEntity->Scale.y / 2);
             }
+            
         }
         break;
         case Editor_Placement_Tile:

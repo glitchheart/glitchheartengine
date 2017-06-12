@@ -197,6 +197,7 @@ static void SaveLevelToFile(const char* FilePath, level* Level, game_state* Game
     File = fopen(FilePath, "w");
     if(File)
     {
+        SaveTilesheetMetaFile(Concat(Concat("../assets/textures/tilesheets/", Level->SheetName),".tm"), &GameState->RenderState, *Level, false);
         fprintf(File, "%s\n", Level->Name);
         fprintf(File, "%s\n", Level->SheetName);
         
