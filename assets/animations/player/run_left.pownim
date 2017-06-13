@@ -1,7 +1,7 @@
 name player_run_left
 type sprite
 framecount 5
-framesize 84
+framesize 84 84
 loop 1
 timeperframe 0.1
 frames

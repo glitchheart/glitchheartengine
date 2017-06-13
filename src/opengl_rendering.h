@@ -27,6 +27,16 @@ enum Texture_Type
     Texture_Barrel,
     Texture_SwordSimple,
     Texture_Player,
+    
+    Texture_SkeletonHit,
+    Texture_SkeletonAttack,
+    Texture_SkeletonWalk,
+    Texture_SkeletonIdle,
+    Texture_SkeletonReact,
+    Texture_SkeletonDeath,
+    
+    Texture_Blob,
+    
     Texture_HealthFull,
     Texture_Health2,
     Texture_Health1,
@@ -284,6 +294,14 @@ struct render_state
             texture BarrelTexture;
             texture SwordSimpleTexture;
             texture PlayerTexture;
+            texture SkeletonHitTexture;
+            texture SkeletonAttackTexture;
+            texture SkeletonWalkTexture;
+            texture SkeletonIdleTexture;
+            texture SkeletonReactTexture;
+            texture SkeletonDeathTexture;
+            
+            texture BlobTexture;
             
             texture HealthFullTexture;
             texture Health2Texture;
@@ -301,6 +319,14 @@ struct render_state
         "../assets/textures/barrel.png",
         "../assets/textures/spritesheets/sword_simple.png",
         "../assets/textures/spritesheets/knight_player.png",
+        "../assets/textures/spritesheets/skeleton/skeleton_hit.png",
+        "../assets/textures/spritesheets/skeleton/skeleton_attack.png",
+        "../assets/textures/spritesheets/skeleton/skeleton_walk.png",
+        "../assets/textures/spritesheets/skeleton/skeleton_idle.png",
+        "../assets/textures/spritesheets/skeleton/skeleton_react.png",
+        "../assets/textures/spritesheets/skeleton/skeleton_death.png",
+        
+        "../assets/textures/spritesheets/blob/blob.png",
         
         "../assets/textures/spritesheets/health_full.png",
         "../assets/textures/spritesheets/health_2.png",

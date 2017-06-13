@@ -20,7 +20,7 @@ struct animation
     real32 TimePerFrame;
     texture* Texture;
     uint32 FrameCount;
-    real32 FrameSize;
+    glm::vec2 FrameSize;
     bool32 Loop;
     
     // TODO(niels): Maybe create union for sprite and transform animations?

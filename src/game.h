@@ -76,7 +76,7 @@ struct game_state
     
     union
     {
-        animation Animation[19];
+        animation Animation[25];
         struct
         {
             animation PlayerIdleUpAnimation;
@@ -101,6 +101,15 @@ struct game_state
             
             animation EnemyHitAnimation;
             animation SwordAttackAnimation;
+            
+            animation SkeletonIdleAnimation;
+            animation SkeletonAttackAnimation;
+            animation SkeletonWalkAnimation;
+            animation SkeletonHitAnimation;
+            animation SkeletonDeathAnimation;
+            animation SkeletonReactAnimation;
+            
+            animation BlobAnimation;
         };
     };
 };

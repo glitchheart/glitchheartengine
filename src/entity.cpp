@@ -58,7 +58,7 @@ static void InitPlayer(game_state* GameState, glm::vec2 Position)
     
     Player->Position = Position;
     Player->Rotation = glm::vec3(0, 0, 0);
-    Player->Scale = glm::vec3(2, 2, 0);
+    Player->Scale = glm::vec3(3, 3, 0);
     Player->Velocity = glm::vec2(0,0);
     PlayAnimation(Player, &GameState->PlayerIdleDownAnimation);
     collision_AABB CollisionAABB;
@@ -201,6 +201,63 @@ static void SpawnEnemy(game_state* GameState, glm::vec2 Position)
     EnemyWeapon->EntityIndex = GameState->EntityCount;
     GameState->EntityCount++;
 }
+
+static void SpawnBlob(game_state* GameState, glm::vec2 Position)
+{
+    // Enemy
+    entity* Enemy = &GameState->Entities[GameState->EntityCount];
+    Enemy->Name = "blob";
+    Enemy->Type = Entity_Blob;
+    
+    render_entity* EnemyRenderEntity = &GameState->RenderState.RenderEntities[GameState->RenderState.RenderEntityCount];
+    
+    EnemyRenderEntity->ShaderIndex = Shader_SpriteSheetShader;
+    EnemyRenderEntity->Texture = &GameState->RenderState.BlobTexture;
+    
+    EnemyRenderEntity->Entity = &*Enemy;
+    Enemy->RenderEntityHandle = GameState->RenderState.RenderEntityCount++;
+    Enemy->CurrentAnimation = 0;
+    Enemy->AnimationInfo.Playing = false;
+    Enemy->AnimationInfo.FrameIndex = 0;
+    Enemy->AnimationInfo.CurrentTime = 0;
+    PlayAnimation(Enemy, &GameState->BlobAnimation);
+    Enemy->Rotation = glm::vec3(0, 0, 0);
+    Enemy->Position = Position;
+    Enemy->Scale = glm::vec3(2, 2, 1);
+    Enemy->Velocity = glm::vec2(-2,0);
+    Enemy->Active = true;
+    Enemy->IsKinematic = false;
+    Enemy->Layer = Layer_Enemy;
+    
+    Enemy->Blob.AIState = AI_Following;
+    Enemy->Blob.ExplodeStartTimer = (timer*)malloc(sizeof(timer));
+    Enemy->Blob.ExplodeStartTimer->TimerHandle = -1;
+    Enemy->Blob.ExplodeStartTimer->TimerMax = 0.5;
+    Enemy->Blob.ExplodeCountdownTimer = (timer*)malloc(sizeof(timer));
+    Enemy->Blob.ExplodeCountdownTimer->TimerHandle = -1;
+    Enemy->Blob.ExplodeCountdownTimer->TimerMax = 1;
+    Enemy->Velocity = glm::vec2(2, 2);
+    
+    collision_AABB CollisionAABB;
+    Enemy->Center = glm::vec2(0.5f, -0.5f);
+    CollisionAABB.Center = glm::vec2(Enemy->Position.x + Enemy->Center.x * Enemy->Scale.x,
+                                     Enemy->Position.y + Enemy->Center.y * Enemy->Scale.y);
+    CollisionAABB.Offset = glm::vec2(0, -0.9);
+    CollisionAABB.Extents = glm::vec2(0.3f, 0.15f);
+    CollisionAABB.IsTrigger = false;
+    Enemy->CollisionAABB = CollisionAABB;
+    
+    collision_AABB* HitTrigger = (collision_AABB*)malloc(sizeof(collision_AABB));
+    HitTrigger->Center = glm::vec2(Enemy->Position.x + Enemy->Center.x * Enemy->Scale.x,
+                                   Enemy->Position.y + Enemy->Center.y * Enemy->Scale.y);
+    HitTrigger->Extents = glm::vec2(0.5f, 0.7f);
+    HitTrigger->IsTrigger;
+    Enemy->HitTrigger = HitTrigger;
+    
+    Enemy->Health = 1;
+    Enemy->EntityIndex = GameState->EntityCount++;
+}
+
 
 static void SpawnBarrel(game_state* GameState, glm::vec2 Position)
 {
