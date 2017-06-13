@@ -30,7 +30,7 @@ static void LoadAnimationFromFile(const char* FilePath, animation* Animation, re
         //framesize
         if(fgets(LineBuffer, 255, File))
         {
-            sscanf(LineBuffer, "framesize %f", &Animation->FrameSize);
+            sscanf(LineBuffer, "framesize %f %f", &Animation->FrameSize.x, &Animation->FrameSize.y);
         }
         
         //loop
@@ -101,6 +101,15 @@ static void LoadAnimations(game_state* GameState)
     LoadAnimationFromFile("../assets/animations/player/attack_right.pownim", &GameState->PlayerAttackRightAnimation, &GameState->RenderState);
     
     LoadAnimationFromFile("../assets/animations/sword_attack.pownim", &GameState->SwordAttackAnimation, &GameState->RenderState);
+    
+    LoadAnimationFromFile("../assets/animations/skeleton/skeleton_attack.pownim", &GameState->SkeletonAttackAnimation, &GameState->RenderState);
+    LoadAnimationFromFile("../assets/animations/skeleton/skeleton_idle.pownim", &GameState->SkeletonIdleAnimation, &GameState->RenderState);
+    LoadAnimationFromFile("../assets/animations/skeleton/skeleton_hit.pownim", &GameState->SkeletonHitAnimation, &GameState->RenderState);
+    LoadAnimationFromFile("../assets/animations/skeleton/skeleton_death.pownim", &GameState->SkeletonDeathAnimation, &GameState->RenderState);
+    LoadAnimationFromFile("../assets/animations/skeleton/skeleton_walk .pownim", &GameState->SkeletonWalkAnimation, &GameState->RenderState);
+    LoadAnimationFromFile("../assets/animations/skeleton/skeleton_react.pownim", &GameState->SkeletonReactAnimation, &GameState->RenderState);
+    
+    LoadAnimationFromFile("../assets/animations/blob/blob_walk.pownim", &GameState->BlobAnimation, &GameState->RenderState);
 }
 
 static void PlayAnimation(entity* Entity, animation* Animation)

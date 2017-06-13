@@ -25,6 +25,7 @@ enum Entity_Enum
     Entity_Tile,
     Entity_PalmTree,
     Entity_Enemy,
+    Entity_Blob,
     Entity_Weapon,
     Entity_Barrel,
     
@@ -100,7 +101,10 @@ struct entity
         } Player;
         struct
         {
-        } PalmTree;
+            AI_State AIState;
+            timer* ExplodeStartTimer;
+            timer* ExplodeCountdownTimer;
+        } Blob;
         struct
         {
             bool32 IsAttacking;

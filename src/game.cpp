@@ -307,11 +307,53 @@ void UpdateWeapon(entity* Entity, game_state* GameState, real64 DeltaTime)
     {
         Entity->CurrentAnimation = 0;
         PlayAnimation(Entity, &GameState->SwordAttackAnimation);
-        RenderEntity->Rendered = true;
+        //RenderEntity->Rendered = true;
     }
     else if(!IsAttacking || !Entity->AnimationInfo.Playing)
     {
         RenderEntity->Rendered = false;
+    }
+}
+
+void UpdateBlob(entity* Entity, game_state* GameState, real64 DeltaTime)
+{
+    switch(Entity->Blob.AIState)
+    {
+        case AI_Following:
+        {
+            glm::vec2 Direction = glm::normalize(glm::vec2(GameState->Entities[GameState->PlayerIndex].Position.x - Entity->Position.x, GameState->Entities[GameState->PlayerIndex].Position.y - Entity->Position.y));
+            if(Abs(glm::distance(Entity->Position, GameState->Entities[GameState->PlayerIndex].Position)) < 1)
+            {
+                Entity->Blob.AIState = AI_Charging;
+                StartTimer(GameState, Entity->Blob.ExplodeStartTimer);
+            }
+            
+            Entity->Position.x += Direction.x * Entity->Velocity.x * DeltaTime;
+            Entity->Position.y += Direction.y * Entity->Velocity.y * DeltaTime;
+            
+            Entity->IsFlipped = Direction.x <= 0;
+        }
+        break;
+        case AI_Charging:
+        {
+            if(TimerDone(GameState, Entity->Blob.ExplodeStartTimer))
+            {
+                Entity->Blob.AIState = AI_Attacking;
+                StartTimer(GameState, Entity->Blob.ExplodeCountdownTimer);
+            }
+            
+            if(Abs(glm::distance(Entity->Position, GameState->Entities[GameState->PlayerIndex].Position)) >= 1)
+                Entity->Blob.AIState = AI_Following;
+        }
+        break;
+        case AI_Attacking:
+        {
+            if(TimerDone(GameState, Entity->Blob.ExplodeCountdownTimer))
+            {
+                printf("DEAD BLOB!\n");
+            }
+        }
+        break;
     }
 }
 
@@ -539,6 +581,11 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                 case Entity_Enemy:
                 {
                     UpdateEnemy(Entity, GameState, DeltaTime);
+                }
+                break;
+                case Entity_Blob:
+                {
+                    UpdateBlob(Entity, GameState, DeltaTime);
                 }
                 break;
                 case Entity_Barrel:

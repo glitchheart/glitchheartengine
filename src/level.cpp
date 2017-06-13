@@ -175,6 +175,12 @@ static bool32 LoadLevelFromFile(char* FilePath, level* Level, game_state* GameSt
                 sscanf(LineBuffer, "enemy %f %f", &Pos.x, &Pos.y);
                 SpawnEnemy(GameState, Pos);
             }
+            else if(StartsWith(&LineBuffer[0], "blob"))
+            {
+                glm::vec2 Pos;
+                sscanf(LineBuffer, "blob %f %f", &Pos.x, &Pos.y);
+                SpawnBlob(GameState, Pos);
+            }
             else if(StartsWith(&LineBuffer[0], "barrel"))
             {
                 glm::vec2 Pos;

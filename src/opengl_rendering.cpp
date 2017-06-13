@@ -1244,7 +1244,8 @@ static void RenderEntity(render_state *RenderState, entity &Entity, glm::mat4 Pr
             UseShader(&Shader);
             auto Frame = Animation->Frames[Entity.AnimationInfo.FrameIndex];
             SetVec2Uniform(Shader.Program,"textureOffset", glm::vec2(Frame.X, Frame.Y));
-            SetFloatUniform(Shader.Program, "frameSize", Animation->FrameSize);
+            SetFloatUniform(Shader.Program, "frameWidth", Animation->FrameSize.x);
+            SetFloatUniform(Shader.Program, "frameHeight", Animation->FrameSize.y);
             SetVec4Uniform(Shader.Program, "color", RenderEntity->Color);
             SetVec2Uniform(Shader.Program,"sheetSize",
                            glm::vec2(Animation->Texture->Width, Animation->Texture->Height));

@@ -1,7 +1,7 @@
 name player_walk_up
 type sprite
 framecount 2
-framesize 16
+framesize 16 16
 loop 1
 timeperframe 0.1
 frames

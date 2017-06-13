@@ -1,7 +1,7 @@
 name enemy_walk_idle
 type sprite
 framecount 1
-framesize 16
+framesize 16 16
 loop 1
 timeperframe 0.05
 frames
