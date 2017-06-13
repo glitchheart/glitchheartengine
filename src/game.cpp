@@ -719,11 +719,6 @@ extern "C" UPDATE(Update)
         }
     }
     
-    if(GetKeyDown(Key_Enter,GameState))
-    {
-        PlaySoundEffect(GameState, &GameState->SoundManager.Track01);
-    }
-    
     if(!GameState->IsInitialized)
     {
         if(!GameState->ShouldReload)
