@@ -3,6 +3,30 @@ static void PrintEntityInfo(const entity& Entity)
     printf("Entity: Name %s, position x %f y %f, rotation x %f y %f z %f\n", Entity.Name, Entity.Position.x, Entity.Position.y, Entity.Rotation.x, Entity.Rotation.y, Entity.Rotation.z);
 }
 
+static void DeleteEntity(game_state* GameState, uint32 EntityIndex)
+{
+    entity* Entity = &GameState->Entities[EntityIndex];
+    
+    uint32 RenderEntityHandle = Entity->RenderEntityHandle;
+    
+    for(uint32 RenderIndex = RenderEntityHandle; RenderIndex < GameState->RenderState.RenderEntityCount - 1; RenderIndex++)
+    {
+        GameState->RenderState.RenderEntities[RenderIndex] = GameState->RenderState.RenderEntities[RenderIndex + 1];
+        GameState->RenderState.RenderEntities[RenderIndex].Entity->RenderEntityHandle = RenderIndex;
+    }
+    
+    GameState->RenderState.RenderEntityCount--;
+    
+    GameState->EditorState.SelectedEntity = 0;
+    
+    for(uint32 Index = EntityIndex; Index < GameState->EntityCount - 1; Index++)
+    {
+        GameState->Entities[Index] = GameState->Entities[Index + 1];
+        GameState->Entities[Index].EntityIndex = Index;
+    }
+    GameState->EntityCount--;
+}
+
 static void InitPlayer(game_state* GameState, glm::vec2 Position)
 {
     entity* Player = &GameState->Entities[GameState->EntityCount];
@@ -125,7 +149,7 @@ static void SpawnEnemy(game_state* GameState, glm::vec2 Position)
     PlayAnimation(Enemy, &GameState->EnemyIdleAnimation);
     Enemy->Rotation = glm::vec3(0, 0, 0);
     Enemy->Position = Position;
-    Enemy->Scale = glm::vec3(1, 1, 1);
+    Enemy->Scale = glm::vec3(2, 2, 1);
     Enemy->Velocity = glm::vec2(-2,0);
     Enemy->Active = true;
     Enemy->IsKinematic = false;
@@ -232,10 +256,10 @@ static void SpawnBlob(game_state* GameState, glm::vec2 Position)
     Enemy->Blob.AIState = AI_Following;
     Enemy->Blob.ExplodeStartTimer = (timer*)malloc(sizeof(timer));
     Enemy->Blob.ExplodeStartTimer->TimerHandle = -1;
-    Enemy->Blob.ExplodeStartTimer->TimerMax = 0.5;
+    Enemy->Blob.ExplodeStartTimer->TimerMax = 0.3;
     Enemy->Blob.ExplodeCountdownTimer = (timer*)malloc(sizeof(timer));
     Enemy->Blob.ExplodeCountdownTimer->TimerHandle = -1;
-    Enemy->Blob.ExplodeCountdownTimer->TimerMax = 1;
+    Enemy->Blob.ExplodeCountdownTimer->TimerMax = 0.5;
     Enemy->Velocity = glm::vec2(2, 2);
     
     collision_AABB CollisionAABB;

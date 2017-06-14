@@ -4,6 +4,8 @@
 #define ANIMATION_GAME
 #include "animation.cpp"
 #include "entity.cpp"
+#include "editor.h"
+#include "editor.cpp"
 #include "collision.cpp"
 #include "level.cpp"
 #include "console.cpp"
@@ -350,7 +352,17 @@ void UpdateBlob(entity* Entity, game_state* GameState, real64 DeltaTime)
         {
             if(TimerDone(GameState, Entity->Blob.ExplodeCountdownTimer))
             {
-                printf("DEAD BLOB!\n");
+                Entity->Blob.AIState = AI_Dying;
+                PlayAnimation(Entity, &GameState->ExplosionAnimation);
+                PlaySoundEffect(GameState, &GameState->SoundManager.Explosion);
+            }
+        }
+        break;
+        case AI_Dying:
+        {
+            if(!Entity->AnimationInfo.Playing)
+            {
+                DeleteEntity(GameState, Entity->EntityIndex);
             }
         }
         break;
@@ -367,16 +379,16 @@ void UpdateEnemy(entity* Entity, game_state* GameState, real64 DeltaTime)
     {
         case AI_Sleeping:
         {
-            PlayAnimation(Entity, &GameState->EnemyIdleAnimation);
+            PlayAnimation(Entity, &GameState->SkeletonIdleAnimation);
         }
         break;
         case AI_Idle:
         {
-            PlayAnimation(Entity, &GameState->EnemyIdleAnimation);
+            PlayAnimation(Entity, &GameState->SkeletonIdleAnimation);
             if(DistanceToPlayer <= Entity->Enemy.MaxAlertDistance)
             {
                 Entity->Enemy.AIState = AI_Following;
-                PlayAnimation(Entity, &GameState->EnemyWalkAnimation);
+                PlayAnimation(Entity, &GameState->SkeletonWalkAnimation);
             }
         }
         break;
@@ -387,16 +399,15 @@ void UpdateEnemy(entity* Entity, game_state* GameState, real64 DeltaTime)
         {
             if(DistanceToPlayer > Entity->Enemy.MaxAlertDistance)
             {
-                PlayAnimation(Entity, &GameState->EnemyIdleAnimation);
+                PlayAnimation(Entity, &GameState->SkeletonIdleAnimation);
                 Entity->Enemy.AIState = AI_Idle;
             }
             else if(DistanceToPlayer < Entity->Enemy.MinDistance)
             {
-                PlayAnimation(Entity, &GameState->EnemyIdleAnimation);
+                PlayAnimation(Entity, &GameState->SkeletonIdleAnimation);
                 StartTimer(GameState, Entity->Enemy.ChargingTimer);
                 Entity->Enemy.AIState = AI_Charging;
                 render_entity* RenderEntity = &GameState->RenderState.RenderEntities[Entity->RenderEntityHandle];
-                RenderEntity->Color = glm::vec4(0, 0, 1, 1);
             }
             else
             {
@@ -452,13 +463,13 @@ void UpdateEnemy(entity* Entity, game_state* GameState, real64 DeltaTime)
             if(!Entity->Enemy.IsAttacking)
             {
                 Entity->Enemy.IsAttacking = true;
-                PlayAnimation(Entity, &GameState->EnemyAttackAnimation);
-                PlaySoundEffect(GameState, &GameState->SoundManager.SwordSlash01);
+                PlayAnimation(Entity, &GameState->SkeletonAttackAnimation);
+                
                 StartTimer(GameState, Entity->Enemy.AttackCooldownTimer);
             }
             else if(!Entity->AnimationInfo.Playing)
             {
-                PlayAnimation(Entity, &GameState->EnemyIdleAnimation);
+                PlayAnimation(Entity, &GameState->SkeletonIdleAnimation);
             }
             
             if(TimerDone(GameState, Entity->Enemy.AttackCooldownTimer))
@@ -484,12 +495,12 @@ void UpdateEnemy(entity* Entity, game_state* GameState, real64 DeltaTime)
         break;
         case AI_Hit:
         {
-            PlayAnimation(Entity, &GameState->EnemyHitAnimation);
+            PlayAnimation(Entity, &GameState->SkeletonHitAnimation);
             
             if(TimerDone(GameState, Entity->HitCooldownTimer))
             {
                 Entity->Enemy.AIState = AI_Idle;
-                PlayAnimation(Entity, &GameState->EnemyIdleAnimation);
+                PlayAnimation(Entity, &GameState->SkeletonIdleAnimation);
             }
         }
         break;
@@ -501,10 +512,7 @@ void UpdateEnemy(entity* Entity, game_state* GameState, real64 DeltaTime)
     //@Cleanup move this somewhere else, maybe out of switch
     render_entity* RenderEntity = &GameState->RenderState.RenderEntities[Entity->RenderEntityHandle];
     
-    if(Entity->Enemy.AIState == AI_Charging)
-        RenderEntity->Color = glm::vec4(0, 0, 1, 1);
-    else
-        RenderEntity->Color = glm::vec4(1, 1, 1, 1);
+    RenderEntity->Color = glm::vec4(1, 1, 1, 1);
     
     Entity->Velocity = glm::vec2(0,0);
     
@@ -748,6 +756,7 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
 extern "C" UPDATE(Update)
 {
     CheckConsoleInput(GameState, DeltaTime);
+    CheckEditorUIInput(GameState, DeltaTime);
     
     if((GetKey(Key_LeftCtrl, GameState) || GetKey(Key_RightCtrl, GameState)) && GetKeyDown(Key_E, GameState))
     {

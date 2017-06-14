@@ -1215,10 +1215,7 @@ static void RenderEntity(render_state *RenderState, entity &Entity, glm::mat4 Pr
         
         if(Entity.Type == Entity_Enemy)
         {
-            if(Entity.Enemy.AIState == AI_Hit)
-                RenderEntity->Color = glm::vec4(1, 0, 0, 1);
-            else if(Entity.Enemy.AIState == AI_Charging)
-                RenderEntity->Color = glm::vec4(0, 0, 1, 1);
+            
         }
         
         if(Entity.CurrentAnimation) 

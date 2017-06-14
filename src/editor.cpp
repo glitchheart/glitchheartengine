@@ -1,25 +1,3 @@
-static void DeleteEntity(game_state* GameState, uint32 EntityIndex)
-{
-    uint32 RenderEntityHandle = GameState->EditorState.SelectedEntity->RenderEntityHandle;
-    
-    for(uint32 RenderIndex = RenderEntityHandle; RenderIndex < GameState->RenderState.RenderEntityCount - 1; RenderIndex++)
-    {
-        GameState->RenderState.RenderEntities[RenderIndex] = GameState->RenderState.RenderEntities[RenderIndex + 1];
-        GameState->RenderState.RenderEntities[RenderIndex].Entity->RenderEntityHandle = RenderIndex;
-    }
-    
-    GameState->RenderState.RenderEntityCount--;
-    
-    GameState->EditorState.SelectedEntity = 0;
-    
-    for(uint32 Index = EntityIndex; Index < GameState->EntityCount - 1; Index++)
-    {
-        GameState->Entities[Index] = GameState->Entities[Index + 1];
-        GameState->Entities[Index].EntityIndex = Index;
-    }
-    GameState->EntityCount--;
-}
-
 static void CheckEditorUIInput(game_state* GameState, real64 DeltaTime)
 {
     real32 SX = 2.0f / GameState->RenderState.WindowWidth;
