@@ -37,6 +37,7 @@ enum Texture_Type
     
     Texture_Blob,
     
+    Texture_Explosion,
     Texture_HealthFull,
     Texture_Health2,
     Texture_Health1,
@@ -303,6 +304,8 @@ struct render_state
             
             texture BlobTexture;
             
+            texture ExplosionTexture;
+            
             texture HealthFullTexture;
             texture Health2Texture;
             texture Health1Texture;
@@ -327,6 +330,7 @@ struct render_state
         "../assets/textures/spritesheets/skeleton/skeleton_death.png",
         
         "../assets/textures/spritesheets/blob/blob.png",
+        "../assets/textures/spritesheets/explosion.png",
         
         "../assets/textures/spritesheets/health_full.png",
         "../assets/textures/spritesheets/health_2.png",

@@ -16,7 +16,8 @@ enum AI_State
     AI_Following,
     AI_Charging,
     AI_Attacking,
-    AI_Hit
+    AI_Hit,
+    AI_Dying
 };
 
 enum Entity_Enum

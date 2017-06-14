@@ -106,10 +106,12 @@ static void LoadAnimations(game_state* GameState)
     LoadAnimationFromFile("../assets/animations/skeleton/skeleton_idle.pownim", &GameState->SkeletonIdleAnimation, &GameState->RenderState);
     LoadAnimationFromFile("../assets/animations/skeleton/skeleton_hit.pownim", &GameState->SkeletonHitAnimation, &GameState->RenderState);
     LoadAnimationFromFile("../assets/animations/skeleton/skeleton_death.pownim", &GameState->SkeletonDeathAnimation, &GameState->RenderState);
-    LoadAnimationFromFile("../assets/animations/skeleton/skeleton_walk .pownim", &GameState->SkeletonWalkAnimation, &GameState->RenderState);
+    LoadAnimationFromFile("../assets/animations/skeleton/skeleton_walk.pownim", &GameState->SkeletonWalkAnimation, &GameState->RenderState);
     LoadAnimationFromFile("../assets/animations/skeleton/skeleton_react.pownim", &GameState->SkeletonReactAnimation, &GameState->RenderState);
     
     LoadAnimationFromFile("../assets/animations/blob/blob_walk.pownim", &GameState->BlobAnimation, &GameState->RenderState);
+    
+    LoadAnimationFromFile("../assets/animations/explosion.pownim", &GameState->ExplosionAnimation, &GameState->RenderState);
 }
 
 static void PlayAnimation(entity* Entity, animation* Animation)

@@ -1,9 +1,9 @@
-name skeleton_attack
+name skeleton_walk
 type sprite
-framecount 18
+framecount 13
 framesize 43 37
 loop 1
-timeperframe 0.1
+timeperframe 0.08
 frames
 0 0
 43 0
@@ -18,9 +18,4 @@ frames
 430 0
 473 0
 516 0
-559 0
-602 0
-645 0
-688 0
-731 0
-texture 5
+texture 6

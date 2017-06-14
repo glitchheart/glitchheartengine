@@ -21,9 +21,6 @@
 #include "opengl_rendering.h"
 #include "opengl_rendering.cpp"
 
-#include "editor.h"
-#include "editor.cpp"
-
 struct game_code
 {
     HMODULE GameCodeDLL;
@@ -147,7 +144,6 @@ int main(void)
         
         Game.Update(DeltaTime, &GameState);
         
-        CheckEditorUIInput(&GameState, DeltaTime);
         CheckLevelVAO(&GameState);
         Render(&GameState);
         PlaySounds(&GameState,&SoundDevice);

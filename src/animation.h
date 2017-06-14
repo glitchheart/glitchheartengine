@@ -23,7 +23,6 @@ struct animation
     glm::vec2 FrameSize;
     bool32 Loop;
     
-    // TODO(niels): Maybe create union for sprite and transform animations?
     sprite_sheet_frame* Frames;
 };
 
