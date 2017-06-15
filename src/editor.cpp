@@ -27,7 +27,7 @@ static void CheckEditorUIInput(game_state* GameState, real64 DeltaTime)
     
     if((GetKey(Key_LeftCtrl, GameState) || GetKey(Key_RightCtrl, GameState)) && GetKeyDown(Key_I, GameState))
     {
-        printf("Bibba\n");
+        
         GameState->CurrentLevel.Tilemap.Tiles[GameState->EditorUI.SelectedIndex].IsSolid = !GameState->CurrentLevel.Tilemap.Tiles[GameState->EditorUI.SelectedIndex].IsSolid; 
     }
 }

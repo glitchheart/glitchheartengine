@@ -2,7 +2,7 @@
 
 // This is calculated with some heuristic
 // In this case we use diagonal distance (http://theory.stanford.edu/~amitp/GameProgramming/Heuristics.html)
-static void AStarComputeHCost(astar_node* Node, astar_node TargetNode)
+static void AStarComputeHCost(astar_node* Node, astar_node& TargetNode)
 {
     int32 Dx = Abs(Node->X - TargetNode.X);
     int32 Dy = Abs(Node->Y - TargetNode.Y);
@@ -98,24 +98,32 @@ static void ReconstructPath(entity* Enemy, game_state* GameState, astar_node& Cu
             }
             Enemy->Enemy.AStarPath = (path_node*)malloc(sizeof(path_node) * Length + 1);
             
-            uint32 Index = Length - 1;Enemy->Enemy.AStarPath[Length] = {AStarWorkingData->WorkingList[Current.WorkingListIndex].X,AStarWorkingData->WorkingList[Current.WorkingListIndex].Y};
+            uint32 Index = Length - 1;Enemy->Enemy.AStarPath[Length] = {Current.X,Current.Y};
             PathNode = AStarWorkingData->WorkingList[Current.ParentIndex];
             while(PathNode.ParentIndex >= 0 && (PathNode.X != StartNode.X || PathNode.Y != StartNode.Y))
             {
+                Assert(!GameState->CurrentLevel.Tilemap.Data[PathNode.X][PathNode.Y].IsSolid);
                 Enemy->Enemy.AStarPath[Index--] = {PathNode.X,PathNode.Y};
+                
                 PathNode = AStarWorkingData->WorkingList[PathNode.ParentIndex];
             }
+            //Assert(!GameState->CurrentLevel.Tilemap.Data[PathNode.X][PathNode.Y].IsSolid);
             Enemy->Enemy.AStarPath[0] = {PathNode.X,PathNode.Y};
             Enemy->Enemy.AStarPathLength = Length;
             
             Enemy->Enemy.PathIndex = 1;
         }
         
+        printf("(%f,%f)\n",Enemy->Position.x,Enemy->Position.y);
         for(uint32 Index = 0; Index < Length; Index++)
         {
             tile_data Data = GameState->CurrentLevel.Tilemap.Data[Enemy->Enemy.AStarPath[Index].X][Enemy->Enemy.AStarPath[Index].Y];
+            
+            //Assert(!GameState->CurrentLevel.Tilemap.Data[Enemy->Enemy.AStarPath[Index].X][Enemy->Enemy.AStarPath[Index].Y].IsSolid);
+            
             printf("(%d,%d) - %d\n",Enemy->Enemy.AStarPath[Index].X,Enemy->Enemy.AStarPath[Index].Y,Data.IsSolid);
         }
+        
     }
 }
 
@@ -142,12 +150,12 @@ static void AStar(entity* Enemy, game_state* GameState, glm::vec2 StartPos, glm:
         uint32 WorkingListCount = 0;
         uint32 ClosedSetCount = 0;
         astar_node StartNode = {};
-        StartNode.X = (uint32)StartPos.x;
-        StartNode.Y = (uint32)StartPos.y;
+        StartNode.X = glm::floor(StartPos.x);
+        StartNode.Y = glm::floor(StartPos.y);
         
         astar_node TargetNode = {};
-        TargetNode.X = (uint32)TargetPos.x;
-        TargetNode.Y = (uint32)TargetPos.y;
+        TargetNode.X = glm::floor(TargetPos.x);
+        TargetNode.Y = glm::floor(TargetPos.y);
         
         uint32 OpenSetCount = 0;
         StartNode.WorkingListIndex = 0;
@@ -160,7 +168,8 @@ static void AStar(entity* Enemy, game_state* GameState, glm::vec2 StartPos, glm:
         int32 WorkingIndex = 0;
         uint32 LowestFcost = StartNode.FCost;
         
-        while(OpenSetCount > 0 && OpenSetCount < OPENSET_COUNT - 8 && WorkingListCount < WORKING_LIST_COUNT - 8)
+        while(OpenSetCount > 0 && OpenSetCount < OPENSET_COUNT - 8 && 
+              WorkingListCount < WORKING_LIST_COUNT - 8)
         {
             for(uint32 OpenIndex = 0; OpenIndex < OpenSetCount; OpenIndex++)
             {
@@ -173,7 +182,6 @@ static void AStar(entity* Enemy, game_state* GameState, glm::vec2 StartPos, glm:
             
             astar_node LastNode = AStarWorkingData->OpenSet[OpenSetCount - 1];
             astar_node Current = AStarWorkingData->OpenSet[WorkingIndex];
-            
             
             if(Current.X == TargetNode.X && Current.Y == TargetNode.Y)
             {
@@ -209,13 +217,17 @@ static void AStar(entity* Enemy, game_state* GameState, glm::vec2 StartPos, glm:
                 {
                     for(int32 Y = Current.Y - 1; Y < Current.Y + 2; Y++)
                     {
+                        if(X == Current.X && Y == Current.Y)
+                            continue;
                         
                         int32 Cost = 10;
                         if(Current.X != X && Current.Y != Y)
                         {
                             Cost = 14;
                         }
-                        HandleNeighbour(&Current, &TargetNode,GameState,X, Y,AStarWorkingData->OpenSet,&OpenSetCount,AStarWorkingData->ClosedSet,ClosedSetCount,Cost,AStarWorkingData->WorkingList,&WorkingListCount);
+                        HandleNeighbour(&Current, &TargetNode,GameState,X, Y,
+                                        AStarWorkingData->OpenSet,&OpenSetCount,
+                                        AStarWorkingData->ClosedSet,ClosedSetCount,Cost,AStarWorkingData->WorkingList,&WorkingListCount);
                         
                     }
                 }
