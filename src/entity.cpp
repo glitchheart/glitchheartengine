@@ -173,7 +173,7 @@ static void SpawnEnemy(game_state* GameState, glm::vec2 Position)
     Enemy->HitTrigger = HitTrigger;
     
     Enemy->Enemy.WalkingSpeed = 5;
-    Enemy->Enemy.MaxAlertDistance = 5;
+    Enemy->Enemy.MaxAlertDistance = 10;
     Enemy->Enemy.MinDistance = 2;
     Enemy->Enemy.AIState = AI_Idle;
     

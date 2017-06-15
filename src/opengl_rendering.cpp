@@ -1126,7 +1126,7 @@ static void RenderAStarPath(render_state* RenderState, entity* Entity, glm::mat4
         for(uint32 PathIndex = 0; PathIndex < Entity->Enemy.AStarPathLength; PathIndex++)
         {
             glm::mat4 Model(1.0f);
-            Model = glm::translate(Model, glm::vec3(Entity->Enemy.AStarPath[PathIndex].x, Entity->Enemy.AStarPath[PathIndex].y, 0.0f));
+            Model = glm::translate(Model, glm::vec3(Entity->Enemy.AStarPath[PathIndex].X, Entity->Enemy.AStarPath[PathIndex].Y, 0.0f));
             Model = glm::scale(Model, glm::vec3(1, 1, 1));
             
             auto Shader = RenderState->Shaders[Shader_AStarPath];

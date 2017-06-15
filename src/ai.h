@@ -10,6 +10,12 @@ struct astar_node
     int32 ParentIndex = -1;
 };
 
+struct path_node
+{
+    int32 X;
+    int32 Y;
+};
+
 #define OPENSET_COUNT 512
 #define CLOSEDSET_COUNT 512
 #define WORKING_LIST_COUNT 1024

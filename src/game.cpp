@@ -411,24 +411,24 @@ void UpdateEnemy(entity* Entity, game_state* GameState, real64 DeltaTime)
             }
             else
             {
-                glm::vec2 EntityPosition = glm::vec2(Entity->Position.x + Entity->Center.x * Entity->Scale.x,Entity->Position.y + Entity->Center.y * Entity->Scale.y);
+                glm::vec2 EntityPosition = glm::vec2(Entity->Position.x - Entity->Center.x * Entity->Scale.x,Entity->Position.y - Entity->Center.y * Entity->Scale.y);
                 if(!Entity->Enemy.AStarPath || (Entity->Enemy.AStarPathLength <= Entity->Enemy.PathIndex && DistanceToPlayer >= 2.0f)) 
                 {
                     Entity->Enemy.PathIndex = Entity->Enemy.AStarPathLength;
                     //StartTimer(GameState, Entity->Enemy.AStarCooldownTimer);
                     glm::vec2 StartPosition = EntityPosition;
-                    glm::vec2 TargetPosition = glm::vec2(Player.Position.x + Player.Center.x * Player.Scale.x,
-                                                         Player.Position.y + Player.Center.y * Player.Scale.y);
+                    glm::vec2 TargetPosition = glm::vec2(Player.Position.x - Player.Center.x * Player.Scale.x,
+                                                         Player.Position.y - Player.Center.y * Player.Scale.y);
                     AStar(Entity,GameState,StartPosition,TargetPosition);
                 }
                 
                 if(Entity->Enemy.AStarPath && Entity->Enemy.PathIndex < Entity->Enemy.AStarPathLength)
                 {
-                    glm::vec2 NewPos = Entity->Enemy.AStarPath[Entity->Enemy.PathIndex];
-                    real64 DistanceToNode = glm::distance(EntityPosition + glm::vec2(0.0,0.1f), NewPos);
+                    path_node NewPos = Entity->Enemy.AStarPath[Entity->Enemy.PathIndex];
+                    real64 DistanceToNode = glm::distance(EntityPosition + glm::vec2(0.0,0.1f), glm::vec2(NewPos.X,NewPos.Y));
                     if(DistanceToNode > 1.0f) 
                     {
-                        glm::vec2 Direction = NewPos - EntityPosition;
+                        glm::vec2 Direction = glm::vec2(NewPos.X,NewPos.Y) - EntityPosition;
                         Direction = glm::normalize(Direction);
                         Entity->Velocity = glm::vec2(Direction.x * Entity->Enemy.WalkingSpeed * DeltaTime, Direction.y * Entity->Enemy.WalkingSpeed * DeltaTime);
                     }
