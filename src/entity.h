@@ -119,7 +119,7 @@ struct entity
             
             AI_State AIState;
             bool32 Path;
-            glm::vec2* AStarPath;
+            path_node* AStarPath;
             uint32 AStarPathLength;
             uint32 PathIndex;
         } Enemy;

@@ -66,15 +66,55 @@ static void HandleNeighbour(astar_node* Current, astar_node* TargetNode,game_sta
             uint32 NewGCost = Current->GCost + Cost;
             if(NewGCost < NeighbourNode.GCost)
             {
-                NeighbourNode.GCost = NewGCost;
-                NeighbourNode.FCost = NewGCost + NeighbourNode.HCost;
-                NeighbourNode.ParentIndex = Current->WorkingListIndex;
+                OpenSet[Index].GCost = NewGCost;
+                OpenSet[Index].FCost = NewGCost + NeighbourNode.HCost;
+                OpenSet[Index].ParentIndex = Current->WorkingListIndex;
                 
-                OpenSet[Index] = NeighbourNode;
                 WorkingList[NeighbourNode.WorkingListIndex].GCost = NewGCost;
                 WorkingList[NeighbourNode.WorkingListIndex].FCost = NewGCost + NeighbourNode.HCost;
                 WorkingList[NeighbourNode.WorkingListIndex].ParentIndex = Current->WorkingListIndex;
             }
+        }
+    }
+}
+
+static void ReconstructPath(entity* Enemy, game_state* GameState, astar_node& Current,astar_working_data* AStarWorkingData,astar_node& StartNode)
+{
+    astar_node PathNode;
+    
+    if(Current.ParentIndex >= 0) {
+        PathNode = AStarWorkingData->WorkingList[Current.ParentIndex];
+        uint32 Length = 1;
+        while(PathNode.ParentIndex >= 0 && (PathNode.X != StartNode.X || PathNode.Y != StartNode.Y))
+        {
+            Length++;
+            PathNode = AStarWorkingData->WorkingList[PathNode.ParentIndex];
+        }
+        if(Length > 0) 
+        {
+            if(Enemy->Enemy.AStarPath)
+            {
+                free(Enemy->Enemy.AStarPath);
+            }
+            Enemy->Enemy.AStarPath = (path_node*)malloc(sizeof(path_node) * Length + 1);
+            
+            uint32 Index = Length - 1;Enemy->Enemy.AStarPath[Length] = {AStarWorkingData->WorkingList[Current.WorkingListIndex].X,AStarWorkingData->WorkingList[Current.WorkingListIndex].Y};
+            PathNode = AStarWorkingData->WorkingList[Current.ParentIndex];
+            while(PathNode.ParentIndex >= 0 && (PathNode.X != StartNode.X || PathNode.Y != StartNode.Y))
+            {
+                Enemy->Enemy.AStarPath[Index--] = {PathNode.X,PathNode.Y};
+                PathNode = AStarWorkingData->WorkingList[PathNode.ParentIndex];
+            }
+            Enemy->Enemy.AStarPath[0] = {PathNode.X,PathNode.Y};
+            Enemy->Enemy.AStarPathLength = Length;
+            
+            Enemy->Enemy.PathIndex = 1;
+        }
+        
+        for(uint32 Index = 0; Index < Length; Index++)
+        {
+            tile_data Data = GameState->CurrentLevel.Tilemap.Data[Enemy->Enemy.AStarPath[Index].X][Enemy->Enemy.AStarPath[Index].Y];
+            printf("(%d,%d) - %d\n",Enemy->Enemy.AStarPath[Index].X,Enemy->Enemy.AStarPath[Index].Y,Data.IsSolid);
         }
     }
 }
@@ -135,6 +175,15 @@ static void AStar(entity* Enemy, game_state* GameState, glm::vec2 StartPos, glm:
             astar_node Current = AStarWorkingData->OpenSet[WorkingIndex];
             
             
+            if(Current.X == TargetNode.X && Current.Y == TargetNode.Y)
+            {
+                ReconstructPath(Enemy,GameState,Current,AStarWorkingData, StartNode);
+                
+                // We're done with the path
+                free(AStarWorkingData);
+                return;
+            }
+            
             if(LastNode.X != AStarWorkingData->OpenSet[WorkingIndex].X || LastNode.Y != AStarWorkingData->OpenSet[WorkingIndex].Y)
             {
                 AStarWorkingData->OpenSet[WorkingIndex] = LastNode;
@@ -152,44 +201,7 @@ static void AStar(entity* Enemy, game_state* GameState, glm::vec2 StartPos, glm:
             OpenSetCount--;
             AStarWorkingData->ClosedSet[ClosedSetCount++] = Current;
             
-            if(Current.X == TargetNode.X && Current.Y == TargetNode.Y)
-            {
-                astar_node PathNode;
-                
-                if(Current.ParentIndex >= 0) {
-                    PathNode = AStarWorkingData->WorkingList[Current.ParentIndex];
-                    uint32 Length = 1;
-                    while(PathNode.ParentIndex >= 0 && (PathNode.X != StartNode.X || PathNode.Y != StartNode.Y))
-                    {
-                        Length++;
-                        PathNode = AStarWorkingData->WorkingList[PathNode.ParentIndex];
-                    }
-                    if(Length > 0) 
-                    {
-                        if(Enemy->Enemy.AStarPath)
-                        {
-                            free(Enemy->Enemy.AStarPath);
-                        }
-                        Enemy->Enemy.AStarPath = (glm::vec2*)malloc(sizeof(glm::vec2) * Length+1);
-                        
-                        uint32 Index = Length - 1;Enemy->Enemy.AStarPath[Length] = glm::vec2(AStarWorkingData->WorkingList[Current.WorkingListIndex].X,AStarWorkingData->WorkingList[Current.WorkingListIndex].Y);
-                        PathNode = AStarWorkingData->WorkingList[Current.ParentIndex];
-                        while(PathNode.ParentIndex >= 0 && (PathNode.X != StartNode.X || PathNode.Y != StartNode.Y))
-                        {
-                            Enemy->Enemy.AStarPath[Index--] = glm::vec2(PathNode.X,PathNode.Y);
-                            PathNode = AStarWorkingData->WorkingList[PathNode.ParentIndex];
-                        }
-                        Enemy->Enemy.AStarPath[0] = glm::vec2(PathNode.X,PathNode.Y);
-                        Enemy->Enemy.AStarPathLength = Length;
-                        
-                        Enemy->Enemy.PathIndex = 1;
-                    }
-                    
-                }
-                // We're done with the path
-                free(AStarWorkingData);
-                return;
-            }
+            
             
             if(Current.X != -1 && Current.Y != -1 && Current.X > 0 && Current.Y > 0 && Current.X < (int32)GameState->CurrentLevel.Tilemap.Width - 1 && Current.Y < (int32)GameState->CurrentLevel.Tilemap.Height - 1) {
                 
@@ -203,10 +215,8 @@ static void AStar(entity* Enemy, game_state* GameState, glm::vec2 StartPos, glm:
                         {
                             Cost = 14;
                         }
-                        if(!GameState->CurrentLevel.Tilemap.Data[X][Current.Y].IsSolid)
-                        {
-                            HandleNeighbour(&Current, &TargetNode,GameState,X, Y,AStarWorkingData->OpenSet,&OpenSetCount,AStarWorkingData->ClosedSet,ClosedSetCount,Cost,AStarWorkingData->WorkingList,&WorkingListCount);
-                        }
+                        HandleNeighbour(&Current, &TargetNode,GameState,X, Y,AStarWorkingData->OpenSet,&OpenSetCount,AStarWorkingData->ClosedSet,ClosedSetCount,Cost,AStarWorkingData->WorkingList,&WorkingListCount);
+                        
                     }
                 }
             }
