@@ -247,7 +247,7 @@ static void LoadTilemapBuffer(render_state* RenderState, tilemap_render_info& Ti
                 real32 TexCoordXHigh = (Tile->TextureOffset.x + Tilemap.TileSize) / Width;
                 real32 TexCoordYHigh = (Tile->TextureOffset.y + Tilemap.TileSize) / Height; 
                 
-                real32 CorrectY = (real32)Tilemap.Height - Y;
+                real32 CorrectY = Y;
                 VertexBuffer[Current++] = (GLfloat)X;
                 VertexBuffer[Current++] = (GLfloat)CorrectY + 1.0f;
                 VertexBuffer[Current++] = (GLfloat)TexCoordX;

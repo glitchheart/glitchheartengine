@@ -228,7 +228,7 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
             level* Level = &GameState->CurrentLevel;
             
             int32 XPos = (int32)(Entity->Position.x + Entity->Center.x * Entity->Scale.x);
-            int32 YPos = Level->Tilemap.Height - (int32)(Entity->Position.y + Entity->Center.y * Entity->Scale.y);
+            int32 YPos = (int32)(Entity->Position.y + Entity->Center.y * Entity->Scale.y);
             
             //@Improvement Is it necessary to go 2 tiles out?
             int32 MinX = Max(0, XPos - 2);
