@@ -125,7 +125,7 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
         
         if(Entity->HitTrigger)
         {
-            Entity->HitTrigger->Center = glm::vec2(Entity->Position.x + Entity->Center.x * Entity->Scale.x, Entity->Position.y + Entity->Center.y * Entity->Scale.y);
+            Entity->HitTrigger->Center = glm::vec2(Entity->Position.x + Entity->Center.x * Entity->Scale.x + Entity->HitTrigger->Offset.x, Entity->Position.y + Entity->Center.y * Entity->Scale.y + Entity->HitTrigger->Offset.y);
         }
         
         glm::vec2 PV;

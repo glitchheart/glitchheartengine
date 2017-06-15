@@ -1067,7 +1067,8 @@ static void RenderColliderWireframe(render_state* RenderState, entity* Entity, g
         {
             glm::mat4 Model(1.0f);
             
-            Model = glm::translate(Model, glm::vec3(Entity->Position.x + Entity->Center.x * Entity->Scale.x - Entity->HitTrigger->Extents.x, Entity->Position.y + Entity->Center.y * Entity->Scale.y - Entity->HitTrigger->Extents.y, 0.0f));
+            
+            Model = glm::translate(Model, glm::vec3(Entity->HitTrigger->Center.x - Entity->HitTrigger->Extents.x, Entity->HitTrigger->Center.y - Entity->HitTrigger->Extents.y, 0.0f)); //glm::translate(Model, glm::vec3(Entity->Position.x + Entity->Center.x * Entity->Scale.x - Entity->HitTrigger->Extents.x, Entity->Position.y + Entity->Center.y * Entity->Scale.y - Entity->HitTrigger->Extents.y, 0.0f));
             Model = glm::scale(Model, glm::vec3(Entity->HitTrigger->Extents.x * 2, Entity->HitTrigger->Extents.y * 2,1));
             
             glBindVertexArray(RenderState->WireframeVAO);
@@ -1311,6 +1312,8 @@ static void RenderTile(render_state* RenderState, uint32 X, uint32 Y, uint32 Til
     SetMat4Uniform(Shader.Program, "Model", Model);
     SetVec4Uniform(Shader.Program, "color", Color);
     SetVec2Uniform(Shader.Program, "textureOffset", TextureOffset);
+    SetFloatUniform(Shader.Program, "frameWidth", 16.0f);
+    SetFloatUniform(Shader.Program, "frameHeight", 16.0f);
     SetVec2Uniform(Shader.Program, "sheetSize", SheetSize);
     glDrawArrays(GL_QUADS, 0, 4);
     glBindVertexArray(0);
@@ -1446,7 +1449,7 @@ static void RenderGame(game_state* GameState)
             {
                 const tilesheet& Tilesheet = GameState->RenderState.Tilesheets[GameState->CurrentLevel.TilesheetIndex];
                 
-                glm::vec2 SheetSize(Tilesheet.Texture.Width / GameState->CurrentLevel.Tilemap.TileSize, Tilesheet.Texture.Height / GameState->CurrentLevel.Tilemap.TileSize);
+                glm::vec2 SheetSize(Tilesheet.Texture.Width, Tilesheet.Texture.Height);
                 
                 RenderTile(&GameState->RenderState, (uint32)GameState->EditorState.TileX, (uint32)GameState->EditorState.TileY, GameState->CurrentLevel.TilesheetIndex, TextureOffset, SheetSize, glm::vec4(1, 1, 1, 1),  GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
             }

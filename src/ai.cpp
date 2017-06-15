@@ -1,5 +1,3 @@
-
-
 // This is calculated with some heuristic
 // In this case we use diagonal distance (http://theory.stanford.edu/~amitp/GameProgramming/Heuristics.html)
 static void AStarComputeHCost(astar_node* Node, astar_node& TargetNode)
@@ -82,7 +80,8 @@ static void ReconstructPath(entity* Enemy, game_state* GameState, astar_node& Cu
 {
     astar_node PathNode;
     
-    if(Current.ParentIndex >= 0) {
+    if(Current.ParentIndex >= 0)
+    {
         PathNode = AStarWorkingData->WorkingList[Current.ParentIndex];
         uint32 Length = 1;
         while(PathNode.ParentIndex >= 0 && (PathNode.X != StartNode.X || PathNode.Y != StartNode.Y))
@@ -90,6 +89,7 @@ static void ReconstructPath(entity* Enemy, game_state* GameState, astar_node& Cu
             Length++;
             PathNode = AStarWorkingData->WorkingList[PathNode.ParentIndex];
         }
+        
         if(Length > 0) 
         {
             if(Enemy->Enemy.AStarPath)
@@ -208,7 +208,8 @@ static void AStar(entity* Enemy, game_state* GameState, glm::vec2 StartPos, glm:
             
             
             
-            if(Current.X != -1 && Current.Y != -1 && Current.X > 0 && Current.Y > 0 && Current.X < (int32)GameState->CurrentLevel.Tilemap.Width - 1 && Current.Y < (int32)GameState->CurrentLevel.Tilemap.Height - 1) {
+            if(Current.X != -1 && Current.Y != -1 && Current.X > 0 && Current.Y > 0 && Current.X < (int32)GameState->CurrentLevel.Tilemap.Width - 1 && Current.Y < (int32)GameState->CurrentLevel.Tilemap.Height - 1)
+            {
                 
                 for(int32 X = Current.X - 1; X < Current.X + 2; X++)
                 {
@@ -236,5 +237,3 @@ static void AStar(entity* Enemy, game_state* GameState, glm::vec2 StartPos, glm:
         free(AStarWorkingData);
     }
 }
-
-
