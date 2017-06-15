@@ -66,9 +66,10 @@ static void InitPlayer(game_state* GameState, glm::vec2 Position)
     Player->AnimationInfo.CurrentTime = 0;
     
     collision_AABB* HitTrigger = (collision_AABB*)malloc(sizeof(collision_AABB));
-    HitTrigger->Center = glm::vec2(Player->Position.x + Player->Center.x * Player->Scale.x,
-                                   Player->Position.y + Player->Center.y * Player->Scale.y);
-    HitTrigger->Extents = glm::vec2(0.5f, 0.7f);
+    HitTrigger->Offset = glm::vec2(0, 1.5f);
+    HitTrigger->Center = glm::vec2(Player->Position.x + Player->Center.x * Player->Scale.x + HitTrigger->Offset.x,
+                                   Player->Position.y + Player->Center.y * Player->Scale.y + HitTrigger->Offset.y);
+    HitTrigger->Extents = glm::vec2(0.5f, 1.0f);
     HitTrigger->IsTrigger;
     Player->HitTrigger = HitTrigger;
     
@@ -86,7 +87,7 @@ static void InitPlayer(game_state* GameState, glm::vec2 Position)
     Player->Velocity = glm::vec2(0,0);
     PlayAnimation(Player, &GameState->PlayerIdleDownAnimation);
     collision_AABB CollisionAABB;
-    Player->Center = glm::vec2(0.5f,-0.9f);
+    Player->Center = glm::vec2(0.5f, -1.0f);
     
     Player->Layer = Layer_Player;
     //Player->IgnoreLayers = Layer_Enemy;
@@ -149,7 +150,7 @@ static void SpawnEnemy(game_state* GameState, glm::vec2 Position)
     PlayAnimation(Enemy, &GameState->EnemyIdleAnimation);
     Enemy->Rotation = glm::vec3(0, 0, 0);
     Enemy->Position = Position;
-    Enemy->Scale = glm::vec3(2, 2, 1);
+    Enemy->Scale = glm::vec3(3, 3, 1);
     Enemy->Velocity = glm::vec2(-2,0);
     Enemy->Active = true;
     Enemy->IsKinematic = false;

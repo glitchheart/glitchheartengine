@@ -402,14 +402,14 @@ void UpdateEnemy(entity* Entity, game_state* GameState, real64 DeltaTime)
                 PlayAnimation(Entity, &GameState->SkeletonIdleAnimation);
                 Entity->Enemy.AIState = AI_Idle;
             }
-            /*
+            
             else if(DistanceToPlayer < Entity->Enemy.MinDistance)
             {
                 PlayAnimation(Entity, &GameState->SkeletonIdleAnimation);
                 StartTimer(GameState, Entity->Enemy.ChargingTimer);
                 Entity->Enemy.AIState = AI_Charging;
                 render_entity* RenderEntity = &GameState->RenderState.RenderEntities[Entity->RenderEntityHandle];
-            }*/
+            }
             else
             {
                 glm::vec2 EntityPosition = glm::vec2(Entity->Position.x,Entity->Position.y);
@@ -676,7 +676,7 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
         case Editor_Placement_Tile:
         {
             int32 X = (int32)glm::floor(Pos.x);
-            int32 Y = (int32)GameState->CurrentLevel.Tilemap.Height - (int32)glm::floor(Pos.y);
+            int32 Y = (int32)glm::floor(Pos.y);
             GameState->EditorState.TileX = (real32)X;
             GameState->EditorState.TileY = (real32)glm::ceil(Pos.y);
             
