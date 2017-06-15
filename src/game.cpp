@@ -402,23 +402,24 @@ void UpdateEnemy(entity* Entity, game_state* GameState, real64 DeltaTime)
                 PlayAnimation(Entity, &GameState->SkeletonIdleAnimation);
                 Entity->Enemy.AIState = AI_Idle;
             }
+            /*
             else if(DistanceToPlayer < Entity->Enemy.MinDistance)
             {
                 PlayAnimation(Entity, &GameState->SkeletonIdleAnimation);
                 StartTimer(GameState, Entity->Enemy.ChargingTimer);
                 Entity->Enemy.AIState = AI_Charging;
                 render_entity* RenderEntity = &GameState->RenderState.RenderEntities[Entity->RenderEntityHandle];
-            }
+            }*/
             else
             {
-                glm::vec2 EntityPosition = glm::vec2(Entity->Position.x - Entity->Center.x * Entity->Scale.x,Entity->Position.y - Entity->Center.y * Entity->Scale.y);
-                if(!Entity->Enemy.AStarPath || (Entity->Enemy.AStarPathLength <= Entity->Enemy.PathIndex && DistanceToPlayer >= 2.0f)) 
+                glm::vec2 EntityPosition = glm::vec2(Entity->Position.x,Entity->Position.y);
+                if(TimerDone(GameState,Entity->Enemy.AStarCooldownTimer)|| !Entity->Enemy.AStarPath || (Entity->Enemy.AStarPathLength <= Entity->Enemy.PathIndex && DistanceToPlayer >= 3.0f)) 
                 {
                     Entity->Enemy.PathIndex = Entity->Enemy.AStarPathLength;
-                    //StartTimer(GameState, Entity->Enemy.AStarCooldownTimer);
+                    StartTimer(GameState, Entity->Enemy.AStarCooldownTimer);
                     glm::vec2 StartPosition = EntityPosition;
-                    glm::vec2 TargetPosition = glm::vec2(Player.Position.x - Player.Center.x * Player.Scale.x,
-                                                         Player.Position.y - Player.Center.y * Player.Scale.y);
+                    glm::vec2 TargetPosition = glm::vec2(Player.Position.x + Player.Center.x * Player.Scale.x,
+                                                         Player.Position.y + Player.Center.y * Player.Scale.y);
                     AStar(Entity,GameState,StartPosition,TargetPosition);
                 }
                 

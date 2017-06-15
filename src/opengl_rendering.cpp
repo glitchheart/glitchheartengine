@@ -5,8 +5,14 @@ static void ErrorCallback(int Error, const char *Description)
 
 void FramebufferSizeCallback(GLFWwindow *Window, int Width, int Height)
 {
+    game_state *GameState = (game_state *)glfwGetWindowUserPointer(Window);
+    
     glfwSetWindowAspectRatio(Window, 16, 9);
     glViewport(0, 0, Width, Height);
+    GLint Viewport[4];
+    glGetIntegerv(GL_VIEWPORT, Viewport);
+    memcpy(GameState->RenderState.Viewport, Viewport, sizeof(GLint) * 4);
+    
 }
 
 inline static real64 GetTime()
@@ -947,7 +953,7 @@ static void RenderText(render_state* RenderState, const render_font& Font, const
             real32 Width;
             real32 Height;
             MeasureText(&Font, Text, &Width, &Height);
-            X -= RenderState->ScaleX * Width / 2;
+            X -= RenderState->ScaleX * Width / 2.0f;
         }
         break;
     }
@@ -1172,7 +1178,12 @@ static void RenderUISprite(render_state* RenderState, uint32 TextureHandle, glm:
     else
     {
         glBindVertexArray(RenderState->UISpriteVAO);
-        glBindTexture(GL_TEXTURE_2D, TextureHandle);
+        if (RenderState->BoundTexture != TextureHandle) //never bind the same texture if it's already bound
+        {
+            glBindTexture(GL_TEXTURE_2D, TextureHandle);
+            RenderState->BoundTexture = TextureHandle;
+        }
+        
     }
     
     UseShader(&Shader);
@@ -1574,6 +1585,11 @@ static void Render(game_state* GameState)
     
     RenderPlayerUI(&GameState->HealthBar, &GameState->RenderState);
     
+    auto Pos = glm::unProject(glm::vec3(GameState->InputController.MouseX, GameState->RenderState.Viewport[3] - GameState->InputController.MouseY, 0),
+                              GameState->Camera.ViewMatrix,
+                              GameState->Camera.ProjectionMatrix,
+                              glm::vec4(0, 0, GameState->RenderState.Viewport[2], GameState->RenderState.Viewport[3]));
+    
     if(GameState->Console.CurrentTime > 0)
         RenderConsole(GameState, &GameState->Console);
     
@@ -1581,7 +1597,17 @@ static void Render(game_state* GameState)
     {
         char FPS[32];
         sprintf(FPS, "%4.0f",GameState->RenderState.FPS);
-        RenderText(&GameState->RenderState, GameState->RenderState.InconsolataFont, glm::vec4(1, 1, 1, 1), FPS, GameState->RenderState.WindowWidth / 2.0f, 20.0f, 1.0f, Alignment_Center);
+        RenderText(&GameState->RenderState, GameState->RenderState.InconsolataFont, 
+                   glm::vec4(1, 1, 1, 1), FPS, GameState->RenderState.WindowWidth / 2.0f, 
+                   20.0f, 1.0f);
+        
+        int32 X = (int32)glm::floor(Pos.x);
+        int32 Y = (int32)glm::floor(Pos.y);
+        char MousePos[32];
+        sprintf(MousePos,"Mouse: (%d %d)",X,Y);
+        RenderText(&GameState->RenderState, GameState->RenderState.InconsolataFont, 
+                   glm::vec4(1, 1, 1, 1), MousePos, GameState->RenderState.WindowWidth / 2.0f - 200, 
+                   20.0f, 1.0f);
     }
     
     glfwSwapBuffers(GameState->RenderState.Window);
