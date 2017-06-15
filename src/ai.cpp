@@ -143,19 +143,19 @@ static void AStar(entity* Enemy, game_state* GameState, glm::vec2 StartPos, glm:
        TargetPos.x >= 0 && TargetPos.y >= 0)
     {
         astar_working_data* AStarWorkingData = (astar_working_data*)malloc(sizeof(astar_working_data));
-        tile_data StartTile = GameState->CurrentLevel.Tilemap.Data[(uint32)StartPos.x][(uint32)StartPos.y];
-        tile_data TargetTile = GameState->CurrentLevel.Tilemap.Data[(uint32)TargetPos.x][(uint32)TargetPos.y];
+        tile_data StartTile = GameState->CurrentLevel.Tilemap.Data[(int32)glm::floor(StartPos.x)][(int32)glm::floor(StartPos.y)];
+        tile_data TargetTile = GameState->CurrentLevel.Tilemap.Data[(int32)glm::floor(TargetPos.x)][(int32)glm::floor(TargetPos.y)];
         glm::vec2 CurrentPos = StartPos;
         
         uint32 WorkingListCount = 0;
         uint32 ClosedSetCount = 0;
         astar_node StartNode = {};
-        StartNode.X = glm::floor(StartPos.x);
-        StartNode.Y = glm::floor(StartPos.y);
+        StartNode.X = (int32)glm::floor(StartPos.x);
+        StartNode.Y = (int32)glm::floor(StartPos.y);
         
         astar_node TargetNode = {};
-        TargetNode.X = glm::floor(TargetPos.x);
-        TargetNode.Y = glm::floor(TargetPos.y);
+        TargetNode.X = (int32)glm::floor(TargetPos.x);
+        TargetNode.Y = (int32)glm::floor(TargetPos.y);
         
         uint32 OpenSetCount = 0;
         StartNode.WorkingListIndex = 0;
