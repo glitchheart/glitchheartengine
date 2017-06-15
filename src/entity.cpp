@@ -19,7 +19,7 @@ static void DeleteEntity(game_state* GameState, uint32 EntityIndex)
     
     GameState->EditorState.SelectedEntity = 0;
     
-    for(uint32 Index = EntityIndex; Index < GameState->EntityCount - 1; Index++)
+    for(uint32 Index = EntityIndex; Index < (uint32)GameState->EntityCount - 1; Index++)
     {
         GameState->Entities[Index] = GameState->Entities[Index + 1];
         GameState->Entities[Index].EntityIndex = Index;

@@ -330,8 +330,8 @@ void UpdateBlob(entity* Entity, game_state* GameState, real64 DeltaTime)
                 StartTimer(GameState, Entity->Blob.ExplodeStartTimer);
             }
             
-            Entity->Position.x += Direction.x * Entity->Velocity.x * DeltaTime;
-            Entity->Position.y += Direction.y * Entity->Velocity.y * DeltaTime;
+            Entity->Position.x += Direction.x * Entity->Velocity.x * (real32)DeltaTime;
+            Entity->Position.y += Direction.y * Entity->Velocity.y * (real32)DeltaTime;
             
             Entity->IsFlipped = Direction.x <= 0;
         }
@@ -412,7 +412,7 @@ void UpdateEnemy(entity* Entity, game_state* GameState, real64 DeltaTime)
             }
             else
             {
-                glm::vec2 EntityPosition = glm::vec2(Entity->Position.x,Entity->Position.y);
+                glm::vec2 EntityPosition = glm::vec2(Entity->Position.x + Entity->Center.x * Entity->Scale.x,Entity->Position.y + Entity->Center.y * Entity->Scale.y);
                 if(TimerDone(GameState,Entity->Enemy.AStarCooldownTimer) || !Entity->Enemy.AStarPath || (Entity->Enemy.AStarPathLength <= Entity->Enemy.PathIndex && DistanceToPlayer >= 3.0f)) 
                 {
                     Entity->Enemy.PathIndex = Entity->Enemy.AStarPathLength;
@@ -646,7 +646,7 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
                         {
                             case Button_Exit:
                             {
-                                GameState->GameMode == Mode_Exit;
+                                GameState->GameMode = Mode_Exit;
                             }
                             break;
                             case Button_SaveAndExit:
