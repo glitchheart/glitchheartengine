@@ -24,9 +24,9 @@ static void SaveTilesheetMetaFile(const char* FilePath, render_state* RenderStat
             fprintf(File, "%d\n", 16);
             
             uint32 Index = 0;
-            for(uint32 Y = 0; Y < Texture.Height / 16; Y++)
+            for(uint32 Y = 0; Y < (uint32)Texture.Height / 16; Y++)
             {
-                for(uint32 X = 0; X < Texture.Width / 16; X++)
+                for(uint32 X = 0; X < (uint32)Texture.Width / 16; X++)
                 {
                     fprintf(File, "%d %d %d %d %d %d %f %f\n", Index, (int32)X * 16, (int32)Y * 16, 16, 16, 0, 0.5f, 0.5);
                     Index++;

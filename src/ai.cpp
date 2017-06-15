@@ -114,7 +114,6 @@ static void ReconstructPath(entity* Enemy, game_state* GameState, astar_node& Cu
             Enemy->Enemy.PathIndex = 1;
         }
         
-        printf("(%f,%f)\n",Enemy->Position.x,Enemy->Position.y);
         for(uint32 Index = 0; Index < Length; Index++)
         {
             tile_data Data = GameState->CurrentLevel.Tilemap.Data[Enemy->Enemy.AStarPath[Index].X][Enemy->Enemy.AStarPath[Index].Y];
@@ -135,24 +134,32 @@ static void ReconstructPath(entity* Enemy, game_state* GameState, astar_node& Cu
 */
 static void AStar(entity* Enemy, game_state* GameState, glm::vec2 StartPos, glm::vec2 TargetPos)
 {
-    if(StartPos.x < GameState->CurrentLevel.Tilemap.Width && StartPos.y < GameState->CurrentLevel.Tilemap.Height &&
-       StartPos.x >= 0 && StartPos.y >= 0 && TargetPos.x < GameState->CurrentLevel.Tilemap.Width && TargetPos.y < GameState->CurrentLevel.Tilemap.Height &&
-       TargetPos.x >= 0 && TargetPos.y >= 0)
+    int32 StartX = (int32)glm::floor(StartPos.x);
+    int32 StartY = (int32)glm::floor(StartPos.y);
+    
+    int32 TargetX = (int32)glm::floor(TargetPos.x);
+    int32 TargetY = (int32)glm::floor(TargetPos.y);
+    
+    if((uint32)StartX < GameState->CurrentLevel.Tilemap.Width && (uint32)StartY < GameState->CurrentLevel.Tilemap.Height &&
+       StartX >= 0 && StartY >= 0 && (uint32)TargetX < GameState->CurrentLevel.Tilemap.Width && (uint32)TargetY < GameState->CurrentLevel.Tilemap.Height &&
+       TargetX >= 0 && TargetY >= 0)
     {
+        
+        
         astar_working_data* AStarWorkingData = (astar_working_data*)malloc(sizeof(astar_working_data));
-        tile_data StartTile = GameState->CurrentLevel.Tilemap.Data[(int32)glm::floor(StartPos.x)][(int32)glm::floor(StartPos.y)];
-        tile_data TargetTile = GameState->CurrentLevel.Tilemap.Data[(int32)glm::floor(TargetPos.x)][(int32)glm::floor(TargetPos.y)];
+        tile_data StartTile = GameState->CurrentLevel.Tilemap.Data[StartX][StartY];
+        tile_data TargetTile = GameState->CurrentLevel.Tilemap.Data[TargetX][TargetY];
         glm::vec2 CurrentPos = StartPos;
         
         uint32 WorkingListCount = 0;
         uint32 ClosedSetCount = 0;
         astar_node StartNode = {};
-        StartNode.X = (int32)glm::floor(StartPos.x);
-        StartNode.Y = (int32)glm::floor(StartPos.y);
+        StartNode.X = StartX;
+        StartNode.Y = StartY;
         
         astar_node TargetNode = {};
-        TargetNode.X = (int32)glm::floor(TargetPos.x);
-        TargetNode.Y = (int32)glm::floor(TargetPos.y);
+        TargetNode.X = TargetX;
+        TargetNode.Y = TargetY;
         
         uint32 OpenSetCount = 0;
         StartNode.WorkingListIndex = 0;
