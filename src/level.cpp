@@ -130,7 +130,7 @@ static bool32 LoadLevelFromFile(char* FilePath, level* Level, game_state* GameSt
         if(fgets(LineBuffer, 255, File))
             sscanf(LineBuffer, "%d", &MapHeight);
         
-        //Assert(MapWidth > 0 && MapHeight > 0);
+        Assert(MapWidth > 0 && MapHeight > 0);
         
         Level->Tilemap.Width = MapWidth;
         Level->Tilemap.Height = MapHeight;
@@ -153,7 +153,7 @@ static bool32 LoadLevelFromFile(char* FilePath, level* Level, game_state* GameSt
             for(uint32 IndexWidth = 0; IndexWidth < MapWidth; ++IndexWidth) 
             {
                 collision_AABB CollisionAABB;
-                CollisionAABB.Center = glm::vec2(IndexWidth + 0.5f, MapHeight - IndexHeight + 0.5f);
+                CollisionAABB.Center = glm::vec2(IndexWidth + 0.5f, MapHeight - IndexHeight - 0.5f);
                 CollisionAABB.Extents = glm::vec2(0.5, 0.5);
                 CollisionAABB.IsTrigger = false;
                 
@@ -162,7 +162,7 @@ static bool32 LoadLevelFromFile(char* FilePath, level* Level, game_state* GameSt
                 tile_data Data = Level->Tilemap.Tiles[TypeIndex];
                 Data.CollisionAABB = CollisionAABB;
                 
-                Level->Tilemap.Data[IndexWidth][IndexHeight] = Data;
+                Level->Tilemap.Data[IndexWidth][MapHeight - IndexHeight - 1] = Data;
             }
             IndexHeight++;
         }

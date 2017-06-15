@@ -118,11 +118,8 @@ static void ReconstructPath(entity* Enemy, game_state* GameState, astar_node& Cu
         for(uint32 Index = 0; Index < Length; Index++)
         {
             tile_data Data = GameState->CurrentLevel.Tilemap.Data[Enemy->Enemy.AStarPath[Index].X][Enemy->Enemy.AStarPath[Index].Y];
-            
-            //Assert(!GameState->CurrentLevel.Tilemap.Data[Enemy->Enemy.AStarPath[Index].X][Enemy->Enemy.AStarPath[Index].Y].IsSolid);
-            
-            printf("(%d,%d) - %d\n",Enemy->Enemy.AStarPath[Index].X,Enemy->Enemy.AStarPath[Index].Y,Data.IsSolid);
         }
+        
         
     }
 }

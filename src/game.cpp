@@ -417,7 +417,7 @@ void UpdateEnemy(entity* Entity, game_state* GameState, real64 DeltaTime)
                 {
                     Entity->Enemy.PathIndex = Entity->Enemy.AStarPathLength;
                     StartTimer(GameState, Entity->Enemy.AStarCooldownTimer);
-                    glm::vec2 StartPosition = EntityPosition;
+                    glm::vec2 StartPosition = glm::vec2(EntityPosition.x, EntityPosition.y);
                     glm::vec2 TargetPosition = glm::vec2(Player.Position.x,
                                                          Player.Position.y);
                     AStar(Entity,GameState,StartPosition,TargetPosition);
