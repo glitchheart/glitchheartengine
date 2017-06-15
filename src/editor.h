@@ -1,12 +1,46 @@
 #ifndef EDITOR_H
 #define EDITOR_H
 
+//@Obsolete: Delete this
 enum Editor_UI_State
 {
     State_Selection,
     State_Animations,
     State_Collision,
     State_EntityList
+};
+
+enum Editor_Mode
+{
+    Editor_Normal,
+    Editor_Animation,
+    Editor_Tilesheet
+};
+
+enum Editor_Button
+{
+    Button_Exit,
+    Button_SaveAndExit,
+    Button_Tilesheet,
+    Button_Animation,
+    Button_SwitchMode,
+};
+
+struct button
+{
+    bool32 Active = false;
+    bool32 Clicked = false;
+    char* Text;
+    glm::vec2 ScreenPosition;
+    glm::vec2 Size;
+    glm::vec4 Color;
+    glm::vec4 TextColor;
+    timer* ClickAnimationTimer;
+    
+    union
+    {
+        Editor_Button EditorType;
+    };
 };
 
 #define MENU_OPTIONS_COUNT 2
@@ -17,8 +51,11 @@ enum Editor_Placement_Mode
     Editor_Placement_Tile
 };
 
+#define NUM_EDITOR_BUTTONS = 10
+
 struct editor_state
 {
+    Editor_Mode Mode = Editor_Normal;
     Editor_Placement_Mode PlacementMode = Editor_Placement_Tile;
     
     entity* SelectedEntity;
@@ -40,6 +77,8 @@ struct editor_state
     real32 ToolbarY;
     real32 ToolbarWidth;
     real32 ToolbarHeight;
+    
+    button Buttons[10];
 };
 
 struct editor_ui

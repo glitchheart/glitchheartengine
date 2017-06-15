@@ -32,7 +32,7 @@ typedef double real64;
 
 struct timer
 {
-    int32 TimerHandle;
+    int32 TimerHandle = -1;
     real64 TimerMax;
 };
 

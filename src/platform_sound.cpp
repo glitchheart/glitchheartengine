@@ -159,6 +159,7 @@ static void LoadSounds(sound_manager *SoundManager, sound_device* SoundDevice)
     LoadSound("../assets/audio/sword_hit_01.wav", DefaultSoundInfo, &SoundManager->SwordHit01,SoundDevice);
     LoadSound("../assets/audio/dash.wav", DefaultSoundInfo, &SoundManager->Dash,SoundDevice);
     LoadSound("../assets/audio/explosion.wav", DefaultSoundInfo, &SoundManager->Explosion, SoundDevice);
+    LoadSound("../assets/audio/ui/button_click.wav", DefaultSoundInfo, &SoundManager->ButtonClick, SoundDevice);
     
     // // Add more sounds here if necessary
 }
