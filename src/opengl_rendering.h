@@ -343,6 +343,7 @@ struct render_state
     FT_Library FTLibrary;
     render_font InconsolataFont;
     render_font MenuFont;
+    render_font ButtonFont;
 };
 
 #endif

@@ -621,137 +621,211 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
 
 static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
 {
-    if(GetKeyDown(Key_M, GameState))
+    switch(GameState->EditorState.Mode)
     {
-        if(GameState->EditorState.PlacementMode == Editor_Placement_Tile)
-            GameState->EditorState.PlacementMode = Editor_Placement_Entity;
-        else
-            GameState->EditorState.PlacementMode = Editor_Placement_Tile;
-    }
-    
-    auto Pos = glm::unProject(glm::vec3(GameState->InputController.MouseX, GameState->RenderState.Viewport[3] - GameState->InputController.MouseY, 0),
-                              GameState->Camera.ViewMatrix,
-                              GameState->Camera.ProjectionMatrix,
-                              glm::vec4(0, 0, GameState->RenderState.Viewport[2], GameState->RenderState.Viewport[3]));
-    
-    switch(GameState->EditorState.PlacementMode)
-    {
-        case Editor_Placement_Entity:
+        case Editor_Normal:
         {
-            if(GetMouseButtonDown(Mouse_Left, GameState))
+            bool32 InToolbar = GameState->RenderState.WindowHeight - GameState->InputController.MouseY >= GameState->RenderState.WindowHeight - 150;
+            
+            for(uint32 ButtonIndex = 0; ButtonIndex < 10; ButtonIndex++)
             {
-                if(GameState->InputController.MouseX >= GameState->EditorState.ToolbarX)
+                button* Button = &GameState->EditorState.Buttons[ButtonIndex];
+                Button->Clicked = false;
+                
+                if(GetMouseButtonDown(Mouse_Left, GameState))
                 {
-                    uint32 Selected = (uint32)(GameState->InputController.MouseY / 65.0f);
-                    GameState->EditorState.SelectedTileType = Selected;
-                }
-                else
-                {
-                    entity* Selected = 0;
-                    
-                    for(uint32 EntityIndex = 0;
-                        EntityIndex < GameState->EntityCount;
-                        EntityIndex++)
+                    if(Button->Active && GameState->InputController.MouseX >= Button->ScreenPosition.x && GameState->InputController.MouseX <= Button->ScreenPosition.x + Button->Size.x && 
+                       GameState->RenderState.WindowHeight - GameState->InputController.MouseY >= Button->ScreenPosition.y && GameState->RenderState.WindowHeight - GameState->InputController.MouseY <= Button->ScreenPosition.y + Button->Size.y)
                     {
-                        entity* Entity = &GameState->Entities[EntityIndex];
+                        Button->Clicked = true;
                         
-                        if(Entity->Type != Entity_Weapon && Pos.x >= Entity->Position.x && Pos.y >= Entity->Position.y - Entity->Scale.y && Pos.x < Entity->Position.x + Entity->Scale.x && Pos.y < Entity->Position.y)
+                        PlaySoundEffect(GameState, &GameState->SoundManager.ButtonClick);
+                        StartTimer(GameState, Button->ClickAnimationTimer);
+                        
+                        switch(Button->EditorType)
                         {
-                            Selected = Entity;
+                            case Button_Exit:
+                            {
+                                GameState->GameMode == Mode_Exit;
+                            }
+                            break;
+                            case Button_SaveAndExit:
+                            {
+                                SaveLevelToFile(GameState->LevelPath, &GameState->CurrentLevel, GameState);
+                                ReloadCurrentLevel(GameState);
+                                GameState->GameMode = Mode_InGame;
+                            }
+                            break;
+                            case Button_Tilesheet:
+                            {
+                            }
+                            break;
+                            case Button_Animation:
+                            {
+                            }
+                            break;
+                            case Button_SwitchMode:
+                            {
+                                if(GameState->EditorState.PlacementMode == Editor_Placement_Tile)
+                                    GameState->EditorState.PlacementMode = Editor_Placement_Entity;
+                                else
+                                    GameState->EditorState.PlacementMode = Editor_Placement_Tile;
+                            }
                             break;
                         }
                     }
-                    
-                    GameState->EditorState.SelectedEntity = Selected;
-                }
-            }
-            
-            if(GameState->EditorState.SelectedEntity && GetMouseButton(Mouse_Left, GameState))
-            {
-                GameState->EditorState.SelectedEntity->Position = glm::vec2(Pos.x - GameState->EditorState.SelectedEntity->Scale.x / 2, Pos.y + GameState->EditorState.SelectedEntity->Scale.y / 2);
-            }
-            
-        }
-        break;
-        case Editor_Placement_Tile:
-        {
-            int32 X = (int32)glm::floor(Pos.x);
-            int32 Y = (int32)glm::floor(Pos.y);
-            GameState->EditorState.TileX = (real32)X;
-            GameState->EditorState.TileY = (real32)glm::ceil(Pos.y);
-            
-            if(GetMouseButton(Mouse_Left, GameState))
-            {
-                if(GameState->InputController.MouseX >= GameState->EditorState.ToolbarX)
-                {
-                    uint32 Selected = (uint32)((GameState->RenderState.WindowHeight - GameState->InputController.MouseY + abs(GameState->EditorState.ToolbarScrollOffsetY)) / 60.0f);
-                    GameState->EditorState.SelectedTileType = Selected;
                 }
                 
-                else
+                if(Button->Active)
                 {
-                    if(X >= 0 && X < (int32)GameState->CurrentLevel.Tilemap.Width 
-                       && Y >= 0 && Y < (int32)GameState->CurrentLevel.Tilemap.Height)
-                    {
-                        tilemap* Tilemap = &GameState->CurrentLevel.Tilemap;
-                        
-                        collision_AABB CollisionAABB;
-                        CollisionAABB.Center = glm::vec2(X + 0.5f, Y + 0.5f);
-                        CollisionAABB.Extents = glm::vec2(0.5, 0.5);
-                        
-                        Tilemap->Data[X][Y] = Tilemap->Tiles[GameState->EditorState.SelectedTileType];
-                        
-                        Tilemap->RenderInfo.Dirty = true;
-                    }
+                    if(!TimerDone(GameState, Button->ClickAnimationTimer))
+                        Button->Color = glm::vec4(0.5, 0.5, 0.5, 1);
+                    else
+                        Button->Color = glm::vec4(1.0f / 255.0f * 154.0f, 1.0f / 255.0f * 51.0f, 1.0f / 255.0f * 52.0f, 1);
                 }
             }
-            if(GetMouseButton(Mouse_Left,GameState) && GetKey(Key_LeftShift,GameState))
+            
+            if(GetKeyDown(Key_M, GameState))
             {
-                if(X >= 0 && X < (int32)GameState->CurrentLevel.Tilemap.Width && Y >= 0 && Y < (int32)GameState->CurrentLevel.Tilemap.Height)
+                if(GameState->EditorState.PlacementMode == Editor_Placement_Tile)
+                    GameState->EditorState.PlacementMode = Editor_Placement_Entity;
+                else
+                    GameState->EditorState.PlacementMode = Editor_Placement_Tile;
+            }
+            
+            auto Pos = glm::unProject(glm::vec3(GameState->InputController.MouseX, GameState->RenderState.Viewport[3] - GameState->InputController.MouseY, 0),
+                                      GameState->Camera.ViewMatrix,
+                                      GameState->Camera.ProjectionMatrix,
+                                      glm::vec4(0, 0, GameState->RenderState.Viewport[2], GameState->RenderState.Viewport[3]));
+            if(!InToolbar)
+            {
+                switch(GameState->EditorState.PlacementMode)
                 {
-                    GameState->CurrentLevel.Tilemap.Data[X][Y] = GameState->CurrentLevel.Tilemap.Tiles[0];
+                    case Editor_Placement_Entity:
+                    {
+                        if(GetMouseButtonDown(Mouse_Left, GameState))
+                        {
+                            if(GameState->InputController.MouseX >= GameState->EditorState.ToolbarX)
+                            {
+                                uint32 Selected = (uint32)(GameState->InputController.MouseY / 65.0f);
+                                GameState->EditorState.SelectedTileType = Selected;
+                            }
+                            else
+                            {
+                                entity* Selected = 0;
+                                
+                                for(uint32 EntityIndex = 0;
+                                    EntityIndex < GameState->EntityCount;
+                                    EntityIndex++)
+                                {
+                                    entity* Entity = &GameState->Entities[EntityIndex];
+                                    
+                                    if(Entity->Type != Entity_Weapon && Pos.x >= Entity->Position.x && Pos.y >= Entity->Position.y - Entity->Scale.y && Pos.x < Entity->Position.x + Entity->Scale.x && Pos.y < Entity->Position.y)
+                                    {
+                                        Selected = Entity;
+                                        break;
+                                    }
+                                }
+                                
+                                GameState->EditorState.SelectedEntity = Selected;
+                            }
+                        }
+                        
+                        if(GameState->EditorState.SelectedEntity && GetMouseButton(Mouse_Left, GameState))
+                        {
+                            GameState->EditorState.SelectedEntity->Position = glm::vec2(Pos.x - GameState->EditorState.SelectedEntity->Scale.x / 2, Pos.y + GameState->EditorState.SelectedEntity->Scale.y / 2);
+                        }
+                        
+                    }
+                    break;
+                    case Editor_Placement_Tile:
+                    {
+                        int32 X = (int32)glm::floor(Pos.x);
+                        int32 Y = (int32)glm::floor(Pos.y);
+                        GameState->EditorState.TileX = (real32)X;
+                        GameState->EditorState.TileY = (real32)glm::ceil(Pos.y);
+                        
+                        if(GetMouseButton(Mouse_Left, GameState))
+                        {
+                            if(GameState->InputController.MouseX >= GameState->EditorState.ToolbarX)
+                            {
+                                uint32 Selected = (uint32)((GameState->RenderState.WindowHeight - GameState->InputController.MouseY + abs(GameState->EditorState.ToolbarScrollOffsetY)) / 60.0f);
+                                GameState->EditorState.SelectedTileType = Selected;
+                            }
+                            
+                            else
+                            {
+                                if(X >= 0 && X < (int32)GameState->CurrentLevel.Tilemap.Width 
+                                   && Y >= 0 && Y < (int32)GameState->CurrentLevel.Tilemap.Height)
+                                {
+                                    tilemap* Tilemap = &GameState->CurrentLevel.Tilemap;
+                                    
+                                    collision_AABB CollisionAABB;
+                                    CollisionAABB.Center = glm::vec2(X + 0.5f, Y + 0.5f);
+                                    CollisionAABB.Extents = glm::vec2(0.5, 0.5);
+                                    
+                                    Tilemap->Data[X][Y] = Tilemap->Tiles[GameState->EditorState.SelectedTileType];
+                                    
+                                    Tilemap->RenderInfo.Dirty = true;
+                                }
+                            }
+                        }
+                        if(GetMouseButton(Mouse_Left,GameState) && GetKey(Key_LeftShift,GameState))
+                        {
+                            if(X >= 0 && X < (int32)GameState->CurrentLevel.Tilemap.Width && Y >= 0 && Y < (int32)GameState->CurrentLevel.Tilemap.Height)
+                            {
+                                GameState->CurrentLevel.Tilemap.Data[X][Y] = GameState->CurrentLevel.Tilemap.Tiles[0];
+                            }
+                        }
+                    }
+                    break;
                 }
             }
+            
+            // View translation
+            if(GameState->InputController.MouseX >= GameState->EditorState.ToolbarX)
+            {
+                GameState->EditorState.ToolbarScrollOffsetY += (real32)GameState->InputController.ScrollY * GameState->EditorState.ToolbarScrollSpeed * (real32)DeltaTime;
+                
+                if(GameState->EditorState.ToolbarScrollOffsetY > 0)
+                    GameState->EditorState.ToolbarScrollOffsetY = 0.0f;
+                else if(GameState->EditorState.ToolbarScrollOffsetY < -((real32)GameState->CurrentLevel.Tilemap.TileCount) * 60)
+                    GameState->EditorState.ToolbarScrollOffsetY = -((real32)GameState->CurrentLevel.Tilemap.TileCount) * 60;
+            }
+            else
+            {
+                GameState->EditorCamera.Zoom += (real32)GameState->InputController.ScrollY * GameState->EditorState.ZoomingSpeed * (real32)DeltaTime * GameState->EditorCamera.Zoom;
+                GameState->EditorCamera.Zoom = Max(Min(GameState->EditorCamera.Zoom, GameState->EditorState.MaxZoom), GameState->EditorState.MinZoom);
+            }
+            
+            if(GetMouseButton(Mouse_Right, GameState))
+            {
+                if(GameState->EditorState.LastKnownMouseX == 0 && GameState->EditorState.LastKnownMouseY == 0)
+                {
+                    GameState->EditorState.LastKnownMouseX = (real32)GameState->InputController.MouseX;
+                    GameState->EditorState.LastKnownMouseY = (real32)GameState->InputController.MouseY;
+                }
+                
+                glm::vec2 Direction = glm::vec2(GameState->InputController.MouseX - GameState->EditorState.LastKnownMouseX, GameState->InputController.MouseY - GameState->EditorState.LastKnownMouseY);
+                
+                GameState->EditorCamera.Center -= glm::vec2(Direction.x / GameState->EditorCamera.Zoom * GameState->EditorState.PanningSpeed * DeltaTime, Direction.y / GameState->EditorCamera.Zoom * -GameState->EditorState.PanningSpeed * DeltaTime);
+                
+                GameState->EditorState.LastKnownMouseX = (real32)GameState->InputController.MouseX;
+                GameState->EditorState.LastKnownMouseY = (real32)GameState->InputController.MouseY;
+            }
+            else
+            {
+                GameState->EditorState.LastKnownMouseX = 0;
+                GameState->EditorState.LastKnownMouseY = 0;
+            }
+        }
+        break;
+        case Editor_Animation:
+        {
         }
         break;
     }
     
-    // View translation
-    if(GameState->InputController.MouseX >= GameState->EditorState.ToolbarX)
-    {
-        GameState->EditorState.ToolbarScrollOffsetY += (real32)GameState->InputController.ScrollY * GameState->EditorState.ToolbarScrollSpeed * (real32)DeltaTime;
-        
-        if(GameState->EditorState.ToolbarScrollOffsetY > 0)
-            GameState->EditorState.ToolbarScrollOffsetY = 0.0f;
-        else if(GameState->EditorState.ToolbarScrollOffsetY < -((real32)GameState->CurrentLevel.Tilemap.TileCount) * 60)
-            GameState->EditorState.ToolbarScrollOffsetY = -((real32)GameState->CurrentLevel.Tilemap.TileCount) * 60;
-    }
-    else
-    {
-        GameState->EditorCamera.Zoom += (real32)GameState->InputController.ScrollY * GameState->EditorState.ZoomingSpeed * (real32)DeltaTime * GameState->EditorCamera.Zoom;
-        GameState->EditorCamera.Zoom = Max(Min(GameState->EditorCamera.Zoom, GameState->EditorState.MaxZoom), GameState->EditorState.MinZoom);
-    }
-    
-    if(GetMouseButton(Mouse_Right, GameState))
-    {
-        if(GameState->EditorState.LastKnownMouseX == 0 && GameState->EditorState.LastKnownMouseY == 0)
-        {
-            GameState->EditorState.LastKnownMouseX = (real32)GameState->InputController.MouseX;
-            GameState->EditorState.LastKnownMouseY = (real32)GameState->InputController.MouseY;
-        }
-        
-        glm::vec2 Direction = glm::vec2(GameState->InputController.MouseX - GameState->EditorState.LastKnownMouseX, GameState->InputController.MouseY - GameState->EditorState.LastKnownMouseY);
-        
-        GameState->EditorCamera.Center -= glm::vec2(Direction.x / GameState->EditorCamera.Zoom * GameState->EditorState.PanningSpeed * DeltaTime, Direction.y / GameState->EditorCamera.Zoom * -GameState->EditorState.PanningSpeed * DeltaTime);
-        
-        GameState->EditorState.LastKnownMouseX = (real32)GameState->InputController.MouseX;
-        GameState->EditorState.LastKnownMouseY = (real32)GameState->InputController.MouseY;
-    }
-    else
-    {
-        GameState->EditorState.LastKnownMouseX = 0;
-        GameState->EditorState.LastKnownMouseY = 0;
-    }
 }
 
 extern "C" UPDATE(Update)
@@ -908,6 +982,7 @@ extern "C" UPDATE(Update)
         {
             EditorUpdateEntities(GameState, DeltaTime);
             GameState->Camera = GameState->EditorCamera;
+            TickTimers(GameState, DeltaTime); // @Cleanup: I don't remember why this has to be called individually for each mode. It might be okay to call it at the end of the Update-function
         }
         break;
     }
