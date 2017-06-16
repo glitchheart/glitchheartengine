@@ -174,7 +174,7 @@ static void SpawnEnemy(game_state* GameState, glm::vec2 Position)
     Enemy->HitTrigger = HitTrigger;
     
     Enemy->Enemy.WalkingSpeed = 5;
-    Enemy->Enemy.MaxAlertDistance = 10;
+    Enemy->Enemy.MaxAlertDistance = 20;
     Enemy->Enemy.MinDistance = 2;
     Enemy->Enemy.AIState = AI_Idle;
     
@@ -188,7 +188,7 @@ static void SpawnEnemy(game_state* GameState, glm::vec2 Position)
     
     Enemy->Enemy.AStarCooldownTimer = (timer*)malloc(sizeof(timer));
     Enemy->Enemy.AStarCooldownTimer->TimerHandle = -1;
-    Enemy->Enemy.AStarCooldownTimer->TimerMax = 0.3;
+    Enemy->Enemy.AStarCooldownTimer->TimerMax = 0.6;
     
     Enemy->HitCooldownTimer = (timer*)malloc(sizeof(timer));
     Enemy->HitCooldownTimer->TimerHandle = -1;
@@ -255,6 +255,10 @@ static void SpawnBlob(game_state* GameState, glm::vec2 Position)
     Enemy->Layer = Layer_Enemy;
     
     Enemy->Blob.AIState = AI_Following;
+    Enemy->Enemy.AStarCooldownTimer = (timer*)malloc(sizeof(timer));
+    Enemy->Enemy.AStarCooldownTimer->TimerHandle = -1;
+    Enemy->Enemy.AStarCooldownTimer->TimerMax = 0.6;
+    
     Enemy->Blob.ExplodeStartTimer = (timer*)malloc(sizeof(timer));
     Enemy->Blob.ExplodeStartTimer->TimerHandle = -1;
     Enemy->Blob.ExplodeStartTimer->TimerMax = 0.3;
