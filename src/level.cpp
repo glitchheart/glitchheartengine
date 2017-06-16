@@ -233,6 +233,9 @@ static void SaveLevelToFile(const char* FilePath, level* Level, game_state* Game
                     case Entity_Enemy:
                     TypeName = "enemy";
                     break;
+                    case Entity_Blob:
+                    TypeName = "blob";
+                    break;
                     case Entity_Barrel:
                     TypeName = "barrel";
                     break;
