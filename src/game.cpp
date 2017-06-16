@@ -323,17 +323,20 @@ void UpdateBlob(entity* Entity, game_state* GameState, real64 DeltaTime)
     {
         case AI_Following:
         {
-            glm::vec2 Direction = glm::normalize(glm::vec2(GameState->Entities[GameState->PlayerIndex].Position.x - Entity->Position.x, GameState->Entities[GameState->PlayerIndex].Position.y - Entity->Position.y));
+            FindPath(GameState,Entity,GameState->Entities[GameState->PlayerIndex]);
+            FollowPath(GameState,Entity,GameState->Entities[GameState->PlayerIndex],DeltaTime);
+            /*glm::vec2 Direction = glm::normalize(glm::vec2(GameState->Entities[GameState->PlayerIndex].Position.x - Entity->Position.x, GameState->Entities[GameState->PlayerIndex].Position.y - Entity->Position.y));
+            */
             if(Abs(glm::distance(Entity->Position, GameState->Entities[GameState->PlayerIndex].Position)) < 1)
             {
                 Entity->Blob.AIState = AI_Charging;
                 StartTimer(GameState, Entity->Blob.ExplodeStartTimer);
             }
-            
+            /*
             Entity->Position.x += Direction.x * Entity->Velocity.x * (real32)DeltaTime;
             Entity->Position.y += Direction.y * Entity->Velocity.y * (real32)DeltaTime;
             
-            Entity->IsFlipped = Direction.x <= 0;
+            Entity->IsFlipped = Direction.x <= 0;*/
         }
         break;
         case AI_Charging:
@@ -412,42 +415,8 @@ void UpdateEnemy(entity* Entity, game_state* GameState, real64 DeltaTime)
             }
             else
             {
-                glm::vec2 EntityPosition = glm::vec2(Entity->Position.x + Entity->Center.x * Entity->Scale.x,Entity->Position.y + Entity->Center.y * Entity->Scale.y);
-                if(TimerDone(GameState,Entity->Enemy.AStarCooldownTimer) || !Entity->Enemy.AStarPath || (Entity->Enemy.AStarPathLength <= Entity->Enemy.PathIndex && DistanceToPlayer >= 3.0f)) 
-                {
-                    Entity->Enemy.PathIndex = Entity->Enemy.AStarPathLength;
-                    StartTimer(GameState, Entity->Enemy.AStarCooldownTimer);
-                    glm::vec2 StartPosition = glm::vec2(EntityPosition.x, EntityPosition.y);
-                    glm::vec2 TargetPosition = glm::vec2(Player.Position.x,
-                                                         Player.Position.y);
-                    AStar(Entity,GameState,StartPosition,TargetPosition);
-                }
-                
-                if(Entity->Enemy.AStarPath && Entity->Enemy.PathIndex < Entity->Enemy.AStarPathLength)
-                {
-                    path_node NewPos = Entity->Enemy.AStarPath[Entity->Enemy.PathIndex];
-                    real64 DistanceToNode = glm::distance(EntityPosition, glm::vec2(NewPos.X,NewPos.Y));
-                    if(DistanceToNode > 1.0f) 
-                    {
-                        glm::vec2 Direction = glm::vec2(NewPos.X,NewPos.Y) - EntityPosition;
-                        Direction = glm::normalize(Direction);
-                        Entity->Velocity = glm::vec2(Direction.x * Entity->Enemy.WalkingSpeed * DeltaTime, Direction.y * Entity->Enemy.WalkingSpeed * DeltaTime);
-                    }
-                    else
-                    {
-                        Entity->Enemy.PathIndex++;
-                    }
-                }
-                
-                glm::vec2 Direction = Player.Position - Entity->Position;
-                if(DistanceToPlayer > Entity->Enemy.MinDistance && DistanceToPlayer < 3.0f)
-                {
-                    Direction = glm::normalize(Direction);
-                    Entity->Velocity =glm::vec2(Direction.x * Entity->Enemy.WalkingSpeed * DeltaTime,
-                                                Direction.y * Entity->Enemy.WalkingSpeed * DeltaTime);
-                }
-                
-                Entity->IsFlipped = Direction.x < 0;
+                FindPath(GameState,Entity,Player);
+                FollowPath(GameState,Entity,Player,DeltaTime);
             }
         }
         break;
