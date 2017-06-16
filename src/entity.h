@@ -127,7 +127,6 @@ struct entity
         {
             uint32 EntityHandle;
         } Weapon;
-        
     };
     
     glm::vec2 Velocity;
