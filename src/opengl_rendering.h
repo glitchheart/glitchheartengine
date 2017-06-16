@@ -344,6 +344,7 @@ struct render_state
     render_font InconsolataFont;
     render_font MenuFont;
     render_font ButtonFont;
+    render_font RobotoFont;
 };
 
 #endif

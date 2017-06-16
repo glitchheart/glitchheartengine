@@ -48,8 +48,9 @@ struct button
 struct textfield
 {
     bool32 Active = false;
-    bool32 Selected;
-    char* Placeholder;
+    bool32 InFocus = false;
+    bool32 OnlyNumber = false;
+    char* Label;
     char Text[TEXTFIELD_LENGTH];
     uint32 TextIndex;
     glm::vec2 ScreenPosition;
@@ -94,12 +95,19 @@ struct editor_state
     real32 ToolbarHeight;
     
     button Buttons[10];
+    textfield Textfields[20];
+    int32 FocusedTextfield = -1;
     
-    textfield AnimationNameField;
-    textfield AnimationFrameSizeField;
-    textfield AnimationFrameCountField;
-    textfield AnimationFrameOffsetField;
+    textfield* AnimationNameField;
+    textfield* AnimationFrameWidthField;
+    textfield* AnimationFrameHeightField;
+    textfield* AnimationFrameCountField;
+    textfield* AnimationFrameOffsetXField;
+    textfield* AnimationFrameOffsetYField;
     
+    button* CreateNewAnimationButton;
+    
+    int32 SelectedAnimation;
     animation* LoadedAnimation;
 };
 

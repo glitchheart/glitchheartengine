@@ -83,48 +83,14 @@ static void LoadAnimations(game_state* GameState)
 {
     FILE* File = fopen("../assets/animations/.animations", "r");
     char LineBuffer[255];
+    char Filepath[100];
     
     while(fgets(LineBuffer, 255, File))
     {
-        LoadAnimationFromFile(Concat(Concat("../assets/animations/", LineBuffer), ".pownim"), GameState);
+        sscanf(LineBuffer, "%s\n", Filepath);
+        LoadAnimationFromFile(Concat(Concat("../assets/animations/", &Filepath[0]), ".pownim"), GameState);
     }
     fclose(File);
-    /*
-    LoadAnimationFromFile("../assets/animations/enemy_anim_idle.pownim", GameState);
-    LoadAnimationFromFile("../assets/animations/enemy_anim_walk.pownim", GameState);
-    LoadAnimationFromFile("../assets/animations/enemy_anim_walk_up.pownim", GameState);
-    LoadAnimationFromFile("../assets/animations/enemy_anim_walk_down.pownim", GameState);
-    LoadAnimationFromFile("../assets/animations/enemy_anim_attack.pownim", GameState);
-    LoadAnimationFromFile("../assets/animations/enemy_anim_hit.pownim", GameState);
-    
-    LoadAnimationFromFile("../assets/animations/player/idle.pownim", GameState);
-    LoadAnimationFromFile("../assets/animations/player/idle_up.pownim", GameState);
-    LoadAnimationFromFile("../assets/animations/player/idle_left.pownim", GameState);
-    LoadAnimationFromFile("../assets/animations/player/idle_right.pownim", GameState);
-    
-    LoadAnimationFromFile("../assets/animations/player/run_up.pownim", GameState);
-    LoadAnimationFromFile("../assets/animations/player/run_down.pownim", GameState);
-    LoadAnimationFromFile("../assets/animations/player/run_left.pownim", GameState);
-    LoadAnimationFromFile("../assets/animations/player/run_right.pownim", GameState);
-    
-    LoadAnimationFromFile("../assets/animations/player/attack_up.pownim", GameState);
-    LoadAnimationFromFile("../assets/animations/player/attack_down.pownim", GameState);
-    LoadAnimationFromFile("../assets/animations/player/attack_left.pownim", GameState);
-    LoadAnimationFromFile("../assets/animations/player/attack_right.pownim", GameState);
-    
-    LoadAnimationFromFile("../assets/animations/sword_attack.pownim", GameState);
-    
-    LoadAnimationFromFile("../assets/animations/skeleton/skeleton_attack.pownim", GameState);
-    LoadAnimationFromFile("../assets/animations/skeleton/skeleton_idle.pownim", GameState);
-    LoadAnimationFromFile("../assets/animations/skeleton/skeleton_hit.pownim", GameState);
-    LoadAnimationFromFile("../assets/animations/skeleton/skeleton_death.pownim", GameState);
-    LoadAnimationFromFile("../assets/animations/skeleton/skeleton_walk.pownim", GameState);
-    LoadAnimationFromFile("../assets/animations/skeleton/skeleton_react.pownim", GameState);
-    
-    LoadAnimationFromFile("../assets/animations/blob/blob_walk.pownim", GameState);
-    
-    LoadAnimationFromFile("../assets/animations/explosion.pownim", GameState);
-*/
 }
 
 static void PlayAnimation(entity* Entity, char* AnimationName, game_state* GameState)
