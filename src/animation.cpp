@@ -1,56 +1,58 @@
-static void LoadAnimationFromFile(const char* FilePath, animation* Animation, render_state* RenderState)
+static void LoadAnimationFromFile(const char* FilePath, game_state* GameState)
 {
+    animation Animation;
+    
     FILE* File;
     File = fopen(FilePath, "r");
     char LineBuffer[255];
     
-    Animation->Name = (char*)malloc(sizeof(char) * 30);
+    Animation.Name = (char*)malloc(sizeof(char) * 30);
     
     if(File)
     {
         //name
         if(fgets(LineBuffer, 255, File))
         {
-            sscanf(LineBuffer, "name %s", Animation->Name);
+            sscanf(LineBuffer, "name %s", Animation.Name);
         }
         
         //type
         if(fgets(LineBuffer, 255, File))
         {
             //TODO(Daniel) write this when we have transformation animations
-            //sscanf(LineBuffer, "name %s", Animation->Name);
+            //sscanf(LineBuffer, "name %s", Animation.Name);
         }
         
         //framecount
         if(fgets(LineBuffer, 255, File))
         {
-            sscanf(LineBuffer, "framecount %d", &Animation->FrameCount);
+            sscanf(LineBuffer, "framecount %d", &Animation.FrameCount);
         }
         
         //framesize
         if(fgets(LineBuffer, 255, File))
         {
-            sscanf(LineBuffer, "framesize %f %f", &Animation->FrameSize.x, &Animation->FrameSize.y);
+            sscanf(LineBuffer, "framesize %f %f", &Animation.FrameSize.x, &Animation.FrameSize.y);
         }
         
         //loop
         if(fgets(LineBuffer, 255, File))
         {
-            sscanf(LineBuffer, "loop %d", &Animation->Loop);
+            sscanf(LineBuffer, "loop %d", &Animation.Loop);
         }
         
         //timeperframe
         if(fgets(LineBuffer, 255, File))
         {
-            sscanf(LineBuffer, "timeperframe %f", &Animation->TimePerFrame);
+            sscanf(LineBuffer, "timeperframe %f", &Animation.TimePerFrame);
         }
         
         //frames
         fgets(LineBuffer, 255, File);
         
-        Animation->Frames = (sprite_sheet_frame*)malloc(sizeof(sprite_sheet_frame) * Animation->FrameCount);
+        Animation.Frames = (sprite_sheet_frame*)malloc(sizeof(sprite_sheet_frame) * Animation.FrameCount);
         
-        for(uint32 i = 0; i < Animation->FrameCount; i++)
+        for(uint32 i = 0; i < Animation.FrameCount; i++)
         {
             real32 OffsetX = 0.0f;
             real32 OffsetY = 0.0f;
@@ -58,7 +60,7 @@ static void LoadAnimationFromFile(const char* FilePath, animation* Animation, re
             if(fgets(LineBuffer, 255, File))
             {
                 sscanf(LineBuffer, "%f %f", &OffsetX, &OffsetY);
-                Animation->Frames[i] = { OffsetX, OffsetY };
+                Animation.Frames[i] = { OffsetX, OffsetY };
             }
         }
         
@@ -69,8 +71,9 @@ static void LoadAnimationFromFile(const char* FilePath, animation* Animation, re
         {
             sscanf(LineBuffer, "texture %d", &TextureIndex);
             
-            Animation->Texture = &RenderState->Textures[TextureIndex];
+            Animation.Texture = &GameState->RenderState.Textures[TextureIndex];
         }
+        GameState->Animations.insert(std::pair<char*, animation>(Animation.Name, Animation));
     }
     else
         printf("Animation-file not loaded: '%s'\n", FilePath);
@@ -78,47 +81,47 @@ static void LoadAnimationFromFile(const char* FilePath, animation* Animation, re
 
 static void LoadAnimations(game_state* GameState)
 {
-    LoadAnimationFromFile("../assets/animations/enemy_anim_idle.pownim", &GameState->EnemyIdleAnimation, &GameState->RenderState);
-    LoadAnimationFromFile("../assets/animations/enemy_anim_walk.pownim", &GameState->EnemyWalkAnimation, &GameState->RenderState);
-    LoadAnimationFromFile("../assets/animations/enemy_anim_walk_up.pownim", &GameState->EnemyWalkUpAnimation, &GameState->RenderState);
-    LoadAnimationFromFile("../assets/animations/enemy_anim_walk_down.pownim", &GameState->EnemyWalkDownAnimation, &GameState->RenderState);
-    LoadAnimationFromFile("../assets/animations/enemy_anim_attack.pownim", &GameState->EnemyAttackAnimation, &GameState->RenderState);
-    LoadAnimationFromFile("../assets/animations/enemy_anim_hit.pownim", &GameState->EnemyHitAnimation, &GameState->RenderState);
+    LoadAnimationFromFile("../assets/animations/enemy_anim_idle.pownim", GameState);
+    LoadAnimationFromFile("../assets/animations/enemy_anim_walk.pownim", GameState);
+    LoadAnimationFromFile("../assets/animations/enemy_anim_walk_up.pownim", GameState);
+    LoadAnimationFromFile("../assets/animations/enemy_anim_walk_down.pownim", GameState);
+    LoadAnimationFromFile("../assets/animations/enemy_anim_attack.pownim", GameState);
+    LoadAnimationFromFile("../assets/animations/enemy_anim_hit.pownim", GameState);
     
-    LoadAnimationFromFile("../assets/animations/player/idle.pownim", &GameState->PlayerIdleDownAnimation, &GameState->RenderState);
-    LoadAnimationFromFile("../assets/animations/player/idle_up.pownim", &GameState->PlayerIdleUpAnimation, &GameState->RenderState);
-    LoadAnimationFromFile("../assets/animations/player/idle_left.pownim", &GameState->PlayerIdleLeftAnimation, &GameState->RenderState);
-    LoadAnimationFromFile("../assets/animations/player/idle_right.pownim", &GameState->PlayerIdleRightAnimation, &GameState->RenderState);
+    LoadAnimationFromFile("../assets/animations/player/idle.pownim", GameState);
+    LoadAnimationFromFile("../assets/animations/player/idle_up.pownim", GameState);
+    LoadAnimationFromFile("../assets/animations/player/idle_left.pownim", GameState);
+    LoadAnimationFromFile("../assets/animations/player/idle_right.pownim", GameState);
     
-    LoadAnimationFromFile("../assets/animations/player/run_up.pownim", &GameState->PlayerRunUpAnimation, &GameState->RenderState);
-    LoadAnimationFromFile("../assets/animations/player/run_down.pownim", &GameState->PlayerRunDownAnimation, &GameState->RenderState);
-    LoadAnimationFromFile("../assets/animations/player/run_left.pownim", &GameState->PlayerRunLeftAnimation, &GameState->RenderState);
-    LoadAnimationFromFile("../assets/animations/player/run_right.pownim", &GameState->PlayerRunRightAnimation, &GameState->RenderState);
+    LoadAnimationFromFile("../assets/animations/player/run_up.pownim", GameState);
+    LoadAnimationFromFile("../assets/animations/player/run_down.pownim", GameState);
+    LoadAnimationFromFile("../assets/animations/player/run_left.pownim", GameState);
+    LoadAnimationFromFile("../assets/animations/player/run_right.pownim", GameState);
     
-    LoadAnimationFromFile("../assets/animations/player/attack_up.pownim", &GameState->PlayerAttackUpAnimation, &GameState->RenderState);
-    LoadAnimationFromFile("../assets/animations/player/attack_down.pownim", &GameState->PlayerAttackDownAnimation, &GameState->RenderState);
-    LoadAnimationFromFile("../assets/animations/player/attack_left.pownim", &GameState->PlayerAttackLeftAnimation, &GameState->RenderState);
-    LoadAnimationFromFile("../assets/animations/player/attack_right.pownim", &GameState->PlayerAttackRightAnimation, &GameState->RenderState);
+    LoadAnimationFromFile("../assets/animations/player/attack_up.pownim", GameState);
+    LoadAnimationFromFile("../assets/animations/player/attack_down.pownim", GameState);
+    LoadAnimationFromFile("../assets/animations/player/attack_left.pownim", GameState);
+    LoadAnimationFromFile("../assets/animations/player/attack_right.pownim", GameState);
     
-    LoadAnimationFromFile("../assets/animations/sword_attack.pownim", &GameState->SwordAttackAnimation, &GameState->RenderState);
+    LoadAnimationFromFile("../assets/animations/sword_attack.pownim", GameState);
     
-    LoadAnimationFromFile("../assets/animations/skeleton/skeleton_attack.pownim", &GameState->SkeletonAttackAnimation, &GameState->RenderState);
-    LoadAnimationFromFile("../assets/animations/skeleton/skeleton_idle.pownim", &GameState->SkeletonIdleAnimation, &GameState->RenderState);
-    LoadAnimationFromFile("../assets/animations/skeleton/skeleton_hit.pownim", &GameState->SkeletonHitAnimation, &GameState->RenderState);
-    LoadAnimationFromFile("../assets/animations/skeleton/skeleton_death.pownim", &GameState->SkeletonDeathAnimation, &GameState->RenderState);
-    LoadAnimationFromFile("../assets/animations/skeleton/skeleton_walk.pownim", &GameState->SkeletonWalkAnimation, &GameState->RenderState);
-    LoadAnimationFromFile("../assets/animations/skeleton/skeleton_react.pownim", &GameState->SkeletonReactAnimation, &GameState->RenderState);
+    LoadAnimationFromFile("../assets/animations/skeleton/skeleton_attack.pownim", GameState);
+    LoadAnimationFromFile("../assets/animations/skeleton/skeleton_idle.pownim", GameState);
+    LoadAnimationFromFile("../assets/animations/skeleton/skeleton_hit.pownim", GameState);
+    LoadAnimationFromFile("../assets/animations/skeleton/skeleton_death.pownim", GameState);
+    LoadAnimationFromFile("../assets/animations/skeleton/skeleton_walk.pownim", GameState);
+    LoadAnimationFromFile("../assets/animations/skeleton/skeleton_react.pownim", GameState);
     
-    LoadAnimationFromFile("../assets/animations/blob/blob_walk.pownim", &GameState->BlobAnimation, &GameState->RenderState);
+    LoadAnimationFromFile("../assets/animations/blob/blob_walk.pownim", GameState);
     
-    LoadAnimationFromFile("../assets/animations/explosion.pownim", &GameState->ExplosionAnimation, &GameState->RenderState);
+    LoadAnimationFromFile("../assets/animations/explosion.pownim", GameState);
 }
 
-static void PlayAnimation(entity* Entity, animation* Animation)
+static void PlayAnimation(entity* Entity, char* AnimationName, game_state* GameState)
 {
-    if(!Entity->CurrentAnimation || strcmp(Entity->CurrentAnimation->Name, Animation->Name) != 0)
+    if(!Entity->CurrentAnimation || !Entity->CurrentAnimation->Name || strcmp(Entity->CurrentAnimation->Name, AnimationName) != 0)
     {
-        Entity->CurrentAnimation = Animation;
+        Entity->CurrentAnimation = &GameState->Animations[AnimationName];
         Entity->AnimationInfo.Playing = true;
         Entity->AnimationInfo.FrameIndex = 0;
         Entity->AnimationInfo.CurrentTime = 0.0;

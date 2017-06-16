@@ -74,45 +74,7 @@ struct game_state
     editor_ui EditorUI;
     editor_state EditorState;
     
-    union
-    {
-        animation Animation[27];
-        struct
-        {
-            animation PlayerIdleUpAnimation;
-            animation PlayerIdleDownAnimation;
-            animation PlayerIdleLeftAnimation;
-            animation PlayerIdleRightAnimation;
-            
-            animation PlayerRunUpAnimation;
-            animation PlayerRunDownAnimation;
-            animation PlayerRunLeftAnimation;
-            animation PlayerRunRightAnimation;
-            animation PlayerAttackUpAnimation;
-            animation PlayerAttackDownAnimation;
-            animation PlayerAttackLeftAnimation;
-            animation PlayerAttackRightAnimation;
-            
-            animation EnemyIdleAnimation;
-            animation EnemyWalkAnimation;
-            animation EnemyWalkUpAnimation;
-            animation EnemyWalkDownAnimation;
-            animation EnemyAttackAnimation;
-            
-            animation EnemyHitAnimation;
-            animation SwordAttackAnimation;
-            
-            animation SkeletonIdleAnimation;
-            animation SkeletonAttackAnimation;
-            animation SkeletonWalkAnimation;
-            animation SkeletonHitAnimation;
-            animation SkeletonDeathAnimation;
-            animation SkeletonReactAnimation;
-            
-            animation BlobAnimation;
-            animation ExplosionAnimation;
-        };
-    };
+    std::map<char*, animation, CompareCStrings> Animations;
 };
 
 #define UPDATE(name)void name(real64 DeltaTime, game_state* GameState) 
