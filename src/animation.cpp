@@ -81,6 +81,15 @@ static void LoadAnimationFromFile(const char* FilePath, game_state* GameState)
 
 static void LoadAnimations(game_state* GameState)
 {
+    FILE* File = fopen("../assets/animations/.animations", "r");
+    char LineBuffer[255];
+    
+    while(fgets(LineBuffer, 255, File))
+    {
+        LoadAnimationFromFile(Concat(Concat("../assets/animations/", LineBuffer), ".pownim"), GameState);
+    }
+    fclose(File);
+    /*
     LoadAnimationFromFile("../assets/animations/enemy_anim_idle.pownim", GameState);
     LoadAnimationFromFile("../assets/animations/enemy_anim_walk.pownim", GameState);
     LoadAnimationFromFile("../assets/animations/enemy_anim_walk_up.pownim", GameState);
@@ -115,6 +124,7 @@ static void LoadAnimations(game_state* GameState)
     LoadAnimationFromFile("../assets/animations/blob/blob_walk.pownim", GameState);
     
     LoadAnimationFromFile("../assets/animations/explosion.pownim", GameState);
+*/
 }
 
 static void PlayAnimation(entity* Entity, char* AnimationName, game_state* GameState)
