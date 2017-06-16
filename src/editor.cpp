@@ -1,5 +1,6 @@
 static void CheckEditorUIInput(game_state* GameState, real64 DeltaTime)
 {
+    GameState->InputController.DeleteCharacter = GetKeyDown(Key_Backspace, GameState);
     real32 SX = 2.0f / GameState->RenderState.WindowWidth;
     real32 SY = 2.0f / GameState->RenderState.WindowHeight;
     

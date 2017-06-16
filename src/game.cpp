@@ -73,18 +73,18 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
                         if(Entity->Velocity.y > 0)
                         {
                             Entity->LookDirection = Up;
-                            PlayAnimation(Entity, &GameState->PlayerRunUpAnimation);
+                            PlayAnimation(Entity, "player_run_up", GameState);
                         }
                         else
                         {
                             Entity->LookDirection = Down;
-                            PlayAnimation(Entity, &GameState->PlayerRunDownAnimation);
+                            PlayAnimation(Entity, "player_run_down", GameState);
                         }
                     }
                     else
                     {
                         Entity->LookDirection = Right;
-                        PlayAnimation(Entity, &GameState->PlayerRunRightAnimation);
+                        PlayAnimation(Entity, "player_run_right", GameState);
                     }
                 }
                 else
@@ -92,12 +92,12 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
                     if(Entity->Player.LastKnownDirectionX == 0)
                     {
                         if(Entity->Player.LastKnownDirectionY > 0)
-                            PlayAnimation(Entity, &GameState->PlayerIdleUpAnimation);
+                            PlayAnimation(Entity, "player_idle_up", GameState);
                         else
-                            PlayAnimation(Entity, &GameState->PlayerIdleDownAnimation);
+                            PlayAnimation(Entity, "player_idle_down", GameState);
                     }
                     else
-                        PlayAnimation(Entity, &GameState->PlayerIdleRightAnimation);
+                        PlayAnimation(Entity, "player_idle_right", GameState);
                 }
                 
                 if(Entity->Velocity.x != 0)
@@ -189,18 +189,18 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
             {
                 case Up:
                 {
-                    PlayAnimation(Entity, &GameState->PlayerAttackUpAnimation);
+                    PlayAnimation(Entity, "player_attack_up", GameState);
                 }
                 break;
                 case Down:
                 {
-                    PlayAnimation(Entity, &GameState->PlayerAttackDownAnimation);
+                    PlayAnimation(Entity, "player_attack_down", GameState);
                 }
                 break;
                 case Left:
                 case Right:
                 {
-                    PlayAnimation(Entity, &GameState->PlayerAttackRightAnimation);
+                    PlayAnimation(Entity, "player_attack_right", GameState);
                 }
                 break;
             }
@@ -308,7 +308,7 @@ void UpdateWeapon(entity* Entity, game_state* GameState, real64 DeltaTime)
     if(IsAttacking && !Entity->AnimationInfo.Playing)
     {
         Entity->CurrentAnimation = 0;
-        PlayAnimation(Entity, &GameState->SwordAttackAnimation);
+        PlayAnimation(Entity, "sword_attack", GameState);
         //RenderEntity->Rendered = true;
     }
     else if(!IsAttacking || !Entity->AnimationInfo.Playing)
@@ -358,7 +358,7 @@ void UpdateBlob(entity* Entity, game_state* GameState, real64 DeltaTime)
             if(TimerDone(GameState, Entity->Blob.ExplodeCountdownTimer))
             {
                 Entity->Blob.AIState = AI_Dying;
-                PlayAnimation(Entity, &GameState->ExplosionAnimation);
+                PlayAnimation(Entity, "explosion", GameState);
                 PlaySoundEffect(GameState, &GameState->SoundManager.Explosion);
             }
         }
@@ -384,16 +384,16 @@ void UpdateEnemy(entity* Entity, game_state* GameState, real64 DeltaTime)
     {
         case AI_Sleeping:
         {
-            PlayAnimation(Entity, &GameState->SkeletonIdleAnimation);
+            PlayAnimation(Entity, "skeleton_idle", GameState);
         }
         break;
         case AI_Idle:
         {
-            PlayAnimation(Entity, &GameState->SkeletonIdleAnimation);
+            PlayAnimation(Entity, "skeleton_idle", GameState);
             if(DistanceToPlayer <= Entity->Enemy.MaxAlertDistance)
             {
                 Entity->Enemy.AIState = AI_Following;
-                PlayAnimation(Entity, &GameState->SkeletonWalkAnimation);
+                PlayAnimation(Entity, "skeleton_walk", GameState);
             }
         }
         break;
@@ -404,13 +404,13 @@ void UpdateEnemy(entity* Entity, game_state* GameState, real64 DeltaTime)
         {
             if(DistanceToPlayer > Entity->Enemy.MaxAlertDistance)
             {
-                PlayAnimation(Entity, &GameState->SkeletonIdleAnimation);
+                PlayAnimation(Entity, "skeleton_idle", GameState);
                 Entity->Enemy.AIState = AI_Idle;
             }
             
             else if(DistanceToPlayer < Entity->Enemy.MinDistance)
             {
-                PlayAnimation(Entity, &GameState->SkeletonIdleAnimation);
+                PlayAnimation(Entity, "skeleton_idle", GameState);
                 StartTimer(GameState, Entity->Enemy.ChargingTimer);
                 Entity->Enemy.AIState = AI_Charging;
                 render_entity* RenderEntity = &GameState->RenderState.RenderEntities[Entity->RenderEntityHandle];
@@ -435,13 +435,13 @@ void UpdateEnemy(entity* Entity, game_state* GameState, real64 DeltaTime)
             if(!Entity->Enemy.IsAttacking)
             {
                 Entity->Enemy.IsAttacking = true;
-                PlayAnimation(Entity, &GameState->SkeletonAttackAnimation);
+                PlayAnimation(Entity, "skeleton_attack", GameState);
                 
                 StartTimer(GameState, Entity->Enemy.AttackCooldownTimer);
             }
             else if(!Entity->AnimationInfo.Playing)
             {
-                PlayAnimation(Entity, &GameState->SkeletonIdleAnimation);
+                PlayAnimation(Entity, "skeleton_idle", GameState);
             }
             
             if(TimerDone(GameState, Entity->Enemy.AttackCooldownTimer))
@@ -467,12 +467,12 @@ void UpdateEnemy(entity* Entity, game_state* GameState, real64 DeltaTime)
         break;
         case AI_Hit:
         {
-            PlayAnimation(Entity, &GameState->SkeletonHitAnimation);
+            PlayAnimation(Entity, "skeleton_hit", GameState);
             
             if(TimerDone(GameState, Entity->HitCooldownTimer))
             {
                 Entity->Enemy.AIState = AI_Idle;
-                PlayAnimation(Entity, &GameState->SkeletonIdleAnimation);
+                PlayAnimation(Entity, "skeleton_idle", GameState);
             }
         }
         break;
@@ -592,70 +592,71 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
 
 static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
 {
+    bool32 InToolbar = GameState->RenderState.WindowHeight - GameState->InputController.MouseY >= GameState->RenderState.WindowHeight - 150;
+    
+    for(uint32 ButtonIndex = 0; ButtonIndex < 10; ButtonIndex++)
+    {
+        button* Button = &GameState->EditorState.Buttons[ButtonIndex];
+        Button->Clicked = false;
+        
+        if(GetMouseButtonDown(Mouse_Left, GameState))
+        {
+            if(Button->Active && GameState->InputController.MouseX >= Button->ScreenPosition.x && GameState->InputController.MouseX <= Button->ScreenPosition.x + Button->Size.x && 
+               GameState->RenderState.WindowHeight - GameState->InputController.MouseY >= Button->ScreenPosition.y && GameState->RenderState.WindowHeight - GameState->InputController.MouseY <= Button->ScreenPosition.y + Button->Size.y)
+            {
+                Button->Clicked = true;
+                
+                PlaySoundEffect(GameState, &GameState->SoundManager.ButtonClick);
+                StartTimer(GameState, Button->ClickAnimationTimer);
+                
+                switch(Button->EditorType)
+                {
+                    case Button_Exit:
+                    {
+                        GameState->GameMode = Mode_Exit;
+                    }
+                    break;
+                    case Button_SaveAndExit:
+                    {
+                        SaveLevelToFile(GameState->LevelPath, &GameState->CurrentLevel, GameState);
+                        ReloadCurrentLevel(GameState);
+                        GameState->GameMode = Mode_InGame;
+                    }
+                    break;
+                    case Button_Tilesheet:
+                    {
+                    }
+                    break;
+                    case Button_Animation:
+                    {
+                        GameState->EditorState.Mode = Editor_Animation;
+                    }
+                    break;
+                    case Button_SwitchMode:
+                    {
+                        if(GameState->EditorState.PlacementMode == Editor_Placement_Tile)
+                            GameState->EditorState.PlacementMode = Editor_Placement_Entity;
+                        else
+                            GameState->EditorState.PlacementMode = Editor_Placement_Tile;
+                    }
+                    break;
+                }
+            }
+        }
+        
+        if(Button->Active)
+        {
+            if(!TimerDone(GameState, Button->ClickAnimationTimer))
+                Button->Color = glm::vec4(0.5, 0.5, 0.5, 1);
+            else
+                Button->Color = glm::vec4(1.0f / 255.0f * 154.0f, 1.0f / 255.0f * 51.0f, 1.0f / 255.0f * 52.0f, 1);
+        }
+    }
+    
     switch(GameState->EditorState.Mode)
     {
         case Editor_Normal:
         {
-            bool32 InToolbar = GameState->RenderState.WindowHeight - GameState->InputController.MouseY >= GameState->RenderState.WindowHeight - 150;
-            
-            for(uint32 ButtonIndex = 0; ButtonIndex < 10; ButtonIndex++)
-            {
-                button* Button = &GameState->EditorState.Buttons[ButtonIndex];
-                Button->Clicked = false;
-                
-                if(GetMouseButtonDown(Mouse_Left, GameState))
-                {
-                    if(Button->Active && GameState->InputController.MouseX >= Button->ScreenPosition.x && GameState->InputController.MouseX <= Button->ScreenPosition.x + Button->Size.x && 
-                       GameState->RenderState.WindowHeight - GameState->InputController.MouseY >= Button->ScreenPosition.y && GameState->RenderState.WindowHeight - GameState->InputController.MouseY <= Button->ScreenPosition.y + Button->Size.y)
-                    {
-                        Button->Clicked = true;
-                        
-                        PlaySoundEffect(GameState, &GameState->SoundManager.ButtonClick);
-                        StartTimer(GameState, Button->ClickAnimationTimer);
-                        
-                        switch(Button->EditorType)
-                        {
-                            case Button_Exit:
-                            {
-                                GameState->GameMode = Mode_Exit;
-                            }
-                            break;
-                            case Button_SaveAndExit:
-                            {
-                                SaveLevelToFile(GameState->LevelPath, &GameState->CurrentLevel, GameState);
-                                ReloadCurrentLevel(GameState);
-                                GameState->GameMode = Mode_InGame;
-                            }
-                            break;
-                            case Button_Tilesheet:
-                            {
-                            }
-                            break;
-                            case Button_Animation:
-                            {
-                            }
-                            break;
-                            case Button_SwitchMode:
-                            {
-                                if(GameState->EditorState.PlacementMode == Editor_Placement_Tile)
-                                    GameState->EditorState.PlacementMode = Editor_Placement_Entity;
-                                else
-                                    GameState->EditorState.PlacementMode = Editor_Placement_Tile;
-                            }
-                            break;
-                        }
-                    }
-                }
-                
-                if(Button->Active)
-                {
-                    if(!TimerDone(GameState, Button->ClickAnimationTimer))
-                        Button->Color = glm::vec4(0.5, 0.5, 0.5, 1);
-                    else
-                        Button->Color = glm::vec4(1.0f / 255.0f * 154.0f, 1.0f / 255.0f * 51.0f, 1.0f / 255.0f * 52.0f, 1);
-                }
-            }
-            
             if(GetKeyDown(Key_M, GameState))
             {
                 if(GameState->EditorState.PlacementMode == Editor_Placement_Tile)
@@ -793,10 +794,36 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
         break;
         case Editor_Animation:
         {
+            if(!GameState->EditorState.LoadedAnimation)
+            {
+                textfield* AnimationNameField = &GameState->EditorState.AnimationNameField;
+                
+                if(!AnimationNameField->Active)
+                {
+                    AnimationNameField->Active = true;
+                    AnimationNameField->Size = glm::vec2(500, 50);
+                    AnimationNameField->ScreenPosition = glm::vec2(GameState->RenderState.WindowWidth / 2 - 250, 400);
+                    AnimationNameField->Placeholder = "Name";
+                }
+                
+                if(GameState->InputController.DeleteCharacter && AnimationNameField->TextIndex != 0)
+                {
+                    AnimationNameField->Text[--AnimationNameField->TextIndex] = 0;
+                }
+                
+                if(GameState->InputController.CurrentCharacter && GameState->InputController.CurrentCharacter != ' ')
+                {
+                    if(AnimationNameField->TextIndex != TEXTFIELD_LENGTH)
+                    {
+                        AnimationNameField->Text[AnimationNameField->TextIndex++] = GameState->InputController.CurrentCharacter;
+                    }
+                }
+            }
+            
+            //CreateAnimation(GameState->EditorState.LoadedAnimation);
         }
         break;
     }
-    
 }
 
 extern "C" UPDATE(Update)
@@ -969,4 +996,5 @@ extern "C" UPDATE(Update)
                                                   glm::vec3(-GameState->Camera.Center.x + GameState->Camera.ViewportWidth / GameState->Camera.Zoom / 2,
                                                             -GameState->Camera.Center.y + GameState->Camera.ViewportHeight / GameState->Camera.Zoom / 2,
                                                             0));
+    GameState->InputController.CurrentCharacter = 0;
 }

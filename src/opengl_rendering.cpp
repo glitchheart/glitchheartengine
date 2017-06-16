@@ -1410,6 +1410,15 @@ void RenderButton(render_state* RenderState, const button& Button, glm::mat4 Pro
     // @Buggy: Alignment_Center is broken
 }
 
+void RenderTextfield(render_state* RenderState, const textfield& Textfield, glm::mat4 ProjectionMatrix, glm::mat4 ViewMatrix)
+{
+    RenderRect(Render_Fill, RenderState, glm::vec4(1, 1, 1, 1), Textfield.ScreenPosition.x, Textfield.ScreenPosition.y, Textfield.Size.x, Textfield.Size.y, ProjectionMatrix, ViewMatrix);
+    if(Textfield.TextIndex == 0)
+        RenderText(RenderState, RenderState->ButtonFont, glm::vec4(0, 0, 0, 1), Textfield.Placeholder, Textfield.ScreenPosition.x, Textfield.ScreenPosition.y + 10, 1);
+    else
+        RenderText(RenderState, RenderState->ButtonFont, glm::vec4(0, 0, 0, 1), Textfield.Text, Textfield.ScreenPosition.x, Textfield.ScreenPosition.y + 10, 1);
+}
+
 static void NEW_RenderTilemap(render_state* RenderState, const tilemap& Tilemap, glm::mat4 ProjectionMatrix, glm::mat4 View)
 {
     glBindVertexArray(Tilemap.RenderInfo.VAO);
@@ -1532,53 +1541,55 @@ static void RenderGame(game_state* GameState)
                 case Editor_Normal:
                 {
                     RenderInGameMode(GameState);
+                    RenderRect(Render_Outline, &GameState->RenderState, glm::vec4(1.0f, 0.0f, 0.0f, 1.0f), 0, 0, (real32)GameState->CurrentLevel.Tilemap.Width * 50, (real32)GameState->CurrentLevel.Tilemap.Height * 50, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
+                    
+                    
+                    if(GameState->EditorState.SelectedEntity)
+                        RenderWireframe(&GameState->RenderState, GameState->EditorState.SelectedEntity, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
+                    
+                    glm::vec2 TextureOffset = GameState->CurrentLevel.Tilemap.Tiles[GameState->EditorState.SelectedTileType].TextureOffset;
+                    TextureOffset = glm::vec2(TextureOffset.x / (real32)GameState->CurrentLevel.Tilemap.RenderEntity.Texture->Width, TextureOffset.y / (real32)GameState->CurrentLevel.Tilemap.RenderEntity.Texture->Height);
+                    
+                    if(GameState->EditorState.TileX >= 0 && GameState->EditorState.TileX < GameState->CurrentLevel.Tilemap.Width && GameState->EditorState.TileY > 0 && GameState->EditorState.TileY <= GameState->CurrentLevel.Tilemap.Height)
+                    {
+                        const tilesheet& Tilesheet = GameState->RenderState.Tilesheets[GameState->CurrentLevel.TilesheetIndex];
+                        
+                        glm::vec2 SheetSize(Tilesheet.Texture.Width, Tilesheet.Texture.Height);
+                        
+                        RenderTile(&GameState->RenderState, (uint32)GameState->EditorState.TileX, (uint32)GameState->EditorState.TileY, GameState->CurrentLevel.TilesheetIndex, TextureOffset, SheetSize, glm::vec4(1, 1, 1, 1),  GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
+                    }
+                    
+                    RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(0, 0, 0, 1), GameState->EditorState.ToolbarX, GameState->EditorState.ToolbarY, GameState->EditorState.ToolbarWidth, GameState->EditorState.ToolbarHeight, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
+                    
+                    EditorRenderTilemap(glm::vec2((real32)GameState->RenderState.WindowWidth - 80, 5 + GameState->EditorState.ToolbarScrollOffsetY), 60, &GameState->RenderState, GameState->CurrentLevel.Tilemap);
+                    
+                    RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(1, 0, 0, 1), (real32)GameState->RenderState.WindowWidth - 80,
+                               GameState->EditorState.SelectedTileType * 60 + 5 + GameState->EditorState.ToolbarScrollOffsetY, 60, 60, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix, GameState->RenderState.SelectedTileTexture.TextureHandle);
+                    
+                    char Text[255]; sprintf(Text,"Type index: %d Is solid: %d",GameState->CurrentLevel.Tilemap.Tiles[GameState->EditorState.SelectedTileType].TypeIndex,GameState->CurrentLevel.Tilemap.Tiles[GameState->EditorState.SelectedTileType].IsSolid);
+                    
+                    RenderText(&GameState->RenderState, GameState->RenderState.MenuFont, glm::vec4(1, 1, 1, 1), Text, (real32)GameState->RenderState.WindowWidth / 2, (real32)GameState->RenderState.WindowHeight - 200, 1, Alignment_Center);
+                    
+                    
+                    RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(0, 0, 0, 1), 0, GameState->RenderState.WindowHeight - 155, GameState->RenderState.WindowWidth - 80, 155, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
+                    
+                    if(GameState->EditorState.PlacementMode == Editor_Placement_Tile)
+                        RenderText(&GameState->RenderState, GameState->RenderState.MenuFont, glm::vec4(0.6f, 0.6f, 0.6f, 1), "Tile-mode", (real32)GameState->RenderState.WindowWidth / 2, (real32)GameState->RenderState.WindowHeight - 70, 1, Alignment_Center);
+                    else
+                        RenderText(&GameState->RenderState, GameState->RenderState.MenuFont, glm::vec4(0.6f, 0.6f, 0.6f, 1), "Entity-mode", (real32)GameState->RenderState.WindowWidth / 2, (real32)GameState->RenderState.WindowHeight - 70, 1, Alignment_Center);
                 }
+                break;
                 case Editor_Animation:
                 {
-                    
+                    RenderText(&GameState->RenderState, GameState->RenderState.MenuFont, glm::vec4(0.6f, 0.6f, 0.6f, 1), "Animation editing", (real32)GameState->RenderState.WindowWidth / 2, (real32)GameState->RenderState.WindowHeight - 70, 1, Alignment_Center);
+                    if(GameState->EditorState.AnimationNameField.Active)
+                        RenderTextfield(&GameState->RenderState, GameState->EditorState.AnimationNameField, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
                 }
                 break;
                 break;
             }
-            RenderInGameMode(GameState);
-            
-            RenderRect(Render_Outline, &GameState->RenderState, glm::vec4(1.0f, 0.0f, 0.0f, 1.0f), 0, 0, (real32)GameState->CurrentLevel.Tilemap.Width * 50, (real32)GameState->CurrentLevel.Tilemap.Height * 50, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
-            
-            if(GameState->EditorState.SelectedEntity)
-                RenderWireframe(&GameState->RenderState, GameState->EditorState.SelectedEntity, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
-            
-            glm::vec2 TextureOffset = GameState->CurrentLevel.Tilemap.Tiles[GameState->EditorState.SelectedTileType].TextureOffset;
-            TextureOffset = glm::vec2(TextureOffset.x / (real32)GameState->CurrentLevel.Tilemap.RenderEntity.Texture->Width, TextureOffset.y / (real32)GameState->CurrentLevel.Tilemap.RenderEntity.Texture->Height);
-            
-            if(GameState->EditorState.TileX >= 0 && GameState->EditorState.TileX < GameState->CurrentLevel.Tilemap.Width && GameState->EditorState.TileY > 0 && GameState->EditorState.TileY <= GameState->CurrentLevel.Tilemap.Height)
-            {
-                const tilesheet& Tilesheet = GameState->RenderState.Tilesheets[GameState->CurrentLevel.TilesheetIndex];
-                
-                glm::vec2 SheetSize(Tilesheet.Texture.Width, Tilesheet.Texture.Height);
-                
-                RenderTile(&GameState->RenderState, (uint32)GameState->EditorState.TileX, (uint32)GameState->EditorState.TileY, GameState->CurrentLevel.TilesheetIndex, TextureOffset, SheetSize, glm::vec4(1, 1, 1, 1),  GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
-            }
-            
-            RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(0, 0, 0, 1), GameState->EditorState.ToolbarX, GameState->EditorState.ToolbarY, GameState->EditorState.ToolbarWidth, GameState->EditorState.ToolbarHeight, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
-            
-            EditorRenderTilemap(glm::vec2((real32)GameState->RenderState.WindowWidth - 80, 5 + GameState->EditorState.ToolbarScrollOffsetY), 60, &GameState->RenderState, GameState->CurrentLevel.Tilemap);
-            
-            RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(1, 0, 0, 1), (real32)GameState->RenderState.WindowWidth - 80,
-                       GameState->EditorState.SelectedTileType * 60 + 5 + GameState->EditorState.ToolbarScrollOffsetY, 60, 60, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix, GameState->RenderState.SelectedTileTexture.TextureHandle);
-            
-            char Text[255]; sprintf(Text,"Type index: %d Is solid: %d",GameState->CurrentLevel.Tilemap.Tiles[GameState->EditorState.SelectedTileType].TypeIndex,GameState->CurrentLevel.Tilemap.Tiles[GameState->EditorState.SelectedTileType].IsSolid);
-            
-            RenderText(&GameState->RenderState, GameState->RenderState.MenuFont, glm::vec4(1, 1, 1, 1), Text, (real32)GameState->RenderState.WindowWidth / 2, (real32)GameState->RenderState.WindowHeight - 200, 1, Alignment_Center);
-            
-            
-            RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(0, 0, 0, 1), 0, GameState->RenderState.WindowHeight - 155, GameState->RenderState.WindowWidth - 80, 155, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
             
             RenderText(&GameState->RenderState, GameState->RenderState.MenuFont, glm::vec4(1, 1, 1, 1), "EDITOR", (real32)GameState->RenderState.WindowWidth / 2, (real32)GameState->RenderState.WindowHeight - 30, 1, Alignment_Center);
-            
-            if(GameState->EditorState.PlacementMode == Editor_Placement_Tile)
-                RenderText(&GameState->RenderState, GameState->RenderState.MenuFont, glm::vec4(0.6f, 0.6f, 0.6f, 1), "Tile-mode", (real32)GameState->RenderState.WindowWidth / 2, (real32)GameState->RenderState.WindowHeight - 70, 1, Alignment_Center);
-            else
-                RenderText(&GameState->RenderState, GameState->RenderState.MenuFont, glm::vec4(0.6f, 0.6f, 0.6f, 1), "Entity-mode", (real32)GameState->RenderState.WindowWidth / 2, (real32)GameState->RenderState.WindowHeight - 70, 1, Alignment_Center);
             
             
             for(int32 ButtonIndex = 0; ButtonIndex < 10; ButtonIndex++)

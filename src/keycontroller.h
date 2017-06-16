@@ -170,6 +170,9 @@ struct input_controller
     real32 ControllerDeadzone = 0.1f;
     bool32 ControllerPresent;
     Controller_Type ControllerType;
+    
+    char CurrentCharacter;
+    bool32 DeleteCharacter = false;
 };
 
 #endif

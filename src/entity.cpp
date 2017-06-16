@@ -85,7 +85,7 @@ static void InitPlayer(game_state* GameState, glm::vec2 Position)
     Player->Rotation = glm::vec3(0, 0, 0);
     Player->Scale = glm::vec3(3, 3, 0);
     Player->Velocity = glm::vec2(0,0);
-    PlayAnimation(Player, &GameState->PlayerIdleDownAnimation);
+    PlayAnimation(Player, "player_idle", GameState);
     collision_AABB CollisionAABB;
     Player->Center = glm::vec2(0.5f, -1.0f);
     
@@ -147,7 +147,7 @@ static void SpawnEnemy(game_state* GameState, glm::vec2 Position)
     Enemy->AnimationInfo.Playing = false;
     Enemy->AnimationInfo.FrameIndex = 0;
     Enemy->AnimationInfo.CurrentTime = 0;
-    PlayAnimation(Enemy, &GameState->EnemyIdleAnimation);
+    PlayAnimation(Enemy, "skeleton_idle", GameState);
     Enemy->Rotation = glm::vec3(0, 0, 0);
     Enemy->Position = Position;
     Enemy->Scale = glm::vec3(3, 3, 1);
@@ -245,7 +245,7 @@ static void SpawnBlob(game_state* GameState, glm::vec2 Position)
     Enemy->AnimationInfo.Playing = false;
     Enemy->AnimationInfo.FrameIndex = 0;
     Enemy->AnimationInfo.CurrentTime = 0;
-    PlayAnimation(Enemy, &GameState->BlobAnimation);
+    PlayAnimation(Enemy, "blob", GameState);
     Enemy->Rotation = glm::vec3(0, 0, 0);
     Enemy->Position = Position;
     Enemy->Scale = glm::vec3(2, 2, 1);
@@ -359,7 +359,7 @@ void Hit(game_state* GameState, entity* Entity)
     if(Entity->Type == Entity_Enemy)
     {
         Entity->Enemy.AIState = AI_Hit;
-        PlayAnimation(Entity, &GameState->EnemyIdleAnimation);
+        PlayAnimation(Entity, "skeleton_idle", GameState);
     }
     
     if(Entity->Health <= 0)

@@ -43,6 +43,21 @@ struct button
     };
 };
 
+#define TEXTFIELD_LENGTH 30
+
+struct textfield
+{
+    bool32 Active = false;
+    bool32 Selected;
+    char* Placeholder;
+    char Text[TEXTFIELD_LENGTH];
+    uint32 TextIndex;
+    glm::vec2 ScreenPosition;
+    glm::vec2 Size;
+    glm::vec4 Color;
+    glm::vec4 TextColor;
+};
+
 #define MENU_OPTIONS_COUNT 2
 
 enum Editor_Placement_Mode
@@ -79,6 +94,13 @@ struct editor_state
     real32 ToolbarHeight;
     
     button Buttons[10];
+    
+    textfield AnimationNameField;
+    textfield AnimationFrameSizeField;
+    textfield AnimationFrameCountField;
+    textfield AnimationFrameOffsetField;
+    
+    animation* LoadedAnimation;
 };
 
 struct editor_ui

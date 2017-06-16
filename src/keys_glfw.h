@@ -213,4 +213,5 @@ void CharacterCallback(GLFWwindow *Window, unsigned int Codepoint)
         if(GameState->Console.BufferIndex < CONSOLE_BUFFER_SIZE - 1)
             GameState->Console.Buffer[GameState->Console.BufferIndex++] = (char)Codepoint;
     }
+    GameState->InputController.CurrentCharacter = (char)Codepoint;
 }
