@@ -596,6 +596,9 @@ static void RenderSetup(render_state *RenderState)
     RenderState->StandardFontShader.Type = Shader_StandardFont;
     LoadShader(ShaderPaths[Shader_StandardFont], &RenderState->StandardFontShader);
     
+    RenderState->RobotoFont = {};
+    InitializeFreeTypeFont("../assets/fonts/roboto/Roboto-Regular.ttf", 20, RenderState->FTLibrary, &RenderState->RobotoFont, &RenderState->StandardFontShader);
+    
     RenderState->InconsolataFont = {};
     InitializeFreeTypeFont("../assets/fonts/inconsolata/Inconsolata-Regular.ttf", 18, RenderState->FTLibrary, &RenderState->InconsolataFont, &RenderState->StandardFontShader);
     
@@ -816,6 +819,19 @@ static void InitializeOpenGL(game_state* GameState, render_state* RenderState, c
     GameState->EditorState.Buttons[4].ClickAnimationTimer = (timer*)malloc(sizeof(timer));
     GameState->EditorState.Buttons[4].ClickAnimationTimer->TimerMax = 0.2f;
     GameState->EditorState.Buttons[4].ClickAnimationTimer->TimerHandle = -1;
+    
+    GameState->EditorState.Buttons[5].Text = (char*)malloc(sizeof(char) * 20);
+    GameState->EditorState.Buttons[5].Text = "Create new";
+    GameState->EditorState.Buttons[5].ScreenPosition = glm::vec2(20, 20);
+    GameState->EditorState.Buttons[5].Size = glm::vec2(320, 60);
+    GameState->EditorState.Buttons[5].Color = glm::vec4(1.0f / 255.0f * 154.0f, 1.0f / 255.0f * 51.0f, 1.0f / 255.0f * 52.0f, 1);
+    GameState->EditorState.Buttons[5].TextColor = glm::vec4(1, 1, 1, 1);
+    GameState->EditorState.Buttons[5].Active = true;
+    GameState->EditorState.Buttons[5].EditorType = Button_Animation;
+    GameState->EditorState.Buttons[5].ClickAnimationTimer = (timer*)malloc(sizeof(timer));
+    GameState->EditorState.Buttons[5].ClickAnimationTimer->TimerMax = 0.2f;
+    GameState->EditorState.Buttons[5].ClickAnimationTimer->TimerHandle = -1;
+    GameState->EditorState.CreateNewAnimationButton = &GameState->EditorState.Buttons[5];
 }
 
 static void ReloadVertexShader(Shader_Type Type, render_state* RenderState)
@@ -1413,10 +1429,9 @@ void RenderButton(render_state* RenderState, const button& Button, glm::mat4 Pro
 void RenderTextfield(render_state* RenderState, const textfield& Textfield, glm::mat4 ProjectionMatrix, glm::mat4 ViewMatrix)
 {
     RenderRect(Render_Fill, RenderState, glm::vec4(1, 1, 1, 1), Textfield.ScreenPosition.x, Textfield.ScreenPosition.y, Textfield.Size.x, Textfield.Size.y, ProjectionMatrix, ViewMatrix);
-    if(Textfield.TextIndex == 0)
-        RenderText(RenderState, RenderState->ButtonFont, glm::vec4(0, 0, 0, 1), Textfield.Placeholder, Textfield.ScreenPosition.x, Textfield.ScreenPosition.y + 10, 1);
-    else
-        RenderText(RenderState, RenderState->ButtonFont, glm::vec4(0, 0, 0, 1), Textfield.Text, Textfield.ScreenPosition.x, Textfield.ScreenPosition.y + 10, 1);
+    
+    RenderText(RenderState, RenderState->RobotoFont, glm::vec4(1, 1, 1, 1), Textfield.Label, Textfield.ScreenPosition.x, Textfield.ScreenPosition.y + 35, 1);
+    RenderText(RenderState, RenderState->RobotoFont, glm::vec4(0, 0, 0, 1), Textfield.Text, Textfield.ScreenPosition.x, Textfield.ScreenPosition.y + 10, 1);
 }
 
 static void NEW_RenderTilemap(render_state* RenderState, const tilemap& Tilemap, glm::mat4 ProjectionMatrix, glm::mat4 View)
@@ -1582,10 +1597,30 @@ static void RenderGame(game_state* GameState)
                 case Editor_Animation:
                 {
                     RenderText(&GameState->RenderState, GameState->RenderState.MenuFont, glm::vec4(0.6f, 0.6f, 0.6f, 1), "Animation editing", (real32)GameState->RenderState.WindowWidth / 2, (real32)GameState->RenderState.WindowHeight - 70, 1, Alignment_Center);
-                    if(GameState->EditorState.AnimationNameField.Active)
-                        RenderTextfield(&GameState->RenderState, GameState->EditorState.AnimationNameField, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
+                    
+                    for(uint32 Index = 0; Index < 20; Index++)
+                    {
+                        if(GameState->EditorState.Textfields[Index].Active)
+                            RenderTextfield(&GameState->RenderState, GameState->EditorState.Textfields[Index], GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
+                    }
+                    
+                    std::map<char*, animation>::iterator Iterator;
+                    
+                    uint32 Index = 0;
+                    
+                    for(Iterator = GameState->Animations.begin(); Iterator != GameState->Animations.end(); Iterator++)
+                    {
+                        if(Index == GameState->EditorState.SelectedAnimation)
+                        {
+                            RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(1, 1, 1, 1), 20, (real32)GameState->RenderState.WindowHeight / 2 + (GameState->Animations.size() - Index) * 20 - 150 - 4, 300, 20, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
+                            RenderText(&GameState->RenderState, GameState->RenderState.InconsolataFont, glm::vec4(0, 0, 0, 1), Iterator->first, 20, (real32)GameState->RenderState.WindowHeight / 2 + (GameState->Animations.size() - Index++) * 20 - 150, 1);
+                        }
+                        else
+                            RenderText(&GameState->RenderState, GameState->RenderState.InconsolataFont, glm::vec4(1, 1, 1, 1), Iterator->first, 20, (real32)GameState->RenderState.WindowHeight / 2 + (GameState->Animations.size() - Index++) * 20 - 150, 1);
+                    }
+                    RenderButton(&GameState->RenderState, *GameState->EditorState.CreateNewAnimationButton, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
+                    RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(1, 1, 1, 1), (real32)GameState->RenderState.WindowWidth / 2.0f - GameState->RenderState.EntityTexture.Width / 2, (real32)GameState->RenderState.WindowHeight / 2.0f - GameState->RenderState.EntityTexture.Height / 2,GameState->RenderState.EntityTexture.Width, GameState->RenderState.EntityTexture.Height, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix, GameState->RenderState.EntityTexture.TextureHandle);
                 }
-                break;
                 break;
             }
             
@@ -1708,11 +1743,8 @@ static void Render(game_state* GameState)
     }
     else
     {
-        //glfwSetInputMode(GameState->RenderState.Window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
         RenderGame(GameState);
     }
-    
-    //RenderPlayerUI(&GameState->HealthBar, &GameState->RenderState);
     
     auto Pos = glm::unProject(glm::vec3(GameState->InputController.MouseX, GameState->RenderState.Viewport[3] - GameState->InputController.MouseY, 0),
                               GameState->Camera.ViewMatrix,
