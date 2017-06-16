@@ -27,6 +27,13 @@ struct astar_working_data
     astar_node WorkingList[WORKING_LIST_COUNT];
 };
 
+struct astar_path
+{
+    path_node* AStarPath;
+    uint32 AStarPathLength;
+    uint32 PathIndex;
+    timer* AStarCooldownTimer;
+};
 
 
 

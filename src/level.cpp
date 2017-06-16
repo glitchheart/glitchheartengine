@@ -217,7 +217,7 @@ static void SaveLevelToFile(const char* FilePath, level* Level, game_state* Game
         {
             for(uint32 X = 0; X < Level->Tilemap.Width; X++)
             {
-                fprintf(File, "%d ", Level->Tilemap.Data[X][Y].TypeIndex);
+                fprintf(File, "%d ", Level->Tilemap.Data[X][Level->Tilemap.Height - Y - 1].TypeIndex);
             }
             fprintf(File, "\n");
         }

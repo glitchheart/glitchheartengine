@@ -1191,15 +1191,33 @@ static void RenderWireframe(render_state* RenderState, entity* Entity, glm::mat4
     }
 }
 
+static astar_path* GetAStarPath(entity* Entity)
+{
+    switch(Entity->Type)
+    {
+        case Entity_Enemy:
+        {
+            return &Entity->Enemy.AStarPath; 
+        };
+        case Entity_Blob:
+        {
+            return &Entity->Blob.AStarPath; 
+        };
+        default:
+        return 0;
+    }
+}
+
 static void RenderAStarPath(render_state* RenderState, entity* Entity, glm::mat4 ProjectionMatrix, glm::mat4 View)
 {
-    if(Entity->Type == Entity_Enemy && Entity->Enemy.AStarPath) 
+    astar_path* Path = GetAStarPath(Entity);
+    if(Path) 
     {
         glBindVertexArray(RenderState->AStarPathVAO);
-        for(uint32 PathIndex = 0; PathIndex < Entity->Enemy.AStarPathLength; PathIndex++)
+        for(uint32 PathIndex = 0; PathIndex < Path->AStarPathLength; PathIndex++)
         {
             glm::mat4 Model(1.0f);
-            Model = glm::translate(Model, glm::vec3(Entity->Enemy.AStarPath[PathIndex].X, Entity->Enemy.AStarPath[PathIndex].Y, 0.0f));
+            Model = glm::translate(Model, glm::vec3(Path->AStarPath[PathIndex].X, Path->AStarPath[PathIndex].Y, 0.0f));
             Model = glm::scale(Model, glm::vec3(1, 1, 1));
             
             auto Shader = RenderState->Shaders[Shader_AStarPath];
@@ -1210,7 +1228,7 @@ static void RenderAStarPath(render_state* RenderState, entity* Entity, glm::mat4
             SetMat4Uniform(Shader.Program, "Model", Model);
             glm::vec4 color;
             
-            if(Entity->Enemy.PathIndex == PathIndex)
+            if(Path->PathIndex == PathIndex)
             {
                 color = glm::vec4(0.0,1.0,0.0,0.4);
             }
@@ -1357,7 +1375,7 @@ static void RenderEntity(render_state *RenderState, entity &Entity, glm::mat4 Pr
     if(RenderState->RenderColliders && !Entity.IsKinematic)
         RenderColliderWireframe(RenderState, &Entity, ProjectionMatrix, View);
     
-    if(RenderState->RenderPaths && Entity.Enemy.AStarPath)
+    if(RenderState->RenderPaths && GetAStarPath(&Entity))
         RenderAStarPath(RenderState,&Entity,ProjectionMatrix,View);
 }
 

@@ -105,6 +105,7 @@ struct entity
             AI_State AIState;
             timer* ExplodeStartTimer;
             timer* ExplodeCountdownTimer;
+            astar_path AStarPath;
         } Blob;
         struct
         {
@@ -115,13 +116,10 @@ struct entity
             
             timer* AttackCooldownTimer;
             timer* ChargingTimer;
-            timer* AStarCooldownTimer;
             
             AI_State AIState;
-            bool32 Path;
-            path_node* AStarPath;
-            uint32 AStarPathLength;
-            uint32 PathIndex;
+            astar_path AStarPath;
+            
         } Enemy;
         struct
         {

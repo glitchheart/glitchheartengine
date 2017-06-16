@@ -186,9 +186,9 @@ static void SpawnEnemy(game_state* GameState, glm::vec2 Position)
     Enemy->Enemy.ChargingTimer->TimerHandle = -1;
     Enemy->Enemy.ChargingTimer->TimerMax = 1.5f;
     
-    Enemy->Enemy.AStarCooldownTimer = (timer*)malloc(sizeof(timer));
-    Enemy->Enemy.AStarCooldownTimer->TimerHandle = -1;
-    Enemy->Enemy.AStarCooldownTimer->TimerMax = 0.6;
+    Enemy->Enemy.AStarPath.AStarCooldownTimer = (timer*)malloc(sizeof(timer));
+    Enemy->Enemy.AStarPath.AStarCooldownTimer->TimerHandle = -1;
+    Enemy->Enemy.AStarPath.AStarCooldownTimer->TimerMax = 0.6;
     
     Enemy->HitCooldownTimer = (timer*)malloc(sizeof(timer));
     Enemy->HitCooldownTimer->TimerHandle = -1;
@@ -255,9 +255,9 @@ static void SpawnBlob(game_state* GameState, glm::vec2 Position)
     Enemy->Layer = Layer_Enemy;
     
     Enemy->Blob.AIState = AI_Following;
-    Enemy->Enemy.AStarCooldownTimer = (timer*)malloc(sizeof(timer));
-    Enemy->Enemy.AStarCooldownTimer->TimerHandle = -1;
-    Enemy->Enemy.AStarCooldownTimer->TimerMax = 0.6;
+    Enemy->Blob.AStarPath.AStarCooldownTimer = (timer*)malloc(sizeof(timer));
+    Enemy->Blob.AStarPath.AStarCooldownTimer->TimerHandle = -1;
+    Enemy->Blob.AStarPath.AStarCooldownTimer->TimerMax = 0.6;
     
     Enemy->Blob.ExplodeStartTimer = (timer*)malloc(sizeof(timer));
     Enemy->Blob.ExplodeStartTimer->TimerHandle = -1;
