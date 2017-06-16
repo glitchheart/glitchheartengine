@@ -76,7 +76,7 @@ static void HandleNeighbour(astar_node* Current, astar_node* TargetNode,game_sta
     }
 }
 
-static void ReconstructPath(entity* Enemy, game_state* GameState, astar_node& Current,astar_working_data* AStarWorkingData,astar_node& StartNode)
+static void ReconstructPath(astar_path* Path, game_state* GameState, astar_node& Current,astar_working_data* AStarWorkingData,astar_node& StartNode)
 {
     astar_node PathNode;
     
@@ -96,52 +96,70 @@ static void ReconstructPath(entity* Enemy, game_state* GameState, astar_node& Cu
             {
                 Length++;
             }
-            PathNode = AStarWorkingData->WorkingList[PathNode.ParentIndex];
             
+            PathNode = AStarWorkingData->WorkingList[PathNode.ParentIndex];
         }
         
         if(Length > 0) 
         {
-            if(Enemy->Enemy.AStarPath)
+            if(Path->AStarPath)
             {
-                free(Enemy->Enemy.AStarPath);
+                free(Path->AStarPath);
             }
-            Enemy->Enemy.AStarPath = (path_node*)malloc(sizeof(path_node) * Length + 1);
+            Path->AStarPath = (path_node*)malloc(sizeof(path_node) * Length + 1);
             
             uint32 Index = Length - 1;
-            Enemy->Enemy.AStarPath[Length] = {Current.X,Current.Y};
+            Path->AStarPath[Length] = {Current.X,Current.Y};
             PathNode = AStarWorkingData->WorkingList[Current.ParentIndex];
             while(PathNode.ParentIndex >= 0 && (PathNode.X != StartNode.X || PathNode.Y != StartNode.Y))
             {
                 Assert(!GameState->CurrentLevel.Tilemap.Data[PathNode.X][PathNode.Y].IsSolid);
-                Enemy->Enemy.AStarPath[Index--] = {PathNode.X,PathNode.Y};
+                Path->AStarPath[Index--] = {PathNode.X,PathNode.Y};
                 astar_node PrevNode = PathNode;
                 PathNode = AStarWorkingData->WorkingList[PathNode.ParentIndex];
                 
                 if(GameState->CurrentLevel.Tilemap.Data[PrevNode.X][PrevNode.Y + 1].IsSolid || GameState->CurrentLevel.Tilemap.Data[PrevNode.X][PrevNode.Y - 1].IsSolid)
                 {
                     if(PrevNode.X > PathNode.X)
-                        Enemy->Enemy.AStarPath[Index--] = {PrevNode.X - 1, PrevNode.Y};
+                        Path->AStarPath[Index--] = {PrevNode.X - 1, PrevNode.Y};
                     if(PrevNode.X < PathNode.X)
-                        Enemy->Enemy.AStarPath[Index--] = {PrevNode.X + 1, PrevNode.Y};
+                        Path->AStarPath[Index--] = {PrevNode.X + 1, PrevNode.Y};
                 }
                 
                 if(GameState->CurrentLevel.Tilemap.Data[PrevNode.X + 1][PrevNode.Y].IsSolid || GameState->CurrentLevel.Tilemap.Data[PrevNode.X - 1][PrevNode.Y].IsSolid)
                 {
                     if(PrevNode.Y > PathNode.Y)
-                        Enemy->Enemy.AStarPath[Index--] = {PrevNode.X, PrevNode.Y - 1};
+                        Path->AStarPath[Index--] = {PrevNode.X, PrevNode.Y - 1};
                     if(PrevNode.Y < PathNode.Y)
-                        Enemy->Enemy.AStarPath[Index--] = {PrevNode.X, PrevNode.Y + 1};
+                        Path->AStarPath[Index--] = {PrevNode.X, PrevNode.Y + 1};
                 }
             }
             //Assert(!GameState->CurrentLevel.Tilemap.Data[PathNode.X][PathNode.Y].IsSolid);
-            Enemy->Enemy.AStarPath[0] = {PathNode.X,PathNode.Y};
-            Enemy->Enemy.AStarPathLength = Length;
+            Path->AStarPath[0] = {PathNode.X,PathNode.Y};
+            Path->AStarPathLength = Length;
             
-            Enemy->Enemy.PathIndex = 0;
+            Path->PathIndex = 0;
         }
     }
 }
+
+static astar_path* GetAStarPath(entity* Entity)
+{
+    switch(Entity->Type)
+    {
+        case Entity_Enemy:
+        {
+            return &Entity->Enemy.AStarPath; 
+        };
+        case Entity_Blob:
+        {
+            return &Entity->Blob.AStarPath; 
+        };
+        default:
+        return 0;
+    }
+}
+
 
 /*
 * FCost = GCost + HCost
@@ -152,7 +170,7 @@ static void ReconstructPath(entity* Enemy, game_state* GameState, astar_node& Cu
 * Horizontal cost: 10
 * Diagonal cost  : 14 (normally sqrt of 2 * 10, but we like ints!)
 */
-static void AStar(entity* Enemy, game_state* GameState, glm::vec2 StartPos, glm::vec2 TargetPos)
+static void AStar(entity* Entity, game_state* GameState, glm::vec2 StartPos, glm::vec2 TargetPos)
 {
     int32 StartX = (int32)glm::floor(StartPos.x);
     int32 StartY = (int32)glm::floor(StartPos.y);
@@ -164,8 +182,6 @@ static void AStar(entity* Enemy, game_state* GameState, glm::vec2 StartPos, glm:
        StartX >= 0 && StartY >= 0 && (uint32)TargetX < GameState->CurrentLevel.Tilemap.Width && (uint32)TargetY < GameState->CurrentLevel.Tilemap.Height &&
        TargetX >= 0 && TargetY >= 0)
     {
-        
-        
         astar_working_data* AStarWorkingData = (astar_working_data*)malloc(sizeof(astar_working_data));
         tile_data StartTile = GameState->CurrentLevel.Tilemap.Data[StartX][StartY];
         tile_data TargetTile = GameState->CurrentLevel.Tilemap.Data[TargetX][TargetY];
@@ -209,7 +225,7 @@ static void AStar(entity* Enemy, game_state* GameState, glm::vec2 StartPos, glm:
             
             if(Current.X == TargetNode.X && Current.Y == TargetNode.Y)
             {
-                ReconstructPath(Enemy,GameState,Current,AStarWorkingData, StartNode);
+                ReconstructPath(GetAStarPath(Entity),GameState,Current,AStarWorkingData, StartNode);
                 
                 // We're done with the path
                 free(AStarWorkingData);
@@ -265,14 +281,14 @@ static void AStar(entity* Enemy, game_state* GameState, glm::vec2 StartPos, glm:
     }
 }
 
-static void FindPath(game_state* GameState, entity* Entity, entity TargetEntity)
+static void FindPath(game_state* GameState, entity* Entity, entity& TargetEntity,astar_path* Path)
 {
     real64 DistanceToTargetEntity = abs(glm::distance(Entity->Position, TargetEntity.Position));
     glm::vec2 EntityPosition = glm::vec2(Entity->Position.x + Entity->Center.x * Entity->Scale.x,Entity->Position.y + Entity->Center.y * Entity->Scale.y);
-    if(TimerDone(GameState,Entity->Enemy.AStarCooldownTimer) || !Entity->Enemy.AStarPath || (Entity->Enemy.AStarPathLength <= Entity->Enemy.PathIndex && DistanceToTargetEntity >= 3.0f)) 
+    if(TimerDone(GameState,Path->AStarCooldownTimer) || !Path->AStarPath || (Path->AStarPathLength <= Path->PathIndex && DistanceToTargetEntity >= 3.0f)) 
     {
-        Entity->Enemy.PathIndex = Entity->Enemy.AStarPathLength;
-        StartTimer(GameState, Entity->Enemy.AStarCooldownTimer);
+        Path->PathIndex = 0;
+        StartTimer(GameState, Path->AStarCooldownTimer);
         glm::vec2 StartPosition = EntityPosition;
         glm::vec2 TargetPosition = glm::vec2(TargetEntity.Position.x + TargetEntity.Center.x * TargetEntity.Scale.x,
                                              TargetEntity.Position.y + TargetEntity.Center.y * TargetEntity.Scale.y);
@@ -281,32 +297,37 @@ static void FindPath(game_state* GameState, entity* Entity, entity TargetEntity)
     
 }
 
-static void FollowPath(game_state* GameState, entity* Entity,entity TargetEntity, real64 DeltaTime)
+static void FollowPath(game_state* GameState, entity* Entity,entity& TargetEntity, real64 DeltaTime, astar_path* Path)
 {
     real64 DistanceToTargetEntity = abs(glm::distance(Entity->Position, TargetEntity.Position));
     glm::vec2 EntityPosition = glm::vec2(Entity->Position.x + Entity->Center.x * Entity->Scale.x,Entity->Position.y + Entity->Center.y * Entity->Scale.y);
-    if(Entity->Enemy.AStarPath && Entity->Enemy.PathIndex < Entity->Enemy.AStarPathLength)
+    if(Path->AStarPath && Path->PathIndex < Path->AStarPathLength)
     {
-        path_node NewPos = Entity->Enemy.AStarPath[Entity->Enemy.PathIndex];
+        path_node NewPos = Path->AStarPath[Path->PathIndex];
+        //printf("NewPos: (%d,%d)\n",NewPos.X,NewPos.Y);
         real64 DistanceToNode = glm::distance(EntityPosition, glm::vec2(NewPos.X,NewPos.Y));
-        if(DistanceToNode > 1.2f) 
+        if(DistanceToNode > 0.8f) 
         {
-            glm::vec2 FollowDirection = glm::vec2(NewPos.X,NewPos.Y) - Entity->Position;
+            glm::vec2 FollowDirection = glm::vec2(NewPos.X,NewPos.Y) - EntityPosition;
             FollowDirection = glm::normalize(FollowDirection);
-            Entity->Velocity = glm::vec2(FollowDirection.x * Entity->Enemy.WalkingSpeed * DeltaTime, FollowDirection.y * Entity->Enemy.WalkingSpeed * DeltaTime);
+            
+            // NOTE(Niels): Remember 5.0 is only temp, needs actual walking speed!!
+            Entity->Velocity = glm::vec2(FollowDirection.x * 5.0f, FollowDirection.y * 5.0f);
         }
         else
         {
-            Entity->Enemy.PathIndex++;
+            Path->PathIndex++;
         }
     }
     
     glm::vec2 Direction = TargetEntity.Position - Entity->Position;
-    if(DistanceToTargetEntity > Entity->Enemy.MinDistance && DistanceToTargetEntity < 3.0f)
+    // NOTE(Niels): Get actual min distance here (instead of 2)!!
+    if(DistanceToTargetEntity > 2 && DistanceToTargetEntity < 3.0f)
     {
+        // NOTE(Niels): Remember 5.0 is only temp, needs actual walking speed!!
         Direction = glm::normalize(Direction);
-        Entity->Velocity =glm::vec2(Direction.x * Entity->Enemy.WalkingSpeed * DeltaTime,
-                                    Direction.y * Entity->Enemy.WalkingSpeed * DeltaTime);
+        Entity->Velocity =glm::vec2(Direction.x * 5.0f,
+                                    Direction.y * 5.0f);
     }
     Entity->IsFlipped = Direction.x < 0;
 }

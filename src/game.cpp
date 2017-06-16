@@ -323,8 +323,8 @@ void UpdateBlob(entity* Entity, game_state* GameState, real64 DeltaTime)
     {
         case AI_Following:
         {
-            FindPath(GameState,Entity,GameState->Entities[GameState->PlayerIndex]);
-            FollowPath(GameState,Entity,GameState->Entities[GameState->PlayerIndex],DeltaTime);
+            FindPath(GameState,Entity,GameState->Entities[GameState->PlayerIndex],GetAStarPath(Entity));
+            FollowPath(GameState,Entity,GameState->Entities[GameState->PlayerIndex],DeltaTime,GetAStarPath(Entity));
             /*glm::vec2 Direction = glm::normalize(glm::vec2(GameState->Entities[GameState->PlayerIndex].Position.x - Entity->Position.x, GameState->Entities[GameState->PlayerIndex].Position.y - Entity->Position.y));
             */
             if(Abs(glm::distance(Entity->Position, GameState->Entities[GameState->PlayerIndex].Position)) < 1)
@@ -332,11 +332,13 @@ void UpdateBlob(entity* Entity, game_state* GameState, real64 DeltaTime)
                 Entity->Blob.AIState = AI_Charging;
                 StartTimer(GameState, Entity->Blob.ExplodeStartTimer);
             }
-            /*
-            Entity->Position.x += Direction.x * Entity->Velocity.x * (real32)DeltaTime;
-            Entity->Position.y += Direction.y * Entity->Velocity.y * (real32)DeltaTime;
             
-            Entity->IsFlipped = Direction.x <= 0;*/
+            Entity->Position.x += Entity->Velocity.x * DeltaTime;
+            Entity->Position.y += Entity->Velocity.y * DeltaTime;
+            
+            //printf("Velocity: (%f,%f)\n",Entity->Velocity.x,Entity->Velocity.y);
+            
+            /*Entity->IsFlipped = Direction.x <= 0;*/
         }
         break;
         case AI_Charging:
@@ -415,8 +417,8 @@ void UpdateEnemy(entity* Entity, game_state* GameState, real64 DeltaTime)
             }
             else
             {
-                FindPath(GameState,Entity,Player);
-                FollowPath(GameState,Entity,Player,DeltaTime);
+                FindPath(GameState,Entity,Player,GetAStarPath(Entity));
+                FollowPath(GameState,Entity,Player,DeltaTime,GetAStarPath(Entity));
             }
         }
         break;
@@ -476,8 +478,8 @@ void UpdateEnemy(entity* Entity, game_state* GameState, real64 DeltaTime)
         break;
     }
     
-    Entity->Position.x += Entity->Velocity.x;
-    Entity->Position.y += Entity->Velocity.y;
+    Entity->Position.x += Entity->Velocity.x * DeltaTime;
+    Entity->Position.y += Entity->Velocity.y * DeltaTime;
     
     //@Cleanup move this somewhere else, maybe out of switch
     render_entity* RenderEntity = &GameState->RenderState.RenderEntities[Entity->RenderEntityHandle];
