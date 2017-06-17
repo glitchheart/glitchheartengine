@@ -372,6 +372,9 @@ void UpdateBlob(entity* Entity, game_state* GameState, real64 DeltaTime)
         }
         break;
     }
+    
+    collision_info CollisionInfo;
+    CheckCollision(GameState, Entity, &CollisionInfo);
 }
 
 void UpdateEnemy(entity* Entity, game_state* GameState, real64 DeltaTime)
