@@ -66,7 +66,7 @@ static void InitPlayer(game_state* GameState, glm::vec2 Position)
     Player->AnimationInfo.CurrentTime = 0;
     
     collision_AABB* HitTrigger = (collision_AABB*)malloc(sizeof(collision_AABB));
-    HitTrigger->Offset = glm::vec2(0, 1.5f);
+    HitTrigger->Offset = glm::vec2(0, 0);
     HitTrigger->Center = glm::vec2(Player->Position.x + Player->Center.x * Player->Scale.x + HitTrigger->Offset.x,
                                    Player->Position.y + Player->Center.y * Player->Scale.y + HitTrigger->Offset.y);
     HitTrigger->Extents = glm::vec2(0.5f, 1.0f);
@@ -87,14 +87,14 @@ static void InitPlayer(game_state* GameState, glm::vec2 Position)
     Player->Velocity = glm::vec2(0,0);
     PlayAnimation(Player, "player_idle_down", GameState);
     collision_AABB CollisionAABB;
-    Player->Center = glm::vec2(0.5f, -1.0f);
+    Player->Center = glm::vec2(0.5f, 0.5f);
     
     Player->Layer = Layer_Player;
-    //Player->IgnoreLayers = Layer_Enemy;
     
     CollisionAABB.Center = glm::vec2(Player->Position.x + Player->Center.x * Player->Scale.x,
                                      Player->Position.y + Player->Center.y * Player->Scale.y);
     CollisionAABB.Extents = glm::vec2(0.3f, 0.15f);
+    CollisionAABB.Offset = glm::vec2(0, -1.4f);
     CollisionAABB.IsTrigger = false;
     Player->CollisionAABB = CollisionAABB;
     
@@ -118,8 +118,8 @@ static void InitPlayer(game_state* GameState, glm::vec2 Position)
     PlayerWeapon->AnimationInfo.CurrentTime = 0;
     
     collision_AABB CollisionAABB3;
-    CollisionAABB3.Center = glm::vec2(0.5, 0.5);
-    CollisionAABB3.Offset = glm::vec2(0.7, 0);
+    CollisionAABB3.Center = glm::vec2(0, 0);
+    CollisionAABB3.Offset = glm::vec2(0, 0);
     CollisionAABB3.Extents = glm::vec2(0.5f,1.0f);
     CollisionAABB3.IsTrigger = true;
     PlayerWeapon->CollisionAABB = CollisionAABB3;
@@ -268,7 +268,7 @@ static void SpawnBlob(game_state* GameState, glm::vec2 Position)
     Enemy->Velocity = glm::vec2(2, 2);
     
     collision_AABB CollisionAABB;
-    Enemy->Center = glm::vec2(0.5f, -0.5f);
+    Enemy->Center = glm::vec2(0.5f, 0.5f);
     CollisionAABB.Center = glm::vec2(Enemy->Position.x + Enemy->Center.x * Enemy->Scale.x,
                                      Enemy->Position.y + Enemy->Center.y * Enemy->Scale.y);
     CollisionAABB.Offset = glm::vec2(0, -0.9);
