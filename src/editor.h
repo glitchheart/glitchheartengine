@@ -45,11 +45,18 @@ struct button
 
 #define TEXTFIELD_LENGTH 30
 
+enum Textfield_Type
+{
+    Textfield_Normal,
+    Textfield_Integer,
+    Textfield_Decimal
+};
+
 struct textfield
 {
     bool32 Active = false;
     bool32 InFocus = false;
-    bool32 OnlyNumber = false;
+    Textfield_Type Type = Textfield_Normal;
     char* Label;
     char Text[TEXTFIELD_LENGTH];
     uint32 TextIndex;
@@ -104,8 +111,10 @@ struct editor_state
     textfield* AnimationFrameCountField;
     textfield* AnimationFrameOffsetXField;
     textfield* AnimationFrameOffsetYField;
+    textfield* AnimationFrameDurationField;
     
     button* CreateNewAnimationButton;
+    button* SaveAnimationButton;
     
     int32 SelectedAnimation;
     animation* LoadedAnimation;

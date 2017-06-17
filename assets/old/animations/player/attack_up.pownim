@@ -1,0 +1,11 @@
+name player_attack_up
+type sprite
+framecount 3
+framesize 84 84
+loop o
+timeperframe 0.1
+frames
+420 252
+504 252
+588 252
+texture knight_player

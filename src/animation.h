@@ -23,6 +23,7 @@ struct animation
     glm::vec2 FrameSize;
     bool32 Loop;
     
+    glm::vec2 FrameOffset;
     sprite_sheet_frame* Frames;
 };
 

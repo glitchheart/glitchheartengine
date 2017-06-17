@@ -1,0 +1,9 @@
+name player_idle_right
+type sprite
+framecount 1
+framesize 84 84
+loop 1
+timeperframe 0.1
+frames
+0 336
+texture knight_player

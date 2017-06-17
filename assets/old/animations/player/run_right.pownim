@@ -1,0 +1,14 @@
+name player_run_right
+type sprite
+framecount 5
+framesize 84 84
+loop 1
+timeperframe 0.1
+frames
+588 84
+0 168
+84 168
+168 168
+252 168
+texture knight_player
+
