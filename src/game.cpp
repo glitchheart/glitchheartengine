@@ -684,18 +684,40 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
             {
                 bool32 CanEnter = true;
                 
-                if(Textfield->OnlyNumber)
+                switch(Textfield->Type)
                 {
-                    CanEnter = GameState->InputController.CurrentCharacter == '0' ||
-                        GameState->InputController.CurrentCharacter == '1' ||
-                        GameState->InputController.CurrentCharacter == '2' ||
-                        GameState->InputController.CurrentCharacter == '3' ||
-                        GameState->InputController.CurrentCharacter == '4' ||
-                        GameState->InputController.CurrentCharacter == '5' ||
-                        GameState->InputController.CurrentCharacter == '6' ||
-                        GameState->InputController.CurrentCharacter == '7' ||
-                        GameState->InputController.CurrentCharacter == '8' ||
-                        GameState->InputController.CurrentCharacter == '9';
+                    case Textfield_Normal:
+                    {}
+                    break;
+                    case Textfield_Integer:
+                    {
+                        CanEnter = GameState->InputController.CurrentCharacter == '0' ||
+                            GameState->InputController.CurrentCharacter == '1' ||
+                            GameState->InputController.CurrentCharacter == '2' ||
+                            GameState->InputController.CurrentCharacter == '3' ||
+                            GameState->InputController.CurrentCharacter == '4' ||
+                            GameState->InputController.CurrentCharacter == '5' ||
+                            GameState->InputController.CurrentCharacter == '6' ||
+                            GameState->InputController.CurrentCharacter == '7' ||
+                            GameState->InputController.CurrentCharacter == '8' ||
+                            GameState->InputController.CurrentCharacter == '9';
+                    }
+                    break;
+                    case Textfield_Decimal:
+                    {
+                        CanEnter = GameState->InputController.CurrentCharacter == '0' ||
+                            GameState->InputController.CurrentCharacter == '1' ||
+                            GameState->InputController.CurrentCharacter == '2' ||
+                            GameState->InputController.CurrentCharacter == '3' ||
+                            GameState->InputController.CurrentCharacter == '4' ||
+                            GameState->InputController.CurrentCharacter == '5' ||
+                            GameState->InputController.CurrentCharacter == '6' ||
+                            GameState->InputController.CurrentCharacter == '7' ||
+                            GameState->InputController.CurrentCharacter == '8' ||
+                            GameState->InputController.CurrentCharacter == '9' ||
+                            GameState->InputController.CurrentCharacter == '.';
+                    }
+                    break;
                 }
                 
                 if(CanEnter && Textfield->TextIndex != TEXTFIELD_LENGTH)
@@ -848,15 +870,29 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
         break;
         case Editor_Animation:
         {
+            if(GameState->EditorState.SaveAnimationButton->Clicked && GameState->EditorState.LoadedAnimation)
+            {
+                SaveAnimationToFile(GameState, *GameState->EditorState.LoadedAnimation);
+            }
+            
             GameState->EditorState.CreateNewAnimationButton->Active = true;
             
             if(GameState->EditorState.CreateNewAnimationButton->Clicked)
             {
                 GameState->EditorState.LoadedAnimation = (animation*)malloc(sizeof(animation));
+                
+                GameState->EditorState.LoadedAnimation->Name = (char*) malloc(30 * sizeof(char));
+                GameState->EditorState.LoadedAnimation->FrameCount = 0;
+                GameState->EditorState.LoadedAnimation->FrameSize = glm::vec2(0, 0);
+                GameState->EditorState.LoadedAnimation->FrameOffset = glm::vec2(0, 0);
+                GameState->EditorState.LoadedAnimation->Loop = 0;
+                GameState->EditorState.LoadedAnimation->Texture = &GameState->RenderState.Textures.begin()->second;
             }
             
             if(GameState->EditorState.LoadedAnimation)
             {
+                animation* LoadedAnimation = GameState->EditorState.LoadedAnimation;
+                
                 if(!GameState->EditorState.AnimationNameField ||!GameState->EditorState.AnimationNameField->Active)
                 {
                     GameState->EditorState.AnimationNameField = &GameState->EditorState.Textfields[0];
@@ -865,6 +901,7 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
                     GameState->EditorState.AnimationFrameCountField = &GameState->EditorState.Textfields[3];
                     GameState->EditorState.AnimationFrameOffsetXField = &GameState->EditorState.Textfields[4];
                     GameState->EditorState.AnimationFrameOffsetYField = &GameState->EditorState.Textfields[5];
+                    GameState->EditorState.AnimationFrameDurationField = &GameState->EditorState.Textfields[6];
                     
                     GameState->EditorState.AnimationNameField->Active = true;
                     GameState->EditorState.AnimationNameField->Size = glm::vec2(300, 30);
@@ -875,32 +912,46 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
                     GameState->EditorState.AnimationFrameWidthField->Size = glm::vec2(300, 30);
                     GameState->EditorState.AnimationFrameWidthField->ScreenPosition = glm::vec2(GameState->RenderState.WindowWidth - 305, 600);
                     GameState->EditorState.AnimationFrameWidthField->Label = "Frame width";
-                    GameState->EditorState.AnimationFrameWidthField->OnlyNumber = true;
+                    GameState->EditorState.AnimationFrameWidthField->Type = Textfield_Integer;
                     
                     GameState->EditorState.AnimationFrameHeightField->Active = true;
                     GameState->EditorState.AnimationFrameHeightField->Size = glm::vec2(300, 30);
                     GameState->EditorState.AnimationFrameHeightField->ScreenPosition = glm::vec2(GameState->RenderState.WindowWidth - 305, 540);
                     GameState->EditorState.AnimationFrameHeightField->Label = "Frame height";
-                    GameState->EditorState.AnimationFrameHeightField->OnlyNumber = true;
+                    GameState->EditorState.AnimationFrameHeightField->Type = Textfield_Integer;
                     
                     GameState->EditorState.AnimationFrameCountField->Active = true;
                     GameState->EditorState.AnimationFrameCountField->Size = glm::vec2(300, 30);
                     GameState->EditorState.AnimationFrameCountField->ScreenPosition = glm::vec2(GameState->RenderState.WindowWidth - 305, 480);
                     GameState->EditorState.AnimationFrameCountField->Label = "Frame count";
-                    GameState->EditorState.AnimationFrameCountField->OnlyNumber = true;
+                    GameState->EditorState.AnimationFrameCountField->Type = Textfield_Integer;
                     
                     GameState->EditorState.AnimationFrameOffsetXField->Active = true;
                     GameState->EditorState.AnimationFrameOffsetXField->Size = glm::vec2(300, 30);
                     GameState->EditorState.AnimationFrameOffsetXField->ScreenPosition = glm::vec2(GameState->RenderState.WindowWidth - 305, 420);
                     GameState->EditorState.AnimationFrameOffsetXField->Label = "Frame offset x";
-                    GameState->EditorState.AnimationFrameOffsetXField->OnlyNumber = true;
+                    GameState->EditorState.AnimationFrameOffsetXField->Type = Textfield_Integer;
                     
                     GameState->EditorState.AnimationFrameOffsetYField->Active = true;
                     GameState->EditorState.AnimationFrameOffsetYField->Size = glm::vec2(300, 30);
                     GameState->EditorState.AnimationFrameOffsetYField->ScreenPosition = glm::vec2(GameState->RenderState.WindowWidth - 305, 360);
                     GameState->EditorState.AnimationFrameOffsetYField->Label = "Frame offset y";
-                    GameState->EditorState.AnimationFrameOffsetYField->OnlyNumber = true;
+                    GameState->EditorState.AnimationFrameOffsetYField->Type = Textfield_Integer;
+                    
+                    GameState->EditorState.AnimationFrameDurationField->Active = true;
+                    GameState->EditorState.AnimationFrameDurationField->Size = glm::vec2(300, 30);
+                    GameState->EditorState.AnimationFrameDurationField->ScreenPosition = glm::vec2(GameState->RenderState.WindowWidth - 305, 300);
+                    GameState->EditorState.AnimationFrameDurationField->Label = "Frame  duration";
+                    GameState->EditorState.AnimationFrameDurationField->Type = Textfield_Decimal;
                 }
+                
+                sscanf(GameState->EditorState.AnimationNameField->Text, "%s", LoadedAnimation->Name);
+                sscanf(GameState->EditorState.AnimationFrameCountField->Text, "%d", &LoadedAnimation->FrameCount);
+                sscanf(GameState->EditorState.AnimationFrameWidthField->Text, "%d", &LoadedAnimation->FrameSize.x);
+                sscanf(GameState->EditorState.AnimationFrameHeightField->Text, "%d", &LoadedAnimation->FrameSize.x);
+                sscanf(GameState->EditorState.AnimationFrameOffsetXField->Text, "%d", &LoadedAnimation->FrameOffset.x);
+                sscanf(GameState->EditorState.AnimationFrameOffsetYField->Text, "%d", &LoadedAnimation->FrameOffset.y);
+                sscanf(GameState->EditorState.AnimationFrameDurationField->Text, "%f", &LoadedAnimation->TimePerFrame);
             }
             else
             {

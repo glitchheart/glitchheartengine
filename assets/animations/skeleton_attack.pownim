@@ -1,0 +1,26 @@
+name skeleton_attack
+type sprite
+framecount 18
+framesize 43 37
+loop 1
+timeperframe 0.1
+frames
+0 0
+43 0
+86 0
+129 0
+172 0
+215 0
+258 0
+301 0
+344 0
+387 0
+430 0
+473 0
+516 0
+559 0
+602 0
+645 0
+688 0
+731 0
+texture skeleton_attack

@@ -21,33 +21,6 @@ enum Shader_Type
     Shader_Count
 };
 
-enum Texture_Type
-{
-    Texture_Entity,
-    Texture_Barrel,
-    Texture_SwordSimple,
-    Texture_Player,
-    
-    Texture_SkeletonHit,
-    Texture_SkeletonAttack,
-    Texture_SkeletonWalk,
-    Texture_SkeletonIdle,
-    Texture_SkeletonReact,
-    Texture_SkeletonDeath,
-    
-    Texture_Blob,
-    
-    Texture_Explosion,
-    Texture_HealthFull,
-    Texture_Health2,
-    Texture_Health1,
-    Texture_HealthEmpty,
-    
-    Texture_SelectedTile,
-    
-    Texture_Count
-};
-
 const char* ShaderPaths[Shader_Count] =
 {
     "../assets/shaders/textureshader",
@@ -77,6 +50,7 @@ struct entity;
 
 struct texture 
 {
+    char* Name;
     GLuint TextureHandle;
     int32 Width;
     int32 Height;
@@ -286,58 +260,7 @@ struct render_state
         };
     };
     
-    union
-    {
-        texture Textures[Texture_Count];
-        struct
-        {
-            texture EntityTexture;
-            texture BarrelTexture;
-            texture SwordSimpleTexture;
-            texture PlayerTexture;
-            texture SkeletonHitTexture;
-            texture SkeletonAttackTexture;
-            texture SkeletonWalkTexture;
-            texture SkeletonIdleTexture;
-            texture SkeletonReactTexture;
-            texture SkeletonDeathTexture;
-            
-            texture BlobTexture;
-            
-            texture ExplosionTexture;
-            
-            texture HealthFullTexture;
-            texture Health2Texture;
-            texture Health1Texture;
-            texture HealthEmptyTexture;
-            
-            texture SelectedTileTexture;
-        };
-    };
-    
-    
-    char* TexturePaths[Texture_Count] =
-    {
-        "../assets/textures/spritesheets/entities.png",
-        "../assets/textures/barrel.png",
-        "../assets/textures/spritesheets/sword_simple.png",
-        "../assets/textures/spritesheets/knight_player.png",
-        "../assets/textures/spritesheets/skeleton/skeleton_hit.png",
-        "../assets/textures/spritesheets/skeleton/skeleton_attack.png",
-        "../assets/textures/spritesheets/skeleton/skeleton_walk.png",
-        "../assets/textures/spritesheets/skeleton/skeleton_idle.png",
-        "../assets/textures/spritesheets/skeleton/skeleton_react.png",
-        "../assets/textures/spritesheets/skeleton/skeleton_death.png",
-        
-        "../assets/textures/spritesheets/blob/blob.png",
-        "../assets/textures/spritesheets/explosion.png",
-        
-        "../assets/textures/spritesheets/health_full.png",
-        "../assets/textures/spritesheets/health_2.png",
-        "../assets/textures/spritesheets/health_1.png",
-        "../assets/textures/spritesheets/health_empty.png",
-        "../assets/textures/selected_tile.png"
-    };
+    std::map<char*, texture, CompareCStrings> Textures;
     
     //freetype
     FT_Library FTLibrary;

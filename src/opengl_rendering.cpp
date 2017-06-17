@@ -381,28 +381,6 @@ static void CreateTilemapVAO(render_state* RenderState, const tilemap& Tilemap, 
     LoadEditorTileBuffer(RenderState, *EditorRenderInfo, Tilemap);
 }
 
-
-void LoadTilesheetPath(const char* FilePath, render_state* RenderState)
-{
-    FILE* File;
-    File = fopen(FilePath, "r");
-    if(File) 
-    {
-        char LineBuffer[255];
-        
-        if(fgets(LineBuffer, 255, File))
-        {
-            printf("%s",LineBuffer);
-            char* TilesheetPath = (char*)malloc(sizeof(char) * 255);
-            sscanf(LineBuffer, "%s", TilesheetPath);
-            RenderState->TexturePaths[0] = TilesheetPath;
-            free(TilesheetPath);
-        }
-        fclose(File);
-    }
-}
-
-
 static void RenderSetup(render_state *RenderState)
 {
     if(FT_Init_FreeType(&RenderState->FTLibrary)) 
@@ -609,7 +587,7 @@ static void RenderSetup(render_state *RenderState)
     InitializeFreeTypeFont("../assets/fonts/raleway/Raleway-Regular.ttf", 30, RenderState->FTLibrary, &RenderState->ButtonFont, &RenderState->StandardFontShader);
 }
 
-static GLuint LoadTexture(const char *FilePath, texture* Texture)
+static GLuint LoadTexture(const char* FilePath, texture* Texture)
 {
     GLuint TextureHandle;
     
@@ -635,17 +613,24 @@ static GLuint LoadTexture(const char *FilePath, texture* Texture)
                  GL_UNSIGNED_BYTE, Image);
     Texture->TextureHandle = TextureHandle;
     stbi_image_free(Image);
+    
     return GL_TRUE;
 }
 
 static void LoadTextures(render_state* RenderState)
 {
-    for(uint32 TextureIndex = 0; TextureIndex < Texture_Count; TextureIndex++)
+    directory_data DirData;
+    FindFilesWithExtensions("../assets/textures/", "png", &DirData, true);
+    
+    for(int32 FileIndex = 0; FileIndex < DirData.FilesLength; FileIndex++)
     {
         texture Texture = {};
-        LoadTexture(RenderState->TexturePaths[TextureIndex], &Texture);
-        RenderState->Textures[TextureIndex] = Texture;
+        LoadTexture(DirData.FilePaths[FileIndex], &Texture);
+        RenderState->Textures.insert(std::pair<char*, texture>(DirData.FileNames[FileIndex], Texture));
     }
+    
+    free(DirData.FilePaths);
+    free(DirData.FileNames);
 }
 
 static void LoadTilesheetTextures(game_state* GameState, render_state* RenderState)
@@ -753,7 +738,7 @@ static void InitializeOpenGL(game_state* GameState, render_state* RenderState, c
     GameState->HealthBar = {};
     GameState->HealthBar.Position = glm::vec2(RenderState->WindowWidth / 2, RenderState->WindowHeight - 50);
     GameState->HealthBar.RenderInfo.Size = glm::vec3(2, 1, 1);
-    GameState->HealthBar.RenderInfo.Texture = &RenderState->Textures[Texture_HealthFull];
+    GameState->HealthBar.RenderInfo.Texture = &RenderState->Textures["health_full"];
     
     // @Incomplete: These values need to be updated when the window size is changed
     GameState->EditorState.ToolbarX = (real32)RenderState->WindowWidth - 100;
@@ -832,6 +817,19 @@ static void InitializeOpenGL(game_state* GameState, render_state* RenderState, c
     GameState->EditorState.Buttons[5].ClickAnimationTimer->TimerMax = 0.2f;
     GameState->EditorState.Buttons[5].ClickAnimationTimer->TimerHandle = -1;
     GameState->EditorState.CreateNewAnimationButton = &GameState->EditorState.Buttons[5];
+    
+    GameState->EditorState.Buttons[6].Text = (char*)malloc(sizeof(char) * 20);
+    GameState->EditorState.Buttons[6].Text = "Save animation";
+    GameState->EditorState.Buttons[6].ScreenPosition = glm::vec2(700, 20);
+    GameState->EditorState.Buttons[6].Size = glm::vec2(320, 60);
+    GameState->EditorState.Buttons[6].Color = glm::vec4(1.0f / 255.0f * 154.0f, 1.0f / 255.0f * 51.0f, 1.0f / 255.0f * 52.0f, 1);
+    GameState->EditorState.Buttons[6].TextColor = glm::vec4(1, 1, 1, 1);
+    GameState->EditorState.Buttons[6].Active = true;
+    GameState->EditorState.Buttons[6].EditorType = Button_Animation;
+    GameState->EditorState.Buttons[6].ClickAnimationTimer = (timer*)malloc(sizeof(timer));
+    GameState->EditorState.Buttons[6].ClickAnimationTimer->TimerMax = 0.2f;
+    GameState->EditorState.Buttons[6].ClickAnimationTimer->TimerHandle = -1;
+    GameState->EditorState.SaveAnimationButton = &GameState->EditorState.Buttons[6];
 }
 
 static void ReloadVertexShader(Shader_Type Type, render_state* RenderState)
@@ -1577,7 +1575,7 @@ void RenderGame(game_state* GameState)
                     EditorRenderTilemap(glm::vec2((real32)GameState->RenderState.WindowWidth - 80, 5 + GameState->EditorState.ToolbarScrollOffsetY), 60, &GameState->RenderState, GameState->CurrentLevel.Tilemap);
                     
                     RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(1, 0, 0, 1), (real32)GameState->RenderState.WindowWidth - 80,
-                               GameState->EditorState.SelectedTileType * 60 + 5 + GameState->EditorState.ToolbarScrollOffsetY, 60, 60, GameState->RenderState.SelectedTileTexture.TextureHandle);
+                               GameState->EditorState.SelectedTileType * 60 + 5 + GameState->EditorState.ToolbarScrollOffsetY, 60, 60, GameState->RenderState.Textures["selected_tile"].TextureHandle);
                     
                     char Text[255]; sprintf(Text,"Type index: %d Is solid: %d",GameState->CurrentLevel.Tilemap.Tiles[GameState->EditorState.SelectedTileType].TypeIndex,GameState->CurrentLevel.Tilemap.Tiles[GameState->EditorState.SelectedTileType].IsSolid);
                     
@@ -1602,6 +1600,11 @@ void RenderGame(game_state* GameState)
                             RenderTextfield(&GameState->RenderState, GameState->EditorState.Textfields[Index]);
                     }
                     
+                    const texture& Texture = *GameState->EditorState.LoadedAnimation->Texture;
+                    real32 Scale = 2.0f;
+                    real32 TextureWidth = (real32)Texture.Width * Scale;
+                    real32 TextureHeight = (real32)Texture.Height * Scale;
+                    
                     std::map<char*, animation>::iterator Iterator;
                     
                     int32 Index = 0;
@@ -1619,7 +1622,7 @@ void RenderGame(game_state* GameState)
                     
                     RenderButton(&GameState->RenderState, *GameState->EditorState.CreateNewAnimationButton);
                     
-                    RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(1, 1, 1, 1), (real32)GameState->RenderState.WindowWidth / 2.0f - GameState->RenderState.SkeletonIdleTexture.Width / 2, (real32)GameState->RenderState.WindowHeight / 2.0f - GameState->RenderState.SkeletonIdleTexture.Height / 2,(real32)GameState->RenderState.SkeletonIdleTexture.Width, (real32)GameState->RenderState.SkeletonIdleTexture.Height,GameState->RenderState.SkeletonIdleTexture.TextureHandle);
+                    RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(1, 1, 1, 1), (real32)GameState->RenderState.WindowWidth / 2.0f - TextureWidth / 2, (real32)GameState->RenderState.WindowHeight / 2.0f - TextureHeight / 2, TextureWidth, TextureHeight, Texture.TextureHandle);
                     
                     if(GameState->EditorState.AnimationFrameCountField)
                     {
@@ -1635,16 +1638,16 @@ void RenderGame(game_state* GameState)
                         sscanf(GameState->EditorState.AnimationFrameOffsetXField->Text, "%d", &FrameOffsetX);
                         sscanf(GameState->EditorState.AnimationFrameOffsetYField->Text, "%d", &FrameOffsetY);
                         
-                        real32 StartX = (real32)GameState->RenderState.WindowWidth / 2.0f - GameState->RenderState.SkeletonIdleTexture.Width / 2;
-                        real32 StartY = (real32)GameState->RenderState.WindowHeight / 2.0f - GameState->RenderState.SkeletonIdleTexture.Height / 2;
+                        real32 StartX = (real32)GameState->RenderState.WindowWidth / 2.0f - TextureWidth / 2;
+                        real32 StartY = (real32)GameState->RenderState.WindowHeight / 2.0f - TextureHeight / 2;
                         
                         for(int32 Index = 0; Index < FrameCount; Index++)
                         {
-                            RenderRect(Render_Outline, &GameState->RenderState, glm::vec4(1, 0, 0, 1), StartX + FrameOffsetX + Index * FrameWidth, StartY + GameState->RenderState.SkeletonIdleTexture.Height - FrameHeight + FrameOffsetY,(real32)FrameWidth, (real32)FrameHeight);
+                            RenderRect(Render_Outline, &GameState->RenderState, glm::vec4(1, 0, 0, 1), StartX + FrameOffsetX + Index * FrameWidth * Scale, StartY + TextureHeight - FrameHeight * Scale + FrameOffsetY,(real32)FrameWidth * Scale, (real32)FrameHeight * Scale);
                         }
                         
                     }
-                    RenderRect(Render_Outline, &GameState->RenderState, glm::vec4(1, 0, 0, 1), (real32)GameState->RenderState.WindowWidth / 2.0f - GameState->RenderState.SkeletonIdleTexture.Width / 2, (real32)GameState->RenderState.WindowHeight / 2.0f - GameState->RenderState.SkeletonIdleTexture.Height / 2,(real32)GameState->RenderState.SkeletonIdleTexture.Width, (real32)GameState->RenderState.SkeletonIdleTexture.Height);
+                    RenderRect(Render_Outline, &GameState->RenderState, glm::vec4(1, 0, 0, 1), (real32)GameState->RenderState.WindowWidth / 2.0f - TextureWidth / 2, (real32)GameState->RenderState.WindowHeight / 2.0f - TextureHeight / 2, TextureWidth, TextureHeight);
                     
                 }
                 break;

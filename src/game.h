@@ -6,6 +6,7 @@
 #include <GLFW/glfw3.h>
 
 #include <map>
+#include "windows.h"
 #include "platform.h"
 #include "opengl_rendering.h"
 #include "animation.h"

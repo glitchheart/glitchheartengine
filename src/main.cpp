@@ -5,7 +5,6 @@
 #include <GLFW/glfw3.h>
 #include "al.h"
 #include "alc.h"
-#include "windows.h"
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb/stb_image.h>
 

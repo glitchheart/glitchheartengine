@@ -1,9 +1,0 @@
-name enemy_attack
-type sprite
-framecount 1
-framesize 16 16
-loop 1
-timeperframe 0.05
-frames
-144 496
-texture 0

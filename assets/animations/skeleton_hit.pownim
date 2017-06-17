@@ -1,0 +1,16 @@
+name skeleton_hit
+type sprite
+framecount 8
+framesize 43 37
+loop 1
+timeperframe 0.1
+frames
+0 0
+43 0
+86 0
+129 0
+172 0
+215 0
+258 0
+301 0
+texture skeleton_hit
