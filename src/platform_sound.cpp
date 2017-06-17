@@ -179,7 +179,7 @@ static void PlaySound(sound_effect *SoundEffect,sound_device* Device)
 {
     if (SoundEffect)
     {
-        ALuint Source;
+        ALuint Source = 0;
         
         int32 SourceState;
         for(uint32 SourceIndex = 0; SourceIndex < SOURCES; SourceIndex++)
