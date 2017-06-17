@@ -36,7 +36,7 @@ struct timer
     real64 TimerMax;
 };
 
-static void HandleError(char const *File, int32 LineNum, char const *msg)
+void HandleError(char const *File, int32 LineNum, char const *msg)
 {
     fprintf(stderr, "Error on in file %s on line %d\n", File, LineNum);
     fprintf(stderr, "%s\n", msg);
@@ -50,7 +50,7 @@ struct CompareCStrings
     }
 };
 
-static char* Concat(const char *s1, const char *s2)
+char* Concat(const char *s1, const char *s2)
 {
     char *result = (char*)malloc(strlen(s1)+strlen(s2)+1);//+1 for the zero-terminator
     strcpy(result, s1);
@@ -68,7 +68,7 @@ struct config_data
     bool32 Muted;
 };
 
-static void LoadConfig(const char* FilePath, config_data* ConfigData)
+void LoadConfig(const char* FilePath, config_data* ConfigData)
 {
     FILE* File;
     File = fopen(FilePath, "r");
@@ -113,7 +113,7 @@ static void LoadConfig(const char* FilePath, config_data* ConfigData)
     }
 }
 
-static bool32 StartsWith(const char *A, const char *B)
+bool32 StartsWith(const char *A, const char *B)
 {
     if(strncmp(A, B, strlen(B)) == 0) return 1;
     return 0;

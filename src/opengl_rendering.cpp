@@ -382,7 +382,7 @@ static void CreateTilemapVAO(render_state* RenderState, const tilemap& Tilemap, 
 }
 
 
-static void LoadTilesheetPath(const char* FilePath, render_state* RenderState)
+void LoadTilesheetPath(const char* FilePath, render_state* RenderState)
 {
     FILE* File;
     File = fopen(FilePath, "r");
@@ -884,7 +884,7 @@ static void SetVec2Uniform(GLuint ShaderHandle, const char *UniformName, glm::ve
     glUniform2f(glGetUniformLocation(ShaderHandle, UniformName), Value.x, Value.y);
 }
 
-static void SetVec3Uniform(GLuint ShaderHandle, const char *UniformName, glm::vec3 Value)
+void SetVec3Uniform(GLuint ShaderHandle, const char *UniformName, glm::vec3 Value)
 {
     glUniform3f(glGetUniformLocation(ShaderHandle, UniformName), Value.x, Value.y, Value.z);
 }
@@ -1262,7 +1262,7 @@ static void RenderAStarPath(render_state* RenderState, entity* Entity, glm::mat4
     }
 }
 
-static void RenderUISprite(render_state* RenderState, uint32 TextureHandle, glm::vec2 ScreenPosition, glm::vec3 Scale)
+void RenderUISprite(render_state* RenderState, uint32 TextureHandle, glm::vec2 ScreenPosition, glm::vec3 Scale)
 {
     real32 X = ScreenPosition.x * RenderState->ScaleX;
     X -= 1;
@@ -1586,7 +1586,7 @@ static void RenderGame(game_state* GameState)
                     RenderText(&GameState->RenderState, GameState->RenderState.MenuFont, glm::vec4(1, 1, 1, 1), Text, (real32)GameState->RenderState.WindowWidth / 2, (real32)GameState->RenderState.WindowHeight - 200, 1, Alignment_Center);
                     
                     
-                    RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(0, 0, 0, 1), 0, GameState->RenderState.WindowHeight - 155, GameState->RenderState.WindowWidth - 80, 155, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
+                    RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(0, 0, 0, 1), 0, (real32)GameState->RenderState.WindowHeight - 155, (real32)GameState->RenderState.WindowWidth - 80, 155, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
                     
                     if(GameState->EditorState.PlacementMode == Editor_Placement_Tile)
                         RenderText(&GameState->RenderState, GameState->RenderState.MenuFont, glm::vec4(0.6f, 0.6f, 0.6f, 1), "Tile-mode", (real32)GameState->RenderState.WindowWidth / 2, (real32)GameState->RenderState.WindowHeight - 70, 1, Alignment_Center);
@@ -1606,7 +1606,7 @@ static void RenderGame(game_state* GameState)
                     
                     std::map<char*, animation>::iterator Iterator;
                     
-                    uint32 Index = 0;
+                    int32 Index = 0;
                     
                     for(Iterator = GameState->Animations.begin(); Iterator != GameState->Animations.end(); Iterator++)
                     {
@@ -1619,7 +1619,7 @@ static void RenderGame(game_state* GameState)
                             RenderText(&GameState->RenderState, GameState->RenderState.InconsolataFont, glm::vec4(1, 1, 1, 1), Iterator->first, 20, (real32)GameState->RenderState.WindowHeight / 2 + (GameState->Animations.size() - Index++) * 20 - 150, 1);
                     }
                     RenderButton(&GameState->RenderState, *GameState->EditorState.CreateNewAnimationButton, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
-                    RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(1, 1, 1, 1), (real32)GameState->RenderState.WindowWidth / 2.0f - GameState->RenderState.EntityTexture.Width / 2, (real32)GameState->RenderState.WindowHeight / 2.0f - GameState->RenderState.EntityTexture.Height / 2,GameState->RenderState.EntityTexture.Width, GameState->RenderState.EntityTexture.Height, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix, GameState->RenderState.EntityTexture.TextureHandle);
+                    RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(1, 1, 1, 1), (real32)GameState->RenderState.WindowWidth / 2.0f - GameState->RenderState.EntityTexture.Width / 2, (real32)GameState->RenderState.WindowHeight / 2.0f - GameState->RenderState.EntityTexture.Height / 2,(real32)GameState->RenderState.EntityTexture.Width, (real32)GameState->RenderState.EntityTexture.Height, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix, GameState->RenderState.EntityTexture.TextureHandle);
                 }
                 break;
             }
@@ -1710,11 +1710,6 @@ static void RenderEditorUI(game_state* GameState, const editor_ui& EditorUI, ren
     }
 }
 
-static void RenderPlayerUI(health_bar* HealthBar, render_state* RenderState)
-{
-    RenderUISprite(RenderState, HealthBar->RenderInfo.Texture->TextureHandle, HealthBar->Position, glm::vec3(0.1, 0.1f, 1));
-}
-
 static void CheckLevelVAO(game_state* GameState)
 {
     if(GameState->CurrentLevel.Tilemap.RenderInfo.VAO == 0)
@@ -1735,7 +1730,7 @@ static void Render(game_state* GameState)
     GameState->RenderState.ScaleY = 2.0f / GameState->RenderState.WindowHeight;
     
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glClearColor(0.1, 0.1, 0.1, 1.0f);
+    glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
     
     if(GameState->EditorUI.On)
     {

@@ -1,11 +1,11 @@
 #include "console_commands.h"
 
-static void ReloadLevel(game_state* GameState)
+void ReloadLevel(game_state* GameState)
 {
     ReloadCurrentLevel(GameState);
 }
 
-static void AddCommand(char* Name, char* (*FunctionPointer)(game_state*, char**))
+void AddCommand(char* Name, char* (*FunctionPointer)(game_state*, char**))
 {
     command_info Info = { Name, FunctionPointer };
     Commands[CommandCount++] = Info;

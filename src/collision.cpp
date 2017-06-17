@@ -32,7 +32,7 @@ static void MinkowskiDifference(collision_AABB* Coll, collision_AABB* Other, col
     AABBSize(Out);
 }
 
-static void ClosestPointsOnBoundsToPoint(collision_AABB* Coll, glm::vec2 Point, glm::vec2* Out)
+void ClosestPointsOnBoundsToPoint(collision_AABB* Coll, glm::vec2 Point, glm::vec2* Out)
 {  
     real32 MinDist = Abs(Point.x - Coll->Min.x);
     
@@ -56,7 +56,7 @@ static void ClosestPointsOnBoundsToPoint(collision_AABB* Coll, glm::vec2 Point, 
     }
 }
 
-static real32 GetRayIntersectionFractionOfFirstRay(glm::vec2 OriginA, glm::vec2 EndA,glm::vec2 OriginB, glm::vec2 EndB)
+real32 GetRayIntersectionFractionOfFirstRay(glm::vec2 OriginA, glm::vec2 EndA,glm::vec2 OriginB, glm::vec2 EndB)
 {
     glm::vec2 R = EndA - OriginA;
     glm::vec2 S = EndB - OriginB;
@@ -85,7 +85,7 @@ static real32 GetRayIntersectionFractionOfFirstRay(glm::vec2 OriginA, glm::vec2 
     return INFINITY;
 }
 
-static real32 GetRayIntersectionFraction(collision_AABB* Coll, glm::vec2 Origin, glm::vec2 Direction)
+real32 GetRayIntersectionFraction(collision_AABB* Coll, glm::vec2 Origin, glm::vec2 Direction)
 {
     AABBMin(Coll);
     AABBMax(Coll);

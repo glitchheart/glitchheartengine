@@ -333,8 +333,8 @@ void UpdateBlob(entity* Entity, game_state* GameState, real64 DeltaTime)
                 StartTimer(GameState, Entity->Blob.ExplodeStartTimer);
             }
             
-            Entity->Position.x += Entity->Velocity.x * DeltaTime;
-            Entity->Position.y += Entity->Velocity.y * DeltaTime;
+            Entity->Position.x += Entity->Velocity.x * (real32)DeltaTime;
+            Entity->Position.y += Entity->Velocity.y * (real32)DeltaTime;
             
             //printf("Velocity: (%f,%f)\n",Entity->Velocity.x,Entity->Velocity.y);
             
@@ -478,8 +478,8 @@ void UpdateEnemy(entity* Entity, game_state* GameState, real64 DeltaTime)
         break;
     }
     
-    Entity->Position.x += Entity->Velocity.x * DeltaTime;
-    Entity->Position.y += Entity->Velocity.y * DeltaTime;
+    Entity->Position.x += Entity->Velocity.x * (real32)DeltaTime;
+    Entity->Position.y += Entity->Velocity.y * (real32)DeltaTime;
     
     //@Cleanup move this somewhere else, maybe out of switch
     render_entity* RenderEntity = &GameState->RenderState.RenderEntities[Entity->RenderEntityHandle];
@@ -653,7 +653,7 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
         }
     }
     
-    for(uint32 Index = 0; Index < 20; Index++)
+    for(int32 Index = 0; Index < 20; Index++)
     {
         textfield* Textfield = &GameState->EditorState.Textfields[Index];
         
@@ -913,7 +913,7 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
                 if(GameState->EditorState.SelectedAnimation == GameState->Animations.size())
                     GameState->EditorState.SelectedAnimation = 0;
                 else if(GameState->EditorState.SelectedAnimation < 0)
-                    GameState->EditorState.SelectedAnimation = GameState->Animations.size() - 1;
+                    GameState->EditorState.SelectedAnimation = (int32)GameState->Animations.size() - 1;
             }
             
             //CreateAnimation(GameState->EditorState.LoadedAnimation);

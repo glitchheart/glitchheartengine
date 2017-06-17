@@ -36,42 +36,42 @@ static void SetMouseInvalidKeys(input_controller *InputController)
 }
 #endif
 
-static bool32 GetKey(Key_Code Key, game_state *GameState)
+bool32 GetKey(Key_Code Key, game_state *GameState)
 {
     return GameState->InputController.KeysDown[Key];
 }
 
-static bool32 GetKeyDown(Key_Code Key, game_state *GameState)
+bool32 GetKeyDown(Key_Code Key, game_state *GameState)
 {
     return GameState->InputController.KeysJustPressed[Key] == Key_JustPressed;
 }
 
-static bool32 GetKeyUp(Key_Code Key, game_state *GameState)
+bool32 GetKeyUp(Key_Code Key, game_state *GameState)
 {
     return GameState->InputController.KeysUp[Key];
 }
 
-static bool32 GetJoystickKey(Controller_Code Key, game_state* GameState)
+bool32 GetJoystickKey(Controller_Code Key, game_state* GameState)
 {
     return GameState->InputController.JoystickKeysDown[Key];
 }
 
-static bool32 GetJoystickKeyDown(Controller_Code Key, game_state* GameState)
+bool32 GetJoystickKeyDown(Controller_Code Key, game_state* GameState)
 {
     return GameState->InputController.JoystickKeysJustPressed[Key] == Key_JustPressed;
 }
 
-static bool32 GetMouseButton(Mouse_Code Key, game_state* GameState)
+bool32 GetMouseButton(Mouse_Code Key, game_state* GameState)
 {
     return GameState->InputController.MouseButtonDown[Key];
 }
 
-static bool32 GetMouseButtonDown(Mouse_Code Key, game_state* GameState)
+bool32 GetMouseButtonDown(Mouse_Code Key, game_state* GameState)
 {
     return GameState->InputController.MouseButtonJustPressed[Key] == Key_JustPressed;
 }
 
-static bool32 GetActionButtonDown(Action_Button ActionButton, game_state* GameState)
+bool32 GetActionButtonDown(Action_Button ActionButton, game_state* GameState)
 {
     if(GameState->InputController.ControllerPresent)
     {
@@ -94,7 +94,7 @@ static bool32 GetActionButtonDown(Action_Button ActionButton, game_state* GameSt
     return 0;
 }
 
-static float GetInputX(game_state* GameState)
+float GetInputX(game_state* GameState)
 {
     if(GameState->InputController.ControllerPresent)
     {
@@ -117,7 +117,7 @@ static float GetInputX(game_state* GameState)
     }
 }
 
-static float GetInputY(game_state* GameState)
+float GetInputY(game_state* GameState)
 {
     if(GameState->InputController.ControllerPresent)
     {
