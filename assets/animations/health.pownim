@@ -1,0 +1,11 @@
+name health
+type sprite
+framecount 3
+framesize 0 0
+loop 0
+timeperframe 0.100000
+frames
+0 0
+0 0
+0 0
+texture health_2

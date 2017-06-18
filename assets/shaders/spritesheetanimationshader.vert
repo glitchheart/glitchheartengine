@@ -7,6 +7,7 @@ uniform float frameWidth;
 uniform float frameHeight;
 uniform vec2 sheetSize;
 uniform vec4 color;
+uniform float isUI;
 
 in vec2 texcoord;
 in vec2 pos;
@@ -17,5 +18,8 @@ void main()
 {
     C = color;
     Texcoord = vec2(1.0 / sheetSize.x * textureOffset.x + texcoord.x / (sheetSize.x / frameWidth), 1.0 / sheetSize.y * textureOffset.y + texcoord.y / (sheetSize.y / frameHeight));
-    gl_Position = Projection * View * Model * vec4(pos.xy, 0.0, 1.0);
+	if(isUI == 1)
+		gl_Position = Model * vec4(pos.xy, 0.0, 1.0);
+	else
+    	gl_Position = Projection * View * Model * vec4(pos.xy, 0.0, 1.0);
 }

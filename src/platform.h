@@ -123,7 +123,7 @@ struct directory_data
 {
     char** FilePaths;
     char** FileNames;
-    int32 FilesLength;
+    int32 FilesLength = 0;
 };
 
 void FindFilesWithExtensions(const char* DirectoryPath, const char* Extension, directory_data* DirectoryData, bool32 WithSubDirectories = false)
@@ -157,10 +157,10 @@ void FindFilesWithExtensions(const char* DirectoryPath, const char* Extension, d
         char* ConcatStr = Concat(DirectoryPath, FindFile.cFileName);
         char* FileName = strtok(FindFile.cFileName, ".");
         
-        DirectoryData->FilePaths[DirectoryData->FilesLength] = (char*)malloc(strlen(ConcatStr) * sizeof(char));
-        DirectoryData->FileNames[DirectoryData->FilesLength] = (char*)malloc(strlen(FileName) * sizeof(char));
-        sprintf(DirectoryData->FilePaths[DirectoryData->FilesLength], ConcatStr);
-        sprintf(DirectoryData->FileNames[DirectoryData->FilesLength], FileName);
+        DirectoryData->FilePaths[DirectoryData->FilesLength] = (char*)malloc(strlen(ConcatStr) * sizeof(char) + 1);
+        DirectoryData->FileNames[DirectoryData->FilesLength] = (char*)malloc(strlen(FileName) * sizeof(char) + 1);
+        strcpy(DirectoryData->FilePaths[DirectoryData->FilesLength], ConcatStr);
+        strcpy(DirectoryData->FileNames[DirectoryData->FilesLength], FileName);
         DirectoryData->FilesLength++;
     }
     
@@ -169,11 +169,6 @@ void FindFilesWithExtensions(const char* DirectoryPath, const char* Extension, d
         if(strcmp(FindFile.cFileName, ".") != 0
            && strcmp(FindFile.cFileName, "..") != 0)
         {
-            //Build up our file path using the passed in
-            //  [sDir] and the file/foldername we just found:
-            //sprintf(Path, "%s\\%s", DirectoryPath, FindFile.cFileName);
-            //
-            
             if(FindFile.dwFileAttributes &FILE_ATTRIBUTE_DIRECTORY)
             {
                 if(WithSubDirectories)
@@ -184,13 +179,11 @@ void FindFilesWithExtensions(const char* DirectoryPath, const char* Extension, d
                 char* ConcatStr = Concat(DirectoryPath, FindFile.cFileName);
                 char* FileName = strtok(FindFile.cFileName, ".");
                 
-                DirectoryData->FilePaths[DirectoryData->FilesLength] = (char*)malloc(strlen(ConcatStr) * sizeof(char));
-                DirectoryData->FileNames[DirectoryData->FilesLength] = (char*)malloc(strlen(FileName) * sizeof(char));
-                sprintf(DirectoryData->FilePaths[DirectoryData->FilesLength], ConcatStr);
-                sprintf(DirectoryData->FileNames[DirectoryData->FilesLength], FileName);
+                DirectoryData->FilePaths[DirectoryData->FilesLength] = (char*)malloc((strlen(ConcatStr) + 1) * sizeof(char));
+                DirectoryData->FileNames[DirectoryData->FilesLength] = (char*)malloc((strlen(FileName)  + 1) * sizeof(char));
+                strcpy(DirectoryData->FilePaths[DirectoryData->FilesLength], ConcatStr);
+                strcpy(DirectoryData->FileNames[DirectoryData->FilesLength], FileName);
                 DirectoryData->FilesLength++;
-                //free(ConcatStr);
-                //free(FileName);
             }
         }
     }

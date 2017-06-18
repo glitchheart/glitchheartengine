@@ -23,7 +23,8 @@
                                             
                                             FrameIndex++;
                                             
-                                            if(X + Animation.FrameSize.x <= Animation.Texture->Width)
+                                            printf("Animation width %f\n", Animation.Texture->Width);
+                                            if(X + (int32)Animation.FrameSize.x <= Animation.Texture->Width)
                                                 X += (int32)Animation.FrameSize.x;
                                             else
                                             {
@@ -32,7 +33,7 @@
                                             }
                                         }
                                         
-                                        fprintf(File, "texture 7\n");
+                                        fprintf(File, "texture %s\n", Animation.Texture->Name);
                                         
                                         GameState->Animations.insert(std::pair<char*, animation>(Animation.Name, Animation));
                                         

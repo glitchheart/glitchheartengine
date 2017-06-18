@@ -589,12 +589,14 @@ static void RenderSetup(render_state *RenderState)
 
 static GLuint LoadTexture(const char* FilePath, texture* Texture)
 {
-    GLuint TextureHandle;
+    Texture->Width = 0;
+    Texture->Height = 0;
+    GLuint TextureHandle = 0;
     
     glEnable(GL_TEXTURE_2D);
     glGenTextures(1, &TextureHandle);
     glBindTexture(GL_TEXTURE_2D, TextureHandle);
-    
+    printf("glBindTexture called\n");
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -610,23 +612,27 @@ static GLuint LoadTexture(const char* FilePath, texture* Texture)
         return GL_FALSE;
     
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, Texture->Width, Texture->Height, 0, GL_RGBA,
-                 GL_UNSIGNED_BYTE, Image);
+                 GL_UNSIGNED_BYTE, (GLvoid*) Image);
+    
     Texture->TextureHandle = TextureHandle;
     stbi_image_free(Image);
     
+    printf("Loaded\n");
     return GL_TRUE;
 }
 
-static void LoadTextures(render_state* RenderState)
+static void LoadTextures(render_state* RenderState, const char* Directory)
 {
-    directory_data DirData;
-    FindFilesWithExtensions("../assets/textures/", "png", &DirData, true);
+    directory_data DirData = {};
+    FindFilesWithExtensions(Directory, "png", &DirData);
     
     for(int32 FileIndex = 0; FileIndex < DirData.FilesLength; FileIndex++)
     {
         texture Texture = {};
+        Texture.Name = (char*)malloc((strlen(DirData.FileNames[FileIndex]) + 1) * sizeof(char));
+        strcpy(Texture.Name, DirData.FileNames[FileIndex]);
         LoadTexture(DirData.FilePaths[FileIndex], &Texture);
-        RenderState->Textures.insert(std::pair<char*, texture>(DirData.FileNames[FileIndex], Texture));
+        RenderState->Textures.insert(std::pair<char*, texture>(Texture.Name, Texture));
     }
     
     free(DirData.FilePaths);
@@ -732,7 +738,8 @@ static void InitializeOpenGL(game_state* GameState, render_state* RenderState, c
         printf("type %d\n", GameState->InputController.ControllerType);
     }
     
-    LoadTextures(RenderState);
+    LoadTextures(RenderState, "../assets/textures/");
+    LoadTextures(RenderState, "../assets/textures/spritesheets/");
     RenderSetup(RenderState);
     
     GameState->HealthBar = {};
@@ -1296,6 +1303,39 @@ void RenderUISprite(render_state* RenderState, uint32 TextureHandle, glm::vec2 S
     glBindVertexArray(0);
 }
 
+static void RenderAnimationPreview(render_state* RenderState, const animation_info& AnimationInfo, const animation& Animation, glm::vec2 ScreenPosition, real32 Scale)
+{
+    auto Shader = RenderState->SpriteSheetShader;
+    
+    glm::mat4 Model(1.0f);
+    Model = glm::translate(Model, glm::vec3(ScreenPosition.x, ScreenPosition.y, 0.0f));
+    Model = glm::scale(Model, glm::vec3(Animation.Texture->Width * Scale, Animation.Texture->Width * Scale, 1));
+    
+    if (RenderState->BoundTexture != Animation.Texture->TextureHandle) //never bind the same texture if it's already bound
+    {
+        glBindTexture(GL_TEXTURE_2D, Animation.Texture->TextureHandle);
+        RenderState->BoundTexture = Animation.Texture->TextureHandle;
+    }
+    
+    glBindVertexArray(RenderState->SpriteSheetVAO);
+    
+    UseShader(&Shader);
+    auto Frame = Animation.Frames[AnimationInfo.FrameIndex];
+    SetFloatUniform(Shader.Program, "isUI", 1);
+    SetVec2Uniform(Shader.Program,"textureOffset", glm::vec2(Frame.X, Frame.Y));
+    SetFloatUniform(Shader.Program, "frameWidth", Animation.FrameSize.x);
+    SetFloatUniform(Shader.Program, "frameHeight", Animation.FrameSize.y);
+    SetVec4Uniform(Shader.Program, "color", glm::vec4(1, 1, 1, 1));
+    SetVec2Uniform(Shader.Program,"sheetSize",
+                   glm::vec2(Animation.Texture->Width, Animation.Texture->Height));
+    
+    SetMat4Uniform(Shader.Program, "Model", Model);
+    
+    glBindBuffer(GL_ARRAY_BUFFER, RenderState->SpriteQuadVBO);
+    glDrawArrays(GL_QUADS, 0, 4);
+    glBindVertexArray(0);
+}
+
 static void RenderEntity(render_state *RenderState, entity &Entity, glm::mat4 ProjectionMatrix, glm::mat4 View)
 { 
     render_entity* RenderEntity = &RenderState->RenderEntities[Entity.RenderEntityHandle];
@@ -1348,6 +1388,7 @@ static void RenderEntity(render_state *RenderState, entity &Entity, glm::mat4 Pr
             
             UseShader(&Shader);
             auto Frame = Animation->Frames[Entity.AnimationInfo.FrameIndex];
+            SetFloatUniform(Shader.Program, "isUI", 0);
             SetVec2Uniform(Shader.Program,"textureOffset", glm::vec2(Frame.X, Frame.Y));
             SetFloatUniform(Shader.Program, "frameWidth", Animation->FrameSize.x);
             SetFloatUniform(Shader.Program, "frameHeight", Animation->FrameSize.y);
@@ -1600,54 +1641,74 @@ void RenderGame(game_state* GameState)
                             RenderTextfield(&GameState->RenderState, GameState->EditorState.Textfields[Index]);
                     }
                     
-                    const texture& Texture = *GameState->EditorState.LoadedAnimation->Texture;
-                    real32 Scale = 2.0f;
-                    real32 TextureWidth = (real32)Texture.Width * Scale;
-                    real32 TextureHeight = (real32)Texture.Height * Scale;
-                    
-                    std::map<char*, animation>::iterator Iterator;
-                    
-                    int32 Index = 0;
-                    
-                    for(Iterator = GameState->Animations.begin(); Iterator != GameState->Animations.end(); Iterator++)
+                    if(!GameState->EditorState.LoadedAnimation)
                     {
-                        if(Index == GameState->EditorState.SelectedAnimation)
+                        std::map<char*, animation>::iterator Iterator;
+                        
+                        int32 Index = 0;
+                        
+                        for(Iterator = GameState->Animations.begin(); Iterator != GameState->Animations.end(); Iterator++)
                         {
-                            RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(1, 1, 1, 1), 20, (real32)GameState->RenderState.WindowHeight / 2 + (GameState->Animations.size() - Index) * 20 - 150 - 4, 300, 20);
-                            RenderText(&GameState->RenderState, GameState->RenderState.InconsolataFont, glm::vec4(0, 0, 0, 1), Iterator->first, 20, (real32)GameState->RenderState.WindowHeight / 2 + (GameState->Animations.size() - Index++) * 20 - 150, 1);
+                            if(Index == GameState->EditorState.SelectedAnimation)
+                            {
+                                RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(1, 1, 1, 1), 20, (real32)GameState->RenderState.WindowHeight / 2 + (GameState->Animations.size() - Index) * 20 - 150 - 4, 300, 20);
+                                RenderText(&GameState->RenderState, GameState->RenderState.InconsolataFont, glm::vec4(0, 0, 0, 1), Iterator->first, 20, (real32)GameState->RenderState.WindowHeight / 2 + (GameState->Animations.size() - Index++) * 20 - 150, 1);
+                            }
+                            else
+                                RenderText(&GameState->RenderState, GameState->RenderState.InconsolataFont, glm::vec4(1, 1, 1, 1), Iterator->first, 20, (real32)GameState->RenderState.WindowHeight / 2 + (GameState->Animations.size() - Index++) * 20 - 150, 1);
                         }
-                        else
-                            RenderText(&GameState->RenderState, GameState->RenderState.InconsolataFont, glm::vec4(1, 1, 1, 1), Iterator->first, 20, (real32)GameState->RenderState.WindowHeight / 2 + (GameState->Animations.size() - Index++) * 20 - 150, 1);
+                    }
+                    else
+                    {
+                        const texture& Texture = *GameState->EditorState.LoadedAnimation->Texture;
+                        real32 Scale = 2.0f;
+                        real32 TextureWidth = (real32)Texture.Width * Scale;
+                        real32 TextureHeight = (real32)Texture.Height * Scale;
+                        
+                        for(int32 TextureIndex = 0; TextureIndex < GameState->EditorState.TexturesLength; TextureIndex++)
+                        {
+                            if(TextureIndex == GameState->EditorState.SelectedTexture)
+                            {
+                                RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(1, 1, 1, 1), 20, (real32)GameState->RenderState.WindowHeight / 2 + (GameState->EditorState.TexturesLength - TextureIndex) * 20 - 150 - 4, 300, 20);
+                                RenderText(&GameState->RenderState, GameState->RenderState.InconsolataFont, glm::vec4(0, 0, 0, 1), GameState->EditorState.Textures[TextureIndex], 20, (real32)GameState->RenderState.WindowHeight / 2 + (GameState->EditorState.TexturesLength - TextureIndex) * 20 - 150, 1);
+                            }
+                            else
+                                RenderText(&GameState->RenderState, GameState->RenderState.InconsolataFont, glm::vec4(1, 1, 1, 1), GameState->EditorState.Textures[TextureIndex], 20, (real32)GameState->RenderState.WindowHeight / 2 + (GameState->EditorState.TexturesLength - TextureIndex) * 20 - 150, 1);
+                        }
+                        
+                        
+                        RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(1, 1, 1, 1), (real32)GameState->RenderState.WindowWidth / 2.0f - TextureWidth / 2, (real32)GameState->RenderState.WindowHeight / 2.0f - TextureHeight / 2, TextureWidth, TextureHeight, Texture.TextureHandle);
+                        
+                        if(GameState->EditorState.AnimationFrameCountField)
+                        {
+                            int32 FrameCount = 0;
+                            int32 FrameWidth = 0;
+                            int32 FrameHeight = 0;
+                            int32 FrameOffsetX = 0;
+                            int32 FrameOffsetY = 0;
+                            
+                            sscanf(GameState->EditorState.AnimationFrameCountField->Text, "%d", &FrameCount);
+                            sscanf(GameState->EditorState.AnimationFrameWidthField->Text, "%d", &FrameWidth);
+                            sscanf(GameState->EditorState.AnimationFrameHeightField->Text, "%d", &FrameHeight);
+                            sscanf(GameState->EditorState.AnimationFrameOffsetXField->Text, "%d", &FrameOffsetX);
+                            sscanf(GameState->EditorState.AnimationFrameOffsetYField->Text, "%d", &FrameOffsetY);
+                            
+                            real32 StartX = (real32)GameState->RenderState.WindowWidth / 2.0f - TextureWidth / 2;
+                            real32 StartY = (real32)GameState->RenderState.WindowHeight / 2.0f - TextureHeight / 2;
+                            
+                            for(int32 Index = 0; Index < FrameCount; Index++)
+                            {
+                                RenderRect(Render_Outline, &GameState->RenderState, glm::vec4(1, 0, 0, 1), StartX + FrameOffsetX + Index * FrameWidth * Scale, StartY + TextureHeight - FrameHeight * Scale + FrameOffsetY,(real32)FrameWidth * Scale, (real32)FrameHeight * Scale);
+                            }
+                            
+                        }
+                        RenderRect(Render_Outline, &GameState->RenderState, glm::vec4(1, 0, 0, 1), (real32)GameState->RenderState.WindowWidth / 2.0f - TextureWidth / 2, (real32)GameState->RenderState.WindowHeight / 2.0f - TextureHeight / 2, TextureWidth, TextureHeight);
+                        
+                        if(GameState->EditorState.LoadedAnimation->FrameCount > 0)
+                            RenderAnimationPreview(&GameState->RenderState, GameState->EditorState.AnimationInfo, *GameState->EditorState.LoadedAnimation, glm::vec2(400, 400), 2);
                     }
                     
                     RenderButton(&GameState->RenderState, *GameState->EditorState.CreateNewAnimationButton);
-                    
-                    RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(1, 1, 1, 1), (real32)GameState->RenderState.WindowWidth / 2.0f - TextureWidth / 2, (real32)GameState->RenderState.WindowHeight / 2.0f - TextureHeight / 2, TextureWidth, TextureHeight, Texture.TextureHandle);
-                    
-                    if(GameState->EditorState.AnimationFrameCountField)
-                    {
-                        int32 FrameCount = 0;
-                        int32 FrameWidth = 0;
-                        int32 FrameHeight = 0;
-                        int32 FrameOffsetX = 0;
-                        int32 FrameOffsetY = 0;
-                        
-                        sscanf(GameState->EditorState.AnimationFrameCountField->Text, "%d", &FrameCount);
-                        sscanf(GameState->EditorState.AnimationFrameWidthField->Text, "%d", &FrameWidth);
-                        sscanf(GameState->EditorState.AnimationFrameHeightField->Text, "%d", &FrameHeight);
-                        sscanf(GameState->EditorState.AnimationFrameOffsetXField->Text, "%d", &FrameOffsetX);
-                        sscanf(GameState->EditorState.AnimationFrameOffsetYField->Text, "%d", &FrameOffsetY);
-                        
-                        real32 StartX = (real32)GameState->RenderState.WindowWidth / 2.0f - TextureWidth / 2;
-                        real32 StartY = (real32)GameState->RenderState.WindowHeight / 2.0f - TextureHeight / 2;
-                        
-                        for(int32 Index = 0; Index < FrameCount; Index++)
-                        {
-                            RenderRect(Render_Outline, &GameState->RenderState, glm::vec4(1, 0, 0, 1), StartX + FrameOffsetX + Index * FrameWidth * Scale, StartY + TextureHeight - FrameHeight * Scale + FrameOffsetY,(real32)FrameWidth * Scale, (real32)FrameHeight * Scale);
-                        }
-                        
-                    }
-                    RenderRect(Render_Outline, &GameState->RenderState, glm::vec4(1, 0, 0, 1), (real32)GameState->RenderState.WindowWidth / 2.0f - TextureWidth / 2, (real32)GameState->RenderState.WindowHeight / 2.0f - TextureHeight / 2, TextureWidth, TextureHeight);
                     
                 }
                 break;
