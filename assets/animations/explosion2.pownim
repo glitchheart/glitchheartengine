@@ -2,6 +2,7 @@ name explosion2
 type sprite
 framecount 8
 framesize 64 64
+center 0 0
 loop 1
 timeperframe 0.100000
 frames

@@ -2,6 +2,7 @@ name skeleton_attack
 type sprite
 framecount 18
 framesize 43 37
+center 0.043 0
 loop 1
 timeperframe 0.1
 frames

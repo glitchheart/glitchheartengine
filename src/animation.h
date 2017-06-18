@@ -21,6 +21,7 @@ struct animation
     texture* Texture;
     uint32 FrameCount;
     glm::vec2 FrameSize;
+    glm::vec2 Center;
     bool32 Loop;
     
     glm::vec2 FrameOffset;

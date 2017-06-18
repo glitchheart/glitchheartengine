@@ -2,6 +2,7 @@ name player_attack_up
 type sprite
 framecount 3
 framesize 84 84
+center 0.5 0.5
 loop o
 timeperframe 0.1
 frames
