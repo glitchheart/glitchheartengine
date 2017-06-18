@@ -117,7 +117,11 @@ struct editor_state
     button* SaveAnimationButton;
     
     int32 SelectedAnimation;
+    animation_info AnimationInfo;
     animation* LoadedAnimation;
+    int32 SelectedTexture;
+    char** Textures;
+    int32 TexturesLength;
 };
 
 struct editor_ui

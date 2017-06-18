@@ -632,6 +632,20 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
                     break;
                     case Button_Animation:
                     {
+                        std::map<char*, texture>::iterator TextureIterator;
+                        
+                        if(GameState->EditorState.Textures)
+                            free(GameState->EditorState.Textures);
+                        
+                        GameState->EditorState.Textures = (char**)malloc(GameState->RenderState.Textures.size() * sizeof(char*));
+                        
+                        int32 Index = 0;
+                        for(TextureIterator = GameState->RenderState.Textures.begin(); TextureIterator != GameState->RenderState.Textures.end(); TextureIterator++)
+                        {
+                            GameState->EditorState.Textures[Index++] = TextureIterator->first;
+                        }
+                        
+                        GameState->EditorState.TexturesLength = (int32)GameState->RenderState.Textures.size();
                         GameState->EditorState.Mode = Editor_Animation;
                     }
                     break;
@@ -873,6 +887,7 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
             if(GameState->EditorState.SaveAnimationButton->Clicked && GameState->EditorState.LoadedAnimation)
             {
                 SaveAnimationToFile(GameState, *GameState->EditorState.LoadedAnimation);
+                GameState->EditorState.LoadedAnimation = 0;
             }
             
             GameState->EditorState.CreateNewAnimationButton->Active = true;
@@ -947,30 +962,42 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
                 
                 sscanf(GameState->EditorState.AnimationNameField->Text, "%s", LoadedAnimation->Name);
                 sscanf(GameState->EditorState.AnimationFrameCountField->Text, "%d", &LoadedAnimation->FrameCount);
-                sscanf(GameState->EditorState.AnimationFrameWidthField->Text, "%d", &LoadedAnimation->FrameSize.x);
-                sscanf(GameState->EditorState.AnimationFrameHeightField->Text, "%d", &LoadedAnimation->FrameSize.x);
-                sscanf(GameState->EditorState.AnimationFrameOffsetXField->Text, "%d", &LoadedAnimation->FrameOffset.x);
-                sscanf(GameState->EditorState.AnimationFrameOffsetYField->Text, "%d", &LoadedAnimation->FrameOffset.y);
+                sscanf(GameState->EditorState.AnimationFrameWidthField->Text, "%f", &LoadedAnimation->FrameSize.x);
+                sscanf(GameState->EditorState.AnimationFrameHeightField->Text, "%f", &LoadedAnimation->FrameSize.y);
+                sscanf(GameState->EditorState.AnimationFrameOffsetXField->Text, "%f", &LoadedAnimation->FrameOffset.x);
+                sscanf(GameState->EditorState.AnimationFrameOffsetYField->Text, "%f", &LoadedAnimation->FrameOffset.y);
                 sscanf(GameState->EditorState.AnimationFrameDurationField->Text, "%f", &LoadedAnimation->TimePerFrame);
-            }
-            else
-            {
-                if(GetKeyDown(Key_Down, GameState))
-                {
-                    GameState->EditorState.SelectedAnimation++;
-                }
-                else if(GetKeyDown(Key_Up, GameState))
-                {
-                    GameState->EditorState.SelectedAnimation--;
-                }
                 
-                if(GameState->EditorState.SelectedAnimation == GameState->Animations.size())
-                    GameState->EditorState.SelectedAnimation = 0;
-                else if(GameState->EditorState.SelectedAnimation < 0)
-                    GameState->EditorState.SelectedAnimation = (int32)GameState->Animations.size() - 1;
+                if(LoadedAnimation->Frames)
+                {
+                    free(LoadedAnimation->Frames);
+                    LoadedAnimation->Frames = 0;
+                }
+                if(LoadedAnimation->FrameCount > 0)
+                {
+                    LoadedAnimation->Frames = (sprite_sheet_frame*)malloc(LoadedAnimation->FrameCount * sizeof(sprite_sheet_frame));
+                    
+                    int32 X = 0;
+                    int32 Y = 0;
+                    
+                    int32 FrameIndex = 0;
+                    
+                    while(FrameIndex < (int32)LoadedAnimation->FrameCount)
+                    {
+                        LoadedAnimation->Frames[FrameIndex] = { (real32)X, (real32)Y };
+                        
+                        FrameIndex++;
+                        
+                        if(X + (int32)LoadedAnimation->FrameSize.x <= LoadedAnimation->Texture->Width)
+                            X += (int32)LoadedAnimation->FrameSize.x;
+                        else
+                        {
+                            X = 0;
+                            Y += (int32)LoadedAnimation->FrameSize.y;
+                        }
+                    }
+                }
             }
-            
-            //CreateAnimation(GameState->EditorState.LoadedAnimation);
         }
         break;
     }
