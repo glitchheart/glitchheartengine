@@ -1336,32 +1336,27 @@ static void RenderEntity(render_state *RenderState, entity &Entity, glm::mat4 Pr
     
     if(RenderEntity->Rendered && Entity.Active)
     {
-        // - (Entity.IsFlipped ? Entity.Center.x * Entity.Scale.x : 0)
         glm::mat4 Model(1.0f);
-        Model = glm::translate(Model, glm::vec3(Entity.Position.x, Entity.Position.y, 0.0f));
-        Model = glm::translate(Model, glm::vec3(1, 1, 0.0f));
-        Model = glm::rotate(Model, Entity.Rotation.z, glm::vec3(0, 0, 1)); 
-        Model = glm::translate(Model, glm::vec3(-1, -1, 0.0f));
-        
-        glm::vec3 Scale;
-        
-        if(Entity.IsFlipped)
-        {
-            Scale = glm::vec3(-Entity.Scale.x, Entity.Scale.y, Entity.Scale.z);
-            Model = glm::translate(Model, glm::vec3(Entity.Scale.x, 0, 0));
-        }
-        else
-            Scale = Entity.Scale;
-        
-        Model = glm::scale(Model, glm::vec3(Scale.x, Scale.y, Scale.z));
-        
-        if(Entity.Type == Entity_Enemy)
-        {
-            
-        }
         
         if(Entity.CurrentAnimation) 
         {
+            Model = glm::translate(Model, glm::vec3(Entity.Position.x - (Entity.IsFlipped ? 1.0f * Entity.Scale.x - Entity.CurrentAnimation->Center.x * Entity.Scale.x : Entity.CurrentAnimation->Center.x * Entity.Scale.x), Entity.Position.y - (Entity.IsFlipped ? Entity.CurrentAnimation->Center.y : 0), 0.0f));
+            Model = glm::translate(Model, glm::vec3(1, 1, 0.0f));
+            Model = glm::rotate(Model, Entity.Rotation.z, glm::vec3(0, 0, 1)); 
+            Model = glm::translate(Model, glm::vec3(-1, -1, 0.0f));
+            
+            glm::vec3 Scale;
+            
+            if(Entity.IsFlipped)
+            {
+                Scale = glm::vec3(-Entity.Scale.x, Entity.Scale.y, Entity.Scale.z);
+                Model = glm::translate(Model, glm::vec3(Entity.Scale.x, 0, 0));
+            }
+            else
+                Scale = Entity.Scale;
+            
+            Model = glm::scale(Model, glm::vec3(Scale.x, Scale.y, Scale.z));
+            
             animation* Animation = Entity.CurrentAnimation;
             
             if (RenderState->BoundTexture != Animation->Texture->TextureHandle) //never bind the same texture if it's already bound
@@ -1392,6 +1387,23 @@ static void RenderEntity(render_state *RenderState, entity &Entity, glm::mat4 Pr
         } 
         else 
         {
+            Model = glm::translate(Model, glm::vec3(Entity.Position.x, Entity.Position.y, 0.0f));
+            Model = glm::translate(Model, glm::vec3(1, 1, 0.0f));
+            Model = glm::rotate(Model, Entity.Rotation.z, glm::vec3(0, 0, 1)); 
+            Model = glm::translate(Model, glm::vec3(-1, -1, 0.0f));
+            
+            glm::vec3 Scale;
+            
+            if(Entity.IsFlipped)
+            {
+                Scale = glm::vec3(-Entity.Scale.x, Entity.Scale.y, Entity.Scale.z);
+                Model = glm::translate(Model, glm::vec3(Entity.Scale.x, 0, 0));
+            }
+            else
+                Scale = Entity.Scale;
+            
+            Model = glm::scale(Model, glm::vec3(Scale.x, Scale.y, Scale.z));
+            
             if (RenderState->BoundTexture != RenderEntity->Texture->TextureHandle) //never bind the same texture if it's already bound
             {
                 glBindTexture(GL_TEXTURE_2D, RenderEntity->Texture->TextureHandle);

@@ -2,6 +2,7 @@ name skeleton_walk
 type sprite
 framecount 13
 framesize 43 37
+center 0.03 0
 loop 1
 timeperframe 0.08
 frames

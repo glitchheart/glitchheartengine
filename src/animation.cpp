@@ -8,6 +8,7 @@
                                         fprintf(File, "type sprite\n");
                                         fprintf(File, "framecount %d\n", Animation.FrameCount);
                                         fprintf(File, "framesize %d %d\n", (int32)Animation.FrameSize.x, (int32)Animation.FrameSize.y);
+                                        fprintf(File, "center %f %f\n", Animation.Center.x, Animation.Center.y);
                                         fprintf(File, "loop %d\n", Animation.Loop);
                                         fprintf(File, "timeperframe %f\n", Animation.TimePerFrame);
                                         fprintf(File, "frames\n");
@@ -75,6 +76,11 @@
                                         if(fgets(LineBuffer, 255, File))
                                         {
                                             sscanf(LineBuffer, "framesize %f %f", &Animation.FrameSize.x, &Animation.FrameSize.y);
+                                        }
+                                        
+                                        if(fgets(LineBuffer, 255, File))
+                                        {
+                                            sscanf(LineBuffer, "center %f %f", &Animation.Center.x, &Animation.Center.y);
                                         }
                                         
                                         //loop

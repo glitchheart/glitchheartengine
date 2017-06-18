@@ -2,6 +2,7 @@ name blob
 type sprite
 framecount 13
 framesize 48 48
+center 0 0
 loop 1
 timeperframe 0.05
 frames
