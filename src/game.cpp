@@ -229,8 +229,7 @@ void UpdateWeapon(entity* Entity, game_state* GameState, real64 DeltaTime)
     
     Entity->IsFlipped = UsingEntity->IsFlipped;
     
-    Entity->CollisionAABB.Extents = glm::vec2(0.7f, 0.7f);
-    Entity->CollisionAABB.Offset = glm::vec2(0, -2);
+    Entity->Position = glm::vec2(Pos.x, Pos.y);
     
     bool32 IsAttacking = false;
     
@@ -244,23 +243,26 @@ void UpdateWeapon(entity* Entity, game_state* GameState, real64 DeltaTime)
             {
                 case Up:
                 {
-                    Entity->Position = glm::vec2(Pos.x, Pos.y + 1.2f);
+                    Entity->CollisionAABB.Extents = glm::vec2(1.0f, 0.5f);
+                    Entity->CollisionAABB.Offset = glm::vec2(0.5, 1.5f);
                 }
                 break;
                 case Down:
                 {
-                    Entity->Position = glm::vec2(Pos.x, Pos.y - 1.2f);
-                    Entity->CollisionAABB.Offset = glm::vec2(0, -2);
+                    Entity->CollisionAABB.Extents = glm::vec2(1.0f, 0.5f);
+                    Entity->CollisionAABB.Offset = glm::vec2(0.5, -1.0f);
                 }
                 break;
                 case Left:
                 {
-                    Entity->Position = glm::vec2(Pos.x - 1.3, Pos.y);
+                    Entity->CollisionAABB.Offset = glm::vec2(-0.5f, 0.5f);
+                    Entity->CollisionAABB.Extents = glm::vec2(0.5f, 1.0f);
                 }
                 break;
                 case Right:
                 {
-                    Entity->Position = glm::vec2(Pos.x + 1, Pos.y);
+                    Entity->CollisionAABB.Offset = glm::vec2(1.5f, 0.5f);
+                    Entity->CollisionAABB.Extents = glm::vec2(0.5f, 1.0f);
                 }
                 break;
             }
@@ -270,17 +272,15 @@ void UpdateWeapon(entity* Entity, game_state* GameState, real64 DeltaTime)
         case Entity_Enemy:
         {
             IsAttacking = UsingEntity->Enemy.IsAttacking;
+            Entity->Position = glm::vec2(Pos.x, Pos.y);
             
-            // @Incomplete: This has to be changed to use the offset
             if(UsingEntity->IsFlipped)
             {
-                //Entity->CollisionAABB.Offset = glm::vec2(-0.8, 0);
-                Entity->Position = glm::vec2(Pos.x - 1.3f, Pos.y - 1.5f);
+                //Entity->CollisionAABB.Offset = glm::vec2(0.7, 0);
             }
             else
             {
                 //Entity->CollisionAABB.Offset = glm::vec2(0.7, 0);
-                Entity->Position = glm::vec2(Pos.x - 0.5f, Pos.y - 1.5f);
             }
             
         }
@@ -367,7 +367,8 @@ void UpdateBlob(entity* Entity, game_state* GameState, real64 DeltaTime)
         {
             if(!Entity->AnimationInfo.Playing)
             {
-                DeleteEntity(GameState, Entity->EntityIndex);
+                Entity->Active = false;
+                //DeleteEntity(GameState, Entity->EntityIndex);
             }
         }
         break;
@@ -483,7 +484,7 @@ void UpdateEnemy(entity* Entity, game_state* GameState, real64 DeltaTime)
     
     Entity->Position.x += Entity->Velocity.x * (real32)DeltaTime;
     Entity->Position.y += Entity->Velocity.y * (real32)DeltaTime;
-    
+    ;
     //@Cleanup move this somewhere else, maybe out of switch
     render_entity* RenderEntity = &GameState->RenderState.RenderEntities[Entity->RenderEntityHandle];
     
@@ -632,6 +633,23 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
                     break;
                     case Button_Animation:
                     {
+                        std::map<char*, animation>::iterator AnimationIterator;
+                        
+                        if(GameState->EditorState.Animations)
+                            free(GameState->EditorState.Animations);
+                        
+                        GameState->EditorState.Animations = (char**)malloc(GameState->Animations.size() * sizeof(char*));
+                        
+                        int32 Index = 0;
+                        for(AnimationIterator = GameState->Animations.begin(); AnimationIterator != GameState->Animations.end(); AnimationIterator++)
+                        {
+                            GameState->EditorState.Animations[Index++] = AnimationIterator->first;
+                        }
+                        
+                        GameState->EditorState.AnimationsLength = (int32)GameState->Animations.size();
+                        
+                        GameState->EditorState.Mode = Editor_Animation;
+                        
                         std::map<char*, texture>::iterator TextureIterator;
                         
                         if(GameState->EditorState.Textures)
@@ -639,7 +657,7 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
                         
                         GameState->EditorState.Textures = (char**)malloc(GameState->RenderState.Textures.size() * sizeof(char*));
                         
-                        int32 Index = 0;
+                        Index = 0;
                         for(TextureIterator = GameState->RenderState.Textures.begin(); TextureIterator != GameState->RenderState.Textures.end(); TextureIterator++)
                         {
                             GameState->EditorState.Textures[Index++] = TextureIterator->first;
@@ -647,6 +665,7 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
                         
                         GameState->EditorState.TexturesLength = (int32)GameState->RenderState.Textures.size();
                         GameState->EditorState.Mode = Editor_Animation;
+                        GameState->EditorState.Editing = true;
                     }
                     break;
                     case Button_SwitchMode:
@@ -886,6 +905,7 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
         {
             if(GameState->EditorState.SaveAnimationButton->Clicked && GameState->EditorState.LoadedAnimation)
             {
+                GameState->EditorState.LoadedAnimation->Loop = GameState->EditorState.ShouldLoop;
                 SaveAnimationToFile(GameState, *GameState->EditorState.LoadedAnimation);
                 GameState->EditorState.LoadedAnimation = 0;
             }
@@ -894,13 +914,14 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
             
             if(GameState->EditorState.CreateNewAnimationButton->Clicked)
             {
+                GameState->EditorState.Editing = false;
                 GameState->EditorState.LoadedAnimation = (animation*)malloc(sizeof(animation));
                 
                 GameState->EditorState.LoadedAnimation->Name = (char*) malloc(30 * sizeof(char));
                 GameState->EditorState.LoadedAnimation->FrameCount = 0;
                 GameState->EditorState.LoadedAnimation->FrameSize = glm::vec2(0, 0);
                 GameState->EditorState.LoadedAnimation->FrameOffset = glm::vec2(0, 0);
-                GameState->EditorState.LoadedAnimation->Loop = 0;
+                GameState->EditorState.LoadedAnimation->Loop = 1;
                 GameState->EditorState.LoadedAnimation->Texture = &GameState->RenderState.Textures.begin()->second;
             }
             
@@ -910,54 +931,15 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
                 
                 if(!GameState->EditorState.AnimationNameField ||!GameState->EditorState.AnimationNameField->Active)
                 {
-                    GameState->EditorState.AnimationNameField = &GameState->EditorState.Textfields[0];
-                    GameState->EditorState.AnimationFrameWidthField = &GameState->EditorState.Textfields[1];
-                    GameState->EditorState.AnimationFrameHeightField = &GameState->EditorState.Textfields[2];
-                    GameState->EditorState.AnimationFrameCountField = &GameState->EditorState.Textfields[3];
-                    GameState->EditorState.AnimationFrameOffsetXField = &GameState->EditorState.Textfields[4];
-                    GameState->EditorState.AnimationFrameOffsetYField = &GameState->EditorState.Textfields[5];
-                    GameState->EditorState.AnimationFrameDurationField = &GameState->EditorState.Textfields[6];
-                    
-                    GameState->EditorState.AnimationNameField->Active = true;
-                    GameState->EditorState.AnimationNameField->Size = glm::vec2(300, 30);
-                    GameState->EditorState.AnimationNameField->ScreenPosition = glm::vec2(GameState->RenderState.WindowWidth - 305, 660);
-                    GameState->EditorState.AnimationNameField->Label = "Name";
-                    
-                    GameState->EditorState.AnimationFrameWidthField->Active = true;
-                    GameState->EditorState.AnimationFrameWidthField->Size = glm::vec2(300, 30);
-                    GameState->EditorState.AnimationFrameWidthField->ScreenPosition = glm::vec2(GameState->RenderState.WindowWidth - 305, 600);
-                    GameState->EditorState.AnimationFrameWidthField->Label = "Frame width";
-                    GameState->EditorState.AnimationFrameWidthField->Type = Textfield_Integer;
-                    
-                    GameState->EditorState.AnimationFrameHeightField->Active = true;
-                    GameState->EditorState.AnimationFrameHeightField->Size = glm::vec2(300, 30);
-                    GameState->EditorState.AnimationFrameHeightField->ScreenPosition = glm::vec2(GameState->RenderState.WindowWidth - 305, 540);
-                    GameState->EditorState.AnimationFrameHeightField->Label = "Frame height";
-                    GameState->EditorState.AnimationFrameHeightField->Type = Textfield_Integer;
-                    
-                    GameState->EditorState.AnimationFrameCountField->Active = true;
-                    GameState->EditorState.AnimationFrameCountField->Size = glm::vec2(300, 30);
-                    GameState->EditorState.AnimationFrameCountField->ScreenPosition = glm::vec2(GameState->RenderState.WindowWidth - 305, 480);
-                    GameState->EditorState.AnimationFrameCountField->Label = "Frame count";
-                    GameState->EditorState.AnimationFrameCountField->Type = Textfield_Integer;
-                    
-                    GameState->EditorState.AnimationFrameOffsetXField->Active = true;
-                    GameState->EditorState.AnimationFrameOffsetXField->Size = glm::vec2(300, 30);
-                    GameState->EditorState.AnimationFrameOffsetXField->ScreenPosition = glm::vec2(GameState->RenderState.WindowWidth - 305, 420);
-                    GameState->EditorState.AnimationFrameOffsetXField->Label = "Frame offset x";
-                    GameState->EditorState.AnimationFrameOffsetXField->Type = Textfield_Integer;
-                    
-                    GameState->EditorState.AnimationFrameOffsetYField->Active = true;
-                    GameState->EditorState.AnimationFrameOffsetYField->Size = glm::vec2(300, 30);
-                    GameState->EditorState.AnimationFrameOffsetYField->ScreenPosition = glm::vec2(GameState->RenderState.WindowWidth - 305, 360);
-                    GameState->EditorState.AnimationFrameOffsetYField->Label = "Frame offset y";
-                    GameState->EditorState.AnimationFrameOffsetYField->Type = Textfield_Integer;
-                    
-                    GameState->EditorState.AnimationFrameDurationField->Active = true;
-                    GameState->EditorState.AnimationFrameDurationField->Size = glm::vec2(300, 30);
-                    GameState->EditorState.AnimationFrameDurationField->ScreenPosition = glm::vec2(GameState->RenderState.WindowWidth - 305, 300);
-                    GameState->EditorState.AnimationFrameDurationField->Label = "Frame  duration";
-                    GameState->EditorState.AnimationFrameDurationField->Type = Textfield_Decimal;
+                    SetEditorFields(GameState);
+                    sprintf(GameState->EditorState.AnimationNameField->Text, "%s", LoadedAnimation->Name);
+                    sprintf(GameState->EditorState.AnimationFrameCountField->Text, "%d", LoadedAnimation->FrameCount);
+                    sprintf(GameState->EditorState.AnimationFrameWidthField->Text, "%f", LoadedAnimation->FrameSize.x);
+                    sprintf(GameState->EditorState.AnimationFrameHeightField->Text, "%f", LoadedAnimation->FrameSize.y);
+                    sprintf(GameState->EditorState.AnimationFrameOffsetXField->Text, "%f", LoadedAnimation->FrameOffset.x);
+                    sprintf(GameState->EditorState.AnimationFrameOffsetYField->Text, "%f", LoadedAnimation->FrameOffset.y);
+                    sprintf(GameState->EditorState.AnimationFrameDurationField->Text, "%f", LoadedAnimation->TimePerFrame);
+                    sprintf(GameState->EditorState.AnimationLoopField->Text, "%f", GameState->EditorState.ShouldLoop);
                 }
                 
                 sscanf(GameState->EditorState.AnimationNameField->Text, "%s", LoadedAnimation->Name);
@@ -967,12 +949,13 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
                 sscanf(GameState->EditorState.AnimationFrameOffsetXField->Text, "%f", &LoadedAnimation->FrameOffset.x);
                 sscanf(GameState->EditorState.AnimationFrameOffsetYField->Text, "%f", &LoadedAnimation->FrameOffset.y);
                 sscanf(GameState->EditorState.AnimationFrameDurationField->Text, "%f", &LoadedAnimation->TimePerFrame);
+                sscanf(GameState->EditorState.AnimationLoopField->Text, "%d", &GameState->EditorState.ShouldLoop);
                 
                 if(LoadedAnimation->Frames)
                 {
                     free(LoadedAnimation->Frames);
-                    LoadedAnimation->Frames = 0;
                 }
+                
                 if(LoadedAnimation->FrameCount > 0)
                 {
                     LoadedAnimation->Frames = (sprite_sheet_frame*)malloc(LoadedAnimation->FrameCount * sizeof(sprite_sheet_frame));
@@ -984,19 +967,23 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
                     
                     while(FrameIndex < (int32)LoadedAnimation->FrameCount)
                     {
-                        LoadedAnimation->Frames[FrameIndex] = { (real32)X, (real32)Y };
-                        
-                        FrameIndex++;
-                        
-                        if(X + (int32)LoadedAnimation->FrameSize.x <= LoadedAnimation->Texture->Width)
-                            X += (int32)LoadedAnimation->FrameSize.x;
-                        else
+                        if(FrameIndex > 0)
                         {
-                            X = 0;
-                            Y += (int32)LoadedAnimation->FrameSize.y;
+                            if(X + (int32)LoadedAnimation->FrameSize.x < LoadedAnimation->Texture->Width)
+                                X += (int32)LoadedAnimation->FrameSize.x;
+                            else
+                            {
+                                X = 0;
+                                Y += (int32)LoadedAnimation->FrameSize.y;
+                            }
                         }
+                        
+                        LoadedAnimation->Frames[FrameIndex] = { (real32)X, (real32)Y };
+                        FrameIndex++;
                     }
                 }
+                
+                TickAnimation(&GameState->EditorState.AnimationInfo, LoadedAnimation, DeltaTime);
             }
         }
         break;
@@ -1042,7 +1029,7 @@ extern "C" UPDATE(Update)
         
         LoadLevelFromFile(GameState->LevelPath, &GameState->CurrentLevel, GameState);
         
-        GameState->GameCamera.Zoom = 4.0f;
+        GameState->GameCamera.Zoom = 2.5f;
         GameState->GameCamera.ViewportWidth = GameState->RenderState.WindowWidth / 20;
         GameState->GameCamera.ViewportHeight = GameState->RenderState.WindowHeight / 20;
         

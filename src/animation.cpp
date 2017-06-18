@@ -23,7 +23,6 @@
                                             
                                             FrameIndex++;
                                             
-                                            printf("Animation width %f\n", Animation.Texture->Width);
                                             if(X + (int32)Animation.FrameSize.x <= Animation.Texture->Width)
                                                 X += (int32)Animation.FrameSize.x;
                                             else
@@ -164,7 +163,7 @@
                                                 Info->FrameIndex++;
                                                 Info->CurrentTime = 0.0;
                                                 
-                                                if(Info->FrameIndex == Animation->FrameCount)
+                                                if(Info->FrameIndex >= Animation->FrameCount)
                                                 {
                                                     Info->FrameIndex = 0;
                                                     

@@ -158,10 +158,10 @@ static void SpawnEnemy(game_state* GameState, glm::vec2 Position)
     //Enemy->IgnoreLayers = Layer_Enemy;
     
     collision_AABB CollisionAABB;
-    Enemy->Center = glm::vec2(0.5f, -0.5f);
+    Enemy->Center = glm::vec2(0, 0.5f);
     CollisionAABB.Center = glm::vec2(Enemy->Position.x + Enemy->Center.x * Enemy->Scale.x,
                                      Enemy->Position.y + Enemy->Center.y * Enemy->Scale.y);
-    CollisionAABB.Offset = glm::vec2(0, -0.9);
+    CollisionAABB.Offset = glm::vec2(0, 0);
     CollisionAABB.Extents = glm::vec2(0.3f, 0.15f);
     CollisionAABB.IsTrigger = false;
     Enemy->CollisionAABB = CollisionAABB;
@@ -216,7 +216,7 @@ static void SpawnEnemy(game_state* GameState, glm::vec2 Position)
     EnemyWeapon->Active = true;
     
     collision_AABB CollisionAABB3;
-    CollisionAABB3.Center = glm::vec2(0.5, 0.5);
+    CollisionAABB3.Center = glm::vec2(0, 0.5);
     CollisionAABB3.Offset = glm::vec2(0.7, 0);
     CollisionAABB3.Extents = glm::vec2(0.5f,1.0f);
     CollisionAABB3.IsTrigger = true;
@@ -349,7 +349,6 @@ static bool32 TimerDone(game_state* GameState, timer* Timer)
 
 //@Incomplete: Maybe we will add a weapon type or damage amount
 void Hit(game_state* GameState, entity* Entity)
-
 {
     Entity->Health -= 1;
     StartTimer(GameState, Entity->HitCooldownTimer);

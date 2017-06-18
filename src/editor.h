@@ -112,16 +112,21 @@ struct editor_state
     textfield* AnimationFrameOffsetXField;
     textfield* AnimationFrameOffsetYField;
     textfield* AnimationFrameDurationField;
+    textfield* AnimationLoopField;
     
     button* CreateNewAnimationButton;
     button* SaveAnimationButton;
     
+    bool32 Editing;
+    bool32 ShouldLoop;
     int32 SelectedAnimation;
     animation_info AnimationInfo;
     animation* LoadedAnimation;
     int32 SelectedTexture;
     char** Textures;
     int32 TexturesLength;
+    char** Animations;
+    int32 AnimationsLength;
 };
 
 struct editor_ui
