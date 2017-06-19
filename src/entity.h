@@ -24,8 +24,7 @@ enum Entity_Enum
 {
     Entity_Player,
     Entity_Tile,
-    Entity_PalmTree,
-    Entity_Enemy,
+    Entity_Skeleton,
     Entity_Blob,
     Entity_Weapon,
     Entity_Barrel,
@@ -112,6 +111,7 @@ struct entity
             bool32 IsAttacking;
             real32 WalkingSpeed;
             real32 MaxAlertDistance;
+            real32 MaxFollowDistance;
             real32 MinDistance;
             
             timer* AttackCooldownTimer;
@@ -120,7 +120,7 @@ struct entity
             AI_State AIState;
             astar_path AStarPath;
             
-        } Enemy;
+        } Skeleton;
         struct
         {
             uint32 EntityHandle;

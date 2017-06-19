@@ -223,7 +223,7 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
             }
         }
         
-        if(Entity->Type == Entity_Player || Entity->Type == Entity_Enemy || Entity->Type == Entity_Barrel)
+        if(Entity->Type == Entity_Player || Entity->Type == Entity_Skeleton || Entity->Type == Entity_Barrel)
         {
             level* Level = &GameState->CurrentLevel;
             

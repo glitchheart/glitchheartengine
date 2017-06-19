@@ -129,101 +129,101 @@ static void InitPlayer(game_state* GameState, glm::vec2 Position)
     GameState->EntityCount++;
 }
 
-static void SpawnEnemy(game_state* GameState, glm::vec2 Position)
+static void SpawnSkeleton(game_state* GameState, glm::vec2 Position)
 {
     // Enemy
-    entity* Enemy = &GameState->Entities[GameState->EntityCount];
-    Enemy->Name = "enemy";
-    Enemy->Type = Entity_Enemy;
+    entity* Skeleton = &GameState->Entities[GameState->EntityCount];
+    Skeleton->Name = "skeleton";
+    Skeleton->Type = Entity_Skeleton;
     
-    render_entity* EnemyRenderEntity = &GameState->RenderState.RenderEntities[GameState->RenderState.RenderEntityCount];
+    render_entity* SkeletonRenderEntity = &GameState->RenderState.RenderEntities[GameState->RenderState.RenderEntityCount];
     
-    EnemyRenderEntity->ShaderIndex = Shader_SpriteSheetShader;
-    EnemyRenderEntity->Texture = &GameState->RenderState.Textures["skeleton_idle"];
+    SkeletonRenderEntity->ShaderIndex = Shader_SpriteSheetShader;
+    SkeletonRenderEntity->Texture = &GameState->RenderState.Textures["skeleton_idle"];
     
-    EnemyRenderEntity->Entity = &*Enemy;
-    Enemy->RenderEntityHandle = GameState->RenderState.RenderEntityCount++;
-    Enemy->CurrentAnimation = 0;
-    Enemy->AnimationInfo.Playing = false;
-    Enemy->AnimationInfo.FrameIndex = 0;
-    Enemy->AnimationInfo.CurrentTime = 0;
-    PlayAnimation(Enemy, "skeleton_idle", GameState);
-    Enemy->Rotation = glm::vec3(0, 0, 0);
-    Enemy->Position = Position;
-    Enemy->Scale = glm::vec3(3, 3, 1);
-    Enemy->Velocity = glm::vec2(-2,0);
-    Enemy->Active = true;
-    Enemy->IsKinematic = false;
-    Enemy->Layer = Layer_Enemy;
+    SkeletonRenderEntity->Entity = &*Skeleton;
+    Skeleton->RenderEntityHandle = GameState->RenderState.RenderEntityCount++;
+    Skeleton->CurrentAnimation = 0;
+    Skeleton->AnimationInfo.Playing = false;
+    Skeleton->AnimationInfo.FrameIndex = 0;
+    Skeleton->AnimationInfo.CurrentTime = 0;
+    PlayAnimation(Skeleton, "skeleton_idle", GameState);
+    Skeleton->Rotation = glm::vec3(0, 0, 0);
+    Skeleton->Position = Position;
+    Skeleton->Scale = glm::vec3(3, 3, 1);
+    Skeleton->Velocity = glm::vec2(-2,0);
+    Skeleton->Active = true;
+    Skeleton->IsKinematic = false;
+    Skeleton->Layer = Layer_Enemy;
     //Enemy->IgnoreLayers = Layer_Enemy;
     
     collision_AABB CollisionAABB;
-    Enemy->Center = glm::vec2(0, 0.5f);
-    CollisionAABB.Center = glm::vec2(Enemy->Position.x + Enemy->Center.x * Enemy->Scale.x,
-                                     Enemy->Position.y + Enemy->Center.y * Enemy->Scale.y);
+    Skeleton->Center = glm::vec2(0, 0.5f);
+    CollisionAABB.Center = glm::vec2(Skeleton->Position.x + Skeleton->Center.x * Skeleton->Scale.x,
+                                     Skeleton->Position.y + Skeleton->Center.y * Skeleton->Scale.y);
     CollisionAABB.Offset = glm::vec2(0, 0);
     CollisionAABB.Extents = glm::vec2(0.3f, 0.15f);
     CollisionAABB.IsTrigger = false;
-    Enemy->CollisionAABB = CollisionAABB;
+    Skeleton->CollisionAABB = CollisionAABB;
     
     collision_AABB* HitTrigger = (collision_AABB*)malloc(sizeof(collision_AABB));
-    HitTrigger->Center = glm::vec2(Enemy->Position.x + Enemy->Center.x * Enemy->Scale.x,
-                                   Enemy->Position.y + Enemy->Center.y * Enemy->Scale.y);
+    HitTrigger->Center = glm::vec2(Skeleton->Position.x + Skeleton->Center.x * Skeleton->Scale.x,
+                                   Skeleton->Position.y + Skeleton->Center.y * Skeleton->Scale.y);
     HitTrigger->Extents = glm::vec2(0.5f, 0.7f);
     HitTrigger->IsTrigger;
-    Enemy->HitTrigger = HitTrigger;
+    Skeleton->HitTrigger = HitTrigger;
     
-    Enemy->Enemy.WalkingSpeed = 5;
-    Enemy->Enemy.MaxAlertDistance = 20;
-    Enemy->Enemy.MinDistance = 2;
-    Enemy->Enemy.AIState = AI_Idle;
+    Skeleton->Skeleton.WalkingSpeed = 5;
+    Skeleton->Skeleton.MaxAlertDistance = 5;
+    Skeleton->Skeleton.MinDistance = 2;
+    Skeleton->Skeleton.AIState = AI_Idle;
     
-    Enemy->Enemy.AttackCooldownTimer = (timer*)malloc(sizeof(timer));
-    Enemy->Enemy.AttackCooldownTimer->TimerHandle = -1;
-    Enemy->Enemy.AttackCooldownTimer->TimerMax = 0.5;
+    Skeleton->Skeleton.AttackCooldownTimer = (timer*)malloc(sizeof(timer));
+    Skeleton->Skeleton.AttackCooldownTimer->TimerHandle = -1;
+    Skeleton->Skeleton.AttackCooldownTimer->TimerMax = 0.5;
     
-    Enemy->Enemy.ChargingTimer = (timer*)malloc(sizeof(timer));
-    Enemy->Enemy.ChargingTimer->TimerHandle = -1;
-    Enemy->Enemy.ChargingTimer->TimerMax = 1.5f;
+    Skeleton->Skeleton.ChargingTimer = (timer*)malloc(sizeof(timer));
+    Skeleton->Skeleton.ChargingTimer->TimerHandle = -1;
+    Skeleton->Skeleton.ChargingTimer->TimerMax = 1.5f;
     
-    Enemy->Enemy.AStarPath.AStarCooldownTimer = (timer*)malloc(sizeof(timer));
-    Enemy->Enemy.AStarPath.AStarCooldownTimer->TimerHandle = -1;
-    Enemy->Enemy.AStarPath.AStarCooldownTimer->TimerMax = 0.6;
+    Skeleton->Skeleton.AStarPath.AStarCooldownTimer = (timer*)malloc(sizeof(timer));
+    Skeleton->Skeleton.AStarPath.AStarCooldownTimer->TimerHandle = -1;
+    Skeleton->Skeleton.AStarPath.AStarCooldownTimer->TimerMax = 0.6;
     
-    Enemy->HitCooldownTimer = (timer*)malloc(sizeof(timer));
-    Enemy->HitCooldownTimer->TimerHandle = -1;
-    Enemy->HitCooldownTimer->TimerMax = 0.4;
+    Skeleton->HitCooldownTimer = (timer*)malloc(sizeof(timer));
+    Skeleton->HitCooldownTimer->TimerHandle = -1;
+    Skeleton->HitCooldownTimer->TimerMax = 0.4;
     
-    Enemy->Health = 2;
-    Enemy->EntityIndex = GameState->EntityCount++;
+    Skeleton->Health = 2;
+    Skeleton->EntityIndex = GameState->EntityCount++;
     
     // Weapon
-    entity* EnemyWeapon = &GameState->Entities[GameState->EntityCount];
-    EnemyWeapon->Name = "Enemy weapon";
-    EnemyWeapon->Type = Entity_Weapon;
+    entity* SkeletonWeapon = &GameState->Entities[GameState->EntityCount];
+    SkeletonWeapon->Name = "Skeleton weapon";
+    SkeletonWeapon->Type = Entity_Weapon;
     
-    render_entity* EnemyWeaponRenderEntity = &GameState->RenderState.RenderEntities[GameState->RenderState.RenderEntityCount];
-    EnemyWeaponRenderEntity->Rendered = true;
-    EnemyWeaponRenderEntity->ShaderIndex = Shader_SpriteSheetShader;
-    EnemyWeaponRenderEntity->Texture = &GameState->RenderState.Textures["sword_simple"];
-    EnemyWeaponRenderEntity->Entity = EnemyWeapon;
-    EnemyWeapon->RenderEntityHandle = GameState->RenderState.RenderEntityCount++;
-    EnemyWeapon->CurrentAnimation = 0;
-    EnemyWeapon->AnimationInfo.Playing = false;
-    EnemyWeapon->AnimationInfo.FrameIndex = 0;
-    EnemyWeapon->AnimationInfo.CurrentTime = 0;
-    EnemyWeapon->Weapon.EntityHandle = Enemy->EntityIndex;
-    EnemyWeapon->Active = true;
+    render_entity* SkeletonWeaponRenderEntity = &GameState->RenderState.RenderEntities[GameState->RenderState.RenderEntityCount];
+    SkeletonWeaponRenderEntity->Rendered = true;
+    SkeletonWeaponRenderEntity->ShaderIndex = Shader_SpriteSheetShader;
+    SkeletonWeaponRenderEntity->Texture = &GameState->RenderState.Textures["sword_simple"];
+    SkeletonWeaponRenderEntity->Entity = SkeletonWeapon;
+    SkeletonWeapon->RenderEntityHandle = GameState->RenderState.RenderEntityCount++;
+    SkeletonWeapon->CurrentAnimation = 0;
+    SkeletonWeapon->AnimationInfo.Playing = false;
+    SkeletonWeapon->AnimationInfo.FrameIndex = 0;
+    SkeletonWeapon->AnimationInfo.CurrentTime = 0;
+    SkeletonWeapon->Weapon.EntityHandle = Skeleton->EntityIndex;
+    SkeletonWeapon->Active = true;
     
     collision_AABB CollisionAABB3;
     CollisionAABB3.Center = glm::vec2(0, 0.5);
     CollisionAABB3.Offset = glm::vec2(0.7, 0);
     CollisionAABB3.Extents = glm::vec2(0.5f,1.0f);
     CollisionAABB3.IsTrigger = true;
-    EnemyWeapon->CollisionAABB = CollisionAABB3;
-    EnemyWeapon->Rotation = glm::vec3(0, 0, 0);
-    EnemyWeapon->Scale = glm::vec3(2, 2, 0); 
-    EnemyWeapon->EntityIndex = GameState->EntityCount;
+    SkeletonWeapon->CollisionAABB = CollisionAABB3;
+    SkeletonWeapon->Rotation = glm::vec3(0, 0, 0);
+    SkeletonWeapon->Scale = glm::vec3(2, 2, 0); 
+    SkeletonWeapon->EntityIndex = GameState->EntityCount;
     GameState->EntityCount++;
 }
 
@@ -355,9 +355,9 @@ void Hit(game_state* GameState, entity* Entity)
     
     printf("%s health %d\n", Entity->Name, Entity->Health); 
     
-    if(Entity->Type == Entity_Enemy)
+    if(Entity->Type == Entity_Skeleton)
     {
-        Entity->Enemy.AIState = AI_Hit;
+        Entity->Skeleton.AIState = AI_Hit;
         PlayAnimation(Entity, "skeleton_idle", GameState);
     }
     
