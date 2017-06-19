@@ -1338,9 +1338,12 @@ static void RenderEntity(render_state *RenderState, entity &Entity, glm::mat4 Pr
     {
         glm::mat4 Model(1.0f);
         
+        
         if(Entity.CurrentAnimation) 
         {
-            Model = glm::translate(Model, glm::vec3(Entity.Position.x - (Entity.IsFlipped ? 1.0f * Entity.Scale.x - Entity.CurrentAnimation->Center.x * Entity.Scale.x : Entity.CurrentAnimation->Center.x * Entity.Scale.x), Entity.Position.y - (Entity.IsFlipped ? Entity.CurrentAnimation->Center.y : 0), 0.0f));
+            real32 RemoveInX = (Entity.IsFlipped ? 1.0f * Entity.Scale.x - (2 * Entity.CurrentAnimation->Center.x * Entity.Scale.x) : 0);
+            
+            Model = glm::translate(Model, glm::vec3(Entity.Position.x - RemoveInX, Entity.Position.y - (Entity.IsFlipped ? Entity.CurrentAnimation->Center.y : 0), 0.0f));
             Model = glm::translate(Model, glm::vec3(1, 1, 0.0f));
             Model = glm::rotate(Model, Entity.Rotation.z, glm::vec3(0, 0, 1)); 
             Model = glm::translate(Model, glm::vec3(-1, -1, 0.0f));

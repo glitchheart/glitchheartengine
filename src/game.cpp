@@ -993,7 +993,9 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
 extern "C" UPDATE(Update)
 {
     CheckConsoleInput(GameState, DeltaTime);
-    CheckEditorUIInput(GameState, DeltaTime);
+    
+    if(GameState->GameMode == Mode_Editor)
+        CheckEditorUIInput(GameState, DeltaTime);
     
     if((GetKey(Key_LeftCtrl, GameState) || GetKey(Key_RightCtrl, GameState)) && GetKeyDown(Key_E, GameState))
     {
