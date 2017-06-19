@@ -708,6 +708,7 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
                         
                         GameState->EditorState.AnimationsLength = (int32)GameState->Animations.size();
                         
+                        GameState->EditorState.CreateNewAnimationButton->Active = true;
                         GameState->EditorState.Mode = Editor_Animation;
                         
                         std::map<char*, texture>::iterator TextureIterator;
@@ -825,6 +826,17 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
     {
         case Editor_Normal:
         {
+            
+            if(GameState->EditorState.CreateNewLevelButton->Clicked)
+            {
+                level Level;
+                Level.SheetName = "overworld1";
+                Level.Name = "test_level";
+                
+                CreateNewLevelWithSize("../assets/levels/level_test.plv", 100, 100, &Level, GameState);
+                GameState->CurrentLevel = Level;
+            }
+            
             GameState->EditorState.CreateNewAnimationButton->Active = false;
             if(GetKeyDown(Key_M, GameState))
             {
@@ -994,22 +1006,15 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
                     SetEditorFields(GameState);
                     sprintf(GameState->EditorState.AnimationNameField->Text, "%s", LoadedAnimation->Name);
                     sprintf(GameState->EditorState.AnimationFrameCountField->Text, "%d", LoadedAnimation->FrameCount);
-                    sprintf(GameState->EditorState.AnimationFrameWidthField->Text, "%f", LoadedAnimation->FrameSize.x);
-                    sprintf(GameState->EditorState.AnimationFrameHeightField->Text, "%f", LoadedAnimation->FrameSize.y);
-                    sprintf(GameState->EditorState.AnimationFrameOffsetXField->Text, "%f", LoadedAnimation->FrameOffset.x);
-                    sprintf(GameState->EditorState.AnimationFrameOffsetYField->Text, "%f", LoadedAnimation->FrameOffset.y);
-                    sprintf(GameState->EditorState.AnimationFrameDurationField->Text, "%f", LoadedAnimation->TimePerFrame);
-                    sprintf(GameState->EditorState.AnimationLoopField->Text, "%f", GameState->EditorState.ShouldLoop);
+                    sprintf(GameState->EditorState.AnimationFrameWidthField->Text, "%d", (int32)LoadedAnimation->FrameSize.x);
+                    sprintf(GameState->EditorState.AnimationFrameHeightField->Text, "%d", (int32)LoadedAnimation->FrameSize.y);
+                    sprintf(GameState->EditorState.AnimationFrameOffsetXField->Text, "%d", (int32)LoadedAnimation->FrameOffset.x);
+                    sprintf(GameState->EditorState.AnimationFrameOffsetYField->Text, "%d", (int32)LoadedAnimation->FrameOffset.y);
+                    sprintf(GameState->EditorState.AnimationFrameDurationField->Text, "%3.00f", LoadedAnimation->TimePerFrame);
+                    sprintf(GameState->EditorState.AnimationLoopField->Text, "%d", GameState->EditorState.ShouldLoop);
                 }
                 
-                sscanf(GameState->EditorState.AnimationNameField->Text, "%s", LoadedAnimation->Name);
-                sscanf(GameState->EditorState.AnimationFrameCountField->Text, "%d", &LoadedAnimation->FrameCount);
-                sscanf(GameState->EditorState.AnimationFrameWidthField->Text, "%f", &LoadedAnimation->FrameSize.x);
-                sscanf(GameState->EditorState.AnimationFrameHeightField->Text, "%f", &LoadedAnimation->FrameSize.y);
-                sscanf(GameState->EditorState.AnimationFrameOffsetXField->Text, "%f", &LoadedAnimation->FrameOffset.x);
-                sscanf(GameState->EditorState.AnimationFrameOffsetYField->Text, "%f", &LoadedAnimation->FrameOffset.y);
-                sscanf(GameState->EditorState.AnimationFrameDurationField->Text, "%f", &LoadedAnimation->TimePerFrame);
-                sscanf(GameState->EditorState.AnimationLoopField->Text, "%d", &GameState->EditorState.ShouldLoop);
+                GetTextfieldValues(GameState);
                 
                 if(LoadedAnimation->Frames)
                 {
@@ -1074,13 +1079,15 @@ extern "C" UPDATE(Update)
         }
     }
     
+    if(!GameState->EditorState.Loaded)
+        CreateEditorButtons(GameState);
+    
     if(!GameState->IsInitialized)
     {
         if(!GameState->ShouldReload)
         {
             LoadAnimations(GameState);
             InitCommands();
-            GameState->LevelPath = "../assets/levels/level_new.plv";
             
             GameState->EditorCamera.Zoom = 3.0f; // @Cleanup: We might not want to reset these values every time we load a level
             GameState->EditorCamera.ViewportWidth = GameState->RenderState.WindowWidth / 20;
