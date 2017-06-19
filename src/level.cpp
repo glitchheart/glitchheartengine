@@ -169,11 +169,11 @@ static bool32 LoadLevelFromFile(char* FilePath, level* Level, game_state* GameSt
         
         while(fgets(LineBuffer, 255, File))
         {
-            if(StartsWith(&LineBuffer[0], "enemy"))
+            if(StartsWith(&LineBuffer[0], "skeleton"))
             {
                 glm::vec2 Pos;
-                sscanf(LineBuffer, "enemy %f %f", &Pos.x, &Pos.y);
-                SpawnEnemy(GameState, Pos);
+                sscanf(LineBuffer, "skeleton %f %f", &Pos.x, &Pos.y);
+                SpawnSkeleton(GameState, Pos);
             }
             else if(StartsWith(&LineBuffer[0], "blob"))
             {
@@ -230,8 +230,8 @@ static void SaveLevelToFile(const char* FilePath, level* Level, game_state* Game
                 char* TypeName = 0;
                 switch(Entity->Type)
                 {
-                    case Entity_Enemy:
-                    TypeName = "enemy";
+                    case Entity_Skeleton:
+                    TypeName = "skeleton";
                     break;
                     case Entity_Blob:
                     TypeName = "blob";

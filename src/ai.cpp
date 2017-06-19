@@ -147,9 +147,9 @@ static astar_path* GetAStarPath(entity* Entity)
 {
     switch(Entity->Type)
     {
-        case Entity_Enemy:
+        case Entity_Skeleton:
         {
-            return &Entity->Enemy.AStarPath; 
+            return &Entity->Skeleton.AStarPath; 
         };
         case Entity_Blob:
         {
