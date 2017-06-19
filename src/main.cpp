@@ -99,7 +99,7 @@ int main(void)
     InitializeOpenGL(&GameState, &RenderState, &ConfigData);
     LoadTilesheetTextures(&GameState, &RenderState);
     GameState.RenderState = RenderState;
-    
+    GameState.LevelPath = ConfigData.StartingLevelFilePath;
     game_code Game = LoadGameCode();
     
     //setup asset reloading

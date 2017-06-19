@@ -53,11 +53,135 @@ static void SetEditorFields(game_state* GameState)
     GameState->EditorState.AnimationFrameDurationField->Label = "Frame  duration";
     GameState->EditorState.AnimationFrameDurationField->Type = Textfield_Decimal;
     
-    GameState->EditorState.AnimationFrameDurationField->Active = true;
-    GameState->EditorState.AnimationFrameDurationField->Size = glm::vec2(300, 30);
-    GameState->EditorState.AnimationFrameDurationField->ScreenPosition = glm::vec2(GameState->RenderState.WindowWidth - 305, 440);
-    GameState->EditorState.AnimationFrameDurationField->Label = "Loop";
-    GameState->EditorState.AnimationFrameDurationField->Type = Textfield_Integer;
+    GameState->EditorState.AnimationLoopField->Active = true;
+    GameState->EditorState.AnimationLoopField->Size = glm::vec2(300, 30);
+    GameState->EditorState.AnimationLoopField->ScreenPosition = glm::vec2(GameState->RenderState.WindowWidth - 305, 440);
+    GameState->EditorState.AnimationLoopField->Label = "Loop";
+    GameState->EditorState.AnimationLoopField->Type = Textfield_Integer;
+}
+
+static void GetTextfieldValues(game_state* GameState)
+{
+    animation* LoadedAnimation = GameState->EditorState.LoadedAnimation;
+    
+    sprintf(GameState->EditorState.AnimationNameField->Text, "%s", LoadedAnimation->Name);
+    sprintf(GameState->EditorState.AnimationFrameCountField->Text, "%d", LoadedAnimation->FrameCount);
+    sprintf(GameState->EditorState.AnimationFrameWidthField->Text, "%d", (int32)LoadedAnimation->FrameSize.x);
+    sprintf(GameState->EditorState.AnimationFrameHeightField->Text, "%d", (int32)LoadedAnimation->FrameSize.y);
+    sprintf(GameState->EditorState.AnimationFrameOffsetXField->Text, "%d", (int32)LoadedAnimation->FrameOffset.x);
+    sprintf(GameState->EditorState.AnimationFrameOffsetYField->Text, "%d", (int32)LoadedAnimation->FrameOffset.y);
+    sprintf(GameState->EditorState.AnimationFrameDurationField->Text, "%3.00f", LoadedAnimation->TimePerFrame);
+    sprintf(GameState->EditorState.AnimationLoopField->Text, "%f", GameState->EditorState.ShouldLoop);
+}
+
+static void CreateEditorButtons(game_state* GameState)
+{
+    render_state* RenderState = &GameState->RenderState;
+    // @Incomplete: These values need to be updated when the window size is changed
+    GameState->EditorState.ToolbarX = (real32)RenderState->WindowWidth - 100;
+    GameState->EditorState.ToolbarY = 0;
+    GameState->EditorState.ToolbarWidth = 100.0f;
+    GameState->EditorState.ToolbarHeight = (real32)RenderState->WindowHeight;
+    
+    GameState->EditorState.Buttons[0].Text = (char*)malloc(sizeof(char) * 20);
+    GameState->EditorState.Buttons[0].Text = "Create/Edit animation";
+    GameState->EditorState.Buttons[0].ScreenPosition = glm::vec2(5, (real32)RenderState->WindowHeight - 150);
+    GameState->EditorState.Buttons[0].Size = glm::vec2(320, 60);
+    GameState->EditorState.Buttons[0].Color = glm::vec4(1.0f / 255.0f * 154.0f, 1.0f / 255.0f * 51.0f, 1.0f / 255.0f * 52.0f, 1);
+    GameState->EditorState.Buttons[0].TextColor = glm::vec4(1, 1, 1, 1);
+    GameState->EditorState.Buttons[0].Active = true;
+    GameState->EditorState.Buttons[0].EditorType = Button_Animation;
+    GameState->EditorState.Buttons[0].ClickAnimationTimer = (timer*)malloc(sizeof(timer));
+    GameState->EditorState.Buttons[0].ClickAnimationTimer->TimerMax = 0.2f;
+    GameState->EditorState.Buttons[0].ClickAnimationTimer->TimerHandle = -1;
+    
+    GameState->EditorState.Buttons[1].Text = (char*)malloc(sizeof(char) * 20);
+    GameState->EditorState.Buttons[1].Text = "Create/Edit tilesheet";
+    GameState->EditorState.Buttons[1].ScreenPosition = glm::vec2(330, (real32)RenderState->WindowHeight - 150);
+    GameState->EditorState.Buttons[1].Size = glm::vec2(320, 60);
+    GameState->EditorState.Buttons[1].Color = glm::vec4(1.0f / 255.0f * 154.0f, 1.0f / 255.0f * 51.0f, 1.0f / 255.0f * 52.0f, 1);
+    GameState->EditorState.Buttons[1].TextColor = glm::vec4(1, 1, 1, 1);
+    GameState->EditorState.Buttons[1].Active = true;
+    GameState->EditorState.Buttons[1].EditorType = Button_Tilesheet;
+    GameState->EditorState.Buttons[1].ClickAnimationTimer = (timer*)malloc(sizeof(timer));
+    GameState->EditorState.Buttons[1].ClickAnimationTimer->TimerMax = 0.2f;GameState->EditorState.Buttons[1].ClickAnimationTimer->TimerHandle = -1;
+    
+    GameState->EditorState.Buttons[2].Text = (char*)malloc(sizeof(char) * 20);
+    GameState->EditorState.Buttons[2].Text = "Switch mode";
+    GameState->EditorState.Buttons[2].ScreenPosition = glm::vec2(655, (real32)RenderState->WindowHeight - 150);
+    GameState->EditorState.Buttons[2].Size = glm::vec2(320, 60);
+    GameState->EditorState.Buttons[2].Color = glm::vec4(1.0f / 255.0f * 154.0f, 1.0f / 255.0f * 51.0f, 1.0f / 255.0f * 52.0f, 1);
+    GameState->EditorState.Buttons[2].TextColor = glm::vec4(1, 1, 1, 1);
+    GameState->EditorState.Buttons[2].Active = true;
+    GameState->EditorState.Buttons[2].EditorType = Button_SwitchMode;
+    GameState->EditorState.Buttons[2].ClickAnimationTimer = (timer*)malloc(sizeof(timer));
+    GameState->EditorState.Buttons[2].ClickAnimationTimer->TimerMax = 0.2f;
+    GameState->EditorState.Buttons[2].ClickAnimationTimer->TimerHandle = -1;
+    
+    GameState->EditorState.Buttons[3].Text = (char*)malloc(sizeof(char) * 20);
+    GameState->EditorState.Buttons[3].Text = "Save and exit";
+    GameState->EditorState.Buttons[3].ScreenPosition = glm::vec2(980, (real32)RenderState->WindowHeight - 150);
+    GameState->EditorState.Buttons[3].Size = glm::vec2(320, 60);
+    GameState->EditorState.Buttons[3].Color = glm::vec4(1.0f / 255.0f * 154.0f, 1.0f / 255.0f * 51.0f, 1.0f / 255.0f * 52.0f, 1);
+    GameState->EditorState.Buttons[3].TextColor = glm::vec4(1, 1, 1, 1);
+    GameState->EditorState.Buttons[3].Active = true;
+    GameState->EditorState.Buttons[3].EditorType = Button_SaveAndExit;
+    GameState->EditorState.Buttons[3].ClickAnimationTimer = (timer*)malloc(sizeof(timer));
+    GameState->EditorState.Buttons[3].ClickAnimationTimer->TimerMax = 0.2f;
+    GameState->EditorState.Buttons[3].ClickAnimationTimer->TimerHandle = -1;
+    
+    GameState->EditorState.Buttons[4].Text = (char*)malloc(sizeof(char) * 20);
+    GameState->EditorState.Buttons[4].Text = "Exit";
+    GameState->EditorState.Buttons[4].ScreenPosition = glm::vec2(1305, (real32)RenderState->WindowHeight - 150);
+    GameState->EditorState.Buttons[4].Size = glm::vec2(280, 60);
+    GameState->EditorState.Buttons[4].Color = glm::vec4(1.0f / 255.0f * 154.0f, 1.0f / 255.0f * 51.0f, 1.0f / 255.0f * 52.0f, 1);
+    GameState->EditorState.Buttons[4].TextColor = glm::vec4(1, 1, 1, 1);
+    GameState->EditorState.Buttons[4].Active = true;
+    GameState->EditorState.Buttons[4].EditorType = Button_Exit;
+    GameState->EditorState.Buttons[4].ClickAnimationTimer = (timer*)malloc(sizeof(timer));
+    GameState->EditorState.Buttons[4].ClickAnimationTimer->TimerMax = 0.2f;
+    GameState->EditorState.Buttons[4].ClickAnimationTimer->TimerHandle = -1;
+    
+    GameState->EditorState.Buttons[5].Text = (char*)malloc(sizeof(char) * 20);
+    GameState->EditorState.Buttons[5].Text = "Create new";
+    GameState->EditorState.Buttons[5].ScreenPosition = glm::vec2(20, 20);
+    GameState->EditorState.Buttons[5].Size = glm::vec2(320, 60);
+    GameState->EditorState.Buttons[5].Color = glm::vec4(1.0f / 255.0f * 154.0f, 1.0f / 255.0f * 51.0f, 1.0f / 255.0f * 52.0f, 1);
+    GameState->EditorState.Buttons[5].TextColor = glm::vec4(1, 1, 1, 1);
+    GameState->EditorState.Buttons[5].Active = true;
+    GameState->EditorState.Buttons[5].EditorType = Button_Animation;
+    GameState->EditorState.Buttons[5].ClickAnimationTimer = (timer*)malloc(sizeof(timer));
+    GameState->EditorState.Buttons[5].ClickAnimationTimer->TimerMax = 0.2f;
+    GameState->EditorState.Buttons[5].ClickAnimationTimer->TimerHandle = -1;
+    GameState->EditorState.CreateNewAnimationButton = &GameState->EditorState.Buttons[5];
+    
+    GameState->EditorState.Buttons[6].Text = (char*)malloc(sizeof(char) * 20);
+    GameState->EditorState.Buttons[6].Text = "Save animation";
+    GameState->EditorState.Buttons[6].ScreenPosition = glm::vec2(700, 20);
+    GameState->EditorState.Buttons[6].Size = glm::vec2(320, 60);
+    GameState->EditorState.Buttons[6].Color = glm::vec4(1.0f / 255.0f * 154.0f, 1.0f / 255.0f * 51.0f, 1.0f / 255.0f * 52.0f, 1);
+    GameState->EditorState.Buttons[6].TextColor = glm::vec4(1, 1, 1, 1);
+    GameState->EditorState.Buttons[6].Active = false;
+    GameState->EditorState.Buttons[6].EditorType = Button_Animation;
+    GameState->EditorState.Buttons[6].ClickAnimationTimer = (timer*)malloc(sizeof(timer));
+    GameState->EditorState.Buttons[6].ClickAnimationTimer->TimerMax = 0.2f;
+    GameState->EditorState.Buttons[6].ClickAnimationTimer->TimerHandle = -1;
+    GameState->EditorState.SaveAnimationButton = &GameState->EditorState.Buttons[6];
+    
+    GameState->EditorState.Buttons[7].Text = (char*)malloc(sizeof(char) * 20);
+    GameState->EditorState.Buttons[7].Text = "Create new level";
+    GameState->EditorState.Buttons[7].ScreenPosition = glm::vec2(700, 20);
+    GameState->EditorState.Buttons[7].Size = glm::vec2(320, 60);
+    GameState->EditorState.Buttons[7].Color = glm::vec4(1.0f / 255.0f * 154.0f, 1.0f / 255.0f * 51.0f, 1.0f / 255.0f * 52.0f, 1);
+    GameState->EditorState.Buttons[7].TextColor = glm::vec4(1, 1, 1, 1);
+    GameState->EditorState.Buttons[7].Active = true;
+    GameState->EditorState.Buttons[7].EditorType = Button_CreateLevel;
+    GameState->EditorState.Buttons[7].ClickAnimationTimer = (timer*)malloc(sizeof(timer));
+    GameState->EditorState.Buttons[7].ClickAnimationTimer->TimerMax = 0.2f;
+    GameState->EditorState.Buttons[7].ClickAnimationTimer->TimerHandle = -1;
+    GameState->EditorState.CreateNewLevelButton = &GameState->EditorState.Buttons[7];
+    
+    GameState->EditorState.Loaded = true;
 }
 
 static void CheckEditorUIInput(game_state* GameState, real64 DeltaTime)
@@ -107,15 +231,7 @@ static void CheckEditorUIInput(game_state* GameState, real64 DeltaTime)
             animation* LoadedAnimation = GameState->EditorState.LoadedAnimation;
             GameState->EditorState.LoadedAnimation->Loop = 1;
             SetEditorFields(GameState);
-            
-            sprintf(GameState->EditorState.AnimationNameField->Text, "%s", LoadedAnimation->Name);
-            sprintf(GameState->EditorState.AnimationFrameCountField->Text, "%d", LoadedAnimation->FrameCount);
-            sprintf(GameState->EditorState.AnimationFrameWidthField->Text, "%f", LoadedAnimation->FrameSize.x);
-            sprintf(GameState->EditorState.AnimationFrameHeightField->Text, "%f", LoadedAnimation->FrameSize.y);
-            sprintf(GameState->EditorState.AnimationFrameOffsetXField->Text, "%f", LoadedAnimation->FrameOffset.x);
-            sprintf(GameState->EditorState.AnimationFrameOffsetYField->Text, "%f", LoadedAnimation->FrameOffset.y);
-            sprintf(GameState->EditorState.AnimationFrameDurationField->Text, "%f", LoadedAnimation->TimePerFrame);
-            sprintf(GameState->EditorState.AnimationLoopField->Text, "%f", GameState->EditorState.ShouldLoop);
+            GetTextfieldValues(GameState);
         }
     }
     

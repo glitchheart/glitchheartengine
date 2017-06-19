@@ -742,97 +742,6 @@ static void InitializeOpenGL(game_state* GameState, render_state* RenderState, c
     GameState->HealthBar.Position = glm::vec2(RenderState->WindowWidth / 2, RenderState->WindowHeight - 50);
     GameState->HealthBar.RenderInfo.Size = glm::vec3(2, 1, 1);
     GameState->HealthBar.RenderInfo.Texture = &RenderState->Textures["health_full"];
-    
-    // @Incomplete: These values need to be updated when the window size is changed
-    GameState->EditorState.ToolbarX = (real32)RenderState->WindowWidth - 100;
-    GameState->EditorState.ToolbarY = 0;
-    GameState->EditorState.ToolbarWidth = 100.0f;
-    GameState->EditorState.ToolbarHeight = (real32)RenderState->WindowHeight;
-    
-    GameState->EditorState.Buttons[0].Text = (char*)malloc(sizeof(char) * 20);
-    GameState->EditorState.Buttons[0].Text = "Create/Edit animation";
-    GameState->EditorState.Buttons[0].ScreenPosition = glm::vec2(5, (real32)RenderState->WindowHeight - 150);
-    GameState->EditorState.Buttons[0].Size = glm::vec2(320, 60);
-    GameState->EditorState.Buttons[0].Color = glm::vec4(1.0f / 255.0f * 154.0f, 1.0f / 255.0f * 51.0f, 1.0f / 255.0f * 52.0f, 1);
-    GameState->EditorState.Buttons[0].TextColor = glm::vec4(1, 1, 1, 1);
-    GameState->EditorState.Buttons[0].Active = true;
-    GameState->EditorState.Buttons[0].EditorType = Button_Animation;
-    GameState->EditorState.Buttons[0].ClickAnimationTimer = (timer*)malloc(sizeof(timer));
-    GameState->EditorState.Buttons[0].ClickAnimationTimer->TimerMax = 0.2f;
-    GameState->EditorState.Buttons[0].ClickAnimationTimer->TimerHandle = -1;
-    
-    GameState->EditorState.Buttons[1].Text = (char*)malloc(sizeof(char) * 20);
-    GameState->EditorState.Buttons[1].Text = "Create/Edit tilesheet";
-    GameState->EditorState.Buttons[1].ScreenPosition = glm::vec2(330, (real32)RenderState->WindowHeight - 150);
-    GameState->EditorState.Buttons[1].Size = glm::vec2(320, 60);
-    GameState->EditorState.Buttons[1].Color = glm::vec4(1.0f / 255.0f * 154.0f, 1.0f / 255.0f * 51.0f, 1.0f / 255.0f * 52.0f, 1);
-    GameState->EditorState.Buttons[1].TextColor = glm::vec4(1, 1, 1, 1);
-    GameState->EditorState.Buttons[1].Active = true;
-    GameState->EditorState.Buttons[1].EditorType = Button_Tilesheet;
-    GameState->EditorState.Buttons[1].ClickAnimationTimer = (timer*)malloc(sizeof(timer));
-    GameState->EditorState.Buttons[1].ClickAnimationTimer->TimerMax = 0.2f;GameState->EditorState.Buttons[1].ClickAnimationTimer->TimerHandle = -1;
-    
-    GameState->EditorState.Buttons[2].Text = (char*)malloc(sizeof(char) * 20);
-    GameState->EditorState.Buttons[2].Text = "Switch mode";
-    GameState->EditorState.Buttons[2].ScreenPosition = glm::vec2(655, (real32)RenderState->WindowHeight - 150);
-    GameState->EditorState.Buttons[2].Size = glm::vec2(320, 60);
-    GameState->EditorState.Buttons[2].Color = glm::vec4(1.0f / 255.0f * 154.0f, 1.0f / 255.0f * 51.0f, 1.0f / 255.0f * 52.0f, 1);
-    GameState->EditorState.Buttons[2].TextColor = glm::vec4(1, 1, 1, 1);
-    GameState->EditorState.Buttons[2].Active = true;
-    GameState->EditorState.Buttons[2].EditorType = Button_SwitchMode;
-    GameState->EditorState.Buttons[2].ClickAnimationTimer = (timer*)malloc(sizeof(timer));
-    GameState->EditorState.Buttons[2].ClickAnimationTimer->TimerMax = 0.2f;
-    GameState->EditorState.Buttons[2].ClickAnimationTimer->TimerHandle = -1;
-    
-    GameState->EditorState.Buttons[3].Text = (char*)malloc(sizeof(char) * 20);
-    GameState->EditorState.Buttons[3].Text = "Save and exit";
-    GameState->EditorState.Buttons[3].ScreenPosition = glm::vec2(980, (real32)RenderState->WindowHeight - 150);
-    GameState->EditorState.Buttons[3].Size = glm::vec2(320, 60);
-    GameState->EditorState.Buttons[3].Color = glm::vec4(1.0f / 255.0f * 154.0f, 1.0f / 255.0f * 51.0f, 1.0f / 255.0f * 52.0f, 1);
-    GameState->EditorState.Buttons[3].TextColor = glm::vec4(1, 1, 1, 1);
-    GameState->EditorState.Buttons[3].Active = true;
-    GameState->EditorState.Buttons[3].EditorType = Button_SaveAndExit;
-    GameState->EditorState.Buttons[3].ClickAnimationTimer = (timer*)malloc(sizeof(timer));
-    GameState->EditorState.Buttons[3].ClickAnimationTimer->TimerMax = 0.2f;
-    GameState->EditorState.Buttons[3].ClickAnimationTimer->TimerHandle = -1;
-    
-    GameState->EditorState.Buttons[4].Text = (char*)malloc(sizeof(char) * 20);
-    GameState->EditorState.Buttons[4].Text = "Exit";
-    GameState->EditorState.Buttons[4].ScreenPosition = glm::vec2(1305, (real32)RenderState->WindowHeight - 150);
-    GameState->EditorState.Buttons[4].Size = glm::vec2(280, 60);
-    GameState->EditorState.Buttons[4].Color = glm::vec4(1.0f / 255.0f * 154.0f, 1.0f / 255.0f * 51.0f, 1.0f / 255.0f * 52.0f, 1);
-    GameState->EditorState.Buttons[4].TextColor = glm::vec4(1, 1, 1, 1);
-    GameState->EditorState.Buttons[4].Active = true;
-    GameState->EditorState.Buttons[4].EditorType = Button_Exit;
-    GameState->EditorState.Buttons[4].ClickAnimationTimer = (timer*)malloc(sizeof(timer));
-    GameState->EditorState.Buttons[4].ClickAnimationTimer->TimerMax = 0.2f;
-    GameState->EditorState.Buttons[4].ClickAnimationTimer->TimerHandle = -1;
-    
-    GameState->EditorState.Buttons[5].Text = (char*)malloc(sizeof(char) * 20);
-    GameState->EditorState.Buttons[5].Text = "Create new";
-    GameState->EditorState.Buttons[5].ScreenPosition = glm::vec2(20, 20);
-    GameState->EditorState.Buttons[5].Size = glm::vec2(320, 60);
-    GameState->EditorState.Buttons[5].Color = glm::vec4(1.0f / 255.0f * 154.0f, 1.0f / 255.0f * 51.0f, 1.0f / 255.0f * 52.0f, 1);
-    GameState->EditorState.Buttons[5].TextColor = glm::vec4(1, 1, 1, 1);
-    GameState->EditorState.Buttons[5].Active = true;
-    GameState->EditorState.Buttons[5].EditorType = Button_Animation;
-    GameState->EditorState.Buttons[5].ClickAnimationTimer = (timer*)malloc(sizeof(timer));
-    GameState->EditorState.Buttons[5].ClickAnimationTimer->TimerMax = 0.2f;
-    GameState->EditorState.Buttons[5].ClickAnimationTimer->TimerHandle = -1;
-    GameState->EditorState.CreateNewAnimationButton = &GameState->EditorState.Buttons[5];
-    
-    GameState->EditorState.Buttons[6].Text = (char*)malloc(sizeof(char) * 20);
-    GameState->EditorState.Buttons[6].Text = "Save animation";
-    GameState->EditorState.Buttons[6].ScreenPosition = glm::vec2(700, 20);
-    GameState->EditorState.Buttons[6].Size = glm::vec2(320, 60);
-    GameState->EditorState.Buttons[6].Color = glm::vec4(1.0f / 255.0f * 154.0f, 1.0f / 255.0f * 51.0f, 1.0f / 255.0f * 52.0f, 1);
-    GameState->EditorState.Buttons[6].TextColor = glm::vec4(1, 1, 1, 1);
-    GameState->EditorState.Buttons[6].Active = true;
-    GameState->EditorState.Buttons[6].EditorType = Button_Animation;
-    GameState->EditorState.Buttons[6].ClickAnimationTimer = (timer*)malloc(sizeof(timer));
-    GameState->EditorState.Buttons[6].ClickAnimationTimer->TimerMax = 0.2f;
-    GameState->EditorState.Buttons[6].ClickAnimationTimer->TimerHandle = -1;
-    GameState->EditorState.SaveAnimationButton = &GameState->EditorState.Buttons[6];
 }
 
 static void ReloadVertexShader(Shader_Type Type, render_state* RenderState)
@@ -901,15 +810,18 @@ static void SetMat4Uniform(GLuint ShaderHandle, const char *UniformName, glm::ma
 }
 
 //TODO(Daniel) there's a weird bug when rendering special characters. The cursor just slowly jumps up for every character pressed
-static void RenderRect(Render_Mode Mode, render_state* RenderState, glm::vec4 Color, real32 X, real32 Y, real32 Width, real32 Height, uint32 TextureHandle = 0)
+static void RenderRect(Render_Mode Mode, render_state* RenderState, glm::vec4 Color, real32 X, real32 Y, real32 Width, real32 Height, uint32 TextureHandle = 0, bool32 IsUI = true, glm::mat4 ProjectionMatrix = glm::mat4(), glm::mat4 ViewMatrix = glm::mat4())
 {
-    X *= RenderState->ScaleX;
-    X -= 1;
-    Y *= RenderState->ScaleY;
-    Y -= 1;
-    
-    Width *= RenderState->ScaleX;
-    Height *= RenderState->ScaleY;
+    if(IsUI)
+    {
+        X *= RenderState->ScaleX;
+        X -= 1;
+        Y *= RenderState->ScaleY;
+        Y -= 1;
+        
+        Width *= RenderState->ScaleX;
+        Height *= RenderState->ScaleY;
+    }
     
     switch(Mode)
     {
@@ -934,6 +846,13 @@ static void RenderRect(Render_Mode Mode, render_state* RenderState, glm::vec4 Co
             Model = glm::translate(Model, glm::vec3(X, Y, 0));
             Model = glm::scale(Model, glm::vec3(Width, Height, 1));
             
+            if(!IsUI)
+            {
+                SetMat4Uniform(Shader.Program, "Projection", ProjectionMatrix);
+                SetMat4Uniform(Shader.Program, "View", ViewMatrix);
+            }
+            
+            SetFloatUniform(Shader.Program, "isUI", (real32)IsUI);
             SetMat4Uniform(Shader.Program, "M", Model);
             SetVec4Uniform(Shader.Program, "color", Color);
             
@@ -951,6 +870,13 @@ static void RenderRect(Render_Mode Mode, render_state* RenderState, glm::vec4 Co
             auto Shader = RenderState->RectShader;
             UseShader(&Shader);
             
+            if(!IsUI)
+            {
+                SetMat4Uniform(Shader.Program, "Projection", ProjectionMatrix);
+                SetMat4Uniform(Shader.Program, "View", ViewMatrix);
+            }
+            
+            SetFloatUniform(Shader.Program, "isUI", (real32)IsUI);
             SetMat4Uniform(Shader.Program, "M", Model);
             SetVec4Uniform(Shader.Program, "color", Color);
             
@@ -1448,8 +1374,8 @@ static void RenderTile(render_state* RenderState, uint32 X, uint32 Y, uint32 Til
 {
     glBindVertexArray(RenderState->SpriteSheetVAO);
     glm::mat4 Model(1.0f);
-    Model = glm::translate(Model, glm::vec3(X, Y, 0.0f));
-    Model = glm::scale(Model, glm::vec3(1, -1, 1));
+    Model = glm::translate(Model, glm::vec3(X, Y - 1, 0.0f));
+    Model = glm::scale(Model, glm::vec3(1, 1, 1));
     
     glBindTexture(GL_TEXTURE_2D, RenderState->Tilesheets[TilesheetIndex].Texture.TextureHandle);
     
@@ -1605,7 +1531,7 @@ void RenderGame(game_state* GameState)
                 case Editor_Normal:
                 {
                     RenderInGameMode(GameState);
-                    RenderRect(Render_Outline, &GameState->RenderState, glm::vec4(1.0f, 0.0f, 0.0f, 1.0f), 0, 0, (real32)GameState->CurrentLevel.Tilemap.Width * 50, (real32)GameState->CurrentLevel.Tilemap.Height * 50);
+                    RenderRect(Render_Outline, &GameState->RenderState, glm::vec4(1.0f, 0.0f, 0.0f, 1.0f), 0, 0, (real32)GameState->CurrentLevel.Tilemap.Width, (real32)GameState->CurrentLevel.Tilemap.Height, 0, false, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
                     
                     
                     if(GameState->EditorState.SelectedEntity)

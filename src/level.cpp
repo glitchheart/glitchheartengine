@@ -197,13 +197,15 @@ static bool32 LoadLevelFromFile(char* FilePath, level* Level, game_state* GameSt
     return false;
 }
 
-static void SaveLevelToFile(const char* FilePath, level* Level, game_state* GameState)
+static void SaveLevelToFile(const char* FilePath, level* Level, game_state* GameState, bool32 New = false)
 {
     FILE* File;
     File = fopen(FilePath, "w");
+    
     if(File)
     {
-        SaveTilesheetMetaFile(Concat(Concat("../assets/textures/tilesheets/", Level->SheetName),".tm"), &GameState->RenderState, *Level, false);
+        SaveTilesheetMetaFile(Concat(Concat("../assets/textures/tilesheets/", Level->SheetName),".tm"), &GameState->RenderState, *Level, New);
+        
         fprintf(File, "%s\n", Level->Name);
         fprintf(File, "%s\n", Level->SheetName);
         
@@ -217,34 +219,61 @@ static void SaveLevelToFile(const char* FilePath, level* Level, game_state* Game
         {
             for(uint32 X = 0; X < Level->Tilemap.Width; X++)
             {
-                fprintf(File, "%d ", Level->Tilemap.Data[X][Level->Tilemap.Height - Y - 1].TypeIndex);
+                if(X == Level->Tilemap.Width - 1)
+                    fprintf(File, "%d", Level->Tilemap.Data[X][Level->Tilemap.Height - Y - 1].TypeIndex);
+                else
+                    fprintf(File, "%d ", Level->Tilemap.Data[X][Level->Tilemap.Height - Y - 1].TypeIndex);
             }
             fprintf(File, "\n");
         }
         
-        for(uint32 Index = 0; Index < GameState->EntityCount; Index++)
+        if(!New)
         {
-            if(Index != GameState->PlayerIndex)
+            for(uint32 Index = 0; Index < GameState->EntityCount; Index++)
             {
-                const entity* Entity = &GameState->Entities[Index];
-                char* TypeName = 0;
-                switch(Entity->Type)
+                if(Index != GameState->PlayerIndex)
                 {
-                    case Entity_Skeleton:
-                    TypeName = "skeleton";
-                    break;
-                    case Entity_Blob:
-                    TypeName = "blob";
-                    break;
-                    case Entity_Barrel:
-                    TypeName = "barrel";
-                    break;
+                    const entity* Entity = &GameState->Entities[Index];
+                    char* TypeName = 0;
+                    switch(Entity->Type)
+                    {
+                        case Entity_Skeleton:
+                        TypeName = "skeleton";
+                        break;
+                        case Entity_Blob:
+                        TypeName = "blob";
+                        break;
+                        case Entity_Barrel:
+                        TypeName = "barrel";
+                        break;
+                    }
+                    
+                    if(TypeName)
+                        fprintf(File, "%s %f %f\n", TypeName, Entity->Position.x, Entity->Position.y);
                 }
-                
-                if(TypeName)
-                    fprintf(File, "%s %f %f\n", TypeName, Entity->Position.x, Entity->Position.y);
             }
         }
+        
         fclose(File);
     }
+}
+
+
+static void CreateNewLevelWithSize(char* FilePath, uint32 Width, uint32 Height, level* NewLevel, game_state* GameState)
+{
+    NewLevel->Tilemap.Width = Width;
+    NewLevel->Tilemap.Height = Height;
+    
+    NewLevel->TilesheetIndex = 0;
+    NewLevel->Tilemap.Data = (tile_data**)calloc(Width, sizeof(tile_data*));
+    
+    for(uint32 I = 0; I < Width; I++)
+    {
+        NewLevel->Tilemap.Data[I] = (tile_data *)calloc(Height, sizeof(tile_data));
+        NewLevel->Tilemap.Data[I]->TypeIndex = 0;
+    }
+    
+    SaveLevelToFile(FilePath, NewLevel, GameState, true);
+    LoadTilesheetMetaFile(Concat(Concat("../assets/textures/tilesheets/", NewLevel->SheetName), ".tm"), NewLevel, &NewLevel->Tilemap, GameState);
+    LoadLevelFromFile(FilePath, NewLevel, GameState);
 }

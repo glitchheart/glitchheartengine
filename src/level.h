@@ -17,17 +17,6 @@ struct tile_data
     Tile_Layer Layer;
 };
 
-struct room
-{
-    real32 X;
-    real32 Y;
-    uint32 Width;
-    uint32 Height;
-    render_entity RenderEntity;
-    tile_data** Data;
-};
-
-
 struct tilemap
 {
     uint32 Width;

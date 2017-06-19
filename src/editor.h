@@ -24,6 +24,7 @@ enum Editor_Button
     Button_Tilesheet,
     Button_Animation,
     Button_SwitchMode,
+    Button_CreateLevel
 };
 
 struct button
@@ -52,6 +53,25 @@ enum Textfield_Type
     Textfield_Decimal
 };
 
+enum Editor_Field_Type
+{
+    Editor_Animation_Name,
+    Editor_Animation_FrameWidth,
+    Editor_Animation_FrameHeight,
+    Editor_Animation_FrameCount,
+    Editor_Animation_FrameOffsetX,
+    Editor_Animation_FrameOffsetY,
+    Editor_Animation_FrameDuration,
+    Editor_Animation_FrameLoopField
+};
+
+struct checkbox
+{
+    bool32 Active = false;
+    bool32 Checked = false;
+    char* Name;
+};
+
 struct textfield
 {
     bool32 Active = false;
@@ -78,6 +98,7 @@ enum Editor_Placement_Mode
 
 struct editor_state
 {
+    bool32 Loaded = false;
     Editor_Mode Mode = Editor_Normal;
     Editor_Placement_Mode PlacementMode = Editor_Placement_Tile;
     
@@ -101,6 +122,7 @@ struct editor_state
     real32 ToolbarWidth;
     real32 ToolbarHeight;
     
+    checkbox Checkboxes[10];
     button Buttons[10];
     textfield Textfields[20];
     int32 FocusedTextfield = -1;
@@ -114,6 +136,7 @@ struct editor_state
     textfield* AnimationFrameDurationField;
     textfield* AnimationLoopField;
     
+    button* CreateNewLevelButton;
     button* CreateNewAnimationButton;
     button* SaveAnimationButton;
     

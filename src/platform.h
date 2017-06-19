@@ -62,6 +62,7 @@ struct config_data
 {
     char* Title;
     char* Version;
+    char* StartingLevelFilePath;
     uint32 ScreenWidth;
     uint32 ScreenHeight;
     bool32 Fullscreen;
@@ -108,6 +109,12 @@ void LoadConfig(const char* FilePath, config_data* ConfigData)
         if(fgets(LineBuffer, 255, File))
         {
             sscanf(LineBuffer, "muted %d", &ConfigData->Muted);
+        }
+        
+        if(fgets(LineBuffer, 255, File))
+        {
+            ConfigData->StartingLevelFilePath = (char*)malloc(20 * sizeof(char));
+            sscanf(LineBuffer, "starting_level_path %s", ConfigData->StartingLevelFilePath);
         }
         fclose(File);
     }
