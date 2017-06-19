@@ -1,0 +1,24 @@
+name skeleton_dead
+type sprite
+framecount 15
+framesize 35 34
+center 0.54 0.000000
+loop 0
+timeperframe 0.100000
+frames
+0 0
+35 0
+70 0
+105 0
+140 0
+175 0
+210 0
+245 0
+280 0
+315 0
+350 0
+385 0
+420 0
+455 0
+490 0
+texture skeleton_dead

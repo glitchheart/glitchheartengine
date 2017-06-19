@@ -1126,6 +1126,9 @@ static void RenderColliderWireframe(render_state* RenderState, entity* Entity, g
             color = glm::vec4(0.0,1.0,0.0,1.0);
         }
         
+        if(Entity->CollisionAABB.IsTrigger)
+            color = glm::vec4(0, 0, 1, 1);
+        
         SetVec4Uniform(Shader.Program, "color", color);
         
         glDrawArrays(GL_LINE_STRIP, 0, 6);
