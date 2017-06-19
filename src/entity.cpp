@@ -70,6 +70,7 @@ static void InitPlayer(game_state* GameState, glm::vec2 Position)
     HitTrigger->Center = glm::vec2(Player->Position.x + Player->Center.x * Player->Scale.x + HitTrigger->Offset.x,
                                    Player->Position.y + Player->Center.y * Player->Scale.y + HitTrigger->Offset.y);
     HitTrigger->Extents = glm::vec2(0.5f, 1.0f);
+    HitTrigger->Offset = glm::vec2(0, 0);
     HitTrigger->IsTrigger;
     Player->HitTrigger = HitTrigger;
     
@@ -87,14 +88,14 @@ static void InitPlayer(game_state* GameState, glm::vec2 Position)
     Player->Velocity = glm::vec2(0,0);
     PlayAnimation(Player, "player_idle_down", GameState);
     collision_AABB CollisionAABB;
-    Player->Center = glm::vec2(0, 0.5f);
+    Player->Center = glm::vec2(0.5f, 0.5f);
     
     Player->Layer = Layer_Player;
     
     CollisionAABB.Center = glm::vec2(Player->Position.x + Player->Center.x * Player->Scale.x,
                                      Player->Position.y + Player->Center.y * Player->Scale.y);
     CollisionAABB.Extents = glm::vec2(0.3f, 0.15f);
-    CollisionAABB.Offset = glm::vec2(0, -1.4f);
+    CollisionAABB.Offset = glm::vec2(0, -1.5f);
     CollisionAABB.IsTrigger = false;
     Player->CollisionAABB = CollisionAABB;
     
@@ -131,7 +132,6 @@ static void InitPlayer(game_state* GameState, glm::vec2 Position)
 
 static void SpawnSkeleton(game_state* GameState, glm::vec2 Position)
 {
-    // Enemy
     entity* Skeleton = &GameState->Entities[GameState->EntityCount];
     Skeleton->Name = "skeleton";
     Skeleton->Type = Entity_Skeleton;
@@ -161,7 +161,7 @@ static void SpawnSkeleton(game_state* GameState, glm::vec2 Position)
     Skeleton->Center = glm::vec2(0, 0.5f);
     CollisionAABB.Center = glm::vec2(Skeleton->Position.x + Skeleton->Center.x * Skeleton->Scale.x,
                                      Skeleton->Position.y + Skeleton->Center.y * Skeleton->Scale.y);
-    CollisionAABB.Offset = glm::vec2(0, 0);
+    CollisionAABB.Offset = glm::vec2(0.5f, -1.2f);
     CollisionAABB.Extents = glm::vec2(0.3f, 0.15f);
     CollisionAABB.IsTrigger = false;
     Skeleton->CollisionAABB = CollisionAABB;
@@ -169,12 +169,14 @@ static void SpawnSkeleton(game_state* GameState, glm::vec2 Position)
     collision_AABB* HitTrigger = (collision_AABB*)malloc(sizeof(collision_AABB));
     HitTrigger->Center = glm::vec2(Skeleton->Position.x + Skeleton->Center.x * Skeleton->Scale.x,
                                    Skeleton->Position.y + Skeleton->Center.y * Skeleton->Scale.y);
-    HitTrigger->Extents = glm::vec2(0.5f, 0.7f);
+    HitTrigger->Extents = glm::vec2(0.5f, 0.8f);
     HitTrigger->IsTrigger;
+    HitTrigger->Offset = glm::vec2(0.5f, -0.4f);
     Skeleton->HitTrigger = HitTrigger;
     
     Skeleton->Skeleton.WalkingSpeed = 5;
     Skeleton->Skeleton.MaxAlertDistance = 5;
+    Skeleton->Skeleton.MaxFollowDistance = 10;
     Skeleton->Skeleton.MinDistance = 2;
     Skeleton->Skeleton.AIState = AI_Idle;
     
@@ -350,20 +352,9 @@ static bool32 TimerDone(game_state* GameState, timer* Timer)
 //@Incomplete: Maybe we will add a weapon type or damage amount
 void Hit(game_state* GameState, entity* Entity)
 {
-    Entity->Health -= 1;
     StartTimer(GameState, Entity->HitCooldownTimer);
+    PlaySoundEffect(GameState, &GameState->SoundManager.SwordHit01);
     
-    printf("%s health %d\n", Entity->Name, Entity->Health); 
-    
-    if(Entity->Type == Entity_Skeleton)
-    {
-        Entity->Skeleton.AIState = AI_Hit;
-        PlayAnimation(Entity, "skeleton_idle", GameState);
-    }
-    
-    if(Entity->Health <= 0)
-    {
-        GameState->RenderState.RenderEntities[Entity->RenderEntityHandle].Rendered = false;
-        Entity->Active = false;
-    }
+    Entity->Health -= 1;
+    Entity->Hit = true;
 }

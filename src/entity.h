@@ -64,6 +64,7 @@ struct entity
     bool32 IsStatic; // For stuff that can't be moved by collision
     bool32 Pickup;
     collision_AABB* HitTrigger;
+    bool32 Hit = false;
     
     int32 Health = -1;
     timer* HitCooldownTimer;

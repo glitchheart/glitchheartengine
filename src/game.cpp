@@ -274,15 +274,33 @@ void UpdateWeapon(entity* Entity, game_state* GameState, real64 DeltaTime)
             IsAttacking = UsingEntity->Skeleton.IsAttacking;
             Entity->Position = glm::vec2(Pos.x, Pos.y);
             
-            if(UsingEntity->IsFlipped)
+            switch(UsingEntity->LookDirection)
             {
-                //Entity->CollisionAABB.Offset = glm::vec2(0.7, 0);
+                case Up:
+                {
+                    Entity->CollisionAABB.Offset = glm::vec2(-0.5f, 1.5f);
+                    Entity->CollisionAABB.Extents = glm::vec2(1.0f, 0.5f);
+                }
+                break;
+                case Down:
+                {
+                    Entity->CollisionAABB.Offset = glm::vec2(-0.5f, -1.0f);
+                    Entity->CollisionAABB.Extents = glm::vec2(1.0f, 0.5f);
+                }
+                break;
+                case Left:
+                {
+                    Entity->CollisionAABB.Offset = glm::vec2(-1.5f, 0.2f);
+                    Entity->CollisionAABB.Extents = glm::vec2(0.5f, 1.0f);
+                }
+                break;
+                case Right:
+                {
+                    Entity->CollisionAABB.Offset = glm::vec2(0.5f, 0.2f);
+                    Entity->CollisionAABB.Extents = glm::vec2(0.5f, 1.0f);
+                }
+                break;
             }
-            else
-            {
-                //Entity->CollisionAABB.Offset = glm::vec2(0.7, 0);
-            }
-            
         }
         break;
     }
@@ -296,10 +314,9 @@ void UpdateWeapon(entity* Entity, game_state* GameState, real64 DeltaTime)
     {
         for(int32 Index = 0; Index < CollisionInfo.OtherCount; Index++)
         {
-            if((UsingEntity->Type == Entity_Player && CollisionInfo.Other[Index]->Type == Entity_Skeleton && CollisionInfo.Other[Index]->Skeleton.AIState != AI_Hit) ||
-               (UsingEntity->Type == Entity_Skeleton && CollisionInfo.Other[Index]->Type == Entity_Player && !CollisionInfo.Other[Index]->Player.IsDashing && TimerDone(GameState, CollisionInfo.Other[Index]->HitCooldownTimer)))
+            if((UsingEntity->Type == Entity_Player && CollisionInfo.Other[Index]->Type == Entity_Skeleton && CollisionInfo.Other[Index]->Skeleton.AIState != AI_Hit && CollisionInfo.Other[Index]->Skeleton.AIState != AI_Dying && !CollisionInfo.Other[Index]->Hit) ||
+               (UsingEntity->Type == Entity_Skeleton && CollisionInfo.Other[Index]->Type == Entity_Player && !CollisionInfo.Other[Index]->Player.IsDashing && !CollisionInfo.Other[Index]->Hit && TimerDone(GameState, CollisionInfo.Other[Index]->HitCooldownTimer)))
             {
-                PlaySoundEffect(GameState, &GameState->SoundManager.SwordHit01);
                 Hit(GameState, CollisionInfo.Other[Index]);
             }
         }
@@ -380,114 +397,163 @@ void UpdateBlob(entity* Entity, game_state* GameState, real64 DeltaTime)
 
 void UpdateSkeleton(entity* Entity, game_state* GameState, real64 DeltaTime)
 {
-    Entity->Velocity = glm::vec2(0,0);
-    entity Player = GameState->Entities[GameState->PlayerIndex];
-    real64 DistanceToPlayer = glm::distance(Entity->Position, Player.Position);
-    
-    switch(Entity->Skeleton.AIState)
+    if(Entity->Active)
     {
-        case AI_Idle:
+        if(Entity->Hit && Entity->Skeleton.AIState != AI_Dying)
         {
-            PlayAnimation(Entity, "skeleton_idle", GameState);
-            if(DistanceToPlayer <= Entity->Skeleton.MaxAlertDistance)
-            {
-                Entity->Skeleton.AIState = AI_Following;
-                PlayAnimation(Entity, "skeleton_walk", GameState);
-            }
+            Entity->Skeleton.AIState = AI_Hit;
         }
-        break;
-        case AI_Alerted:
-        {}
-        break;
-        case AI_Following:
+        
+        Entity->Velocity = glm::vec2(0,0);
+        entity& Player = GameState->Entities[GameState->PlayerIndex];
+        real64 DistanceToPlayer = glm::distance(Entity->Position, Player.Position);
+        
+        switch(Entity->Skeleton.AIState)
         {
-            if(DistanceToPlayer > Entity->Skeleton.MaxFollowDistance)
+            case AI_Idle:
             {
                 PlayAnimation(Entity, "skeleton_idle", GameState);
-                Entity->Skeleton.AIState = AI_Idle;
-            }
-            else if(DistanceToPlayer < Entity->Skeleton.MinDistance)
-            {
-                PlayAnimation(Entity, "skeleton_idle", GameState);
-                StartTimer(GameState, Entity->Skeleton.ChargingTimer);
-                Entity->Skeleton.AIState = AI_Charging;
-                render_entity* RenderEntity = &GameState->RenderState.RenderEntities[Entity->RenderEntityHandle];
-            }
-            else
-            {
-                FindPath(GameState, Entity, Player, GetAStarPath(Entity));
-                FollowPath(GameState, Entity, Player, DeltaTime, GetAStarPath(Entity));
-            }
-        }
-        break;
-        case AI_Charging:
-        {
-            if(TimerDone(GameState, Entity->Skeleton.ChargingTimer))
-            {
-                Entity->Skeleton.AIState = AI_Attacking;
-            }
-        }
-        break;
-        case AI_Attacking:
-        {
-            if(!Entity->Skeleton.IsAttacking)
-            {
-                Entity->Skeleton.IsAttacking = true;
-                PlayAnimation(Entity, "skeleton_attack", GameState);
-                
-                StartTimer(GameState, Entity->Skeleton.AttackCooldownTimer);
-            }
-            else if(!Entity->AnimationInfo.Playing)
-            {
-                PlayAnimation(Entity, "skeleton_idle", GameState);
-            }
-            
-            if(TimerDone(GameState, Entity->Skeleton.AttackCooldownTimer))
-            {
-                if(DistanceToPlayer > Entity->Skeleton.MinDistance)
+                if(DistanceToPlayer <= Entity->Skeleton.MaxAlertDistance)
                 {
-                    Entity->Skeleton.IsAttacking = false;
                     Entity->Skeleton.AIState = AI_Following;
+                    PlayAnimation(Entity, "skeleton_walk", GameState);
                 }
-                else if(DistanceToPlayer > Entity->Skeleton.MaxAlertDistance)
+            }
+            break;
+            case AI_Alerted:
+            {}
+            break;
+            case AI_Following:
+            {
+                if(DistanceToPlayer > Entity->Skeleton.MaxFollowDistance)
                 {
-                    Entity->Skeleton.IsAttacking = false;
+                    PlayAnimation(Entity, "skeleton_idle", GameState);
                     Entity->Skeleton.AIState = AI_Idle;
+                }
+                else if(DistanceToPlayer < Entity->Skeleton.MinDistance)
+                {
+                    PlayAnimation(Entity, "skeleton_idle", GameState);
+                    StartTimer(GameState, Entity->Skeleton.ChargingTimer);
+                    Entity->Skeleton.AIState = AI_Charging;
+                    render_entity* RenderEntity = &GameState->RenderState.RenderEntities[Entity->RenderEntityHandle];
                 }
                 else
                 {
-                    Entity->Skeleton.IsAttacking = false;
-                    Entity->Skeleton.AIState = AI_Charging;
-                    StartTimer(GameState, Entity->Skeleton.ChargingTimer);
+                    FindPath(GameState, Entity, Player, GetAStarPath(Entity));
+                    FollowPath(GameState, Entity, Player, DeltaTime, GetAStarPath(Entity));
                 }
             }
-        }
-        break;
-        case AI_Hit:
-        {
-            PlayAnimation(Entity, "skeleton_hit", GameState);
-            
-            if(TimerDone(GameState, Entity->HitCooldownTimer))
+            break;
+            case AI_Charging:
             {
-                Entity->Skeleton.AIState = AI_Idle;
-                PlayAnimation(Entity, "skeleton_idle", GameState);
+                if(TimerDone(GameState, Entity->Skeleton.ChargingTimer))
+                {
+                    Entity->Skeleton.AIState = AI_Attacking;
+                }
+            }
+            break;
+            case AI_Attacking:
+            {
+                if(!Entity->Skeleton.IsAttacking)
+                {
+                    Entity->Skeleton.IsAttacking = true;
+                    PlayAnimation(Entity, "skeleton_attack", GameState);
+                    
+                    StartTimer(GameState, Entity->Skeleton.AttackCooldownTimer);
+                }
+                else if(!Entity->AnimationInfo.Playing)
+                {
+                    PlayAnimation(Entity, "skeleton_idle", GameState);
+                }
+                
+                if(TimerDone(GameState, Entity->Skeleton.AttackCooldownTimer))
+                {
+                    if(DistanceToPlayer > Entity->Skeleton.MinDistance)
+                    {
+                        Entity->Skeleton.IsAttacking = false;
+                        Entity->Skeleton.AIState = AI_Following;
+                    }
+                    else if(DistanceToPlayer > Entity->Skeleton.MaxAlertDistance)
+                    {
+                        Entity->Skeleton.IsAttacking = false;
+                        Entity->Skeleton.AIState = AI_Idle;
+                    }
+                    else
+                    {
+                        Entity->Skeleton.IsAttacking = false;
+                        Entity->Skeleton.AIState = AI_Charging;
+                        StartTimer(GameState, Entity->Skeleton.ChargingTimer);
+                    }
+                }
+            }
+            break;
+            case AI_Hit:
+            {
+                if(Entity->Health == 0)
+                {
+                    PlayAnimation(Entity, "skeleton_dead", GameState);
+                    Entity->Skeleton.AIState = AI_Dying;
+                }
+                else
+                {
+                    PlayAnimation(Entity, "skeleton_hit", GameState);
+                    
+                    if(TimerDone(GameState, Entity->HitCooldownTimer))
+                    {
+                        Entity->Skeleton.AIState = AI_Idle;
+                        PlayAnimation(Entity, "skeleton_idle", GameState);
+                    }
+                }
+            }
+            break;
+            case AI_Dying:
+            {
+                if(!Entity->AnimationInfo.Playing)
+                {
+                    Entity->Active = false;
+                }
+            }
+            break;
+        }
+        
+        Entity->Position.x += Entity->Velocity.x * (real32)DeltaTime;
+        Entity->Position.y += Entity->Velocity.y * (real32)DeltaTime;
+        
+        glm::vec2 Direction = glm::normalize(Player.Position - Entity->Position);
+        
+        if(Abs(Direction.x) < 0.4f)
+        {
+            if(Direction.y > 0)
+            {
+                Entity->LookDirection = Up;
+            }
+            else
+            {
+                Entity->LookDirection = Down;
             }
         }
-        break;
+        else
+        {
+            if(Direction.x < 0)
+                Entity->LookDirection = Left;
+            else
+                Entity->LookDirection = Right;
+        }
+        
+        Entity->IsFlipped = Entity->Velocity.x < 0;
+        
+        // @Cleanup: move this somewhere else, maybe out of switch
+        render_entity* RenderEntity = &GameState->RenderState.RenderEntities[Entity->RenderEntityHandle];
+        
+        RenderEntity->Color = glm::vec4(1, 1, 1, 1);
+        
+        Entity->Velocity = glm::vec2(0,0);
+        
+        Entity->Hit = false;
+        
+        collision_info CollisionInfo;
+        CheckCollision(GameState, Entity, &CollisionInfo);
     }
-    
-    Entity->Position.x += Entity->Velocity.x * (real32)DeltaTime;
-    Entity->Position.y += Entity->Velocity.y * (real32)DeltaTime;
-    ;
-    //@Cleanup move this somewhere else, maybe out of switch
-    render_entity* RenderEntity = &GameState->RenderState.RenderEntities[Entity->RenderEntityHandle];
-    
-    RenderEntity->Color = glm::vec4(1, 1, 1, 1);
-    
-    Entity->Velocity = glm::vec2(0,0);
-    
-    collision_info CollisionInfo;
-    CheckCollision(GameState, Entity, &CollisionInfo);
 }
 
 void UpdateBarrel(entity* Entity, game_state* GameState, real64 DeltaTime)
@@ -947,7 +1013,7 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
                 
                 if(LoadedAnimation->Frames)
                 {
-                    free(LoadedAnimation->Frames);
+                    //free(LoadedAnimation->Frames);
                 }
                 
                 if(LoadedAnimation->FrameCount > 0)
