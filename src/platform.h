@@ -104,6 +104,7 @@ void LoadConfig(const char* FilePath, config_data* ConfigData)
         if(fgets(LineBuffer, 255, File))
         {
             sscanf(LineBuffer, "fullscreen %d", &ConfigData->Fullscreen);
+            ConfigData->Fullscreen = false;
         }
         
         if(fgets(LineBuffer, 255, File))
