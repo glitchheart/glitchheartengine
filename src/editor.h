@@ -72,6 +72,7 @@ struct checkbox
     char* Label;
     glm::vec2 ScreenPosition;
     glm::vec4 Color;
+    bool32 JustChecked = false;
 };
 
 struct textfield
@@ -137,7 +138,7 @@ struct editor_state
     textfield* AnimationFrameOffsetYField;
     textfield* AnimationFrameDurationField;
     checkbox* AnimationLoopCheckbox;
-    checkbox* TileIsSolidCheckBox;
+    checkbox* TileIsSolidCheckbox;
     
     button* CreateNewLevelButton;
     button* CreateNewAnimationButton;

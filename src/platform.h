@@ -114,7 +114,7 @@ void LoadConfig(const char* FilePath, config_data* ConfigData)
         
         if(fgets(LineBuffer, 255, File))
         {
-            ConfigData->StartingLevelFilePath = (char*)malloc(20 * sizeof(char));
+            ConfigData->StartingLevelFilePath = (char*)malloc(40 * sizeof(char));
             sscanf(LineBuffer, "starting_level_path %s", ConfigData->StartingLevelFilePath);
         }
         fclose(File);

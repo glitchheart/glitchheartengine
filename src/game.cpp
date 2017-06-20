@@ -709,7 +709,7 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
                         GameState->EditorState.AnimationsLength = (int32)GameState->Animations.size();
                         
                         GameState->EditorState.CreateNewAnimationButton->Active = true;
-                        GameState->EditorState.TileIsSolidCheckBox->Active = false;
+                        GameState->EditorState.TileIsSolidCheckbox->Active = false;
                         GameState->EditorState.Mode = Editor_Animation;
                         
                         std::map<char*, texture>::iterator TextureIterator;
@@ -754,17 +754,27 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
     for(uint32 Index = 0; Index < 10; Index++)
     {
         checkbox* Checkbox = &GameState->EditorState.Checkboxes[Index];
+        Checkbox->JustChecked = false;
         
         if(GetMouseButtonDown(Mouse_Left, GameState))
         {
             if(Checkbox->Active && GameState->InputController.MouseX >= Checkbox->ScreenPosition.x && GameState->InputController.MouseX <= Checkbox->ScreenPosition.x + 25 && GameState->RenderState.WindowHeight - GameState->InputController.MouseY >= Checkbox->ScreenPosition.y && GameState->RenderState.WindowHeight - GameState->InputController.MouseY <= Checkbox->ScreenPosition.y + 25)
             {
                 Checkbox->Checked = !Checkbox->Checked;
+                Checkbox->JustChecked = true;
             }
         }
     }
     
-    uint32 FocusedField = GameState->EditorState.FocusedTextfield;
+    if(GameState->EditorState.TileIsSolidCheckbox->JustChecked)
+    {
+        uint32 SelectedTile = GameState->EditorState.SelectedTileType;
+        GameState->CurrentLevel.Tilemap.Tiles[SelectedTile].IsSolid = GameState->EditorState.TileIsSolidCheckbox->Checked;
+        UpdateTileData(SelectedTile, GameState->CurrentLevel.Tilemap.Tiles[SelectedTile].IsSolid, &GameState->CurrentLevel.Tilemap);
+        // @Incomplete: Should call SaveTilesheetMetafile!!!!
+    }
+    
+    int32 FocusedField = GameState->EditorState.FocusedTextfield;
     
     for(int32 Index = 0; Index < 20; Index++)
     {
@@ -850,7 +860,6 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
     {
         case Editor_Normal:
         {
-            
             if(GameState->EditorState.CreateNewLevelButton->Clicked)
             {
                 level Level;
@@ -917,6 +926,7 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
                     break;
                     case Editor_Placement_Tile:
                     {
+                        GameState->EditorState.TileIsSolidCheckbox->Active = true;
                         int32 X = (int32)glm::floor(Pos.x);
                         int32 Y = (int32)glm::floor(Pos.y);
                         GameState->EditorState.TileX = (real32)X;
