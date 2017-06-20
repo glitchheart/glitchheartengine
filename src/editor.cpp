@@ -11,7 +11,6 @@ static void InitEditorFields(game_state* GameState)
     GameState->EditorState.AnimationFrameOffsetYField = &GameState->EditorState.Textfields[5];
     GameState->EditorState.AnimationFrameDurationField = &GameState->EditorState.Textfields[6];
     GameState->EditorState.AnimationLoopCheckbox = &GameState->EditorState.Checkboxes[0];
-    GameState->EditorState.TileIsSolidCheckBox = &GameState->EditorState.Checkboxes[1];
     
     GameState->EditorState.AnimationNameField->Active = true;
     GameState->EditorState.AnimationNameField->Size = glm::vec2(300, 30);
@@ -58,12 +57,6 @@ static void InitEditorFields(game_state* GameState)
     GameState->EditorState.AnimationLoopCheckbox->Checked = false;
     GameState->EditorState.AnimationLoopCheckbox->ScreenPosition = glm::vec2(GameState->RenderState.WindowWidth - 305, 440);
     GameState->EditorState.AnimationLoopCheckbox->Label = "Loop";
-    
-    // Tile editor
-    GameState->EditorState.AnimationLoopCheckbox->Active = false;
-    GameState->EditorState.AnimationLoopCheckbox->Checked = false;
-    GameState->EditorState.AnimationLoopCheckbox->ScreenPosition = glm::vec2(GameState->RenderState.WindowWidth - 305, 860);
-    GameState->EditorState.AnimationLoopCheckbox->Label = "Loop";
 }
 
 static void SetFieldValues(game_state* GameState)
@@ -87,7 +80,7 @@ static void SetFieldValues(game_state* GameState)
         break;
         case Editor_Tilesheet:
         {
-            GameState->EditorState.TileIsSolidCheckBox->Checked = GameState->CurrentLevel.Tilemap.Tiles[GameState->EditorState.SelectedTileType].IsSolid;
+            GameState->EditorState.TileIsSolidCheckbox->Checked = GameState->CurrentLevel.Tilemap.Tiles[GameState->EditorState.SelectedTileType].IsSolid;
         }
         break;
     }
@@ -199,6 +192,13 @@ static void CreateEditorButtons(game_state* GameState)
     GameState->EditorState.Buttons[7].ClickAnimationTimer->TimerMax = 0.2f;
     GameState->EditorState.Buttons[7].ClickAnimationTimer->TimerHandle = -1;
     GameState->EditorState.CreateNewLevelButton = &GameState->EditorState.Buttons[7];
+    
+    // Tile editor
+    GameState->EditorState.TileIsSolidCheckbox = &GameState->EditorState.Checkboxes[1];
+    GameState->EditorState.TileIsSolidCheckbox->Active = false;
+    GameState->EditorState.TileIsSolidCheckbox->Checked = false;
+    GameState->EditorState.TileIsSolidCheckbox->ScreenPosition = glm::vec2(GameState->RenderState.WindowWidth - 200, 200);
+    GameState->EditorState.TileIsSolidCheckbox->Label = "Is solid";
     
     GameState->EditorState.Loaded = true;
 }

@@ -1,3 +1,15 @@
+static void UpdateTileData(int32 SelectedTypeIndex, bool32 IsSolid, tilemap* Tilemap)
+{
+    for(uint32 X = 0; X < Tilemap->Width; X++)
+    {
+        for(uint32 Y = 0; Y < Tilemap->Height; Y++)
+        {
+            if(Tilemap->Data[X][Y].TypeIndex == SelectedTypeIndex)
+                Tilemap->Data[X][Y].IsSolid = IsSolid;
+        }
+    }
+}
+
 static void SaveTilesheetMetaFile(const char* FilePath, render_state* RenderState, level& Level, bool32 New = false)
 {
     FILE* File;

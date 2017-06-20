@@ -836,6 +836,8 @@ static void RenderRect(Render_Mode Mode, render_state* RenderState, glm::vec4 Co
             }
             else
             {
+                glBindTexture(GL_TEXTURE_2D, 0);
+                RenderState->BoundTexture = 0;
                 glBindVertexArray(RenderState->RectVAO);
             }
             
@@ -881,10 +883,10 @@ static void RenderRect(Render_Mode Mode, render_state* RenderState, glm::vec4 Co
             SetVec4Uniform(Shader.Program, "color", Color);
             
             glDrawArrays(GL_LINE_STRIP, 0, 8);
-            glBindVertexArray(0);
         }
         break;
     }
+    glBindVertexArray(0);
 }
 
 static void MeasureText(const render_font* Font, const char* Text, float* Width, float* Height)
@@ -913,7 +915,6 @@ static void MeasureText(const render_font* Font, const char* Text, float* Width,
 //rendering methods
 static void RenderText(render_state* RenderState, const render_font& Font, const glm::vec4& Color, const char* Text, real32 X, real32 Y, real32 Scale, Alignment Alignment = Alignment_Left) 
 {
-    
     glBindVertexArray(Font.VAO);
     auto Shader = RenderState->Shaders[Shader_StandardFont];
     UseShader(&Shader);
@@ -1416,14 +1417,13 @@ void RenderTextfield(render_state* RenderState, const textfield& Textfield)
 
 void RenderCheckbox(render_state* RenderState, const checkbox& Checkbox)
 {
-    RenderRect(Render_Fill, RenderState,glm::vec4(1,1,1,1),Checkbox.ScreenPosition.x,Checkbox.ScreenPosition.y,25,25);
+    RenderRect(Render_Fill, RenderState, glm::vec4(1, 1, 1, 1),Checkbox.ScreenPosition.x, Checkbox.ScreenPosition.y, 25, 25);
     
     RenderText(RenderState, RenderState->RobotoFont, glm::vec4(1, 1, 1, 1), Checkbox.Label, Checkbox.ScreenPosition.x, Checkbox.ScreenPosition.y + 35, 1);
     
     if(Checkbox.Checked)
     {
-        RenderRect(Render_Fill, RenderState,glm::vec4(0,0,0,1),Checkbox.ScreenPosition.x + 5,Checkbox.ScreenPosition.y + 5,15,15);
-        
+        RenderRect(Render_Fill, RenderState, glm::vec4(1, 0, 0, 1),Checkbox.ScreenPosition.x + 5, Checkbox.ScreenPosition.y + 5, 15, 15);
     }
 }
 
@@ -1592,18 +1592,6 @@ void RenderGame(game_state* GameState)
                 {
                     RenderText(&GameState->RenderState, GameState->RenderState.MenuFont, glm::vec4(0.6f, 0.6f, 0.6f, 1), "Animation editing", (real32)GameState->RenderState.WindowWidth / 2, (real32)GameState->RenderState.WindowHeight - 70, 1, Alignment_Center);
                     
-                    for(uint32 Index = 0; Index < 20; Index++)
-                    {
-                        if(GameState->EditorState.Textfields[Index].Active)
-                            RenderTextfield(&GameState->RenderState, GameState->EditorState.Textfields[Index]);
-                    }
-                    
-                    for(uint32 Index = 0; Index < 10; Index++)
-                    {
-                        if(GameState->EditorState.Checkboxes[Index].Active)
-                            RenderCheckbox(&GameState->RenderState, GameState->EditorState.Checkboxes[Index]);
-                    }
-                    
                     if(!GameState->EditorState.LoadedAnimation)
                     {
                         std::map<char*, animation>::iterator Iterator;
@@ -1688,7 +1676,6 @@ void RenderGame(game_state* GameState)
                     }
                     
                     RenderButton(&GameState->RenderState, *GameState->EditorState.CreateNewAnimationButton);
-                    
                 }
                 break;
             }
@@ -1700,6 +1687,18 @@ void RenderGame(game_state* GameState)
             {
                 if(GameState->EditorState.Buttons[ButtonIndex].Active)
                     RenderButton(&GameState->RenderState, GameState->EditorState.Buttons[ButtonIndex]);
+            }
+            
+            for(uint32 Index = 0; Index < 20; Index++)
+            {
+                if(GameState->EditorState.Textfields[Index].Active)
+                    RenderTextfield(&GameState->RenderState, GameState->EditorState.Textfields[Index]);
+            }
+            
+            for(uint32 Index = 0; Index < 10; Index++)
+            {
+                if(GameState->EditorState.Checkboxes[Index].Active)
+                    RenderCheckbox(&GameState->RenderState, GameState->EditorState.Checkboxes[Index]);
             }
         }
         break;
