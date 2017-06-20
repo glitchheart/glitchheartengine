@@ -1,4 +1,4 @@
-static void SetEditorFields(game_state* GameState)
+static void InitEditorFields(game_state* GameState)
 {
     GameState->EditorState.AnimationInfo.Playing = true;
     GameState->EditorState.AnimationInfo.FrameIndex = 0;
@@ -10,7 +10,8 @@ static void SetEditorFields(game_state* GameState)
     GameState->EditorState.AnimationFrameOffsetXField = &GameState->EditorState.Textfields[4];
     GameState->EditorState.AnimationFrameOffsetYField = &GameState->EditorState.Textfields[5];
     GameState->EditorState.AnimationFrameDurationField = &GameState->EditorState.Textfields[6];
-    GameState->EditorState.AnimationLoopField = &GameState->EditorState.Textfields[7];
+    GameState->EditorState.AnimationLoopCheckbox = &GameState->EditorState.Checkboxes[0];
+    GameState->EditorState.TileIsSolidCheckBox = &GameState->EditorState.Checkboxes[1];
     
     GameState->EditorState.AnimationNameField->Active = true;
     GameState->EditorState.AnimationNameField->Size = glm::vec2(300, 30);
@@ -53,25 +54,43 @@ static void SetEditorFields(game_state* GameState)
     GameState->EditorState.AnimationFrameDurationField->Label = "Frame  duration";
     GameState->EditorState.AnimationFrameDurationField->Type = Textfield_Decimal;
     
-    GameState->EditorState.AnimationLoopField->Active = true;
-    GameState->EditorState.AnimationLoopField->Size = glm::vec2(300, 30);
-    GameState->EditorState.AnimationLoopField->ScreenPosition = glm::vec2(GameState->RenderState.WindowWidth - 305, 440);
-    GameState->EditorState.AnimationLoopField->Label = "Loop";
-    GameState->EditorState.AnimationLoopField->Type = Textfield_Integer;
+    GameState->EditorState.AnimationLoopCheckbox->Active = true;
+    GameState->EditorState.AnimationLoopCheckbox->Checked = false;
+    GameState->EditorState.AnimationLoopCheckbox->ScreenPosition = glm::vec2(GameState->RenderState.WindowWidth - 305, 440);
+    GameState->EditorState.AnimationLoopCheckbox->Label = "Loop";
+    
+    // Tile editor
+    GameState->EditorState.AnimationLoopCheckbox->Active = false;
+    GameState->EditorState.AnimationLoopCheckbox->Checked = false;
+    GameState->EditorState.AnimationLoopCheckbox->ScreenPosition = glm::vec2(GameState->RenderState.WindowWidth - 305, 860);
+    GameState->EditorState.AnimationLoopCheckbox->Label = "Loop";
 }
 
-static void GetTextfieldValues(game_state* GameState)
+static void SetFieldValues(game_state* GameState)
 {
-    animation* LoadedAnimation = GameState->EditorState.LoadedAnimation;
-    
-    sprintf(GameState->EditorState.AnimationNameField->Text, "%s", LoadedAnimation->Name);
-    sprintf(GameState->EditorState.AnimationFrameCountField->Text, "%d", LoadedAnimation->FrameCount);
-    sprintf(GameState->EditorState.AnimationFrameWidthField->Text, "%d", (int32)LoadedAnimation->FrameSize.x);
-    sprintf(GameState->EditorState.AnimationFrameHeightField->Text, "%d", (int32)LoadedAnimation->FrameSize.y);
-    sprintf(GameState->EditorState.AnimationFrameOffsetXField->Text, "%d", (int32)LoadedAnimation->FrameOffset.x);
-    sprintf(GameState->EditorState.AnimationFrameOffsetYField->Text, "%d", (int32)LoadedAnimation->FrameOffset.y);
-    sprintf(GameState->EditorState.AnimationFrameDurationField->Text, "%3.00f", LoadedAnimation->TimePerFrame);
-    sprintf(GameState->EditorState.AnimationLoopField->Text, "%f", GameState->EditorState.ShouldLoop);
+    switch(GameState->EditorState.Mode)
+    {
+        case Editor_Animation:
+        {
+            animation* LoadedAnimation = GameState->EditorState.LoadedAnimation;
+            
+            sprintf(GameState->EditorState.AnimationNameField->Text, "%s", LoadedAnimation->Name);
+            sprintf(GameState->EditorState.AnimationFrameCountField->Text, "%d", LoadedAnimation->FrameCount);
+            sprintf(GameState->EditorState.AnimationFrameWidthField->Text, "%d", (int32)LoadedAnimation->FrameSize.x);
+            sprintf(GameState->EditorState.AnimationFrameHeightField->Text, "%d", (int32)LoadedAnimation->FrameSize.y);
+            sprintf(GameState->EditorState.AnimationFrameOffsetXField->Text, "%d", (int32)LoadedAnimation->FrameOffset.x);
+            sprintf(GameState->EditorState.AnimationFrameOffsetYField->Text, "%d", (int32)LoadedAnimation->FrameOffset.y);
+            sprintf(GameState->EditorState.AnimationFrameDurationField->Text, "%3.4f", LoadedAnimation->TimePerFrame);
+            GameState->EditorState.AnimationLoopCheckbox->Checked =
+                GameState->EditorState.ShouldLoop;
+        }
+        break;
+        case Editor_Tilesheet:
+        {
+            GameState->EditorState.TileIsSolidCheckBox->Checked = GameState->CurrentLevel.Tilemap.Tiles[GameState->EditorState.SelectedTileType].IsSolid;
+        }
+        break;
+    }
 }
 
 static void CreateEditorButtons(game_state* GameState)
@@ -230,8 +249,8 @@ static void CheckEditorUIInput(game_state* GameState, real64 DeltaTime)
             
             animation* LoadedAnimation = GameState->EditorState.LoadedAnimation;
             GameState->EditorState.LoadedAnimation->Loop = 1;
-            SetEditorFields(GameState);
-            GetTextfieldValues(GameState);
+            InitEditorFields(GameState);
+            SetFieldValues(GameState);
         }
     }
     

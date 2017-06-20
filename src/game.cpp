@@ -709,6 +709,7 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
                         GameState->EditorState.AnimationsLength = (int32)GameState->Animations.size();
                         
                         GameState->EditorState.CreateNewAnimationButton->Active = true;
+                        GameState->EditorState.TileIsSolidCheckBox->Active = false;
                         GameState->EditorState.Mode = Editor_Animation;
                         
                         std::map<char*, texture>::iterator TextureIterator;
@@ -750,9 +751,25 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
         }
     }
     
+    for(uint32 Index = 0; Index < 10; Index++)
+    {
+        checkbox* Checkbox = &GameState->EditorState.Checkboxes[Index];
+        
+        if(GetMouseButtonDown(Mouse_Left, GameState))
+        {
+            if(Checkbox->Active && GameState->InputController.MouseX >= Checkbox->ScreenPosition.x && GameState->InputController.MouseX <= Checkbox->ScreenPosition.x + 25 && GameState->RenderState.WindowHeight - GameState->InputController.MouseY >= Checkbox->ScreenPosition.y && GameState->RenderState.WindowHeight - GameState->InputController.MouseY <= Checkbox->ScreenPosition.y + 25)
+            {
+                Checkbox->Checked = !Checkbox->Checked;
+            }
+        }
+    }
+    
+    uint32 FocusedField = GameState->EditorState.FocusedTextfield;
+    
     for(int32 Index = 0; Index < 20; Index++)
     {
         textfield* Textfield = &GameState->EditorState.Textfields[Index];
+        Textfield->InFocus = false;
         
         if(GetMouseButtonDown(Mouse_Left, GameState))
         {
@@ -760,6 +777,7 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
                GameState->RenderState.WindowHeight - GameState->InputController.MouseY >= Textfield->ScreenPosition.y && GameState->RenderState.WindowHeight - GameState->InputController.MouseY <= Textfield->ScreenPosition.y + Textfield->Size.y)
             {
                 GameState->EditorState.FocusedTextfield = Index;
+                Textfield->InFocus = true;
                 /*
                 PlaySoundEffect(GameState, &GameState->SoundManager.ButtonClick);
                 StartTimer(GameState, Button->ClickAnimationTimer);
@@ -821,6 +839,12 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
             }
         }
     }
+    
+    if(GameState->EditorState.FocusedTextfield == FocusedField)
+    {
+        GameState->EditorState.Textfields[GameState->EditorState.FocusedTextfield].InFocus = true;
+    }
+    
     
     switch(GameState->EditorState.Mode)
     {
@@ -989,7 +1013,7 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
                 GameState->EditorState.Editing = false;
                 GameState->EditorState.LoadedAnimation = (animation*)malloc(sizeof(animation));
                 
-                GameState->EditorState.LoadedAnimation->Name = (char*) malloc(30 * sizeof(char));
+                GameState->EditorState.LoadedAnimation->Name = (char*) calloc(30, sizeof(char));
                 GameState->EditorState.LoadedAnimation->FrameCount = 0;
                 GameState->EditorState.LoadedAnimation->FrameSize = glm::vec2(0, 0);
                 GameState->EditorState.LoadedAnimation->FrameOffset = glm::vec2(0, 0);
@@ -1003,18 +1027,28 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
                 
                 if(!GameState->EditorState.AnimationNameField ||!GameState->EditorState.AnimationNameField->Active)
                 {
-                    SetEditorFields(GameState);
+                    InitEditorFields(GameState);
                     sprintf(GameState->EditorState.AnimationNameField->Text, "%s", LoadedAnimation->Name);
                     sprintf(GameState->EditorState.AnimationFrameCountField->Text, "%d", LoadedAnimation->FrameCount);
                     sprintf(GameState->EditorState.AnimationFrameWidthField->Text, "%d", (int32)LoadedAnimation->FrameSize.x);
                     sprintf(GameState->EditorState.AnimationFrameHeightField->Text, "%d", (int32)LoadedAnimation->FrameSize.y);
                     sprintf(GameState->EditorState.AnimationFrameOffsetXField->Text, "%d", (int32)LoadedAnimation->FrameOffset.x);
                     sprintf(GameState->EditorState.AnimationFrameOffsetYField->Text, "%d", (int32)LoadedAnimation->FrameOffset.y);
-                    sprintf(GameState->EditorState.AnimationFrameDurationField->Text, "%3.00f", LoadedAnimation->TimePerFrame);
-                    sprintf(GameState->EditorState.AnimationLoopField->Text, "%d", GameState->EditorState.ShouldLoop);
+                    sprintf(GameState->EditorState.AnimationFrameDurationField->Text, "%3.4f", LoadedAnimation->TimePerFrame);
+                    GameState->EditorState.AnimationLoopCheckbox->Checked = GameState->EditorState.ShouldLoop;
                 }
                 
-                GetTextfieldValues(GameState);
+                sscanf(GameState->EditorState.AnimationNameField->Text, "%s", LoadedAnimation->Name);
+                sscanf(GameState->EditorState.AnimationFrameCountField->Text, "%d", &LoadedAnimation->FrameCount);
+                sscanf(GameState->EditorState.AnimationFrameWidthField->Text, "%f", &LoadedAnimation->FrameSize.x);
+                sscanf(GameState->EditorState.AnimationFrameHeightField->Text, "%f", &LoadedAnimation->FrameSize.y);
+                sscanf(GameState->EditorState.AnimationFrameOffsetXField->Text, "%f", &LoadedAnimation->FrameOffset.x);
+                sscanf(GameState->EditorState.AnimationFrameOffsetYField->Text, "%f", &LoadedAnimation->FrameOffset.y);
+                sscanf(GameState->EditorState.AnimationFrameDurationField->Text, "%f", &LoadedAnimation->TimePerFrame);
+                GameState->EditorState.ShouldLoop =
+                    GameState->EditorState.AnimationLoopCheckbox->Checked; 
+                
+                SetFieldValues(GameState);
                 
                 if(LoadedAnimation->Frames)
                 {
@@ -1105,7 +1139,6 @@ extern "C" UPDATE(Update)
         GameState->IsInitialized = true;
         GameState->ShouldReload = false;
     }
-    else
     
 #ifdef DEBUG
     if(GetKeyDown(Key_F1, GameState))
