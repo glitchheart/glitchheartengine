@@ -1407,7 +1407,26 @@ void RenderTextfield(render_state* RenderState, const textfield& Textfield)
     
     RenderText(RenderState, RenderState->RobotoFont, glm::vec4(1, 1, 1, 1), Textfield.Label, Textfield.ScreenPosition.x, Textfield.ScreenPosition.y + 35, 1);
     RenderText(RenderState, RenderState->RobotoFont, glm::vec4(0, 0, 0, 1), Textfield.Text, Textfield.ScreenPosition.x, Textfield.ScreenPosition.y + 10, 1);
+    if(Textfield.InFocus)
+    {
+        RenderRect(Render_Outline, RenderState, glm::vec4(1, 0, 0, 1), Textfield.ScreenPosition.x-3, Textfield.ScreenPosition.y - 3, Textfield.Size.x + 6, Textfield.Size.y + 6);
+    }
+    
 }
+
+void RenderCheckbox(render_state* RenderState, const checkbox& Checkbox)
+{
+    RenderRect(Render_Fill, RenderState,glm::vec4(1,1,1,1),Checkbox.ScreenPosition.x,Checkbox.ScreenPosition.y,25,25);
+    
+    RenderText(RenderState, RenderState->RobotoFont, glm::vec4(1, 1, 1, 1), Checkbox.Label, Checkbox.ScreenPosition.x, Checkbox.ScreenPosition.y + 35, 1);
+    
+    if(Checkbox.Checked)
+    {
+        RenderRect(Render_Fill, RenderState,glm::vec4(0,0,0,1),Checkbox.ScreenPosition.x + 5,Checkbox.ScreenPosition.y + 5,15,15);
+        
+    }
+}
+
 
 static void NEW_RenderTilemap(render_state* RenderState, const tilemap& Tilemap, glm::mat4 ProjectionMatrix, glm::mat4 View)
 {
@@ -1577,6 +1596,12 @@ void RenderGame(game_state* GameState)
                     {
                         if(GameState->EditorState.Textfields[Index].Active)
                             RenderTextfield(&GameState->RenderState, GameState->EditorState.Textfields[Index]);
+                    }
+                    
+                    for(uint32 Index = 0; Index < 10; Index++)
+                    {
+                        if(GameState->EditorState.Checkboxes[Index].Active)
+                            RenderCheckbox(&GameState->RenderState, GameState->EditorState.Checkboxes[Index]);
                     }
                     
                     if(!GameState->EditorState.LoadedAnimation)
