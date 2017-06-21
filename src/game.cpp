@@ -114,37 +114,49 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
                         Entity->LookDirection = Left;
                 }
             }
-            else
+            else if(!TimerDone(GameState, Entity->Player.AttackMoveTimer))
             {
                 glm::vec2 Vel;
                 real32 AttackMoveSpeed = Entity->Player.AttackMoveSpeed;
                 
-                switch(Entity->LookDirection)
+                if(Entity->Player.LastKnownDirectionX != 0 || Entity->Player.LastKnownDirectionY != 0)
                 {
-                    case Up:
-                    {
-                        Vel = glm::vec2(0, AttackMoveSpeed * DeltaTime);
-                    }
-                    break;
-                    case Down:
-                    {
-                        
-                        Vel = glm::vec2(0, -AttackMoveSpeed * DeltaTime);
-                    }
-                    break;
-                    case Left:
-                    {
-                        
-                        Vel = glm::vec2(-AttackMoveSpeed * DeltaTime, 0);
-                    }
-                    break;
-                    case Right:
-                    {
-                        Vel = glm::vec2(AttackMoveSpeed * DeltaTime, 0);
-                    }
-                    break;
+                    Vel = glm::vec2(Entity->Player.LastKnownDirectionX * AttackMoveSpeed * DeltaTime, Entity->Player.LastKnownDirectionY * AttackMoveSpeed * DeltaTime);
                 }
+                else
+                {
+                    switch(Entity->LookDirection)
+                    {
+                        case Up:
+                        {
+                            Vel = glm::vec2(0, AttackMoveSpeed * DeltaTime);
+                        }
+                        break;
+                        case Down:
+                        {
+                            
+                            Vel = glm::vec2(0, -AttackMoveSpeed * DeltaTime);
+                        }
+                        break;
+                        case Left:
+                        {
+                            
+                            Vel = glm::vec2(-AttackMoveSpeed * DeltaTime, 0);
+                        }
+                        break;
+                        case Right:
+                        {
+                            Vel = glm::vec2(AttackMoveSpeed * DeltaTime, 0);
+                        }
+                        break;
+                    }
+                }
+                
                 Entity->Velocity = Vel;
+            }
+            else
+            {
+                Entity->Velocity = glm::vec2(0, 0);
             }
             
             if(GetActionButtonDown(Action_Interact, GameState) && Entity->Player.Pickup)
@@ -242,6 +254,7 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
             }
             
             Entity->Player.IsAttacking = true;
+            StartTimer(GameState, Entity->Player.AttackMoveTimer);
             Entity->AttackCount++;
             PlaySoundEffect(GameState, &GameState->SoundManager.SwordSlash01);
         }
@@ -280,25 +293,25 @@ void UpdateWeapon(entity* Entity, game_state* GameState, real64 DeltaTime)
             {
                 case Up:
                 {
-                    Entity->CollisionAABB.Extents = glm::vec2(1.0f, 0.5f);
-                    Entity->CollisionAABB.Offset = glm::vec2(0.5, 1.5f);
+                    Entity->CollisionAABB.Offset = glm::vec2(-1.0f, 1.5f);
+                    Entity->CollisionAABB.Extents = glm::vec2(1.0, 0.5f);
                 }
                 break;
                 case Down:
                 {
+                    Entity->CollisionAABB.Offset = glm::vec2(-1.0f, -1.0f);
                     Entity->CollisionAABB.Extents = glm::vec2(1.0f, 0.5f);
-                    Entity->CollisionAABB.Offset = glm::vec2(0.5, -1.0f);
                 }
                 break;
                 case Left:
                 {
-                    Entity->CollisionAABB.Offset = glm::vec2(-0.5f, 0.5f);
+                    Entity->CollisionAABB.Offset = glm::vec2(-2.0f, 0.5f);
                     Entity->CollisionAABB.Extents = glm::vec2(0.5f, 1.0f);
                 }
                 break;
                 case Right:
                 {
-                    Entity->CollisionAABB.Offset = glm::vec2(1.5f, 0.5f);
+                    Entity->CollisionAABB.Offset = glm::vec2(0, 0.5f);
                     Entity->CollisionAABB.Extents = glm::vec2(0.5f, 1.0f);
                 }
                 break;
@@ -315,25 +328,25 @@ void UpdateWeapon(entity* Entity, game_state* GameState, real64 DeltaTime)
             {
                 case Up:
                 {
-                    Entity->CollisionAABB.Offset = glm::vec2(-0.5f, 1.5f);
+                    Entity->CollisionAABB.Offset = glm::vec2(-1.0f, 1.5f);
                     Entity->CollisionAABB.Extents = glm::vec2(1.0f, 0.5f);
                 }
                 break;
                 case Down:
                 {
-                    Entity->CollisionAABB.Offset = glm::vec2(-0.5f, -1.0f);
+                    Entity->CollisionAABB.Offset = glm::vec2(-1.0f, -1.0f);
                     Entity->CollisionAABB.Extents = glm::vec2(1.0f, 0.5f);
                 }
                 break;
                 case Left:
                 {
-                    Entity->CollisionAABB.Offset = glm::vec2(-1.5f, 0.2f);
+                    Entity->CollisionAABB.Offset = glm::vec2(-2.0f, 0.2f);
                     Entity->CollisionAABB.Extents = glm::vec2(0.5f, 1.0f);
                 }
                 break;
                 case Right:
                 {
-                    Entity->CollisionAABB.Offset = glm::vec2(0.5f, 0.2f);
+                    Entity->CollisionAABB.Offset = glm::vec2(0, 0.2f);
                     Entity->CollisionAABB.Extents = glm::vec2(0.5f, 1.0f);
                 }
                 break;
@@ -585,7 +598,7 @@ void UpdateSkeleton(entity* Entity, game_state* GameState, real64 DeltaTime)
                 Entity->LookDirection = Right;
         }
         
-        if(!Entity->Skeleton.AIState == AI_Hit)
+        if(Entity->Skeleton.AIState != AI_Hit)
             Entity->IsFlipped = Entity->Velocity.x < 0;
         
         // @Cleanup: move this somewhere else, maybe out of switch
@@ -817,6 +830,8 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
         uint32 SelectedTile = GameState->EditorState.SelectedTileType;
         GameState->CurrentLevel.Tilemap.Tiles[SelectedTile].IsSolid = GameState->EditorState.TileIsSolidCheckbox->Checked;
         UpdateTileData(SelectedTile, GameState->CurrentLevel.Tilemap.Tiles[SelectedTile].IsSolid, &GameState->CurrentLevel.Tilemap);
+        SaveTilesheetMetaFile(Concat(Concat("../assets/textures/tilesheets/", GameState->CurrentLevel.SheetName), ".tm"), &GameState->RenderState, GameState->CurrentLevel, false);
+        
         // @Incomplete: Should call SaveTilesheetMetafile!!!!
     }
     
@@ -937,30 +952,22 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
                     {
                         if(GetMouseButtonDown(Mouse_Left, GameState))
                         {
-                            if(GameState->InputController.MouseX >= GameState->EditorState.ToolbarX)
+                            entity* Selected = 0;
+                            
+                            for(uint32 EntityIndex = 0;
+                                EntityIndex < GameState->EntityCount;
+                                EntityIndex++)
                             {
-                                uint32 Selected = (uint32)(GameState->InputController.MouseY / 65.0f);
-                                GameState->EditorState.SelectedTileType = Selected;
-                            }
-                            else
-                            {
-                                entity* Selected = 0;
+                                entity* Entity = &GameState->Entities[EntityIndex];
                                 
-                                for(uint32 EntityIndex = 0;
-                                    EntityIndex < GameState->EntityCount;
-                                    EntityIndex++)
+                                if(Entity->Type != Entity_Weapon && Pos.x >= Entity->Position.x && Pos.y >= Entity->Position.y - Entity->Scale.y && Pos.x < Entity->Position.x + Entity->Scale.x && Pos.y < Entity->Position.y)
                                 {
-                                    entity* Entity = &GameState->Entities[EntityIndex];
-                                    
-                                    if(Entity->Type != Entity_Weapon && Pos.x >= Entity->Position.x && Pos.y >= Entity->Position.y - Entity->Scale.y && Pos.x < Entity->Position.x + Entity->Scale.x && Pos.y < Entity->Position.y)
-                                    {
-                                        Selected = Entity;
-                                        break;
-                                    }
+                                    Selected = Entity;
+                                    break;
                                 }
-                                
-                                GameState->EditorState.SelectedEntity = Selected;
                             }
+                            
+                            GameState->EditorState.SelectedEntity = Selected;
                         }
                         
                         if(GameState->EditorState.SelectedEntity && GetMouseButton(Mouse_Left, GameState))
@@ -984,8 +991,8 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
                             {
                                 uint32 Selected = (uint32)((GameState->RenderState.WindowHeight - GameState->InputController.MouseY + abs(GameState->EditorState.ToolbarScrollOffsetY)) / 60.0f);
                                 GameState->EditorState.SelectedTileType = Selected;
+                                GameState->EditorState.TileIsSolidCheckbox->Checked = GameState->CurrentLevel.Tilemap.Tiles[Selected].IsSolid;
                             }
-                            
                             else
                             {
                                 if(X >= 0 && X < (int32)GameState->CurrentLevel.Tilemap.Width 
@@ -997,7 +1004,7 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
                                     CollisionAABB.Center = glm::vec2(X + 0.5f, Y + 0.5f);
                                     CollisionAABB.Extents = glm::vec2(0.5, 0.5);
                                     
-                                    Tilemap->Data[X][Y] = Tilemap->Tiles[GameState->EditorState.SelectedTileType];
+                                    Tilemap->Data[X][Y] = Tilemap->Tiles[GameState->EditorState.SelectedTileType + 1];
                                     
                                     Tilemap->RenderInfo.Dirty = true;
                                 }

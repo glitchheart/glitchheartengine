@@ -245,6 +245,7 @@ static void LoadTilemapBuffer(render_state* RenderState, tilemap_render_info& Ti
         for(uint32 Y = 0; Y < Tilemap.Height; Y++)
         {
             tile_data* Tile = &Tilemap.Data[X][Y];
+            
             if(Tile->TypeIndex != 0)
             {
                 real32 TexCoordX = (Tile->TextureOffset.x) / Width;
@@ -309,7 +310,7 @@ static void LoadEditorTileBuffer(render_state* RenderState, editor_render_info& 
     real32 Width = (real32)Tilemap.RenderEntity.Texture->Width;
     real32 Height = (real32)Tilemap.RenderEntity.Texture->Height;
     
-    for(uint32 Index = 0; Index < Tilemap.TileCount; Index++)
+    for(uint32 Index = 1; Index < Tilemap.TileCount; Index++)
     {
         tile_data* Tile = &Tilemap.Tiles[Index];
         
@@ -318,21 +319,21 @@ static void LoadEditorTileBuffer(render_state* RenderState, editor_render_info& 
         real32 TexCoordXHigh = (Tile->TextureOffset.x + Tilemap.TileSize) / Width;
         real32 TexCoordYHigh = (Tile->TextureOffset.y + Tilemap.TileSize) / Height; 
         
-        real32 CorrectY = (real32)Index;
+        real32 CorrectY = (real32)Index - 1;
         VertexBuffer[Current++] = (GLfloat)0;
-        VertexBuffer[Current++] = (GLfloat)Index + 1.0f;
+        VertexBuffer[Current++] = (GLfloat)Index - 1 + 1.0f;
         VertexBuffer[Current++] = (GLfloat)TexCoordX;
         VertexBuffer[Current++] =  (GLfloat)TexCoordY;
         VertexBuffer[Current++] = (GLfloat)1;
-        VertexBuffer[Current++] = (GLfloat)Index + 1;
+        VertexBuffer[Current++] = (GLfloat)Index - 1 + 1;
         VertexBuffer[Current++] = (GLfloat)TexCoordXHigh;
         VertexBuffer[Current++] =  (GLfloat)TexCoordY;
         VertexBuffer[Current++] = (GLfloat)1;
-        VertexBuffer[Current++] = (GLfloat)Index;
+        VertexBuffer[Current++] = (GLfloat)Index - 1;
         VertexBuffer[Current++] = (GLfloat)TexCoordXHigh;
         VertexBuffer[Current++] = (GLfloat)TexCoordYHigh;
         VertexBuffer[Current++] = (GLfloat)0;
-        VertexBuffer[Current++] = (GLfloat)Index;
+        VertexBuffer[Current++] = (GLfloat)Index - 1;
         VertexBuffer[Current++] =(GLfloat)TexCoordX;
         VertexBuffer[Current++] = (GLfloat)TexCoordYHigh;
     }
@@ -1268,10 +1269,9 @@ static void RenderEntity(render_state *RenderState, entity &Entity, glm::mat4 Pr
     {
         glm::mat4 Model(1.0f);
         
-        
         if(Entity.CurrentAnimation) 
         {
-            real32 RemoveInX = (Entity.IsFlipped ? 1.0f * Entity.Scale.x - (2 * Entity.CurrentAnimation->Center.x * Entity.Scale.x) : 0);
+            real32 RemoveInX = (Entity.IsFlipped ? 1.0f * Entity.Scale.x - (2 * Entity.CurrentAnimation->Center.x * Entity.Scale.x) : 0) + Entity.CurrentAnimation->Center.x * Entity.Scale.x;
             
             Model = glm::translate(Model, glm::vec3(Entity.Position.x - RemoveInX, Entity.Position.y - (Entity.IsFlipped ? Entity.CurrentAnimation->Center.y : 0), 0.0f));
             Model = glm::translate(Model, glm::vec3(1, 1, 0.0f));
@@ -1556,8 +1556,7 @@ void RenderGame(game_state* GameState)
                     if(GameState->EditorState.SelectedEntity)
                         RenderWireframe(&GameState->RenderState, GameState->EditorState.SelectedEntity, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
                     
-                    glm::vec2 TextureOffset = GameState->CurrentLevel.Tilemap.Tiles[GameState->EditorState.SelectedTileType].TextureOffset;
-                    TextureOffset = glm::vec2(TextureOffset.x / (real32)GameState->CurrentLevel.Tilemap.RenderEntity.Texture->Width, TextureOffset.y / (real32)GameState->CurrentLevel.Tilemap.RenderEntity.Texture->Height);
+                    glm::vec2 TextureOffset = GameState->CurrentLevel.Tilemap.Tiles[GameState->EditorState.SelectedTileType + 1].TextureOffset;
                     
                     if(GameState->EditorState.TileX >= 0 && GameState->EditorState.TileX < GameState->CurrentLevel.Tilemap.Width && GameState->EditorState.TileY > 0 && GameState->EditorState.TileY <= GameState->CurrentLevel.Tilemap.Height)
                     {
