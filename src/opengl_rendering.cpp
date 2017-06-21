@@ -1453,6 +1453,7 @@ static void NEW_RenderTilemap(render_state* RenderState, const tilemap& Tilemap,
     glBindVertexArray(0);
 }
 
+
 static void EditorRenderTilemap(glm::vec2 ScreenPosition, real32 Size, render_state* RenderState, const tilemap& Tilemap)
 {
     real32 X = ScreenPosition.x * RenderState->ScaleX;

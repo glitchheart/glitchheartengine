@@ -51,6 +51,7 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
             StartTimer(GameState, Entity->Player.DashTimer);
         }
         
+        
         if(!Entity->Player.IsDashing)
         {
             if(Entity->Player.IsAttacking && !Entity->AnimationInfo.Playing)
@@ -187,7 +188,13 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
         {
             if(TimerDone(GameState, Entity->Player.DashTimer))
             {
-                StartTimer(GameState, Entity->Player.DashCooldownTimer);
+                Entity->Player.DashCount++;
+                
+                if(Entity->Player.DashCount == 3)
+                {
+                    Entity->Player.DashCount = 0;
+                    StartTimer(GameState, Entity->Player.DashCooldownTimer);
+                }
                 Entity->Player.IsDashing = false;
             }
             else
