@@ -56,7 +56,7 @@ static void InitPlayer(game_state* GameState, glm::vec2 Position)
     Player->HitCooldownTimer = (timer*)malloc(sizeof(timer));
     Player->HitCooldownTimer->TimerHandle = -1;
     Player->HitCooldownTimer->TimerMax = 0.4;
-    
+    Player->Player.AttackMoveSpeed = 8;
     Player->Player.DashSpeed = 30;
     Player->Active = true;
     Player->IsKinematic = false;
@@ -135,6 +135,7 @@ static void SpawnSkeleton(game_state* GameState, glm::vec2 Position)
     entity* Skeleton = &GameState->Entities[GameState->EntityCount];
     Skeleton->Name = "skeleton";
     Skeleton->Type = Entity_Skeleton;
+    Skeleton->HitRecoilSpeed = 10;
     
     render_entity* SkeletonRenderEntity = &GameState->RenderState.RenderEntities[GameState->RenderState.RenderEntityCount];
     
@@ -192,11 +193,15 @@ static void SpawnSkeleton(game_state* GameState, glm::vec2 Position)
     Skeleton->Skeleton.AStarPath.AStarCooldownTimer->TimerHandle = -1;
     Skeleton->Skeleton.AStarPath.AStarCooldownTimer->TimerMax = 0.6;
     
+    Skeleton->RecoilTimer = (timer*)malloc(sizeof(timer));
+    Skeleton->RecoilTimer->TimerHandle = -1;
+    Skeleton->RecoilTimer->TimerMax = 0.2;
+    
     Skeleton->HitCooldownTimer = (timer*)malloc(sizeof(timer));
     Skeleton->HitCooldownTimer->TimerHandle = -1;
     Skeleton->HitCooldownTimer->TimerMax = 0.4;
     
-    Skeleton->Health = 2;
+    Skeleton->Health = 4;
     Skeleton->EntityIndex = GameState->EntityCount++;
     
     // Weapon
@@ -350,11 +355,15 @@ static bool32 TimerDone(game_state* GameState, timer* Timer)
 }
 
 //@Incomplete: Maybe we will add a weapon type or damage amount
-void Hit(game_state* GameState, entity* Entity)
+void Hit(game_state* GameState, entity* ByEntity, entity* HitEntity)
 {
-    StartTimer(GameState, Entity->HitCooldownTimer);
-    PlaySoundEffect(GameState, &GameState->SoundManager.SwordHit01);
-    
-    Entity->Health -= 1;
-    Entity->Hit = true;
+    if(HitEntity->HitAttackCountId != ByEntity->AttackCount)
+    {
+        StartTimer(GameState, HitEntity->HitCooldownTimer);
+        PlaySoundEffect(GameState, &GameState->SoundManager.SwordHit01);
+        
+        HitEntity->Health -= 1;
+        HitEntity->Hit = true;
+        HitEntity->HitAttackCountId = ByEntity->AttackCount;
+    }
 }

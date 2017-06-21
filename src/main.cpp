@@ -130,7 +130,7 @@ int main(void)
     {
         //calculate deltatime
         CurrentFrame = GetTime();
-        DeltaTime = CurrentFrame - LastFrame;
+        DeltaTime = Min(CurrentFrame - LastFrame, 0.1);
         LastFrame = CurrentFrame;
         real64 FPS = 1.0/DeltaTime;
         GameState.RenderState.FPS = FPS;

@@ -2,7 +2,7 @@ name player_attack_right
 type sprite
 framecount 3
 framesize 84 84
-center 0.5 0.5
+center 0.39 0
 loop 0
 timeperframe 0.1
 frames
@@ -10,5 +10,3 @@ frames
 84 336
 168 336
 texture knight_player
-
-
