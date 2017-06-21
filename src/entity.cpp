@@ -43,15 +43,15 @@ static void InitPlayer(game_state* GameState, glm::vec2 Position)
     
     Player->Player.DashTimer = (timer*)malloc(sizeof(timer));
     Player->Player.DashTimer->TimerHandle = -1;
-    Player->Player.DashTimer->TimerMax = 0.2;
+    Player->Player.DashTimer->TimerMax = 0.28;
     
     Player->Player.DashCooldownTimer = (timer*)malloc(sizeof(timer));
     Player->Player.DashCooldownTimer->TimerHandle = -1;
-    Player->Player.DashCooldownTimer->TimerMax = 0.6;
+    Player->Player.DashCooldownTimer->TimerMax = 0.2;
     
     Player->Player.PickupCooldownTimer = (timer*)malloc(sizeof(timer));
     Player->Player.PickupCooldownTimer->TimerHandle = -1;
-    Player->Player.PickupCooldownTimer->TimerMax = 0.3;
+    Player->Player.PickupCooldownTimer->TimerMax = 0.32;
     
     Player->HitCooldownTimer = (timer*)malloc(sizeof(timer));
     Player->HitCooldownTimer->TimerHandle = -1;
