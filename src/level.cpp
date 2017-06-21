@@ -35,7 +35,9 @@ static void SaveTilesheetMetaFile(const char* FilePath, render_state* RenderStat
             fprintf(File, "%d\n", Texture.Width / 16 * Texture.Height / 16);
             fprintf(File, "%d\n", 16);
             
-            uint32 Index = 0;
+            int32 Index = 0;
+            fprintf(File, "%d %d %d %d %d %d %f %f\n", Index++, 0, 0, 0, 0, 0, 0.0f, 0.0f);
+            
             for(uint32 Y = 0; Y < (uint32)Texture.Height / 16; Y++)
             {
                 for(uint32 X = 0; X < (uint32)Texture.Width / 16; X++)
@@ -82,6 +84,7 @@ static void LoadTilesheetMetaFile(char* FilePath, level* Level, tilemap* Tilemap
         }
         
         int TileIndex = 0;
+        
         // Get each tile
         while(fgets(LineBuffer, 255, File))
         {

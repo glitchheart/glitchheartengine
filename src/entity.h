@@ -87,6 +87,7 @@ struct entity
             timer* PickupCooldownTimer;
             
             real32 AttackMoveSpeed;
+            timer* AttackMoveTimer;
             real64 CurrentAttackCooldownTime;
             real64 AttackCooldown;
             

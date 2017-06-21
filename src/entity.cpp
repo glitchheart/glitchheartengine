@@ -53,10 +53,14 @@ static void InitPlayer(game_state* GameState, glm::vec2 Position)
     Player->Player.PickupCooldownTimer->TimerHandle = -1;
     Player->Player.PickupCooldownTimer->TimerMax = 0.32;
     
+    Player->Player.AttackMoveTimer = (timer*)malloc(sizeof(timer));
+    Player->Player.AttackMoveTimer->TimerHandle = -1;
+    Player->Player.AttackMoveTimer->TimerMax = 0.1;
+    
     Player->HitCooldownTimer = (timer*)malloc(sizeof(timer));
     Player->HitCooldownTimer->TimerHandle = -1;
     Player->HitCooldownTimer->TimerMax = 0.4;
-    Player->Player.AttackMoveSpeed = 8;
+    Player->Player.AttackMoveSpeed = 15;
     Player->Player.DashSpeed = 30;
     Player->Active = true;
     Player->IsKinematic = false;
@@ -88,7 +92,7 @@ static void InitPlayer(game_state* GameState, glm::vec2 Position)
     Player->Velocity = glm::vec2(0,0);
     PlayAnimation(Player, "player_idle_down", GameState);
     collision_AABB CollisionAABB;
-    Player->Center = glm::vec2(0.5f, 0.5f);
+    Player->Center = glm::vec2(0, 0.5f);
     
     Player->Layer = Layer_Player;
     
@@ -162,7 +166,7 @@ static void SpawnSkeleton(game_state* GameState, glm::vec2 Position)
     Skeleton->Center = glm::vec2(0, 0.5f);
     CollisionAABB.Center = glm::vec2(Skeleton->Position.x + Skeleton->Center.x * Skeleton->Scale.x,
                                      Skeleton->Position.y + Skeleton->Center.y * Skeleton->Scale.y);
-    CollisionAABB.Offset = glm::vec2(0.5f, -1.2f);
+    CollisionAABB.Offset = glm::vec2(0, -1.2f);
     CollisionAABB.Extents = glm::vec2(0.3f, 0.15f);
     CollisionAABB.IsTrigger = false;
     Skeleton->CollisionAABB = CollisionAABB;
@@ -170,9 +174,9 @@ static void SpawnSkeleton(game_state* GameState, glm::vec2 Position)
     collision_AABB* HitTrigger = (collision_AABB*)malloc(sizeof(collision_AABB));
     HitTrigger->Center = glm::vec2(Skeleton->Position.x + Skeleton->Center.x * Skeleton->Scale.x,
                                    Skeleton->Position.y + Skeleton->Center.y * Skeleton->Scale.y);
-    HitTrigger->Extents = glm::vec2(0.5f, 0.8f);
+    HitTrigger->Extents = glm::vec2(0.6f, 0.8f);
     HitTrigger->IsTrigger;
-    HitTrigger->Offset = glm::vec2(0.5f, -0.4f);
+    HitTrigger->Offset = glm::vec2(0, -0.4f);
     Skeleton->HitTrigger = HitTrigger;
     
     Skeleton->Skeleton.WalkingSpeed = 5;
