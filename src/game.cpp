@@ -56,7 +56,13 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
             if(Entity->Player.IsAttacking && !Entity->AnimationInfo.Playing)
             {
                 Entity->Player.IsAttacking = false;
-                StartTimer(GameState, Entity->Player.AttackCooldownTimer);
+                
+                if(Entity->AttackCount == 3)
+                {
+                    Entity->AttackCount = 0;
+                    Entity->Velocity = glm::vec2(0, 0);
+                    StartTimer(GameState, Entity->Player.AttackCooldownTimer);
+                }
             }
             
             if(!Entity->Player.IsAttacking)
@@ -109,7 +115,37 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
                 }
             }
             else
-                Entity->Velocity = glm::vec2(0, 0);
+            {
+                glm::vec2 Vel;
+                real32 AttackMoveSpeed = Entity->Player.AttackMoveSpeed;
+                
+                switch(Entity->LookDirection)
+                {
+                    case Up:
+                    {
+                        Vel = glm::vec2(0, AttackMoveSpeed * DeltaTime);
+                    }
+                    break;
+                    case Down:
+                    {
+                        
+                        Vel = glm::vec2(0, -AttackMoveSpeed * DeltaTime);
+                    }
+                    break;
+                    case Left:
+                    {
+                        
+                        Vel = glm::vec2(-AttackMoveSpeed * DeltaTime, 0);
+                    }
+                    break;
+                    case Right:
+                    {
+                        Vel = glm::vec2(AttackMoveSpeed * DeltaTime, 0);
+                    }
+                    break;
+                }
+                Entity->Velocity = Vel;
+            }
             
             if(GetActionButtonDown(Action_Interact, GameState) && Entity->Player.Pickup)
             {
@@ -206,6 +242,7 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
             }
             
             Entity->Player.IsAttacking = true;
+            Entity->AttackCount++;
             PlaySoundEffect(GameState, &GameState->SoundManager.SwordSlash01);
         }
         
@@ -317,7 +354,7 @@ void UpdateWeapon(entity* Entity, game_state* GameState, real64 DeltaTime)
             if((UsingEntity->Type == Entity_Player && CollisionInfo.Other[Index]->Type == Entity_Skeleton && CollisionInfo.Other[Index]->Skeleton.AIState != AI_Hit && CollisionInfo.Other[Index]->Skeleton.AIState != AI_Dying && !CollisionInfo.Other[Index]->Hit) ||
                (UsingEntity->Type == Entity_Skeleton && CollisionInfo.Other[Index]->Type == Entity_Player && !CollisionInfo.Other[Index]->Player.IsDashing && !CollisionInfo.Other[Index]->Hit && TimerDone(GameState, CollisionInfo.Other[Index]->HitCooldownTimer)))
             {
-                Hit(GameState, CollisionInfo.Other[Index]);
+                Hit(GameState, UsingEntity, CollisionInfo.Other[Index]);
             }
         }
     }
@@ -399,13 +436,18 @@ void UpdateSkeleton(entity* Entity, game_state* GameState, real64 DeltaTime)
 {
     if(Entity->Active)
     {
+        entity& Player = GameState->Entities[GameState->PlayerIndex];
+        
         if(Entity->Hit && Entity->Skeleton.AIState != AI_Dying)
         {
+            PlayAnimation(Entity, "skeleton_hit", GameState);
             Entity->Skeleton.AIState = AI_Hit;
+            Entity->HitRecoilDirection = glm::normalize(Entity->Position - Player.Position);
+            StartTimer(GameState, Entity->RecoilTimer);
         }
         
         Entity->Velocity = glm::vec2(0,0);
-        entity& Player = GameState->Entities[GameState->PlayerIndex];
+        
         real64 DistanceToPlayer = glm::distance(Entity->Position, Player.Position);
         
         switch(Entity->Skeleton.AIState)
@@ -496,9 +538,12 @@ void UpdateSkeleton(entity* Entity, game_state* GameState, real64 DeltaTime)
                 }
                 else
                 {
-                    PlayAnimation(Entity, "skeleton_hit", GameState);
+                    if(!TimerDone(GameState, Entity->RecoilTimer))
+                    {
+                        Entity->Velocity = glm::vec2(Entity->HitRecoilDirection.x * Entity->HitRecoilSpeed, Entity->HitRecoilDirection.y * Entity->HitRecoilSpeed);
+                    }
                     
-                    if(TimerDone(GameState, Entity->HitCooldownTimer))
+                    if(!Entity->AnimationInfo.Playing)
                     {
                         Entity->Skeleton.AIState = AI_Idle;
                         PlayAnimation(Entity, "skeleton_idle", GameState);
@@ -540,7 +585,8 @@ void UpdateSkeleton(entity* Entity, game_state* GameState, real64 DeltaTime)
                 Entity->LookDirection = Right;
         }
         
-        Entity->IsFlipped = Entity->Velocity.x < 0;
+        if(!Entity->Skeleton.AIState == AI_Hit)
+            Entity->IsFlipped = Entity->Velocity.x < 0;
         
         // @Cleanup: move this somewhere else, maybe out of switch
         render_entity* RenderEntity = &GameState->RenderState.RenderEntities[Entity->RenderEntityHandle];

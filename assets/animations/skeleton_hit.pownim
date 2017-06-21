@@ -3,8 +3,8 @@ type sprite
 framecount 8
 framesize 43 37
 center 0.3 0
-loop 1
-timeperframe 0.1
+loop 0
+timeperframe 0.05
 frames
 0 0
 43 0

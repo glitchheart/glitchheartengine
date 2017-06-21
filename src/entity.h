@@ -67,7 +67,14 @@ struct entity
     bool32 Hit = false;
     
     int32 Health = -1;
+    
+    int32 AttackCount;
+    int32 HitAttackCountId;
+    
+    timer* RecoilTimer;
     timer* HitCooldownTimer;
+    real32 HitRecoilSpeed;
+    glm::vec2 HitRecoilDirection;
     union
     {
         struct
@@ -79,6 +86,7 @@ struct entity
             timer* DashCooldownTimer;
             timer* PickupCooldownTimer;
             
+            real32 AttackMoveSpeed;
             real64 CurrentAttackCooldownTime;
             real64 AttackCooldown;
             
