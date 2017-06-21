@@ -97,6 +97,7 @@ struct entity
             real64 MaxDashTime;
             
             real32 DashSpeed;
+            uint32 DashCount;
             
             real64 CurrentDashCooldownTime;
             real64 DashCooldown;
