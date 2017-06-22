@@ -51,6 +51,12 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
             StartTimer(GameState, Entity->Player.DashTimer);
         }
         
+        if(Entity->Player.IsDashing &&!TimerDone(GameState,Entity->Player.DashTimer) && GetActionButtonDown(Action_Dash, GameState))
+        {
+            Entity->Player.DashCount = 0;
+            StartTimer(GameState,Entity->Player.DashCooldownTimer);
+        }
+        
         
         if(!Entity->Player.IsDashing)
         {
