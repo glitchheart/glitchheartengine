@@ -307,25 +307,25 @@ void UpdateWeapon(entity* Entity, game_state* GameState, real64 DeltaTime)
                 case Up:
                 {
                     Entity->CollisionAABB.Offset = glm::vec2(-1.0f, 1.5f);
-                    Entity->CollisionAABB.Extents = glm::vec2(1.0, 0.5f);
+                    Entity->CollisionAABB.Extents = glm::vec2(1.25f, 0.5f);
                 }
                 break;
                 case Down:
                 {
                     Entity->CollisionAABB.Offset = glm::vec2(-1.0f, -1.0f);
-                    Entity->CollisionAABB.Extents = glm::vec2(1.0f, 0.5f);
+                    Entity->CollisionAABB.Extents = glm::vec2(1.25f, 0.5f);
                 }
                 break;
                 case Left:
                 {
                     Entity->CollisionAABB.Offset = glm::vec2(-2.0f, 0.5f);
-                    Entity->CollisionAABB.Extents = glm::vec2(0.5f, 1.0f);
+                    Entity->CollisionAABB.Extents = glm::vec2(0.5f, 1.25f);
                 }
                 break;
                 case Right:
                 {
                     Entity->CollisionAABB.Offset = glm::vec2(0, 0.5f);
-                    Entity->CollisionAABB.Extents = glm::vec2(0.5f, 1.0f);
+                    Entity->CollisionAABB.Extents = glm::vec2(0.5f, 1.25f);
                 }
                 break;
             }
