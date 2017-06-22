@@ -39,7 +39,7 @@ static void InitPlayer(game_state* GameState, glm::vec2 Position)
     
     Player->Player.AttackCooldownTimer = (timer*)malloc(sizeof(timer));
     Player->Player.AttackCooldownTimer->TimerHandle = -1;
-    Player->Player.AttackCooldownTimer->TimerMax = 0.3;
+    Player->Player.AttackCooldownTimer->TimerMax = 0.19;
     
     Player->Player.DashTimer = (timer*)malloc(sizeof(timer));
     Player->Player.DashTimer->TimerHandle = -1;
@@ -124,8 +124,8 @@ static void InitPlayer(game_state* GameState, glm::vec2 Position)
     
     collision_AABB CollisionAABB3;
     CollisionAABB3.Center = glm::vec2(0, 0);
-    CollisionAABB3.Offset = glm::vec2(0, 0);
-    CollisionAABB3.Extents = glm::vec2(0.5f,1.0f);
+    CollisionAABB3.Offset = glm::vec2(0.2, 0);
+    CollisionAABB3.Extents = glm::vec2(1.1f,1.2f);
     CollisionAABB3.IsTrigger = true;
     PlayerWeapon->CollisionAABB = CollisionAABB3;
     PlayerWeapon->Rotation = glm::vec3(0, 0, 0);
@@ -174,7 +174,7 @@ static void SpawnSkeleton(game_state* GameState, glm::vec2 Position)
     collision_AABB* HitTrigger = (collision_AABB*)malloc(sizeof(collision_AABB));
     HitTrigger->Center = glm::vec2(Skeleton->Position.x + Skeleton->Center.x * Skeleton->Scale.x,
                                    Skeleton->Position.y + Skeleton->Center.y * Skeleton->Scale.y);
-    HitTrigger->Extents = glm::vec2(0.6f, 0.8f);
+    HitTrigger->Extents = glm::vec2(0.6f, 0.9f);
     HitTrigger->IsTrigger;
     HitTrigger->Offset = glm::vec2(0, -0.4f);
     Skeleton->HitTrigger = HitTrigger;
