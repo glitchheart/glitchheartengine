@@ -107,6 +107,7 @@ struct editor_state
     
     entity* SelectedEntity;
     uint32 SelectedTileType = 1;
+    entity* PlacementEntity;
     
     real32 LastKnownMouseX;
     real32 LastKnownMouseY;

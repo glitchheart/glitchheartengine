@@ -1104,8 +1104,8 @@ static void RenderWireframe(render_state* RenderState, entity* Entity, glm::mat4
     {
         glm::mat4 Model(1.0f);
         
-        Model = glm::translate(Model, glm::vec3(Entity->Position.x, Entity->Position.y, 0.0f));
-        Model = glm::scale(Model, glm::vec3(Entity->Scale.x, -Entity->Scale.y, 1));
+        Model = glm::translate(Model, glm::vec3(Entity->Position.x -  Entity->Scale.x/2, Entity->Position.y, 0.0f));
+        Model = glm::scale(Model, glm::vec3(Entity->Scale.x, Entity->Scale.y, 1));
         
         glBindVertexArray(RenderState->WireframeVAO);
         
@@ -1714,21 +1714,8 @@ static void CheckLevelVAO(game_state* GameState)
     }
 }
 
-static void Render(game_state* GameState)
+static void RenderDebugInfo(game_state* GameState)
 {
-    if(GameState->CurrentLevel.Tilemap.RenderInfo.Dirty)
-    {
-        LoadTilemapBuffer(&GameState->RenderState, GameState->CurrentLevel.Tilemap.RenderInfo, GameState->CurrentLevel.Tilemap); 
-    }
-    
-    GameState->RenderState.ScaleX = 2.0f / GameState->RenderState.WindowWidth;
-    GameState->RenderState.ScaleY = 2.0f / GameState->RenderState.WindowHeight;
-    
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-    
-    RenderGame(GameState);
-    
     auto Pos = glm::unProject(glm::vec3(GameState->InputController.MouseX, GameState->RenderState.Viewport[3] - GameState->InputController.MouseY, 0),
                               GameState->Camera.ViewMatrix,
                               GameState->Camera.ProjectionMatrix,
@@ -1753,6 +1740,25 @@ static void Render(game_state* GameState)
                    glm::vec4(1, 1, 1, 1), MousePos, GameState->RenderState.WindowWidth / 2.0f - 200, 
                    20.0f, 1.0f);
     }
+    
+}
+
+static void Render(game_state* GameState)
+{
+    if(GameState->CurrentLevel.Tilemap.RenderInfo.Dirty)
+    {
+        LoadTilemapBuffer(&GameState->RenderState, GameState->CurrentLevel.Tilemap.RenderInfo, GameState->CurrentLevel.Tilemap); 
+    }
+    
+    GameState->RenderState.ScaleX = 2.0f / GameState->RenderState.WindowWidth;
+    GameState->RenderState.ScaleY = 2.0f / GameState->RenderState.WindowHeight;
+    
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+    
+    RenderGame(GameState);
+    
+    RenderDebugInfo(GameState);
     
     glfwSwapBuffers(GameState->RenderState.Window);
 }

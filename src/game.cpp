@@ -944,26 +944,38 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
                 GameState->CurrentLevel = Level;
             }
             
-            GameState->EditorState.CreateNewAnimationButton->Active = false;
-            if(GetKeyDown(Key_M, GameState))
-            {
-                if(GameState->EditorState.PlacementMode == Editor_Placement_Tile)
-                    GameState->EditorState.PlacementMode = Editor_Placement_Entity;
-                else
-                    GameState->EditorState.PlacementMode = Editor_Placement_Tile;
-            }
-            
             auto Pos = glm::unProject(glm::vec3(GameState->InputController.MouseX, GameState->RenderState.Viewport[3] - GameState->InputController.MouseY, 0),
                                       GameState->Camera.ViewMatrix,
                                       GameState->Camera.ProjectionMatrix,
                                       glm::vec4(0, 0, GameState->RenderState.Viewport[2], GameState->RenderState.Viewport[3]));
+            GameState->EditorState.CreateNewAnimationButton->Active = false;
+            if(GetKeyDown(Key_M, GameState))
+            {
+                if(GameState->EditorState.PlacementMode == Editor_Placement_Tile)
+                {
+                    GameState->EditorState.PlacementMode = Editor_Placement_Entity;
+                    SpawnSkeleton(GameState,Pos);
+                    GameState->EditorState.PlacementEntity = &GameState->Entities[GameState->EntityCount - 2];
+                }
+                else
+                {
+                    GameState->EditorState.PlacementMode = Editor_Placement_Tile;
+                    if(GameState->EditorState.PlacementEntity)
+                    {
+                        DeleteEntity(GameState,GameState->EditorState.PlacementEntity->EntityIndex);
+                        GameState->EditorState.PlacementEntity = 0;
+                    }
+                }
+            }
+            
+            
             if(!InToolbar)
             {
                 switch(GameState->EditorState.PlacementMode)
                 {
                     case Editor_Placement_Entity:
                     {
-                        if(GetMouseButtonDown(Mouse_Left, GameState))
+                        if(GetMouseButtonDown(Mouse_Left, GameState) && !GameState->EditorState.PlacementEntity)
                         {
                             entity* Selected = 0;
                             
@@ -973,7 +985,7 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
                             {
                                 entity* Entity = &GameState->Entities[EntityIndex];
                                 
-                                if(Entity->Type != Entity_Weapon && Pos.x >= Entity->Position.x && Pos.y >= Entity->Position.y - Entity->Scale.y && Pos.x < Entity->Position.x + Entity->Scale.x && Pos.y < Entity->Position.y)
+                                if(Entity->Type != Entity_Weapon && Pos.x >= Entity->Position.x - Entity->Scale.x/2 && Pos.y < Entity->Position.y + Entity->Scale.y && Pos.x < Entity->Position.x + Entity->Scale.x && Pos.y > Entity->Position.y)
                                 {
                                     Selected = Entity;
                                     break;
@@ -983,11 +995,22 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
                             GameState->EditorState.SelectedEntity = Selected;
                         }
                         
-                        if(GameState->EditorState.SelectedEntity && GetMouseButton(Mouse_Left, GameState))
+                        if(GameState->EditorState.SelectedEntity && GetMouseButton(Mouse_Left, GameState) && !GameState->EditorState.PlacementEntity)
                         {
-                            GameState->EditorState.SelectedEntity->Position = glm::vec2(Pos.x - GameState->EditorState.SelectedEntity->Scale.x / 2, Pos.y + GameState->EditorState.SelectedEntity->Scale.y / 2);
+                            GameState->EditorState.SelectedEntity->Position = glm::vec2(Pos.x, Pos.y - GameState->EditorState.SelectedEntity->Scale.y / 2 );
                         }
                         
+                        if(GameState->EditorState.PlacementEntity)
+                        {
+                            GameState->EditorState.PlacementEntity->Position = glm::vec2(Pos.x, Pos.y - GameState->EditorState.PlacementEntity->Scale.y / 2);
+                            
+                            if(GetMouseButton(Mouse_Left, GameState))
+                            {
+                                GameState->EditorState.PlacementEntity = 0;
+                                SpawnSkeleton(GameState,Pos);
+                                GameState->EditorState.PlacementEntity = &GameState->Entities[GameState->EntityCount - 2];
+                            }
+                        }
                     }
                     break;
                     case Editor_Placement_Tile:
@@ -1186,6 +1209,11 @@ extern "C" UPDATE(Update)
             SaveLevelToFile(GameState->LevelPath, &GameState->CurrentLevel, GameState);
             ReloadCurrentLevel(GameState);
             GameState->GameMode = Mode_InGame;
+            if(GameState->EditorState.PlacementEntity)
+            {
+                DeleteEntity(GameState,GameState->EditorState.PlacementEntity->EntityIndex);
+                GameState->EditorState.PlacementEntity = 0;
+            }
         }
     }
     

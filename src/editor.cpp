@@ -268,7 +268,6 @@ static void CheckEditorUIInput(game_state* GameState, real64 DeltaTime)
     if(GameState->EditorState.SelectedEntity && GetKeyDown(Key_Delete,GameState))
     {
         DeleteEntity(GameState,GameState->EditorState.SelectedEntity->EntityIndex);
-        
     }
     
     if(MouseX <= ListRectWidth)

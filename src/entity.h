@@ -141,6 +141,6 @@ struct entity
     glm::vec2 Velocity;
 };
 
-#define NUM_ENTITIES 40
+#define NUM_ENTITIES 80
 
 #endif
