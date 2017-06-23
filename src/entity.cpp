@@ -5,19 +5,26 @@ void PrintEntityInfo(const entity& Entity)
 
 static void DeleteEntity(game_state* GameState, uint32 EntityIndex)
 {
+    if(GameState->EntityCount == 0 || GameState->RenderState.RenderEntityCount == 0)
+        return;
+    
     entity* Entity = &GameState->Entities[EntityIndex];
     
     uint32 RenderEntityHandle = Entity->RenderEntityHandle;
     
-    for(uint32 RenderIndex = RenderEntityHandle; RenderIndex < GameState->RenderState.RenderEntityCount - 1; RenderIndex++)
+    for(uint32 RenderIndex = RenderEntityHandle; RenderIndex < GameState->RenderState.RenderEntityCount; RenderIndex++)
     {
         GameState->RenderState.RenderEntities[RenderIndex] = GameState->RenderState.RenderEntities[RenderIndex + 1];
-        GameState->RenderState.RenderEntities[RenderIndex].Entity->RenderEntityHandle = RenderIndex;
+        if(GameState->RenderState.RenderEntities[RenderIndex].Entity)
+        {
+            GameState->RenderState.RenderEntities[RenderIndex].Entity->RenderEntityHandle = RenderIndex;
+        }
     }
     
-    GameState->RenderState.RenderEntityCount--;
+    GameState->RenderState.RenderEntityCount = Max(GameState->RenderState.RenderEntityCount - 1,0);
     
-    GameState->EditorState.SelectedEntity = 0;
+    if(GameState->EditorState.SelectedEntity)
+        GameState->EditorState.SelectedEntity = 0;
     
     for(uint32 Index = EntityIndex; Index < (uint32)GameState->EntityCount - 1; Index++)
     {
