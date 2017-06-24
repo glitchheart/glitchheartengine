@@ -892,7 +892,7 @@ static void RenderRect(Render_Mode Mode, render_state* RenderState, glm::vec4 Co
 
 static void MeasureText(const render_font* Font, const char* Text, float* Width, float* Height)
 {
-    int Count, C;
+    int Count;
     
     if (!Text) 
     {
@@ -1403,7 +1403,7 @@ static void RenderEntity(render_state *RenderState, entity &Entity, glm::mat4 Pr
         SetMat4Uniform(Shader.Program, "Model", Model);
         
         auto Skeleton = Entity.Skeleton;
-        
+        Skeleton.Healthbar;
         glBindBuffer(GL_ARRAY_BUFFER, RenderState->SpriteQuadVBO);
         glDrawArrays(GL_QUADS, 0, 4);
         glBindVertexArray(0);
