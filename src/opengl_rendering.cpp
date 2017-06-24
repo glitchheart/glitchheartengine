@@ -1260,6 +1260,49 @@ static void RenderAnimationPreview(render_state* RenderState, const animation_in
     glBindVertexArray(0);
 }
 
+static void RenderHealthbar(render_state* RenderState,
+                            entity* Entity, const entity_healthbar& Healthbar, glm::mat4 ProjectionMatrix, glm::mat4 ViewMatrix)
+{
+    glm::mat4 Model(1.0f);
+    
+    Model = glm::translate(Model, glm::vec3(Entity->Position.x + Healthbar.Offset.x, Entity->Position.y + Healthbar.Offset.y, 0.0f));
+    Model = glm::scale(Model, glm::vec3(Healthbar.Scale.x, Healthbar.Scale.y, 0));
+    
+    if (RenderState->BoundTexture != Healthbar.RenderInfo.Texture->TextureHandle)
+    {
+        glBindTexture(GL_TEXTURE_2D, Healthbar.RenderInfo.Texture->TextureHandle);
+        RenderState->BoundTexture = Healthbar.RenderInfo.Texture->TextureHandle;
+    }
+    
+    shader Shader = RenderState->SpriteSheetShader;
+    
+    if(Shader.Program == 0)
+    {
+        Shader = RenderState->ErrorShaderSprite;
+        glBindVertexArray(RenderState->SpriteErrorVAO);
+    }
+    else
+    {
+        glBindVertexArray(RenderState->SpriteSheetVAO);
+    }
+    
+    UseShader(&Shader);
+    
+    SetFloatUniform(Shader.Program, "isUI", 0);
+    SetVec2Uniform(Shader.Program,"textureOffset", glm::vec2(Healthbar.RenderInfo.FrameSize.x * Healthbar.CurrentFrame,0));
+    SetFloatUniform(Shader.Program, "frameWidth", Healthbar.RenderInfo.FrameSize.x);
+    SetFloatUniform(Shader.Program, "frameHeight",Healthbar.RenderInfo.FrameSize.y);
+    SetVec4Uniform(Shader.Program, "color", glm::vec4(1, 1, 1, 1));
+    SetVec2Uniform(Shader.Program,"sheetSize",
+                   glm::vec2(Healthbar.RenderInfo.Texture->Width, Healthbar.RenderInfo.Texture->Height));
+    
+    SetMat4Uniform(Shader.Program, "Projection", ProjectionMatrix);
+    SetMat4Uniform(Shader.Program, "View", ViewMatrix);
+    SetMat4Uniform(Shader.Program, "Model", Model);
+    glDrawArrays(GL_QUADS, 0, 4);
+    glBindVertexArray(0);
+}
+
 static void RenderEntity(render_state *RenderState, entity &Entity, glm::mat4 ProjectionMatrix, glm::mat4 View)
 { 
     render_entity* RenderEntity = &RenderState->RenderEntities[Entity.RenderEntityHandle];
@@ -1359,9 +1402,16 @@ static void RenderEntity(render_state *RenderState, entity &Entity, glm::mat4 Pr
         SetMat4Uniform(Shader.Program, "View", View);
         SetMat4Uniform(Shader.Program, "Model", Model);
         
+        auto Skeleton = Entity.Skeleton;
+        
         glBindBuffer(GL_ARRAY_BUFFER, RenderState->SpriteQuadVBO);
         glDrawArrays(GL_QUADS, 0, 4);
         glBindVertexArray(0);
+        
+        if(Entity.Type == Entity_Skeleton && Entity.Health < 4 && Entity.Health > 0)
+        {
+            RenderHealthbar(RenderState, &Entity, *Entity.Skeleton.Healthbar, ProjectionMatrix, View);
+        }
     }
     
     if(RenderState->RenderColliders && !Entity.IsKinematic)

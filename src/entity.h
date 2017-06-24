@@ -48,6 +48,14 @@ struct entity_weapon
     Entity_Layer IgnoreLayers;
 };
 
+struct entity_healthbar
+{
+    glm::vec2 Offset;
+    glm::vec3 Scale;
+    ui_render_info RenderInfo;
+    int32 CurrentFrame;
+};
+
 struct entity
 {
     Entity_Enum Type;
@@ -80,7 +88,7 @@ struct entity
     int32 Health = -1;
     
     int32 AttackCount;
-    int32 HitAttackCountId;
+    int32 HitAttackCountId = -1;
     
     timer* RecoilTimer;
     timer* HitCooldownTimer;
@@ -134,6 +142,8 @@ struct entity
         } Blob;
         struct
         {
+            entity_healthbar* Healthbar;
+            
             bool32 IsAttacking;
             real32 WalkingSpeed;
             real32 MaxAlertDistance;
