@@ -66,7 +66,8 @@ static void InitPlayer(game_state* GameState, glm::vec2 Position)
     
     Player->HitCooldownTimer = (timer*)malloc(sizeof(timer));
     Player->HitCooldownTimer->TimerHandle = -1;
-    Player->HitCooldownTimer->TimerMax = 0.4;
+    Player->HitCooldownTimer->TimerMax = 0.2;
+    Player->HitRecoilSpeed = 20;
     Player->Player.AttackMoveSpeed = 15;
     Player->Player.DashSpeed = 30;
     Player->Active = true;
@@ -145,7 +146,7 @@ static void SpawnSkeleton(game_state* GameState, glm::vec2 Position)
     PlayAnimation(Skeleton, "skeleton_idle", GameState);
     Skeleton->Rotation = glm::vec3(0, 0, 0);
     Skeleton->Position = Position;
-    Skeleton->Scale = glm::vec3(3, 3, 1);
+    Skeleton->Scale = glm::vec3(3, 2.58, 1);
     Skeleton->Velocity = glm::vec2(-2,0);
     Skeleton->Active = true;
     Skeleton->IsKinematic = false;
@@ -181,7 +182,7 @@ static void SpawnSkeleton(game_state* GameState, glm::vec2 Position)
     
     Skeleton->Skeleton.ChargingTimer = (timer*)malloc(sizeof(timer));
     Skeleton->Skeleton.ChargingTimer->TimerHandle = -1;
-    Skeleton->Skeleton.ChargingTimer->TimerMax = 1.5f;
+    Skeleton->Skeleton.ChargingTimer->TimerMax = 0.2f;
     
     Skeleton->Skeleton.AStarPath.AStarCooldownTimer = (timer*)malloc(sizeof(timer));
     Skeleton->Skeleton.AStarPath.AStarCooldownTimer->TimerHandle = -1;
@@ -206,6 +207,17 @@ static void SpawnSkeleton(game_state* GameState, glm::vec2 Position)
     Skeleton->Weapon.CollisionAABB = CollisionAABB3;
     Skeleton->Weapon.Rotation = glm::vec3(0, 0, 0);
     Skeleton->Weapon.Scale = glm::vec3(2, 2, 0); 
+    
+    Skeleton->Skeleton.Healthbar = (entity_healthbar*)malloc(sizeof(entity_healthbar));
+    Skeleton->Skeleton.Healthbar->Offset = glm::vec2(-0.5f, 2.2f);
+    Skeleton->Skeleton.Healthbar->Scale = glm::vec3(1.0, 0.25,0 );
+    ui_render_info RenderInfo = {};
+    RenderInfo.Texture = &GameState->RenderState.Textures["4_health"];
+    RenderInfo.TextureOffset = glm::vec2(256, 0);
+    
+    RenderInfo.FrameSize = glm::vec2(64, 16);
+    RenderInfo.ShaderIndex = Shader_SpriteSheetShader;
+    Skeleton->Skeleton.Healthbar->RenderInfo = RenderInfo;
     Skeleton->EntityIndex = GameState->EntityCount++;
 }
 
@@ -336,9 +348,10 @@ void Hit(game_state* GameState, entity* ByEntity, entity* HitEntity)
     {
         StartTimer(GameState, HitEntity->HitCooldownTimer);
         PlaySoundEffect(GameState, &GameState->SoundManager.SwordHit01);
-        
+        HitEntity->HitRecoilDirection = glm::normalize(HitEntity->Position - ByEntity->Position);
         HitEntity->Health -= 1;
         HitEntity->Hit = true;
         HitEntity->HitAttackCountId = ByEntity->AttackCount;
+        printf("%s was hit by %s\n", HitEntity->Name, ByEntity->Name);
     }
 }

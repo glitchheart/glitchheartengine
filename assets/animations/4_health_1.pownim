@@ -1,0 +1,10 @@
+name 4_health_1
+type sprite
+framecount 1
+framesize 64 16
+center 0.5 0.000000
+loop 1
+timeperframe 0.050000
+frames
+64 0
+texture 4_health

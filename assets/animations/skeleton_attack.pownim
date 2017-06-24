@@ -3,7 +3,7 @@ type sprite
 framecount 18
 framesize 43 37
 center 0.23 0
-loop 1
+loop 0
 timeperframe 0.1
 frames
 0 0

@@ -67,7 +67,8 @@ struct ui_render_info
     bool32 Rendered = true;
     
     texture* Texture;
-    
+    glm::vec2 TextureOffset;
+    glm::vec2 FrameSize;
     uint32 ShaderIndex;
     glm::vec2 Size = glm::vec3(1, 1, 1);
     glm::vec4 Color = glm::vec4(1, 1, 1, 1);
