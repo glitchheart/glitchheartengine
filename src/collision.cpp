@@ -115,6 +115,45 @@ real32 GetRayIntersectionFraction(collision_AABB* Coll, glm::vec2 Origin, glm::v
     return MinT;
 }
 
+void CheckWeaponCollision(game_state* GameState, entity_weapon* Entity, collision_info* CollisionInfo)
+{
+    CollisionInfo->OtherCount = -1;
+    
+    glm::vec2 PV;
+    CollisionInfo->OtherCount = 0;
+    
+    for(uint32 OtherEntityIndex = 0;
+        OtherEntityIndex < GameState->EntityCount;
+        OtherEntityIndex++)
+    {
+        entity* OtherEntity = &GameState->Entities[OtherEntityIndex];
+        
+        if(!(OtherEntity->Layer & Entity->IgnoreLayers) && !(Entity->Layer & OtherEntity->IgnoreLayers)
+           && !OtherEntity->IsKinematic && OtherEntity->Active)
+        {
+            if(OtherEntity->HitTrigger)
+            {
+                collision_AABB MdHit;
+                MinkowskiDifference(OtherEntity->HitTrigger, &Entity->CollisionAABB, &MdHit);
+                if(MdHit.Min.x <= 0 &&
+                   MdHit.Max.x >= 0 &&
+                   MdHit.Min.y <= 0 &&
+                   MdHit.Max.y >= 0)
+                {
+                    CollisionInfo->Other[CollisionInfo->OtherCount++] = OtherEntity;
+                    
+                    OtherEntity->HitTrigger->IsColliding = true;
+                }
+                else 
+                {
+                    OtherEntity->HitTrigger->IsColliding = false;
+                }
+            }
+            
+        }
+    }
+}
+
 void CheckCollision(game_state* GameState, entity* Entity, collision_info* CollisionInfo)
 {
     CollisionInfo->OtherCount = -1;
