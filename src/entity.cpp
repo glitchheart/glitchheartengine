@@ -110,35 +110,18 @@ static void InitPlayer(game_state* GameState, glm::vec2 Position)
     CollisionAABB.IsTrigger = false;
     Player->CollisionAABB = CollisionAABB;
     
-    Player->EntityIndex = GameState->EntityCount;
-    GameState->EntityCount++;
-    
-    entity* PlayerWeapon = &GameState->Entities[GameState->EntityCount];
-    PlayerWeapon->Name = "Player weapon";
-    PlayerWeapon->Type = Entity_Weapon;
-    PlayerWeapon->Active = true;
-    
-    render_entity* PlayerWeaponRenderEntity = &GameState->RenderState.RenderEntities[GameState->RenderState.RenderEntityCount];
-    PlayerWeaponRenderEntity->Rendered = true;
-    PlayerWeaponRenderEntity->ShaderIndex = Shader_SpriteSheetShader;
-    PlayerWeaponRenderEntity->Texture = &GameState->RenderState.Textures["sword_simple"];
-    PlayerWeaponRenderEntity->Entity = &*PlayerWeapon;
-    PlayerWeapon->RenderEntityHandle = GameState->RenderState.RenderEntityCount++;
-    PlayerWeapon->CurrentAnimation = 0;
-    PlayerWeapon->AnimationInfo.Playing = false;
-    PlayerWeapon->AnimationInfo.FrameIndex = 0;
-    PlayerWeapon->AnimationInfo.CurrentTime = 0;
-    
+    // Weapon
     collision_AABB CollisionAABB3;
     CollisionAABB3.Center = glm::vec2(0, 0);
     CollisionAABB3.Offset = glm::vec2(0.2, 0);
     CollisionAABB3.Extents = glm::vec2(1.1f,1.2f);
     CollisionAABB3.IsTrigger = true;
-    PlayerWeapon->CollisionAABB = CollisionAABB3;
-    PlayerWeapon->Rotation = glm::vec3(0, 0, 0);
-    PlayerWeapon->Scale = glm::vec3(2, 2, 0); 
-    PlayerWeapon->EntityIndex = GameState->EntityCount;
-    GameState->EntityCount++;
+    Player->Weapon.Rotation = glm::vec3(0, 0, 0);
+    Player->Weapon.Scale = glm::vec3(2, 2, 0); 
+    
+    Player->Weapon.CollisionAABB = CollisionAABB3;
+    
+    Player->EntityIndex = GameState->EntityCount++;
 }
 
 static void SpawnSkeleton(game_state* GameState, glm::vec2 Position)
@@ -213,36 +196,17 @@ static void SpawnSkeleton(game_state* GameState, glm::vec2 Position)
     Skeleton->HitCooldownTimer->TimerMax = 0.4;
     
     Skeleton->Health = 4;
-    Skeleton->EntityIndex = GameState->EntityCount++;
     
     // Weapon
-    entity* SkeletonWeapon = &GameState->Entities[GameState->EntityCount];
-    SkeletonWeapon->Name = "Skeleton weapon";
-    SkeletonWeapon->Type = Entity_Weapon;
-    
-    render_entity* SkeletonWeaponRenderEntity = &GameState->RenderState.RenderEntities[GameState->RenderState.RenderEntityCount];
-    SkeletonWeaponRenderEntity->Rendered = true;
-    SkeletonWeaponRenderEntity->ShaderIndex = Shader_SpriteSheetShader;
-    SkeletonWeaponRenderEntity->Texture = &GameState->RenderState.Textures["sword_simple"];
-    SkeletonWeaponRenderEntity->Entity = SkeletonWeapon;
-    SkeletonWeapon->RenderEntityHandle = GameState->RenderState.RenderEntityCount++;
-    SkeletonWeapon->CurrentAnimation = 0;
-    SkeletonWeapon->AnimationInfo.Playing = false;
-    SkeletonWeapon->AnimationInfo.FrameIndex = 0;
-    SkeletonWeapon->AnimationInfo.CurrentTime = 0;
-    SkeletonWeapon->Weapon.EntityHandle = Skeleton->EntityIndex;
-    SkeletonWeapon->Active = true;
-    
     collision_AABB CollisionAABB3;
     CollisionAABB3.Center = glm::vec2(0, 0.5);
     CollisionAABB3.Offset = glm::vec2(0.7, 0);
     CollisionAABB3.Extents = glm::vec2(0.5f,1.0f);
     CollisionAABB3.IsTrigger = true;
-    SkeletonWeapon->CollisionAABB = CollisionAABB3;
-    SkeletonWeapon->Rotation = glm::vec3(0, 0, 0);
-    SkeletonWeapon->Scale = glm::vec3(2, 2, 0); 
-    SkeletonWeapon->EntityIndex = GameState->EntityCount;
-    GameState->EntityCount++;
+    Skeleton->Weapon.CollisionAABB = CollisionAABB3;
+    Skeleton->Weapon.Rotation = glm::vec3(0, 0, 0);
+    Skeleton->Weapon.Scale = glm::vec3(2, 2, 0); 
+    Skeleton->EntityIndex = GameState->EntityCount++;
 }
 
 static void SpawnBlob(game_state* GameState, glm::vec2 Position)

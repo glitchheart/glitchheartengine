@@ -37,6 +37,17 @@ enum Look_Direction
     Up, Down, Left, Right
 };
 
+struct entity_weapon
+{
+    collision_AABB CollisionAABB;
+    glm::vec2 Center = glm::vec2(0.5, 0.5);
+    glm::vec3 Rotation;
+    glm::vec3 Scale = glm::vec3(1, 1, 1);
+    bool32 IsFlipped;
+    Entity_Layer Layer;
+    Entity_Layer IgnoreLayers;
+};
+
 struct entity
 {
     Entity_Enum Type;
@@ -75,6 +86,10 @@ struct entity
     timer* HitCooldownTimer;
     real32 HitRecoilSpeed;
     glm::vec2 HitRecoilDirection;
+    
+    bool32 HasWeapon;
+    entity_weapon Weapon;
+    
     union
     {
         struct
@@ -132,10 +147,6 @@ struct entity
             astar_path AStarPath;
             
         } Skeleton;
-        struct
-        {
-            uint32 EntityHandle;
-        } Weapon;
     };
     
     glm::vec2 Velocity;

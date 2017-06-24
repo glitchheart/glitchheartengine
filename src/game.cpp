@@ -10,6 +10,8 @@
 #include "level.cpp"
 #include "console.cpp"
 #include "ai.cpp"
+#include <time.h>
+#include <stdlib.h>
 
 #define DEBUG
 
@@ -46,6 +48,7 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
         
         if(!Entity->Player.IsAttacking && TimerDone(GameState, Entity->Player.DashCooldownTimer) && !Entity->Player.IsDashing && GetActionButtonDown(Action_Dash, GameState))
         {
+            
             PlaySoundEffect(GameState, &GameState->SoundManager.Dash);
             Entity->Player.IsDashing = true;
             StartTimer(GameState, Entity->Player.DashTimer);
@@ -283,49 +286,38 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
 
 void UpdateWeapon(entity* Entity, game_state* GameState, real64 DeltaTime)
 {
-    entity* UsingEntity = &GameState->Entities[Entity->Weapon.EntityHandle];
-    render_entity* RenderEntity = &GameState->RenderState.RenderEntities[Entity->RenderEntityHandle];
-    
-    RenderEntity->Color = glm::vec4(1, 1, 1, 1);
-    
-    glm::vec2 Pos = glm::vec2(UsingEntity->Position.x, UsingEntity->Position.y);
-    
-    Entity->IsFlipped = UsingEntity->IsFlipped;
-    
-    Entity->Position = glm::vec2(Pos.x, Pos.y);
-    
     bool32 IsAttacking = false;
     
-    switch(UsingEntity->Type)
+    switch(Entity->Type)
     {
         case Entity_Player:
         {
-            IsAttacking = UsingEntity->Player.IsAttacking;
+            IsAttacking = Entity->Player.IsAttacking;
             
-            switch(UsingEntity->LookDirection)
+            switch(Entity->LookDirection)
             {
                 case Up:
                 {
-                    Entity->CollisionAABB.Offset = glm::vec2(-1.0f, 1.5f);
-                    Entity->CollisionAABB.Extents = glm::vec2(1.25f, 0.5f);
+                    Entity->Weapon.CollisionAABB.Offset = glm::vec2(-1.0f, 1.5f);
+                    Entity->Weapon.CollisionAABB.Extents = glm::vec2(1.25f, 0.5f);
                 }
                 break;
                 case Down:
                 {
-                    Entity->CollisionAABB.Offset = glm::vec2(-1.0f, -1.0f);
-                    Entity->CollisionAABB.Extents = glm::vec2(1.25f, 0.5f);
+                    Entity->Weapon.CollisionAABB.Offset = glm::vec2(-1.0f, -1.0f);
+                    Entity->Weapon.CollisionAABB.Extents = glm::vec2(1.25f, 0.5f);
                 }
                 break;
                 case Left:
                 {
-                    Entity->CollisionAABB.Offset = glm::vec2(-2.0f, 0.5f);
-                    Entity->CollisionAABB.Extents = glm::vec2(0.5f, 1.25f);
+                    Entity->Weapon.CollisionAABB.Offset = glm::vec2(-2.0f, 0.5f);
+                    Entity->Weapon.CollisionAABB.Extents = glm::vec2(0.5f, 1.25f);
                 }
                 break;
                 case Right:
                 {
-                    Entity->CollisionAABB.Offset = glm::vec2(0, 0.5f);
-                    Entity->CollisionAABB.Extents = glm::vec2(0.5f, 1.25f);
+                    Entity->Weapon.CollisionAABB.Offset = glm::vec2(0, 0.5f);
+                    Entity->Weapon.CollisionAABB.Extents = glm::vec2(0.5f, 1.25f);
                 }
                 break;
             }
@@ -334,33 +326,32 @@ void UpdateWeapon(entity* Entity, game_state* GameState, real64 DeltaTime)
         break;
         case Entity_Skeleton:
         {
-            IsAttacking = UsingEntity->Skeleton.IsAttacking;
-            Entity->Position = glm::vec2(Pos.x, Pos.y);
+            IsAttacking = Entity->Skeleton.IsAttacking;
             
-            switch(UsingEntity->LookDirection)
+            switch(Entity->LookDirection)
             {
                 case Up:
                 {
-                    Entity->CollisionAABB.Offset = glm::vec2(-1.0f, 1.5f);
-                    Entity->CollisionAABB.Extents = glm::vec2(1.0f, 0.5f);
+                    Entity->Weapon.CollisionAABB.Offset = glm::vec2(-1.0f, 1.5f);
+                    Entity->Weapon.CollisionAABB.Extents = glm::vec2(1.0f, 0.5f);
                 }
                 break;
                 case Down:
                 {
-                    Entity->CollisionAABB.Offset = glm::vec2(-1.0f, -1.0f);
-                    Entity->CollisionAABB.Extents = glm::vec2(1.0f, 0.5f);
+                    Entity->Weapon.CollisionAABB.Offset = glm::vec2(-1.0f, -1.0f);
+                    Entity->Weapon.CollisionAABB.Extents = glm::vec2(1.0f, 0.5f);
                 }
                 break;
                 case Left:
                 {
-                    Entity->CollisionAABB.Offset = glm::vec2(-2.0f, 0.2f);
-                    Entity->CollisionAABB.Extents = glm::vec2(0.5f, 1.0f);
+                    Entity->Weapon.CollisionAABB.Offset = glm::vec2(-2.0f, 0.2f);
+                    Entity->Weapon.CollisionAABB.Extents = glm::vec2(0.5f, 1.0f);
                 }
                 break;
                 case Right:
                 {
-                    Entity->CollisionAABB.Offset = glm::vec2(0, 0.2f);
-                    Entity->CollisionAABB.Extents = glm::vec2(0.5f, 1.0f);
+                    Entity->Weapon.CollisionAABB.Offset = glm::vec2(0, 0.2f);
+                    Entity->Weapon.CollisionAABB.Extents = glm::vec2(0.5f, 1.0f);
                 }
                 break;
             }
@@ -368,32 +359,21 @@ void UpdateWeapon(entity* Entity, game_state* GameState, real64 DeltaTime)
         break;
     }
     
-    Entity->CollisionAABB.Center = glm::vec2(Entity->Position.x + Entity->Center.x * Entity->Scale.x + Entity->CollisionAABB.Offset.x, Entity->Position.y + Entity->Center.y * Entity->Scale.y + Entity->CollisionAABB.Offset.y);
+    Entity->Weapon.CollisionAABB.Center = glm::vec2(Entity->Position.x + Entity->Weapon.Center.x * Entity->Weapon.Scale.x + Entity->Weapon.CollisionAABB.Offset.x, Entity->Position.y + Entity->Weapon.Center.y * Entity->Weapon.Scale.y + Entity->Weapon.CollisionAABB.Offset.y);
     
     collision_info CollisionInfo;
-    CheckCollision(GameState, Entity, &CollisionInfo);
+    CheckWeaponCollision(GameState, &Entity->Weapon, &CollisionInfo);
     
     if(IsAttacking)
     {
         for(int32 Index = 0; Index < CollisionInfo.OtherCount; Index++)
         {
-            if((UsingEntity->Type == Entity_Player && CollisionInfo.Other[Index]->Type == Entity_Skeleton && CollisionInfo.Other[Index]->Skeleton.AIState != AI_Hit && CollisionInfo.Other[Index]->Skeleton.AIState != AI_Dying && !CollisionInfo.Other[Index]->Hit) ||
-               (UsingEntity->Type == Entity_Skeleton && CollisionInfo.Other[Index]->Type == Entity_Player && !CollisionInfo.Other[Index]->Player.IsDashing && !CollisionInfo.Other[Index]->Hit && TimerDone(GameState, CollisionInfo.Other[Index]->HitCooldownTimer)))
+            if((Entity->Type == Entity_Player && CollisionInfo.Other[Index]->Type == Entity_Skeleton && CollisionInfo.Other[Index]->Skeleton.AIState != AI_Hit && CollisionInfo.Other[Index]->Skeleton.AIState != AI_Dying && !CollisionInfo.Other[Index]->Hit) ||
+               (Entity->Type == Entity_Skeleton && CollisionInfo.Other[Index]->Type == Entity_Player && !CollisionInfo.Other[Index]->Player.IsDashing && !CollisionInfo.Other[Index]->Hit && TimerDone(GameState, CollisionInfo.Other[Index]->HitCooldownTimer)))
             {
-                Hit(GameState, UsingEntity, CollisionInfo.Other[Index]);
+                Hit(GameState, Entity, CollisionInfo.Other[Index]);
             }
         }
-    }
-    
-    if(IsAttacking && !Entity->AnimationInfo.Playing)
-    {
-        Entity->CurrentAnimation = 0;
-        PlayAnimation(Entity, "sword_attack", GameState);
-        //RenderEntity->Rendered = true;
-    }
-    else if(!IsAttacking || !Entity->AnimationInfo.Playing)
-    {
-        RenderEntity->Rendered = false;
     }
 }
 
@@ -687,16 +667,13 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                 case Entity_Player: 
                 {
                     UpdatePlayer(Entity, GameState, DeltaTime);
-                }
-                break;
-                case Entity_Weapon:
-                {
                     UpdateWeapon(Entity, GameState, DeltaTime);
                 }
                 break;
                 case Entity_Skeleton:
                 {
                     UpdateSkeleton(Entity, GameState, DeltaTime);
+                    UpdateWeapon(Entity, GameState, DeltaTime);
                 }
                 break;
                 case Entity_Blob:
