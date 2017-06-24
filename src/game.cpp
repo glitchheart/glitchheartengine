@@ -446,6 +446,8 @@ void UpdateBlob(entity* Entity, game_state* GameState, real64 DeltaTime)
 
 void UpdateSkeleton(entity* Entity, game_state* GameState, real64 DeltaTime)
 {
+    auto& Skeleton = Entity->Skeleton;
+    
     if(Entity->Active)
     {
         entity& Player = GameState->Entities[GameState->PlayerIndex];
@@ -455,12 +457,12 @@ void UpdateSkeleton(entity* Entity, game_state* GameState, real64 DeltaTime)
             if(Entity->Health == 0)
             {
                 PlayAnimation(Entity, "skeleton_dead", GameState);
-                Entity->Skeleton.AIState = AI_Dying;
+                Skeleton.AIState = AI_Dying;
             }
-            else if(strcmp(Entity->CurrentAnimation->Name, "skeleton_attack") != 0 && Entity->Skeleton.AIState != AI_Dying)
+            else if(strcmp(Entity->CurrentAnimation->Name, "skeleton_attack") != 0 && Skeleton.AIState != AI_Dying)
             {
                 PlayAnimation(Entity, "skeleton_hit", GameState);
-                Entity->Skeleton.AIState = AI_Hit;
+                Skeleton.AIState = AI_Hit;
                 Entity->HitRecoilDirection = glm::normalize(Entity->Position - Player.Position);
                 StartTimer(GameState, Entity->RecoilTimer);
             }
@@ -470,15 +472,15 @@ void UpdateSkeleton(entity* Entity, game_state* GameState, real64 DeltaTime)
         
         real64 DistanceToPlayer = glm::distance(Entity->Position, Player.Position);
         
-        switch(Entity->Skeleton.AIState)
+        switch(Skeleton.AIState)
         {
             case AI_Idle:
             {
                 PlayAnimation(Entity, "skeleton_idle", GameState);
                 
-                if(DistanceToPlayer <= Entity->Skeleton.MaxAlertDistance)
+                if(DistanceToPlayer <= Skeleton.MaxAlertDistance)
                 {
-                    Entity->Skeleton.AIState = AI_Following;
+                    Skeleton.AIState = AI_Following;
                     PlayAnimation(Entity, "skeleton_walk", GameState);
                 }
             }
@@ -488,20 +490,21 @@ void UpdateSkeleton(entity* Entity, game_state* GameState, real64 DeltaTime)
             break;
             case AI_Following:
             {
-                if(DistanceToPlayer > Entity->Skeleton.MaxFollowDistance)
+                if(DistanceToPlayer > Skeleton.MaxFollowDistance)
                 {
                     PlayAnimation(Entity, "skeleton_idle", GameState);
-                    Entity->Skeleton.AIState = AI_Idle;
+                    Skeleton.AIState = AI_Idle;
                 }
-                else if(DistanceToPlayer < Entity->Skeleton.MinDistance)
+                else if(DistanceToPlayer < Skeleton.MinDistance)
                 {
                     PlayAnimation(Entity, "skeleton_idle", GameState);
-                    StartTimer(GameState, Entity->Skeleton.ChargingTimer);
-                    Entity->Skeleton.AIState = AI_Charging;
+                    StartTimer(GameState, Skeleton.ChargingTimer);
+                    Skeleton.AIState = AI_Charging;
                     render_entity* RenderEntity = &GameState->RenderState.RenderEntities[Entity->RenderEntityHandle];
                 }
                 else
                 {
+                    PlayAnimation(Entity, "skeleton_walk", GameState);
                     FindPath(GameState, Entity, Player, GetAStarPath(Entity));
                     FollowPath(GameState, Entity, Player, DeltaTime, GetAStarPath(Entity));
                 }
@@ -509,48 +512,48 @@ void UpdateSkeleton(entity* Entity, game_state* GameState, real64 DeltaTime)
             break;
             case AI_Charging:
             {
-                if(TimerDone(GameState, Entity->Skeleton.ChargingTimer))
+                if(TimerDone(GameState, Skeleton.ChargingTimer))
                 {
-                    Entity->Skeleton.AIState = AI_Attacking;
+                    Skeleton.AIState = AI_Attacking;
                     PlayAnimation(Entity, "skeleton_attack", GameState);
                 }
             }
             break;
             case AI_Attacking:
             {
-                if(Entity->AnimationInfo.FrameIndex >= 6 && Entity->AnimationInfo.FrameIndex < 14 && !Entity->Skeleton.IsAttacking && strcmp(Entity->CurrentAnimation->Name, "skeleton_idle") != 0)
+                if(Entity->AnimationInfo.FrameIndex >= 6 && Entity->AnimationInfo.FrameIndex < 14 && !Skeleton.IsAttacking && strcmp(Entity->CurrentAnimation->Name, "skeleton_idle") != 0)
                 {
                     printf("ATTAAAACK!\n");
-                    Entity->Skeleton.IsAttacking = true;
+                    Skeleton.IsAttacking = true;
                     
                     Entity->AttackCount++;
                     if(Entity->AttackCount == 3)
                         Entity->AttackCount = 0;
                     
-                    StartTimer(GameState, Entity->Skeleton.AttackCooldownTimer);
+                    StartTimer(GameState, Skeleton.AttackCooldownTimer);
                 }
                 else if(!Entity->AnimationInfo.Playing)
                 {
                     PlayAnimation(Entity, "skeleton_idle", GameState);
                 }
                 
-                if(Entity->Skeleton.IsAttacking && TimerDone(GameState, Entity->Skeleton.AttackCooldownTimer))
+                if(Skeleton.IsAttacking && TimerDone(GameState, Skeleton.AttackCooldownTimer))
                 {
-                    if(DistanceToPlayer > Entity->Skeleton.MinDistance)
+                    if(DistanceToPlayer > Skeleton.MinDistance)
                     {
-                        Entity->Skeleton.IsAttacking = false;
-                        Entity->Skeleton.AIState = AI_Following;
+                        Skeleton.IsAttacking = false;
+                        Skeleton.AIState = AI_Following;
                     }
-                    else if(DistanceToPlayer > Entity->Skeleton.MaxAlertDistance)
+                    else if(DistanceToPlayer > Skeleton.MaxAlertDistance)
                     {
-                        Entity->Skeleton.IsAttacking = false;
-                        Entity->Skeleton.AIState = AI_Idle;
+                        Skeleton.IsAttacking = false;
+                        Skeleton.AIState = AI_Idle;
                     }
                     else
                     {
                         Entity->Skeleton.IsAttacking = false;
                         Entity->Skeleton.AIState = AI_Charging;
-                        StartTimer(GameState, Entity->Skeleton.ChargingTimer);
+                        StartTimer(GameState, Skeleton.ChargingTimer);
                     }
                 }
             }
@@ -564,7 +567,7 @@ void UpdateSkeleton(entity* Entity, game_state* GameState, real64 DeltaTime)
                 
                 if(!Entity->AnimationInfo.Playing)
                 {
-                    Entity->Skeleton.AIState = AI_Idle;
+                    Skeleton.AIState = AI_Idle;
                     PlayAnimation(Entity, "skeleton_idle", GameState);
                 }
             }
