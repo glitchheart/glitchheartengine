@@ -49,7 +49,11 @@ static void InitPlayer(game_state* GameState, glm::vec2 Position)
     
     Player->Player.AttackCooldownTimer = (timer*)malloc(sizeof(timer));
     Player->Player.AttackCooldownTimer->TimerHandle = -1;
-    Player->Player.AttackCooldownTimer->TimerMax = 0.19;
+    Player->Player.AttackCooldownTimer->TimerMax = 0.4;
+    
+    Player->Player.LastAttackTimer = (timer*)malloc(sizeof(timer));
+    Player->Player.LastAttackTimer->TimerHandle = -1;
+    Player->Player.LastAttackTimer->TimerMax = 1.0;
     
     Player->Player.DashTimer = (timer*)malloc(sizeof(timer));
     Player->Player.DashTimer->TimerHandle = -1;
@@ -84,7 +88,7 @@ static void InitPlayer(game_state* GameState, glm::vec2 Position)
     HitTrigger->Offset = glm::vec2(0, 0);
     HitTrigger->Center = glm::vec2(Player->Position.x + Player->Center.x * Player->Scale.x + HitTrigger->Offset.x,
                                    Player->Position.y + Player->Center.y * Player->Scale.y + HitTrigger->Offset.y);
-    HitTrigger->Extents = glm::vec2(0.5f, 1.0f);
+    HitTrigger->Extents = glm::vec2(0.65f, 1.0f);
     HitTrigger->Offset = glm::vec2(0, 0);
     HitTrigger->IsTrigger;
     Player->HitTrigger = HitTrigger;
@@ -168,7 +172,7 @@ static void SpawnSkeleton(game_state* GameState, glm::vec2 Position)
     collision_AABB* HitTrigger = (collision_AABB*)malloc(sizeof(collision_AABB));
     HitTrigger->Center = glm::vec2(Skeleton->Position.x + Skeleton->Center.x * Skeleton->Scale.x,
                                    Skeleton->Position.y + Skeleton->Center.y * Skeleton->Scale.y);
-    HitTrigger->Extents = glm::vec2(0.6f, 0.9f);
+    HitTrigger->Extents = glm::vec2(0.8f, 0.9f);
     HitTrigger->IsTrigger;
     HitTrigger->Offset = glm::vec2(0, -0.4f);
     Skeleton->HitTrigger = HitTrigger;
@@ -298,7 +302,6 @@ static void SpawnBarrel(game_state* GameState, glm::vec2 Position)
     
     BarrelRenderEntity->ShaderIndex = Shader_Texture;
     BarrelRenderEntity->Texture = &GameState->RenderState.Textures["barrel"];
-    
     BarrelRenderEntity->Entity = &*Barrel;
     Barrel->RenderEntityHandle = GameState->RenderState.RenderEntityCount++;
     
@@ -349,6 +352,7 @@ void Hit(game_state* GameState, entity* ByEntity, entity* HitEntity)
 {
     if(HitEntity->HitAttackCountId != ByEntity->AttackCount)
     {
+        StartTimer(GameState, GameState->GameCamera.ScreenShakeTimer);
         StartTimer(GameState, HitEntity->HitCooldownTimer);
         PlaySoundEffect(GameState, &GameState->SoundManager.SwordHit01);
         HitEntity->HitRecoilDirection = glm::normalize(HitEntity->Position - ByEntity->Position);

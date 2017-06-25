@@ -30,6 +30,7 @@ struct camera
     glm::vec2 Center;
     glm::mat4 ViewMatrix;
     glm::mat4 ProjectionMatrix;
+    timer* ScreenShakeTimer;
 };
 
 enum Game_Mode

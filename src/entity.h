@@ -63,7 +63,7 @@ struct entity
     uint32 EntityIndex;
     glm::vec2 Position;
     glm::vec2 Center = glm::vec2(0.5, 0.5);
-    glm::vec3 Rotation;
+    glm::vec3 Rotation;;
     glm::vec3 Scale = glm::vec3(1, 1, 1);
     bool32 IsFlipped;
     
@@ -105,6 +105,7 @@ struct entity
             bool32 IsAttacking;
             
             timer* AttackCooldownTimer;
+            timer* LastAttackTimer;
             timer* DashTimer;
             timer* DashCooldownTimer;
             timer* PickupCooldownTimer;

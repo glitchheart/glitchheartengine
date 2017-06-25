@@ -33,6 +33,9 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
                               GameState->GameCamera.ProjectionMatrix,
                               glm::vec4(0, 0, GameState->RenderState.Viewport[2], GameState->RenderState.Viewport[3]));
     
+    if(TimerDone(GameState, Entity->Player.LastAttackTimer) && TimerDone(GameState, Entity->Player.AttackCooldownTimer))
+        Entity->AttackCount = 0;
+    
     if (!GameState->Console.Open)
     {
         if(!TimerDone(GameState, Entity->HitCooldownTimer))
@@ -276,6 +279,9 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
             }
             
             Entity->Player.IsAttacking = true;
+            StartTimer(GameState, Entity->Player.LastAttackTimer);
+            //StartTimer(GameState, GameState->GameCamera.ScreenShakeTimer);
+            
             StartTimer(GameState, Entity->Player.AttackMoveTimer);
             Entity->AttackCount++;
             PlaySoundEffect(GameState, &GameState->SoundManager.SwordSlash01);
@@ -1222,6 +1228,8 @@ extern "C" UPDATE(Update)
     {
         if(!GameState->ShouldReload)
         {
+            srand(time(NULL));
+            
             LoadAnimations(GameState);
             InitCommands();
             
@@ -1237,6 +1245,9 @@ extern "C" UPDATE(Update)
         GameState->GameCamera.Zoom = 2.5f;
         GameState->GameCamera.ViewportWidth = GameState->RenderState.WindowWidth / 20;
         GameState->GameCamera.ViewportHeight = GameState->RenderState.WindowHeight / 20;
+        GameState->GameCamera.ScreenShakeTimer = (timer*)malloc(sizeof(timer));
+        GameState->GameCamera.ScreenShakeTimer->TimerHandle = -1;
+        GameState->GameCamera.ScreenShakeTimer->TimerMax = 0.2f;
         
         GameState->IsInitialized = true;
         GameState->ShouldReload = false;
@@ -1331,6 +1342,8 @@ extern "C" UPDATE(Update)
         }
     }
     
+    glm::vec2 Center = GameState->Camera.Center;
+    
     switch(GameState->GameMode)
     {
         case Mode_InGame:
@@ -1340,6 +1353,15 @@ extern "C" UPDATE(Update)
             {
                 UpdateEntities(GameState, DeltaTime);
                 TickTimers(GameState, DeltaTime);
+                
+                if(!TimerDone(GameState, GameState->GameCamera.ScreenShakeTimer))
+                {
+                    real32 Radius = 0.07f;
+                    int32 RandomAngle = rand() % 360;
+                    glm::vec2 Offset = glm::vec2(sin(RandomAngle) * Radius, cos(RandomAngle) * Radius);
+                    Center.x += Offset.x / 1.5f;
+                    Center.y += Offset.y;
+                }
             }
             GameState->Camera = GameState->GameCamera;
         }
@@ -1361,8 +1383,8 @@ extern "C" UPDATE(Update)
                                                     1.0f);
     
     GameState->Camera.ViewMatrix = glm::translate(glm::mat4(1.0f),
-                                                  glm::vec3(-GameState->Camera.Center.x + GameState->Camera.ViewportWidth / GameState->Camera.Zoom / 2,
-                                                            -GameState->Camera.Center.y + GameState->Camera.ViewportHeight / GameState->Camera.Zoom / 2,
+                                                  glm::vec3(-Center.x + GameState->Camera.ViewportWidth / GameState->Camera.Zoom / 2,
+                                                            -Center.y + GameState->Camera.ViewportHeight / GameState->Camera.Zoom / 2,
                                                             0));
     GameState->InputController.CurrentCharacter = 0;
 }
