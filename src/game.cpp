@@ -1000,11 +1000,11 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
                         {
                             GameState->EditorState.PlacementEntity->Position = glm::vec2(Pos.x, Pos.y - GameState->EditorState.PlacementEntity->Scale.y / 2);
                             
-                            if(GetMouseButton(Mouse_Left, GameState))
+                            if(GetMouseButtonDown(Mouse_Left, GameState))
                             {
                                 GameState->EditorState.PlacementEntity = 0;
                                 SpawnSkeleton(GameState,Pos);
-                                GameState->EditorState.PlacementEntity = &GameState->Entities[GameState->EntityCount - 2];
+                                GameState->EditorState.PlacementEntity = &GameState->Entities[GameState->EntityCount - 1];
                             }
                         }
                     }

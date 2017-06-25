@@ -43,7 +43,7 @@ enum Render_Mode
 };
 
 
-#define NUM_ENTITIES 80
+#define NUM_ENTITIES 100
 
 struct entity;
 
@@ -159,7 +159,7 @@ struct render_state
     GLint Viewport[4];
     
     render_entity RenderEntities[NUM_ENTITIES];
-    uint32 RenderEntityCount;
+    int32 RenderEntityCount;
     
     bool32 RenderColliders;
     bool32 RenderFPS;

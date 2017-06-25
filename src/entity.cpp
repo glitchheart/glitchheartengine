@@ -12,16 +12,17 @@ static void DeleteEntity(game_state* GameState, uint32 EntityIndex)
     
     uint32 RenderEntityHandle = Entity->RenderEntityHandle;
     
-    for(uint32 RenderIndex = RenderEntityHandle; RenderIndex < GameState->RenderState.RenderEntityCount; RenderIndex++)
+    for(int32 RenderIndex = RenderEntityHandle; RenderIndex < GameState->RenderState.RenderEntityCount; RenderIndex++)
     {
         GameState->RenderState.RenderEntities[RenderIndex] = GameState->RenderState.RenderEntities[RenderIndex + 1];
+        
         if(GameState->RenderState.RenderEntities[RenderIndex].Entity)
         {
             GameState->RenderState.RenderEntities[RenderIndex].Entity->RenderEntityHandle = RenderIndex;
         }
     }
     
-    GameState->RenderState.RenderEntityCount = Max(GameState->RenderState.RenderEntityCount - 1,0);
+    GameState->RenderState.RenderEntityCount = max(GameState->RenderState.RenderEntityCount - 1, 0);
     
     if(GameState->EditorState.SelectedEntity)
         GameState->EditorState.SelectedEntity = 0;
@@ -30,7 +31,9 @@ static void DeleteEntity(game_state* GameState, uint32 EntityIndex)
     {
         GameState->Entities[Index] = GameState->Entities[Index + 1];
         GameState->Entities[Index].EntityIndex = Index;
+        GameState->RenderState.RenderEntities[GameState->Entities[Index].RenderEntityHandle].Entity = &GameState->Entities[Index];
     }
+    
     GameState->EntityCount--;
 }
 
