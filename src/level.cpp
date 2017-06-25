@@ -203,6 +203,7 @@ static bool32 LoadLevelFromFile(char* FilePath, level* Level, game_state* GameSt
                 SpawnBarrel(GameState, Pos);
             }
         }
+        
         fclose(File);
         
         Level->Tilemap.RenderInfo.VAO = 0;
