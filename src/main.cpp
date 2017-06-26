@@ -1,15 +1,6 @@
-#include "main.h"
-
 #include <glad/glad.h>
-#include "glm/gtc/matrix_transform.hpp"
-#include <GLFW/glfw3.h>
 #include "al.h"
 #include "alc.h"
-#define STB_IMAGE_IMPLEMENTATION
-#include <stb/stb_image.h>
-
-#include <map>
-
 #include "game.h"
 #include "platform_sound.h"
 #include "platform_sound.cpp"
@@ -17,7 +8,6 @@
 #define KEY_INIT
 #include "keycontroller.cpp"
 #include "keys_glfw.h"
-#include "opengl_rendering.h"
 #include "opengl_rendering.cpp"
 
 struct game_code

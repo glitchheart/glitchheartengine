@@ -1,3 +1,6 @@
+#ifndef AI_H
+#define AI_H
+
 struct astar_node
 {
     int32 X = -1;
@@ -35,6 +38,4 @@ struct astar_path
     timer* AStarCooldownTimer;
 };
 
-
-
-
+#endif

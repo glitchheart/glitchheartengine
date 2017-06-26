@@ -12,6 +12,7 @@ struct animation_info
     uint32 FrameIndex;
     bool32 Playing;
     real64 CurrentTime;
+    bool32 FreezeFrame;
 };
 
 struct animation

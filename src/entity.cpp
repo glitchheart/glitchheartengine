@@ -22,7 +22,7 @@ static void DeleteEntity(game_state* GameState, uint32 EntityIndex)
         }
     }
     
-    GameState->RenderState.RenderEntityCount = max(GameState->RenderState.RenderEntityCount - 1, 0);
+    GameState->RenderState.RenderEntityCount = Max(GameState->RenderState.RenderEntityCount - 1, 0);
     
     if(GameState->EditorState.SelectedEntity)
         GameState->EditorState.SelectedEntity = 0;
@@ -45,7 +45,10 @@ static void InitPlayer(game_state* GameState, glm::vec2 Position)
     Player->Type = Entity_Player;
     Player->Health = 3;
     Player->Player.WalkingSpeed = 8.5f;
-    Player->Player.ThrowingSpeed = 25.0f;
+    Player->Player.ThrowingSpeed = 15.0f;
+    Player->Player.CrosshairRadius = 4;
+    Player->Player.CrosshairPositionX = Player->Player.CrosshairRadius * 1.0f;
+    Player->Player.CrosshairPositionY = 0;
     
     Player->Player.AttackCooldownTimer = (timer*)malloc(sizeof(timer));
     Player->Player.AttackCooldownTimer->TimerHandle = -1;
@@ -55,6 +58,10 @@ static void InitPlayer(game_state* GameState, glm::vec2 Position)
     Player->Player.LastAttackTimer->TimerHandle = -1;
     Player->Player.LastAttackTimer->TimerMax = 1.0;
     
+    Player->Player.PickupCooldownTimer = (timer*)malloc(sizeof(timer));
+    Player->Player.PickupCooldownTimer->TimerHandle = -1;
+    Player->Player.PickupCooldownTimer->TimerMax = 0.36;
+    
     Player->Player.DashTimer = (timer*)malloc(sizeof(timer));
     Player->Player.DashTimer->TimerHandle = -1;
     Player->Player.DashTimer->TimerMax = 0.24;
@@ -62,10 +69,6 @@ static void InitPlayer(game_state* GameState, glm::vec2 Position)
     Player->Player.DashCooldownTimer = (timer*)malloc(sizeof(timer));
     Player->Player.DashCooldownTimer->TimerHandle = -1;
     Player->Player.DashCooldownTimer->TimerMax = 0.2;
-    
-    Player->Player.PickupCooldownTimer = (timer*)malloc(sizeof(timer));
-    Player->Player.PickupCooldownTimer->TimerHandle = -1;
-    Player->Player.PickupCooldownTimer->TimerMax = 0.36;
     
     Player->Player.AttackMoveTimer = (timer*)malloc(sizeof(timer));
     Player->Player.AttackMoveTimer->TimerHandle = -1;
@@ -237,7 +240,7 @@ static void SpawnBlob(game_state* GameState, glm::vec2 Position)
     
     render_entity* EnemyRenderEntity = &GameState->RenderState.RenderEntities[GameState->RenderState.RenderEntityCount];
     
-    EnemyRenderEntity->ShaderIndex = Shader_SpriteSheetShader;
+    EnemyRenderEntity->ShaderIndex = Shader_Texture;
     EnemyRenderEntity->Texture = &GameState->RenderState.Textures["blob"];
     
     EnemyRenderEntity->Entity = &*Enemy;
@@ -298,21 +301,31 @@ static void SpawnBarrel(game_state* GameState, glm::vec2 Position)
     Barrel->Layer = Layer_Environment;
     Barrel->IgnoreLayers = Layer_Environment;
     
+    Barrel->Pickup.PickupThrowTimer = (timer*)malloc(sizeof(timer));
+    Barrel->Pickup.PickupThrowTimer->TimerHandle = -1;
+    Barrel->Pickup.PickupThrowTimer->TimerMax = 0.4f;
+    
     render_entity* BarrelRenderEntity = &GameState->RenderState.RenderEntities[GameState->RenderState.RenderEntityCount];
     
-    BarrelRenderEntity->ShaderIndex = Shader_Texture;
-    BarrelRenderEntity->Texture = &GameState->RenderState.Textures["barrel"];
+    BarrelRenderEntity->ShaderIndex = Shader_SpriteSheetShader;
     BarrelRenderEntity->Entity = &*Barrel;
+    BarrelRenderEntity->Texture = &GameState->RenderState.Textures["barrel_sheet"];
     Barrel->RenderEntityHandle = GameState->RenderState.RenderEntityCount++;
+    
+    Barrel->CurrentAnimation = 0;
+    Barrel->AnimationInfo.Playing = false;
+    Barrel->AnimationInfo.FrameIndex = 0;
+    Barrel->AnimationInfo.CurrentTime = 0;
+    PlayAnimation(Barrel, "barrel_standing", GameState);
     
     Barrel->Rotation = glm::vec3(0, 0, 0);
     Barrel->Position = Position;
     Barrel->Scale = glm::vec3(2, 2, 0);
     Barrel->Velocity = glm::vec2(0,0);
-    Barrel->Center = glm::vec2(0.5, -0.5);
+    Barrel->Center = glm::vec2(0.5, 0.5);
     Barrel->IsStatic = true;
     Barrel->IsKinematic = false;
-    Barrel->Pickup = true;
+    Barrel->IsPickup = true;
     
     collision_AABB CollisionAABB;
     
@@ -326,27 +339,6 @@ static void SpawnBarrel(game_state* GameState, glm::vec2 Position)
     GameState->EntityCount++;
 }
 
-static void StartTimer(game_state* GameState, timer* Timer)
-{
-    Timer->TimerHandle = GameState->TimerCount;
-    GameState->Timers[Timer->TimerHandle] = Timer->TimerMax;
-    
-    GameState->TimerCount++;
-    if(GameState->TimerCount == NUM_TIMERS)
-        GameState->TimerCount = 0;
-}
-
-static bool32 TimerDone(game_state* GameState, timer* Timer)
-{
-    if(Timer->TimerHandle != -1 && 
-       GameState->Timers[Timer->TimerHandle] <= 0)
-    {
-        Timer->TimerHandle = -1;
-    }
-    
-    return Timer->TimerHandle == -1;
-}
-
 //@Incomplete: Maybe we will add a weapon type or damage amount
 void Hit(game_state* GameState, entity* ByEntity, entity* HitEntity)
 {
@@ -354,11 +346,694 @@ void Hit(game_state* GameState, entity* ByEntity, entity* HitEntity)
     {
         StartTimer(GameState, GameState->GameCamera.ScreenShakeTimer);
         StartTimer(GameState, HitEntity->HitCooldownTimer);
-        PlaySoundEffect(GameState, &GameState->SoundManager.SwordHit01);
+        PlaySoundEffect(GameState, &GameState->SoundManager.SwordHit02);
         HitEntity->HitRecoilDirection = glm::normalize(HitEntity->Position - ByEntity->Position);
         HitEntity->Health -= 1;
         HitEntity->Hit = true;
         HitEntity->HitAttackCountId = ByEntity->AttackCount;
-        printf("%s was hit by %s\n", HitEntity->Name, ByEntity->Name);
+    }
+}
+
+
+void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
+{
+    auto pos = glm::unProject(glm::vec3(GameState->InputController.MouseX,GameState->RenderState.Viewport[3] - GameState->InputController.MouseY, 0),
+                              GameState->GameCamera.ViewMatrix,
+                              GameState->GameCamera.ProjectionMatrix,
+                              glm::vec4(0, 0, GameState->RenderState.Viewport[2], GameState->RenderState.Viewport[3]));
+    
+    if(TimerDone(GameState, Entity->Player.LastAttackTimer) && TimerDone(GameState, Entity->Player.AttackCooldownTimer))
+        Entity->AttackCount = 0;
+    
+    if (!GameState->Console.Open)
+    {
+        if(!TimerDone(GameState, Entity->HitCooldownTimer))
+        {
+            Entity->Velocity = glm::vec2(Entity->HitRecoilDirection.x * Entity->HitRecoilSpeed * DeltaTime, Entity->HitRecoilDirection.y * Entity->HitRecoilSpeed * DeltaTime);
+        }
+        else
+        {
+            // Set the last know direction for dash direction later
+            if(Entity->Velocity.x != 0 || Entity->Velocity.y != 0)
+            {
+                glm::vec2 Direction = glm::normalize(Entity->Velocity);
+                Entity->Player.LastKnownDirectionX = Direction.x;
+                Entity->Player.LastKnownDirectionY = Direction.y;
+            }
+            
+            if(!Entity->Player.Pickup && !Entity->Player.IsAttacking && TimerDone(GameState, Entity->Player.DashCooldownTimer) && !Entity->Player.IsDashing && GetActionButtonDown(Action_Dash, GameState))
+            {
+                
+                PlaySoundEffect(GameState, &GameState->SoundManager.Dash);
+                Entity->Player.IsDashing = true;
+                StartTimer(GameState, Entity->Player.DashTimer);
+            }
+            
+            if(Entity->Player.IsDashing &&!TimerDone(GameState,Entity->Player.DashTimer) && GetActionButtonDown(Action_Dash, GameState))
+            {
+                Entity->Player.DashCount = 0;
+                StartTimer(GameState,Entity->Player.DashCooldownTimer);
+            }
+            
+            
+            if(!Entity->Player.IsDashing)
+            {
+                if(Entity->Player.IsAttacking && !Entity->AnimationInfo.Playing)
+                {
+                    Entity->Player.IsAttacking = false;
+                    
+                    if(Entity->AttackCount == 3)
+                    {
+                        Entity->AttackCount = 0;
+                        Entity->Velocity = glm::vec2(0, 0);
+                        StartTimer(GameState, Entity->Player.AttackCooldownTimer);
+                    }
+                }
+                
+                if(!Entity->Player.IsAttacking)
+                {
+                    real32 InputX = GetInputX(GameState);
+                    real32 InputY = GetInputY(GameState);
+                    Entity->Velocity.x = InputX * Entity->Player.WalkingSpeed * (real32)DeltaTime;
+                    Entity->Velocity.y = InputY * Entity->Player.WalkingSpeed * (real32)DeltaTime;
+                    
+                    if(Entity->Velocity.x != 0.0f || Entity->Velocity.y != 0.0f)
+                    {
+                        if(Abs(InputX) < 0.3)
+                        {
+                            if(Entity->Velocity.y > 0)
+                            {
+                                Entity->LookDirection = Up;
+                                PlayAnimation(Entity, "player_run_up", GameState);
+                            }
+                            else
+                            {
+                                Entity->LookDirection = Down;
+                                PlayAnimation(Entity, "player_run_down", GameState);
+                            }
+                        }
+                        else
+                        {
+                            Entity->LookDirection = Right;
+                            PlayAnimation(Entity, "player_run_right", GameState);
+                        }
+                    }
+                    else
+                    {
+                        if(Entity->Player.LastKnownDirectionX == 0)
+                        {
+                            if(Entity->Player.LastKnownDirectionY > 0)
+                                PlayAnimation(Entity, "player_idle_up", GameState);
+                            else
+                                PlayAnimation(Entity, "player_idle_down", GameState);
+                        }
+                        else
+                            PlayAnimation(Entity, "player_idle_right", GameState);
+                    }
+                    
+                    if(Entity->Velocity.x != 0)
+                    {
+                        Entity->IsFlipped = Entity->Velocity.x < 0;
+                        
+                        if(Entity->LookDirection == Right && Entity->IsFlipped)
+                            Entity->LookDirection = Left;
+                    }
+                }
+                else if(!TimerDone(GameState, Entity->Player.AttackMoveTimer))
+                {
+                    glm::vec2 Vel;
+                    real32 AttackMoveSpeed = Entity->Player.AttackMoveSpeed;
+                    
+                    if(Entity->Player.LastKnownDirectionX != 0 || Entity->Player.LastKnownDirectionY != 0)
+                    {
+                        Vel = glm::vec2(Entity->Player.LastKnownDirectionX * AttackMoveSpeed * DeltaTime, Entity->Player.LastKnownDirectionY * AttackMoveSpeed * DeltaTime);
+                    }
+                    else
+                    {
+                        switch(Entity->LookDirection)
+                        {
+                            case Up:
+                            {
+                                Vel = glm::vec2(0, AttackMoveSpeed * DeltaTime);
+                            }
+                            break;
+                            case Down:
+                            {
+                                
+                                Vel = glm::vec2(0, -AttackMoveSpeed * DeltaTime);
+                            }
+                            break;
+                            case Left:
+                            {
+                                
+                                Vel = glm::vec2(-AttackMoveSpeed * DeltaTime, 0);
+                            }
+                            break;
+                            case Right:
+                            {
+                                Vel = glm::vec2(AttackMoveSpeed * DeltaTime, 0);
+                            }
+                            break;
+                        }
+                    }
+                    
+                    Entity->Velocity = Vel;
+                }
+                else
+                {
+                    Entity->Velocity = glm::vec2(0, 0);
+                }
+                
+                if(GetActionButtonDown(Action_Interact, GameState) && Entity->Player.Pickup)
+                {
+                    Entity->Player.Pickup->IsKinematic = false;
+                    real32 ThrowingDir = Entity->IsFlipped ? -1.0f : 1.0f;
+                    glm::vec2 Throw;
+                    
+                    glm::vec2 Dir = glm::normalize(glm::vec2(Entity->Player.CrosshairPositionX, Entity->Player.CrosshairPositionY));
+                    Throw.x = Dir.x * Entity->Player.ThrowingSpeed;
+                    Throw.y = Dir.y * Entity->Player.ThrowingSpeed;
+                    
+                    Entity->Player.Pickup->Velocity = Throw;
+                    StartTimer(GameState, Entity->Player.Pickup->Pickup.PickupThrowTimer);
+                    PlayAnimation(Entity->Player.Pickup, "barrel_thrown", GameState);
+                    PlaySoundEffect(GameState, &GameState->SoundManager.Throw);
+                    Entity->Player.Pickup = NULL;
+                    StartTimer(GameState, Entity->Player.PickupCooldownTimer);
+                }
+            }
+            else
+            {
+                if(TimerDone(GameState, Entity->Player.DashTimer))
+                {
+                    Entity->Player.DashCount++;
+                    
+                    if(Entity->Player.DashCount == 3)
+                    {
+                        Entity->Player.DashCount = 0;
+                        StartTimer(GameState, Entity->Player.DashCooldownTimer);
+                    }
+                    Entity->Player.IsDashing = false;
+                }
+                else
+                {
+                    Entity->Velocity = glm::vec2(Entity->Player.LastKnownDirectionX * Entity->Player.DashSpeed * DeltaTime, Entity->Player.LastKnownDirectionY * Entity->Player.DashSpeed * DeltaTime);
+                }
+            }
+        }
+        
+        Entity->Position += Entity->Velocity;
+        
+        Entity->Hit = false;
+        
+        collision_info CollisionInfo;
+        CheckCollision(GameState, Entity, &CollisionInfo);
+        
+        entity* OtherEntity = 0;
+        bool32 OtherFound = false;
+        
+        for(int Index = 0; Index < CollisionInfo.OtherCount; Index++)
+        {
+            if(CollisionInfo.Other[Index]->IsPickup)
+            {
+                OtherEntity = CollisionInfo.Other[Index];
+                OtherFound = true;
+                break;
+            }
+        }
+        
+        if(OtherFound && OtherEntity->IsPickup &&
+           GetActionButtonDown(Action_Interact, GameState) && TimerDone(GameState, Entity->Player.PickupCooldownTimer))
+        {
+            Entity->Player.RenderCrosshair = true;
+            Entity->Player.Pickup = OtherEntity;
+            Entity->Player.Pickup->Position = Entity->Position;
+            Entity->Player.Pickup->Velocity = glm::vec2(0.0f,0.0f);
+            Entity->Player.Pickup->IsKinematic = true;
+        }
+        
+        if(Entity->Player.Pickup)
+        {
+            Entity->Player.Pickup->Position = glm::vec2(Entity->Position.x - 0.5f, Entity->Position.y);
+            
+            auto Input = glm::normalize(glm::vec2(GetInputX(GameState, Stick_Right), GetInputY(GameState, Stick_Right)));
+            
+            if(Input.x == Input.x || Input.y == Input.y) // NaN check
+            {
+                Entity->Player.CrosshairPositionX = Input.x * Entity->Player.CrosshairRadius;
+                Entity->Player.CrosshairPositionY = Input.y * Entity->Player.CrosshairRadius;
+            }
+        }
+        else
+            Entity->Player.RenderCrosshair = false;
+        
+        //attacking
+        if(!Entity->Player.Pickup && TimerDone(GameState, Entity->Player.AttackCooldownTimer) && !Entity->Player.IsAttacking && (GetActionButtonDown(Action_Attack, GameState) || GetJoystickKeyDown(Joystick_3, GameState)))
+        {
+            switch(Entity->LookDirection)
+            {
+                case Up:
+                {
+                    PlayAnimation(Entity, "player_attack_up", GameState);
+                }
+                break;
+                case Down:
+                {
+                    PlayAnimation(Entity, "player_attack_down", GameState);
+                }
+                break;
+                case Left:
+                case Right:
+                {
+                    PlayAnimation(Entity, "player_attack_right", GameState);
+                }
+                break;
+            }
+            
+            Entity->Player.IsAttacking = true;
+            StartTimer(GameState, Entity->Player.LastAttackTimer);
+            
+            StartTimer(GameState, Entity->Player.AttackMoveTimer);
+            Entity->AttackCount++;
+            PlaySoundEffect(GameState, &GameState->SoundManager.SwordSlash01);
+        }
+        
+        auto Direction = glm::vec2(pos.x, pos.y) - Entity->Position;
+        Direction = glm::normalize(Direction);
+        float Degrees = atan2(Direction.y, Direction.x);
+        
+        GameState->GameCamera.CenterTarget = glm::vec2(Entity->Position.x, Entity->Position.y);
+    }
+}
+
+void UpdateWeapon(entity* Entity, game_state* GameState, real64 DeltaTime)
+{
+    bool32 IsAttacking = false;
+    
+    switch(Entity->Type)
+    {
+        case Entity_Player:
+        {
+            IsAttacking = Entity->Player.IsAttacking;
+            
+            switch(Entity->LookDirection)
+            {
+                case Up:
+                {
+                    Entity->Weapon.CollisionAABB.Offset = glm::vec2(-1.0f, 1.5f);
+                    Entity->Weapon.CollisionAABB.Extents = glm::vec2(1.25f, 0.5f);
+                }
+                break;
+                case Down:
+                {
+                    Entity->Weapon.CollisionAABB.Offset = glm::vec2(-1.0f, -1.0f);
+                    Entity->Weapon.CollisionAABB.Extents = glm::vec2(1.25f, 0.5f);
+                }
+                break;
+                case Left:
+                {
+                    Entity->Weapon.CollisionAABB.Offset = glm::vec2(-2.0f, 0.5f);
+                    Entity->Weapon.CollisionAABB.Extents = glm::vec2(0.5f, 1.25f);
+                }
+                break;
+                case Right:
+                {
+                    Entity->Weapon.CollisionAABB.Offset = glm::vec2(0, 0.5f);
+                    Entity->Weapon.CollisionAABB.Extents = glm::vec2(0.5f, 1.25f);
+                }
+                break;
+            }
+            
+        }
+        break;
+        case Entity_Skeleton:
+        {
+            IsAttacking = Entity->Skeleton.IsAttacking;
+            
+            switch(Entity->LookDirection)
+            {
+                case Up:
+                {
+                    Entity->Weapon.CollisionAABB.Offset = glm::vec2(-1.0f, 1.5f);
+                    Entity->Weapon.CollisionAABB.Extents = glm::vec2(1.0f, 0.5f);
+                }
+                break;
+                case Down:
+                {
+                    Entity->Weapon.CollisionAABB.Offset = glm::vec2(-1.0f, -1.0f);
+                    Entity->Weapon.CollisionAABB.Extents = glm::vec2(1.0f, 0.5f);
+                }
+                break;
+                case Left:
+                {
+                    Entity->Weapon.CollisionAABB.Offset = glm::vec2(-2.0f, 0.2f);
+                    Entity->Weapon.CollisionAABB.Extents = glm::vec2(0.5f, 1.0f);
+                }
+                break;
+                case Right:
+                {
+                    Entity->Weapon.CollisionAABB.Offset = glm::vec2(0, 0.2f);
+                    Entity->Weapon.CollisionAABB.Extents = glm::vec2(0.5f, 1.0f);
+                }
+                break;
+            }
+        }
+        break;
+    }
+    
+    Entity->Weapon.CollisionAABB.Center = glm::vec2(Entity->Position.x + Entity->Weapon.Center.x * Entity->Weapon.Scale.x + Entity->Weapon.CollisionAABB.Offset.x, Entity->Position.y + Entity->Weapon.Center.y * Entity->Weapon.Scale.y + Entity->Weapon.CollisionAABB.Offset.y);
+    
+    collision_info CollisionInfo;
+    CheckWeaponCollision(GameState, &Entity->Weapon, &CollisionInfo);
+    
+    if(IsAttacking)
+    {
+        for(int32 Index = 0; Index < CollisionInfo.OtherCount; Index++)
+        {
+            if((Entity->Type == Entity_Player && CollisionInfo.Other[Index]->Type == Entity_Skeleton && CollisionInfo.Other[Index]->Skeleton.AIState != AI_Hit && CollisionInfo.Other[Index]->Skeleton.AIState != AI_Dying && !CollisionInfo.Other[Index]->Hit) ||
+               (Entity->Type == Entity_Skeleton && CollisionInfo.Other[Index]->Type == Entity_Player && !CollisionInfo.Other[Index]->Player.IsDashing && !CollisionInfo.Other[Index]->Hit && TimerDone(GameState, CollisionInfo.Other[Index]->HitCooldownTimer)))
+            {
+                Hit(GameState, Entity, CollisionInfo.Other[Index]);
+            }
+        }
+    }
+}
+
+void UpdateBlob(entity* Entity, game_state* GameState, real64 DeltaTime)
+{
+    switch(Entity->Blob.AIState)
+    {
+        case AI_Following:
+        {
+            FindPath(GameState,Entity,GameState->Entities[GameState->PlayerIndex],GetAStarPath(Entity));
+            FollowPath(GameState,Entity,GameState->Entities[GameState->PlayerIndex],DeltaTime,GetAStarPath(Entity));
+            /*glm::vec2 Direction = glm::normalize(glm::vec2(GameState->Entities[GameState->PlayerIndex].Position.x - Entity->Position.x, GameState->Entities[GameState->PlayerIndex].Position.y - Entity->Position.y));
+            */
+            if(Abs(glm::distance(Entity->Position, GameState->Entities[GameState->PlayerIndex].Position)) < 1)
+            {
+                Entity->Blob.AIState = AI_Charging;
+                StartTimer(GameState, Entity->Blob.ExplodeStartTimer);
+            }
+            
+            Entity->Position.x += Entity->Velocity.x * (real32)DeltaTime;
+            Entity->Position.y += Entity->Velocity.y * (real32)DeltaTime;
+            
+            //printf("Velocity: (%f,%f)\n",Entity->Velocity.x,Entity->Velocity.y);
+            
+            /*Entity->IsFlipped = Direction.x <= 0;*/
+        }
+        break;
+        case AI_Charging:
+        {
+            if(TimerDone(GameState, Entity->Blob.ExplodeStartTimer))
+            {
+                Entity->Blob.AIState = AI_Attacking;
+                StartTimer(GameState, Entity->Blob.ExplodeCountdownTimer);
+            }
+            
+            if(Abs(glm::distance(Entity->Position, GameState->Entities[GameState->PlayerIndex].Position)) >= 1)
+                Entity->Blob.AIState = AI_Following;
+        }
+        break;
+        case AI_Attacking:
+        {
+            if(TimerDone(GameState, Entity->Blob.ExplodeCountdownTimer))
+            {
+                Entity->Blob.AIState = AI_Dying;
+                PlayAnimation(Entity, "explosion", GameState);
+                PlaySoundEffect(GameState, &GameState->SoundManager.Explosion);
+            }
+        }
+        break;
+        case AI_Dying:
+        {
+            if(!Entity->AnimationInfo.Playing)
+            {
+                Entity->Active = false;
+                //DeleteEntity(GameState, Entity->EntityIndex);
+            }
+        }
+        break;
+    }
+    
+    collision_info CollisionInfo;
+    CheckCollision(GameState, Entity, &CollisionInfo);
+}
+
+void UpdateSkeleton(entity* Entity, game_state* GameState, real64 DeltaTime)
+{
+    auto& Skeleton = Entity->Skeleton;
+    
+    if(Entity->Active && !Entity->Dead)
+    {
+        entity& Player = GameState->Entities[GameState->PlayerIndex];
+        
+        if(Entity->Hit)
+        {
+            if(Entity->Health == 0)
+            {
+                PlayAnimation(Entity, "skeleton_dead", GameState);
+                Entity->AnimationInfo.FreezeFrame = true;
+                Skeleton.AIState = AI_Dying;
+            }
+            else if(strcmp(Entity->CurrentAnimation->Name, "skeleton_attack") != 0 && Skeleton.AIState != AI_Dying)
+            {
+                PlayAnimation(Entity, "skeleton_hit", GameState);
+                Skeleton.AIState = AI_Hit;
+                Entity->HitRecoilDirection = glm::normalize(Entity->Position - Player.Position);
+                StartTimer(GameState, Entity->RecoilTimer);
+            }
+        }
+        
+        Entity->Velocity = glm::vec2(0,0);
+        
+        real64 DistanceToPlayer = glm::distance(Entity->Position, Player.Position);
+        
+        switch(Skeleton.AIState)
+        {
+            case AI_Idle:
+            {
+                PlayAnimation(Entity, "skeleton_idle", GameState);
+                
+                if(DistanceToPlayer <= Skeleton.MaxAlertDistance)
+                {
+                    Skeleton.AIState = AI_Following;
+                    PlayAnimation(Entity, "skeleton_walk", GameState);
+                }
+            }
+            break;
+            case AI_Alerted:
+            {}
+            break;
+            case AI_Following:
+            {
+                if(DistanceToPlayer > Skeleton.MaxFollowDistance)
+                {
+                    PlayAnimation(Entity, "skeleton_idle", GameState);
+                    Skeleton.AIState = AI_Idle;
+                }
+                else if(DistanceToPlayer < Skeleton.MinDistance)
+                {
+                    PlayAnimation(Entity, "skeleton_idle", GameState);
+                    StartTimer(GameState, Skeleton.ChargingTimer);
+                    Skeleton.AIState = AI_Charging;
+                    render_entity* RenderEntity = &GameState->RenderState.RenderEntities[Entity->RenderEntityHandle];
+                }
+                else
+                {
+                    PlayAnimation(Entity, "skeleton_walk", GameState);
+                    FindPath(GameState, Entity, Player, GetAStarPath(Entity));
+                    FollowPath(GameState, Entity, Player, DeltaTime, GetAStarPath(Entity));
+                }
+            }
+            break;
+            case AI_Charging:
+            {
+                if(TimerDone(GameState, Skeleton.ChargingTimer))
+                {
+                    Skeleton.AIState = AI_Attacking;
+                    PlayAnimation(Entity, "skeleton_attack", GameState);
+                }
+            }
+            break;
+            case AI_Attacking:
+            {
+                if(Entity->AnimationInfo.FrameIndex >= 6 && Entity->AnimationInfo.FrameIndex < 14 && !Skeleton.IsAttacking && strcmp(Entity->CurrentAnimation->Name, "skeleton_idle") != 0)
+                {
+                    Skeleton.IsAttacking = true;
+                    
+                    Entity->AttackCount++;
+                    if(Entity->AttackCount == 3)
+                        Entity->AttackCount = 0;
+                    
+                    StartTimer(GameState, Skeleton.AttackCooldownTimer);
+                }
+                else if(!Entity->AnimationInfo.Playing)
+                {
+                    PlayAnimation(Entity, "skeleton_idle", GameState);
+                }
+                
+                if(Skeleton.IsAttacking && TimerDone(GameState, Skeleton.AttackCooldownTimer))
+                {
+                    if(DistanceToPlayer > Skeleton.MinDistance)
+                    {
+                        Skeleton.IsAttacking = false;
+                        Skeleton.AIState = AI_Following;
+                    }
+                    else if(DistanceToPlayer > Skeleton.MaxAlertDistance)
+                    {
+                        Skeleton.IsAttacking = false;
+                        Skeleton.AIState = AI_Idle;
+                    }
+                    else
+                    {
+                        Entity->Skeleton.IsAttacking = false;
+                        Entity->Skeleton.AIState = AI_Charging;
+                        StartTimer(GameState, Skeleton.ChargingTimer);
+                    }
+                }
+            }
+            break;
+            case AI_Hit:
+            {
+                if(!TimerDone(GameState, Entity->RecoilTimer))
+                {
+                    Entity->Velocity = glm::vec2(Entity->HitRecoilDirection.x * Entity->HitRecoilSpeed, Entity->HitRecoilDirection.y * Entity->HitRecoilSpeed);
+                }
+                
+                if(!Entity->AnimationInfo.Playing)
+                {
+                    Skeleton.AIState = AI_Idle;
+                    PlayAnimation(Entity, "skeleton_idle", GameState);
+                }
+            }
+            break;
+            case AI_Dying:
+            {
+                if(!Entity->AnimationInfo.Playing)
+                {
+                    Entity->Dead = true;
+                    Entity->IsKinematic = true;
+                }
+            }
+            break;
+        }
+        
+        Entity->Position.x += Entity->Velocity.x * (real32)DeltaTime;
+        Entity->Position.y += Entity->Velocity.y * (real32)DeltaTime;
+        
+        glm::vec2 Direction = glm::normalize(Player.Position - Entity->Position);
+        
+        if(Abs(Direction.x) < 0.4f)
+        {
+            if(Direction.y > 0)
+            {
+                Entity->LookDirection = Up;
+            }
+            else
+            {
+                Entity->LookDirection = Down;
+            }
+        }
+        else
+        {
+            if(Direction.x < 0)
+                Entity->LookDirection = Left;
+            else
+                Entity->LookDirection = Right;
+        }
+        
+        Entity->IsFlipped = Direction.x < 0;
+        
+        // @Cleanup: move this somewhere else, maybe out of switch
+        render_entity* RenderEntity = &GameState->RenderState.RenderEntities[Entity->RenderEntityHandle];
+        
+        RenderEntity->Color = glm::vec4(1, 1, 1, 1);
+        
+        Entity->Velocity = glm::vec2(0,0);
+        
+        Entity->Hit = false;
+        
+        collision_info CollisionInfo;
+        CheckCollision(GameState, Entity, &CollisionInfo);
+        
+        Entity->Skeleton.Healthbar->CurrentFrame = 4 - Entity->Health;
+    }
+}
+
+void UpdateBarrel(entity* Entity, game_state* GameState, real64 DeltaTime)
+{
+    if(Entity->Active)
+    {
+        collision_info CollisionInfo;
+        Entity->IsColliding = false;
+        Entity->CollisionAABB.IsColliding = false;
+        CheckCollision(GameState, Entity, &CollisionInfo);
+        
+        if(TimerDone(GameState, Entity->Pickup.PickupThrowTimer))
+            Entity->Velocity = glm::vec2();
+        
+        if(!Entity->Dead && Entity->AnimationInfo.FrameIndex == Entity->CurrentAnimation->FrameCount - 4)
+        {
+            Entity->Dead = true;
+            PlaySoundEffect(GameState, &GameState->SoundManager.BarrelBreak);
+        }
+        
+        if(!Entity->AnimationInfo.Playing)
+        {
+            Entity->Active = false;
+        }
+        
+        real32 XVel = 0.0f;
+        real32 YVel = 0.0f;
+        
+        real32 ThrowDiff = 0.2f;
+        
+        auto Player = GameState->Entities[0];
+        
+        Entity->Pickup.RenderButtonHint = !Entity->IsKinematic && glm::distance(Player.Position, Entity->Position) < 1.5f;
+        Entity->Position.x += Entity->Velocity.x * DeltaTime;
+        Entity->Position.y += Entity->Velocity.y * DeltaTime;
+    }
+}
+
+void UpdateEntities(game_state* GameState, real64 DeltaTime)
+{
+    for(uint32 EntityIndex = 0;
+        EntityIndex < GameState->EntityCount;
+        EntityIndex++)
+    {
+        entity* Entity = &GameState->Entities[EntityIndex];
+        
+        if(Entity->Active)
+        {
+            switch(Entity->Type)
+            {
+                case Entity_Player: 
+                {
+                    UpdatePlayer(Entity, GameState, DeltaTime);
+                    UpdateWeapon(Entity, GameState, DeltaTime);
+                }
+                break;
+                case Entity_Skeleton:
+                {
+                    UpdateSkeleton(Entity, GameState, DeltaTime);
+                    UpdateWeapon(Entity, GameState, DeltaTime);
+                }
+                break;
+                case Entity_Blob:
+                {
+                    UpdateBlob(Entity, GameState, DeltaTime);
+                }
+                break;
+                case Entity_Barrel:
+                {
+                    UpdateBarrel(Entity, GameState, DeltaTime);
+                }
+            }
+            
+            if(Entity->Active && Entity->CurrentAnimation && Entity->AnimationInfo.Playing)
+                TickAnimation(&Entity->AnimationInfo, Entity->CurrentAnimation, DeltaTime);
+        }
     }
 }

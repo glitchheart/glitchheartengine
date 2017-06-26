@@ -38,8 +38,11 @@ struct sound_manager
             sound_effect Effect01;
             sound_effect SwordSlash01;
             sound_effect SwordHit01;
+            sound_effect SwordHit02;
             sound_effect Dash;
             sound_effect Explosion;
+            sound_effect Throw;
+            sound_effect BarrelBreak;
             
             sound_effect ButtonClick;
         };

@@ -1,12 +1,12 @@
 #ifndef GAMESTATE_H
 #define GAMESTATE_H
 
-#include "glm/gtc/matrix_transform.hpp"
-
-#include <GLFW/glfw3.h>
-
-#include <map>
 #include "windows.h"
+#include "glm/gtc/matrix_transform.hpp"
+#include <GLFW/glfw3.h>
+#include <time.h>
+#include <stdlib.h>
+#include <map>
 #include "platform.h"
 #include "opengl_rendering.h"
 #include "animation.h"
@@ -28,6 +28,8 @@ struct camera
     uint32 ViewportHeight;
     real32 Zoom; //NOTE(Daniel) The higher the number the closer you are zoomed in. 1.0f is NORMAL
     glm::vec2 Center;
+    glm::vec2 CenterTarget;
+    real32 FollowSpeed;
     glm::mat4 ViewMatrix;
     glm::mat4 ProjectionMatrix;
     timer* ScreenShakeTimer;
@@ -83,6 +85,27 @@ struct game_state
 typedef UPDATE(update);
 UPDATE(UpdateStub)
 {
+}
+
+void StartTimer(game_state* GameState, timer* Timer)
+{
+    Timer->TimerHandle = GameState->TimerCount;
+    GameState->Timers[Timer->TimerHandle] = Timer->TimerMax;
+    
+    GameState->TimerCount++;
+    if(GameState->TimerCount == NUM_TIMERS)
+        GameState->TimerCount = 0;
+}
+
+bool32 TimerDone(game_state* GameState, timer* Timer)
+{
+    if(Timer->TimerHandle != -1 && 
+       GameState->Timers[Timer->TimerHandle] <= 0)
+    {
+        Timer->TimerHandle = -1;
+    }
+    
+    return Timer->TimerHandle == -1;
 }
 
 #endif

@@ -1,3 +1,6 @@
+#ifndef UI_H
+#define UI_H
+
 enum UI_Type
 {
     UI_Button,
@@ -11,3 +14,5 @@ struct health_bar
     glm::vec2 Position;
     ui_render_info RenderInfo;
 };
+
+#endif

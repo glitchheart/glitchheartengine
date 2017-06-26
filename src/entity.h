@@ -77,11 +77,12 @@ struct entity
     uint32 RenderEntityHandle;
     
     bool32 Active;
+    bool32 Dead;
     collision_AABB CollisionAABB;
     bool32 IsKinematic;
     bool32 IsColliding;
     bool32 IsStatic; // For stuff that can't be moved by collision
-    bool32 Pickup;
+    bool32 IsPickup;
     collision_AABB* HitTrigger;
     bool32 Hit = false;
     
@@ -128,6 +129,10 @@ struct entity
             
             real32 WalkingSpeed;
             entity* Pickup;
+            bool32 RenderCrosshair;
+            real32 CrosshairRadius;
+            real32 CrosshairPositionX;
+            real32 CrosshairPositionY;
             
             real64 PickupCooldown;
             real32 ThrowingSpeed;
@@ -158,6 +163,11 @@ struct entity
             astar_path AStarPath;
             
         } Skeleton;
+        struct
+        {
+            timer* PickupThrowTimer;
+            bool32 RenderButtonHint;
+        } Pickup;
     };
     
     glm::vec2 Velocity;

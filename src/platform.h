@@ -1,3 +1,6 @@
+#ifndef PLATFORM_H
+#define PLATFORM_H
+
 #define ArrayCount(Array) (sizeof(Array) / sizeof(Array[0])) 
 
 #ifdef POWDER_DEBUG
@@ -138,8 +141,8 @@ void FindFilesWithExtensions(const char* DirectoryPath, const char* Extension, d
 {
     if(DirectoryData->FilesLength == 0)
     {
-        DirectoryData->FileNames = (char**)malloc(30 * sizeof(char*));
-        DirectoryData->FilePaths = (char**)malloc(30 * sizeof(char*));
+        DirectoryData->FileNames = (char**)malloc(50 * sizeof(char*));
+        DirectoryData->FilePaths = (char**)malloc(50 * sizeof(char*));
     }
     
     WIN32_FIND_DATA FindFile;
@@ -196,3 +199,5 @@ void FindFilesWithExtensions(const char* DirectoryPath, const char* Extension, d
         }
     }
 }
+
+#endif
