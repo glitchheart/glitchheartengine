@@ -109,6 +109,12 @@ enum Action_Button
     Action_Count
 };
 
+enum Stick
+{
+    Stick_Left,
+    Stick_Right
+};
+
 enum Controller_Axis_Code
 {
     Axis_1, // Left stick X (PS4 W10)

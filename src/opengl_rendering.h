@@ -1,6 +1,9 @@
 #ifndef RENDERING_H
 #define RENDERING_H
 
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb/stb_image.h>
+
 #include <ft2build.h>
 #include FT_FREETYPE_H
 

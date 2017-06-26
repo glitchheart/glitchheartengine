@@ -171,7 +171,10 @@
                                                 
                                                 if(Info->FrameIndex >= Animation->FrameCount)
                                                 {
-                                                    Info->FrameIndex = 0;
+                                                    if(!Info->FreezeFrame)
+                                                        Info->FrameIndex = 0;
+                                                    else
+                                                        Info->FrameIndex = Animation->FrameCount - 1;
                                                     
                                                     if(!Animation->Loop)
                                                     {

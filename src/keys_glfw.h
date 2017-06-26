@@ -1,3 +1,6 @@
+#ifndef KEYS_GLFW_H
+#define KEYS_GLFW_H
+
 std::map<uint32, Key_Code> KeyMappings = 
 {
     { GLFW_KEY_LEFT, Key_Left },
@@ -215,3 +218,5 @@ void CharacterCallback(GLFWwindow *Window, unsigned int Codepoint)
     }
     GameState->InputController.CurrentCharacter = (char)Codepoint;
 }
+
+#endif

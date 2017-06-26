@@ -1,3 +1,5 @@
+#include "opengl_rendering.h"
+
 static void ErrorCallback(int Error, const char *Description)
 {
     fprintf(stderr, "Error: %s\n", Description);
@@ -731,8 +733,6 @@ static void InitializeOpenGL(game_state* GameState, render_state* RenderState, c
         {
             GameState->InputController.ControllerType = Controller_PS4;
         }
-        
-        printf("type %d\n", GameState->InputController.ControllerType);
     }
     
     LoadTextures(RenderState, "../assets/textures/");
@@ -1066,9 +1066,7 @@ static void RenderColliderWireframe(render_state* RenderState, entity* Entity, g
         {
             glm::mat4 Model(1.0f);
             
-            
-            Model = glm::translate(Model, glm::vec3(Entity->HitTrigger->Center.x - Entity->HitTrigger->Extents.x, Entity->HitTrigger->Center.y - Entity->HitTrigger->Extents.y, 0.0f)); //glm::translate(Model, glm::vec3(Entity->Position.x + Entity->Center.x * Entity->Scale.x - Entity->HitTrigger->Extents.x, Entity->Position.y + Entity->Center.y * Entity->Scale.y - Entity->HitTrigger->Extents.y, 0.0f));
-            Model = glm::scale(Model, glm::vec3(Entity->HitTrigger->Extents.x * 2, Entity->HitTrigger->Extents.y * 2,1));
+            Model = glm::translate(Model, glm::vec3(Entity->HitTrigger->Center.x - Entity->HitTrigger->Extents.x, Entity->HitTrigger->Center.y - Entity->HitTrigger->Extents.y, 0.0f)); Model = glm::scale(Model, glm::vec3(Entity->HitTrigger->Extents.x * 2, Entity->HitTrigger->Extents.y * 2,1));
             
             glBindVertexArray(RenderState->WireframeVAO);
             
@@ -1093,6 +1091,12 @@ static void RenderColliderWireframe(render_state* RenderState, entity* Entity, g
             
             glDrawArrays(GL_LINE_STRIP, 0, 6);
             glBindVertexArray(0);
+        }
+        
+        if(Entity->Type == Entity_Player)
+        {
+            RenderRect(Render_Outline, RenderState, glm::vec4(0, 0, 1, 1), Entity->Weapon.CollisionAABB.Center.x - Entity->Weapon.CollisionAABB.Extents.x, Entity->Weapon.CollisionAABB.Center.y - Entity->Weapon.CollisionAABB.Extents.y, Entity->Weapon.CollisionAABB.Extents.x * 2, Entity->Weapon.CollisionAABB.Extents.y * 2, 0, false, ProjectionMatrix, View);
+            //RenderRect(Render_Outline,
         }
     }
 }
@@ -1401,6 +1405,7 @@ static void RenderEntity(render_state *RenderState, entity &Entity, glm::mat4 Pr
         SetMat4Uniform(Shader.Program, "Projection", ProjectionMatrix);
         SetMat4Uniform(Shader.Program, "View", View);
         SetMat4Uniform(Shader.Program, "Model", Model);
+        SetVec4Uniform(Shader.Program, "Color", glm::vec4(1, 1, 1, 1));
         
         auto Skeleton = Entity.Skeleton;
         Skeleton.Healthbar;
@@ -1412,6 +1417,16 @@ static void RenderEntity(render_state *RenderState, entity &Entity, glm::mat4 Pr
         {
             RenderHealthbar(RenderState, &Entity, *Entity.Skeleton.Healthbar, ProjectionMatrix, View);
         }
+    }
+    
+    if(Entity.Type == Entity_Player && Entity.Player.RenderCrosshair)
+    {
+        RenderRect(Render_Fill, RenderState, glm::vec4(1, 1, 1, 1), Entity.Position.x + Entity.Player.CrosshairPositionX, Entity.Position.y + Entity.Player.CrosshairPositionY, 1, 1, RenderState->Textures["crosshair"].TextureHandle, false, ProjectionMatrix, View);
+    }
+    else if(Entity.Type == Entity_Barrel && Entity.Pickup.RenderButtonHint)
+    {
+        // @Cleanup: This should definitely be done differently to open up for other possible key bindings
+        RenderRect(Render_Fill, RenderState, glm::vec4(1, 1, 1, 1), Entity.Position.x + 0.5f, Entity.Position.y + 1.5f, 1, 1, RenderState->Textures["b_button"].TextureHandle, false, ProjectionMatrix, View);
     }
     
     if(RenderState->RenderColliders && !Entity.IsKinematic)
@@ -1553,7 +1568,7 @@ static void RenderInGameMode(game_state* GameState)
     
     qsort(GameState->RenderState.RenderEntities, GameState->RenderState.RenderEntityCount, sizeof(render_entity), CompareFunction);
     
-    for(uint32 Index = 0; Index < GameState->RenderState.RenderEntityCount; Index++) 
+    for(int32 Index = 0; Index < GameState->RenderState.RenderEntityCount; Index++) 
     {
         render_entity* Render = &GameState->RenderState.RenderEntities[Index];
         // @Incomplete: Only render if in view

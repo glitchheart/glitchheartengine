@@ -6,7 +6,7 @@ static void LoadWavFile(const char *Filename, sound_effect *LoadedSound)
     wave_data WaveData;
     
     SoundFile = fopen(Filename, "rb");
-    printf("Buffer: %d\n", LoadedSound->Buffer);
+    //printf("Buffer: %d\n", LoadedSound->Buffer);
     
     if (SoundFile)
     {
@@ -47,7 +47,7 @@ static void LoadWavFile(const char *Filename, sound_effect *LoadedSound)
             WaveData.SubChunkID[3] != 'a')
         {
             HandleError(__FILE__, __LINE__, "Wave data malformed");
-            printf("ChunkID: %c %c %c %c \n", WaveData.SubChunkID[0], WaveData.SubChunkID[1], WaveData.SubChunkID[2], WaveData.SubChunkID[3]);
+            //printf("ChunkID: %c %c %c %c \n", WaveData.SubChunkID[0], WaveData.SubChunkID[1], WaveData.SubChunkID[2], WaveData.SubChunkID[3]);
         }
         
         unsigned char *Data = (unsigned char *)malloc(WaveData.SubChunk2Size);
@@ -88,7 +88,7 @@ static void LoadWavFile(const char *Filename, sound_effect *LoadedSound)
         alBufferData(LoadedSound->Buffer, Format, (void*)Data, Size, Frequency);
         fclose(SoundFile);
         
-        printf("Samplerate: %d, Size: %d\n", Frequency, Size);
+        //printf("Samplerate: %d, Size: %d\n", Frequency, Size);
     }
 }
 
@@ -157,9 +157,12 @@ static void LoadSounds(sound_manager *SoundManager, sound_device* SoundDevice)
     LoadSound("../assets/audio/mainmenu.wav", DefaultSoundInfo, &SoundManager->MainMenuTrack,SoundDevice);
     LoadSound("../assets/audio/sword_slash_01.wav", DefaultSoundInfo, &SoundManager->SwordSlash01,SoundDevice);
     LoadSound("../assets/audio/sword_hit_01.wav", DefaultSoundInfo, &SoundManager->SwordHit01,SoundDevice);
+    LoadSound("../assets/audio/sword_hit_02.wav", DefaultSoundInfo, &SoundManager->SwordHit02, SoundDevice);
     LoadSound("../assets/audio/dash.wav", DefaultSoundInfo, &SoundManager->Dash,SoundDevice);
     LoadSound("../assets/audio/explosion.wav", DefaultSoundInfo, &SoundManager->Explosion, SoundDevice);
     LoadSound("../assets/audio/ui/button_click.wav", DefaultSoundInfo, &SoundManager->ButtonClick, SoundDevice);
+    LoadSound("../assets/audio/barrel_break.wav", DefaultSoundInfo, &SoundManager->BarrelBreak, SoundDevice);
+    LoadSound("../assets/audio/throw.wav", DefaultSoundInfo, &SoundManager->Throw, SoundDevice);
     
     // // Add more sounds here if necessary
 }

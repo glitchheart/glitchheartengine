@@ -1,0 +1,10 @@
+name barrel_standing
+type sprite
+framecount 1
+framesize 32 32
+center 0.000000 0.000000
+loop 1
+timeperframe 0.100000
+frames
+0 0
+texture barrel_sheet
