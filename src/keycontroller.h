@@ -105,6 +105,8 @@ enum Action_Button
     Action_Attack,
     Action_Dash,
     Action_Interact,
+    Action_Target,
+    Action_SwitchTarget,
     
     Action_Count
 };
@@ -139,21 +141,25 @@ struct input_controller
     {
         Key_Z,
         Key_X,
-        Key_E
+        Key_E,
+        Key_C
     };
     
     Controller_Code ActionButtonXboxControllerBindings[Action_Count] = 
     {
         Joystick_3,
         Joystick_1,
-        Joystick_2
+        Joystick_2,
+        Joystick_5, // Left bumper
+        Joystick_6
     };
     
     Controller_Code ActionButtonPS4ControllerBindings[Action_Count] = 
     {
         Joystick_1,
         Joystick_2,
-        Joystick_1
+        Joystick_1,
+        Joystick_4
     };
     
     bool32 KeysDown[Key_Count];

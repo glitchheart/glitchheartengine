@@ -829,11 +829,12 @@ static void RenderRect(Render_Mode Mode, render_state* RenderState, glm::vec4 Co
         case Render_Fill:
         {
             auto Shader = RenderState->RectShader;
-            if(TextureHandle)
+            if(TextureHandle && RenderState->BoundTexture != TextureHandle)
             {
                 glBindVertexArray(RenderState->TextureRectVAO);
                 glBindTexture(GL_TEXTURE_2D, TextureHandle);
                 Shader = RenderState->TextureRectShader;
+                RenderState->BoundTexture = TextureHandle;
             }
             else
             {
@@ -1415,6 +1416,11 @@ static void RenderEntity(render_state *RenderState, entity &Entity, glm::mat4 Pr
     {
         // @Cleanup: This should definitely be done differently to open up for other possible key bindings
         RenderRect(Render_Fill, RenderState, glm::vec4(1, 1, 1, 1), Entity.Position.x + 0.5f, Entity.Position.y + 1.5f, 1, 1, RenderState->Textures["b_button"].TextureHandle, false, ProjectionMatrix, View);
+    }
+    
+    if((Entity.Type == Entity_Skeleton || Entity.Type == Entity_Blob) && Entity.Enemy.IsTargeted)
+    {
+        RenderRect(Render_Fill, RenderState, glm::vec4(1, 1, 1, 1), Entity.Position.x + Entity.Enemy.TargetingPositionX, Entity.Position.y + Entity.Enemy.TargetingPositionY, 1, 1, RenderState->Textures["red_arrow"].TextureHandle, false, ProjectionMatrix, View);
     }
     
     if(RenderState->RenderColliders && !Entity.IsKinematic)

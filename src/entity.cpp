@@ -49,6 +49,8 @@ static void InitPlayer(game_state* GameState, glm::vec2 Position)
     Player->Player.CrosshairRadius = 4;
     Player->Player.CrosshairPositionX = Player->Player.CrosshairRadius * 1.0f;
     Player->Player.CrosshairPositionY = 0;
+    Player->Player.TargetingDistance = 5;
+    Player->Player.TargetedEnemyHandle = -1;
     
     Player->Player.AttackCooldownTimer = (timer*)malloc(sizeof(timer));
     Player->Player.AttackCooldownTimer->TimerHandle = -1;
@@ -141,6 +143,9 @@ static void SpawnSkeleton(game_state* GameState, glm::vec2 Position)
     Skeleton->Name = "skeleton";
     Skeleton->Type = Entity_Skeleton;
     Skeleton->HitRecoilSpeed = 10;
+    Skeleton->Enemy.IsTargeted = false;
+    Skeleton->Enemy.TargetingPositionX = -0.5;
+    Skeleton->Enemy.TargetingPositionY = 2;
     
     render_entity* SkeletonRenderEntity = &GameState->RenderState.RenderEntities[GameState->RenderState.RenderEntityCount];
     
@@ -417,7 +422,47 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
                     Entity->Velocity.x = InputX * Entity->Player.WalkingSpeed * (real32)DeltaTime;
                     Entity->Velocity.y = InputY * Entity->Player.WalkingSpeed * (real32)DeltaTime;
                     
-                    if(Entity->Velocity.x != 0.0f || Entity->Velocity.y != 0.0f)
+                    // @Cleanup: This section really needs a cleanup
+                    if(Entity->Player.TargetedEnemyHandle != -1)
+                    {
+                        bool32 Moving = Entity->Velocity.x != 0 || Entity->Velocity.y != 0;
+                        
+                        auto Direction = glm::normalize(GameState->Entities[Entity->Player.TargetedEnemyHandle].Position - Entity->Position);
+                        
+                        if(Direction.x < 0.3)
+                        {
+                            if(Direction.y > 0)
+                            {
+                                Entity->LookDirection = Up;
+                                if(Moving)
+                                    PlayAnimation(Entity, "player_run_up", GameState);
+                                else
+                                    PlayAnimation(Entity, "player_idle_up", GameState);
+                            }
+                            else
+                            {
+                                Entity->LookDirection = Down;
+                                if(Moving)
+                                    PlayAnimation(Entity, "player_run_down", GameState);
+                                else
+                                    PlayAnimation(Entity, "player_idle_down", GameState);
+                            }
+                        }
+                        else
+                        {
+                            Entity->LookDirection = Right;
+                            if(Moving)
+                                PlayAnimation(Entity, "player_run_right", GameState);
+                            else
+                                PlayAnimation(Entity, "player_idle_right", GameState);
+                        }
+                        
+                        Entity->IsFlipped = Direction.x < 0;
+                        
+                        if(Entity->LookDirection == Right && Entity->IsFlipped)
+                            Entity->LookDirection = Left;
+                    }
+                    else if(Entity->Velocity.x != 0.0f || Entity->Velocity.y != 0.0f)
                     {
                         if(Abs(InputX) < 0.3)
                         {
@@ -437,6 +482,14 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
                             Entity->LookDirection = Right;
                             PlayAnimation(Entity, "player_run_right", GameState);
                         }
+                        
+                        if(Entity->Velocity.x != 0)
+                        {
+                            Entity->IsFlipped = Entity->Velocity.x < 0;
+                            
+                            if(Entity->LookDirection == Right && Entity->IsFlipped)
+                                Entity->LookDirection = Left;
+                        }
                     }
                     else
                     {
@@ -449,14 +502,14 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
                         }
                         else
                             PlayAnimation(Entity, "player_idle_right", GameState);
-                    }
-                    
-                    if(Entity->Velocity.x != 0)
-                    {
-                        Entity->IsFlipped = Entity->Velocity.x < 0;
                         
-                        if(Entity->LookDirection == Right && Entity->IsFlipped)
-                            Entity->LookDirection = Left;
+                        if(Entity->Velocity.x != 0)
+                        {
+                            Entity->IsFlipped = Entity->Velocity.x < 0;
+                            
+                            if(Entity->LookDirection == Right && Entity->IsFlipped)
+                                Entity->LookDirection = Left;
+                        }
                     }
                 }
                 else if(!TimerDone(GameState, Entity->Player.AttackMoveTimer))
@@ -514,6 +567,9 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
                     Throw.x = Dir.x * Entity->Player.ThrowingSpeed;
                     Throw.y = Dir.y * Entity->Player.ThrowingSpeed;
                     
+                    
+                    printf("THROW x %f y %f\n", Throw.x, Throw.y);
+                    
                     Entity->Player.Pickup->Velocity = Throw;
                     StartTimer(GameState, Entity->Player.Pickup->Pickup.PickupThrowTimer);
                     PlayAnimation(Entity->Player.Pickup, "barrel_thrown", GameState);
@@ -548,31 +604,6 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
         
         collision_info CollisionInfo;
         CheckCollision(GameState, Entity, &CollisionInfo);
-        
-        /* // @Cleanup: We should not need this anymore, since we don't use collision for pickups anymore
-        entity* OtherEntity = 0;
-        bool32 OtherFound = false;
-        
-        for(int Index = 0; Index < CollisionInfo.OtherCount; Index++)
-        {
-            if(CollisionInfo.Other[Index]->IsPickup)
-            {
-                OtherEntity = CollisionInfo.Other[Index];
-                OtherFound = true;
-                break;
-            }
-        }
-        
-        if(OtherFound && OtherEntity->IsPickup &&
-           GetActionButtonDown(Action_Interact, GameState) && TimerDone(GameState, Entity->Player.PickupCooldownTimer))
-        {
-            Entity->Player.RenderCrosshair = true;
-            Entity->Player.Pickup = OtherEntity;
-            Entity->Player.Pickup->Position = Entity->Position;
-            Entity->Player.Pickup->Velocity = glm::vec2(0.0f,0.0f);
-            Entity->Player.Pickup->IsKinematic = true;
-        }
-        */
         
         if(Entity->Player.Pickup)
         {
@@ -618,6 +649,77 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
             StartTimer(GameState, Entity->Player.AttackMoveTimer);
             Entity->AttackCount++;
             PlaySoundEffect(GameState, &GameState->SoundManager.SwordSlash01);
+        }
+        
+        if(Entity->Player.Pickup)
+        {
+            if(GetActionButtonDown(Action_Target, GameState))
+            {
+                if(Entity->Player.TargetedEnemyHandle == -1)
+                {
+                    int32 Closest = -1;
+                    real32 ClosestDistance = 2000.0f;
+                    
+                    for(uint32 Index = 0; Index < GameState->EntityCount; Index++)
+                    {
+                        if(GameState->Entities[Index].Type == Entity_Skeleton) // @Incomplete: We need a way to easily determine whether it's an enemy or not
+                        {
+                            auto Distance = glm::distance(Entity->Position, GameState->Entities[Index].Position);
+                            if(Distance <= Entity->Player.TargetingDistance && Distance < ClosestDistance)
+                            {
+                                ClosestDistance = Distance;
+                                Closest = Index;
+                            }
+                        }
+                    }
+                    
+                    if(Closest != -1)
+                    {
+                        Entity->Player.TargetedEnemyHandle = Closest;
+                        GameState->Entities[Closest].Enemy.IsTargeted = true;
+                    }
+                }
+                else
+                {
+                    GameState->Entities[Entity->Player.TargetedEnemyHandle].Enemy.IsTargeted = false;
+                    Entity->Player.TargetedEnemyHandle = -1;
+                }
+            }
+            
+            if(GetActionButtonDown(Action_SwitchTarget, GameState))
+            {
+                printf("HIT!\n");
+                int32 NextTarget = -1;
+                
+                if(Entity->Player.TargetedEnemyHandle + 1 < GameState->EntityCount)
+                {
+                    for(uint32 Index = Entity->Player.TargetedEnemyHandle + 1; Index < GameState->EntityCount; Index++)
+                    {
+                        auto Distance = glm::distance(Entity->Position, GameState->Entities[Index].Position);
+                        if(Distance <= Entity->Player.TargetingDistance)
+                        {
+                            NextTarget = Index;
+                            break;
+                        }
+                    }
+                }
+                
+                if(NextTarget == -1 && Entity->Player.TargetedEnemyHandle >= 0)
+                {
+                    for(uint32 Index = 0; Index < Entity->Player.TargetedEnemyHandle - 1; Index++)
+                    {
+                        auto Distance = glm::distance(Entity->Position, GameState->Entities[Index].Position);
+                        if(Distance <= Entity->Player.TargetingDistance)
+                        {
+                            NextTarget = Index;
+                            break;
+                        }
+                    }
+                }
+                GameState->Entities[Entity->Player.TargetedEnemyHandle].Enemy.IsTargeted = false;
+                GameState->Entities[NextTarget].Enemy.IsTargeted = true;
+                Entity->Player.TargetedEnemyHandle = NextTarget;
+            }
         }
         
         auto Direction = glm::vec2(pos.x, pos.y) - Entity->Position;
@@ -974,7 +1076,9 @@ void UpdateBarrel(entity* Entity, game_state* GameState, real64 DeltaTime)
         CheckCollision(GameState, Entity, &CollisionInfo);
         
         if(TimerDone(GameState, Entity->Pickup.PickupThrowTimer))
+        {
             Entity->Velocity = glm::vec2();
+        }
         
         if(!Entity->Dead && Entity->AnimationInfo.FrameIndex == Entity->CurrentAnimation->FrameCount - 4)
         {
@@ -995,10 +1099,11 @@ void UpdateBarrel(entity* Entity, game_state* GameState, real64 DeltaTime)
         auto& Player = GameState->Entities[0];
         
         Entity->Pickup.RenderButtonHint = !Entity->IsKinematic && glm::distance(Player.Position, Entity->Position) < 1.5f;
-        Entity->Position.x += Entity->Velocity.x * DeltaTime;
-        Entity->Position.y += Entity->Velocity.y * DeltaTime;
         
-        if(Entity->Pickup.RenderButtonHint && GetActionButtonDown(Action_Interact, GameState) && !Player.Player.Pickup)
+        Entity->Position.x += Entity->Velocity.x * (real32)DeltaTime;
+        Entity->Position.y += Entity->Velocity.y * (real32)DeltaTime;
+        
+        if(TimerDone(GameState, Entity->Pickup.PickupThrowTimer) && Entity->Pickup.RenderButtonHint && GetActionButtonDown(Action_Interact, GameState) && !Player.Player.Pickup)
         {
             Player.Player.Pickup = Entity;
             Player.Player.RenderCrosshair = true;

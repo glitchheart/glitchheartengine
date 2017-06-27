@@ -138,13 +138,17 @@ struct entity
             real32 ThrowingSpeed;
             real32 LastKnownDirectionX;
             real32 LastKnownDirectionY;
+            real32 TargetingDistance;
+            int32 TargetedEnemyHandle;
         } Player;
         struct
         {
             entity_healthbar* Healthbar;
             AI_State AIState;
             astar_path AStarPath;
-            
+            bool32 IsTargeted;
+            real32 TargetingPositionX;
+            real32 TargetingPositionY;
             union
             {
                 struct
