@@ -308,7 +308,7 @@ static void SpawnBarrel(game_state* GameState, glm::vec2 Position)
     
     Barrel->Pickup.PickupThrowTimer = (timer*)malloc(sizeof(timer));
     Barrel->Pickup.PickupThrowTimer->TimerHandle = -1;
-    Barrel->Pickup.PickupThrowTimer->TimerMax = 0.4f;
+    Barrel->Pickup.PickupThrowTimer->TimerMax = 1.5f;
     
     render_entity* BarrelRenderEntity = &GameState->RenderState.RenderEntities[GameState->RenderState.RenderEntityCount];
     
@@ -609,11 +609,12 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
         {
             Entity->Player.Pickup->Position = glm::vec2(Entity->Position.x - 0.5f, Entity->Position.y);
             
+            // If the player has targeted an enemy, the crosshair should be targeted at it
             if(Entity->Player.TargetedEnemyHandle != -1)
             {
                 auto Direction = GameState->Entities[Entity->Player.TargetedEnemyHandle].Position - Entity->Position;
                 
-                Entity->Player.CrosshairPositionX = Direction.x * 0.9f;
+                Entity->Player.CrosshairPositionX = Direction.x * 0.9f; // @Incomplete: Not sure this is the best way, but it works fine
                 Entity->Player.CrosshairPositionY = Direction.y * 0.9f;
             }
             else
@@ -1099,8 +1100,24 @@ void UpdateBarrel(entity* Entity, game_state* GameState, real64 DeltaTime)
             Entity->Velocity = glm::vec2();
         }
         
-        if(!Entity->Dead && Entity->AnimationInfo.FrameIndex == Entity->CurrentAnimation->FrameCount - 4)
+        bool32 HasHitEnemy = false;
+        
+        if(Entity->Velocity.x != 0 || Entity->Velocity.y != 0)
         {
+            for(int32 Index = 0; Index < CollisionInfo.OtherCount; Index++)
+            {
+                if(CollisionInfo.Other[Index]->Type == Entity_Skeleton || CollisionInfo.Other[Index]->Type == Entity_Blob)
+                {
+                    Hit(GameState, Entity, CollisionInfo.Other[Index]);
+                    HasHitEnemy = true;
+                }
+            }
+        }
+        
+        if(HasHitEnemy || (!Entity->Dead && !Entity->AnimationInfo.Playing && strcmp(Entity->CurrentAnimation->Name, "barrel_destroy") == 0))
+        {
+            //Entity->Velocity = glm::vec2();
+            PlayAnimation(Entity, "barrel_destroy", GameState);
             Entity->Dead = true;
             PlaySoundEffect(GameState, &GameState->SoundManager.BarrelBreak);
         }

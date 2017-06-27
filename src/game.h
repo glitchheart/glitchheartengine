@@ -22,6 +22,13 @@
 #include "menu.h"
 #include "ui.h"
 
+enum Fading_Mode
+{
+    Fading_None,
+    Fading_In,
+    Fading_Out
+};
+
 struct camera
 {
     uint32 ViewportWidth;
@@ -33,6 +40,9 @@ struct camera
     glm::mat4 ViewMatrix;
     glm::mat4 ProjectionMatrix;
     timer* ScreenShakeTimer;
+    Fading_Mode FadingMode = Fading_None;
+    real32 FadingAlpha = 0.0f;
+    real32 FadingSpeed;
 };
 
 enum Game_Mode
