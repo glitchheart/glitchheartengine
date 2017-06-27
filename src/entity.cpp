@@ -76,6 +76,10 @@ static void InitPlayer(game_state* GameState, glm::vec2 Position)
     Player->Player.AttackMoveTimer->TimerHandle = -1;
     Player->Player.AttackMoveTimer->TimerMax = 0.07;
     
+    Player->HitFlickerTimer = (timer*)malloc(sizeof(timer));
+    Player->HitFlickerTimer->TimerHandle = -1;
+    Player->HitFlickerTimer->TimerMax = 0.05f;
+    
     Player->HitCooldownTimer = (timer*)malloc(sizeof(timer));
     Player->HitCooldownTimer->TimerHandle = -1;
     Player->HitCooldownTimer->TimerMax = 0.2;
@@ -198,6 +202,10 @@ static void SpawnSkeleton(game_state* GameState, glm::vec2 Position)
     Skeleton->Enemy.Skeleton.ChargingTimer = (timer*)malloc(sizeof(timer));
     Skeleton->Enemy.Skeleton.ChargingTimer->TimerHandle = -1;
     Skeleton->Enemy.Skeleton.ChargingTimer->TimerMax = 0.2f;
+    
+    Skeleton->HitFlickerTimer = (timer*)malloc(sizeof(timer));
+    Skeleton->HitFlickerTimer->TimerHandle = -1;
+    Skeleton->HitFlickerTimer->TimerMax = 0.05f;
     
     Skeleton->Enemy.AStarPath.AStarCooldownTimer = (timer*)malloc(sizeof(timer));
     Skeleton->Enemy.AStarPath.AStarCooldownTimer->TimerHandle = -1;
@@ -356,6 +364,8 @@ void Hit(game_state* GameState, entity* ByEntity, entity* HitEntity)
         HitEntity->Health -= 1;
         HitEntity->Hit = true;
         HitEntity->HitAttackCountId = ByEntity->AttackCount;
+        HitEntity->HitFlickerFramesLeft = HitEntity->HitFlickerFrameMax;
+        StartTimer(GameState, HitEntity->HitFlickerTimer);
     }
 }
 
@@ -1073,8 +1083,6 @@ void UpdateSkeleton(entity* Entity, game_state* GameState, real64 DeltaTime)
         // @Cleanup: move this somewhere else, maybe out of switch
         render_entity* RenderEntity = &GameState->RenderState.RenderEntities[Entity->RenderEntityHandle];
         
-        RenderEntity->Color = glm::vec4(1, 1, 1, 1);
-        
         Entity->Velocity = glm::vec2(0,0);
         
         Entity->Hit = false;
@@ -1150,6 +1158,29 @@ void UpdateBarrel(entity* Entity, game_state* GameState, real64 DeltaTime)
     }
 }
 
+void UpdateGeneral(entity* Entity, game_state* GameState, real64 DeltaTime)
+{
+    auto& RenderEntity = GameState->RenderState.RenderEntities[Entity->RenderEntityHandle];
+    
+    if(Entity->HitFlickerFramesLeft > 0 && TimerDone(GameState, Entity->HitFlickerTimer))
+    {
+        Entity->HitFlickerFramesLeft--;
+        
+        if(Entity->HitFlickerFramesLeft % 2 == 0)
+        {
+            RenderEntity.Color = glm::vec4(1, 0, 0, 1);
+        }
+        else
+            RenderEntity.Color = glm::vec4(1, 1, 1, 1);
+        
+        StartTimer(GameState, Entity->HitFlickerTimer);
+    }
+    else if(Entity->HitFlickerFramesLeft == 0)
+    {
+        RenderEntity.Color = glm::vec4(1, 1, 1, 1);
+    }
+}
+
 void UpdateEntities(game_state* GameState, real64 DeltaTime)
 {
     for(uint32 EntityIndex = 0;
@@ -1184,6 +1215,8 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                     UpdateBarrel(Entity, GameState, DeltaTime);
                 }
             }
+            
+            UpdateGeneral(Entity, GameState, DeltaTime);
             
             if(Entity->Active && Entity->CurrentAnimation && Entity->AnimationInfo.Playing)
                 TickAnimation(&Entity->AnimationInfo, Entity->CurrentAnimation, DeltaTime);

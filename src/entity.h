@@ -84,7 +84,12 @@ struct entity
     bool32 IsStatic; // For stuff that can't be moved by collision
     bool32 IsPickup;
     collision_AABB* HitTrigger;
+    
     bool32 Hit = false;
+    
+    int32 HitFlickerFramesLeft = 0;
+    int32 HitFlickerFrameMax = 6;
+    timer* HitFlickerTimer;
     
     int32 Health = -1;
     
