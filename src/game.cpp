@@ -684,6 +684,7 @@ extern "C" UPDATE(Update)
         case Fading_Out:
         {
             GameState->GameCamera.FadingAlpha += GameState->GameCamera.FadingSpeed * DeltaTime;
+            
             if(GameState->GameCamera.FadingAlpha >= 1.0f)
             {
                 GameState->GameCamera.FadingAlpha = 1.0f;
@@ -719,6 +720,21 @@ extern "C" UPDATE(Update)
                     auto Direction = glm::normalize(GameState->GameCamera.CenterTarget - Center);
                     Center = glm::vec2(Center.x + Direction.x * GameState->GameCamera.FollowSpeed * DeltaTime, Center.y + Direction.y  * GameState->GameCamera.FollowSpeed * DeltaTime);
                     GameState->GameCamera.Center = Center;
+                }
+            }
+            
+            if(GameState->PlayerState == Player_Alive && GameState->Entities[0].Dead)
+            {
+                GameState->PlayerState = Player_Dead;
+                StartTimer(GameState, GameState->DeathScreenTimer);
+            }
+            
+            if(GameState->PlayerState == Player_Dead)
+            {
+                if(TimerDone(GameState, GameState->DeathScreenTimer) && GameState->InputController.AnyKeyPressed)
+                {
+                    GameState->PlayerState = Player_Alive;
+                    ReloadCurrentLevel(GameState);
                 }
             }
             

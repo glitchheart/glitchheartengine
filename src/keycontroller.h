@@ -162,6 +162,8 @@ struct input_controller
         Joystick_4
     };
     
+    bool32 AnyKeyPressed;
+    
     bool32 KeysDown[Key_Count];
     bool32 KeysUp[Key_Count];
     Key_Mode KeysJustPressed[Key_Count];

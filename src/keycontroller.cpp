@@ -1,6 +1,7 @@
 #ifdef KEY_INIT
 static void SetInvalidKeys(input_controller *InputController)
 {
+    InputController->AnyKeyPressed = false;
     for(uint32 KeyCode = 0; KeyCode < Key_Count; KeyCode++)
     {
         if(InputController->KeysJustPressed[KeyCode] == Key_JustPressed)
@@ -13,6 +14,7 @@ static void SetInvalidKeys(input_controller *InputController)
 
 static void SetControllerInvalidKeys(input_controller *InputController)
 {
+    InputController->AnyKeyPressed = false;
     for(uint32 KeyCode = 0; KeyCode < Joystick_Count; KeyCode++)
     {
         if(InputController->JoystickKeysJustPressed[KeyCode] == Key_JustPressed)
@@ -24,6 +26,7 @@ static void SetControllerInvalidKeys(input_controller *InputController)
 
 static void SetMouseInvalidKeys(input_controller *InputController)
 {
+    InputController->AnyKeyPressed = false;
     for(uint32 KeyCode = 0; KeyCode < Mouse_Count; KeyCode++)
     {
         if(InputController->MouseButtonJustPressed[KeyCode] == Key_JustPressed)

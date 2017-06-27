@@ -362,6 +362,7 @@ void Hit(game_state* GameState, entity* ByEntity, entity* HitEntity)
         PlaySoundEffect(GameState, &GameState->SoundManager.SwordHit02);
         HitEntity->HitRecoilDirection = glm::normalize(HitEntity->Position - ByEntity->Position);
         HitEntity->Health -= 1;
+        
         HitEntity->Hit = true;
         HitEntity->HitAttackCountId = ByEntity->AttackCount;
         HitEntity->HitFlickerFramesLeft = HitEntity->HitFlickerFrameMax;
@@ -380,7 +381,7 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
     if(TimerDone(GameState, Entity->Player.LastAttackTimer) && TimerDone(GameState, Entity->Player.AttackCooldownTimer))
         Entity->AttackCount = 0;
     
-    if (!GameState->Console.Open)
+    if (Entity->Active && Entity->Health > 0)
     {
         if(!TimerDone(GameState, Entity->HitCooldownTimer))
         {
@@ -715,7 +716,7 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
                 {
                     for(uint32 Index = Entity->Player.TargetedEnemyHandle + 1; Index < GameState->EntityCount; Index++)
                     {
-                        if(GameState->Entities[Index].Type == Entity_Blob || GameState->Entities[Index].Type == Entity_Skeleton)
+                        if(GameState->Entities[Index].Health > 0 && GameState->Entities[Index].Type == Entity_Blob || GameState->Entities[Index].Type == Entity_Skeleton)
                         {
                             auto Distance = glm::distance(Entity->Position, GameState->Entities[Index].Position);
                             if(Distance <= Entity->Player.TargetingDistance)
@@ -731,7 +732,7 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
                 {
                     for(uint32 Index = 0; Index < Entity->Player.TargetedEnemyHandle - 1; Index++)
                     {
-                        if(GameState->Entities[Index].Type == Entity_Blob || GameState->Entities[Index].Type == Entity_Skeleton)
+                        if(GameState->Entities[Index].Health > 0 && GameState->Entities[Index].Type == Entity_Blob || GameState->Entities[Index].Type == Entity_Skeleton)
                         {
                             auto Distance = glm::distance(Entity->Position, GameState->Entities[Index].Position);
                             if(Distance <= Entity->Player.TargetingDistance)
@@ -757,6 +758,16 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
         float Degrees = atan2(Direction.y, Direction.x);
         
         GameState->GameCamera.CenterTarget = glm::vec2(Entity->Position.x, Entity->Position.y);
+    }
+    else
+    {
+        Entity->Dead = true;
+        PlayAnimation(Entity, "player_death", GameState);
+    }
+    
+    if(Entity->Dead && !Entity->AnimationInfo.Playing)
+    {
+        Entity->Active = false;
     }
 }
 
@@ -962,23 +973,30 @@ void UpdateSkeleton(entity* Entity, game_state* GameState, real64 DeltaTime)
             break;
             case AI_Following:
             {
-                if(DistanceToPlayer > Skeleton.MaxFollowDistance)
+                if(Player.Active)
                 {
-                    PlayAnimation(Entity, "skeleton_idle", GameState);
-                    Enemy.AIState = AI_Idle;
-                }
-                else if(DistanceToPlayer < Skeleton.MinDistance)
-                {
-                    PlayAnimation(Entity, "skeleton_idle", GameState);
-                    StartTimer(GameState, Skeleton.ChargingTimer);
-                    Enemy.AIState = AI_Charging;
-                    render_entity* RenderEntity = &GameState->RenderState.RenderEntities[Entity->RenderEntityHandle];
+                    if(DistanceToPlayer > Skeleton.MaxFollowDistance)
+                    {
+                        PlayAnimation(Entity, "skeleton_idle", GameState);
+                        Enemy.AIState = AI_Idle;
+                    }
+                    else if(DistanceToPlayer < Skeleton.MinDistance)
+                    {
+                        PlayAnimation(Entity, "skeleton_idle", GameState);
+                        StartTimer(GameState, Skeleton.ChargingTimer);
+                        Enemy.AIState = AI_Charging;
+                        render_entity* RenderEntity = &GameState->RenderState.RenderEntities[Entity->RenderEntityHandle];
+                    }
+                    else
+                    {
+                        PlayAnimation(Entity, "skeleton_walk", GameState);
+                        FindPath(GameState, Entity, Player, GetAStarPath(Entity));
+                        FollowPath(GameState, Entity, Player, DeltaTime, GetAStarPath(Entity));
+                    }
                 }
                 else
                 {
-                    PlayAnimation(Entity, "skeleton_walk", GameState);
-                    FindPath(GameState, Entity, Player, GetAStarPath(Entity));
-                    FollowPath(GameState, Entity, Player, DeltaTime, GetAStarPath(Entity));
+                    PlayAnimation(Entity, "skeleton_idle", GameState);
                 }
             }
             break;

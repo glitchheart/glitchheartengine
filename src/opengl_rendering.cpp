@@ -196,8 +196,8 @@ static void InitializeFreeTypeFont(char* FontPath, int FontSize, FT_Library Libr
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     
     unsigned int X = 0;
     
@@ -588,6 +588,9 @@ static void RenderSetup(render_state *RenderState)
     
     RenderState->ButtonFont = {};
     InitializeFreeTypeFont("../assets/fonts/raleway/Raleway-Regular.ttf", 30, RenderState->FTLibrary, &RenderState->ButtonFont, &RenderState->StandardFontShader);
+    
+    RenderState->ButtonFont = {};
+    InitializeFreeTypeFont("../assets/fonts/rubber-biscuit/RUBBBB__.ttf", 50, RenderState->FTLibrary, &RenderState->TitleFont, &RenderState->StandardFontShader);
 }
 
 static GLuint LoadTexture(const char* FilePath, texture* Texture)
@@ -1763,6 +1766,20 @@ void RenderGame(game_state* GameState)
     if(GameState->Camera.FadingMode != Fading_None)
     {
         RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(0, 0, 0, GameState->Camera.FadingAlpha), 0, 0, GameState->RenderState.WindowWidth, GameState->RenderState.WindowHeight);
+    }
+    
+    if(GameState->PlayerState == Player_Dead)
+    {
+        RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(1, 0, 0, 0.2f), 0, 0, GameState->RenderState.WindowWidth, GameState->RenderState.WindowHeight);
+        
+        real32 Width = 0;
+        real32 Height = 0;
+        MeasureText(&GameState->RenderState.TitleFont, "YOU DIED", &Width, &Height);
+        
+        RenderText(&GameState->RenderState, GameState->RenderState.TitleFont, glm::vec4(1, 1, 1, 1), "YOU DIED", (real32)GameState->RenderState.WindowWidth / 2 - Width / 2, (real32)GameState->RenderState.WindowHeight / 2 - Height / 2, 1);
+        
+        MeasureText(&GameState->RenderState.TitleFont, "Press any key to restart. . .", &Width, &Height);
+        RenderText(&GameState->RenderState, GameState->RenderState.TitleFont, glm::vec4(1, 1, 1, 1), "Press any key to restart. . .", (real32)GameState->RenderState.WindowWidth / 2 - Width / 2, (real32)GameState->RenderState.WindowHeight / 2 - Height * 2, 1);
     }
 }
 
