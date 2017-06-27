@@ -1762,6 +1762,11 @@ void RenderGame(game_state* GameState)
         }
         break;
     }
+    
+    if(GameState->Camera.FadingMode != Fading_None)
+    {
+        RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(0, 0, 0, GameState->Camera.FadingAlpha), 0, 0, GameState->RenderState.WindowWidth, GameState->RenderState.WindowHeight);
+    }
 }
 
 static void CheckLevelVAO(game_state* GameState)

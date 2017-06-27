@@ -12,6 +12,27 @@
 
 #define DEBUG
 
+static void StartFade(camera& Camera, Fading_Mode Mode, bool32 SetValueToFadeStart = false)
+{
+    Camera.FadingMode = Mode;
+    
+    if(SetValueToFadeStart)
+    {
+        switch(Mode)
+        {
+            case Fading_In:
+            {
+                Camera.FadingAlpha = 1.0f;
+            }
+            break;
+            case Fading_Out:
+            {
+                Camera.FadingAlpha = 0.0f;
+            }
+            break;
+        }
+    }
+}
 static void TickTimers(game_state* GameState, real64 DeltaTime)
 {
     for(uint32 Index = 0; Index < NUM_TIMERS; Index++)
@@ -546,7 +567,11 @@ extern "C" UPDATE(Update)
         GameState->GameCamera.ScreenShakeTimer = (timer*)malloc(sizeof(timer));
         GameState->GameCamera.ScreenShakeTimer->TimerHandle = -1;
         GameState->GameCamera.ScreenShakeTimer->TimerMax = 0.2f;
-        GameState->GameCamera.FollowSpeed = 22.0f; // @Incomplete: This is not the right value, it is only set so high to remove smooth following as of now, since it needs to be done a little differently
+        GameState->GameCamera.FollowSpeed = 22.0f; 
+        GameState->GameCamera.FadingSpeed = 0.6f;
+        StartFade(GameState->GameCamera, Fading_In, true);
+        
+        // @Incomplete: This is not the right value, it is only set so high to remove smooth following as of now, since it needs to be done a little differently
         
         GameState->GameCamera.Center = GameState->Entities[0].Position; // Set center to player's position!
         
@@ -643,6 +668,31 @@ extern "C" UPDATE(Update)
         }
     }
     
+    switch(GameState->GameCamera.FadingMode)
+    {
+        case Fading_In:
+        {
+            GameState->GameCamera.FadingAlpha -= GameState->GameCamera.FadingSpeed * DeltaTime;
+            
+            if(GameState->GameCamera.FadingAlpha <= 0.0f)
+            {
+                GameState->GameCamera.FadingAlpha = 0.0f;
+                GameState->GameCamera.FadingMode = Fading_None;
+            }
+        }
+        break;
+        case Fading_Out:
+        {
+            GameState->GameCamera.FadingAlpha += GameState->GameCamera.FadingSpeed * DeltaTime;
+            if(GameState->GameCamera.FadingAlpha >= 1.0f)
+            {
+                GameState->GameCamera.FadingAlpha = 1.0f;
+                GameState->GameCamera.FadingMode = Fading_None;
+            }
+        }
+        break;
+    }
+    
     glm::vec2 Center = GameState->Camera.Center;
     
     switch(GameState->GameMode)
@@ -671,6 +721,7 @@ extern "C" UPDATE(Update)
                     GameState->GameCamera.Center = Center;
                 }
             }
+            
             GameState->Camera = GameState->GameCamera;
         }
         break;
