@@ -6,7 +6,7 @@ uniform vec2 textureOffset;
 uniform float frameWidth;
 uniform float frameHeight;
 uniform vec2 sheetSize;
-uniform vec4 color;
+uniform vec4 Color;
 uniform float isUI;
 
 in vec2 texcoord;
@@ -16,7 +16,7 @@ out vec2 Texcoord;
 
 void main()
 {
-    C = color;
+    C = Color;
     Texcoord = vec2(1.0 / sheetSize.x * textureOffset.x + texcoord.x / (sheetSize.x / frameWidth), 1.0 / sheetSize.y * textureOffset.y + texcoord.y / (sheetSize.y / frameHeight));
 
 	if(isUI == 1.0)

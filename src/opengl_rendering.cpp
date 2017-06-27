@@ -1350,7 +1350,6 @@ static void RenderEntity(render_state *RenderState, entity &Entity, glm::mat4 Pr
             SetVec2Uniform(Shader.Program,"textureOffset", glm::vec2(Frame.X, Frame.Y));
             SetFloatUniform(Shader.Program, "frameWidth", Animation->FrameSize.x);
             SetFloatUniform(Shader.Program, "frameHeight", Animation->FrameSize.y);
-            SetVec4Uniform(Shader.Program, "color", RenderEntity->Color);
             SetVec2Uniform(Shader.Program,"sheetSize",
                            glm::vec2(Animation->Texture->Width, Animation->Texture->Height));
         } 
@@ -1394,10 +1393,8 @@ static void RenderEntity(render_state *RenderState, entity &Entity, glm::mat4 Pr
         SetMat4Uniform(Shader.Program, "Projection", ProjectionMatrix);
         SetMat4Uniform(Shader.Program, "View", View);
         SetMat4Uniform(Shader.Program, "Model", Model);
-        SetVec4Uniform(Shader.Program, "Color", glm::vec4(1, 1, 1, 1));
+        SetVec4Uniform(Shader.Program, "Color", RenderEntity->Color);
         
-        auto Skeleton = Entity.Enemy.Skeleton;
-        Entity.Enemy.Healthbar;
         glBindBuffer(GL_ARRAY_BUFFER, RenderState->SpriteQuadVBO);
         glDrawArrays(GL_QUADS, 0, 4);
         glBindVertexArray(0);
