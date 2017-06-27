@@ -141,28 +141,31 @@ struct entity
         } Player;
         struct
         {
-            AI_State AIState;
-            timer* ExplodeStartTimer;
-            timer* ExplodeCountdownTimer;
-            astar_path AStarPath;
-        } Blob;
-        struct
-        {
             entity_healthbar* Healthbar;
-            
-            bool32 IsAttacking;
-            real32 WalkingSpeed;
-            real32 MaxAlertDistance;
-            real32 MaxFollowDistance;
-            real32 MinDistance;
-            
-            timer* AttackCooldownTimer;
-            timer* ChargingTimer;
-            
             AI_State AIState;
             astar_path AStarPath;
             
-        } Skeleton;
+            union
+            {
+                struct
+                {
+                    timer* ExplodeStartTimer;
+                    timer* ExplodeCountdownTimer;
+                } Blob;
+                struct
+                {
+                    bool32 IsAttacking;
+                    real32 WalkingSpeed;
+                    real32 MaxAlertDistance;
+                    real32 MaxFollowDistance;
+                    real32 MinDistance;
+                    
+                    timer* AttackCooldownTimer;
+                    timer* ChargingTimer;
+                    
+                } Skeleton;
+            };
+        } Enemy;
         struct
         {
             timer* PickupThrowTimer;
