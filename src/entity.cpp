@@ -49,7 +49,7 @@ static void InitPlayer(game_state* GameState, glm::vec2 Position)
     Player->Player.CrosshairRadius = 4;
     Player->Player.CrosshairPositionX = Player->Player.CrosshairRadius * 1.0f;
     Player->Player.CrosshairPositionY = 0;
-    Player->Player.TargetingDistance = 5;
+    Player->Player.TargetingDistance = 10;
     Player->Player.TargetedEnemyHandle = -1;
     
     Player->Player.AttackCooldownTimer = (timer*)malloc(sizeof(timer));
@@ -559,6 +559,9 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
                 
                 if(GetActionButtonDown(Action_Interact, GameState) && Entity->Player.Pickup)
                 {
+                    GameState->Entities[Entity->Player.TargetedEnemyHandle].Enemy.IsTargeted = false;
+                    Entity->Player.TargetedEnemyHandle = -1;
+                    
                     Entity->Player.Pickup->IsKinematic = false;
                     real32 ThrowingDir = Entity->IsFlipped ? -1.0f : 1.0f;
                     glm::vec2 Throw;
@@ -566,9 +569,6 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
                     glm::vec2 Dir = glm::normalize(glm::vec2(Entity->Player.CrosshairPositionX, Entity->Player.CrosshairPositionY));
                     Throw.x = Dir.x * Entity->Player.ThrowingSpeed;
                     Throw.y = Dir.y * Entity->Player.ThrowingSpeed;
-                    
-                    
-                    printf("THROW x %f y %f\n", Throw.x, Throw.y);
                     
                     Entity->Player.Pickup->Velocity = Throw;
                     StartTimer(GameState, Entity->Player.Pickup->Pickup.PickupThrowTimer);
@@ -609,12 +609,22 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
         {
             Entity->Player.Pickup->Position = glm::vec2(Entity->Position.x - 0.5f, Entity->Position.y);
             
-            auto Input = glm::normalize(glm::vec2(GetInputX(GameState, Stick_Right), GetInputY(GameState, Stick_Right)));
-            
-            if(Input.x == Input.x || Input.y == Input.y) // NaN check
+            if(Entity->Player.TargetedEnemyHandle != -1)
             {
-                Entity->Player.CrosshairPositionX = Input.x * Entity->Player.CrosshairRadius;
-                Entity->Player.CrosshairPositionY = Input.y * Entity->Player.CrosshairRadius;
+                auto Direction = GameState->Entities[Entity->Player.TargetedEnemyHandle].Position - Entity->Position;
+                
+                Entity->Player.CrosshairPositionX = Direction.x * 0.9f;
+                Entity->Player.CrosshairPositionY = Direction.y * 0.9f;
+            }
+            else
+            {
+                auto Input = glm::normalize(glm::vec2(GetInputX(GameState, Stick_Right), GetInputY(GameState, Stick_Right)));
+                
+                if(Input.x == Input.x || Input.y == Input.y) // NaN check
+                {
+                    Entity->Player.CrosshairPositionX = Input.x * Entity->Player.CrosshairRadius;
+                    Entity->Player.CrosshairPositionY = Input.y * Entity->Player.CrosshairRadius;
+                }
             }
         }
         else
@@ -688,37 +698,46 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
             
             if(GetActionButtonDown(Action_SwitchTarget, GameState))
             {
-                printf("HIT!\n");
                 int32 NextTarget = -1;
                 
                 if(Entity->Player.TargetedEnemyHandle + 1 < GameState->EntityCount)
                 {
                     for(uint32 Index = Entity->Player.TargetedEnemyHandle + 1; Index < GameState->EntityCount; Index++)
                     {
-                        auto Distance = glm::distance(Entity->Position, GameState->Entities[Index].Position);
-                        if(Distance <= Entity->Player.TargetingDistance)
+                        if(GameState->Entities[Index].Type == Entity_Blob || GameState->Entities[Index].Type == Entity_Skeleton)
                         {
-                            NextTarget = Index;
-                            break;
+                            auto Distance = glm::distance(Entity->Position, GameState->Entities[Index].Position);
+                            if(Distance <= Entity->Player.TargetingDistance)
+                            {
+                                NextTarget = Index;
+                                break;
+                            }
                         }
                     }
                 }
                 
-                if(NextTarget == -1 && Entity->Player.TargetedEnemyHandle >= 0)
+                if(NextTarget == -1 && Entity->Player.TargetedEnemyHandle > 0)
                 {
                     for(uint32 Index = 0; Index < Entity->Player.TargetedEnemyHandle - 1; Index++)
                     {
-                        auto Distance = glm::distance(Entity->Position, GameState->Entities[Index].Position);
-                        if(Distance <= Entity->Player.TargetingDistance)
+                        if(GameState->Entities[Index].Type == Entity_Blob || GameState->Entities[Index].Type == Entity_Skeleton)
                         {
-                            NextTarget = Index;
-                            break;
+                            auto Distance = glm::distance(Entity->Position, GameState->Entities[Index].Position);
+                            if(Distance <= Entity->Player.TargetingDistance)
+                            {
+                                NextTarget = Index;
+                                break;
+                            }
                         }
                     }
                 }
-                GameState->Entities[Entity->Player.TargetedEnemyHandle].Enemy.IsTargeted = false;
-                GameState->Entities[NextTarget].Enemy.IsTargeted = true;
-                Entity->Player.TargetedEnemyHandle = NextTarget;
+                
+                if(NextTarget != -1)
+                {
+                    GameState->Entities[Entity->Player.TargetedEnemyHandle].Enemy.IsTargeted = false;
+                    GameState->Entities[NextTarget].Enemy.IsTargeted = true;
+                    Entity->Player.TargetedEnemyHandle = NextTarget;
+                }
             }
         }
         
