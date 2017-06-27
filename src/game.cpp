@@ -546,7 +546,8 @@ extern "C" UPDATE(Update)
         GameState->GameCamera.ScreenShakeTimer = (timer*)malloc(sizeof(timer));
         GameState->GameCamera.ScreenShakeTimer->TimerHandle = -1;
         GameState->GameCamera.ScreenShakeTimer->TimerMax = 0.2f;
-        GameState->GameCamera.FollowSpeed = 12.0f;
+        GameState->GameCamera.FollowSpeed = 22.0f; // @Incomplete: This is not the right value, it is only set so high to remove smooth following as of now, since it needs to be done a little differently
+        
         GameState->GameCamera.Center = GameState->Entities[0].Position; // Set center to player's position!
         
         GameState->IsInitialized = true;

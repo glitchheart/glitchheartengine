@@ -1130,19 +1130,7 @@ static void RenderWireframe(render_state* RenderState, entity* Entity, glm::mat4
 
 static astar_path* GetAStarPath(entity* Entity)
 {
-    switch(Entity->Type)
-    {
-        case Entity_Skeleton:
-        {
-            return &Entity->Skeleton.AStarPath; 
-        };
-        case Entity_Blob:
-        {
-            return &Entity->Blob.AStarPath; 
-        };
-        default:
-        return 0;
-    }
+    return &Entity->Enemy.AStarPath;
 }
 
 static void RenderAStarPath(render_state* RenderState, entity* Entity, glm::mat4 ProjectionMatrix, glm::mat4 View)
@@ -1407,15 +1395,15 @@ static void RenderEntity(render_state *RenderState, entity &Entity, glm::mat4 Pr
         SetMat4Uniform(Shader.Program, "Model", Model);
         SetVec4Uniform(Shader.Program, "Color", glm::vec4(1, 1, 1, 1));
         
-        auto Skeleton = Entity.Skeleton;
-        Skeleton.Healthbar;
+        auto Skeleton = Entity.Enemy.Skeleton;
+        Entity.Enemy.Healthbar;
         glBindBuffer(GL_ARRAY_BUFFER, RenderState->SpriteQuadVBO);
         glDrawArrays(GL_QUADS, 0, 4);
         glBindVertexArray(0);
         
         if(Entity.Type == Entity_Skeleton && Entity.Health < 4 && Entity.Health > 0)
         {
-            RenderHealthbar(RenderState, &Entity, *Entity.Skeleton.Healthbar, ProjectionMatrix, View);
+            RenderHealthbar(RenderState, &Entity, *Entity.Enemy.Healthbar, ProjectionMatrix, View);
         }
     }
     

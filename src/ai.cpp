@@ -145,19 +145,7 @@ static void ReconstructPath(astar_path* Path, game_state* GameState, astar_node&
 
 static astar_path* GetAStarPath(entity* Entity)
 {
-    switch(Entity->Type)
-    {
-        case Entity_Skeleton:
-        {
-            return &Entity->Skeleton.AStarPath; 
-        };
-        case Entity_Blob:
-        {
-            return &Entity->Blob.AStarPath; 
-        };
-        default:
-        return 0;
-    }
+    return &Entity->Enemy.AStarPath;
 }
 
 
