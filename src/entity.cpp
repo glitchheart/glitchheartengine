@@ -68,6 +68,10 @@ static void InitPlayer(game_state* GameState, glm::vec2 Position)
     Player->Player.DashTimer->TimerHandle = -1;
     Player->Player.DashTimer->TimerMax = 0.24;
     
+    Player->Player.AfterDashCooldownTimer = (timer*)malloc(sizeof(timer));
+    Player->Player.AfterDashCooldownTimer->TimerHandle = -1;
+    Player->Player.AfterDashCooldownTimer->TimerMax = 0.24;
+    
     Player->Player.DashCooldownTimer = (timer*)malloc(sizeof(timer));
     Player->Player.DashCooldownTimer->TimerHandle = -1;
     Player->Player.DashCooldownTimer->TimerMax = 0.2;
@@ -405,7 +409,7 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
                 StartTimer(GameState, Entity->Player.DashTimer);
             }
             
-            if(Entity->Player.IsDashing &&!TimerDone(GameState,Entity->Player.DashTimer) && GetActionButtonDown(Action_Dash, GameState))
+            if(Entity->Player.IsDashing && !TimerDone(GameState,Entity->Player.DashTimer) && GetActionButtonDown(Action_Dash, GameState))
             {
                 Entity->Player.DashCount = 0;
                 StartTimer(GameState,Entity->Player.DashCooldownTimer);
@@ -593,6 +597,7 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
             {
                 if(TimerDone(GameState, Entity->Player.DashTimer))
                 {
+                    StartTimer(GameState, Entity->Player.AfterDashCooldownTimer);
                     Entity->Player.DashCount++;
                     
                     if(Entity->Player.DashCount == 3)
