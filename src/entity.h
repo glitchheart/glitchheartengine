@@ -114,6 +114,7 @@ struct entity
             timer* LastAttackTimer;
             timer* DashTimer;
             timer* DashCooldownTimer;
+            timer* AfterDashCooldownTimer;
             timer* PickupCooldownTimer;
             
             real32 AttackMoveSpeed;
