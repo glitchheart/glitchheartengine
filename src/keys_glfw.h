@@ -89,6 +89,7 @@ static void ControllerKeyCallback(game_state* GameState, int Key, int Action)
     {
         if (Action == GLFW_PRESS)
         {
+            GameState->InputController.AnyKeyPressed = true;
             if (GameState->InputController.JoystickKeysJustPressed[ControllerMappings[Key]] == Key_NotPressed)
             {
                 GameState->InputController.JoystickKeysJustPressed[ControllerMappings[Key]] = Key_JustPressed;
@@ -158,6 +159,7 @@ static void KeyCallback(GLFWwindow *Window, int Key, int Scancode, int Action, i
     {
         if (Action == GLFW_PRESS)
         {
+            GameState->InputController.AnyKeyPressed = true;
             if (GameState->InputController.KeysJustPressed[KeyMappings[Key]] == Key_NotPressed)
             {
                 GameState->InputController.KeysJustPressed[KeyMappings[Key]] = Key_JustPressed;
@@ -188,6 +190,7 @@ static void MouseButtonCallback(GLFWwindow *Window, int Button, int Action, int 
     {
         if (Action == GLFW_PRESS)
         {
+            GameState->InputController.AnyKeyPressed = true;
             if (GameState->InputController.MouseButtonJustPressed[MouseButtonMappings[Button]] == Key_NotPressed)
             {
                 GameState->InputController.MouseButtonJustPressed[MouseButtonMappings[Button]] = Key_JustPressed;

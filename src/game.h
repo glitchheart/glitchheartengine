@@ -54,6 +54,12 @@ enum Game_Mode
     Mode_Exit
 };
 
+enum Player_State
+{
+    Player_Alive,
+    Player_Dead
+};
+
 #define NUM_TIMERS 128
 
 struct game_state
@@ -61,6 +67,10 @@ struct game_state
     bool32 IsInitialized;
     bool32 Paused;
     bool32 ShouldReload;
+    
+    Player_State PlayerState = Player_Alive;
+    timer* DeathScreenTimer;
+    
     Game_Mode GameMode;
     main_menu MainMenu;
     render_state RenderState;

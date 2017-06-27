@@ -88,6 +88,10 @@ int main(void)
     render_state RenderState;
     InitializeOpenGL(&GameState, &RenderState, &ConfigData);
     LoadTilesheetTextures(&GameState, &RenderState);
+    GameState.DeathScreenTimer = (timer*)malloc(sizeof(timer));
+    GameState.DeathScreenTimer->TimerMax = 1.0f;
+    GameState.DeathScreenTimer->TimerHandle = -1;
+    
     GameState.RenderState = RenderState;
     GameState.LevelPath = ConfigData.StartingLevelFilePath;
     game_code Game = LoadGameCode();
