@@ -1765,7 +1765,9 @@ void RenderGame(game_state* GameState)
     
     if(GameState->Camera.FadingMode != Fading_None)
     {
-        RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(0, 0, 0, GameState->Camera.FadingAlpha), 0, 0, GameState->RenderState.WindowWidth, GameState->RenderState.WindowHeight);
+        auto Color = GameState->Camera.FadingTint;
+        
+        RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(Color.x, Color.y, Color.z, GameState->Camera.FadingAlpha), 0, 0, GameState->RenderState.WindowWidth, GameState->RenderState.WindowHeight);
     }
     
     if(GameState->PlayerState == Player_Dead)

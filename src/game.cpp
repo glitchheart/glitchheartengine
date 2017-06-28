@@ -12,27 +12,6 @@
 
 #define DEBUG
 
-static void StartFade(camera& Camera, Fading_Mode Mode, bool32 SetValueToFadeStart = false)
-{
-    Camera.FadingMode = Mode;
-    
-    if(SetValueToFadeStart)
-    {
-        switch(Mode)
-        {
-            case Fading_In:
-            {
-                Camera.FadingAlpha = 1.0f;
-            }
-            break;
-            case Fading_Out:
-            {
-                Camera.FadingAlpha = 0.0f;
-            }
-            break;
-        }
-    }
-}
 static void TickTimers(game_state* GameState, real64 DeltaTime)
 {
     for(uint32 Index = 0; Index < NUM_TIMERS; Index++)
@@ -569,7 +548,7 @@ extern "C" UPDATE(Update)
         GameState->GameCamera.ScreenShakeTimer->TimerMax = 0.2f;
         GameState->GameCamera.FollowSpeed = 22.0f; 
         GameState->GameCamera.FadingSpeed = 0.6f;
-        StartFade(GameState->GameCamera, Fading_In, true);
+        StartFade(GameState->GameCamera, Fading_In, 0.6f, glm::vec3(0, 0, 0), 1.0f, 0.0f);
         
         // @Incomplete: This is not the right value, it is only set so high to remove smooth following as of now, since it needs to be done a little differently
         
@@ -672,7 +651,7 @@ extern "C" UPDATE(Update)
     {
         case Fading_In:
         {
-            GameState->GameCamera.FadingAlpha -= GameState->GameCamera.FadingSpeed * DeltaTime;
+            GameState->GameCamera.FadingAlpha -= GameState->GameCamera.FadingSpeed * (real32)DeltaTime;
             
             if(GameState->GameCamera.FadingAlpha <= 0.0f)
             {
@@ -689,6 +668,30 @@ extern "C" UPDATE(Update)
             {
                 GameState->GameCamera.FadingAlpha = 1.0f;
                 GameState->GameCamera.FadingMode = Fading_None;
+            }
+        }
+        case Fading_OutIn:
+        {
+            if(GameState->GameCamera.FadingIn)
+            {
+                GameState->GameCamera.FadingAlpha -= GameState->GameCamera.FadingSpeed * (real32)DeltaTime;
+                
+                if(GameState->GameCamera.FadingAlpha <= 0.0f)
+                {
+                    GameState->GameCamera.FadingAlpha = 0.0f;
+                    GameState->GameCamera.FadingMode = Fading_None;
+                    GameState->GameCamera.FadingIn = false;
+                }
+            }
+            else
+            {
+                GameState->GameCamera.FadingAlpha += GameState->GameCamera.FadingSpeed * DeltaTime;
+                
+                if(GameState->GameCamera.FadingAlpha >= GameState->GameCamera.EndAlpha)
+                {
+                    GameState->GameCamera.FadingAlpha = GameState->GameCamera.EndAlpha;
+                    GameState->GameCamera.FadingIn = true;
+                }
             }
         }
         break;
