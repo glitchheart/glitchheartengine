@@ -172,6 +172,9 @@ struct entity
                     real32 ExplosionCollisionExtentsY;
                     timer* ExplodeStartTimer;
                     timer* ExplodeCountdownTimer;
+                    
+                    bool32 InPickupMode;
+                    timer* PickupThrowTimer;
                 } Blob;
                 struct
                 {
@@ -189,10 +192,10 @@ struct entity
         struct
         {
             timer* PickupThrowTimer;
-            bool32 RenderButtonHint;
         } Pickup;
     };
     
+    bool32 RenderButtonHint;
     glm::vec2 Velocity;
 };
 

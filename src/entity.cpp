@@ -281,16 +281,20 @@ static void SpawnBlob(game_state* GameState, glm::vec2 Position)
     Enemy->Enemy.AStarPath.AStarCooldownTimer->TimerHandle = -1;
     Enemy->Enemy.AStarPath.AStarCooldownTimer->TimerMax = 0.6;
     
+    Enemy->Enemy.Blob.PickupThrowTimer = (timer*)malloc(sizeof(timer));
+    Enemy->Enemy.Blob.PickupThrowTimer->TimerHandle = -1;
+    Enemy->Enemy.Blob.PickupThrowTimer->TimerMax = 1.5f;
+    
     Enemy->HitFlickerTimer = (timer*)malloc(sizeof(timer));
     Enemy->HitFlickerTimer->TimerHandle = -1;
     Enemy->HitFlickerTimer->TimerMax = 0.05f;
     
     Enemy->Enemy.Blob.ExplodeStartTimer = (timer*)malloc(sizeof(timer));
     Enemy->Enemy.Blob.ExplodeStartTimer->TimerHandle = -1;
-    Enemy->Enemy.Blob.ExplodeStartTimer->TimerMax = 0.3;
+    Enemy->Enemy.Blob.ExplodeStartTimer->TimerMax = 0.5;
     Enemy->Enemy.Blob.ExplodeCountdownTimer = (timer*)malloc(sizeof(timer));
     Enemy->Enemy.Blob.ExplodeCountdownTimer->TimerHandle = -1;
-    Enemy->Enemy.Blob.ExplodeCountdownTimer->TimerMax = 0.5;
+    Enemy->Enemy.Blob.ExplodeCountdownTimer->TimerMax = 1.0;
     Enemy->Velocity = glm::vec2(2, 2);
     
     collision_AABB CollisionAABB;
@@ -598,11 +602,22 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
                     Throw.y = Dir.y * Entity->Player.ThrowingSpeed;
                     
                     Entity->Player.Pickup->Velocity = Throw;
-                    StartTimer(GameState, Entity->Player.Pickup->Pickup.PickupThrowTimer);
-                    PlayAnimation(Entity->Player.Pickup, "barrel_thrown", GameState);
-                    PlaySoundEffect(GameState, &GameState->SoundManager.Throw);
-                    Entity->Player.Pickup = NULL;
-                    StartTimer(GameState, Entity->Player.PickupCooldownTimer);
+                    
+                    if(Entity->Player.Pickup->Type == Entity_Barrel)
+                    {
+                        StartTimer(GameState, Entity->Player.Pickup->Pickup.PickupThrowTimer);
+                        PlayAnimation(Entity->Player.Pickup, "barrel_thrown", GameState);
+                        PlaySoundEffect(GameState, &GameState->SoundManager.Throw);
+                        Entity->Player.Pickup = NULL;
+                        StartTimer(GameState, Entity->Player.PickupCooldownTimer);
+                    }
+                    else if(Entity->Player.Pickup->Type == Entity_Blob)
+                    {
+                        StartTimer(GameState, Entity->Player.Pickup->Enemy.Blob.PickupThrowTimer);
+                        PlaySoundEffect(GameState, &GameState->SoundManager.Throw);
+                        Entity->Player.Pickup = NULL;
+                        StartTimer(GameState, Entity->Player.PickupCooldownTimer);
+                    }
                 }
             }
             else
@@ -883,6 +898,31 @@ void UpdateWeapon(entity* Entity, game_state* GameState, real64 DeltaTime)
 
 void UpdateBlob(entity* Entity, game_state* GameState, real64 DeltaTime)
 {
+    if(!Entity->Enemy.Blob.InPickupMode)
+    {
+        auto& Player = GameState->Entities[0];
+        
+        Entity->RenderButtonHint = !Entity->IsKinematic && glm::distance(Player.Position, Entity->Position) < 1.5f;
+        
+        if(TimerDone(GameState, Entity->Enemy.Blob.PickupThrowTimer) && Entity->RenderButtonHint && GetActionButtonDown(Action_Interact, GameState) && !Player.Player.Pickup)
+        {
+            Player.Player.Pickup = Entity;
+            Player.Player.RenderCrosshair = true;
+            Entity->Position = Player.Position;
+            Entity->Velocity = glm::vec2(0.0f,0.0f);
+            Entity->IsKinematic = true;
+            Entity->Enemy.Blob.InPickupMode = true;
+            Entity->RenderButtonHint = false;
+        }
+    }
+    else
+    {
+        if(TimerDone(GameState, Entity->Enemy.Blob.PickupThrowTimer))
+        {
+            Entity->Velocity = glm::vec2();
+        }
+    }
+    
     switch(Entity->Enemy.AIState)
     {
         case AI_Following:
@@ -894,9 +934,6 @@ void UpdateBlob(entity* Entity, game_state* GameState, real64 DeltaTime)
                 Entity->Enemy.AIState = AI_Charging;
                 StartTimer(GameState, Entity->Enemy.Blob.ExplodeStartTimer);
             }
-            
-            Entity->Position.x += Entity->Velocity.x * (real32)DeltaTime;
-            Entity->Position.y += Entity->Velocity.y * (real32)DeltaTime;
         }
         break;
         case AI_Charging:
@@ -917,6 +954,7 @@ void UpdateBlob(entity* Entity, game_state* GameState, real64 DeltaTime)
             {
                 Entity->Enemy.AIState = AI_Dying;
                 PlayAnimation(Entity, "explosion", GameState);
+                Entity->Velocity = glm::vec2();
                 PlaySoundEffect(GameState, &GameState->SoundManager.Explosion);
             }
         }
@@ -947,6 +985,9 @@ void UpdateBlob(entity* Entity, game_state* GameState, real64 DeltaTime)
             }
         }
     }
+    
+    Entity->Position.x += Entity->Velocity.x * (real32)DeltaTime;
+    Entity->Position.y += Entity->Velocity.y * (real32)DeltaTime;
 }
 
 void UpdateSkeleton(entity* Entity, game_state* GameState, real64 DeltaTime)
@@ -1179,19 +1220,11 @@ void UpdateBarrel(entity* Entity, game_state* GameState, real64 DeltaTime)
             Entity->Active = false;
         }
         
-        real32 XVel = 0.0f;
-        real32 YVel = 0.0f;
-        
-        real32 ThrowDiff = 0.2f;
-        
         auto& Player = GameState->Entities[0];
         
-        Entity->Pickup.RenderButtonHint = !Entity->IsKinematic && glm::distance(Player.Position, Entity->Position) < 1.5f;
+        Entity->RenderButtonHint = !Entity->IsKinematic && glm::distance(Player.Position, Entity->Position) < 1.5f;
         
-        Entity->Position.x += Entity->Velocity.x * (real32)DeltaTime;
-        Entity->Position.y += Entity->Velocity.y * (real32)DeltaTime;
-        
-        if(TimerDone(GameState, Entity->Pickup.PickupThrowTimer) && Entity->Pickup.RenderButtonHint && GetActionButtonDown(Action_Interact, GameState) && !Player.Player.Pickup)
+        if(TimerDone(GameState, Entity->Pickup.PickupThrowTimer) && Entity->RenderButtonHint && GetActionButtonDown(Action_Interact, GameState) && !Player.Player.Pickup)
         {
             Player.Player.Pickup = Entity;
             Player.Player.RenderCrosshair = true;
@@ -1199,6 +1232,9 @@ void UpdateBarrel(entity* Entity, game_state* GameState, real64 DeltaTime)
             Entity->Velocity = glm::vec2(0.0f,0.0f);
             Entity->IsKinematic = true;
         }
+        
+        Entity->Position.x += Entity->Velocity.x * (real32)DeltaTime;
+        Entity->Position.y += Entity->Velocity.y * (real32)DeltaTime;
     }
 }
 
