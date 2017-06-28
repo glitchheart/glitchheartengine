@@ -237,7 +237,7 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
                 Level.SheetName = "overworld1";
                 Level.Name = "test_level";
                 
-                CreateNewLevelWithSize("../assets/levels/level_test.plv", 100, 100, &Level, GameState);
+                CreateNewLevelWithSize("../assets/levels/level_new.plv", 200, 120, &Level, GameState);
                 GameState->CurrentLevel = Level;
             }
             
@@ -336,13 +336,32 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
                                 {
                                     tilemap* Tilemap = &GameState->CurrentLevel.Tilemap;
                                     
-                                    collision_AABB CollisionAABB;
-                                    CollisionAABB.Center = glm::vec2(X + 0.5f, Y + 0.5f);
-                                    CollisionAABB.Extents = glm::vec2(0.5, 0.5);
-                                    
-                                    Tilemap->Data[X][Y] = Tilemap->Tiles[GameState->EditorState.SelectedTileType + 1];
-                                    
-                                    Tilemap->RenderInfo.Dirty = true;
+                                    if(GetKey(Key_F, GameState))
+                                    {
+                                        for(int32 IndexX = 0; IndexX < Tilemap->Width; IndexX++)
+                                        {
+                                            for(int32 IndexY = 0; IndexY < Tilemap->Height; IndexY++)
+                                            {
+                                                collision_AABB CollisionAABB;
+                                                CollisionAABB.Center = glm::vec2(IndexX + 0.5f, IndexY + 0.5f);
+                                                CollisionAABB.Extents = glm::vec2(0.5, 0.5);
+                                                
+                                                Tilemap->Data[IndexX][IndexY] = Tilemap->Tiles[GameState->EditorState.SelectedTileType + 1];
+                                                
+                                                Tilemap->RenderInfo.Dirty = true;
+                                            }
+                                        }
+                                    }
+                                    else
+                                    {
+                                        collision_AABB CollisionAABB;
+                                        CollisionAABB.Center = glm::vec2(X + 0.5f, Y + 0.5f);
+                                        CollisionAABB.Extents = glm::vec2(0.5, 0.5);
+                                        
+                                        Tilemap->Data[X][Y] = Tilemap->Tiles[GameState->EditorState.SelectedTileType + 1];
+                                        
+                                        Tilemap->RenderInfo.Dirty = true;
+                                    }
                                 }
                             }
                         }
