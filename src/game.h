@@ -26,7 +26,8 @@ enum Fading_Mode
 {
     Fading_None,
     Fading_In,
-    Fading_Out
+    Fading_Out,
+    Fading_OutIn
 };
 
 struct camera
@@ -40,7 +41,13 @@ struct camera
     glm::mat4 ViewMatrix;
     glm::mat4 ProjectionMatrix;
     timer* ScreenShakeTimer;
+    
     Fading_Mode FadingMode = Fading_None;
+    glm::vec3 FadingTint;
+    
+    bool32 FadingIn;
+    real32 StartAlpha;
+    real32 EndAlpha;
     real32 FadingAlpha = 0.0f;
     real32 FadingSpeed;
 };
@@ -127,5 +134,34 @@ bool32 TimerDone(game_state* GameState, timer* Timer)
     
     return Timer->TimerHandle == -1;
 }
+
+
+static void StartFade(camera& Camera, Fading_Mode Mode, real32 FadingSpeed, glm::vec3 FadingTint, real32 StartAlpha = 0, real32 EndAlpha = 0)
+{
+    Camera.FadingMode = Mode;
+    Camera.FadingTint = FadingTint;
+    Camera.EndAlpha = EndAlpha;
+    Camera.FadingSpeed = FadingSpeed;
+    
+    switch(Mode)
+    {
+        case Fading_In:
+        {
+            Camera.FadingAlpha = 1.0f;
+        }
+        break;
+        case Fading_Out:
+        {
+            Camera.FadingAlpha = 0.0f;
+        }
+        break;
+        case Fading_OutIn:
+        {
+            Camera.FadingAlpha = StartAlpha;
+        }
+        break;
+    }
+}
+
 
 #endif

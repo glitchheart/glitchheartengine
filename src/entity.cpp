@@ -371,6 +371,11 @@ void Hit(game_state* GameState, entity* ByEntity, entity* HitEntity)
         HitEntity->HitAttackCountId = ByEntity->AttackCount;
         HitEntity->HitFlickerFramesLeft = HitEntity->HitFlickerFrameMax;
         StartTimer(GameState, HitEntity->HitFlickerTimer);
+        
+        if(HitEntity->Type == Entity_Player)
+        {
+            StartFade(GameState->GameCamera, Fading_OutIn, 4.0f, glm::vec3(1, 0, 0), 0.0f, 0.4f);
+        }
     }
 }
 
@@ -735,7 +740,7 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
                 
                 if(NextTarget == -1 && Entity->Player.TargetedEnemyHandle > 0)
                 {
-                    for(uint32 Index = 0; Index < Entity->Player.TargetedEnemyHandle - 1; Index++)
+                    for(int32 Index = 0; Index < Entity->Player.TargetedEnemyHandle - 1; Index++)
                     {
                         if(GameState->Entities[Index].Health > 0 && GameState->Entities[Index].Type == Entity_Blob || GameState->Entities[Index].Type == Entity_Skeleton)
                         {
