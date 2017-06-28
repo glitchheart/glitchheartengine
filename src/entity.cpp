@@ -294,13 +294,15 @@ static void SpawnBlob(game_state* GameState, glm::vec2 Position)
     Enemy->Velocity = glm::vec2(2, 2);
     
     collision_AABB CollisionAABB;
-    Enemy->Center = glm::vec2(0.5f, 0.5f);
+    Enemy->Center = glm::vec2(-0.5f, 0.5f);
     CollisionAABB.Center = glm::vec2(Enemy->Position.x + Enemy->Center.x * Enemy->Scale.x,
                                      Enemy->Position.y + Enemy->Center.y * Enemy->Scale.y);
     CollisionAABB.Offset = glm::vec2(0, -0.9);
     CollisionAABB.Extents = glm::vec2(0.3f, 0.15f);
     CollisionAABB.IsTrigger = false;
     Enemy->CollisionAABB = CollisionAABB;
+    Enemy->Enemy.Blob.ExplosionCollisionExtentsX = 1.5f;
+    Enemy->Enemy.Blob.ExplosionCollisionExtentsY = 1.5f;
     
     collision_AABB* HitTrigger = (collision_AABB*)malloc(sizeof(collision_AABB));
     HitTrigger->Center = glm::vec2(Enemy->Position.x + Enemy->Center.x * Enemy->Scale.x,
@@ -887,8 +889,6 @@ void UpdateBlob(entity* Entity, game_state* GameState, real64 DeltaTime)
         {
             FindPath(GameState,Entity,GameState->Entities[GameState->PlayerIndex], &Entity->Enemy.AStarPath);
             FollowPath(GameState,Entity,GameState->Entities[GameState->PlayerIndex],DeltaTime, &Entity->Enemy.AStarPath);
-            /*glm::vec2 Direction = glm::normalize(glm::vec2(GameState->Entities[GameState->PlayerIndex].Position.x - Entity->Position.x, GameState->Entities[GameState->PlayerIndex].Position.y - Entity->Position.y));
-            */
             if(Abs(glm::distance(Entity->Position, GameState->Entities[GameState->PlayerIndex].Position)) < Entity->Enemy.MinDistanceToPlayer)
             {
                 Entity->Enemy.AIState = AI_Charging;
@@ -897,10 +897,6 @@ void UpdateBlob(entity* Entity, game_state* GameState, real64 DeltaTime)
             
             Entity->Position.x += Entity->Velocity.x * (real32)DeltaTime;
             Entity->Position.y += Entity->Velocity.y * (real32)DeltaTime;
-            
-            //printf("Velocity: (%f,%f)\n",Entity->Velocity.x,Entity->Velocity.y);
-            
-            /*Entity->IsFlipped = Direction.x <= 0;*/
         }
         break;
         case AI_Charging:
@@ -927,6 +923,7 @@ void UpdateBlob(entity* Entity, game_state* GameState, real64 DeltaTime)
         break;
         case AI_Dying:
         {
+            Entity->CollisionAABB.Extents = glm::vec2(Entity->Enemy.Blob.ExplosionCollisionExtentsX, Entity->Enemy.Blob.ExplosionCollisionExtentsY);
             if(!Entity->AnimationInfo.Playing)
             {
                 Entity->Active = false;
@@ -938,6 +935,18 @@ void UpdateBlob(entity* Entity, game_state* GameState, real64 DeltaTime)
     
     collision_info CollisionInfo;
     CheckCollision(GameState, Entity, &CollisionInfo);
+    
+    if(Entity->Enemy.AIState == AI_Dying)
+    {
+        for(int32 Index = 0; Index < CollisionInfo.OtherCount; Index++)
+        {
+            auto Other = CollisionInfo.Other[Index];
+            if(Other->Type != Entity_Barrel)
+            {
+                Hit(GameState, Entity, CollisionInfo.Other[Index]);
+            }
+        }
+    }
 }
 
 void UpdateSkeleton(entity* Entity, game_state* GameState, real64 DeltaTime)
