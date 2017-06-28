@@ -46,7 +46,6 @@ struct camera
     glm::vec3 FadingTint;
     
     bool32 FadingIn;
-    real32 StartAlpha;
     real32 EndAlpha;
     real32 FadingAlpha = 0.0f;
     real32 FadingSpeed;

@@ -196,8 +196,8 @@ static void InitializeFreeTypeFont(char* FontPath, int FontSize, FT_Library Libr
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     
     unsigned int X = 0;
     
@@ -583,13 +583,8 @@ static void RenderSetup(render_state *RenderState)
     RenderState->InconsolataFont = {};
     InitializeFreeTypeFont("../assets/fonts/inconsolata/Inconsolata-Regular.ttf", 18, RenderState->FTLibrary, &RenderState->InconsolataFont, &RenderState->StandardFontShader);
     
-    RenderState->MenuFont = {};
     InitializeFreeTypeFont("../assets/fonts/inconsolata/Inconsolata-Regular.ttf", 40, RenderState->FTLibrary, &RenderState->MenuFont, &RenderState->StandardFontShader);
-    
-    RenderState->ButtonFont = {};
     InitializeFreeTypeFont("../assets/fonts/raleway/Raleway-Regular.ttf", 30, RenderState->FTLibrary, &RenderState->ButtonFont, &RenderState->StandardFontShader);
-    
-    RenderState->ButtonFont = {};
     InitializeFreeTypeFont("../assets/fonts/rubber-biscuit/RUBBBB__.ttf", 50, RenderState->FTLibrary, &RenderState->TitleFont, &RenderState->StandardFontShader);
 }
 
@@ -832,6 +827,7 @@ static void RenderRect(Render_Mode Mode, render_state* RenderState, glm::vec4 Co
         case Render_Fill:
         {
             auto Shader = RenderState->RectShader;
+            
             if(TextureHandle && RenderState->BoundTexture != TextureHandle)
             {
                 glBindVertexArray(RenderState->TextureRectVAO);

@@ -23,6 +23,7 @@ enum AI_State
 enum Entity_Enum
 {
     Entity_Player,
+    Entity_Enemy,
     Entity_Tile,
     Entity_Skeleton,
     Entity_Blob,
@@ -30,6 +31,12 @@ enum Entity_Enum
     Entity_Barrel,
     
     Entity_Max
+};
+
+enum Enemy_Type
+{
+    Enemy_Blob,
+    Enemy_Skeleton
 };
 
 enum Look_Direction
@@ -149,12 +156,14 @@ struct entity
         } Player;
         struct
         {
+            Enemy_Type EnemyType;
             entity_healthbar* Healthbar;
             AI_State AIState;
             astar_path AStarPath;
             bool32 IsTargeted;
             real32 TargetingPositionX;
             real32 TargetingPositionY;
+            real32 MinDistanceToPlayer;
             union
             {
                 struct
@@ -168,7 +177,6 @@ struct entity
                     real32 WalkingSpeed;
                     real32 MaxAlertDistance;
                     real32 MaxFollowDistance;
-                    real32 MinDistance;
                     
                     timer* AttackCooldownTimer;
                     timer* ChargingTimer;

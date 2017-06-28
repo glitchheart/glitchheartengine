@@ -36,7 +36,6 @@ static void SaveTilesheetMetaFile(const char* FilePath, render_state* RenderStat
             fprintf(File, "%d\n", 16);
             
             int32 Index = 0;
-            fprintf(File, "%d %d %d %d %d %d %f %f\n", Index++, 0, 0, 0, 0, 0, 0.0f, 0.0f);
             
             for(uint32 Y = 0; Y < (uint32)Texture.Height / 16; Y++)
             {
@@ -157,7 +156,8 @@ static bool32 LoadLevelFromFile(char* FilePath, level* Level, game_state* GameSt
             Level->Tilemap.Data[I] = (tile_data *)malloc(MapHeight * sizeof(tile_data));
         }
         
-        char Line[256];
+        char Line[1024];
+        Assert(MapWidth < 1024 * 2 + 1);
         uint32 IndexHeight = 0;
         
         while (IndexHeight < MapHeight)
@@ -273,7 +273,6 @@ static void SaveLevelToFile(const char* FilePath, level* Level, game_state* Game
         fclose(File);
     }
 }
-
 
 static void CreateNewLevelWithSize(char* FilePath, uint32 Width, uint32 Height, level* NewLevel, game_state* GameState)
 {
