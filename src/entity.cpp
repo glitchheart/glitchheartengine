@@ -417,21 +417,6 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
                 Entity->Player.LastKnownDirectionY = Direction.y;
             }
             
-            if(!Entity->Player.Pickup && !Entity->Player.IsAttacking && TimerDone(GameState, Entity->Player.DashCooldownTimer) && !Entity->Player.IsDashing && GetActionButtonDown(Action_Dash, GameState))
-            {
-                
-                PlaySoundEffect(GameState, &GameState->SoundManager.Dash);
-                Entity->Player.IsDashing = true;
-                StartTimer(GameState, Entity->Player.DashTimer);
-            }
-            
-            if(Entity->Player.IsDashing && !TimerDone(GameState,Entity->Player.DashTimer) && GetActionButtonDown(Action_Dash, GameState))
-            {
-                Entity->Player.DashCount = 0;
-                StartTimer(GameState,Entity->Player.DashCooldownTimer);
-            }
-            
-            
             if(!Entity->Player.IsDashing)
             {
                 if(Entity->Player.IsAttacking && !Entity->AnimationInfo.Playing)
@@ -639,6 +624,22 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
                     Entity->Velocity = glm::vec2(Entity->Player.LastKnownDirectionX * Entity->Player.DashSpeed * DeltaTime, Entity->Player.LastKnownDirectionY * Entity->Player.DashSpeed * DeltaTime);
                 }
             }
+            
+            if(!Entity->Player.Pickup && !Entity->Player.IsAttacking && TimerDone(GameState, Entity->Player.DashCooldownTimer) && !Entity->Player.IsDashing && GetActionButtonDown(Action_Dash, GameState))
+            {
+                
+                PlaySoundEffect(GameState, &GameState->SoundManager.Dash);
+                Entity->Player.IsDashing = true;
+                StartTimer(GameState, Entity->Player.DashTimer);
+            }
+            
+            if(Entity->Player.IsDashing && !TimerDone(GameState,Entity->Player.DashTimer) && GetActionButtonDown(Action_Dash, GameState))
+            {
+                Entity->Player.DashCount = 0;
+                StartTimer(GameState,Entity->Player.DashCooldownTimer);
+            }
+            
+            
         }
         
         Entity->Position += Entity->Velocity;
@@ -716,7 +717,8 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
                     
                     for(uint32 Index = 0; Index < GameState->EntityCount; Index++)
                     {
-                        if(GameState->Entities[Index].Type == Entity_Skeleton) // @Incomplete: We need a way to easily determine whether it's an enemy or not
+                        if(!GameState->Entities[Index].Dead &&
+                           GameState->Entities[Index].Type == Entity_Skeleton) // @Incomplete: We need a way to easily determine whether it's an enemy or not
                         {
                             auto Distance = glm::distance(Entity->Position, GameState->Entities[Index].Position);
                             if(Distance <= Entity->Player.TargetingDistance && Distance < ClosestDistance)
@@ -748,7 +750,7 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
                 {
                     for(uint32 Index = Entity->Player.TargetedEnemyHandle + 1; Index < GameState->EntityCount; Index++)
                     {
-                        if(GameState->Entities[Index].Health > 0 && GameState->Entities[Index].Type == Entity_Blob || GameState->Entities[Index].Type == Entity_Skeleton)
+                        if(GameState->Entities[Index].Health > 0 && (GameState->Entities[Index].Type == Entity_Blob || GameState->Entities[Index].Type == Entity_Skeleton))
                         {
                             auto Distance = glm::distance(Entity->Position, GameState->Entities[Index].Position);
                             if(Distance <= Entity->Player.TargetingDistance)
@@ -764,7 +766,7 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
                 {
                     for(int32 Index = 0; Index < Entity->Player.TargetedEnemyHandle - 1; Index++)
                     {
-                        if(GameState->Entities[Index].Health > 0 && GameState->Entities[Index].Type == Entity_Blob || GameState->Entities[Index].Type == Entity_Skeleton)
+                        if(GameState->Entities[Index].Health > 0 && (GameState->Entities[Index].Type == Entity_Blob || GameState->Entities[Index].Type == Entity_Skeleton))
                         {
                             auto Distance = glm::distance(Entity->Position, GameState->Entities[Index].Position);
                             if(Distance <= Entity->Player.TargetingDistance)
@@ -817,14 +819,14 @@ void UpdateWeapon(entity* Entity, game_state* GameState, real64 DeltaTime)
             {
                 case Up:
                 {
-                    Entity->Weapon.CollisionAABB.Offset = glm::vec2(-1.0f, 1.2f);
-                    Entity->Weapon.CollisionAABB.Extents = glm::vec2(1.25f, 1.0f);
+                    Entity->Weapon.CollisionAABB.Offset = glm::vec2(-1.0f, 0.8f);
+                    Entity->Weapon.CollisionAABB.Extents = glm::vec2(1.5f, 1.5f);
                 }
                 break;
                 case Down:
                 {
                     Entity->Weapon.CollisionAABB.Offset = glm::vec2(-1.0f, -1.0f);
-                    Entity->Weapon.CollisionAABB.Extents = glm::vec2(1.25f, 0.5f);
+                    Entity->Weapon.CollisionAABB.Extents = glm::vec2(1.5f, 0.5f);
                 }
                 break;
                 case Left:
@@ -954,6 +956,7 @@ void UpdateBlob(entity* Entity, game_state* GameState, real64 DeltaTime)
             {
                 Entity->Enemy.AIState = AI_Dying;
                 PlayAnimation(Entity, "explosion", GameState);
+                Entity->Health = 0;
                 Entity->Velocity = glm::vec2();
                 PlaySoundEffect(GameState, &GameState->SoundManager.Explosion);
             }
@@ -1128,6 +1131,7 @@ void UpdateSkeleton(entity* Entity, game_state* GameState, real64 DeltaTime)
             break;
             case AI_Dying:
             {
+                Entity->IsKinematic = true;
                 if(!Entity->AnimationInfo.Playing)
                 {
                     Entity->Dead = true;
