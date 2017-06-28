@@ -1408,7 +1408,7 @@ static void RenderEntity(render_state *RenderState, entity &Entity, glm::mat4 Pr
     {
         RenderRect(Render_Fill, RenderState, glm::vec4(1, 1, 1, 1), Entity.Position.x + Entity.Player.CrosshairPositionX, Entity.Position.y + Entity.Player.CrosshairPositionY, 1, 1, RenderState->Textures["crosshair"].TextureHandle, false, ProjectionMatrix, View);
     }
-    else if(Entity.Type == Entity_Barrel && Entity.Pickup.RenderButtonHint)
+    else if(Entity.RenderButtonHint)
     {
         // @Cleanup: This should definitely be done differently to open up for other possible key bindings
         RenderRect(Render_Fill, RenderState, glm::vec4(1, 1, 1, 1), Entity.Position.x + 0.5f, Entity.Position.y + 1.5f, 1, 1, RenderState->Textures["b_button"].TextureHandle, false, ProjectionMatrix, View);
