@@ -107,7 +107,7 @@ struct game_state
     std::map<char*, animation, CompareCStrings> Animations;
 };
 
-#define UPDATE(name)void name(real64 DeltaTime, game_state* GameState) 
+#define UPDATE(name)void name(real64 DeltaTime, game_state* GameState)
 typedef UPDATE(update);
 UPDATE(UpdateStub)
 {

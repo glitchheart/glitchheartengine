@@ -168,6 +168,8 @@ struct entity
             {
                 struct
                 {
+                    real32 ExplosionCollisionExtentsX;
+                    real32 ExplosionCollisionExtentsY;
                     timer* ExplodeStartTimer;
                     timer* ExplodeCountdownTimer;
                 } Blob;
