@@ -221,7 +221,7 @@ static void CheckEditorUIInput(game_state* GameState, real64 DeltaTime)
         else if(GameState->EditorState.SelectedTexture < 0)
             GameState->EditorState.SelectedTexture = (int32)GameState->EditorState.TexturesLength - 1;
         
-        GameState->EditorState.LoadedAnimation->Texture = &GameState->RenderState.Textures[GameState->EditorState.Textures[GameState->EditorState.SelectedTexture]];
+        GameState->EditorState.LoadedAnimation->Texture = GameState->RenderState.Textures[GameState->EditorState.Textures[GameState->EditorState.SelectedTexture]];
     }
     else
     {

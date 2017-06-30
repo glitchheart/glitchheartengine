@@ -118,7 +118,7 @@
                                         if(fgets(LineBuffer, 255, File))
                                         {
                                             sscanf(LineBuffer, "texture %s", TextureName);
-                                            Animation.Texture = &GameState->RenderState.Textures[TextureName];
+                                            Animation.Texture = GameState->RenderState.Textures[TextureName];
                                             free(TextureName);
                                         }
                                         GameState->Animations.insert(std::pair<char*, animation>(Animation.Name, Animation));

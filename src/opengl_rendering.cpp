@@ -625,15 +625,23 @@ static void LoadTextures(render_state* RenderState, const char* Directory)
     
     for(int32 FileIndex = 0; FileIndex < DirData.FilesLength; FileIndex++)
     {
-        texture Texture = {};
-        Texture.Name = (char*)malloc((strlen(DirData.FileNames[FileIndex]) + 1) * sizeof(char));
-        strcpy(Texture.Name, DirData.FileNames[FileIndex]);
-        LoadTexture(DirData.FilePaths[FileIndex], &Texture);
-        RenderState->Textures.insert(std::pair<char*, texture>(Texture.Name, Texture));
+        texture* Texture = &RenderState->TextureArray[RenderState->TextureIndex++];
+        
+        Texture->Name = (char*)malloc((strlen(DirData.FileNames[FileIndex]) + 1) * sizeof(char));
+        strcpy(Texture->Name, DirData.FileNames[FileIndex]);
+        LoadTexture(DirData.FilePaths[FileIndex], Texture);
+        RenderState->Textures.insert(std::pair<char*, texture*>(Texture->Name, Texture));
     }
     
     free(DirData.FilePaths);
     free(DirData.FileNames);
+    
+    std::map<char*, texture*>::iterator Iterator;
+    
+    for(Iterator = RenderState->Textures.begin(); Iterator != RenderState->Textures.end(); Iterator++)
+    {
+        printf("key %s\n", Iterator->first);
+    }
 }
 
 static void LoadTilesheetTextures(game_state* GameState, render_state* RenderState)
@@ -740,7 +748,7 @@ static void InitializeOpenGL(game_state* GameState, render_state* RenderState, c
     GameState->HealthBar = {};
     GameState->HealthBar.Position = glm::vec2(RenderState->WindowWidth / 2, RenderState->WindowHeight - 50);
     GameState->HealthBar.RenderInfo.Size = glm::vec3(2, 1, 1);
-    GameState->HealthBar.RenderInfo.Texture = &RenderState->Textures["health_full"];
+    GameState->HealthBar.RenderInfo.Texture = RenderState->Textures["health_full"];
 }
 
 static void ReloadVertexShader(Shader_Type Type, render_state* RenderState)
@@ -1406,17 +1414,17 @@ static void RenderEntity(render_state *RenderState, entity &Entity, glm::mat4 Pr
     
     if(Entity.Type == Entity_Player && Entity.Player.RenderCrosshair)
     {
-        RenderRect(Render_Fill, RenderState, glm::vec4(1, 1, 1, 1), Entity.Position.x + Entity.Player.CrosshairPositionX, Entity.Position.y + Entity.Player.CrosshairPositionY, 1, 1, RenderState->Textures["crosshair"].TextureHandle, false, ProjectionMatrix, View);
+        RenderRect(Render_Fill, RenderState, glm::vec4(1, 1, 1, 1), Entity.Position.x + Entity.Player.CrosshairPositionX, Entity.Position.y + Entity.Player.CrosshairPositionY, 1, 1, RenderState->Textures["crosshair"]->TextureHandle, false, ProjectionMatrix, View);
     }
     else if(Entity.RenderButtonHint)
     {
         // @Cleanup: This should definitely be done differently to open up for other possible key bindings
-        RenderRect(Render_Fill, RenderState, glm::vec4(1, 1, 1, 1), Entity.Position.x + 0.5f, Entity.Position.y + 1.5f, 1, 1, RenderState->Textures["b_button"].TextureHandle, false, ProjectionMatrix, View);
+        RenderRect(Render_Fill, RenderState, glm::vec4(1, 1, 1, 1), Entity.Position.x + 0.5f, Entity.Position.y + 1.5f, 1, 1, RenderState->Textures["b_button"]->TextureHandle, false, ProjectionMatrix, View);
     }
     
     if((Entity.Type == Entity_Skeleton || Entity.Type == Entity_Blob) && Entity.Enemy.IsTargeted)
     {
-        RenderRect(Render_Fill, RenderState, glm::vec4(1, 1, 1, 1), Entity.Position.x + Entity.Enemy.TargetingPositionX, Entity.Position.y + Entity.Enemy.TargetingPositionY, 1, 1, RenderState->Textures["red_arrow"].TextureHandle, false, ProjectionMatrix, View);
+        RenderRect(Render_Fill, RenderState, glm::vec4(1, 1, 1, 1), Entity.Position.x + Entity.Enemy.TargetingPositionX, Entity.Position.y + Entity.Enemy.TargetingPositionY, 1, 1, RenderState->Textures["red_arrow"]->TextureHandle, false, ProjectionMatrix, View);
     }
     
     if(RenderState->RenderColliders && !Entity.IsKinematic)
@@ -1597,6 +1605,11 @@ void RenderGame(game_state* GameState)
             RenderInGameMode(GameState);
             if(GameState->Paused)
                 RenderText(&GameState->RenderState, GameState->RenderState.MenuFont, glm::vec4(0.5, 1, 1, 1), "PAUSED", (real32)GameState->RenderState.WindowWidth / 2, 40, 1, Alignment_Center);
+            
+            if(!GameState->InputController.ControllerPresent)
+            {
+                //RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(1, 1, 1, 1), GameState->InputController.MouseX - 20, (real32)GameState->RenderState.WindowHeight - GameState->InputController.MouseY - 20, 40, 40, GameState->RenderState.Textures["cross"]->TextureHandle, true, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
+            }
         }
         break;
         case Mode_Editor:
@@ -1628,7 +1641,7 @@ void RenderGame(game_state* GameState)
                     EditorRenderTilemap(glm::vec2((real32)GameState->RenderState.WindowWidth - 80, 5 + GameState->EditorState.ToolbarScrollOffsetY), 60, &GameState->RenderState, GameState->CurrentLevel.Tilemap);
                     
                     RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(1, 0, 0, 1), (real32)GameState->RenderState.WindowWidth - 80,
-                               GameState->EditorState.SelectedTileType * 60 + 5 + GameState->EditorState.ToolbarScrollOffsetY, 60, 60, GameState->RenderState.Textures["selected_tile"].TextureHandle);
+                               GameState->EditorState.SelectedTileType * 60 + 5 + GameState->EditorState.ToolbarScrollOffsetY, 60, 60, GameState->RenderState.Textures["selected_tile"]->TextureHandle);
                     
                     char Text[255]; sprintf(Text,"Type index: %d Is solid: %d",GameState->CurrentLevel.Tilemap.Tiles[GameState->EditorState.SelectedTileType].TypeIndex,GameState->CurrentLevel.Tilemap.Tiles[GameState->EditorState.SelectedTileType].IsSolid);
                     
