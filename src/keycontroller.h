@@ -53,6 +53,7 @@ enum Key_Code
     Key_X,
     Key_Y,
     Key_Z,
+    Key_Space,
     Key_Tab,
     Key_Enter,
     Key_Backspace,
@@ -68,6 +69,8 @@ enum Key_Code
     Key_5,
     Key_6,
     Key_7,
+    Key_MouseLeft,
+    Key_MouseRight,
     Key_Count
 };
 
@@ -139,10 +142,11 @@ struct input_controller
 {
     Key_Code ActionButtonKeyboardBindings[Action_Count] = 
     {
-        Key_Z,
-        Key_X,
-        Key_E,
-        Key_C
+        Key_MouseLeft,
+        Key_Space,
+        Key_MouseRight,
+        Key_Q,
+        Key_E
     };
     
     Controller_Code ActionButtonXboxControllerBindings[Action_Count] = 
@@ -151,7 +155,7 @@ struct input_controller
         Joystick_1,
         Joystick_2,
         Joystick_5, // Left bumper
-        Joystick_6
+        Joystick_6 // Right bumper
     };
     
     Controller_Code ActionButtonPS4ControllerBindings[Action_Count] = 

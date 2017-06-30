@@ -45,7 +45,7 @@ static void InitPlayer(game_state* GameState, glm::vec2 Position)
     Player->Type = Entity_Player;
     Player->Health = 3;
     Player->Player.WalkingSpeed = 8.5f;
-    Player->Player.ThrowingSpeed = 15.0f;
+    Player->Player.ThrowingSpeed = 18.0f;
     Player->Player.CrosshairRadius = 4;
     Player->Player.CrosshairPositionX = Player->Player.CrosshairRadius * 1.0f;
     Player->Player.CrosshairPositionY = 0;
@@ -68,13 +68,13 @@ static void InitPlayer(game_state* GameState, glm::vec2 Position)
     Player->Player.DashTimer->TimerHandle = -1;
     Player->Player.DashTimer->TimerMax = 0.24;
     
-    Player->Player.AfterDashCooldownTimer = (timer*)malloc(sizeof(timer));
-    Player->Player.AfterDashCooldownTimer->TimerHandle = -1;
-    Player->Player.AfterDashCooldownTimer->TimerMax = 0.24;
-    
     Player->Player.DashCooldownTimer = (timer*)malloc(sizeof(timer));
     Player->Player.DashCooldownTimer->TimerHandle = -1;
-    Player->Player.DashCooldownTimer->TimerMax = 0.2;
+    Player->Player.DashCooldownTimer->TimerMax = 0.8f;
+    
+    Player->Player.AfterDashTimer = (timer*)malloc(sizeof(timer));
+    Player->Player.AfterDashTimer->TimerHandle = -1;
+    Player->Player.AfterDashTimer->TimerMax = 0.2f;
     
     Player->Player.AttackMoveTimer = (timer*)malloc(sizeof(timer));
     Player->Player.AttackMoveTimer->TimerHandle = -1;
@@ -108,7 +108,7 @@ static void InitPlayer(game_state* GameState, glm::vec2 Position)
     
     render_entity* PlayerRenderEntity = &GameState->RenderState.RenderEntities[GameState->RenderState.RenderEntityCount];
     PlayerRenderEntity->ShaderIndex = Shader_SpriteSheetShader;
-    PlayerRenderEntity->Texture = &GameState->RenderState.Textures["knight_player"];
+    PlayerRenderEntity->Texture = GameState->RenderState.Textures["knight_player"];
     PlayerRenderEntity->Rendered = true;
     PlayerRenderEntity->Entity = &*Player;
     Player->RenderEntityHandle = GameState->RenderState.RenderEntityCount++;
@@ -158,7 +158,7 @@ static void SpawnSkeleton(game_state* GameState, glm::vec2 Position)
     render_entity* SkeletonRenderEntity = &GameState->RenderState.RenderEntities[GameState->RenderState.RenderEntityCount];
     
     SkeletonRenderEntity->ShaderIndex = Shader_SpriteSheetShader;
-    SkeletonRenderEntity->Texture = &GameState->RenderState.Textures["skeleton_idle"];
+    SkeletonRenderEntity->Texture = GameState->RenderState.Textures["skeleton_idle"];
     
     SkeletonRenderEntity->Entity = &*Skeleton;
     Skeleton->RenderEntityHandle = GameState->RenderState.RenderEntityCount++;
@@ -239,7 +239,7 @@ static void SpawnSkeleton(game_state* GameState, glm::vec2 Position)
     Skeleton->Enemy.Healthbar->Offset = glm::vec2(-0.5f, 2.2f);
     Skeleton->Enemy.Healthbar->Scale = glm::vec3(1.0, 0.25,0 );
     ui_render_info RenderInfo = {};
-    RenderInfo.Texture = &GameState->RenderState.Textures["4_health"];
+    RenderInfo.Texture = GameState->RenderState.Textures["4_health"];
     RenderInfo.TextureOffset = glm::vec2(256, 0);
     
     RenderInfo.FrameSize = glm::vec2(64, 16);
@@ -259,7 +259,7 @@ static void SpawnBlob(game_state* GameState, glm::vec2 Position)
     render_entity* EnemyRenderEntity = &GameState->RenderState.RenderEntities[GameState->RenderState.RenderEntityCount];
     
     EnemyRenderEntity->ShaderIndex = Shader_SpriteSheetShader;
-    EnemyRenderEntity->Texture = &GameState->RenderState.Textures["blob"];
+    EnemyRenderEntity->Texture = GameState->RenderState.Textures["blob"];
     
     EnemyRenderEntity->Entity = &*Enemy;
     Enemy->RenderEntityHandle = GameState->RenderState.RenderEntityCount++;
@@ -337,7 +337,7 @@ static void SpawnBarrel(game_state* GameState, glm::vec2 Position)
     
     BarrelRenderEntity->ShaderIndex = Shader_SpriteSheetShader;
     BarrelRenderEntity->Entity = &*Barrel;
-    BarrelRenderEntity->Texture = &GameState->RenderState.Textures["barrel_sheet"];
+    BarrelRenderEntity->Texture = GameState->RenderState.Textures["barrel_sheet"];
     Barrel->RenderEntityHandle = GameState->RenderState.RenderEntityCount++;
     
     Barrel->CurrentAnimation = 0;
@@ -393,10 +393,15 @@ void Hit(game_state* GameState, entity* ByEntity, entity* HitEntity)
 
 void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
 {
-    auto pos = glm::unProject(glm::vec3(GameState->InputController.MouseX,GameState->RenderState.Viewport[3] - GameState->InputController.MouseY, 0),
-                              GameState->GameCamera.ViewMatrix,
-                              GameState->GameCamera.ProjectionMatrix,
-                              glm::vec4(0, 0, GameState->RenderState.Viewport[2], GameState->RenderState.Viewport[3]));
+    bool32 UsingController = GameState->InputController.ControllerPresent;
+    
+    auto TempPos = glm::unProject(glm::vec3(GameState->InputController.MouseX, GameState->RenderState.Viewport[3] - GameState->InputController.MouseY, 0),
+                                  GameState->Camera.ViewMatrix,
+                                  GameState->Camera.ProjectionMatrix,
+                                  glm::vec4(0, 0, GameState->RenderState.Viewport[2], GameState->RenderState.Viewport[3]));
+    auto Pos = glm::vec2(TempPos.x, TempPos.y);
+    
+    auto DirectionToMouse = glm::normalize(glm::vec2(Pos.x - Entity->Position.x, Pos.y - Entity->Position.y));
     
     if(TimerDone(GameState, Entity->Player.LastAttackTimer) && TimerDone(GameState, Entity->Player.AttackCooldownTimer))
         Entity->AttackCount = 0;
@@ -410,12 +415,9 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
         else
         {
             // Set the last know direction for dash direction later
-            if(Entity->Velocity.x != 0 || Entity->Velocity.y != 0)
-            {
-                glm::vec2 Direction = glm::normalize(Entity->Velocity);
-                Entity->Player.LastKnownDirectionX = Direction.x;
-                Entity->Player.LastKnownDirectionY = Direction.y;
-            }
+            glm::vec2 Direction = UsingController ? glm::normalize(Entity->Velocity) : DirectionToMouse;
+            Entity->Player.LastKnownDirectionX = Direction.x;
+            Entity->Player.LastKnownDirectionY = Direction.y;
             
             if(!Entity->Player.IsDashing)
             {
@@ -480,9 +482,13 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
                     }
                     else if(Entity->Velocity.x != 0.0f || Entity->Velocity.y != 0.0f)
                     {
-                        if(Abs(InputX) < 0.3)
+                        
+                        auto XValue = UsingController ? InputX : DirectionToMouse.x;
+                        auto YValue = UsingController ? Entity->Velocity.y : DirectionToMouse.y;
+                        
+                        if(Abs(XValue) < 0.3)
                         {
-                            if(Entity->Velocity.y > 0)
+                            if(YValue > 0)
                             {
                                 Entity->LookDirection = Up;
                                 PlayAnimation(Entity, "player_run_up", GameState);
@@ -499,9 +505,9 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
                             PlayAnimation(Entity, "player_run_right", GameState);
                         }
                         
-                        if(Entity->Velocity.x != 0)
+                        if(XValue != 0)
                         {
-                            Entity->IsFlipped = Entity->Velocity.x < 0;
+                            Entity->IsFlipped = XValue < 0;
                             
                             if(Entity->LookDirection == Right && Entity->IsFlipped)
                                 Entity->LookDirection = Left;
@@ -509,7 +515,7 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
                     }
                     else
                     {
-                        if(Entity->Player.LastKnownDirectionX == 0)
+                        if(Abs(Entity->Player.LastKnownDirectionX) < 0.3)
                         {
                             if(Entity->Player.LastKnownDirectionY > 0)
                                 PlayAnimation(Entity, "player_idle_up", GameState);
@@ -519,13 +525,10 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
                         else
                             PlayAnimation(Entity, "player_idle_right", GameState);
                         
-                        if(Entity->Velocity.x != 0)
-                        {
-                            Entity->IsFlipped = Entity->Velocity.x < 0;
-                            
-                            if(Entity->LookDirection == Right && Entity->IsFlipped)
-                                Entity->LookDirection = Left;
-                        }
+                        Entity->IsFlipped = Entity->Player.LastKnownDirectionX < 0;
+                        
+                        if(Entity->LookDirection == Right && Entity->IsFlipped)
+                            Entity->LookDirection = Left;
                     }
                 }
                 else if(!TimerDone(GameState, Entity->Player.AttackMoveTimer))
@@ -605,41 +608,42 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
                     }
                 }
             }
-            else
-            {
-                if(TimerDone(GameState, Entity->Player.DashTimer))
-                {
-                    StartTimer(GameState, Entity->Player.AfterDashCooldownTimer);
-                    Entity->Player.DashCount++;
-                    
-                    if(Entity->Player.DashCount == 3)
-                    {
-                        Entity->Player.DashCount = 0;
-                        StartTimer(GameState, Entity->Player.DashCooldownTimer);
-                    }
-                    Entity->Player.IsDashing = false;
-                }
-                else
-                {
-                    Entity->Velocity = glm::vec2(Entity->Player.LastKnownDirectionX * Entity->Player.DashSpeed * DeltaTime, Entity->Player.LastKnownDirectionY * Entity->Player.DashSpeed * DeltaTime);
-                }
-            }
             
-            if(!Entity->Player.Pickup && !Entity->Player.IsAttacking && TimerDone(GameState, Entity->Player.DashCooldownTimer) && !Entity->Player.IsDashing && GetActionButtonDown(Action_Dash, GameState))
+            if(TimerDone(GameState, Entity->Player.DashTimer))
             {
+                if(Entity->Player.IsDashing)
+                    StartTimer(GameState, Entity->Player.AfterDashTimer);
                 
-                PlaySoundEffect(GameState, &GameState->SoundManager.Dash);
-                Entity->Player.IsDashing = true;
-                StartTimer(GameState, Entity->Player.DashTimer);
+                Entity->Player.IsDashing = false;
             }
             
-            if(Entity->Player.IsDashing && !TimerDone(GameState,Entity->Player.DashTimer) && GetActionButtonDown(Action_Dash, GameState))
+            if(!Entity->Player.Pickup && !Entity->Player.IsAttacking && TimerDone(GameState, Entity->Player.DashTimer) && GetActionButtonDown(Action_Dash, GameState))
+            {
+                Entity->Player.DashCount++;
+                
+                if(Entity->Player.DashCount < 4)
+                {
+                    PlaySoundEffect(GameState, &GameState->SoundManager.Dash);
+                    Entity->Player.IsDashing = true;
+                    StartTimer(GameState, Entity->Player.DashTimer);
+                    StartTimer(GameState, Entity->Player.DashCooldownTimer);
+                }
+            }
+            
+            if(Entity->Player.IsDashing)
+            {
+                Entity->Velocity = glm::vec2(Entity->Player.LastKnownDirectionX * Entity->Player.DashSpeed * DeltaTime, Entity->Player.LastKnownDirectionY * Entity->Player.DashSpeed * DeltaTime);
+            }
+            
+            if(TimerDone(GameState, Entity->Player.DashCooldownTimer) && !Entity->Player.IsDashing)
             {
                 Entity->Player.DashCount = 0;
-                StartTimer(GameState,Entity->Player.DashCooldownTimer);
             }
             
-            
+            if(!TimerDone(GameState, Entity->Player.AfterDashTimer))
+            {
+                Entity->Velocity = glm::vec2();
+            }
         }
         
         Entity->Position += Entity->Velocity;
@@ -663,7 +667,7 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
             }
             else
             {
-                auto Input = glm::normalize(glm::vec2(GetInputX(GameState, Stick_Right), GetInputY(GameState, Stick_Right)));
+                auto Input = UsingController ? glm::normalize(glm::vec2(GetInputX(GameState, Stick_Right), GetInputY(GameState, Stick_Right))) : DirectionToMouse;
                 
                 if(Input.x == Input.x || Input.y == Input.y) // NaN check
                 {
@@ -673,7 +677,15 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
             }
         }
         else
+        {
+            if(Entity->Player.TargetedEnemyHandle != -1)
+            {
+                GameState->Entities[Entity->Player.TargetedEnemyHandle].Enemy.IsTargeted = false;
+                Entity->Player.TargetedEnemyHandle = -1;
+            }
+            
             Entity->Player.RenderCrosshair = false;
+        }
         
         //attacking
         if(!Entity->Player.Pickup && TimerDone(GameState, Entity->Player.AttackCooldownTimer) && !Entity->Player.IsAttacking && (GetActionButtonDown(Action_Attack, GameState) || GetJoystickKeyDown(Joystick_3, GameState)))
@@ -787,7 +799,7 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
             }
         }
         
-        auto Direction = glm::vec2(pos.x, pos.y) - Entity->Position;
+        auto Direction = glm::vec2(Pos.x, Pos.y) - Entity->Position;
         Direction = glm::normalize(Direction);
         float Degrees = atan2(Direction.y, Direction.x);
         
@@ -958,6 +970,11 @@ void UpdateBlob(entity* Entity, game_state* GameState, real64 DeltaTime)
                 PlayAnimation(Entity, "explosion", GameState);
                 Entity->Health = 0;
                 Entity->Velocity = glm::vec2();
+                if(Entity->Enemy.Blob.InPickupMode)
+                {
+                    auto& Player = GameState->Entities[0];
+                    Player.Player.Pickup = 0;
+                }
                 PlaySoundEffect(GameState, &GameState->SoundManager.Explosion);
             }
         }
@@ -1211,7 +1228,7 @@ void UpdateBarrel(entity* Entity, game_state* GameState, real64 DeltaTime)
         
         if(!Entity->Dead)
         {
-            if(HasHitEnemy || (!Entity->AnimationInfo.Playing && strcmp(Entity->CurrentAnimation->Name, "barrel_destroy") == 0))
+            if(HasHitEnemy || (!Entity->AnimationInfo.Playing && strcmp(Entity->CurrentAnimation->Name, "barrel_thrown") == 0))
             {
                 PlayAnimation(Entity, "barrel_destroy", GameState);
                 Entity->Dead = true;

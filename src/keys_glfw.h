@@ -8,6 +8,7 @@ std::map<uint32, Key_Code> KeyMappings =
     { GLFW_KEY_UP, Key_Up },
     { GLFW_KEY_DOWN, Key_Down },
     { GLFW_KEY_ESCAPE, Key_Escape },
+    { GLFW_KEY_SPACE, Key_Space },
     { GLFW_KEY_TAB, Key_Tab },
     { GLFW_KEY_BACKSPACE, Key_Backspace },
     { GLFW_KEY_LEFT_SHIFT, Key_LeftShift },

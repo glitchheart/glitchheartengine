@@ -39,13 +39,31 @@ static void SetMouseInvalidKeys(input_controller *InputController)
 }
 #endif
 
+bool32 GetMouseButton(Mouse_Code Key, game_state* GameState)
+{
+    return GameState->InputController.MouseButtonDown[Key];
+}
+
+bool32 GetMouseButtonDown(Mouse_Code Key, game_state* GameState)
+{
+    return GameState->InputController.MouseButtonJustPressed[Key] == Key_JustPressed;
+}
+
 bool32 GetKey(Key_Code Key, game_state *GameState)
 {
+    if(Key == Key_MouseLeft)
+        return GetMouseButton(Mouse_Left, GameState);
+    if(Key == Key_MouseRight)
+        return GetMouseButton(Mouse_Right, GameState);
     return GameState->InputController.KeysDown[Key];
 }
 
 bool32 GetKeyDown(Key_Code Key, game_state *GameState)
 {
+    if(Key == Key_MouseLeft)
+        return GetMouseButtonDown(Mouse_Left, GameState);
+    if(Key == Key_MouseRight)
+        return GetMouseButtonDown(Mouse_Right, GameState);
     return GameState->InputController.KeysJustPressed[Key] == Key_JustPressed;
 }
 
@@ -62,16 +80,6 @@ bool32 GetJoystickKey(Controller_Code Key, game_state* GameState)
 bool32 GetJoystickKeyDown(Controller_Code Key, game_state* GameState)
 {
     return GameState->InputController.JoystickKeysJustPressed[Key] == Key_JustPressed;
-}
-
-bool32 GetMouseButton(Mouse_Code Key, game_state* GameState)
-{
-    return GameState->InputController.MouseButtonDown[Key];
-}
-
-bool32 GetMouseButtonDown(Mouse_Code Key, game_state* GameState)
-{
-    return GameState->InputController.MouseButtonJustPressed[Key] == Key_JustPressed;
 }
 
 bool32 GetActionButtonDown(Action_Button ActionButton, game_state* GameState)
@@ -108,11 +116,11 @@ float GetInputX(game_state* GameState, Stick Stick = Stick_Left)
     }
     else
     {
-        if (GetKey(Key_Left, GameState))
+        if (GetKey(Key_A, GameState))
         {
             return -1;
         }
-        else if (GetKey(Key_Right, GameState))
+        else if (GetKey(Key_D, GameState))
         {
             return 1;
         }
@@ -141,11 +149,11 @@ float GetInputY(game_state* GameState, Stick Stick = Stick_Left)
     }
     else
     {
-        if (GetKey(Key_Up, GameState))
+        if (GetKey(Key_W, GameState))
         {
             return 1;
         }
-        else if (GetKey(Key_Down, GameState))
+        else if (GetKey(Key_S, GameState))
         {
             return -1;
         }

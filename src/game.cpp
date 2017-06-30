@@ -81,7 +81,7 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
                         GameState->EditorState.TileIsSolidCheckbox->Active = false;
                         GameState->EditorState.Mode = Editor_Animation;
                         
-                        std::map<char*, texture>::iterator TextureIterator;
+                        std::map<char*, texture*>::iterator TextureIterator;
                         
                         if(GameState->EditorState.Textures)
                             free(GameState->EditorState.Textures);
@@ -89,6 +89,7 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
                         GameState->EditorState.Textures = (char**)malloc(GameState->RenderState.Textures.size() * sizeof(char*));
                         
                         Index = 0;
+                        
                         for(TextureIterator = GameState->RenderState.Textures.begin(); TextureIterator != GameState->RenderState.Textures.end(); TextureIterator++)
                         {
                             GameState->EditorState.Textures[Index++] = TextureIterator->first;
@@ -338,9 +339,9 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
                                     
                                     if(GetKey(Key_F, GameState))
                                     {
-                                        for(int32 IndexX = 0; IndexX < Tilemap->Width; IndexX++)
+                                        for(uint32 IndexX = 0; IndexX < Tilemap->Width; IndexX++)
                                         {
-                                            for(int32 IndexY = 0; IndexY < Tilemap->Height; IndexY++)
+                                            for(uint32 IndexY = 0; IndexY < Tilemap->Height; IndexY++)
                                             {
                                                 collision_AABB CollisionAABB;
                                                 CollisionAABB.Center = glm::vec2(IndexX + 0.5f, IndexY + 0.5f);
@@ -438,7 +439,7 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
                 GameState->EditorState.LoadedAnimation->FrameSize = glm::vec2(0, 0);
                 GameState->EditorState.LoadedAnimation->FrameOffset = glm::vec2(0, 0);
                 GameState->EditorState.LoadedAnimation->Loop = 1;
-                GameState->EditorState.LoadedAnimation->Texture = &GameState->RenderState.Textures.begin()->second;
+                GameState->EditorState.LoadedAnimation->Texture = GameState->RenderState.Textures.begin()->second;
             }
             
             if(GameState->EditorState.LoadedAnimation)
@@ -599,7 +600,6 @@ extern "C" UPDATE(Update)
         GameState->RenderState.RenderPaths = !GameState->RenderState.RenderPaths;
     }
     
-    
     if(GetKeyDown(Key_F5, GameState))
     {
         TogglePauseSound(GameState);
@@ -681,7 +681,7 @@ extern "C" UPDATE(Update)
         break;
         case Fading_Out:
         {
-            GameState->GameCamera.FadingAlpha += GameState->GameCamera.FadingSpeed * DeltaTime;
+            GameState->GameCamera.FadingAlpha += GameState->GameCamera.FadingSpeed * (real32)DeltaTime;
             
             if(GameState->GameCamera.FadingAlpha >= 1.0f)
             {
@@ -704,7 +704,7 @@ extern "C" UPDATE(Update)
             }
             else
             {
-                GameState->GameCamera.FadingAlpha += GameState->GameCamera.FadingSpeed * DeltaTime;
+                GameState->GameCamera.FadingAlpha += GameState->GameCamera.FadingSpeed * (real32)DeltaTime;
                 
                 if(GameState->GameCamera.FadingAlpha >= GameState->GameCamera.EndAlpha)
                 {

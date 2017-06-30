@@ -168,8 +168,8 @@ void FindFilesWithExtensions(const char* DirectoryPath, const char* Extension, d
         char* ConcatStr = Concat(DirectoryPath, FindFile.cFileName);
         char* FileName = strtok(FindFile.cFileName, ".");
         
-        DirectoryData->FilePaths[DirectoryData->FilesLength] = (char*)malloc(strlen(ConcatStr) * sizeof(char) + 1);
-        DirectoryData->FileNames[DirectoryData->FilesLength] = (char*)malloc(strlen(FileName) * sizeof(char) + 1);
+        DirectoryData->FilePaths[DirectoryData->FilesLength] = (char*)malloc((strlen(ConcatStr) + 1) * sizeof(char));
+        DirectoryData->FileNames[DirectoryData->FilesLength] = (char*)malloc((strlen(FileName) + 1) * sizeof(char));
         strcpy(DirectoryData->FilePaths[DirectoryData->FilesLength], ConcatStr);
         strcpy(DirectoryData->FileNames[DirectoryData->FilesLength], FileName);
         DirectoryData->FilesLength++;
