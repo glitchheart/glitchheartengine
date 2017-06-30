@@ -635,13 +635,6 @@ static void LoadTextures(render_state* RenderState, const char* Directory)
     
     free(DirData.FilePaths);
     free(DirData.FileNames);
-    
-    std::map<char*, texture*>::iterator Iterator;
-    
-    for(Iterator = RenderState->Textures.begin(); Iterator != RenderState->Textures.end(); Iterator++)
-    {
-        printf("key %s\n", Iterator->first);
-    }
 }
 
 static void LoadTilesheetTextures(game_state* GameState, render_state* RenderState)
@@ -702,6 +695,8 @@ static void InitializeOpenGL(game_state* GameState, render_state* RenderState, c
     
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+    glfwSetInputMode(RenderState->Window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+    
     glfwSetErrorCallback(ErrorCallback);
     glfwSetFramebufferSizeCallback(RenderState->Window, FramebufferSizeCallback);
     
@@ -748,7 +743,6 @@ static void InitializeOpenGL(game_state* GameState, render_state* RenderState, c
     GameState->HealthBar = {};
     GameState->HealthBar.Position = glm::vec2(RenderState->WindowWidth / 2, RenderState->WindowHeight - 50);
     GameState->HealthBar.RenderInfo.Size = glm::vec3(2, 1, 1);
-    GameState->HealthBar.RenderInfo.Texture = RenderState->Textures["health_full"];
 }
 
 static void ReloadVertexShader(Shader_Type Type, render_state* RenderState)
@@ -1602,18 +1596,20 @@ void RenderGame(game_state* GameState)
         break;
         case Mode_InGame:
         {
+            glfwSetInputMode(GameState->RenderState.Window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
             RenderInGameMode(GameState);
             if(GameState->Paused)
                 RenderText(&GameState->RenderState, GameState->RenderState.MenuFont, glm::vec4(0.5, 1, 1, 1), "PAUSED", (real32)GameState->RenderState.WindowWidth / 2, 40, 1, Alignment_Center);
             
             if(!GameState->InputController.ControllerPresent)
             {
-                //RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(1, 1, 1, 1), GameState->InputController.MouseX - 20, (real32)GameState->RenderState.WindowHeight - GameState->InputController.MouseY - 20, 40, 40, GameState->RenderState.Textures["cross"]->TextureHandle, true, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
+                RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(1, 1, 1, 1), GameState->InputController.MouseX - 20, (real32)GameState->RenderState.WindowHeight - GameState->InputController.MouseY - 20, 40, 40, GameState->RenderState.Textures["cross"]->TextureHandle, true, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
             }
         }
         break;
         case Mode_Editor:
         {
+            glfwSetInputMode(GameState->RenderState.Window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
             switch(GameState->EditorState.Mode)
             {
                 case Editor_Normal:

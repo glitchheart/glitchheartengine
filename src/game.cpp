@@ -81,18 +81,18 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
                         GameState->EditorState.TileIsSolidCheckbox->Active = false;
                         GameState->EditorState.Mode = Editor_Animation;
                         
-                        std::map<char*, texture*>::iterator TextureIterator;
+                        std::map<char const*, texture*>::iterator TextureIterator;
                         
                         if(GameState->EditorState.Textures)
                             free(GameState->EditorState.Textures);
                         
-                        GameState->EditorState.Textures = (char**)malloc(GameState->RenderState.Textures.size() * sizeof(char*));
+                        GameState->EditorState.Textures = (char const**)malloc(GameState->RenderState.Textures.size() * sizeof(char*));
                         
                         Index = 0;
                         
                         for(TextureIterator = GameState->RenderState.Textures.begin(); TextureIterator != GameState->RenderState.Textures.end(); TextureIterator++)
                         {
-                            GameState->EditorState.Textures[Index++] = TextureIterator->first;
+                            GameState->EditorState.Textures[Index++] = &*TextureIterator->first;
                         }
                         
                         GameState->EditorState.TexturesLength = (int32)GameState->RenderState.Textures.size();
@@ -730,7 +730,7 @@ extern "C" UPDATE(Update)
                 
                 if(!TimerDone(GameState, GameState->GameCamera.ScreenShakeTimer))
                 {
-                    real32 Radius = 0.05f;
+                    real32 Radius = 0.02f;
                     int32 RandomAngle = rand() % 360;
                     glm::vec2 Offset = glm::vec2(sin(RandomAngle) * Radius, cos(RandomAngle) * Radius);
                     Center.x += Offset.x / 1.5f;

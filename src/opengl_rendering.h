@@ -152,11 +152,11 @@ struct point
     GLfloat T;
 };
 
-struct ltstr
+struct cmp_str
 {
-    bool operator()(const char* s1, const char* s2) const
+    bool operator()(const char *a, const char *b) const
     {
-        return strcmp(s1, s2) ;
+        return std::strcmp(a, b) < 0;
     }
 };
 
@@ -274,7 +274,7 @@ struct render_state
     
     texture TextureArray[40];
     int32 TextureIndex;
-    std::map<char*, texture*, ltstr> Textures;
+    std::map<const char*, texture*, cmp_str> Textures;
     
     //freetype
     FT_Library FTLibrary;
