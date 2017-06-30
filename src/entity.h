@@ -164,6 +164,9 @@ struct entity
             real32 TargetingPositionX;
             real32 TargetingPositionY;
             real32 MinDistanceToPlayer;
+            real32 MaxAlertDistance;
+            real32 MaxFollowDistance;
+            
             union
             {
                 struct
@@ -180,8 +183,6 @@ struct entity
                 {
                     bool32 IsAttacking;
                     real32 WalkingSpeed;
-                    real32 MaxAlertDistance;
-                    real32 MaxFollowDistance;
                     
                     timer* AttackCooldownTimer;
                     timer* ChargingTimer;

@@ -112,16 +112,29 @@
                                             }
                                         }
                                         
-                                        char* TextureName = (char*) malloc(200 * sizeof(char));
-                                        
                                         //texturepath
                                         if(fgets(LineBuffer, 255, File))
                                         {
-                                            sscanf(LineBuffer, "texture %s", TextureName);
-                                            Animation.Texture = GameState->RenderState.Textures[TextureName];
+                                            char TextureNameBuffer[255];
+                                            int Length;
+                                            
+                                            sscanf(LineBuffer, "texture %s%n", TextureNameBuffer, &Length);
+                                            char* TextureName = (char*) malloc(50 * sizeof(char));
+                                            strcpy(TextureName, TextureNameBuffer);
+                                            if(GameState->RenderState.Textures.find(TextureName) != GameState->RenderState.Textures.end())
+                                            {
+                                                Animation.Texture = GameState->RenderState.Textures[TextureName];
+                                            }
+                                            else
+                                            {
+                                                printf("Texture: '%s' could not be found. Animation will not be loaded.\n", TextureName);
+                                                free(TextureName);
+                                                return;
+                                            }
                                             free(TextureName);
                                         }
                                         GameState->Animations.insert(std::pair<char*, animation>(Animation.Name, Animation));
+                                        fclose(File);
                                     }
                                     else
                                         printf("Animation-file not loaded: '%s'\n", FilePath);
@@ -145,10 +158,20 @@
                                 {
                                     if(!Entity->CurrentAnimation || !Entity->CurrentAnimation->Name || strcmp(Entity->CurrentAnimation->Name, AnimationName) != 0)
                                     {
-                                        Entity->CurrentAnimation = &GameState->Animations[AnimationName];
-                                        Entity->AnimationInfo.Playing = true;
-                                        Entity->AnimationInfo.FrameIndex = 0;
-                                        Entity->AnimationInfo.CurrentTime = 0.0;
+                                        if(GameState->Animations.find(AnimationName) != GameState->Animations.end())
+                                        {
+                                            Entity->CurrentAnimation = &GameState->Animations[AnimationName];
+                                            Entity->AnimationInfo.Playing = true;
+                                            Entity->AnimationInfo.FrameIndex = 0;
+                                            Entity->AnimationInfo.CurrentTime = 0.0;
+                                        }
+                                        else
+                                        {
+                                            Entity->CurrentAnimation = 0;
+                                            Entity->AnimationInfo.Playing = false;
+                                            Entity->AnimationInfo.FrameIndex = 0;
+                                            Entity->AnimationInfo.CurrentTime = 0.0;
+                                        }
                                     }
                                 }
                                 

@@ -151,7 +151,7 @@ struct editor_state
     animation_info AnimationInfo;
     animation* LoadedAnimation;
     int32 SelectedTexture;
-    char** Textures;
+    char const** Textures;
     int32 TexturesLength;
     char** Animations;
     int32 AnimationsLength;
