@@ -18,7 +18,7 @@ targetingdistance 10
 attackcooldowntimer 0.4
 lastattacktimer 1.0
 pickupcooldowntimer 0.36
-dashtimer 0.8
+dashtimer 0.9
 dashcooldowntimer 0.8
 attackmovetimer 0.07
 attackmovespeed 15

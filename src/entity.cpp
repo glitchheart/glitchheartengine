@@ -183,15 +183,22 @@ static void LoadPlayerData(game_state* GameState, int32 Handle = -1, glm::vec2 P
             {
                 if(!Entity->Player.AttackCooldownTimer)
                     Entity->Player.AttackCooldownTimer = (timer*)malloc(sizeof(timer));
-                sscanf(LineBuffer, "attackcooldowntimer %f", &Entity->Player.AttackCooldownTimer->TimerMax);
+                sscanf(LineBuffer, "attackcooldowntimer %lf", &Entity->Player.AttackCooldownTimer->TimerMax);
                 Entity->Player.AttackCooldownTimer->TimerHandle = -1;
             }
             else if(StartsWith(&LineBuffer[0], "lastattacktimer"))
             {
                 if(!Entity->Player.LastAttackTimer)
                     Entity->Player.LastAttackTimer = (timer*)malloc(sizeof(timer));
-                sscanf(LineBuffer, "lastattacktimer %f", &Entity->Player.LastAttackTimer->TimerMax);
+                sscanf(LineBuffer, "lastattacktimer %lf", &Entity->Player.LastAttackTimer->TimerMax);
                 Entity->Player.LastAttackTimer->TimerHandle = -1;
+            }
+            else if(StartsWith(&LineBuffer[0], "pickupcooldowntimer"))
+            {
+                if(!Entity->Player.PickupCooldownTimer)
+                    Entity->Player.PickupCooldownTimer = (timer*)malloc(sizeof(timer));
+                sscanf(LineBuffer, "pickupcooldowntimer %lf", &Entity->Player.PickupCooldownTimer->TimerMax);
+                Entity->Player.PickupCooldownTimer->TimerHandle = -1;
             }
             else if(StartsWith(&LineBuffer[0], "dashtimer"))
             {
@@ -211,7 +218,7 @@ static void LoadPlayerData(game_state* GameState, int32 Handle = -1, glm::vec2 P
             {
                 if(!Entity->Player.AttackMoveTimer)
                     Entity->Player.AttackMoveTimer = (timer*)malloc(sizeof(timer));
-                sscanf(LineBuffer, "attackmovetimer %f", &Entity->Player.AttackMoveTimer->TimerMax);
+                sscanf(LineBuffer, "attackmovetimer %lf", &Entity->Player.AttackMoveTimer->TimerMax);
                 Entity->Player.AttackMoveTimer->TimerHandle = -1;
             }
             else if(StartsWith(&LineBuffer[0], "attackmovespeed"))
