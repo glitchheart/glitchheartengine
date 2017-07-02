@@ -129,7 +129,7 @@ struct entity
             real64 AttackCooldown;
             
             bool32 IsDashing;
-            
+            real32 DashCounterDivider;
             real64 CurrentDashTime;
             real64 MaxDashTime;
             
