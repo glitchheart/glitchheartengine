@@ -15,7 +15,6 @@
 #include "entity.h"
 #include "level.h"
 #include "keycontroller.h"
-
 #include "sound.h"
 #include "console.h"
 #include "editor.h"
@@ -105,6 +104,8 @@ struct game_state
     editor_state EditorState;
     
     std::map<char*, animation, CompareCStrings> Animations;
+    
+    entity_file_reload_data* ReloadData;
 };
 
 #define UPDATE(name)void name(real64 DeltaTime, game_state* GameState)

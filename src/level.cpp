@@ -136,7 +136,7 @@ static bool32 LoadLevelFromFile(char* FilePath, level* Level, game_state* GameSt
         if(fgets(LineBuffer, 255, File))
             sscanf(LineBuffer, "%f %f", &Level->PlayerStartPosition.x, &Level->PlayerStartPosition.y);
         
-        InitPlayer(GameState, Level->PlayerStartPosition);
+        LoadPlayerData(GameState, -1, Level->PlayerStartPosition);
         
         if(fgets(LineBuffer, 255, File))
             sscanf(LineBuffer, "%d", &MapWidth);
@@ -196,6 +196,12 @@ static bool32 LoadLevelFromFile(char* FilePath, level* Level, game_state* GameSt
                 sscanf(LineBuffer, "blob %f %f", &Pos.x, &Pos.y);
                 SpawnBlob(GameState, Pos);
             }
+            else if(StartsWith(&LineBuffer[0], "wraith"))
+            {
+                glm::vec2 Pos;
+                sscanf(LineBuffer, "wraith %f %f", &Pos.x, &Pos.y);
+                SpawnWraith(GameState, Pos);
+            }
             else if(StartsWith(&LineBuffer[0], "barrel"))
             {
                 glm::vec2 Pos;
@@ -253,14 +259,32 @@ static void SaveLevelToFile(const char* FilePath, level* Level, game_state* Game
                     char* TypeName = 0;
                     switch(Entity->Type)
                     {
-                        case Entity_Skeleton:
-                        TypeName = "skeleton";
-                        break;
-                        case Entity_Blob:
-                        TypeName = "blob";
+                        case Entity_Enemy:
+                        {
+                            switch(Entity->Enemy.EnemyType)
+                            {
+                                case Enemy_Skeleton:
+                                {
+                                    TypeName = "skeleton";
+                                }
+                                break;
+                                case Enemy_Blob:
+                                {
+                                    TypeName = "blob";
+                                }
+                                break;
+                                case Enemy_Wraith:
+                                {
+                                    TypeName = "wraith";
+                                }
+                                break;
+                            }
+                        }
                         break;
                         case Entity_Barrel:
-                        TypeName = "barrel";
+                        {
+                            TypeName = "barrel";
+                        }
                         break;
                     }
                     

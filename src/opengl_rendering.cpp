@@ -418,11 +418,11 @@ static void RenderSetup(render_state *RenderState)
     glBindBuffer(GL_ARRAY_BUFFER, RenderState->SpriteQuadVBO);
     glBufferData(GL_ARRAY_BUFFER, RenderState->SpriteQuadVerticesSize, RenderState->SpriteQuadVertices, GL_STATIC_DRAW);
     
-    RenderState->TextureShader.Type = Shader_SpriteSheetShader;
-    LoadShader(ShaderPaths[Shader_SpriteSheetShader], &RenderState->SpriteSheetShader);
+    RenderState->TextureShader.Type = Shader_Spritesheet;
+    LoadShader(ShaderPaths[Shader_Spritesheet], &RenderState->SpritesheetShader);
     
-    PositionLocation = glGetAttribLocation(RenderState->SpriteSheetShader.Program, "pos");
-    TexcoordLocation = glGetAttribLocation(RenderState->SpriteSheetShader.Program, "texcoord");
+    PositionLocation = glGetAttribLocation(RenderState->SpritesheetShader.Program, "pos");
+    TexcoordLocation = glGetAttribLocation(RenderState->SpritesheetShader.Program, "texcoord");
     
     glEnableVertexAttribArray(PositionLocation);
     glVertexAttribPointer(PositionLocation, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
@@ -1064,11 +1064,11 @@ static void RenderColliderWireframe(render_state* RenderState, entity* Entity, g
         glDrawArrays(GL_LINE_STRIP, 0, 6);
         glBindVertexArray(0);
         
-        if(Entity->HitTrigger)
+        if(Entity->HasHitTrigger)
         {
             glm::mat4 Model(1.0f);
             
-            Model = glm::translate(Model, glm::vec3(Entity->HitTrigger->Center.x - Entity->HitTrigger->Extents.x, Entity->HitTrigger->Center.y - Entity->HitTrigger->Extents.y, 0.0f)); Model = glm::scale(Model, glm::vec3(Entity->HitTrigger->Extents.x * 2, Entity->HitTrigger->Extents.y * 2,1));
+            Model = glm::translate(Model, glm::vec3(Entity->HitTrigger.Center.x - Entity->HitTrigger.Extents.x, Entity->HitTrigger.Center.y - Entity->HitTrigger.Extents.y, 0.0f)); Model = glm::scale(Model, glm::vec3(Entity->HitTrigger.Extents.x * 2, Entity->HitTrigger.Extents.y * 2,1));
             
             glBindVertexArray(RenderState->WireframeVAO);
             
@@ -1080,7 +1080,7 @@ static void RenderColliderWireframe(render_state* RenderState, entity* Entity, g
             SetMat4Uniform(Shader.Program, "Model", Model);
             glm::vec4 color;
             
-            if(Entity->HitTrigger->IsColliding)
+            if(Entity->HitTrigger.IsColliding)
             {
                 color = glm::vec4(1.0,0.0,0.0,1.0);
             }
@@ -1223,7 +1223,7 @@ static void RenderAnimationPreview(render_state* RenderState, const animation_in
     ScreenPosition.y *= RenderState->ScaleY;
     ScreenPosition.y-= 1;
     
-    auto Shader = RenderState->SpriteSheetShader;
+    auto Shader = RenderState->SpritesheetShader;
     
     glm::mat4 Model(1.0f);
     Model = glm::translate(Model, glm::vec3(ScreenPosition.x, ScreenPosition.y, 0.0f));
@@ -1268,7 +1268,7 @@ static void RenderHealthbar(render_state* RenderState,
         RenderState->BoundTexture = Healthbar.RenderInfo.Texture->TextureHandle;
     }
     
-    shader Shader = RenderState->SpriteSheetShader;
+    shader Shader = RenderState->SpritesheetShader;
     
     if(Shader.Program == 0)
     {
@@ -1400,7 +1400,7 @@ static void RenderEntity(render_state *RenderState, entity &Entity, glm::mat4 Pr
         glDrawArrays(GL_QUADS, 0, 4);
         glBindVertexArray(0);
         
-        if(Entity.Type == Entity_Skeleton && Entity.Health < 4 && Entity.Health > 0)
+        if(Entity.Type == Entity_Enemy && Entity.Health < 4 && Entity.Health > 0)
         {
             RenderHealthbar(RenderState, &Entity, *Entity.Enemy.Healthbar, ProjectionMatrix, View);
         }
@@ -1416,7 +1416,7 @@ static void RenderEntity(render_state *RenderState, entity &Entity, glm::mat4 Pr
         RenderRect(Render_Fill, RenderState, glm::vec4(1, 1, 1, 1), Entity.Position.x + 0.5f, Entity.Position.y + 1.5f, 1, 1, RenderState->Textures["b_button"]->TextureHandle, false, ProjectionMatrix, View);
     }
     
-    if((Entity.Type == Entity_Skeleton || Entity.Type == Entity_Blob) && Entity.Enemy.IsTargeted)
+    if(Entity.Type == Entity_Enemy && Entity.Enemy.IsTargeted)
     {
         RenderRect(Render_Fill, RenderState, glm::vec4(1, 1, 1, 1), Entity.Position.x + Entity.Enemy.TargetingPositionX, Entity.Position.y + Entity.Enemy.TargetingPositionY, 1, 1, RenderState->Textures["red_arrow"]->TextureHandle, false, ProjectionMatrix, View);
     }
@@ -1437,7 +1437,7 @@ static void RenderTile(render_state* RenderState, uint32 X, uint32 Y, uint32 Til
     
     glBindTexture(GL_TEXTURE_2D, RenderState->Tilesheets[TilesheetIndex].Texture.TextureHandle);
     
-    shader Shader = RenderState->SpriteSheetShader;
+    shader Shader = RenderState->SpritesheetShader;
     UseShader(&Shader);
     
     SetMat4Uniform(Shader.Program, "Projection", ProjectionMatrix);

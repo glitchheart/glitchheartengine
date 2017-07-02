@@ -131,10 +131,10 @@ void CheckWeaponCollision(game_state* GameState, entity_weapon* Entity, collisio
         if(!(OtherEntity->Layer & Entity->IgnoreLayers) && !(Entity->Layer & OtherEntity->IgnoreLayers)
            && !OtherEntity->IsKinematic && OtherEntity->Active)
         {
-            if(OtherEntity->HitTrigger)
+            if(OtherEntity->HasHitTrigger)
             {
                 collision_AABB MdHit;
-                MinkowskiDifference(OtherEntity->HitTrigger, &Entity->CollisionAABB, &MdHit);
+                MinkowskiDifference(&OtherEntity->HitTrigger, &Entity->CollisionAABB, &MdHit);
                 if(MdHit.Min.x <= 0 &&
                    MdHit.Max.x >= 0 &&
                    MdHit.Min.y <= 0 &&
@@ -142,11 +142,11 @@ void CheckWeaponCollision(game_state* GameState, entity_weapon* Entity, collisio
                 {
                     CollisionInfo->Other[CollisionInfo->OtherCount++] = OtherEntity;
                     
-                    OtherEntity->HitTrigger->IsColliding = true;
+                    OtherEntity->HitTrigger.IsColliding = true;
                 }
                 else 
                 {
-                    OtherEntity->HitTrigger->IsColliding = false;
+                    OtherEntity->HitTrigger.IsColliding = false;
                 }
             }
             
@@ -162,9 +162,9 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
     {
         Entity->CollisionAABB.Center = glm::vec2(Entity->Position.x + Entity->Center.x * Entity->Scale.x + Entity->CollisionAABB.Offset.x, Entity->Position.y + Entity->Center.y * Entity->Scale.y + Entity->CollisionAABB.Offset.y);
         
-        if(Entity->HitTrigger)
+        if(Entity->HasHitTrigger)
         {
-            Entity->HitTrigger->Center = glm::vec2(Entity->Position.x + Entity->Center.x * Entity->Scale.x + Entity->HitTrigger->Offset.x, Entity->Position.y + Entity->Center.y * Entity->Scale.y + Entity->HitTrigger->Offset.y);
+            Entity->HitTrigger.Center = glm::vec2(Entity->Position.x + Entity->Center.x * Entity->Scale.x + Entity->HitTrigger.Offset.x, Entity->Position.y + Entity->Center.y * Entity->Scale.y + Entity->HitTrigger.Offset.y);
         }
         
         glm::vec2 PV;
@@ -180,10 +180,10 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
                && OtherEntity->EntityIndex != Entity->EntityIndex 
                && !OtherEntity->IsKinematic && OtherEntity->Active)
             {
-                if(OtherEntity->HitTrigger)
+                if(OtherEntity->HasHitTrigger)
                 {
                     collision_AABB MdHit;
-                    MinkowskiDifference(OtherEntity->HitTrigger, &Entity->CollisionAABB, &MdHit);
+                    MinkowskiDifference(&OtherEntity->HitTrigger, &Entity->CollisionAABB, &MdHit);
                     if(MdHit.Min.x <= 0 &&
                        MdHit.Max.x >= 0 &&
                        MdHit.Min.y <= 0 &&
@@ -191,11 +191,11 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
                     {
                         CollisionInfo->Other[CollisionInfo->OtherCount++] = OtherEntity;
                         
-                        OtherEntity->HitTrigger->IsColliding = true;
+                        OtherEntity->HitTrigger.IsColliding = true;
                     }
                     else 
                     {
-                        OtherEntity->HitTrigger->IsColliding = false;
+                        OtherEntity->HitTrigger.IsColliding = false;
                     }
                 }
                 
@@ -262,80 +262,77 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
             }
         }
         
-        if(Entity->Type == Entity_Player || Entity->Type == Entity_Skeleton || Entity->Type == Entity_Barrel)
+        level* Level = &GameState->CurrentLevel;
+        
+        int32 XPos = (int32)(Entity->Position.x + Entity->Center.x * Entity->Scale.x);
+        int32 YPos = (int32)(Entity->Position.y + Entity->Center.y * Entity->Scale.y);
+        
+        //@Improvement Is it necessary to go 2 tiles out?
+        int32 MinX = Max(0, XPos - 2);
+        int32 MaxX = Max(0, Min((int32)Level->Tilemap.Width, XPos + 2));
+        int32 MinY = Max(0, YPos - 2);
+        int32 MaxY = Max(0, Min((int32)Level->Tilemap.Height, YPos + 2));
+        
+        //check tile collision
+        for(int32 X = MinX; X < MaxX; X++)
         {
-            level* Level = &GameState->CurrentLevel;
-            
-            int32 XPos = (int32)(Entity->Position.x + Entity->Center.x * Entity->Scale.x);
-            int32 YPos = (int32)(Entity->Position.y + Entity->Center.y * Entity->Scale.y);
-            
-            //@Improvement Is it necessary to go 2 tiles out?
-            int32 MinX = Max(0, XPos - 2);
-            int32 MaxX = Max(0, Min((int32)Level->Tilemap.Width, XPos + 2));
-            int32 MinY = Max(0, YPos - 2);
-            int32 MaxY = Max(0, Min((int32)Level->Tilemap.Height, YPos + 2));
-            
-            //check tile collision
-            for(int32 X = MinX; X < MaxX; X++)
+            for(int32 Y = MinY; Y < MaxY; Y++)
             {
-                for(int32 Y = MinY; Y < MaxY; Y++)
+                tile_data Tile = Level->Tilemap.Data[X][Y];
+                
+                if(Tile.IsSolid)
                 {
-                    tile_data Tile = Level->Tilemap.Data[X][Y];
-                    
-                    if(Tile.IsSolid)
+                    //@Cleanup we have to move this to a separate function, because it is used in entity collision and tile collision
+                    collision_AABB Md;
+                    MinkowskiDifference(&Tile.CollisionAABB, &Entity->CollisionAABB, &Md);
+                    if(Md.Min.x <= 0 &&
+                       Md.Max.x >= 0 &&
+                       Md.Min.y <= 0 &&
+                       Md.Max.y >= 0)
                     {
-                        //@Cleanup we have to move this to a separate function, because it is used in entity collision and tile collision
-                        collision_AABB Md;
-                        MinkowskiDifference(&Tile.CollisionAABB, &Entity->CollisionAABB, &Md);
-                        if(Md.Min.x <= 0 &&
-                           Md.Max.x >= 0 &&
-                           Md.Min.y <= 0 &&
-                           Md.Max.y >= 0)
+                        Entity->IsColliding = true;
+                        Entity->CollisionAABB.IsColliding = true;
+                        
+                        //calculate what side is colliding
+                        auto OtherPosition = Tile.CollisionAABB.Center;
+                        auto OtherExtents = Tile.CollisionAABB.Extents;
+                        auto Position = Entity->CollisionAABB.Center;
+                        auto Extents = Entity->CollisionAABB.Extents;
+                        
+                        AABBMin(&Md);
+                        AABBMax(&Md);
+                        AABBSize(&Md);
+                        glm::vec2 PenetrationVector;
+                        ClosestPointsOnBoundsToPoint(&Md, glm::vec2(0,0), &PenetrationVector);
+                        
+                        if(Abs(PenetrationVector.x) > Abs(PenetrationVector.y))
                         {
-                            Entity->IsColliding = true;
-                            Entity->CollisionAABB.IsColliding = true;
-                            
-                            //calculate what side is colliding
-                            auto OtherPosition = Tile.CollisionAABB.Center;
-                            auto OtherExtents = Tile.CollisionAABB.Extents;
-                            auto Position = Entity->CollisionAABB.Center;
-                            auto Extents = Entity->CollisionAABB.Extents;
-                            
-                            AABBMin(&Md);
-                            AABBMax(&Md);
-                            AABBSize(&Md);
-                            glm::vec2 PenetrationVector;
-                            ClosestPointsOnBoundsToPoint(&Md, glm::vec2(0,0), &PenetrationVector);
-                            
-                            if(Abs(PenetrationVector.x) > Abs(PenetrationVector.y))
-                            {
-                                if(PenetrationVector.x > 0)
-                                    CollisionInfo->Side = CollisionInfo->Side | Side_Left;
-                                else if(PenetrationVector.x < 0)
-                                    CollisionInfo->Side = CollisionInfo->Side | Side_Right;
-                            }
-                            else
-                            {
-                                if(PenetrationVector.y < 0)
-                                    CollisionInfo->Side = CollisionInfo->Side | Side_Bottom;
-                                else if(PenetrationVector.y > 0) 
-                                    CollisionInfo->Side = CollisionInfo->Side | Side_Top;
-                            }
-                            
-                            if(PenetrationVector.x != 0)
-                            {
-                                PV.x = PenetrationVector.x * 1.001f; // This is necessary to prevent the player from getting stuck
-                            }
-                            
-                            if(PenetrationVector.y != 0)
-                            {
-                                PV.y = PenetrationVector.y * 1.001f; // This is necessary to prevent the player from getting stuck
-                            }
-                            
-                            if(Entity->Type == Entity_Barrel)
-                            {
-                                Entity->Velocity = glm::vec2(0.0f,0.0f);
-                            }
+                            if(PenetrationVector.x > 0)
+                                CollisionInfo->Side = CollisionInfo->Side | Side_Left;
+                            else if(PenetrationVector.x < 0)
+                                CollisionInfo->Side = CollisionInfo->Side | Side_Right;
+                        }
+                        else
+                        {
+                            if(PenetrationVector.y < 0)
+                                CollisionInfo->Side = CollisionInfo->Side | Side_Bottom;
+                            else if(PenetrationVector.y > 0) 
+                                CollisionInfo->Side = CollisionInfo->Side | Side_Top;
+                        }
+                        
+                        if(PenetrationVector.x != 0)
+                        {
+                            PV.x = PenetrationVector.x * 1.001f; // This is necessary to prevent the player from getting stuck
+                        }
+                        
+                        if(PenetrationVector.y != 0)
+                        {
+                            PV.y = PenetrationVector.y * 1.001f; // This is necessary to prevent the player from getting stuck
+                        }
+                        
+                        if(Entity->Type == Entity_Barrel)
+                        {
+                            Entity->Velocity = glm::vec2(0.0f,0.0f);
                         }
                     }
                 }

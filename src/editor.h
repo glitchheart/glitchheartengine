@@ -93,7 +93,8 @@ struct textfield
 
 enum Editor_Placement_Mode
 {
-    Editor_Placement_Entity,
+    Editor_Placement_SelectEntity,
+    Editor_Placement_PlaceEntity,
     Editor_Placement_Tile
 };
 

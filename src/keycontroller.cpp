@@ -79,6 +79,14 @@ bool32 GetJoystickKey(Controller_Code Key, game_state* GameState)
 
 bool32 GetJoystickKeyDown(Controller_Code Key, game_state* GameState)
 {
+    /*if(GameState->InputController.ControllerType == Xbox)
+    {
+        switch(Key)
+        {
+            case Joystick_
+        }
+    }*/
+    
     return GameState->InputController.JoystickKeysJustPressed[Key] == Key_JustPressed;
 }
 

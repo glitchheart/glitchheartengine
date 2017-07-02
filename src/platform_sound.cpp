@@ -163,7 +163,7 @@ static void LoadSounds(sound_manager *SoundManager, sound_device* SoundDevice)
     LoadSound("../assets/audio/ui/button_click.wav", DefaultSoundInfo, &SoundManager->ButtonClick, SoundDevice);
     LoadSound("../assets/audio/barrel_break.wav", DefaultSoundInfo, &SoundManager->BarrelBreak, SoundDevice);
     LoadSound("../assets/audio/throw.wav", DefaultSoundInfo, &SoundManager->Throw, SoundDevice);
-    
+    LoadSound("../assets/audio/slide_1.wav", DefaultSoundInfo, &SoundManager->Slide01, SoundDevice);
     // // Add more sounds here if necessary
 }
 

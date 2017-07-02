@@ -37,6 +37,233 @@ static void DeleteEntity(game_state* GameState, uint32 EntityIndex)
     GameState->EntityCount--;
 }
 
+static void LoadEntityFiles(game_state* GameState)
+{
+}
+
+static void LoadEntityData(FILE* File, entity* Entity, game_state* GameState, bool32 IsReload = false)
+{
+    if(!IsReload)
+    {
+        Entity->EntityIndex = GameState->EntityCount++;
+        
+        render_entity* RenderEntity = &GameState->RenderState.RenderEntities[GameState->RenderState.RenderEntityCount];
+        RenderEntity->ShaderIndex = Shader_Spritesheet;
+        RenderEntity->Rendered = true;
+        RenderEntity->Entity = &*Entity;
+        Entity->RenderEntityHandle = GameState->RenderState.RenderEntityCount++;
+        RenderEntity->Color = glm::vec4(1, 1, 1, 1);
+        
+        Entity->HitFlickerTimer = (timer*)malloc(sizeof(timer));
+        Entity->HitFlickerTimer->TimerHandle = -1;
+        Entity->HitFlickerTimer->TimerMax = 0.05f;
+    }
+    
+    char LineBuffer[255];
+    
+    while(fgets(LineBuffer, 255, File))
+    {
+        if(StartsWith(&LineBuffer[0], "#"))
+        {
+            break;
+        }
+        else if(StartsWith(&LineBuffer[0], "name"))
+        {
+            Entity->Name = (char*)malloc(30 * sizeof(char));
+            sscanf(LineBuffer, "name %s", Entity->Name);
+        }
+        else if(StartsWith(&LineBuffer[0], "active"))
+        {
+            bool32 Active;
+            sscanf(LineBuffer, "active %d", &Active);
+            Entity->Active = Active;
+        }
+        else if(StartsWith(&LineBuffer[0], "layer"))
+        {
+            char* LayerName = (char*)malloc(30 * sizeof(char));
+            sscanf(LineBuffer, "layer %s", LayerName);
+            
+            if(strcmp(LayerName, "Layer_Player"))
+            {
+                Entity->Layer = Layer_Player;
+            }
+            else if(strcmp(LayerName, "Layer_Enemy"))
+            {
+                Entity->Layer = Layer_Enemy;
+            }
+            
+            free(LayerName);
+        }
+        else if(StartsWith(&LineBuffer[0], "iskinematic"))
+        {
+            bool32 IsKinematic;
+            sscanf(LineBuffer, "iskinematic %d", &IsKinematic);
+            Entity->IsKinematic = IsKinematic;
+        }
+        else if(StartsWith(&LineBuffer[0], "scale"))
+        {
+            glm::vec3 Scale;
+            sscanf(LineBuffer, "scale %f %f", &Scale.x, &Scale.y);
+            Entity->Scale = Scale;
+        }
+        else if(StartsWith(&LineBuffer[0], "center"))
+        {
+            sscanf(LineBuffer, "center %f %f", &Entity->Center.x, &Entity->Center.y);
+        }
+        else if(StartsWith(&LineBuffer[0], "health"))
+        {
+            sscanf(LineBuffer, "health %d", &Entity->Health);
+        }
+        else if(StartsWith(&LineBuffer[0], "animation"))
+        {
+            char* AnimationName = (char*)malloc(30 * sizeof(char)); 
+            sscanf(LineBuffer, "animation %s", AnimationName);
+            PlayAnimation(Entity, AnimationName, GameState);
+            free(AnimationName);
+        }
+        else if(StartsWith(&LineBuffer[0], "hitcooldowntimer"))
+        {
+            if(!Entity->HitCooldownTimer)
+                Entity->HitCooldownTimer = (timer*)malloc(sizeof(timer));
+            sscanf(LineBuffer, "hitcooldowntimer %lf", &Entity->HitCooldownTimer->TimerMax);
+            Entity->HitCooldownTimer->TimerHandle = -1;
+        }
+        else if(StartsWith(&LineBuffer[0], "collider"))
+        {
+            sscanf(LineBuffer, "collider %f %f %f %f %d", &Entity->CollisionAABB.Offset.x, &Entity->CollisionAABB.Offset.y, &Entity->CollisionAABB.Extents.x, &Entity->CollisionAABB.Extents.y, &Entity->CollisionAABB.IsTrigger);
+        }
+        else if(StartsWith(&LineBuffer[0], "hashittrigger"))
+        {
+            sscanf(LineBuffer, "hashittrigger %d", &Entity->HasHitTrigger);
+        }
+        else if(StartsWith(&LineBuffer[0], "hittrigger"))
+        {
+            sscanf(LineBuffer, "hittrigger %f %f %f %f %d", &Entity->HitTrigger.Offset.x, &Entity->HitTrigger.Offset.y, &Entity->HitTrigger.Extents.x, &Entity->HitTrigger.Extents.y, &Entity->HitTrigger.IsTrigger);
+        }
+    }
+}
+
+static void LoadPlayerData(game_state* GameState, int32 Handle = -1, glm::vec2 Position = glm::vec2())
+{
+    FILE* File;
+    File = fopen("../assets/entities/player.dat", "r");
+    
+    entity* Entity = Handle != -1 ? &GameState->Entities[Handle] :  &GameState->Entities[GameState->EntityCount];
+    
+    if(Handle == -1)
+    {
+        Entity->Position = Position;
+    }
+    
+    if(File)
+    {
+        LoadEntityData(File, Entity, GameState, Handle != -1);
+        
+        char LineBuffer[255];
+        
+        while(fgets(LineBuffer, 255, File))
+        {
+            if(StartsWith(&LineBuffer[0], "walkingspeed"))
+            {
+                sscanf(LineBuffer, "walkingspeed %f", &Entity->Player.WalkingSpeed);
+            }
+            else if(StartsWith(&LineBuffer[0], "walkingspeed"))
+            {
+                sscanf(LineBuffer, "throwingspeed %f", &Entity->Player.ThrowingSpeed);
+            }
+            else if(StartsWith(&LineBuffer[0], "crosshairradius"))
+            {
+                sscanf(LineBuffer, "crosshairradius %f", &Entity->Player.CrosshairRadius);
+            }
+            else if(StartsWith(&LineBuffer[0], "targetingsdistance"))
+            {
+                sscanf(LineBuffer, "targetingsdistance %f", &Entity->Player.TargetingDistance);
+            }
+            else if(StartsWith(&LineBuffer[0], "attackcooldowntimer"))
+            {
+                if(!Entity->Player.AttackCooldownTimer)
+                    Entity->Player.AttackCooldownTimer = (timer*)malloc(sizeof(timer));
+                sscanf(LineBuffer, "attackcooldowntimer %f", &Entity->Player.AttackCooldownTimer->TimerMax);
+                Entity->Player.AttackCooldownTimer->TimerHandle = -1;
+            }
+            else if(StartsWith(&LineBuffer[0], "lastattacktimer"))
+            {
+                if(!Entity->Player.LastAttackTimer)
+                    Entity->Player.LastAttackTimer = (timer*)malloc(sizeof(timer));
+                sscanf(LineBuffer, "lastattacktimer %f", &Entity->Player.LastAttackTimer->TimerMax);
+                Entity->Player.LastAttackTimer->TimerHandle = -1;
+            }
+            else if(StartsWith(&LineBuffer[0], "dashtimer"))
+            {
+                if(!Entity->Player.DashTimer)
+                    Entity->Player.DashTimer = (timer*)malloc(sizeof(timer));
+                sscanf(LineBuffer, "dashtimer %lf", &Entity->Player.DashTimer->TimerMax);
+                Entity->Player.DashTimer->TimerHandle = -1;
+            }
+            else if(StartsWith(&LineBuffer[0], "dashcooldowntimer"))
+            {
+                if(!Entity->Player.DashCooldownTimer)
+                    Entity->Player.DashCooldownTimer = (timer*)malloc(sizeof(timer));
+                sscanf(LineBuffer, "dashcooldowntimer %lf", &Entity->Player.DashCooldownTimer->TimerMax);
+                Entity->Player.DashCooldownTimer->TimerHandle = -1;
+            }
+            else if(StartsWith(&LineBuffer[0], "attackmovetimer"))
+            {
+                if(!Entity->Player.AttackMoveTimer)
+                    Entity->Player.AttackMoveTimer = (timer*)malloc(sizeof(timer));
+                sscanf(LineBuffer, "attackmovetimer %f", &Entity->Player.AttackMoveTimer->TimerMax);
+                Entity->Player.AttackMoveTimer->TimerHandle = -1;
+            }
+            else if(StartsWith(&LineBuffer[0], "attackmovespeed"))
+            {
+                sscanf(LineBuffer, "attackmovespeed %f", &Entity->Player.AttackMoveSpeed);
+            }
+            else if(StartsWith(&LineBuffer[0], "dashspeed"))
+            {
+                sscanf(LineBuffer, "dashspeed %f", &Entity->Player.DashSpeed);
+            }
+            else if(StartsWith(&LineBuffer[0], "weaponscale"))
+            {
+                sscanf(LineBuffer, "weaponscale %f %f", &Entity->Weapon.Scale.x, &Entity->Weapon.Scale.y);
+            }
+            else if(StartsWith(&LineBuffer[0], "weaponcollider"))
+            {
+                sscanf(LineBuffer, "weaponcollider %f %f %f %f %d", &Entity->Weapon.CollisionAABB.Offset.x, &Entity->Weapon.CollisionAABB.Offset.y, &Entity->Weapon.CollisionAABB.Extents.x, &Entity->Weapon.CollisionAABB.Extents.y, &Entity->Weapon.CollisionAABB.IsTrigger);
+            }
+            else if(StartsWith(&LineBuffer[0], "dustcloud"))
+            {
+                entity* PlayerDustCloud = Handle == -1 ? &GameState->Entities[GameState->EntityCount] : &GameState->Entities[Entity->Player.DustCloudHandle];
+                PlayerDustCloud->Name = "Dust cloud";
+                PlayerDustCloud->Type = Entity_RenderItem;
+                PlayerDustCloud->Active = false;
+                
+                if(Handle == -1)
+                    Entity->Player.DustCloudHandle = GameState->EntityCount;
+                
+                char* AnimationName = (char*)malloc(30 * sizeof(char));
+                
+                sscanf(LineBuffer, "dustcloud scale %f %f animation %s", &PlayerDustCloud->Scale.x, &PlayerDustCloud->Scale.y, AnimationName);
+                
+                PlayAnimation(PlayerDustCloud, AnimationName, GameState);
+                free(AnimationName);
+                
+                if(Handle == -1)
+                {
+                    render_entity* PlayerDustCloudRenderEntity = &GameState->RenderState.RenderEntities[GameState->RenderState.RenderEntityCount];
+                    PlayerDustCloudRenderEntity->ShaderIndex = Shader_Spritesheet;
+                    PlayerDustCloudRenderEntity->Rendered = true;
+                    PlayerDustCloudRenderEntity->Entity = &*PlayerDustCloud;
+                    PlayerDustCloud->RenderEntityHandle = GameState->RenderState.RenderEntityCount++;
+                    PlayerDustCloudRenderEntity->Color = glm::vec4(1, 1, 1, 1);
+                    PlayerDustCloud->EntityIndex = GameState->EntityCount++;
+                    PlayerDustCloud->Position = glm::vec2(1, 1);
+                }
+            }
+        }
+        fclose(File);
+    }
+}
+/*
 static void InitPlayer(game_state* GameState, glm::vec2 Position)
 {
     entity* Player = &GameState->Entities[GameState->EntityCount];
@@ -44,7 +271,7 @@ static void InitPlayer(game_state* GameState, glm::vec2 Position)
     Player->Name = "Player";
     Player->Type = Entity_Player;
     Player->Health = 3;
-    Player->Player.WalkingSpeed = 8.5f;
+    Player->Player.WalkingSpeed = 7.0f;
     Player->Player.ThrowingSpeed = 18.0f;
     Player->Player.CrosshairRadius = 4;
     Player->Player.CrosshairPositionX = Player->Player.CrosshairRadius * 1.0f;
@@ -66,20 +293,17 @@ static void InitPlayer(game_state* GameState, glm::vec2 Position)
     
     Player->Player.DashTimer = (timer*)malloc(sizeof(timer));
     Player->Player.DashTimer->TimerHandle = -1;
-    Player->Player.DashTimer->TimerMax = 0.18;
+    Player->Player.DashTimer->TimerMax = 0.8f;
     
     Player->Player.DashCooldownTimer = (timer*)malloc(sizeof(timer));
     Player->Player.DashCooldownTimer->TimerHandle = -1;
     Player->Player.DashCooldownTimer->TimerMax = 0.8f;
     
-    Player->Player.AfterDashTimer = (timer*)malloc(sizeof(timer));
-    Player->Player.AfterDashTimer->TimerHandle = -1;
-    Player->Player.AfterDashTimer->TimerMax = 0.2f;
-    
     Player->Player.AttackMoveTimer = (timer*)malloc(sizeof(timer));
     Player->Player.AttackMoveTimer->TimerHandle = -1;
     Player->Player.AttackMoveTimer->TimerMax = 0.07;
     
+    // same for all entities
     Player->HitFlickerTimer = (timer*)malloc(sizeof(timer));
     Player->HitFlickerTimer->TimerHandle = -1;
     Player->HitFlickerTimer->TimerMax = 0.05f;
@@ -87,9 +311,11 @@ static void InitPlayer(game_state* GameState, glm::vec2 Position)
     Player->HitCooldownTimer = (timer*)malloc(sizeof(timer));
     Player->HitCooldownTimer->TimerHandle = -1;
     Player->HitCooldownTimer->TimerMax = 0.2;
+    
     Player->HitRecoilSpeed = 20;
+    
     Player->Player.AttackMoveSpeed = 15;
-    Player->Player.DashSpeed = 30;
+    Player->Player.DashSpeed = 17;
     Player->Active = true;
     Player->IsKinematic = false;
     Player->CurrentAnimation = 0;
@@ -102,13 +328,10 @@ static void InitPlayer(game_state* GameState, glm::vec2 Position)
     HitTrigger->Center = glm::vec2(Player->Position.x + Player->Center.x * Player->Scale.x + HitTrigger->Offset.x,
                                    Player->Position.y + Player->Center.y * Player->Scale.y + HitTrigger->Offset.y);
     HitTrigger->Extents = glm::vec2(0.65f, 1.0f);
-    HitTrigger->Offset = glm::vec2(0, 0);
-    HitTrigger->IsTrigger;
-    Player->HitTrigger = HitTrigger;
+    
     
     render_entity* PlayerRenderEntity = &GameState->RenderState.RenderEntities[GameState->RenderState.RenderEntityCount];
-    PlayerRenderEntity->ShaderIndex = Shader_SpriteSheetShader;
-    PlayerRenderEntity->Texture = GameState->RenderState.Textures["knight_player"];
+    PlayerRenderEntity->ShaderIndex = Shader_Spritesheet;
     PlayerRenderEntity->Rendered = true;
     PlayerRenderEntity->Entity = &*Player;
     Player->RenderEntityHandle = GameState->RenderState.RenderEntityCount++;
@@ -143,13 +366,36 @@ static void InitPlayer(game_state* GameState, glm::vec2 Position)
     Player->Weapon.CollisionAABB = CollisionAABB3;
     
     Player->EntityIndex = GameState->EntityCount++;
+    
+    entity* PlayerDustCloud = &GameState->Entities[GameState->EntityCount];
+    PlayerDustCloud->Name = "Dust cloud";
+    PlayerDustCloud->Type = Entity_RenderItem;
+    PlayerDustCloud->Active = false;
+    PlayerDustCloud->Rotation = glm::vec3(0, 0, 0);
+    PlayerDustCloud->Scale = glm::vec3(1, 1, 0);
+    PlayerDustCloud->Velocity = glm::vec2(0,0);
+    
+    Player->Player.DustCloudHandle = GameState->EntityCount;
+    PlayAnimation(PlayerDustCloud, "dust_brown", GameState);
+    render_entity* PlayerDustCloudRenderEntity = &GameState->RenderState.RenderEntities[GameState->RenderState.RenderEntityCount];
+    PlayerDustCloudRenderEntity->ShaderIndex = Shader_Spritesheet;
+    PlayerDustCloudRenderEntity->Texture = GameState->RenderState.Textures["dust_cloud_brown"];
+    PlayerDustCloudRenderEntity->Rendered = true;
+    PlayerDustCloudRenderEntity->Entity = &*PlayerDustCloud;
+    PlayerDustCloud->RenderEntityHandle = GameState->RenderState.RenderEntityCount++;
+    PlayerDustCloudRenderEntity->Color = glm::vec4(1, 1, 1, 1);
+    PlayerDustCloud->EntityIndex = GameState->EntityCount++;
+    PlayerDustCloud->Position = glm::vec2(1, 1);
 }
+*/
 
 static void SpawnSkeleton(game_state* GameState, glm::vec2 Position)
 {
     entity* Skeleton = &GameState->Entities[GameState->EntityCount];
     Skeleton->Name = "skeleton";
-    Skeleton->Type = Entity_Skeleton;
+    Skeleton->Type = Entity_Enemy;
+    Skeleton->Enemy.EnemyType = Enemy_Skeleton;
+    
     Skeleton->HitRecoilSpeed = 10;
     Skeleton->Enemy.IsTargeted = false;
     Skeleton->Enemy.TargetingPositionX = -0.5;
@@ -157,7 +403,7 @@ static void SpawnSkeleton(game_state* GameState, glm::vec2 Position)
     
     render_entity* SkeletonRenderEntity = &GameState->RenderState.RenderEntities[GameState->RenderState.RenderEntityCount];
     
-    SkeletonRenderEntity->ShaderIndex = Shader_SpriteSheetShader;
+    SkeletonRenderEntity->ShaderIndex = Shader_Spritesheet;
     SkeletonRenderEntity->Texture = GameState->RenderState.Textures["skeleton_idle"];
     
     SkeletonRenderEntity->Entity = &*Skeleton;
@@ -185,15 +431,14 @@ static void SpawnSkeleton(game_state* GameState, glm::vec2 Position)
     CollisionAABB.IsTrigger = false;
     Skeleton->CollisionAABB = CollisionAABB;
     
-    collision_AABB* HitTrigger = (collision_AABB*)malloc(sizeof(collision_AABB));
-    HitTrigger->Center = glm::vec2(Skeleton->Position.x + Skeleton->Center.x * Skeleton->Scale.x,
-                                   Skeleton->Position.y + Skeleton->Center.y * Skeleton->Scale.y);
-    HitTrigger->Extents = glm::vec2(0.8f, 0.9f);
-    HitTrigger->IsTrigger;
-    HitTrigger->Offset = glm::vec2(0, -0.4f);
-    Skeleton->HitTrigger = HitTrigger;
+    Skeleton->HitTrigger.Center = glm::vec2(Skeleton->Position.x + Skeleton->Center.x * Skeleton->Scale.x,
+                                            Skeleton->Position.y + Skeleton->Center.y * Skeleton->Scale.y);
+    Skeleton->HitTrigger.Extents = glm::vec2(0.8f, 0.9f);
+    Skeleton->HitTrigger.IsTrigger = true;
+    Skeleton->HitTrigger.Offset = glm::vec2(0, -0.4f);
+    Skeleton->HasHitTrigger = true;
     
-    Skeleton->Enemy.Skeleton.WalkingSpeed = 5;
+    Skeleton->Enemy.WalkingSpeed = 5;
     Skeleton->Enemy.MaxAlertDistance = 5;
     Skeleton->Enemy.MaxFollowDistance = 10;
     Skeleton->Enemy.MinDistanceToPlayer = 2;
@@ -241,83 +486,196 @@ static void SpawnSkeleton(game_state* GameState, glm::vec2 Position)
     ui_render_info RenderInfo = {};
     RenderInfo.Texture = GameState->RenderState.Textures["4_health"];
     RenderInfo.TextureOffset = glm::vec2(256, 0);
-    
     RenderInfo.FrameSize = glm::vec2(64, 16);
-    RenderInfo.ShaderIndex = Shader_SpriteSheetShader;
+    RenderInfo.ShaderIndex = Shader_Spritesheet;
     Skeleton->Enemy.Healthbar->RenderInfo = RenderInfo;
+    
     Skeleton->EntityIndex = GameState->EntityCount++;
+}
+
+
+static void SpawnWraith(game_state* GameState, glm::vec2 Position)
+{
+    entity* Wraith = &GameState->Entities[GameState->EntityCount];
+    Wraith->Name = "skeleton";
+    Wraith->Type = Entity_Enemy;
+    Wraith->Enemy.EnemyType = Enemy_Wraith;
+    
+    Wraith->HitRecoilSpeed = 10;
+    Wraith->Enemy.IsTargeted = false;
+    Wraith->Enemy.TargetingPositionX = -0.5;
+    Wraith->Enemy.TargetingPositionY = 2;
+    
+    render_entity* WraithRenderEntity = &GameState->RenderState.RenderEntities[GameState->RenderState.RenderEntityCount];
+    
+    WraithRenderEntity->ShaderIndex = Shader_Spritesheet;
+    WraithRenderEntity->Texture = GameState->RenderState.Textures["wraith_idle"];
+    
+    WraithRenderEntity->Entity = &*Wraith;
+    Wraith->RenderEntityHandle = GameState->RenderState.RenderEntityCount++;
+    Wraith->CurrentAnimation = 0;
+    Wraith->AnimationInfo.Playing = false;
+    Wraith->AnimationInfo.FrameIndex = 0;
+    Wraith->AnimationInfo.CurrentTime = 0;
+    PlayAnimation(Wraith, "wraith_idle", GameState);
+    Wraith->Rotation = glm::vec3(0, 0, 0);
+    Wraith->Position = Position;
+    Wraith->Scale = glm::vec3(4, 4, 1);
+    Wraith->Velocity = glm::vec2(-2,0);
+    Wraith->Active = true;
+    Wraith->IsKinematic = false;
+    Wraith->Layer = Layer_Enemy;
+    //Enemy->IgnoreLayers = Layer_Enemy;
+    
+    collision_AABB CollisionAABB;
+    Wraith->Center = glm::vec2(0.5, 0.5f);
+    CollisionAABB.Center = glm::vec2(Wraith->Position.x + Wraith->Center.x * Wraith->Scale.x,
+                                     Wraith->Position.y + Wraith->Center.y * Wraith->Scale.y);
+    CollisionAABB.Offset = glm::vec2(0, -1.2f);
+    CollisionAABB.Extents = glm::vec2(0.3f, 0.15f);
+    CollisionAABB.IsTrigger = false;
+    Wraith->CollisionAABB = CollisionAABB;
+    
+    Wraith->HitTrigger.Center = glm::vec2(Wraith->Position.x + Wraith->Center.x * Wraith->Scale.x,
+                                          Wraith->Position.y + Wraith->Center.y * Wraith->Scale.y);
+    Wraith->HitTrigger.Extents = glm::vec2(0.8f, 0.9f);
+    Wraith->HitTrigger.IsTrigger;
+    Wraith->HitTrigger.Offset = glm::vec2(0, -0.4f);
+    Wraith->HasHitTrigger = true;
+    
+    Wraith->Enemy.WalkingSpeed = 5;
+    Wraith->Enemy.MaxAlertDistance = 5;
+    Wraith->Enemy.MaxFollowDistance = 10;
+    Wraith->Enemy.MinDistanceToPlayer = 2;
+    Wraith->Enemy.AIState = AI_Idle;
+    
+    Wraith->Enemy.Wraith.AttackCooldownTimer = (timer*)malloc(sizeof(timer));
+    Wraith->Enemy.Wraith.AttackCooldownTimer->TimerHandle = -1;
+    Wraith->Enemy.Wraith.AttackCooldownTimer->TimerMax = 0.5;
+    
+    Wraith->Enemy.Wraith.ChargingTimer = (timer*)malloc(sizeof(timer));
+    Wraith->Enemy.Wraith.ChargingTimer->TimerHandle = -1;
+    Wraith->Enemy.Wraith.ChargingTimer->TimerMax = 0.2f;
+    
+    Wraith->HitFlickerTimer = (timer*)malloc(sizeof(timer));
+    Wraith->HitFlickerTimer->TimerHandle = -1;
+    Wraith->HitFlickerTimer->TimerMax = 0.05f;
+    
+    Wraith->Enemy.AStarPath.AStarCooldownTimer = (timer*)malloc(sizeof(timer));
+    Wraith->Enemy.AStarPath.AStarCooldownTimer->TimerHandle = -1;
+    Wraith->Enemy.AStarPath.AStarCooldownTimer->TimerMax = 0.6;
+    
+    Wraith->RecoilTimer = (timer*)malloc(sizeof(timer));
+    Wraith->RecoilTimer->TimerHandle = -1;
+    Wraith->RecoilTimer->TimerMax = 0.2;
+    
+    Wraith->HitCooldownTimer = (timer*)malloc(sizeof(timer));
+    Wraith->HitCooldownTimer->TimerHandle = -1;
+    Wraith->HitCooldownTimer->TimerMax = 0.4;
+    
+    Wraith->Health = 4;
+    
+    // Weapon
+    collision_AABB CollisionAABB3;
+    CollisionAABB3.Center = glm::vec2(0, 0.5);
+    CollisionAABB3.Offset = glm::vec2(0.7, 0);
+    CollisionAABB3.Extents = glm::vec2(0.5f, 1.0f);
+    CollisionAABB3.IsTrigger = true;
+    Wraith->Weapon.CollisionAABB = CollisionAABB3;
+    Wraith->Weapon.Rotation = glm::vec3(0, 0, 0);
+    Wraith->Weapon.Scale = glm::vec3(2, 2, 0); 
+    
+    Wraith->Enemy.Healthbar = (entity_healthbar*)malloc(sizeof(entity_healthbar));
+    Wraith->Enemy.Healthbar->Offset = glm::vec2(-0.5f, 2.2f);
+    Wraith->Enemy.Healthbar->Scale = glm::vec3(1.0, 0.25,0 );
+    ui_render_info RenderInfo = {};
+    RenderInfo.Texture = GameState->RenderState.Textures["4_health"];
+    RenderInfo.TextureOffset = glm::vec2(256, 0);
+    RenderInfo.FrameSize = glm::vec2(64, 16);
+    RenderInfo.ShaderIndex = Shader_Spritesheet;
+    Wraith->Enemy.Healthbar->RenderInfo = RenderInfo;
+    
+    Wraith->EntityIndex = GameState->EntityCount++;
 }
 
 static void SpawnBlob(game_state* GameState, glm::vec2 Position)
 {
     // Enemy
-    entity* Enemy = &GameState->Entities[GameState->EntityCount];
-    Enemy->Name = "blob";
-    Enemy->Type = Entity_Blob;
-    Enemy->Enemy.MinDistanceToPlayer = 2;
+    entity* Blob = &GameState->Entities[GameState->EntityCount];
+    Blob->Name = "blob";
+    Blob->Type = Entity_Enemy;
+    Blob->Enemy.EnemyType = Enemy_Blob;
+    Blob->Enemy.MinDistanceToPlayer = 2;
     
-    render_entity* EnemyRenderEntity = &GameState->RenderState.RenderEntities[GameState->RenderState.RenderEntityCount];
+    render_entity* BlobRenderEntity = &GameState->RenderState.RenderEntities[GameState->RenderState.RenderEntityCount];
     
-    EnemyRenderEntity->ShaderIndex = Shader_SpriteSheetShader;
-    EnemyRenderEntity->Texture = GameState->RenderState.Textures["blob"];
+    BlobRenderEntity->ShaderIndex = Shader_Spritesheet;
+    BlobRenderEntity->Texture = GameState->RenderState.Textures["blob"];
     
-    EnemyRenderEntity->Entity = &*Enemy;
-    Enemy->RenderEntityHandle = GameState->RenderState.RenderEntityCount++;
-    Enemy->CurrentAnimation = 0;
-    Enemy->AnimationInfo.Playing = false;
-    Enemy->AnimationInfo.FrameIndex = 0;
-    Enemy->AnimationInfo.CurrentTime = 0;
-    PlayAnimation(Enemy, "blob", GameState);
+    BlobRenderEntity->Entity = &*Blob;
+    Blob->RenderEntityHandle = GameState->RenderState.RenderEntityCount++;
+    Blob->CurrentAnimation = 0;
+    Blob->AnimationInfo.Playing = false;
+    Blob->AnimationInfo.FrameIndex = 0;
+    Blob->AnimationInfo.CurrentTime = 0;
+    PlayAnimation(Blob, "blob", GameState);
     
-    Enemy->Active = true;
-    Enemy->Position = Position;
-    Enemy->Rotation = glm::vec3(0, 0, 0);
-    Enemy->Scale = glm::vec3(2, 2, 1);
-    Enemy->Velocity = glm::vec2(0, 0);
-    Enemy->IsKinematic = false;
-    Enemy->Layer = Layer_Enemy;
+    Blob->Active = true;
+    Blob->Position = Position;
+    Blob->Rotation = glm::vec3(0, 0, 0);
+    Blob->Scale = glm::vec3(2, 2, 1);
+    Blob->Velocity = glm::vec2(0, 0);
+    Blob->IsKinematic = false;
+    Blob->Layer = Layer_Enemy;
     
-    Enemy->HitFlickerTimer = (timer*)malloc(sizeof(timer));
-    Enemy->HitFlickerTimer->TimerHandle = -1;
-    Enemy->HitFlickerTimer->TimerMax = 0.05f;
+    Blob->HitFlickerTimer = (timer*)malloc(sizeof(timer));
+    Blob->HitFlickerTimer->TimerHandle = -1;
+    Blob->HitFlickerTimer->TimerMax = 0.05f;
     
-    Enemy->Enemy.MaxAlertDistance = 10;
-    Enemy->Enemy.MaxFollowDistance = 20;
-    Enemy->Enemy.AIState = AI_Following;
-    Enemy->Enemy.AStarPath.AStarCooldownTimer = (timer*)malloc(sizeof(timer));
-    Enemy->Enemy.AStarPath.AStarCooldownTimer->TimerHandle = -1;
-    Enemy->Enemy.AStarPath.AStarCooldownTimer->TimerMax = 0.6;
-    Enemy->Enemy.Blob.PickupThrowTimer = (timer*)malloc(sizeof(timer));
-    Enemy->Enemy.Blob.PickupThrowTimer->TimerHandle = -1;
-    Enemy->Enemy.Blob.PickupThrowTimer->TimerMax = 1.5f;
+    Blob->Enemy.MaxAlertDistance = 10;
+    Blob->Enemy.MaxFollowDistance = 20;
+    Blob->Enemy.AIState = AI_Following;
+    Blob->Enemy.AStarPath.AStarCooldownTimer = (timer*)malloc(sizeof(timer));
+    Blob->Enemy.AStarPath.AStarCooldownTimer->TimerHandle = -1;
+    Blob->Enemy.AStarPath.AStarCooldownTimer->TimerMax = 0.6;
+    Blob->Enemy.Blob.PickupThrowTimer = (timer*)malloc(sizeof(timer));
+    Blob->Enemy.Blob.PickupThrowTimer->TimerHandle = -1;
+    Blob->Enemy.Blob.PickupThrowTimer->TimerMax = 1.5f;
     
-    Enemy->Enemy.Blob.ExplodeStartTimer = (timer*)malloc(sizeof(timer));
-    Enemy->Enemy.Blob.ExplodeStartTimer->TimerHandle = -1;
-    Enemy->Enemy.Blob.ExplodeStartTimer->TimerMax = 0.5;
-    Enemy->Enemy.Blob.ExplodeCountdownTimer = (timer*)malloc(sizeof(timer));
-    Enemy->Enemy.Blob.ExplodeCountdownTimer->TimerHandle = -1;
-    Enemy->Enemy.Blob.ExplodeCountdownTimer->TimerMax = 1.0;
+    Blob->Enemy.Blob.ExplodeStartTimer = (timer*)malloc(sizeof(timer));
+    Blob->Enemy.Blob.ExplodeStartTimer->TimerHandle = -1;
+    Blob->Enemy.Blob.ExplodeStartTimer->TimerMax = 0.5;
+    Blob->Enemy.Blob.ExplodeCountdownTimer = (timer*)malloc(sizeof(timer));
+    Blob->Enemy.Blob.ExplodeCountdownTimer->TimerHandle = -1;
+    Blob->Enemy.Blob.ExplodeCountdownTimer->TimerMax = 1.0;
     
     collision_AABB CollisionAABB;
-    Enemy->Center = glm::vec2(-0.5f, 0.5f);
-    CollisionAABB.Center = glm::vec2(Enemy->Position.x + Enemy->Center.x * Enemy->Scale.x,
-                                     Enemy->Position.y + Enemy->Center.y * Enemy->Scale.y);
-    CollisionAABB.Offset = glm::vec2(0, -0.9);
+    Blob->Center = glm::vec2(0, 0.5f);
+    CollisionAABB.Center = glm::vec2(Blob->Position.x + Blob->Center.x * Blob->Scale.x,
+                                     Blob->Position.y + Blob->Center.y * Blob->Scale.y);
+    CollisionAABB.Offset = glm::vec2(-0.5, -0.9);
     CollisionAABB.Extents = glm::vec2(0.3f, 0.15f);
     CollisionAABB.IsTrigger = false;
-    Enemy->CollisionAABB = CollisionAABB;
-    Enemy->Enemy.Blob.ExplosionCollisionExtentsX = 1.5f;
-    Enemy->Enemy.Blob.ExplosionCollisionExtentsY = 1.5f;
+    Blob->CollisionAABB = CollisionAABB;
+    Blob->Enemy.Blob.ExplosionCollisionExtentsX = 1.0f;
+    Blob->Enemy.Blob.ExplosionCollisionExtentsY = 1.0f;
     
-    collision_AABB* HitTrigger = (collision_AABB*)malloc(sizeof(collision_AABB));
-    HitTrigger->Center = glm::vec2(Enemy->Position.x + Enemy->Center.x * Enemy->Scale.x,
-                                   Enemy->Position.y + Enemy->Center.y * Enemy->Scale.y);
-    HitTrigger->Extents = glm::vec2(0.5f, 0.7f);
-    HitTrigger->IsTrigger;
-    Enemy->HitTrigger = HitTrigger;
+    Blob->HitTrigger.Extents = glm::vec2(0.5f, 0.7f);
+    Blob->HitTrigger.IsTrigger = true;
+    Blob->HasHitTrigger = true;
     
-    Enemy->Health = 1;
-    Enemy->EntityIndex = GameState->EntityCount++;
+    Blob->Health = 1;
+    Blob->EntityIndex = GameState->EntityCount++;
+    
+    Blob->Enemy.Healthbar = (entity_healthbar*)malloc(sizeof(entity_healthbar));
+    Blob->Enemy.Healthbar->Offset = glm::vec2(-0.5f, 2.2f);
+    Blob->Enemy.Healthbar->Scale = glm::vec3(1.0, 0.25,0 );
+    ui_render_info RenderInfo = {};
+    RenderInfo.Texture = GameState->RenderState.Textures["4_health"];
+    RenderInfo.TextureOffset = glm::vec2(256, 0);
+    RenderInfo.FrameSize = glm::vec2(64, 16);
+    RenderInfo.ShaderIndex = Shader_Spritesheet;
+    Blob->Enemy.Healthbar->RenderInfo = RenderInfo;
 }
 
 
@@ -336,7 +694,7 @@ static void SpawnBarrel(game_state* GameState, glm::vec2 Position)
     
     render_entity* BarrelRenderEntity = &GameState->RenderState.RenderEntities[GameState->RenderState.RenderEntityCount];
     
-    BarrelRenderEntity->ShaderIndex = Shader_SpriteSheetShader;
+    BarrelRenderEntity->ShaderIndex = Shader_Spritesheet;
     BarrelRenderEntity->Entity = &*Barrel;
     BarrelRenderEntity->Texture = GameState->RenderState.Textures["barrel_sheet"];
     Barrel->RenderEntityHandle = GameState->RenderState.RenderEntityCount++;
@@ -415,13 +773,12 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
         }
         else
         {
-            // Set the last know direction for dash direction later
-            glm::vec2 Direction = UsingController ? glm::normalize(Entity->Velocity) : DirectionToMouse;
-            Entity->Player.LastKnownDirectionX = Direction.x;
-            Entity->Player.LastKnownDirectionY = Direction.y;
-            
             if(!Entity->Player.IsDashing)
             {
+                glm::vec2 Direction = UsingController ? glm::normalize(Entity->Velocity) : DirectionToMouse;
+                Entity->Player.LastKnownDirectionX = Direction.x;
+                Entity->Player.LastKnownDirectionY = Direction.y;
+                
                 if(Entity->Player.IsAttacking && !Entity->AnimationInfo.Playing)
                 {
                     Entity->Player.IsAttacking = false;
@@ -448,7 +805,7 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
                         
                         auto Direction = glm::normalize(GameState->Entities[Entity->Player.TargetedEnemyHandle].Position - Entity->Position);
                         
-                        if(Direction.x < 0.3)
+                        if(Direction.x < 0.7)
                         {
                             if(Direction.y > 0)
                             {
@@ -487,7 +844,7 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
                         auto XValue = UsingController ? InputX : DirectionToMouse.x;
                         auto YValue = UsingController ? Entity->Velocity.y : DirectionToMouse.y;
                         
-                        if(Abs(XValue) < 0.3)
+                        if(Abs(XValue) < 0.7)
                         {
                             if(YValue > 0)
                             {
@@ -600,7 +957,7 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
                         Entity->Player.Pickup = NULL;
                         StartTimer(GameState, Entity->Player.PickupCooldownTimer);
                     }
-                    else if(Entity->Player.Pickup->Type == Entity_Blob)
+                    else if(Entity->Player.Pickup->Type == Entity_Enemy && Entity->Player.Pickup->Enemy.EnemyType == Enemy_Blob)
                     {
                         StartTimer(GameState, Entity->Player.Pickup->Enemy.Blob.PickupThrowTimer);
                         PlaySoundEffect(GameState, &GameState->SoundManager.Throw);
@@ -612,20 +969,19 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
             
             if(TimerDone(GameState, Entity->Player.DashTimer))
             {
-                if(Entity->Player.IsDashing)
-                    StartTimer(GameState, Entity->Player.AfterDashTimer);
-                
                 Entity->Player.IsDashing = false;
             }
             
-            if(!Entity->Player.Pickup && !Entity->Player.IsAttacking && TimerDone(GameState, Entity->Player.AfterDashTimer) && TimerDone(GameState, Entity->Player.DashTimer) && GetActionButtonDown(Action_Dash, GameState))
+            if(!Entity->Player.Pickup && !Entity->Player.IsAttacking  && TimerDone(GameState, Entity->Player.DashTimer) && GetActionButtonDown(Action_Dash, GameState))
             {
+                PlaySoundEffect(GameState, &GameState->SoundManager.Slide01);
                 Entity->Player.DashCount++;
                 
                 if(Entity->Player.DashCount < 4)
                 {
-                    PlaySoundEffect(GameState, &GameState->SoundManager.Dash);
                     Entity->Player.IsDashing = true;
+                    Entity->Player.DashDirectionX = Entity->Player.LastKnownDirectionX;
+                    Entity->Player.DashDirectionY = Entity->Player.LastKnownDirectionY; 
                     StartTimer(GameState, Entity->Player.DashTimer);
                     StartTimer(GameState, Entity->Player.DashCooldownTimer);
                 }
@@ -633,17 +989,21 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
             
             if(Entity->Player.IsDashing)
             {
-                Entity->Velocity = glm::vec2(Entity->Player.LastKnownDirectionX * Entity->Player.DashSpeed * DeltaTime, Entity->Player.LastKnownDirectionY * Entity->Player.DashSpeed * DeltaTime);
+                auto XInput = GetInputX(GameState);
+                auto YInput = GetInputY(GameState);
+                
+                auto NewDirection = glm::normalize(glm::vec2(Entity->Player.DashDirectionX + XInput / 500.0f, Entity->Player.DashDirectionY + YInput / 500.0f));
+                
+                Entity->Player.DashDirectionX = NewDirection.x;
+                Entity->Player.DashDirectionY = NewDirection.y;
+                
+                Entity->Velocity = glm::vec2(Entity->Player.DashDirectionX * Entity->Player.DashSpeed * DeltaTime, Entity->Player.DashDirectionY * Entity->Player.DashSpeed * DeltaTime);
+                
             }
             
             if(TimerDone(GameState, Entity->Player.DashCooldownTimer) && !Entity->Player.IsDashing)
             {
                 Entity->Player.DashCount = 0;
-            }
-            
-            if(!TimerDone(GameState, Entity->Player.AfterDashTimer))
-            {
-                Entity->Velocity = glm::vec2();
             }
         }
         
@@ -732,7 +1092,7 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
                     for(uint32 Index = 0; Index < GameState->EntityCount; Index++)
                     {
                         if(!GameState->Entities[Index].Dead &&
-                           GameState->Entities[Index].Type == Entity_Skeleton) // @Incomplete: We need a way to easily determine whether it's an enemy or not
+                           GameState->Entities[Index].Type == Entity_Enemy && GameState->Entities[Index].Enemy.EnemyType == Enemy_Skeleton) // @Incomplete: We need a way to easily determine whether it's an enemy or not
                         {
                             auto Distance = glm::distance(Entity->Position, GameState->Entities[Index].Position);
                             if(Distance <= Entity->Player.TargetingDistance && Distance < ClosestDistance)
@@ -764,7 +1124,7 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
                 {
                     for(uint32 Index = Entity->Player.TargetedEnemyHandle + 1; Index < GameState->EntityCount; Index++)
                     {
-                        if(GameState->Entities[Index].Health > 0 && (GameState->Entities[Index].Type == Entity_Blob || GameState->Entities[Index].Type == Entity_Skeleton))
+                        if(GameState->Entities[Index].Health > 0 && GameState->Entities[Index].Type == Entity_Enemy)
                         {
                             auto Distance = glm::distance(Entity->Position, GameState->Entities[Index].Position);
                             if(Distance <= Entity->Player.TargetingDistance)
@@ -780,7 +1140,7 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
                 {
                     for(int32 Index = 0; Index < Entity->Player.TargetedEnemyHandle - 1; Index++)
                     {
-                        if(GameState->Entities[Index].Health > 0 && (GameState->Entities[Index].Type == Entity_Blob || GameState->Entities[Index].Type == Entity_Skeleton))
+                        if(GameState->Entities[Index].Health > 0 && GameState->Entities[Index].Type == Entity_Enemy)
                         {
                             auto Distance = glm::distance(Entity->Position, GameState->Entities[Index].Position);
                             if(Distance <= Entity->Player.TargetingDistance)
@@ -817,6 +1177,10 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
     {
         Entity->Active = false;
     }
+    
+    auto& DustCloud = GameState->Entities[Entity->Player.DustCloudHandle];
+    DustCloud.Position = Entity->Position;
+    DustCloud.Active = Entity->Player.IsDashing;
 }
 
 void UpdateWeapon(entity* Entity, game_state* GameState, real64 DeltaTime)
@@ -859,7 +1223,7 @@ void UpdateWeapon(entity* Entity, game_state* GameState, real64 DeltaTime)
             
         }
         break;
-        case Entity_Skeleton:
+        case Entity_Enemy:
         {
             IsAttacking = Entity->Enemy.Skeleton.IsAttacking;
             
@@ -903,8 +1267,8 @@ void UpdateWeapon(entity* Entity, game_state* GameState, real64 DeltaTime)
     {
         for(int32 Index = 0; Index < CollisionInfo.OtherCount; Index++)
         {
-            if((Entity->Type == Entity_Player && CollisionInfo.Other[Index]->Type == Entity_Skeleton && CollisionInfo.Other[Index]->Enemy.AIState != AI_Hit && CollisionInfo.Other[Index]->Enemy.AIState != AI_Dying && !CollisionInfo.Other[Index]->Hit) ||
-               (Entity->Type == Entity_Skeleton && CollisionInfo.Other[Index]->Type == Entity_Player && !CollisionInfo.Other[Index]->Player.IsDashing && !CollisionInfo.Other[Index]->Hit && TimerDone(GameState, CollisionInfo.Other[Index]->HitCooldownTimer)))
+            if((Entity->Type == Entity_Player && CollisionInfo.Other[Index]->Type == Entity_Enemy && CollisionInfo.Other[Index]->Enemy.AIState != AI_Hit && CollisionInfo.Other[Index]->Enemy.AIState != AI_Dying && !CollisionInfo.Other[Index]->Hit) ||
+               (Entity->Type == Entity_Enemy && CollisionInfo.Other[Index]->Type == Entity_Player && !CollisionInfo.Other[Index]->Player.IsDashing && !CollisionInfo.Other[Index]->Hit && TimerDone(GameState, CollisionInfo.Other[Index]->HitCooldownTimer)))
             {
                 Hit(GameState, Entity, CollisionInfo.Other[Index]);
             }
@@ -1025,6 +1389,22 @@ void UpdateBlob(entity* Entity, game_state* GameState, real64 DeltaTime)
             {
                 Hit(GameState, Entity, CollisionInfo.Other[Index]);
             }
+        }
+    }
+    else if(!TimerDone(GameState, Entity->Enemy.Blob.PickupThrowTimer))
+    {
+        if(CollisionInfo.OtherCount > 0)
+        {
+            Entity->Enemy.AIState = AI_Dying;
+            PlayAnimation(Entity, "explosion", GameState);
+            Entity->Health = 0;
+            Entity->Velocity = glm::vec2();
+            if(Entity->Enemy.Blob.InPickupMode)
+            {
+                auto& Player = GameState->Entities[0];
+                Player.Player.Pickup = 0;
+            }
+            PlaySoundEffect(GameState, &GameState->SoundManager.Explosion);
         }
     }
     
@@ -1183,31 +1563,31 @@ void UpdateSkeleton(entity* Entity, game_state* GameState, real64 DeltaTime)
         Entity->Position.x += Entity->Velocity.x * (real32)DeltaTime;
         Entity->Position.y += Entity->Velocity.y * (real32)DeltaTime;
         
-        if(Entity->Enemy.AIState != AI_Attacking)
+        //if(Entity->Enemy.AIState != AI_Attacking)
+        //{
+        glm::vec2 Direction = glm::normalize(Player.Position - Entity->Position);
+        
+        if(Abs(Direction.x) < 0.4f)
         {
-            glm::vec2 Direction = glm::normalize(Player.Position - Entity->Position);
-            
-            if(Abs(Direction.x) < 0.4f)
+            if(Direction.y > 0)
             {
-                if(Direction.y > 0)
-                {
-                    Entity->LookDirection = Up;
-                }
-                else
-                {
-                    Entity->LookDirection = Down;
-                }
+                Entity->LookDirection = Up;
             }
             else
             {
-                if(Direction.x < 0)
-                    Entity->LookDirection = Left;
-                else
-                    Entity->LookDirection = Right;
+                Entity->LookDirection = Down;
             }
-            
-            Entity->IsFlipped = Direction.x < 0;
         }
+        else
+        {
+            if(Direction.x < 0)
+                Entity->LookDirection = Left;
+            else
+                Entity->LookDirection = Right;
+        }
+        
+        Entity->IsFlipped = Direction.x < 0;
+        //}
         
         // @Cleanup: move this somewhere else, maybe out of switch
         render_entity* RenderEntity = &GameState->RenderState.RenderEntities[Entity->RenderEntityHandle];
@@ -1243,7 +1623,7 @@ void UpdateBarrel(entity* Entity, game_state* GameState, real64 DeltaTime)
         {
             for(int32 Index = 0; Index < CollisionInfo.OtherCount; Index++)
             {
-                if(CollisionInfo.Other[Index]->Type == Entity_Skeleton || CollisionInfo.Other[Index]->Type == Entity_Blob)
+                if(CollisionInfo.Other[Index]->Type == Entity_Enemy)
                 {
                     Hit(GameState, Entity, CollisionInfo.Other[Index]);
                     HasHitEnemy = true;
@@ -1289,22 +1669,25 @@ void UpdateGeneral(entity* Entity, game_state* GameState, real64 DeltaTime)
 {
     auto& RenderEntity = GameState->RenderState.RenderEntities[Entity->RenderEntityHandle];
     
-    if(Entity->HitFlickerFramesLeft > 0 && TimerDone(GameState, Entity->HitFlickerTimer))
+    if(Entity->HitFlickerTimer)
     {
-        Entity->HitFlickerFramesLeft--;
-        
-        if(Entity->HitFlickerFramesLeft % 2 == 0)
+        if(Entity->HitFlickerFramesLeft > 0 && TimerDone(GameState, Entity->HitFlickerTimer))
         {
-            RenderEntity.Color = glm::vec4(1, 0, 0, 1);
+            Entity->HitFlickerFramesLeft--;
+            
+            if(Entity->HitFlickerFramesLeft % 2 == 0)
+            {
+                RenderEntity.Color = glm::vec4(1, 0, 0, 1);
+            }
+            else
+                RenderEntity.Color = glm::vec4(1, 1, 1, 1);
+            
+            StartTimer(GameState, Entity->HitFlickerTimer);
         }
-        else
+        else if(Entity->HitFlickerFramesLeft == 0)
+        {
             RenderEntity.Color = glm::vec4(1, 1, 1, 1);
-        
-        StartTimer(GameState, Entity->HitFlickerTimer);
-    }
-    else if(Entity->HitFlickerFramesLeft == 0)
-    {
-        RenderEntity.Color = glm::vec4(1, 1, 1, 1);
+        }
     }
 }
 
@@ -1326,15 +1709,22 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                     UpdateWeapon(Entity, GameState, DeltaTime);
                 }
                 break;
-                case Entity_Skeleton:
+                case Entity_Enemy:
                 {
-                    UpdateSkeleton(Entity, GameState, DeltaTime);
-                    UpdateWeapon(Entity, GameState, DeltaTime);
-                }
-                break;
-                case Entity_Blob:
-                {
-                    UpdateBlob(Entity, GameState, DeltaTime);
+                    switch(Entity->Enemy.EnemyType)
+                    {
+                        case Enemy_Skeleton:
+                        {
+                            UpdateSkeleton(Entity, GameState, DeltaTime);
+                            UpdateWeapon(Entity, GameState, DeltaTime);
+                        }
+                        break;
+                        case Enemy_Blob:
+                        {
+                            UpdateBlob(Entity, GameState, DeltaTime);
+                        }
+                        break;
+                    }
                 }
                 break;
                 case Entity_Barrel:

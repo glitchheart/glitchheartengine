@@ -110,7 +110,7 @@ enum Action_Button
     Action_Interact,
     Action_Target,
     Action_SwitchTarget,
-    
+    Action_Throw,
     Action_Count
 };
 
@@ -155,7 +155,8 @@ struct input_controller
         Joystick_1,
         Joystick_2,
         Joystick_5, // Left bumper
-        Joystick_6 // Right bumper
+        Joystick_6, // Right bumper
+        Joystick_7 // Right trigger
     };
     
     Controller_Code ActionButtonPS4ControllerBindings[Action_Count] = 

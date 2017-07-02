@@ -1,0 +1,11 @@
+name wraith_fly
+type sprite
+framecount 2
+framesize 80 80
+center 0.000000 0.000000
+loop 1
+timeperframe 0.100000
+frames
+320 0
+400 0
+texture wraith_fly

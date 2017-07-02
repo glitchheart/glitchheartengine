@@ -39,6 +39,13 @@ struct timer
     real64 TimerMax;
 };
 
+struct entity_file_reload_data
+{
+    bool32 ReloadPlayerFile;
+    bool32 ReloadSkeletonFile;
+    bool32 ReloadWraithFile;
+};
+
 void HandleError(char const *File, int32 LineNum, char const *msg)
 {
     fprintf(stderr, "Error on in file %s on line %d\n", File, LineNum);

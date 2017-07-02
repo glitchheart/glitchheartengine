@@ -1,0 +1,12 @@
+name wraith_idle
+type sprite
+framecount 3
+framesize 80 80
+center 0.000000 0.000000
+loop 1
+timeperframe 0.200000
+frames
+560 0
+640 0
+720 0
+texture wraith_idle
