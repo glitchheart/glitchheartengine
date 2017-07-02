@@ -167,7 +167,7 @@ static void LoadPlayerData(game_state* GameState, int32 Handle = -1, glm::vec2 P
             {
                 sscanf(LineBuffer, "walkingspeed %f", &Entity->Player.WalkingSpeed);
             }
-            else if(StartsWith(&LineBuffer[0], "walkingspeed"))
+            else if(StartsWith(&LineBuffer[0], "throwingspeed"))
             {
                 sscanf(LineBuffer, "throwingspeed %f", &Entity->Player.ThrowingSpeed);
             }
@@ -175,9 +175,13 @@ static void LoadPlayerData(game_state* GameState, int32 Handle = -1, glm::vec2 P
             {
                 sscanf(LineBuffer, "crosshairradius %f", &Entity->Player.CrosshairRadius);
             }
-            else if(StartsWith(&LineBuffer[0], "targetingsdistance"))
+            else if(StartsWith(&LineBuffer[0], "dashcounterdivider"))
             {
-                sscanf(LineBuffer, "targetingsdistance %f", &Entity->Player.TargetingDistance);
+                sscanf(LineBuffer, "dashcounterdivider %f", &Entity->Player.DashCounterDivider);
+            }
+            else if(StartsWith(&LineBuffer[0], "targetingdistance"))
+            {
+                sscanf(LineBuffer, "targetingdistance %f", &Entity->Player.TargetingDistance);
             }
             else if(StartsWith(&LineBuffer[0], "attackcooldowntimer"))
             {
@@ -986,6 +990,7 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
                 
                 if(Entity->Player.DashCount < 4)
                 {
+                    StartTimer(GameState, GameState->GameCamera.ScreenShakeTimer);
                     Entity->Player.IsDashing = true;
                     Entity->Player.DashDirectionX = Entity->Player.LastKnownDirectionX;
                     Entity->Player.DashDirectionY = Entity->Player.LastKnownDirectionY; 
@@ -999,7 +1004,7 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
                 auto XInput = GetInputX(GameState);
                 auto YInput = GetInputY(GameState);
                 
-                auto NewDirection = glm::normalize(glm::vec2(Entity->Player.DashDirectionX + XInput / 500.0f, Entity->Player.DashDirectionY + YInput / 500.0f));
+                auto NewDirection = glm::normalize(glm::vec2(Entity->Player.DashDirectionX + XInput / Entity->Player.DashCounterDivider, Entity->Player.DashDirectionY + YInput / Entity->Player.DashCounterDivider));
                 
                 Entity->Player.DashDirectionX = NewDirection.x;
                 Entity->Player.DashDirectionY = NewDirection.y;
