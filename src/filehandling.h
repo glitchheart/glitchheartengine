@@ -1,6 +1,31 @@
 #ifndef FILEHANDLING_H
 #define FILEHANDLING_H
 
+struct asset_manager
+{
+    bool ListenForChanges;
+    
+    //shaders
+    bool32 DirtyVertexShaderIndices[Shader_Count]; //set to 1 if they should be reloaded
+    bool32 DirtyFragmentShaderIndices[Shader_Count];
+    time_t VertexShaderTimes[Shader_Count];
+    time_t FragmentShaderTimes[Shader_Count];
+    
+    //textures
+    const char* TilesetTexturePath = "'../assets/textures/tiles.png";
+    bool32 DirtyTileset;
+    time_t TilesetTime;
+    
+    //dll's
+    const char* DllPaths[1] = { "game.dll" };
+    uint32 DirtyGameDll;
+    FILETIME GameDllTime;
+    
+    entity_file_reload_data ReloadData;
+    bool32 DirtyPlayerFile = false;
+    time_t PlayerFileTime;
+};
+
 static GLchar* LoadShaderFromFile(const char* Path)
 {
     GLchar *Source = {};
@@ -27,27 +52,6 @@ static GLchar* LoadShaderFromFile(const char* Path)
     return Source;
 }
 
-struct asset_manager
-{
-    bool ListenForChanges;
-    
-    //shaders
-    uint32 DirtyVertexShaderIndices[Shader_Count]; //set to 1 if they should be reloaded
-    uint32 DirtyFragmentShaderIndices[Shader_Count];
-    time_t VertexShaderTimes[Shader_Count];
-    time_t FragmentShaderTimes[Shader_Count];
-    
-    //textures
-    const char* TilesetTexturePath = "'../assets/textures/tiles.png";
-    uint32 DirtyTileset;
-    time_t TilesetTime;
-    
-    //dll's
-    const char* DllPaths[1] = { "game.dll" };
-    uint32 DirtyGameDll;
-    FILETIME GameDllTime;
-};
-
 static FILETIME GetLastWriteTime(const char* FilePath)
 {
     FILETIME LastWriteTime = {};
@@ -63,7 +67,7 @@ static FILETIME GetLastWriteTime(const char* FilePath)
     return LastWriteTime;
 }
 
-static void CheckDirty(const char* FilePath, time_t LastTime, uint32* DirtyId, time_t* Time)
+static void CheckDirty(const char* FilePath, time_t LastTime, bool32* DirtyId, time_t* Time)
 {
     struct stat sb;
     stat(FilePath, &sb);
@@ -82,6 +86,9 @@ static void StartupFileTimeChecks(asset_manager* AssetManager)
     struct stat sb;
     stat(AssetManager->TilesetTexturePath, &sb);
     AssetManager->TilesetTime =  sb.st_mtime;
+    
+    stat("../assets/entities/player.dat", &sb);
+    AssetManager->PlayerFileTime = sb.st_mtime;
     
     for (int i = 0; i < Shader_Count; i++) 
     {
@@ -107,7 +114,10 @@ static void ListenToFileChanges(asset_manager* AssetManager)
             CheckDirty(Concat(ShaderPaths[i], ".frag"), AssetManager->FragmentShaderTimes[i], &AssetManager->DirtyFragmentShaderIndices[i], &AssetManager->FragmentShaderTimes[i]);
         }
         
-        CheckDirty(AssetManager->TilesetTexturePath, AssetManager->TilesetTime, &AssetManager->DirtyTileset, &AssetManager->TilesetTime);	
+        CheckDirty(AssetManager->TilesetTexturePath, AssetManager->TilesetTime, &AssetManager->DirtyTileset, &AssetManager->TilesetTime);
+        
+        CheckDirty("../assets/entities/player.dat", AssetManager->PlayerFileTime, &AssetManager->DirtyPlayerFile, &AssetManager->PlayerFileTime);
+        AssetManager->ReloadData.ReloadPlayerFile = AssetManager->DirtyPlayerFile;
     }
 }
 

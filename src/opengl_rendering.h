@@ -14,7 +14,7 @@ enum Shader_Type
     Shader_Rect,
     Shader_TextureRect,
     Shader_StandardFont,
-    Shader_SpriteSheetShader,
+    Shader_Spritesheet,
     Shader_Wireframe,
     Shader_UISprite,
     Shader_ErrorSprite,
@@ -263,7 +263,7 @@ struct render_state
             shader RectShader;
             shader TextureRectShader;
             shader StandardFontShader;
-            shader SpriteSheetShader;
+            shader SpritesheetShader;
             shader WireframeShader;
             shader UISpriteShader;
             shader ErrorShaderSprite;

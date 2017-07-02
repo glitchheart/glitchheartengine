@@ -1,0 +1,18 @@
+name dust_brown
+type sprite
+framecount 9
+framesize 85 55
+center 0.000000 0.000000
+loop 1
+timeperframe 0.050000
+frames
+0 0
+85 0
+170 0
+255 0
+340 0
+425 0
+510 0
+595 0
+680 0
+texture dust_cloud_brown

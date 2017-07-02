@@ -133,6 +133,7 @@ int main(void)
             glfwSetWindowShouldClose(GameState.RenderState.Window, GLFW_TRUE);
         
         ReloadAssets(&AssetManager, &GameState);
+        GameState.ReloadData = &AssetManager.ReloadData;
         ReloadDlls(&Game);
         
         Game.Update(DeltaTime, &GameState);

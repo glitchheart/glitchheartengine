@@ -102,10 +102,12 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
                     break;
                     case Button_SwitchMode:
                     {
-                        if(GameState->EditorState.PlacementMode == Editor_Placement_Tile)
-                            GameState->EditorState.PlacementMode = Editor_Placement_Entity;
-                        else
+                        if(GameState->EditorState.PlacementMode == Editor_Placement_SelectEntity)
+                            GameState->EditorState.PlacementMode = Editor_Placement_PlaceEntity;
+                        else if(GameState->EditorState.PlacementMode == Editor_Placement_PlaceEntity)
                             GameState->EditorState.PlacementMode = Editor_Placement_Tile;
+                        else
+                            GameState->EditorState.PlacementMode = Editor_Placement_SelectEntity;
                     }
                     break;
                 }
@@ -252,20 +254,25 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
             
             if(GetKeyDown(Key_M, GameState))
             {
-                if(GameState->EditorState.PlacementMode == Editor_Placement_Tile)
+                if(GameState->EditorState.PlacementMode == Editor_Placement_SelectEntity)
                 {
-                    GameState->EditorState.PlacementMode = Editor_Placement_Entity;
+                    GameState->EditorState.PlacementMode = Editor_Placement_PlaceEntity;
                     SpawnSkeleton(GameState,Pos);
                     GameState->EditorState.PlacementEntity = &GameState->Entities[GameState->EntityCount - 2];
                 }
-                else
+                else if(GameState->EditorState.PlacementMode == Editor_Placement_PlaceEntity)
                 {
                     GameState->EditorState.PlacementMode = Editor_Placement_Tile;
+                    
                     if(GameState->EditorState.PlacementEntity)
                     {
                         DeleteEntity(GameState,GameState->EditorState.PlacementEntity->EntityIndex);
                         GameState->EditorState.PlacementEntity = 0;
                     }
+                }
+                else
+                {
+                    GameState->EditorState.PlacementMode = Editor_Placement_SelectEntity;
                 }
             }
             
@@ -274,9 +281,9 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
             {
                 switch(GameState->EditorState.PlacementMode)
                 {
-                    case Editor_Placement_Entity:
+                    case Editor_Placement_SelectEntity:
                     {
-                        if(GetMouseButtonDown(Mouse_Left, GameState) && !GameState->EditorState.PlacementEntity)
+                        if(GetMouseButtonDown(Mouse_Left, GameState))
                         {
                             entity* Selected = 0;
                             
@@ -300,7 +307,10 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
                         {
                             GameState->EditorState.SelectedEntity->Position = glm::vec2(Pos.x, Pos.y - GameState->EditorState.SelectedEntity->Scale.y / 2 );
                         }
-                        
+                    }
+                    break;
+                    case Editor_Placement_PlaceEntity:
+                    {
                         if(GameState->EditorState.PlacementEntity)
                         {
                             GameState->EditorState.PlacementEntity->Position = glm::vec2(Pos.x, Pos.y - GameState->EditorState.PlacementEntity->Scale.y / 2);
@@ -512,6 +522,14 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
 
 extern "C" UPDATE(Update)
 {
+    if(GameState->ReloadData->ReloadPlayerFile)
+    {
+        if(GameState->ReloadData->ReloadPlayerFile)
+        {
+            LoadPlayerData(GameState, 0);
+        }
+    }
+    
     CheckConsoleInput(GameState, DeltaTime);
     
     if(GameState->GameMode == Mode_Editor)
@@ -566,7 +584,7 @@ extern "C" UPDATE(Update)
         GameState->GameCamera.ScreenShakeTimer = (timer*)malloc(sizeof(timer));
         GameState->GameCamera.ScreenShakeTimer->TimerHandle = -1;
         GameState->GameCamera.ScreenShakeTimer->TimerMax = 0.2f;
-        GameState->GameCamera.FollowSpeed = 22.0f; 
+        GameState->GameCamera.FollowSpeed = 12.0f; 
         GameState->GameCamera.FadingSpeed = 0.6f;
         StartFade(GameState->GameCamera, Fading_In, 0.6f, glm::vec3(0, 0, 0), 1.0f, 0.0f);
         
@@ -730,7 +748,7 @@ extern "C" UPDATE(Update)
                 
                 if(!TimerDone(GameState, GameState->GameCamera.ScreenShakeTimer))
                 {
-                    real32 Radius = 0.02f;
+                    real32 Radius = 0.05f;
                     int32 RandomAngle = rand() % 360;
                     glm::vec2 Offset = glm::vec2(sin(RandomAngle) * Radius, cos(RandomAngle) * Radius);
                     Center.x += Offset.x / 1.5f;

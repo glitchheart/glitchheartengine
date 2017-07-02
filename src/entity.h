@@ -20,23 +20,22 @@ enum AI_State
     AI_Dying
 };
 
-enum Entity_Enum
+enum Entity_Type
 {
     Entity_Player,
     Entity_Enemy,
     Entity_Tile,
-    Entity_Skeleton,
-    Entity_Blob,
     Entity_Weapon,
     Entity_Barrel,
-    
+    Entity_RenderItem,
     Entity_Max
 };
 
 enum Enemy_Type
 {
     Enemy_Blob,
-    Enemy_Skeleton
+    Enemy_Skeleton,
+    Enemy_Wraith
 };
 
 enum Look_Direction
@@ -65,7 +64,7 @@ struct entity_healthbar
 
 struct entity
 {
-    Entity_Enum Type;
+    Entity_Type Type;
     char* Name;
     uint32 EntityIndex;
     glm::vec2 Position;
@@ -90,7 +89,8 @@ struct entity
     bool32 IsColliding;
     bool32 IsStatic; // For stuff that can't be moved by collision
     bool32 IsPickup;
-    collision_AABB* HitTrigger;
+    bool32 HasHitTrigger;
+    collision_AABB HitTrigger;
     
     bool32 Hit = false;
     
@@ -121,7 +121,6 @@ struct entity
             timer* LastAttackTimer;
             timer* DashTimer;
             timer* DashCooldownTimer;
-            timer* AfterDashTimer;
             timer* PickupCooldownTimer;
             
             real32 AttackMoveSpeed;
@@ -134,6 +133,8 @@ struct entity
             real64 CurrentDashTime;
             real64 MaxDashTime;
             
+            real32 DashDirectionX;
+            real32 DashDirectionY;
             real32 DashSpeed;
             uint32 DashCount;
             
@@ -153,6 +154,7 @@ struct entity
             real32 LastKnownDirectionY;
             real32 TargetingDistance;
             int32 TargetedEnemyHandle;
+            int32 DustCloudHandle;
         } Player;
         struct
         {
@@ -166,6 +168,7 @@ struct entity
             real32 MinDistanceToPlayer;
             real32 MaxAlertDistance;
             real32 MaxFollowDistance;
+            real32 WalkingSpeed;
             
             union
             {
@@ -182,12 +185,16 @@ struct entity
                 struct
                 {
                     bool32 IsAttacking;
-                    real32 WalkingSpeed;
-                    
                     timer* AttackCooldownTimer;
                     timer* ChargingTimer;
                     
                 } Skeleton;
+                struct
+                {
+                    bool32 IsAttacking;
+                    timer* AttackCooldownTimer;
+                    timer* ChargingTimer;
+                } Wraith;
             };
         } Enemy;
         struct
