@@ -1,4 +1,4 @@
-name player_attack_down
+name player_attack_right
 type sprite
 framecount 3
 framesize 84 84

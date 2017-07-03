@@ -3,7 +3,7 @@ active 1
 layer Layer_Enemy
 iskinematic 0
 center 0 0.5
-scale 2 2
+scale 1
 health 1
 animation blob
 hitcooldowntimer 0.2

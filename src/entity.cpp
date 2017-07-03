@@ -98,9 +98,7 @@ static void LoadEntityData(FILE* File, entity* Entity, game_state* GameState, bo
         }
         else if(StartsWith(&LineBuffer[0], "scale"))
         {
-            glm::vec3 Scale;
-            sscanf(LineBuffer, "scale %f %f", &Scale.x, &Scale.y);
-            Entity->Scale = Scale;
+            sscanf(LineBuffer, "scale %f", &Entity->Scale);
         }
         else if(StartsWith(&LineBuffer[0], "center"))
         {
@@ -669,6 +667,26 @@ static void LoadPlayerData(game_state* GameState, int32 Handle = -1, glm::vec2 P
             {
                 sscanf(LineBuffer, "weaponcollider %f %f %f %f %d", &Entity->Weapon.CollisionAABB.Offset.x, &Entity->Weapon.CollisionAABB.Offset.y, &Entity->Weapon.CollisionAABB.Extents.x, &Entity->Weapon.CollisionAABB.Extents.y, &Entity->Weapon.CollisionAABB.IsTrigger);
             }
+            else if(StartsWith(&LineBuffer[0], "weaponinfo"))
+            {
+                sscanf(LineBuffer, "weaponinfo up %f %f %f %f down %f %f %f %f left %f %f %f %f right %f %f %f %f", 
+                       &Entity->Player.WeaponColliderInfo.OffsetUpX, 
+                       &Entity->Player.WeaponColliderInfo.OffsetUpY, 
+                       &Entity->Player.WeaponColliderInfo.ExtentsUpX, 
+                       &Entity->Player.WeaponColliderInfo.ExtentsUpY, 
+                       &Entity->Player.WeaponColliderInfo.OffsetDownX, 
+                       &Entity->Player.WeaponColliderInfo.OffsetDownY, 
+                       &Entity->Player.WeaponColliderInfo.ExtentsDownX, 
+                       &Entity->Player.WeaponColliderInfo.ExtentsDownY, 
+                       &Entity->Player.WeaponColliderInfo.OffsetLeftX, 
+                       &Entity->Player.WeaponColliderInfo.OffsetLeftY, 
+                       &Entity->Player.WeaponColliderInfo.ExtentsLeftX, 
+                       &Entity->Player.WeaponColliderInfo.ExtentsLeftY, 
+                       &Entity->Player.WeaponColliderInfo.OffsetRightX, 
+                       &Entity->Player.WeaponColliderInfo.OffsetRightY, 
+                       &Entity->Player.WeaponColliderInfo.ExtentsRightX, 
+                       &Entity->Player.WeaponColliderInfo.ExtentsRightY);
+            }
             else if(StartsWith(&LineBuffer[0], "dustcloud"))
             {
                 entity* PlayerDustCloud = Handle == -1 ? &GameState->Entities[GameState->EntityCount] : &GameState->Entities[Entity->Player.DustCloudHandle];
@@ -681,7 +699,7 @@ static void LoadPlayerData(game_state* GameState, int32 Handle = -1, glm::vec2 P
                 
                 char* AnimationName = (char*)malloc(30 * sizeof(char));
                 
-                sscanf(LineBuffer, "dustcloud scale %f %f animation %s", &PlayerDustCloud->Scale.x, &PlayerDustCloud->Scale.y, AnimationName);
+                sscanf(LineBuffer, "dustcloud scale %f animation %s", &PlayerDustCloud->Scale, AnimationName);
                 
                 PlayAnimation(PlayerDustCloud, AnimationName, GameState);
                 free(AnimationName);
@@ -729,7 +747,7 @@ static void SpawnWraith(game_state* GameState, glm::vec2 Position)
     PlayAnimation(Wraith, "wraith_idle", GameState);
     Wraith->Rotation = glm::vec3(0, 0, 0);
     Wraith->Position = Position;
-    Wraith->Scale = glm::vec3(4, 4, 1);
+    Wraith->Scale = 1;
     Wraith->Velocity = glm::vec2(-2,0);
     Wraith->Active = true;
     Wraith->IsKinematic = false;
@@ -738,15 +756,15 @@ static void SpawnWraith(game_state* GameState, glm::vec2 Position)
     
     collision_AABB CollisionAABB;
     Wraith->Center = glm::vec2(0.5, 0.5f);
-    CollisionAABB.Center = glm::vec2(Wraith->Position.x + Wraith->Center.x * Wraith->Scale.x,
-                                     Wraith->Position.y + Wraith->Center.y * Wraith->Scale.y);
+    CollisionAABB.Center = glm::vec2(Wraith->Position.x + Wraith->Center.x * Wraith->Scale,
+                                     Wraith->Position.y + Wraith->Center.y * Wraith->Scale);
     CollisionAABB.Offset = glm::vec2(0, -1.2f);
     CollisionAABB.Extents = glm::vec2(0.3f, 0.15f);
     CollisionAABB.IsTrigger = false;
     Wraith->CollisionAABB = CollisionAABB;
     
-    Wraith->HitTrigger.Center = glm::vec2(Wraith->Position.x + Wraith->Center.x * Wraith->Scale.x,
-                                          Wraith->Position.y + Wraith->Center.y * Wraith->Scale.y);
+    Wraith->HitTrigger.Center = glm::vec2(Wraith->Position.x + Wraith->Center.x * Wraith->Scale,
+                                          Wraith->Position.y + Wraith->Center.y * Wraith->Scale);
     Wraith->HitTrigger.Extents = glm::vec2(0.8f, 0.9f);
     Wraith->HitTrigger.IsTrigger;
     Wraith->HitTrigger.Offset = glm::vec2(0, -0.4f);
@@ -835,7 +853,7 @@ static void SpawnBarrel(game_state* GameState, glm::vec2 Position)
     
     Barrel->Rotation = glm::vec3(0, 0, 0);
     Barrel->Position = Position;
-    Barrel->Scale = glm::vec3(2, 2, 0);
+    Barrel->Scale = 2;
     Barrel->Velocity = glm::vec2(0,0);
     Barrel->Center = glm::vec2(0.5, 0.5);
     Barrel->IsStatic = true;
@@ -845,8 +863,8 @@ static void SpawnBarrel(game_state* GameState, glm::vec2 Position)
     collision_AABB CollisionAABB;
     
     CollisionAABB.Extents = glm::vec2(0.5f,0.5f);
-    CollisionAABB.Center = glm::vec2(Barrel->Position.x + Barrel->Center.x * Barrel->Scale.x,
-                                     Barrel->Position.y + Barrel->Center.y * Barrel->Scale.y);
+    CollisionAABB.Center = glm::vec2(Barrel->Position.x + Barrel->Center.x * Barrel->Scale,
+                                     Barrel->Position.y + Barrel->Center.y * Barrel->Scale);
     CollisionAABB.IsTrigger = true;
     Barrel->CollisionAABB = CollisionAABB;
     
@@ -943,26 +961,26 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
                             {
                                 Entity->LookDirection = Up;
                                 if(Moving)
-                                    PlayAnimation(Entity, "player_run_up", GameState);
+                                    PlayAnimation(Entity, "swordsman_walk", GameState);
                                 else
-                                    PlayAnimation(Entity, "player_idle_up", GameState);
+                                    PlayAnimation(Entity, "swordsman_idle", GameState);
                             }
                             else
                             {
                                 Entity->LookDirection = Down;
                                 if(Moving)
-                                    PlayAnimation(Entity, "player_run_down", GameState);
+                                    PlayAnimation(Entity, "swordsman_walk", GameState);
                                 else
-                                    PlayAnimation(Entity, "player_idle_down", GameState);
+                                    PlayAnimation(Entity, "swordsman_idle", GameState);
                             }
                         }
                         else
                         {
                             Entity->LookDirection = Right;
                             if(Moving)
-                                PlayAnimation(Entity, "player_run_right", GameState);
+                                PlayAnimation(Entity, "swordsman_walk", GameState);
                             else
-                                PlayAnimation(Entity, "player_idle_right", GameState);
+                                PlayAnimation(Entity, "swordsman_idle", GameState);
                         }
                         
                         Entity->IsFlipped = Direction.x < 0;
@@ -975,23 +993,24 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
                         auto XValue = UsingController ? InputX : DirectionToMouse.x;
                         auto YValue = UsingController ? InputY : DirectionToMouse.y;
                         
-                        if(Abs(XValue) < 0.7)
+                        PlayAnimation(Entity, "swordsman_walk", GameState);
+                        
+                        if(Abs(XValue) < 0.7f && Abs(YValue) > 0.2f)
                         {
                             if(YValue > 0)
                             {
                                 Entity->LookDirection = Up;
-                                PlayAnimation(Entity, "player_run_up", GameState);
                             }
                             else
                             {
                                 Entity->LookDirection = Down;
-                                PlayAnimation(Entity, "player_run_down", GameState);
+                                //PlayAnimation(Entity, "player_run_down", GameState);
                             }
                         }
                         else
                         {
                             Entity->LookDirection = Right;
-                            PlayAnimation(Entity, "player_run_right", GameState);
+                            //PlayAnimation(Entity, "player_run_right", GameState);
                         }
                         
                         if(XValue != 0)
@@ -1001,17 +1020,27 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
                     }
                     else
                     {
+                        PlayAnimation(Entity, "swordsman_idle", GameState);
                         if(Abs(Entity->Player.LastKnownDirectionX) < 0.3)
                         {
                             if(Entity->Player.LastKnownDirectionY > 0)
-                                PlayAnimation(Entity, "player_idle_up", GameState);
+                            {
+                                Entity->LookDirection = Up;
+                                //PlayAnimation(Entity, "player_idle_up", GameState);
+                            }
                             else
-                                PlayAnimation(Entity, "player_idle_down", GameState);
+                            {
+                                Entity->LookDirection = Down;
+                                //PlayAnimation(Entity, "player_idle_down", GameState);
+                            }
                         }
                         else
-                            PlayAnimation(Entity, "player_idle_right", GameState);
-                        
+                        {
+                            Entity->LookDirection = Right;
+                            //PlayAnimation(Entity, "player_idle_right", GameState);
+                        }
                         Entity->IsFlipped = Entity->Player.LastKnownDirectionX < 0;
+                        
                     }
                 }
                 else if(!TimerDone(GameState, Entity->Player.AttackMoveTimer))
@@ -1158,18 +1187,18 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
             {
                 case Up:
                 {
-                    PlayAnimation(Entity, "player_attack_up", GameState);
+                    PlayAnimation(Entity, "swordsman_attack_up", GameState);
                 }
                 break;
                 case Down:
                 {
-                    PlayAnimation(Entity, "player_attack_down", GameState);
+                    PlayAnimation(Entity, "swordsman_attack_down", GameState);
                 }
                 break;
                 case Left:
                 case Right:
                 {
-                    PlayAnimation(Entity, "player_attack_right", GameState);
+                    PlayAnimation(Entity, "swordsman_attack_right", GameState);
                 }
                 break;
             }
@@ -1272,7 +1301,7 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
     else
     {
         Entity->Dead = true;
-        PlayAnimation(Entity, "player_death", GameState);
+        PlayAnimation(Entity, "swordsman_death", GameState);
     }
     
     if(Entity->Dead && !Entity->AnimationInfo.Playing)
@@ -1294,35 +1323,35 @@ void UpdateWeapon(entity* Entity, game_state* GameState, real64 DeltaTime)
         case Entity_Player:
         {
             IsAttacking = Entity->Player.IsAttacking;
+            auto WeaponColliderInfo = Entity->Player.WeaponColliderInfo;
             
             switch(Entity->LookDirection)
             {
                 case Up:
                 {
-                    Entity->Weapon.CollisionAABB.Offset = glm::vec2(-1.0f, 0.8f);
-                    Entity->Weapon.CollisionAABB.Extents = glm::vec2(1.5f, 1.5f);
+                    Entity->Weapon.CollisionAABB.Offset = glm::vec2(WeaponColliderInfo.OffsetUpX, WeaponColliderInfo.OffsetUpY);
+                    Entity->Weapon.CollisionAABB.Extents = glm::vec2(WeaponColliderInfo.ExtentsUpX, WeaponColliderInfo.ExtentsUpY);
                 }
                 break;
                 case Down:
                 {
-                    Entity->Weapon.CollisionAABB.Offset = glm::vec2(-1.0f, -1.0f);
-                    Entity->Weapon.CollisionAABB.Extents = glm::vec2(1.5f, 0.5f);
+                    Entity->Weapon.CollisionAABB.Offset = glm::vec2(WeaponColliderInfo.OffsetDownX, WeaponColliderInfo.OffsetDownY);
+                    Entity->Weapon.CollisionAABB.Extents = glm::vec2(WeaponColliderInfo.ExtentsDownX, WeaponColliderInfo.ExtentsDownY);
                 }
                 break;
                 case Left:
                 {
-                    Entity->Weapon.CollisionAABB.Offset = glm::vec2(-2.0f, 0.5f);
-                    Entity->Weapon.CollisionAABB.Extents = glm::vec2(0.5f, 1.5f);
+                    Entity->Weapon.CollisionAABB.Offset = glm::vec2(WeaponColliderInfo.OffsetLeftX, WeaponColliderInfo.OffsetLeftY);
+                    Entity->Weapon.CollisionAABB.Extents = glm::vec2(WeaponColliderInfo.ExtentsLeftX, WeaponColliderInfo.ExtentsLeftY);
                 }
                 break;
                 case Right:
                 {
-                    Entity->Weapon.CollisionAABB.Offset = glm::vec2(0, 0.5f);
-                    Entity->Weapon.CollisionAABB.Extents = glm::vec2(0.5f, 1.5f);
+                    Entity->Weapon.CollisionAABB.Offset = glm::vec2(WeaponColliderInfo.OffsetRightX, WeaponColliderInfo.OffsetRightY);
+                    Entity->Weapon.CollisionAABB.Extents = glm::vec2(WeaponColliderInfo.ExtentsRightX, WeaponColliderInfo.ExtentsRightY);
                 }
                 break;
             }
-            
         }
         break;
         case Entity_Enemy:
@@ -1355,6 +1384,7 @@ void UpdateWeapon(entity* Entity, game_state* GameState, real64 DeltaTime)
                     Entity->Weapon.CollisionAABB.Extents = glm::vec2(0.5f, 1.0f);
                 }
                 break;
+                
             }
         }
         break;

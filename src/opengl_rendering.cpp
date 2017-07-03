@@ -626,7 +626,6 @@ static void LoadTextures(render_state* RenderState, const char* Directory)
     for(int32 FileIndex = 0; FileIndex < DirData.FilesLength; FileIndex++)
     {
         texture* Texture = &RenderState->TextureArray[RenderState->TextureIndex++];
-        
         Texture->Name = (char*)malloc((strlen(DirData.FileNames[FileIndex]) + 1) * sizeof(char));
         strcpy(Texture->Name, DirData.FileNames[FileIndex]);
         LoadTexture(DirData.FilePaths[FileIndex], Texture);
@@ -1110,8 +1109,8 @@ static void RenderWireframe(render_state* RenderState, entity* Entity, glm::mat4
     {
         glm::mat4 Model(1.0f);
         
-        Model = glm::translate(Model, glm::vec3(Entity->Position.x -  Entity->Scale.x/2, Entity->Position.y, 0.0f));
-        Model = glm::scale(Model, glm::vec3(Entity->Scale.x, Entity->Scale.y, 1));
+        Model = glm::translate(Model, glm::vec3(Entity->Position.x -  Entity->Scale / 2, Entity->Position.y, 0.0f));
+        Model = glm::scale(Model, glm::vec3(Entity->Scale, Entity->Scale, 1));
         
         glBindVertexArray(RenderState->WireframeVAO);
         
@@ -1303,22 +1302,23 @@ static void RenderEntity(render_state *RenderState, entity &Entity, glm::mat4 Pr
         
         if(Entity.CurrentAnimation) 
         {
-            real32 RemoveInX = (Entity.IsFlipped ? 1.0f * Entity.Scale.x - (2 * Entity.CurrentAnimation->Center.x * Entity.Scale.x) : 0) + Entity.CurrentAnimation->Center.x * Entity.Scale.x;
+            real32 WidthInUnits = (real32)Entity.CurrentAnimation->FrameSize.x / (real32)PIXELS_PER_UNIT;
+            real32 HeightInUnits = (real32)Entity.CurrentAnimation->FrameSize.y / (real32)PIXELS_PER_UNIT;
+            
+            glm::vec3 Scale = glm::vec3(WidthInUnits * Entity.Scale, HeightInUnits * Entity.Scale, 1);
+            
+            real32 RemoveInX = (Entity.IsFlipped ? 1.0f * Scale.x - (2 * Entity.CurrentAnimation->Center.x * Scale.x) : 0) + Entity.CurrentAnimation->Center.x * Scale.x;
             
             Model = glm::translate(Model, glm::vec3(Entity.Position.x - RemoveInX, Entity.Position.y - (Entity.IsFlipped ? Entity.CurrentAnimation->Center.y : 0), 0.0f));
             Model = glm::translate(Model, glm::vec3(1, 1, 0.0f));
             Model = glm::rotate(Model, Entity.Rotation.z, glm::vec3(0, 0, 1)); 
             Model = glm::translate(Model, glm::vec3(-1, -1, 0.0f));
             
-            glm::vec3 Scale;
-            
             if(Entity.IsFlipped)
             {
-                Scale = glm::vec3(-Entity.Scale.x, Entity.Scale.y, Entity.Scale.z);
-                Model = glm::translate(Model, glm::vec3(Entity.Scale.x, 0, 0));
+                Model = glm::translate(Model, glm::vec3(Scale.x, 0, 0));
+                Scale = glm::vec3(-Scale.x, Scale.y, 1);
             }
-            else
-                Scale = Entity.Scale;
             
             Model = glm::scale(Model, glm::vec3(Scale.x, Scale.y, Scale.z));
             
@@ -1356,15 +1356,16 @@ static void RenderEntity(render_state *RenderState, entity &Entity, glm::mat4 Pr
             Model = glm::rotate(Model, Entity.Rotation.z, glm::vec3(0, 0, 1)); 
             Model = glm::translate(Model, glm::vec3(-1, -1, 0.0f));
             
-            glm::vec3 Scale;
+            real32 WidthInUnits = Entity.CurrentAnimation->Texture->Width / (real32)PIXELS_PER_UNIT;
+            real32 HeightInUnits = Entity.CurrentAnimation->Texture->Height / (real32)PIXELS_PER_UNIT;
+            
+            glm::vec3 Scale = glm::vec3(WidthInUnits * Entity.Scale, HeightInUnits * Entity.Scale, 1);
             
             if(Entity.IsFlipped)
             {
-                Scale = glm::vec3(-Entity.Scale.x, Entity.Scale.y, Entity.Scale.z);
-                Model = glm::translate(Model, glm::vec3(Entity.Scale.x, 0, 0));
+                Scale = glm::vec3(-Scale.x, Scale.y, 1);
+                Model = glm::translate(Model, glm::vec3(Entity.Scale, 0, 0));
             }
-            else
-                Scale = Entity.Scale;
             
             Model = glm::scale(Model, glm::vec3(Scale.x, Scale.y, Scale.z));
             
@@ -1706,8 +1707,8 @@ void RenderGame(game_state* GameState)
                             real32 StartX = (real32)GameState->RenderState.WindowWidth / 2.0f - TextureWidth / 2;
                             real32 StartY = (real32)GameState->RenderState.WindowHeight / 2.0f - TextureHeight / 2;
                             
-                            real32 X = 0;
-                            real32 Y = 0;
+                            real32 X = FrameWidth * FrameOffsetX;
+                            real32 Y = FrameHeight * FrameOffsetY;
                             
                             for(int32 Index = 0; Index < FrameCount; Index++)
                             {

@@ -7,6 +7,8 @@
 #include <ft2build.h>
 #include FT_FREETYPE_H
 
+#define PIXELS_PER_UNIT 32
+
 enum Shader_Type
 {
     Shader_Texture,

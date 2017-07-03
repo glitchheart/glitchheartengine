@@ -293,7 +293,7 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
                             {
                                 entity* Entity = &GameState->Entities[EntityIndex];
                                 
-                                if(Entity->Type != Entity_Weapon && Pos.x >= Entity->Position.x - Entity->Scale.x/2 && Pos.y < Entity->Position.y + Entity->Scale.y && Pos.x < Entity->Position.x + Entity->Scale.x && Pos.y > Entity->Position.y)
+                                if(Entity->Type != Entity_Weapon && Pos.x >= Entity->Position.x - Entity->Scale / 2 && Pos.y < Entity->Position.y + Entity->Scale && Pos.x < Entity->Position.x + Entity->Scale && Pos.y > Entity->Position.y)
                                 {
                                     Selected = Entity;
                                     break;
@@ -305,7 +305,7 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
                         
                         if(GameState->EditorState.SelectedEntity && GetMouseButton(Mouse_Left, GameState) && !GameState->EditorState.PlacementEntity)
                         {
-                            GameState->EditorState.SelectedEntity->Position = glm::vec2(Pos.x, Pos.y - GameState->EditorState.SelectedEntity->Scale.y / 2 );
+                            GameState->EditorState.SelectedEntity->Position = glm::vec2(Pos.x, Pos.y - GameState->EditorState.SelectedEntity->Scale / 2 );
                         }
                     }
                     break;
@@ -313,7 +313,7 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
                     {
                         if(GameState->EditorState.PlacementEntity)
                         {
-                            GameState->EditorState.PlacementEntity->Position = glm::vec2(Pos.x, Pos.y - GameState->EditorState.PlacementEntity->Scale.y / 2);
+                            GameState->EditorState.PlacementEntity->Position = glm::vec2(Pos.x, Pos.y - GameState->EditorState.PlacementEntity->Scale / 2);
                             
                             if(GetMouseButtonDown(Mouse_Left, GameState))
                             {
@@ -490,8 +490,8 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
                 {
                     LoadedAnimation->Frames = (sprite_sheet_frame*)malloc(LoadedAnimation->FrameCount * sizeof(sprite_sheet_frame));
                     
-                    int32 X = 0;
-                    int32 Y = 0;
+                    int32 X = LoadedAnimation->FrameSize.x * LoadedAnimation->FrameOffset.x;
+                    int32 Y = LoadedAnimation->FrameSize.y * LoadedAnimation->FrameOffset.y;
                     
                     int32 FrameIndex = 0;
                     

@@ -76,6 +76,25 @@ Entity->Enemy.Hit = & ## entityname ## Hit; \
 Entity->Enemy.Wandering = & ## entityname ## Wandering; \
 Entity->Enemy.Dying = & ## entityname ## Dying; 
 
+struct weapon_collider_info
+{
+    real32 OffsetUpX;
+    real32 OffsetUpY;
+    real32 ExtentsUpX;
+    real32 ExtentsUpY;
+    real32 OffsetDownX;
+    real32 OffsetDownY;
+    real32 ExtentsDownX;
+    real32 ExtentsDownY;
+    real32 OffsetLeftX;
+    real32 OffsetLeftY;
+    real32 ExtentsLeftX;
+    real32 ExtentsLeftY;
+    real32 OffsetRightX;
+    real32 OffsetRightY;
+    real32 ExtentsRightX;
+    real32 ExtentsRightY;
+};
 
 struct entity
 {
@@ -85,7 +104,7 @@ struct entity
     glm::vec2 Position;
     glm::vec2 Center = glm::vec2(0.5, 0.5);
     glm::vec3 Rotation;;
-    glm::vec3 Scale = glm::vec3(1, 1, 1);
+    real32 Scale;
     bool32 IsFlipped;
     
     Look_Direction LookDirection = Down;
@@ -130,6 +149,7 @@ struct entity
     {
         struct
         {
+            weapon_collider_info WeaponColliderInfo;
             bool32 IsAttacking;
             
             timer* AttackCooldownTimer;
@@ -170,6 +190,7 @@ struct entity
             real32 TargetingDistance;
             int32 TargetedEnemyHandle;
             int32 DustCloudHandle;
+            
         } Player;
         struct
         {

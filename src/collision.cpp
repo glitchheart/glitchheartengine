@@ -159,11 +159,11 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
     
     if(!Entity->IsKinematic && Entity->Active)
     {
-        Entity->CollisionAABB.Center = glm::vec2(Entity->Position.x + Entity->Center.x * Entity->Scale.x + Entity->CollisionAABB.Offset.x, Entity->Position.y + Entity->Center.y * Entity->Scale.y + Entity->CollisionAABB.Offset.y);
+        Entity->CollisionAABB.Center = glm::vec2(Entity->Position.x + Entity->Center.x * Entity->Scale + Entity->CollisionAABB.Offset.x, Entity->Position.y + Entity->Center.y * Entity->Scale + Entity->CollisionAABB.Offset.y);
         
         if(Entity->HasHitTrigger)
         {
-            Entity->HitTrigger.Center = glm::vec2(Entity->Position.x + Entity->Center.x * Entity->Scale.x + Entity->HitTrigger.Offset.x, Entity->Position.y + Entity->Center.y * Entity->Scale.y + Entity->HitTrigger.Offset.y);
+            Entity->HitTrigger.Center = glm::vec2(Entity->Position.x + Entity->Center.x * Entity->Scale + Entity->HitTrigger.Offset.x, Entity->Position.y + Entity->Center.y * Entity->Scale + Entity->HitTrigger.Offset.y);
         }
         
         glm::vec2 PV;
@@ -263,8 +263,8 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
         
         level* Level = &GameState->CurrentLevel;
         
-        int32 XPos = (int32)(Entity->Position.x + Entity->Center.x * Entity->Scale.x);
-        int32 YPos = (int32)(Entity->Position.y + Entity->Center.y * Entity->Scale.y);
+        int32 XPos = (int32)(Entity->Position.x + Entity->Center.x * Entity->Scale);
+        int32 YPos = (int32)(Entity->Position.y + Entity->Center.y * Entity->Scale);
         
         //@Improvement Is it necessary to go 2 tiles out?
         int32 MinX = Max(0, XPos - 2);
@@ -341,7 +341,7 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
         if(!Entity->CollisionAABB.IsTrigger)
         {
             Entity->Position += PV;
-            Entity->CollisionAABB.Center = glm::vec2(Entity->Position.x + Entity->Center.x * Entity->Scale.x + Entity->CollisionAABB.Offset.x, Entity->Position.y + Entity->Center.y * Entity->Scale.y + Entity->CollisionAABB.Offset.y);
+            Entity->CollisionAABB.Center = glm::vec2(Entity->Position.x + Entity->Center.x * Entity->Scale + Entity->CollisionAABB.Offset.x, Entity->Position.y + Entity->Center.y * Entity->Scale + Entity->CollisionAABB.Offset.y);
         }
     }
 }

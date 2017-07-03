@@ -1,4 +1,4 @@
-name player_idle_down
+name player_idle
 type sprite
 framecount 4
 framesize 84 84

@@ -13,8 +13,8 @@
                                         fprintf(File, "timeperframe %f\n", Animation.TimePerFrame);
                                         fprintf(File, "frames\n");
                                         
-                                        int32 X = 0;
-                                        int32 Y = 0;
+                                        int32 X = (int32)(Animation.FrameOffset.y) * Animation.FrameSize.x;
+                                        int32 Y = (int32)(Animation.FrameOffset.x) * Animation.FrameSize.y;
                                         
                                         int32 FrameIndex = 0;
                                         
