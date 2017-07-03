@@ -366,7 +366,6 @@ AI_FUNC(SkeletonWandering)
     
 }
 
-
 static void LoadSkeletonData(game_state* GameState, int32 Handle = -1, glm::vec2 Position = glm::vec2())
 {
     FILE* File;
@@ -415,6 +414,75 @@ static void LoadSkeletonData(game_state* GameState, int32 Handle = -1, glm::vec2
     if(Entity)
     {
         AI_FUNCS(Skeleton);
+    }
+    
+}
+
+
+static void LoadBlobData(game_state* GameState, int32 Handle = -1, glm::vec2 Position = glm::vec2())
+{
+    FILE* File;
+    File = fopen("../assets/entities/blob.dat", "r");
+    
+    entity* Entity = Handle != -1 ? &GameState->Entities[Handle] : &GameState->Entities[GameState->EntityCount];
+    
+    if(Handle == -1)
+    {
+        Entity->Position = Position;
+    }
+    
+    if(File)
+    {
+        LoadEntityData(File,Entity,GameState, Handle != -1);
+        LoadEnemyData(File,Entity,GameState);
+        
+        char LineBuffer[255];
+        
+        while(fgets(LineBuffer, 255, File))
+        {
+            if(StartsWith(&LineBuffer[0], "#"))
+            {
+                break;
+            }
+            else if(StartsWith(&LineBuffer[0],"pickupthrowtimer"))
+            {
+                if(!Entity->Enemy.Blob.PickupThrowTimer)
+                    Entity->Enemy.Blob.PickupThrowTimer = (timer*)malloc(sizeof(timer));
+                Entity->Enemy.Blob.PickupThrowTimer->TimerHandle = -1;
+                
+                sscanf(LineBuffer,"pickupthrowtimer %lf",&Entity->Enemy.Blob.PickupThrowTimer->TimerMax);
+            }
+            else if(StartsWith(&LineBuffer[0],"explodestarttimer"))
+            {
+                if(!Entity->Enemy.Blob.ExplodeStartTimer)
+                    Entity->Enemy.Blob.ExplodeStartTimer = (timer*)malloc(sizeof(timer));
+                Entity->Enemy.Blob.ExplodeStartTimer->TimerHandle = -1;
+                
+                sscanf(LineBuffer,"explodestarttimer %lf",&Entity->Enemy.Blob.ExplodeStartTimer->TimerMax);
+            }
+            else if(StartsWith(&LineBuffer[0],"explodecountdowntimer"))
+            {
+                if(!Entity->Enemy.Blob.ExplodeCountdownTimer)
+                    Entity->Enemy.Blob.ExplodeCountdownTimer = (timer*)malloc(sizeof(timer));
+                Entity->Enemy.Blob.ExplodeCountdownTimer->TimerHandle = -1;
+                
+                sscanf(LineBuffer,"explodecountdowntimer %lf",&Entity->Enemy.Blob.ExplodeCountdownTimer->TimerMax);
+            }
+            else if(StartsWith(&LineBuffer[0],"explosioncollisionextents"))
+            {
+                if(!Entity->Enemy.Blob.ExplodeCountdownTimer)
+                    Entity->Enemy.Blob.ExplodeCountdownTimer = (timer*)malloc(sizeof(timer));
+                Entity->Enemy.Blob.ExplodeCountdownTimer->TimerHandle = -1;
+                
+                sscanf(LineBuffer,"explosioncollisionextents %f %f",&Entity->Enemy.Blob.ExplosionCollisionExtentsX, &Entity->Enemy.Blob.ExplosionCollisionExtentsY);
+            }
+        }
+        fclose(File);
+    }
+    
+    if(Entity)
+    {
+        AI_FUNCS(Blob);
     }
     
 }
@@ -656,6 +724,7 @@ static void SpawnWraith(game_state* GameState, glm::vec2 Position)
     Wraith->EntityIndex = GameState->EntityCount++;
 }
 
+/*
 static void SpawnBlob(game_state* GameState, glm::vec2 Position)
 {
     // Enemy
@@ -664,6 +733,7 @@ static void SpawnBlob(game_state* GameState, glm::vec2 Position)
     Blob->Type = Entity_Enemy;
     Blob->Enemy.EnemyType = Enemy_Blob;
     Blob->Enemy.MinDistanceToPlayer = 2;
+    Blob->Enemy.WalkingSpeed = 5.0f;
     
     render_entity* BlobRenderEntity = &GameState->RenderState.RenderEntities[GameState->RenderState.RenderEntityCount];
     
@@ -696,6 +766,7 @@ static void SpawnBlob(game_state* GameState, glm::vec2 Position)
     Blob->Enemy.AStarPath.AStarCooldownTimer = (timer*)malloc(sizeof(timer));
     Blob->Enemy.AStarPath.AStarCooldownTimer->TimerHandle = -1;
     Blob->Enemy.AStarPath.AStarCooldownTimer->TimerMax = 0.6;
+    
     Blob->Enemy.Blob.PickupThrowTimer = (timer*)malloc(sizeof(timer));
     Blob->Enemy.Blob.PickupThrowTimer->TimerHandle = -1;
     Blob->Enemy.Blob.PickupThrowTimer->TimerMax = 1.5f;
@@ -736,7 +807,7 @@ static void SpawnBlob(game_state* GameState, glm::vec2 Position)
     Blob->Enemy.Healthbar->RenderInfo = RenderInfo;
 }
 
-
+*/
 static void SpawnBarrel(game_state* GameState, glm::vec2 Position)
 {
     entity* Barrel = &GameState->Entities[GameState->EntityCount];

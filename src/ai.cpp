@@ -300,7 +300,7 @@ static void FollowPath(game_state* GameState, entity* Entity,entity& TargetEntit
             FollowDirection = glm::normalize(FollowDirection);
             
             // NOTE(Niels): Remember 5.0 is only temp, needs actual walking speed!!
-            Entity->Velocity = glm::vec2(FollowDirection.x * 5.0f, FollowDirection.y * 5.0f);
+            Entity->Velocity = glm::vec2(FollowDirection.x * Entity->Enemy.WalkingSpeed, FollowDirection.y * Entity->Enemy.WalkingSpeed);
         }
         else
         {
