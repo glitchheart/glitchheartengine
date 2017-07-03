@@ -965,7 +965,6 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
                     }
                     else if(Entity->Velocity.x != 0.0f || Entity->Velocity.y != 0.0f)
                     {
-                        
                         auto XValue = UsingController ? InputX : DirectionToMouse.x;
                         auto YValue = UsingController ? Entity->Velocity.y : DirectionToMouse.y;
                         

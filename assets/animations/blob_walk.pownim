@@ -4,7 +4,7 @@ framecount 13
 framesize 48 48
 center 0.5 0
 loop 1
-timeperframe 0.05
+timeperframe 0.03
 frames
 0 0
 48 0
