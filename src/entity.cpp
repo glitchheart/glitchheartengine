@@ -366,6 +366,88 @@ AI_FUNC(SkeletonWandering)
     
 }
 
+AI_FUNC(BlobIdle)
+{
+    auto Player = GameState->Entities[0];
+    real64 DistanceToPlayer = glm::distance(Entity->Position, Player.Position);
+    
+    if(DistanceToPlayer <= Entity->Enemy.MaxAlertDistance)
+    {
+        Entity->Enemy.AIState = AI_Following;
+    }
+    else
+    {
+        Entity->Velocity = glm::vec2();
+    }
+}
+
+AI_FUNC(BlobAlerted)
+{
+}
+
+AI_FUNC(BlobFollowing)
+{
+    FindPath(GameState,Entity,GameState->Entities[GameState->PlayerIndex], &Entity->Enemy.AStarPath);
+    FollowPath(GameState,Entity,GameState->Entities[GameState->PlayerIndex],DeltaTime, &Entity->Enemy.AStarPath);
+    if(Abs(glm::distance(Entity->Position, GameState->Entities[GameState->PlayerIndex].Position)) < Entity->Enemy.MinDistanceToPlayer)
+    {
+        Entity->Enemy.AIState = AI_Charging;
+        StartTimer(GameState, Entity->Enemy.Blob.ExplodeStartTimer);
+    }
+    else
+    {
+        Entity->Enemy.AIState = AI_Idle;
+    }
+}
+
+AI_FUNC(BlobCharging)
+{
+    if(TimerDone(GameState, Entity->Enemy.Blob.ExplodeStartTimer))
+    {
+        Entity->Enemy.AIState = AI_Attacking;
+        StartTimer(GameState, Entity->Enemy.Blob.ExplodeCountdownTimer);
+    }
+    
+    if(Abs(glm::distance(Entity->Position, GameState->Entities[GameState->PlayerIndex].Position)) >= 1)
+        Entity->Enemy.AIState = AI_Following;
+}
+
+AI_FUNC(BlobAttacking)
+{
+    if(TimerDone(GameState, Entity->Enemy.Blob.ExplodeCountdownTimer))
+    {
+        Entity->Enemy.AIState = AI_Dying;
+        PlayAnimation(Entity, "explosion", GameState);
+        Entity->Health = 0;
+        Entity->Velocity = glm::vec2();
+        if(Entity->Enemy.Blob.InPickupMode)
+        {
+            auto& Player = GameState->Entities[0];
+            Player.Player.Pickup = 0;
+        }
+        PlaySoundEffect(GameState, &GameState->SoundManager.Explosion);
+    }
+}
+
+AI_FUNC(BlobHit)
+{
+}
+
+AI_FUNC(BlobWandering)
+{
+}
+
+AI_FUNC(BlobDying)
+{
+    Entity->CollisionAABB.Extents = glm::vec2(Entity->Enemy.Blob.ExplosionCollisionExtentsX, Entity->Enemy.Blob.ExplosionCollisionExtentsY);
+    if(!Entity->AnimationInfo.Playing)
+    {
+        Entity->Active = false;
+        printf("HOT DAMN\n");
+        //DeleteEntity(GameState, Entity->EntityIndex);
+    }
+}
+
 
 static void LoadSkeletonData(game_state* GameState, int32 Handle = -1, glm::vec2 Position = glm::vec2())
 {
@@ -734,6 +816,9 @@ static void SpawnBlob(game_state* GameState, glm::vec2 Position)
     RenderInfo.FrameSize = glm::vec2(64, 16);
     RenderInfo.ShaderIndex = Shader_Spritesheet;
     Blob->Enemy.Healthbar->RenderInfo = RenderInfo;
+    
+    auto& Entity = Blob;
+    AI_FUNCS(Blob);
 }
 
 
@@ -1335,142 +1420,6 @@ void UpdateWeapon(entity* Entity, game_state* GameState, real64 DeltaTime)
     }
 }
 
-void UpdateBlob(entity* Entity, game_state* GameState, real64 DeltaTime)
-{
-    if(!Entity->Enemy.Blob.InPickupMode)
-    {
-        auto& Player = GameState->Entities[0];
-        
-        Entity->RenderButtonHint = !Entity->IsKinematic && glm::distance(Player.Position, Entity->Position) < 1.5f;
-        
-        if(TimerDone(GameState, Entity->Enemy.Blob.PickupThrowTimer) && Entity->RenderButtonHint && GetActionButtonDown(Action_Interact, GameState) && !Player.Player.Pickup)
-        {
-            Player.Player.Pickup = Entity;
-            Player.Player.RenderCrosshair = true;
-            Entity->Position = Player.Position;
-            Entity->Velocity = glm::vec2(0.0f,0.0f);
-            Entity->IsKinematic = true;
-            Entity->Enemy.Blob.InPickupMode = true;
-            Entity->RenderButtonHint = false;
-        }
-    }
-    else
-    {
-        if(TimerDone(GameState, Entity->Enemy.Blob.PickupThrowTimer))
-        {
-            Entity->Velocity = glm::vec2();
-        }
-    }
-    
-    switch(Entity->Enemy.AIState)
-    {
-        case AI_Idle:
-        {
-            auto Player = GameState->Entities[0];
-            real64 DistanceToPlayer = glm::distance(Entity->Position, Player.Position);
-            
-            if(DistanceToPlayer <= Entity->Enemy.MaxAlertDistance)
-            {
-                Entity->Enemy.AIState = AI_Following;
-            }
-            else
-            {
-                Entity->Velocity = glm::vec2();
-            }
-        }
-        break;
-        case AI_Following:
-        {
-            FindPath(GameState,Entity,GameState->Entities[GameState->PlayerIndex], &Entity->Enemy.AStarPath);
-            FollowPath(GameState,Entity,GameState->Entities[GameState->PlayerIndex],DeltaTime, &Entity->Enemy.AStarPath);
-            if(Abs(glm::distance(Entity->Position, GameState->Entities[GameState->PlayerIndex].Position)) < Entity->Enemy.MinDistanceToPlayer)
-            {
-                Entity->Enemy.AIState = AI_Charging;
-                StartTimer(GameState, Entity->Enemy.Blob.ExplodeStartTimer);
-            }
-            else
-            {
-                Entity->Enemy.AIState = AI_Idle;
-            }
-        }
-        break;
-        case AI_Charging:
-        {
-            if(TimerDone(GameState, Entity->Enemy.Blob.ExplodeStartTimer))
-            {
-                Entity->Enemy.AIState = AI_Attacking;
-                StartTimer(GameState, Entity->Enemy.Blob.ExplodeCountdownTimer);
-            }
-            
-            if(Abs(glm::distance(Entity->Position, GameState->Entities[GameState->PlayerIndex].Position)) >= 1)
-                Entity->Enemy.AIState = AI_Following;
-        }
-        break;
-        case AI_Attacking:
-        {
-            if(TimerDone(GameState, Entity->Enemy.Blob.ExplodeCountdownTimer))
-            {
-                Entity->Enemy.AIState = AI_Dying;
-                PlayAnimation(Entity, "explosion", GameState);
-                Entity->Health = 0;
-                Entity->Velocity = glm::vec2();
-                if(Entity->Enemy.Blob.InPickupMode)
-                {
-                    auto& Player = GameState->Entities[0];
-                    Player.Player.Pickup = 0;
-                }
-                PlaySoundEffect(GameState, &GameState->SoundManager.Explosion);
-            }
-        }
-        break;
-        case AI_Dying:
-        {
-            Entity->CollisionAABB.Extents = glm::vec2(Entity->Enemy.Blob.ExplosionCollisionExtentsX, Entity->Enemy.Blob.ExplosionCollisionExtentsY);
-            if(!Entity->AnimationInfo.Playing)
-            {
-                Entity->Active = false;
-                printf("HOT DAMN\n");
-                //DeleteEntity(GameState, Entity->EntityIndex);
-            }
-        }
-        break;
-    }
-    
-    collision_info CollisionInfo;
-    CheckCollision(GameState, Entity, &CollisionInfo);
-    
-    if(Entity->Enemy.AIState == AI_Dying)
-    {
-        for(int32 Index = 0; Index < CollisionInfo.OtherCount; Index++)
-        {
-            auto Other = CollisionInfo.Other[Index];
-            if(Other->Type != Entity_Barrel)
-            {
-                Hit(GameState, Entity, CollisionInfo.Other[Index]);
-            }
-        }
-    }
-    else if(!TimerDone(GameState, Entity->Enemy.Blob.PickupThrowTimer))
-    {
-        if(CollisionInfo.OtherCount > 0)
-        {
-            Entity->Enemy.AIState = AI_Dying;
-            PlayAnimation(Entity, "explosion", GameState);
-            Entity->Health = 0;
-            Entity->Velocity = glm::vec2();
-            if(Entity->Enemy.Blob.InPickupMode)
-            {
-                auto& Player = GameState->Entities[0];
-                Player.Player.Pickup = 0;
-            }
-            PlaySoundEffect(GameState, &GameState->SoundManager.Explosion);
-        }
-    }
-    
-    Entity->Position.x += Entity->Velocity.x * (real32)DeltaTime;
-    Entity->Position.y += Entity->Velocity.y * (real32)DeltaTime;
-}
-
 void UpdateAI(entity* Entity, game_state* GameState, real64 DeltaTime)
 {
     switch(Entity->Enemy.AIState)
@@ -1516,6 +1465,70 @@ void UpdateAI(entity* Entity, game_state* GameState, real64 DeltaTime)
         }
         break;
     }
+}
+
+
+
+void UpdateBlob(entity* Entity, game_state* GameState, real64 DeltaTime)
+{
+    if(!Entity->Enemy.Blob.InPickupMode)
+    {
+        auto& Player = GameState->Entities[0];
+        
+        Entity->RenderButtonHint = !Entity->IsKinematic && glm::distance(Player.Position, Entity->Position) < 1.5f;
+        
+        if(TimerDone(GameState, Entity->Enemy.Blob.PickupThrowTimer) && Entity->RenderButtonHint && GetActionButtonDown(Action_Interact, GameState) && !Player.Player.Pickup)
+        {
+            Player.Player.Pickup = Entity;
+            Player.Player.RenderCrosshair = true;
+            Entity->Position = Player.Position;
+            Entity->Velocity = glm::vec2(0.0f,0.0f);
+            Entity->IsKinematic = true;
+            Entity->Enemy.Blob.InPickupMode = true;
+            Entity->RenderButtonHint = false;
+        }
+    }
+    else
+    {
+        if(TimerDone(GameState, Entity->Enemy.Blob.PickupThrowTimer))
+        {
+            Entity->Velocity = glm::vec2();
+        }
+    }
+    UpdateAI(Entity,GameState,DeltaTime);
+    collision_info CollisionInfo;
+    CheckCollision(GameState, Entity, &CollisionInfo);
+    
+    if(Entity->Enemy.AIState == AI_Dying)
+    {
+        for(int32 Index = 0; Index < CollisionInfo.OtherCount; Index++)
+        {
+            auto Other = CollisionInfo.Other[Index];
+            if(Other->Type != Entity_Barrel)
+            {
+                Hit(GameState, Entity, CollisionInfo.Other[Index]);
+            }
+        }
+    }
+    else if(!TimerDone(GameState, Entity->Enemy.Blob.PickupThrowTimer))
+    {
+        if(CollisionInfo.OtherCount > 0)
+        {
+            Entity->Enemy.AIState = AI_Dying;
+            PlayAnimation(Entity, "explosion", GameState);
+            Entity->Health = 0;
+            Entity->Velocity = glm::vec2();
+            if(Entity->Enemy.Blob.InPickupMode)
+            {
+                auto& Player = GameState->Entities[0];
+                Player.Player.Pickup = 0;
+            }
+            PlaySoundEffect(GameState, &GameState->SoundManager.Explosion);
+        }
+    }
+    
+    Entity->Position.x += Entity->Velocity.x * (real32)DeltaTime;
+    Entity->Position.y += Entity->Velocity.y * (real32)DeltaTime;
 }
 
 
