@@ -443,7 +443,6 @@ AI_FUNC(BlobDying)
     if(!Entity->AnimationInfo.Playing)
     {
         Entity->Active = false;
-        printf("HOT DAMN\n");
         //DeleteEntity(GameState, Entity->EntityIndex);
     }
 }
@@ -497,6 +496,73 @@ static void LoadSkeletonData(game_state* GameState, int32 Handle = -1, glm::vec2
     if(Entity)
     {
         AI_FUNCS(Skeleton);
+    }
+}
+
+static void LoadBlobData(game_state* GameState, int32 Handle = -1, glm::vec2 Position = glm::vec2())
+{
+    FILE* File;
+    File = fopen("../assets/entities/blob.dat", "r");
+    
+    entity* Entity = Handle != -1 ? &GameState->Entities[Handle] : &GameState->Entities[GameState->EntityCount];
+    
+    if(Handle == -1)
+    {
+        Entity->Position = Position;
+    }
+    
+    if(File)
+    {
+        LoadEntityData(File,Entity,GameState, Handle != -1);
+        LoadEnemyData(File,Entity,GameState);
+        
+        char LineBuffer[255];
+        
+        while(fgets(LineBuffer, 255, File))
+        {
+            if(StartsWith(&LineBuffer[0], "#"))
+            {
+                break;
+            }
+            else if(StartsWith(&LineBuffer[0],"pickupthrowtimer"))
+            {
+                if(!Entity->Enemy.Blob.PickupThrowTimer)
+                    Entity->Enemy.Blob.PickupThrowTimer = (timer*)malloc(sizeof(timer));
+                Entity->Enemy.Blob.PickupThrowTimer->TimerHandle = -1;
+                
+                sscanf(LineBuffer,"pickupthrowtimer %lf",&Entity->Enemy.Blob.PickupThrowTimer->TimerMax);
+            }
+            else if(StartsWith(&LineBuffer[0],"explodestarttimer"))
+            {
+                if(!Entity->Enemy.Blob.ExplodeStartTimer)
+                    Entity->Enemy.Blob.ExplodeStartTimer = (timer*)malloc(sizeof(timer));
+                Entity->Enemy.Blob.ExplodeStartTimer->TimerHandle = -1;
+                
+                sscanf(LineBuffer,"explodestarttimer %lf",&Entity->Enemy.Blob.ExplodeStartTimer->TimerMax);
+            }
+            else if(StartsWith(&LineBuffer[0],"explodecountdowntimer"))
+            {
+                if(!Entity->Enemy.Blob.ExplodeCountdownTimer)
+                    Entity->Enemy.Blob.ExplodeCountdownTimer = (timer*)malloc(sizeof(timer));
+                Entity->Enemy.Blob.ExplodeCountdownTimer->TimerHandle = -1;
+                
+                sscanf(LineBuffer,"explodecountdowntimer %lf",&Entity->Enemy.Blob.ExplodeCountdownTimer->TimerMax);
+            }
+            else if(StartsWith(&LineBuffer[0],"explosioncollisionextents"))
+            {
+                if(!Entity->Enemy.Blob.ExplodeCountdownTimer)
+                    Entity->Enemy.Blob.ExplodeCountdownTimer = (timer*)malloc(sizeof(timer));
+                Entity->Enemy.Blob.ExplodeCountdownTimer->TimerHandle = -1;
+                
+                sscanf(LineBuffer,"explosioncollisionextents %f %f",&Entity->Enemy.Blob.ExplosionCollisionExtentsX, &Entity->Enemy.Blob.ExplosionCollisionExtentsY);
+            }
+        }
+        fclose(File);
+    }
+    
+    if(Entity)
+    {
+        AI_FUNCS(Blob);
     }
     
 }
@@ -737,90 +803,6 @@ static void SpawnWraith(game_state* GameState, glm::vec2 Position)
     
     Wraith->EntityIndex = GameState->EntityCount++;
 }
-
-static void SpawnBlob(game_state* GameState, glm::vec2 Position)
-{
-    // Enemy
-    entity* Blob = &GameState->Entities[GameState->EntityCount];
-    Blob->Name = "blob";
-    Blob->Type = Entity_Enemy;
-    Blob->Enemy.EnemyType = Enemy_Blob;
-    Blob->Enemy.MinDistanceToPlayer = 2;
-    
-    render_entity* BlobRenderEntity = &GameState->RenderState.RenderEntities[GameState->RenderState.RenderEntityCount];
-    
-    BlobRenderEntity->ShaderIndex = Shader_Spritesheet;
-    BlobRenderEntity->Texture = GameState->RenderState.Textures["blob"];
-    
-    BlobRenderEntity->Entity = &*Blob;
-    Blob->RenderEntityHandle = GameState->RenderState.RenderEntityCount++;
-    Blob->CurrentAnimation = 0;
-    Blob->AnimationInfo.Playing = false;
-    Blob->AnimationInfo.FrameIndex = 0;
-    Blob->AnimationInfo.CurrentTime = 0;
-    PlayAnimation(Blob, "blob", GameState);
-    
-    Blob->Active = true;
-    Blob->Position = Position;
-    Blob->Rotation = glm::vec3(0, 0, 0);
-    Blob->Scale = glm::vec3(2, 2, 1);
-    Blob->Velocity = glm::vec2(0, 0);
-    Blob->IsKinematic = false;
-    Blob->Layer = Layer_Enemy;
-    
-    Blob->HitFlickerTimer = (timer*)malloc(sizeof(timer));
-    Blob->HitFlickerTimer->TimerHandle = -1;
-    Blob->HitFlickerTimer->TimerMax = 0.05f;
-    
-    Blob->Enemy.MaxAlertDistance = 10;
-    Blob->Enemy.MaxFollowDistance = 20;
-    Blob->Enemy.AIState = AI_Following;
-    Blob->Enemy.AStarPath.AStarCooldownTimer = (timer*)malloc(sizeof(timer));
-    Blob->Enemy.AStarPath.AStarCooldownTimer->TimerHandle = -1;
-    Blob->Enemy.AStarPath.AStarCooldownTimer->TimerMax = 0.6;
-    Blob->Enemy.Blob.PickupThrowTimer = (timer*)malloc(sizeof(timer));
-    Blob->Enemy.Blob.PickupThrowTimer->TimerHandle = -1;
-    Blob->Enemy.Blob.PickupThrowTimer->TimerMax = 1.5f;
-    
-    Blob->Enemy.Blob.ExplodeStartTimer = (timer*)malloc(sizeof(timer));
-    Blob->Enemy.Blob.ExplodeStartTimer->TimerHandle = -1;
-    Blob->Enemy.Blob.ExplodeStartTimer->TimerMax = 0.5;
-    Blob->Enemy.Blob.ExplodeCountdownTimer = (timer*)malloc(sizeof(timer));
-    Blob->Enemy.Blob.ExplodeCountdownTimer->TimerHandle = -1;
-    Blob->Enemy.Blob.ExplodeCountdownTimer->TimerMax = 1.0;
-    
-    collision_AABB CollisionAABB;
-    Blob->Center = glm::vec2(0, 0.5f);
-    CollisionAABB.Center = glm::vec2(Blob->Position.x + Blob->Center.x * Blob->Scale.x,
-                                     Blob->Position.y + Blob->Center.y * Blob->Scale.y);
-    CollisionAABB.Offset = glm::vec2(-0.5, -0.9);
-    CollisionAABB.Extents = glm::vec2(0.3f, 0.15f);
-    CollisionAABB.IsTrigger = false;
-    Blob->CollisionAABB = CollisionAABB;
-    Blob->Enemy.Blob.ExplosionCollisionExtentsX = 1.0f;
-    Blob->Enemy.Blob.ExplosionCollisionExtentsY = 1.0f;
-    
-    Blob->HitTrigger.Extents = glm::vec2(0.5f, 0.7f);
-    Blob->HitTrigger.IsTrigger = true;
-    Blob->HasHitTrigger = true;
-    
-    Blob->Health = 1;
-    Blob->EntityIndex = GameState->EntityCount++;
-    
-    Blob->Enemy.Healthbar = (entity_healthbar*)malloc(sizeof(entity_healthbar));
-    Blob->Enemy.Healthbar->Offset = glm::vec2(-0.5f, 2.2f);
-    Blob->Enemy.Healthbar->Scale = glm::vec3(1.0, 0.25,0 );
-    ui_render_info RenderInfo = {};
-    RenderInfo.Texture = GameState->RenderState.Textures["4_health"];
-    RenderInfo.TextureOffset = glm::vec2(256, 0);
-    RenderInfo.FrameSize = glm::vec2(64, 16);
-    RenderInfo.ShaderIndex = Shader_Spritesheet;
-    Blob->Enemy.Healthbar->RenderInfo = RenderInfo;
-    
-    auto& Entity = Blob;
-    AI_FUNCS(Blob);
-}
-
 
 static void SpawnBarrel(game_state* GameState, glm::vec2 Position)
 {

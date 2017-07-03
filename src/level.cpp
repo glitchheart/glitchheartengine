@@ -189,13 +189,12 @@ static bool32 LoadLevelFromFile(char* FilePath, level* Level, game_state* GameSt
                 glm::vec2 Pos;
                 sscanf(LineBuffer, "skeleton %f %f", &Pos.x, &Pos.y);
                 LoadSkeletonData(GameState, -1, Pos);
-                //SpawnSkeleton(GameState, Pos);
             }
             else if(StartsWith(&LineBuffer[0], "blob"))
             {
                 glm::vec2 Pos;
                 sscanf(LineBuffer, "blob %f %f", &Pos.x, &Pos.y);
-                SpawnBlob(GameState, Pos);
+                LoadBlobData(GameState, -1, Pos);
             }
             else if(StartsWith(&LineBuffer[0], "wraith"))
             {
