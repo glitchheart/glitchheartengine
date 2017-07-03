@@ -574,6 +574,9 @@ static void LoadPlayerData(game_state* GameState, int32 Handle = -1, glm::vec2 P
     
     entity* Entity = Handle != -1 ? &GameState->Entities[Handle] :  &GameState->Entities[GameState->EntityCount];
     Entity->Type = Entity_Player;
+    Entity->Player.TargetedEnemyHandle = -1;
+    Entity->Player.LastKnownDirectionX = 0;
+    Entity->Player.LastKnownDirectionY = 0;
     
     if(Handle == -1)
     {
@@ -901,8 +904,11 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
             if(!Entity->Player.IsDashing)
             {
                 glm::vec2 Direction = UsingController ? glm::normalize(Entity->Velocity) : DirectionToMouse;
-                Entity->Player.LastKnownDirectionX = Direction.x;
-                Entity->Player.LastKnownDirectionY = Direction.y;
+                if(Direction.x == Direction.x && Direction.y == Direction.y && (Direction.x != 0 || Direction.y != 0))
+                {
+                    Entity->Player.LastKnownDirectionX = Direction.x;
+                    Entity->Player.LastKnownDirectionY = Direction.y;
+                }
                 
                 if(Entity->Player.IsAttacking && !Entity->AnimationInfo.Playing)
                 {
