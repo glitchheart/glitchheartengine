@@ -27,4 +27,4 @@ weaponcollider 0.7 0 0.5 1.0 1
 healthbar offset -0.5 2.2 scale 1.0 0.25
 #skeleton
 attackcooldowntimer 0.5
-chargingtimer 0.2
+chargingtimer 0.05

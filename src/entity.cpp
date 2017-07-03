@@ -575,7 +575,7 @@ static void LoadPlayerData(game_state* GameState, int32 Handle = -1, glm::vec2 P
     entity* Entity = Handle != -1 ? &GameState->Entities[Handle] :  &GameState->Entities[GameState->EntityCount];
     Entity->Type = Entity_Player;
     Entity->Player.TargetedEnemyHandle = -1;
-    Entity->Player.LastKnownDirectionX = 0;
+    Entity->Player.LastKnownDirectionX = 1.0f;
     Entity->Player.LastKnownDirectionY = 0;
     
     if(Handle == -1)
@@ -926,6 +926,7 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
                 {
                     real32 InputX = GetInputX(GameState);
                     real32 InputY = GetInputY(GameState);
+                    
                     Entity->Velocity.x = InputX * Entity->Player.WalkingSpeed * (real32)DeltaTime;
                     Entity->Velocity.y = InputY * Entity->Player.WalkingSpeed * (real32)DeltaTime;
                     
@@ -972,7 +973,7 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
                     else if(Entity->Velocity.x != 0.0f || Entity->Velocity.y != 0.0f)
                     {
                         auto XValue = UsingController ? InputX : DirectionToMouse.x;
-                        auto YValue = UsingController ? Entity->Velocity.y : DirectionToMouse.y;
+                        auto YValue = UsingController ? InputY : DirectionToMouse.y;
                         
                         if(Abs(XValue) < 0.7)
                         {
@@ -996,9 +997,6 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
                         if(XValue != 0)
                         {
                             Entity->IsFlipped = XValue < 0;
-                            
-                            if(Entity->LookDirection == Right && Entity->IsFlipped)
-                                Entity->LookDirection = Left;
                         }
                     }
                     else
@@ -1014,9 +1012,6 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
                             PlayAnimation(Entity, "player_idle_right", GameState);
                         
                         Entity->IsFlipped = Entity->Player.LastKnownDirectionX < 0;
-                        
-                        if(Entity->LookDirection == Right && Entity->IsFlipped)
-                            Entity->LookDirection = Left;
                     }
                 }
                 else if(!TimerDone(GameState, Entity->Player.AttackMoveTimer))
@@ -1028,34 +1023,6 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
                     {
                         Vel = glm::vec2(Entity->Player.LastKnownDirectionX * AttackMoveSpeed * DeltaTime, Entity->Player.LastKnownDirectionY * AttackMoveSpeed * DeltaTime);
                     }
-                    else
-                    {
-                        switch(Entity->LookDirection)
-                        {
-                            case Up:
-                            {
-                                Vel = glm::vec2(0, AttackMoveSpeed * DeltaTime);
-                            }
-                            break;
-                            case Down:
-                            {
-                                
-                                Vel = glm::vec2(0, -AttackMoveSpeed * DeltaTime);
-                            }
-                            break;
-                            case Left:
-                            {
-                                
-                                Vel = glm::vec2(-AttackMoveSpeed * DeltaTime, 0);
-                            }
-                            break;
-                            case Right:
-                            {
-                                Vel = glm::vec2(AttackMoveSpeed * DeltaTime, 0);
-                            }
-                            break;
-                        }
-                    }
                     
                     Entity->Velocity = Vel;
                 }
@@ -1064,6 +1031,10 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
                     Entity->Velocity = glm::vec2(0, 0);
                 }
                 
+                if(Entity->LookDirection == Right && Entity->IsFlipped)
+                    Entity->LookDirection = Left;
+                
+                // Pickup
                 if(GetActionButtonDown(Action_Interact, GameState) && Entity->Player.Pickup)
                 {
                     GameState->Entities[Entity->Player.TargetedEnemyHandle].Enemy.IsTargeted = false;
