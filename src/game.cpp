@@ -257,7 +257,7 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
                 if(GameState->EditorState.PlacementMode == Editor_Placement_SelectEntity)
                 {
                     GameState->EditorState.PlacementMode = Editor_Placement_PlaceEntity;
-                    SpawnSkeleton(GameState,Pos);
+                    LoadSkeletonData(GameState,-1,Pos);
                     GameState->EditorState.PlacementEntity = &GameState->Entities[GameState->EntityCount - 2];
                 }
                 else if(GameState->EditorState.PlacementMode == Editor_Placement_PlaceEntity)
@@ -318,7 +318,7 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
                             if(GetMouseButtonDown(Mouse_Left, GameState))
                             {
                                 GameState->EditorState.PlacementEntity = 0;
-                                SpawnSkeleton(GameState,Pos);
+                                LoadSkeletonData(GameState,-1,Pos);
                                 GameState->EditorState.PlacementEntity = &GameState->Entities[GameState->EntityCount - 1];
                             }
                         }
@@ -524,10 +524,21 @@ extern "C" UPDATE(Update)
 {
     if(GameState->ReloadData->ReloadPlayerFile)
     {
-        if(GameState->ReloadData->ReloadPlayerFile)
+        LoadPlayerData(GameState, 0);
+        GameState->ReloadData->ReloadPlayerFile = false;
+    }
+    
+    if(GameState->ReloadData->ReloadSkeletonFile)
+    {
+        for(uint32 EntityIndex = 0; EntityIndex < GameState->EntityCount; EntityIndex++)
         {
-            LoadPlayerData(GameState, 0);
+            auto Entity = GameState->Entities[EntityIndex];
+            if(Entity.Type == Entity_Enemy && Entity.Enemy.EnemyType == Enemy_Skeleton && !Entity.Dead)
+            {
+                LoadSkeletonData(GameState,EntityIndex);
+            }
         }
+        GameState->ReloadData->ReloadSkeletonFile = false;
     }
     
     CheckConsoleInput(GameState, DeltaTime);

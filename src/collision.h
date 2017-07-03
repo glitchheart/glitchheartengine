@@ -15,7 +15,7 @@
      return static_cast<Collision_Side>(static_cast<int>(a) | static_cast<int>(b));
  }
  
-#define NUM_OTHERS 20 //@Improvement: We need a more dynamic way for this. This gives us bugs, when we try to write to more than the size allows.
+#define NUM_OTHERS 40 //@Improvement: We need a more dynamic way for this. This gives us bugs, when we try to write to more than the size allows.
  
  struct collision_info
  {
