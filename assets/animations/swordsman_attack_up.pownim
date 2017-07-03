@@ -1,0 +1,16 @@
+name swordsman_attack_up
+type sprite
+framecount 7
+framesize 40 31
+center 0.425 0.000000
+loop 0
+timeperframe 0.060000
+frames
+0 0
+40 0
+80 0
+120 0
+160 0
+200 0
+240 0
+texture swordsman_attack3

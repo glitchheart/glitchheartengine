@@ -272,14 +272,14 @@ static void AStar(entity* Entity, game_state* GameState, glm::vec2 StartPos, glm
 static void FindPath(game_state* GameState, entity* Entity, entity& TargetEntity,astar_path* Path)
 {
     real64 DistanceToTargetEntity = abs(glm::distance(Entity->Position, TargetEntity.Position));
-    glm::vec2 EntityPosition = glm::vec2(Entity->Position.x + Entity->Center.x * Entity->Scale.x,Entity->Position.y + Entity->Center.y * Entity->Scale.y);
+    glm::vec2 EntityPosition = glm::vec2(Entity->Position.x + Entity->Center.x * Entity->Scale,Entity->Position.y + Entity->Center.y * Entity->Scale);
     if(TimerDone(GameState,Path->AStarCooldownTimer) || !Path->AStarPath || (Path->AStarPathLength <= Path->PathIndex && DistanceToTargetEntity >= 3.0f)) 
     {
         Path->PathIndex = 0;
         StartTimer(GameState, Path->AStarCooldownTimer);
         glm::vec2 StartPosition = EntityPosition;
-        glm::vec2 TargetPosition = glm::vec2(TargetEntity.Position.x + TargetEntity.Center.x * TargetEntity.Scale.x,
-                                             TargetEntity.Position.y + TargetEntity.Center.y * TargetEntity.Scale.y);
+        glm::vec2 TargetPosition = glm::vec2(TargetEntity.Position.x + TargetEntity.Center.x * TargetEntity.Scale,
+                                             TargetEntity.Position.y + TargetEntity.Center.y * TargetEntity.Scale);
         AStar(Entity,GameState,StartPosition,TargetPosition);
     }
     
@@ -288,7 +288,7 @@ static void FindPath(game_state* GameState, entity* Entity, entity& TargetEntity
 static void FollowPath(game_state* GameState, entity* Entity,entity& TargetEntity, real64 DeltaTime, astar_path* Path)
 {
     real64 DistanceToTargetEntity = abs(glm::distance(Entity->Position, TargetEntity.Position));
-    glm::vec2 EntityPosition = glm::vec2(Entity->Position.x + Entity->Center.x * Entity->Scale.x,Entity->Position.y + Entity->Center.y * Entity->Scale.y);
+    glm::vec2 EntityPosition = glm::vec2(Entity->Position.x + Entity->Center.x * Entity->Scale, Entity->Position.y + Entity->Center.y * Entity->Scale);
     if(Path->AStarPath && Path->PathIndex < Path->AStarPathLength)
     {
         path_node NewPos = Path->AStarPath[Path->PathIndex];
