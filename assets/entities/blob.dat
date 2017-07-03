@@ -14,7 +14,7 @@ hitrecoilspeed 10
 recoiltimer 0.2
 #enemy
 enemytype 0
-walkingspeed 5.0
+walkingspeed 7.0
 istargeted 0
 targetingposition -0.5 2
 maxalertdistance 5
