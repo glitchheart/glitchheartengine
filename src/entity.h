@@ -10,14 +10,14 @@ enum Entity_Layer
 
 enum AI_State
 {
-    AI_Sleeping,
     AI_Idle,
     AI_Alerted,
     AI_Following,
     AI_Charging,
     AI_Attacking,
     AI_Hit,
-    AI_Dying
+    AI_Dying,
+    AI_Wandering
 };
 
 enum Entity_Type
@@ -61,6 +61,21 @@ struct entity_healthbar
     ui_render_info RenderInfo;
     int32 CurrentFrame;
 };
+
+struct game_state;
+
+typedef void (*AIFunction)(entity*, game_state*, real64);
+#define AI_FUNC(name) void name(entity* Entity, game_state* GameState, real64 DeltaTime)
+
+#define AI_FUNCS(entityname) Entity->Enemy.Idle = & ## entityname ## Idle; \
+Entity->Enemy.Alerted = & ## entityname ## Alerted; \
+Entity->Enemy.Following = & ## entityname ## Following; \
+Entity->Enemy.Charging = & ## entityname ## Charging; \
+Entity->Enemy.Attacking = & ## entityname ## Attacking; \
+Entity->Enemy.Hit = & ## entityname ## Hit; \
+Entity->Enemy.Wandering = & ## entityname ## Wandering; \
+Entity->Enemy.Dying = & ## entityname ## Dying; 
+
 
 struct entity
 {
@@ -169,6 +184,14 @@ struct entity
             real32 MaxAlertDistance;
             real32 MaxFollowDistance;
             real32 WalkingSpeed;
+            AIFunction Idle;
+            AIFunction Alerted;
+            AIFunction Following;
+            AIFunction Charging;
+            AIFunction Attacking;
+            AIFunction Hit;
+            AIFunction Dying;
+            AIFunction Wandering;
             
             union
             {

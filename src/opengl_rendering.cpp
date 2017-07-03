@@ -1130,21 +1130,16 @@ static void RenderWireframe(render_state* RenderState, entity* Entity, glm::mat4
     }
 }
 
-static astar_path* GetAStarPath(entity* Entity)
-{
-    return &Entity->Enemy.AStarPath;
-}
-
 static void RenderAStarPath(render_state* RenderState, entity* Entity, glm::mat4 ProjectionMatrix, glm::mat4 View)
 {
-    astar_path* Path = GetAStarPath(Entity);
-    if(Path) 
+    astar_path& Path = Entity->Enemy.AStarPath;
+    if(Path.AStarPath) 
     {
         glBindVertexArray(RenderState->AStarPathVAO);
-        for(uint32 PathIndex = 0; PathIndex < Path->AStarPathLength; PathIndex++)
+        for(uint32 PathIndex = 0; PathIndex < Path.AStarPathLength; PathIndex++)
         {
             glm::mat4 Model(1.0f);
-            Model = glm::translate(Model, glm::vec3(Path->AStarPath[PathIndex].X, Path->AStarPath[PathIndex].Y, 0.0f));
+            Model = glm::translate(Model, glm::vec3(Path.AStarPath[PathIndex].X, Path.AStarPath[PathIndex].Y, 0.0f));
             Model = glm::scale(Model, glm::vec3(1, 1, 1));
             
             auto Shader = RenderState->Shaders[Shader_AStarPath];
@@ -1155,7 +1150,7 @@ static void RenderAStarPath(render_state* RenderState, entity* Entity, glm::mat4
             SetMat4Uniform(Shader.Program, "Model", Model);
             glm::vec4 color;
             
-            if(Path->PathIndex == PathIndex)
+            if(Path.PathIndex == PathIndex)
             {
                 color = glm::vec4(0.0,1.0,0.0,0.4);
             }
@@ -1424,7 +1419,7 @@ static void RenderEntity(render_state *RenderState, entity &Entity, glm::mat4 Pr
     if(RenderState->RenderColliders && !Entity.IsKinematic)
         RenderColliderWireframe(RenderState, &Entity, ProjectionMatrix, View);
     
-    if(RenderState->RenderPaths && GetAStarPath(&Entity))
+    if(RenderState->RenderPaths && Entity.Type == Entity_Enemy)
         RenderAStarPath(RenderState,&Entity,ProjectionMatrix,View);
 }
 
