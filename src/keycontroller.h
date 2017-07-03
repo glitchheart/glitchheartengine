@@ -186,7 +186,7 @@ struct input_controller
     real64 ScrollX;
     real64 ScrollY;
     
-    real32 ControllerDeadzone = 0.1f;
+    real32 ControllerDeadzone = 0.2f;
     bool32 ControllerPresent;
     Controller_Type ControllerType;
     

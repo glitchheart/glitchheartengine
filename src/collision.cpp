@@ -149,7 +149,6 @@ void CheckWeaponCollision(game_state* GameState, entity_weapon* Entity, collisio
                     OtherEntity->HitTrigger.IsColliding = false;
                 }
             }
-            
         }
     }
 }
