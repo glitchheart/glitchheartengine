@@ -175,6 +175,8 @@ struct entity
             real32 DashSpeed;
             uint32 DashCount;
             
+            bool32 IsDefending;
+            
             real64 CurrentDashCooldownTime;
             real64 DashCooldown;
             

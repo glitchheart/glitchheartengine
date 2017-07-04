@@ -2,9 +2,9 @@ name swordsman_parry
 type sprite
 framecount 10
 framesize 34 28
-center 0.000000 0.000000
+center 0.35 0.000000
 loop 0
-timeperframe 0.070000
+timeperframe 0.040000
 frames
 0 0
 34 0

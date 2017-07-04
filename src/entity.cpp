@@ -758,12 +758,11 @@ static void SpawnWraith(game_state* GameState, glm::vec2 Position)
     PlayAnimation(Wraith, "wraith_idle", GameState);
     Wraith->Rotation = glm::vec3(0, 0, 0);
     Wraith->Position = Position;
-    Wraith->Scale = 1;
+    Wraith->Scale = 2;
     Wraith->Velocity = glm::vec2(-2,0);
     Wraith->Active = true;
     Wraith->IsKinematic = false;
     Wraith->Layer = Layer_Enemy;
-    //Enemy->IgnoreLayers = Layer_Enemy;
     
     collision_AABB CollisionAABB;
     Wraith->Center = glm::vec2(0.5, 0.5f);
@@ -883,7 +882,7 @@ static void SpawnBarrel(game_state* GameState, glm::vec2 Position)
     GameState->EntityCount++;
 }
 
-//@Incomplete: Maybe we will add a weapon type or damage amount
+// @Incomplete: Maybe we will add a weapon type or damage amount
 void Hit(game_state* GameState, entity* ByEntity, entity* HitEntity)
 {
     if(HitEntity->HitAttackCountId != ByEntity->AttackCount)
@@ -926,6 +925,18 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
     
     if (Entity->Active && Entity->Health > 0)
     {
+        if(GetActionButtonDown(Action_Defend, GameState))
+        {
+            Entity->Velocity = glm::vec2(0, 0);
+            Entity->Player.IsDefending = true;
+            PlayAnimation(Entity, "swordsman_parry", GameState);
+        }
+        
+        if(Entity->Player.IsDefending && !Entity->AnimationInfo.Playing)
+        {
+            Entity->Player.IsDefending = false;
+        }
+        
         if(!TimerDone(GameState, Entity->HitCooldownTimer))
         {
             PlayAnimation(Entity, "swordsman_hit", GameState);
@@ -933,7 +944,7 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
         }
         else
         {
-            if(!Entity->Player.IsDashing)
+            if(!Entity->Player.IsDashing && !Entity->Player.IsDefending)
             {
                 glm::vec2 Direction = UsingController ? glm::normalize(Entity->Velocity) : DirectionToMouse;
                 if(Direction.x == Direction.x && Direction.y == Direction.y && (Direction.x != 0 || Direction.y != 0))
@@ -1498,35 +1509,39 @@ void UpdateBlob(entity* Entity, game_state* GameState, real64 DeltaTime)
             Entity->Velocity = glm::vec2();
         }
     }
+    
     UpdateAI(Entity,GameState,DeltaTime);
     collision_info CollisionInfo;
     CheckCollision(GameState, Entity, &CollisionInfo);
     
-    if(Entity->Enemy.AIState == AI_Dying)
+    if(Entity->AnimationInfo.FrameIndex < 15)
     {
-        for(int32 Index = 0; Index < CollisionInfo.OtherCount; Index++)
+        if(Entity->Enemy.AIState == AI_Dying)
         {
-            auto Other = CollisionInfo.Other[Index];
-            if(Other->Type != Entity_Barrel)
+            for(int32 Index = 0; Index < CollisionInfo.OtherCount; Index++)
             {
-                Hit(GameState, Entity, CollisionInfo.Other[Index]);
+                auto Other = CollisionInfo.Other[Index];
+                if(Other->Type != Entity_Barrel)
+                {
+                    Hit(GameState, Entity, CollisionInfo.Other[Index]);
+                }
             }
         }
-    }
-    else if(!TimerDone(GameState, Entity->Enemy.Blob.PickupThrowTimer))
-    {
-        if(CollisionInfo.OtherCount > 0)
+        else if(!TimerDone(GameState, Entity->Enemy.Blob.PickupThrowTimer))
         {
-            Entity->Enemy.AIState = AI_Dying;
-            PlayAnimation(Entity, "explosion", GameState);
-            Entity->Health = 0;
-            Entity->Velocity = glm::vec2();
-            if(Entity->Enemy.Blob.InPickupMode)
+            if(CollisionInfo.OtherCount > 0)
             {
-                auto& Player = GameState->Entities[0];
-                Player.Player.Pickup = 0;
+                Entity->Enemy.AIState = AI_Dying;
+                PlayAnimation(Entity, "explosion", GameState);
+                Entity->Health = 0;
+                Entity->Velocity = glm::vec2();
+                if(Entity->Enemy.Blob.InPickupMode)
+                {
+                    auto& Player = GameState->Entities[0];
+                    Player.Player.Pickup = 0;
+                }
+                PlaySoundEffect(GameState, &GameState->SoundManager.Explosion);
             }
-            PlaySoundEffect(GameState, &GameState->SoundManager.Explosion);
         }
     }
     
