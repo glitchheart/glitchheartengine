@@ -21,7 +21,7 @@ struct tilemap
 {
     uint32 Width;
     uint32 Height;
-    uint32 TileSize;
+    uint32 TileSize = 16;
     tilemap_render_info RenderInfo;
     editor_render_info EditorRenderInfo;
     render_entity RenderEntity;

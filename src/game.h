@@ -46,7 +46,7 @@ struct camera
     
     bool32 FadingIn;
     real32 EndAlpha;
-    real32 FadingAlpha;
+    real32 FadingAlpha = 0.0f;
     real32 FadingSpeed;
 };
 
