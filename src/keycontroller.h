@@ -106,12 +106,14 @@ enum Controller_Code
 enum Action_Button
 {
     Action_Attack,
+    Action_Defend,
     Action_Dash,
     Action_Interact,
     Action_Target,
     Action_SwitchTarget,
     Action_Throw,
     Action_Count
+    
 };
 
 enum Stick
@@ -152,6 +154,7 @@ struct input_controller
     Controller_Code ActionButtonXboxControllerBindings[Action_Count] = 
     {
         Joystick_3,
+        Joystick_4,
         Joystick_1,
         Joystick_2,
         Joystick_5, // Left bumper
@@ -162,6 +165,7 @@ struct input_controller
     Controller_Code ActionButtonPS4ControllerBindings[Action_Count] = 
     {
         Joystick_1,
+        Joystick_4,
         Joystick_2,
         Joystick_1,
         Joystick_4
