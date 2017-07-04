@@ -156,7 +156,7 @@
                                 
                                 static void PlayAnimation(entity* Entity, char* AnimationName, game_state* GameState)
                                 {
-                                    if(!Entity->CurrentAnimation || !Entity->CurrentAnimation->Name || strcmp(Entity->CurrentAnimation->Name, AnimationName) != 0)
+                                    if(!Entity->CurrentAnimation || !Entity->CurrentAnimation->Name || strcmp(Entity->CurrentAnimation->Name, AnimationName) != 0 || !Entity->AnimationInfo.Playing)
                                     {
                                         if(GameState->Animations.find(AnimationName) != GameState->Animations.end())
                                         {

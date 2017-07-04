@@ -6,7 +6,7 @@ center 0 0.5
 scale 3
 health 3
 animation swordsman_idle
-hitcooldowntimer 0.2
+hitcooldowntimer 0.5
 collider 0 -1.5 0.3 0.15 0
 hashittrigger 1
 hittrigger 0 -0.2 0.65 1.2 1
@@ -15,7 +15,7 @@ walkingspeed 7.0
 throwingspeed 18.0
 crosshairradius 4
 targetingdistance 10
-attackcooldowntimer 0.4
+attackcooldowntimer 0.3
 lastattacktimer 1.0
 pickupcooldowntimer 0.36
 dashtimer 1.1

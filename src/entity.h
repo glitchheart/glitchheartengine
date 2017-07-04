@@ -132,6 +132,8 @@ struct entity
     int32 HitFlickerFrameMax = 6;
     timer* HitFlickerTimer;
     
+    timer* HitAttackCountIdResetTimer;
+    
     int32 Health = -1;
     
     int32 AttackCount;

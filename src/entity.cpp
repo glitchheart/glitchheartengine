@@ -53,6 +53,10 @@ static void LoadEntityData(FILE* File, entity* Entity, game_state* GameState, bo
         Entity->HitFlickerTimer = (timer*)malloc(sizeof(timer));
         Entity->HitFlickerTimer->TimerHandle = -1;
         Entity->HitFlickerTimer->TimerMax = 0.05f;
+        
+        Entity->HitAttackCountIdResetTimer = (timer*)malloc(sizeof(timer));
+        Entity->HitAttackCountIdResetTimer->TimerHandle = -1;
+        Entity->HitAttackCountIdResetTimer->TimerMax = 1.0f;
     }
     
     char LineBuffer[255];
@@ -252,8 +256,7 @@ AI_FUNC(SkeletonFollowing)
     
     real64 DistanceToPlayer = glm::distance(Entity->Position, Player.Position);
     
-    
-    if(Player.Active)
+    if(!Player.Dead && Player.Active)
     {
         if(DistanceToPlayer > Entity->Enemy.MaxFollowDistance)
         {
@@ -298,38 +301,46 @@ AI_FUNC(SkeletonAttacking)
     auto& Skeleton = Entity->Enemy.Skeleton;
     real64 DistanceToPlayer = glm::distance(Entity->Position, Player.Position);
     
-    if(Entity->AnimationInfo.FrameIndex >= 6 && Entity->AnimationInfo.FrameIndex < 14 && !Skeleton.IsAttacking && strcmp(Entity->CurrentAnimation->Name, "skeleton_idle") != 0)
+    if(Player.Dead)
     {
-        Skeleton.IsAttacking = true;
-        
-        Entity->AttackCount++;
-        if(Entity->AttackCount == 3)
-            Entity->AttackCount = 0;
-        
-        StartTimer(GameState, Skeleton.AttackCooldownTimer);
+        Skeleton.IsAttacking = false;
+        Enemy.AIState = AI_Idle;
     }
-    else if(!Entity->AnimationInfo.Playing)
+    else
     {
-        PlayAnimation(Entity, "skeleton_idle", GameState);
-    }
-    
-    if(Skeleton.IsAttacking && TimerDone(GameState, Skeleton.AttackCooldownTimer))
-    {
-        if(DistanceToPlayer > Entity->Enemy.MinDistanceToPlayer)
+        if(Entity->AnimationInfo.FrameIndex >= 6 && Entity->AnimationInfo.FrameIndex < 14 && !Skeleton.IsAttacking && strcmp(Entity->CurrentAnimation->Name, "skeleton_idle") != 0)
         {
-            Skeleton.IsAttacking = false;
-            Enemy.AIState = AI_Following;
+            Skeleton.IsAttacking = true;
+            
+            Entity->AttackCount++;
+            if(Entity->AttackCount == 3)
+                Entity->AttackCount = 0;
+            
+            StartTimer(GameState, Skeleton.AttackCooldownTimer);
         }
-        else if(DistanceToPlayer > Entity->Enemy.MaxAlertDistance)
+        else if(!Entity->AnimationInfo.Playing)
         {
-            Skeleton.IsAttacking = false;
-            Enemy.AIState = AI_Idle;
+            PlayAnimation(Entity, "skeleton_idle", GameState);
         }
-        else
+        
+        if(Skeleton.IsAttacking && TimerDone(GameState, Skeleton.AttackCooldownTimer))
         {
-            Skeleton.IsAttacking = false;
-            Entity->Enemy.AIState = AI_Charging;
-            StartTimer(GameState, Skeleton.ChargingTimer);
+            if(DistanceToPlayer > Entity->Enemy.MinDistanceToPlayer)
+            {
+                Skeleton.IsAttacking = false;
+                Enemy.AIState = AI_Following;
+            }
+            else if(DistanceToPlayer > Entity->Enemy.MaxAlertDistance)
+            {
+                Skeleton.IsAttacking = false;
+                Enemy.AIState = AI_Idle;
+            }
+            else
+            {
+                Skeleton.IsAttacking = false;
+                Entity->Enemy.AIState = AI_Charging;
+                StartTimer(GameState, Skeleton.ChargingTimer);
+            }
         }
     }
 }
@@ -886,7 +897,9 @@ void Hit(game_state* GameState, entity* ByEntity, entity* HitEntity)
         HitEntity->Hit = true;
         HitEntity->HitAttackCountId = ByEntity->AttackCount;
         HitEntity->HitFlickerFramesLeft = HitEntity->HitFlickerFrameMax;
+        
         StartTimer(GameState, HitEntity->HitFlickerTimer);
+        StartTimer(GameState, HitEntity->HitAttackCountIdResetTimer);
         
         if(HitEntity->Type == Entity_Player)
         {
@@ -915,6 +928,7 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
     {
         if(!TimerDone(GameState, Entity->HitCooldownTimer))
         {
+            PlayAnimation(Entity, "swordsman_hit", GameState);
             Entity->Velocity = glm::vec2(Entity->HitRecoilDirection.x * Entity->HitRecoilSpeed * DeltaTime, Entity->HitRecoilDirection.y * Entity->HitRecoilSpeed * DeltaTime);
         }
         else
@@ -1298,16 +1312,17 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
         
         GameState->GameCamera.CenterTarget = glm::vec2(Entity->Position.x, Entity->Position.y);
     }
-    else
+    else if(!Entity->Dead)
     {
         Entity->Dead = true;
         PlayAnimation(Entity, "swordsman_death", GameState);
+        Entity->AnimationInfo.FreezeFrame = true;
     }
     
-    if(Entity->Dead && !Entity->AnimationInfo.Playing)
-    {
-        Entity->Active = false;
-    }
+    //if(Entity->Dead && !Entity->AnimationInfo.Playing)
+    //{
+    //Entity->Active = false;
+    //}
     
     auto& DustCloud = GameState->Entities[Entity->Player.DustCloudHandle];
     DustCloud.Position = Entity->Position;
@@ -1399,7 +1414,7 @@ void UpdateWeapon(entity* Entity, game_state* GameState, real64 DeltaTime)
     {
         for(int32 Index = 0; Index < CollisionInfo.OtherCount; Index++)
         {
-            if((Entity->Type == Entity_Player && CollisionInfo.Other[Index]->Type == Entity_Enemy && CollisionInfo.Other[Index]->Enemy.AIState != AI_Hit && CollisionInfo.Other[Index]->Enemy.AIState != AI_Dying && !CollisionInfo.Other[Index]->Hit) ||
+            if((Entity->Type == Entity_Player && CollisionInfo.Other[Index]->Type == Entity_Enemy && CollisionInfo.Other[Index]->Enemy.AIState != AI_Hit && CollisionInfo.Other[Index]->Enemy.AIState != AI_Dying) ||
                (Entity->Type == Entity_Enemy && CollisionInfo.Other[Index]->Type == Entity_Player && !CollisionInfo.Other[Index]->Player.IsDashing && !CollisionInfo.Other[Index]->Hit && TimerDone(GameState, CollisionInfo.Other[Index]->HitCooldownTimer)))
             {
                 Hit(GameState, Entity, CollisionInfo.Other[Index]);
@@ -1548,14 +1563,11 @@ void UpdateSkeleton(entity* Entity, game_state* GameState, real64 DeltaTime)
         
         Entity->Velocity = glm::vec2(0,0);
         
-        real64 DistanceToPlayer = glm::distance(Entity->Position, Player.Position);
         UpdateAI(Entity,GameState,DeltaTime);
         
         Entity->Position.x += Entity->Velocity.x * (real32)DeltaTime;
         Entity->Position.y += Entity->Velocity.y * (real32)DeltaTime;
         
-        //if(Entity->Enemy.AIState != AI_Attacking)
-        //{
         glm::vec2 Direction = glm::normalize(Player.Position - Entity->Position);
         
         if(Abs(Direction.x) < 0.4f)
@@ -1678,6 +1690,14 @@ void UpdateGeneral(entity* Entity, game_state* GameState, real64 DeltaTime)
         else if(Entity->HitFlickerFramesLeft == 0)
         {
             RenderEntity.Color = glm::vec4(1, 1, 1, 1);
+        }
+    }
+    
+    if(Entity->HitAttackCountIdResetTimer)
+    {
+        if(TimerDone(GameState, Entity->HitAttackCountIdResetTimer))
+        {
+            Entity->HitAttackCountId = -1;
         }
     }
 }
