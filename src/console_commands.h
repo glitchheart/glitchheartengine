@@ -52,10 +52,10 @@ static char* LoadLevel(game_state* GameState, char** Arguments)
             free(GameState->CurrentLevel.Tilemap.Data);
             
             GameState->CurrentLevel = {};
-            
+            /*
             for(int32 Index = 0; Index < GameState->EntityCount; Index++)
                 GameState->Entities[Index] = {};
-            
+            */
             for(int32 Index = 0; Index < GameState->RenderState.RenderEntityCount; Index++)
                 GameState->RenderState.RenderEntities[Index] = {};
             
@@ -94,7 +94,7 @@ static void ReloadCurrentLevel(game_state* GameState)
     free(GameState->CurrentLevel.Tilemap.Data);
     
     for(int32 Index = 0; Index < GameState->EntityCount; Index++)
-        GameState->Entities[Index] = {};
+        //GameState->Entities[Index] = {};
     
     for(int32 Index = 0; Index < GameState->RenderState.RenderEntityCount; Index++)
         GameState->RenderState.RenderEntities[Index] = {};
