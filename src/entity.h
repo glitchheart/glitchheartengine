@@ -102,12 +102,12 @@ struct entity
     char* Name;
     uint32 EntityIndex;
     glm::vec2 Position;
-    glm::vec2 Center = glm::vec2(0.5, 0.5);
+    glm::vec2 Center;
     glm::vec3 Rotation;;
     real32 Scale;
     bool32 IsFlipped;
     
-    Look_Direction LookDirection = Down;
+    Look_Direction LookDirection;
     Entity_Layer Layer;
     Entity_Layer IgnoreLayers;
     
@@ -126,18 +126,18 @@ struct entity
     bool32 HasHitTrigger;
     collision_AABB HitTrigger;
     
-    bool32 Hit = false;
+    bool32 Hit;
     
-    int32 HitFlickerFramesLeft = 0;
-    int32 HitFlickerFrameMax = 6;
+    int32 HitFlickerFramesLeft;
+    int32 HitFlickerFrameMax;
     timer* HitFlickerTimer;
     
     timer* HitAttackCountIdResetTimer;
     
-    int32 Health = -1;
+    int32 Health;
     
     int32 AttackCount;
-    int32 HitAttackCountId = -1;
+    int32 HitAttackCountId;
     
     timer* RecoilTimer;
     timer* HitCooldownTimer;
@@ -216,6 +216,7 @@ struct entity
             AIFunction Attacking;
             AIFunction Hit;
             AIFunction Dying;
+            animation Dix;
             AIFunction Wandering;
             
             union
