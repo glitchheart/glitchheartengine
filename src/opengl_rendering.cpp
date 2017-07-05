@@ -1251,44 +1251,19 @@ static void RenderAnimationPreview(render_state* RenderState, const animation_in
 static void RenderHealthbar(render_state* RenderState,
                             entity* Entity, const entity_healthbar& Healthbar, glm::mat4 ProjectionMatrix, glm::mat4 ViewMatrix)
 {
-    glm::mat4 Model(1.0f);
+    RenderRect(Render_Fill, RenderState, glm::vec4(0.6, 0, 0, 1), Entity->Position.x + Healthbar.Offset.x, Entity->Position.y + Healthbar.Offset.y, 1.0f
+               / (real32)Entity->FullHealth * (real32)Entity->Health , 0.1f, 0, false, ProjectionMatrix, ViewMatrix);
     
-    Model = glm::translate(Model, glm::vec3(Entity->Position.x + Healthbar.Offset.x, Entity->Position.y + Healthbar.Offset.y, 0.0f));
-    Model = glm::scale(Model, glm::vec3(Healthbar.Scale.x, Healthbar.Scale.y, 0));
-    
-    if (RenderState->BoundTexture != Healthbar.RenderInfo.Texture->TextureHandle)
+    if(Entity->HealthLost > 0)
     {
-        glBindTexture(GL_TEXTURE_2D, Healthbar.RenderInfo.Texture->TextureHandle);
-        RenderState->BoundTexture = Healthbar.RenderInfo.Texture->TextureHandle;
+        real32 StartX = Entity->Position.x + Healthbar.Offset.x + 1.0f
+            / (real32)Entity->FullHealth * (real32)Entity->Health;
+        real32 Width = 1.0f
+            / (real32)Entity->FullHealth * (real32)Entity->HealthLost;
+        
+        RenderRect(Render_Fill, RenderState, glm::vec4(1, 1, 1, 1), StartX, Entity->Position.y + Healthbar.Offset.y, Width, 0.1f, 0, false, ProjectionMatrix, ViewMatrix);
+        
     }
-    
-    shader Shader = RenderState->SpritesheetShader;
-    
-    if(Shader.Program == 0)
-    {
-        Shader = RenderState->ErrorShaderSprite;
-        glBindVertexArray(RenderState->SpriteErrorVAO);
-    }
-    else
-    {
-        glBindVertexArray(RenderState->SpriteSheetVAO);
-    }
-    
-    UseShader(&Shader);
-    
-    SetFloatUniform(Shader.Program, "isUI", 0);
-    SetVec2Uniform(Shader.Program,"textureOffset", glm::vec2(Healthbar.RenderInfo.FrameSize.x * Healthbar.CurrentFrame,0));
-    SetFloatUniform(Shader.Program, "frameWidth", Healthbar.RenderInfo.FrameSize.x);
-    SetFloatUniform(Shader.Program, "frameHeight",Healthbar.RenderInfo.FrameSize.y);
-    SetVec4Uniform(Shader.Program, "color", glm::vec4(1, 1, 1, 1));
-    SetVec2Uniform(Shader.Program,"sheetSize",
-                   glm::vec2(Healthbar.RenderInfo.Texture->Width, Healthbar.RenderInfo.Texture->Height));
-    
-    SetMat4Uniform(Shader.Program, "Projection", ProjectionMatrix);
-    SetMat4Uniform(Shader.Program, "View", ViewMatrix);
-    SetMat4Uniform(Shader.Program, "Model", Model);
-    glDrawArrays(GL_QUADS, 0, 4);
-    glBindVertexArray(0);
 }
 
 static void RenderEntity(render_state *RenderState, entity &Entity, glm::mat4 ProjectionMatrix, glm::mat4 View)
@@ -1396,7 +1371,7 @@ static void RenderEntity(render_state *RenderState, entity &Entity, glm::mat4 Pr
         glDrawArrays(GL_QUADS, 0, 4);
         glBindVertexArray(0);
         
-        if(Entity.Type == Entity_Enemy && Entity.Health < 4 && Entity.Health > 0)
+        if(Entity.Type == Entity_Enemy && Entity.Health < Entity.FullHealth && Entity.Health > 0)
         {
             RenderHealthbar(RenderState, &Entity, *Entity.Enemy.Healthbar, ProjectionMatrix, View);
         }
@@ -1599,7 +1574,21 @@ void RenderGame(game_state* GameState)
             
             if(!GameState->InputController.ControllerPresent)
             {
-                RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(1, 1, 1, 1), GameState->InputController.MouseX - 20, (real32)GameState->RenderState.WindowHeight - GameState->InputController.MouseY - 20, 40, 40, GameState->RenderState.Textures["cross"]->TextureHandle, true, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
+                RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(1, 1, 1, 1), GameState->InputController.MouseX - 20, (real32)GameState->RenderState.WindowHeight - GameState->InputController.MouseY - 20, 40, 40, 
+                           GameState->RenderState.Textures["cross"]->TextureHandle, true, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
+            }
+            
+            // Player UI
+            auto Player = GameState->Entities[0];
+            RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(0, 0, 0, 1), 48, GameState->RenderState.WindowHeight - 52, 404, 29);
+            RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(0.6f, 0, 0, 1), 50, GameState->RenderState.WindowHeight - 50, 400.0 / (real32)Player.FullHealth * (real32)Player.Health, 25);
+            
+            if(Player.HealthDecreaseTimer && !TimerDone(GameState, Player.HealthDecreaseTimer))
+            {
+                real32 StartX = 50 +  400.0 / (real32)Player.FullHealth * (real32)Player.Health;
+                real32 Width = 400.0 / (real32)Player.FullHealth * Player.HealthLost;
+                
+                RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(1, 1, 1, 1), StartX, GameState->RenderState.WindowHeight - 50, Width, 25);
             }
         }
         break;

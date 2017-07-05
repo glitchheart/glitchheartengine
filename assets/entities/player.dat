@@ -4,14 +4,18 @@ layer Layer_Player
 iskinematic 0
 center 0 0.5
 scale 3
-health 3
+health 150
 animation swordsman_idle
 hitcooldowntimer 0.5
 collider 0 -1.5 0.3 0.15 0
 hashittrigger 1
 hittrigger 0 -0.2 0.65 1.2 1
+weaponscale 2 2
+weaponcollider 0.2 0 1.1 1.2 1
+weaponinfo 20 up -1.0 1.5 1.5 0.8 down -1.0 -1.0 1.5 0.8 left -3.0 0.2 1.3 1.3 right 1.0 0.2 1.2 1.3
 #player
-walkingspeed 7.0
+healthdecreasetimer 0.8
+walkingspeed 5.0
 throwingspeed 18.0
 crosshairradius 4
 targetingdistance 10
@@ -24,7 +28,4 @@ dashcooldowntimer 0.8
 attackmovetimer 0.07
 attackmovespeed 15
 dashspeed 14
-weaponscale 2 2
-weaponcollider 0.2 0 1.1 1.2 1
-weaponinfo up -1.0 1.5 1.5 0.8 down -1.0 -1.0 1.5 0.8 left -3.0 0.2 1.3 1.3 right 1.0 0.2 1.2 1.3
 dustcloud scale 1 1 animation dust_brown

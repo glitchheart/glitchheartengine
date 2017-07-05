@@ -15,4 +15,9 @@ struct health_bar
     ui_render_info RenderInfo;
 };
 
+struct player_ui
+{
+    glm::vec2 ScreenPosition;
+};
+
 #endif

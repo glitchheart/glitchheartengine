@@ -116,55 +116,59 @@ bool32 GetActionButtonDown(Action_Button ActionButton, game_state* GameState)
 float GetInputX(game_state* GameState, Stick Stick = Stick_Left)
 {
     int32 Axis = Stick == Stick_Left ? 0 : 2;
-    if(GameState->InputController.ControllerPresent)
+    
+    real32 InputX = 0.0f;
+    
+    if(Abs(GameState->InputController.Axes[Axis]) < GameState->InputController.ControllerDeadzone)
+        InputX = 0;
+    else
+        InputX = GameState->InputController.Axes[Axis]; // Might be another axis index for other controllers
+    
+    if (GetKey(Key_A, GameState))
     {
-        if(Abs(GameState->InputController.Axes[Axis]) < GameState->InputController.ControllerDeadzone)
-            return 0;
-        return GameState->InputController.Axes[Axis]; // Might be another axis index for other controllers
+        InputX += -1;
+    }
+    else if (GetKey(Key_D, GameState))
+    {
+        InputX += 1;
     }
     else
-    {
-        if (GetKey(Key_A, GameState))
-        {
-            return -1;
-        }
-        else if (GetKey(Key_D, GameState))
-        {
-            return 1;
-        }
-        else
-            return 0;
-    }
+        InputX += 0;
+    
+    return InputX;
 }
 
 float GetInputY(game_state* GameState, Stick Stick = Stick_Left)
 {
     int32 Axis = Stick == Stick_Left ? 1 : 3;
-    if(GameState->InputController.ControllerPresent)
+    
+    real32 InputY = 0.0f;
+    
+    if(Abs(GameState->InputController.Axes[Axis]) < GameState->InputController.ControllerDeadzone)
     {
-        if(Abs(GameState->InputController.Axes[Axis]) < GameState->InputController.ControllerDeadzone)
-            return 0;
-        
-        switch(GameState->InputController.ControllerType)
-        {
-            case Controller_Xbox:
-            return GameState->InputController.Axes[Axis]; // Might be another axis index for other controllers
-            break;
-            case Controller_PS4:
-            return -1 * GameState->InputController.Axes[Axis]; // Might be another axis index for other controllers
-            break;
-        }
+        InputY = 0.0f;
     }
     else
     {
-        if (GetKey(Key_W, GameState))
+        switch(GameState->InputController.ControllerType)
         {
-            return 1;
-        }
-        else if (GetKey(Key_S, GameState))
-        {
-            return -1;
+            case Controller_Xbox:
+            InputY = GameState->InputController.Axes[Axis]; // Might be another axis index for other controllers
+            break;
+            case Controller_PS4:
+            InputY = -1 * GameState->InputController.Axes[Axis]; // Might be another axis index for other controllers
+            break;
         }
     }
-    return 0;
+    
+    if (GetKey(Key_W, GameState))
+    {
+        InputY += 1;
+    }
+    else if (GetKey(Key_S, GameState))
+    {
+        InputY += -1;
+    }
+    
+    return InputY;
 }

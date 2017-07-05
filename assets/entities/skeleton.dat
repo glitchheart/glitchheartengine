@@ -4,7 +4,7 @@ layer Layer_Enemy
 iskinematic 0
 center 0 0.5
 scale 2
-health 4
+health 50
 animation skeleton_idle
 hitcooldowntimer 0.2
 collider 0 -1.2 0.3 0.15 0
@@ -12,9 +12,12 @@ hashittrigger 1
 hittrigger 0 -0.4 0.8 0.9 1
 hitrecoilspeed 10
 recoiltimer 0.2
+weaponscale 2 2
+weaponcollider 0.7 0 0.5 1.0 1
+weaponinfo 20 up -1.0 1.5 1.0 0.5 down -1.0 -1.0 1.0 0.5 left -2.0 0.2 0.5 1.0 right 0 0.2 0.5 1.0
 #enemy
 enemytype 1
-walkingspeed 6.5
+walkingspeed 5
 istargeted 0
 targetingposition -0.5 2
 maxalertdistance 10
@@ -22,8 +25,6 @@ maxfollowdistance 15
 mindistancetoplayer 2
 aistate 0
 astarcooldowntimer 0.6
-weaponscale 2 2
-weaponcollider 0.7 0 0.5 1.0 1
 healthbar offset -0.5 2.2 scale 1.0 0.25
 #skeleton
 attackcooldowntimer 0.3

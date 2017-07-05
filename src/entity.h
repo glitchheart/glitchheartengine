@@ -45,6 +45,7 @@ enum Look_Direction
 
 struct entity_weapon
 {
+    int32 Damage;
     collision_AABB CollisionAABB;
     glm::vec2 Center = glm::vec2(0.5, 0.5);
     glm::vec3 Rotation;
@@ -78,22 +79,16 @@ Entity->Enemy.Dying = & ## entityname ## Dying;
 
 struct weapon_collider_info
 {
-    real32 OffsetUpX;
-    real32 OffsetUpY;
-    real32 ExtentsUpX;
-    real32 ExtentsUpY;
-    real32 OffsetDownX;
-    real32 OffsetDownY;
-    real32 ExtentsDownX;
-    real32 ExtentsDownY;
-    real32 OffsetLeftX;
-    real32 OffsetLeftY;
-    real32 ExtentsLeftX;
-    real32 ExtentsLeftY;
-    real32 OffsetRightX;
-    real32 OffsetRightY;
-    real32 ExtentsRightX;
-    real32 ExtentsRightY;
+    glm::vec2 OffsetUp;
+    glm::vec2 ExtentsUp;
+    glm::vec2 OffsetDown;
+    glm::vec2 ExtentsDown;
+    glm::vec2 OffsetLeft;
+    glm::vec2 ExtentsLeft;
+    glm::vec2 OffsetRight;
+    glm::vec2 ExtentsRight;
+    
+    weapon_collider_info() {}
 };
 
 struct entity
@@ -134,7 +129,10 @@ struct entity
     
     timer* HitAttackCountIdResetTimer;
     
+    int32 FullHealth;
     int32 Health = -1;
+    int32 HealthLost;
+    timer* HealthDecreaseTimer;
     
     int32 AttackCount;
     int32 HitAttackCountId = -1;
@@ -146,12 +144,12 @@ struct entity
     
     bool32 HasWeapon;
     entity_weapon Weapon;
+    weapon_collider_info WeaponColliderInfo;
     
     union
     {
         struct
         {
-            weapon_collider_info WeaponColliderInfo;
             bool32 IsAttacking;
             
             timer* AttackCooldownTimer;
@@ -235,7 +233,6 @@ struct entity
                     bool32 IsAttacking;
                     timer* AttackCooldownTimer;
                     timer* ChargingTimer;
-                    
                 } Skeleton;
                 struct
                 {
@@ -253,6 +250,8 @@ struct entity
     
     bool32 RenderButtonHint;
     glm::vec2 Velocity;
+    
+    entity(){}
 };
 
 #define NUM_ENTITIES 100
