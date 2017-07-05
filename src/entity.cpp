@@ -1098,7 +1098,7 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
             
             if(!Entity->Player.Pickup && !Entity->Player.IsAttacking  && TimerDone(GameState, Entity->Player.DashTimer) && GetActionButtonDown(Action_Dash, GameState))
             {
-                PlaySoundEffect(GameState, &GameState->SoundManager.Slide01);
+                PlaySoundEffect(GameState, &GameState->SoundManager.Dash);
                 Entity->Player.DashCount++;
                 
                 if(Entity->Player.DashCount < 4)
@@ -1109,6 +1109,7 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
                     Entity->Player.DashDirectionY = Entity->Player.LastKnownDirectionY; 
                     StartTimer(GameState, Entity->Player.DashTimer);
                     StartTimer(GameState, Entity->Player.DashCooldownTimer);
+                    PlayAnimation(Entity, "swordsman_roll", GameState);
                 }
             }
             
