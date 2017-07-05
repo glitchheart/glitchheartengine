@@ -592,9 +592,8 @@ extern "C" UPDATE(Update)
         GameState->GameCamera.Zoom = 2.5f;
         GameState->GameCamera.ViewportWidth = GameState->RenderState.WindowWidth / 20;
         GameState->GameCamera.ViewportHeight = GameState->RenderState.WindowHeight / 20;
-        GameState->GameCamera.ScreenShakeTimer = (timer*)malloc(sizeof(timer));
-        GameState->GameCamera.ScreenShakeTimer->TimerHandle = -1;
-        GameState->GameCamera.ScreenShakeTimer->TimerMax = 0.2f;
+        GameState->GameCamera.ScreenShakeTimer.TimerHandle = -1;
+        GameState->GameCamera.ScreenShakeTimer.TimerMax = 0.2f;
         GameState->GameCamera.FollowSpeed = 12.0f; 
         GameState->GameCamera.FadingSpeed = 0.6f;
         StartFade(GameState->GameCamera, Fading_In, 0.6f, glm::vec3(0, 0, 0), 1.0f, 0.0f);

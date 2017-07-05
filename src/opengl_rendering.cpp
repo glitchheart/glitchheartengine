@@ -1583,7 +1583,7 @@ void RenderGame(game_state* GameState)
             RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(0, 0, 0, 1), 48, GameState->RenderState.WindowHeight - 52, 404, 29);
             RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(0.6f, 0, 0, 1), 50, GameState->RenderState.WindowHeight - 50, 400.0 / (real32)Player.FullHealth * (real32)Player.Health, 25);
             
-            if(Player.HealthDecreaseTimer && !TimerDone(GameState, Player.HealthDecreaseTimer))
+            if(!TimerDone(GameState, Player.HealthDecreaseTimer))
             {
                 real32 StartX = 50 +  400.0 / (real32)Player.FullHealth * (real32)Player.Health;
                 real32 Width = 400.0 / (real32)Player.FullHealth * Player.HealthLost;

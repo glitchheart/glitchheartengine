@@ -36,7 +36,7 @@ struct button
     glm::vec2 Size;
     glm::vec4 Color;
     glm::vec4 TextColor;
-    timer* ClickAnimationTimer;
+    timer ClickAnimationTimer;
     
     union
     {

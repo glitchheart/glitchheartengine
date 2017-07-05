@@ -39,7 +39,7 @@ struct camera
     real32 FollowSpeed;
     glm::mat4 ViewMatrix;
     glm::mat4 ProjectionMatrix;
-    timer* ScreenShakeTimer;
+    timer ScreenShakeTimer;
     
     Fading_Mode FadingMode = Fading_None;
     glm::vec3 FadingTint;
@@ -74,7 +74,7 @@ struct game_state
     bool32 ShouldReload;
     
     Player_State PlayerState = Player_Alive;
-    timer* DeathScreenTimer;
+    timer DeathScreenTimer;
     
     Game_Mode GameMode;
     main_menu MainMenu;
@@ -115,25 +115,25 @@ UPDATE(UpdateStub)
 {
 }
 
-void StartTimer(game_state* GameState, timer* Timer)
+void StartTimer(game_state* GameState, timer& Timer)
 {
-    Timer->TimerHandle = GameState->TimerCount;
-    GameState->Timers[Timer->TimerHandle] = Timer->TimerMax;
+    Timer.TimerHandle = GameState->TimerCount;
+    GameState->Timers[Timer.TimerHandle] = Timer.TimerMax;
     
     GameState->TimerCount++;
     if(GameState->TimerCount == NUM_TIMERS)
         GameState->TimerCount = 0;
 }
 
-bool32 TimerDone(game_state* GameState, timer* Timer)
+bool32 TimerDone(game_state* GameState, timer& Timer)
 {
-    if(Timer->TimerHandle != -1 && 
-       GameState->Timers[Timer->TimerHandle] <= 0)
+    if(Timer.TimerHandle != -1 && 
+       GameState->Timers[Timer.TimerHandle] <= 0)
     {
-        Timer->TimerHandle = -1;
+        Timer.TimerHandle = -1;
     }
     
-    return Timer->TimerHandle == -1;
+    return Timer.TimerHandle == -1;
 }
 
 static void StartFade(camera& Camera, Fading_Mode Mode, real32 FadingSpeed, glm::vec3 FadingTint, real32 StartAlpha = 0, real32 EndAlpha = 0)
