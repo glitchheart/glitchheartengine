@@ -1304,9 +1304,9 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
     //Entity->Active = false;
     //}
     
-    auto& DustCloud = GameState->Entities[Entity->Player.DustCloudHandle];
-    DustCloud.Position = Entity->Position;
-    DustCloud.Active = Entity->Player.IsDashing;
+    //auto& DustCloud = GameState->Entities[Entity->Player.DustCloudHandle];
+    //DustCloud.Position = Entity->Position;
+    //DustCloud.Active = Entity->Player.IsDashing;
 }
 
 void UpdateWeapon(entity* Entity, game_state* GameState, real64 DeltaTime)
