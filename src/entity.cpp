@@ -57,6 +57,10 @@ static void LoadEntityData(FILE* File, entity* Entity, game_state* GameState, bo
         Entity->HitAttackCountIdResetTimer = (timer*)malloc(sizeof(timer));
         Entity->HitAttackCountIdResetTimer->TimerHandle = -1;
         Entity->HitAttackCountIdResetTimer->TimerMax = 1.0f;
+        
+        Entity->HealthDecreaseTimer = (timer*)malloc(sizeof(timer));
+        Entity->HealthDecreaseTimer->TimerMax = 0.8;
+        Entity->HealthDecreaseTimer->TimerHandle = -1;
     }
     
     char LineBuffer[255];
@@ -110,7 +114,8 @@ static void LoadEntityData(FILE* File, entity* Entity, game_state* GameState, bo
         }
         else if(StartsWith(&LineBuffer[0], "health"))
         {
-            sscanf(LineBuffer, "health %d", &Entity->Health);
+            sscanf(LineBuffer, "health %d", &Entity->FullHealth);
+            Entity->Health = Entity->FullHealth;
         }
         else if(StartsWith(&LineBuffer[0], "animation"))
         {
@@ -148,6 +153,35 @@ static void LoadEntityData(FILE* File, entity* Entity, game_state* GameState, bo
                 Entity->RecoilTimer = (timer*)malloc(sizeof(timer));
             Entity->RecoilTimer->TimerHandle = -1;
             sscanf(LineBuffer,"recoiltimer %lf",&Entity->RecoilTimer->TimerMax);
+        }
+        else if(StartsWith(&LineBuffer[0], "weaponscale"))
+        {
+            sscanf(LineBuffer, "weaponscale %f %f", &Entity->Weapon.Scale.x, &Entity->Weapon.Scale.y);
+        }
+        else if(StartsWith(&LineBuffer[0], "weaponcollider"))
+        {
+            sscanf(LineBuffer, "weaponcollider %f %f %f %f %d", &Entity->Weapon.CollisionAABB.Offset.x, &Entity->Weapon.CollisionAABB.Offset.y, &Entity->Weapon.CollisionAABB.Extents.x, &Entity->Weapon.CollisionAABB.Extents.y, &Entity->Weapon.CollisionAABB.IsTrigger);
+        }
+        else if(StartsWith(&LineBuffer[0], "weaponinfo"))
+        {
+            sscanf(LineBuffer, "weaponinfo %d up %f %f %f %f down %f %f %f %f left %f %f %f %f right %f %f %f %f", 
+                   &Entity->Weapon.Damage,
+                   &Entity->WeaponColliderInfo.OffsetUp.x, 
+                   &Entity->WeaponColliderInfo.OffsetUp.y, 
+                   &Entity->WeaponColliderInfo.ExtentsUp.x, 
+                   &Entity->WeaponColliderInfo.ExtentsUp.y, 
+                   &Entity->WeaponColliderInfo.OffsetDown.x, 
+                   &Entity->WeaponColliderInfo.OffsetDown.y, 
+                   &Entity->WeaponColliderInfo.ExtentsDown.x, 
+                   &Entity->WeaponColliderInfo.ExtentsDown.y, 
+                   &Entity->WeaponColliderInfo.OffsetLeft.x, 
+                   &Entity->WeaponColliderInfo.OffsetLeft.y, 
+                   &Entity->WeaponColliderInfo.ExtentsLeft.x, 
+                   &Entity->WeaponColliderInfo.ExtentsLeft.y, 
+                   &Entity->WeaponColliderInfo.OffsetRight.x, 
+                   &Entity->WeaponColliderInfo.OffsetRight.y, 
+                   &Entity->WeaponColliderInfo.ExtentsRight.x, 
+                   &Entity->WeaponColliderInfo.ExtentsRight.y);
         }
     }
 }
@@ -202,14 +236,6 @@ static void LoadEnemyData(FILE* File, entity* Entity, game_state* GameState)
                 Entity->Enemy.AStarPath.AStarCooldownTimer->TimerHandle = -1;
                 
                 sscanf(LineBuffer, "astarcooldowntimer %lf", &Entity->Enemy.AStarPath.AStarCooldownTimer->TimerMax);
-            }
-            else if(StartsWith(&LineBuffer[0], "weaponscale"))
-            {
-                sscanf(LineBuffer, "weaponscale %f %f", &Entity->Weapon.Scale.x, &Entity->Weapon.Scale.y);
-            }
-            else if(StartsWith(&LineBuffer[0], "weaponcollider"))
-            {
-                sscanf(LineBuffer, "weaponcollider %f %f %f %f %d", &Entity->Weapon.CollisionAABB.Offset.x, &Entity->Weapon.CollisionAABB.Offset.y, &Entity->Weapon.CollisionAABB.Extents.x, &Entity->Weapon.CollisionAABB.Extents.y, &Entity->Weapon.CollisionAABB.IsTrigger);
             }
             else if(StartsWith(&LineBuffer[0], "healthbar"))
             {
@@ -622,8 +648,11 @@ static void LoadPlayerData(game_state* GameState, int32 Handle = -1, glm::vec2 P
             }
             else if(StartsWith(&LineBuffer[0], "attackcooldowntimer"))
             {
-                if(!Entity->Player.AttackCooldownTimer)
-                    Entity->Player.AttackCooldownTimer = (timer*)malloc(sizeof(timer));
+                if(Entity->Player.AttackCooldownTimer)
+                    free(Entity->Player.AttackCooldownTimer);
+                Entity->Player.AttackCooldownTimer = (timer*)malloc(sizeof(timer));
+                
+                Entity->Player.AttackCooldownTimer->TimerMax = 0;
                 sscanf(LineBuffer, "attackcooldowntimer %lf", &Entity->Player.AttackCooldownTimer->TimerMax);
                 Entity->Player.AttackCooldownTimer->TimerHandle = -1;
             }
@@ -669,34 +698,6 @@ static void LoadPlayerData(game_state* GameState, int32 Handle = -1, glm::vec2 P
             else if(StartsWith(&LineBuffer[0], "dashspeed"))
             {
                 sscanf(LineBuffer, "dashspeed %f", &Entity->Player.DashSpeed);
-            }
-            else if(StartsWith(&LineBuffer[0], "weaponscale"))
-            {
-                sscanf(LineBuffer, "weaponscale %f %f", &Entity->Weapon.Scale.x, &Entity->Weapon.Scale.y);
-            }
-            else if(StartsWith(&LineBuffer[0], "weaponcollider"))
-            {
-                sscanf(LineBuffer, "weaponcollider %f %f %f %f %d", &Entity->Weapon.CollisionAABB.Offset.x, &Entity->Weapon.CollisionAABB.Offset.y, &Entity->Weapon.CollisionAABB.Extents.x, &Entity->Weapon.CollisionAABB.Extents.y, &Entity->Weapon.CollisionAABB.IsTrigger);
-            }
-            else if(StartsWith(&LineBuffer[0], "weaponinfo"))
-            {
-                sscanf(LineBuffer, "weaponinfo up %f %f %f %f down %f %f %f %f left %f %f %f %f right %f %f %f %f", 
-                       &Entity->Player.WeaponColliderInfo.OffsetUpX, 
-                       &Entity->Player.WeaponColliderInfo.OffsetUpY, 
-                       &Entity->Player.WeaponColliderInfo.ExtentsUpX, 
-                       &Entity->Player.WeaponColliderInfo.ExtentsUpY, 
-                       &Entity->Player.WeaponColliderInfo.OffsetDownX, 
-                       &Entity->Player.WeaponColliderInfo.OffsetDownY, 
-                       &Entity->Player.WeaponColliderInfo.ExtentsDownX, 
-                       &Entity->Player.WeaponColliderInfo.ExtentsDownY, 
-                       &Entity->Player.WeaponColliderInfo.OffsetLeftX, 
-                       &Entity->Player.WeaponColliderInfo.OffsetLeftY, 
-                       &Entity->Player.WeaponColliderInfo.ExtentsLeftX, 
-                       &Entity->Player.WeaponColliderInfo.ExtentsLeftY, 
-                       &Entity->Player.WeaponColliderInfo.OffsetRightX, 
-                       &Entity->Player.WeaponColliderInfo.OffsetRightY, 
-                       &Entity->Player.WeaponColliderInfo.ExtentsRightX, 
-                       &Entity->Player.WeaponColliderInfo.ExtentsRightY);
             }
             else if(StartsWith(&LineBuffer[0], "dustcloud"))
             {
@@ -882,7 +883,6 @@ static void SpawnBarrel(game_state* GameState, glm::vec2 Position)
     GameState->EntityCount++;
 }
 
-// @Incomplete: Maybe we will add a weapon type or damage amount
 void Hit(game_state* GameState, entity* ByEntity, entity* HitEntity)
 {
     if(HitEntity->HitAttackCountId != ByEntity->AttackCount)
@@ -891,11 +891,16 @@ void Hit(game_state* GameState, entity* ByEntity, entity* HitEntity)
         StartTimer(GameState, HitEntity->HitCooldownTimer);
         PlaySoundEffect(GameState, &GameState->SoundManager.SwordHit02);
         HitEntity->HitRecoilDirection = glm::normalize(HitEntity->Position - ByEntity->Position);
-        HitEntity->Health -= 1;
+        
+        int32 Damage = ByEntity->Weapon.Damage > HitEntity->Health ? HitEntity->Health : ByEntity->Weapon.Damage;
+        HitEntity->Health -= Damage;
         
         HitEntity->Hit = true;
         HitEntity->HitAttackCountId = ByEntity->AttackCount;
         HitEntity->HitFlickerFramesLeft = HitEntity->HitFlickerFrameMax;
+        
+        StartTimer(GameState, HitEntity->HealthDecreaseTimer);
+        HitEntity->HealthLost = Damage;
         
         StartTimer(GameState, HitEntity->HitFlickerTimer);
         StartTimer(GameState, HitEntity->HitAttackCountIdResetTimer);
@@ -1349,32 +1354,32 @@ void UpdateWeapon(entity* Entity, game_state* GameState, real64 DeltaTime)
         case Entity_Player:
         {
             IsAttacking = Entity->Player.IsAttacking;
-            auto WeaponColliderInfo = Entity->Player.WeaponColliderInfo;
+            auto WeaponColliderInfo = Entity->WeaponColliderInfo;
             
             switch(Entity->LookDirection)
             {
                 case Up:
                 {
-                    Entity->Weapon.CollisionAABB.Offset = glm::vec2(WeaponColliderInfo.OffsetUpX, WeaponColliderInfo.OffsetUpY);
-                    Entity->Weapon.CollisionAABB.Extents = glm::vec2(WeaponColliderInfo.ExtentsUpX, WeaponColliderInfo.ExtentsUpY);
+                    Entity->Weapon.CollisionAABB.Offset = glm::vec2(WeaponColliderInfo.OffsetUp.x, WeaponColliderInfo.OffsetUp.y);
+                    Entity->Weapon.CollisionAABB.Extents = glm::vec2(WeaponColliderInfo.ExtentsUp.x, WeaponColliderInfo.ExtentsUp.y);
                 }
                 break;
                 case Down:
                 {
-                    Entity->Weapon.CollisionAABB.Offset = glm::vec2(WeaponColliderInfo.OffsetDownX, WeaponColliderInfo.OffsetDownY);
-                    Entity->Weapon.CollisionAABB.Extents = glm::vec2(WeaponColliderInfo.ExtentsDownX, WeaponColliderInfo.ExtentsDownY);
+                    Entity->Weapon.CollisionAABB.Offset = glm::vec2(WeaponColliderInfo.OffsetDown.x, WeaponColliderInfo.OffsetDown.y);
+                    Entity->Weapon.CollisionAABB.Extents = glm::vec2(WeaponColliderInfo.ExtentsDown.x, WeaponColliderInfo.ExtentsDown.y);
                 }
                 break;
                 case Left:
                 {
-                    Entity->Weapon.CollisionAABB.Offset = glm::vec2(WeaponColliderInfo.OffsetLeftX, WeaponColliderInfo.OffsetLeftY);
-                    Entity->Weapon.CollisionAABB.Extents = glm::vec2(WeaponColliderInfo.ExtentsLeftX, WeaponColliderInfo.ExtentsLeftY);
+                    Entity->Weapon.CollisionAABB.Offset = glm::vec2(WeaponColliderInfo.OffsetLeft.x, WeaponColliderInfo.OffsetLeft.y);
+                    Entity->Weapon.CollisionAABB.Extents = glm::vec2(WeaponColliderInfo.ExtentsLeft.x, WeaponColliderInfo.ExtentsLeft.y);
                 }
                 break;
                 case Right:
                 {
-                    Entity->Weapon.CollisionAABB.Offset = glm::vec2(WeaponColliderInfo.OffsetRightX, WeaponColliderInfo.OffsetRightY);
-                    Entity->Weapon.CollisionAABB.Extents = glm::vec2(WeaponColliderInfo.ExtentsRightX, WeaponColliderInfo.ExtentsRightY);
+                    Entity->Weapon.CollisionAABB.Offset = glm::vec2(WeaponColliderInfo.OffsetRight.x, WeaponColliderInfo.OffsetRight.y);
+                    Entity->Weapon.CollisionAABB.Extents = glm::vec2(WeaponColliderInfo.ExtentsRight.x, WeaponColliderInfo.ExtentsRight.y);
                 }
                 break;
             }
@@ -1383,34 +1388,34 @@ void UpdateWeapon(entity* Entity, game_state* GameState, real64 DeltaTime)
         case Entity_Enemy:
         {
             IsAttacking = Entity->Enemy.Skeleton.IsAttacking;
+            auto WeaponColliderInfo = Entity->WeaponColliderInfo;
             
             switch(Entity->LookDirection)
             {
                 case Up:
                 {
-                    Entity->Weapon.CollisionAABB.Offset = glm::vec2(-1.0f, 1.5f);
-                    Entity->Weapon.CollisionAABB.Extents = glm::vec2(1.0f, 0.5f);
+                    Entity->Weapon.CollisionAABB.Offset = glm::vec2(WeaponColliderInfo.OffsetUp.x, WeaponColliderInfo.OffsetUp.y);
+                    Entity->Weapon.CollisionAABB.Extents = glm::vec2(WeaponColliderInfo.ExtentsUp.x, WeaponColliderInfo.ExtentsUp.y);
                 }
                 break;
                 case Down:
                 {
-                    Entity->Weapon.CollisionAABB.Offset = glm::vec2(-1.0f, -1.0f);
-                    Entity->Weapon.CollisionAABB.Extents = glm::vec2(1.0f, 0.5f);
+                    Entity->Weapon.CollisionAABB.Offset = glm::vec2(WeaponColliderInfo.OffsetDown.x, WeaponColliderInfo.OffsetDown.y);
+                    Entity->Weapon.CollisionAABB.Extents = glm::vec2(WeaponColliderInfo.ExtentsDown.x, WeaponColliderInfo.ExtentsDown.y);
                 }
                 break;
                 case Left:
                 {
-                    Entity->Weapon.CollisionAABB.Offset = glm::vec2(-2.0f, 0.2f);
-                    Entity->Weapon.CollisionAABB.Extents = glm::vec2(0.5f, 1.0f);
+                    Entity->Weapon.CollisionAABB.Offset = glm::vec2(WeaponColliderInfo.OffsetLeft.x, WeaponColliderInfo.OffsetLeft.y);
+                    Entity->Weapon.CollisionAABB.Extents = glm::vec2(WeaponColliderInfo.ExtentsLeft.x, WeaponColliderInfo.ExtentsLeft.y);
                 }
                 break;
                 case Right:
                 {
-                    Entity->Weapon.CollisionAABB.Offset = glm::vec2(0, 0.2f);
-                    Entity->Weapon.CollisionAABB.Extents = glm::vec2(0.5f, 1.0f);
+                    Entity->Weapon.CollisionAABB.Offset = glm::vec2(WeaponColliderInfo.OffsetRight.x, WeaponColliderInfo.OffsetRight.y);
+                    Entity->Weapon.CollisionAABB.Extents = glm::vec2(WeaponColliderInfo.ExtentsRight.x, WeaponColliderInfo.ExtentsRight.y);
                 }
                 break;
-                
             }
         }
         break;
@@ -1561,7 +1566,7 @@ void UpdateSkeleton(entity* Entity, game_state* GameState, real64 DeltaTime)
         
         if(Entity->Hit)
         {
-            if(Entity->Health == 0)
+            if(Entity->Health <= 0)
             {
                 PlayAnimation(Entity, "skeleton_dead", GameState);
                 Entity->AnimationInfo.FreezeFrame = true;
@@ -1715,6 +1720,9 @@ void UpdateGeneral(entity* Entity, game_state* GameState, real64 DeltaTime)
             Entity->HitAttackCountId = -1;
         }
     }
+    
+    if(Entity->HealthDecreaseTimer && TimerDone(GameState, Entity->HealthDecreaseTimer))
+        Entity->HealthLost = 0;
 }
 
 void UpdateEntities(game_state* GameState, real64 DeltaTime)

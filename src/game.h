@@ -93,6 +93,7 @@ struct game_state
     uint16 EntityCount;
     entity Entities[NUM_ENTITIES];
     
+    player_ui PlayerUI;
     health_bar HealthBar;
     
     uint32 TimerCount;
@@ -134,7 +135,6 @@ bool32 TimerDone(game_state* GameState, timer* Timer)
     
     return Timer->TimerHandle == -1;
 }
-
 
 static void StartFade(camera& Camera, Fading_Mode Mode, real32 FadingSpeed, glm::vec3 FadingTint, real32 StartAlpha = 0, real32 EndAlpha = 0)
 {
