@@ -107,42 +107,42 @@ struct entity
     Entity_Layer IgnoreLayers;
     
     animation_info AnimationInfo;
-    animation* CurrentAnimation;
+    animation* CurrentAnimation = 0;
     
     uint32 RenderEntityHandle;
     
-    bool32 Active;
-    bool32 Dead;
+    bool32 Active = true;
+    bool32 Dead = false;
     collision_AABB CollisionAABB;
-    bool32 IsKinematic;
-    bool32 IsColliding;
-    bool32 IsStatic; // For stuff that can't be moved by collision
-    bool32 IsPickup;
-    bool32 HasHitTrigger;
+    bool32 IsKinematic = false;
+    bool32 IsColliding = false;
+    bool32 IsStatic = false; // For stuff that can't be moved by collision
+    bool32 IsPickup = false;
+    bool32 HasHitTrigger = false;
     collision_AABB HitTrigger;
     
     bool32 Hit = false;
     
     int32 HitFlickerFramesLeft = 0;
     int32 HitFlickerFrameMax = 6;
-    timer* HitFlickerTimer;
+    timer HitFlickerTimer;
     
-    timer* HitAttackCountIdResetTimer;
+    timer HitAttackCountIdResetTimer;
     
     int32 FullHealth;
     int32 Health = -1;
     int32 HealthLost;
-    timer* HealthDecreaseTimer;
+    timer HealthDecreaseTimer;
     
     int32 AttackCount;
     int32 HitAttackCountId = -1;
     
-    timer* RecoilTimer;
-    timer* HitCooldownTimer;
+    timer RecoilTimer;
+    timer HitCooldownTimer;
     real32 HitRecoilSpeed;
     glm::vec2 HitRecoilDirection;
     
-    bool32 HasWeapon;
+    bool32 HasWeapon = false;
     entity_weapon Weapon;
     weapon_collider_info WeaponColliderInfo;
     
@@ -150,20 +150,20 @@ struct entity
     {
         struct
         {
-            bool32 IsAttacking;
+            bool32 IsAttacking = false;
             
-            timer* AttackCooldownTimer;
-            timer* LastAttackTimer;
-            timer* DashTimer;
-            timer* DashCooldownTimer;
-            timer* PickupCooldownTimer;
+            timer AttackCooldownTimer;
+            timer LastAttackTimer;
+            timer DashTimer;
+            timer DashCooldownTimer;
+            timer PickupCooldownTimer;
             
             real32 AttackMoveSpeed;
-            timer* AttackMoveTimer;
+            timer AttackMoveTimer;
             real64 CurrentAttackCooldownTime;
             real64 AttackCooldown;
             
-            bool32 IsDashing;
+            bool32 IsDashing = false;
             real32 DashCounterDivider;
             real64 CurrentDashTime;
             real64 MaxDashTime;
@@ -173,13 +173,13 @@ struct entity
             real32 DashSpeed;
             uint32 DashCount;
             
-            bool32 IsDefending;
+            bool32 IsDefending = false;
             
             real64 CurrentDashCooldownTime;
             real64 DashCooldown;
             
             real32 WalkingSpeed;
-            entity* Pickup;
+            entity* Pickup = 0;
             bool32 RenderCrosshair;
             real32 CrosshairRadius;
             real32 CrosshairPositionX;
@@ -197,10 +197,10 @@ struct entity
         struct
         {
             Enemy_Type EnemyType;
-            entity_healthbar* Healthbar;
+            entity_healthbar* Healthbar = 0;
             AI_State AIState;
             astar_path AStarPath;
-            bool32 IsTargeted;
+            bool32 IsTargeted = false;
             real32 TargetingPositionX;
             real32 TargetingPositionY;
             real32 MinDistanceToPlayer;
@@ -222,33 +222,33 @@ struct entity
                 {
                     real32 ExplosionCollisionExtentsX;
                     real32 ExplosionCollisionExtentsY;
-                    timer* ExplodeStartTimer;
-                    timer* ExplodeCountdownTimer;
+                    timer ExplodeStartTimer;
+                    timer ExplodeCountdownTimer;
                     
-                    bool32 InPickupMode;
-                    timer* PickupThrowTimer;
+                    bool32 InPickupMode = false;
+                    timer PickupThrowTimer;
                 } Blob;
                 struct
                 {
-                    bool32 IsAttacking;
-                    timer* AttackCooldownTimer;
-                    timer* ChargingTimer;
+                    bool32 IsAttacking = false;
+                    timer AttackCooldownTimer;
+                    timer ChargingTimer;
                 } Skeleton;
                 struct
                 {
-                    bool32 IsAttacking;
-                    timer* AttackCooldownTimer;
-                    timer* ChargingTimer;
+                    bool32 IsAttacking = false;
+                    timer AttackCooldownTimer;
+                    timer ChargingTimer;
                 } Wraith;
             };
         } Enemy;
         struct
         {
-            timer* PickupThrowTimer;
+            timer PickupThrowTimer;
         } Pickup;
     };
     
-    bool32 RenderButtonHint;
+    bool32 RenderButtonHint = false;
     glm::vec2 Velocity;
     
     entity(){}

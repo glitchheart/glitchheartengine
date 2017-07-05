@@ -32,10 +32,11 @@ struct astar_working_data
 
 struct astar_path
 {
-    path_node* AStarPath;
-    uint32 AStarPathLength;
-    uint32 PathIndex;
-    timer* AStarCooldownTimer;
+    path_node* AStarPath = 0;
+    uint32 AStarPathLength = 0;
+    uint32 PathIndex = 0;
+    timer AStarCooldownTimer;
+    astar_path(){}
 };
 
 #endif

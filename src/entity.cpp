@@ -50,17 +50,19 @@ static void LoadEntityData(FILE* File, entity* Entity, game_state* GameState, bo
         Entity->RenderEntityHandle = GameState->RenderState.RenderEntityCount++;
         RenderEntity->Color = glm::vec4(1, 1, 1, 1);
         
-        Entity->HitFlickerTimer = (timer*)malloc(sizeof(timer));
-        Entity->HitFlickerTimer->TimerHandle = -1;
-        Entity->HitFlickerTimer->TimerMax = 0.05f;
+        Entity->HitFlickerTimer.TimerHandle = -1;
+        Entity->HitFlickerTimer.TimerMax = 0.05f;
         
-        Entity->HitAttackCountIdResetTimer = (timer*)malloc(sizeof(timer));
-        Entity->HitAttackCountIdResetTimer->TimerHandle = -1;
-        Entity->HitAttackCountIdResetTimer->TimerMax = 1.0f;
+        Entity->HitAttackCountIdResetTimer.TimerHandle = -1;
+        Entity->HitAttackCountIdResetTimer.TimerMax = 1.0f;
         
-        Entity->HealthDecreaseTimer = (timer*)malloc(sizeof(timer));
-        Entity->HealthDecreaseTimer->TimerMax = 0.8;
-        Entity->HealthDecreaseTimer->TimerHandle = -1;
+        Entity->HealthDecreaseTimer.TimerMax = 0.8;
+        Entity->HealthDecreaseTimer.TimerHandle = -1;
+    }
+    else
+    {
+        Entity->Dead = false;
+        Entity->Active = true;
     }
     
     char LineBuffer[255];
@@ -126,10 +128,8 @@ static void LoadEntityData(FILE* File, entity* Entity, game_state* GameState, bo
         }
         else if(StartsWith(&LineBuffer[0], "hitcooldowntimer"))
         {
-            if(!Entity->HitCooldownTimer)
-                Entity->HitCooldownTimer = (timer*)malloc(sizeof(timer));
-            sscanf(LineBuffer, "hitcooldowntimer %lf", &Entity->HitCooldownTimer->TimerMax);
-            Entity->HitCooldownTimer->TimerHandle = -1;
+            sscanf(LineBuffer, "hitcooldowntimer %lf", &Entity->HitCooldownTimer.TimerMax);
+            Entity->HitCooldownTimer.TimerHandle = -1;
         }
         else if(StartsWith(&LineBuffer[0], "collider"))
         {
@@ -149,10 +149,8 @@ static void LoadEntityData(FILE* File, entity* Entity, game_state* GameState, bo
         }
         else if(StartsWith(&LineBuffer[0], "recoiltimer"))
         {
-            if(!Entity->RecoilTimer)
-                Entity->RecoilTimer = (timer*)malloc(sizeof(timer));
-            Entity->RecoilTimer->TimerHandle = -1;
-            sscanf(LineBuffer,"recoiltimer %lf",&Entity->RecoilTimer->TimerMax);
+            Entity->RecoilTimer.TimerHandle = -1;
+            sscanf(LineBuffer,"recoiltimer %lf",&Entity->RecoilTimer.TimerMax);
         }
         else if(StartsWith(&LineBuffer[0], "weaponscale"))
         {
@@ -190,7 +188,7 @@ static void LoadEnemyData(FILE* File, entity* Entity, game_state* GameState)
 {
     Entity->Enemy.IsTargeted = false;
     Entity->Type = Entity_Enemy;
-    
+    Entity->Enemy.AStarPath = {};
     if(File)
     {
         char LineBuffer[255];
@@ -231,11 +229,9 @@ static void LoadEnemyData(FILE* File, entity* Entity, game_state* GameState)
             }
             else if(StartsWith(&LineBuffer[0], "astarcooldowntimer"))
             {
-                if(!Entity->Enemy.AStarPath.AStarCooldownTimer)
-                    Entity->Enemy.AStarPath.AStarCooldownTimer = (timer*)malloc(sizeof(timer));
-                Entity->Enemy.AStarPath.AStarCooldownTimer->TimerHandle = -1;
+                Entity->Enemy.AStarPath.AStarCooldownTimer.TimerHandle = -1;
                 
-                sscanf(LineBuffer, "astarcooldowntimer %lf", &Entity->Enemy.AStarPath.AStarCooldownTimer->TimerMax);
+                sscanf(LineBuffer, "astarcooldowntimer %lf", &Entity->Enemy.AStarPath.AStarCooldownTimer.TimerMax);
             }
             else if(StartsWith(&LineBuffer[0], "healthbar"))
             {
@@ -490,6 +486,8 @@ static void LoadSkeletonData(game_state* GameState, int32 Handle = -1, glm::vec2
     
     entity* Entity = Handle != -1 ? &GameState->Entities[Handle] : &GameState->Entities[GameState->EntityCount];
     
+    Entity->Enemy.Skeleton = {};
+    
     if(Handle == -1)
     {
         Entity->Position = Position;
@@ -510,19 +508,15 @@ static void LoadSkeletonData(game_state* GameState, int32 Handle = -1, glm::vec2
             }
             else if(StartsWith(&LineBuffer[0],"attackcooldowntimer"))
             {
-                if(!Entity->Enemy.Skeleton.AttackCooldownTimer)
-                    Entity->Enemy.Skeleton.AttackCooldownTimer = (timer*)malloc(sizeof(timer));
-                Entity->Enemy.Skeleton.AttackCooldownTimer->TimerHandle = -1;
+                Entity->Enemy.Skeleton.AttackCooldownTimer.TimerHandle = -1;
                 
-                sscanf(LineBuffer,"attackcooldowntimer %lf",&Entity->Enemy.Skeleton.AttackCooldownTimer->TimerMax);
+                sscanf(LineBuffer,"attackcooldowntimer %lf",&Entity->Enemy.Skeleton.AttackCooldownTimer.TimerMax);
             }
             else if(StartsWith(&LineBuffer[0],"chargingtimer"))
             {
-                if(!Entity->Enemy.Skeleton.ChargingTimer)
-                    Entity->Enemy.Skeleton.ChargingTimer = (timer*)malloc(sizeof(timer));
-                Entity->Enemy.Skeleton.ChargingTimer->TimerHandle = -1;
+                Entity->Enemy.Skeleton.ChargingTimer.TimerHandle = -1;
                 
-                sscanf(LineBuffer,"chargingtimer %lf",&Entity->Enemy.Skeleton.ChargingTimer->TimerMax);
+                sscanf(LineBuffer,"chargingtimer %lf",&Entity->Enemy.Skeleton.ChargingTimer.TimerMax);
             }
         }
         fclose(File);
@@ -561,34 +555,22 @@ static void LoadBlobData(game_state* GameState, int32 Handle = -1, glm::vec2 Pos
             }
             else if(StartsWith(&LineBuffer[0],"pickupthrowtimer"))
             {
-                if(!Entity->Enemy.Blob.PickupThrowTimer)
-                    Entity->Enemy.Blob.PickupThrowTimer = (timer*)malloc(sizeof(timer));
-                Entity->Enemy.Blob.PickupThrowTimer->TimerHandle = -1;
+                Entity->Enemy.Blob.PickupThrowTimer.TimerHandle = -1;
                 
-                sscanf(LineBuffer,"pickupthrowtimer %lf",&Entity->Enemy.Blob.PickupThrowTimer->TimerMax);
+                sscanf(LineBuffer,"pickupthrowtimer %lf",&Entity->Enemy.Blob.PickupThrowTimer.TimerMax);
             }
             else if(StartsWith(&LineBuffer[0],"explodestarttimer"))
             {
-                if(!Entity->Enemy.Blob.ExplodeStartTimer)
-                    Entity->Enemy.Blob.ExplodeStartTimer = (timer*)malloc(sizeof(timer));
-                Entity->Enemy.Blob.ExplodeStartTimer->TimerHandle = -1;
-                
-                sscanf(LineBuffer,"explodestarttimer %lf",&Entity->Enemy.Blob.ExplodeStartTimer->TimerMax);
+                Entity->Enemy.Blob.ExplodeStartTimer.TimerHandle = -1;
+                sscanf(LineBuffer,"explodestarttimer %lf",&Entity->Enemy.Blob.ExplodeStartTimer.TimerMax);
             }
             else if(StartsWith(&LineBuffer[0],"explodecountdowntimer"))
             {
-                if(!Entity->Enemy.Blob.ExplodeCountdownTimer)
-                    Entity->Enemy.Blob.ExplodeCountdownTimer = (timer*)malloc(sizeof(timer));
-                Entity->Enemy.Blob.ExplodeCountdownTimer->TimerHandle = -1;
-                
-                sscanf(LineBuffer,"explodecountdowntimer %lf",&Entity->Enemy.Blob.ExplodeCountdownTimer->TimerMax);
+                Entity->Enemy.Blob.ExplodeCountdownTimer.TimerHandle = -1;
+                sscanf(LineBuffer,"explodecountdowntimer %lf",&Entity->Enemy.Blob.ExplodeCountdownTimer.TimerMax);
             }
             else if(StartsWith(&LineBuffer[0],"explosioncollisionextents"))
             {
-                if(!Entity->Enemy.Blob.ExplodeCountdownTimer)
-                    Entity->Enemy.Blob.ExplodeCountdownTimer = (timer*)malloc(sizeof(timer));
-                Entity->Enemy.Blob.ExplodeCountdownTimer->TimerHandle = -1;
-                
                 sscanf(LineBuffer,"explosioncollisionextents %f %f",&Entity->Enemy.Blob.ExplosionCollisionExtentsX, &Entity->Enemy.Blob.ExplosionCollisionExtentsY);
             }
         }
@@ -612,6 +594,8 @@ static void LoadPlayerData(game_state* GameState, int32 Handle = -1, glm::vec2 P
     Entity->Player.TargetedEnemyHandle = -1;
     Entity->Player.LastKnownDirectionX = 1.0f;
     Entity->Player.LastKnownDirectionY = 0;
+    Entity->Player.Pickup = {};
+    Entity->Player = {};
     
     if(Handle == -1)
     {
@@ -620,6 +604,7 @@ static void LoadPlayerData(game_state* GameState, int32 Handle = -1, glm::vec2 P
     
     if(File)
     {
+        Entity->Dead = false;
         LoadEntityData(File, Entity, GameState, Handle != -1);
         
         char LineBuffer[255];
@@ -648,47 +633,34 @@ static void LoadPlayerData(game_state* GameState, int32 Handle = -1, glm::vec2 P
             }
             else if(StartsWith(&LineBuffer[0], "attackcooldowntimer"))
             {
-                if(!Entity->Player.AttackCooldownTimer)
-                    Entity->Player.AttackCooldownTimer = (timer*)malloc(sizeof(timer));
-                
-                Entity->Player.AttackCooldownTimer->TimerMax = 0;
-                sscanf(LineBuffer, "attackcooldowntimer %lf", &Entity->Player.AttackCooldownTimer->TimerMax);
-                Entity->Player.AttackCooldownTimer->TimerHandle = -1;
+                Entity->Player.AttackCooldownTimer.TimerMax = 0;
+                sscanf(LineBuffer, "attackcooldowntimer %lf", &Entity->Player.AttackCooldownTimer.TimerMax);
+                Entity->Player.AttackCooldownTimer.TimerHandle = -1;
             }
             else if(StartsWith(&LineBuffer[0], "lastattacktimer"))
             {
-                if(!Entity->Player.LastAttackTimer)
-                    Entity->Player.LastAttackTimer = (timer*)malloc(sizeof(timer));
-                sscanf(LineBuffer, "lastattacktimer %lf", &Entity->Player.LastAttackTimer->TimerMax);
-                Entity->Player.LastAttackTimer->TimerHandle = -1;
+                sscanf(LineBuffer, "lastattacktimer %lf", &Entity->Player.LastAttackTimer.TimerMax);
+                Entity->Player.LastAttackTimer.TimerHandle = -1;
             }
             else if(StartsWith(&LineBuffer[0], "pickupcooldowntimer"))
             {
-                if(!Entity->Player.PickupCooldownTimer)
-                    Entity->Player.PickupCooldownTimer = (timer*)malloc(sizeof(timer));
-                sscanf(LineBuffer, "pickupcooldowntimer %lf", &Entity->Player.PickupCooldownTimer->TimerMax);
-                Entity->Player.PickupCooldownTimer->TimerHandle = -1;
+                sscanf(LineBuffer, "pickupcooldowntimer %lf", &Entity->Player.PickupCooldownTimer.TimerMax);
+                Entity->Player.PickupCooldownTimer.TimerHandle = -1;
             }
             else if(StartsWith(&LineBuffer[0], "dashtimer"))
             {
-                if(!Entity->Player.DashTimer)
-                    Entity->Player.DashTimer = (timer*)malloc(sizeof(timer));
-                sscanf(LineBuffer, "dashtimer %lf", &Entity->Player.DashTimer->TimerMax);
-                Entity->Player.DashTimer->TimerHandle = -1;
+                sscanf(LineBuffer, "dashtimer %lf", &Entity->Player.DashTimer.TimerMax);
+                Entity->Player.DashTimer.TimerHandle = -1;
             }
             else if(StartsWith(&LineBuffer[0], "dashcooldowntimer"))
             {
-                if(!Entity->Player.DashCooldownTimer)
-                    Entity->Player.DashCooldownTimer = (timer*)malloc(sizeof(timer));
-                sscanf(LineBuffer, "dashcooldowntimer %lf", &Entity->Player.DashCooldownTimer->TimerMax);
-                Entity->Player.DashCooldownTimer->TimerHandle = -1;
+                sscanf(LineBuffer, "dashcooldowntimer %lf", &Entity->Player.DashCooldownTimer.TimerMax);
+                Entity->Player.DashCooldownTimer.TimerHandle = -1;
             }
             else if(StartsWith(&LineBuffer[0], "attackmovetimer"))
             {
-                if(!Entity->Player.AttackMoveTimer)
-                    Entity->Player.AttackMoveTimer = (timer*)malloc(sizeof(timer));
-                sscanf(LineBuffer, "attackmovetimer %lf", &Entity->Player.AttackMoveTimer->TimerMax);
-                Entity->Player.AttackMoveTimer->TimerHandle = -1;
+                sscanf(LineBuffer, "attackmovetimer %lf", &Entity->Player.AttackMoveTimer.TimerMax);
+                Entity->Player.AttackMoveTimer.TimerHandle = -1;
             }
             else if(StartsWith(&LineBuffer[0], "attackmovespeed"))
             {
@@ -786,29 +758,23 @@ static void SpawnWraith(game_state* GameState, glm::vec2 Position)
     Wraith->Enemy.MinDistanceToPlayer = 2;
     Wraith->Enemy.AIState = AI_Idle;
     
-    Wraith->Enemy.Wraith.AttackCooldownTimer = (timer*)malloc(sizeof(timer));
-    Wraith->Enemy.Wraith.AttackCooldownTimer->TimerHandle = -1;
-    Wraith->Enemy.Wraith.AttackCooldownTimer->TimerMax = 0.5;
+    Wraith->Enemy.Wraith.AttackCooldownTimer.TimerHandle = -1;
+    Wraith->Enemy.Wraith.AttackCooldownTimer.TimerMax = 0.5;
     
-    Wraith->Enemy.Wraith.ChargingTimer = (timer*)malloc(sizeof(timer));
-    Wraith->Enemy.Wraith.ChargingTimer->TimerHandle = -1;
-    Wraith->Enemy.Wraith.ChargingTimer->TimerMax = 0.2f;
+    Wraith->Enemy.Wraith.ChargingTimer.TimerHandle = -1;
+    Wraith->Enemy.Wraith.ChargingTimer.TimerMax = 0.2f;
     
-    Wraith->HitFlickerTimer = (timer*)malloc(sizeof(timer));
-    Wraith->HitFlickerTimer->TimerHandle = -1;
-    Wraith->HitFlickerTimer->TimerMax = 0.05f;
+    Wraith->HitFlickerTimer.TimerHandle = -1;
+    Wraith->HitFlickerTimer.TimerMax = 0.05f;
     
-    Wraith->Enemy.AStarPath.AStarCooldownTimer = (timer*)malloc(sizeof(timer));
-    Wraith->Enemy.AStarPath.AStarCooldownTimer->TimerHandle = -1;
-    Wraith->Enemy.AStarPath.AStarCooldownTimer->TimerMax = 0.6;
+    Wraith->Enemy.AStarPath.AStarCooldownTimer.TimerHandle = -1;
+    Wraith->Enemy.AStarPath.AStarCooldownTimer.TimerMax = 0.6;
     
-    Wraith->RecoilTimer = (timer*)malloc(sizeof(timer));
-    Wraith->RecoilTimer->TimerHandle = -1;
-    Wraith->RecoilTimer->TimerMax = 0.2;
+    Wraith->RecoilTimer.TimerHandle = -1;
+    Wraith->RecoilTimer.TimerMax = 0.2;
     
-    Wraith->HitCooldownTimer = (timer*)malloc(sizeof(timer));
-    Wraith->HitCooldownTimer->TimerHandle = -1;
-    Wraith->HitCooldownTimer->TimerMax = 0.4;
+    Wraith->HitCooldownTimer.TimerHandle = -1;
+    Wraith->HitCooldownTimer.TimerMax = 0.4;
     
     Wraith->Health = 4;
     
@@ -844,9 +810,8 @@ static void SpawnBarrel(game_state* GameState, glm::vec2 Position)
     Barrel->Layer = Layer_Environment;
     Barrel->IgnoreLayers = Layer_Environment;
     
-    Barrel->Pickup.PickupThrowTimer = (timer*)malloc(sizeof(timer));
-    Barrel->Pickup.PickupThrowTimer->TimerHandle = -1;
-    Barrel->Pickup.PickupThrowTimer->TimerMax = 1.5f;
+    Barrel->Pickup.PickupThrowTimer.TimerHandle = -1;
+    Barrel->Pickup.PickupThrowTimer.TimerMax = 1.5f;
     
     render_entity* BarrelRenderEntity = &GameState->RenderState.RenderEntities[GameState->RenderState.RenderEntityCount];
     
@@ -1691,36 +1656,31 @@ void UpdateGeneral(entity* Entity, game_state* GameState, real64 DeltaTime)
 {
     auto& RenderEntity = GameState->RenderState.RenderEntities[Entity->RenderEntityHandle];
     
-    if(Entity->HitFlickerTimer)
+    
+    if(Entity->HitFlickerFramesLeft > 0 && TimerDone(GameState, Entity->HitFlickerTimer))
     {
-        if(Entity->HitFlickerFramesLeft > 0 && TimerDone(GameState, Entity->HitFlickerTimer))
+        Entity->HitFlickerFramesLeft--;
+        
+        if(Entity->HitFlickerFramesLeft % 2 == 0)
         {
-            Entity->HitFlickerFramesLeft--;
-            
-            if(Entity->HitFlickerFramesLeft % 2 == 0)
-            {
-                RenderEntity.Color = glm::vec4(1, 0, 0, 1);
-            }
-            else
-                RenderEntity.Color = glm::vec4(1, 1, 1, 1);
-            
-            StartTimer(GameState, Entity->HitFlickerTimer);
+            RenderEntity.Color = glm::vec4(1, 0, 0, 1);
         }
-        else if(Entity->HitFlickerFramesLeft == 0)
-        {
+        else
             RenderEntity.Color = glm::vec4(1, 1, 1, 1);
-        }
+        
+        StartTimer(GameState, Entity->HitFlickerTimer);
     }
-    
-    if(Entity->HitAttackCountIdResetTimer)
+    else if(Entity->HitFlickerFramesLeft == 0)
     {
-        if(TimerDone(GameState, Entity->HitAttackCountIdResetTimer))
-        {
-            Entity->HitAttackCountId = -1;
-        }
+        RenderEntity.Color = glm::vec4(1, 1, 1, 1);
     }
     
-    if(Entity->HealthDecreaseTimer && TimerDone(GameState, Entity->HealthDecreaseTimer))
+    if(TimerDone(GameState, Entity->HitAttackCountIdResetTimer))
+    {
+        Entity->HitAttackCountId = -1;
+    }
+    
+    if(TimerDone(GameState, Entity->HealthDecreaseTimer))
         Entity->HealthLost = 0;
 }
 

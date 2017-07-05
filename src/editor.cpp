@@ -103,9 +103,8 @@ static void CreateEditorButtons(game_state* GameState)
     GameState->EditorState.Buttons[0].TextColor = glm::vec4(1, 1, 1, 1);
     GameState->EditorState.Buttons[0].Active = true;
     GameState->EditorState.Buttons[0].EditorType = Button_Animation;
-    GameState->EditorState.Buttons[0].ClickAnimationTimer = (timer*)malloc(sizeof(timer));
-    GameState->EditorState.Buttons[0].ClickAnimationTimer->TimerMax = 0.2f;
-    GameState->EditorState.Buttons[0].ClickAnimationTimer->TimerHandle = -1;
+    GameState->EditorState.Buttons[0].ClickAnimationTimer.TimerMax = 0.2f;
+    GameState->EditorState.Buttons[0].ClickAnimationTimer.TimerHandle = -1;
     
     GameState->EditorState.Buttons[1].Text = (char*)malloc(sizeof(char) * 20);
     GameState->EditorState.Buttons[1].Text = "Create/Edit tilesheet";
@@ -115,8 +114,8 @@ static void CreateEditorButtons(game_state* GameState)
     GameState->EditorState.Buttons[1].TextColor = glm::vec4(1, 1, 1, 1);
     GameState->EditorState.Buttons[1].Active = true;
     GameState->EditorState.Buttons[1].EditorType = Button_Tilesheet;
-    GameState->EditorState.Buttons[1].ClickAnimationTimer = (timer*)malloc(sizeof(timer));
-    GameState->EditorState.Buttons[1].ClickAnimationTimer->TimerMax = 0.2f;GameState->EditorState.Buttons[1].ClickAnimationTimer->TimerHandle = -1;
+    GameState->EditorState.Buttons[1].ClickAnimationTimer.TimerMax = 0.2f;
+    GameState->EditorState.Buttons[1].ClickAnimationTimer.TimerHandle = -1;
     
     GameState->EditorState.Buttons[2].Text = (char*)malloc(sizeof(char) * 20);
     GameState->EditorState.Buttons[2].Text = "Switch mode";
@@ -126,9 +125,8 @@ static void CreateEditorButtons(game_state* GameState)
     GameState->EditorState.Buttons[2].TextColor = glm::vec4(1, 1, 1, 1);
     GameState->EditorState.Buttons[2].Active = true;
     GameState->EditorState.Buttons[2].EditorType = Button_SwitchMode;
-    GameState->EditorState.Buttons[2].ClickAnimationTimer = (timer*)malloc(sizeof(timer));
-    GameState->EditorState.Buttons[2].ClickAnimationTimer->TimerMax = 0.2f;
-    GameState->EditorState.Buttons[2].ClickAnimationTimer->TimerHandle = -1;
+    GameState->EditorState.Buttons[2].ClickAnimationTimer.TimerMax = 0.2f;
+    GameState->EditorState.Buttons[2].ClickAnimationTimer.TimerHandle = -1;
     
     GameState->EditorState.Buttons[3].Text = (char*)malloc(sizeof(char) * 20);
     GameState->EditorState.Buttons[3].Text = "Save and exit";
@@ -138,9 +136,8 @@ static void CreateEditorButtons(game_state* GameState)
     GameState->EditorState.Buttons[3].TextColor = glm::vec4(1, 1, 1, 1);
     GameState->EditorState.Buttons[3].Active = true;
     GameState->EditorState.Buttons[3].EditorType = Button_SaveAndExit;
-    GameState->EditorState.Buttons[3].ClickAnimationTimer = (timer*)malloc(sizeof(timer));
-    GameState->EditorState.Buttons[3].ClickAnimationTimer->TimerMax = 0.2f;
-    GameState->EditorState.Buttons[3].ClickAnimationTimer->TimerHandle = -1;
+    GameState->EditorState.Buttons[3].ClickAnimationTimer.TimerMax = 0.2f;
+    GameState->EditorState.Buttons[3].ClickAnimationTimer.TimerHandle = -1;
     
     GameState->EditorState.Buttons[4].Text = (char*)malloc(sizeof(char) * 20);
     GameState->EditorState.Buttons[4].Text = "Exit";
@@ -150,9 +147,8 @@ static void CreateEditorButtons(game_state* GameState)
     GameState->EditorState.Buttons[4].TextColor = glm::vec4(1, 1, 1, 1);
     GameState->EditorState.Buttons[4].Active = true;
     GameState->EditorState.Buttons[4].EditorType = Button_Exit;
-    GameState->EditorState.Buttons[4].ClickAnimationTimer = (timer*)malloc(sizeof(timer));
-    GameState->EditorState.Buttons[4].ClickAnimationTimer->TimerMax = 0.2f;
-    GameState->EditorState.Buttons[4].ClickAnimationTimer->TimerHandle = -1;
+    GameState->EditorState.Buttons[4].ClickAnimationTimer.TimerMax = 0.2f;
+    GameState->EditorState.Buttons[4].ClickAnimationTimer.TimerHandle = -1;
     
     GameState->EditorState.Buttons[5].Text = (char*)malloc(sizeof(char) * 20);
     GameState->EditorState.Buttons[5].Text = "Create new";
@@ -162,9 +158,8 @@ static void CreateEditorButtons(game_state* GameState)
     GameState->EditorState.Buttons[5].TextColor = glm::vec4(1, 1, 1, 1);
     GameState->EditorState.Buttons[5].Active = true;
     GameState->EditorState.Buttons[5].EditorType = Button_Animation;
-    GameState->EditorState.Buttons[5].ClickAnimationTimer = (timer*)malloc(sizeof(timer));
-    GameState->EditorState.Buttons[5].ClickAnimationTimer->TimerMax = 0.2f;
-    GameState->EditorState.Buttons[5].ClickAnimationTimer->TimerHandle = -1;
+    GameState->EditorState.Buttons[5].ClickAnimationTimer.TimerMax = 0.2f;
+    GameState->EditorState.Buttons[5].ClickAnimationTimer.TimerHandle = -1;
     GameState->EditorState.CreateNewAnimationButton = &GameState->EditorState.Buttons[5];
     
     GameState->EditorState.Buttons[6].Text = (char*)malloc(sizeof(char) * 20);
@@ -175,9 +170,8 @@ static void CreateEditorButtons(game_state* GameState)
     GameState->EditorState.Buttons[6].TextColor = glm::vec4(1, 1, 1, 1);
     GameState->EditorState.Buttons[6].Active = false;
     GameState->EditorState.Buttons[6].EditorType = Button_Animation;
-    GameState->EditorState.Buttons[6].ClickAnimationTimer = (timer*)malloc(sizeof(timer));
-    GameState->EditorState.Buttons[6].ClickAnimationTimer->TimerMax = 0.2f;
-    GameState->EditorState.Buttons[6].ClickAnimationTimer->TimerHandle = -1;
+    GameState->EditorState.Buttons[6].ClickAnimationTimer.TimerMax = 0.2f;
+    GameState->EditorState.Buttons[6].ClickAnimationTimer.TimerHandle = -1;
     GameState->EditorState.SaveAnimationButton = &GameState->EditorState.Buttons[6];
     
     GameState->EditorState.Buttons[7].Text = (char*)malloc(sizeof(char) * 20);
@@ -188,9 +182,8 @@ static void CreateEditorButtons(game_state* GameState)
     GameState->EditorState.Buttons[7].TextColor = glm::vec4(1, 1, 1, 1);
     GameState->EditorState.Buttons[7].Active = true;
     GameState->EditorState.Buttons[7].EditorType = Button_CreateLevel;
-    GameState->EditorState.Buttons[7].ClickAnimationTimer = (timer*)malloc(sizeof(timer));
-    GameState->EditorState.Buttons[7].ClickAnimationTimer->TimerMax = 0.2f;
-    GameState->EditorState.Buttons[7].ClickAnimationTimer->TimerHandle = -1;
+    GameState->EditorState.Buttons[7].ClickAnimationTimer.TimerMax = 0.2f;
+    GameState->EditorState.Buttons[7].ClickAnimationTimer.TimerHandle = -1;
     GameState->EditorState.CreateNewLevelButton = &GameState->EditorState.Buttons[7];
     
     // Tile editor

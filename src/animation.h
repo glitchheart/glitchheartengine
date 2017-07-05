@@ -9,10 +9,10 @@ struct sprite_sheet_frame
 
 struct animation_info
 {
-    uint32 FrameIndex;
-    bool32 Playing;
-    real64 CurrentTime;
-    bool32 FreezeFrame;
+    uint32 FrameIndex = 0;
+    bool32 Playing = false;
+    real64 CurrentTime = 0;
+    bool32 FreezeFrame = false;
 };
 
 struct animation
