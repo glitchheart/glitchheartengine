@@ -649,8 +649,7 @@ static void LoadPlayerData(game_state* GameState, int32 Handle = -1, glm::vec2 P
             else if(StartsWith(&LineBuffer[0], "attackcooldowntimer"))
             {
                 if(Entity->Player.AttackCooldownTimer)
-                    free(Entity->Player.AttackCooldownTimer);
-                Entity->Player.AttackCooldownTimer = (timer*)malloc(sizeof(timer));
+                    Entity->Player.AttackCooldownTimer = (timer*)malloc(sizeof(timer));
                 
                 Entity->Player.AttackCooldownTimer->TimerMax = 0;
                 sscanf(LineBuffer, "attackcooldowntimer %lf", &Entity->Player.AttackCooldownTimer->TimerMax);
