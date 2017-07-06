@@ -58,10 +58,10 @@ static void LoadEntityData(FILE* File, entity* Entity, game_state* GameState, bo
         
         Entity->HealthDecreaseTimer.TimerMax = 0.8;
         Entity->HealthDecreaseTimer.TimerHandle = -1;
+        Entity->Dead = false;
     }
     else
     {
-        Entity->Dead = false;
         Entity->Active = true;
     }
     
@@ -196,6 +196,7 @@ static void LoadEntityData(FILE* File, entity* Entity, game_state* GameState, bo
 static void LoadEnemyData(FILE* File, entity* Entity, game_state* GameState)
 {
     Entity->Enemy.IsTargeted = false;
+    Entity->Enemy.AIState = AI_Idle;
     Entity->Type = Entity_Enemy;
     Entity->Enemy.AStarPath = {};
     Entity->Enemy.HealthCountStart = glm::vec2(-10, 50);
@@ -216,12 +217,10 @@ static void LoadEnemyData(FILE* File, entity* Entity, game_state* GameState)
             else if(StartsWith(&LineBuffer[0], "walkingspeed"))
             {
                 sscanf(LineBuffer, "walkingspeed %f", &Entity->Enemy.WalkingSpeed);
-                printf("Walking speed %f\n", Entity->Enemy.WalkingSpeed);
             }
             else if(StartsWith(&LineBuffer[0], "closetoplayerspeed"))
             {
                 sscanf(LineBuffer, "closetoplayerspeed %f", &Entity->Enemy.CloseToPlayerSpeed);
-                printf("Close to player speed %f\n", Entity->Enemy.CloseToPlayerSpeed);
             }
             else if(StartsWith(&LineBuffer[0], "targetingposition"))
             {
@@ -380,16 +379,20 @@ AI_FUNC(SkeletonAttacking)
             Entity->Velocity = glm::vec2(Direction.x * Entity->AttackMoveSpeed, Direction.y * Entity->AttackMoveSpeed);
         }
         
-        if(Entity->AnimationInfo.FrameIndex >= 6 && Entity->AnimationInfo.FrameIndex < 14 && !Skeleton.IsAttacking && strcmp(Entity->CurrentAnimation->Name, "skeleton_idle") != 0)
+        if(Entity->AnimationInfo.FrameIndex >= 6 &&Entity->AnimationInfo.FrameIndex < 14 && !Skeleton.IsAttacking && strcmp(Entity->CurrentAnimation->Name, "skeleton_idle") != 0)
         {
             StartTimer(GameState, Entity->AttackMoveTimer);
-            Skeleton.IsAttacking = true;
             
-            Entity->AttackCount++;
-            if(Entity->AttackCount == 3)
-                Entity->AttackCount = 0;
-            
-            StartTimer(GameState, Skeleton.AttackCooldownTimer);
+            if(Entity->AnimationInfo.FrameIndex >= 8)
+            {
+                Skeleton.IsAttacking = true;
+                
+                Entity->AttackCount++;
+                if(Entity->AttackCount == 3)
+                    Entity->AttackCount = 0;
+                
+                StartTimer(GameState, Skeleton.AttackCooldownTimer);
+            }
         }
         else if(!Entity->AnimationInfo.Playing)
         {
@@ -538,6 +541,9 @@ static void LoadSkeletonData(game_state* GameState, int32 Handle = -1, glm::vec2
     entity* Entity = Handle != -1 ? &GameState->Entities[Handle] : &GameState->Entities[GameState->EntityCount];
     
     Entity->Enemy.Skeleton = {};
+    Entity->Position = glm::vec2(0, 0);
+    Entity->AnimationInfo.FreezeFrame = false;
+    Entity->Dead = false;
     
     if(Handle == -1)
     {
