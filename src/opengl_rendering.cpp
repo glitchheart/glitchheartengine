@@ -586,6 +586,7 @@ static void RenderSetup(render_state *RenderState)
     InitializeFreeTypeFont("../assets/fonts/inconsolata/Inconsolata-Regular.ttf", 40, RenderState->FTLibrary, &RenderState->MenuFont, &RenderState->StandardFontShader);
     InitializeFreeTypeFont("../assets/fonts/raleway/Raleway-Regular.ttf", 30, RenderState->FTLibrary, &RenderState->ButtonFont, &RenderState->StandardFontShader);
     InitializeFreeTypeFont("../assets/fonts/rubber-biscuit/RUBBBB__.ttf", 50, RenderState->FTLibrary, &RenderState->TitleFont, &RenderState->StandardFontShader);
+    InitializeFreeTypeFont("../assets/fonts/rubber-biscuit/RUBBBB__.ttf", 15, RenderState->FTLibrary, &RenderState->DamageFont, &RenderState->StandardFontShader);
 }
 
 static GLuint LoadTexture(const char* FilePath, texture* Texture)
@@ -1263,6 +1264,19 @@ static void RenderHealthbar(render_state* RenderState,
         
         RenderRect(Render_Fill, RenderState, glm::vec4(1, 1, 1, 1), StartX, Entity->Position.y + Healthbar.Offset.y, Width, 0.1f, 0, false, ProjectionMatrix, ViewMatrix);
         
+        glm::mat4 Model = glm::mat4(1.0f) * ViewMatrix;
+        
+        glm::vec3 Projected =
+            glm::project(glm::vec3(Entity->Position.x, Entity->Position.y, 0), Model, ProjectionMatrix, glm::vec4(RenderState->Viewport[0], RenderState->Viewport[1], RenderState->Viewport[2], RenderState->Viewport[3]));
+        
+        for(int32 Index = 0; Index < 10; Index++)
+        {
+            auto& HealthCount = Entity->Enemy.HealthCounts[Index];
+            if(HealthCount.Visible)
+            {
+                RenderText(RenderState, RenderState->DamageFont, glm::vec4(1, 0, 0, 1), &HealthCount.Count[0], Projected.x + HealthCount.Position.x, Projected.y + HealthCount.Position.y, 1);
+            }
+        }
     }
 }
 

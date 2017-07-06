@@ -214,6 +214,8 @@ static bool32 LoadLevelFromFile(char* FilePath, level* Level, game_state* GameSt
         
         Level->Tilemap.RenderInfo.VAO = 0;
         
+        GameState->Camera.Center = GameState->Entities[0].Position;
+        
         return true;
     }
     return false;

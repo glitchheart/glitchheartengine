@@ -314,8 +314,8 @@ static void FollowPath(game_state* GameState, entity* Entity,entity& TargetEntit
     {
         // NOTE(Niels): Remember 5.0 is only temp, needs actual walking speed!!
         Direction = glm::normalize(Direction);
-        Entity->Velocity =glm::vec2(Direction.x * 5.0f,
-                                    Direction.y * 5.0f);
+        Entity->Velocity =glm::vec2(Direction.x * Entity->Enemy.WalkingSpeed,
+                                    Direction.y * Entity->Enemy.WalkingSpeed);
     }
     Entity->IsFlipped = Direction.x < 0;
 }
