@@ -106,7 +106,7 @@ enum Controller_Code
 enum Action_Button
 {
     Action_Attack,
-    Action_Defend,
+    Action_Use,
     Action_Dash,
     Action_Interact,
     Action_Target,

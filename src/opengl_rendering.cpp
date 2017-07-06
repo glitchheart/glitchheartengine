@@ -1604,6 +1604,21 @@ void RenderGame(game_state* GameState)
                 
                 RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(1, 1, 1, 1), StartX, GameState->RenderState.WindowHeight - 50, Width, 25);
             }
+            
+            RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(0, 0, 0, 1), 48, GameState->RenderState.WindowHeight - 92, 404, 29);
+            RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(1, 1, 0.5, 1), 50, GameState->RenderState.WindowHeight - 90, 400.0 / (real32)Player.Player.FullStamina * (real32)Player.Player.Stamina, 25);
+            
+            /*if(!TimerDone(GameState, Player.Player.StaminaDecreaseTimer))
+            {
+            real32 StartX = 50 +  400.0 / (real32)Player.Player.FullStamina * (real32)Player.Player.Stamina;
+            real32 Width = 400.0 / (real32)Player.Player.FullStamina * Player.Player.Stamina;
+            
+            RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(1, 1, 1, 1), StartX, GameState->RenderState.WindowHeight - 90, Width, 25);
+            }*/
+            
+            RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(0, 0, 0, 1), 48, 10, 80, 80);
+            RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(1, 1, 1, 1), 48 + 40 - 25, 10 + 40 - 25, 50, 50, GameState->RenderState.Textures["health_potion"]->TextureHandle);
+            RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(1, 1, 1, 1), 48 + 40 - 17.5f, 90, 35, 35, GameState->RenderState.Textures["y_button"]->TextureHandle);
         }
         break;
         case Mode_Editor:
