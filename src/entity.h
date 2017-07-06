@@ -164,6 +164,13 @@ struct entity
         {
             bool32 IsAttacking = false;
             
+            int32 FullStamina;
+            int32 Stamina;
+            int32 StaminaLost;
+            
+            timer StaminaGainTimer;
+            timer StaminaDecreaseTimer;
+            
             timer AttackCooldownTimer;
             timer LastAttackTimer;
             timer DashTimer;

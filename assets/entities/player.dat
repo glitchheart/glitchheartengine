@@ -16,6 +16,9 @@ weaponinfo 20 up -1.0 0.8 1.1 0.5 down -1.0 -1.0 1.1 0.5 left -2.6 0.2 0.9 0.8 r
 attackmovetimer 0.07
 attackmovespeed 15
 #player
+stamina 100
+staminagaintimer 0.1
+staminadecreasetimer 0.8
 healthdecreasetimer 0.8
 walkingspeed 5.0
 throwingspeed 18.0

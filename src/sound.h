@@ -45,6 +45,7 @@ struct sound_manager
             sound_effect BarrelBreak;
             sound_effect Slide01;
             sound_effect ButtonClick;
+            sound_effect UseHealth;
         };
     };
     

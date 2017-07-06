@@ -65,6 +65,8 @@ static void LoadEntityData(FILE* File, entity* Entity, game_state* GameState, bo
         Entity->Active = true;
     }
     
+    Entity->AnimationInfo.FreezeFrame = false;
+    
     char LineBuffer[255];
     
     while(fgets(LineBuffer, 255, File))
@@ -718,6 +720,23 @@ static void LoadPlayerData(game_state* GameState, int32 Handle = -1, glm::vec2 P
             {
                 sscanf(LineBuffer, "dashspeed %f", &Entity->Player.DashSpeed);
             }
+            else if(StartsWith(&LineBuffer[0], "stamina "))
+            {
+                sscanf(LineBuffer, "stamina %d", &Entity->Player.FullStamina);
+                Entity->Player.Stamina = Entity->Player.FullStamina;
+            }
+            else if(StartsWith(&LineBuffer[0], "staminagaintimer"))
+            {
+                sscanf(LineBuffer, "staminagaintimer %lf", &Entity->Player.StaminaGainTimer.TimerMax);
+                printf("We did it!\n");
+                Entity->Player.StaminaGainTimer.TimerHandle = -1;
+            }
+            else if(StartsWith(&LineBuffer[0], "staminadecreasetimer"))
+            {
+                sscanf(LineBuffer, "staminadecreasetimer %lf", &Entity->Player.StaminaDecreaseTimer.TimerMax);
+                printf("LOADED IT\n");
+                Entity->HealthDecreaseTimer.TimerHandle = -1;
+            }
             else if(StartsWith(&LineBuffer[0], "dustcloud"))
             {
                 entity* PlayerDustCloud = Handle == -1 ? &GameState->Entities[GameState->EntityCount] : &GameState->Entities[Entity->Player.DustCloudHandle];
@@ -937,6 +956,20 @@ void Hit(game_state* GameState, entity* ByEntity, entity* HitEntity)
 
 void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
 {
+    if(Entity->Player.Stamina != Entity->Player.FullStamina)
+    {
+        if(TimerDone(GameState, Entity->Player.StaminaGainTimer))
+        {
+            Entity->Player.Stamina += 1;
+            
+            if(Entity->Player.Stamina < Entity->Player.FullStamina)
+            {
+                StartTimer(GameState, Entity->Player.StaminaGainTimer);
+                printf("Stamina gain timer max %f\n", Entity->Player.StaminaGainTimer.TimerMax);
+            }
+        }
+    }
+    
     if(Entity->Hit)
         Entity->Player.IsAttacking = false;
     
@@ -955,11 +988,10 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
     
     if (Entity->Active && Entity->Health > 0)
     {
-        if(GetActionButtonDown(Action_Defend, GameState))
+        if(!Entity->Player.IsAttacking && !Entity->Hit && !Entity->Player.IsDashing && GetActionButtonDown(Action_Use, GameState))
         {
-            Entity->Velocity = glm::vec2(0, 0);
-            Entity->Player.IsDefending = true;
-            PlayAnimation(Entity, "swordsman_parry", GameState);
+            PlaySoundEffect(GameState, &GameState->SoundManager.UseHealth);
+            Entity->Health = Min(Entity->FullHealth, Entity->Health + 30);
         }
         
         if(Entity->Player.IsDefending && !Entity->AnimationInfo.Playing)
@@ -1167,6 +1199,12 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
                     Entity->Player.DashDirectionX = Entity->Player.LastKnownDirectionX;
                     Entity->Player.DashDirectionY = Entity->Player.LastKnownDirectionY; 
                     StartTimer(GameState, Entity->Player.DashTimer);
+                    
+                    int32 NewStamina = Max(0, Entity->Player.Stamina - 40);
+                    Entity->Player.StaminaLost = Entity->Player.Stamina - NewStamina;
+                    Entity->Player.Stamina = NewStamina;
+                    StartTimer(GameState, Entity->Player.StaminaDecreaseTimer);
+                    
                     PlayAnimation(Entity, "swordsman_roll", GameState);
                 }
             }
