@@ -285,6 +285,7 @@ struct render_state
     render_font ButtonFont;
     render_font RobotoFont;
     render_font TitleFont;
+    render_font DamageFont;
 };
 
 #endif

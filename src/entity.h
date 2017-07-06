@@ -91,6 +91,13 @@ struct weapon_collider_info
     weapon_collider_info() {}
 };
 
+struct enemy_health_count
+{
+    bool32 Visible = false;
+    char Count[20];
+    glm::vec2 Position = glm::vec2(0, 0);
+};
+
 struct entity
 {
     Entity_Type Type;
@@ -121,6 +128,8 @@ struct entity
     bool32 HasHitTrigger = false;
     collision_AABB HitTrigger;
     
+    glm::vec2 Velocity;
+    
     bool32 Hit = false;
     
     int32 HitFlickerFramesLeft = 0;
@@ -142,6 +151,9 @@ struct entity
     real32 HitRecoilSpeed;
     glm::vec2 HitRecoilDirection;
     
+    real32 AttackMoveSpeed;
+    timer AttackMoveTimer;
+    
     bool32 HasWeapon = false;
     entity_weapon Weapon;
     weapon_collider_info WeaponColliderInfo;
@@ -158,8 +170,6 @@ struct entity
             timer DashCooldownTimer;
             timer PickupCooldownTimer;
             
-            real32 AttackMoveSpeed;
-            timer AttackMoveTimer;
             real64 CurrentAttackCooldownTime;
             real64 AttackCooldown;
             
@@ -198,6 +208,11 @@ struct entity
         {
             Enemy_Type EnemyType;
             entity_healthbar* Healthbar = 0;
+            
+            int32 HealthCountIndex = 0;
+            enemy_health_count HealthCounts[10];
+            glm::vec2 HealthCountStart;
+            
             AI_State AIState;
             astar_path AStarPath;
             bool32 IsTargeted = false;
@@ -205,8 +220,11 @@ struct entity
             real32 TargetingPositionY;
             real32 MinDistanceToPlayer;
             real32 MaxAlertDistance;
+            real32 SlowdownDistance;
             real32 MaxFollowDistance;
+            real32 AttackDistance;
             real32 WalkingSpeed;
+            real32 CloseToPlayerSpeed;
             AIFunction Idle;
             AIFunction Alerted;
             AIFunction Following;
@@ -249,7 +267,6 @@ struct entity
     };
     
     bool32 RenderButtonHint = false;
-    glm::vec2 Velocity;
     
     entity(){}
 };

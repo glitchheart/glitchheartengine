@@ -127,7 +127,7 @@
                                             }
                                             else
                                             {
-                                                printf("Texture: '%s' could not be found. Animation will not be loaded.\n", TextureName);
+                                                printf("Texture: '%s' could not be found. Animation '%s' will not be loaded. Please delete the file or add the missing texture.\n", TextureName, Animation.Name);
                                                 free(TextureName);
                                                 return;
                                             }

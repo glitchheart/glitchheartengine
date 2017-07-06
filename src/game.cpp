@@ -596,6 +596,7 @@ extern "C" UPDATE(Update)
         GameState->GameCamera.ScreenShakeTimer.TimerMax = 0.2f;
         GameState->GameCamera.FollowSpeed = 12.0f; 
         GameState->GameCamera.FadingSpeed = 0.6f;
+        
         StartFade(GameState->GameCamera, Fading_In, 0.6f, glm::vec3(0, 0, 0), 1.0f, 0.0f);
         
         // @Incomplete: This is not the right value, it is only set so high to remove smooth following as of now, since it needs to be done a little differently
