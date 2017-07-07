@@ -813,4 +813,5 @@ extern "C" UPDATE(Update)
                                                             -Center.y + GameState->Camera.ViewportHeight / GameState->Camera.Zoom / 2,
                                                             0));
     GameState->InputController.CurrentCharacter = 0;
+    GameState->RenderState.DeltaTime = DeltaTime;
 }

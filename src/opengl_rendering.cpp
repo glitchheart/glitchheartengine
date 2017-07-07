@@ -1330,6 +1330,14 @@ static void RenderEntity(render_state *RenderState, entity &Entity, glm::mat4 Pr
             
             UseShader(&Shader);
             auto Frame = Animation->Frames[Entity.AnimationInfo.FrameIndex];
+            
+            if(Entity.Type == Entity_Enemy && Entity.Enemy.HasLoot && Entity.Dead)
+                SetFloatUniform(Shader.Program, "glow", GL_TRUE);
+            else
+                SetFloatUniform(Shader.Program, "glow", GL_FALSE);
+            
+            SetFloatUniform(Shader.Program, "time", GetTime());
+            
             SetFloatUniform(Shader.Program, "isUI", 0);
             SetVec2Uniform(Shader.Program,"textureOffset", glm::vec2(Frame.X, Frame.Y));
             SetFloatUniform(Shader.Program, "frameWidth", Animation->FrameSize.x);
@@ -1396,8 +1404,7 @@ static void RenderEntity(render_state *RenderState, entity &Entity, glm::mat4 Pr
     }
     else if(Entity.RenderButtonHint)
     {
-        // @Cleanup: This should definitely be done differently to open up for other possible key bindings
-        RenderRect(Render_Fill, RenderState, glm::vec4(1, 1, 1, 1), Entity.Position.x + 0.5f, Entity.Position.y + 1.5f, 1, 1, RenderState->Textures["b_button"]->TextureHandle, false, ProjectionMatrix, View);
+        RenderRect(Render_Fill, RenderState, glm::vec4(1, 1, 1, 1), Entity.Position.x + Entity.RenderButtonOffset.x, Entity.Position.y + Entity.RenderButtonOffset.y, 1, 1, RenderState->Textures["b_button"]->TextureHandle, false, ProjectionMatrix, View);
     }
     
     if(Entity.Type == Entity_Enemy && Entity.Enemy.IsTargeted)

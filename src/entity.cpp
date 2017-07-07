@@ -128,6 +128,11 @@ static void LoadEntityData(FILE* File, entity* Entity, game_state* GameState, bo
             PlayAnimation(Entity, AnimationName, GameState);
             free(AnimationName);
         }
+        else if(StartsWith(&LineBuffer[0], "renderbuttonoffset"))
+        {
+            char* AnimationName = (char*)malloc(30 * sizeof(char)); 
+            sscanf(LineBuffer, "renderbuttonoffset %f %f", &Entity->RenderButtonOffset.x, &Entity->RenderButtonOffset.y);
+        }
         else if(StartsWith(&LineBuffer[0], "hitcooldowntimer"))
         {
             sscanf(LineBuffer, "hitcooldowntimer %lf", &Entity->HitCooldownTimer.TimerMax);
@@ -211,6 +216,10 @@ static void LoadEnemyData(FILE* File, entity* Entity, game_state* GameState)
     Entity->Type = Entity_Enemy;
     Entity->Enemy.AStarPath = {};
     Entity->Enemy.HealthCountStart = glm::vec2(-10, 50);
+    
+    Entity->Enemy.HasLoot = true;
+    Entity->Enemy.Loot.HealthPotions = 1;
+    
     if(File)
     {
         char LineBuffer[255];
@@ -1016,7 +1025,6 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
             if(Entity->Player.Stamina < Entity->Player.FullStamina)
             {
                 StartTimer(GameState, Entity->Player.StaminaGainTimer);
-                printf("Stamina gain timer max %f\n", Entity->Player.StaminaGainTimer.TimerMax);
             }
             
             Entity->Player.Stamina = Min(Entity->Player.Stamina,Entity->Player.FullStamina);
@@ -1667,6 +1675,9 @@ void UpdateSkeleton(entity* Entity, game_state* GameState, real64 DeltaTime)
     auto& Enemy = Entity->Enemy;
     auto& Skeleton = Entity->Enemy.Skeleton;
     
+    auto& Player = GameState->Entities[0];
+    Entity->RenderButtonHint = Entity->Dead && glm::distance(Player.Position, Entity->Position) < 1.5f;
+    
     if(Entity->Active && !Entity->Dead)
     {
         entity& Player = GameState->Entities[GameState->PlayerIndex];
@@ -1865,22 +1876,24 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                 break;
                 case Entity_Enemy:
                 {
-                    if(!Entity->Dead)
+                    
+                    switch(Entity->Enemy.EnemyType)
                     {
-                        switch(Entity->Enemy.EnemyType)
+                        case Enemy_Skeleton:
                         {
-                            case Enemy_Skeleton:
+                            UpdateSkeleton(Entity, GameState, DeltaTime);
+                            
+                            if(!Entity->Dead)
                             {
-                                UpdateSkeleton(Entity, GameState, DeltaTime);
                                 UpdateWeapon(Entity, GameState, DeltaTime);
                             }
-                            break;
-                            case Enemy_Blob:
-                            {
-                                UpdateBlob(Entity, GameState, DeltaTime);
-                            }
-                            break;
                         }
+                        break;
+                        case Enemy_Blob:
+                        {
+                            UpdateBlob(Entity, GameState, DeltaTime);
+                        }
+                        break;
                     }
                 }
                 break;
