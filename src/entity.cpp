@@ -385,7 +385,7 @@ AI_FUNC(SkeletonAttacking)
         {
             StartTimer(GameState, Entity->AttackMoveTimer);
             
-            if(Entity->AnimationInfo.FrameIndex >= 8)
+            if(Entity->AnimationInfo.FrameIndex >= Entity->AttackLowFrameIndex && Entity->AnimationInfo.FrameIndex <= Entity->AttackHighFrameIndex)
             {
                 Skeleton.IsAttacking = true;
                 
@@ -754,9 +754,21 @@ static void LoadPlayerData(game_state* GameState, int32 Handle = -1, glm::vec2 P
             {
                 sscanf(LineBuffer, "mindiffstamina %d", &Entity->Player.MinDiffStamina);
             }
-            else if(StartsWith(&LineBuffer[0], "dustcloud"))
+            else if(StartsWith(&LineBuffer[0], "staminagaincooldowntimer"))
+            {
+                Entity->Player.StaminaGainCooldownTimer.TimerMax = 0;
+                sscanf(LineBuffer, "staminagaincooldowntimer %lf", &Entity->Player.StaminaGainCooldownTimer.TimerMax);
+                Entity->Player.StaminaGainCooldownTimer.TimerHandle = -1;
+            }
+            else if(StartsWith(&LineBuffer[0], "attacklowframeindex"))
+            {
+                sscanf(LineBuffer, "attacklowframeindex %d", &Entity->AttackLowFrameIndex);
+            }
+            else if(StartsWith(&LineBuffer[0], "attackhighframeindex"))
+            {
+                sscanf(LineBuffer, "attackhighframeindex %d", &Entity->AttackHighFrameIndex);
+            }
             /*else if(StartsWith(&LineBuffer[0], "dustcloud"))
-
             {
                 entity* PlayerDustCloud = Handle == -1 ? &GameState->Entities[GameState->EntityCount] : &GameState->Entities[Entity->Player.DustCloudHandle];
                 PlayerDustCloud->Name = "Dust cloud";
@@ -940,6 +952,7 @@ static void DecreaseStamina(entity* Entity, game_state* GameState, int32 Cost)
     Entity->Player.StaminaLost = Entity->Player.Stamina - NewStamina;
     Entity->Player.Stamina = NewStamina;
     StartTimer(GameState, Entity->Player.StaminaDecreaseTimer);
+    StartTimer(GameState,Entity->Player.StaminaGainCooldownTimer);
 }
 
 void Hit(game_state* GameState, entity* ByEntity, entity* HitEntity)
@@ -984,6 +997,15 @@ void Hit(game_state* GameState, entity* ByEntity, entity* HitEntity)
 
 void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
 {
+    if(TimerDone(GameState,Entity->Player.StaminaGainCooldownTimer))
+    {
+        Entity->Player.StaminaGainTimer.TimerMax = 0.06;
+    }
+    else
+    {
+        Entity->Player.StaminaGainTimer.TimerMax = 0.16;
+    }
+    
     if(Entity->Player.Stamina != Entity->Player.FullStamina)
     {
         if(TimerDone(GameState, Entity->Player.StaminaGainTimer))
@@ -995,6 +1017,8 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
                 StartTimer(GameState, Entity->Player.StaminaGainTimer);
                 printf("Stamina gain timer max %f\n", Entity->Player.StaminaGainTimer.TimerMax);
             }
+            
+            Entity->Player.Stamina = Min(Entity->Player.Stamina,Entity->Player.FullStamina);
         }
     }
     
@@ -1512,7 +1536,10 @@ void UpdateWeapon(entity* Entity, game_state* GameState, real64 DeltaTime)
             if((Entity->Type == Entity_Player && CollisionInfo.Other[Index]->Type == Entity_Enemy && CollisionInfo.Other[Index]->Enemy.AIState != AI_Hit && CollisionInfo.Other[Index]->Enemy.AIState != AI_Dying) ||
                (Entity->Type == Entity_Enemy && CollisionInfo.Other[Index]->Type == Entity_Player && !CollisionInfo.Other[Index]->Player.IsDashing && !CollisionInfo.Other[Index]->Hit && TimerDone(GameState, CollisionInfo.Other[Index]->HitCooldownTimer)))
             {
-                Hit(GameState, Entity, CollisionInfo.Other[Index]);
+                if((Entity->Type == Entity_Player && Entity->AnimationInfo.FrameIndex >= Entity->AttackLowFrameIndex && Entity->AnimationInfo.FrameIndex <= Entity->AttackHighFrameIndex) || Entity->Type != Entity_Player)
+                {
+                    Hit(GameState, Entity, CollisionInfo.Other[Index]);
+                }
             }
         }
     }
