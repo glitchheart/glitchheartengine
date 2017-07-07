@@ -737,6 +737,18 @@ static void LoadPlayerData(game_state* GameState, int32 Handle = -1, glm::vec2 P
                 printf("LOADED IT\n");
                 Entity->HealthDecreaseTimer.TimerHandle = -1;
             }
+            else if(StartsWith(&LineBuffer[0], "hitstaminacost"))
+            {
+                sscanf(LineBuffer, "hitstaminacost %d", &Entity->Player.HitStaminaCost);
+            }
+            else if(StartsWith(&LineBuffer[0], "rollstaminacost"))
+            {
+                sscanf(LineBuffer, "rollstaminacost %d", &Entity->Player.RollStaminaCost);
+            }
+            else if(StartsWith(&LineBuffer[0], "attackstaminacost"))
+            {
+                sscanf(LineBuffer, "attackstaminacost %d", &Entity->Player.AttackStaminaCost);
+            }
             else if(StartsWith(&LineBuffer[0], "dustcloud"))
             {
                 entity* PlayerDustCloud = Handle == -1 ? &GameState->Entities[GameState->EntityCount] : &GameState->Entities[Entity->Player.DustCloudHandle];
@@ -914,6 +926,15 @@ static void SpawnBarrel(game_state* GameState, glm::vec2 Position)
     GameState->EntityCount++;
 }
 
+
+static void DecreaseStamina(entity* Entity, game_state* GameState, int32 Cost) 
+{
+    int32 NewStamina = Max(0, Entity->Player.Stamina - Cost);
+    Entity->Player.StaminaLost = Entity->Player.Stamina - NewStamina;
+    Entity->Player.Stamina = NewStamina;
+    StartTimer(GameState, Entity->Player.StaminaDecreaseTimer);
+}
+
 void Hit(game_state* GameState, entity* ByEntity, entity* HitEntity)
 {
     if(HitEntity->HitAttackCountId != ByEntity->AttackCount)
@@ -948,11 +969,11 @@ void Hit(game_state* GameState, entity* ByEntity, entity* HitEntity)
         
         if(HitEntity->Type == Entity_Player)
         {
+            DecreaseStamina(HitEntity,GameState,HitEntity->Player.HitStaminaCost);
             StartFade(GameState->GameCamera, Fading_OutIn, 4.0f, glm::vec3(1, 0, 0), 0.0f, 0.4f);
         }
     }
 }
-
 
 void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
 {
@@ -1200,9 +1221,7 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
                     Entity->Player.DashDirectionY = Entity->Player.LastKnownDirectionY; 
                     StartTimer(GameState, Entity->Player.DashTimer);
                     
-                    int32 NewStamina = Max(0, Entity->Player.Stamina - 40);
-                    Entity->Player.StaminaLost = Entity->Player.Stamina - NewStamina;
-                    Entity->Player.Stamina = NewStamina;
+                    DecreaseStamina(Entity,GameState,Entity->Player.RollStaminaCost);
                     StartTimer(GameState, Entity->Player.StaminaDecreaseTimer);
                     
                     PlayAnimation(Entity, "swordsman_roll", GameState);
@@ -1297,6 +1316,7 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
             Entity->Player.IsAttacking = true;
             StartTimer(GameState, Entity->Player.LastAttackTimer);
             
+            DecreaseStamina(Entity,GameState,Entity->Player.AttackStaminaCost);
             StartTimer(GameState, Entity->AttackMoveTimer);
             Entity->AttackCount++;
             PlaySoundEffect(GameState, &GameState->SoundManager.SwordSlash01);
@@ -1810,19 +1830,22 @@ void UpdateEntities(game_state* GameState, real64 DeltaTime)
                 break;
                 case Entity_Enemy:
                 {
-                    switch(Entity->Enemy.EnemyType)
+                    if(!Entity->Dead)
                     {
-                        case Enemy_Skeleton:
+                        switch(Entity->Enemy.EnemyType)
                         {
-                            UpdateSkeleton(Entity, GameState, DeltaTime);
-                            UpdateWeapon(Entity, GameState, DeltaTime);
+                            case Enemy_Skeleton:
+                            {
+                                UpdateSkeleton(Entity, GameState, DeltaTime);
+                                UpdateWeapon(Entity, GameState, DeltaTime);
+                            }
+                            break;
+                            case Enemy_Blob:
+                            {
+                                UpdateBlob(Entity, GameState, DeltaTime);
+                            }
+                            break;
                         }
-                        break;
-                        case Enemy_Blob:
-                        {
-                            UpdateBlob(Entity, GameState, DeltaTime);
-                        }
-                        break;
                     }
                 }
                 break;

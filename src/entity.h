@@ -167,6 +167,9 @@ struct entity
             int32 FullStamina;
             int32 Stamina;
             int32 StaminaLost;
+            int32 HitStaminaCost;
+            int32 RollStaminaCost;
+            int32 AttackStaminaCost;
             
             timer StaminaGainTimer;
             timer StaminaDecreaseTimer;
