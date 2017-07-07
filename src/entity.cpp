@@ -749,6 +749,10 @@ static void LoadPlayerData(game_state* GameState, int32 Handle = -1, glm::vec2 P
             {
                 sscanf(LineBuffer, "attackstaminacost %d", &Entity->Player.AttackStaminaCost);
             }
+            else if(StartsWith(&LineBuffer[0], "mindiffstamina"))
+            {
+                sscanf(LineBuffer, "mindiffstamina %d", &Entity->Player.MinDiffStamina);
+            }
             else if(StartsWith(&LineBuffer[0], "dustcloud"))
             {
                 entity* PlayerDustCloud = Handle == -1 ? &GameState->Entities[GameState->EntityCount] : &GameState->Entities[Entity->Player.DustCloudHandle];
@@ -1211,7 +1215,7 @@ void UpdatePlayer(entity* Entity, game_state* GameState, real64 DeltaTime)
                 StartTimer(GameState, Entity->Player.DashCooldownTimer);
             }
             
-            if(!Entity->Player.Pickup && !Entity->Player.IsAttacking  && TimerDone(GameState, Entity->Player.DashTimer) && GetActionButtonDown(Action_Dash, GameState))
+            if(!Entity->Player.Pickup && !Entity->Player.IsAttacking  && TimerDone(GameState, Entity->Player.DashTimer) && GetActionButtonDown(Action_Dash, GameState)  && Entity->Player.Stamina >= Entity->Player.RollStaminaCost - Entity->Player.MinDiffStamina)
             {
                 if(!Entity->Player.IsDashing && TimerDone(GameState, Entity->Player.DashCooldownTimer))
                 {

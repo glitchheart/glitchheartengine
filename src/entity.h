@@ -170,6 +170,7 @@ struct entity
             int32 HitStaminaCost;
             int32 RollStaminaCost;
             int32 AttackStaminaCost;
+            int32 MinDiffStamina;
             
             timer StaminaGainTimer;
             timer StaminaDecreaseTimer;
