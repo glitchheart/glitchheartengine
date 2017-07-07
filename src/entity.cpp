@@ -163,6 +163,15 @@ static void LoadEntityData(FILE* File, entity* Entity, game_state* GameState, bo
         {
             sscanf(LineBuffer, "attackmovespeed %f", &Entity->AttackMoveSpeed);
         }
+        
+        else if(StartsWith(&LineBuffer[0], "attacklowframeindex"))
+        {
+            sscanf(LineBuffer, "attacklowframeindex %d", &Entity->AttackLowFrameIndex);
+        }
+        else if(StartsWith(&LineBuffer[0], "attackhighframeindex"))
+        {
+            sscanf(LineBuffer, "attackhighframeindex %d", &Entity->AttackHighFrameIndex);
+        }
         else if(StartsWith(&LineBuffer[0], "weaponscale"))
         {
             sscanf(LineBuffer, "weaponscale %f %f", &Entity->Weapon.Scale.x, &Entity->Weapon.Scale.y);
@@ -759,14 +768,6 @@ static void LoadPlayerData(game_state* GameState, int32 Handle = -1, glm::vec2 P
                 Entity->Player.StaminaGainCooldownTimer.TimerMax = 0;
                 sscanf(LineBuffer, "staminagaincooldowntimer %lf", &Entity->Player.StaminaGainCooldownTimer.TimerMax);
                 Entity->Player.StaminaGainCooldownTimer.TimerHandle = -1;
-            }
-            else if(StartsWith(&LineBuffer[0], "attacklowframeindex"))
-            {
-                sscanf(LineBuffer, "attacklowframeindex %d", &Entity->AttackLowFrameIndex);
-            }
-            else if(StartsWith(&LineBuffer[0], "attackhighframeindex"))
-            {
-                sscanf(LineBuffer, "attackhighframeindex %d", &Entity->AttackHighFrameIndex);
             }
             /*else if(StartsWith(&LineBuffer[0], "dustcloud"))
             {
