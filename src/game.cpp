@@ -580,18 +580,18 @@ extern "C" UPDATE(Update)
             LoadAnimations(GameState);
             InitCommands();
             
-            GameState->EditorCamera.Zoom = 3.0f; // @Cleanup: We might not want to reset these values every time we load a level
-            GameState->EditorCamera.ViewportWidth = GameState->RenderState.WindowWidth / 20;
-            GameState->EditorCamera.ViewportHeight = GameState->RenderState.WindowHeight / 20;
+            GameState->EditorCamera.Zoom = 48.0f; // @Cleanup: We might not want to reset these values every time we load a level
+            GameState->EditorCamera.ViewportWidth = GameState->RenderState.WindowWidth;
+            GameState->EditorCamera.ViewportHeight = GameState->RenderState.WindowHeight;
             
             GameState->GameMode = Mode_InGame;
         }
         
         LoadLevelFromFile(GameState->LevelPath, &GameState->CurrentLevel, GameState);
         
-        GameState->GameCamera.Zoom = 2.5f;
-        GameState->GameCamera.ViewportWidth = GameState->RenderState.WindowWidth / 20;
-        GameState->GameCamera.ViewportHeight = GameState->RenderState.WindowHeight / 20;
+        GameState->GameCamera.Zoom = 48.0f;
+        GameState->GameCamera.ViewportWidth = GameState->RenderState.WindowWidth;
+        GameState->GameCamera.ViewportHeight = GameState->RenderState.WindowHeight;
         GameState->GameCamera.ScreenShakeTimer.TimerHandle = -1;
         GameState->GameCamera.ScreenShakeTimer.TimerMax = 0.2f;
         GameState->GameCamera.FollowSpeed = 12.0f; 
