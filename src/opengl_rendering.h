@@ -208,10 +208,10 @@ struct render_state
     GLfloat TileQuadVertices[16] =
     {
         //pos        //texcoords
-        0.0f, 1.0f, 0.0625f, 0.9375f,
-        1.0f, 1.0f, 0.9375f, 0.9375f,
-        1.0f, 0.0f, 0.9375f, 0.0625f,
-        0.0f, 0.0f, 0.0625f, 0.0625f
+        0.0f, 1.0f, 0.125f, 1.0f,
+        1.0f, 1.0f, 1.0f, 1.0f,
+        1.0f, 0.0f, 1.0f, 0.125f,
+        0.0f, 0.0f, 0.125f, 0.125f
     };
     
     GLuint TileVAO;

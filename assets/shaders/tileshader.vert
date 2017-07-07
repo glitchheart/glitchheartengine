@@ -4,6 +4,7 @@ uniform mat4 View;
 uniform mat4 Model;
 uniform float isUI;
 uniform float Scale;
+uniform vec2 TextureSize;
 
 in vec2 pos;
 in vec2 texcoord;
