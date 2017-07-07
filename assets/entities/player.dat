@@ -17,11 +17,12 @@ attackmovetimer 0.07
 attackmovespeed 15
 #player
 stamina 100
-staminagaintimer 0.08
+staminagaintimer 0.09
 staminadecreasetimer 0.8
 hitstaminacost 20
 rollstaminacost 25
 attackstaminacost 20
+mindiffstamina 13
 healthdecreasetimer 0.8
 walkingspeed 5.0
 throwingspeed 18.0
