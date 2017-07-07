@@ -17,8 +17,11 @@ attackmovetimer 0.07
 attackmovespeed 15
 #player
 stamina 100
-staminagaintimer 0.1
+staminagaintimer 0.08
 staminadecreasetimer 0.8
+hitstaminacost 20
+rollstaminacost 25
+attackstaminacost 20
 healthdecreasetimer 0.8
 walkingspeed 5.0
 throwingspeed 18.0
@@ -29,6 +32,6 @@ lastattacktimer 1.0
 pickupcooldowntimer 0.36
 dashtimer 0.3
 dashcounterdivider 250
-dashcooldowntimer 0.8
+dashcooldowntimer 0.4
 dashspeed 14
 dustcloud scale 1 1 animation dust_brown
