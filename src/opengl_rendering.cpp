@@ -19,7 +19,6 @@ void FramebufferSizeCallback(GLFWwindow *Window, int Width, int Height)
     GameState->EditorState.ToolbarY = 0;
     GameState->EditorState.ToolbarWidth = 100.0f;
     GameState->EditorState.ToolbarHeight = (real32)GameState->RenderState.WindowHeight;
-    
 }
 
 inline static real64 GetTime()
