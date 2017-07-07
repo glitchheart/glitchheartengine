@@ -655,6 +655,7 @@ static void LoadPlayerData(game_state* GameState, int32 Handle = -1, glm::vec2 P
     Entity->Player.LastKnownDirectionY = 0;
     Entity->Player.Pickup = {};
     Entity->Player = {};
+    Entity->Player.RenderCrosshair = false;
     
     if(Handle == -1)
     {
@@ -754,6 +755,8 @@ static void LoadPlayerData(game_state* GameState, int32 Handle = -1, glm::vec2 P
                 sscanf(LineBuffer, "mindiffstamina %d", &Entity->Player.MinDiffStamina);
             }
             else if(StartsWith(&LineBuffer[0], "dustcloud"))
+            /*else if(StartsWith(&LineBuffer[0], "dustcloud"))
+
             {
                 entity* PlayerDustCloud = Handle == -1 ? &GameState->Entities[GameState->EntityCount] : &GameState->Entities[Entity->Player.DustCloudHandle];
                 PlayerDustCloud->Name = "Dust cloud";
@@ -762,7 +765,7 @@ static void LoadPlayerData(game_state* GameState, int32 Handle = -1, glm::vec2 P
                 
                 if(Handle == -1)
                     Entity->Player.DustCloudHandle = GameState->EntityCount;
-                
+                    
                 char* AnimationName = (char*)malloc(30 * sizeof(char));
                 
                 sscanf(LineBuffer, "dustcloud scale %f animation %s", &PlayerDustCloud->Scale, AnimationName);
@@ -781,7 +784,7 @@ static void LoadPlayerData(game_state* GameState, int32 Handle = -1, glm::vec2 P
                     PlayerDustCloud->EntityIndex = GameState->EntityCount++;
                     PlayerDustCloud->Position = glm::vec2(1, 1);
                 }
-            }
+            }*/
         }
         fclose(File);
     }
