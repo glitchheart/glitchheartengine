@@ -153,6 +153,8 @@ struct entity
     
     real32 AttackMoveSpeed;
     timer AttackMoveTimer;
+    int32 AttackLowFrameIndex;
+    int32 AttackHighFrameIndex;
     
     bool32 HasWeapon = false;
     entity_weapon Weapon;
@@ -172,6 +174,7 @@ struct entity
             int32 AttackStaminaCost;
             int32 MinDiffStamina;
             
+            timer StaminaGainCooldownTimer;
             timer StaminaGainTimer;
             timer StaminaDecreaseTimer;
             

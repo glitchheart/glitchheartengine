@@ -6,23 +6,26 @@ center 0 0.5
 scale 2
 health 150
 animation swordsman_idle
-hitcooldowntimer 0.5
+hitcooldowntimer 0.35
 collider 0 -1.0 0.3 0.15 0
 hashittrigger 1
 hittrigger 0 -0.2 0.48 0.8 1
 weaponscale 2 2
 weaponcollider 0.2 0 1.1 1.2 1
-weaponinfo 20 up -1.0 0.8 1.1 0.5 down -1.0 -1.0 1.1 0.5 left -2.6 0.2 0.9 0.8 right 0.5 0.2 0.9 0.8
+weaponinfo 25 up -1.0 0.8 1.1 0.5 down -1.0 -1.0 1.1 0.5 left -2.6 0.2 0.9 0.8 right 0.5 0.2 0.9 0.8
 attackmovetimer 0.07
 attackmovespeed 15
+attacklowframeindex 3
+attackhighframeindex 14
 #player
 stamina 100
-staminagaintimer 0.09
+staminagaincooldowntimer 1.7
+staminagaintimer 0.07
 staminadecreasetimer 0.8
 hitstaminacost 20
 rollstaminacost 25
 attackstaminacost 20
-mindiffstamina 13
+mindiffstamina 18
 healthdecreasetimer 0.8
 walkingspeed 5.0
 throwingspeed 18.0
