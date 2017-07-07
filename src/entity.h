@@ -98,6 +98,11 @@ struct enemy_health_count
     glm::vec2 Position = glm::vec2(0, 0);
 };
 
+struct player_inventory
+{
+    int32 HealthPotionCount = 0;
+};
+
 struct entity
 {
     Entity_Type Type;
@@ -173,6 +178,8 @@ struct entity
             int32 RollStaminaCost;
             int32 AttackStaminaCost;
             int32 MinDiffStamina;
+            
+            player_inventory Inventory;
             
             timer StaminaGainCooldownTimer;
             timer StaminaGainTimer;
