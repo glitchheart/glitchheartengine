@@ -170,6 +170,7 @@ struct render_state
     GLfloat ScaleX;
     GLfloat ScaleY;
     GLint Viewport[4];
+    real64 DeltaTime;
     
     render_entity RenderEntities[NUM_ENTITIES];
     int32 RenderEntityCount;

@@ -19,6 +19,7 @@ attacklowframeindex 8
 attackhighframeindex 14
 weaponcollider 0.7 0 0.5 1.0 1
 weaponinfo 70 up -1.0 1.5 1.0 0.5 down -1.0 -1.0 1.0 0.5 left -2.0 0.2 0.5 1.0 right 0 0.2 0.5 1.0
+renderbuttonoffset -1 1
 #enemy
 enemytype 1
 walkingspeed 5

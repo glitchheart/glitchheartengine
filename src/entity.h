@@ -103,6 +103,11 @@ struct player_inventory
     int32 HealthPotionCount = 0;
 };
 
+struct loot
+{
+    int32 HealthPotions = 0;
+};
+
 struct entity
 {
     Entity_Type Type;
@@ -234,6 +239,9 @@ struct entity
             enemy_health_count HealthCounts[10];
             glm::vec2 HealthCountStart;
             
+            bool32 HasLoot = false;
+            loot Loot;
+            
             AI_State AIState;
             astar_path AStarPath;
             bool32 IsTargeted = false;
@@ -287,6 +295,7 @@ struct entity
         } Pickup;
     };
     
+    glm::vec2 RenderButtonOffset = glm::vec2(0.5f, 1.5f);
     bool32 RenderButtonHint = false;
     
     entity(){}
