@@ -39,6 +39,12 @@ struct timer
     real64 TimerMax;
 };
 
+struct v2i
+{
+    int32 X;
+    int32 Y;
+};
+
 struct entity_file_reload_data
 {
     bool32 ReloadPlayerFile;
