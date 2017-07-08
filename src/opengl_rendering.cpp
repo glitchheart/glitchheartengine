@@ -1752,6 +1752,15 @@ static void RenderInGameMode(game_state* GameState)
 
 void RenderGame(game_state* GameState)
 {
+    if(GameState->GameMode == Mode_InGame || (GameState->GameMode == Mode_Editor && !GameState->EditorState.MenuOpen))
+    {
+        glfwSetInputMode(GameState->RenderState.Window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+        RenderInGameMode(GameState);
+    }
+}
+
+void RenderUI(game_state* GameState)
+{
     switch(GameState->GameMode)
     {
         case Mode_MainMenu:
@@ -1778,7 +1787,6 @@ void RenderGame(game_state* GameState)
         case Mode_InGame:
         {
             glfwSetInputMode(GameState->RenderState.Window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
-            RenderInGameMode(GameState);
             if(GameState->Paused)
                 RenderText(&GameState->RenderState, GameState->RenderState.MenuFont, glm::vec4(0.5, 1, 1, 1), "PAUSED", (r32)GameState->RenderState.WindowWidth / 2, 40, 1, Alignment_Center);
             
@@ -1839,8 +1847,6 @@ void RenderGame(game_state* GameState)
                 {
                     case Editor_Level:
                     {
-                        RenderInGameMode(GameState);
-                        
                         RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(0, 0, 0, 1), 0, (r32)GameState->RenderState.WindowHeight - 155, (r32)GameState->RenderState.WindowWidth - 80, 155);
                         
                         switch(GameState->EditorState.PlacementMode)
@@ -2133,7 +2139,6 @@ static void Render(game_state* GameState)
     
     // Render scene
     RenderGame(GameState);
-    RenderDebugInfo(GameState);
     
     // Second pass
     glBindFramebuffer(GL_FRAMEBUFFER, 0); // back to default
@@ -2146,5 +2151,8 @@ static void Render(game_state* GameState)
     glBindTexture(GL_TEXTURE_2D, GameState->RenderState.TextureColorBuffer);
     glDrawArrays(GL_QUADS, 0, 4); 
     
+    // Render UI
+    RenderDebugInfo(GameState);
+    RenderUI(GameState);
     glfwSwapBuffers(GameState->RenderState.Window);
 }

@@ -41,7 +41,6 @@ const char* ShaderPaths[Shader_Count] =
     "../assets/shaders/errorshaderui",
     "../assets/shaders/astarpathshader",
     "../assets/shaders/framebuffershader",
-    "../assets/shaders/framebufferdarkenshader"
 };
 
 
