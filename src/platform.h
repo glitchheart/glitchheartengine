@@ -43,6 +43,7 @@ struct entity_file_reload_data
 {
     bool32 ReloadPlayerFile;
     bool32 ReloadSkeletonFile;
+    bool32 ReloadMinotaurFile;
     bool32 ReloadWraithFile;
 };
 
@@ -77,7 +78,15 @@ struct config_data
     uint32 ScreenHeight;
     bool32 Fullscreen;
     bool32 Muted;
+    real32 Zoom;
 };
+
+
+bool32 StartsWith(const char *A, const char *B)
+{
+    if(strncmp(A, B, strlen(B)) == 0) return 1;
+    return 0;
+}
 
 void LoadConfig(const char* FilePath, config_data* ConfigData)
 {
@@ -90,51 +99,54 @@ void LoadConfig(const char* FilePath, config_data* ConfigData)
     
     if(File)
     {
-        //@Cleanup: Should be changed to check for each property every line.
-        if(fgets(LineBuffer, 255, File))
+        while(fgets(LineBuffer, 255, File))
         {
-            sscanf(LineBuffer, "title %s", ConfigData->Title);
+            if(StartsWith(LineBuffer, "title"))
+            {
+                sscanf(LineBuffer, "title %s", ConfigData->Title);
+            }
+            else if(StartsWith(LineBuffer, "version"))
+            {
+                sscanf(LineBuffer, "version %s", ConfigData->Version);
+            }
+            else if(StartsWith(LineBuffer, "screen_width"))
+            {
+                sscanf(LineBuffer, "screen_width %d", &ConfigData->ScreenWidth);
+            }
+            else if(StartsWith(LineBuffer, "screen_height"))
+            {
+                sscanf(LineBuffer, "screen_height %d", &ConfigData->ScreenHeight);
+            }
+            else if(StartsWith(LineBuffer, "screen_height"))
+            {
+                sscanf(LineBuffer, "screen_height %d", &ConfigData->ScreenHeight);
+            }
+            else if(StartsWith(LineBuffer, "fullscreen"))
+            {
+                sscanf(LineBuffer, "fullscreen %d", &ConfigData->Fullscreen);
+                ConfigData->Fullscreen = false;
+            } 
+            else if(StartsWith(LineBuffer, "muted"))
+            {
+                sscanf(LineBuffer, "muted %d", &ConfigData->Muted);
+            }
+            else if(StartsWith(LineBuffer, "muted"))
+            {
+                sscanf(LineBuffer, "muted %d", &ConfigData->Muted);
+            }
+            else if(StartsWith(LineBuffer, "starting_level_path"))
+            {
+                ConfigData->StartingLevelFilePath = (char*)malloc(40 * sizeof(char));
+                sscanf(LineBuffer, "starting_level_path %s", ConfigData->StartingLevelFilePath);
+            }
+            else if(StartsWith(LineBuffer, "zoom"))
+            {
+                sscanf(LineBuffer, "zoom %f", &ConfigData->Zoom);
+            }
         }
         
-        if(fgets(LineBuffer, 255, File))
-        {
-            sscanf(LineBuffer, "version %s", ConfigData->Version);
-        }
-        
-        if(fgets(LineBuffer, 255, File))
-        {
-            sscanf(LineBuffer, "screen_width %d", &ConfigData->ScreenWidth);
-        }
-        
-        if(fgets(LineBuffer, 255, File))
-        {
-            sscanf(LineBuffer, "screen_height %d", &ConfigData->ScreenHeight);
-        }
-        
-        if(fgets(LineBuffer, 255, File))
-        {
-            sscanf(LineBuffer, "fullscreen %d", &ConfigData->Fullscreen);
-            ConfigData->Fullscreen = false;
-        }
-        
-        if(fgets(LineBuffer, 255, File))
-        {
-            sscanf(LineBuffer, "muted %d", &ConfigData->Muted);
-        }
-        
-        if(fgets(LineBuffer, 255, File))
-        {
-            ConfigData->StartingLevelFilePath = (char*)malloc(40 * sizeof(char));
-            sscanf(LineBuffer, "starting_level_path %s", ConfigData->StartingLevelFilePath);
-        }
         fclose(File);
     }
-}
-
-bool32 StartsWith(const char *A, const char *B)
-{
-    if(strncmp(A, B, strlen(B)) == 0) return 1;
-    return 0;
 }
 
 struct directory_data

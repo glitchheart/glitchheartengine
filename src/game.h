@@ -72,6 +72,7 @@ struct game_state
     bool32 IsInitialized;
     bool32 Paused;
     bool32 ShouldReload;
+    real32 InitialZoom;
     
     Player_State PlayerState = Player_Alive;
     timer DeathScreenTimer;

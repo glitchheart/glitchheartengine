@@ -218,6 +218,13 @@ static bool32 LoadLevelFromFile(char* FilePath, level* Level, game_state* GameSt
                 sscanf(LineBuffer, "skeleton %f %f", &Pos.x, &Pos.y);
                 LoadSkeletonData(GameState, -1, Pos);
             }
+            else if(StartsWith(&LineBuffer[0], "minotaur"))
+            {
+                glm::vec2 Pos;
+                sscanf(LineBuffer, "minotaur %f %f", &Pos.x, &Pos.y);
+                LoadMinotaurData(GameState, -1, Pos);
+            }
+            
             else if(StartsWith(&LineBuffer[0], "blob"))
             {
                 glm::vec2 Pos;
@@ -319,6 +326,11 @@ static void SaveLevelToFile(const char* FilePath, level* Level, game_state* Game
                                 case Enemy_Wraith:
                                 {
                                     TypeName = "wraith";
+                                }
+                                break;
+                                case Enemy_Minotaur:
+                                {
+                                    TypeName = "minotaur";
                                 }
                                 break;
                             }
