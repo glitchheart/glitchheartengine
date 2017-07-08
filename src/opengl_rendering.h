@@ -57,8 +57,8 @@ struct texture
 {
     char* Name;
     GLuint TextureHandle;
-    int32 Width;
-    int32 Height;
+    i32 Width;
+    i32 Height;
 };
 
 struct tilesheet
@@ -69,38 +69,38 @@ struct tilesheet
 
 struct ui_render_info
 {
-    bool32 Rendered = true;
+    b32 Rendered = true;
     
     texture* Texture;
     glm::vec2 TextureOffset;
     glm::vec2 FrameSize;
-    uint32 ShaderIndex;
+    u32 ShaderIndex;
     glm::vec2 Size = glm::vec3(1, 1, 1);
     glm::vec4 Color = glm::vec4(1, 1, 1, 1);
 };
 
 struct editor_render_info
 {
-    bool32 Dirty = false;
+    b32 Dirty = false;
     GLuint VAO;
     GLuint VBO;
-    int32 VBOSize;
+    i32 VBOSize;
 };
 
 struct tilemap_render_info
 {
-    bool32 Dirty = true;
+    b32 Dirty = true;
     GLuint VAOS[2];
     GLuint VBOS[2];
-    int32 VBOSizes[2];
+    i32 VBOSizes[2];
 };
 
 struct render_entity
 {
     entity* Entity;
-    bool32 Rendered = true;
+    b32 Rendered = true;
     texture* Texture;
-    uint32 ShaderIndex;
+    u32 ShaderIndex;
     glm::vec4 Color = glm::vec4(1, 1, 1, 1);
 };
 
@@ -125,24 +125,24 @@ struct render_font
     GLuint VAO;
     GLuint VBO;
     GLuint Texture;
-    uint32 AtlasWidth;
-    uint32 AtlasHeight;
+    u32 AtlasWidth;
+    u32 AtlasHeight;
     GLfloat GlyphWidth;
     glm::vec4 Color = glm::vec4(1, 1, 1, 1);
     glm::vec4 AlphaColor = glm::vec4(1, 1, 1, 1);
     
     struct character_info 
     {
-        real32 AX; // advance.x
-        real32 AY; // advance.y
+        r32 AX; // advance.x
+        r32 AY; // advance.y
         
-        real32 BW; // bitmap.width;
-        real32 BH; // bitmap.rows;
+        r32 BW; // bitmap.width;
+        r32 BH; // bitmap.rows;
         
-        real32 BL; // bitmap_left;
-        real32 BT; // bitmap_top;
+        r32 BL; // bitmap_left;
+        r32 BT; // bitmap_top;
         
-        real32 TX;
+        r32 TX;
     } CharacterInfo[255];
 };
 
@@ -170,16 +170,16 @@ struct render_state
     GLfloat ScaleX;
     GLfloat ScaleY;
     GLint Viewport[4];
-    real64 DeltaTime;
+    r64 DeltaTime;
     
     render_entity RenderEntities[NUM_ENTITIES];
-    int32 RenderEntityCount;
+    i32 RenderEntityCount;
     
-    bool32 RenderColliders;
-    bool32 RenderFPS;
-    bool32 RenderPaths;
-    bool32 ShouldClose;
-    real64 FPS;
+    b32 RenderColliders;
+    b32 RenderFPS;
+    b32 RenderPaths;
+    b32 ShouldClose;
+    r64 FPS;
     
     size_t SpriteQuadVerticesSize = 16 * sizeof(GLfloat);
     size_t TileQuadVerticesSize = 16 * sizeof(GLfloat);
@@ -254,7 +254,7 @@ struct render_state
     GLuint NormalQuadVBO;
     
     tilesheet* Tilesheets;
-    uint32 TilesheetCount;
+    u32 TilesheetCount;
     
     union 
     {
@@ -276,7 +276,7 @@ struct render_state
     };
     
     texture TextureArray[40];
-    int32 TextureIndex;
+    i32 TextureIndex;
     std::map<const char*, texture*, cmp_str> Textures;
     
     //freetype

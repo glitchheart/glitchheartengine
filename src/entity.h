@@ -46,12 +46,12 @@ enum Look_Direction
 
 struct entity_weapon
 {
-    int32 Damage;
+    i32 Damage;
     collision_AABB CollisionAABB;
     glm::vec2 Center = glm::vec2(0.5, 0.5);
     glm::vec3 Rotation;
     glm::vec3 Scale = glm::vec3(1, 1, 1);
-    bool32 IsFlipped;
+    b32 IsFlipped;
     Entity_Layer Layer;
     Entity_Layer IgnoreLayers;
 };
@@ -61,13 +61,13 @@ struct entity_healthbar
     glm::vec2 Offset;
     glm::vec3 Scale;
     ui_render_info RenderInfo;
-    int32 CurrentFrame;
+    i32 CurrentFrame;
 };
 
 struct game_state;
 
-typedef void (*AIFunction)(entity*, game_state*, real64);
-#define AI_FUNC(name) void name(entity* Entity, game_state* GameState, real64 DeltaTime)
+typedef void (*AIFunction)(entity*, game_state*, r64);
+#define AI_FUNC(name) void name(entity* Entity, game_state* GameState, r64 DeltaTime)
 
 #define AI_FUNCS(entityname) Entity->Enemy.Idle = & ## entityname ## Idle; \
 Entity->Enemy.Alerted = & ## entityname ## Alerted; \
@@ -94,31 +94,31 @@ struct weapon_collider_info
 
 struct enemy_health_count
 {
-    bool32 Visible = false;
+    b32 Visible = false;
     char Count[20];
     glm::vec2 Position = glm::vec2(0, 0);
 };
 
 struct player_inventory
 {
-    int32 HealthPotionCount = 0;
+    i32 HealthPotionCount = 0;
 };
 
 struct loot
 {
-    int32 HealthPotions = 0;
+    i32 HealthPotions = 0;
 };
 
 struct entity
 {
     Entity_Type Type;
     char* Name;
-    uint32 EntityIndex;
+    u32 EntityIndex;
     glm::vec2 Position;
     glm::vec2 Center = glm::vec2(0.5, 0.5);
     glm::vec3 Rotation;;
-    real32 Scale;
-    bool32 IsFlipped;
+    r32 Scale;
+    b32 IsFlipped;
     
     Look_Direction LookDirection = Down;
     Entity_Layer Layer;
@@ -127,47 +127,47 @@ struct entity
     animation_info AnimationInfo;
     animation* CurrentAnimation = 0;
     
-    uint32 RenderEntityHandle;
+    u32 RenderEntityHandle;
     
-    bool32 Active = true;
-    bool32 Dead = false;
+    b32 Active = true;
+    b32 Dead = false;
     collision_AABB CollisionAABB;
-    bool32 IsKinematic = false;
-    bool32 IsColliding = false;
-    bool32 IsStatic = false; // For stuff that can't be moved by collision
-    bool32 IsPickup = false;
-    bool32 HasHitTrigger = false;
+    b32 IsKinematic = false;
+    b32 IsColliding = false;
+    b32 IsStatic = false; // For stuff that can't be moved by collision
+    b32 IsPickup = false;
+    b32 HasHitTrigger = false;
     collision_AABB HitTrigger;
     
     glm::vec2 Velocity;
     
-    bool32 Hit = false;
+    b32 Hit = false;
     
-    int32 HitFlickerFramesLeft = 0;
-    int32 HitFlickerFrameMax = 6;
+    i32 HitFlickerFramesLeft = 0;
+    i32 HitFlickerFrameMax = 6;
     timer HitFlickerTimer;
     
     timer HitAttackCountIdResetTimer;
     
-    int32 FullHealth;
-    int32 Health = -1;
-    int32 HealthLost;
+    i32 FullHealth;
+    i32 Health = -1;
+    i32 HealthLost;
     timer HealthDecreaseTimer;
     
-    int32 AttackCount;
-    int32 HitAttackCountId = -1;
+    i32 AttackCount;
+    i32 HitAttackCountId = -1;
     
     timer RecoilTimer;
     timer HitCooldownTimer;
-    real32 HitRecoilSpeed;
+    r32 HitRecoilSpeed;
     glm::vec2 HitRecoilDirection;
     
-    real32 AttackMoveSpeed;
+    r32 AttackMoveSpeed;
     timer AttackMoveTimer;
-    int32 AttackLowFrameIndex;
-    int32 AttackHighFrameIndex;
+    i32 AttackLowFrameIndex;
+    i32 AttackHighFrameIndex;
     
-    bool32 HasWeapon = false;
+    b32 HasWeapon = false;
     entity_weapon Weapon;
     weapon_collider_info WeaponColliderInfo;
     
@@ -175,15 +175,15 @@ struct entity
     {
         struct
         {
-            bool32 IsAttacking = false;
+            b32 IsAttacking = false;
             
-            int32 FullStamina;
-            int32 Stamina;
-            int32 StaminaLost;
-            int32 HitStaminaCost;
-            int32 RollStaminaCost;
-            int32 AttackStaminaCost;
-            int32 MinDiffStamina;
+            i32 FullStamina;
+            i32 Stamina;
+            i32 StaminaLost;
+            i32 HitStaminaCost;
+            i32 RollStaminaCost;
+            i32 AttackStaminaCost;
+            i32 MinDiffStamina;
             
             player_inventory Inventory;
             
@@ -197,38 +197,38 @@ struct entity
             timer DashCooldownTimer;
             timer PickupCooldownTimer;
             
-            real64 CurrentAttackCooldownTime;
-            real64 AttackCooldown;
+            r64 CurrentAttackCooldownTime;
+            r64 AttackCooldown;
             
-            bool32 IsDashing = false;
-            real32 DashCounterDivider;
-            real64 CurrentDashTime;
-            real64 MaxDashTime;
+            b32 IsDashing = false;
+            r32 DashCounterDivider;
+            r64 CurrentDashTime;
+            r64 MaxDashTime;
             
-            real32 DashDirectionX;
-            real32 DashDirectionY;
-            real32 DashSpeed;
-            uint32 DashCount;
+            r32 DashDirectionX;
+            r32 DashDirectionY;
+            r32 DashSpeed;
+            u32 DashCount;
             
-            bool32 IsDefending = false;
+            b32 IsDefending = false;
             
-            real64 CurrentDashCooldownTime;
-            real64 DashCooldown;
+            r64 CurrentDashCooldownTime;
+            r64 DashCooldown;
             
-            real32 WalkingSpeed;
+            r32 WalkingSpeed;
             entity* Pickup = 0;
-            bool32 RenderCrosshair;
-            real32 CrosshairRadius;
-            real32 CrosshairPositionX;
-            real32 CrosshairPositionY;
+            b32 RenderCrosshair;
+            r32 CrosshairRadius;
+            r32 CrosshairPositionX;
+            r32 CrosshairPositionY;
             
-            real64 PickupCooldown;
-            real32 ThrowingSpeed;
-            real32 LastKnownDirectionX;
-            real32 LastKnownDirectionY;
-            real32 TargetingDistance;
-            int32 TargetedEnemyHandle;
-            int32 DustCloudHandle;
+            r64 PickupCooldown;
+            r32 ThrowingSpeed;
+            r32 LastKnownDirectionX;
+            r32 LastKnownDirectionY;
+            r32 TargetingDistance;
+            i32 TargetedEnemyHandle;
+            i32 DustCloudHandle;
             
         } Player;
         struct
@@ -236,25 +236,25 @@ struct entity
             Enemy_Type EnemyType;
             entity_healthbar* Healthbar = 0;
             
-            int32 HealthCountIndex = 0;
+            i32 HealthCountIndex = 0;
             enemy_health_count HealthCounts[10];
             glm::vec2 HealthCountStart;
             
-            bool32 HasLoot = false;
+            b32 HasLoot = false;
             loot Loot;
             
             AI_State AIState;
             astar_path AStarPath;
-            bool32 IsTargeted = false;
-            real32 TargetingPositionX;
-            real32 TargetingPositionY;
-            real32 MinDistanceToPlayer;
-            real32 MaxAlertDistance;
-            real32 SlowdownDistance;
-            real32 MaxFollowDistance;
-            real32 AttackDistance;
-            real32 WalkingSpeed;
-            real32 CloseToPlayerSpeed;
+            b32 IsTargeted = false;
+            r32 TargetingPositionX;
+            r32 TargetingPositionY;
+            r32 MinDistanceToPlayer;
+            r32 MaxAlertDistance;
+            r32 SlowdownDistance;
+            r32 MaxFollowDistance;
+            r32 AttackDistance;
+            r32 WalkingSpeed;
+            r32 CloseToPlayerSpeed;
             AIFunction Idle;
             AIFunction Alerted;
             AIFunction Following;
@@ -264,36 +264,36 @@ struct entity
             AIFunction Dying;
             AIFunction Wandering;
             
-            int32 WaypointCount = 0;
+            i32 WaypointCount = 0;
             v2i Waypoints[10];
             
             union
             {
                 struct
                 {
-                    real32 ExplosionCollisionExtentsX;
-                    real32 ExplosionCollisionExtentsY;
+                    r32 ExplosionCollisionExtentsX;
+                    r32 ExplosionCollisionExtentsY;
                     timer ExplodeStartTimer;
                     timer ExplodeCountdownTimer;
                     
-                    bool32 InPickupMode = false;
+                    b32 InPickupMode = false;
                     timer PickupThrowTimer;
                 } Blob;
                 struct
                 {
-                    bool32 IsAttacking = false;
+                    b32 IsAttacking = false;
                     timer AttackCooldownTimer;
                     timer ChargingTimer;
                 } Skeleton;
                 struct
                 {
-                    bool32 IsAttacking = false;
+                    b32 IsAttacking = false;
                     timer AttackCooldownTimer;
                     timer ChargingTimer;
                 } Minotaur;
                 struct
                 {
-                    bool32 IsAttacking = false;
+                    b32 IsAttacking = false;
                     timer AttackCooldownTimer;
                     timer ChargingTimer;
                 } Wraith;
@@ -306,7 +306,7 @@ struct entity
     };
     
     glm::vec2 RenderButtonOffset = glm::vec2(0.5f, 1.5f);
-    bool32 RenderButtonHint = false;
+    b32 RenderButtonHint = false;
     
     entity(){}
 };

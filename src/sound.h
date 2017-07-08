@@ -3,33 +3,33 @@
 
 struct sound_info
 {
-    real32 Pitch;
-    real32 Gain;
-    real32 Position[3];
-    real32 Velocity[3];
-    bool32 Loop;
+    r32 Pitch;
+    r32 Gain;
+    r32 Position[3];
+    r32 Velocity[3];
+    b32 Loop;
 };
 
 struct sound_effect
 {
-    uint32 Buffer;
-    uint32 Source;
-    int32 SourceState;
+    u32 Buffer;
+    u32 Source;
+    i32 SourceState;
     sound_info SoundInfo;
 };
 
 struct sound_queue
 {
-    uint32 SoundCount;
+    u32 SoundCount;
     sound_effect Sounds[32];
 };
 
 
 struct sound_manager
 {
-    bool32 Muted;
-    bool32 Paused;
-    bool32 Stopped;
+    b32 Muted;
+    b32 Paused;
+    b32 Stopped;
     union 
     {
         sound_effect SoundEffects[64];

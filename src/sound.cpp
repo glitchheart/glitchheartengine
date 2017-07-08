@@ -1,4 +1,4 @@
- void PlaySoundEffect(game_state *GameState, sound_effect* LoadedSound, real32 Pitch = 1.0f)
+ void PlaySoundEffect(game_state *GameState, sound_effect* LoadedSound, r32 Pitch = 1.0f)
  {
      sound_effect SoundEffect = {};
      SoundEffect.Buffer = LoadedSound->Buffer;

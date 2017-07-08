@@ -146,9 +146,9 @@ static void LoadSounds(sound_manager *SoundManager, sound_device* SoundDevice)
     sound_info DefaultSoundInfo = {};
     DefaultSoundInfo.Pitch = 1;
     DefaultSoundInfo.Gain = 1;
-    real32 Position[3] = {0, 0, 0};
+    r32 Position[3] = {0, 0, 0};
     memcpy(DefaultSoundInfo.Position, Position, 3);
-    real32 Velocity[3] = {0, 0, 0};
+    r32 Velocity[3] = {0, 0, 0};
     memcpy(DefaultSoundInfo.Velocity, Velocity, 3);
     DefaultSoundInfo.Loop = AL_FALSE;
     
@@ -185,8 +185,8 @@ static void PlaySound(sound_effect *SoundEffect,sound_device* Device)
     {
         ALuint Source = 0;
         
-        int32 SourceState;
-        for(uint32 SourceIndex = 0; SourceIndex < SOURCES; SourceIndex++)
+        i32 SourceState;
+        for(u32 SourceIndex = 0; SourceIndex < SOURCES; SourceIndex++)
         {
             alGetSourcei(Device->Sources[SourceIndex],AL_SOURCE_STATE,&SourceState);
             if(SourceState != AL_PLAYING)
@@ -209,7 +209,7 @@ static void PlaySound(sound_effect *SoundEffect,sound_device* Device)
 static void StopSound(game_state* GameState, sound_device* SoundDevice)
 {
     
-    for(uint32 SourceIndex = 0; SourceIndex < SOURCES; SourceIndex++)
+    for(u32 SourceIndex = 0; SourceIndex < SOURCES; SourceIndex++)
     {
         alSourcef(SoundDevice->Sources[SourceIndex],AL_GAIN,0);
         alSourceStop(SoundDevice->Sources[SourceIndex]);
@@ -225,7 +225,7 @@ static void StopSound(game_state* GameState, sound_device* SoundDevice)
 
 static void PauseSound(game_state* GameState, sound_device* SoundDevice)
 {
-    for(uint32 SourceIndex = 0; SourceIndex < SOURCES; SourceIndex++)
+    for(u32 SourceIndex = 0; SourceIndex < SOURCES; SourceIndex++)
     {
         alSourcef(SoundDevice->Sources[SourceIndex],AL_GAIN,0);
         ALint SourceState;
@@ -251,7 +251,7 @@ static void PlaySounds(game_state *GameState, sound_device* Device)
 {
     if(GameState->SoundManager.Muted && !Device->Muted)
     {
-        for(uint32 SourceIndex = 0; SourceIndex < SOURCES; SourceIndex++)
+        for(u32 SourceIndex = 0; SourceIndex < SOURCES; SourceIndex++)
         {
             alSourcef(Device->Sources[SourceIndex],AL_GAIN,0);
         }
@@ -259,7 +259,7 @@ static void PlaySounds(game_state *GameState, sound_device* Device)
     }
     else if(!GameState->SoundManager.Muted)
     {
-        for(uint32 SourceIndex = 0; SourceIndex < SOURCES; SourceIndex++)
+        for(u32 SourceIndex = 0; SourceIndex < SOURCES; SourceIndex++)
         {
             alSourcef(Device->Sources[SourceIndex],AL_GAIN,1);
         }
@@ -273,7 +273,7 @@ static void PlaySounds(game_state *GameState, sound_device* Device)
     }
     else 
     {
-        for (uint32 Sound = 0;
+        for (u32 Sound = 0;
              Sound < GameState->SoundManager.SoundQueue.SoundCount;
              Sound++)
         {

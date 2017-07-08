@@ -12,9 +12,9 @@
 
 #define DEBUG
 
-static void TickTimers(game_state* GameState, real64 DeltaTime)
+static void TickTimers(game_state* GameState, r64 DeltaTime)
 {
-    for(uint32 Index = 0; Index < NUM_TIMERS; Index++)
+    for(u32 Index = 0; Index < NUM_TIMERS; Index++)
     {
         if(GameState->Timers[Index] > 0)
             GameState->Timers[Index] -= DeltaTime;
@@ -23,7 +23,7 @@ static void TickTimers(game_state* GameState, real64 DeltaTime)
     }
 }
 
-static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
+static void EditorUpdateEntities(game_state* GameState, r64 DeltaTime)
 {
     if(GetKeyDown(Key_Escape, GameState))
     {
@@ -64,13 +64,13 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
                     
                     GameState->EditorState.Animations = (char**)malloc(GameState->Animations.size() * sizeof(char*));
                     
-                    int32 Index = 0;
+                    i32 Index = 0;
                     for(AnimationIterator = GameState->Animations.begin(); AnimationIterator != GameState->Animations.end(); AnimationIterator++)
                     {
                         GameState->EditorState.Animations[Index++] = AnimationIterator->first;
                     }
                     
-                    GameState->EditorState.AnimationsLength = (int32)GameState->Animations.size();
+                    GameState->EditorState.AnimationsLength = (i32)GameState->Animations.size();
                     
                     GameState->EditorState.CreateNewAnimationButton->Active = true;
                     GameState->EditorState.TileIsSolidCheckbox->Active = false;
@@ -90,7 +90,7 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
                         GameState->EditorState.Textures[Index++] = &*TextureIterator->first;
                     }
                     
-                    GameState->EditorState.TexturesLength = (int32)GameState->RenderState.Textures.size();
+                    GameState->EditorState.TexturesLength = (i32)GameState->RenderState.Textures.size();
                     GameState->EditorState.Mode = Editor_Animation;
                     GameState->EditorState.Editing = true;
                 }
@@ -121,9 +121,9 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
     }
     else
     {
-        bool32 InToolbar = GameState->RenderState.WindowHeight - GameState->InputController.MouseY >= GameState->RenderState.WindowHeight - 150;
+        b32 InToolbar = GameState->RenderState.WindowHeight - GameState->InputController.MouseY >= GameState->RenderState.WindowHeight - 150;
         
-        for(uint32 ButtonIndex = 0; ButtonIndex < 10; ButtonIndex++)
+        for(u32 ButtonIndex = 0; ButtonIndex < 10; ButtonIndex++)
         {
             button* Button = &GameState->EditorState.Buttons[ButtonIndex];
             Button->Clicked = false;
@@ -165,13 +165,13 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
                             
                             GameState->EditorState.Animations = (char**)malloc(GameState->Animations.size() * sizeof(char*));
                             
-                            int32 Index = 0;
+                            i32 Index = 0;
                             for(AnimationIterator = GameState->Animations.begin(); AnimationIterator != GameState->Animations.end(); AnimationIterator++)
                             {
                                 GameState->EditorState.Animations[Index++] = AnimationIterator->first;
                             }
                             
-                            GameState->EditorState.AnimationsLength = (int32)GameState->Animations.size();
+                            GameState->EditorState.AnimationsLength = (i32)GameState->Animations.size();
                             
                             GameState->EditorState.CreateNewAnimationButton->Active = true;
                             GameState->EditorState.TileIsSolidCheckbox->Active = false;
@@ -191,7 +191,7 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
                                 GameState->EditorState.Textures[Index++] = &*TextureIterator->first;
                             }
                             
-                            GameState->EditorState.TexturesLength = (int32)GameState->RenderState.Textures.size();
+                            GameState->EditorState.TexturesLength = (i32)GameState->RenderState.Textures.size();
                             GameState->EditorState.Mode = Editor_Animation;
                             GameState->EditorState.Editing = true;
                         }
@@ -219,7 +219,7 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
             }
         }
         
-        for(uint32 Index = 0; Index < 10; Index++)
+        for(u32 Index = 0; Index < 10; Index++)
         {
             checkbox* Checkbox = &GameState->EditorState.Checkboxes[Index];
             Checkbox->JustChecked = false;
@@ -236,7 +236,7 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
         
         if(GameState->EditorState.TileIsSolidCheckbox->JustChecked)
         {
-            uint32 SelectedTile = GameState->EditorState.SelectedTileType;
+            u32 SelectedTile = GameState->EditorState.SelectedTileType;
             GameState->CurrentLevel.Tilemap.Tiles[SelectedTile].IsSolid = GameState->EditorState.TileIsSolidCheckbox->Checked;
             UpdateTileData(SelectedTile, GameState->CurrentLevel.Tilemap.Tiles[SelectedTile].IsSolid, &GameState->CurrentLevel.Tilemap);
             SaveTilesheetMetaFile(Concat(Concat("../assets/textures/tilesheets/", GameState->CurrentLevel.SheetName), ".tm"), &GameState->RenderState, GameState->CurrentLevel, false);
@@ -244,9 +244,9 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
             // @Incomplete: Should call SaveTilesheetMetafile!!!!
         }
         
-        int32 FocusedField = GameState->EditorState.FocusedTextfield;
+        i32 FocusedField = GameState->EditorState.FocusedTextfield;
         
-        for(int32 Index = 0; Index < 20; Index++)
+        for(i32 Index = 0; Index < 20; Index++)
         {
             textfield* Textfield = &GameState->EditorState.Textfields[Index];
             Textfield->InFocus = false;
@@ -270,7 +270,7 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
                 
                 if(GameState->InputController.CurrentCharacter && GameState->InputController.CurrentCharacter != ' ')
                 {
-                    bool32 CanEnter = true;
+                    b32 CanEnter = true;
                     
                     switch(Textfield->Type)
                     {
@@ -374,7 +374,7 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
                             {
                                 entity* Selected = 0;
                                 
-                                for(uint32 EntityIndex = 0;
+                                for(u32 EntityIndex = 0;
                                     EntityIndex < GameState->EntityCount;
                                     EntityIndex++)
                                 {
@@ -436,46 +436,46 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
                             sscanf(GameState->EditorState.TileBrushHeightField->Text, "%f", &GameState->EditorState.TileBrushSize.y);
                             
                             GameState->EditorState.TileIsSolidCheckbox->Active = true;
-                            int32 X = (int32)glm::floor(Pos.x);
-                            int32 Y = (int32)glm::floor(Pos.y);
-                            GameState->EditorState.TileX = (real32)X;
-                            GameState->EditorState.TileY = (real32)glm::ceil(Pos.y);
+                            i32 X = (i32)glm::floor(Pos.x);
+                            i32 Y = (i32)glm::floor(Pos.y);
+                            GameState->EditorState.TileX = (r32)X;
+                            GameState->EditorState.TileY = (r32)glm::ceil(Pos.y);
                             
                             if(GetMouseButton(Mouse_Left, GameState))
                             {
-                                int32 TilesheetWidth = GameState->CurrentLevel.Tilemap.RenderEntity.Texture->Width / GameState->CurrentLevel.Tilemap.TileSize;
-                                int32 TilesheetHeight = GameState->CurrentLevel.Tilemap.RenderEntity.Texture->Height / GameState->CurrentLevel.Tilemap.TileSize;
+                                i32 TilesheetWidth = GameState->CurrentLevel.Tilemap.RenderEntity.Texture->Width / GameState->CurrentLevel.Tilemap.TileSize;
+                                i32 TilesheetHeight = GameState->CurrentLevel.Tilemap.RenderEntity.Texture->Height / GameState->CurrentLevel.Tilemap.TileSize;
                                 
-                                real32 ToolbarX = GameState->EditorState.ToolbarX + GameState->EditorState.TilemapOffset.x;
-                                real32 ToolbarY = GameState->EditorState.ToolbarY + GameState->EditorState.TilemapOffset.y;
+                                r32 ToolbarX = GameState->EditorState.ToolbarX + GameState->EditorState.TilemapOffset.x;
+                                r32 ToolbarY = GameState->EditorState.ToolbarY + GameState->EditorState.TilemapOffset.y;
                                 
                                 if(GameState->InputController.MouseX >= ToolbarX && GameState->InputController.MouseX <= ToolbarX + TilesheetWidth * GameState->EditorState.RenderedTileSize && GameState->RenderState.WindowHeight - GameState->InputController.MouseY > ToolbarY && GameState->RenderState.WindowHeight - GameState->InputController.MouseY <=  ToolbarY + TilesheetHeight * GameState->EditorState.RenderedTileSize)
                                 {
-                                    int32 X = (int32)(GameState->InputController.MouseX - (GameState->EditorState.ToolbarX + GameState->EditorState.TilemapOffset.x)) / GameState->EditorState.RenderedTileSize;
-                                    int32 Y = (int32)(GameState->RenderState.WindowHeight - GameState->InputController.MouseY - (GameState->EditorState.ToolbarY + GameState->EditorState.TilemapOffset.y)) / GameState->EditorState.RenderedTileSize;
+                                    i32 X = (i32)(GameState->InputController.MouseX - (GameState->EditorState.ToolbarX + GameState->EditorState.TilemapOffset.x)) / GameState->EditorState.RenderedTileSize;
+                                    i32 Y = (i32)(GameState->RenderState.WindowHeight - GameState->InputController.MouseY - (GameState->EditorState.ToolbarY + GameState->EditorState.TilemapOffset.y)) / GameState->EditorState.RenderedTileSize;
                                     
-                                    GameState->EditorState.SelectedTilePosition = glm::vec2((real32)X, (real32)Y);
-                                    int32 Selected = X + Y * TilesheetWidth;
+                                    GameState->EditorState.SelectedTilePosition = glm::vec2((r32)X, (r32)Y);
+                                    i32 Selected = X + Y * TilesheetWidth;
                                     
                                     GameState->EditorState.SelectedTileType = Selected;
                                     GameState->EditorState.TileIsSolidCheckbox->Checked = GameState->CurrentLevel.Tilemap.Tiles[Selected].IsSolid;
                                 }
                                 else
                                 {
-                                    if(X >= 0 && X < (int32)GameState->CurrentLevel.Tilemap.Width 
-                                       && Y >= 0 && Y < (int32)GameState->CurrentLevel.Tilemap.Height)
+                                    if(X >= 0 && X < (i32)GameState->CurrentLevel.Tilemap.Width 
+                                       && Y >= 0 && Y < (i32)GameState->CurrentLevel.Tilemap.Height)
                                     {
                                         tilemap* Tilemap = &GameState->CurrentLevel.Tilemap;
                                         
                                         if(GetKey(Key_F, GameState))
                                         {
-                                            for(uint32 IndexX = 0; IndexX < Tilemap->Width; IndexX++)
+                                            for(u32 IndexX = 0; IndexX < Tilemap->Width; IndexX++)
                                             {
-                                                for(uint32 IndexY = 0; IndexY < Tilemap->Height; IndexY++)
+                                                for(u32 IndexY = 0; IndexY < Tilemap->Height; IndexY++)
                                                 {
-                                                    for(int32 X = 0; X < (int32)GameState->EditorState.TileBrushSize.x && X + IndexX < Tilemap->Width; X++)
+                                                    for(i32 X = 0; X < (i32)GameState->EditorState.TileBrushSize.x && X + IndexX < Tilemap->Width; X++)
                                                     {
-                                                        for(int32 Y = 0; Y < (int32)GameState->EditorState.TileBrushSize.y && Y + IndexY < Tilemap->Height; Y++)
+                                                        for(i32 Y = 0; Y < (i32)GameState->EditorState.TileBrushSize.y && Y + IndexY < Tilemap->Height; Y++)
                                                         {
                                                             Tilemap->Data[1][IndexX + X][IndexY + Y] = Tilemap->Tiles[GameState->EditorState.SelectedTileType + 1];
                                                         }
@@ -486,11 +486,11 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
                                         }
                                         else
                                         {
-                                            for(uint32 IndexY = 0; IndexY < Tilemap->Height; IndexY++)
+                                            for(u32 IndexY = 0; IndexY < Tilemap->Height; IndexY++)
                                             {
-                                                for(int32 RelativeX = 0; RelativeX < (int32)GameState->EditorState.TileBrushSize.x && RelativeX + X < Tilemap->Width; RelativeX++)
+                                                for(i32 RelativeX = 0; RelativeX < (i32)GameState->EditorState.TileBrushSize.x && RelativeX + X < Tilemap->Width; RelativeX++)
                                                 {
-                                                    for(int32 RelativeY = 0; RelativeY < (int32)GameState->EditorState.TileBrushSize.y && RelativeY + Y < Tilemap->Height; RelativeY++)
+                                                    for(i32 RelativeY = 0; RelativeY < (i32)GameState->EditorState.TileBrushSize.y && RelativeY + Y < Tilemap->Height; RelativeY++)
                                                     {
                                                         Tilemap->Data[GameState->EditorState.CurrentTilemapLayer][X + RelativeX][Y + RelativeY] = Tilemap->Tiles[GameState->EditorState.SelectedTileType + 1];
                                                     }
@@ -504,7 +504,7 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
                             }
                             if(GetMouseButton(Mouse_Left,GameState) && GetKey(Key_LeftShift,GameState))
                             {
-                                if(X >= 0 && X < (int32)GameState->CurrentLevel.Tilemap.Width && Y >= 0 && Y < (int32)GameState->CurrentLevel.Tilemap.Height)
+                                if(X >= 0 && X < (i32)GameState->CurrentLevel.Tilemap.Width && Y >= 0 && Y < (i32)GameState->CurrentLevel.Tilemap.Height)
                                 {
                                     GameState->CurrentLevel.Tilemap.Data[GameState->EditorState.CurrentTilemapLayer][X][Y] = GameState->CurrentLevel.Tilemap.Tiles[0];
                                 }
@@ -517,16 +517,16 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
                 // View translation
                 if(GameState->InputController.MouseX >= GameState->EditorState.ToolbarX && GameState->InputController.MouseX < GameState->EditorState.ToolbarX + GameState->EditorState.ToolbarWidth)
                 {
-                    GameState->EditorState.ToolbarScrollOffsetY += (real32)GameState->InputController.ScrollY * GameState->EditorState.ToolbarScrollSpeed * (real32)DeltaTime;
+                    GameState->EditorState.ToolbarScrollOffsetY += (r32)GameState->InputController.ScrollY * GameState->EditorState.ToolbarScrollSpeed * (r32)DeltaTime;
                     
                     if(GameState->EditorState.ToolbarScrollOffsetY > 0)
                         GameState->EditorState.ToolbarScrollOffsetY = 0.0f;
-                    else if(GameState->EditorState.ToolbarScrollOffsetY < -((real32)GameState->CurrentLevel.Tilemap.TileCount) * 60)
-                        GameState->EditorState.ToolbarScrollOffsetY = -((real32)GameState->CurrentLevel.Tilemap.TileCount) * 60;
+                    else if(GameState->EditorState.ToolbarScrollOffsetY < -((r32)GameState->CurrentLevel.Tilemap.TileCount) * 60)
+                        GameState->EditorState.ToolbarScrollOffsetY = -((r32)GameState->CurrentLevel.Tilemap.TileCount) * 60;
                 }
                 else
                 {
-                    GameState->EditorCamera.Zoom += (real32)GameState->InputController.ScrollY * GameState->EditorState.ZoomingSpeed * (real32)DeltaTime * GameState->EditorCamera.Zoom;
+                    GameState->EditorCamera.Zoom += (r32)GameState->InputController.ScrollY * GameState->EditorState.ZoomingSpeed * (r32)DeltaTime * GameState->EditorCamera.Zoom;
                     GameState->EditorCamera.Zoom = Max(Min(GameState->EditorCamera.Zoom, GameState->EditorState.MaxZoom), GameState->EditorState.MinZoom);
                 }
                 
@@ -534,16 +534,16 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
                 {
                     if(GameState->EditorState.LastKnownMouseX == 0 && GameState->EditorState.LastKnownMouseY == 0)
                     {
-                        GameState->EditorState.LastKnownMouseX = (real32)GameState->InputController.MouseX;
-                        GameState->EditorState.LastKnownMouseY = (real32)GameState->InputController.MouseY;
+                        GameState->EditorState.LastKnownMouseX = (r32)GameState->InputController.MouseX;
+                        GameState->EditorState.LastKnownMouseY = (r32)GameState->InputController.MouseY;
                     }
                     
                     glm::vec2 Direction = glm::vec2(GameState->InputController.MouseX - GameState->EditorState.LastKnownMouseX, GameState->InputController.MouseY - GameState->EditorState.LastKnownMouseY);
                     
                     GameState->EditorCamera.Center -= glm::vec2(Direction.x / GameState->EditorCamera.Zoom * GameState->EditorState.PanningSpeed * DeltaTime, Direction.y / GameState->EditorCamera.Zoom * -GameState->EditorState.PanningSpeed * DeltaTime);
                     
-                    GameState->EditorState.LastKnownMouseX = (real32)GameState->InputController.MouseX;
-                    GameState->EditorState.LastKnownMouseY = (real32)GameState->InputController.MouseY;
+                    GameState->EditorState.LastKnownMouseX = (r32)GameState->InputController.MouseX;
+                    GameState->EditorState.LastKnownMouseY = (r32)GameState->InputController.MouseY;
                 }
                 else
                 {
@@ -608,25 +608,25 @@ static void EditorUpdateEntities(game_state* GameState, real64 DeltaTime)
                     {
                         LoadedAnimation->Frames = (sprite_sheet_frame*)malloc(LoadedAnimation->FrameCount * sizeof(sprite_sheet_frame));
                         
-                        int32 X = (int32)LoadedAnimation->FrameSize.x * (int32)LoadedAnimation->FrameOffset.x;
-                        int32 Y = (int32)LoadedAnimation->FrameSize.y * (int32)LoadedAnimation->FrameOffset.y;
+                        i32 X = (i32)LoadedAnimation->FrameSize.x * (i32)LoadedAnimation->FrameOffset.x;
+                        i32 Y = (i32)LoadedAnimation->FrameSize.y * (i32)LoadedAnimation->FrameOffset.y;
                         
-                        int32 FrameIndex = 0;
+                        i32 FrameIndex = 0;
                         
-                        while(FrameIndex < (int32)LoadedAnimation->FrameCount)
+                        while(FrameIndex < (i32)LoadedAnimation->FrameCount)
                         {
                             if(FrameIndex > 0)
                             {
-                                if(X + (int32)LoadedAnimation->FrameSize.x < LoadedAnimation->Texture->Width)
-                                    X += (int32)LoadedAnimation->FrameSize.x;
+                                if(X + (i32)LoadedAnimation->FrameSize.x < LoadedAnimation->Texture->Width)
+                                    X += (i32)LoadedAnimation->FrameSize.x;
                                 else
                                 {
                                     X = 0;
-                                    Y += (int32)LoadedAnimation->FrameSize.y;
+                                    Y += (i32)LoadedAnimation->FrameSize.y;
                                 }
                             }
                             
-                            LoadedAnimation->Frames[FrameIndex] = { (real32)X, (real32)Y };
+                            LoadedAnimation->Frames[FrameIndex] = { (r32)X, (r32)Y };
                             FrameIndex++;
                         }
                     }
@@ -656,7 +656,7 @@ extern "C" UPDATE(Update)
     
     if(GameState->ReloadData->ReloadSkeletonFile)
     {
-        for(uint32 EntityIndex = 0; EntityIndex < GameState->EntityCount; EntityIndex++)
+        for(u32 EntityIndex = 0; EntityIndex < GameState->EntityCount; EntityIndex++)
         {
             auto Entity = GameState->Entities[EntityIndex];
             if(Entity.Type == Entity_Enemy && Entity.Enemy.EnemyType == Enemy_Skeleton && !Entity.Dead)
@@ -669,7 +669,7 @@ extern "C" UPDATE(Update)
     
     if(GameState->ReloadData->ReloadMinotaurFile)
     {
-        for(uint32 EntityIndex = 0; EntityIndex < GameState->EntityCount; EntityIndex++)
+        for(u32 EntityIndex = 0; EntityIndex < GameState->EntityCount; EntityIndex++)
         {
             auto Entity = GameState->Entities[EntityIndex];
             if(Entity.Type == Entity_Enemy && Entity.Enemy.EnemyType == Enemy_Minotaur && !Entity.Dead)
@@ -813,7 +813,7 @@ extern "C" UPDATE(Update)
         
         if(GameState->MainMenu.SelectedIndex < 0)
             GameState->MainMenu.SelectedIndex = GameState->MainMenu.OptionCount - 1;
-        else if(GameState->MainMenu.SelectedIndex == (int32)GameState->MainMenu.OptionCount)
+        else if(GameState->MainMenu.SelectedIndex == (i32)GameState->MainMenu.OptionCount)
             GameState->MainMenu.SelectedIndex = 0;
         
         if(GetKeyDown(Key_Enter, GameState))
@@ -836,7 +836,7 @@ extern "C" UPDATE(Update)
     {
         case Fading_In:
         {
-            GameState->GameCamera.FadingAlpha -= GameState->GameCamera.FadingSpeed * (real32)DeltaTime;
+            GameState->GameCamera.FadingAlpha -= GameState->GameCamera.FadingSpeed * (r32)DeltaTime;
             
             if(GameState->GameCamera.FadingAlpha <= 0.0f)
             {
@@ -847,7 +847,7 @@ extern "C" UPDATE(Update)
         break;
         case Fading_Out:
         {
-            GameState->GameCamera.FadingAlpha += GameState->GameCamera.FadingSpeed * (real32)DeltaTime;
+            GameState->GameCamera.FadingAlpha += GameState->GameCamera.FadingSpeed * (r32)DeltaTime;
             
             if(GameState->GameCamera.FadingAlpha >= 1.0f)
             {
@@ -859,7 +859,7 @@ extern "C" UPDATE(Update)
         {
             if(GameState->GameCamera.FadingIn)
             {
-                GameState->GameCamera.FadingAlpha -= GameState->GameCamera.FadingSpeed * (real32)DeltaTime;
+                GameState->GameCamera.FadingAlpha -= GameState->GameCamera.FadingSpeed * (r32)DeltaTime;
                 
                 if(GameState->GameCamera.FadingAlpha <= 0.0f)
                 {
@@ -870,7 +870,7 @@ extern "C" UPDATE(Update)
             }
             else
             {
-                GameState->GameCamera.FadingAlpha += GameState->GameCamera.FadingSpeed * (real32)DeltaTime;
+                GameState->GameCamera.FadingAlpha += GameState->GameCamera.FadingSpeed * (r32)DeltaTime;
                 
                 if(GameState->GameCamera.FadingAlpha >= GameState->GameCamera.EndAlpha)
                 {
@@ -896,8 +896,8 @@ extern "C" UPDATE(Update)
                 
                 if(!TimerDone(GameState, GameState->GameCamera.ScreenShakeTimer))
                 {
-                    real32 Radius = 0.05f;
-                    int32 RandomAngle = rand() % 360;
+                    r32 Radius = 0.05f;
+                    i32 RandomAngle = rand() % 360;
                     glm::vec2 Offset = glm::vec2(sin(RandomAngle) * Radius, cos(RandomAngle) * Radius);
                     Center.x += Offset.x / 1.5f;
                     Center.y += Offset.y;
@@ -940,13 +940,13 @@ extern "C" UPDATE(Update)
                 {
                     if(GetKeyDown(Key_Left, GameState))
                     {
-                        GameState->EditorState.PlacementEntity = (Entity_Placement_Type)((int32)GameState->EditorState.PlacementEntity - 1);
+                        GameState->EditorState.PlacementEntity = (Entity_Placement_Type)((i32)GameState->EditorState.PlacementEntity - 1);
                         if(GameState->EditorState.PlacementEntity == -1)
-                            GameState->EditorState.PlacementEntity = (Entity_Placement_Type)((int32)Placement_Entity_Max - 1);
+                            GameState->EditorState.PlacementEntity = (Entity_Placement_Type)((i32)Placement_Entity_Max - 1);
                     }
                     else if(GetKeyDown(Key_Right, GameState))
                     {
-                        GameState->EditorState.PlacementEntity = (Entity_Placement_Type)((int32)GameState->EditorState.PlacementEntity + 1);
+                        GameState->EditorState.PlacementEntity = (Entity_Placement_Type)((i32)GameState->EditorState.PlacementEntity + 1);
                         if(GameState->EditorState.PlacementEntity == Placement_Entity_Max)
                             GameState->EditorState.PlacementEntity = (Entity_Placement_Type)0;
                     }

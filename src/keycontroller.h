@@ -174,31 +174,31 @@ struct input_controller
         Joystick_4
     };
     
-    bool32 AnyKeyPressed;
+    b32 AnyKeyPressed;
     
-    bool32 KeysDown[Key_Count];
-    bool32 KeysUp[Key_Count];
+    b32 KeysDown[Key_Count];
+    b32 KeysUp[Key_Count];
     Key_Mode KeysJustPressed[Key_Count];
     
-    bool32 MouseButtonDown[Mouse_Count];
+    b32 MouseButtonDown[Mouse_Count];
     Key_Mode MouseButtonJustPressed[Mouse_Count];
     
-    bool32 JoystickKeysDown[Joystick_Count];
+    b32 JoystickKeysDown[Joystick_Count];
     Key_Mode JoystickKeysJustPressed[Joystick_Count];
     
-    real32 Axes[NUM_AXES];
+    r32 Axes[NUM_AXES];
     
-    real64 MouseX;
-    real64 MouseY;
-    real64 ScrollX;
-    real64 ScrollY;
+    r64 MouseX;
+    r64 MouseY;
+    r64 ScrollX;
+    r64 ScrollY;
     
-    real32 ControllerDeadzone = 0.2f;
-    bool32 ControllerPresent;
+    r32 ControllerDeadzone = 0.2f;
+    b32 ControllerPresent;
     Controller_Type ControllerType;
     
     char CurrentCharacter;
-    bool32 DeleteCharacter = false;
+    b32 DeleteCharacter = false;
 };
 
 #endif

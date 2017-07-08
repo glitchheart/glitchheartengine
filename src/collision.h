@@ -21,7 +21,7 @@
  {
      Collision_Side Side;
      entity* Other[NUM_OTHERS]; 
-     int32 OtherCount = 0;
+     i32 OtherCount = 0;
  };
  
  struct collision_AABB
@@ -32,8 +32,8 @@
      glm::vec2 Min;
      glm::vec2 Max;
      glm::vec2 Size;
-     bool32 IsTrigger;
-     bool32 IsColliding;
+     b32 IsTrigger;
+     b32 IsColliding;
  };
  
 #endif

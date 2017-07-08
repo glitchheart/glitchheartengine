@@ -53,9 +53,9 @@ void ExecuteCommand(game_state *GameState)
             }
         }
         
-        bool32 Found = false;
+        b32 Found = false;
         
-        for(uint32 i = 0; i < CommandCount; i++)
+        for(u32 i = 0; i < CommandCount; i++)
         {
             if(strcmp(CommandName, Commands[i].Name) == 0)
             {
@@ -90,7 +90,7 @@ void ExecuteCommand(game_state *GameState)
     }
 }
 
-static void CheckConsoleInput(game_state* GameState, real64 DeltaTime)
+static void CheckConsoleInput(game_state* GameState, r64 DeltaTime)
 {
     if(GameState->Console.Open && GameState->Console.CurrentTime < GameState->Console.TimeToAnimate)
     {

@@ -9,10 +9,10 @@ enum Tile_Layer
 
 struct tile_data
 {
-    int32 TypeIndex;
+    i32 TypeIndex;
     glm::vec2 TextureOffset;
     glm::vec2 TextureSize;
-    bool32 IsSolid;
+    b32 IsSolid;
     glm::vec2 Center;
     collision_AABB CollisionAABB;
     Tile_Layer Layer;
@@ -22,18 +22,18 @@ struct tile_data
 
 struct tilemap
 {
-    int32 Width = 0;
-    int32 Height = 0;
-    uint32 TileSize = 16;
-    int32 TilesheetWidth = 0;
-    int32 TilesheetHeight = 0;
+    i32 Width = 0;
+    i32 Height = 0;
+    u32 TileSize = 16;
+    i32 TilesheetWidth = 0;
+    i32 TilesheetHeight = 0;
     
     tilemap_render_info RenderInfo;
     editor_render_info EditorRenderInfo;
     render_entity RenderEntity;
     
     tile_data* Tiles;
-    uint32 TileCount;
+    u32 TileCount;
     tile_data** Data[TILEMAP_LAYERS];
 };
 
@@ -44,7 +44,7 @@ struct level
     glm::vec2 PlayerStartPosition;
     tilemap Tilemap;
     char* TilesheetPath;
-    uint32 TilesheetIndex;
+    u32 TilesheetIndex;
 };
 
 

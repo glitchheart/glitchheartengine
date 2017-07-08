@@ -1,8 +1,8 @@
-static void UpdateTileData(int32 SelectedTypeIndex, bool32 IsSolid, tilemap* Tilemap)
+static void UpdateTileData(i32 SelectedTypeIndex, b32 IsSolid, tilemap* Tilemap)
 {
-    for(uint32 X = 0; X < Tilemap->Width; X++)
+    for(u32 X = 0; X < Tilemap->Width; X++)
     {
-        for(uint32 Y = 0; Y < Tilemap->Height; Y++)
+        for(u32 Y = 0; Y < Tilemap->Height; Y++)
         {
             if(Tilemap->Data[1][X][Y].TypeIndex == SelectedTypeIndex)
                 Tilemap->Data[1][X][Y].IsSolid = IsSolid;
@@ -10,7 +10,7 @@ static void UpdateTileData(int32 SelectedTypeIndex, bool32 IsSolid, tilemap* Til
     }
 }
 
-static void SaveTilesheetMetaFile(const char* FilePath, render_state* RenderState, level& Level, bool32 New = false)
+static void SaveTilesheetMetaFile(const char* FilePath, render_state* RenderState, level& Level, b32 New = false)
 {
     FILE* File;
     File = fopen(FilePath, "w");
@@ -19,9 +19,9 @@ static void SaveTilesheetMetaFile(const char* FilePath, render_state* RenderStat
     {
         if(New)
         {
-            uint32 TextureIndex = 0;
+            u32 TextureIndex = 0;
             
-            for(uint32 Index = 0; RenderState->TilesheetCount; Index++)
+            for(u32 Index = 0; RenderState->TilesheetCount; Index++)
             {
                 if(strcmp(Level.SheetName, RenderState->Tilesheets[Index].Name) == 0)
                 {
@@ -35,13 +35,13 @@ static void SaveTilesheetMetaFile(const char* FilePath, render_state* RenderStat
             fprintf(File, "%d\n", Texture.Width / 16 * Texture.Height / 16);
             fprintf(File, "%d\n", 16);
             
-            int32 Index = 0;
+            i32 Index = 0;
             
-            for(uint32 Y = 0; Y < (uint32)Texture.Height / 16; Y++)
+            for(u32 Y = 0; Y < (u32)Texture.Height / 16; Y++)
             {
-                for(uint32 X = 0; X < (uint32)Texture.Width / 16; X++)
+                for(u32 X = 0; X < (u32)Texture.Width / 16; X++)
                 {
-                    fprintf(File, "%d %d %d %d %d %d %f %f\n", Index, (int32)X * 16, (int32)Y * 16, 16, 16, 0, 0.5f, 0.5);
+                    fprintf(File, "%d %d %d %d %d %d %f %f\n", Index, (i32)X * 16, (i32)Y * 16, 16, 16, 0, 0.5f, 0.5);
                     Index++;
                 }
             }
@@ -51,10 +51,10 @@ static void SaveTilesheetMetaFile(const char* FilePath, render_state* RenderStat
             fprintf(File, "%d\n", Level.Tilemap.TileCount);
             fprintf(File, "%d\n", Level.Tilemap.TileSize);
             
-            for(uint32 Index = 0; Index < Level.Tilemap.TileCount; Index++)
+            for(u32 Index = 0; Index < Level.Tilemap.TileCount; Index++)
             {
                 const tile_data& TileData = Level.Tilemap.Tiles[Index];
-                fprintf(File, "%d %d %d %d %d %d %f %f\n", Index, (int32)TileData.TextureOffset.x, (int32)TileData.TextureOffset.y, Level.Tilemap.TileSize, Level.Tilemap.TileSize, TileData.IsSolid, TileData.Center.x, TileData.Center.y); 
+                fprintf(File, "%d %d %d %d %d %d %f %f\n", Index, (i32)TileData.TextureOffset.x, (i32)TileData.TextureOffset.y, Level.Tilemap.TileSize, Level.Tilemap.TileSize, TileData.IsSolid, TileData.Center.x, TileData.Center.y); 
             }
         }
         fclose(File);
@@ -108,15 +108,15 @@ static void LoadTilesheetMetaFile(char* FilePath, level* Level, tilemap* Tilemap
     }
 }
 
-static bool32 LoadLevelFromFile(char* FilePath, level* Level, game_state* GameState)
+static b32 LoadLevelFromFile(char* FilePath, level* Level, game_state* GameState)
 {
     //read the file manmain
     FILE* File;
     File = fopen(FilePath, "r");
     char LineBuffer[255];
     
-    uint32 MapWidth = 0;
-    uint32 MapHeight = 0;
+    u32 MapWidth = 0;
+    u32 MapHeight = 0;
     
     Level->Tilemap.RenderEntity.ShaderIndex = Shader_Tile;
     Level->Tilemap.RenderEntity.Texture = &GameState->RenderState.Tilesheets[Level->TilesheetIndex].Texture;
@@ -152,7 +152,7 @@ static bool32 LoadLevelFromFile(char* FilePath, level* Level, game_state* GameSt
         Level->Tilemap.Data[0] = (tile_data**)malloc(MapWidth * sizeof(tile_data*));
         Level->Tilemap.Data[1] = (tile_data**)malloc(MapWidth * sizeof(tile_data*));
         
-        for(uint32 I = 0; I < MapWidth; I++)
+        for(u32 I = 0; I < MapWidth; I++)
         {
             Level->Tilemap.Data[0][I] = (tile_data *)malloc(MapHeight * sizeof(tile_data));
             Level->Tilemap.Data[1][I] = (tile_data *)malloc(MapHeight * sizeof(tile_data));
@@ -160,7 +160,7 @@ static bool32 LoadLevelFromFile(char* FilePath, level* Level, game_state* GameSt
         
         char Line[1024];
         Assert(MapWidth < 1024 * 2 + 1);
-        uint32 IndexHeight = 0;
+        u32 IndexHeight = 0;
         
         // Layer 1
         while (IndexHeight < MapHeight)
@@ -168,14 +168,14 @@ static bool32 LoadLevelFromFile(char* FilePath, level* Level, game_state* GameSt
             fgets(Line, sizeof(Line), File);
             char *Ptr = &Line[0];
             
-            for(uint32 IndexWidth = 0; IndexWidth < MapWidth; ++IndexWidth) 
+            for(u32 IndexWidth = 0; IndexWidth < MapWidth; ++IndexWidth) 
             {
                 collision_AABB CollisionAABB;
                 CollisionAABB.Center = glm::vec2(IndexWidth + 0.5f, MapHeight - IndexHeight - 0.5f);
                 CollisionAABB.Extents = glm::vec2(0.5, 0.5);
                 CollisionAABB.IsTrigger = false;
                 
-                int TypeIndex = (uint32)strtol(Ptr, &Ptr, 10);
+                int TypeIndex = (u32)strtol(Ptr, &Ptr, 10);
                 
                 tile_data Data = Level->Tilemap.Tiles[TypeIndex];
                 Data.CollisionAABB = CollisionAABB;
@@ -193,14 +193,14 @@ static bool32 LoadLevelFromFile(char* FilePath, level* Level, game_state* GameSt
             fgets(Line, sizeof(Line), File);
             char *Ptr = &Line[0];
             
-            for(uint32 IndexWidth = 0; IndexWidth < MapWidth; ++IndexWidth) 
+            for(u32 IndexWidth = 0; IndexWidth < MapWidth; ++IndexWidth) 
             {
                 collision_AABB CollisionAABB;
                 CollisionAABB.Center = glm::vec2(IndexWidth + 0.5f, MapHeight - IndexHeight - 0.5f);
                 CollisionAABB.Extents = glm::vec2(0.5, 0.5);
                 CollisionAABB.IsTrigger = false;
                 
-                int TypeIndex = (uint32)strtol(Ptr, &Ptr, 10);
+                int TypeIndex = (u32)strtol(Ptr, &Ptr, 10);
                 
                 tile_data Data = Level->Tilemap.Tiles[TypeIndex];
                 Data.CollisionAABB = CollisionAABB;
@@ -210,7 +210,7 @@ static bool32 LoadLevelFromFile(char* FilePath, level* Level, game_state* GameSt
             IndexHeight++;
         }
         
-        int32 PathIndex = 0;
+        i32 PathIndex = 0;
         
         while(fgets(LineBuffer, 255, File))
         {
@@ -253,7 +253,7 @@ static bool32 LoadLevelFromFile(char* FilePath, level* Level, game_state* GameSt
         
         if(PathIndex != 0)
         {
-            int32 WaypointCount = 0;
+            i32 WaypointCount = 0;
             char* PathPtr = *LineBuffer[0];
             PathPtr += PathIndex;
         }
@@ -270,7 +270,7 @@ static bool32 LoadLevelFromFile(char* FilePath, level* Level, game_state* GameSt
     return false;
 }
 
-static void SaveLevelToFile(const char* FilePath, level* Level, game_state* GameState, bool32 New = false)
+static void SaveLevelToFile(const char* FilePath, level* Level, game_state* GameState, b32 New = false)
 {
     FILE* File;
     File = fopen(FilePath, "w");
@@ -288,9 +288,9 @@ static void SaveLevelToFile(const char* FilePath, level* Level, game_state* Game
         fprintf(File, "%d\n", Level->Tilemap.Width);
         fprintf(File, "%d\n", Level->Tilemap.Height);
         
-        for(uint32 Y = 0; Y < Level->Tilemap.Height; Y++)
+        for(u32 Y = 0; Y < Level->Tilemap.Height; Y++)
         {
-            for(uint32 X = 0; X < Level->Tilemap.Width; X++)
+            for(u32 X = 0; X < Level->Tilemap.Width; X++)
             {
                 if(X == Level->Tilemap.Width - 1)
                     fprintf(File, "%d", Level->Tilemap.Data[0][X][Level->Tilemap.Height - Y - 1].TypeIndex);
@@ -300,9 +300,9 @@ static void SaveLevelToFile(const char* FilePath, level* Level, game_state* Game
             fprintf(File, "\n");
         }
         
-        for(uint32 Y = 0; Y < Level->Tilemap.Height; Y++)
+        for(u32 Y = 0; Y < Level->Tilemap.Height; Y++)
         {
-            for(uint32 X = 0; X < Level->Tilemap.Width; X++)
+            for(u32 X = 0; X < Level->Tilemap.Width; X++)
             {
                 if(X == Level->Tilemap.Width - 1)
                     fprintf(File, "%d", Level->Tilemap.Data[1][X][Level->Tilemap.Height - Y - 1].TypeIndex);
@@ -314,7 +314,7 @@ static void SaveLevelToFile(const char* FilePath, level* Level, game_state* Game
         
         if(!New)
         {
-            for(uint32 Index = 0; Index < GameState->EntityCount; Index++)
+            for(u32 Index = 0; Index < GameState->EntityCount; Index++)
             {
                 if(Index != GameState->PlayerIndex)
                 {
@@ -366,7 +366,7 @@ static void SaveLevelToFile(const char* FilePath, level* Level, game_state* Game
     }
 }
 
-static void CreateNewLevelWithSize(char* FilePath, uint32 Width, uint32 Height, level* NewLevel, game_state* GameState)
+static void CreateNewLevelWithSize(char* FilePath, u32 Width, u32 Height, level* NewLevel, game_state* GameState)
 {
     NewLevel->Tilemap.Width = Width;
     NewLevel->Tilemap.Height = Height;
@@ -375,7 +375,7 @@ static void CreateNewLevelWithSize(char* FilePath, uint32 Width, uint32 Height, 
     NewLevel->Tilemap.Data[0] = (tile_data**)calloc(Width, sizeof(tile_data*));
     NewLevel->Tilemap.Data[1] = (tile_data**)calloc(Width, sizeof(tile_data*));
     
-    for(uint32 I = 0; I < Width; I++)
+    for(u32 I = 0; I < Width; I++)
     {
         NewLevel->Tilemap.Data[0][I] = (tile_data *)calloc(Height, sizeof(tile_data));
         NewLevel->Tilemap.Data[0][I]->TypeIndex = 0;

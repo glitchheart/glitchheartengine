@@ -6,19 +6,19 @@ struct asset_manager
     bool ListenForChanges;
     
     //shaders
-    bool32 DirtyVertexShaderIndices[Shader_Count]; //set to 1 if they should be reloaded
-    bool32 DirtyFragmentShaderIndices[Shader_Count];
+    b32 DirtyVertexShaderIndices[Shader_Count]; //set to 1 if they should be reloaded
+    b32 DirtyFragmentShaderIndices[Shader_Count];
     time_t VertexShaderTimes[Shader_Count];
     time_t FragmentShaderTimes[Shader_Count];
     
     //textures
     const char* TilesetTexturePath = "'../assets/textures/tiles.png";
-    bool32 DirtyTileset;
+    b32 DirtyTileset;
     time_t TilesetTime;
     
     //dll's
     const char* DllPaths[1] = { "game.dll" };
-    uint32 DirtyGameDll;
+    u32 DirtyGameDll;
     FILETIME GameDllTime;
     
     entity_file_reload_data ReloadData;
@@ -36,7 +36,7 @@ static GLchar* LoadShaderFromFile(const char* Path)
     if(File)
     {
         fseek(File, 0, SEEK_END);
-        uint32 Size = ftell(File);
+        u32 Size = ftell(File);
         fseek(File, 0, SEEK_SET);
         
         Source = (GLchar *)malloc(Size+1);
@@ -68,7 +68,7 @@ static FILETIME GetLastWriteTime(const char* FilePath)
     return LastWriteTime;
 }
 
-static void CheckDirty(const char* FilePath, time_t LastTime, bool32* DirtyId, time_t* Time)
+static void CheckDirty(const char* FilePath, time_t LastTime, b32* DirtyId, time_t* Time)
 {
     struct stat sb;
     stat(FilePath, &sb);

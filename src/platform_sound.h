@@ -8,13 +8,13 @@ struct sound_device
 {
     ALCdevice *Device;
     ALCcontext *Context;
-    bool32 IsInitialized;
+    b32 IsInitialized;
     ALuint Sources[SOURCES];
     ALuint Buffers[SOUNDS];
-    uint32 BufferCount;
-    bool32 Muted;
-    bool32 Paused;
-    bool32 Stopped;
+    u32 BufferCount;
+    b32 Muted;
+    b32 Paused;
+    b32 Stopped;
 };
 
 struct RIFF_header

@@ -2,14 +2,14 @@
 // In this case we use diagonal distance (http://theory.stanford.edu/~amitp/GameProgramming/Heuristics.html)
 static void AStarComputeHCost(astar_node* Node, astar_node& TargetNode)
 {
-    int32 Dx = Abs(Node->X - TargetNode.X);
-    int32 Dy = Abs(Node->Y - TargetNode.Y);
+    i32 Dx = Abs(Node->X - TargetNode.X);
+    i32 Dy = Abs(Node->Y - TargetNode.Y);
     Node->HCost = 10 * (Dx + Dy) + (14 - 2 * 10) * Min(Dx,Dy);
 }
 
-static bool32 IsClosed(int32 X, int32 Y, astar_node ClosedSet[], uint32 ClosedSetCount)
+static b32 IsClosed(i32 X, i32 Y, astar_node ClosedSet[], u32 ClosedSetCount)
 {
-    for(uint32 ClosedIndex = 0; ClosedIndex < ClosedSetCount; ClosedIndex++)
+    for(u32 ClosedIndex = 0; ClosedIndex < ClosedSetCount; ClosedIndex++)
     {
         if(X == ClosedSet[ClosedIndex].X && Y == ClosedSet[ClosedIndex].Y && ClosedSet[ClosedIndex].X != -1 && ClosedSet[ClosedIndex].Y != -1)
         {
@@ -20,9 +20,9 @@ static bool32 IsClosed(int32 X, int32 Y, astar_node ClosedSet[], uint32 ClosedSe
     return false;
 }
 
-static int32 GetOpen(int32 X, int32 Y,astar_node OpenSet[],uint32 OpenSetCount)
+static i32 GetOpen(i32 X, i32 Y,astar_node OpenSet[],u32 OpenSetCount)
 {
-    for(uint32 OpenIndex = 0; OpenIndex < OpenSetCount; OpenIndex++)
+    for(u32 OpenIndex = 0; OpenIndex < OpenSetCount; OpenIndex++)
     {
         if(X == OpenSet[OpenIndex].X && Y == OpenSet[OpenIndex].Y)
         {
@@ -32,12 +32,12 @@ static int32 GetOpen(int32 X, int32 Y,astar_node OpenSet[],uint32 OpenSetCount)
     return -1;
 }
 
-static void HandleNeighbour(astar_node* Current, astar_node* TargetNode,game_state* GameState, int32 X, int32 Y, astar_node OpenSet[], uint32* OpenSetCount, astar_node ClosedSet[], uint32 ClosedSetCount, uint32 Cost, astar_node WorkingList[], uint32* WorkingListCount)
+static void HandleNeighbour(astar_node* Current, astar_node* TargetNode,game_state* GameState, i32 X, i32 Y, astar_node OpenSet[], u32* OpenSetCount, astar_node ClosedSet[], u32 ClosedSetCount, u32 Cost, astar_node WorkingList[], u32* WorkingListCount)
 {
     tile_data CurrentNeighbour = GameState->CurrentLevel.Tilemap.Data[1][X][Y];
     if(!CurrentNeighbour.IsSolid && !IsClosed(X, Y,ClosedSet,ClosedSetCount))
     {
-        int32 Index = GetOpen(X, Y,OpenSet,*OpenSetCount);
+        i32 Index = GetOpen(X, Y,OpenSet,*OpenSetCount);
         if(Index < 0)
         {
             astar_node NeighbourNode  = {};
@@ -61,7 +61,7 @@ static void HandleNeighbour(astar_node* Current, astar_node* TargetNode,game_sta
         else 
         {
             astar_node NeighbourNode  = OpenSet[Index];
-            uint32 NewGCost = Current->GCost + Cost;
+            u32 NewGCost = Current->GCost + Cost;
             if(NewGCost < NeighbourNode.GCost)
             {
                 OpenSet[Index].GCost = NewGCost;
@@ -83,7 +83,7 @@ static void ReconstructPath(astar_path* Path, game_state* GameState, astar_node&
     if(Current.ParentIndex >= 0)
     {
         PathNode = AStarWorkingData->WorkingList[Current.ParentIndex];
-        uint32 Length = 1;
+        u32 Length = 1;
         while(PathNode.ParentIndex >= 0 && (PathNode.X != StartNode.X || PathNode.Y != StartNode.Y))
         {
             Length++;
@@ -108,7 +108,7 @@ static void ReconstructPath(astar_path* Path, game_state* GameState, astar_node&
             }
             Path->AStarPath = (path_node*)malloc(sizeof(path_node) * Length + 1);
             
-            uint32 Index = Length - 1;
+            u32 Index = Length - 1;
             Path->AStarPath[Length] = {Current.X,Current.Y};
             PathNode = AStarWorkingData->WorkingList[Current.ParentIndex];
             while(PathNode.ParentIndex >= 0 && (PathNode.X != StartNode.X || PathNode.Y != StartNode.Y))
@@ -160,14 +160,14 @@ static astar_path* GetAStarPath(entity* Entity)
 */
 static void AStar(entity* Entity, game_state* GameState, glm::vec2 StartPos, glm::vec2 TargetPos)
 {
-    int32 StartX = (int32)glm::floor(StartPos.x);
-    int32 StartY = (int32)glm::floor(StartPos.y);
+    i32 StartX = (i32)glm::floor(StartPos.x);
+    i32 StartY = (i32)glm::floor(StartPos.y);
     
-    int32 TargetX = (int32)glm::floor(TargetPos.x);
-    int32 TargetY = (int32)glm::floor(TargetPos.y);
+    i32 TargetX = (i32)glm::floor(TargetPos.x);
+    i32 TargetY = (i32)glm::floor(TargetPos.y);
     
-    if((uint32)StartX < GameState->CurrentLevel.Tilemap.Width && (uint32)StartY < GameState->CurrentLevel.Tilemap.Height &&
-       StartX >= 0 && StartY >= 0 && (uint32)TargetX < GameState->CurrentLevel.Tilemap.Width && (uint32)TargetY < GameState->CurrentLevel.Tilemap.Height &&
+    if((u32)StartX < GameState->CurrentLevel.Tilemap.Width && (u32)StartY < GameState->CurrentLevel.Tilemap.Height &&
+       StartX >= 0 && StartY >= 0 && (u32)TargetX < GameState->CurrentLevel.Tilemap.Width && (u32)TargetY < GameState->CurrentLevel.Tilemap.Height &&
        TargetX >= 0 && TargetY >= 0)
     {
         astar_working_data* AStarWorkingData = (astar_working_data*)malloc(sizeof(astar_working_data));
@@ -175,8 +175,8 @@ static void AStar(entity* Entity, game_state* GameState, glm::vec2 StartPos, glm
         tile_data TargetTile = GameState->CurrentLevel.Tilemap.Data[1][TargetX][TargetY];
         glm::vec2 CurrentPos = StartPos;
         
-        uint32 WorkingListCount = 0;
-        uint32 ClosedSetCount = 0;
+        u32 WorkingListCount = 0;
+        u32 ClosedSetCount = 0;
         astar_node StartNode = {};
         StartNode.X = StartX;
         StartNode.Y = StartY;
@@ -185,7 +185,7 @@ static void AStar(entity* Entity, game_state* GameState, glm::vec2 StartPos, glm
         TargetNode.X = TargetX;
         TargetNode.Y = TargetY;
         
-        uint32 OpenSetCount = 0;
+        u32 OpenSetCount = 0;
         StartNode.WorkingListIndex = 0;
         AStarWorkingData->WorkingList[WorkingListCount++] = StartNode;
         AStarWorkingData->WorkingList[WorkingListCount++] = TargetNode;
@@ -193,13 +193,13 @@ static void AStar(entity* Entity, game_state* GameState, glm::vec2 StartPos, glm
         AStarWorkingData->OpenSet[OpenSetCount++] = StartNode;
         AStarComputeHCost(&StartNode,TargetNode);
         
-        int32 WorkingIndex = 0;
-        uint32 LowestFcost = StartNode.FCost;
+        i32 WorkingIndex = 0;
+        u32 LowestFcost = StartNode.FCost;
         
         while(OpenSetCount > 0 && OpenSetCount < OPENSET_COUNT - 8 && 
               WorkingListCount < WORKING_LIST_COUNT - 8)
         {
-            for(uint32 OpenIndex = 0; OpenIndex < OpenSetCount; OpenIndex++)
+            for(u32 OpenIndex = 0; OpenIndex < OpenSetCount; OpenIndex++)
             {
                 if(AStarWorkingData->OpenSet[OpenIndex].FCost < LowestFcost)
                 {
@@ -239,17 +239,17 @@ static void AStar(entity* Entity, game_state* GameState, glm::vec2 StartPos, glm
             
             
             
-            if(Current.X != -1 && Current.Y != -1 && Current.X > 0 && Current.Y > 0 && Current.X < (int32)GameState->CurrentLevel.Tilemap.Width - 1 && Current.Y < (int32)GameState->CurrentLevel.Tilemap.Height - 1)
+            if(Current.X != -1 && Current.Y != -1 && Current.X > 0 && Current.Y > 0 && Current.X < (i32)GameState->CurrentLevel.Tilemap.Width - 1 && Current.Y < (i32)GameState->CurrentLevel.Tilemap.Height - 1)
             {
                 
-                for(int32 X = Current.X - 1; X < Current.X + 2; X++)
+                for(i32 X = Current.X - 1; X < Current.X + 2; X++)
                 {
-                    for(int32 Y = Current.Y - 1; Y < Current.Y + 2; Y++)
+                    for(i32 Y = Current.Y - 1; Y < Current.Y + 2; Y++)
                     {
                         if(X == Current.X && Y == Current.Y)
                             continue;
                         
-                        int32 Cost = 10;
+                        i32 Cost = 10;
                         if(Current.X != X && Current.Y != Y)
                         {
                             Cost = 14;
@@ -271,7 +271,7 @@ static void AStar(entity* Entity, game_state* GameState, glm::vec2 StartPos, glm
 
 static void FindPath(game_state* GameState, entity* Entity, entity& TargetEntity,astar_path* Path)
 {
-    real64 DistanceToTargetEntity = abs(glm::distance(Entity->Position, TargetEntity.Position));
+    r64 DistanceToTargetEntity = abs(glm::distance(Entity->Position, TargetEntity.Position));
     glm::vec2 EntityPosition = glm::vec2(Entity->Position.x + Entity->Center.x * Entity->Scale,Entity->Position.y + Entity->Center.y * Entity->Scale);
     if(TimerDone(GameState,Path->AStarCooldownTimer) || !Path->AStarPath || (Path->AStarPathLength <= Path->PathIndex && DistanceToTargetEntity >= 3.0f)) 
     {
@@ -285,15 +285,15 @@ static void FindPath(game_state* GameState, entity* Entity, entity& TargetEntity
     
 }
 
-static void FollowPath(game_state* GameState, entity* Entity,entity& TargetEntity, real64 DeltaTime, astar_path* Path)
+static void FollowPath(game_state* GameState, entity* Entity,entity& TargetEntity, r64 DeltaTime, astar_path* Path)
 {
-    real64 DistanceToTargetEntity = abs(glm::distance(Entity->Position, TargetEntity.Position));
+    r64 DistanceToTargetEntity = abs(glm::distance(Entity->Position, TargetEntity.Position));
     glm::vec2 EntityPosition = glm::vec2(Entity->Position.x + Entity->Center.x * Entity->Scale, Entity->Position.y + Entity->Center.y * Entity->Scale);
     if(Path->AStarPath && Path->PathIndex < Path->AStarPathLength)
     {
         path_node NewPos = Path->AStarPath[Path->PathIndex];
         //printf("NewPos: (%d,%d)\n",NewPos.X,NewPos.Y);
-        real64 DistanceToNode = glm::distance(EntityPosition, glm::vec2(NewPos.X,NewPos.Y));
+        r64 DistanceToNode = glm::distance(EntityPosition, glm::vec2(NewPos.X,NewPos.Y));
         if(DistanceToNode > 0.8f) 
         {
             glm::vec2 FollowDirection = glm::vec2(NewPos.X,NewPos.Y) - EntityPosition;

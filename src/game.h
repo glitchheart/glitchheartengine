@@ -31,12 +31,12 @@ enum Fading_Mode
 
 struct camera
 {
-    uint32 ViewportWidth;
-    uint32 ViewportHeight;
-    real32 Zoom; //NOTE(Daniel) The higher the number the closer you are zoomed in. 1.0f is NORMAL
+    u32 ViewportWidth;
+    u32 ViewportHeight;
+    r32 Zoom; //NOTE(Daniel) The higher the number the closer you are zoomed in. 1.0f is NORMAL
     glm::vec2 Center;
     glm::vec2 CenterTarget;
-    real32 FollowSpeed;
+    r32 FollowSpeed;
     glm::mat4 ViewMatrix;
     glm::mat4 ProjectionMatrix;
     timer ScreenShakeTimer;
@@ -44,10 +44,10 @@ struct camera
     Fading_Mode FadingMode = Fading_None;
     glm::vec3 FadingTint;
     
-    bool32 FadingIn;
-    real32 EndAlpha;
-    real32 FadingAlpha = 0.0f;
-    real32 FadingSpeed;
+    b32 FadingIn;
+    r32 EndAlpha;
+    r32 FadingAlpha = 0.0f;
+    r32 FadingSpeed;
 };
 
 enum Game_Mode
@@ -69,10 +69,10 @@ enum Player_State
 
 struct game_state
 {
-    bool32 IsInitialized;
-    bool32 Paused;
-    bool32 ShouldReload;
-    real32 InitialZoom;
+    b32 IsInitialized;
+    b32 Paused;
+    b32 ShouldReload;
+    r32 InitialZoom;
     
     Player_State PlayerState = Player_Alive;
     timer DeathScreenTimer;
@@ -85,20 +85,20 @@ struct game_state
     camera GameCamera;
     camera EditorCamera;
     
-    uint32 PlayerIndex;
+    u32 PlayerIndex;
     char * LevelPath;
     level CurrentLevel;
     input_controller InputController;
     sound_manager SoundManager;
     
-    uint16 EntityCount;
+    u16 EntityCount;
     entity Entities[NUM_ENTITIES];
     
     player_ui PlayerUI;
     health_bar HealthBar;
     
-    uint32 TimerCount;
-    real64 Timers[NUM_TIMERS];
+    u32 TimerCount;
+    r64 Timers[NUM_TIMERS];
     
     // Editor
     console Console;
@@ -110,7 +110,7 @@ struct game_state
     entity_file_reload_data* ReloadData;
 };
 
-#define UPDATE(name)void name(real64 DeltaTime, game_state* GameState)
+#define UPDATE(name)void name(r64 DeltaTime, game_state* GameState)
 typedef UPDATE(update);
 UPDATE(UpdateStub)
 {
@@ -126,7 +126,7 @@ void StartTimer(game_state* GameState, timer& Timer)
         GameState->TimerCount = 0;
 }
 
-bool32 TimerDone(game_state* GameState, timer& Timer)
+b32 TimerDone(game_state* GameState, timer& Timer)
 {
     if(Timer.TimerHandle != -1 && 
        GameState->Timers[Timer.TimerHandle] <= 0)
@@ -137,7 +137,7 @@ bool32 TimerDone(game_state* GameState, timer& Timer)
     return Timer.TimerHandle == -1;
 }
 
-static void StartFade(camera& Camera, Fading_Mode Mode, real32 FadingSpeed, glm::vec3 FadingTint, real32 StartAlpha = 0, real32 EndAlpha = 0)
+static void StartFade(camera& Camera, Fading_Mode Mode, r32 FadingSpeed, glm::vec3 FadingTint, r32 StartAlpha = 0, r32 EndAlpha = 0)
 {
     Camera.FadingMode = Mode;
     Camera.FadingTint = FadingTint;

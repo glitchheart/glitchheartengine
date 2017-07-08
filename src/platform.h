@@ -19,41 +19,41 @@
 
 #include "stdint.h"
 
-typedef uint8_t uint8;
-typedef uint16_t uint16;
-typedef uint32_t uint32;
-typedef uint64_t uint64;
+typedef uint8_t u8;
+typedef uint16_t u16;
+typedef uint32_t u32;
+typedef uint64_t u64;
 
-typedef int8_t int8;
-typedef int16_t int16;
-typedef int32_t int32;
-typedef int64_t int64;
-typedef int32 bool32;
+typedef int8_t i8;
+typedef int16_t i16;
+typedef int32_t i32;
+typedef int64_t i64;
+typedef i32 b32;
 
-typedef float real32;
-typedef double real64;
+typedef float r32;
+typedef double r64;
 
 struct timer
 {
-    int32 TimerHandle = -1;
-    real64 TimerMax;
+    i32 TimerHandle = -1;
+    r64 TimerMax;
 };
 
 struct v2i
 {
-    int32 X;
-    int32 Y;
+    i32 X;
+    i32 Y;
 };
 
 struct entity_file_reload_data
 {
-    bool32 ReloadPlayerFile;
-    bool32 ReloadSkeletonFile;
-    bool32 ReloadMinotaurFile;
-    bool32 ReloadWraithFile;
+    b32 ReloadPlayerFile;
+    b32 ReloadSkeletonFile;
+    b32 ReloadMinotaurFile;
+    b32 ReloadWraithFile;
 };
 
-void HandleError(char const *File, int32 LineNum, char const *msg)
+void HandleError(char const *File, i32 LineNum, char const *msg)
 {
     fprintf(stderr, "Error on in file %s on line %d\n", File, LineNum);
     fprintf(stderr, "%s\n", msg);
@@ -80,15 +80,15 @@ struct config_data
     char* Title;
     char* Version;
     char* StartingLevelFilePath;
-    uint32 ScreenWidth;
-    uint32 ScreenHeight;
-    bool32 Fullscreen;
-    bool32 Muted;
-    real32 Zoom;
+    u32 ScreenWidth;
+    u32 ScreenHeight;
+    b32 Fullscreen;
+    b32 Muted;
+    r32 Zoom;
 };
 
 
-bool32 StartsWith(const char *A, const char *B)
+b32 StartsWith(const char *A, const char *B)
 {
     if(strncmp(A, B, strlen(B)) == 0) return 1;
     return 0;
@@ -159,10 +159,10 @@ struct directory_data
 {
     char** FilePaths;
     char** FileNames;
-    int32 FilesLength = 0;
+    i32 FilesLength = 0;
 };
 
-void FindFilesWithExtensions(const char* DirectoryPath, const char* Extension, directory_data* DirectoryData, bool32 WithSubDirectories = false)
+void FindFilesWithExtensions(const char* DirectoryPath, const char* Extension, directory_data* DirectoryData, b32 WithSubDirectories = false)
 {
     if(DirectoryData->FilesLength == 0)
     {

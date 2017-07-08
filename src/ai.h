@@ -3,20 +3,20 @@
 
 struct astar_node
 {
-    int32 X = -1;
-    int32 Y = -1;
-    int32 WorkingListIndex = -1;
-    uint32 FCost = 0;
-    uint32 GCost = 0;
-    uint32 HCost = 0;
+    i32 X = -1;
+    i32 Y = -1;
+    i32 WorkingListIndex = -1;
+    u32 FCost = 0;
+    u32 GCost = 0;
+    u32 HCost = 0;
     
-    int32 ParentIndex = -1;
+    i32 ParentIndex = -1;
 };
 
 struct path_node
 {
-    int32 X;
-    int32 Y;
+    i32 X;
+    i32 Y;
 };
 
 #define OPENSET_COUNT 512
@@ -33,8 +33,8 @@ struct astar_working_data
 struct astar_path
 {
     path_node* AStarPath = 0;
-    uint32 AStarPathLength = 0;
-    uint32 PathIndex = 0;
+    u32 AStarPathLength = 0;
+    u32 PathIndex = 0;
     timer AStarCooldownTimer;
     astar_path(){}
 };

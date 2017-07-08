@@ -7,29 +7,29 @@
                                         fprintf(File, "name %s\n", Animation.Name);
                                         fprintf(File, "type sprite\n");
                                         fprintf(File, "framecount %d\n", Animation.FrameCount);
-                                        fprintf(File, "framesize %d %d\n", (int32)Animation.FrameSize.x, (int32)Animation.FrameSize.y);
+                                        fprintf(File, "framesize %d %d\n", (i32)Animation.FrameSize.x, (i32)Animation.FrameSize.y);
                                         fprintf(File, "center %f %f\n", Animation.Center.x, Animation.Center.y);
                                         fprintf(File, "loop %d\n", Animation.Loop);
                                         fprintf(File, "timeperframe %f\n", Animation.TimePerFrame);
                                         fprintf(File, "frames\n");
                                         
-                                        int32 X = (int32)(Animation.FrameOffset.y) * (int32)Animation.FrameSize.x;
-                                        int32 Y = (int32)(Animation.FrameOffset.x) * (int32)Animation.FrameSize.y;
+                                        i32 X = (i32)(Animation.FrameOffset.y) * (i32)Animation.FrameSize.x;
+                                        i32 Y = (i32)(Animation.FrameOffset.x) * (i32)Animation.FrameSize.y;
                                         
-                                        int32 FrameIndex = 0;
+                                        i32 FrameIndex = 0;
                                         
-                                        while(FrameIndex < (int32)Animation.FrameCount)
+                                        while(FrameIndex < (i32)Animation.FrameCount)
                                         {
                                             fprintf(File, "%d %d\n", X, Y);
                                             
                                             FrameIndex++;
                                             
-                                            if(X + (int32)Animation.FrameSize.x <= Animation.Texture->Width)
-                                                X += (int32)Animation.FrameSize.x;
+                                            if(X + (i32)Animation.FrameSize.x <= Animation.Texture->Width)
+                                                X += (i32)Animation.FrameSize.x;
                                             else
                                             {
                                                 X = 0;
-                                                Y += (int32)Animation.FrameSize.y;
+                                                Y += (i32)Animation.FrameSize.y;
                                             }
                                         }
                                         
@@ -100,10 +100,10 @@
                                         
                                         Animation.Frames = (sprite_sheet_frame*)malloc(sizeof(sprite_sheet_frame) * Animation.FrameCount);
                                         
-                                        for(int32 i = 0; i < Animation.FrameCount; i++)
+                                        for(i32 i = 0; i < Animation.FrameCount; i++)
                                         {
-                                            real32 OffsetX = 0.0f;
-                                            real32 OffsetY = 0.0f;
+                                            r32 OffsetX = 0.0f;
+                                            r32 OffsetY = 0.0f;
                                             
                                             if(fgets(LineBuffer, 255, File))
                                             {
@@ -145,7 +145,7 @@
                                     directory_data DirData;
                                     FindFilesWithExtensions("../assets/animations/", "pownim", &DirData);
                                     
-                                    for(int32 FileIndex = 0; FileIndex < DirData.FilesLength; FileIndex++)
+                                    for(i32 FileIndex = 0; FileIndex < DirData.FilesLength; FileIndex++)
                                     {
                                         LoadAnimationFromFile(DirData.FilePaths[FileIndex], GameState);
                                     }
@@ -180,7 +180,7 @@
                                     Info->Playing = false;
                                 }
                                 
-                                static void TickAnimation(animation_info* Info, animation* Animation, real64 DeltaTime)
+                                static void TickAnimation(animation_info* Info, animation* Animation, r64 DeltaTime)
                                 {
                                     if(Animation) 
                                     {
