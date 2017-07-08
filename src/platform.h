@@ -17,6 +17,8 @@
 #define Max(A,B) ((A > B) ? (A) : (B))
 #define Abs(x) ((x) < 0 ? -(x) : (x))
 
+#define PI 3.141592653589793f
+
 #include "stdint.h"
 
 typedef uint8_t u8;
@@ -166,8 +168,8 @@ void FindFilesWithExtensions(const char* DirectoryPath, const char* Extension, d
 {
     if(DirectoryData->FilesLength == 0)
     {
-        DirectoryData->FileNames = (char**)malloc(70 * sizeof(char*));
-        DirectoryData->FilePaths = (char**)malloc(70 * sizeof(char*));
+        DirectoryData->FileNames = (char**)malloc(128 * sizeof(char*));
+        DirectoryData->FilePaths = (char**)malloc(128 * sizeof(char*));
     }
     
     WIN32_FIND_DATA FindFile;

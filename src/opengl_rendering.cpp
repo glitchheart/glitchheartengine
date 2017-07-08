@@ -571,6 +571,15 @@ static void RenderSetup(render_state *RenderState)
     
     glBindVertexArray(0);
     
+    // Lines
+    glGenBuffers(1, &RenderState->PrimitiveVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, RenderState->PrimitiveVBO);
+    
+    PositionLocation3 = glGetAttribLocation(RenderState->WireframeShader.Program, "pos");
+    glEnableVertexAttribArray(PositionLocation3);
+    glVertexAttribPointer(PositionLocation3, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), 0);
+    glBindVertexArray(0);
+    
     //astar tile
     glGenVertexArrays(1, &RenderState->AStarPathVAO);
     glBindVertexArray(RenderState->AStarPathVAO);
@@ -721,6 +730,8 @@ static void InitializeOpenGL(game_state* GameState, render_state* RenderState, c
     glfwGetFramebufferSize(RenderState->Window, &RenderState->WindowWidth, &RenderState->WindowHeight);
     glViewport(0, 0, RenderState->WindowWidth, RenderState->WindowHeight);
     glDisable(GL_DITHER);
+    glLineWidth(2.0f);
+    
     printf("%s\n", glGetString(GL_VERSION));
     
     glfwSetWindowUserPointer(RenderState->Window, GameState);
@@ -791,12 +802,6 @@ static void ReloadAssets(asset_manager *AssetManager, game_state* GameState)
             AssetManager->DirtyFragmentShaderIndices[i] = 0;
         }
     }
-    /*
-    if(AssetManager->DirtyTileset == 1)
-    {
-    GameState->CurrentLevel.Tilemap.RenderEntity.Texture = LoadTexture("../assets/textures/tiles.png");
-    AssetManager->DirtyTileset = 0;
-    }*/
 }
 
 static void SetFloatUniform(GLuint ShaderHandle, const char* UniformName, r32 Value)
@@ -824,7 +829,89 @@ static void SetMat4Uniform(GLuint ShaderHandle, const char *UniformName, glm::ma
     glUniformMatrix4fv(glGetUniformLocation(ShaderHandle, UniformName), 1, GL_FALSE, &Value[0][0]);
 }
 
-//TODO(Daniel) there's a weird bug when rendering special characters. The cursor just slowly jumps up for every character pressed
+static void RenderLine(render_state& RenderState, glm::vec4 Color, r32 X1, r32 Y1, r32 X2, r32 Y2, b32 IsUI = true, glm::mat4 ProjectionMatrix = glm::mat4(), glm::mat4 ViewMatrix = glm::mat4())
+{
+    if(IsUI)
+    {
+        X1 *= RenderState.ScaleX;
+        X1 -= 1;
+        Y1 *= RenderState.ScaleY;
+        Y1 -= 1;
+        X2 *= RenderState.ScaleX;
+        X2 -= 1;
+        Y2 *= RenderState.ScaleY;
+        Y2 -= 1;
+    }
+    
+    glBindBuffer(GL_ARRAY_BUFFER, RenderState.PrimitiveVBO);
+    
+    GLfloat Points[4] = { X1, Y1, X2, Y2 };
+    glBufferData(GL_ARRAY_BUFFER, 4 * sizeof(GLfloat), &Points[0], GL_DYNAMIC_DRAW);
+    
+    auto& Shader = RenderState.RectShader;
+    UseShader(&Shader);
+    
+    //draw upper part
+    glm::mat4 Model(1.0f);
+    
+    if(!IsUI)
+    {
+        SetMat4Uniform(Shader.Program, "Projection", ProjectionMatrix);
+        SetMat4Uniform(Shader.Program, "View", ViewMatrix);
+    }
+    
+    SetFloatUniform(Shader.Program, "isUI", (r32)IsUI);
+    SetMat4Uniform(Shader.Program, "M", Model);
+    SetVec4Uniform(Shader.Program, "color", Color);
+    
+    glDrawArrays(GL_LINES, 0, 4);
+}
+
+static void RenderCircle(render_state& RenderState, glm::vec4 Color, r32 CenterX, r32 CenterY, r32 Radius, b32 IsUI = true, glm::mat4 ProjectionMatrix = glm::mat4(), glm::mat4 ViewMatrix = glm::mat4())
+{
+    if(IsUI)
+    {
+        CenterX *= RenderState.ScaleX;
+        CenterX -= 1;
+        CenterY *= RenderState.ScaleY;
+        CenterY -= 1;
+        Radius *= RenderState.ScaleX;
+    }
+    
+    glBindBuffer(GL_ARRAY_BUFFER, RenderState.PrimitiveVBO);
+    
+    GLfloat Points[720];
+    
+    i32 PointIndex = 0;
+    
+    for(i32 Index; Index < 360; Index++)
+    {
+        r32 Radians = (Index * PI) / 180.0f;
+        Points[PointIndex++] = glm::cos(Radians * Radius);
+        Points[PointIndex++] = glm::sin(Radians * Radius);
+    }
+    
+    glBufferData(GL_ARRAY_BUFFER, 720 * sizeof(GLfloat), &Points[0], GL_DYNAMIC_DRAW);
+    
+    auto& Shader = RenderState.RectShader;
+    UseShader(&Shader);
+    
+    //draw upper part
+    glm::mat4 Model(1.0f);
+    
+    if(!IsUI)
+    {
+        SetMat4Uniform(Shader.Program, "Projection", ProjectionMatrix);
+        SetMat4Uniform(Shader.Program, "View", ViewMatrix);
+    }
+    
+    SetFloatUniform(Shader.Program, "isUI", (r32)IsUI);
+    SetMat4Uniform(Shader.Program, "M", Model);
+    SetVec4Uniform(Shader.Program, "color", Color);
+    
+    glDrawArrays(GL_LINE_LOOP, 0, 720);
+}
+
 static void RenderRect(Render_Mode Mode, render_state* RenderState, glm::vec4 Color, r32 X, r32 Y, r32 Width, r32 Height, u32 TextureHandle = 0, b32 IsUI = true, glm::mat4 ProjectionMatrix = glm::mat4(), glm::mat4 ViewMatrix = glm::mat4())
 {
     if(IsUI)
@@ -844,19 +931,21 @@ static void RenderRect(Render_Mode Mode, render_state* RenderState, glm::vec4 Co
         {
             auto Shader = RenderState->RectShader;
             
-            if(TextureHandle && RenderState->BoundTexture != TextureHandle)
+            if(TextureHandle != 0)
             {
                 glBindVertexArray(RenderState->TextureRectVAO);
-                glBindTexture(GL_TEXTURE_2D, TextureHandle);
-                Shader = RenderState->TextureRectShader;
-                RenderState->BoundTexture = TextureHandle;
             }
             else
             {
-                glBindTexture(GL_TEXTURE_2D, 0);
-                RenderState->BoundTexture = 0;
                 glBindVertexArray(RenderState->RectVAO);
             }
+            
+            if(TextureHandle != 0)
+            {
+                glBindTexture(GL_TEXTURE_2D, TextureHandle);
+                Shader = RenderState->TextureRectShader;
+                RenderState->BoundTexture = TextureHandle;
+            } 
             
             UseShader(&Shader);
             
@@ -1300,8 +1389,10 @@ static void RenderHealthbar(render_state* RenderState,
     }
 }
 
-static void RenderEntity(render_state *RenderState, entity &Entity, glm::mat4 ProjectionMatrix, glm::mat4 View)
+static void RenderEntity(game_state *GameState, entity &Entity, glm::mat4 ProjectionMatrix, glm::mat4 View)
 { 
+    render_state* RenderState = &GameState->RenderState;
+    
     render_entity* RenderEntity = &RenderState->RenderEntities[Entity.RenderEntityHandle];
     auto Shader = RenderState->Shaders[RenderEntity->ShaderIndex];
     
@@ -1428,9 +1519,31 @@ static void RenderEntity(render_state *RenderState, entity &Entity, glm::mat4 Pr
         RenderRect(Render_Fill, RenderState, glm::vec4(1, 1, 1, 1), Entity.Position.x + Entity.RenderButtonOffset.x, Entity.Position.y + Entity.RenderButtonOffset.y, 1, 1, RenderState->Textures["b_button"]->TextureHandle, false, ProjectionMatrix, View);
     }
     
-    if(Entity.Type == Entity_Enemy && Entity.Enemy.IsTargeted)
+    if(Entity.Type == Entity_Enemy)
     {
-        RenderRect(Render_Fill, RenderState, glm::vec4(1, 1, 1, 1), Entity.Position.x + Entity.Enemy.TargetingPositionX, Entity.Position.y + Entity.Enemy.TargetingPositionY, 1, 1, RenderState->Textures["red_arrow"]->TextureHandle, false, ProjectionMatrix, View);
+        if(Entity.Enemy.IsTargeted)
+        {
+            RenderRect(Render_Fill, RenderState, glm::vec4(1, 1, 1, 1), Entity.Position.x + Entity.Enemy.TargetingPositionX, Entity.Position.y + Entity.Enemy.TargetingPositionY, 1, 1, RenderState->Textures["red_arrow"]->TextureHandle, false, ProjectionMatrix, View);}
+        
+        if(GameState->GameMode == Mode_Editor 
+           && GameState->EditorState.SelectedEntity 
+           && GameState->EditorState.SelectedEntity->EntityIndex == Entity.EntityIndex 
+           && Entity.Enemy.WaypointCount > 0)
+        {
+            for(i32 Index = 1; Index < Entity.Enemy.WaypointCount; Index++)
+            {
+                auto Point1 = Entity.Enemy.Waypoints[Index - 1];
+                auto Point2 = Entity.Enemy.Waypoints[Index];
+                
+                RenderLine(*RenderState, glm::vec4(1, 1, 1, 1), Point1.X + 0.5f, Point1.Y + 0.5f, Point2.X + 0.5f, Point2.Y + 0.5f, false, ProjectionMatrix, View);
+            }
+            
+            for(i32 Index = 0; Index < Entity.Enemy.WaypointCount; Index++)
+            {
+                auto Point = Entity.Enemy.Waypoints[Index];
+                RenderRect(Render_Fill, RenderState, glm::vec4(0, 1, 0, 0.5), Point.X + 0.25f, Point.Y + 0.25f, 0.5f, 0.5f, RenderState->Textures["circle"]->TextureHandle, false, ProjectionMatrix, View);
+            }
+        }
     }
     
     if(RenderState->RenderColliders && !Entity.IsKinematic)
@@ -1593,7 +1706,7 @@ static void RenderInGameMode(game_state* GameState)
         render_entity* Render = &GameState->RenderState.RenderEntities[Index];
         // @Incomplete: Only render if in view
         Render->Entity->RenderEntityHandle = Index;
-        RenderEntity(&GameState->RenderState, *Render->Entity, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
+        RenderEntity(GameState, *Render->Entity, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
     }
 }
 

@@ -254,6 +254,7 @@ struct entity
             r32 MaxFollowDistance;
             r32 AttackDistance;
             r32 WalkingSpeed;
+            r32 WanderingSpeed;
             r32 CloseToPlayerSpeed;
             AIFunction Idle;
             AIFunction Alerted;
@@ -266,6 +267,8 @@ struct entity
             
             i32 WaypointCount = 0;
             v2i Waypoints[10];
+            i32 WaypointIndex = 0;
+            b32 WanderingForward = true;
             
             union
             {

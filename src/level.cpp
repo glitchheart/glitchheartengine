@@ -175,7 +175,7 @@ static b32 LoadLevelFromFile(char* FilePath, level* Level, game_state* GameState
                 CollisionAABB.Extents = glm::vec2(0.5, 0.5);
                 CollisionAABB.IsTrigger = false;
                 
-                int TypeIndex = (u32)strtol(Ptr, &Ptr, 10);
+                u32 TypeIndex = (u32)strtol(Ptr, &Ptr, 10);
                 
                 tile_data Data = Level->Tilemap.Tiles[TypeIndex];
                 Data.CollisionAABB = CollisionAABB;
@@ -217,29 +217,26 @@ static b32 LoadLevelFromFile(char* FilePath, level* Level, game_state* GameState
             if(StartsWith(&LineBuffer[0], "skeleton"))
             {
                 glm::vec2 Pos;
-                sscanf(LineBuffer, "skeleton %f %f", &Pos.x, &Pos.y);
-                PathIndex = strlen("skeleton %f %f");
+                sscanf(LineBuffer, "skeleton %f %f%n", &Pos.x, &Pos.y, &PathIndex);
                 LoadSkeletonData(GameState, -1, Pos);
             }
             else if(StartsWith(&LineBuffer[0], "minotaur"))
             {
                 glm::vec2 Pos;
-                sscanf(LineBuffer, "minotaur %f %f", &Pos.x, &Pos.y);
-                PathIndex = strlen("minotaur %f %f");
+                sscanf(LineBuffer, "minotaur %f %f%n", &Pos.x, &Pos.y, &PathIndex);
                 LoadMinotaurData(GameState, -1, Pos);
             }
             
             else if(StartsWith(&LineBuffer[0], "blob"))
             {
                 glm::vec2 Pos;
-                sscanf(LineBuffer, "blob %f %f", &Pos.x, &Pos.y);
-                PathIndex = strlen("blob %f %f");
+                sscanf(LineBuffer, "blob %f %f%n", &Pos.x, &Pos.y, &PathIndex);
                 LoadBlobData(GameState, -1, Pos);
             }
             else if(StartsWith(&LineBuffer[0], "wraith"))
             {
                 glm::vec2 Pos;
-                sscanf(LineBuffer, "wraith %f %f", &Pos.x, &Pos.y);
+                sscanf(LineBuffer, "wraith %f %f%n", &Pos.x, &Pos.y);
                 PathIndex = strlen("wraith %f %f");
                 SpawnWraith(GameState, Pos);
             }
@@ -249,13 +246,31 @@ static b32 LoadLevelFromFile(char* FilePath, level* Level, game_state* GameState
                 sscanf(LineBuffer, "barrel %f %f", &Pos.x, &Pos.y);
                 SpawnBarrel(GameState, Pos);
             }
-        }
-        
-        if(PathIndex != 0)
-        {
-            i32 WaypointCount = 0;
-            char* PathPtr = *LineBuffer[0];
-            PathPtr += PathIndex;
+            
+            if(PathIndex != 0)
+            {
+                auto& Entity = GameState->Entities[GameState->EntityCount - 1];
+                
+                i32 WaypointCount = 0;
+                char* PathPtr = &LineBuffer[0];
+                PathPtr += PathIndex + 1;
+                
+                i32 Consumed = 0;
+                sscanf(PathPtr, "path %d%n", &WaypointCount, &Consumed);
+                PathPtr += Consumed + 1;
+                
+                if(WaypointCount > 0)
+                {
+                    Assert(WaypointCount <= 10);
+                    Entity.Enemy.WaypointCount = WaypointCount;
+                    
+                    for(i32 Index = 0; Index < WaypointCount; Index++)
+                    {
+                        Entity.Enemy.Waypoints[Index].X = (u32)strtol(PathPtr, &PathPtr, 10);
+                        Entity.Enemy.Waypoints[Index].Y = (u32)strtol(PathPtr, &PathPtr, 10);
+                    }
+                }
+            }
         }
         
         fclose(File);
@@ -357,7 +372,27 @@ static void SaveLevelToFile(const char* FilePath, level* Level, game_state* Game
                     }
                     
                     if(TypeName)
-                        fprintf(File, "%s %f %f\n", TypeName, Entity->Position.x, Entity->Position.y);
+                    {
+                        if(Entity->Type == Entity_Enemy && Entity->Enemy.WaypointCount > 0)
+                        {
+                            fprintf(File, "%s %f %f path %d ", TypeName, Entity->Position.x, Entity->Position.y, Entity->Enemy.WaypointCount);
+                            for(i32 Index = 0; Index < Entity->Enemy.WaypointCount; Index++)
+                            {
+                                if(Index == Entity->Enemy.WaypointCount - 1)
+                                {
+                                    fprintf(File, "%d %d\n", Entity->Enemy.Waypoints[Index].X, Entity->Enemy.Waypoints[Index].Y);
+                                }
+                                else
+                                {
+                                    fprintf(File, "%d %d ", Entity->Enemy.Waypoints[Index].X, Entity->Enemy.Waypoints[Index].Y);
+                                }
+                            }
+                        }
+                        else
+                        {
+                            fprintf(File, "%s %f %f\n", TypeName, Entity->Position.x, Entity->Position.y);
+                        }
+                    }
                 }
             }
         }

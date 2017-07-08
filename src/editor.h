@@ -175,6 +175,8 @@ struct editor_state
     textfield* TileBrushWidthField;
     textfield* TileBrushHeightField;
     
+    b32 IsInCreateWaypointMode = false;
+    
     b32 Editing;
     b32 ShouldLoop;
     i32 SelectedAnimation;

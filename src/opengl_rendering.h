@@ -225,6 +225,8 @@ struct render_state
         0.0f, 0.0f
     };
     
+    GLuint PrimitiveVBO;
+    
     GLfloat WireframeQuadVertices[10] =
     {
         0.0f, 1.0f,
@@ -275,7 +277,7 @@ struct render_state
         };
     };
     
-    texture TextureArray[40];
+    texture TextureArray[50];
     i32 TextureIndex;
     std::map<const char*, texture*, cmp_str> Textures;
     
