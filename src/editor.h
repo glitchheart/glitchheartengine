@@ -44,6 +44,16 @@ struct button
     };
 };
 
+enum Entity_Placement_Type
+{
+    Placement_Entity_Skeleton,
+    Placement_Entity_Blob,
+    Placement_Entity_Wraith,
+    Placement_Entity_Barrel,
+    
+    Placement_Entity_Max
+};
+
 #define TEXTFIELD_LENGTH 30
 
 enum Textfield_Type
@@ -108,17 +118,24 @@ struct editor_state
     
     entity* SelectedEntity;
     uint32 SelectedTileType = 1;
-    entity* PlacementEntity;
+    glm::vec2 SelectedTilePosition;
+    Entity_Placement_Type PlacementEntity;
+    int32 CurrentTilemapLayer = 1;
     
     real32 LastKnownMouseX;
     real32 LastKnownMouseY;
     real32 ZoomingSpeed = 50;
-    real32 PanningSpeed = 30;
-    real32 MinZoom = 0.1f;
-    real32 MaxZoom = 10;
+    real32 PanningSpeed = 300;
+    real32 MinZoom = 5;
+    real32 MaxZoom = 100;
     
     real32 TileX;
     real32 TileY;
+    
+    glm::vec2 TilemapOffset;
+    real32 RenderedTileSize = 30.0f;
+    
+    glm::vec2 TileBrushSize = glm::vec2(1, 1);
     
     real32 ToolbarScrollSpeed = 30000;
     real32 ToolbarScrollOffsetY = 0.0f;
@@ -145,6 +162,9 @@ struct editor_state
     button* CreateNewLevelButton;
     button* CreateNewAnimationButton;
     button* SaveAnimationButton;
+    
+    textfield* TileBrushWidthField;
+    textfield* TileBrushHeightField;
     
     bool32 Editing;
     bool32 ShouldLoop;

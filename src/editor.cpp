@@ -10,59 +10,81 @@ static void InitEditorFields(game_state* GameState)
     GameState->EditorState.AnimationFrameOffsetXField = &GameState->EditorState.Textfields[4];
     GameState->EditorState.AnimationFrameOffsetYField = &GameState->EditorState.Textfields[5];
     GameState->EditorState.AnimationFrameDurationField = &GameState->EditorState.Textfields[6];
+    GameState->EditorState.TileBrushWidthField = &GameState->EditorState.Textfields[7];
+    GameState->EditorState.TileBrushHeightField = &GameState->EditorState.Textfields[8];
+    
     GameState->EditorState.AnimationLoopCheckbox = &GameState->EditorState.Checkboxes[0];
     
-    GameState->EditorState.AnimationNameField->Active = true;
+    GameState->EditorState.AnimationNameField->Active = false;
     GameState->EditorState.AnimationNameField->Size = glm::vec2(300, 30);
     GameState->EditorState.AnimationNameField->ScreenPosition = glm::vec2(GameState->RenderState.WindowWidth - 305, 860);
     GameState->EditorState.AnimationNameField->Label = "Name";
     
-    GameState->EditorState.AnimationFrameWidthField->Active = true;
+    GameState->EditorState.AnimationFrameWidthField->Active = false;
     GameState->EditorState.AnimationFrameWidthField->Size = glm::vec2(300, 30);
     GameState->EditorState.AnimationFrameWidthField->ScreenPosition = glm::vec2(GameState->RenderState.WindowWidth - 305, 800);
     GameState->EditorState.AnimationFrameWidthField->Label = "Frame width";
     GameState->EditorState.AnimationFrameWidthField->Type = Textfield_Integer;
     
-    GameState->EditorState.AnimationFrameHeightField->Active = true;
+    GameState->EditorState.AnimationFrameHeightField->Active = false;
     GameState->EditorState.AnimationFrameHeightField->Size = glm::vec2(300, 30);
     GameState->EditorState.AnimationFrameHeightField->ScreenPosition = glm::vec2(GameState->RenderState.WindowWidth - 305, 740);
     GameState->EditorState.AnimationFrameHeightField->Label = "Frame height";
     GameState->EditorState.AnimationFrameHeightField->Type = Textfield_Integer;
     
-    GameState->EditorState.AnimationFrameCountField->Active = true;
+    GameState->EditorState.AnimationFrameCountField->Active = false;
     GameState->EditorState.AnimationFrameCountField->Size = glm::vec2(300, 30);
     GameState->EditorState.AnimationFrameCountField->ScreenPosition = glm::vec2(GameState->RenderState.WindowWidth - 305, 680);
     GameState->EditorState.AnimationFrameCountField->Label = "Frame count";
     GameState->EditorState.AnimationFrameCountField->Type = Textfield_Integer;
     
-    GameState->EditorState.AnimationFrameOffsetXField->Active = true;
+    GameState->EditorState.AnimationFrameOffsetXField->Active = false;
     GameState->EditorState.AnimationFrameOffsetXField->Size = glm::vec2(300, 30);
     GameState->EditorState.AnimationFrameOffsetXField->ScreenPosition = glm::vec2(GameState->RenderState.WindowWidth - 305, 620);
     GameState->EditorState.AnimationFrameOffsetXField->Label = "Frame offset x";
     GameState->EditorState.AnimationFrameOffsetXField->Type = Textfield_Integer;
     
-    GameState->EditorState.AnimationFrameOffsetYField->Active = true;
+    GameState->EditorState.AnimationFrameOffsetYField->Active = false;
     GameState->EditorState.AnimationFrameOffsetYField->Size = glm::vec2(300, 30);
     GameState->EditorState.AnimationFrameOffsetYField->ScreenPosition = glm::vec2(GameState->RenderState.WindowWidth - 305, 560);
     GameState->EditorState.AnimationFrameOffsetYField->Label = "Frame offset y";
     GameState->EditorState.AnimationFrameOffsetYField->Type = Textfield_Integer;
     
-    GameState->EditorState.AnimationFrameDurationField->Active = true;
+    GameState->EditorState.AnimationFrameDurationField->Active = false;
     GameState->EditorState.AnimationFrameDurationField->Size = glm::vec2(300, 30);
     GameState->EditorState.AnimationFrameDurationField->ScreenPosition = glm::vec2(GameState->RenderState.WindowWidth - 305, 500);
     GameState->EditorState.AnimationFrameDurationField->Label = "Frame  duration";
     GameState->EditorState.AnimationFrameDurationField->Type = Textfield_Decimal;
     
-    GameState->EditorState.AnimationLoopCheckbox->Active = true;
+    GameState->EditorState.AnimationLoopCheckbox->Active = false;
     GameState->EditorState.AnimationLoopCheckbox->Checked = false;
     GameState->EditorState.AnimationLoopCheckbox->ScreenPosition = glm::vec2(GameState->RenderState.WindowWidth - 305, 440);
     GameState->EditorState.AnimationLoopCheckbox->Label = "Loop";
+    
+    GameState->EditorState.TileBrushWidthField->Active = true;
+    GameState->EditorState.TileBrushWidthField->Size = glm::vec2(300, 30);
+    GameState->EditorState.TileBrushWidthField->ScreenPosition = glm::vec2(10, 100);
+    GameState->EditorState.TileBrushWidthField->Label = "Brush width";
+    GameState->EditorState.TileBrushWidthField->Type = Textfield_Integer;
+    sprintf(GameState->EditorState.TileBrushWidthField->Text, "1"); 
+    
+    GameState->EditorState.TileBrushHeightField->Active = true;
+    GameState->EditorState.TileBrushHeightField->Size = glm::vec2(300, 30);
+    GameState->EditorState.TileBrushHeightField->ScreenPosition = glm::vec2(10, 150);
+    GameState->EditorState.TileBrushHeightField->Label = "Brush height";
+    GameState->EditorState.TileBrushHeightField->Type = Textfield_Integer;
+    sprintf(GameState->EditorState.TileBrushHeightField->Text, "1");
 }
 
 static void SetFieldValues(game_state* GameState)
 {
     switch(GameState->EditorState.Mode)
     {
+        case Editor_Normal:
+        {
+            
+        }
+        break;
         case Editor_Animation:
         {
             animation* LoadedAnimation = GameState->EditorState.LoadedAnimation;
@@ -90,9 +112,10 @@ static void CreateEditorButtons(game_state* GameState)
 {
     render_state* RenderState = &GameState->RenderState;
     // @Incomplete: These values need to be updated when the window size is changed
-    GameState->EditorState.ToolbarX = (real32)RenderState->WindowWidth - 100;
+    GameState->EditorState.TilemapOffset = glm::vec2(0, 300);
+    GameState->EditorState.ToolbarX = 0;
     GameState->EditorState.ToolbarY = 0;
-    GameState->EditorState.ToolbarWidth = 100.0f;
+    GameState->EditorState.ToolbarWidth = 500.0f;
     GameState->EditorState.ToolbarHeight = (real32)RenderState->WindowHeight;
     
     GameState->EditorState.Buttons[0].Text = (char*)malloc(sizeof(char) * 20);
@@ -190,7 +213,7 @@ static void CreateEditorButtons(game_state* GameState)
     GameState->EditorState.TileIsSolidCheckbox = &GameState->EditorState.Checkboxes[1];
     GameState->EditorState.TileIsSolidCheckbox->Active = false;
     GameState->EditorState.TileIsSolidCheckbox->Checked = false;
-    GameState->EditorState.TileIsSolidCheckbox->ScreenPosition = glm::vec2(GameState->RenderState.WindowWidth - 200, 200);
+    GameState->EditorState.TileIsSolidCheckbox->ScreenPosition = glm::vec2(20, 225);
     GameState->EditorState.TileIsSolidCheckbox->Label = "Is solid";
     
     GameState->EditorState.Loaded = true;

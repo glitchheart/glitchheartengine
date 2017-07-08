@@ -34,7 +34,7 @@ static int32 GetOpen(int32 X, int32 Y,astar_node OpenSet[],uint32 OpenSetCount)
 
 static void HandleNeighbour(astar_node* Current, astar_node* TargetNode,game_state* GameState, int32 X, int32 Y, astar_node OpenSet[], uint32* OpenSetCount, astar_node ClosedSet[], uint32 ClosedSetCount, uint32 Cost, astar_node WorkingList[], uint32* WorkingListCount)
 {
-    tile_data CurrentNeighbour = GameState->CurrentLevel.Tilemap.Data[X][Y];
+    tile_data CurrentNeighbour = GameState->CurrentLevel.Tilemap.Data[1][X][Y];
     if(!CurrentNeighbour.IsSolid && !IsClosed(X, Y,ClosedSet,ClosedSetCount))
     {
         int32 Index = GetOpen(X, Y,OpenSet,*OpenSetCount);
@@ -87,12 +87,12 @@ static void ReconstructPath(astar_path* Path, game_state* GameState, astar_node&
         while(PathNode.ParentIndex >= 0 && (PathNode.X != StartNode.X || PathNode.Y != StartNode.Y))
         {
             Length++;
-            if(GameState->CurrentLevel.Tilemap.Data[PathNode.X][PathNode.Y + 1].IsSolid || GameState->CurrentLevel.Tilemap.Data[PathNode.X][PathNode.Y - 1].IsSolid)
+            if(GameState->CurrentLevel.Tilemap.Data[1][PathNode.X][PathNode.Y + 1].IsSolid || GameState->CurrentLevel.Tilemap.Data[1][PathNode.X][PathNode.Y - 1].IsSolid)
             {
                 Length++;
             }
             
-            if(GameState->CurrentLevel.Tilemap.Data[PathNode.X + 1][PathNode.Y].IsSolid || GameState->CurrentLevel.Tilemap.Data[PathNode.X - 1][PathNode.Y].IsSolid)
+            if(GameState->CurrentLevel.Tilemap.Data[1][PathNode.X + 1][PathNode.Y].IsSolid || GameState->CurrentLevel.Tilemap.Data[1][PathNode.X - 1][PathNode.Y].IsSolid)
             {
                 Length++;
             }
@@ -113,12 +113,12 @@ static void ReconstructPath(astar_path* Path, game_state* GameState, astar_node&
             PathNode = AStarWorkingData->WorkingList[Current.ParentIndex];
             while(PathNode.ParentIndex >= 0 && (PathNode.X != StartNode.X || PathNode.Y != StartNode.Y))
             {
-                Assert(!GameState->CurrentLevel.Tilemap.Data[PathNode.X][PathNode.Y].IsSolid);
+                Assert(!GameState->CurrentLevel.Tilemap.Data[1][PathNode.X][PathNode.Y].IsSolid);
                 Path->AStarPath[Index--] = {PathNode.X,PathNode.Y};
                 astar_node PrevNode = PathNode;
                 PathNode = AStarWorkingData->WorkingList[PathNode.ParentIndex];
                 
-                if(GameState->CurrentLevel.Tilemap.Data[PrevNode.X][PrevNode.Y + 1].IsSolid || GameState->CurrentLevel.Tilemap.Data[PrevNode.X][PrevNode.Y - 1].IsSolid)
+                if(GameState->CurrentLevel.Tilemap.Data[1][PrevNode.X][PrevNode.Y + 1].IsSolid || GameState->CurrentLevel.Tilemap.Data[1][PrevNode.X][PrevNode.Y - 1].IsSolid)
                 {
                     if(PrevNode.X > PathNode.X)
                         Path->AStarPath[Index--] = {PrevNode.X - 1, PrevNode.Y};
@@ -126,7 +126,7 @@ static void ReconstructPath(astar_path* Path, game_state* GameState, astar_node&
                         Path->AStarPath[Index--] = {PrevNode.X + 1, PrevNode.Y};
                 }
                 
-                if(GameState->CurrentLevel.Tilemap.Data[PrevNode.X + 1][PrevNode.Y].IsSolid || GameState->CurrentLevel.Tilemap.Data[PrevNode.X - 1][PrevNode.Y].IsSolid)
+                if(GameState->CurrentLevel.Tilemap.Data[1][PrevNode.X + 1][PrevNode.Y].IsSolid || GameState->CurrentLevel.Tilemap.Data[1][PrevNode.X - 1][PrevNode.Y].IsSolid)
                 {
                     if(PrevNode.Y > PathNode.Y)
                         Path->AStarPath[Index--] = {PrevNode.X, PrevNode.Y - 1};
@@ -171,8 +171,8 @@ static void AStar(entity* Entity, game_state* GameState, glm::vec2 StartPos, glm
        TargetX >= 0 && TargetY >= 0)
     {
         astar_working_data* AStarWorkingData = (astar_working_data*)malloc(sizeof(astar_working_data));
-        tile_data StartTile = GameState->CurrentLevel.Tilemap.Data[StartX][StartY];
-        tile_data TargetTile = GameState->CurrentLevel.Tilemap.Data[TargetX][TargetY];
+        tile_data StartTile = GameState->CurrentLevel.Tilemap.Data[1][StartX][StartY];
+        tile_data TargetTile = GameState->CurrentLevel.Tilemap.Data[1][TargetX][TargetY];
         glm::vec2 CurrentPos = StartPos;
         
         uint32 WorkingListCount = 0;

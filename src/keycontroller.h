@@ -62,6 +62,7 @@ enum Key_Code
     Key_RightCtrl,
     Key_RightShift,
     Key_Delete,
+    Key_0,
     Key_1,
     Key_2,
     Key_3,
@@ -69,6 +70,8 @@ enum Key_Code
     Key_5,
     Key_6,
     Key_7,
+    Key_8,
+    Key_9,
     Key_MouseLeft,
     Key_MouseRight,
     Key_Count

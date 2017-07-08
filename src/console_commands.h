@@ -90,9 +90,12 @@ static void ReloadCurrentLevel(game_state* GameState)
     
     for(uint32 X = 0; X < GameState->CurrentLevel.Tilemap.Width; X++)
     {
-        free(GameState->CurrentLevel.Tilemap.Data[X]);
+        free(GameState->CurrentLevel.Tilemap.Data[0][X]);
+        free(GameState->CurrentLevel.Tilemap.Data[1][X]);
     }
-    free(GameState->CurrentLevel.Tilemap.Data);
+    
+    free(GameState->CurrentLevel.Tilemap.Data[0]);
+    free(GameState->CurrentLevel.Tilemap.Data[1]);
     
     memset(GameState->Entities, 0, sizeof(GameState->EntityCount));
     
