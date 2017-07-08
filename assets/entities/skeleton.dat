@@ -27,8 +27,8 @@ wanderingspeed 1
 closetoplayerspeed 2
 istargeted 0
 targetingposition -0.5 2
-maxalertdistance 10
-maxfollowdistance 15
+maxalertdistance 5
+maxfollowdistance 5
 mindistancetoplayer 4
 slowdowndistance 6
 attackdistance 3.5
@@ -38,3 +38,4 @@ healthbar offset -0.5 2.2 scale 1.0 0.25
 #skeleton
 attackcooldowntimer 0.5
 chargingtimer 0.6
+alertedtimer 1.5
