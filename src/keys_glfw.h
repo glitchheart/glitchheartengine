@@ -139,7 +139,6 @@ static void ControllerKeys(game_state* GameState, uint32 Joystick)
     }
 }
 
-
 static void CursorPositionCallback(GLFWwindow *Window, double XPos, double YPos)
 {
     game_state *GameState = (game_state *)glfwGetWindowUserPointer(Window);

@@ -24,6 +24,7 @@ struct asset_manager
     entity_file_reload_data ReloadData;
     time_t PlayerFileTime;
     time_t SkeletonFileTime;
+    time_t MinotaurFileTime;
 };
 
 static GLchar* LoadShaderFromFile(const char* Path)
@@ -93,6 +94,9 @@ static void StartupFileTimeChecks(asset_manager* AssetManager)
     stat("../assets/entities/skeleton.dat", &sb);
     AssetManager->SkeletonFileTime = sb.st_mtime;
     
+    stat("../assets/entities/minotaur.dat", &sb);
+    AssetManager->MinotaurFileTime = sb.st_mtime;
+    
     for (int i = 0; i < Shader_Count; i++) 
     {
         struct stat sb1;
@@ -122,6 +126,8 @@ static void ListenToFileChanges(asset_manager* AssetManager)
         CheckDirty("../assets/entities/player.dat", AssetManager->PlayerFileTime, &AssetManager->ReloadData.ReloadPlayerFile, &AssetManager->PlayerFileTime);
         
         CheckDirty("../assets/entities/skeleton.dat", AssetManager->SkeletonFileTime, &AssetManager->ReloadData.ReloadSkeletonFile, &AssetManager->SkeletonFileTime);
+        
+        CheckDirty("../assets/entities/minotaur.dat", AssetManager->MinotaurFileTime, &AssetManager->ReloadData.ReloadMinotaurFile, &AssetManager->MinotaurFileTime);
         
     }
 }

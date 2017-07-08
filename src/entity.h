@@ -35,7 +35,8 @@ enum Enemy_Type
 {
     Enemy_Blob,
     Enemy_Skeleton,
-    Enemy_Wraith
+    Enemy_Wraith,
+    Enemy_Minotaur
 };
 
 enum Look_Direction
@@ -281,6 +282,12 @@ struct entity
                     timer AttackCooldownTimer;
                     timer ChargingTimer;
                 } Skeleton;
+                struct
+                {
+                    bool32 IsAttacking = false;
+                    timer AttackCooldownTimer;
+                    timer ChargingTimer;
+                } Minotaur;
                 struct
                 {
                     bool32 IsAttacking = false;

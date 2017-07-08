@@ -12,7 +12,7 @@ enum Editor_UI_State
 
 enum Editor_Mode
 {
-    Editor_Normal,
+    Editor_Level,
     Editor_Animation,
     Editor_Tilesheet
 };
@@ -50,6 +50,7 @@ enum Entity_Placement_Type
     Placement_Entity_Blob,
     Placement_Entity_Wraith,
     Placement_Entity_Barrel,
+    Placement_Entity_Minotaur,
     
     Placement_Entity_Max
 };
@@ -108,12 +109,19 @@ enum Editor_Placement_Mode
     Editor_Placement_Tile
 };
 
+enum Editor_Menu_Option
+{
+    Editor_Menu_Game,
+    Editor_Menu_Level,
+    Editor_Menu_Animations
+};
+
 #define NUM_EDITOR_BUTTONS = 10
 
 struct editor_state
 {
     bool32 Loaded = false;
-    Editor_Mode Mode = Editor_Normal;
+    Editor_Mode Mode = Editor_Level;
     Editor_Placement_Mode PlacementMode = Editor_Placement_Tile;
     
     entity* SelectedEntity;
@@ -125,7 +133,7 @@ struct editor_state
     real32 LastKnownMouseX;
     real32 LastKnownMouseY;
     real32 ZoomingSpeed = 50;
-    real32 PanningSpeed = 300;
+    real32 PanningSpeed = 500;
     real32 MinZoom = 5;
     real32 MaxZoom = 100;
     
@@ -149,6 +157,7 @@ struct editor_state
     textfield Textfields[20];
     int32 FocusedTextfield = -1;
     
+    bool32 HasLoadedAnimations;
     textfield* AnimationNameField;
     textfield* AnimationFrameWidthField;
     textfield* AnimationFrameHeightField;
@@ -176,6 +185,15 @@ struct editor_state
     int32 TexturesLength;
     char** Animations;
     int32 AnimationsLength;
+    
+    int32 SelectedMenuOption;
+    bool32 MenuOpen;
+    char* MenuOptions[3] = 
+    {
+        "Game",
+        "Level editor",
+        "Animations"
+    };
 };
 
 struct editor_ui
@@ -183,11 +201,6 @@ struct editor_ui
     bool32 On;
     Editor_UI_State State;
     uint32 SelectedIndex;
-    char* MenuOptions[2] = 
-    {
-        "Animations",
-        "Collision",
-    };
 };
 
 #endif

@@ -93,6 +93,7 @@ int main(void)
     
     GameState.RenderState = RenderState;
     GameState.LevelPath = ConfigData.StartingLevelFilePath;
+    GameState.InitialZoom = ConfigData.Zoom;
     game_code Game = LoadGameCode();
     
     //setup asset reloading
