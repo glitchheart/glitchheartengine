@@ -22,6 +22,7 @@ enum Shader_Type
     Shader_ErrorSprite,
     Shader_ErrorUI,
     Shader_AStarPath,
+    Shader_FrameBuffer,
     
     Shader_Count
 };
@@ -39,6 +40,8 @@ const char* ShaderPaths[Shader_Count] =
     "../assets/shaders/errorshadersprite",
     "../assets/shaders/errorshaderui",
     "../assets/shaders/astarpathshader",
+    "../assets/shaders/framebuffershader",
+    "../assets/shaders/framebufferdarkenshader"
 };
 
 
@@ -181,6 +184,11 @@ struct render_state
     b32 ShouldClose;
     r64 FPS;
     
+    GLuint FrameBufferVAO;
+    GLuint FrameBufferVBO;
+    GLuint FrameBuffer;
+    GLuint TextureColorBuffer;
+    
     size_t SpriteQuadVerticesSize = 16 * sizeof(GLfloat);
     size_t TileQuadVerticesSize = 16 * sizeof(GLfloat);
     size_t NormalQuadVerticesSize = 8 * sizeof(GLfloat);
@@ -189,12 +197,21 @@ struct render_state
     GLuint BoundVertexBuffer;
     GLuint BoundTexture;
     
+    GLfloat FrameBufferVertices[16] =
+    {
+        -1.0f, 1.0f, 0, 1.0f,
+        1.0f, 1.0f, 1.0f, 1.0f,
+        1.0f, -1.0f, 1.0f, 0.0f, 
+        -1.0f, -1.0f, 0, 0.0f
+    };
+    
     GLfloat SpriteQuadVertices[16] =
     { //pos        //texcoords
         0.0f, 1.0f, 0, 0.0f,
         1.0f, 1.0f, 1.0f,  0.0f,
         1.0f, 0.0f, 1.0f,  1.0f,
-        0.0f, 0.0f, 0,  1.0f};
+        0.0f, 0.0f, 0,  1.0f
+    };
     
     GLuint SpriteVAO;
     GLuint SpriteQuadVBO;
@@ -274,6 +291,7 @@ struct render_state
             shader ErrorShaderSprite;
             shader ErrorShaderUI;
             shader AStarPathShader;
+            shader FrameBufferShader;
         };
     };
     

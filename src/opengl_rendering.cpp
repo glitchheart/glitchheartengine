@@ -405,6 +405,27 @@ static void RenderSetup(render_state *RenderState)
         fprintf(stderr, "Could not init freetype library\n");
     }
     
+    // Framebuffer
+    glGenFramebuffers(1, &RenderState->FrameBuffer);
+    glBindFramebuffer(GL_FRAMEBUFFER, RenderState->FrameBuffer);
+    
+    glGenTextures(1, &RenderState->TextureColorBuffer);
+    glBindTexture(GL_TEXTURE_2D, RenderState->TextureColorBuffer);
+    
+    glTexImage2D(
+        GL_TEXTURE_2D, 0, GL_RGB, RenderState->WindowWidth, RenderState->WindowHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL
+        );
+    glFramebufferTexture2D(
+        GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, RenderState->TextureColorBuffer, 0
+        );
+    
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    
+    if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+        printf("ERROR::FRAMEBUFFER:: Framebuffer is not complete!");
+    
+    printf("Width %d\n", RenderState->WindowWidth);
     //Sprite
     glGenVertexArrays(1, &RenderState->SpriteVAO);
     glBindVertexArray(RenderState->SpriteVAO);
@@ -547,6 +568,25 @@ static void RenderSetup(render_state *RenderState)
     
     PositionLocation2 = glGetAttribLocation(RenderState->TextureRectShader.Program, "pos");
     TexcoordLocation2 = glGetAttribLocation(RenderState->TextureRectShader.Program, "texcoord");
+    
+    glEnableVertexAttribArray(PositionLocation2);
+    glVertexAttribPointer(PositionLocation2, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
+    glEnableVertexAttribArray(TexcoordLocation2);
+    glVertexAttribPointer(TexcoordLocation2, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *)(2 * sizeof(float)));
+    
+    glBindVertexArray(0);
+    
+    glGenVertexArrays(1, &RenderState->FrameBufferVAO);
+    glBindVertexArray(RenderState->FrameBufferVAO);
+    glGenBuffers(1, &RenderState->FrameBufferVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, RenderState->FrameBufferVBO);
+    glBufferData(GL_ARRAY_BUFFER, RenderState->SpriteQuadVerticesSize, RenderState->FrameBufferVertices, GL_DYNAMIC_DRAW);
+    
+    RenderState->TextureRectShader.Type = Shader_FrameBuffer;
+    LoadShader(ShaderPaths[Shader_FrameBuffer], &RenderState->FrameBufferShader);
+    
+    PositionLocation2 = glGetAttribLocation(RenderState->FrameBufferShader.Program, "pos");
+    TexcoordLocation2 = glGetAttribLocation(RenderState->FrameBufferShader.Program, "texcoord");
     
     glEnableVertexAttribArray(PositionLocation2);
     glVertexAttribPointer(PositionLocation2, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
@@ -2084,12 +2124,27 @@ static void Render(game_state* GameState)
     GameState->RenderState.ScaleX = 2.0f / GameState->RenderState.WindowWidth;
     GameState->RenderState.ScaleY = 2.0f / GameState->RenderState.WindowHeight;
     
+    
+    // First pass
+    glBindFramebuffer(GL_FRAMEBUFFER, GameState->RenderState.FrameBuffer);
+    
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+    glClearColor(1.0f, 0.1f, 0.1f, 1.0f);
     
+    // Render scene
     RenderGame(GameState);
-    
     RenderDebugInfo(GameState);
+    
+    // Second pass
+    glBindFramebuffer(GL_FRAMEBUFFER, 0); // back to default
+    glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
+    
+    glBindVertexArray(GameState->RenderState.FrameBufferVAO);
+    
+    UseShader(&GameState->RenderState.FrameBufferShader);
+    glBindTexture(GL_TEXTURE_2D, GameState->RenderState.TextureColorBuffer);
+    glDrawArrays(GL_QUADS, 0, 4); 
     
     glfwSwapBuffers(GameState->RenderState.Window);
 }
