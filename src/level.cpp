@@ -210,18 +210,22 @@ static bool32 LoadLevelFromFile(char* FilePath, level* Level, game_state* GameSt
             IndexHeight++;
         }
         
+        int32 PathIndex = 0;
+        
         while(fgets(LineBuffer, 255, File))
         {
             if(StartsWith(&LineBuffer[0], "skeleton"))
             {
                 glm::vec2 Pos;
                 sscanf(LineBuffer, "skeleton %f %f", &Pos.x, &Pos.y);
+                PathIndex = strlen("skeleton %f %f");
                 LoadSkeletonData(GameState, -1, Pos);
             }
             else if(StartsWith(&LineBuffer[0], "minotaur"))
             {
                 glm::vec2 Pos;
                 sscanf(LineBuffer, "minotaur %f %f", &Pos.x, &Pos.y);
+                PathIndex = strlen("minotaur %f %f");
                 LoadMinotaurData(GameState, -1, Pos);
             }
             
@@ -229,12 +233,14 @@ static bool32 LoadLevelFromFile(char* FilePath, level* Level, game_state* GameSt
             {
                 glm::vec2 Pos;
                 sscanf(LineBuffer, "blob %f %f", &Pos.x, &Pos.y);
+                PathIndex = strlen("blob %f %f");
                 LoadBlobData(GameState, -1, Pos);
             }
             else if(StartsWith(&LineBuffer[0], "wraith"))
             {
                 glm::vec2 Pos;
                 sscanf(LineBuffer, "wraith %f %f", &Pos.x, &Pos.y);
+                PathIndex = strlen("wraith %f %f");
                 SpawnWraith(GameState, Pos);
             }
             else if(StartsWith(&LineBuffer[0], "barrel"))
@@ -243,6 +249,13 @@ static bool32 LoadLevelFromFile(char* FilePath, level* Level, game_state* GameSt
                 sscanf(LineBuffer, "barrel %f %f", &Pos.x, &Pos.y);
                 SpawnBarrel(GameState, Pos);
             }
+        }
+        
+        if(PathIndex != 0)
+        {
+            int32 WaypointCount = 0;
+            char* PathPtr = *LineBuffer[0];
+            PathPtr += PathIndex;
         }
         
         fclose(File);

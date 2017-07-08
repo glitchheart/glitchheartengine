@@ -264,6 +264,9 @@ struct entity
             AIFunction Dying;
             AIFunction Wandering;
             
+            int32 WaypointCount = 0;
+            v2i Waypoints[10];
+            
             union
             {
                 struct
