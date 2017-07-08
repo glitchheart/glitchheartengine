@@ -239,6 +239,10 @@ static void LoadEnemyData(FILE* File, entity* Entity, game_state* GameState)
             {
                 sscanf(LineBuffer, "walkingspeed %f", &Entity->Enemy.WalkingSpeed);
             }
+            else if(StartsWith(&LineBuffer[0], "wanderingspeed"))
+            {
+                sscanf(LineBuffer, "wanderingspeed %f", &Entity->Enemy.WanderingSpeed);
+            }
             else if(StartsWith(&LineBuffer[0], "closetoplayerspeed"))
             {
                 sscanf(LineBuffer, "closetoplayerspeed %f", &Entity->Enemy.CloseToPlayerSpeed);
@@ -469,9 +473,48 @@ AI_FUNC(SkeletonDying)
 
 AI_FUNC(SkeletonWandering)
 {
-    
+    if(Entity->Enemy.WaypointCount > 0)
+    {
+        PlayAnimation(Entity, "skeleton_walk", GameState);
+        
+        auto CurrentWaypoint = glm::vec2(Entity->Enemy.Waypoints[Entity->Enemy.WaypointIndex].X, Entity->Enemy.Waypoints[Entity->Enemy.WaypointIndex].Y);
+        
+        auto Distance = glm::distance(CurrentWaypoint, glm::vec2(Entity->Position.x, Entity->Position.y - 0.5f));
+        
+        if(Distance < 0.01f)
+        {
+            if(Entity->Enemy.WanderingForward)
+            {
+                if(Entity->Enemy.WaypointIndex == Entity->Enemy.WaypointCount - 1)
+                {
+                    Entity->Enemy.WanderingForward = false;
+                    Entity->Enemy.WaypointIndex--;
+                }
+                else
+                {
+                    Entity->Enemy.WaypointIndex++;
+                }
+            }
+            else
+            {
+                if(Entity->Enemy.WaypointIndex == 0)
+                {
+                    Entity->Enemy.WanderingForward = true;
+                    Entity->Enemy.WaypointIndex++;
+                }
+                else
+                {
+                    Entity->Enemy.WaypointIndex--;
+                }
+            }
+        }
+        
+        CurrentWaypoint =  glm::vec2(Entity->Enemy.Waypoints[Entity->Enemy.WaypointIndex].X, Entity->Enemy.Waypoints[Entity->Enemy.WaypointIndex].Y);
+        auto Direction = glm::normalize(CurrentWaypoint - glm::vec2(Entity->Position.x, Entity->Position.y - 0.5f));
+        
+        Entity->Velocity = glm::vec2(Direction.x * Entity->Enemy.WanderingSpeed, Direction.y * Entity->Enemy.WanderingSpeed);
+    }
 }
-
 
 AI_FUNC(MinotaurIdle)
 {
@@ -1911,10 +1954,10 @@ void UpdateSkeleton(entity* Entity, game_state* GameState, r64 DeltaTime)
         Entity->Position.x += Entity->Velocity.x * (r32)DeltaTime;
         Entity->Position.y += Entity->Velocity.y * (r32)DeltaTime;
         
+        glm::vec2 Direction = glm::normalize(Player.Position - Entity->Position);
+        
         if(Entity->Enemy.AIState != AI_Attacking)
         {
-            glm::vec2 Direction = glm::normalize(Player.Position - Entity->Position);
-            
             if(Abs(Direction.x) < 0.4f)
             {
                 if(Direction.y > 0)
@@ -1933,9 +1976,12 @@ void UpdateSkeleton(entity* Entity, game_state* GameState, r64 DeltaTime)
                 else
                     Entity->LookDirection = Right;
             }
-            
-            Entity->IsFlipped = Direction.x < 0;
         }
+        
+        if(Entity->Velocity.x == 0.0f && Entity->Velocity.y == 0.0f)
+            Entity->IsFlipped = Direction.x < 0;
+        else
+            Entity->IsFlipped = Entity->Velocity.x < 0;
         
         render_entity* RenderEntity = &GameState->RenderState.RenderEntities[Entity->RenderEntityHandle];
         
