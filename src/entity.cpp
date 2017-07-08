@@ -298,6 +298,60 @@ static void LoadEnemyData(FILE* File, entity* Entity, game_state* GameState)
     }
 }
 
+static void EnemyWander(game_state* GameState, entity* Entity)
+{
+    if(Entity->Enemy.WaypointCount > 0)
+    {
+        PlayAnimation(Entity, Concat(Entity->Name,"_walk"), GameState);
+        
+        auto CurrentWaypoint = glm::vec2(Entity->Enemy.Waypoints[Entity->Enemy.WaypointIndex].X, Entity->Enemy.Waypoints[Entity->Enemy.WaypointIndex].Y);
+        
+        auto Distance = glm::distance(CurrentWaypoint, glm::vec2(Entity->Position.x, Entity->Position.y - 0.5f));
+        
+        if(Distance < 0.01f)
+        {
+            if(Entity->Enemy.WanderingForward)
+            {
+                if(Entity->Enemy.WaypointIndex == Entity->Enemy.WaypointCount - 1)
+                {
+                    Entity->Enemy.WanderingForward = false;
+                    Entity->Enemy.WaypointIndex--;
+                }
+                else
+                {
+                    Entity->Enemy.WaypointIndex++;
+                }
+            }
+            else
+            {
+                if(Entity->Enemy.WaypointIndex == 0)
+                {
+                    Entity->Enemy.WanderingForward = true;
+                    Entity->Enemy.WaypointIndex++;
+                }
+                else
+                {
+                    Entity->Enemy.WaypointIndex--;
+                }
+            }
+        }
+        
+        CurrentWaypoint =  glm::vec2(Entity->Enemy.Waypoints[Entity->Enemy.WaypointIndex].X, Entity->Enemy.Waypoints[Entity->Enemy.WaypointIndex].Y);
+        auto Direction = glm::normalize(CurrentWaypoint - glm::vec2(Entity->Position.x, Entity->Position.y - 0.5f));
+        
+        Entity->Velocity = glm::vec2(Direction.x * Entity->Enemy.WanderingSpeed, Direction.y * Entity->Enemy.WanderingSpeed);
+    }
+    
+    entity& Player = GameState->Entities[GameState->PlayerIndex];
+    auto& Enemy = Entity->Enemy;
+    r64 DistanceToPlayer = glm::distance(Entity->Position, Player.Position);
+    
+    if(DistanceToPlayer <= Entity->Enemy.MaxAlertDistance)
+    {
+        Enemy.AIState = AI_Alerted;
+        StartTimer(GameState,Entity->Enemy.Skeleton.AlertedTimer);
+    }
+}
 
 AI_FUNC(SkeletonIdle)
 {
@@ -308,14 +362,26 @@ AI_FUNC(SkeletonIdle)
     
     if(DistanceToPlayer <= Entity->Enemy.MaxAlertDistance)
     {
-        Enemy.AIState = AI_Following;
-        PlayAnimation(Entity, "skeleton_walk", GameState);
+        Enemy.AIState = AI_Alerted;
+        StartTimer(GameState,Entity->Enemy.Skeleton.AlertedTimer);
+    }
+    else
+    {
+        Enemy.AIState = AI_Wandering;
+        PlayAnimation(Entity, "minotaur_walk", GameState);
     }
 }
 
 AI_FUNC(SkeletonAlerted)
 {
-    
+    entity& Player = GameState->Entities[GameState->PlayerIndex];
+    auto& Enemy = Entity->Enemy;
+    r64 DistanceToPlayer = glm::distance(Entity->Position, Player.Position);
+    if(TimerDone(GameState,Entity->Enemy.Skeleton.AlertedTimer) && DistanceToPlayer <= Entity->Enemy.MaxAlertDistance)
+    {
+        Enemy.AIState = AI_Following;
+        PlayAnimation(Entity, "skeleton_walk", GameState);
+    }
 }
 
 AI_FUNC(SkeletonFollowing)
@@ -330,8 +396,8 @@ AI_FUNC(SkeletonFollowing)
     {
         if(DistanceToPlayer > Entity->Enemy.MaxFollowDistance)
         {
-            PlayAnimation(Entity, "skeleton_idle", GameState);
-            Enemy.AIState = AI_Idle;
+            PlayAnimation(Entity, "skeleton_walk", GameState);
+            Enemy.AIState = AI_Wandering;
         }
         else if(DistanceToPlayer < Entity->Enemy.MinDistanceToPlayer)
         {
@@ -434,7 +500,7 @@ AI_FUNC(SkeletonAttacking)
             else if(DistanceToPlayer > Entity->Enemy.MaxAlertDistance)
             {
                 Skeleton.IsAttacking = false;
-                Enemy.AIState = AI_Idle;
+                Enemy.AIState = AI_Wandering;
             }
             else
             {
@@ -473,47 +539,7 @@ AI_FUNC(SkeletonDying)
 
 AI_FUNC(SkeletonWandering)
 {
-    if(Entity->Enemy.WaypointCount > 0)
-    {
-        PlayAnimation(Entity, "skeleton_walk", GameState);
-        
-        auto CurrentWaypoint = glm::vec2(Entity->Enemy.Waypoints[Entity->Enemy.WaypointIndex].X, Entity->Enemy.Waypoints[Entity->Enemy.WaypointIndex].Y);
-        
-        auto Distance = glm::distance(CurrentWaypoint, glm::vec2(Entity->Position.x, Entity->Position.y - 0.5f));
-        
-        if(Distance < 0.01f)
-        {
-            if(Entity->Enemy.WanderingForward)
-            {
-                if(Entity->Enemy.WaypointIndex == Entity->Enemy.WaypointCount - 1)
-                {
-                    Entity->Enemy.WanderingForward = false;
-                    Entity->Enemy.WaypointIndex--;
-                }
-                else
-                {
-                    Entity->Enemy.WaypointIndex++;
-                }
-            }
-            else
-            {
-                if(Entity->Enemy.WaypointIndex == 0)
-                {
-                    Entity->Enemy.WanderingForward = true;
-                    Entity->Enemy.WaypointIndex++;
-                }
-                else
-                {
-                    Entity->Enemy.WaypointIndex--;
-                }
-            }
-        }
-        
-        CurrentWaypoint =  glm::vec2(Entity->Enemy.Waypoints[Entity->Enemy.WaypointIndex].X, Entity->Enemy.Waypoints[Entity->Enemy.WaypointIndex].Y);
-        auto Direction = glm::normalize(CurrentWaypoint - glm::vec2(Entity->Position.x, Entity->Position.y - 0.5f));
-        
-        Entity->Velocity = glm::vec2(Direction.x * Entity->Enemy.WanderingSpeed, Direction.y * Entity->Enemy.WanderingSpeed);
-    }
+    EnemyWander(GameState,Entity);
 }
 
 AI_FUNC(MinotaurIdle)
@@ -525,14 +551,26 @@ AI_FUNC(MinotaurIdle)
     
     if(DistanceToPlayer <= Entity->Enemy.MaxAlertDistance)
     {
-        Enemy.AIState = AI_Following;
+        Enemy.AIState = AI_Alerted;
+        StartTimer(GameState, Entity->Enemy.Minotaur.AlertedTimer);
+    }
+    else
+    {
+        Enemy.AIState = AI_Wandering;
         PlayAnimation(Entity, "minotaur_walk", GameState);
     }
 }
 
 AI_FUNC(MinotaurAlerted)
 {
-    
+    entity& Player = GameState->Entities[GameState->PlayerIndex];
+    auto& Enemy = Entity->Enemy;
+    r64 DistanceToPlayer = glm::distance(Entity->Position, Player.Position);
+    if(TimerDone(GameState,Entity->Enemy.Minotaur.AlertedTimer) && DistanceToPlayer <= Entity->Enemy.MaxAlertDistance)
+    {
+        Enemy.AIState = AI_Following;
+        PlayAnimation(Entity, "minotaur_walk", GameState);
+    }
 }
 
 AI_FUNC(MinotaurFollowing)
@@ -547,8 +585,8 @@ AI_FUNC(MinotaurFollowing)
     {
         if(DistanceToPlayer > Entity->Enemy.MaxFollowDistance)
         {
-            PlayAnimation(Entity, "minotaur_idle", GameState);
-            Enemy.AIState = AI_Idle;
+            PlayAnimation(Entity, "minotaur_walk", GameState);
+            Enemy.AIState = AI_Wandering;
         }
         else if(DistanceToPlayer < Entity->Enemy.MinDistanceToPlayer)
         {
@@ -621,7 +659,7 @@ AI_FUNC(MinotaurAttacking)
             Entity->Velocity = glm::vec2(Direction.x * Entity->AttackMoveSpeed, Direction.y * Entity->AttackMoveSpeed);
         }
         
-        if(Entity->AnimationInfo.FrameIndex >= 6 &&Entity->AnimationInfo.FrameIndex < 14 && !Minotaur.IsAttacking && strcmp(Entity->CurrentAnimation->Name, "minotaur_idle") != 0)
+        if(Entity->AnimationInfo.FrameIndex >= Entity->AttackLowFrameIndex - 2 &&Entity->AnimationInfo.FrameIndex < 14 && !Minotaur.IsAttacking && strcmp(Entity->CurrentAnimation->Name, "minotaur_idle") != 0)
         {
             StartTimer(GameState, Entity->AttackMoveTimer);
             
@@ -634,6 +672,10 @@ AI_FUNC(MinotaurAttacking)
                     Entity->AttackCount = 0;
                 
                 StartTimer(GameState, Minotaur.AttackCooldownTimer);
+            }
+            else
+            {
+                Minotaur.IsAttacking = false;
             }
         }
         else if(!Entity->AnimationInfo.Playing)
@@ -651,7 +693,7 @@ AI_FUNC(MinotaurAttacking)
             else if(DistanceToPlayer > Entity->Enemy.MaxAlertDistance)
             {
                 Minotaur.IsAttacking = false;
-                Enemy.AIState = AI_Idle;
+                Enemy.AIState = AI_Wandering;
             }
             else
             {
@@ -673,8 +715,8 @@ AI_FUNC(MinotaurHit)
     
     if(!Entity->AnimationInfo.Playing)
     {
-        Enemy.AIState = AI_Idle;
-        PlayAnimation(Entity, "minotaur_idle", GameState);
+        Enemy.AIState = AI_Following;
+        PlayAnimation(Entity, "minotaur_walk", GameState);
     }
 }
 
@@ -690,7 +732,7 @@ AI_FUNC(MinotaurDying)
 
 AI_FUNC(MinotaurWandering)
 {
-    
+    EnemyWander(GameState,Entity);
 }
 
 
@@ -820,6 +862,12 @@ static void LoadSkeletonData(game_state* GameState, i32 Handle = -1, glm::vec2 P
                 
                 sscanf(LineBuffer,"chargingtimer %lf",&Entity->Enemy.Skeleton.ChargingTimer.TimerMax);
             }
+            else if(StartsWith(&LineBuffer[0],"alertedtimer"))
+            {
+                Entity->Enemy.Skeleton.AlertedTimer.TimerHandle = -1;
+                
+                sscanf(LineBuffer,"alertedtimer %lf",&Entity->Enemy.Skeleton.AlertedTimer.TimerMax);
+            }
         }
         fclose(File);
     }
@@ -874,6 +922,12 @@ static void LoadMinotaurData(game_state* GameState, i32 Handle = -1, glm::vec2 P
                 Entity->Enemy.Minotaur.ChargingTimer.TimerHandle = -1;
                 
                 sscanf(LineBuffer,"chargingtimer %lf",&Entity->Enemy.Minotaur.ChargingTimer.TimerMax);
+            }
+            else if(StartsWith(&LineBuffer[0],"alertedtimer"))
+            {
+                Entity->Enemy.Minotaur.AlertedTimer.TimerHandle = -1;
+                
+                sscanf(LineBuffer,"alertedtimer %lf",&Entity->Enemy.Minotaur.AlertedTimer.TimerMax);
             }
         }
         fclose(File);
@@ -1256,6 +1310,12 @@ void Hit(game_state* GameState, entity* ByEntity, entity* HitEntity)
 
 void UpdatePlayer(entity* Entity, game_state* GameState, r64 DeltaTime)
 {
+    r32 UsedWalkingSpeed = Entity->Player.WalkingSpeed;
+    if(!TimerDone(GameState, Entity->HitCooldownTimer))
+    {
+        UsedWalkingSpeed = UsedWalkingSpeed / 2;
+    }
+    
     if(TimerDone(GameState,Entity->Player.StaminaGainCooldownTimer))
     {
         Entity->Player.StaminaGainTimer.TimerMax = 0.06;
@@ -1314,7 +1374,7 @@ void UpdatePlayer(entity* Entity, game_state* GameState, r64 DeltaTime)
             PlayAnimation(Entity, "swordsman_hit", GameState);
             Entity->Velocity = glm::vec2(Entity->HitRecoilDirection.x * Entity->HitRecoilSpeed * DeltaTime, Entity->HitRecoilDirection.y * Entity->HitRecoilSpeed * DeltaTime);
         }
-        else
+        if(true)
         {
             if(!Entity->Player.IsDashing && !Entity->Player.IsDefending)
             {
@@ -1342,8 +1402,8 @@ void UpdatePlayer(entity* Entity, game_state* GameState, r64 DeltaTime)
                     r32 InputX = GetInputX(GameState);
                     r32 InputY = GetInputY(GameState);
                     
-                    Entity->Velocity.x = InputX * Entity->Player.WalkingSpeed * (r32)DeltaTime;
-                    Entity->Velocity.y = InputY * Entity->Player.WalkingSpeed * (r32)DeltaTime;
+                    Entity->Velocity.x = InputX * UsedWalkingSpeed * (r32)DeltaTime;
+                    Entity->Velocity.y = InputY * UsedWalkingSpeed * (r32)DeltaTime;
                     
                     // @Cleanup: This section really needs a cleanup
                     if(Entity->Player.TargetedEnemyHandle != -1)
@@ -1580,7 +1640,9 @@ void UpdatePlayer(entity* Entity, game_state* GameState, r64 DeltaTime)
         }
         
         //attacking
-        if(!Entity->Player.Pickup && TimerDone(GameState, Entity->Player.AttackCooldownTimer) && !Entity->Player.IsAttacking && (GetActionButtonDown(Action_Attack, GameState) || GetJoystickKeyDown(Joystick_3, GameState)))
+        if(!Entity->Player.Pickup && TimerDone(GameState, Entity->Player.AttackCooldownTimer) &&
+           TimerDone(GameState, Entity->HitCooldownTimer)
+           && !Entity->Player.IsAttacking && (GetActionButtonDown(Action_Attack, GameState) || GetJoystickKeyDown(Joystick_3, GameState)))
         {
             switch(Entity->LookDirection)
             {
@@ -1794,7 +1856,7 @@ void UpdateWeapon(entity* Entity, game_state* GameState, r64 DeltaTime)
             if((Entity->Type == Entity_Player && CollisionInfo.Other[Index]->Type == Entity_Enemy && CollisionInfo.Other[Index]->Enemy.AIState != AI_Hit && CollisionInfo.Other[Index]->Enemy.AIState != AI_Dying) ||
                (Entity->Type == Entity_Enemy && CollisionInfo.Other[Index]->Type == Entity_Player && !CollisionInfo.Other[Index]->Player.IsDashing && !CollisionInfo.Other[Index]->Hit && TimerDone(GameState, CollisionInfo.Other[Index]->HitCooldownTimer)))
             {
-                if((Entity->Type == Entity_Player && Entity->AnimationInfo.FrameIndex >= Entity->AttackLowFrameIndex && Entity->AnimationInfo.FrameIndex <= Entity->AttackHighFrameIndex) || Entity->Type != Entity_Player)
+                if(Entity->AnimationInfo.FrameIndex >= Entity->AttackLowFrameIndex && Entity->AnimationInfo.FrameIndex <= Entity->AttackHighFrameIndex)
                 {
                     Hit(GameState, Entity, CollisionInfo.Other[Index]);
                 }
@@ -2033,7 +2095,7 @@ void UpdateMinotaur(entity* Entity, game_state* GameState, r64 DeltaTime)
         Entity->Position.x += Entity->Velocity.x * (r32)DeltaTime;
         Entity->Position.y += Entity->Velocity.y * (r32)DeltaTime;
         
-        if(Entity->Enemy.AIState != AI_Attacking)
+        if(Entity->Enemy.AIState != AI_Attacking && !Entity->Enemy.Minotaur.IsAttacking)
         {
             glm::vec2 Direction = glm::normalize(Player.Position - Entity->Position);
             
