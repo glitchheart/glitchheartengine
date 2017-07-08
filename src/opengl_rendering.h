@@ -90,9 +90,9 @@ struct editor_render_info
 struct tilemap_render_info
 {
     bool32 Dirty = true;
-    GLuint VAO;
-    GLuint VBO;
-    int32 VBOSize;
+    GLuint VAOS[2];
+    GLuint VBOS[2];
+    int32 VBOSizes[2];
 };
 
 struct render_entity

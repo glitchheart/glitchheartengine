@@ -277,7 +277,7 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
         {
             for(int32 Y = MinY; Y < MaxY; Y++)
             {
-                tile_data Tile = Level->Tilemap.Data[X][Y];
+                tile_data Tile = Level->Tilemap.Data[1][X][Y];
                 
                 if(Tile.IsSolid)
                 {

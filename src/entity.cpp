@@ -572,8 +572,11 @@ static void LoadSkeletonData(game_state* GameState, int32 Handle = -1, glm::vec2
     
     if(File)
     {
-        LoadEntityData(File,Entity,GameState, Handle != -1);
-        LoadEnemyData(File,Entity,GameState);
+        LoadEntityData(File,Entity, GameState, Handle != -1);
+        LoadEnemyData(File,Entity, GameState);
+        
+        if(Handle == -1)
+            Entity->Position = glm::vec2(Position.x, Position.y);
         
         char LineBuffer[255];
         
@@ -780,32 +783,32 @@ static void LoadPlayerData(game_state* GameState, int32 Handle = -1, glm::vec2 P
             }
             /*else if(StartsWith(&LineBuffer[0], "dustcloud"))
             {
-                entity* PlayerDustCloud = Handle == -1 ? &GameState->Entities[GameState->EntityCount] : &GameState->Entities[Entity->Player.DustCloudHandle];
-                PlayerDustCloud->Name = "Dust cloud";
-                PlayerDustCloud->Type = Entity_RenderItem;
-                PlayerDustCloud->Active = false;
-                
-                if(Handle == -1)
-                    Entity->Player.DustCloudHandle = GameState->EntityCount;
-                    
-                char* AnimationName = (char*)malloc(30 * sizeof(char));
-                
-                sscanf(LineBuffer, "dustcloud scale %f animation %s", &PlayerDustCloud->Scale, AnimationName);
-                
-                PlayAnimation(PlayerDustCloud, AnimationName, GameState);
-                free(AnimationName);
-                
-                if(Handle == -1)
-                {
-                    render_entity* PlayerDustCloudRenderEntity = &GameState->RenderState.RenderEntities[GameState->RenderState.RenderEntityCount];
-                    PlayerDustCloudRenderEntity->ShaderIndex = Shader_Spritesheet;
-                    PlayerDustCloudRenderEntity->Rendered = true;
-                    PlayerDustCloudRenderEntity->Entity = &*PlayerDustCloud;
-                    PlayerDustCloud->RenderEntityHandle = GameState->RenderState.RenderEntityCount++;
-                    PlayerDustCloudRenderEntity->Color = glm::vec4(1, 1, 1, 1);
-                    PlayerDustCloud->EntityIndex = GameState->EntityCount++;
-                    PlayerDustCloud->Position = glm::vec2(1, 1);
-                }
+            entity* PlayerDustCloud = Handle == -1 ? &GameState->Entities[GameState->EntityCount] : &GameState->Entities[Entity->Player.DustCloudHandle];
+            PlayerDustCloud->Name = "Dust cloud";
+            PlayerDustCloud->Type = Entity_RenderItem;
+            PlayerDustCloud->Active = false;
+            
+            if(Handle == -1)
+            Entity->Player.DustCloudHandle = GameState->EntityCount;
+            
+            char* AnimationName = (char*)malloc(30 * sizeof(char));
+            
+            sscanf(LineBuffer, "dustcloud scale %f animation %s", &PlayerDustCloud->Scale, AnimationName);
+            
+            PlayAnimation(PlayerDustCloud, AnimationName, GameState);
+            free(AnimationName);
+            
+            if(Handle == -1)
+            {
+            render_entity* PlayerDustCloudRenderEntity = &GameState->RenderState.RenderEntities[GameState->RenderState.RenderEntityCount];
+            PlayerDustCloudRenderEntity->ShaderIndex = Shader_Spritesheet;
+            PlayerDustCloudRenderEntity->Rendered = true;
+            PlayerDustCloudRenderEntity->Entity = &*PlayerDustCloud;
+            PlayerDustCloud->RenderEntityHandle = GameState->RenderState.RenderEntityCount++;
+            PlayerDustCloudRenderEntity->Color = glm::vec4(1, 1, 1, 1);
+            PlayerDustCloud->EntityIndex = GameState->EntityCount++;
+            PlayerDustCloud->Position = glm::vec2(1, 1);
+            }
             }*/
         }
         fclose(File);
@@ -1845,7 +1848,7 @@ void UpdateGeneral(entity* Entity, game_state* GameState, real64 DeltaTime)
             
             if(HealthCount.Visible)
             {
-                HealthCount.Position.y += 100 * DeltaTime;
+                HealthCount.Position.y += 100 * (real32)DeltaTime;
                 
                 if(HealthCount.Position.y - Entity->Enemy.HealthCountStart.y >= 70)
                 {

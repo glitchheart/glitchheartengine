@@ -9,7 +9,7 @@ struct sprite_sheet_frame
 
 struct animation_info
 {
-    uint32 FrameIndex = 0;
+    int32 FrameIndex = 0;
     bool32 Playing = false;
     real64 CurrentTime = 0;
     bool32 FreezeFrame = false;
@@ -20,7 +20,7 @@ struct animation
     char* Name;
     real32 TimePerFrame;
     texture* Texture;
-    uint32 FrameCount;
+    int32 FrameCount = 0;
     glm::vec2 FrameSize;
     glm::vec2 Center;
     bool32 Loop;

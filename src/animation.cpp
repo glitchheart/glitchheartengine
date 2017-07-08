@@ -13,8 +13,8 @@
                                         fprintf(File, "timeperframe %f\n", Animation.TimePerFrame);
                                         fprintf(File, "frames\n");
                                         
-                                        int32 X = (int32)(Animation.FrameOffset.y) * Animation.FrameSize.x;
-                                        int32 Y = (int32)(Animation.FrameOffset.x) * Animation.FrameSize.y;
+                                        int32 X = (int32)(Animation.FrameOffset.y) * (int32)Animation.FrameSize.x;
+                                        int32 Y = (int32)(Animation.FrameOffset.x) * (int32)Animation.FrameSize.y;
                                         
                                         int32 FrameIndex = 0;
                                         
@@ -100,7 +100,7 @@
                                         
                                         Animation.Frames = (sprite_sheet_frame*)malloc(sizeof(sprite_sheet_frame) * Animation.FrameCount);
                                         
-                                        for(uint32 i = 0; i < Animation.FrameCount; i++)
+                                        for(int32 i = 0; i < Animation.FrameCount; i++)
                                         {
                                             real32 OffsetX = 0.0f;
                                             real32 OffsetY = 0.0f;
