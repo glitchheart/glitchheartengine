@@ -29,8 +29,8 @@ enum Editor_Button
 
 struct button
 {
-    bool32 Active = false;
-    bool32 Clicked = false;
+    b32 Active = false;
+    b32 Clicked = false;
     char* Text;
     glm::vec2 ScreenPosition;
     glm::vec2 Size;
@@ -78,22 +78,22 @@ enum Editor_Field_Type
 
 struct checkbox
 {
-    bool32 Active = false;
-    bool32 Checked = false;
+    b32 Active = false;
+    b32 Checked = false;
     char* Label;
     glm::vec2 ScreenPosition;
     glm::vec4 Color;
-    bool32 JustChecked = false;
+    b32 JustChecked = false;
 };
 
 struct textfield
 {
-    bool32 Active = false;
-    bool32 InFocus = false;
+    b32 Active = false;
+    b32 InFocus = false;
     Textfield_Type Type = Textfield_Normal;
     char* Label;
     char Text[TEXTFIELD_LENGTH];
-    uint32 TextIndex;
+    u32 TextIndex;
     glm::vec2 ScreenPosition;
     glm::vec2 Size;
     glm::vec4 Color;
@@ -120,44 +120,44 @@ enum Editor_Menu_Option
 
 struct editor_state
 {
-    bool32 Loaded = false;
+    b32 Loaded = false;
     Editor_Mode Mode = Editor_Level;
     Editor_Placement_Mode PlacementMode = Editor_Placement_Tile;
     
     entity* SelectedEntity;
-    uint32 SelectedTileType = 1;
+    u32 SelectedTileType = 1;
     glm::vec2 SelectedTilePosition;
     Entity_Placement_Type PlacementEntity;
-    int32 CurrentTilemapLayer = 1;
+    i32 CurrentTilemapLayer = 1;
     
-    real32 LastKnownMouseX;
-    real32 LastKnownMouseY;
-    real32 ZoomingSpeed = 50;
-    real32 PanningSpeed = 500;
-    real32 MinZoom = 5;
-    real32 MaxZoom = 100;
+    r32 LastKnownMouseX;
+    r32 LastKnownMouseY;
+    r32 ZoomingSpeed = 50;
+    r32 PanningSpeed = 500;
+    r32 MinZoom = 5;
+    r32 MaxZoom = 100;
     
-    real32 TileX;
-    real32 TileY;
+    r32 TileX;
+    r32 TileY;
     
     glm::vec2 TilemapOffset;
-    real32 RenderedTileSize = 30.0f;
+    r32 RenderedTileSize = 30.0f;
     
     glm::vec2 TileBrushSize = glm::vec2(1, 1);
     
-    real32 ToolbarScrollSpeed = 30000;
-    real32 ToolbarScrollOffsetY = 0.0f;
-    real32 ToolbarX;
-    real32 ToolbarY;
-    real32 ToolbarWidth;
-    real32 ToolbarHeight;
+    r32 ToolbarScrollSpeed = 30000;
+    r32 ToolbarScrollOffsetY = 0.0f;
+    r32 ToolbarX;
+    r32 ToolbarY;
+    r32 ToolbarWidth;
+    r32 ToolbarHeight;
     
     checkbox Checkboxes[10];
     button Buttons[10];
     textfield Textfields[20];
-    int32 FocusedTextfield = -1;
+    i32 FocusedTextfield = -1;
     
-    bool32 HasLoadedAnimations;
+    b32 HasLoadedAnimations;
     textfield* AnimationNameField;
     textfield* AnimationFrameWidthField;
     textfield* AnimationFrameHeightField;
@@ -175,19 +175,19 @@ struct editor_state
     textfield* TileBrushWidthField;
     textfield* TileBrushHeightField;
     
-    bool32 Editing;
-    bool32 ShouldLoop;
-    int32 SelectedAnimation;
+    b32 Editing;
+    b32 ShouldLoop;
+    i32 SelectedAnimation;
     animation_info AnimationInfo;
     animation* LoadedAnimation;
-    int32 SelectedTexture;
+    i32 SelectedTexture;
     char const** Textures;
-    int32 TexturesLength;
+    i32 TexturesLength;
     char** Animations;
-    int32 AnimationsLength;
+    i32 AnimationsLength;
     
-    int32 SelectedMenuOption;
-    bool32 MenuOpen;
+    i32 SelectedMenuOption;
+    b32 MenuOpen;
     char* MenuOptions[3] = 
     {
         "Game",
@@ -198,9 +198,9 @@ struct editor_state
 
 struct editor_ui
 {
-    bool32 On;
+    b32 On;
     Editor_UI_State State;
-    uint32 SelectedIndex;
+    u32 SelectedIndex;
 };
 
 #endif

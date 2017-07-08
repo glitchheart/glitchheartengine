@@ -1,7 +1,7 @@
 #ifndef KEYS_GLFW_H
 #define KEYS_GLFW_H
 
-std::map<uint32, Key_Code> KeyMappings = 
+std::map<u32, Key_Code> KeyMappings = 
 {
     { GLFW_KEY_LEFT, Key_Left },
     { GLFW_KEY_RIGHT, Key_Right },
@@ -67,14 +67,14 @@ std::map<uint32, Key_Code> KeyMappings =
     { GLFW_KEY_DELETE, Key_Delete}
 };
 
-std::map<uint32, Mouse_Code> MouseButtonMappings = 
+std::map<u32, Mouse_Code> MouseButtonMappings = 
 {
     { GLFW_MOUSE_BUTTON_LEFT, Mouse_Left },
     { GLFW_MOUSE_BUTTON_RIGHT, Mouse_Right },
     { GLFW_MOUSE_BUTTON_MIDDLE, Mouse_Middle }
 };
 
-std::map<uint32, Controller_Code> ControllerMappings =
+std::map<u32, Controller_Code> ControllerMappings =
 {
     {GLFW_JOYSTICK_1, Joystick_1},
     {GLFW_JOYSTICK_2, Joystick_2},
@@ -121,12 +121,12 @@ static void ControllerKeyCallback(game_state* GameState, int Key, int Action)
     }
 }
 
-static void ControllerKeys(game_state* GameState, uint32 Joystick)
+static void ControllerKeys(game_state* GameState, u32 Joystick)
 {
-    int32 Count;
+    i32 Count;
     const unsigned char* ButtonState = glfwGetJoystickButtons(Joystick,&Count);
     
-    for(int32 i = 0; i < Count; i++)
+    for(i32 i = 0; i < Count; i++)
     {
         ControllerKeyCallback(GameState,i,ButtonState[i]);
     }

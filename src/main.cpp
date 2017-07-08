@@ -16,7 +16,7 @@ struct game_code
     FILETIME LastDllWriteTime;
     update *Update;
     
-    bool32 IsValid;
+    b32 IsValid;
     const char *DllPath = "game.dll";
     const char *TempDllPath = "game_temp.dll";
 };
@@ -99,7 +99,7 @@ int main(void)
     //setup asset reloading
     asset_manager AssetManager = {};
     StartupFileTimeChecks(&AssetManager);
-    uint32 FrameCounterForAssetCheck = 0;
+    u32 FrameCounterForAssetCheck = 0;
     
     GameState.Console = {};
     GameState.EditorUI = {};
@@ -116,9 +116,9 @@ int main(void)
         GameState.SoundManager = SoundManager;
     }
     
-    real64 LastFrame = GetTime();
-    real64 CurrentFrame = 0.0;
-    real64 DeltaTime;
+    r64 LastFrame = GetTime();
+    r64 CurrentFrame = 0.0;
+    r64 DeltaTime;
     
     while (!ShouldCloseWindow(&GameState.RenderState) && !GameState.RenderState.ShouldClose)
     {
@@ -126,7 +126,7 @@ int main(void)
         CurrentFrame = GetTime();
         DeltaTime = Min(CurrentFrame - LastFrame, 0.1);
         LastFrame = CurrentFrame;
-        real64 FPS = 1.0/DeltaTime;
+        r64 FPS = 1.0/DeltaTime;
         GameState.RenderState.FPS = FPS;
         
         if(GameState.GameMode == Mode_Exit || GetKeyDown(Key_Q, &GameState) && GetKey(Key_LeftCtrl, &GameState))

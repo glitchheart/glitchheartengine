@@ -3,27 +3,27 @@
 
 struct sprite_sheet_frame
 {
-    real32 X;
-    real32 Y;
+    r32 X;
+    r32 Y;
 };
 
 struct animation_info
 {
-    int32 FrameIndex = 0;
-    bool32 Playing = false;
-    real64 CurrentTime = 0;
-    bool32 FreezeFrame = false;
+    i32 FrameIndex = 0;
+    b32 Playing = false;
+    r64 CurrentTime = 0;
+    b32 FreezeFrame = false;
 };
 
 struct animation
 {
     char* Name;
-    real32 TimePerFrame;
+    r32 TimePerFrame;
     texture* Texture;
-    int32 FrameCount = 0;
+    i32 FrameCount = 0;
     glm::vec2 FrameSize;
     glm::vec2 Center;
-    bool32 Loop;
+    b32 Loop;
     
     glm::vec2 FrameOffset;
     sprite_sheet_frame* Frames;

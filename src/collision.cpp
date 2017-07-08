@@ -34,7 +34,7 @@ static void MinkowskiDifference(collision_AABB* Coll, collision_AABB* Other, col
 
 void ClosestPointsOnBoundsToPoint(collision_AABB* Coll, glm::vec2 Point, glm::vec2* Out)
 {  
-    real32 MinDist = Abs(Point.x - Coll->Min.x);
+    r32 MinDist = Abs(Point.x - Coll->Min.x);
     
     *Out = glm::vec2(Coll->Min.x, Point.y);
     
@@ -56,13 +56,13 @@ void ClosestPointsOnBoundsToPoint(collision_AABB* Coll, glm::vec2 Point, glm::ve
     }
 }
 
-real32 GetRayIntersectionFractionOfFirstRay(glm::vec2 OriginA, glm::vec2 EndA,glm::vec2 OriginB, glm::vec2 EndB)
+r32 GetRayIntersectionFractionOfFirstRay(glm::vec2 OriginA, glm::vec2 EndA,glm::vec2 OriginB, glm::vec2 EndB)
 {
     glm::vec2 R = EndA - OriginA;
     glm::vec2 S = EndB - OriginB;
     
-    real32 Numerator = glm::dot((OriginB - OriginA),  R);
-    real32 Denominator = glm::dot(R , S);
+    r32 Numerator = glm::dot((OriginB - OriginA),  R);
+    r32 Denominator = glm::dot(R , S);
     
     if(Numerator == 0 && Denominator == 0)
     {
@@ -74,8 +74,8 @@ real32 GetRayIntersectionFractionOfFirstRay(glm::vec2 OriginA, glm::vec2 EndA,gl
         return INFINITY;
     }
     
-    real32 U = Numerator / Denominator;
-    real32 T = ((glm::dot(OriginA / OriginB,S))) / Denominator;
+    r32 U = Numerator / Denominator;
+    r32 T = ((glm::dot(OriginA / OriginB,S))) / Denominator;
     
     if ((T >= 0) && (T <= 1) && (U >= 0) && (U <= 1))
     {
@@ -85,15 +85,15 @@ real32 GetRayIntersectionFractionOfFirstRay(glm::vec2 OriginA, glm::vec2 EndA,gl
     return INFINITY;
 }
 
-real32 GetRayIntersectionFraction(collision_AABB* Coll, glm::vec2 Origin, glm::vec2 Direction)
+r32 GetRayIntersectionFraction(collision_AABB* Coll, glm::vec2 Origin, glm::vec2 Direction)
 {
     AABBMin(Coll);
     AABBMax(Coll);
     glm::vec2 End = Origin + Direction;
     
-    real32 MinT = GetRayIntersectionFractionOfFirstRay(Origin,End,glm::vec2(Coll->Min.x, Coll->Min.y),
+    r32 MinT = GetRayIntersectionFractionOfFirstRay(Origin,End,glm::vec2(Coll->Min.x, Coll->Min.y),
                                                        glm::vec2(Coll->Min.x, Coll->Max.y));
-    real32 X;
+    r32 X;
     X = GetRayIntersectionFractionOfFirstRay(Origin,End, glm::vec2(Coll->Min.x, Coll->Max.y),
                                              glm::vec2(Coll->Max.x, Coll->Max.y));
     if(X < MinT)
@@ -122,7 +122,7 @@ void CheckWeaponCollision(game_state* GameState, entity_weapon* Entity, collisio
     glm::vec2 PV;
     CollisionInfo->OtherCount = 0;
     
-    for(uint32 OtherEntityIndex = 0;
+    for(u32 OtherEntityIndex = 0;
         OtherEntityIndex < GameState->EntityCount;
         OtherEntityIndex++)
     {
@@ -169,7 +169,7 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
         glm::vec2 PV;
         CollisionInfo->OtherCount = 0;
         
-        for(uint32 OtherEntityIndex = 0;
+        for(u32 OtherEntityIndex = 0;
             OtherEntityIndex < GameState->EntityCount;
             OtherEntityIndex++)
         {
@@ -263,19 +263,19 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
         
         level* Level = &GameState->CurrentLevel;
         
-        int32 XPos = (int32)(Entity->Position.x + Entity->Center.x * Entity->Scale);
-        int32 YPos = (int32)(Entity->Position.y + Entity->Center.y * Entity->Scale);
+        i32 XPos = (i32)(Entity->Position.x + Entity->Center.x * Entity->Scale);
+        i32 YPos = (i32)(Entity->Position.y + Entity->Center.y * Entity->Scale);
         
         //@Improvement Is it necessary to go 2 tiles out?
-        int32 MinX = Max(0, XPos - 2);
-        int32 MaxX = Max(0, Min((int32)Level->Tilemap.Width, XPos + 2));
-        int32 MinY = Max(0, YPos - 2);
-        int32 MaxY = Max(0, Min((int32)Level->Tilemap.Height, YPos + 2));
+        i32 MinX = Max(0, XPos - 2);
+        i32 MaxX = Max(0, Min((i32)Level->Tilemap.Width, XPos + 2));
+        i32 MinY = Max(0, YPos - 2);
+        i32 MaxY = Max(0, Min((i32)Level->Tilemap.Height, YPos + 2));
         
         //check tile collision
-        for(int32 X = MinX; X < MaxX; X++)
+        for(i32 X = MinX; X < MaxX; X++)
         {
-            for(int32 Y = MinY; Y < MaxY; Y++)
+            for(i32 Y = MinY; Y < MaxY; Y++)
             {
                 tile_data Tile = Level->Tilemap.Data[1][X][Y];
                 

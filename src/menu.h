@@ -3,8 +3,8 @@
 
 struct main_menu
 {
-    int32 SelectedIndex;
-    uint32 OptionCount = 3;
+    i32 SelectedIndex;
+    u32 OptionCount = 3;
     
     char* Options[3] = 
     {

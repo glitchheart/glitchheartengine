@@ -2,7 +2,7 @@
 static void SetInvalidKeys(input_controller *InputController)
 {
     InputController->AnyKeyPressed = false;
-    for(uint32 KeyCode = 0; KeyCode < Key_Count; KeyCode++)
+    for(u32 KeyCode = 0; KeyCode < Key_Count; KeyCode++)
     {
         if(InputController->KeysJustPressed[KeyCode] == Key_JustPressed)
         {
@@ -15,7 +15,7 @@ static void SetInvalidKeys(input_controller *InputController)
 static void SetControllerInvalidKeys(input_controller *InputController)
 {
     InputController->AnyKeyPressed = false;
-    for(uint32 KeyCode = 0; KeyCode < Joystick_Count; KeyCode++)
+    for(u32 KeyCode = 0; KeyCode < Joystick_Count; KeyCode++)
     {
         if(InputController->JoystickKeysJustPressed[KeyCode] == Key_JustPressed)
         {
@@ -27,7 +27,7 @@ static void SetControllerInvalidKeys(input_controller *InputController)
 static void SetMouseInvalidKeys(input_controller *InputController)
 {
     InputController->AnyKeyPressed = false;
-    for(uint32 KeyCode = 0; KeyCode < Mouse_Count; KeyCode++)
+    for(u32 KeyCode = 0; KeyCode < Mouse_Count; KeyCode++)
     {
         if(InputController->MouseButtonJustPressed[KeyCode] == Key_JustPressed)
         {
@@ -39,17 +39,17 @@ static void SetMouseInvalidKeys(input_controller *InputController)
 }
 #endif
 
-bool32 GetMouseButton(Mouse_Code Key, game_state* GameState)
+b32 GetMouseButton(Mouse_Code Key, game_state* GameState)
 {
     return GameState->InputController.MouseButtonDown[Key];
 }
 
-bool32 GetMouseButtonDown(Mouse_Code Key, game_state* GameState)
+b32 GetMouseButtonDown(Mouse_Code Key, game_state* GameState)
 {
     return GameState->InputController.MouseButtonJustPressed[Key] == Key_JustPressed;
 }
 
-bool32 GetKey(Key_Code Key, game_state *GameState)
+b32 GetKey(Key_Code Key, game_state *GameState)
 {
     if(Key == Key_MouseLeft)
         return GetMouseButton(Mouse_Left, GameState);
@@ -58,7 +58,7 @@ bool32 GetKey(Key_Code Key, game_state *GameState)
     return GameState->InputController.KeysDown[Key];
 }
 
-bool32 GetKeyDown(Key_Code Key, game_state *GameState)
+b32 GetKeyDown(Key_Code Key, game_state *GameState)
 {
     if(Key == Key_MouseLeft)
         return GetMouseButtonDown(Mouse_Left, GameState);
@@ -67,17 +67,17 @@ bool32 GetKeyDown(Key_Code Key, game_state *GameState)
     return GameState->InputController.KeysJustPressed[Key] == Key_JustPressed;
 }
 
-bool32 GetKeyUp(Key_Code Key, game_state *GameState)
+b32 GetKeyUp(Key_Code Key, game_state *GameState)
 {
     return GameState->InputController.KeysUp[Key];
 }
 
-bool32 GetJoystickKey(Controller_Code Key, game_state* GameState)
+b32 GetJoystickKey(Controller_Code Key, game_state* GameState)
 {
     return GameState->InputController.JoystickKeysDown[Key];
 }
 
-bool32 GetJoystickKeyDown(Controller_Code Key, game_state* GameState)
+b32 GetJoystickKeyDown(Controller_Code Key, game_state* GameState)
 {
     /*if(GameState->InputController.ControllerType == Xbox)
     {
@@ -90,7 +90,7 @@ bool32 GetJoystickKeyDown(Controller_Code Key, game_state* GameState)
     return GameState->InputController.JoystickKeysJustPressed[Key] == Key_JustPressed;
 }
 
-bool32 GetActionButtonDown(Action_Button ActionButton, game_state* GameState)
+b32 GetActionButtonDown(Action_Button ActionButton, game_state* GameState)
 {
     if(GameState->InputController.ControllerPresent)
     {
@@ -115,9 +115,9 @@ bool32 GetActionButtonDown(Action_Button ActionButton, game_state* GameState)
 
 float GetInputX(game_state* GameState, Stick Stick = Stick_Left)
 {
-    int32 Axis = Stick == Stick_Left ? 0 : 2;
+    i32 Axis = Stick == Stick_Left ? 0 : 2;
     
-    real32 InputX = 0.0f;
+    r32 InputX = 0.0f;
     
     if(Abs(GameState->InputController.Axes[Axis]) < GameState->InputController.ControllerDeadzone)
         InputX = 0;
@@ -140,9 +140,9 @@ float GetInputX(game_state* GameState, Stick Stick = Stick_Left)
 
 float GetInputY(game_state* GameState, Stick Stick = Stick_Left)
 {
-    int32 Axis = Stick == Stick_Left ? 1 : 3;
+    i32 Axis = Stick == Stick_Left ? 1 : 3;
     
-    real32 InputY = 0.0f;
+    r32 InputY = 0.0f;
     
     if(Abs(GameState->InputController.Axes[Axis]) < GameState->InputController.ControllerDeadzone)
     {

@@ -3,15 +3,15 @@
 
 static char* Zoom(game_state* GameState, char** Arguments)
 {
-    real32 ZoomAmount = (real32) strtod(Arguments[0], NULL);
+    r32 ZoomAmount = (r32) strtod(Arguments[0], NULL);
     GameState->GameCamera.Zoom = ZoomAmount;
     return Concat("Zoom set to ", Arguments[0]);
 }
 
 static char* Jump(game_state* GameState, char** Arguments)
 {
-    real32 X = (real32) strtod(Arguments[0], NULL);
-    real32 Y = (real32) strtod(Arguments[1], NULL);
+    r32 X = (r32) strtod(Arguments[0], NULL);
+    r32 Y = (r32) strtod(Arguments[1], NULL);
     
     GameState->Entities[GameState->PlayerIndex].Position = glm::vec2(X, Y);
     char* Result = (char*)malloc(40 * sizeof(char));
@@ -45,7 +45,7 @@ static char* LoadLevel(game_state* GameState, char** Arguments)
             GameState->IsInitialized = false;
             GameState->ShouldReload = true;
             
-            for(uint32 X = 0; X < GameState->CurrentLevel.Tilemap.Width; X++)
+            for(u32 X = 0; X < GameState->CurrentLevel.Tilemap.Width; X++)
             {
                 free(GameState->CurrentLevel.Tilemap.Data[X]);
             }
@@ -53,10 +53,10 @@ static char* LoadLevel(game_state* GameState, char** Arguments)
             
             GameState->CurrentLevel = {};
             
-            for(int32 Index = 0; Index < GameState->EntityCount; Index++)
+            for(i32 Index = 0; Index < GameState->EntityCount; Index++)
                 GameState->Entities[Index] = {};
             
-            for(int32 Index = 0; Index < GameState->RenderState.RenderEntityCount; Index++)
+            for(i32 Index = 0; Index < GameState->RenderState.RenderEntityCount; Index++)
                 GameState->RenderState.RenderEntities[Index] = {};
             
             GameState->EntityCount = 0;
@@ -88,7 +88,7 @@ static void ReloadCurrentLevel(game_state* GameState)
     GameState->ShouldReload = true;
     GameState->PlayerState = Player_Alive;
     
-    for(uint32 X = 0; X < GameState->CurrentLevel.Tilemap.Width; X++)
+    for(u32 X = 0; X < GameState->CurrentLevel.Tilemap.Width; X++)
     {
         free(GameState->CurrentLevel.Tilemap.Data[0][X]);
         free(GameState->CurrentLevel.Tilemap.Data[1][X]);
@@ -99,7 +99,7 @@ static void ReloadCurrentLevel(game_state* GameState)
     
     memset(GameState->Entities, 0, sizeof(GameState->EntityCount));
     
-    for(int32 Index = 0; Index < GameState->RenderState.RenderEntityCount; Index++)
+    for(i32 Index = 0; Index < GameState->RenderState.RenderEntityCount; Index++)
         GameState->RenderState.RenderEntities[Index] = {};
     
     GameState->EntityCount = 0;
