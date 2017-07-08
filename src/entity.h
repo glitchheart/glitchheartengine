@@ -287,18 +287,21 @@ struct entity
                     b32 IsAttacking = false;
                     timer AttackCooldownTimer;
                     timer ChargingTimer;
+                    timer AlertedTimer;
                 } Skeleton;
                 struct
                 {
                     b32 IsAttacking = false;
                     timer AttackCooldownTimer;
                     timer ChargingTimer;
+                    timer AlertedTimer;
                 } Minotaur;
                 struct
                 {
                     b32 IsAttacking = false;
                     timer AttackCooldownTimer;
                     timer ChargingTimer;
+                    timer AlertedTimer;
                 } Wraith;
             };
         } Enemy;
