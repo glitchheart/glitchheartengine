@@ -188,6 +188,10 @@ struct render_state
     GLuint FrameBuffer;
     GLuint TextureColorBuffer;
     
+    // Lighting map
+    GLuint LightingFrameBuffer;
+    GLuint LightingTextureColorBuffer;
+    
     size_t SpriteQuadVerticesSize = 16 * sizeof(GLfloat);
     size_t TileQuadVerticesSize = 16 * sizeof(GLfloat);
     size_t NormalQuadVerticesSize = 8 * sizeof(GLfloat);
