@@ -30,6 +30,12 @@
          GameState->EditorState.MenuOpen = !GameState->EditorState.MenuOpen;
      }
      
+     if(GetKeyDown(Key_Enter, GameState) && GameState->EditorState.FocusedTextfield)
+     {
+         GameState->EditorState.Textfields[GameState->EditorState.FocusedTextfield].InFocus = false;
+         GameState->EditorState.FocusedTextfield = 0;
+     }
+     
      if(GameState->EditorState.MenuOpen)
      {
          if(GetKeyDown(Key_Up, GameState))

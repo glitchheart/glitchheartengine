@@ -368,7 +368,7 @@ AI_FUNC(SkeletonIdle)
     else
     {
         Enemy.AIState = AI_Wandering;
-        PlayAnimation(Entity, "minotaur_walk", GameState);
+        PlayAnimation(Entity, "skeleton_walk", GameState);
     }
 }
 
@@ -470,7 +470,7 @@ AI_FUNC(SkeletonAttacking)
             Entity->Velocity = glm::vec2(Direction.x * Entity->AttackMoveSpeed, Direction.y * Entity->AttackMoveSpeed);
         }
         
-        if(Entity->AnimationInfo.FrameIndex >= 6 &&Entity->AnimationInfo.FrameIndex < 14 && !Skeleton.IsAttacking && strcmp(Entity->CurrentAnimation->Name, "skeleton_idle") != 0)
+        if(Entity->AnimationInfo.FrameIndex >= Entity->AttackLowFrameIndex - 2 &&Entity->AnimationInfo.FrameIndex < Entity->AttackHighFrameIndex && !Skeleton.IsAttacking && strcmp(Entity->CurrentAnimation->Name, "skeleton_idle") != 0)
         {
             StartTimer(GameState, Entity->AttackMoveTimer);
             
@@ -659,7 +659,7 @@ AI_FUNC(MinotaurAttacking)
             Entity->Velocity = glm::vec2(Direction.x * Entity->AttackMoveSpeed, Direction.y * Entity->AttackMoveSpeed);
         }
         
-        if(Entity->AnimationInfo.FrameIndex >= Entity->AttackLowFrameIndex - 2 &&Entity->AnimationInfo.FrameIndex < 14 && !Minotaur.IsAttacking && strcmp(Entity->CurrentAnimation->Name, "minotaur_idle") != 0)
+        if(Entity->AnimationInfo.FrameIndex >= Entity->AttackLowFrameIndex - 2 &&Entity->AnimationInfo.FrameIndex < Entity->AttackHighFrameIndex && !Minotaur.IsAttacking && strcmp(Entity->CurrentAnimation->Name, "minotaur_idle") != 0)
         {
             StartTimer(GameState, Entity->AttackMoveTimer);
             

@@ -15,8 +15,8 @@ recoiltimer 0.07
 weaponscale 2 2
 attackmovetimer 0.05
 attackmovespeed 5
-attacklowframeindex 4
-attackhighframeindex 7
+attacklowframeindex 6
+attackhighframeindex 9
 weaponcollider 0.7 0 0.5 1.0 1
 weaponinfo 80 up -1.0 2.0 1.5 1 down -1.0 -1.3 1.5 0.8 left -2.5 0.2 1 1.5 right 0.5 0.2 1 1.5
 renderbuttonoffset -1 1
@@ -38,4 +38,4 @@ healthbar offset -0.5 3.3 scale 1.0 0.25
 #minotaur
 attackcooldowntimer 0.8
 chargingtimer 0.6
-alertedtimer 1.5
+alertedtimer 1.0
