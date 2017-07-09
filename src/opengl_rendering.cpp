@@ -2177,7 +2177,7 @@ static void Render(game_state* GameState)
         auto Entity = GameState->Entities[Index];
         if(Entity.Type == Entity_Enemy)
         {
-            RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(1, 0, 0, 1), Entity.Position.x, Entity.Position.y, 1, 1, 0, false, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
+            RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(1, 1, 1, 0.4), Entity.Position.x - 2, Entity.Position.y, 5, 5, GameState->RenderState.Textures["lightshit"]->TextureHandle, false, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
             
         }
     }
