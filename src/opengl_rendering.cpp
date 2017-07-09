@@ -693,8 +693,8 @@ static GLuint LoadTexture(const char* FilePath, texture* Texture)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     
     //enable alpha for textures
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     
     unsigned char* Image = stbi_load(FilePath, &Texture->Width, &Texture->Height, 0, STBI_rgb_alpha);
     
@@ -1949,6 +1949,11 @@ void RenderUI(game_state* GameState)
                                         Text = "Barrel";
                                     }
                                     break;
+                                    case Placement_Entity_Bonfire:
+                                    {
+                                        Text = "Bonfire";
+                                    }
+                                    break;
                                 }
                                 
                                 RenderText(&GameState->RenderState, GameState->RenderState.InconsolataFont, glm::vec4(1, 1, 1, 1), Text, GameState->InputController.MouseX, GameState->RenderState.WindowHeight - GameState->InputController.MouseY + 20, 1, Alignment_Center); 
@@ -2147,6 +2152,27 @@ static void RenderDebugInfo(game_state* GameState)
     
 }
 
+static void RenderLightSources(game_state* GameState)
+{
+    glBindFramebuffer(GL_FRAMEBUFFER, GameState->RenderState.LightingFrameBuffer);
+    glBindTexture(GL_TEXTURE_2D, GameState->RenderState.LightingTextureColorBuffer);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glClearColor(0, 0, 0, 1.0f);
+    glBlendFunc(GL_ONE, GL_ONE);
+    
+    if(GameState->GameMode == Mode_InGame || GameState->EditorState.Mode == Editor_Level)
+    {
+        for(i32 Index = 0; Index < GameState->EntityCount; Index++)
+        {
+            auto Entity = GameState->Entities[Index];
+            if(Entity.Type == Entity_Bonfire)
+            {
+                RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(0.5, 0.2, 0, 0.6), Entity.Position.x - 1, Entity.Position.y - 1, 3, 3, GameState->RenderState.Textures["lightmap"]->TextureHandle, false, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
+            }
+        }
+    }
+}
+
 static void Render(game_state* GameState)
 {
     if(GameState->CurrentLevel.Tilemap.RenderInfo.Dirty)
@@ -2167,25 +2193,13 @@ static void Render(game_state* GameState)
     // Render scene
     RenderGame(GameState);
     
-    glBindFramebuffer(GL_FRAMEBUFFER, GameState->RenderState.LightingFrameBuffer);
-    glBindTexture(GL_TEXTURE_2D, GameState->RenderState.LightingTextureColorBuffer);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glClearColor(0, 0, 0, 1.0f);
-    
-    for(i32 Index = 0; Index < GameState->EntityCount; Index++)
-    {
-        auto Entity = GameState->Entities[Index];
-        if(Entity.Type == Entity_Enemy)
-        {
-            RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(1, 1, 1, 0.4), Entity.Position.x - 2, Entity.Position.y, 5, 5, GameState->RenderState.Textures["lightshit"]->TextureHandle, false, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
-            
-        }
-    }
+    RenderLightSources(GameState);
     
     // Second pass
     glBindFramebuffer(GL_FRAMEBUFFER, 0); // back to default
     glClearColor(0, 0, 0, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     
     glBindVertexArray(GameState->RenderState.FrameBufferVAO);
     UseShader(&GameState->RenderState.FrameBufferShader);

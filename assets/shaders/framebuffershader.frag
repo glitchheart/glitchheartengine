@@ -14,11 +14,6 @@ void main()
 	vec4 color = vec4(distance, distance, distance, 1.0);
 	vec4 lightingColor = texture(lightingTex, Texcoord);
 	vec4 endColor = texture(tex, Texcoord);
-
-	if(lightingColor.r < 0.1 && lightingColor.g < 0.1 && lightingColor.b < 0.1)
-	{
-		outColor = endColor * color;
-	}
-	else
-		outColor = endColor * color + lightingColor * 0.4;
+	
+	outColor = endColor * color + lightingColor * 0.5;
 }

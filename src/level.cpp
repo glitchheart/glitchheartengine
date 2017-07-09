@@ -246,6 +246,12 @@ static b32 LoadLevelFromFile(char* FilePath, level* Level, game_state* GameState
                 sscanf(LineBuffer, "barrel %f %f", &Pos.x, &Pos.y);
                 SpawnBarrel(GameState, Pos);
             }
+            else if(StartsWith(&LineBuffer[0], "bonfire"))
+            {
+                glm::vec2 Pos;
+                sscanf(LineBuffer, "bonfire %f %f", &Pos.x, &Pos.y);
+                LoadBonfireData(GameState, -1, Pos);
+            }
             
             if(PathIndex != 0)
             {
@@ -367,6 +373,11 @@ static void SaveLevelToFile(const char* FilePath, level* Level, game_state* Game
                         case Entity_Barrel:
                         {
                             TypeName = "barrel";
+                        }
+                        break;
+                        case Entity_Bonfire:
+                        {
+                            TypeName = "bonfire";
                         }
                         break;
                     }

@@ -102,7 +102,6 @@ struct game_state
     
     // Editor
     console Console;
-    editor_ui EditorUI;
     editor_state EditorState;
     
     std::map<char*, animation, CompareCStrings> Animations;

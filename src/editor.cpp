@@ -327,20 +327,4 @@ static void CheckEditorUIInput(game_state* GameState, r64 DeltaTime)
     {
         DeleteEntity(GameState,GameState->EditorState.SelectedEntity->EntityIndex);
     }
-    
-    if(MouseX <= ListRectWidth)
-    {
-        auto Y = GameState->RenderState.WindowHeight - MouseY;
-        
-        auto Index = (i32)floor(((r32)GameState->RenderState.WindowHeight / 2.0f - (r32)Y) / 20.0f + 1.0f);
-        
-        if(Index >= 0 && Index < GameState->EntityCount)
-            GameState->EditorUI.SelectedIndex = Index;
-    }
-    
-    if((GetKey(Key_LeftCtrl, GameState) || GetKey(Key_RightCtrl, GameState)) && GetKeyDown(Key_I, GameState))
-    {
-        
-        GameState->CurrentLevel.Tilemap.Tiles[GameState->EditorUI.SelectedIndex].IsSolid = !GameState->CurrentLevel.Tilemap.Tiles[GameState->EditorUI.SelectedIndex].IsSolid; 
-    }
 }

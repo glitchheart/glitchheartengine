@@ -1,15 +1,6 @@
 #ifndef EDITOR_H
 #define EDITOR_H
 
-//@Obsolete: Delete this
-enum Editor_UI_State
-{
-    State_Selection,
-    State_Animations,
-    State_Collision,
-    State_EntityList
-};
-
 enum Editor_Mode
 {
     Editor_Level,
@@ -50,6 +41,7 @@ enum Entity_Placement_Type
     Placement_Entity_Blob,
     Placement_Entity_Wraith,
     Placement_Entity_Barrel,
+    Placement_Entity_Bonfire,
     Placement_Entity_Minotaur,
     
     Placement_Entity_Max
@@ -196,13 +188,6 @@ struct editor_state
         "Level editor",
         "Animations"
     };
-};
-
-struct editor_ui
-{
-    b32 On;
-    Editor_UI_State State;
-    u32 SelectedIndex;
 };
 
 #endif

@@ -125,17 +125,6 @@ static char* View(game_state* GameState, char** Arguments)
 {
     if(Arguments) 
     {
-        if(strcmp(Arguments[0], "entity_list") == 0)
-        {
-            GameState->EditorUI.On = true;
-            GameState->EditorUI.State = State_EntityList;
-            return "Toggled entity list";
-        }
-        else if(strcmp(Arguments[0], "normal") == 0)
-        {
-            GameState->EditorUI.On = false;
-            return "Toggled view to normal mode";
-        }
     }
     return "Error: No arguments provided";
 }
@@ -144,17 +133,7 @@ static char* Editor(game_state* GameState, char** Arguments)
 {
     if(Arguments)
     {
-        if(strcmp(Arguments[0], "off") == 0)
-        {
-            GameState->EditorUI.On = false;
-            return "Toggled editor off";
-        }
-        else if(strcmp(Arguments[0], "on") == 0)
-        {
-            GameState->EditorUI.On = true;
-            return "Toggled editor on";
-            
-        }
+        
     }
     return "Error: No arguments provided";
 }
