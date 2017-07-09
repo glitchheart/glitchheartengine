@@ -418,14 +418,61 @@ static void RenderSetup(render_state *RenderState)
     glFramebufferTexture2D(
         GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, RenderState->TextureColorBuffer, 0
         );
-    
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    
+    glBindTexture(GL_TEXTURE_2D, 0);
     
     if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
         printf("ERROR::FRAMEBUFFER:: Framebuffer is not complete!");
     
-    printf("Width %d\n", RenderState->WindowWidth);
+    glGenFramebuffers(1, &RenderState->LightingFrameBuffer);
+    glBindFramebuffer(GL_FRAMEBUFFER, RenderState->LightingFrameBuffer);
+    
+    glGenTextures(1, &RenderState->LightingTextureColorBuffer);
+    glBindTexture(GL_TEXTURE_2D, RenderState->LightingTextureColorBuffer);
+    
+    glTexImage2D(
+        GL_TEXTURE_2D, 0, GL_RGB, RenderState->WindowWidth, RenderState->WindowHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL
+        );
+    glFramebufferTexture2D(
+        GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, RenderState->LightingTextureColorBuffer, 0
+        );
+    
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    
+    glBindTexture(GL_TEXTURE_2D, 0);
+    
+    if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+        printf("ERROR::FRAMEBUFFER:: Framebuffer is not complete!");
+    
+    // FrameBuffer VAO
+    glGenVertexArrays(1, &RenderState->FrameBufferVAO);
+    glBindVertexArray(RenderState->FrameBufferVAO);
+    glGenBuffers(1, &RenderState->FrameBufferVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, RenderState->FrameBufferVBO);
+    glBufferData(GL_ARRAY_BUFFER, RenderState->SpriteQuadVerticesSize, RenderState->FrameBufferVertices, GL_DYNAMIC_DRAW);
+    
+    RenderState->FrameBufferShader.Type = Shader_FrameBuffer;
+    
+    LoadShader(ShaderPaths[Shader_FrameBuffer], &RenderState->FrameBufferShader);
+    
+    auto PosLoc = glGetAttribLocation(RenderState->FrameBufferShader.Program, "pos");
+    auto TexLoc = glGetAttribLocation(RenderState->FrameBufferShader.Program, "texcoord");
+    
+    glEnableVertexAttribArray(PosLoc);
+    glVertexAttribPointer(PosLoc, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
+    glEnableVertexAttribArray(TexLoc);
+    glVertexAttribPointer(TexLoc, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *)(2 * sizeof(float)));
+    
+    TexLoc = glGetUniformLocation(RenderState->FrameBufferShader.Program, "tex");
+    glUniform1i(TexLoc, 0);
+    TexLoc = glGetUniformLocation(RenderState->FrameBufferShader.Program, "lightingTex");
+    glUniform1i(TexLoc, 1);
+    
+    glBindVertexArray(0);
+    
     //Sprite
     glGenVertexArrays(1, &RenderState->SpriteVAO);
     glBindVertexArray(RenderState->SpriteVAO);
@@ -568,25 +615,6 @@ static void RenderSetup(render_state *RenderState)
     
     PositionLocation2 = glGetAttribLocation(RenderState->TextureRectShader.Program, "pos");
     TexcoordLocation2 = glGetAttribLocation(RenderState->TextureRectShader.Program, "texcoord");
-    
-    glEnableVertexAttribArray(PositionLocation2);
-    glVertexAttribPointer(PositionLocation2, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
-    glEnableVertexAttribArray(TexcoordLocation2);
-    glVertexAttribPointer(TexcoordLocation2, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *)(2 * sizeof(float)));
-    
-    glBindVertexArray(0);
-    
-    glGenVertexArrays(1, &RenderState->FrameBufferVAO);
-    glBindVertexArray(RenderState->FrameBufferVAO);
-    glGenBuffers(1, &RenderState->FrameBufferVBO);
-    glBindBuffer(GL_ARRAY_BUFFER, RenderState->FrameBufferVBO);
-    glBufferData(GL_ARRAY_BUFFER, RenderState->SpriteQuadVerticesSize, RenderState->FrameBufferVertices, GL_DYNAMIC_DRAW);
-    
-    RenderState->TextureRectShader.Type = Shader_FrameBuffer;
-    LoadShader(ShaderPaths[Shader_FrameBuffer], &RenderState->FrameBufferShader);
-    
-    PositionLocation2 = glGetAttribLocation(RenderState->FrameBufferShader.Program, "pos");
-    TexcoordLocation2 = glGetAttribLocation(RenderState->FrameBufferShader.Program, "texcoord");
     
     glEnableVertexAttribArray(PositionLocation2);
     glVertexAttribPointer(PositionLocation2, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
@@ -2130,29 +2158,56 @@ static void Render(game_state* GameState)
     GameState->RenderState.ScaleX = 2.0f / GameState->RenderState.WindowWidth;
     GameState->RenderState.ScaleY = 2.0f / GameState->RenderState.WindowHeight;
     
-    
     // First pass
     glBindFramebuffer(GL_FRAMEBUFFER, GameState->RenderState.FrameBuffer);
-    
+    glBindTexture(GL_TEXTURE_2D, GameState->RenderState.TextureColorBuffer);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glClearColor(1.0f, 0.1f, 0.1f, 1.0f);
+    glClearColor(0, 0, 0, 1.0f);
     
     // Render scene
     RenderGame(GameState);
     
+    glBindFramebuffer(GL_FRAMEBUFFER, GameState->RenderState.LightingFrameBuffer);
+    glBindTexture(GL_TEXTURE_2D, GameState->RenderState.LightingTextureColorBuffer);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glClearColor(0, 0, 0, 1.0f);
+    
+    for(i32 Index = 0; Index < GameState->EntityCount; Index++)
+    {
+        auto Entity = GameState->Entities[Index];
+        if(Entity.Type == Entity_Enemy)
+        {
+            RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(1, 0, 0, 1), Entity.Position.x, Entity.Position.y, 1, 1, 0, false, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
+            
+        }
+    }
+    
     // Second pass
     glBindFramebuffer(GL_FRAMEBUFFER, 0); // back to default
-    glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+    glClearColor(0, 0, 0, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
     
     glBindVertexArray(GameState->RenderState.FrameBufferVAO);
-    
     UseShader(&GameState->RenderState.FrameBufferShader);
+    
+    auto TexLoc = glGetUniformLocation(GameState->RenderState.FrameBufferShader.Program, "tex");
+    glUniform1i(TexLoc, 0);
+    TexLoc = glGetUniformLocation(GameState->RenderState.FrameBufferShader.Program, "lightingTex");
+    glUniform1i(TexLoc, 1);
+    
+    glActiveTexture(GL_TEXTURE0);
+    glEnable(GL_TEXTURE_2D);
     glBindTexture(GL_TEXTURE_2D, GameState->RenderState.TextureColorBuffer);
+    
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, GameState->RenderState.LightingTextureColorBuffer);
+    
     glDrawArrays(GL_QUADS, 0, 4); 
+    
+    glActiveTexture(GL_TEXTURE0);
     
     // Render UI
     RenderDebugInfo(GameState);
     RenderUI(GameState);
     glfwSwapBuffers(GameState->RenderState.Window);
-}
+    }
