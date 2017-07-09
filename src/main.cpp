@@ -102,7 +102,6 @@ int main(void)
     u32 FrameCounterForAssetCheck = 0;
     
     GameState.Console = {};
-    GameState.EditorUI = {};
     
     sound_device SoundDevice = {};
     InitAudio(&SoundDevice);

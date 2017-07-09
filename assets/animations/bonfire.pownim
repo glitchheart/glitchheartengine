@@ -1,0 +1,13 @@
+name bonfire
+type sprite
+framecount 4
+framesize 16 16
+center 0.000000 0.000000
+loop 1
+timeperframe 0.100000
+frames
+0 0
+16 0
+32 0
+48 0
+texture campfire

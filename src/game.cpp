@@ -466,6 +466,11 @@
                                      case Placement_Entity_Barrel:
                                      {}
                                      break;
+                                     case Placement_Entity_Bonfire:
+                                     {
+                                         LoadBonfireData(GameState, -1, glm::vec2(Pos.x, Pos.y - 0.5f));
+                                     }
+                                     break;
                                  }
                              }
                          }

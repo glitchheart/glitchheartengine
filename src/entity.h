@@ -27,6 +27,7 @@ enum Entity_Type
     Entity_Tile,
     Entity_Weapon,
     Entity_Barrel,
+    Entity_Bonfire,
     Entity_RenderItem,
     Entity_Max
 };

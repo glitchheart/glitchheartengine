@@ -288,7 +288,6 @@ static void LoadEnemyData(FILE* File, entity* Entity, game_state* GameState)
                        &Entity->Enemy.Healthbar->Offset.y,&Entity->Enemy.Healthbar->Scale.x,
                        &Entity->Enemy.Healthbar->Scale.y);
                 ui_render_info RenderInfo = {};
-                RenderInfo.Texture = GameState->RenderState.Textures["4_health"];
                 RenderInfo.TextureOffset = glm::vec2(256, 0);
                 RenderInfo.FrameSize = glm::vec2(64, 16);
                 RenderInfo.ShaderIndex = Shader_Spritesheet;
@@ -818,6 +817,31 @@ AI_FUNC(BlobDying)
 }
 
 
+static void LoadBonfireData(game_state* GameState, i32 Handle = -1, glm::vec2 Position = glm::vec2())
+{
+    FILE* File;
+    File = fopen("../assets/entities/bonfire.dat", "r");
+    
+    entity* Entity = Handle != -1 ? &GameState->Entities[Handle] : &GameState->Entities[GameState->EntityCount];
+    
+    Entity->Type = Entity_Bonfire;
+    
+    if(Handle == -1)
+    {
+        Entity->Position = Position;
+    }
+    
+    if(File)
+    {
+        LoadEntityData(File, Entity, GameState, Handle != -1);
+        
+        if(Handle == -1)
+            Entity->Position = glm::vec2(Position.x, Position.y);
+        
+        fclose(File);
+    }
+}
+
 static void LoadSkeletonData(game_state* GameState, i32 Handle = -1, glm::vec2 Position = glm::vec2())
 {
     FILE* File;
@@ -877,7 +901,6 @@ static void LoadSkeletonData(game_state* GameState, i32 Handle = -1, glm::vec2 P
         AI_FUNCS(Skeleton);
     }
 }
-
 
 static void LoadMinotaurData(game_state* GameState, i32 Handle = -1, glm::vec2 Position = glm::vec2())
 {
@@ -1203,7 +1226,6 @@ static void SpawnWraith(game_state* GameState, glm::vec2 Position)
     Wraith->Enemy.Healthbar->Offset = glm::vec2(-0.5f, 2.2f);
     Wraith->Enemy.Healthbar->Scale = glm::vec3(1.0, 0.25,0 );
     ui_render_info RenderInfo = {};
-    RenderInfo.Texture = GameState->RenderState.Textures["4_health"];
     RenderInfo.TextureOffset = glm::vec2(256, 0);
     RenderInfo.FrameSize = glm::vec2(64, 16);
     RenderInfo.ShaderIndex = Shader_Spritesheet;
@@ -2196,6 +2218,12 @@ void UpdateBarrel(entity* Entity, game_state* GameState, r64 DeltaTime)
     }
 }
 
+static void UpdateStaticEntity(entity* Entity, game_state* GameState, r64 DeltaTime)
+{
+    collision_info CollisionInfo;
+    CheckCollision(GameState, Entity, &CollisionInfo);
+}
+
 void UpdateGeneral(entity* Entity, game_state* GameState, r64 DeltaTime)
 {
     auto& RenderEntity = GameState->RenderState.RenderEntities[Entity->RenderEntityHandle];
@@ -2300,6 +2328,11 @@ void UpdateEntities(game_state* GameState, r64 DeltaTime)
                 {
                     UpdateBarrel(Entity, GameState, DeltaTime);
                 }
+                case Entity_Bonfire:
+                {
+                    UpdateStaticEntity(Entity, GameState, DeltaTime);
+                }
+                break;
             }
             
             UpdateGeneral(Entity, GameState, DeltaTime);
