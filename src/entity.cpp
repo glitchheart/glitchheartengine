@@ -1183,6 +1183,15 @@ static void LoadPlayerData(game_state* GameState, i32 Handle = -1, glm::vec2 Pos
                 sscanf(LineBuffer, "staminagaincooldowntimer %lf", &Entity->Player.StaminaGainCooldownTimer.TimerMax);
                 Entity->Player.StaminaGainCooldownTimer.TimerHandle = -1;
             }
+            else if(StartsWith(&LineBuffer[0], "staminagaintimerfast"))
+            {
+                printf("Fast: %s\n", LineBuffer);
+                sscanf(LineBuffer, "staminagaintimerfast %lf", &Entity->Player.StaminaGainTimerFast);
+            }
+            else if(StartsWith(&LineBuffer[0], "staminagaintimerslow"))
+            {
+                sscanf(LineBuffer, "staminagaintimerslow %lf", &Entity->Player.StaminaGainTimerSlow);
+            }
         }
         fclose(File);
     }
@@ -1401,11 +1410,11 @@ void UpdatePlayer(entity* Entity, game_state* GameState, r64 DeltaTime)
     
     if(TimerDone(GameState,Entity->Player.StaminaGainCooldownTimer))
     {
-        Entity->Player.StaminaGainTimer.TimerMax = 0.06;
+        Entity->Player.StaminaGainTimer.TimerMax =Entity->Player.StaminaGainTimerFast;
     }
     else
     {
-        Entity->Player.StaminaGainTimer.TimerMax = 0.16;
+        Entity->Player.StaminaGainTimer.TimerMax = Entity->Player.StaminaGainTimerSlow;
     }
     
     if(Entity->Player.Stamina != Entity->Player.FullStamina)
