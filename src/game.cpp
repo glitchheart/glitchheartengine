@@ -871,7 +871,10 @@
          GameState->RenderGame = !GameState->RenderGame;
      }
      
-     
+     if(GetKeyDown(Key_F8, GameState))
+     {
+         GameState->AIDebugModeOn = !GameState->AIDebugModeOn;
+     }
      
      if(GameState->GameMode == Mode_InGame && GetKey(Key_LeftCtrl, GameState) && GetKeyDown(Key_P, GameState))
      {
@@ -1003,7 +1006,7 @@
              Direction.x = 1;
          }
          
-         r32 Factor = 72.0 / GameState->GameCamera.Zoom;
+         r32 Factor = 72.0f / GameState->GameCamera.Zoom;
          
          if(GetKey(Key_Add, GameState))
          {
