@@ -20,7 +20,7 @@ attackhighframeindex 14
 #player
 stamina 100
 staminagaincooldowntimer 1.7
-staminagaintimerfast 0.04
+staminagaintimerfast 0.02
 staminagaintimerslow 0.16
 staminadecreasetimer 0.8
 hitstaminacost 15
