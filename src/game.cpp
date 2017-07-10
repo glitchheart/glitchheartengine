@@ -1074,6 +1074,7 @@
          break;
          case Mode_Editor:
          {
+             Center = GameState->EditorCamera.Center;
              EditorUpdateEntities(GameState, DeltaTime);
              
              switch(GameState->EditorState.PlacementMode)
