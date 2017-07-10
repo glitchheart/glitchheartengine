@@ -1185,7 +1185,6 @@ static void LoadPlayerData(game_state* GameState, i32 Handle = -1, glm::vec2 Pos
             }
             else if(StartsWith(&LineBuffer[0], "staminagaintimerfast"))
             {
-                printf("Fast: %s\n", LineBuffer);
                 sscanf(LineBuffer, "staminagaintimerfast %lf", &Entity->Player.StaminaGainTimerFast);
             }
             else if(StartsWith(&LineBuffer[0], "staminagaintimerslow"))
@@ -1362,7 +1361,9 @@ void Hit(game_state* GameState, entity* ByEntity, entity* HitEntity)
         }
         else
         {
-            StartTimer(GameState, GameState->GameCamera.ScreenShakeTimer);
+            if(TimerDone(GameState, GameState->GameCamera.ScreenShakeTimer))
+                StartTimer(GameState, GameState->GameCamera.ScreenShakeTimer);
+            
             StartTimer(GameState, HitEntity->StaggerCooldownTimer);
             PlaySoundEffect(GameState, &GameState->SoundManager.SwordHit02);
             HitEntity->HitRecoilDirection = glm::normalize(HitEntity->Position - ByEntity->Position);
@@ -2199,9 +2200,10 @@ void UpdateMinotaur(entity* Entity, game_state* GameState, r64 DeltaTime)
         
         if(Entity->Enemy.AIState != AI_Attacking && !Entity->Enemy.Minotaur.IsAttacking)
         {
+            
             glm::vec2 Direction = glm::normalize(Player.Position - Entity->Position);
             
-            if(Abs(Direction.x) < 0.4f)
+            if(Abs(Direction.x) < 0.6f)
             {
                 if(Direction.y > 0)
                 {
