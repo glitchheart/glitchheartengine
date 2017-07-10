@@ -74,6 +74,10 @@ struct game_state
     b32 ShouldReload;
     b32 RenderGame = true;
     
+    b32 GodModeOn = false;
+    
+    r32 ZoomBeforeGodMode;
+    
     r32 InitialZoom;
     
     Player_State PlayerState = Player_Alive;

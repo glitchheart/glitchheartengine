@@ -740,20 +740,39 @@
      if(GameState->GameMode == Mode_Editor)
          CheckEditorUIInput(GameState, DeltaTime);
      
-     if((GetKey(Key_LeftCtrl, GameState) || GetKey(Key_RightCtrl, GameState)) && GetKeyDown(Key_E, GameState))
+     if((GetKey(Key_LeftCtrl, GameState) || GetKey(Key_RightCtrl, GameState)))
      {
-         if(GameState->GameMode == Mode_InGame)
+         if(GetKeyDown(Key_E, GameState)) // Editor-mode on/off
          {
-             ReloadCurrentLevel(GameState);
-             GameState->GameMode = Mode_Editor;
-             GameState->Paused = false;
-             GameState->EditorCamera.Center = GameState->GameCamera.Center;
+             if(GameState->GameMode == Mode_InGame)
+             {
+                 ReloadCurrentLevel(GameState);
+                 GameState->GameMode = Mode_Editor;
+                 GameState->Paused = false;
+                 GameState->EditorCamera.Center = GameState->GameCamera.Center;
+             }
+             else
+             {
+                 SaveLevelToFile(GameState->LevelPath, &GameState->CurrentLevel, GameState);
+                 ReloadCurrentLevel(GameState);
+                 GameState->GameMode = Mode_InGame;
+             }
          }
-         else
+         else if(GetKeyDown(Key_G, GameState)) // God-mode on/off
          {
-             SaveLevelToFile(GameState->LevelPath, &GameState->CurrentLevel, GameState);
-             ReloadCurrentLevel(GameState);
-             GameState->GameMode = Mode_InGame;
+             GameState->GodModeOn = !GameState->GodModeOn;
+             
+             if(!GameState->GodModeOn)
+             {
+                 auto Player = GameState->Entities[0];
+                 GameState->GameCamera.Center = glm::vec2(Player.Position.x, Player.Position.y);
+                 GameState->Camera.Center = glm::vec2(Player.Position.x, Player.Position.y);
+                 GameState->GameCamera.Zoom = GameState->ZoomBeforeGodMode;
+             }
+             else
+             {
+                 GameState->ZoomBeforeGodMode = GameState->GameCamera.Zoom;
+             }
          }
      }
      
@@ -944,6 +963,45 @@
      }
      
      glm::vec2 Center = GameState->Camera.Center;
+     
+     if(GameState->GodModeOn)
+     {
+         r32 Zoom = GameState->Camera.Zoom;
+         
+         glm::vec2 Direction;
+         
+         if(GetKey(Key_W, GameState) || GetKey(Key_Up, GameState))
+         {
+             Direction.y = 1;
+         }
+         else if(GetKey(Key_S, GameState) || GetKey(Key_Down, GameState))
+         {
+             Direction.y = -1;
+         }
+         
+         if(GetKey(Key_A, GameState) || GetKey(Key_Left, GameState))
+         {
+             Direction.x = -1;
+         }
+         else if(GetKey(Key_D, GameState) || GetKey(Key_Right, GameState))
+         {
+             Direction.x = 1;
+         }
+         
+         if(GetKey(Key_Add, GameState))
+         {
+             Zoom += -20 * DeltaTime;
+         }
+         else if(GetKey(Key_Subtract, GameState))
+         {
+             Zoom += 20 * DeltaTime;
+         }
+         
+         Direction = glm::normalize(Direction);
+         
+         GameState->GameCamera.CenterTarget = Center + glm::vec2(Direction.x * 10 * DeltaTime, Direction.y * 10 * DeltaTime);
+         GameState->GameCamera.Zoom = Zoom;
+     }
      
      switch(GameState->GameMode)
      {
