@@ -990,16 +990,16 @@
          
          if(GetKey(Key_Add, GameState))
          {
-             Zoom += -20 * DeltaTime;
+             Zoom += -GameState->GodModeZoomSpeed * DeltaTime;
          }
          else if(GetKey(Key_Subtract, GameState))
          {
-             Zoom += 20 * DeltaTime;
+             Zoom += GameState->GodModeZoomSpeed * DeltaTime;
          }
          
          Direction = glm::normalize(Direction);
          
-         GameState->GameCamera.CenterTarget = Center + glm::vec2(Direction.x * 10 * DeltaTime, Direction.y * 10 * DeltaTime);
+         GameState->GameCamera.CenterTarget = Center + glm::vec2(Direction.x * GameState->GodModePanSpeed * DeltaTime, Direction.y * GameState->GodModePanSpeed * DeltaTime);
          GameState->GameCamera.Zoom = Zoom;
      }
      
