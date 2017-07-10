@@ -6,7 +6,7 @@ center 0 0.5
 scale 2
 health 150
 animation swordsman_idle
-hitcooldowntimer 1.0
+staggercooldowntimer 1.0
 collider 0 -1.0 0.3 0.15 0
 hashittrigger 1
 hittrigger 0 -0.2 0.48 0.8 1
@@ -20,10 +20,10 @@ attackhighframeindex 14
 #player
 stamina 100
 staminagaincooldowntimer 1.7
-staminagaintimer 0.07
+staminagaintimer 0.05
 staminadecreasetimer 0.8
-hitstaminacost 20
-rollstaminacost 25
+hitstaminacost 15
+rollstaminacost 20
 attackstaminacost 20
 mindiffstamina 18
 healthdecreasetimer 0.8

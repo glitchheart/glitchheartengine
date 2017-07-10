@@ -975,13 +975,13 @@
          break;
      }
      
-     glm::vec2 Center = GameState->Camera.Center;
+     glm::vec2 Center = GameState->GameCamera.Center;
      
      if(GameState->GodModeOn)
      {
          r32 Zoom = GameState->Camera.Zoom;
          
-         glm::vec2 Direction;
+         glm::vec2 Direction = glm::vec2(0, 0);
          
          if(GetKey(Key_W, GameState) || GetKey(Key_Up, GameState))
          {
@@ -1001,19 +1001,25 @@
              Direction.x = 1;
          }
          
+         r32 Factor = 72.0 / GameState->GameCamera.Zoom;
+         
          if(GetKey(Key_Add, GameState))
          {
-             Zoom += (r32)(GameState->GodModeZoomSpeed * DeltaTime);
+             Zoom += (r32)(GameState->GodModeZoomSpeed / Factor * DeltaTime);
          }
          else if(GetKey(Key_Subtract, GameState))
          {
-             Zoom += (r32)(-GameState->GodModeZoomSpeed * DeltaTime);
+             Zoom += (r32)(-GameState->GodModeZoomSpeed / Factor * DeltaTime);
          }
          
          Direction = glm::normalize(Direction);
          
-         GameState->GameCamera.CenterTarget = Center + glm::vec2(Direction.x * GameState->GodModePanSpeed * DeltaTime, Direction.y * GameState->GodModePanSpeed * DeltaTime);
-         GameState->GameCamera.Zoom = Zoom;
+         if(Abs(Direction.x) > 0.0 || Abs(Direction.y) > 0.0)
+         {
+             GameState->GameCamera.Center = Center + glm::vec2(Direction.x * GameState->GodModePanSpeed * Factor * DeltaTime, Direction.y * GameState->GodModePanSpeed * Factor * DeltaTime);
+         }
+         
+         GameState->GameCamera.Zoom = Min(Max(Zoom, GameState->GodModeMinZoom), GameState->GodModeMaxZoom);
      }
      
      switch(GameState->GameMode)
@@ -1035,11 +1041,14 @@
                      Center.y += Offset.y;
                  }
                  
-                 if(glm::distance(GameState->GameCamera.CenterTarget, Center) > 0.01f)
+                 if(!GameState->GodModeOn)
                  {
-                     auto Direction = glm::normalize(GameState->GameCamera.CenterTarget - Center);
-                     Center = glm::vec2(Center.x + Direction.x * GameState->GameCamera.FollowSpeed * DeltaTime, Center.y + Direction.y  * GameState->GameCamera.FollowSpeed * DeltaTime);
-                     GameState->GameCamera.Center = Center;
+                     if(glm::distance(GameState->GameCamera.CenterTarget, Center) > 0.01f)
+                     {
+                         auto Direction = glm::normalize(GameState->GameCamera.CenterTarget - Center);
+                         Center = glm::vec2(Center.x + Direction.x * GameState->GameCamera.FollowSpeed * DeltaTime, Center.y + Direction.y  * GameState->GameCamera.FollowSpeed * DeltaTime);
+                         GameState->GameCamera.Center = Center;
+                     }
                  }
              }
              

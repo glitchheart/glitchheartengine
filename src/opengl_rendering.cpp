@@ -1538,7 +1538,7 @@ static void RenderEntity(game_state *GameState, entity &Entity, glm::mat4 Projec
                 SetFloatUniform(Shader.Program, "glow", GL_FALSE);
             
             SetFloatUniform(Shader.Program, "time", (r32)GetTime());
-            
+            SetVec4Uniform(Shader.Program, "spriteColor", RenderEntity->Color);
             SetFloatUniform(Shader.Program, "isUI", 0);
             SetVec2Uniform(Shader.Program,"textureOffset", glm::vec2(Frame.X, Frame.Y));
             SetFloatUniform(Shader.Program, "frameWidth", Animation->FrameSize.x);

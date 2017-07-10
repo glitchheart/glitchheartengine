@@ -75,9 +75,11 @@ struct game_state
     b32 RenderGame = true;
     
     b32 GodModeOn = false;
-    r32 GodModePanSpeed = 12.0f;
-    r32 GodModeZoomSpeed = 25.0f;
+    r32 GodModePanSpeed = 10.0f;
+    r32 GodModeZoomSpeed = 45.0f;
     r32 ZoomBeforeGodMode;
+    r32 GodModeMinZoom = 5.0f;
+    r32 GodModeMaxZoom = 100.0f;
     
     r32 InitialZoom;
     

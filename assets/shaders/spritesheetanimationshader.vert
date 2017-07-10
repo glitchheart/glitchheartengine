@@ -6,19 +6,16 @@ uniform vec2 textureOffset;
 uniform float frameWidth;
 uniform float frameHeight;
 uniform vec2 sheetSize;
-uniform vec4 Color;
 uniform float isUI;
 
 in vec2 texcoord;
 in vec2 pos;
-out vec4 C;
 out vec2 Texcoord;
 out vec2 TextureSize;
 out vec2 TextureOffset;
 
 void main()
 {
-    C = Color;
 	TextureSize = sheetSize;    
 	TextureOffset = vec2(1.0 / sheetSize.x * textureOffset.x, 1.0 / sheetSize.y * textureOffset.y);
 

@@ -6,7 +6,7 @@ center 0 0.5
 scale 3
 health 120
 animation minotaur_idle
-hitcooldowntimer 0.2
+staggercooldowntimer 0.2
 collider 0.2 -1.5 0.6 0.15 0
 hashittrigger 1
 hittrigger 0 0 1.0 1.5 1
@@ -27,13 +27,14 @@ closetoplayerspeed 2
 wanderingspeed 1
 istargeted 0
 targetingposition -0.5 2
-maxalertdistance 10
-maxfollowdistance 15
+maxalertdistance 6
+maxfollowdistance 7
 mindistancetoplayer 4
 slowdowndistance 6
 attackdistance 3.5
-aistate 7
+aistate 8
 astarcooldowntimer 0.6
+defendingtimer 2
 healthbar offset -0.5 3.3 scale 1.0 0.25
 #minotaur
 attackcooldowntimer 0.8
