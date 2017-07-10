@@ -72,6 +72,8 @@ struct game_state
     b32 IsInitialized;
     b32 Paused;
     b32 ShouldReload;
+    b32 RenderGame = true;
+    
     r32 InitialZoom;
     
     Player_State PlayerState = Player_Alive;
@@ -99,6 +101,9 @@ struct game_state
     
     u32 TimerCount;
     r64 Timers[NUM_TIMERS];
+    
+    light_source LightSources[32];
+    u32 LightSourceCount;
     
     // Editor
     console Console;

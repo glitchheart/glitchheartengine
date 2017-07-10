@@ -696,6 +696,13 @@
  
  extern "C" UPDATE(Update)
  {
+     printf("Entity Size: %d\n",sizeof(entity));
+     printf("Player Size: %d\n",sizeof(entity::Player));
+     printf("Enemy Size: %d\n",sizeof(entity::Enemy));
+     printf("Light Size: %d\n",sizeof(light_source));
+     printf("GameState Size: %d\n",sizeof(game_state));
+     
+     
      if(GameState->ReloadData->ReloadPlayerFile)
      {
          LoadPlayerData(GameState, 0);
@@ -824,6 +831,12 @@
      {
          StopSound(GameState);
      }
+     
+     if(GetKeyDown(Key_F7, GameState))
+     {
+         GameState->RenderGame = !GameState->RenderGame;
+     }
+     
      
      
      if(GameState->GameMode == Mode_InGame && GetKey(Key_LeftCtrl, GameState) && GetKeyDown(Key_P, GameState))

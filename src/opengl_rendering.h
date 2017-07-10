@@ -23,6 +23,7 @@ enum Shader_Type
     Shader_ErrorUI,
     Shader_AStarPath,
     Shader_FrameBuffer,
+    Shader_LightSource,
     
     Shader_Count
 };
@@ -41,6 +42,7 @@ const char* ShaderPaths[Shader_Count] =
     "../assets/shaders/errorshaderui",
     "../assets/shaders/astarpathshader",
     "../assets/shaders/framebuffershader",
+    "../assets/shaders/lightsourceshader",
 };
 
 
@@ -295,6 +297,7 @@ struct render_state
             shader ErrorShaderUI;
             shader AStarPathShader;
             shader FrameBufferShader;
+            shader LightSourceShader;
         };
     };
     
