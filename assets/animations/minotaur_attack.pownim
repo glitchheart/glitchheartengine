@@ -4,7 +4,7 @@ framecount 10
 framesize 48 48
 center 0.5 0.000000
 loop 0
-timeperframe 0.100000
+timeperframe 0.080000
 frames
 0 144
 48 144

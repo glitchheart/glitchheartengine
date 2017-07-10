@@ -705,7 +705,10 @@ AI_FUNC(MinotaurAttacking)
             Entity->Velocity = glm::vec2(Direction.x * Entity->AttackMoveSpeed, Direction.y * Entity->AttackMoveSpeed);
         }
         
-        if(Entity->AnimationInfo.FrameIndex >= Entity->AttackLowFrameIndex - 2 &&Entity->AnimationInfo.FrameIndex < Entity->AttackHighFrameIndex && !Minotaur.IsAttacking && strcmp(Entity->CurrentAnimation->Name, "minotaur_idle") != 0)
+        if(Entity->AnimationInfo.FrameIndex >= Entity->AttackLowFrameIndex - 2 
+           && Entity->AnimationInfo.FrameIndex < Entity->AttackHighFrameIndex 
+           && !Minotaur.IsAttacking 
+           && strcmp(Entity->CurrentAnimation->Name, "minotaur_idle") != 0)
         {
             StartTimer(GameState, Entity->AttackMoveTimer);
             
@@ -714,8 +717,6 @@ AI_FUNC(MinotaurAttacking)
                 Minotaur.IsAttacking = true;
                 
                 Entity->AttackCount++;
-                if(Entity->AttackCount == 3)
-                    Entity->AttackCount = 0;
                 
                 StartTimer(GameState, Minotaur.AttackCooldownTimer);
             }
@@ -724,13 +725,22 @@ AI_FUNC(MinotaurAttacking)
                 Minotaur.IsAttacking = false;
             }
         }
-        else if(!Entity->AnimationInfo.Playing)
+        else if(!Entity->AnimationInfo.Playing && strcmp(Entity->CurrentAnimation->Name, "minotaur_attack") == 0)
         {
             PlayAnimation(Entity, "minotaur_idle", GameState);
+            
+            if(Entity->AttackCount < Minotaur.MaxAttackStreak)
+            {
+                Minotaur.IsAttacking = false;
+                Enemy.AIState = AI_Attacking;
+                PlayAnimation(Entity, "minotaur_attack", GameState);
+            }
         }
         
-        if(Minotaur.IsAttacking && TimerDone(GameState, Minotaur.AttackCooldownTimer))
+        if(Minotaur.IsAttacking && TimerDone(GameState, Minotaur.AttackCooldownTimer) && Entity->AttackCount == Minotaur.MaxAttackStreak)
         {
+            Entity->AttackCount = 0;
+            
             if(DistanceToPlayer > Entity->Enemy.MinDistanceToPlayer)
             {
                 Minotaur.IsAttacking = false;
@@ -987,20 +997,22 @@ static void LoadMinotaurData(game_state* GameState, i32 Handle = -1, glm::vec2 P
             else if(StartsWith(&LineBuffer[0],"attackcooldowntimer"))
             {
                 Entity->Enemy.Minotaur.AttackCooldownTimer.TimerHandle = -1;
-                
                 sscanf(LineBuffer,"attackcooldowntimer %lf",&Entity->Enemy.Minotaur.AttackCooldownTimer.TimerMax);
             }
             else if(StartsWith(&LineBuffer[0],"chargingtimer"))
             {
                 Entity->Enemy.Minotaur.ChargingTimer.TimerHandle = -1;
-                
                 sscanf(LineBuffer,"chargingtimer %lf",&Entity->Enemy.Minotaur.ChargingTimer.TimerMax);
             }
             else if(StartsWith(&LineBuffer[0],"alertedtimer"))
             {
                 Entity->Enemy.Minotaur.AlertedTimer.TimerHandle = -1;
-                
                 sscanf(LineBuffer,"alertedtimer %lf",&Entity->Enemy.Minotaur.AlertedTimer.TimerMax);
+            }
+            else if(StartsWith(&LineBuffer[0],"maxattackstreak"))
+            {
+                Entity->Enemy.Minotaur.AlertedTimer.TimerHandle = -1;
+                sscanf(LineBuffer,"maxattackstreak %d",&Entity->Enemy.Minotaur.MaxAttackStreak);
             }
         }
         fclose(File);
@@ -2200,7 +2212,6 @@ void UpdateMinotaur(entity* Entity, game_state* GameState, r64 DeltaTime)
         
         if(Entity->Enemy.AIState != AI_Attacking && !Entity->Enemy.Minotaur.IsAttacking)
         {
-            
             glm::vec2 Direction = glm::normalize(Player.Position - Entity->Position);
             
             if(Abs(Direction.x) < 0.6f)
