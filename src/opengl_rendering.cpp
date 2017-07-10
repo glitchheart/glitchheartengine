@@ -1869,7 +1869,6 @@ void RenderGame(game_state* GameState)
 {
     if(GameState->GameMode == Mode_InGame || (GameState->GameMode == Mode_Editor && !GameState->EditorState.MenuOpen))
     {
-        glfwSetInputMode(GameState->RenderState.Window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
         RenderInGameMode(GameState);
     }
 }
@@ -1902,6 +1901,7 @@ void RenderUI(game_state* GameState)
         case Mode_InGame:
         {
             glfwSetInputMode(GameState->RenderState.Window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+            
             if(GameState->Paused)
                 RenderText(&GameState->RenderState, GameState->RenderState.MenuFont, glm::vec4(0.5, 1, 1, 1), "PAUSED", (r32)GameState->RenderState.WindowWidth / 2, 40, 1, Alignment_Center);
             
@@ -2226,7 +2226,7 @@ static void RenderDebugInfo(game_state* GameState)
         sprintf(FPS, "%4.0f",GameState->RenderState.FPS);
         RenderText(&GameState->RenderState, GameState->RenderState.InconsolataFont, 
                    glm::vec4(1, 1, 1, 1), FPS, GameState->RenderState.WindowWidth / 2.0f, 
-                   20.0f, 1.0f);
+                   GameState->RenderState.WindowHeight - 20.0f, 1.0f);
         
         i32 X = (i32)glm::floor(Pos.x);
         i32 Y = (i32)glm::floor(Pos.y);
@@ -2234,7 +2234,7 @@ static void RenderDebugInfo(game_state* GameState)
         sprintf(MousePos,"Mouse: (%d %d)",X,Y);
         RenderText(&GameState->RenderState, GameState->RenderState.InconsolataFont, 
                    glm::vec4(1, 1, 1, 1), MousePos, GameState->RenderState.WindowWidth / 2.0f - 200, 
-                   20.0f, 1.0f);
+                   GameState->RenderState.WindowHeight - 20.0f, 1.0f);
     }
     
 }
@@ -2317,6 +2317,7 @@ static void Render(game_state* GameState)
     {
         LoadTilemapBuffer(&GameState->RenderState, 0, &GameState->CurrentLevel.Tilemap.RenderInfo.VAOS[0], &GameState->CurrentLevel.Tilemap.RenderInfo.VBOS[0], &GameState->CurrentLevel.Tilemap.RenderInfo.VBOSizes[0], GameState->CurrentLevel.Tilemap);
         LoadTilemapBuffer(&GameState->RenderState, 1, &GameState->CurrentLevel.Tilemap.RenderInfo.VAOS[1], &GameState->CurrentLevel.Tilemap.RenderInfo.VBOS[1], &GameState->CurrentLevel.Tilemap.RenderInfo.VBOSizes[1], GameState->CurrentLevel.Tilemap);
+        GameState->CurrentLevel.Tilemap.RenderInfo.Dirty = false;
     }
     
     GameState->RenderState.ScaleX = 2.0f / GameState->RenderState.WindowWidth;
@@ -2334,7 +2335,8 @@ static void Render(game_state* GameState)
         RenderGame(GameState);
     }
     
-    RenderLightSources(GameState);
+    if(GameState->GameMode == Mode_InGame)
+        RenderLightSources(GameState);
     
     // Second pass
     glBindFramebuffer(GL_FRAMEBUFFER, 0); // back to default
@@ -2362,7 +2364,7 @@ static void Render(game_state* GameState)
     glActiveTexture(GL_TEXTURE0);
     
     // Render UI
-    RenderDebugInfo(GameState);
     RenderUI(GameState);
+    RenderDebugInfo(GameState);
     glfwSwapBuffers(GameState->RenderState.Window);
     }

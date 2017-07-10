@@ -170,6 +170,10 @@ static void LoadSounds(sound_manager *SoundManager, sound_device* SoundDevice)
     LoadSound("../assets/audio/enemies/minotaur/minotaur_grunt02.wav", DefaultSoundInfo, &SoundManager->MinotaurGrunt02, SoundDevice);
     LoadSound("../assets/audio/enemies/minotaur/minotaur_hit.wav", DefaultSoundInfo, &SoundManager->MinotaurHit, SoundDevice);
     LoadSound("../assets/audio/enemies/minotaur/minotaur_death.wav", DefaultSoundInfo, &SoundManager->MinotaurDeath, SoundDevice);
+    
+    DefaultSoundInfo.Gain = 0.5;
+    LoadSound("../assets/audio/enemies/shield_impact.wav", DefaultSoundInfo, &SoundManager->ShieldImpact, SoundDevice);
+    
     // // Add more sounds here if necessary
 }
 

@@ -1376,10 +1376,14 @@ void Hit(game_state* GameState, entity* ByEntity, entity* HitEntity)
 {
     if(HitEntity->HitAttackCountId != ByEntity->AttackCount)
     {
+        HitEntity->HitAttackCountId = ByEntity->AttackCount;
+        StartTimer(GameState, HitEntity->HitAttackCountIdResetTimer);
+        
         if(HitEntity->Invincible)
         {
             if(ByEntity->Type == Entity_Player)
             {
+                PlaySoundEffect(GameState, &GameState->SoundManager.ShieldImpact);
                 StartTimer(GameState, ByEntity->StaggerCooldownTimer);
             }
         }
@@ -1403,7 +1407,6 @@ void Hit(game_state* GameState, entity* ByEntity, entity* HitEntity)
             HitEntity->HealthLost = Damage;
             
             StartTimer(GameState, HitEntity->HitFlickerTimer);
-            StartTimer(GameState, HitEntity->HitAttackCountIdResetTimer);
             
             if(HitEntity->Type == Entity_Enemy)
             {

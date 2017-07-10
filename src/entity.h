@@ -47,7 +47,6 @@ enum Light_Type
     Light_Pointlight, Light_Ambient, LightCount
 };
 
-
 enum Look_Direction
 {
     Up, Down, Left, Right
