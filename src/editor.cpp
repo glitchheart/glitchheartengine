@@ -15,7 +15,7 @@ static void InitEditorFields(game_state* GameState)
     
     GameState->EditorState.AnimationLoopCheckbox = &GameState->EditorState.Checkboxes[0];
     
-    r32 FieldX = GameState->RenderState.WindowWidth - 310;
+    r32 FieldX = (r32)(GameState->RenderState.WindowWidth - 310);
     
     GameState->EditorState.AnimationNameField->Active = false;
     GameState->EditorState.AnimationNameField->Size = glm::vec2(300, 30);

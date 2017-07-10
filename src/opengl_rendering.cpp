@@ -310,8 +310,8 @@ static void LoadEditorTileBuffer(render_state* RenderState, editor_render_info& 
     r32 Width = (r32)Tilemap.RenderEntity.Texture->Width;
     r32 Height = (r32)Tilemap.RenderEntity.Texture->Height;
     
-    i32 X = 0.0f;
-    i32 Y = 0.0f;
+    i32 X = 0;
+    i32 Y = 0;
     
     for(u32 Index = 1; Index < Tilemap.TileCount; Index++)
     {
@@ -911,6 +911,12 @@ static void SetVec4ArrayUniform(GLuint ShaderHandle, const char *UniformName, gl
     glUniform4fv(glGetUniformLocation(ShaderHandle, UniformName), Length, (GLfloat*)&Value[0]);
 }
 
+
+static void SetFloatArrayUniform(GLuint ShaderHandle, const char *UniformName, r32* Value, u32 Length)
+{
+    glUniform1fv(glGetUniformLocation(ShaderHandle, UniformName), Length, (GLfloat*)&Value[0]);
+}
+
 static void RenderLine(render_state& RenderState, glm::vec4 Color, r32 X1, r32 Y1, r32 X2, r32 Y2, b32 IsUI = true, glm::mat4 ProjectionMatrix = glm::mat4(), glm::mat4 ViewMatrix = glm::mat4())
 {
     if(IsUI)
@@ -949,7 +955,8 @@ static void RenderLine(render_state& RenderState, glm::vec4 Color, r32 X1, r32 Y
     glDrawArrays(GL_LINES, 0, 4);
 }
 
-static void RenderCircle(render_state& RenderState, glm::vec4 Color, r32 CenterX, r32 CenterY, r32 Radius, b32 IsUI = true, glm::mat4 ProjectionMatrix = glm::mat4(), glm::mat4 ViewMatrix = glm::mat4())
+// NOTE(Niels): Possible future use but buggy
+void RenderCircle(render_state& RenderState, glm::vec4 Color, r32 CenterX, r32 CenterY, r32 Radius, b32 IsUI = true, glm::mat4 ProjectionMatrix = glm::mat4(), glm::mat4 ViewMatrix = glm::mat4())
 {
     if(IsUI)
     {
@@ -966,7 +973,7 @@ static void RenderCircle(render_state& RenderState, glm::vec4 Color, r32 CenterX
     
     i32 PointIndex = 0;
     
-    for(i32 Index; Index < 360; Index++)
+    for(i32 Index = 0; Index < 360; Index++)
     {
         r32 Radians = (Index * PI) / 180.0f;
         Points[PointIndex++] = glm::cos(Radians * Radius);
@@ -1841,18 +1848,18 @@ void RenderUI(game_state* GameState)
             // Player UI
             auto Player = GameState->Entities[0];
             RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(0, 0, 0, 1), 48.0f, GameState->RenderState.WindowHeight - 52.0f, 404.0f, 29.0f);
-            RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(0.6f, 0, 0, 1), 50.0f, GameState->RenderState.WindowHeight - 50.0f, 400.0 / (r32)Player.FullHealth * (r32)Player.Health, 25.0f);
+            RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(0.6f, 0, 0, 1), 50.0f, GameState->RenderState.WindowHeight - 50.0f, 400.0f / (r32)Player.FullHealth * (r32)Player.Health, 25.0f);
             
             if(!TimerDone(GameState, Player.HealthDecreaseTimer))
             {
-                r32 StartX = 50 +  400.0 / (r32)Player.FullHealth * (r32)Player.Health;
-                r32 Width = 400.0 / (r32)Player.FullHealth * Player.HealthLost;
+                r32 StartX = 50 +  400.0f / (r32)Player.FullHealth * (r32)Player.Health;
+                r32 Width = 400.0f / (r32)Player.FullHealth * Player.HealthLost;
                 
-                RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(1, 1, 1, 1), StartX, GameState->RenderState.WindowHeight - 50, Width, 25);
+                RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(1, 1, 1, 1), StartX, (r32)(GameState->RenderState.WindowHeight - 50), (r32)Width, 25.0f);
             }
             
-            RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(0, 0, 0, 1), 48, GameState->RenderState.WindowHeight - 92, 404, 29);
-            RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(1, 1, 0.5, 1), 50, GameState->RenderState.WindowHeight - 90, 400.0 / (r32)Player.Player.FullStamina * (r32)Player.Player.Stamina, 25);
+            RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(0, 0, 0, 1), 48.0f, (r32)(GameState->RenderState.WindowHeight - 92), 404.0f, 29.0f);
+            RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(1, 1, 0.5, 1), 50.0f, (r32)(GameState->RenderState.WindowHeight - 90), 400.0f / (r32)Player.Player.FullStamina * (r32)Player.Player.Stamina, 25.0f);
             
             RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(0, 0, 0, 1), 48, 10, 80, 80);
             RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(1, 1, 1, 1), 48 + 40 - 25, 10 + 40 - 25, 50, 50, GameState->RenderState.Textures["health_potion"]->TextureHandle);
@@ -1906,9 +1913,9 @@ void RenderUI(game_state* GameState)
                                     
                                     glm::vec2 SheetSize(Tilesheet.Texture.Width, Tilesheet.Texture.Height);
                                     
-                                    for(i32 X = 0;X < (i32)GameState->EditorState.TileBrushSize.x && X + (i32)GameState->EditorState.TileX < GameState->CurrentLevel.Tilemap.Width; X++)
+                                    for(u32 X = 0;X < GameState->EditorState.TileBrushSize.x && X + GameState->EditorState.TileX < GameState->CurrentLevel.Tilemap.Width; X++)
                                     {
-                                        for(i32 Y = 0;Y < (i32)GameState->EditorState.TileBrushSize.y && Y + (i32)GameState->EditorState.TileY < GameState->CurrentLevel.Tilemap.Height; Y++)
+                                        for(u32 Y = 0;Y < GameState->EditorState.TileBrushSize.y && Y + GameState->EditorState.TileY < GameState->CurrentLevel.Tilemap.Height; Y++)
                                         {
                                             RenderTile(&GameState->RenderState, (u32)GameState->EditorState.TileX + X, (u32)GameState->EditorState.TileY + Y, GameState->CurrentLevel.TilesheetIndex, TextureOffset, SheetSize, glm::vec4(1, 1, 1, 1),  GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
                                         }
@@ -1934,7 +1941,7 @@ void RenderUI(game_state* GameState)
                             break;
                             case Editor_Placement_PlaceEntity:
                             {
-                                char* Text;
+                                char* Text = "";
                                 
                                 switch(GameState->EditorState.PlacementEntity)
                                 {
@@ -1970,7 +1977,7 @@ void RenderUI(game_state* GameState)
                                     break;
                                 }
                                 
-                                RenderText(&GameState->RenderState, GameState->RenderState.InconsolataFont, glm::vec4(1, 1, 1, 1), Text, GameState->InputController.MouseX, GameState->RenderState.WindowHeight - GameState->InputController.MouseY + 20, 1, Alignment_Center); 
+                                RenderText(&GameState->RenderState, GameState->RenderState.InconsolataFont, glm::vec4(1, 1, 1, 1), Text, (r32)GameState->InputController.MouseX, GameState->RenderState.WindowHeight - (r32)GameState->InputController.MouseY + 20, 1, Alignment_Center); 
                                 
                                 if(GameState->EditorState.SelectedEntity)
                                     RenderWireframe(&GameState->RenderState, GameState->EditorState.SelectedEntity, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
@@ -2049,8 +2056,8 @@ void RenderUI(game_state* GameState)
                                 r32 StartX = (r32)GameState->RenderState.WindowWidth / 2.0f - TextureWidth / 2;
                                 r32 StartY = (r32)GameState->RenderState.WindowHeight / 2.0f - TextureHeight / 2;
                                 
-                                r32 X = FrameWidth * FrameOffsetX;
-                                r32 Y = FrameHeight * FrameOffsetY;
+                                r32 X = (r32)(FrameWidth * FrameOffsetX);
+                                r32 Y = (r32)(FrameHeight * FrameOffsetY);
                                 
                                 for(i32 Index = 0; Index < FrameCount; Index++)
                                 {
@@ -2110,12 +2117,12 @@ void RenderUI(game_state* GameState)
     {
         auto Color = GameState->Camera.FadingTint;
         
-        RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(Color.x, Color.y, Color.z, GameState->Camera.FadingAlpha), 0, 0, GameState->RenderState.WindowWidth, GameState->RenderState.WindowHeight);
+        RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(Color.x, Color.y, Color.z, GameState->Camera.FadingAlpha), 0, 0, (r32)GameState->RenderState.WindowWidth, (r32)GameState->RenderState.WindowHeight);
     }
     
     if(GameState->PlayerState == Player_Dead)
     {
-        RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(1, 0, 0, 0.2f), 0, 0, GameState->RenderState.WindowWidth, GameState->RenderState.WindowHeight);
+        RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(1, 0, 0, 0.2f), 0, 0, (r32)GameState->RenderState.WindowWidth, (r32)GameState->RenderState.WindowHeight);
         
         r32 Width = 0;
         r32 Height = 0;
@@ -2180,21 +2187,40 @@ static void RenderLightSources(game_state* GameState)
     
     if(GameState->GameMode == Mode_InGame || GameState->EditorState.Mode == Editor_Level)
     {
-        glm::vec4 Positions[32];
-        i32 NumOfLights = 0;
-        for(i32 Index = 0; Index < GameState->EntityCount; Index++)
+        glm::vec4 PointlightPositions[32];
+        r32 PointlightRadi[32];
+        r32 PointlightIntensities[32];
+        glm::vec4 PointLightColors[32];
+        i32 NumOfPointLights = 0;
+        
+        r32 AmbientIntensity = 0.0f;
+        glm::vec4 AmbientColor = glm::vec4(0,0,0,1);
+        
+        for(u32 Index = 0; Index < GameState->LightSourceCount; Index++)
         {
-            auto Entity = GameState->Entities[Index];
-            if(Entity.Type == Entity_Bonfire)
+            auto LightSource = GameState->LightSources[Index];
+            switch(LightSource.Type)
             {
-                glm::mat4 Model(1.0f);
-                Model = glm::translate(Model,glm::vec3(Entity.Position.x + 1.0f,Entity.Position.y + 1.0f,0));
-                Positions[NumOfLights++] = Model * glm::vec4(-0.5,-0.5,0.0f,1.0f);
+                case Light_Pointlight:
+                {
+                    glm::mat4 Model(1.0f);
+                    Model = glm::translate(Model,glm::vec3(LightSource.Pointlight.Position.x + 1.0f,LightSource.Pointlight.Position.y + 1.0f,0));
+                    PointlightPositions[NumOfPointLights] = Model * glm::vec4(-0.5,-0.5,0.0f,1.0f);
+                    PointlightRadi[NumOfPointLights] = LightSource.Pointlight.Radius;
+                    PointlightIntensities[NumOfPointLights] = LightSource.Pointlight.Intensity;
+                    PointLightColors[NumOfPointLights] = LightSource.Color;
+                    NumOfPointLights++;
+                }
+                break;
+                case Light_Ambient:
+                {
+                    AmbientIntensity = LightSource.Ambient.Intensity;
+                    AmbientColor = LightSource.Color;
+                }
+                break;
             }
         }
         
-        r32 Radius = 2.0f;
-        r32 Intensity = 5.0f;
         glm::vec4 Color = glm::vec4(0.5,0.2,0.0,0.6);
         
         auto Shader = GameState->RenderState.LightSourceShader;
@@ -2203,12 +2229,15 @@ static void RenderLightSources(game_state* GameState)
         
         SetMat4Uniform(Shader.Program, "P", P);
         SetMat4Uniform(Shader.Program, "V", V);
-        SetVec4Uniform(Shader.Program, "color", Color);
-        SetFloatUniform(Shader.Program, "radius", Radius);
-        SetFloatUniform(Shader.Program, "intensity", Intensity);
-        SetIntUniform(Shader.Program, "NUM_LIGHTS", NumOfLights);
-        SetVec4ArrayUniform(Shader.Program, "LightPos",Positions,NumOfLights);
+        SetVec4ArrayUniform(Shader.Program, "PointLightColors", PointLightColors,NumOfPointLights);
+        SetFloatArrayUniform(Shader.Program, "PointLightRadius", PointlightRadi, NumOfPointLights);
+        SetFloatArrayUniform(Shader.Program, "PointLightIntensity", PointlightIntensities, NumOfPointLights);
+        SetIntUniform(Shader.Program, "NUM_POINTLIGHTS", NumOfPointLights);
+        SetVec4ArrayUniform(Shader.Program, "PointLightPos",PointlightPositions,NumOfPointLights);
         SetVec2Uniform(Shader.Program, "screenSize", glm::vec2((r32)GameState->RenderState.WindowWidth,(r32)GameState->RenderState.WindowHeight));
+        
+        SetVec4Uniform(Shader.Program, "AmbientColor", AmbientColor);
+        SetFloatUniform(Shader.Program, "AmbientIntensity", AmbientIntensity);
         
         glDrawArrays(GL_QUADS, 0, 4);
         

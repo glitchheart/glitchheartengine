@@ -43,7 +43,7 @@ enum Enemy_Type
 
 enum Light_Type
 {
-    Pointlight, LightCount
+    Light_Pointlight, Light_Ambient, LightCount
 };
 
 
@@ -121,14 +121,22 @@ struct light_source
 {
     Light_Type Type;
     b32 Active = false;
+    glm::vec4 Color;
     union
     {
         struct
         {
             r32 Radius;
             r32 Intensity;
+            glm::vec2 Position;
         } Pointlight;
+        struct
+        {
+            r32 Intensity;
+        } Ambient;
     };
+    
+    light_source(){}
 };
 
 struct entity
@@ -160,6 +168,8 @@ struct entity
     b32 IsPickup = false;
     b32 HasHitTrigger = false;
     collision_AABB HitTrigger;
+    
+    i32 LightSourceHandle = -1;
     
     glm::vec2 Velocity;
     
