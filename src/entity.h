@@ -334,6 +334,7 @@ struct entity
                 struct
                 {
                     b32 IsAttacking = false;
+                    i32 MaxAttackStreak = 1;
                     timer AttackCooldownTimer;
                     timer ChargingTimer;
                     timer AlertedTimer;
