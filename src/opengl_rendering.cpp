@@ -2256,7 +2256,10 @@ static void RenderLightSources(game_state* GameState)
         glm::vec4 PointlightPositions[32];
         r32 PointlightRadi[32];
         r32 PointlightIntensities[32];
-        glm::vec4 PointLightColors[32];
+        r32 PointlightConstantAtt[32];
+        r32 PointlightLinearAtt[32];
+        r32 PointlightExponentialAtt[32];
+        glm::vec4 PointlightColors[32];
         i32 NumOfPointLights = 0;
         
         r32 AmbientIntensity = 0.0f;
@@ -2274,7 +2277,10 @@ static void RenderLightSources(game_state* GameState)
                     PointlightPositions[NumOfPointLights] = Model * glm::vec4(-0.5,-0.5,0.0f,1.0f);
                     PointlightRadi[NumOfPointLights] = LightSource.Pointlight.Radius;
                     PointlightIntensities[NumOfPointLights] = LightSource.Pointlight.Intensity;
-                    PointLightColors[NumOfPointLights] = LightSource.Color;
+                    PointlightColors[NumOfPointLights] = LightSource.Color;
+                    PointlightConstantAtt[NumOfPointLights] = LightSource.Pointlight.ConstantAtten;
+                    PointlightLinearAtt[NumOfPointLights] = LightSource.Pointlight.LinearAtten;
+                    PointlightExponentialAtt[NumOfPointLights] = LightSource.Pointlight.ExponentialAtten;
                     NumOfPointLights++;
                 }
                 break;
@@ -2295,9 +2301,12 @@ static void RenderLightSources(game_state* GameState)
         
         SetMat4Uniform(Shader.Program, "P", P);
         SetMat4Uniform(Shader.Program, "V", V);
-        SetVec4ArrayUniform(Shader.Program, "PointLightColors", PointLightColors,NumOfPointLights);
+        SetVec4ArrayUniform(Shader.Program, "PointLightColors", PointlightColors,NumOfPointLights);
         SetFloatArrayUniform(Shader.Program, "PointLightRadius", PointlightRadi, NumOfPointLights);
         SetFloatArrayUniform(Shader.Program, "PointLightIntensity", PointlightIntensities, NumOfPointLights);
+        SetFloatArrayUniform(Shader.Program, "PointLightConstantAtt", PointlightConstantAtt, NumOfPointLights);
+        SetFloatArrayUniform(Shader.Program, "PointLightLinearAtt", PointlightLinearAtt, NumOfPointLights);
+        SetFloatArrayUniform(Shader.Program, "PointLightExpAtt", PointlightExponentialAtt, NumOfPointLights);
         SetIntUniform(Shader.Program, "NUM_POINTLIGHTS", NumOfPointLights);
         SetVec4ArrayUniform(Shader.Program, "PointLightPos",PointlightPositions,NumOfPointLights);
         SetVec2Uniform(Shader.Program, "screenSize", glm::vec2((r32)GameState->RenderState.WindowWidth,(r32)GameState->RenderState.WindowHeight));
