@@ -164,6 +164,9 @@ struct light_source
             r32 Radius;
             r32 Intensity;
             glm::vec2 Position;
+            r32 ConstantAtten;
+            r32 LinearAtten;
+            r32 ExponentialAtten;
         } Pointlight;
         struct
         {
