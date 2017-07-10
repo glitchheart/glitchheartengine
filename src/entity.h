@@ -40,6 +40,13 @@ enum Enemy_Type
     Enemy_Minotaur
 };
 
+
+enum Light_Type
+{
+    Pointlight, LightCount
+};
+
+
 enum Look_Direction
 {
     Up, Down, Left, Right
@@ -110,6 +117,20 @@ struct loot
     i32 HealthPotions = 0;
 };
 
+struct light_source
+{
+    Light_Type Type;
+    b32 Active = false;
+    union
+    {
+        struct
+        {
+            r32 Radius;
+            r32 Intensity;
+        } Pointlight;
+    };
+};
+
 struct entity
 {
     Entity_Type Type;
@@ -117,7 +138,7 @@ struct entity
     u32 EntityIndex;
     glm::vec2 Position;
     glm::vec2 Center = glm::vec2(0.5, 0.5);
-    glm::vec3 Rotation;;
+    glm::vec3 Rotation;
     r32 Scale;
     b32 IsFlipped;
     
@@ -144,15 +165,15 @@ struct entity
     
     b32 Hit = false;
     
-    i32 HitFlickerFramesLeft = 0;
-    i32 HitFlickerFrameMax = 6;
+    i16 HitFlickerFramesLeft = 0;
+    i16 HitFlickerFrameMax = 6;
     timer HitFlickerTimer;
     
     timer HitAttackCountIdResetTimer;
     
-    i32 FullHealth;
-    i32 Health = -1;
-    i32 HealthLost;
+    i16 FullHealth;
+    i16 Health = -1;
+    i16 HealthLost;
     timer HealthDecreaseTimer;
     
     i32 AttackCount;
@@ -178,13 +199,13 @@ struct entity
         {
             b32 IsAttacking = false;
             
-            i32 FullStamina;
-            i32 Stamina;
-            i32 StaminaLost;
-            i32 HitStaminaCost;
-            i32 RollStaminaCost;
-            i32 AttackStaminaCost;
-            i32 MinDiffStamina;
+            i16 FullStamina;
+            i16 Stamina;
+            i16 StaminaLost;
+            i16 HitStaminaCost;
+            i16 RollStaminaCost;
+            i16 AttackStaminaCost;
+            i16 MinDiffStamina;
             
             player_inventory Inventory;
             

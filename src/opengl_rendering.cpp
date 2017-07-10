@@ -678,6 +678,10 @@ static void RenderSetup(render_state *RenderState)
     InitializeFreeTypeFont("../assets/fonts/roboto/Roboto-Regular.ttf", 30, RenderState->FTLibrary, &RenderState->ButtonFont, &RenderState->StandardFontShader);
     InitializeFreeTypeFont("../assets/fonts/rubber-biscuit/RUBBBB__.ttf", 50, RenderState->FTLibrary, &RenderState->TitleFont, &RenderState->StandardFontShader);
     InitializeFreeTypeFont("../assets/fonts/rubber-biscuit/RUBBBB__.ttf", 15, RenderState->FTLibrary, &RenderState->DamageFont, &RenderState->StandardFontShader);
+    
+    // Light sources
+    RenderState->LightSourceShader.Type = Shader_LightSource;
+    LoadShader(ShaderPaths[Shader_LightSource], &RenderState->LightSourceShader);
 }
 
 static GLuint LoadTexture(const char* FilePath, texture* Texture)
@@ -877,6 +881,11 @@ static void SetFloatUniform(GLuint ShaderHandle, const char* UniformName, r32 Va
     glUniform1f(glGetUniformLocation(ShaderHandle, UniformName), Value);
 }
 
+static void SetIntUniform(GLuint ShaderHandle, const char* UniformName, i32 Value)
+{
+    glUniform1i(glGetUniformLocation(ShaderHandle, UniformName), Value);
+}
+
 static void SetVec2Uniform(GLuint ShaderHandle, const char *UniformName, glm::vec2 Value)
 {
     glUniform2f(glGetUniformLocation(ShaderHandle, UniformName), Value.x, Value.y);
@@ -895,6 +904,11 @@ static void SetVec4Uniform(GLuint ShaderHandle, const char *UniformName, glm::ve
 static void SetMat4Uniform(GLuint ShaderHandle, const char *UniformName, glm::mat4 Value)
 {
     glUniformMatrix4fv(glGetUniformLocation(ShaderHandle, UniformName), 1, GL_FALSE, &Value[0][0]);
+}
+
+static void SetVec4ArrayUniform(GLuint ShaderHandle, const char *UniformName, glm::vec4* Value, u32 Length)
+{
+    glUniform4fv(glGetUniformLocation(ShaderHandle, UniformName), Length, (GLfloat*)&Value[0]);
 }
 
 static void RenderLine(render_state& RenderState, glm::vec4 Color, r32 X1, r32 Y1, r32 X2, r32 Y2, b32 IsUI = true, glm::mat4 ProjectionMatrix = glm::mat4(), glm::mat4 ViewMatrix = glm::mat4())
@@ -2154,22 +2168,51 @@ static void RenderDebugInfo(game_state* GameState)
 
 static void RenderLightSources(game_state* GameState)
 {
+    glBindVertexArray(GameState->RenderState.FrameBufferVAO);
     glBindFramebuffer(GL_FRAMEBUFFER, GameState->RenderState.LightingFrameBuffer);
     glBindTexture(GL_TEXTURE_2D, GameState->RenderState.LightingTextureColorBuffer);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glClearColor(0, 0, 0, 1.0f);
     glBlendFunc(GL_ONE, GL_ONE);
     
+    glm::mat4 P = GameState->Camera.ProjectionMatrix;
+    glm::mat4 V = GameState->Camera.ViewMatrix;
+    
     if(GameState->GameMode == Mode_InGame || GameState->EditorState.Mode == Editor_Level)
     {
+        glm::vec4 Positions[32];
+        i32 NumOfLights = 0;
         for(i32 Index = 0; Index < GameState->EntityCount; Index++)
         {
             auto Entity = GameState->Entities[Index];
             if(Entity.Type == Entity_Bonfire)
             {
-                RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(0.5, 0.2, 0, 0.6), Entity.Position.x - 1, Entity.Position.y - 1, 3, 3, GameState->RenderState.Textures["lightmap"]->TextureHandle, false, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
+                glm::mat4 Model(1.0f);
+                Model = glm::translate(Model,glm::vec3(Entity.Position.x + 1.0f,Entity.Position.y + 1.0f,0));
+                Positions[NumOfLights++] = Model * glm::vec4(-0.5,-0.5,0.0f,1.0f);
             }
         }
+        
+        r32 Radius = 2.0f;
+        r32 Intensity = 5.0f;
+        glm::vec4 Color = glm::vec4(0.5,0.2,0.0,0.6);
+        
+        auto Shader = GameState->RenderState.LightSourceShader;
+        
+        UseShader(&Shader);
+        
+        SetMat4Uniform(Shader.Program, "P", P);
+        SetMat4Uniform(Shader.Program, "V", V);
+        SetVec4Uniform(Shader.Program, "color", Color);
+        SetFloatUniform(Shader.Program, "radius", Radius);
+        SetFloatUniform(Shader.Program, "intensity", Intensity);
+        SetIntUniform(Shader.Program, "NUM_LIGHTS", NumOfLights);
+        SetVec4ArrayUniform(Shader.Program, "LightPos",Positions,NumOfLights);
+        SetVec2Uniform(Shader.Program, "screenSize", glm::vec2((r32)GameState->RenderState.WindowWidth,(r32)GameState->RenderState.WindowHeight));
+        
+        glDrawArrays(GL_QUADS, 0, 4);
+        
+        glBindVertexArray(0);
     }
 }
 
@@ -2191,7 +2234,10 @@ static void Render(game_state* GameState)
     glClearColor(0, 0, 0, 1.0f);
     
     // Render scene
-    RenderGame(GameState);
+    if(GameState->RenderGame)
+    {
+        RenderGame(GameState);
+    }
     
     RenderLightSources(GameState);
     
