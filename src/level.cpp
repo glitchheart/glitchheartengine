@@ -210,7 +210,7 @@ static b32 LoadLevelFromFile(char* FilePath, level* Level, game_state* GameState
             IndexHeight++;
         }
         
-        i32 PathIndex = 0;
+        u32 PathIndex = 0;
         
         while(fgets(LineBuffer, 255, File))
         {
@@ -236,8 +236,7 @@ static b32 LoadLevelFromFile(char* FilePath, level* Level, game_state* GameState
             else if(StartsWith(&LineBuffer[0], "wraith"))
             {
                 glm::vec2 Pos;
-                sscanf(LineBuffer, "wraith %f %f%n", &Pos.x, &Pos.y);
-                PathIndex = strlen("wraith %f %f");
+                sscanf(LineBuffer, "wraith %f %f%n", &Pos.x, &Pos.y, &PathIndex);
                 SpawnWraith(GameState, Pos);
             }
             else if(StartsWith(&LineBuffer[0], "barrel"))

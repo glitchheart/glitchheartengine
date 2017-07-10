@@ -118,7 +118,7 @@ static void LoadEntityData(FILE* File, entity* Entity, game_state* GameState, b3
         }
         else if(StartsWith(&LineBuffer[0], "health"))
         {
-            sscanf(LineBuffer, "health %d", &Entity->FullHealth);
+            sscanf(LineBuffer, "health %hd", &Entity->FullHealth);
             Entity->Health = Entity->FullHealth;
         }
         else if(StartsWith(&LineBuffer[0], "animation"))
@@ -206,6 +206,25 @@ static void LoadEntityData(FILE* File, entity* Entity, game_state* GameState, b3
                    &Entity->WeaponColliderInfo.OffsetRight.y, 
                    &Entity->WeaponColliderInfo.ExtentsRight.x, 
                    &Entity->WeaponColliderInfo.ExtentsRight.y);
+        }
+        else if(StartsWith(&LineBuffer[0],"pointlight"))
+        {
+            light_source NewPointLight;
+            
+            sscanf(LineBuffer, "pointlight type %d active %d radius %f intensity %f color %f %f %f %f",
+                   &NewPointLight.Type ,&NewPointLight.Active,
+                   &NewPointLight.Pointlight.Radius, &NewPointLight.Pointlight.Intensity,&NewPointLight.Color.x,&NewPointLight.Color.y,&NewPointLight.Color.z,&NewPointLight.Color.w);
+            NewPointLight.Pointlight.Position = Entity->Position;
+            if(Entity->LightSourceHandle == -1)
+            {
+                Entity->LightSourceHandle = GameState->LightSourceCount;
+                GameState->LightSources[GameState->LightSourceCount++] = NewPointLight;
+            }
+            else
+            {
+                GameState->LightSources[Entity->LightSourceHandle] = NewPointLight;
+            }
+            
         }
     }
 }
@@ -1098,7 +1117,7 @@ static void LoadPlayerData(game_state* GameState, i32 Handle = -1, glm::vec2 Pos
             }
             else if(StartsWith(&LineBuffer[0], "stamina "))
             {
-                sscanf(LineBuffer, "stamina %d", &Entity->Player.FullStamina);
+                sscanf(LineBuffer, "stamina %hd", &Entity->Player.FullStamina);
                 Entity->Player.Stamina = Entity->Player.FullStamina;
             }
             else if(StartsWith(&LineBuffer[0], "staminagaintimer"))
@@ -1113,19 +1132,19 @@ static void LoadPlayerData(game_state* GameState, i32 Handle = -1, glm::vec2 Pos
             }
             else if(StartsWith(&LineBuffer[0], "hitstaminacost"))
             {
-                sscanf(LineBuffer, "hitstaminacost %d", &Entity->Player.HitStaminaCost);
+                sscanf(LineBuffer, "hitstaminacost %hd", &Entity->Player.HitStaminaCost);
             }
             else if(StartsWith(&LineBuffer[0], "rollstaminacost"))
             {
-                sscanf(LineBuffer, "rollstaminacost %d", &Entity->Player.RollStaminaCost);
+                sscanf(LineBuffer, "rollstaminacost %hd", &Entity->Player.RollStaminaCost);
             }
             else if(StartsWith(&LineBuffer[0], "attackstaminacost"))
             {
-                sscanf(LineBuffer, "attackstaminacost %d", &Entity->Player.AttackStaminaCost);
+                sscanf(LineBuffer, "attackstaminacost %hd", &Entity->Player.AttackStaminaCost);
             }
             else if(StartsWith(&LineBuffer[0], "mindiffstamina"))
             {
-                sscanf(LineBuffer, "mindiffstamina %d", &Entity->Player.MinDiffStamina);
+                sscanf(LineBuffer, "mindiffstamina %hd", &Entity->Player.MinDiffStamina);
             }
             else if(StartsWith(&LineBuffer[0], "staminagaincooldowntimer"))
             {
@@ -1281,9 +1300,9 @@ static void SpawnBarrel(game_state* GameState, glm::vec2 Position)
 }
 
 
-static void DecreaseStamina(entity* Entity, game_state* GameState, i32 Cost) 
+static void DecreaseStamina(entity* Entity, game_state* GameState, i16 Cost) 
 {
-    i32 NewStamina = Max(0, Entity->Player.Stamina - Cost);
+    i16 NewStamina = Max(0, Entity->Player.Stamina - Cost);
     Entity->Player.StaminaLost = Entity->Player.Stamina - NewStamina;
     Entity->Player.Stamina = NewStamina;
     StartTimer(GameState, Entity->Player.StaminaDecreaseTimer);
@@ -1299,7 +1318,7 @@ void Hit(game_state* GameState, entity* ByEntity, entity* HitEntity)
         PlaySoundEffect(GameState, &GameState->SoundManager.SwordHit02);
         HitEntity->HitRecoilDirection = glm::normalize(HitEntity->Position - ByEntity->Position);
         
-        i32 Damage = ByEntity->Weapon.Damage > HitEntity->Health ? HitEntity->Health : ByEntity->Weapon.Damage;
+        i16 Damage = ByEntity->Weapon.Damage > HitEntity->Health ? (i16)HitEntity->Health : (i16)ByEntity->Weapon.Damage;
         HitEntity->Health -= Damage;
         
         HitEntity->Hit = true;

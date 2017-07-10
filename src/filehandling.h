@@ -25,6 +25,7 @@ struct asset_manager
     time_t PlayerFileTime;
     time_t SkeletonFileTime;
     time_t MinotaurFileTime;
+    time_t BonfireFileTime;
 };
 
 static GLchar* LoadShaderFromFile(const char* Path)
@@ -97,6 +98,9 @@ static void StartupFileTimeChecks(asset_manager* AssetManager)
     stat("../assets/entities/minotaur.dat", &sb);
     AssetManager->MinotaurFileTime = sb.st_mtime;
     
+    stat("../assets/entities/bonfire.dat", &sb);
+    AssetManager->BonfireFileTime = sb.st_mtime;
+    
     for (int i = 0; i < Shader_Count; i++) 
     {
         struct stat sb1;
@@ -129,6 +133,7 @@ static void ListenToFileChanges(asset_manager* AssetManager)
         
         CheckDirty("../assets/entities/minotaur.dat", AssetManager->MinotaurFileTime, &AssetManager->ReloadData.ReloadMinotaurFile, &AssetManager->MinotaurFileTime);
         
+        CheckDirty("../assets/entities/bonfire.dat", AssetManager->BonfireFileTime, &AssetManager->ReloadData.ReloadBonfireFile, &AssetManager->BonfireFileTime);
     }
 }
 

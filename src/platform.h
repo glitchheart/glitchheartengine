@@ -53,6 +53,7 @@ struct entity_file_reload_data
     b32 ReloadSkeletonFile;
     b32 ReloadMinotaurFile;
     b32 ReloadWraithFile;
+    b32 ReloadBonfireFile;
 };
 
 void HandleError(char const *File, i32 LineNum, char const *msg)

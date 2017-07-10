@@ -499,8 +499,8 @@
                                  
                                  if(GameState->InputController.MouseX >= ToolbarX && GameState->InputController.MouseX <= ToolbarX + TilesheetWidth * GameState->EditorState.RenderedTileSize && GameState->RenderState.WindowHeight - GameState->InputController.MouseY > ToolbarY && GameState->RenderState.WindowHeight - GameState->InputController.MouseY <=  ToolbarY + TilesheetHeight * GameState->EditorState.RenderedTileSize)
                                  {
-                                     i32 X = (i32)(GameState->InputController.MouseX - (GameState->EditorState.ToolbarX + GameState->EditorState.TilemapOffset.x)) / GameState->EditorState.RenderedTileSize;
-                                     i32 Y = (i32)(GameState->RenderState.WindowHeight - GameState->InputController.MouseY - (GameState->EditorState.ToolbarY + GameState->EditorState.TilemapOffset.y)) / GameState->EditorState.RenderedTileSize;
+                                     i32 X = (i32)((GameState->InputController.MouseX - (GameState->EditorState.ToolbarX + GameState->EditorState.TilemapOffset.x)) / GameState->EditorState.RenderedTileSize);
+                                     i32 Y = (i32)((GameState->RenderState.WindowHeight - GameState->InputController.MouseY - (GameState->EditorState.ToolbarY + GameState->EditorState.TilemapOffset.y)) / GameState->EditorState.RenderedTileSize);
                                      
                                      GameState->EditorState.SelectedTilePosition = glm::vec2((r32)X, (r32)Y);
                                      i32 Selected = X + Y * TilesheetWidth;
@@ -536,9 +536,9 @@
                                          {
                                              for(u32 IndexY = 0; IndexY < Tilemap->Height; IndexY++)
                                              {
-                                                 for(i32 RelativeX = 0; RelativeX < (i32)GameState->EditorState.TileBrushSize.x && RelativeX + X < Tilemap->Width; RelativeX++)
+                                                 for(u32 RelativeX = 0; RelativeX < GameState->EditorState.TileBrushSize.x && RelativeX + X < Tilemap->Width; RelativeX++)
                                                  {
-                                                     for(i32 RelativeY = 0; RelativeY < (i32)GameState->EditorState.TileBrushSize.y && RelativeY + Y < Tilemap->Height; RelativeY++)
+                                                     for(u32 RelativeY = 0; RelativeY < GameState->EditorState.TileBrushSize.y && RelativeY + Y < Tilemap->Height; RelativeY++)
                                                      {
                                                          Tilemap->Data[GameState->EditorState.CurrentTilemapLayer][X + RelativeX][Y + RelativeY] = Tilemap->Tiles[GameState->EditorState.SelectedTileType + 1];
                                                      }
@@ -696,13 +696,6 @@
  
  extern "C" UPDATE(Update)
  {
-     printf("Entity Size: %d\n",sizeof(entity));
-     printf("Player Size: %d\n",sizeof(entity::Player));
-     printf("Enemy Size: %d\n",sizeof(entity::Enemy));
-     printf("Light Size: %d\n",sizeof(light_source));
-     printf("GameState Size: %d\n",sizeof(game_state));
-     
-     
      if(GameState->ReloadData->ReloadPlayerFile)
      {
          LoadPlayerData(GameState, 0);
@@ -733,6 +726,19 @@
              }
          }
          GameState->ReloadData->ReloadMinotaurFile = false;
+     }
+     
+     if(GameState->ReloadData->ReloadBonfireFile)
+     {
+         for(u32 EntityIndex = 0; EntityIndex < GameState->EntityCount; EntityIndex++)
+         {
+             auto Entity = GameState->Entities[EntityIndex];
+             if(Entity.Type == Entity_Bonfire)
+             {
+                 LoadBonfireData(GameState, EntityIndex);
+             }
+         }
+         GameState->ReloadData->ReloadBonfireFile = false;
      }
      
      CheckConsoleInput(GameState, DeltaTime);
@@ -767,10 +773,17 @@
      {
          if(!GameState->ShouldReload)
          {
-             srand(time(NULL));
+             srand((u32)time(NULL));
              
              LoadAnimations(GameState);
              InitCommands();
+             
+             light_source AmbientLight;
+             AmbientLight.Type = Light_Ambient;
+             AmbientLight.Active = true;
+             AmbientLight.Color = glm::vec4(0.1,0,0,1);
+             AmbientLight.Ambient.Intensity = 0.5f;
+             GameState->LightSources[GameState->LightSourceCount++] = AmbientLight;
              
              GameState->EditorCamera.Zoom = GameState->InitialZoom; // @Cleanup: We might not want to reset these values every time we load a level
              GameState->EditorCamera.ViewportWidth = GameState->RenderState.WindowWidth;

@@ -141,7 +141,7 @@ b32 TimerDone(game_state* GameState, timer& Timer)
     return Timer.TimerHandle == -1;
 }
 
-static void StartFade(camera& Camera, Fading_Mode Mode, r32 FadingSpeed, glm::vec3 FadingTint, r32 StartAlpha = 0, r32 EndAlpha = 0)
+void StartFade(camera& Camera, Fading_Mode Mode, r32 FadingSpeed, glm::vec3 FadingTint, r32 StartAlpha = 0, r32 EndAlpha = 0)
 {
     Camera.FadingMode = Mode;
     Camera.FadingTint = FadingTint;
