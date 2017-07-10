@@ -52,6 +52,8 @@ std::map<u32, Key_Code> KeyMappings =
     { GLFW_KEY_7, Key_7 },
     { GLFW_KEY_8, Key_8 },
     { GLFW_KEY_9, Key_9 },
+    { GLFW_KEY_KP_ADD, Key_Add },
+    { GLFW_KEY_KP_SUBTRACT, Key_Subtract },
     { GLFW_KEY_F1, Key_F1 },
     { GLFW_KEY_F2, Key_F2 },
     { GLFW_KEY_F3, Key_F3 },
