@@ -1151,7 +1151,7 @@ static void LoadPlayerData(game_state* GameState, i32 Handle = -1, glm::vec2 Pos
                 sscanf(LineBuffer, "stamina %hd", &Entity->Player.FullStamina);
                 Entity->Player.Stamina = Entity->Player.FullStamina;
             }
-            else if(StartsWith(&LineBuffer[0], "staminagaintimer"))
+            else if(StartsWith(&LineBuffer[0], "staminagaintimer "))
             {
                 sscanf(LineBuffer, "staminagaintimer %lf", &Entity->Player.StaminaGainTimer.TimerMax);
                 Entity->Player.StaminaGainTimer.TimerHandle = -1;
