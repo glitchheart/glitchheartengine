@@ -14,6 +14,7 @@ enum AI_State
     AI_Alerted,
     AI_Following,
     AI_Charging,
+    AI_Defending,
     AI_Attacking,
     AI_Hit,
     AI_Dying,
@@ -81,6 +82,7 @@ typedef void (*AIFunction)(entity*, game_state*, r64);
 Entity->Enemy.Alerted = & ## entityname ## Alerted; \
 Entity->Enemy.Following = & ## entityname ## Following; \
 Entity->Enemy.Charging = & ## entityname ## Charging; \
+Entity->Enemy.Defending = & ## entityname ## Defending; \
 Entity->Enemy.Attacking = & ## entityname ## Attacking; \
 Entity->Enemy.Hit = & ## entityname ## Hit; \
 Entity->Enemy.Wandering = & ## entityname ## Wandering; \
@@ -181,6 +183,7 @@ struct entity
     
     timer HitAttackCountIdResetTimer;
     
+    b32 Invincible = false;
     i16 FullHealth;
     i16 Health = -1;
     i16 HealthLost;
@@ -190,7 +193,7 @@ struct entity
     i32 HitAttackCountId = -1;
     
     timer RecoilTimer;
-    timer HitCooldownTimer;
+    timer StaggerCooldownTimer;
     r32 HitRecoilSpeed;
     glm::vec2 HitRecoilDirection;
     
@@ -272,6 +275,8 @@ struct entity
             enemy_health_count HealthCounts[10];
             glm::vec2 HealthCountStart;
             
+            i32 TimesHit;
+            
             b32 HasLoot = false;
             loot Loot;
             
@@ -292,6 +297,7 @@ struct entity
             AIFunction Alerted;
             AIFunction Following;
             AIFunction Charging;
+            AIFunction Defending;
             AIFunction Attacking;
             AIFunction Hit;
             AIFunction Dying;
@@ -301,6 +307,8 @@ struct entity
             v2i Waypoints[10];
             i32 WaypointIndex = 0;
             b32 WanderingForward = true;
+            
+            timer DefendingTimer;
             
             union
             {
