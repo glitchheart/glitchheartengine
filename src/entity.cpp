@@ -294,6 +294,10 @@ static void LoadEnemyData(FILE* File, entity* Entity, game_state* GameState)
             {
                 sscanf(LineBuffer, "aistate %d", &Entity->Enemy.AIState);
             }
+            else if(StartsWith(&LineBuffer[0], "healthcountposition"))
+            {
+                sscanf(LineBuffer, "healthcountposition %f %f", &Entity->Enemy.HealthCountStart.x, &Entity->Enemy.HealthCountStart.y);
+            }
             else if(StartsWith(&LineBuffer[0], "astarcooldowntimer"))
             {
                 Entity->Enemy.AStarPath.AStarCooldownTimer.TimerHandle = -1;
@@ -578,6 +582,7 @@ AI_FUNC(MinotaurIdle)
     if(DistanceToPlayer <= Entity->Enemy.MaxAlertDistance)
     {
         Enemy.AIState = AI_Alerted;
+        PlaySoundEffect(GameState, &GameState->SoundManager.MinotaurGrunt02);
         StartTimer(GameState, Entity->Enemy.Minotaur.AlertedTimer);
     }
     else
@@ -655,6 +660,7 @@ AI_FUNC(MinotaurCharging)
     else if(TimerDone(GameState, Minotaur.ChargingTimer) && DistanceToPlayer <= Enemy.AttackDistance)
     {
         Enemy.AIState = AI_Attacking;
+        PlaySoundEffect(GameState, &GameState->SoundManager.MinotaurGrunt01);
         PlayAnimation(Entity, "minotaur_attack", GameState);
     }
     else
@@ -679,6 +685,9 @@ AI_FUNC(MinotaurDefending)
         Entity->Invincible = false;
         RenderEntity.Color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
         Entity->Enemy.AIState = AI_Attacking;
+        
+        PlaySoundEffect(GameState, &GameState->SoundManager.MinotaurGrunt01);
+        
         PlayAnimation(Entity, "minotaur_attack", GameState);
     }
 }
@@ -733,6 +742,7 @@ AI_FUNC(MinotaurAttacking)
             {
                 Minotaur.IsAttacking = false;
                 Enemy.AIState = AI_Attacking;
+                PlaySoundEffect(GameState, &GameState->SoundManager.MinotaurGrunt01);
                 PlayAnimation(Entity, "minotaur_attack", GameState);
             }
         }
@@ -746,16 +756,10 @@ AI_FUNC(MinotaurAttacking)
                 Minotaur.IsAttacking = false;
                 Enemy.AIState = AI_Following;
             }
-            else if(DistanceToPlayer > Entity->Enemy.MaxAlertDistance)
-            {
-                Minotaur.IsAttacking = false;
-                Enemy.AIState = AI_Wandering;
-            }
             else
             {
                 Minotaur.IsAttacking = false;
-                Entity->Enemy.AIState = AI_Charging;
-                StartTimer(GameState, Minotaur.ChargingTimer);
+                Enemy.AIState = AI_Wandering;
             }
         }
     }
@@ -789,6 +793,11 @@ AI_FUNC(MinotaurDying)
 AI_FUNC(MinotaurWandering)
 {
     EnemyWander(GameState,Entity);
+    
+    if(Entity->Enemy.AIState == AI_Alerted || Entity->Enemy.AIState == AI_Following)
+    {
+        PlaySoundEffect(GameState, &GameState->SoundManager.MinotaurGrunt02);
+    }
 }
 
 
@@ -2179,10 +2188,12 @@ void UpdateMinotaur(entity* Entity, game_state* GameState, r64 DeltaTime)
         
         if(Entity->Hit)
         {
+            PlaySoundEffect(GameState, &GameState->SoundManager.MinotaurHit);
             Enemy.TimesHit++;
             
             if(Entity->Health <= 0)
             {
+                PlaySoundEffect(GameState, &GameState->SoundManager.MinotaurDeath);
                 PlayAnimation(Entity, "minotaur_death", GameState);
                 Entity->AnimationInfo.FreezeFrame = true;
                 Enemy.AIState = AI_Dying;

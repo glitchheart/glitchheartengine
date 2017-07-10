@@ -74,6 +74,7 @@ struct game_state
     b32 ShouldReload;
     b32 RenderGame = true;
     
+    b32 AIDebugModeOn = false;
     b32 GodModeOn = false;
     r32 GodModePanSpeed = 10.0f;
     r32 GodModeZoomSpeed = 45.0f;
