@@ -1324,6 +1324,7 @@ void Hit(game_state* GameState, entity* ByEntity, entity* HitEntity)
         
         if(HitEntity->Type == Entity_Player)
         {
+            PlayAnimation(HitEntity, "swordsman_hit", GameState);
             DecreaseStamina(HitEntity,GameState,HitEntity->Player.HitStaminaCost);
             StartFade(GameState->GameCamera, Fading_OutIn, 4.0f, glm::vec3(1, 0, 0), 0.0f, 0.4f);
         }
@@ -1393,230 +1394,225 @@ void UpdatePlayer(entity* Entity, game_state* GameState, r64 DeltaTime)
         
         if(!TimerDone(GameState, Entity->HitCooldownTimer))
         {
-            PlayAnimation(Entity, "swordsman_hit", GameState);
             Entity->Velocity = glm::vec2(Entity->HitRecoilDirection.x * Entity->HitRecoilSpeed * DeltaTime, Entity->HitRecoilDirection.y * Entity->HitRecoilSpeed * DeltaTime);
         }
-        if(true)
+        
+        if(!Entity->Player.IsDashing && !Entity->Player.IsDefending)
         {
-            if(!Entity->Player.IsDashing && !Entity->Player.IsDefending)
+            glm::vec2 Direction = UsingController ? glm::normalize(Entity->Velocity) : DirectionToMouse;
+            if(Direction.x == Direction.x && Direction.y == Direction.y && (Direction.x != 0 || Direction.y != 0))
             {
-                glm::vec2 Direction = UsingController ? glm::normalize(Entity->Velocity) : DirectionToMouse;
-                if(Direction.x == Direction.x && Direction.y == Direction.y && (Direction.x != 0 || Direction.y != 0))
-                {
-                    Entity->Player.LastKnownDirectionX = Direction.x;
-                    Entity->Player.LastKnownDirectionY = Direction.y;
-                }
+                Entity->Player.LastKnownDirectionX = Direction.x;
+                Entity->Player.LastKnownDirectionY = Direction.y;
+            }
+            
+            if(Entity->Player.IsAttacking && !Entity->AnimationInfo.Playing)
+            {
+                Entity->Player.IsAttacking = false;
                 
-                if(Entity->Player.IsAttacking && !Entity->AnimationInfo.Playing)
+                if(Entity->AttackCount == 3)
                 {
-                    Entity->Player.IsAttacking = false;
-                    
-                    if(Entity->AttackCount == 3)
-                    {
-                        Entity->AttackCount = 0;
-                        Entity->Velocity = glm::vec2(0, 0);
-                        StartTimer(GameState, Entity->Player.AttackCooldownTimer);
-                    }
+                    Entity->AttackCount = 0;
+                    Entity->Velocity = glm::vec2(0, 0);
+                    StartTimer(GameState, Entity->Player.AttackCooldownTimer);
                 }
+            }
+            
+            if(!Entity->Player.IsAttacking)
+            {
+                r32 InputX = GetInputX(GameState);
+                r32 InputY = GetInputY(GameState);
                 
-                if(!Entity->Player.IsAttacking)
+                Entity->Velocity.x = InputX * UsedWalkingSpeed * (r32)DeltaTime;
+                Entity->Velocity.y = InputY * UsedWalkingSpeed * (r32)DeltaTime;
+                
+                // @Cleanup: This section really needs a cleanup
+                if(Entity->Player.TargetedEnemyHandle != -1)
                 {
-                    r32 InputX = GetInputX(GameState);
-                    r32 InputY = GetInputY(GameState);
+                    b32 Moving = Entity->Velocity.x != 0 || Entity->Velocity.y != 0;
                     
-                    Entity->Velocity.x = InputX * UsedWalkingSpeed * (r32)DeltaTime;
-                    Entity->Velocity.y = InputY * UsedWalkingSpeed * (r32)DeltaTime;
+                    auto Direction = glm::normalize(GameState->Entities[Entity->Player.TargetedEnemyHandle].Position - Entity->Position);
                     
-                    // @Cleanup: This section really needs a cleanup
-                    if(Entity->Player.TargetedEnemyHandle != -1)
+                    if(Direction.x < 0.7)
                     {
-                        b32 Moving = Entity->Velocity.x != 0 || Entity->Velocity.y != 0;
-                        
-                        auto Direction = glm::normalize(GameState->Entities[Entity->Player.TargetedEnemyHandle].Position - Entity->Position);
-                        
-                        if(Direction.x < 0.7)
+                        if(Direction.y > 0)
                         {
-                            if(Direction.y > 0)
-                            {
-                                Entity->LookDirection = Up;
-                                if(Moving)
-                                    PlayAnimation(Entity, "swordsman_walk", GameState);
-                                else
-                                    PlayAnimation(Entity, "swordsman_idle", GameState);
-                            }
-                            else
-                            {
-                                Entity->LookDirection = Down;
-                                if(Moving)
-                                    PlayAnimation(Entity, "swordsman_walk", GameState);
-                                else
-                                    PlayAnimation(Entity, "swordsman_idle", GameState);
-                            }
-                        }
-                        else
-                        {
-                            Entity->LookDirection = Right;
+                            Entity->LookDirection = Up;
                             if(Moving)
                                 PlayAnimation(Entity, "swordsman_walk", GameState);
                             else
                                 PlayAnimation(Entity, "swordsman_idle", GameState);
                         }
-                        
-                        Entity->IsFlipped = Direction.x < 0;
-                        
-                        if(Entity->LookDirection == Right && Entity->IsFlipped)
-                            Entity->LookDirection = Left;
-                    }
-                    else if(Entity->Velocity.x != 0.0f || Entity->Velocity.y != 0.0f)
-                    {
-                        auto XValue = UsingController ? InputX : DirectionToMouse.x;
-                        auto YValue = UsingController ? InputY : DirectionToMouse.y;
-                        
-                        PlayAnimation(Entity, "swordsman_walk", GameState);
-                        
-                        if(Abs(XValue) < 0.7f && Abs(YValue) > 0.2f)
-                        {
-                            if(YValue > 0)
-                            {
-                                Entity->LookDirection = Up;
-                            }
-                            else
-                            {
-                                Entity->LookDirection = Down;
-                                //PlayAnimation(Entity, "player_run_down", GameState);
-                            }
-                        }
                         else
                         {
-                            Entity->LookDirection = Right;
-                            //PlayAnimation(Entity, "player_run_right", GameState);
-                        }
-                        
-                        if(XValue != 0)
-                        {
-                            Entity->IsFlipped = XValue < 0;
+                            Entity->LookDirection = Down;
+                            if(Moving)
+                                PlayAnimation(Entity, "swordsman_walk", GameState);
+                            else
+                                PlayAnimation(Entity, "swordsman_idle", GameState);
                         }
                     }
                     else
                     {
-                        PlayAnimation(Entity, "swordsman_idle", GameState);
-                        if(Abs(Entity->Player.LastKnownDirectionX) < 0.3)
+                        Entity->LookDirection = Right;
+                        if(Moving)
+                            PlayAnimation(Entity, "swordsman_walk", GameState);
+                        else
+                            PlayAnimation(Entity, "swordsman_idle", GameState);
+                    }
+                    
+                    Entity->IsFlipped = Direction.x < 0;
+                    
+                    if(Entity->LookDirection == Right && Entity->IsFlipped)
+                        Entity->LookDirection = Left;
+                }
+                else if(Entity->Velocity.x != 0.0f || Entity->Velocity.y != 0.0f)
+                {
+                    auto XValue = UsingController ? InputX : DirectionToMouse.x;
+                    auto YValue = UsingController ? InputY : DirectionToMouse.y;
+                    
+                    PlayAnimation(Entity, "swordsman_walk", GameState);
+                    
+                    if(Abs(XValue) < 0.7f && Abs(YValue) > 0.2f)
+                    {
+                        if(YValue > 0)
                         {
-                            if(Entity->Player.LastKnownDirectionY > 0)
-                            {
-                                Entity->LookDirection = Up;
-                                //PlayAnimation(Entity, "player_idle_up", GameState);
-                            }
-                            else
-                            {
-                                Entity->LookDirection = Down;
-                                //PlayAnimation(Entity, "player_idle_down", GameState);
-                            }
+                            Entity->LookDirection = Up;
                         }
                         else
                         {
-                            Entity->LookDirection = Right;
-                            //PlayAnimation(Entity, "player_idle_right", GameState);
+                            Entity->LookDirection = Down;
                         }
-                        Entity->IsFlipped = Entity->Player.LastKnownDirectionX < 0;
-                        
                     }
-                }
-                else if(!TimerDone(GameState, Entity->AttackMoveTimer))
-                {
-                    glm::vec2 Vel;
-                    r32 AttackMoveSpeed = Entity->AttackMoveSpeed;
-                    
-                    if(Entity->Player.LastKnownDirectionX != 0 || Entity->Player.LastKnownDirectionY != 0)
+                    else
                     {
-                        Vel = glm::vec2(Entity->Player.LastKnownDirectionX * AttackMoveSpeed * DeltaTime, Entity->Player.LastKnownDirectionY * AttackMoveSpeed * DeltaTime);
+                        Entity->LookDirection = Right;
                     }
                     
-                    Entity->Velocity = Vel;
+                    if(XValue != 0)
+                    {
+                        Entity->IsFlipped = XValue < 0;
+                    }
                 }
                 else
                 {
-                    Entity->Velocity = glm::vec2(0, 0);
-                }
-                
-                if(Entity->LookDirection == Right && Entity->IsFlipped)
-                    Entity->LookDirection = Left;
-                
-                // Pickup
-                if(GetActionButtonDown(Action_Interact, GameState) && Entity->Player.Pickup)
-                {
-                    GameState->Entities[Entity->Player.TargetedEnemyHandle].Enemy.IsTargeted = false;
-                    Entity->Player.TargetedEnemyHandle = -1;
-                    
-                    Entity->Player.Pickup->IsKinematic = false;
-                    r32 ThrowingDir = Entity->IsFlipped ? -1.0f : 1.0f;
-                    glm::vec2 Throw;
-                    
-                    glm::vec2 Dir = glm::normalize(glm::vec2(Entity->Player.CrosshairPositionX, Entity->Player.CrosshairPositionY));
-                    Throw.x = Dir.x * Entity->Player.ThrowingSpeed;
-                    Throw.y = Dir.y * Entity->Player.ThrowingSpeed;
-                    
-                    Entity->Player.Pickup->Velocity = Throw;
-                    
-                    if(Entity->Player.Pickup->Type == Entity_Barrel)
+                    PlayAnimation(Entity, "swordsman_idle", GameState);
+                    if(Abs(Entity->Player.LastKnownDirectionX) < 0.3)
                     {
-                        StartTimer(GameState, Entity->Player.Pickup->Pickup.PickupThrowTimer);
-                        PlayAnimation(Entity->Player.Pickup, "barrel_thrown", GameState);
-                        PlaySoundEffect(GameState, &GameState->SoundManager.Throw);
-                        Entity->Player.Pickup = NULL;
-                        StartTimer(GameState, Entity->Player.PickupCooldownTimer);
+                        if(Entity->Player.LastKnownDirectionY > 0)
+                        {
+                            Entity->LookDirection = Up;
+                            //PlayAnimation(Entity, "player_idle_up", GameState);
+                        }
+                        else
+                        {
+                            Entity->LookDirection = Down;
+                            //PlayAnimation(Entity, "player_idle_down", GameState);
+                        }
                     }
-                    else if(Entity->Player.Pickup->Type == Entity_Enemy && Entity->Player.Pickup->Enemy.EnemyType == Enemy_Blob)
+                    else
                     {
-                        StartTimer(GameState, Entity->Player.Pickup->Enemy.Blob.PickupThrowTimer);
-                        PlaySoundEffect(GameState, &GameState->SoundManager.Throw);
-                        Entity->Player.Pickup = NULL;
-                        StartTimer(GameState, Entity->Player.PickupCooldownTimer);
+                        Entity->LookDirection = Right;
+                        //PlayAnimation(Entity, "player_idle_right", GameState);
                     }
+                    Entity->IsFlipped = Entity->Player.LastKnownDirectionX < 0;
+                    
                 }
             }
-            
-            if(Entity->Player.IsDashing && TimerDone(GameState, Entity->Player.DashTimer))
+            else if(!TimerDone(GameState, Entity->AttackMoveTimer))
             {
-                Entity->Player.IsDashing = false;
-                StartTimer(GameState, Entity->Player.DashCooldownTimer);
-            }
-            
-            if(!Entity->Player.Pickup && !Entity->Player.IsAttacking  && TimerDone(GameState, Entity->Player.DashTimer) && GetActionButtonDown(Action_Dash, GameState)  && Entity->Player.Stamina >= Entity->Player.RollStaminaCost - Entity->Player.MinDiffStamina)
-            {
-                if(!Entity->Player.IsDashing && TimerDone(GameState, Entity->Player.DashCooldownTimer))
+                glm::vec2 Vel;
+                r32 AttackMoveSpeed = Entity->AttackMoveSpeed;
+                
+                if(Entity->Player.LastKnownDirectionX != 0 || Entity->Player.LastKnownDirectionY != 0)
                 {
-                    PlaySoundEffect(GameState, &GameState->SoundManager.Dash);
-                    Entity->Player.IsDashing = true;
-                    Entity->Player.DashDirectionX = Entity->Player.LastKnownDirectionX;
-                    Entity->Player.DashDirectionY = Entity->Player.LastKnownDirectionY; 
-                    StartTimer(GameState, Entity->Player.DashTimer);
-                    
-                    DecreaseStamina(Entity,GameState,Entity->Player.RollStaminaCost);
-                    StartTimer(GameState, Entity->Player.StaminaDecreaseTimer);
-                    
-                    PlayAnimation(Entity, "swordsman_roll", GameState);
+                    Vel = glm::vec2(Entity->Player.LastKnownDirectionX * AttackMoveSpeed * DeltaTime, Entity->Player.LastKnownDirectionY * AttackMoveSpeed * DeltaTime);
+                }
+                
+                Entity->Velocity = Vel;
+            }
+            else
+            {
+                Entity->Velocity = glm::vec2(0, 0);
+            }
+            
+            if(Entity->LookDirection == Right && Entity->IsFlipped)
+                Entity->LookDirection = Left;
+            
+            // Pickup
+            if(GetActionButtonDown(Action_Interact, GameState) && Entity->Player.Pickup)
+            {
+                GameState->Entities[Entity->Player.TargetedEnemyHandle].Enemy.IsTargeted = false;
+                Entity->Player.TargetedEnemyHandle = -1;
+                
+                Entity->Player.Pickup->IsKinematic = false;
+                r32 ThrowingDir = Entity->IsFlipped ? -1.0f : 1.0f;
+                glm::vec2 Throw;
+                
+                glm::vec2 Dir = glm::normalize(glm::vec2(Entity->Player.CrosshairPositionX, Entity->Player.CrosshairPositionY));
+                Throw.x = Dir.x * Entity->Player.ThrowingSpeed;
+                Throw.y = Dir.y * Entity->Player.ThrowingSpeed;
+                
+                Entity->Player.Pickup->Velocity = Throw;
+                
+                if(Entity->Player.Pickup->Type == Entity_Barrel)
+                {
+                    StartTimer(GameState, Entity->Player.Pickup->Pickup.PickupThrowTimer);
+                    PlayAnimation(Entity->Player.Pickup, "barrel_thrown", GameState);
+                    PlaySoundEffect(GameState, &GameState->SoundManager.Throw);
+                    Entity->Player.Pickup = NULL;
+                    StartTimer(GameState, Entity->Player.PickupCooldownTimer);
+                }
+                else if(Entity->Player.Pickup->Type == Entity_Enemy && Entity->Player.Pickup->Enemy.EnemyType == Enemy_Blob)
+                {
+                    StartTimer(GameState, Entity->Player.Pickup->Enemy.Blob.PickupThrowTimer);
+                    PlaySoundEffect(GameState, &GameState->SoundManager.Throw);
+                    Entity->Player.Pickup = NULL;
+                    StartTimer(GameState, Entity->Player.PickupCooldownTimer);
                 }
             }
-            
-            if(Entity->Player.IsDashing)
+        }
+        
+        if(Entity->Player.IsDashing && TimerDone(GameState, Entity->Player.DashTimer))
+        {
+            Entity->Player.IsDashing = false;
+            StartTimer(GameState, Entity->Player.DashCooldownTimer);
+        }
+        
+        if(!Entity->Player.Pickup && !Entity->Player.IsAttacking  && TimerDone(GameState, Entity->Player.DashTimer) && GetActionButtonDown(Action_Dash, GameState)  && Entity->Player.Stamina >= Entity->Player.RollStaminaCost - Entity->Player.MinDiffStamina)
+        {
+            if(!Entity->Player.IsDashing && TimerDone(GameState, Entity->Player.DashCooldownTimer))
             {
-                auto XInput = GetInputX(GameState);
-                auto YInput = GetInputY(GameState);
+                PlaySoundEffect(GameState, &GameState->SoundManager.Dash);
+                Entity->Player.IsDashing = true;
+                Entity->Player.DashDirectionX = Entity->Player.LastKnownDirectionX;
+                Entity->Player.DashDirectionY = Entity->Player.LastKnownDirectionY; 
+                StartTimer(GameState, Entity->Player.DashTimer);
                 
-                auto NewDirection = glm::normalize(glm::vec2(Entity->Player.DashDirectionX + XInput / Entity->Player.DashCounterDivider, Entity->Player.DashDirectionY + YInput / Entity->Player.DashCounterDivider));
+                DecreaseStamina(Entity,GameState,Entity->Player.RollStaminaCost);
+                StartTimer(GameState, Entity->Player.StaminaDecreaseTimer);
                 
-                Entity->Player.DashDirectionX = NewDirection.x;
-                Entity->Player.DashDirectionY = NewDirection.y;
-                
-                Entity->Velocity = glm::vec2(Entity->Player.DashDirectionX * Entity->Player.DashSpeed * DeltaTime, Entity->Player.DashDirectionY * Entity->Player.DashSpeed * DeltaTime);
-                
+                PlayAnimation(Entity, "swordsman_roll", GameState);
             }
+        }
+        
+        if(Entity->Player.IsDashing)
+        {
+            auto XInput = GetInputX(GameState);
+            auto YInput = GetInputY(GameState);
             
-            if(TimerDone(GameState, Entity->Player.DashCooldownTimer) && !Entity->Player.IsDashing)
-            {
-                Entity->Player.DashCount = 0;
-            }
+            auto NewDirection = glm::normalize(glm::vec2(Entity->Player.DashDirectionX + XInput / Entity->Player.DashCounterDivider, Entity->Player.DashDirectionY + YInput / Entity->Player.DashCounterDivider));
+            
+            Entity->Player.DashDirectionX = NewDirection.x;
+            Entity->Player.DashDirectionY = NewDirection.y;
+            
+            Entity->Velocity = glm::vec2(Entity->Player.DashDirectionX * Entity->Player.DashSpeed * DeltaTime, Entity->Player.DashDirectionY * Entity->Player.DashSpeed * DeltaTime);
+            
+        }
+        
+        if(TimerDone(GameState, Entity->Player.DashCooldownTimer) && !Entity->Player.IsDashing)
+        {
+            Entity->Player.DashCount = 0;
         }
         
         if(Entity->Velocity.x == Entity->Velocity.x)
