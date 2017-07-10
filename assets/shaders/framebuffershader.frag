@@ -18,5 +18,5 @@ void main()
 	vec4 lightingColor = texture(lightingTex, Texcoord);
 	vec4 endColor = texture(tex, Texcoord);
 	
-	outColor = endColor * (color + lightingColor);
+	outColor = endColor * (color  + lightingColor);
 }

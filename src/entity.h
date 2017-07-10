@@ -18,8 +18,41 @@ enum AI_State
     AI_Attacking,
     AI_Hit,
     AI_Dying,
-    AI_Wandering
+    AI_Wandering,
+    AI_Count
 };
+
+#define PAIR(name) {AI_ ## name, "AI_" " " #name}
+
+const static struct
+{
+    AI_State Val;
+    const char* Str;
+    
+} Conversion [] =
+{
+    PAIR(Idle),
+    PAIR(Alerted),
+    PAIR(Following),
+    PAIR(Charging),
+    PAIR(Defending),
+    PAIR(Attacking),
+    PAIR(Hit),
+    PAIR(Dying),
+    PAIR(Wandering)
+};
+
+const char* EnumToStr(AI_State State)
+{
+    for(i32 Index = 0; Index < AI_Count; Index++)
+    {
+        if(State == Conversion[Index].Val)
+        {
+            return Conversion[Index].Str;
+        }
+    }
+    Assert(false);
+}
 
 enum Entity_Type
 {
@@ -130,6 +163,9 @@ struct light_source
             r32 Radius;
             r32 Intensity;
             glm::vec2 Position;
+            r32 ConstantAtten;
+            r32 LinearAtten;
+            r32 ExponentialAtten;
         } Pointlight;
         struct
         {
