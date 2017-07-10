@@ -1344,39 +1344,49 @@ void Hit(game_state* GameState, entity* ByEntity, entity* HitEntity)
 {
     if(HitEntity->HitAttackCountId != ByEntity->AttackCount)
     {
-        StartTimer(GameState, GameState->GameCamera.ScreenShakeTimer);
-        StartTimer(GameState, HitEntity->StaggerCooldownTimer);
-        PlaySoundEffect(GameState, &GameState->SoundManager.SwordHit02);
-        HitEntity->HitRecoilDirection = glm::normalize(HitEntity->Position - ByEntity->Position);
-        
-        i16 Damage = ByEntity->Weapon.Damage > HitEntity->Health ? (i16)HitEntity->Health : (i16)ByEntity->Weapon.Damage;
-        HitEntity->Health -= Damage;
-        
-        HitEntity->Hit = true;
-        HitEntity->HitAttackCountId = ByEntity->AttackCount;
-        HitEntity->HitFlickerFramesLeft = HitEntity->HitFlickerFrameMax;
-        
-        StartTimer(GameState, HitEntity->HealthDecreaseTimer);
-        HitEntity->HealthLost = Damage;
-        
-        StartTimer(GameState, HitEntity->HitFlickerTimer);
-        StartTimer(GameState, HitEntity->HitAttackCountIdResetTimer);
-        
-        if(HitEntity->Type == Entity_Enemy)
+        if(HitEntity->Invincible)
         {
-            HitEntity->Enemy.HealthCounts[HitEntity->Enemy.HealthCountIndex].Visible = true;
-            HitEntity->Enemy.HealthCounts[HitEntity->Enemy.HealthCountIndex].Position = HitEntity->Enemy.HealthCountStart;
-            sprintf(HitEntity->Enemy.HealthCounts[HitEntity->Enemy.HealthCountIndex].Count, "%d", HitEntity->HealthLost);
-            HitEntity->Enemy.HealthCountIndex++;
-            if(HitEntity->Enemy.HealthCountIndex == 10)
-                HitEntity->Enemy.HealthCountIndex = 0;
+            if(ByEntity->Type == Entity_Player)
+            {
+                StartTimer(GameState, ByEntity->StaggerCooldownTimer);
+            }
         }
-        
-        if(HitEntity->Type == Entity_Player)
+        else
         {
-            PlayAnimation(HitEntity, "swordsman_hit", GameState);
-            DecreaseStamina(HitEntity,GameState,HitEntity->Player.HitStaminaCost);
-            StartFade(GameState->GameCamera, Fading_OutIn, 4.0f, glm::vec3(1, 0, 0), 0.0f, 0.4f);
+            StartTimer(GameState, GameState->GameCamera.ScreenShakeTimer);
+            StartTimer(GameState, HitEntity->StaggerCooldownTimer);
+            PlaySoundEffect(GameState, &GameState->SoundManager.SwordHit02);
+            HitEntity->HitRecoilDirection = glm::normalize(HitEntity->Position - ByEntity->Position);
+            
+            i16 Damage = ByEntity->Weapon.Damage > HitEntity->Health ? (i16)HitEntity->Health : (i16)ByEntity->Weapon.Damage;
+            HitEntity->Health -= Damage;
+            
+            HitEntity->Hit = true;
+            HitEntity->HitAttackCountId = ByEntity->AttackCount;
+            HitEntity->HitFlickerFramesLeft = HitEntity->HitFlickerFrameMax;
+            
+            StartTimer(GameState, HitEntity->HealthDecreaseTimer);
+            HitEntity->HealthLost = Damage;
+            
+            StartTimer(GameState, HitEntity->HitFlickerTimer);
+            StartTimer(GameState, HitEntity->HitAttackCountIdResetTimer);
+            
+            if(HitEntity->Type == Entity_Enemy)
+            {
+                HitEntity->Enemy.HealthCounts[HitEntity->Enemy.HealthCountIndex].Visible = true;
+                HitEntity->Enemy.HealthCounts[HitEntity->Enemy.HealthCountIndex].Position = HitEntity->Enemy.HealthCountStart;
+                sprintf(HitEntity->Enemy.HealthCounts[HitEntity->Enemy.HealthCountIndex].Count, "%d", HitEntity->HealthLost);
+                HitEntity->Enemy.HealthCountIndex++;
+                if(HitEntity->Enemy.HealthCountIndex == 10)
+                    HitEntity->Enemy.HealthCountIndex = 0;
+            }
+            
+            if(HitEntity->Type == Entity_Player)
+            {
+                PlayAnimation(HitEntity, "swordsman_hit", GameState);
+                DecreaseStamina(HitEntity,GameState,HitEntity->Player.HitStaminaCost);
+                StartFade(GameState->GameCamera, Fading_OutIn, 4.0f, glm::vec3(1, 0, 0), 0.0f, 0.4f);
+            }
         }
     }
 }
@@ -1923,22 +1933,12 @@ void UpdateWeapon(entity* Entity, game_state* GameState, r64 DeltaTime)
     {
         for(i32 Index = 0; Index < CollisionInfo.OtherCount; Index++)
         {
-            if(CollisionInfo.Other[Index]->Invincible)
+            if( (Entity->Type == Entity_Player && CollisionInfo.Other[Index]->Type == Entity_Enemy && CollisionInfo.Other[Index]->Enemy.AIState != AI_Hit && CollisionInfo.Other[Index]->Enemy.AIState != AI_Dying) ||
+               (Entity->Type == Entity_Enemy && CollisionInfo.Other[Index]->Type == Entity_Player && !CollisionInfo.Other[Index]->Player.IsDashing && !CollisionInfo.Other[Index]->Hit && TimerDone(GameState, CollisionInfo.Other[Index]->StaggerCooldownTimer)))
             {
-                if(Entity->Type == Entity_Player)
+                if(Entity->AnimationInfo.FrameIndex >= Entity->AttackLowFrameIndex && Entity->AnimationInfo.FrameIndex <= Entity->AttackHighFrameIndex)
                 {
-                    StartTimer(GameState, Entity->StaggerCooldownTimer);
-                }
-            }
-            else
-            {
-                if((Entity->Type == Entity_Player && CollisionInfo.Other[Index]->Type == Entity_Enemy && CollisionInfo.Other[Index]->Enemy.AIState != AI_Hit && CollisionInfo.Other[Index]->Enemy.AIState != AI_Dying) ||
-                   (Entity->Type == Entity_Enemy && CollisionInfo.Other[Index]->Type == Entity_Player && !CollisionInfo.Other[Index]->Player.IsDashing && !CollisionInfo.Other[Index]->Hit && TimerDone(GameState, CollisionInfo.Other[Index]->StaggerCooldownTimer)))
-                {
-                    if(Entity->AnimationInfo.FrameIndex >= Entity->AttackLowFrameIndex && Entity->AnimationInfo.FrameIndex <= Entity->AttackHighFrameIndex)
-                    {
-                        Hit(GameState, Entity, CollisionInfo.Other[Index]);
-                    }
+                    Hit(GameState, Entity, CollisionInfo.Other[Index]);
                 }
             }
         }

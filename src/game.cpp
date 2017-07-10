@@ -752,6 +752,7 @@
          {
              if(GameState->GameMode == Mode_InGame)
              {
+                 GameState->GodModeOn = false;
                  ReloadCurrentLevel(GameState);
                  GameState->GameMode = Mode_Editor;
                  GameState->Paused = false;
@@ -759,6 +760,7 @@
              }
              else
              {
+                 GameState->GodModeOn = false;
                  SaveLevelToFile(GameState->LevelPath, &GameState->CurrentLevel, GameState);
                  ReloadCurrentLevel(GameState);
                  GameState->GameMode = Mode_InGame;
