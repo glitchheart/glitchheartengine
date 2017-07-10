@@ -72,6 +72,8 @@ enum Key_Code
     Key_7,
     Key_8,
     Key_9,
+    Key_Add,
+    Key_Subtract,
     Key_MouseLeft,
     Key_MouseRight,
     Key_Count

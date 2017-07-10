@@ -2283,8 +2283,11 @@ void UpdateEntities(game_state* GameState, r64 DeltaTime)
             {
                 case Entity_Player: 
                 {
-                    UpdatePlayer(Entity, GameState, DeltaTime);
-                    UpdateWeapon(Entity, GameState, DeltaTime);
+                    if(!GameState->GodModeOn)
+                    {
+                        UpdatePlayer(Entity, GameState, DeltaTime);
+                        UpdateWeapon(Entity, GameState, DeltaTime);
+                    }
                 }
                 break;
                 case Entity_Enemy:
