@@ -65,6 +65,7 @@ static void LoadEntityData(FILE* File, entity* Entity, game_state* GameState, b3
         Entity->Active = true;
     }
     
+    Entity->AttackCount = 0;
     Entity->AnimationInfo.FreezeFrame = false;
     
     char LineBuffer[255];
@@ -750,18 +751,17 @@ AI_FUNC(MinotaurAttacking)
             }
         }
         
-        if(Minotaur.IsAttacking && TimerDone(GameState, Minotaur.AttackCooldownTimer) && Entity->AttackCount == Minotaur.MaxAttackStreak)
+        if(TimerDone(GameState, Minotaur.AttackCooldownTimer) && Entity->AttackCount == Minotaur.MaxAttackStreak)
         {
             Entity->AttackCount = 0;
+            Minotaur.IsAttacking = false;
             
             if(DistanceToPlayer > Entity->Enemy.MinDistanceToPlayer)
             {
-                Minotaur.IsAttacking = false;
                 Enemy.AIState = AI_Following;
             }
             else
             {
-                Minotaur.IsAttacking = false;
                 Enemy.AIState = AI_Wandering;
             }
         }
@@ -1417,6 +1417,8 @@ void Hit(game_state* GameState, entity* ByEntity, entity* HitEntity)
             
             if(HitEntity->Type == Entity_Player)
             {
+                if(ByEntity->Enemy.EnemyType == Enemy_Minotaur)
+                    printf("By: state %d attacking %d\n", ByEntity->Enemy.AIState, ByEntity->Enemy.Minotaur.IsAttacking);
                 PlayAnimation(HitEntity, "swordsman_hit", GameState);
                 DecreaseStamina(HitEntity,GameState,HitEntity->Player.HitStaminaCost);
                 StartFade(GameState->GameCamera, Fading_OutIn, 4.0f, glm::vec3(1, 0, 0), 0.0f, 0.4f);
@@ -2205,6 +2207,7 @@ void UpdateMinotaur(entity* Entity, game_state* GameState, r64 DeltaTime)
             {
                 PlayAnimation(Entity, "minotaur_detected", GameState);
                 Enemy.AIState = AI_Hit;
+                Minotaur.IsAttacking = false;
                 Entity->HitRecoilDirection = glm::normalize(Entity->Position - Player.Position);
                 StartTimer(GameState, Entity->RecoilTimer);
             }

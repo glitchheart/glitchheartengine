@@ -16,7 +16,7 @@ weaponscale 2 2
 attackmovetimer 0.05
 attackmovespeed 7
 attacklowframeindex 6
-attackhighframeindex 9
+attackhighframeindex 8
 weaponcollider 0.7 0 0.5 1.0 1
 weaponinfo 40 up -1.0 2.0 1.5 1 down -1.0 -1.3 1.5 0.8 left -2.5 0.2 1 1.5 right 0.5 0.2 1 1.5
 renderbuttonoffset -1 1
@@ -35,7 +35,7 @@ attackdistance 3.5
 aistate 8 #AI_Wandering
 healthcountposition -10 200
 astarcooldowntimer 0.6
-defendingtimer 2
+defendingtimer 1.2
 healthbar offset -0.5 3.3 scale 1.0 0.25
 #minotaur
 maxattackstreak 2
