@@ -225,6 +225,8 @@ struct entity
             timer StaminaGainCooldownTimer;
             timer StaminaGainTimer;
             timer StaminaDecreaseTimer;
+            r64 StaminaGainTimerFast;
+            r64 StaminaGainTimerSlow;
             
             timer AttackCooldownTimer;
             timer LastAttackTimer;
