@@ -1139,16 +1139,19 @@ static void RenderText(render_state* RenderState, const render_font& Font, const
             
             MeasureText(Font, Text, &Width, &Height);
             
-            if((i32)Width % 2 != 0)
-                Width -= 1.0f;
-            if((i32)Height % 2 != 0)
-                Height -= 1.0f;
-            
             X -= Width / 2.0f;
             Y -= Height / 2.0f;
         }
         break;
     }
+    
+    X = (r32)(i32)X;
+    Y = (r32)(i32)Y;
+    
+    if((i32)X % 2 != 0)
+        X-= 1.0f;
+    if((i32)Y % 2 != 0)
+        Y -= 1.0f;
     
     X *= RenderState->ScaleX;
     X -= 1.0f;
@@ -1600,14 +1603,65 @@ static void RenderEntity(game_state *GameState, entity &Entity, glm::mat4 Projec
             RenderHealthbar(RenderState, &Entity, *Entity.Enemy.Healthbar, ProjectionMatrix, View);
         }
         
-        if(GameState->AIDebugModeOn)
+        if(GameState->AIDebugModeOn && Entity.Type == Entity_Enemy)
         {
             glm::mat4 Model = glm::mat4(1.0f) * View;
             
             glm::vec3 Projected =
                 glm::project(glm::vec3(Entity.Position.x, Entity.Position.y, 0), Model, ProjectionMatrix, glm::vec4(GameState->RenderState.Viewport[0], GameState->RenderState.Viewport[1], GameState->RenderState.Viewport[2], GameState->RenderState.Viewport[3]));
             
-            RenderText(RenderState, RenderState->ButtonFont, glm::vec4(1, 1, 1, 1), "AI_TEST", Projected.x, Projected.y, 1, Alignment_Center);
+            char* State = "State MISSING";
+            
+            switch(Entity.Enemy.AIState)
+            {
+                case AI_Idle:
+                {
+                    State = "Idle";
+                }
+                break;
+                case AI_Wandering:
+                {
+                    State = "Wandering";
+                }
+                break;
+                case AI_Attacking:
+                {
+                    State = "Attacking";
+                }
+                break;
+                case AI_Defending:
+                {
+                    State = "Defending";
+                }
+                break;
+                case AI_Dying:
+                {
+                    State = "Dying";
+                }
+                break;
+                case AI_Charging:
+                {
+                    State = "Charging";
+                }
+                break;
+                case AI_Following:
+                {
+                    State = "Following";
+                }
+                break;
+                case AI_Alerted:
+                {
+                    State = "Alerted";
+                }
+                break;
+                case AI_Hit:
+                {
+                    State = "Hit";
+                }
+                break;
+            }
+            
+            RenderText(RenderState, RenderState->ButtonFont, glm::vec4(1, 1, 1, 1), State, Projected.x, Projected.y, 1, Alignment_Center);
         }
     }
     

@@ -710,7 +710,7 @@ AI_FUNC(MinotaurAttacking)
     {
         if(!TimerDone(GameState, Entity->AttackMoveTimer))
         {
-            glm::vec2 Direction = glm::normalize(Player.Position - Entity->Position);
+            glm::vec2 Direction = Minotaur.LastAttackMoveDirection;
             Entity->Velocity = glm::vec2(Direction.x * Entity->AttackMoveSpeed, Direction.y * Entity->AttackMoveSpeed);
         }
         
@@ -720,7 +720,10 @@ AI_FUNC(MinotaurAttacking)
            && strcmp(Entity->CurrentAnimation->Name, "minotaur_idle") != 0)
         {
             StartTimer(GameState, Entity->AttackMoveTimer);
-            
+            if(Entity->AttackCount == 0)
+            {
+                Minotaur.LastAttackMoveDirection = glm::normalize(Player.Position - Entity->Position);
+            }
             if(Entity->AnimationInfo.FrameIndex >= Entity->AttackLowFrameIndex && Entity->AnimationInfo.FrameIndex <= Entity->AttackHighFrameIndex)
             {
                 Minotaur.IsAttacking = true;
@@ -2330,6 +2333,11 @@ static void UpdateStaticEntity(entity* Entity, game_state* GameState, r64 DeltaT
 
 void UpdateGeneral(entity* Entity, game_state* GameState, r64 DeltaTime)
 {
+    if(Entity->LightSourceHandle != -1)
+    {
+        GameState->LightSources[Entity->LightSourceHandle].Pointlight.Position = Entity->Position;
+    }
+    
     auto& RenderEntity = GameState->RenderState.RenderEntities[Entity->RenderEntityHandle];
     
     if(Entity->HitFlickerFramesLeft > 0 && TimerDone(GameState, Entity->HitFlickerTimer))
