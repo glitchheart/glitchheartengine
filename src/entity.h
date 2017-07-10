@@ -338,6 +338,7 @@ struct entity
                     timer AttackCooldownTimer;
                     timer ChargingTimer;
                     timer AlertedTimer;
+                    glm::vec2 LastAttackMoveDirection;
                 } Minotaur;
                 struct
                 {
