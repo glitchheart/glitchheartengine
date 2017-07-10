@@ -677,7 +677,7 @@ static void RenderSetup(render_state *RenderState)
     InitializeFreeTypeFont("../assets/fonts/inconsolata/Inconsolata-Regular.ttf", 40, RenderState->FTLibrary, &RenderState->MenuFont, &RenderState->StandardFontShader);
     InitializeFreeTypeFont("../assets/fonts/roboto/Roboto-Regular.ttf", 30, RenderState->FTLibrary, &RenderState->ButtonFont, &RenderState->StandardFontShader);
     InitializeFreeTypeFont("../assets/fonts/rubber-biscuit/RUBBBB__.ttf", 50, RenderState->FTLibrary, &RenderState->TitleFont, &RenderState->StandardFontShader);
-    InitializeFreeTypeFont("../assets/fonts/rubber-biscuit/RUBBBB__.ttf", 15, RenderState->FTLibrary, &RenderState->DamageFont, &RenderState->StandardFontShader);
+    InitializeFreeTypeFont("../assets/fonts/pixelmix.ttf", 18, RenderState->FTLibrary, &RenderState->DamageFont, &RenderState->StandardFontShader);
     
     // Light sources
     RenderState->LightSourceShader.Type = Shader_LightSource;
@@ -1453,6 +1453,7 @@ static void RenderHealthbar(render_state* RenderState,
     RenderRect(Render_Fill, RenderState, glm::vec4(0.6, 0, 0, 1), Entity->Position.x + Healthbar.Offset.x, Entity->Position.y + Healthbar.Offset.y, 1.0f
                / (r32)Entity->FullHealth * (r32)Entity->Health , 0.1f, 0, false, ProjectionMatrix, ViewMatrix);
     
+    
     if(Entity->HealthLost > 0)
     {
         r32 StartX = Entity->Position.x + Healthbar.Offset.x + 1.0f
@@ -1466,6 +1467,7 @@ static void RenderHealthbar(render_state* RenderState,
         
         glm::vec3 Projected =
             glm::project(glm::vec3(Entity->Position.x, Entity->Position.y, 0), Model, ProjectionMatrix, glm::vec4(RenderState->Viewport[0], RenderState->Viewport[1], RenderState->Viewport[2], RenderState->Viewport[3]));
+        
         
         for(i32 Index = 0; Index < 10; Index++)
         {
@@ -1596,6 +1598,16 @@ static void RenderEntity(game_state *GameState, entity &Entity, glm::mat4 Projec
         if(Entity.Type == Entity_Enemy && Entity.Health < Entity.FullHealth && Entity.Health > 0)
         {
             RenderHealthbar(RenderState, &Entity, *Entity.Enemy.Healthbar, ProjectionMatrix, View);
+        }
+        
+        if(GameState->AIDebugModeOn)
+        {
+            glm::mat4 Model = glm::mat4(1.0f) * View;
+            
+            glm::vec3 Projected =
+                glm::project(glm::vec3(Entity.Position.x, Entity.Position.y, 0), Model, ProjectionMatrix, glm::vec4(GameState->RenderState.Viewport[0], GameState->RenderState.Viewport[1], GameState->RenderState.Viewport[2], GameState->RenderState.Viewport[3]));
+            
+            RenderText(RenderState, RenderState->ButtonFont, glm::vec4(1, 1, 1, 1), "AI_TEST", Projected.x, Projected.y, 1, Alignment_Center);
         }
     }
     

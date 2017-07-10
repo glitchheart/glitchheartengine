@@ -46,6 +46,11 @@ struct sound_manager
             sound_effect Slide01;
             sound_effect ButtonClick;
             sound_effect UseHealth;
+            
+            sound_effect MinotaurGrunt01;
+            sound_effect MinotaurGrunt02;
+            sound_effect MinotaurHit;
+            sound_effect MinotaurDeath;
         };
     };
     

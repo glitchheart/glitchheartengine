@@ -32,7 +32,8 @@ maxfollowdistance 7
 mindistancetoplayer 4
 slowdowndistance 6
 attackdistance 3.5
-aistate 8 //AI_Wandering
+aistate 8 #AI_Wandering
+healthcountposition -10 200
 astarcooldowntimer 0.6
 defendingtimer 2
 healthbar offset -0.5 3.3 scale 1.0 0.25
