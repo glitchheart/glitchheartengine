@@ -1003,11 +1003,11 @@
          
          if(GetKey(Key_Add, GameState))
          {
-             Zoom += -GameState->GodModeZoomSpeed * DeltaTime;
+             Zoom += (r32)(GameState->GodModeZoomSpeed * DeltaTime);
          }
          else if(GetKey(Key_Subtract, GameState))
          {
-             Zoom += GameState->GodModeZoomSpeed * DeltaTime;
+             Zoom += (r32)(-GameState->GodModeZoomSpeed * DeltaTime);
          }
          
          Direction = glm::normalize(Direction);
