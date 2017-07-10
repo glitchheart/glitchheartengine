@@ -2177,7 +2177,7 @@ void UpdateMinotaur(entity* Entity, game_state* GameState, r64 DeltaTime)
         
         Entity->Velocity = glm::vec2(0,0);
         
-        if(Enemy.TimesHit == 2)
+        if(Enemy.TimesHit == 2 && Entity->Health > 0)
         {
             Enemy.AIState = AI_Defending;
             Enemy.TimesHit = 0;
