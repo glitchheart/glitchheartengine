@@ -2143,7 +2143,6 @@ void UpdateSkeleton(entity* Entity, game_state* GameState, r64 DeltaTime)
     }
 }
 
-
 void UpdateMinotaur(entity* Entity, game_state* GameState, r64 DeltaTime)
 {
     auto& Enemy = Entity->Enemy;
