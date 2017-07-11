@@ -190,6 +190,9 @@ struct input_controller
     
     r32 Axes[NUM_AXES];
     
+    r32 AxesUsedZone = 0.4f;
+    Key_Mode AxesJustPressed[NUM_AXES];
+    
     r64 MouseX;
     r64 MouseY;
     r64 ScrollX;

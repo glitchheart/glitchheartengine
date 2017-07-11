@@ -259,6 +259,10 @@ static void LoadEnemyData(FILE* File, entity* Entity, game_state* GameState)
             {
                 sscanf(LineBuffer, "walkingspeed %f", &Entity->Enemy.WalkingSpeed);
             }
+            else if(StartsWith(&LineBuffer[0], "experience"))
+            {
+                sscanf(LineBuffer, "experience %d", &Entity->Enemy.Experience);
+            }
             else if(StartsWith(&LineBuffer[0], "wanderingspeed"))
             {
                 sscanf(LineBuffer, "wanderingspeed %f", &Entity->Enemy.WanderingSpeed);
@@ -661,6 +665,7 @@ AI_FUNC(MinotaurCharging)
     else if(TimerDone(GameState, Minotaur.ChargingTimer) && DistanceToPlayer <= Enemy.AttackDistance)
     {
         Enemy.AIState = AI_Attacking;
+        Minotaur.LastAttackMoveDirection = glm::normalize(Player.Position - Entity->Position);
         PlaySoundEffect(GameState, &GameState->SoundManager.MinotaurGrunt01);
         PlayAnimation(Entity, "minotaur_attack", GameState);
     }
@@ -721,10 +726,7 @@ AI_FUNC(MinotaurAttacking)
            && strcmp(Entity->CurrentAnimation->Name, "minotaur_idle") != 0)
         {
             StartTimer(GameState, Entity->AttackMoveTimer);
-            if(Entity->AttackCount == 0)
-            {
-                Minotaur.LastAttackMoveDirection = glm::normalize(Player.Position - Entity->Position);
-            }
+            
             if(Entity->AnimationInfo.FrameIndex >= Entity->AttackLowFrameIndex && Entity->AnimationInfo.FrameIndex <= Entity->AttackHighFrameIndex)
             {
                 Minotaur.IsAttacking = true;
@@ -1217,6 +1219,18 @@ static void LoadPlayerData(game_state* GameState, i32 Handle = -1, glm::vec2 Pos
             }
         }
         fclose(File);
+        
+        if(GameState->CharacterData.Level != 1)
+        {
+            Entity->Player.Level = GameState->CharacterData.Level;
+            Entity->Health = GameState->CharacterData.Health;
+            Entity->FullHealth = GameState->CharacterData.Health;
+            Entity->Player.Stamina = GameState->CharacterData.Stamina;
+            Entity->Player.FullStamina = GameState->CharacterData.Stamina;
+            Entity->Weapon.Damage = GameState->CharacterData.Strength;
+            
+            printf("Health is %d\n", Entity->Health);
+        }
     }
 }
 
@@ -1410,6 +1424,11 @@ void Hit(game_state* GameState, entity* ByEntity, entity* HitEntity)
             
             if(HitEntity->Type == Entity_Enemy)
             {
+                if(HitEntity->Health <= 0)
+                {
+                    GameState->Entities[0].Player.Experience += HitEntity->Enemy.Experience;
+                }
+                
                 HitEntity->Enemy.HealthCounts[HitEntity->Enemy.HealthCountIndex].Visible = true;
                 HitEntity->Enemy.HealthCounts[HitEntity->Enemy.HealthCountIndex].Position = HitEntity->Enemy.HealthCountStart;
                 sprintf(HitEntity->Enemy.HealthCounts[HitEntity->Enemy.HealthCountIndex].Count, "%d", HitEntity->HealthLost);
@@ -1432,6 +1451,13 @@ void Hit(game_state* GameState, entity* ByEntity, entity* HitEntity)
 
 void UpdatePlayer(entity* Entity, game_state* GameState, r64 DeltaTime)
 {
+    if(Entity->Player.Experience >= GameState->LevelExperienceData[Entity->Player.Level])
+    {
+        Entity->Player.Experience -= GameState->LevelExperienceData[Entity->Player.Level];
+        Entity->Player.Level++;
+        GameState->LevelGainModeOn = true;
+    }
+    
     r32 UsedWalkingSpeed = Entity->Player.WalkingSpeed;
     if(!TimerDone(GameState, Entity->StaggerCooldownTimer))
     {

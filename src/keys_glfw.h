@@ -78,22 +78,22 @@ std::map<u32, Mouse_Code> MouseButtonMappings =
 
 std::map<u32, Controller_Code> ControllerMappings =
 {
-    {GLFW_JOYSTICK_1, Joystick_1},
-    {GLFW_JOYSTICK_2, Joystick_2},
-    {GLFW_JOYSTICK_3, Joystick_3},
-    {GLFW_JOYSTICK_4, Joystick_4},
-    {GLFW_JOYSTICK_5, Joystick_5},
-    {GLFW_JOYSTICK_6, Joystick_6},
-    {GLFW_JOYSTICK_7, Joystick_7},
-    {GLFW_JOYSTICK_8, Joystick_8},
-    {GLFW_JOYSTICK_9, Joystick_9},
-    {GLFW_JOYSTICK_10, Joystick_10},
-    {GLFW_JOYSTICK_11, Joystick_11},
-    {GLFW_JOYSTICK_12, Joystick_12},
-    {GLFW_JOYSTICK_13, Joystick_13},
-    {GLFW_JOYSTICK_14, Joystick_14},
-    {GLFW_JOYSTICK_15, Joystick_15},
-    {GLFW_JOYSTICK_16, Joystick_16},
+    { GLFW_JOYSTICK_1, Joystick_1 },
+    { GLFW_JOYSTICK_2, Joystick_2 },
+    { GLFW_JOYSTICK_3, Joystick_3 },
+    { GLFW_JOYSTICK_4, Joystick_4 },
+    { GLFW_JOYSTICK_5, Joystick_5 },
+    { GLFW_JOYSTICK_6, Joystick_6 },
+    { GLFW_JOYSTICK_7, Joystick_7 },
+    { GLFW_JOYSTICK_8, Joystick_8 },
+    { GLFW_JOYSTICK_9, Joystick_9 },
+    { GLFW_JOYSTICK_10, Joystick_10 },
+    { GLFW_JOYSTICK_11, Joystick_11 },
+    { GLFW_JOYSTICK_12, Joystick_12 },
+    { GLFW_JOYSTICK_13, Joystick_13 },
+    { GLFW_JOYSTICK_14, Joystick_14 },
+    { GLFW_JOYSTICK_15, Joystick_15 },
+    { GLFW_JOYSTICK_16, Joystick_16 },
 };
 
 static void ControllerKeyCallback(game_state* GameState, int Key, int Action)
@@ -137,7 +137,23 @@ static void ControllerKeys(game_state* GameState, u32 Joystick)
     
     for(int Index = 0; Index < NUM_AXES; Index++)
     {
-        GameState->InputController.Axes[Index] = Axes[Index]; 
+        GameState->InputController.Axes[Index] = Axes[Index];
+        
+        if(Abs(Axes[Index]) > GameState->InputController.AxesUsedZone)
+        {
+            if(GameState->InputController.AxesJustPressed[Index] == Key_JustPressed)
+            {
+                GameState->InputController.AxesJustPressed[Index] = Key_Invalid;
+            }
+            else if(GameState->InputController.AxesJustPressed[Index] != Key_Invalid)
+            {
+                GameState->InputController.AxesJustPressed[Index] = Key_JustPressed;
+            }
+        }
+        else if(Abs(Axes[Index]) <= GameState->InputController.ControllerDeadzone)
+        {
+            GameState->InputController.AxesJustPressed[Index] = Key_NotPressed;
+        }
     }
 }
 
