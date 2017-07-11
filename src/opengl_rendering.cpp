@@ -1892,7 +1892,7 @@ void RenderUI(game_state* GameState)
             RenderText(&GameState->RenderState, GameState->RenderState.RobotoFont, glm::vec4(1, 1, 1, 1), &Text[0], 48 + 202.0f, GameState->RenderState.WindowHeight - 75.5f, 1, Alignment_Center);
             
             // Level and experience
-            sprintf(Text, "Level %d", Player.Player.Level);
+            sprintf(Text, "Level %d", (Player.Player.Level + 1));
             RenderText(&GameState->RenderState, GameState->RenderState.RobotoFont, glm::vec4(1, 1, 1, 1), &Text[0], 48.0f, (r32)GameState->RenderState.WindowHeight - 115, 1);
             
             RenderText(&GameState->RenderState, GameState->RenderState.RobotoFont, glm::vec4(1, 1, 1, 1), "Experience", 48.0f, (r32)GameState->RenderState.WindowHeight - 137, 1);
@@ -1900,14 +1900,18 @@ void RenderUI(game_state* GameState)
             // Experience bar
             RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(0, 0, 0, 1), 48.0f, (r32)GameState->RenderState.WindowHeight - 170, 304.0f, 20.0f);
             
-            i32 ExperienceForNextLevel = GameState->LevelExperienceData[Player.Player.Level];
+            i32 ExperienceForNextLevel = GameState->StatData[Player.Player.Level].ExperienceForLevel;
             
             RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(0, 0.8, 0.1, 1), 50.0f, GameState->RenderState.WindowHeight - 168.0f, 300.0f / (r32)ExperienceForNextLevel * (r32)Player.Player.Experience, 15.0f);
+            
+            RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(1, 1, 1, 1), 50.0f + 304 / 3, GameState->RenderState.WindowHeight - 170.0f, 2, 20.0f);
+            
+            RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(1, 1, 1, 1), 50.0f + (304 / 3) * 2, GameState->RenderState.WindowHeight - 170.0f, 2, 20.0f);
             
             sprintf(Text, "%d / %d", Player.Player.Experience, ExperienceForNextLevel);
             RenderText(&GameState->RenderState, GameState->RenderState.RobotoFont, glm::vec4(1, 1, 1, 1), &Text[0], 48 + 152.0f, GameState->RenderState.WindowHeight - 160.0f, 1, Alignment_Center);
             
-            if(GameState->LevelGainModeOn)
+            if(GameState->StatGainModeOn)
             {
                 r32 HalfWidth = (r32)GameState->RenderState.WindowWidth / 2.0f;
                 r32 HalfHeight = (r32)GameState->RenderState.WindowHeight / 2.0f;
@@ -1916,9 +1920,16 @@ void RenderUI(game_state* GameState)
                 
                 RenderText(&GameState->RenderState, GameState->RenderState.RobotoFont, glm::vec4(1, 1, 1, 1), "Choose an upgrade", HalfWidth, HalfHeight + 50, 1, Alignment_Center);
                 
-                RenderText(&GameState->RenderState, GameState->RenderState.RobotoFont, glm::vec4(1, 1, 1, 1), "Health", HalfWidth, HalfHeight + 20, 1, Alignment_Center);
-                RenderText(&GameState->RenderState, GameState->RenderState.RobotoFont, glm::vec4(1, 1, 1, 1), "Stamina", HalfWidth, HalfHeight - 10, 1, Alignment_Center);
-                RenderText(&GameState->RenderState, GameState->RenderState.RobotoFont, glm::vec4(1, 1, 1, 1), "Strength", HalfWidth, HalfHeight - 40, 1, Alignment_Center);
+                auto CurrentMilestone = GameState->StatData[Player.Player.Level].Milestones[Player.Player.LastMilestone - 1];
+                
+                sprintf(Text, "Health +%d", CurrentMilestone.Health);
+                RenderText(&GameState->RenderState, GameState->RenderState.RobotoFont, glm::vec4(1, 1, 1, 1), &Text[0], HalfWidth, HalfHeight + 20, 1, Alignment_Center);
+                
+                sprintf(Text, "Stamina +%d", CurrentMilestone.Stamina);
+                RenderText(&GameState->RenderState, GameState->RenderState.RobotoFont, glm::vec4(1, 1, 1, 1), &Text[0], HalfWidth, HalfHeight - 10, 1, Alignment_Center);
+                
+                sprintf(Text, "Strength +%d", CurrentMilestone.Strength);
+                RenderText(&GameState->RenderState, GameState->RenderState.RobotoFont, glm::vec4(1, 1, 1, 1), &Text[0], HalfWidth, HalfHeight - 40, 1, Alignment_Center);
                 
                 r32 YForSelector = HalfHeight + 20 - GameState->SelectedGainIndex * 30.0f;
                 
