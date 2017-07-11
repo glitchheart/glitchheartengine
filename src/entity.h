@@ -245,6 +245,8 @@ struct entity
     {
         struct
         {
+            i32 Level = 1;
+            i32 Experience;
             b32 IsAttacking = false;
             
             i16 FullStamina;
@@ -308,6 +310,7 @@ struct entity
             Enemy_Type EnemyType;
             entity_healthbar* Healthbar = 0;
             
+            i32 Experience;
             i32 HealthCountIndex = 0;
             enemy_health_count HealthCounts[10];
             glm::vec2 HealthCountStart;

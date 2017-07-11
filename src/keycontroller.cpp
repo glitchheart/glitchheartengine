@@ -77,14 +77,39 @@ b32 GetJoystickKey(Controller_Code Key, game_state* GameState)
     return GameState->InputController.JoystickKeysDown[Key];
 }
 
+//@Incomplete: Needs direction bool
+b32 GetJoystickAxesXDown(game_state* GameState, Stick Stick = Stick_Left)
+{
+    i32 Axis = Stick == Stick_Left ? 0 : 2;
+    
+    return GameState->InputController.AxesJustPressed[Axis] == Key_JustPressed;
+}
+
+b32 GetJoystickAxesYDown(game_state* GameState, b32 ForUpDirection, Stick Stick = Stick_Left)
+{
+    i32 Axis = Stick == Stick_Left ? 1 : 3;
+    b32 CorrectDirection = false;
+    
+    if(ForUpDirection)
+    {
+        CorrectDirection = GameState->InputController.Axes[Axis] > 0;
+    }
+    else
+    {
+        CorrectDirection = GameState->InputController.Axes[Axis] < 0;
+    }
+    
+    return CorrectDirection && GameState->InputController.AxesJustPressed[Axis] == Key_JustPressed;
+}
+
 b32 GetJoystickKeyDown(Controller_Code Key, game_state* GameState)
 {
     /*if(GameState->InputController.ControllerType == Xbox)
     {
-        switch(Key)
-        {
-            case Joystick_
-        }
+    switch(Key)
+    {
+    case Joystick_
+    }
     }*/
     
     return GameState->InputController.JoystickKeysJustPressed[Key] == Key_JustPressed;

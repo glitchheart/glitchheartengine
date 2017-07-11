@@ -12,7 +12,7 @@ hashittrigger 1
 hittrigger 0 -0.2 0.48 0.8 1
 weaponscale 2 2
 weaponcollider 0.2 0 1.1 1.2 1
-weaponinfo 25 up -1.0 0.8 1.1 0.5 down -1.0 -1.0 1.1 0.5 left -2.6 0.2 0.9 0.8 right 0.5 0.2 0.9 0.8
+weaponinfo 30 up -1.0 0.8 1.1 0.5 down -1.0 -1.0 1.1 0.5 left -2.6 0.2 0.9 0.8 right 0.5 0.2 0.9 0.8
 attackmovetimer 0.07
 attackmovespeed 15
 attacklowframeindex 3
@@ -27,7 +27,7 @@ staminadecreasetimer 0.8
 hitstaminacost 15
 rollstaminacost 20
 attackstaminacost 20
-mindiffstamina 18
+mindiffstamina 40
 healthdecreasetimer 0.8
 walkingspeed 5.0
 throwingspeed 18.0

@@ -65,6 +65,21 @@ enum Player_State
     Player_Dead
 };
 
+enum Player_Gain_Type
+{
+    Gain_Health,
+    Gain_Stamina,
+    Gain_Strength
+};
+
+struct character_data
+{
+    i16 Level = 1;
+    i16 Health = 0;
+    i16 Stamina = 0;
+    i16 Strength = 0;
+};
+
 #define NUM_TIMERS 128
 
 struct game_state
@@ -73,6 +88,11 @@ struct game_state
     b32 Paused;
     b32 ShouldReload;
     b32 RenderGame = true;
+    
+    character_data CharacterData;
+    b32 LevelGainModeOn = false;
+    
+    i32 SelectedGainIndex = 0;
     
     b32 AIDebugModeOn = false;
     b32 GodModeOn = false;
@@ -86,6 +106,8 @@ struct game_state
     
     Player_State PlayerState = Player_Alive;
     timer DeathScreenTimer;
+    
+    i32 LevelExperienceData[10];
     
     Game_Mode GameMode;
     main_menu MainMenu;

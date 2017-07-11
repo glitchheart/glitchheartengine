@@ -22,6 +22,7 @@ weaponinfo 20 up -1.0 1.5 1.0 0.5 down -1.0 -1.0 1.0 0.5 left -2.0 0.2 0.5 1.0 r
 renderbuttonoffset -1 1
 #enemy
 enemytype 1
+experience 50
 walkingspeed 5
 wanderingspeed 1
 closetoplayerspeed 2

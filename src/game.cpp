@@ -23,6 +23,40 @@
      }
  }
  
+ static void LoadGameDataFile(game_state* GameState)
+ {
+     FILE* File;
+     File = fopen("../assets/game_data.dat", "r");
+     
+     if(File)
+     {
+         char LineBuffer[256];
+         
+         while(fgets(LineBuffer, 255, File))
+         {
+             if(StartsWith(&LineBuffer[0], "levels"))
+             {
+                 i32 NumLevels = 0;
+                 sscanf(LineBuffer, "levels %d", &NumLevels);
+                 
+                 Assert(NumLevels <= 10);
+                 
+                 for(i32 Index = 0; Index < NumLevels; Index++)
+                 {
+                     fgets(LineBuffer, 255, File);
+                     
+                     i32 ExperienceNeeded = 0;
+                     
+                     sscanf(LineBuffer, "%d", &ExperienceNeeded);
+                     
+                     GameState->LevelExperienceData[Index] = ExperienceNeeded;
+                 }
+             }
+         }
+         fclose(File);
+     }
+ }
+ 
  static void EditorUpdateEntities(game_state* GameState, r64 DeltaTime)
  {
      if(GetKeyDown(Key_Escape, GameState))
@@ -794,6 +828,7 @@
      {
          if(!GameState->ShouldReload)
          {
+             LoadGameDataFile(GameState);
              srand((u32)time(NULL));
              
              LoadAnimations(GameState);
@@ -874,6 +909,11 @@
      if(GetKeyDown(Key_F8, GameState))
      {
          GameState->AIDebugModeOn = !GameState->AIDebugModeOn;
+     }
+     
+     if(GetKeyDown(Key_F9, GameState))
+     {
+         GameState->LevelGainModeOn = !GameState->LevelGainModeOn;
      }
      
      if(GameState->GameMode == Mode_InGame && GetKey(Key_LeftCtrl, GameState) && GetKeyDown(Key_P, GameState))
@@ -1032,7 +1072,7 @@
          case Mode_InGame:
          case Mode_MainMenu:
          {
-             if(!GameState->Paused)
+             if(!GameState->Paused && !GameState->LevelGainModeOn)
              {
                  UpdateEntities(GameState, DeltaTime);
                  TickTimers(GameState, DeltaTime);
@@ -1054,6 +1094,61 @@
                          Center = glm::vec2(Center.x + Direction.x * GameState->GameCamera.FollowSpeed * DeltaTime, Center.y + Direction.y  * GameState->GameCamera.FollowSpeed * DeltaTime);
                          GameState->GameCamera.Center = Center;
                      }
+                 }
+             }
+             else if(GameState->LevelGainModeOn)
+             {
+                 b32 ControllerPresent = GameState->InputController.ControllerPresent;
+                 
+                 b32 UpPressed = ControllerPresent ? GetJoystickAxesYDown(GameState, true) : GetKeyDown(Key_W, GameState) || GetKeyDown(Key_Up, GameState);
+                 b32 DownPressed = ControllerPresent ? GetJoystickAxesYDown(GameState, false) : GetKeyDown(Key_S, GameState) || GetKeyDown(Key_Down, GameState);
+                 
+                 if(UpPressed)
+                 {
+                     GameState->SelectedGainIndex--;
+                     if(GameState->SelectedGainIndex == -1)
+                         GameState->SelectedGainIndex = 2;
+                 }
+                 else if(DownPressed)
+                 {
+                     GameState->SelectedGainIndex++;
+                     if(GameState->SelectedGainIndex == 3)
+                         GameState->SelectedGainIndex = 0;
+                 }
+                 
+                 if(GetJoystickKeyDown(Joystick_1, GameState) || GetKeyDown(Key_Enter, GameState))
+                 {
+                     auto& Player = GameState->Entities[0];
+                     
+                     switch((Player_Gain_Type)GameState->SelectedGainIndex)
+                     {
+                         case Gain_Health:
+                         {
+                             Player.Health += 20;
+                             Player.FullHealth += 20;
+                         }
+                         break;
+                         case Gain_Stamina:
+                         {
+                             Player.Player.Stamina += 20;
+                             Player.Player.FullStamina += 20;
+                         }
+                         break;
+                         case Gain_Strength:
+                         {
+                             Player.Weapon.Damage += 2;
+                         }
+                         break;
+                     }
+                     
+                     //@Incomplete: Play sound!
+                     
+                     GameState->CharacterData.Health = Player.FullHealth;
+                     GameState->CharacterData.Strength = (i16)Player.Weapon.Damage;
+                     GameState->CharacterData.Stamina = Player.Player.FullStamina;
+                     GameState->CharacterData.Level++;
+                     GameState->SelectedGainIndex = 0;
+                     GameState->LevelGainModeOn = false;
                  }
              }
              

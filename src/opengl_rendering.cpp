@@ -678,6 +678,7 @@ static void RenderSetup(render_state *RenderState)
     InitializeFreeTypeFont("../assets/fonts/roboto/Roboto-Regular.ttf", 30, RenderState->FTLibrary, &RenderState->ButtonFont, &RenderState->StandardFontShader);
     InitializeFreeTypeFont("../assets/fonts/rubber-biscuit/RUBBBB__.ttf", 50, RenderState->FTLibrary, &RenderState->TitleFont, &RenderState->StandardFontShader);
     InitializeFreeTypeFont("../assets/fonts/pixelmix.ttf", 18, RenderState->FTLibrary, &RenderState->DamageFont, &RenderState->StandardFontShader);
+    InitializeFreeTypeFont("../assets/fonts/Arialic-Hollow.ttf", 18, RenderState->FTLibrary, &RenderState->OutlineFont, &RenderState->StandardFontShader);
     
     // Light sources
     RenderState->LightSourceShader.Type = Shader_LightSource;
@@ -1108,7 +1109,7 @@ static void MeasureText(const render_font& Font, const char* Text, float* Width,
 }
 
 //rendering methods
-static void RenderText(render_state* RenderState, const render_font& Font, const glm::vec4& Color, const char* Text, r32 X, r32 Y, r32 Scale, Alignment Alignment = Alignment_Left) 
+static void RenderText(render_state* RenderState, const render_font& Font, const glm::vec4& Color, const char* Text, r32 X, r32 Y, r32 Scale, Alignment Alignment = Alignment_Left, b32 AlignCenterY = true) 
 {
     glBindVertexArray(Font.VAO);
     auto Shader = RenderState->Shaders[Shader_StandardFont];
@@ -1140,7 +1141,8 @@ static void RenderText(render_state* RenderState, const render_font& Font, const
             MeasureText(Font, Text, &Width, &Height);
             
             X -= Width / 2.0f;
-            Y -= Height / 2.0f;
+            if(AlignCenterY)
+                Y -= Height / 2.0f;
         }
         break;
     }
@@ -1806,7 +1808,6 @@ static void NEW_RenderTilemap(render_state* RenderState, const tilemap& Tilemap,
     glBindVertexArray(0);
 }
 
-
 static void EditorRenderTilemap(glm::vec2 ScreenPosition, r32 Size, render_state* RenderState, const tilemap& Tilemap)
 {
     r32 X = ScreenPosition.x * RenderState->ScaleX;
@@ -1925,11 +1926,52 @@ void RenderUI(game_state* GameState)
             }
             
             RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(0, 0, 0, 1), 48.0f, (r32)(GameState->RenderState.WindowHeight - 92), 404.0f, 29.0f);
-            RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(1, 1, 0.5, 1), 50.0f, (r32)(GameState->RenderState.WindowHeight - 90), 400.0f / (r32)Player.Player.FullStamina * (r32)Player.Player.Stamina, 25.0f);
+            RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(1, 0.5, 0, 1), 50.0f, (r32)(GameState->RenderState.WindowHeight - 90), 400.0f / (r32)Player.Player.FullStamina * (r32)Player.Player.Stamina, 25.0f);
             
             RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(0, 0, 0, 1), 48, 10, 80, 80);
             RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(1, 1, 1, 1), 48 + 40 - 25, 10 + 40 - 25, 50, 50, GameState->RenderState.Textures["health_potion"]->TextureHandle);
             RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(1, 1, 1, 1), 48 + 40 - 17.5f, 90, 35, 35, GameState->RenderState.Textures["y_button"]->TextureHandle);
+            
+            char Text[100];
+            sprintf(Text, "%d / %d", Player.Health, Player.FullHealth);
+            RenderText(&GameState->RenderState, GameState->RenderState.RobotoFont, glm::vec4(1, 1, 1, 1), &Text[0], 48 + 202.0f, GameState->RenderState.WindowHeight - 35.5f, 1, Alignment_Center);
+            
+            sprintf(Text, "%d / %d", Player.Player.Stamina, Player.Player.FullStamina);
+            RenderText(&GameState->RenderState, GameState->RenderState.RobotoFont, glm::vec4(1, 1, 1, 1), &Text[0], 48 + 202.0f, GameState->RenderState.WindowHeight - 75.5f, 1, Alignment_Center);
+            
+            // Level and experience
+            sprintf(Text, "Level %d", Player.Player.Level);
+            RenderText(&GameState->RenderState, GameState->RenderState.RobotoFont, glm::vec4(1, 1, 1, 1), &Text[0], 48.0f, (r32)GameState->RenderState.WindowHeight - 115, 1);
+            
+            RenderText(&GameState->RenderState, GameState->RenderState.RobotoFont, glm::vec4(1, 1, 1, 1), "Experience", 48.0f, (r32)GameState->RenderState.WindowHeight - 137, 1);
+            
+            // Experience bar
+            RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(0, 0, 0, 1), 48.0f, (r32)GameState->RenderState.WindowHeight - 170, 304.0f, 20.0f);
+            
+            i32 ExperienceForNextLevel = GameState->LevelExperienceData[Player.Player.Level];
+            
+            RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(0, 0.8, 0.1, 1), 50.0f, GameState->RenderState.WindowHeight - 168.0f, 300.0f / (r32)ExperienceForNextLevel * (r32)Player.Player.Experience, 15.0f);
+            
+            sprintf(Text, "%d / %d", Player.Player.Experience, ExperienceForNextLevel);
+            RenderText(&GameState->RenderState, GameState->RenderState.RobotoFont, glm::vec4(1, 1, 1, 1), &Text[0], 48 + 152.0f, GameState->RenderState.WindowHeight - 160.0f, 1, Alignment_Center);
+            
+            if(GameState->LevelGainModeOn)
+            {
+                r32 HalfWidth = (r32)GameState->RenderState.WindowWidth / 2.0f;
+                r32 HalfHeight = (r32)GameState->RenderState.WindowHeight / 2.0f;
+                
+                RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(0, 0, 0, 1), HalfWidth - 150, HalfHeight - 100, 300, 200);
+                
+                RenderText(&GameState->RenderState, GameState->RenderState.RobotoFont, glm::vec4(1, 1, 1, 1), "Choose an upgrade", HalfWidth, HalfHeight + 50, 1, Alignment_Center);
+                
+                RenderText(&GameState->RenderState, GameState->RenderState.RobotoFont, glm::vec4(1, 1, 1, 1), "Health", HalfWidth, HalfHeight + 20, 1, Alignment_Center);
+                RenderText(&GameState->RenderState, GameState->RenderState.RobotoFont, glm::vec4(1, 1, 1, 1), "Stamina", HalfWidth, HalfHeight - 10, 1, Alignment_Center);
+                RenderText(&GameState->RenderState, GameState->RenderState.RobotoFont, glm::vec4(1, 1, 1, 1), "Strength", HalfWidth, HalfHeight - 40, 1, Alignment_Center);
+                
+                r32 YForSelector = HalfHeight + 20 - GameState->SelectedGainIndex * 30.0f;
+                
+                RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(1, 1, 1, 1), HalfWidth - 70, YForSelector - 7.5f, 15, 15);
+            }
         }
         break;
         case Mode_Editor:
@@ -2348,13 +2390,15 @@ static void Render(game_state* GameState)
         RenderLightSources(GameState);
     
     // Second pass
-    glBindFramebuffer(GL_FRAMEBUFFER, 0); // back to default
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glClearColor(0, 0, 0, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     
     glBindVertexArray(GameState->RenderState.FrameBufferVAO);
     UseShader(&GameState->RenderState.FrameBufferShader);
+    
+    SetIntUniform(GameState->RenderState.FrameBufferShader.Program, "ignoreLight", GameState->GameMode == Mode_Editor && GameState->EditorState.PlacementMode == Editor_Placement_Tile);
     
     auto TexLoc = glGetUniformLocation(GameState->RenderState.FrameBufferShader.Program, "tex");
     glUniform1i(TexLoc, 0);
