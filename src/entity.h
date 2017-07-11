@@ -245,7 +245,8 @@ struct entity
     {
         struct
         {
-            i32 Level = 1;
+            i32 Level = 0;
+            i32 LastMilestone = 0;
             i32 Experience;
             b32 IsAttacking = false;
             

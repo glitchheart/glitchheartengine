@@ -72,9 +72,23 @@ enum Player_Gain_Type
     Gain_Strength
 };
 
+struct level_milestone
+{
+    i32 MilestonePoint = 0;
+    i32 Health = 0;
+    i32 Stamina = 0;
+    i32 Strength = 0;
+};
+
+struct character_level
+{
+    i32 ExperienceForLevel = 0;
+    level_milestone Milestones[2];
+};
+
 struct character_data
 {
-    i16 Level = 1;
+    i16 Level = 0;
     i16 Health = 0;
     i16 Stamina = 0;
     i16 Strength = 0;
@@ -90,7 +104,7 @@ struct game_state
     b32 RenderGame = true;
     
     character_data CharacterData;
-    b32 LevelGainModeOn = false;
+    b32 StatGainModeOn = false;
     
     i32 SelectedGainIndex = 0;
     
@@ -107,7 +121,8 @@ struct game_state
     Player_State PlayerState = Player_Alive;
     timer DeathScreenTimer;
     
-    i32 LevelExperienceData[10];
+    character_level StatData[10];
+    character_data LastCharacterData;
     
     Game_Mode GameMode;
     main_menu MainMenu;

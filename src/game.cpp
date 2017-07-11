@@ -46,13 +46,22 @@
                      fgets(LineBuffer, 255, File);
                      
                      i32 ExperienceNeeded = 0;
+                     i32 NumberOfMilestones = 0;
+                     i32 Consumed = 0;
                      
-                     sscanf(LineBuffer, "%d", &ExperienceNeeded);
+                     auto& FirstMilestone = GameState->StatData[Index].Milestones[0];
+                     auto& SecondMilestone = GameState->StatData[Index].Milestones[1];
                      
-                     GameState->LevelExperienceData[Index] = ExperienceNeeded;
+                     sscanf(LineBuffer, "%d %d %d %d %d %d %d", &ExperienceNeeded, &FirstMilestone.Health, &FirstMilestone.Stamina, &FirstMilestone.Strength, &SecondMilestone.Health, &SecondMilestone.Stamina, &SecondMilestone.Strength);
+                     
+                     GameState->StatData[Index].ExperienceForLevel = ExperienceNeeded;
+                     
+                     FirstMilestone.MilestonePoint = GameState->StatData[Index].ExperienceForLevel / 3;
+                     SecondMilestone.MilestonePoint = (GameState->StatData[Index].ExperienceForLevel / 3) * 2;
                  }
              }
          }
+         
          fclose(File);
      }
  }
@@ -913,7 +922,7 @@
      
      if(GetKeyDown(Key_F9, GameState))
      {
-         GameState->LevelGainModeOn = !GameState->LevelGainModeOn;
+         GameState->StatGainModeOn = !GameState->StatGainModeOn;
      }
      
      if(GameState->GameMode == Mode_InGame && GetKey(Key_LeftCtrl, GameState) && GetKeyDown(Key_P, GameState))
@@ -1072,7 +1081,7 @@
          case Mode_InGame:
          case Mode_MainMenu:
          {
-             if(!GameState->Paused && !GameState->LevelGainModeOn)
+             if(!GameState->Paused && !GameState->StatGainModeOn)
              {
                  UpdateEntities(GameState, DeltaTime);
                  TickTimers(GameState, DeltaTime);
@@ -1096,7 +1105,7 @@
                      }
                  }
              }
-             else if(GameState->LevelGainModeOn)
+             else if(GameState->StatGainModeOn)
              {
                  b32 ControllerPresent = GameState->InputController.ControllerPresent;
                  
@@ -1120,35 +1129,41 @@
                  {
                      auto& Player = GameState->Entities[0];
                      
+                     auto Milestone = GameState->StatData[Player.Player.Level].Milestones[Player.Player.LastMilestone - 1];
+                     
                      switch((Player_Gain_Type)GameState->SelectedGainIndex)
                      {
                          case Gain_Health:
                          {
-                             Player.Health += 20;
-                             Player.FullHealth += 20;
+                             r32 Ratio = (r32)Player.Health / (r32)Player.FullHealth;
+                             Player.FullHealth += Milestone.Health;
+                             Player.Health += (i32)(Player.FullHealth * Ratio);
                          }
                          break;
                          case Gain_Stamina:
                          {
-                             Player.Player.Stamina += 20;
-                             Player.Player.FullStamina += 20;
+                             r32 Ratio = (r32)Player.Player.Stamina / (r32)Player.Player.FullStamina;
+                             Player.Player.FullStamina += Milestone.Stamina;
+                             Player.Player.Stamina += (i32)(Player.Player.FullStamina * Ratio);
                          }
                          break;
                          case Gain_Strength:
                          {
-                             Player.Weapon.Damage += 2;
+                             Player.Weapon.Damage += Milestone.Strength;
                          }
                          break;
                      }
                      
                      //@Incomplete: Play sound!
                      
+                     GameState->LastCharacterData = GameState->CharacterData;
+                     
                      GameState->CharacterData.Health = Player.FullHealth;
                      GameState->CharacterData.Strength = (i16)Player.Weapon.Damage;
                      GameState->CharacterData.Stamina = Player.Player.FullStamina;
                      GameState->CharacterData.Level++;
                      GameState->SelectedGainIndex = 0;
-                     GameState->LevelGainModeOn = false;
+                     GameState->StatGainModeOn = false;
                  }
              }
              
