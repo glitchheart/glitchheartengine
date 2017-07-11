@@ -39,6 +39,7 @@ struct timer
 {
     i32 TimerHandle = -1;
     r64 TimerMax;
+    char* Name;
 };
 
 struct v2i

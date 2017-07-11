@@ -28,6 +28,43 @@ enum Shader_Type
     Shader_Count
 };
 
+#define SHADERPAIR(name) {Shader_ ## name, "Shader_" "" #name}
+
+
+const static struct
+{
+    Shader_Type Val;
+    char* Str;
+    
+} ShaderConversion [] =
+{
+    SHADERPAIR(Texture),
+    SHADERPAIR(Tile),
+    SHADERPAIR(Rect),
+    SHADERPAIR(TextureRect),
+    SHADERPAIR(StandardFont),
+    SHADERPAIR(Spritesheet),
+    SHADERPAIR(Wireframe),
+    SHADERPAIR(UISprite),
+    SHADERPAIR(ErrorSprite),
+    SHADERPAIR(ErrorUI),
+    SHADERPAIR(AStarPath),
+    SHADERPAIR(FrameBuffer),
+    SHADERPAIR(LightSource)
+};
+
+char* ShaderEnumToStr(Shader_Type Shader)
+{
+    for(i32 Index = 0; Index < Shader_Count; Index++)
+    {
+        if(Shader == ShaderConversion[Index].Val)
+        {
+            return ShaderConversion[Index].Str;
+        }
+    }
+    Assert(false);
+}
+
 const char* ShaderPaths[Shader_Count] =
 {
     "../assets/shaders/textureshader",
