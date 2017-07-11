@@ -1223,14 +1223,14 @@ static void LoadPlayerData(game_state* GameState, i32 Handle = -1, glm::vec2 Pos
         }
         fclose(File);
         
-        if(GameState->CharacterData.Level != 1)
+        if(GameState->CharacterData.Level != 0)
         {
             Entity->Player.Level = GameState->CharacterData.Level;
-            Entity->Health = GameState->CharacterData.Health;
-            Entity->FullHealth = GameState->CharacterData.Health;
-            Entity->Player.Stamina = GameState->CharacterData.Stamina;
-            Entity->Player.FullStamina = GameState->CharacterData.Stamina;
-            Entity->Weapon.Damage = GameState->CharacterData.Strength;
+            Entity->Health = GameState->LastCharacterData.Health;
+            Entity->FullHealth = GameState->LastCharacterData.Health;
+            Entity->Player.Stamina = GameState->LastCharacterData.Stamina;
+            Entity->Player.FullStamina = GameState->LastCharacterData.Stamina;
+            Entity->Weapon.Damage = GameState->LastCharacterData.Strength;
         }
     }
 }
@@ -1450,11 +1450,22 @@ void Hit(game_state* GameState, entity* ByEntity, entity* HitEntity)
 
 void UpdatePlayer(entity* Entity, game_state* GameState, r64 DeltaTime)
 {
-    if(Entity->Player.Experience >= GameState->LevelExperienceData[Entity->Player.Level])
+    if(Entity->Player.LastMilestone == 0 && Entity->Player.Experience >= GameState->StatData[Entity->Player.Level].Milestones[0].MilestonePoint)
     {
-        Entity->Player.Experience -= GameState->LevelExperienceData[Entity->Player.Level];
+        Entity->Player.LastMilestone++;
+        GameState->StatGainModeOn = true;
+    }
+    else if(Entity->Player.LastMilestone == 1 && Entity->Player.Experience >= GameState->StatData[Entity->Player.Level].Milestones[1].MilestonePoint)
+    {
+        Entity->Player.LastMilestone++;
+        GameState->StatGainModeOn = true;
+    }
+    
+    if(Entity->Player.Experience >= GameState->StatData[Entity->Player.Level].ExperienceForLevel)
+    {
+        Entity->Player.Experience -= GameState->StatData[Entity->Player.Level].ExperienceForLevel;
         Entity->Player.Level++;
-        GameState->LevelGainModeOn = true;
+        Entity->Player.LastMilestone = 0;
     }
     
     r32 UsedWalkingSpeed = Entity->Player.WalkingSpeed;
