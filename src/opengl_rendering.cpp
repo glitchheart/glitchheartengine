@@ -863,14 +863,14 @@ static void ReloadAssets(asset_manager *AssetManager, game_state* GameState)
     {
         if(AssetManager->DirtyVertexShaderIndices[i] == 1)
         {
-            printf("Reloading vertex shader type: %d\n", i);
+            printf("Reloading vertex shader type: %s\n", ShaderEnumToStr((Shader_Type)i));
             ReloadVertexShader((Shader_Type)i, &GameState->RenderState);
             AssetManager->DirtyVertexShaderIndices[i] = 0;
         }
         
         if(AssetManager->DirtyFragmentShaderIndices[i] == 1)
         {
-            printf("Reloading fragment shader type: %d\n", i);
+            printf("Reloading fragment shader type: %s\n", ShaderEnumToStr((Shader_Type)i));
             ReloadFragmentShader((Shader_Type)i, &GameState->RenderState);
             AssetManager->DirtyFragmentShaderIndices[i] = 0;
         }
@@ -1613,55 +1613,7 @@ static void RenderEntity(game_state *GameState, entity &Entity, glm::mat4 Projec
                 glm::project(glm::vec3(Entity.Position.x, Entity.Position.y, 0), Model, ProjectionMatrix, glm::vec4(GameState->RenderState.Viewport[0], GameState->RenderState.Viewport[1], GameState->RenderState.Viewport[2], GameState->RenderState.Viewport[3]));
             
             char* State = "State MISSING";
-            
-            switch(Entity.Enemy.AIState)
-            {
-                case AI_Idle:
-                {
-                    State = "Idle";
-                }
-                break;
-                case AI_Wandering:
-                {
-                    State = "Wandering";
-                }
-                break;
-                case AI_Attacking:
-                {
-                    State = "Attacking";
-                }
-                break;
-                case AI_Defending:
-                {
-                    State = "Defending";
-                }
-                break;
-                case AI_Dying:
-                {
-                    State = "Dying";
-                }
-                break;
-                case AI_Charging:
-                {
-                    State = "Charging";
-                }
-                break;
-                case AI_Following:
-                {
-                    State = "Following";
-                }
-                break;
-                case AI_Alerted:
-                {
-                    State = "Alerted";
-                }
-                break;
-                case AI_Hit:
-                {
-                    State = "Hit";
-                }
-                break;
-            }
+            State = AIEnumToStr(Entity.Enemy.AIState);
             
             RenderText(RenderState, RenderState->ButtonFont, glm::vec4(1, 1, 1, 1), State, Projected.x, Projected.y, 1, Alignment_Center);
         }

@@ -22,33 +22,33 @@ enum AI_State
     AI_Count
 };
 
-#define PAIR(name) {AI_ ## name, "AI_" " " #name}
+#define AIPAIR(name) {AI_ ## name, "AI_" "" #name}
 
 const static struct
 {
     AI_State Val;
-    const char* Str;
+    char* Str;
     
-} Conversion [] =
+} AIConversion [] =
 {
-    PAIR(Idle),
-    PAIR(Alerted),
-    PAIR(Following),
-    PAIR(Charging),
-    PAIR(Defending),
-    PAIR(Attacking),
-    PAIR(Hit),
-    PAIR(Dying),
-    PAIR(Wandering)
+    AIPAIR(Idle),
+    AIPAIR(Alerted),
+    AIPAIR(Following),
+    AIPAIR(Charging),
+    AIPAIR(Defending),
+    AIPAIR(Attacking),
+    AIPAIR(Hit),
+    AIPAIR(Dying),
+    AIPAIR(Wandering)
 };
 
-const char* EnumToStr(AI_State State)
+char* AIEnumToStr(AI_State State)
 {
     for(i32 Index = 0; Index < AI_Count; Index++)
     {
-        if(State == Conversion[Index].Val)
+        if(State == AIConversion[Index].Val)
         {
-            return Conversion[Index].Str;
+            return AIConversion[Index].Str;
         }
     }
     Assert(false);

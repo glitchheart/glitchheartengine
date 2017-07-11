@@ -16,7 +16,7 @@ void main()
 	distance -= 0.2;
 	vec4 color = vec4(distance, distance, distance, 1.0);
 
-	color = vec4(0.2, 0.2, 0.2, 1);
+	color = vec4(0.05, 0.05, 0.05, 1);
 
 	vec4 lightingColor = texture(lightingTex, Texcoord);
 	vec4 endColor = texture(tex, Texcoord);

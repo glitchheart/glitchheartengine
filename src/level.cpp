@@ -237,13 +237,11 @@ static b32 LoadLevelFromFile(char* FilePath, level* Level, game_state* GameState
             {
                 glm::vec2 Pos;
                 sscanf(LineBuffer, "wraith %f %f%n", &Pos.x, &Pos.y, &PathIndex);
-                SpawnWraith(GameState, Pos);
             }
             else if(StartsWith(&LineBuffer[0], "barrel"))
             {
                 glm::vec2 Pos;
                 sscanf(LineBuffer, "barrel %f %f", &Pos.x, &Pos.y);
-                SpawnBarrel(GameState, Pos);
             }
             else if(StartsWith(&LineBuffer[0], "bonfire"))
             {
