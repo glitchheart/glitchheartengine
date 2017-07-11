@@ -378,6 +378,7 @@ struct entity
                     timer ChargingTimer;
                     timer AlertedTimer;
                     glm::vec2 LastAttackMoveDirection;
+                    
                 } Minotaur;
                 struct
                 {
@@ -386,6 +387,10 @@ struct entity
                     timer ChargingTimer;
                     timer AlertedTimer;
                 } Wraith;
+                struct
+                {
+                    
+                } Rock;
             };
         } Enemy;
         struct
