@@ -665,7 +665,6 @@ AI_FUNC(MinotaurCharging)
     else if(TimerDone(GameState, Minotaur.ChargingTimer) && DistanceToPlayer <= Enemy.AttackDistance)
     {
         Enemy.AIState = AI_Attacking;
-        Minotaur.LastAttackMoveDirection = glm::normalize(Player.Position - Entity->Position);
         PlaySoundEffect(GameState, &GameState->SoundManager.MinotaurGrunt01);
         PlayAnimation(Entity, "minotaur_attack", GameState);
     }
@@ -726,6 +725,10 @@ AI_FUNC(MinotaurAttacking)
            && strcmp(Entity->CurrentAnimation->Name, "minotaur_idle") != 0)
         {
             StartTimer(GameState, Entity->AttackMoveTimer);
+            if(Entity->AttackCount == 0)
+            {
+                Minotaur.LastAttackMoveDirection = glm::normalize(Player.Position - Entity->Position);
+            }
             
             if(Entity->AnimationInfo.FrameIndex >= Entity->AttackLowFrameIndex && Entity->AnimationInfo.FrameIndex <= Entity->AttackHighFrameIndex)
             {
@@ -1228,8 +1231,6 @@ static void LoadPlayerData(game_state* GameState, i32 Handle = -1, glm::vec2 Pos
             Entity->Player.Stamina = GameState->CharacterData.Stamina;
             Entity->Player.FullStamina = GameState->CharacterData.Stamina;
             Entity->Weapon.Damage = GameState->CharacterData.Strength;
-            
-            printf("Health is %d\n", Entity->Health);
         }
     }
 }
@@ -1439,8 +1440,6 @@ void Hit(game_state* GameState, entity* ByEntity, entity* HitEntity)
             
             if(HitEntity->Type == Entity_Player)
             {
-                if(ByEntity->Enemy.EnemyType == Enemy_Minotaur)
-                    printf("By: state %d attacking %d\n", ByEntity->Enemy.AIState, ByEntity->Enemy.Minotaur.IsAttacking);
                 PlayAnimation(HitEntity, "swordsman_hit", GameState);
                 DecreaseStamina(HitEntity,GameState,HitEntity->Player.HitStaminaCost);
                 StartFade(GameState->GameCamera, Fading_OutIn, 4.0f, glm::vec3(1, 0, 0), 0.0f, 0.4f);
