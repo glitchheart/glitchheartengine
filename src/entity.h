@@ -176,6 +176,25 @@ struct light_source
     light_source(){}
 };
 
+struct static_entity
+{
+};
+
+struct object_entity
+{
+    glm::vec2 Position;
+    glm::vec2 Velocity;
+    i32 RenderEntityHandle;
+    union
+    {
+        struct
+        {
+        } Rock;
+    }
+};
+
+//@Incomplete: We will have to create three arrays. One with static entities, one with objects and one with living entities
+
 struct entity
 {
     Entity_Type Type;
