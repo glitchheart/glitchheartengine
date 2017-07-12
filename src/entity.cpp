@@ -903,7 +903,6 @@ static void LoadBonfireData(game_state* GameState, i32 Handle = -1, glm::vec2 Po
     File = fopen("../assets/entities/bonfire.dat", "r");
     
     entity* Entity = Handle != -1 ? &GameState->Entities[Handle] : &GameState->Entities[GameState->EntityCount];
-    
     Entity->Type = Entity_Bonfire;
     
     if(Handle == -1)
@@ -1131,7 +1130,7 @@ static void LoadPlayerData(game_state* GameState, i32 Handle = -1, glm::vec2 Pos
         }
         else
         {
-            Entity->Position = Position;
+            LoadBonfireData(GameState,-1,Position);
             GameState->CharacterData.CurrentCheckpoint = Position;
             GameState->CharacterData.HasCheckpoint = true;
         }
@@ -1249,7 +1248,10 @@ static void LoadPlayerData(game_state* GameState, i32 Handle = -1, glm::vec2 Pos
         if(GameState->CharacterData.Level != 0)
         {
             Entity->Player.Level = GameState->CharacterData.Level;
-            Entity->Position = GameState->CharacterData.CurrentCheckpoint;
+            if(GameState->CharacterData.HasCheckpoint)
+            {
+                Entity->Position = GameState->CharacterData.CurrentCheckpoint;
+            }
             Entity->Health = GameState->LastCharacterData.Health;
             Entity->FullHealth = GameState->LastCharacterData.Health;
             Entity->Player.Stamina = GameState->LastCharacterData.Stamina;

@@ -928,8 +928,11 @@
      if(GetKeyDown(Key_F10, GameState))
      {
          auto CheckpointPos = glm::vec2(GameState->Entities[0].Position.x,GameState->Entities[0].Position.y - 0.5f);
-         GameState->CharacterData.CurrentCheckpoint = CheckpointPos;
+         
+         
+         GameState->CharacterData.HasCheckpoint = true;
          LoadBonfireData(GameState,-1,CheckpointPos);
+         GameState->CharacterData.CurrentCheckpoint = CheckpointPos;
      }
      
      if(GameState->GameMode == Mode_InGame && GetKey(Key_LeftCtrl, GameState) && GetKeyDown(Key_P, GameState))

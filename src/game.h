@@ -93,7 +93,7 @@ struct character_data
     i16 Stamina = 0;
     i16 Strength = 0;
     glm::vec2 CurrentCheckpoint;
-    b32 HasCheckpoint = false;
+    b32 HasCheckpoint;
 };
 
 #define NUM_TIMERS 128
