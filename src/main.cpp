@@ -147,7 +147,7 @@ int main(void)
         
         PollEvents();
         
-        if(GameState.InputController.ControllerPresent)
+        if(ControllerPresent(&GameState))
         {
             ControllerKeys(&GameState,GLFW_JOYSTICK_1);
         }

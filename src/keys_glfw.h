@@ -96,6 +96,13 @@ std::map<u32, Controller_Code> ControllerMappings =
     { GLFW_JOYSTICK_16, Joystick_16 },
 };
 
+static b32 ControllerPresent(game_state* GameState)
+{
+    int Present = glfwJoystickPresent(GLFW_JOYSTICK_1); 
+    GameState->InputController.ControllerPresent = Present;
+    return Present;
+}
+
 static void ControllerKeyCallback(game_state* GameState, int Key, int Action)
 {
     if(GameState)
