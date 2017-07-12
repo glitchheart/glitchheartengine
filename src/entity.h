@@ -190,7 +190,7 @@ struct object_entity
         struct
         {
         } Rock;
-    }
+    };
 };
 
 //@Incomplete: We will have to create three arrays. One with static entities, one with objects and one with living entities
