@@ -238,9 +238,9 @@ struct entity
     timer HitAttackCountIdResetTimer;
     
     b32 Invincible = false;
-    i16 FullHealth;
-    i16 Health = -1;
-    i16 HealthLost;
+    i32 FullHealth;
+    i32 Health = -1;
+    i32 HealthLost;
     timer HealthDecreaseTimer;
     
     i32 AttackCount;
@@ -269,13 +269,13 @@ struct entity
             i32 Experience;
             b32 IsAttacking = false;
             
-            i16 FullStamina;
-            i16 Stamina;
-            i16 StaminaLost;
-            i16 HitStaminaCost;
-            i16 RollStaminaCost;
-            i16 AttackStaminaCost;
-            i16 MinDiffStamina;
+            i32 FullStamina;
+            i32 Stamina;
+            i32 StaminaLost;
+            i32 HitStaminaCost;
+            i32 RollStaminaCost;
+            i32 AttackStaminaCost;
+            i32 MinDiffStamina;
             
             player_inventory Inventory;
             

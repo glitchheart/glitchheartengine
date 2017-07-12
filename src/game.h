@@ -88,10 +88,10 @@ struct character_level
 
 struct character_data
 {
-    i16 Level = 0;
-    i16 Health = 0;
-    i16 Stamina = 0;
-    i16 Strength = 0;
+    i32 Level = 0;
+    i32 Health = 0;
+    i32 Stamina = 0;
+    i32 Strength = 0;
     glm::vec2 CurrentCheckpoint;
     b32 HasCheckpoint;
 };

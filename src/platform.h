@@ -229,4 +229,11 @@ void FindFilesWithExtensions(const char* DirectoryPath, const char* Extension, d
     }
 }
 
+void DebugPrintVec2(glm::vec2 Vec2, const char* Msg = "")
+{
+    printf(Concat(Msg, " (%f,%f)\n"),Vec2.x,Vec2.y);
+}
+
+
+
 #endif

@@ -97,7 +97,15 @@ static void ReloadCurrentLevel(game_state* GameState)
     free(GameState->CurrentLevel.Tilemap.Data[0]);
     free(GameState->CurrentLevel.Tilemap.Data[1]);
     
-    memset(GameState->Entities, 0, sizeof(GameState->EntityCount));
+    memset(GameState->Entities, 0, sizeof(entity) * GameState->EntityCount);
+    for(i32 Index = 0; Index < GameState->EntityCount; Index++)
+    {
+        if(GameState->Entities[Index].LightSourceHandle == 0)
+        {
+            GameState->Entities[Index].LightSourceHandle = -1;
+        }
+    }
+    
     memset(GameState->LightSources, 0, sizeof(light_source) * GameState->LightSourceCount);
     
     for(i32 Index = 0; Index < GameState->RenderState.RenderEntityCount; Index++)

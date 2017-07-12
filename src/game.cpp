@@ -56,8 +56,8 @@
                      
                      GameState->StatData[Index].ExperienceForLevel = ExperienceNeeded;
                      
-                     FirstMilestone.MilestonePoint = GameState->StatData[Index].ExperienceForLevel / 3;
-                     SecondMilestone.MilestonePoint = (GameState->StatData[Index].ExperienceForLevel / 3) * 2;
+                     FirstMilestone.MilestonePoint = (i16)GameState->StatData[Index].ExperienceForLevel / 3;
+                     SecondMilestone.MilestonePoint = (i16)(GameState->StatData[Index].ExperienceForLevel / 3) * 2;
                  }
              }
          }
