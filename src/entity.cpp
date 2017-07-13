@@ -1131,6 +1131,7 @@ static void LoadPlayerData(game_state* GameState, i32 Handle = -1, glm::vec2 Pos
         }
         else
         {
+            LoadBonfireData(GameState, -1, Position);
             Entity->Position = Position;
             GameState->CharacterData.CurrentCheckpoint = Position;
             GameState->CharacterData.HasCheckpoint = true;
@@ -1248,9 +1249,12 @@ static void LoadPlayerData(game_state* GameState, i32 Handle = -1, glm::vec2 Pos
         
         if(GameState->CharacterData.Level != 0)
         {
-            printf("Level\n");
+            if(GameState->CharacterData.HasCheckpoint)
+            {
+                Entity->Position = GameState->CharacterData.CurrentCheckpoint;
+            }
+            
             Entity->Player.Level = GameState->CharacterData.Level;
-            Entity->Position = GameState->CharacterData.CurrentCheckpoint;
             Entity->Health = GameState->LastCharacterData.Health;
             Entity->FullHealth = GameState->LastCharacterData.Health;
             Entity->Player.Stamina = GameState->LastCharacterData.Stamina;
