@@ -2363,15 +2363,16 @@ static void Render(game_state* GameState)
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glClearColor(0, 0, 0, 1.0f);
     
-    // Render scene
-    if(GameState->RenderGame)
+    if(GameState->GameMode == Mode_InGame || GameState->GameMode == Mode_Editor && GameState->EditorState.Mode == Editor_Level)
     {
-        RenderGame(GameState);
-    }
-    
-    if(GameState->GameMode == Mode_InGame)
+        // Render scene
+        if(GameState->RenderGame)
+        {
+            RenderGame(GameState);
+        }
+        
         RenderLightSources(GameState);
-    
+    }
     // Second pass
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glClearColor(0, 0, 0, 1.0f);

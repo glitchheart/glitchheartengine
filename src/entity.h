@@ -397,7 +397,6 @@ struct entity
                     timer AttackCooldownTimer;
                     timer ChargingTimer;
                     timer AlertedTimer;
-                    
                 } Minotaur;
                 struct
                 {

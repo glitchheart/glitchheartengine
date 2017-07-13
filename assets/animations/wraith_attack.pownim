@@ -2,7 +2,7 @@ name wraith_attack
 type sprite
 framecount 10
 framesize 80 80
-center 0.000000 0.000000
+center 0.5 0.000000
 loop 0
 timeperframe 0.100000
 frames

@@ -500,7 +500,9 @@
                                      }
                                      break;
                                      case Placement_Entity_Wraith:
-                                     {}
+                                     {
+                                         LoadWraithData(GameState, -1, glm::vec2(Pos.x, Pos.y - 0.5));
+                                     }
                                      break;
                                      case Placement_Entity_Minotaur:
                                      {
