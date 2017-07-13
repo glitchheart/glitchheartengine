@@ -811,6 +811,198 @@ AI_FUNC(MinotaurWandering)
 }
 
 
+AI_FUNC(WraithIdle)
+{
+    PlayAnimation(Entity, "wraith_idle", GameState);
+    entity& Player = GameState->Entities[GameState->PlayerIndex];
+    auto& Enemy = Entity->Enemy;
+    r64 DistanceToPlayer = glm::distance(Entity->Position, Player.Position);
+    
+    if(DistanceToPlayer <= Entity->Enemy.MaxAlertDistance)
+    {
+        Enemy.AIState = AI_Alerted;
+        StartTimer(GameState,Entity->Enemy.Skeleton.AlertedTimer);
+    }
+    else
+    {
+        Enemy.AIState = AI_Wandering;
+        PlayAnimation(Entity, "wraith_fly", GameState);
+    }
+}
+
+AI_FUNC(WraithAlerted)
+{
+    entity& Player = GameState->Entities[GameState->PlayerIndex];
+    auto& Enemy = Entity->Enemy;
+    r64 DistanceToPlayer = glm::distance(Entity->Position, Player.Position);
+    if(TimerDone(GameState,Entity->Enemy.Wraith.AlertedTimer) && DistanceToPlayer <= Entity->Enemy.MaxAlertDistance)
+    {
+        Enemy.AIState = AI_Following;
+        PlayAnimation(Entity, "wraith_fly", GameState);
+    }
+}
+
+AI_FUNC(WraithFollowing)
+{
+    entity& Player = GameState->Entities[GameState->PlayerIndex];
+    auto& Enemy = Entity->Enemy;
+    auto& Wraith = Entity->Enemy.Wraith;
+    
+    r64 DistanceToPlayer = glm::distance(Entity->Position, Player.Position);
+    
+    if(!Player.Dead && Player.Active)
+    {
+        if(DistanceToPlayer > Entity->Enemy.MaxFollowDistance)
+        {
+            PlayAnimation(Entity, "wraith_fly", GameState);
+            Enemy.AIState = AI_Wandering;
+        }
+        else if(DistanceToPlayer < Entity->Enemy.MinDistanceToPlayer)
+        {
+            PlayAnimation(Entity, "wraith_idle", GameState);
+            StartTimer(GameState, Wraith.ChargingTimer);
+            Enemy.AIState = AI_Charging;
+            render_entity* RenderEntity = &GameState->RenderState.RenderEntities[Entity->RenderEntityHandle];
+        }
+        else if(DistanceToPlayer <= Entity->Enemy.SlowdownDistance)
+        {
+            PlayAnimation(Entity, "wraith_fly", GameState);
+            glm::vec2 Direction = glm::normalize(Player.Position - Entity->Position);
+            Entity->Velocity = glm::vec2(Direction.x * Entity->Enemy.CloseToPlayerSpeed, Direction.y * Entity->Enemy.CloseToPlayerSpeed);
+        }
+        else
+        {
+            PlayAnimation(Entity, "wraith_fly", GameState);
+            FindPath(GameState, Entity, Player, &Entity->Enemy.AStarPath);
+            FollowPath(GameState, Entity, Player, DeltaTime, &Entity->Enemy.AStarPath);
+        }
+    }
+    else
+    {
+        PlayAnimation(Entity, "wraith_idle", GameState);
+    }
+}
+
+AI_FUNC(WraithCharging)
+{
+    entity& Player = GameState->Entities[GameState->PlayerIndex];
+    auto& Enemy = Entity->Enemy;
+    auto& Wraith = Entity->Enemy.Wraith;
+    
+    r64 DistanceToPlayer = glm::distance(Entity->Position, Player.Position);
+    
+    if(DistanceToPlayer >= Enemy.MaxAlertDistance)
+    {
+        Enemy.AIState = AI_Following;
+    }
+    else if(TimerDone(GameState, Wraith.ChargingTimer) && DistanceToPlayer <= Enemy.AttackDistance)
+    {
+        Enemy.AIState = AI_Attacking;
+        Enemy.LastAttackMoveDirection = glm::normalize(Player.Position - Entity->Position);
+        PlayAnimation(Entity, "wraith_attack", GameState);
+    }
+    else
+    {
+        PlayAnimation(Entity, "wraith_fly", GameState);
+        glm::vec2 Direction = glm::normalize(Player.Position - Entity->Position);
+        Entity->Velocity = glm::vec2((Direction.x + 0.1f) * Entity->Enemy.CloseToPlayerSpeed, (Direction.y + 0.1f) * Entity->Enemy.CloseToPlayerSpeed);
+    }
+}
+
+AI_FUNC(WraithDefending)
+{}
+
+AI_FUNC(WraithAttacking)
+{
+    entity& Player = GameState->Entities[GameState->PlayerIndex];
+    auto& Enemy = Entity->Enemy;
+    auto& Wraith = Entity->Enemy.Wraith;
+    r64 DistanceToPlayer = glm::distance(Entity->Position, Player.Position);
+    
+    if(Player.Dead)
+    {
+        Wraith.IsAttacking = false;
+        Enemy.AIState = AI_Idle;
+    }
+    else
+    {
+        if(!TimerDone(GameState, Entity->AttackMoveTimer))
+        {
+            Entity->Velocity = glm::vec2(Enemy.LastAttackMoveDirection.x * Entity->AttackMoveSpeed, Enemy.LastAttackMoveDirection.y * Entity->AttackMoveSpeed);
+        }
+        
+        if(Entity->AnimationInfo.FrameIndex >= Entity->AttackLowFrameIndex - 2 &&Entity->AnimationInfo.FrameIndex < Entity->AttackHighFrameIndex && !Wraith.IsAttacking && strcmp(Entity->CurrentAnimation->Name, "wraith_idle") != 0)
+        {
+            StartTimer(GameState, Entity->AttackMoveTimer);
+            
+            if(Entity->AnimationInfo.FrameIndex >= Entity->AttackLowFrameIndex && Entity->AnimationInfo.FrameIndex <= Entity->AttackHighFrameIndex)
+            {
+                Wraith.IsAttacking = true;
+                
+                Entity->AttackCount++;
+                if(Entity->AttackCount == 3)
+                    Entity->AttackCount = 0;
+                
+                StartTimer(GameState, Wraith.AttackCooldownTimer);
+            }
+        }
+        else if(!Entity->AnimationInfo.Playing)
+        {
+            PlayAnimation(Entity, "wraith_idle", GameState);
+        }
+        
+        if(Wraith.IsAttacking && TimerDone(GameState, Wraith.AttackCooldownTimer))
+        {
+            if(DistanceToPlayer > Entity->Enemy.MinDistanceToPlayer)
+            {
+                Wraith.IsAttacking = false;
+                Enemy.AIState = AI_Following;
+            }
+            else if(DistanceToPlayer > Entity->Enemy.MaxAlertDistance)
+            {
+                Wraith.IsAttacking = false;
+                Enemy.AIState = AI_Wandering;
+            }
+            else
+            {
+                Wraith.IsAttacking = false;
+                Entity->Enemy.AIState = AI_Charging;
+                StartTimer(GameState, Wraith.ChargingTimer);
+            }
+        }
+    }
+}
+
+AI_FUNC(WraithHit)
+{
+    auto& Enemy = Entity->Enemy;
+    if(!TimerDone(GameState, Entity->RecoilTimer))
+    {
+        Entity->Velocity = glm::vec2(Entity->HitRecoilDirection.x * Entity->HitRecoilSpeed, Entity->HitRecoilDirection.y * Entity->HitRecoilSpeed);
+    }
+    
+    if(!Entity->AnimationInfo.Playing)
+    {
+        Enemy.AIState = AI_Idle;
+        PlayAnimation(Entity, "wraith_idle", GameState);
+    }
+}
+
+AI_FUNC(WraithDying)
+{
+    Entity->IsKinematic = true;
+    if(!Entity->AnimationInfo.Playing)
+    {
+        Entity->Dead = true;
+        Entity->IsKinematic = true;
+    }
+}
+
+AI_FUNC(WraithWandering)
+{
+    EnemyWander(GameState,Entity);
+}
+
 AI_FUNC(BlobIdle)
 {
     auto Player = GameState->Entities[0];
@@ -1046,6 +1238,69 @@ static void LoadMinotaurData(game_state* GameState, i32 Handle = -1, glm::vec2 P
     if(Entity)
     {
         AI_FUNCS(Minotaur);
+    }
+}
+
+static void LoadWraithData(game_state* GameState, i32 Handle = -1, glm::vec2 Position = glm::vec2())
+{
+    FILE* File;
+    File = fopen("../assets/entities/wraith.dat", "r");
+    
+    entity* Entity = Handle != -1 ? &GameState->Entities[Handle] : &GameState->Entities[GameState->EntityCount];
+    
+    Entity->Enemy.Skeleton = {};
+    Entity->AnimationInfo.FreezeFrame = false;
+    Entity->Dead = false;
+    
+    if(Handle == -1)
+    {
+        Entity->Position = Position;
+    }
+    
+    if(File)
+    {
+        LoadEntityData(File,Entity, GameState, Handle != -1);
+        LoadEnemyData(File,Entity, GameState);
+        
+        if(Handle == -1)
+            Entity->Position = glm::vec2(Position.x, Position.y);
+        
+        char LineBuffer[255];
+        
+        while(fgets(LineBuffer, 255, File))
+        {
+            if(StartsWith(&LineBuffer[0], "#"))
+            {
+                break;
+            }
+            else if(StartsWith(&LineBuffer[0],"attackcooldowntimer"))
+            {
+                Entity->Enemy.Skeleton.AttackCooldownTimer.TimerHandle = -1;
+                
+                sscanf(LineBuffer,"attackcooldowntimer %lf",&Entity->Enemy.Wraith.AttackCooldownTimer.TimerMax);
+                Entity->Enemy.Wraith.AttackCooldownTimer.Name = "Attack Cooldown";
+            }
+            else if(StartsWith(&LineBuffer[0],"chargingtimer"))
+            {
+                Entity->Enemy.Wraith.ChargingTimer.TimerHandle = -1;
+                
+                sscanf(LineBuffer,"chargingtimer %lf",&Entity->Enemy.Wraith.ChargingTimer.TimerMax);
+                Entity->Enemy.Wraith.ChargingTimer.Name = "Charging";
+            }
+            else if(StartsWith(&LineBuffer[0],"alertedtimer"))
+            {
+                Entity->Enemy.Skeleton.AlertedTimer.TimerHandle = -1;
+                
+                sscanf(LineBuffer,"alertedtimer %lf",&Entity->Enemy.Wraith.AlertedTimer.TimerMax);
+                Entity->Enemy.Wraith.AlertedTimer.Name = "Alerted";
+            }
+        }
+        fclose(File);
+    }
+    
+    if(Entity)
+    {
+        AI_FUNCS(Wraith);
     }
 }
 
@@ -2199,6 +2454,88 @@ void UpdateMinotaur(entity* Entity, game_state* GameState, r64 DeltaTime)
     }
 }
 
+void UpdateWraith(entity* Entity, game_state* GameState, r64 DeltaTime)
+{
+    auto& Enemy = Entity->Enemy;
+    auto& Wraith = Entity->Enemy.Wraith;
+    
+    auto& Player = GameState->Entities[0];
+    Entity->RenderButtonHint = Entity->Dead && glm::distance(Player.Position, Entity->Position) < 1.5f;
+    
+    if(Entity->Active && !Entity->Dead)
+    {
+        entity& Player = GameState->Entities[GameState->PlayerIndex];
+        
+        if(Entity->Hit)
+        {
+            if(Entity->Health <= 0)
+            {
+                Wraith.IsAttacking = false;
+                PlayAnimation(Entity, "wraith_death", GameState);
+                Entity->AnimationInfo.FreezeFrame = true;
+                Enemy.AIState = AI_Dying;
+            }
+            else if(strcmp(Entity->CurrentAnimation->Name, "wraith_attack") != 0 && Enemy.AIState != AI_Dying)
+            {
+                //PlayAnimation(Entity, "skeleton_hit", GameState);
+                Enemy.AIState = AI_Hit;
+                Entity->HitRecoilDirection = glm::normalize(Entity->Position - Player.Position);
+                StartTimer(GameState, Entity->RecoilTimer);
+            }
+        }
+        
+        Entity->Velocity = glm::vec2(0,0); //@Cleanup: This is not good. Do this in AI
+        
+        UpdateAI(Entity,GameState,DeltaTime);
+        
+        Entity->Position.x += Entity->Velocity.x * (r32)DeltaTime;
+        Entity->Position.y += Entity->Velocity.y * (r32)DeltaTime;
+        
+        glm::vec2 Direction = glm::normalize(Player.Position - Entity->Position);
+        
+        if(Entity->Enemy.AIState != AI_Attacking && !Entity->Enemy.Wraith.IsAttacking)
+        {
+            glm::vec2 Direction = glm::normalize(Player.Position - Entity->Position);
+            
+            if(Abs(Direction.x) < 0.6f)
+            {
+                if(Direction.y > 0)
+                {
+                    Entity->LookDirection = Up;
+                }
+                else
+                {
+                    Entity->LookDirection = Down;
+                }
+            }
+            else
+            {
+                if(Direction.x < 0)
+                    Entity->LookDirection = Left;
+                else
+                    Entity->LookDirection = Right;
+            }
+            
+            Entity->IsFlipped = Direction.x < 0;
+        }
+        else if(!TimerDone(GameState, Entity->AttackMoveTimer))
+        {
+            Entity->IsFlipped = Entity->Velocity.x < 0;
+        }
+        
+        render_entity* RenderEntity = &GameState->RenderState.RenderEntities[Entity->RenderEntityHandle];
+        
+        Entity->Velocity = glm::vec2(0,0);
+        
+        Entity->Hit = false;
+        
+        collision_info CollisionInfo;
+        CheckCollision(GameState, Entity, &CollisionInfo);
+        
+        Entity->Enemy.Healthbar->CurrentFrame = 4 - Entity->Health;
+    }
+}
+
 void UpdateBarrel(entity* Entity, game_state* GameState, r64 DeltaTime)
 {
     if(Entity->Active)
@@ -2367,6 +2704,11 @@ void UpdateEntities(game_state* GameState, r64 DeltaTime)
                             {
                                 UpdateWeapon(Entity, GameState, DeltaTime);
                             }
+                        }
+                        break;
+                        case Enemy_Wraith:
+                        {
+                            UpdateWraith(Entity, GameState, DeltaTime);
                         }
                         break;
                         case Enemy_Blob:
