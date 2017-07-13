@@ -49,7 +49,6 @@
                      
                      i32 ExperienceNeeded = 0;
                      i32 NumberOfMilestones = 0;
-                     i32 Consumed = 0;
                      
                      auto& FirstMilestone = GameState->StatData[Index].Milestones[0];
                      auto& SecondMilestone = GameState->StatData[Index].Milestones[1];
@@ -1152,14 +1151,14 @@
                          {
                              r32 Ratio = (r32)Player.Health / (r32)Player.FullHealth;
                              Player.FullHealth += Milestone.Health;
-                             Player.Health += (i32)(Player.FullHealth * Ratio);
+                             Player.Health = (i32)(Player.FullHealth * Ratio);
                          }
                          break;
                          case Gain_Stamina:
                          {
                              r32 Ratio = (r32)Player.Player.Stamina / (r32)Player.Player.FullStamina;
                              Player.Player.FullStamina += Milestone.Stamina;
-                             Player.Player.Stamina += (i32)(Player.Player.FullStamina * Ratio);
+                             Player.Player.Stamina = (i32)(Player.Player.FullStamina * Ratio);
                          }
                          break;
                          case Gain_Strength:
