@@ -85,7 +85,6 @@ static void ReloadCurrentLevel(game_state* GameState)
     
     //@Incomplete still needs to respawn the player
     GameState->IsInitialized = false;
-    GameState->ShouldReload = true;
     GameState->PlayerState = Player_Alive;
     
     for(u32 X = 0; X < GameState->CurrentLevel.Tilemap.Width; X++)

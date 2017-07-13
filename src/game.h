@@ -96,7 +96,7 @@ struct character_data
     b32 HasCheckpoint;
 };
 
-#define NUM_TIMERS 128
+#define NUM_TIMERS 1024
 
 struct game_state
 {
@@ -104,6 +104,7 @@ struct game_state
     b32 Paused;
     b32 ShouldReload;
     b32 RenderGame = true;
+    b32 RenderLight = true;
     
     character_data CharacterData;
     b32 StatGainModeOn = false;
@@ -147,7 +148,7 @@ struct game_state
     health_bar HealthBar;
     
     u32 TimerCount;
-    r64 Timers[NUM_TIMERS];
+    r32 Timers[NUM_TIMERS];
     
     light_source LightSources[32];
     u32 LightSourceCount;
@@ -169,23 +170,22 @@ UPDATE(UpdateStub)
 
 void StartTimer(game_state* GameState, timer& Timer)
 {
-    Timer.TimerHandle = GameState->TimerCount;
-    GameState->Timers[Timer.TimerHandle] = Timer.TimerMax;
+    if(Timer.TimerHandle == -1)
+    {
+        Timer.TimerHandle = GameState->TimerCount;
+        GameState->TimerCount++;
+        Assert(GameState->TimerCount < NUM_TIMERS);
+    }
     
-    GameState->TimerCount++;
-    if(GameState->TimerCount == NUM_TIMERS)
-        GameState->TimerCount = 0;
+    GameState->Timers[Timer.TimerHandle] = Timer.TimerMax;
 }
 
 b32 TimerDone(game_state* GameState, timer& Timer)
 {
-    if(Timer.TimerHandle != -1 && 
-       GameState->Timers[Timer.TimerHandle] <= 0)
-    {
-        Timer.TimerHandle = -1;
-    }
+    if(Timer.TimerHandle == -1)
+        return true;
     
-    return Timer.TimerHandle == -1;
+    return GameState->Timers[Timer.TimerHandle] <= 0;;
 }
 
 void StartFade(camera& Camera, Fading_Mode Mode, r32 FadingSpeed, glm::vec3 FadingTint, r32 StartAlpha = 0, r32 EndAlpha = 0)
@@ -214,6 +214,5 @@ void StartFade(camera& Camera, Fading_Mode Mode, r32 FadingSpeed, glm::vec3 Fadi
         break;
     }
 }
-
 
 #endif

@@ -903,6 +903,7 @@ static void LoadBonfireData(game_state* GameState, i32 Handle = -1, glm::vec2 Po
     File = fopen("../assets/entities/bonfire.dat", "r");
     
     entity* Entity = Handle != -1 ? &GameState->Entities[Handle] : &GameState->Entities[GameState->EntityCount];
+    
     Entity->Type = Entity_Bonfire;
     
     if(Handle == -1)
@@ -1130,7 +1131,7 @@ static void LoadPlayerData(game_state* GameState, i32 Handle = -1, glm::vec2 Pos
         }
         else
         {
-            LoadBonfireData(GameState,-1,Position);
+            Entity->Position = Position;
             GameState->CharacterData.CurrentCheckpoint = Position;
             GameState->CharacterData.HasCheckpoint = true;
         }
@@ -1247,11 +1248,9 @@ static void LoadPlayerData(game_state* GameState, i32 Handle = -1, glm::vec2 Pos
         
         if(GameState->CharacterData.Level != 0)
         {
+            printf("Level\n");
             Entity->Player.Level = GameState->CharacterData.Level;
-            if(GameState->CharacterData.HasCheckpoint)
-            {
-                Entity->Position = GameState->CharacterData.CurrentCheckpoint;
-            }
+            Entity->Position = GameState->CharacterData.CurrentCheckpoint;
             Entity->Health = GameState->LastCharacterData.Health;
             Entity->FullHealth = GameState->LastCharacterData.Health;
             Entity->Player.Stamina = GameState->LastCharacterData.Stamina;
@@ -1377,7 +1376,7 @@ void UpdatePlayer(entity* Entity, game_state* GameState, r64 DeltaTime)
                 StartTimer(GameState, Entity->Player.StaminaGainTimer);
             }
             
-            Entity->Player.Stamina = Min(Entity->Player.Stamina,Entity->Player.FullStamina);
+            Entity->Player.Stamina = Min(Entity->Player.Stamina, Entity->Player.FullStamina);
         }
     }
     
@@ -1390,6 +1389,7 @@ void UpdatePlayer(entity* Entity, game_state* GameState, r64 DeltaTime)
                                   GameState->Camera.ViewMatrix,
                                   GameState->Camera.ProjectionMatrix,
                                   glm::vec4(0, 0, GameState->RenderState.Viewport[2], GameState->RenderState.Viewport[3]));
+    
     auto Pos = glm::vec2(TempPos.x, TempPos.y);
     
     auto DirectionToMouse = glm::normalize(glm::vec2(Pos.x - Entity->Position.x, Pos.y - Entity->Position.y));

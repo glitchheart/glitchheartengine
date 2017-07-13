@@ -19,7 +19,9 @@
          if(GameState->Timers[Index] > 0)
              GameState->Timers[Index] -= DeltaTime;
          else
+         {
              GameState->Timers[Index] = 0;
+         }
      }
  }
  
@@ -800,6 +802,7 @@
                  GameState->GameMode = Mode_Editor;
                  GameState->Paused = false;
                  GameState->EditorCamera.Center = GameState->GameCamera.Center;
+                 printf("In game\n");
              }
              else
              {
@@ -835,7 +838,7 @@
      
      if(!GameState->IsInitialized)
      {
-         if(!GameState->ShouldReload)
+         if(GameState->ShouldReload)
          {
              LoadGameDataFile(GameState);
              srand((u32)time(NULL));
@@ -850,11 +853,12 @@
              AmbientLight.Ambient.Intensity = 0.5f;
              GameState->LightSources[GameState->LightSourceCount++] = AmbientLight;
              
-             GameState->EditorCamera.Zoom = GameState->InitialZoom; // @Cleanup: We might not want to reset these values every time we load a level
+             GameState->EditorCamera.Zoom = GameState->InitialZoom; 
              GameState->EditorCamera.ViewportWidth = GameState->RenderState.WindowWidth;
              GameState->EditorCamera.ViewportHeight = GameState->RenderState.WindowHeight;
              
              GameState->GameMode = Mode_InGame;
+             GameState->ShouldReload = false;
          }
          
          LoadLevelFromFile(GameState->LevelPath, &GameState->CurrentLevel, GameState);
@@ -872,9 +876,8 @@
          // @Incomplete: This is not the right value, it is only set so high to remove smooth following as of now, since it needs to be done a little differently
          
          GameState->GameCamera.Center = GameState->Entities[0].Position; // Set center to player's position!
-         
+         GameState->GameCamera.CenterTarget = GameState->Entities[0].Position;
          GameState->IsInitialized = true;
-         GameState->ShouldReload = false;
      }
      
 #ifdef DEBUG
@@ -928,11 +931,8 @@
      if(GetKeyDown(Key_F10, GameState))
      {
          auto CheckpointPos = glm::vec2(GameState->Entities[0].Position.x,GameState->Entities[0].Position.y - 0.5f);
-         
-         
-         GameState->CharacterData.HasCheckpoint = true;
-         LoadBonfireData(GameState,-1,CheckpointPos);
          GameState->CharacterData.CurrentCheckpoint = CheckpointPos;
+         LoadBonfireData(GameState,-1,CheckpointPos);
      }
      
      if(GameState->GameMode == Mode_InGame && GetKey(Key_LeftCtrl, GameState) && GetKeyDown(Key_P, GameState))
@@ -1086,6 +1086,11 @@
          GameState->GameCamera.Zoom = Min(Max(Zoom, GameState->GodModeMinZoom), GameState->GodModeMaxZoom);
      }
      
+     if(GetKeyDown(Key_L, GameState) && GetKey(Key_LeftCtrl, GameState))
+     {
+         GameState->RenderLight = !GameState->RenderLight;
+     }
+     
      switch(GameState->GameMode)
      {
          case Mode_InGame:
@@ -1171,7 +1176,6 @@
                      GameState->CharacterData.Health = Player.FullHealth;
                      GameState->CharacterData.Strength = (i16)Player.Weapon.Damage;
                      GameState->CharacterData.Stamina = Player.Player.FullStamina;
-                     GameState->CharacterData.Level++;
                      GameState->SelectedGainIndex = 0;
                      GameState->StatGainModeOn = false;
                  }
