@@ -16,7 +16,7 @@ weaponscale 2 2
 attackmovetimer 0.07
 attackmovespeed 10
 attacklowframeindex 6
-attackhighframeindex 9
+attackhighframeindex 10
 weaponcollider 0.7 0 0.5 1.0 1
 weaponinfo 20 up -1.0 1.5 1.0 0.5 down -1.0 -1.0 1.0 0.5 left -1.7 -0.2 1.0 0.8 right -0.3 -0.3 1.0 0.8
 renderbuttonoffset -1 1
@@ -38,6 +38,6 @@ healthcountposition -10 50
 astarcooldowntimer 0.6
 healthbar offset -0.5 2.2 scale 1.0 0.25
 #skeleton
-attackcooldowntimer 0.5
-chargingtimer 0.5
+attackcooldowntimer 0.7
+chargingtimer 0.6
 alertedtimer 1.0

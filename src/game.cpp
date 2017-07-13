@@ -801,7 +801,6 @@
                  GameState->GameMode = Mode_Editor;
                  GameState->Paused = false;
                  GameState->EditorCamera.Center = GameState->GameCamera.Center;
-                 printf("In game\n");
              }
              else
              {
@@ -1150,15 +1149,15 @@
                          case Gain_Health:
                          {
                              r32 Ratio = (r32)Player.Health / (r32)Player.FullHealth;
-                             Player.FullHealth += Milestone.Health;
-                             Player.Health = (i32)(Player.FullHealth * Ratio);
+                             Player.FullHealth += (i16)Milestone.Health;
+                             Player.Health = (i16)(Player.FullHealth * Ratio);
                          }
                          break;
                          case Gain_Stamina:
                          {
                              r32 Ratio = (r32)Player.Player.Stamina / (r32)Player.Player.FullStamina;
-                             Player.Player.FullStamina += Milestone.Stamina;
-                             Player.Player.Stamina = (i32)(Player.Player.FullStamina * Ratio);
+                             Player.Player.FullStamina += (i16)Milestone.Stamina;
+                             Player.Player.Stamina = (i16)(Player.Player.FullStamina * Ratio);
                          }
                          break;
                          case Gain_Strength:
@@ -1253,6 +1252,7 @@
                                                    glm::vec3(-Center.x + GameState->Camera.ViewportWidth / GameState->Camera.Zoom / 2,
                                                              -Center.y + GameState->Camera.ViewportHeight / GameState->Camera.Zoom / 2,
                                                              0));
+     
      GameState->InputController.CurrentCharacter = 0;
      GameState->RenderState.DeltaTime = DeltaTime;
 }
