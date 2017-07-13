@@ -2361,7 +2361,7 @@ static void Render(game_state* GameState)
     glBindVertexArray(GameState->RenderState.FrameBufferVAO);
     UseShader(&GameState->RenderState.FrameBufferShader);
     
-    SetIntUniform(GameState->RenderState.FrameBufferShader.Program, "ignoreLight", GameState->GameMode == Mode_Editor && GameState->EditorState.PlacementMode == Editor_Placement_Tile);
+    SetIntUniform(GameState->RenderState.FrameBufferShader.Program, "ignoreLight", GameState->GodModeOn || GameState->GameMode == Mode_Editor && GameState->EditorState.PlacementMode == Editor_Placement_Tile || !GameState->RenderLight);
     
     auto TexLoc = glGetUniformLocation(GameState->RenderState.FrameBufferShader.Program, "tex");
     glUniform1i(TexLoc, 0);

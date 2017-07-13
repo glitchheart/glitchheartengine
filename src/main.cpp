@@ -80,6 +80,7 @@ int main(void)
     printf("Initializing gamestate\n");
     
     game_state GameState = {};
+    GameState.ShouldReload = true;
     GameState.InputController = {};
     
     config_data ConfigData;
