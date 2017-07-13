@@ -669,6 +669,8 @@ AI_FUNC(MinotaurCharging)
     {
         Enemy.AIState = AI_Attacking;
         PlaySoundEffect(GameState, &GameState->SoundManager.MinotaurGrunt01);
+        
+        Minotaur.LastAttackMoveDirection = glm::normalize(Player.Position - Entity->Position);
         PlayAnimation(Entity, "minotaur_attack", GameState);
     }
     else
@@ -696,6 +698,8 @@ AI_FUNC(MinotaurDefending)
         
         PlaySoundEffect(GameState, &GameState->SoundManager.MinotaurGrunt01);
         
+        entity& Player = GameState->Entities[GameState->PlayerIndex];
+        Entity->Enemy.Minotaur.LastAttackMoveDirection = glm::normalize(Player.Position - Entity->Position);
         PlayAnimation(Entity, "minotaur_attack", GameState);
     }
 }
@@ -728,10 +732,6 @@ AI_FUNC(MinotaurAttacking)
            && strcmp(Entity->CurrentAnimation->Name, "minotaur_idle") != 0)
         {
             StartTimer(GameState, Entity->AttackMoveTimer);
-            if(Entity->AttackCount == 0)
-            {
-                Minotaur.LastAttackMoveDirection = glm::normalize(Player.Position - Entity->Position);
-            }
             
             if(Entity->AnimationInfo.FrameIndex >= Entity->AttackLowFrameIndex && Entity->AnimationInfo.FrameIndex <= Entity->AttackHighFrameIndex)
             {
@@ -1131,7 +1131,6 @@ static void LoadPlayerData(game_state* GameState, i32 Handle = -1, glm::vec2 Pos
         }
         else
         {
-            LoadBonfireData(GameState, -1, Position);
             Entity->Position = Position;
             GameState->CharacterData.CurrentCheckpoint = Position;
             GameState->CharacterData.HasCheckpoint = true;
@@ -1252,6 +1251,7 @@ static void LoadPlayerData(game_state* GameState, i32 Handle = -1, glm::vec2 Pos
             if(GameState->CharacterData.HasCheckpoint)
             {
                 Entity->Position = GameState->CharacterData.CurrentCheckpoint;
+                LoadBonfireData(GameState, -1, Position);
             }
             
             Entity->Player.Level = GameState->CharacterData.Level;
@@ -2177,6 +2177,10 @@ void UpdateMinotaur(entity* Entity, game_state* GameState, r64 DeltaTime)
             }
             
             Entity->IsFlipped = Direction.x > 0;
+        }
+        else if(!TimerDone(GameState, Entity->AttackMoveTimer))
+        {
+            Entity->IsFlipped = Entity->Velocity.x > 0;
         }
         
         render_entity* RenderEntity = &GameState->RenderState.RenderEntities[Entity->RenderEntityHandle];

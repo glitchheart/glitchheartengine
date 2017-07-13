@@ -25,7 +25,7 @@ staminagaintimerfast 0.02
 staminagaintimerslow 0.16
 staminadecreasetimer 0.8
 hitstaminacost 15
-rollstaminacost 20
+rollstaminacost 25
 attackstaminacost 20
 mindiffstamina 40
 healthdecreasetimer 0.8
@@ -36,8 +36,8 @@ targetingdistance 10
 attackcooldowntimer 0.3
 lastattacktimer 1.0
 pickupcooldowntimer 0.36
-dashtimer 0.3
+dashtimer 0.4
 dashcounterdivider 250
 dashcooldowntimer 0.4
-dashspeed 10
+dashspeed 7
 dustcloud scale 1 1 animation dust_brown
