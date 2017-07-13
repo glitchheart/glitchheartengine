@@ -15,10 +15,28 @@ void FramebufferSizeCallback(GLFWwindow *Window, int Width, int Height)
     glGetIntegerv(GL_VIEWPORT, Viewport);
     memcpy(GameState->RenderState.Viewport, Viewport, sizeof(GLint) * 4);
     
-    GameState->EditorState.ToolbarX = (r32)GameState->RenderState.WindowWidth - 100;
-    GameState->EditorState.ToolbarY = 0;
-    GameState->EditorState.ToolbarWidth = 100.0f;
-    GameState->EditorState.ToolbarHeight = (r32)GameState->RenderState.WindowHeight;
+    GameState->RenderState.WindowWidth = Width;
+    GameState->RenderState.WindowHeight = Height;
+    GameState->EditorCamera.ViewportWidth = GameState->RenderState.WindowWidth;
+    GameState->EditorCamera.ViewportHeight = GameState->RenderState.WindowHeight;
+    GameState->GameCamera.ViewportWidth = GameState->RenderState.WindowWidth;
+    GameState->GameCamera.ViewportHeight = GameState->RenderState.WindowHeight;
+    GameState->Camera.ViewportWidth = GameState->RenderState.WindowWidth;
+    GameState->Camera.ViewportHeight = GameState->RenderState.WindowHeight;
+    
+    // Change resolution of framebuffer texture
+    //@Incomplete: This should be done with lower resolutions and just be upscaled maybe? We need fixed resolutions
+    glBindTexture(GL_TEXTURE_2D, GameState->RenderState.TextureColorBuffer);
+    glTexImage2D(
+        GL_TEXTURE_2D, 0, GL_RGB, GameState->RenderState.WindowWidth, GameState->RenderState.WindowHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL
+        );
+    glFramebufferTexture2D(
+        GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, GameState->RenderState.TextureColorBuffer, 0
+        );
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    
+    glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 inline static r64 GetTime()
@@ -792,6 +810,8 @@ static void InitializeOpenGL(game_state* GameState, render_state* RenderState, c
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
     glfwSetInputMode(RenderState->Window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+    
+    glfwSetWindowAspectRatio(RenderState->Window, 16, 9);
     
     glfwSetErrorCallback(ErrorCallback);
     glfwSetFramebufferSizeCallback(RenderState->Window, FramebufferSizeCallback);
@@ -2361,7 +2381,7 @@ static void Render(game_state* GameState)
     glBindVertexArray(GameState->RenderState.FrameBufferVAO);
     UseShader(&GameState->RenderState.FrameBufferShader);
     
-    SetIntUniform(GameState->RenderState.FrameBufferShader.Program, "ignoreLight", GameState->GodModeOn || GameState->GameMode == Mode_Editor && GameState->EditorState.PlacementMode == Editor_Placement_Tile || !GameState->RenderLight);
+    SetIntUniform(GameState->RenderState.FrameBufferShader.Program, "ignoreLight",  !GameState->RenderLight);
     
     auto TexLoc = glGetUniformLocation(GameState->RenderState.FrameBufferShader.Program, "tex");
     glUniform1i(TexLoc, 0);

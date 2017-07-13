@@ -211,7 +211,7 @@ static void LoadEntityData(FILE* File, entity* Entity, game_state* GameState, b3
                    &Entity->WeaponColliderInfo.ExtentsRight.x, 
                    &Entity->WeaponColliderInfo.ExtentsRight.y);
         }
-        else if(StartsWith(&LineBuffer[0],"pointlight"))
+        /*else if(StartsWith(&LineBuffer[0],"pointlight"))
         {
             light_source NewPointLight;
             
@@ -229,7 +229,7 @@ static void LoadEntityData(FILE* File, entity* Entity, game_state* GameState, b3
                 GameState->LightSources[Entity->LightSourceHandle] = NewPointLight;
             }
             
-        }
+        }*/
     }
 }
 
@@ -475,6 +475,7 @@ AI_FUNC(SkeletonCharging)
     else if(TimerDone(GameState, Skeleton.ChargingTimer) && DistanceToPlayer <= Enemy.AttackDistance)
     {
         Enemy.AIState = AI_Attacking;
+        Enemy.LastAttackMoveDirection = glm::normalize(Player.Position - Entity->Position);
         PlayAnimation(Entity, "skeleton_attack", GameState);
     }
     else
@@ -504,8 +505,7 @@ AI_FUNC(SkeletonAttacking)
     {
         if(!TimerDone(GameState, Entity->AttackMoveTimer))
         {
-            glm::vec2 Direction = glm::normalize(Player.Position - Entity->Position);
-            Entity->Velocity = glm::vec2(Direction.x * Entity->AttackMoveSpeed, Direction.y * Entity->AttackMoveSpeed);
+            Entity->Velocity = glm::vec2(Enemy.LastAttackMoveDirection.x * Entity->AttackMoveSpeed, Enemy.LastAttackMoveDirection.y * Entity->AttackMoveSpeed);
         }
         
         if(Entity->AnimationInfo.FrameIndex >= Entity->AttackLowFrameIndex - 2 &&Entity->AnimationInfo.FrameIndex < Entity->AttackHighFrameIndex && !Skeleton.IsAttacking && strcmp(Entity->CurrentAnimation->Name, "skeleton_idle") != 0)
@@ -670,7 +670,7 @@ AI_FUNC(MinotaurCharging)
         Enemy.AIState = AI_Attacking;
         PlaySoundEffect(GameState, &GameState->SoundManager.MinotaurGrunt01);
         
-        Minotaur.LastAttackMoveDirection = glm::normalize(Player.Position - Entity->Position);
+        Enemy.LastAttackMoveDirection = glm::normalize(Player.Position - Entity->Position);
         PlayAnimation(Entity, "minotaur_attack", GameState);
     }
     else
@@ -699,7 +699,7 @@ AI_FUNC(MinotaurDefending)
         PlaySoundEffect(GameState, &GameState->SoundManager.MinotaurGrunt01);
         
         entity& Player = GameState->Entities[GameState->PlayerIndex];
-        Entity->Enemy.Minotaur.LastAttackMoveDirection = glm::normalize(Player.Position - Entity->Position);
+        Entity->Enemy.LastAttackMoveDirection = glm::normalize(Player.Position - Entity->Position);
         PlayAnimation(Entity, "minotaur_attack", GameState);
     }
 }
@@ -722,8 +722,7 @@ AI_FUNC(MinotaurAttacking)
     {
         if(!TimerDone(GameState, Entity->AttackMoveTimer))
         {
-            glm::vec2 Direction = Minotaur.LastAttackMoveDirection;
-            Entity->Velocity = glm::vec2(Direction.x * Entity->AttackMoveSpeed, Direction.y * Entity->AttackMoveSpeed);
+            Entity->Velocity = glm::vec2(Enemy.LastAttackMoveDirection.x * Entity->AttackMoveSpeed, Enemy.LastAttackMoveDirection.y * Entity->AttackMoveSpeed);
         }
         
         if(Entity->AnimationInfo.FrameIndex >= Entity->AttackLowFrameIndex - 2 
@@ -1255,11 +1254,11 @@ static void LoadPlayerData(game_state* GameState, i32 Handle = -1, glm::vec2 Pos
             }
             
             Entity->Player.Level = GameState->CharacterData.Level;
-            Entity->Health = GameState->LastCharacterData.Health;
-            Entity->FullHealth = GameState->LastCharacterData.Health;
-            Entity->Player.Stamina = GameState->LastCharacterData.Stamina;
-            Entity->Player.FullStamina = GameState->LastCharacterData.Stamina;
-            Entity->Weapon.Damage = GameState->LastCharacterData.Strength;
+            Entity->Health = (i16)GameState->LastCharacterData.Health;
+            Entity->FullHealth = (i16)GameState->LastCharacterData.Health;
+            Entity->Player.Stamina = (i16)GameState->LastCharacterData.Stamina;
+            Entity->Player.FullStamina = (i16)GameState->LastCharacterData.Stamina;
+            Entity->Weapon.Damage = (i16)GameState->LastCharacterData.Strength;
         }
     }
 }
@@ -1684,7 +1683,7 @@ void UpdatePlayer(entity* Entity, game_state* GameState, r64 DeltaTime)
         //attacking
         if(!Entity->Player.Pickup && TimerDone(GameState, Entity->Player.AttackCooldownTimer) &&
            TimerDone(GameState, Entity->StaggerCooldownTimer)
-           && !Entity->Player.IsAttacking && (GetActionButtonDown(Action_Attack, GameState) || GetJoystickKeyDown(Joystick_3, GameState)))
+           && !Entity->Player.IsAttacking && Entity->Player.Stamina >= Entity->Player.AttackStaminaCost - Entity->Player.MinDiffStamina && (GetActionButtonDown(Action_Attack, GameState) || GetJoystickKeyDown(Joystick_3, GameState))) //@Cleanup: Remove the check for Joystick_3. Not sure why it is there?
         {
             switch(Entity->LookDirection)
             {
@@ -2043,6 +2042,7 @@ void UpdateSkeleton(entity* Entity, game_state* GameState, r64 DeltaTime)
         {
             if(Entity->Health <= 0)
             {
+                Skeleton.IsAttacking = false;
                 PlayAnimation(Entity, "skeleton_dead", GameState);
                 Entity->AnimationInfo.FreezeFrame = true;
                 Enemy.AIState = AI_Dying;
@@ -2056,7 +2056,7 @@ void UpdateSkeleton(entity* Entity, game_state* GameState, r64 DeltaTime)
             }
         }
         
-        Entity->Velocity = glm::vec2(0,0);
+        Entity->Velocity = glm::vec2(0,0); //@Cleanup: This is not good. Do this in AI
         
         UpdateAI(Entity,GameState,DeltaTime);
         
@@ -2065,9 +2065,11 @@ void UpdateSkeleton(entity* Entity, game_state* GameState, r64 DeltaTime)
         
         glm::vec2 Direction = glm::normalize(Player.Position - Entity->Position);
         
-        if(Entity->Enemy.AIState != AI_Attacking)
+        if(Entity->Enemy.AIState != AI_Attacking && !Entity->Enemy.Skeleton.IsAttacking)
         {
-            if(Abs(Direction.x) < 0.4f)
+            glm::vec2 Direction = glm::normalize(Player.Position - Entity->Position);
+            
+            if(Abs(Direction.x) < 0.6f)
             {
                 if(Direction.y > 0)
                 {
@@ -2085,12 +2087,13 @@ void UpdateSkeleton(entity* Entity, game_state* GameState, r64 DeltaTime)
                 else
                     Entity->LookDirection = Right;
             }
-        }
-        
-        if(Entity->Velocity.x == 0.0f && Entity->Velocity.y == 0.0f)
+            
             Entity->IsFlipped = Direction.x < 0;
-        else
+        }
+        else if(!TimerDone(GameState, Entity->AttackMoveTimer))
+        {
             Entity->IsFlipped = Entity->Velocity.x < 0;
+        }
         
         render_entity* RenderEntity = &GameState->RenderState.RenderEntities[Entity->RenderEntityHandle];
         

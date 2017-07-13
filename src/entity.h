@@ -369,6 +369,7 @@ struct entity
             b32 WanderingForward = true;
             
             timer DefendingTimer;
+            glm::vec2 LastAttackMoveDirection;
             
             union
             {
@@ -396,7 +397,6 @@ struct entity
                     timer AttackCooldownTimer;
                     timer ChargingTimer;
                     timer AlertedTimer;
-                    glm::vec2 LastAttackMoveDirection;
                     
                 } Minotaur;
                 struct
