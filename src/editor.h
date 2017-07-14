@@ -110,6 +110,14 @@ enum Editor_Menu_Option
 
 #define NUM_EDITOR_BUTTONS = 10
 
+enum Animation_Mode
+{
+    Animation_SelectAnimation,
+    Animation_Edit,
+    Animation_SelectTexture,
+    Animation_Create
+};
+
 struct editor_state
 {
     b32 Loaded = false;
@@ -169,9 +177,10 @@ struct editor_state
     
     b32 IsInCreateWaypointMode = false;
     
+    Animation_Mode AnimationMode = Animation_SelectAnimation;
     b32 Editing;
     b32 ShouldLoop;
-    i32 SelectedAnimation;
+    i32 SelectedAnimation = 0;
     animation_info AnimationInfo;
     animation* LoadedAnimation;
     i32 SelectedTexture;

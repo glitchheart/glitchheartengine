@@ -157,7 +157,10 @@ struct game_state
     console Console;
     editor_state EditorState;
     
-    std::map<char*, animation, CompareCStrings> Animations;
+    animation AnimationArray[50];
+    i32 AnimationIndex;
+    
+    std::map<char*, animation*, CompareCStrings> Animations;
     
     entity_file_reload_data* ReloadData;
 };

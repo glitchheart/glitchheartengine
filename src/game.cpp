@@ -71,7 +71,15 @@
  {
      if(GetKeyDown(Key_Escape, GameState))
      {
-         GameState->EditorState.MenuOpen = !GameState->EditorState.MenuOpen;
+         if(GameState->EditorState.AnimationMode == Animation_Edit || GameState->EditorState.AnimationMode == Animation_Create ||GameState->EditorState.AnimationMode == Animation_SelectTexture)
+         {
+             GameState->EditorState.AnimationMode = Animation_SelectAnimation;
+             ToggleAnimationFields(&GameState->EditorState, false);
+         }
+         else
+         {
+             GameState->EditorState.MenuOpen = !GameState->EditorState.MenuOpen;
+         }
      }
      
      if(GetKeyDown(Key_Enter, GameState) && GameState->EditorState.FocusedTextfield)
@@ -107,21 +115,6 @@
                  {
                      GameState->EditorState.Mode = Editor_Animation;
                      
-                     std::map<char*, animation>::iterator AnimationIterator;
-                     
-                     if(GameState->EditorState.Animations)
-                         free(GameState->EditorState.Animations);
-                     
-                     GameState->EditorState.Animations = (char**)malloc(GameState->Animations.size() * sizeof(char*));
-                     
-                     i32 Index = 0;
-                     for(AnimationIterator = GameState->Animations.begin(); AnimationIterator != GameState->Animations.end(); AnimationIterator++)
-                     {
-                         GameState->EditorState.Animations[Index++] = AnimationIterator->first;
-                     }
-                     
-                     GameState->EditorState.AnimationsLength = (i32)GameState->Animations.size();
-                     
                      GameState->EditorState.CreateNewAnimationButton->Active = true;
                      GameState->EditorState.TileIsSolidCheckbox->Active = false;
                      GameState->EditorState.Mode = Editor_Animation;
@@ -133,7 +126,7 @@
                      
                      GameState->EditorState.Textures = (char const**)malloc(GameState->RenderState.Textures.size() * sizeof(char*));
                      
-                     Index = 0;
+                     i32 Index = 0;
                      
                      for(TextureIterator = GameState->RenderState.Textures.begin(); TextureIterator != GameState->RenderState.Textures.end(); TextureIterator++)
                      {
@@ -208,21 +201,6 @@
                          break;
                          case Button_Animation:
                          {
-                             std::map<char*, animation>::iterator AnimationIterator;
-                             
-                             if(GameState->EditorState.Animations)
-                                 free(GameState->EditorState.Animations);
-                             
-                             GameState->EditorState.Animations = (char**)malloc(GameState->Animations.size() * sizeof(char*));
-                             
-                             i32 Index = 0;
-                             for(AnimationIterator = GameState->Animations.begin(); AnimationIterator != GameState->Animations.end(); AnimationIterator++)
-                             {
-                                 GameState->EditorState.Animations[Index++] = AnimationIterator->first;
-                             }
-                             
-                             GameState->EditorState.AnimationsLength = (i32)GameState->Animations.size();
-                             
                              GameState->EditorState.CreateNewAnimationButton->Active = true;
                              GameState->EditorState.TileIsSolidCheckbox->Active = false;
                              GameState->EditorState.Mode = Editor_Animation;
@@ -234,7 +212,7 @@
                              
                              GameState->EditorState.Textures = (char const**)malloc(GameState->RenderState.Textures.size() * sizeof(char*));
                              
-                             Index = 0;
+                             i32 Index = 0;
                              
                              for(TextureIterator = GameState->RenderState.Textures.begin(); TextureIterator != GameState->RenderState.Textures.end(); TextureIterator++)
                              {
@@ -243,6 +221,8 @@
                              
                              GameState->EditorState.TexturesLength = (i32)GameState->RenderState.Textures.size();
                              GameState->EditorState.Mode = Editor_Animation;
+                             GameState->EditorState.SelectedTexture = 0;
+                             GameState->EditorState.SelectedAnimation = 0;
                              GameState->EditorState.Editing = true;
                          }
                          break;
@@ -397,7 +377,6 @@
                                            glm::vec4(0, 0, GameState->RenderState.Viewport[2], GameState->RenderState.Viewport[3]));
                  
                  GameState->EditorState.CreateNewAnimationButton->Active = false;
-                 GameState->EditorState.SaveAnimationButton->Active = false;
                  
                  if(GetKeyDown(Key_E, GameState))
                  {
@@ -523,6 +502,7 @@
                          break;
                          case Editor_Placement_Tile:
                          {
+                             printf("T pressed\n");
                              GameState->EditorState.TileBrushWidthField->Active = true;
                              GameState->EditorState.TileBrushHeightField->Active = true;
                              
@@ -651,33 +631,62 @@
                  GameState->EditorState.CreateNewLevelButton->Active = false;
                  GameState->EditorState.CreateNewAnimationButton->Active = true;
                  
-                 if(GameState->EditorState.SaveAnimationButton->Clicked && GameState->EditorState.LoadedAnimation)
+                 switch(GameState->EditorState.AnimationMode)
                  {
-                     ToggleAnimationFields(&GameState->EditorState, false);
-                     GameState->EditorState.LoadedAnimation->Loop = GameState->EditorState.ShouldLoop;
-                     SaveAnimationToFile(GameState, *GameState->EditorState.LoadedAnimation);
-                     GameState->EditorState.LoadedAnimation = 0;
-                     GameState->EditorState.HasLoadedAnimations = false;
-                 }
-                 
-                 if(GameState->EditorState.CreateNewAnimationButton->Clicked)
-                 {
-                     ToggleAnimationFields(&GameState->EditorState, true);
-                     GameState->EditorState.Editing = false;
-                     GameState->EditorState.LoadedAnimation = (animation*)malloc(sizeof(animation));
-                     
-                     GameState->EditorState.LoadedAnimation->Name = (char*) calloc(30, sizeof(char));
-                     GameState->EditorState.LoadedAnimation->FrameCount = 0;
-                     GameState->EditorState.LoadedAnimation->FrameSize = glm::vec2(0, 0);
-                     GameState->EditorState.LoadedAnimation->FrameOffset = glm::vec2(0, 0);
-                     GameState->EditorState.LoadedAnimation->TimePerFrame = 0.0f;
-                     GameState->EditorState.LoadedAnimation->Loop = 1;
-                     GameState->EditorState.LoadedAnimation->Texture = GameState->RenderState.Textures.begin()->second;
+                     case Animation_SelectAnimation:
+                     {
+                         if(GameState->EditorState.CreateNewAnimationButton->Clicked)
+                         {
+                             
+                             GameState->EditorState.AnimationMode = Animation_SelectTexture;
+                             GameState->EditorState.LoadedAnimation = (animation*)malloc(sizeof(animation));
+                             
+                             GameState->EditorState.LoadedAnimation->Name = (char*) calloc(30, sizeof(char));
+                             GameState->EditorState.LoadedAnimation->FrameCount = 0;
+                             GameState->EditorState.LoadedAnimation->FrameSize = glm::vec2(0, 0);
+                             GameState->EditorState.LoadedAnimation->FrameOffset = glm::vec2(0, 0);
+                             GameState->EditorState.LoadedAnimation->TimePerFrame = 0.0f;
+                             GameState->EditorState.LoadedAnimation->Loop = 1;
+                             GameState->EditorState.LoadedAnimation->Texture = GameState->RenderState.Textures.begin()->second;
+                         }
+                         
+                         if(GetKeyDown(Key_Enter, GameState))
+                         {
+                             GameState->EditorState.AnimationMode = Animation_Edit;
+                             ToggleAnimationFields(&GameState->EditorState, true);
+                         }
+                         
+                     }
+                     break;
+                     case Animation_Edit:
+                     {
+                     }
+                     break;
+                     case Animation_SelectTexture:
+                     {
+                         if(GetKeyDown(Key_Enter, GameState))
+                         {
+                             GameState->EditorState.AnimationMode = Animation_Create;
+                             ToggleAnimationFields(&GameState->EditorState, true);
+                         }
+                     }
+                     break;
+                     case Animation_Create:
+                     {
+                         if(GameState->EditorState.SaveAnimationButton->Clicked && GameState->EditorState.LoadedAnimation)
+                         {
+                             ToggleAnimationFields(&GameState->EditorState, false);
+                             GameState->EditorState.LoadedAnimation->Loop = GameState->EditorState.ShouldLoop;
+                             SaveAnimationToFile(GameState, *GameState->EditorState.LoadedAnimation);
+                             GameState->EditorState.LoadedAnimation = 0;
+                             GameState->EditorState.HasLoadedAnimations = false;
+                         }
+                     }
+                     break;
                  }
                  
                  if(GameState->EditorState.LoadedAnimation)
                  {
-                     GameState->EditorState.SaveAnimationButton->Active = true;
                      GameState->EditorState.CreateNewAnimationButton->Active = false;
                      
                      animation* LoadedAnimation = GameState->EditorState.LoadedAnimation;
@@ -729,7 +738,6 @@
                  }
                  else
                  {
-                     GameState->EditorState.SaveAnimationButton->Active = false;
                      GameState->EditorState.CreateNewAnimationButton->Active = true;
                  }
              }

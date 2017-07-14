@@ -35,7 +35,10 @@
                                         
                                         fprintf(File, "texture %s\n", Animation.Texture->Name);
                                         
-                                        GameState->Animations.insert(std::pair<char*, animation>(Animation.Name, Animation));
+                                        GameState->AnimationArray[GameState->AnimationIndex] = Animation;
+                                        
+                                        GameState->Animations.insert(std::pair<char*, animation*>(GameState->AnimationArray[GameState->AnimationIndex].Name, &GameState->AnimationArray[GameState->AnimationIndex]));
+                                        GameState->AnimationIndex++;
                                         
                                         fclose(File);
                                     }
@@ -133,7 +136,10 @@
                                             }
                                             free(TextureName);
                                         }
-                                        GameState->Animations.insert(std::pair<char*, animation>(Animation.Name, Animation));
+                                        
+                                        GameState->AnimationArray[GameState->AnimationIndex] = Animation;
+                                        GameState->Animations.insert(std::pair<char*, animation*>(GameState->AnimationArray[GameState->AnimationIndex].Name, &GameState->AnimationArray[GameState->AnimationIndex]));
+                                        GameState->AnimationIndex++;
                                         fclose(File);
                                     }
                                     else
@@ -160,7 +166,7 @@
                                     {
                                         if(GameState->Animations.find(AnimationName) != GameState->Animations.end())
                                         {
-                                            Entity->CurrentAnimation = &GameState->Animations[AnimationName];
+                                            Entity->CurrentAnimation = GameState->Animations[AnimationName];
                                             Entity->AnimationInfo.Playing = true;
                                             Entity->AnimationInfo.FrameIndex = 0;
                                             Entity->AnimationInfo.CurrentTime = 0.0;
