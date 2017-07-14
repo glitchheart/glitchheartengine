@@ -1903,7 +1903,7 @@ void RenderUI(game_state* GameState)
                 r32 YPos = GameState->RenderState.WindowHeight - 52.0f;
                 
                 RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(1,1,1,1), XPos, YPos, TotalWidth, Height);
-                RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(0,0.5,0.5,1), XPos, YPos, TotalWidth * (1 -  ElapsedTimer(GameState,Player.Player.CheckpointPlacementTimer)),Height);
+                RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(0,0.5,0.5,1), XPos, YPos, TotalWidth * (1 -  ElapsedTimerFrac(GameState,Player.Player.CheckpointPlacementTimer)),Height);
             }
             
             
