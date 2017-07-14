@@ -75,6 +75,7 @@
          {
              GameState->EditorState.AnimationMode = Animation_SelectAnimation;
              ToggleAnimationFields(&GameState->EditorState, false);
+             GameState->EditorState.CreateNewAnimationButton->Active = true;
          }
          else
          {
@@ -177,7 +178,6 @@
                     GameState->RenderState.WindowHeight - GameState->InputController.MouseY >= Button->ScreenPosition.y && GameState->RenderState.WindowHeight - GameState->InputController.MouseY <= Button->ScreenPosition.y + Button->Size.y)
                  {
                      Button->Clicked = true;
-                     
                      PlaySoundEffect(GameState, &GameState->SoundManager.ButtonClick);
                      StartTimer(GameState, Button->ClickAnimationTimer);
                      
@@ -502,7 +502,6 @@
                          break;
                          case Editor_Placement_Tile:
                          {
-                             printf("T pressed\n");
                              GameState->EditorState.TileBrushWidthField->Active = true;
                              GameState->EditorState.TileBrushHeightField->Active = true;
                              
@@ -637,17 +636,8 @@
                      {
                          if(GameState->EditorState.CreateNewAnimationButton->Clicked)
                          {
-                             
                              GameState->EditorState.AnimationMode = Animation_SelectTexture;
-                             GameState->EditorState.LoadedAnimation = (animation*)malloc(sizeof(animation));
-                             
-                             GameState->EditorState.LoadedAnimation->Name = (char*) calloc(30, sizeof(char));
-                             GameState->EditorState.LoadedAnimation->FrameCount = 0;
-                             GameState->EditorState.LoadedAnimation->FrameSize = glm::vec2(0, 0);
-                             GameState->EditorState.LoadedAnimation->FrameOffset = glm::vec2(0, 0);
-                             GameState->EditorState.LoadedAnimation->TimePerFrame = 0.0f;
-                             GameState->EditorState.LoadedAnimation->Loop = 1;
-                             GameState->EditorState.LoadedAnimation->Texture = GameState->RenderState.Textures.begin()->second;
+                             GameState->EditorState.LoadedAnimation = 0;
                          }
                          
                          if(GetKeyDown(Key_Enter, GameState))
@@ -667,6 +657,22 @@
                          if(GetKeyDown(Key_Enter, GameState))
                          {
                              GameState->EditorState.AnimationMode = Animation_Create;
+                             
+                             GameState->EditorState.LoadedAnimation = (animation*)malloc(sizeof(animation));
+                             
+                             GameState->EditorState.LoadedAnimation->Name = (char*) calloc(30, sizeof(char));
+                             GameState->EditorState.LoadedAnimation->FrameCount = 0;
+                             GameState->EditorState.LoadedAnimation->FrameSize = glm::vec2(0, 0);
+                             GameState->EditorState.LoadedAnimation->FrameOffset = glm::vec2(0, 0);
+                             GameState->EditorState.LoadedAnimation->TimePerFrame = 0.0f;
+                             GameState->EditorState.LoadedAnimation->Loop = 1;
+                             GameState->EditorState.LoadedAnimation->Texture = GameState->RenderState.Textures[GameState->EditorState.Textures[GameState->EditorState.SelectedTexture]];
+                             
+                             for(i32 Index = 0; Index < TEXTFIELD_LENGTH; Index++)
+                             {
+                                 GameState->EditorState.AnimationNameField->Text[Index] = 0;
+                             }
+                             
                              ToggleAnimationFields(&GameState->EditorState, true);
                          }
                      }
@@ -687,7 +693,8 @@
                  
                  if(GameState->EditorState.LoadedAnimation)
                  {
-                     GameState->EditorState.CreateNewAnimationButton->Active = false;
+                     if(GameState->EditorState.AnimationMode == Animation_Edit || GameState->EditorState.AnimationMode == Animation_Create)
+                         GameState->EditorState.CreateNewAnimationButton->Active = false;
                      
                      animation* LoadedAnimation = GameState->EditorState.LoadedAnimation;
                      
