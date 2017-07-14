@@ -119,11 +119,11 @@ static void LoadEntityData(FILE* File, entity* Entity, game_state* GameState, b3
             
             if(strcmp(LayerName, "Layer_Player") == 0)
             {
-                Entity->Layer = (Entity_Layer)1;
+                Entity->Layer = Layer_Player;
             }
             else if(strcmp(LayerName, "Layer_Enemy") == 0)
             {
-                Entity->Layer = (Entity_Layer)4;;
+                Entity->Layer = Layer_Enemy;
             }
             
             free(LayerName);
@@ -273,8 +273,8 @@ static void LoadEnemyData(FILE* File, entity* Entity, game_state* GameState)
     Entity->Enemy.WaypointCount = 0;
     Entity->Enemy.WaypointIndex = 0;
     Entity->Enemy.WanderingForward = true;
-    Entity->Weapon.Layer = (Entity_Layer)4;
     
+    Entity->Weapon.Layer = (Entity_Layer)4;
     Entity->Weapon.IgnoreLayers = (Entity_Layer)0;
     
     if(File)

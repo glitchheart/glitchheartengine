@@ -6,7 +6,7 @@ center 0 0.5
 scale 3
 health 280
 animation minotaur_idle
-staggercooldowntimer 0.2
+staggercooldowntimer 0.1
 collider 0.2 -1.5 0.6 0.15 0
 hashittrigger 1
 hittrigger 0 0 1.0 1.5 1
