@@ -939,13 +939,29 @@
      if(GetKeyDown(Key_F10, GameState))
      {
          auto CheckpointPos = glm::vec2(GameState->Entities[0].Position.x,GameState->Entities[0].Position.y - 0.5f);
+         if(!GameState->CharacterData.HasCheckpoint)
+         {
+             LoadBonfireData(GameState,-1,CheckpointPos);
+             GameState->CharacterData.CheckpointHandle = GameState->EntityCount - 1;
+         }
+         else
+         {
+             GameState->Entities[GameState->CharacterData.CheckpointHandle].Position = CheckpointPos;
+         }
          GameState->CharacterData.CurrentCheckpoint = CheckpointPos;
-         LoadBonfireData(GameState,-1,CheckpointPos);
      }
      
      if(GameState->GameMode == Mode_InGame && GetKey(Key_LeftCtrl, GameState) && GetKeyDown(Key_P, GameState))
      {
          GameState->Paused = !GameState->Paused;
+     }
+     
+     if(GameState->GameMode == Mode_InGame && (GetKey(Key_LeftCtrl, GameState) || GetKey(Key_RightCtrl, GameState)))
+     {
+         if(GetKeyDown(Key_F, GameState))
+             SaveGame(GameState);
+         if(GetKeyDown(Key_V, GameState))
+             LoadGame(GameState);
      }
      
 #endif
@@ -1265,4 +1281,6 @@
      
      GameState->InputController.CurrentCharacter = 0;
      GameState->RenderState.DeltaTime = DeltaTime;
-}
+ }
+ 
+ 

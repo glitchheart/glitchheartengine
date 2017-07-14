@@ -1,3 +1,4 @@
+
 void PrintEntityInfo(const entity& Entity)
 {
     printf("Entity: Name %s, position x %f y %f, rotation x %f y %f z %f\n", Entity.Name, Entity.Position.x, Entity.Position.y, Entity.Rotation.x, Entity.Rotation.y, Entity.Rotation.z);
@@ -50,9 +51,15 @@ static void LoadEntityData(FILE* File, entity* Entity, game_state* GameState, b3
         Entity->RenderEntityHandle = GameState->RenderState.RenderEntityCount++;
         RenderEntity->Color = glm::vec4(1, 1, 1, 1);
         
+        Entity->LookDirection = Down;
         Entity->HitFlickerTimer.TimerHandle = -1;
         Entity->HitFlickerTimer.TimerMax = 0.05f;
         Entity->HitFlickerTimer.Name = "Hit Flicker";
+        Entity->HitFlickerFramesLeft = 0;
+        Entity->HitFlickerFrameMax = 6;
+        
+        Entity->RenderButtonOffset = glm::vec2(0.5f,1.5f);
+        Entity->RenderButtonHint = false;
         
         Entity->HitAttackCountIdResetTimer.TimerHandle = -1;
         Entity->HitAttackCountIdResetTimer.TimerMax = 1.0f;
@@ -62,6 +69,20 @@ static void LoadEntityData(FILE* File, entity* Entity, game_state* GameState, b3
         Entity->HealthDecreaseTimer.TimerHandle = -1;
         Entity->HealthDecreaseTimer.Name = "Health Decrease";
         Entity->Dead = false;
+        Entity->Center = glm::vec2(0.5,0.5);
+        Entity->CurrentAnimation = 0;
+        Entity->Active = true;
+        Entity->IsKinematic = false;
+        Entity->IsColliding = false;
+        Entity->IsStatic = false;
+        Entity->IsPickup = false;
+        Entity->HasHitTrigger = false;
+        Entity->LightSourceHandle = -1;
+        Entity->Hit = false;
+        Entity->Invincible = false;
+        Entity->Health = -1;
+        Entity->HitAttackCountId = -1;
+        Entity->HasWeapon = false;
     }
     else
     {
@@ -243,6 +264,13 @@ static void LoadEnemyData(FILE* File, entity* Entity, game_state* GameState)
     
     Entity->Enemy.HasLoot = true;
     Entity->Enemy.Loot.HealthPotions = 1;
+    Entity->Enemy.Healthbar = 0;
+    Entity->Enemy.HealthCountIndex = 0;
+    Entity->Enemy.HasLoot = false;
+    Entity->Enemy.IsTargeted = false;
+    Entity->Enemy.WaypointCount = 0;
+    Entity->Enemy.WaypointIndex = 0;
+    Entity->Enemy.WanderingForward = true;
     
     if(File)
     {
@@ -1123,6 +1151,7 @@ static void LoadSkeletonData(game_state* GameState, i32 Handle = -1, glm::vec2 P
     Entity->Enemy.Skeleton = {};
     Entity->AnimationInfo.FreezeFrame = false;
     Entity->Dead = false;
+    Entity->Enemy.Skeleton.IsAttacking = false;
     
     if(Handle == -1)
     {
@@ -1186,6 +1215,8 @@ static void LoadMinotaurData(game_state* GameState, i32 Handle = -1, glm::vec2 P
     Entity->Enemy.Minotaur = {};
     Entity->AnimationInfo.FreezeFrame = false;
     Entity->Dead = false;
+    Entity->Enemy.Minotaur.IsAttacking = false;
+    Entity->Enemy.Minotaur.MaxAttackStreak = 1;
     
     if(Handle == -1)
     {
@@ -1251,6 +1282,7 @@ static void LoadWraithData(game_state* GameState, i32 Handle = -1, glm::vec2 Pos
     Entity->Enemy.Skeleton = {};
     Entity->AnimationInfo.FreezeFrame = false;
     Entity->Dead = false;
+    Entity->Enemy.Wraith.IsAttacking = false;
     
     if(Handle == -1)
     {
@@ -1310,6 +1342,8 @@ static void LoadBlobData(game_state* GameState, i32 Handle = -1, glm::vec2 Posit
     File = fopen("../assets/entities/blob.dat", "r");
     
     entity* Entity = Handle != -1 ? &GameState->Entities[Handle] : &GameState->Entities[GameState->EntityCount];
+    
+    Entity->Enemy.Blob.InPickupMode = false;
     
     if(Handle == -1)
     {
@@ -1376,20 +1410,12 @@ static void LoadPlayerData(game_state* GameState, i32 Handle = -1, glm::vec2 Pos
     Entity->Player.Pickup = {};
     Entity->Player = {};
     Entity->Player.RenderCrosshair = false;
-    
-    if(Handle == -1)
-    {
-        if(GameState->CharacterData.HasCheckpoint)
-        {
-            Entity->Position = GameState->CharacterData.CurrentCheckpoint;
-        }
-        else
-        {
-            Entity->Position = Position;
-            GameState->CharacterData.CurrentCheckpoint = Position;
-            GameState->CharacterData.HasCheckpoint = true;
-        }
-    }
+    Entity->Player.Level = 0;
+    Entity->Player.LastMilestone = 0;
+    Entity->Player.IsAttacking = false;
+    Entity->Player.IsDashing = false;
+    Entity->Player.IsDefending = false;
+    Entity->Player.Pickup = 0;
     
     if(File)
     {
@@ -1499,6 +1525,7 @@ static void LoadPlayerData(game_state* GameState, i32 Handle = -1, glm::vec2 Pos
             }
         }
         fclose(File);
+        LoadGame(GameState);
         
         if(GameState->CharacterData.Level != 0)
         {
@@ -1514,6 +1541,25 @@ static void LoadPlayerData(game_state* GameState, i32 Handle = -1, glm::vec2 Pos
             Entity->Player.Stamina = (i16)GameState->LastCharacterData.Stamina;
             Entity->Player.FullStamina = (i16)GameState->LastCharacterData.Stamina;
             Entity->Weapon.Damage = (i16)GameState->LastCharacterData.Strength;
+        }
+        
+        
+        if(Handle == -1)
+        {
+            if(GameState->CharacterData.HasCheckpoint)
+            {
+                Entity->Position = glm::vec2(GameState->CharacterData.CurrentCheckpoint.x,GameState->CharacterData.CurrentCheckpoint.y - 0.5f);
+                LoadBonfireData(GameState,-1,GameState->CharacterData.CurrentCheckpoint);
+                GameState->CharacterData.CheckpointHandle = GameState->EntityCount - 1;
+            }
+            else
+            {
+                Entity->Position = Position;
+                GameState->CharacterData.CurrentCheckpoint = Position;
+                GameState->CharacterData.HasCheckpoint = true;
+                LoadBonfireData(GameState,-1,GameState->CharacterData.CurrentCheckpoint);
+                GameState->CharacterData.CheckpointHandle = GameState->EntityCount - 1;
+            }
         }
     }
 }
