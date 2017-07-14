@@ -100,8 +100,11 @@ struct character_data
 struct save_file
 {
     character_data CharacterData;
+    character_data LastCharacterData;
     i32 CurrentExperience = 0;
     glm::vec2 CurrentPosition;
+    i32 LastMilestone;
+    player_inventory PlayerInventory;
 };
 
 
@@ -200,6 +203,13 @@ b32 TimerDone(game_state* GameState, timer& Timer)
     return GameState->Timers[Timer.TimerHandle] <= 0;;
 }
 
+r64 ElapsedTimer(game_state* GameState, timer& Timer)
+{
+    if(Timer.TimerHandle == -1)
+        return 1.0;
+    return GameState->Timers[Timer.TimerHandle] / Timer.TimerMax;
+}
+
 void StartFade(camera& Camera, Fading_Mode Mode, r32 FadingSpeed, glm::vec3 FadingTint, r32 StartAlpha = 0, r32 EndAlpha = 0)
 {
     Camera.FadingMode = Mode;
@@ -234,12 +244,15 @@ void SaveGame(game_state* GameState)
     
     if(File)
     {
-        save_file SaveFile;
-        SaveFile.CharacterData = GameState->CharacterData;
-        SaveFile.CurrentExperience = GameState->Entities[0].Player.Experience;
-        SaveFile.CurrentPosition = GameState->Entities[0].Position;
+        auto Entity = GameState->Entities[0];
         
-        fwrite(&SaveFile, sizeof(save_file),1,File);
+        fwrite(&GameState->CharacterData,sizeof(character_data), 1, File);
+        fwrite(&GameState->LastCharacterData,sizeof(character_data), 1, File);
+        fwrite(&Entity.Player.Experience,sizeof(i32), 1, File);
+        fwrite(&Entity.Position,sizeof(glm::vec2), 1, File);
+        fwrite(&Entity.Player.LastMilestone,sizeof(i32), 1, File);
+        fwrite(&Entity.Player.Inventory,sizeof(player_inventory), 1, File);
+        
         fclose(File);
         printf("Saved game!\n");
     }
@@ -251,13 +264,13 @@ void LoadGame(game_state* GameState)
     File = fopen("../savefile1.gs", "rb");
     if(File)
     {
-        save_file SaveFile;
-        fread(&SaveFile, sizeof(save_file), 1, File);
+        fread(&GameState->CharacterData, sizeof(character_data), 1, File);
+        fread(&GameState->LastCharacterData, sizeof(character_data), 1, File);
+        fread(&GameState->Entities[0].Player.Experience, sizeof(i32), 1, File);
+        fread(&GameState->Entities[0].Position, sizeof(glm::vec2),1,File);
+        fread(&GameState->Entities[0].Player.LastMilestone, sizeof(i32), 1, File);
+        fread(&GameState->Entities[0].Player.Inventory, sizeof(player_inventory), 1 , File);
         
-        printf("Experience: %d\n", SaveFile.CurrentExperience);
-        GameState->CharacterData = SaveFile.CharacterData;
-        GameState->Entities[0].Player.Experience = SaveFile.CurrentExperience;
-        GameState->Entities[0].Position = SaveFile.CurrentPosition;
         fclose(File);
         printf("Loaded game!\n");
     }

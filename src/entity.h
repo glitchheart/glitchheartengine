@@ -269,6 +269,7 @@ struct entity
             i32 LastMilestone;
             i32 Experience;
             b32 IsAttacking;
+            b32 IsChargingCheckpoint;
             
             i16 FullStamina;
             i16 Stamina;
@@ -285,6 +286,9 @@ struct entity
             timer StaminaDecreaseTimer;
             r64 StaminaGainTimerFast;
             r64 StaminaGainTimerSlow;
+            
+            timer CheckpointPlacementTimer;
+            timer CheckpointPlacementCooldownTimer;
             
             timer AttackCooldownTimer;
             timer LastAttackTimer;

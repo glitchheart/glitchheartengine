@@ -1890,6 +1890,18 @@ void RenderUI(game_state* GameState)
             RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(0, 0, 0, 1), 48.0f, GameState->RenderState.WindowHeight - 52.0f, 404.0f, 29.0f);
             RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(0.6f, 0, 0, 1), 50.0f, GameState->RenderState.WindowHeight - 50.0f, 400.0f / (r32)Player.FullHealth * (r32)Player.Health, 25.0f);
             
+            if(!TimerDone(GameState,Player.Player.CheckpointPlacementTimer) && Player.Player.IsChargingCheckpoint)
+            {
+                r32 TotalWidth = 404.f;
+                r32 Height = 25.0f;
+                r32 XPos = GameState->RenderState.WindowWidth / 2.0f - TotalWidth/2.0f;
+                r32 YPos = GameState->RenderState.WindowHeight - 52.0f;
+                
+                RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(1,1,1,1), XPos, YPos, TotalWidth, Height);
+                RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(0,0.5,0.5,1), XPos, YPos, TotalWidth * (1 -  ElapsedTimer(GameState,Player.Player.CheckpointPlacementTimer)),Height);
+            }
+            
+            
             if(!TimerDone(GameState, Player.HealthDecreaseTimer))
             {
                 r32 StartX = 50 +  400.0f / (r32)Player.FullHealth * (r32)Player.Health;
