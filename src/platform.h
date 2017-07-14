@@ -134,7 +134,6 @@ void LoadConfig(const char* FilePath, config_data* ConfigData)
             else if(StartsWith(LineBuffer, "fullscreen"))
             {
                 sscanf(LineBuffer, "fullscreen %d", &ConfigData->Fullscreen);
-                ConfigData->Fullscreen = false;
             } 
             else if(StartsWith(LineBuffer, "muted"))
             {
