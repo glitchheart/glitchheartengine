@@ -110,7 +110,7 @@ static void SetFieldValues(game_state* GameState, b32 Reload = false)
                     if(LoadedAnimation->Name)
                         sprintf(GameState->EditorState.AnimationNameField->Text, "%s", LoadedAnimation->Name);
                     
-                    for(i32 Index = strlen(LoadedAnimation->Name); Index < TEXTFIELD_LENGTH; Index++)
+                    for(i32 Index = (i32)strlen(LoadedAnimation->Name); Index < TEXTFIELD_LENGTH; Index++)
                     {
                         GameState->EditorState.AnimationNameField->Text[Index] = 0;
                     }

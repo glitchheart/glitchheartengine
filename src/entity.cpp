@@ -266,9 +266,9 @@ static void LoadEnemyData(FILE* File, entity* Entity, game_state* GameState)
     
     Entity->Enemy.HasLoot = true;
     Entity->Enemy.Loot.HealthPotions = 1;
+    
     Entity->Enemy.Healthbar = 0;
     Entity->Enemy.HealthCountIndex = 0;
-    Entity->Enemy.HasLoot = false;
     Entity->Enemy.IsTargeted = false;
     Entity->Enemy.WaypointCount = 0;
     Entity->Enemy.WaypointIndex = 0;
@@ -445,6 +445,7 @@ AI_FUNC(SkeletonAlerted)
     entity& Player = GameState->Entities[GameState->PlayerIndex];
     auto& Enemy = Entity->Enemy;
     r64 DistanceToPlayer = glm::distance(Entity->Position, Player.Position);
+    
     if(TimerDone(GameState,Entity->Enemy.Skeleton.AlertedTimer) && DistanceToPlayer <= Entity->Enemy.MaxAlertDistance)
     {
         Enemy.AIState = AI_Following;
@@ -1740,9 +1741,6 @@ void UpdatePlayer(entity* Entity, game_state* GameState, r64 DeltaTime)
     
     auto DirectionToMouse = glm::normalize(glm::vec2(Pos.x - Entity->Position.x, Pos.y - Entity->Position.y));
     
-    if(TimerDone(GameState, Entity->Player.LastAttackTimer) && TimerDone(GameState, Entity->Player.AttackCooldownTimer))
-        Entity->AttackCount = 0;
-    
     if (Entity->Active && Entity->Health > 0)
     {
         if(!Entity->Player.IsAttacking && !Entity->Hit && !Entity->Player.IsDashing && GetActionButtonDown(Action_Use, GameState))
@@ -2267,15 +2265,15 @@ void UpdateWeapon(entity* Entity, game_state* GameState, r64 DeltaTime)
     
     Entity->Weapon.CollisionAABB.Center = glm::vec2(Entity->Position.x + Entity->Weapon.Center.x * Entity->Weapon.Scale.x + Entity->Weapon.CollisionAABB.Offset.x, Entity->Position.y + Entity->Weapon.Center.y * Entity->Weapon.Scale.y + Entity->Weapon.CollisionAABB.Offset.y);
     
-    collision_info CollisionInfo;
-    CheckWeaponCollision(GameState, &Entity->Weapon, &CollisionInfo);
-    
     if(IsAttacking)
     {
+        collision_info CollisionInfo;
+        CheckWeaponCollision(GameState, &Entity->Weapon, &CollisionInfo);
+        
         for(i32 Index = 0; Index < CollisionInfo.OtherCount; Index++)
         {
-            if( (Entity->Type == Entity_Player && CollisionInfo.Other[Index]->Type == Entity_Enemy && CollisionInfo.Other[Index]->Enemy.AIState != AI_Hit && CollisionInfo.Other[Index]->Enemy.AIState != AI_Dying) ||
-               (Entity->Type == Entity_Enemy && CollisionInfo.Other[Index]->Type == Entity_Player && !CollisionInfo.Other[Index]->Player.IsDashing && !CollisionInfo.Other[Index]->Hit && TimerDone(GameState, CollisionInfo.Other[Index]->StaggerCooldownTimer)))
+            if((Entity->Type == Entity_Player && CollisionInfo.Other[Index]->Type == Entity_Enemy && CollisionInfo.Other[Index]->Enemy.AIState != AI_Dying) ||
+               (Entity->Type == Entity_Enemy && CollisionInfo.Other[Index]->Type == Entity_Player && !CollisionInfo.Other[Index]->Player.IsDashing))
             {
                 if(Entity->AnimationInfo.FrameIndex >= Entity->AttackLowFrameIndex && Entity->AnimationInfo.FrameIndex <= Entity->AttackHighFrameIndex)
                 {
