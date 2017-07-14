@@ -211,7 +211,7 @@ static void LoadEntityData(FILE* File, entity* Entity, game_state* GameState, b3
                    &Entity->WeaponColliderInfo.ExtentsRight.x, 
                    &Entity->WeaponColliderInfo.ExtentsRight.y);
         }
-        /*else if(StartsWith(&LineBuffer[0],"pointlight"))
+        else if(StartsWith(&LineBuffer[0],"pointlight"))
         {
             light_source NewPointLight;
             
@@ -229,7 +229,7 @@ static void LoadEntityData(FILE* File, entity* Entity, game_state* GameState, b3
                 GameState->LightSources[Entity->LightSourceHandle] = NewPointLight;
             }
             
-        }*/
+        }
     }
 }
 

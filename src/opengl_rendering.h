@@ -345,6 +345,7 @@ struct render_state
     //freetype
     FT_Library FTLibrary;
     render_font InconsolataFont;
+    render_font SmallerInconsolataFont;
     render_font MenuFont;
     render_font ButtonFont;
     render_font RobotoFont;
