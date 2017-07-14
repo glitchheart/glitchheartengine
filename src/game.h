@@ -94,7 +94,16 @@ struct character_data
     i32 Strength = 0;
     glm::vec2 CurrentCheckpoint;
     b32 HasCheckpoint;
+    i32 CheckpointHandle = -1;
 };
+
+struct save_file
+{
+    character_data CharacterData;
+    i32 CurrentExperience = 0;
+    glm::vec2 CurrentPosition;
+};
+
 
 #define NUM_TIMERS 1024
 
@@ -217,5 +226,42 @@ void StartFade(camera& Camera, Fading_Mode Mode, r32 FadingSpeed, glm::vec3 Fadi
         break;
     }
 }
+
+void SaveGame(game_state* GameState)
+{
+    FILE* File;
+    File = fopen("../savefile1.gs", "wb");
+    
+    if(File)
+    {
+        save_file SaveFile;
+        SaveFile.CharacterData = GameState->CharacterData;
+        SaveFile.CurrentExperience = GameState->Entities[0].Player.Experience;
+        SaveFile.CurrentPosition = GameState->Entities[0].Position;
+        
+        fwrite(&SaveFile, sizeof(save_file),1,File);
+        fclose(File);
+        printf("Saved game!\n");
+    }
+}
+
+void LoadGame(game_state* GameState)
+{
+    FILE* File;
+    File = fopen("../savefile1.gs", "rb");
+    if(File)
+    {
+        save_file SaveFile;
+        fread(&SaveFile, sizeof(save_file), 1, File);
+        
+        printf("Experience: %d\n", SaveFile.CurrentExperience);
+        GameState->CharacterData = SaveFile.CharacterData;
+        GameState->Entities[0].Player.Experience = SaveFile.CurrentExperience;
+        GameState->Entities[0].Position = SaveFile.CurrentPosition;
+        fclose(File);
+        printf("Loaded game!\n");
+    }
+}
+
 
 #endif
