@@ -80,7 +80,6 @@ static void InitEditorFields(game_state* GameState)
 
 static void ToggleAnimationFields(editor_state* EditorState, b32 Active)
 {
-    EditorState->AnimationMode = Active ? Animation_Create : Animation_SelectAnimation;
     EditorState->AnimationNameField->Active = Active;
     EditorState->AnimationFrameWidthField->Active = Active;
     EditorState->AnimationFrameHeightField->Active = Active;
@@ -111,6 +110,11 @@ static void SetFieldValues(game_state* GameState, b32 Reload = false)
                     if(LoadedAnimation->Name)
                         sprintf(GameState->EditorState.AnimationNameField->Text, "%s", LoadedAnimation->Name);
                     
+                    for(i32 Index = strlen(LoadedAnimation->Name); Index < TEXTFIELD_LENGTH; Index++)
+                    {
+                        GameState->EditorState.AnimationNameField->Text[Index] = 0;
+                    }
+                    
                     if(LoadedAnimation->FrameCount != 0)
                         sprintf(GameState->EditorState.AnimationFrameCountField->Text, "%d", LoadedAnimation->FrameCount);
                     
@@ -122,11 +126,8 @@ static void SetFieldValues(game_state* GameState, b32 Reload = false)
                     
                     if(LoadedAnimation->FrameCount > 0)
                     {
-                        if(LoadedAnimation->Frames[0].X != 0.0f)
-                            sprintf(GameState->EditorState.AnimationFrameOffsetXField->Text, "%d", (i32)LoadedAnimation->Frames[0].X / (i32)LoadedAnimation->FrameSize.x);
-                        
-                        if(LoadedAnimation->Frames[0].Y != 0.0f)
-                            sprintf(GameState->EditorState.AnimationFrameOffsetYField->Text, "%d", (i32)LoadedAnimation->Frames[0].Y / (i32)LoadedAnimation->FrameSize.y);
+                        sprintf(GameState->EditorState.AnimationFrameOffsetXField->Text, "%d", (i32)LoadedAnimation->Frames[0].X / (i32)LoadedAnimation->FrameSize.x);
+                        sprintf(GameState->EditorState.AnimationFrameOffsetYField->Text, "%d", (i32)LoadedAnimation->Frames[0].Y / (i32)LoadedAnimation->FrameSize.y);
                     }
                     
                     if(LoadedAnimation->TimePerFrame != 0.0f)
@@ -280,10 +281,8 @@ static void CheckEditorUIInput(game_state* GameState, r64 DeltaTime)
                     GameState->EditorState.SelectedTexture = 0;
                 else if(GameState->EditorState.SelectedTexture < 0)
                     GameState->EditorState.SelectedTexture = (i32)GameState->EditorState.TexturesLength - 1;
-                
-                GameState->EditorState.LoadedAnimation->Texture = GameState->RenderState.Textures[GameState->EditorState.Textures[GameState->EditorState.SelectedTexture]];
             }
-            else
+            else if(GameState->EditorState.AnimationMode == Animation_SelectAnimation)
             {
                 b32 Changed = false;
                 if(GetKeyDown(Key_Down, GameState))
