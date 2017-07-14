@@ -14,7 +14,7 @@
                                         fprintf(File, "frames\n");
                                         
                                         i32 X = (i32)(Animation.FrameOffset.y) * (i32)Animation.FrameSize.x;
-                                        i32 Y = (i32)(Animation.FrameOffset.x) * (i32)Animation.FrameSize.y;
+                                        i32 Y = (i32)(Animation.FrameOffset.y) * (i32)Animation.FrameSize.y;
                                         
                                         i32 FrameIndex = 0;
                                         
