@@ -948,7 +948,7 @@
          auto CheckpointPos = glm::vec2(GameState->Entities[0].Position.x,GameState->Entities[0].Position.y - 0.5f);
          if(!GameState->CharacterData.HasCheckpoint)
          {
-             LoadBonfireData(GameState,-1,CheckpointPos);
+             LoadBonfireData(GameState,-1,CheckpointPos, true);
              GameState->CharacterData.CheckpointHandle = GameState->EntityCount - 1;
          }
          else
