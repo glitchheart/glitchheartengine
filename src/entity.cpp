@@ -276,6 +276,7 @@ static void LoadEnemyData(FILE* File, entity* Entity, game_state* GameState)
     
     Entity->Weapon.Layer = (Entity_Layer)4;
     Entity->Weapon.IgnoreLayers = (Entity_Layer)0;
+    Entity->IgnoreLayers = (Entity_Layer)0;
     
     if(File)
     {
@@ -1427,6 +1428,7 @@ static void LoadPlayerData(game_state* GameState, i32 Handle = -1, glm::vec2 Pos
     Entity->Player.Pickup = 0;
     Entity->IgnoreLayers = (Entity_Layer)0;
     Entity->Layer = (Entity_Layer)1;
+    Entity->Weapon.IgnoreLayers = (Entity_Layer)0;
     
     if(File)
     {
