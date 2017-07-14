@@ -1527,6 +1527,20 @@ static void LoadPlayerData(game_state* GameState, i32 Handle = -1, glm::vec2 Pos
             {
                 sscanf(LineBuffer, "staminagaintimerslow %lf", &Entity->Player.StaminaGainTimerSlow);
             }
+            else if(StartsWith(&LineBuffer[0], "checkpointplacementtimer"))
+            {
+                Entity->Player.CheckpointPlacementTimer.TimerMax = 0;
+                sscanf(LineBuffer, "checkpointplacementtimer %lf", &Entity->Player.CheckpointPlacementTimer.TimerMax);
+                Entity->Player.CheckpointPlacementTimer.TimerHandle = -1;
+                Entity->Player.CheckpointPlacementTimer.Name = "Checkpoint Placement";
+            }
+            else if(StartsWith(&LineBuffer[0], "checkpointplacementcooldowntimer"))
+            {
+                Entity->Player.CheckpointPlacementCooldownTimer.TimerMax = 0;
+                sscanf(LineBuffer, "checkpointplacementcooldowntimer %lf", &Entity->Player.CheckpointPlacementCooldownTimer.TimerMax);
+                Entity->Player.CheckpointPlacementCooldownTimer.TimerHandle = -1;
+                Entity->Player.CheckpointPlacementCooldownTimer.Name = "Checkpoint Placement";
+            }
         }
         fclose(File);
         LoadGame(GameState);
@@ -1537,6 +1551,7 @@ static void LoadPlayerData(game_state* GameState, i32 Handle = -1, glm::vec2 Pos
             {
                 Entity->Position = GameState->CharacterData.CurrentCheckpoint;
                 LoadBonfireData(GameState, -1, Position, true);
+                GameState->CharacterData.CheckpointHandle = GameState->EntityCount - 1;
             }
             
             Entity->Player.Level = GameState->CharacterData.Level;
@@ -1553,16 +1568,16 @@ static void LoadPlayerData(game_state* GameState, i32 Handle = -1, glm::vec2 Pos
             if(GameState->CharacterData.HasCheckpoint)
             {
                 Entity->Position = glm::vec2(GameState->CharacterData.CurrentCheckpoint.x,GameState->CharacterData.CurrentCheckpoint.y - 0.5f);
-                GameState->CharacterData.CheckpointHandle = GameState->EntityCount - 1;
             }
             else
             {
                 Entity->Position = Position;
                 GameState->CharacterData.CurrentCheckpoint = Position;
                 GameState->CharacterData.HasCheckpoint = true;
-                GameState->CharacterData.CheckpointHandle = GameState->EntityCount - 1;
+                
             }
             LoadBonfireData(GameState,-1,GameState->CharacterData.CurrentCheckpoint, true);
+            GameState->CharacterData.CheckpointHandle = GameState->EntityCount - 1;
         }
     }
 }
@@ -1635,6 +1650,23 @@ void Hit(game_state* GameState, entity* ByEntity, entity* HitEntity)
             }
         }
     }
+}
+
+void PlaceCheckpoint(game_state* GameState, entity* Entity)
+{
+    auto CheckpointPos = glm::vec2(Entity->Position.x, Entity->Position.y - 0.5f);
+    if(!GameState->CharacterData.HasCheckpoint)
+    {
+        LoadBonfireData(GameState,-1,CheckpointPos, true);
+        GameState->CharacterData.CheckpointHandle = GameState->EntityCount - 1;
+    }
+    else
+    {
+        printf("Checkpoint Handle: %d\n", GameState->CharacterData.CheckpointHandle);
+        GameState->Entities[GameState->CharacterData.CheckpointHandle].Position = CheckpointPos;
+    }
+    GameState->CharacterData.CurrentCheckpoint = CheckpointPos;
+    SaveGame(GameState);
 }
 
 void UpdatePlayer(entity* Entity, game_state* GameState, r64 DeltaTime)
@@ -1942,6 +1974,9 @@ void UpdatePlayer(entity* Entity, game_state* GameState, r64 DeltaTime)
             Entity->Player.DashCount = 0;
         }
         
+        if(Entity->Player.IsChargingCheckpoint)
+            Entity->Velocity = glm::vec2(Entity->Velocity.x * 0.5f, Entity->Velocity.y * 0.5f);
+        
         if(Entity->Velocity.x == Entity->Velocity.x)
             Entity->Position += Entity->Velocity;
         
@@ -1984,8 +2019,24 @@ void UpdatePlayer(entity* Entity, game_state* GameState, r64 DeltaTime)
             Entity->Player.RenderCrosshair = false;
         }
         
+        if(!Entity->Player.IsAttacking && !Entity->Player.IsChargingCheckpoint && !Entity->Player.IsDashing && GetActionButton(Action_Checkpoint, GameState) && TimerDone(GameState, Entity->Player.CheckpointPlacementCooldownTimer))
+        {
+            Entity->Player.IsChargingCheckpoint = true;
+            StartTimer(GameState,Entity->Player.CheckpointPlacementTimer);
+        }
+        else if(Entity->Player.IsChargingCheckpoint && TimerDone(GameState,Entity->Player.CheckpointPlacementTimer) && GetActionButton(Action_Checkpoint, GameState))
+        {
+            Entity->Player.IsChargingCheckpoint = false;
+            StartTimer(GameState,Entity->Player.CheckpointPlacementCooldownTimer);
+            PlaceCheckpoint(GameState,Entity);
+        }
+        else if(!GetActionButton(Action_Checkpoint, GameState))
+        {
+            Entity->Player.IsChargingCheckpoint = false;
+        }
+        
         //attacking
-        if(!Entity->Player.Pickup && TimerDone(GameState, Entity->Player.AttackCooldownTimer) &&
+        if(!Entity->Player.Pickup && !Entity->Player.IsChargingCheckpoint && TimerDone(GameState, Entity->Player.AttackCooldownTimer) &&
            TimerDone(GameState, Entity->StaggerCooldownTimer)
            && !Entity->Player.IsAttacking && Entity->Player.Stamina >= Entity->Player.AttackStaminaCost - Entity->Player.MinDiffStamina && (GetActionButtonDown(Action_Attack, GameState) || GetJoystickKeyDown(Joystick_3, GameState))) //@Cleanup: Remove the check for Joystick_3. Not sure why it is there?
         {

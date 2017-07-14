@@ -24,6 +24,8 @@ staminagaincooldowntimer 1.7
 staminagaintimerfast 0.02
 staminagaintimerslow 0.16
 staminadecreasetimer 0.8
+checkpointplacementtimer 5.0
+checkpointplacementcooldowntimer 20.0
 hitstaminacost 15
 rollstaminacost 15
 attackstaminacost 25
