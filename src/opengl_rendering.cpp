@@ -1562,7 +1562,6 @@ static void RenderEntity(game_state *GameState, entity &Entity, glm::mat4 Projec
             
             if(Entity.Type == Entity_Enemy && Entity.Enemy.HasLoot && Entity.Dead)
             {
-                printf("SHOW LOOT\n");
                 SetFloatUniform(Shader.Program, "glow", GL_TRUE);
             }
             else

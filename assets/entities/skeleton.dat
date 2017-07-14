@@ -15,8 +15,8 @@ recoiltimer 0.07
 weaponscale 2 2
 attackmovetimer 0.07
 attackmovespeed 10
-attacklowframeindex 6
-attackhighframeindex 10
+attacklowframeindex 8
+attackhighframeindex 13
 weaponcollider 0.7 0 0.5 1.0 1
 weaponinfo 20 up -1.0 1.5 1.0 0.5 down -1.0 -1.0 1.0 0.5 left -1.7 -0.2 1.0 0.8 right -0.3 -0.3 1.0 0.8
 renderbuttonoffset -1 1
