@@ -117,11 +117,11 @@ static void LoadEntityData(FILE* File, entity* Entity, game_state* GameState, b3
             char* LayerName = (char*)malloc(30 * sizeof(char));
             sscanf(LineBuffer, "layer %s", LayerName);
             
-            if(strcmp(LayerName, "Layer_Player"))
+            if(strcmp(LayerName, "Layer_Player") == 0)
             {
                 Entity->Layer = Layer_Player;
             }
-            else if(strcmp(LayerName, "Layer_Enemy"))
+            else if(strcmp(LayerName, "Layer_Enemy") == 0)
             {
                 Entity->Layer = Layer_Enemy;
             }
@@ -232,6 +232,7 @@ static void LoadEntityData(FILE* File, entity* Entity, game_state* GameState, b3
                    &Entity->WeaponColliderInfo.OffsetRight.y, 
                    &Entity->WeaponColliderInfo.ExtentsRight.x, 
                    &Entity->WeaponColliderInfo.ExtentsRight.y);
+            Entity->Weapon.Layer = Entity->Layer;
         }
         else if(StartsWith(&LineBuffer[0],"pointlight"))
         {
@@ -272,6 +273,9 @@ static void LoadEnemyData(FILE* File, entity* Entity, game_state* GameState)
     Entity->Enemy.WaypointCount = 0;
     Entity->Enemy.WaypointIndex = 0;
     Entity->Enemy.WanderingForward = true;
+    
+    Entity->Weapon.Layer = (Entity_Layer)4;
+    Entity->Weapon.IgnoreLayers = (Entity_Layer)0;
     
     if(File)
     {
@@ -1420,6 +1424,8 @@ static void LoadPlayerData(game_state* GameState, i32 Handle = -1, glm::vec2 Pos
     Entity->Player.IsDashing = false;
     Entity->Player.IsDefending = false;
     Entity->Player.Pickup = 0;
+    Entity->IgnoreLayers = (Entity_Layer)0;
+    Entity->Layer = (Entity_Layer)1;
     
     if(File)
     {
@@ -1580,6 +1586,7 @@ static void LoadPlayerData(game_state* GameState, i32 Handle = -1, glm::vec2 Pos
             GameState->CharacterData.CheckpointHandle = GameState->EntityCount - 1;
         }
     }
+    printf("Player layer is: %d\n", (i32)Entity->Layer);
 }
 
 static void DecreaseStamina(entity* Entity, game_state* GameState, i16 Cost) 
@@ -2206,7 +2213,25 @@ void UpdateWeapon(entity* Entity, game_state* GameState, r64 DeltaTime)
         break;
         case Entity_Enemy:
         {
-            IsAttacking = Entity->Enemy.Skeleton.IsAttacking;
+            switch(Entity->Enemy.EnemyType)
+            {
+                case Enemy_Skeleton:
+                {
+                    IsAttacking = Entity->Enemy.Skeleton.IsAttacking;
+                }
+                break;
+                case Enemy_Minotaur:
+                {
+                    IsAttacking = Entity->Enemy.Minotaur.IsAttacking;
+                }
+                break;
+                case Enemy_Wraith:
+                {
+                    IsAttacking = Entity->Enemy.Wraith.IsAttacking;
+                }
+                break;
+            }
+            
             auto WeaponColliderInfo = Entity->WeaponColliderInfo;
             
             switch(Entity->LookDirection)

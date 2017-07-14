@@ -6,7 +6,7 @@ center 0 0.5
 scale 2
 health 60
 animation skeleton_idle
-staggercooldowntimer 0.2
+staggercooldowntimer 0.1
 collider 0 -1.2 0.3 0.15 0
 hashittrigger 1
 hittrigger 0 -0.4 0.8 0.9 1
