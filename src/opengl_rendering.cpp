@@ -2358,64 +2358,67 @@ static void RenderLightSources(game_state* GameState)
 
 static void Render(game_state* GameState)
 {
-    if(GameState->CurrentLevel.Tilemap.RenderInfo.Dirty)
+    if(GameState->IsInitialized)
     {
-        LoadTilemapBuffer(&GameState->RenderState, 0, &GameState->CurrentLevel.Tilemap.RenderInfo.VAOS[0], &GameState->CurrentLevel.Tilemap.RenderInfo.VBOS[0], &GameState->CurrentLevel.Tilemap.RenderInfo.VBOSizes[0], GameState->CurrentLevel.Tilemap);
-        LoadTilemapBuffer(&GameState->RenderState, 1, &GameState->CurrentLevel.Tilemap.RenderInfo.VAOS[1], &GameState->CurrentLevel.Tilemap.RenderInfo.VBOS[1], &GameState->CurrentLevel.Tilemap.RenderInfo.VBOSizes[1], GameState->CurrentLevel.Tilemap);
-        GameState->CurrentLevel.Tilemap.RenderInfo.Dirty = false;
-    }
-    
-    GameState->RenderState.ScaleX = 2.0f / GameState->RenderState.WindowWidth;
-    GameState->RenderState.ScaleY = 2.0f / GameState->RenderState.WindowHeight;
-    
-    // First pass
-    glBindFramebuffer(GL_FRAMEBUFFER, GameState->RenderState.FrameBuffer);
-    glBindTexture(GL_TEXTURE_2D, GameState->RenderState.TextureColorBuffer);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glClearColor(0, 0, 0, 1.0f);
-    
-    if(GameState->GameMode == Mode_InGame || GameState->GameMode == Mode_Editor && GameState->EditorState.Mode == Editor_Level)
-    {
-        // Render scene
-        if(GameState->RenderGame)
+        if(GameState->CurrentLevel.Tilemap.RenderInfo.Dirty)
         {
-            RenderGame(GameState);
+            LoadTilemapBuffer(&GameState->RenderState, 0, &GameState->CurrentLevel.Tilemap.RenderInfo.VAOS[0], &GameState->CurrentLevel.Tilemap.RenderInfo.VBOS[0], &GameState->CurrentLevel.Tilemap.RenderInfo.VBOSizes[0], GameState->CurrentLevel.Tilemap);
+            LoadTilemapBuffer(&GameState->RenderState, 1, &GameState->CurrentLevel.Tilemap.RenderInfo.VAOS[1], &GameState->CurrentLevel.Tilemap.RenderInfo.VBOS[1], &GameState->CurrentLevel.Tilemap.RenderInfo.VBOSizes[1], GameState->CurrentLevel.Tilemap);
+            GameState->CurrentLevel.Tilemap.RenderInfo.Dirty = false;
         }
         
-        RenderLightSources(GameState);
+        GameState->RenderState.ScaleX = 2.0f / GameState->RenderState.WindowWidth;
+        GameState->RenderState.ScaleY = 2.0f / GameState->RenderState.WindowHeight;
+        
+        // First pass
+        glBindFramebuffer(GL_FRAMEBUFFER, GameState->RenderState.FrameBuffer);
+        glBindTexture(GL_TEXTURE_2D, GameState->RenderState.TextureColorBuffer);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glClearColor(0, 0, 0, 1.0f);
+        
+        if(GameState->GameMode == Mode_InGame || GameState->GameMode == Mode_Editor && GameState->EditorState.Mode == Editor_Level)
+        {
+            // Render scene
+            if(GameState->RenderGame)
+            {
+                RenderGame(GameState);
+            }
+            
+            RenderLightSources(GameState);
+        }
+        
+        // Second pass
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glClearColor(0, 0, 0, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        
+        glBindVertexArray(GameState->RenderState.FrameBufferVAO);
+        UseShader(&GameState->RenderState.FrameBufferShader);
+        
+        SetIntUniform(GameState->RenderState.FrameBufferShader.Program, "ignoreLight",  !GameState->RenderLight);
+        
+        auto TexLoc = glGetUniformLocation(GameState->RenderState.FrameBufferShader.Program, "tex");
+        glUniform1i(TexLoc, 0);
+        TexLoc = glGetUniformLocation(GameState->RenderState.FrameBufferShader.Program, "lightingTex");
+        glUniform1i(TexLoc, 1);
+        
+        glActiveTexture(GL_TEXTURE0);
+        glEnable(GL_TEXTURE_2D);
+        glBindTexture(GL_TEXTURE_2D, GameState->RenderState.TextureColorBuffer);
+        
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, GameState->RenderState.LightingTextureColorBuffer);
+        
+        GameState->RenderState.BoundTexture = GameState->RenderState.LightingTextureColorBuffer;
+        
+        glDrawArrays(GL_QUADS, 0, 4); 
+        
+        glActiveTexture(GL_TEXTURE0);
+        
+        // Render UI
+        RenderUI(GameState);
+        RenderDebugInfo(GameState);
+        glfwSwapBuffers(GameState->RenderState.Window);
     }
-    
-    // Second pass
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glClearColor(0, 0, 0, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    
-    glBindVertexArray(GameState->RenderState.FrameBufferVAO);
-    UseShader(&GameState->RenderState.FrameBufferShader);
-    
-    SetIntUniform(GameState->RenderState.FrameBufferShader.Program, "ignoreLight",  !GameState->RenderLight);
-    
-    auto TexLoc = glGetUniformLocation(GameState->RenderState.FrameBufferShader.Program, "tex");
-    glUniform1i(TexLoc, 0);
-    TexLoc = glGetUniformLocation(GameState->RenderState.FrameBufferShader.Program, "lightingTex");
-    glUniform1i(TexLoc, 1);
-    
-    glActiveTexture(GL_TEXTURE0);
-    glEnable(GL_TEXTURE_2D);
-    glBindTexture(GL_TEXTURE_2D, GameState->RenderState.TextureColorBuffer);
-    
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, GameState->RenderState.LightingTextureColorBuffer);
-    
-    GameState->RenderState.BoundTexture = GameState->RenderState.LightingTextureColorBuffer;
-    
-    glDrawArrays(GL_QUADS, 0, 4); 
-    
-    glActiveTexture(GL_TEXTURE0);
-    
-    // Render UI
-    RenderUI(GameState);
-    RenderDebugInfo(GameState);
-    glfwSwapBuffers(GameState->RenderState.Window);
     }

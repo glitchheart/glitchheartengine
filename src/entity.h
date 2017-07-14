@@ -205,6 +205,7 @@ struct entity
     glm::vec3 Rotation;
     r32 Scale;
     b32 IsFlipped;
+    b32 IsTemporary;
     
     Look_Direction LookDirection;
     Entity_Layer Layer;

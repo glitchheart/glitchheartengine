@@ -69,7 +69,7 @@ static void LoadEntityData(FILE* File, entity* Entity, game_state* GameState, b3
         Entity->HealthDecreaseTimer.TimerHandle = -1;
         Entity->HealthDecreaseTimer.Name = "Health Decrease";
         Entity->Dead = false;
-        Entity->Center = glm::vec2(0.5,0.5);
+        Entity->Center = glm::vec2(0.5, 0.5);
         Entity->CurrentAnimation = 0;
         Entity->Active = true;
         Entity->IsKinematic = false;
@@ -83,6 +83,8 @@ static void LoadEntityData(FILE* File, entity* Entity, game_state* GameState, b3
         Entity->Health = -1;
         Entity->HitAttackCountId = -1;
         Entity->HasWeapon = false;
+        Entity->IsTemporary = false;
+        Entity->AnimationInfo.FreezeFrame = false;
     }
     else
     {
@@ -90,7 +92,6 @@ static void LoadEntityData(FILE* File, entity* Entity, game_state* GameState, b3
     }
     
     Entity->AttackCount = 0;
-    Entity->AnimationInfo.FreezeFrame = false;
     
     char LineBuffer[255];
     
@@ -1116,8 +1117,10 @@ AI_FUNC(BlobDying)
 }
 
 
-static void LoadBonfireData(game_state* GameState, i32 Handle = -1, glm::vec2 Position = glm::vec2())
+static void LoadBonfireData(game_state* GameState, i32 Handle = -1, glm::vec2 Position = glm::vec2(), b32 IsTemporary = false)
 {
+    printf("Vec2 %f %f\n", Position.x, Position.y);
+    
     FILE* File;
     File = fopen("../assets/entities/bonfire.dat", "r");
     
@@ -1133,6 +1136,7 @@ static void LoadBonfireData(game_state* GameState, i32 Handle = -1, glm::vec2 Po
     if(File)
     {
         LoadEntityData(File, Entity, GameState, Handle != -1);
+        Entity->IsTemporary = IsTemporary;
         
         if(Handle == -1)
             Entity->Position = glm::vec2(Position.x, Position.y);
@@ -1532,7 +1536,7 @@ static void LoadPlayerData(game_state* GameState, i32 Handle = -1, glm::vec2 Pos
             if(GameState->CharacterData.HasCheckpoint)
             {
                 Entity->Position = GameState->CharacterData.CurrentCheckpoint;
-                LoadBonfireData(GameState, -1, Position);
+                LoadBonfireData(GameState, -1, Position, true);
             }
             
             Entity->Player.Level = GameState->CharacterData.Level;
@@ -1549,7 +1553,6 @@ static void LoadPlayerData(game_state* GameState, i32 Handle = -1, glm::vec2 Pos
             if(GameState->CharacterData.HasCheckpoint)
             {
                 Entity->Position = glm::vec2(GameState->CharacterData.CurrentCheckpoint.x,GameState->CharacterData.CurrentCheckpoint.y - 0.5f);
-                LoadBonfireData(GameState,-1,GameState->CharacterData.CurrentCheckpoint);
                 GameState->CharacterData.CheckpointHandle = GameState->EntityCount - 1;
             }
             else
@@ -1557,9 +1560,9 @@ static void LoadPlayerData(game_state* GameState, i32 Handle = -1, glm::vec2 Pos
                 Entity->Position = Position;
                 GameState->CharacterData.CurrentCheckpoint = Position;
                 GameState->CharacterData.HasCheckpoint = true;
-                LoadBonfireData(GameState,-1,GameState->CharacterData.CurrentCheckpoint);
                 GameState->CharacterData.CheckpointHandle = GameState->EntityCount - 1;
             }
+            LoadBonfireData(GameState,-1,GameState->CharacterData.CurrentCheckpoint, true);
         }
     }
 }
@@ -2654,7 +2657,7 @@ void UpdateGeneral(entity* Entity, game_state* GameState, r64 DeltaTime)
 {
     if(Entity->LightSourceHandle != -1)
     {
-        GameState->LightSources[Entity->LightSourceHandle].Pointlight.Position = Entity->Position;
+        GameState->LightSources[Entity->LightSourceHandle].Pointlight.Position = glm::vec2(Entity->Position.x - Entity->Center.x, Entity->Position.y);
     }
     
     auto& RenderEntity = GameState->RenderState.RenderEntities[Entity->RenderEntityHandle];

@@ -339,67 +339,70 @@ static void SaveLevelToFile(const char* FilePath, level* Level, game_state* Game
                 {
                     const entity* Entity = &GameState->Entities[Index];
                     char* TypeName = 0;
-                    switch(Entity->Type)
+                    if(!Entity->IsTemporary)
                     {
-                        case Entity_Enemy:
+                        switch(Entity->Type)
                         {
-                            switch(Entity->Enemy.EnemyType)
+                            case Entity_Enemy:
                             {
-                                case Enemy_Skeleton:
+                                switch(Entity->Enemy.EnemyType)
                                 {
-                                    TypeName = "skeleton";
-                                }
-                                break;
-                                case Enemy_Blob:
-                                {
-                                    TypeName = "blob";
-                                }
-                                break;
-                                case Enemy_Wraith:
-                                {
-                                    TypeName = "wraith";
-                                }
-                                break;
-                                case Enemy_Minotaur:
-                                {
-                                    TypeName = "minotaur";
-                                }
-                                break;
-                            }
-                        }
-                        break;
-                        case Entity_Barrel:
-                        {
-                            TypeName = "barrel";
-                        }
-                        break;
-                        case Entity_Bonfire:
-                        {
-                            TypeName = "bonfire";
-                        }
-                        break;
-                    }
-                    
-                    if(TypeName)
-                    {
-                        if(Entity->Type == Entity_Enemy && Entity->Enemy.WaypointCount > 0)
-                        {
-                            fprintf(File, "%s %f %f path %d ", TypeName, Entity->Position.x, Entity->Position.y, Entity->Enemy.WaypointCount);
-                            for(i32 Index = 0; Index < Entity->Enemy.WaypointCount; Index++)
-                            {
-                                if(Index == Entity->Enemy.WaypointCount - 1)
-                                {
-                                    fprintf(File, "%d %d\n", Entity->Enemy.Waypoints[Index].X, Entity->Enemy.Waypoints[Index].Y);
-                                }
-                                else
-                                {
-                                    fprintf(File, "%d %d ", Entity->Enemy.Waypoints[Index].X, Entity->Enemy.Waypoints[Index].Y);
+                                    case Enemy_Skeleton:
+                                    {
+                                        TypeName = "skeleton";
+                                    }
+                                    break;
+                                    case Enemy_Blob:
+                                    {
+                                        TypeName = "blob";
+                                    }
+                                    break;
+                                    case Enemy_Wraith:
+                                    {
+                                        TypeName = "wraith";
+                                    }
+                                    break;
+                                    case Enemy_Minotaur:
+                                    {
+                                        TypeName = "minotaur";
+                                    }
+                                    break;
                                 }
                             }
+                            break;
+                            case Entity_Barrel:
+                            {
+                                TypeName = "barrel";
+                            }
+                            break;
+                            case Entity_Bonfire:
+                            {
+                                TypeName = "bonfire";
+                            }
+                            break;
                         }
-                        else
+                        
+                        if(TypeName)
                         {
-                            fprintf(File, "%s %f %f\n", TypeName, Entity->Position.x, Entity->Position.y);
+                            if(Entity->Type == Entity_Enemy && Entity->Enemy.WaypointCount > 0)
+                            {
+                                fprintf(File, "%s %f %f path %d ", TypeName, Entity->Position.x, Entity->Position.y, Entity->Enemy.WaypointCount);
+                                for(i32 Index = 0; Index < Entity->Enemy.WaypointCount; Index++)
+                                {
+                                    if(Index == Entity->Enemy.WaypointCount - 1)
+                                    {
+                                        fprintf(File, "%d %d\n", Entity->Enemy.Waypoints[Index].X, Entity->Enemy.Waypoints[Index].Y);
+                                    }
+                                    else
+                                    {
+                                        fprintf(File, "%d %d ", Entity->Enemy.Waypoints[Index].X, Entity->Enemy.Waypoints[Index].Y);
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                fprintf(File, "%s %f %f\n", TypeName, Entity->Position.x, Entity->Position.y);
+                            }
                         }
                     }
                 }
