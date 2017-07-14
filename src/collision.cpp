@@ -92,7 +92,7 @@ r32 GetRayIntersectionFraction(collision_AABB* Coll, glm::vec2 Origin, glm::vec2
     glm::vec2 End = Origin + Direction;
     
     r32 MinT = GetRayIntersectionFractionOfFirstRay(Origin,End,glm::vec2(Coll->Min.x, Coll->Min.y),
-                                                       glm::vec2(Coll->Min.x, Coll->Max.y));
+                                                    glm::vec2(Coll->Min.x, Coll->Max.y));
     r32 X;
     X = GetRayIntersectionFractionOfFirstRay(Origin,End, glm::vec2(Coll->Min.x, Coll->Max.y),
                                              glm::vec2(Coll->Max.x, Coll->Max.y));
@@ -128,7 +128,8 @@ void CheckWeaponCollision(game_state* GameState, entity_weapon* Entity, collisio
     {
         entity* OtherEntity = &GameState->Entities[OtherEntityIndex];
         
-        if(!(OtherEntity->Layer & Entity->IgnoreLayers) && !(Entity->Layer & OtherEntity->IgnoreLayers)
+        if(!(OtherEntity->Layer & Entity->IgnoreLayers)
+           && !(Entity->Layer & OtherEntity->IgnoreLayers)
            && !OtherEntity->IsKinematic && OtherEntity->Active)
         {
             if(OtherEntity->HasHitTrigger)

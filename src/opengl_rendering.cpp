@@ -1561,9 +1561,14 @@ static void RenderEntity(game_state *GameState, entity &Entity, glm::mat4 Projec
             auto Frame = Animation->Frames[Entity.AnimationInfo.FrameIndex];
             
             if(Entity.Type == Entity_Enemy && Entity.Enemy.HasLoot && Entity.Dead)
+            {
+                printf("SHOW LOOT\n");
                 SetFloatUniform(Shader.Program, "glow", GL_TRUE);
+            }
             else
+            {
                 SetFloatUniform(Shader.Program, "glow", GL_FALSE);
+            }
             
             SetFloatUniform(Shader.Program, "time", (r32)GetTime());
             SetVec4Uniform(Shader.Program, "spriteColor", RenderEntity->Color);
