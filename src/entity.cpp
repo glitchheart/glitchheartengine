@@ -1407,6 +1407,27 @@ static void LoadBlobData(game_state* GameState, i32 Handle = -1, glm::vec2 Posit
     
 }
 
+void PlaceCheckpoint(game_state* GameState, entity* Entity)
+{
+    auto CheckpointPos = glm::vec2(Entity->Position.x, Entity->Position.y - 0.5f);
+    if(!GameState->CharacterData.HasCheckpoint)
+    {
+        LoadBonfireData(GameState,-1,CheckpointPos, true);
+        GameState->CharacterData.CheckpointHandle = GameState->EntityCount - 1;
+    }
+    else
+    {
+        GameState->Entities[GameState->CharacterData.CheckpointHandle].Position = CheckpointPos;
+    }
+    printf("New checkpoint: (%f,%f)\n",CheckpointPos.x, CheckpointPos.y);
+    GameState->LastCharacterData.CurrentCheckpoint = CheckpointPos;
+    GameState->LastCharacterData.CheckpointHandle = GameState->CharacterData.CheckpointHandle;
+    GameState->CharacterData.CurrentCheckpoint = CheckpointPos;
+    GameState->CharacterData.HasCheckpoint = true;
+    GameState->LastCharacterData.HasCheckpoint = true;
+    SaveGame(GameState);
+}
+
 static void LoadPlayerData(game_state* GameState, i32 Handle = -1, glm::vec2 Position = glm::vec2())
 {
     FILE* File;
@@ -1420,7 +1441,6 @@ static void LoadPlayerData(game_state* GameState, i32 Handle = -1, glm::vec2 Pos
     Entity->Player.Pickup = {};
     Entity->Player = {};
     Entity->Player.RenderCrosshair = false;
-    Entity->Player.Level = 0;
     Entity->Player.LastMilestone = 0;
     Entity->Player.IsAttacking = false;
     Entity->Player.IsDashing = false;
@@ -1496,8 +1516,8 @@ static void LoadPlayerData(game_state* GameState, i32 Handle = -1, glm::vec2 Pos
             }
             else if(StartsWith(&LineBuffer[0], "stamina "))
             {
-                sscanf(LineBuffer, "stamina %hd", &Entity->Player.FullStamina);
-                Entity->Player.Stamina = Entity->Player.FullStamina;
+                sscanf(LineBuffer, "stamina %d", &GameState->CharacterData.Stamina);
+                Entity->Player.Stamina = (i16)GameState->CharacterData.Stamina;
             }
             else if(StartsWith(&LineBuffer[0], "staminagaintimer "))
             {
@@ -1553,25 +1573,6 @@ static void LoadPlayerData(game_state* GameState, i32 Handle = -1, glm::vec2 Pos
         }
         fclose(File);
         LoadGame(GameState);
-        
-        if(GameState->CharacterData.Level != 0)
-        {
-            if(GameState->CharacterData.HasCheckpoint)
-            {
-                Entity->Position = GameState->CharacterData.CurrentCheckpoint;
-                LoadBonfireData(GameState, -1, Position, true);
-                GameState->CharacterData.CheckpointHandle = GameState->EntityCount - 1;
-            }
-            
-            Entity->Player.Level = GameState->CharacterData.Level;
-            Entity->Health = (i16)GameState->LastCharacterData.Health;
-            Entity->FullHealth = (i16)GameState->LastCharacterData.Health;
-            Entity->Player.Stamina = (i16)GameState->LastCharacterData.Stamina;
-            Entity->Player.FullStamina = (i16)GameState->LastCharacterData.Stamina;
-            Entity->Weapon.Damage = (i16)GameState->LastCharacterData.Strength;
-        }
-        
-        
         if(Handle == -1)
         {
             if(GameState->CharacterData.HasCheckpoint)
@@ -1587,9 +1588,18 @@ static void LoadPlayerData(game_state* GameState, i32 Handle = -1, glm::vec2 Pos
             }
             LoadBonfireData(GameState,-1,GameState->CharacterData.CurrentCheckpoint, true);
             GameState->CharacterData.CheckpointHandle = GameState->EntityCount - 1;
+            GameState->LastCharacterData.CheckpointHandle = GameState->EntityCount - 1;
+            GameState->LastCharacterData.CurrentCheckpoint = Position;
+            GameState->LastCharacterData.HasCheckpoint = true;
+            
+            if(GameState->CharacterData.Health == 0)
+            {
+                GameState->CharacterData.Health = Entity->Health;
+                GameState->CharacterData.Stamina = Entity->Player.Stamina;
+                GameState->CharacterData.Strength = Entity->Weapon.Damage;
+            }
         }
     }
-    printf("Player layer is: %d\n", (i32)Entity->Layer);
 }
 
 static void DecreaseStamina(entity* Entity, game_state* GameState, i16 Cost) 
@@ -1662,41 +1672,28 @@ void Hit(game_state* GameState, entity* ByEntity, entity* HitEntity)
     }
 }
 
-void PlaceCheckpoint(game_state* GameState, entity* Entity)
-{
-    auto CheckpointPos = glm::vec2(Entity->Position.x, Entity->Position.y - 0.5f);
-    if(!GameState->CharacterData.HasCheckpoint)
-    {
-        LoadBonfireData(GameState,-1,CheckpointPos, true);
-        GameState->CharacterData.CheckpointHandle = GameState->EntityCount - 1;
-    }
-    else
-    {
-        printf("Checkpoint Handle: %d\n", GameState->CharacterData.CheckpointHandle);
-        GameState->Entities[GameState->CharacterData.CheckpointHandle].Position = CheckpointPos;
-    }
-    GameState->CharacterData.CurrentCheckpoint = CheckpointPos;
-    SaveGame(GameState);
-}
-
 void UpdatePlayer(entity* Entity, game_state* GameState, r64 DeltaTime)
 {
-    if(Entity->Player.LastMilestone == 0 && Entity->Player.Experience >= GameState->StatData[Entity->Player.Level].Milestones[0].MilestonePoint)
+    if(Entity->Player.LastMilestone == 0 && Entity->Player.Experience >= GameState->StatData[GameState->CharacterData.Level].Milestones[0].MilestonePoint)
     {
         Entity->Player.LastMilestone++;
         GameState->StatGainModeOn = true;
+        SaveGame(GameState);
     }
-    else if(Entity->Player.LastMilestone == 1 && Entity->Player.Experience >= GameState->StatData[Entity->Player.Level].Milestones[1].MilestonePoint)
+    else if(Entity->Player.LastMilestone == 1 && Entity->Player.Experience >= GameState->StatData[GameState->CharacterData.Level].Milestones[1].MilestonePoint)
     {
         Entity->Player.LastMilestone++;
         GameState->StatGainModeOn = true;
+        SaveGame(GameState);
     }
     
-    if(Entity->Player.Experience >= GameState->StatData[Entity->Player.Level].ExperienceForLevel)
+    if(Entity->Player.Experience >= GameState->StatData[GameState->CharacterData.Level].ExperienceForLevel)
     {
-        Entity->Player.Experience -= GameState->StatData[Entity->Player.Level].ExperienceForLevel;
-        Entity->Player.Level++;
+        Entity->Player.Experience -= GameState->StatData[GameState->CharacterData.Level].ExperienceForLevel;
+        GameState->CharacterData.Level++;
+        
         Entity->Player.LastMilestone = 0;
+        SaveGame(GameState);
     }
     
     r32 UsedWalkingSpeed = Entity->Player.WalkingSpeed;
@@ -1714,18 +1711,18 @@ void UpdatePlayer(entity* Entity, game_state* GameState, r64 DeltaTime)
         Entity->Player.StaminaGainTimer.TimerMax = Entity->Player.StaminaGainTimerSlow;
     }
     
-    if(Entity->Player.Stamina != Entity->Player.FullStamina)
+    if(Entity->Player.Stamina != GameState->CharacterData.Stamina)
     {
         if(TimerDone(GameState, Entity->Player.StaminaGainTimer))
         {
             Entity->Player.Stamina += 1;
             
-            if(Entity->Player.Stamina < Entity->Player.FullStamina)
+            if(Entity->Player.Stamina < GameState->CharacterData.Stamina)
             {
                 StartTimer(GameState, Entity->Player.StaminaGainTimer);
             }
             
-            Entity->Player.Stamina = Min(Entity->Player.Stamina, Entity->Player.FullStamina);
+            Entity->Player.Stamina = Min(Entity->Player.Stamina, (i16)GameState->CharacterData.Stamina);
         }
     }
     
@@ -1745,10 +1742,11 @@ void UpdatePlayer(entity* Entity, game_state* GameState, r64 DeltaTime)
     
     if (Entity->Active && Entity->Health > 0)
     {
-        if(!Entity->Player.IsAttacking && !Entity->Hit && !Entity->Player.IsDashing && GetActionButtonDown(Action_Use, GameState))
+        if(!Entity->Player.IsAttacking && !Entity->Hit && !Entity->Player.IsDashing && GetActionButtonDown(Action_Use, GameState) && Entity->Player.Inventory.HealthPotionCount > 0)
         {
             PlaySoundEffect(GameState, &GameState->SoundManager.UseHealth);
-            Entity->Health = Min(Entity->FullHealth, Entity->Health + 30);
+            Entity->Health = Min((i16)GameState->CharacterData.Health, Entity->Health + 30);
+            Entity->Player.Inventory.HealthPotionCount--;
         }
         
         if(Entity->Player.IsDefending && !Entity->AnimationInfo.Playing)
@@ -2022,7 +2020,6 @@ void UpdatePlayer(entity* Entity, game_state* GameState, r64 DeltaTime)
                 GameState->Entities[Entity->Player.TargetedEnemyHandle].Enemy.IsTargeted = false;
                 Entity->Player.TargetedEnemyHandle = -1;
             }
-            
             Entity->Player.RenderCrosshair = false;
         }
         
@@ -2168,6 +2165,11 @@ void UpdatePlayer(entity* Entity, game_state* GameState, r64 DeltaTime)
         Entity->Dead = true;
         PlayAnimation(Entity, "swordsman_death", GameState);
         Entity->AnimationInfo.FreezeFrame = true;
+        Entity->Player.Experience = 0;
+        Entity->Player.LastMilestone = 0;
+        GameState->CharacterData = GameState->LastCharacterData;
+        printf("\n");
+        SaveGame(GameState);
     }
 }
 
@@ -2406,18 +2408,33 @@ void UpdateBlob(entity* Entity, game_state* GameState, r64 DeltaTime)
     Entity->Position.y += Entity->Velocity.y * (r32)DeltaTime;
 }
 
+static void DetermineLoot(entity* Entity)
+{
+    Entity->Enemy.HasLoot = rand() % 2 == 0;
+}
+
+static void CheckLootPickup(game_state* GameState, entity* Entity, entity* Player)
+{
+    if(Entity->RenderButtonHint && GetActionButtonDown(Action_Interact, GameState))
+    {
+        Player->Player.Inventory.HealthPotionCount = Player->Player.Inventory.HealthPotionCount + 1;
+        Entity->Enemy.HasLoot = false;
+        Entity->RenderButtonHint = false;
+    }
+}
+
 void UpdateSkeleton(entity* Entity, game_state* GameState, r64 DeltaTime)
 {
     auto& Enemy = Entity->Enemy;
     auto& Skeleton = Entity->Enemy.Skeleton;
     
-    auto& Player = GameState->Entities[0];
-    Entity->RenderButtonHint = Entity->Dead && glm::distance(Player.Position, Entity->Position) < 1.5f;
+    auto Player = &GameState->Entities[0];
+    Entity->RenderButtonHint = Entity->Enemy.HasLoot && Entity->Dead && glm::distance(Player->Position, Entity->Position) < 1.5f;
+    
+    CheckLootPickup(GameState, Entity,Player);
     
     if(Entity->Active && !Entity->Dead)
     {
-        entity& Player = GameState->Entities[GameState->PlayerIndex];
-        
         if(Entity->Hit)
         {
             if(Entity->Health <= 0)
@@ -2426,12 +2443,14 @@ void UpdateSkeleton(entity* Entity, game_state* GameState, r64 DeltaTime)
                 PlayAnimation(Entity, "skeleton_dead", GameState);
                 Entity->AnimationInfo.FreezeFrame = true;
                 Enemy.AIState = AI_Dying;
+                SaveGame(GameState);
+                DetermineLoot(Entity);
             }
             else if(strcmp(Entity->CurrentAnimation->Name, "skeleton_attack") != 0 && Enemy.AIState != AI_Dying)
             {
                 PlayAnimation(Entity, "skeleton_hit", GameState);
                 Enemy.AIState = AI_Hit;
-                Entity->HitRecoilDirection = glm::normalize(Entity->Position - Player.Position);
+                Entity->HitRecoilDirection = glm::normalize(Entity->Position - Player->Position);
                 StartTimer(GameState, Entity->RecoilTimer);
             }
         }
@@ -2443,11 +2462,11 @@ void UpdateSkeleton(entity* Entity, game_state* GameState, r64 DeltaTime)
         Entity->Position.x += Entity->Velocity.x * (r32)DeltaTime;
         Entity->Position.y += Entity->Velocity.y * (r32)DeltaTime;
         
-        glm::vec2 Direction = glm::normalize(Player.Position - Entity->Position);
+        glm::vec2 Direction = glm::normalize(Player->Position - Entity->Position);
         
         if(Entity->Enemy.AIState != AI_Attacking && !Entity->Enemy.Skeleton.IsAttacking)
         {
-            glm::vec2 Direction = glm::normalize(Player.Position - Entity->Position);
+            glm::vec2 Direction = glm::normalize(Player->Position - Entity->Position);
             
             if(Abs(Direction.x) < 0.6f)
             {
@@ -2493,13 +2512,14 @@ void UpdateMinotaur(entity* Entity, game_state* GameState, r64 DeltaTime)
     auto& Enemy = Entity->Enemy;
     auto& Minotaur = Entity->Enemy.Minotaur;
     
-    auto& Player = GameState->Entities[0];
-    Entity->RenderButtonHint = Entity->Dead && glm::distance(Player.Position, Entity->Position) < 1.5f;
+    auto Player = &GameState->Entities[0];
+    
+    Entity->RenderButtonHint = Entity->Enemy.HasLoot &&  Entity->Dead && glm::distance(Player->Position, Entity->Position) < 1.5f;
+    
+    CheckLootPickup(GameState, Entity, Player);
     
     if(Entity->Active && !Entity->Dead)
     {
-        entity& Player = GameState->Entities[GameState->PlayerIndex];
-        
         if(Entity->Hit)
         {
             PlaySoundEffect(GameState, &GameState->SoundManager.MinotaurHit);
@@ -2511,13 +2531,15 @@ void UpdateMinotaur(entity* Entity, game_state* GameState, r64 DeltaTime)
                 PlayAnimation(Entity, "minotaur_death", GameState);
                 Entity->AnimationInfo.FreezeFrame = true;
                 Enemy.AIState = AI_Dying;
+                SaveGame(GameState);
+                DetermineLoot(Entity);
             }
             else if(strcmp(Entity->CurrentAnimation->Name, "minotaur_attack") != 0 && Enemy.AIState != AI_Dying)
             {
                 PlayAnimation(Entity, "minotaur_detected", GameState);
                 Enemy.AIState = AI_Hit;
                 Minotaur.IsAttacking = false;
-                Entity->HitRecoilDirection = glm::normalize(Entity->Position - Player.Position);
+                Entity->HitRecoilDirection = glm::normalize(Entity->Position - Player->Position);
                 StartTimer(GameState, Entity->RecoilTimer);
             }
         }
@@ -2538,7 +2560,7 @@ void UpdateMinotaur(entity* Entity, game_state* GameState, r64 DeltaTime)
         
         if(Entity->Enemy.AIState != AI_Attacking && !Entity->Enemy.Minotaur.IsAttacking)
         {
-            glm::vec2 Direction = glm::normalize(Player.Position - Entity->Position);
+            glm::vec2 Direction = glm::normalize(Player->Position - Entity->Position);
             
             if(Abs(Direction.x) < 0.6f)
             {

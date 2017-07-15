@@ -1892,7 +1892,7 @@ void RenderUI(game_state* GameState)
             // Player UI
             auto Player = GameState->Entities[0];
             RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(0, 0, 0, 1), 48.0f, GameState->RenderState.WindowHeight - 52.0f, 404.0f, 29.0f);
-            RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(0.6f, 0, 0, 1), 50.0f, GameState->RenderState.WindowHeight - 50.0f, 400.0f / (r32)Player.FullHealth * (r32)Player.Health, 25.0f);
+            RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(0.6f, 0, 0, 1), 50.0f, GameState->RenderState.WindowHeight - 50.0f, 400.0f / (r32)GameState->CharacterData.Health * (r32)Player.Health, 25.0f);
             
             if(!TimerDone(GameState,Player.Player.CheckpointPlacementTimer) && Player.Player.IsChargingCheckpoint)
             {
@@ -1908,28 +1908,34 @@ void RenderUI(game_state* GameState)
             
             if(!TimerDone(GameState, Player.HealthDecreaseTimer))
             {
-                r32 StartX = 50 +  400.0f / (r32)Player.FullHealth * (r32)Player.Health;
-                r32 Width = 400.0f / (r32)Player.FullHealth * Player.HealthLost;
+                r32 StartX = 50 +  400.0f / (r32)GameState->CharacterData.Health * (r32)Player.Health;
+                r32 Width = 400.0f / (r32)GameState->CharacterData.Health * Player.HealthLost;
                 
                 RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(1, 1, 1, 1), StartX, (r32)(GameState->RenderState.WindowHeight - 50), (r32)Width, 25.0f);
             }
             
             RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(0, 0, 0, 1), 48.0f, (r32)(GameState->RenderState.WindowHeight - 92), 404.0f, 29.0f);
-            RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(1, 0.5, 0, 1), 50.0f, (r32)(GameState->RenderState.WindowHeight - 90), 400.0f / (r32)Player.Player.FullStamina * (r32)Player.Player.Stamina, 25.0f);
+            RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(1, 0.5, 0, 1), 50.0f, (r32)(GameState->RenderState.WindowHeight - 90), 400.0f / (r32)GameState->CharacterData.Stamina * (r32)Player.Player.Stamina, 25.0f);
             
             RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(0, 0, 0, 1), 48, 10, 80, 80);
             RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(1, 1, 1, 1), 48 + 40 - 25, 10 + 40 - 25, 50, 50, GameState->RenderState.Textures["health_potion"]->TextureHandle);
+            
+            char InventoryText[64];
+            sprintf(InventoryText, "%d", GameState->Entities[0].Player.Inventory.HealthPotionCount);
+            
+            RenderText(&GameState->RenderState, GameState->RenderState.RobotoFont, glm::vec4(1, 1, 1, 1), InventoryText, 48 + 40 - 17.5f, 90, 1, Alignment_Center);
+            
             RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(1, 1, 1, 1), 48 + 40 - 17.5f, 90, 35, 35, GameState->RenderState.Textures["y_button"]->TextureHandle);
             
             char Text[100];
-            sprintf(Text, "%d / %d", Player.Health, Player.FullHealth);
+            sprintf(Text, "%d / %d", Player.Health, GameState->CharacterData.Health);
             RenderText(&GameState->RenderState, GameState->RenderState.RobotoFont, glm::vec4(1, 1, 1, 1), &Text[0], 48 + 202.0f, GameState->RenderState.WindowHeight - 35.5f, 1, Alignment_Center);
             
-            sprintf(Text, "%d / %d", Player.Player.Stamina, Player.Player.FullStamina);
+            sprintf(Text, "%d / %d", Player.Player.Stamina, GameState->CharacterData.Stamina);
             RenderText(&GameState->RenderState, GameState->RenderState.RobotoFont, glm::vec4(1, 1, 1, 1), &Text[0], 48 + 202.0f, GameState->RenderState.WindowHeight - 75.5f, 1, Alignment_Center);
             
             // Level and experience
-            sprintf(Text, "Level %d", (Player.Player.Level + 1));
+            sprintf(Text, "Level %d", (GameState->CharacterData.Level + 1));
             RenderText(&GameState->RenderState, GameState->RenderState.RobotoFont, glm::vec4(1, 1, 1, 1), &Text[0], 48.0f, (r32)GameState->RenderState.WindowHeight - 115, 1);
             
             RenderText(&GameState->RenderState, GameState->RenderState.RobotoFont, glm::vec4(1, 1, 1, 1), "Experience", 48.0f, (r32)GameState->RenderState.WindowHeight - 137, 1);
@@ -1937,7 +1943,7 @@ void RenderUI(game_state* GameState)
             // Experience bar
             RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(0, 0, 0, 1), 48.0f, (r32)GameState->RenderState.WindowHeight - 170, 304.0f, 20.0f);
             
-            i32 ExperienceForNextLevel = GameState->StatData[Player.Player.Level].ExperienceForLevel;
+            i32 ExperienceForNextLevel = GameState->StatData[GameState->CharacterData.Level].ExperienceForLevel;
             
             RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(0, 0.8, 0.1, 1), 50.0f, GameState->RenderState.WindowHeight - 168.0f, 300.0f / (r32)ExperienceForNextLevel * (r32)Player.Player.Experience, 15.0f);
             
@@ -1957,7 +1963,7 @@ void RenderUI(game_state* GameState)
                 
                 RenderText(&GameState->RenderState, GameState->RenderState.RobotoFont, glm::vec4(1, 1, 1, 1), "Choose an upgrade", HalfWidth, HalfHeight + 50, 1, Alignment_Center);
                 
-                auto CurrentMilestone = GameState->StatData[Player.Player.Level].Milestones[Player.Player.LastMilestone - 1];
+                auto CurrentMilestone = GameState->StatData[GameState->CharacterData.Level].Milestones[Player.Player.LastMilestone - 1];
                 
                 sprintf(Text, "Health +%d", CurrentMilestone.Health);
                 RenderText(&GameState->RenderState, GameState->RenderState.RobotoFont, glm::vec4(1, 1, 1, 1), &Text[0], HalfWidth, HalfHeight + 20, 1, Alignment_Center);
