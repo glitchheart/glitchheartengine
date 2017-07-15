@@ -45,3 +45,4 @@ chargingtimer 0.4
 alertedtimer 1.0
 jumpattacktimer 1
 jumpattackimpacttimer 0.3
+impactcollisionextents 2 1
