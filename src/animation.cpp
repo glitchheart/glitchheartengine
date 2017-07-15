@@ -14,7 +14,7 @@
                                         fprintf(File, "frames\n");
                                         
                                         i32 X = (i32)(Animation.FrameOffset.y) * (i32)Animation.FrameSize.x;
-                                        i32 Y = (i32)(Animation.FrameOffset.x) * (i32)Animation.FrameSize.y;
+                                        i32 Y = (i32)(Animation.FrameOffset.y) * (i32)Animation.FrameSize.y;
                                         
                                         i32 FrameIndex = 0;
                                         
@@ -35,7 +35,10 @@
                                         
                                         fprintf(File, "texture %s\n", Animation.Texture->Name);
                                         
-                                        GameState->Animations.insert(std::pair<char*, animation>(Animation.Name, Animation));
+                                        GameState->AnimationArray[GameState->AnimationIndex] = Animation;
+                                        
+                                        GameState->Animations.insert(std::pair<char*, animation*>(GameState->AnimationArray[GameState->AnimationIndex].Name, &GameState->AnimationArray[GameState->AnimationIndex]));
+                                        GameState->AnimationIndex++;
                                         
                                         fclose(File);
                                     }
@@ -133,7 +136,10 @@
                                             }
                                             free(TextureName);
                                         }
-                                        GameState->Animations.insert(std::pair<char*, animation>(Animation.Name, Animation));
+                                        
+                                        GameState->AnimationArray[GameState->AnimationIndex] = Animation;
+                                        GameState->Animations.insert(std::pair<char*, animation*>(GameState->AnimationArray[GameState->AnimationIndex].Name, &GameState->AnimationArray[GameState->AnimationIndex]));
+                                        GameState->AnimationIndex++;
                                         fclose(File);
                                     }
                                     else
@@ -160,7 +166,7 @@
                                     {
                                         if(GameState->Animations.find(AnimationName) != GameState->Animations.end())
                                         {
-                                            Entity->CurrentAnimation = &GameState->Animations[AnimationName];
+                                            Entity->CurrentAnimation = GameState->Animations[AnimationName];
                                             Entity->AnimationInfo.Playing = true;
                                             Entity->AnimationInfo.FrameIndex = 0;
                                             Entity->AnimationInfo.CurrentTime = 0.0;
@@ -171,6 +177,27 @@
                                             Entity->AnimationInfo.Playing = false;
                                             Entity->AnimationInfo.FrameIndex = 0;
                                             Entity->AnimationInfo.CurrentTime = 0.0;
+                                        }
+                                    }
+                                }
+                                
+                                static void PlayAnimation(object_entity* Object, char* AnimationName, game_state* GameState)
+                                {
+                                    if(!Object->CurrentAnimation || !Object->CurrentAnimation->Name || strcmp(Object->CurrentAnimation->Name, AnimationName) != 0 || !Object->AnimationInfo.Playing)
+                                    {
+                                        if(GameState->Animations.find(AnimationName) != GameState->Animations.end())
+                                        {
+                                            Object->CurrentAnimation = GameState->Animations[AnimationName];
+                                            Object->AnimationInfo.Playing = true;
+                                            Object->AnimationInfo.FrameIndex = 0;
+                                            Object->AnimationInfo.CurrentTime = 0.0;
+                                        }
+                                        else
+                                        {
+                                            Object->CurrentAnimation = 0;
+                                            Object->AnimationInfo.Playing = false;
+                                            Object->AnimationInfo.FrameIndex = 0;
+                                            Object->AnimationInfo.CurrentTime = 0.0;
                                         }
                                     }
                                 }

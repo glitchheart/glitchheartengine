@@ -138,6 +138,29 @@ b32 GetActionButtonDown(Action_Button ActionButton, game_state* GameState)
     return 0;
 }
 
+b32 GetActionButton(Action_Button ActionButton, game_state* GameState)
+{
+    if(GameState->InputController.ControllerPresent)
+    {
+        switch(GameState->InputController.ControllerType)
+        {
+            case Controller_Xbox:
+            {
+                return GetJoystickKey(GameState->InputController.ActionButtonXboxControllerBindings[ActionButton], GameState);
+            }
+            case Controller_PS4:
+            {
+                return GetJoystickKey(GameState->InputController.ActionButtonPS4ControllerBindings[ActionButton], GameState);
+            }
+        }
+    }
+    else
+    {
+        return GetKey(GameState->InputController.ActionButtonKeyboardBindings[ActionButton], GameState);
+    }
+    return 0;
+}
+
 float GetInputX(game_state* GameState, Stick Stick = Stick_Left)
 {
     i32 Axis = Stick == Stick_Left ? 0 : 2;

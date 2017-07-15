@@ -19,7 +19,9 @@
          if(GameState->Timers[Index] > 0)
              GameState->Timers[Index] -= DeltaTime;
          else
+         {
              GameState->Timers[Index] = 0;
+         }
      }
  }
  
@@ -47,7 +49,6 @@
                      
                      i32 ExperienceNeeded = 0;
                      i32 NumberOfMilestones = 0;
-                     i32 Consumed = 0;
                      
                      auto& FirstMilestone = GameState->StatData[Index].Milestones[0];
                      auto& SecondMilestone = GameState->StatData[Index].Milestones[1];
@@ -70,7 +71,16 @@
  {
      if(GetKeyDown(Key_Escape, GameState))
      {
-         GameState->EditorState.MenuOpen = !GameState->EditorState.MenuOpen;
+         if(GameState->EditorState.AnimationMode == Animation_Edit || GameState->EditorState.AnimationMode == Animation_Create ||GameState->EditorState.AnimationMode == Animation_SelectTexture)
+         {
+             GameState->EditorState.AnimationMode = Animation_SelectAnimation;
+             ToggleAnimationFields(&GameState->EditorState, false);
+             GameState->EditorState.CreateNewAnimationButton->Active = true;
+         }
+         else
+         {
+             GameState->EditorState.MenuOpen = !GameState->EditorState.MenuOpen;
+         }
      }
      
      if(GetKeyDown(Key_Enter, GameState) && GameState->EditorState.FocusedTextfield)
@@ -106,21 +116,6 @@
                  {
                      GameState->EditorState.Mode = Editor_Animation;
                      
-                     std::map<char*, animation>::iterator AnimationIterator;
-                     
-                     if(GameState->EditorState.Animations)
-                         free(GameState->EditorState.Animations);
-                     
-                     GameState->EditorState.Animations = (char**)malloc(GameState->Animations.size() * sizeof(char*));
-                     
-                     i32 Index = 0;
-                     for(AnimationIterator = GameState->Animations.begin(); AnimationIterator != GameState->Animations.end(); AnimationIterator++)
-                     {
-                         GameState->EditorState.Animations[Index++] = AnimationIterator->first;
-                     }
-                     
-                     GameState->EditorState.AnimationsLength = (i32)GameState->Animations.size();
-                     
                      GameState->EditorState.CreateNewAnimationButton->Active = true;
                      GameState->EditorState.TileIsSolidCheckbox->Active = false;
                      GameState->EditorState.Mode = Editor_Animation;
@@ -132,7 +127,7 @@
                      
                      GameState->EditorState.Textures = (char const**)malloc(GameState->RenderState.Textures.size() * sizeof(char*));
                      
-                     Index = 0;
+                     i32 Index = 0;
                      
                      for(TextureIterator = GameState->RenderState.Textures.begin(); TextureIterator != GameState->RenderState.Textures.end(); TextureIterator++)
                      {
@@ -183,7 +178,6 @@
                     GameState->RenderState.WindowHeight - GameState->InputController.MouseY >= Button->ScreenPosition.y && GameState->RenderState.WindowHeight - GameState->InputController.MouseY <= Button->ScreenPosition.y + Button->Size.y)
                  {
                      Button->Clicked = true;
-                     
                      PlaySoundEffect(GameState, &GameState->SoundManager.ButtonClick);
                      StartTimer(GameState, Button->ClickAnimationTimer);
                      
@@ -207,21 +201,6 @@
                          break;
                          case Button_Animation:
                          {
-                             std::map<char*, animation>::iterator AnimationIterator;
-                             
-                             if(GameState->EditorState.Animations)
-                                 free(GameState->EditorState.Animations);
-                             
-                             GameState->EditorState.Animations = (char**)malloc(GameState->Animations.size() * sizeof(char*));
-                             
-                             i32 Index = 0;
-                             for(AnimationIterator = GameState->Animations.begin(); AnimationIterator != GameState->Animations.end(); AnimationIterator++)
-                             {
-                                 GameState->EditorState.Animations[Index++] = AnimationIterator->first;
-                             }
-                             
-                             GameState->EditorState.AnimationsLength = (i32)GameState->Animations.size();
-                             
                              GameState->EditorState.CreateNewAnimationButton->Active = true;
                              GameState->EditorState.TileIsSolidCheckbox->Active = false;
                              GameState->EditorState.Mode = Editor_Animation;
@@ -233,7 +212,7 @@
                              
                              GameState->EditorState.Textures = (char const**)malloc(GameState->RenderState.Textures.size() * sizeof(char*));
                              
-                             Index = 0;
+                             i32 Index = 0;
                              
                              for(TextureIterator = GameState->RenderState.Textures.begin(); TextureIterator != GameState->RenderState.Textures.end(); TextureIterator++)
                              {
@@ -242,6 +221,8 @@
                              
                              GameState->EditorState.TexturesLength = (i32)GameState->RenderState.Textures.size();
                              GameState->EditorState.Mode = Editor_Animation;
+                             GameState->EditorState.SelectedTexture = 0;
+                             GameState->EditorState.SelectedAnimation = 0;
                              GameState->EditorState.Editing = true;
                          }
                          break;
@@ -396,7 +377,6 @@
                                            glm::vec4(0, 0, GameState->RenderState.Viewport[2], GameState->RenderState.Viewport[3]));
                  
                  GameState->EditorState.CreateNewAnimationButton->Active = false;
-                 GameState->EditorState.SaveAnimationButton->Active = false;
                  
                  if(GetKeyDown(Key_E, GameState))
                  {
@@ -499,7 +479,9 @@
                                      }
                                      break;
                                      case Placement_Entity_Wraith:
-                                     {}
+                                     {
+                                         LoadWraithData(GameState, -1, glm::vec2(Pos.x, Pos.y - 0.5));
+                                     }
                                      break;
                                      case Placement_Entity_Minotaur:
                                      {
@@ -648,34 +630,71 @@
                  GameState->EditorState.CreateNewLevelButton->Active = false;
                  GameState->EditorState.CreateNewAnimationButton->Active = true;
                  
-                 if(GameState->EditorState.SaveAnimationButton->Clicked && GameState->EditorState.LoadedAnimation)
+                 switch(GameState->EditorState.AnimationMode)
                  {
-                     ToggleAnimationFields(&GameState->EditorState, false);
-                     GameState->EditorState.LoadedAnimation->Loop = GameState->EditorState.ShouldLoop;
-                     SaveAnimationToFile(GameState, *GameState->EditorState.LoadedAnimation);
-                     GameState->EditorState.LoadedAnimation = 0;
-                     GameState->EditorState.HasLoadedAnimations = false;
-                 }
-                 
-                 if(GameState->EditorState.CreateNewAnimationButton->Clicked)
-                 {
-                     ToggleAnimationFields(&GameState->EditorState, true);
-                     GameState->EditorState.Editing = false;
-                     GameState->EditorState.LoadedAnimation = (animation*)malloc(sizeof(animation));
-                     
-                     GameState->EditorState.LoadedAnimation->Name = (char*) calloc(30, sizeof(char));
-                     GameState->EditorState.LoadedAnimation->FrameCount = 0;
-                     GameState->EditorState.LoadedAnimation->FrameSize = glm::vec2(0, 0);
-                     GameState->EditorState.LoadedAnimation->FrameOffset = glm::vec2(0, 0);
-                     GameState->EditorState.LoadedAnimation->TimePerFrame = 0.0f;
-                     GameState->EditorState.LoadedAnimation->Loop = 1;
-                     GameState->EditorState.LoadedAnimation->Texture = GameState->RenderState.Textures.begin()->second;
+                     case Animation_SelectAnimation:
+                     {
+                         if(GameState->EditorState.CreateNewAnimationButton->Clicked)
+                         {
+                             GameState->EditorState.AnimationMode = Animation_SelectTexture;
+                             GameState->EditorState.LoadedAnimation = 0;
+                         }
+                         
+                         if(GetKeyDown(Key_Enter, GameState))
+                         {
+                             GameState->EditorState.AnimationMode = Animation_Edit;
+                             ToggleAnimationFields(&GameState->EditorState, true);
+                         }
+                         
+                     }
+                     break;
+                     case Animation_Edit:
+                     {
+                     }
+                     break;
+                     case Animation_SelectTexture:
+                     {
+                         if(GetKeyDown(Key_Enter, GameState))
+                         {
+                             GameState->EditorState.AnimationMode = Animation_Create;
+                             
+                             GameState->EditorState.LoadedAnimation = (animation*)malloc(sizeof(animation));
+                             
+                             GameState->EditorState.LoadedAnimation->Name = (char*) calloc(30, sizeof(char));
+                             GameState->EditorState.LoadedAnimation->FrameCount = 0;
+                             GameState->EditorState.LoadedAnimation->FrameSize = glm::vec2(0, 0);
+                             GameState->EditorState.LoadedAnimation->FrameOffset = glm::vec2(0, 0);
+                             GameState->EditorState.LoadedAnimation->TimePerFrame = 0.0f;
+                             GameState->EditorState.LoadedAnimation->Loop = 1;
+                             GameState->EditorState.LoadedAnimation->Texture = GameState->RenderState.Textures[GameState->EditorState.Textures[GameState->EditorState.SelectedTexture]];
+                             
+                             for(i32 Index = 0; Index < TEXTFIELD_LENGTH; Index++)
+                             {
+                                 GameState->EditorState.AnimationNameField->Text[Index] = 0;
+                             }
+                             
+                             ToggleAnimationFields(&GameState->EditorState, true);
+                         }
+                     }
+                     break;
+                     case Animation_Create:
+                     {
+                         if(GameState->EditorState.SaveAnimationButton->Clicked && GameState->EditorState.LoadedAnimation)
+                         {
+                             ToggleAnimationFields(&GameState->EditorState, false);
+                             GameState->EditorState.LoadedAnimation->Loop = GameState->EditorState.ShouldLoop;
+                             SaveAnimationToFile(GameState, *GameState->EditorState.LoadedAnimation);
+                             GameState->EditorState.LoadedAnimation = 0;
+                             GameState->EditorState.HasLoadedAnimations = false;
+                         }
+                     }
+                     break;
                  }
                  
                  if(GameState->EditorState.LoadedAnimation)
                  {
-                     GameState->EditorState.SaveAnimationButton->Active = true;
-                     GameState->EditorState.CreateNewAnimationButton->Active = false;
+                     if(GameState->EditorState.AnimationMode == Animation_Edit || GameState->EditorState.AnimationMode == Animation_Create)
+                         GameState->EditorState.CreateNewAnimationButton->Active = false;
                      
                      animation* LoadedAnimation = GameState->EditorState.LoadedAnimation;
                      
@@ -726,7 +745,6 @@
                  }
                  else
                  {
-                     GameState->EditorState.SaveAnimationButton->Active = false;
                      GameState->EditorState.CreateNewAnimationButton->Active = true;
                  }
              }
@@ -835,7 +853,7 @@
      
      if(!GameState->IsInitialized)
      {
-         if(!GameState->ShouldReload)
+         if(GameState->ShouldReload)
          {
              LoadGameDataFile(GameState);
              srand((u32)time(NULL));
@@ -850,11 +868,12 @@
              AmbientLight.Ambient.Intensity = 0.5f;
              GameState->LightSources[GameState->LightSourceCount++] = AmbientLight;
              
-             GameState->EditorCamera.Zoom = GameState->InitialZoom; // @Cleanup: We might not want to reset these values every time we load a level
+             GameState->EditorCamera.Zoom = GameState->InitialZoom; 
              GameState->EditorCamera.ViewportWidth = GameState->RenderState.WindowWidth;
              GameState->EditorCamera.ViewportHeight = GameState->RenderState.WindowHeight;
              
              GameState->GameMode = Mode_InGame;
+             GameState->ShouldReload = false;
          }
          
          LoadLevelFromFile(GameState->LevelPath, &GameState->CurrentLevel, GameState);
@@ -872,9 +891,8 @@
          // @Incomplete: This is not the right value, it is only set so high to remove smooth following as of now, since it needs to be done a little differently
          
          GameState->GameCamera.Center = GameState->Entities[0].Position; // Set center to player's position!
-         
+         GameState->GameCamera.CenterTarget = GameState->Entities[0].Position;
          GameState->IsInitialized = true;
-         GameState->ShouldReload = false;
      }
      
 #ifdef DEBUG
@@ -925,19 +943,17 @@
          GameState->StatGainModeOn = !GameState->StatGainModeOn;
      }
      
-     if(GetKeyDown(Key_F10, GameState))
-     {
-         auto CheckpointPos = glm::vec2(GameState->Entities[0].Position.x,GameState->Entities[0].Position.y - 0.5f);
-         
-         
-         GameState->CharacterData.HasCheckpoint = true;
-         LoadBonfireData(GameState,-1,CheckpointPos);
-         GameState->CharacterData.CurrentCheckpoint = CheckpointPos;
-     }
-     
      if(GameState->GameMode == Mode_InGame && GetKey(Key_LeftCtrl, GameState) && GetKeyDown(Key_P, GameState))
      {
          GameState->Paused = !GameState->Paused;
+     }
+     
+     if(GameState->GameMode == Mode_InGame && (GetKey(Key_LeftCtrl, GameState) || GetKey(Key_RightCtrl, GameState)))
+     {
+         if(GetKeyDown(Key_F, GameState))
+             SaveGame(GameState);
+         if(GetKeyDown(Key_V, GameState))
+             LoadGame(GameState);
      }
      
 #endif
@@ -1086,6 +1102,11 @@
          GameState->GameCamera.Zoom = Min(Max(Zoom, GameState->GodModeMinZoom), GameState->GodModeMaxZoom);
      }
      
+     if(GetKeyDown(Key_L, GameState) && GetKey(Key_LeftCtrl, GameState))
+     {
+         GameState->RenderLight = !GameState->RenderLight;
+     }
+     
      switch(GameState->GameMode)
      {
          case Mode_InGame:
@@ -1094,6 +1115,8 @@
              if(!GameState->Paused && !GameState->StatGainModeOn)
              {
                  UpdateEntities(GameState, DeltaTime);
+                 UpdateObjects(GameState, DeltaTime);
+                 
                  TickTimers(GameState, DeltaTime);
                  
                  if(!TimerDone(GameState, GameState->GameCamera.ScreenShakeTimer))
@@ -1139,41 +1162,39 @@
                  {
                      auto& Player = GameState->Entities[0];
                      
-                     auto Milestone = GameState->StatData[Player.Player.Level].Milestones[Player.Player.LastMilestone - 1];
+                     auto Milestone = GameState->StatData[GameState->CharacterData.Level].Milestones[Player.Player.LastMilestone - 1];
+                     GameState->LastCharacterData = GameState->CharacterData;
                      
                      switch((Player_Gain_Type)GameState->SelectedGainIndex)
                      {
                          case Gain_Health:
                          {
-                             r32 Ratio = (r32)Player.Health / (r32)Player.FullHealth;
-                             Player.FullHealth += Milestone.Health;
-                             Player.Health += (i32)(Player.FullHealth * Ratio);
+                             r32 Ratio = (r32)Player.Health / (r32)GameState->CharacterData.Health;
+                             GameState->CharacterData.Health += (i16)Milestone.Health;
+                             Player.Health = (i16)(GameState->CharacterData.Health * Ratio);
                          }
                          break;
                          case Gain_Stamina:
                          {
-                             r32 Ratio = (r32)Player.Player.Stamina / (r32)Player.Player.FullStamina;
-                             Player.Player.FullStamina += Milestone.Stamina;
-                             Player.Player.Stamina += (i32)(Player.Player.FullStamina * Ratio);
+                             r32 Ratio = (r32)Player.Player.Stamina / (r32)GameState->CharacterData.Stamina;
+                             GameState->CharacterData.Stamina += (i16)Milestone.Stamina;
+                             Player.Player.Stamina = (i16)(GameState->CharacterData.Stamina * Ratio);
                          }
                          break;
                          case Gain_Strength:
                          {
-                             Player.Weapon.Damage += Milestone.Strength;
+                             GameState->CharacterData.Strength += Milestone.Strength;
                          }
                          break;
                      }
-                     
                      //@Incomplete: Play sound!
                      
-                     GameState->LastCharacterData = GameState->CharacterData;
+                     printf("Level: %d\n", GameState->LastCharacterData.Level);
                      
-                     GameState->CharacterData.Health = Player.FullHealth;
-                     GameState->CharacterData.Strength = (i16)Player.Weapon.Damage;
-                     GameState->CharacterData.Stamina = Player.Player.FullStamina;
-                     GameState->CharacterData.Level++;
+                     Player.Weapon.Damage = GameState->CharacterData.Strength;
                      GameState->SelectedGainIndex = 0;
                      GameState->StatGainModeOn = false;
+                     SaveGame(GameState);
                  }
              }
              
@@ -1250,6 +1271,9 @@
                                                    glm::vec3(-Center.x + GameState->Camera.ViewportWidth / GameState->Camera.Zoom / 2,
                                                              -Center.y + GameState->Camera.ViewportHeight / GameState->Camera.Zoom / 2,
                                                              0));
+     
      GameState->InputController.CurrentCharacter = 0;
      GameState->RenderState.DeltaTime = DeltaTime;
-}
+ }
+ 
+ 
