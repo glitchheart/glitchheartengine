@@ -97,17 +97,6 @@ struct character_data
     i32 CheckpointHandle = -1;
 };
 
-struct save_file
-{
-    character_data CharacterData;
-    character_data LastCharacterData;
-    i32 CurrentExperience = 0;
-    glm::vec2 CurrentPosition;
-    i32 LastMilestone;
-    player_inventory PlayerInventory;
-};
-
-
 #define NUM_TIMERS 1024
 
 struct game_state
@@ -212,6 +201,11 @@ r64 ElapsedTimer(game_state* GameState, timer& Timer)
         return 1.0;
     
     return GameState->Timers[Timer.TimerHandle] / Timer.TimerMax;
+}
+
+r64 ElapsedTimerFrac(game_state* GameState, timer& Timer)
+{
+    return ElapsedTimer(GameState,Timer) / Timer.TimerMax;
 }
 
 void StartFade(camera& Camera, Fading_Mode Mode, r32 FadingSpeed, glm::vec3 FadingTint, r32 StartAlpha = 0, r32 EndAlpha = 0)
