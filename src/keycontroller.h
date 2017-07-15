@@ -180,10 +180,9 @@ struct input_controller
         Joystick_4
     };
     
-    Action_Button ActionQueue[20];
-    i32 ActionQueueIndex = 0;
-    i32 NextActionIndexForInsert = 0;
-    i32 ActionQueueCount = 0;
+    b32 ActionRunning = false;
+    b32 HasQueuedAction = false;
+    Action_Button NextAction;
     
     b32 AnyKeyPressed;
     
