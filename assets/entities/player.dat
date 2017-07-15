@@ -39,6 +39,6 @@ attackcooldowntimer 0.1
 pickupcooldowntimer 0.36
 dashtimer 0.4
 dashcounterdivider 250
-dashcooldowntimer 0.4
+dashcooldowntimer 0.2
 dashspeed 8
 dustcloud scale 1 1 animation dust_brown
