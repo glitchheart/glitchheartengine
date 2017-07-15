@@ -266,9 +266,9 @@ struct entity
     timer HitAttackCountIdResetTimer;
     
     b32 Invincible;
-    i16 FullHealth;
-    i16 Health;
-    i16 HealthLost;
+    i32 FullHealth;
+    i32 Health;
+    i32 HealthLost;
     timer HealthDecreaseTimer;
     
     i32 AttackCount;

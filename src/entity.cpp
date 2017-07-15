@@ -38,9 +38,9 @@ static void DeleteEntity(game_state* GameState, u32 EntityIndex)
     GameState->EntityCount--;
 }
 
-static void DecreaseStamina(entity* Entity, game_state* GameState, i16 Cost) 
+static void DecreaseStamina(entity* Entity, game_state* GameState, i32 Cost) 
 {
-    i16 NewStamina = Max(0, Entity->Player.Stamina - Cost);
+    i32 NewStamina = Max(0, Entity->Player.Stamina - Cost);
     Entity->Player.StaminaLost = Entity->Player.Stamina - NewStamina;
     Entity->Player.Stamina = NewStamina;
     StartTimer(GameState, Entity->Player.StaminaDecreaseTimer);

@@ -134,7 +134,7 @@ static b32 LoadLevelFromFile(char* FilePath, level* Level, game_state* GameState
         if(fgets(LineBuffer, 255, File))
             sscanf(LineBuffer, "%s", Level->SheetName);
         
-        for(i32 Index = 0; Index < GameState->RenderState.TilesheetCount; Index++)
+        for(i32 Index = 0; Index < (i32)GameState->RenderState.TilesheetCount; Index++)
         {
             if(strcmp(Level->SheetName, GameState->RenderState.Tilesheets[Index].Name) == 0)
             {
