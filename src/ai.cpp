@@ -292,14 +292,13 @@ static void FollowPath(game_state* GameState, entity* Entity,entity& TargetEntit
     if(Path->AStarPath && Path->PathIndex < Path->AStarPathLength)
     {
         path_node NewPos = Path->AStarPath[Path->PathIndex];
-        //printf("NewPos: (%d,%d)\n",NewPos.X,NewPos.Y);
+        
         r64 DistanceToNode = glm::distance(EntityPosition, glm::vec2(NewPos.X,NewPos.Y));
         if(DistanceToNode > 0.8f) 
         {
             glm::vec2 FollowDirection = glm::vec2(NewPos.X,NewPos.Y) - EntityPosition;
             FollowDirection = glm::normalize(FollowDirection);
             
-            // NOTE(Niels): Remember 5.0 is only temp, needs actual walking speed!!
             Entity->Velocity = glm::vec2(FollowDirection.x * Entity->Enemy.WalkingSpeed, FollowDirection.y * Entity->Enemy.WalkingSpeed);
         }
         else
@@ -310,12 +309,5 @@ static void FollowPath(game_state* GameState, entity* Entity,entity& TargetEntit
     
     glm::vec2 Direction = TargetEntity.Position - Entity->Position;
     // NOTE(Niels): Get actual min distance here (instead of 2)!!
-    if(DistanceToTargetEntity > 2 && DistanceToTargetEntity < 3.0f)
-    {
-        // NOTE(Niels): Remember 5.0 is only temp, needs actual walking speed!!
-        Direction = glm::normalize(Direction);
-        Entity->Velocity =glm::vec2(Direction.x * Entity->Enemy.WalkingSpeed,
-                                    Direction.y * Entity->Enemy.WalkingSpeed);
-    }
-    Entity->IsFlipped = Direction.x < 0;
+    
 }
