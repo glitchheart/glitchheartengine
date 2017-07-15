@@ -104,11 +104,15 @@ static void StartupFileTimeChecks(asset_manager* AssetManager)
     for (int i = 0; i < Shader_Count; i++) 
     {
         struct stat sb1;
-        stat(Concat(ShaderPaths[i], ".vert"), &sb1);
+        auto ConcatedVertexShaderString = Concat(ShaderPaths[i], ".vert");
+        stat(ConcatedVertexShaderString, &sb1);
+        free(ConcatedVertexShaderString);
         AssetManager->VertexShaderTimes[i] =  sb1.st_mtime;
         
         struct stat sb2;
-        stat(Concat(ShaderPaths[i], ".frag"), &sb2);
+        auto ConcatedFragmentShaderString = Concat(ShaderPaths[i], ".frag");
+        stat(ConcatedFragmentShaderString, &sb2);
+        free(ConcatedFragmentShaderString);
         AssetManager->FragmentShaderTimes[i] =  sb2.st_mtime;
     }
 }
