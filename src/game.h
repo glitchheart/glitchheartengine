@@ -156,6 +156,9 @@ struct game_state
     u16 EntityCount;
     entity Entities[NUM_ENTITIES];
     
+    i32 ObjectCount;
+    object_entity Objects[NUM_ENTITIES];
+    
     player_ui PlayerUI;
     health_bar HealthBar;
     
@@ -207,6 +210,7 @@ r64 ElapsedTimer(game_state* GameState, timer& Timer)
 {
     if(Timer.TimerHandle == -1)
         return 1.0;
+    
     return GameState->Timers[Timer.TimerHandle] / Timer.TimerMax;
 }
 

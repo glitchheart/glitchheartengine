@@ -38,6 +38,103 @@ static void DeleteEntity(game_state* GameState, u32 EntityIndex)
     GameState->EntityCount--;
 }
 
+static void DecreaseStamina(entity* Entity, game_state* GameState, i16 Cost) 
+{
+    i16 NewStamina = Max(0, Entity->Player.Stamina - Cost);
+    Entity->Player.StaminaLost = Entity->Player.Stamina - NewStamina;
+    Entity->Player.Stamina = NewStamina;
+    StartTimer(GameState, Entity->Player.StaminaDecreaseTimer);
+    StartTimer(GameState,Entity->Player.StaminaGainCooldownTimer);
+}
+
+void Hit(game_state* GameState, entity* ByEntity, entity* HitEntity)
+{
+    if(HitEntity->HitAttackCountId != ByEntity->AttackCount)
+    {
+        HitEntity->HitAttackCountId = ByEntity->AttackCount;
+        StartTimer(GameState, HitEntity->HitAttackCountIdResetTimer);
+        
+        if(HitEntity->Invincible)
+        {
+            if(ByEntity->Type == Entity_Player)
+            {
+                PlaySoundEffect(GameState, &GameState->SoundManager.ShieldImpact);
+                StartTimer(GameState, ByEntity->StaggerCooldownTimer);
+            }
+        }
+        else
+        {
+            if(TimerDone(GameState, GameState->GameCamera.ScreenShakeTimer))
+                StartTimer(GameState, GameState->GameCamera.ScreenShakeTimer);
+            
+            StartTimer(GameState, HitEntity->StaggerCooldownTimer);
+            PlaySoundEffect(GameState, &GameState->SoundManager.SwordHit02);
+            HitEntity->HitRecoilDirection = glm::normalize(HitEntity->Position - ByEntity->Position);
+            
+            i16 Damage = ByEntity->Weapon.Damage > HitEntity->Health ? (i16)HitEntity->Health : (i16)ByEntity->Weapon.Damage;
+            HitEntity->Health -= Damage;
+            
+            HitEntity->Hit = true;
+            HitEntity->HitAttackCountId = ByEntity->AttackCount;
+            HitEntity->HitFlickerFramesLeft = HitEntity->HitFlickerFrameMax;
+            
+            StartTimer(GameState, HitEntity->HealthDecreaseTimer);
+            HitEntity->HealthLost = Damage;
+            
+            StartTimer(GameState, HitEntity->HitFlickerTimer);
+            
+            if(HitEntity->Type == Entity_Enemy)
+            {
+                if(HitEntity->Health <= 0)
+                {
+                    GameState->Entities[0].Player.Experience += HitEntity->Enemy.Experience;
+                }
+                
+                HitEntity->Enemy.HealthCounts[HitEntity->Enemy.HealthCountIndex].Visible = true;
+                HitEntity->Enemy.HealthCounts[HitEntity->Enemy.HealthCountIndex].Position = HitEntity->Enemy.HealthCountStart;
+                sprintf(HitEntity->Enemy.HealthCounts[HitEntity->Enemy.HealthCountIndex].Count, "%d", HitEntity->HealthLost);
+                HitEntity->Enemy.HealthCountIndex++;
+                if(HitEntity->Enemy.HealthCountIndex == 10)
+                    HitEntity->Enemy.HealthCountIndex = 0;
+            }
+            
+            if(HitEntity->Type == Entity_Player)
+            {
+                PlayAnimation(HitEntity, "swordsman_hit", GameState);
+                DecreaseStamina(HitEntity,GameState,HitEntity->Player.HitStaminaCost);
+                StartFade(GameState->GameCamera, Fading_OutIn, 4.0f, glm::vec3(1, 0, 0), 0.0f, 0.4f);
+            }
+        }
+    }
+}
+
+static void SpawnShadow(game_state* GameState, glm::vec2 Position, i32* Handle)
+{
+    *Handle = GameState->ObjectCount;
+    
+    auto Shadow = &GameState->Objects[GameState->ObjectCount++];
+    Shadow->Active = true;
+    Shadow->Scale = 2;
+    Shadow->Type = Object_Shadow;
+    Shadow->Position = glm::vec2(Position.x - 1.4f, Position.y - 1.5f);
+    
+    PlayAnimation(Shadow, "big_shadow", GameState);
+    
+    render_entity* RenderEntity = &GameState->RenderState.RenderEntities[GameState->RenderState.RenderEntityCount];
+    Shadow->RenderEntityHandle = GameState->RenderState.RenderEntityCount;
+    
+    RenderEntity->ShaderIndex = Shader_Spritesheet;
+    RenderEntity->Rendered = true;
+    RenderEntity->Background = true;
+    RenderEntity->RenderType = Render_Type_Object;
+    RenderEntity->Object = &*Shadow;
+    
+    Shadow->RenderEntityHandle = GameState->RenderState.RenderEntityCount++;
+    RenderEntity->Color = glm::vec4(1, 1, 1, 1);
+    
+    GameState->Objects[GameState->ObjectCount++];
+}
+
 static void LoadEntityData(FILE* File, entity* Entity, game_state* GameState, b32 IsReload = false)
 {
     if(!IsReload)
@@ -615,6 +712,20 @@ AI_FUNC(SkeletonWandering)
     EnemyWander(GameState,Entity);
 }
 
+static void MinotaurSetAttackMode(entity* Entity, game_state* GameState)
+{
+    if(Entity->Enemy.AttackMode == 0)
+    {
+        PlayAnimation(Entity, "minotaur_attack", GameState);
+    }
+    else
+    {
+        SpawnShadow(GameState, Entity->Position, &Entity->Enemy.Minotaur.ShadowHandle);
+        StartTimer(GameState, Entity->Enemy.Minotaur.JumpAttackTimer);
+        PlayAnimation(Entity, "minotaur_detected", GameState);
+    }
+}
+
 AI_FUNC(MinotaurIdle)
 {
     PlayAnimation(Entity, "minotaur_idle", GameState);
@@ -706,7 +817,8 @@ AI_FUNC(MinotaurCharging)
         PlaySoundEffect(GameState, &GameState->SoundManager.MinotaurGrunt01);
         
         Enemy.LastAttackMoveDirection = glm::normalize(Player.Position - Entity->Position);
-        PlayAnimation(Entity, "minotaur_attack", GameState);
+        
+        MinotaurSetAttackMode(Entity, GameState);
     }
     else
     {
@@ -735,7 +847,8 @@ AI_FUNC(MinotaurDefending)
         
         entity& Player = GameState->Entities[GameState->PlayerIndex];
         Entity->Enemy.LastAttackMoveDirection = glm::normalize(Player.Position - Entity->Position);
-        PlayAnimation(Entity, "minotaur_attack", GameState);
+        
+        MinotaurSetAttackMode(Entity, GameState);
     }
 }
 
@@ -752,59 +865,118 @@ AI_FUNC(MinotaurAttacking)
     {
         Minotaur.IsAttacking = false;
         Enemy.AIState = AI_Idle;
+        
+        Enemy.AttackMode++;
+        if(Enemy.AttackMode == 2)
+        {
+            Enemy.AttackMode = 0;
+        }
     }
     else
     {
-        if(!TimerDone(GameState, Entity->AttackMoveTimer))
+        if(Entity->Enemy.AttackMode == 0) // standard double attack
         {
-            Entity->Velocity = glm::vec2(Enemy.LastAttackMoveDirection.x * Entity->AttackMoveSpeed, Enemy.LastAttackMoveDirection.y * Entity->AttackMoveSpeed);
-        }
-        
-        if(Entity->AnimationInfo.FrameIndex >= Entity->AttackLowFrameIndex - 2 
-           && Entity->AnimationInfo.FrameIndex < Entity->AttackHighFrameIndex 
-           && !Minotaur.IsAttacking 
-           && strcmp(Entity->CurrentAnimation->Name, "minotaur_idle") != 0)
-        {
-            StartTimer(GameState, Entity->AttackMoveTimer);
-            
-            if(Entity->AnimationInfo.FrameIndex >= Entity->AttackLowFrameIndex && Entity->AnimationInfo.FrameIndex <= Entity->AttackHighFrameIndex)
+            if(!TimerDone(GameState, Entity->AttackMoveTimer))
             {
-                Minotaur.IsAttacking = true;
+                Entity->Velocity = glm::vec2(Enemy.LastAttackMoveDirection.x * Entity->AttackMoveSpeed, Enemy.LastAttackMoveDirection.y * Entity->AttackMoveSpeed);
+            }
+            
+            if(Entity->AnimationInfo.FrameIndex >= Entity->AttackLowFrameIndex - 2 
+               && Entity->AnimationInfo.FrameIndex < Entity->AttackHighFrameIndex 
+               && !Minotaur.IsAttacking 
+               && strcmp(Entity->CurrentAnimation->Name, "minotaur_idle") != 0)
+            {
+                StartTimer(GameState, Entity->AttackMoveTimer);
                 
-                Entity->AttackCount++;
+                if(Entity->AnimationInfo.FrameIndex >= Entity->AttackLowFrameIndex && Entity->AnimationInfo.FrameIndex <= Entity->AttackHighFrameIndex)
+                {
+                    Minotaur.IsAttacking = true;
+                    
+                    Entity->AttackCount++;
+                    
+                    StartTimer(GameState, Minotaur.AttackCooldownTimer);
+                }
+                else
+                {
+                    Minotaur.IsAttacking = false;
+                }
+            }
+            else if(!Entity->AnimationInfo.Playing && strcmp(Entity->CurrentAnimation->Name, "minotaur_attack") == 0)
+            {
+                PlayAnimation(Entity, "minotaur_idle", GameState);
                 
-                StartTimer(GameState, Minotaur.AttackCooldownTimer);
+                if(Entity->AttackCount < Minotaur.MaxAttackStreak)
+                {
+                    Minotaur.IsAttacking = false;
+                    Enemy.AIState = AI_Attacking;
+                    PlaySoundEffect(GameState, &GameState->SoundManager.MinotaurGrunt01);
+                    
+                    MinotaurSetAttackMode(Entity, GameState);
+                }
+            }
+            
+            
+            if(TimerDone(GameState, Minotaur.AttackCooldownTimer) && Entity->AttackCount == Minotaur.MaxAttackStreak)
+            {
+                Entity->AttackCount = 0;
+                Minotaur.IsAttacking = false;
+                
+                Enemy.AttackMode++;
+                if(Enemy.AttackMode == 2)
+                {
+                    Enemy.AttackMode = 0;
+                }
+                
+                if(DistanceToPlayer > Entity->Enemy.MinDistanceToPlayer)
+                {
+                    Enemy.AIState = AI_Following;
+                }
+                else
+                {
+                    Enemy.AIState = AI_Wandering;
+                }
+            }
+        }
+        else // jump attack
+        {
+            if(!TimerDone(GameState, Entity->Enemy.Minotaur.JumpAttackTimer))
+            {
+                Entity->IsKinematic = true; 
+                
+                auto Elapsed = ElapsedTimer(GameState, Entity->Enemy.Minotaur.JumpAttackTimer);
+                
+                if(Elapsed < 0.5)
+                    Elapsed = -0.8f;
+                
+                glm::vec2 JumpDirection = glm::vec2(0, Elapsed);
+                
+                glm::vec2 Direction = Enemy.LastAttackMoveDirection + JumpDirection;
+                Entity->Velocity = glm::vec2(Direction.x * 7, Direction.y * 7);
+                
+                GameState->Objects[Entity->Enemy.Minotaur.ShadowHandle].Position += glm::vec2(Enemy.LastAttackMoveDirection.x * 7 * DeltaTime, Enemy.LastAttackMoveDirection.y * 7 * DeltaTime);
             }
             else
             {
-                Minotaur.IsAttacking = false;
-            }
-        }
-        else if(!Entity->AnimationInfo.Playing && strcmp(Entity->CurrentAnimation->Name, "minotaur_attack") == 0)
-        {
-            PlayAnimation(Entity, "minotaur_idle", GameState);
-            
-            if(Entity->AttackCount < Minotaur.MaxAttackStreak)
-            {
-                Minotaur.IsAttacking = false;
-                Enemy.AIState = AI_Attacking;
-                PlaySoundEffect(GameState, &GameState->SoundManager.MinotaurGrunt01);
-                PlayAnimation(Entity, "minotaur_attack", GameState);
-            }
-        }
-        
-        if(TimerDone(GameState, Minotaur.AttackCooldownTimer) && Entity->AttackCount == Minotaur.MaxAttackStreak)
-        {
-            Entity->AttackCount = 0;
-            Minotaur.IsAttacking = false;
-            
-            if(DistanceToPlayer > Entity->Enemy.MinDistanceToPlayer)
-            {
-                Enemy.AIState = AI_Following;
-            }
-            else
-            {
-                Enemy.AIState = AI_Wandering;
+                Entity->IsKinematic = false;
+                Entity->Enemy.AttackMode = 0;
+                PlaySoundEffect(GameState, &GameState->SoundManager.MinotaurStomp);
+                Entity->Enemy.AIState = AI_Idle;
+                GameState->Objects[Entity->Enemy.Minotaur.ShadowHandle].Active = false;
+                
+                collision_info CollisionInfo;
+                CheckCollision(GameState, Entity, &CollisionInfo);
+                
+                for(i32 Index = 0; Index < CollisionInfo.OtherCount; Index++)
+                {
+                    if((Entity->Type == Entity_Player && CollisionInfo.Other[Index]->Type == Entity_Enemy && CollisionInfo.Other[Index]->Enemy.AIState != AI_Dying) ||
+                       (Entity->Type == Entity_Enemy && CollisionInfo.Other[Index]->Type == Entity_Player && !CollisionInfo.Other[Index]->Player.IsDashing))
+                    {
+                        if(Entity->AnimationInfo.FrameIndex >= Entity->AttackLowFrameIndex && Entity->AnimationInfo.FrameIndex <= Entity->AttackHighFrameIndex)
+                        {
+                            Hit(GameState, Entity, CollisionInfo.Other[Index]);
+                        }
+                    }
+                }
             }
         }
     }
@@ -1272,6 +1444,12 @@ static void LoadMinotaurData(game_state* GameState, i32 Handle = -1, glm::vec2 P
                 Entity->Enemy.Minotaur.AlertedTimer.TimerHandle = -1;
                 sscanf(LineBuffer,"maxattackstreak %d",&Entity->Enemy.Minotaur.MaxAttackStreak);
             }
+            else if(StartsWith(&LineBuffer[0],"jumpattacktimer"))
+            {
+                Entity->Enemy.Minotaur.JumpAttackTimer.TimerHandle = -1;
+                sscanf(LineBuffer,"jumpattacktimer %lf",&Entity->Enemy.Minotaur.JumpAttackTimer.TimerMax);
+                Entity->Enemy.Minotaur.JumpAttackTimer.Name = "Jump attack";
+            }
         }
         fclose(File);
     }
@@ -1590,76 +1768,6 @@ static void LoadPlayerData(game_state* GameState, i32 Handle = -1, glm::vec2 Pos
         }
     }
     printf("Player layer is: %d\n", (i32)Entity->Layer);
-}
-
-static void DecreaseStamina(entity* Entity, game_state* GameState, i16 Cost) 
-{
-    i16 NewStamina = Max(0, Entity->Player.Stamina - Cost);
-    Entity->Player.StaminaLost = Entity->Player.Stamina - NewStamina;
-    Entity->Player.Stamina = NewStamina;
-    StartTimer(GameState, Entity->Player.StaminaDecreaseTimer);
-    StartTimer(GameState,Entity->Player.StaminaGainCooldownTimer);
-}
-
-void Hit(game_state* GameState, entity* ByEntity, entity* HitEntity)
-{
-    if(HitEntity->HitAttackCountId != ByEntity->AttackCount)
-    {
-        HitEntity->HitAttackCountId = ByEntity->AttackCount;
-        StartTimer(GameState, HitEntity->HitAttackCountIdResetTimer);
-        
-        if(HitEntity->Invincible)
-        {
-            if(ByEntity->Type == Entity_Player)
-            {
-                PlaySoundEffect(GameState, &GameState->SoundManager.ShieldImpact);
-                StartTimer(GameState, ByEntity->StaggerCooldownTimer);
-            }
-        }
-        else
-        {
-            if(TimerDone(GameState, GameState->GameCamera.ScreenShakeTimer))
-                StartTimer(GameState, GameState->GameCamera.ScreenShakeTimer);
-            
-            StartTimer(GameState, HitEntity->StaggerCooldownTimer);
-            PlaySoundEffect(GameState, &GameState->SoundManager.SwordHit02);
-            HitEntity->HitRecoilDirection = glm::normalize(HitEntity->Position - ByEntity->Position);
-            
-            i16 Damage = ByEntity->Weapon.Damage > HitEntity->Health ? (i16)HitEntity->Health : (i16)ByEntity->Weapon.Damage;
-            HitEntity->Health -= Damage;
-            
-            HitEntity->Hit = true;
-            HitEntity->HitAttackCountId = ByEntity->AttackCount;
-            HitEntity->HitFlickerFramesLeft = HitEntity->HitFlickerFrameMax;
-            
-            StartTimer(GameState, HitEntity->HealthDecreaseTimer);
-            HitEntity->HealthLost = Damage;
-            
-            StartTimer(GameState, HitEntity->HitFlickerTimer);
-            
-            if(HitEntity->Type == Entity_Enemy)
-            {
-                if(HitEntity->Health <= 0)
-                {
-                    GameState->Entities[0].Player.Experience += HitEntity->Enemy.Experience;
-                }
-                
-                HitEntity->Enemy.HealthCounts[HitEntity->Enemy.HealthCountIndex].Visible = true;
-                HitEntity->Enemy.HealthCounts[HitEntity->Enemy.HealthCountIndex].Position = HitEntity->Enemy.HealthCountStart;
-                sprintf(HitEntity->Enemy.HealthCounts[HitEntity->Enemy.HealthCountIndex].Count, "%d", HitEntity->HealthLost);
-                HitEntity->Enemy.HealthCountIndex++;
-                if(HitEntity->Enemy.HealthCountIndex == 10)
-                    HitEntity->Enemy.HealthCountIndex = 0;
-            }
-            
-            if(HitEntity->Type == Entity_Player)
-            {
-                PlayAnimation(HitEntity, "swordsman_hit", GameState);
-                DecreaseStamina(HitEntity,GameState,HitEntity->Player.HitStaminaCost);
-                StartFade(GameState->GameCamera, Fading_OutIn, 4.0f, glm::vec3(1, 0, 0), 0.0f, 0.4f);
-            }
-        }
-    }
 }
 
 void PlaceCheckpoint(game_state* GameState, entity* Entity)
@@ -2611,7 +2719,7 @@ void UpdateWraith(entity* Entity, game_state* GameState, r64 DeltaTime)
         
         Entity->Velocity = glm::vec2(0,0); //@Cleanup: This is not good. Do this in AI
         
-        UpdateAI(Entity,GameState,DeltaTime);
+        UpdateAI(Entity, GameState, DeltaTime);
         
         Entity->Position.x += Entity->Velocity.x * (r32)DeltaTime;
         Entity->Position.y += Entity->Velocity.y * (r32)DeltaTime;
@@ -2780,6 +2888,17 @@ void UpdateGeneral(entity* Entity, game_state* GameState, r64 DeltaTime)
                 }
             }
         }
+    }
+}
+
+void UpdateObjects(game_state* GameState, r64 DeltaTime)
+{
+    for(i32 Index = 0; Index < GameState->ObjectCount; Index++)
+    {
+        auto& Object = GameState->Objects[Index];
+        
+        if(Object.Active && Object.CurrentAnimation && Object.AnimationInfo.Playing)
+            TickAnimation(&Object.AnimationInfo, Object.CurrentAnimation, DeltaTime);
     }
 }
 

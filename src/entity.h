@@ -176,24 +176,38 @@ struct light_source
     light_source(){}
 };
 
-struct static_entity
+enum Object_Type
 {
+    Object_Shadow,
+    Object_Rock
 };
 
 struct object_entity
 {
+    b32 Active;
+    Object_Type Type;
     glm::vec2 Position;
-    glm::vec2 Velocity;
+    r32 Scale;
+    glm::vec2 Center;
+    b32 IsFlipped;
     i32 RenderEntityHandle;
+    i32 LightSourceHandle;
+    
+    animation* CurrentAnimation;
+    animation_info AnimationInfo;
+    
     union
     {
         struct
         {
-        } Rock;
+            b32 IsKinematic;
+            collision_AABB Collider;
+            glm::vec2 Velocity;
+        } Moving;
     };
+    
+    object_entity(){}
 };
-
-//@Incomplete: We will have to create three arrays. One with static entities, one with objects and one with living entities
 
 struct entity
 {
@@ -345,6 +359,7 @@ struct entity
             b32 HasLoot;
             loot Loot;
             
+            i32 AttackMode;
             AI_State AIState;
             astar_path AStarPath;
             b32 IsTargeted;
@@ -402,6 +417,8 @@ struct entity
                     timer AttackCooldownTimer;
                     timer ChargingTimer;
                     timer AlertedTimer;
+                    timer JumpAttackTimer;
+                    i32 ShadowHandle;
                 } Minotaur;
                 struct
                 {
@@ -410,10 +427,6 @@ struct entity
                     timer ChargingTimer;
                     timer AlertedTimer;
                 } Wraith;
-                struct
-                {
-                    
-                } Rock;
             };
         } Enemy;
         struct
