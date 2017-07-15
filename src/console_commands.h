@@ -39,7 +39,6 @@ static char* LoadLevel(game_state* GameState, char** Arguments)
         
         if(File)
         {
-            printf("adasd\n");
             fclose(File);
             GameState->LevelPath = Path;
             GameState->IsInitialized = false;
@@ -85,7 +84,6 @@ static void ReloadCurrentLevel(game_state* GameState)
     
     //@Incomplete still needs to respawn the player
     GameState->IsInitialized = false;
-    GameState->ShouldReload = true;
     GameState->PlayerState = Player_Alive;
     
     for(u32 X = 0; X < GameState->CurrentLevel.Tilemap.Width; X++)
@@ -97,21 +95,18 @@ static void ReloadCurrentLevel(game_state* GameState)
     free(GameState->CurrentLevel.Tilemap.Data[0]);
     free(GameState->CurrentLevel.Tilemap.Data[1]);
     
-    memset(GameState->Entities, 0, sizeof(entity) * GameState->EntityCount);
+    //memset(GameState->Entities, 0, sizeof(entity) * GameState->EntityCount);
     for(i32 Index = 0; Index < GameState->EntityCount; Index++)
-    {
-        if(GameState->Entities[Index].LightSourceHandle == 0)
-        {
-            GameState->Entities[Index].LightSourceHandle = -1;
-        }
-    }
+        GameState->Entities[Index] = {};
     
-    memset(GameState->LightSources, 0, sizeof(light_source) * GameState->LightSourceCount);
+    //memset(GameState->LightSources, 0, sizeof(light_source) * GameState->LightSourceCount);
+        
+    //for(i32 Index = 0; Index < GameState->RenderState.RenderEntityCount; Index++)
+    //GameState->RenderState.RenderEntities[Index] = {};
     
-    for(i32 Index = 0; Index < GameState->RenderState.RenderEntityCount; Index++)
-        GameState->RenderState.RenderEntities[Index] = {};
-    
+    GameState->LightSourceCount = 0;
     GameState->EntityCount = 0;
+    GameState->ObjectCount = 0;
     GameState->RenderState.RenderEntityCount = 0;
 }
 

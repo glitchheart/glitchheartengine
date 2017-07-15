@@ -16,28 +16,29 @@ weaponinfo 15 up -1.0 0.8 1.1 0.5 down -1.0 -1.0 1.1 0.5 left -2.6 0.2 0.9 0.8 r
 attackmovetimer 0.07
 attackmovespeed 15
 attacklowframeindex 3
-attackhighframeindex 14
-pointlight type 0 active 1 radius 5.4 intensity 1.3 color 1.0 1.0 1.0 1.0 atten 2 0.1 0.7
+attackhighframeindex 6
+pointlight type 0 active 1 radius 5.4 intensity 0.8 color 1.0 1.0 1.0 1.0 atten 2 0.1 0.7
 #player
 stamina 100
-staminagaincooldowntimer 1.7
+staminagaincooldowntimer 0.8
 staminagaintimerfast 0.02
 staminagaintimerslow 0.16
 staminadecreasetimer 0.8
+checkpointplacementtimer 5.0
+checkpointplacementcooldowntimer 20.0
 hitstaminacost 15
-rollstaminacost 20
+rollstaminacost 15
 attackstaminacost 20
-mindiffstamina 40
+mindiffstamina 15
 healthdecreasetimer 0.8
-walkingspeed 5.0
+walkingspeed 5.5
 throwingspeed 18.0
 crosshairradius 4
 targetingdistance 10
-attackcooldowntimer 0.3
-lastattacktimer 1.0
+attackcooldowntimer 0.1
 pickupcooldowntimer 0.36
-dashtimer 0.3
+dashtimer 0.4
 dashcounterdivider 250
 dashcooldowntimer 0.4
-dashspeed 10
+dashspeed 8
 dustcloud scale 1 1 animation dust_brown

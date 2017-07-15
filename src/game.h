@@ -94,9 +94,10 @@ struct character_data
     i32 Strength = 0;
     glm::vec2 CurrentCheckpoint;
     b32 HasCheckpoint;
+    i32 CheckpointHandle = -1;
 };
 
-#define NUM_TIMERS 128
+#define NUM_TIMERS 1024
 
 struct game_state
 {
@@ -104,11 +105,15 @@ struct game_state
     b32 Paused;
     b32 ShouldReload;
     b32 RenderGame = true;
+    b32 RenderLight = true;
     
     character_data CharacterData;
     b32 StatGainModeOn = false;
     
     i32 SelectedGainIndex = 0;
+    
+    loot CurrentLoot[64];
+    i32 CurrentLootCount = 0;
     
     b32 AIDebugModeOn = false;
     b32 GodModeOn = false;
@@ -143,6 +148,9 @@ struct game_state
     u16 EntityCount;
     entity Entities[NUM_ENTITIES];
     
+    i32 ObjectCount;
+    object_entity Objects[NUM_ENTITIES];
+    
     player_ui PlayerUI;
     health_bar HealthBar;
     
@@ -156,7 +164,10 @@ struct game_state
     console Console;
     editor_state EditorState;
     
-    std::map<char*, animation, CompareCStrings> Animations;
+    animation AnimationArray[50];
+    i32 AnimationIndex;
+    
+    std::map<char*, animation*, CompareCStrings> Animations;
     
     entity_file_reload_data* ReloadData;
 };
@@ -169,23 +180,34 @@ UPDATE(UpdateStub)
 
 void StartTimer(game_state* GameState, timer& Timer)
 {
-    Timer.TimerHandle = GameState->TimerCount;
-    GameState->Timers[Timer.TimerHandle] = Timer.TimerMax;
+    if(Timer.TimerHandle == -1)
+    {
+        Timer.TimerHandle = GameState->TimerCount;
+        GameState->TimerCount++;
+        Assert(GameState->TimerCount < NUM_TIMERS);
+    }
     
-    GameState->TimerCount++;
-    if(GameState->TimerCount == NUM_TIMERS)
-        GameState->TimerCount = 0;
+    GameState->Timers[Timer.TimerHandle] = Timer.TimerMax;
 }
 
 b32 TimerDone(game_state* GameState, timer& Timer)
 {
-    if(Timer.TimerHandle != -1 && 
-       GameState->Timers[Timer.TimerHandle] <= 0)
-    {
-        Timer.TimerHandle = -1;
-    }
+    if(Timer.TimerHandle == -1)
+        return true;
     
-    return Timer.TimerHandle == -1;
+    return GameState->Timers[Timer.TimerHandle] <= 0;;
+}
+
+r64 ElapsedTimer(game_state* GameState, timer& Timer)
+{
+    if(Timer.TimerHandle == -1)
+        return 1.0;
+    return GameState->Timers[Timer.TimerHandle];
+}
+
+r64 ElapsedTimerFrac(game_state* GameState, timer& Timer)
+{
+    return ElapsedTimer(GameState,Timer) / Timer.TimerMax;
 }
 
 void StartFade(camera& Camera, Fading_Mode Mode, r32 FadingSpeed, glm::vec3 FadingTint, r32 StartAlpha = 0, r32 EndAlpha = 0)
@@ -215,5 +237,43 @@ void StartFade(camera& Camera, Fading_Mode Mode, r32 FadingSpeed, glm::vec3 Fadi
     }
 }
 
+void SaveGame(game_state* GameState)
+{
+    FILE* File;
+    File = fopen("../savefile1.gs", "wb");
+    
+    if(File)
+    {
+        auto Entity = GameState->Entities[0];
+        
+        fwrite(&GameState->CharacterData,sizeof(character_data), 1, File);
+        fwrite(&GameState->LastCharacterData,sizeof(character_data), 1, File);
+        fwrite(&Entity.Player.Experience,sizeof(i32), 1, File);
+        fwrite(&Entity.Position,sizeof(glm::vec2), 1, File);
+        fwrite(&Entity.Player.LastMilestone,sizeof(i32), 1, File);
+        fwrite(&Entity.Player.Inventory,sizeof(player_inventory), 1, File);
+        
+        fclose(File);
+        printf("Saved game!\n");
+    }
+}
+
+void LoadGame(game_state* GameState)
+{
+    FILE* File;
+    File = fopen("../savefile1.gs", "rb");
+    if(File)
+    {
+        fread(&GameState->CharacterData, sizeof(character_data), 1, File);
+        fread(&GameState->LastCharacterData, sizeof(character_data), 1, File);
+        fread(&GameState->Entities[0].Player.Experience, sizeof(i32), 1, File);
+        fread(&GameState->Entities[0].Position, sizeof(glm::vec2),1,File);
+        fread(&GameState->Entities[0].Player.LastMilestone, sizeof(i32), 1, File);
+        fread(&GameState->Entities[0].Player.Inventory, sizeof(player_inventory), 1 , File);
+        
+        fclose(File);
+        printf("Loaded game!\n");
+    }
+}
 
 #endif

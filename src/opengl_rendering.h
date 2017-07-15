@@ -92,7 +92,7 @@ enum Render_Mode
 #define NUM_ENTITIES 100
 
 struct entity;
-
+struct object_entity;
 
 struct texture 
 {
@@ -136,10 +136,24 @@ struct tilemap_render_info
     i32 VBOSizes[2];
 };
 
+enum Render_Type
+{
+    Render_Type_Entity,
+    Render_Type_Object
+};
+
 struct render_entity
 {
-    entity* Entity;
+    Render_Type RenderType = Render_Type_Entity;
+    
+    union
+    {
+        entity* Entity;
+        object_entity* Object;
+    };
+    
     b32 Rendered = true;
+    b32 Background = false;
     texture* Texture;
     u32 ShaderIndex;
     glm::vec4 Color = glm::vec4(1, 1, 1, 1);
@@ -338,13 +352,14 @@ struct render_state
         };
     };
     
-    texture TextureArray[50];
+    texture TextureArray[60];
     i32 TextureIndex;
     std::map<const char*, texture*, cmp_str> Textures;
     
     //freetype
     FT_Library FTLibrary;
     render_font InconsolataFont;
+    render_font SmallerInconsolataFont;
     render_font MenuFont;
     render_font ButtonFont;
     render_font RobotoFont;

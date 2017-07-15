@@ -2,18 +2,18 @@ name minotaur_detected
 type sprite
 framecount 10
 framesize 48 48
-center 0.5 0.000000
+center 0.500000 0.000000
 loop 0
-timeperframe 0.0600000
+timeperframe 0.060000
 frames
-0 480
-48 480
-96 480
-144 480
-192 480
-240 480
-288 480
-336 480
-384 480
-432 480
+48 48
+96 48
+144 48
+192 48
+240 48
+288 48
+336 48
+384 48
+432 48
+480 48
 texture minotaur

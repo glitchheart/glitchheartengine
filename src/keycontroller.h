@@ -117,7 +117,9 @@ enum Action_Button
     Action_Target,
     Action_SwitchTarget,
     Action_Throw,
-    Action_Count
+    Action_Checkpoint,
+    Action_Count,
+    
     
 };
 
@@ -153,7 +155,10 @@ struct input_controller
         Key_Space,
         Key_MouseRight,
         Key_Q,
-        Key_E
+        Key_E,
+        Key_7,
+        Key_8,
+        Key_C
     };
     
     Controller_Code ActionButtonXboxControllerBindings[Action_Count] = 
@@ -164,7 +169,8 @@ struct input_controller
         Joystick_2,
         Joystick_5, // Left bumper
         Joystick_6, // Right bumper
-        Joystick_7 // Right trigger
+        Joystick_7, // Right trigger
+        Joystick_8
     };
     
     Controller_Code ActionButtonPS4ControllerBindings[Action_Count] = 

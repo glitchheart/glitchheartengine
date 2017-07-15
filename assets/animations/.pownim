@@ -1,9 +1,0 @@
-name 
-type sprite
-framecount 0
-framesize 0 0
-center 0.000000 0.000000
-loop 0
-timeperframe 0.000000
-frames
-texture b_button
