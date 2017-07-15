@@ -39,7 +39,6 @@ static char* LoadLevel(game_state* GameState, char** Arguments)
         
         if(File)
         {
-            printf("adasd\n");
             fclose(File);
             GameState->LevelPath = Path;
             GameState->IsInitialized = false;
