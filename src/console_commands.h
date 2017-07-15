@@ -107,6 +107,7 @@ static void ReloadCurrentLevel(game_state* GameState)
     
     GameState->LightSourceCount = 0;
     GameState->EntityCount = 0;
+    GameState->ObjectCount = 0;
     GameState->RenderState.RenderEntityCount = 0;
 }
 

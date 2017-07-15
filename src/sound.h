@@ -53,6 +53,7 @@ struct sound_manager
             sound_effect MinotaurGrunt02;
             sound_effect MinotaurHit;
             sound_effect MinotaurDeath;
+            sound_effect MinotaurStomp;
         };
     };
     
