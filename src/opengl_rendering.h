@@ -92,7 +92,7 @@ enum Render_Mode
 #define NUM_ENTITIES 100
 
 struct entity;
-
+struct object_entity;
 
 struct texture 
 {
@@ -136,10 +136,24 @@ struct tilemap_render_info
     i32 VBOSizes[2];
 };
 
+enum Render_Type
+{
+    Render_Type_Entity,
+    Render_Type_Object
+};
+
 struct render_entity
 {
-    entity* Entity;
+    Render_Type RenderType = Render_Type_Entity;
+    
+    union
+    {
+        entity* Entity;
+        object_entity* Object;
+    };
+    
     b32 Rendered = true;
+    b32 Background = false;
     texture* Texture;
     u32 ShaderIndex;
     glm::vec4 Color = glm::vec4(1, 1, 1, 1);

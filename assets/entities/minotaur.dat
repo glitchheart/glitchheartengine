@@ -43,3 +43,4 @@ maxattackstreak 2
 attackcooldowntimer 0.3
 chargingtimer 0.4
 alertedtimer 1.0
+jumpattacktimer 1

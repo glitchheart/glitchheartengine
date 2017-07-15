@@ -1115,6 +1115,8 @@
              if(!GameState->Paused && !GameState->StatGainModeOn)
              {
                  UpdateEntities(GameState, DeltaTime);
+                 UpdateObjects(GameState, DeltaTime);
+                 
                  TickTimers(GameState, DeltaTime);
                  
                  if(!TimerDone(GameState, GameState->GameCamera.ScreenShakeTimer))

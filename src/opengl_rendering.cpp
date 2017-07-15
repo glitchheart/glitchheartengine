@@ -1437,10 +1437,12 @@ static void RenderAnimationPreview(render_state* RenderState, const animation_in
     r32 MaxWidth = 350.0f;
     r32 MaxHeight = MaxWidth * Ratio;
     
+    RenderRect(Render_Fill, RenderState, glm::vec4(1, 1, 1, 1), ScreenPosition.x, ScreenPosition.y, MaxWidth, MaxHeight);
+    
     ScreenPosition.x *= RenderState->ScaleX;
     ScreenPosition.x -= 1;
     ScreenPosition.y *= RenderState->ScaleY;
-    ScreenPosition.y-= 1;
+    ScreenPosition.y -= 1;
     
     auto Shader = RenderState->SpritesheetShader;
     
@@ -1506,32 +1508,36 @@ static void RenderHealthbar(render_state* RenderState,
     }
 }
 
-static void RenderEntity(game_state *GameState, entity &Entity, glm::mat4 ProjectionMatrix, glm::mat4 View)
+static void RenderEntity(game_state *GameState, render_entity* RenderEntity, glm::mat4 ProjectionMatrix, glm::mat4 View)
 { 
     render_state* RenderState = &GameState->RenderState;
     
-    render_entity* RenderEntity = &RenderState->RenderEntities[Entity.RenderEntityHandle];
     auto Shader = RenderState->Shaders[RenderEntity->ShaderIndex];
     
-    if(RenderEntity->Rendered && Entity.Active)
+    b32 Active = RenderEntity->RenderType == Render_Type_Entity ? RenderEntity->Entity->Active : RenderEntity->Object->Active;
+    b32 IsFlipped = RenderEntity->RenderType == Render_Type_Entity ? RenderEntity->Entity->IsFlipped : RenderEntity->Object->IsFlipped;
+    glm::vec2 Position = RenderEntity->RenderType == Render_Type_Entity ? RenderEntity->Entity->Position : RenderEntity->Object->Position;
+    glm::vec2 Center = RenderEntity->RenderType == Render_Type_Entity ? RenderEntity->Entity->Center : RenderEntity->Object->Center;
+    r32 EntityScale = RenderEntity->RenderType == Render_Type_Entity ? RenderEntity->Entity->Scale : RenderEntity->Object->Scale;
+    
+    animation* CurrentAnimation =  RenderEntity->RenderType == Render_Type_Entity ? RenderEntity->Entity->CurrentAnimation : RenderEntity->Object->CurrentAnimation;
+    animation_info AnimationInfo = RenderEntity->RenderType == Render_Type_Entity ? RenderEntity->Entity->AnimationInfo : RenderEntity->Object->AnimationInfo;
+    
+    if(RenderEntity->Rendered && Active)
     {
         glm::mat4 Model(1.0f);
         
-        if(Entity.CurrentAnimation) 
+        if(CurrentAnimation) 
         {
-            r32 WidthInUnits = (r32)Entity.CurrentAnimation->FrameSize.x / (r32)PIXELS_PER_UNIT;
-            r32 HeightInUnits = (r32)Entity.CurrentAnimation->FrameSize.y / (r32)PIXELS_PER_UNIT;
+            r32 WidthInUnits = (r32)CurrentAnimation->FrameSize.x / (r32)PIXELS_PER_UNIT;
+            r32 HeightInUnits = (r32)CurrentAnimation->FrameSize.y / (r32)PIXELS_PER_UNIT;
             
-            glm::vec3 Scale = glm::vec3(WidthInUnits * Entity.Scale, HeightInUnits * Entity.Scale, 1);
+            glm::vec3 Scale = glm::vec3(WidthInUnits * EntityScale, HeightInUnits * EntityScale, 1);
             
-            r32 RemoveInX = (Entity.IsFlipped ? 1.0f * Scale.x - (2 * Entity.CurrentAnimation->Center.x * Scale.x) : 0) + Entity.CurrentAnimation->Center.x * Scale.x;
+            r32 RemoveInX = (IsFlipped ? 1.0f * Scale.x - (2 * CurrentAnimation->Center.x * Scale.x) : 0) + CurrentAnimation->Center.x * Scale.x;
             
-            Model = glm::translate(Model, glm::vec3(Entity.Position.x - RemoveInX, Entity.Position.y - (Entity.IsFlipped ? Entity.CurrentAnimation->Center.y : 0), 0.0f));
-            Model = glm::translate(Model, glm::vec3(1, 1, 0.0f));
-            Model = glm::rotate(Model, Entity.Rotation.z, glm::vec3(0, 0, 1)); 
-            Model = glm::translate(Model, glm::vec3(-1, -1, 0.0f));
-            
-            if(Entity.IsFlipped)
+            Model = glm::translate(Model, glm::vec3(Position.x - RemoveInX, Position.y - (IsFlipped ? CurrentAnimation->Center.y : 0), 0.0f));
+            if(IsFlipped)
             {
                 Model = glm::translate(Model, glm::vec3(Scale.x, 0, 0));
                 Scale = glm::vec3(-Scale.x, Scale.y, 1);
@@ -1539,7 +1545,7 @@ static void RenderEntity(game_state *GameState, entity &Entity, glm::mat4 Projec
             
             Model = glm::scale(Model, glm::vec3(Scale.x, Scale.y, Scale.z));
             
-            animation* Animation = Entity.CurrentAnimation;
+            animation* Animation = CurrentAnimation;
             
             if (RenderState->BoundTexture != Animation->Texture->TextureHandle) //never bind the same texture if it's already bound
             {
@@ -1558,11 +1564,15 @@ static void RenderEntity(game_state *GameState, entity &Entity, glm::mat4 Projec
             }
             
             UseShader(&Shader);
-            auto Frame = Animation->Frames[Entity.AnimationInfo.FrameIndex];
+            auto Frame = Animation->Frames[AnimationInfo.FrameIndex];
             
-            if(Entity.Type == Entity_Enemy && Entity.Enemy.HasLoot && Entity.Dead)
+            if(RenderEntity->RenderType == Render_Type_Entity)
             {
-                SetFloatUniform(Shader.Program, "glow", GL_TRUE);
+                auto& Entity = *RenderEntity->Entity;
+                if(Entity.Type == Entity_Enemy && Entity.Enemy.HasLoot && Entity.Dead)
+                    SetFloatUniform(Shader.Program, "glow", GL_TRUE);
+                else
+                    SetFloatUniform(Shader.Program, "glow", GL_FALSE);
             }
             else
             {
@@ -1580,20 +1590,17 @@ static void RenderEntity(game_state *GameState, entity &Entity, glm::mat4 Projec
         } 
         else 
         {
-            Model = glm::translate(Model, glm::vec3(Entity.Position.x, Entity.Position.y, 0.0f));
-            Model = glm::translate(Model, glm::vec3(1, 1, 0.0f));
-            Model = glm::rotate(Model, Entity.Rotation.z, glm::vec3(0, 0, 1)); 
-            Model = glm::translate(Model, glm::vec3(-1, -1, 0.0f));
+            Model = glm::translate(Model, glm::vec3(Position.x, Position.y, 0.0f));
             
             r32 WidthInUnits = RenderEntity->Texture->Width / (r32)PIXELS_PER_UNIT;
             r32 HeightInUnits = RenderEntity->Texture->Height / (r32)PIXELS_PER_UNIT;
             
-            glm::vec3 Scale = glm::vec3(WidthInUnits * Entity.Scale, HeightInUnits * Entity.Scale, 1);
+            glm::vec3 Scale = glm::vec3(WidthInUnits * EntityScale, HeightInUnits * EntityScale, 1);
             
-            if(Entity.IsFlipped)
+            if(IsFlipped)
             {
                 Scale = glm::vec3(-Scale.x, Scale.y, 1);
-                Model = glm::translate(Model, glm::vec3(Entity.Scale, 0, 0));
+                Model = glm::translate(Model, glm::vec3(EntityScale, 0, 0));
             }
             
             Model = glm::scale(Model, glm::vec3(Scale.x, Scale.y, Scale.z));
@@ -1625,66 +1632,76 @@ static void RenderEntity(game_state *GameState, entity &Entity, glm::mat4 Projec
         glDrawArrays(GL_QUADS, 0, 4);
         glBindVertexArray(0);
         
-        if(Entity.Type == Entity_Enemy && Entity.Health < Entity.FullHealth && Entity.Health > 0)
+        if(RenderEntity->RenderType == Render_Type_Entity)
         {
-            RenderHealthbar(RenderState, &Entity, *Entity.Enemy.Healthbar, ProjectionMatrix, View);
-        }
-        
-        if(GameState->AIDebugModeOn && Entity.Type == Entity_Enemy)
-        {
-            glm::mat4 Model = glm::mat4(1.0f) * View;
+            auto& Entity = *RenderEntity->Entity;
             
-            glm::vec3 Projected =
-                glm::project(glm::vec3(Entity.Position.x, Entity.Position.y, 0), Model, ProjectionMatrix, glm::vec4(GameState->RenderState.Viewport[0], GameState->RenderState.Viewport[1], GameState->RenderState.Viewport[2], GameState->RenderState.Viewport[3]));
-            
-            char* State = "State MISSING";
-            State = AIEnumToStr(Entity.Enemy.AIState);
-            
-            RenderText(RenderState, RenderState->ButtonFont, glm::vec4(1, 1, 1, 1), State, Projected.x, Projected.y, 1, Alignment_Center);
-        }
-    }
-    
-    if(Entity.Type == Entity_Player && Entity.Player.RenderCrosshair)
-    {
-        RenderRect(Render_Fill, RenderState, glm::vec4(1, 1, 1, 1), Entity.Position.x + Entity.Player.CrosshairPositionX, Entity.Position.y + Entity.Player.CrosshairPositionY, 1, 1, RenderState->Textures["crosshair"]->TextureHandle, false, ProjectionMatrix, View);
-    }
-    else if(Entity.RenderButtonHint)
-    {
-        RenderRect(Render_Fill, RenderState, glm::vec4(1, 1, 1, 1), Entity.Position.x + Entity.RenderButtonOffset.x, Entity.Position.y + Entity.RenderButtonOffset.y, 1, 1, RenderState->Textures["b_button"]->TextureHandle, false, ProjectionMatrix, View);
-    }
-    
-    if(Entity.Type == Entity_Enemy)
-    {
-        if(Entity.Enemy.IsTargeted)
-        {
-            RenderRect(Render_Fill, RenderState, glm::vec4(1, 1, 1, 1), Entity.Position.x + Entity.Enemy.TargetingPositionX, Entity.Position.y + Entity.Enemy.TargetingPositionY, 1, 1, RenderState->Textures["red_arrow"]->TextureHandle, false, ProjectionMatrix, View);}
-        
-        if(GameState->GameMode == Mode_Editor 
-           && GameState->EditorState.SelectedEntity 
-           && GameState->EditorState.SelectedEntity->EntityIndex == Entity.EntityIndex 
-           && Entity.Enemy.WaypointCount > 0)
-        {
-            for(i32 Index = 1; Index < Entity.Enemy.WaypointCount; Index++)
+            if(Entity.Type == Entity_Enemy && Entity.Health < Entity.FullHealth && Entity.Health > 0)
             {
-                auto Point1 = Entity.Enemy.Waypoints[Index - 1];
-                auto Point2 = Entity.Enemy.Waypoints[Index];
+                RenderHealthbar(RenderState, &Entity, *Entity.Enemy.Healthbar, ProjectionMatrix, View);
+            }
+            
+            if(GameState->AIDebugModeOn && Entity.Type == Entity_Enemy)
+            {
+                glm::mat4 Model = glm::mat4(1.0f) * View;
                 
-                RenderLine(*RenderState, glm::vec4(1, 1, 1, 1), Point1.X + 0.5f, Point1.Y + 0.5f, Point2.X + 0.5f, Point2.Y + 0.5f, false, ProjectionMatrix, View);
-            }
-            
-            for(i32 Index = 0; Index < Entity.Enemy.WaypointCount; Index++)
-            {
-                auto Point = Entity.Enemy.Waypoints[Index];
-                RenderRect(Render_Fill, RenderState, glm::vec4(0, 1, 0, 0.5), Point.X + 0.25f, Point.Y + 0.25f, 0.5f, 0.5f, RenderState->Textures["circle"]->TextureHandle, false, ProjectionMatrix, View);
+                glm::vec3 Projected =
+                    glm::project(glm::vec3(Entity.Position.x, Entity.Position.y, 0), Model, ProjectionMatrix, glm::vec4(GameState->RenderState.Viewport[0], GameState->RenderState.Viewport[1], GameState->RenderState.Viewport[2], GameState->RenderState.Viewport[3]));
+                
+                char* State = "State MISSING";
+                State = AIEnumToStr(Entity.Enemy.AIState);
+                
+                RenderText(RenderState, RenderState->ButtonFont, glm::vec4(1, 1, 1, 1), State, Projected.x, Projected.y, 1, Alignment_Center);
             }
         }
     }
     
-    if(RenderState->RenderColliders && !Entity.IsKinematic)
-        RenderColliderWireframe(RenderState, &Entity, ProjectionMatrix, View);
-    
-    if(RenderState->RenderPaths && Entity.Type == Entity_Enemy)
-        RenderAStarPath(RenderState,&Entity,ProjectionMatrix,View);
+    if(RenderEntity->RenderType == Render_Type_Entity)
+    {
+        auto& Entity = *RenderEntity->Entity;
+        
+        if(Entity.Type == Entity_Player && Entity.Player.RenderCrosshair)
+        {
+            RenderRect(Render_Fill, RenderState, glm::vec4(1, 1, 1, 1), Entity.Position.x + Entity.Player.CrosshairPositionX, Entity.Position.y + Entity.Player.CrosshairPositionY, 1, 1, RenderState->Textures["crosshair"]->TextureHandle, false, ProjectionMatrix, View);
+        }
+        else if(Entity.RenderButtonHint)
+        {
+            RenderRect(Render_Fill, RenderState, glm::vec4(1, 1, 1, 1), Entity.Position.x + Entity.RenderButtonOffset.x, Entity.Position.y + Entity.RenderButtonOffset.y, 1, 1, RenderState->Textures["b_button"]->TextureHandle, false, ProjectionMatrix, View);
+        }
+        
+        if(Entity.Type == Entity_Enemy)
+        {
+            if(Entity.Enemy.IsTargeted)
+            {
+                RenderRect(Render_Fill, RenderState, glm::vec4(1, 1, 1, 1), Entity.Position.x + Entity.Enemy.TargetingPositionX, Entity.Position.y + Entity.Enemy.TargetingPositionY, 1, 1, RenderState->Textures["red_arrow"]->TextureHandle, false, ProjectionMatrix, View);}
+            
+            if(GameState->GameMode == Mode_Editor 
+               && GameState->EditorState.SelectedEntity 
+               && GameState->EditorState.SelectedEntity->EntityIndex == Entity.EntityIndex 
+               && Entity.Enemy.WaypointCount > 0)
+            {
+                for(i32 Index = 1; Index < Entity.Enemy.WaypointCount; Index++)
+                {
+                    auto Point1 = Entity.Enemy.Waypoints[Index - 1];
+                    auto Point2 = Entity.Enemy.Waypoints[Index];
+                    
+                    RenderLine(*RenderState, glm::vec4(1, 1, 1, 1), Point1.X + 0.5f, Point1.Y + 0.5f, Point2.X + 0.5f, Point2.Y + 0.5f, false, ProjectionMatrix, View);
+                }
+                
+                for(i32 Index = 0; Index < Entity.Enemy.WaypointCount; Index++)
+                {
+                    auto Point = Entity.Enemy.Waypoints[Index];
+                    RenderRect(Render_Fill, RenderState, glm::vec4(0, 1, 0, 0.5), Point.X + 0.25f, Point.Y + 0.25f, 0.5f, 0.5f, RenderState->Textures["circle"]->TextureHandle, false, ProjectionMatrix, View);
+                }
+            }
+        }
+        
+        if(RenderState->RenderColliders && !Entity.IsKinematic)
+            RenderColliderWireframe(RenderState, &Entity, ProjectionMatrix, View);
+        
+        if(RenderState->RenderPaths && Entity.Type == Entity_Enemy)
+            RenderAStarPath(RenderState,&Entity,ProjectionMatrix,View);
+    }
 }
 
 static void RenderTile(render_state* RenderState, u32 X, u32 Y, u32 TilesheetIndex, glm::vec2 TextureOffset, glm::vec2 SheetSize, glm::vec4 Color,  glm::mat4 ProjectionMatrix, glm::mat4 View)
@@ -1821,7 +1838,7 @@ int CompareFunction(const void* a, const void* b)
     collision_AABB BoxA = APtr.Entity->CollisionAABB;
     collision_AABB BoxB = BPtr.Entity->CollisionAABB;
     
-    if(BoxA.Center.y - BoxA.Extents.y > BoxB.Center.y - BoxB.Extents.y)
+    if(APtr.Background || BoxA.Center.y - BoxA.Extents.y > BoxB.Center.y - BoxB.Extents.y)
         return -1;
     if(BoxA.Center.y  - BoxA.Extents.y < BoxB.Center.y - BoxB.Extents.y)
         return 1;
@@ -1837,9 +1854,13 @@ static void RenderInGameMode(game_state* GameState)
     for(i32 Index = 0; Index < GameState->RenderState.RenderEntityCount; Index++) 
     {
         render_entity* Render = &GameState->RenderState.RenderEntities[Index];
-        // @Incomplete: Only render if in view
-        Render->Entity->RenderEntityHandle = Index;
-        RenderEntity(GameState, *Render->Entity, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
+        
+        if(Render->RenderType == Render_Type_Entity)
+            Render->Entity->RenderEntityHandle = Index;
+        else if(Render->RenderType == Render_Type_Object)
+            Render->Object->RenderEntityHandle = Index;
+        
+        RenderEntity(GameState, Render, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
     }
 }
 
@@ -2158,6 +2179,8 @@ void RenderUI(game_state* GameState)
                                 r32 TextureWidth = (r32)Texture.Width * Scale;
                                 r32 TextureHeight = (r32)Texture.Height * Scale;
                                 
+                                RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(1, 1, 1, 1), (r32)GameState->RenderState.WindowWidth / 2.0f - TextureWidth / 2, (r32)GameState->RenderState.WindowHeight / 2.0f - TextureHeight / 2, TextureWidth, TextureHeight);
+                                
                                 RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(1, 1, 1, 1), (r32)GameState->RenderState.WindowWidth / 2.0f - TextureWidth / 2, (r32)GameState->RenderState.WindowHeight / 2.0f - TextureHeight / 2, TextureWidth, TextureHeight, Texture.TextureHandle);
                                 
                                 
@@ -2396,6 +2419,7 @@ static void Render(game_state* GameState)
         glBindFramebuffer(GL_FRAMEBUFFER, GameState->RenderState.FrameBuffer);
         glBindTexture(GL_TEXTURE_2D, GameState->RenderState.TextureColorBuffer);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        
         glClearColor(0, 0, 0, 1.0f);
         
         if(GameState->GameMode == Mode_InGame || GameState->GameMode == Mode_Editor && GameState->EditorState.Mode == Editor_Level)

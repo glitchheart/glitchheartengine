@@ -181,6 +181,27 @@
                                     }
                                 }
                                 
+                                static void PlayAnimation(object_entity* Object, char* AnimationName, game_state* GameState)
+                                {
+                                    if(!Object->CurrentAnimation || !Object->CurrentAnimation->Name || strcmp(Object->CurrentAnimation->Name, AnimationName) != 0 || !Object->AnimationInfo.Playing)
+                                    {
+                                        if(GameState->Animations.find(AnimationName) != GameState->Animations.end())
+                                        {
+                                            Object->CurrentAnimation = GameState->Animations[AnimationName];
+                                            Object->AnimationInfo.Playing = true;
+                                            Object->AnimationInfo.FrameIndex = 0;
+                                            Object->AnimationInfo.CurrentTime = 0.0;
+                                        }
+                                        else
+                                        {
+                                            Object->CurrentAnimation = 0;
+                                            Object->AnimationInfo.Playing = false;
+                                            Object->AnimationInfo.FrameIndex = 0;
+                                            Object->AnimationInfo.CurrentTime = 0.0;
+                                        }
+                                    }
+                                }
+                                
                                 static void StopAnimation(animation_info* Info)
                                 {
                                     Info->Playing = false;

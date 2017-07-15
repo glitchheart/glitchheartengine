@@ -145,6 +145,9 @@ struct game_state
     u16 EntityCount;
     entity Entities[NUM_ENTITIES];
     
+    i32 ObjectCount;
+    object_entity Objects[NUM_ENTITIES];
+    
     player_ui PlayerUI;
     health_bar HealthBar;
     
