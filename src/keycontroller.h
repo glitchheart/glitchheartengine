@@ -118,9 +118,7 @@ enum Action_Button
     Action_SwitchTarget,
     Action_Throw,
     Action_Checkpoint,
-    Action_Count,
-    
-    
+    Action_Count
 };
 
 enum Stick
@@ -181,6 +179,11 @@ struct input_controller
         Joystick_1,
         Joystick_4
     };
+    
+    Action_Button ActionQueue[20];
+    i32 ActionQueueIndex = 0;
+    i32 NextActionIndexForInsert = 0;
+    i32 ActionQueueCount = 0;
     
     b32 AnyKeyPressed;
     

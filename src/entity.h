@@ -355,7 +355,6 @@ struct entity
             r32 TargetingDistance;
             i32 TargetedEnemyHandle;
             i32 DustCloudHandle;
-            
         } Player;
         struct
         {
