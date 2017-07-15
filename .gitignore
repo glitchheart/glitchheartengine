@@ -1,5 +1,6 @@
 *.o
 *.exe
+*.gs
 
 libgame.a
 build/
