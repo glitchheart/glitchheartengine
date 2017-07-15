@@ -1949,13 +1949,11 @@ void RenderUI(game_state* GameState)
             
             RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(1, 1, 1, 1), 48 + 40 - 17.5f, 90, 35, 35, GameState->RenderState.Textures["y_button"]->TextureHandle);
             
-            i32 CloseLootCount = 0;
             auto ButtonTexWidth = GameState->RenderState.Textures["b_button"]->Width / 2;
             for(i32 Index = 0; Index < GameState->CurrentLootCount; Index++)
             {
                 if(GameState->CurrentLoot[Index].RenderButtonHint)
                 {
-                    
                     switch(GameState->CurrentLoot[Index].Type)
                     {
                         case Loot_Health:
