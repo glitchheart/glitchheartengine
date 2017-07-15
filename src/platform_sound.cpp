@@ -6,7 +6,6 @@ static void LoadWavFile(const char *Filename, sound_effect *LoadedSound)
     wave_data WaveData;
     
     SoundFile = fopen(Filename, "rb");
-    //printf("Buffer: %d\n", LoadedSound->Buffer);
     
     if (SoundFile)
     {
@@ -47,7 +46,6 @@ static void LoadWavFile(const char *Filename, sound_effect *LoadedSound)
             WaveData.SubChunkID[3] != 'a')
         {
             HandleError(__FILE__, __LINE__, "Wave data malformed");
-            //printf("ChunkID: %c %c %c %c \n", WaveData.SubChunkID[0], WaveData.SubChunkID[1], WaveData.SubChunkID[2], WaveData.SubChunkID[3]);
         }
         
         unsigned char *Data = (unsigned char *)malloc(WaveData.SubChunk2Size);
@@ -87,8 +85,6 @@ static void LoadWavFile(const char *Filename, sound_effect *LoadedSound)
         alGenBuffers(1, &LoadedSound->Buffer);
         alBufferData(LoadedSound->Buffer, Format, (void*)Data, Size, Frequency);
         fclose(SoundFile);
-        
-        //printf("Samplerate: %d, Size: %d\n", Frequency, Size);
     }
 }
 
