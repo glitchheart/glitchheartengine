@@ -1924,7 +1924,7 @@ void RenderUI(game_state* GameState)
                 r32 YPos = GameState->RenderState.WindowHeight - 52.0f;
                 
                 RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(1,1,1,1), XPos, YPos, TotalWidth, Height);
-                RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(0,0.5,0.5,1), XPos, YPos, TotalWidth * (1 -  ElapsedTimerFrac(GameState,Player.Player.CheckpointPlacementTimer)),Height);
+                RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(0.0f,0.5f,0.5f,1.0f), XPos, YPos, TotalWidth * (r32)(1 -  ElapsedTimerFrac(GameState,Player.Player.CheckpointPlacementTimer)),Height);
             }
             
             
@@ -1958,17 +1958,17 @@ void RenderUI(game_state* GameState)
                     {
                         case Loot_Health:
                         {
-                            RenderText(&GameState->RenderState, GameState->RenderState.RobotoFont, glm::vec4(1,1,1,1), "Health Potion", GameState->RenderState.WindowWidth / 2 - ButtonTexWidth - 200, GameState->RenderState.WindowHeight - 490, Alignment_Center);
+                            RenderText(&GameState->RenderState, GameState->RenderState.RobotoFont, glm::vec4(1,1,1,1), "Health Potion", (r32)GameState->RenderState.WindowWidth / 2 - ButtonTexWidth - 200, (r32)GameState->RenderState.WindowHeight - 490, Alignment_Center);
                         }
                         break;
                         case Loot_Checkpoint:
                         {
-                            RenderText(&GameState->RenderState, GameState->RenderState.RobotoFont, glm::vec4(1,1,1,1), "Checkpoint", GameState->RenderState.WindowWidth / 2 - ButtonTexWidth - 200, GameState->RenderState.WindowHeight - 490, Alignment_Center);
+                            RenderText(&GameState->RenderState, GameState->RenderState.RobotoFont, glm::vec4(1,1,1,1), "Checkpoint", (r32)GameState->RenderState.WindowWidth / 2 - ButtonTexWidth - 200, (r32)GameState->RenderState.WindowHeight - 490, Alignment_Center);
                         }
                         break;
                     }
                     
-                    RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(1, 1, 1, 1), GameState->RenderState.WindowWidth / 2 - ButtonTexWidth, GameState->RenderState.WindowHeight - 500, 40, 40, GameState->RenderState.Textures["b_button"]->TextureHandle);
+                    RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(1, 1, 1, 1), (r32)GameState->RenderState.WindowWidth / 2 - ButtonTexWidth, (r32)GameState->RenderState.WindowHeight - 500, 40, 40, GameState->RenderState.Textures["b_button"]->TextureHandle);
                     
                     break;
                 }
