@@ -144,6 +144,7 @@ static void LoadEntityData(FILE* File, entity* Entity, game_state* GameState, b3
         render_entity* RenderEntity = &GameState->RenderState.RenderEntities[GameState->RenderState.RenderEntityCount];
         RenderEntity->ShaderIndex = Shader_Spritesheet;
         RenderEntity->Rendered = true;
+        RenderEntity->RenderType = Render_Type_Entity;
         RenderEntity->Entity = &*Entity;
         Entity->RenderEntityHandle = GameState->RenderState.RenderEntityCount++;
         RenderEntity->Color = glm::vec4(1, 1, 1, 1);
