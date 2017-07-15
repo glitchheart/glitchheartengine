@@ -112,6 +112,9 @@ struct game_state
     
     i32 SelectedGainIndex = 0;
     
+    loot CurrentLoot[64];
+    i32 CurrentLootCount = 0;
+    
     b32 AIDebugModeOn = false;
     b32 GodModeOn = false;
     r32 GodModePanSpeed = 10.0f;
