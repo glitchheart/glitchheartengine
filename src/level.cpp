@@ -122,7 +122,6 @@ static b32 LoadLevelFromFile(char* FilePath, level* Level, game_state* GameState
     u32 MapHeight = 0;
     
     Level->Tilemap.RenderEntity.ShaderIndex = Shader_Tile;
-    Level->Tilemap.RenderEntity.Texture = &GameState->RenderState.Tilesheets[Level->TilesheetIndex].Texture;
     
     if(File)
     {
@@ -142,6 +141,8 @@ static b32 LoadLevelFromFile(char* FilePath, level* Level, game_state* GameState
                 break;
             }
         }
+        
+        Level->Tilemap.RenderEntity.Texture = &GameState->RenderState.Tilesheets[Level->TilesheetIndex].Texture;
         
         LoadTilesheetMetaFile(Concat(Concat("../assets/textures/tilesheets/", Level->SheetName), ".tm"), Level, &Level->Tilemap, GameState);
         
