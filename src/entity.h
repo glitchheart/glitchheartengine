@@ -147,10 +147,22 @@ struct player_inventory
     b32 HasCheckpoint;
 };
 
+
+enum Loot_Type
+{
+    Loot_Health,
+    Loot_Checkpoint
+};
+
 struct loot
 {
-    i32 HealthPotions = 0;
+    glm::vec2 Position;
+    Loot_Type Type;
+    b32 RenderButtonHint;
+    i32 Handle = -1;
+    i32 OwnerHandle;
 };
+
 
 struct light_source
 {

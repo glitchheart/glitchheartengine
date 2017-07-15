@@ -360,10 +360,7 @@ static void LoadEnemyData(FILE* File, entity* Entity, game_state* GameState)
     Entity->Type = Entity_Enemy;
     Entity->Enemy.AStarPath = {};
     Entity->Enemy.HealthCountStart = glm::vec2(-10, 50);
-    
-    Entity->Enemy.HasLoot = true;
-    Entity->Enemy.Loot.HealthPotions = 1;
-    
+    Entity->Enemy.HasLoot = false;
     Entity->Enemy.Healthbar = 0;
     Entity->Enemy.HealthCountIndex = 0;
     Entity->Enemy.IsTargeted = false;
@@ -1812,6 +1809,36 @@ static void LoadPlayerData(game_state* GameState, i32 Handle = -1, glm::vec2 Pos
     }
 }
 
+
+static void CheckLootPickup(game_state* GameState, loot* Loot, entity* Player)
+{
+    if(Loot->RenderButtonHint && GetActionButtonDown(Action_Interact, GameState))
+    {
+        switch(Loot->Type)
+        {
+            case Loot_Health:
+            {
+                Player->Player.Inventory.HealthPotionCount = Player->Player.Inventory.HealthPotionCount + 1;
+            }
+            break;
+            case Loot_Checkpoint:
+            {
+                Player->Player.Inventory.HasCheckpoint = true;
+            }
+            break;
+        }
+        GameState->Entities[Loot->OwnerHandle].Enemy.HasLoot = false;
+        Loot->RenderButtonHint= false;
+        for(i32 Index = Loot->Handle; Index < GameState->CurrentLootCount; Index++)
+        {
+            GameState->CurrentLoot[Index] = GameState->CurrentLoot[Index + 1];
+        }
+        GameState->CurrentLootCount--;
+        
+    }
+}
+
+
 void UpdatePlayer(entity* Entity, game_state* GameState, r64 DeltaTime)
 {
     if(Entity->Player.LastMilestone == 0 && Entity->Player.Experience >= GameState->StatData[GameState->CharacterData.Level].Milestones[0].MilestonePoint)
@@ -1834,6 +1861,19 @@ void UpdatePlayer(entity* Entity, game_state* GameState, r64 DeltaTime)
         
         Entity->Player.LastMilestone = 0;
         SaveGame(GameState);
+    }
+    
+    if(GameState->CurrentLootCount > 0)
+    {
+        for(i32 Index = 0; Index < GameState->CurrentLootCount; Index++)
+        {
+            auto Loot = GameState->CurrentLoot[Index];
+            if(Loot.Handle != -1 && glm::distance(Entity->Position, Loot.Position) < 1.5f)
+            {
+                GameState->CurrentLoot[Index].RenderButtonHint = true;
+                CheckLootPickup(GameState,&Loot,Entity);
+            }
+        }
     }
     
     r32 UsedWalkingSpeed = Entity->Player.WalkingSpeed;
@@ -2163,7 +2203,7 @@ void UpdatePlayer(entity* Entity, game_state* GameState, r64 DeltaTime)
             Entity->Player.RenderCrosshair = false;
         }
         
-        if(!Entity->Player.IsAttacking && !Entity->Player.IsChargingCheckpoint && !Entity->Player.IsDashing && GetActionButton(Action_Checkpoint, GameState) && TimerDone(GameState, Entity->Player.CheckpointPlacementCooldownTimer))
+        if(!Entity->Player.IsAttacking && !Entity->Player.IsChargingCheckpoint && !Entity->Player.IsDashing && GetActionButton(Action_Checkpoint, GameState) && TimerDone(GameState, Entity->Player.CheckpointPlacementCooldownTimer) && Entity->Player.Inventory.HasCheckpoint)
         {
             Entity->Player.IsChargingCheckpoint = true;
             StartTimer(GameState,Entity->Player.CheckpointPlacementTimer);
@@ -2173,6 +2213,7 @@ void UpdatePlayer(entity* Entity, game_state* GameState, r64 DeltaTime)
             Entity->Player.IsChargingCheckpoint = false;
             StartTimer(GameState,Entity->Player.CheckpointPlacementCooldownTimer);
             PlaceCheckpoint(GameState,Entity);
+            Entity->Player.Inventory.HasCheckpoint = false;
         }
         else if(!GetActionButton(Action_Checkpoint, GameState))
         {
@@ -2547,18 +2588,18 @@ void UpdateBlob(entity* Entity, game_state* GameState, r64 DeltaTime)
     Entity->Position.y += Entity->Velocity.y * (r32)DeltaTime;
 }
 
-static void DetermineLoot(entity* Entity)
+static void DetermineLoot(game_state* GameState, entity* Entity)
 {
-    Entity->Enemy.HasLoot = rand() % 2 == 0;
-}
-
-static void CheckLootPickup(game_state* GameState, entity* Entity, entity* Player)
-{
-    if(Entity->RenderButtonHint && GetActionButtonDown(Action_Interact, GameState))
+    b32 HasLoot = rand() % 2 == 0;
+    Entity->Enemy.HasLoot = HasLoot;
+    if(HasLoot)
     {
-        Player->Player.Inventory.HealthPotionCount = Player->Player.Inventory.HealthPotionCount + 1;
-        Entity->Enemy.HasLoot = false;
-        Entity->RenderButtonHint = false;
+        loot Loot;
+        Loot.Position = Entity->Position;
+        Loot.Type = rand() % 10 > 2 ? Loot_Health : Loot_Checkpoint;
+        Loot.OwnerHandle = Entity->EntityIndex;
+        Loot.Handle = GameState->CurrentLootCount;
+        GameState->CurrentLoot[GameState->CurrentLootCount++] = Loot;
     }
 }
 
@@ -2569,8 +2610,6 @@ void UpdateSkeleton(entity* Entity, game_state* GameState, r64 DeltaTime)
     
     auto Player = &GameState->Entities[0];
     Entity->RenderButtonHint = Entity->Enemy.HasLoot && Entity->Dead && glm::distance(Player->Position, Entity->Position) < 1.5f;
-    
-    CheckLootPickup(GameState, Entity,Player);
     
     if(Entity->Active && !Entity->Dead)
     {
@@ -2583,7 +2622,7 @@ void UpdateSkeleton(entity* Entity, game_state* GameState, r64 DeltaTime)
                 Entity->AnimationInfo.FreezeFrame = true;
                 Enemy.AIState = AI_Dying;
                 SaveGame(GameState);
-                DetermineLoot(Entity);
+                DetermineLoot(GameState,Entity);
             }
             else if(strcmp(Entity->CurrentAnimation->Name, "skeleton_attack") != 0 && Enemy.AIState != AI_Dying)
             {
@@ -2655,8 +2694,6 @@ void UpdateMinotaur(entity* Entity, game_state* GameState, r64 DeltaTime)
     
     Entity->RenderButtonHint = Entity->Enemy.HasLoot &&  Entity->Dead && glm::distance(Player->Position, Entity->Position) < 1.5f;
     
-    CheckLootPickup(GameState, Entity, Player);
-    
     if(Entity->Active && !Entity->Dead)
     {
         if(Entity->Hit)
@@ -2671,7 +2708,7 @@ void UpdateMinotaur(entity* Entity, game_state* GameState, r64 DeltaTime)
                 Entity->AnimationInfo.FreezeFrame = true;
                 Enemy.AIState = AI_Dying;
                 SaveGame(GameState);
-                DetermineLoot(Entity);
+                DetermineLoot(GameState, Entity);
             }
             else if(strcmp(Entity->CurrentAnimation->Name, "minotaur_attack") != 0 && Enemy.AIState != AI_Dying)
             {
