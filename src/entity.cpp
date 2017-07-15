@@ -1306,8 +1306,6 @@ AI_FUNC(BlobDying)
 
 static void LoadBonfireData(game_state* GameState, i32 Handle = -1, glm::vec2 Position = glm::vec2(), b32 IsTemporary = false)
 {
-    printf("Vec2 %f %f\n", Position.x, Position.y);
-    
     FILE* File;
     File = fopen("../assets/entities/bonfire.dat", "r");
     
@@ -1612,7 +1610,7 @@ void PlaceCheckpoint(game_state* GameState, entity* Entity)
     {
         GameState->Entities[GameState->CharacterData.CheckpointHandle].Position = CheckpointPos;
     }
-    printf("New checkpoint: (%f,%f)\n",CheckpointPos.x, CheckpointPos.y);
+    
     GameState->LastCharacterData.CurrentCheckpoint = CheckpointPos;
     GameState->LastCharacterData.CheckpointHandle = GameState->CharacterData.CheckpointHandle;
     GameState->CharacterData.CurrentCheckpoint = CheckpointPos;
@@ -1782,7 +1780,7 @@ static void LoadPlayerData(game_state* GameState, i32 Handle = -1, glm::vec2 Pos
             LoadBonfireData(GameState,-1,GameState->CharacterData.CurrentCheckpoint, true);
             GameState->CharacterData.CheckpointHandle = GameState->EntityCount - 1;
             GameState->LastCharacterData.CheckpointHandle = GameState->EntityCount - 1;
-            GameState->LastCharacterData.CurrentCheckpoint = Position;
+            GameState->LastCharacterData.CurrentCheckpoint = GameState->CharacterData.CurrentCheckpoint;
             GameState->LastCharacterData.HasCheckpoint = true;
             
             if(GameState->CharacterData.Health == 0)
@@ -2291,7 +2289,6 @@ void UpdatePlayer(entity* Entity, game_state* GameState, r64 DeltaTime)
         Entity->Player.Experience = 0;
         Entity->Player.LastMilestone = 0;
         GameState->CharacterData = GameState->LastCharacterData;
-        printf("\n");
         SaveGame(GameState);
     }
 }
