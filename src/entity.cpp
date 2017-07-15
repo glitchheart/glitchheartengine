@@ -2121,8 +2121,16 @@ void UpdatePlayer(entity* Entity, game_state* GameState, r64 DeltaTime)
             PlaySoundEffect(GameState, &GameState->SoundManager.Dash);
             Entity->Player.IsDashing = true;
             
+            glm::vec2 Direction = UsingController ? glm::normalize(glm::vec2(GetInputX(GameState), GetInputY(GameState))) : DirectionToMouse;
+            
+            if(Direction.x == Direction.x && Direction.y == Direction.y && (Direction.x != 0 || Direction.y != 0))
+            {
+                Entity->Player.LastKnownDirectionX = Direction.x;
+                Entity->Player.LastKnownDirectionY = Direction.y;
+            }
+            
             Entity->Player.DashDirectionX = Entity->Player.LastKnownDirectionX;
-            Entity->Player.DashDirectionY = Entity->Player.LastKnownDirectionY; 
+            Entity->Player.DashDirectionY = Entity->Player.LastKnownDirectionY;
             StartTimer(GameState, Entity->Player.DashTimer);
             
             DecreaseStamina(Entity,GameState,Entity->Player.RollStaminaCost);
