@@ -352,7 +352,7 @@ struct render_state
         };
     };
     
-    texture TextureArray[60];
+    texture TextureArray[70];
     i32 TextureIndex;
     std::map<const char*, texture*, cmp_str> Textures;
     

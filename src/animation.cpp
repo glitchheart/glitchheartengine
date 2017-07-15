@@ -122,7 +122,7 @@
                                             int Length;
                                             
                                             sscanf(LineBuffer, "texture %s%n", TextureNameBuffer, &Length);
-                                            char* TextureName = (char*) malloc(50 * sizeof(char));
+                                            char* TextureName = (char*) malloc(70 * sizeof(char));
                                             strcpy(TextureName, TextureNameBuffer);
                                             if(GameState->RenderState.Textures.find(TextureName) != GameState->RenderState.Textures.end())
                                             {

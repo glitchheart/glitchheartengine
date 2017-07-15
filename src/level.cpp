@@ -63,43 +63,46 @@ static void SaveTilesheetMetaFile(const char* FilePath, render_state* RenderStat
 
 static void LoadTilesheetMetaFile(char* FilePath, level* Level, tilemap* Tilemap, game_state* GameState)
 {
-    FILE* File;
-    File = fopen(FilePath, "r");
-    char LineBuffer[255];
-    
-    if(File)
+    if(FileExists(FilePath))
     {
-        // Get number of tiles for array allocation
-        int NumTiles;
-        if(fgets(LineBuffer, 255, File))
-        {
-            sscanf(LineBuffer, "%d", &NumTiles);
-            Tilemap->Tiles = (tile_data*)malloc(sizeof(tile_data) * NumTiles);
-        }
+        FILE* File;
+        File = fopen(FilePath, "r");
+        char LineBuffer[255];
         
-        if(fgets(LineBuffer, 255, File))
+        if(File)
         {
-            sscanf(LineBuffer, "%d", &Tilemap->TileSize);
-        }
-        
-        int TileIndex = 0;
-        
-        // Get each tile
-        while(fgets(LineBuffer, 255, File))
-        {
-            tile_data Data = {};
-            glm::vec2 TextureOffset;
-            glm::vec2 TextureSize;
-            glm::vec2 Center;
+            // Get number of tiles for array allocation
+            int NumTiles;
+            if(fgets(LineBuffer, 255, File))
+            {
+                sscanf(LineBuffer, "%d", &NumTiles);
+                Tilemap->Tiles = (tile_data*)malloc(sizeof(tile_data) * NumTiles);
+            }
             
-            sscanf(LineBuffer,"%d %f %f %f %f %d %f %f", &Data.TypeIndex, &TextureOffset.x, &TextureOffset.y, &TextureSize.x, &TextureSize.y, &Data.IsSolid, &Center.x, &Center.y);
-            Data.TextureOffset = TextureOffset;
-            Data.TextureSize = TextureSize;
-            Data.Center = Center;
-            Tilemap->Tiles[TileIndex++] = Data;
+            if(fgets(LineBuffer, 255, File))
+            {
+                sscanf(LineBuffer, "%d", &Tilemap->TileSize);
+            }
+            
+            int TileIndex = 0;
+            
+            // Get each tile
+            while(fgets(LineBuffer, 255, File))
+            {
+                tile_data Data = {};
+                glm::vec2 TextureOffset;
+                glm::vec2 TextureSize;
+                glm::vec2 Center;
+                
+                sscanf(LineBuffer,"%d %f %f %f %f %d %f %f", &Data.TypeIndex, &TextureOffset.x, &TextureOffset.y, &TextureSize.x, &TextureSize.y, &Data.IsSolid, &Center.x, &Center.y);
+                Data.TextureOffset = TextureOffset;
+                Data.TextureSize = TextureSize;
+                Data.Center = Center;
+                Tilemap->Tiles[TileIndex++] = Data;
+            }
+            Tilemap->TileCount = TileIndex;
+            fclose(File);
         }
-        Tilemap->TileCount = TileIndex;
-        fclose(File);
     }
     else
     {
@@ -130,6 +133,15 @@ static b32 LoadLevelFromFile(char* FilePath, level* Level, game_state* GameState
         Level->SheetName = (char*)malloc(sizeof(char) * 30);
         if(fgets(LineBuffer, 255, File))
             sscanf(LineBuffer, "%s", Level->SheetName);
+        
+        for(i32 Index = 0; Index < GameState->RenderState.TilesheetCount; Index++)
+        {
+            if(strcmp(Level->SheetName, GameState->RenderState.Tilesheets[Index].Name) == 0)
+            {
+                Level->TilesheetIndex = Index;
+                break;
+            }
+        }
         
         LoadTilesheetMetaFile(Concat(Concat("../assets/textures/tilesheets/", Level->SheetName), ".tm"), Level, &Level->Tilemap, GameState);
         

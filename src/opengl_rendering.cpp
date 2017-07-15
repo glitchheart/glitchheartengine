@@ -2095,11 +2095,11 @@ void RenderUI(game_state* GameState)
                                 
                                 char Text[255]; sprintf(Text,"Type index: %d Is solid: %d",GameState->CurrentLevel.Tilemap.Tiles[GameState->EditorState.SelectedTileType].TypeIndex,GameState->CurrentLevel.Tilemap.Tiles[GameState->EditorState.SelectedTileType].IsSolid);
                                 
-                                RenderText(&GameState->RenderState, GameState->RenderState.MenuFont, glm::vec4(1, 1, 1, 1), Text, 10, (r32)GameState->RenderState.WindowHeight - 90, 1);
+                                RenderText(&GameState->RenderState, GameState->RenderState.MenuFont, glm::vec4(1, 1, 1, 1), Text, GameState->RenderState.WindowWidth * 0.6f, (r32)GameState->RenderState.WindowHeight - 90, 1);
                                 
                                 char LayerText[20];
                                 sprintf(LayerText, "Layer %d", GameState->EditorState.CurrentTilemapLayer);
-                                RenderText(&GameState->RenderState, GameState->RenderState.MenuFont, glm::vec4(1, 1, 1, 1), &LayerText[0], 10, (r32)GameState->RenderState.WindowHeight - 140, 1); 
+                                RenderText(&GameState->RenderState, GameState->RenderState.MenuFont, glm::vec4(1, 1, 1, 1), &LayerText[0], GameState->RenderState.WindowWidth * 0.6f, (r32)GameState->RenderState.WindowHeight - 140, 1); 
                             }
                             break;
                             case Editor_Placement_PlaceEntity:
