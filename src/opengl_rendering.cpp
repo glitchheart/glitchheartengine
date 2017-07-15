@@ -1840,7 +1840,7 @@ int CompareFunction(const void* a, const void* b)
     
     if(APtr.Background || BoxA.Center.y - BoxA.Extents.y > BoxB.Center.y - BoxB.Extents.y)
         return -1;
-    if(BoxA.Center.y  - BoxA.Extents.y < BoxB.Center.y - BoxB.Extents.y)
+    if(BoxA.Center.y  - BoxA.Extents.y < BoxB.Center.y - BoxB.Extents.y || BPtr.Background)
         return 1;
     return 0;
 }

@@ -420,6 +420,8 @@ struct entity
                     timer AlertedTimer;
                     timer JumpAttackTimer;
                     timer JumpAttackImpactTimer;
+                    glm::vec2 ImpactCollisionExtents;
+                    glm::vec2 OldCollisionExtents;
                     i32 ShadowHandle;
                 } Minotaur;
                 struct
