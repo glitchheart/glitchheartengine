@@ -1839,6 +1839,15 @@ static void CheckLootPickup(game_state* GameState, loot* Loot, entity* Player)
 }
 
 
+static void ClearLoot(game_state* GameState)
+{
+    for(i32 Index = 0; Index < GameState->CurrentLootCount; Index++)
+    {
+        GameState->CurrentLoot[Index] = {};
+    }
+}
+
+
 void UpdatePlayer(entity* Entity, game_state* GameState, r64 DeltaTime)
 {
     if(Entity->Player.LastMilestone == 0 && Entity->Player.Experience >= GameState->StatData[GameState->CharacterData.Level].Milestones[0].MilestonePoint)
@@ -2353,6 +2362,7 @@ void UpdatePlayer(entity* Entity, game_state* GameState, r64 DeltaTime)
         Entity->Player.Experience = 0;
         Entity->Player.LastMilestone = 0;
         GameState->CharacterData = GameState->LastCharacterData;
+        ClearLoot(GameState);
         SaveGame(GameState);
     }
 }
