@@ -20,7 +20,7 @@ attackhighframeindex 6
 pointlight type 0 active 1 radius 5.4 intensity 0.8 color 1.0 1.0 1.0 1.0 atten 2 0.1 0.7
 #player
 stamina 100
-staminagaincooldowntimer 1.7
+staminagaincooldowntimer 0.8
 staminagaintimerfast 0.02
 staminagaintimerslow 0.16
 staminadecreasetimer 0.8
@@ -28,7 +28,7 @@ checkpointplacementtimer 5.0
 checkpointplacementcooldowntimer 20.0
 hitstaminacost 15
 rollstaminacost 15
-attackstaminacost 25
+attackstaminacost 20
 mindiffstamina 15
 healthdecreasetimer 0.8
 walkingspeed 5.5

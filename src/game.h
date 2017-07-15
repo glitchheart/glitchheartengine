@@ -196,7 +196,7 @@ r64 ElapsedTimer(game_state* GameState, timer& Timer)
 {
     if(Timer.TimerHandle == -1)
         return 1.0;
-    return GameState->Timers[Timer.TimerHandle] / Timer.TimerMax;
+    return GameState->Timers[Timer.TimerHandle];
 }
 
 r64 ElapsedTimerFrac(game_state* GameState, timer& Timer)
@@ -269,6 +269,5 @@ void LoadGame(game_state* GameState)
         printf("Loaded game!\n");
     }
 }
-
 
 #endif

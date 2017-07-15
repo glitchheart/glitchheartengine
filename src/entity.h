@@ -144,6 +144,7 @@ struct enemy_health_count
 struct player_inventory
 {
     i32 HealthPotionCount = 0;
+    b32 HasCheckpoint;
 };
 
 struct loot
