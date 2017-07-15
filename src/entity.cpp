@@ -144,6 +144,7 @@ static void LoadEntityData(FILE* File, entity* Entity, game_state* GameState, b3
         render_entity* RenderEntity = &GameState->RenderState.RenderEntities[GameState->RenderState.RenderEntityCount];
         RenderEntity->ShaderIndex = Shader_Spritesheet;
         RenderEntity->Rendered = true;
+        RenderEntity->RenderType = Render_Type_Entity;
         RenderEntity->Entity = &*Entity;
         Entity->RenderEntityHandle = GameState->RenderState.RenderEntityCount++;
         RenderEntity->Color = glm::vec4(1, 1, 1, 1);
@@ -348,7 +349,6 @@ static void LoadEntityData(FILE* File, entity* Entity, game_state* GameState, b3
             {
                 GameState->LightSources[Entity->LightSourceHandle] = NewPointLight;
             }
-            
         }
     }
 }
@@ -465,7 +465,9 @@ static void EnemyWander(game_state* GameState, entity* Entity)
 {
     if(Entity->Enemy.WaypointCount > 0)
     {
-        PlayAnimation(Entity, Concat(Entity->Name,"_walk"), GameState);
+        auto WalkString = Concat(Entity->Name,"_walk");
+        PlayAnimation(Entity, WalkString, GameState);
+        free(WalkString);
         
         auto CurrentWaypoint = glm::vec2(Entity->Enemy.Waypoints[Entity->Enemy.WaypointIndex].X, Entity->Enemy.Waypoints[Entity->Enemy.WaypointIndex].Y);
         
@@ -912,17 +914,14 @@ AI_FUNC(MinotaurAttacking)
                 }
             }
             
-            
             if(TimerDone(GameState, Minotaur.AttackCooldownTimer) && Entity->AttackCount == Minotaur.MaxAttackStreak)
             {
                 Entity->AttackCount = 0;
                 Minotaur.IsAttacking = false;
                 
                 Enemy.AttackMode++;
-                if(Enemy.AttackMode == 2)
-                {
-                    Enemy.AttackMode = 0;
-                }
+                
+                Enemy.AttackMode = 1;
                 
                 if(DistanceToPlayer > Entity->Enemy.MinDistanceToPlayer)
                 {
@@ -957,29 +956,30 @@ AI_FUNC(MinotaurAttacking)
                 if(Entity->IsKinematic)
                 {
                     Entity->IsKinematic = false;
-                    Entity->Enemy.AttackMode = 0;
                     PlaySoundEffect(GameState, &GameState->SoundManager.MinotaurStomp);
+                    StartTimer(GameState, Entity->Enemy.Minotaur.JumpAttackImpactTimer);
                 }
                 
                 if(!TimerDone(GameState, Entity->Enemy.Minotaur.JumpAttackImpactTimer))
                 {
+                    Entity->CollisionAABB.IsTrigger = true;
+                    Entity->CollisionAABB.Extents = Entity->Enemy.Minotaur.ImpactCollisionExtents;
                     collision_info CollisionInfo;
                     CheckCollision(GameState, Entity, &CollisionInfo); //@Incomplete: Remember to check for collision with a bigger collider maybe?
                     
                     for(i32 Index = 0; Index < CollisionInfo.OtherCount; Index++)
                     {
-                        if((Entity->Type == Entity_Player && CollisionInfo.Other[Index]->Type == Entity_Enemy && CollisionInfo.Other[Index]->Enemy.AIState != AI_Dying) ||
-                           (Entity->Type == Entity_Enemy && CollisionInfo.Other[Index]->Type == Entity_Player && !CollisionInfo.Other[Index]->Player.IsDashing))
+                        if(CollisionInfo.Other[Index]->Type == Entity_Player && !CollisionInfo.Other[Index]->Player.IsDashing)
                         {
-                            if(Entity->AnimationInfo.FrameIndex >= Entity->AttackLowFrameIndex && Entity->AnimationInfo.FrameIndex <= Entity->AttackHighFrameIndex)
-                            {
-                                Hit(GameState, Entity, CollisionInfo.Other[Index]);
-                            }
+                            Hit(GameState, Entity, CollisionInfo.Other[Index]);
                         }
                     }
                 }
                 else
                 {
+                    Entity->CollisionAABB.IsTrigger = false;
+                    Entity->Enemy.AttackMode = 0;
+                    Entity->CollisionAABB.Extents = Entity->Enemy.Minotaur.OldCollisionExtents;
                     Entity->Enemy.AIState = AI_Idle;
                     GameState->Objects[Entity->Enemy.Minotaur.ShadowHandle].Active = false;
                 }
@@ -1403,6 +1403,7 @@ static void LoadMinotaurData(game_state* GameState, i32 Handle = -1, glm::vec2 P
     Entity->Dead = false;
     Entity->Enemy.Minotaur.IsAttacking = false;
     Entity->Enemy.Minotaur.MaxAttackStreak = 1;
+    Entity->Enemy.AttackMode = 0;
     
     if(Handle == -1)
     {
@@ -1413,6 +1414,8 @@ static void LoadMinotaurData(game_state* GameState, i32 Handle = -1, glm::vec2 P
     {
         LoadEntityData(File,Entity, GameState, Handle != -1);
         LoadEnemyData(File,Entity, GameState);
+        
+        Entity->Enemy.Minotaur.OldCollisionExtents = Entity->CollisionAABB.Extents;
         
         if(Handle == -1)
             Entity->Position = Position;
@@ -1459,6 +1462,10 @@ static void LoadMinotaurData(game_state* GameState, i32 Handle = -1, glm::vec2 P
                 Entity->Enemy.Minotaur.JumpAttackImpactTimer.TimerHandle = -1;
                 sscanf(LineBuffer,"jumpattackimpacttimer %lf",&Entity->Enemy.Minotaur.JumpAttackImpactTimer.TimerMax);
                 Entity->Enemy.Minotaur.JumpAttackImpactTimer.Name = "Jump attack impact";
+            }
+            else if(StartsWith(&LineBuffer[0],"impactcollisionextents"))
+            {
+                sscanf(LineBuffer,"impactcollisionextents %f %f", &Entity->Enemy.Minotaur.ImpactCollisionExtents.x, &Entity->Enemy.Minotaur.ImpactCollisionExtents.y);
             }
         }
         fclose(File);
