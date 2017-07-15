@@ -119,28 +119,25 @@ void GetActionButtonsForQueue(game_state* GameState)
 {
     auto InputController = &GameState->InputController;
     
-    for(i32 Action = 0; Action < Action_Count; Action++)
+    if(GameState->InputController.ActionRunning)
     {
-        if(InputController->ControllerPresent)
+        for(i32 Action = 0; Action < Action_Count; Action++)
         {
-            if(GetJoystickKeyDown(InputController->ActionButtonXboxControllerBindings[Action], GameState))
+            if(InputController->ControllerPresent)
             {
-                InputController->ActionQueue[InputController->NextActionIndexForInsert++] = (Action_Button)Action;
-                InputController->ActionQueueCount++;
-                
-                if(InputController->NextActionIndexForInsert == 20)
-                    InputController->NextActionIndexForInsert = 0;
+                if(GetJoystickKeyDown(InputController->ActionButtonXboxControllerBindings[Action], GameState))
+                {
+                    InputController->NextAction = (Action_Button)Action;
+                    GameState->InputController.HasQueuedAction = true;
+                }
             }
-        }
-        else
-        {
-            if(GetKeyDown(InputController->ActionButtonKeyboardBindings[Action], GameState))
+            else
             {
-                InputController->ActionQueue[InputController->NextActionIndexForInsert++] = (Action_Button)Action;
-                InputController->ActionQueueCount++;
-                
-                if(InputController->NextActionIndexForInsert == 20)
-                    InputController->NextActionIndexForInsert = 0;
+                if(GetKeyDown(InputController->ActionButtonKeyboardBindings[Action], GameState))
+                {
+                    InputController->NextAction = (Action_Button)Action;
+                    GameState->InputController.HasQueuedAction = true;
+                }
             }
         }
     }
@@ -148,25 +145,16 @@ void GetActionButtonsForQueue(game_state* GameState)
 
 void ResetActionButtonQueue(game_state* GameState)
 {
-    GameState->InputController.ActionQueueCount = 0;
+    GameState->InputController.HasQueuedAction = false;
 }
 
 b32 GetActionButtonDown(Action_Button ActionButton, game_state* GameState)
 {
-    if(GameState->InputController.ActionQueueCount > 0)
+    if(GameState->InputController.HasQueuedAction)
     {
-        auto Action = GameState->InputController.ActionQueue[GameState->InputController.ActionQueueIndex];
-        
-        if((Action_Button)Action == ActionButton)
+        if((Action_Button)GameState->InputController.NextAction == ActionButton)
         {
-            GameState->InputController.ActionQueueIndex++;
-            GameState->InputController.ActionQueueCount--;
-            
-            if(GameState->InputController.ActionQueueIndex == 20)
-            {
-                GameState->InputController.ActionQueueIndex = 0;
-            }
-            
+            GameState->InputController.HasQueuedAction = false;
             return true;
         }
         else return false;

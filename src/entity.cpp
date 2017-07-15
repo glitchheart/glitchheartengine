@@ -1841,7 +1841,9 @@ static void CheckLootPickup(game_state* GameState, loot* Loot, entity* Player)
 void UpdatePlayer(entity* Entity, game_state* GameState, r64 DeltaTime)
 {
     if(Entity->Hit)
+    {
         Entity->Player.IsAttacking = false;
+    }
     
     // Leveling and stats
     if(Entity->Player.LastMilestone == 0 && Entity->Player.Experience >= GameState->StatData[GameState->CharacterData.Level].Milestones[0].MilestonePoint)
@@ -2118,6 +2120,7 @@ void UpdatePlayer(entity* Entity, game_state* GameState, r64 DeltaTime)
         {
             PlaySoundEffect(GameState, &GameState->SoundManager.Dash);
             Entity->Player.IsDashing = true;
+            
             Entity->Player.DashDirectionX = Entity->Player.LastKnownDirectionX;
             Entity->Player.DashDirectionY = Entity->Player.LastKnownDirectionY; 
             StartTimer(GameState, Entity->Player.DashTimer);
@@ -2252,6 +2255,7 @@ void UpdatePlayer(entity* Entity, game_state* GameState, r64 DeltaTime)
             }
             
             Entity->Player.IsAttacking = true;
+            
             StartTimer(GameState, Entity->Player.LastAttackTimer);
             
             DecreaseStamina(Entity,GameState,Entity->Player.AttackStaminaCost);
@@ -2261,6 +2265,7 @@ void UpdatePlayer(entity* Entity, game_state* GameState, r64 DeltaTime)
         }
         else if(Entity->Player.Stamina < Entity->Player.AttackStaminaCost - Entity->Player.MinDiffStamina)
         {
+            
             ResetActionButtonQueue(GameState);
         }
         
@@ -2361,6 +2366,8 @@ void UpdatePlayer(entity* Entity, game_state* GameState, r64 DeltaTime)
         GameState->CharacterData = GameState->LastCharacterData;
         SaveGame(GameState);
     }
+    
+    GameState->InputController.ActionRunning = Entity->Player.IsAttacking || Entity->Player.IsDashing;
 }
 
 void UpdateWeapon(entity* Entity, game_state* GameState, r64 DeltaTime)
