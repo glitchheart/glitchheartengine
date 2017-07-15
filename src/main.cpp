@@ -152,6 +152,7 @@ int main(void)
         {
             ControllerKeys(&GameState,GLFW_JOYSTICK_1);
         }
+        GetActionButtonsForQueue(&GameState);
         
         FrameCounterForAssetCheck++;
         if(FrameCounterForAssetCheck == 10)

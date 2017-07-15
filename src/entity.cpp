@@ -1838,18 +1838,12 @@ static void CheckLootPickup(game_state* GameState, loot* Loot, entity* Player)
     }
 }
 
-
-static void ClearLoot(game_state* GameState)
-{
-    for(i32 Index = 0; Index < GameState->CurrentLootCount; Index++)
-    {
-        GameState->CurrentLoot[Index] = {};
-    }
-}
-
-
 void UpdatePlayer(entity* Entity, game_state* GameState, r64 DeltaTime)
 {
+    if(Entity->Hit)
+        Entity->Player.IsAttacking = false;
+    
+    // Leveling and stats
     if(Entity->Player.LastMilestone == 0 && Entity->Player.Experience >= GameState->StatData[GameState->CharacterData.Level].Milestones[0].MilestonePoint)
     {
         Entity->Player.LastMilestone++;
@@ -1872,6 +1866,7 @@ void UpdatePlayer(entity* Entity, game_state* GameState, r64 DeltaTime)
         SaveGame(GameState);
     }
     
+    // Loot
     if(GameState->CurrentLootCount > 0)
     {
         for(i32 Index = 0; Index < GameState->CurrentLootCount; Index++)
@@ -1918,9 +1913,6 @@ void UpdatePlayer(entity* Entity, game_state* GameState, r64 DeltaTime)
             Entity->Player.Stamina = Min(Entity->Player.Stamina, (i16)GameState->CharacterData.Stamina);
         }
     }
-    
-    if(Entity->Hit)
-        Entity->Player.IsAttacking = false;
     
     b32 UsingController = GameState->InputController.ControllerPresent;
     
@@ -2122,21 +2114,22 @@ void UpdatePlayer(entity* Entity, game_state* GameState, r64 DeltaTime)
             StartTimer(GameState, Entity->Player.DashCooldownTimer);
         }
         
-        if(!Entity->Player.Pickup && !Entity->Player.IsAttacking  && TimerDone(GameState, Entity->Player.DashTimer) && GetActionButtonDown(Action_Dash, GameState)  && Entity->Player.Stamina >= Entity->Player.RollStaminaCost - Entity->Player.MinDiffStamina)
+        if(!Entity->Player.IsDashing && TimerDone(GameState, Entity->Player.DashCooldownTimer) && !Entity->Player.Pickup && !Entity->Player.IsAttacking  && TimerDone(GameState, Entity->Player.DashTimer) && GetActionButtonDown(Action_Dash, GameState)  && Entity->Player.Stamina >= Entity->Player.RollStaminaCost - Entity->Player.MinDiffStamina)
         {
-            if(!Entity->Player.IsDashing && TimerDone(GameState, Entity->Player.DashCooldownTimer))
-            {
-                PlaySoundEffect(GameState, &GameState->SoundManager.Dash);
-                Entity->Player.IsDashing = true;
-                Entity->Player.DashDirectionX = Entity->Player.LastKnownDirectionX;
-                Entity->Player.DashDirectionY = Entity->Player.LastKnownDirectionY; 
-                StartTimer(GameState, Entity->Player.DashTimer);
-                
-                DecreaseStamina(Entity,GameState,Entity->Player.RollStaminaCost);
-                StartTimer(GameState, Entity->Player.StaminaDecreaseTimer);
-                
-                PlayAnimation(Entity, "swordsman_roll", GameState);
-            }
+            PlaySoundEffect(GameState, &GameState->SoundManager.Dash);
+            Entity->Player.IsDashing = true;
+            Entity->Player.DashDirectionX = Entity->Player.LastKnownDirectionX;
+            Entity->Player.DashDirectionY = Entity->Player.LastKnownDirectionY; 
+            StartTimer(GameState, Entity->Player.DashTimer);
+            
+            DecreaseStamina(Entity,GameState,Entity->Player.RollStaminaCost);
+            StartTimer(GameState, Entity->Player.StaminaDecreaseTimer);
+            
+            PlayAnimation(Entity, "swordsman_roll", GameState);
+        }
+        else if(Entity->Player.Stamina < Entity->Player.RollStaminaCost - Entity->Player.MinDiffStamina)
+        {
+            ResetActionButtonQueue(GameState);
         }
         
         Entity->Invincible = Entity->Player.IsDashing;
@@ -2266,6 +2259,10 @@ void UpdatePlayer(entity* Entity, game_state* GameState, r64 DeltaTime)
             Entity->AttackCount++;
             PlaySoundEffect(GameState, &GameState->SoundManager.SwordSlash01);
         }
+        else if(Entity->Player.Stamina < Entity->Player.AttackStaminaCost - Entity->Player.MinDiffStamina)
+        {
+            ResetActionButtonQueue(GameState);
+        }
         
         if(Entity->Player.Pickup)
         {
@@ -2362,7 +2359,6 @@ void UpdatePlayer(entity* Entity, game_state* GameState, r64 DeltaTime)
         Entity->Player.Experience = 0;
         Entity->Player.LastMilestone = 0;
         GameState->CharacterData = GameState->LastCharacterData;
-        ClearLoot(GameState);
         SaveGame(GameState);
     }
 }
