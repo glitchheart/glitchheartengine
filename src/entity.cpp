@@ -660,21 +660,20 @@ AI_FUNC(SkeletonAttacking)
             PlayAnimation(Entity, "skeleton_idle", GameState);
         }
         
-        if(Skeleton.IsAttacking && TimerDone(GameState, Skeleton.AttackCooldownTimer))
+        if(Skeleton.IsAttacking && strcmp(Entity->CurrentAnimation->Name, "skeleton_attack") == 0 && Entity->AnimationInfo.FrameIndex >= Entity->AttackHighFrameIndex)
         {
+            Skeleton.IsAttacking = false;
+            
             if(DistanceToPlayer > Entity->Enemy.MinDistanceToPlayer)
             {
-                Skeleton.IsAttacking = false;
                 Enemy.AIState = AI_Following;
             }
             else if(DistanceToPlayer > Entity->Enemy.MaxAlertDistance)
             {
-                Skeleton.IsAttacking = false;
                 Enemy.AIState = AI_Wandering;
             }
             else
             {
-                Skeleton.IsAttacking = false;
                 Entity->Enemy.AIState = AI_Charging;
                 StartTimer(GameState, Skeleton.ChargingTimer);
             }
