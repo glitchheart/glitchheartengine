@@ -1961,19 +1961,7 @@ void UpdatePlayer(entity* Entity, game_state* GameState, r64 DeltaTime)
                 Entity->Player.LastKnownDirectionY = Direction.y;
             }
             
-            if(Entity->Player.IsAttacking && !Entity->AnimationInfo.Playing)
-            {
-                Entity->Player.IsAttacking = false;
-                
-                if(Entity->AttackCount == 3)
-                {
-                    Entity->AttackCount = 0;
-                    Entity->Velocity = glm::vec2(0, 0);
-                    StartTimer(GameState, Entity->Player.AttackCooldownTimer);
-                }
-            }
-            
-            if(!Entity->Player.IsAttacking)
+            if(!Entity->Player.IsAttacking && TimerDone(GameState, Entity->Player.AttackCooldownTimer))
             {
                 r32 InputX = GetInputX(GameState);
                 r32 InputY = GetInputY(GameState);
@@ -2231,6 +2219,18 @@ void UpdatePlayer(entity* Entity, game_state* GameState, r64 DeltaTime)
         else if(!GetActionButton(Action_Checkpoint, GameState))
         {
             Entity->Player.IsChargingCheckpoint = false;
+        }
+        
+        if(Entity->Player.IsAttacking && Entity->AnimationInfo.FrameIndex >= Entity->AttackHighFrameIndex)
+        {
+            Entity->Player.IsAttacking = false;
+            StartTimer(GameState, Entity->Player.AttackCooldownTimer);
+            
+            if(Entity->AttackCount == 3)
+            {
+                Entity->AttackCount = 0;
+                Entity->Velocity = glm::vec2(0, 0);
+            }
         }
         
         //attacking
