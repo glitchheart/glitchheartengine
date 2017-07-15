@@ -35,7 +35,7 @@ walkingspeed 4
 throwingspeed 18.0
 crosshairradius 4
 targetingdistance 10
-attackcooldowntimer 0.1
+attackcooldowntimer 0.15
 pickupcooldowntimer 0.36
 dashtimer 0.4
 dashcounterdivider 250
