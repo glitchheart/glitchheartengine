@@ -957,25 +957,34 @@ AI_FUNC(MinotaurAttacking)
             }
             else
             {
-                Entity->IsKinematic = false;
-                Entity->Enemy.AttackMode = 0;
-                PlaySoundEffect(GameState, &GameState->SoundManager.MinotaurStomp);
-                Entity->Enemy.AIState = AI_Idle;
-                GameState->Objects[Entity->Enemy.Minotaur.ShadowHandle].Active = false;
-                
-                collision_info CollisionInfo;
-                CheckCollision(GameState, Entity, &CollisionInfo);
-                
-                for(i32 Index = 0; Index < CollisionInfo.OtherCount; Index++)
+                if(Entity->IsKinematic)
                 {
-                    if((Entity->Type == Entity_Player && CollisionInfo.Other[Index]->Type == Entity_Enemy && CollisionInfo.Other[Index]->Enemy.AIState != AI_Dying) ||
-                       (Entity->Type == Entity_Enemy && CollisionInfo.Other[Index]->Type == Entity_Player && !CollisionInfo.Other[Index]->Player.IsDashing))
+                    Entity->IsKinematic = false;
+                    Entity->Enemy.AttackMode = 0;
+                    PlaySoundEffect(GameState, &GameState->SoundManager.MinotaurStomp);
+                }
+                
+                if(!TimerDone(GameState, Entity->Enemy.Minotaur.JumpAttackImpactTimer))
+                {
+                    collision_info CollisionInfo;
+                    CheckCollision(GameState, Entity, &CollisionInfo); //@Incomplete: Remember to check for collision with a bigger collider maybe?
+                    
+                    for(i32 Index = 0; Index < CollisionInfo.OtherCount; Index++)
                     {
-                        if(Entity->AnimationInfo.FrameIndex >= Entity->AttackLowFrameIndex && Entity->AnimationInfo.FrameIndex <= Entity->AttackHighFrameIndex)
+                        if((Entity->Type == Entity_Player && CollisionInfo.Other[Index]->Type == Entity_Enemy && CollisionInfo.Other[Index]->Enemy.AIState != AI_Dying) ||
+                           (Entity->Type == Entity_Enemy && CollisionInfo.Other[Index]->Type == Entity_Player && !CollisionInfo.Other[Index]->Player.IsDashing))
                         {
-                            Hit(GameState, Entity, CollisionInfo.Other[Index]);
+                            if(Entity->AnimationInfo.FrameIndex >= Entity->AttackLowFrameIndex && Entity->AnimationInfo.FrameIndex <= Entity->AttackHighFrameIndex)
+                            {
+                                Hit(GameState, Entity, CollisionInfo.Other[Index]);
+                            }
                         }
                     }
+                }
+                else
+                {
+                    Entity->Enemy.AIState = AI_Idle;
+                    GameState->Objects[Entity->Enemy.Minotaur.ShadowHandle].Active = false;
                 }
             }
         }
@@ -1449,6 +1458,12 @@ static void LoadMinotaurData(game_state* GameState, i32 Handle = -1, glm::vec2 P
                 Entity->Enemy.Minotaur.JumpAttackTimer.TimerHandle = -1;
                 sscanf(LineBuffer,"jumpattacktimer %lf",&Entity->Enemy.Minotaur.JumpAttackTimer.TimerMax);
                 Entity->Enemy.Minotaur.JumpAttackTimer.Name = "Jump attack";
+            }
+            else if(StartsWith(&LineBuffer[0],"jumpattackimpacttimer"))
+            {
+                Entity->Enemy.Minotaur.JumpAttackImpactTimer.TimerHandle = -1;
+                sscanf(LineBuffer,"jumpattackimpacttimer %lf",&Entity->Enemy.Minotaur.JumpAttackImpactTimer.TimerMax);
+                Entity->Enemy.Minotaur.JumpAttackImpactTimer.Name = "Jump attack impact";
             }
         }
         fclose(File);
