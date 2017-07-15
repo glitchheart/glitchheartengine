@@ -1874,6 +1874,10 @@ void UpdatePlayer(entity* Entity, game_state* GameState, r64 DeltaTime)
                 GameState->CurrentLoot[Index].RenderButtonHint = true;
                 CheckLootPickup(GameState,&Loot,Entity);
             }
+            else
+            {
+                GameState->CurrentLoot[Index].RenderButtonHint = false;
+            }
         }
     }
     
