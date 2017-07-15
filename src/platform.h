@@ -234,5 +234,11 @@ void DebugPrintVec2(glm::vec2 Vec2, const char* Msg = "")
 }
 
 
+b32 FileExists(char* FilePath)
+{
+    struct stat Buffer;
+    return (stat(FilePath,&Buffer) == 0);
+}
+
 
 #endif

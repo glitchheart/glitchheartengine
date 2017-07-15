@@ -165,7 +165,7 @@
      }
      else
      {
-         b32 InToolbar = GameState->RenderState.WindowHeight - GameState->InputController.MouseY >= GameState->RenderState.WindowHeight - 150;
+         b32 InToolbar = GameState->RenderState.WindowHeight - GameState->InputController.MouseY >= GameState->RenderState.WindowHeight;
          
          for(u32 ButtonIndex = 0; ButtonIndex < 10; ButtonIndex++)
          {
@@ -521,6 +521,8 @@
                                  
                                  r32 ToolbarX = GameState->EditorState.ToolbarX + GameState->EditorState.TilemapOffset.x;
                                  r32 ToolbarY = GameState->EditorState.ToolbarY + GameState->EditorState.TilemapOffset.y;
+                                 
+                                 printf("Mouse position: (%f,%f)\n", GameState->InputController.MouseX, GameState->RenderState.WindowHeight - GameState->InputController.MouseY);
                                  
                                  if(GameState->InputController.MouseX >= ToolbarX && GameState->InputController.MouseX <= ToolbarX + TilesheetWidth * GameState->EditorState.RenderedTileSize && GameState->RenderState.WindowHeight - GameState->InputController.MouseY > ToolbarY && GameState->RenderState.WindowHeight - GameState->InputController.MouseY <=  ToolbarY + TilesheetHeight * GameState->EditorState.RenderedTileSize)
                                  {
