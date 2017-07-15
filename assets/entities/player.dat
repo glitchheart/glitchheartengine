@@ -20,16 +20,16 @@ attackhighframeindex 6
 pointlight type 0 active 1 radius 5.4 intensity 0.8 color 1.0 1.0 1.0 1.0 atten 2 0.1 0.7
 #player
 stamina 100
-staminagaincooldowntimer 1
-staminagaintimerfast 0.05
+staminagaincooldowntimer 0.8
+staminagaintimerfast 0.04
 staminagaintimerslow 0.16
 staminadecreasetimer 0.8
 checkpointplacementtimer 5.0
 checkpointplacementcooldowntimer 20.0
 hitstaminacost 15
-rollstaminacost 15
-attackstaminacost 35
-mindiffstamina 15
+rollstaminacost 18
+attackstaminacost 20
+mindiffstamina 100
 healthdecreasetimer 0.8
 walkingspeed 4
 throwingspeed 18.0
@@ -37,8 +37,8 @@ crosshairradius 4
 targetingdistance 10
 attackcooldowntimer 0.1
 pickupcooldowntimer 0.36
-dashtimer 0.4
+dashtimer 0.6
 dashcounterdivider 250
-dashcooldowntimer 0.4
-dashspeed 8
+dashcooldowntimer 0.15
+dashspeed 6
 dustcloud scale 1 1 animation dust_brown
