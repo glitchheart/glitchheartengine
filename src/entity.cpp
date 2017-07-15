@@ -981,10 +981,22 @@ AI_FUNC(MinotaurAttacking)
                 else
                 {
                     Entity->CollisionAABB.IsTrigger = false;
+                    
                     Entity->Enemy.AttackMode = 0;
                     Entity->CollisionAABB.Extents = Entity->Enemy.Minotaur.OldCollisionExtents;
-                    Entity->Enemy.AIState = AI_Idle;
-                    GameState->Objects[Entity->Enemy.Minotaur.ShadowHandle].Active = false;
+                    
+                    if(rand() % 2 == 0 && DistanceToPlayer <= Enemy.AttackDistance) //@Incomplete: Maybe set a specific percentage for this in the .dat-file
+                    {
+                        Enemy.AIState = AI_Attacking;
+                        PlaySoundEffect(GameState, &GameState->SoundManager.MinotaurGrunt01);
+                        Enemy.LastAttackMoveDirection = glm::normalize(Player.Position - Entity->Position);
+                        MinotaurSetAttackMode(Entity, GameState);
+                    }
+                    else
+                    {
+                        Entity->Enemy.AIState = AI_Idle;
+                        GameState->Objects[Entity->Enemy.Minotaur.ShadowHandle].Active = false;
+                    }
                 }
             }
         }
