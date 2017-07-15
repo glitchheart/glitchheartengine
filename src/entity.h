@@ -419,6 +419,7 @@ struct entity
                     timer ChargingTimer;
                     timer AlertedTimer;
                     timer JumpAttackTimer;
+                    timer JumpAttackImpactTimer;
                     i32 ShadowHandle;
                 } Minotaur;
                 struct
