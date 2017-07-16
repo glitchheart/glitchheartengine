@@ -52,6 +52,7 @@ char* AIEnumToStr(AI_State State)
         }
     }
     Assert(false);
+    return 0;
 }
 
 enum Entity_Type

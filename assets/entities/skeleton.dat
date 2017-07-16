@@ -11,7 +11,7 @@ collider 0 -1.2 0.3 0.15 0
 hashittrigger 1
 hittrigger 0 -0.4 0.8 0.9 1
 hitrecoilspeed 10
-recoiltimer 0.07
+recoiltimer 0.03
 weaponscale 2 2
 attackmovetimer 0.07
 attackmovespeed 10

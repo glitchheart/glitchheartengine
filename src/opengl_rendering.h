@@ -63,6 +63,7 @@ char* ShaderEnumToStr(Shader_Type Shader)
         }
     }
     Assert(false);
+    return 0;
 }
 
 const char* ShaderPaths[Shader_Count] =
