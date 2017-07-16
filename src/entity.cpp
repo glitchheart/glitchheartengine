@@ -87,7 +87,7 @@ void Hit(game_state* GameState, entity* ByEntity, entity* HitEntity)
             {
                 if(HitEntity->Health <= 0)
                 {
-                    GameState->Entities[0].Player.Experience += HitEntity->Enemy.Experience;
+                    GameState->Entities[0].Player.Will += HitEntity->Enemy.Will;
                 }
                 
                 HitEntity->Enemy.HealthCounts[HitEntity->Enemy.HealthCountIndex].Visible = true;
@@ -134,6 +134,33 @@ static void SpawnShadow(game_state* GameState, glm::vec2 Position, i32* Handle)
     
     GameState->Objects[GameState->ObjectCount++];
 }
+
+static void SpawnLoot(game_state* GameState, glm::vec2 Position, i32* Handle)
+{
+    *Handle = GameState->ObjectCount;
+    
+    auto Loot = &GameState->Objects[GameState->ObjectCount++];
+    Loot->Active = true;
+    Loot->Scale = 2;
+    Loot->Type = Object_Loot;
+    Loot->Position = glm::vec2(Position.x, Position.y - 0.5f);
+    
+    render_entity* RenderEntity = &GameState->RenderState.RenderEntities[GameState->RenderState.RenderEntityCount];
+    RenderEntity->Texture = GameState->RenderState.Textures["basic_loot"];
+    Loot->RenderEntityHandle = GameState->RenderState.RenderEntityCount;
+    
+    RenderEntity->ShaderIndex = Shader_Texture;
+    RenderEntity->Rendered = true;
+    RenderEntity->Background = false;
+    RenderEntity->RenderType = Render_Type_Object;
+    RenderEntity->Object = &*Loot;
+    
+    Loot->RenderEntityHandle = GameState->RenderState.RenderEntityCount++;
+    RenderEntity->Color = glm::vec4(1, 1, 1, 1);
+    
+    GameState->Objects[GameState->ObjectCount++];
+}
+
 
 static void LoadEntityData(FILE* File, entity* Entity, game_state* GameState, b32 IsReload = false)
 {
@@ -391,9 +418,9 @@ static void LoadEnemyData(FILE* File, entity* Entity, game_state* GameState)
             {
                 sscanf(LineBuffer, "walkingspeed %f", &Entity->Enemy.WalkingSpeed);
             }
-            else if(StartsWith(&LineBuffer[0], "experience"))
+            else if(StartsWith(&LineBuffer[0], "will"))
             {
-                sscanf(LineBuffer, "experience %d", &Entity->Enemy.Experience);
+                sscanf(LineBuffer, "will %d", &Entity->Enemy.Will);
             }
             else if(StartsWith(&LineBuffer[0], "wanderingspeed"))
             {
@@ -1648,7 +1675,6 @@ static void LoadPlayerData(game_state* GameState, i32 Handle = -1, glm::vec2 Pos
     Entity->Player.Pickup = {};
     Entity->Player = {};
     Entity->Player.RenderCrosshair = false;
-    Entity->Player.LastMilestone = 0;
     Entity->Player.IsAttacking = false;
     Entity->Player.IsDashing = false;
     Entity->Player.IsDefending = false;
@@ -1826,9 +1852,18 @@ static void CheckLootPickup(game_state* GameState, loot* Loot, entity* Player)
                 Player->Player.Inventory.HasCheckpoint = true;
             }
             break;
+            case Loot_LevelItem:
+            {
+                if(Player->Player.Will >= GameState->StatData[GameState->CharacterData.Level].WillForLevel)
+                {
+                    GameState->StatGainModeOn = true;
+                }
+            }
+            break;
         }
         GameState->Entities[Loot->OwnerHandle].Enemy.HasLoot = false;
         Loot->RenderButtonHint= false;
+        GameState->Objects[Loot->OwnerHandle].Active = false;
         for(i32 Index = Loot->Handle; Index < GameState->CurrentLootCount; Index++)
         {
             GameState->CurrentLoot[Index] = GameState->CurrentLoot[Index + 1];
@@ -1840,32 +1875,14 @@ static void CheckLootPickup(game_state* GameState, loot* Loot, entity* Player)
 
 void UpdatePlayer(entity* Entity, game_state* GameState, r64 DeltaTime)
 {
+    if(GetActionButtonDown(Action_Use, GameState))
+    {
+        printf("Use!\n");
+    }
+    
     if(Entity->Hit)
     {
         Entity->Player.IsAttacking = false;
-    }
-    
-    // Leveling and stats
-    if(Entity->Player.LastMilestone == 0 && Entity->Player.Experience >= GameState->StatData[GameState->CharacterData.Level].Milestones[0].MilestonePoint)
-    {
-        Entity->Player.LastMilestone++;
-        GameState->StatGainModeOn = true;
-        SaveGame(GameState);
-    }
-    else if(Entity->Player.LastMilestone == 1 && Entity->Player.Experience >= GameState->StatData[GameState->CharacterData.Level].Milestones[1].MilestonePoint)
-    {
-        Entity->Player.LastMilestone++;
-        GameState->StatGainModeOn = true;
-        SaveGame(GameState);
-    }
-    
-    if(Entity->Player.Experience >= GameState->StatData[GameState->CharacterData.Level].ExperienceForLevel)
-    {
-        Entity->Player.Experience -= GameState->StatData[GameState->CharacterData.Level].ExperienceForLevel;
-        GameState->CharacterData.Level++;
-        
-        Entity->Player.LastMilestone = 0;
-        SaveGame(GameState);
     }
     
     // Loot
@@ -1874,7 +1891,7 @@ void UpdatePlayer(entity* Entity, game_state* GameState, r64 DeltaTime)
         for(i32 Index = 0; Index < GameState->CurrentLootCount; Index++)
         {
             auto Loot = GameState->CurrentLoot[Index];
-            if(Loot.Handle != -1 && glm::distance(Entity->Position, Loot.Position) < 1.5f)
+            if(Loot.Handle != -1 && glm::distance(Entity->Position, GameState->Objects[Loot.OwnerHandle].Position) < 1.5f)
             {
                 GameState->CurrentLoot[Index].RenderButtonHint = true;
                 CheckLootPickup(GameState,&Loot,Entity);
@@ -2369,8 +2386,7 @@ void UpdatePlayer(entity* Entity, game_state* GameState, r64 DeltaTime)
         Entity->Dead = true;
         PlayAnimation(Entity, "swordsman_death", GameState);
         Entity->AnimationInfo.FreezeFrame = true;
-        Entity->Player.Experience = 0;
-        Entity->Player.LastMilestone = 0;
+        Entity->Player.Will = 0;
         GameState->CharacterData = GameState->LastCharacterData;
         SaveGame(GameState);
     }
@@ -2620,9 +2636,23 @@ static void DetermineLoot(game_state* GameState, entity* Entity)
     if(HasLoot)
     {
         loot Loot;
-        Loot.Position = Entity->Position;
-        Loot.Type = rand() % 10 > 2 ? Loot_Health : Loot_Checkpoint;
-        Loot.OwnerHandle = Entity->EntityIndex;
+        
+        i32 RNG = rand() % 20;
+        if(RNG > 17)
+        {
+            Loot.Type = Loot_Checkpoint;
+        }
+        else if(RNG > 12 && RNG < 17)
+        {
+            Loot.Type = Loot_Health;
+        }
+        else if(RNG > 0 && RNG < 12)
+        {
+            Loot.Type = Loot_LevelItem;
+        }
+        
+        SpawnLoot(GameState, Entity->Position, &Loot.OwnerHandle);
+        
         Loot.Handle = GameState->CurrentLootCount;
         GameState->CurrentLoot[GameState->CurrentLootCount++] = Loot;
     }

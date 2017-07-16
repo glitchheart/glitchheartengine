@@ -1566,26 +1566,12 @@ static void RenderEntity(game_state *GameState, render_entity* RenderEntity, glm
             UseShader(&Shader);
             auto Frame = Animation->Frames[AnimationInfo.FrameIndex];
             
-            if(RenderEntity->RenderType == Render_Type_Entity)
-            {
-                auto& Entity = *RenderEntity->Entity;
-                if(Entity.Type == Entity_Enemy && Entity.Enemy.HasLoot && Entity.Dead)
-                    SetFloatUniform(Shader.Program, "glow", GL_TRUE);
-                else
-                    SetFloatUniform(Shader.Program, "glow", GL_FALSE);
-            }
-            else
-            {
-                SetFloatUniform(Shader.Program, "glow", GL_FALSE);
-            }
-            
-            SetFloatUniform(Shader.Program, "time", (r32)GetTime());
             SetVec4Uniform(Shader.Program, "spriteColor", RenderEntity->Color);
             SetFloatUniform(Shader.Program, "isUI", 0);
             SetVec2Uniform(Shader.Program,"textureOffset", glm::vec2(Frame.X, Frame.Y));
             SetFloatUniform(Shader.Program, "frameWidth", Animation->FrameSize.x);
             SetFloatUniform(Shader.Program, "frameHeight", Animation->FrameSize.y);
-            SetVec2Uniform(Shader.Program,"sheetSize",
+            SetVec2Uniform(Shader.Program,"textureSize",
                            glm::vec2(Animation->Texture->Width, Animation->Texture->Height));
         } 
         else 
@@ -1621,8 +1607,28 @@ static void RenderEntity(game_state *GameState, render_entity* RenderEntity, glm
                 glBindVertexArray(RenderState->SpriteVAO);
             }
             UseShader(&Shader);
+            SetVec2Uniform(Shader.Program,"textureSize",
+                           glm::vec2(RenderEntity->Texture->Width, RenderEntity->Texture->Height));
         }
         
+        
+        if(RenderEntity->RenderType == Render_Type_Entity)
+        {
+            SetFloatUniform(Shader.Program, "glow", GL_FALSE);
+        }
+        else
+        {
+            auto& OEntity = *RenderEntity->Object;
+            
+            if(OEntity.Type == Object_Loot)
+            {
+                SetFloatUniform(Shader.Program, "glow", GL_TRUE);
+            }
+            else
+                SetFloatUniform(Shader.Program, "glow", GL_FALSE);
+        }
+        
+        SetFloatUniform(Shader.Program, "time", (r32)GetTime());
         SetMat4Uniform(Shader.Program, "Projection", ProjectionMatrix);
         SetMat4Uniform(Shader.Program, "View", View);
         SetMat4Uniform(Shader.Program, "Model", Model);
@@ -1664,11 +1670,6 @@ static void RenderEntity(game_state *GameState, render_entity* RenderEntity, glm
         {
             RenderRect(Render_Fill, RenderState, glm::vec4(1, 1, 1, 1), Entity.Position.x + Entity.Player.CrosshairPositionX, Entity.Position.y + Entity.Player.CrosshairPositionY, 1, 1, RenderState->Textures["crosshair"]->TextureHandle, false, ProjectionMatrix, View);
         }
-        
-        /*else if(Entity.RenderButtonHint)
-        {
-            RenderRect(Render_Fill, RenderState, glm::vec4(1, 1, 1, 1), Entity.Position.x + Entity.RenderButtonOffset.x, Entity.Position.y + Entity.RenderButtonOffset.y, 1, 1, RenderState->Textures["b_button"]->TextureHandle, false, ProjectionMatrix, View);
-        }*/
         
         if(Entity.Type == Entity_Enemy)
         {
@@ -1947,9 +1948,26 @@ void RenderUI(game_state* GameState)
             
             RenderText(&GameState->RenderState, GameState->RenderState.RobotoFont, glm::vec4(1, 1, 1, 1), InventoryText, 48 + 40 - 17.5f, 90, 1, Alignment_Center);
             
-            RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(1, 1, 1, 1), 48 + 40 - 17.5f, 90, 35, 35, GameState->RenderState.Textures["y_button"]->TextureHandle);
+            if(GameState->InputController.ControllerType == Controller_Xbox)
+            {
+                RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(1, 1, 1, 1), 48 + 40 - 17.5f, 90, 35, 35, GameState->RenderState.Textures["x_button"]->TextureHandle);
+            }
+            else if (GameState->InputController.ControllerType == Controller_PS4) 
+            {
+                RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(1, 1, 1, 1), 48 + 40 - 17.5f, 90, 35, 35, GameState->RenderState.Textures["square_button"]->TextureHandle);
+            }
             
-            auto ButtonTexWidth = GameState->RenderState.Textures["b_button"]->Width / 2;
+            texture* ButtonTexture = 0;
+            if(GameState->InputController.ControllerType == Controller_Xbox)
+            {
+                ButtonTexture = GameState->RenderState.Textures["a_button"];
+            }
+            else if (GameState->InputController.ControllerType == Controller_PS4) 
+            {
+                ButtonTexture = GameState->RenderState.Textures["cross_button"];
+            }
+            
+            auto ButtonTexWidth = ButtonTexture->Width / 2;
             for(i32 Index = 0; Index < GameState->CurrentLootCount; Index++)
             {
                 if(GameState->CurrentLoot[Index].RenderButtonHint)
@@ -1968,7 +1986,7 @@ void RenderUI(game_state* GameState)
                         break;
                     }
                     
-                    RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(1, 1, 1, 1), (r32)GameState->RenderState.WindowWidth / 2 - ButtonTexWidth, (r32)GameState->RenderState.WindowHeight - 500, 40, 40, GameState->RenderState.Textures["b_button"]->TextureHandle);
+                    RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(1, 1, 1, 1), (r32)GameState->RenderState.WindowWidth / 2 - ButtonTexWidth, (r32)GameState->RenderState.WindowHeight - 500, 35, 35, ButtonTexture->TextureHandle);
                     
                     break;
                 }
@@ -1985,21 +2003,23 @@ void RenderUI(game_state* GameState)
             sprintf(Text, "Level %d", (GameState->CharacterData.Level + 1));
             RenderText(&GameState->RenderState, GameState->RenderState.RobotoFont, glm::vec4(1, 1, 1, 1), &Text[0], 48.0f, (r32)GameState->RenderState.WindowHeight - 115, 1);
             
-            RenderText(&GameState->RenderState, GameState->RenderState.RobotoFont, glm::vec4(1, 1, 1, 1), "Experience", 48.0f, (r32)GameState->RenderState.WindowHeight - 137, 1);
+            i32 CurrentWill = Player.Player.Will;
             
-            // Experience bar
-            RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(0, 0, 0, 1), 48.0f, (r32)GameState->RenderState.WindowHeight - 170, 304.0f, 20.0f);
+            r32 XPos = 150.0f;
             
-            i32 ExperienceForNextLevel = GameState->StatData[GameState->CharacterData.Level].ExperienceForLevel;
+            RenderRect(Render_Fill, &GameState->RenderState,glm::vec4(0, 0, 0, 1), XPos, 50.0f, 300.0f,30.0f);
             
-            RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(0, 0.8, 0.1, 1), 50.0f, GameState->RenderState.WindowHeight - 168.0f, 300.0f / (r32)ExperienceForNextLevel * (r32)Player.Player.Experience, 15.0f);
+            char Buf[64];
+            sprintf(Buf,"%d",CurrentWill);
             
-            RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(1, 1, 1, 1), 50.0f + 304 / 3, GameState->RenderState.WindowHeight - 170.0f, 2, 20.0f);
+            r32 Width;
+            r32 Height;
             
-            RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(1, 1, 1, 1), 50.0f + (304 / 3) * 2, GameState->RenderState.WindowHeight - 170.0f, 2, 20.0f);
+            MeasureText(GameState->RenderState.RobotoFont, Buf, &Width, &Height);
             
-            sprintf(Text, "%d / %d", Player.Player.Experience, ExperienceForNextLevel);
-            RenderText(&GameState->RenderState, GameState->RenderState.RobotoFont, glm::vec4(1, 1, 1, 1), &Text[0], 48 + 152.0f, GameState->RenderState.WindowHeight - 160.0f, 1, Alignment_Center);
+            RenderText(&GameState->RenderState, GameState->RenderState.RobotoFont, glm::vec4(1, 1, 1, 1), "Will", XPos + 5.0f, 50.0f + Height/2.0f, 1);
+            
+            RenderText(&GameState->RenderState, GameState->RenderState.RobotoFont, glm::vec4(1, 1, 1, 1), Buf, XPos + 5.0f + 300.0f - Width * 2.0f, 50.0f + Height/2.0f, 1);
             
             if(GameState->StatGainModeOn)
             {
@@ -2010,15 +2030,13 @@ void RenderUI(game_state* GameState)
                 
                 RenderText(&GameState->RenderState, GameState->RenderState.RobotoFont, glm::vec4(1, 1, 1, 1), "Choose an upgrade", HalfWidth, HalfHeight + 50, 1, Alignment_Center);
                 
-                auto CurrentMilestone = GameState->StatData[GameState->CharacterData.Level].Milestones[Player.Player.LastMilestone - 1];
-                
-                sprintf(Text, "Health +%d", CurrentMilestone.Health);
+                sprintf(Text, "Health +%d", 5);
                 RenderText(&GameState->RenderState, GameState->RenderState.RobotoFont, glm::vec4(1, 1, 1, 1), &Text[0], HalfWidth, HalfHeight + 20, 1, Alignment_Center);
                 
-                sprintf(Text, "Stamina +%d", CurrentMilestone.Stamina);
+                sprintf(Text, "Stamina +%d", 5);
                 RenderText(&GameState->RenderState, GameState->RenderState.RobotoFont, glm::vec4(1, 1, 1, 1), &Text[0], HalfWidth, HalfHeight - 10, 1, Alignment_Center);
                 
-                sprintf(Text, "Strength +%d", CurrentMilestone.Strength);
+                sprintf(Text, "Strength +%d", 1);
                 RenderText(&GameState->RenderState, GameState->RenderState.RobotoFont, glm::vec4(1, 1, 1, 1), &Text[0], HalfWidth, HalfHeight - 40, 1, Alignment_Center);
                 
                 r32 YForSelector = HalfHeight + 20 - GameState->SelectedGainIndex * 30.0f;
