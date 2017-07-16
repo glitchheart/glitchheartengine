@@ -3,15 +3,11 @@
 
 #define ArrayCount(Array) (sizeof(Array) / sizeof(Array[0])) 
 
-#ifdef POWDER_DEBUG
+#ifdef DEBUG
 #define Assert(Expression) if(!(Expression)) {printf("Assertion failed in: %s on line %d\n",__FILE__,__LINE__); exit(EXIT_FAILURE);}
 #else
 #define Assert(Expression)
 #endif
-
-#define NUM_JOYSTICK_KEYS Joystick_Count
-#define NUM_KEYS Key_Count
-#define NUM_MOUSE_BUTTONS Mouse_Count
 
 #define Min(A,B) ((A < B) ? (A) : (B))
 #define Max(A,B) ((A > B) ? (A) : (B))

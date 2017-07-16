@@ -227,6 +227,7 @@ static void KeyCallback(GLFWwindow *Window, int Key, int Scancode, int Action, i
     {
         if (Action == GLFW_PRESS)
         {
+            printf("Key: %d\n", KeyMappings[Key]);
             GameState->InputController.AnyKeyPressed = true;
             if (GameState->InputController.KeysJustPressed[KeyMappings[Key]] == Key_NotPressed)
             {

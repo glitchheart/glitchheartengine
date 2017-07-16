@@ -963,7 +963,7 @@
      
 #endif
      
-     if (GetKeyDown(Key_Escape, GameState) && !GameState->Console.Open)
+     if (GetActionButtonDown(Action_Menu, GameState) && !GameState->Console.Open)
      {
          switch(GameState->GameMode)
          {
@@ -971,12 +971,14 @@
              {
                  //StopSoundEffect(GameState, &GameState->SoundManager.MainMenuTrack);
                  GameState->GameMode = Mode_InGame;
+                 GameState->Paused = false;
              }
              break;
              case Mode_InGame:
              {
                  //PlaySoundEffect(GameState, &GameState->SoundManager.MainMenuTrack);
                  GameState->GameMode = Mode_MainMenu;
+                 GameState->Paused = true;
              }
              break;
          }

@@ -67,7 +67,7 @@ void Hit(game_state* GameState, entity* ByEntity, entity* HitEntity)
             if(TimerDone(GameState, GameState->GameCamera.ScreenShakeTimer))
                 StartTimer(GameState, GameState->GameCamera.ScreenShakeTimer);
             
-            StartTimer(GameState, HitEntity->StaggerCooldownTimer);
+            //StartTimer(GameState, HitEntity->StaggerCooldownTimer);
             PlaySoundEffect(GameState, &GameState->SoundManager.SwordHit02);
             HitEntity->HitRecoilDirection = glm::normalize(HitEntity->Position - ByEntity->Position);
             
@@ -2022,14 +2022,17 @@ void UpdatePlayer(entity* Entity, game_state* GameState, r64 DeltaTime)
                 }
                 else if(Entity->Velocity.x != 0.0f || Entity->Velocity.y != 0.0f)
                 {
-                    auto XValue = UsingController ? InputX : DirectionToMouse.x;
-                    auto YValue = UsingController ? InputY : DirectionToMouse.y;
+                    auto ControllerXValue = UsingController ? InputX : 0.0f;
+                    auto ControllerYValue = UsingController ? InputY : 0.0f;
+                    
+                    auto MouseXValue = DirectionToMouse.x;
+                    auto MouseYValue = DirectionToMouse.y;
                     
                     PlayAnimation(Entity, "swordsman_walk", GameState);
                     
-                    if(Abs(XValue) < 0.7f && Abs(YValue) > 0.2f)
+                    if(Abs(ControllerXValue) < 0.7f && Abs(ControllerYValue) > 0.2f || Abs(MouseXValue) < 0.7f && Abs(MouseYValue) > 0.2f)
                     {
-                        if(YValue > 0)
+                        if(ControllerYValue > 0 || MouseYValue > 0)
                         {
                             Entity->LookDirection = Up;
                         }
@@ -2043,9 +2046,13 @@ void UpdatePlayer(entity* Entity, game_state* GameState, r64 DeltaTime)
                         Entity->LookDirection = Right;
                     }
                     
-                    if(XValue != 0)
+                    if(Abs(ControllerXValue) > GameState->InputController.ControllerDeadzone)
                     {
-                        Entity->IsFlipped = XValue < 0;
+                        Entity->IsFlipped = ControllerXValue < 0;
+                    }
+                    else if(Abs(MouseXValue) > 0.01f)
+                    {
+                        Entity->IsFlipped = MouseXValue < 0;
                     }
                 }
                 else
