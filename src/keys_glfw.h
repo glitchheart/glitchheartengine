@@ -146,6 +146,34 @@ static void ControllerKeys(game_state* GameState, u32 Joystick)
     {
         GameState->InputController.Axes[Index] = Axes[Index];
         
+        if(Index == 5 && GameState->InputController.ControllerType == Controller_Xbox)
+        {
+            r32 LTAxis = Axes[4];
+            r32 RTAxis = Axes[5];
+            
+            GameState->InputController.JoystickKeysDown[Joystick_LeftTrigger] = LTAxis > 0;
+            
+            if(LTAxis > 0  && GameState->InputController.JoystickKeysJustPressed[Joystick_LeftTrigger] != Key_Invalid)
+            {
+                GameState->InputController.JoystickKeysJustPressed[Joystick_LeftTrigger] = Key_JustPressed;
+            }
+            else if(LTAxis <= 0)
+            {
+                GameState->InputController.JoystickKeysJustPressed[Joystick_LeftTrigger] = Key_NotPressed;
+            }
+            
+            GameState->InputController.JoystickKeysDown[Joystick_RightTrigger] = RTAxis > 0;
+            
+            if(RTAxis > 0 && GameState->InputController.JoystickKeysJustPressed[Joystick_RightTrigger] != Key_Invalid)
+            {
+                GameState->InputController.JoystickKeysJustPressed[Joystick_RightTrigger] = Key_JustPressed;
+            }
+            else if(RTAxis <= 0)
+            {
+                GameState->InputController.JoystickKeysJustPressed[Joystick_RightTrigger] = Key_NotPressed;
+            }
+        }
+        
         if(Abs(Axes[Index]) > GameState->InputController.AxesUsedZone)
         {
             if(GameState->InputController.AxesJustPressed[Index] == Key_JustPressed)

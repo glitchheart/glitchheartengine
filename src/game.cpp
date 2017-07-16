@@ -759,6 +759,16 @@
  
  extern "C" UPDATE(Update)
  {
+     if(GetJoystickKeyDown(Joystick_LeftTrigger, GameState))
+     {
+         printf("WORKY BOIOOO\n");
+     }
+     
+     if(GetJoystickKeyDown(Joystick_RightTrigger, GameState))
+     {
+         printf("WORKY RIGHTY BOIOOO\n");
+     }
+     
      if(GameState->ReloadData->ReloadPlayerFile)
      {
          LoadPlayerData(GameState, 0);
@@ -1144,8 +1154,8 @@
              {
                  b32 ControllerPresent = GameState->InputController.ControllerPresent;
                  
-                 b32 UpPressed = ControllerPresent ? GetJoystickAxesYDown(GameState, true) : GetKeyDown(Key_W, GameState) || GetKeyDown(Key_Up, GameState);
-                 b32 DownPressed = ControllerPresent ? GetJoystickAxesYDown(GameState, false) : GetKeyDown(Key_S, GameState) || GetKeyDown(Key_Down, GameState);
+                 b32 UpPressed = ControllerPresent ? GetJoystickAxisYDown(GameState, true) : GetKeyDown(Key_W, GameState) || GetKeyDown(Key_Up, GameState);
+                 b32 DownPressed = ControllerPresent ? GetJoystickAxisYDown(GameState, false) : GetKeyDown(Key_S, GameState) || GetKeyDown(Key_Down, GameState);
                  
                  if(UpPressed)
                  {

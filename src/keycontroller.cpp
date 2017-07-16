@@ -78,25 +78,41 @@ b32 GetJoystickKey(Controller_Code Key, game_state* GameState)
 }
 
 //@Incomplete: Needs direction bool
-b32 GetJoystickAxesXDown(game_state* GameState, Stick Stick = Stick_Left)
+b32 GetJoystickAxisXDown(game_state* GameState, Stick Stick = Stick_Left)
 {
     i32 Axis = Stick == Stick_Left ? 0 : 2;
     
     return GameState->InputController.AxesJustPressed[Axis] == Key_JustPressed;
 }
 
-b32 GetJoystickAxesYDown(game_state* GameState, b32 ForUpDirection, Stick Stick = Stick_Left)
+b32 GetJoystickAxisYDown(game_state* GameState, b32 ForUpDirection, Stick Stick = Stick_Left)
 {
     i32 Axis = Stick == Stick_Left ? 1 : 3;
     b32 CorrectDirection = false;
     
     if(ForUpDirection)
     {
-        CorrectDirection = GameState->InputController.Axes[Axis] > 0;
+        switch(GameState->InputController.ControllerType)
+        {
+            case Controller_Xbox:
+            CorrectDirection = GameState->InputController.Axes[Axis] > 0;
+            break;
+            case Controller_PS4:
+            CorrectDirection = GameState->InputController.Axes[Axis] < 0;
+            break;
+        }
     }
     else
     {
-        CorrectDirection = GameState->InputController.Axes[Axis] < 0;
+        switch(GameState->InputController.ControllerType)
+        {
+            case Controller_Xbox:
+            CorrectDirection = GameState->InputController.Axes[Axis] < 0;
+            break;
+            case Controller_PS4:
+            CorrectDirection = GameState->InputController.Axes[Axis] > 0;
+            break;
+        }
     }
     
     return CorrectDirection && GameState->InputController.AxesJustPressed[Axis] == Key_JustPressed;
@@ -125,10 +141,21 @@ void GetActionButtonsForQueue(game_state* GameState)
         {
             if(InputController->ControllerPresent)
             {
-                if(GetJoystickKeyDown(InputController->ActionButtonXboxControllerBindings[Action], GameState))
+                if(InputController->ControllerType == Controller_PS4)
                 {
-                    InputController->NextAction = (Action_Button)Action;
-                    GameState->InputController.HasQueuedAction = true;
+                    if(GetJoystickKeyDown((Controller_Code)InputController->ActionButtonPS4ControllerBindings[Action], GameState))
+                    {
+                        InputController->NextAction = (Action_Button)Action;
+                        GameState->InputController.HasQueuedAction = true;
+                    }
+                }
+                else
+                {
+                    if(GetJoystickKeyDown((Controller_Code)InputController->ActionButtonXboxControllerBindings[Action], GameState))
+                    {
+                        InputController->NextAction = (Action_Button)Action;
+                        GameState->InputController.HasQueuedAction = true;
+                    }
                 }
             }
             else
@@ -167,11 +194,11 @@ b32 GetActionButtonDown(Action_Button ActionButton, game_state* GameState)
             {
                 case Controller_Xbox:
                 {
-                    return GetJoystickKeyDown(GameState->InputController.ActionButtonXboxControllerBindings[ActionButton], GameState);
+                    return GetJoystickKeyDown((Controller_Code)GameState->InputController.ActionButtonXboxControllerBindings[ActionButton], GameState);
                 }
                 case Controller_PS4:
                 {
-                    return GetJoystickKeyDown(GameState->InputController.ActionButtonPS4ControllerBindings[ActionButton], GameState);
+                    return GetJoystickKeyDown((Controller_Code)GameState->InputController.ActionButtonPS4ControllerBindings[ActionButton], GameState);
                 }
             }
         }
@@ -191,11 +218,11 @@ b32 GetActionButton(Action_Button ActionButton, game_state* GameState)
         {
             case Controller_Xbox:
             {
-                return GetJoystickKey(GameState->InputController.ActionButtonXboxControllerBindings[ActionButton], GameState);
+                return GetJoystickKey((Controller_Code)GameState->InputController.ActionButtonXboxControllerBindings[ActionButton], GameState);
             }
             case Controller_PS4:
             {
-                return GetJoystickKey(GameState->InputController.ActionButtonPS4ControllerBindings[ActionButton], GameState);
+                return GetJoystickKey((Controller_Code)GameState->InputController.ActionButtonPS4ControllerBindings[ActionButton], GameState);
             }
         }
     }
@@ -212,10 +239,8 @@ float GetInputX(game_state* GameState, Stick Stick = Stick_Left)
     
     r32 InputX = 0.0f;
     
-    if(Abs(GameState->InputController.Axes[Axis]) < GameState->InputController.ControllerDeadzone)
-        InputX = 0;
-    else
-        InputX = GameState->InputController.Axes[Axis]; // Might be another axis index for other controllers
+    if(Abs(GameState->InputController.Axes[Axis]) > GameState->InputController.ControllerDeadzone)
+        InputX = GameState->InputController.Axes[Axis]; 
     
     if (GetKey(Key_A, GameState))
     {
@@ -237,11 +262,7 @@ float GetInputY(game_state* GameState, Stick Stick = Stick_Left)
     
     r32 InputY = 0.0f;
     
-    if(Abs(GameState->InputController.Axes[Axis]) < GameState->InputController.ControllerDeadzone)
-    {
-        InputY = 0.0f;
-    }
-    else
+    if(Abs(GameState->InputController.Axes[Axis]) > GameState->InputController.ControllerDeadzone)
     {
         switch(GameState->InputController.ControllerType)
         {
@@ -249,7 +270,7 @@ float GetInputY(game_state* GameState, Stick Stick = Stick_Left)
             InputY = GameState->InputController.Axes[Axis]; // Might be another axis index for other controllers
             break;
             case Controller_PS4:
-            InputY = -1 * GameState->InputController.Axes[Axis]; // Might be another axis index for other controllers
+            InputY = -1 * GameState->InputController.Axes[Axis];
             break;
         }
     }

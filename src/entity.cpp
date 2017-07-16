@@ -2240,7 +2240,7 @@ void UpdatePlayer(entity* Entity, game_state* GameState, r64 DeltaTime)
         //attacking
         if(!Entity->Player.Pickup && !Entity->Player.IsChargingCheckpoint && TimerDone(GameState, Entity->Player.AttackCooldownTimer) &&
            TimerDone(GameState, Entity->StaggerCooldownTimer)
-           && !Entity->Player.IsAttacking && Entity->Player.Stamina >= Entity->Player.AttackStaminaCost - Entity->Player.MinDiffStamina && (GetActionButtonDown(Action_Attack, GameState) || GetJoystickKeyDown(Joystick_3, GameState))) //@Cleanup: Remove the check for Joystick_3. Not sure why it is there?
+           && !Entity->Player.IsAttacking && Entity->Player.Stamina >= Entity->Player.AttackStaminaCost - Entity->Player.MinDiffStamina && (GetActionButtonDown(Action_Attack, GameState)))
         {
             switch(Entity->LookDirection)
             {
