@@ -47,18 +47,11 @@
                  {
                      fgets(LineBuffer, 255, File);
                      
-                     i32 ExperienceNeeded = 0;
-                     i32 NumberOfMilestones = 0;
+                     i32 WillNeeded = 0;
                      
-                     auto& FirstMilestone = GameState->StatData[Index].Milestones[0];
-                     auto& SecondMilestone = GameState->StatData[Index].Milestones[1];
+                     sscanf(LineBuffer, "%d", &WillNeeded);
                      
-                     sscanf(LineBuffer, "%d %d %d %d %d %d %d", &ExperienceNeeded, &FirstMilestone.Health, &FirstMilestone.Stamina, &FirstMilestone.Strength, &SecondMilestone.Health, &SecondMilestone.Stamina, &SecondMilestone.Strength);
-                     
-                     GameState->StatData[Index].ExperienceForLevel = ExperienceNeeded;
-                     
-                     FirstMilestone.MilestonePoint = (i16)GameState->StatData[Index].ExperienceForLevel / 3;
-                     SecondMilestone.MilestonePoint = (i16)(GameState->StatData[Index].ExperienceForLevel / 3) * 2;
+                     GameState->StatData[Index].WillForLevel = WillNeeded;
                  }
              }
          }
@@ -1170,11 +1163,10 @@
                          GameState->SelectedGainIndex = 0;
                  }
                  
-                 if(GetJoystickKeyDown(Joystick_1, GameState) || GetKeyDown(Key_Enter, GameState))
+                 if(GetActionButtonDown(Action_Interact,GameState) || GetKeyDown(Key_Enter, GameState))
                  {
                      auto& Player = GameState->Entities[0];
                      
-                     auto Milestone = GameState->StatData[GameState->CharacterData.Level].Milestones[Player.Player.LastMilestone - 1];
                      GameState->LastCharacterData = GameState->CharacterData;
                      
                      switch((Player_Gain_Type)GameState->SelectedGainIndex)
@@ -1182,27 +1174,26 @@
                          case Gain_Health:
                          {
                              r32 Ratio = (r32)Player.Health / (r32)GameState->CharacterData.Health;
-                             GameState->CharacterData.Health += (i16)Milestone.Health;
+                             GameState->CharacterData.Health += 5;
                              Player.Health = (i16)(GameState->CharacterData.Health * Ratio);
                          }
                          break;
                          case Gain_Stamina:
                          {
                              r32 Ratio = (r32)Player.Player.Stamina / (r32)GameState->CharacterData.Stamina;
-                             GameState->CharacterData.Stamina += (i16)Milestone.Stamina;
+                             GameState->CharacterData.Stamina += 5;
                              Player.Player.Stamina = (i16)(GameState->CharacterData.Stamina * Ratio);
                          }
                          break;
                          case Gain_Strength:
                          {
-                             GameState->CharacterData.Strength += Milestone.Strength;
+                             GameState->CharacterData.Strength += 1;
                          }
                          break;
                      }
                      //@Incomplete: Play sound!
                      
-                     printf("Level: %d\n", GameState->LastCharacterData.Level);
-                     
+                     GameState->CharacterData.Level++;
                      Player.Weapon.Damage = GameState->CharacterData.Strength;
                      GameState->SelectedGainIndex = 0;
                      GameState->StatGainModeOn = false;

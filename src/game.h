@@ -72,18 +72,9 @@ enum Player_Gain_Type
     Gain_Strength
 };
 
-struct level_milestone
-{
-    i32 MilestonePoint = 0;
-    i32 Health = 0;
-    i32 Stamina = 0;
-    i32 Strength = 0;
-};
-
 struct character_level
 {
-    i32 ExperienceForLevel = 0;
-    level_milestone Milestones[2];
+    i32 WillForLevel = 0;
 };
 
 struct character_data
@@ -248,9 +239,8 @@ void SaveGame(game_state* GameState)
         
         fwrite(&GameState->CharacterData,sizeof(character_data), 1, File);
         fwrite(&GameState->LastCharacterData,sizeof(character_data), 1, File);
-        fwrite(&Entity.Player.Experience,sizeof(i32), 1, File);
+        fwrite(&Entity.Player.Will,sizeof(i32), 1, File);
         fwrite(&Entity.Position,sizeof(glm::vec2), 1, File);
-        fwrite(&Entity.Player.LastMilestone,sizeof(i32), 1, File);
         fwrite(&Entity.Player.Inventory,sizeof(player_inventory), 1, File);
         
         fclose(File);
@@ -266,9 +256,8 @@ void LoadGame(game_state* GameState)
     {
         fread(&GameState->CharacterData, sizeof(character_data), 1, File);
         fread(&GameState->LastCharacterData, sizeof(character_data), 1, File);
-        fread(&GameState->Entities[0].Player.Experience, sizeof(i32), 1, File);
+        fread(&GameState->Entities[0].Player.Will, sizeof(i32), 1, File);
         fread(&GameState->Entities[0].Position, sizeof(glm::vec2),1,File);
-        fread(&GameState->Entities[0].Player.LastMilestone, sizeof(i32), 1, File);
         fread(&GameState->Entities[0].Player.Inventory, sizeof(player_inventory), 1 , File);
         
         fclose(File);

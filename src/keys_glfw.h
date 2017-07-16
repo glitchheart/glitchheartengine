@@ -76,6 +76,9 @@ std::map<u32, Mouse_Code> MouseButtonMappings =
     { GLFW_MOUSE_BUTTON_MIDDLE, Mouse_Middle }
 };
 
+#define GLFW_JOYSTICK_17 16
+#define GLFW_JOYSTICK_18 17
+
 std::map<u32, Controller_Code> ControllerMappings =
 {
     { GLFW_JOYSTICK_1, Joystick_1 },
@@ -94,6 +97,8 @@ std::map<u32, Controller_Code> ControllerMappings =
     { GLFW_JOYSTICK_14, Joystick_14 },
     { GLFW_JOYSTICK_15, Joystick_15 },
     { GLFW_JOYSTICK_16, Joystick_16 },
+    { GLFW_JOYSTICK_17, Joystick_LeftTrigger },
+    { GLFW_JOYSTICK_18, Joystick_RightTrigger }
 };
 
 static b32 ControllerPresent(game_state* GameState)

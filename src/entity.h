@@ -151,12 +151,12 @@ struct player_inventory
 enum Loot_Type
 {
     Loot_Health,
-    Loot_Checkpoint
+    Loot_Checkpoint,
+    Loot_LevelItem
 };
 
 struct loot
 {
-    glm::vec2 Position;
     Loot_Type Type;
     b32 RenderButtonHint;
     i32 Handle = -1;
@@ -192,7 +192,8 @@ struct light_source
 enum Object_Type
 {
     Object_Shadow,
-    Object_Rock
+    Object_Rock,
+    Object_Loot
 };
 
 struct object_entity
@@ -217,6 +218,10 @@ struct object_entity
             collision_AABB Collider;
             glm::vec2 Velocity;
         } Moving;
+        struct
+        {
+            
+        } Inanimate;
     };
     
     object_entity(){}
@@ -293,8 +298,7 @@ struct entity
         struct
         {
             i32 Level;
-            i32 LastMilestone;
-            i32 Experience;
+            i32 Will;
             b32 IsAttacking;
             b32 IsChargingCheckpoint;
             
@@ -361,7 +365,7 @@ struct entity
             Enemy_Type EnemyType;
             entity_healthbar* Healthbar;
             
-            i32 Experience;
+            i32 Will;
             i32 HealthCountIndex;
             enemy_health_count HealthCounts[10];
             glm::vec2 HealthCountStart;

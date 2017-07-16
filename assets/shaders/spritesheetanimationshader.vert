@@ -5,7 +5,7 @@ uniform mat4 Model;
 uniform vec2 textureOffset;
 uniform float frameWidth;
 uniform float frameHeight;
-uniform vec2 sheetSize;
+uniform vec2 textureSize;
 uniform float isUI;
 
 in vec2 texcoord;
@@ -16,10 +16,10 @@ out vec2 TextureOffset;
 
 void main()
 {
-	TextureSize = sheetSize;    
-	TextureOffset = vec2(1.0 / sheetSize.x * textureOffset.x, 1.0 / sheetSize.y * textureOffset.y);
+	TextureSize = textureSize;    
+	TextureOffset = vec2(1.0 / textureSize.x * textureOffset.x, 1.0 / textureSize.y * textureOffset.y);
 
-	Texcoord = vec2(1.0 / sheetSize.x * textureOffset.x + texcoord.x / (sheetSize.x / frameWidth), 1.0 / sheetSize.y * textureOffset.y + texcoord.y / (sheetSize.y / 		frameHeight));
+	Texcoord = vec2(1.0 / textureSize.x * textureOffset.x + texcoord.x / (textureSize.x / frameWidth), 1.0 / textureSize.y * textureOffset.y + texcoord.y / (textureSize.y / 		frameHeight));
 
 	if(isUI == 1.0)
 		gl_Position = Model * vec4(pos.xy, 0.0, 1.0);

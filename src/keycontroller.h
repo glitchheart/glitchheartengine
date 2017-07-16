@@ -22,20 +22,20 @@ RIGHT TRIGGER Axis 5
 
 PS4
 
-A 1
-B 2
-X 0
-Y 3
-LB 4
-RB 5
-LT 6
-RT 7
+  Cross 1
+ Cirlce 2
+ Square 0
+ Triangle 3
+L1 4
+R1 5
+L2 6
+R2 7
 DPAD DOWN 16
 DPAD UP 14
 DPAD RIGHT 15
 DPAD LEFT 17
-START 9
-BACK 8
+ OPTION 9
+ SHARE 8
 */
 
 enum Key_Mode
