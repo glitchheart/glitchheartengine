@@ -1,6 +1,43 @@
 #ifndef KEYCONTROLLER_H
 #define KEYCONTROLLER_H
 
+/*
+XBOX 
+
+A 0
+B 1
+X 2
+Y 3
+LB 4
+RB 5
+DPAD DOWN 12
+DPAD UP 10
+DPAD RIGHT 11
+DPAD LEFFT 13
+START 7
+BACK 6
+
+LEFT TRIGGER Axis 4
+RIGHT TRIGGER Axis 5
+
+PS4
+
+A 1
+B 2
+X 0
+Y 3
+LB 4
+RB 5
+LT 6
+RT 7
+DPAD DOWN 16
+DPAD UP 14
+DPAD RIGHT 15
+DPAD LEFT 17
+START 9
+BACK 8
+*/
+
 enum Key_Mode
 {
     Key_NotPressed,
@@ -87,6 +124,53 @@ enum Mouse_Code
     Mouse_Count
 };
 
+enum Xbox_Code
+{
+    Xbox_A,
+    Xbox_B,
+    Xbox_X,
+    Xbox_Y,
+    Xbox_LeftBumper,
+    Xbox_RightBumper,
+    Xbox_Back,
+    Xbox_Start,
+    Xbox_LeftStick,
+    Xbox_RightStick,
+    Xbox_DPadUp,
+    Xbox_DPadRight,
+    Xbox_DPadDown,
+    Xbox_DPadLeft,
+    Xbox_14,
+    Xbox_15,
+    Xbox_16,
+    Xbox_LeftTrigger,
+    Xbox_RightTrigger,
+    Xbox_Count
+};
+
+enum PS4_Code
+{
+    PS4_Square,
+    PS4_Cross,
+    PS4_Circle,
+    PS4_Triangle,
+    PS4_L1,
+    PS4_R1,
+    PS4_L2,
+    PS4_R2,
+    PS4_Select,
+    PS4_Start,
+    PS4_LeftStick,
+    PS4_RightStick,
+    PS4_Home,
+    PS4_TouchPad,
+    PS4_DPadUp,
+    PS4_DPadRigt,
+    PS4_DPadDown,
+    PS4_DPadLeft,
+    PS4_Count
+};
+
 enum Controller_Code
 {
     Joystick_1,
@@ -105,6 +189,8 @@ enum Controller_Code
     Joystick_14,
     Joystick_15,
     Joystick_16,
+    Joystick_LeftTrigger,
+    Joystick_RightTrigger,
     Joystick_Count
 };
 
@@ -159,25 +245,20 @@ struct input_controller
         Key_C
     };
     
-    Controller_Code ActionButtonXboxControllerBindings[Action_Count] = 
+    Xbox_Code ActionButtonXboxControllerBindings[Action_Count] = 
     {
-        Joystick_3,
-        Joystick_4,
-        Joystick_1,
-        Joystick_2,
-        Joystick_5, // Left bumper
-        Joystick_6, // Right bumper
-        Joystick_7, // Right trigger
-        Joystick_8
+        Xbox_RightBumper,
+        Xbox_X,
+        Xbox_B,
+        Xbox_A
     };
     
-    Controller_Code ActionButtonPS4ControllerBindings[Action_Count] = 
+    PS4_Code ActionButtonPS4ControllerBindings[Action_Count] = 
     {
-        Joystick_1,
-        Joystick_4,
-        Joystick_2,
-        Joystick_1,
-        Joystick_4
+        PS4_R1,
+        PS4_Square,
+        PS4_Circle,
+        PS4_Cross,
     };
     
     b32 ActionRunning = false;

@@ -29,7 +29,7 @@ checkpointplacementcooldowntimer 20.0
 hitstaminacost 15
 rollstaminacost 18
 attackstaminacost 20
-mindiffstamina 100
+mindiffstamina 5
 healthdecreasetimer 0.8
 walkingspeed 4
 throwingspeed 18.0
