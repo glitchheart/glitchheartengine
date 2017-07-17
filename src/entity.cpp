@@ -975,10 +975,10 @@ AI_FUNC(MinotaurAttacking)
                 
                 auto PlayerPosition = GameState->Entities[0].Position;
                 
-                glm::vec2 Direction = Enemy.LastAttackMoveDirection + (PlayerPosition - Entity->Position);
-                Entity->Velocity = glm::vec2(Direction.x * 7, (Elapsed + Direction.y) * 7);
+                glm::vec2 Direction = glm::vec2(Enemy.LastAttackMoveDirection.x +  (PlayerPosition.x - Entity->Position.x),Enemy.LastAttackMoveDirection.y + Elapsed);
+                Entity->Velocity = glm::vec2(Direction.x * 7, Direction.y * 7);
                 
-                GameState->Objects[Entity->Enemy.Minotaur.ShadowHandle].Position += glm::vec2(Enemy.LastAttackMoveDirection.x * 7 * DeltaTime, Enemy.LastAttackMoveDirection.y * 7 * DeltaTime);
+                GameState->Objects[Entity->Enemy.Minotaur.ShadowHandle].Position += glm::vec2(Direction.x * 7 * DeltaTime, Enemy.LastAttackMoveDirection.y * 7 * DeltaTime);
             }
             else
             {
@@ -1893,7 +1893,6 @@ static void CheckLootPickup(game_state* GameState, loot* Loot, entity* Player)
 
 void UpdatePlayer(entity* Entity, game_state* GameState, r64 DeltaTime)
 {
-    printf("%f\n", Entity->Player.WalkingSpeed);
     if(Entity->Hit)
     {
         Entity->Player.IsAttacking = false;
