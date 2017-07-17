@@ -164,7 +164,10 @@ struct game_state
     
     std::map<char*, animation*, CompareCStrings> Animations;
     
-    gmap Map;
+    gmap KeyMappings;
+    gmap MouseButtonMappings;
+    gmap ControllerMappings;
+    
     
     entity_file_reload_data* ReloadData;
 };
