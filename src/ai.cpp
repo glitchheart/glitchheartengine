@@ -106,11 +106,13 @@ static void ReconstructPath(astar_path* Path, game_state* GameState, astar_node&
             {
                 free(Path->AStarPath);
             }
+            
             Path->AStarPath = (path_node*)malloc(sizeof(path_node) * Length + 1);
             
             u32 Index = Length - 1;
             Path->AStarPath[Length] = {Current.X,Current.Y};
             PathNode = AStarWorkingData->WorkingList[Current.ParentIndex];
+            
             while(PathNode.ParentIndex >= 0 && (PathNode.X != StartNode.X || PathNode.Y != StartNode.Y))
             {
                 Assert(!GameState->CurrentLevel.Tilemap.Data[1][PathNode.X][PathNode.Y].IsSolid);
@@ -236,8 +238,6 @@ static void AStar(entity* Entity, game_state* GameState, glm::vec2 StartPos, glm
             
             OpenSetCount--;
             AStarWorkingData->ClosedSet[ClosedSetCount++] = Current;
-            
-            
             
             if(Current.X != -1 && Current.Y != -1 && Current.X > 0 && Current.Y > 0 && Current.X < (i32)GameState->CurrentLevel.Tilemap.Width - 1 && Current.Y < (i32)GameState->CurrentLevel.Tilemap.Height - 1)
             {

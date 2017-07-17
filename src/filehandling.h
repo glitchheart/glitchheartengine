@@ -125,8 +125,14 @@ static void ListenToFileChanges(asset_manager* AssetManager)
     {
         for (int i = 0; i < Shader_Count; i++)
         {
-            CheckDirty(Concat(ShaderPaths[i], ".vert"), AssetManager->VertexShaderTimes[i], &AssetManager->DirtyVertexShaderIndices[i], &AssetManager->VertexShaderTimes[i]);
-            CheckDirty(Concat(ShaderPaths[i], ".frag"), AssetManager->FragmentShaderTimes[i], &AssetManager->DirtyFragmentShaderIndices[i], &AssetManager->FragmentShaderTimes[i]);
+            char* VertexPath = Concat(ShaderPaths[i], ".vert");
+            char* FragmentPath = Concat(ShaderPaths[i], ".frag");
+            
+            CheckDirty(VertexPath, AssetManager->VertexShaderTimes[i], &AssetManager->DirtyVertexShaderIndices[i], &AssetManager->VertexShaderTimes[i]);
+            CheckDirty(FragmentPath, AssetManager->FragmentShaderTimes[i], &AssetManager->DirtyFragmentShaderIndices[i], &AssetManager->FragmentShaderTimes[i]);
+            
+            free(VertexPath);
+            free(FragmentPath);
         }
         
         CheckDirty(AssetManager->TilesetTexturePath, AssetManager->TilesetTime, &AssetManager->DirtyTileset, &AssetManager->TilesetTime);
