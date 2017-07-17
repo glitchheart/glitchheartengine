@@ -852,20 +852,11 @@
      {
          if(GameState->ShouldReload)
          {
-             Gmap_Init(&GameState->Map,HashString,sizeof(char*));
-             
-             
-             
              LoadGameDataFile(GameState);
              srand((u32)time(NULL));
              
              LoadAnimations(GameState);
              InitCommands();
-             
-             GameState->Map["skeleton_walk"] = *GameState->Animations["skeleton_walk"];
-             
-             animation& Anim = (animation&)GameState->Map["skeleton_walk"];
-             printf("Animation FrameSize: (%f,%f)",Anim.FrameSize.x,Anim.FrameSize.y);
              
              light_source AmbientLight;
              AmbientLight.Type = Light_Ambient;

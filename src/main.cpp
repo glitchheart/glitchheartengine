@@ -32,8 +32,7 @@ static game_code LoadGameCode()
     Result.GameCodeDLL = LoadLibraryA(Result.TempDllPath);
     
     Result.LastDllWriteTime = GetLastWriteTime(Result.DllPath);
-    gmap Map;
-    InitKeyMappings(&Map);
+    
     if (Result.GameCodeDLL)
     {
         Result.Update = (update *)GetProcAddress(Result.GameCodeDLL, "Update");
@@ -86,6 +85,8 @@ int main(void)
     GameState.ShouldReload = true;
     GameState.InputController = {};
     
+    InitKeys(&GameState);
+    
     config_data ConfigData;
     LoadConfig("../assets/.config", &ConfigData);
     
@@ -133,7 +134,10 @@ int main(void)
         GameState.RenderState.FPS = FPS;
         
         if(GameState.GameMode == Mode_Exit || GetKeyDown(Key_Q, &GameState) && GetKey(Key_LeftCtrl, &GameState))
+        {
+            printf("Quit\n");
             glfwSetWindowShouldClose(GameState.RenderState.Window, GLFW_TRUE);
+        }
         
         ReloadAssets(&AssetManager, &GameState);
         GameState.ReloadData = &AssetManager.ReloadData;
