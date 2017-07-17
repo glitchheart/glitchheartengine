@@ -67,6 +67,7 @@ struct CompareCStrings
     }
 };
 
+//Remember to free string after usage
 char* Concat(const char *s1, const char *s2)
 {
     char *result = (char*)malloc(strlen(s1)+strlen(s2)+1);//+1 for the zero-terminator
@@ -228,6 +229,7 @@ void DebugPrintVec2(glm::vec2 Vec2, const char* Msg = "")
 {
     printf(Concat(Msg, " (%f,%f)\n"),Vec2.x,Vec2.y);
 }
+
 
 
 b32 FileExists(char* FilePath)
