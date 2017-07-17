@@ -85,6 +85,7 @@ static GLuint LoadShader(const char* FilePath, shader *Shd)
     Shd->VertexShader = glCreateShader(GL_VERTEX_SHADER);
     char* VertexString = Concat(FilePath,".vert");
     GLchar *VertexText = LoadShaderFromFile(VertexString);
+    free(VertexString);
     
     glShaderSource(Shd->VertexShader, 1, &VertexText, NULL);
     glCompileShader(Shd->VertexShader);
@@ -98,6 +99,7 @@ static GLuint LoadShader(const char* FilePath, shader *Shd)
     Shd->FragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
     char* FragmentString = Concat(FilePath,".frag");
     GLchar *FragmentText = LoadShaderFromFile(FragmentString);
+    free(FragmentString);
     
     glShaderSource(Shd->FragmentShader, 1, &FragmentText, NULL);
     glCompileShader(Shd->FragmentShader);
@@ -126,6 +128,7 @@ static GLuint LoadVertexShader(const char* FilePath, shader *Shd)
     GLchar *VertexText = LoadShaderFromFile(VertexString);
     glShaderSource(Shd->VertexShader, 1, &VertexText, NULL);
     glCompileShader(Shd->VertexShader);
+    free(VertexString);
     
     if (!ShaderCompilationErrorChecking(FilePath, Shd->VertexShader))
     {
@@ -150,6 +153,7 @@ static GLuint LoadFragmentShader(const char* FilePath, shader *Shd)
     GLchar *FragmentText = LoadShaderFromFile(FragmentString);
     glShaderSource(Shd->FragmentShader, 1, &FragmentText, NULL);
     glCompileShader(Shd->FragmentShader);
+    free(FragmentString);
     
     if (!ShaderCompilationErrorChecking(FilePath, Shd->FragmentShader))
     {
@@ -779,8 +783,10 @@ static void LoadTilesheetTextures(game_state* GameState, render_state* RenderSta
             RenderState->Tilesheets[I].Name = (char*)malloc(sizeof(char) * 20);
             
             strcpy(RenderState->Tilesheets[I].Name, TempNames[I]);
-            LoadTexture(Concat(Concat("../assets/textures/tilesheets/", TempNames[I]), ".png"), &RenderState->Tilesheets[I].Texture);
+            char* Path = Concat(Concat("../assets/textures/tilesheets/", TempNames[I]), ".png");
+            LoadTexture(Path, &RenderState->Tilesheets[I].Texture);
             free(TempNames[I]);
+            free(Path);
         }
         
     }

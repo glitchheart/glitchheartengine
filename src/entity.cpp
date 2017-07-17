@@ -975,7 +975,7 @@ AI_FUNC(MinotaurAttacking)
                 
                 auto PlayerPosition = GameState->Entities[0].Position;
                 
-                glm::vec2 Direction = glm::vec2(Enemy.LastAttackMoveDirection.x +  (PlayerPosition.x - Entity->Position.x),Enemy.LastAttackMoveDirection.y + Elapsed);
+                glm::vec2 Direction = glm::vec2(Enemy.LastAttackMoveDirection.x +  (PlayerPosition.x - Entity->Position.x) / 2, Enemy.LastAttackMoveDirection.y + Elapsed);
                 Entity->Velocity = glm::vec2(Direction.x * 7, Direction.y * 7);
                 
                 GameState->Objects[Entity->Enemy.Minotaur.ShadowHandle].Position += glm::vec2(Direction.x * 7 * DeltaTime, Enemy.LastAttackMoveDirection.y * 7 * DeltaTime);
