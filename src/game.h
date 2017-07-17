@@ -10,6 +10,7 @@
 #include "platform.h"
 #include "opengl_rendering.h"
 #include "animation.h"
+#include "gmap.h"
 #include "collision.h"
 #include "ai.h"
 #include "entity.h"
@@ -20,6 +21,8 @@
 #include "editor.h"
 #include "menu.h"
 #include "ui.h"
+
+
 
 enum Fading_Mode
 {
@@ -160,6 +163,8 @@ struct game_state
     i32 AnimationIndex;
     
     std::map<char*, animation*, CompareCStrings> Animations;
+    
+    gmap Map;
     
     entity_file_reload_data* ReloadData;
 };
