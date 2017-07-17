@@ -83,6 +83,7 @@ struct character_data
     i32 Health = 0;
     i32 Stamina = 0;
     i32 Strength = 0;
+    i32 HealthPotionCount = 3;
     glm::vec2 CurrentCheckpoint;
     b32 HasCheckpoint;
     i32 CheckpointHandle = -1;
@@ -251,17 +252,25 @@ void SaveGame(game_state* GameState)
 void LoadGame(game_state* GameState)
 {
     FILE* File;
-    File = fopen("../savefile1.gs", "rb");
-    if(File)
+    char* FilePath = "../savefile1.gs";
+    if(FileExists(FilePath))
     {
-        fread(&GameState->CharacterData, sizeof(character_data), 1, File);
-        fread(&GameState->LastCharacterData, sizeof(character_data), 1, File);
-        fread(&GameState->Entities[0].Player.Will, sizeof(i32), 1, File);
-        fread(&GameState->Entities[0].Position, sizeof(glm::vec2),1,File);
-        fread(&GameState->Entities[0].Player.Inventory, sizeof(player_inventory), 1 , File);
-        
-        fclose(File);
-        printf("Loaded game!\n");
+        File = fopen(FilePath, "rb");
+        if(File)
+        {
+            fread(&GameState->CharacterData, sizeof(character_data), 1, File);
+            fread(&GameState->LastCharacterData, sizeof(character_data), 1, File);
+            fread(&GameState->Entities[0].Player.Will, sizeof(i32), 1, File);
+            fread(&GameState->Entities[0].Position, sizeof(glm::vec2),1,File);
+            fread(&GameState->Entities[0].Player.Inventory, sizeof(player_inventory), 1 , File);
+            
+            fclose(File);
+            printf("Loaded game!\n");
+        }
+    }
+    else
+    {
+        SaveGame(GameState);
     }
 }
 

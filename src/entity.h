@@ -144,13 +144,14 @@ struct enemy_health_count
 
 struct player_inventory
 {
-    i32 HealthPotionCount = 0;
+    i32 HealthPotionCount;
     b32 HasCheckpoint;
 };
 
 
 enum Loot_Type
 {
+    Loot_Nothing,
     Loot_Health,
     Loot_Checkpoint,
     Loot_LevelItem
@@ -327,6 +328,9 @@ struct entity
             timer DashTimer;
             timer DashCooldownTimer;
             timer PickupCooldownTimer;
+            timer HealthPotionTimer;
+            
+            b32 TakingHealthPotion;
             
             r64 CurrentAttackCooldownTime;
             r64 AttackCooldown;

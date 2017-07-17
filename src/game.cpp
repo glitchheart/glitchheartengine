@@ -752,16 +752,6 @@
  
  extern "C" UPDATE(Update)
  {
-     if(GetJoystickKeyDown(Joystick_LeftTrigger, GameState))
-     {
-         printf("WORKY BOIOOO\n");
-     }
-     
-     if(GetJoystickKeyDown(Joystick_RightTrigger, GameState))
-     {
-         printf("WORKY RIGHTY BOIOOO\n");
-     }
-     
      if(GameState->ReloadData->ReloadPlayerFile)
      {
          LoadPlayerData(GameState, 0);
@@ -1195,6 +1185,7 @@
                      }
                      //@Incomplete: Play sound!
                      
+                     Player.Player.Will -= GameState->StatData[GameState->CharacterData.Level].WillForLevel;
                      GameState->CharacterData.Level++;
                      Player.Weapon.Damage = GameState->CharacterData.Strength;
                      GameState->SelectedGainIndex = 0;

@@ -1,5 +1,3 @@
-#include "opengl_rendering.h"
-
 static void ErrorCallback(int Error, const char *Description)
 {
     fprintf(stderr, "Error: %s\n", Description);
@@ -1976,14 +1974,38 @@ void RenderUI(game_state* GameState)
                     {
                         case Loot_Health:
                         {
-                            RenderText(&GameState->RenderState, GameState->RenderState.RobotoFont, glm::vec4(1,1,1,1), "Health Potion", (r32)GameState->RenderState.WindowWidth / 2 - ButtonTexWidth - 200, (r32)GameState->RenderState.WindowHeight - 490, Alignment_Center);
+                            r32 Width;
+                            r32 Height;
+                            MeasureText(GameState->RenderState.RobotoFont,"Health Potion", &Width, &Height);
+                            RenderText(&GameState->RenderState, GameState->RenderState.RobotoFont, glm::vec4(1,1,1,1), "Health Potion", (r32)GameState->RenderState.WindowWidth / 2 - ButtonTexWidth - Width - 10.0f, (r32)GameState->RenderState.WindowHeight - 490, Alignment_Center);
                         }
                         break;
                         case Loot_Checkpoint:
                         {
-                            RenderText(&GameState->RenderState, GameState->RenderState.RobotoFont, glm::vec4(1,1,1,1), "Checkpoint", (r32)GameState->RenderState.WindowWidth / 2 - ButtonTexWidth - 200, (r32)GameState->RenderState.WindowHeight - 490, Alignment_Center);
+                            r32 Width;
+                            r32 Height;
+                            MeasureText(GameState->RenderState.RobotoFont,"Checkpoint", &Width, &Height);
+                            RenderText(&GameState->RenderState, GameState->RenderState.RobotoFont, glm::vec4(1,1,1,1), "Checkpoint", (r32)GameState->RenderState.WindowWidth / 2 - ButtonTexWidth - Width - 10.0f, (r32)GameState->RenderState.WindowHeight - 490, Alignment_Center);
                         }
                         break;
+                        case Loot_LevelItem:
+                        {
+                            
+                            char LootText[64];
+                            if(GameState->Entities[0].Player.Will >= GameState->StatData[GameState->CharacterData.Level].WillForLevel)
+                            {
+                                
+                                sprintf(LootText,"Spend %d will to gain power", GameState->StatData[GameState->CharacterData.Level].WillForLevel);
+                            }
+                            else
+                            {
+                                sprintf(LootText, "Not enough will to gain power");
+                            }
+                            r32 Width;
+                            r32 Height;
+                            MeasureText(GameState->RenderState.RobotoFont,LootText, &Width, &Height);
+                            RenderText(&GameState->RenderState, GameState->RenderState.RobotoFont, glm::vec4(1,1,1,1), LootText, (r32)GameState->RenderState.WindowWidth / 2 - ButtonTexWidth - Width - 10.0f, (r32)GameState->RenderState.WindowHeight - 490, Alignment_Center);
+                        } break;
                     }
                     
                     RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(1, 1, 1, 1), (r32)GameState->RenderState.WindowWidth / 2 - ButtonTexWidth, (r32)GameState->RenderState.WindowHeight - 500, 35, 35, ButtonTexture->TextureHandle);
