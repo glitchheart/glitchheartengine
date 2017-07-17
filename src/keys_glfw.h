@@ -1,105 +1,117 @@
 #ifndef KEYS_GLFW_H
 #define KEYS_GLFW_H
 
-std::map<u32, Key_Code> KeyMappings = 
+void InitKeyMappings(game_state* GameState)
 {
-    { GLFW_KEY_LEFT, Key_Left },
-    { GLFW_KEY_RIGHT, Key_Right },
-    { GLFW_KEY_UP, Key_Up },
-    { GLFW_KEY_DOWN, Key_Down },
-    { GLFW_KEY_ESCAPE, Key_Escape },
-    { GLFW_KEY_SPACE, Key_Space },
-    { GLFW_KEY_TAB, Key_Tab },
-    { GLFW_KEY_BACKSPACE, Key_Backspace },
-    { GLFW_KEY_LEFT_SHIFT, Key_LeftShift },
-    { GLFW_KEY_RIGHT_SHIFT, Key_RightShift },
-    { GLFW_KEY_ENTER, Key_Enter },
-    { GLFW_KEY_LEFT_CONTROL, Key_LeftCtrl },
-    { GLFW_KEY_RIGHT_CONTROL, Key_RightCtrl },
-    { GLFW_KEY_A, Key_A },
-    { GLFW_KEY_B, Key_B },
-    { GLFW_KEY_C, Key_C },
-    { GLFW_KEY_D, Key_D },
-    { GLFW_KEY_E, Key_E },
-    { GLFW_KEY_F, Key_F },
-    { GLFW_KEY_G, Key_G },
-    { GLFW_KEY_H, Key_H },
-    { GLFW_KEY_I, Key_I },
-    { GLFW_KEY_J, Key_J },
-    { GLFW_KEY_K, Key_K },
-    { GLFW_KEY_L, Key_L },
-    { GLFW_KEY_M, Key_M },
-    { GLFW_KEY_N, Key_N },
-    { GLFW_KEY_O, Key_O },
-    { GLFW_KEY_P, Key_P },
-    { GLFW_KEY_Q, Key_Q },
-    { GLFW_KEY_R, Key_R },
-    { GLFW_KEY_S, Key_S },
-    { GLFW_KEY_T, Key_T },
-    { GLFW_KEY_U, Key_U },
-    { GLFW_KEY_V, Key_V },
-    { GLFW_KEY_W, Key_W },
-    { GLFW_KEY_X, Key_X },
-    { GLFW_KEY_Y, Key_Y },
-    { GLFW_KEY_Z, Key_Z },
-    { GLFW_KEY_0, Key_0 },
-    { GLFW_KEY_1, Key_1 },
-    { GLFW_KEY_2, Key_2 },
-    { GLFW_KEY_3, Key_3 },
-    { GLFW_KEY_4, Key_4 },
-    { GLFW_KEY_5, Key_5 },
-    { GLFW_KEY_6, Key_6 },
-    { GLFW_KEY_7, Key_7 },
-    { GLFW_KEY_8, Key_8 },
-    { GLFW_KEY_9, Key_9 },
-    { GLFW_KEY_KP_ADD, Key_Add },
-    { GLFW_KEY_KP_SUBTRACT, Key_Subtract },
-    { GLFW_KEY_F1, Key_F1 },
-    { GLFW_KEY_F2, Key_F2 },
-    { GLFW_KEY_F3, Key_F3 },
-    { GLFW_KEY_F4, Key_F4},
-    { GLFW_KEY_F5, Key_F5},
-    { GLFW_KEY_F6, Key_F6},
-    { GLFW_KEY_F7, Key_F7},
-    { GLFW_KEY_F8, Key_F8},
-    { GLFW_KEY_F9, Key_F9},
-    { GLFW_KEY_F10, Key_F10},
-    { GLFW_KEY_F11, Key_F11},
-    { GLFW_KEY_F12, Key_F12},
-    { GLFW_KEY_DELETE, Key_Delete}
-};
+    Gmap_Init(&GameState->KeyMappings,HashInt,sizeof(int*), 512);
+    GameState->KeyMappings[GLFW_KEY_LEFT] = Key_Left;
+    GameState->KeyMappings[GLFW_KEY_RIGHT] = Key_Right;
+    GameState->KeyMappings[GLFW_KEY_UP] = Key_Up;
+    GameState->KeyMappings[GLFW_KEY_DOWN] = Key_Down;
+    GameState->KeyMappings[GLFW_KEY_ESCAPE] = Key_Escape;
+    GameState->KeyMappings[GLFW_KEY_SPACE] = Key_Space;
+    GameState->KeyMappings[GLFW_KEY_TAB] = Key_Tab;
+    GameState->KeyMappings[GLFW_KEY_BACKSPACE] = Key_Backspace;
+    GameState->KeyMappings[GLFW_KEY_LEFT_SHIFT] = Key_LeftShift;
+    GameState->KeyMappings[GLFW_KEY_RIGHT_SHIFT] = Key_RightShift;
+    GameState->KeyMappings[GLFW_KEY_ENTER] = Key_Enter;
+    GameState->KeyMappings[GLFW_KEY_LEFT_CONTROL] = Key_LeftCtrl;
+    GameState->KeyMappings[GLFW_KEY_RIGHT_CONTROL] = Key_RightCtrl;
+    GameState->KeyMappings[GLFW_KEY_A] = Key_A;
+    GameState->KeyMappings[GLFW_KEY_B] = Key_B;
+    GameState->KeyMappings[GLFW_KEY_C] = Key_C;
+    GameState->KeyMappings[GLFW_KEY_D] = Key_D;
+    GameState->KeyMappings[GLFW_KEY_E] = Key_E;
+    GameState->KeyMappings[GLFW_KEY_F] = Key_F;
+    GameState->KeyMappings[GLFW_KEY_G] = Key_G;
+    GameState->KeyMappings[GLFW_KEY_H] = Key_H;
+    GameState->KeyMappings[GLFW_KEY_I] = Key_I;
+    GameState->KeyMappings[GLFW_KEY_J] = Key_J;
+    GameState->KeyMappings[GLFW_KEY_K] = Key_K;
+    GameState->KeyMappings[GLFW_KEY_L] = Key_L;
+    GameState->KeyMappings[GLFW_KEY_M] = Key_M;
+    GameState->KeyMappings[GLFW_KEY_N] = Key_N;
+    GameState->KeyMappings[GLFW_KEY_O] = Key_O;
+    GameState->KeyMappings[GLFW_KEY_P] = Key_P;
+    GameState->KeyMappings[GLFW_KEY_Q] = Key_Q;
+    GameState->KeyMappings[GLFW_KEY_R] = Key_R;
+    GameState->KeyMappings[GLFW_KEY_S] = Key_S;
+    GameState->KeyMappings[GLFW_KEY_T] = Key_T;
+    GameState->KeyMappings[GLFW_KEY_U] = Key_U;
+    GameState->KeyMappings[GLFW_KEY_V] = Key_V;
+    GameState->KeyMappings[GLFW_KEY_W] = Key_W;
+    GameState->KeyMappings[GLFW_KEY_X] = Key_X;
+    GameState->KeyMappings[GLFW_KEY_Y] = Key_Y;
+    GameState->KeyMappings[GLFW_KEY_Z] = Key_Z;
+    GameState->KeyMappings[GLFW_KEY_0] = Key_0;
+    GameState->KeyMappings[GLFW_KEY_1] = Key_1;
+    GameState->KeyMappings[GLFW_KEY_2] = Key_2;
+    GameState->KeyMappings[GLFW_KEY_3] = Key_3;
+    GameState->KeyMappings[GLFW_KEY_4] = Key_4;
+    GameState->KeyMappings[GLFW_KEY_5] = Key_5;
+    GameState->KeyMappings[GLFW_KEY_6] = Key_6;
+    GameState->KeyMappings[GLFW_KEY_7] = Key_7;
+    GameState->KeyMappings[GLFW_KEY_8] = Key_8;
+    GameState->KeyMappings[GLFW_KEY_9] = Key_9;
+    GameState->KeyMappings[GLFW_KEY_KP_ADD] = Key_Add;
+    GameState->KeyMappings[GLFW_KEY_KP_SUBTRACT] = Key_Subtract;
+    GameState->KeyMappings[GLFW_KEY_F1] = Key_F1;
+    GameState->KeyMappings[GLFW_KEY_F2] = Key_F2;
+    GameState->KeyMappings[GLFW_KEY_F3] = Key_F3;
+    GameState->KeyMappings[GLFW_KEY_F4] = Key_F4;
+    GameState->KeyMappings[GLFW_KEY_F5] = Key_F5;
+    GameState->KeyMappings[GLFW_KEY_F6] = Key_F6;
+    GameState->KeyMappings[GLFW_KEY_F7] = Key_F7;
+    GameState->KeyMappings[GLFW_KEY_F8] = Key_F8;
+    GameState->KeyMappings[GLFW_KEY_F9] = Key_F9;
+    GameState->KeyMappings[GLFW_KEY_F10] = Key_F10;
+    GameState->KeyMappings[GLFW_KEY_F11] = Key_F11;
+    GameState->KeyMappings[GLFW_KEY_F12] = Key_F12;
+    GameState->KeyMappings[GLFW_KEY_DELETE] = Key_Delete;
+}
 
-std::map<u32, Mouse_Code> MouseButtonMappings = 
+void InitMouseButtonMappings(game_state* GameState)
 {
-    { GLFW_MOUSE_BUTTON_LEFT, Mouse_Left },
-    { GLFW_MOUSE_BUTTON_RIGHT, Mouse_Right },
-    { GLFW_MOUSE_BUTTON_MIDDLE, Mouse_Middle }
-};
+    Gmap_Init(&GameState->MouseButtonMappings,HashInt,sizeof(int*),16);
+    GameState->MouseButtonMappings[GLFW_MOUSE_BUTTON_LEFT] = Mouse_Left;
+    GameState->MouseButtonMappings[GLFW_MOUSE_BUTTON_RIGHT] = Mouse_Right;
+    GameState->MouseButtonMappings[GLFW_MOUSE_BUTTON_MIDDLE] = Mouse_Middle;
+}
+
 
 #define GLFW_JOYSTICK_17 16
 #define GLFW_JOYSTICK_18 17
 
-std::map<u32, Controller_Code> ControllerMappings =
+void InitControllerMappings(game_state* GameState)
 {
-    { GLFW_JOYSTICK_1, Joystick_1 },
-    { GLFW_JOYSTICK_2, Joystick_2 },
-    { GLFW_JOYSTICK_3, Joystick_3 },
-    { GLFW_JOYSTICK_4, Joystick_4 },
-    { GLFW_JOYSTICK_5, Joystick_5 },
-    { GLFW_JOYSTICK_6, Joystick_6 },
-    { GLFW_JOYSTICK_7, Joystick_7 },
-    { GLFW_JOYSTICK_8, Joystick_8 },
-    { GLFW_JOYSTICK_9, Joystick_9 },
-    { GLFW_JOYSTICK_10, Joystick_10 },
-    { GLFW_JOYSTICK_11, Joystick_11 },
-    { GLFW_JOYSTICK_12, Joystick_12 },
-    { GLFW_JOYSTICK_13, Joystick_13 },
-    { GLFW_JOYSTICK_14, Joystick_14 },
-    { GLFW_JOYSTICK_15, Joystick_15 },
-    { GLFW_JOYSTICK_16, Joystick_16 },
-    { GLFW_JOYSTICK_17, Joystick_LeftTrigger },
-    { GLFW_JOYSTICK_18, Joystick_RightTrigger }
-};
+    Gmap_Init(&GameState->ControllerMappings,HashInt,sizeof(int*),32);
+    GameState->ControllerMappings[GLFW_JOYSTICK_1] = Joystick_1;
+    GameState->ControllerMappings[GLFW_JOYSTICK_2] = Joystick_2;
+    GameState->ControllerMappings[GLFW_JOYSTICK_3] = Joystick_3;
+    GameState->ControllerMappings[GLFW_JOYSTICK_4] = Joystick_4;
+    GameState->ControllerMappings[GLFW_JOYSTICK_5] = Joystick_5;
+    GameState->ControllerMappings[GLFW_JOYSTICK_6] = Joystick_6;
+    GameState->ControllerMappings[GLFW_JOYSTICK_7] = Joystick_7;
+    GameState->ControllerMappings[GLFW_JOYSTICK_8] = Joystick_8;
+    GameState->ControllerMappings[GLFW_JOYSTICK_9] = Joystick_9;
+    GameState->ControllerMappings[GLFW_JOYSTICK_10] = Joystick_10;
+    GameState->ControllerMappings[GLFW_JOYSTICK_11] = Joystick_11;
+    GameState->ControllerMappings[GLFW_JOYSTICK_12] = Joystick_12;
+    GameState->ControllerMappings[GLFW_JOYSTICK_13] = Joystick_13;
+    GameState->ControllerMappings[GLFW_JOYSTICK_14] = Joystick_14;
+    GameState->ControllerMappings[GLFW_JOYSTICK_15] = Joystick_15;
+    GameState->ControllerMappings[GLFW_JOYSTICK_16] = Joystick_16;
+    GameState->ControllerMappings[GLFW_JOYSTICK_17] = Joystick_LeftTrigger;
+    GameState->ControllerMappings[GLFW_JOYSTICK_18] = Joystick_RightTrigger;
+}
+
+void InitKeys(game_state* GameState)
+{
+    InitKeyMappings(GameState);
+    InitMouseButtonMappings(GameState);
+    InitControllerMappings(GameState);
+}
+
 
 static b32 ControllerPresent(game_state* GameState)
 {
@@ -115,22 +127,22 @@ static void ControllerKeyCallback(game_state* GameState, int Key, int Action)
         if (Action == GLFW_PRESS)
         {
             GameState->InputController.AnyKeyPressed = true;
-            if (GameState->InputController.JoystickKeysJustPressed[ControllerMappings[Key]] == Key_NotPressed)
+            if (GameState->InputController.JoystickKeysJustPressed[GameState->ControllerMappings[Key]] == Key_NotPressed)
             {
-                GameState->InputController.JoystickKeysJustPressed[ControllerMappings[Key]] = Key_JustPressed;
+                GameState->InputController.JoystickKeysJustPressed[GameState->ControllerMappings[Key]] = Key_JustPressed;
             }
-            else if(GameState->InputController.JoystickKeysJustPressed[ControllerMappings[Key]] == Key_JustPressed)
+            else if(GameState->InputController.JoystickKeysJustPressed[GameState->ControllerMappings[Key]] == Key_JustPressed)
             {
                 // NOTE(niels): Do we ever even get in here???
-                GameState->InputController.JoystickKeysJustPressed[ControllerMappings[Key]] = Key_Invalid;
+                GameState->InputController.JoystickKeysJustPressed[GameState->ControllerMappings[Key]] = Key_Invalid;
                 
             }
-            GameState->InputController.JoystickKeysDown[ControllerMappings[Key]] = true;
+            GameState->InputController.JoystickKeysDown[GameState->ControllerMappings[Key]] = true;
         }
         else if (Action == GLFW_RELEASE)
         {
-            GameState->InputController.JoystickKeysJustPressed[ControllerMappings[Key]] = Key_NotPressed;
-            GameState->InputController.JoystickKeysDown[ControllerMappings[Key]] = false;
+            GameState->InputController.JoystickKeysJustPressed[GameState->ControllerMappings[Key]] = Key_NotPressed;
+            GameState->InputController.JoystickKeysDown[GameState->ControllerMappings[Key]] = false;
         }
     }
 }
@@ -227,24 +239,25 @@ static void KeyCallback(GLFWwindow *Window, int Key, int Scancode, int Action, i
     {
         if (Action == GLFW_PRESS)
         {
+            printf("Ctrl: %d\n", Key);
             GameState->InputController.AnyKeyPressed = true;
-            if (GameState->InputController.KeysJustPressed[KeyMappings[Key]] == Key_NotPressed)
+            if (GameState->InputController.KeysJustPressed[GameState->KeyMappings[Key]] == Key_NotPressed)
             {
-                GameState->InputController.KeysJustPressed[KeyMappings[Key]] = Key_JustPressed;
+                GameState->InputController.KeysJustPressed[GameState->KeyMappings[Key]] = Key_JustPressed;
             }
-            else if (GameState->InputController.KeysJustPressed[KeyMappings[Key]] == Key_JustPressed)
+            else if (GameState->InputController.KeysJustPressed[GameState->KeyMappings[Key]] == Key_JustPressed)
             {
                 // NOTE(niels): Do we ever even get in here???
-                GameState->InputController.KeysJustPressed[KeyMappings[Key]] = Key_Invalid;
+                GameState->InputController.KeysJustPressed[GameState->KeyMappings[Key]] = Key_Invalid;
             }
             
-            GameState->InputController.KeysDown[KeyMappings[Key]] = true;
+            GameState->InputController.KeysDown[GameState->KeyMappings[Key]] = true;
         }
         else if (Action == GLFW_RELEASE)
         {
-            GameState->InputController.KeysUp[KeyMappings[Key]] = true;
-            GameState->InputController.KeysJustPressed[KeyMappings[Key]] = Key_NotPressed;
-            GameState->InputController.KeysDown[KeyMappings[Key]] = false;
+            GameState->InputController.KeysUp[GameState->KeyMappings[Key]] = true;
+            GameState->InputController.KeysJustPressed[GameState->KeyMappings[Key]] = Key_NotPressed;
+            GameState->InputController.KeysDown[GameState->KeyMappings[Key]] = false;
         }
     }
 }
@@ -259,22 +272,22 @@ static void MouseButtonCallback(GLFWwindow *Window, int Button, int Action, int 
         if (Action == GLFW_PRESS)
         {
             GameState->InputController.AnyKeyPressed = true;
-            if (GameState->InputController.MouseButtonJustPressed[MouseButtonMappings[Button]] == Key_NotPressed)
+            if (GameState->InputController.MouseButtonJustPressed[GameState->MouseButtonMappings[Button]] == Key_NotPressed)
             {
-                GameState->InputController.MouseButtonJustPressed[MouseButtonMappings[Button]] = Key_JustPressed;
+                GameState->InputController.MouseButtonJustPressed[GameState->MouseButtonMappings[Button]] = Key_JustPressed;
             }
-            else if (GameState->InputController.MouseButtonJustPressed[MouseButtonMappings[Button]] == Key_JustPressed)
+            else if (GameState->InputController.MouseButtonJustPressed[GameState->MouseButtonMappings[Button]] == Key_JustPressed)
             {
                 // NOTE(niels): Do we ever even get in here???
-                GameState->InputController.MouseButtonJustPressed[MouseButtonMappings[Button]] = Key_Invalid;
+                GameState->InputController.MouseButtonJustPressed[GameState->MouseButtonMappings[Button]] = Key_Invalid;
             }
             
-            GameState->InputController.MouseButtonDown[MouseButtonMappings[Button]] = true;
+            GameState->InputController.MouseButtonDown[GameState->MouseButtonMappings[Button]] = true;
         }
         else if (Action == GLFW_RELEASE)
         {
-            GameState->InputController.MouseButtonJustPressed[MouseButtonMappings[Button]] = Key_NotPressed;
-            GameState->InputController.MouseButtonDown[MouseButtonMappings[Button]] = false;
+            GameState->InputController.MouseButtonJustPressed[GameState->MouseButtonMappings[Button]] = Key_NotPressed;
+            GameState->InputController.MouseButtonDown[GameState->MouseButtonMappings[Button]] = false;
         }
     }
 }

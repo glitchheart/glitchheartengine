@@ -1,8 +1,5 @@
- #define _CRTDBG_MAP_ALLOC  
-#include <stdlib.h>  
-#include <crtdbg.h> 
- 
 #include "game.h"
+#include "gmap.cpp"
 #include "keycontroller.cpp"
 #include "sound.cpp"
 #define ANIMATION_GAME
@@ -13,6 +10,7 @@
 #include "entity.cpp"
 #include "level.cpp"
 #include "editor.cpp"
+ 
  
 #define DEBUG
  
