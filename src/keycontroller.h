@@ -23,7 +23,7 @@ RIGHT TRIGGER Axis 5
 PS4
 
   Cross 1
- Cirlce 2
+ Circle 2
  Square 0
  Triangle 3
 L1 4
