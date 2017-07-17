@@ -973,8 +973,10 @@ AI_FUNC(MinotaurAttacking)
                 
                 glm::vec2 JumpDirection = glm::vec2(0, Elapsed);
                 
-                glm::vec2 Direction = Enemy.LastAttackMoveDirection + JumpDirection;
-                Entity->Velocity = glm::vec2(Direction.x * 7, Direction.y * 7);
+                auto PlayerPosition = GameState->Entities[0].Position;
+                
+                glm::vec2 Direction = Enemy.LastAttackMoveDirection + (PlayerPosition - Entity->Position);
+                Entity->Velocity = glm::vec2(Direction.x * 7, (Elapsed + Direction.y) * 7);
                 
                 GameState->Objects[Entity->Enemy.Minotaur.ShadowHandle].Position += glm::vec2(Enemy.LastAttackMoveDirection.x * 7 * DeltaTime, Enemy.LastAttackMoveDirection.y * 7 * DeltaTime);
             }
@@ -1658,6 +1660,7 @@ void PlaceCheckpoint(game_state* GameState, entity* Entity)
     GameState->LastCharacterData.CheckpointHandle = GameState->CharacterData.CheckpointHandle;
     GameState->CharacterData.CurrentCheckpoint = CheckpointPos;
     GameState->CharacterData.HasCheckpoint = true;
+    GameState->Entities[0].Player.Inventory.HealthPotionCount = GameState->CharacterData.HealthPotionCount;
     GameState->LastCharacterData.HasCheckpoint = true;
     SaveGame(GameState);
 }
@@ -1669,11 +1672,12 @@ static void LoadPlayerData(game_state* GameState, i32 Handle = -1, glm::vec2 Pos
     
     entity* Entity = Handle != -1 ? &GameState->Entities[Handle] :  &GameState->Entities[GameState->EntityCount];
     Entity->Type = Entity_Player;
+    Entity->Player = {};
     Entity->Player.TargetedEnemyHandle = -1;
     Entity->Player.LastKnownDirectionX = 1.0f;
     Entity->Player.LastKnownDirectionY = 0;
     Entity->Player.Pickup = {};
-    Entity->Player = {};
+    
     Entity->Player.RenderCrosshair = false;
     Entity->Player.IsAttacking = false;
     Entity->Player.IsDashing = false;
@@ -1803,6 +1807,13 @@ static void LoadPlayerData(game_state* GameState, i32 Handle = -1, glm::vec2 Pos
                 Entity->Player.CheckpointPlacementCooldownTimer.TimerHandle = -1;
                 Entity->Player.CheckpointPlacementCooldownTimer.Name = "Checkpoint Placement";
             }
+            else if(StartsWith(&LineBuffer[0], "healthpotiontimer"))
+            {
+                Entity->Player.HealthPotionTimer.TimerMax = 0;
+                sscanf(LineBuffer, "healthpotiontimer %lf", &Entity->Player.HealthPotionTimer.TimerMax);
+                Entity->Player.HealthPotionTimer.TimerHandle = -1;
+                Entity->Player.HealthPotionTimer.Name = "Health Potion";
+            }
         }
         fclose(File);
         LoadGame(GameState);
@@ -1824,6 +1835,7 @@ static void LoadPlayerData(game_state* GameState, i32 Handle = -1, glm::vec2 Pos
             GameState->LastCharacterData.CheckpointHandle = GameState->EntityCount - 1;
             GameState->LastCharacterData.CurrentCheckpoint = GameState->CharacterData.CurrentCheckpoint;
             GameState->LastCharacterData.HasCheckpoint = true;
+            Entity->Player.Inventory.HealthPotionCount = GameState->CharacterData.HealthPotionCount;
             
             if(GameState->CharacterData.Health == 0)
             {
@@ -1840,16 +1852,19 @@ static void CheckLootPickup(game_state* GameState, loot* Loot, entity* Player)
 {
     if(Loot->RenderButtonHint && GetActionButtonDown(Action_Interact, GameState))
     {
+        b32 CanLoot = false;
         switch(Loot->Type)
         {
             case Loot_Health:
             {
-                Player->Player.Inventory.HealthPotionCount = Player->Player.Inventory.HealthPotionCount + 1;
+                Player->Player.Inventory.HealthPotionCount = Player->Player.Inventory.HealthPotionCount;
+                CanLoot = true;
             }
             break;
             case Loot_Checkpoint:
             {
                 Player->Player.Inventory.HasCheckpoint = true;
+                CanLoot = true;
             }
             break;
             case Loot_LevelItem:
@@ -1857,29 +1872,28 @@ static void CheckLootPickup(game_state* GameState, loot* Loot, entity* Player)
                 if(Player->Player.Will >= GameState->StatData[GameState->CharacterData.Level].WillForLevel)
                 {
                     GameState->StatGainModeOn = true;
+                    CanLoot = true;
                 }
             }
             break;
         }
-        GameState->Entities[Loot->OwnerHandle].Enemy.HasLoot = false;
-        Loot->RenderButtonHint= false;
-        GameState->Objects[Loot->OwnerHandle].Active = false;
-        for(i32 Index = Loot->Handle; Index < GameState->CurrentLootCount; Index++)
+        if(CanLoot)
         {
-            GameState->CurrentLoot[Index] = GameState->CurrentLoot[Index + 1];
+            GameState->Entities[Loot->OwnerHandle].Enemy.HasLoot = false;
+            Loot->RenderButtonHint= false;
+            GameState->Objects[Loot->OwnerHandle].Active = false;
+            for(i32 Index = Loot->Handle; Index < GameState->CurrentLootCount; Index++)
+            {
+                GameState->CurrentLoot[Index] = GameState->CurrentLoot[Index + 1];
+            }
+            GameState->CurrentLootCount--;
         }
-        GameState->CurrentLootCount--;
-        
     }
 }
 
 void UpdatePlayer(entity* Entity, game_state* GameState, r64 DeltaTime)
 {
-    if(GetActionButtonDown(Action_Use, GameState))
-    {
-        printf("Use!\n");
-    }
-    
+    printf("%f\n", Entity->Player.WalkingSpeed);
     if(Entity->Hit)
     {
         Entity->Player.IsAttacking = false;
@@ -1904,7 +1918,7 @@ void UpdatePlayer(entity* Entity, game_state* GameState, r64 DeltaTime)
     }
     
     r32 UsedWalkingSpeed = Entity->Player.WalkingSpeed;
-    if(!TimerDone(GameState, Entity->StaggerCooldownTimer))
+    if(!TimerDone(GameState, Entity->StaggerCooldownTimer) || Entity->Player.TakingHealthPotion)
     {
         UsedWalkingSpeed = UsedWalkingSpeed / 2;
     }
@@ -1946,11 +1960,19 @@ void UpdatePlayer(entity* Entity, game_state* GameState, r64 DeltaTime)
     
     if (Entity->Active && Entity->Health > 0)
     {
-        if(!Entity->Player.IsAttacking && !Entity->Hit && !Entity->Player.IsDashing && GetActionButtonDown(Action_Use, GameState) && Entity->Player.Inventory.HealthPotionCount > 0)
+        if(!Entity->Player.IsAttacking && !Entity->Hit && !Entity->Player.IsDashing && GetActionButtonDown(Action_Use, GameState) && Entity->Player.Inventory.HealthPotionCount > 0 && TimerDone(GameState,Entity->Player.HealthPotionTimer) && !Entity->Player.TakingHealthPotion)
+        {
+            //@Incomplete: Play some animation here for drinking!!!
+            StartTimer(GameState,Entity->Player.HealthPotionTimer);
+            Entity->Player.Inventory.HealthPotionCount--;
+            Entity->Player.TakingHealthPotion = true;
+        }
+        
+        if(Entity->Player.TakingHealthPotion && TimerDone(GameState, Entity->Player.HealthPotionTimer))
         {
             PlaySoundEffect(GameState, &GameState->SoundManager.UseHealth);
             Entity->Health = Min((i16)GameState->CharacterData.Health, Entity->Health + 30);
-            Entity->Player.Inventory.HealthPotionCount--;
+            Entity->Player.TakingHealthPotion = false;
         }
         
         if(Entity->Player.IsDefending && !Entity->AnimationInfo.Playing)
@@ -2395,6 +2417,7 @@ void UpdatePlayer(entity* Entity, game_state* GameState, r64 DeltaTime)
         Entity->AnimationInfo.FreezeFrame = true;
         Entity->Player.Will = 0;
         GameState->CharacterData = GameState->LastCharacterData;
+        Entity->Player.Inventory.HealthPotionCount = GameState->CharacterData.HealthPotionCount;
         SaveGame(GameState);
     }
     
@@ -2651,7 +2674,8 @@ static void DetermineLoot(game_state* GameState, entity* Entity)
         }
         else if(RNG > 12 && RNG < 17)
         {
-            Loot.Type = Loot_Health;
+            //Loot.Type = Loot_Health;
+            Loot.Type = Loot_Nothing;
         }
         else if(RNG > 0 && RNG < 12)
         {

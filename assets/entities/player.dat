@@ -26,6 +26,7 @@ staminagaintimerslow 0.16
 staminadecreasetimer 0.8
 checkpointplacementtimer 5.0
 checkpointplacementcooldowntimer 20.0
+healthpotiontimer 0.5
 hitstaminacost 15
 rollstaminacost 18
 attackstaminacost 13
