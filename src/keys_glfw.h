@@ -1,6 +1,11 @@
 #ifndef KEYS_GLFW_H
 #define KEYS_GLFW_H
 
+void InitKeyMappings(gmap* Map)
+{
+    
+}
+
 std::map<u32, Key_Code> KeyMappings = 
 {
     { GLFW_KEY_LEFT, Key_Left },

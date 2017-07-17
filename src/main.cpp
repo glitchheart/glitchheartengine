@@ -2,10 +2,12 @@
 #include "al.h"
 #include "alc.h"
 #include "game.h"
+#include "gmap.h"
 #include "platform_sound.h"
 #include "platform_sound.cpp"
 #include "filehandling.h"
 #define KEY_INIT
+#include "gmap.cpp"
 #include "keycontroller.cpp"
 #include "keys_glfw.h"
 #include "opengl_rendering.cpp"
@@ -30,7 +32,8 @@ static game_code LoadGameCode()
     Result.GameCodeDLL = LoadLibraryA(Result.TempDllPath);
     
     Result.LastDllWriteTime = GetLastWriteTime(Result.DllPath);
-    
+    gmap Map;
+    InitKeyMappings(&Map);
     if (Result.GameCodeDLL)
     {
         Result.Update = (update *)GetProcAddress(Result.GameCodeDLL, "Update");
