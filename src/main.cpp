@@ -1,6 +1,6 @@
-#define _CRTDBG_MAP_ALLOC  
-#include <stdlib.h>  
-#include <crtdbg.h>  
+//#define _CRTDBG_MAP_ALLOC  
+//#include <stdlib.h>  
+//#include <crtdbg.h>  
 
 #include <glad/glad.h>
 #include "al.h"
@@ -175,5 +175,5 @@ int main(void)
     
     CleanupSound(&SoundDevice,&GameState.SoundManager);
     CloseWindow(&GameState);
-    _CrtDumpMemoryLeaks();
+    //_CrtDumpMemoryLeaks();
 }
