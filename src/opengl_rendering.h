@@ -1,6 +1,7 @@
 #ifndef RENDERING_H
 #define RENDERING_H
 
+
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb/stb_image.h>
 
@@ -356,6 +357,8 @@ struct render_state
     texture TextureArray[70];
     i32 TextureIndex;
     std::map<const char*, texture*, cmp_str> Textures;
+    
+    
     
     //freetype
     FT_Library FTLibrary;
