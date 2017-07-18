@@ -24,8 +24,7 @@
 #include "menu.h"
 #include "ui.h"
 
-GENERIC_MAP(animation,animation)
-GENERIC_MAP(peepee,animation*)
+GENERIC_MAP(animation,animation*)
 
 enum Fading_Mode
 {

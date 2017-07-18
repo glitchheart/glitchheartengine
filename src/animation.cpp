@@ -36,7 +36,7 @@
                                         fprintf(File, "texture %s\n", Animation.Texture->Name);
                                         
                                         GameState->AnimationArray[GameState->AnimationIndex] = Animation;
-                                        GameState->AnimationMap[GameState->AnimationArray[GameState->AnimationIndex].Name] = Animation;
+                                        GameState->AnimationMap[GameState->AnimationArray[GameState->AnimationIndex].Name] = &GameState->AnimationArray[GameState->AnimationIndex];
                                         
                                         GameState->AnimationIndex++;
                                         
@@ -139,7 +139,7 @@
                                         
                                         GameState->AnimationArray[GameState->AnimationIndex] = Animation;
                                         
-                                        GameState->AnimationMap[GameState->AnimationArray[GameState->AnimationIndex].Name] = Animation;
+                                        GameState->AnimationMap[GameState->AnimationArray[GameState->AnimationIndex].Name] = &GameState->AnimationArray[GameState->AnimationIndex];
                                         
                                         GameState->AnimationIndex++;
                                         fclose(File);
@@ -167,9 +167,9 @@
                                 {
                                     if(!Entity->CurrentAnimation || !Entity->CurrentAnimation->Name || strcmp(Entity->CurrentAnimation->Name, AnimationName) != 0 || !Entity->AnimationInfo.Playing)
                                     {
-                                        if(GameState->AnimationMap[AnimationName].Name)
+                                        if(GameState->AnimationMap[AnimationName])
                                         {
-                                            Entity->CurrentAnimation = &GameState->AnimationMap[AnimationName];
+                                            Entity->CurrentAnimation = GameState->AnimationMap[AnimationName];
                                             Entity->AnimationInfo.Playing = true;
                                             Entity->AnimationInfo.FrameIndex = 0;
                                             Entity->AnimationInfo.CurrentTime = 0.0;
@@ -188,9 +188,9 @@
                                 {
                                     if(!Object->CurrentAnimation || !Object->CurrentAnimation->Name || strcmp(Object->CurrentAnimation->Name, AnimationName) != 0 || !Object->AnimationInfo.Playing)
                                     {
-                                        if(GameState->AnimationMap[AnimationName].Name)
+                                        if(GameState->AnimationMap[AnimationName])
                                         {
-                                            Object->CurrentAnimation = &GameState->AnimationMap[AnimationName];
+                                            Object->CurrentAnimation = GameState->AnimationMap[AnimationName];
                                             Object->AnimationInfo.Playing = true;
                                             Object->AnimationInfo.FrameIndex = 0;
                                             Object->AnimationInfo.CurrentTime = 0.0;
