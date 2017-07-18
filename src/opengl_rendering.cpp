@@ -859,6 +859,7 @@ static void InitializeOpenGL(game_state* GameState, render_state* RenderState, c
         }
     }
     
+    //Gmap_Init(&GameState->TexturesMap, HashString, sizeof(texture), 512);
     LoadTextures(RenderState, "../assets/textures/");
     LoadTextures(RenderState, "../assets/textures/spritesheets/");
     RenderSetup(RenderState);

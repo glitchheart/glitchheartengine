@@ -36,8 +36,8 @@
                                         fprintf(File, "texture %s\n", Animation.Texture->Name);
                                         
                                         GameState->AnimationArray[GameState->AnimationIndex] = Animation;
+                                        GameState->AnimationMap[GameState->AnimationArray[GameState->AnimationIndex].Name] = Animation;
                                         
-                                        GameState->Animations.insert(std::pair<char*, animation*>(GameState->AnimationArray[GameState->AnimationIndex].Name, &GameState->AnimationArray[GameState->AnimationIndex]));
                                         GameState->AnimationIndex++;
                                         
                                         fclose(File);
@@ -138,7 +138,9 @@
                                         }
                                         
                                         GameState->AnimationArray[GameState->AnimationIndex] = Animation;
-                                        GameState->Animations.insert(std::pair<char*, animation*>(GameState->AnimationArray[GameState->AnimationIndex].Name, &GameState->AnimationArray[GameState->AnimationIndex]));
+                                        
+                                        GameState->AnimationMap[GameState->AnimationArray[GameState->AnimationIndex].Name] = Animation;
+                                        
                                         GameState->AnimationIndex++;
                                         fclose(File);
                                     }
@@ -148,6 +150,7 @@
                                 
                                 static void LoadAnimations(game_state* GameState)
                                 {
+                                    animation_Map_Init(&GameState->AnimationMap, HashString,sizeof(animation),4096);
                                     directory_data DirData;
                                     FindFilesWithExtensions("../assets/animations/", "pownim", &DirData);
                                     
@@ -164,9 +167,9 @@
                                 {
                                     if(!Entity->CurrentAnimation || !Entity->CurrentAnimation->Name || strcmp(Entity->CurrentAnimation->Name, AnimationName) != 0 || !Entity->AnimationInfo.Playing)
                                     {
-                                        if(GameState->Animations.find(AnimationName) != GameState->Animations.end())
+                                        if(GameState->AnimationMap[AnimationName].Name)
                                         {
-                                            Entity->CurrentAnimation = GameState->Animations[AnimationName];
+                                            Entity->CurrentAnimation = &GameState->AnimationMap[AnimationName];
                                             Entity->AnimationInfo.Playing = true;
                                             Entity->AnimationInfo.FrameIndex = 0;
                                             Entity->AnimationInfo.CurrentTime = 0.0;
@@ -185,9 +188,9 @@
                                 {
                                     if(!Object->CurrentAnimation || !Object->CurrentAnimation->Name || strcmp(Object->CurrentAnimation->Name, AnimationName) != 0 || !Object->AnimationInfo.Playing)
                                     {
-                                        if(GameState->Animations.find(AnimationName) != GameState->Animations.end())
+                                        if(GameState->AnimationMap[AnimationName].Name)
                                         {
-                                            Object->CurrentAnimation = GameState->Animations[AnimationName];
+                                            Object->CurrentAnimation = &GameState->AnimationMap[AnimationName];
                                             Object->AnimationInfo.Playing = true;
                                             Object->AnimationInfo.FrameIndex = 0;
                                             Object->AnimationInfo.CurrentTime = 0.0;

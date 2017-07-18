@@ -3,7 +3,7 @@
 call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" x64
 set WERROR=
 set DEBUG=-DPOWDER_DEBUG
-set WIGNORED=-wd4201 -wd4100 -wd4189 -wd4530 -wd4577 -wd4996 -wd4456
+set WIGNORED=-wd4201 -wd4100 -wd4189 -wd4530 -wd4577 -wd4996 -wd4456 -wd4706
 
 WHERE cl
 IF %ERRORLEVEL% NEQ 0 call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" x64

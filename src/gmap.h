@@ -3,37 +3,44 @@
 
 #define INIT_SIZE 1024
 
-struct gmap;
+typedef u32 (*hash_function)(u32 Size, const void* Key);
 
-typedef u32 (*hash_function)(gmap* Map, const void* Key);
+#define GENERIC_MAP(NAME,TYPE) \
+struct NAME ## _map \
+{ \
+    void** Data; \
+    i32 Count; \
+    hash_function Hash; \
+    \
+    TYPE& operator[](const void* Key) \
+    { \
+        if(this->Data[this->Hash(this->Count,Key)]) \
+        return *((TYPE*)this->Data[this->Hash(this->Count,Key)]); \
+        else \
+        { \
+            this->Data[this->Hash(this->Count,Key)] = malloc(sizeof(TYPE)); \
+            return *((TYPE*)this->Data[this->Hash(this->Count,Key)]); \
+        } \
+    } \
+    \
+    TYPE& operator[](const i32 Key) \
+    { \
+        if(this->Data[this->Hash(this->Count,&Key)]) \
+        return *((TYPE*)this->Data[this->Hash(this->Count,&Key)]); \
+        else \
+        { \
+            this->Data[this->Hash(this->Count,&Key)] = malloc(sizeof(TYPE)); \
+            return *((TYPE*)this->Data[this->Hash(this->Count,&Key)]); \
+        } \
+    } \
+}; \
+void NAME ## _Map_Init(NAME ## _map* Map, hash_function Hash, u32 ValSize, i32 InitSize = INIT_SIZE) \
+{ \
+    Map->Data = (void**)calloc(InitSize, ValSize);\
+    Map->Count = InitSize; \
+    Map->Hash = Hash; \
+}
 
-struct gmap
-{
-    void** Data;
-    i32 Count;
-    hash_function Hash;
-    
-    animation& operator[](const void* Key)
-    {
-        if(this->Data[this->Hash(this,Key)])
-            return *((animation*)this->Data[this->Hash(this,Key)]);
-        else
-        {
-            this->Data[this->Hash(this,Key)] = malloc(sizeof(animation));
-            return *((animation*)this->Data[this->Hash(this,Key)]);
-        }
-    }
-    
-    i32& operator[](const i32 Key)
-    {
-        if(this->Data[this->Hash(this,&Key)])
-            return *((i32*)this->Data[this->Hash(this,&Key)]);
-        else
-        {
-            this->Data[this->Hash(this,&Key)] = (i32*)malloc(sizeof(i32));
-            return *((i32*)this->Data[this->Hash(this,&Key)]);
-        }
-    }
-};
+GENERIC_MAP(integer,i32)
 
 #endif

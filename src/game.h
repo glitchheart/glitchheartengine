@@ -7,10 +7,12 @@
 #include <time.h>
 #include <stdlib.h>
 #include <map>
+
 #include "platform.h"
+#include "gmap.h"
 #include "opengl_rendering.h"
 #include "animation.h"
-#include "gmap.h"
+
 #include "collision.h"
 #include "ai.h"
 #include "entity.h"
@@ -22,7 +24,8 @@
 #include "menu.h"
 #include "ui.h"
 
-
+GENERIC_MAP(animation,animation)
+GENERIC_MAP(peepee,animation*)
 
 enum Fading_Mode
 {
@@ -162,12 +165,11 @@ struct game_state
     animation AnimationArray[50];
     i32 AnimationIndex;
     
-    std::map<char*, animation*, CompareCStrings> Animations;
+    animation_map AnimationMap;
     
-    gmap KeyMappings;
-    gmap MouseButtonMappings;
-    gmap ControllerMappings;
-    
+    integer_map KeyMappings;
+    integer_map MouseButtonMappings;
+    integer_map ControllerMappings;
     
     entity_file_reload_data* ReloadData;
 };
