@@ -18,7 +18,7 @@ struct tile_data
     Tile_Layer Layer;
 };
 
-#define TILEMAP_LAYERS 2
+#define TILEMAP_LAYERS 5
 
 struct tilemap
 {

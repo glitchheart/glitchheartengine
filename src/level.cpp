@@ -162,65 +162,47 @@ static b32 LoadLevelFromFile(char* FilePath, level* Level, game_state* GameState
         Level->Tilemap.Width = MapWidth;
         Level->Tilemap.Height = MapHeight;
         
-        Level->Tilemap.Data[0] = (tile_data**)malloc(MapWidth * sizeof(tile_data*));
-        Level->Tilemap.Data[1] = (tile_data**)malloc(MapWidth * sizeof(tile_data*));
+        for(i32 Layer = 0; Layer < TILEMAP_LAYERS; Layer++)
+        {
+            Level->Tilemap.Data[Layer] = (tile_data**)malloc(MapWidth * sizeof(tile_data*));
+        }
         
         for(u32 I = 0; I < MapWidth; I++)
         {
-            Level->Tilemap.Data[0][I] = (tile_data *)malloc(MapHeight * sizeof(tile_data));
-            Level->Tilemap.Data[1][I] = (tile_data *)malloc(MapHeight * sizeof(tile_data));
+            for(i32 Layer = 0; Layer < TILEMAP_LAYERS; Layer++)
+            {
+                Level->Tilemap.Data[Layer][I] = (tile_data *)calloc(MapHeight, sizeof(tile_data));
+            }
         }
         
         char Line[1024];
         Assert(MapWidth < 1024 * 2 + 1);
         u32 IndexHeight = 0;
         
-        // Layer 1
-        while (IndexHeight < MapHeight)
+        for(i32 Layer = 0; Layer < TILEMAP_LAYERS; Layer++)
         {
-            fgets(Line, sizeof(Line), File);
-            char *Ptr = &Line[0];
-            
-            for(u32 IndexWidth = 0; IndexWidth < MapWidth; ++IndexWidth) 
+            while (IndexHeight < MapHeight)
             {
-                collision_AABB CollisionAABB;
-                CollisionAABB.Center = glm::vec2(IndexWidth + 0.5f, MapHeight - IndexHeight - 0.5f);
-                CollisionAABB.Extents = glm::vec2(0.5, 0.5);
-                CollisionAABB.IsTrigger = false;
+                fgets(Line, sizeof(Line), File);
+                char *Ptr = &Line[0];
                 
-                u32 TypeIndex = (u32)strtol(Ptr, &Ptr, 10);
-                
-                tile_data Data = Level->Tilemap.Tiles[TypeIndex];
-                Data.CollisionAABB = CollisionAABB;
-                
-                Level->Tilemap.Data[0][IndexWidth][MapHeight - IndexHeight - 1] = Data;
+                for(u32 IndexWidth = 0; IndexWidth < MapWidth; ++IndexWidth) 
+                {
+                    collision_AABB CollisionAABB;
+                    CollisionAABB.Center = glm::vec2(IndexWidth + 0.5f, MapHeight - IndexHeight - 0.5f);
+                    CollisionAABB.Extents = glm::vec2(0.5, 0.5);
+                    CollisionAABB.IsTrigger = false;
+                    
+                    u32 TypeIndex = (u32)strtol(Ptr, &Ptr, 10);
+                    
+                    tile_data Data = Level->Tilemap.Tiles[TypeIndex];
+                    Data.CollisionAABB = CollisionAABB;
+                    
+                    Level->Tilemap.Data[Layer][IndexWidth][MapHeight - IndexHeight - 1] = Data;
+                }
+                IndexHeight++;
             }
-            IndexHeight++;
-        }
-        
-        IndexHeight = 0;
-        
-        // Layer 2
-        while (IndexHeight < MapHeight)
-        {
-            fgets(Line, sizeof(Line), File);
-            char *Ptr = &Line[0];
-            
-            for(u32 IndexWidth = 0; IndexWidth < MapWidth; ++IndexWidth) 
-            {
-                collision_AABB CollisionAABB;
-                CollisionAABB.Center = glm::vec2(IndexWidth + 0.5f, MapHeight - IndexHeight - 0.5f);
-                CollisionAABB.Extents = glm::vec2(0.5, 0.5);
-                CollisionAABB.IsTrigger = false;
-                
-                int TypeIndex = (u32)strtol(Ptr, &Ptr, 10);
-                
-                tile_data Data = Level->Tilemap.Tiles[TypeIndex];
-                Data.CollisionAABB = CollisionAABB;
-                
-                Level->Tilemap.Data[1][IndexWidth][MapHeight - IndexHeight - 1] = Data;
-            }
-            IndexHeight++;
+            IndexHeight = 0;
         }
         
         u32 PathIndex = 0;
@@ -320,28 +302,19 @@ static void SaveLevelToFile(const char* FilePath, level* Level, game_state* Game
         fprintf(File, "%d\n", Level->Tilemap.Width);
         fprintf(File, "%d\n", Level->Tilemap.Height);
         
-        for(u32 Y = 0; Y < Level->Tilemap.Height; Y++)
+        for(i32 Layer = 0; Layer < TILEMAP_LAYERS; Layer++)
         {
-            for(u32 X = 0; X < Level->Tilemap.Width; X++)
+            for(u32 Y = 0; Y < Level->Tilemap.Height; Y++)
             {
-                if(X == Level->Tilemap.Width - 1)
-                    fprintf(File, "%d", Level->Tilemap.Data[0][X][Level->Tilemap.Height - Y - 1].TypeIndex);
-                else
-                    fprintf(File, "%d ", Level->Tilemap.Data[0][X][Level->Tilemap.Height - Y - 1].TypeIndex);
+                for(u32 X = 0; X < Level->Tilemap.Width; X++)
+                {
+                    if(X == Level->Tilemap.Width - 1)
+                        fprintf(File, "%d", Level->Tilemap.Data[Layer][X][Level->Tilemap.Height - Y - 1].TypeIndex);
+                    else
+                        fprintf(File, "%d ", Level->Tilemap.Data[Layer][X][Level->Tilemap.Height - Y - 1].TypeIndex);
+                }
+                fprintf(File, "\n");
             }
-            fprintf(File, "\n");
-        }
-        
-        for(u32 Y = 0; Y < Level->Tilemap.Height; Y++)
-        {
-            for(u32 X = 0; X < Level->Tilemap.Width; X++)
-            {
-                if(X == Level->Tilemap.Width - 1)
-                    fprintf(File, "%d", Level->Tilemap.Data[1][X][Level->Tilemap.Height - Y - 1].TypeIndex);
-                else
-                    fprintf(File, "%d ", Level->Tilemap.Data[1][X][Level->Tilemap.Height - Y - 1].TypeIndex);
-            }
-            fprintf(File, "\n");
         }
         
         if(!New)
@@ -432,16 +405,18 @@ static void CreateNewLevelWithSize(char* FilePath, u32 Width, u32 Height, level*
     NewLevel->Tilemap.Height = Height;
     
     NewLevel->TilesheetIndex = 0;
-    NewLevel->Tilemap.Data[0] = (tile_data**)calloc(Width, sizeof(tile_data*));
-    NewLevel->Tilemap.Data[1] = (tile_data**)calloc(Width, sizeof(tile_data*));
     
-    for(u32 I = 0; I < Width; I++)
+    for(i32 Layer = 0; Layer < TILEMAP_LAYERS; Layer++)
     {
-        NewLevel->Tilemap.Data[0][I] = (tile_data *)calloc(Height, sizeof(tile_data));
-        NewLevel->Tilemap.Data[0][I]->TypeIndex = 0;
-        NewLevel->Tilemap.Data[1][I] = (tile_data *)calloc(Height, sizeof(tile_data));
-        NewLevel->Tilemap.Data[1][I]->TypeIndex = 0;
+        NewLevel->Tilemap.Data[Layer] = (tile_data**)calloc(Width, sizeof(tile_data*));
+        
+        for(u32 I = 0; I < Width; I++)
+        {
+            NewLevel->Tilemap.Data[Layer][I] = (tile_data *)calloc(Height, sizeof(tile_data));
+            NewLevel->Tilemap.Data[Layer][I]->TypeIndex = 0;
+        }
     }
+    
     
     SaveLevelToFile(FilePath, NewLevel, GameState, true);
     LoadTilesheetMetaFile(Concat(Concat("../assets/textures/tilesheets/", NewLevel->SheetName), ".tm"), NewLevel, &NewLevel->Tilemap, GameState);
