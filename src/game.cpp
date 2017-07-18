@@ -879,7 +879,7 @@ extern "C" UPDATE(Update)
         GameState->GameCamera.ViewportHeight = GameState->RenderState.WindowHeight;
         GameState->GameCamera.ScreenShakeTimer.TimerHandle = -1;
         GameState->GameCamera.ScreenShakeTimer.TimerMax = 0.2f;
-        GameState->GameCamera.FollowSpeed = 12.0f; 
+        GameState->GameCamera.FollowSpeed = 10.0f; 
         GameState->GameCamera.FadingSpeed = 0.6f;
         
         StartFade(GameState->GameCamera, Fading_In, 0.6f, glm::vec3(0, 0, 0), 1.0f, 0.0f);
@@ -1131,7 +1131,9 @@ extern "C" UPDATE(Update)
                     if(glm::distance(GameState->GameCamera.CenterTarget, Center) > 0.01f)
                     {
                         auto Direction = glm::normalize(GameState->GameCamera.CenterTarget - Center);
-                        Center = glm::vec2(Center.x + Direction.x * GameState->GameCamera.FollowSpeed * DeltaTime, Center.y + Direction.y  * GameState->GameCamera.FollowSpeed * DeltaTime);
+                        
+                        Center = GameState->Entities[0].Position; // glm::vec2(Center.x + Direction.x * GameState->GameCamera.FollowSpeed * DeltaTime, Center.y + Direction.y  * GameState->GameCamera.FollowSpeed * DeltaTime);
+                        
                         GameState->GameCamera.Center = Center;
                     }
                 }
@@ -1146,6 +1148,7 @@ extern "C" UPDATE(Update)
                 if(UpPressed)
                 {
                     GameState->SelectedGainIndex--;
+                    
                     if(GameState->SelectedGainIndex == -1)
                         GameState->SelectedGainIndex = 2;
                 }
@@ -1250,7 +1253,7 @@ extern "C" UPDATE(Update)
                 }
                 break;
             }
-            // @Cleanup: I don't remember why this has to be called individually for each mode. It might be okay to call it at the end of the Update-function
+            
             GameState->Camera = GameState->EditorCamera;
             TickTimers(GameState, DeltaTime);
         }
