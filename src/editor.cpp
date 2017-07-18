@@ -277,10 +277,10 @@ static void CheckEditorUIInput(game_state* GameState, r64 DeltaTime)
                     GameState->EditorState.SelectedTexture--;
                 }
                 
-                if(GameState->EditorState.SelectedTexture == GameState->EditorState.TexturesLength)
+                if(GameState->EditorState.SelectedTexture == GameState->RenderState.TextureIndex)
                     GameState->EditorState.SelectedTexture = 0;
                 else if(GameState->EditorState.SelectedTexture < 0)
-                    GameState->EditorState.SelectedTexture = (i32)GameState->EditorState.TexturesLength - 1;
+                    GameState->EditorState.SelectedTexture = (i32)GameState->RenderState.TextureIndex - 1;
             }
             else if(GameState->EditorState.AnimationMode == Animation_SelectAnimation)
             {
