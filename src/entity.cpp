@@ -2201,7 +2201,6 @@ void UpdatePlayer(entity* Entity, game_state* GameState, r64 DeltaTime)
             Entity->Player.DashDirectionY = NewDirection.y;
             
             Entity->Velocity = glm::vec2(Entity->Player.DashDirectionX * Entity->Player.DashSpeed * DeltaTime, Entity->Player.DashDirectionY * Entity->Player.DashSpeed * DeltaTime);
-            
         }
         
         if(TimerDone(GameState, Entity->Player.DashCooldownTimer) && !Entity->Player.IsDashing)
@@ -2218,6 +2217,7 @@ void UpdatePlayer(entity* Entity, game_state* GameState, r64 DeltaTime)
         Entity->Hit = false;
         
         collision_info CollisionInfo;
+        
         CheckCollision(GameState, Entity, &CollisionInfo);
         
         if(Entity->Player.Pickup)
@@ -3102,7 +3102,6 @@ void UpdateEntities(game_state* GameState, r64 DeltaTime)
                 break;
                 case Entity_Enemy:
                 {
-                    
                     switch(Entity->Enemy.EnemyType)
                     {
                         case Enemy_Skeleton:
