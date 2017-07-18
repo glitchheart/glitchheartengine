@@ -124,7 +124,7 @@
                                             sscanf(LineBuffer, "texture %s%n", TextureNameBuffer, &Length);
                                             char* TextureName = (char*) malloc(70 * sizeof(char));
                                             strcpy(TextureName, TextureNameBuffer);
-                                            if(GameState->RenderState.Textures.find(TextureName) != GameState->RenderState.Textures.end())
+                                            if(GameState->RenderState.Textures[TextureName])
                                             {
                                                 Animation.Texture = GameState->RenderState.Textures[TextureName];
                                             }
@@ -150,7 +150,7 @@
                                 
                                 static void LoadAnimations(game_state* GameState)
                                 {
-                                    animation_Map_Init(&GameState->AnimationMap, HashString,sizeof(animation),4096);
+                                    animation_Map_Init(&GameState->AnimationMap, HashString,sizeof(animation*),4096);
                                     directory_data DirData;
                                     FindFilesWithExtensions("../assets/animations/", "pownim", &DirData);
                                     

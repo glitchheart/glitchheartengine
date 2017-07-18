@@ -184,10 +184,6 @@ struct editor_state
     animation_info AnimationInfo;
     animation* LoadedAnimation;
     i32 SelectedTexture;
-    char const** Textures;
-    i32 TexturesLength;
-    char** Animations;
-    i32 AnimationsLength;
     
     i32 SelectedMenuOption;
     b32 MenuOpen;

@@ -747,7 +747,7 @@ static void LoadTextures(render_state* RenderState, const char* Directory)
         Texture->Name = (char*)malloc((strlen(DirData.FileNames[FileIndex]) + 1) * sizeof(char));
         strcpy(Texture->Name, DirData.FileNames[FileIndex]);
         LoadTexture(DirData.FilePaths[FileIndex], Texture);
-        RenderState->Textures.insert(std::pair<char*, texture*>(Texture->Name, Texture));
+        RenderState->Textures[Texture->Name] =  Texture;
     }
     
     free(DirData.FilePaths);
@@ -859,7 +859,7 @@ static void InitializeOpenGL(game_state* GameState, render_state* RenderState, c
         }
     }
     
-    //Gmap_Init(&GameState->TexturesMap, HashString, sizeof(texture), 512);
+    texture_Map_Init(&RenderState->Textures, HashString, sizeof(texture*), 4096);
     LoadTextures(RenderState, "../assets/textures/");
     LoadTextures(RenderState, "../assets/textures/spritesheets/");
     RenderSetup(RenderState);
@@ -2233,15 +2233,15 @@ void RenderUI(game_state* GameState)
                         {
                             if(GameState->EditorState.AnimationMode == Animation_SelectTexture)
                             {
-                                for(i32 TextureIndex = 0; TextureIndex < GameState->EditorState.TexturesLength; TextureIndex++)
+                                for(i32 TextureIndex = 0; TextureIndex < GameState->RenderState.TextureIndex; TextureIndex++)
                                 {
                                     if(TextureIndex == GameState->EditorState.SelectedTexture)
                                     {
-                                        RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(1, 1, 1, 1), 15, (r32)GameState->RenderState.WindowHeight / 2 + (GameState->EditorState.TexturesLength - TextureIndex) * 15 - 350 - 4, 300, 20);
-                                        RenderText(&GameState->RenderState, GameState->RenderState.SmallerInconsolataFont, glm::vec4(0, 0, 0, 1), GameState->EditorState.Textures[TextureIndex], 20, (r32)GameState->RenderState.WindowHeight / 2 + (GameState->EditorState.TexturesLength - TextureIndex) * 15 - 350, 1);
+                                        RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(1, 1, 1, 1), 15, (r32)GameState->RenderState.WindowHeight / 2 + (GameState->RenderState.TextureIndex - TextureIndex) * 15 - 350 - 4, 300, 20);
+                                        RenderText(&GameState->RenderState, GameState->RenderState.SmallerInconsolataFont, glm::vec4(0, 0, 0, 1), GameState->RenderState.TextureArray[TextureIndex].Name, 20, (r32)GameState->RenderState.WindowHeight / 2 + (GameState->RenderState.TextureIndex - TextureIndex) * 15 - 350, 1);
                                     }
                                     else
-                                        RenderText(&GameState->RenderState, GameState->RenderState.SmallerInconsolataFont, glm::vec4(1, 1, 1, 1), GameState->EditorState.Textures[TextureIndex], 20, (r32)GameState->RenderState.WindowHeight / 2 + (GameState->EditorState.TexturesLength - TextureIndex) * 15 - 350, 1);
+                                        RenderText(&GameState->RenderState, GameState->RenderState.SmallerInconsolataFont, glm::vec4(1, 1, 1, 1), GameState->RenderState.TextureArray[TextureIndex].Name, 20, (r32)GameState->RenderState.WindowHeight / 2 + (GameState->RenderState.TextureIndex - TextureIndex) * 15 - 350, 1);
                                 }
                             }
                             

@@ -113,23 +113,6 @@ static void EditorUpdateEntities(game_state* GameState, r64 DeltaTime)
                     GameState->EditorState.CreateNewAnimationButton->Active = true;
                     GameState->EditorState.TileIsSolidCheckbox->Active = false;
                     GameState->EditorState.Mode = Editor_Animation;
-                    
-                    std::map<char const*, texture*>::iterator TextureIterator;
-                    
-                    if(GameState->EditorState.Textures)
-                        free(GameState->EditorState.Textures);
-                    
-                    GameState->EditorState.Textures = (char const**)malloc(GameState->RenderState.Textures.size() * sizeof(char*));
-                    
-                    i32 Index = 0;
-                    
-                    for(TextureIterator = GameState->RenderState.Textures.begin(); TextureIterator != GameState->RenderState.Textures.end(); TextureIterator++)
-                    {
-                        GameState->EditorState.Textures[Index++] = &*TextureIterator->first;
-                    }
-                    
-                    GameState->EditorState.TexturesLength = (i32)GameState->RenderState.Textures.size();
-                    GameState->EditorState.Mode = Editor_Animation;
                     GameState->EditorState.Editing = true;
                 }
                 break;
@@ -197,23 +180,6 @@ static void EditorUpdateEntities(game_state* GameState, r64 DeltaTime)
                         {
                             GameState->EditorState.CreateNewAnimationButton->Active = true;
                             GameState->EditorState.TileIsSolidCheckbox->Active = false;
-                            GameState->EditorState.Mode = Editor_Animation;
-                            
-                            std::map<char const*, texture*>::iterator TextureIterator;
-                            
-                            if(GameState->EditorState.Textures)
-                                free(GameState->EditorState.Textures);
-                            
-                            GameState->EditorState.Textures = (char const**)malloc(GameState->RenderState.Textures.size() * sizeof(char*));
-                            
-                            i32 Index = 0;
-                            
-                            for(TextureIterator = GameState->RenderState.Textures.begin(); TextureIterator != GameState->RenderState.Textures.end(); TextureIterator++)
-                            {
-                                GameState->EditorState.Textures[Index++] = &*TextureIterator->first;
-                            }
-                            
-                            GameState->EditorState.TexturesLength = (i32)GameState->RenderState.Textures.size();
                             GameState->EditorState.Mode = Editor_Animation;
                             GameState->EditorState.SelectedTexture = 0;
                             GameState->EditorState.SelectedAnimation = 0;
@@ -662,7 +628,7 @@ static void EditorUpdateEntities(game_state* GameState, r64 DeltaTime)
                             GameState->EditorState.LoadedAnimation->FrameOffset = glm::vec2(0, 0);
                             GameState->EditorState.LoadedAnimation->TimePerFrame = 0.0f;
                             GameState->EditorState.LoadedAnimation->Loop = 1;
-                            GameState->EditorState.LoadedAnimation->Texture = GameState->RenderState.Textures[GameState->EditorState.Textures[GameState->EditorState.SelectedTexture]];
+                            GameState->EditorState.LoadedAnimation->Texture = &GameState->RenderState.TextureArray[GameState->EditorState.SelectedTexture];
                             
                             for(i32 Index = 0; Index < TEXTFIELD_LENGTH; Index++)
                             {

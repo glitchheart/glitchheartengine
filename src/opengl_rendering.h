@@ -1,7 +1,6 @@
 #ifndef RENDERING_H
 #define RENDERING_H
 
-
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb/stb_image.h>
 
@@ -9,6 +8,8 @@
 #include FT_FREETYPE_H
 
 #define PIXELS_PER_UNIT 32
+
+
 
 enum Shader_Type
 {
@@ -103,6 +104,8 @@ struct texture
     i32 Width;
     i32 Height;
 };
+
+GENERIC_MAP(texture, texture*);
 
 struct tilesheet
 {
@@ -209,14 +212,6 @@ struct point
     GLfloat Y;
     GLfloat S;
     GLfloat T;
-};
-
-struct cmp_str
-{
-    bool operator()(const char *a, const char *b) const
-    {
-        return std::strcmp(a, b) < 0;
-    }
 };
 
 struct render_state
@@ -356,8 +351,7 @@ struct render_state
     
     texture TextureArray[70];
     i32 TextureIndex;
-    std::map<const char*, texture*, cmp_str> Textures;
-    
+    texture_map Textures;
     
     
     //freetype
