@@ -2427,6 +2427,11 @@ void UpdatePlayer(entity* Entity, game_state* GameState, r64 DeltaTime)
         SaveGame(GameState);
     }
     
+    if(GameState->InputController.ActionRunning)
+    {
+        ResetActionButtonQueue(GameState);
+    }
+    
     GameState->InputController.ActionRunning = Entity->Player.IsAttacking || Entity->Player.IsDashing;
 }
 
