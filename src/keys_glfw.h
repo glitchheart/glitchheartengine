@@ -3,7 +3,7 @@
 
 void InitKeyMappings(game_state* GameState)
 {
-    integer_Map_Init(&GameState->KeyMappings,HashInt,sizeof(int*), 1024);
+    integer_Map_Init(&GameState->KeyMappings,HashInt, 1024);
     GameState->KeyMappings[GLFW_KEY_LEFT] = Key_Left;
     GameState->KeyMappings[GLFW_KEY_RIGHT] = Key_Right;
     GameState->KeyMappings[GLFW_KEY_UP] = Key_Up;
@@ -72,7 +72,7 @@ void InitKeyMappings(game_state* GameState)
 
 void InitMouseButtonMappings(game_state* GameState)
 {
-    integer_Map_Init(&GameState->MouseButtonMappings,HashInt,sizeof(int*),64);
+    integer_Map_Init(&GameState->MouseButtonMappings,HashInt,64);
     GameState->MouseButtonMappings[GLFW_MOUSE_BUTTON_LEFT] = Mouse_Left;
     GameState->MouseButtonMappings[GLFW_MOUSE_BUTTON_RIGHT] = Mouse_Right;
     GameState->MouseButtonMappings[GLFW_MOUSE_BUTTON_MIDDLE] = Mouse_Middle;
@@ -84,7 +84,7 @@ void InitMouseButtonMappings(game_state* GameState)
 
 void InitControllerMappings(game_state* GameState)
 {
-    integer_Map_Init(&GameState->ControllerMappings, HashInt, sizeof(int*), 128);
+    integer_Map_Init(&GameState->ControllerMappings, HashInt, 128);
     GameState->ControllerMappings[GLFW_JOYSTICK_1] = Joystick_1;
     GameState->ControllerMappings[GLFW_JOYSTICK_2] = Joystick_2;
     GameState->ControllerMappings[GLFW_JOYSTICK_3] = Joystick_3;
