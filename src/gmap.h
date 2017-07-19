@@ -34,9 +34,9 @@ struct NAME ## _map \
         } \
     } \
 }; \
-void NAME ## _Map_Init(NAME ## _map* Map, hash_function Hash, u32 ValSize, i32 InitSize = INIT_SIZE) \
+void NAME ## _Map_Init(NAME ## _map* Map, hash_function Hash, i32 InitSize = INIT_SIZE) \
 { \
-    Map->Data = (void**)calloc(InitSize, ValSize);\
+    Map->Data = (void**)calloc(InitSize, sizeof(TYPE*));\
     Map->Count = InitSize; \
     Map->Hash = Hash; \
 }
