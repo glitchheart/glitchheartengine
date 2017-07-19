@@ -133,12 +133,14 @@ struct editor_render_info
     i32 VBOSize;
 };
 
+#define TILEMAP_LAYERS 5
 struct tilemap_render_info
 {
     b32 Dirty = true;
-    GLuint VAOS[2];
-    GLuint VBOS[2];
-    i32 VBOSizes[2];
+    i32 DirtyLayer = -1;
+    GLuint VAOS[TILEMAP_LAYERS];
+    GLuint VBOS[TILEMAP_LAYERS];
+    i32 VBOSizes[TILEMAP_LAYERS];
 };
 
 enum Render_Type
@@ -162,6 +164,8 @@ struct render_entity
     texture* Texture;
     u32 ShaderIndex;
     glm::vec4 Color = glm::vec4(1, 1, 1, 1);
+    
+    i32 RenderLayer = 0;
 };
 
 struct shader

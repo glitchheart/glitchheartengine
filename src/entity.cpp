@@ -161,7 +161,6 @@ static void SpawnLoot(game_state* GameState, glm::vec2 Position, i32* Handle)
     GameState->Objects[GameState->ObjectCount++];
 }
 
-
 static void LoadEntityData(FILE* File, entity* Entity, game_state* GameState, b32 IsReload = false)
 {
     if(!IsReload)
@@ -171,6 +170,7 @@ static void LoadEntityData(FILE* File, entity* Entity, game_state* GameState, b3
         render_entity* RenderEntity = &GameState->RenderState.RenderEntities[GameState->RenderState.RenderEntityCount];
         RenderEntity->ShaderIndex = Shader_Spritesheet;
         RenderEntity->Rendered = true;
+        RenderEntity->Background = false;
         RenderEntity->RenderType = Render_Type_Entity;
         RenderEntity->Entity = &*Entity;
         Entity->RenderEntityHandle = GameState->RenderState.RenderEntityCount++;

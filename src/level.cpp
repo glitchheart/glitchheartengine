@@ -167,9 +167,10 @@ static b32 LoadLevelFromFile(char* FilePath, level* Level, game_state* GameState
             Level->Tilemap.Data[Layer] = (tile_data**)malloc(MapWidth * sizeof(tile_data*));
         }
         
-        for(u32 I = 0; I < MapWidth; I++)
+        
+        for(i32 Layer = 0; Layer < TILEMAP_LAYERS; Layer++)
         {
-            for(i32 Layer = 0; Layer < TILEMAP_LAYERS; Layer++)
+            for(u32 I = 0; I < MapWidth; I++)
             {
                 Level->Tilemap.Data[Layer][I] = (tile_data *)calloc(MapHeight, sizeof(tile_data));
             }
@@ -274,8 +275,11 @@ static b32 LoadLevelFromFile(char* FilePath, level* Level, game_state* GameState
         
         fclose(File);
         
-        Level->Tilemap.RenderInfo.VAOS[0] = 0;
-        Level->Tilemap.RenderInfo.VAOS[1] = 0;
+        for(i32 Layer = 0; Layer < TILEMAP_LAYERS; Layer++)
+        {
+            Level->Tilemap.RenderInfo.VAOS[Layer] = 0;
+        }
+        Level->Tilemap.RenderInfo.Dirty = true;
         
         GameState->Camera.Center = GameState->Entities[0].Position;
         

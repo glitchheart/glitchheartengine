@@ -41,6 +41,6 @@ void NAME ## _Map_Init(NAME ## _map* Map, hash_function Hash, u32 ValSize, i32 I
     Map->Hash = Hash; \
 }
 
-GENERIC_MAP(integer,i32)
+GENERIC_MAP(integer, i32)
 
 #endif
