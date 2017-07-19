@@ -394,28 +394,37 @@ static void LoadEditorTileBuffer(render_state* RenderState, editor_render_info& 
     free(VertexBuffer);
 }
 
-static void CreateTilemapVAO(render_state* RenderState, const tilemap& Tilemap, editor_render_info* EditorRenderInfo, tilemap_render_info* TilemapRenderInfo)
+static void CreateTilemapVAO(render_state* RenderState, const tilemap& Tilemap, editor_render_info* EditorRenderInfo, tilemap_render_info* TilemapRenderInfo, i32 OnlyLayer = -1)
 {
-    TilemapRenderInfo->VBOS[0] = 0;
-    TilemapRenderInfo->VBOS[1] = 0;
+    if(OnlyLayer != -1)
+    {
+        TilemapRenderInfo->VBOS[OnlyLayer] = 0;
+        glGenVertexArrays(1, &TilemapRenderInfo->VAOS[OnlyLayer]);
+        glBindVertexArray(TilemapRenderInfo->VAOS[OnlyLayer]);
+        LoadTilemapBuffer(RenderState, OnlyLayer, &TilemapRenderInfo->VAOS[OnlyLayer], &TilemapRenderInfo->VBOS[OnlyLayer], &TilemapRenderInfo->VBOSizes[OnlyLayer], Tilemap);
+    }
+    else
+    {
+        for(i32 Layer = 0; Layer < TILEMAP_LAYERS; Layer++)
+        {
+            TilemapRenderInfo->VBOS[Layer] = 0;
+            glGenVertexArrays(1, &TilemapRenderInfo->VAOS[Layer]);
+            glBindVertexArray(TilemapRenderInfo->VAOS[Layer]);
+            LoadTilemapBuffer(RenderState, Layer, &TilemapRenderInfo->VAOS[Layer], &TilemapRenderInfo->VBOS[Layer], &TilemapRenderInfo->VBOSizes[Layer], Tilemap);
+            
+        }
+    }
+    
     TilemapRenderInfo->Dirty = false;
     
-    //tile
-    glGenVertexArrays(1, &TilemapRenderInfo->VAOS[0]);
-    glBindVertexArray(TilemapRenderInfo->VAOS[0]);
-    LoadTilemapBuffer(RenderState, 0, &TilemapRenderInfo->VAOS[0], &TilemapRenderInfo->VBOS[0], &TilemapRenderInfo->VBOSizes[0], Tilemap);
-    
-    glGenVertexArrays(1, &TilemapRenderInfo->VAOS[1]);
-    glBindVertexArray(TilemapRenderInfo->VAOS[1]);
-    LoadTilemapBuffer(RenderState, 1, &TilemapRenderInfo->VAOS[1], &TilemapRenderInfo->VBOS[1], &TilemapRenderInfo->VBOSizes[1], Tilemap);
-    
-    glBindVertexArray(0);
-    
-    glGenVertexArrays(1, &EditorRenderInfo->VAO);
-    glBindVertexArray(EditorRenderInfo->VAO);
-    
-    EditorRenderInfo->VBO = 0;
-    LoadEditorTileBuffer(RenderState, *EditorRenderInfo, Tilemap);
+    if(EditorRenderInfo->VAO == 0)
+    {
+        glGenVertexArrays(1, &EditorRenderInfo->VAO);
+        glBindVertexArray(EditorRenderInfo->VAO);
+        
+        EditorRenderInfo->VBO = 0;
+        LoadEditorTileBuffer(RenderState, *EditorRenderInfo, Tilemap);
+    }
 }
 
 static void RenderSetup(render_state *RenderState)
@@ -1774,7 +1783,7 @@ void RenderCheckbox(render_state* RenderState, const checkbox& Checkbox)
 }
 
 
-static void NEW_RenderTilemap(render_state* RenderState, const tilemap& Tilemap, glm::mat4 ProjectionMatrix, glm::mat4 View)
+static void RenderTilemap(i32 Layer, render_state* RenderState, const tilemap& Tilemap, glm::mat4 ProjectionMatrix, glm::mat4 View)
 {
     if (RenderState->BoundTexture != Tilemap.RenderEntity.Texture->TextureHandle)
     {
@@ -1782,7 +1791,7 @@ static void NEW_RenderTilemap(render_state* RenderState, const tilemap& Tilemap,
         RenderState->BoundTexture = Tilemap.RenderEntity.Texture->TextureHandle;
     }
     
-    glBindVertexArray(Tilemap.RenderInfo.VAOS[0]);
+    glBindVertexArray(Tilemap.RenderInfo.VAOS[Layer]);
     
     auto Shader = RenderState->TileShader;
     UseShader(&Shader);
@@ -1794,18 +1803,9 @@ static void NEW_RenderTilemap(render_state* RenderState, const tilemap& Tilemap,
     SetMat4Uniform(Shader.Program, "Projection", ProjectionMatrix);
     SetMat4Uniform(Shader.Program, "View", View);
     SetMat4Uniform(Shader.Program, "Model", Model);
+    SetVec4Uniform(Shader.Program, "Color", Layer == 1 ? glm::vec4(1, 1, 1, 1) : glm::vec4(1, 1, 1, 1));
     
-    glDrawArrays(GL_QUADS, 0, Tilemap.RenderInfo.VBOSizes[0] / 4);
-    
-    glBindVertexArray(Tilemap.RenderInfo.VAOS[1]);
-    
-    SetFloatUniform(Shader.Program, "isUI", 0);
-    SetMat4Uniform(Shader.Program, "Projection", ProjectionMatrix);
-    SetMat4Uniform(Shader.Program, "View", View);
-    SetMat4Uniform(Shader.Program, "Model", Model);
-    
-    glDrawArrays(GL_QUADS, 0, Tilemap.RenderInfo.VBOSizes[1] / 4);
-    
+    glDrawArrays(GL_QUADS, 0, Tilemap.RenderInfo.VBOSizes[Layer] / 4);
     glBindVertexArray(0);
 }
 
@@ -1854,20 +1854,26 @@ int CompareFunction(const void* a, const void* b)
 
 static void RenderInGameMode(game_state* GameState)
 {
-    NEW_RenderTilemap(&GameState->RenderState, GameState->CurrentLevel.Tilemap, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
-    
     qsort(GameState->RenderState.RenderEntities, GameState->RenderState.RenderEntityCount, sizeof(render_entity), CompareFunction);
     
-    for(i32 Index = 0; Index < GameState->RenderState.RenderEntityCount; Index++) 
+    for(i32 Layer = 0; Layer < TILEMAP_LAYERS; Layer++)
     {
-        render_entity* Render = &GameState->RenderState.RenderEntities[Index];
+        RenderTilemap(Layer, &GameState->RenderState, GameState->CurrentLevel.Tilemap, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
         
-        if(Render->RenderType == Render_Type_Entity)
-            Render->Entity->RenderEntityHandle = Index;
-        else if(Render->RenderType == Render_Type_Object)
-            Render->Object->RenderEntityHandle = Index;
-        
-        RenderEntity(GameState, Render, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
+        if(Layer == 1)
+        {
+            for(i32 Index = 0; Index < GameState->RenderState.RenderEntityCount; Index++) 
+            {
+                render_entity* Render = &GameState->RenderState.RenderEntities[Index];
+                
+                if(Render->RenderType == Render_Type_Entity)
+                    Render->Entity->RenderEntityHandle = Index;
+                else if(Render->RenderType == Render_Type_Object)
+                    Render->Object->RenderEntityHandle = Index;
+                
+                RenderEntity(GameState, Render, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
+            }
+        }
     }
 }
 
@@ -2355,12 +2361,28 @@ void RenderUI(game_state* GameState)
     }
 }
 
+// @Inefficient: Maybe find a way to update only parts of the tilemap when placing tiles
 static void CheckLevelVAO(game_state* GameState)
 {
-    if(GameState->CurrentLevel.Tilemap.RenderInfo.VAOS[0] == 0 || GameState->CurrentLevel.Tilemap.RenderInfo.VAOS[1] == 0)
+    if(GameState->CurrentLevel.Tilemap.RenderInfo.Dirty)
     {
-        CreateTilemapVAO(&GameState->RenderState, GameState->CurrentLevel.Tilemap,
-                         &GameState->CurrentLevel.Tilemap.EditorRenderInfo, &GameState->CurrentLevel.Tilemap.RenderInfo);
+        if(GameState->CurrentLevel.Tilemap.RenderInfo.DirtyLayer == -1)
+        {
+            for(i32 Layer = 0; Layer < TILEMAP_LAYERS; Layer++)
+            {
+                if(GameState->CurrentLevel.Tilemap.RenderInfo.VAOS[Layer] == 0)
+                {
+                    CreateTilemapVAO(&GameState->RenderState, GameState->CurrentLevel.Tilemap,
+                                     &GameState->CurrentLevel.Tilemap.EditorRenderInfo, &GameState->CurrentLevel.Tilemap.RenderInfo, Layer);
+                }
+            }
+        }
+        else
+        {
+            CreateTilemapVAO(&GameState->RenderState, GameState->CurrentLevel.Tilemap,
+                             &GameState->CurrentLevel.Tilemap.EditorRenderInfo, &GameState->CurrentLevel.Tilemap.RenderInfo, GameState->CurrentLevel.Tilemap.RenderInfo.DirtyLayer);
+            GameState->CurrentLevel.Tilemap.RenderInfo.DirtyLayer = -1;
+        }
     }
 }
 
@@ -2478,12 +2500,7 @@ static void Render(game_state* GameState)
 {
     if(GameState->IsInitialized)
     {
-        if(GameState->CurrentLevel.Tilemap.RenderInfo.Dirty)
-        {
-            LoadTilemapBuffer(&GameState->RenderState, 0, &GameState->CurrentLevel.Tilemap.RenderInfo.VAOS[0], &GameState->CurrentLevel.Tilemap.RenderInfo.VBOS[0], &GameState->CurrentLevel.Tilemap.RenderInfo.VBOSizes[0], GameState->CurrentLevel.Tilemap);
-            LoadTilemapBuffer(&GameState->RenderState, 1, &GameState->CurrentLevel.Tilemap.RenderInfo.VAOS[1], &GameState->CurrentLevel.Tilemap.RenderInfo.VBOS[1], &GameState->CurrentLevel.Tilemap.RenderInfo.VBOSizes[1], GameState->CurrentLevel.Tilemap);
-            GameState->CurrentLevel.Tilemap.RenderInfo.Dirty = false;
-        }
+        CheckLevelVAO(GameState);
         
         GameState->RenderState.ScaleX = 2.0f / GameState->RenderState.WindowWidth;
         GameState->RenderState.ScaleY = 2.0f / GameState->RenderState.WindowHeight;

@@ -510,9 +510,10 @@ static void EditorUpdateEntities(game_state* GameState, r64 DeltaTime)
                                                     {
                                                         for(i32 Y = 0; Y < (i32)GameState->EditorState.TileBrushSize.y && Y + IndexY < Tilemap->Height; Y++)
                                                         {
-                                                            Tilemap->Data[1][IndexX + X][IndexY + Y] = Tilemap->Tiles[GameState->EditorState.SelectedTileType + 1];
+                                                            Tilemap->Data[GameState->EditorState.CurrentTilemapLayer][IndexX + X][IndexY + Y] = Tilemap->Tiles[GameState->EditorState.SelectedTileType + 1];
                                                         }
                                                     }
+                                                    
                                                     Tilemap->RenderInfo.Dirty = true;
                                                 }
                                             }
@@ -530,6 +531,7 @@ static void EditorUpdateEntities(game_state* GameState, r64 DeltaTime)
                                                 }
                                             }
                                             
+                                            Tilemap->RenderInfo.DirtyLayer = GameState->EditorState.CurrentTilemapLayer;
                                             Tilemap->RenderInfo.Dirty = true;
                                         }
                                     }
@@ -1213,6 +1215,18 @@ extern "C" UPDATE(Update)
                     else if(GetKeyDown(Key_2, GameState))
                     {
                         GameState->EditorState.CurrentTilemapLayer = 1; 
+                    }
+                    else if(GetKeyDown(Key_3, GameState))
+                    {
+                        GameState->EditorState.CurrentTilemapLayer = 2; 
+                    }
+                    else if(GetKeyDown(Key_4, GameState))
+                    {
+                        GameState->EditorState.CurrentTilemapLayer = 3; 
+                    }
+                    else if(GetKeyDown(Key_5, GameState))
+                    {
+                        GameState->EditorState.CurrentTilemapLayer = 4; 
                     }
                 }
                 break;

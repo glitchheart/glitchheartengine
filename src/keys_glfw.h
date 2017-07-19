@@ -84,7 +84,7 @@ void InitMouseButtonMappings(game_state* GameState)
 
 void InitControllerMappings(game_state* GameState)
 {
-    integer_Map_Init(&GameState->ControllerMappings,HashInt,sizeof(int*),64);
+    integer_Map_Init(&GameState->ControllerMappings, HashInt, sizeof(int*), 128);
     GameState->ControllerMappings[GLFW_JOYSTICK_1] = Joystick_1;
     GameState->ControllerMappings[GLFW_JOYSTICK_2] = Joystick_2;
     GameState->ControllerMappings[GLFW_JOYSTICK_3] = Joystick_3;
