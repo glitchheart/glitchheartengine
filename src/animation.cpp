@@ -150,7 +150,7 @@
                                 
                                 static void LoadAnimations(game_state* GameState)
                                 {
-                                    animation_Map_Init(&GameState->AnimationMap, HashString,sizeof(animation*),4096);
+                                    animation_Map_Init(&GameState->AnimationMap, HashString, 4096);
                                     directory_data DirData;
                                     FindFilesWithExtensions("../assets/animations/", "pownim", &DirData);
                                     
