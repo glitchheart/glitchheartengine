@@ -72,7 +72,7 @@ void InitKeyMappings(game_state* GameState)
 
 void InitMouseButtonMappings(game_state* GameState)
 {
-    integer_Map_Init(&GameState->MouseButtonMappings,HashInt,sizeof(int*),64);
+    integer_Map_Init(&GameState->MouseButtonMappings,HashInt,sizeof(int*), 128);
     GameState->MouseButtonMappings[GLFW_MOUSE_BUTTON_LEFT] = Mouse_Left;
     GameState->MouseButtonMappings[GLFW_MOUSE_BUTTON_RIGHT] = Mouse_Right;
     GameState->MouseButtonMappings[GLFW_MOUSE_BUTTON_MIDDLE] = Mouse_Middle;
