@@ -269,7 +269,7 @@ static void LoadTilemapBuffer(render_state* RenderState, i32 Layer, GLuint* VAO,
             {
                 tile_data* Tile = &Tilemap.Data[Layer][X][Y];
                 
-                if(Tile->TypeIndex != 0)
+                if(Tile->TypeIndex != -1)
                 {
                     r32 TexCoordX = (Tile->TextureOffset.x) / Width;
                     r32 TexCoordY = (Tile->TextureOffset.y) / Height; 
@@ -306,7 +306,7 @@ static void LoadTilemapBuffer(render_state* RenderState, i32 Layer, GLuint* VAO,
             {
                 tile_data* Tile = &Tilemap.Data[Layer][X][Y];
                 
-                if(Tile->TypeIndex != 0)
+                if(Tile->TypeIndex != -1)
                 {
                     r32 TexCoordX = (Tile->TextureOffset.x) / Width;
                     r32 TexCoordY = (Tile->TextureOffset.y) / Height; 
@@ -374,7 +374,7 @@ static void LoadEditorTileBuffer(render_state* RenderState, editor_render_info& 
     i32 X = 0;
     i32 Y = 0;
     
-    for(u32 Index = 1; Index < Tilemap.TileCount; Index++)
+    for(u32 Index = 0; Index < Tilemap.TileCount; Index++)
     {
         tile_data* Tile = &Tilemap.Tiles[Index];
         

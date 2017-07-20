@@ -541,7 +541,7 @@ static void EditorUpdateEntities(game_state* GameState, r64 DeltaTime)
                             {
                                 if(X >= 0 && X < (i32)GameState->CurrentLevel.Tilemap.Width && Y >= 0 && Y < (i32)GameState->CurrentLevel.Tilemap.Height)
                                 {
-                                    GameState->CurrentLevel.Tilemap.Data[GameState->EditorState.CurrentTilemapLayer][X][Y] = GameState->CurrentLevel.Tilemap.Tiles[0];
+                                    GameState->CurrentLevel.Tilemap.Data[GameState->EditorState.CurrentTilemapLayer][X][Y].TypeIndex = -1;
                                 }
                             }
                         }

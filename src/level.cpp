@@ -101,6 +101,7 @@ static void LoadTilesheetMetaFile(char* FilePath, level* Level, tilemap* Tilemap
                 Data.Center = Center;
                 Tilemap->Tiles[TileIndex++] = Data;
             }
+            printf("Tilemap tile count %d\n", TileIndex);
             Tilemap->TileCount = TileIndex;
             fclose(File);
         }
@@ -205,15 +206,25 @@ static b32 LoadLevelFromFile(char* FilePath, level* Level, game_state* GameState
                 
                 for(u32 IndexWidth = 0; IndexWidth < MapWidth; ++IndexWidth) 
                 {
-                    collision_AABB CollisionAABB;
-                    CollisionAABB.Center = glm::vec2(IndexWidth + 0.5f, MapHeight - IndexHeight - 0.5f);
-                    CollisionAABB.Extents = glm::vec2(0.5, 0.5);
-                    CollisionAABB.IsTrigger = false;
-                    
-                    u32 TypeIndex = (u32)strtol(Ptr, &Ptr, 10);
+                    i32 TypeIndex = (u32)strtol(Ptr, &Ptr, 10);
                     
                     tile_data Data = Level->Tilemap.Tiles[TypeIndex];
-                    Data.CollisionAABB = CollisionAABB;
+                    
+                    if(TypeIndex > 0)
+                    {
+                        collision_AABB CollisionAABB;
+                        CollisionAABB.Center = glm::vec2(IndexWidth + 0.5f, MapHeight - IndexHeight - 0.5f);
+                        CollisionAABB.Extents = glm::vec2(0.5, 0.5);
+                        CollisionAABB.IsTrigger = false;
+                        
+                        Data.CollisionAABB = CollisionAABB;
+                        
+                        Data.TypeIndex = TypeIndex - 1;
+                    }
+                    else
+                    {
+                        Data.TypeIndex = -1;
+                    }
                     
                     Level->Tilemap.Data[Layer][IndexWidth][MapHeight - IndexHeight - 1] = Data;
                 }
