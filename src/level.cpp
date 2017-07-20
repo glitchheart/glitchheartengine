@@ -32,16 +32,17 @@ static void SaveTilesheetMetaFile(const char* FilePath, render_state* RenderStat
             
             const texture& Texture = RenderState->Tilesheets[TextureIndex].Texture;
             
-            fprintf(File, "%d\n", Texture.Width / 16 * Texture.Height / 16);
+            fprintf(File, "%d\n", Texture.Width / RenderState->Tilesheets[TextureIndex].TileWidth * Texture.Height / RenderState->Tilesheets[TextureIndex].TileHeight);
+            
             fprintf(File, "%d\n", 16);
             
             i32 Index = 0;
             
-            for(u32 Y = 0; Y < (u32)Texture.Height / 16; Y++)
+            for(u32 Y = 0; Y < (u32)Texture.Height / RenderState->Tilesheets[TextureIndex].TileHeight; Y++)
             {
-                for(u32 X = 0; X < (u32)Texture.Width / 16; X++)
+                for(u32 X = 0; X < (u32)Texture.Width / RenderState->Tilesheets[TextureIndex].TileWidth; X++)
                 {
-                    fprintf(File, "%d %d %d %d %d %d %f %f\n", Index, (i32)X * 16, (i32)Y * 16, 16, 16, 0, 0.5f, 0.5);
+                    fprintf(File, "%d %d %d %d %d %d %f %f\n", Index, (i32)X * RenderState->Tilesheets[TextureIndex].TileWidth, (i32)Y * RenderState->Tilesheets[TextureIndex].TileHeight, RenderState->Tilesheets[TextureIndex].TileWidth, RenderState->Tilesheets[TextureIndex].TileHeight, 0, 0.5f, 0.5);
                     Index++;
                 }
             }
@@ -49,12 +50,12 @@ static void SaveTilesheetMetaFile(const char* FilePath, render_state* RenderStat
         else
         {
             fprintf(File, "%d\n", Level.Tilemap.TileCount);
-            fprintf(File, "%d\n", Level.Tilemap.TileSize);
+            fprintf(File, "%d %d\n", Level.Tilemap.TileWidth, Level.Tilemap.TileHeight);
             
             for(u32 Index = 0; Index < Level.Tilemap.TileCount; Index++)
             {
                 const tile_data& TileData = Level.Tilemap.Tiles[Index];
-                fprintf(File, "%d %d %d %d %d %d %f %f\n", Index, (i32)TileData.TextureOffset.x, (i32)TileData.TextureOffset.y, Level.Tilemap.TileSize, Level.Tilemap.TileSize, TileData.IsSolid, TileData.Center.x, TileData.Center.y); 
+                fprintf(File, "%d %d %d %d %d %d %f %f\n", Index, (i32)TileData.TextureOffset.x, (i32)TileData.TextureOffset.y, Level.Tilemap.TileWidth, Level.Tilemap.TileHeight, TileData.IsSolid, TileData.Center.x, TileData.Center.y); 
             }
         }
         fclose(File);
@@ -81,7 +82,7 @@ static void LoadTilesheetMetaFile(char* FilePath, level* Level, tilemap* Tilemap
             
             if(fgets(LineBuffer, 255, File))
             {
-                sscanf(LineBuffer, "%d", &Tilemap->TileSize);
+                sscanf(LineBuffer, "%d %d", &Tilemap->TileWidth, &Tilemap->TileHeight);
             }
             
             int TileIndex = 0;
@@ -156,6 +157,21 @@ static b32 LoadLevelFromFile(char* FilePath, level* Level, game_state* GameState
         
         if(fgets(LineBuffer, 255, File))
             sscanf(LineBuffer, "%d", &MapHeight);
+        
+        if(fgets(LineBuffer, 255, File))
+        {
+            char LevelType[20];
+            sscanf(LineBuffer, "%s", LevelType);
+            
+            if(StartsWith(LevelType, "orthogonal"))
+            {
+                Level->Type = Level_Orthogonal;
+            }
+            else if(StartsWith(LevelType, "isometric"))
+            {
+                Level->Type = Level_Isometric;
+            }
+        }
         
         Assert(MapWidth > 0 && MapHeight > 0);
         
@@ -305,6 +321,15 @@ static void SaveLevelToFile(const char* FilePath, level* Level, game_state* Game
         
         fprintf(File, "%d\n", Level->Tilemap.Width);
         fprintf(File, "%d\n", Level->Tilemap.Height);
+        
+        if(Level->Type == Level_Orthogonal)
+        {
+            fprintf(File,"orthogonal\n");
+        }
+        else
+        {
+            fprintf(File,"isometric\n");
+        }
         
         for(i32 Layer = 0; Layer < TILEMAP_LAYERS; Layer++)
         {
