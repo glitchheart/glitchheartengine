@@ -476,8 +476,8 @@ static void EditorUpdateEntities(game_state* GameState, r64 DeltaTime)
                             
                             if(GetMouseButton(Mouse_Left, GameState))
                             {
-                                i32 TilesheetWidth = GameState->CurrentLevel.Tilemap.RenderEntity.Texture->Width / GameState->CurrentLevel.Tilemap.TileSize;
-                                i32 TilesheetHeight = GameState->CurrentLevel.Tilemap.RenderEntity.Texture->Height / GameState->CurrentLevel.Tilemap.TileSize;
+                                i32 TilesheetWidth = GameState->CurrentLevel.Tilemap.RenderEntity.Texture->Width / GameState->CurrentLevel.Tilemap.TileWidth;
+                                i32 TilesheetHeight = GameState->CurrentLevel.Tilemap.RenderEntity.Texture->Height / GameState->CurrentLevel.Tilemap.TileHeight;
                                 
                                 r32 ToolbarX = GameState->EditorState.ToolbarX + GameState->EditorState.TilemapOffset.x;
                                 r32 ToolbarY = GameState->EditorState.ToolbarY + GameState->EditorState.TilemapOffset.y;
@@ -541,7 +541,7 @@ static void EditorUpdateEntities(game_state* GameState, r64 DeltaTime)
                             {
                                 if(X >= 0 && X < (i32)GameState->CurrentLevel.Tilemap.Width && Y >= 0 && Y < (i32)GameState->CurrentLevel.Tilemap.Height)
                                 {
-                                    GameState->CurrentLevel.Tilemap.Data[GameState->EditorState.CurrentTilemapLayer][X][Y] = GameState->CurrentLevel.Tilemap.Tiles[0];
+                                    GameState->CurrentLevel.Tilemap.Data[GameState->EditorState.CurrentTilemapLayer][X][Y].TypeIndex = -1;
                                 }
                             }
                         }
@@ -1208,9 +1208,13 @@ extern "C" UPDATE(Update)
                 break;
                 case Editor_Placement_Tile:
                 {
-                    if(GetKeyDown(Key_1, GameState))
+                    if(GetKeyDown(Key_0, GameState))
                     {
-                        GameState->EditorState.CurrentTilemapLayer = 0; 
+                        GameState->EditorState.RenderAllLayers = !GameState->EditorState.RenderAllLayers; 
+                    }
+                    else if(GetKeyDown(Key_1, GameState))
+                    {
+                        GameState->EditorState.CurrentTilemapLayer = 0;
                     }
                     else if(GetKeyDown(Key_2, GameState))
                     {

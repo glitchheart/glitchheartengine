@@ -72,7 +72,7 @@ void InitKeyMappings(game_state* GameState)
 
 void InitMouseButtonMappings(game_state* GameState)
 {
-    integer_Map_Init(&GameState->MouseButtonMappings,HashInt,64);
+    integer_Map_Init(&GameState->MouseButtonMappings,HashInt,16);
     GameState->MouseButtonMappings[GLFW_MOUSE_BUTTON_LEFT] = Mouse_Left;
     GameState->MouseButtonMappings[GLFW_MOUSE_BUTTON_RIGHT] = Mouse_Right;
     GameState->MouseButtonMappings[GLFW_MOUSE_BUTTON_MIDDLE] = Mouse_Middle;
@@ -107,11 +107,11 @@ void InitControllerMappings(game_state* GameState)
 
 void InitKeys(game_state* GameState)
 {
-    printf("Keys\n");
+    //printf("Keys\n");
     InitKeyMappings(GameState);
-    printf("Mouse\n");
+    //printf("Mouse\n");
     InitMouseButtonMappings(GameState);
-    printf("Controller\n");
+    //printf("Controller\n");
     InitControllerMappings(GameState);
 }
 

@@ -236,7 +236,8 @@ struct input_controller
         Key_E,
         Key_Escape,
         Key_8,
-        Key_C
+        Key_C,
+        Key_U
     };
     
     Xbox_Code ActionButtonXboxControllerBindings[Action_Count] = 
@@ -246,7 +247,9 @@ struct input_controller
         Xbox_B,
         Xbox_A,
         Xbox_LeftBumper,
-        Xbox_Start
+        Xbox_Start,
+        Xbox_Back,
+        Xbox_Back,
     };
     
     PS4_Code ActionButtonPS4ControllerBindings[Action_Count] = 
@@ -256,7 +259,9 @@ struct input_controller
         PS4_Circle,
         PS4_Cross,
         PS4_L1,
-        PS4_Option
+        PS4_Option,
+        PS4_Share,
+        PS4_Share
     };
     
     b32 ActionRunning = false;

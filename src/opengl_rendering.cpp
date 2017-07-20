@@ -252,7 +252,7 @@ static void InitializeFreeTypeFont(char* FontPath, int FontSize, FT_Library Libr
     glBindVertexArray(0);
 }
 
-static void LoadTilemapBuffer(render_state* RenderState, i32 Layer, GLuint* VAO, GLuint* VBO, i32* Size, const tilemap& Tilemap)
+static void LoadTilemapBuffer(render_state* RenderState, i32 Layer, GLuint* VAO, GLuint* VBO, i32* Size, const tilemap& Tilemap, Level_Type LevelType)
 {
     GLfloat* VertexBuffer = (GLfloat*)malloc(sizeof(GLfloat) * 16 * Tilemap.Width * Tilemap.Height);
     
@@ -261,36 +261,78 @@ static void LoadTilemapBuffer(render_state* RenderState, i32 Layer, GLuint* VAO,
     r32 Width = (r32)Tilemap.RenderEntity.Texture->Width;
     r32 Height = (r32)Tilemap.RenderEntity.Texture->Height;
     
-    for(u32 X = 0; X < Tilemap.Width; X++)
+    if(LevelType == Level_Orthogonal)
     {
-        for(u32 Y = 0; Y < Tilemap.Height; Y++)
+        for(u32 X = 0; X < Tilemap.Width; X++)
         {
-            tile_data* Tile = &Tilemap.Data[Layer][X][Y];
-            
-            if(Tile->TypeIndex != 0)
+            for(u32 Y = 0; Y < Tilemap.Height; Y++)
             {
-                r32 TexCoordX = (Tile->TextureOffset.x) / Width;
-                r32 TexCoordY = (Tile->TextureOffset.y) / Height; 
-                r32 TexCoordXHigh = (Tile->TextureOffset.x + Tilemap.TileSize) / Width;
-                r32 TexCoordYHigh = (Tile->TextureOffset.y + Tilemap.TileSize) / Height; 
+                tile_data* Tile = &Tilemap.Data[Layer][X][Y];
                 
-                r32 CorrectY = (r32)Y;
-                VertexBuffer[Current++] = (GLfloat)X;
-                VertexBuffer[Current++] = (GLfloat)CorrectY + 1.0f;
-                VertexBuffer[Current++] = (GLfloat)TexCoordX;
-                VertexBuffer[Current++] =  (GLfloat)TexCoordY;
-                VertexBuffer[Current++] = (GLfloat)X + 1;
-                VertexBuffer[Current++] = (GLfloat)CorrectY + 1;
-                VertexBuffer[Current++] = (GLfloat)TexCoordXHigh;
-                VertexBuffer[Current++] =  (GLfloat)TexCoordY;
-                VertexBuffer[Current++] = (GLfloat)X + 1;
-                VertexBuffer[Current++] = (GLfloat)CorrectY;
-                VertexBuffer[Current++] = (GLfloat)TexCoordXHigh;
-                VertexBuffer[Current++] = (GLfloat)TexCoordYHigh;
-                VertexBuffer[Current++] = (GLfloat)X;
-                VertexBuffer[Current++] = (GLfloat)CorrectY;
-                VertexBuffer[Current++] =(GLfloat)TexCoordX;
-                VertexBuffer[Current++] = (GLfloat)TexCoordYHigh;
+                if(Tile->TypeIndex != -1)
+                {
+                    r32 TexCoordX = (Tile->TextureOffset.x) / Width;
+                    r32 TexCoordY = (Tile->TextureOffset.y) / Height; 
+                    r32 TexCoordXHigh = (Tile->TextureOffset.x + Tilemap.TileWidth) / Width;
+                    r32 TexCoordYHigh = (Tile->TextureOffset.y + Tilemap.TileHeight) / Height; 
+                    
+                    r32 CorrectY = (r32)Y;
+                    VertexBuffer[Current++] = (GLfloat)X;
+                    VertexBuffer[Current++] = (GLfloat)CorrectY + 1.0f;
+                    VertexBuffer[Current++] = (GLfloat)TexCoordX;
+                    VertexBuffer[Current++] =  (GLfloat)TexCoordY;
+                    VertexBuffer[Current++] = (GLfloat)X + 1;
+                    VertexBuffer[Current++] = (GLfloat)CorrectY + 1;
+                    VertexBuffer[Current++] = (GLfloat)TexCoordXHigh;
+                    VertexBuffer[Current++] =  (GLfloat)TexCoordY;
+                    VertexBuffer[Current++] = (GLfloat)X + 1;
+                    VertexBuffer[Current++] = (GLfloat)CorrectY;
+                    VertexBuffer[Current++] = (GLfloat)TexCoordXHigh;
+                    VertexBuffer[Current++] = (GLfloat)TexCoordYHigh;
+                    VertexBuffer[Current++] = (GLfloat)X;
+                    VertexBuffer[Current++] = (GLfloat)CorrectY;
+                    VertexBuffer[Current++] =(GLfloat)TexCoordX;
+                    VertexBuffer[Current++] = (GLfloat)TexCoordYHigh;
+                }
+            }
+        }
+        
+    }
+    else
+    {
+        for(i32 X = 0; X < Tilemap.Width; X++)
+        {
+            for(i32 Y = 0; Y < Tilemap.Height; Y++)
+            {
+                tile_data* Tile = &Tilemap.Data[Layer][X][Y];
+                
+                if(Tile->TypeIndex != -1)
+                {
+                    r32 TexCoordX = (Tile->TextureOffset.x) / Width;
+                    r32 TexCoordY = (Tile->TextureOffset.y) / Height; 
+                    r32 TexCoordXHigh = (Tile->TextureOffset.x + Tilemap.TileWidth) / Width;
+                    r32 TexCoordYHigh = (Tile->TextureOffset.y + Tilemap.TileHeight) / Height; 
+                    
+                    r32 CorrectX = (r32)(X + Y) * 0.5f;
+                    r32 CorrectY = (r32)(X - Y) * 0.25f;
+                    
+                    VertexBuffer[Current++] = (GLfloat)CorrectX;
+                    VertexBuffer[Current++] = (GLfloat)CorrectY + 0.5f;
+                    VertexBuffer[Current++] = (GLfloat)TexCoordX;
+                    VertexBuffer[Current++] =  (GLfloat)TexCoordY;
+                    VertexBuffer[Current++] = (GLfloat)CorrectX + 1;
+                    VertexBuffer[Current++] = (GLfloat)CorrectY + 0.5f;
+                    VertexBuffer[Current++] = (GLfloat)TexCoordXHigh;
+                    VertexBuffer[Current++] =  (GLfloat)TexCoordY;
+                    VertexBuffer[Current++] = (GLfloat)CorrectX + 1;
+                    VertexBuffer[Current++] = (GLfloat)CorrectY;
+                    VertexBuffer[Current++] = (GLfloat)TexCoordXHigh;
+                    VertexBuffer[Current++] = (GLfloat)TexCoordYHigh;
+                    VertexBuffer[Current++] = (GLfloat)CorrectX;
+                    VertexBuffer[Current++] = (GLfloat)CorrectY;
+                    VertexBuffer[Current++] =(GLfloat)TexCoordX;
+                    VertexBuffer[Current++] = (GLfloat)TexCoordYHigh;
+                }
             }
         }
     }
@@ -320,7 +362,6 @@ static void LoadTilemapBuffer(render_state* RenderState, i32 Layer, GLuint* VAO,
     free(VertexBuffer);
 }
 
-
 static void LoadEditorTileBuffer(render_state* RenderState, editor_render_info& EditorRenderInfo, const tilemap& Tilemap)
 {
     GLfloat* VertexBuffer = (GLfloat*)malloc(sizeof(GLfloat) * 16 * Tilemap.TileCount);
@@ -333,14 +374,14 @@ static void LoadEditorTileBuffer(render_state* RenderState, editor_render_info& 
     i32 X = 0;
     i32 Y = 0;
     
-    for(u32 Index = 1; Index < Tilemap.TileCount; Index++)
+    for(u32 Index = 0; Index < Tilemap.TileCount; Index++)
     {
         tile_data* Tile = &Tilemap.Tiles[Index];
         
         r32 TexCoordX = (Tile->TextureOffset.x) / Width;
         r32 TexCoordY = (Tile->TextureOffset.y) / Height; 
-        r32 TexCoordXHigh = (Tile->TextureOffset.x + Tilemap.TileSize) / Width;
-        r32 TexCoordYHigh = (Tile->TextureOffset.y + Tilemap.TileSize) / Height; 
+        r32 TexCoordXHigh = (Tile->TextureOffset.x + Tilemap.TileWidth) / Width;
+        r32 TexCoordYHigh = (Tile->TextureOffset.y + Tilemap.TileHeight) / Height; 
         
         VertexBuffer[Current++] = (GLfloat)X;
         VertexBuffer[Current++] = (GLfloat)Y + 1.0f;
@@ -361,7 +402,7 @@ static void LoadEditorTileBuffer(render_state* RenderState, editor_render_info& 
         
         X++;
         
-        if(X == (i32)(Width / Tilemap.TileSize))
+        if(X == (i32)(Width / Tilemap.TileWidth))
         {
             X = 0;
             Y++;
@@ -394,14 +435,14 @@ static void LoadEditorTileBuffer(render_state* RenderState, editor_render_info& 
     free(VertexBuffer);
 }
 
-static void CreateTilemapVAO(render_state* RenderState, const tilemap& Tilemap, editor_render_info* EditorRenderInfo, tilemap_render_info* TilemapRenderInfo, i32 OnlyLayer = -1)
+static void CreateTilemapVAO(render_state* RenderState, const tilemap& Tilemap, Level_Type LevelType, editor_render_info* EditorRenderInfo, tilemap_render_info* TilemapRenderInfo, i32 OnlyLayer = -1)
 {
     if(OnlyLayer != -1)
     {
         TilemapRenderInfo->VBOS[OnlyLayer] = 0;
         glGenVertexArrays(1, &TilemapRenderInfo->VAOS[OnlyLayer]);
         glBindVertexArray(TilemapRenderInfo->VAOS[OnlyLayer]);
-        LoadTilemapBuffer(RenderState, OnlyLayer, &TilemapRenderInfo->VAOS[OnlyLayer], &TilemapRenderInfo->VBOS[OnlyLayer], &TilemapRenderInfo->VBOSizes[OnlyLayer], Tilemap);
+        LoadTilemapBuffer(RenderState, OnlyLayer, &TilemapRenderInfo->VAOS[OnlyLayer], &TilemapRenderInfo->VBOS[OnlyLayer], &TilemapRenderInfo->VBOSizes[OnlyLayer], Tilemap, LevelType);
     }
     else
     {
@@ -410,7 +451,7 @@ static void CreateTilemapVAO(render_state* RenderState, const tilemap& Tilemap, 
             TilemapRenderInfo->VBOS[Layer] = 0;
             glGenVertexArrays(1, &TilemapRenderInfo->VAOS[Layer]);
             glBindVertexArray(TilemapRenderInfo->VAOS[Layer]);
-            LoadTilemapBuffer(RenderState, Layer, &TilemapRenderInfo->VAOS[Layer], &TilemapRenderInfo->VBOS[Layer], &TilemapRenderInfo->VBOSizes[Layer], Tilemap);
+            LoadTilemapBuffer(RenderState, Layer, &TilemapRenderInfo->VAOS[Layer], &TilemapRenderInfo->VBOS[Layer], &TilemapRenderInfo->VBOSizes[Layer], Tilemap, LevelType);
             
         }
     }
@@ -765,8 +806,6 @@ static void LoadTextures(render_state* RenderState, const char* Directory)
 
 static void LoadTilesheetTextures(game_state* GameState, render_state* RenderState)
 {
-    char* TempNames[30];
-    
     FILE* File;
     File = fopen("../assets/textures/tilesheets/.tilesheets", "r");
     char LineBuffer[255];
@@ -777,27 +816,19 @@ static void LoadTilesheetTextures(game_state* GameState, render_state* RenderSta
         
         while(fgets(LineBuffer, 255, File))
         {
-            TempNames[Index] = (char*)malloc(sizeof(char) * 20);
-            sscanf(LineBuffer, "%s", TempNames[Index++]);
+            RenderState->Tilesheets[Index].Name= (char*)malloc(sizeof(char) * 20);
+            sscanf(LineBuffer, "%s %d %d", RenderState->Tilesheets[Index].Name, &RenderState->Tilesheets[Index].TileWidth, &RenderState->Tilesheets[Index].TileHeight);
+            
+            char* Path = Concat(Concat("../assets/textures/tilesheets/", RenderState->Tilesheets[Index].Name), ".png");
+            LoadTexture(Path, &RenderState->Tilesheets[Index].Texture);
+            
+            free(Path);
+            Index++;
         }
-        
-        fclose(File);
         
         RenderState->TilesheetCount = Index;
-        RenderState->Tilesheets = (tilesheet*)malloc(sizeof(tilesheet) * Index);
         
-        for(u32 I = 0; I < Index; I++)
-        {
-            RenderState->Tilesheets[I] = {};
-            RenderState->Tilesheets[I].Name = (char*)malloc(sizeof(char) * 20);
-            
-            strcpy(RenderState->Tilesheets[I].Name, TempNames[I]);
-            char* Path = Concat(Concat("../assets/textures/tilesheets/", TempNames[I]), ".png");
-            LoadTexture(Path, &RenderState->Tilesheets[I].Texture);
-            free(TempNames[I]);
-            free(Path);
-        }
-        
+        fclose(File);
     }
 }
 
@@ -868,7 +899,7 @@ static void InitializeOpenGL(game_state* GameState, render_state* RenderState, c
         }
     }
     
-    texture_Map_Init(&RenderState->Textures, HashString,4096);
+    texture_Map_Init(&RenderState->Textures, HashString, 4096);
     LoadTextures(RenderState, "../assets/textures/");
     LoadTextures(RenderState, "../assets/textures/spritesheets/");
     RenderSetup(RenderState);
@@ -1739,7 +1770,7 @@ static void RenderTile(render_state* RenderState, u32 X, u32 Y, u32 TilesheetInd
     SetVec2Uniform(Shader.Program, "textureOffset", TextureOffset);
     SetFloatUniform(Shader.Program, "frameWidth", 16.0f);
     SetFloatUniform(Shader.Program, "frameHeight", 16.0f);
-    SetVec2Uniform(Shader.Program, "sheetSize", SheetSize);
+    SetVec2Uniform(Shader.Program, "textureSize", SheetSize);
     glDrawArrays(GL_QUADS, 0, 4);
     glBindVertexArray(0);
 }
@@ -1783,7 +1814,7 @@ void RenderCheckbox(render_state* RenderState, const checkbox& Checkbox)
 }
 
 
-static void RenderTilemap(i32 Layer, render_state* RenderState, const tilemap& Tilemap, glm::mat4 ProjectionMatrix, glm::mat4 View)
+static void RenderTilemap(i32 Layer, render_state* RenderState, const tilemap& Tilemap, glm::mat4 ProjectionMatrix, glm::mat4 View, glm::vec4 Color = glm::vec4(1, 1, 1, 1))
 {
     if (RenderState->BoundTexture != Tilemap.RenderEntity.Texture->TextureHandle)
     {
@@ -1803,7 +1834,7 @@ static void RenderTilemap(i32 Layer, render_state* RenderState, const tilemap& T
     SetMat4Uniform(Shader.Program, "Projection", ProjectionMatrix);
     SetMat4Uniform(Shader.Program, "View", View);
     SetMat4Uniform(Shader.Program, "Model", Model);
-    SetVec4Uniform(Shader.Program, "Color", Layer == 1 ? glm::vec4(1, 1, 1, 1) : glm::vec4(1, 1, 1, 1));
+    SetVec4Uniform(Shader.Program, "Color", Color);
     
     glDrawArrays(GL_QUADS, 0, Tilemap.RenderInfo.VBOSizes[Layer] / 4);
     glBindVertexArray(0);
@@ -1832,7 +1863,7 @@ static void EditorRenderTilemap(glm::vec2 ScreenPosition, r32 Size, render_state
     Model = glm::scale(Model, glm::vec3(Size * RenderState->ScaleX, Size * RenderState->ScaleY, 0.1));
     SetFloatUniform(Shader.Program, "isUI", 1);
     SetMat4Uniform(Shader.Program, "Model", Model);
-    
+    SetVec4Uniform(Shader.Program, "Color", glm::vec4(1, 1, 1, 1));
     glDrawArrays(GL_QUADS, 0, Tilemap.EditorRenderInfo.VBOSize / 4);
     glBindVertexArray(0);
 }
@@ -1858,7 +1889,15 @@ static void RenderInGameMode(game_state* GameState)
     
     for(i32 Layer = 0; Layer < TILEMAP_LAYERS; Layer++)
     {
-        RenderTilemap(Layer, &GameState->RenderState, GameState->CurrentLevel.Tilemap, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
+        if(!GameState->EditorState.RenderAllLayers)
+        {
+            if(GameState->EditorState.CurrentTilemapLayer == Layer)
+                RenderTilemap(Layer, &GameState->RenderState, GameState->CurrentLevel.Tilemap, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
+            else
+                RenderTilemap(Layer, &GameState->RenderState, GameState->CurrentLevel.Tilemap, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix, glm::vec4(1, 1, 1, 0.2));
+        }
+        else
+            RenderTilemap(Layer, &GameState->RenderState, GameState->CurrentLevel.Tilemap, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
         
         if(Layer == 1)
         {
@@ -2372,7 +2411,7 @@ static void CheckLevelVAO(game_state* GameState)
             {
                 if(GameState->CurrentLevel.Tilemap.RenderInfo.VAOS[Layer] == 0)
                 {
-                    CreateTilemapVAO(&GameState->RenderState, GameState->CurrentLevel.Tilemap,
+                    CreateTilemapVAO(&GameState->RenderState, GameState->CurrentLevel.Tilemap, GameState->CurrentLevel.Type,
                                      &GameState->CurrentLevel.Tilemap.EditorRenderInfo, &GameState->CurrentLevel.Tilemap.RenderInfo, Layer);
                 }
             }
@@ -2380,6 +2419,7 @@ static void CheckLevelVAO(game_state* GameState)
         else
         {
             CreateTilemapVAO(&GameState->RenderState, GameState->CurrentLevel.Tilemap,
+                             GameState->CurrentLevel.Type,
                              &GameState->CurrentLevel.Tilemap.EditorRenderInfo, &GameState->CurrentLevel.Tilemap.RenderInfo, GameState->CurrentLevel.Tilemap.RenderInfo.DirtyLayer);
             GameState->CurrentLevel.Tilemap.RenderInfo.DirtyLayer = -1;
         }

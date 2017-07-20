@@ -2270,15 +2270,23 @@ void UpdatePlayer(entity* Entity, game_state* GameState, r64 DeltaTime)
             Entity->Player.IsChargingCheckpoint = false;
         }
         
-        if(Entity->Player.IsAttacking && Entity->AnimationInfo.FrameIndex >= Entity->AttackHighFrameIndex)
+        if(Entity->Player.IsAttacking)
         {
-            Entity->Player.IsAttacking = false;
-            StartTimer(GameState, Entity->Player.AttackCooldownTimer);
-            
-            if(Entity->AttackCount == 3)
+            if(Entity->AnimationInfo.FrameIndex >= Entity->AttackLowFrameIndex)
             {
-                Entity->AttackCount = 0;
-                Entity->Velocity = glm::vec2(0, 0);
+                StartTimer(GameState, Entity->AttackMoveTimer);
+            }
+            
+            if(Entity->AnimationInfo.FrameIndex >= Entity->AttackHighFrameIndex)
+            {
+                Entity->Player.IsAttacking = false;
+                StartTimer(GameState, Entity->Player.AttackCooldownTimer);
+                
+                if(Entity->AttackCount == 3)
+                {
+                    Entity->AttackCount = 0;
+                    Entity->Velocity = glm::vec2(0, 0);
+                }
             }
         }
         
@@ -2312,7 +2320,6 @@ void UpdatePlayer(entity* Entity, game_state* GameState, r64 DeltaTime)
             StartTimer(GameState, Entity->Player.LastAttackTimer);
             
             DecreaseStamina(Entity,GameState,Entity->Player.AttackStaminaCost);
-            StartTimer(GameState, Entity->AttackMoveTimer);
             Entity->AttackCount++;
             PlaySoundEffect(GameState, &GameState->SoundManager.SwordSlash01);
         }
@@ -2418,6 +2425,11 @@ void UpdatePlayer(entity* Entity, game_state* GameState, r64 DeltaTime)
         GameState->CharacterData = GameState->LastCharacterData;
         Entity->Player.Inventory.HealthPotionCount = GameState->CharacterData.HealthPotionCount;
         SaveGame(GameState);
+    }
+    
+    if(GameState->InputController.ActionRunning)
+    {
+        ResetActionButtonQueue(GameState);
     }
     
     GameState->InputController.ActionRunning = Entity->Player.IsAttacking || Entity->Player.IsDashing;
