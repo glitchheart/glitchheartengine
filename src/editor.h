@@ -128,7 +128,9 @@ struct editor_state
     u32 SelectedTileType = 1;
     glm::vec2 SelectedTilePosition;
     Entity_Placement_Type PlacementEntity;
+    
     i32 CurrentTilemapLayer = 1;
+    b32 RenderAllLayers = true;
     
     r32 LastKnownMouseX;
     r32 LastKnownMouseY;

@@ -24,7 +24,10 @@ struct tilemap
 {
     u32 Width = 0;
     u32 Height = 0;
-    u32 TileSize = 16;
+    
+    i32 TileWidth;
+    i32 TileHeight;
+    
     i32 TilesheetWidth = 0;
     i32 TilesheetHeight = 0;
     
@@ -37,10 +40,17 @@ struct tilemap
     tile_data** Data[TILEMAP_LAYERS];
 };
 
+enum Level_Type
+{
+    Level_Orthogonal,
+    Level_Isometric
+};
+
 struct level
 {
     char* Name;
     char* SheetName;
+    Level_Type Type = Level_Orthogonal;
     glm::vec2 PlayerStartPosition;
     tilemap Tilemap;
     char* TilesheetPath;
