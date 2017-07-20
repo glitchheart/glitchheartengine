@@ -107,10 +107,14 @@ struct texture
 
 GENERIC_MAP(texture, texture*);
 
+#define TILESHEET_MAX 10
+
 struct tilesheet
 {
     char* Name;
     texture Texture;
+    i32 TileWidth;
+    i32 TileHeight;
 };
 
 struct ui_render_info
@@ -329,7 +333,7 @@ struct render_state
     GLuint TextureRectVAO;
     GLuint NormalQuadVBO;
     
-    tilesheet* Tilesheets;
+    tilesheet Tilesheets[TILESHEET_MAX];
     u32 TilesheetCount;
     
     union 

@@ -107,11 +107,11 @@ void InitControllerMappings(game_state* GameState)
 
 void InitKeys(game_state* GameState)
 {
-    printf("Keys\n");
+    //printf("Keys\n");
     InitKeyMappings(GameState);
-    printf("Mouse\n");
+    //printf("Mouse\n");
     InitMouseButtonMappings(GameState);
-    printf("Controller\n");
+    //printf("Controller\n");
     InitControllerMappings(GameState);
 }
 
