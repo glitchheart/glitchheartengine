@@ -273,6 +273,12 @@ static b32 LoadLevelFromFile(char* FilePath, level* Level, game_state* GameState
                 sscanf(LineBuffer, "bonfire %f %f", &Pos.x, &Pos.y);
                 LoadBonfireData(GameState, -1, Pos);
             }
+            else if(StartsWith(LineBuffer, "tree"))
+            {
+                glm::vec2 Pos;
+                sscanf(LineBuffer, "tree %f %f", &Pos.x, &Pos.y);
+                SpawnTree(GameState, Pos);
+            }
             
             if(PathIndex != 0)
             {

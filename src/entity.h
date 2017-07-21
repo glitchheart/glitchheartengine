@@ -195,7 +195,8 @@ enum Object_Type
 {
     Object_Shadow,
     Object_Rock,
-    Object_Loot
+    Object_Loot,
+    Object_Tree
 };
 
 struct object_entity
