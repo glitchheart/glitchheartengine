@@ -6,4 +6,4 @@ center 0.5 0.5
 scale 1
 animation bonfire
 collider -0.5 -0.7 0.35 0.2 0
-pointlight type 0 active 1 radius 16.0 intensity 10.0 color 0.95 0.25 0.1 1.0 atten 2 0.5 0.7
+pointlight type 0 active 1 radius 0 intensity 6 color 0.87 0.22 0.05 1.0 atten 0.7 0.5 0.7

@@ -27,11 +27,9 @@ void main()
 
 		vec4 dir = normalize(PointLightPos[i] - ((inverse(P*V)) * vec4((gl_FragCoord.x/screenSize.x - 0.5) * 2.0,
 			(gl_FragCoord.y/screenSize.y - 0.5) * 2.0,0,1)));
-		float lp = 1/(PointLightConstantAtt[i] + PointLightLinearAtt[i] * dist + PointLightExpAtt[i] * dist *  dist); 
-    	if(dist < PointLightRadius[i])
-			finalColor += (lp *  PointLightColors[i]) * PointLightIntensity[i];// * (PointLightRadius[i] - dist);
-    	else
-			finalColor += vec4(0,0,0,1);
+		float attenuation = 1/(PointLightConstantAtt[i] + PointLightLinearAtt[i] * dist + PointLightExpAtt[i] * dist *  dist);     	
+		finalColor += (attenuation *  PointLightColors[i]) * PointLightIntensity[i];// * (PointLightRadius[i] - dist);
 	}
+
 	outColor = finalColor;
 }
