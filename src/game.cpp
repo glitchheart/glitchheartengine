@@ -1121,7 +1121,7 @@ extern "C" UPDATE(Update)
                         if(GameState->CurrentLevel.Type == Level_Isometric)
                         {
                             auto PlayerPos = GameState->Entities[0].Position;
-                            Center = glm::vec2((PlayerPos.x + PlayerPos.y) * 0.5f,(PlayerPos.x - PlayerPos.y) * 0.25f);; // Set center to player's position!
+                            Center = ToIsometric(PlayerPos);
                         }
                         else
                         {

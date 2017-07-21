@@ -1816,7 +1816,7 @@ static void LoadPlayerData(game_state* GameState, i32 Handle = -1, glm::vec2 Pos
             }
         }
         fclose(File);
-        /*
+        
         LoadGame(GameState);
         if(Handle == -1)
         {
@@ -1844,7 +1844,7 @@ static void LoadPlayerData(game_state* GameState, i32 Handle = -1, glm::vec2 Pos
                 GameState->CharacterData.Stamina = Entity->Player.Stamina;
                 GameState->CharacterData.Strength = Entity->Weapon.Damage;
             }
-        }*/
+        }
     }
 }
 
@@ -2217,11 +2217,80 @@ void UpdatePlayer(entity* Entity, game_state* GameState, r64 DeltaTime)
         {
             if(Entity->Velocity.x == Entity->Velocity.x)
             {
-                //@Incomplete: Rotate velocity/direction to the left to have proper/more natural isometric movement
-                r32 NewX = Entity->Velocity.x;
-                r32 NewY = Entity->Velocity.y;
+                r32 DX = 0.0f;
+                r32 DY = 0.0f;
                 
-                Entity->Position += glm::vec2(NewX,NewY);
+                r32 Scale = 2.0f;
+                
+                if(Entity->Velocity.x > 0)
+                {
+                    DX = 1;
+                }
+                else if(Entity->Velocity.x < 0)
+                {
+                    DX = -1;
+                }
+                
+                if(Entity->Velocity.y > 0)
+                {
+                    DY = 1;
+                }
+                else if(Entity->Velocity.y < 0)
+                {
+                    DY = -1;
+                }
+                
+                if(DX < 0 && DY > 0)
+                {
+                    DX = 0;
+                }
+                else if(DX == 0.0f && DY > 0)
+                {
+                    DX = 1.0f;
+                    Scale = 1.0f;
+                }
+                else if(DX > 0 && DY > 0)
+                {
+                    DY = 0.0f;
+                    Scale = 1.0f;
+                }
+                else if(DX > 0 && DY == 0.0f)
+                {
+                    DY = -1.0f;
+                }
+                else if(DX > 0 && DY < 0)
+                {
+                    DX = 0.0f;
+                }
+                else if(DX == 0.0f && DY < 0)
+                {
+                    DX = -1.0f;
+                    Scale = 1.0f;
+                }
+                else if(DX < 0 && DY < 0)
+                {
+                    DY = 0.0f;
+                    Scale = 1.0f;
+                }
+                else if(DX < 0 && DY == 0.0f)
+                {
+                    DY = 1.0f;
+                }
+                
+                r32 Length = glm::length(glm::vec2(DX, DY));
+                
+                glm::vec2 Direction;
+                
+                if(Length != 0.0f)
+                {
+                    Direction = glm::normalize(glm::vec2(DX, DY));
+                }
+                else
+                {
+                    Direction = glm::vec2(0, 0);
+                }
+                
+                Entity->Position += glm::vec2(Direction.x / Scale * Entity->Player.WalkingSpeed * DeltaTime, Direction.y * Entity->Player.WalkingSpeed * DeltaTime);
             }
             
         }

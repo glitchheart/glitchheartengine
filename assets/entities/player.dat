@@ -3,7 +3,7 @@ active 1
 layer Layer_Player
 iskinematic 0
 center 0 0.5
-scale 2
+scale 1
 health 50
 animation swordsman_idle
 staggercooldowntimer 1.0

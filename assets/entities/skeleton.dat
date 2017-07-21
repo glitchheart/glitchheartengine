@@ -3,7 +3,7 @@ active 1
 layer Layer_Enemy
 iskinematic 0
 center 0 0.5
-scale 2
+scale 1
 health 60
 animation skeleton_idle
 staggercooldowntimer 0.1
@@ -36,7 +36,7 @@ attackdistance 5
 aistate 8
 healthcountposition -10 100
 astarcooldowntimer 0.6
-healthbar offset -0.5 2.2 scale 1.0 0.25
+healthbar offset 0 1 scale 1.0 0.25
 #skeleton
 attackcooldowntimer 0.7
 chargingtimer 0.8

@@ -230,13 +230,29 @@ void DebugPrintVec2(glm::vec2 Vec2, const char* Msg = "")
     printf(Concat(Msg, " (%f,%f)\n"),Vec2.x,Vec2.y);
 }
 
-
-
 b32 FileExists(char* FilePath)
 {
     struct stat Buffer;
     return (stat(FilePath,&Buffer) == 0);
 }
 
+glm::vec2 ToCartesian(glm::vec2 Position)
+{
+    glm::vec2 TempPt;
+    TempPt.x = (2 * Position.y + Position.x) / 2;
+    TempPt.y = (2 * Position.y - Position.x) / 2;
+    return TempPt;
+}
+
+glm::vec2 ToIsometric(glm::vec2 Position)
+{
+    Position.x *= 0.5f;
+    Position.y *= 0.5f;
+    
+    glm::vec2 TempPt;
+    TempPt.x = Position.x - Position.y;
+    TempPt.y = (Position.x + Position.y) / 2.0f;
+    return TempPt;
+}
 
 #endif

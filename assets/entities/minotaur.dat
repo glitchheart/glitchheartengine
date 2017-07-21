@@ -3,7 +3,7 @@ active 1
 layer Layer_Enemy
 iskinematic 0
 center 0 0.5
-scale 3
+scale 2
 health 280
 animation minotaur_idle
 staggercooldowntimer 0.1
