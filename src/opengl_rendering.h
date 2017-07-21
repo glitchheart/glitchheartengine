@@ -9,8 +9,6 @@
 
 #define PIXELS_PER_UNIT 32
 
-
-
 enum Shader_Type
 {
     Shader_Texture,
@@ -357,10 +355,9 @@ struct render_state
         };
     };
     
-    texture TextureArray[70];
+    texture TextureArray[80];
     i32 TextureIndex;
     texture_map Textures;
-    
     
     //freetype
     FT_Library FTLibrary;
