@@ -172,7 +172,7 @@ static void SpawnTree(game_state* GameState, glm::vec2 Position, i32* Handle = 0
     
     auto Tree = &GameState->Objects[GameState->ObjectCount++];
     Tree->Active = true;
-    Tree->Scale = 0.5f;
+    Tree->Scale = 1.0f;
     Tree->Type = Object_Tree,
     Tree->Position = glm::vec2(Position.x - 1.4f, Position.y - 1.5f);
     
@@ -181,7 +181,7 @@ static void SpawnTree(game_state* GameState, glm::vec2 Position, i32* Handle = 0
     
     RenderEntity->ShaderIndex = Shader_Texture;
     RenderEntity->Rendered = true;
-    RenderEntity->Background = true;
+    RenderEntity->Background = false;
     RenderEntity->RenderType = Render_Type_Object;
     RenderEntity->Object = &*Tree;
     RenderEntity->Texture = GameState->RenderState.Textures["big_tree"];

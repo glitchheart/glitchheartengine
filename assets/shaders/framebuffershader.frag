@@ -21,9 +21,8 @@ void main()
 	vec4 lightingColor = texture(lightingTex, Texcoord);
 	vec4 endColor = texture(tex, Texcoord);
 	
-	vec4 ambient = vec4(0.0,0.3,0.4,1) * endColor * 0.7;
+	vec4 ambient = vec4(0.3,0.1,0.1,1) * endColor * 0.7;
 	vec4 linearColor = ambient + lightingColor;
-
 
 	//outColor = endColor * (color + lightingColor + ambient);
 	if(!ignoreLight)
