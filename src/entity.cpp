@@ -1816,12 +1816,13 @@ static void LoadPlayerData(game_state* GameState, i32 Handle = -1, glm::vec2 Pos
             }
         }
         fclose(File);
+        /*
         LoadGame(GameState);
         if(Handle == -1)
         {
             if(GameState->CharacterData.HasCheckpoint)
             {
-                Entity->Position = glm::vec2(GameState->CharacterData.CurrentCheckpoint.x,GameState->CharacterData.CurrentCheckpoint.y - 0.5f);
+                Entity->Position = glm::vec2(GameState->CharacterData.CurrentCheckpoint.x - 0.5f,GameState->CharacterData.CurrentCheckpoint.y - 0.5f);
             }
             else
             {
@@ -1843,7 +1844,7 @@ static void LoadPlayerData(game_state* GameState, i32 Handle = -1, glm::vec2 Pos
                 GameState->CharacterData.Stamina = Entity->Player.Stamina;
                 GameState->CharacterData.Strength = Entity->Weapon.Damage;
             }
-        }
+        }*/
     }
 }
 
@@ -2211,8 +2212,24 @@ void UpdatePlayer(entity* Entity, game_state* GameState, r64 DeltaTime)
         if(Entity->Player.IsChargingCheckpoint)
             Entity->Velocity = glm::vec2(Entity->Velocity.x * 0.5f, Entity->Velocity.y * 0.5f);
         
-        if(Entity->Velocity.x == Entity->Velocity.x)
-            Entity->Position += Entity->Velocity;
+        
+        if(GameState->CurrentLevel.Type == Level_Isometric)
+        {
+            if(Entity->Velocity.x == Entity->Velocity.x)
+            {
+                //@Incomplete: Rotate velocity/direction to the left to have proper/more natural isometric movement
+                r32 NewX = Entity->Velocity.x;
+                r32 NewY = Entity->Velocity.y;
+                
+                Entity->Position += glm::vec2(NewX,NewY);
+            }
+            
+        }
+        else
+        {
+            if(Entity->Velocity.x == Entity->Velocity.x)
+                Entity->Position += Entity->Velocity;
+        }
         
         Entity->Hit = false;
         

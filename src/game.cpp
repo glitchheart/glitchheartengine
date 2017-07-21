@@ -495,6 +495,14 @@ static void EditorUpdateEntities(game_state* GameState, r64 DeltaTime)
                                 }
                                 else
                                 {
+                                    if(GameState->CurrentLevel.Type == Level_Isometric)
+                                    {
+                                        auto OldX = X;
+                                        auto OldY = Y;
+                                        X = (i32)((r32)(OldX + OldY) * 0.5f);
+                                        Y = (i32)((r32)(OldX - OldY) * 0.25f);
+                                    }
+                                    
                                     if(X >= 0 && X < (i32)GameState->CurrentLevel.Tilemap.Width 
                                        && Y >= 0 && Y < (i32)GameState->CurrentLevel.Tilemap.Height)
                                     {
@@ -520,6 +528,7 @@ static void EditorUpdateEntities(game_state* GameState, r64 DeltaTime)
                                         }
                                         else
                                         {
+                                            
                                             for(u32 IndexY = 0; IndexY < Tilemap->Height; IndexY++)
                                             {
                                                 for(u32 RelativeX = 0; RelativeX < GameState->EditorState.TileBrushSize.x && RelativeX + X < Tilemap->Width; RelativeX++)
@@ -852,8 +861,19 @@ extern "C" UPDATE(Update)
         
         // @Incomplete: This is not the right value, it is only set so high to remove smooth following as of now, since it needs to be done a little differently
         
-        GameState->GameCamera.Center = GameState->Entities[0].Position; // Set center to player's position!
-        GameState->GameCamera.CenterTarget = GameState->Entities[0].Position;
+        if(GameState->CurrentLevel.Type == Level_Isometric)
+        {
+            auto PlayerPos = GameState->Entities[0].Position;
+            GameState->GameCamera.Center = glm::vec2((PlayerPos.x + PlayerPos.y) * 0.5f,(PlayerPos.x - PlayerPos.y) * 0.25f);; // Set center to player's position!
+            GameState->GameCamera.CenterTarget = glm::vec2((PlayerPos.x + PlayerPos.y) * 0.5f,(PlayerPos.x - PlayerPos.y) * 0.25f);
+        }
+        else
+        {
+            GameState->GameCamera.Center = GameState->Entities[0].Position; // Set center to player's position!
+            GameState->GameCamera.CenterTarget = GameState->Entities[0].Position;
+        }
+        
+        
         GameState->IsInitialized = true;
     }
     
@@ -1098,7 +1118,16 @@ extern "C" UPDATE(Update)
                     {
                         auto Direction = glm::normalize(GameState->GameCamera.CenterTarget - Center);
                         
-                        Center = GameState->Entities[0].Position; // glm::vec2(Center.x + Direction.x * GameState->GameCamera.FollowSpeed * DeltaTime, Center.y + Direction.y  * GameState->GameCamera.FollowSpeed * DeltaTime);
+                        if(GameState->CurrentLevel.Type == Level_Isometric)
+                        {
+                            auto PlayerPos = GameState->Entities[0].Position;
+                            Center = glm::vec2((PlayerPos.x + PlayerPos.y) * 0.5f,(PlayerPos.x - PlayerPos.y) * 0.25f);; // Set center to player's position!
+                        }
+                        else
+                        {
+                            Center = GameState->Entities[0].Position;
+                        }
+                        // glm::vec2(Center.x + Direction.x * GameState->GameCamera.FollowSpeed * DeltaTime, Center.y + Direction.y  * GameState->GameCamera.FollowSpeed * DeltaTime);
                         
                         GameState->GameCamera.Center = Center;
                     }
