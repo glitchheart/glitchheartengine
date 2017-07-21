@@ -92,6 +92,9 @@ void Hit(game_state* GameState, entity* ByEntity, entity* HitEntity)
                 
                 HitEntity->Enemy.HealthCounts[HitEntity->Enemy.HealthCountIndex].Visible = true;
                 HitEntity->Enemy.HealthCounts[HitEntity->Enemy.HealthCountIndex].Position = HitEntity->Enemy.HealthCountStart;
+                
+                memset(HitEntity->Enemy.HealthCounts[HitEntity->Enemy.HealthCountIndex].Count, 0, 20 * sizeof(char));
+                
                 sprintf(HitEntity->Enemy.HealthCounts[HitEntity->Enemy.HealthCountIndex].Count, "%d", HitEntity->HealthLost);
                 HitEntity->Enemy.HealthCountIndex++;
                 if(HitEntity->Enemy.HealthCountIndex == 10)
@@ -114,7 +117,7 @@ static void SpawnShadow(game_state* GameState, glm::vec2 Position, i32* Handle)
     
     auto Shadow = &GameState->Objects[GameState->ObjectCount++];
     Shadow->Active = true;
-    Shadow->Scale = 2;
+    Shadow->Scale = 1;
     Shadow->Type = Object_Shadow;
     Shadow->Position = glm::vec2(Position.x - 1.4f, Position.y - 1.5f);
     
@@ -141,7 +144,7 @@ static void SpawnLoot(game_state* GameState, glm::vec2 Position, i32* Handle)
     
     auto Loot = &GameState->Objects[GameState->ObjectCount++];
     Loot->Active = true;
-    Loot->Scale = 2;
+    Loot->Scale = 1;
     Loot->Type = Object_Loot;
     Loot->Position = glm::vec2(Position.x, Position.y - 0.5f);
     
@@ -399,6 +402,12 @@ static void LoadEnemyData(FILE* File, entity* Entity, game_state* GameState)
     Entity->Weapon.Layer = (Entity_Layer)4;
     Entity->Weapon.IgnoreLayers = (Entity_Layer)0;
     Entity->IgnoreLayers = (Entity_Layer)0;
+    
+    Entity->Enemy.HealthCountIndex = 0;
+    for(i32 Index = 0; Index < 10; Index++)
+    {
+        memset(Entity->Enemy.HealthCounts[Index].Count, 0, 20 * sizeof(char));
+    }
     
     if(File)
     {
