@@ -1581,7 +1581,52 @@ static void RenderEntity(game_state *GameState, render_entity* RenderEntity, glm
             
             r32 RemoveInX = (IsFlipped ? 1.0f * Scale.x - (2 * CurrentAnimation->Center.x * Scale.x) : 0) + CurrentAnimation->Center.x * Scale.x;
             
-            Model = glm::translate(Model, glm::vec3(Position.x - RemoveInX, Position.y - (IsFlipped ? CurrentAnimation->Center.y : 0), 0.0f));
+            r32 CorrectX = Position.x - RemoveInX;
+            r32 CorrectY = Position.y - (IsFlipped ? CurrentAnimation->Center.y : 0);
+            if(GameState->CurrentLevel.Type == Level_Isometric)
+            {
+                CorrectX = (Position.x + Position.y - RemoveInX) * 0.5f;
+                CorrectY = (Position.x - Position.y) * 0.25f;
+            }
+            
+            if(RenderEntity->Entity->Type == Entity_Player)
+            {
+                if(GetKey(Key_W,GameState))
+                {
+                    RenderText(&GameState->RenderState, 
+                               GameState->RenderState.MenuFont, 
+                               glm::vec4(0.5, 1, 1, 1), "W", 
+                               (r32)GameState->RenderState.WindowWidth / 2, 
+                               80, 1, Alignment_Center);
+                }
+                if(GetKey(Key_A,GameState))
+                {
+                    RenderText(&GameState->RenderState, 
+                               GameState->RenderState.MenuFont, 
+                               glm::vec4(0.5, 1, 1, 1), "A", 
+                               (r32)GameState->RenderState.WindowWidth / 2 - 40, 
+                               40, 1, Alignment_Center);
+                }
+                if(GetKey(Key_S,GameState))
+                {
+                    RenderText(&GameState->RenderState, 
+                               GameState->RenderState.MenuFont, 
+                               glm::vec4(0.5, 1, 1, 1), "S", 
+                               (r32)GameState->RenderState.WindowWidth / 2, 
+                               40, 1, Alignment_Center);
+                }
+                if(GetKey(Key_D,GameState))
+                {
+                    RenderText(&GameState->RenderState, 
+                               GameState->RenderState.MenuFont, 
+                               glm::vec4(0.5, 1, 1, 1), "D", 
+                               (r32)GameState->RenderState.WindowWidth / 2 + 40, 
+                               40, 1, Alignment_Center);
+                }
+                
+            }
+            
+            Model = glm::translate(Model, glm::vec3(CorrectX, CorrectY, 0.0f));
             if(IsFlipped)
             {
                 Model = glm::translate(Model, glm::vec3(Scale.x, 0, 0));
@@ -1621,7 +1666,15 @@ static void RenderEntity(game_state *GameState, render_entity* RenderEntity, glm
         } 
         else 
         {
-            Model = glm::translate(Model, glm::vec3(Position.x, Position.y, 0.0f));
+            r32 CorrectX = Position.x;
+            r32 CorrectY = Position.y;
+            if(GameState->CurrentLevel.Type == Level_Isometric)
+            {
+                CorrectX = (Position.x + Position.y) * 0.5f;
+                CorrectY = (Position.x - Position.y) * 0.25f;
+            }
+            
+            Model = glm::translate(Model, glm::vec3(CorrectX, CorrectY, 0.0f));
             
             r32 WidthInUnits = RenderEntity->Texture->Width / (r32)PIXELS_PER_UNIT;
             r32 HeightInUnits = RenderEntity->Texture->Height / (r32)PIXELS_PER_UNIT;
@@ -2489,7 +2542,17 @@ static void RenderLightSources(game_state* GameState)
                 case Light_Pointlight:
                 {
                     glm::mat4 Model(1.0f);
-                    Model = glm::translate(Model,glm::vec3(LightSource.Pointlight.Position.x + 1.0f,LightSource.Pointlight.Position.y + 1.0f,0));
+                    
+                    r32 CorrectX = LightSource.Pointlight.Position.x + 1.0f;
+                    r32 CorrectY = LightSource.Pointlight.Position.y + 1.0f;
+                    
+                    if(GameState->CurrentLevel.Type == Level_Isometric)
+                    {
+                        CorrectX = (LightSource.Pointlight.Position.x + 1.0f + LightSource.Pointlight.Position.y + 1.0f) * 0.5f;
+                        CorrectY = (LightSource.Pointlight.Position.x + 1.0f - LightSource.Pointlight.Position.y + 1.0f) * 0.25f;
+                    }
+                    
+                    Model = glm::translate(Model,glm::vec3(CorrectX,CorrectY,0));
                     PointlightPositions[NumOfPointLights] = Model * glm::vec4(-0.5,-0.5,0.0f,1.0f);
                     PointlightRadi[NumOfPointLights] = LightSource.Pointlight.Radius;
                     PointlightIntensities[NumOfPointLights] = LightSource.Pointlight.Intensity;
