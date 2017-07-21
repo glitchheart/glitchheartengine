@@ -164,6 +164,34 @@ static void SpawnLoot(game_state* GameState, glm::vec2 Position, i32* Handle)
     GameState->Objects[GameState->ObjectCount++];
 }
 
+
+static void SpawnTree(game_state* GameState, glm::vec2 Position, i32* Handle = 0)
+{
+    if(Handle)
+        *Handle = GameState->ObjectCount;
+    
+    auto Tree = &GameState->Objects[GameState->ObjectCount++];
+    Tree->Active = true;
+    Tree->Scale = 0.5f;
+    Tree->Type = Object_Tree,
+    Tree->Position = glm::vec2(Position.x - 1.4f, Position.y - 1.5f);
+    
+    render_entity* RenderEntity = &GameState->RenderState.RenderEntities[GameState->RenderState.RenderEntityCount];
+    Tree->RenderEntityHandle = GameState->RenderState.RenderEntityCount;
+    
+    RenderEntity->ShaderIndex = Shader_Texture;
+    RenderEntity->Rendered = true;
+    RenderEntity->Background = true;
+    RenderEntity->RenderType = Render_Type_Object;
+    RenderEntity->Object = &*Tree;
+    RenderEntity->Texture = GameState->RenderState.Textures["big_tree"];
+    
+    Tree->RenderEntityHandle = GameState->RenderState.RenderEntityCount++;
+    RenderEntity->Color = glm::vec4(1, 1, 1, 1);
+    
+    GameState->Objects[GameState->ObjectCount++];
+}
+
 static void LoadEntityData(FILE* File, entity* Entity, game_state* GameState, b32 IsReload = false)
 {
     if(!IsReload)
