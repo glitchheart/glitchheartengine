@@ -238,37 +238,17 @@ float GetInputX(game_state* GameState, Stick Stick = Stick_Left)
     if(Abs(GameState->InputController.Axes[Axis]) > GameState->InputController.ControllerDeadzone)
         InputX = GameState->InputController.Axes[Axis]; 
     
-    if(GameState->CurrentLevel.Type == Level_Orthogonal)
+    if (GetKey(Key_A, GameState))
     {
-        if (GetKey(Key_A, GameState))
-        {
-            InputX += -1;
-        }
-        else if (GetKey(Key_D, GameState))
-        {
-            InputX += 1;
-        }
+        InputX += -1;
+    }
+    else if (GetKey(Key_D, GameState))
+    {
+        InputX += 1;
     }
     else
-    {
-        if (GetKey(Key_A, GameState))
-        {
-            InputX += -1;
-        }
-        else if (GetKey(Key_D, GameState))
-        {
-            InputX += 1;
-        }
-        else if(GetKey(Key_W, GameState))
-        {
-            InputX += 1;
-        }
-        else if(GetKey(Key_S, GameState))
-        {
-            InputX += -1;
-        }
-        
-    }
+        InputX += 0;
+    
     return InputX;
 }
 
@@ -291,35 +271,13 @@ float GetInputY(game_state* GameState, Stick Stick = Stick_Left)
         }
     }
     
-    if(GameState->CurrentLevel.Type == Level_Orthogonal)
+    if (GetKey(Key_W, GameState))
     {
-        if (GetKey(Key_W, GameState))
-        {
-            InputY += 1;
-        }
-        else if (GetKey(Key_S, GameState))
-        {
-            InputY += -1;
-        }
+        InputY += 1;
     }
-    else
+    else if (GetKey(Key_S, GameState))
     {
-        if (GetKey(Key_W, GameState))
-        {
-            InputY += 1;
-        }
-        else if (GetKey(Key_S, GameState))
-        {
-            InputY += -1;
-        }
-        else if(GetKey(Key_A, GameState))
-        {
-            InputY += 1;
-        }
-        else if(GetKey(Key_D, GameState))
-        {
-            InputY += -1;
-        }
+        InputY += -1;
     }
     
     return InputY;

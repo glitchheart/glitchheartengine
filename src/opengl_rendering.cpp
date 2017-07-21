@@ -313,8 +313,9 @@ static void LoadTilemapBuffer(render_state* RenderState, i32 Layer, GLuint* VAO,
                     r32 TexCoordXHigh = (Tile->TextureOffset.x + Tilemap.TileWidth) / Width;
                     r32 TexCoordYHigh = (Tile->TextureOffset.y + Tilemap.TileHeight) / Height; 
                     
-                    r32 CorrectX = (r32)(X + Y) * 0.5f;
-                    r32 CorrectY = (r32)(X - Y) * 0.25f;
+                    glm::vec2 CorrectPosition = ToIsometric(glm::vec2(X, Y));
+                    r32 CorrectX = CorrectPosition.x;
+                    r32 CorrectY = CorrectPosition.y;
                     
                     VertexBuffer[Current++] = (GLfloat)CorrectX;
                     VertexBuffer[Current++] = (GLfloat)CorrectY + 0.5f;
@@ -1523,23 +1524,25 @@ static void RenderAnimationPreview(render_state* RenderState, const animation_in
 static void RenderHealthbar(render_state* RenderState,
                             entity* Entity, const entity_healthbar& Healthbar, glm::mat4 ProjectionMatrix, glm::mat4 ViewMatrix)
 {
-    RenderRect(Render_Fill, RenderState, glm::vec4(0.6, 0, 0, 1), Entity->Position.x + Healthbar.Offset.x, Entity->Position.y + Healthbar.Offset.y, 1.0f
+    auto EntityPosition = ToIsometric(Entity->Position);
+    
+    RenderRect(Render_Fill, RenderState, glm::vec4(0.6, 0, 0, 1), EntityPosition.x + Healthbar.Offset.x, EntityPosition.y + Healthbar.Offset.y, 1.0f
                / (r32)Entity->FullHealth * (r32)Entity->Health , 0.1f, 0, false, ProjectionMatrix, ViewMatrix);
     
     
     if(Entity->HealthLost > 0)
     {
-        r32 StartX = Entity->Position.x + Healthbar.Offset.x + 1.0f
+        r32 StartX = EntityPosition.x + Healthbar.Offset.x + 1.0f
             / (r32)Entity->FullHealth * (r32)Entity->Health;
         r32 Width = 1.0f
             / (r32)Entity->FullHealth * (r32)Entity->HealthLost;
         
-        RenderRect(Render_Fill, RenderState, glm::vec4(1, 1, 1, 1), StartX, Entity->Position.y + Healthbar.Offset.y, Width, 0.1f, 0, false, ProjectionMatrix, ViewMatrix);
+        RenderRect(Render_Fill, RenderState, glm::vec4(1, 1, 1, 1), StartX, EntityPosition.y + Healthbar.Offset.y, Width, 0.1f, 0, false, ProjectionMatrix, ViewMatrix);
         
         glm::mat4 Model = glm::mat4(1.0f) * ViewMatrix;
         
         glm::vec3 Projected =
-            glm::project(glm::vec3(Entity->Position.x, Entity->Position.y, 0), Model, ProjectionMatrix, glm::vec4(RenderState->Viewport[0], RenderState->Viewport[1], RenderState->Viewport[2], RenderState->Viewport[3]));
+            glm::project(glm::vec3(EntityPosition.x, EntityPosition.y, 0), Model, ProjectionMatrix, glm::vec4(RenderState->Viewport[0], RenderState->Viewport[1], RenderState->Viewport[2], RenderState->Viewport[3]));
         
         
         for(i32 Index = 0; Index < 10; Index++)
@@ -1583,9 +1586,12 @@ static void RenderEntity(game_state *GameState, render_entity* RenderEntity, glm
             
             r32 CorrectX = Position.x - RemoveInX;
             r32 CorrectY = Position.y - (IsFlipped ? CurrentAnimation->Center.y : 0);
+            
+            auto CorrectPos = ToIsometric(glm::vec2(CorrectX, CorrectY));
+            
             if(GameState->CurrentLevel.Type == Level_Isometric)
             {
-                CorrectX = (Position.x + Position.y - RemoveInX) * 0.5f;
+                CorrectX = (Position.x + Position.y - RemoveInX);
                 CorrectY = (Position.x - Position.y) * 0.25f;
             }
             
@@ -1626,7 +1632,7 @@ static void RenderEntity(game_state *GameState, render_entity* RenderEntity, glm
                 
             }
             
-            Model = glm::translate(Model, glm::vec3(CorrectX, CorrectY, 0.0f));
+            Model = glm::translate(Model, glm::vec3(CorrectPos.x, CorrectPos.y, 0.0f));
             if(IsFlipped)
             {
                 Model = glm::translate(Model, glm::vec3(Scale.x, 0, 0));
@@ -1668,6 +1674,7 @@ static void RenderEntity(game_state *GameState, render_entity* RenderEntity, glm
         {
             r32 CorrectX = Position.x;
             r32 CorrectY = Position.y;
+            
             if(GameState->CurrentLevel.Type == Level_Isometric)
             {
                 CorrectX = (Position.x + Position.y) * 0.5f;
@@ -2543,14 +2550,10 @@ static void RenderLightSources(game_state* GameState)
                 {
                     glm::mat4 Model(1.0f);
                     
-                    r32 CorrectX = LightSource.Pointlight.Position.x + 1.0f;
-                    r32 CorrectY = LightSource.Pointlight.Position.y + 1.0f;
+                    auto Position = GameState->CurrentLevel.Type == Level_Isometric ?ToIsometric(LightSource.Pointlight.Position) : LightSource.Pointlight.Position;
                     
-                    if(GameState->CurrentLevel.Type == Level_Isometric)
-                    {
-                        CorrectX = (LightSource.Pointlight.Position.x + 1.0f + LightSource.Pointlight.Position.y + 1.0f) * 0.5f;
-                        CorrectY = (LightSource.Pointlight.Position.x + 1.0f - LightSource.Pointlight.Position.y + 1.0f) * 0.25f;
-                    }
+                    r32 CorrectX = Position.x + 1.0f;
+                    r32 CorrectY = Position.y + 1.0f;
                     
                     Model = glm::translate(Model,glm::vec3(CorrectX,CorrectY,0));
                     PointlightPositions[NumOfPointLights] = Model * glm::vec4(-0.5,-0.5,0.0f,1.0f);

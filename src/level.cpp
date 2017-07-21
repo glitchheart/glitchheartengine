@@ -184,7 +184,6 @@ static b32 LoadLevelFromFile(char* FilePath, level* Level, game_state* GameState
             Level->Tilemap.Data[Layer] = (tile_data**)malloc(MapWidth * sizeof(tile_data*));
         }
         
-        
         for(i32 Layer = 0; Layer < TILEMAP_LAYERS; Layer++)
         {
             for(u32 I = 0; I < MapWidth; I++)
@@ -208,10 +207,11 @@ static b32 LoadLevelFromFile(char* FilePath, level* Level, game_state* GameState
                 {
                     i32 TypeIndex = (u32)strtol(Ptr, &Ptr, 10);
                     
-                    tile_data Data = Level->Tilemap.Tiles[TypeIndex];
+                    tile_data Data;
                     
                     if(TypeIndex > 0)
                     {
+                        Data = Level->Tilemap.Tiles[TypeIndex - 1];
                         collision_AABB CollisionAABB;
                         CollisionAABB.Center = glm::vec2(IndexWidth + 0.5f, MapHeight - IndexHeight - 0.5f);
                         CollisionAABB.Extents = glm::vec2(0.5, 0.5);
