@@ -1550,7 +1550,7 @@ static void RenderHealthbar(render_state* RenderState,
             auto& HealthCount = Entity->Enemy.HealthCounts[Index];
             if(HealthCount.Visible)
             {
-                RenderText(RenderState, RenderState->DamageFont, glm::vec4(1, 0, 0, 1), &HealthCount.Count[0], Projected.x + HealthCount.Position.x, Projected.y + HealthCount.Position.y, 1);
+                RenderText(RenderState, RenderState->DamageFont, glm::vec4(1, 0, 0, 1), HealthCount.Count, Projected.x + HealthCount.Position.x, Projected.y + HealthCount.Position.y, 1);
             }
         }
     }
@@ -1584,16 +1584,10 @@ static void RenderEntity(game_state *GameState, render_entity* RenderEntity, glm
             
             r32 RemoveInX = (IsFlipped ? 1.0f * Scale.x - (2 * CurrentAnimation->Center.x * Scale.x) : 0) + CurrentAnimation->Center.x * Scale.x;
             
-            r32 CorrectX = Position.x - RemoveInX;
-            r32 CorrectY = Position.y - (IsFlipped ? CurrentAnimation->Center.y : 0);
+            auto CorrectPos = ToIsometric(Position);
             
-            auto CorrectPos = ToIsometric(glm::vec2(CorrectX, CorrectY));
-            
-            if(GameState->CurrentLevel.Type == Level_Isometric)
-            {
-                CorrectX = (Position.x + Position.y - RemoveInX);
-                CorrectY = (Position.x - Position.y) * 0.25f;
-            }
+            CorrectPos.x = CorrectPos.x - RemoveInX;
+            CorrectPos.y = CorrectPos.y - (IsFlipped ? CurrentAnimation->Center.y : 0);
             
             if(RenderEntity->Entity->Type == Entity_Player)
             {
@@ -1672,14 +1666,11 @@ static void RenderEntity(game_state *GameState, render_entity* RenderEntity, glm
         } 
         else 
         {
-            r32 CorrectX = Position.x;
-            r32 CorrectY = Position.y;
             
-            if(GameState->CurrentLevel.Type == Level_Isometric)
-            {
-                CorrectX = (Position.x + Position.y) * 0.5f;
-                CorrectY = (Position.x - Position.y) * 0.25f;
-            }
+            auto CorrectPos = ToIsometric(glm::vec2(Position.x, Position.y));
+            
+            r32 CorrectX = CorrectPos.x;
+            r32 CorrectY = CorrectPos.y;
             
             Model = glm::translate(Model, glm::vec3(CorrectX, CorrectY, 0.0f));
             
