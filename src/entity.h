@@ -169,7 +169,7 @@ struct loot
 struct light_source
 {
     Light_Type Type;
-    b32 Active = false;
+    b32 Active;
     glm::vec4 Color;
     union
     {

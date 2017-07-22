@@ -833,13 +833,6 @@ extern "C" UPDATE(Update)
             LoadAnimations(GameState);
             InitCommands();
             
-            light_source AmbientLight;
-            AmbientLight.Type = Light_Ambient;
-            AmbientLight.Active = true;
-            AmbientLight.Color = glm::vec4(0.1,0,0,1);
-            AmbientLight.Ambient.Intensity = 0.5f;
-            GameState->LightSources[GameState->LightSourceCount++] = AmbientLight;
-            
             GameState->EditorCamera.Zoom = GameState->InitialZoom; 
             GameState->EditorCamera.ViewportWidth = GameState->RenderState.WindowWidth;
             GameState->EditorCamera.ViewportHeight = GameState->RenderState.WindowHeight;

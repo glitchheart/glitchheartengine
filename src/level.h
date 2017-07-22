@@ -55,6 +55,7 @@ struct level
     tilemap Tilemap;
     char* TilesheetPath;
     u32 TilesheetIndex;
+    i32 AmbientLightHandle;
 };
 
 

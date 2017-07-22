@@ -7,8 +7,6 @@ uniform float PointLightIntensity[32];
 uniform float PointLightConstantAtt[32];
 uniform float PointLightLinearAtt[32];
 uniform float PointLightExpAtt[32];
-uniform float AmbientIntensity;
-uniform vec4 AmbientColor;
 uniform vec2 screenSize;
 uniform int NUM_POINTLIGHTS;
 uniform mat4 P;

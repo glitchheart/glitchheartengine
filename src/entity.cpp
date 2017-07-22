@@ -395,22 +395,7 @@ static void LoadEntityData(FILE* File, entity* Entity, game_state* GameState, b3
         }
         else if(StartsWith(&LineBuffer[0],"pointlight"))
         {
-            light_source NewPointLight;
-            
-            sscanf(LineBuffer, "pointlight type %d active %d radius %f intensity %f color %f %f %f %f atten %f %f %f",
-                   &NewPointLight.Type ,&NewPointLight.Active,
-                   &NewPointLight.Pointlight.Radius, &NewPointLight.Pointlight.Intensity,&NewPointLight.Color.x,&NewPointLight.Color.y,&NewPointLight.Color.z,&NewPointLight.Color.w, &NewPointLight.Pointlight.ConstantAtten, &NewPointLight.Pointlight.LinearAtten, &NewPointLight.Pointlight.ExponentialAtten);
-            NewPointLight.Pointlight.Position = Entity->Position;
-            
-            if(Entity->LightSourceHandle == -1)
-            {
-                Entity->LightSourceHandle = GameState->LightSourceCount;
-                GameState->LightSources[GameState->LightSourceCount++] = NewPointLight;
-            }
-            else
-            {
-                GameState->LightSources[Entity->LightSourceHandle] = NewPointLight;
-            }
+            Entity->LightSourceHandle = LoadLight(GameState, LineBuffer, Entity->Position, Entity->LightSourceHandle);
         }
     }
 }
