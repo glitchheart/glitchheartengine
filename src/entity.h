@@ -203,6 +203,7 @@ struct object_entity
 {
     b32 Active;
     Object_Type Type;
+    b32 UsesTransparency;
     glm::vec2 Position;
     r32 Scale;
     glm::vec2 Center;
