@@ -28,6 +28,6 @@ void main()
 		float attenuation = 1/(PointLightConstantAtt[i] + PointLightLinearAtt[i] * dist + PointLightExpAtt[i] * dist *  dist);     	
 		finalColor += (attenuation *  PointLightColors[i]) * PointLightIntensity[i];// * (PointLightRadius[i] - dist);
 	}
-
+	
 	outColor = finalColor;
 }

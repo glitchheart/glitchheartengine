@@ -838,7 +838,10 @@ static void InitializeOpenGL(game_state* GameState, render_state* RenderState, c
     if (!glfwInit())
         exit(EXIT_FAILURE);
     
-    RenderState->Window = glfwCreateWindow(ConfigData->ScreenWidth, ConfigData->ScreenHeight, Concat(Concat(ConfigData->Title, " "), ConfigData->Version), ConfigData->Fullscreen ? glfwGetPrimaryMonitor() : NULL, NULL);
+    RenderState->Window = glfwCreateWindow(ConfigData->ScreenWidth, ConfigData->ScreenHeight, Concat(Concat(ConfigData->Title, " "), ConfigData->Version), ConfigData->Fullscreen ? glfwGetPrimaryMonitor() : NULL, 
+                                           NULL);
+    RenderState->Contrast = ConfigData->Contrast;
+    RenderState->Brightness = ConfigData->Brightness;
     
     if (!RenderState->Window)
     {
@@ -2626,6 +2629,8 @@ static void Render(game_state* GameState)
             SetFloatUniform(GameState->RenderState.FrameBufferShader.Program, "ambientIntensity", GameState->LightSources[AmbientLightHandle].Ambient.Intensity);
         }
         
+        SetFloatUniform(GameState->RenderState.FrameBufferShader.Program, "contrast", GameState->RenderState.Contrast);
+        SetFloatUniform(GameState->RenderState.FrameBufferShader.Program, "brightness", GameState->RenderState.Brightness);
         SetIntUniform(GameState->RenderState.FrameBufferShader.Program, "ignoreLight",  !GameState->RenderLight);
         
         auto TexLoc = glGetUniformLocation(GameState->RenderState.FrameBufferShader.Program, "tex");
@@ -2642,7 +2647,7 @@ static void Render(game_state* GameState)
         
         GameState->RenderState.BoundTexture = GameState->RenderState.LightingTextureColorBuffer;
         
-        glEnable(GL_FRAMEBUFFER_SRGB);
+        //glEnable(GL_FRAMEBUFFER_SRGB);
         
         glDrawArrays(GL_QUADS, 0, 4); 
         

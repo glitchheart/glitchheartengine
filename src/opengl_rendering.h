@@ -225,6 +225,8 @@ struct render_state
     GLFWwindow *Window;
     int WindowWidth;
     int WindowHeight;
+    r32 Contrast;
+    r32 Brightness;
     GLfloat ScaleX;
     GLfloat ScaleY;
     GLint Viewport[4];

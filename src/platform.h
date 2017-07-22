@@ -84,6 +84,8 @@ struct config_data
     u32 ScreenWidth;
     u32 ScreenHeight;
     b32 Fullscreen;
+    r32 Contrast;
+    r32 Brightness;
     b32 Muted;
     r32 Zoom;
 };
@@ -127,6 +129,14 @@ void LoadConfig(const char* FilePath, config_data* ConfigData)
             else if(StartsWith(LineBuffer, "screen_height"))
             {
                 sscanf(LineBuffer, "screen_height %d", &ConfigData->ScreenHeight);
+            }
+            else if(StartsWith(LineBuffer, "contrast"))
+            {
+                sscanf(LineBuffer, "contrast %f", &ConfigData->Contrast);
+            }
+            else if(StartsWith(LineBuffer, "brightness"))
+            {
+                sscanf(LineBuffer, "brightness %f", &ConfigData->Brightness);
             }
             else if(StartsWith(LineBuffer, "fullscreen"))
             {
