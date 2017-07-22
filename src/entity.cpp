@@ -1375,6 +1375,7 @@ static void LoadBonfireData(game_state* GameState, i32 Handle = -1, glm::vec2 Po
     entity* Entity = Handle != -1 ? &GameState->Entities[Handle] : &GameState->Entities[GameState->EntityCount];
     
     Entity->Type = Entity_Bonfire;
+    Entity->Bonfire.IncreasingGlow = true;
     
     if(Handle == -1)
     {
@@ -1385,6 +1386,29 @@ static void LoadBonfireData(game_state* GameState, i32 Handle = -1, glm::vec2 Po
     {
         LoadEntityData(File, Entity, GameState, Handle != -1);
         Entity->IsTemporary = IsTemporary;
+        
+        char LineBuffer[255];
+        
+        while(fgets(LineBuffer, 255, File))
+        {
+            if(StartsWith(&LineBuffer[0], "#"))
+            {
+                break;
+            }
+            else if(StartsWith(&LineBuffer[0], "glowtimer"))
+            {
+                Entity->Bonfire.GlowTimer.TimerHandle = -1;
+                
+                sscanf(LineBuffer,"glowtimer %lf",&Entity->Bonfire.GlowTimer.TimerMax);
+                Entity->Bonfire.GlowTimer.Name = "GlowTimer";
+            }
+            else if(StartsWith(&LineBuffer[0], "glowincrease"))
+            {
+                sscanf(LineBuffer, "glowincrease %f", &Entity->Bonfire.GlowIncrease);
+            }
+        }
+        
+        StartTimer(GameState,Entity->Bonfire.GlowTimer);
         
         if(Handle == -1)
             Entity->Position = glm::vec2(Position.x, Position.y);
@@ -3267,6 +3291,18 @@ void UpdateEntities(game_state* GameState, r64 DeltaTime)
                 case Entity_Bonfire:
                 {
                     UpdateStaticEntity(Entity, GameState, DeltaTime);
+                    
+                    if(!TimerDone(GameState,Entity->Bonfire.GlowTimer))
+                    {
+                        printf("Glowing\n");
+                        GameState->LightSources[Entity->LightSourceHandle].Pointlight.Intensity += Entity->Bonfire.IncreasingGlow ? Entity->Bonfire.GlowIncrease : -Entity->Bonfire.GlowIncrease;
+                    }
+                    else
+                    {
+                        printf("Changing direction\n");
+                        Entity->Bonfire.IncreasingGlow = !Entity->Bonfire.IncreasingGlow;
+                        StartTimer(GameState,Entity->Bonfire.GlowTimer);
+                    }
                 }
                 break;
             }
