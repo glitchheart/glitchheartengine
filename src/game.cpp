@@ -473,15 +473,10 @@ static void EditorUpdateEntities(game_state* GameState, r64 DeltaTime)
                             i32 X = (i32)Pos.x;
                             i32 Y = (i32)Pos.y;
                             
-                            auto Isometric = ToCartesian(glm::vec2(X * 2.0, Y * 2.0));
-                            X = Isometric.x;
-                            Y = Isometric.y;
+                            printf("Before x %d y %d\n", X, Y);
                             
-                            GameState->EditorState.TileX = (r32)glm::floor(X);
-                            GameState->EditorState.TileY = (r32)glm::ceil(Y);
-                            
-                            X = glm::floor(X);
-                            Y = glm::floor(Y);
+                            GameState->EditorState.TileX = (r32)X;
+                            GameState->EditorState.TileY = (r32)Y;
                             
                             if(GetMouseButton(Mouse_Left, GameState))
                             {
