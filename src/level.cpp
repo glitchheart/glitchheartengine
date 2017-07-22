@@ -174,6 +174,14 @@ static b32 LoadLevelFromFile(char* FilePath, level* Level, game_state* GameState
             }
         }
         
+        if(fgets(LineBuffer, 255, File))
+        {
+            if(StartsWith(LineBuffer, "ambient"))
+            {
+                GameState->CurrentLevel.AmbientLightHandle = LoadLight(GameState,LineBuffer);
+            }
+        }
+        
         Assert(MapWidth > 0 && MapHeight > 0);
         
         Level->Tilemap.Width = MapWidth;
@@ -346,6 +354,16 @@ static void SaveLevelToFile(const char* FilePath, level* Level, game_state* Game
         else
         {
             fprintf(File,"isometric\n");
+        }
+        
+        if(Level->AmbientLightHandle != -1)
+        {
+            auto Light = GameState->LightSources[Level->AmbientLightHandle];
+            fprintf(File, "ambient type %d active %d intensity %f color %f %f %f %f",Light.Type,Light.Active,Light.Ambient.Intensity,Light.Color.x,Light.Color.y,Light.Color.z,Light.Color.w);
+        }
+        else
+        {
+            fprintf(File, "ambient type %d active %d intensity %f color %f %f %f %f", 1,1,0.0f,0.0f,0.0f,0.0f,0.0f);
         }
         
         for(i32 Layer = 0; Layer < TILEMAP_LAYERS; Layer++)

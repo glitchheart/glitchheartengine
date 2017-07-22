@@ -2531,9 +2531,6 @@ static void RenderLightSources(game_state* GameState)
         glm::vec4 PointlightColors[32];
         i32 NumOfPointLights = 0;
         
-        r32 AmbientIntensity = 0.0f;
-        glm::vec4 AmbientColor = glm::vec4(0,0,0,1);
-        
         for(u32 Index = 0; Index < GameState->LightSourceCount; Index++)
         {
             auto LightSource = GameState->LightSources[Index];
@@ -2543,13 +2540,13 @@ static void RenderLightSources(game_state* GameState)
                 {
                     glm::mat4 Model(1.0f);
                     
-                    auto Position = GameState->CurrentLevel.Type == Level_Isometric ?ToIsometric(LightSource.Pointlight.Position) : LightSource.Pointlight.Position;
+                    auto Position = GameState->CurrentLevel.Type == Level_Isometric ?ToIsometric(LightSource.Pointlight.Position + 1.0f) : LightSource.Pointlight.Position + 1.0f;
                     
-                    r32 CorrectX = Position.x + 1.0f;
-                    r32 CorrectY = Position.y + 1.0f;
+                    r32 CorrectX = Position.x;
+                    r32 CorrectY = Position.y;
                     
                     Model = glm::translate(Model,glm::vec3(CorrectX,CorrectY,0));
-                    PointlightPositions[NumOfPointLights] = Model * glm::vec4(-0.5,-0.5,0.0f,1.0f);
+                    PointlightPositions[NumOfPointLights] = Model * glm::vec4(0.0f, 0.0f, 0.0f,1.0f);
                     PointlightRadi[NumOfPointLights] = LightSource.Pointlight.Radius;
                     PointlightIntensities[NumOfPointLights] = LightSource.Pointlight.Intensity;
                     PointlightColors[NumOfPointLights] = LightSource.Color;
@@ -2557,12 +2554,6 @@ static void RenderLightSources(game_state* GameState)
                     PointlightLinearAtt[NumOfPointLights] = LightSource.Pointlight.LinearAtten;
                     PointlightExponentialAtt[NumOfPointLights] = LightSource.Pointlight.ExponentialAtten;
                     NumOfPointLights++;
-                }
-                break;
-                case Light_Ambient:
-                {
-                    AmbientIntensity = LightSource.Ambient.Intensity;
-                    AmbientColor = LightSource.Color;
                 }
                 break;
             }
@@ -2585,9 +2576,6 @@ static void RenderLightSources(game_state* GameState)
         SetIntUniform(Shader.Program, "NUM_POINTLIGHTS", NumOfPointLights);
         SetVec4ArrayUniform(Shader.Program, "PointLightPos",PointlightPositions,NumOfPointLights);
         SetVec2Uniform(Shader.Program, "screenSize", glm::vec2((r32)GameState->RenderState.WindowWidth,(r32)GameState->RenderState.WindowHeight));
-        
-        SetVec4Uniform(Shader.Program, "AmbientColor", AmbientColor);
-        SetFloatUniform(Shader.Program, "AmbientIntensity", AmbientIntensity);
         
         glDrawArrays(GL_QUADS, 0, 4);
         
@@ -2631,6 +2619,13 @@ static void Render(game_state* GameState)
         glBindVertexArray(GameState->RenderState.FrameBufferVAO);
         UseShader(&GameState->RenderState.FrameBufferShader);
         
+        auto AmbientLightHandle = GameState->CurrentLevel.AmbientLightHandle;
+        if(AmbientLightHandle != -1)
+        {
+            SetVec4Uniform(GameState->RenderState.FrameBufferShader.Program, "ambientColor", GameState->LightSources[AmbientLightHandle].Color);
+            SetFloatUniform(GameState->RenderState.FrameBufferShader.Program, "ambientIntensity", GameState->LightSources[AmbientLightHandle].Ambient.Intensity);
+        }
+        
         SetIntUniform(GameState->RenderState.FrameBufferShader.Program, "ignoreLight",  !GameState->RenderLight);
         
         auto TexLoc = glGetUniformLocation(GameState->RenderState.FrameBufferShader.Program, "tex");
@@ -2646,6 +2641,8 @@ static void Render(game_state* GameState)
         glBindTexture(GL_TEXTURE_2D, GameState->RenderState.LightingTextureColorBuffer);
         
         GameState->RenderState.BoundTexture = GameState->RenderState.LightingTextureColorBuffer;
+        
+        glEnable(GL_FRAMEBUFFER_SRGB);
         
         glDrawArrays(GL_QUADS, 0, 4); 
         
