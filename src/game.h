@@ -91,6 +91,8 @@ struct character_data
     glm::vec2 CurrentCheckpoint;
     b32 HasCheckpoint;
     i32 CheckpointHandle = -1;
+    b32 HasLostWill;
+    i32 LostWill;
 };
 
 #define NUM_TIMERS 1024

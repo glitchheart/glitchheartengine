@@ -16,33 +16,33 @@ void main()
 {
 	float distance =  1 - distance(vec2(Texcoord.x, Texcoord.y), vec2(0.5,0.5)) * 1.5;
 	distance -= 0.2;
-	vec4 color = vec4(distance, distance, distance, 1.0) * 0.1;
-
+	vec4 color = vec4(distance, distance, distance, 1.0) * 0.3;
+		
 	//color = vec4(0.08, 0.08, 0.08, 1);
 
 	vec4 lightingColor = texture(lightingTex, Texcoord);
 	vec4 endColor = texture(tex, Texcoord);
 	
-	vec4 ambient = vec4(0.7,0.05,0.1,1) * endColor * 0.8;
-	vec4 linearColor = ambient + lightingColor + color;
-
+	vec4 ambient = ambientColor * endColor * ambientIntensity;
+	vec4 linearColor = (ambient + lightingColor + color);
 	
-
 	//outColor = endColor * (color + lightingColor + ambient);
 	if(!ignoreLight)
+	{
 		endColor = endColor * vec4(linearColor.rgb, lightingColor.a);
-	
-	endColor.rgb /= endColor.a;
+		
+		endColor.rgb /= endColor.a;
 
-	//Contrast 1.64
-	endColor.rgb += ((endColor.rgb - 0.5) * max(contrast, 0.0)) + 0.5f;
-	
-	// Brightness 1.0 - 2.0/2.8
-	endColor.rgb += 1.0 - 2.0/brightness;
+		//Contrast
+		endColor.rgb += (endColor.rgb - 0.5) * contrast + 0.5f;
+		
+		// Brightness
+		endColor.rgb += brightness;
 
-	endColor.rgb *= endColor.a;
+		endColor.rgb *= endColor.a;
 
-	float gamma = 1.8;
-	endColor.rgb = pow(endColor.rgb, vec3(1.0/gamma));
+		float gamma = 1.0;
+		endColor.rgb = pow(endColor.rgb, vec3(1.0/gamma));
+	}
 	outColor = endColor;
 }

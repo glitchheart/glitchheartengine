@@ -2543,7 +2543,7 @@ static void RenderLightSources(game_state* GameState)
                 {
                     glm::mat4 Model(1.0f);
                     
-                    auto Position = GameState->CurrentLevel.Type == Level_Isometric ?ToIsometric(LightSource.Pointlight.Position + 1.0f) : LightSource.Pointlight.Position + 1.0f;
+                    auto Position = GameState->CurrentLevel.Type == Level_Isometric ?ToIsometric(LightSource.Pointlight.Position + 1.1f) : LightSource.Pointlight.Position + 1.1f;
                     
                     r32 CorrectX = Position.x;
                     r32 CorrectY = Position.y;
