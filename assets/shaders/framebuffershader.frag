@@ -42,7 +42,7 @@ void main()
 
 	endColor.rgb *= endColor.a;
 
-	float gamma = 2.2;
+	float gamma = 1.8;
 	endColor.rgb = pow(endColor.rgb, vec3(1.0/gamma));
 	outColor = endColor;
 }
