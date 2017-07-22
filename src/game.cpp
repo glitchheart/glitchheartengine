@@ -469,10 +469,19 @@ static void EditorUpdateEntities(game_state* GameState, r64 DeltaTime)
                             sscanf(GameState->EditorState.TileBrushHeightField->Text, "%f", &GameState->EditorState.TileBrushSize.y);
                             
                             GameState->EditorState.TileIsSolidCheckbox->Active = true;
-                            i32 X = (i32)glm::floor(Pos.x);
-                            i32 Y = (i32)glm::floor(Pos.y);
-                            GameState->EditorState.TileX = (r32)X;
-                            GameState->EditorState.TileY = (r32)glm::ceil(Pos.y);
+                            
+                            i32 X = (i32)Pos.x;
+                            i32 Y = (i32)Pos.y;
+                            
+                            auto Isometric = ToCartesian(glm::vec2(X * 2.0, Y * 2.0));
+                            X = Isometric.x;
+                            Y = Isometric.y;
+                            
+                            GameState->EditorState.TileX = (r32)glm::floor(X);
+                            GameState->EditorState.TileY = (r32)glm::ceil(Y);
+                            
+                            X = glm::floor(X);
+                            Y = glm::floor(Y);
                             
                             if(GetMouseButton(Mouse_Left, GameState))
                             {
@@ -495,14 +504,6 @@ static void EditorUpdateEntities(game_state* GameState, r64 DeltaTime)
                                 }
                                 else
                                 {
-                                    if(GameState->CurrentLevel.Type == Level_Isometric)
-                                    {
-                                        auto OldX = X;
-                                        auto OldY = Y;
-                                        X = (i32)((r32)(OldX + OldY) * 0.5f);
-                                        Y = (i32)((r32)(OldX - OldY) * 0.25f);
-                                    }
-                                    
                                     if(X >= 0 && X < (i32)GameState->CurrentLevel.Tilemap.Width 
                                        && Y >= 0 && Y < (i32)GameState->CurrentLevel.Tilemap.Height)
                                     {

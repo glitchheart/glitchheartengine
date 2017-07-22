@@ -1802,12 +1802,14 @@ static void RenderEntity(game_state *GameState, render_entity* RenderEntity, glm
     }
 }
 
-static void RenderTile(render_state* RenderState, u32 X, u32 Y, u32 TilesheetIndex, glm::vec2 TextureOffset, glm::vec2 SheetSize, glm::vec4 Color,  glm::mat4 ProjectionMatrix, glm::mat4 View)
+static void RenderTile(render_state* RenderState, u32 X, u32 Y, u32 TilesheetIndex, i32 TileWidth, i32 TileHeight, glm::vec2 TextureOffset, glm::vec2 SheetSize, glm::vec4 Color,  glm::mat4 ProjectionMatrix, glm::mat4 View)
 {
     glBindVertexArray(RenderState->SpriteSheetVAO);
     glm::mat4 Model(1.0f);
-    Model = glm::translate(Model, glm::vec3(X, Y - 1, 0.0f));
-    Model = glm::scale(Model, glm::vec3(1, 1, 1));
+    
+    glm::vec2 Position = ToIsometric(glm::vec2(X, Y - 1));
+    Model = glm::translate(Model, glm::vec3(Position.x, Position.y, 0.0f));
+    Model = glm::scale(Model, glm::vec3(1, 0.5f, 1));
     
     glBindTexture(GL_TEXTURE_2D, RenderState->Tilesheets[TilesheetIndex].Texture.TextureHandle);
     
@@ -1819,8 +1821,8 @@ static void RenderTile(render_state* RenderState, u32 X, u32 Y, u32 TilesheetInd
     SetMat4Uniform(Shader.Program, "Model", Model);
     SetVec4Uniform(Shader.Program, "color", Color);
     SetVec2Uniform(Shader.Program, "textureOffset", TextureOffset);
-    SetFloatUniform(Shader.Program, "frameWidth", 16.0f);
-    SetFloatUniform(Shader.Program, "frameHeight", 16.0f);
+    SetFloatUniform(Shader.Program, "frameWidth", TileWidth);
+    SetFloatUniform(Shader.Program, "frameHeight", TileHeight);
     SetVec2Uniform(Shader.Program, "textureSize", SheetSize);
     glDrawArrays(GL_QUADS, 0, 4);
     glBindVertexArray(0);
@@ -2047,7 +2049,7 @@ void RenderUI(game_state* GameState)
             char InventoryText[64];
             sprintf(InventoryText, "%d", GameState->Entities[0].Player.Inventory.HealthPotionCount);
             
-            RenderText(&GameState->RenderState, GameState->RenderState.RobotoFont, glm::vec4(1, 1, 1, 1), InventoryText, 48 + 40 - 17.5f, 90, 1, Alignment_Center);
+            RenderText(&GameState->RenderState, GameState->RenderState.RobotoFont, glm::vec4(1, 1, 1, 1), InventoryText, 48 + 40 - 30, 75, 1, Alignment_Center);
             
             if(GameState->InputController.ControllerType == Controller_Xbox)
             {
@@ -2219,12 +2221,12 @@ void RenderUI(game_state* GameState)
                                     
                                     for(u32 X = 0;X < GameState->EditorState.TileBrushSize.x && X + GameState->EditorState.TileX < GameState->CurrentLevel.Tilemap.Width; X++)
                                     {
-                                        for(u32 Y = 0;Y < GameState->EditorState.TileBrushSize.y && Y + GameState->EditorState.TileY < GameState->CurrentLevel.Tilemap.Height; Y++)
+                                        for(u32 Y = 0 ;Y < GameState->EditorState.TileBrushSize.y && Y + GameState->EditorState.TileY < GameState->CurrentLevel.Tilemap.Height; Y++)
                                         {
-                                            RenderTile(&GameState->RenderState, (u32)GameState->EditorState.TileX + X, (u32)GameState->EditorState.TileY + Y, GameState->CurrentLevel.TilesheetIndex, TextureOffset, SheetSize, glm::vec4(1, 1, 1, 1),  GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
+                                            RenderTile(&GameState->RenderState, (u32)GameState->EditorState.TileX + X, (u32)GameState->EditorState.TileY + Y, GameState->CurrentLevel.TilesheetIndex, GameState->CurrentLevel.Tilemap.TileWidth, GameState->CurrentLevel.Tilemap.TileHeight, TextureOffset, SheetSize, glm::vec4(1, 1, 1, 1),  GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
                                         }
                                     }
-                                    RenderTile(&GameState->RenderState, (u32)GameState->EditorState.TileX, (u32)GameState->EditorState.TileY, GameState->CurrentLevel.TilesheetIndex, TextureOffset, SheetSize, glm::vec4(1, 1, 1, 1),  GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
+                                    RenderTile(&GameState->RenderState, (u32)GameState->EditorState.TileX, (u32)GameState->EditorState.TileY, GameState->CurrentLevel.TilesheetIndex, GameState->CurrentLevel.Tilemap.TileWidth, GameState->CurrentLevel.Tilemap.TileHeight, TextureOffset, SheetSize, glm::vec4(1, 1, 1, 1),  GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
                                 }
                                 
                                 RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(0, 0, 0, 1), GameState->EditorState.ToolbarX, GameState->EditorState.ToolbarY, GameState->EditorState.ToolbarWidth, GameState->EditorState.ToolbarHeight);

@@ -120,6 +120,7 @@ static void SpawnShadow(game_state* GameState, glm::vec2 Position, i32* Handle)
     Shadow->Scale = 1;
     Shadow->Type = Object_Shadow;
     Shadow->Position = glm::vec2(Position.x - 1.4f, Position.y - 1.5f);
+    Shadow->UsesTransparency = true;
     
     PlayAnimation(Shadow, "big_shadow", GameState);
     
@@ -147,6 +148,7 @@ static void SpawnLoot(game_state* GameState, glm::vec2 Position, i32* Handle)
     Loot->Scale = 1;
     Loot->Type = Object_Loot;
     Loot->Position = glm::vec2(Position.x, Position.y - 0.5f);
+    Loot->UsesTransparency = true;
     
     render_entity* RenderEntity = &GameState->RenderState.RenderEntities[GameState->RenderState.RenderEntityCount];
     RenderEntity->Texture = GameState->RenderState.Textures["basic_loot"];
@@ -175,6 +177,7 @@ static void SpawnTree(game_state* GameState, glm::vec2 Position, i32* Handle = 0
     Tree->Scale = 1.0f;
     Tree->Type = Object_Tree,
     Tree->Position = glm::vec2(Position.x - 1.4f, Position.y - 1.5f);
+    Tree->UsesTransparency = true;
     
     render_entity* RenderEntity = &GameState->RenderState.RenderEntities[GameState->RenderState.RenderEntityCount];
     Tree->RenderEntityHandle = GameState->RenderState.RenderEntityCount;
