@@ -459,6 +459,12 @@ struct entity
         {
             timer PickupThrowTimer;
         } Pickup;
+        struct
+        {
+            timer GlowTimer;
+            b32 IncreasingGlow;
+            r32 GlowIncrease;
+        } Bonfire;
     };
     
     glm::vec2 RenderButtonOffset;
