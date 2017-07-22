@@ -2647,6 +2647,7 @@ static void Render(game_state* GameState)
         
         GameState->RenderState.BoundTexture = GameState->RenderState.LightingTextureColorBuffer;
         
+        //Enable this if we don't do gamma correction in framebuffer shader
         //glEnable(GL_FRAMEBUFFER_SRGB);
         
         glDrawArrays(GL_QUADS, 0, 4); 
