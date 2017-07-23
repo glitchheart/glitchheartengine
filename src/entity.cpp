@@ -351,52 +351,51 @@ static void LoadEntityData(FILE* File, entity* Entity, game_state* GameState, b3
         Entity->TilePosition.Z = 0;
         
         hit_tile_extents HitExtents;
-        HitExtents.StartX = 1;
+        HitExtents.StartX = 0;
         HitExtents.EndX = 3;
-        HitExtents.StartY = 1;
+        HitExtents.StartY = 0;
         HitExtents.EndY = 3;
-        
         Entity->HitExtents[North] = HitExtents;
         
-        HitExtents.StartX = 1;
+        HitExtents.StartX = 0;
         HitExtents.EndX = 3;
         HitExtents.StartY = -1;
         HitExtents.EndY = 2;
         Entity->HitExtents[NorthEast] = HitExtents;
         
-        HitExtents.StartX = 1;
+        HitExtents.StartX = 0;
         HitExtents.EndX = 3;
         HitExtents.StartY = -2;
-        HitExtents.EndY = 0;
+        HitExtents.EndY = 1;
         Entity->HitExtents[East] = HitExtents;
         
         HitExtents.StartX = -1;
         HitExtents.EndX = 2;
         HitExtents.StartY = -2;
-        HitExtents.EndY = 0;
+        HitExtents.EndY = 1;
         Entity->HitExtents[SouthEast] = HitExtents;
         
         HitExtents.StartX = -2;
-        HitExtents.EndX = 0;
+        HitExtents.EndX = 1;
         HitExtents.StartY = -2;
-        HitExtents.EndY = 0;
+        HitExtents.EndY = 1;
         Entity->HitExtents[South] = HitExtents;
         
         HitExtents.StartX = -2;
-        HitExtents.EndX = 0;
+        HitExtents.EndX = 1;
         HitExtents.StartY = -1;
         HitExtents.EndY = 2;
         Entity->HitExtents[SouthWest] = HitExtents;
         
         HitExtents.StartX = -2;
-        HitExtents.EndX = 0;
-        HitExtents.StartY = 1;
+        HitExtents.EndX = 1;
+        HitExtents.StartY = 0;
         HitExtents.EndY = 3;
         Entity->HitExtents[West] = HitExtents;
         
         HitExtents.StartX = -1;
         HitExtents.EndX = 2;
-        HitExtents.StartY = 1;
+        HitExtents.StartY = 0;
         HitExtents.EndY = 3;
         Entity->HitExtents[NorthWest] = HitExtents;
     }

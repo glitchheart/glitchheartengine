@@ -142,7 +142,7 @@ static void LoadSounds(sound_manager *SoundManager, sound_device* SoundDevice)
     sound_info DefaultSoundInfo = {};
     DefaultSoundInfo.Pitch = 1;
     DefaultSoundInfo.Gain = 1;
-    r32 Position[3] = {0, 0, 0};
+    r32 Position[3] = {20, 0, 0};
     memcpy(DefaultSoundInfo.Position, Position, 3);
     r32 Velocity[3] = {0, 0, 0};
     memcpy(DefaultSoundInfo.Velocity, Velocity, 3);
@@ -167,6 +167,7 @@ static void LoadSounds(sound_manager *SoundManager, sound_device* SoundDevice)
     LoadSound("../assets/audio/enemies/minotaur/minotaur_hit.wav", DefaultSoundInfo, &SoundManager->MinotaurHit, SoundDevice);
     LoadSound("../assets/audio/enemies/minotaur/minotaur_death.wav", DefaultSoundInfo, &SoundManager->MinotaurDeath, SoundDevice);
     LoadSound("../assets/audio/enemies/minotaur/stomp.wav", DefaultSoundInfo, &SoundManager->MinotaurStomp, SoundDevice);
+    //LoadSound("../assets/audio/enemies/minotaur/stomp.wav", DefaultSoundInfo, &SoundManager->MinotaurStomp, SoundDevice);
     
     DefaultSoundInfo.Gain = 0.5;
     LoadSound("../assets/audio/enemies/shield_impact.wav", DefaultSoundInfo, &SoundManager->ShieldImpact, SoundDevice);
