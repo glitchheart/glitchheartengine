@@ -2886,7 +2886,7 @@ void UpdateWeapon(entity* Entity, game_state* GameState, r64 DeltaTime)
                     {
                         i32 Handle = GameState->EntityTilePositions[Entity->TilePosition.X + X][Entity->TilePosition.Y + Y].Entities[EntityIndex] - 1;
                         
-                        if(Handle >= 0)
+                        if(Handle >= 0 && Handle < GameState->EntityCount)
                         {
                             entity* HitEntity = &GameState->Entities[Handle];
                             if(HitEntity->Active && !HitEntity->Dead && (Entity->Type == Entity_Enemy && HitEntity->Type == Entity_Player) || (Entity->Type == Entity_Player && HitEntity->Type == Entity_Enemy))
