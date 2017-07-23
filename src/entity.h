@@ -83,7 +83,16 @@ enum Light_Type
 
 enum Look_Direction
 {
-    Up, Down, Left, Right
+    North, 
+    NorthEast, 
+    East, 
+    SouthEast, 
+    South, 
+    SouthWest, 
+    West, 
+    NorthWest,
+    
+    LookDirection_Count
 };
 
 struct entity_weapon
@@ -214,6 +223,8 @@ struct object_entity
     i32 RenderEntityHandle;
     i32 LightSourceHandle;
     
+    v2i TilePosition;
+    
     animation* CurrentAnimation;
     animation_info AnimationInfo;
     
@@ -234,6 +245,14 @@ struct object_entity
     object_entity(){}
 };
 
+struct hit_tile_extents
+{
+    i32 StartX;
+    i32 EndX;
+    i32 StartY;
+    i32 EndY;
+};
+
 struct entity
 {
     Entity_Type Type;
@@ -245,6 +264,8 @@ struct entity
     r32 Scale;
     b32 IsFlipped;
     b32 IsTemporary;
+    
+    v3i TilePosition;
     
     Look_Direction LookDirection;
     Entity_Layer Layer;
@@ -299,6 +320,8 @@ struct entity
     b32 HasWeapon;
     entity_weapon Weapon;
     weapon_collider_info WeaponColliderInfo;
+    
+    hit_tile_extents HitExtents[LookDirection_Count];
     
     union
     {

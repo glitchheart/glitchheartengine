@@ -710,6 +710,21 @@ static void RenderSetup(render_state *RenderState)
     
     glBindVertexArray(0);
     
+    glGenVertexArrays(1, &RenderState->IsometricWireframeVAO);
+    glBindVertexArray(RenderState->IsometricWireframeVAO);
+    glGenBuffers(1, &RenderState->IsometricWireframeQuadVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, RenderState->IsometricWireframeQuadVBO);
+    glBufferData(GL_ARRAY_BUFFER, RenderState->WireframeQuadVerticesSize, RenderState->IsometricWireframeQuadVertices, GL_DYNAMIC_DRAW);
+    
+    RenderState->RectShader.Type = Shader_Wireframe;
+    LoadShader(ShaderPaths[Shader_Wireframe], &RenderState->WireframeShader);
+    
+    PositionLocation3 = glGetAttribLocation(RenderState->WireframeShader.Program, "pos");
+    glEnableVertexAttribArray(PositionLocation3);
+    glVertexAttribPointer(PositionLocation3, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), 0);
+    
+    glBindVertexArray(0);
+    
     // Lines
     glGenBuffers(1, &RenderState->PrimitiveVBO);
     glBindBuffer(GL_ARRAY_BUFFER, RenderState->PrimitiveVBO);
@@ -1072,6 +1087,28 @@ void RenderCircle(render_state& RenderState, glm::vec4 Color, r32 CenterX, r32 C
     glDrawArrays(GL_LINE_LOOP, 0, 720);
 }
 
+static void RenderIsometricOutline(render_state* RenderState, glm::vec4 Color, r32 X, r32 Y, r32 Width, r32 Height, glm::mat4 ProjectionMatrix, glm::mat4 ViewMatrix)
+{
+    glm::mat4 Model(1.0f);
+    Model = glm::translate(Model, glm::vec3(X, Y, 0));
+    Model = glm::scale(Model, glm::vec3(Width, Height, 1));
+    
+    glBindVertexArray(RenderState->IsometricWireframeVAO);
+    
+    auto Shader = RenderState->RectShader;
+    UseShader(&Shader);
+    
+    SetMat4Uniform(Shader.Program, "Projection", ProjectionMatrix);
+    SetMat4Uniform(Shader.Program, "View", ViewMatrix);
+    
+    SetFloatUniform(Shader.Program, "isUI", (r32)false);
+    SetMat4Uniform(Shader.Program, "M", Model);
+    SetVec4Uniform(Shader.Program, "color", Color);
+    
+    glDrawArrays(GL_LINE_LOOP, 0, 4);
+    glBindVertexArray(0);
+}
+
 static void RenderRect(Render_Mode Mode, render_state* RenderState, glm::vec4 Color, r32 X, r32 Y, r32 Width, r32 Height, u32 TextureHandle = 0, b32 IsUI = true, glm::mat4 ProjectionMatrix = glm::mat4(), glm::mat4 ViewMatrix = glm::mat4())
 {
     if(IsUI)
@@ -1148,7 +1185,7 @@ static void RenderRect(Render_Mode Mode, render_state* RenderState, glm::vec4 Co
             SetMat4Uniform(Shader.Program, "M", Model);
             SetVec4Uniform(Shader.Program, "color", Color);
             
-            glDrawArrays(GL_LINE_STRIP, 0, 8);
+            glDrawArrays(GL_LINE_LOOP, 0, 4);
         }
         break;
     }
@@ -1337,7 +1374,7 @@ static void RenderColliderWireframe(render_state* RenderState, entity* Entity, g
         
         SetVec4Uniform(Shader.Program, "color", color);
         
-        glDrawArrays(GL_LINE_STRIP, 0, 6);
+        glDrawArrays(GL_LINE_LOOP, 0, 4);
         glBindVertexArray(0);
         
         if(Entity->HasHitTrigger)
@@ -1369,7 +1406,7 @@ static void RenderColliderWireframe(render_state* RenderState, entity* Entity, g
             
             SetVec4Uniform(Shader.Program, "color", color);
             
-            glDrawArrays(GL_LINE_STRIP, 0, 6);
+            glDrawArrays(GL_LINE_LOOP, 0, 4);
             glBindVertexArray(0);
         }
         
@@ -1380,7 +1417,6 @@ static void RenderColliderWireframe(render_state* RenderState, entity* Entity, g
         }
     }
 }
-
 
 static void RenderWireframe(render_state* RenderState, entity* Entity, glm::mat4 ProjectionMatrix, glm::mat4 View)
 {
@@ -1773,6 +1809,29 @@ static void RenderEntity(game_state *GameState, render_entity* RenderEntity, glm
         if(Entity.Type == Entity_Player && Entity.Player.RenderCrosshair)
         {
             RenderRect(Render_Fill, RenderState, glm::vec4(1, 1, 1, 1), Entity.Position.x + Entity.Player.CrosshairPositionX, Entity.Position.y + Entity.Player.CrosshairPositionY, 1, 1, RenderState->Textures["crosshair"]->TextureHandle, false, ProjectionMatrix, View);
+        }
+        
+        if(RenderState->RenderColliders && (Entity.Type == Entity_Player || Entity.Type == Entity_Enemy))
+        {
+            r32 CartesianX = glm::floor(Entity.Position.x - 0.5f);
+            r32 CartesianY = glm::ceil(Entity.Position.y - 0.5f);
+            
+            glm::vec2 CorrectPosition = ToIsometric(glm::vec2(CartesianX, CartesianY));
+            r32 CorrectX = CorrectPosition.x;
+            r32 CorrectY = CorrectPosition.y;
+            
+            RenderIsometricOutline(RenderState, glm::vec4(0, 1, 0, 1), CorrectX, CorrectY, 1, 0.5f, ProjectionMatrix, View);
+            
+            hit_tile_extents HitExtents = Entity.HitExtents[Entity.LookDirection];
+            
+            for(i32 X = HitExtents.StartX; X < HitExtents.EndX; X++)
+            {
+                for(i32 Y = HitExtents.StartY; Y < HitExtents.EndY; Y++)
+                {
+                    glm::vec2 Pos = ToIsometric(glm::vec2(CartesianX + X, CartesianY + Y));
+                    RenderIsometricOutline(RenderState, glm::vec4(0, 0, 1, 1), Pos.x, Pos.y, 1, 0.5f, ProjectionMatrix, View);
+                }
+            }
         }
         
         if(Entity.Type == Entity_Enemy)
