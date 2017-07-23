@@ -5,7 +5,7 @@ void PrintEntityInfo(const entity& Entity)
 }
 
 
-i32 LoadPointlight(game_state* GameState, glm::vec4 Color = glm::vec4(), r32 Intensity = 0.0f, r32 ConstantAtten = 0.0f, r32 LinearAtten = 0.0f, r32 ExponentialAtten = 0.0f,glm::vec2 InitPosition = glm::vec2(), b32 ShouldGlow = false, r32 GlowTimerMax = 0.0f, r32 GlowIncrease = 0.0f)
+i32 LoadPointlight(game_state* GameState, glm::vec4 Color = glm::vec4(), r32 Intensity = 0.0f, r32 ConstantAtten = 0.0f, r32 LinearAtten = 0.0f, r32 ExponentialAtten = 0.0f,glm::vec2 InitPosition = glm::vec2(), b32 ShouldGlow = false, r64 GlowTimerMax = 0.0f, r32 GlowIncrease = 0.0f)
 {
     light_source LightSource;
     
@@ -242,7 +242,7 @@ static void SpawnWillDrop(game_state* GameState, glm::vec2 Position, i32* Handle
     
     auto Will  = &GameState->Objects[GameState->ObjectCount++];
     Will->Active = true;
-    Will->Scale = 1;
+    Will->Scale = 0.5f;
     Will->Type = Object_Will;
     Will->Position = glm::vec2(Position.x, Position.y - 0.5f);
     Will->UsesTransparency = true;
@@ -253,7 +253,7 @@ static void SpawnWillDrop(game_state* GameState, glm::vec2 Position, i32* Handle
     
     Will->RenderEntityHandle = GameState->RenderState.RenderEntityCount;
     
-    RenderEntity->ShaderIndex = Shader_Texture;
+    RenderEntity->ShaderIndex = Shader_Spritesheet;
     RenderEntity->Rendered = true;
     RenderEntity->Background = false;
     RenderEntity->RenderType = Render_Type_Object;
@@ -263,7 +263,7 @@ static void SpawnWillDrop(game_state* GameState, glm::vec2 Position, i32* Handle
     Will->RenderEntityHandle = GameState->RenderState.RenderEntityCount++;
     RenderEntity->Color = glm::vec4(1, 1, 1, 1);
     
-    Will->LightSourceHandle = LoadPointlight(GameState, glm::vec4(0.0f, 0.1f, 0.7f, 1.0f), 0.9f,0.17f,2.1,0.1, GameState->CharacterData.LostWillPosition, true,1.2, 0.0007);
+    Will->LightSourceHandle = LoadPointlight(GameState, glm::vec4(0.0f, 0.1f, 0.7f, 1.0f), 2.0f, 6.8f,12.9f,0.1f, GameState->CharacterData.LostWillPosition, true,1.2, 0.0007f);
     
     GameState->Objects[GameState->ObjectCount++];
 }
@@ -1996,8 +1996,9 @@ static void CheckWillPickup(game_state* GameState,object_entity* Will,entity* Pl
 {
     if(GameState->CharacterData.RenderWillButtonHint && GetActionButtonDown(Action_Interact, GameState))
     {
-        Player->Player.Will = GameState->CharacterData.LostWill;
+        Player->Player.Will += GameState->CharacterData.LostWill;
         GameState->CharacterData.HasLostWill = false;
+        
         GameState->CharacterData.LostWillPosition = glm::vec2();
         GameState->CharacterData.LostWill = 0;
         GameState->Objects[GameState->CharacterData.LostWillObjectHandle].Active = false;
@@ -2692,12 +2693,14 @@ void UpdatePlayer(entity* Entity, game_state* GameState, r64 DeltaTime)
         if(Entity->Player.Will > 0)
         {
             GameState->CharacterData.HasLostWill = true;
+            GameState->LastCharacterData.HasLostWill = false;
             GameState->CharacterData.LostWill = Entity->Player.Will;
             GameState->CharacterData.LostWillPosition = Entity->Position;
         }
         else
         {
             GameState->CharacterData.HasLostWill = false;
+            GameState->LastCharacterData.HasLostWill = false;
             GameState->CharacterData.LostWill = 0;
         }
         
@@ -2881,8 +2884,6 @@ void UpdateAI(entity* Entity, game_state* GameState, r64 DeltaTime)
     }
 }
 
-
-
 void UpdateBlob(entity* Entity, game_state* GameState, r64 DeltaTime)
 {
     if(!Entity->Enemy.Blob.InPickupMode)
@@ -2951,27 +2952,23 @@ void UpdateBlob(entity* Entity, game_state* GameState, r64 DeltaTime)
 
 static void DetermineLoot(game_state* GameState, entity* Entity)
 {
-    b32 HasLoot = rand() % 2 == 0;
-    Entity->Enemy.HasLoot = HasLoot;
+    b32 HasLoot = false;
+    loot Loot;
+    i32 RNG = rand() % 20;
+    if(RNG > 17)
+    {
+        HasLoot = true;
+        Loot.Type = Loot_Checkpoint;
+    }
+    else if(RNG > 0 && RNG < 12)
+    {
+        HasLoot = true;
+        Loot.Type = Loot_LevelItem;
+    }
+    
     if(HasLoot)
     {
-        loot Loot;
-        
-        i32 RNG = rand() % 20;
-        if(RNG > 17)
-        {
-            Loot.Type = Loot_Checkpoint;
-        }
-        else if(RNG > 12 && RNG < 17)
-        {
-            //Loot.Type = Loot_Health;
-            Loot.Type = Loot_Nothing;
-        }
-        else if(RNG > 0 && RNG < 12)
-        {
-            Loot.Type = Loot_LevelItem;
-        }
-        
+        Entity->Enemy.HasLoot = HasLoot;
         SpawnLoot(GameState, Entity->Position, &Loot.OwnerHandle);
         
         Loot.Handle = GameState->CurrentLootCount;

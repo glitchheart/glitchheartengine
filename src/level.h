@@ -22,8 +22,8 @@ struct tile_data
 
 struct tilemap
 {
-    u32 Width = 0;
-    u32 Height = 0;
+    i32 Width = 0;
+    i32 Height = 0;
     
     i32 TileWidth;
     i32 TileHeight;
