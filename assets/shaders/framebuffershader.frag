@@ -40,7 +40,7 @@ void main()
 		endColor.rgb += (endColor.rgb - 0.5) * contrast + 0.5f;
 		
 		// Brightness
-		endColor.rgb += brightness - 0.3;
+		endColor.rgb += brightness - 0.5;
 
 		endColor.rgb *= endColor.a;
 
