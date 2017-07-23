@@ -4,6 +4,76 @@ void PrintEntityInfo(const entity& Entity)
     printf("Entity: Name %s, position x %f y %f, rotation x %f y %f z %f\n", Entity.Name, Entity.Position.x, Entity.Position.y, Entity.Rotation.x, Entity.Rotation.y, Entity.Rotation.z);
 }
 
+
+i32 LoadPointlight(game_state* GameState, glm::vec4 Color = glm::vec4(), r32 Intensity = 0.0f, r32 ConstantAtten = 0.0f, r32 LinearAtten = 0.0f, r32 ExponentialAtten = 0.0f,glm::vec2 InitPosition = glm::vec2(), b32 ShouldGlow = false, r64 GlowTimerMax = 0.0f, r32 GlowIncrease = 0.0f)
+{
+    light_source LightSource;
+    
+    LightSource.Type = Light_Pointlight;
+    LightSource.Active = true;
+    LightSource.Color = Color;
+    
+    if(ShouldGlow)
+    {
+        LightSource.Pointlight.GlowTimer.TimerHandle = -1;
+        LightSource.Pointlight.GlowTimer.TimerMax = GlowTimerMax;
+        LightSource.Pointlight.GlowIncrease = GlowIncrease;
+    }
+    
+    LightSource.Pointlight.Intensity = Intensity;
+    LightSource.Pointlight.Position = InitPosition;
+    LightSource.Pointlight.ConstantAtten = ConstantAtten;
+    LightSource.Pointlight.LinearAtten = LinearAtten;
+    LightSource.Pointlight.ExponentialAtten = ExponentialAtten;
+    GameState->LightSources[GameState->LightSourceCount++] = LightSource;
+    return GameState->LightSourceCount - 1;
+}
+
+i32 LoadLight(game_state* GameState, char* LineBuffer, glm::vec2 InitPosition = glm::vec2(), i32 Handle = -1)
+{
+    b32 ShouldGlow = false;
+    light_source LightSource;
+    if(StartsWith(&LineBuffer[0], "pointlight"))
+    {
+        r64 GlowTimerMax = 0.0;
+        r32 GlowIncrease;
+        sscanf(LineBuffer, "pointlight type %d active %d intensity %f color %f %f %f %f atten %f %f %f shouldglow %d glowtimer %lf glowincrease %f",
+               &LightSource.Type , &LightSource.Active,&LightSource.Pointlight.Intensity,&LightSource.Color.x, &LightSource.Color.y, &LightSource.Color.z,&LightSource.Color.w, &LightSource.Pointlight.ConstantAtten, &LightSource.Pointlight.LinearAtten, &LightSource.Pointlight.ExponentialAtten, &ShouldGlow, &GlowTimerMax, &GlowIncrease);
+        if(ShouldGlow)
+        {
+            printf("GlowtimerMax: %lf\n", GlowTimerMax);
+            LightSource.Pointlight.GlowTimer.TimerHandle = -1;
+            LightSource.Pointlight.GlowTimer.TimerMax = GlowTimerMax;
+            LightSource.Pointlight.GlowIncrease = GlowIncrease;
+            LightSource.Pointlight.IncreasingGlow = true;
+        }
+    }
+    else if(StartsWith(&LineBuffer[0], "ambient"))
+    {
+        sscanf(LineBuffer, "ambient type %d active %d intensity %f color %f %f %f %f",&LightSource.Type, &LightSource.Active, &LightSource.Ambient.Intensity, &LightSource.Color.x, &LightSource.Color.y, &LightSource.Color.z, &LightSource.Color.w);
+    }
+    
+    if(Handle != -1)
+    {
+        GameState->LightSources[Handle] = LightSource;
+        if(ShouldGlow)
+        {
+            StartTimer(GameState,GameState->LightSources[Handle].Pointlight.GlowTimer);
+        }
+        return Handle;
+    }
+    else
+    {
+        GameState->LightSources[GameState->LightSourceCount++] = LightSource;
+        if(ShouldGlow)
+        {
+            StartTimer(GameState,GameState->LightSources[GameState->LightSourceCount - 1].Pointlight.GlowTimer);
+        }
+        return GameState->LightSourceCount - 1;
+    }
+}
+
+
 static void DeleteEntity(game_state* GameState, u32 EntityIndex)
 {
     if(GameState->EntityCount == 0 || GameState->RenderState.RenderEntityCount == 0)
@@ -162,6 +232,38 @@ static void SpawnLoot(game_state* GameState, glm::vec2 Position, i32* Handle)
     
     Loot->RenderEntityHandle = GameState->RenderState.RenderEntityCount++;
     RenderEntity->Color = glm::vec4(1, 1, 1, 1);
+    
+    GameState->Objects[GameState->ObjectCount++];
+}
+
+static void SpawnWillDrop(game_state* GameState, glm::vec2 Position, i32* Handle)
+{
+    *Handle = GameState->ObjectCount;
+    
+    auto Will  = &GameState->Objects[GameState->ObjectCount++];
+    Will->Active = true;
+    Will->Scale = 0.5f;
+    Will->Type = Object_Will;
+    Will->Position = glm::vec2(Position.x, Position.y - 0.5f);
+    Will->UsesTransparency = true;
+    
+    PlayAnimation(Will, "will_glow", GameState);
+    
+    render_entity* RenderEntity = &GameState->RenderState.RenderEntities[GameState->RenderState.RenderEntityCount];
+    
+    Will->RenderEntityHandle = GameState->RenderState.RenderEntityCount;
+    
+    RenderEntity->ShaderIndex = Shader_Spritesheet;
+    RenderEntity->Rendered = true;
+    RenderEntity->Background = false;
+    RenderEntity->RenderType = Render_Type_Object;
+    //RenderEntity->Texture = GameState->RenderState.Textures["will_glow"];
+    RenderEntity->Object = &*Will;
+    
+    Will->RenderEntityHandle = GameState->RenderState.RenderEntityCount++;
+    RenderEntity->Color = glm::vec4(1, 1, 1, 1);
+    
+    Will->LightSourceHandle = LoadPointlight(GameState, glm::vec4(0.0f, 0.1f, 0.7f, 1.0f), 2.0f, 6.8f,12.9f,0.1f, GameState->CharacterData.LostWillPosition, true,1.2, 0.0007f);
     
     GameState->Objects[GameState->ObjectCount++];
 }
@@ -1375,7 +1477,6 @@ static void LoadBonfireData(game_state* GameState, i32 Handle = -1, glm::vec2 Po
     entity* Entity = Handle != -1 ? &GameState->Entities[Handle] : &GameState->Entities[GameState->EntityCount];
     
     Entity->Type = Entity_Bonfire;
-    Entity->Bonfire.IncreasingGlow = true;
     
     if(Handle == -1)
     {
@@ -1395,20 +1496,9 @@ static void LoadBonfireData(game_state* GameState, i32 Handle = -1, glm::vec2 Po
             {
                 break;
             }
-            else if(StartsWith(&LineBuffer[0], "glowtimer"))
-            {
-                Entity->Bonfire.GlowTimer.TimerHandle = -1;
-                
-                sscanf(LineBuffer,"glowtimer %lf",&Entity->Bonfire.GlowTimer.TimerMax);
-                Entity->Bonfire.GlowTimer.Name = "GlowTimer";
-            }
-            else if(StartsWith(&LineBuffer[0], "glowincrease"))
-            {
-                sscanf(LineBuffer, "glowincrease %f", &Entity->Bonfire.GlowIncrease);
-            }
         }
         
-        StartTimer(GameState,Entity->Bonfire.GlowTimer);
+        StartTimer(GameState,GameState->LightSources[Entity->LightSourceHandle].Pointlight.GlowTimer);
         
         if(Handle == -1)
             Entity->Position = glm::vec2(Position.x, Position.y);
@@ -1893,7 +1983,28 @@ static void LoadPlayerData(game_state* GameState, i32 Handle = -1, glm::vec2 Pos
                 GameState->CharacterData.Stamina = Entity->Player.Stamina;
                 GameState->CharacterData.Strength = Entity->Weapon.Damage;
             }
+            
+            if(GameState->CharacterData.HasLostWill)
+            {
+                SpawnWillDrop(GameState,GameState->CharacterData.LostWillPosition,&GameState->CharacterData.LostWillObjectHandle);
+            }
         }
+    }
+}
+
+static void CheckWillPickup(game_state* GameState,object_entity* Will,entity* Player)
+{
+    if(GameState->CharacterData.RenderWillButtonHint && GetActionButtonDown(Action_Interact, GameState))
+    {
+        Player->Player.Will += GameState->CharacterData.LostWill;
+        GameState->CharacterData.HasLostWill = false;
+        
+        GameState->CharacterData.LostWillPosition = glm::vec2();
+        GameState->CharacterData.LostWill = 0;
+        GameState->Objects[GameState->CharacterData.LostWillObjectHandle].Active = false;
+        auto LightSourceHandle = GameState->Objects[GameState->CharacterData.LostWillObjectHandle].LightSourceHandle;
+        GameState->LightSources[LightSourceHandle].Active = false;
+        GameState->CharacterData.RenderWillButtonHint= false;
     }
 }
 
@@ -1947,6 +2058,22 @@ void UpdatePlayer(entity* Entity, game_state* GameState, r64 DeltaTime)
     {
         Entity->Player.IsAttacking = false;
     }
+    
+    //Will
+    if(GameState->CharacterData.HasLostWill)
+    {
+        auto Will = GameState->Objects[GameState->CharacterData.LostWillObjectHandle];
+        if(glm::distance(Entity->Position, Will.Position) < 1.5f)
+        {
+            GameState->CharacterData.RenderWillButtonHint = true;
+            CheckWillPickup(GameState,&Will,Entity);
+        }
+        else
+        {
+            GameState->CharacterData.RenderWillButtonHint = false;
+        }
+    }
+    
     
     // Loot
     if(GameState->CurrentLootCount > 0)
@@ -2556,8 +2683,28 @@ void UpdatePlayer(entity* Entity, game_state* GameState, r64 DeltaTime)
         Entity->Dead = true;
         PlayAnimation(Entity, "swordsman_death", GameState);
         Entity->AnimationInfo.FreezeFrame = true;
-        Entity->Player.Will = 0;
+        if(GameState->CharacterData.LostWillObjectHandle != -1)
+        {
+            GameState->LightSources[GameState->CharacterData.LostWillObjectHandle].Active = false;
+        }
+        
         GameState->CharacterData = GameState->LastCharacterData;
+        
+        if(Entity->Player.Will > 0)
+        {
+            GameState->CharacterData.HasLostWill = true;
+            GameState->LastCharacterData.HasLostWill = false;
+            GameState->CharacterData.LostWill = Entity->Player.Will;
+            GameState->CharacterData.LostWillPosition = Entity->Position;
+        }
+        else
+        {
+            GameState->CharacterData.HasLostWill = false;
+            GameState->LastCharacterData.HasLostWill = false;
+            GameState->CharacterData.LostWill = 0;
+        }
+        
+        Entity->Player.Will = 0;
         Entity->Player.Inventory.HealthPotionCount = GameState->CharacterData.HealthPotionCount;
         SaveGame(GameState);
     }
@@ -2737,8 +2884,6 @@ void UpdateAI(entity* Entity, game_state* GameState, r64 DeltaTime)
     }
 }
 
-
-
 void UpdateBlob(entity* Entity, game_state* GameState, r64 DeltaTime)
 {
     if(!Entity->Enemy.Blob.InPickupMode)
@@ -2807,27 +2952,23 @@ void UpdateBlob(entity* Entity, game_state* GameState, r64 DeltaTime)
 
 static void DetermineLoot(game_state* GameState, entity* Entity)
 {
-    b32 HasLoot = rand() % 2 == 0;
-    Entity->Enemy.HasLoot = HasLoot;
+    b32 HasLoot = false;
+    loot Loot;
+    i32 RNG = rand() % 20;
+    if(RNG > 17)
+    {
+        HasLoot = true;
+        Loot.Type = Loot_Checkpoint;
+    }
+    else if(RNG > 0 && RNG < 12)
+    {
+        HasLoot = true;
+        Loot.Type = Loot_LevelItem;
+    }
+    
     if(HasLoot)
     {
-        loot Loot;
-        
-        i32 RNG = rand() % 20;
-        if(RNG > 17)
-        {
-            Loot.Type = Loot_Checkpoint;
-        }
-        else if(RNG > 12 && RNG < 17)
-        {
-            //Loot.Type = Loot_Health;
-            Loot.Type = Loot_Nothing;
-        }
-        else if(RNG > 0 && RNG < 12)
-        {
-            Loot.Type = Loot_LevelItem;
-        }
-        
+        Entity->Enemy.HasLoot = HasLoot;
         SpawnLoot(GameState, Entity->Position, &Loot.OwnerHandle);
         
         Loot.Handle = GameState->CurrentLootCount;
@@ -3213,6 +3354,21 @@ void UpdateGeneral(entity* Entity, game_state* GameState, r64 DeltaTime)
     }
 }
 
+
+void LightGlow(game_state* GameState, i32 LightHandle)
+{
+    auto Light = &GameState->LightSources[LightHandle].Pointlight;
+    if(!TimerDone(GameState,Light->GlowTimer))
+    {
+        GameState->LightSources[LightHandle].Pointlight.Intensity += Light->IncreasingGlow ? Light->GlowIncrease : -Light->GlowIncrease;
+    }
+    else
+    {
+        Light->IncreasingGlow = !Light->IncreasingGlow;
+        StartTimer(GameState,Light->GlowTimer);
+    }
+}
+
 void UpdateObjects(game_state* GameState, r64 DeltaTime)
 {
     for(i32 Index = 0; Index < GameState->ObjectCount; Index++)
@@ -3221,8 +3377,15 @@ void UpdateObjects(game_state* GameState, r64 DeltaTime)
         
         if(Object.Active && Object.CurrentAnimation && Object.AnimationInfo.Playing)
             TickAnimation(&Object.AnimationInfo, Object.CurrentAnimation, DeltaTime);
+        
+        if(Object.Type == Object_Will)
+        {
+            LightGlow(GameState, Object.LightSourceHandle);
+            
+        }
     }
 }
+
 
 void UpdateEntities(game_state* GameState, r64 DeltaTime)
 {
@@ -3292,17 +3455,7 @@ void UpdateEntities(game_state* GameState, r64 DeltaTime)
                 {
                     UpdateStaticEntity(Entity, GameState, DeltaTime);
                     
-                    if(!TimerDone(GameState,Entity->Bonfire.GlowTimer))
-                    {
-                        printf("Glowing\n");
-                        GameState->LightSources[Entity->LightSourceHandle].Pointlight.Intensity += Entity->Bonfire.IncreasingGlow ? Entity->Bonfire.GlowIncrease : -Entity->Bonfire.GlowIncrease;
-                    }
-                    else
-                    {
-                        printf("Changing direction\n");
-                        Entity->Bonfire.IncreasingGlow = !Entity->Bonfire.IncreasingGlow;
-                        StartTimer(GameState,Entity->Bonfire.GlowTimer);
-                    }
+                    LightGlow(GameState,Entity->LightSourceHandle);
                 }
                 break;
             }

@@ -93,6 +93,9 @@ struct character_data
     i32 CheckpointHandle = -1;
     b32 HasLostWill;
     i32 LostWill;
+    i32 LostWillObjectHandle = -1;
+    glm::vec2 LostWillPosition;
+    b32 RenderWillButtonHint = false;
 };
 
 #define NUM_TIMERS 1024
@@ -137,7 +140,7 @@ struct game_state
     camera GameCamera;
     camera EditorCamera;
     
-    u32 PlayerIndex;
+    i32 PlayerIndex;
     char * LevelPath;
     level CurrentLevel;
     input_controller InputController;
@@ -281,33 +284,6 @@ void LoadGame(game_state* GameState)
     else
     {
         SaveGame(GameState);
-    }
-}
-
-i32 LoadLight(game_state* GameState, char* LineBuffer, glm::vec2 InitPosition = glm::vec2(), i32 Handle = -1)
-{
-    light_source LightSource;
-    if(StartsWith(&LineBuffer[0], "pointlight"))
-    {
-        sscanf(LineBuffer, "pointlight type %d active %d intensity %f color %f %f %f %f atten %f %f %f",
-               &LightSource.Type , &LightSource.Active,&LightSource.Pointlight.Intensity,&LightSource.Color.x, &LightSource.Color.y, &LightSource.Color.z,&LightSource.Color.w, &LightSource.Pointlight.ConstantAtten, &LightSource.Pointlight.LinearAtten, &LightSource.Pointlight.ExponentialAtten);
-    }
-    else if(StartsWith(&LineBuffer[0], "ambient"))
-    {
-        sscanf(LineBuffer, "ambient type %d active %d intensity %f color %f %f %f %f",&LightSource.Type, &LightSource.Active, &LightSource.Ambient.Intensity, &LightSource.Color.x, &LightSource.Color.y, &LightSource.Color.z, &LightSource.Color.w);
-    }
-    
-    if(Handle != -1)
-    {
-        GameState->LightSources[Handle] = LightSource;
-        printf("Handle: %d\n", Handle);
-        return Handle;
-    }
-    else
-    {
-        GameState->LightSources[GameState->LightSourceCount++] = LightSource;
-        printf("New Handle: %d\n", GameState->LightSourceCount - 1);
-        return GameState->LightSourceCount - 1;
     }
 }
 

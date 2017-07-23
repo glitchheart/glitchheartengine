@@ -1,8 +1,8 @@
 static void UpdateTileData(i32 SelectedTypeIndex, b32 IsSolid, tilemap* Tilemap)
 {
-    for(u32 X = 0; X < Tilemap->Width; X++)
+    for(i32 X = 0; X < Tilemap->Width; X++)
     {
-        for(u32 Y = 0; Y < Tilemap->Height; Y++)
+        for(i32 Y = 0; Y < Tilemap->Height; Y++)
         {
             if(Tilemap->Data[1][X][Y].TypeIndex == SelectedTypeIndex)
                 Tilemap->Data[1][X][Y].IsSolid = IsSolid;
@@ -368,9 +368,9 @@ static void SaveLevelToFile(const char* FilePath, level* Level, game_state* Game
         
         for(i32 Layer = 0; Layer < TILEMAP_LAYERS; Layer++)
         {
-            for(u32 Y = 0; Y < Level->Tilemap.Height; Y++)
+            for(i32 Y = 0; Y < Level->Tilemap.Height; Y++)
             {
-                for(u32 X = 0; X < Level->Tilemap.Width; X++)
+                for(i32 X = 0; X < Level->Tilemap.Width; X++)
                 {
                     if(X == Level->Tilemap.Width - 1)
                         fprintf(File, "%d", Level->Tilemap.Data[Layer][X][Level->Tilemap.Height - Y - 1].TypeIndex + 1);
@@ -383,7 +383,7 @@ static void SaveLevelToFile(const char* FilePath, level* Level, game_state* Game
         
         if(!New)
         {
-            for(u32 Index = 0; Index < GameState->EntityCount; Index++)
+            for(i32 Index = 0; Index < GameState->EntityCount; Index++)
             {
                 if(Index != GameState->PlayerIndex)
                 {

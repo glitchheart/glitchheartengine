@@ -168,8 +168,8 @@ static void AStar(entity* Entity, game_state* GameState, glm::vec2 StartPos, glm
     i32 TargetX = (i32)glm::floor(TargetPos.x);
     i32 TargetY = (i32)glm::floor(TargetPos.y);
     
-    if((u32)StartX < GameState->CurrentLevel.Tilemap.Width && (u32)StartY < GameState->CurrentLevel.Tilemap.Height &&
-       StartX >= 0 && StartY >= 0 && (u32)TargetX < GameState->CurrentLevel.Tilemap.Width && (u32)TargetY < GameState->CurrentLevel.Tilemap.Height &&
+    if(StartX < GameState->CurrentLevel.Tilemap.Width && StartY < GameState->CurrentLevel.Tilemap.Height &&
+       StartX >= 0 && StartY >= 0 && TargetX < GameState->CurrentLevel.Tilemap.Width && TargetY < GameState->CurrentLevel.Tilemap.Height &&
        TargetX >= 0 && TargetY >= 0)
     {
         astar_working_data* AStarWorkingData = (astar_working_data*)malloc(sizeof(astar_working_data));
