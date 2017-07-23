@@ -44,6 +44,14 @@ struct v2i
     i32 Y;
 };
 
+
+struct v3i
+{
+    i32 X;
+    i32 Y;
+    i32 Z;
+};
+
 struct entity_file_reload_data
 {
     b32 ReloadPlayerFile;
