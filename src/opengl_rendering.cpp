@@ -263,9 +263,9 @@ static void LoadTilemapBuffer(render_state* RenderState, i32 Layer, GLuint* VAO,
     
     if(LevelType == Level_Orthogonal)
     {
-        for(u32 X = 0; X < Tilemap.Width; X++)
+        for(i32 X = 0; X < Tilemap.Width; X++)
         {
-            for(u32 Y = 0; Y < Tilemap.Height; Y++)
+            for(i32 Y = 0; Y < Tilemap.Height; Y++)
             {
                 tile_data* Tile = &Tilemap.Data[Layer][X][Y];
                 
@@ -903,7 +903,7 @@ static void InitializeOpenGL(game_state* GameState, render_state* RenderState, c
         }
     }
     
-    texture_Map_Init(&RenderState->Textures, HashString, 4096);
+    texture_Map_Init(&RenderState->Textures, HashString, 8192);
     LoadTextures(RenderState, "../assets/textures/");
     LoadTextures(RenderState, "../assets/textures/spritesheets/");
     RenderSetup(RenderState);
@@ -1308,8 +1308,10 @@ static void RenderColliderWireframe(render_state* RenderState, entity* Entity, g
     {
         glm::mat4 Model(1.0f);
         
-        Model = glm::translate(Model, glm::vec3(Entity->CollisionAABB.Center.x - Entity->CollisionAABB.Extents.x, Entity->CollisionAABB.Center.y - Entity->CollisionAABB.Extents.y, 0.0f));
-        Model = glm::scale(Model, glm::vec3(Entity->CollisionAABB.Extents.x * 2, Entity->CollisionAABB.Extents.y * 2,1));
+        auto IsoCenter = ToIsometric(glm::vec2(Entity->CollisionAABB.Center.x - Entity->CollisionAABB.Extents.x, Entity->CollisionAABB.Center.y - Entity->CollisionAABB.Extents.y));
+        
+        Model = glm::translate(Model, glm::vec3(IsoCenter.x, IsoCenter.y, 0.0f));
+        Model = glm::scale(Model, glm::vec3(Entity->CollisionAABB.Extents.x, Entity->CollisionAABB.Extents.y,1));
         
         glBindVertexArray(RenderState->WireframeVAO);
         
@@ -1342,7 +1344,9 @@ static void RenderColliderWireframe(render_state* RenderState, entity* Entity, g
         {
             glm::mat4 Model(1.0f);
             
-            Model = glm::translate(Model, glm::vec3(Entity->HitTrigger.Center.x - Entity->HitTrigger.Extents.x, Entity->HitTrigger.Center.y - Entity->HitTrigger.Extents.y, 0.0f)); Model = glm::scale(Model, glm::vec3(Entity->HitTrigger.Extents.x * 2, Entity->HitTrigger.Extents.y * 2,1));
+            auto HitIso = ToIsometric(glm::vec2(Entity->HitTrigger.Center.x - Entity->HitTrigger.Extents.x, Entity->HitTrigger.Center.y - Entity->HitTrigger.Extents.y));
+            
+            Model = glm::translate(Model, glm::vec3(HitIso.x,HitIso.y, 0.0f)); Model = glm::scale(Model, glm::vec3(Entity->HitTrigger.Extents.x, Entity->HitTrigger.Extents.y,1));
             
             glBindVertexArray(RenderState->WireframeVAO);
             
@@ -1371,7 +1375,8 @@ static void RenderColliderWireframe(render_state* RenderState, entity* Entity, g
         
         if(Entity->HasWeapon)
         {
-            RenderRect(Render_Outline, RenderState, glm::vec4(0, 0, 1, 1), Entity->Weapon.CollisionAABB.Center.x - Entity->Weapon.CollisionAABB.Extents.x, Entity->Weapon.CollisionAABB.Center.y - Entity->Weapon.CollisionAABB.Extents.y, Entity->Weapon.CollisionAABB.Extents.x * 2, Entity->Weapon.CollisionAABB.Extents.y * 2, 0, false, ProjectionMatrix, View);
+            auto IsoWeaponPos = ToIsometric(glm::vec2(Entity->Weapon.CollisionAABB.Center.x - Entity->Weapon.CollisionAABB.Extents.x,Entity->Weapon.CollisionAABB.Center.y - Entity->Weapon.CollisionAABB.Extents.y));
+            RenderRect(Render_Outline, RenderState, glm::vec4(0, 0, 1, 1), IsoWeaponPos.x, IsoWeaponPos.y, Entity->Weapon.CollisionAABB.Extents.x, Entity->Weapon.CollisionAABB.Extents.y, 0, false, ProjectionMatrix, View);
         }
     }
 }
@@ -1824,8 +1829,8 @@ static void RenderTile(render_state* RenderState, u32 X, u32 Y, u32 TilesheetInd
     SetMat4Uniform(Shader.Program, "Model", Model);
     SetVec4Uniform(Shader.Program, "color", Color);
     SetVec2Uniform(Shader.Program, "textureOffset", TextureOffset);
-    SetFloatUniform(Shader.Program, "frameWidth", TileWidth);
-    SetFloatUniform(Shader.Program, "frameHeight", TileHeight);
+    SetFloatUniform(Shader.Program, "frameWidth", (r32)TileWidth);
+    SetFloatUniform(Shader.Program, "frameHeight", (r32)TileHeight);
     SetVec2Uniform(Shader.Program, "textureSize", SheetSize);
     glDrawArrays(GL_QUADS, 0, 4);
     glBindVertexArray(0);
@@ -2559,7 +2564,7 @@ static void RenderLightSources(game_state* GameState)
                     {
                         glm::mat4 Model(1.0f);
                         
-                        auto Position = GameState->CurrentLevel.Type == Level_Isometric ?ToIsometric(glm::vec2(LightSource.Pointlight.Position.x + 1.1f, LightSource.Pointlight.Position.y + 0.5f)) : LightSource.Pointlight.Position + 1.5f;
+                        auto Position = GameState->CurrentLevel.Type == Level_Isometric ?ToIsometric(glm::vec2(LightSource.Pointlight.Position.x + 0.7f, LightSource.Pointlight.Position.y + 0.25f)) : LightSource.Pointlight.Position + 1.5f;
                         
                         r32 CorrectX = Position.x;
                         r32 CorrectY = Position.y;

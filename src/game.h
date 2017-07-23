@@ -140,7 +140,7 @@ struct game_state
     camera GameCamera;
     camera EditorCamera;
     
-    u32 PlayerIndex;
+    i32 PlayerIndex;
     char * LevelPath;
     level CurrentLevel;
     input_controller InputController;

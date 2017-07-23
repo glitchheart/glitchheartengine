@@ -23,8 +23,9 @@ void main()
 	vec4 lightingColor = texture(lightingTex, Texcoord);
 	vec4 endColor = texture(tex, Texcoord);
 	
-	endColor.rgb *= 0.55;
-
+	if(!ignoreLight)
+		endColor.rgb *= 0.55;
+	
 	vec4 ambient = ambientColor * endColor * ambientIntensity;
 	vec4 linearColor = (ambient + lightingColor + color);
 	
@@ -46,5 +47,6 @@ void main()
 		float gamma = 1.1;
 		endColor.rgb = pow(endColor.rgb, vec3(1.0/gamma));
 	}
-	outColor = endColor;
+	
+	outColor = clamp(endColor,0.0,1.0);
 }

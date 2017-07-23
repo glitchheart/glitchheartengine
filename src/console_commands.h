@@ -44,7 +44,7 @@ static char* LoadLevel(game_state* GameState, char** Arguments)
             GameState->IsInitialized = false;
             GameState->ShouldReload = true;
             
-            for(u32 X = 0; X < GameState->CurrentLevel.Tilemap.Width; X++)
+            for(i32 X = 0; X < GameState->CurrentLevel.Tilemap.Width; X++)
             {
                 free(GameState->CurrentLevel.Tilemap.Data[X]);
             }
@@ -86,7 +86,7 @@ static void ReloadCurrentLevel(game_state* GameState)
     GameState->IsInitialized = false;
     GameState->PlayerState = Player_Alive;
     
-    for(u32 X = 0; X < GameState->CurrentLevel.Tilemap.Width; X++)
+    for(i32 X = 0; X < GameState->CurrentLevel.Tilemap.Width; X++)
     {
         free(GameState->CurrentLevel.Tilemap.Data[0][X]);
         free(GameState->CurrentLevel.Tilemap.Data[1][X]);
@@ -100,7 +100,7 @@ static void ReloadCurrentLevel(game_state* GameState)
         GameState->Entities[Index] = {};
     
     //memset(GameState->LightSources, 0, sizeof(light_source) * GameState->LightSourceCount);
-        
+    
     //for(i32 Index = 0; Index < GameState->RenderState.RenderEntityCount; Index++)
     //GameState->RenderState.RenderEntities[Index] = {};
     
