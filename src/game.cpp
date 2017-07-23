@@ -470,10 +470,10 @@ static void EditorUpdateEntities(game_state* GameState, r64 DeltaTime)
                             
                             GameState->EditorState.TileIsSolidCheckbox->Active = true;
                             
-                            i32 X = (i32)Pos.x;
-                            i32 Y = (i32)Pos.y;
+                            glm::vec2 NewPos = ToCartesian(glm::vec2(Pos.x, Pos.y));
                             
-                            printf("Before x %d y %d\n", X, Y);
+                            i32 X = (i32)glm::floor(NewPos.x / 0.5f);
+                            i32 Y = (i32)glm::floor(NewPos.y / 0.5f);
                             
                             GameState->EditorState.TileX = (r32)X;
                             GameState->EditorState.TileY = (r32)Y;
