@@ -175,12 +175,14 @@ struct light_source
     {
         struct
         {
-            r32 Radius;
             r32 Intensity;
             glm::vec2 Position;
             r32 ConstantAtten;
             r32 LinearAtten;
             r32 ExponentialAtten;
+            timer GlowTimer;
+            r32 GlowIncrease;
+            b32 IncreasingGlow;
         } Pointlight;
         struct
         {
@@ -196,6 +198,7 @@ enum Object_Type
     Object_Shadow,
     Object_Rock,
     Object_Loot,
+    Object_Will,
     Object_Tree
 };
 
@@ -461,9 +464,6 @@ struct entity
         } Pickup;
         struct
         {
-            timer GlowTimer;
-            b32 IncreasingGlow;
-            r32 GlowIncrease;
         } Bonfire;
     };
     

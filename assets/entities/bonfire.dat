@@ -6,7 +6,7 @@ center 0.5 0.5
 scale 1
 animation bonfire
 collider -0.5 -0.7 0.35 0.2 0
-pointlight type 0 active 1 intensity 0.2 color 0.7 0.3 0.0 1.0 atten 0.34 1.1 0.5
+pointlight type 0 active 1 intensity 2.5 color 0.67 0.33 0.0 1.0 atten 3.3 3.7 0.1 shouldglow 1 glowtimer 0.09 glowincrease 0.00073
+glowtimer 1.2
+glowincrease 0.00005
 #bonfire
-glowtimer 1.5
-glowincrease 0.0000007
