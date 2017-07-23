@@ -2222,14 +2222,17 @@ void RenderUI(game_state* GameState)
                                     
                                     glm::vec2 SheetSize(Tilesheet.Texture.Width, Tilesheet.Texture.Height);
                                     
-                                    for(u32 X = 0;X < GameState->EditorState.TileBrushSize.x && X + GameState->EditorState.TileX < GameState->CurrentLevel.Tilemap.Width; X++)
+                                    for(u32 X = 0; X < GameState->EditorState.TileBrushSize.x && X + GameState->EditorState.TileX < GameState->CurrentLevel.Tilemap.Width; X++)
                                     {
-                                        for(u32 Y = 0 ;Y < GameState->EditorState.TileBrushSize.y && Y + GameState->EditorState.TileY < GameState->CurrentLevel.Tilemap.Height; Y++)
+                                        for(u32 Y = 0;Y < GameState->EditorState.TileBrushSize.y && Y + GameState->EditorState.TileY < GameState->CurrentLevel.Tilemap.Height; Y++)
                                         {
-                                            RenderTile(&GameState->RenderState, (u32)GameState->EditorState.TileX + X, (u32)GameState->EditorState.TileY + Y, GameState->CurrentLevel.TilesheetIndex, GameState->CurrentLevel.Tilemap.TileWidth, GameState->CurrentLevel.Tilemap.TileHeight, TextureOffset, SheetSize, glm::vec4(1, 1, 1, 1),  GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
+                                            glm::vec2 CorrectPosition = ToIsometric(glm::vec2(X, Y));
+                                            r32 CorrectX = GameState->EditorState.TileX + CorrectPosition.x;
+                                            r32 CorrectY = GameState->EditorState.TileY + CorrectPosition.y + 1.0f;
+                                            
+                                            RenderTile(&GameState->RenderState, CorrectX, CorrectY, GameState->CurrentLevel.TilesheetIndex, GameState->CurrentLevel.Tilemap.TileWidth, GameState->CurrentLevel.Tilemap.TileHeight, TextureOffset, SheetSize, glm::vec4(1, 1, 1, 1),  GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
                                         }
                                     }
-                                    RenderTile(&GameState->RenderState, (u32)GameState->EditorState.TileX, (u32)GameState->EditorState.TileY, GameState->CurrentLevel.TilesheetIndex, GameState->CurrentLevel.Tilemap.TileWidth, GameState->CurrentLevel.Tilemap.TileHeight, TextureOffset, SheetSize, glm::vec4(1, 1, 1, 1),  GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
                                 }
                                 
                                 RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(0, 0, 0, 1), GameState->EditorState.ToolbarX, GameState->EditorState.ToolbarY, GameState->EditorState.ToolbarWidth, GameState->EditorState.ToolbarHeight);

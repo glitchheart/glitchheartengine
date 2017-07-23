@@ -265,5 +265,19 @@ glm::vec2 ToIsometric(glm::vec2 Position)
     return TempPt;
 }
 
+r32 Sign (glm::vec2 P1, glm::vec2 P2, glm::vec2 P3)
+{
+    return (P1.x - P3.x) * (P2.y - P3.y) - (P2.x - P3.x) * (P1.y - P3.y);
+}
 
+b32 PointInTriangle (glm::vec2 Pt, glm::vec2 V1, glm::vec2 V2, glm::vec2 V3)
+{
+    bool B1, B2, B3;
+    
+    B1 = Sign(Pt, V1, V2) < 0.0f;
+    B2 = Sign(Pt, V2, V3) < 0.0f;
+    B3 = Sign(Pt, V3, V1) < 0.0f;
+    
+    return ((B1 == B2) && (B2 == B3));
+}
 #endif
