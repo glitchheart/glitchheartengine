@@ -263,9 +263,9 @@ static void LoadTilemapBuffer(render_state* RenderState, i32 Layer, GLuint* VAO,
     
     if(LevelType == Level_Orthogonal)
     {
-        for(u32 X = 0; X < Tilemap.Width; X++)
+        for(i32 X = 0; X < Tilemap.Width; X++)
         {
-            for(u32 Y = 0; Y < Tilemap.Height; Y++)
+            for(i32 Y = 0; Y < Tilemap.Height; Y++)
             {
                 tile_data* Tile = &Tilemap.Data[Layer][X][Y];
                 
@@ -903,7 +903,7 @@ static void InitializeOpenGL(game_state* GameState, render_state* RenderState, c
         }
     }
     
-    texture_Map_Init(&RenderState->Textures, HashString, 4096);
+    texture_Map_Init(&RenderState->Textures, HashString, 8192);
     LoadTextures(RenderState, "../assets/textures/");
     LoadTextures(RenderState, "../assets/textures/spritesheets/");
     RenderSetup(RenderState);
@@ -1308,8 +1308,10 @@ static void RenderColliderWireframe(render_state* RenderState, entity* Entity, g
     {
         glm::mat4 Model(1.0f);
         
-        Model = glm::translate(Model, glm::vec3(Entity->CollisionAABB.Center.x - Entity->CollisionAABB.Extents.x, Entity->CollisionAABB.Center.y - Entity->CollisionAABB.Extents.y, 0.0f));
-        Model = glm::scale(Model, glm::vec3(Entity->CollisionAABB.Extents.x * 2, Entity->CollisionAABB.Extents.y * 2,1));
+        auto IsoCenter = ToIsometric(glm::vec2(Entity->CollisionAABB.Center.x - Entity->CollisionAABB.Extents.x, Entity->CollisionAABB.Center.y - Entity->CollisionAABB.Extents.y));
+        
+        Model = glm::translate(Model, glm::vec3(IsoCenter.x, IsoCenter.y, 0.0f));
+        Model = glm::scale(Model, glm::vec3(Entity->CollisionAABB.Extents.x, Entity->CollisionAABB.Extents.y,1));
         
         glBindVertexArray(RenderState->WireframeVAO);
         
@@ -1342,7 +1344,9 @@ static void RenderColliderWireframe(render_state* RenderState, entity* Entity, g
         {
             glm::mat4 Model(1.0f);
             
-            Model = glm::translate(Model, glm::vec3(Entity->HitTrigger.Center.x - Entity->HitTrigger.Extents.x, Entity->HitTrigger.Center.y - Entity->HitTrigger.Extents.y, 0.0f)); Model = glm::scale(Model, glm::vec3(Entity->HitTrigger.Extents.x * 2, Entity->HitTrigger.Extents.y * 2,1));
+            auto HitIso = ToIsometric(glm::vec2(Entity->HitTrigger.Center.x - Entity->HitTrigger.Extents.x, Entity->HitTrigger.Center.y - Entity->HitTrigger.Extents.y));
+            
+            Model = glm::translate(Model, glm::vec3(HitIso.x,HitIso.y, 0.0f)); Model = glm::scale(Model, glm::vec3(Entity->HitTrigger.Extents.x, Entity->HitTrigger.Extents.y,1));
             
             glBindVertexArray(RenderState->WireframeVAO);
             
@@ -1371,7 +1375,8 @@ static void RenderColliderWireframe(render_state* RenderState, entity* Entity, g
         
         if(Entity->HasWeapon)
         {
-            RenderRect(Render_Outline, RenderState, glm::vec4(0, 0, 1, 1), Entity->Weapon.CollisionAABB.Center.x - Entity->Weapon.CollisionAABB.Extents.x, Entity->Weapon.CollisionAABB.Center.y - Entity->Weapon.CollisionAABB.Extents.y, Entity->Weapon.CollisionAABB.Extents.x * 2, Entity->Weapon.CollisionAABB.Extents.y * 2, 0, false, ProjectionMatrix, View);
+            auto IsoWeaponPos = ToIsometric(glm::vec2(Entity->Weapon.CollisionAABB.Center.x - Entity->Weapon.CollisionAABB.Extents.x,Entity->Weapon.CollisionAABB.Center.y - Entity->Weapon.CollisionAABB.Extents.y));
+            RenderRect(Render_Outline, RenderState, glm::vec4(0, 0, 1, 1), IsoWeaponPos.x, IsoWeaponPos.y, Entity->Weapon.CollisionAABB.Extents.x, Entity->Weapon.CollisionAABB.Extents.y, 0, false, ProjectionMatrix, View);
         }
     }
 }
@@ -1824,8 +1829,8 @@ static void RenderTile(render_state* RenderState, u32 X, u32 Y, u32 TilesheetInd
     SetMat4Uniform(Shader.Program, "Model", Model);
     SetVec4Uniform(Shader.Program, "color", Color);
     SetVec2Uniform(Shader.Program, "textureOffset", TextureOffset);
-    SetFloatUniform(Shader.Program, "frameWidth", TileWidth);
-    SetFloatUniform(Shader.Program, "frameHeight", TileHeight);
+    SetFloatUniform(Shader.Program, "frameWidth", (r32)TileWidth);
+    SetFloatUniform(Shader.Program, "frameHeight", (r32)TileHeight);
     SetVec2Uniform(Shader.Program, "textureSize", SheetSize);
     glDrawArrays(GL_QUADS, 0, 4);
     glBindVertexArray(0);
@@ -2074,51 +2079,66 @@ void RenderUI(game_state* GameState)
             }
             
             auto ButtonTexWidth = ButtonTexture->Width / 2;
-            for(i32 Index = 0; Index < GameState->CurrentLootCount; Index++)
+            b32 LootRendered = false;
+            
+            
+            if(GameState->CharacterData.RenderWillButtonHint)
             {
-                if(GameState->CurrentLoot[Index].RenderButtonHint)
+                r32 Width;
+                r32 Height;
+                MeasureText(GameState->RenderState.RobotoFont, "Regain lost will", &Width, &Height);
+                RenderText(&GameState->RenderState, GameState->RenderState.RobotoFont, glm::vec4(1,1,1,1), "Regain lost will", (r32)GameState->RenderState.WindowWidth / 2 - ButtonTexWidth - Width - 10.0f, (r32)GameState->RenderState.WindowHeight - 490, Alignment_Center);
+                LootRendered = true;
+            }
+            
+            if(!LootRendered)
+            {
+                for(i32 Index = 0; Index < GameState->CurrentLootCount; Index++)
                 {
-                    switch(GameState->CurrentLoot[Index].Type)
+                    if(GameState->CurrentLoot[Index].RenderButtonHint)
                     {
-                        case Loot_Health:
+                        switch(GameState->CurrentLoot[Index].Type)
                         {
-                            r32 Width;
-                            r32 Height;
-                            MeasureText(GameState->RenderState.RobotoFont,"Health Potion", &Width, &Height);
-                            RenderText(&GameState->RenderState, GameState->RenderState.RobotoFont, glm::vec4(1,1,1,1), "Health Potion", (r32)GameState->RenderState.WindowWidth / 2 - ButtonTexWidth - Width - 10.0f, (r32)GameState->RenderState.WindowHeight - 490, Alignment_Center);
-                        }
-                        break;
-                        case Loot_Checkpoint:
-                        {
-                            r32 Width;
-                            r32 Height;
-                            MeasureText(GameState->RenderState.RobotoFont,"Checkpoint", &Width, &Height);
-                            RenderText(&GameState->RenderState, GameState->RenderState.RobotoFont, glm::vec4(1,1,1,1), "Checkpoint", (r32)GameState->RenderState.WindowWidth / 2 - ButtonTexWidth - Width - 10.0f, (r32)GameState->RenderState.WindowHeight - 490, Alignment_Center);
-                        }
-                        break;
-                        case Loot_LevelItem:
-                        {
-                            
-                            char LootText[64];
-                            if(GameState->Entities[0].Player.Will >= GameState->StatData[GameState->CharacterData.Level].WillForLevel)
+                            case Loot_Health:
+                            {
+                                r32 Width;
+                                r32 Height;
+                                MeasureText(GameState->RenderState.RobotoFont,"Health Potion", &Width, &Height);
+                                RenderText(&GameState->RenderState, GameState->RenderState.RobotoFont, glm::vec4(1,1,1,1), "Health Potion", (r32)GameState->RenderState.WindowWidth / 2 - ButtonTexWidth - Width - 10.0f, (r32)GameState->RenderState.WindowHeight - 490, Alignment_Center);
+                            }
+                            break;
+                            case Loot_Checkpoint:
+                            {
+                                r32 Width;
+                                r32 Height;
+                                MeasureText(GameState->RenderState.RobotoFont,"Checkpoint", &Width, &Height);
+                                RenderText(&GameState->RenderState, GameState->RenderState.RobotoFont, glm::vec4(1,1,1,1), "Checkpoint", (r32)GameState->RenderState.WindowWidth / 2 - ButtonTexWidth - Width - 10.0f, (r32)GameState->RenderState.WindowHeight - 490, Alignment_Center);
+                            }
+                            break;
+                            case Loot_LevelItem:
                             {
                                 
-                                sprintf(LootText,"Spend %d will to gain power", GameState->StatData[GameState->CharacterData.Level].WillForLevel);
-                            }
-                            else
-                            {
-                                sprintf(LootText, "Not enough will to gain power");
-                            }
-                            r32 Width;
-                            r32 Height;
-                            MeasureText(GameState->RenderState.RobotoFont,LootText, &Width, &Height);
-                            RenderText(&GameState->RenderState, GameState->RenderState.RobotoFont, glm::vec4(1,1,1,1), LootText, (r32)GameState->RenderState.WindowWidth / 2 - ButtonTexWidth - Width - 10.0f, (r32)GameState->RenderState.WindowHeight - 490, Alignment_Center);
-                        } break;
+                                char LootText[64];
+                                if(GameState->Entities[0].Player.Will >= GameState->StatData[GameState->CharacterData.Level].WillForLevel)
+                                {
+                                    
+                                    sprintf(LootText,"Spend %d will to gain power", GameState->StatData[GameState->CharacterData.Level].WillForLevel);
+                                }
+                                else
+                                {
+                                    sprintf(LootText, "Not enough will to gain power");
+                                }
+                                r32 Width;
+                                r32 Height;
+                                MeasureText(GameState->RenderState.RobotoFont,LootText, &Width, &Height);
+                                RenderText(&GameState->RenderState, GameState->RenderState.RobotoFont, glm::vec4(1,1,1,1), LootText, (r32)GameState->RenderState.WindowWidth / 2 - ButtonTexWidth - Width - 10.0f, (r32)GameState->RenderState.WindowHeight - 490, Alignment_Center);
+                            } break;
+                        }
+                        
+                        RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(1, 1, 1, 1), (r32)GameState->RenderState.WindowWidth / 2 - ButtonTexWidth, (r32)GameState->RenderState.WindowHeight - 500, 35, 35, ButtonTexture->TextureHandle);
+                        
+                        break;
                     }
-                    
-                    RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(1, 1, 1, 1), (r32)GameState->RenderState.WindowWidth / 2 - ButtonTexWidth, (r32)GameState->RenderState.WindowHeight - 500, 35, 35, ButtonTexture->TextureHandle);
-                    
-                    break;
                 }
             }
             
@@ -2529,7 +2549,6 @@ static void RenderLightSources(game_state* GameState)
     if(GameState->GameMode == Mode_InGame || GameState->EditorState.Mode == Editor_Level)
     {
         glm::vec4 PointlightPositions[32];
-        r32 PointlightRadi[32];
         r32 PointlightIntensities[32];
         r32 PointlightConstantAtt[32];
         r32 PointlightLinearAtt[32];
@@ -2540,28 +2559,30 @@ static void RenderLightSources(game_state* GameState)
         for(u32 Index = 0; Index < GameState->LightSourceCount; Index++)
         {
             auto LightSource = GameState->LightSources[Index];
-            switch(LightSource.Type)
+            if(LightSource.Active)
             {
-                case Light_Pointlight:
+                switch(LightSource.Type)
                 {
-                    glm::mat4 Model(1.0f);
-                    
-                    auto Position = GameState->CurrentLevel.Type == Level_Isometric ?ToIsometric(glm::vec2(LightSource.Pointlight.Position.x + 1.1f, LightSource.Pointlight.Position.y + 0.5f)) : LightSource.Pointlight.Position + 1.5f;
-                    
-                    r32 CorrectX = Position.x;
-                    r32 CorrectY = Position.y;
-                    
-                    Model = glm::translate(Model,glm::vec3(CorrectX,CorrectY,0));
-                    PointlightPositions[NumOfPointLights] = Model * glm::vec4(0.0f, 0.0f, 0.0f,1.0f);
-                    PointlightRadi[NumOfPointLights] = LightSource.Pointlight.Radius;
-                    PointlightIntensities[NumOfPointLights] = LightSource.Pointlight.Intensity;
-                    PointlightColors[NumOfPointLights] = LightSource.Color;
-                    PointlightConstantAtt[NumOfPointLights] = LightSource.Pointlight.ConstantAtten;
-                    PointlightLinearAtt[NumOfPointLights] = LightSource.Pointlight.LinearAtten;
-                    PointlightExponentialAtt[NumOfPointLights] = LightSource.Pointlight.ExponentialAtten;
-                    NumOfPointLights++;
+                    case Light_Pointlight:
+                    {
+                        glm::mat4 Model(1.0f);
+                        
+                        auto Position = GameState->CurrentLevel.Type == Level_Isometric ?ToIsometric(glm::vec2(LightSource.Pointlight.Position.x + 0.7f, LightSource.Pointlight.Position.y + 0.25f)) : LightSource.Pointlight.Position + 1.5f;
+                        
+                        r32 CorrectX = Position.x;
+                        r32 CorrectY = Position.y;
+                        
+                        Model = glm::translate(Model,glm::vec3(CorrectX,CorrectY,0));
+                        PointlightPositions[NumOfPointLights] = Model * glm::vec4(0.0f, 0.0f, 0.0f,1.0f);
+                        PointlightIntensities[NumOfPointLights] = LightSource.Pointlight.Intensity;
+                        PointlightColors[NumOfPointLights] = LightSource.Color;
+                        PointlightConstantAtt[NumOfPointLights] = LightSource.Pointlight.ConstantAtten;
+                        PointlightLinearAtt[NumOfPointLights] = LightSource.Pointlight.LinearAtten;
+                        PointlightExponentialAtt[NumOfPointLights] = LightSource.Pointlight.ExponentialAtten;
+                        NumOfPointLights++;
+                    }
+                    break;
                 }
-                break;
             }
         }
         
@@ -2574,7 +2595,6 @@ static void RenderLightSources(game_state* GameState)
         SetMat4Uniform(Shader.Program, "P", P);
         SetMat4Uniform(Shader.Program, "V", V);
         SetVec4ArrayUniform(Shader.Program, "PointLightColors", PointlightColors,NumOfPointLights);
-        SetFloatArrayUniform(Shader.Program, "PointLightRadius", PointlightRadi, NumOfPointLights);
         SetFloatArrayUniform(Shader.Program, "PointLightIntensity", PointlightIntensities, NumOfPointLights);
         SetFloatArrayUniform(Shader.Program, "PointLightConstantAtt", PointlightConstantAtt, NumOfPointLights);
         SetFloatArrayUniform(Shader.Program, "PointLightLinearAtt", PointlightLinearAtt, NumOfPointLights);

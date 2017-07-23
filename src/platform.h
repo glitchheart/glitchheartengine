@@ -34,7 +34,7 @@ typedef double r64;
 struct timer
 {
     i32 TimerHandle = -1;
-    r64 TimerMax;
+    r64 TimerMax = 0.0;
     char* Name;
 };
 

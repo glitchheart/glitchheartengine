@@ -506,9 +506,9 @@ static void EditorUpdateEntities(game_state* GameState, r64 DeltaTime)
                                         
                                         if(GetKey(Key_F, GameState))
                                         {
-                                            for(u32 IndexX = 0; IndexX < Tilemap->Width; IndexX++)
+                                            for(i32 IndexX = 0; IndexX < Tilemap->Width; IndexX++)
                                             {
-                                                for(u32 IndexY = 0; IndexY < Tilemap->Height; IndexY++)
+                                                for(i32 IndexY = 0; IndexY < Tilemap->Height; IndexY++)
                                                 {
                                                     for(i32 X = 0; X < (i32)GameState->EditorState.TileBrushSize.x && X + IndexX < Tilemap->Width; X++)
                                                     {
@@ -525,11 +525,11 @@ static void EditorUpdateEntities(game_state* GameState, r64 DeltaTime)
                                         else
                                         {
                                             
-                                            for(u32 IndexY = 0; IndexY < Tilemap->Height; IndexY++)
+                                            for(i32 IndexY = 0; IndexY < Tilemap->Height; IndexY++)
                                             {
-                                                for(u32 RelativeX = 0; RelativeX < GameState->EditorState.TileBrushSize.x && RelativeX + X < Tilemap->Width; RelativeX++)
+                                                for(i32 RelativeX = 0; RelativeX < GameState->EditorState.TileBrushSize.x && RelativeX + X < Tilemap->Width; RelativeX++)
                                                 {
-                                                    for(u32 RelativeY = 0; RelativeY < GameState->EditorState.TileBrushSize.y && RelativeY + Y < Tilemap->Height; RelativeY++)
+                                                    for(i32 RelativeY = 0; RelativeY < GameState->EditorState.TileBrushSize.y && RelativeY + Y < Tilemap->Height; RelativeY++)
                                                     {
                                                         Tilemap->Data[GameState->EditorState.CurrentTilemapLayer][X + RelativeX][Y + RelativeY] = Tilemap->Tiles[GameState->EditorState.SelectedTileType + 1];
                                                     }
