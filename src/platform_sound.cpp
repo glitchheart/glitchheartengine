@@ -317,27 +317,30 @@ static void PlaySounds(game_state *GameState, sound_device* Device)
         Device->Paused = false;
     }
     
-    for(i32 SourceIndex = 0; SourceIndex < SOURCES; SourceIndex++)
+    if(!GameState->SoundManager.Paused && !GameState->SoundManager.Stopped && !GameState->SoundManager.Muted)
     {
-        auto Source = Device->Sources[SourceIndex];
-        ALint SourceState;
-        alGetSourcei(Source,AL_SOURCE_STATE,&SourceState);
-        auto Sound = Device->SourceToSound[Source];
-        if(SourceState == AL_PLAYING)
+        for(i32 SourceIndex = 0; SourceIndex < SOURCES; SourceIndex++)
         {
-            if(Sound.SoundInfo.Rolloff > 0)
+            auto Source = Device->Sources[SourceIndex];
+            ALint SourceState;
+            alGetSourcei(Source,AL_SOURCE_STATE,&SourceState);
+            auto Sound = Device->SourceToSound[Source];
+            if(SourceState == AL_PLAYING)
             {
-                if(Sound.SoundInfo.EntityHandle != -1)
+                if(Sound.SoundInfo.Rolloff > 0)
                 {
-                    auto Entity = GameState->Entities[Sound.SoundInfo.EntityHandle];
-                    Device->SourceToSound[Source].SoundInfo.Position[0] = Entity.Position.x;
-                    Device->SourceToSound[Source].SoundInfo.Position[1] = Entity.Position.y;
+                    if(Sound.SoundInfo.EntityHandle != -1)
+                    {
+                        auto Entity = GameState->Entities[Sound.SoundInfo.EntityHandle];
+                        Device->SourceToSound[Source].SoundInfo.Position[0] = Entity.Position.x;
+                        Device->SourceToSound[Source].SoundInfo.Position[1] = Entity.Position.y;
+                    }
+                    
+                    r32 Distance = glm::distance(glm::vec2(Sound.SoundInfo.Position[0], Sound.SoundInfo.Position[1]), GameState->Entities[0].Position);
+                    r32 VolFactor = 1.0f - (Distance/Sound.SoundInfo.Rolloff);
+                    alSourcef(Device->Sources[SourceIndex],AL_GAIN,Max(0.0f,VolFactor) * GameState->SoundManager.SFXGain);
+                    Device->SourceGain[SourceIndex] = Max(0.0f,VolFactor) * GameState->SoundManager.SFXGain;
                 }
-                
-                r32 Distance = glm::distance(glm::vec2(Sound.SoundInfo.Position[0], Sound.SoundInfo.Position[1]), GameState->Entities[0].Position);
-                r32 VolFactor = 1.0f - (Distance/Sound.SoundInfo.Rolloff);
-                alSourcef(Device->Sources[SourceIndex],AL_GAIN,Max(0.0f,VolFactor) * GameState->SoundManager.SFXGain);
-                Device->SourceGain[SourceIndex] = Max(0.0f,VolFactor) * GameState->SoundManager.SFXGain;
             }
         }
     }

@@ -902,21 +902,7 @@ static void InitializeOpenGL(game_state* GameState, render_state* RenderState, c
     glGetIntegerv(GL_VIEWPORT, Viewport);
     memcpy(RenderState->Viewport, Viewport, sizeof(GLint) * 4);
     
-    int Present = glfwJoystickPresent(GLFW_JOYSTICK_1);
-    if(Present)
-    {
-        GameState->InputController.ControllerPresent = true;
-        const char* Name = glfwGetJoystickName(GLFW_JOYSTICK_1);
-        
-        if(strstr(Name, "Xbox") != 0)
-        {
-            GameState->InputController.ControllerType = Controller_Xbox;
-        }
-        else if(strstr(Name, "PS4") != 0 || strstr(Name, "Wireless") != 0)
-        {
-            GameState->InputController.ControllerType = Controller_PS4;
-        }
-    }
+    ControllerPresent(GameState);
     
     texture_Map_Init(&RenderState->Textures, HashString, 8192);
     LoadTextures(RenderState, "../assets/textures/");
