@@ -251,23 +251,26 @@ static void KeyCallback(GLFWwindow *Window, int Key, int Scancode, int Action, i
     game_state *GameState = (game_state *)glfwGetWindowUserPointer(Window);
     SetInvalidKeys(&GameState->InputController);
     
-    if (GameState)
+    if(Key != GLFW_KEY_COMMA && Key != GLFW_KEY_PERIOD && (Key < 320 || Key > 329))
     {
-        if (Action == GLFW_PRESS)
+        if (GameState)
         {
-            GameState->InputController.AnyKeyPressed = true;
-            if (GameState->InputController.KeysJustPressed[GameState->KeyMappings[Key]] == Key_NotPressed)
+            if (Action == GLFW_PRESS)
             {
-                GameState->InputController.KeysJustPressed[GameState->KeyMappings[Key]] = Key_JustPressed;
+                GameState->InputController.AnyKeyPressed = true;
+                if (GameState->InputController.KeysJustPressed[GameState->KeyMappings[Key]] == Key_NotPressed)
+                {
+                    GameState->InputController.KeysJustPressed[GameState->KeyMappings[Key]] = Key_JustPressed;
+                }
+                
+                GameState->InputController.KeysDown[GameState->KeyMappings[Key]] = true;
             }
-            
-            GameState->InputController.KeysDown[GameState->KeyMappings[Key]] = true;
-        }
-        else if (Action == GLFW_RELEASE)
-        {
-            GameState->InputController.KeysUp[GameState->KeyMappings[Key]] = true;
-            GameState->InputController.KeysJustPressed[GameState->KeyMappings[Key]] = Key_NotPressed;
-            GameState->InputController.KeysDown[GameState->KeyMappings[Key]] = false;
+            else if (Action == GLFW_RELEASE)
+            {
+                GameState->InputController.KeysUp[GameState->KeyMappings[Key]] = true;
+                GameState->InputController.KeysJustPressed[GameState->KeyMappings[Key]] = Key_NotPressed;
+                GameState->InputController.KeysDown[GameState->KeyMappings[Key]] = false;
+            }
         }
     }
 }
