@@ -777,17 +777,17 @@ AI_FUNC(SkeletonFollowing)
     
     if(!Player.Dead && Player.Active)
     {
-        if(DistanceToPlayer > Entity->Enemy.MaxFollowDistance)
-        {
-            PlayAnimation(Entity, "skeleton_walk", GameState);
-            Enemy.AIState = AI_Wandering;
-        }
-        else if(DistanceToPlayer < Entity->Enemy.MinDistanceToPlayer)
+        if(DistanceToPlayer < Entity->Enemy.MinDistanceToPlayer)
         {
             PlayAnimation(Entity, "skeleton_idle", GameState);
             StartTimer(GameState, Skeleton.ChargingTimer);
             Enemy.AIState = AI_Charging;
             render_entity* RenderEntity = &GameState->RenderState.RenderEntities[Entity->RenderEntityHandle];
+        }
+        else if(DistanceToPlayer > Entity->Enemy.MaxFollowDistance)
+        {
+            PlayAnimation(Entity, "skeleton_walk", GameState);
+            Enemy.AIState = AI_Wandering;
         }
         else if(DistanceToPlayer <= Entity->Enemy.SlowdownDistance)
         {
@@ -1594,6 +1594,9 @@ static void LoadSkeletonData(game_state* GameState, i32 Handle = -1, glm::vec2 P
     {
         LoadEntityData(File,Entity, GameState, Handle != -1);
         LoadEnemyData(File,Entity, GameState);
+        
+        Entity->Enemy.EnemyCollider = Entity->CollisionAABB;
+        Entity->Enemy.EnemyCollider.Extents = glm::vec2(Entity->Enemy.EnemyCollider.Extents.x * 3, Entity->Enemy.EnemyCollider.Extents.y * 3);
         
         if(Handle == -1)
             Entity->Position = glm::vec2(Position.x, Position.y);

@@ -162,6 +162,11 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
     {
         Entity->CollisionAABB.Center = glm::vec2(Entity->Position.x + Entity->Center.x * Entity->Scale + Entity->CollisionAABB.Offset.x, Entity->Position.y + Entity->Center.y * Entity->Scale + Entity->CollisionAABB.Offset.y);
         
+        if(Entity->Type == Entity_Enemy)
+        {
+            Entity->Enemy.EnemyCollider.Center = glm::vec2(Entity->Position.x + Entity->Center.x * Entity->Scale + Entity->Enemy.EnemyCollider.Offset.x, Entity->Position.y + Entity->Center.y * Entity->Scale + Entity->Enemy.EnemyCollider.Offset.y);
+        }
+        
         if(Entity->HasHitTrigger)
         {
             Entity->HitTrigger.Center = glm::vec2(Entity->Position.x + Entity->Center.x * Entity->Scale + Entity->HitTrigger.Offset.x, Entity->Position.y + Entity->Center.y * Entity->Scale + Entity->HitTrigger.Offset.y);
@@ -200,7 +205,13 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
                 }
                 
                 collision_AABB Md;
-                MinkowskiDifference(&OtherEntity->CollisionAABB, &Entity->CollisionAABB, &Md);
+                if(Entity->Type == Entity_Enemy && OtherEntity->Type == Entity_Enemy)
+                {
+                    MinkowskiDifference(&OtherEntity->Enemy.EnemyCollider, &Entity->Enemy.EnemyCollider, &Md);
+                }
+                else
+                    MinkowskiDifference(&OtherEntity->CollisionAABB, &Entity->CollisionAABB, &Md);
+                
                 if(Md.Min.x <= 0 &&
                    Md.Max.x >= 0 &&
                    Md.Min.y <= 0 &&
@@ -215,12 +226,6 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
                     {
                         OtherEntity->IsColliding = true;
                         OtherEntity->CollisionAABB.IsColliding = true;
-                        
-                        //calculate what side is colliding
-                        auto OtherPosition = OtherEntity->CollisionAABB.Center;
-                        auto OtherExtents = OtherEntity->CollisionAABB.Extents;
-                        auto Position = Entity->CollisionAABB.Center;
-                        auto Extents = Entity->CollisionAABB.Extents;
                         
                         AABBMin(&Md);
                         AABBMax(&Md);

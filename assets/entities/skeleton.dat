@@ -23,14 +23,14 @@ renderbuttonoffset -1 1
 #enemy
 enemytype 1
 will 50
-walkingspeed 5
-wanderingspeed 1
-closetoplayerspeed 2
+walkingspeed 2
+wanderingspeed 2
+closetoplayerspeed 1
 istargeted 0
 targetingposition -0.5 2
 maxalertdistance 8
 maxfollowdistance 10
-mindistancetoplayer 2
+mindistancetoplayer 4
 slowdowndistance 6
 attackdistance 3
 aistate 8
@@ -38,6 +38,6 @@ healthcountposition -10 100
 astarcooldowntimer 0.6
 healthbar offset 0 1 scale 1.0 0.25
 #skeleton
-attackcooldowntimer 0.5
-chargingtimer 0.6
+attackcooldowntimer 1.0
+chargingtimer 1.5
 alertedtimer 0.1

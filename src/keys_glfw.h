@@ -261,7 +261,6 @@ static void KeyCallback(GLFWwindow *Window, int Key, int Scancode, int Action, i
                 GameState->InputController.KeysJustPressed[GameState->KeyMappings[Key]] = Key_JustPressed;
             }
             
-            printf("Value %d for key %d\n", GameState->KeyMappings[Key], Key);
             GameState->InputController.KeysDown[GameState->KeyMappings[Key]] = true;
         }
         else if (Action == GLFW_RELEASE)
