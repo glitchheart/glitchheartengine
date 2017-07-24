@@ -10,7 +10,6 @@ struct sound_info
     r32 Velocity[3];
     r32 Rolloff;
     b32 Loop;
-    b32 Playing;
     i32 EntityHandle;
 };
 
