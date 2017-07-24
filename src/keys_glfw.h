@@ -84,7 +84,7 @@ void InitMouseButtonMappings(game_state* GameState)
 
 void InitControllerMappings(game_state* GameState)
 {
-    integer_Map_Init(&GameState->ControllerMappings, HashIntKeys, 17);
+    integer_Map_Init(&GameState->ControllerMappings, HashInt, 127);
     GameState->ControllerMappings[GLFW_JOYSTICK_1] = Joystick_1;
     GameState->ControllerMappings[GLFW_JOYSTICK_2] = Joystick_2;
     GameState->ControllerMappings[GLFW_JOYSTICK_3] = Joystick_3;
@@ -147,7 +147,12 @@ static void ControllerKeyCallback(game_state* GameState, int Key, int Action)
             {
                 GameState->InputController.JoystickKeysJustPressed[GameState->ControllerMappings[Key]] = Key_JustPressed;
             }
-            
+            else if(GameState->InputController.JoystickKeysJustPressed[GameState->ControllerMappings[Key]] == Key_JustPressed)
+            {
+                // NOTE(niels): Do we ever even get in here???
+                GameState->InputController.JoystickKeysJustPressed[GameState->ControllerMappings[Key]] = Key_Invalid;
+                
+            }
             GameState->InputController.JoystickKeysDown[GameState->ControllerMappings[Key]] = true;
         }
         else if (Action == GLFW_RELEASE)
