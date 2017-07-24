@@ -903,7 +903,7 @@ static void InitializeOpenGL(game_state* GameState, render_state* RenderState, c
         }
     }
     
-    texture_Map_Init(&RenderState->Textures, HashString, 8192);
+    texture_Map_Init(&RenderState->Textures, HashString, 4096);
     LoadTextures(RenderState, "../assets/textures/");
     LoadTextures(RenderState, "../assets/textures/spritesheets/");
     RenderSetup(RenderState);
@@ -1535,7 +1535,7 @@ static void RenderHealthbar(render_state* RenderState,
     auto EntityPosition = ToIsometric(Entity->Position);
     
     RenderRect(Render_Fill, RenderState, glm::vec4(0.6, 0, 0, 1), EntityPosition.x + Healthbar.Offset.x, EntityPosition.y + Healthbar.Offset.y, 1.0f
-               / (r32)Entity->FullHealth * (r32)Entity->Health , 0.1f, 0, false, ProjectionMatrix, ViewMatrix);
+               / (r32)Entity->FullHealth * (r32)Entity->Health , 0.05f, 0, false, ProjectionMatrix, ViewMatrix);
     
     
     if(Entity->HealthLost > 0)
@@ -1545,7 +1545,7 @@ static void RenderHealthbar(render_state* RenderState,
         r32 Width = 1.0f
             / (r32)Entity->FullHealth * (r32)Entity->HealthLost;
         
-        RenderRect(Render_Fill, RenderState, glm::vec4(1, 1, 1, 1), StartX, EntityPosition.y + Healthbar.Offset.y, Width, 0.1f, 0, false, ProjectionMatrix, ViewMatrix);
+        RenderRect(Render_Fill, RenderState, glm::vec4(1, 1, 1, 1), StartX, EntityPosition.y + Healthbar.Offset.y, Width, 0.05f, 0, false, ProjectionMatrix, ViewMatrix);
         
         glm::mat4 Model = glm::mat4(1.0f) * ViewMatrix;
         
