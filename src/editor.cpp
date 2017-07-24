@@ -270,10 +270,12 @@ static void CheckEditorUIInput(game_state* GameState, r64 DeltaTime)
             {
                 if(GetKeyDown(Key_Down, GameState))
                 {
+                    printf("Down\n");
                     GameState->EditorState.SelectedTexture++;
                 }
                 else if(GetKeyDown(Key_Up, GameState))
                 {
+                    printf("Up\n");
                     GameState->EditorState.SelectedTexture--;
                 }
                 
@@ -285,13 +287,16 @@ static void CheckEditorUIInput(game_state* GameState, r64 DeltaTime)
             else if(GameState->EditorState.AnimationMode == Animation_SelectAnimation)
             {
                 b32 Changed = false;
+                
                 if(GetKeyDown(Key_Down, GameState))
                 {
+                    printf("Down\n");
                     GameState->EditorState.SelectedAnimation++;
                     Changed = true;
                 }
                 else if(GetKeyDown(Key_Up, GameState))
                 {
+                    printf("Up\n");
                     GameState->EditorState.SelectedAnimation--;
                     Changed = true;
                 }
