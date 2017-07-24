@@ -3,7 +3,7 @@
 
 void InitKeyMappings(game_state* GameState)
 {
-    integer_Map_Init(&GameState->KeyMappings,HashInt, 1024);
+    integer_Map_Init(&GameState->KeyMappings, HashInt, 348);
     GameState->KeyMappings[GLFW_KEY_LEFT] = Key_Left;
     GameState->KeyMappings[GLFW_KEY_RIGHT] = Key_Right;
     GameState->KeyMappings[GLFW_KEY_UP] = Key_Up;
@@ -255,12 +255,8 @@ static void KeyCallback(GLFWwindow *Window, int Key, int Scancode, int Action, i
             {
                 GameState->InputController.KeysJustPressed[GameState->KeyMappings[Key]] = Key_JustPressed;
             }
-            else if (GameState->InputController.KeysJustPressed[GameState->KeyMappings[Key]] == Key_JustPressed)
-            {
-                // NOTE(niels): Do we ever even get in here???
-                GameState->InputController.KeysJustPressed[GameState->KeyMappings[Key]] = Key_Invalid;
-            }
             
+            printf("Value %d for key %d\n", GameState->KeyMappings[Key], Key);
             GameState->InputController.KeysDown[GameState->KeyMappings[Key]] = true;
         }
         else if (Action == GLFW_RELEASE)
