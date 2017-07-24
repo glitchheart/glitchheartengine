@@ -834,6 +834,7 @@ extern "C" UPDATE(Update)
             
             GameState->GameMode = Mode_InGame;
             GameState->ShouldReload = false;
+            PlayMusicTrack(GameState, &GameState->SoundManager.Brugt);
         }
         
         LoadLevelFromFile(GameState->LevelPath, &GameState->CurrentLevel, GameState);

@@ -7,11 +7,11 @@
 #include "alc.h"
 #include "game.h"
 #include "gmap.h"
+#include "gmap.cpp"
 #include "platform_sound.h"
 #include "platform_sound.cpp"
 #include "filehandling.h"
 #define KEY_INIT
-#include "gmap.cpp"
 #include "keycontroller.cpp"
 #include "keys_glfw.h"
 #include "opengl_rendering.cpp"
@@ -119,6 +119,8 @@ int main(void)
     {
         sound_manager SoundManager = {};
         SoundManager.Muted = ConfigData.Muted;
+        SoundManager.SFXGain = ConfigData.SFXVolume;
+        SoundManager.MusicGain = ConfigData.MusicVolume;
         LoadSounds(&SoundManager,&SoundDevice);
         ResetSoundQueue(&SoundManager);
         GameState.SoundManager = SoundManager;
