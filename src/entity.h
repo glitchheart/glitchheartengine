@@ -396,6 +396,8 @@ struct entity
         struct
         {
             Enemy_Type EnemyType;
+            collision_AABB EnemyCollider;
+            
             entity_healthbar* Healthbar;
             
             i32 Will;
