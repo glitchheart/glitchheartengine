@@ -777,17 +777,17 @@ AI_FUNC(SkeletonFollowing)
     
     if(!Player.Dead && Player.Active)
     {
-        if(DistanceToPlayer > Entity->Enemy.MaxFollowDistance)
-        {
-            PlayAnimation(Entity, "skeleton_walk", GameState);
-            Enemy.AIState = AI_Wandering;
-        }
-        else if(DistanceToPlayer < Entity->Enemy.MinDistanceToPlayer)
+        if(DistanceToPlayer < Entity->Enemy.MinDistanceToPlayer)
         {
             PlayAnimation(Entity, "skeleton_idle", GameState);
             StartTimer(GameState, Skeleton.ChargingTimer);
             Enemy.AIState = AI_Charging;
             render_entity* RenderEntity = &GameState->RenderState.RenderEntities[Entity->RenderEntityHandle];
+        }
+        else if(DistanceToPlayer > Entity->Enemy.MaxFollowDistance)
+        {
+            PlayAnimation(Entity, "skeleton_walk", GameState);
+            Enemy.AIState = AI_Wandering;
         }
         else if(DistanceToPlayer <= Entity->Enemy.SlowdownDistance)
         {
@@ -1595,6 +1595,9 @@ static void LoadSkeletonData(game_state* GameState, i32 Handle = -1, glm::vec2 P
         LoadEntityData(File,Entity, GameState, Handle != -1);
         LoadEnemyData(File,Entity, GameState);
         
+        Entity->Enemy.EnemyCollider = Entity->CollisionAABB;
+        Entity->Enemy.EnemyCollider.Extents = glm::vec2(Entity->Enemy.EnemyCollider.Extents.x * 3, Entity->Enemy.EnemyCollider.Extents.y * 3);
+        
         if(Handle == -1)
             Entity->Position = glm::vec2(Position.x, Position.y);
         
@@ -1897,7 +1900,7 @@ static void LoadPlayerData(game_state* GameState, i32 Handle = -1, glm::vec2 Pos
     {
         Entity->Dead = false;
         LoadEntityData(File, Entity, GameState, Handle != -1);
-        
+        printf("MOVE SPEED %f\n", Entity->AttackMoveSpeed);
         char LineBuffer[255];
         
         while(fgets(LineBuffer, 255, File))
@@ -2121,6 +2124,8 @@ static void CheckLootPickup(game_state* GameState, loot* Loot, entity* Player)
 
 void UpdatePlayer(entity* Entity, game_state* GameState, r64 DeltaTime)
 {
+    r32 CurrentSpeed = 0.0f;
+    
     if(Entity->Hit)
     {
         Entity->Player.IsAttacking = false;
@@ -2535,7 +2540,11 @@ void UpdatePlayer(entity* Entity, game_state* GameState, r64 DeltaTime)
                     Direction = glm::vec2(0, 0);
                 }
                 
-                Entity->Position += glm::vec2(Direction.x / Scale * Entity->Player.WalkingSpeed * DeltaTime, Direction.y * Entity->Player.WalkingSpeed * DeltaTime);
+                r32 Speed = Entity->Player.WalkingSpeed;
+                if(!TimerDone(GameState, Entity->AttackMoveTimer))
+                    Speed = Entity->AttackMoveSpeed;
+                
+                Entity->Position += glm::vec2(Direction.x / Scale * Speed * DeltaTime, Direction.y * Speed * DeltaTime);
             }
             
         }
