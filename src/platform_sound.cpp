@@ -137,56 +137,47 @@ static void InitAudio(sound_device *SoundDevice)
     source_to_sound_Map_Init(&SoundDevice->SourceToSound, HashInt, 32);
 }
 
-static void LoadSound(const char *filename,  sound_info SoundInfo, sound_effect *LoadedSound, sound_device* SoundDevice, char* Name = "")
+static void LoadSound(const char *filename, sound_effect *LoadedSound, sound_device* SoundDevice, char* Name = "")
 {
     LoadWavFile(filename, LoadedSound);
-    LoadedSound->SoundInfo = SoundInfo;
+    LoadedSound->SoundInfo.Pitch = 1.0f;
+    LoadedSound->SoundInfo.Position[0] = 0.0f;
+    LoadedSound->SoundInfo.Position[1] = 0.0f;
+    LoadedSound->SoundInfo.Position[2] = 0.0f;
+    LoadedSound->SoundInfo.Rolloff = 0.0;
+    LoadedSound->SoundInfo.Loop = false;
+    LoadedSound->SoundInfo.EntityHandle = -1;
+    LoadedSound->SoundInfo.Gain = 0.0f;
     LoadedSound->SoundInfo.Name = Name;
     SoundDevice->Buffers[SoundDevice->BufferCount++] = LoadedSound->Buffer;
 }
 
 static void LoadSounds(sound_manager *SoundManager, sound_device* SoundDevice)
 {
-    sound_info DefaultSoundInfo = {};
-    DefaultSoundInfo.Pitch = 1;
+    LoadSound("../assets/audio/Countdown_1.wav", &SoundManager->Effect01,SoundDevice);
+    LoadSound("../assets/audio/mainmenu.wav", &SoundManager->MainMenuTrack,SoundDevice);
+    LoadSound("../assets/audio/sword_slash_01.wav", &SoundManager->SwordSlash01,SoundDevice);
+    LoadSound("../assets/audio/sword_hit_01.wav",  &SoundManager->SwordHit01,SoundDevice);
+    LoadSound("../assets/audio/sword_hit_02.wav",  &SoundManager->SwordHit02, SoundDevice);
+    LoadSound("../assets/audio/dash.wav", &SoundManager->Dash,SoundDevice);
+    LoadSound("../assets/audio/explosion.wav", &SoundManager->Explosion, SoundDevice);
+    LoadSound("../assets/audio/ui/button_click.wav", &SoundManager->ButtonClick, SoundDevice);
+    LoadSound("../assets/audio/barrel_break.wav", &SoundManager->BarrelBreak, SoundDevice);
+    LoadSound("../assets/audio/throw.wav", &SoundManager->Throw, SoundDevice);
+    LoadSound("../assets/audio/slide_1.wav", &SoundManager->Slide01, SoundDevice);
+    LoadSound("../assets/audio/use_health.wav", &SoundManager->UseHealth, SoundDevice);
     
-    r32 Position[3] = {20, 0, 0};
-    memcpy(DefaultSoundInfo.Position, Position, 3);
-    r32 Velocity[3] = {0, 0, 0};
-    memcpy(DefaultSoundInfo.Velocity, Velocity, 3);
-    DefaultSoundInfo.Loop = AL_FALSE;
-    DefaultSoundInfo.Rolloff = 0.0f;
+    LoadSound("../assets/audio/enemies/minotaur/minotaur_grunt01.wav", &SoundManager->MinotaurGrunt01, SoundDevice);
+    LoadSound("../assets/audio/enemies/minotaur/minotaur_grunt02.wav",  &SoundManager->MinotaurGrunt02, SoundDevice);
+    LoadSound("../assets/audio/enemies/minotaur/minotaur_hit.wav", &SoundManager->MinotaurHit, SoundDevice);
+    LoadSound("../assets/audio/enemies/minotaur/minotaur_death.wav", &SoundManager->MinotaurDeath, SoundDevice);
+    LoadSound("../assets/audio/enemies/minotaur/stomp.wav", &SoundManager->MinotaurStomp, SoundDevice);
+    LoadSound("../assets/audio/enemies/shield_impact.wav", &SoundManager->ShieldImpact, SoundDevice);
+    LoadSound("../assets/audio/splash_01.wav", &SoundManager->Splash01, SoundDevice);
     
-    DefaultSoundInfo.Gain = SoundManager->SFXGain;
-    LoadSound("../assets/audio/Countdown_1.wav", DefaultSoundInfo, &SoundManager->Effect01,SoundDevice);
-    LoadSound("../assets/audio/mainmenu.wav", DefaultSoundInfo, &SoundManager->MainMenuTrack,SoundDevice);
-    LoadSound("../assets/audio/sword_slash_01.wav", DefaultSoundInfo, &SoundManager->SwordSlash01,SoundDevice);
-    LoadSound("../assets/audio/sword_hit_01.wav", DefaultSoundInfo, &SoundManager->SwordHit01,SoundDevice);
-    LoadSound("../assets/audio/sword_hit_02.wav", DefaultSoundInfo, &SoundManager->SwordHit02, SoundDevice);
-    LoadSound("../assets/audio/dash.wav", DefaultSoundInfo, &SoundManager->Dash,SoundDevice);
-    LoadSound("../assets/audio/explosion.wav", DefaultSoundInfo, &SoundManager->Explosion, SoundDevice);
-    LoadSound("../assets/audio/ui/button_click.wav", DefaultSoundInfo, &SoundManager->ButtonClick, SoundDevice);
-    LoadSound("../assets/audio/barrel_break.wav", DefaultSoundInfo, &SoundManager->BarrelBreak, SoundDevice);
-    LoadSound("../assets/audio/throw.wav", DefaultSoundInfo, &SoundManager->Throw, SoundDevice);
-    LoadSound("../assets/audio/slide_1.wav", DefaultSoundInfo, &SoundManager->Slide01, SoundDevice);
-    LoadSound("../assets/audio/use_health.wav", DefaultSoundInfo, &SoundManager->UseHealth, SoundDevice);
+    LoadSound("../assets/audio/bonfire.wav", &SoundManager->Bonfire, SoundDevice);
     
-    LoadSound("../assets/audio/enemies/minotaur/minotaur_grunt01.wav", DefaultSoundInfo, &SoundManager->MinotaurGrunt01, SoundDevice);
-    LoadSound("../assets/audio/enemies/minotaur/minotaur_grunt02.wav", DefaultSoundInfo, &SoundManager->MinotaurGrunt02, SoundDevice);
-    LoadSound("../assets/audio/enemies/minotaur/minotaur_hit.wav", DefaultSoundInfo, &SoundManager->MinotaurHit, SoundDevice);
-    LoadSound("../assets/audio/enemies/minotaur/minotaur_death.wav", DefaultSoundInfo, &SoundManager->MinotaurDeath, SoundDevice);
-    LoadSound("../assets/audio/enemies/minotaur/stomp.wav", DefaultSoundInfo, &SoundManager->MinotaurStomp, SoundDevice);
-    LoadSound("../assets/audio/enemies/shield_impact.wav", DefaultSoundInfo, &SoundManager->ShieldImpact, SoundDevice);
-    LoadSound("../assets/audio/splash_01.wav", DefaultSoundInfo, &SoundManager->Splash01, SoundDevice);
-    
-    DefaultSoundInfo.Rolloff = 5.0f;
-    DefaultSoundInfo.Loop = true;
-    LoadSound("../assets/audio/bonfire.wav", DefaultSoundInfo, &SoundManager->Bonfire, SoundDevice);
-    
-    DefaultSoundInfo.Rolloff = 0.0f;
-    DefaultSoundInfo.Loop = true;
-    DefaultSoundInfo.Gain = SoundManager->MusicGain;
-    LoadSound("../assets/audio/music/Brugt.wav", DefaultSoundInfo, &SoundManager->Brugt, SoundDevice, "Brugt");
+    LoadSound("../assets/audio/music/Brugt.wav", &SoundManager->Brugt, SoundDevice, "Brugt");
     
     // // Add more sounds here if necessary
 }

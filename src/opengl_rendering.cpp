@@ -1820,7 +1820,7 @@ static void RenderEntity(game_state *GameState, render_entity* RenderEntity, glm
     }
 }
 
-static void RenderTile(render_state* RenderState, u32 X, u32 Y, u32 TilesheetIndex, i32 TileWidth, i32 TileHeight, glm::vec2 TextureOffset, glm::vec2 SheetSize, glm::vec4 Color,  glm::mat4 ProjectionMatrix, glm::mat4 View)
+static void RenderTile(render_state* RenderState, r32 X, r32 Y, u32 TilesheetIndex, i32 TileWidth, i32 TileHeight, glm::vec2 TextureOffset, glm::vec2 SheetSize, glm::vec4 Color,  glm::mat4 ProjectionMatrix, glm::mat4 View)
 {
     glBindVertexArray(RenderState->SpriteSheetVAO);
     glm::mat4 Model(1.0f);
