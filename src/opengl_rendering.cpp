@@ -1341,80 +1341,31 @@ static void RenderConsole(game_state* GameState, console* Console)
 
 static void RenderColliderWireframe(render_state* RenderState, entity* Entity, glm::mat4 ProjectionMatrix, glm::mat4 View)
 {
+    
     if(Entity->Active)
     {
         glm::mat4 Model(1.0f);
         
         auto IsoCenter = ToIsometric(glm::vec2(Entity->CollisionAABB.Center.x - Entity->CollisionAABB.Extents.x, Entity->CollisionAABB.Center.y - Entity->CollisionAABB.Extents.y));
         
-        Model = glm::translate(Model, glm::vec3(IsoCenter.x, IsoCenter.y, 0.0f));
-        Model = glm::scale(Model, glm::vec3(Entity->CollisionAABB.Extents.x, Entity->CollisionAABB.Extents.y,1));
+        r32 CorrectX = IsoCenter.x;
+        r32 CorrectY = IsoCenter.y;
         
-        glBindVertexArray(RenderState->WireframeVAO);
-        
-        auto Shader = RenderState->Shaders[Shader_Wireframe];
-        UseShader(&Shader);
-        
-        SetMat4Uniform(Shader.Program, "Projection", ProjectionMatrix);
-        SetMat4Uniform(Shader.Program, "View", View);
-        SetMat4Uniform(Shader.Program, "Model", Model);
-        glm::vec4 color;
+        glm::vec4 Color;
         
         if(Entity->IsColliding)
         {
-            color = glm::vec4(1.0,0.0,0.0,1.0);
+            Color = glm::vec4(1.0,0.0,0.0,1.0);
         }
         else 
         {
-            color = glm::vec4(0.0,1.0,0.0,1.0);
+            Color = glm::vec4(0.0,1.0,0.0,1.0);
         }
         
         if(Entity->CollisionAABB.IsTrigger)
-            color = glm::vec4(0, 0, 1, 1);
+            Color = glm::vec4(0, 0, 1, 1);
         
-        SetVec4Uniform(Shader.Program, "color", color);
-        
-        glDrawArrays(GL_LINE_LOOP, 0, 4);
-        glBindVertexArray(0);
-        
-        if(Entity->HasHitTrigger)
-        {
-            glm::mat4 Model(1.0f);
-            
-            auto HitIso = ToIsometric(glm::vec2(Entity->HitTrigger.Center.x - Entity->HitTrigger.Extents.x, Entity->HitTrigger.Center.y - Entity->HitTrigger.Extents.y));
-            
-            Model = glm::translate(Model, glm::vec3(HitIso.x,HitIso.y, 0.0f)); Model = glm::scale(Model, glm::vec3(Entity->HitTrigger.Extents.x, Entity->HitTrigger.Extents.y,1));
-            
-            glBindVertexArray(RenderState->WireframeVAO);
-            
-            auto Shader = RenderState->Shaders[Shader_Wireframe];
-            UseShader(&Shader);
-            
-            SetMat4Uniform(Shader.Program, "Projection", ProjectionMatrix);
-            SetMat4Uniform(Shader.Program, "View", View);
-            SetMat4Uniform(Shader.Program, "Model", Model);
-            glm::vec4 color;
-            
-            if(Entity->HitTrigger.IsColliding)
-            {
-                color = glm::vec4(1.0,0.0,0.0,1.0);
-            }
-            else 
-            {
-                color = glm::vec4(0.0,1.0,0.0,1.0);
-            }
-            
-            SetVec4Uniform(Shader.Program, "color", color);
-            
-            glDrawArrays(GL_LINE_LOOP, 0, 4);
-            glBindVertexArray(0);
-        }
-        
-        if(Entity->HasWeapon)
-        {
-            auto IsoWeaponPos = ToIsometric(glm::vec2(Entity->Weapon.CollisionAABB.Center.x - Entity->Weapon.CollisionAABB.Extents.x,Entity->Weapon.CollisionAABB.Center.y - Entity->Weapon.CollisionAABB.Extents.y));
-            RenderRect(Render_Outline, RenderState, glm::vec4(0, 0, 1, 1), IsoWeaponPos.x, IsoWeaponPos.y, Entity->Weapon.CollisionAABB.Extents.x, Entity->Weapon.CollisionAABB.Extents.y, 0, false, ProjectionMatrix, View);
-        }
+        RenderIsometricOutline(RenderState, Color, CorrectX, CorrectY, 1, 0.5f, ProjectionMatrix, View);
     }
 }
 

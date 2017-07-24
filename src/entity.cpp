@@ -40,7 +40,6 @@ i32 LoadLight(game_state* GameState, char* LineBuffer, glm::vec2 InitPosition = 
                &LightSource.Type , &LightSource.Active,&LightSource.Pointlight.Intensity,&LightSource.Color.x, &LightSource.Color.y, &LightSource.Color.z,&LightSource.Color.w, &LightSource.Pointlight.ConstantAtten, &LightSource.Pointlight.LinearAtten, &LightSource.Pointlight.ExponentialAtten, &ShouldGlow, &GlowTimerMax, &GlowIncrease);
         if(ShouldGlow)
         {
-            printf("GlowtimerMax: %lf\n", GlowTimerMax);
             LightSource.Pointlight.GlowTimer.TimerHandle = -1;
             LightSource.Pointlight.GlowTimer.TimerMax = GlowTimerMax;
             LightSource.Pointlight.GlowIncrease = GlowIncrease;
@@ -137,7 +136,18 @@ void Hit(game_state* GameState, entity* ByEntity, entity* HitEntity)
                 StartTimer(GameState, GameState->GameCamera.ScreenShakeTimer);
             
             //StartTimer(GameState, HitEntity->StaggerCooldownTimer);
-            PlaySoundEffect(GameState, &GameState->SoundManager.SwordHit02);
+            
+            i32 ran = rand() % 2;
+            
+            if(ran == 0)
+            {
+                PlaySoundEffect(GameState, &GameState->SoundManager.Splash01, 0.95f);
+            }
+            else
+            {
+                PlaySoundEffect(GameState, &GameState->SoundManager.Splash01,0.85f);
+            }
+            
             HitEntity->HitRecoilDirection = glm::normalize(HitEntity->Position - ByEntity->Position);
             
             i16 Damage = ByEntity->Weapon.Damage > HitEntity->Health ? (i16)HitEntity->Health : (i16)ByEntity->Weapon.Damage;
@@ -1553,7 +1563,11 @@ static void LoadBonfireData(game_state* GameState, i32 Handle = -1, glm::vec2 Po
         StartTimer(GameState,GameState->LightSources[Entity->LightSourceHandle].Pointlight.GlowTimer);
         
         if(Handle == -1)
+        {
+            printf("Entityhandle: %d\n", Entity->EntityIndex);
             Entity->Position = glm::vec2(Position.x, Position.y);
+            PlaySoundEffect(GameState,&GameState->SoundManager.Bonfire, 1.0f, Entity->Position.x, Entity->Position.y, 10.0f, true, Entity->EntityIndex);
+        }
         
         fclose(File);
     }
@@ -1844,6 +1858,7 @@ void PlaceCheckpoint(game_state* GameState, entity* Entity)
     }
     else
     {
+        printf("New area\n");
         GameState->Entities[GameState->CharacterData.CheckpointHandle].Position = CheckpointPos;
     }
     
@@ -2641,7 +2656,17 @@ void UpdatePlayer(entity* Entity, game_state* GameState, r64 DeltaTime)
             
             DecreaseStamina(Entity,GameState,Entity->Player.AttackStaminaCost);
             Entity->AttackCount++;
-            PlaySoundEffect(GameState, &GameState->SoundManager.SwordSlash01);
+            
+            i32 Ran = rand() % 2;
+            if(Ran == 0)
+            {
+                PlaySoundEffect(GameState, &GameState->SoundManager.SwordSlash01);
+            }
+            else
+            {
+                PlaySoundEffect(GameState, &GameState->SoundManager.SwordSlash01, 0.85f);
+            }
+            
         }
         else if(Entity->Player.Stamina < Entity->Player.AttackStaminaCost - Entity->Player.MinDiffStamina)
         {
@@ -3035,13 +3060,13 @@ static void DetermineLoot(game_state* GameState, entity* Entity)
 {
     b32 HasLoot = false;
     loot Loot;
-    i32 RNG = rand() % 20;
-    if(RNG > 17)
+    i32 RNG = rand() % 100;
+    if(RNG > 90)
     {
         HasLoot = true;
         Loot.Type = Loot_Checkpoint;
     }
-    else if(RNG > 0 && RNG < 12)
+    else if(RNG > 0 && RNG < 10)
     {
         HasLoot = true;
         Loot.Type = Loot_LevelItem;
