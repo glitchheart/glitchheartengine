@@ -724,6 +724,12 @@ static void EditorUpdateEntities(game_state* GameState, r64 DeltaTime)
 
 extern "C" UPDATE(Update)
 {
+    
+    if(GetKeyDown(Key_Down,GameState))
+    {
+        printf("Tits\n");
+    }
+    
     if(GameState->ReloadData->ReloadPlayerFile)
     {
         LoadPlayerData(GameState, 0);
