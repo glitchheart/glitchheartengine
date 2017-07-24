@@ -21,3 +21,9 @@ u32 HashInt(u32 Size, const void* Key) {
     K = (K >> 16) ^ K;
     return K % Size;
 }
+
+u32 HashIntKeys(u32 Size, const void* Key)
+{
+    u32 K = *(u32*)(Key);
+    return K % Size;
+}
