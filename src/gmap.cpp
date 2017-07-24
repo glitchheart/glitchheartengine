@@ -33,15 +33,15 @@ u32 HashStringJenkins(u32 Size, const void* Key)
     return Hash & (Size - 1);
 }
 
-/*
+
 u32 HashInt(u32 Size, const void* Key) {
     u32 K = *(u32*)(Key);
     K = ((K >> 16) ^ K) * 0x45d9f3b;
     K = ((K >> 16) ^ K) * 0x45d9f3b;
     K = (K >> 16) ^ K;
     return K % (Size - 1);
-}*/
-
+}
+/*
 u32 HashInt(u32 Size, const void* A)
 {
     u32 K = *(u32*)A;
@@ -52,7 +52,7 @@ u32 HashInt(u32 Size, const void* A)
     K += ~(K<<11);
     K ^=  (K>>16);
     return K & (Size - 1);
-}
+}*/
 
 u32 HashIntKeys(u32 Size, const void* Key)
 {
