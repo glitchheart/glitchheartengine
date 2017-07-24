@@ -1900,7 +1900,7 @@ static void LoadPlayerData(game_state* GameState, i32 Handle = -1, glm::vec2 Pos
     {
         Entity->Dead = false;
         LoadEntityData(File, Entity, GameState, Handle != -1);
-        
+        printf("MOVE SPEED %f\n", Entity->AttackMoveSpeed);
         char LineBuffer[255];
         
         while(fgets(LineBuffer, 255, File))
@@ -2124,6 +2124,8 @@ static void CheckLootPickup(game_state* GameState, loot* Loot, entity* Player)
 
 void UpdatePlayer(entity* Entity, game_state* GameState, r64 DeltaTime)
 {
+    r32 CurrentSpeed = 0.0f;
+    
     if(Entity->Hit)
     {
         Entity->Player.IsAttacking = false;
@@ -2538,7 +2540,11 @@ void UpdatePlayer(entity* Entity, game_state* GameState, r64 DeltaTime)
                     Direction = glm::vec2(0, 0);
                 }
                 
-                Entity->Position += glm::vec2(Direction.x / Scale * Entity->Player.WalkingSpeed * DeltaTime, Direction.y * Entity->Player.WalkingSpeed * DeltaTime);
+                r32 Speed = Entity->Player.WalkingSpeed;
+                if(!TimerDone(GameState, Entity->AttackMoveTimer))
+                    Speed = Entity->AttackMoveSpeed;
+                
+                Entity->Position += glm::vec2(Direction.x / Scale * Speed * DeltaTime, Direction.y * Speed * DeltaTime);
             }
             
         }
