@@ -4,7 +4,7 @@ layer Layer_Enemy
 iskinematic 0
 center 0 0.5
 scale 1
-health 60
+health 85
 animation skeleton_idle
 staggercooldowntimer 0.1
 collider 0 -1.2 0.3 0.15 0
@@ -13,8 +13,8 @@ hittrigger 0 -0.4 0.8 0.9 1
 hitrecoilspeed 10
 recoiltimer 0.0
 weaponscale 2 2
-attackmovetimer 0.07
-attackmovespeed 10
+attackmovetimer 0.03
+attackmovespeed 3
 attacklowframeindex 8
 attackhighframeindex 13
 weaponcollider 0.7 0 0.5 1.0 1
