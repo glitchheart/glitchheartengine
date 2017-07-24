@@ -147,12 +147,7 @@ static void ControllerKeyCallback(game_state* GameState, int Key, int Action)
             {
                 GameState->InputController.JoystickKeysJustPressed[GameState->ControllerMappings[Key]] = Key_JustPressed;
             }
-            else if(GameState->InputController.JoystickKeysJustPressed[GameState->ControllerMappings[Key]] == Key_JustPressed)
-            {
-                // NOTE(niels): Do we ever even get in here???
-                GameState->InputController.JoystickKeysJustPressed[GameState->ControllerMappings[Key]] = Key_Invalid;
-                
-            }
+            
             GameState->InputController.JoystickKeysDown[GameState->ControllerMappings[Key]] = true;
         }
         else if (Action == GLFW_RELEASE)

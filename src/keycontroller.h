@@ -250,6 +250,7 @@ struct input_controller
         Xbox_Start,
         Xbox_Back,
         Xbox_Back,
+        Xbox_Back
     };
     
     PS4_Code ActionButtonPS4ControllerBindings[Action_Count] = 
