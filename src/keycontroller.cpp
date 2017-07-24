@@ -193,6 +193,7 @@ b32 GetActionButtonDown(Action_Button ActionButton, game_state* GameState)
                 {
                     ButtonDown = ButtonDown ||  GetJoystickKeyDown(GameState->InputController.ActionButtonXboxControllerBindings[ActionButton], GameState);
                 }
+                break;
                 case Controller_PS4:
                 {
                     ButtonDown = ButtonDown || GetJoystickKeyDown(GameState->InputController.ActionButtonPS4ControllerBindings[ActionButton], GameState);
@@ -217,6 +218,7 @@ b32 GetActionButton(Action_Button ActionButton, game_state* GameState)
             {
                 Button = Button || GetJoystickKey(GameState->InputController.ActionButtonXboxControllerBindings[ActionButton], GameState);
             }
+            break;
             case Controller_PS4:
             {
                 Button = Button || GetJoystickKey(GameState->InputController.ActionButtonPS4ControllerBindings[ActionButton], GameState);
