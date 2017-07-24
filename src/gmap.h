@@ -39,6 +39,11 @@ void NAME ## _Map_Init(NAME ## _map* Map, hash_function Hash, i32 InitSize = INI
     Map->Data = (void**)calloc(InitSize, sizeof(TYPE*));\
     Map->Count = InitSize; \
     Map->Hash = Hash; \
+}\
+\
+void ClearMap(NAME ## _map* Map)\
+{\
+    Map->Data = (void**)calloc(Map->Count, sizeof(TYPE*));\
 }
 
 GENERIC_MAP(integer, i32)

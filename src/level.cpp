@@ -101,7 +101,7 @@ static void LoadTilesheetMetaFile(char* FilePath, level* Level, tilemap* Tilemap
                 Data.Center = Center;
                 Tilemap->Tiles[TileIndex++] = Data;
             }
-            printf("Tilemap tile count %d\n", TileIndex);
+            
             Tilemap->TileCount = TileIndex;
             fclose(File);
         }

@@ -95,6 +95,8 @@ struct config_data
     r32 Contrast;
     r32 Brightness;
     b32 Muted;
+    r32 SFXVolume;
+    r32 MusicVolume;
     r32 Zoom;
 };
 
@@ -154,9 +156,13 @@ void LoadConfig(const char* FilePath, config_data* ConfigData)
             {
                 sscanf(LineBuffer, "muted %d", &ConfigData->Muted);
             }
-            else if(StartsWith(LineBuffer, "muted"))
+            else if(StartsWith(LineBuffer, "sfx_volume"))
             {
-                sscanf(LineBuffer, "muted %d", &ConfigData->Muted);
+                sscanf(LineBuffer, "sfx_volume %f", &ConfigData->SFXVolume);
+            }
+            else if(StartsWith(LineBuffer, "music_volume"))
+            {
+                sscanf(LineBuffer, "music_volume %f", &ConfigData->MusicVolume);
             }
             else if(StartsWith(LineBuffer, "starting_level_path"))
             {
@@ -273,12 +279,12 @@ glm::vec2 ToIsometric(glm::vec2 Position)
     return TempPt;
 }
 
-r32 Sign (glm::vec2 P1, glm::vec2 P2, glm::vec2 P3)
+r32 Sign(glm::vec2 P1, glm::vec2 P2, glm::vec2 P3)
 {
     return (P1.x - P3.x) * (P2.y - P3.y) - (P2.x - P3.x) * (P1.y - P3.y);
 }
 
-b32 PointInTriangle (glm::vec2 Pt, glm::vec2 V1, glm::vec2 V2, glm::vec2 V3)
+b32 PointInTriangle(glm::vec2 Pt, glm::vec2 V1, glm::vec2 V2, glm::vec2 V3)
 {
     bool B1, B2, B3;
     
@@ -288,4 +294,12 @@ b32 PointInTriangle (glm::vec2 Pt, glm::vec2 V1, glm::vec2 V2, glm::vec2 V3)
     
     return ((B1 == B2) && (B2 == B3));
 }
+
+r32 RandomFloat(r32 From, r32 To)
+{
+    r32 Rand = Min(Max(From, ((r32)rand()/(r32)(RAND_MAX)) * To),To);
+    return Rand;
+}
+
+
 #endif

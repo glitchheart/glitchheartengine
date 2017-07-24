@@ -4,7 +4,7 @@ framecount 7
 framesize 40 31
 center 0.425 0.000000
 loop 0
-timeperframe 0.080000
+timeperframe 0.100000
 frames
 0 0
 40 0

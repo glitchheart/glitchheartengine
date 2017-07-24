@@ -29,14 +29,14 @@ checkpointplacementcooldowntimer 20.0
 healthpotiontimer 0.5
 hitstaminacost 15
 rollstaminacost 18
-attackstaminacost 13
+attackstaminacost 15
 mindiffstamina 8
 healthdecreasetimer 0.8
 walkingspeed 4
 throwingspeed 18.0
 crosshairradius 4
 targetingdistance 10
-attackcooldowntimer 0.08
+attackcooldowntimer 0.17
 pickupcooldowntimer 0.36
 dashtimer 0.6
 dashcounterdivider 250

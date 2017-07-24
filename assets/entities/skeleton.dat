@@ -11,7 +11,7 @@ collider 0 -1.2 0.3 0.15 0
 hashittrigger 1
 hittrigger 0 -0.4 0.8 0.9 1
 hitrecoilspeed 10
-recoiltimer 0.00
+recoiltimer 0.0
 weaponscale 2 2
 attackmovetimer 0.07
 attackmovespeed 10
@@ -30,14 +30,14 @@ istargeted 0
 targetingposition -0.5 2
 maxalertdistance 8
 maxfollowdistance 10
-mindistancetoplayer 4
+mindistancetoplayer 2
 slowdowndistance 6
-attackdistance 5
+attackdistance 3
 aistate 8
 healthcountposition -10 100
 astarcooldowntimer 0.6
 healthbar offset 0 1 scale 1.0 0.25
 #skeleton
-attackcooldowntimer 0.7
-chargingtimer 0.8
-alertedtimer 1.0
+attackcooldowntimer 0.5
+chargingtimer 0.6
+alertedtimer 0.1
