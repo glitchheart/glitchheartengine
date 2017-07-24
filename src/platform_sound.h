@@ -4,6 +4,9 @@
 #define SOURCES 64
 #define SOUNDS 64
 
+GENERIC_MAP(source_to_sound,sound_effect);
+struct sound_effect;
+
 struct sound_device
 {
     ALCdevice *Device;
@@ -15,6 +18,8 @@ struct sound_device
     b32 Muted;
     b32 Paused;
     b32 Stopped;
+    r32 SourceGain[SOURCES];
+    source_to_sound_map SourceToSound;
 };
 
 struct RIFF_header

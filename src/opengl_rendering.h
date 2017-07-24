@@ -253,7 +253,7 @@ struct render_state
     size_t SpriteQuadVerticesSize = 16 * sizeof(GLfloat);
     size_t TileQuadVerticesSize = 16 * sizeof(GLfloat);
     size_t NormalQuadVerticesSize = 8 * sizeof(GLfloat);
-    size_t WireframeQuadVerticesSize = 10 * sizeof(GLfloat);
+    size_t WireframeQuadVerticesSize = 8 * sizeof(GLfloat);
     size_t AStarPathQuadVerticesSize = 10 * sizeof(GLfloat);
     GLuint BoundVertexBuffer;
     GLuint BoundTexture;
@@ -310,12 +310,23 @@ struct render_state
         0.0f, 1.0f,
         1.0f, 1.0f,
         1.0f, 0.0f,
-        0.0f, 0.0f,
-        0.0f, 1.0f
+        0.0f, 0.0f
+    };
+    
+    
+    GLfloat IsometricWireframeQuadVertices[8] =
+    {
+        0.5f, 1.0f,
+        1.0f, 0.5f,
+        0.5f, 0.0f,
+        0.0f, 0.5f
     };
     
     GLuint WireframeVAO;
     GLuint WireframeQuadVBO;
+    
+    GLuint IsometricWireframeVAO;
+    GLuint IsometricWireframeQuadVBO;
     
     GLfloat AStarPathQuadVertices[10] =
     {

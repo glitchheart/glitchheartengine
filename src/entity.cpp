@@ -4,7 +4,6 @@ void PrintEntityInfo(const entity& Entity)
     printf("Entity: Name %s, position x %f y %f, rotation x %f y %f z %f\n", Entity.Name, Entity.Position.x, Entity.Position.y, Entity.Rotation.x, Entity.Rotation.y, Entity.Rotation.z);
 }
 
-
 i32 LoadPointlight(game_state* GameState, glm::vec4 Color = glm::vec4(), r32 Intensity = 0.0f, r32 ConstantAtten = 0.0f, r32 LinearAtten = 0.0f, r32 ExponentialAtten = 0.0f,glm::vec2 InitPosition = glm::vec2(), b32 ShouldGlow = false, r64 GlowTimerMax = 0.0f, r32 GlowIncrease = 0.0f)
 {
     light_source LightSource;
@@ -41,7 +40,6 @@ i32 LoadLight(game_state* GameState, char* LineBuffer, glm::vec2 InitPosition = 
                &LightSource.Type , &LightSource.Active,&LightSource.Pointlight.Intensity,&LightSource.Color.x, &LightSource.Color.y, &LightSource.Color.z,&LightSource.Color.w, &LightSource.Pointlight.ConstantAtten, &LightSource.Pointlight.LinearAtten, &LightSource.Pointlight.ExponentialAtten, &ShouldGlow, &GlowTimerMax, &GlowIncrease);
         if(ShouldGlow)
         {
-            printf("GlowtimerMax: %lf\n", GlowTimerMax);
             LightSource.Pointlight.GlowTimer.TimerHandle = -1;
             LightSource.Pointlight.GlowTimer.TimerMax = GlowTimerMax;
             LightSource.Pointlight.GlowIncrease = GlowIncrease;
@@ -138,7 +136,18 @@ void Hit(game_state* GameState, entity* ByEntity, entity* HitEntity)
                 StartTimer(GameState, GameState->GameCamera.ScreenShakeTimer);
             
             //StartTimer(GameState, HitEntity->StaggerCooldownTimer);
-            PlaySoundEffect(GameState, &GameState->SoundManager.SwordHit02);
+            
+            i32 ran = rand() % 2;
+            
+            if(ran == 0)
+            {
+                PlaySoundEffect(GameState, &GameState->SoundManager.Splash01, 0.95f);
+            }
+            else
+            {
+                PlaySoundEffect(GameState, &GameState->SoundManager.Splash01,0.85f);
+            }
+            
             HitEntity->HitRecoilDirection = glm::normalize(HitEntity->Position - ByEntity->Position);
             
             i16 Damage = ByEntity->Weapon.Damage > HitEntity->Health ? (i16)HitEntity->Health : (i16)ByEntity->Weapon.Damage;
@@ -312,7 +321,7 @@ static void LoadEntityData(FILE* File, entity* Entity, game_state* GameState, b3
         Entity->RenderEntityHandle = GameState->RenderState.RenderEntityCount++;
         RenderEntity->Color = glm::vec4(1, 1, 1, 1);
         
-        Entity->LookDirection = Down;
+        Entity->LookDirection = South;
         Entity->HitFlickerTimer.TimerHandle = -1;
         Entity->HitFlickerTimer.TimerMax = 0.05f;
         Entity->HitFlickerTimer.Name = "Hit Flicker";
@@ -346,6 +355,59 @@ static void LoadEntityData(FILE* File, entity* Entity, game_state* GameState, b3
         Entity->HasWeapon = false;
         Entity->IsTemporary = false;
         Entity->AnimationInfo.FreezeFrame = false;
+        
+        Entity->TilePosition.X = 0;
+        Entity->TilePosition.Y = 0;
+        Entity->TilePosition.Z = 0;
+        
+        hit_tile_extents HitExtents;
+        HitExtents.StartX = 0;
+        HitExtents.EndX = 3;
+        HitExtents.StartY = 0;
+        HitExtents.EndY = 3;
+        Entity->HitExtents[North] = HitExtents;
+        
+        HitExtents.StartX = 0;
+        HitExtents.EndX = 3;
+        HitExtents.StartY = -1;
+        HitExtents.EndY = 2;
+        Entity->HitExtents[NorthEast] = HitExtents;
+        
+        HitExtents.StartX = 0;
+        HitExtents.EndX = 3;
+        HitExtents.StartY = -2;
+        HitExtents.EndY = 1;
+        Entity->HitExtents[East] = HitExtents;
+        
+        HitExtents.StartX = -1;
+        HitExtents.EndX = 2;
+        HitExtents.StartY = -2;
+        HitExtents.EndY = 1;
+        Entity->HitExtents[SouthEast] = HitExtents;
+        
+        HitExtents.StartX = -2;
+        HitExtents.EndX = 1;
+        HitExtents.StartY = -2;
+        HitExtents.EndY = 1;
+        Entity->HitExtents[South] = HitExtents;
+        
+        HitExtents.StartX = -2;
+        HitExtents.EndX = 1;
+        HitExtents.StartY = -1;
+        HitExtents.EndY = 2;
+        Entity->HitExtents[SouthWest] = HitExtents;
+        
+        HitExtents.StartX = -2;
+        HitExtents.EndX = 1;
+        HitExtents.StartY = 0;
+        HitExtents.EndY = 3;
+        Entity->HitExtents[West] = HitExtents;
+        
+        HitExtents.StartX = -1;
+        HitExtents.EndX = 2;
+        HitExtents.StartY = 0;
+        HitExtents.EndY = 3;
+        Entity->HitExtents[NorthWest] = HitExtents;
     }
     else
     {
@@ -1501,7 +1563,11 @@ static void LoadBonfireData(game_state* GameState, i32 Handle = -1, glm::vec2 Po
         StartTimer(GameState,GameState->LightSources[Entity->LightSourceHandle].Pointlight.GlowTimer);
         
         if(Handle == -1)
+        {
+            printf("Entityhandle: %d\n", Entity->EntityIndex);
             Entity->Position = glm::vec2(Position.x, Position.y);
+            PlaySoundEffect(GameState,&GameState->SoundManager.Bonfire, 1.0f, Entity->Position.x, Entity->Position.y, 10.0f, true, Entity->EntityIndex);
+        }
         
         fclose(File);
     }
@@ -1792,6 +1858,7 @@ void PlaceCheckpoint(game_state* GameState, entity* Entity)
     }
     else
     {
+        printf("New area\n");
         GameState->Entities[GameState->CharacterData.CheckpointHandle].Position = CheckpointPos;
     }
     
@@ -2189,7 +2256,6 @@ void UpdatePlayer(entity* Entity, game_state* GameState, r64 DeltaTime)
                     {
                         if(Direction.y > 0)
                         {
-                            Entity->LookDirection = Up;
                             if(Moving)
                                 PlayAnimation(Entity, "swordsman_walk", GameState);
                             else
@@ -2197,7 +2263,6 @@ void UpdatePlayer(entity* Entity, game_state* GameState, r64 DeltaTime)
                         }
                         else
                         {
-                            Entity->LookDirection = Down;
                             if(Moving)
                                 PlayAnimation(Entity, "swordsman_walk", GameState);
                             else
@@ -2206,7 +2271,6 @@ void UpdatePlayer(entity* Entity, game_state* GameState, r64 DeltaTime)
                     }
                     else
                     {
-                        Entity->LookDirection = Right;
                         if(Moving)
                             PlayAnimation(Entity, "swordsman_walk", GameState);
                         else
@@ -2214,9 +2278,6 @@ void UpdatePlayer(entity* Entity, game_state* GameState, r64 DeltaTime)
                     }
                     
                     Entity->IsFlipped = Direction.x < 0;
-                    
-                    if(Entity->LookDirection == Right && Entity->IsFlipped)
-                        Entity->LookDirection = Left;
                 }
                 else if(Entity->Velocity.x != 0.0f || Entity->Velocity.y != 0.0f)
                 {
@@ -2232,16 +2293,16 @@ void UpdatePlayer(entity* Entity, game_state* GameState, r64 DeltaTime)
                     {
                         if(ControllerYValue > 0 || MouseYValue > 0)
                         {
-                            Entity->LookDirection = Up;
+                            //Entity->LookDirection = North;
                         }
                         else
                         {
-                            Entity->LookDirection = Down;
+                            //Entity->LookDirection = South;
                         }
                     }
                     else
                     {
-                        Entity->LookDirection = Right;
+                        //Entity->LookDirection = East;
                     }
                     
                     if(Abs(ControllerXValue) > GameState->InputController.ControllerDeadzone)
@@ -2260,18 +2321,18 @@ void UpdatePlayer(entity* Entity, game_state* GameState, r64 DeltaTime)
                     {
                         if(Entity->Player.LastKnownDirectionY > 0)
                         {
-                            Entity->LookDirection = Up;
+                            //Entity->LookDirection = North;
                             //PlayAnimation(Entity, "player_idle_up", GameState);
                         }
                         else
                         {
-                            Entity->LookDirection = Down;
+                            //Entity->LookDirection = South;
                             //PlayAnimation(Entity, "player_idle_down", GameState);
                         }
                     }
                     else
                     {
-                        Entity->LookDirection = Right;
+                        //Entity->LookDirection = East;
                         //PlayAnimation(Entity, "player_idle_right", GameState);
                     }
                     Entity->IsFlipped = Entity->Player.LastKnownDirectionX < 0;
@@ -2295,8 +2356,8 @@ void UpdatePlayer(entity* Entity, game_state* GameState, r64 DeltaTime)
                 Entity->Velocity = glm::vec2(0, 0);
             }
             
-            if(Entity->LookDirection == Right && Entity->IsFlipped)
-                Entity->LookDirection = Left;
+            //if(Entity->LookDirection == East && Entity->IsFlipped)
+            //Entity->LookDirection = West;
             
             // Pickup
             if(GetActionButtonDown(Action_Interact, GameState) && Entity->Player.Pickup)
@@ -2419,38 +2480,46 @@ void UpdatePlayer(entity* Entity, game_state* GameState, r64 DeltaTime)
                 if(DX < 0 && DY > 0)
                 {
                     DX = 0;
+                    Entity->LookDirection = NorthWest;
                 }
                 else if(DX == 0.0f && DY > 0)
                 {
                     DX = 1.0f;
                     Scale = 1.0f;
+                    Entity->LookDirection = North;
                 }
                 else if(DX > 0 && DY > 0)
                 {
                     DY = 0.0f;
                     Scale = 1.0f;
+                    Entity->LookDirection = NorthEast;
                 }
                 else if(DX > 0 && DY == 0.0f)
                 {
                     DY = -1.0f;
+                    Entity->LookDirection = East;
                 }
                 else if(DX > 0 && DY < 0)
                 {
                     DX = 0.0f;
+                    Entity->LookDirection = SouthEast;
                 }
                 else if(DX == 0.0f && DY < 0)
                 {
                     DX = -1.0f;
                     Scale = 1.0f;
+                    Entity->LookDirection = South;
                 }
                 else if(DX < 0 && DY < 0)
                 {
                     DY = 0.0f;
                     Scale = 1.0f;
+                    Entity->LookDirection = SouthWest;
                 }
                 else if(DX < 0 && DY == 0.0f)
                 {
                     DY = 1.0f;
+                    Entity->LookDirection = West;
                 }
                 
                 r32 Length = glm::length(glm::vec2(DX, DY));
@@ -2559,18 +2628,22 @@ void UpdatePlayer(entity* Entity, game_state* GameState, r64 DeltaTime)
         {
             switch(Entity->LookDirection)
             {
-                case Up:
+                case North:
+                case NorthEast:
+                case NorthWest:
                 {
                     PlayAnimation(Entity, "swordsman_attack_up", GameState);
                 }
                 break;
-                case Down:
+                case South:
+                case SouthEast:
+                case SouthWest:
                 {
                     PlayAnimation(Entity, "swordsman_attack_down", GameState);
                 }
                 break;
-                case Left:
-                case Right:
+                case West:
+                case East:
                 {
                     PlayAnimation(Entity, "swordsman_attack_right", GameState);
                 }
@@ -2583,7 +2656,17 @@ void UpdatePlayer(entity* Entity, game_state* GameState, r64 DeltaTime)
             
             DecreaseStamina(Entity,GameState,Entity->Player.AttackStaminaCost);
             Entity->AttackCount++;
-            PlaySoundEffect(GameState, &GameState->SoundManager.SwordSlash01);
+            
+            i32 Ran = rand() % 2;
+            if(Ran == 0)
+            {
+                PlaySoundEffect(GameState, &GameState->SoundManager.SwordSlash01);
+            }
+            else
+            {
+                PlaySoundEffect(GameState, &GameState->SoundManager.SwordSlash01, 0.85f);
+            }
+            
         }
         else if(Entity->Player.Stamina < Entity->Player.AttackStaminaCost - Entity->Player.MinDiffStamina)
         {
@@ -2730,25 +2813,25 @@ void UpdateWeapon(entity* Entity, game_state* GameState, r64 DeltaTime)
             
             switch(Entity->LookDirection)
             {
-                case Up:
+                case North:
                 {
                     Entity->Weapon.CollisionAABB.Offset = glm::vec2(WeaponColliderInfo.OffsetUp.x, WeaponColliderInfo.OffsetUp.y);
                     Entity->Weapon.CollisionAABB.Extents = glm::vec2(WeaponColliderInfo.ExtentsUp.x, WeaponColliderInfo.ExtentsUp.y);
                 }
                 break;
-                case Down:
+                case South:
                 {
                     Entity->Weapon.CollisionAABB.Offset = glm::vec2(WeaponColliderInfo.OffsetDown.x, WeaponColliderInfo.OffsetDown.y);
                     Entity->Weapon.CollisionAABB.Extents = glm::vec2(WeaponColliderInfo.ExtentsDown.x, WeaponColliderInfo.ExtentsDown.y);
                 }
                 break;
-                case Left:
+                case West:
                 {
                     Entity->Weapon.CollisionAABB.Offset = glm::vec2(WeaponColliderInfo.OffsetLeft.x, WeaponColliderInfo.OffsetLeft.y);
                     Entity->Weapon.CollisionAABB.Extents = glm::vec2(WeaponColliderInfo.ExtentsLeft.x, WeaponColliderInfo.ExtentsLeft.y);
                 }
                 break;
-                case Right:
+                case East:
                 {
                     Entity->Weapon.CollisionAABB.Offset = glm::vec2(WeaponColliderInfo.OffsetRight.x, WeaponColliderInfo.OffsetRight.y);
                     Entity->Weapon.CollisionAABB.Extents = glm::vec2(WeaponColliderInfo.ExtentsRight.x, WeaponColliderInfo.ExtentsRight.y);
@@ -2782,25 +2865,25 @@ void UpdateWeapon(entity* Entity, game_state* GameState, r64 DeltaTime)
             
             switch(Entity->LookDirection)
             {
-                case Up:
+                case North:
                 {
                     Entity->Weapon.CollisionAABB.Offset = glm::vec2(WeaponColliderInfo.OffsetUp.x, WeaponColliderInfo.OffsetUp.y);
                     Entity->Weapon.CollisionAABB.Extents = glm::vec2(WeaponColliderInfo.ExtentsUp.x, WeaponColliderInfo.ExtentsUp.y);
                 }
                 break;
-                case Down:
+                case South:
                 {
                     Entity->Weapon.CollisionAABB.Offset = glm::vec2(WeaponColliderInfo.OffsetDown.x, WeaponColliderInfo.OffsetDown.y);
                     Entity->Weapon.CollisionAABB.Extents = glm::vec2(WeaponColliderInfo.ExtentsDown.x, WeaponColliderInfo.ExtentsDown.y);
                 }
                 break;
-                case Left:
+                case West:
                 {
                     Entity->Weapon.CollisionAABB.Offset = glm::vec2(WeaponColliderInfo.OffsetLeft.x, WeaponColliderInfo.OffsetLeft.y);
                     Entity->Weapon.CollisionAABB.Extents = glm::vec2(WeaponColliderInfo.ExtentsLeft.x, WeaponColliderInfo.ExtentsLeft.y);
                 }
                 break;
-                case Right:
+                case East:
                 {
                     Entity->Weapon.CollisionAABB.Offset = glm::vec2(WeaponColliderInfo.OffsetRight.x, WeaponColliderInfo.OffsetRight.y);
                     Entity->Weapon.CollisionAABB.Extents = glm::vec2(WeaponColliderInfo.ExtentsRight.x, WeaponColliderInfo.ExtentsRight.y);
@@ -2813,22 +2896,45 @@ void UpdateWeapon(entity* Entity, game_state* GameState, r64 DeltaTime)
     
     Entity->Weapon.CollisionAABB.Center = glm::vec2(Entity->Position.x + Entity->Weapon.Center.x * Entity->Weapon.Scale.x + Entity->Weapon.CollisionAABB.Offset.x, Entity->Position.y + Entity->Weapon.Center.y * Entity->Weapon.Scale.y + Entity->Weapon.CollisionAABB.Offset.y);
     
-    if(IsAttacking)
+    if(IsAttacking && Entity->AnimationInfo.FrameIndex >= Entity->AttackLowFrameIndex && Entity->AnimationInfo.FrameIndex <= Entity->AttackHighFrameIndex)
     {
-        collision_info CollisionInfo;
-        CheckWeaponCollision(GameState, &Entity->Weapon, &CollisionInfo);
+        hit_tile_extents HitExtents = Entity->HitExtents[Entity->LookDirection];
         
-        for(i32 Index = 0; Index < CollisionInfo.OtherCount; Index++)
+        for(i32 X = HitExtents.StartX; X < HitExtents.EndX; X++)
         {
-            if((Entity->Type == Entity_Player && CollisionInfo.Other[Index]->Type == Entity_Enemy && CollisionInfo.Other[Index]->Enemy.AIState != AI_Dying) ||
-               (Entity->Type == Entity_Enemy && CollisionInfo.Other[Index]->Type == Entity_Player && !CollisionInfo.Other[Index]->Player.IsDashing))
+            for(i32 Y = HitExtents.StartY; Y < HitExtents.EndY; Y++)
             {
-                if(Entity->AnimationInfo.FrameIndex >= Entity->AttackLowFrameIndex && Entity->AnimationInfo.FrameIndex <= Entity->AttackHighFrameIndex)
+                if(Entity->TilePosition.X + X >= 0 && Entity->TilePosition.Y + Y >= 0 && Entity->TilePosition.X + X < GameState->CurrentLevel.Tilemap.Width && Entity->TilePosition.Y + Y < GameState->CurrentLevel.Tilemap.Height)
                 {
-                    Hit(GameState, Entity, CollisionInfo.Other[Index]);
+                    for(i32 EntityIndex = 0; EntityIndex < 20; EntityIndex++)
+                    {
+                        i32 Handle = GameState->EntityTilePositions[Entity->TilePosition.X + X][Entity->TilePosition.Y + Y].Entities[EntityIndex] - 1;
+                        
+                        if(Handle >= 0 && Handle < GameState->EntityCount)
+                        {
+                            entity* HitEntity = &GameState->Entities[Handle];
+                            if(HitEntity->Active && !HitEntity->Dead && (Entity->Type == Entity_Enemy && HitEntity->Type == Entity_Player) || (Entity->Type == Entity_Player && HitEntity->Type == Entity_Enemy))
+                                Hit(GameState, Entity, HitEntity);
+                        }
+                    }
                 }
             }
         }
+        
+        //collision_info CollisionInfo;
+        //CheckWeaponCollision(GameState, &Entity->Weapon, &CollisionInfo);
+        
+        /*for(i32 Index = 0; Index < CollisionInfo.OtherCount; Index++)
+        {
+        if((Entity->Type == Entity_Player && CollisionInfo.Other[Index]->Type == Entity_Enemy && CollisionInfo.Other[Index]->Enemy.AIState != AI_Dying) ||
+        (Entity->Type == Entity_Enemy && CollisionInfo.Other[Index]->Type == Entity_Player && !CollisionInfo.Other[Index]->Player.IsDashing))
+        {
+        if(Entity->AnimationInfo.FrameIndex >= Entity->AttackLowFrameIndex && Entity->AnimationInfo.FrameIndex <= Entity->AttackHighFrameIndex)
+        {
+        Hit(GameState, Entity, CollisionInfo.Other[Index]);
+        }
+        }
+        }*/
     }
 }
 
@@ -2954,13 +3060,13 @@ static void DetermineLoot(game_state* GameState, entity* Entity)
 {
     b32 HasLoot = false;
     loot Loot;
-    i32 RNG = rand() % 20;
-    if(RNG > 17)
+    i32 RNG = rand() % 100;
+    if(RNG > 90)
     {
         HasLoot = true;
         Loot.Type = Loot_Checkpoint;
     }
-    else if(RNG > 0 && RNG < 12)
+    else if(RNG > 0 && RNG < 10)
     {
         HasLoot = true;
         Loot.Type = Loot_LevelItem;
@@ -3023,19 +3129,19 @@ void UpdateSkeleton(entity* Entity, game_state* GameState, r64 DeltaTime)
             {
                 if(Direction.y > 0)
                 {
-                    Entity->LookDirection = Up;
+                    Entity->LookDirection = North;
                 }
                 else
                 {
-                    Entity->LookDirection = Down;
+                    Entity->LookDirection = South;
                 }
             }
             else
             {
                 if(Direction.x < 0)
-                    Entity->LookDirection = Left;
+                    Entity->LookDirection = West;
                 else
-                    Entity->LookDirection = Right;
+                    Entity->LookDirection = East;
             }
             
             Entity->IsFlipped = Direction.x < 0;
@@ -3115,19 +3221,19 @@ void UpdateMinotaur(entity* Entity, game_state* GameState, r64 DeltaTime)
             {
                 if(Direction.y > 0)
                 {
-                    Entity->LookDirection = Up;
+                    Entity->LookDirection = North;
                 }
                 else
                 {
-                    Entity->LookDirection = Down;
+                    Entity->LookDirection = South;
                 }
             }
             else
             {
                 if(Direction.x < 0)
-                    Entity->LookDirection = Left;
+                    Entity->LookDirection = West;
                 else
-                    Entity->LookDirection = Right;
+                    Entity->LookDirection = East;
             }
             
             Entity->IsFlipped = Direction.x > 0;
@@ -3197,19 +3303,19 @@ void UpdateWraith(entity* Entity, game_state* GameState, r64 DeltaTime)
             {
                 if(Direction.y > 0)
                 {
-                    Entity->LookDirection = Up;
+                    Entity->LookDirection = North;
                 }
                 else
                 {
-                    Entity->LookDirection = Down;
+                    Entity->LookDirection = South;
                 }
             }
             else
             {
                 if(Direction.x < 0)
-                    Entity->LookDirection = Left;
+                    Entity->LookDirection = West;
                 else
-                    Entity->LookDirection = Right;
+                    Entity->LookDirection = East;
             }
             
             Entity->IsFlipped = Direction.x < 0;
@@ -3300,8 +3406,30 @@ static void UpdateStaticEntity(entity* Entity, game_state* GameState, r64 DeltaT
     CheckCollision(GameState, Entity, &CollisionInfo);
 }
 
+void UpdateTilePosition(entity& Entity, game_state* GameState, r64 DeltaTime)
+{
+    r32 CartesianX = glm::floor(Entity.Position.x - 0.5f);
+    r32 CartesianY = glm::ceil(Entity.Position.y - 0.5f);
+    
+    if(CartesianX >= 0 && CartesianX < GameState->CurrentLevel.Tilemap.Width && CartesianY >= 0 && CartesianY < GameState->CurrentLevel.Tilemap.Height)
+    {
+        Entity.TilePosition.X = (i32)CartesianX;
+        Entity.TilePosition.Y = (i32)CartesianY;
+        Entity.TilePosition.Z = GameState->EntityTilePositions[Entity.TilePosition.X][Entity.TilePosition.Y].Count++;
+        
+        GameState->EntityTilePositions[Entity.TilePosition.X][Entity.TilePosition.Y].Entities[Entity.TilePosition.Z] = Entity.EntityIndex + 1;
+        
+        if(GameState->EntityTilePositions[Entity.TilePosition.X][Entity.TilePosition.Y].Count == 20)
+        {
+            GameState->EntityTilePositions[Entity.TilePosition.X][Entity.TilePosition.Y].Count = 0;
+        }
+    }
+}
+
 void UpdateGeneral(entity* Entity, game_state* GameState, r64 DeltaTime)
 {
+    GameState->EntityTilePositions[Entity->TilePosition.X][Entity->TilePosition.Y].Entities[Entity->TilePosition.Z] = 0;
+    
     if(Entity->LightSourceHandle != -1)
     {
         GameState->LightSources[Entity->LightSourceHandle].Pointlight.Position = glm::vec2(Entity->Position.x - Entity->Center.x, Entity->Position.y);
@@ -3386,7 +3514,6 @@ void UpdateObjects(game_state* GameState, r64 DeltaTime)
     }
 }
 
-
 void UpdateEntities(game_state* GameState, r64 DeltaTime)
 {
     for(u32 EntityIndex = 0;
@@ -3459,6 +3586,9 @@ void UpdateEntities(game_state* GameState, r64 DeltaTime)
                 }
                 break;
             }
+            
+            if(Entity->Active && !Entity->Dead)
+                UpdateTilePosition(*Entity, GameState, DeltaTime);
             
             if(Entity->Active && Entity->CurrentAnimation && Entity->AnimationInfo.Playing)
                 TickAnimation(&Entity->AnimationInfo, Entity->CurrentAnimation, DeltaTime);

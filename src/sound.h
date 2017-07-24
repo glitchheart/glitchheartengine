@@ -3,11 +3,14 @@
 
 struct sound_info
 {
+    char* Name;
     r32 Pitch;
     r32 Gain;
     r32 Position[3];
     r32 Velocity[3];
+    r32 Rolloff;
     b32 Loop;
+    i32 EntityHandle;
 };
 
 struct sound_effect
@@ -27,6 +30,8 @@ struct sound_queue
 
 struct sound_manager
 {
+    r32 SFXGain;
+    r32 MusicGain;
     b32 Muted;
     b32 Paused;
     b32 Stopped;
@@ -54,6 +59,8 @@ struct sound_manager
             sound_effect MinotaurHit;
             sound_effect MinotaurDeath;
             sound_effect MinotaurStomp;
+            sound_effect Splash01;
+            sound_effect Bonfire;
         };
     };
     
@@ -64,6 +71,7 @@ struct sound_manager
         {
             sound_effect Track01;
             sound_effect MainMenuTrack;
+            sound_effect Brugt;
         };
     };
     

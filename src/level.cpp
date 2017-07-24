@@ -101,7 +101,7 @@ static void LoadTilesheetMetaFile(char* FilePath, level* Level, tilemap* Tilemap
                 Data.Center = Center;
                 Tilemap->Tiles[TileIndex++] = Data;
             }
-            printf("Tilemap tile count %d\n", TileIndex);
+            
             Tilemap->TileCount = TileIndex;
             fclose(File);
         }
@@ -190,6 +190,7 @@ static b32 LoadLevelFromFile(char* FilePath, level* Level, game_state* GameState
         for(i32 Layer = 0; Layer < TILEMAP_LAYERS; Layer++)
         {
             Level->Tilemap.Data[Layer] = (tile_data**)malloc(MapWidth * sizeof(tile_data*));
+            GameState->EntityTilePositions = (tile_position**)malloc(MapWidth * sizeof(tile_position*));
         }
         
         for(i32 Layer = 0; Layer < TILEMAP_LAYERS; Layer++)
@@ -197,6 +198,7 @@ static b32 LoadLevelFromFile(char* FilePath, level* Level, game_state* GameState
             for(u32 I = 0; I < MapWidth; I++)
             {
                 Level->Tilemap.Data[Layer][I] = (tile_data *)calloc(MapHeight, sizeof(tile_data));
+                GameState->EntityTilePositions[I] = (tile_position*)malloc(MapHeight * sizeof(tile_position));
             }
         }
         

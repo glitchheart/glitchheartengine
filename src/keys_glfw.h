@@ -107,11 +107,8 @@ void InitControllerMappings(game_state* GameState)
 
 void InitKeys(game_state* GameState)
 {
-    //printf("Keys\n");
     InitKeyMappings(GameState);
-    //printf("Mouse\n");
     InitMouseButtonMappings(GameState);
-    //printf("Controller\n");
     InitControllerMappings(GameState);
 }
 
@@ -119,6 +116,22 @@ void InitKeys(game_state* GameState)
 static b32 ControllerPresent(game_state* GameState)
 {
     int Present = glfwJoystickPresent(GLFW_JOYSTICK_1); 
+    
+    if(Present)
+    {
+        GameState->InputController.ControllerPresent = true;
+        const char* Name = glfwGetJoystickName(GLFW_JOYSTICK_1);
+        
+        if(strstr(Name, "Xbox") != 0)
+        {
+            GameState->InputController.ControllerType = Controller_Xbox;
+        }
+        else if(strstr(Name, "PS4") != 0 || strstr(Name, "Wireless") != 0)
+        {
+            GameState->InputController.ControllerType = Controller_PS4;
+        }
+    }
+    
     GameState->InputController.ControllerPresent = Present;
     return Present;
 }
