@@ -84,7 +84,7 @@ void InitMouseButtonMappings(game_state* GameState)
 
 void InitControllerMappings(game_state* GameState)
 {
-    integer_Map_Init(&GameState->ControllerMappings, HashInt, 127);
+    integer_Map_Init(&GameState->ControllerMappings, HashInt, 128);
     GameState->ControllerMappings[GLFW_JOYSTICK_1] = Joystick_1;
     GameState->ControllerMappings[GLFW_JOYSTICK_2] = Joystick_2;
     GameState->ControllerMappings[GLFW_JOYSTICK_3] = Joystick_3;
@@ -103,6 +103,41 @@ void InitControllerMappings(game_state* GameState)
     GameState->ControllerMappings[GLFW_JOYSTICK_16] = Joystick_16;
     GameState->ControllerMappings[GLFW_JOYSTICK_17] = Joystick_LeftTrigger;
     GameState->ControllerMappings[GLFW_JOYSTICK_18] = Joystick_RightTrigger;
+    i32 J1 = GLFW_JOYSTICK_1;
+    i32 J2 = GLFW_JOYSTICK_2;
+    i32 J3 = GLFW_JOYSTICK_3;
+    i32 J4 = GLFW_JOYSTICK_4;
+    i32 J5 = GLFW_JOYSTICK_5;
+    i32 J6 = GLFW_JOYSTICK_6;
+    i32 J7 = GLFW_JOYSTICK_7;
+    i32 J8 = GLFW_JOYSTICK_8;
+    i32 J9 = GLFW_JOYSTICK_9;
+    i32 J10 = GLFW_JOYSTICK_10;
+    i32 J11 = GLFW_JOYSTICK_11;
+    i32 J12 = GLFW_JOYSTICK_12;
+    i32 J13 = GLFW_JOYSTICK_13;
+    i32 J14 = GLFW_JOYSTICK_14;
+    i32 J15 = GLFW_JOYSTICK_15;
+    i32 J16 = GLFW_JOYSTICK_16;
+    i32 J17 = GLFW_JOYSTICK_17;
+    
+    printf("Hash:%d %d\n",1, HashInt(128,&J1));
+    printf("Hash:%d %d\n",2, HashInt(128,&J2));
+    printf("Hash:%d %d\n",3, HashInt(128,&J3));
+    printf("Hash:%d %d\n",4, HashInt(128,&J4));
+    printf("Hash:%d %d\n",5, HashInt(128,&J5));
+    printf("Hash:%d %d\n",6, HashInt(128,&J6));
+    printf("Hash:%d %d\n",7, HashInt(128,&J7));
+    printf("Hash:%d %d\n",8, HashInt(128,&J8));
+    printf("Hash:%d %d\n",9, HashInt(128,&J9));
+    printf("Hash:%d %d\n",10, HashInt(128,&J10));
+    printf("Hash:%d %d\n",11, HashInt(128,&J11));
+    printf("Hash:%d %d\n",12, HashInt(128,&J12));
+    printf("Hash:%d %d\n",13, HashInt(128,&J13));
+    printf("Hash:%d %d\n",14, HashInt(128,&J14));
+    printf("Hash:%d %d\n",15, HashInt(128,&J15));
+    printf("Hash:%d %d\n",16, HashInt(128,&J16));
+    printf("Hash:%d %d\n",17, HashInt(128,&J17));
 }
 
 void InitKeys(game_state* GameState)

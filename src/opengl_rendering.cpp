@@ -904,7 +904,7 @@ static void InitializeOpenGL(game_state* GameState, render_state* RenderState, c
     
     ControllerPresent(GameState);
     
-    texture_Map_Init(&RenderState->Textures, HashString, 4096);
+    texture_Map_Init(&RenderState->Textures, HashStringJenkins, 512);
     LoadTextures(RenderState, "../assets/textures/");
     LoadTextures(RenderState, "../assets/textures/spritesheets/");
     RenderSetup(RenderState);
