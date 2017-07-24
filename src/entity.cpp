@@ -2124,8 +2124,6 @@ static void CheckLootPickup(game_state* GameState, loot* Loot, entity* Player)
 
 void UpdatePlayer(entity* Entity, game_state* GameState, r64 DeltaTime)
 {
-    r32 CurrentSpeed = 0.0f;
-    
     if(Entity->Hit)
     {
         Entity->Player.IsAttacking = false;
