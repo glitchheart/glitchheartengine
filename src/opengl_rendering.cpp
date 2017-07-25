@@ -254,6 +254,8 @@ static void InitializeFreeTypeFont(char* FontPath, int FontSize, FT_Library Libr
 
 static void LoadTilemapBuffer(render_state* RenderState, i32 Layer, GLuint* VAO, GLuint* VBO, i32* Size, const tilemap& Tilemap, Level_Type LevelType)
 {
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, RenderState->SpriteQuadIndexBuffer);
+    
     GLfloat* VertexBuffer = (GLfloat*)malloc(sizeof(GLfloat) * 16 * Tilemap.Width * Tilemap.Height);
     
     i32 Current = 0;
@@ -277,6 +279,7 @@ static void LoadTilemapBuffer(render_state* RenderState, i32 Layer, GLuint* VAO,
                     r32 TexCoordYHigh = (Tile->TextureOffset.y + Tilemap.TileHeight) / Height; 
                     
                     r32 CorrectY = (r32)Y;
+                    
                     VertexBuffer[Current++] = (GLfloat)X;
                     VertexBuffer[Current++] = (GLfloat)CorrectY + 1.0f;
                     VertexBuffer[Current++] = (GLfloat)TexCoordX;
@@ -436,6 +439,60 @@ static void LoadEditorTileBuffer(render_state* RenderState, editor_render_info& 
     free(VertexBuffer);
 }
 
+static void LoadTilemapWireframeBuffer(const tilemap& Tilemap, render_state* RenderState, u32* VAO, u32* VBO, u32* Size)
+{
+    glGenVertexArrays(1, VAO);
+    glBindVertexArray(*VAO);
+    
+    GLfloat* WireframeVertexBuffer = (GLfloat*)malloc(sizeof(GLfloat) * 8 * Tilemap.Width * Tilemap.Height);
+    
+    i32 WireframeCurrent = 0;
+    
+    r32 Width = (r32)Tilemap.RenderEntity.Texture->Width;
+    r32 Height = (r32)Tilemap.RenderEntity.Texture->Height;
+    
+    for(i32 X = 0; X < Tilemap.Width; X++)
+    {
+        for(i32 Y = 0; Y < Tilemap.Height; Y++)
+        {
+            
+            glm::vec2 CorrectPosition = ToIsometric(glm::vec2(X, Y));
+            r32 CorrectX = CorrectPosition.x;
+            r32 CorrectY = CorrectPosition.y;
+            
+            WireframeVertexBuffer[WireframeCurrent++] = (GLfloat)CorrectX;
+            WireframeVertexBuffer[WireframeCurrent++] = (GLfloat)CorrectY + 0.5f;
+            WireframeVertexBuffer[WireframeCurrent++] = (GLfloat)CorrectX + 1;
+            WireframeVertexBuffer[WireframeCurrent++] = (GLfloat)CorrectY + 0.5f;
+            WireframeVertexBuffer[WireframeCurrent++] = (GLfloat)CorrectX + 1;
+            WireframeVertexBuffer[WireframeCurrent++] = (GLfloat)CorrectY;
+            WireframeVertexBuffer[WireframeCurrent++] = (GLfloat)CorrectX;
+            WireframeVertexBuffer[WireframeCurrent++] = (GLfloat)CorrectY;
+        }
+    }
+    
+    *Size = WireframeCurrent;
+    
+    if(*VBO == 0)
+        glGenBuffers(1, VBO);
+    
+    glBindBuffer(GL_ARRAY_BUFFER, *VBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * *Size, WireframeVertexBuffer, GL_DYNAMIC_DRAW);
+    
+    if(RenderState->WireframeShader.Type != Shader_Wireframe)
+    {
+        RenderState->TileShader.Type = Shader_Wireframe;
+        LoadShader(ShaderPaths[Shader_Wireframe], &RenderState->WireframeShader);
+    }
+    
+    auto PositionLocation = glGetAttribLocation(RenderState->WireframeShader.Program, "pos");
+    
+    glEnableVertexAttribArray(PositionLocation);
+    glVertexAttribPointer(PositionLocation, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    free(WireframeVertexBuffer);
+}
+
 static void CreateTilemapVAO(render_state* RenderState, const tilemap& Tilemap, Level_Type LevelType, editor_render_info* EditorRenderInfo, tilemap_render_info* TilemapRenderInfo, i32 OnlyLayer = -1)
 {
     if(OnlyLayer != -1)
@@ -570,6 +627,10 @@ static void RenderSetup(render_state *RenderState)
     glGenBuffers(1, &RenderState->SpriteQuadVBO);
     glBindBuffer(GL_ARRAY_BUFFER, RenderState->SpriteQuadVBO);
     glBufferData(GL_ARRAY_BUFFER, RenderState->SpriteQuadVerticesSize, RenderState->SpriteQuadVertices, GL_STATIC_DRAW);
+    
+    glGenBuffers(1, &RenderState->SpriteQuadIndexBuffer);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, RenderState->SpriteQuadIndexBuffer);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(RenderState->SpriteQuadIndices), RenderState->SpriteQuadIndices, GL_STATIC_DRAW);
     
     RenderState->TextureShader.Type = Shader_Spritesheet;
     LoadShader(ShaderPaths[Shader_Spritesheet], &RenderState->SpritesheetShader);
@@ -1711,8 +1772,7 @@ static void RenderEntity(game_state *GameState, render_entity* RenderEntity, glm
         SetMat4Uniform(Shader.Program, "Model", Model);
         SetVec4Uniform(Shader.Program, "Color", RenderEntity->Color);
         
-        glBindBuffer(GL_ARRAY_BUFFER, RenderState->SpriteQuadVBO);
-        glDrawArrays(GL_QUADS, 0, 4);
+        glDrawElements(GL_TRIANGLES, sizeof(RenderState->SpriteQuadIndices), GL_UNSIGNED_INT, (void*)0); 
         glBindVertexArray(0);
         
         if(RenderEntity->RenderType == Render_Type_Entity)
@@ -1893,8 +1953,16 @@ static void RenderTilemap(i32 Layer, render_state* RenderState, const tilemap& T
     SetMat4Uniform(Shader.Program, "Model", Model);
     SetVec4Uniform(Shader.Program, "Color", Color);
     
+    //glDrawElements(GL_TRIANGLES, sizeof(RenderState->SpriteQuadIndices), GL_UNSIGNED_INT, (void*)0); 
     glDrawArrays(GL_QUADS, 0, Tilemap.RenderInfo.VBOSizes[Layer] / 4);
     glBindVertexArray(0);
+    
+    // @Incomplete: We have to create a way of drawing a subtle grid over all tiles
+    
+    /*
+    glBindVertexArray(Tilemap.RenderInfo.WireframeVAO);
+    UseShader(&RenderState->WireframeShader);
+    glDrawArrays(GL_QUADS, 0, Tilemap.RenderInfo.WireframeVBO);*/
 }
 
 static void EditorRenderTilemap(glm::vec2 ScreenPosition, r32 Size, render_state* RenderState, const tilemap& Tilemap)
@@ -2490,6 +2558,7 @@ static void CheckLevelVAO(game_state* GameState)
                                      &GameState->CurrentLevel.Tilemap.EditorRenderInfo, &GameState->CurrentLevel.Tilemap.RenderInfo, Layer);
                 }
             }
+            LoadTilemapWireframeBuffer(GameState->CurrentLevel.Tilemap, &GameState->RenderState, &GameState->CurrentLevel.Tilemap.RenderInfo.WireframeVAO, &GameState->CurrentLevel.Tilemap.RenderInfo.WireframeVBO, &GameState->CurrentLevel.Tilemap.RenderInfo.WireframeVBOSize);
         }
         else
         {
@@ -2497,6 +2566,7 @@ static void CheckLevelVAO(game_state* GameState)
                              GameState->CurrentLevel.Type,
                              &GameState->CurrentLevel.Tilemap.EditorRenderInfo, &GameState->CurrentLevel.Tilemap.RenderInfo, GameState->CurrentLevel.Tilemap.RenderInfo.DirtyLayer);
             GameState->CurrentLevel.Tilemap.RenderInfo.DirtyLayer = -1;
+            LoadTilemapWireframeBuffer(GameState->CurrentLevel.Tilemap, &GameState->RenderState, &GameState->CurrentLevel.Tilemap.RenderInfo.WireframeVAO, &GameState->CurrentLevel.Tilemap.RenderInfo.WireframeVBO, &GameState->CurrentLevel.Tilemap.RenderInfo.WireframeVBOSize);
         }
     }
 }

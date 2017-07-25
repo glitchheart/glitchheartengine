@@ -1900,7 +1900,7 @@ static void LoadPlayerData(game_state* GameState, i32 Handle = -1, glm::vec2 Pos
     {
         Entity->Dead = false;
         LoadEntityData(File, Entity, GameState, Handle != -1);
-        printf("MOVE SPEED %f\n", Entity->AttackMoveSpeed);
+        
         char LineBuffer[255];
         
         while(fgets(LineBuffer, 255, File))
@@ -2260,24 +2260,24 @@ void UpdatePlayer(entity* Entity, game_state* GameState, r64 DeltaTime)
                         if(Direction.y > 0)
                         {
                             if(Moving)
-                                PlayAnimation(Entity, "swordsman_walk", GameState);
+                                PlayAnimation(Entity, "swordsman_walk_shield_up", GameState);
                             else
-                                PlayAnimation(Entity, "swordsman_idle", GameState);
+                                PlayAnimation(Entity, "swordsman_idle_shield_up", GameState);
                         }
                         else
                         {
                             if(Moving)
-                                PlayAnimation(Entity, "swordsman_walk", GameState);
+                                PlayAnimation(Entity, "swordsman_walk_shield_up", GameState);
                             else
-                                PlayAnimation(Entity, "swordsman_idle", GameState);
+                                PlayAnimation(Entity, "swordsman_idle_shield_up", GameState);
                         }
                     }
                     else
                     {
                         if(Moving)
-                            PlayAnimation(Entity, "swordsman_walk", GameState);
+                            PlayAnimation(Entity, "swordsman_walk_shield_up", GameState);
                         else
-                            PlayAnimation(Entity, "swordsman_idle", GameState);
+                            PlayAnimation(Entity, "swordsman_idle_shield_up", GameState);
                     }
                     
                     Entity->IsFlipped = Direction.x < 0;
@@ -2290,7 +2290,7 @@ void UpdatePlayer(entity* Entity, game_state* GameState, r64 DeltaTime)
                     auto MouseXValue = DirectionToMouse.x;
                     auto MouseYValue = DirectionToMouse.y;
                     
-                    PlayAnimation(Entity, "swordsman_walk", GameState);
+                    PlayAnimation(Entity, "swordsman_walk_shield_up", GameState);
                     
                     if(Abs(ControllerXValue) < 0.7f && Abs(ControllerYValue) > 0.2f || Abs(MouseXValue) < 0.7f && Abs(MouseYValue) > 0.2f)
                     {
@@ -2319,7 +2319,7 @@ void UpdatePlayer(entity* Entity, game_state* GameState, r64 DeltaTime)
                 }
                 else
                 {
-                    PlayAnimation(Entity, "swordsman_idle", GameState);
+                    PlayAnimation(Entity, "swordsman_idle_shield_up", GameState);
                     if(Abs(Entity->Player.LastKnownDirectionX) < 0.3)
                     {
                         if(Entity->Player.LastKnownDirectionY > 0)
