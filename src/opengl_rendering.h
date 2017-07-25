@@ -143,6 +143,10 @@ struct tilemap_render_info
     GLuint VAOS[TILEMAP_LAYERS];
     GLuint VBOS[TILEMAP_LAYERS];
     i32 VBOSizes[TILEMAP_LAYERS];
+    
+    GLuint WireframeVBO;
+    GLuint WireframeVAO;
+    GLuint WireframeVBOSize;
 };
 
 enum Render_Type
@@ -274,8 +278,14 @@ struct render_state
         0.0f, 0.0f, 0,  1.0f
     };
     
+    GLuint SpriteQuadIndices[6] =
+    {
+        0, 1, 2, 0, 2, 3
+    };
+    
     GLuint SpriteVAO;
     GLuint SpriteQuadVBO;
+    GLuint SpriteQuadIndexBuffer;
     GLuint UISpriteVAO;
     GLuint SpriteSheetVAO;
     

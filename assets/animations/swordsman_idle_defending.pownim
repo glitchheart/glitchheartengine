@@ -1,0 +1,15 @@
+name swordsman_idle_defending
+type sprite
+framecount 4
+framesize 34 27
+center 0.32 0.000000
+loop 1
+timeperframe 0.20000
+frames
+0 0
+34 0
+68 0
+102 0
+texture swordsman_idle_defending
+
+

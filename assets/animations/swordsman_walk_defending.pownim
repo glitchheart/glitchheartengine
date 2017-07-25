@@ -1,0 +1,17 @@
+name swordsman_walk_defending
+type sprite
+framecount 8
+framesize 33 28
+center 0.39 0.000000
+loop 1
+timeperframe 0.070000
+frames
+0 0
+33 0
+66 0
+99 0
+132 0
+165 0
+198 0
+231 0
+texture swordsman_walk_defending
