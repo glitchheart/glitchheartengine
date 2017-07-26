@@ -326,7 +326,7 @@ struct render_state
     };
     
     
-    GLfloat IsometricWireframeQuadVertices[8] =
+    GLfloat IsometricQuadVertices[8] =
     {
         0.5f, 1.0f,
         1.0f, 0.5f,
@@ -337,8 +337,8 @@ struct render_state
     GLuint WireframeVAO;
     GLuint WireframeQuadVBO;
     
-    GLuint IsometricWireframeVAO;
-    GLuint IsometricWireframeQuadVBO;
+    GLuint IsometricVAO;
+    GLuint IsometricQuadVBO;
     
     GLfloat AStarPathQuadVertices[10] =
     {

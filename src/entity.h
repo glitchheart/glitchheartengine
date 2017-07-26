@@ -264,6 +264,7 @@ struct entity
     r32 Scale;
     b32 IsFlipped;
     b32 IsTemporary;
+    b32 ShowAttackTiles;
     
     v3i TilePosition;
     

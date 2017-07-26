@@ -354,6 +354,7 @@ static void LoadEntityData(FILE* File, entity* Entity, game_state* GameState, b3
         Entity->HitAttackCountId = -1;
         Entity->HasWeapon = false;
         Entity->IsTemporary = false;
+        Entity->ShowAttackTiles = false;
         Entity->AnimationInfo.FreezeFrame = false;
         
         Entity->TilePosition.X = 0;
@@ -789,17 +790,17 @@ AI_FUNC(SkeletonFollowing)
             PlayAnimation(Entity, "skeleton_walk", GameState);
             Enemy.AIState = AI_Wandering;
         }
-        else if(DistanceToPlayer <= Entity->Enemy.SlowdownDistance)
+        /*else if(DistanceToPlayer <= Entity->Enemy.SlowdownDistance)
         {
             PlayAnimation(Entity, "skeleton_walk", GameState);
             glm::vec2 Direction = glm::normalize(Player.Position - Entity->Position);
             Entity->Velocity = glm::vec2(Direction.x * Entity->Enemy.CloseToPlayerSpeed, Direction.y * Entity->Enemy.CloseToPlayerSpeed);
-        }
+        }*/
         else
         {
             PlayAnimation(Entity, "skeleton_walk", GameState);
             FindPath(GameState, Entity, Player, &Entity->Enemy.AStarPath);
-            FollowPath(GameState, Entity, Player, DeltaTime, &Entity->Enemy.AStarPath);
+            FollowPath(GameState, Entity, Player, &Entity->Enemy.AStarPath);
         }
     }
     else
@@ -839,6 +840,7 @@ AI_FUNC(SkeletonDefending)
 
 AI_FUNC(SkeletonAttacking)
 {
+    Entity->ShowAttackTiles = true;
     entity& Player = GameState->Entities[GameState->PlayerIndex];
     auto& Enemy = Entity->Enemy;
     auto& Skeleton = Entity->Enemy.Skeleton;
@@ -847,6 +849,7 @@ AI_FUNC(SkeletonAttacking)
     if(Player.Dead)
     {
         Skeleton.IsAttacking = false;
+        Entity->ShowAttackTiles = false;
         Enemy.AIState = AI_Idle;
     }
     else
@@ -879,7 +882,7 @@ AI_FUNC(SkeletonAttacking)
         if(Skeleton.IsAttacking && strcmp(Entity->CurrentAnimation->Name, "skeleton_attack") == 0 && Entity->AnimationInfo.FrameIndex >= Entity->AttackHighFrameIndex)
         {
             Skeleton.IsAttacking = false;
-            
+            Entity->ShowAttackTiles = false;
             if(DistanceToPlayer > Entity->Enemy.MinDistanceToPlayer)
             {
                 Enemy.AIState = AI_Following;
@@ -1005,7 +1008,7 @@ AI_FUNC(MinotaurFollowing)
         {
             PlayAnimation(Entity, "minotaur_walk", GameState);
             FindPath(GameState, Entity, Player, &Entity->Enemy.AStarPath);
-            FollowPath(GameState, Entity, Player, DeltaTime, &Entity->Enemy.AStarPath);
+            FollowPath(GameState, Entity, Player, &Entity->Enemy.AStarPath);
         }
     }
     else
@@ -1317,7 +1320,7 @@ AI_FUNC(WraithFollowing)
         {
             PlayAnimation(Entity, "wraith_fly", GameState);
             FindPath(GameState, Entity, Player, &Entity->Enemy.AStarPath);
-            FollowPath(GameState, Entity, Player, DeltaTime, &Entity->Enemy.AStarPath);
+            FollowPath(GameState, Entity, Player, &Entity->Enemy.AStarPath);
         }
     }
     else
@@ -1468,7 +1471,7 @@ AI_FUNC(BlobAlerted)
 AI_FUNC(BlobFollowing)
 {
     FindPath(GameState,Entity,GameState->Entities[GameState->PlayerIndex], &Entity->Enemy.AStarPath);
-    FollowPath(GameState,Entity,GameState->Entities[GameState->PlayerIndex],DeltaTime, &Entity->Enemy.AStarPath);
+    FollowPath(GameState,Entity,GameState->Entities[GameState->PlayerIndex], &Entity->Enemy.AStarPath);
     if(Abs(glm::distance(Entity->Position, GameState->Entities[GameState->PlayerIndex].Position)) < Entity->Enemy.MinDistanceToPlayer)
     {
         Entity->Enemy.AIState = AI_Charging;
@@ -3422,19 +3425,17 @@ void UpdateTilePosition(entity& Entity, game_state* GameState, r64 DeltaTime)
     {
         Entity.TilePosition.X = (i32)CartesianX;
         Entity.TilePosition.Y = (i32)CartesianY;
+        Assert(GameState->EntityTilePositions[Entity.TilePosition.X][Entity.TilePosition.Y].Count < 20);
         Entity.TilePosition.Z = GameState->EntityTilePositions[Entity.TilePosition.X][Entity.TilePosition.Y].Count++;
         
         GameState->EntityTilePositions[Entity.TilePosition.X][Entity.TilePosition.Y].Entities[Entity.TilePosition.Z] = Entity.EntityIndex + 1;
-        
-        if(GameState->EntityTilePositions[Entity.TilePosition.X][Entity.TilePosition.Y].Count == 20)
-        {
-            GameState->EntityTilePositions[Entity.TilePosition.X][Entity.TilePosition.Y].Count = 0;
-        }
     }
 }
 
 void UpdateGeneral(entity* Entity, game_state* GameState, r64 DeltaTime)
 {
+    GameState->RenderState.RenderEntities[Entity->RenderEntityHandle].Rendered = glm::distance(Entity->Position, GameState->Entities[0].Position) < 15;
+    
     GameState->EntityTilePositions[Entity->TilePosition.X][Entity->TilePosition.Y].Entities[Entity->TilePosition.Z] = 0;
     
     if(Entity->LightSourceHandle != -1)
@@ -3594,8 +3595,21 @@ void UpdateEntities(game_state* GameState, r64 DeltaTime)
                 break;
             }
             
-            if(Entity->Active && !Entity->Dead)
-                UpdateTilePosition(*Entity, GameState, DeltaTime);
+            if(GameState->ClearTilePositionFrame)
+            {
+                for(i32 X = 0; X < GameState->CurrentLevel.Tilemap.Width; X++)
+                {
+                    for(i32 Y = 0; Y < GameState->CurrentLevel.Tilemap.Height; Y++)
+                    {
+                        GameState->EntityTilePositions[X][Y].Count = 0;
+                    }
+                }
+            }
+            else
+            {
+                if(Entity->Active && !Entity->Dead)
+                    UpdateTilePosition(*Entity, GameState, DeltaTime);
+            }
             
             if(Entity->Active && Entity->CurrentAnimation && Entity->AnimationInfo.Playing)
                 TickAnimation(&Entity->AnimationInfo, Entity->CurrentAnimation, DeltaTime);
