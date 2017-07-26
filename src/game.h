@@ -113,6 +113,7 @@ struct game_state
     b32 ShouldReload;
     b32 RenderGame = true;
     b32 RenderLight = true;
+    b32 ClearTilePositionFrame = false;
     
     character_data CharacterData;
     b32 StatGainModeOn = false;

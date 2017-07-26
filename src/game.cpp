@@ -724,7 +724,6 @@ static void EditorUpdateEntities(game_state* GameState, r64 DeltaTime)
 
 extern "C" UPDATE(Update)
 {
-    
     if(GetKeyDown(Key_Down,GameState))
     {
         printf("Tits\n");
@@ -1281,6 +1280,7 @@ extern "C" UPDATE(Update)
     
     GameState->InputController.CurrentCharacter = 0;
     GameState->RenderState.DeltaTime = DeltaTime;
+    GameState->ClearTilePositionFrame = !GameState->ClearTilePositionFrame;
 }
 
  

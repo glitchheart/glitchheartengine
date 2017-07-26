@@ -477,7 +477,7 @@ static void LoadTilemapWireframeBuffer(const tilemap& Tilemap, render_state* Ren
         glGenBuffers(1, VBO);
     
     glBindBuffer(GL_ARRAY_BUFFER, *VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * *Size, WireframeVertexBuffer, GL_DYNAMIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * *Size, WireframeVertexBuffer, GL_STATIC_DRAW);
     
     if(RenderState->WireframeShader.Type != Shader_Wireframe)
     {
@@ -778,11 +778,13 @@ static void RenderSetup(render_state *RenderState)
     
     glBindVertexArray(0);
     
-    glGenVertexArrays(1, &RenderState->IsometricWireframeVAO);
-    glBindVertexArray(RenderState->IsometricWireframeVAO);
-    glGenBuffers(1, &RenderState->IsometricWireframeQuadVBO);
-    glBindBuffer(GL_ARRAY_BUFFER, RenderState->IsometricWireframeQuadVBO);
-    glBufferData(GL_ARRAY_BUFFER, RenderState->WireframeQuadVerticesSize, RenderState->IsometricWireframeQuadVertices, GL_DYNAMIC_DRAW);
+    glGenVertexArrays(1, &RenderState->IsometricVAO);
+    glBindVertexArray(RenderState->IsometricVAO);
+    glGenBuffers(1, &RenderState->IsometricQuadVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, RenderState->IsometricQuadVBO);
+    glBufferData(GL_ARRAY_BUFFER, RenderState->WireframeQuadVerticesSize, RenderState->IsometricQuadVertices, GL_DYNAMIC_DRAW);
+    
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, RenderState->QuadIndexBuffer);
     
     RenderState->RectShader.Type = Shader_Wireframe;
     LoadShader(ShaderPaths[Shader_Wireframe], &RenderState->WireframeShader);
@@ -1141,13 +1143,36 @@ void RenderCircle(render_state& RenderState, glm::vec4 Color, r32 CenterX, r32 C
     glDrawArrays(GL_LINE_LOOP, 0, 720);
 }
 
+static void RenderIsometricRect(render_state* RenderState, glm::vec4 Color, r32 X, r32 Y, r32 Width, r32 Height, glm::mat4 ProjectionMatrix, glm::mat4 ViewMatrix)
+{
+    glm::mat4 Model(1.0f);
+    Model = glm::translate(Model, glm::vec3(X, Y, 0));
+    Model = glm::scale(Model, glm::vec3(Width, Height, 1));
+    
+    glBindVertexArray(RenderState->IsometricVAO);
+    
+    auto Shader = RenderState->RectShader;
+    UseShader(&Shader);
+    
+    SetMat4Uniform(Shader.Program, "Projection", ProjectionMatrix);
+    SetMat4Uniform(Shader.Program, "View", ViewMatrix);
+    
+    SetFloatUniform(Shader.Program, "isUI", (r32)false);
+    SetMat4Uniform(Shader.Program, "M", Model);
+    SetVec4Uniform(Shader.Program, "color", Color);
+    
+    glDrawElements(GL_TRIANGLES, sizeof(RenderState->QuadIndices), GL_UNSIGNED_INT, (void*)0);
+    
+    glBindVertexArray(0);
+}
+
 static void RenderIsometricOutline(render_state* RenderState, glm::vec4 Color, r32 X, r32 Y, r32 Width, r32 Height, glm::mat4 ProjectionMatrix, glm::mat4 ViewMatrix)
 {
     glm::mat4 Model(1.0f);
     Model = glm::translate(Model, glm::vec3(X, Y, 0));
     Model = glm::scale(Model, glm::vec3(Width, Height, 1));
     
-    glBindVertexArray(RenderState->IsometricWireframeVAO);
+    glBindVertexArray(RenderState->IsometricVAO);
     
     auto Shader = RenderState->RectShader;
     UseShader(&Shader);
@@ -1452,21 +1477,11 @@ static void RenderWireframe(render_state* RenderState, entity* Entity, glm::mat4
 static void RenderAStarPath(render_state* RenderState, entity* Entity, glm::mat4 ProjectionMatrix, glm::mat4 View)
 {
     astar_path& Path = Entity->Enemy.AStarPath;
+    
     if(Path.AStarPath) 
     {
-        glBindVertexArray(RenderState->AStarPathVAO);
         for(u32 PathIndex = 0; PathIndex < Path.AStarPathLength; PathIndex++)
         {
-            glm::mat4 Model(1.0f);
-            Model = glm::translate(Model, glm::vec3(Path.AStarPath[PathIndex].X, Path.AStarPath[PathIndex].Y, 0.0f));
-            Model = glm::scale(Model, glm::vec3(1, 1, 1));
-            
-            auto Shader = RenderState->Shaders[Shader_AStarPath];
-            UseShader(&Shader);
-            
-            SetMat4Uniform(Shader.Program, "Projection", ProjectionMatrix);
-            SetMat4Uniform(Shader.Program, "View", View);
-            SetMat4Uniform(Shader.Program, "Model", Model);
             glm::vec4 color;
             
             if(Path.PathIndex == PathIndex)
@@ -1477,12 +1492,10 @@ static void RenderAStarPath(render_state* RenderState, entity* Entity, glm::mat4
             {
                 color = glm::vec4(0.0, 0.0, 1.0, 0.4);
             }
+            glm::vec2 Position = ToIsometric(glm::vec2(Path.AStarPath[PathIndex].X, Path.AStarPath[PathIndex].Y));
             
-            SetVec4Uniform(Shader.Program, "color", color);
-            glDrawArrays(GL_QUADS, 0, 6); // @Incomplete: Change this to glDrawElements
+            RenderIsometricRect(RenderState, color, Position.x, Position.y, 1, 0.5f, ProjectionMatrix, View);
         }
-        
-        glBindVertexArray(0);
     }
 }
 
@@ -1794,6 +1807,8 @@ static void RenderEntity(game_state *GameState, render_entity* RenderEntity, glm
                 {
                     glm::vec2 Pos = ToIsometric(glm::vec2(CartesianX + X, CartesianY + Y));
                     RenderIsometricOutline(RenderState, glm::vec4(0, 0, 1, 1), Pos.x, Pos.y, 1, 0.5f, ProjectionMatrix, View);
+                    if(X == 0 && Y == 0)
+                        RenderIsometricRect(RenderState, glm::vec4(1, 0, 0, 1), Pos.x, Pos.y, 1, 0.5f, ProjectionMatrix, View);
                 }
             }
         }
@@ -1925,13 +1940,6 @@ static void RenderTilemap(i32 Layer, render_state* RenderState, const tilemap& T
     //glDrawElements(GL_TRIANGLES, sizeof(RenderState->QuadIndices), GL_UNSIGNED_INT, (void*)0); 
     glDrawArrays(GL_QUADS, 0, Tilemap.RenderInfo.VBOSizes[Layer] / 4);
     glBindVertexArray(0);
-    
-    // @Incomplete: We have to create a way of drawing a subtle grid over all tiles
-    // @Incomplete: Change to glDrawElements
-    /*
-    glBindVertexArray(Tilemap.RenderInfo.WireframeVAO);
-    UseShader(&RenderState->WireframeShader);
-    glDrawArrays(GL_QUADS, 0, Tilemap.RenderInfo.WireframeVBO);*/
 }
 
 static void EditorRenderTilemap(glm::vec2 ScreenPosition, r32 Size, render_state* RenderState, const tilemap& Tilemap)
@@ -1997,6 +2005,34 @@ static void RenderInGameMode(game_state* GameState)
         
         if(Layer == 1)
         {
+            for(i32 Index = 0; Index < GameState->RenderState.RenderEntityCount; Index++)
+            {
+                render_state* RenderState = &GameState->RenderState;
+                const entity& Entity = *RenderState->RenderEntities[Index].Entity;
+                
+                if(Entity.ShowAttackTiles &&(Entity.Type == Entity_Player || Entity.Type == Entity_Enemy))
+                {
+                    r32 CartesianX = glm::floor(Entity.Position.x - 0.5f);
+                    r32 CartesianY = glm::ceil(Entity.Position.y - 0.5f);
+                    
+                    glm::vec2 CorrectPosition = ToIsometric(glm::vec2(CartesianX, CartesianY));
+                    r32 CorrectX = CorrectPosition.x;
+                    r32 CorrectY = CorrectPosition.y;
+                    
+                    hit_tile_extents HitExtents = Entity.HitExtents[Entity.LookDirection];
+                    
+                    for(i32 X = HitExtents.StartX; X < HitExtents.EndX; X++)
+                    {
+                        for(i32 Y = HitExtents.StartY; Y < HitExtents.EndY; Y++)
+                        {
+                            glm::vec2 Pos = ToIsometric(glm::vec2(CartesianX + X, CartesianY + Y));
+                            
+                            RenderIsometricRect(RenderState, glm::vec4(1, 0, 0, 0.2), Pos.x, Pos.y, 1, 0.5f, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
+                        }
+                    }
+                }
+            }
+            
             for(i32 Index = 0; Index < GameState->RenderState.RenderEntityCount; Index++) 
             {
                 render_entity* Render = &GameState->RenderState.RenderEntities[Index];
