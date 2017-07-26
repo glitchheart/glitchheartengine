@@ -248,6 +248,8 @@ struct render_state
     GLuint FrameBufferVAO;
     GLuint FrameBufferVBO;
     GLuint FrameBuffer;
+    GLuint FrameBufferTex0Loc;
+    GLuint FrameBufferTex1Loc;
     GLuint TextureColorBuffer;
     
     // Lighting map
@@ -278,14 +280,14 @@ struct render_state
         0.0f, 0.0f, 0,  1.0f
     };
     
-    GLuint SpriteQuadIndices[6] =
+    GLuint QuadIndices[6] =
     {
         0, 1, 2, 0, 2, 3
     };
     
     GLuint SpriteVAO;
     GLuint SpriteQuadVBO;
-    GLuint SpriteQuadIndexBuffer;
+    GLuint QuadIndexBuffer;
     GLuint UISpriteVAO;
     GLuint SpriteSheetVAO;
     

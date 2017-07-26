@@ -254,7 +254,7 @@ static void InitializeFreeTypeFont(char* FontPath, int FontSize, FT_Library Libr
 
 static void LoadTilemapBuffer(render_state* RenderState, i32 Layer, GLuint* VAO, GLuint* VBO, i32* Size, const tilemap& Tilemap, Level_Type LevelType)
 {
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, RenderState->SpriteQuadIndexBuffer);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, RenderState->QuadIndexBuffer);
     
     GLfloat* VertexBuffer = (GLfloat*)malloc(sizeof(GLfloat) * 16 * Tilemap.Width * Tilemap.Height);
     
@@ -594,10 +594,17 @@ static void RenderSetup(render_state *RenderState)
     glEnableVertexAttribArray(TexLoc);
     glVertexAttribPointer(TexLoc, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *)(2 * sizeof(float)));
     
-    TexLoc = glGetUniformLocation(RenderState->FrameBufferShader.Program, "tex");
-    glUniform1i(TexLoc, 0);
-    TexLoc = glGetUniformLocation(RenderState->FrameBufferShader.Program, "lightingTex");
-    glUniform1i(TexLoc, 1);
+    //auto TexLoc = glGetUniformLocation(GameState->RenderState.FrameBufferShader.Program, "tex");
+    //glUniform1i(TexLoc, 0);
+    //TexLoc = glGetUniformLocation(GameState->RenderState.FrameBufferShader.Program, "lightingTex");
+    //glUniform1i(TexLoc, 1);
+    
+    RenderState->FrameBufferTex0Loc = glGetUniformLocation(RenderState->FrameBufferShader.Program, "tex");
+    RenderState->FrameBufferTex1Loc = glGetUniformLocation(RenderState->FrameBufferShader.Program, "lightingTex");
+    
+    glGenBuffers(1, &RenderState->QuadIndexBuffer);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, RenderState->QuadIndexBuffer);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(RenderState->QuadIndices), RenderState->QuadIndices, GL_STATIC_DRAW);
     
     glBindVertexArray(0);
     
@@ -627,10 +634,7 @@ static void RenderSetup(render_state *RenderState)
     glGenBuffers(1, &RenderState->SpriteQuadVBO);
     glBindBuffer(GL_ARRAY_BUFFER, RenderState->SpriteQuadVBO);
     glBufferData(GL_ARRAY_BUFFER, RenderState->SpriteQuadVerticesSize, RenderState->SpriteQuadVertices, GL_STATIC_DRAW);
-    
-    glGenBuffers(1, &RenderState->SpriteQuadIndexBuffer);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, RenderState->SpriteQuadIndexBuffer);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(RenderState->SpriteQuadIndices), RenderState->SpriteQuadIndices, GL_STATIC_DRAW);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, RenderState->QuadIndexBuffer);
     
     RenderState->TextureShader.Type = Shader_Spritesheet;
     LoadShader(ShaderPaths[Shader_Spritesheet], &RenderState->SpritesheetShader);
@@ -729,6 +733,8 @@ static void RenderSetup(render_state *RenderState)
     glBindBuffer(GL_ARRAY_BUFFER, RenderState->NormalQuadVBO);
     glBufferData(GL_ARRAY_BUFFER, RenderState->NormalQuadVerticesSize, RenderState->NormalQuadVertices, GL_DYNAMIC_DRAW);
     
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, RenderState->QuadIndexBuffer);
+    
     RenderState->RectShader.Type = Shader_Rect;
     LoadShader(ShaderPaths[Shader_Rect], &RenderState->RectShader);
     
@@ -741,6 +747,7 @@ static void RenderSetup(render_state *RenderState)
     glGenVertexArrays(1, &RenderState->TextureRectVAO);
     glBindVertexArray(RenderState->TextureRectVAO);
     glBindBuffer(GL_ARRAY_BUFFER, RenderState->SpriteQuadVBO);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, RenderState->QuadIndexBuffer);
     
     RenderState->TextureRectShader.Type = Shader_TextureRect;
     LoadShader(ShaderPaths[Shader_TextureRect], &RenderState->TextureRectShader);
@@ -1208,7 +1215,7 @@ static void RenderRect(Render_Mode Mode, render_state* RenderState, glm::vec4 Co
             SetMat4Uniform(Shader.Program, "M", Model);
             SetVec4Uniform(Shader.Program, "color", Color);
             
-            glDrawArrays(GL_QUADS, 0, 4);
+            glDrawElements(GL_TRIANGLES, sizeof(RenderState->QuadIndices), GL_UNSIGNED_INT, (void*)0);
         }
         break;
         case Render_Outline:
@@ -1472,50 +1479,11 @@ static void RenderAStarPath(render_state* RenderState, entity* Entity, glm::mat4
             }
             
             SetVec4Uniform(Shader.Program, "color", color);
-            glDrawArrays(GL_QUADS, 0, 6);
-            
+            glDrawArrays(GL_QUADS, 0, 6); // @Incomplete: Change this to glDrawElements
         }
         
         glBindVertexArray(0);
     }
-}
-
-void RenderUISprite(render_state* RenderState, u32 TextureHandle, glm::vec2 ScreenPosition, glm::vec3 Scale)
-{
-    r32 X = ScreenPosition.x * RenderState->ScaleX;
-    X -= 1;
-    r32 Y = ScreenPosition.y * RenderState->ScaleY;
-    Y -= 1;
-    
-    auto Shader = RenderState->UISpriteShader;
-    
-    if(Shader.Program == 0)
-    {
-        Shader = RenderState->ErrorShaderUI;
-        glBindVertexArray(RenderState->UIErrorVAO);
-    }
-    else
-    {
-        glBindVertexArray(RenderState->UISpriteVAO);
-        if (RenderState->BoundTexture != TextureHandle) //never bind the same texture if it's already bound
-        {
-            glBindTexture(GL_TEXTURE_2D, TextureHandle);
-            RenderState->BoundTexture = TextureHandle;
-        }
-        
-    }
-    
-    UseShader(&Shader);
-    
-    glm::mat4 Model(1.0f);
-    Model = glm::translate(Model, glm::vec3(X, Y, 0));
-    Model = glm::scale(Model, Scale);
-    
-    SetMat4Uniform(Shader.Program, "M", Model);
-    SetVec4Uniform(Shader.Program, "color", glm::vec4(1, 1, 1, 1)); 
-    
-    glDrawArrays(GL_QUADS, 0, 4);
-    glBindVertexArray(0);
 }
 
 static void RenderAnimationPreview(render_state* RenderState, const animation_info& AnimationInfo, const animation& Animation, glm::vec2 ScreenPosition, r32 Scale)
@@ -1558,8 +1526,7 @@ static void RenderAnimationPreview(render_state* RenderState, const animation_in
     
     SetMat4Uniform(Shader.Program, "Model", Model);
     
-    glBindBuffer(GL_ARRAY_BUFFER, RenderState->SpriteQuadVBO);
-    glDrawArrays(GL_QUADS, 0, 4);
+    glDrawElements(GL_TRIANGLES, sizeof(RenderState->QuadIndices), GL_UNSIGNED_INT, (void*)0);
     glBindVertexArray(0);
 }
 
@@ -1772,7 +1739,7 @@ static void RenderEntity(game_state *GameState, render_entity* RenderEntity, glm
         SetMat4Uniform(Shader.Program, "Model", Model);
         SetVec4Uniform(Shader.Program, "Color", RenderEntity->Color);
         
-        glDrawElements(GL_TRIANGLES, sizeof(RenderState->SpriteQuadIndices), GL_UNSIGNED_INT, (void*)0); 
+        glDrawElements(GL_TRIANGLES, sizeof(RenderState->QuadIndices), GL_UNSIGNED_INT, (void*)0); 
         glBindVertexArray(0);
         
         if(RenderEntity->RenderType == Render_Type_Entity)
@@ -1888,7 +1855,8 @@ static void RenderTile(render_state* RenderState, r32 X, r32 Y, u32 TilesheetInd
     SetFloatUniform(Shader.Program, "frameWidth", (r32)TileWidth);
     SetFloatUniform(Shader.Program, "frameHeight", (r32)TileHeight);
     SetVec2Uniform(Shader.Program, "textureSize", SheetSize);
-    glDrawArrays(GL_QUADS, 0, 4);
+    
+    glDrawElements(GL_TRIANGLES, sizeof(RenderState->QuadIndices), GL_UNSIGNED_INT, (void*)0);
     glBindVertexArray(0);
 }
 
@@ -1953,12 +1921,13 @@ static void RenderTilemap(i32 Layer, render_state* RenderState, const tilemap& T
     SetMat4Uniform(Shader.Program, "Model", Model);
     SetVec4Uniform(Shader.Program, "Color", Color);
     
-    //glDrawElements(GL_TRIANGLES, sizeof(RenderState->SpriteQuadIndices), GL_UNSIGNED_INT, (void*)0); 
+    // @Incomplete: Change to glDrawElements
+    //glDrawElements(GL_TRIANGLES, sizeof(RenderState->QuadIndices), GL_UNSIGNED_INT, (void*)0); 
     glDrawArrays(GL_QUADS, 0, Tilemap.RenderInfo.VBOSizes[Layer] / 4);
     glBindVertexArray(0);
     
     // @Incomplete: We have to create a way of drawing a subtle grid over all tiles
-    
+    // @Incomplete: Change to glDrawElements
     /*
     glBindVertexArray(Tilemap.RenderInfo.WireframeVAO);
     UseShader(&RenderState->WireframeShader);
@@ -1989,7 +1958,9 @@ static void EditorRenderTilemap(glm::vec2 ScreenPosition, r32 Size, render_state
     SetFloatUniform(Shader.Program, "isUI", 1);
     SetMat4Uniform(Shader.Program, "Model", Model);
     SetVec4Uniform(Shader.Program, "Color", glm::vec4(1, 1, 1, 1));
+    
     glDrawArrays(GL_QUADS, 0, Tilemap.EditorRenderInfo.VBOSize / 4);
+    // @Incomplete: Change to glDrawElements
     glBindVertexArray(0);
 }
 
@@ -2669,7 +2640,7 @@ static void RenderLightSources(game_state* GameState)
         SetVec4ArrayUniform(Shader.Program, "PointLightPos",PointlightPositions,NumOfPointLights);
         SetVec2Uniform(Shader.Program, "screenSize", glm::vec2((r32)GameState->RenderState.WindowWidth,(r32)GameState->RenderState.WindowHeight));
         
-        glDrawArrays(GL_QUADS, 0, 4);
+        glDrawElements(GL_TRIANGLES, sizeof(GameState->RenderState.QuadIndices), GL_UNSIGNED_INT, (void*)0);
         
         glBindVertexArray(0);
     }
@@ -2684,6 +2655,7 @@ static void Render(game_state* GameState)
         GameState->RenderState.ScaleX = 2.0f / GameState->RenderState.WindowWidth;
         GameState->RenderState.ScaleY = 2.0f / GameState->RenderState.WindowHeight;
         
+        // @Cleanup: Move frame buffer rendering into function(s)
         // First pass
         glBindFramebuffer(GL_FRAMEBUFFER, GameState->RenderState.FrameBuffer);
         glBindTexture(GL_TEXTURE_2D, GameState->RenderState.TextureColorBuffer);
@@ -2722,10 +2694,8 @@ static void Render(game_state* GameState)
         SetFloatUniform(GameState->RenderState.FrameBufferShader.Program, "brightness", GameState->RenderState.Brightness);
         SetIntUniform(GameState->RenderState.FrameBufferShader.Program, "ignoreLight",  !GameState->RenderLight);
         
-        auto TexLoc = glGetUniformLocation(GameState->RenderState.FrameBufferShader.Program, "tex");
-        glUniform1i(TexLoc, 0);
-        TexLoc = glGetUniformLocation(GameState->RenderState.FrameBufferShader.Program, "lightingTex");
-        glUniform1i(TexLoc, 1);
+        glUniform1i(GameState->RenderState.FrameBufferTex0Loc, 0);
+        glUniform1i(GameState->RenderState.FrameBufferTex1Loc, 1);
         
         glActiveTexture(GL_TEXTURE0);
         glEnable(GL_TEXTURE_2D);
@@ -2739,8 +2709,7 @@ static void Render(game_state* GameState)
         //Enable this if we don't do gamma correction in framebuffer shader
         //glEnable(GL_FRAMEBUFFER_SRGB);
         
-        glDrawArrays(GL_QUADS, 0, 4); 
-        
+        glDrawElements(GL_TRIANGLES, sizeof(GameState->RenderState.QuadIndices), GL_UNSIGNED_INT, (void*)0); 
         glActiveTexture(GL_TEXTURE0);
         
         // Render UI
