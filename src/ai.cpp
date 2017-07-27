@@ -273,7 +273,8 @@ static void FindPath(game_state* GameState, entity* Entity, entity& TargetEntity
 {
     r64 DistanceToTargetEntity = abs(glm::distance(Entity->Position, TargetEntity.Position));
     glm::vec2 EntityPosition = glm::vec2(Entity->Position.x + Entity->Center.x * Entity->Scale,Entity->Position.y + Entity->Center.y * Entity->Scale);
-    if(TimerDone(GameState,Path->AStarCooldownTimer) || !Path->AStarPath || (Path->AStarPathLength <= Path->PathIndex && DistanceToTargetEntity >= 3.0f)) 
+    
+    if(TimerDone(GameState, Path->AStarCooldownTimer) || !Path->AStarPath || (Path->AStarPathLength <= Path->PathIndex && DistanceToTargetEntity >= 3.0f)) 
     {
         Path->PathIndex = 0;
         StartTimer(GameState, Path->AStarCooldownTimer);
@@ -293,7 +294,7 @@ static void FollowPath(game_state* GameState, entity* Entity,entity& TargetEntit
     {
         path_node NewPos = Path->AStarPath[Path->PathIndex];
         
-        r64 DistanceToNode = glm::distance(EntityPosition, glm::vec2(NewPos.X, NewPos.Y));
+        r64 DistanceToNode = glm::distance(ToIsometric(EntityPosition), ToIsometric(glm::vec2(NewPos.X, NewPos.Y)));
         
         if(DistanceToNode > 0.1f) 
         {

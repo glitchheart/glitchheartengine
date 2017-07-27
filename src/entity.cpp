@@ -214,7 +214,7 @@ static void SpawnShadow(game_state* GameState, glm::vec2 Position, i32* Handle)
     
     Shadow->RenderEntityHandle = GameState->RenderState.RenderEntityCount++;
     RenderEntity->Color = glm::vec4(1, 1, 1, 1);
-    
+    printf("Shadow\n");
     GameState->Objects[GameState->ObjectCount++];
 }
 
@@ -240,6 +240,7 @@ static void SpawnLoot(game_state* GameState, glm::vec2 Position, i32* Handle)
     RenderEntity->Object = &*Loot;
     
     Loot->RenderEntityHandle = GameState->RenderState.RenderEntityCount++;
+    printf("Loot\n");
     RenderEntity->Color = glm::vec4(1, 1, 1, 1);
     
     GameState->Objects[GameState->ObjectCount++];
@@ -270,6 +271,7 @@ static void SpawnWillDrop(game_state* GameState, glm::vec2 Position, i32* Handle
     RenderEntity->Object = &*Will;
     
     Will->RenderEntityHandle = GameState->RenderState.RenderEntityCount++;
+    printf("Will\n");
     RenderEntity->Color = glm::vec4(1, 1, 1, 1);
     
     Will->LightSourceHandle = LoadPointlight(GameState, glm::vec4(0.2f, 0.15f, 0.65f, 0.3f), 0.45f, 0.2f, 1.0f,0.2f, GameState->CharacterData.LostWillPosition, true,0.9, 0.0007f);

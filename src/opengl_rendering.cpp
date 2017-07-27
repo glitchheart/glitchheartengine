@@ -1454,7 +1454,9 @@ static void RenderWireframe(render_state* RenderState, entity* Entity, glm::mat4
     {
         glm::mat4 Model(1.0f);
         
-        Model = glm::translate(Model, glm::vec3(Entity->Position.x -  Entity->Scale / 2, Entity->Position.y, 0.0f));
+        auto Pos = ToIsometric(Entity->Position);
+        
+        Model = glm::translate(Model, glm::vec3(Pos.x - Entity->Scale / 2, Pos.y, 0.0f));
         Model = glm::scale(Model, glm::vec3(Entity->Scale, Entity->Scale, 1));
         
         glBindVertexArray(RenderState->WireframeVAO);
@@ -1467,9 +1469,9 @@ static void RenderWireframe(render_state* RenderState, entity* Entity, glm::mat4
         SetMat4Uniform(Shader.Program, "Model", Model);
         glm::vec4 color(0.0,1.0,0.0,1.0);
         
-        SetVec4Uniform(Shader.Program, "color", color);
+        SetVec4Uniform(Shader.Program, "Color", color);
         
-        glDrawArrays(GL_LINE_STRIP, 0, 6);
+        glDrawArrays(GL_LINE_LOOP, 0, 6);
         glBindVertexArray(0);
     }
 }
