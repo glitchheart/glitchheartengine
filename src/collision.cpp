@@ -205,12 +205,12 @@ void CheckCollision(game_state* GameState, entity* Entity, collision_info* Colli
                 }
                 
                 collision_AABB Md;
-                if(Entity->Type == Entity_Enemy && OtherEntity->Type == Entity_Enemy)
-                {
-                    MinkowskiDifference(&OtherEntity->Enemy.EnemyCollider, &Entity->Enemy.EnemyCollider, &Md);
-                }
-                else
-                    MinkowskiDifference(&OtherEntity->CollisionAABB, &Entity->CollisionAABB, &Md);
+                //if(Entity->Type == Entity_Enemy && OtherEntity->Type == Entity_Enemy)
+                //{
+                //MinkowskiDifference(&OtherEntity->Enemy.EnemyCollider, &Entity->Enemy.EnemyCollider, &Md);
+                //}
+                //else
+                MinkowskiDifference(&OtherEntity->CollisionAABB, &Entity->CollisionAABB, &Md);
                 
                 if(Md.Min.x <= 0 &&
                    Md.Max.x >= 0 &&

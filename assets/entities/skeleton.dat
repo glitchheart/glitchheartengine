@@ -14,7 +14,7 @@ hitrecoilspeed 10
 recoiltimer 0.0
 weaponscale 2 2
 attackmovetimer 0.03
-attackmovespeed 3
+attackmovespeed 0
 attacklowframeindex 8
 attackhighframeindex 13
 weaponcollider 0.7 0 0.5 1.0 1

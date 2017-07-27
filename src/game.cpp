@@ -380,8 +380,11 @@ static void EditorUpdateEntities(game_state* GameState, r64 DeltaTime)
                             {
                                 if(GetMouseButtonDown(Mouse_Left, GameState) && GameState->EditorState.SelectedEntity->Enemy.WaypointCount < 10)
                                 {
-                                    auto X = (i32)glm::floor(Pos.x);
-                                    auto Y = (i32)glm::floor(Pos.y);
+                                    
+                                    glm::vec2 NewPos = ToCartesian(glm::vec2(Pos.x, Pos.y));
+                                    
+                                    i32 X = (i32)glm::floor(NewPos.x / 0.5f);
+                                    i32 Y = (i32)glm::floor(NewPos.y / 0.5f);
                                     
                                     if(!GameState->CurrentLevel.Tilemap.Data[1][X][Y].IsSolid)
                                     {
@@ -395,6 +398,11 @@ static void EditorUpdateEntities(game_state* GameState, r64 DeltaTime)
                             }
                             else
                             {
+                                glm::vec2 NewPos = ToCartesian(glm::vec2(Pos.x, Pos.y));
+                                
+                                NewPos.x = glm::floor(NewPos.x / 0.5f);
+                                NewPos.y = glm::floor(NewPos.y / 0.5f);
+                                
                                 if(GetMouseButtonDown(Mouse_Left, GameState))
                                 {
                                     entity* Selected = 0;
@@ -405,7 +413,7 @@ static void EditorUpdateEntities(game_state* GameState, r64 DeltaTime)
                                     {
                                         entity* Entity = &GameState->Entities[EntityIndex];
                                         
-                                        if(Entity->Type != Entity_Weapon && Pos.x >= Entity->Position.x - Entity->Scale / 2 && Pos.y < Entity->Position.y + Entity->Scale && Pos.x < Entity->Position.x + Entity->Scale && Pos.y > Entity->Position.y)
+                                        if(Entity->Type != Entity_Weapon && NewPos.x >= Entity->Position.x - Entity->Scale / 2 && NewPos.y < Entity->Position.y + Entity->Scale && NewPos.x < Entity->Position.x + Entity->Scale && NewPos.y > Entity->Position.y)
                                         {
                                             Selected = Entity;
                                             break;
@@ -417,7 +425,7 @@ static void EditorUpdateEntities(game_state* GameState, r64 DeltaTime)
                                 
                                 if(GameState->EditorState.SelectedEntity && GetMouseButton(Mouse_Left, GameState))
                                 {
-                                    GameState->EditorState.SelectedEntity->Position = glm::vec2(Pos.x, Pos.y - GameState->EditorState.SelectedEntity->Scale / 2 );
+                                    GameState->EditorState.SelectedEntity->Position = glm::vec2(NewPos.x, NewPos.y - GameState->EditorState.SelectedEntity->Scale / 2 );
                                 }
                             }
                         }
@@ -426,26 +434,32 @@ static void EditorUpdateEntities(game_state* GameState, r64 DeltaTime)
                         {
                             if(GetMouseButtonDown(Mouse_Left, GameState))
                             {
+                                glm::vec2 NewPos = ToCartesian(glm::vec2(Pos.x, Pos.y));
+                                
+                                NewPos.x = glm::floor(NewPos.x / 0.5f);
+                                NewPos.y = glm::floor(NewPos.y / 0.5f);
+                                
                                 switch(GameState->EditorState.PlacementEntity)
                                 {
                                     case Placement_Entity_Skeleton:
                                     {
-                                        LoadSkeletonData(GameState, -1, glm::vec2(Pos.x, Pos.y - 0.5f));
+                                        LoadSkeletonData(GameState, -1, glm::vec2(NewPos.x, NewPos.y - 0.5f));
+                                        SaveLevelToFile(GameState->LevelPath, &GameState->CurrentLevel, GameState);
                                     }
                                     break;
                                     case Placement_Entity_Blob:
                                     {
-                                        LoadBlobData(GameState, -1, glm::vec2(Pos.x, Pos.y - 0.5f));
+                                        LoadBlobData(GameState, -1, glm::vec2(NewPos.x, NewPos.y - 0.5f));
                                     }
                                     break;
                                     case Placement_Entity_Wraith:
                                     {
-                                        LoadWraithData(GameState, -1, glm::vec2(Pos.x, Pos.y - 0.5));
+                                        LoadWraithData(GameState, -1, glm::vec2(NewPos.x, NewPos.y - 0.5));
                                     }
                                     break;
                                     case Placement_Entity_Minotaur:
                                     {
-                                        LoadMinotaurData(GameState, -1, glm::vec2(Pos.x, Pos.y - 0.5f));
+                                        LoadMinotaurData(GameState, -1, glm::vec2(NewPos.x, NewPos.y - 0.5f));
                                     }
                                     break;
                                     case Placement_Entity_Barrel:
@@ -453,10 +467,12 @@ static void EditorUpdateEntities(game_state* GameState, r64 DeltaTime)
                                     break;
                                     case Placement_Entity_Bonfire:
                                     {
-                                        LoadBonfireData(GameState, -1, glm::vec2(Pos.x, Pos.y - 0.5f));
+                                        LoadBonfireData(GameState, -1, glm::vec2(NewPos.x, NewPos.y - 0.5f));
                                     }
                                     break;
                                 }
+                                
+                                SaveLevelToFile(GameState->LevelPath, &GameState->CurrentLevel, GameState);
                             }
                         }
                         break;
