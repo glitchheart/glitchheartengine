@@ -261,20 +261,17 @@ static void SpawnWillDrop(game_state* GameState, glm::vec2 Position, i32* Handle
     
     render_entity* RenderEntity = &GameState->RenderState.RenderEntities[GameState->RenderState.RenderEntityCount];
     
-    Will->RenderEntityHandle = GameState->RenderState.RenderEntityCount;
-    
     RenderEntity->ShaderIndex = Shader_Spritesheet;
     RenderEntity->Rendered = true;
     RenderEntity->Background = false;
     RenderEntity->RenderType = Render_Type_Object;
-    //RenderEntity->Texture = GameState->RenderState.Textures["will_glow"];
     RenderEntity->Object = &*Will;
     
     Will->RenderEntityHandle = GameState->RenderState.RenderEntityCount++;
-    printf("Will\n");
+    
     RenderEntity->Color = glm::vec4(1, 1, 1, 1);
     
-    Will->LightSourceHandle = LoadPointlight(GameState, glm::vec4(0.2f, 0.15f, 0.65f, 0.3f), 0.45f, 0.2f, 1.0f,0.2f, GameState->CharacterData.LostWillPosition, true,0.9, 0.0007f);
+    Will->LightSourceHandle = LoadPointlight(GameState, glm::vec4(0.2f, 0.15f, 0.65f, 0.3f), 0.45f, 0.2f, 1.0f,0.2f, GameState->CharacterData.LostWillPosition, true, 0.9, 0.0007f);
     
     GameState->Objects[GameState->ObjectCount++];
 }

@@ -400,8 +400,13 @@ static void EditorUpdateEntities(game_state* GameState, r64 DeltaTime)
                             {
                                 glm::vec2 NewPos = ToCartesian(glm::vec2(Pos.x, Pos.y));
                                 
-                                NewPos.x = glm::floor(NewPos.x / 0.5f);
-                                NewPos.y = glm::floor(NewPos.y / 0.5f);
+                                NewPos.x /= 0.5f;
+                                NewPos.y /= 0.5f;
+                                
+                                glm::vec2 ExactPos = NewPos;
+                                
+                                NewPos.x = glm::floor(NewPos.x);
+                                NewPos.y = glm::floor(NewPos.y);
                                 
                                 if(GetMouseButtonDown(Mouse_Left, GameState))
                                 {
@@ -413,9 +418,10 @@ static void EditorUpdateEntities(game_state* GameState, r64 DeltaTime)
                                     {
                                         entity* Entity = &GameState->Entities[EntityIndex];
                                         
-                                        if(Entity->Type != Entity_Weapon && NewPos.x >= Entity->Position.x - Entity->Scale / 2 && NewPos.y < Entity->Position.y + Entity->Scale && NewPos.x < Entity->Position.x + Entity->Scale && NewPos.y > Entity->Position.y)
+                                        if(Entity->Type != Entity_Weapon && NewPos.x >= Entity->Position.x - Entity->Scale && NewPos.y < Entity->Position.y + Entity->Scale && NewPos.x < Entity->Position.x + Entity->Scale && NewPos.y > Entity->Position.y)
                                         {
                                             Selected = Entity;
+                                            GameState->EditorState.CurrentSelectedEntityOffset = Entity->Position - ExactPos;
                                             break;
                                         }
                                     }
@@ -425,7 +431,7 @@ static void EditorUpdateEntities(game_state* GameState, r64 DeltaTime)
                                 
                                 if(GameState->EditorState.SelectedEntity && GetMouseButton(Mouse_Left, GameState))
                                 {
-                                    GameState->EditorState.SelectedEntity->Position = glm::vec2(NewPos.x, NewPos.y - GameState->EditorState.SelectedEntity->Scale / 2 );
+                                    GameState->EditorState.SelectedEntity->Position = glm::vec2(NewPos.x + GameState->EditorState.CurrentSelectedEntityOffset.x, NewPos.y - GameState->EditorState.SelectedEntity->Scale / 2 + GameState->EditorState.CurrentSelectedEntityOffset.y);
                                 }
                             }
                         }

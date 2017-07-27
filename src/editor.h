@@ -125,6 +125,7 @@ struct editor_state
     Editor_Placement_Mode PlacementMode = Editor_Placement_Tile;
     
     entity* SelectedEntity;
+    glm::vec2 CurrentSelectedEntityOffset;
     u32 SelectedTileType = 1;
     glm::vec2 SelectedTilePosition;
     Entity_Placement_Type PlacementEntity;
