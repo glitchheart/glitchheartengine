@@ -335,5 +335,6 @@ static void CheckEditorUIInput(game_state* GameState, r64 DeltaTime)
     if(GameState->EditorState.SelectedEntity && GetKeyDown(Key_Delete,GameState))
     {
         DeleteEntity(GameState,GameState->EditorState.SelectedEntity->EntityIndex);
+        SaveLevelToFile(GameState->LevelPath, &GameState->CurrentLevel, GameState);
     }
 }

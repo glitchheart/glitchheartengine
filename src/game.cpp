@@ -444,7 +444,6 @@ static void EditorUpdateEntities(game_state* GameState, r64 DeltaTime)
                                     case Placement_Entity_Skeleton:
                                     {
                                         LoadSkeletonData(GameState, -1, glm::vec2(NewPos.x, NewPos.y - 0.5f));
-                                        SaveLevelToFile(GameState->LevelPath, &GameState->CurrentLevel, GameState);
                                     }
                                     break;
                                     case Placement_Entity_Blob:
