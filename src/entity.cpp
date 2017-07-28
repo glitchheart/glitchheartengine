@@ -126,7 +126,7 @@ void Hit(game_state* GameState, sound_queue* SoundQueue, entity* ByEntity, entit
         {
             if(ByEntity->Type == Entity_Player)
             {
-                PlaySoundEffect(&GameState->SoundManager, SoundQueue, &GameState->SoundManager.ShieldImpact);
+                PLAY_SOUND(ShieldImpact);
                 StartTimer(GameState, ByEntity->StaggerCooldownTimer);
             }
         }
@@ -141,11 +141,11 @@ void Hit(game_state* GameState, sound_queue* SoundQueue, entity* ByEntity, entit
             
             if(ran == 0)
             {
-                PlaySoundEffect(&GameState->SoundManager, SoundQueue, &GameState->SoundManager.Splash01, 0.95f);
+                PLAY_SOUND(Splash01, 0.95f);
             }
             else
             {
-                PlaySoundEffect(&GameState->SoundManager, SoundQueue, &GameState->SoundManager.Splash01,0.85f);
+                PLAY_SOUND(Splash01, 0.85f);
             }
             
             HitEntity->HitRecoilDirection = glm::normalize(HitEntity->Position - ByEntity->Position);
@@ -957,7 +957,7 @@ AI_FUNC(MinotaurIdle)
     if(DistanceToPlayer <= Entity->Enemy.MaxAlertDistance)
     {
         Enemy.AIState = AI_Alerted;
-        PlaySoundEffect(&GameState->SoundManager, SoundQueue, &GameState->SoundManager.MinotaurGrunt02);
+        PLAY_SOUND(MinotaurGrunt02);
         StartTimer(GameState, Entity->Enemy.Minotaur.AlertedTimer);
     }
     else
@@ -1035,7 +1035,7 @@ AI_FUNC(MinotaurCharging)
     else if(TimerDone(GameState, Minotaur.ChargingTimer) && DistanceToPlayer <= Enemy.AttackDistance)
     {
         Enemy.AIState = AI_Attacking;
-        PlaySoundEffect(&GameState->SoundManager, SoundQueue, &GameState->SoundManager.MinotaurGrunt01);
+        PLAY_SOUND(MinotaurGrunt01);
         
         Enemy.LastAttackMoveDirection = glm::normalize(Player.Position - Entity->Position);
         
@@ -1064,7 +1064,7 @@ AI_FUNC(MinotaurDefending)
         RenderEntity.Color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
         Entity->Enemy.AIState = AI_Attacking;
         
-        PlaySoundEffect(&GameState->SoundManager, SoundQueue, &GameState->SoundManager.MinotaurGrunt01);
+        PLAY_SOUND(MinotaurGrunt01);
         
         entity& Player = GameState->Entities[GameState->PlayerIndex];
         Entity->Enemy.LastAttackMoveDirection = glm::normalize(Player.Position - Entity->Position);
@@ -1130,7 +1130,7 @@ AI_FUNC(MinotaurAttacking)
                 {
                     Minotaur.IsAttacking = false;
                     Enemy.AIState = AI_Attacking;
-                    PlaySoundEffect(&GameState->SoundManager, SoundQueue, &GameState->SoundManager.MinotaurGrunt01);
+                    PLAY_SOUND(MinotaurGrunt01);
                     
                     MinotaurSetAttackMode(Entity, GameState);
                 }
@@ -1180,7 +1180,7 @@ AI_FUNC(MinotaurAttacking)
                 if(Entity->IsKinematic)
                 {
                     Entity->IsKinematic = false;
-                    PlaySoundEffect(&GameState->SoundManager, SoundQueue, &GameState->SoundManager.MinotaurStomp);
+                    PLAY_SOUND(MinotaurStomp);
                     StartTimer(GameState, Entity->Enemy.Minotaur.JumpAttackImpactTimer);
                 }
                 
@@ -1209,7 +1209,7 @@ AI_FUNC(MinotaurAttacking)
                     if(rand() % 2 == 0 && DistanceToPlayer <= Enemy.AttackDistance) //@Incomplete: Maybe set a specific percentage for this in the .dat-file
                     {
                         Enemy.AIState = AI_Attacking;
-                        PlaySoundEffect(&GameState->SoundManager, SoundQueue, &GameState->SoundManager.MinotaurGrunt01);
+                        PLAY_SOUND(MinotaurGrunt01);
                         Enemy.LastAttackMoveDirection = glm::normalize(Player.Position - Entity->Position);
                         MinotaurSetAttackMode(Entity, GameState);
                     }
@@ -1255,7 +1255,7 @@ AI_FUNC(MinotaurWandering)
     
     if(Entity->Enemy.AIState == AI_Alerted || Entity->Enemy.AIState == AI_Following)
     {
-        PlaySoundEffect(&GameState->SoundManager, SoundQueue, &GameState->SoundManager.MinotaurGrunt02);
+        PLAY_SOUND(MinotaurGrunt02);
     }
 }
 
@@ -1509,7 +1509,7 @@ AI_FUNC(BlobAttacking)
         PlayAnimation(Entity, "explosion", GameState);
         Entity->Health = 0;
         Entity->Velocity = glm::vec2();
-        PlaySoundEffect(&GameState->SoundManager, SoundQueue, &GameState->SoundManager.Explosion);
+        PLAY_SOUND(Explosion);
     }
 }
 
@@ -1567,7 +1567,7 @@ static void LoadBonfireData(game_state* GameState, sound_queue* SoundQueue, i32 
         {
             DEBUG_PRINT("Entityhandle: %d\n", Entity->EntityIndex);
             Entity->Position = glm::vec2(Position.x, Position.y);
-            PlaySoundEffect(&GameState->SoundManager, SoundQueue,&GameState->SoundManager.Bonfire, 1.0f, Entity->Position.x, Entity->Position.y, 10.0f, true, Entity->EntityIndex);
+            PLAY_SOUND(Bonfire, 1.0f, Entity->Position.x, Entity->Position.y, 10.0f, true, Entity->EntityIndex);
         }
         
         fclose(File);
@@ -2202,7 +2202,7 @@ void UpdatePlayer(entity* Entity, game_state* GameState, sound_queue* SoundQueue
         
         if(Entity->Player.TakingHealthPotion && TimerDone(GameState, Entity->Player.HealthPotionTimer))
         {
-            PlaySoundEffect(&GameState->SoundManager, SoundQueue, &GameState->SoundManager.UseHealth);
+            PLAY_SOUND(UseHealth);
             Entity->Health = Min((i16)GameState->CharacterData.Health, Entity->Health + 30);
             Entity->Player.TakingHealthPotion = false;
         }
@@ -2358,7 +2358,7 @@ void UpdatePlayer(entity* Entity, game_state* GameState, sound_queue* SoundQueue
         
         if(!Entity->Player.IsDashing && TimerDone(GameState, Entity->Player.DashCooldownTimer) && !Entity->Player.IsAttacking  && TimerDone(GameState, Entity->Player.DashTimer) && GetActionButtonDown(Action_Dash, InputController)  && Entity->Player.Stamina >= Entity->Player.RollStaminaCost - Entity->Player.MinDiffStamina)
         {
-            PlaySoundEffect(&GameState->SoundManager, SoundQueue, &GameState->SoundManager.Dash);
+            PLAY_SOUND(Dash);
             Entity->Player.IsDashing = true;
             
             glm::vec2 Direction = UsingController ? glm::normalize(glm::vec2(GetInputX(InputController), GetInputY(InputController))) : DirectionToMouse;
@@ -2589,11 +2589,11 @@ void UpdatePlayer(entity* Entity, game_state* GameState, sound_queue* SoundQueue
             i32 Ran = rand() % 2;
             if(Ran == 0)
             {
-                PlaySoundEffect(&GameState->SoundManager, SoundQueue, &GameState->SoundManager.SwordSlash01);
+                PLAY_SOUND(SwordSlash01, 0.95f);
             }
             else
             {
-                PlaySoundEffect(&GameState->SoundManager, SoundQueue,  &GameState->SoundManager.SwordSlash01, 0.85f);
+                PLAY_SOUND(SwordSlash01, 0.85f);
             }
             
         }
@@ -2986,12 +2986,14 @@ void UpdateMinotaur(entity* Entity, game_state* GameState, sound_queue* SoundQue
     {
         if(Entity->Hit)
         {
-            PlaySoundEffect(&GameState->SoundManager, SoundQueue, &GameState->SoundManager.MinotaurHit);
+            PLAY_SOUND(MinotaurHit);
+            
             Enemy.TimesHit++;
             
             if(Entity->Health <= 0)
             {
-                PlaySoundEffect(&GameState->SoundManager, SoundQueue, &GameState->SoundManager.MinotaurDeath);
+                PLAY_SOUND(MinotaurDeath);
+                
                 PlayAnimation(Entity, "minotaur_death", GameState);
                 Entity->AnimationInfo.FreezeFrame = true;
                 Enemy.AIState = AI_Dying;
@@ -3177,7 +3179,7 @@ void UpdateBarrel(entity* Entity, game_state* GameState, sound_queue* SoundQueue
                 PlayAnimation(Entity, "barrel_destroy", GameState);
                 Entity->Dead = true;
                 Entity->Velocity = glm::vec2(0, 0);
-                PlaySoundEffect(&GameState->SoundManager, SoundQueue, &GameState->SoundManager.BarrelBreak);
+                PLAY_SOUND(BarrelBreak);
             }
         }
         

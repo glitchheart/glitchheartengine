@@ -132,9 +132,6 @@ int main(void)
 {
     DEBUG_PRINT("Initializing gamestate\n");
     
-    //game_state GameState = {};
-    //GameState.ShouldReload = true;
-    
     InitKeys();
     
     config_data ConfigData;
@@ -152,8 +149,7 @@ int main(void)
     game_state* GameState = (game_state*)GameMemory.PermanentStorage;
     GameState->ShouldReload = true;
     
-    render_state RenderState;
-    InitializeOpenGL(&GameMemory, &RenderState, &ConfigData);
+    InitializeOpenGL(&GameMemory, &ConfigData);
     
     game_code Game = LoadGameCode();
     
@@ -202,7 +198,7 @@ int main(void)
             if(GameState->GameMode == Mode_Exit)
             {
                 DEBUG_PRINT("Quit\n");
-                glfwSetWindowShouldClose(RenderState.Window, GLFW_TRUE);
+                glfwSetWindowShouldClose(GameState->RenderState.Window, GLFW_TRUE);
             }
         }
         
@@ -255,6 +251,6 @@ int main(void)
     }
     
     //CleanupSound(&SoundDevice,&SoundManager);
-    CloseWindow(&RenderState);
+    CloseWindow(&GameState->RenderState);
     //_CrtDumpMemoryLeaks();
 }
