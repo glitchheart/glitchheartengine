@@ -484,6 +484,7 @@ static void EditorUpdateEntities(game_state* GameState, input_controller* InputC
                         break;
                         case Editor_Placement_Tile:
                         {
+                            printf("Ey\n");
                             GameState->EditorState.TileBrushWidthField->Active = true;
                             GameState->EditorState.TileBrushHeightField->Active = true;
                             
@@ -629,7 +630,7 @@ static void EditorUpdateEntities(game_state* GameState, input_controller* InputC
                             GameState->EditorState.LoadedAnimation = 0;
                         }
                         
-                        if(KEY(Key_Enter))
+                        if(KEY_DOWN(Key_Enter))
                         {
                             GameState->EditorState.AnimationMode = Animation_Edit;
                             ToggleAnimationFields(&GameState->EditorState, true);
