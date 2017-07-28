@@ -8,8 +8,10 @@
 #include <cstdio>
 
 #include "platform.h"
+
 #include "gmap.h"
 #include "opengl_rendering.h"
+#include "sound.h"
 #include "animation.h"
 
 #include "collision.h"
@@ -17,7 +19,7 @@
 #include "entity.h"
 #include "level.h"
 #include "keycontroller.h"
-#include "sound.h"
+
 #include "console.h"
 #include "editor.h"
 #include "menu.h"
@@ -83,6 +85,7 @@ struct character_level
 
 struct character_data
 {
+    b32 IsInitialized = 0;
     i32 Level = 0;
     i32 Health = 0;
     i32 Stamina = 0;
@@ -150,7 +153,6 @@ struct game_state
     i32 PlayerIndex;
     char * LevelPath;
     level CurrentLevel;
-    input_controller InputController;
     sound_manager SoundManager;
     
     u16 EntityCount;
@@ -179,18 +181,8 @@ struct game_state
     
     animation_map AnimationMap;
     
-    integer_map KeyMappings;
-    integer_map MouseButtonMappings;
-    integer_map ControllerMappings;
-    
     entity_file_reload_data* ReloadData;
 };
-
-#define UPDATE(name)void name(r64 DeltaTime, game_state* GameState)
-typedef UPDATE(update);
-UPDATE(UpdateStub)
-{
-}
 
 void StartTimer(game_state* GameState, timer& Timer)
 {
@@ -288,6 +280,7 @@ void LoadGame(game_state* GameState)
             
             fclose(File);
             DEBUG_PRINT("Loaded game!\n");
+            GameState->CharacterData.IsInitialized = true;
         }
     }
     else

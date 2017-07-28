@@ -90,7 +90,7 @@ void ExecuteCommand(game_state *GameState)
     }
 }
 
-static void CheckConsoleInput(game_state* GameState, r64 DeltaTime)
+static void CheckConsoleInput(game_state* GameState, input_controller* InputController, r64 DeltaTime)
 {
     if(GameState->Console.Open && GameState->Console.CurrentTime < GameState->Console.TimeToAnimate)
     {
@@ -103,7 +103,7 @@ static void CheckConsoleInput(game_state* GameState, r64 DeltaTime)
         GameState->Console.CurrentTime -= DeltaTime;
     }
     
-    if (GetKeyDown(Key_Tab, GameState))
+    if (GetKeyDown(Key_Tab, InputController))
     {
         GameState->Console.Open = !GameState->Console.Open;
         
@@ -114,7 +114,7 @@ static void CheckConsoleInput(game_state* GameState, r64 DeltaTime)
     }
     
     //@Fix there could still be some issues with deleting too many characters at once.
-    if (GetKey(Key_Backspace, GameState) && GameState->Console.Open)
+    if (GetKey(Key_Backspace, InputController) && GameState->Console.Open)
     {
         if(GameState->Console.DeleteTime >= 0.1 || GameState->Console.DeleteTime == 0) //character delete delay
         {
@@ -125,12 +125,12 @@ static void CheckConsoleInput(game_state* GameState, r64 DeltaTime)
         GameState->Console.DeleteTime += DeltaTime;
     }
     
-    if(GetKeyUp(Key_Backspace, GameState))
+    if(GetKeyUp(Key_Backspace, InputController))
     {
         GameState->Console.DeleteTime = 0;
     }
     
-    if (GetKeyDown(Key_Enter, GameState) && GameState->Console.Open)
+    if (GetKeyDown(Key_Enter, InputController) && GameState->Console.Open)
     {
         ExecuteCommand(GameState);
     }

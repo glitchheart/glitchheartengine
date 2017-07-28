@@ -1,134 +1,92 @@
-#ifdef KEY_INIT
-static void SetInvalidKeys(input_controller *InputController)
+b32 GetMouseButton(Mouse_Code Key, input_controller* InputController)
 {
-    InputController->AnyKeyPressed = false;
-    for(u32 KeyCode = 0; KeyCode < NUM_KEYS; KeyCode++)
-    {
-        if(InputController->KeysJustPressed[KeyCode] == Key_JustPressed)
-        {
-            InputController->KeysJustPressed[KeyCode] = Key_Invalid;
-        }
-        InputController->KeysUp[KeyCode] = false;
-    } 
+    return InputController->MouseButtonDown[Key];
 }
 
-static void SetControllerInvalidKeys(input_controller *InputController)
+b32 GetMouseButtonDown(Mouse_Code Key, input_controller* InputController)
 {
-    InputController->AnyKeyPressed = false;
-    for(u32 KeyCode = 0; KeyCode < NUM_JOYSTICK_KEYS; KeyCode++)
-    {
-        if(InputController->JoystickKeysJustPressed[KeyCode] == Key_JustPressed)
-        {
-            InputController->JoystickKeysJustPressed[KeyCode] = Key_Invalid;
-        }
-    }
+    return InputController->MouseButtonJustPressed[Key] == Key_JustPressed;
 }
 
-static void SetMouseInvalidKeys(input_controller *InputController)
-{
-    InputController->AnyKeyPressed = false;
-    for(u32 KeyCode = 0; KeyCode < NUM_MOUSE_BUTTONS; KeyCode++)
-    {
-        if(InputController->MouseButtonJustPressed[KeyCode] == Key_JustPressed)
-        {
-            InputController->MouseButtonJustPressed[KeyCode] = Key_Invalid;
-        }
-    }
-    InputController->ScrollX = 0;
-    InputController->ScrollY = 0;
-}
-#endif
-
-b32 GetMouseButton(Mouse_Code Key, game_state* GameState)
-{
-    return GameState->InputController.MouseButtonDown[Key];
-}
-
-b32 GetMouseButtonDown(Mouse_Code Key, game_state* GameState)
-{
-    return GameState->InputController.MouseButtonJustPressed[Key] == Key_JustPressed;
-}
-
-b32 GetKey(Key_Code Key, game_state *GameState)
+b32 GetKey(Key_Code Key, input_controller* InputController)
 {
     if(Key == Key_MouseLeft)
-        return GetMouseButton(Mouse_Left, GameState);
+        return GetMouseButton(Mouse_Left, InputController);
     if(Key == Key_MouseRight)
-        return GetMouseButton(Mouse_Right, GameState);
-    return GameState->InputController.KeysDown[Key];
+        return GetMouseButton(Mouse_Right, InputController);
+    return InputController->KeysDown[Key];
 }
 
-b32 GetKeyDown(Key_Code Key, game_state *GameState)
+b32 GetKeyDown(Key_Code Key, input_controller* InputController)
 {
     if(Key == Key_MouseLeft)
-        return GetMouseButtonDown(Mouse_Left, GameState);
+        return GetMouseButtonDown(Mouse_Left, InputController);
     if(Key == Key_MouseRight)
-        return GetMouseButtonDown(Mouse_Right, GameState);
-    return GameState->InputController.KeysJustPressed[Key] == Key_JustPressed;
+        return GetMouseButtonDown(Mouse_Right, InputController);
+    return InputController->KeysJustPressed[Key] == Key_JustPressed;
 }
 
-b32 GetKeyUp(Key_Code Key, game_state *GameState)
+b32 GetKeyUp(Key_Code Key, input_controller* InputController)
 {
-    return GameState->InputController.KeysUp[Key];
+    return InputController->KeysUp[Key];
 }
 
-b32 GetJoystickKey(Controller_Code Key, game_state* GameState)
+b32 GetJoystickKey(Controller_Code Key, input_controller* InputController)
 {
-    return GameState->InputController.JoystickKeysDown[Key];
+    return InputController->JoystickKeysDown[Key];
 }
 
 //@Incomplete: Needs direction bool
-b32 GetJoystickAxisXDown(game_state* GameState, Stick Stick = Stick_Left)
+b32 GetJoystickAxisXDown(input_controller* InputController, Stick Stick = Stick_Left)
 {
     i32 Axis = Stick == Stick_Left ? 0 : 2;
     
-    return GameState->InputController.AxesJustPressed[Axis] == Key_JustPressed;
+    return InputController->AxesJustPressed[Axis] == Key_JustPressed;
 }
 
-b32 GetJoystickAxisYDown(game_state* GameState, b32 ForUpDirection, Stick Stick = Stick_Left)
+b32 GetJoystickAxisYDown(input_controller* InputController, b32 ForUpDirection, Stick Stick = Stick_Left)
 {
     i32 Axis = Stick == Stick_Left ? 1 : 3;
     b32 CorrectDirection = false;
     
     if(ForUpDirection)
     {
-        switch(GameState->InputController.ControllerType)
+        switch(InputController->ControllerType)
         {
             case Controller_Xbox:
-            CorrectDirection = GameState->InputController.Axes[Axis] > 0;
+            CorrectDirection = InputController->Axes[Axis] > 0;
             break;
             case Controller_PS4:
-            CorrectDirection = GameState->InputController.Axes[Axis] < 0;
+            CorrectDirection = InputController->Axes[Axis] < 0;
             break;
         }
     }
     else
     {
-        switch(GameState->InputController.ControllerType)
+        switch(InputController->ControllerType)
         {
             case Controller_Xbox:
-            CorrectDirection = GameState->InputController.Axes[Axis] < 0;
+            CorrectDirection = InputController->Axes[Axis] < 0;
             break;
             case Controller_PS4:
-            CorrectDirection = GameState->InputController.Axes[Axis] > 0;
+            CorrectDirection = InputController->Axes[Axis] > 0;
             break;
         }
     }
     
-    return CorrectDirection && GameState->InputController.AxesJustPressed[Axis] == Key_JustPressed;
+    return CorrectDirection && InputController->AxesJustPressed[Axis] == Key_JustPressed;
 }
 
-b32 GetJoystickKeyDown(Controller_Code Key, game_state* GameState)
+b32 GetJoystickKeyDown(Controller_Code Key, input_controller* InputController)
 {
-    return GameState->InputController.JoystickKeysJustPressed[Key] == Key_JustPressed;
+    return InputController->JoystickKeysJustPressed[Key] == Key_JustPressed;
 }
 
-void GetActionButtonsForQueue(game_state* GameState)
+void GetActionButtonsForQueue(input_controller* InputController)
 {
-    auto InputController = &GameState->InputController;
     b32 ActionQueued = false;
     
-    if(GameState->InputController.ActionRunning)
+    if(InputController->ActionRunning)
     {
         for(i32 Action = 0; Action < Action_Count; Action++)
         {
@@ -136,19 +94,19 @@ void GetActionButtonsForQueue(game_state* GameState)
             {
                 if(InputController->ControllerType == Controller_PS4)
                 {
-                    if(GetJoystickKeyDown(InputController->ActionButtonPS4ControllerBindings[Action], GameState))
+                    if(GetJoystickKeyDown(InputController->ActionButtonPS4ControllerBindings[Action], InputController))
                     {
                         InputController->NextAction = (Action_Button)Action;
-                        GameState->InputController.HasQueuedAction = true;
+                        InputController->HasQueuedAction = true;
                         ActionQueued = true;
                     }
                 }
                 else
                 {
-                    if(GetJoystickKeyDown(InputController->ActionButtonXboxControllerBindings[Action], GameState))
+                    if(GetJoystickKeyDown(InputController->ActionButtonXboxControllerBindings[Action], InputController))
                     {
                         InputController->NextAction = (Action_Button)Action;
-                        GameState->InputController.HasQueuedAction = true;
+                        InputController->HasQueuedAction = true;
                         ActionQueued = true;
                     }
                 }
@@ -156,28 +114,28 @@ void GetActionButtonsForQueue(game_state* GameState)
             
             if(!ActionQueued)
             {
-                if(GetKeyDown(InputController->ActionButtonKeyboardBindings[Action], GameState))
+                if(GetKeyDown(InputController->ActionButtonKeyboardBindings[Action], InputController))
                 {
                     InputController->NextAction = (Action_Button)Action;
-                    GameState->InputController.HasQueuedAction = true;
+                    InputController->HasQueuedAction = true;
                 }
             }
         }
     }
 }
 
-void ResetActionButtonQueue(game_state* GameState)
+void ResetActionButtonQueue(input_controller* InputController)
 {
-    GameState->InputController.HasQueuedAction = false;
+    InputController->HasQueuedAction = false;
 }
 
-b32 GetActionButtonDown(Action_Button ActionButton, game_state* GameState)
+b32 GetActionButtonDown(Action_Button ActionButton, input_controller* InputController)
 {
-    if(GameState->InputController.HasQueuedAction)
+    if(InputController->HasQueuedAction)
     {
-        if((Action_Button)GameState->InputController.NextAction == ActionButton)
+        if((Action_Button)InputController->NextAction == ActionButton)
         {
-            GameState->InputController.HasQueuedAction = false;
+            InputController->HasQueuedAction = false;
             return true;
         }
         else return false;
@@ -185,66 +143,66 @@ b32 GetActionButtonDown(Action_Button ActionButton, game_state* GameState)
     else
     {
         b32 ButtonDown = false;
-        if(GameState->InputController.ControllerPresent)
+        if(InputController->ControllerPresent)
         {
-            switch(GameState->InputController.ControllerType)
+            switch(InputController->ControllerType)
             {
                 case Controller_Xbox:
                 {
-                    ButtonDown = ButtonDown ||  GetJoystickKeyDown(GameState->InputController.ActionButtonXboxControllerBindings[ActionButton], GameState);
+                    ButtonDown = ButtonDown ||  GetJoystickKeyDown(InputController->ActionButtonXboxControllerBindings[ActionButton], InputController);
                 }
                 break;
                 case Controller_PS4:
                 {
-                    ButtonDown = ButtonDown || GetJoystickKeyDown(GameState->InputController.ActionButtonPS4ControllerBindings[ActionButton], GameState);
+                    ButtonDown = ButtonDown || GetJoystickKeyDown(InputController->ActionButtonPS4ControllerBindings[ActionButton], InputController);
                 }
             }
         }
         
-        ButtonDown = ButtonDown ||  GetKeyDown(GameState->InputController.ActionButtonKeyboardBindings[ActionButton], GameState);
+        ButtonDown = ButtonDown ||  GetKeyDown(InputController->ActionButtonKeyboardBindings[ActionButton], InputController);
         
         return ButtonDown;
     }
 }
 
-b32 GetActionButton(Action_Button ActionButton, game_state* GameState)
+b32 GetActionButton(Action_Button ActionButton, input_controller* InputController)
 {
     b32 Button = false;
-    if(GameState->InputController.ControllerPresent)
+    if(InputController->ControllerPresent)
     {
-        switch(GameState->InputController.ControllerType)
+        switch(InputController->ControllerType)
         {
             case Controller_Xbox:
             {
-                Button = Button || GetJoystickKey(GameState->InputController.ActionButtonXboxControllerBindings[ActionButton], GameState);
+                Button = Button || GetJoystickKey(InputController->ActionButtonXboxControllerBindings[ActionButton], InputController);
             }
             break;
             case Controller_PS4:
             {
-                Button = Button || GetJoystickKey(GameState->InputController.ActionButtonPS4ControllerBindings[ActionButton], GameState);
+                Button = Button || GetJoystickKey(InputController->ActionButtonPS4ControllerBindings[ActionButton], InputController);
             }
         }
     }
     
-    Button = Button || GetKey(GameState->InputController.ActionButtonKeyboardBindings[ActionButton], GameState);
+    Button = Button || GetKey(InputController->ActionButtonKeyboardBindings[ActionButton], InputController);
     
     return Button;
 }
 
-float GetInputX(game_state* GameState, Stick Stick = Stick_Left)
+float GetInputX(input_controller* InputController, Stick Stick = Stick_Left)
 {
     i32 Axis = Stick == Stick_Left ? 0 : 2;
     
     r32 InputX = 0.0f;
     
-    if(Abs(GameState->InputController.Axes[Axis]) > GameState->InputController.ControllerDeadzone)
-        InputX = GameState->InputController.Axes[Axis]; 
+    if(Abs(InputController->Axes[Axis]) > InputController->ControllerDeadzone)
+        InputX = InputController->Axes[Axis]; 
     
-    if (GetKey(Key_A, GameState))
+    if (GetKey(Key_A, InputController))
     {
         InputX += -1;
     }
-    else if (GetKey(Key_D, GameState))
+    else if (GetKey(Key_D, InputController))
     {
         InputX += 1;
     }
@@ -254,33 +212,47 @@ float GetInputX(game_state* GameState, Stick Stick = Stick_Left)
     return InputX;
 }
 
-float GetInputY(game_state* GameState, Stick Stick = Stick_Left)
+float GetInputY(input_controller* InputController, Stick Stick = Stick_Left)
 {
     i32 Axis = Stick == Stick_Left ? 1 : 3;
     
     r32 InputY = 0.0f;
     
-    if(Abs(GameState->InputController.Axes[Axis]) > GameState->InputController.ControllerDeadzone)
+    if(Abs(InputController->Axes[Axis]) > InputController->ControllerDeadzone)
     {
-        switch(GameState->InputController.ControllerType)
+        switch(InputController->ControllerType)
         {
             case Controller_Xbox:
-            InputY = GameState->InputController.Axes[Axis]; // Might be another axis index for other controllers
+            InputY = InputController->Axes[Axis]; // Might be another axis index for other controllers
             break;
             case Controller_PS4:
-            InputY = -1 * GameState->InputController.Axes[Axis];
+            InputY = -1 * InputController->Axes[Axis];
             break;
         }
     }
     
-    if (GetKey(Key_W, GameState))
+    if (GetKey(Key_W, InputController))
     {
         InputY += 1;
     }
-    else if (GetKey(Key_S, GameState))
+    else if (GetKey(Key_S, InputController))
     {
         InputY += -1;
     }
     
     return InputY;
 }
+
+#define KEY(Key) GetKey(Key, InputController)
+#define KEY_DOWN(Key) GetKeyDown(Key, InputController)
+#define KEY_UP(Key) GetKeyUp(Key, InputController)
+#define JOYSTICK_KEY(Key) GetJoystickKey(Key, InputController)
+#define JOYSTICK_KEY_DOWN(Key) GetJoystickKeyDown(Key, InputController)
+#define JOYSTICK_AXIS_X_DOWN(...) GetJoystickAxisXDown(InputController,__VA_ARGS__)
+#define JOYSTICK_AXIS_Y_DOWN(Up, ...) GetJoystickAxisYDown(InputController,Up, __VA_ARGS__)
+#define MOUSE(Key) GetMouseButton(Key, InputController)
+#define MOUSE_DOWN(Key) GetMouseButtonDown(Key, InputController)
+#define ACTION_DOWN(Action) GetActionButtonDown(Action, InputController)
+#define ACTION(Action) GetActionButton(Action, InputController)
+#define INPUT_X(...) GetInputX(InputController,__VA_ARGS__)
+#define INPUT_Y(...) GetInputX(InputController,__VA_ARGS__)

@@ -88,11 +88,12 @@ static void LoadWavFile(const char *Filename, sound_effect *LoadedSound)
     }
 }
 
-static void ResetSoundQueue(sound_manager *SoundManager)
+static void ResetSoundQueue(sound_queue* SoundQueue)
 {
-    sound_queue SoundQueue = {};
-    SoundQueue.SoundCount = 0;
-    SoundManager->SoundQueue = SoundQueue;
+    for(i32 Sound = 0; Sound < SoundQueue->SoundCount; Sound++)
+    {
+        SoundQueue->Sounds[Sound].Buffer = 0;
+    }
 }
 
 static void InitAudio(sound_device *SoundDevice)
@@ -132,6 +133,13 @@ static void InitAudio(sound_device *SoundDevice)
     alDistanceModel(AL_LINEAR_DISTANCE_CLAMPED);
     
     alGenSources((ALuint)SOURCES,SoundDevice->Sources);
+    
+    SoundDevice->Stopped = false;
+    SoundDevice->Paused = false;
+    SoundDevice->Muted = false;
+    SoundDevice->PrevStopped = false;
+    SoundDevice->PrevPaused = false;
+    SoundDevice->PrevMuted = false;
     
     SoundDevice->IsInitialized = SoundDevice->Device && SoundDevice->Context;
     source_to_sound_Map_Init(&SoundDevice->SourceToSound, HashInt, 32);
@@ -230,9 +238,8 @@ static void PlaySound(sound_effect *SoundEffect,sound_device* Device)
     }
 }
 
-static void StopSound(game_state* GameState, sound_device* SoundDevice)
+static void StopSound(sound_device* SoundDevice)
 {
-    
     for(u32 SourceIndex = 0; SourceIndex < SOURCES; SourceIndex++)
     {
         alSourcef(SoundDevice->Sources[SourceIndex],AL_GAIN,0);
@@ -243,11 +250,9 @@ static void StopSound(game_state* GameState, sound_device* SoundDevice)
             alSourcef(SoundDevice->Sources[SourceIndex],AL_GAIN,SoundDevice->SourceGain[SourceIndex]);
         }
     }
-    
-    ResetSoundQueue(&GameState->SoundManager);
 }
 
-static void PauseSound(game_state* GameState, sound_device* SoundDevice)
+static void PauseSound(sound_device* SoundDevice)
 {
     for(u32 SourceIndex = 0; SourceIndex < SOURCES; SourceIndex++)
     {
@@ -256,7 +261,6 @@ static void PauseSound(game_state* GameState, sound_device* SoundDevice)
         alGetSourcei(SoundDevice->Sources[SourceIndex],AL_SOURCE_STATE,&SourceState);
         if(SourceState == AL_PLAYING)
         {
-            
             alSourcePause(SoundDevice->Sources[SourceIndex]);
         }
         else
@@ -271,53 +275,52 @@ static void PauseSound(game_state* GameState, sound_device* SoundDevice)
 }
 
 
-static void PlaySounds(game_state *GameState, sound_device* Device)
+static void PlaySounds(game_memory *GameMemory, sound_device* Device, sound_queue* SoundQueue)
 {
-    if(GameState->SoundManager.Muted && !Device->Muted)
+    //DEBUG_PRINT("Stopped: %d, Paused: %d, Muted: %d\n",Device->Stopped,Device->Paused,Device->Muted);
+    game_state* GameState = (game_state*)GameMemory->PermanentStorage;
+    if(Device->Muted && !Device->PrevMuted)
     {
         for(u32 SourceIndex = 0; SourceIndex < SOURCES; SourceIndex++)
         {
             alSourcef(Device->Sources[SourceIndex],AL_GAIN,0);
         }
-        Device->Muted = true;
     }
-    else if(!GameState->SoundManager.Muted)
+    else
     {
         for(u32 SourceIndex = 0; SourceIndex < SOURCES; SourceIndex++)
         {
             alSourcef(Device->Sources[SourceIndex],AL_GAIN,Device->SourceGain[SourceIndex]);
         }
-        Device->Muted = false;
     }
     
-    if(GameState->SoundManager.Stopped)
+    if(Device->Stopped && !Device->PrevStopped)
     {
-        StopSound(GameState,Device);
-        GameState->SoundManager.Stopped = false;
+        StopSound(Device);
+        ResetSoundQueue(SoundQueue);
     }
-    else 
+    else
     {
         for (u32 Sound = 0;
-             Sound < GameState->SoundManager.SoundQueue.SoundCount;
+             Sound < SoundQueue->SoundCount;
              Sound++)
         {
-            PlaySound(&GameState->SoundManager.SoundQueue.Sounds[Sound],Device);
+            PlaySound(&SoundQueue->Sounds[Sound],Device);
         }
-        
-        ResetSoundQueue(&GameState->SoundManager);
-    }
-    if(GameState->SoundManager.Paused)
-    {
-        PauseSound(GameState,Device);
-        Device->Paused = true;
-    }
-    else if(!GameState->SoundManager.Paused && Device->Paused)
-    {
-        alSourcePlayv(SOURCES,Device->Sources);
-        Device->Paused = false;
+        ResetSoundQueue(SoundQueue);
     }
     
-    if(!GameState->SoundManager.Paused && !GameState->SoundManager.Stopped && !GameState->SoundManager.Muted)
+    if(Device->Paused && !Device->PrevPaused)
+    {
+        PauseSound(Device);
+    }
+    else if(!Device->Paused && Device->PrevPaused)
+    {
+        Device->PrevPaused = false;
+        alSourcePlayv(SOURCES,Device->Sources);
+    }
+    
+    if(!Device->Paused && !Device->Stopped && !Device->Muted)
     {
         for(i32 SourceIndex = 0; SourceIndex < SOURCES; SourceIndex++)
         {

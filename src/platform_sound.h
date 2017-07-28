@@ -15,8 +15,11 @@ struct sound_device
     ALuint Sources[SOURCES];
     ALuint Buffers[SOUNDS];
     u32 BufferCount;
+    b32 PrevMuted;
     b32 Muted;
+    b32 PrevPaused;
     b32 Paused;
+    b32 PrevStopped;
     b32 Stopped;
     r32 SourceGain[SOURCES];
     source_to_sound_map SourceToSound;

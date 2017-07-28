@@ -3,7 +3,8 @@
 
 struct asset_manager
 {
-    bool ListenForChanges;
+    b32 IsInitialized;
+    b32 ListenForChanges;
     
     //shaders
     b32 DirtyVertexShaderIndices[Shader_Count]; //set to 1 if they should be reloaded
@@ -12,12 +13,12 @@ struct asset_manager
     time_t FragmentShaderTimes[Shader_Count];
     
     //textures
-    const char* TilesetTexturePath = "'../assets/textures/tiles.png";
+    char* TilesetTexturePath;
     b32 DirtyTileset;
     time_t TilesetTime;
     
     //dll's
-    const char* DllPaths[1] = { "game.dll" };
+    char* DllPaths[1];
     u32 DirtyGameDll;
     FILETIME GameDllTime;
     
@@ -85,6 +86,14 @@ static void CheckDirty(const char* FilePath, time_t LastTime, b32* DirtyId, time
 
 static void StartupFileTimeChecks(asset_manager* AssetManager)
 {
+    if(!AssetManager->IsInitialized)
+    {
+        AssetManager->TilesetTexturePath = "../assets/textures/tiles.png";
+        AssetManager->DllPaths[0] = "game.dll";
+        AssetManager->IsInitialized = true;
+    }
+    
+    
     struct stat sb;
     stat(AssetManager->TilesetTexturePath, &sb);
     AssetManager->TilesetTime =  sb.st_mtime;

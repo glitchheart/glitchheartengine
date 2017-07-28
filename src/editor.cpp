@@ -260,7 +260,7 @@ static void CreateEditorButtons(game_state* GameState)
     GameState->EditorState.Loaded = true;
 }
 
-static void CheckEditorUIInput(game_state* GameState, r64 DeltaTime)
+static void CheckEditorUIInput(game_state* GameState, input_controller* InputController,  r64 DeltaTime)
 {
     switch(GameState->EditorState.Mode)
     {
@@ -268,12 +268,12 @@ static void CheckEditorUIInput(game_state* GameState, r64 DeltaTime)
         {
             if(GameState->EditorState.AnimationMode == Animation_SelectTexture)
             {
-                if(GetKeyDown(Key_Down, GameState))
+                if(KEY_DOWN(Key_Down))
                 {
                     DEBUG_PRINT("Down\n");
                     GameState->EditorState.SelectedTexture++;
                 }
-                else if(GetKeyDown(Key_Up, GameState))
+                else if(KEY_DOWN(Key_Up))
                 {
                     DEBUG_PRINT("Up\n");
                     GameState->EditorState.SelectedTexture--;
@@ -288,13 +288,13 @@ static void CheckEditorUIInput(game_state* GameState, r64 DeltaTime)
             {
                 b32 Changed = false;
                 
-                if(GetKeyDown(Key_Down, GameState))
+                if(GetKeyDown(Key_Down, InputController))
                 {
                     DEBUG_PRINT("Down\n");
                     GameState->EditorState.SelectedAnimation++;
                     Changed = true;
                 }
-                else if(GetKeyDown(Key_Up, GameState))
+                else if(GetKeyDown(Key_Up, InputController))
                 {
                     DEBUG_PRINT("Up\n");
                     GameState->EditorState.SelectedAnimation--;
@@ -322,17 +322,17 @@ static void CheckEditorUIInput(game_state* GameState, r64 DeltaTime)
         break;
     }
     
-    GameState->InputController.DeleteCharacter = GetKeyDown(Key_Backspace, GameState);
+    InputController->DeleteCharacter = KEY_DOWN(Key_Backspace);
     
     r32 SX = 2.0f / GameState->RenderState.WindowWidth;
     r32 SY = 2.0f / GameState->RenderState.WindowHeight;
     
-    auto MouseX = GameState->InputController.MouseX;
-    auto MouseY = GameState->InputController.MouseY;
+    auto MouseX = InputController->MouseX;
+    auto MouseY = InputController->MouseY;
     
     int ListRectWidth = 120;
     
-    if(GameState->EditorState.SelectedEntity && GetKeyDown(Key_Delete,GameState))
+    if(GameState->EditorState.SelectedEntity && KEY_DOWN(Key_Delete))
     {
         DeleteEntity(GameState,GameState->EditorState.SelectedEntity->EntityIndex);
         SaveLevelToFile(GameState->LevelPath, &GameState->CurrentLevel, GameState);

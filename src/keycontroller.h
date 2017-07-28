@@ -181,11 +181,11 @@ enum Key_Mode
 #define Xbox_LeftTrigger Joystick_RightTrigger
 #define Xbox_RightTrigger 18
 
-typedef i32 Key_Code;
-typedef i32 Controller_Code;
-typedef i32 PS4_Code;
-typedef i32 Xbox_Code;
-typedef i32 Mouse_Code;
+using Key_Code = i32;
+using Controller_Code = i32;
+using Xbox_Code = i32;
+using PS4_Code = i32;
+using Mouse_Code = i32;
 
 enum Action_Button
 {
@@ -297,6 +297,11 @@ struct input_controller
     
     char CurrentCharacter;
     b32 DeleteCharacter = false;
+    
+    integer_map KeyMappings;
+    integer_map MouseButtonMappings;
+    integer_map ControllerMappings;
+    
 };
 
 #endif

@@ -190,12 +190,7 @@ struct editor_state
     
     i32 SelectedMenuOption;
     b32 MenuOpen;
-    char* MenuOptions[3] = 
-    {
-        "Game",
-        "Level editor",
-        "Animations"
-    };
+    char* MenuOptions[3];
 };
 
 #endif
