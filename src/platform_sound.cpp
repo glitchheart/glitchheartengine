@@ -191,7 +191,7 @@ static void LoadSounds(sound_effects* SoundEffects, sound_device* SoundDevice)
     // // Add more sounds here if necessary
 }
 
-static void CleanupSound(sound_device* SoundDevice, sound_manager* SoundManager)
+static void CleanupSound(sound_device* SoundDevice)
 {
     alDeleteSources(SOURCES, SoundDevice->Sources);
     alDeleteBuffers(SoundDevice->BufferCount, SoundDevice->Buffers);
