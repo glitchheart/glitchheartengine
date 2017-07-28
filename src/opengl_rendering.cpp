@@ -889,7 +889,7 @@ static void LoadTextures(render_state* RenderState, const char* Directory)
     free(DirData.FileNames);
 }
 
-static void LoadTilesheetTextures(game_state* GameState, render_state* RenderState)
+static void LoadTilesheetTextures(render_state* RenderState)
 {
     FILE* File;
     File = fopen("../assets/textures/tilesheets/.tilesheets", "r");
@@ -983,10 +983,8 @@ static void InitializeOpenGL(game_memory* GameMemory, config_data* ConfigData)
     GameState->HealthBar = {};
     GameState->HealthBar.Position = glm::vec2(RenderState.WindowWidth / 2, RenderState.WindowHeight - 50);
     GameState->HealthBar.RenderInfo.Size = glm::vec3(2, 1, 1);
-    LoadTilesheetTextures(GameState, &RenderState);
+    LoadTilesheetTextures(&RenderState);
     GameState->RenderState = RenderState;
-    GameState->LevelPath = ConfigData->StartingLevelFilePath;
-    GameState->InitialZoom = ConfigData->Zoom;
 }
 
 static void ReloadVertexShader(Shader_Type Type, render_state* RenderState)

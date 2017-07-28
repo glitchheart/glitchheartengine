@@ -150,7 +150,8 @@ int main(void)
     //@Incomplete: We really want to get ALL of game state out of main!!!
     game_state* GameState = (game_state*)GameMemory.PermanentStorage;
     GameState->ShouldReload = true;
-    
+    GameState->LevelPath = ConfigData.StartingLevelFilePath;
+    GameState->InitialZoom = ConfigData.Zoom;
     InitializeOpenGL(&GameMemory, &ConfigData);
     
     game_code Game = LoadGameCode();
