@@ -1,8 +1,9 @@
 //#define _CRTDBG_MAP_ALLOC  
-#define DEBUG
-#include <stdlib.h>  
+
+//#include <stdlib.h>  
 //#include <crtdbg.h>  
 
+#define DEBUG
 #include <glad/glad.h>
 #include "al.h"
 #include "alc.h"
@@ -12,6 +13,7 @@
 #include "platform.h"
 #include "keycontroller.h"
 #include "keycontroller.cpp"
+
 input_controller InputController;
 
 #include "gmap.h"
@@ -180,7 +182,6 @@ int main(void)
     r64 CurrentFrame = 0.0;
     r64 DeltaTime;
     
-    
     while (!ShouldCloseWindow(&GameState->RenderState) && !GameState->RenderState.ShouldClose)
     {
         //calculate deltatime
@@ -200,19 +201,19 @@ int main(void)
             }
         }
         
-        if(GetKeyDown(Key_F3,&InputController))
+        if(GetKeyDown(Key_F3, &InputController))
         {
             SoundDevice.PrevMuted = SoundDevice.Muted;
             SoundDevice.Muted = !SoundDevice.Muted;
         }
         
-        if(GetKeyDown(Key_F5,&InputController))
+        if(GetKeyDown(Key_F5, &InputController))
         {
             SoundDevice.PrevStopped = SoundDevice.Stopped;
             SoundDevice.Stopped = !SoundDevice.Stopped;
         }
         
-        if(GetKeyDown(Key_F6,&InputController))
+        if(GetKeyDown(Key_F6, &InputController))
         {
             SoundDevice.PrevPaused = SoundDevice.Paused;
             SoundDevice.Paused = !SoundDevice.Paused;
@@ -247,7 +248,7 @@ int main(void)
         }
     }
     
-    //CleanupSound(&SoundDevice,&SoundManager);
+    CleanupSound(&SoundDevice, &GameState->SoundManager);
     CloseWindow(&GameState->RenderState);
     //_CrtDumpMemoryLeaks();
 }
