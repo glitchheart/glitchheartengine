@@ -32,7 +32,7 @@ static char* LoadLevel(game_state* GameState, char** Arguments)
         
         char* Path = Concat(Concat(PathPrefix, Arguments[0]), PathSuffix);
         
-        printf("String allocation\n");
+        DEBUG_PRINT("String allocation\n");
         
         FILE* File;
         File = fopen(Path, "r");
@@ -63,7 +63,7 @@ static char* LoadLevel(game_state* GameState, char** Arguments)
             
             sprintf(Result, "Loaded level");
             
-            printf("End of LoadLevel\n");
+            DEBUG_PRINT("End of LoadLevel\n");
         }
         else
         {

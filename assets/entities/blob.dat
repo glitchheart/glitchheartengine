@@ -27,7 +27,6 @@ aistate 0
 astarcooldowntimer 0.6
 healthbar offset -0.5 2.2 scale 1.0 0.25
 #blob
-pickupthrowtimer 1.5
 explodestarttimer 0.5
 explodecountdowntimer 1.0
 explosioncollisionextents 1.0 1.0

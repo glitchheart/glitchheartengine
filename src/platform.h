@@ -3,8 +3,15 @@
 
 #define ArrayCount(Array) (sizeof(Array) / sizeof(Array[0])) 
 
+
 #ifdef DEBUG
-#define Assert(Expression) if(!(Expression)) {printf("Assertion failed in: %s on line %d\n",__FILE__,__LINE__); exit(EXIT_FAILURE);}
+#define DEBUG_PRINT(format, ...) printf(format, __VA_ARGS__)
+#else
+#define DEBUG_PRINT(format, ...)
+#endif
+
+#ifdef DEBUG
+#define Assert(Expression) if(!(Expression)) {DEBUG_PRINT("Assertion failed in: %s on line %d\n",__FILE__,__LINE__); exit(EXIT_FAILURE);}
 #else
 #define Assert(Expression)
 #endif
@@ -203,7 +210,7 @@ void FindFilesWithExtensions(const char* DirectoryPath, const char* Extension, d
     
     if((hFind = FindFirstFile(Path, &FindFile)) == INVALID_HANDLE_VALUE)
     {
-        printf("Path not found: %s\n", DirectoryPath);
+        DEBUG_PRINT("Path not found: %s\n", DirectoryPath);
         return;
     }
     
@@ -251,7 +258,7 @@ void FindFilesWithExtensions(const char* DirectoryPath, const char* Extension, d
 
 void DebugPrintVec2(glm::vec2 Vec2, const char* Msg = "")
 {
-    printf(Concat(Msg, " (%f,%f)\n"),Vec2.x,Vec2.y);
+    DEBUG_PRINT(Concat(Msg, " (%f,%f)\n"),Vec2.x,Vec2.y);
 }
 
 b32 FileExists(char* FilePath)

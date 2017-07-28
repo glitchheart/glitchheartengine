@@ -283,7 +283,6 @@ struct entity
     b32 IsKinematic;
     b32 IsColliding;
     b32 IsStatic; // For stuff that can't be moved by collision
-    b32 IsPickup;
     b32 HasHitTrigger;
     collision_AABB HitTrigger;
     
@@ -356,7 +355,6 @@ struct entity
             timer LastAttackTimer;
             timer DashTimer;
             timer DashCooldownTimer;
-            timer PickupCooldownTimer;
             timer HealthPotionTimer;
             
             b32 TakingHealthPotion;
@@ -380,13 +378,11 @@ struct entity
             r64 DashCooldown;
             
             r32 WalkingSpeed;
-            entity* Pickup;
             b32 RenderCrosshair;
             r32 CrosshairRadius;
             r32 CrosshairPositionX;
             r32 CrosshairPositionY;
             
-            r64 PickupCooldown;
             r32 ThrowingSpeed;
             r32 LastKnownDirectionX;
             r32 LastKnownDirectionY;
@@ -452,8 +448,6 @@ struct entity
                     timer ExplodeStartTimer;
                     timer ExplodeCountdownTimer;
                     
-                    b32 InPickupMode;
-                    timer PickupThrowTimer;
                 } Blob;
                 struct
                 {
@@ -484,10 +478,6 @@ struct entity
                 } Wraith;
             };
         } Enemy;
-        struct
-        {
-            timer PickupThrowTimer;
-        } Pickup;
         struct
         {
         } Bonfire;

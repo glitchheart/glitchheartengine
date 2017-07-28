@@ -1,7 +1,7 @@
 
 void PrintEntityInfo(const entity& Entity)
 {
-    printf("Entity: Name %s, position x %f y %f, rotation x %f y %f z %f\n", Entity.Name, Entity.Position.x, Entity.Position.y, Entity.Rotation.x, Entity.Rotation.y, Entity.Rotation.z);
+    DEBUG_PRINT("Entity: Name %s, position x %f y %f, rotation x %f y %f z %f\n", Entity.Name, Entity.Position.x, Entity.Position.y, Entity.Rotation.x, Entity.Rotation.y, Entity.Rotation.z);
 }
 
 i32 LoadPointlight(game_state* GameState, glm::vec4 Color = glm::vec4(), r32 Intensity = 0.0f, r32 ConstantAtten = 0.0f, r32 LinearAtten = 0.0f, r32 ExponentialAtten = 0.0f,glm::vec2 InitPosition = glm::vec2(), b32 ShouldGlow = false, r64 GlowTimerMax = 0.0f, r32 GlowIncrease = 0.0f)
@@ -32,7 +32,7 @@ i32 LoadLight(game_state* GameState, char* LineBuffer, glm::vec2 InitPosition = 
 {
     b32 ShouldGlow = false;
     light_source LightSource;
-    if(StartsWith(&LineBuffer[0], "pointlight"))
+    if(StartsWith(LineBuffer, "pointlight"))
     {
         r64 GlowTimerMax = 0.0;
         r32 GlowIncrease;
@@ -46,7 +46,7 @@ i32 LoadLight(game_state* GameState, char* LineBuffer, glm::vec2 InitPosition = 
             LightSource.Pointlight.IncreasingGlow = true;
         }
     }
-    else if(StartsWith(&LineBuffer[0], "ambient"))
+    else if(StartsWith(LineBuffer, "ambient"))
     {
         sscanf(LineBuffer, "ambient type %d active %d intensity %f color %f %f %f %f",&LightSource.Type, &LightSource.Active, &LightSource.Ambient.Intensity, &LightSource.Color.x, &LightSource.Color.y, &LightSource.Color.z, &LightSource.Color.w);
     }
@@ -214,7 +214,7 @@ static void SpawnShadow(game_state* GameState, glm::vec2 Position, i32* Handle)
     
     Shadow->RenderEntityHandle = GameState->RenderState.RenderEntityCount++;
     RenderEntity->Color = glm::vec4(1, 1, 1, 1);
-    printf("Shadow\n");
+    DEBUG_PRINT("Shadow\n");
     GameState->Objects[GameState->ObjectCount++];
 }
 
@@ -240,7 +240,7 @@ static void SpawnLoot(game_state* GameState, glm::vec2 Position, i32* Handle)
     RenderEntity->Object = &*Loot;
     
     Loot->RenderEntityHandle = GameState->RenderState.RenderEntityCount++;
-    printf("Loot\n");
+    DEBUG_PRINT("Loot\n");
     RenderEntity->Color = glm::vec4(1, 1, 1, 1);
     
     GameState->Objects[GameState->ObjectCount++];
@@ -344,7 +344,6 @@ static void LoadEntityData(FILE* File, entity* Entity, game_state* GameState, b3
         Entity->IsKinematic = false;
         Entity->IsColliding = false;
         Entity->IsStatic = false;
-        Entity->IsPickup = false;
         Entity->HasHitTrigger = false;
         Entity->LightSourceHandle = -1;
         Entity->Hit = false;
@@ -420,22 +419,22 @@ static void LoadEntityData(FILE* File, entity* Entity, game_state* GameState, b3
     
     while(fgets(LineBuffer, 255, File))
     {
-        if(StartsWith(&LineBuffer[0], "#"))
+        if(StartsWith(LineBuffer, "#"))
         {
             break;
         }
-        else if(StartsWith(&LineBuffer[0], "name"))
+        else if(StartsWith(LineBuffer, "name"))
         {
             Entity->Name = (char*)malloc(30 * sizeof(char));
             sscanf(LineBuffer, "name %s", Entity->Name);
         }
-        else if(StartsWith(&LineBuffer[0], "active"))
+        else if(StartsWith(LineBuffer, "active"))
         {
             b32 Active;
             sscanf(LineBuffer, "active %d", &Active);
             Entity->Active = Active;
         }
-        else if(StartsWith(&LineBuffer[0], "layer"))
+        else if(StartsWith(LineBuffer, "layer"))
         {
             char* LayerName = (char*)malloc(30 * sizeof(char));
             sscanf(LineBuffer, "layer %s", LayerName);
@@ -451,90 +450,90 @@ static void LoadEntityData(FILE* File, entity* Entity, game_state* GameState, b3
             
             free(LayerName);
         }
-        else if(StartsWith(&LineBuffer[0], "iskinematic"))
+        else if(StartsWith(LineBuffer, "iskinematic"))
         {
             b32 IsKinematic;
             sscanf(LineBuffer, "iskinematic %d", &IsKinematic);
             Entity->IsKinematic = IsKinematic;
         }
-        else if(StartsWith(&LineBuffer[0], "scale"))
+        else if(StartsWith(LineBuffer, "scale"))
         {
             sscanf(LineBuffer, "scale %f", &Entity->Scale);
         }
-        else if(StartsWith(&LineBuffer[0], "center"))
+        else if(StartsWith(LineBuffer, "center"))
         {
             sscanf(LineBuffer, "center %f %f", &Entity->Center.x, &Entity->Center.y);
         }
-        else if(StartsWith(&LineBuffer[0], "health"))
+        else if(StartsWith(LineBuffer, "health"))
         {
             sscanf(LineBuffer, "health %d", &Entity->FullHealth);
             Entity->Health = Entity->FullHealth;
         }
-        else if(StartsWith(&LineBuffer[0], "animation"))
+        else if(StartsWith(LineBuffer, "animation"))
         {
             char* AnimationName = (char*)malloc(30 * sizeof(char)); 
             sscanf(LineBuffer, "animation %s", AnimationName);
             PlayAnimation(Entity, AnimationName, GameState);
             free(AnimationName);
         }
-        else if(StartsWith(&LineBuffer[0], "renderbuttonoffset"))
+        else if(StartsWith(LineBuffer, "renderbuttonoffset"))
         {
             char* AnimationName = (char*)malloc(30 * sizeof(char)); 
             sscanf(LineBuffer, "renderbuttonoffset %f %f", &Entity->RenderButtonOffset.x, &Entity->RenderButtonOffset.y);
         }
-        else if(StartsWith(&LineBuffer[0], "staggercooldowntimer"))
+        else if(StartsWith(LineBuffer, "staggercooldowntimer"))
         {
             sscanf(LineBuffer, "staggercooldowntimer %lf", &Entity->StaggerCooldownTimer.TimerMax);
             Entity->StaggerCooldownTimer.TimerHandle = -1;
         }
-        else if(StartsWith(&LineBuffer[0], "collider"))
+        else if(StartsWith(LineBuffer, "collider"))
         {
             sscanf(LineBuffer, "collider %f %f %f %f %d", &Entity->CollisionAABB.Offset.x, &Entity->CollisionAABB.Offset.y, &Entity->CollisionAABB.Extents.x, &Entity->CollisionAABB.Extents.y, &Entity->CollisionAABB.IsTrigger);
         }
-        else if(StartsWith(&LineBuffer[0], "hashittrigger"))
+        else if(StartsWith(LineBuffer, "hashittrigger"))
         {
             sscanf(LineBuffer, "hashittrigger %d", &Entity->HasHitTrigger);
         }
-        else if(StartsWith(&LineBuffer[0], "hittrigger"))
+        else if(StartsWith(LineBuffer, "hittrigger"))
         {
             sscanf(LineBuffer, "hittrigger %f %f %f %f %d", &Entity->HitTrigger.Offset.x, &Entity->HitTrigger.Offset.y, &Entity->HitTrigger.Extents.x, &Entity->HitTrigger.Extents.y, &Entity->HitTrigger.IsTrigger);
         }
-        else if(StartsWith(&LineBuffer[0], "hitrecoilspeed"))
+        else if(StartsWith(LineBuffer, "hitrecoilspeed"))
         {
             sscanf(LineBuffer, "hitrecoilspeed %f", &Entity->HitRecoilSpeed);
         }
-        else if(StartsWith(&LineBuffer[0], "recoiltimer"))
+        else if(StartsWith(LineBuffer, "recoiltimer"))
         {
             Entity->RecoilTimer.TimerHandle = -1;
             sscanf(LineBuffer,"recoiltimer %lf",&Entity->RecoilTimer.TimerMax);
         }
-        else if(StartsWith(&LineBuffer[0], "attackmovetimer"))
+        else if(StartsWith(LineBuffer, "attackmovetimer"))
         {
             sscanf(LineBuffer, "attackmovetimer %lf", &Entity->AttackMoveTimer.TimerMax);
             Entity->AttackMoveTimer.TimerHandle = -1;
         }
-        else if(StartsWith(&LineBuffer[0], "attackmovespeed"))
+        else if(StartsWith(LineBuffer, "attackmovespeed"))
         {
             sscanf(LineBuffer, "attackmovespeed %f", &Entity->AttackMoveSpeed);
         }
         
-        else if(StartsWith(&LineBuffer[0], "attacklowframeindex"))
+        else if(StartsWith(LineBuffer, "attacklowframeindex"))
         {
             sscanf(LineBuffer, "attacklowframeindex %d", &Entity->AttackLowFrameIndex);
         }
-        else if(StartsWith(&LineBuffer[0], "attackhighframeindex"))
+        else if(StartsWith(LineBuffer, "attackhighframeindex"))
         {
             sscanf(LineBuffer, "attackhighframeindex %d", &Entity->AttackHighFrameIndex);
         }
-        else if(StartsWith(&LineBuffer[0], "weaponscale"))
+        else if(StartsWith(LineBuffer, "weaponscale"))
         {
             sscanf(LineBuffer, "weaponscale %f %f", &Entity->Weapon.Scale.x, &Entity->Weapon.Scale.y);
         }
-        else if(StartsWith(&LineBuffer[0], "weaponcollider"))
+        else if(StartsWith(LineBuffer, "weaponcollider"))
         {
             sscanf(LineBuffer, "weaponcollider %f %f %f %f %d", &Entity->Weapon.CollisionAABB.Offset.x, &Entity->Weapon.CollisionAABB.Offset.y, &Entity->Weapon.CollisionAABB.Extents.x, &Entity->Weapon.CollisionAABB.Extents.y, &Entity->Weapon.CollisionAABB.IsTrigger);
         }
-        else if(StartsWith(&LineBuffer[0], "weaponinfo"))
+        else if(StartsWith(LineBuffer, "weaponinfo"))
         {
             Entity->HasWeapon = true;
             sscanf(LineBuffer, "weaponinfo %d up %f %f %f %f down %f %f %f %f left %f %f %f %f right %f %f %f %f", 
@@ -557,7 +556,7 @@ static void LoadEntityData(FILE* File, entity* Entity, game_state* GameState, b3
                    &Entity->WeaponColliderInfo.ExtentsRight.y);
             Entity->Weapon.Layer = Entity->Layer;
         }
-        else if(StartsWith(&LineBuffer[0],"pointlight"))
+        else if(StartsWith(LineBuffer,"pointlight"))
         {
             Entity->LightSourceHandle = LoadLight(GameState, LineBuffer, Entity->Position, Entity->LightSourceHandle);
         }
@@ -595,74 +594,74 @@ static void LoadEnemyData(FILE* File, entity* Entity, game_state* GameState)
         
         while(fgets(LineBuffer, 255, File))
         {
-            if(StartsWith(&LineBuffer[0], "#"))
+            if(StartsWith(LineBuffer, "#"))
             {
                 break;
             }
-            else if(StartsWith(&LineBuffer[0], "enemytype"))
+            else if(StartsWith(LineBuffer, "enemytype"))
             {
                 sscanf(LineBuffer, "enemytype %d", &Entity->Enemy.EnemyType);
             }
-            else if(StartsWith(&LineBuffer[0], "walkingspeed"))
+            else if(StartsWith(LineBuffer, "walkingspeed"))
             {
                 sscanf(LineBuffer, "walkingspeed %f", &Entity->Enemy.WalkingSpeed);
             }
-            else if(StartsWith(&LineBuffer[0], "will"))
+            else if(StartsWith(LineBuffer, "will"))
             {
                 sscanf(LineBuffer, "will %d", &Entity->Enemy.Will);
             }
-            else if(StartsWith(&LineBuffer[0], "wanderingspeed"))
+            else if(StartsWith(LineBuffer, "wanderingspeed"))
             {
                 sscanf(LineBuffer, "wanderingspeed %f", &Entity->Enemy.WanderingSpeed);
             }
-            else if(StartsWith(&LineBuffer[0], "closetoplayerspeed"))
+            else if(StartsWith(LineBuffer, "closetoplayerspeed"))
             {
                 sscanf(LineBuffer, "closetoplayerspeed %f", &Entity->Enemy.CloseToPlayerSpeed);
             }
-            else if(StartsWith(&LineBuffer[0], "targetingposition"))
+            else if(StartsWith(LineBuffer, "targetingposition"))
             {
                 sscanf(LineBuffer, "targetingposition %f %f", &Entity->Enemy.TargetingPositionX, &Entity->Enemy.TargetingPositionY);
             }
-            else if(StartsWith(&LineBuffer[0], "maxalertdistance"))
+            else if(StartsWith(LineBuffer, "maxalertdistance"))
             {
                 sscanf(LineBuffer, "maxalertdistance %f", &Entity->Enemy.MaxAlertDistance);
             }
-            else if(StartsWith(&LineBuffer[0], "maxfollowdistance"))
+            else if(StartsWith(LineBuffer, "maxfollowdistance"))
             {
                 sscanf(LineBuffer, "maxfollowdistance %f", &Entity->Enemy.MaxFollowDistance);
             }
-            else if(StartsWith(&LineBuffer[0], "mindistancetoplayer"))
+            else if(StartsWith(LineBuffer, "mindistancetoplayer"))
             {
                 sscanf(LineBuffer, "mindistancetoplayer %f", &Entity->Enemy.MinDistanceToPlayer);
             }
-            else if(StartsWith(&LineBuffer[0], "slowdowndistance"))
+            else if(StartsWith(LineBuffer, "slowdowndistance"))
             {
                 sscanf(LineBuffer, "slowdowndistance %f", &Entity->Enemy.SlowdownDistance);
             }
-            else if(StartsWith(&LineBuffer[0], "attackdistance"))
+            else if(StartsWith(LineBuffer, "attackdistance"))
             {
                 sscanf(LineBuffer, "attackdistance %f", &Entity->Enemy.AttackDistance);
             }
-            else if(StartsWith(&LineBuffer[0], "aistate"))
+            else if(StartsWith(LineBuffer, "aistate"))
             {
                 sscanf(LineBuffer, "aistate %d", &Entity->Enemy.AIState);
             }
-            else if(StartsWith(&LineBuffer[0], "healthcountposition"))
+            else if(StartsWith(LineBuffer, "healthcountposition"))
             {
                 sscanf(LineBuffer, "healthcountposition %f %f", &Entity->Enemy.HealthCountStart.x, &Entity->Enemy.HealthCountStart.y);
             }
-            else if(StartsWith(&LineBuffer[0], "astarcooldowntimer"))
+            else if(StartsWith(LineBuffer, "astarcooldowntimer"))
             {
                 Entity->Enemy.AStarPath.AStarCooldownTimer.TimerHandle = -1;
                 
                 sscanf(LineBuffer, "astarcooldowntimer %lf", &Entity->Enemy.AStarPath.AStarCooldownTimer.TimerMax);
             }
-            else if(StartsWith(&LineBuffer[0], "defendingtimer"))
+            else if(StartsWith(LineBuffer, "defendingtimer"))
             {
                 Entity->Enemy.DefendingTimer.TimerHandle = -1;
                 sscanf(LineBuffer, "defendingtimer %lf", &Entity->Enemy.DefendingTimer.TimerMax);
             }
-            else if(StartsWith(&LineBuffer[0], "healthbar"))
+            else if(StartsWith(LineBuffer, "healthbar"))
             {
                 Entity->Enemy.Healthbar = (entity_healthbar*)malloc(sizeof(entity_healthbar));
                 sscanf(LineBuffer, "healthbar offset %f %f scale %f %f",&Entity->Enemy.Healthbar->Offset.x,
@@ -1505,11 +1504,6 @@ AI_FUNC(BlobAttacking)
         PlayAnimation(Entity, "explosion", GameState);
         Entity->Health = 0;
         Entity->Velocity = glm::vec2();
-        if(Entity->Enemy.Blob.InPickupMode)
-        {
-            auto& Player = GameState->Entities[0];
-            Player.Player.Pickup = 0;
-        }
         PlaySoundEffect(GameState, &GameState->SoundManager.Explosion);
     }
 }
@@ -1556,7 +1550,7 @@ static void LoadBonfireData(game_state* GameState, i32 Handle = -1, glm::vec2 Po
         
         while(fgets(LineBuffer, 255, File))
         {
-            if(StartsWith(&LineBuffer[0], "#"))
+            if(StartsWith(LineBuffer, "#"))
             {
                 break;
             }
@@ -1566,7 +1560,7 @@ static void LoadBonfireData(game_state* GameState, i32 Handle = -1, glm::vec2 Po
         
         if(Handle == -1)
         {
-            printf("Entityhandle: %d\n", Entity->EntityIndex);
+            DEBUG_PRINT("Entityhandle: %d\n", Entity->EntityIndex);
             Entity->Position = glm::vec2(Position.x, Position.y);
             PlaySoundEffect(GameState,&GameState->SoundManager.Bonfire, 1.0f, Entity->Position.x, Entity->Position.y, 10.0f, true, Entity->EntityIndex);
         }
@@ -1607,25 +1601,25 @@ static void LoadSkeletonData(game_state* GameState, i32 Handle = -1, glm::vec2 P
         
         while(fgets(LineBuffer, 255, File))
         {
-            if(StartsWith(&LineBuffer[0], "#"))
+            if(StartsWith(LineBuffer, "#"))
             {
                 break;
             }
-            else if(StartsWith(&LineBuffer[0],"attackcooldowntimer"))
+            else if(StartsWith(LineBuffer,"attackcooldowntimer"))
             {
                 Entity->Enemy.Skeleton.AttackCooldownTimer.TimerHandle = -1;
                 
                 sscanf(LineBuffer,"attackcooldowntimer %lf",&Entity->Enemy.Skeleton.AttackCooldownTimer.TimerMax);
                 Entity->Enemy.Skeleton.AttackCooldownTimer.Name = "Attack Cooldown";
             }
-            else if(StartsWith(&LineBuffer[0],"chargingtimer"))
+            else if(StartsWith(LineBuffer,"chargingtimer"))
             {
                 Entity->Enemy.Skeleton.ChargingTimer.TimerHandle = -1;
                 
                 sscanf(LineBuffer,"chargingtimer %lf",&Entity->Enemy.Skeleton.ChargingTimer.TimerMax);
                 Entity->Enemy.Skeleton.ChargingTimer.Name = "Charging";
             }
-            else if(StartsWith(&LineBuffer[0],"alertedtimer"))
+            else if(StartsWith(LineBuffer,"alertedtimer"))
             {
                 Entity->Enemy.Skeleton.AlertedTimer.TimerHandle = -1;
                 
@@ -1675,46 +1669,46 @@ static void LoadMinotaurData(game_state* GameState, i32 Handle = -1, glm::vec2 P
         
         while(fgets(LineBuffer, 255, File))
         {
-            if(StartsWith(&LineBuffer[0], "#"))
+            if(StartsWith(LineBuffer, "#"))
             {
                 break;
             }
-            else if(StartsWith(&LineBuffer[0],"attackcooldowntimer"))
+            else if(StartsWith(LineBuffer,"attackcooldowntimer"))
             {
                 Entity->Enemy.Minotaur.AttackCooldownTimer.TimerHandle = -1;
                 sscanf(LineBuffer,"attackcooldowntimer %lf",&Entity->Enemy.Minotaur.AttackCooldownTimer.TimerMax);
                 Entity->Enemy.Minotaur.AttackCooldownTimer.Name = "Attack Cooldown";
             }
-            else if(StartsWith(&LineBuffer[0],"chargingtimer"))
+            else if(StartsWith(LineBuffer,"chargingtimer"))
             {
                 Entity->Enemy.Minotaur.ChargingTimer.TimerHandle = -1;
                 sscanf(LineBuffer,"chargingtimer %lf",&Entity->Enemy.Minotaur.ChargingTimer.TimerMax);
                 Entity->Enemy.Minotaur.ChargingTimer.Name = "Charging";
             }
-            else if(StartsWith(&LineBuffer[0],"alertedtimer"))
+            else if(StartsWith(LineBuffer,"alertedtimer"))
             {
                 Entity->Enemy.Minotaur.AlertedTimer.TimerHandle = -1;
                 sscanf(LineBuffer,"alertedtimer %lf",&Entity->Enemy.Minotaur.AlertedTimer.TimerMax);
                 Entity->Enemy.Minotaur.AlertedTimer.Name = "Alerted";
             }
-            else if(StartsWith(&LineBuffer[0],"maxattackstreak"))
+            else if(StartsWith(LineBuffer,"maxattackstreak"))
             {
                 Entity->Enemy.Minotaur.AlertedTimer.TimerHandle = -1;
                 sscanf(LineBuffer,"maxattackstreak %d",&Entity->Enemy.Minotaur.MaxAttackStreak);
             }
-            else if(StartsWith(&LineBuffer[0],"jumpattacktimer"))
+            else if(StartsWith(LineBuffer,"jumpattacktimer"))
             {
                 Entity->Enemy.Minotaur.JumpAttackTimer.TimerHandle = -1;
                 sscanf(LineBuffer,"jumpattacktimer %lf",&Entity->Enemy.Minotaur.JumpAttackTimer.TimerMax);
                 Entity->Enemy.Minotaur.JumpAttackTimer.Name = "Jump attack";
             }
-            else if(StartsWith(&LineBuffer[0],"jumpattackimpacttimer"))
+            else if(StartsWith(LineBuffer,"jumpattackimpacttimer"))
             {
                 Entity->Enemy.Minotaur.JumpAttackImpactTimer.TimerHandle = -1;
                 sscanf(LineBuffer,"jumpattackimpacttimer %lf",&Entity->Enemy.Minotaur.JumpAttackImpactTimer.TimerMax);
                 Entity->Enemy.Minotaur.JumpAttackImpactTimer.Name = "Jump attack impact";
             }
-            else if(StartsWith(&LineBuffer[0],"impactcollisionextents"))
+            else if(StartsWith(LineBuffer,"impactcollisionextents"))
             {
                 sscanf(LineBuffer,"impactcollisionextents %f %f", &Entity->Enemy.Minotaur.ImpactCollisionExtents.x, &Entity->Enemy.Minotaur.ImpactCollisionExtents.y);
             }
@@ -1757,25 +1751,25 @@ static void LoadWraithData(game_state* GameState, i32 Handle = -1, glm::vec2 Pos
         
         while(fgets(LineBuffer, 255, File))
         {
-            if(StartsWith(&LineBuffer[0], "#"))
+            if(StartsWith(LineBuffer, "#"))
             {
                 break;
             }
-            else if(StartsWith(&LineBuffer[0],"attackcooldowntimer"))
+            else if(StartsWith(LineBuffer,"attackcooldowntimer"))
             {
                 Entity->Enemy.Skeleton.AttackCooldownTimer.TimerHandle = -1;
                 
                 sscanf(LineBuffer,"attackcooldowntimer %lf",&Entity->Enemy.Wraith.AttackCooldownTimer.TimerMax);
                 Entity->Enemy.Wraith.AttackCooldownTimer.Name = "Attack Cooldown";
             }
-            else if(StartsWith(&LineBuffer[0],"chargingtimer"))
+            else if(StartsWith(LineBuffer,"chargingtimer"))
             {
                 Entity->Enemy.Wraith.ChargingTimer.TimerHandle = -1;
                 
                 sscanf(LineBuffer,"chargingtimer %lf",&Entity->Enemy.Wraith.ChargingTimer.TimerMax);
                 Entity->Enemy.Wraith.ChargingTimer.Name = "Charging";
             }
-            else if(StartsWith(&LineBuffer[0],"alertedtimer"))
+            else if(StartsWith(LineBuffer,"alertedtimer"))
             {
                 Entity->Enemy.Skeleton.AlertedTimer.TimerHandle = -1;
                 
@@ -1799,7 +1793,6 @@ static void LoadBlobData(game_state* GameState, i32 Handle = -1, glm::vec2 Posit
     
     entity* Entity = Handle != -1 ? &GameState->Entities[Handle] : &GameState->Entities[GameState->EntityCount];
     
-    Entity->Enemy.Blob.InPickupMode = false;
     
     if(Handle == -1)
     {
@@ -1815,30 +1808,23 @@ static void LoadBlobData(game_state* GameState, i32 Handle = -1, glm::vec2 Posit
         
         while(fgets(LineBuffer, 255, File))
         {
-            if(StartsWith(&LineBuffer[0], "#"))
+            if(StartsWith(LineBuffer, "#"))
             {
                 break;
             }
-            else if(StartsWith(&LineBuffer[0],"pickupthrowtimer"))
-            {
-                Entity->Enemy.Blob.PickupThrowTimer.TimerHandle = -1;
-                
-                sscanf(LineBuffer,"pickupthrowtimer %lf",&Entity->Enemy.Blob.PickupThrowTimer.TimerMax);
-                Entity->Enemy.Blob.PickupThrowTimer.Name = "Pickup Throw";
-            }
-            else if(StartsWith(&LineBuffer[0],"explodestarttimer"))
+            else if(StartsWith(LineBuffer,"explodestarttimer"))
             {
                 Entity->Enemy.Blob.ExplodeStartTimer.TimerHandle = -1;
                 sscanf(LineBuffer,"explodestarttimer %lf",&Entity->Enemy.Blob.ExplodeStartTimer.TimerMax);
                 Entity->Enemy.Blob.ExplodeStartTimer.Name = "Explode Start";
             }
-            else if(StartsWith(&LineBuffer[0],"explodecountdowntimer"))
+            else if(StartsWith(LineBuffer,"explodecountdowntimer"))
             {
                 Entity->Enemy.Blob.ExplodeCountdownTimer.TimerHandle = -1;
                 sscanf(LineBuffer,"explodecountdowntimer %lf",&Entity->Enemy.Blob.ExplodeCountdownTimer.TimerMax);
                 Entity->Enemy.Blob.ExplodeCountdownTimer.Name = "ExplodeCountdown";
             }
-            else if(StartsWith(&LineBuffer[0],"explosioncollisionextents"))
+            else if(StartsWith(LineBuffer,"explosioncollisionextents"))
             {
                 sscanf(LineBuffer,"explosioncollisionextents %f %f",&Entity->Enemy.Blob.ExplosionCollisionExtentsX, &Entity->Enemy.Blob.ExplosionCollisionExtentsY);
             }
@@ -1863,7 +1849,7 @@ void PlaceCheckpoint(game_state* GameState, entity* Entity)
     }
     else
     {
-        printf("New area\n");
+        DEBUG_PRINT("New area\n");
         GameState->Entities[GameState->CharacterData.CheckpointHandle].Position = CheckpointPos;
     }
     
@@ -1887,13 +1873,11 @@ static void LoadPlayerData(game_state* GameState, i32 Handle = -1, glm::vec2 Pos
     Entity->Player.TargetedEnemyHandle = -1;
     Entity->Player.LastKnownDirectionX = 1.0f;
     Entity->Player.LastKnownDirectionY = 0;
-    Entity->Player.Pickup = {};
     
     Entity->Player.RenderCrosshair = false;
     Entity->Player.IsAttacking = false;
     Entity->Player.IsDashing = false;
     Entity->Player.IsDefending = false;
-    Entity->Player.Pickup = 0;
     Entity->IgnoreLayers = (Entity_Layer)0;
     Entity->Layer = (Entity_Layer)1;
     Entity->Weapon.IgnoreLayers = (Entity_Layer)0;
@@ -1907,118 +1891,112 @@ static void LoadPlayerData(game_state* GameState, i32 Handle = -1, glm::vec2 Pos
         
         while(fgets(LineBuffer, 255, File))
         {
-            if(StartsWith(&LineBuffer[0], "walkingspeed"))
+            if(StartsWith(LineBuffer, "walkingspeed"))
             {
                 sscanf(LineBuffer, "walkingspeed %f", &Entity->Player.WalkingSpeed);
             }
-            else if(StartsWith(&LineBuffer[0], "throwingspeed"))
+            else if(StartsWith(LineBuffer, "throwingspeed"))
             {
                 sscanf(LineBuffer, "throwingspeed %f", &Entity->Player.ThrowingSpeed);
             }
-            else if(StartsWith(&LineBuffer[0], "crosshairradius"))
+            else if(StartsWith(LineBuffer, "crosshairradius"))
             {
                 sscanf(LineBuffer, "crosshairradius %f", &Entity->Player.CrosshairRadius);
             }
-            else if(StartsWith(&LineBuffer[0], "dashcounterdivider"))
+            else if(StartsWith(LineBuffer, "dashcounterdivider"))
             {
                 sscanf(LineBuffer, "dashcounterdivider %f", &Entity->Player.DashCounterDivider);
             }
-            else if(StartsWith(&LineBuffer[0], "targetingdistance"))
+            else if(StartsWith(LineBuffer, "targetingdistance"))
             {
                 sscanf(LineBuffer, "targetingdistance %f", &Entity->Player.TargetingDistance);
             }
-            else if(StartsWith(&LineBuffer[0], "attackcooldowntimer"))
+            else if(StartsWith(LineBuffer, "attackcooldowntimer"))
             {
                 Entity->Player.AttackCooldownTimer.TimerMax = 0;
                 sscanf(LineBuffer, "attackcooldowntimer %lf", &Entity->Player.AttackCooldownTimer.TimerMax);
                 Entity->Player.AttackCooldownTimer.TimerHandle = -1;
                 Entity->Player.AttackCooldownTimer.Name = "Attack Cooldown";
             }
-            else if(StartsWith(&LineBuffer[0], "lastattacktimer"))
+            else if(StartsWith(LineBuffer, "lastattacktimer"))
             {
                 sscanf(LineBuffer, "lastattacktimer %lf", &Entity->Player.LastAttackTimer.TimerMax);
                 Entity->Player.LastAttackTimer.TimerHandle = -1;
                 Entity->Player.LastAttackTimer.Name = "Last Attack";
             }
-            else if(StartsWith(&LineBuffer[0], "pickupcooldowntimer"))
-            {
-                sscanf(LineBuffer, "pickupcooldowntimer %lf", &Entity->Player.PickupCooldownTimer.TimerMax);
-                Entity->Player.PickupCooldownTimer.TimerHandle = -1;
-                Entity->Player.PickupCooldownTimer.Name = "Pickup Cooldown";
-            }
-            else if(StartsWith(&LineBuffer[0], "dashtimer"))
+            else if(StartsWith(LineBuffer, "dashtimer"))
             {
                 sscanf(LineBuffer, "dashtimer %lf", &Entity->Player.DashTimer.TimerMax);
                 Entity->Player.DashTimer.TimerHandle = -1;
                 Entity->Player.DashTimer.Name = "Dash";
             }
-            else if(StartsWith(&LineBuffer[0], "dashcooldowntimer"))
+            else if(StartsWith(LineBuffer, "dashcooldowntimer"))
             {
                 sscanf(LineBuffer, "dashcooldowntimer %lf", &Entity->Player.DashCooldownTimer.TimerMax);
                 Entity->Player.DashCooldownTimer.TimerHandle = -1;
                 Entity->Player.DashCooldownTimer.Name = "Dash Cooldown";
             }
-            else if(StartsWith(&LineBuffer[0], "dashspeed"))
+            else if(StartsWith(LineBuffer, "dashspeed"))
             {
                 sscanf(LineBuffer, "dashspeed %f", &Entity->Player.DashSpeed);
             }
-            else if(StartsWith(&LineBuffer[0], "stamina "))
+            else if(StartsWith(LineBuffer, "stamina "))
             {
                 sscanf(LineBuffer, "stamina %d", &GameState->CharacterData.Stamina);
                 Entity->Player.Stamina = (i16)GameState->CharacterData.Stamina;
             }
-            else if(StartsWith(&LineBuffer[0], "staminagaintimer "))
+            else if(StartsWith(LineBuffer, "staminagaintimer "))
             {
                 sscanf(LineBuffer, "staminagaintimer %lf", &Entity->Player.StaminaGainTimer.TimerMax);
                 Entity->Player.StaminaGainTimer.TimerHandle = -1;
                 Entity->Player.StaminaGainTimer.Name = "Stamina Gain";
             }
-            else if(StartsWith(&LineBuffer[0], "hitstaminacost"))
+            else if(StartsWith(LineBuffer, "hitstaminacost"))
             {
                 sscanf(LineBuffer, "hitstaminacost %d", &Entity->Player.HitStaminaCost);
             }
-            else if(StartsWith(&LineBuffer[0], "rollstaminacost"))
+            else if(StartsWith(LineBuffer, "rollstaminacost"))
             {
                 sscanf(LineBuffer, "rollstaminacost %d", &Entity->Player.RollStaminaCost);
             }
-            else if(StartsWith(&LineBuffer[0], "attackstaminacost"))
+            else if(StartsWith(LineBuffer, "attackstaminacost"))
             {
                 sscanf(LineBuffer, "attackstaminacost %d", &Entity->Player.AttackStaminaCost);
             }
-            else if(StartsWith(&LineBuffer[0], "mindiffstamina"))
+            else if(StartsWith(LineBuffer, "mindiffstamina"))
             {
                 sscanf(LineBuffer, "mindiffstamina %d", &Entity->Player.MinDiffStamina);
             }
-            else if(StartsWith(&LineBuffer[0], "staminagaincooldowntimer"))
+            else if(StartsWith(LineBuffer, "staminagaincooldowntimer"))
             {
                 Entity->Player.StaminaGainCooldownTimer.TimerMax = 0;
                 sscanf(LineBuffer, "staminagaincooldowntimer %lf", &Entity->Player.StaminaGainCooldownTimer.TimerMax);
                 Entity->Player.StaminaGainCooldownTimer.TimerHandle = -1;
                 Entity->Player.StaminaGainCooldownTimer.Name = "Stamina Gain Cooldown";
             }
-            else if(StartsWith(&LineBuffer[0], "staminagaintimerfast"))
+            else if(StartsWith(LineBuffer, "staminagaintimerfast"))
             {
                 sscanf(LineBuffer, "staminagaintimerfast %lf", &Entity->Player.StaminaGainTimerFast);
             }
-            else if(StartsWith(&LineBuffer[0], "staminagaintimerslow"))
+            else if(StartsWith(LineBuffer, "staminagaintimerslow"))
             {
                 sscanf(LineBuffer, "staminagaintimerslow %lf", &Entity->Player.StaminaGainTimerSlow);
             }
-            else if(StartsWith(&LineBuffer[0], "checkpointplacementtimer"))
+            else if(StartsWith(LineBuffer, "checkpointplacementtimer"))
             {
                 Entity->Player.CheckpointPlacementTimer.TimerMax = 0;
                 sscanf(LineBuffer, "checkpointplacementtimer %lf", &Entity->Player.CheckpointPlacementTimer.TimerMax);
                 Entity->Player.CheckpointPlacementTimer.TimerHandle = -1;
                 Entity->Player.CheckpointPlacementTimer.Name = "Checkpoint Placement";
             }
-            else if(StartsWith(&LineBuffer[0], "checkpointplacementcooldowntimer"))
+            else if(StartsWith(LineBuffer, "checkpointplacementcooldowntimer"))
             {
                 Entity->Player.CheckpointPlacementCooldownTimer.TimerMax = 0;
                 sscanf(LineBuffer, "checkpointplacementcooldowntimer %lf", &Entity->Player.CheckpointPlacementCooldownTimer.TimerMax);
                 Entity->Player.CheckpointPlacementCooldownTimer.TimerHandle = -1;
                 Entity->Player.CheckpointPlacementCooldownTimer.Name = "Checkpoint Placement";
             }
-            else if(StartsWith(&LineBuffer[0], "healthpotiontimer"))
+            else if(StartsWith(LineBuffer, "healthpotiontimer"))
             {
                 Entity->Player.HealthPotionTimer.TimerMax = 0;
                 sscanf(LineBuffer, "healthpotiontimer %lf", &Entity->Player.HealthPotionTimer.TimerMax);
@@ -2364,38 +2342,6 @@ void UpdatePlayer(entity* Entity, game_state* GameState, r64 DeltaTime)
             //if(Entity->LookDirection == East && Entity->IsFlipped)
             //Entity->LookDirection = West;
             
-            // Pickup
-            if(GetActionButtonDown(Action_Interact, GameState) && Entity->Player.Pickup)
-            {
-                GameState->Entities[Entity->Player.TargetedEnemyHandle].Enemy.IsTargeted = false;
-                Entity->Player.TargetedEnemyHandle = -1;
-                
-                Entity->Player.Pickup->IsKinematic = false;
-                r32 ThrowingDir = Entity->IsFlipped ? -1.0f : 1.0f;
-                glm::vec2 Throw;
-                
-                glm::vec2 Dir = glm::normalize(glm::vec2(Entity->Player.CrosshairPositionX, Entity->Player.CrosshairPositionY));
-                Throw.x = Dir.x * Entity->Player.ThrowingSpeed;
-                Throw.y = Dir.y * Entity->Player.ThrowingSpeed;
-                
-                Entity->Player.Pickup->Velocity = Throw;
-                
-                if(Entity->Player.Pickup->Type == Entity_Barrel)
-                {
-                    StartTimer(GameState, Entity->Player.Pickup->Pickup.PickupThrowTimer);
-                    PlayAnimation(Entity->Player.Pickup, "barrel_thrown", GameState);
-                    PlaySoundEffect(GameState, &GameState->SoundManager.Throw);
-                    Entity->Player.Pickup = NULL;
-                    StartTimer(GameState, Entity->Player.PickupCooldownTimer);
-                }
-                else if(Entity->Player.Pickup->Type == Entity_Enemy && Entity->Player.Pickup->Enemy.EnemyType == Enemy_Blob)
-                {
-                    StartTimer(GameState, Entity->Player.Pickup->Enemy.Blob.PickupThrowTimer);
-                    PlaySoundEffect(GameState, &GameState->SoundManager.Throw);
-                    Entity->Player.Pickup = NULL;
-                    StartTimer(GameState, Entity->Player.PickupCooldownTimer);
-                }
-            }
         }
         
         if(Entity->Player.IsDashing && TimerDone(GameState, Entity->Player.DashTimer))
@@ -2404,7 +2350,7 @@ void UpdatePlayer(entity* Entity, game_state* GameState, r64 DeltaTime)
             StartTimer(GameState, Entity->Player.DashCooldownTimer);
         }
         
-        if(!Entity->Player.IsDashing && TimerDone(GameState, Entity->Player.DashCooldownTimer) && !Entity->Player.Pickup && !Entity->Player.IsAttacking  && TimerDone(GameState, Entity->Player.DashTimer) && GetActionButtonDown(Action_Dash, GameState)  && Entity->Player.Stamina >= Entity->Player.RollStaminaCost - Entity->Player.MinDiffStamina)
+        if(!Entity->Player.IsDashing && TimerDone(GameState, Entity->Player.DashCooldownTimer) && !Entity->Player.IsAttacking  && TimerDone(GameState, Entity->Player.DashTimer) && GetActionButtonDown(Action_Dash, GameState)  && Entity->Player.Stamina >= Entity->Player.RollStaminaCost - Entity->Player.MinDiffStamina)
         {
             PlaySoundEffect(GameState, &GameState->SoundManager.Dash);
             Entity->Player.IsDashing = true;
@@ -2560,38 +2506,6 @@ void UpdatePlayer(entity* Entity, game_state* GameState, r64 DeltaTime)
         
         CheckCollision(GameState, Entity, &CollisionInfo);
         
-        if(Entity->Player.Pickup)
-        {
-            Entity->Player.Pickup->Position = glm::vec2(Entity->Position.x - 0.5f, Entity->Position.y);
-            
-            // If the player has targeted an enemy, the crosshair should be targeted at it
-            if(Entity->Player.TargetedEnemyHandle != -1)
-            {
-                auto Direction = GameState->Entities[Entity->Player.TargetedEnemyHandle].Position - Entity->Position;
-                
-                Entity->Player.CrosshairPositionX = Direction.x * 0.9f; // @Incomplete: Not sure this is the best way, but it works fine
-                Entity->Player.CrosshairPositionY = Direction.y * 0.9f;
-            }
-            else
-            {
-                auto Input = UsingController ? glm::normalize(glm::vec2(GetInputX(GameState, Stick_Right), GetInputY(GameState, Stick_Right))) : DirectionToMouse;
-                
-                if(Input.x == Input.x || Input.y == Input.y) // NaN check
-                {
-                    Entity->Player.CrosshairPositionX = Input.x * Entity->Player.CrosshairRadius;
-                    Entity->Player.CrosshairPositionY = Input.y * Entity->Player.CrosshairRadius;
-                }
-            }
-        }
-        else
-        {
-            if(Entity->Player.TargetedEnemyHandle != -1)
-            {
-                GameState->Entities[Entity->Player.TargetedEnemyHandle].Enemy.IsTargeted = false;
-                Entity->Player.TargetedEnemyHandle = -1;
-            }
-            Entity->Player.RenderCrosshair = false;
-        }
         
         if(!Entity->Player.IsAttacking && !Entity->Player.IsChargingCheckpoint && !Entity->Player.IsDashing && GetActionButton(Action_Checkpoint, GameState) && TimerDone(GameState, Entity->Player.CheckpointPlacementCooldownTimer) && Entity->Player.Inventory.HasCheckpoint)
         {
@@ -2631,7 +2545,7 @@ void UpdatePlayer(entity* Entity, game_state* GameState, r64 DeltaTime)
         }
         
         //attacking
-        if(!Entity->Player.Pickup && !Entity->Player.IsChargingCheckpoint && TimerDone(GameState, Entity->Player.AttackCooldownTimer) &&
+        if(!Entity->Player.IsChargingCheckpoint && TimerDone(GameState, Entity->Player.AttackCooldownTimer) &&
            TimerDone(GameState, Entity->StaggerCooldownTimer)
            && !Entity->Player.IsAttacking && Entity->Player.Stamina >= Entity->Player.AttackStaminaCost - Entity->Player.MinDiffStamina && (GetActionButtonDown(Action_Attack, GameState)))
         {
@@ -2683,86 +2597,6 @@ void UpdatePlayer(entity* Entity, game_state* GameState, r64 DeltaTime)
             ResetActionButtonQueue(GameState);
         }
         
-        if(Entity->Player.Pickup)
-        {
-            if(GetActionButtonDown(Action_Target, GameState))
-            {
-                if(Entity->Player.TargetedEnemyHandle == -1)
-                {
-                    i32 Closest = -1;
-                    r32 ClosestDistance = 2000.0f;
-                    
-                    for(u32 Index = 0; Index < GameState->EntityCount; Index++)
-                    {
-                        if(!GameState->Entities[Index].Dead &&
-                           GameState->Entities[Index].Type == Entity_Enemy && GameState->Entities[Index].Enemy.EnemyType == Enemy_Skeleton) // @Incomplete: We need a way to easily determine whether it's an enemy or not
-                        {
-                            auto Distance = glm::distance(Entity->Position, GameState->Entities[Index].Position);
-                            if(Distance <= Entity->Player.TargetingDistance && Distance < ClosestDistance)
-                            {
-                                ClosestDistance = Distance;
-                                Closest = Index;
-                            }
-                        }
-                    }
-                    
-                    if(Closest != -1)
-                    {
-                        Entity->Player.TargetedEnemyHandle = Closest;
-                        GameState->Entities[Closest].Enemy.IsTargeted = true;
-                    }
-                }
-                else
-                {
-                    GameState->Entities[Entity->Player.TargetedEnemyHandle].Enemy.IsTargeted = false;
-                    Entity->Player.TargetedEnemyHandle = -1;
-                }
-            }
-            
-            if(GetActionButtonDown(Action_SwitchTarget, GameState))
-            {
-                i32 NextTarget = -1;
-                
-                if(Entity->Player.TargetedEnemyHandle + 1 < GameState->EntityCount)
-                {
-                    for(u32 Index = Entity->Player.TargetedEnemyHandle + 1; Index < GameState->EntityCount; Index++)
-                    {
-                        if(GameState->Entities[Index].Health > 0 && GameState->Entities[Index].Type == Entity_Enemy)
-                        {
-                            auto Distance = glm::distance(Entity->Position, GameState->Entities[Index].Position);
-                            if(Distance <= Entity->Player.TargetingDistance)
-                            {
-                                NextTarget = Index;
-                                break;
-                            }
-                        }
-                    }
-                }
-                
-                if(NextTarget == -1 && Entity->Player.TargetedEnemyHandle > 0)
-                {
-                    for(i32 Index = 0; Index < Entity->Player.TargetedEnemyHandle - 1; Index++)
-                    {
-                        if(GameState->Entities[Index].Health > 0 && GameState->Entities[Index].Type == Entity_Enemy)
-                        {
-                            auto Distance = glm::distance(Entity->Position, GameState->Entities[Index].Position);
-                            if(Distance <= Entity->Player.TargetingDistance)
-                            {
-                                NextTarget = Index;
-                                break;
-                            }
-                        }
-                    }
-                }
-                
-                if(NextTarget != -1)
-                {
-                    GameState->Entities[Entity->Player.TargetedEnemyHandle].Enemy.IsTargeted = false;
-                    GameState->Entities[NextTarget].Enemy.IsTargeted = true;
-                    Entity->Player.TargetedEnemyHandle = NextTarget;
-                }
-            }
-        }
         
         auto Direction = glm::vec2(Pos.x, Pos.y) - Entity->Position;
         Direction = glm::normalize(Direction);
@@ -3001,30 +2835,6 @@ void UpdateAI(entity* Entity, game_state* GameState, r64 DeltaTime)
 
 void UpdateBlob(entity* Entity, game_state* GameState, r64 DeltaTime)
 {
-    if(!Entity->Enemy.Blob.InPickupMode)
-    {
-        auto& Player = GameState->Entities[0];
-        
-        Entity->RenderButtonHint = !Entity->IsKinematic && glm::distance(Player.Position, Entity->Position) < 1.5f;
-        
-        if(TimerDone(GameState, Entity->Enemy.Blob.PickupThrowTimer) && Entity->RenderButtonHint && GetActionButtonDown(Action_Interact, GameState) && !Player.Player.Pickup)
-        {
-            Player.Player.Pickup = Entity;
-            Player.Player.RenderCrosshair = true;
-            Entity->Position = Player.Position;
-            Entity->Velocity = glm::vec2(0.0f,0.0f);
-            Entity->IsKinematic = true;
-            Entity->Enemy.Blob.InPickupMode = true;
-            Entity->RenderButtonHint = false;
-        }
-    }
-    else
-    {
-        if(TimerDone(GameState, Entity->Enemy.Blob.PickupThrowTimer))
-        {
-            Entity->Velocity = glm::vec2();
-        }
-    }
     
     UpdateAI(Entity,GameState,DeltaTime);
     collision_info CollisionInfo;
@@ -3041,22 +2851,6 @@ void UpdateBlob(entity* Entity, game_state* GameState, r64 DeltaTime)
                 {
                     Hit(GameState, Entity, CollisionInfo.Other[Index]);
                 }
-            }
-        }
-        else if(!TimerDone(GameState, Entity->Enemy.Blob.PickupThrowTimer))
-        {
-            if(CollisionInfo.OtherCount > 0)
-            {
-                Entity->Enemy.AIState = AI_Dying;
-                PlayAnimation(Entity, "explosion", GameState);
-                Entity->Health = 0;
-                Entity->Velocity = glm::vec2();
-                if(Entity->Enemy.Blob.InPickupMode)
-                {
-                    auto& Player = GameState->Entities[0];
-                    Player.Player.Pickup = 0;
-                }
-                PlaySoundEffect(GameState, &GameState->SoundManager.Explosion);
             }
         }
     }
@@ -3356,11 +3150,6 @@ void UpdateBarrel(entity* Entity, game_state* GameState, r64 DeltaTime)
         Entity->CollisionAABB.IsColliding = false;
         CheckCollision(GameState, Entity, &CollisionInfo);
         
-        if(TimerDone(GameState, Entity->Pickup.PickupThrowTimer))
-        {
-            Entity->Velocity = glm::vec2();
-        }
-        
         b32 HasHitEnemy = false;
         
         if(Entity->Velocity.x != 0 || Entity->Velocity.y != 0)
@@ -3394,15 +3183,6 @@ void UpdateBarrel(entity* Entity, game_state* GameState, r64 DeltaTime)
         auto& Player = GameState->Entities[0];
         
         Entity->RenderButtonHint = !Entity->IsKinematic && glm::distance(Player.Position, Entity->Position) < 1.5f;
-        
-        if(TimerDone(GameState, Entity->Pickup.PickupThrowTimer) && Entity->RenderButtonHint && GetActionButtonDown(Action_Interact, GameState) && !Player.Player.Pickup)
-        {
-            Player.Player.Pickup = Entity;
-            Player.Player.RenderCrosshair = true;
-            Entity->Position = Player.Position;
-            Entity->Velocity = glm::vec2(0.0f,0.0f);
-            Entity->IsKinematic = true;
-        }
         
         Entity->Position.x += Entity->Velocity.x * (r32)DeltaTime;
         Entity->Position.y += Entity->Velocity.y * (r32)DeltaTime;
