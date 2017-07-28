@@ -27,13 +27,10 @@ struct sound_queue
     sound_effect Sounds[32];
 };
 
-struct sound_manager
+
+struct sound_effects
 {
-    r32 SFXGain;
-    r32 MusicGain;
-    b32 Muted;
-    b32 Paused;
-    b32 Stopped;
+    
     union 
     {
         sound_effect SoundEffects[64];
@@ -73,6 +70,17 @@ struct sound_manager
             sound_effect Brugt;
         };
     };
+};
+
+
+struct sound_manager
+{
+    r32 SFXGain;
+    r32 MusicGain;
+    b32 Muted;
+    b32 Paused;
+    b32 Stopped;
+    sound_effects SoundEffects;
 };
 
 

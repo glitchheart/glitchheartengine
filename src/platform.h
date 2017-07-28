@@ -77,9 +77,27 @@ struct entity_file_reload_data
     b32 ReloadBonfireFile;
 };
 
+struct config_data
+{
+    char* Title;
+    char* Version;
+    char* StartingLevelFilePath;
+    u32 ScreenWidth;
+    u32 ScreenHeight;
+    b32 Fullscreen;
+    r32 Contrast;
+    r32 Brightness;
+    b32 Muted;
+    r32 SFXVolume;
+    r32 MusicVolume;
+    r32 Zoom;
+};
+
 struct game_memory
 {
     b32 IsInitialized;
+    b32 ShouldReload;
+    config_data ConfigData;
     
     u64 PermanentStorageSize;
     void* PermanentStorage;
@@ -87,6 +105,7 @@ struct game_memory
 
 struct input_controller;
 struct sound_queue;
+struct sound_effects;
 
 struct game_update_return
 {
@@ -94,7 +113,7 @@ struct game_update_return
     i32 EntityCount;
 };
 
-#define UPDATE(name)void name(r64 DeltaTime, game_memory* GameMemory, input_controller* InputController, sound_queue* SoundQueue, game_update_return* GameUpdateStruct)
+#define UPDATE(name)void name(r64 DeltaTime, game_memory* GameMemory, input_controller* InputController, sound_queue* SoundQueue, game_update_return* GameUpdateStruct, sound_effects* SoundEffects)
 typedef UPDATE(update);
 UPDATE(UpdateStub)
 {
@@ -123,21 +142,6 @@ char* Concat(const char *s1, const char *s2)
     return result;
 }
 
-struct config_data
-{
-    char* Title;
-    char* Version;
-    char* StartingLevelFilePath;
-    u32 ScreenWidth;
-    u32 ScreenHeight;
-    b32 Fullscreen;
-    r32 Contrast;
-    r32 Brightness;
-    b32 Muted;
-    r32 SFXVolume;
-    r32 MusicVolume;
-    r32 Zoom;
-};
 
 
 b32 StartsWith(const char *A, const char *B)

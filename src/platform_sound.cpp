@@ -161,32 +161,32 @@ static void LoadSound(const char *filename, sound_effect *LoadedSound, sound_dev
     SoundDevice->Buffers[SoundDevice->BufferCount++] = LoadedSound->Buffer;
 }
 
-static void LoadSounds(sound_manager *SoundManager, sound_device* SoundDevice)
+static void LoadSounds(sound_effects* SoundEffects, sound_device* SoundDevice)
 {
-    LoadSound("../assets/audio/Countdown_1.wav", &SoundManager->Effect01,SoundDevice);
-    LoadSound("../assets/audio/mainmenu.wav", &SoundManager->MainMenuTrack,SoundDevice);
-    LoadSound("../assets/audio/sword_slash_01.wav", &SoundManager->SwordSlash01,SoundDevice);
-    LoadSound("../assets/audio/sword_hit_01.wav",  &SoundManager->SwordHit01,SoundDevice);
-    LoadSound("../assets/audio/sword_hit_02.wav",  &SoundManager->SwordHit02, SoundDevice);
-    LoadSound("../assets/audio/dash.wav", &SoundManager->Dash,SoundDevice);
-    LoadSound("../assets/audio/explosion.wav", &SoundManager->Explosion, SoundDevice);
-    LoadSound("../assets/audio/ui/button_click.wav", &SoundManager->ButtonClick, SoundDevice);
-    LoadSound("../assets/audio/barrel_break.wav", &SoundManager->BarrelBreak, SoundDevice);
-    LoadSound("../assets/audio/throw.wav", &SoundManager->Throw, SoundDevice);
-    LoadSound("../assets/audio/slide_1.wav", &SoundManager->Slide01, SoundDevice);
-    LoadSound("../assets/audio/use_health.wav", &SoundManager->UseHealth, SoundDevice);
+    LoadSound("../assets/audio/Countdown_1.wav", &SoundEffects->Effect01,SoundDevice);
+    LoadSound("../assets/audio/mainmenu.wav", &SoundEffects->MainMenuTrack,SoundDevice);
+    LoadSound("../assets/audio/sword_slash_01.wav", &SoundEffects->SwordSlash01,SoundDevice);
+    LoadSound("../assets/audio/sword_hit_01.wav",  &SoundEffects->SwordHit01,SoundDevice);
+    LoadSound("../assets/audio/sword_hit_02.wav",  &SoundEffects->SwordHit02, SoundDevice);
+    LoadSound("../assets/audio/dash.wav", &SoundEffects->Dash,SoundDevice);
+    LoadSound("../assets/audio/explosion.wav", &SoundEffects->Explosion, SoundDevice);
+    LoadSound("../assets/audio/ui/button_click.wav", &SoundEffects->ButtonClick, SoundDevice);
+    LoadSound("../assets/audio/barrel_break.wav", &SoundEffects->BarrelBreak, SoundDevice);
+    LoadSound("../assets/audio/throw.wav", &SoundEffects->Throw, SoundDevice);
+    LoadSound("../assets/audio/slide_1.wav", &SoundEffects->Slide01, SoundDevice);
+    LoadSound("../assets/audio/use_health.wav", &SoundEffects->UseHealth, SoundDevice);
     
-    LoadSound("../assets/audio/enemies/minotaur/minotaur_grunt01.wav", &SoundManager->MinotaurGrunt01, SoundDevice);
-    LoadSound("../assets/audio/enemies/minotaur/minotaur_grunt02.wav",  &SoundManager->MinotaurGrunt02, SoundDevice);
-    LoadSound("../assets/audio/enemies/minotaur/minotaur_hit.wav", &SoundManager->MinotaurHit, SoundDevice);
-    LoadSound("../assets/audio/enemies/minotaur/minotaur_death.wav", &SoundManager->MinotaurDeath, SoundDevice);
-    LoadSound("../assets/audio/enemies/minotaur/stomp.wav", &SoundManager->MinotaurStomp, SoundDevice);
-    LoadSound("../assets/audio/enemies/shield_impact.wav", &SoundManager->ShieldImpact, SoundDevice);
-    LoadSound("../assets/audio/splash_01.wav", &SoundManager->Splash01, SoundDevice);
+    LoadSound("../assets/audio/enemies/minotaur/minotaur_grunt01.wav", &SoundEffects->MinotaurGrunt01, SoundDevice);
+    LoadSound("../assets/audio/enemies/minotaur/minotaur_grunt02.wav",  &SoundEffects->MinotaurGrunt02, SoundDevice);
+    LoadSound("../assets/audio/enemies/minotaur/minotaur_hit.wav", &SoundEffects->MinotaurHit, SoundDevice);
+    LoadSound("../assets/audio/enemies/minotaur/minotaur_death.wav", &SoundEffects->MinotaurDeath, SoundDevice);
+    LoadSound("../assets/audio/enemies/minotaur/stomp.wav", &SoundEffects->MinotaurStomp, SoundDevice);
+    LoadSound("../assets/audio/enemies/shield_impact.wav", &SoundEffects->ShieldImpact, SoundDevice);
+    LoadSound("../assets/audio/splash_01.wav", &SoundEffects->Splash01, SoundDevice);
     
-    LoadSound("../assets/audio/bonfire.wav", &SoundManager->Bonfire, SoundDevice);
+    LoadSound("../assets/audio/bonfire.wav", &SoundEffects->Bonfire, SoundDevice);
     
-    LoadSound("../assets/audio/music/Brugt.wav", &SoundManager->Brugt, SoundDevice, "Brugt");
+    LoadSound("../assets/audio/music/Brugt.wav", &SoundEffects->Brugt, SoundDevice, "Brugt");
     
     // // Add more sounds here if necessary
 }

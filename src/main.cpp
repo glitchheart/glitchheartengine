@@ -149,9 +149,8 @@ int main(void)
     
     //@Incomplete: We really want to get ALL of game state out of main!!!
     game_state* GameState = (game_state*)GameMemory.PermanentStorage;
-    GameState->ShouldReload = true;
-    GameState->LevelPath = ConfigData.StartingLevelFilePath;
-    GameState->InitialZoom = ConfigData.Zoom;
+    GameMemory.ShouldReload = true;
+    GameMemory.ConfigData = ConfigData;
     InitializeOpenGL(&GameMemory, &ConfigData);
     
     game_code Game = LoadGameCode();
@@ -166,15 +165,11 @@ int main(void)
     InitAudio(&SoundDevice);
     
     sound_queue SoundQueue = {};
+    sound_effects SoundEffects = {};
     if (SoundDevice.IsInitialized)
     {
-        sound_manager SoundManager = {};
-        SoundManager.Muted = ConfigData.Muted;
-        SoundManager.SFXGain = ConfigData.SFXVolume;
-        SoundManager.MusicGain = ConfigData.MusicVolume;
-        LoadSounds(&SoundManager,&SoundDevice);
+        LoadSounds(&SoundEffects,&SoundDevice);
         ResetSoundQueue(&SoundQueue);
-        GameState->SoundManager = SoundManager;
         SoundDevice.SFXVolume = ConfigData.SFXVolume;
         SoundDevice.MusicVolume = ConfigData.MusicVolume;
     }
@@ -224,7 +219,7 @@ int main(void)
         GameState->ReloadData = &AssetManager.ReloadData;
         ReloadDlls(&Game);
         
-        game_update_return GameUpdateStruct = {};Game.Update(DeltaTime, &GameMemory, &InputController, &SoundQueue, &GameUpdateStruct);
+        game_update_return GameUpdateStruct = {};Game.Update(DeltaTime, &GameMemory, &InputController, &SoundQueue, &GameUpdateStruct, &SoundEffects);
         
         CheckLevelVAO(&GameMemory);
         Render(&GameMemory);
