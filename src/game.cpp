@@ -751,6 +751,9 @@ extern "C" UPDATE(Update)
     
     if(!GameState->IsInitialized)
     {
+        GameState->InitialZoom = GameMemory->ConfigData.Zoom;
+        GameState->LevelPath = GameMemory->ConfigData.StartingLevelFilePath;
+        GameState->ShouldReload = GameMemory->ShouldReload;
         GameState->Console = {};
         GameState->RenderGame = true;
         GameState->RenderLight = true;
@@ -791,6 +794,13 @@ extern "C" UPDATE(Update)
         
         if(GameState->ShouldReload)
         {
+            sound_manager SoundManager = {};
+            memcpy(&SoundManager.SoundEffects, SoundEffects, sizeof(sound_effect) * (64 + 32));
+            SoundManager.Muted = GameMemory->ConfigData.Muted;
+            SoundManager.SFXGain = GameMemory->ConfigData.SFXVolume;
+            SoundManager.MusicGain = GameMemory->ConfigData.MusicVolume;
+            GameState->SoundManager = SoundManager;
+            
             LoadGameDataFile(GameState);
             srand((u32)time(NULL));
             
@@ -803,6 +813,7 @@ extern "C" UPDATE(Update)
             
             GameState->GameMode = Mode_InGame;
             GameState->ShouldReload = false;
+            GameMemory->ShouldReload = false;
             PLAY_TRACK(Brugt);
         }
         

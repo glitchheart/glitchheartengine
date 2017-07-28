@@ -41,6 +41,6 @@
      GameState->SoundManager.Stopped = true;
  }
  
-#define PLAY_SOUND(Sound,...) PlaySoundEffect(&GameState->SoundManager, SoundQueue, &GameState->SoundManager.## Sound, __VA_ARGS__)
+#define PLAY_SOUND(Sound,...) PlaySoundEffect(&GameState->SoundManager, SoundQueue, &GameState->SoundManager.SoundEffects.## Sound, __VA_ARGS__)
  
- #define PLAY_TRACK(Track,...) PlayMusicTrack(&GameState->SoundManager, SoundQueue, &GameState->SoundManager.## Track, __VA_ARGS__)
+ #define PLAY_TRACK(Track,...) PlayMusicTrack(&GameState->SoundManager, SoundQueue, &GameState->SoundManager.SoundEffects.## Track, __VA_ARGS__)
