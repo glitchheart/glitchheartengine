@@ -136,6 +136,8 @@ struct game_state
     
     r32 InitialZoom;
     
+    glm::vec2 EntityPositions[NUM_ENTITIES];
+    
     Player_State PlayerState = Player_Alive;
     timer DeathScreenTimer;
     

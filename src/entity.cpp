@@ -565,6 +565,7 @@ static void LoadEntityData(FILE* File, entity* Entity, game_state* GameState, b3
             Entity->LightSourceHandle = LoadLight(GameState, LineBuffer, Entity->Position, Entity->LightSourceHandle);
         }
     }
+    GameState->EntityPositions[GameState->EntityCount] = Entity->Position;
 }
 
 static void LoadEnemyData(FILE* File, entity* Entity, game_state* GameState)
@@ -3398,5 +3399,6 @@ void UpdateEntities(game_state* GameState, input_controller* InputController, so
             if(Entity->Active && Entity->CurrentAnimation && Entity->AnimationInfo.Playing)
                 TickAnimation(&Entity->AnimationInfo, Entity->CurrentAnimation, DeltaTime);
         }
+        GameState->EntityPositions[EntityIndex] = Entity->Position;
     }
 }

@@ -489,6 +489,4 @@ struct entity
     entity(){}
 };
 
-#define NUM_ENTITIES 100
-
 #endif

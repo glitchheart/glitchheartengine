@@ -89,9 +89,6 @@ enum Render_Mode
     Render_Fill, Render_Outline
 };
 
-
-#define NUM_ENTITIES 100
-
 struct entity;
 struct object_entity;
 

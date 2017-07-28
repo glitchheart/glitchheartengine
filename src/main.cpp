@@ -16,6 +16,7 @@ input_controller InputController;
 
 #include "gmap.h"
 #include "gmap.cpp"
+#include "sound.h"
 #include "platform_sound.h"
 #include "platform_sound.cpp"
 #include "filehandling.h"
@@ -167,6 +168,7 @@ int main(void)
     sound_device SoundDevice = {};
     InitAudio(&SoundDevice);
     
+    sound_queue SoundQueue = {};
     if (SoundDevice.IsInitialized)
     {
         sound_manager SoundManager = {};
@@ -174,11 +176,11 @@ int main(void)
         SoundManager.SFXGain = ConfigData.SFXVolume;
         SoundManager.MusicGain = ConfigData.MusicVolume;
         LoadSounds(&SoundManager,&SoundDevice);
-        ResetSoundQueue(&SoundManager);
+        ResetSoundQueue(&SoundQueue);
         GameState->SoundManager = SoundManager;
+        SoundDevice.SFXVolume = ConfigData.SFXVolume;
+        SoundDevice.MusicVolume = ConfigData.MusicVolume;
     }
-    
-    sound_queue SoundQueue = {};
     
     r64 LastFrame = GetTime();
     r64 CurrentFrame = 0.0;
@@ -226,11 +228,12 @@ int main(void)
         GameState->ReloadData = &AssetManager.ReloadData;
         ReloadDlls(&Game);
         
-        Game.Update(DeltaTime, &GameMemory, &InputController, &SoundQueue);
+        i32 EntityCount = 0;
+        auto EntityPositions = Game.Update(DeltaTime, &GameMemory, &InputController, &SoundQueue,&EntityCount);
         
         CheckLevelVAO(&GameMemory);
         Render(&GameMemory);
-        PlaySounds(&GameMemory,&SoundDevice);
+        PlaySounds(&SoundDevice, &SoundQueue, EntityPositions, EntityCount);
         
         SetControllerInvalidKeys();
         SetInvalidKeys();
