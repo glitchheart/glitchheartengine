@@ -1,6 +1,8 @@
 #ifndef PLATFORM_H
 #define PLATFORM_H
 
+#define NUM_ENTITIES 100
+
 #define ArrayCount(Array) (sizeof(Array) / sizeof(Array[0])) 
 
 
@@ -84,11 +86,13 @@ struct game_memory
 };
 
 struct input_controller;
+struct sound_queue;
 
-#define UPDATE(name)void name(r64 DeltaTime, game_memory* GameMemory, input_controller* InputController)
+#define UPDATE(name)glm::vec2* name(r64 DeltaTime, game_memory* GameMemory, input_controller* InputController, sound_queue* SoundQueue, i32* EntityCount)
 typedef UPDATE(update);
 UPDATE(UpdateStub)
 {
+    return 0;
 }
 
 void HandleError(char const *File, i32 LineNum, char const *msg)

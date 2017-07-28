@@ -22,6 +22,8 @@ struct sound_device
     b32 PrevStopped;
     b32 Stopped;
     r32 SourceGain[SOURCES];
+    r32 SFXVolume;
+    r32 MusicVolume;
     source_to_sound_map SourceToSound;
 };
 

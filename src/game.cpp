@@ -801,10 +801,10 @@ extern "C" UPDATE(Update)
             
             GameState->GameMode = Mode_InGame;
             GameState->ShouldReload = false;
-            PlayMusicTrack(GameState, &GameState->SoundManager.Brugt);
+            PlayMusicTrack(&GameState->SoundManager, SoundQueue, &GameState->SoundManager.Brugt);
         }
         
-        LoadLevelFromFile(GameState->LevelPath, &GameState->CurrentLevel, GameState);
+        LoadLevelFromFile(GameState->LevelPath, &GameState->CurrentLevel, GameState, SoundQueue);
         
         GameState->GameCamera.Zoom = GameState->InitialZoom;
         GameState->GameCamera.ViewportWidth = GameState->RenderState.WindowWidth;
@@ -881,7 +881,7 @@ extern "C" UPDATE(Update)
                 auto Entity = GameState->Entities[EntityIndex];
                 if(Entity.Type == Entity_Bonfire)
                 {
-                    LoadBonfireData(GameState, EntityIndex);
+                    LoadBonfireData(GameState, SoundQueue, EntityIndex);
                 }
             }
             GameState->ReloadData->ReloadBonfireFile = false;
@@ -1164,7 +1164,7 @@ extern "C" UPDATE(Update)
         {
             if(!GameState->Paused && !GameState->StatGainModeOn)
             {
-                UpdateEntities(GameState, InputController, DeltaTime);
+                UpdateEntities(GameState, InputController, SoundQueue, DeltaTime);
                 UpdateObjects(GameState, DeltaTime);
                 
                 TickTimers(GameState, DeltaTime);
@@ -1280,7 +1280,7 @@ extern "C" UPDATE(Update)
         case Mode_Editor:
         {
             Center = GameState->EditorCamera.Center;
-            EditorUpdateEntities(GameState,InputController, DeltaTime);
+            EditorUpdateEntities(GameState,InputController, SoundQueue, DeltaTime);
             
             switch(GameState->EditorState.PlacementMode)
             {
@@ -1353,6 +1353,9 @@ extern "C" UPDATE(Update)
     GameState->RenderState.DeltaTime = DeltaTime;
     GameState->ClearTilePositionFrame = !GameState->ClearTilePositionFrame;
     GetActionButtonsForQueue(InputController);
+    *EntityCount = GameState->EntityCount;
+    
+    return GameState->EntityPositions;
 }
 
  
