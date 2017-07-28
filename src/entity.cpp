@@ -565,7 +565,7 @@ static void LoadEntityData(FILE* File, entity* Entity, game_state* GameState, b3
             Entity->LightSourceHandle = LoadLight(GameState, LineBuffer, Entity->Position, Entity->LightSourceHandle);
         }
     }
-    GameState->EntityPositions[GameState->EntityCount] = Entity->Position;
+    GameState->EntityPositions[Entity->EntityIndex] = Entity->Position;
 }
 
 static void LoadEnemyData(FILE* File, entity* Entity, game_state* GameState)

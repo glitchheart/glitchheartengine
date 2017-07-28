@@ -159,8 +159,6 @@ int main(void)
     
     u32 FrameCounterForAssetCheck = 0;
     
-    GameState->Console = {};
-    
     sound_device SoundDevice = {};
     InitAudio(&SoundDevice);
     
@@ -224,12 +222,12 @@ int main(void)
         GameState->ReloadData = &AssetManager.ReloadData;
         ReloadDlls(&Game);
         
-        i32 EntityCount = 0;
-        auto EntityPositions = Game.Update(DeltaTime, &GameMemory, &InputController, &SoundQueue,&EntityCount);
+        
+        auto GameUpdateStruct = Game.Update(DeltaTime, &GameMemory, &InputController, &SoundQueue);
         
         CheckLevelVAO(&GameMemory);
         Render(&GameMemory);
-        PlaySounds(&SoundDevice, &SoundQueue, EntityPositions, EntityCount);
+        PlaySounds(&SoundDevice, &SoundQueue, GameUpdateStruct.EntityPositions, GameUpdateStruct.EntityCount);
         
         SetControllerInvalidKeys();
         SetInvalidKeys();

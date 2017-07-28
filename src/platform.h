@@ -88,11 +88,17 @@ struct game_memory
 struct input_controller;
 struct sound_queue;
 
-#define UPDATE(name)glm::vec2* name(r64 DeltaTime, game_memory* GameMemory, input_controller* InputController, sound_queue* SoundQueue, i32* EntityCount)
+struct game_update_return
+{
+    glm::vec2 EntityPositions[NUM_ENTITIES];
+    i32 EntityCount;
+};
+
+#define UPDATE(name)game_update_return name(r64 DeltaTime, game_memory* GameMemory, input_controller* InputController, sound_queue* SoundQueue)
 typedef UPDATE(update);
 UPDATE(UpdateStub)
 {
-    return 0;
+    return game_update_return();
 }
 
 void HandleError(char const *File, i32 LineNum, char const *msg)
