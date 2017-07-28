@@ -1,0 +1,19 @@
+name demon_attack
+type sprite
+framecount 10
+framesize 128 128
+center 0.45 0.000000
+loop 1
+timeperframe 0.100000
+frames
+0 0
+128 0
+256 0
+384 0
+512 0
+640 0
+768 0
+896 0
+1024 0
+1152 0
+texture demon_attack
