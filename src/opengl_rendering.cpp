@@ -612,6 +612,7 @@ static void RenderSetup(render_state *RenderState)
     glGenBuffers(1, &RenderState->SpriteQuadVBO);
     glBindBuffer(GL_ARRAY_BUFFER, RenderState->SpriteQuadVBO);
     glBufferData(GL_ARRAY_BUFFER, RenderState->SpriteQuadVerticesSize, RenderState->SpriteQuadVertices, GL_STATIC_DRAW);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, RenderState->QuadIndexBuffer);
     
     RenderState->TextureShader.Type = Shader_Texture;
     LoadShader(ShaderPaths[Shader_Texture], &RenderState->TextureShader);

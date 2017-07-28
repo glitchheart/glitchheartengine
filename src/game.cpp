@@ -803,7 +803,7 @@ extern "C" UPDATE(Update)
             
             GameState->GameMode = Mode_InGame;
             GameState->ShouldReload = false;
-            PlayMusicTrack(&GameState->SoundManager, SoundQueue, &GameState->SoundManager.Brugt);
+            PLAY_TRACK(Brugt);
         }
         
         LoadLevelFromFile(GameState->LevelPath, &GameState->CurrentLevel, GameState, SoundQueue);
@@ -889,6 +889,12 @@ extern "C" UPDATE(Update)
             GameState->ReloadData->ReloadBonfireFile = false;
         }
     }
+    if(GameState->Console.Open)
+    {
+        if(GameState->Console.BufferIndex < CONSOLE_BUFFER_SIZE - 1 && InputController->CurrentCharacter != 0)
+            GameState->Console.Buffer[GameState->Console.BufferIndex++] = InputController->CurrentCharacter;
+    }
+    
     CheckConsoleInput(GameState, InputController, DeltaTime);
     
     if(GameState->GameMode == Mode_Editor)
@@ -1023,11 +1029,6 @@ extern "C" UPDATE(Update)
         }
     }
     
-    if(GameState->Console.Open)
-    {
-        if(GameState->Console.BufferIndex < CONSOLE_BUFFER_SIZE - 1 && InputController->CurrentCharacter != 0)
-            GameState->Console.Buffer[GameState->Console.BufferIndex++] = InputController->CurrentCharacter;
-    }
     
     if(GameState->GameMode == Mode_MainMenu)
     {

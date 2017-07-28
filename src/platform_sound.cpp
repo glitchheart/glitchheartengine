@@ -94,6 +94,7 @@ static void ResetSoundQueue(sound_queue* SoundQueue)
     {
         SoundQueue->Sounds[Sound].Buffer = 0;
     }
+    SoundQueue->SoundCount = 0;
 }
 
 static void InitAudio(sound_device *SoundDevice)
