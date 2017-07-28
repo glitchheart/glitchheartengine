@@ -916,18 +916,19 @@ static void LoadTilesheetTextures(game_state* GameState, render_state* RenderSta
     }
 }
 
-static void InitializeOpenGL(game_memory* GameMemory, render_state* RenderState, config_data* ConfigData)
+static void InitializeOpenGL(game_memory* GameMemory, config_data* ConfigData)
 {
     game_state* GameState = (game_state*)GameMemory->PermanentStorage;
     if (!glfwInit())
         exit(EXIT_FAILURE);
+    render_state RenderState = {};
     
-    RenderState->Window = glfwCreateWindow(ConfigData->ScreenWidth, ConfigData->ScreenHeight, Concat(Concat(ConfigData->Title, " "), ConfigData->Version), ConfigData->Fullscreen ? glfwGetPrimaryMonitor() : NULL, 
-                                           NULL);
-    RenderState->Contrast = ConfigData->Contrast;
-    RenderState->Brightness = ConfigData->Brightness;
+    RenderState.Window = glfwCreateWindow(ConfigData->ScreenWidth, ConfigData->ScreenHeight, Concat(Concat(ConfigData->Title, " "), ConfigData->Version), ConfigData->Fullscreen ? glfwGetPrimaryMonitor() : NULL, 
+                                          NULL);
+    RenderState.Contrast = ConfigData->Contrast;
+    RenderState.Brightness = ConfigData->Brightness;
     
-    if (!RenderState->Window)
+    if (!RenderState.Window)
     {
         glfwTerminate();
         exit(EXIT_FAILURE);
@@ -937,52 +938,52 @@ static void InitializeOpenGL(game_memory* GameMemory, render_state* RenderState,
     const GLFWvidmode *Mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
     int Width, Height;
     
-    glfwGetFramebufferSize(RenderState->Window, &Width, &Height);
-    glfwSetWindowPos(RenderState->Window, Mode->width / 2 - Width / 2, Mode->height / 2 - Height / 2);
+    glfwGetFramebufferSize(RenderState.Window, &Width, &Height);
+    glfwSetWindowPos(RenderState.Window, Mode->width / 2 - Width / 2, Mode->height / 2 - Height / 2);
     
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
-    glfwSetInputMode(RenderState->Window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+    glfwSetInputMode(RenderState.Window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
     
-    glfwSetWindowAspectRatio(RenderState->Window, 16, 9);
+    glfwSetWindowAspectRatio(RenderState.Window, 16, 9);
     
     glfwSetErrorCallback(ErrorCallback);
-    glfwSetFramebufferSizeCallback(RenderState->Window, FramebufferSizeCallback);
+    glfwSetFramebufferSizeCallback(RenderState.Window, FramebufferSizeCallback);
     
-    glfwMakeContextCurrent(RenderState->Window);
+    glfwMakeContextCurrent(RenderState.Window);
     gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
     glfwSwapInterval(0);
     
-    glfwGetFramebufferSize(RenderState->Window, &RenderState->WindowWidth, &RenderState->WindowHeight);
-    glViewport(0, 0, RenderState->WindowWidth, RenderState->WindowHeight);
+    glfwGetFramebufferSize(RenderState.Window, &RenderState.WindowWidth, &RenderState.WindowHeight);
+    glViewport(0, 0, RenderState.WindowWidth, RenderState.WindowHeight);
     glDisable(GL_DITHER);
     glLineWidth(2.0f);
     
     DEBUG_PRINT("%s\n", glGetString(GL_VERSION));
     
-    glfwSetWindowUserPointer(RenderState->Window, GameState);
-    glfwSetKeyCallback(RenderState->Window, KeyCallback);
-    glfwSetCharCallback(RenderState->Window, CharacterCallback);
-    glfwSetCursorPosCallback(RenderState->Window, CursorPositionCallback);
-    glfwSetMouseButtonCallback(RenderState->Window, MouseButtonCallback);
-    glfwSetScrollCallback(RenderState->Window, ScrollCallback);
+    glfwSetWindowUserPointer(RenderState.Window, GameState);
+    glfwSetKeyCallback(RenderState.Window, KeyCallback);
+    glfwSetCharCallback(RenderState.Window, CharacterCallback);
+    glfwSetCursorPosCallback(RenderState.Window, CursorPositionCallback);
+    glfwSetMouseButtonCallback(RenderState.Window, MouseButtonCallback);
+    glfwSetScrollCallback(RenderState.Window, ScrollCallback);
     
     GLint Viewport[4];
     glGetIntegerv(GL_VIEWPORT, Viewport);
-    memcpy(RenderState->Viewport, Viewport, sizeof(GLint) * 4);
+    memcpy(RenderState.Viewport, Viewport, sizeof(GLint) * 4);
     
     ControllerPresent();
     
-    texture_Map_Init(&RenderState->Textures, HashStringJenkins, 512);
-    LoadTextures(RenderState, "../assets/textures/");
-    LoadTextures(RenderState, "../assets/textures/spritesheets/");
-    RenderSetup(RenderState);
+    texture_Map_Init(&RenderState.Textures, HashStringJenkins, 512);
+    LoadTextures(&RenderState, "../assets/textures/");
+    LoadTextures(&RenderState, "../assets/textures/spritesheets/");
+    RenderSetup(&RenderState);
     
     GameState->HealthBar = {};
-    GameState->HealthBar.Position = glm::vec2(RenderState->WindowWidth / 2, RenderState->WindowHeight - 50);
+    GameState->HealthBar.Position = glm::vec2(RenderState.WindowWidth / 2, RenderState.WindowHeight - 50);
     GameState->HealthBar.RenderInfo.Size = glm::vec3(2, 1, 1);
-    LoadTilesheetTextures(GameState, RenderState);
-    GameState->RenderState = *RenderState;
+    LoadTilesheetTextures(GameState, &RenderState);
+    GameState->RenderState = RenderState;
     GameState->LevelPath = ConfigData->StartingLevelFilePath;
     GameState->InitialZoom = ConfigData->Zoom;
 }
