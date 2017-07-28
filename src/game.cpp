@@ -751,6 +751,7 @@ extern "C" UPDATE(Update)
     
     if(!GameState->IsInitialized)
     {
+        GameState->Console = {};
         GameState->RenderGame = true;
         GameState->RenderLight = true;
         GameState->ClearTilePositionFrame = false;
@@ -1354,9 +1355,12 @@ extern "C" UPDATE(Update)
     GameState->RenderState.DeltaTime = DeltaTime;
     GameState->ClearTilePositionFrame = !GameState->ClearTilePositionFrame;
     GetActionButtonsForQueue(InputController);
-    *EntityCount = GameState->EntityCount;
     
-    return GameState->EntityPositions;
+    game_update_return GameUpdateReturn = {};
+    GameUpdateReturn.EntityCount = GameState->EntityCount;
+    memcpy(&GameUpdateReturn.EntityPositions,&GameState->EntityPositions,sizeof(glm::vec2) * NUM_ENTITIES);
+    
+    return GameUpdateReturn;
 }
 
  
