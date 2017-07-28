@@ -244,7 +244,7 @@ int main(void)
         }
     }
     
-    CleanupSound(&SoundDevice, &GameState->SoundManager);
+    CleanupSound(&SoundDevice);
     CloseWindow(&GameState->RenderState);
     //_CrtDumpMemoryLeaks();
 }
