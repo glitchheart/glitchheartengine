@@ -20,9 +20,16 @@
 #define Max(A,B) ((A > B) ? (A) : (B))
 #define Abs(x) ((x) < 0 ? -(x) : (x))
 
+#define Kilobytes(Value) ((Value)*1024LL)
+#define Megabytes(Value) (Kilobytes(Value)*1024LL)
+#define Gigabytes(Value) (Megabytes(Value)*1024LL)
+#define Terabytes(Value) (Gigabytes(Value)*1024LL)
+
 #define PI 3.141592653589793f
 
 #include "stdint.h"
+#include <cstdio>
+#include <cstdlib>
 
 typedef uint8_t u8;
 typedef uint16_t u16;
@@ -67,6 +74,22 @@ struct entity_file_reload_data
     b32 ReloadWraithFile;
     b32 ReloadBonfireFile;
 };
+
+struct game_memory
+{
+    b32 IsInitialized;
+    
+    u64 PermanentStorageSize;
+    void* PermanentStorage;
+};
+
+struct input_controller;
+
+#define UPDATE(name)void name(r64 DeltaTime, game_memory* GameMemory, input_controller* InputController)
+typedef UPDATE(update);
+UPDATE(UpdateStub)
+{
+}
 
 void HandleError(char const *File, i32 LineNum, char const *msg)
 {

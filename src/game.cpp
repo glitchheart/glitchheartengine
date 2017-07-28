@@ -62,9 +62,9 @@ static void LoadGameDataFile(game_state* GameState)
     }
 }
 
-static void EditorUpdateEntities(game_state* GameState, r64 DeltaTime)
+static void EditorUpdateEntities(game_state* GameState, input_controller* InputController, sound_queue* SoundQueue, r64 DeltaTime)
 {
-    if(GetKeyDown(Key_Escape, GameState))
+    if(KEY_DOWN(Key_Escape))
     {
         if(GameState->EditorState.AnimationMode == Animation_Edit || GameState->EditorState.AnimationMode == Animation_Create ||GameState->EditorState.AnimationMode == Animation_SelectTexture)
         {
@@ -78,7 +78,7 @@ static void EditorUpdateEntities(game_state* GameState, r64 DeltaTime)
         }
     }
     
-    if(GetKeyDown(Key_Enter, GameState) && GameState->EditorState.FocusedTextfield)
+    if(KEY_DOWN(Key_Enter) && GameState->EditorState.FocusedTextfield)
     {
         GameState->EditorState.Textfields[GameState->EditorState.FocusedTextfield].InFocus = false;
         GameState->EditorState.FocusedTextfield = 0;
@@ -86,14 +86,14 @@ static void EditorUpdateEntities(game_state* GameState, r64 DeltaTime)
     
     if(GameState->EditorState.MenuOpen)
     {
-        if(GetKeyDown(Key_Up, GameState))
+        if(KEY_DOWN(Key_Up))
         {
             GameState->EditorState.SelectedMenuOption++;
             
             if(GameState->EditorState.SelectedMenuOption == 3)
                 GameState->EditorState.SelectedMenuOption = 0;
         }
-        else if(GetKeyDown(Key_Down, GameState))
+        else if(KEY_DOWN(Key_Down))
         {
             
             GameState->EditorState.SelectedMenuOption--;
@@ -101,7 +101,7 @@ static void EditorUpdateEntities(game_state* GameState, r64 DeltaTime)
                 GameState->EditorState.SelectedMenuOption = 2;
         }
         
-        if(GetKeyDown(Key_Enter, GameState))
+        if(KEY_DOWN(Key_Enter))
         {
             GameState->EditorState.MenuOpen = false;
             
@@ -143,20 +143,20 @@ static void EditorUpdateEntities(game_state* GameState, r64 DeltaTime)
     }
     else
     {
-        b32 InToolbar = GameState->RenderState.WindowHeight - GameState->InputController.MouseY >= GameState->RenderState.WindowHeight;
+        b32 InToolbar = GameState->RenderState.WindowHeight - InputController->MouseY >= GameState->RenderState.WindowHeight;
         
         for(u32 ButtonIndex = 0; ButtonIndex < 10; ButtonIndex++)
         {
             button* Button = &GameState->EditorState.Buttons[ButtonIndex];
             Button->Clicked = false;
             
-            if(GetMouseButtonDown(Mouse_Left, GameState))
+            if(MOUSE_DOWN(Mouse_Left))
             {
-                if(Button->Active && GameState->InputController.MouseX >= Button->ScreenPosition.x && GameState->InputController.MouseX <= Button->ScreenPosition.x + Button->Size.x && 
-                   GameState->RenderState.WindowHeight - GameState->InputController.MouseY >= Button->ScreenPosition.y && GameState->RenderState.WindowHeight - GameState->InputController.MouseY <= Button->ScreenPosition.y + Button->Size.y)
+                if(Button->Active && InputController->MouseX >= Button->ScreenPosition.x && InputController->MouseX <= Button->ScreenPosition.x + Button->Size.x && 
+                   GameState->RenderState.WindowHeight - InputController->MouseY >= Button->ScreenPosition.y && GameState->RenderState.WindowHeight - InputController->MouseY <= Button->ScreenPosition.y + Button->Size.y)
                 {
                     Button->Clicked = true;
-                    PlaySoundEffect(GameState, &GameState->SoundManager.ButtonClick);
+                    PlaySoundEffect(&GameState->SoundManager, SoundQueue, &GameState->SoundManager.ButtonClick);
                     StartTimer(GameState, Button->ClickAnimationTimer);
                     
                     switch(Button->EditorType)
@@ -215,9 +215,9 @@ static void EditorUpdateEntities(game_state* GameState, r64 DeltaTime)
             checkbox* Checkbox = &GameState->EditorState.Checkboxes[Index];
             Checkbox->JustChecked = false;
             
-            if(GetMouseButtonDown(Mouse_Left, GameState))
+            if(MOUSE_DOWN(Mouse_Left))
             {
-                if(Checkbox->Active && GameState->InputController.MouseX >= Checkbox->ScreenPosition.x && GameState->InputController.MouseX <= Checkbox->ScreenPosition.x + 25 && GameState->RenderState.WindowHeight - GameState->InputController.MouseY >= Checkbox->ScreenPosition.y && GameState->RenderState.WindowHeight - GameState->InputController.MouseY <= Checkbox->ScreenPosition.y + 25)
+                if(Checkbox->Active && InputController->MouseX >= Checkbox->ScreenPosition.x && InputController->MouseX <= Checkbox->ScreenPosition.x + 25 && GameState->RenderState.WindowHeight - InputController->MouseY >= Checkbox->ScreenPosition.y && GameState->RenderState.WindowHeight - InputController->MouseY <= Checkbox->ScreenPosition.y + 25)
                 {
                     Checkbox->Checked = !Checkbox->Checked;
                     Checkbox->JustChecked = true;
@@ -242,10 +242,10 @@ static void EditorUpdateEntities(game_state* GameState, r64 DeltaTime)
             textfield* Textfield = &GameState->EditorState.Textfields[Index];
             Textfield->InFocus = false;
             
-            if(GetMouseButtonDown(Mouse_Left, GameState))
+            if(MOUSE_DOWN(Mouse_Left))
             {
-                if(Textfield->Active && GameState->InputController.MouseX >= Textfield->ScreenPosition.x && GameState->InputController.MouseX <= Textfield->ScreenPosition.x + Textfield->Size.x && 
-                   GameState->RenderState.WindowHeight - GameState->InputController.MouseY >= Textfield->ScreenPosition.y && GameState->RenderState.WindowHeight - GameState->InputController.MouseY <= Textfield->ScreenPosition.y + Textfield->Size.y)
+                if(Textfield->Active && InputController->MouseX >= Textfield->ScreenPosition.x && InputController->MouseX <= Textfield->ScreenPosition.x + Textfield->Size.x && 
+                   GameState->RenderState.WindowHeight - InputController->MouseY >= Textfield->ScreenPosition.y && GameState->RenderState.WindowHeight - InputController->MouseY <= Textfield->ScreenPosition.y + Textfield->Size.y)
                 {
                     GameState->EditorState.FocusedTextfield = Index;
                     Textfield->InFocus = true;
@@ -254,12 +254,12 @@ static void EditorUpdateEntities(game_state* GameState, r64 DeltaTime)
             
             if(Index == GameState->EditorState.FocusedTextfield)
             {
-                if(GameState->InputController.DeleteCharacter && Textfield->TextIndex != 0)
+                if(InputController->DeleteCharacter && Textfield->TextIndex != 0)
                 {
                     Textfield->Text[--Textfield->TextIndex] = 0;
                 }
                 
-                if(GameState->InputController.CurrentCharacter && GameState->InputController.CurrentCharacter != ' ')
+                if(InputController->CurrentCharacter && InputController->CurrentCharacter != ' ')
                 {
                     b32 CanEnter = true;
                     
@@ -270,38 +270,37 @@ static void EditorUpdateEntities(game_state* GameState, r64 DeltaTime)
                         break;
                         case Textfield_Integer:
                         {
-                            CanEnter = GameState->InputController.CurrentCharacter == '0' ||
-                                GameState->InputController.CurrentCharacter == '1' ||
-                                GameState->InputController.CurrentCharacter == '2' ||
-                                GameState->InputController.CurrentCharacter == '3' ||
-                                GameState->InputController.CurrentCharacter == '4' ||
-                                GameState->InputController.CurrentCharacter == '5' ||
-                                GameState->InputController.CurrentCharacter == '6' ||
-                                GameState->InputController.CurrentCharacter == '7' ||
-                                GameState->InputController.CurrentCharacter == '8' ||
-                                GameState->InputController.CurrentCharacter == '9';
+                            CanEnter = InputController->CurrentCharacter == '0' ||
+                                InputController->CurrentCharacter == '1' ||
+                                InputController->CurrentCharacter == '2' ||
+                                InputController->CurrentCharacter == '3' ||
+                                InputController->CurrentCharacter == '4' ||
+                                InputController->CurrentCharacter == '5' ||
+                                InputController->CurrentCharacter == '6' ||
+                                InputController->CurrentCharacter == '7' ||
+                                InputController->CurrentCharacter == '9';
                         }
                         break;
                         case Textfield_Decimal:
                         {
-                            CanEnter = GameState->InputController.CurrentCharacter == '0' ||
-                                GameState->InputController.CurrentCharacter == '1' ||
-                                GameState->InputController.CurrentCharacter == '2' ||
-                                GameState->InputController.CurrentCharacter == '3' ||
-                                GameState->InputController.CurrentCharacter == '4' ||
-                                GameState->InputController.CurrentCharacter == '5' ||
-                                GameState->InputController.CurrentCharacter == '6' ||
-                                GameState->InputController.CurrentCharacter == '7' ||
-                                GameState->InputController.CurrentCharacter == '8' ||
-                                GameState->InputController.CurrentCharacter == '9' ||
-                                GameState->InputController.CurrentCharacter == '.';
+                            CanEnter = InputController->CurrentCharacter == '0' ||
+                                InputController->CurrentCharacter == '1' ||
+                                InputController->CurrentCharacter == '2' ||
+                                InputController->CurrentCharacter == '3' ||
+                                InputController->CurrentCharacter == '4' ||
+                                InputController->CurrentCharacter == '5' ||
+                                InputController->CurrentCharacter == '6' ||
+                                InputController->CurrentCharacter == '7' ||
+                                InputController->CurrentCharacter == '8' ||
+                                InputController->CurrentCharacter == '9' ||
+                                InputController->CurrentCharacter == '.';
                         }
                         break;
                     }
                     
                     if(CanEnter && Textfield->TextIndex != TEXTFIELD_LENGTH)
                     {
-                        Textfield->Text[Textfield->TextIndex++] = GameState->InputController.CurrentCharacter;
+                        Textfield->Text[Textfield->TextIndex++] = InputController->CurrentCharacter;
                     }
                 }
             }
@@ -317,7 +316,7 @@ static void EditorUpdateEntities(game_state* GameState, r64 DeltaTime)
         {
             case Editor_Level:
             {
-                if(GetKeyDown(Key_S, GameState))
+                if(KEY_DOWN(Key_S))
                 {
                     SaveLevelToFile(GameState->LevelPath, &GameState->CurrentLevel, GameState);
                 }
@@ -328,18 +327,18 @@ static void EditorUpdateEntities(game_state* GameState, r64 DeltaTime)
                     Level.SheetName = "overworld1";
                     Level.Name = "test_level";
                     
-                    CreateNewLevelWithSize("../assets/levels/level_new.plv", 200, 120, &Level, GameState);
+                    CreateNewLevelWithSize("../assets/levels/level_new.plv", 200, 120, &Level, GameState, SoundQueue);
                     GameState->CurrentLevel = Level;
                 }
                 
-                auto Pos = glm::unProject(glm::vec3(GameState->InputController.MouseX, GameState->RenderState.Viewport[3] - GameState->InputController.MouseY, 0),
+                auto Pos = glm::unProject(glm::vec3(InputController->MouseX, GameState->RenderState.Viewport[3] - InputController->MouseY, 0),
                                           GameState->Camera.ViewMatrix,
                                           GameState->Camera.ProjectionMatrix,
                                           glm::vec4(0, 0, GameState->RenderState.Viewport[2], GameState->RenderState.Viewport[3]));
                 
                 GameState->EditorState.CreateNewAnimationButton->Active = false;
                 
-                if(GetKeyDown(Key_E, GameState))
+                if(KEY_DOWN(Key_E))
                 {
                     if(GameState->EditorState.PlacementMode == Editor_Placement_PlaceEntity)
                     {
@@ -351,7 +350,7 @@ static void EditorUpdateEntities(game_state* GameState, r64 DeltaTime)
                     }
                 }
                 
-                if(GetKeyDown(Key_T, GameState))
+                if(KEY_DOWN(Key_T))
                 {
                     GameState->EditorState.PlacementMode = Editor_Placement_Tile;
                 }
@@ -367,7 +366,7 @@ static void EditorUpdateEntities(game_state* GameState, r64 DeltaTime)
                         {
                             if(GameState->EditorState.SelectedEntity 
                                && GameState->EditorState.SelectedEntity->Type == Entity_Enemy 
-                               && GetKeyDown(Key_P, GameState))
+                               && KEY_DOWN(Key_P))
                             {
                                 GameState->EditorState.IsInCreateWaypointMode = !GameState->EditorState.IsInCreateWaypointMode;
                                 
@@ -379,7 +378,7 @@ static void EditorUpdateEntities(game_state* GameState, r64 DeltaTime)
                             
                             if(GameState->EditorState.IsInCreateWaypointMode)
                             {
-                                if(GetMouseButtonDown(Mouse_Left, GameState) && GameState->EditorState.SelectedEntity->Enemy.WaypointCount < 10)
+                                if(MOUSE_DOWN(Mouse_Left) && GameState->EditorState.SelectedEntity->Enemy.WaypointCount < 10)
                                 {
                                     
                                     glm::vec2 NewPos = ToCartesian(glm::vec2(Pos.x, Pos.y));
@@ -409,7 +408,7 @@ static void EditorUpdateEntities(game_state* GameState, r64 DeltaTime)
                                 NewPos.x = glm::floor(NewPos.x);
                                 NewPos.y = glm::floor(NewPos.y);
                                 
-                                if(GetMouseButtonDown(Mouse_Left, GameState))
+                                if(MOUSE_DOWN(Mouse_Left))
                                 {
                                     entity* Selected = 0;
                                     
@@ -430,7 +429,7 @@ static void EditorUpdateEntities(game_state* GameState, r64 DeltaTime)
                                     GameState->EditorState.SelectedEntity = Selected;
                                 }
                                 
-                                if(GameState->EditorState.SelectedEntity && GetMouseButton(Mouse_Left, GameState))
+                                if(GameState->EditorState.SelectedEntity && MOUSE(Mouse_Left))
                                 {
                                     GameState->EditorState.SelectedEntity->Position = glm::vec2(NewPos.x + GameState->EditorState.CurrentSelectedEntityOffset.x, NewPos.y - GameState->EditorState.SelectedEntity->Scale / 2 + GameState->EditorState.CurrentSelectedEntityOffset.y);
                                 }
@@ -439,7 +438,7 @@ static void EditorUpdateEntities(game_state* GameState, r64 DeltaTime)
                         break;
                         case Editor_Placement_PlaceEntity:
                         {
-                            if(GetMouseButtonDown(Mouse_Left, GameState))
+                            if(MOUSE_DOWN(Mouse_Left))
                             {
                                 glm::vec2 NewPos = ToCartesian(glm::vec2(Pos.x, Pos.y));
                                 
@@ -473,7 +472,7 @@ static void EditorUpdateEntities(game_state* GameState, r64 DeltaTime)
                                     break;
                                     case Placement_Entity_Bonfire:
                                     {
-                                        LoadBonfireData(GameState, -1, glm::vec2(NewPos.x, NewPos.y - 0.5f));
+                                        LoadBonfireData(GameState, SoundQueue, -1, glm::vec2(NewPos.x, NewPos.y - 0.5f));
                                     }
                                     break;
                                 }
@@ -500,7 +499,7 @@ static void EditorUpdateEntities(game_state* GameState, r64 DeltaTime)
                             GameState->EditorState.TileX = (r32)X;
                             GameState->EditorState.TileY = (r32)Y;
                             
-                            if(GetMouseButton(Mouse_Left, GameState))
+                            if(MOUSE(Mouse_Left))
                             {
                                 i32 TilesheetWidth = GameState->CurrentLevel.Tilemap.RenderEntity.Texture->Width / GameState->CurrentLevel.Tilemap.TileWidth;
                                 i32 TilesheetHeight = GameState->CurrentLevel.Tilemap.RenderEntity.Texture->Height / GameState->CurrentLevel.Tilemap.TileHeight;
@@ -508,10 +507,10 @@ static void EditorUpdateEntities(game_state* GameState, r64 DeltaTime)
                                 r32 ToolbarX = GameState->EditorState.ToolbarX + GameState->EditorState.TilemapOffset.x;
                                 r32 ToolbarY = GameState->EditorState.ToolbarY + GameState->EditorState.TilemapOffset.y;
                                 
-                                if(GameState->InputController.MouseX >= ToolbarX && GameState->InputController.MouseX <= ToolbarX + TilesheetWidth * GameState->EditorState.RenderedTileSize && GameState->RenderState.WindowHeight - GameState->InputController.MouseY > ToolbarY && GameState->RenderState.WindowHeight - GameState->InputController.MouseY <=  ToolbarY + TilesheetHeight * GameState->EditorState.RenderedTileSize)
+                                if(InputController->MouseX >= ToolbarX && InputController->MouseX <= ToolbarX + TilesheetWidth * GameState->EditorState.RenderedTileSize && GameState->RenderState.WindowHeight - InputController->MouseY > ToolbarY && GameState->RenderState.WindowHeight - InputController->MouseY <=  ToolbarY + TilesheetHeight * GameState->EditorState.RenderedTileSize)
                                 {
-                                    i32 X = (i32)((GameState->InputController.MouseX - (GameState->EditorState.ToolbarX + GameState->EditorState.TilemapOffset.x)) / GameState->EditorState.RenderedTileSize);
-                                    i32 Y = (i32)((GameState->RenderState.WindowHeight - GameState->InputController.MouseY - (GameState->EditorState.ToolbarY + GameState->EditorState.TilemapOffset.y)) / GameState->EditorState.RenderedTileSize);
+                                    i32 X = (i32)((InputController->MouseX - (GameState->EditorState.ToolbarX + GameState->EditorState.TilemapOffset.x)) / GameState->EditorState.RenderedTileSize);
+                                    i32 Y = (i32)((GameState->RenderState.WindowHeight - InputController->MouseY - (GameState->EditorState.ToolbarY + GameState->EditorState.TilemapOffset.y)) / GameState->EditorState.RenderedTileSize);
                                     
                                     GameState->EditorState.SelectedTilePosition = glm::vec2((r32)X, (r32)Y);
                                     i32 Selected = X + Y * TilesheetWidth;
@@ -526,7 +525,7 @@ static void EditorUpdateEntities(game_state* GameState, r64 DeltaTime)
                                     {
                                         tilemap* Tilemap = &GameState->CurrentLevel.Tilemap;
                                         
-                                        if(GetKey(Key_F, GameState))
+                                        if(KEY(Key_F))
                                         {
                                             for(i32 IndexX = 0; IndexX < Tilemap->Width; IndexX++)
                                             {
@@ -564,7 +563,7 @@ static void EditorUpdateEntities(game_state* GameState, r64 DeltaTime)
                                     }
                                 }
                             }
-                            if(GetMouseButton(Mouse_Left,GameState) && GetKey(Key_LeftShift,GameState))
+                            if(MOUSE(Mouse_Left) && KEY(Key_LeftShift))
                             {
                                 if(X >= 0 && X < (i32)GameState->CurrentLevel.Tilemap.Width && Y >= 0 && Y < (i32)GameState->CurrentLevel.Tilemap.Height)
                                 {
@@ -577,9 +576,9 @@ static void EditorUpdateEntities(game_state* GameState, r64 DeltaTime)
                 }
                 
                 // View translation
-                if(GameState->InputController.MouseX >= GameState->EditorState.ToolbarX && GameState->InputController.MouseX < GameState->EditorState.ToolbarX + GameState->EditorState.ToolbarWidth)
+                if(InputController->MouseX >= GameState->EditorState.ToolbarX && InputController->MouseX < GameState->EditorState.ToolbarX + GameState->EditorState.ToolbarWidth)
                 {
-                    GameState->EditorState.ToolbarScrollOffsetY += (r32)GameState->InputController.ScrollY * GameState->EditorState.ToolbarScrollSpeed * (r32)DeltaTime;
+                    GameState->EditorState.ToolbarScrollOffsetY += (r32)InputController->ScrollY * GameState->EditorState.ToolbarScrollSpeed * (r32)DeltaTime;
                     
                     if(GameState->EditorState.ToolbarScrollOffsetY > 0)
                         GameState->EditorState.ToolbarScrollOffsetY = 0.0f;
@@ -588,24 +587,24 @@ static void EditorUpdateEntities(game_state* GameState, r64 DeltaTime)
                 }
                 else
                 {
-                    GameState->EditorCamera.Zoom += (r32)GameState->InputController.ScrollY * GameState->EditorState.ZoomingSpeed * (r32)DeltaTime * GameState->EditorCamera.Zoom;
+                    GameState->EditorCamera.Zoom += (r32)InputController->ScrollY * GameState->EditorState.ZoomingSpeed * (r32)DeltaTime * GameState->EditorCamera.Zoom;
                     GameState->EditorCamera.Zoom = Max(Min(GameState->EditorCamera.Zoom, GameState->EditorState.MaxZoom), GameState->EditorState.MinZoom);
                 }
                 
-                if(GetMouseButton(Mouse_Right, GameState))
+                if(MOUSE(Mouse_Right))
                 {
                     if(GameState->EditorState.LastKnownMouseX == 0 && GameState->EditorState.LastKnownMouseY == 0)
                     {
-                        GameState->EditorState.LastKnownMouseX = (r32)GameState->InputController.MouseX;
-                        GameState->EditorState.LastKnownMouseY = (r32)GameState->InputController.MouseY;
+                        GameState->EditorState.LastKnownMouseX = (r32)InputController->MouseX;
+                        GameState->EditorState.LastKnownMouseY = (r32)InputController->MouseY;
                     }
                     
-                    glm::vec2 Direction = glm::vec2(GameState->InputController.MouseX - GameState->EditorState.LastKnownMouseX, GameState->InputController.MouseY - GameState->EditorState.LastKnownMouseY);
+                    glm::vec2 Direction = glm::vec2(InputController->MouseX - GameState->EditorState.LastKnownMouseX, InputController->MouseY - GameState->EditorState.LastKnownMouseY);
                     
                     GameState->EditorCamera.Center -= glm::vec2(Direction.x / GameState->EditorCamera.Zoom * GameState->EditorState.PanningSpeed * DeltaTime, Direction.y / GameState->EditorCamera.Zoom * -GameState->EditorState.PanningSpeed * DeltaTime);
                     
-                    GameState->EditorState.LastKnownMouseX = (r32)GameState->InputController.MouseX;
-                    GameState->EditorState.LastKnownMouseY = (r32)GameState->InputController.MouseY;
+                    GameState->EditorState.LastKnownMouseX = (r32)InputController->MouseX;
+                    GameState->EditorState.LastKnownMouseY = (r32)InputController->MouseY;
                 }
                 else
                 {
@@ -629,7 +628,7 @@ static void EditorUpdateEntities(game_state* GameState, r64 DeltaTime)
                             GameState->EditorState.LoadedAnimation = 0;
                         }
                         
-                        if(GetKeyDown(Key_Enter, GameState))
+                        if(KEY(Key_Enter))
                         {
                             GameState->EditorState.AnimationMode = Animation_Edit;
                             ToggleAnimationFields(&GameState->EditorState, true);
@@ -643,7 +642,7 @@ static void EditorUpdateEntities(game_state* GameState, r64 DeltaTime)
                     break;
                     case Animation_SelectTexture:
                     {
-                        if(GetKeyDown(Key_Enter, GameState))
+                        if(KEY_DOWN(Key_Enter))
                         {
                             GameState->EditorState.AnimationMode = Animation_Create;
                             
@@ -746,102 +745,48 @@ static void EditorUpdateEntities(game_state* GameState, r64 DeltaTime)
 
 extern "C" UPDATE(Update)
 {
-    if(GameState->ReloadData->ReloadPlayerFile)
-    {
-        LoadPlayerData(GameState, 0);
-        GameState->ReloadData->ReloadPlayerFile = false;
-    }
-    
-    if(GameState->ReloadData->ReloadSkeletonFile)
-    {
-        for(u32 EntityIndex = 0; EntityIndex < GameState->EntityCount; EntityIndex++)
-        {
-            auto Entity = GameState->Entities[EntityIndex];
-            if(Entity.Type == Entity_Enemy && Entity.Enemy.EnemyType == Enemy_Skeleton && !Entity.Dead)
-            {
-                LoadSkeletonData(GameState,EntityIndex);
-            }
-        }
-        GameState->ReloadData->ReloadSkeletonFile = false;
-    }
-    
-    if(GameState->ReloadData->ReloadMinotaurFile)
-    {
-        for(u32 EntityIndex = 0; EntityIndex < GameState->EntityCount; EntityIndex++)
-        {
-            auto Entity = GameState->Entities[EntityIndex];
-            if(Entity.Type == Entity_Enemy && Entity.Enemy.EnemyType == Enemy_Minotaur && !Entity.Dead)
-            {
-                LoadMinotaurData(GameState, EntityIndex);
-            }
-        }
-        GameState->ReloadData->ReloadMinotaurFile = false;
-    }
-    
-    if(GameState->ReloadData->ReloadBonfireFile)
-    {
-        for(u32 EntityIndex = 0; EntityIndex < GameState->EntityCount; EntityIndex++)
-        {
-            auto Entity = GameState->Entities[EntityIndex];
-            if(Entity.Type == Entity_Bonfire)
-            {
-                LoadBonfireData(GameState, EntityIndex);
-            }
-        }
-        GameState->ReloadData->ReloadBonfireFile = false;
-    }
-    
-    CheckConsoleInput(GameState, DeltaTime);
-    
-    if(GameState->GameMode == Mode_Editor)
-        CheckEditorUIInput(GameState, DeltaTime);
-    
-    if((GetKey(Key_LeftCtrl, GameState) || GetKey(Key_RightCtrl, GameState)))
-    {
-        if(GetKeyDown(Key_E, GameState)) // Editor-mode on/off
-        {
-            if(GameState->GameMode == Mode_InGame)
-            {
-                GameState->GodModeOn = false;
-                ReloadCurrentLevel(GameState);
-                GameState->GameMode = Mode_Editor;
-                GameState->Paused = false;
-                GameState->EditorCamera.Center = GameState->GameCamera.Center;
-            }
-            else
-            {
-                GameState->GodModeOn = false;
-                SaveLevelToFile(GameState->LevelPath, &GameState->CurrentLevel, GameState);
-                ReloadCurrentLevel(GameState);
-                GameState->GameMode = Mode_InGame;
-            }
-        }
-        else if(GetKeyDown(Key_G, GameState)) // God-mode on/off
-        {
-            GameState->GodModeOn = !GameState->GodModeOn;
-            
-            if(!GameState->GodModeOn)
-            {
-                auto Player = GameState->Entities[0];
-                GameState->GameCamera.Center = glm::vec2(Player.Position.x, Player.Position.y);
-                GameState->Camera.Center = glm::vec2(Player.Position.x, Player.Position.y);
-                GameState->GameCamera.Zoom = GameState->ZoomBeforeGodMode;
-            }
-            else
-            {
-                GameState->ZoomBeforeGodMode = GameState->GameCamera.Zoom;
-            }
-        }
-    }
-    
-    if(!GameState->EditorState.Loaded)
-    {
-        InitEditorFields(GameState);
-        CreateEditorButtons(GameState);
-    }
+    game_state* GameState = (game_state*)GameMemory->PermanentStorage;
+    Assert(GameState);
     
     if(!GameState->IsInitialized)
     {
+        GameState->RenderGame = true;
+        GameState->RenderLight = true;
+        GameState->ClearTilePositionFrame = false;
+        GameState->StatGainModeOn = false;
+        GameState->SelectedGainIndex = 0;
+        GameState->CurrentLootCount = 0;
+        GameState->AIDebugModeOn = false;
+        GameState->GodModeOn = false;
+        GameState->GodModePanSpeed = 10.0f;
+        GameState->GodModeZoomSpeed = 45.0f;
+        GameState->GodModeMinZoom = 5.0f;
+        GameState->GodModeMaxZoom = 100.0f;
+        GameState->PlayerState = Player_Alive;
+        
+        GameState->DeathScreenTimer.TimerMax = 1.0f;
+        GameState->DeathScreenTimer.TimerHandle = -1;
+        
+        GameState->EditorState.MenuOptions[0] = "Game";
+        GameState->EditorState.MenuOptions[1] = "Level editor";
+        GameState->EditorState.MenuOptions[2] = "Animation";
+        GameState->EditorState.Loaded = false;
+        GameState->EditorState.Mode = Editor_Level;
+        GameState->EditorState.PlacementMode = Editor_Placement_Tile;
+        GameState->EditorState.SelectedTileType = 1;
+        GameState->EditorState.CurrentTilemapLayer = 1;
+        GameState->EditorState.RenderAllLayers = true;
+        GameState->EditorState.ZoomingSpeed = 50;
+        GameState->EditorState.PanningSpeed = 500;
+        GameState->EditorState.MinZoom = 5;
+        GameState->EditorState.MaxZoom = 100;
+        GameState->EditorState.RenderedTileSize = 30.0f;
+        GameState->EditorState.TileBrushSize = glm::vec2(1, 1);
+        GameState->EditorState.ToolbarScrollSpeed = 30000;
+        GameState->EditorState.ToolbarScrollOffsetY = 0.0f;
+        GameState->EditorState.IsInCreateWaypointMode = false;
+        GameState->EditorState.SelectedAnimation = 0;
+        
         if(GameState->ShouldReload)
         {
             LoadGameDataFile(GameState);
@@ -887,72 +832,175 @@ extern "C" UPDATE(Update)
         
         
         GameState->IsInitialized = true;
+        GameMemory->IsInitialized = true;
     }
     
+    if(KEY_DOWN(Key_Q) && KEY(Key_LeftCtrl))
+    {
+        GameState->GameMode = Mode_Exit;
+    }
+    
+    if(GameState->ReloadData)
+    {
+        if(GameState->ReloadData->ReloadPlayerFile)
+        {
+            LoadPlayerData(GameState, 0);
+            GameState->ReloadData->ReloadPlayerFile = false;
+        }
+        
+        if(GameState->ReloadData->ReloadSkeletonFile)
+        {
+            for(u32 EntityIndex = 0; EntityIndex < GameState->EntityCount; EntityIndex++)
+            {
+                auto Entity = GameState->Entities[EntityIndex];
+                if(Entity.Type == Entity_Enemy && Entity.Enemy.EnemyType == Enemy_Skeleton && !Entity.Dead)
+                {
+                    LoadSkeletonData(GameState,EntityIndex);
+                }
+            }
+            GameState->ReloadData->ReloadSkeletonFile = false;
+        }
+        
+        if(GameState->ReloadData->ReloadMinotaurFile)
+        {
+            for(u32 EntityIndex = 0; EntityIndex < GameState->EntityCount; EntityIndex++)
+            {
+                auto Entity = GameState->Entities[EntityIndex];
+                if(Entity.Type == Entity_Enemy && Entity.Enemy.EnemyType == Enemy_Minotaur && !Entity.Dead)
+                {
+                    LoadMinotaurData(GameState, EntityIndex);
+                }
+            }
+            GameState->ReloadData->ReloadMinotaurFile = false;
+        }
+        
+        if(GameState->ReloadData->ReloadBonfireFile)
+        {
+            for(u32 EntityIndex = 0; EntityIndex < GameState->EntityCount; EntityIndex++)
+            {
+                auto Entity = GameState->Entities[EntityIndex];
+                if(Entity.Type == Entity_Bonfire)
+                {
+                    LoadBonfireData(GameState, EntityIndex);
+                }
+            }
+            GameState->ReloadData->ReloadBonfireFile = false;
+        }
+    }
+    CheckConsoleInput(GameState, InputController, DeltaTime);
+    
+    if(GameState->GameMode == Mode_Editor)
+        CheckEditorUIInput(GameState,InputController, DeltaTime);
+    
+    if((KEY(Key_LeftCtrl) || KEY(Key_RightCtrl)))
+    {
+        if(KEY_DOWN(Key_E)) // Editor-mode on/off
+        {
+            if(GameState->GameMode == Mode_InGame)
+            {
+                GameState->GodModeOn = false;
+                ReloadCurrentLevel(GameState);
+                GameState->GameMode = Mode_Editor;
+                GameState->Paused = false;
+                GameState->EditorCamera.Center = GameState->GameCamera.Center;
+            }
+            else
+            {
+                GameState->GodModeOn = false;
+                SaveLevelToFile(GameState->LevelPath, &GameState->CurrentLevel, GameState);
+                ReloadCurrentLevel(GameState);
+                GameState->GameMode = Mode_InGame;
+            }
+        }
+        else if(KEY_DOWN(Key_G)) // God-mode on/off
+        {
+            GameState->GodModeOn = !GameState->GodModeOn;
+            
+            if(!GameState->GodModeOn)
+            {
+                auto Player = GameState->Entities[0];
+                GameState->GameCamera.Center = glm::vec2(Player.Position.x, Player.Position.y);
+                GameState->Camera.Center = glm::vec2(Player.Position.x, Player.Position.y);
+                GameState->GameCamera.Zoom = GameState->ZoomBeforeGodMode;
+            }
+            else
+            {
+                GameState->ZoomBeforeGodMode = GameState->GameCamera.Zoom;
+            }
+        }
+    }
+    
+    if(!GameState->EditorState.Loaded)
+    {
+        InitEditorFields(GameState);
+        CreateEditorButtons(GameState);
+    }
+    
+    
 #ifdef DEBUG
-    if(GetKeyDown(Key_F1, GameState))
+    if(KEY_DOWN(Key_F1))
     {
         GameState->RenderState.RenderColliders = !GameState->RenderState.RenderColliders;
     }
     
-    if(GetKeyDown(Key_F2, GameState))
+    if(KEY_DOWN(Key_F2))
     {
         GameState->RenderState.RenderFPS = !GameState->RenderState.RenderFPS;
     }
     
     
-    if(GetKeyDown(Key_F3, GameState))
+    if(KEY_DOWN(Key_F3))
     {
-        ToggleMuteSound(GameState);
+        //ToggleMuteSound(GameState);
     }
     
-    if(GetKeyDown(Key_F4, GameState))
+    if(KEY_DOWN(Key_F4))
     {
         GameState->RenderState.RenderPaths = !GameState->RenderState.RenderPaths;
     }
     
-    if(GetKeyDown(Key_F5, GameState))
+    if(KEY_DOWN(Key_F5))
     {
-        TogglePauseSound(GameState);
+        //TogglePauseSound(GameState);
     }
     
     
-    if(GetKeyDown(Key_F6, GameState))
+    if(KEY_DOWN(Key_F6))
     {
-        StopSound(GameState);
+        //StopSound(GameState);
     }
     
-    if(GetKeyDown(Key_F7, GameState))
+    if(KEY_DOWN(Key_F7))
     {
         GameState->RenderGame = !GameState->RenderGame;
     }
     
-    if(GetKeyDown(Key_F8, GameState))
+    if(KEY_DOWN(Key_F8))
     {
         GameState->AIDebugModeOn = !GameState->AIDebugModeOn;
     }
     
-    if(GetKeyDown(Key_F9, GameState))
+    if(KEY_DOWN(Key_F9))
     {
         GameState->StatGainModeOn = !GameState->StatGainModeOn;
     }
     
-    if(GameState->GameMode == Mode_InGame && GetKey(Key_LeftCtrl, GameState) && GetKeyDown(Key_P, GameState))
+    if(GameState->GameMode == Mode_InGame && KEY(Key_LeftCtrl) && KEY_DOWN(Key_P))
     {
         GameState->Paused = !GameState->Paused;
     }
     
-    if(GameState->GameMode == Mode_InGame && (GetKey(Key_LeftCtrl, GameState) || GetKey(Key_RightCtrl, GameState)))
+    if(GameState->GameMode == Mode_InGame && (KEY(Key_LeftCtrl) || KEY(Key_RightCtrl)))
     {
-        if(GetKeyDown(Key_F, GameState))
+        if(KEY_DOWN(Key_F))
             SaveGame(GameState);
-        if(GetKeyDown(Key_V, GameState))
+        if(KEY_DOWN(Key_V))
             LoadGame(GameState);
     }
     
 #endif
     
-    if (GetActionButtonDown(Action_Menu, GameState) && !GameState->Console.Open)
+    if (ACTION_DOWN(Action_Menu) && !GameState->Console.Open)
     {
         switch(GameState->GameMode)
         {
@@ -973,11 +1021,17 @@ extern "C" UPDATE(Update)
         }
     }
     
+    if(GameState->Console.Open)
+    {
+        if(GameState->Console.BufferIndex < CONSOLE_BUFFER_SIZE - 1 && InputController->CurrentCharacter != 0)
+            GameState->Console.Buffer[GameState->Console.BufferIndex++] = InputController->CurrentCharacter;
+    }
+    
     if(GameState->GameMode == Mode_MainMenu)
     {
-        if(GetKeyDown(Key_Up, GameState))
+        if(KEY_DOWN(Key_Up))
             GameState->MainMenu.SelectedIndex -= 1;
-        else if(GetKeyDown(Key_Down, GameState))
+        else if(KEY_DOWN(Key_Down))
             GameState->MainMenu.SelectedIndex += 1;
         
         if(GameState->MainMenu.SelectedIndex < 0)
@@ -985,7 +1039,7 @@ extern "C" UPDATE(Update)
         else if(GameState->MainMenu.SelectedIndex == (i32)GameState->MainMenu.OptionCount)
             GameState->MainMenu.SelectedIndex = 0;
         
-        if(GetKeyDown(Key_Enter, GameState))
+        if(KEY_DOWN(Key_Enter))
         {
             char* Selection = GameState->MainMenu.Options[GameState->MainMenu.SelectedIndex];
             
@@ -1059,31 +1113,31 @@ extern "C" UPDATE(Update)
         
         glm::vec2 Direction = glm::vec2(0, 0);
         
-        if(GetKey(Key_W, GameState) || GetKey(Key_Up, GameState))
+        if(KEY(Key_W) || KEY(Key_Up))
         {
             Direction.y = 1;
         }
-        else if(GetKey(Key_S, GameState) || GetKey(Key_Down, GameState))
+        else if(KEY(Key_S) || KEY(Key_Down))
         {
             Direction.y = -1;
         }
         
-        if(GetKey(Key_A, GameState) || GetKey(Key_Left, GameState))
+        if(KEY(Key_A) || KEY(Key_Left))
         {
             Direction.x = -1;
         }
-        else if(GetKey(Key_D, GameState) || GetKey(Key_Right, GameState))
+        else if(KEY(Key_D) || KEY(Key_Right))
         {
             Direction.x = 1;
         }
         
         r32 Factor = 72.0f / GameState->GameCamera.Zoom;
         
-        if(GetKey(Key_Add, GameState))
+        if(KEY(Key_Add))
         {
             Zoom += (r32)(GameState->GodModeZoomSpeed / Factor * DeltaTime);
         }
-        else if(GetKey(Key_Subtract, GameState))
+        else if(KEY(Key_Subtract))
         {
             Zoom += (r32)(-GameState->GodModeZoomSpeed / Factor * DeltaTime);
         }
@@ -1098,7 +1152,7 @@ extern "C" UPDATE(Update)
         GameState->GameCamera.Zoom = Min(Max(Zoom, GameState->GodModeMinZoom), GameState->GodModeMaxZoom);
     }
     
-    if(GetKeyDown(Key_L, GameState) && GetKey(Key_LeftCtrl, GameState))
+    if(KEY_DOWN(Key_L) && KEY(Key_LeftCtrl))
     {
         GameState->RenderLight = !GameState->RenderLight;
     }
@@ -1110,7 +1164,7 @@ extern "C" UPDATE(Update)
         {
             if(!GameState->Paused && !GameState->StatGainModeOn)
             {
-                UpdateEntities(GameState, DeltaTime);
+                UpdateEntities(GameState, InputController, DeltaTime);
                 UpdateObjects(GameState, DeltaTime);
                 
                 TickTimers(GameState, DeltaTime);
@@ -1147,10 +1201,10 @@ extern "C" UPDATE(Update)
             }
             else if(GameState->StatGainModeOn)
             {
-                b32 ControllerPresent = GameState->InputController.ControllerPresent;
+                b32 ControllerPresent = InputController->ControllerPresent;
                 
-                b32 UpPressed = ControllerPresent ? GetJoystickAxisYDown(GameState, true) : GetKeyDown(Key_W, GameState) || GetKeyDown(Key_Up, GameState);
-                b32 DownPressed = ControllerPresent ? GetJoystickAxisYDown(GameState, false) : GetKeyDown(Key_S, GameState) || GetKeyDown(Key_Down, GameState);
+                b32 UpPressed = ControllerPresent ? JOYSTICK_AXIS_Y_DOWN(true) : KEY_DOWN(Key_W) || KEY_DOWN(Key_Up);
+                b32 DownPressed = ControllerPresent ? JOYSTICK_AXIS_Y_DOWN(false) : KEY_DOWN(Key_S) || KEY_DOWN(Key_Down);
                 
                 if(UpPressed)
                 {
@@ -1166,7 +1220,7 @@ extern "C" UPDATE(Update)
                         GameState->SelectedGainIndex = 0;
                 }
                 
-                if(GetActionButtonDown(Action_Interact,GameState) || GetKeyDown(Key_Enter, GameState))
+                if(ACTION_DOWN(Action_Interact) || KEY_DOWN(Key_Enter))
                 {
                     auto& Player = GameState->Entities[0];
                     
@@ -1213,7 +1267,7 @@ extern "C" UPDATE(Update)
             
             if(GameState->PlayerState == Player_Dead)
             {
-                if(TimerDone(GameState, GameState->DeathScreenTimer) && GameState->InputController.AnyKeyPressed)
+                if(TimerDone(GameState, GameState->DeathScreenTimer) && InputController->AnyKeyPressed)
                 {
                     GameState->PlayerState = Player_Alive;
                     ReloadCurrentLevel(GameState);
@@ -1226,20 +1280,20 @@ extern "C" UPDATE(Update)
         case Mode_Editor:
         {
             Center = GameState->EditorCamera.Center;
-            EditorUpdateEntities(GameState, DeltaTime);
+            EditorUpdateEntities(GameState,InputController, DeltaTime);
             
             switch(GameState->EditorState.PlacementMode)
             {
                 case Editor_Placement_PlaceEntity:
                 case Editor_Placement_SelectEntity:
                 {
-                    if(GetKeyDown(Key_Left, GameState))
+                    if(KEY_DOWN(Key_Left))
                     {
                         GameState->EditorState.PlacementEntity = (Entity_Placement_Type)((i32)GameState->EditorState.PlacementEntity - 1);
                         if(GameState->EditorState.PlacementEntity == -1)
                             GameState->EditorState.PlacementEntity = (Entity_Placement_Type)((i32)Placement_Entity_Max - 1);
                     }
-                    else if(GetKeyDown(Key_Right, GameState))
+                    else if(KEY_DOWN(Key_Right))
                     {
                         GameState->EditorState.PlacementEntity = (Entity_Placement_Type)((i32)GameState->EditorState.PlacementEntity + 1);
                         if(GameState->EditorState.PlacementEntity == Placement_Entity_Max)
@@ -1249,27 +1303,27 @@ extern "C" UPDATE(Update)
                 break;
                 case Editor_Placement_Tile:
                 {
-                    if(GetKeyDown(Key_0, GameState))
+                    if(KEY_DOWN(Key_0))
                     {
                         GameState->EditorState.RenderAllLayers = !GameState->EditorState.RenderAllLayers; 
                     }
-                    else if(GetKeyDown(Key_1, GameState))
+                    else if(KEY_DOWN(Key_1))
                     {
                         GameState->EditorState.CurrentTilemapLayer = 0;
                     }
-                    else if(GetKeyDown(Key_2, GameState))
+                    else if(KEY_DOWN(Key_2))
                     {
                         GameState->EditorState.CurrentTilemapLayer = 1; 
                     }
-                    else if(GetKeyDown(Key_3, GameState))
+                    else if(KEY_DOWN(Key_3))
                     {
                         GameState->EditorState.CurrentTilemapLayer = 2; 
                     }
-                    else if(GetKeyDown(Key_4, GameState))
+                    else if(KEY_DOWN(Key_4))
                     {
                         GameState->EditorState.CurrentTilemapLayer = 3; 
                     }
-                    else if(GetKeyDown(Key_5, GameState))
+                    else if(KEY_DOWN(Key_5))
                     {
                         GameState->EditorState.CurrentTilemapLayer = 4; 
                     }
@@ -1295,9 +1349,10 @@ extern "C" UPDATE(Update)
                                                             -Center.y + GameState->Camera.ViewportHeight / GameState->Camera.Zoom / 2,
                                                             0));
     
-    GameState->InputController.CurrentCharacter = 0;
+    InputController->CurrentCharacter = 0;
     GameState->RenderState.DeltaTime = DeltaTime;
     GameState->ClearTilePositionFrame = !GameState->ClearTilePositionFrame;
+    GetActionButtonsForQueue(InputController);
 }
 
  

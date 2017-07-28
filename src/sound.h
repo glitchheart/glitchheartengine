@@ -27,7 +27,6 @@ struct sound_queue
     sound_effect Sounds[32];
 };
 
-
 struct sound_manager
 {
     r32 SFXGain;
@@ -74,8 +73,6 @@ struct sound_manager
             sound_effect Brugt;
         };
     };
-    
-    sound_queue SoundQueue;
 };
 
 

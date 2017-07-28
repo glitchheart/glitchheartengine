@@ -1,18 +1,25 @@
 //#define _CRTDBG_MAP_ALLOC  
-//#include <stdlib.h>  
+#define DEBUG
+#include <stdlib.h>  
 //#include <crtdbg.h>  
 
 #include <glad/glad.h>
 #include "al.h"
 #include "alc.h"
+
 #include "game.h"
+
+#include "platform.h"
+#include "keycontroller.h"
+#include "keycontroller.cpp"
+input_controller InputController;
+
 #include "gmap.h"
 #include "gmap.cpp"
 #include "platform_sound.h"
 #include "platform_sound.cpp"
 #include "filehandling.h"
 #define KEY_INIT
-#include "keycontroller.cpp"
 #include "keys_glfw.h"
 #include "opengl_rendering.cpp"
 
@@ -81,36 +88,81 @@ static void ReloadDlls(game_code *Game)
     }
 }
 
+static void SetInvalidKeys()
+{
+    InputController.AnyKeyPressed = false;
+    for(u32 KeyCode = 0; KeyCode < NUM_KEYS; KeyCode++)
+    {
+        if(InputController.KeysJustPressed[KeyCode] == Key_JustPressed)
+        {
+            InputController.KeysJustPressed[KeyCode] = Key_Invalid;
+        }
+        InputController.KeysUp[KeyCode] = false;
+    } 
+}
+
+static void SetControllerInvalidKeys()
+{
+    InputController.AnyKeyPressed = false;
+    for(u32 KeyCode = 0; KeyCode < NUM_JOYSTICK_KEYS; KeyCode++)
+    {
+        if(InputController.JoystickKeysJustPressed[KeyCode] == Key_JustPressed)
+        {
+            InputController.JoystickKeysJustPressed[KeyCode] = Key_Invalid;
+        }
+    }
+}
+
+static void SetMouseInvalidKeys()
+{
+    InputController.AnyKeyPressed = false;
+    for(u32 KeyCode = 0; KeyCode < NUM_MOUSE_BUTTONS; KeyCode++)
+    {
+        if(InputController.MouseButtonJustPressed[KeyCode] == Key_JustPressed)
+        {
+            InputController.MouseButtonJustPressed[KeyCode] = Key_Invalid;
+        }
+    }
+    InputController.ScrollX = 0;
+    InputController.ScrollY = 0;
+}
+
 int main(void)
 {
     DEBUG_PRINT("Initializing gamestate\n");
     
-    game_state GameState = {};
-    GameState.ShouldReload = true;
-    GameState.InputController = {};
+    //game_state GameState = {};
+    //GameState.ShouldReload = true;
     
-    InitKeys(&GameState);
+    InitKeys();
     
     config_data ConfigData;
     LoadConfig("../assets/.config", &ConfigData);
     
-    render_state RenderState;
-    InitializeOpenGL(&GameState, &RenderState, &ConfigData);
-    LoadTilesheetTextures(&GameState, &RenderState);
-    GameState.DeathScreenTimer.TimerMax = 1.0f;
-    GameState.DeathScreenTimer.TimerHandle = -1;
+    LPVOID BaseAddress = 0;
+    game_memory GameMemory = {};
+    GameMemory.PermanentStorageSize = Megabytes(512);
+    u64 TotalSize = GameMemory.PermanentStorageSize;
+    GameMemory.PermanentStorage = VirtualAlloc(BaseAddress, (size_t)TotalSize,
+                                               MEM_RESERVE|MEM_COMMIT,
+                                               PAGE_READWRITE);
     
-    GameState.RenderState = RenderState;
-    GameState.LevelPath = ConfigData.StartingLevelFilePath;
-    GameState.InitialZoom = ConfigData.Zoom;
+    //@Incomplete: We really want to get ALL of game state out of main!!!
+    game_state* GameState = (game_state*)GameMemory.PermanentStorage;
+    GameState->ShouldReload = true;
+    
+    render_state RenderState;
+    InitializeOpenGL(&GameMemory, &RenderState, &ConfigData);
+    
     game_code Game = LoadGameCode();
     
     //setup asset reloading
     asset_manager AssetManager = {};
     StartupFileTimeChecks(&AssetManager);
+    
     u32 FrameCounterForAssetCheck = 0;
     
-    GameState.Console = {};
+    GameState->Console = {};
     
     sound_device SoundDevice = {};
     InitAudio(&SoundDevice);
@@ -123,49 +175,73 @@ int main(void)
         SoundManager.MusicGain = ConfigData.MusicVolume;
         LoadSounds(&SoundManager,&SoundDevice);
         ResetSoundQueue(&SoundManager);
-        GameState.SoundManager = SoundManager;
+        GameState->SoundManager = SoundManager;
     }
+    
+    sound_queue SoundQueue = {};
     
     r64 LastFrame = GetTime();
     r64 CurrentFrame = 0.0;
     r64 DeltaTime;
     
-    while (!ShouldCloseWindow(&GameState.RenderState) && !GameState.RenderState.ShouldClose)
+    
+    while (!ShouldCloseWindow(&GameState->RenderState) && !GameState->RenderState.ShouldClose)
     {
         //calculate deltatime
         CurrentFrame = GetTime();
         DeltaTime = Min(CurrentFrame - LastFrame, 0.1);
         LastFrame = CurrentFrame;
         r64 FPS = 1.0/DeltaTime;
-        GameState.RenderState.FPS = FPS;
         
-        if(GameState.GameMode == Mode_Exit || GetKeyDown(Key_Q, &GameState) && GetKey(Key_LeftCtrl, &GameState))
+        if(GameMemory.IsInitialized)
         {
-            DEBUG_PRINT("Quit\n");
-            glfwSetWindowShouldClose(GameState.RenderState.Window, GLFW_TRUE);
+            GameState->RenderState.FPS = FPS;
+            
+            if(GameState->GameMode == Mode_Exit)
+            {
+                DEBUG_PRINT("Quit\n");
+                glfwSetWindowShouldClose(RenderState.Window, GLFW_TRUE);
+            }
         }
         
-        ReloadAssets(&AssetManager, &GameState);
-        GameState.ReloadData = &AssetManager.ReloadData;
+        if(GetKeyDown(Key_F3,&InputController))
+        {
+            SoundDevice.PrevMuted = SoundDevice.Muted;
+            SoundDevice.Muted = !SoundDevice.Muted;
+        }
+        
+        if(GetKeyDown(Key_F5,&InputController))
+        {
+            SoundDevice.PrevStopped = SoundDevice.Stopped;
+            SoundDevice.Stopped = !SoundDevice.Stopped;
+        }
+        
+        if(GetKeyDown(Key_F6,&InputController))
+        {
+            SoundDevice.PrevPaused = SoundDevice.Paused;
+            SoundDevice.Paused = !SoundDevice.Paused;
+        }
+        
+        ReloadAssets(&GameMemory, &AssetManager);
+        GameState->ReloadData = &AssetManager.ReloadData;
         ReloadDlls(&Game);
         
-        Game.Update(DeltaTime, &GameState);
+        Game.Update(DeltaTime, &GameMemory, &InputController, &SoundQueue);
         
-        CheckLevelVAO(&GameState);
-        Render(&GameState);
-        PlaySounds(&GameState,&SoundDevice);
+        CheckLevelVAO(&GameMemory);
+        Render(&GameMemory);
+        PlaySounds(&GameMemory,&SoundDevice);
         
-        SetControllerInvalidKeys(&GameState.InputController);
-        SetInvalidKeys(&GameState.InputController);
-        SetMouseInvalidKeys(&GameState.InputController);
+        SetControllerInvalidKeys();
+        SetInvalidKeys();
+        SetMouseInvalidKeys();
         
         PollEvents();
         
-        if(ControllerPresent(&GameState))
+        if(ControllerPresent())
         {
-            ControllerKeys(&GameState,GLFW_JOYSTICK_1);
+            ControllerKeys(GLFW_JOYSTICK_1);
         }
-        GetActionButtonsForQueue(&GameState);
         
         FrameCounterForAssetCheck++;
         if(FrameCounterForAssetCheck == 10)
@@ -175,7 +251,7 @@ int main(void)
         }
     }
     
-    CleanupSound(&SoundDevice,&GameState.SoundManager);
-    CloseWindow(&GameState);
+    //CleanupSound(&SoundDevice,&SoundManager);
+    CloseWindow(&RenderState);
     //_CrtDumpMemoryLeaks();
 }

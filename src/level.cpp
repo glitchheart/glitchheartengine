@@ -113,7 +113,7 @@ static void LoadTilesheetMetaFile(char* FilePath, level* Level, tilemap* Tilemap
     }
 }
 
-static b32 LoadLevelFromFile(char* FilePath, level* Level, game_state* GameState)
+static b32 LoadLevelFromFile(char* FilePath, level* Level, game_state* GameState, sound_queue* SoundQueue)
 {
     //read the file manmain
     FILE* File;
@@ -151,7 +151,7 @@ static b32 LoadLevelFromFile(char* FilePath, level* Level, game_state* GameState
         if(fgets(LineBuffer, 255, File))
             sscanf(LineBuffer, "%f %f", &Level->PlayerStartPosition.x, &Level->PlayerStartPosition.y);
         
-        LoadPlayerData(GameState, -1, Level->PlayerStartPosition);
+        LoadPlayerData(GameState, SoundQueue, -1, Level->PlayerStartPosition);
         
         if(fgets(LineBuffer, 255, File))
             sscanf(LineBuffer, "%d", &MapWidth);
@@ -247,41 +247,40 @@ static b32 LoadLevelFromFile(char* FilePath, level* Level, game_state* GameState
         
         while(fgets(LineBuffer, 255, File))
         {
-            if(StartsWith(&LineBuffer[0], "skeleton"))
+            if(StartsWith(LineBuffer, "skeleton"))
             {
                 glm::vec2 Pos;
                 sscanf(LineBuffer, "skeleton %f %f%n", &Pos.x, &Pos.y, &PathIndex);
                 LoadSkeletonData(GameState, -1, Pos);
             }
-            else if(StartsWith(&LineBuffer[0], "minotaur"))
+            else if(StartsWith(LineBuffer, "minotaur"))
             {
                 glm::vec2 Pos;
                 sscanf(LineBuffer, "minotaur %f %f%n", &Pos.x, &Pos.y, &PathIndex);
                 LoadMinotaurData(GameState, -1, Pos);
             }
-            
-            else if(StartsWith(&LineBuffer[0], "blob"))
+            else if(StartsWith(LineBuffer, "blob"))
             {
                 glm::vec2 Pos;
                 sscanf(LineBuffer, "blob %f %f%n", &Pos.x, &Pos.y, &PathIndex);
                 LoadBlobData(GameState, -1, Pos);
             }
-            else if(StartsWith(&LineBuffer[0], "wraith"))
+            else if(StartsWith(LineBuffer, "wraith"))
             {
                 glm::vec2 Pos;
                 sscanf(LineBuffer, "wraith %f %f%n", &Pos.x, &Pos.y, &PathIndex);
                 LoadWraithData(GameState, -1, Pos);
             }
-            else if(StartsWith(&LineBuffer[0], "barrel"))
+            else if(StartsWith(LineBuffer, "barrel"))
             {
                 glm::vec2 Pos;
                 sscanf(LineBuffer, "barrel %f %f", &Pos.x, &Pos.y);
             }
-            else if(StartsWith(&LineBuffer[0], "bonfire"))
+            else if(StartsWith(LineBuffer, "bonfire"))
             {
                 glm::vec2 Pos;
                 sscanf(LineBuffer, "bonfire %f %f", &Pos.x, &Pos.y);
-                LoadBonfireData(GameState, -1, Pos);
+                LoadBonfireData(GameState, SoundQueue, -1, Pos);
             }
             else if(StartsWith(LineBuffer, "tree"))
             {
@@ -295,7 +294,7 @@ static b32 LoadLevelFromFile(char* FilePath, level* Level, game_state* GameState
                 auto& Entity = GameState->Entities[GameState->EntityCount - 1];
                 
                 i32 WaypointCount = 0;
-                char* PathPtr = &LineBuffer[0];
+                char* PathPtr = LineBuffer;
                 PathPtr += PathIndex + 1;
                 
                 i32 Consumed = 0;
@@ -465,7 +464,7 @@ static void SaveLevelToFile(const char* FilePath, level* Level, game_state* Game
     }
 }
 
-static void CreateNewLevelWithSize(char* FilePath, u32 Width, u32 Height, level* NewLevel, game_state* GameState)
+static void CreateNewLevelWithSize(char* FilePath, u32 Width, u32 Height, level* NewLevel, game_state* GameState, sound_queue* SoundQueue)
 {
     NewLevel->Tilemap.Width = Width;
     NewLevel->Tilemap.Height = Height;
@@ -486,5 +485,5 @@ static void CreateNewLevelWithSize(char* FilePath, u32 Width, u32 Height, level*
     
     SaveLevelToFile(FilePath, NewLevel, GameState, true);
     LoadTilesheetMetaFile(Concat(Concat("../assets/textures/tilesheets/", NewLevel->SheetName), ".tm"), NewLevel, &NewLevel->Tilemap, GameState);
-    LoadLevelFromFile(FilePath, NewLevel, GameState);
+    LoadLevelFromFile(FilePath, NewLevel, GameState, SoundQueue);
 }

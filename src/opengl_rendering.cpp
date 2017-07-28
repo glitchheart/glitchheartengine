@@ -26,11 +26,9 @@ void FramebufferSizeCallback(GLFWwindow *Window, int Width, int Height)
     //@Incomplete: This should be done with lower resolutions and just be upscaled maybe? We need fixed resolutions
     glBindTexture(GL_TEXTURE_2D, GameState->RenderState.TextureColorBuffer);
     glTexImage2D(
-        GL_TEXTURE_2D, 0, GL_RGB, GameState->RenderState.WindowWidth, GameState->RenderState.WindowHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL
-        );
+        GL_TEXTURE_2D, 0, GL_RGB, GameState->RenderState.WindowWidth, GameState->RenderState.WindowHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
     glFramebufferTexture2D(
-        GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, GameState->RenderState.TextureColorBuffer, 0
-        );
+        GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, GameState->RenderState.TextureColorBuffer, 0);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     
@@ -47,9 +45,9 @@ inline static void PollEvents()
     glfwPollEvents();
 }
 
-static void CloseWindow(game_state* GameState)
+static void CloseWindow(render_state* RenderState)
 {
-    glfwDestroyWindow(GameState->RenderState.Window);
+    glfwDestroyWindow(RenderState->Window);
     glfwTerminate();
     exit(EXIT_SUCCESS);
 }
@@ -918,8 +916,9 @@ static void LoadTilesheetTextures(game_state* GameState, render_state* RenderSta
     }
 }
 
-static void InitializeOpenGL(game_state* GameState, render_state* RenderState, config_data* ConfigData)
+static void InitializeOpenGL(game_memory* GameMemory, render_state* RenderState, config_data* ConfigData)
 {
+    game_state* GameState = (game_state*)GameMemory->PermanentStorage;
     if (!glfwInit())
         exit(EXIT_FAILURE);
     
@@ -972,7 +971,7 @@ static void InitializeOpenGL(game_state* GameState, render_state* RenderState, c
     glGetIntegerv(GL_VIEWPORT, Viewport);
     memcpy(RenderState->Viewport, Viewport, sizeof(GLint) * 4);
     
-    ControllerPresent(GameState);
+    ControllerPresent();
     
     texture_Map_Init(&RenderState->Textures, HashStringJenkins, 512);
     LoadTextures(RenderState, "../assets/textures/");
@@ -982,6 +981,10 @@ static void InitializeOpenGL(game_state* GameState, render_state* RenderState, c
     GameState->HealthBar = {};
     GameState->HealthBar.Position = glm::vec2(RenderState->WindowWidth / 2, RenderState->WindowHeight - 50);
     GameState->HealthBar.RenderInfo.Size = glm::vec3(2, 1, 1);
+    LoadTilesheetTextures(GameState, RenderState);
+    GameState->RenderState = *RenderState;
+    GameState->LevelPath = ConfigData->StartingLevelFilePath;
+    GameState->InitialZoom = ConfigData->Zoom;
 }
 
 static void ReloadVertexShader(Shader_Type Type, render_state* RenderState)
@@ -998,8 +1001,9 @@ static void ReloadFragmentShader(Shader_Type Type, render_state* RenderState)
     LoadFragmentShader(ShaderPaths[Type], &RenderState->Shaders[Type]);
 }
 
-static void ReloadAssets(asset_manager *AssetManager, game_state* GameState)
+static void ReloadAssets(game_memory* GameMemory, asset_manager* AssetManager)
 {
+    game_state* GameState = (game_state*)GameMemory->PermanentStorage;
     for(int i = 0; i < Shader_Count; i++)
     {
         if(AssetManager->DirtyVertexShaderIndices[i] == 1)
@@ -1613,43 +1617,6 @@ static void RenderEntity(game_state *GameState, render_entity* RenderEntity, glm
             CorrectPos.x = CorrectPos.x - RemoveInX;
             CorrectPos.y = CorrectPos.y - (IsFlipped ? CurrentAnimation->Center.y : 0);
             
-            if(RenderEntity->Entity->Type == Entity_Player)
-            {
-                if(GetKey(Key_W,GameState))
-                {
-                    RenderText(&GameState->RenderState, 
-                               GameState->RenderState.MenuFont, 
-                               glm::vec4(0.5, 1, 1, 1), "W", 
-                               (r32)GameState->RenderState.WindowWidth / 2, 
-                               80, 1, Alignment_Center);
-                }
-                if(GetKey(Key_A,GameState))
-                {
-                    RenderText(&GameState->RenderState, 
-                               GameState->RenderState.MenuFont, 
-                               glm::vec4(0.5, 1, 1, 1), "A", 
-                               (r32)GameState->RenderState.WindowWidth / 2 - 40, 
-                               40, 1, Alignment_Center);
-                }
-                if(GetKey(Key_S,GameState))
-                {
-                    RenderText(&GameState->RenderState, 
-                               GameState->RenderState.MenuFont, 
-                               glm::vec4(0.5, 1, 1, 1), "S", 
-                               (r32)GameState->RenderState.WindowWidth / 2, 
-                               40, 1, Alignment_Center);
-                }
-                if(GetKey(Key_D,GameState))
-                {
-                    RenderText(&GameState->RenderState, 
-                               GameState->RenderState.MenuFont, 
-                               glm::vec4(0.5, 1, 1, 1), "D", 
-                               (r32)GameState->RenderState.WindowWidth / 2 + 40, 
-                               40, 1, Alignment_Center);
-                }
-                
-            }
-            
             Model = glm::translate(Model, glm::vec3(CorrectPos.x, CorrectPos.y, 0.0f));
             if(IsFlipped)
             {
@@ -2010,26 +1977,29 @@ static void RenderInGameMode(game_state* GameState)
             for(i32 Index = 0; Index < GameState->RenderState.RenderEntityCount; Index++)
             {
                 render_state* RenderState = &GameState->RenderState;
-                const entity& Entity = *RenderState->RenderEntities[Index].Entity;
-                
-                if(Entity.ShowAttackTiles &&(Entity.Type == Entity_Player || Entity.Type == Entity_Enemy))
+                auto RenderEntity = RenderState->RenderEntities[Index];
+                if(RenderEntity.RenderType == Render_Type_Entity)
                 {
-                    r32 CartesianX = glm::floor(Entity.Position.x - 0.5f);
-                    r32 CartesianY = glm::ceil(Entity.Position.y - 0.5f);
-                    
-                    glm::vec2 CorrectPosition = ToIsometric(glm::vec2(CartesianX, CartesianY));
-                    r32 CorrectX = CorrectPosition.x;
-                    r32 CorrectY = CorrectPosition.y;
-                    
-                    hit_tile_extents HitExtents = Entity.HitExtents[Entity.LookDirection];
-                    
-                    for(i32 X = HitExtents.StartX; X < HitExtents.EndX; X++)
+                    const entity& Entity = *RenderEntity.Entity;
+                    if(Entity.ShowAttackTiles &&(Entity.Type == Entity_Player || Entity.Type == Entity_Enemy))
                     {
-                        for(i32 Y = HitExtents.StartY; Y < HitExtents.EndY; Y++)
+                        r32 CartesianX = glm::floor(Entity.Position.x - 0.5f);
+                        r32 CartesianY = glm::ceil(Entity.Position.y - 0.5f);
+                        
+                        glm::vec2 CorrectPosition = ToIsometric(glm::vec2(CartesianX, CartesianY));
+                        r32 CorrectX = CorrectPosition.x;
+                        r32 CorrectY = CorrectPosition.y;
+                        
+                        hit_tile_extents HitExtents = Entity.HitExtents[Entity.LookDirection];
+                        
+                        for(i32 X = HitExtents.StartX; X < HitExtents.EndX; X++)
                         {
-                            glm::vec2 Pos = ToIsometric(glm::vec2(CartesianX + X, CartesianY + Y));
-                            
-                            RenderIsometricRect(RenderState, glm::vec4(1, 0, 0, 0.2), Pos.x, Pos.y, 1, 0.5f, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
+                            for(i32 Y = HitExtents.StartY; Y < HitExtents.EndY; Y++)
+                            {
+                                glm::vec2 Pos = ToIsometric(glm::vec2(CartesianX + X, CartesianY + Y));
+                                
+                                RenderIsometricRect(RenderState, glm::vec4(1, 0, 0, 0.2), Pos.x, Pos.y, 1, 0.5f, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
+                            }
                         }
                     }
                 }
@@ -2090,9 +2060,9 @@ void RenderUI(game_state* GameState)
             if(GameState->Paused)
                 RenderText(&GameState->RenderState, GameState->RenderState.MenuFont, glm::vec4(0.5, 1, 1, 1), "PAUSED", (r32)GameState->RenderState.WindowWidth / 2, 40, 1, Alignment_Center);
             
-            if(!GameState->InputController.ControllerPresent)
+            if(!InputController.ControllerPresent)
             {
-                RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(1, 1, 1, 1), (r32)GameState->InputController.MouseX - 20.0f, (r32)GameState->RenderState.WindowHeight - (r32)GameState->InputController.MouseY - 20.0f, 40.0f, 40.0f, 
+                RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(1, 1, 1, 1), (r32)InputController.MouseX - 20.0f, (r32)GameState->RenderState.WindowHeight - (r32)InputController.MouseY - 20.0f, 40.0f, 40.0f, 
                            GameState->RenderState.Textures["cross"]->TextureHandle, true, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
             }
             
@@ -2132,21 +2102,21 @@ void RenderUI(game_state* GameState)
             
             RenderText(&GameState->RenderState, GameState->RenderState.RobotoFont, glm::vec4(1, 1, 1, 1), InventoryText, 48 + 40 - 30, 75, 1, Alignment_Center);
             
-            if(GameState->InputController.ControllerType == Controller_Xbox)
+            if(InputController.ControllerType == Controller_Xbox)
             {
                 RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(1, 1, 1, 1), 48 + 40 - 17.5f, 90, 35, 35, GameState->RenderState.Textures["x_button"]->TextureHandle);
             }
-            else if (GameState->InputController.ControllerType == Controller_PS4) 
+            else if (InputController.ControllerType == Controller_PS4) 
             {
                 RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(1, 1, 1, 1), 48 + 40 - 17.5f, 90, 35, 35, GameState->RenderState.Textures["square_button"]->TextureHandle);
             }
             
             texture* ButtonTexture = 0;
-            if(GameState->InputController.ControllerType == Controller_Xbox)
+            if(InputController.ControllerType == Controller_Xbox)
             {
                 ButtonTexture = GameState->RenderState.Textures["a_button"];
             }
-            else if (GameState->InputController.ControllerType == Controller_PS4) 
+            else if (InputController.ControllerType == Controller_PS4) 
             {
                 ButtonTexture = GameState->RenderState.Textures["cross_button"];
             }
@@ -2382,7 +2352,7 @@ void RenderUI(game_state* GameState)
                                     break;
                                 }
                                 
-                                RenderText(&GameState->RenderState, GameState->RenderState.InconsolataFont, glm::vec4(1, 1, 1, 1), Text, (r32)GameState->InputController.MouseX, GameState->RenderState.WindowHeight - (r32)GameState->InputController.MouseY + 20, 1, Alignment_Center); 
+                                RenderText(&GameState->RenderState, GameState->RenderState.InconsolataFont, glm::vec4(1, 1, 1, 1), Text, (r32)InputController.MouseX, GameState->RenderState.WindowHeight - (r32)InputController.MouseY + 20, 1, Alignment_Center); 
                                 
                                 if(GameState->EditorState.SelectedEntity)
                                     RenderWireframe(&GameState->RenderState, GameState->EditorState.SelectedEntity, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
@@ -2553,8 +2523,9 @@ void RenderUI(game_state* GameState)
 }
 
 // @Inefficient: Maybe find a way to update only parts of the tilemap when placing tiles
-static void CheckLevelVAO(game_state* GameState)
+static void CheckLevelVAO(game_memory* GameMemory)
 {
+    game_state* GameState = (game_state*)GameMemory->PermanentStorage;
     if(GameState->CurrentLevel.Tilemap.RenderInfo.Dirty)
     {
         if(GameState->CurrentLevel.Tilemap.RenderInfo.DirtyLayer == -1)
@@ -2582,7 +2553,7 @@ static void CheckLevelVAO(game_state* GameState)
 
 static void RenderDebugInfo(game_state* GameState)
 {
-    auto Pos = glm::unProject(glm::vec3(GameState->InputController.MouseX, GameState->RenderState.Viewport[3] - GameState->InputController.MouseY, 0),
+    auto Pos = glm::unProject(glm::vec3(InputController.MouseX, GameState->RenderState.Viewport[3] - InputController.MouseY, 0),
                               GameState->Camera.ViewMatrix,
                               GameState->Camera.ProjectionMatrix,
                               glm::vec4(0, 0, GameState->RenderState.Viewport[2], GameState->RenderState.Viewport[3]));
@@ -2684,11 +2655,12 @@ static void RenderLightSources(game_state* GameState)
     }
 }
 
-static void Render(game_state* GameState)
+static void Render(game_memory* GameMemory)
 {
+    game_state* GameState = (game_state*)GameMemory->PermanentStorage;
     if(GameState->IsInitialized)
     {
-        CheckLevelVAO(GameState);
+        CheckLevelVAO(GameMemory);
         
         GameState->RenderState.ScaleX = 2.0f / GameState->RenderState.WindowWidth;
         GameState->RenderState.ScaleY = 2.0f / GameState->RenderState.WindowHeight;

@@ -115,7 +115,7 @@ static void DecreaseStamina(entity* Entity, game_state* GameState, i32 Cost)
     StartTimer(GameState,Entity->Player.StaminaGainCooldownTimer);
 }
 
-void Hit(game_state* GameState, entity* ByEntity, entity* HitEntity)
+void Hit(game_state* GameState, sound_queue* SoundQueue, entity* ByEntity, entity* HitEntity)
 {
     if(HitEntity->HitAttackCountId != ByEntity->AttackCount)
     {
@@ -126,7 +126,7 @@ void Hit(game_state* GameState, entity* ByEntity, entity* HitEntity)
         {
             if(ByEntity->Type == Entity_Player)
             {
-                PlaySoundEffect(GameState, &GameState->SoundManager.ShieldImpact);
+                PlaySoundEffect(&GameState->SoundManager, SoundQueue, &GameState->SoundManager.ShieldImpact);
                 StartTimer(GameState, ByEntity->StaggerCooldownTimer);
             }
         }
@@ -141,11 +141,11 @@ void Hit(game_state* GameState, entity* ByEntity, entity* HitEntity)
             
             if(ran == 0)
             {
-                PlaySoundEffect(GameState, &GameState->SoundManager.Splash01, 0.95f);
+                PlaySoundEffect(&GameState->SoundManager, SoundQueue, &GameState->SoundManager.Splash01, 0.95f);
             }
             else
             {
-                PlaySoundEffect(GameState, &GameState->SoundManager.Splash01,0.85f);
+                PlaySoundEffect(&GameState->SoundManager, SoundQueue, &GameState->SoundManager.Splash01,0.85f);
             }
             
             HitEntity->HitRecoilDirection = glm::normalize(HitEntity->Position - ByEntity->Position);
@@ -204,6 +204,7 @@ static void SpawnShadow(game_state* GameState, glm::vec2 Position, i32* Handle)
     PlayAnimation(Shadow, "big_shadow", GameState);
     
     render_entity* RenderEntity = &GameState->RenderState.RenderEntities[GameState->RenderState.RenderEntityCount];
+    RenderEntity->RenderType = Render_Type_Object;
     Shadow->RenderEntityHandle = GameState->RenderState.RenderEntityCount;
     
     RenderEntity->ShaderIndex = Shader_Spritesheet;
@@ -230,6 +231,7 @@ static void SpawnLoot(game_state* GameState, glm::vec2 Position, i32* Handle)
     Loot->UsesTransparency = true;
     
     render_entity* RenderEntity = &GameState->RenderState.RenderEntities[GameState->RenderState.RenderEntityCount];
+    RenderEntity->RenderType = Render_Type_Object;
     RenderEntity->Texture = GameState->RenderState.Textures["basic_loot"];
     Loot->RenderEntityHandle = GameState->RenderState.RenderEntityCount;
     
@@ -260,6 +262,7 @@ static void SpawnWillDrop(game_state* GameState, glm::vec2 Position, i32* Handle
     PlayAnimation(Will, "will_glow", GameState);
     
     render_entity* RenderEntity = &GameState->RenderState.RenderEntities[GameState->RenderState.RenderEntityCount];
+    RenderEntity->RenderType = Render_Type_Object;
     
     RenderEntity->ShaderIndex = Shader_Spritesheet;
     RenderEntity->Rendered = true;
@@ -290,6 +293,7 @@ static void SpawnTree(game_state* GameState, glm::vec2 Position, i32* Handle = 0
     Tree->UsesTransparency = true;
     
     render_entity* RenderEntity = &GameState->RenderState.RenderEntities[GameState->RenderState.RenderEntityCount];
+    RenderEntity->RenderType = Render_Type_Object;
     Tree->RenderEntityHandle = GameState->RenderState.RenderEntityCount;
     
     RenderEntity->ShaderIndex = Shader_Texture;
@@ -952,7 +956,7 @@ AI_FUNC(MinotaurIdle)
     if(DistanceToPlayer <= Entity->Enemy.MaxAlertDistance)
     {
         Enemy.AIState = AI_Alerted;
-        PlaySoundEffect(GameState, &GameState->SoundManager.MinotaurGrunt02);
+        PlaySoundEffect(&GameState->SoundManager, SoundQueue, &GameState->SoundManager.MinotaurGrunt02);
         StartTimer(GameState, Entity->Enemy.Minotaur.AlertedTimer);
     }
     else
@@ -1030,7 +1034,7 @@ AI_FUNC(MinotaurCharging)
     else if(TimerDone(GameState, Minotaur.ChargingTimer) && DistanceToPlayer <= Enemy.AttackDistance)
     {
         Enemy.AIState = AI_Attacking;
-        PlaySoundEffect(GameState, &GameState->SoundManager.MinotaurGrunt01);
+        PlaySoundEffect(&GameState->SoundManager, SoundQueue, &GameState->SoundManager.MinotaurGrunt01);
         
         Enemy.LastAttackMoveDirection = glm::normalize(Player.Position - Entity->Position);
         
@@ -1059,7 +1063,7 @@ AI_FUNC(MinotaurDefending)
         RenderEntity.Color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
         Entity->Enemy.AIState = AI_Attacking;
         
-        PlaySoundEffect(GameState, &GameState->SoundManager.MinotaurGrunt01);
+        PlaySoundEffect(&GameState->SoundManager, SoundQueue, &GameState->SoundManager.MinotaurGrunt01);
         
         entity& Player = GameState->Entities[GameState->PlayerIndex];
         Entity->Enemy.LastAttackMoveDirection = glm::normalize(Player.Position - Entity->Position);
@@ -1125,7 +1129,7 @@ AI_FUNC(MinotaurAttacking)
                 {
                     Minotaur.IsAttacking = false;
                     Enemy.AIState = AI_Attacking;
-                    PlaySoundEffect(GameState, &GameState->SoundManager.MinotaurGrunt01);
+                    PlaySoundEffect(&GameState->SoundManager, SoundQueue, &GameState->SoundManager.MinotaurGrunt01);
                     
                     MinotaurSetAttackMode(Entity, GameState);
                 }
@@ -1175,7 +1179,7 @@ AI_FUNC(MinotaurAttacking)
                 if(Entity->IsKinematic)
                 {
                     Entity->IsKinematic = false;
-                    PlaySoundEffect(GameState, &GameState->SoundManager.MinotaurStomp);
+                    PlaySoundEffect(&GameState->SoundManager, SoundQueue, &GameState->SoundManager.MinotaurStomp);
                     StartTimer(GameState, Entity->Enemy.Minotaur.JumpAttackImpactTimer);
                 }
                 
@@ -1190,7 +1194,7 @@ AI_FUNC(MinotaurAttacking)
                     {
                         if(CollisionInfo.Other[Index]->Type == Entity_Player && !CollisionInfo.Other[Index]->Player.IsDashing)
                         {
-                            Hit(GameState, Entity, CollisionInfo.Other[Index]);
+                            Hit(GameState, SoundQueue, Entity, CollisionInfo.Other[Index]);
                         }
                     }
                 }
@@ -1204,7 +1208,7 @@ AI_FUNC(MinotaurAttacking)
                     if(rand() % 2 == 0 && DistanceToPlayer <= Enemy.AttackDistance) //@Incomplete: Maybe set a specific percentage for this in the .dat-file
                     {
                         Enemy.AIState = AI_Attacking;
-                        PlaySoundEffect(GameState, &GameState->SoundManager.MinotaurGrunt01);
+                        PlaySoundEffect(&GameState->SoundManager, SoundQueue, &GameState->SoundManager.MinotaurGrunt01);
                         Enemy.LastAttackMoveDirection = glm::normalize(Player.Position - Entity->Position);
                         MinotaurSetAttackMode(Entity, GameState);
                     }
@@ -1250,7 +1254,7 @@ AI_FUNC(MinotaurWandering)
     
     if(Entity->Enemy.AIState == AI_Alerted || Entity->Enemy.AIState == AI_Following)
     {
-        PlaySoundEffect(GameState, &GameState->SoundManager.MinotaurGrunt02);
+        PlaySoundEffect(&GameState->SoundManager, SoundQueue, &GameState->SoundManager.MinotaurGrunt02);
     }
 }
 
@@ -1504,7 +1508,7 @@ AI_FUNC(BlobAttacking)
         PlayAnimation(Entity, "explosion", GameState);
         Entity->Health = 0;
         Entity->Velocity = glm::vec2();
-        PlaySoundEffect(GameState, &GameState->SoundManager.Explosion);
+        PlaySoundEffect(&GameState->SoundManager, SoundQueue, &GameState->SoundManager.Explosion);
     }
 }
 
@@ -1527,7 +1531,7 @@ AI_FUNC(BlobDying)
 }
 
 
-static void LoadBonfireData(game_state* GameState, i32 Handle = -1, glm::vec2 Position = glm::vec2(), b32 IsTemporary = false)
+static void LoadBonfireData(game_state* GameState, sound_queue* SoundQueue, i32 Handle = -1, glm::vec2 Position = glm::vec2(), b32 IsTemporary = false)
 {
     FILE* File;
     File = fopen("../assets/entities/bonfire.dat", "r");
@@ -1562,7 +1566,7 @@ static void LoadBonfireData(game_state* GameState, i32 Handle = -1, glm::vec2 Po
         {
             DEBUG_PRINT("Entityhandle: %d\n", Entity->EntityIndex);
             Entity->Position = glm::vec2(Position.x, Position.y);
-            PlaySoundEffect(GameState,&GameState->SoundManager.Bonfire, 1.0f, Entity->Position.x, Entity->Position.y, 10.0f, true, Entity->EntityIndex);
+            PlaySoundEffect(&GameState->SoundManager, SoundQueue,&GameState->SoundManager.Bonfire, 1.0f, Entity->Position.x, Entity->Position.y, 10.0f, true, Entity->EntityIndex);
         }
         
         fclose(File);
@@ -1839,12 +1843,12 @@ static void LoadBlobData(game_state* GameState, i32 Handle = -1, glm::vec2 Posit
     
 }
 
-void PlaceCheckpoint(game_state* GameState, entity* Entity)
+void PlaceCheckpoint(game_state* GameState, sound_queue* SoundQueue, entity* Entity)
 {
     auto CheckpointPos = glm::vec2(Entity->Position.x, Entity->Position.y - 0.5f);
     if(!GameState->CharacterData.HasCheckpoint)
     {
-        LoadBonfireData(GameState,-1,CheckpointPos, true);
+        LoadBonfireData(GameState,SoundQueue, -1,CheckpointPos, true);
         GameState->CharacterData.CheckpointHandle = GameState->EntityCount - 1;
     }
     else
@@ -1862,7 +1866,7 @@ void PlaceCheckpoint(game_state* GameState, entity* Entity)
     SaveGame(GameState);
 }
 
-static void LoadPlayerData(game_state* GameState, i32 Handle = -1, glm::vec2 Position = glm::vec2())
+static void LoadPlayerData(game_state* GameState, sound_queue* SoundQueue, i32 Handle = -1, glm::vec2 Position = glm::vec2())
 {
     FILE* File;
     File = fopen("../assets/entities/player.dat", "r");
@@ -2020,7 +2024,7 @@ static void LoadPlayerData(game_state* GameState, i32 Handle = -1, glm::vec2 Pos
                 GameState->CharacterData.HasCheckpoint = true;
                 
             }
-            LoadBonfireData(GameState,-1,GameState->CharacterData.CurrentCheckpoint, true);
+            LoadBonfireData(GameState, SoundQueue, -1,GameState->CharacterData.CurrentCheckpoint, true);
             GameState->CharacterData.CheckpointHandle = GameState->EntityCount - 1;
             GameState->LastCharacterData.CheckpointHandle = GameState->EntityCount - 1;
             GameState->LastCharacterData.CurrentCheckpoint = GameState->CharacterData.CurrentCheckpoint;
@@ -2039,12 +2043,13 @@ static void LoadPlayerData(game_state* GameState, i32 Handle = -1, glm::vec2 Pos
                 SpawnWillDrop(GameState,GameState->CharacterData.LostWillPosition,&GameState->CharacterData.LostWillObjectHandle);
             }
         }
+        Entity->Player.Inventory.HasCheckpoint = true;
     }
 }
 
-static void CheckWillPickup(game_state* GameState,object_entity* Will,entity* Player)
+static void CheckWillPickup(game_state* GameState, input_controller* InputController, object_entity* Will,entity* Player)
 {
-    if(GameState->CharacterData.RenderWillButtonHint && GetActionButtonDown(Action_Interact, GameState))
+    if(GameState->CharacterData.RenderWillButtonHint && GetActionButtonDown(Action_Interact, InputController))
     {
         Player->Player.Will += GameState->CharacterData.LostWill;
         GameState->CharacterData.HasLostWill = false;
@@ -2059,9 +2064,9 @@ static void CheckWillPickup(game_state* GameState,object_entity* Will,entity* Pl
 }
 
 
-static void CheckLootPickup(game_state* GameState, loot* Loot, entity* Player)
+static void CheckLootPickup(game_state* GameState, input_controller* InputController,loot* Loot, entity* Player)
 {
-    if(Loot->RenderButtonHint && GetActionButtonDown(Action_Interact, GameState))
+    if(Loot->RenderButtonHint && GetActionButtonDown(Action_Interact, InputController))
     {
         b32 CanLoot = false;
         switch(Loot->Type)
@@ -2102,7 +2107,7 @@ static void CheckLootPickup(game_state* GameState, loot* Loot, entity* Player)
     }
 }
 
-void UpdatePlayer(entity* Entity, game_state* GameState, r64 DeltaTime)
+void UpdatePlayer(entity* Entity, game_state* GameState, sound_queue* SoundQueue,input_controller* InputController, r64 DeltaTime)
 {
     if(Entity->Hit)
     {
@@ -2110,13 +2115,13 @@ void UpdatePlayer(entity* Entity, game_state* GameState, r64 DeltaTime)
     }
     
     //Will
-    if(GameState->CharacterData.HasLostWill)
+    if(GameState->CharacterData.IsInitialized && GameState->CharacterData.HasLostWill)
     {
         auto Will = GameState->Objects[GameState->CharacterData.LostWillObjectHandle];
         if(glm::distance(Entity->Position, Will.Position) < 1.5f)
         {
             GameState->CharacterData.RenderWillButtonHint = true;
-            CheckWillPickup(GameState,&Will,Entity);
+            CheckWillPickup(GameState,InputController, &Will,Entity);
         }
         else
         {
@@ -2134,7 +2139,7 @@ void UpdatePlayer(entity* Entity, game_state* GameState, r64 DeltaTime)
             if(Loot.Handle != -1 && glm::distance(Entity->Position, GameState->Objects[Loot.OwnerHandle].Position) < 1.5f)
             {
                 GameState->CurrentLoot[Index].RenderButtonHint = true;
-                CheckLootPickup(GameState,&Loot,Entity);
+                CheckLootPickup(GameState,InputController, &Loot,Entity);
             }
             else
             {
@@ -2173,9 +2178,9 @@ void UpdatePlayer(entity* Entity, game_state* GameState, r64 DeltaTime)
         }
     }
     
-    b32 UsingController = GameState->InputController.ControllerPresent;
+    b32 UsingController = InputController->ControllerPresent;
     
-    auto TempPos = glm::unProject(glm::vec3(GameState->InputController.MouseX, GameState->RenderState.Viewport[3] - GameState->InputController.MouseY, 0),
+    auto TempPos = glm::unProject(glm::vec3(InputController->MouseX, GameState->RenderState.Viewport[3] - InputController->MouseY, 0),
                                   GameState->Camera.ViewMatrix,
                                   GameState->Camera.ProjectionMatrix,
                                   glm::vec4(0, 0, GameState->RenderState.Viewport[2], GameState->RenderState.Viewport[3]));
@@ -2186,7 +2191,7 @@ void UpdatePlayer(entity* Entity, game_state* GameState, r64 DeltaTime)
     
     if (Entity->Active && Entity->Health > 0)
     {
-        if(!Entity->Player.IsAttacking && !Entity->Hit && !Entity->Player.IsDashing && GetActionButtonDown(Action_Use, GameState) && Entity->Player.Inventory.HealthPotionCount > 0 && TimerDone(GameState,Entity->Player.HealthPotionTimer) && !Entity->Player.TakingHealthPotion)
+        if(!Entity->Player.IsAttacking && !Entity->Hit && !Entity->Player.IsDashing && GetActionButtonDown(Action_Use, InputController) && Entity->Player.Inventory.HealthPotionCount > 0 && TimerDone(GameState,Entity->Player.HealthPotionTimer) && !Entity->Player.TakingHealthPotion)
         {
             //@Incomplete: Play some animation here for drinking!!!
             StartTimer(GameState,Entity->Player.HealthPotionTimer);
@@ -2196,7 +2201,7 @@ void UpdatePlayer(entity* Entity, game_state* GameState, r64 DeltaTime)
         
         if(Entity->Player.TakingHealthPotion && TimerDone(GameState, Entity->Player.HealthPotionTimer))
         {
-            PlaySoundEffect(GameState, &GameState->SoundManager.UseHealth);
+            PlaySoundEffect(&GameState->SoundManager, SoundQueue, &GameState->SoundManager.UseHealth);
             Entity->Health = Min((i16)GameState->CharacterData.Health, Entity->Health + 30);
             Entity->Player.TakingHealthPotion = false;
         }
@@ -2222,8 +2227,8 @@ void UpdatePlayer(entity* Entity, game_state* GameState, r64 DeltaTime)
             
             if(!Entity->Player.IsAttacking && TimerDone(GameState, Entity->Player.AttackCooldownTimer))
             {
-                r32 InputX = GetInputX(GameState);
-                r32 InputY = GetInputY(GameState);
+                r32 InputX = GetInputX(InputController);
+                r32 InputY = GetInputY(InputController);
                 
                 Entity->Velocity.x = InputX * UsedWalkingSpeed * (r32)DeltaTime;
                 Entity->Velocity.y = InputY * UsedWalkingSpeed * (r32)DeltaTime;
@@ -2288,7 +2293,7 @@ void UpdatePlayer(entity* Entity, game_state* GameState, r64 DeltaTime)
                         //Entity->LookDirection = East;
                     }
                     
-                    if(Abs(ControllerXValue) > GameState->InputController.ControllerDeadzone)
+                    if(Abs(ControllerXValue) > InputController->ControllerDeadzone)
                     {
                         Entity->IsFlipped = ControllerXValue < 0;
                     }
@@ -2350,12 +2355,12 @@ void UpdatePlayer(entity* Entity, game_state* GameState, r64 DeltaTime)
             StartTimer(GameState, Entity->Player.DashCooldownTimer);
         }
         
-        if(!Entity->Player.IsDashing && TimerDone(GameState, Entity->Player.DashCooldownTimer) && !Entity->Player.IsAttacking  && TimerDone(GameState, Entity->Player.DashTimer) && GetActionButtonDown(Action_Dash, GameState)  && Entity->Player.Stamina >= Entity->Player.RollStaminaCost - Entity->Player.MinDiffStamina)
+        if(!Entity->Player.IsDashing && TimerDone(GameState, Entity->Player.DashCooldownTimer) && !Entity->Player.IsAttacking  && TimerDone(GameState, Entity->Player.DashTimer) && GetActionButtonDown(Action_Dash, InputController)  && Entity->Player.Stamina >= Entity->Player.RollStaminaCost - Entity->Player.MinDiffStamina)
         {
-            PlaySoundEffect(GameState, &GameState->SoundManager.Dash);
+            PlaySoundEffect(&GameState->SoundManager, SoundQueue, &GameState->SoundManager.Dash);
             Entity->Player.IsDashing = true;
             
-            glm::vec2 Direction = UsingController ? glm::normalize(glm::vec2(GetInputX(GameState), GetInputY(GameState))) : DirectionToMouse;
+            glm::vec2 Direction = UsingController ? glm::normalize(glm::vec2(GetInputX(InputController), GetInputY(InputController))) : DirectionToMouse;
             
             if(Direction.x == Direction.x && Direction.y == Direction.y && (Direction.x != 0 || Direction.y != 0))
             {
@@ -2374,15 +2379,15 @@ void UpdatePlayer(entity* Entity, game_state* GameState, r64 DeltaTime)
         }
         else if(Entity->Player.Stamina < Entity->Player.RollStaminaCost - Entity->Player.MinDiffStamina)
         {
-            ResetActionButtonQueue(GameState);
+            ResetActionButtonQueue(InputController);
         }
         
         Entity->Invincible = Entity->Player.IsDashing;
         
         if(Entity->Player.IsDashing)
         {
-            auto XInput = GetInputX(GameState);
-            auto YInput = GetInputY(GameState);
+            auto XInput = GetInputX(InputController);
+            auto YInput = GetInputY(InputController);
             
             auto NewDirection = glm::normalize(glm::vec2(Entity->Player.DashDirectionX + XInput / Entity->Player.DashCounterDivider, Entity->Player.DashDirectionY + YInput / Entity->Player.DashCounterDivider));
             
@@ -2507,19 +2512,19 @@ void UpdatePlayer(entity* Entity, game_state* GameState, r64 DeltaTime)
         CheckCollision(GameState, Entity, &CollisionInfo);
         
         
-        if(!Entity->Player.IsAttacking && !Entity->Player.IsChargingCheckpoint && !Entity->Player.IsDashing && GetActionButton(Action_Checkpoint, GameState) && TimerDone(GameState, Entity->Player.CheckpointPlacementCooldownTimer) && Entity->Player.Inventory.HasCheckpoint)
+        if(!Entity->Player.IsAttacking && !Entity->Player.IsChargingCheckpoint && !Entity->Player.IsDashing && GetActionButton(Action_Checkpoint, InputController) && TimerDone(GameState, Entity->Player.CheckpointPlacementCooldownTimer) && Entity->Player.Inventory.HasCheckpoint)
         {
             Entity->Player.IsChargingCheckpoint = true;
             StartTimer(GameState,Entity->Player.CheckpointPlacementTimer);
         }
-        else if(Entity->Player.IsChargingCheckpoint && TimerDone(GameState,Entity->Player.CheckpointPlacementTimer) && GetActionButton(Action_Checkpoint, GameState))
+        else if(Entity->Player.IsChargingCheckpoint && TimerDone(GameState,Entity->Player.CheckpointPlacementTimer) && GetActionButton(Action_Checkpoint, InputController))
         {
             Entity->Player.IsChargingCheckpoint = false;
             StartTimer(GameState,Entity->Player.CheckpointPlacementCooldownTimer);
-            PlaceCheckpoint(GameState,Entity);
+            PlaceCheckpoint(GameState, SoundQueue,Entity);
             Entity->Player.Inventory.HasCheckpoint = false;
         }
-        else if(!GetActionButton(Action_Checkpoint, GameState))
+        else if(!GetActionButton(Action_Checkpoint, InputController))
         {
             Entity->Player.IsChargingCheckpoint = false;
         }
@@ -2547,7 +2552,7 @@ void UpdatePlayer(entity* Entity, game_state* GameState, r64 DeltaTime)
         //attacking
         if(!Entity->Player.IsChargingCheckpoint && TimerDone(GameState, Entity->Player.AttackCooldownTimer) &&
            TimerDone(GameState, Entity->StaggerCooldownTimer)
-           && !Entity->Player.IsAttacking && Entity->Player.Stamina >= Entity->Player.AttackStaminaCost - Entity->Player.MinDiffStamina && (GetActionButtonDown(Action_Attack, GameState)))
+           && !Entity->Player.IsAttacking && Entity->Player.Stamina >= Entity->Player.AttackStaminaCost - Entity->Player.MinDiffStamina && (GetActionButtonDown(Action_Attack, InputController)))
         {
             switch(Entity->LookDirection)
             {
@@ -2583,18 +2588,18 @@ void UpdatePlayer(entity* Entity, game_state* GameState, r64 DeltaTime)
             i32 Ran = rand() % 2;
             if(Ran == 0)
             {
-                PlaySoundEffect(GameState, &GameState->SoundManager.SwordSlash01);
+                PlaySoundEffect(&GameState->SoundManager, SoundQueue, &GameState->SoundManager.SwordSlash01);
             }
             else
             {
-                PlaySoundEffect(GameState, &GameState->SoundManager.SwordSlash01, 0.85f);
+                PlaySoundEffect(&GameState->SoundManager, SoundQueue,  &GameState->SoundManager.SwordSlash01, 0.85f);
             }
             
         }
         else if(Entity->Player.Stamina < Entity->Player.AttackStaminaCost - Entity->Player.MinDiffStamina)
         {
             
-            ResetActionButtonQueue(GameState);
+            ResetActionButtonQueue(InputController);
         }
         
         
@@ -2635,15 +2640,15 @@ void UpdatePlayer(entity* Entity, game_state* GameState, r64 DeltaTime)
         SaveGame(GameState);
     }
     
-    if(GameState->InputController.ActionRunning)
+    if(InputController->ActionRunning)
     {
-        ResetActionButtonQueue(GameState);
+        ResetActionButtonQueue(InputController);
     }
     
-    GameState->InputController.ActionRunning = Entity->Player.IsAttacking || Entity->Player.IsDashing;
+    InputController->ActionRunning = Entity->Player.IsAttacking || Entity->Player.IsDashing;
 }
 
-void UpdateWeapon(entity* Entity, game_state* GameState, r64 DeltaTime)
+void UpdateWeapon(entity* Entity, game_state* GameState, sound_queue* SoundQueue, r64 DeltaTime)
 {
     b32 IsAttacking = false;
     
@@ -2757,7 +2762,7 @@ void UpdateWeapon(entity* Entity, game_state* GameState, r64 DeltaTime)
                         {
                             entity* HitEntity = &GameState->Entities[Handle];
                             if(HitEntity->Active && !HitEntity->Dead && (Entity->Type == Entity_Enemy && HitEntity->Type == Entity_Player) || (Entity->Type == Entity_Player && HitEntity->Type == Entity_Enemy))
-                                Hit(GameState, Entity, HitEntity);
+                                Hit(GameState, SoundQueue, Entity, HitEntity);
                         }
                     }
                 }
@@ -2781,62 +2786,62 @@ void UpdateWeapon(entity* Entity, game_state* GameState, r64 DeltaTime)
     }
 }
 
-void UpdateAI(entity* Entity, game_state* GameState, r64 DeltaTime)
+void UpdateAI(entity* Entity, game_state* GameState, sound_queue* SoundQueue, r64 DeltaTime)
 {
     switch(Entity->Enemy.AIState)
     {
         case AI_Idle:
         {
-            Entity->Enemy.Idle(Entity,GameState,DeltaTime);
+            Entity->Enemy.Idle(Entity,GameState, SoundQueue, DeltaTime);
         }
         break;
         case AI_Alerted:
         {
-            Entity->Enemy.Alerted(Entity,GameState,DeltaTime);
+            Entity->Enemy.Alerted(Entity,GameState, SoundQueue,DeltaTime);
         }
         break;
         case AI_Following:
         {
-            Entity->Enemy.Following(Entity,GameState,DeltaTime);
+            Entity->Enemy.Following(Entity,GameState, SoundQueue,DeltaTime);
         }
         break;
         case AI_Charging:
         {
-            Entity->Enemy.Charging(Entity,GameState,DeltaTime);
+            Entity->Enemy.Charging(Entity,GameState, SoundQueue,DeltaTime);
         }
         break;
         case AI_Defending:
         {
-            Entity->Enemy.Defending(Entity,GameState,DeltaTime);
+            Entity->Enemy.Defending(Entity,GameState, SoundQueue,DeltaTime);
         }
         break;
         case AI_Attacking:
         {
-            Entity->Enemy.Attacking(Entity,GameState,DeltaTime);
+            Entity->Enemy.Attacking(Entity,GameState, SoundQueue,DeltaTime);
         }
         break;
         case AI_Hit:
         {
-            Entity->Enemy.Hit(Entity,GameState,DeltaTime);
+            Entity->Enemy.Hit(Entity,GameState, SoundQueue,DeltaTime);
         }
         break;
         case AI_Dying:
         {
-            Entity->Enemy.Dying(Entity,GameState,DeltaTime);
+            Entity->Enemy.Dying(Entity,GameState, SoundQueue,DeltaTime);
         }
         break;
         case AI_Wandering:
         {
-            Entity->Enemy.Wandering(Entity,GameState,DeltaTime);
+            Entity->Enemy.Wandering(Entity,GameState, SoundQueue,DeltaTime);
         }
         break;
     }
 }
 
-void UpdateBlob(entity* Entity, game_state* GameState, r64 DeltaTime)
+void UpdateBlob(entity* Entity, game_state* GameState, sound_queue* SoundQueue, r64 DeltaTime)
 {
     
-    UpdateAI(Entity,GameState,DeltaTime);
+    UpdateAI(Entity,GameState, SoundQueue, DeltaTime);
     collision_info CollisionInfo;
     CheckCollision(GameState, Entity, &CollisionInfo);
     
@@ -2849,7 +2854,7 @@ void UpdateBlob(entity* Entity, game_state* GameState, r64 DeltaTime)
                 auto Other = CollisionInfo.Other[Index];
                 if(Other->Type != Entity_Barrel)
                 {
-                    Hit(GameState, Entity, CollisionInfo.Other[Index]);
+                    Hit(GameState, SoundQueue, Entity, CollisionInfo.Other[Index]);
                 }
             }
         }
@@ -2885,7 +2890,7 @@ static void DetermineLoot(game_state* GameState, entity* Entity)
     }
 }
 
-void UpdateSkeleton(entity* Entity, game_state* GameState, r64 DeltaTime)
+void UpdateSkeleton(entity* Entity, game_state* GameState, sound_queue* SoundQueue, r64 DeltaTime)
 {
     auto& Enemy = Entity->Enemy;
     auto& Skeleton = Entity->Enemy.Skeleton;
@@ -2917,7 +2922,7 @@ void UpdateSkeleton(entity* Entity, game_state* GameState, r64 DeltaTime)
         
         Entity->Velocity = glm::vec2(0,0); //@Cleanup: This is not good. Do this in AI
         
-        UpdateAI(Entity,GameState,DeltaTime);
+        UpdateAI(Entity,GameState, SoundQueue,DeltaTime);
         
         Entity->Position.x += Entity->Velocity.x * (r32)DeltaTime;
         Entity->Position.y += Entity->Velocity.y * (r32)DeltaTime;
@@ -2967,7 +2972,7 @@ void UpdateSkeleton(entity* Entity, game_state* GameState, r64 DeltaTime)
     }
 }
 
-void UpdateMinotaur(entity* Entity, game_state* GameState, r64 DeltaTime)
+void UpdateMinotaur(entity* Entity, game_state* GameState, sound_queue* SoundQueue, r64 DeltaTime)
 {
     auto& Enemy = Entity->Enemy;
     auto& Minotaur = Entity->Enemy.Minotaur;
@@ -2980,12 +2985,12 @@ void UpdateMinotaur(entity* Entity, game_state* GameState, r64 DeltaTime)
     {
         if(Entity->Hit)
         {
-            PlaySoundEffect(GameState, &GameState->SoundManager.MinotaurHit);
+            PlaySoundEffect(&GameState->SoundManager, SoundQueue, &GameState->SoundManager.MinotaurHit);
             Enemy.TimesHit++;
             
             if(Entity->Health <= 0)
             {
-                PlaySoundEffect(GameState, &GameState->SoundManager.MinotaurDeath);
+                PlaySoundEffect(&GameState->SoundManager, SoundQueue, &GameState->SoundManager.MinotaurDeath);
                 PlayAnimation(Entity, "minotaur_death", GameState);
                 Entity->AnimationInfo.FreezeFrame = true;
                 Enemy.AIState = AI_Dying;
@@ -3011,7 +3016,7 @@ void UpdateMinotaur(entity* Entity, game_state* GameState, r64 DeltaTime)
             StartTimer(GameState, Enemy.DefendingTimer);
         }
         
-        UpdateAI(Entity,GameState,DeltaTime);
+        UpdateAI(Entity,GameState, SoundQueue,DeltaTime);
         
         Entity->Position.x += Entity->Velocity.x * (r32)DeltaTime;
         Entity->Position.y += Entity->Velocity.y * (r32)DeltaTime;
@@ -3059,7 +3064,7 @@ void UpdateMinotaur(entity* Entity, game_state* GameState, r64 DeltaTime)
     }
 }
 
-void UpdateWraith(entity* Entity, game_state* GameState, r64 DeltaTime)
+void UpdateWraith(entity* Entity, game_state* GameState, sound_queue* SoundQueue, r64 DeltaTime)
 {
     auto& Enemy = Entity->Enemy;
     auto& Wraith = Entity->Enemy.Wraith;
@@ -3091,7 +3096,7 @@ void UpdateWraith(entity* Entity, game_state* GameState, r64 DeltaTime)
         
         Entity->Velocity = glm::vec2(0,0); //@Cleanup: This is not good. Do this in AI
         
-        UpdateAI(Entity, GameState, DeltaTime);
+        UpdateAI(Entity, GameState, SoundQueue, DeltaTime);
         
         Entity->Position.x += Entity->Velocity.x * (r32)DeltaTime;
         Entity->Position.y += Entity->Velocity.y * (r32)DeltaTime;
@@ -3141,7 +3146,7 @@ void UpdateWraith(entity* Entity, game_state* GameState, r64 DeltaTime)
     }
 }
 
-void UpdateBarrel(entity* Entity, game_state* GameState, r64 DeltaTime)
+void UpdateBarrel(entity* Entity, game_state* GameState, sound_queue* SoundQueue, r64 DeltaTime)
 {
     if(Entity->Active)
     {
@@ -3158,7 +3163,7 @@ void UpdateBarrel(entity* Entity, game_state* GameState, r64 DeltaTime)
             {
                 if(CollisionInfo.Other[Index]->Type == Entity_Enemy)
                 {
-                    Hit(GameState, Entity, CollisionInfo.Other[Index]);
+                    Hit(GameState, SoundQueue, Entity, CollisionInfo.Other[Index]);
                     HasHitEnemy = true;
                 }
             }
@@ -3171,7 +3176,7 @@ void UpdateBarrel(entity* Entity, game_state* GameState, r64 DeltaTime)
                 PlayAnimation(Entity, "barrel_destroy", GameState);
                 Entity->Dead = true;
                 Entity->Velocity = glm::vec2(0, 0);
-                PlaySoundEffect(GameState, &GameState->SoundManager.BarrelBreak);
+                PlaySoundEffect(&GameState->SoundManager, SoundQueue, &GameState->SoundManager.BarrelBreak);
             }
         }
         
@@ -3301,7 +3306,7 @@ void UpdateObjects(game_state* GameState, r64 DeltaTime)
     }
 }
 
-void UpdateEntities(game_state* GameState, r64 DeltaTime)
+void UpdateEntities(game_state* GameState, input_controller* InputController, sound_queue* SoundQueue, r64 DeltaTime)
 {
     for(u32 EntityIndex = 0;
         EntityIndex < GameState->EntityCount;
@@ -3319,8 +3324,8 @@ void UpdateEntities(game_state* GameState, r64 DeltaTime)
                 {
                     if(!GameState->GodModeOn)
                     {
-                        UpdatePlayer(Entity, GameState, DeltaTime);
-                        UpdateWeapon(Entity, GameState, DeltaTime);
+                        UpdatePlayer(Entity, GameState, SoundQueue, InputController, DeltaTime);
+                        UpdateWeapon(Entity, GameState, SoundQueue, DeltaTime);
                     }
                 }
                 break;
@@ -3330,32 +3335,32 @@ void UpdateEntities(game_state* GameState, r64 DeltaTime)
                     {
                         case Enemy_Skeleton:
                         {
-                            UpdateSkeleton(Entity, GameState, DeltaTime);
+                            UpdateSkeleton(Entity, GameState, SoundQueue, DeltaTime);
                             
                             if(!Entity->Dead)
                             {
-                                UpdateWeapon(Entity, GameState, DeltaTime);
+                                UpdateWeapon(Entity, GameState, SoundQueue, DeltaTime);
                             }
                         }
                         break;
                         case Enemy_Minotaur:
                         {
-                            UpdateMinotaur(Entity, GameState, DeltaTime);
+                            UpdateMinotaur(Entity, GameState, SoundQueue, DeltaTime);
                             
                             if(!Entity->Dead)
                             {
-                                UpdateWeapon(Entity, GameState, DeltaTime);
+                                UpdateWeapon(Entity, GameState, SoundQueue, DeltaTime);
                             }
                         }
                         break;
                         case Enemy_Wraith:
                         {
-                            UpdateWraith(Entity, GameState, DeltaTime);
+                            UpdateWraith(Entity, GameState, SoundQueue, DeltaTime);
                         }
                         break;
                         case Enemy_Blob:
                         {
-                            UpdateBlob(Entity, GameState, DeltaTime);
+                            UpdateBlob(Entity, GameState, SoundQueue, DeltaTime);
                         }
                         break;
                     }
@@ -3363,7 +3368,7 @@ void UpdateEntities(game_state* GameState, r64 DeltaTime)
                 break;
                 case Entity_Barrel:
                 {
-                    UpdateBarrel(Entity, GameState, DeltaTime);
+                    UpdateBarrel(Entity, GameState, SoundQueue, DeltaTime);
                 }
                 case Entity_Bonfire:
                 {
