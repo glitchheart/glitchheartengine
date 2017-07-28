@@ -45,7 +45,7 @@ static game_code LoadGameCode()
     
     if (!Result.IsValid)
     {
-        printf("Invalid\n");
+        DEBUG_PRINT("Invalid\n");
         Result.Update = UpdateStub;
     }
     
@@ -76,14 +76,14 @@ static void ReloadDlls(game_code *Game)
     
     if (CompareFileTime(&Game->LastDllWriteTime, &LastWriteTime) != 0)
     {
-        printf("RELOAD\n");
+        DEBUG_PRINT("RELOAD\n");
         ReloadGameCode(Game);
     }
 }
 
 int main(void)
 {
-    printf("Initializing gamestate\n");
+    DEBUG_PRINT("Initializing gamestate\n");
     
     game_state GameState = {};
     GameState.ShouldReload = true;
@@ -141,7 +141,7 @@ int main(void)
         
         if(GameState.GameMode == Mode_Exit || GetKeyDown(Key_Q, &GameState) && GetKey(Key_LeftCtrl, &GameState))
         {
-            printf("Quit\n");
+            DEBUG_PRINT("Quit\n");
             glfwSetWindowShouldClose(GameState.RenderState.Window, GLFW_TRUE);
         }
         

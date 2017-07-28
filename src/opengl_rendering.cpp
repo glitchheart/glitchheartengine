@@ -72,8 +72,8 @@ static GLint ShaderCompilationErrorChecking(const char* ShaderName, GLuint Shade
         GLchar* ErrorLog = (GLchar*)malloc(MaxLength);
         glGetShaderInfoLog(Shader, MaxLength, &MaxLength, ErrorLog);
         
-        printf("SHADER Compilation error - %s\n", ShaderName);
-        printf(ErrorLog);
+        DEBUG_PRINT("SHADER Compilation error - %s\n", ShaderName);
+        DEBUG_PRINT(ErrorLog);
         
         glDeleteShader(Shader); // Don't leak the shader.
     }
@@ -552,7 +552,7 @@ static void RenderSetup(render_state *RenderState)
     glBindTexture(GL_TEXTURE_2D, 0);
     
     if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-        printf("ERROR::FRAMEBUFFER:: Framebuffer is not complete!");
+        DEBUG_PRINT("ERROR::FRAMEBUFFER:: Framebuffer is not complete!");
     
     glGenFramebuffers(1, &RenderState->LightingFrameBuffer);
     glBindFramebuffer(GL_FRAMEBUFFER, RenderState->LightingFrameBuffer);
@@ -573,7 +573,7 @@ static void RenderSetup(render_state *RenderState)
     glBindTexture(GL_TEXTURE_2D, 0);
     
     if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-        printf("ERROR::FRAMEBUFFER:: Framebuffer is not complete!");
+        DEBUG_PRINT("ERROR::FRAMEBUFFER:: Framebuffer is not complete!");
     
     // FrameBuffer VAO
     glGenVertexArrays(1, &RenderState->FrameBufferVAO);
@@ -959,7 +959,7 @@ static void InitializeOpenGL(game_state* GameState, render_state* RenderState, c
     glDisable(GL_DITHER);
     glLineWidth(2.0f);
     
-    printf("%s\n", glGetString(GL_VERSION));
+    DEBUG_PRINT("%s\n", glGetString(GL_VERSION));
     
     glfwSetWindowUserPointer(RenderState->Window, GameState);
     glfwSetKeyCallback(RenderState->Window, KeyCallback);
@@ -1004,14 +1004,14 @@ static void ReloadAssets(asset_manager *AssetManager, game_state* GameState)
     {
         if(AssetManager->DirtyVertexShaderIndices[i] == 1)
         {
-            printf("Reloading vertex shader type: %s\n", ShaderEnumToStr((Shader_Type)i));
+            DEBUG_PRINT("Reloading vertex shader type: %s\n", ShaderEnumToStr((Shader_Type)i));
             ReloadVertexShader((Shader_Type)i, &GameState->RenderState);
             AssetManager->DirtyVertexShaderIndices[i] = 0;
         }
         
         if(AssetManager->DirtyFragmentShaderIndices[i] == 1)
         {
-            printf("Reloading fragment shader type: %s\n", ShaderEnumToStr((Shader_Type)i));
+            DEBUG_PRINT("Reloading fragment shader type: %s\n", ShaderEnumToStr((Shader_Type)i));
             ReloadFragmentShader((Shader_Type)i, &GameState->RenderState);
             AssetManager->DirtyFragmentShaderIndices[i] = 0;
         }

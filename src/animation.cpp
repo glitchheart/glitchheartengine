@@ -130,7 +130,7 @@
                                             }
                                             else
                                             {
-                                                printf("Texture: '%s' could not be found. Animation '%s' will not be loaded. Please delete the file or add the missing texture.\n", TextureName, Animation.Name);
+                                                DEBUG_PRINT("Texture: '%s' could not be found. Animation '%s' will not be loaded. Please delete the file or add the missing texture.\n", TextureName, Animation.Name);
                                                 free(TextureName);
                                                 return;
                                             }
@@ -145,7 +145,7 @@
                                         fclose(File);
                                     }
                                     else
-                                        printf("Animation-file not loaded: '%s'\n", FilePath);
+                                        DEBUG_PRINT("Animation-file not loaded: '%s'\n", FilePath);
                                 }
                                 
                                 static void LoadAnimations(game_state* GameState)

@@ -267,7 +267,7 @@ void SaveGame(game_state* GameState)
         fwrite(&Entity.Player.Inventory,sizeof(player_inventory), 1, File);
         
         fclose(File);
-        printf("Saved game!\n");
+        DEBUG_PRINT("Saved game!\n");
     }
 }
 
@@ -287,7 +287,7 @@ void LoadGame(game_state* GameState)
             fread(&GameState->Entities[0].Player.Inventory, sizeof(player_inventory), 1 , File);
             
             fclose(File);
-            printf("Loaded game!\n");
+            DEBUG_PRINT("Loaded game!\n");
         }
     }
     else

@@ -24,6 +24,7 @@ static void TickTimers(game_state* GameState, r64 DeltaTime)
             GameState->Timers[Index] = 0;
         }
     }
+    DEBUG_PRINT("HELLO%d\n",5);
 }
 
 static void LoadGameDataFile(game_state* GameState)
@@ -745,11 +746,6 @@ static void EditorUpdateEntities(game_state* GameState, r64 DeltaTime)
 
 extern "C" UPDATE(Update)
 {
-    if(GetKeyDown(Key_Down,GameState))
-    {
-        printf("Tits\n");
-    }
-    
     if(GameState->ReloadData->ReloadPlayerFile)
     {
         LoadPlayerData(GameState, 0);
