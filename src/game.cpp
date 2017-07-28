@@ -1356,11 +1356,8 @@ extern "C" UPDATE(Update)
     GameState->ClearTilePositionFrame = !GameState->ClearTilePositionFrame;
     GetActionButtonsForQueue(InputController);
     
-    game_update_return GameUpdateReturn = {};
-    GameUpdateReturn.EntityCount = GameState->EntityCount;
-    memcpy(&GameUpdateReturn.EntityPositions,&GameState->EntityPositions,sizeof(glm::vec2) * NUM_ENTITIES);
-    
-    return GameUpdateReturn;
+    GameUpdateStruct->EntityCount = GameState->EntityCount;
+    memcpy(&GameUpdateStruct->EntityPositions,&GameState->EntityPositions,sizeof(glm::vec2) * NUM_ENTITIES);
 }
 
  

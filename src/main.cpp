@@ -222,8 +222,7 @@ int main(void)
         GameState->ReloadData = &AssetManager.ReloadData;
         ReloadDlls(&Game);
         
-        
-        auto GameUpdateStruct = Game.Update(DeltaTime, &GameMemory, &InputController, &SoundQueue);
+        game_update_return GameUpdateStruct = {};Game.Update(DeltaTime, &GameMemory, &InputController, &SoundQueue, &GameUpdateStruct);
         
         CheckLevelVAO(&GameMemory);
         Render(&GameMemory);

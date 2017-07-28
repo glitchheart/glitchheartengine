@@ -94,11 +94,10 @@ struct game_update_return
     i32 EntityCount;
 };
 
-#define UPDATE(name)game_update_return name(r64 DeltaTime, game_memory* GameMemory, input_controller* InputController, sound_queue* SoundQueue)
+#define UPDATE(name)void name(r64 DeltaTime, game_memory* GameMemory, input_controller* InputController, sound_queue* SoundQueue, game_update_return* GameUpdateStruct)
 typedef UPDATE(update);
 UPDATE(UpdateStub)
 {
-    return game_update_return();
 }
 
 void HandleError(char const *File, i32 LineNum, char const *msg)
