@@ -26,5 +26,5 @@ void main()
 		}
 	}
 
-    outColor =  vec4(vec3(color.rgb * spriteColor.rgb) * 1.0,color.a * spriteColor.a);
+    outColor =  vec4(vec3(color.rgb * spriteColor.rgb) * 1.0, color.a * spriteColor.a);
 }

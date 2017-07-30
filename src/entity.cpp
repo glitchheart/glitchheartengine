@@ -2016,7 +2016,7 @@ static void LoadPlayerData(game_state* GameState, sound_queue* SoundQueue, i32 H
         {
             if(GameState->CharacterData.HasCheckpoint)
             {
-                Entity->Position = glm::vec2(GameState->CharacterData.CurrentCheckpoint.x - 0.5f,GameState->CharacterData.CurrentCheckpoint.y - 0.5f);
+                Entity->Position = glm::vec2(GameState->CharacterData.CurrentCheckpoint.x + 0.5f,GameState->CharacterData.CurrentCheckpoint.y + 0.5f);
             }
             else
             {
@@ -2025,6 +2025,9 @@ static void LoadPlayerData(game_state* GameState, sound_queue* SoundQueue, i32 H
                 GameState->CharacterData.HasCheckpoint = true;
                 
             }
+            
+            Entity->Position = glm::vec2(glm::floor(Entity->Position.x), glm::floor(Entity->Position.y));
+            
             LoadBonfireData(GameState, SoundQueue, -1,GameState->CharacterData.CurrentCheckpoint, true);
             GameState->CharacterData.CheckpointHandle = GameState->EntityCount - 1;
             GameState->LastCharacterData.CheckpointHandle = GameState->EntityCount - 1;
@@ -2110,543 +2113,112 @@ static void CheckLootPickup(game_state* GameState, input_controller* InputContro
 
 void UpdatePlayer(entity* Entity, game_state* GameState, sound_queue* SoundQueue,input_controller* InputController, r64 DeltaTime)
 {
-    if(Entity->Hit)
+    // Collision check
+    collision_info CollisionInfo;
+    CheckCollision(GameState, Entity, &CollisionInfo);
+    
+    // Input + movement
+    r32 XInput = GetInputX(InputController);
+    r32 YInput = GetInputY(InputController);
+    
+    r32 DX = 0.0f;
+    r32 DY = 0.0f;
+    
+    r32 Scale = 2.0f;
+    
+    if(XInput > 0)
     {
-        Entity->Player.IsAttacking = false;
+        DX = 1;
+    }
+    else if(XInput < 0)
+    {
+        DX = -1;
     }
     
-    //Will
-    if(GameState->CharacterData.IsInitialized && GameState->CharacterData.HasLostWill)
+    if(YInput > 0)
     {
-        auto Will = GameState->Objects[GameState->CharacterData.LostWillObjectHandle];
-        if(glm::distance(Entity->Position, Will.Position) < 1.5f)
-        {
-            GameState->CharacterData.RenderWillButtonHint = true;
-            CheckWillPickup(GameState,InputController, &Will,Entity);
-        }
-        else
-        {
-            GameState->CharacterData.RenderWillButtonHint = false;
-        }
+        DY = 1;
+    }
+    else if(YInput < 0)
+    {
+        DY = -1;
     }
     
-    
-    // Loot
-    if(GameState->CurrentLootCount > 0)
+    if(DX < 0 && DY > 0)
     {
-        for(i32 Index = 0; Index < GameState->CurrentLootCount; Index++)
-        {
-            auto Loot = GameState->CurrentLoot[Index];
-            if(Loot.Handle != -1 && glm::distance(Entity->Position, GameState->Objects[Loot.OwnerHandle].Position) < 1.5f)
-            {
-                GameState->CurrentLoot[Index].RenderButtonHint = true;
-                CheckLootPickup(GameState,InputController, &Loot,Entity);
-            }
-            else
-            {
-                GameState->CurrentLoot[Index].RenderButtonHint = false;
-            }
-        }
+        DX = 0;
+        Entity->LookDirection = NorthWest;
+    }
+    else if(DX == 0.0f && DY > 0)
+    {
+        DX = 1.0f;
+        Scale = 1.0f;
+        Entity->LookDirection = North;
+        DX = 0;
+        DY = 0;
+    }
+    else if(DX > 0 && DY > 0)
+    {
+        DY = 0.0f;
+        Scale = 1.0f;
+        Entity->LookDirection = NorthEast;
+    }
+    else if(DX > 0 && DY == 0.0f)
+    {
+        DY = -1.0f;
+        Entity->LookDirection = East;
+        DX = 0;
+        DY = 0;
+    }
+    else if(DX > 0 && DY < 0)
+    {
+        DX = 0.0f;
+        Entity->LookDirection = SouthEast;
+    }
+    else if(DX == 0.0f && DY < 0)
+    {
+        DX = -1.0f;
+        Scale = 1.0f;
+        Entity->LookDirection = South;
+        DX = 0;
+        DY = 0;
+    }
+    else if(DX < 0 && DY < 0)
+    {
+        DY = 0.0f;
+        Scale = 1.0f;
+        Entity->LookDirection = SouthWest;
+    }
+    else if(DX < 0 && DY == 0.0f)
+    {
+        DY = 1.0f;
+        Entity->LookDirection = West;
+        DX = 0;
+        DY = 0;
     }
     
-    r32 UsedWalkingSpeed = Entity->Player.WalkingSpeed;
-    if(!TimerDone(GameState, Entity->StaggerCooldownTimer) || Entity->Player.TakingHealthPotion)
-    {
-        UsedWalkingSpeed = UsedWalkingSpeed / 2;
-    }
+    r32 Length = glm::length(glm::vec2(DX, DY));
     
-    if(TimerDone(GameState,Entity->Player.StaminaGainCooldownTimer))
+    glm::vec2 Direction;
+    
+    if(Length != 0.0f)
     {
-        Entity->Player.StaminaGainTimer.TimerMax =Entity->Player.StaminaGainTimerFast;
+        Direction = glm::normalize(glm::vec2(DX, DY));
     }
     else
     {
-        Entity->Player.StaminaGainTimer.TimerMax = Entity->Player.StaminaGainTimerSlow;
+        Direction = glm::vec2(0, 0);
     }
     
-    if(Entity->Player.Stamina != GameState->CharacterData.Stamina)
-    {
-        if(TimerDone(GameState, Entity->Player.StaminaGainTimer))
-        {
-            Entity->Player.Stamina += 1;
-            
-            if(Entity->Player.Stamina < GameState->CharacterData.Stamina)
-            {
-                StartTimer(GameState, Entity->Player.StaminaGainTimer);
-            }
-            
-            Entity->Player.Stamina = Min(Entity->Player.Stamina, (i16)GameState->CharacterData.Stamina);
-        }
-    }
+    // Set speed
+    r32 Speed = Entity->Player.WalkingSpeed;
     
-    b32 UsingController = InputController->ControllerPresent;
+    // Set new position
+    Entity->Velocity = glm::vec2(Direction.x * Speed, Direction.y * Speed);
+    Entity->Position += glm::vec2(Entity->Velocity.x * DeltaTime, Entity->Velocity.y * DeltaTime);
     
-    auto TempPos = glm::unProject(glm::vec3(InputController->MouseX, GameState->RenderState.Viewport[3] - InputController->MouseY, 0),
-                                  GameState->Camera.ViewMatrix,
-                                  GameState->Camera.ProjectionMatrix,
-                                  glm::vec4(0, 0, GameState->RenderState.Viewport[2], GameState->RenderState.Viewport[3]));
-    
-    auto Pos = glm::vec2(TempPos.x, TempPos.y);
-    
-    auto DirectionToMouse = glm::normalize(glm::vec2(Pos.x - Entity->Position.x, Pos.y - Entity->Position.y));
-    
-    if (Entity->Active && Entity->Health > 0)
-    {
-        if(!Entity->Player.IsAttacking && !Entity->Hit && !Entity->Player.IsDashing && GetActionButtonDown(Action_Use, InputController) && Entity->Player.Inventory.HealthPotionCount > 0 && TimerDone(GameState,Entity->Player.HealthPotionTimer) && !Entity->Player.TakingHealthPotion)
-        {
-            //@Incomplete: Play some animation here for drinking!!!
-            StartTimer(GameState,Entity->Player.HealthPotionTimer);
-            Entity->Player.Inventory.HealthPotionCount--;
-            Entity->Player.TakingHealthPotion = true;
-        }
-        
-        if(Entity->Player.TakingHealthPotion && TimerDone(GameState, Entity->Player.HealthPotionTimer))
-        {
-            PLAY_SOUND(UseHealth);
-            Entity->Health = Min((i16)GameState->CharacterData.Health, Entity->Health + 30);
-            Entity->Player.TakingHealthPotion = false;
-        }
-        
-        if(Entity->Player.IsDefending && !Entity->AnimationInfo.Playing)
-        {
-            Entity->Player.IsDefending = false;
-        }
-        
-        if(!TimerDone(GameState, Entity->StaggerCooldownTimer))
-        {
-            Entity->Velocity = glm::vec2(Entity->HitRecoilDirection.x * Entity->HitRecoilSpeed * DeltaTime, Entity->HitRecoilDirection.y * Entity->HitRecoilSpeed * DeltaTime);
-        }
-        
-        if(!Entity->Player.IsDashing && !Entity->Player.IsDefending)
-        {
-            glm::vec2 Direction = UsingController ? glm::normalize(Entity->Velocity) : DirectionToMouse;
-            if(Direction.x == Direction.x && Direction.y == Direction.y && (Direction.x != 0 || Direction.y != 0))
-            {
-                Entity->Player.LastKnownDirectionX = Direction.x;
-                Entity->Player.LastKnownDirectionY = Direction.y;
-            }
-            
-            if(!Entity->Player.IsAttacking && TimerDone(GameState, Entity->Player.AttackCooldownTimer))
-            {
-                r32 InputX = GetInputX(InputController);
-                r32 InputY = GetInputY(InputController);
-                
-                Entity->Velocity.x = InputX * UsedWalkingSpeed * (r32)DeltaTime;
-                Entity->Velocity.y = InputY * UsedWalkingSpeed * (r32)DeltaTime;
-                
-                // @Cleanup: This section really needs a cleanup
-                if(Entity->Player.TargetedEnemyHandle != -1)
-                {
-                    b32 Moving = Entity->Velocity.x != 0 || Entity->Velocity.y != 0;
-                    
-                    auto Direction = glm::normalize(GameState->Entities[Entity->Player.TargetedEnemyHandle].Position - Entity->Position);
-                    
-                    if(Direction.x < 0.7)
-                    {
-                        if(Direction.y > 0)
-                        {
-                            if(Moving)
-                                PlayAnimation(Entity, "swordsman_walk_shield_up", GameState);
-                            else
-                                PlayAnimation(Entity, "swordsman_idle_shield_up", GameState);
-                        }
-                        else
-                        {
-                            if(Moving)
-                                PlayAnimation(Entity, "swordsman_walk_shield_up", GameState);
-                            else
-                                PlayAnimation(Entity, "swordsman_idle_shield_up", GameState);
-                        }
-                    }
-                    else
-                    {
-                        if(Moving)
-                            PlayAnimation(Entity, "swordsman_walk_shield_up", GameState);
-                        else
-                            PlayAnimation(Entity, "swordsman_idle_shield_up", GameState);
-                    }
-                    
-                    Entity->IsFlipped = Direction.x < 0;
-                }
-                else if(Entity->Velocity.x != 0.0f || Entity->Velocity.y != 0.0f)
-                {
-                    auto ControllerXValue = UsingController ? InputX : 0.0f;
-                    auto ControllerYValue = UsingController ? InputY : 0.0f;
-                    
-                    auto MouseXValue = DirectionToMouse.x;
-                    auto MouseYValue = DirectionToMouse.y;
-                    
-                    PlayAnimation(Entity, "swordsman_walk_shield_up", GameState);
-                    
-                    if(Abs(ControllerXValue) < 0.7f && Abs(ControllerYValue) > 0.2f || Abs(MouseXValue) < 0.7f && Abs(MouseYValue) > 0.2f)
-                    {
-                        if(ControllerYValue > 0 || MouseYValue > 0)
-                        {
-                            //Entity->LookDirection = North;
-                        }
-                        else
-                        {
-                            //Entity->LookDirection = South;
-                        }
-                    }
-                    else
-                    {
-                        //Entity->LookDirection = East;
-                    }
-                    
-                    if(Abs(ControllerXValue) > InputController->ControllerDeadzone)
-                    {
-                        Entity->IsFlipped = ControllerXValue < 0;
-                    }
-                    else if(Abs(MouseXValue) > 0.01f)
-                    {
-                        Entity->IsFlipped = MouseXValue < 0;
-                    }
-                }
-                else
-                {
-                    PlayAnimation(Entity, "swordsman_idle_shield_up", GameState);
-                    if(Abs(Entity->Player.LastKnownDirectionX) < 0.3)
-                    {
-                        if(Entity->Player.LastKnownDirectionY > 0)
-                        {
-                            //Entity->LookDirection = North;
-                            //PlayAnimation(Entity, "player_idle_up", GameState);
-                        }
-                        else
-                        {
-                            //Entity->LookDirection = South;
-                            //PlayAnimation(Entity, "player_idle_down", GameState);
-                        }
-                    }
-                    else
-                    {
-                        //Entity->LookDirection = East;
-                        //PlayAnimation(Entity, "player_idle_right", GameState);
-                    }
-                    Entity->IsFlipped = Entity->Player.LastKnownDirectionX < 0;
-                    
-                }
-            }
-            else if(!TimerDone(GameState, Entity->AttackMoveTimer))
-            {
-                glm::vec2 Vel;
-                r32 AttackMoveSpeed = Entity->AttackMoveSpeed;
-                
-                if(Entity->Player.LastKnownDirectionX != 0 || Entity->Player.LastKnownDirectionY != 0)
-                {
-                    Vel = glm::vec2(Entity->Player.LastKnownDirectionX * AttackMoveSpeed * DeltaTime, Entity->Player.LastKnownDirectionY * AttackMoveSpeed * DeltaTime);
-                }
-                
-                Entity->Velocity = Vel;
-            }
-            else
-            {
-                Entity->Velocity = glm::vec2(0, 0);
-            }
-            
-            //if(Entity->LookDirection == East && Entity->IsFlipped)
-            //Entity->LookDirection = West;
-            
-        }
-        
-        if(Entity->Player.IsDashing && TimerDone(GameState, Entity->Player.DashTimer))
-        {
-            Entity->Player.IsDashing = false;
-            StartTimer(GameState, Entity->Player.DashCooldownTimer);
-        }
-        
-        if(!Entity->Player.IsDashing && TimerDone(GameState, Entity->Player.DashCooldownTimer) && !Entity->Player.IsAttacking  && TimerDone(GameState, Entity->Player.DashTimer) && GetActionButtonDown(Action_Dash, InputController)  && Entity->Player.Stamina >= Entity->Player.RollStaminaCost - Entity->Player.MinDiffStamina)
-        {
-            PLAY_SOUND(Dash);
-            Entity->Player.IsDashing = true;
-            
-            glm::vec2 Direction = UsingController ? glm::normalize(glm::vec2(GetInputX(InputController), GetInputY(InputController))) : DirectionToMouse;
-            
-            if(Direction.x == Direction.x && Direction.y == Direction.y && (Direction.x != 0 || Direction.y != 0))
-            {
-                Entity->Player.LastKnownDirectionX = Direction.x;
-                Entity->Player.LastKnownDirectionY = Direction.y;
-            }
-            
-            Entity->Player.DashDirectionX = Entity->Player.LastKnownDirectionX;
-            Entity->Player.DashDirectionY = Entity->Player.LastKnownDirectionY;
-            StartTimer(GameState, Entity->Player.DashTimer);
-            
-            DecreaseStamina(Entity,GameState,Entity->Player.RollStaminaCost);
-            StartTimer(GameState, Entity->Player.StaminaDecreaseTimer);
-            
-            PlayAnimation(Entity, "swordsman_roll", GameState);
-        }
-        else if(Entity->Player.Stamina < Entity->Player.RollStaminaCost - Entity->Player.MinDiffStamina)
-        {
-            ResetActionButtonQueue(InputController);
-        }
-        
-        Entity->Invincible = Entity->Player.IsDashing;
-        
-        if(Entity->Player.IsDashing)
-        {
-            auto XInput = GetInputX(InputController);
-            auto YInput = GetInputY(InputController);
-            
-            auto NewDirection = glm::normalize(glm::vec2(Entity->Player.DashDirectionX + XInput / Entity->Player.DashCounterDivider, Entity->Player.DashDirectionY + YInput / Entity->Player.DashCounterDivider));
-            
-            Entity->Player.DashDirectionX = NewDirection.x;
-            Entity->Player.DashDirectionY = NewDirection.y;
-            
-            Entity->Velocity = glm::vec2(Entity->Player.DashDirectionX * Entity->Player.DashSpeed * DeltaTime, Entity->Player.DashDirectionY * Entity->Player.DashSpeed * DeltaTime);
-        }
-        
-        if(TimerDone(GameState, Entity->Player.DashCooldownTimer) && !Entity->Player.IsDashing)
-        {
-            Entity->Player.DashCount = 0;
-        }
-        
-        if(Entity->Player.IsChargingCheckpoint)
-            Entity->Velocity = glm::vec2(Entity->Velocity.x * 0.5f, Entity->Velocity.y * 0.5f);
-        
-        
-        if(GameState->CurrentLevel.Type == Level_Isometric)
-        {
-            if(Entity->Velocity.x == Entity->Velocity.x)
-            {
-                r32 DX = 0.0f;
-                r32 DY = 0.0f;
-                
-                r32 Scale = 2.0f;
-                
-                if(Entity->Velocity.x > 0)
-                {
-                    DX = 1;
-                }
-                else if(Entity->Velocity.x < 0)
-                {
-                    DX = -1;
-                }
-                
-                if(Entity->Velocity.y > 0)
-                {
-                    DY = 1;
-                }
-                else if(Entity->Velocity.y < 0)
-                {
-                    DY = -1;
-                }
-                
-                if(DX < 0 && DY > 0)
-                {
-                    DX = 0;
-                    Entity->LookDirection = NorthWest;
-                }
-                else if(DX == 0.0f && DY > 0)
-                {
-                    DX = 1.0f;
-                    Scale = 1.0f;
-                    Entity->LookDirection = North;
-                }
-                else if(DX > 0 && DY > 0)
-                {
-                    DY = 0.0f;
-                    Scale = 1.0f;
-                    Entity->LookDirection = NorthEast;
-                }
-                else if(DX > 0 && DY == 0.0f)
-                {
-                    DY = -1.0f;
-                    Entity->LookDirection = East;
-                }
-                else if(DX > 0 && DY < 0)
-                {
-                    DX = 0.0f;
-                    Entity->LookDirection = SouthEast;
-                }
-                else if(DX == 0.0f && DY < 0)
-                {
-                    DX = -1.0f;
-                    Scale = 1.0f;
-                    Entity->LookDirection = South;
-                }
-                else if(DX < 0 && DY < 0)
-                {
-                    DY = 0.0f;
-                    Scale = 1.0f;
-                    Entity->LookDirection = SouthWest;
-                }
-                else if(DX < 0 && DY == 0.0f)
-                {
-                    DY = 1.0f;
-                    Entity->LookDirection = West;
-                }
-                
-                r32 Length = glm::length(glm::vec2(DX, DY));
-                
-                glm::vec2 Direction;
-                
-                if(Length != 0.0f)
-                {
-                    Direction = glm::normalize(glm::vec2(DX, DY));
-                }
-                else
-                {
-                    Direction = glm::vec2(0, 0);
-                }
-                
-                r32 Speed = Entity->Player.WalkingSpeed;
-                if(!TimerDone(GameState, Entity->AttackMoveTimer))
-                    Speed = Entity->AttackMoveSpeed;
-                
-                Entity->Position += glm::vec2(Direction.x / Scale * Speed * DeltaTime, Direction.y * Speed * DeltaTime);
-            }
-            
-        }
-        else
-        {
-            if(Entity->Velocity.x == Entity->Velocity.x)
-                Entity->Position += Entity->Velocity;
-        }
-        
-        Entity->Hit = false;
-        
-        collision_info CollisionInfo;
-        
-        CheckCollision(GameState, Entity, &CollisionInfo);
-        
-        
-        if(!Entity->Player.IsAttacking && !Entity->Player.IsChargingCheckpoint && !Entity->Player.IsDashing && GetActionButton(Action_Checkpoint, InputController) && TimerDone(GameState, Entity->Player.CheckpointPlacementCooldownTimer) && Entity->Player.Inventory.HasCheckpoint)
-        {
-            Entity->Player.IsChargingCheckpoint = true;
-            StartTimer(GameState,Entity->Player.CheckpointPlacementTimer);
-        }
-        else if(Entity->Player.IsChargingCheckpoint && TimerDone(GameState,Entity->Player.CheckpointPlacementTimer) && GetActionButton(Action_Checkpoint, InputController))
-        {
-            Entity->Player.IsChargingCheckpoint = false;
-            StartTimer(GameState,Entity->Player.CheckpointPlacementCooldownTimer);
-            PlaceCheckpoint(GameState, SoundQueue,Entity);
-            Entity->Player.Inventory.HasCheckpoint = false;
-        }
-        else if(!GetActionButton(Action_Checkpoint, InputController))
-        {
-            Entity->Player.IsChargingCheckpoint = false;
-        }
-        
-        if(Entity->Player.IsAttacking)
-        {
-            if(Entity->AnimationInfo.FrameIndex >= Entity->AttackLowFrameIndex)
-            {
-                StartTimer(GameState, Entity->AttackMoveTimer);
-            }
-            
-            if(Entity->AnimationInfo.FrameIndex >= Entity->AttackHighFrameIndex)
-            {
-                Entity->Player.IsAttacking = false;
-                StartTimer(GameState, Entity->Player.AttackCooldownTimer);
-                
-                if(Entity->AttackCount == 3)
-                {
-                    Entity->AttackCount = 0;
-                    Entity->Velocity = glm::vec2(0, 0);
-                }
-            }
-        }
-        
-        //attacking
-        if(!Entity->Player.IsChargingCheckpoint && TimerDone(GameState, Entity->Player.AttackCooldownTimer) &&
-           TimerDone(GameState, Entity->StaggerCooldownTimer)
-           && !Entity->Player.IsAttacking && Entity->Player.Stamina >= Entity->Player.AttackStaminaCost - Entity->Player.MinDiffStamina && (GetActionButtonDown(Action_Attack, InputController)))
-        {
-            switch(Entity->LookDirection)
-            {
-                case North:
-                case NorthEast:
-                case NorthWest:
-                {
-                    PlayAnimation(Entity, "swordsman_attack_up", GameState);
-                }
-                break;
-                case South:
-                case SouthEast:
-                case SouthWest:
-                {
-                    PlayAnimation(Entity, "swordsman_attack_down", GameState);
-                }
-                break;
-                case West:
-                case East:
-                {
-                    PlayAnimation(Entity, "swordsman_attack_right", GameState);
-                }
-                break;
-            }
-            
-            Entity->Player.IsAttacking = true;
-            
-            StartTimer(GameState, Entity->Player.LastAttackTimer);
-            
-            DecreaseStamina(Entity,GameState,Entity->Player.AttackStaminaCost);
-            Entity->AttackCount++;
-            
-            i32 Ran = rand() % 2;
-            if(Ran == 0)
-            {
-                PLAY_SOUND(SwordSlash01, 0.95f);
-            }
-            else
-            {
-                PLAY_SOUND(SwordSlash01, 0.85f);
-            }
-            
-        }
-        else if(Entity->Player.Stamina < Entity->Player.AttackStaminaCost - Entity->Player.MinDiffStamina)
-        {
-            
-            ResetActionButtonQueue(InputController);
-        }
-        
-        
-        auto Direction = glm::vec2(Pos.x, Pos.y) - Entity->Position;
-        Direction = glm::normalize(Direction);
-        float Degrees = atan2(Direction.y, Direction.x);
-        
-        GameState->GameCamera.CenterTarget = glm::vec2(Entity->Position.x, Entity->Position.y);
-    }
-    else if(!Entity->Dead)
-    {
-        Entity->Dead = true;
-        PlayAnimation(Entity, "swordsman_death", GameState);
-        Entity->AnimationInfo.FreezeFrame = true;
-        if(GameState->CharacterData.LostWillObjectHandle != -1)
-        {
-            GameState->LightSources[GameState->CharacterData.LostWillObjectHandle].Active = false;
-        }
-        
-        GameState->CharacterData = GameState->LastCharacterData;
-        
-        if(Entity->Player.Will > 0)
-        {
-            GameState->CharacterData.HasLostWill = true;
-            GameState->LastCharacterData.HasLostWill = false;
-            GameState->CharacterData.LostWill = Entity->Player.Will;
-            GameState->CharacterData.LostWillPosition = Entity->Position;
-        }
-        else
-        {
-            GameState->CharacterData.HasLostWill = false;
-            GameState->LastCharacterData.HasLostWill = false;
-            GameState->CharacterData.LostWill = 0;
-        }
-        
-        Entity->Player.Will = 0;
-        Entity->Player.Inventory.HealthPotionCount = GameState->CharacterData.HealthPotionCount;
-        SaveGame(GameState);
-    }
-    
-    if(InputController->ActionRunning)
-    {
-        ResetActionButtonQueue(InputController);
-    }
-    
-    InputController->ActionRunning = Entity->Player.IsAttacking || Entity->Player.IsDashing;
+    // Update camera if centered on player
+    GameState->GameCamera.CenterTarget = Entity->Position;
 }
 
 void UpdateWeapon(entity* Entity, game_state* GameState, sound_queue* SoundQueue, r64 DeltaTime)
