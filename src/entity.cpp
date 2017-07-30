@@ -1,4 +1,3 @@
-
 void PrintEntityInfo(const entity& Entity)
 {
     DEBUG_PRINT("Entity: Name %s, position x %f y %f, rotation x %f y %f z %f\n", Entity.Name, Entity.Position.x, Entity.Position.y, Entity.Rotation.x, Entity.Rotation.y, Entity.Rotation.z);
@@ -2154,8 +2153,8 @@ void UpdatePlayer(entity* Entity, game_state* GameState, sound_queue* SoundQueue
         DX = 1.0f;
         Scale = 1.0f;
         Entity->LookDirection = North;
-        DX = 0;
-        DY = 0;
+        //DX = 0;
+        //DY = 0;
     }
     else if(DX > 0 && DY > 0)
     {
@@ -2167,8 +2166,8 @@ void UpdatePlayer(entity* Entity, game_state* GameState, sound_queue* SoundQueue
     {
         DY = -1.0f;
         Entity->LookDirection = East;
-        DX = 0;
-        DY = 0;
+        //DX = 0;
+        //DY = 0;
     }
     else if(DX > 0 && DY < 0)
     {
@@ -2180,8 +2179,8 @@ void UpdatePlayer(entity* Entity, game_state* GameState, sound_queue* SoundQueue
         DX = -1.0f;
         Scale = 1.0f;
         Entity->LookDirection = South;
-        DX = 0;
-        DY = 0;
+        //DX = 0;
+        //DY = 0;
     }
     else if(DX < 0 && DY < 0)
     {
@@ -2193,8 +2192,8 @@ void UpdatePlayer(entity* Entity, game_state* GameState, sound_queue* SoundQueue
     {
         DY = 1.0f;
         Entity->LookDirection = West;
-        DX = 0;
-        DY = 0;
+        //DX = 0;
+        //DY = 0;
     }
     
     r32 Length = glm::length(glm::vec2(DX, DY));
@@ -2210,11 +2209,20 @@ void UpdatePlayer(entity* Entity, game_state* GameState, sound_queue* SoundQueue
         Direction = glm::vec2(0, 0);
     }
     
+    Entity->IsFlipped = Direction.x < 0;
+    
     // Set speed
     r32 Speed = Entity->Player.WalkingSpeed;
     
     // Set new position
     Entity->Velocity = glm::vec2(Direction.x * Speed, Direction.y * Speed);
+    
+    // Set animation
+    if(Abs(Entity->Velocity.x) > 0.0f || Abs(Entity->Velocity.y) > 0.0f)
+        PlayAnimation(Entity, "swordsman_walk", GameState);
+    else
+        PlayAnimation(Entity, "swordsman_idle", GameState);
+    
     Entity->Position += glm::vec2(Entity->Velocity.x * DeltaTime, Entity->Velocity.y * DeltaTime);
     
     // Update camera if centered on player
