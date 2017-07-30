@@ -1599,32 +1599,39 @@ static void RenderEntity(game_state *GameState, render_entity* RenderEntity, glm
     animation* CurrentAnimation =  RenderEntity->RenderType == Render_Type_Entity ? RenderEntity->Entity->CurrentAnimation : RenderEntity->Object->CurrentAnimation;
     animation_info AnimationInfo = RenderEntity->RenderType == Render_Type_Entity ? RenderEntity->Entity->AnimationInfo : RenderEntity->Object->AnimationInfo;
     
+    glm::mat4 OldModel;
+    
     if(RenderEntity->Rendered && Active)
     {
         glm::mat4 Model(1.0f);
         
         if(CurrentAnimation) 
         {
+            
             r32 WidthInUnits = (r32)CurrentAnimation->FrameSize.x / (r32)PIXELS_PER_UNIT;
             r32 HeightInUnits = (r32)CurrentAnimation->FrameSize.y / (r32)PIXELS_PER_UNIT;
             
             glm::vec3 Scale = glm::vec3(WidthInUnits * EntityScale, HeightInUnits * EntityScale, 1);
             
-            r32 RemoveInX = (IsFlipped ? 1.0f * Scale.x - (2 * CurrentAnimation->Center.x * Scale.x) : 0) + CurrentAnimation->Center.x * Scale.x;
+            r32 RemoveInX = IsFlipped ? 1.0f * Scale.x - CurrentAnimation->Center.x * Scale.x : CurrentAnimation->Center.x * Scale.x;
             
             auto CorrectPos = ToIsometric(Position);
+            OldModel = glm::translate(OldModel, glm::vec3(CorrectPos.x, CorrectPos.y, 0.0f));
             
             CorrectPos.x = CorrectPos.x - RemoveInX;
             CorrectPos.y = CorrectPos.y - (IsFlipped ? CurrentAnimation->Center.y : 0);
             
             Model = glm::translate(Model, glm::vec3(CorrectPos.x, CorrectPos.y, 0.0f));
+            
             if(IsFlipped)
             {
                 Model = glm::translate(Model, glm::vec3(Scale.x, 0, 0));
+                OldModel = glm::translate(OldModel, glm::vec3(Scale.x, 0, 0));
                 Scale = glm::vec3(-Scale.x, Scale.y, 1);
             }
             
             Model = glm::scale(Model, glm::vec3(Scale.x, Scale.y, Scale.z));
+            OldModel = glm::scale(OldModel, glm::vec3(Scale.x, Scale.y, Scale.z));
             
             animation* Animation = CurrentAnimation;
             
@@ -1720,6 +1727,15 @@ static void RenderEntity(game_state *GameState, render_entity* RenderEntity, glm
         SetMat4Uniform(Shader.Program, "View", View);
         SetMat4Uniform(Shader.Program, "Model", Model);
         SetVec4Uniform(Shader.Program, "Color", RenderEntity->Color);
+        
+        glDrawElements(GL_TRIANGLES, sizeof(RenderState->QuadIndices), GL_UNSIGNED_INT, (void*)0); 
+        //glBindVertexArray(0);
+        
+        SetFloatUniform(Shader.Program, "time", (r32)GetTime());
+        SetMat4Uniform(Shader.Program, "Projection", ProjectionMatrix);
+        SetMat4Uniform(Shader.Program, "View", View);
+        SetMat4Uniform(Shader.Program, "Model", OldModel);
+        SetVec4Uniform(Shader.Program, "spriteColor", glm::vec4(1, 0, 0, 1));
         
         glDrawElements(GL_TRIANGLES, sizeof(RenderState->QuadIndices), GL_UNSIGNED_INT, (void*)0); 
         glBindVertexArray(0);
