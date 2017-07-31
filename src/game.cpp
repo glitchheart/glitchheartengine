@@ -1,5 +1,4 @@
 #include "game.h"
-#include "gmap.cpp"
 #include "keycontroller.cpp"
 #include "sound.cpp"
 #define ANIMATION_GAME
@@ -24,7 +23,6 @@ static void TickTimers(game_state* GameState, r64 DeltaTime)
             GameState->Timers[Index] = 0;
         }
     }
-    DEBUG_PRINT("HELLO%d\n",5);
 }
 
 static void LoadGameDataFile(game_state* GameState)
@@ -484,7 +482,6 @@ static void EditorUpdateEntities(game_state* GameState, input_controller* InputC
                         break;
                         case Editor_Placement_Tile:
                         {
-                            printf("Ey\n");
                             GameState->EditorState.TileBrushWidthField->Active = true;
                             GameState->EditorState.TileBrushHeightField->Active = true;
                             
@@ -957,7 +954,7 @@ extern "C" UPDATE(Update)
     }
     
     
-#ifdef DEBUG
+#if GLITCH_DEBUG
     if(KEY_DOWN(Key_F1))
     {
         GameState->RenderState.RenderColliders = !GameState->RenderState.RenderColliders;

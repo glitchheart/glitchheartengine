@@ -1,3 +1,11 @@
+
+void AddTimer(const char* LineBuffer, const char* Format, char* Name, timer* Timer)
+{
+    sscanf(LineBuffer, Format, &Timer->TimerMax);
+    Timer->TimerHandle = -1;
+    Timer->Name = Name;
+}
+
 void PrintEntityInfo(const entity& Entity)
 {
     DEBUG_PRINT("Entity: Name %s, position x %f y %f, rotation x %f y %f z %f\n", Entity.Name, Entity.Position.x, Entity.Position.y, Entity.Rotation.x, Entity.Rotation.y, Entity.Rotation.z);
@@ -1871,7 +1879,8 @@ static void LoadPlayerData(game_state* GameState, sound_queue* SoundQueue, i32 H
     FILE* File;
     File = fopen("../assets/entities/player.dat", "r");
     
-    entity* Entity = Handle != -1 ? &GameState->Entities[Handle] :  &GameState->Entities[GameState->EntityCount];
+    entity* Entity = Handle != -1 ? &GameState->Entities[Handle] 
+        : &GameState->Entities[GameState->EntityCount];
     Entity->Type = Entity_Player;
     Entity->Player = {};
     Entity->Player.TargetedEnemyHandle = -1;
@@ -1917,28 +1926,22 @@ static void LoadPlayerData(game_state* GameState, sound_queue* SoundQueue, i32 H
             }
             else if(StartsWith(LineBuffer, "attackcooldowntimer"))
             {
-                Entity->Player.AttackCooldownTimer.TimerMax = 0;
-                sscanf(LineBuffer, "attackcooldowntimer %lf", &Entity->Player.AttackCooldownTimer.TimerMax);
-                Entity->Player.AttackCooldownTimer.TimerHandle = -1;
-                Entity->Player.AttackCooldownTimer.Name = "Attack Cooldown";
+                AddTimer(LineBuffer, "attackcooldowntimer %lf", "Attack Cooldown",
+                         &Entity->Player.AttackCooldownTimer);
             }
             else if(StartsWith(LineBuffer, "lastattacktimer"))
             {
-                sscanf(LineBuffer, "lastattacktimer %lf", &Entity->Player.LastAttackTimer.TimerMax);
-                Entity->Player.LastAttackTimer.TimerHandle = -1;
-                Entity->Player.LastAttackTimer.Name = "Last Attack";
+                AddTimer(LineBuffer, "lastattacktimer %lf", "Last Attack",
+                         &Entity->Player.LastAttackTimer);
             }
             else if(StartsWith(LineBuffer, "dashtimer"))
             {
-                sscanf(LineBuffer, "dashtimer %lf", &Entity->Player.DashTimer.TimerMax);
-                Entity->Player.DashTimer.TimerHandle = -1;
-                Entity->Player.DashTimer.Name = "Dash";
+                AddTimer(LineBuffer, "dashtimer %lf", "Dash",&Entity->Player.DashTimer);
             }
             else if(StartsWith(LineBuffer, "dashcooldowntimer"))
             {
-                sscanf(LineBuffer, "dashcooldowntimer %lf", &Entity->Player.DashCooldownTimer.TimerMax);
-                Entity->Player.DashCooldownTimer.TimerHandle = -1;
-                Entity->Player.DashCooldownTimer.Name = "Dash Cooldown";
+                AddTimer(LineBuffer, "dashcooldowntimer %lf", "Dash Cooldown",
+                         &Entity->Player.DashCooldownTimer);
             }
             else if(StartsWith(LineBuffer, "dashspeed"))
             {
@@ -1951,9 +1954,8 @@ static void LoadPlayerData(game_state* GameState, sound_queue* SoundQueue, i32 H
             }
             else if(StartsWith(LineBuffer, "staminagaintimer "))
             {
-                sscanf(LineBuffer, "staminagaintimer %lf", &Entity->Player.StaminaGainTimer.TimerMax);
-                Entity->Player.StaminaGainTimer.TimerHandle = -1;
-                Entity->Player.StaminaGainTimer.Name = "Stamina Gain";
+                AddTimer(LineBuffer, "staminagaintimer %lf", "Stamina Gain",
+                         &Entity->Player.StaminaGainTimer);
             }
             else if(StartsWith(LineBuffer, "hitstaminacost"))
             {
@@ -1973,39 +1975,34 @@ static void LoadPlayerData(game_state* GameState, sound_queue* SoundQueue, i32 H
             }
             else if(StartsWith(LineBuffer, "staminagaincooldowntimer"))
             {
-                Entity->Player.StaminaGainCooldownTimer.TimerMax = 0;
-                sscanf(LineBuffer, "staminagaincooldowntimer %lf", &Entity->Player.StaminaGainCooldownTimer.TimerMax);
-                Entity->Player.StaminaGainCooldownTimer.TimerHandle = -1;
-                Entity->Player.StaminaGainCooldownTimer.Name = "Stamina Gain Cooldown";
+                AddTimer(LineBuffer, "staminagaincooldowntimer %lf", "Stamina Gain Cooldown",
+                         &Entity->Player.StaminaGainCooldownTimer);
             }
             else if(StartsWith(LineBuffer, "staminagaintimerfast"))
             {
-                sscanf(LineBuffer, "staminagaintimerfast %lf", &Entity->Player.StaminaGainTimerFast);
+                sscanf(LineBuffer, "staminagaintimerfast %lf", 
+                       &Entity->Player.StaminaGainTimerFast);
             }
             else if(StartsWith(LineBuffer, "staminagaintimerslow"))
             {
-                sscanf(LineBuffer, "staminagaintimerslow %lf", &Entity->Player.StaminaGainTimerSlow);
+                sscanf(LineBuffer, "staminagaintimerslow %lf", 
+                       &Entity->Player.StaminaGainTimerSlow);
             }
             else if(StartsWith(LineBuffer, "checkpointplacementtimer"))
             {
-                Entity->Player.CheckpointPlacementTimer.TimerMax = 0;
-                sscanf(LineBuffer, "checkpointplacementtimer %lf", &Entity->Player.CheckpointPlacementTimer.TimerMax);
-                Entity->Player.CheckpointPlacementTimer.TimerHandle = -1;
-                Entity->Player.CheckpointPlacementTimer.Name = "Checkpoint Placement";
+                AddTimer(LineBuffer, "checkpointplacementtimer %lf", "Checkpoint Placement",
+                         &Entity->Player.CheckpointPlacementTimer);
             }
             else if(StartsWith(LineBuffer, "checkpointplacementcooldowntimer"))
             {
-                Entity->Player.CheckpointPlacementCooldownTimer.TimerMax = 0;
-                sscanf(LineBuffer, "checkpointplacementcooldowntimer %lf", &Entity->Player.CheckpointPlacementCooldownTimer.TimerMax);
-                Entity->Player.CheckpointPlacementCooldownTimer.TimerHandle = -1;
-                Entity->Player.CheckpointPlacementCooldownTimer.Name = "Checkpoint Placement";
+                AddTimer(LineBuffer, "checkpointplacementcooldowntimer %lf", 
+                         "Checkpoint Placement Cooldown",
+                         &Entity->Player.CheckpointPlacementCooldownTimer);
             }
             else if(StartsWith(LineBuffer, "healthpotiontimer"))
             {
-                Entity->Player.HealthPotionTimer.TimerMax = 0;
-                sscanf(LineBuffer, "healthpotiontimer %lf", &Entity->Player.HealthPotionTimer.TimerMax);
-                Entity->Player.HealthPotionTimer.TimerHandle = -1;
-                Entity->Player.HealthPotionTimer.Name = "Health Potion";
+                AddTimer(LineBuffer, "healthpotiontimer %lf", "Health Potion",
+                         &Entity->Player.HealthPotionTimer);
             }
         }
         fclose(File);
