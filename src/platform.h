@@ -6,13 +6,13 @@
 #define ArrayCount(Array) (sizeof(Array) / sizeof(Array[0])) 
 
 
-#ifdef DEBUG
+#if GLITCH_DEBUG
 #define DEBUG_PRINT(format, ...) printf(format, __VA_ARGS__)
 #else
 #define DEBUG_PRINT(format, ...)
 #endif
 
-#ifdef DEBUG
+#if GLITCH_DEBUG
 #define Assert(Expression) if(!(Expression)) {DEBUG_PRINT("Assertion failed in: %s on line %d\n",__FILE__,__LINE__); exit(EXIT_FAILURE);}
 #else
 #define Assert(Expression)
@@ -33,6 +33,7 @@
 #include <cstdio>
 #include <cstdlib>
 
+
 typedef uint8_t u8;
 typedef uint16_t u16;
 typedef uint32_t u32;
@@ -47,6 +48,13 @@ typedef i32 b32;
 typedef float r32;
 typedef double r64;
 
+#include "glm/gtc/matrix_transform.hpp"
+#include <GLFW/glfw3.h>
+
+#include "gmap.h"
+#include "gmap.cpp"
+#include "keycontroller.h"
+
 struct timer
 {
     i32 TimerHandle = -1;
@@ -59,7 +67,6 @@ struct v2i
     i32 X;
     i32 Y;
 };
-
 
 struct v3i
 {
@@ -141,8 +148,6 @@ char* Concat(const char *s1, const char *s2)
     strcat(result, s2);
     return result;
 }
-
-
 
 b32 StartsWith(const char *A, const char *B)
 {

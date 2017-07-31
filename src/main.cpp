@@ -11,18 +11,14 @@
 #include "game.h"
 
 #include "platform.h"
-#include "keycontroller.h"
 #include "keycontroller.cpp"
-
-input_controller InputController;
-
-#include "gmap.h"
-#include "gmap.cpp"
 #include "sound.h"
 #include "platform_sound.h"
 #include "platform_sound.cpp"
 #include "filehandling.h"
-#define KEY_INIT
+
+input_controller InputController;
+
 #include "keys_glfw.h"
 #include "opengl_rendering.cpp"
 

@@ -3,7 +3,31 @@
 
 void InitKeyMappings()
 {
-    integer_Map_Init(&InputController.KeyMappings,HashIntKeys, 348);
+    integer_Map_Init(&InputController.KeyMappings,HashIntKeys, GLFW_KEY_LAST);
+    InputController.KeyMappings[GLFW_KEY_UNKNOWN] = Key_Unknown;
+    InputController.KeyMappings[GLFW_KEY_APOSTROPHE] = Key_Apostrophe;
+    InputController.KeyMappings[GLFW_KEY_COMMA] = Key_Comma;
+    InputController.KeyMappings[GLFW_KEY_MINUS] = Key_Minus;
+    InputController.KeyMappings[GLFW_KEY_PERIOD] = Key_Period;
+    InputController.KeyMappings[GLFW_KEY_SLASH] = Key_Slash;
+    InputController.KeyMappings[GLFW_KEY_SEMICOLON] = Key_SemiColon;
+    InputController.KeyMappings[GLFW_KEY_EQUAL] = Key_Equal;
+    InputController.KeyMappings[GLFW_KEY_LEFT_BRACKET] = Key_LeftBracket;
+    InputController.KeyMappings[GLFW_KEY_BACKSLASH] = Key_Backslash;
+    InputController.KeyMappings[GLFW_KEY_RIGHT_BRACKET] = Key_RightBracket;
+    InputController.KeyMappings[GLFW_KEY_GRAVE_ACCENT] = Key_GraveAccent;
+    InputController.KeyMappings[GLFW_KEY_WORLD_1] = Key_World1;
+    InputController.KeyMappings[GLFW_KEY_WORLD_2] = Key_World2;
+    InputController.KeyMappings[GLFW_KEY_INSERT] = Key_Insert;
+    InputController.KeyMappings[GLFW_KEY_PAGE_UP] = Key_PageUp;
+    InputController.KeyMappings[GLFW_KEY_PAGE_DOWN] = Key_PageDown;
+    InputController.KeyMappings[GLFW_KEY_HOME] = Key_Home;
+    InputController.KeyMappings[GLFW_KEY_END] = Key_End;
+    InputController.KeyMappings[GLFW_KEY_CAPS_LOCK] = Key_CapsLock;
+    InputController.KeyMappings[GLFW_KEY_SCROLL_LOCK] = Key_ScrollLock;
+    InputController.KeyMappings[GLFW_KEY_NUM_LOCK] = Key_NumLock;
+    InputController.KeyMappings[GLFW_KEY_PRINT_SCREEN] = Key_PrintScreen;
+    InputController.KeyMappings[GLFW_KEY_PAUSE] = Key_Pause;
     InputController.KeyMappings[GLFW_KEY_LEFT] = Key_Left;
     InputController.KeyMappings[GLFW_KEY_RIGHT] = Key_Right;
     InputController.KeyMappings[GLFW_KEY_UP] = Key_Up;
@@ -17,6 +41,12 @@ void InitKeyMappings()
     InputController.KeyMappings[GLFW_KEY_ENTER] = Key_Enter;
     InputController.KeyMappings[GLFW_KEY_LEFT_CONTROL] = Key_LeftCtrl;
     InputController.KeyMappings[GLFW_KEY_RIGHT_CONTROL] = Key_RightCtrl;
+    InputController.KeyMappings[GLFW_KEY_LEFT_ALT] = Key_LeftAlt;
+    InputController.KeyMappings[GLFW_KEY_RIGHT_ALT] = Key_RightAlt;
+    InputController.KeyMappings[GLFW_KEY_LEFT_SUPER] = Key_LeftSuper;
+    InputController.KeyMappings[GLFW_KEY_RIGHT_SUPER] = Key_RightSuper;
+    InputController.KeyMappings[GLFW_KEY_MENU] = Key_Menu;
+    InputController.KeyMappings[GLFW_KEY_LAST] = Key_Last;
     InputController.KeyMappings[GLFW_KEY_A] = Key_A;
     InputController.KeyMappings[GLFW_KEY_B] = Key_B;
     InputController.KeyMappings[GLFW_KEY_C] = Key_C;
@@ -53,8 +83,6 @@ void InitKeyMappings()
     InputController.KeyMappings[GLFW_KEY_7] = Key_7;
     InputController.KeyMappings[GLFW_KEY_8] = Key_8;
     InputController.KeyMappings[GLFW_KEY_9] = Key_9;
-    InputController.KeyMappings[GLFW_KEY_KP_ADD] = Key_Add;
-    InputController.KeyMappings[GLFW_KEY_KP_SUBTRACT] = Key_Subtract;
     InputController.KeyMappings[GLFW_KEY_F1] = Key_F1;
     InputController.KeyMappings[GLFW_KEY_F2] = Key_F2;
     InputController.KeyMappings[GLFW_KEY_F3] = Key_F3;
@@ -67,6 +95,36 @@ void InitKeyMappings()
     InputController.KeyMappings[GLFW_KEY_F10] = Key_F10;
     InputController.KeyMappings[GLFW_KEY_F11] = Key_F11;
     InputController.KeyMappings[GLFW_KEY_F12] = Key_F12;
+    InputController.KeyMappings[GLFW_KEY_F13] = Key_F13;
+    InputController.KeyMappings[GLFW_KEY_F14] = Key_F14;
+    InputController.KeyMappings[GLFW_KEY_F15] = Key_F15;
+    InputController.KeyMappings[GLFW_KEY_F16] = Key_F16;
+    InputController.KeyMappings[GLFW_KEY_F17] = Key_F17;
+    InputController.KeyMappings[GLFW_KEY_F18] = Key_F18;
+    InputController.KeyMappings[GLFW_KEY_F19] = Key_F19;
+    InputController.KeyMappings[GLFW_KEY_F20] = Key_F20;
+    InputController.KeyMappings[GLFW_KEY_F21] = Key_F21;
+    InputController.KeyMappings[GLFW_KEY_F22] = Key_F22;
+    InputController.KeyMappings[GLFW_KEY_F23] = Key_F23;
+    InputController.KeyMappings[GLFW_KEY_F24] = Key_F24;
+    InputController.KeyMappings[GLFW_KEY_F25] = Key_F25;
+    InputController.KeyMappings[GLFW_KEY_KP_0] = Key_KP0;
+    InputController.KeyMappings[GLFW_KEY_KP_1] = Key_KP1;
+    InputController.KeyMappings[GLFW_KEY_KP_2] = Key_KP2;
+    InputController.KeyMappings[GLFW_KEY_KP_3] = Key_KP3;
+    InputController.KeyMappings[GLFW_KEY_KP_4] = Key_KP4;
+    InputController.KeyMappings[GLFW_KEY_KP_5] = Key_KP5;
+    InputController.KeyMappings[GLFW_KEY_KP_6] = Key_KP6;
+    InputController.KeyMappings[GLFW_KEY_KP_7] = Key_KP7;
+    InputController.KeyMappings[GLFW_KEY_KP_8] = Key_KP8;
+    InputController.KeyMappings[GLFW_KEY_KP_9] = Key_KP9;
+    InputController.KeyMappings[GLFW_KEY_KP_ADD] = Key_Add;
+    InputController.KeyMappings[GLFW_KEY_KP_SUBTRACT] = Key_Subtract;
+    InputController.KeyMappings[GLFW_KEY_KP_DECIMAL] = Key_KPDecimal;
+    InputController.KeyMappings[GLFW_KEY_KP_DIVIDE] = Key_KPDivide;
+    InputController.KeyMappings[GLFW_KEY_KP_MULTIPLY] = Key_KPMultiply;
+    InputController.KeyMappings[GLFW_KEY_KP_ENTER] = Key_KPEnter;
+    InputController.KeyMappings[GLFW_KEY_KP_EQUAL] = Key_KPEqual;
     InputController.KeyMappings[GLFW_KEY_DELETE] = Key_Delete;
 }
 
@@ -235,24 +293,21 @@ void ScrollCallback(GLFWwindow* Window, double XOffset, double YOffset)
 
 static void KeyCallback(GLFWwindow *Window, int Key, int Scancode, int Action, int Mods)
 {
-    if(Key != GLFW_KEY_COMMA && Key != GLFW_KEY_PERIOD && (Key < 320 || Key > 329))
+    if (Action == GLFW_PRESS)
     {
-        if (Action == GLFW_PRESS)
+        InputController.AnyKeyPressed = true;
+        if (InputController.KeysJustPressed[InputController.KeyMappings[Key]] == Key_NotPressed)
         {
-            InputController.AnyKeyPressed = true;
-            if (InputController.KeysJustPressed[InputController.KeyMappings[Key]] == Key_NotPressed)
-            {
-                InputController.KeysJustPressed[InputController.KeyMappings[Key]] = Key_JustPressed;
-            }
-            
-            InputController.KeysDown[InputController.KeyMappings[Key]] = true;
+            InputController.KeysJustPressed[InputController.KeyMappings[Key]] = Key_JustPressed;
         }
-        else if (Action == GLFW_RELEASE)
-        {
-            InputController.KeysUp[InputController.KeyMappings[Key]] = true;
-            InputController.KeysJustPressed[InputController.KeyMappings[Key]] = Key_NotPressed;
-            InputController.KeysDown[InputController.KeyMappings[Key]] = false;
-        }
+        
+        InputController.KeysDown[InputController.KeyMappings[Key]] = true;
+    }
+    else if (Action == GLFW_RELEASE)
+    {
+        InputController.KeysUp[InputController.KeyMappings[Key]] = true;
+        InputController.KeysJustPressed[InputController.KeyMappings[Key]] = Key_NotPressed;
+        InputController.KeysDown[InputController.KeyMappings[Key]] = false;
     }
 }
 

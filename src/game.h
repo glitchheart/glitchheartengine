@@ -2,14 +2,11 @@
 #define GAMESTATE_H
 
 #include "windows.h"
-#include "glm/gtc/matrix_transform.hpp"
-#include <GLFW/glfw3.h>
 #include <time.h>
 #include <cstdio>
 
 #include "platform.h"
 
-#include "gmap.h"
 #include "opengl_rendering.h"
 #include "sound.h"
 #include "animation.h"
