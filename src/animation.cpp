@@ -163,7 +163,7 @@
                                     free(DirData.FileNames);
                                 }
                                 
-                                static void PlayAnimation(entity* Entity, char* AnimationName, game_state* GameState)
+                                static inline void PlayAnimation(entity* Entity, char* AnimationName, game_state* GameState)
                                 {
                                     if(!Entity->CurrentAnimation || !Entity->CurrentAnimation->Name || strcmp(Entity->CurrentAnimation->Name, AnimationName) != 0 || !Entity->AnimationInfo.Playing)
                                     {
@@ -184,7 +184,7 @@
                                     }
                                 }
                                 
-                                static void PlayAnimation(object_entity* Object, char* AnimationName, game_state* GameState)
+                                static inline void PlayAnimation(object_entity* Object, char* AnimationName, game_state* GameState)
                                 {
                                     if(!Object->CurrentAnimation || !Object->CurrentAnimation->Name || strcmp(Object->CurrentAnimation->Name, AnimationName) != 0 || !Object->AnimationInfo.Playing)
                                     {
@@ -205,7 +205,7 @@
                                     }
                                 }
                                 
-                                static void StopAnimation(animation_info* Info)
+                                static inline void StopAnimation(animation_info* Info)
                                 {
                                     Info->Playing = false;
                                 }

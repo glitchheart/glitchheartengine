@@ -29,10 +29,8 @@
 
 #define PI 3.141592653589793f
 
-#include "stdint.h"
-#include <cstdio>
-#include <cstdlib>
-
+#include <stdint.h>
+#include <malloc.h>
 
 typedef uint8_t u8;
 typedef uint16_t u16;
@@ -126,11 +124,13 @@ UPDATE(UpdateStub)
 {
 }
 
-void HandleError(char const *File, i32 LineNum, char const *msg)
+inline void HandleError(char const *File, i32 LineNum, char const *msg)
 {
     fprintf(stderr, "Error on in file %s on line %d\n", File, LineNum);
     fprintf(stderr, "%s\n", msg);
 }
+
+#define ERR(msg) HandleError(__FILE__,__LINE__,msg)
 
 struct CompareCStrings 
 {
@@ -141,7 +141,7 @@ struct CompareCStrings
 };
 
 //Remember to free string after usage
-char* Concat(const char *s1, const char *s2)
+inline char* Concat(const char *s1, const char *s2)
 {
     char *result = (char*)malloc(strlen(s1)+strlen(s2)+1);//+1 for the zero-terminator
     strcpy(result, s1);
@@ -149,13 +149,13 @@ char* Concat(const char *s1, const char *s2)
     return result;
 }
 
-b32 StartsWith(const char *A, const char *B)
+inline b32 StartsWith(const char *A, const char *B)
 {
     if(strncmp(A, B, strlen(B)) == 0) return 1;
     return 0;
 }
 
-void LoadConfig(const char* FilePath, config_data* ConfigData)
+inline void LoadConfig(const char* FilePath, config_data* ConfigData)
 {
     FILE* File;
     File = fopen(FilePath, "r");
@@ -234,7 +234,7 @@ struct directory_data
     i32 FilesLength = 0;
 };
 
-void FindFilesWithExtensions(const char* DirectoryPath, const char* Extension, directory_data* DirectoryData, b32 WithSubDirectories = false)
+inline void FindFilesWithExtensions(const char* DirectoryPath, const char* Extension, directory_data* DirectoryData, b32 WithSubDirectories = false)
 {
     if(DirectoryData->FilesLength == 0)
     {
@@ -297,18 +297,18 @@ void FindFilesWithExtensions(const char* DirectoryPath, const char* Extension, d
     }
 }
 
-void DebugPrintVec2(glm::vec2 Vec2, const char* Msg = "")
+inline void DebugPrintVec2(glm::vec2 Vec2, const char* Msg = "")
 {
     DEBUG_PRINT(Concat(Msg, " (%f,%f)\n"),Vec2.x,Vec2.y);
 }
 
-b32 FileExists(char* FilePath)
+inline b32 FileExists(char* FilePath)
 {
     struct stat Buffer;
     return (stat(FilePath,&Buffer) == 0);
 }
 
-glm::vec2 ToCartesian(glm::vec2 Position)
+inline glm::vec2 ToCartesian(glm::vec2 Position)
 {
     glm::vec2 TempPt;
     TempPt.x = (2 * Position.y + Position.x) / 2;
@@ -316,7 +316,7 @@ glm::vec2 ToCartesian(glm::vec2 Position)
     return TempPt;
 }
 
-glm::vec2 ToIsometric(glm::vec2 Position)
+inline glm::vec2 ToIsometric(glm::vec2 Position)
 {
     Position.x *= 0.5f;
     Position.y *= 0.5f;
@@ -327,12 +327,12 @@ glm::vec2 ToIsometric(glm::vec2 Position)
     return TempPt;
 }
 
-r32 Sign(glm::vec2 P1, glm::vec2 P2, glm::vec2 P3)
+inline r32 Sign(glm::vec2 P1, glm::vec2 P2, glm::vec2 P3)
 {
     return (P1.x - P3.x) * (P2.y - P3.y) - (P2.x - P3.x) * (P1.y - P3.y);
 }
 
-b32 PointInTriangle(glm::vec2 Pt, glm::vec2 V1, glm::vec2 V2, glm::vec2 V3)
+inline b32 PointInTriangle(glm::vec2 Pt, glm::vec2 V1, glm::vec2 V2, glm::vec2 V3)
 {
     bool B1, B2, B3;
     
@@ -343,7 +343,7 @@ b32 PointInTriangle(glm::vec2 Pt, glm::vec2 V1, glm::vec2 V2, glm::vec2 V3)
     return ((B1 == B2) && (B2 == B3));
 }
 
-r32 RandomFloat(r32 From, r32 To)
+inline r32 RandomFloat(r32 From, r32 To)
 {
     r32 Rand = Min(Max(From, ((r32)rand()/(r32)(RAND_MAX)) * To),To);
     return Rand;
