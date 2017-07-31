@@ -12,7 +12,7 @@
 
 #define DEBUG
 
-static void TickTimers(game_state* GameState, r64 DeltaTime)
+static inline void TickTimers(game_state* GameState, r64 DeltaTime)
 {
     for(u32 Index = 0; Index < NUM_TIMERS; Index++)
     {
@@ -965,26 +965,9 @@ extern "C" UPDATE(Update)
         GameState->RenderState.RenderFPS = !GameState->RenderState.RenderFPS;
     }
     
-    
-    if(KEY_DOWN(Key_F3))
-    {
-        //ToggleMuteSound(GameState);
-    }
-    
     if(KEY_DOWN(Key_F4))
     {
         GameState->RenderState.RenderPaths = !GameState->RenderState.RenderPaths;
-    }
-    
-    if(KEY_DOWN(Key_F5))
-    {
-        //TogglePauseSound(GameState);
-    }
-    
-    
-    if(KEY_DOWN(Key_F6))
-    {
-        //StopSound(GameState);
     }
     
     if(KEY_DOWN(Key_F7))

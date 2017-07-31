@@ -20,7 +20,7 @@ static void LoadWavFile(const char *Filename, sound_effect *LoadedSound)
               RiffHeader.Format[2] != 'V' ||
               RiffHeader.Format[3] != 'E')))
         {
-            HandleError(__FILE__, __LINE__, "Riff header malformed");
+            ERR("Riff header malformed");
         }
         
         fread(&WaveFormat, sizeof(wave_format), 1, SoundFile);
@@ -30,7 +30,7 @@ static void LoadWavFile(const char *Filename, sound_effect *LoadedSound)
             WaveFormat.SubChunkID[2] != 't' ||
             WaveFormat.SubChunkID[3] != ' ')
         {
-            HandleError(__FILE__, __LINE__, "Wave info malformed");
+            ERR("Wave info malformed");
         }
         
         if (WaveFormat.SubChunkSize > 16)
@@ -45,14 +45,14 @@ static void LoadWavFile(const char *Filename, sound_effect *LoadedSound)
             WaveData.SubChunkID[2] != 't' ||
             WaveData.SubChunkID[3] != 'a')
         {
-            HandleError(__FILE__, __LINE__, "Wave data malformed");
+            ERR("Wave data malformed");
         }
         
         unsigned char *Data = (unsigned char *)malloc(WaveData.SubChunk2Size);
         
         if (!fread(Data, WaveData.SubChunk2Size, 1, SoundFile))
         {
-            HandleError(__FILE__, __LINE__, "Error loading Wave data");
+            ERR("Error loading Wave data");
         }
         
         ALsizei Size = WaveData.SubChunk2Size;
@@ -88,7 +88,7 @@ static void LoadWavFile(const char *Filename, sound_effect *LoadedSound)
     }
 }
 
-static void ResetSoundQueue(sound_queue* SoundQueue)
+static inline void ResetSoundQueue(sound_queue* SoundQueue)
 {
     for(i32 Sound = 0; Sound < SoundQueue->SoundCount; Sound++)
     {
@@ -103,7 +103,7 @@ static void InitAudio(sound_device *SoundDevice)
     if (!SoundDevice->Device)
     {
         SoundDevice->Device = 0;
-        HandleError(__FILE__, __LINE__, "Could not load Sound device");
+        ERR("Could not load Sound device");
         exit(EXIT_FAILURE);
     }
     
@@ -115,7 +115,7 @@ static void InitAudio(sound_device *SoundDevice)
     Enumeration = alcIsExtensionPresent(0, "ALC_ENUMERATION_EXT");
     if (!Enumeration)
     {
-        HandleError(__FILE__, __LINE__, "Enumeration extension not supported");
+        ERR("Enumeration extension not supported");
         exit(EXIT_FAILURE);
     }
     
@@ -123,7 +123,7 @@ static void InitAudio(sound_device *SoundDevice)
     alcMakeContextCurrent(SoundDevice->Context);
     if (!SoundDevice->Context)
     {
-        HandleError(__FILE__, __LINE__, "Could not set sound context");
+        ERR("Could not set sound context");
         SoundDevice->Context = 0;
     }
     
@@ -146,7 +146,7 @@ static void InitAudio(sound_device *SoundDevice)
     source_to_sound_Map_Init(&SoundDevice->SourceToSound, HashInt, 32);
 }
 
-static void LoadSound(const char *filename, sound_effect *LoadedSound, sound_device* SoundDevice, char* Name = "")
+static inline void LoadSound(const char *filename, sound_effect *LoadedSound, sound_device* SoundDevice, char* Name = "")
 {
     LoadWavFile(filename, LoadedSound);
     LoadedSound->SoundInfo.Pitch = 1.0f;
@@ -161,7 +161,7 @@ static void LoadSound(const char *filename, sound_effect *LoadedSound, sound_dev
     SoundDevice->Buffers[SoundDevice->BufferCount++] = LoadedSound->Buffer;
 }
 
-static void LoadSounds(sound_effects* SoundEffects, sound_device* SoundDevice)
+static inline void LoadSounds(sound_effects* SoundEffects, sound_device* SoundDevice)
 {
     LoadSound("../assets/audio/Countdown_1.wav", &SoundEffects->Effect01,SoundDevice);
     LoadSound("../assets/audio/mainmenu.wav", &SoundEffects->MainMenuTrack,SoundDevice);
@@ -191,7 +191,7 @@ static void LoadSounds(sound_effects* SoundEffects, sound_device* SoundDevice)
     // // Add more sounds here if necessary
 }
 
-static void CleanupSound(sound_device* SoundDevice)
+static inline void CleanupSound(sound_device* SoundDevice)
 {
     alDeleteSources(SOURCES, SoundDevice->Sources);
     alDeleteBuffers(SoundDevice->BufferCount, SoundDevice->Buffers);
@@ -202,7 +202,7 @@ static void CleanupSound(sound_device* SoundDevice)
     alcCloseDevice(SoundDevice->Device);
 }
 
-static void PlaySound(sound_effect *SoundEffect,sound_device* Device)
+static inline void PlaySound(sound_effect *SoundEffect,sound_device* Device)
 {
     if (SoundEffect)
     {
@@ -239,7 +239,7 @@ static void PlaySound(sound_effect *SoundEffect,sound_device* Device)
     }
 }
 
-static void StopSound(sound_device* SoundDevice)
+static inline void StopSound(sound_device* SoundDevice)
 {
     for(u32 SourceIndex = 0; SourceIndex < SOURCES; SourceIndex++)
     {
@@ -253,7 +253,7 @@ static void StopSound(sound_device* SoundDevice)
     }
 }
 
-static void PauseSound(sound_device* SoundDevice)
+static inline void PauseSound(sound_device* SoundDevice)
 {
     for(u32 SourceIndex = 0; SourceIndex < SOURCES; SourceIndex++)
     {

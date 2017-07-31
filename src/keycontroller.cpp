@@ -1,14 +1,14 @@
-b32 GetMouseButton(Mouse_Code Key, input_controller* InputController)
+static inline b32 GetMouseButton(Mouse_Code Key, input_controller* InputController)
 {
     return InputController->MouseButtonDown[Key];
 }
 
-b32 GetMouseButtonDown(Mouse_Code Key, input_controller* InputController)
+static inline b32 GetMouseButtonDown(Mouse_Code Key, input_controller* InputController)
 {
     return InputController->MouseButtonJustPressed[Key] == Key_JustPressed;
 }
 
-b32 GetKey(Key_Code Key, input_controller* InputController)
+static inline b32 GetKey(Key_Code Key, input_controller* InputController)
 {
     if(Key == Key_MouseLeft)
         return GetMouseButton(Mouse_Left, InputController);
@@ -17,7 +17,7 @@ b32 GetKey(Key_Code Key, input_controller* InputController)
     return InputController->KeysDown[Key];
 }
 
-b32 GetKeyDown(Key_Code Key, input_controller* InputController)
+static inline b32 GetKeyDown(Key_Code Key, input_controller* InputController)
 {
     if(Key == Key_MouseLeft)
         return GetMouseButtonDown(Mouse_Left, InputController);
@@ -26,25 +26,25 @@ b32 GetKeyDown(Key_Code Key, input_controller* InputController)
     return InputController->KeysJustPressed[Key] == Key_JustPressed;
 }
 
-b32 GetKeyUp(Key_Code Key, input_controller* InputController)
+static inline b32 GetKeyUp(Key_Code Key, input_controller* InputController)
 {
     return InputController->KeysUp[Key];
 }
 
-b32 GetJoystickKey(Controller_Code Key, input_controller* InputController)
+static inline b32 GetJoystickKey(Controller_Code Key, input_controller* InputController)
 {
     return InputController->JoystickKeysDown[Key];
 }
 
 //@Incomplete: Needs direction bool
-b32 GetJoystickAxisXDown(input_controller* InputController, Stick Stick = Stick_Left)
+static inline b32 GetJoystickAxisXDown(input_controller* InputController, Stick Stick = Stick_Left)
 {
     i32 Axis = Stick == Stick_Left ? 0 : 2;
     
     return InputController->AxesJustPressed[Axis] == Key_JustPressed;
 }
 
-b32 GetJoystickAxisYDown(input_controller* InputController, b32 ForUpDirection, Stick Stick = Stick_Left)
+static inline b32 GetJoystickAxisYDown(input_controller* InputController, b32 ForUpDirection, Stick Stick = Stick_Left)
 {
     i32 Axis = Stick == Stick_Left ? 1 : 3;
     b32 CorrectDirection = false;
@@ -77,12 +77,12 @@ b32 GetJoystickAxisYDown(input_controller* InputController, b32 ForUpDirection, 
     return CorrectDirection && InputController->AxesJustPressed[Axis] == Key_JustPressed;
 }
 
-b32 GetJoystickKeyDown(Controller_Code Key, input_controller* InputController)
+static inline b32 GetJoystickKeyDown(Controller_Code Key, input_controller* InputController)
 {
     return InputController->JoystickKeysJustPressed[Key] == Key_JustPressed;
 }
 
-void GetActionButtonsForQueue(input_controller* InputController)
+static inline void GetActionButtonsForQueue(input_controller* InputController)
 {
     b32 ActionQueued = false;
     
@@ -124,12 +124,12 @@ void GetActionButtonsForQueue(input_controller* InputController)
     }
 }
 
-void ResetActionButtonQueue(input_controller* InputController)
+static inline void ResetActionButtonQueue(input_controller* InputController)
 {
     InputController->HasQueuedAction = false;
 }
 
-b32 GetActionButtonDown(Action_Button ActionButton, input_controller* InputController)
+static inline b32 GetActionButtonDown(Action_Button ActionButton, input_controller* InputController)
 {
     if(InputController->HasQueuedAction)
     {
@@ -165,7 +165,7 @@ b32 GetActionButtonDown(Action_Button ActionButton, input_controller* InputContr
     }
 }
 
-b32 GetActionButton(Action_Button ActionButton, input_controller* InputController)
+static inline b32 GetActionButton(Action_Button ActionButton, input_controller* InputController)
 {
     b32 Button = false;
     if(InputController->ControllerPresent)
@@ -189,7 +189,7 @@ b32 GetActionButton(Action_Button ActionButton, input_controller* InputControlle
     return Button;
 }
 
-float GetInputX(input_controller* InputController, Stick Stick = Stick_Left)
+static inline r32 GetInputX(input_controller* InputController, Stick Stick = Stick_Left)
 {
     i32 Axis = Stick == Stick_Left ? 0 : 2;
     
@@ -212,7 +212,7 @@ float GetInputX(input_controller* InputController, Stick Stick = Stick_Left)
     return InputX;
 }
 
-float GetInputY(input_controller* InputController, Stick Stick = Stick_Left)
+static inline r32 GetInputY(input_controller* InputController, Stick Stick = Stick_Left)
 {
     i32 Axis = Stick == Stick_Left ? 1 : 3;
     

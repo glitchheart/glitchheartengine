@@ -32,7 +32,7 @@ static void MinkowskiDifference(collision_AABB* Coll, collision_AABB* Other, col
     AABBSize(Out);
 }
 
-void ClosestPointsOnBoundsToPoint(collision_AABB* Coll, glm::vec2 Point, glm::vec2* Out)
+static void ClosestPointsOnBoundsToPoint(collision_AABB* Coll, glm::vec2 Point, glm::vec2* Out)
 {  
     r32 MinDist = Abs(Point.x - Coll->Min.x);
     
@@ -56,7 +56,7 @@ void ClosestPointsOnBoundsToPoint(collision_AABB* Coll, glm::vec2 Point, glm::ve
     }
 }
 
-r32 GetRayIntersectionFractionOfFirstRay(glm::vec2 OriginA, glm::vec2 EndA,glm::vec2 OriginB, glm::vec2 EndB)
+static r32 GetRayIntersectionFractionOfFirstRay(glm::vec2 OriginA, glm::vec2 EndA,glm::vec2 OriginB, glm::vec2 EndB)
 {
     glm::vec2 R = EndA - OriginA;
     glm::vec2 S = EndB - OriginB;
@@ -154,7 +154,7 @@ void CheckWeaponCollision(game_state* GameState, entity_weapon* Entity, collisio
     }
 }
 
-void CheckCollision(game_state* GameState, entity* Entity, collision_info* CollisionInfo)
+static void CheckCollision(game_state* GameState, entity* Entity, collision_info* CollisionInfo)
 {
     CollisionInfo->OtherCount = -1;
     

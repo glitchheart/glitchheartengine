@@ -1,17 +1,16 @@
-
-void AddTimer(const char* LineBuffer, const char* Format, char* Name, timer* Timer)
+static inline void AddTimer(const char* LineBuffer, const char* Format, char* Name, timer* Timer)
 {
     sscanf(LineBuffer, Format, &Timer->TimerMax);
     Timer->TimerHandle = -1;
     Timer->Name = Name;
 }
 
-void PrintEntityInfo(const entity& Entity)
+static inline void PrintEntityInfo(const entity& Entity)
 {
     DEBUG_PRINT("Entity: Name %s, position x %f y %f, rotation x %f y %f z %f\n", Entity.Name, Entity.Position.x, Entity.Position.y, Entity.Rotation.x, Entity.Rotation.y, Entity.Rotation.z);
 }
 
-i32 LoadPointlight(game_state* GameState, glm::vec4 Color = glm::vec4(), r32 Intensity = 0.0f, r32 ConstantAtten = 0.0f, r32 LinearAtten = 0.0f, r32 ExponentialAtten = 0.0f,glm::vec2 InitPosition = glm::vec2(), b32 ShouldGlow = false, r64 GlowTimerMax = 0.0f, r32 GlowIncrease = 0.0f)
+static i32 LoadPointlight(game_state* GameState, glm::vec4 Color = glm::vec4(), r32 Intensity = 0.0f, r32 ConstantAtten = 0.0f, r32 LinearAtten = 0.0f, r32 ExponentialAtten = 0.0f,glm::vec2 InitPosition = glm::vec2(), b32 ShouldGlow = false, r64 GlowTimerMax = 0.0f, r32 GlowIncrease = 0.0f)
 {
     light_source LightSource;
     
@@ -35,7 +34,7 @@ i32 LoadPointlight(game_state* GameState, glm::vec4 Color = glm::vec4(), r32 Int
     return GameState->LightSourceCount - 1;
 }
 
-i32 LoadLight(game_state* GameState, char* LineBuffer, glm::vec2 InitPosition = glm::vec2(), i32 Handle = -1)
+static i32 LoadLight(game_state* GameState, char* LineBuffer, glm::vec2 InitPosition = glm::vec2(), i32 Handle = -1)
 {
     b32 ShouldGlow = false;
     light_source LightSource;
@@ -122,7 +121,7 @@ static void DecreaseStamina(entity* Entity, game_state* GameState, i32 Cost)
     StartTimer(GameState,Entity->Player.StaminaGainCooldownTimer);
 }
 
-void Hit(game_state* GameState, sound_queue* SoundQueue, entity* ByEntity, entity* HitEntity)
+static void Hit(game_state* GameState, sound_queue* SoundQueue, entity* ByEntity, entity* HitEntity)
 {
     if(HitEntity->HitAttackCountId != ByEntity->AttackCount)
     {
@@ -285,7 +284,6 @@ static void SpawnWillDrop(game_state* GameState, glm::vec2 Position, i32* Handle
     
     GameState->Objects[GameState->ObjectCount++];
 }
-
 
 static void SpawnTree(game_state* GameState, glm::vec2 Position, i32* Handle = 0)
 {
@@ -1851,7 +1849,7 @@ static void LoadBlobData(game_state* GameState, i32 Handle = -1, glm::vec2 Posit
     
 }
 
-void PlaceCheckpoint(game_state* GameState, sound_queue* SoundQueue, entity* Entity)
+static void PlaceCheckpoint(game_state* GameState, sound_queue* SoundQueue, entity* Entity)
 {
     auto CheckpointPos = glm::vec2(Entity->Position.x, Entity->Position.y - 0.5f);
     if(!GameState->CharacterData.HasCheckpoint)
@@ -2226,7 +2224,7 @@ void UpdatePlayer(entity* Entity, game_state* GameState, sound_queue* SoundQueue
     GameState->GameCamera.CenterTarget = Entity->Position;
 }
 
-void UpdateWeapon(entity* Entity, game_state* GameState, sound_queue* SoundQueue, r64 DeltaTime)
+static void UpdateWeapon(entity* Entity, game_state* GameState, sound_queue* SoundQueue, r64 DeltaTime)
 {
     b32 IsAttacking = false;
     
@@ -2364,7 +2362,7 @@ void UpdateWeapon(entity* Entity, game_state* GameState, sound_queue* SoundQueue
     }
 }
 
-void UpdateAI(entity* Entity, game_state* GameState, sound_queue* SoundQueue, r64 DeltaTime)
+static void UpdateAI(entity* Entity, game_state* GameState, sound_queue* SoundQueue, r64 DeltaTime)
 {
     switch(Entity->Enemy.AIState)
     {
@@ -2416,7 +2414,7 @@ void UpdateAI(entity* Entity, game_state* GameState, sound_queue* SoundQueue, r6
     }
 }
 
-void UpdateBlob(entity* Entity, game_state* GameState, sound_queue* SoundQueue, r64 DeltaTime)
+static void UpdateBlob(entity* Entity, game_state* GameState, sound_queue* SoundQueue, r64 DeltaTime)
 {
     
     UpdateAI(Entity,GameState, SoundQueue, DeltaTime);
@@ -2468,7 +2466,7 @@ static void DetermineLoot(game_state* GameState, entity* Entity)
     }
 }
 
-void UpdateSkeleton(entity* Entity, game_state* GameState, sound_queue* SoundQueue, r64 DeltaTime)
+static void UpdateSkeleton(entity* Entity, game_state* GameState, sound_queue* SoundQueue, r64 DeltaTime)
 {
     auto& Enemy = Entity->Enemy;
     auto& Skeleton = Entity->Enemy.Skeleton;
@@ -2550,7 +2548,7 @@ void UpdateSkeleton(entity* Entity, game_state* GameState, sound_queue* SoundQue
     }
 }
 
-void UpdateMinotaur(entity* Entity, game_state* GameState, sound_queue* SoundQueue, r64 DeltaTime)
+static void UpdateMinotaur(entity* Entity, game_state* GameState, sound_queue* SoundQueue, r64 DeltaTime)
 {
     auto& Enemy = Entity->Enemy;
     auto& Minotaur = Entity->Enemy.Minotaur;
@@ -2644,7 +2642,7 @@ void UpdateMinotaur(entity* Entity, game_state* GameState, sound_queue* SoundQue
     }
 }
 
-void UpdateWraith(entity* Entity, game_state* GameState, sound_queue* SoundQueue, r64 DeltaTime)
+static void UpdateWraith(entity* Entity, game_state* GameState, sound_queue* SoundQueue, r64 DeltaTime)
 {
     auto& Enemy = Entity->Enemy;
     auto& Wraith = Entity->Enemy.Wraith;
@@ -2726,7 +2724,7 @@ void UpdateWraith(entity* Entity, game_state* GameState, sound_queue* SoundQueue
     }
 }
 
-void UpdateBarrel(entity* Entity, game_state* GameState, sound_queue* SoundQueue, r64 DeltaTime)
+static void UpdateBarrel(entity* Entity, game_state* GameState, sound_queue* SoundQueue, r64 DeltaTime)
 {
     if(Entity->Active)
     {
@@ -2780,7 +2778,7 @@ static void UpdateStaticEntity(entity* Entity, game_state* GameState, r64 DeltaT
     CheckCollision(GameState, Entity, &CollisionInfo);
 }
 
-void UpdateTilePosition(entity& Entity, game_state* GameState, r64 DeltaTime)
+static void UpdateTilePosition(entity& Entity, game_state* GameState, r64 DeltaTime)
 {
     r32 CartesianX = glm::floor(Entity.Position.x - 0.5f);
     r32 CartesianY = glm::ceil(Entity.Position.y - 0.5f);
@@ -2796,7 +2794,7 @@ void UpdateTilePosition(entity& Entity, game_state* GameState, r64 DeltaTime)
     }
 }
 
-void UpdateGeneral(entity* Entity, game_state* GameState, r64 DeltaTime)
+static void UpdateGeneral(entity* Entity, game_state* GameState, r64 DeltaTime)
 {
     GameState->RenderState.RenderEntities[Entity->RenderEntityHandle].Rendered = glm::distance(Entity->Position, GameState->Entities[0].Position) < 15;
     
@@ -2855,7 +2853,7 @@ void UpdateGeneral(entity* Entity, game_state* GameState, r64 DeltaTime)
 }
 
 
-void LightGlow(game_state* GameState, i32 LightHandle)
+static void LightGlow(game_state* GameState, i32 LightHandle)
 {
     auto Light = &GameState->LightSources[LightHandle].Pointlight;
     if(!TimerDone(GameState,Light->GlowTimer))
@@ -2869,7 +2867,7 @@ void LightGlow(game_state* GameState, i32 LightHandle)
     }
 }
 
-void UpdateObjects(game_state* GameState, r64 DeltaTime)
+static void UpdateObjects(game_state* GameState, r64 DeltaTime)
 {
     for(i32 Index = 0; Index < GameState->ObjectCount; Index++)
     {
@@ -2886,7 +2884,7 @@ void UpdateObjects(game_state* GameState, r64 DeltaTime)
     }
 }
 
-void UpdateEntities(game_state* GameState, input_controller* InputController, sound_queue* SoundQueue, r64 DeltaTime)
+static void UpdateEntities(game_state* GameState, input_controller* InputController, sound_queue* SoundQueue, r64 DeltaTime)
 {
     for(u32 EntityIndex = 0;
         EntityIndex < GameState->EntityCount;
