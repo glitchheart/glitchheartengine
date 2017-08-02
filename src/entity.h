@@ -260,7 +260,10 @@ struct entity
     u32 EntityIndex;
     glm::vec2 Position;
     glm::vec2 CurrentTile;
+    
     glm::vec2 CurrentDestination;
+    i32 FramesForDestination;
+    
     glm::vec2 Center;
     glm::vec3 Rotation;
     r32 Scale;

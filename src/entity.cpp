@@ -2151,8 +2151,6 @@ void UpdatePlayer(entity* Entity, game_state* GameState, sound_queue* SoundQueue
         DX = 1.0f;
         Scale = 1.0f;
         Entity->LookDirection = North;
-        //DX = 0;
-        //DY = 0;
     }
     else if(DX > 0 && DY > 0)
     {
@@ -2164,8 +2162,6 @@ void UpdatePlayer(entity* Entity, game_state* GameState, sound_queue* SoundQueue
     {
         DY = -1.0f;
         Entity->LookDirection = East;
-        //DX = 0;
-        //DY = 0;
     }
     else if(DX > 0 && DY < 0)
     {
@@ -2177,8 +2173,6 @@ void UpdatePlayer(entity* Entity, game_state* GameState, sound_queue* SoundQueue
         DX = -1.0f;
         Scale = 1.0f;
         Entity->LookDirection = South;
-        //DX = 0;
-        //DY = 0;
     }
     else if(DX < 0 && DY < 0)
     {
@@ -2190,8 +2184,6 @@ void UpdatePlayer(entity* Entity, game_state* GameState, sound_queue* SoundQueue
     {
         DY = 1.0f;
         Entity->LookDirection = West;
-        //DX = 0;
-        //DY = 0;
     }
     
     Entity->IsFlipped = DX < 0;
