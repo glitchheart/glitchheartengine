@@ -74,20 +74,512 @@ union v2
         r32 V;
     };
     r32 E[2];
+    v2(r32 X, r32 Y) : X(X), Y(Y){}
+    v2() : X(0.0f), Y(0.0f) {}
+    v2(r32 I) : E{I,I} {}
+    v2(r32 E[2]) : E{E[0],E[1]} {}
+    v2(const v2& O) : E{O.X,O.Y} {}
+    
+    v2 operator* (v2 O)
+    {
+        v2 Res(*this);
+        Res.X *= O.X;
+        Res.Y *= O.Y;
+        return Res;
+    }
+    
+    v2 operator+ (v2 O)
+    {
+        v2 Res(*this);
+        Res.X += O.X;
+        Res.Y += O.Y;
+        return Res;
+    }
+    
+    void operator*= (v2 O)
+    {
+        this->X *= O.X;
+        this->Y *= O.Y;
+    }
+    
+    void operator+= (v2 O)
+    {
+        this->X += O.X;
+        this->Y += O.Y;
+    }
+    
+    v2 operator+ (r32 S)
+    {
+        v2 Res(*this);
+        Res.X += S;
+        Res.Y += S;
+        return Res;
+    }
+    
+    v2 operator* (r32 S)
+    {
+        v2 Res(*this);
+        Res.X *= S;
+        Res.Y *= S;
+        return Res;
+    }
+    
+    v2 operator/ (r32 S)
+    {
+        v2 Res(*this);
+        Res.X /= S;
+        Res.Y /= S;
+        return Res;
+    }
+    
+    void operator+= (r32 S)
+    {
+        this->X += S;
+        this->Y += S;
+    }
+    
+    void operator*= (r32 S)
+    {
+        this->X *= S;
+        this->Y *= S;
+    }
+    
+    void operator/= (r32 S)
+    {
+        this->X /= S;
+        this->Y /= S;
+    }
+    
 };
 
-struct v2i
+union v3
 {
-    i32 X;
-    i32 Y;
+    struct
+    {
+        r32 X, Y, Z;
+    };
+    
+    struct
+    {
+        r32 R, G, B;
+    };
+    r32 E[3];
+    v3(r32 X, r32 Y, r32 Z) : X(X), Y(Y), Z(Z) {}
+    v3() : X(0.0f), Y(0.0f), Z(0.0f) {}
+    v3(r32 I) : E{I,I,I} {}
+    v3(r32 E[3]) : E{E[0],E[1], E[2]} {}
+    v3(const v3& O) : E{O.X, O.Y, O.Z} {}
+    
+    v3 operator* (v3 O)
+    {
+        v3 Res(*this);
+        Res.X *= O.X;
+        Res.Y *= O.Y;
+        Res.Z *= O.Z;
+        return Res;
+    }
+    
+    v3 operator+ (v3 O)
+    {
+        v3 Res(*this);
+        Res.X += O.X;
+        Res.Y += O.Y;
+        Res.Z += O.Z;
+        return Res;
+    }
+    
+    void operator*= (v3 O)
+    {
+        this->X *= O.X;
+        this->Y *= O.Y;
+        this->Z *= O.Z;
+    }
+    
+    void operator+= (v3 O)
+    {
+        this->X += O.X;
+        this->Y += O.Y;
+        this->Z += O.Z;
+    }
+    
+    v3 operator+ (r32 S)
+    {
+        v3 Res(*this);
+        Res.X += S;
+        Res.Y += S;
+        Res.Z += S;
+        return Res;
+    }
+    
+    v3 operator* (r32 S)
+    {
+        v3 Res(*this);
+        Res.X *= S;
+        Res.Y *= S;
+        Res.Z *= S;
+        return Res;
+    }
+    
+    v3 operator/ (r32 S)
+    {
+        v3 Res(*this);
+        Res.X /= S;
+        Res.Y /= S;
+        Res.Z /= S;
+        return Res;
+    }
+    
+    void operator+= (r32 S)
+    {
+        this->X += S;
+        this->Y += S;
+        this->Z += S;
+    }
+    
+    void operator*= (r32 S)
+    {
+        this->X *= S;
+        this->Y *= S;
+        this->Z *= S;
+    }
+    
+    void operator/= (r32 S)
+    {
+        this->X /= S;
+        this->Y /= S;
+        this->Z /= S;
+    }
 };
 
-struct v3i
+
+union v4
 {
-    i32 X;
-    i32 Y;
-    i32 Z;
+    struct
+    {
+        r32 X, Y, Z, W;
+    };
+    
+    struct
+    {
+        r32 R, G, B, A;
+    };
+    r32 E[4];
+    v4(r32 X, r32 Y, r32 Z, r32 W) : X(X), Y(Y), Z(Z), W(W) {}
+    v4() : X(0.0f), Y(0.0f), Z(0.0f), W(0.0f) {}
+    v4(r32 I) : E{I,I,I,I} {}
+    v4(r32 E[4]) : E{E[0],E[1], E[2], E[3]} {}
+    v4(const v4& O) : X(O.X), Y(O.Y), Z(O.Z), W(O.W) {}
+    
+    v4 operator* (v4 O)
+    {
+        v4 Res(*this);
+        Res.X *= O.X;
+        Res.Y *= O.Y;
+        Res.Z *= O.Z;
+        Res.W *= O.W;
+        return Res;
+    }
+    
+    v4 operator+ (v4 O)
+    {
+        v4 Res(*this);
+        Res.X += O.X;
+        Res.Y += O.Y;
+        Res.Z += O.Z;
+        Res.W += O.W;
+        return Res;
+    }
+    
+    void operator*= (v4 O)
+    {
+        this->X *= O.X;
+        this->Y *= O.Y;
+        this->Z *= O.Z;
+        this->W *= O.W;
+    }
+    
+    void operator+= (v4 O)
+    {
+        this->X += O.X;
+        this->Y += O.Y;
+        this->Z += O.Z;
+        this->W += O.W;
+    }
+    
+    v4 operator+ (r32 S)
+    {
+        v4 Res(*this);
+        Res.X += S;
+        Res.Y += S;
+        Res.Z += S;
+        Res.W += S;
+        return Res;
+    }
+    
+    v4 operator* (r32 S)
+    {
+        v4 Res(*this);
+        Res.X *= S;
+        Res.Y *= S;
+        Res.Z *= S;
+        Res.W *= S;
+        return Res;
+    }
+    
+    v4 operator/ (r32 S)
+    {
+        v4 Res(*this);
+        Res.X /= S;
+        Res.Y /= S;
+        Res.Z /= S;
+        Res.W /= S;
+        return Res;
+    }
+    
+    void operator+= (r32 S)
+    {
+        this->X += S;
+        this->Y += S;
+        this->Z += S;
+        this->W += S;
+    }
+    
+    void operator*= (r32 S)
+    {
+        this->X *= S;
+        this->Y *= S;
+        this->Z *= S;
+        this->W *= S;
+    }
+    
+    void operator/= (r32 S)
+    {
+        this->X /= S;
+        this->Y /= S;
+        this->Z /= S;
+        this->W /= S;
+    }
 };
+
+union v2i
+{
+    struct
+    {
+        i32 X,Y;
+    };
+    i32 E[2];
+    v2i(i32 X, i32 Y) : X(X), Y(Y){}
+    v2i() : X(0),Y(0) {}
+    v2i(i32 I) : X(I), Y(I) {}
+    v2i(i32 E[2]) : E{E[0],E[1]} {}
+};
+
+union v3i
+{
+    struct
+    {
+        i32 X,Y,Z;
+    };
+    i32 E[3];
+    v3i(i32 X, i32 Y, i32 Z) : X(X), Y(Y), Z(Z){}
+    v3i() : X(0), Y(0), Z(0) {}
+    v3i(i32 I) : X(I), Y(I), Z(I) {}
+    v3i(i32 E[3]) : E{E[0],E[1], E[2]} {}
+};
+
+union m4
+{
+    struct
+    {
+        r32 M00,M01,M02,M03;
+        r32 M10,M11,M12,M13;
+        r32 M20,M21,M22,M23;
+        r32 M30,M31,M32,M33;
+    };
+    struct
+    {
+        r32 A, B, C, D;
+        r32 E, F, G, H;
+        r32 I, J, K, L;
+        r32 M, N, O, P;
+    };
+    struct
+    {
+        r32 M0[4];
+        r32 M1[4];
+        r32 M2[4];
+        r32 M3[4];
+    };
+    r32 V[4][4];
+    
+    m4() : V{{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0}} {}
+    m4(r32 M00, r32 M01, r32 M02, r32 M03, 
+       r32 M10, r32 M11, r32 M12, r32 M13,
+       r32 M20, r32 M21, r32 M22, r32 M23,
+       r32 M30, r32 M31, r32 M32, r32 M33) : 
+    M00(M00), M01(M01), M02(M02), M03(M03),
+    M10(M10), M11(M11), M12(M12), M13(M13),
+    M20(M20), M21(M21), M22(M22), M23(M23),
+    M30(M30), M31(M31), M32(M32), M33(M33) {}
+    
+    m4(r32 M0[4], r32 M1[4], r32 M2[4], r32 M3[4]) : 
+    M0 {M0[0],M0[1],M0[2],M0[3]}, 
+    M1 {M1[0],M1[1],M1[2],M1[3]}, 
+    M2 {M2[0],M2[1],M2[2],M2[3]}, 
+    M3 {M3[0],M3[1],M3[2],M3[3]} {}
+    
+    m4(r32 V[4][4]) : 
+    V{ {V[0][0],V[0][1],V[0][2],V[0][3]}, 
+        {V[1][0],V[1][1],V[1][2],V[1][3]}, 
+        {V[2][0],V[2][1],V[2][2],V[2][3]}, 
+        {V[3][0],V[3][1],V[3][2],V[3][3]}}
+    {}
+    
+    m4(r32 I) : V {{I,I,I,I},{I,I,I,I},{I,I,I,I},{I,I,I,I}} {}
+    
+    m4(const m4& O) : V{ {O.V[0][0],O.V[0][1],O.V[0][2],O.V[0][3]}, 
+        {O.V[1][0],O.V[1][1],O.V[1][2],O.V[1][3]}, 
+        {O.V[2][0],O.V[2][1],O.V[2][2],O.V[2][3]}, 
+        {O.V[3][0],O.V[3][1],O.V[3][2],O.V[3][3]}} {}
+    
+    m4 operator*(m4 Other)
+    {
+        m4 Res(*this);
+        for(i32 Outer = 0; Outer < 4; I++)
+        {
+            for(i32 Inner = 0; Inner < 4; J++)
+            {
+                r32 Sum = 0;
+                for(i32 Shared = 0; Shared < 4; K++)
+                {
+                    Sum += this->V[Inner][Shared] * Other.V[Shared][Outer];
+                }
+                Res.V[Inner][Outer] = Sum;
+            }
+        }
+        
+        return Res;
+    }
+    
+    v3 operator*(v3& Vec)
+    {
+        v3 Res(0.0f);
+        Res.X = this->A * Vec.X + this->B * Vec.Y + this->C * Vec.Z;
+        Res.Y = this->E * Vec.X + this->F * Vec.Y + this->G * Vec.Z;
+        Res.Z = this->H * Vec.X + this->I * Vec.Y + this->J * Vec.Z;
+        
+        return Res;
+    }
+};
+
+r32 Distance(v2 V1, v2 V2)
+{
+    return sqrt(pow(V1.X - V2.X, 2) + pow(V1.Y - V2.Y, 2));
+}
+
+r32 Distance(v3 V1, v3 V2)
+{
+    return sqrt(pow(V1.X - V2.X, 2) + pow(V1.Y - V2.Y, 2) + pow(V1.Z - V2.Z, 2));
+}
+
+r32 Distance(v4 V1, v4 V2)
+{
+    return sqrt(pow(V1.X - V2.X, 2) + pow(V1.Y - V2.Y, 2) + pow(V1.Z - V2.Z, 2) + pow(V1.W - V2.W,2));
+}
+
+i32 Distance(v2i V1, v2i V2)
+{
+    return (i32)sqrt(pow(V1.X - V2.X, 2) + pow(V1.Y - V2.Y, 2));
+}
+
+i32 Distance(v3i V1, v3i V2)
+{
+    return (i32)sqrt(pow(V1.X - V2.X, 2) + pow(V1.Y - V2.Y, 2) + pow(V1.Z - V2.Z, 2));
+}
+
+r32 Length(v2 V)
+{
+    return sqrt(pow(V.X,2) + pow(V.Y,2));
+}
+
+r32 Length(v3 V)
+{
+    return sqrt(pow(V.X,2) + pow(V.Y,2) + pow(V.Z,2));
+}
+
+r32 Length(v4 V)
+{
+    return sqrt(pow(V.X,2) + pow(V.Y,2) + pow(V.Z,2) + pow(V.W,2));
+}
+
+v2 Normalize(v2 V)
+{
+    v2 Res;
+    auto L = Length(V);
+    Res /= L;
+    return Res;
+}
+
+v3 Normalize(v3 V)
+{
+    v3 Res;
+    auto L = Length(V);
+    Res /= L;
+    return Res;
+}
+
+v4 Normalize(v4 V)
+{
+    v4 Res(V);
+    auto L = Length(V);
+    Res /= L;
+    return Res;
+}
+
+m4 Scale(m4 In, v3 Scale)
+{
+    m4 Res(In);
+    m4 S(Scale.X,0,      0,      0,
+         0,      Scale.Y,0,      0,
+         0,      0,      Scale.Z,0,
+         0,      0,      0,      1);
+    
+    Res = S * Res;
+    
+    return Res;
+}
+
+m4 Translate(m4 In, v3 Translate)
+{
+    m4 Res(In);
+    m4 T(0,0,0,Translate.X,
+         0,0,0,Translate.Y,
+         0,0,0,Translate.Z,
+         0,0,0,1);
+    
+    Res = T * Res;
+    
+    return Res;
+}
+
+v3 Project(v3 In, m4 M, m4 P, v4 Viewport)
+{
+    v3 Res(1.0f);
+    
+    m4 V = Translate(m4(1.0f),v3(Viewport.X,Viewport.Y,Viewport.Z));
+    auto Temp = P * V * M;
+    Res = v3(Temp.M03,Temp.M13,Temp.M23);
+    
+    return Res;
+}
+
+
+v3 UnProject(v3 In, m4 Model, m4 Projection, v4 Viewport)
+{
+    v3 Res;
+    
+    return Res;
+}
 
 struct entity_file_reload_data
 {
