@@ -275,7 +275,6 @@ static inline void PauseSound(sound_device* SoundDevice)
     }
 }
 
-
 static void PlaySounds(sound_device* Device, sound_queue* SoundQueue, glm::vec2* EntityPositions, i32 EntityCount)
 {
     

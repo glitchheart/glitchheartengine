@@ -60,6 +60,22 @@ struct timer
     char* Name;
 };
 
+union v2
+{
+    struct
+    {
+        r32 X;
+        r32 Y;
+    };
+    
+    struct
+    {
+        r32 U;
+        r32 V;
+    };
+    r32 E[2];
+};
+
 struct v2i
 {
     i32 X;
