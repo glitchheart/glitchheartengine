@@ -387,11 +387,7 @@ static void EditorUpdateEntities(game_state* GameState, input_controller* InputC
                                     
                                     if(!GameState->CurrentLevel.Tilemap.Data[1][X][Y].IsSolid)
                                     {
-                                        GameState->EditorState.SelectedEntity->Enemy.Waypoints[GameState->EditorState.SelectedEntity->Enemy.WaypointCount++] = 
-                                        { 
-                                            X,
-                                            Y
-                                        };
+                                        GameState->EditorState.SelectedEntity->Enemy.Waypoints[GameState->EditorState.SelectedEntity->Enemy.WaypointCount++] = v2i(X,Y);
                                     }
                                 }
                             }
@@ -441,8 +437,8 @@ static void EditorUpdateEntities(game_state* GameState, input_controller* InputC
                             {
                                 glm::vec2 NewPos = ToCartesian(glm::vec2(Pos.x, Pos.y));
                                 
-                                NewPos.x = glm::floor(NewPos.x / 0.5f);
-                                NewPos.y = glm::floor(NewPos.y / 0.5f);
+                                NewPos.x = floor(NewPos.x / 0.5f);
+                                NewPos.y = floor(NewPos.y / 0.5f);
                                 
                                 switch(GameState->EditorState.PlacementEntity)
                                 {
@@ -492,8 +488,8 @@ static void EditorUpdateEntities(game_state* GameState, input_controller* InputC
                             
                             glm::vec2 NewPos = ToCartesian(glm::vec2(Pos.x, Pos.y));
                             
-                            i32 X = (i32)glm::floor(NewPos.x / 0.5f);
-                            i32 Y = (i32)glm::floor(NewPos.y / 0.5f);
+                            i32 X = (i32)floor(NewPos.x / 0.5f);
+                            i32 Y = (i32)floor(NewPos.y / 0.5f);
                             
                             GameState->EditorState.TileX = (r32)X;
                             GameState->EditorState.TileY = (r32)Y;
