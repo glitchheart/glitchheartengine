@@ -1616,7 +1616,6 @@ static void RenderEntity(game_state *GameState, render_entity* RenderEntity, glm
         
         if(CurrentAnimation) 
         {
-            
             r32 WidthInUnits = (r32)CurrentAnimation->FrameSize.x / (r32)PIXELS_PER_UNIT;
             r32 HeightInUnits = (r32)CurrentAnimation->FrameSize.y / (r32)PIXELS_PER_UNIT;
             
