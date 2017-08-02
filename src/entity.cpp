@@ -2219,7 +2219,7 @@ void UpdatePlayer(entity* Entity, game_state* GameState, sound_queue* SoundQueue
     
     // Set animation
     if(Abs(Entity->Velocity.x) > 0.0f || Abs(Entity->Velocity.y) > 0.0f)
-        PlayAnimation(Entity, "swordsman_walk", GameState);
+        PlayAnimation(Entity, "demon_idle_south", GameState);
     else
         PlayAnimation(Entity, "swordsman_idle", GameState);
     

@@ -270,12 +270,10 @@ static void CheckEditorUIInput(game_state* GameState, input_controller* InputCon
             {
                 if(KEY_DOWN(Key_Down))
                 {
-                    DEBUG_PRINT("Down\n");
                     GameState->EditorState.SelectedTexture++;
                 }
                 else if(KEY_DOWN(Key_Up))
                 {
-                    DEBUG_PRINT("Up\n");
                     GameState->EditorState.SelectedTexture--;
                 }
                 
