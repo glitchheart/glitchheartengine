@@ -2,7 +2,7 @@ name swordsman_idle
 type sprite
 framecount 4
 framesize 34 27
-center 0.32 0.000000
+center 0.29 0.000000
 loop 1
 timeperframe 0.20000
 frames
