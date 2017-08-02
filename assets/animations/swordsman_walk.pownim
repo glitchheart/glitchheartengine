@@ -2,7 +2,7 @@ name swordsman_walk
 type sprite
 framecount 8
 framesize 33 28
-center 0.39 0.000000
+center 0.3 0.000000
 loop 1
 timeperframe 0.070000
 frames

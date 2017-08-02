@@ -2042,6 +2042,9 @@ static void LoadPlayerData(game_state* GameState, sound_queue* SoundQueue, i32 H
             }
         }
         Entity->Player.Inventory.HasCheckpoint = true;
+        Entity->Position = glm::floor(Entity->Position);
+        Entity->CurrentTile = Entity->Position;
+        Entity->CurrentDestination = Entity->Position;
     }
 }
 
@@ -2191,26 +2194,36 @@ void UpdatePlayer(entity* Entity, game_state* GameState, sound_queue* SoundQueue
         //DY = 0;
     }
     
-    r32 Length = glm::length(glm::vec2(DX, DY));
+    Entity->IsFlipped = DX < 0;
     
+    r32 Speed = Entity->Player.WalkingSpeed;
+    
+    r32 Length = glm::length(Entity->CurrentDestination - Entity->Position);
     glm::vec2 Direction;
     
     if(Length != 0.0f)
     {
-        Direction = glm::normalize(glm::vec2(DX, DY));
+        Direction = glm::normalize(Entity->CurrentDestination - Entity->Position);
     }
     else
     {
         Direction = glm::vec2(0, 0);
     }
     
-    Entity->IsFlipped = Direction.x < 0;
-    
-    // Set speed
-    r32 Speed = Entity->Player.WalkingSpeed;
-    
-    // Set new position
-    Entity->Velocity = glm::vec2(Direction.x * Speed, Direction.y * Speed);
+    if(Abs(glm::distance(Entity->Position, Entity->CurrentDestination)) < 0.01f)
+    {
+        Entity->Position = Entity->CurrentDestination;
+        Entity->CurrentTile = Entity->Position;
+        
+        Entity->Velocity = glm::vec2(0, 0);
+        
+        if(DX != 0.0f || DY != 0.0f)
+        {
+            Entity->CurrentDestination = glm::vec2(Entity->CurrentTile.x, Entity->CurrentTile.y) + glm::vec2(DX, DY);
+        }
+    }
+    else
+        Entity->Velocity = glm::vec2(Direction.x * Speed, Direction.y * Speed);
     
     // Set animation
     if(Abs(Entity->Velocity.x) > 0.0f || Abs(Entity->Velocity.y) > 0.0f)
