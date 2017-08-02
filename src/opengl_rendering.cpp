@@ -1616,7 +1616,6 @@ static void RenderEntity(game_state *GameState, render_entity* RenderEntity, glm
             r32 RemoveInX = IsFlipped ? 1.0f * Scale.x - CurrentAnimation->Center.x * Scale.x : CurrentAnimation->Center.x * Scale.x;
             
             auto CorrectPos = ToIsometric(Position);
-            OldModel = glm::translate(OldModel, glm::vec3(CorrectPos.x, CorrectPos.y, 0.0f));
             
             CorrectPos.x = CorrectPos.x - RemoveInX;
             CorrectPos.y = CorrectPos.y - (IsFlipped ? CurrentAnimation->Center.y : 0);
@@ -1626,12 +1625,10 @@ static void RenderEntity(game_state *GameState, render_entity* RenderEntity, glm
             if(IsFlipped)
             {
                 Model = glm::translate(Model, glm::vec3(Scale.x, 0, 0));
-                OldModel = glm::translate(OldModel, glm::vec3(Scale.x, 0, 0));
                 Scale = glm::vec3(-Scale.x, Scale.y, 1);
             }
             
             Model = glm::scale(Model, glm::vec3(Scale.x, Scale.y, Scale.z));
-            OldModel = glm::scale(OldModel, glm::vec3(Scale.x, Scale.y, Scale.z));
             
             animation* Animation = CurrentAnimation;
             
@@ -1728,16 +1725,7 @@ static void RenderEntity(game_state *GameState, render_entity* RenderEntity, glm
         SetMat4Uniform(Shader.Program, "Model", Model);
         SetVec4Uniform(Shader.Program, "Color", RenderEntity->Color);
         
-        glDrawElements(GL_TRIANGLES, sizeof(RenderState->QuadIndices), GL_UNSIGNED_INT, (void*)0); 
-        //glBindVertexArray(0);
-        
-        SetFloatUniform(Shader.Program, "time", (r32)GetTime());
-        SetMat4Uniform(Shader.Program, "Projection", ProjectionMatrix);
-        SetMat4Uniform(Shader.Program, "View", View);
-        SetMat4Uniform(Shader.Program, "Model", OldModel);
-        SetVec4Uniform(Shader.Program, "spriteColor", glm::vec4(1, 0, 0, 1));
-        
-        glDrawElements(GL_TRIANGLES, sizeof(RenderState->QuadIndices), GL_UNSIGNED_INT, (void*)0); 
+        glDrawElements(GL_TRIANGLES, sizeof(RenderState->QuadIndices), GL_UNSIGNED_INT, (void*)0);
         glBindVertexArray(0);
         
         if(RenderEntity->RenderType == Render_Type_Entity)
