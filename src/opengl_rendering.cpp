@@ -975,7 +975,7 @@ static void InitializeOpenGL(game_memory* GameMemory, config_data* ConfigData)
     
     ControllerPresent();
     
-    texture_Map_Init(&RenderState.Textures, HashStringJenkins, 512);
+    texture_Map_Init(&RenderState.Textures, HashStringJenkins, 4048);
     LoadTextures(&RenderState, "../assets/textures/");
     LoadTextures(&RenderState, "../assets/textures/spritesheets/");
     RenderSetup(&RenderState);
@@ -1607,7 +1607,9 @@ static void RenderEntity(game_state *GameState, render_entity* RenderEntity, glm
         {
             if(RenderEntity->Entity->Type == Entity_Player)
             {
-                auto CurrentTilePos = ToIsometric(glm::vec2(RenderEntity->Entity->CurrentDestination.x - 1, RenderEntity->Entity->CurrentDestination.y));
+                //printf("Current tile %d %d\n", RenderEntity->Entity->TilePosition.X, RenderEntity->Entity->TilePosition.Y);
+                
+                auto CurrentTilePos = ToIsometric(glm::vec2(RenderEntity->Entity->CurrentDestination.x, RenderEntity->Entity->CurrentDestination.y + 1));
                 RenderIsometricRect(RenderState, glm::vec4(0.3, 0.3, 0, 0.2), CurrentTilePos.x, CurrentTilePos.y, 1, 0.5f, ProjectionMatrix, View);
             }
         }
@@ -1626,7 +1628,7 @@ static void RenderEntity(game_state *GameState, render_entity* RenderEntity, glm
             auto CorrectPos = ToIsometric(Position);
             
             CorrectPos.x = CorrectPos.x - RemoveInX;
-            CorrectPos.y = CorrectPos.y - (IsFlipped ? CurrentAnimation->Center.y : 0);
+            CorrectPos.y = CorrectPos.y - CurrentAnimation->Center.y;
             
             Model = glm::translate(Model, glm::vec3(CorrectPos.x, CorrectPos.y, 0.0f));
             

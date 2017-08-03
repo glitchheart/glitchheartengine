@@ -1,0 +1,20 @@
+name demon_idle_southeast
+type sprite
+framecount 10
+framesize 128 128
+center 0.5 0.5
+loop 0
+timeperframe 0.1
+frames
+0 0
+128 0
+256 0
+384 0
+512 0
+640 0
+768 0
+896 0
+1024 0
+1152 0
+texture demon_idle_southeast
+
