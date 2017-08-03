@@ -23,7 +23,7 @@ struct sound_effect
 
 struct sound_queue
 {
-    u32 SoundCount;
+    i32 SoundCount;
     sound_effect Sounds[32];
 };
 

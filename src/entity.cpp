@@ -1459,7 +1459,7 @@ AI_FUNC(WraithWandering)
 
 AI_FUNC(BlobIdle)
 {
-    auto Player = GameState->Entities[0];
+    auto& Player = GameState->Entities[0];
     r64 DistanceToPlayer = Distance(Entity->Position, Player.Position);
     
     if(DistanceToPlayer <= Entity->Enemy.MaxAlertDistance)

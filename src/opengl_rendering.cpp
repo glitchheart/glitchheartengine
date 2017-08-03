@@ -1044,19 +1044,20 @@ void SetVec3Uniform(GLuint ShaderHandle, const char *UniformName, math::v3 Value
 
 static void SetVec4Uniform(GLuint ShaderHandle, const char *UniformName, math::v4 Value)
 {
-    glUniformath::m4f(glGetUniformLocation(ShaderHandle, UniformName), Value.x, Value.y, Value.z, Value.w);
+    glUniform4f(glGetUniformLocation(ShaderHandle, UniformName), Value.x, Value.y, Value.z, Value.w);
 }
 
 static void SetMat4Uniform(GLuint ShaderHandle, const char *UniformName, math::m4 Value)
 {
-    glUniformMatrix4fv(glGetUniformLocation(ShaderHandle, UniformName), 1, GL_FALSE, &Value.V[0][0]);
+    // math::m4 is in RowMajor, OpenGL expects in ColumnMajor
+    auto V = Transpose(Value);
+    glUniformMatrix4fv(glGetUniformLocation(ShaderHandle, UniformName), 1, GL_FALSE, &V.V[0][0]);
 }
 
 static void SetVec4ArrayUniform(GLuint ShaderHandle, const char *UniformName, math::v4* Value, u32 Length)
 {
-    glUniformath::m4fv(glGetUniformLocation(ShaderHandle, UniformName), Length, (GLfloat*)&Value[0]);
+    glUniform4fv(glGetUniformLocation(ShaderHandle, UniformName), Length, (GLfloat*)&Value[0]);
 }
-
 
 static void SetFloatArrayUniform(GLuint ShaderHandle, const char *UniformName, r32* Value, u32 Length)
 {
@@ -1572,7 +1573,6 @@ static void RenderHealthbar(render_state* RenderState,
         math::v3 Projected =
             Project(math::v3(EntityPosition.x, EntityPosition.y, 0), Model, ProjectionMatrix, math::v4(RenderState->Viewport[0], RenderState->Viewport[1], RenderState->Viewport[2], RenderState->Viewport[3]));
         
-        
         for(i32 Index = 0; Index < 10; Index++)
         {
             auto& HealthCount = Entity->Enemy.HealthCounts[Index];
@@ -1763,8 +1763,8 @@ static void RenderEntity(game_state *GameState, render_entity* RenderEntity, mat
         
         if(RenderState->RenderColliders && (Entity.Type == Entity_Player || Entity.Type == Entity_Enemy))
         {
-            r32 CartesianX = Floor(Entity.Position.x - 0.5f);
-            r32 CartesianY = Ceil(Entity.Position.y - 0.5f);
+            r32 CartesianX = (r32)math::Floor(Entity.Position.x - 0.5f);
+            r32 CartesianY = (r32)math::Ceil(Entity.Position.y - 0.5f);
             
             math::v2 CorrectPosition = ToIsometric(math::v2(CartesianX, CartesianY));
             r32 CorrectX = CorrectPosition.x;
@@ -1987,8 +1987,8 @@ static void RenderInGameMode(game_state* GameState)
                     const entity& Entity = *RenderEntity.Entity;
                     if(Entity.ShowAttackTiles &&(Entity.Type == Entity_Player || Entity.Type == Entity_Enemy))
                     {
-                        r32 CartesianX = Floor(Entity.Position.x - 0.5f);
-                        r32 CartesianY = Ceil(Entity.Position.y - 0.5f);
+                        r32 CartesianX = (r32)math::Floor(Entity.Position.x - 0.5f);
+                        r32 CartesianY = (r32)math::Ceil(Entity.Position.y - 0.5f);
                         
                         math::v2 CorrectPosition = ToIsometric(math::v2(CartesianX, CartesianY));
                         r32 CorrectX = CorrectPosition.x;
@@ -2071,7 +2071,7 @@ void RenderUI(game_state* GameState)
             }
             
             // Player UI
-            auto Player = GameState->Entities[0];
+            auto& Player = GameState->Entities[0];
             RenderRect(Render_Fill, &GameState->RenderState, math::v4(0, 0, 0, 1), 48.0f, GameState->RenderState.WindowHeight - 52.0f, 404.0f, 29.0f);
             RenderRect(Render_Fill, &GameState->RenderState, math::v4(0.6f, 0, 0, 1), 50.0f, GameState->RenderState.WindowHeight - 50.0f, 400.0f / (r32)GameState->CharacterData.Health * (r32)Player.Health, 25.0f);
             
@@ -2289,9 +2289,9 @@ void RenderUI(game_state* GameState)
                                     
                                     math::v2 SheetSize(Tilesheet.Texture.Width, Tilesheet.Texture.Height);
                                     
-                                    for(u32 X = 0; X < GameState->EditorState.TileBrushSize.x && X + GameState->EditorState.TileX < GameState->CurrentLevel.Tilemap.Width; X++)
+                                    for(i32 X = 0; X < GameState->EditorState.TileBrushSize.x && X + GameState->EditorState.TileX < GameState->CurrentLevel.Tilemap.Width; X++)
                                     {
-                                        for(u32 Y = 0;Y < GameState->EditorState.TileBrushSize.y && Y + GameState->EditorState.TileY < GameState->CurrentLevel.Tilemap.Height; Y++)
+                                        for(i32 Y = 0;Y < GameState->EditorState.TileBrushSize.y && Y + GameState->EditorState.TileY < GameState->CurrentLevel.Tilemap.Height; Y++)
                                         {
                                             math::v2 CorrectPosition = ToIsometric(math::v2(X, Y));
                                             r32 CorrectX = GameState->EditorState.TileX + CorrectPosition.x;
@@ -2573,8 +2573,8 @@ static void RenderDebugInfo(game_state* GameState)
                    math::v4(1, 1, 1, 1), FPS, GameState->RenderState.WindowWidth / 2.0f, 
                    GameState->RenderState.WindowHeight - 20.0f, 1.0f);
         
-        i32 X = (i32)Floor(Pos.x);
-        i32 Y = (i32)Floor(Pos.y);
+        i32 X = (i32)math::Floor(Pos.x);
+        i32 Y = (i32)math::Floor(Pos.y);
         char MousePos[32];
         sprintf(MousePos,"Mouse: (%d %d)",X,Y);
         RenderText(&GameState->RenderState, GameState->RenderState.InconsolataFont, 
@@ -2608,7 +2608,7 @@ static void RenderLightSources(game_state* GameState)
         
         for(u32 Index = 0; Index < GameState->LightSourceCount; Index++)
         {
-            auto LightSource = GameState->LightSources[Index];
+            auto& LightSource = GameState->LightSources[Index];
             if(LightSource.Active)
             {
                 switch(LightSource.Type)
