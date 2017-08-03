@@ -99,9 +99,9 @@ struct entity_weapon
 {
     i32 Damage;
     collision_AABB CollisionAABB;
-    glm::vec2 Center = glm::vec2(0.5, 0.5);
-    glm::vec3 Rotation;
-    glm::vec3 Scale = glm::vec3(1, 1, 1);
+    math::v2 Center = math::v2(0.5, 0.5);
+    math::v3 Rotation;
+    math::v3 Scale = math::v3(1, 1, 1);
     b32 IsFlipped;
     Entity_Layer Layer;
     Entity_Layer IgnoreLayers;
@@ -109,8 +109,8 @@ struct entity_weapon
 
 struct entity_healthbar
 {
-    glm::vec2 Offset;
-    glm::vec3 Scale;
+    math::v2 Offset;
+    math::v3 Scale;
     ui_render_info RenderInfo;
     i32 CurrentFrame;
 };
@@ -132,14 +132,14 @@ Entity->Enemy.Dying = & ## entityname ## Dying;
 
 struct weapon_collider_info
 {
-    glm::vec2 OffsetUp;
-    glm::vec2 ExtentsUp;
-    glm::vec2 OffsetDown;
-    glm::vec2 ExtentsDown;
-    glm::vec2 OffsetLeft;
-    glm::vec2 ExtentsLeft;
-    glm::vec2 OffsetRight;
-    glm::vec2 ExtentsRight;
+    math::v2 OffsetUp;
+    math::v2 ExtentsUp;
+    math::v2 OffsetDown;
+    math::v2 ExtentsDown;
+    math::v2 OffsetLeft;
+    math::v2 ExtentsLeft;
+    math::v2 OffsetRight;
+    math::v2 ExtentsRight;
     
     weapon_collider_info() {}
 };
@@ -148,7 +148,7 @@ struct enemy_health_count
 {
     b32 Visible = false;
     char Count[20];
-    glm::vec2 Position = glm::vec2(0, 0);
+    math::v2 Position = math::v2(0, 0);
 };
 
 struct player_inventory
@@ -179,13 +179,13 @@ struct light_source
 {
     Light_Type Type;
     b32 Active;
-    glm::vec4 Color;
+    math::v4 Color;
     union
     {
         struct
         {
             r32 Intensity;
-            glm::vec2 Position;
+            math::v2 Position;
             r32 ConstantAtten;
             r32 LinearAtten;
             r32 ExponentialAtten;
@@ -216,14 +216,14 @@ struct object_entity
     b32 Active;
     Object_Type Type;
     b32 UsesTransparency;
-    glm::vec2 Position;
+    math::v2 Position;
     r32 Scale;
-    glm::vec2 Center;
+    math::v2 Center;
     b32 IsFlipped;
     i32 RenderEntityHandle;
     i32 LightSourceHandle;
     
-    v2i TilePosition;
+    math::v2i TilePosition;
     
     animation* CurrentAnimation;
     animation_info AnimationInfo;
@@ -234,7 +234,7 @@ struct object_entity
         {
             b32 IsKinematic;
             collision_AABB Collider;
-            glm::vec2 Velocity;
+            math::v2 Velocity;
         } Moving;
         struct
         {
@@ -258,17 +258,17 @@ struct entity
     Entity_Type Type;
     char* Name;
     u32 EntityIndex;
-    glm::vec2 Position;
-    glm::vec2 CurrentTile;
-    glm::vec2 CurrentDestination;
-    glm::vec2 Center;
-    glm::vec3 Rotation;
+    math::v2 Position;
+    math::v2 CurrentTile;
+    math::v2 CurrentDestination;
+    math::v2 Center;
+    math::v3 Rotation;
     r32 Scale;
     b32 IsFlipped;
     b32 IsTemporary;
     b32 ShowAttackTiles;
     
-    v3i TilePosition;
+    math::v3i TilePosition;
     
     Look_Direction LookDirection;
     Entity_Layer Layer;
@@ -290,7 +290,7 @@ struct entity
     
     i32 LightSourceHandle;
     
-    glm::vec2 Velocity;
+    math::v2 Velocity;
     
     b32 Hit;
     
@@ -312,7 +312,7 @@ struct entity
     timer RecoilTimer;
     timer StaggerCooldownTimer;
     r32 HitRecoilSpeed;
-    glm::vec2 HitRecoilDirection;
+    math::v2 HitRecoilDirection;
     
     r32 AttackMoveSpeed;
     timer AttackMoveTimer;
@@ -402,7 +402,7 @@ struct entity
             i32 Will;
             i32 HealthCountIndex;
             enemy_health_count HealthCounts[10];
-            glm::vec2 HealthCountStart;
+            math::v2 HealthCountStart;
             
             i32 TimesHit;
             
@@ -434,12 +434,12 @@ struct entity
             AIFunction Wandering;
             
             i32 WaypointCount;
-            v2i Waypoints[10];
+            math::v2i Waypoints[10];
             i32 WaypointIndex;
             b32 WanderingForward;
             
             timer DefendingTimer;
-            glm::vec2 LastAttackMoveDirection;
+            math::v2 LastAttackMoveDirection;
             
             union
             {
@@ -467,8 +467,8 @@ struct entity
                     timer AlertedTimer;
                     timer JumpAttackTimer;
                     timer JumpAttackImpactTimer;
-                    glm::vec2 ImpactCollisionExtents;
-                    glm::vec2 OldCollisionExtents;
+                    math::v2 ImpactCollisionExtents;
+                    math::v2 OldCollisionExtents;
                     i32 ShadowHandle;
                 } Minotaur;
                 struct
@@ -485,7 +485,7 @@ struct entity
         } Bonfire;
     };
     
-    glm::vec2 RenderButtonOffset;
+    math::v2 RenderButtonOffset;
     b32 RenderButtonHint;
     
     entity(){}

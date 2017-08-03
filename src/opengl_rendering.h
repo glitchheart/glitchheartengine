@@ -117,11 +117,11 @@ struct ui_render_info
     b32 Rendered = true;
     
     texture* Texture;
-    glm::vec2 TextureOffset;
-    glm::vec2 FrameSize;
+    math::v2 TextureOffset;
+    math::v2 FrameSize;
     u32 ShaderIndex;
-    glm::vec2 Size = glm::vec3(1, 1, 1);
-    glm::vec4 Color = glm::vec4(1, 1, 1, 1);
+    math::v2 Size = math::v2(1, 1);
+    math::v4 Color = math::v4(1, 1, 1, 1);
 };
 
 struct editor_render_info
@@ -166,7 +166,7 @@ struct render_entity
     b32 Background = false;
     texture* Texture;
     u32 ShaderIndex;
-    glm::vec4 Color = glm::vec4(1, 1, 1, 1);
+    math::v4 Color = math::v4(1, 1, 1, 1);
     
     i32 RenderLayer = 0;
 };
@@ -195,8 +195,8 @@ struct render_font
     u32 AtlasWidth;
     u32 AtlasHeight;
     GLfloat GlyphWidth;
-    glm::vec4 Color = glm::vec4(1, 1, 1, 1);
-    glm::vec4 AlphaColor = glm::vec4(1, 1, 1, 1);
+    math::v4 Color = math::v4(1, 1, 1, 1);
+    math::v4 AlphaColor = math::v4(1, 1, 1, 1);
     
     struct character_info 
     {

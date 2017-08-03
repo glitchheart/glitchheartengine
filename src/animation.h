@@ -21,11 +21,11 @@ struct animation
     r32 TimePerFrame;
     texture* Texture;
     i32 FrameCount = 0;
-    glm::vec2 FrameSize;
-    glm::vec2 Center;
+    math::v2 FrameSize;
+    math::v2 Center;
     b32 Loop;
     
-    glm::vec2 FrameOffset;
+    math::v2 FrameOffset;
     sprite_sheet_frame* Frames;
 };
 

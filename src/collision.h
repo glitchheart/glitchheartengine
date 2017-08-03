@@ -26,12 +26,12 @@
  
  struct collision_AABB
  {
-     glm::vec2 Center;
-     glm::vec2 Offset;
-     glm::vec2 Extents;
-     glm::vec2 Min;
-     glm::vec2 Max;
-     glm::vec2 Size;
+     math::v2 Center;
+     math::v2 Offset;
+     math::v2 Extents;
+     math::v2 Min;
+     math::v2 Max;
+     math::v2 Size;
      b32 IsTrigger;
      b32 IsColliding;
  };

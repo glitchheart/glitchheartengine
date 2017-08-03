@@ -37,15 +37,15 @@ struct camera
     u32 ViewportWidth;
     u32 ViewportHeight;
     r32 Zoom; //NOTE(Daniel) The higher the number the closer you are zoomed in. 1.0f is NORMAL
-    glm::vec2 Center;
-    glm::vec2 CenterTarget;
+    math::v2 Center;
+    math::v2 CenterTarget;
     r32 FollowSpeed;
-    glm::mat4 ViewMatrix;
-    glm::mat4 ProjectionMatrix;
+    math::m4 ViewMatrix;
+    math::m4 ProjectionMatrix;
     timer ScreenShakeTimer;
     
     Fading_Mode FadingMode = Fading_None;
-    glm::vec3 FadingTint;
+    math::v3 FadingTint;
     
     b32 FadingIn;
     r32 EndAlpha;
@@ -88,13 +88,13 @@ struct character_data
     i32 Stamina = 0;
     i32 Strength = 0;
     i32 HealthPotionCount = 3;
-    glm::vec2 CurrentCheckpoint;
+    math::v2 CurrentCheckpoint;
     b32 HasCheckpoint;
     i32 CheckpointHandle = -1;
     b32 HasLostWill;
     i32 LostWill;
     i32 LostWillObjectHandle = -1;
-    glm::vec2 LostWillPosition;
+    math::v2 LostWillPosition;
     b32 RenderWillButtonHint = false;
 };
 
@@ -133,7 +133,7 @@ struct game_state
     
     r32 InitialZoom;
     
-    glm::vec2 EntityPositions[NUM_ENTITIES];
+    math::v2 EntityPositions[NUM_ENTITIES];
     
     Player_State PlayerState = Player_Alive;
     timer DeathScreenTimer;
@@ -215,7 +215,7 @@ r64 ElapsedTimerFrac(game_state* GameState, timer& Timer)
     return ElapsedTimer(GameState,Timer) / Timer.TimerMax;
 }
 
-void StartFade(camera& Camera, Fading_Mode Mode, r32 FadingSpeed, glm::vec3 FadingTint, r32 StartAlpha = 0, r32 EndAlpha = 0)
+void StartFade(camera& Camera, Fading_Mode Mode, r32 FadingSpeed, math::v3 FadingTint, r32 StartAlpha = 0, r32 EndAlpha = 0)
 {
     Camera.FadingMode = Mode;
     Camera.FadingTint = FadingTint;
@@ -254,7 +254,7 @@ void SaveGame(game_state* GameState)
         fwrite(&GameState->CharacterData,sizeof(character_data), 1, File);
         fwrite(&GameState->LastCharacterData,sizeof(character_data), 1, File);
         fwrite(&Entity.Player.Will,sizeof(i32), 1, File);
-        fwrite(&Entity.Position,sizeof(glm::vec2), 1, File);
+        fwrite(&Entity.Position,sizeof(math::v2), 1, File);
         fwrite(&Entity.Player.Inventory,sizeof(player_inventory), 1, File);
         
         fclose(File);
@@ -274,7 +274,7 @@ void LoadGame(game_state* GameState)
             fread(&GameState->CharacterData, sizeof(character_data), 1, File);
             fread(&GameState->LastCharacterData, sizeof(character_data), 1, File);
             fread(&GameState->Entities[0].Player.Will, sizeof(i32), 1, File);
-            fread(&GameState->Entities[0].Position, sizeof(glm::vec2),1,File);
+            fread(&GameState->Entities[0].Position, sizeof(math::v2),1,File);
             fread(&GameState->Entities[0].Player.Inventory, sizeof(player_inventory), 1 , File);
             
             fclose(File);

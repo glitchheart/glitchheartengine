@@ -160,13 +160,13 @@ static astar_path* GetAStarPath(entity* Entity)
 * Horizontal cost: 10
 * Diagonal cost  : 14 (normally sqrt of 2 * 10, but we like ints!)
 */
-static void AStar(entity* Entity, game_state* GameState, glm::vec2 StartPos, glm::vec2 TargetPos)
+static void AStar(entity* Entity, game_state* GameState, math::v2 StartPos, math::v2 TargetPos)
 {
-    i32 StartX = (i32)glm::floor(StartPos.x);
-    i32 StartY = (i32)glm::floor(StartPos.y);
+    i32 StartX = (i32)floor(StartPos.x);
+    i32 StartY = (i32)floor(StartPos.y);
     
-    i32 TargetX = (i32)glm::floor(TargetPos.x);
-    i32 TargetY = (i32)glm::floor(TargetPos.y);
+    i32 TargetX = (i32)floor(TargetPos.x);
+    i32 TargetY = (i32)floor(TargetPos.y);
     
     if(StartX < GameState->CurrentLevel.Tilemap.Width && StartY < GameState->CurrentLevel.Tilemap.Height &&
        StartX >= 0 && StartY >= 0 && TargetX < GameState->CurrentLevel.Tilemap.Width && TargetY < GameState->CurrentLevel.Tilemap.Height &&
@@ -175,7 +175,7 @@ static void AStar(entity* Entity, game_state* GameState, glm::vec2 StartPos, glm
         astar_working_data* AStarWorkingData = (astar_working_data*)malloc(sizeof(astar_working_data));
         tile_data StartTile = GameState->CurrentLevel.Tilemap.Data[1][StartX][StartY];
         tile_data TargetTile = GameState->CurrentLevel.Tilemap.Data[1][TargetX][TargetY];
-        glm::vec2 CurrentPos = StartPos;
+        math::v2 CurrentPos = StartPos;
         
         u32 WorkingListCount = 0;
         u32 ClosedSetCount = 0;
@@ -271,16 +271,16 @@ static void AStar(entity* Entity, game_state* GameState, glm::vec2 StartPos, glm
 
 static void FindPath(game_state* GameState, entity* Entity, entity& TargetEntity,astar_path* Path)
 {
-    r64 DistanceToTargetEntity = abs(glm::distance(Entity->Position, TargetEntity.Position));
-    glm::vec2 EntityPosition = glm::vec2(Entity->Position.x + Entity->Center.x * Entity->Scale,Entity->Position.y + Entity->Center.y * Entity->Scale);
+    r64 DistanceToTargetEntity = abs(Distance(Entity->Position, TargetEntity.Position));
+    math::v2 EntityPosition = math::v2(Entity->Position.x + Entity->Center.x * Entity->Scale,Entity->Position.y + Entity->Center.y * Entity->Scale);
     
     if(TimerDone(GameState, Path->AStarCooldownTimer) || !Path->AStarPath || (Path->AStarPathLength <= Path->PathIndex && DistanceToTargetEntity >= 3.0f)) 
     {
         Path->PathIndex = 0;
         StartTimer(GameState, Path->AStarCooldownTimer);
-        glm::vec2 StartPosition = EntityPosition;
-        glm::vec2 TargetPosition = glm::vec2(TargetEntity.Position.x + TargetEntity.Center.x * TargetEntity.Scale,
-                                             TargetEntity.Position.y + TargetEntity.Center.y * TargetEntity.Scale);
+        math::v2 StartPosition = EntityPosition;
+        math::v2 TargetPosition = math::v2(TargetEntity.Position.x + TargetEntity.Center.x * TargetEntity.Scale,
+                                           TargetEntity.Position.y + TargetEntity.Center.y * TargetEntity.Scale);
         AStar(Entity,GameState,StartPosition,TargetPosition);
     }
     
@@ -288,20 +288,20 @@ static void FindPath(game_state* GameState, entity* Entity, entity& TargetEntity
 
 static void FollowPath(game_state* GameState, entity* Entity,entity& TargetEntity,  astar_path* Path)
 {
-    glm::vec2 EntityPosition = glm::vec2(Entity->Position.x, Entity->Position.y);
+    math::v2 EntityPosition = math::v2(Entity->Position.x, Entity->Position.y);
     
     if(Path->AStarPath && Path->PathIndex < Path->AStarPathLength)
     {
         path_node NewPos = Path->AStarPath[Path->PathIndex];
         
-        r64 DistanceToNode = glm::distance(ToIsometric(EntityPosition), ToIsometric(glm::vec2(NewPos.X, NewPos.Y)));
+        r64 DistanceToNode = Distance(ToIsometric(EntityPosition), ToIsometric(math::v2(NewPos.X, NewPos.Y)));
         
         if(DistanceToNode > 0.1f) 
         {
-            glm::vec2 FollowDirection = glm::vec2(NewPos.X, NewPos.Y) - EntityPosition;
-            FollowDirection = glm::normalize(FollowDirection);
+            math::v2 FollowDirection = math::v2(NewPos.X, NewPos.Y) - EntityPosition;
+            FollowDirection = Normalize(FollowDirection);
             
-            Entity->Velocity = glm::vec2(FollowDirection.x * Entity->Enemy.WalkingSpeed, FollowDirection.y * Entity->Enemy.WalkingSpeed);
+            Entity->Velocity = math::v2(FollowDirection.x * Entity->Enemy.WalkingSpeed, FollowDirection.y * Entity->Enemy.WalkingSpeed);
         }
         else
         {

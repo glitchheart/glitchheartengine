@@ -10,7 +10,7 @@ static void AABBMax(collision_AABB* Coll)
 
 static void AABBSize(collision_AABB* Coll)
 {
-    Coll->Size = glm::vec2(Coll->Extents.x * 2, Coll->Extents.y * 2);
+    Coll->Size = math::v2(Coll->Extents.x * 2, Coll->Extents.y * 2);
 }
 
 static void MinkowskiDifference(collision_AABB* Coll, collision_AABB* Other, collision_AABB* Out)
@@ -21,10 +21,10 @@ static void MinkowskiDifference(collision_AABB* Coll, collision_AABB* Other, col
     AABBMin(Other);
     AABBMax(Other);
     AABBSize(Other);
-    glm::vec2 TopLeft = Coll->Min - Other->Max;
-    glm::vec2 FullSize = Coll->Size + Other->Size;
-    glm::vec2 Center = glm::vec2(TopLeft.x + (FullSize.x / 2), TopLeft.y + (FullSize.y /2));
-    glm::vec2 Extents = glm::vec2(FullSize.x / 2, FullSize.y / 2);
+    math::v2 TopLeft = Coll->Min - Other->Max;
+    math::v2 FullSize = Coll->Size + Other->Size;
+    math::v2 Center = math::v2(TopLeft.x + (FullSize.x / 2), TopLeft.y + (FullSize.y /2));
+    math::v2 Extents = math::v2(FullSize.x / 2, FullSize.y / 2);
     Out->Center = Center;
     Out->Extents = Extents;
     AABBMin(Out);
@@ -32,37 +32,37 @@ static void MinkowskiDifference(collision_AABB* Coll, collision_AABB* Other, col
     AABBSize(Out);
 }
 
-static void ClosestPointsOnBoundsToPoint(collision_AABB* Coll, glm::vec2 Point, glm::vec2* Out)
+static void ClosestPointsOnBoundsToPoint(collision_AABB* Coll, math::v2 Point, math::v2* Out)
 {  
     r32 MinDist = Abs(Point.x - Coll->Min.x);
     
-    *Out = glm::vec2(Coll->Min.x, Point.y);
+    *Out = math::v2(Coll->Min.x, Point.y);
     
     if(Abs(Coll->Max.x - Point.x) < MinDist)
     {
         MinDist = Abs(Coll->Max.x - Point.x);
-        *Out = glm::vec2(Coll->Max.x, Point.y);
+        *Out = math::v2(Coll->Max.x, Point.y);
     }
     
     if(Abs(Coll->Max.y - Point.y) < MinDist)
     {
         MinDist = Abs(Coll->Max.y - Point.y);
-        *Out = glm::vec2(Point.x, Coll->Max.y);
+        *Out = math::v2(Point.x, Coll->Max.y);
     }
     if(Abs(Coll->Min.y - Point.y) < MinDist)
     {
         MinDist = Abs(Coll->Min.y - Point.y);
-        *Out = glm::vec2(Point.x, Coll->Min.y);
+        *Out = math::v2(Point.x, Coll->Min.y);
     }
 }
 
-static r32 GetRayIntersectionFractionOfFirstRay(glm::vec2 OriginA, glm::vec2 EndA,glm::vec2 OriginB, glm::vec2 EndB)
+static r32 GetRayIntersectionFractionOfFirstRay(math::v2 OriginA, math::v2 EndA,math::v2 OriginB, math::v2 EndB)
 {
-    glm::vec2 R = EndA - OriginA;
-    glm::vec2 S = EndB - OriginB;
+    math::v2 R = EndA - OriginA;
+    math::v2 S = EndB - OriginB;
     
-    r32 Numerator = glm::dot((OriginB - OriginA),  R);
-    r32 Denominator = glm::dot(R , S);
+    r32 Numerator = Dot((OriginB - OriginA),  R);
+    r32 Denominator = Dot(R , S);
     
     if(Numerator == 0 && Denominator == 0)
     {
@@ -75,7 +75,7 @@ static r32 GetRayIntersectionFractionOfFirstRay(glm::vec2 OriginA, glm::vec2 End
     }
     
     r32 U = Numerator / Denominator;
-    r32 T = ((glm::dot(OriginA / OriginB,S))) / Denominator;
+    r32 T = ((Dot(OriginA / OriginB,S))) / Denominator;
     
     if ((T >= 0) && (T <= 1) && (U >= 0) && (U <= 1))
     {
@@ -85,29 +85,29 @@ static r32 GetRayIntersectionFractionOfFirstRay(glm::vec2 OriginA, glm::vec2 End
     return INFINITY;
 }
 
-r32 GetRayIntersectionFraction(collision_AABB* Coll, glm::vec2 Origin, glm::vec2 Direction)
+r32 GetRayIntersectionFraction(collision_AABB* Coll, math::v2 Origin, math::v2 Direction)
 {
     AABBMin(Coll);
     AABBMax(Coll);
-    glm::vec2 End = Origin + Direction;
+    math::v2 End = Origin + Direction;
     
-    r32 MinT = GetRayIntersectionFractionOfFirstRay(Origin,End,glm::vec2(Coll->Min.x, Coll->Min.y),
-                                                    glm::vec2(Coll->Min.x, Coll->Max.y));
+    r32 MinT = GetRayIntersectionFractionOfFirstRay(Origin,End,math::v2(Coll->Min.x, Coll->Min.y),
+                                                    math::v2(Coll->Min.x, Coll->Max.y));
     r32 X;
-    X = GetRayIntersectionFractionOfFirstRay(Origin,End, glm::vec2(Coll->Min.x, Coll->Max.y),
-                                             glm::vec2(Coll->Max.x, Coll->Max.y));
+    X = GetRayIntersectionFractionOfFirstRay(Origin,End, math::v2(Coll->Min.x, Coll->Max.y),
+                                             math::v2(Coll->Max.x, Coll->Max.y));
     if(X < MinT)
     {
         MinT = X;
     }
-    X = GetRayIntersectionFractionOfFirstRay(Origin,End, glm::vec2(Coll->Max.x, Coll->Max.y),
-                                             glm::vec2(Coll->Max.x, Coll->Min.y));
+    X = GetRayIntersectionFractionOfFirstRay(Origin,End, math::v2(Coll->Max.x, Coll->Max.y),
+                                             math::v2(Coll->Max.x, Coll->Min.y));
     if(X < MinT)
     {
         MinT = X;
     }
-    X = GetRayIntersectionFractionOfFirstRay(Origin,End, glm::vec2(Coll->Max.x, Coll->Min.y),
-                                             glm::vec2(Coll->Min.x, Coll->Min.y));
+    X = GetRayIntersectionFractionOfFirstRay(Origin,End, math::v2(Coll->Max.x, Coll->Min.y),
+                                             math::v2(Coll->Min.x, Coll->Min.y));
     if(X < MinT)
     {
         MinT = X;
@@ -119,7 +119,7 @@ void CheckWeaponCollision(game_state* GameState, entity_weapon* Entity, collisio
 {
     CollisionInfo->OtherCount = -1;
     
-    glm::vec2 PV;
+    math::v2 PV;
     CollisionInfo->OtherCount = 0;
     
     for(u32 OtherEntityIndex = 0;
@@ -160,19 +160,19 @@ static void CheckCollision(game_state* GameState, entity* Entity, collision_info
     
     if(!Entity->IsKinematic && Entity->Active)
     {
-        Entity->CollisionAABB.Center = glm::vec2(Entity->Position.x + Entity->Center.x * Entity->Scale + Entity->CollisionAABB.Offset.x, Entity->Position.y + Entity->Center.y * Entity->Scale + Entity->CollisionAABB.Offset.y);
+        Entity->CollisionAABB.Center = math::v2(Entity->Position.x + Entity->Center.x * Entity->Scale + Entity->CollisionAABB.Offset.x, Entity->Position.y + Entity->Center.y * Entity->Scale + Entity->CollisionAABB.Offset.y);
         
         if(Entity->Type == Entity_Enemy)
         {
-            Entity->Enemy.EnemyCollider.Center = glm::vec2(Entity->Position.x + Entity->Center.x * Entity->Scale + Entity->Enemy.EnemyCollider.Offset.x, Entity->Position.y + Entity->Center.y * Entity->Scale + Entity->Enemy.EnemyCollider.Offset.y);
+            Entity->Enemy.EnemyCollider.Center = math::v2(Entity->Position.x + Entity->Center.x * Entity->Scale + Entity->Enemy.EnemyCollider.Offset.x, Entity->Position.y + Entity->Center.y * Entity->Scale + Entity->Enemy.EnemyCollider.Offset.y);
         }
         
         if(Entity->HasHitTrigger)
         {
-            Entity->HitTrigger.Center = glm::vec2(Entity->Position.x + Entity->Center.x * Entity->Scale + Entity->HitTrigger.Offset.x, Entity->Position.y + Entity->Center.y * Entity->Scale + Entity->HitTrigger.Offset.y);
+            Entity->HitTrigger.Center = math::v2(Entity->Position.x + Entity->Center.x * Entity->Scale + Entity->HitTrigger.Offset.x, Entity->Position.y + Entity->Center.y * Entity->Scale + Entity->HitTrigger.Offset.y);
         }
         
-        glm::vec2 PV;
+        math::v2 PV;
         CollisionInfo->OtherCount = 0;
         
         for(u32 OtherEntityIndex = 0;
@@ -230,8 +230,8 @@ static void CheckCollision(game_state* GameState, entity* Entity, collision_info
                         AABBMin(&Md);
                         AABBMax(&Md);
                         AABBSize(&Md);
-                        glm::vec2 PenetrationVector;
-                        ClosestPointsOnBoundsToPoint(&Md, glm::vec2(0,0), &PenetrationVector);
+                        math::v2 PenetrationVector;
+                        ClosestPointsOnBoundsToPoint(&Md, math::v2(0,0), &PenetrationVector);
                         
                         if(Abs(PenetrationVector.x) > Abs(PenetrationVector.y))
                         {
@@ -307,8 +307,8 @@ static void CheckCollision(game_state* GameState, entity* Entity, collision_info
                         AABBMin(&Md);
                         AABBMax(&Md);
                         AABBSize(&Md);
-                        glm::vec2 PenetrationVector;
-                        ClosestPointsOnBoundsToPoint(&Md, glm::vec2(0,0), &PenetrationVector);
+                        math::v2 PenetrationVector;
+                        ClosestPointsOnBoundsToPoint(&Md, math::v2(0,0), &PenetrationVector);
                         
                         if(Abs(PenetrationVector.x) > Abs(PenetrationVector.y))
                         {
@@ -337,7 +337,7 @@ static void CheckCollision(game_state* GameState, entity* Entity, collision_info
                         
                         if(Entity->Type == Entity_Barrel)
                         {
-                            Entity->Velocity = glm::vec2(0.0f,0.0f);
+                            Entity->Velocity = math::v2(0.0f,0.0f);
                         }
                     }
                 }
@@ -347,7 +347,7 @@ static void CheckCollision(game_state* GameState, entity* Entity, collision_info
         if(!Entity->CollisionAABB.IsTrigger)
         {
             Entity->Position += PV;
-            Entity->CollisionAABB.Center = glm::vec2(Entity->Position.x + Entity->Center.x * Entity->Scale + Entity->CollisionAABB.Offset.x, Entity->Position.y + Entity->Center.y * Entity->Scale + Entity->CollisionAABB.Offset.y);
+            Entity->CollisionAABB.Center = math::v2(Entity->Position.x + Entity->Center.x * Entity->Scale + Entity->CollisionAABB.Offset.x, Entity->Position.y + Entity->Center.y * Entity->Scale + Entity->CollisionAABB.Offset.y);
         }
     }
 }

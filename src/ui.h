@@ -11,13 +11,13 @@ enum UI_Type
 struct health_bar
 {
     UI_Type Type;
-    glm::vec2 Position;
+    math::v2 Position;
     ui_render_info RenderInfo;
 };
 
 struct player_ui
 {
-    glm::vec2 ScreenPosition;
+    math::v2 ScreenPosition;
 };
 
 #endif

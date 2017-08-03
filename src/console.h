@@ -20,12 +20,12 @@ static command_info Commands[COMMAND_ARRAY_SIZE];
 struct console
 {
     bool Open;
-    glm::vec3 EndPosition = glm::vec3(-1, 0.5f, 0);
+    math::v3 EndPosition = math::v3(-1, 0.5f, 0);
     r32 TimeToAnimate = 0.3f;
     r64 CurrentTime;
     r64 DeleteTime;
-    glm::vec4 Color;
-    glm::vec3 CursorColor;
+    math::v4 Color;
+    math::v3 CursorColor;
     u32 MaxHeight;
     u32 BufferIndex;
     char Buffer[CONSOLE_BUFFER_SIZE];

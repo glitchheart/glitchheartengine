@@ -275,7 +275,7 @@ static inline void PauseSound(sound_device* SoundDevice)
     }
 }
 
-static void PlaySounds(sound_device* Device, sound_queue* SoundQueue, glm::vec2* EntityPositions, i32 EntityCount)
+static void PlaySounds(sound_device* Device, sound_queue* SoundQueue, v2* EntityPositions, i32 EntityCount)
 {
     
     if(Device->Muted && !Device->PrevMuted)
@@ -343,8 +343,8 @@ static void PlaySounds(sound_device* Device, sound_queue* SoundQueue, glm::vec2*
                     
                     if(EntityPositions)
                     {
-                        r32 Distance = glm::distance(glm::vec2(Sound.SoundInfo.Position[0], Sound.SoundInfo.Position[1]), EntityPositions[0]);
-                        r32 VolFactor = 1.0f - (Distance/Sound.SoundInfo.Rolloff);
+                        r32 DistanceToEntity = Distance(v2(Sound.SoundInfo.Position[0], Sound.SoundInfo.Position[1]), EntityPositions[0]);
+                        r32 VolFactor = 1.0f - (DistanceToEntity/Sound.SoundInfo.Rolloff);
                         alSourcef(Device->Sources[SourceIndex],AL_GAIN,Max(0.0f,VolFactor) * Device->SFXVolume);
                         Device->SourceGain[SourceIndex] = Max(0.0f,VolFactor) * Device->SFXVolume;
                     }
