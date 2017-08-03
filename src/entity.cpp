@@ -2110,6 +2110,7 @@ static void CheckLootPickup(game_state* GameState, input_controller* InputContro
 
 void UpdatePlayer(entity* Entity, game_state* GameState, sound_queue* SoundQueue,input_controller* InputController, r64 DeltaTime)
 {
+    
     // Collision check
     collision_info CollisionInfo;
     CheckCollision(GameState, Entity, &CollisionInfo);
@@ -2122,6 +2123,8 @@ void UpdatePlayer(entity* Entity, game_state* GameState, sound_queue* SoundQueue
     r32 DY = 0.0f;
     
     r32 Scale = 2.0f;
+    
+    auto NewDirection = North;
     
     if(XInput > 0)
     {
@@ -2144,7 +2147,7 @@ void UpdatePlayer(entity* Entity, game_state* GameState, sound_queue* SoundQueue
     if(DX < 0 && DY > 0)
     {
         DX = 0;
-        Entity->LookDirection = NorthWest;
+        NewDirection = NorthWest;
     }
     else if(DX == 0.0f && DY > 0)
     {
@@ -2156,37 +2159,37 @@ void UpdatePlayer(entity* Entity, game_state* GameState, sound_queue* SoundQueue
     {
         DY = 0.0f;
         Scale = 1.0f;
-        Entity->LookDirection = NorthEast;
+        NewDirection = NorthEast;
     }
     else if(DX > 0 && DY == 0.0f)
     {
         DY = -1.0f;
-        Entity->LookDirection = East;
+        NewDirection = East;
     }
     else if(DX > 0 && DY < 0)
     {
         DX = 0.0f;
-        Entity->LookDirection = SouthEast;
+        NewDirection = SouthEast;
     }
     else if(DX == 0.0f && DY < 0)
     {
         DX = -1.0f;
         Scale = 1.0f;
-        Entity->LookDirection = South;
+        NewDirection = South;
     }
     else if(DX < 0 && DY < 0)
     {
         DY = 0.0f;
         Scale = 1.0f;
-        Entity->LookDirection = SouthWest;
+        NewDirection = SouthWest;
     }
     else if(DX < 0 && DY == 0.0f)
     {
         DY = 1.0f;
-        Entity->LookDirection = West;
+        NewDirection = West;
     }
     
-    Entity->IsFlipped = DX < 0;
+    //Entity->IsFlipped = DX < 0;
     
     r32 Speed = Entity->Player.WalkingSpeed;
     
@@ -2212,21 +2215,89 @@ void UpdatePlayer(entity* Entity, game_state* GameState, sound_queue* SoundQueue
         if(DX != 0.0f || DY != 0.0f)
         {
             Entity->CurrentDestination = glm::vec2(Entity->CurrentTile.x, Entity->CurrentTile.y) + glm::vec2(DX, DY);
+            Entity->LookDirection = NewDirection;
         }
     }
     else
         Entity->Velocity = glm::vec2(Direction.x * Speed, Direction.y * Speed);
     
-    // Set animation
-    if(Abs(Entity->Velocity.x) > 0.0f || Abs(Entity->Velocity.y) > 0.0f)
-        PlayAnimation(Entity, "demon_idle_south", GameState);
-    else
-        PlayAnimation(Entity, "swordsman_idle", GameState);
+    char* AnimationName;
+    
+    b32 Walking = Abs(XInput) > 0.0f || Abs(YInput) > 0.0f || Abs(Entity->Velocity.x) > 0.0f || Abs(Entity->Velocity.y) > 0.0f;
+    
+    switch(Entity->LookDirection)
+    {
+        case North:
+        {
+            if(Walking)
+                AnimationName = "man_walk_north";
+            else
+                AnimationName = "man_idle_north";
+        }
+        break;
+        case NorthEast:
+        {
+            if(Walking)
+                AnimationName = "man_walk_northeast";
+            else
+                AnimationName = "man_idle_northeast";
+        }
+        break;
+        case East:
+        {
+            if(Walking)
+                AnimationName = "man_walk_east";
+            else
+                AnimationName = "man_idle_east";
+        }
+        break;
+        case SouthEast:
+        {if(Walking)
+                AnimationName = "man_walk_southeast";
+            else
+                AnimationName = "man_idle_southeast";
+        }
+        break;
+        case South:
+        {if(Walking)
+                AnimationName = "man_walk_south";
+            else
+                AnimationName = "man_idle_south";
+        }
+        break;
+        case SouthWest:
+        {
+            if(Walking)
+                AnimationName = "man_walk_southwest";
+            else
+                AnimationName = "man_idle_southwest";
+        }
+        break;
+        case West:
+        {
+            if(Walking)
+                AnimationName = "man_walk_west";
+            else
+                AnimationName = "man_idle_west";
+        }
+        break;
+        case NorthWest:
+        {
+            if(Walking)
+                AnimationName = "man_walk_northwest";
+            else
+                AnimationName = "man_idle_northwest";
+        }
+        break;
+    }
+    
+    PlayAnimation(Entity, AnimationName, GameState);
     
     Entity->Position += glm::vec2(Entity->Velocity.x * DeltaTime, Entity->Velocity.y * DeltaTime);
     
     // Update camera if centered on player
     GameState->GameCamera.CenterTarget = Entity->Position;
+    
 }
 
 static void UpdateWeapon(entity* Entity, game_state* GameState, sound_queue* SoundQueue, r64 DeltaTime)

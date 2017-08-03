@@ -175,7 +175,7 @@ struct game_state
     console Console;
     editor_state EditorState;
     
-    animation AnimationArray[50];
+    animation AnimationArray[80];
     i32 AnimationIndex;
     
     animation_map AnimationMap;

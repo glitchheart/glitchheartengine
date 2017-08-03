@@ -377,7 +377,7 @@ struct render_state
         };
     };
     
-    texture TextureArray[80];
+    texture TextureArray[150];
     i32 TextureIndex;
     texture_map Textures;
     
