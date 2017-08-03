@@ -330,7 +330,7 @@ static void EditorUpdateEntities(game_state* GameState, input_controller* InputC
                     GameState->CurrentLevel = Level;
                 }
                 
-                auto Pos = UnProject(v3(InputController->MouseX, GameState->RenderState.Viewport[3] - InputController->MouseY, 0),
+                auto Pos = UnProject(math::v3(InputController->MouseX, GameState->RenderState.Viewport[3] - InputController->MouseY, 0),
                                      GameState->Camera.ViewMatrix,
                                      GameState->Camera.ProjectionMatrix,
                                      math::v4(0, 0, GameState->RenderState.Viewport[2], GameState->RenderState.Viewport[3]));
@@ -380,28 +380,28 @@ static void EditorUpdateEntities(game_state* GameState, input_controller* InputC
                                 if(MOUSE_DOWN(Mouse_Left) && GameState->EditorState.SelectedEntity->Enemy.WaypointCount < 10)
                                 {
                                     
-                                    v2 NewPos = ToCartesian(v2(Pos.x, Pos.y));
+                                    math::v2 NewPos = ToCartesian(math::v2(Pos.x, Pos.y));
                                     
-                                    i32 X = (i32)Floor(NewPos.x / 0.5f);
-                                    i32 Y = (i32)Floor(NewPos.y / 0.5f);
+                                    i32 X = (i32)math::Floor(NewPos.x / 0.5f);
+                                    i32 Y = (i32)math::Floor(NewPos.y / 0.5f);
                                     
                                     if(!GameState->CurrentLevel.Tilemap.Data[1][X][Y].IsSolid)
                                     {
-                                        GameState->EditorState.SelectedEntity->Enemy.Waypoints[GameState->EditorState.SelectedEntity->Enemy.WaypointCount++] = v2i(X,Y);
+                                        GameState->EditorState.SelectedEntity->Enemy.Waypoints[GameState->EditorState.SelectedEntity->Enemy.WaypointCount++] = math::v2i(X,Y);
                                     }
                                 }
                             }
                             else
                             {
-                                v2 NewPos = ToCartesian(v2(Pos.x, Pos.y));
+                                math::v2 NewPos = ToCartesian(math::v2(Pos.x, Pos.y));
                                 
                                 NewPos.x /= 0.5f;
                                 NewPos.y /= 0.5f;
                                 
-                                v2 ExactPos = NewPos;
+                                math::v2 ExactPos = NewPos;
                                 
-                                NewPos.x = Floor(NewPos.x);
-                                NewPos.y = Floor(NewPos.y);
+                                NewPos.x = math::Floor(NewPos.x);
+                                NewPos.y = math::Floor(NewPos.y);
                                 
                                 if(MOUSE_DOWN(Mouse_Left))
                                 {
@@ -426,7 +426,7 @@ static void EditorUpdateEntities(game_state* GameState, input_controller* InputC
                                 
                                 if(GameState->EditorState.SelectedEntity && MOUSE(Mouse_Left))
                                 {
-                                    GameState->EditorState.SelectedEntity->Position = v2(NewPos.x + GameState->EditorState.CurrentSelectedEntityOffset.x, NewPos.y - GameState->EditorState.SelectedEntity->Scale / 2 + GameState->EditorState.CurrentSelectedEntityOffset.y);
+                                    GameState->EditorState.SelectedEntity->Position = math::v2(NewPos.x + GameState->EditorState.CurrentSelectedEntityOffset.x, NewPos.y - GameState->EditorState.SelectedEntity->Scale / 2 + GameState->EditorState.CurrentSelectedEntityOffset.y);
                                 }
                             }
                         }
@@ -435,7 +435,7 @@ static void EditorUpdateEntities(game_state* GameState, input_controller* InputC
                         {
                             if(MOUSE_DOWN(Mouse_Left))
                             {
-                                v2 NewPos = ToCartesian(v2(Pos.x, Pos.y));
+                                math::v2 NewPos = ToCartesian(math::v2(Pos.x, Pos.y));
                                 
                                 NewPos.x = floor(NewPos.x / 0.5f);
                                 NewPos.y = floor(NewPos.y / 0.5f);
@@ -444,22 +444,22 @@ static void EditorUpdateEntities(game_state* GameState, input_controller* InputC
                                 {
                                     case Placement_Entity_Skeleton:
                                     {
-                                        LoadSkeletonData(GameState, -1, v2(NewPos.x, NewPos.y - 0.5f));
+                                        LoadSkeletonData(GameState, -1, math::v2(NewPos.x, NewPos.y - 0.5f));
                                     }
                                     break;
                                     case Placement_Entity_Blob:
                                     {
-                                        LoadBlobData(GameState, -1, v2(NewPos.x, NewPos.y - 0.5f));
+                                        LoadBlobData(GameState, -1, math::v2(NewPos.x, NewPos.y - 0.5f));
                                     }
                                     break;
                                     case Placement_Entity_Wraith:
                                     {
-                                        LoadWraithData(GameState, -1, v2(NewPos.x, NewPos.y - 0.5));
+                                        LoadWraithData(GameState, -1, math::v2(NewPos.x, NewPos.y - 0.5));
                                     }
                                     break;
                                     case Placement_Entity_Minotaur:
                                     {
-                                        LoadMinotaurData(GameState, -1, v2(NewPos.x, NewPos.y - 0.5f));
+                                        LoadMinotaurData(GameState, -1, math::v2(NewPos.x, NewPos.y - 0.5f));
                                     }
                                     break;
                                     case Placement_Entity_Barrel:
@@ -467,7 +467,7 @@ static void EditorUpdateEntities(game_state* GameState, input_controller* InputC
                                     break;
                                     case Placement_Entity_Bonfire:
                                     {
-                                        LoadBonfireData(GameState, SoundQueue, -1, v2(NewPos.x, NewPos.y - 0.5f));
+                                        LoadBonfireData(GameState, SoundQueue, -1, math::v2(NewPos.x, NewPos.y - 0.5f));
                                     }
                                     break;
                                 }
@@ -486,7 +486,7 @@ static void EditorUpdateEntities(game_state* GameState, input_controller* InputC
                             
                             GameState->EditorState.TileIsSolidCheckbox->Active = true;
                             
-                            v2 NewPos = ToCartesian(v2(Pos.x, Pos.y));
+                            math::v2 NewPos = ToCartesian(math::v2(Pos.x, Pos.y));
                             
                             i32 X = (i32)floor(NewPos.x / 0.5f);
                             i32 Y = (i32)floor(NewPos.y / 0.5f);
@@ -507,7 +507,7 @@ static void EditorUpdateEntities(game_state* GameState, input_controller* InputC
                                     i32 X = (i32)((InputController->MouseX - (GameState->EditorState.ToolbarX + GameState->EditorState.TilemapOffset.x)) / GameState->EditorState.RenderedTileSize);
                                     i32 Y = (i32)((GameState->RenderState.WindowHeight - InputController->MouseY - (GameState->EditorState.ToolbarY + GameState->EditorState.TilemapOffset.y)) / GameState->EditorState.RenderedTileSize);
                                     
-                                    GameState->EditorState.SelectedTilePosition = v2((r32)X, (r32)Y);
+                                    GameState->EditorState.SelectedTilePosition = math::v2((r32)X, (r32)Y);
                                     i32 Selected = X + Y * TilesheetWidth;
                                     
                                     GameState->EditorState.SelectedTileType = Selected;
@@ -594,9 +594,9 @@ static void EditorUpdateEntities(game_state* GameState, input_controller* InputC
                         GameState->EditorState.LastKnownMouseY = (r32)InputController->MouseY;
                     }
                     
-                    v2 Direction = v2(InputController->MouseX - GameState->EditorState.LastKnownMouseX, InputController->MouseY - GameState->EditorState.LastKnownMouseY);
+                    math::v2 Direction = math::v2(InputController->MouseX - GameState->EditorState.LastKnownMouseX, InputController->MouseY - GameState->EditorState.LastKnownMouseY);
                     
-                    GameState->EditorCamera.Center -= v2(Direction.x / GameState->EditorCamera.Zoom * GameState->EditorState.PanningSpeed * DeltaTime, Direction.y / GameState->EditorCamera.Zoom * -GameState->EditorState.PanningSpeed * DeltaTime);
+                    GameState->EditorCamera.Center -= math::v2(Direction.x / GameState->EditorCamera.Zoom * GameState->EditorState.PanningSpeed * DeltaTime, Direction.y / GameState->EditorCamera.Zoom * -GameState->EditorState.PanningSpeed * DeltaTime);
                     
                     GameState->EditorState.LastKnownMouseX = (r32)InputController->MouseX;
                     GameState->EditorState.LastKnownMouseY = (r32)InputController->MouseY;
@@ -645,8 +645,8 @@ static void EditorUpdateEntities(game_state* GameState, input_controller* InputC
                             
                             GameState->EditorState.LoadedAnimation->Name = (char*) calloc(30, sizeof(char));
                             GameState->EditorState.LoadedAnimation->FrameCount = 0;
-                            GameState->EditorState.LoadedAnimation->FrameSize = v2(0, 0);
-                            GameState->EditorState.LoadedAnimation->FrameOffset = v2(0, 0);
+                            GameState->EditorState.LoadedAnimation->FrameSize = math::v2(0, 0);
+                            GameState->EditorState.LoadedAnimation->FrameOffset = math::v2(0, 0);
                             GameState->EditorState.LoadedAnimation->TimePerFrame = 0.0f;
                             GameState->EditorState.LoadedAnimation->Loop = 1;
                             GameState->EditorState.LoadedAnimation->Texture = &GameState->RenderState.TextureArray[GameState->EditorState.SelectedTexture];
@@ -780,7 +780,7 @@ extern "C" UPDATE(Update)
         GameState->EditorState.MinZoom = 5;
         GameState->EditorState.MaxZoom = 100;
         GameState->EditorState.RenderedTileSize = 30.0f;
-        GameState->EditorState.TileBrushSize = v2(1, 1);
+        GameState->EditorState.TileBrushSize = math::v2(1, 1);
         GameState->EditorState.ToolbarScrollSpeed = 30000;
         GameState->EditorState.ToolbarScrollOffsetY = 0.0f;
         GameState->EditorState.IsInCreateWaypointMode = false;
@@ -821,15 +821,15 @@ extern "C" UPDATE(Update)
         GameState->GameCamera.FollowSpeed = 10.0f; 
         GameState->GameCamera.FadingSpeed = 0.6f;
         
-        StartFade(GameState->GameCamera, Fading_In, 0.6f, v3(0, 0, 0), 1.0f, 0.0f);
+        StartFade(GameState->GameCamera, Fading_In, 0.6f, math::v3(0, 0, 0), 1.0f, 0.0f);
         
         // @Incomplete: This is not the right value, it is only set so high to remove smooth following as of now, since it needs to be done a little differently
         
         if(GameState->CurrentLevel.Type == Level_Isometric)
         {
             auto PlayerPos = GameState->Entities[0].Position;
-            GameState->GameCamera.Center = v2((PlayerPos.x + PlayerPos.y) * 0.5f,(PlayerPos.x - PlayerPos.y) * 0.25f);; // Set center to player's position!
-            GameState->GameCamera.CenterTarget = v2((PlayerPos.x + PlayerPos.y) * 0.5f,(PlayerPos.x - PlayerPos.y) * 0.25f);
+            GameState->GameCamera.Center = math::v2((PlayerPos.x + PlayerPos.y) * 0.5f,(PlayerPos.x - PlayerPos.y) * 0.25f);; // Set center to player's position!
+            GameState->GameCamera.CenterTarget = math::v2((PlayerPos.x + PlayerPos.y) * 0.5f,(PlayerPos.x - PlayerPos.y) * 0.25f);
         }
         else
         {
@@ -932,8 +932,8 @@ extern "C" UPDATE(Update)
             if(!GameState->GodModeOn)
             {
                 auto Player = GameState->Entities[0];
-                GameState->GameCamera.Center = v2(Player.Position.x, Player.Position.y);
-                GameState->Camera.Center = v2(Player.Position.x, Player.Position.y);
+                GameState->GameCamera.Center = math::v2(Player.Position.x, Player.Position.y);
+                GameState->Camera.Center = math::v2(Player.Position.x, Player.Position.y);
                 GameState->GameCamera.Zoom = GameState->ZoomBeforeGodMode;
             }
             else
@@ -1096,13 +1096,13 @@ extern "C" UPDATE(Update)
         break;
     }
     
-    v2 Center = GameState->GameCamera.Center;
+    math::v2 Center = GameState->GameCamera.Center;
     
     if(GameState->GodModeOn)
     {
         r32 Zoom = GameState->Camera.Zoom;
         
-        v2 Direction = v2(0, 0);
+        math::v2 Direction = math::v2(0, 0);
         
         if(KEY(Key_W) || KEY(Key_Up))
         {
@@ -1137,7 +1137,7 @@ extern "C" UPDATE(Update)
         
         if(Abs(Direction.x) > 0.0 || Abs(Direction.y) > 0.0)
         {
-            GameState->GameCamera.Center = Center + v2(Direction.x * GameState->GodModePanSpeed * Factor * DeltaTime, Direction.y * GameState->GodModePanSpeed * Factor * DeltaTime);
+            GameState->GameCamera.Center = Center + math::v2(Direction.x * GameState->GodModePanSpeed * Factor * DeltaTime, Direction.y * GameState->GodModePanSpeed * Factor * DeltaTime);
         }
         
         GameState->GameCamera.Zoom = Min(Max(Zoom, GameState->GodModeMinZoom), GameState->GodModeMaxZoom);
@@ -1164,7 +1164,7 @@ extern "C" UPDATE(Update)
                 {
                     r32 Radius = 0.05f;
                     i32 RandomAngle = rand() % 360;
-                    v2 Offset = v2(sin(RandomAngle) * Radius, cos(RandomAngle) * Radius);
+                    math::v2 Offset = math::v2(sin(RandomAngle) * Radius, cos(RandomAngle) * Radius);
                     Center.x += Offset.x / 1.5f;
                     Center.y += Offset.y;
                 }
@@ -1184,7 +1184,7 @@ extern "C" UPDATE(Update)
                         {
                             Center = GameState->Entities[0].Position;
                         }
-                        // v2(Center.x + Direction.x * GameState->GameCamera.FollowSpeed * DeltaTime, Center.y + Direction.y  * GameState->GameCamera.FollowSpeed * DeltaTime);
+                        // math::v2(Center.x + Direction.x * GameState->GameCamera.FollowSpeed * DeltaTime, Center.y + Direction.y  * GameState->GameCamera.FollowSpeed * DeltaTime);
                         
                         GameState->GameCamera.Center = Center;
                     }
@@ -1328,17 +1328,17 @@ extern "C" UPDATE(Update)
         break;
     }
     
-    GameState->Camera.ProjectionMatrix = Ortho(0.0f,
-                                               (GameState->Camera.ViewportWidth / GameState->Camera.Zoom),
-                                               0.0f,
-                                               (GameState->Camera.ViewportHeight / GameState->Camera.Zoom),
-                                               -1.0f,
-                                               1.0f);
+    GameState->Camera.ProjectionMatrix = math::Ortho(0.0f,
+                                                     (GameState->Camera.ViewportWidth / GameState->Camera.Zoom),
+                                                     0.0f,
+                                                     (GameState->Camera.ViewportHeight / GameState->Camera.Zoom),
+                                                     -1.0f,
+                                                     1.0f);
     
-    GameState->Camera.ViewMatrix = Translate(m4(1.0f),
-                                             v3(-Center.x + GameState->Camera.ViewportWidth / GameState->Camera.Zoom / 2,
-                                                -Center.y + GameState->Camera.ViewportHeight / GameState->Camera.Zoom / 2,
-                                                0));
+    GameState->Camera.ViewMatrix = math::Translate(math::m4(1.0f),
+                                                   math::v3(-Center.x + GameState->Camera.ViewportWidth / GameState->Camera.Zoom / 2,
+                                                            -Center.y + GameState->Camera.ViewportHeight / GameState->Camera.Zoom / 2,
+                                                            0));
     
     InputController->CurrentCharacter = 0;
     GameState->RenderState.DeltaTime = DeltaTime;
@@ -1346,7 +1346,7 @@ extern "C" UPDATE(Update)
     GetActionButtonsForQueue(InputController);
     
     GameUpdateStruct->EntityCount = GameState->EntityCount;
-    memcpy(&GameUpdateStruct->EntityPositions,&GameState->EntityPositions,sizeof(v2) * NUM_ENTITIES);
+    memcpy(&GameUpdateStruct->EntityPositions,&GameState->EntityPositions,sizeof(math::v2) * NUM_ENTITIES);
 }
 
  
