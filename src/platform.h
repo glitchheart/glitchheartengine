@@ -887,16 +887,16 @@ namespace math
             {O.V[1][0],O.V[1][1],O.V[1][2],O.V[1][3]}, 
             {O.V[2][0],O.V[2][1],O.V[2][2],O.V[2][3]}, 
             {O.V[3][0],O.V[3][1],O.V[3][2],O.V[3][3]}} {}
-        /*
+        
         m4 operator*(m4 Other)
         {
             m4 Res(*this);
-            for(i32 Outer = 0; Outer < 4; I++)
+            for(i32 Outer = 0; Outer < 4; Outer++)
             {
-                for(i32 Inner = 0; Inner < 4; J++)
+                for(i32 Inner = 0; Inner < 4; Inner++)
                 {
                     r32 Sum = 0;
-                    for(i32 Shared = 0; Shared < 4; K++)
+                    for(i32 Shared = 0; Shared < 4; Shared++)
                     {
                         Sum += this->V[Inner][Shared] * Other.V[Shared][Outer];
                     }
@@ -905,8 +905,8 @@ namespace math
             }
             
             return Res;
-        }*/
-        
+        }
+        /*
         m4 operator*(m4 Other)
         {
             m4 Res(*this);
@@ -928,7 +928,7 @@ namespace math
             Res.M43 = this->M41 * Other.M13 + this->M42 * Other.M23 + this->M43 * Other.M33 + this->M44 * Other.M43;
             Res.M44 = this->M41 * Other.M14 + this->M42 * Other.M24 + this->M43 * Other.M34 + this->M44 * Other.M44;
             return Res;
-        }
+        }*/
         
         v3 operator*(v3& Vec)
         {
