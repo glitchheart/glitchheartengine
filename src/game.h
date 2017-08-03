@@ -34,8 +34,8 @@ enum Fading_Mode
 
 struct camera
 {
-    u32 ViewportWidth;
-    u32 ViewportHeight;
+    i32 ViewportWidth;
+    i32 ViewportHeight;
     r32 Zoom; //NOTE(Daniel) The higher the number the closer you are zoomed in. 1.0f is NORMAL
     math::v2 Center;
     math::v2 CenterTarget;
@@ -249,7 +249,7 @@ void SaveGame(game_state* GameState)
     
     if(File)
     {
-        auto Entity = GameState->Entities[0];
+        auto& Entity = GameState->Entities[0];
         
         fwrite(&GameState->CharacterData,sizeof(character_data), 1, File);
         fwrite(&GameState->LastCharacterData,sizeof(character_data), 1, File);

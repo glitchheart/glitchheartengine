@@ -400,8 +400,8 @@ static void EditorUpdateEntities(game_state* GameState, input_controller* InputC
                                 
                                 math::v2 ExactPos = NewPos;
                                 
-                                NewPos.x = math::Floor(NewPos.x);
-                                NewPos.y = math::Floor(NewPos.y);
+                                NewPos.x = (r32)math::Floor(NewPos.x);
+                                NewPos.y = (r32)math::Floor(NewPos.y);
                                 
                                 if(MOUSE_DOWN(Mouse_Left))
                                 {
@@ -1213,7 +1213,7 @@ extern "C" UPDATE(Update)
                 
                 if(ACTION_DOWN(Action_Interact) || KEY_DOWN(Key_Enter))
                 {
-                    auto& Player = GameState->Entities[0];
+                    auto Player = GameState->Entities[0];
                     
                     GameState->LastCharacterData = GameState->CharacterData;
                     
@@ -1335,10 +1335,57 @@ extern "C" UPDATE(Update)
                                                      -1.0f,
                                                      1.0f);
     
+    auto orth = glm::ortho(0.0f,
+                           static_cast<GLfloat>
+                           (GameState->Camera.ViewportWidth / GameState->Camera.Zoom),
+                           0.0f,
+                           
+                           static_cast<GLfloat>
+                           (GameState->Camera.ViewportHeight / GameState->Camera.Zoom),
+                           -1.0f,
+                           1.0f);
+    
     GameState->Camera.ViewMatrix = math::Translate(math::m4(1.0f),
                                                    math::v3(-Center.x + GameState->Camera.ViewportWidth / GameState->Camera.Zoom / 2,
                                                             -Center.y + GameState->Camera.ViewportHeight / GameState->Camera.Zoom / 2,
                                                             0));
+    
+    auto T = glm::translate(glm::mat4(1.0f),
+                            glm::vec3(-Center.x + GameState->Camera.ViewportWidth / GameState->Camera.Zoom / 2,
+                                      -Center.y + GameState->Camera.ViewportHeight / GameState->Camera.Zoom / 2,
+                                      0));
+    
+    math::m4 Ma(1.0f,1.0f,0.0f,1.0f,
+                2.0f,3.0f,2.0f,2.0f,
+                3.0f,6.0f,3.0f,3.0f,
+                4.0f,4.0f,7.0f,4.0f);
+    auto Mat = Transpose(Ma);
+    
+    glm::mat4 GMat(1.0f, 2.0f, 3.0f, 4.0f,
+                   1.0f, 3.0f, 6.0f, 4.0f,
+                   0.0f, 2.0f, 3.0f, 7.0f,
+                   1.0f, 2.0f, 3.0f, 4.0f);
+    
+    auto G = GMat[0][1];
+    auto M = Mat.V[0][1];
+    
+    auto G2 = GMat[0][2];
+    auto M2 = Mat.V[0][2];
+    
+    auto G3 = GMat[0][3];
+    auto M3 = Mat.V[0][3];
+    
+    auto G4 = GMat[1][1];
+    auto M4 = Mat.V[1][1];
+    
+    auto G5 = GMat[1][2];
+    auto M5 = Mat.V[1][2];
+    
+    auto G6 = GMat[1][3];
+    auto M6 = Mat.V[1][3];
+    
+    auto G7 = GMat[2][2];
+    auto M7 = Mat.V[2][2];
     
     InputController->CurrentCharacter = 0;
     GameState->RenderState.DeltaTime = DeltaTime;

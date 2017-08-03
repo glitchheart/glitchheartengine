@@ -359,7 +359,7 @@ static void SaveLevelToFile(const char* FilePath, level* Level, game_state* Game
         
         if(Level->AmbientLightHandle != -1)
         {
-            auto Light = GameState->LightSources[Level->AmbientLightHandle];
+            auto& Light = GameState->LightSources[Level->AmbientLightHandle];
             fprintf(File, "ambient type %d active %d intensity %f color %f %f %f %f",Light.Type,Light.Active,Light.Ambient.Intensity,Light.Color.x,Light.Color.y,Light.Color.z,Light.Color.w);
         }
         else

@@ -48,7 +48,7 @@ typedef i32 b32;
 typedef float r32;
 typedef double r64;
 
-//#include "glm/gtc/matrix_transform.hpp"
+#include "glm/gtc/matrix_transform.hpp"
 #include <GLFW/glfw3.h>
 #include <cmath>
 
@@ -88,7 +88,15 @@ namespace math
         v2() : X(0.0f), Y(0.0f) {}
         v2(r32 I) : E{I,I} {}
         v2(r32 E[2]) : E{E[0],E[1]} {}
-        v2(const v2& O) : E{O.X,O.Y} {}
+        v2(const v2& O) = default;
+        v2(i32 X, i32 Y) : X((r32)X), Y((r32)Y) {}
+        v2(r64 X, r64 Y) : X((r32)X), Y((r32)Y) {}
+        v2(r32 X, r64 Y) : X(X), Y((r32)Y) {}
+        v2(r32 X, i32 Y) : X(X), Y((r32)Y) {}
+        v2(i32 X, r32 Y) : X((r32)X), Y(Y) {}
+        v2(i32 X, r64 Y) : X((r32)X), Y((r32)Y) {}
+        v2(r64 X, i32 Y) : X((r32)X), Y((r32)Y) {}
+        v2(r64 X, r32 Y) : X((r32)X), Y(Y) {}
         
         v2 operator* (v2 O)
         {
@@ -223,6 +231,15 @@ namespace math
         v3(r32 I) : E{I,I,I} {}
         v3(r32 E[3]) : E{E[0],E[1], E[2]} {}
         v3(const v3& O) : E{O.X, O.Y, O.Z} {}
+        v3(r64 X, r64 Y, r64 Z) : X((r32)X), Y((r32)Y), Z((r32)Z) {}
+        v3(r64 X, i32 Y, r64 Z) : X((r32)X), Y((r32)Y), Z((r32)Z) {}
+        v3(i32 X, i32 Y, i32 Z) : X((r32)X), Y((r32)Y), Z((r32)Z) {}
+        v3(i32 X, r32 Y, i32 Z) : X((r32)X), Y(Y), Z((r32)Z) {}
+        v3(r64 X, r64 Y, i32 Z) : X((r32)X), Y((r32)Y), Z((r32)Z) {}
+        v3(r32 X, r32 Y, i32 Z) : X(X), Y(Y), Z((r32)Z) {}
+        v3(r32 X, i32 Y, i32 Z) : X(X), Y((r32)Y), Z((r32)Z) {}
+        v3(i32 X, i32 Y, r32 Z) : X((r32)X), Y((r32)Y), Z(Z) {}
+        v3(r32 X, r32 Y, r64 Z) : X(X), Y(Y), Z((r32)Z) {}
         
         v3 operator* (v3 O)
         {
@@ -374,6 +391,37 @@ namespace math
         v4(r32 I) : E{I,I,I,I} {}
         v4(r32 E[4]) : E{E[0],E[1], E[2], E[3]} {}
         v4(const v4& O) : X(O.X), Y(O.Y), Z(O.Z), W(O.W) {}
+        
+        v4(i32 X, i32 Y, i32 Z, i32 W) : 
+        X((r32)X), Y((r32)Y), Z((r32)Z), W((r32)W) {}
+        
+        v4(r32 X, r32 Y, r32 Z, i32 W) : 
+        X(X), Y(Y), Z(Z), W((r32)W) {}
+        
+        v4(r64 X, r64 Y, r64 Z, r64 W) : 
+        X((r32)X), Y((r32)Y), Z((r32)Z), W((r32)W) {}
+        
+        v4(r64 X, r64 Y, r64 Z, i32 W) : 
+        X((r32)X), Y((r32)Y), Z((r32)Z), W((r32)W) {}
+        
+        v4(r32 X, i32 Y, r32 Z, i32 W) : 
+        X(X), Y((r32)Y), Z(Z), W((r32)W) {}
+        
+        v4(i32 X, r64 Y, i32 Z, i32 W) : 
+        X((r32)X), Y((r32)Y), Z((r32)Z), W((r32)W) {}
+        
+        v4(r64 X, i32 Y, i32 Z, i32 W) : 
+        X((r32)X), Y((r32)Y), Z((r32)Z), W((r32)W) {}
+        
+        v4(i32 X, i32 Y, i32 Z, r64 W) : 
+        X((r32)X), Y((r32)Y), Z((r32)Z), W((r32)W) {}
+        
+        v4(r32 X, i32 Y, i32 Z, i32 W) : 
+        X(X), Y((r32)Y), Z((r32)Z), W((r32)W) {}
+        
+        v4(i32 X, i32 Y, i32 Z, r32 W) : 
+        X((r32)X), Y((r32)Y), Z((r32)Z), W(W) {}
+        
         
         v4 operator* (v4 O)
         {
@@ -789,13 +837,6 @@ namespace math
     {
         struct
         {
-            r32 M00,M01,M02,M03;
-            r32 M10,M11,M12,M13;
-            r32 M20,M21,M22,M23;
-            r32 M30,M31,M32,M33;
-        };
-        struct
-        {
             r32 M11,M12,M13,M14;
             r32 M21,M22,M23,M24;
             r32 M31,M32,M33,M34;
@@ -818,14 +859,14 @@ namespace math
         r32 V[4][4];
         
         m4() : V{{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0}} {}
-        m4(r32 M00, r32 M01, r32 M02, r32 M03, 
-           r32 M10, r32 M11, r32 M12, r32 M13,
-           r32 M20, r32 M21, r32 M22, r32 M23,
-           r32 M30, r32 M31, r32 M32, r32 M33) : 
-        M00(M00), M01(M01), M02(M02), M03(M03),
-        M10(M10), M11(M11), M12(M12), M13(M13),
-        M20(M20), M21(M21), M22(M22), M23(M23),
-        M30(M30), M31(M31), M32(M32), M33(M33) {}
+        m4(r32 M11, r32 M12, r32 M13, r32 M14, 
+           r32 M21, r32 M22, r32 M23, r32 M24,
+           r32 M31, r32 M32, r32 M33, r32 M34,
+           r32 M41, r32 M42, r32 M43, r32 M44) : 
+        M11(M11), M12(M12), M13(M13), M14(M14),
+        M21(M21), M22(M22), M23(M23), M24(M24),
+        M31(M31), M32(M32), M33(M33), M34(M34),
+        M41(M41), M42(M42), M43(M43), M44(M44) {}
         
         m4(r32 M0[4], r32 M1[4], r32 M2[4], r32 M3[4]) : 
         M0 {M0[0],M0[1],M0[2],M0[3]}, 
@@ -869,23 +910,23 @@ namespace math
         m4 operator*(m4 Other)
         {
             m4 Res(*this);
-            Res.M00 = 
-                this->M00 * Other.M00 + this->M01 * Other.M10 + this->M02 * Other.M20 + this->M03 * Other.M30;
-            Res.M01 = this->M00 * Other.M01 + this->M01 * Other.M11 + this->M02 * Other.M21 + this->M03 * Other.M31;
-            Res.M02 = this->M00 * Other.M02 + this->M01 * Other.M12+ this->M02 * Other.M22 + this->M03 * Other.M32;
-            Res.M03 = this->M00 * Other.M03 + this->M01 * Other.M13 + this->M02 * Other.M23 + this->M03 * Other.M33;
-            Res.M10 = this->M10 * Other.M00 + this->M11 * Other.M10 + this->M12 * Other.M20 + this->M13 * Other.M30;
-            Res.M11 = this->M10 * Other.M01 + this->M11 * Other.M11 + this->M12 * Other.M21 + this->M13 * Other.M31;
-            Res.M12 = this->M10 * Other.M02 + this->M11 * Other.M12 + this->M12 * Other.M22 + this->M13 * Other.M32;
-            Res.M13 = this->M10 * Other.M03 + this->M11 * Other.M13 + this->M12 * Other.M23 + this->M13 * Other.M33;
-            Res.M20 = this->M20 * Other.M00 + this->M21 * Other.M10 + this->M22 * Other.M20 + this->M23 * Other.M30;
-            Res.M21 = this->M20 * Other.M01 + this->M21 * Other.M11 + this->M22 * Other.M21 + this->M23 * Other.M31;
-            Res.M22 = this->M20 * Other.M02 + this->M21 * Other.M12 + this->M22 * Other.M22 + this->M23 * Other.M32;
-            Res.M23 = this->M20 * Other.M03 + this->M21 * Other.M13 + this->M22 * Other.M23 + this->M23 * Other.M33;
-            Res.M30 = this->M30 * Other.M00 + this->M31 * Other.M10 + this->M32 * Other.M20 + this->M33 * Other.M30;
-            Res.M31 = this->M30 * Other.M01 + this->M31 * Other.M11 + this->M32 * Other.M21 + this->M33 * Other.M31;
-            Res.M32 = this->M30 * Other.M02 + this->M31 * Other.M12 + this->M32 * Other.M22 + this->M33 * Other.M32;
-            Res.M33 = this->M30 * Other.M03 + this->M31 * Other.M13 + this->M32 * Other.M23 + this->M33 * Other.M33;
+            Res.M11 = 
+                this->M11 * Other.M11 + this->M12 * Other.M21 + this->M13 * Other.M31 + this->M14 * Other.M41;
+            Res.M12 = this->M11 * Other.M12 + this->M12 * Other.M22 + this->M13 * Other.M32 + this->M14 * Other.M42;
+            Res.M13 = this->M11 * Other.M13 + this->M12 * Other.M23+ this->M13 * Other.M33 + this->M14 * Other.M43;
+            Res.M14 = this->M11 * Other.M14 + this->M12 * Other.M24 + this->M13 * Other.M34 + this->M14 * Other.M44;
+            Res.M21 = this->M21 * Other.M11 + this->M22 * Other.M21 + this->M23 * Other.M31 + this->M24 * Other.M41;
+            Res.M22 = this->M21 * Other.M12 + this->M22 * Other.M22 + this->M23 * Other.M32 + this->M24 * Other.M42;
+            Res.M23 = this->M21 * Other.M13 + this->M22 * Other.M23 + this->M23 * Other.M33 + this->M24 * Other.M43;
+            Res.M24 = this->M21 * Other.M14 + this->M22 * Other.M24 + this->M23 * Other.M34 + this->M24 * Other.M44;
+            Res.M31 = this->M31 * Other.M11 + this->M32 * Other.M21 + this->M33 * Other.M31 + this->M34 * Other.M41;
+            Res.M32 = this->M31 * Other.M12 + this->M32 * Other.M22 + this->M33 * Other.M32 + this->M34 * Other.M42;
+            Res.M33 = this->M31 * Other.M13 + this->M32 * Other.M23 + this->M33 * Other.M33 + this->M34 * Other.M43;
+            Res.M34 = this->M31 * Other.M14 + this->M32 * Other.M24 + this->M33 * Other.M34 + this->M34 * Other.M44;
+            Res.M41 = this->M41 * Other.M11 + this->M42 * Other.M21 + this->M43 * Other.M31 + this->M44 * Other.M41;
+            Res.M42 = this->M41 * Other.M12 + this->M42 * Other.M22 + this->M43 * Other.M32 + this->M44 * Other.M42;
+            Res.M43 = this->M41 * Other.M13 + this->M42 * Other.M23 + this->M43 * Other.M33 + this->M44 * Other.M43;
+            Res.M44 = this->M41 * Other.M14 + this->M42 * Other.M24 + this->M43 * Other.M34 + this->M44 * Other.M44;
             return Res;
         }
         
@@ -898,7 +939,7 @@ namespace math
             return Res;
         }
         
-        v4 operator*(v4& Vec)
+        v4 operator*(v4 Vec)
         {
             v4 Res(0.0f);
             Res.X = this->A * Vec.X + this->B * Vec.Y + this->C * Vec.Z + this->D * Vec.W;
@@ -975,6 +1016,27 @@ namespace math
         return Res;
     }
     
+    m4 Transpose(m4 In)
+    {
+        m4 Res(In);
+        Res.M11 = In.M11;
+        Res.M12 = In.M21;
+        Res.M13 = In.M31;
+        Res.M14 = In.M41;
+        Res.M21 = In.M12;
+        Res.M22 = In.M22;
+        Res.M23 = In.M32;
+        Res.M24 = In.M42;
+        Res.M31 = In.M13;
+        Res.M32 = In.M23;
+        Res.M33 = In.M33;
+        Res.M34 = In.M43;
+        Res.M41 = In.M14;
+        Res.M42 = In.M24;
+        Res.M43 = In.M34;
+        Res.M44 = In.M44;
+        return Res;
+    }
     
     r32 Dot(v2 V1, v2 V2)
     {
@@ -1004,17 +1066,17 @@ namespace math
     
     r32 Distance(v2 V1, v2 V2)
     {
-        return sqrt(pow(V1.X - V2.X, 2) + pow(V1.Y - V2.Y, 2));
+        return sqrt(pow(V1.X - V2.X, 2.0f) + pow(V1.Y - V2.Y, 2.0f));
     }
     
     r32 Distance(v3 V1, v3 V2)
     {
-        return sqrt(pow(V1.X - V2.X, 2) + pow(V1.Y - V2.Y, 2) + pow(V1.Z - V2.Z, 2));
+        return sqrt(pow(V1.X - V2.X, 2.0f) + pow(V1.Y - V2.Y, 2.0f) + pow(V1.Z - V2.Z, 2.0f));
     }
     
     r32 Distance(v4 V1, v4 V2)
     {
-        return sqrt(pow(V1.X - V2.X, 2) + pow(V1.Y - V2.Y, 2) + pow(V1.Z - V2.Z, 2) + pow(V1.W - V2.W,2));
+        return sqrt(pow(V1.X - V2.X, 2.0f) + pow(V1.Y - V2.Y, 2.0f) + pow(V1.Z - V2.Z, 2.0f) + pow(V1.W - V2.W,2.0f));
     }
     
     i32 Distance(v2i V1, v2i V2)
@@ -1029,27 +1091,27 @@ namespace math
     
     i32 Floor(r32 V)
     {
-        return floor(V);
+        return (i32)floor(V);
     }
     
     v2 Floor(v2 V)
     {
         v2 Res(V);
-        Res.X = Floor(V.X);
-        Res.Y = Floor(V.Y);
+        Res.X = (r32)Floor(V.X);
+        Res.Y = (r32)Floor(V.Y);
         return Res;
     }
     
     i32 Ceil(r32 V)
     {
-        return Ceil(V);
+        return (i32)ceil(V);
     }
     
     v2 Ceil(v2 V)
     {
         v2 Res(V);
-        Res.X = Ceil(V.X);
-        Res.Y = Ceil(V.Y);
+        Res.X = (r32)Ceil(V.X);
+        Res.Y = (r32)Ceil(V.Y);
         return Res;
     }
     
@@ -1108,10 +1170,10 @@ namespace math
     m4 Translate(m4 In, v3 Translate)
     {
         m4 Res(In);
-        m4 T(0,0,0,Translate.X,
-             0,0,0,Translate.Y,
-             0,0,0,Translate.Z,
-             0,0,0,1);
+        m4 T(1.0f);
+        T.M14 = Translate.X;
+        T.M24 = Translate.Y;
+        T.M34 = Translate.Z;
         
         Res = T * Res;
         
@@ -1124,18 +1186,22 @@ namespace math
         
         m4 V = Translate(m4(1.0f),v3(Viewport.X,Viewport.Y,Viewport.Z));
         auto Temp = P * V * M;
-        Res = v3(Temp.M03,Temp.M13,Temp.M23);
+        Res = v3(Temp.M14,Temp.M24,Temp.M34);
         
         return Res;
     }
     
     m4 Ortho(r32 Left, r32 Right, r32 Bottom, r32 Top, r32 Near, r32 Far)
     {
-        m4 Res(0.0f);
-        Res.M00 = 1 / Right;
-        Res.M11 = 1 / Top;
-        Res.M22 = 2 / (Far - Near);
-        Res.M33 = (-Far + Near)/(Far - Near);
+        m4 Res(1.0f);
+        Res.M11 = 2.0f/(Right - Left);
+        Res.M22 = 2.0f/(Top - Bottom);
+        Res.M33 = (-2.0f)/(Far - Near);
+        Res.M34 = -((Far + Near)/(Far - Near));
+        Res.M14 = -((Right + Left)/(Right - Left));
+        Res.M24 = -((Top + Bottom)/(Top - Bottom));
+        //Res.M44 = 1.0f;
+        
         return Res;
     }
     
