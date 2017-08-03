@@ -143,12 +143,6 @@ int main(void)
                                                MEM_RESERVE|MEM_COMMIT,
                                                PAGE_READWRITE);
     
-    auto V1 = v4(1.0f);
-    auto V2 = v4(4.0f);
-    
-    auto Dist = Distance(V1,V2);
-    DEBUG_PRINT("Distance: %f\n", Dist);
-    
     //@Incomplete: We really want to get ALL of game state out of main!!!
     game_state* GameState = (game_state*)GameMemory.PermanentStorage;
     GameMemory.ShouldReload = true;

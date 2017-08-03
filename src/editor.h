@@ -23,10 +23,10 @@ struct button
     b32 Active = false;
     b32 Clicked = false;
     char* Text;
-    glm::vec2 ScreenPosition;
-    glm::vec2 Size;
-    glm::vec4 Color;
-    glm::vec4 TextColor;
+    math::v2 ScreenPosition;
+    math::v2 Size;
+    math::v4 Color;
+    math::v4 TextColor;
     timer ClickAnimationTimer;
     
     union
@@ -73,8 +73,8 @@ struct checkbox
     b32 Active = false;
     b32 Checked = false;
     char* Label;
-    glm::vec2 ScreenPosition;
-    glm::vec4 Color;
+    math::v2 ScreenPosition;
+    math::v4 Color;
     b32 JustChecked = false;
 };
 
@@ -86,10 +86,10 @@ struct textfield
     char* Label;
     char Text[TEXTFIELD_LENGTH];
     u32 TextIndex;
-    glm::vec2 ScreenPosition;
-    glm::vec2 Size;
-    glm::vec4 Color;
-    glm::vec4 TextColor;
+    math::v2 ScreenPosition;
+    math::v2 Size;
+    math::v4 Color;
+    math::v4 TextColor;
 };
 
 #define MENU_OPTIONS_COUNT 2
@@ -125,9 +125,9 @@ struct editor_state
     Editor_Placement_Mode PlacementMode = Editor_Placement_Tile;
     
     entity* SelectedEntity;
-    glm::vec2 CurrentSelectedEntityOffset;
+    math::v2 CurrentSelectedEntityOffset;
     u32 SelectedTileType = 1;
-    glm::vec2 SelectedTilePosition;
+    math::v2 SelectedTilePosition;
     Entity_Placement_Type PlacementEntity;
     
     i32 CurrentTilemapLayer = 1;
@@ -143,10 +143,10 @@ struct editor_state
     r32 TileX;
     r32 TileY;
     
-    glm::vec2 TilemapOffset;
+    math::v2 TilemapOffset;
     r32 RenderedTileSize = 30.0f;
     
-    glm::vec2 TileBrushSize = glm::vec2(1, 1);
+    math::v2 TileBrushSize = math::v2(1, 1);
     
     r32 ToolbarScrollSpeed = 30000;
     r32 ToolbarScrollOffsetY = 0.0f;

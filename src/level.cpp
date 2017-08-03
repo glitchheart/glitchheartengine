@@ -91,9 +91,9 @@ static void LoadTilesheetMetaFile(char* FilePath, level* Level, tilemap* Tilemap
             while(fgets(LineBuffer, 255, File))
             {
                 tile_data Data = {};
-                glm::vec2 TextureOffset;
-                glm::vec2 TextureSize;
-                glm::vec2 Center;
+                math::v2 TextureOffset;
+                math::v2 TextureSize;
+                math::v2 Center;
                 
                 sscanf(LineBuffer,"%d %f %f %f %f %d %f %f", &Data.TypeIndex, &TextureOffset.x, &TextureOffset.y, &TextureSize.x, &TextureSize.y, &Data.IsSolid, &Center.x, &Center.y);
                 Data.TextureOffset = TextureOffset;
@@ -223,8 +223,8 @@ static b32 LoadLevelFromFile(char* FilePath, level* Level, game_state* GameState
                     {
                         Data = Level->Tilemap.Tiles[TypeIndex - 1];
                         collision_AABB CollisionAABB;
-                        CollisionAABB.Center = glm::vec2(IndexWidth + 0.5f, MapHeight - IndexHeight - 0.5f);
-                        CollisionAABB.Extents = glm::vec2(0.5, 0.5);
+                        CollisionAABB.Center = math::v2(IndexWidth + 0.5f, MapHeight - IndexHeight - 0.5f);
+                        CollisionAABB.Extents = math::v2(0.5, 0.5);
                         CollisionAABB.IsTrigger = false;
                         
                         Data.CollisionAABB = CollisionAABB;
@@ -249,42 +249,42 @@ static b32 LoadLevelFromFile(char* FilePath, level* Level, game_state* GameState
         {
             if(StartsWith(LineBuffer, "skeleton"))
             {
-                glm::vec2 Pos;
+                math::v2 Pos;
                 sscanf(LineBuffer, "skeleton %f %f%n", &Pos.x, &Pos.y, &PathIndex);
                 LoadSkeletonData(GameState, -1, Pos);
             }
             else if(StartsWith(LineBuffer, "minotaur"))
             {
-                glm::vec2 Pos;
+                math::v2 Pos;
                 sscanf(LineBuffer, "minotaur %f %f%n", &Pos.x, &Pos.y, &PathIndex);
                 LoadMinotaurData(GameState, -1, Pos);
             }
             else if(StartsWith(LineBuffer, "blob"))
             {
-                glm::vec2 Pos;
+                math::v2 Pos;
                 sscanf(LineBuffer, "blob %f %f%n", &Pos.x, &Pos.y, &PathIndex);
                 LoadBlobData(GameState, -1, Pos);
             }
             else if(StartsWith(LineBuffer, "wraith"))
             {
-                glm::vec2 Pos;
+                math::v2 Pos;
                 sscanf(LineBuffer, "wraith %f %f%n", &Pos.x, &Pos.y, &PathIndex);
                 LoadWraithData(GameState, -1, Pos);
             }
             else if(StartsWith(LineBuffer, "barrel"))
             {
-                glm::vec2 Pos;
+                math::v2 Pos;
                 sscanf(LineBuffer, "barrel %f %f", &Pos.x, &Pos.y);
             }
             else if(StartsWith(LineBuffer, "bonfire"))
             {
-                glm::vec2 Pos;
+                math::v2 Pos;
                 sscanf(LineBuffer, "bonfire %f %f", &Pos.x, &Pos.y);
                 LoadBonfireData(GameState, SoundQueue, -1, Pos);
             }
             else if(StartsWith(LineBuffer, "tree"))
             {
-                glm::vec2 Pos;
+                math::v2 Pos;
                 sscanf(LineBuffer, "tree %f %f", &Pos.x, &Pos.y);
                 SpawnTree(GameState, Pos);
             }

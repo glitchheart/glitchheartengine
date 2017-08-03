@@ -10,7 +10,7 @@ static inline void PrintEntityInfo(const entity& Entity)
     DEBUG_PRINT("Entity: Name %s, position x %f y %f, rotation x %f y %f z %f\n", Entity.Name, Entity.Position.x, Entity.Position.y, Entity.Rotation.x, Entity.Rotation.y, Entity.Rotation.z);
 }
 
-static i32 LoadPointlight(game_state* GameState, glm::vec4 Color = glm::vec4(), r32 Intensity = 0.0f, r32 ConstantAtten = 0.0f, r32 LinearAtten = 0.0f, r32 ExponentialAtten = 0.0f,glm::vec2 InitPosition = glm::vec2(), b32 ShouldGlow = false, r64 GlowTimerMax = 0.0f, r32 GlowIncrease = 0.0f)
+static i32 LoadPointlight(game_state* GameState, math::v4 Color = math::v4(), r32 Intensity = 0.0f, r32 ConstantAtten = 0.0f, r32 LinearAtten = 0.0f, r32 ExponentialAtten = 0.0f,math::v2 InitPosition = math::v2(), b32 ShouldGlow = false, r64 GlowTimerMax = 0.0f, r32 GlowIncrease = 0.0f)
 {
     light_source LightSource;
     
@@ -34,7 +34,7 @@ static i32 LoadPointlight(game_state* GameState, glm::vec4 Color = glm::vec4(), 
     return GameState->LightSourceCount - 1;
 }
 
-static i32 LoadLight(game_state* GameState, char* LineBuffer, glm::vec2 InitPosition = glm::vec2(), i32 Handle = -1)
+static i32 LoadLight(game_state* GameState, char* LineBuffer, math::v2 InitPosition = math::v2(), i32 Handle = -1)
 {
     b32 ShouldGlow = false;
     light_source LightSource;
@@ -154,7 +154,7 @@ static void Hit(game_state* GameState, sound_queue* SoundQueue, entity* ByEntity
                 PLAY_SOUND(Splash01, 0.85f);
             }
             
-            HitEntity->HitRecoilDirection = glm::normalize(HitEntity->Position - ByEntity->Position);
+            HitEntity->HitRecoilDirection = Normalize(HitEntity->Position - ByEntity->Position);
             
             i16 Damage = ByEntity->Weapon.Damage > HitEntity->Health ? (i16)HitEntity->Health : (i16)ByEntity->Weapon.Damage;
             HitEntity->Health -= Damage;
@@ -190,13 +190,13 @@ static void Hit(game_state* GameState, sound_queue* SoundQueue, entity* ByEntity
             {
                 PlayAnimation(HitEntity, "swordsman_hit", GameState);
                 DecreaseStamina(HitEntity,GameState,HitEntity->Player.HitStaminaCost);
-                StartFade(GameState->GameCamera, Fading_OutIn, 4.0f, glm::vec3(1, 0, 0), 0.0f, 0.4f);
+                StartFade(GameState->GameCamera, Fading_OutIn, 4.0f, math::v3(1, 0, 0), 0.0f, 0.4f);
             }
         }
     }
 }
 
-static void SpawnShadow(game_state* GameState, glm::vec2 Position, i32* Handle)
+static void SpawnShadow(game_state* GameState, math::v2 Position, i32* Handle)
 {
     *Handle = GameState->ObjectCount;
     
@@ -204,7 +204,7 @@ static void SpawnShadow(game_state* GameState, glm::vec2 Position, i32* Handle)
     Shadow->Active = true;
     Shadow->Scale = 1;
     Shadow->Type = Object_Shadow;
-    Shadow->Position = glm::vec2(Position.x - 1.4f, Position.y - 1.5f);
+    Shadow->Position = math::v2(Position.x - 1.4f, Position.y - 1.5f);
     Shadow->UsesTransparency = true;
     
     PlayAnimation(Shadow, "big_shadow", GameState);
@@ -220,12 +220,12 @@ static void SpawnShadow(game_state* GameState, glm::vec2 Position, i32* Handle)
     RenderEntity->Object = &*Shadow;
     
     Shadow->RenderEntityHandle = GameState->RenderState.RenderEntityCount++;
-    RenderEntity->Color = glm::vec4(1, 1, 1, 1);
+    RenderEntity->Color = math::v4(1, 1, 1, 1);
     DEBUG_PRINT("Shadow\n");
     GameState->Objects[GameState->ObjectCount++];
 }
 
-static void SpawnLoot(game_state* GameState, glm::vec2 Position, i32* Handle)
+static void SpawnLoot(game_state* GameState, math::v2 Position, i32* Handle)
 {
     *Handle = GameState->ObjectCount;
     
@@ -233,7 +233,7 @@ static void SpawnLoot(game_state* GameState, glm::vec2 Position, i32* Handle)
     Loot->Active = true;
     Loot->Scale = 1;
     Loot->Type = Object_Loot;
-    Loot->Position = glm::vec2(Position.x, Position.y - 0.5f);
+    Loot->Position = math::v2(Position.x, Position.y - 0.5f);
     Loot->UsesTransparency = true;
     
     render_entity* RenderEntity = &GameState->RenderState.RenderEntities[GameState->RenderState.RenderEntityCount];
@@ -249,12 +249,12 @@ static void SpawnLoot(game_state* GameState, glm::vec2 Position, i32* Handle)
     
     Loot->RenderEntityHandle = GameState->RenderState.RenderEntityCount++;
     DEBUG_PRINT("Loot\n");
-    RenderEntity->Color = glm::vec4(1, 1, 1, 1);
+    RenderEntity->Color = math::v4(1, 1, 1, 1);
     
     GameState->Objects[GameState->ObjectCount++];
 }
 
-static void SpawnWillDrop(game_state* GameState, glm::vec2 Position, i32* Handle)
+static void SpawnWillDrop(game_state* GameState, math::v2 Position, i32* Handle)
 {
     *Handle = GameState->ObjectCount;
     
@@ -262,7 +262,7 @@ static void SpawnWillDrop(game_state* GameState, glm::vec2 Position, i32* Handle
     Will->Active = true;
     Will->Scale = 0.5f;
     Will->Type = Object_Will;
-    Will->Position = glm::vec2(Position.x, Position.y - 0.5f);
+    Will->Position = math::v2(Position.x, Position.y - 0.5f);
     Will->UsesTransparency = true;
     
     PlayAnimation(Will, "will_glow", GameState);
@@ -278,14 +278,14 @@ static void SpawnWillDrop(game_state* GameState, glm::vec2 Position, i32* Handle
     
     Will->RenderEntityHandle = GameState->RenderState.RenderEntityCount++;
     
-    RenderEntity->Color = glm::vec4(1, 1, 1, 1);
+    RenderEntity->Color = math::v4(1, 1, 1, 1);
     
-    Will->LightSourceHandle = LoadPointlight(GameState, glm::vec4(0.2f, 0.15f, 0.65f, 0.3f), 0.45f, 0.2f, 1.0f,0.2f, GameState->CharacterData.LostWillPosition, true, 0.9, 0.0007f);
+    Will->LightSourceHandle = LoadPointlight(GameState, math::v4(0.2f, 0.15f, 0.65f, 0.3f), 0.45f, 0.2f, 1.0f,0.2f, GameState->CharacterData.LostWillPosition, true, 0.9, 0.0007f);
     
     GameState->Objects[GameState->ObjectCount++];
 }
 
-static void SpawnTree(game_state* GameState, glm::vec2 Position, i32* Handle = 0)
+static void SpawnTree(game_state* GameState, math::v2 Position, i32* Handle = 0)
 {
     if(Handle)
         *Handle = GameState->ObjectCount;
@@ -294,7 +294,7 @@ static void SpawnTree(game_state* GameState, glm::vec2 Position, i32* Handle = 0
     Tree->Active = true;
     Tree->Scale = 1.0f;
     Tree->Type = Object_Tree,
-    Tree->Position = glm::vec2(Position.x - 1.4f, Position.y - 1.5f);
+    Tree->Position = math::v2(Position.x - 1.4f, Position.y - 1.5f);
     Tree->UsesTransparency = true;
     
     render_entity* RenderEntity = &GameState->RenderState.RenderEntities[GameState->RenderState.RenderEntityCount];
@@ -309,7 +309,7 @@ static void SpawnTree(game_state* GameState, glm::vec2 Position, i32* Handle = 0
     RenderEntity->Texture = GameState->RenderState.Textures["big_tree"];
     
     Tree->RenderEntityHandle = GameState->RenderState.RenderEntityCount++;
-    RenderEntity->Color = glm::vec4(1, 1, 1, 1);
+    RenderEntity->Color = math::v4(1, 1, 1, 1);
     
     GameState->Objects[GameState->ObjectCount++];
 }
@@ -327,7 +327,7 @@ static void LoadEntityData(FILE* File, entity* Entity, game_state* GameState, b3
         RenderEntity->RenderType = Render_Type_Entity;
         RenderEntity->Entity = &*Entity;
         Entity->RenderEntityHandle = GameState->RenderState.RenderEntityCount++;
-        RenderEntity->Color = glm::vec4(1, 1, 1, 1);
+        RenderEntity->Color = math::v4(1, 1, 1, 1);
         
         Entity->LookDirection = South;
         Entity->HitFlickerTimer.TimerHandle = -1;
@@ -336,7 +336,7 @@ static void LoadEntityData(FILE* File, entity* Entity, game_state* GameState, b3
         Entity->HitFlickerFramesLeft = 0;
         Entity->HitFlickerFrameMax = 6;
         
-        Entity->RenderButtonOffset = glm::vec2(0.5f,1.5f);
+        Entity->RenderButtonOffset = math::v2(0.5f,1.5f);
         Entity->RenderButtonHint = false;
         
         Entity->HitAttackCountIdResetTimer.TimerHandle = -1;
@@ -347,7 +347,7 @@ static void LoadEntityData(FILE* File, entity* Entity, game_state* GameState, b3
         Entity->HealthDecreaseTimer.TimerHandle = -1;
         Entity->HealthDecreaseTimer.Name = "Health Decrease";
         Entity->Dead = false;
-        Entity->Center = glm::vec2(0.5, 0.5);
+        Entity->Center = math::v2(0.5, 0.5);
         Entity->CurrentAnimation = 0;
         Entity->Active = true;
         Entity->IsKinematic = false;
@@ -579,7 +579,7 @@ static void LoadEnemyData(FILE* File, entity* Entity, game_state* GameState)
     Entity->Enemy.AIState = AI_Idle;
     Entity->Type = Entity_Enemy;
     Entity->Enemy.AStarPath = {};
-    Entity->Enemy.HealthCountStart = glm::vec2(-10, 50);
+    Entity->Enemy.HealthCountStart = math::v2(-10, 50);
     Entity->Enemy.HasLoot = false;
     Entity->Enemy.Healthbar = 0;
     Entity->Enemy.HealthCountIndex = 0;
@@ -678,8 +678,8 @@ static void LoadEnemyData(FILE* File, entity* Entity, game_state* GameState)
                        &Entity->Enemy.Healthbar->Offset.y,&Entity->Enemy.Healthbar->Scale.x,
                        &Entity->Enemy.Healthbar->Scale.y);
                 ui_render_info RenderInfo = {};
-                RenderInfo.TextureOffset = glm::vec2(256, 0);
-                RenderInfo.FrameSize = glm::vec2(64, 16);
+                RenderInfo.TextureOffset = math::v2(256, 0);
+                RenderInfo.FrameSize = math::v2(64, 16);
                 RenderInfo.ShaderIndex = Shader_Spritesheet;
                 Entity->Enemy.Healthbar->RenderInfo = RenderInfo;
             }
@@ -695,11 +695,11 @@ static void EnemyWander(game_state* GameState, entity* Entity)
         PlayAnimation(Entity, WalkString, GameState);
         free(WalkString);
         
-        auto CurrentWaypoint = glm::vec2(Entity->Enemy.Waypoints[Entity->Enemy.WaypointIndex].X, Entity->Enemy.Waypoints[Entity->Enemy.WaypointIndex].Y);
+        auto CurrentWaypoint = math::v2(Entity->Enemy.Waypoints[Entity->Enemy.WaypointIndex].X, Entity->Enemy.Waypoints[Entity->Enemy.WaypointIndex].Y);
         
-        auto Distance = glm::distance(CurrentWaypoint, glm::vec2(Entity->Position.x, Entity->Position.y - 0.5f));
+        auto DistanceToWaypoint = Distance(CurrentWaypoint, math::v2(Entity->Position.x, Entity->Position.y - 0.5f));
         
-        if(Distance < 0.01f)
+        if(DistanceToWaypoint < 0.01f)
         {
             if(Entity->Enemy.WanderingForward)
             {
@@ -727,15 +727,15 @@ static void EnemyWander(game_state* GameState, entity* Entity)
             }
         }
         
-        CurrentWaypoint =  glm::vec2(Entity->Enemy.Waypoints[Entity->Enemy.WaypointIndex].X, Entity->Enemy.Waypoints[Entity->Enemy.WaypointIndex].Y);
-        auto Direction = glm::normalize(CurrentWaypoint - glm::vec2(Entity->Position.x, Entity->Position.y - 0.5f));
+        CurrentWaypoint =  math::v2(Entity->Enemy.Waypoints[Entity->Enemy.WaypointIndex].X, Entity->Enemy.Waypoints[Entity->Enemy.WaypointIndex].Y);
+        auto Direction = Normalize(CurrentWaypoint - math::v2(Entity->Position.x, Entity->Position.y - 0.5f));
         
-        Entity->Velocity = glm::vec2(Direction.x * Entity->Enemy.WanderingSpeed, Direction.y * Entity->Enemy.WanderingSpeed);
+        Entity->Velocity = math::v2(Direction.x * Entity->Enemy.WanderingSpeed, Direction.y * Entity->Enemy.WanderingSpeed);
     }
     
     entity& Player = GameState->Entities[GameState->PlayerIndex];
     auto& Enemy = Entity->Enemy;
-    r64 DistanceToPlayer = glm::distance(Entity->Position, Player.Position);
+    r64 DistanceToPlayer = Distance(Entity->Position, Player.Position);
     
     if(DistanceToPlayer <= Entity->Enemy.MaxAlertDistance)
     {
@@ -749,7 +749,7 @@ AI_FUNC(SkeletonIdle)
     PlayAnimation(Entity, "skeleton_idle", GameState);
     entity& Player = GameState->Entities[GameState->PlayerIndex];
     auto& Enemy = Entity->Enemy;
-    r64 DistanceToPlayer = glm::distance(Entity->Position, Player.Position);
+    r64 DistanceToPlayer = Distance(Entity->Position, Player.Position);
     
     if(DistanceToPlayer <= Entity->Enemy.MaxAlertDistance)
     {
@@ -767,7 +767,7 @@ AI_FUNC(SkeletonAlerted)
 {
     entity& Player = GameState->Entities[GameState->PlayerIndex];
     auto& Enemy = Entity->Enemy;
-    r64 DistanceToPlayer = glm::distance(Entity->Position, Player.Position);
+    r64 DistanceToPlayer = Distance(Entity->Position, Player.Position);
     
     if(TimerDone(GameState,Entity->Enemy.Skeleton.AlertedTimer) && DistanceToPlayer <= Entity->Enemy.MaxAlertDistance)
     {
@@ -782,7 +782,7 @@ AI_FUNC(SkeletonFollowing)
     auto& Enemy = Entity->Enemy;
     auto& Skeleton = Entity->Enemy.Skeleton;
     
-    r64 DistanceToPlayer = glm::distance(Entity->Position, Player.Position);
+    r64 DistanceToPlayer = Distance(Entity->Position, Player.Position);
     
     if(!Player.Dead && Player.Active)
     {
@@ -801,8 +801,8 @@ AI_FUNC(SkeletonFollowing)
         /*else if(DistanceToPlayer <= Entity->Enemy.SlowdownDistance)
         {
             PlayAnimation(Entity, "skeleton_walk", GameState);
-            glm::vec2 Direction = glm::normalize(Player.Position - Entity->Position);
-            Entity->Velocity = glm::vec2(Direction.x * Entity->Enemy.CloseToPlayerSpeed, Direction.y * Entity->Enemy.CloseToPlayerSpeed);
+            math::v2 Direction = Normalize(Player.Position - Entity->Position);
+            Entity->Velocity = math::v2(Direction.x * Entity->Enemy.CloseToPlayerSpeed, Direction.y * Entity->Enemy.CloseToPlayerSpeed);
         }*/
         else
         {
@@ -823,7 +823,7 @@ AI_FUNC(SkeletonCharging)
     auto& Enemy = Entity->Enemy;
     auto& Skeleton = Entity->Enemy.Skeleton;
     
-    r64 DistanceToPlayer = glm::distance(Entity->Position, Player.Position);
+    r64 DistanceToPlayer = Distance(Entity->Position, Player.Position);
     
     if(DistanceToPlayer >= Enemy.MaxAlertDistance)
     {
@@ -832,14 +832,14 @@ AI_FUNC(SkeletonCharging)
     else if(TimerDone(GameState, Skeleton.ChargingTimer) && DistanceToPlayer <= Enemy.AttackDistance)
     {
         Enemy.AIState = AI_Attacking;
-        Enemy.LastAttackMoveDirection = glm::normalize(Player.Position - Entity->Position);
+        Enemy.LastAttackMoveDirection = Normalize(Player.Position - Entity->Position);
         PlayAnimation(Entity, "skeleton_attack", GameState);
     }
     else
     {
         PlayAnimation(Entity, "skeleton_walk", GameState);
-        glm::vec2 Direction = glm::normalize(Player.Position - Entity->Position);
-        Entity->Velocity = glm::vec2((Direction.x + 0.1f) * Entity->Enemy.CloseToPlayerSpeed, (Direction.y + 0.1f) * Entity->Enemy.CloseToPlayerSpeed);
+        math::v2 Direction = Normalize(Player.Position - Entity->Position);
+        Entity->Velocity = math::v2((Direction.x + 0.1f) * Entity->Enemy.CloseToPlayerSpeed, (Direction.y + 0.1f) * Entity->Enemy.CloseToPlayerSpeed);
     }
 }
 
@@ -852,7 +852,7 @@ AI_FUNC(SkeletonAttacking)
     entity& Player = GameState->Entities[GameState->PlayerIndex];
     auto& Enemy = Entity->Enemy;
     auto& Skeleton = Entity->Enemy.Skeleton;
-    r64 DistanceToPlayer = glm::distance(Entity->Position, Player.Position);
+    r64 DistanceToPlayer = Distance(Entity->Position, Player.Position);
     
     if(Player.Dead)
     {
@@ -864,7 +864,7 @@ AI_FUNC(SkeletonAttacking)
     {
         if(!TimerDone(GameState, Entity->AttackMoveTimer))
         {
-            Entity->Velocity = glm::vec2(Enemy.LastAttackMoveDirection.x * Entity->AttackMoveSpeed, Enemy.LastAttackMoveDirection.y * Entity->AttackMoveSpeed);
+            Entity->Velocity = math::v2(Enemy.LastAttackMoveDirection.x * Entity->AttackMoveSpeed, Enemy.LastAttackMoveDirection.y * Entity->AttackMoveSpeed);
         }
         
         if(Entity->AnimationInfo.FrameIndex >= Entity->AttackLowFrameIndex - 2 &&Entity->AnimationInfo.FrameIndex < Entity->AttackHighFrameIndex && !Skeleton.IsAttacking && strcmp(Entity->CurrentAnimation->Name, "skeleton_idle") != 0)
@@ -913,7 +913,7 @@ AI_FUNC(SkeletonHit)
     auto& Enemy = Entity->Enemy;
     if(!TimerDone(GameState, Entity->RecoilTimer))
     {
-        Entity->Velocity = glm::vec2(Entity->HitRecoilDirection.x * Entity->HitRecoilSpeed, Entity->HitRecoilDirection.y * Entity->HitRecoilSpeed);
+        Entity->Velocity = math::v2(Entity->HitRecoilDirection.x * Entity->HitRecoilSpeed, Entity->HitRecoilDirection.y * Entity->HitRecoilSpeed);
     }
     
     if(!Entity->AnimationInfo.Playing)
@@ -957,7 +957,7 @@ AI_FUNC(MinotaurIdle)
     PlayAnimation(Entity, "minotaur_idle", GameState);
     entity& Player = GameState->Entities[GameState->PlayerIndex];
     auto& Enemy = Entity->Enemy;
-    r64 DistanceToPlayer = glm::distance(Entity->Position, Player.Position);
+    r64 DistanceToPlayer = Distance(Entity->Position, Player.Position);
     
     if(DistanceToPlayer <= Entity->Enemy.MaxAlertDistance)
     {
@@ -976,7 +976,7 @@ AI_FUNC(MinotaurAlerted)
 {
     entity& Player = GameState->Entities[GameState->PlayerIndex];
     auto& Enemy = Entity->Enemy;
-    r64 DistanceToPlayer = glm::distance(Entity->Position, Player.Position);
+    r64 DistanceToPlayer = Distance(Entity->Position, Player.Position);
     if(TimerDone(GameState,Entity->Enemy.Minotaur.AlertedTimer) && DistanceToPlayer <= Entity->Enemy.MaxAlertDistance)
     {
         Enemy.AIState = AI_Following;
@@ -990,7 +990,7 @@ AI_FUNC(MinotaurFollowing)
     auto& Enemy = Entity->Enemy;
     auto& Minotaur = Entity->Enemy.Minotaur;
     
-    r64 DistanceToPlayer = glm::distance(Entity->Position, Player.Position);
+    r64 DistanceToPlayer = Distance(Entity->Position, Player.Position);
     
     if(!Player.Dead && Player.Active)
     {
@@ -1009,8 +1009,8 @@ AI_FUNC(MinotaurFollowing)
         else if(DistanceToPlayer <= Entity->Enemy.SlowdownDistance)
         {
             PlayAnimation(Entity, "minotaur_walk", GameState);
-            glm::vec2 Direction = glm::normalize(Player.Position - Entity->Position);
-            Entity->Velocity = glm::vec2(Direction.x * Entity->Enemy.CloseToPlayerSpeed, Direction.y * Entity->Enemy.CloseToPlayerSpeed);
+            math::v2 Direction = Normalize(Player.Position - Entity->Position);
+            Entity->Velocity = math::v2(Direction.x * Entity->Enemy.CloseToPlayerSpeed, Direction.y * Entity->Enemy.CloseToPlayerSpeed);
         }
         else
         {
@@ -1031,7 +1031,7 @@ AI_FUNC(MinotaurCharging)
     auto& Enemy = Entity->Enemy;
     auto& Minotaur = Entity->Enemy.Minotaur;
     
-    r64 DistanceToPlayer = glm::distance(Entity->Position, Player.Position);
+    r64 DistanceToPlayer = Distance(Entity->Position, Player.Position);
     
     if(DistanceToPlayer >= Enemy.MaxAlertDistance)
     {
@@ -1042,15 +1042,15 @@ AI_FUNC(MinotaurCharging)
         Enemy.AIState = AI_Attacking;
         PLAY_SOUND(MinotaurGrunt01);
         
-        Enemy.LastAttackMoveDirection = glm::normalize(Player.Position - Entity->Position);
+        Enemy.LastAttackMoveDirection = Normalize(Player.Position - Entity->Position);
         
         MinotaurSetAttackMode(Entity, GameState);
     }
     else
     {
         PlayAnimation(Entity, "minotaur_walk", GameState);
-        glm::vec2 Direction = glm::normalize(Player.Position - Entity->Position);
-        Entity->Velocity = glm::vec2((Direction.x + 0.1f) * Entity->Enemy.CloseToPlayerSpeed, (Direction.y + 0.1f) * Entity->Enemy.CloseToPlayerSpeed);
+        math::v2 Direction = Normalize(Player.Position - Entity->Position);
+        Entity->Velocity = math::v2((Direction.x + 0.1f) * Entity->Enemy.CloseToPlayerSpeed, (Direction.y + 0.1f) * Entity->Enemy.CloseToPlayerSpeed);
     }
 }
 
@@ -1061,18 +1061,18 @@ AI_FUNC(MinotaurDefending)
     if(!TimerDone(GameState, Entity->Enemy.DefendingTimer))
     {
         Entity->Invincible = true;
-        RenderEntity.Color = glm::vec4(0.0f, 0.2f, 0.8f, 1.0f);
+        RenderEntity.Color = math::v4(0.0f, 0.2f, 0.8f, 1.0f);
     }
     else
     {
         Entity->Invincible = false;
-        RenderEntity.Color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
+        RenderEntity.Color = math::v4(1.0f, 1.0f, 1.0f, 1.0f);
         Entity->Enemy.AIState = AI_Attacking;
         
         PLAY_SOUND(MinotaurGrunt01);
         
         entity& Player = GameState->Entities[GameState->PlayerIndex];
-        Entity->Enemy.LastAttackMoveDirection = glm::normalize(Player.Position - Entity->Position);
+        Entity->Enemy.LastAttackMoveDirection = Normalize(Player.Position - Entity->Position);
         
         MinotaurSetAttackMode(Entity, GameState);
     }
@@ -1083,7 +1083,7 @@ AI_FUNC(MinotaurAttacking)
     entity& Player = GameState->Entities[GameState->PlayerIndex];
     auto& Enemy = Entity->Enemy;
     auto& Minotaur = Entity->Enemy.Minotaur;
-    r64 DistanceToPlayer = glm::distance(Entity->Position, Player.Position);
+    r64 DistanceToPlayer = Distance(Entity->Position, Player.Position);
     
     Enemy.TimesHit = 0;
     
@@ -1104,7 +1104,7 @@ AI_FUNC(MinotaurAttacking)
         {
             if(!TimerDone(GameState, Entity->AttackMoveTimer))
             {
-                Entity->Velocity = glm::vec2(Enemy.LastAttackMoveDirection.x * Entity->AttackMoveSpeed, Enemy.LastAttackMoveDirection.y * Entity->AttackMoveSpeed);
+                Entity->Velocity = math::v2(Enemy.LastAttackMoveDirection.x * Entity->AttackMoveSpeed, Enemy.LastAttackMoveDirection.y * Entity->AttackMoveSpeed);
             }
             
             if(Entity->AnimationInfo.FrameIndex >= Entity->AttackLowFrameIndex - 2 
@@ -1171,14 +1171,14 @@ AI_FUNC(MinotaurAttacking)
                 if(Elapsed < 0.5)
                     Elapsed = -0.8f;
                 
-                glm::vec2 JumpDirection = glm::vec2(0, Elapsed);
+                math::v2 JumpDirection = math::v2(0, Elapsed);
                 
                 auto PlayerPosition = GameState->Entities[0].Position;
                 
-                glm::vec2 Direction = glm::vec2(Enemy.LastAttackMoveDirection.x +  (PlayerPosition.x - Entity->Position.x) / 2, Enemy.LastAttackMoveDirection.y + Elapsed);
-                Entity->Velocity = glm::vec2(Direction.x * 7, Direction.y * 7);
+                math::v2 Direction = math::v2(Enemy.LastAttackMoveDirection.x +  (PlayerPosition.x - Entity->Position.x) / 2, Enemy.LastAttackMoveDirection.y + Elapsed);
+                Entity->Velocity = math::v2(Direction.x * 7, Direction.y * 7);
                 
-                GameState->Objects[Entity->Enemy.Minotaur.ShadowHandle].Position += glm::vec2(Direction.x * 7 * DeltaTime, Enemy.LastAttackMoveDirection.y * 7 * DeltaTime);
+                GameState->Objects[Entity->Enemy.Minotaur.ShadowHandle].Position += math::v2(Direction.x * 7 * DeltaTime, Enemy.LastAttackMoveDirection.y * 7 * DeltaTime);
             }
             else
             {
@@ -1215,7 +1215,7 @@ AI_FUNC(MinotaurAttacking)
                     {
                         Enemy.AIState = AI_Attacking;
                         PLAY_SOUND(MinotaurGrunt01);
-                        Enemy.LastAttackMoveDirection = glm::normalize(Player.Position - Entity->Position);
+                        Enemy.LastAttackMoveDirection = Normalize(Player.Position - Entity->Position);
                         MinotaurSetAttackMode(Entity, GameState);
                     }
                     else
@@ -1234,7 +1234,7 @@ AI_FUNC(MinotaurHit)
     auto& Enemy = Entity->Enemy;
     if(!TimerDone(GameState, Entity->RecoilTimer))
     {
-        Entity->Velocity = glm::vec2(Entity->HitRecoilDirection.x * Entity->HitRecoilSpeed, Entity->HitRecoilDirection.y * Entity->HitRecoilSpeed);
+        Entity->Velocity = math::v2(Entity->HitRecoilDirection.x * Entity->HitRecoilSpeed, Entity->HitRecoilDirection.y * Entity->HitRecoilSpeed);
     }
     
     if(!Entity->AnimationInfo.Playing)
@@ -1270,7 +1270,7 @@ AI_FUNC(WraithIdle)
     PlayAnimation(Entity, "wraith_idle", GameState);
     entity& Player = GameState->Entities[GameState->PlayerIndex];
     auto& Enemy = Entity->Enemy;
-    r64 DistanceToPlayer = glm::distance(Entity->Position, Player.Position);
+    r64 DistanceToPlayer = Distance(Entity->Position, Player.Position);
     
     if(DistanceToPlayer <= Entity->Enemy.MaxAlertDistance)
     {
@@ -1288,7 +1288,7 @@ AI_FUNC(WraithAlerted)
 {
     entity& Player = GameState->Entities[GameState->PlayerIndex];
     auto& Enemy = Entity->Enemy;
-    r64 DistanceToPlayer = glm::distance(Entity->Position, Player.Position);
+    r64 DistanceToPlayer = Distance(Entity->Position, Player.Position);
     if(TimerDone(GameState,Entity->Enemy.Wraith.AlertedTimer) && DistanceToPlayer <= Entity->Enemy.MaxAlertDistance)
     {
         Enemy.AIState = AI_Following;
@@ -1302,7 +1302,7 @@ AI_FUNC(WraithFollowing)
     auto& Enemy = Entity->Enemy;
     auto& Wraith = Entity->Enemy.Wraith;
     
-    r64 DistanceToPlayer = glm::distance(Entity->Position, Player.Position);
+    r64 DistanceToPlayer = Distance(Entity->Position, Player.Position);
     
     if(!Player.Dead && Player.Active)
     {
@@ -1321,8 +1321,8 @@ AI_FUNC(WraithFollowing)
         else if(DistanceToPlayer <= Entity->Enemy.SlowdownDistance)
         {
             PlayAnimation(Entity, "wraith_fly", GameState);
-            glm::vec2 Direction = glm::normalize(Player.Position - Entity->Position);
-            Entity->Velocity = glm::vec2(Direction.x * Entity->Enemy.CloseToPlayerSpeed, Direction.y * Entity->Enemy.CloseToPlayerSpeed);
+            math::v2 Direction = Normalize(Player.Position - Entity->Position);
+            Entity->Velocity = math::v2(Direction.x * Entity->Enemy.CloseToPlayerSpeed, Direction.y * Entity->Enemy.CloseToPlayerSpeed);
         }
         else
         {
@@ -1343,7 +1343,7 @@ AI_FUNC(WraithCharging)
     auto& Enemy = Entity->Enemy;
     auto& Wraith = Entity->Enemy.Wraith;
     
-    r64 DistanceToPlayer = glm::distance(Entity->Position, Player.Position);
+    r64 DistanceToPlayer = Distance(Entity->Position, Player.Position);
     
     if(DistanceToPlayer >= Enemy.MaxAlertDistance)
     {
@@ -1352,14 +1352,14 @@ AI_FUNC(WraithCharging)
     else if(TimerDone(GameState, Wraith.ChargingTimer) && DistanceToPlayer <= Enemy.AttackDistance)
     {
         Enemy.AIState = AI_Attacking;
-        Enemy.LastAttackMoveDirection = glm::normalize(Player.Position - Entity->Position);
+        Enemy.LastAttackMoveDirection = Normalize(Player.Position - Entity->Position);
         PlayAnimation(Entity, "wraith_attack", GameState);
     }
     else
     {
         PlayAnimation(Entity, "wraith_fly", GameState);
-        glm::vec2 Direction = glm::normalize(Player.Position - Entity->Position);
-        Entity->Velocity = glm::vec2((Direction.x + 0.1f) * Entity->Enemy.CloseToPlayerSpeed, (Direction.y + 0.1f) * Entity->Enemy.CloseToPlayerSpeed);
+        math::v2 Direction = Normalize(Player.Position - Entity->Position);
+        Entity->Velocity = math::v2((Direction.x + 0.1f) * Entity->Enemy.CloseToPlayerSpeed, (Direction.y + 0.1f) * Entity->Enemy.CloseToPlayerSpeed);
     }
 }
 
@@ -1371,7 +1371,7 @@ AI_FUNC(WraithAttacking)
     entity& Player = GameState->Entities[GameState->PlayerIndex];
     auto& Enemy = Entity->Enemy;
     auto& Wraith = Entity->Enemy.Wraith;
-    r64 DistanceToPlayer = glm::distance(Entity->Position, Player.Position);
+    r64 DistanceToPlayer = Distance(Entity->Position, Player.Position);
     
     if(Player.Dead)
     {
@@ -1382,7 +1382,7 @@ AI_FUNC(WraithAttacking)
     {
         if(!TimerDone(GameState, Entity->AttackMoveTimer))
         {
-            Entity->Velocity = glm::vec2(Enemy.LastAttackMoveDirection.x * Entity->AttackMoveSpeed, Enemy.LastAttackMoveDirection.y * Entity->AttackMoveSpeed);
+            Entity->Velocity = math::v2(Enemy.LastAttackMoveDirection.x * Entity->AttackMoveSpeed, Enemy.LastAttackMoveDirection.y * Entity->AttackMoveSpeed);
         }
         
         if(Entity->AnimationInfo.FrameIndex >= Entity->AttackLowFrameIndex - 2 &&Entity->AnimationInfo.FrameIndex < Entity->AttackHighFrameIndex && !Wraith.IsAttacking && strcmp(Entity->CurrentAnimation->Name, "wraith_idle") != 0)
@@ -1432,7 +1432,7 @@ AI_FUNC(WraithHit)
     auto& Enemy = Entity->Enemy;
     if(!TimerDone(GameState, Entity->RecoilTimer))
     {
-        Entity->Velocity = glm::vec2(Entity->HitRecoilDirection.x * Entity->HitRecoilSpeed, Entity->HitRecoilDirection.y * Entity->HitRecoilSpeed);
+        Entity->Velocity = math::v2(Entity->HitRecoilDirection.x * Entity->HitRecoilSpeed, Entity->HitRecoilDirection.y * Entity->HitRecoilSpeed);
     }
     
     if(!Entity->AnimationInfo.Playing)
@@ -1460,7 +1460,7 @@ AI_FUNC(WraithWandering)
 AI_FUNC(BlobIdle)
 {
     auto Player = GameState->Entities[0];
-    r64 DistanceToPlayer = glm::distance(Entity->Position, Player.Position);
+    r64 DistanceToPlayer = Distance(Entity->Position, Player.Position);
     
     if(DistanceToPlayer <= Entity->Enemy.MaxAlertDistance)
     {
@@ -1468,7 +1468,7 @@ AI_FUNC(BlobIdle)
     }
     else
     {
-        Entity->Velocity = glm::vec2();
+        Entity->Velocity = math::v2();
     }
 }
 
@@ -1480,7 +1480,7 @@ AI_FUNC(BlobFollowing)
 {
     FindPath(GameState,Entity,GameState->Entities[GameState->PlayerIndex], &Entity->Enemy.AStarPath);
     FollowPath(GameState,Entity,GameState->Entities[GameState->PlayerIndex], &Entity->Enemy.AStarPath);
-    if(Abs(glm::distance(Entity->Position, GameState->Entities[GameState->PlayerIndex].Position)) < Entity->Enemy.MinDistanceToPlayer)
+    if(Abs(Distance(Entity->Position, GameState->Entities[GameState->PlayerIndex].Position)) < Entity->Enemy.MinDistanceToPlayer)
     {
         Entity->Enemy.AIState = AI_Charging;
         StartTimer(GameState, Entity->Enemy.Blob.ExplodeStartTimer);
@@ -1499,7 +1499,7 @@ AI_FUNC(BlobCharging)
         StartTimer(GameState, Entity->Enemy.Blob.ExplodeCountdownTimer);
     }
     
-    if(Abs(glm::distance(Entity->Position, GameState->Entities[GameState->PlayerIndex].Position)) >= 1)
+    if(Abs(Distance(Entity->Position, GameState->Entities[GameState->PlayerIndex].Position)) >= 1)
         Entity->Enemy.AIState = AI_Following;
 }
 
@@ -1513,7 +1513,7 @@ AI_FUNC(BlobAttacking)
         Entity->Enemy.AIState = AI_Dying;
         PlayAnimation(Entity, "explosion", GameState);
         Entity->Health = 0;
-        Entity->Velocity = glm::vec2();
+        Entity->Velocity = math::v2();
         PLAY_SOUND(Explosion);
     }
 }
@@ -1528,7 +1528,7 @@ AI_FUNC(BlobWandering)
 
 AI_FUNC(BlobDying)
 {
-    Entity->CollisionAABB.Extents = glm::vec2(Entity->Enemy.Blob.ExplosionCollisionExtentsX, Entity->Enemy.Blob.ExplosionCollisionExtentsY);
+    Entity->CollisionAABB.Extents = math::v2(Entity->Enemy.Blob.ExplosionCollisionExtentsX, Entity->Enemy.Blob.ExplosionCollisionExtentsY);
     if(!Entity->AnimationInfo.Playing)
     {
         Entity->Active = false;
@@ -1537,7 +1537,7 @@ AI_FUNC(BlobDying)
 }
 
 
-static void LoadBonfireData(game_state* GameState, sound_queue* SoundQueue, i32 Handle = -1, glm::vec2 Position = glm::vec2(), b32 IsTemporary = false)
+static void LoadBonfireData(game_state* GameState, sound_queue* SoundQueue, i32 Handle = -1, math::v2 Position = math::v2(), b32 IsTemporary = false)
 {
     FILE* File;
     File = fopen("../assets/entities/bonfire.dat", "r");
@@ -1571,7 +1571,7 @@ static void LoadBonfireData(game_state* GameState, sound_queue* SoundQueue, i32 
         if(Handle == -1)
         {
             DEBUG_PRINT("Entityhandle: %d\n", Entity->EntityIndex);
-            Entity->Position = glm::vec2(Position.x, Position.y);
+            Entity->Position = math::v2(Position.x, Position.y);
             PLAY_SOUND(Bonfire, 1.0f, Entity->Position.x, Entity->Position.y, 10.0f, true, Entity->EntityIndex);
         }
         
@@ -1579,7 +1579,7 @@ static void LoadBonfireData(game_state* GameState, sound_queue* SoundQueue, i32 
     }
 }
 
-static void LoadSkeletonData(game_state* GameState, i32 Handle = -1, glm::vec2 Position = glm::vec2())
+static void LoadSkeletonData(game_state* GameState, i32 Handle = -1, math::v2 Position = math::v2())
 {
     FILE* File;
     File = fopen("../assets/entities/skeleton.dat", "r");
@@ -1602,10 +1602,10 @@ static void LoadSkeletonData(game_state* GameState, i32 Handle = -1, glm::vec2 P
         LoadEnemyData(File,Entity, GameState);
         
         Entity->Enemy.EnemyCollider = Entity->CollisionAABB;
-        Entity->Enemy.EnemyCollider.Extents = glm::vec2(Entity->Enemy.EnemyCollider.Extents.x * 3, Entity->Enemy.EnemyCollider.Extents.y * 3);
+        Entity->Enemy.EnemyCollider.Extents = math::v2(Entity->Enemy.EnemyCollider.Extents.x * 3, Entity->Enemy.EnemyCollider.Extents.y * 3);
         
         if(Handle == -1)
-            Entity->Position = glm::vec2(Position.x, Position.y);
+            Entity->Position = math::v2(Position.x, Position.y);
         
         char LineBuffer[255];
         
@@ -1646,7 +1646,7 @@ static void LoadSkeletonData(game_state* GameState, i32 Handle = -1, glm::vec2 P
     }
 }
 
-static void LoadMinotaurData(game_state* GameState, i32 Handle = -1, glm::vec2 Position = glm::vec2())
+static void LoadMinotaurData(game_state* GameState, i32 Handle = -1, math::v2 Position = math::v2())
 {
     FILE* File;
     File = fopen("../assets/entities/minotaur.dat", "r");
@@ -1732,7 +1732,7 @@ static void LoadMinotaurData(game_state* GameState, i32 Handle = -1, glm::vec2 P
     }
 }
 
-static void LoadWraithData(game_state* GameState, i32 Handle = -1, glm::vec2 Position = glm::vec2())
+static void LoadWraithData(game_state* GameState, i32 Handle = -1, math::v2 Position = math::v2())
 {
     FILE* File;
     File = fopen("../assets/entities/wraith.dat", "r");
@@ -1755,7 +1755,7 @@ static void LoadWraithData(game_state* GameState, i32 Handle = -1, glm::vec2 Pos
         LoadEnemyData(File,Entity, GameState);
         
         if(Handle == -1)
-            Entity->Position = glm::vec2(Position.x, Position.y);
+            Entity->Position = math::v2(Position.x, Position.y);
         
         char LineBuffer[255];
         
@@ -1796,7 +1796,7 @@ static void LoadWraithData(game_state* GameState, i32 Handle = -1, glm::vec2 Pos
     }
 }
 
-static void LoadBlobData(game_state* GameState, i32 Handle = -1, glm::vec2 Position = glm::vec2())
+static void LoadBlobData(game_state* GameState, i32 Handle = -1, math::v2 Position = math::v2())
 {
     FILE* File;
     File = fopen("../assets/entities/blob.dat", "r");
@@ -1851,7 +1851,7 @@ static void LoadBlobData(game_state* GameState, i32 Handle = -1, glm::vec2 Posit
 
 static void PlaceCheckpoint(game_state* GameState, sound_queue* SoundQueue, entity* Entity)
 {
-    auto CheckpointPos = glm::vec2(Entity->Position.x, Entity->Position.y - 0.5f);
+    auto CheckpointPos = math::v2(Entity->Position.x, Entity->Position.y - 0.5f);
     if(!GameState->CharacterData.HasCheckpoint)
     {
         LoadBonfireData(GameState,SoundQueue, -1,CheckpointPos, true);
@@ -1872,7 +1872,7 @@ static void PlaceCheckpoint(game_state* GameState, sound_queue* SoundQueue, enti
     SaveGame(GameState);
 }
 
-static void LoadPlayerData(game_state* GameState, sound_queue* SoundQueue, i32 Handle = -1, glm::vec2 Position = glm::vec2())
+static void LoadPlayerData(game_state* GameState, sound_queue* SoundQueue, i32 Handle = -1, math::v2 Position = math::v2())
 {
     FILE* File;
     File = fopen("../assets/entities/player.dat", "r");
@@ -2010,7 +2010,7 @@ static void LoadPlayerData(game_state* GameState, sound_queue* SoundQueue, i32 H
         {
             if(GameState->CharacterData.HasCheckpoint)
             {
-                Entity->Position = glm::vec2(GameState->CharacterData.CurrentCheckpoint.x + 0.5f,GameState->CharacterData.CurrentCheckpoint.y + 0.5f);
+                Entity->Position = math::v2(GameState->CharacterData.CurrentCheckpoint.x + 0.5f,GameState->CharacterData.CurrentCheckpoint.y + 0.5f);
             }
             else
             {
@@ -2020,7 +2020,7 @@ static void LoadPlayerData(game_state* GameState, sound_queue* SoundQueue, i32 H
                 
             }
             
-            Entity->Position = glm::vec2(glm::floor(Entity->Position.x), glm::floor(Entity->Position.y));
+            Entity->Position = math::v2(floor(Entity->Position.x), floor(Entity->Position.y));
             
             LoadBonfireData(GameState, SoundQueue, -1,GameState->CharacterData.CurrentCheckpoint, true);
             GameState->CharacterData.CheckpointHandle = GameState->EntityCount - 1;
@@ -2042,7 +2042,7 @@ static void LoadPlayerData(game_state* GameState, sound_queue* SoundQueue, i32 H
             }
         }
         Entity->Player.Inventory.HasCheckpoint = true;
-        Entity->Position = glm::floor(Entity->Position);
+        Entity->Position = Floor(Entity->Position);
         Entity->CurrentTile = Entity->Position;
         Entity->CurrentDestination = Entity->Position;
     }
@@ -2055,7 +2055,7 @@ static void CheckWillPickup(game_state* GameState, input_controller* InputContro
         Player->Player.Will += GameState->CharacterData.LostWill;
         GameState->CharacterData.HasLostWill = false;
         
-        GameState->CharacterData.LostWillPosition = glm::vec2();
+        GameState->CharacterData.LostWillPosition = math::v2();
         GameState->CharacterData.LostWill = 0;
         GameState->Objects[GameState->CharacterData.LostWillObjectHandle].Active = false;
         auto LightSourceHandle = GameState->Objects[GameState->CharacterData.LostWillObjectHandle].LightSourceHandle;
@@ -2198,32 +2198,32 @@ void UpdatePlayer(entity* Entity, game_state* GameState, sound_queue* SoundQueue
     
     r32 Speed = Entity->Player.WalkingSpeed;
     
-    r32 Length = glm::length(Entity->CurrentDestination - Entity->Position);
-    glm::vec2 Direction;
+    r32 Len = Length(Entity->CurrentDestination - Entity->Position);
+    math::v2 Direction;
     
-    if(Length != 0.0f)
+    if(Len != 0.0f)
     {
-        Direction = glm::normalize(Entity->CurrentDestination - Entity->Position);
+        Direction = Normalize(Entity->CurrentDestination - Entity->Position);
     }
     else
     {
-        Direction = glm::vec2(0, 0);
+        Direction = math::v2(0, 0);
     }
     
-    if(Abs(glm::distance(Entity->Position, Entity->CurrentDestination)) < 0.01f)
+    if(Abs(Distance(Entity->Position, Entity->CurrentDestination)) < 0.01f)
     {
         Entity->Position = Entity->CurrentDestination;
         Entity->CurrentTile = Entity->Position;
         
-        Entity->Velocity = glm::vec2(0, 0);
+        Entity->Velocity = math::v2(0, 0);
         
         if(DX != 0.0f || DY != 0.0f)
         {
-            Entity->CurrentDestination = glm::vec2(Entity->CurrentTile.x, Entity->CurrentTile.y) + glm::vec2(DX, DY);
+            Entity->CurrentDestination = math::v2(Entity->CurrentTile.x, Entity->CurrentTile.y) + math::v2(DX, DY);
         }
     }
     else
-        Entity->Velocity = glm::vec2(Direction.x * Speed, Direction.y * Speed);
+        Entity->Velocity = math::v2(Direction.x * Speed, Direction.y * Speed);
     
     // Set animation
     if(Abs(Entity->Velocity.x) > 0.0f || Abs(Entity->Velocity.y) > 0.0f)
@@ -2231,7 +2231,7 @@ void UpdatePlayer(entity* Entity, game_state* GameState, sound_queue* SoundQueue
     else
         PlayAnimation(Entity, "swordsman_idle", GameState);
     
-    Entity->Position += glm::vec2(Entity->Velocity.x * DeltaTime, Entity->Velocity.y * DeltaTime);
+    Entity->Position += math::v2(Entity->Velocity.x * DeltaTime, Entity->Velocity.y * DeltaTime);
     
     // Update camera if centered on player
     GameState->GameCamera.CenterTarget = Entity->Position;
@@ -2252,26 +2252,26 @@ static void UpdateWeapon(entity* Entity, game_state* GameState, sound_queue* Sou
             {
                 case North:
                 {
-                    Entity->Weapon.CollisionAABB.Offset = glm::vec2(WeaponColliderInfo.OffsetUp.x, WeaponColliderInfo.OffsetUp.y);
-                    Entity->Weapon.CollisionAABB.Extents = glm::vec2(WeaponColliderInfo.ExtentsUp.x, WeaponColliderInfo.ExtentsUp.y);
+                    Entity->Weapon.CollisionAABB.Offset = math::v2(WeaponColliderInfo.OffsetUp.x, WeaponColliderInfo.OffsetUp.y);
+                    Entity->Weapon.CollisionAABB.Extents = math::v2(WeaponColliderInfo.ExtentsUp.x, WeaponColliderInfo.ExtentsUp.y);
                 }
                 break;
                 case South:
                 {
-                    Entity->Weapon.CollisionAABB.Offset = glm::vec2(WeaponColliderInfo.OffsetDown.x, WeaponColliderInfo.OffsetDown.y);
-                    Entity->Weapon.CollisionAABB.Extents = glm::vec2(WeaponColliderInfo.ExtentsDown.x, WeaponColliderInfo.ExtentsDown.y);
+                    Entity->Weapon.CollisionAABB.Offset = math::v2(WeaponColliderInfo.OffsetDown.x, WeaponColliderInfo.OffsetDown.y);
+                    Entity->Weapon.CollisionAABB.Extents = math::v2(WeaponColliderInfo.ExtentsDown.x, WeaponColliderInfo.ExtentsDown.y);
                 }
                 break;
                 case West:
                 {
-                    Entity->Weapon.CollisionAABB.Offset = glm::vec2(WeaponColliderInfo.OffsetLeft.x, WeaponColliderInfo.OffsetLeft.y);
-                    Entity->Weapon.CollisionAABB.Extents = glm::vec2(WeaponColliderInfo.ExtentsLeft.x, WeaponColliderInfo.ExtentsLeft.y);
+                    Entity->Weapon.CollisionAABB.Offset = math::v2(WeaponColliderInfo.OffsetLeft.x, WeaponColliderInfo.OffsetLeft.y);
+                    Entity->Weapon.CollisionAABB.Extents = math::v2(WeaponColliderInfo.ExtentsLeft.x, WeaponColliderInfo.ExtentsLeft.y);
                 }
                 break;
                 case East:
                 {
-                    Entity->Weapon.CollisionAABB.Offset = glm::vec2(WeaponColliderInfo.OffsetRight.x, WeaponColliderInfo.OffsetRight.y);
-                    Entity->Weapon.CollisionAABB.Extents = glm::vec2(WeaponColliderInfo.ExtentsRight.x, WeaponColliderInfo.ExtentsRight.y);
+                    Entity->Weapon.CollisionAABB.Offset = math::v2(WeaponColliderInfo.OffsetRight.x, WeaponColliderInfo.OffsetRight.y);
+                    Entity->Weapon.CollisionAABB.Extents = math::v2(WeaponColliderInfo.ExtentsRight.x, WeaponColliderInfo.ExtentsRight.y);
                 }
                 break;
             }
@@ -2304,26 +2304,26 @@ static void UpdateWeapon(entity* Entity, game_state* GameState, sound_queue* Sou
             {
                 case North:
                 {
-                    Entity->Weapon.CollisionAABB.Offset = glm::vec2(WeaponColliderInfo.OffsetUp.x, WeaponColliderInfo.OffsetUp.y);
-                    Entity->Weapon.CollisionAABB.Extents = glm::vec2(WeaponColliderInfo.ExtentsUp.x, WeaponColliderInfo.ExtentsUp.y);
+                    Entity->Weapon.CollisionAABB.Offset = math::v2(WeaponColliderInfo.OffsetUp.x, WeaponColliderInfo.OffsetUp.y);
+                    Entity->Weapon.CollisionAABB.Extents = math::v2(WeaponColliderInfo.ExtentsUp.x, WeaponColliderInfo.ExtentsUp.y);
                 }
                 break;
                 case South:
                 {
-                    Entity->Weapon.CollisionAABB.Offset = glm::vec2(WeaponColliderInfo.OffsetDown.x, WeaponColliderInfo.OffsetDown.y);
-                    Entity->Weapon.CollisionAABB.Extents = glm::vec2(WeaponColliderInfo.ExtentsDown.x, WeaponColliderInfo.ExtentsDown.y);
+                    Entity->Weapon.CollisionAABB.Offset = math::v2(WeaponColliderInfo.OffsetDown.x, WeaponColliderInfo.OffsetDown.y);
+                    Entity->Weapon.CollisionAABB.Extents = math::v2(WeaponColliderInfo.ExtentsDown.x, WeaponColliderInfo.ExtentsDown.y);
                 }
                 break;
                 case West:
                 {
-                    Entity->Weapon.CollisionAABB.Offset = glm::vec2(WeaponColliderInfo.OffsetLeft.x, WeaponColliderInfo.OffsetLeft.y);
-                    Entity->Weapon.CollisionAABB.Extents = glm::vec2(WeaponColliderInfo.ExtentsLeft.x, WeaponColliderInfo.ExtentsLeft.y);
+                    Entity->Weapon.CollisionAABB.Offset = math::v2(WeaponColliderInfo.OffsetLeft.x, WeaponColliderInfo.OffsetLeft.y);
+                    Entity->Weapon.CollisionAABB.Extents = math::v2(WeaponColliderInfo.ExtentsLeft.x, WeaponColliderInfo.ExtentsLeft.y);
                 }
                 break;
                 case East:
                 {
-                    Entity->Weapon.CollisionAABB.Offset = glm::vec2(WeaponColliderInfo.OffsetRight.x, WeaponColliderInfo.OffsetRight.y);
-                    Entity->Weapon.CollisionAABB.Extents = glm::vec2(WeaponColliderInfo.ExtentsRight.x, WeaponColliderInfo.ExtentsRight.y);
+                    Entity->Weapon.CollisionAABB.Offset = math::v2(WeaponColliderInfo.OffsetRight.x, WeaponColliderInfo.OffsetRight.y);
+                    Entity->Weapon.CollisionAABB.Extents = math::v2(WeaponColliderInfo.ExtentsRight.x, WeaponColliderInfo.ExtentsRight.y);
                 }
                 break;
             }
@@ -2331,7 +2331,7 @@ static void UpdateWeapon(entity* Entity, game_state* GameState, sound_queue* Sou
         break;
     }
     
-    Entity->Weapon.CollisionAABB.Center = glm::vec2(Entity->Position.x + Entity->Weapon.Center.x * Entity->Weapon.Scale.x + Entity->Weapon.CollisionAABB.Offset.x, Entity->Position.y + Entity->Weapon.Center.y * Entity->Weapon.Scale.y + Entity->Weapon.CollisionAABB.Offset.y);
+    Entity->Weapon.CollisionAABB.Center = math::v2(Entity->Position.x + Entity->Weapon.Center.x * Entity->Weapon.Scale.x + Entity->Weapon.CollisionAABB.Offset.x, Entity->Position.y + Entity->Weapon.Center.y * Entity->Weapon.Scale.y + Entity->Weapon.CollisionAABB.Offset.y);
     
     if(IsAttacking && Entity->AnimationInfo.FrameIndex >= Entity->AttackLowFrameIndex && Entity->AnimationInfo.FrameIndex <= Entity->AttackHighFrameIndex)
     {
@@ -2485,7 +2485,7 @@ static void UpdateSkeleton(entity* Entity, game_state* GameState, sound_queue* S
     auto& Skeleton = Entity->Enemy.Skeleton;
     
     auto Player = &GameState->Entities[0];
-    Entity->RenderButtonHint = Entity->Enemy.HasLoot && Entity->Dead && glm::distance(Player->Position, Entity->Position) < 1.5f;
+    Entity->RenderButtonHint = Entity->Enemy.HasLoot && Entity->Dead && Distance(Player->Position, Entity->Position) < 1.5f;
     
     if(Entity->Active && !Entity->Dead)
     {
@@ -2504,23 +2504,23 @@ static void UpdateSkeleton(entity* Entity, game_state* GameState, sound_queue* S
             {
                 PlayAnimation(Entity, "skeleton_hit", GameState);
                 Enemy.AIState = AI_Hit;
-                Entity->HitRecoilDirection = glm::normalize(Entity->Position - Player->Position);
+                Entity->HitRecoilDirection = Normalize(Entity->Position - Player->Position);
                 StartTimer(GameState, Entity->RecoilTimer);
             }
         }
         
-        Entity->Velocity = glm::vec2(0,0); //@Cleanup: This is not good. Do this in AI
+        Entity->Velocity = math::v2(0,0); //@Cleanup: This is not good. Do this in AI
         
         UpdateAI(Entity,GameState, SoundQueue,DeltaTime);
         
         Entity->Position.x += Entity->Velocity.x * (r32)DeltaTime;
         Entity->Position.y += Entity->Velocity.y * (r32)DeltaTime;
         
-        glm::vec2 Direction = glm::normalize(Player->Position - Entity->Position);
+        math::v2 Direction = Normalize(Player->Position - Entity->Position);
         
         if(Entity->Enemy.AIState != AI_Attacking && !Entity->Enemy.Skeleton.IsAttacking)
         {
-            glm::vec2 Direction = glm::normalize(Player->Position - Entity->Position);
+            math::v2 Direction = Normalize(Player->Position - Entity->Position);
             
             if(Abs(Direction.x) < 0.6f)
             {
@@ -2550,7 +2550,7 @@ static void UpdateSkeleton(entity* Entity, game_state* GameState, sound_queue* S
         
         render_entity* RenderEntity = &GameState->RenderState.RenderEntities[Entity->RenderEntityHandle];
         
-        Entity->Velocity = glm::vec2(0,0);
+        Entity->Velocity = math::v2(0,0);
         
         Entity->Hit = false;
         
@@ -2568,7 +2568,7 @@ static void UpdateMinotaur(entity* Entity, game_state* GameState, sound_queue* S
     
     auto Player = &GameState->Entities[0];
     
-    Entity->RenderButtonHint = Entity->Enemy.HasLoot &&  Entity->Dead && glm::distance(Player->Position, Entity->Position) < 1.5f;
+    Entity->RenderButtonHint = Entity->Enemy.HasLoot &&  Entity->Dead && Distance(Player->Position, Entity->Position) < 1.5f;
     
     if(Entity->Active && !Entity->Dead)
     {
@@ -2593,12 +2593,12 @@ static void UpdateMinotaur(entity* Entity, game_state* GameState, sound_queue* S
                 PlayAnimation(Entity, "minotaur_detected", GameState);
                 Enemy.AIState = AI_Hit;
                 Minotaur.IsAttacking = false;
-                Entity->HitRecoilDirection = glm::normalize(Entity->Position - Player->Position);
+                Entity->HitRecoilDirection = Normalize(Entity->Position - Player->Position);
                 StartTimer(GameState, Entity->RecoilTimer);
             }
         }
         
-        Entity->Velocity = glm::vec2(0,0);
+        Entity->Velocity = math::v2(0,0);
         
         if(Enemy.TimesHit == 2 && Entity->Health > 0)
         {
@@ -2614,7 +2614,7 @@ static void UpdateMinotaur(entity* Entity, game_state* GameState, sound_queue* S
         
         if(Entity->Enemy.AIState != AI_Attacking && !Entity->Enemy.Minotaur.IsAttacking)
         {
-            glm::vec2 Direction = glm::normalize(Player->Position - Entity->Position);
+            math::v2 Direction = Normalize(Player->Position - Entity->Position);
             
             if(Abs(Direction.x) < 0.6f)
             {
@@ -2644,7 +2644,7 @@ static void UpdateMinotaur(entity* Entity, game_state* GameState, sound_queue* S
         
         render_entity* RenderEntity = &GameState->RenderState.RenderEntities[Entity->RenderEntityHandle];
         
-        Entity->Velocity = glm::vec2(0,0);
+        Entity->Velocity = math::v2(0,0);
         
         Entity->Hit = false;
         
@@ -2661,7 +2661,7 @@ static void UpdateWraith(entity* Entity, game_state* GameState, sound_queue* Sou
     auto& Wraith = Entity->Enemy.Wraith;
     
     auto& Player = GameState->Entities[0];
-    Entity->RenderButtonHint = Entity->Dead && glm::distance(Player.Position, Entity->Position) < 1.5f;
+    Entity->RenderButtonHint = Entity->Dead && Distance(Player.Position, Entity->Position) < 1.5f;
     
     if(Entity->Active && !Entity->Dead)
     {
@@ -2680,23 +2680,23 @@ static void UpdateWraith(entity* Entity, game_state* GameState, sound_queue* Sou
             {
                 //PlayAnimation(Entity, "skeleton_hit", GameState);
                 Enemy.AIState = AI_Hit;
-                Entity->HitRecoilDirection = glm::normalize(Entity->Position - Player.Position);
+                Entity->HitRecoilDirection = Normalize(Entity->Position - Player.Position);
                 StartTimer(GameState, Entity->RecoilTimer);
             }
         }
         
-        Entity->Velocity = glm::vec2(0,0); //@Cleanup: This is not good. Do this in AI
+        Entity->Velocity = math::v2(0,0); //@Cleanup: This is not good. Do this in AI
         
         UpdateAI(Entity, GameState, SoundQueue, DeltaTime);
         
         Entity->Position.x += Entity->Velocity.x * (r32)DeltaTime;
         Entity->Position.y += Entity->Velocity.y * (r32)DeltaTime;
         
-        glm::vec2 Direction = glm::normalize(Player.Position - Entity->Position);
+        math::v2 Direction = Normalize(Player.Position - Entity->Position);
         
         if(Entity->Enemy.AIState != AI_Attacking && !Entity->Enemy.Wraith.IsAttacking)
         {
-            glm::vec2 Direction = glm::normalize(Player.Position - Entity->Position);
+            math::v2 Direction = Normalize(Player.Position - Entity->Position);
             
             if(Abs(Direction.x) < 0.6f)
             {
@@ -2726,7 +2726,7 @@ static void UpdateWraith(entity* Entity, game_state* GameState, sound_queue* Sou
         
         render_entity* RenderEntity = &GameState->RenderState.RenderEntities[Entity->RenderEntityHandle];
         
-        Entity->Velocity = glm::vec2(0,0);
+        Entity->Velocity = math::v2(0,0);
         
         Entity->Hit = false;
         
@@ -2766,7 +2766,7 @@ static void UpdateBarrel(entity* Entity, game_state* GameState, sound_queue* Sou
             {
                 PlayAnimation(Entity, "barrel_destroy", GameState);
                 Entity->Dead = true;
-                Entity->Velocity = glm::vec2(0, 0);
+                Entity->Velocity = math::v2(0, 0);
                 PLAY_SOUND(BarrelBreak);
             }
         }
@@ -2778,7 +2778,7 @@ static void UpdateBarrel(entity* Entity, game_state* GameState, sound_queue* Sou
         
         auto& Player = GameState->Entities[0];
         
-        Entity->RenderButtonHint = !Entity->IsKinematic && glm::distance(Player.Position, Entity->Position) < 1.5f;
+        Entity->RenderButtonHint = !Entity->IsKinematic && Distance(Player.Position, Entity->Position) < 1.5f;
         
         Entity->Position.x += Entity->Velocity.x * (r32)DeltaTime;
         Entity->Position.y += Entity->Velocity.y * (r32)DeltaTime;
@@ -2793,8 +2793,8 @@ static void UpdateStaticEntity(entity* Entity, game_state* GameState, r64 DeltaT
 
 static void UpdateTilePosition(entity& Entity, game_state* GameState, r64 DeltaTime)
 {
-    r32 CartesianX = glm::floor(Entity.Position.x - 0.5f);
-    r32 CartesianY = glm::ceil(Entity.Position.y - 0.5f);
+    r32 CartesianX = floor(Entity.Position.x - 0.5f);
+    r32 CartesianY = ceil(Entity.Position.y - 0.5f);
     
     if(CartesianX >= 0 && CartesianX < GameState->CurrentLevel.Tilemap.Width && CartesianY >= 0 && CartesianY < GameState->CurrentLevel.Tilemap.Height)
     {
@@ -2809,13 +2809,13 @@ static void UpdateTilePosition(entity& Entity, game_state* GameState, r64 DeltaT
 
 static void UpdateGeneral(entity* Entity, game_state* GameState, r64 DeltaTime)
 {
-    GameState->RenderState.RenderEntities[Entity->RenderEntityHandle].Rendered = glm::distance(Entity->Position, GameState->Entities[0].Position) < 15;
+    GameState->RenderState.RenderEntities[Entity->RenderEntityHandle].Rendered = Distance(Entity->Position, GameState->Entities[0].Position) < 15;
     
     GameState->EntityTilePositions[Entity->TilePosition.X][Entity->TilePosition.Y].Entities[Entity->TilePosition.Z] = 0;
     
     if(Entity->LightSourceHandle != -1)
     {
-        GameState->LightSources[Entity->LightSourceHandle].Pointlight.Position = glm::vec2(Entity->Position.x - Entity->Center.x, Entity->Position.y);
+        GameState->LightSources[Entity->LightSourceHandle].Pointlight.Position = math::v2(Entity->Position.x - Entity->Center.x, Entity->Position.y);
     }
     
     auto& RenderEntity = GameState->RenderState.RenderEntities[Entity->RenderEntityHandle];
@@ -2826,16 +2826,16 @@ static void UpdateGeneral(entity* Entity, game_state* GameState, r64 DeltaTime)
         
         if(Entity->HitFlickerFramesLeft % 2 == 0)
         {
-            RenderEntity.Color = glm::vec4(1, 0, 0, 1);
+            RenderEntity.Color = math::v4(1, 0, 0, 1);
         }
         else
-            RenderEntity.Color = glm::vec4(1, 1, 1, 1);
+            RenderEntity.Color = math::v4(1, 1, 1, 1);
         
         StartTimer(GameState, Entity->HitFlickerTimer);
     }
     else if(Entity->HitFlickerFramesLeft == 0)
     {
-        RenderEntity.Color = glm::vec4(1, 1, 1, 1);
+        RenderEntity.Color = math::v4(1, 1, 1, 1);
     }
     
     if(TimerDone(GameState, Entity->HitAttackCountIdResetTimer))

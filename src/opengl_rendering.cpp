@@ -314,7 +314,7 @@ static void LoadTilemapBuffer(render_state* RenderState, i32 Layer, GLuint* VAO,
                     r32 TexCoordXHigh = (Tile->TextureOffset.x + Tilemap.TileWidth) / Width;
                     r32 TexCoordYHigh = (Tile->TextureOffset.y + Tilemap.TileHeight) / Height; 
                     
-                    glm::vec2 CorrectPosition = ToIsometric(glm::vec2(X, Y));
+                    math::v2 CorrectPosition = ToIsometric(math::v2(X, Y));
                     r32 CorrectX = CorrectPosition.x;
                     r32 CorrectY = CorrectPosition.y;
                     
@@ -454,7 +454,7 @@ static void LoadTilemapWireframeBuffer(const tilemap& Tilemap, render_state* Ren
         for(i32 Y = 0; Y < Tilemap.Height; Y++)
         {
             
-            glm::vec2 CorrectPosition = ToIsometric(glm::vec2(X, Y));
+            math::v2 CorrectPosition = ToIsometric(math::v2(X, Y));
             r32 CorrectX = CorrectPosition.x;
             r32 CorrectY = CorrectPosition.y;
             
@@ -981,8 +981,8 @@ static void InitializeOpenGL(game_memory* GameMemory, config_data* ConfigData)
     RenderSetup(&RenderState);
     
     GameState->HealthBar = {};
-    GameState->HealthBar.Position = glm::vec2(RenderState.WindowWidth / 2, RenderState.WindowHeight - 50);
-    GameState->HealthBar.RenderInfo.Size = glm::vec3(2, 1, 1);
+    GameState->HealthBar.Position = math::v2(RenderState.WindowWidth / 2, RenderState.WindowHeight - 50);
+    GameState->HealthBar.RenderInfo.Size = math::v2(2, 1);
     LoadTilesheetTextures(&RenderState);
     GameState->RenderState = RenderState;
 }
@@ -1032,29 +1032,29 @@ static void SetIntUniform(GLuint ShaderHandle, const char* UniformName, i32 Valu
     glUniform1i(glGetUniformLocation(ShaderHandle, UniformName), Value);
 }
 
-static void SetVec2Uniform(GLuint ShaderHandle, const char *UniformName, glm::vec2 Value)
+static void SetVec2Uniform(GLuint ShaderHandle, const char *UniformName, math::v2 Value)
 {
     glUniform2f(glGetUniformLocation(ShaderHandle, UniformName), Value.x, Value.y);
 }
 
-void SetVec3Uniform(GLuint ShaderHandle, const char *UniformName, glm::vec3 Value)
+void SetVec3Uniform(GLuint ShaderHandle, const char *UniformName, math::v3 Value)
 {
     glUniform3f(glGetUniformLocation(ShaderHandle, UniformName), Value.x, Value.y, Value.z);
 }
 
-static void SetVec4Uniform(GLuint ShaderHandle, const char *UniformName, glm::vec4 Value)
+static void SetVec4Uniform(GLuint ShaderHandle, const char *UniformName, v4 Value)
 {
-    glUniform4f(glGetUniformLocation(ShaderHandle, UniformName), Value.x, Value.y, Value.z, Value.w);
+    glUniformath::m4f(glGetUniformLocation(ShaderHandle, UniformName), Value.x, Value.y, Value.z, Value.w);
 }
 
-static void SetMat4Uniform(GLuint ShaderHandle, const char *UniformName, glm::mat4 Value)
+static void SetMat4Uniform(GLuint ShaderHandle, const char *UniformName, math::m4 Value)
 {
-    glUniformMatrix4fv(glGetUniformLocation(ShaderHandle, UniformName), 1, GL_FALSE, &Value[0][0]);
+    glUniformMatrix4fv(glGetUniformLocation(ShaderHandle, UniformName), 1, GL_FALSE, &Value.V[0][0]);
 }
 
-static void SetVec4ArrayUniform(GLuint ShaderHandle, const char *UniformName, glm::vec4* Value, u32 Length)
+static void SetVec4ArrayUniform(GLuint ShaderHandle, const char *UniformName, v4* Value, u32 Length)
 {
-    glUniform4fv(glGetUniformLocation(ShaderHandle, UniformName), Length, (GLfloat*)&Value[0]);
+    glUniformath::m4fv(glGetUniformLocation(ShaderHandle, UniformName), Length, (GLfloat*)&Value[0]);
 }
 
 
@@ -1063,7 +1063,7 @@ static void SetFloatArrayUniform(GLuint ShaderHandle, const char *UniformName, r
     glUniform1fv(glGetUniformLocation(ShaderHandle, UniformName), Length, (GLfloat*)&Value[0]);
 }
 
-static void RenderLine(render_state& RenderState, glm::vec4 Color, r32 X1, r32 Y1, r32 X2, r32 Y2, b32 IsUI = true, glm::mat4 ProjectionMatrix = glm::mat4(), glm::mat4 ViewMatrix = glm::mat4())
+static void RenderLine(render_state& RenderState, v4 Color, r32 X1, r32 Y1, r32 X2, r32 Y2, b32 IsUI = true, math::m4 ProjectionMatrix = math::m4(), math::m4 ViewMatrix = math::m4())
 {
     if(IsUI)
     {
@@ -1086,7 +1086,7 @@ static void RenderLine(render_state& RenderState, glm::vec4 Color, r32 X1, r32 Y
     UseShader(&Shader);
     
     //draw upper part
-    glm::mat4 Model(1.0f);
+    math::m4 Model(1.0f);
     
     if(!IsUI)
     {
@@ -1102,7 +1102,7 @@ static void RenderLine(render_state& RenderState, glm::vec4 Color, r32 X1, r32 Y
 }
 
 // NOTE(Niels): Possible future use but buggy
-void RenderCircle(render_state& RenderState, glm::vec4 Color, r32 CenterX, r32 CenterY, r32 Radius, b32 IsUI = true, glm::mat4 ProjectionMatrix = glm::mat4(), glm::mat4 ViewMatrix = glm::mat4())
+void RenderCircle(render_state& RenderState, v4 Color, r32 CenterX, r32 CenterY, r32 Radius, b32 IsUI = true, math::m4 ProjectionMatrix = math::m4(), math::m4 ViewMatrix = math::m4())
 {
     if(IsUI)
     {
@@ -1122,8 +1122,8 @@ void RenderCircle(render_state& RenderState, glm::vec4 Color, r32 CenterX, r32 C
     for(i32 Index = 0; Index < 360; Index++)
     {
         r32 Radians = (Index * PI) / 180.0f;
-        Points[PointIndex++] = glm::cos(Radians * Radius);
-        Points[PointIndex++] = glm::sin(Radians * Radius);
+        Points[PointIndex++] = cos(Radians * Radius);
+        Points[PointIndex++] = sin(Radians * Radius);
     }
     
     glBufferData(GL_ARRAY_BUFFER, 720 * sizeof(GLfloat), &Points[0], GL_DYNAMIC_DRAW);
@@ -1132,7 +1132,7 @@ void RenderCircle(render_state& RenderState, glm::vec4 Color, r32 CenterX, r32 C
     UseShader(&Shader);
     
     //draw upper part
-    glm::mat4 Model(1.0f);
+    math::m4 Model(1.0f);
     
     if(!IsUI)
     {
@@ -1147,11 +1147,11 @@ void RenderCircle(render_state& RenderState, glm::vec4 Color, r32 CenterX, r32 C
     glDrawArrays(GL_LINE_LOOP, 0, 720);
 }
 
-static void RenderIsometricRect(render_state* RenderState, glm::vec4 Color, r32 X, r32 Y, r32 Width, r32 Height, glm::mat4 ProjectionMatrix, glm::mat4 ViewMatrix)
+static void RenderIsometricRect(render_state* RenderState, v4 Color, r32 X, r32 Y, r32 Width, r32 Height, math::m4 ProjectionMatrix, math::m4 ViewMatrix)
 {
-    glm::mat4 Model(1.0f);
-    Model = glm::translate(Model, glm::vec3(X, Y, 0));
-    Model = glm::scale(Model, glm::vec3(Width, Height, 1));
+    math::m4 Model(1.0f);
+    Model = math::Translate(Model, math::v3(X, Y, 0));
+    Model = math::Scale(Model, math::v3(Width, Height, 1));
     
     glBindVertexArray(RenderState->IsometricVAO);
     
@@ -1170,11 +1170,11 @@ static void RenderIsometricRect(render_state* RenderState, glm::vec4 Color, r32 
     glBindVertexArray(0);
 }
 
-static void RenderIsometricOutline(render_state* RenderState, glm::vec4 Color, r32 X, r32 Y, r32 Width, r32 Height, glm::mat4 ProjectionMatrix, glm::mat4 ViewMatrix)
+static void RenderIsometricOutline(render_state* RenderState, v4 Color, r32 X, r32 Y, r32 Width, r32 Height, math::m4 ProjectionMatrix, math::m4 ViewMatrix)
 {
-    glm::mat4 Model(1.0f);
-    Model = glm::translate(Model, glm::vec3(X, Y, 0));
-    Model = glm::scale(Model, glm::vec3(Width, Height, 1));
+    math::m4 Model(1.0f);
+    Model = math::Translate(Model, math::v3(X, Y, 0));
+    Model = math::Scale(Model, math::v3(Width, Height, 1));
     
     glBindVertexArray(RenderState->IsometricVAO);
     
@@ -1192,7 +1192,7 @@ static void RenderIsometricOutline(render_state* RenderState, glm::vec4 Color, r
     glBindVertexArray(0);
 }
 
-static void RenderRect(Render_Mode Mode, render_state* RenderState, glm::vec4 Color, r32 X, r32 Y, r32 Width, r32 Height, u32 TextureHandle = 0, b32 IsUI = true, glm::mat4 ProjectionMatrix = glm::mat4(), glm::mat4 ViewMatrix = glm::mat4())
+static void RenderRect(Render_Mode Mode, render_state* RenderState, v4 Color, r32 X, r32 Y, r32 Width, r32 Height, u32 TextureHandle = 0, b32 IsUI = true, math::m4 ProjectionMatrix = math::m4(), math::m4 ViewMatrix = math::m4())
 {
     if(IsUI)
     {
@@ -1230,9 +1230,9 @@ static void RenderRect(Render_Mode Mode, render_state* RenderState, glm::vec4 Co
             UseShader(&Shader);
             
             //draw upper part
-            glm::mat4 Model(1.0f);
-            Model = glm::translate(Model, glm::vec3(X, Y, 0));
-            Model = glm::scale(Model, glm::vec3(Width, Height, 1));
+            math::m4 Model(1.0f);
+            Model = math::Translate(Model, math::v3(X, Y, 0));
+            Model = math::Scale(Model, math::v3(Width, Height, 1));
             
             if(!IsUI)
             {
@@ -1249,9 +1249,9 @@ static void RenderRect(Render_Mode Mode, render_state* RenderState, glm::vec4 Co
         break;
         case Render_Outline:
         {
-            glm::mat4 Model(1.0f);
-            Model = glm::translate(Model, glm::vec3(X, Y, 0));
-            Model = glm::scale(Model, glm::vec3(Width, Height, 1));
+            math::m4 Model(1.0f);
+            Model = math::Translate(Model, math::v3(X, Y, 0));
+            Model = math::Scale(Model, math::v3(Width, Height, 1));
             
             glBindVertexArray(RenderState->WireframeVAO);
             
@@ -1299,7 +1299,7 @@ static void MeasureText(const render_font& Font, const char* Text, float* Width,
 }
 
 //rendering methods
-static void RenderText(render_state* RenderState, const render_font& Font, const glm::vec4& Color, const char* Text, r32 X, r32 Y, r32 Scale, Alignment Alignment = Alignment_Left, b32 AlignCenterY = true) 
+static void RenderText(render_state* RenderState, const render_font& Font, const v4& Color, const char* Text, r32 X, r32 Y, r32 Scale, Alignment Alignment = Alignment_Left, b32 AlignCenterY = true) 
 {
     glBindVertexArray(Font.VAO);
     auto Shader = RenderState->Shaders[Shader_StandardFont];
@@ -1391,10 +1391,10 @@ static void RenderConsole(game_state* GameState, console* Console)
     r32 PercentAnimated = 1.0f + 1.0f - (r32)Console->CurrentTime / (r32)Console->TimeToAnimate;
     
     //draw upper part
-    RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(0.0f, 0.4f, 0.3f, 0.6f), 0.0f, (r32)RenderState->WindowHeight * 0.77f * PercentAnimated, (r32)RenderState->WindowWidth, (r32)RenderState->WindowHeight * 0.23f);
+    RenderRect(Render_Fill, &GameState->RenderState, v4(0.0f, 0.4f, 0.3f, 0.6f), 0.0f, (r32)RenderState->WindowHeight * 0.77f * PercentAnimated, (r32)RenderState->WindowWidth, (r32)RenderState->WindowHeight * 0.23f);
     
     //draw lower bar
-    RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(0.0f, 0.2f, 0.2f, 0.6f), 0.0f, (r32)RenderState->WindowHeight * 0.77f * PercentAnimated, (r32)RenderState->WindowWidth, 20);  
+    RenderRect(Render_Fill, &GameState->RenderState, v4(0.0f, 0.2f, 0.2f, 0.6f), 0.0f, (r32)RenderState->WindowHeight * 0.77f * PercentAnimated, (r32)RenderState->WindowWidth, 20);  
     
     GLfloat TimeValue = (r32)glfwGetTime();
     GLfloat AlphaValue = (r32)((sin(TimeValue * 4) / 2) + 0.5f);
@@ -1403,65 +1403,65 @@ static void RenderConsole(game_state* GameState, console* Console)
     MeasureText(RenderState->InconsolataFont, &Console->Buffer[0], &Width, &Height);
     
     //draw cursor
-    RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(AlphaValue, 1, AlphaValue, 1), 5 / 1920.0f * (r32)RenderState->WindowWidth + Width, RenderState->WindowHeight * 0.77f * PercentAnimated, 10, 20);
+    RenderRect(Render_Fill, &GameState->RenderState, v4(AlphaValue, 1, AlphaValue, 1), 5 / 1920.0f * (r32)RenderState->WindowWidth + Width, RenderState->WindowHeight * 0.77f * PercentAnimated, 10, 20);
     
-    RenderText(RenderState, RenderState->InconsolataFont, glm::vec4(0, 0.8, 0, 1),  &Console->Buffer[0],  5 / 1920.0f * (r32)RenderState->WindowWidth, (r32)RenderState->WindowHeight * 0.775f * PercentAnimated, 1);
+    RenderText(RenderState, RenderState->InconsolataFont, v4(0, 0.8, 0, 1),  &Console->Buffer[0],  5 / 1920.0f * (r32)RenderState->WindowWidth, (r32)RenderState->WindowHeight * 0.775f * PercentAnimated, 1);
     
     int index = 0;
     
-    glm::vec4 Color;
+    v4 Color;
     
     for(int Index = 0; Index < HISTORY_BUFFER_LINES; Index++)
     {
         if(Index % 2 != 0)
-            Color = glm::vec4(0, 1, 0, 1);
+            Color = v4(0, 1, 0, 1);
         else
-            Color = glm::vec4(1, 1, 1, 1);
+            Color = v4(1, 1, 1, 1);
         
         RenderText(RenderState, RenderState->InconsolataFont, Color, &Console->HistoryBuffer[Index][0], 5 / 1920.0f * (r32)RenderState->WindowWidth, (r32)RenderState->WindowHeight * 0.78f * PercentAnimated + (Index + 1) * 20 * PercentAnimated, 1);
     }
 }
 
-static void RenderColliderWireframe(render_state* RenderState, entity* Entity, glm::mat4 ProjectionMatrix, glm::mat4 View)
+static void RenderColliderWireframe(render_state* RenderState, entity* Entity, math::m4 ProjectionMatrix, math::m4 View)
 {
     
     if(Entity->Active)
     {
-        glm::mat4 Model(1.0f);
+        math::m4 Model(1.0f);
         
-        auto IsoCenter = ToIsometric(glm::vec2(Entity->CollisionAABB.Center.x - Entity->CollisionAABB.Extents.x, Entity->CollisionAABB.Center.y - Entity->CollisionAABB.Extents.y));
+        auto IsoCenter = ToIsometric(math::v2(Entity->CollisionAABB.Center.x - Entity->CollisionAABB.Extents.x, Entity->CollisionAABB.Center.y - Entity->CollisionAABB.Extents.y));
         
         r32 CorrectX = IsoCenter.x;
         r32 CorrectY = IsoCenter.y;
         
-        glm::vec4 Color;
+        v4 Color;
         
         if(Entity->IsColliding)
         {
-            Color = glm::vec4(1.0,0.0,0.0,1.0);
+            Color = v4(1.0,0.0,0.0,1.0);
         }
         else 
         {
-            Color = glm::vec4(0.0,1.0,0.0,1.0);
+            Color = v4(0.0,1.0,0.0,1.0);
         }
         
         if(Entity->CollisionAABB.IsTrigger)
-            Color = glm::vec4(0, 0, 1, 1);
+            Color = v4(0, 0, 1, 1);
         
         RenderIsometricOutline(RenderState, Color, CorrectX, CorrectY, 1, 0.5f, ProjectionMatrix, View);
     }
 }
 
-static void RenderWireframe(render_state* RenderState, entity* Entity, glm::mat4 ProjectionMatrix, glm::mat4 View)
+static void RenderWireframe(render_state* RenderState, entity* Entity, math::m4 ProjectionMatrix, math::m4 View)
 {
     if(Entity->Active)
     {
-        glm::mat4 Model(1.0f);
+        math::m4 Model(1.0f);
         
         auto Pos = ToIsometric(Entity->Position);
         
-        Model = glm::translate(Model, glm::vec3(Pos.x - Entity->Scale / 2, Pos.y, 0.0f));
-        Model = glm::scale(Model, glm::vec3(Entity->Scale, Entity->Scale, 1));
+        Model = math::Translate(Model, math::v3(Pos.x - Entity->Scale / 2, Pos.y, 0.0f));
+        Model = math::Scale(Model, math::v3(Entity->Scale, Entity->Scale, 1));
         
         glBindVertexArray(RenderState->WireframeVAO);
         
@@ -1471,7 +1471,7 @@ static void RenderWireframe(render_state* RenderState, entity* Entity, glm::mat4
         SetMat4Uniform(Shader.Program, "Projection", ProjectionMatrix);
         SetMat4Uniform(Shader.Program, "View", View);
         SetMat4Uniform(Shader.Program, "Model", Model);
-        glm::vec4 color(0.0,1.0,0.0,1.0);
+        v4 color(0.0,1.0,0.0,1.0);
         
         SetVec4Uniform(Shader.Program, "Color", color);
         
@@ -1480,7 +1480,7 @@ static void RenderWireframe(render_state* RenderState, entity* Entity, glm::mat4
     }
 }
 
-static void RenderAStarPath(render_state* RenderState, entity* Entity, glm::mat4 ProjectionMatrix, glm::mat4 View)
+static void RenderAStarPath(render_state* RenderState, entity* Entity, math::m4 ProjectionMatrix, math::m4 View)
 {
     astar_path& Path = Entity->Enemy.AStarPath;
     
@@ -1488,31 +1488,31 @@ static void RenderAStarPath(render_state* RenderState, entity* Entity, glm::mat4
     {
         for(u32 PathIndex = 0; PathIndex < Path.AStarPathLength; PathIndex++)
         {
-            glm::vec4 color;
+            v4 color;
             
             if(Path.PathIndex == PathIndex)
             {
-                color = glm::vec4(0.0,1.0,0.0,0.4);
+                color = v4(0.0,1.0,0.0,0.4);
             }
             else 
             {
-                color = glm::vec4(0.0, 0.0, 1.0, 0.4);
+                color = v4(0.0, 0.0, 1.0, 0.4);
             }
-            glm::vec2 Position = ToIsometric(glm::vec2(Path.AStarPath[PathIndex].X, Path.AStarPath[PathIndex].Y));
+            math::v2 Position = ToIsometric(math::v2(Path.AStarPath[PathIndex].X, Path.AStarPath[PathIndex].Y));
             
             RenderIsometricRect(RenderState, color, Position.x, Position.y, 1, 0.5f, ProjectionMatrix, View);
         }
     }
 }
 
-static void RenderAnimationPreview(render_state* RenderState, const animation_info& AnimationInfo, const animation& Animation, glm::vec2 ScreenPosition, r32 Scale)
+static void RenderAnimationPreview(render_state* RenderState, const animation_info& AnimationInfo, const animation& Animation, math::v2 ScreenPosition, r32 Scale)
 {
     r32 Ratio = Animation.FrameSize.y / Animation.FrameSize.x;
     
     r32 MaxWidth = 350.0f;
     r32 MaxHeight = MaxWidth * Ratio;
     
-    RenderRect(Render_Fill, RenderState, glm::vec4(1, 1, 1, 1), ScreenPosition.x, ScreenPosition.y, MaxWidth, MaxHeight);
+    RenderRect(Render_Fill, RenderState, v4(1, 1, 1, 1), ScreenPosition.x, ScreenPosition.y, MaxWidth, MaxHeight);
     
     ScreenPosition.x *= RenderState->ScaleX;
     ScreenPosition.x -= 1;
@@ -1521,9 +1521,9 @@ static void RenderAnimationPreview(render_state* RenderState, const animation_in
     
     auto Shader = RenderState->SpritesheetShader;
     
-    glm::mat4 Model(1.0f);
-    Model = glm::translate(Model, glm::vec3(ScreenPosition.x, ScreenPosition.y, 0.0f));
-    Model = glm::scale(Model, glm::vec3(MaxWidth * RenderState->ScaleX, MaxHeight * RenderState->ScaleY, 1));
+    math::m4 Model(1.0f);
+    Model = math::Translate(Model, math::v3(ScreenPosition.x, ScreenPosition.y, 0.0f));
+    Model = math::Scale(Model, math::v3(MaxWidth * RenderState->ScaleX, MaxHeight * RenderState->ScaleY, 1));
     
     if (RenderState->BoundTexture != Animation.Texture->TextureHandle) //never bind the same texture if it's already bound
     {
@@ -1536,12 +1536,12 @@ static void RenderAnimationPreview(render_state* RenderState, const animation_in
     UseShader(&Shader);
     auto Frame = Animation.Frames[AnimationInfo.FrameIndex];
     SetFloatUniform(Shader.Program, "isUI", 1);
-    SetVec2Uniform(Shader.Program,"textureOffset", glm::vec2(Frame.X, Frame.Y));
+    SetVec2Uniform(Shader.Program,"textureOffset", math::v2(Frame.X, Frame.Y));
     SetFloatUniform(Shader.Program, "frameWidth", Animation.FrameSize.x);
     SetFloatUniform(Shader.Program, "frameHeight", Animation.FrameSize.y);
-    SetVec4Uniform(Shader.Program, "color", glm::vec4(1, 1, 1, 1));
+    SetVec4Uniform(Shader.Program, "color", v4(1, 1, 1, 1));
     SetVec2Uniform(Shader.Program,"sheetSize",
-                   glm::vec2(Animation.Texture->Width, Animation.Texture->Height));
+                   math::v2(Animation.Texture->Width, Animation.Texture->Height));
     
     SetMat4Uniform(Shader.Program, "Model", Model);
     
@@ -1550,11 +1550,11 @@ static void RenderAnimationPreview(render_state* RenderState, const animation_in
 }
 
 static void RenderHealthbar(render_state* RenderState,
-                            entity* Entity, const entity_healthbar& Healthbar, glm::mat4 ProjectionMatrix, glm::mat4 ViewMatrix)
+                            entity* Entity, const entity_healthbar& Healthbar, math::m4 ProjectionMatrix, math::m4 ViewMatrix)
 {
     auto EntityPosition = ToIsometric(Entity->Position);
     
-    RenderRect(Render_Fill, RenderState, glm::vec4(0.6, 0, 0, 1), EntityPosition.x + Healthbar.Offset.x, EntityPosition.y + Healthbar.Offset.y, 1.0f
+    RenderRect(Render_Fill, RenderState, v4(0.6, 0, 0, 1), EntityPosition.x + Healthbar.Offset.x, EntityPosition.y + Healthbar.Offset.y, 1.0f
                / (r32)Entity->FullHealth * (r32)Entity->Health , 0.05f, 0, false, ProjectionMatrix, ViewMatrix);
     
     
@@ -1565,12 +1565,12 @@ static void RenderHealthbar(render_state* RenderState,
         r32 Width = 1.0f
             / (r32)Entity->FullHealth * (r32)Entity->HealthLost;
         
-        RenderRect(Render_Fill, RenderState, glm::vec4(1, 1, 1, 1), StartX, EntityPosition.y + Healthbar.Offset.y, Width, 0.05f, 0, false, ProjectionMatrix, ViewMatrix);
+        RenderRect(Render_Fill, RenderState, v4(1, 1, 1, 1), StartX, EntityPosition.y + Healthbar.Offset.y, Width, 0.05f, 0, false, ProjectionMatrix, ViewMatrix);
         
-        glm::mat4 Model = glm::mat4(1.0f) * ViewMatrix;
+        math::m4 Model = math::m4(1.0f) * ViewMatrix;
         
-        glm::vec3 Projected =
-            glm::project(glm::vec3(EntityPosition.x, EntityPosition.y, 0), Model, ProjectionMatrix, glm::vec4(RenderState->Viewport[0], RenderState->Viewport[1], RenderState->Viewport[2], RenderState->Viewport[3]));
+        math::v3 Projected =
+            Project(math::v3(EntityPosition.x, EntityPosition.y, 0), Model, ProjectionMatrix, v4(RenderState->Viewport[0], RenderState->Viewport[1], RenderState->Viewport[2], RenderState->Viewport[3]));
         
         
         for(i32 Index = 0; Index < 10; Index++)
@@ -1578,13 +1578,13 @@ static void RenderHealthbar(render_state* RenderState,
             auto& HealthCount = Entity->Enemy.HealthCounts[Index];
             if(HealthCount.Visible)
             {
-                RenderText(RenderState, RenderState->DamageFont, glm::vec4(1, 0, 0, 1), HealthCount.Count, Projected.x + HealthCount.Position.x, Projected.y + HealthCount.Position.y, 1);
+                RenderText(RenderState, RenderState->DamageFont, v4(1, 0, 0, 1), HealthCount.Count, Projected.x + HealthCount.Position.x, Projected.y + HealthCount.Position.y, 1);
             }
         }
     }
 }
 
-static void RenderEntity(game_state *GameState, render_entity* RenderEntity, glm::mat4 ProjectionMatrix, glm::mat4 View)
+static void RenderEntity(game_state *GameState, render_entity* RenderEntity, math::m4 ProjectionMatrix, math::m4 View)
 { 
     render_state* RenderState = &GameState->RenderState;
     
@@ -1592,18 +1592,18 @@ static void RenderEntity(game_state *GameState, render_entity* RenderEntity, glm
     
     b32 Active = RenderEntity->RenderType == Render_Type_Entity ? RenderEntity->Entity->Active : RenderEntity->Object->Active;
     b32 IsFlipped = RenderEntity->RenderType == Render_Type_Entity ? RenderEntity->Entity->IsFlipped : RenderEntity->Object->IsFlipped;
-    glm::vec2 Position = RenderEntity->RenderType == Render_Type_Entity ? RenderEntity->Entity->Position : RenderEntity->Object->Position;
-    glm::vec2 Center = RenderEntity->RenderType == Render_Type_Entity ? RenderEntity->Entity->Center : RenderEntity->Object->Center;
+    math::v2 Position = RenderEntity->RenderType == Render_Type_Entity ? RenderEntity->Entity->Position : RenderEntity->Object->Position;
+    math::v2 Center = RenderEntity->RenderType == Render_Type_Entity ? RenderEntity->Entity->Center : RenderEntity->Object->Center;
     r32 EntityScale = RenderEntity->RenderType == Render_Type_Entity ? RenderEntity->Entity->Scale : RenderEntity->Object->Scale;
     
     animation* CurrentAnimation =  RenderEntity->RenderType == Render_Type_Entity ? RenderEntity->Entity->CurrentAnimation : RenderEntity->Object->CurrentAnimation;
     animation_info AnimationInfo = RenderEntity->RenderType == Render_Type_Entity ? RenderEntity->Entity->AnimationInfo : RenderEntity->Object->AnimationInfo;
     
-    glm::mat4 OldModel;
+    math::m4 OldModel;
     
     if(RenderEntity->Rendered && Active)
     {
-        glm::mat4 Model(1.0f);
+        math::m4 Model(1.0f);
         
         if(CurrentAnimation) 
         {
@@ -1611,7 +1611,7 @@ static void RenderEntity(game_state *GameState, render_entity* RenderEntity, glm
             r32 WidthInUnits = (r32)CurrentAnimation->FrameSize.x / (r32)PIXELS_PER_UNIT;
             r32 HeightInUnits = (r32)CurrentAnimation->FrameSize.y / (r32)PIXELS_PER_UNIT;
             
-            glm::vec3 Scale = glm::vec3(WidthInUnits * EntityScale, HeightInUnits * EntityScale, 1);
+            math::v3 Scale = math::v3(WidthInUnits * EntityScale, HeightInUnits * EntityScale, 1);
             
             r32 RemoveInX = IsFlipped ? 1.0f * Scale.x - CurrentAnimation->Center.x * Scale.x : CurrentAnimation->Center.x * Scale.x;
             
@@ -1620,15 +1620,15 @@ static void RenderEntity(game_state *GameState, render_entity* RenderEntity, glm
             CorrectPos.x = CorrectPos.x - RemoveInX;
             CorrectPos.y = CorrectPos.y - (IsFlipped ? CurrentAnimation->Center.y : 0);
             
-            Model = glm::translate(Model, glm::vec3(CorrectPos.x, CorrectPos.y, 0.0f));
+            Model = math::Translate(Model, math::v3(CorrectPos.x, CorrectPos.y, 0.0f));
             
             if(IsFlipped)
             {
-                Model = glm::translate(Model, glm::vec3(Scale.x, 0, 0));
-                Scale = glm::vec3(-Scale.x, Scale.y, 1);
+                Model = math::Translate(Model, math::v3(Scale.x, 0, 0));
+                Scale = math::v3(-Scale.x, Scale.y, 1);
             }
             
-            Model = glm::scale(Model, glm::vec3(Scale.x, Scale.y, Scale.z));
+            Model = math::Scale(Model, math::v3(Scale.x, Scale.y, Scale.z));
             
             animation* Animation = CurrentAnimation;
             
@@ -1653,34 +1653,34 @@ static void RenderEntity(game_state *GameState, render_entity* RenderEntity, glm
             
             SetVec4Uniform(Shader.Program, "spriteColor", RenderEntity->Color);
             SetFloatUniform(Shader.Program, "isUI", 0);
-            SetVec2Uniform(Shader.Program,"textureOffset", glm::vec2(Frame.X, Frame.Y));
+            SetVec2Uniform(Shader.Program,"textureOffset", math::v2(Frame.X, Frame.Y));
             SetFloatUniform(Shader.Program, "frameWidth", Animation->FrameSize.x);
             SetFloatUniform(Shader.Program, "frameHeight", Animation->FrameSize.y);
             SetVec2Uniform(Shader.Program,"textureSize",
-                           glm::vec2(Animation->Texture->Width, Animation->Texture->Height));
+                           math::v2(Animation->Texture->Width, Animation->Texture->Height));
         } 
         else 
         {
             
-            auto CorrectPos = ToIsometric(glm::vec2(Position.x, Position.y));
+            auto CorrectPos = ToIsometric(math::v2(Position.x, Position.y));
             
             r32 CorrectX = CorrectPos.x;
             r32 CorrectY = CorrectPos.y;
             
-            Model = glm::translate(Model, glm::vec3(CorrectX, CorrectY, 0.0f));
+            Model = math::Translate(Model, math::v3(CorrectX, CorrectY, 0.0f));
             
             r32 WidthInUnits = RenderEntity->Texture->Width / (r32)PIXELS_PER_UNIT;
             r32 HeightInUnits = RenderEntity->Texture->Height / (r32)PIXELS_PER_UNIT;
             
-            glm::vec3 Scale = glm::vec3(WidthInUnits * EntityScale, HeightInUnits * EntityScale, 1);
+            math::v3 Scale = math::v3(WidthInUnits * EntityScale, HeightInUnits * EntityScale, 1);
             
             if(IsFlipped)
             {
-                Scale = glm::vec3(-Scale.x, Scale.y, 1);
-                Model = glm::translate(Model, glm::vec3(EntityScale, 0, 0));
+                Scale = math::v3(-Scale.x, Scale.y, 1);
+                Model = math::Translate(Model, math::v3(EntityScale, 0, 0));
             }
             
-            Model = glm::scale(Model, glm::vec3(Scale.x, Scale.y, Scale.z));
+            Model = math::Scale(Model, math::v3(Scale.x, Scale.y, Scale.z));
             
             if (RenderState->BoundTexture != RenderEntity->Texture->TextureHandle) //never bind the same texture if it's already bound
             {
@@ -1699,7 +1699,7 @@ static void RenderEntity(game_state *GameState, render_entity* RenderEntity, glm
             }
             UseShader(&Shader);
             SetVec2Uniform(Shader.Program,"textureSize",
-                           glm::vec2(RenderEntity->Texture->Width, RenderEntity->Texture->Height));
+                           math::v2(RenderEntity->Texture->Width, RenderEntity->Texture->Height));
         }
         
         
@@ -1739,15 +1739,15 @@ static void RenderEntity(game_state *GameState, render_entity* RenderEntity, glm
             
             if(GameState->AIDebugModeOn && Entity.Type == Entity_Enemy)
             {
-                glm::mat4 Model = glm::mat4(1.0f) * View;
+                math::m4 Model = math::m4(1.0f) * View;
                 
-                glm::vec3 Projected =
-                    glm::project(glm::vec3(Entity.Position.x, Entity.Position.y, 0), Model, ProjectionMatrix, glm::vec4(GameState->RenderState.Viewport[0], GameState->RenderState.Viewport[1], GameState->RenderState.Viewport[2], GameState->RenderState.Viewport[3]));
+                math::v3 Projected =
+                    Project(math::v3(Entity.Position.x, Entity.Position.y, 0), Model, ProjectionMatrix, v4(GameState->RenderState.Viewport[0], GameState->RenderState.Viewport[1], GameState->RenderState.Viewport[2], GameState->RenderState.Viewport[3]));
                 
                 char* State = "State MISSING";
                 State = AIEnumToStr(Entity.Enemy.AIState);
                 
-                RenderText(RenderState, RenderState->ButtonFont, glm::vec4(1, 1, 1, 1), State, Projected.x, Projected.y, 1, Alignment_Center);
+                RenderText(RenderState, RenderState->ButtonFont, v4(1, 1, 1, 1), State, Projected.x, Projected.y, 1, Alignment_Center);
             }
         }
     }
@@ -1758,19 +1758,19 @@ static void RenderEntity(game_state *GameState, render_entity* RenderEntity, glm
         
         if(Entity.Type == Entity_Player && Entity.Player.RenderCrosshair)
         {
-            RenderRect(Render_Fill, RenderState, glm::vec4(1, 1, 1, 1), Entity.Position.x + Entity.Player.CrosshairPositionX, Entity.Position.y + Entity.Player.CrosshairPositionY, 1, 1, RenderState->Textures["crosshair"]->TextureHandle, false, ProjectionMatrix, View);
+            RenderRect(Render_Fill, RenderState, v4(1, 1, 1, 1), Entity.Position.x + Entity.Player.CrosshairPositionX, Entity.Position.y + Entity.Player.CrosshairPositionY, 1, 1, RenderState->Textures["crosshair"]->TextureHandle, false, ProjectionMatrix, View);
         }
         
         if(RenderState->RenderColliders && (Entity.Type == Entity_Player || Entity.Type == Entity_Enemy))
         {
-            r32 CartesianX = glm::floor(Entity.Position.x - 0.5f);
-            r32 CartesianY = glm::ceil(Entity.Position.y - 0.5f);
+            r32 CartesianX = Floor(Entity.Position.x - 0.5f);
+            r32 CartesianY = Ceil(Entity.Position.y - 0.5f);
             
-            glm::vec2 CorrectPosition = ToIsometric(glm::vec2(CartesianX, CartesianY));
+            math::v2 CorrectPosition = ToIsometric(math::v2(CartesianX, CartesianY));
             r32 CorrectX = CorrectPosition.x;
             r32 CorrectY = CorrectPosition.y;
             
-            RenderIsometricOutline(RenderState, glm::vec4(0, 1, 0, 1), CorrectX, CorrectY, 1, 0.5f, ProjectionMatrix, View);
+            RenderIsometricOutline(RenderState, v4(0, 1, 0, 1), CorrectX, CorrectY, 1, 0.5f, ProjectionMatrix, View);
             
             hit_tile_extents HitExtents = Entity.HitExtents[Entity.LookDirection];
             
@@ -1778,10 +1778,10 @@ static void RenderEntity(game_state *GameState, render_entity* RenderEntity, glm
             {
                 for(i32 Y = HitExtents.StartY; Y < HitExtents.EndY; Y++)
                 {
-                    glm::vec2 Pos = ToIsometric(glm::vec2(CartesianX + X, CartesianY + Y));
-                    RenderIsometricOutline(RenderState, glm::vec4(0, 0, 1, 1), Pos.x, Pos.y, 1, 0.5f, ProjectionMatrix, View);
+                    math::v2 Pos = ToIsometric(math::v2(CartesianX + X, CartesianY + Y));
+                    RenderIsometricOutline(RenderState, v4(0, 0, 1, 1), Pos.x, Pos.y, 1, 0.5f, ProjectionMatrix, View);
                     if(X == 0 && Y == 0)
-                        RenderIsometricRect(RenderState, glm::vec4(1, 0, 0, 1), Pos.x, Pos.y, 1, 0.5f, ProjectionMatrix, View);
+                        RenderIsometricRect(RenderState, v4(1, 0, 0, 1), Pos.x, Pos.y, 1, 0.5f, ProjectionMatrix, View);
                 }
             }
         }
@@ -1790,7 +1790,7 @@ static void RenderEntity(game_state *GameState, render_entity* RenderEntity, glm
         {
             if(Entity.Enemy.IsTargeted)
             {
-                RenderRect(Render_Fill, RenderState, glm::vec4(1, 1, 1, 1), Entity.Position.x + Entity.Enemy.TargetingPositionX, Entity.Position.y + Entity.Enemy.TargetingPositionY, 1, 1, RenderState->Textures["red_arrow"]->TextureHandle, false, ProjectionMatrix, View);}
+                RenderRect(Render_Fill, RenderState, v4(1, 1, 1, 1), Entity.Position.x + Entity.Enemy.TargetingPositionX, Entity.Position.y + Entity.Enemy.TargetingPositionY, 1, 1, RenderState->Textures["red_arrow"]->TextureHandle, false, ProjectionMatrix, View);}
             
             if(GameState->GameMode == Mode_Editor 
                && GameState->EditorState.SelectedEntity 
@@ -1802,13 +1802,13 @@ static void RenderEntity(game_state *GameState, render_entity* RenderEntity, glm
                     auto Point1 = Entity.Enemy.Waypoints[Index - 1];
                     auto Point2 = Entity.Enemy.Waypoints[Index];
                     
-                    RenderLine(*RenderState, glm::vec4(1, 1, 1, 1), Point1.X + 0.5f, Point1.Y + 0.5f, Point2.X + 0.5f, Point2.Y + 0.5f, false, ProjectionMatrix, View);
+                    RenderLine(*RenderState, v4(1, 1, 1, 1), Point1.X + 0.5f, Point1.Y + 0.5f, Point2.X + 0.5f, Point2.Y + 0.5f, false, ProjectionMatrix, View);
                 }
                 
                 for(i32 Index = 0; Index < Entity.Enemy.WaypointCount; Index++)
                 {
                     auto Point = Entity.Enemy.Waypoints[Index];
-                    RenderRect(Render_Fill, RenderState, glm::vec4(0, 1, 0, 0.5), Point.X + 0.25f, Point.Y + 0.25f, 0.5f, 0.5f, RenderState->Textures["circle"]->TextureHandle, false, ProjectionMatrix, View);
+                    RenderRect(Render_Fill, RenderState, v4(0, 1, 0, 0.5), Point.X + 0.25f, Point.Y + 0.25f, 0.5f, 0.5f, RenderState->Textures["circle"]->TextureHandle, false, ProjectionMatrix, View);
                 }
             }
         }
@@ -1821,14 +1821,14 @@ static void RenderEntity(game_state *GameState, render_entity* RenderEntity, glm
     }
 }
 
-static void RenderTile(render_state* RenderState, r32 X, r32 Y, u32 TilesheetIndex, i32 TileWidth, i32 TileHeight, glm::vec2 TextureOffset, glm::vec2 SheetSize, glm::vec4 Color,  glm::mat4 ProjectionMatrix, glm::mat4 View)
+static void RenderTile(render_state* RenderState, r32 X, r32 Y, u32 TilesheetIndex, i32 TileWidth, i32 TileHeight, math::v2 TextureOffset, math::v2 SheetSize, v4 Color,  math::m4 ProjectionMatrix, math::m4 View)
 {
     glBindVertexArray(RenderState->SpriteSheetVAO);
-    glm::mat4 Model(1.0f);
+    math::m4 Model(1.0f);
     
-    glm::vec2 Position = ToIsometric(glm::vec2(X, Y - 1));
-    Model = glm::translate(Model, glm::vec3(Position.x, Position.y, 0.0f));
-    Model = glm::scale(Model, glm::vec3(1, 0.5f, 1));
+    math::v2 Position = ToIsometric(math::v2(X, Y - 1));
+    Model = math::Translate(Model, math::v3(Position.x, Position.y, 0.0f));
+    Model = math::Scale(Model, math::v3(1, 0.5f, 1));
     
     glBindTexture(GL_TEXTURE_2D, RenderState->Tilesheets[TilesheetIndex].Texture.TextureHandle);
     
@@ -1850,44 +1850,44 @@ static void RenderTile(render_state* RenderState, r32 X, r32 Y, u32 TilesheetInd
 
 void RenderButton(render_state* RenderState, const button& Button)
 {
-    RenderRect(Render_Fill, RenderState, glm::vec4(0.26, 0.525, 0.95, 1), Button.ScreenPosition.x, Button.ScreenPosition.y, Button.Size.x, Button.Size.y, RenderState->Textures["button"]->TextureHandle);
+    RenderRect(Render_Fill, RenderState, v4(0.26, 0.525, 0.95, 1), Button.ScreenPosition.x, Button.ScreenPosition.y, Button.Size.x, Button.Size.y, RenderState->Textures["button"]->TextureHandle);
     RenderText(RenderState, RenderState->ButtonFont, Button.TextColor, Button.Text, Button.ScreenPosition.x + Button.Size.x / 2, Button.ScreenPosition.y + Button.Size.y / 2, 1, Alignment_Center);
 }
 
 void RenderTextfield(render_state* RenderState, const textfield& Textfield)
 {
-    RenderRect(Render_Fill, RenderState, glm::vec4(1, 1, 1, 1), Textfield.ScreenPosition.x, Textfield.ScreenPosition.y, Textfield.Size.x, Textfield.Size.y);
+    RenderRect(Render_Fill, RenderState, v4(1, 1, 1, 1), Textfield.ScreenPosition.x, Textfield.ScreenPosition.y, Textfield.Size.x, Textfield.Size.y);
     
-    RenderText(RenderState, RenderState->RobotoFont, glm::vec4(1, 1, 1, 1), Textfield.Label, Textfield.ScreenPosition.x, Textfield.ScreenPosition.y + 35, 1);
-    RenderText(RenderState, RenderState->RobotoFont, glm::vec4(0, 0, 0, 1), Textfield.Text, Textfield.ScreenPosition.x, Textfield.ScreenPosition.y + 10, 1);
+    RenderText(RenderState, RenderState->RobotoFont, v4(1, 1, 1, 1), Textfield.Label, Textfield.ScreenPosition.x, Textfield.ScreenPosition.y + 35, 1);
+    RenderText(RenderState, RenderState->RobotoFont, v4(0, 0, 0, 1), Textfield.Text, Textfield.ScreenPosition.x, Textfield.ScreenPosition.y + 10, 1);
     
     if(Textfield.InFocus)
     {
-        RenderRect(Render_Outline, RenderState, glm::vec4(1, 0, 0, 1), Textfield.ScreenPosition.x-3, Textfield.ScreenPosition.y - 3, Textfield.Size.x + 6, Textfield.Size.y + 6);
+        RenderRect(Render_Outline, RenderState, v4(1, 0, 0, 1), Textfield.ScreenPosition.x-3, Textfield.ScreenPosition.y - 3, Textfield.Size.x + 6, Textfield.Size.y + 6);
         
         // Draw cursor
         r32 Width;
         r32 Height;
         MeasureText(RenderState->RobotoFont, Textfield.Text, &Width, &Height);
-        RenderRect(Render_Fill, RenderState, glm::vec4(0.5, 0.3, 0.57, 1), Textfield.ScreenPosition.x + Width + 2, Textfield.ScreenPosition.y + 7, 10, 20);
+        RenderRect(Render_Fill, RenderState, v4(0.5, 0.3, 0.57, 1), Textfield.ScreenPosition.x + Width + 2, Textfield.ScreenPosition.y + 7, 10, 20);
     }
     
 }
 
 void RenderCheckbox(render_state* RenderState, const checkbox& Checkbox)
 {
-    RenderRect(Render_Fill, RenderState, glm::vec4(1, 1, 1, 1),Checkbox.ScreenPosition.x, Checkbox.ScreenPosition.y, 25, 25);
+    RenderRect(Render_Fill, RenderState, v4(1, 1, 1, 1),Checkbox.ScreenPosition.x, Checkbox.ScreenPosition.y, 25, 25);
     
-    RenderText(RenderState, RenderState->RobotoFont, glm::vec4(1, 1, 1, 1), Checkbox.Label, Checkbox.ScreenPosition.x, Checkbox.ScreenPosition.y + 35, 1);
+    RenderText(RenderState, RenderState->RobotoFont, v4(1, 1, 1, 1), Checkbox.Label, Checkbox.ScreenPosition.x, Checkbox.ScreenPosition.y + 35, 1);
     
     if(Checkbox.Checked)
     {
-        RenderRect(Render_Fill, RenderState, glm::vec4(1, 0, 0, 1),Checkbox.ScreenPosition.x + 5, Checkbox.ScreenPosition.y + 5, 15, 15);
+        RenderRect(Render_Fill, RenderState, v4(1, 0, 0, 1),Checkbox.ScreenPosition.x + 5, Checkbox.ScreenPosition.y + 5, 15, 15);
     }
 }
 
 
-static void RenderTilemap(i32 Layer, render_state* RenderState, const tilemap& Tilemap, glm::mat4 ProjectionMatrix, glm::mat4 View, glm::vec4 Color = glm::vec4(1, 1, 1, 1))
+static void RenderTilemap(i32 Layer, render_state* RenderState, const tilemap& Tilemap, math::m4 ProjectionMatrix, math::m4 View, v4 Color = v4(1, 1, 1, 1))
 {
     if (RenderState->BoundTexture != Tilemap.RenderEntity.Texture->TextureHandle)
     {
@@ -1900,8 +1900,8 @@ static void RenderTilemap(i32 Layer, render_state* RenderState, const tilemap& T
     auto Shader = RenderState->TileShader;
     UseShader(&Shader);
     
-    glm::mat4 Model(1.0f);
-    Model = glm::scale(Model, glm::vec3(1, 1, 1.0f));
+    math::m4 Model(1.0f);
+    Model = math::Scale(Model, math::v3(1, 1, 1.0f));
     
     SetFloatUniform(Shader.Program, "isUI", 0);
     SetMat4Uniform(Shader.Program, "Projection", ProjectionMatrix);
@@ -1915,7 +1915,7 @@ static void RenderTilemap(i32 Layer, render_state* RenderState, const tilemap& T
     glBindVertexArray(0);
 }
 
-static void EditorRenderTilemap(glm::vec2 ScreenPosition, r32 Size, render_state* RenderState, const tilemap& Tilemap)
+static void EditorRenderTilemap(math::v2 ScreenPosition, r32 Size, render_state* RenderState, const tilemap& Tilemap)
 {
     r32 X = ScreenPosition.x * RenderState->ScaleX;
     X -= 1;
@@ -1933,12 +1933,12 @@ static void EditorRenderTilemap(glm::vec2 ScreenPosition, r32 Size, render_state
     auto Shader = RenderState->TileShader;
     UseShader(&Shader);
     
-    glm::mat4 Model(1.0f);
-    Model = glm::translate(Model, glm::vec3(X, Y, 0));
-    Model = glm::scale(Model, glm::vec3(Size * RenderState->ScaleX, Size * RenderState->ScaleY, 0.1));
+    math::m4 Model(1.0f);
+    Model = math::Translate(Model, math::v3(X, Y, 0));
+    Model = math::Scale(Model, math::v3(Size * RenderState->ScaleX, Size * RenderState->ScaleY, 0.1));
     SetFloatUniform(Shader.Program, "isUI", 1);
     SetMat4Uniform(Shader.Program, "Model", Model);
-    SetVec4Uniform(Shader.Program, "Color", glm::vec4(1, 1, 1, 1));
+    SetVec4Uniform(Shader.Program, "Color", v4(1, 1, 1, 1));
     
     glDrawArrays(GL_QUADS, 0, Tilemap.EditorRenderInfo.VBOSize / 4);
     // @Incomplete: Change to glDrawElements
@@ -1971,7 +1971,7 @@ static void RenderInGameMode(game_state* GameState)
             if(GameState->EditorState.CurrentTilemapLayer == Layer)
                 RenderTilemap(Layer, &GameState->RenderState, GameState->CurrentLevel.Tilemap, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
             else
-                RenderTilemap(Layer, &GameState->RenderState, GameState->CurrentLevel.Tilemap, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix, glm::vec4(1, 1, 1, 0.2));
+                RenderTilemap(Layer, &GameState->RenderState, GameState->CurrentLevel.Tilemap, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix, v4(1, 1, 1, 0.2));
         }
         else
             RenderTilemap(Layer, &GameState->RenderState, GameState->CurrentLevel.Tilemap, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
@@ -1987,10 +1987,10 @@ static void RenderInGameMode(game_state* GameState)
                     const entity& Entity = *RenderEntity.Entity;
                     if(Entity.ShowAttackTiles &&(Entity.Type == Entity_Player || Entity.Type == Entity_Enemy))
                     {
-                        r32 CartesianX = glm::floor(Entity.Position.x - 0.5f);
-                        r32 CartesianY = glm::ceil(Entity.Position.y - 0.5f);
+                        r32 CartesianX = Floor(Entity.Position.x - 0.5f);
+                        r32 CartesianY = Ceil(Entity.Position.y - 0.5f);
                         
-                        glm::vec2 CorrectPosition = ToIsometric(glm::vec2(CartesianX, CartesianY));
+                        math::v2 CorrectPosition = ToIsometric(math::v2(CartesianX, CartesianY));
                         r32 CorrectX = CorrectPosition.x;
                         r32 CorrectY = CorrectPosition.y;
                         
@@ -2000,9 +2000,9 @@ static void RenderInGameMode(game_state* GameState)
                         {
                             for(i32 Y = HitExtents.StartY; Y < HitExtents.EndY; Y++)
                             {
-                                glm::vec2 Pos = ToIsometric(glm::vec2(CartesianX + X, CartesianY + Y));
+                                math::v2 Pos = ToIsometric(math::v2(CartesianX + X, CartesianY + Y));
                                 
-                                RenderIsometricRect(RenderState, glm::vec4(1, 0, 0, 0.2), Pos.x, Pos.y, 1, 0.5f, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
+                                RenderIsometricRect(RenderState, v4(1, 0, 0, 0.2), Pos.x, Pos.y, 1, 0.5f, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
                             }
                         }
                     }
@@ -2038,19 +2038,19 @@ void RenderUI(game_state* GameState)
     {
         case Mode_MainMenu:
         {
-            glm::vec4 TextColor;
+            v4 TextColor;
             
             for(u32 Index = 0; Index < GameState->MainMenu.OptionCount; Index++)
             {
                 if((i32)Index == GameState->MainMenu.SelectedIndex)
                 {
-                    RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(1, 1, 1, 1), (r32)GameState->RenderState.WindowWidth / 2 - 200, (r32)GameState->RenderState.WindowHeight / 2 - 10 - 40 * Index, 400, 40);
+                    RenderRect(Render_Fill, &GameState->RenderState, v4(1, 1, 1, 1), (r32)GameState->RenderState.WindowWidth / 2 - 200, (r32)GameState->RenderState.WindowHeight / 2 - 10 - 40 * Index, 400, 40);
                     
-                    TextColor = glm::vec4(0, 0, 0, 1);
+                    TextColor = v4(0, 0, 0, 1);
                 }
                 else
                 {
-                    TextColor = glm::vec4(1, 1, 1, 1);
+                    TextColor = v4(1, 1, 1, 1);
                 }
                 RenderText(&GameState->RenderState, GameState->RenderState.MenuFont, TextColor, GameState->MainMenu.Options[Index], (r32)GameState->RenderState.WindowWidth / 2, (r32)GameState->RenderState.WindowHeight / 2 - 40 * Index, 1, Alignment_Center);
                 
@@ -2062,18 +2062,18 @@ void RenderUI(game_state* GameState)
             glfwSetInputMode(GameState->RenderState.Window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
             
             if(GameState->Paused)
-                RenderText(&GameState->RenderState, GameState->RenderState.MenuFont, glm::vec4(0.5, 1, 1, 1), "PAUSED", (r32)GameState->RenderState.WindowWidth / 2, 40, 1, Alignment_Center);
+                RenderText(&GameState->RenderState, GameState->RenderState.MenuFont, v4(0.5, 1, 1, 1), "PAUSED", (r32)GameState->RenderState.WindowWidth / 2, 40, 1, Alignment_Center);
             
             if(!InputController.ControllerPresent)
             {
-                RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(1, 1, 1, 1), (r32)InputController.MouseX - 20.0f, (r32)GameState->RenderState.WindowHeight - (r32)InputController.MouseY - 20.0f, 40.0f, 40.0f, 
+                RenderRect(Render_Fill, &GameState->RenderState, v4(1, 1, 1, 1), (r32)InputController.MouseX - 20.0f, (r32)GameState->RenderState.WindowHeight - (r32)InputController.MouseY - 20.0f, 40.0f, 40.0f, 
                            GameState->RenderState.Textures["cross"]->TextureHandle, true, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
             }
             
             // Player UI
             auto Player = GameState->Entities[0];
-            RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(0, 0, 0, 1), 48.0f, GameState->RenderState.WindowHeight - 52.0f, 404.0f, 29.0f);
-            RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(0.6f, 0, 0, 1), 50.0f, GameState->RenderState.WindowHeight - 50.0f, 400.0f / (r32)GameState->CharacterData.Health * (r32)Player.Health, 25.0f);
+            RenderRect(Render_Fill, &GameState->RenderState, v4(0, 0, 0, 1), 48.0f, GameState->RenderState.WindowHeight - 52.0f, 404.0f, 29.0f);
+            RenderRect(Render_Fill, &GameState->RenderState, v4(0.6f, 0, 0, 1), 50.0f, GameState->RenderState.WindowHeight - 50.0f, 400.0f / (r32)GameState->CharacterData.Health * (r32)Player.Health, 25.0f);
             
             if(!TimerDone(GameState,Player.Player.CheckpointPlacementTimer) && Player.Player.IsChargingCheckpoint)
             {
@@ -2082,8 +2082,8 @@ void RenderUI(game_state* GameState)
                 r32 XPos = GameState->RenderState.WindowWidth / 2.0f - TotalWidth/2.0f;
                 r32 YPos = GameState->RenderState.WindowHeight - 52.0f;
                 
-                RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(1,1,1,1), XPos, YPos, TotalWidth, Height);
-                RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(0.0f,0.5f,0.5f,1.0f), XPos, YPos, TotalWidth * (r32)(1 -  ElapsedTimerFrac(GameState,Player.Player.CheckpointPlacementTimer)),Height);
+                RenderRect(Render_Fill, &GameState->RenderState, v4(1,1,1,1), XPos, YPos, TotalWidth, Height);
+                RenderRect(Render_Fill, &GameState->RenderState, v4(0.0f,0.5f,0.5f,1.0f), XPos, YPos, TotalWidth * (r32)(1 -  ElapsedTimerFrac(GameState,Player.Player.CheckpointPlacementTimer)),Height);
             }
             
             
@@ -2092,27 +2092,27 @@ void RenderUI(game_state* GameState)
                 r32 StartX = 50 +  400.0f / (r32)GameState->CharacterData.Health * (r32)Player.Health;
                 r32 Width = 400.0f / (r32)GameState->CharacterData.Health * Player.HealthLost;
                 
-                RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(1, 1, 1, 1), StartX, (r32)(GameState->RenderState.WindowHeight - 50), (r32)Width, 25.0f);
+                RenderRect(Render_Fill, &GameState->RenderState, v4(1, 1, 1, 1), StartX, (r32)(GameState->RenderState.WindowHeight - 50), (r32)Width, 25.0f);
             }
             
-            RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(0, 0, 0, 1), 48.0f, (r32)(GameState->RenderState.WindowHeight - 92), 404.0f, 29.0f);
-            RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(1, 0.5, 0, 1), 50.0f, (r32)(GameState->RenderState.WindowHeight - 90), 400.0f / (r32)GameState->CharacterData.Stamina * (r32)Player.Player.Stamina, 25.0f);
+            RenderRect(Render_Fill, &GameState->RenderState, v4(0, 0, 0, 1), 48.0f, (r32)(GameState->RenderState.WindowHeight - 92), 404.0f, 29.0f);
+            RenderRect(Render_Fill, &GameState->RenderState, v4(1, 0.5, 0, 1), 50.0f, (r32)(GameState->RenderState.WindowHeight - 90), 400.0f / (r32)GameState->CharacterData.Stamina * (r32)Player.Player.Stamina, 25.0f);
             
-            RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(0, 0, 0, 1), 48, 10, 80, 80);
-            RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(1, 1, 1, 1), 48 + 40 - 25, 10 + 40 - 25, 50, 50, GameState->RenderState.Textures["health_potion"]->TextureHandle);
+            RenderRect(Render_Fill, &GameState->RenderState, v4(0, 0, 0, 1), 48, 10, 80, 80);
+            RenderRect(Render_Fill, &GameState->RenderState, v4(1, 1, 1, 1), 48 + 40 - 25, 10 + 40 - 25, 50, 50, GameState->RenderState.Textures["health_potion"]->TextureHandle);
             
             char InventoryText[64];
             sprintf(InventoryText, "%d", GameState->Entities[0].Player.Inventory.HealthPotionCount);
             
-            RenderText(&GameState->RenderState, GameState->RenderState.RobotoFont, glm::vec4(1, 1, 1, 1), InventoryText, 48 + 40 - 30, 75, 1, Alignment_Center);
+            RenderText(&GameState->RenderState, GameState->RenderState.RobotoFont, v4(1, 1, 1, 1), InventoryText, 48 + 40 - 30, 75, 1, Alignment_Center);
             
             if(InputController.ControllerType == Controller_Xbox)
             {
-                RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(1, 1, 1, 1), 48 + 40 - 17.5f, 90, 35, 35, GameState->RenderState.Textures["x_button"]->TextureHandle);
+                RenderRect(Render_Fill, &GameState->RenderState, v4(1, 1, 1, 1), 48 + 40 - 17.5f, 90, 35, 35, GameState->RenderState.Textures["x_button"]->TextureHandle);
             }
             else if (InputController.ControllerType == Controller_PS4) 
             {
-                RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(1, 1, 1, 1), 48 + 40 - 17.5f, 90, 35, 35, GameState->RenderState.Textures["square_button"]->TextureHandle);
+                RenderRect(Render_Fill, &GameState->RenderState, v4(1, 1, 1, 1), 48 + 40 - 17.5f, 90, 35, 35, GameState->RenderState.Textures["square_button"]->TextureHandle);
             }
             
             texture* ButtonTexture = 0;
@@ -2134,7 +2134,7 @@ void RenderUI(game_state* GameState)
                 r32 Width;
                 r32 Height;
                 MeasureText(GameState->RenderState.RobotoFont, "Regain lost will", &Width, &Height);
-                RenderText(&GameState->RenderState, GameState->RenderState.RobotoFont, glm::vec4(1,1,1,1), "Regain lost will", (r32)GameState->RenderState.WindowWidth / 2 - ButtonTexWidth - Width - 10.0f, (r32)GameState->RenderState.WindowHeight - 490, Alignment_Center);
+                RenderText(&GameState->RenderState, GameState->RenderState.RobotoFont, v4(1,1,1,1), "Regain lost will", (r32)GameState->RenderState.WindowWidth / 2 - ButtonTexWidth - Width - 10.0f, (r32)GameState->RenderState.WindowHeight - 490, Alignment_Center);
                 LootRendered = true;
             }
             
@@ -2151,7 +2151,7 @@ void RenderUI(game_state* GameState)
                                 r32 Width;
                                 r32 Height;
                                 MeasureText(GameState->RenderState.RobotoFont,"Health Potion", &Width, &Height);
-                                RenderText(&GameState->RenderState, GameState->RenderState.RobotoFont, glm::vec4(1,1,1,1), "Health Potion", (r32)GameState->RenderState.WindowWidth / 2 - ButtonTexWidth - Width - 10.0f, (r32)GameState->RenderState.WindowHeight - 490, Alignment_Center);
+                                RenderText(&GameState->RenderState, GameState->RenderState.RobotoFont, v4(1,1,1,1), "Health Potion", (r32)GameState->RenderState.WindowWidth / 2 - ButtonTexWidth - Width - 10.0f, (r32)GameState->RenderState.WindowHeight - 490, Alignment_Center);
                             }
                             break;
                             case Loot_Checkpoint:
@@ -2159,7 +2159,7 @@ void RenderUI(game_state* GameState)
                                 r32 Width;
                                 r32 Height;
                                 MeasureText(GameState->RenderState.RobotoFont,"Checkpoint", &Width, &Height);
-                                RenderText(&GameState->RenderState, GameState->RenderState.RobotoFont, glm::vec4(1,1,1,1), "Checkpoint", (r32)GameState->RenderState.WindowWidth / 2 - ButtonTexWidth - Width - 10.0f, (r32)GameState->RenderState.WindowHeight - 490, Alignment_Center);
+                                RenderText(&GameState->RenderState, GameState->RenderState.RobotoFont, v4(1,1,1,1), "Checkpoint", (r32)GameState->RenderState.WindowWidth / 2 - ButtonTexWidth - Width - 10.0f, (r32)GameState->RenderState.WindowHeight - 490, Alignment_Center);
                             }
                             break;
                             case Loot_LevelItem:
@@ -2178,11 +2178,11 @@ void RenderUI(game_state* GameState)
                                 r32 Width;
                                 r32 Height;
                                 MeasureText(GameState->RenderState.RobotoFont,LootText, &Width, &Height);
-                                RenderText(&GameState->RenderState, GameState->RenderState.RobotoFont, glm::vec4(1,1,1,1), LootText, (r32)GameState->RenderState.WindowWidth / 2 - ButtonTexWidth - Width - 10.0f, (r32)GameState->RenderState.WindowHeight - 490, Alignment_Center);
+                                RenderText(&GameState->RenderState, GameState->RenderState.RobotoFont, v4(1,1,1,1), LootText, (r32)GameState->RenderState.WindowWidth / 2 - ButtonTexWidth - Width - 10.0f, (r32)GameState->RenderState.WindowHeight - 490, Alignment_Center);
                             } break;
                         }
                         
-                        RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(1, 1, 1, 1), (r32)GameState->RenderState.WindowWidth / 2 - ButtonTexWidth, (r32)GameState->RenderState.WindowHeight - 500, 35, 35, ButtonTexture->TextureHandle);
+                        RenderRect(Render_Fill, &GameState->RenderState, v4(1, 1, 1, 1), (r32)GameState->RenderState.WindowWidth / 2 - ButtonTexWidth, (r32)GameState->RenderState.WindowHeight - 500, 35, 35, ButtonTexture->TextureHandle);
                         
                         break;
                     }
@@ -2191,20 +2191,20 @@ void RenderUI(game_state* GameState)
             
             char Text[100];
             sprintf(Text, "%d / %d", Player.Health, GameState->CharacterData.Health);
-            RenderText(&GameState->RenderState, GameState->RenderState.RobotoFont, glm::vec4(1, 1, 1, 1), &Text[0], 48 + 202.0f, GameState->RenderState.WindowHeight - 35.5f, 1, Alignment_Center);
+            RenderText(&GameState->RenderState, GameState->RenderState.RobotoFont, v4(1, 1, 1, 1), &Text[0], 48 + 202.0f, GameState->RenderState.WindowHeight - 35.5f, 1, Alignment_Center);
             
             sprintf(Text, "%d / %d", Player.Player.Stamina, GameState->CharacterData.Stamina);
-            RenderText(&GameState->RenderState, GameState->RenderState.RobotoFont, glm::vec4(1, 1, 1, 1), &Text[0], 48 + 202.0f, GameState->RenderState.WindowHeight - 75.5f, 1, Alignment_Center);
+            RenderText(&GameState->RenderState, GameState->RenderState.RobotoFont, v4(1, 1, 1, 1), &Text[0], 48 + 202.0f, GameState->RenderState.WindowHeight - 75.5f, 1, Alignment_Center);
             
             // Level and experience
             sprintf(Text, "Level %d", (GameState->CharacterData.Level + 1));
-            RenderText(&GameState->RenderState, GameState->RenderState.RobotoFont, glm::vec4(1, 1, 1, 1), &Text[0], 48.0f, (r32)GameState->RenderState.WindowHeight - 115, 1);
+            RenderText(&GameState->RenderState, GameState->RenderState.RobotoFont, v4(1, 1, 1, 1), &Text[0], 48.0f, (r32)GameState->RenderState.WindowHeight - 115, 1);
             
             i32 CurrentWill = Player.Player.Will;
             
             r32 XPos = 150.0f;
             
-            RenderRect(Render_Fill, &GameState->RenderState,glm::vec4(0, 0, 0, 1), XPos, 50.0f, 300.0f,30.0f);
+            RenderRect(Render_Fill, &GameState->RenderState,v4(0, 0, 0, 1), XPos, 50.0f, 300.0f,30.0f);
             
             char Buf[64];
             sprintf(Buf,"%d",CurrentWill);
@@ -2214,31 +2214,31 @@ void RenderUI(game_state* GameState)
             
             MeasureText(GameState->RenderState.RobotoFont, Buf, &Width, &Height);
             
-            RenderText(&GameState->RenderState, GameState->RenderState.RobotoFont, glm::vec4(1, 1, 1, 1), "Will", XPos + 5.0f, 50.0f + Height/2.0f, 1);
+            RenderText(&GameState->RenderState, GameState->RenderState.RobotoFont, v4(1, 1, 1, 1), "Will", XPos + 5.0f, 50.0f + Height/2.0f, 1);
             
-            RenderText(&GameState->RenderState, GameState->RenderState.RobotoFont, glm::vec4(1, 1, 1, 1), Buf, XPos + 5.0f + 300.0f - Width * 2.0f, 50.0f + Height/2.0f, 1);
+            RenderText(&GameState->RenderState, GameState->RenderState.RobotoFont, v4(1, 1, 1, 1), Buf, XPos + 5.0f + 300.0f - Width * 2.0f, 50.0f + Height/2.0f, 1);
             
             if(GameState->StatGainModeOn)
             {
                 r32 HalfWidth = (r32)GameState->RenderState.WindowWidth / 2.0f;
                 r32 HalfHeight = (r32)GameState->RenderState.WindowHeight / 2.0f;
                 
-                RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(0, 0, 0, 1), HalfWidth - 150, HalfHeight - 100, 300, 200);
+                RenderRect(Render_Fill, &GameState->RenderState, v4(0, 0, 0, 1), HalfWidth - 150, HalfHeight - 100, 300, 200);
                 
-                RenderText(&GameState->RenderState, GameState->RenderState.RobotoFont, glm::vec4(1, 1, 1, 1), "Choose an upgrade", HalfWidth, HalfHeight + 50, 1, Alignment_Center);
+                RenderText(&GameState->RenderState, GameState->RenderState.RobotoFont, v4(1, 1, 1, 1), "Choose an upgrade", HalfWidth, HalfHeight + 50, 1, Alignment_Center);
                 
                 sprintf(Text, "Health +%d", 5);
-                RenderText(&GameState->RenderState, GameState->RenderState.RobotoFont, glm::vec4(1, 1, 1, 1), &Text[0], HalfWidth, HalfHeight + 20, 1, Alignment_Center);
+                RenderText(&GameState->RenderState, GameState->RenderState.RobotoFont, v4(1, 1, 1, 1), &Text[0], HalfWidth, HalfHeight + 20, 1, Alignment_Center);
                 
                 sprintf(Text, "Stamina +%d", 5);
-                RenderText(&GameState->RenderState, GameState->RenderState.RobotoFont, glm::vec4(1, 1, 1, 1), &Text[0], HalfWidth, HalfHeight - 10, 1, Alignment_Center);
+                RenderText(&GameState->RenderState, GameState->RenderState.RobotoFont, v4(1, 1, 1, 1), &Text[0], HalfWidth, HalfHeight - 10, 1, Alignment_Center);
                 
                 sprintf(Text, "Strength +%d", 1);
-                RenderText(&GameState->RenderState, GameState->RenderState.RobotoFont, glm::vec4(1, 1, 1, 1), &Text[0], HalfWidth, HalfHeight - 40, 1, Alignment_Center);
+                RenderText(&GameState->RenderState, GameState->RenderState.RobotoFont, v4(1, 1, 1, 1), &Text[0], HalfWidth, HalfHeight - 40, 1, Alignment_Center);
                 
                 r32 YForSelector = HalfHeight + 20 - GameState->SelectedGainIndex * 30.0f;
                 
-                RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(1, 1, 1, 1), HalfWidth - 70, YForSelector - 7.5f, 15, 15);
+                RenderRect(Render_Fill, &GameState->RenderState, v4(1, 1, 1, 1), HalfWidth - 70, YForSelector - 7.5f, 15, 15);
             }
         }
         break;
@@ -2257,12 +2257,12 @@ void RenderUI(game_state* GameState)
                         
                         MeasureText(GameState->RenderState.MenuFont, GameState->EditorState.MenuOptions[Index], &Width, &Height);
                         
-                        RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(1, 1, 1, 1), (r32)GameState->RenderState.WindowWidth / 2 - Width / 2 - 5, (r32)GameState->RenderState.WindowHeight / 2 - 30 + Index * 40 - Height + 5, Width + 10, Height + 10);
-                        RenderText(&GameState->RenderState, GameState->RenderState.MenuFont, glm::vec4(0, 0, 0, 1), GameState->EditorState.MenuOptions[Index], (r32)GameState->RenderState.WindowWidth / 2, (r32)GameState->RenderState.WindowHeight / 2 - 30 + Index * 40, 1, Alignment_Center);
+                        RenderRect(Render_Fill, &GameState->RenderState, v4(1, 1, 1, 1), (r32)GameState->RenderState.WindowWidth / 2 - Width / 2 - 5, (r32)GameState->RenderState.WindowHeight / 2 - 30 + Index * 40 - Height + 5, Width + 10, Height + 10);
+                        RenderText(&GameState->RenderState, GameState->RenderState.MenuFont, v4(0, 0, 0, 1), GameState->EditorState.MenuOptions[Index], (r32)GameState->RenderState.WindowWidth / 2, (r32)GameState->RenderState.WindowHeight / 2 - 30 + Index * 40, 1, Alignment_Center);
                     }
                     else
                     {
-                        RenderText(&GameState->RenderState, GameState->RenderState.MenuFont, glm::vec4(1, 1, 1, 1), GameState->EditorState.MenuOptions[Index], (r32)GameState->RenderState.WindowWidth / 2, (r32)GameState->RenderState.WindowHeight / 2 - 30 + Index * 40, 1, Alignment_Center);
+                        RenderText(&GameState->RenderState, GameState->RenderState.MenuFont, v4(1, 1, 1, 1), GameState->EditorState.MenuOptions[Index], (r32)GameState->RenderState.WindowWidth / 2, (r32)GameState->RenderState.WindowHeight / 2 - 30 + Index * 40, 1, Alignment_Center);
                     }
                 }
             }
@@ -2272,50 +2272,50 @@ void RenderUI(game_state* GameState)
                 {
                     case Editor_Level:
                     {
-                        RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(0, 0, 0, 1), 0, (r32)GameState->RenderState.WindowHeight - 155, (r32)GameState->RenderState.WindowWidth - 80, 155);
+                        RenderRect(Render_Fill, &GameState->RenderState, v4(0, 0, 0, 1), 0, (r32)GameState->RenderState.WindowHeight - 155, (r32)GameState->RenderState.WindowWidth - 80, 155);
                         
                         switch(GameState->EditorState.PlacementMode)
                         {
                             case Editor_Placement_Tile:
                             {
-                                RenderRect(Render_Outline, &GameState->RenderState, glm::vec4(1.0f, 0.0f, 0.0f, 1.0f), 0, 0, (r32)GameState->CurrentLevel.Tilemap.Width, (r32)GameState->CurrentLevel.Tilemap.Height, 0, false, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
-                                RenderRect(Render_Outline, &GameState->RenderState, glm::vec4(1.0f, 0.0f, 0.0f, 1.0f), 0, 0, (r32)GameState->CurrentLevel.Tilemap.Width, (r32)GameState->CurrentLevel.Tilemap.Height, 0, false, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
+                                RenderRect(Render_Outline, &GameState->RenderState, v4(1.0f, 0.0f, 0.0f, 1.0f), 0, 0, (r32)GameState->CurrentLevel.Tilemap.Width, (r32)GameState->CurrentLevel.Tilemap.Height, 0, false, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
+                                RenderRect(Render_Outline, &GameState->RenderState, v4(1.0f, 0.0f, 0.0f, 1.0f), 0, 0, (r32)GameState->CurrentLevel.Tilemap.Width, (r32)GameState->CurrentLevel.Tilemap.Height, 0, false, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
                                 
-                                glm::vec2 TextureOffset = GameState->CurrentLevel.Tilemap.Tiles[GameState->EditorState.SelectedTileType + 1].TextureOffset;
+                                math::v2 TextureOffset = GameState->CurrentLevel.Tilemap.Tiles[GameState->EditorState.SelectedTileType + 1].TextureOffset;
                                 
                                 if(GameState->EditorState.TileX >= 0 && GameState->EditorState.TileX < GameState->CurrentLevel.Tilemap.Width && GameState->EditorState.TileY > 0 && GameState->EditorState.TileY <= GameState->CurrentLevel.Tilemap.Height)
                                 {
                                     const tilesheet& Tilesheet = GameState->RenderState.Tilesheets[GameState->CurrentLevel.TilesheetIndex];
                                     
-                                    glm::vec2 SheetSize(Tilesheet.Texture.Width, Tilesheet.Texture.Height);
+                                    math::v2 SheetSize(Tilesheet.Texture.Width, Tilesheet.Texture.Height);
                                     
                                     for(u32 X = 0; X < GameState->EditorState.TileBrushSize.x && X + GameState->EditorState.TileX < GameState->CurrentLevel.Tilemap.Width; X++)
                                     {
                                         for(u32 Y = 0;Y < GameState->EditorState.TileBrushSize.y && Y + GameState->EditorState.TileY < GameState->CurrentLevel.Tilemap.Height; Y++)
                                         {
-                                            glm::vec2 CorrectPosition = ToIsometric(glm::vec2(X, Y));
+                                            math::v2 CorrectPosition = ToIsometric(math::v2(X, Y));
                                             r32 CorrectX = GameState->EditorState.TileX + CorrectPosition.x;
                                             r32 CorrectY = GameState->EditorState.TileY + CorrectPosition.y + 1.0f;
                                             
-                                            RenderTile(&GameState->RenderState, CorrectX, CorrectY, GameState->CurrentLevel.TilesheetIndex, GameState->CurrentLevel.Tilemap.TileWidth, GameState->CurrentLevel.Tilemap.TileHeight, TextureOffset, SheetSize, glm::vec4(1, 1, 1, 1),  GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
+                                            RenderTile(&GameState->RenderState, CorrectX, CorrectY, GameState->CurrentLevel.TilesheetIndex, GameState->CurrentLevel.Tilemap.TileWidth, GameState->CurrentLevel.Tilemap.TileHeight, TextureOffset, SheetSize, v4(1, 1, 1, 1),  GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
                                         }
                                     }
                                 }
                                 
-                                RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(0, 0, 0, 1), GameState->EditorState.ToolbarX, GameState->EditorState.ToolbarY, GameState->EditorState.ToolbarWidth, GameState->EditorState.ToolbarHeight);
+                                RenderRect(Render_Fill, &GameState->RenderState, v4(0, 0, 0, 1), GameState->EditorState.ToolbarX, GameState->EditorState.ToolbarY, GameState->EditorState.ToolbarWidth, GameState->EditorState.ToolbarHeight);
                                 
                                 EditorRenderTilemap(GameState->EditorState.TilemapOffset, GameState->EditorState.RenderedTileSize, &GameState->RenderState, GameState->CurrentLevel.Tilemap);
                                 
-                                RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(1, 0, 0, 1), GameState->EditorState.ToolbarX + GameState->EditorState.TilemapOffset.x + GameState->EditorState.SelectedTilePosition.x * GameState->EditorState.RenderedTileSize,
+                                RenderRect(Render_Fill, &GameState->RenderState, v4(1, 0, 0, 1), GameState->EditorState.ToolbarX + GameState->EditorState.TilemapOffset.x + GameState->EditorState.SelectedTilePosition.x * GameState->EditorState.RenderedTileSize,
                                            GameState->EditorState.ToolbarY + GameState->EditorState.TilemapOffset.y + GameState->EditorState.SelectedTilePosition.y * GameState->EditorState.RenderedTileSize, GameState->EditorState.RenderedTileSize, GameState->EditorState.RenderedTileSize, GameState->RenderState.Textures["selected_tile"]->TextureHandle);
                                 
                                 char Text[255]; sprintf(Text,"Type index: %d Is solid: %d",GameState->CurrentLevel.Tilemap.Tiles[GameState->EditorState.SelectedTileType].TypeIndex,GameState->CurrentLevel.Tilemap.Tiles[GameState->EditorState.SelectedTileType].IsSolid);
                                 
-                                RenderText(&GameState->RenderState, GameState->RenderState.MenuFont, glm::vec4(1, 1, 1, 1), Text, GameState->RenderState.WindowWidth * 0.6f, (r32)GameState->RenderState.WindowHeight - 90, 1);
+                                RenderText(&GameState->RenderState, GameState->RenderState.MenuFont, v4(1, 1, 1, 1), Text, GameState->RenderState.WindowWidth * 0.6f, (r32)GameState->RenderState.WindowHeight - 90, 1);
                                 
                                 char LayerText[20];
                                 sprintf(LayerText, "Layer %d", GameState->EditorState.CurrentTilemapLayer);
-                                RenderText(&GameState->RenderState, GameState->RenderState.MenuFont, glm::vec4(1, 1, 1, 1), &LayerText[0], GameState->RenderState.WindowWidth * 0.6f, (r32)GameState->RenderState.WindowHeight - 140, 1); 
+                                RenderText(&GameState->RenderState, GameState->RenderState.MenuFont, v4(1, 1, 1, 1), &LayerText[0], GameState->RenderState.WindowWidth * 0.6f, (r32)GameState->RenderState.WindowHeight - 140, 1); 
                             }
                             break;
                             case Editor_Placement_PlaceEntity:
@@ -2356,7 +2356,7 @@ void RenderUI(game_state* GameState)
                                     break;
                                 }
                                 
-                                RenderText(&GameState->RenderState, GameState->RenderState.InconsolataFont, glm::vec4(1, 1, 1, 1), Text, (r32)InputController.MouseX, GameState->RenderState.WindowHeight - (r32)InputController.MouseY + 20, 1, Alignment_Center); 
+                                RenderText(&GameState->RenderState, GameState->RenderState.InconsolataFont, v4(1, 1, 1, 1), Text, (r32)InputController.MouseX, GameState->RenderState.WindowHeight - (r32)InputController.MouseY + 20, 1, Alignment_Center); 
                                 
                                 if(GameState->EditorState.SelectedEntity)
                                     RenderWireframe(&GameState->RenderState, GameState->EditorState.SelectedEntity, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
@@ -2371,14 +2371,14 @@ void RenderUI(game_state* GameState)
                         }
                         
                         if(GameState->EditorState.PlacementMode == Editor_Placement_Tile)
-                            RenderText(&GameState->RenderState, GameState->RenderState.MenuFont, glm::vec4(0.6f, 0.6f, 0.6f, 1), "Tile-mode", (r32)GameState->RenderState.WindowWidth / 2, (r32)GameState->RenderState.WindowHeight - 70, 1, Alignment_Center);
+                            RenderText(&GameState->RenderState, GameState->RenderState.MenuFont, v4(0.6f, 0.6f, 0.6f, 1), "Tile-mode", (r32)GameState->RenderState.WindowWidth / 2, (r32)GameState->RenderState.WindowHeight - 70, 1, Alignment_Center);
                         else
-                            RenderText(&GameState->RenderState, GameState->RenderState.MenuFont, glm::vec4(0.6f, 0.6f, 0.6f, 1), "Entity-mode", (r32)GameState->RenderState.WindowWidth / 2, (r32)GameState->RenderState.WindowHeight - 70, 1, Alignment_Center);
+                            RenderText(&GameState->RenderState, GameState->RenderState.MenuFont, v4(0.6f, 0.6f, 0.6f, 1), "Entity-mode", (r32)GameState->RenderState.WindowWidth / 2, (r32)GameState->RenderState.WindowHeight - 70, 1, Alignment_Center);
                     }
                     break;
                     case Editor_Animation:
                     {
-                        RenderText(&GameState->RenderState, GameState->RenderState.MenuFont, glm::vec4(0.6f, 0.6f, 0.6f, 1), "Animations", (r32)GameState->RenderState.WindowWidth / 2, (r32)GameState->RenderState.WindowHeight - 70, 1, Alignment_Center);
+                        RenderText(&GameState->RenderState, GameState->RenderState.MenuFont, v4(0.6f, 0.6f, 0.6f, 1), "Animations", (r32)GameState->RenderState.WindowWidth / 2, (r32)GameState->RenderState.WindowHeight - 70, 1, Alignment_Center);
                         
                         if(GameState->EditorState.AnimationMode == Animation_SelectAnimation)
                         {
@@ -2393,11 +2393,11 @@ void RenderUI(game_state* GameState)
                                 
                                 if(Index == GameState->EditorState.SelectedAnimation)
                                 {
-                                    RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(1, 1, 1, 1), ExtraX + 20, StartingY + (20 - CalculatedIndex) * 15 - 4, 100, 15);
-                                    RenderText(&GameState->RenderState, GameState->RenderState.SmallerInconsolataFont, glm::vec4(0, 0, 0, 1), Animation.Name, ExtraX + 20, StartingY + (20 - CalculatedIndex) * 15, 1);
+                                    RenderRect(Render_Fill, &GameState->RenderState, v4(1, 1, 1, 1), ExtraX + 20, StartingY + (20 - CalculatedIndex) * 15 - 4, 100, 15);
+                                    RenderText(&GameState->RenderState, GameState->RenderState.SmallerInconsolataFont, v4(0, 0, 0, 1), Animation.Name, ExtraX + 20, StartingY + (20 - CalculatedIndex) * 15, 1);
                                 }
                                 else
-                                    RenderText(&GameState->RenderState, GameState->RenderState.SmallerInconsolataFont, glm::vec4(1, 1, 1, 1), Animation.Name, ExtraX + 20, StartingY + (20 - CalculatedIndex) * 15, 1);
+                                    RenderText(&GameState->RenderState, GameState->RenderState.SmallerInconsolataFont, v4(1, 1, 1, 1), Animation.Name, ExtraX + 20, StartingY + (20 - CalculatedIndex) * 15, 1);
                             }
                         }
                         else
@@ -2408,11 +2408,11 @@ void RenderUI(game_state* GameState)
                                 {
                                     if(TextureIndex == GameState->EditorState.SelectedTexture)
                                     {
-                                        RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(1, 1, 1, 1), 15, (r32)GameState->RenderState.WindowHeight / 2 + (GameState->RenderState.TextureIndex - TextureIndex) * 15 - 350 - 4, 300, 20);
-                                        RenderText(&GameState->RenderState, GameState->RenderState.SmallerInconsolataFont, glm::vec4(0, 0, 0, 1), GameState->RenderState.TextureArray[TextureIndex].Name, 20, (r32)GameState->RenderState.WindowHeight / 2 + (GameState->RenderState.TextureIndex - TextureIndex) * 15 - 350, 1);
+                                        RenderRect(Render_Fill, &GameState->RenderState, v4(1, 1, 1, 1), 15, (r32)GameState->RenderState.WindowHeight / 2 + (GameState->RenderState.TextureIndex - TextureIndex) * 15 - 350 - 4, 300, 20);
+                                        RenderText(&GameState->RenderState, GameState->RenderState.SmallerInconsolataFont, v4(0, 0, 0, 1), GameState->RenderState.TextureArray[TextureIndex].Name, 20, (r32)GameState->RenderState.WindowHeight / 2 + (GameState->RenderState.TextureIndex - TextureIndex) * 15 - 350, 1);
                                     }
                                     else
-                                        RenderText(&GameState->RenderState, GameState->RenderState.SmallerInconsolataFont, glm::vec4(1, 1, 1, 1), GameState->RenderState.TextureArray[TextureIndex].Name, 20, (r32)GameState->RenderState.WindowHeight / 2 + (GameState->RenderState.TextureIndex - TextureIndex) * 15 - 350, 1);
+                                        RenderText(&GameState->RenderState, GameState->RenderState.SmallerInconsolataFont, v4(1, 1, 1, 1), GameState->RenderState.TextureArray[TextureIndex].Name, 20, (r32)GameState->RenderState.WindowHeight / 2 + (GameState->RenderState.TextureIndex - TextureIndex) * 15 - 350, 1);
                                 }
                             }
                             
@@ -2423,9 +2423,9 @@ void RenderUI(game_state* GameState)
                                 r32 TextureWidth = (r32)Texture.Width * Scale;
                                 r32 TextureHeight = (r32)Texture.Height * Scale;
                                 
-                                RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(1, 1, 1, 1), (r32)GameState->RenderState.WindowWidth / 2.0f - TextureWidth / 2, (r32)GameState->RenderState.WindowHeight / 2.0f - TextureHeight / 2, TextureWidth, TextureHeight);
+                                RenderRect(Render_Fill, &GameState->RenderState, v4(1, 1, 1, 1), (r32)GameState->RenderState.WindowWidth / 2.0f - TextureWidth / 2, (r32)GameState->RenderState.WindowHeight / 2.0f - TextureHeight / 2, TextureWidth, TextureHeight);
                                 
-                                RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(1, 1, 1, 1), (r32)GameState->RenderState.WindowWidth / 2.0f - TextureWidth / 2, (r32)GameState->RenderState.WindowHeight / 2.0f - TextureHeight / 2, TextureWidth, TextureHeight, Texture.TextureHandle);
+                                RenderRect(Render_Fill, &GameState->RenderState, v4(1, 1, 1, 1), (r32)GameState->RenderState.WindowWidth / 2.0f - TextureWidth / 2, (r32)GameState->RenderState.WindowHeight / 2.0f - TextureHeight / 2, TextureWidth, TextureHeight, Texture.TextureHandle);
                                 
                                 
                                 if(GameState->EditorState.AnimationFrameCountField)
@@ -2463,15 +2463,15 @@ void RenderUI(game_state* GameState)
                                             }
                                         }
                                         
-                                        RenderRect(Render_Outline, &GameState->RenderState, glm::vec4(1, 0, 0, 1), StartX + X * Scale, StartY - Y * Scale + TextureHeight - FrameHeight * Scale,(r32)FrameWidth * Scale, (r32)FrameHeight * Scale);
+                                        RenderRect(Render_Outline, &GameState->RenderState, v4(1, 0, 0, 1), StartX + X * Scale, StartY - Y * Scale + TextureHeight - FrameHeight * Scale,(r32)FrameWidth * Scale, (r32)FrameHeight * Scale);
                                     }
                                     
                                 }
                                 
-                                RenderRect(Render_Outline, &GameState->RenderState, glm::vec4(1, 0, 0, 1), (r32)GameState->RenderState.WindowWidth / 2.0f - TextureWidth / 2, (r32)GameState->RenderState.WindowHeight / 2.0f - TextureHeight / 2, TextureWidth, TextureHeight);
+                                RenderRect(Render_Outline, &GameState->RenderState, v4(1, 0, 0, 1), (r32)GameState->RenderState.WindowWidth / 2.0f - TextureWidth / 2, (r32)GameState->RenderState.WindowHeight / 2.0f - TextureHeight / 2, TextureWidth, TextureHeight);
                                 
                                 if(GameState->EditorState.LoadedAnimation->FrameCount > 0)
-                                    RenderAnimationPreview(&GameState->RenderState, GameState->EditorState.AnimationInfo, *GameState->EditorState.LoadedAnimation, glm::vec2((r32)GameState->RenderState.WindowWidth - 300, 60), 2);
+                                    RenderAnimationPreview(&GameState->RenderState, GameState->EditorState.AnimationInfo, *GameState->EditorState.LoadedAnimation, math::v2((r32)GameState->RenderState.WindowWidth - 300, 60), 2);
                             }
                         }
                         
@@ -2480,7 +2480,7 @@ void RenderUI(game_state* GameState)
                     break;
                 }
                 
-                RenderText(&GameState->RenderState, GameState->RenderState.MenuFont, glm::vec4(1, 1, 1, 1), "EDITOR", (r32)GameState->RenderState.WindowWidth / 2, (r32)GameState->RenderState.WindowHeight - 30, 1, Alignment_Center);
+                RenderText(&GameState->RenderState, GameState->RenderState.MenuFont, v4(1, 1, 1, 1), "EDITOR", (r32)GameState->RenderState.WindowWidth / 2, (r32)GameState->RenderState.WindowHeight - 30, 1, Alignment_Center);
             }
             
             for(i32 ButtonIndex = 0; ButtonIndex < 10; ButtonIndex++)
@@ -2508,21 +2508,21 @@ void RenderUI(game_state* GameState)
     {
         auto Color = GameState->Camera.FadingTint;
         
-        RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(Color.x, Color.y, Color.z, GameState->Camera.FadingAlpha), 0, 0, (r32)GameState->RenderState.WindowWidth, (r32)GameState->RenderState.WindowHeight);
+        RenderRect(Render_Fill, &GameState->RenderState, v4(Color.x, Color.y, Color.z, GameState->Camera.FadingAlpha), 0, 0, (r32)GameState->RenderState.WindowWidth, (r32)GameState->RenderState.WindowHeight);
     }
     
     if(GameState->PlayerState == Player_Dead)
     {
-        RenderRect(Render_Fill, &GameState->RenderState, glm::vec4(1, 0, 0, 0.2f), 0, 0, (r32)GameState->RenderState.WindowWidth, (r32)GameState->RenderState.WindowHeight);
+        RenderRect(Render_Fill, &GameState->RenderState, v4(1, 0, 0, 0.2f), 0, 0, (r32)GameState->RenderState.WindowWidth, (r32)GameState->RenderState.WindowHeight);
         
         r32 Width = 0;
         r32 Height = 0;
         MeasureText(GameState->RenderState.TitleFont, "YOU DIED", &Width, &Height);
         
-        RenderText(&GameState->RenderState, GameState->RenderState.TitleFont, glm::vec4(1, 1, 1, 1), "YOU DIED", (r32)GameState->RenderState.WindowWidth / 2 - Width / 2, (r32)GameState->RenderState.WindowHeight / 2 - Height / 2, 1);
+        RenderText(&GameState->RenderState, GameState->RenderState.TitleFont, v4(1, 1, 1, 1), "YOU DIED", (r32)GameState->RenderState.WindowWidth / 2 - Width / 2, (r32)GameState->RenderState.WindowHeight / 2 - Height / 2, 1);
         
         MeasureText(GameState->RenderState.TitleFont, "Press any key to restart. . .", &Width, &Height);
-        RenderText(&GameState->RenderState, GameState->RenderState.TitleFont, glm::vec4(1, 1, 1, 1), "Press any key to restart. . .", (r32)GameState->RenderState.WindowWidth / 2 - Width / 2, (r32)GameState->RenderState.WindowHeight / 2 - Height * 2, 1);
+        RenderText(&GameState->RenderState, GameState->RenderState.TitleFont, v4(1, 1, 1, 1), "Press any key to restart. . .", (r32)GameState->RenderState.WindowWidth / 2 - Width / 2, (r32)GameState->RenderState.WindowHeight / 2 - Height * 2, 1);
     }
 }
 
@@ -2557,10 +2557,10 @@ static void CheckLevelVAO(game_memory* GameMemory)
 
 static void RenderDebugInfo(game_state* GameState)
 {
-    auto Pos = glm::unProject(glm::vec3(InputController.MouseX, GameState->RenderState.Viewport[3] - InputController.MouseY, 0),
-                              GameState->Camera.ViewMatrix,
-                              GameState->Camera.ProjectionMatrix,
-                              glm::vec4(0, 0, GameState->RenderState.Viewport[2], GameState->RenderState.Viewport[3]));
+    auto Pos = UnProject(math::v3(InputController.MouseX, GameState->RenderState.Viewport[3] - InputController.MouseY, 0),
+                         GameState->Camera.ViewMatrix,
+                         GameState->Camera.ProjectionMatrix,
+                         v4(0, 0, GameState->RenderState.Viewport[2], GameState->RenderState.Viewport[3]));
     
     if(GameState->Console.CurrentTime > 0)
         RenderConsole(GameState, &GameState->Console);
@@ -2570,15 +2570,15 @@ static void RenderDebugInfo(game_state* GameState)
         char FPS[32];
         sprintf(FPS, "%4.0f",GameState->RenderState.FPS);
         RenderText(&GameState->RenderState, GameState->RenderState.InconsolataFont, 
-                   glm::vec4(1, 1, 1, 1), FPS, GameState->RenderState.WindowWidth / 2.0f, 
+                   v4(1, 1, 1, 1), FPS, GameState->RenderState.WindowWidth / 2.0f, 
                    GameState->RenderState.WindowHeight - 20.0f, 1.0f);
         
-        i32 X = (i32)glm::floor(Pos.x);
-        i32 Y = (i32)glm::floor(Pos.y);
+        i32 X = (i32)Floor(Pos.x);
+        i32 Y = (i32)Floor(Pos.y);
         char MousePos[32];
         sprintf(MousePos,"Mouse: (%d %d)",X,Y);
         RenderText(&GameState->RenderState, GameState->RenderState.InconsolataFont, 
-                   glm::vec4(1, 1, 1, 1), MousePos, GameState->RenderState.WindowWidth / 2.0f - 200, 
+                   v4(1, 1, 1, 1), MousePos, GameState->RenderState.WindowWidth / 2.0f - 200, 
                    GameState->RenderState.WindowHeight - 20.0f, 1.0f);
     }
     
@@ -2593,17 +2593,17 @@ static void RenderLightSources(game_state* GameState)
     glClearColor(0, 0, 0, 1.0f);
     glBlendFunc(GL_ONE, GL_ONE);
     
-    glm::mat4 P = GameState->Camera.ProjectionMatrix;
-    glm::mat4 V = GameState->Camera.ViewMatrix;
+    math::m4 P = GameState->Camera.ProjectionMatrix;
+    math::m4 V = GameState->Camera.ViewMatrix;
     
     if(GameState->GameMode == Mode_InGame || GameState->EditorState.Mode == Editor_Level)
     {
-        glm::vec4 PointlightPositions[32];
+        v4 PointlightPositions[32];
         r32 PointlightIntensities[32];
         r32 PointlightConstantAtt[32];
         r32 PointlightLinearAtt[32];
         r32 PointlightExponentialAtt[32];
-        glm::vec4 PointlightColors[32];
+        v4 PointlightColors[32];
         i32 NumOfPointLights = 0;
         
         for(u32 Index = 0; Index < GameState->LightSourceCount; Index++)
@@ -2615,15 +2615,15 @@ static void RenderLightSources(game_state* GameState)
                 {
                     case Light_Pointlight:
                     {
-                        glm::mat4 Model(1.0f);
+                        math::m4 Model(1.0f);
                         
-                        auto Position = GameState->CurrentLevel.Type == Level_Isometric ?ToIsometric(glm::vec2(LightSource.Pointlight.Position.x + 0.7f, LightSource.Pointlight.Position.y + 0.2f)) : LightSource.Pointlight.Position + 1.5f;
+                        auto Position = GameState->CurrentLevel.Type == Level_Isometric ?ToIsometric(math::v2(LightSource.Pointlight.Position.x + 0.7f, LightSource.Pointlight.Position.y + 0.2f)) : LightSource.Pointlight.Position + 1.5f;
                         
                         r32 CorrectX = Position.x;
                         r32 CorrectY = Position.y;
                         
-                        Model = glm::translate(Model,glm::vec3(CorrectX,CorrectY,0));
-                        PointlightPositions[NumOfPointLights] = Model * glm::vec4(0.0f, 0.0f, 0.0f,1.0f);
+                        Model = math::Translate(Model,math::v3(CorrectX,CorrectY,0));
+                        PointlightPositions[NumOfPointLights] = Model * v4(0.0f, 0.0f, 0.0f,1.0f);
                         PointlightIntensities[NumOfPointLights] = LightSource.Pointlight.Intensity;
                         PointlightColors[NumOfPointLights] = LightSource.Color;
                         PointlightConstantAtt[NumOfPointLights] = LightSource.Pointlight.ConstantAtten;
@@ -2636,7 +2636,7 @@ static void RenderLightSources(game_state* GameState)
             }
         }
         
-        glm::vec4 Color = glm::vec4(0.5,0.2,0.0,0.6);
+        v4 Color = v4(0.5,0.2,0.0,0.6);
         
         auto Shader = GameState->RenderState.LightSourceShader;
         
@@ -2651,7 +2651,7 @@ static void RenderLightSources(game_state* GameState)
         SetFloatArrayUniform(Shader.Program, "PointLightExpAtt", PointlightExponentialAtt, NumOfPointLights);
         SetIntUniform(Shader.Program, "NUM_POINTLIGHTS", NumOfPointLights);
         SetVec4ArrayUniform(Shader.Program, "PointLightPos",PointlightPositions,NumOfPointLights);
-        SetVec2Uniform(Shader.Program, "screenSize", glm::vec2((r32)GameState->RenderState.WindowWidth,(r32)GameState->RenderState.WindowHeight));
+        SetVec2Uniform(Shader.Program, "screenSize", math::v2((r32)GameState->RenderState.WindowWidth,(r32)GameState->RenderState.WindowHeight));
         
         glDrawElements(GL_TRIANGLES, sizeof(GameState->RenderState.QuadIndices), GL_UNSIGNED_INT, (void*)0);
         
