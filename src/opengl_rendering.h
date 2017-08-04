@@ -100,7 +100,7 @@ struct texture
     i32 Height;
 };
 
-GENERIC_MAP(texture, texture*, char*);
+GENERIC_MAP(texture, texture*, char*, strcmp, "");
 
 #define TILESHEET_MAX 10
 
