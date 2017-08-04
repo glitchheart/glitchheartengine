@@ -1,0 +1,29 @@
+name monster_attack_northwest
+type sprite
+framecount 20
+framesize 128 128
+center 0.5 0.3
+loop 1
+timeperframe 0.1
+frames
+0 0
+128 0
+256 0
+384 0
+512 0
+640 0
+768 0
+896 0
+1024 0
+1152 0
+1280 0
+1408 0
+1536 0
+1664 0
+1792 0
+1920 0
+2048 0
+2176 0
+2304 0
+2432 0
+texture monster_attack_northwest

@@ -447,16 +447,6 @@ static void EditorUpdateEntities(game_state* GameState, input_controller* InputC
                                         LoadSkeletonData(GameState, -1, math::v2(NewPos.x, NewPos.y - 0.5f));
                                     }
                                     break;
-                                    case Placement_Entity_Blob:
-                                    {
-                                        LoadBlobData(GameState, -1, math::v2(NewPos.x, NewPos.y - 0.5f));
-                                    }
-                                    break;
-                                    case Placement_Entity_Wraith:
-                                    {
-                                        LoadWraithData(GameState, -1, math::v2(NewPos.x, NewPos.y - 0.5));
-                                    }
-                                    break;
                                     case Placement_Entity_Minotaur:
                                     {
                                         LoadMinotaurData(GameState, -1, math::v2(NewPos.x, NewPos.y - 0.5f));

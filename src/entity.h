@@ -305,6 +305,7 @@ struct entity
     
     timer HitAttackCountIdResetTimer;
     
+    b32 IsAttacking;
     b32 Invincible;
     i32 FullHealth;
     i32 Health;
@@ -336,7 +337,6 @@ struct entity
         {
             i32 Level;
             i32 Will;
-            b32 IsAttacking;
             b32 IsChargingCheckpoint;
             
             i32 FullStamina;
@@ -450,22 +450,12 @@ struct entity
             {
                 struct
                 {
-                    r32 ExplosionCollisionExtentsX;
-                    r32 ExplosionCollisionExtentsY;
-                    timer ExplodeStartTimer;
-                    timer ExplodeCountdownTimer;
-                    
-                } Blob;
-                struct
-                {
-                    b32 IsAttacking;
                     timer AttackCooldownTimer;
                     timer ChargingTimer;
                     timer AlertedTimer;
                 } Skeleton;
                 struct
                 {
-                    b32 IsAttacking;
                     i32 MaxAttackStreak;
                     timer AttackCooldownTimer;
                     timer ChargingTimer;
@@ -476,13 +466,6 @@ struct entity
                     math::v2 OldCollisionExtents;
                     i32 ShadowHandle;
                 } Minotaur;
-                struct
-                {
-                    b32 IsAttacking;
-                    timer AttackCooldownTimer;
-                    timer ChargingTimer;
-                    timer AlertedTimer;
-                } Wraith;
             };
         } Enemy;
         struct
