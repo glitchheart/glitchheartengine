@@ -335,6 +335,8 @@ static void EditorUpdateEntities(game_state* GameState, input_controller* InputC
                                      GameState->Camera.ProjectionMatrix,
                                      math::v4(0, 0, GameState->RenderState.Viewport[2], GameState->RenderState.Viewport[3]));
                 
+                DebugPrintVec2(math::v2(Pos.x,Pos.y));
+                
                 GameState->EditorState.CreateNewAnimationButton->Active = false;
                 
                 if(KEY_DOWN(Key_E))

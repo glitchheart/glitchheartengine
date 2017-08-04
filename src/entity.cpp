@@ -2231,7 +2231,6 @@ void UpdatePlayer(entity* Entity, game_state* GameState, sound_queue* SoundQueue
     else
         PlayAnimation(Entity, "swordsman_idle", GameState);
     
-    DebugPrintVec2(Entity->Velocity);
     Entity->Position += math::v2(Entity->Velocity.x * DeltaTime, Entity->Velocity.y * DeltaTime);
     
     
