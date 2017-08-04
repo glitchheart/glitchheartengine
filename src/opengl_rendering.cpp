@@ -978,7 +978,7 @@ static void InitializeOpenGL(game_memory* GameMemory, config_data* ConfigData)
     
     ControllerPresent();
     
-    texture_Map_Init(&RenderState.Textures, HashStringJenkins, 1024);
+    texture_Map_Init(&RenderState.Textures, HashStringJenkins, 4096);
     LoadTextures(&RenderState, "../assets/textures/");
     LoadTextures(&RenderState, "../assets/textures/spritesheets/");
     RenderSetup(&RenderState);
