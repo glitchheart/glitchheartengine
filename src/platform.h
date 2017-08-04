@@ -209,7 +209,7 @@ namespace math
         v2(r64 X, i32 Y) : X((r32)X), Y((r32)Y) {}
         v2(r64 X, r32 Y) : X((r32)X), Y(Y) {}
         
-        v2 operator* (v2 O)
+        inline v2 operator* (v2 O)
         {
             v2 Res(*this);
             Res.X *= O.X;
@@ -217,7 +217,7 @@ namespace math
             return Res;
         }
         
-        v2 operator+ (v2 O)
+        inline v2 operator+ (v2 O)
         {
             v2 Res(*this);
             Res.X += O.X;
@@ -225,19 +225,19 @@ namespace math
             return Res;
         }
         
-        void operator*= (v2 O)
+        inline void operator*= (v2 O)
         {
             this->X *= O.X;
             this->Y *= O.Y;
         }
         
-        void operator+= (v2 O)
+        inline void operator+= (v2 O)
         {
             this->X += O.X;
             this->Y += O.Y;
         }
         
-        v2 operator+ (r32 S)
+        inline v2 operator+ (r32 S)
         {
             v2 Res(*this);
             Res.X += S;
@@ -245,7 +245,7 @@ namespace math
             return Res;
         }
         
-        v2 operator* (r32 S)
+        inline v2 operator* (r32 S)
         {
             v2 Res(*this);
             Res.X *= S;
@@ -253,7 +253,7 @@ namespace math
             return Res;
         }
         
-        v2 operator/ (r32 S)
+        inline v2 operator/ (r32 S)
         {
             v2 Res(*this);
             Res.X /= S;
@@ -261,31 +261,31 @@ namespace math
             return Res;
         }
         
-        void operator+= (r32 S)
+        inline void operator+= (r32 S)
         {
             this->X += S;
             this->Y += S;
         }
         
-        void operator*= (r32 S)
+        inline void operator*= (r32 S)
         {
             this->X *= S;
             this->Y *= S;
         }
         
-        void operator/= (r32 S)
+        inline void operator/= (r32 S)
         {
             this->X /= S;
             this->Y /= S;
         }
         
-        void operator-= (r32 S)
+        inline void operator-= (r32 S)
         {
             this->X -= S;
             this->Y -= S;
         }
         
-        v2 operator- (v2 O)
+        inline v2 operator- (v2 O)
         {
             v2 Res(*this);
             Res.X -= O.X;
@@ -293,13 +293,13 @@ namespace math
             return Res;
         }
         
-        void operator-= (v2 O)
+        inline void operator-= (v2 O)
         {
             this->X -= O.X;
             this->Y -= O.Y;
         }
         
-        v2 operator- (r32 S)
+        inline v2 operator- (r32 S)
         {
             v2 Res(*this);
             Res.X -= S;
@@ -307,7 +307,7 @@ namespace math
             return Res;
         }
         
-        v2 operator/ (v2 O)
+        inline v2 operator/ (v2 O)
         {
             v2 Res(*this);
             Res.X /= O.X;
@@ -315,7 +315,7 @@ namespace math
             return Res;
         }
         
-        void operator/= (v2 O)
+        inline void operator/= (v2 O)
         {
             this->X /= O.X;
             this->Y /= O.Y;
@@ -352,7 +352,7 @@ namespace math
         v3(i32 X, i32 Y, r32 Z) : X((r32)X), Y((r32)Y), Z(Z) {}
         v3(r32 X, r32 Y, r64 Z) : X(X), Y(Y), Z((r32)Z) {}
         
-        v3 operator* (v3 O)
+        inline v3 operator* (v3 O)
         {
             v3 Res(*this);
             Res.X *= O.X;
@@ -361,7 +361,7 @@ namespace math
             return Res;
         }
         
-        v3 operator+ (v3 O)
+        inline v3 operator+ (v3 O)
         {
             v3 Res(*this);
             Res.X += O.X;
@@ -370,21 +370,21 @@ namespace math
             return Res;
         }
         
-        void operator*= (v3 O)
+        inline void operator*= (v3 O)
         {
             this->X *= O.X;
             this->Y *= O.Y;
             this->Z *= O.Z;
         }
         
-        void operator+= (v3 O)
+        inline void operator+= (v3 O)
         {
             this->X += O.X;
             this->Y += O.Y;
             this->Z += O.Z;
         }
         
-        v3 operator+ (r32 S)
+        inline v3 operator+ (r32 S)
         {
             v3 Res(*this);
             Res.X += S;
@@ -393,7 +393,7 @@ namespace math
             return Res;
         }
         
-        v3 operator* (r32 S)
+        inline v3 operator* (r32 S)
         {
             v3 Res(*this);
             Res.X *= S;
@@ -402,7 +402,7 @@ namespace math
             return Res;
         }
         
-        v3 operator/ (r32 S)
+        inline v3 operator/ (r32 S)
         {
             v3 Res(*this);
             Res.X /= S;
@@ -411,35 +411,35 @@ namespace math
             return Res;
         }
         
-        void operator+= (r32 S)
+        inline void operator+= (r32 S)
         {
             this->X += S;
             this->Y += S;
             this->Z += S;
         }
         
-        void operator*= (r32 S)
+        inline void operator*= (r32 S)
         {
             this->X *= S;
             this->Y *= S;
             this->Z *= S;
         }
         
-        void operator/= (r32 S)
+        inline void operator/= (r32 S)
         {
             this->X /= S;
             this->Y /= S;
             this->Z /= S;
         }
         
-        void operator-= (r32 S)
+        inline void operator-= (r32 S)
         {
             this->X -= S;
             this->Y -= S;
             this->Z -= S;
         }
         
-        v3 operator- (v3 O)
+        inline v3 operator- (v3 O)
         {
             v3 Res(*this);
             Res.X -= O.X;
@@ -448,15 +448,14 @@ namespace math
             return Res;
         }
         
-        void operator-= (v3 O)
+        inline void operator-= (v3 O)
         {
             this->X -= O.X;
             this->Y -= O.Y;
             this->Z -= O.Z;
         }
         
-        
-        v3 operator- (r32 S)
+        inline v3 operator- (r32 S)
         {
             v3 Res(*this);
             Res.X -= S;
@@ -465,7 +464,7 @@ namespace math
             return Res;
         }
         
-        v3 operator/ (v3 O)
+        inline v3 operator/ (v3 O)
         {
             v3 Res(*this);
             Res.X /= O.X;
@@ -474,7 +473,7 @@ namespace math
             return Res;
         }
         
-        void operator/= (v3 O)
+        inline void operator/= (v3 O)
         {
             this->X /= O.X;
             this->Y /= O.Y;
@@ -538,7 +537,7 @@ namespace math
         
         v4(v3 O, r32 W) : X(O.X), Y(O.Y), Z(O.Z), W(W) {}
         
-        v4 operator* (v4 O)
+        inline v4 operator* (v4 O)
         {
             v4 Res(*this);
             Res.X *= O.X;
@@ -548,7 +547,7 @@ namespace math
             return Res;
         }
         
-        v4 operator+ (v4 O)
+        inline v4 operator+ (v4 O)
         {
             v4 Res(*this);
             Res.X += O.X;
@@ -558,7 +557,7 @@ namespace math
             return Res;
         }
         
-        void operator*= (v4 O)
+        inline void operator*= (v4 O)
         {
             this->X *= O.X;
             this->Y *= O.Y;
@@ -566,7 +565,7 @@ namespace math
             this->W *= O.W;
         }
         
-        void operator+= (v4 O)
+        inline void operator+= (v4 O)
         {
             this->X += O.X;
             this->Y += O.Y;
@@ -574,7 +573,7 @@ namespace math
             this->W += O.W;
         }
         
-        v4 operator+ (r32 S)
+        inline v4 operator+ (r32 S)
         {
             v4 Res(*this);
             Res.X += S;
@@ -584,7 +583,7 @@ namespace math
             return Res;
         }
         
-        v4 operator* (r32 S)
+        inline v4 operator* (r32 S)
         {
             v4 Res(*this);
             Res.X *= S;
@@ -594,7 +593,7 @@ namespace math
             return Res;
         }
         
-        v4 operator/ (r32 S)
+        inline v4 operator/ (r32 S)
         {
             v4 Res(*this);
             Res.X /= S;
@@ -604,7 +603,7 @@ namespace math
             return Res;
         }
         
-        void operator+= (r32 S)
+        inline void operator+= (r32 S)
         {
             this->X += S;
             this->Y += S;
@@ -612,7 +611,7 @@ namespace math
             this->W += S;
         }
         
-        void operator*= (r32 S)
+        inline void operator*= (r32 S)
         {
             this->X *= S;
             this->Y *= S;
@@ -620,7 +619,7 @@ namespace math
             this->W *= S;
         }
         
-        void operator/= (r32 S)
+        inline void operator/= (r32 S)
         {
             this->X /= S;
             this->Y /= S;
@@ -628,7 +627,7 @@ namespace math
             this->W /= S;
         }
         
-        void operator-= (r32 S)
+        inline void operator-= (r32 S)
         {
             this->X -= S;
             this->Y -= S;
@@ -636,7 +635,7 @@ namespace math
             this->W -= S;
         }
         
-        v4 operator- (v4 O)
+        inline v4 operator- (v4 O)
         {
             v4 Res(*this);
             Res.X -= O.X;
@@ -646,7 +645,7 @@ namespace math
             return Res;
         }
         
-        void operator-= (v4 O)
+        inline void operator-= (v4 O)
         {
             this->X -= O.X;
             this->Y -= O.Y;
@@ -654,7 +653,7 @@ namespace math
             this->W -= O.W;
         }
         
-        v4 operator- (r32 S)
+        inline v4 operator- (r32 S)
         {
             v4 Res(*this);
             Res.X -= S;
@@ -664,7 +663,7 @@ namespace math
             return Res;
         }
         
-        v4 operator/ (v4 O)
+        inline v4 operator/ (v4 O)
         {
             v4 Res(*this);
             Res.X /= O.X;
@@ -674,7 +673,7 @@ namespace math
             return Res;
         }
         
-        void operator/= (v4 O)
+        inline void operator/= (v4 O)
         {
             this->X /= O.X;
             this->Y /= O.Y;
@@ -699,7 +698,7 @@ namespace math
         v2i(i32 I) : X(I), Y(I) {}
         v2i(i32 E[2]) : E{E[0],E[1]} {}
         
-        v2i operator* (v2i O)
+        inline v2i operator* (v2i O)
         {
             v2i Res(*this);
             Res.X *= O.X;
@@ -707,7 +706,7 @@ namespace math
             return Res;
         }
         
-        v2i operator+ (v2i O)
+        inline v2i operator+ (v2i O)
         {
             v2i Res(*this);
             Res.X += O.X;
@@ -715,19 +714,19 @@ namespace math
             return Res;
         }
         
-        void operator*= (v2i O)
+        inline void operator*= (v2i O)
         {
             this->X *= O.X;
             this->Y *= O.Y;
         }
         
-        void operator+= (v2i O)
+        inline void operator+= (v2i O)
         {
             this->X += O.X;
             this->Y += O.Y;
         }
         
-        v2i operator+ (i32 S)
+        inline v2i operator+ (i32 S)
         {
             v2i Res(*this);
             Res.X += S;
@@ -735,7 +734,7 @@ namespace math
             return Res;
         }
         
-        v2i operator* (i32 S)
+        inline v2i operator* (i32 S)
         {
             v2i Res(*this);
             Res.X *= S;
@@ -743,7 +742,7 @@ namespace math
             return Res;
         }
         
-        v2i operator/ (i32 S)
+        inline v2i operator/ (i32 S)
         {
             v2i Res(*this);
             Res.X /= S;
@@ -751,31 +750,31 @@ namespace math
             return Res;
         }
         
-        void operator+= (i32 S)
+        inline void operator+= (i32 S)
         {
             this->X += S;
             this->Y += S;
         }
         
-        void operator*= (i32 S)
+        inline void operator*= (i32 S)
         {
             this->X *= S;
             this->Y *= S;
         }
         
-        void operator/= (i32 S)
+        inline void operator/= (i32 S)
         {
             this->X /= S;
             this->Y /= S;
         }
         
-        void operator-= (i32 S)
+        inline void operator-= (i32 S)
         {
             this->X -= S;
             this->Y -= S;
         }
         
-        v2i operator- (v2i O)
+        inline v2i operator- (v2i O)
         {
             v2i Res(*this);
             Res.X -= O.X;
@@ -783,13 +782,13 @@ namespace math
             return Res;
         }
         
-        void operator-= (v2i O)
+        inline void operator-= (v2i O)
         {
             this->X -= O.X;
             this->Y -= O.Y;
         }
         
-        v2i operator- (i32 S)
+        inline v2i operator- (i32 S)
         {
             v2i Res(*this);
             Res.X -= S;
@@ -797,7 +796,7 @@ namespace math
             return Res;
         }
         
-        v2i operator/ (v2i O)
+        inline v2i operator/ (v2i O)
         {
             v2i Res(*this);
             Res.X /= O.X;
@@ -805,7 +804,7 @@ namespace math
             return Res;
         }
         
-        void operator/= (v2i O)
+        inline void operator/= (v2i O)
         {
             this->X /= O.X;
             this->Y /= O.Y;
@@ -828,7 +827,7 @@ namespace math
         v3i(i32 I) : X(I), Y(I), Z(I) {}
         v3i(i32 E[3]) : E{E[0],E[1], E[2]} {}
         
-        v3i operator* (v3i O)
+        inline v3i operator* (v3i O)
         {
             v3i Res(*this);
             Res.X *= O.X;
@@ -836,7 +835,7 @@ namespace math
             return Res;
         }
         
-        v3i operator+ (v3i O)
+        inline v3i operator+ (v3i O)
         {
             v3i Res(*this);
             Res.X += O.X;
@@ -844,19 +843,19 @@ namespace math
             return Res;
         }
         
-        void operator*= (v3i O)
+        inline void operator*= (v3i O)
         {
             this->X *= O.X;
             this->Y *= O.Y;
         }
         
-        void operator+= (v3i O)
+        inline void operator+= (v3i O)
         {
             this->X += O.X;
             this->Y += O.Y;
         }
         
-        v3i operator+ (i32 S)
+        inline v3i operator+ (i32 S)
         {
             v3i Res(*this);
             Res.X += S;
@@ -864,7 +863,7 @@ namespace math
             return Res;
         }
         
-        v3i operator* (i32 S)
+        inline v3i operator* (i32 S)
         {
             v3i Res(*this);
             Res.X *= S;
@@ -872,7 +871,7 @@ namespace math
             return Res;
         }
         
-        v3i operator/ (i32 S)
+        inline v3i operator/ (i32 S)
         {
             v3i Res(*this);
             Res.X /= S;
@@ -880,32 +879,32 @@ namespace math
             return Res;
         }
         
-        void operator+= (i32 S)
+        inline void operator+= (i32 S)
         {
             this->X += S;
             this->Y += S;
         }
         
-        void operator*= (i32 S)
+        inline void operator*= (i32 S)
         {
             this->X *= S;
             this->Y *= S;
         }
         
-        void operator/= (i32 S)
+        inline void operator/= (i32 S)
         {
             this->X /= S;
             this->Y /= S;
         }
         
-        void operator-= (i32 S)
+        inline void operator-= (i32 S)
         {
             this->X -= S;
             this->Y -= S;
             this->Z -= S;
         }
         
-        v3i operator- (v3i O)
+        inline v3i operator- (v3i O)
         {
             v3i Res(*this);
             Res.X -= O.X;
@@ -914,14 +913,14 @@ namespace math
             return Res;
         }
         
-        void operator-= (v3i O)
+        inline void operator-= (v3i O)
         {
             this->X -= O.X;
             this->Y -= O.Y;
             this->Z -= O.Z;
         }
         
-        v3i operator- (i32 S)
+        inline v3i operator- (i32 S)
         {
             v3i Res(*this);
             Res.X -= S;
@@ -930,7 +929,7 @@ namespace math
             return Res;
         }
         
-        v3i operator/ (v3i O)
+        inline v3i operator/ (v3i O)
         {
             v3i Res(*this);
             Res.X /= O.X;
@@ -939,7 +938,7 @@ namespace math
             return Res;
         }
         
-        void operator/= (v3i O)
+        inline void operator/= (v3i O)
         {
             this->X /= O.X;
             this->Y /= O.Y;
@@ -973,7 +972,7 @@ namespace math
         };
         r32 V[4][4];
         
-        r32* operator[](i32 Idx)
+        inline r32* operator[](i32 Idx)
         {
             return this->V[Idx];
         }
@@ -1027,7 +1026,7 @@ namespace math
             return Res;
         }*/
         
-        m4 operator*(m4 Other)
+        inline m4 operator*(m4 Other)
         {
             m4 Res(*this);
             Res.M11 = 
@@ -1050,7 +1049,7 @@ namespace math
             return Res;
         }
         
-        v3 operator*(v3& Vec)
+        inline v3 operator*(v3& Vec)
         {
             v3 Res(0.0f);
             Res.X = this->A * Vec.X + this->B * Vec.Y + this->C * Vec.Z + this->D * 1.0f;
@@ -1059,7 +1058,7 @@ namespace math
             return Res;
         }
         
-        v4 operator*(v4 Vec)
+        inline v4 operator*(v4 Vec)
         {
             v4 Res(0.0f);
             Res.X = this->A * Vec.X + this->B * Vec.Y + this->C * Vec.Z + this->D * Vec.W;
@@ -1069,7 +1068,7 @@ namespace math
             return Res;
         }
         
-        m4 operator*(r32 S)
+        inline m4 operator*(r32 S)
         {
             m4 Res(*this);
             Res.M11 *= S;
@@ -1094,7 +1093,7 @@ namespace math
     };
     
     
-    v4 operator*(const v4& V, const m4& M)
+    inline v4 operator*(const v4& V, const m4& M)
     {
         v4 Res(0.0f);
         Res.X = M.A * V.X + M.B * V.Y + M.C * V.Z + M.D * V.W;
@@ -1104,7 +1103,7 @@ namespace math
         return Res;
     }
     
-    r32 Determinant(const m4& In)
+    inline r32 Determinant(const m4& In)
     {
         return In.M11 * In.M22 * In.M33 * In.M44 + In.M11 * In.M23 * In.M34 * In.M42 + In.M11 * In.M24 * In.M32 * In.M43 + 
             In.M12 * In.M21 * In.M34 * In.M43 + In.M12 * In.M23 * In.M31 * In.M44 + In.M12 * In.M24 * In.M33 * In.M41 +
@@ -1118,7 +1117,7 @@ namespace math
     }
     
     // Inverse is tested against glm::inverse and seems to work
-    m4 Inverse(const m4& In)
+    inline m4 Inverse(const m4& In)
     {
         m4 Res(0.0f);
         Res.M11 =
@@ -1176,7 +1175,7 @@ namespace math
         return Res;
     }
     
-    m4 Transpose(m4 In)
+    inline m4 Transpose(m4 In)
     {
         m4 Res(In);
         Res.M11 = In.M11;
@@ -1198,63 +1197,62 @@ namespace math
         return Res;
     }
     
-    r32 Dot(v2 V1, v2 V2)
+    inline r32 Dot(v2 V1, v2 V2)
     {
         return V1.X * V2.X + V1.Y + V2.Y;
     }
     
-    r32 Dot(v3 V1, v3 V2)
+    inline r32 Dot(v3 V1, v3 V2)
     {
         return V1.X * V2.X + V1.Y + V2.Y + V1.Z * V2.Z;
     }
     
-    r32 Dot(v4 V1, v4 V2)
+    inline r32 Dot(v4 V1, v4 V2)
     {
         return V1.X * V2.X + V1.Y + V2.Y + V1.Z * V2.Z + V1.W * V2.W;
     }
     
-    i32 Dot(v2i V1, v2i V2)
+    inline i32 Dot(v2i V1, v2i V2)
     {
         return V1.X * V2.X + V1.Y + V2.Y;
     }
     
-    
-    i32 Dot(v3i V1, v3i V2)
+    inline i32 Dot(v3i V1, v3i V2)
     {
         return V1.X * V2.X + V1.Y + V2.Y + V1.Z + V2.Z;
     }
     
-    r32 Distance(v2 V1, v2 V2)
+    inline r32 Distance(v2 V1, v2 V2)
     {
         return sqrt(pow(V1.X - V2.X, 2.0f) + pow(V1.Y - V2.Y, 2.0f));
     }
     
-    r32 Distance(v3 V1, v3 V2)
+    inline r32 Distance(v3 V1, v3 V2)
     {
         return sqrt(pow(V1.X - V2.X, 2.0f) + pow(V1.Y - V2.Y, 2.0f) + pow(V1.Z - V2.Z, 2.0f));
     }
     
-    r32 Distance(v4 V1, v4 V2)
+    inline r32 Distance(v4 V1, v4 V2)
     {
         return sqrt(pow(V1.X - V2.X, 2.0f) + pow(V1.Y - V2.Y, 2.0f) + pow(V1.Z - V2.Z, 2.0f) + pow(V1.W - V2.W,2.0f));
     }
     
-    i32 Distance(v2i V1, v2i V2)
+    inline i32 Distance(v2i V1, v2i V2)
     {
         return (i32)sqrt(pow(V1.X - V2.X, 2) + pow(V1.Y - V2.Y, 2));
     }
     
-    i32 Distance(v3i V1, v3i V2)
+    inline i32 Distance(v3i V1, v3i V2)
     {
         return (i32)sqrt(pow(V1.X - V2.X, 2) + pow(V1.Y - V2.Y, 2) + pow(V1.Z - V2.Z, 2));
     }
     
-    i32 Floor(r32 V)
+    inline i32 Floor(r32 V)
     {
         return (i32)floor(V);
     }
     
-    v2 Floor(v2 V)
+    inline v2 Floor(v2 V)
     {
         v2 Res(V);
         Res.X = (r32)Floor(V.X);
@@ -1262,12 +1260,12 @@ namespace math
         return Res;
     }
     
-    i32 Ceil(r32 V)
+    inline i32 Ceil(r32 V)
     {
         return (i32)ceil(V);
     }
     
-    v2 Ceil(v2 V)
+    inline v2 Ceil(v2 V)
     {
         v2 Res(V);
         Res.X = (r32)Ceil(V.X);
@@ -1275,22 +1273,22 @@ namespace math
         return Res;
     }
     
-    r32 Length(v2 V)
+    inline r32 Length(v2 V)
     {
         return sqrt(pow(V.X,2) + pow(V.Y,2));
     }
     
-    r32 Length(v3 V)
+    inline r32 Length(v3 V)
     {
         return sqrt(pow(V.X,2) + pow(V.Y,2) + pow(V.Z,2));
     }
     
-    r32 Length(v4 V)
+    inline r32 Length(v4 V)
     {
         return sqrt(pow(V.X,2) + pow(V.Y,2) + pow(V.Z,2) + pow(V.W,2));
     }
     
-    v2 Normalize(v2 V)
+    inline v2 Normalize(v2 V)
     {
         v2 Res(V);
         auto L = Length(V);
@@ -1298,7 +1296,7 @@ namespace math
         return Res;
     }
     
-    v3 Normalize(v3 V)
+    inline v3 Normalize(v3 V)
     {
         v3 Res(V);
         auto L = Length(V);
@@ -1306,7 +1304,7 @@ namespace math
         return Res;
     }
     
-    v4 Normalize(v4 V)
+    inline v4 Normalize(v4 V)
     {
         v4 Res(V);
         auto L = Length(V);
@@ -1314,7 +1312,7 @@ namespace math
         return Res;
     }
     
-    m4 Scale(m4 In, v3 Scale)
+    inline m4 Scale(m4 In, v3 Scale)
     {
         m4 Res(In);
         Res.M11 = Scale.X * Res.M11;
@@ -1324,20 +1322,18 @@ namespace math
         return Res;
     }
     
-    m4 Translate(m4 In, v3 Translate)
+    inline m4 Translate(m4 In, v3 Translate)
     {
         m4 Res(In);
         m4 T(1.0f);
         T.M14 = Translate.X;
         T.M24 = Translate.Y;
         T.M34 = Translate.Z;
-        
         Res = T * Res;
-        
         return Res;
     }
     
-    v3 Project(v3 In, m4 M, m4 P, v4 Viewport)
+    inline v3 Project(v3 In, m4 M, m4 P, v4 Viewport)
     {
         v3 Res(1.0f);
         
@@ -1348,7 +1344,7 @@ namespace math
         return Res;
     }
     
-    m4 Ortho(r32 Left, r32 Right, r32 Bottom, r32 Top, r32 Near, r32 Far)
+    inline m4 Ortho(r32 Left, r32 Right, r32 Bottom, r32 Top, r32 Near, r32 Far)
     {
         m4 Res(1.0f);
         Res.M11 = 2.0f/(Right - Left);
@@ -1362,7 +1358,7 @@ namespace math
         return Res;
     }
     
-    v3 UnProject(v3 In, m4 Model, m4 Projection, v4 Viewport)
+    inline v3 UnProject(v3 In, m4 Model, m4 Projection, v4 Viewport)
     {
         auto Inv = Inverse(Projection * Model);
         
