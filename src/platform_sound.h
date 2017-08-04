@@ -4,7 +4,7 @@
 #define SOURCES 64
 #define SOUNDS 64
 
-GENERIC_MAP(source_to_sound,sound_effect, i32);
+GENERIC_MAP(source_to_sound,sound_effect, i32, CmpInt, -1);
 struct sound_effect;
 
 struct sound_device

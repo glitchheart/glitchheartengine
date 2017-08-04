@@ -22,7 +22,7 @@
 #include "menu.h"
 #include "ui.h"
 
-GENERIC_MAP(animation,animation*, char*)
+GENERIC_MAP(animation,animation*, char*, strcmp, "")
 
 enum Fading_Mode
 {
