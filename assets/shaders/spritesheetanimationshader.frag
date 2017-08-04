@@ -27,4 +27,6 @@ void main()
 	}
 
     outColor =  vec4(vec3(color.rgb * spriteColor.rgb) * 1.0, color.a * spriteColor.a);
+//	if(outColor.a == 0.0)
+	//	outColor = vec4(1, 0, 0, 1);
 }

@@ -2,7 +2,7 @@ name man_walk_northeast
 type sprite
 framecount 10
 framesize 128 128
-center 0.5 0.2
+center 0.5 0.3
 loop 1
 timeperframe 0.07
 frames

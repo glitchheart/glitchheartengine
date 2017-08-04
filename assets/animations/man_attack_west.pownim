@@ -1,9 +1,9 @@
-name man_walk_west
+name man_attack_west
 type sprite
 framecount 10
 framesize 64 64
 center 0.5 0.3
-loop 1
+loop 0
 timeperframe 0.1
 frames
 0 0
@@ -16,4 +16,4 @@ frames
 448 0
 512 0
 576 0
-texture man_walk_west
+texture man_attack_west
