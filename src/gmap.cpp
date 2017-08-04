@@ -2,10 +2,10 @@
 // Needs a relatively high count to work with zero collisions..
 // Is this to be expected? Or can we find a better hash function
 // or possibly find another solution?
-inline u64 HashString(u64 Size, const void* Key)
+inline u64 HashString(u64 Size, char* Key)
 {
     u64 Hash = 5381;
-    char* K = (char*)Key;
+    char* K = Key;
     u64 C;
     
     while (C = *K++)
@@ -16,9 +16,9 @@ inline u64 HashString(u64 Size, const void* Key)
 
 // Jenkins one at a time hash
 // NOTE(niels): https://en.wikipedia.org/wiki/Jenkins_hash_function
-inline u64 HashStringJenkins(u64 Size, const void* Key) 
+inline u64 HashStringJenkins(u64 Size, char* Key) 
 {
-    char* K = (char*)Key;
+    char* K = Key;
     u64 Length = (u64)strlen(K);
     u64 I = 0;
     u64 Hash = 0;
@@ -33,8 +33,8 @@ inline u64 HashStringJenkins(u64 Size, const void* Key)
     return Hash & (Size - 1);
 }
 
-inline u64 HashInt(u64 Size, const void* Key) {
-    u64 K = (u64)(*(i32*)(Key));
+inline u64 HashInt(u64 Size, i32 Key) {
+    u64 K = (u64)((i32)Key);
     K = ((K >> 16) ^ K) * 0x45d9f3b;
     K = ((K >> 16) ^ K) * 0x45d9f3b;
     K = (K >> 16) ^ K;
@@ -54,8 +54,8 @@ u32 HashInt(u32 Size, const void* A)
     return K & (Size - 1);
 }*/
 
-inline u64 HashIntKeys(u64 Size, const void* Key)
+inline u64 HashIntKeys(u64 Size, u32 Key)
 {
-    u32 K = *(u32*)(Key);
+    u32 K = *(u32)(Key);
     return K % ((u32)Size - 1);
 }
