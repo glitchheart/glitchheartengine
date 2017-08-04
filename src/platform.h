@@ -421,6 +421,7 @@ namespace math
         v4(i32 X, i32 Y, i32 Z, r32 W) : 
         X((r32)X), Y((r32)Y), Z((r32)Z), W(W) {}
         
+        v4(v3 O, r32 W) : X(O.X), Y(O.Y), Z(O.Z), W(W) {}
         
         v4 operator* (v4 O)
         {
@@ -1200,7 +1201,7 @@ namespace math
         
         return Res;
     }
-    
+    /*
     v3 UnProject(v3 In, m4 Model, m4 Projection, v4 Viewport)
     {
         v3 Res;
@@ -1210,6 +1211,21 @@ namespace math
         auto IV = Inverse(VP * Projection * Model);
         Res = IV * In;
         return Res;
+    }
+    */
+    v3 UnProject(v3 In, m4 Model, m4 Projection, v4 Viewport)
+    {
+        auto Inv = Inverse(Projection * Model);
+        
+        auto Tmp = v4(In,1.0f);
+        Tmp.X = (Tmp.X - Viewport.X) / Viewport.Z;
+        Tmp.Y = (Tmp.Y - Viewport.Y) / Viewport.W;
+        Tmp *= (2 - 1); // Wut?
+        
+        auto Obj = Inv * Tmp;
+        Obj /= Obj.W;
+        
+        return v3(Obj.X,Obj.Y,Obj.Z);
     }
 }
 
