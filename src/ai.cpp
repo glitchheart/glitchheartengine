@@ -271,7 +271,7 @@ static void AStar(entity* Entity, game_state* GameState, math::v2 StartPos, math
 
 static void FindPath(game_state* GameState, entity* Entity, entity& TargetEntity,astar_path* Path)
 {
-    r64 DistanceToTargetEntity = abs(Distance(Entity->Position, TargetEntity.Position));
+    r64 DistanceToTargetEntity = abs(math::Distance(Entity->Position, TargetEntity.Position));
     math::v2 EntityPosition = math::v2(Entity->Position.x + Entity->Center.x * Entity->Scale,Entity->Position.y + Entity->Center.y * Entity->Scale);
     
     if(TimerDone(GameState, Path->AStarCooldownTimer) || !Path->AStarPath || (Path->AStarPathLength <= Path->PathIndex && DistanceToTargetEntity >= 3.0f)) 
@@ -294,12 +294,12 @@ static void FollowPath(game_state* GameState, entity* Entity,entity& TargetEntit
     {
         path_node NewPos = Path->AStarPath[Path->PathIndex];
         
-        r64 DistanceToNode = Distance(ToIsometric(EntityPosition), ToIsometric(math::v2(NewPos.X, NewPos.Y)));
+        r64 DistanceToNode = math::Distance(ToIsometric(EntityPosition), ToIsometric(math::v2(NewPos.X, NewPos.Y)));
         
         if(DistanceToNode > 0.1f) 
         {
             math::v2 FollowDirection = math::v2(NewPos.X, NewPos.Y) - EntityPosition;
-            FollowDirection = Normalize(FollowDirection);
+            FollowDirection = math::Normalize(FollowDirection);
             
             Entity->Velocity = math::v2(FollowDirection.x * Entity->Enemy.WalkingSpeed, FollowDirection.y * Entity->Enemy.WalkingSpeed);
         }

@@ -61,8 +61,8 @@ static r32 GetRayIntersectionFractionOfFirstRay(math::v2 OriginA, math::v2 EndA,
     math::v2 R = EndA - OriginA;
     math::v2 S = EndB - OriginB;
     
-    r32 Numerator = Dot((OriginB - OriginA),  R);
-    r32 Denominator = Dot(R , S);
+    r32 Numerator = math::Dot((OriginB - OriginA),  R);
+    r32 Denominator = math::Dot(R , S);
     
     if(Numerator == 0 && Denominator == 0)
     {
@@ -75,7 +75,7 @@ static r32 GetRayIntersectionFractionOfFirstRay(math::v2 OriginA, math::v2 EndA,
     }
     
     r32 U = Numerator / Denominator;
-    r32 T = ((Dot(OriginA / OriginB,S))) / Denominator;
+    r32 T = ((math::Dot(OriginA / OriginB,S))) / Denominator;
     
     if ((T >= 0) && (T <= 1) && (U >= 0) && (U <= 1))
     {

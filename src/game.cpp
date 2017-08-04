@@ -330,10 +330,10 @@ static void EditorUpdateEntities(game_state* GameState, input_controller* InputC
                     GameState->CurrentLevel = Level;
                 }
                 
-                auto Pos = UnProject(math::v3(InputController->MouseX, GameState->RenderState.Viewport[3] - InputController->MouseY, 0),
-                                     GameState->Camera.ViewMatrix,
-                                     GameState->Camera.ProjectionMatrix,
-                                     math::v4(0, 0, GameState->RenderState.Viewport[2], GameState->RenderState.Viewport[3]));
+                auto Pos = math::UnProject(math::v3(InputController->MouseX, GameState->RenderState.Viewport[3] - InputController->MouseY, 0),
+                                           GameState->Camera.ViewMatrix,
+                                           GameState->Camera.ProjectionMatrix,
+                                           math::v4(0, 0, GameState->RenderState.Viewport[2], GameState->RenderState.Viewport[3]));
                 
                 DebugPrintVec2(math::v2(Pos.x,Pos.y));
                 
@@ -1135,7 +1135,7 @@ extern "C" UPDATE(Update)
             Zoom += (r32)(-GameState->GodModeZoomSpeed / Factor * DeltaTime);
         }
         
-        Direction = Normalize(Direction);
+        Direction = math::Normalize(Direction);
         
         if(Abs(Direction.x) > 0.0 || Abs(Direction.y) > 0.0)
         {
@@ -1173,9 +1173,9 @@ extern "C" UPDATE(Update)
                 
                 if(!GameState->GodModeOn)
                 {
-                    if(Distance(GameState->GameCamera.CenterTarget, Center) > 0.01f)
+                    if(math::Distance(GameState->GameCamera.CenterTarget, Center) > 0.01f)
                     {
-                        auto Direction = Normalize(GameState->GameCamera.CenterTarget - Center);
+                        auto Direction = math::Normalize(GameState->GameCamera.CenterTarget - Center);
                         
                         if(GameState->CurrentLevel.Type == Level_Isometric)
                         {

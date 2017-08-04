@@ -154,7 +154,7 @@ static void Hit(game_state* GameState, sound_queue* SoundQueue, entity* ByEntity
                 PLAY_SOUND(Splash01, 0.85f);
             }
             
-            HitEntity->HitRecoilDirection = Normalize(HitEntity->Position - ByEntity->Position);
+            HitEntity->HitRecoilDirection = math::Normalize(HitEntity->Position - ByEntity->Position);
             
             i16 Damage = ByEntity->Weapon.Damage > HitEntity->Health ? (i16)HitEntity->Health : (i16)ByEntity->Weapon.Damage;
             HitEntity->Health -= Damage;
@@ -364,9 +364,9 @@ static void LoadEntityData(FILE* File, entity* Entity, game_state* GameState, b3
         Entity->ShowAttackTiles = false;
         Entity->AnimationInfo.FreezeFrame = false;
         
-        Entity->TilePosition.X = 0;
-        Entity->TilePosition.Y = 0;
-        Entity->TilePosition.Z = 0;
+        Entity->TilePosition.x = 0;
+        Entity->TilePosition.y = 0;
+        Entity->TilePosition.z = 0;
         
         hit_tile_extents HitExtents;
         HitExtents.StartX = 0;
@@ -695,9 +695,9 @@ static void EnemyWander(game_state* GameState, entity* Entity)
         PlayAnimation(Entity, WalkString, GameState);
         free(WalkString);
         
-        auto CurrentWaypoint = math::v2(Entity->Enemy.Waypoints[Entity->Enemy.WaypointIndex].X, Entity->Enemy.Waypoints[Entity->Enemy.WaypointIndex].Y);
+        auto CurrentWaypoint = math::v2(Entity->Enemy.Waypoints[Entity->Enemy.WaypointIndex].x, Entity->Enemy.Waypoints[Entity->Enemy.WaypointIndex].y);
         
-        auto DistanceToWaypoint = Distance(CurrentWaypoint, math::v2(Entity->Position.x, Entity->Position.y - 0.5f));
+        auto DistanceToWaypoint = math::Distance(CurrentWaypoint, math::v2(Entity->Position.x, Entity->Position.y - 0.5f));
         
         if(DistanceToWaypoint < 0.01f)
         {
@@ -727,15 +727,15 @@ static void EnemyWander(game_state* GameState, entity* Entity)
             }
         }
         
-        CurrentWaypoint =  math::v2(Entity->Enemy.Waypoints[Entity->Enemy.WaypointIndex].X, Entity->Enemy.Waypoints[Entity->Enemy.WaypointIndex].Y);
-        auto Direction = Normalize(CurrentWaypoint - math::v2(Entity->Position.x, Entity->Position.y - 0.5f));
+        CurrentWaypoint =  math::v2(Entity->Enemy.Waypoints[Entity->Enemy.WaypointIndex].x, Entity->Enemy.Waypoints[Entity->Enemy.WaypointIndex].y);
+        auto Direction = math::Normalize(CurrentWaypoint - math::v2(Entity->Position.x, Entity->Position.y - 0.5f));
         
         Entity->Velocity = math::v2(Direction.x * Entity->Enemy.WanderingSpeed, Direction.y * Entity->Enemy.WanderingSpeed);
     }
     
     entity& Player = GameState->Entities[GameState->PlayerIndex];
     auto& Enemy = Entity->Enemy;
-    r64 DistanceToPlayer = Distance(Entity->Position, Player.Position);
+    r64 DistanceToPlayer = math::Distance(Entity->Position, Player.Position);
     
     if(DistanceToPlayer <= Entity->Enemy.MaxAlertDistance)
     {
@@ -749,7 +749,7 @@ AI_FUNC(SkeletonIdle)
     PlayAnimation(Entity, "skeleton_idle", GameState);
     entity& Player = GameState->Entities[GameState->PlayerIndex];
     auto& Enemy = Entity->Enemy;
-    r64 DistanceToPlayer = Distance(Entity->Position, Player.Position);
+    r64 DistanceToPlayer = math::Distance(Entity->Position, Player.Position);
     
     if(DistanceToPlayer <= Entity->Enemy.MaxAlertDistance)
     {
@@ -767,7 +767,7 @@ AI_FUNC(SkeletonAlerted)
 {
     entity& Player = GameState->Entities[GameState->PlayerIndex];
     auto& Enemy = Entity->Enemy;
-    r64 DistanceToPlayer = Distance(Entity->Position, Player.Position);
+    r64 DistanceToPlayer = math::Distance(Entity->Position, Player.Position);
     
     if(TimerDone(GameState,Entity->Enemy.Skeleton.AlertedTimer) && DistanceToPlayer <= Entity->Enemy.MaxAlertDistance)
     {
@@ -782,7 +782,7 @@ AI_FUNC(SkeletonFollowing)
     auto& Enemy = Entity->Enemy;
     auto& Skeleton = Entity->Enemy.Skeleton;
     
-    r64 DistanceToPlayer = Distance(Entity->Position, Player.Position);
+    r64 DistanceToPlayer = math::Distance(Entity->Position, Player.Position);
     
     if(!Player.Dead && Player.Active)
     {
@@ -801,7 +801,7 @@ AI_FUNC(SkeletonFollowing)
         /*else if(DistanceToPlayer <= Entity->Enemy.SlowdownDistance)
         {
             PlayAnimation(Entity, "skeleton_walk", GameState);
-            math::v2 Direction = Normalize(Player.Position - Entity->Position);
+            math::v2 Direction = math::Normalize(Player.Position - Entity->Position);
             Entity->Velocity = math::v2(Direction.x * Entity->Enemy.CloseToPlayerSpeed, Direction.y * Entity->Enemy.CloseToPlayerSpeed);
         }*/
         else
@@ -823,7 +823,7 @@ AI_FUNC(SkeletonCharging)
     auto& Enemy = Entity->Enemy;
     auto& Skeleton = Entity->Enemy.Skeleton;
     
-    r64 DistanceToPlayer = Distance(Entity->Position, Player.Position);
+    r64 DistanceToPlayer = math::Distance(Entity->Position, Player.Position);
     
     if(DistanceToPlayer >= Enemy.MaxAlertDistance)
     {
@@ -832,13 +832,13 @@ AI_FUNC(SkeletonCharging)
     else if(TimerDone(GameState, Skeleton.ChargingTimer) && DistanceToPlayer <= Enemy.AttackDistance)
     {
         Enemy.AIState = AI_Attacking;
-        Enemy.LastAttackMoveDirection = Normalize(Player.Position - Entity->Position);
+        Enemy.LastAttackMoveDirection = math::Normalize(Player.Position - Entity->Position);
         PlayAnimation(Entity, "skeleton_attack", GameState);
     }
     else
     {
         PlayAnimation(Entity, "skeleton_walk", GameState);
-        math::v2 Direction = Normalize(Player.Position - Entity->Position);
+        math::v2 Direction = math::Normalize(Player.Position - Entity->Position);
         Entity->Velocity = math::v2((Direction.x + 0.1f) * Entity->Enemy.CloseToPlayerSpeed, (Direction.y + 0.1f) * Entity->Enemy.CloseToPlayerSpeed);
     }
 }
@@ -852,7 +852,7 @@ AI_FUNC(SkeletonAttacking)
     entity& Player = GameState->Entities[GameState->PlayerIndex];
     auto& Enemy = Entity->Enemy;
     auto& Skeleton = Entity->Enemy.Skeleton;
-    r64 DistanceToPlayer = Distance(Entity->Position, Player.Position);
+    r64 DistanceToPlayer = math::Distance(Entity->Position, Player.Position);
     
     if(Player.Dead)
     {
@@ -957,7 +957,7 @@ AI_FUNC(MinotaurIdle)
     PlayAnimation(Entity, "minotaur_idle", GameState);
     entity& Player = GameState->Entities[GameState->PlayerIndex];
     auto& Enemy = Entity->Enemy;
-    r64 DistanceToPlayer = Distance(Entity->Position, Player.Position);
+    r64 DistanceToPlayer = math::Distance(Entity->Position, Player.Position);
     
     if(DistanceToPlayer <= Entity->Enemy.MaxAlertDistance)
     {
@@ -976,7 +976,7 @@ AI_FUNC(MinotaurAlerted)
 {
     entity& Player = GameState->Entities[GameState->PlayerIndex];
     auto& Enemy = Entity->Enemy;
-    r64 DistanceToPlayer = Distance(Entity->Position, Player.Position);
+    r64 DistanceToPlayer = math::Distance(Entity->Position, Player.Position);
     if(TimerDone(GameState,Entity->Enemy.Minotaur.AlertedTimer) && DistanceToPlayer <= Entity->Enemy.MaxAlertDistance)
     {
         Enemy.AIState = AI_Following;
@@ -990,7 +990,7 @@ AI_FUNC(MinotaurFollowing)
     auto& Enemy = Entity->Enemy;
     auto& Minotaur = Entity->Enemy.Minotaur;
     
-    r64 DistanceToPlayer = Distance(Entity->Position, Player.Position);
+    r64 DistanceToPlayer = math::Distance(Entity->Position, Player.Position);
     
     if(!Player.Dead && Player.Active)
     {
@@ -1009,7 +1009,7 @@ AI_FUNC(MinotaurFollowing)
         else if(DistanceToPlayer <= Entity->Enemy.SlowdownDistance)
         {
             PlayAnimation(Entity, "minotaur_walk", GameState);
-            math::v2 Direction = Normalize(Player.Position - Entity->Position);
+            math::v2 Direction = math::Normalize(Player.Position - Entity->Position);
             Entity->Velocity = math::v2(Direction.x * Entity->Enemy.CloseToPlayerSpeed, Direction.y * Entity->Enemy.CloseToPlayerSpeed);
         }
         else
@@ -1031,7 +1031,7 @@ AI_FUNC(MinotaurCharging)
     auto& Enemy = Entity->Enemy;
     auto& Minotaur = Entity->Enemy.Minotaur;
     
-    r64 DistanceToPlayer = Distance(Entity->Position, Player.Position);
+    r64 DistanceToPlayer = math::Distance(Entity->Position, Player.Position);
     
     if(DistanceToPlayer >= Enemy.MaxAlertDistance)
     {
@@ -1042,14 +1042,14 @@ AI_FUNC(MinotaurCharging)
         Enemy.AIState = AI_Attacking;
         PLAY_SOUND(MinotaurGrunt01);
         
-        Enemy.LastAttackMoveDirection = Normalize(Player.Position - Entity->Position);
+        Enemy.LastAttackMoveDirection = math::Normalize(Player.Position - Entity->Position);
         
         MinotaurSetAttackMode(Entity, GameState);
     }
     else
     {
         PlayAnimation(Entity, "minotaur_walk", GameState);
-        math::v2 Direction = Normalize(Player.Position - Entity->Position);
+        math::v2 Direction = math::Normalize(Player.Position - Entity->Position);
         Entity->Velocity = math::v2((Direction.x + 0.1f) * Entity->Enemy.CloseToPlayerSpeed, (Direction.y + 0.1f) * Entity->Enemy.CloseToPlayerSpeed);
     }
 }
@@ -1072,7 +1072,7 @@ AI_FUNC(MinotaurDefending)
         PLAY_SOUND(MinotaurGrunt01);
         
         entity& Player = GameState->Entities[GameState->PlayerIndex];
-        Entity->Enemy.LastAttackMoveDirection = Normalize(Player.Position - Entity->Position);
+        Entity->Enemy.LastAttackMoveDirection = math::Normalize(Player.Position - Entity->Position);
         
         MinotaurSetAttackMode(Entity, GameState);
     }
@@ -1083,7 +1083,7 @@ AI_FUNC(MinotaurAttacking)
     entity& Player = GameState->Entities[GameState->PlayerIndex];
     auto& Enemy = Entity->Enemy;
     auto& Minotaur = Entity->Enemy.Minotaur;
-    r64 DistanceToPlayer = Distance(Entity->Position, Player.Position);
+    r64 DistanceToPlayer = math::Distance(Entity->Position, Player.Position);
     
     Enemy.TimesHit = 0;
     
@@ -1215,7 +1215,7 @@ AI_FUNC(MinotaurAttacking)
                     {
                         Enemy.AIState = AI_Attacking;
                         PLAY_SOUND(MinotaurGrunt01);
-                        Enemy.LastAttackMoveDirection = Normalize(Player.Position - Entity->Position);
+                        Enemy.LastAttackMoveDirection = math::Normalize(Player.Position - Entity->Position);
                         MinotaurSetAttackMode(Entity, GameState);
                     }
                     else
@@ -1270,7 +1270,7 @@ AI_FUNC(WraithIdle)
     PlayAnimation(Entity, "wraith_idle", GameState);
     entity& Player = GameState->Entities[GameState->PlayerIndex];
     auto& Enemy = Entity->Enemy;
-    r64 DistanceToPlayer = Distance(Entity->Position, Player.Position);
+    r64 DistanceToPlayer = math::Distance(Entity->Position, Player.Position);
     
     if(DistanceToPlayer <= Entity->Enemy.MaxAlertDistance)
     {
@@ -1288,7 +1288,7 @@ AI_FUNC(WraithAlerted)
 {
     entity& Player = GameState->Entities[GameState->PlayerIndex];
     auto& Enemy = Entity->Enemy;
-    r64 DistanceToPlayer = Distance(Entity->Position, Player.Position);
+    r64 DistanceToPlayer = math::Distance(Entity->Position, Player.Position);
     if(TimerDone(GameState,Entity->Enemy.Wraith.AlertedTimer) && DistanceToPlayer <= Entity->Enemy.MaxAlertDistance)
     {
         Enemy.AIState = AI_Following;
@@ -1302,7 +1302,7 @@ AI_FUNC(WraithFollowing)
     auto& Enemy = Entity->Enemy;
     auto& Wraith = Entity->Enemy.Wraith;
     
-    r64 DistanceToPlayer = Distance(Entity->Position, Player.Position);
+    r64 DistanceToPlayer = math::Distance(Entity->Position, Player.Position);
     
     if(!Player.Dead && Player.Active)
     {
@@ -1321,7 +1321,7 @@ AI_FUNC(WraithFollowing)
         else if(DistanceToPlayer <= Entity->Enemy.SlowdownDistance)
         {
             PlayAnimation(Entity, "wraith_fly", GameState);
-            math::v2 Direction = Normalize(Player.Position - Entity->Position);
+            math::v2 Direction = math::Normalize(Player.Position - Entity->Position);
             Entity->Velocity = math::v2(Direction.x * Entity->Enemy.CloseToPlayerSpeed, Direction.y * Entity->Enemy.CloseToPlayerSpeed);
         }
         else
@@ -1343,7 +1343,7 @@ AI_FUNC(WraithCharging)
     auto& Enemy = Entity->Enemy;
     auto& Wraith = Entity->Enemy.Wraith;
     
-    r64 DistanceToPlayer = Distance(Entity->Position, Player.Position);
+    r64 DistanceToPlayer = math::Distance(Entity->Position, Player.Position);
     
     if(DistanceToPlayer >= Enemy.MaxAlertDistance)
     {
@@ -1352,13 +1352,13 @@ AI_FUNC(WraithCharging)
     else if(TimerDone(GameState, Wraith.ChargingTimer) && DistanceToPlayer <= Enemy.AttackDistance)
     {
         Enemy.AIState = AI_Attacking;
-        Enemy.LastAttackMoveDirection = Normalize(Player.Position - Entity->Position);
+        Enemy.LastAttackMoveDirection = math::Normalize(Player.Position - Entity->Position);
         PlayAnimation(Entity, "wraith_attack", GameState);
     }
     else
     {
         PlayAnimation(Entity, "wraith_fly", GameState);
-        math::v2 Direction = Normalize(Player.Position - Entity->Position);
+        math::v2 Direction = math::Normalize(Player.Position - Entity->Position);
         Entity->Velocity = math::v2((Direction.x + 0.1f) * Entity->Enemy.CloseToPlayerSpeed, (Direction.y + 0.1f) * Entity->Enemy.CloseToPlayerSpeed);
     }
 }
@@ -1371,7 +1371,7 @@ AI_FUNC(WraithAttacking)
     entity& Player = GameState->Entities[GameState->PlayerIndex];
     auto& Enemy = Entity->Enemy;
     auto& Wraith = Entity->Enemy.Wraith;
-    r64 DistanceToPlayer = Distance(Entity->Position, Player.Position);
+    r64 DistanceToPlayer = math::Distance(Entity->Position, Player.Position);
     
     if(Player.Dead)
     {
@@ -1460,7 +1460,7 @@ AI_FUNC(WraithWandering)
 AI_FUNC(BlobIdle)
 {
     auto& Player = GameState->Entities[0];
-    r64 DistanceToPlayer = Distance(Entity->Position, Player.Position);
+    r64 DistanceToPlayer = math::Distance(Entity->Position, Player.Position);
     
     if(DistanceToPlayer <= Entity->Enemy.MaxAlertDistance)
     {
@@ -1480,7 +1480,7 @@ AI_FUNC(BlobFollowing)
 {
     FindPath(GameState,Entity,GameState->Entities[GameState->PlayerIndex], &Entity->Enemy.AStarPath);
     FollowPath(GameState,Entity,GameState->Entities[GameState->PlayerIndex], &Entity->Enemy.AStarPath);
-    if(Abs(Distance(Entity->Position, GameState->Entities[GameState->PlayerIndex].Position)) < Entity->Enemy.MinDistanceToPlayer)
+    if(Abs(math::Distance(Entity->Position, GameState->Entities[GameState->PlayerIndex].Position)) < Entity->Enemy.MinDistanceToPlayer)
     {
         Entity->Enemy.AIState = AI_Charging;
         StartTimer(GameState, Entity->Enemy.Blob.ExplodeStartTimer);
@@ -1499,7 +1499,7 @@ AI_FUNC(BlobCharging)
         StartTimer(GameState, Entity->Enemy.Blob.ExplodeCountdownTimer);
     }
     
-    if(Abs(Distance(Entity->Position, GameState->Entities[GameState->PlayerIndex].Position)) >= 1)
+    if(Abs(math::Distance(Entity->Position, GameState->Entities[GameState->PlayerIndex].Position)) >= 1)
         Entity->Enemy.AIState = AI_Following;
 }
 
@@ -2042,7 +2042,7 @@ static void LoadPlayerData(game_state* GameState, sound_queue* SoundQueue, i32 H
             }
         }
         Entity->Player.Inventory.HasCheckpoint = true;
-        Entity->Position = Floor(Entity->Position);
+        Entity->Position = math::Floor(Entity->Position);
         Entity->CurrentTile = Entity->Position;
         Entity->CurrentDestination = Entity->Position;
     }
@@ -2198,19 +2198,19 @@ void UpdatePlayer(entity* Entity, game_state* GameState, sound_queue* SoundQueue
     
     r32 Speed = Entity->Player.WalkingSpeed;
     
-    r32 Len = Length(Entity->CurrentDestination - Entity->Position);
+    r32 Len = math::Length(Entity->CurrentDestination - Entity->Position);
     math::v2 Direction;
     
     if(Len != 0.0f)
     {
-        Direction = Normalize(Entity->CurrentDestination - Entity->Position);
+        Direction = math::Normalize(Entity->CurrentDestination - Entity->Position);
     }
     else
     {
         Direction = math::v2(0, 0);
     }
     
-    if(Abs(Distance(Entity->Position, Entity->CurrentDestination)) < 0.01f)
+    if(Abs(math::Distance(Entity->Position, Entity->CurrentDestination)) < 0.01f)
     {
         Entity->Position = Entity->CurrentDestination;
         Entity->CurrentTile = Entity->Position;
@@ -2342,11 +2342,11 @@ static void UpdateWeapon(entity* Entity, game_state* GameState, sound_queue* Sou
         {
             for(i32 Y = HitExtents.StartY; Y < HitExtents.EndY; Y++)
             {
-                if(Entity->TilePosition.X + X >= 0 && Entity->TilePosition.Y + Y >= 0 && Entity->TilePosition.X + X < GameState->CurrentLevel.Tilemap.Width && Entity->TilePosition.Y + Y < GameState->CurrentLevel.Tilemap.Height)
+                if(Entity->TilePosition.x + X >= 0 && Entity->TilePosition.y + Y >= 0 && Entity->TilePosition.x + X < GameState->CurrentLevel.Tilemap.Width && Entity->TilePosition.y + Y < GameState->CurrentLevel.Tilemap.Height)
                 {
                     for(i32 EntityIndex = 0; EntityIndex < 20; EntityIndex++)
                     {
-                        i32 Handle = GameState->EntityTilePositions[Entity->TilePosition.X + X][Entity->TilePosition.Y + Y].Entities[EntityIndex] - 1;
+                        i32 Handle = GameState->EntityTilePositions[Entity->TilePosition.x + X][Entity->TilePosition.y + Y].Entities[EntityIndex] - 1;
                         
                         if(Handle >= 0 && Handle < GameState->EntityCount)
                         {
@@ -2484,7 +2484,7 @@ static void UpdateSkeleton(entity* Entity, game_state* GameState, sound_queue* S
     auto& Skeleton = Entity->Enemy.Skeleton;
     
     auto Player = &GameState->Entities[0];
-    Entity->RenderButtonHint = Entity->Enemy.HasLoot && Entity->Dead && Distance(Player->Position, Entity->Position) < 1.5f;
+    Entity->RenderButtonHint = Entity->Enemy.HasLoot && Entity->Dead && math::Distance(Player->Position, Entity->Position) < 1.5f;
     
     if(Entity->Active && !Entity->Dead)
     {
@@ -2503,7 +2503,7 @@ static void UpdateSkeleton(entity* Entity, game_state* GameState, sound_queue* S
             {
                 PlayAnimation(Entity, "skeleton_hit", GameState);
                 Enemy.AIState = AI_Hit;
-                Entity->HitRecoilDirection = Normalize(Entity->Position - Player->Position);
+                Entity->HitRecoilDirection = math::Normalize(Entity->Position - Player->Position);
                 StartTimer(GameState, Entity->RecoilTimer);
             }
         }
@@ -2515,11 +2515,11 @@ static void UpdateSkeleton(entity* Entity, game_state* GameState, sound_queue* S
         Entity->Position.x += Entity->Velocity.x * (r32)DeltaTime;
         Entity->Position.y += Entity->Velocity.y * (r32)DeltaTime;
         
-        math::v2 Direction = Normalize(Player->Position - Entity->Position);
+        math::v2 Direction = math::Normalize(Player->Position - Entity->Position);
         
         if(Entity->Enemy.AIState != AI_Attacking && !Entity->Enemy.Skeleton.IsAttacking)
         {
-            math::v2 Direction = Normalize(Player->Position - Entity->Position);
+            math::v2 Direction = math::Normalize(Player->Position - Entity->Position);
             
             if(Abs(Direction.x) < 0.6f)
             {
@@ -2567,7 +2567,7 @@ static void UpdateMinotaur(entity* Entity, game_state* GameState, sound_queue* S
     
     auto Player = &GameState->Entities[0];
     
-    Entity->RenderButtonHint = Entity->Enemy.HasLoot &&  Entity->Dead && Distance(Player->Position, Entity->Position) < 1.5f;
+    Entity->RenderButtonHint = Entity->Enemy.HasLoot &&  Entity->Dead && math::Distance(Player->Position, Entity->Position) < 1.5f;
     
     if(Entity->Active && !Entity->Dead)
     {
@@ -2592,7 +2592,7 @@ static void UpdateMinotaur(entity* Entity, game_state* GameState, sound_queue* S
                 PlayAnimation(Entity, "minotaur_detected", GameState);
                 Enemy.AIState = AI_Hit;
                 Minotaur.IsAttacking = false;
-                Entity->HitRecoilDirection = Normalize(Entity->Position - Player->Position);
+                Entity->HitRecoilDirection = math::Normalize(Entity->Position - Player->Position);
                 StartTimer(GameState, Entity->RecoilTimer);
             }
         }
@@ -2613,7 +2613,7 @@ static void UpdateMinotaur(entity* Entity, game_state* GameState, sound_queue* S
         
         if(Entity->Enemy.AIState != AI_Attacking && !Entity->Enemy.Minotaur.IsAttacking)
         {
-            math::v2 Direction = Normalize(Player->Position - Entity->Position);
+            math::v2 Direction = math::Normalize(Player->Position - Entity->Position);
             
             if(Abs(Direction.x) < 0.6f)
             {
@@ -2660,7 +2660,7 @@ static void UpdateWraith(entity* Entity, game_state* GameState, sound_queue* Sou
     auto& Wraith = Entity->Enemy.Wraith;
     
     auto& Player = GameState->Entities[0];
-    Entity->RenderButtonHint = Entity->Dead && Distance(Player.Position, Entity->Position) < 1.5f;
+    Entity->RenderButtonHint = Entity->Dead && math::Distance(Player.Position, Entity->Position) < 1.5f;
     
     if(Entity->Active && !Entity->Dead)
     {
@@ -2679,7 +2679,7 @@ static void UpdateWraith(entity* Entity, game_state* GameState, sound_queue* Sou
             {
                 //PlayAnimation(Entity, "skeleton_hit", GameState);
                 Enemy.AIState = AI_Hit;
-                Entity->HitRecoilDirection = Normalize(Entity->Position - Player.Position);
+                Entity->HitRecoilDirection = math::Normalize(Entity->Position - Player.Position);
                 StartTimer(GameState, Entity->RecoilTimer);
             }
         }
@@ -2691,11 +2691,11 @@ static void UpdateWraith(entity* Entity, game_state* GameState, sound_queue* Sou
         Entity->Position.x += Entity->Velocity.x * (r32)DeltaTime;
         Entity->Position.y += Entity->Velocity.y * (r32)DeltaTime;
         
-        math::v2 Direction = Normalize(Player.Position - Entity->Position);
+        math::v2 Direction = math::Normalize(Player.Position - Entity->Position);
         
         if(Entity->Enemy.AIState != AI_Attacking && !Entity->Enemy.Wraith.IsAttacking)
         {
-            math::v2 Direction = Normalize(Player.Position - Entity->Position);
+            math::v2 Direction = math::Normalize(Player.Position - Entity->Position);
             
             if(Abs(Direction.x) < 0.6f)
             {
@@ -2777,7 +2777,7 @@ static void UpdateBarrel(entity* Entity, game_state* GameState, sound_queue* Sou
         
         auto& Player = GameState->Entities[0];
         
-        Entity->RenderButtonHint = !Entity->IsKinematic && Distance(Player.Position, Entity->Position) < 1.5f;
+        Entity->RenderButtonHint = !Entity->IsKinematic && math::Distance(Player.Position, Entity->Position) < 1.5f;
         
         Entity->Position.x += Entity->Velocity.x * (r32)DeltaTime;
         Entity->Position.y += Entity->Velocity.y * (r32)DeltaTime;
@@ -2797,20 +2797,20 @@ static void UpdateTilePosition(entity& Entity, game_state* GameState, r64 DeltaT
     
     if(CartesianX >= 0 && CartesianX < GameState->CurrentLevel.Tilemap.Width && CartesianY >= 0 && CartesianY < GameState->CurrentLevel.Tilemap.Height)
     {
-        Entity.TilePosition.X = (i32)CartesianX;
-        Entity.TilePosition.Y = (i32)CartesianY;
-        Assert(GameState->EntityTilePositions[Entity.TilePosition.X][Entity.TilePosition.Y].Count < 20);
-        Entity.TilePosition.Z = GameState->EntityTilePositions[Entity.TilePosition.X][Entity.TilePosition.Y].Count++;
+        Entity.TilePosition.x = (i32)CartesianX;
+        Entity.TilePosition.y = (i32)CartesianY;
+        Assert(GameState->EntityTilePositions[Entity.TilePosition.x][Entity.TilePosition.y].Count < 20);
+        Entity.TilePosition.z = GameState->EntityTilePositions[Entity.TilePosition.x][Entity.TilePosition.y].Count++;
         
-        GameState->EntityTilePositions[Entity.TilePosition.X][Entity.TilePosition.Y].Entities[Entity.TilePosition.Z] = Entity.EntityIndex + 1;
+        GameState->EntityTilePositions[Entity.TilePosition.x][Entity.TilePosition.y].Entities[Entity.TilePosition.z] = Entity.EntityIndex + 1;
     }
 }
 
 static void UpdateGeneral(entity* Entity, game_state* GameState, r64 DeltaTime)
 {
-    GameState->RenderState.RenderEntities[Entity->RenderEntityHandle].Rendered = Distance(Entity->Position, GameState->Entities[0].Position) < 15;
+    GameState->RenderState.RenderEntities[Entity->RenderEntityHandle].Rendered = math::Distance(Entity->Position, GameState->Entities[0].Position) < 15;
     
-    GameState->EntityTilePositions[Entity->TilePosition.X][Entity->TilePosition.Y].Entities[Entity->TilePosition.Z] = 0;
+    GameState->EntityTilePositions[Entity->TilePosition.x][Entity->TilePosition.y].Entities[Entity->TilePosition.z] = 0;
     
     if(Entity->LightSourceHandle != -1)
     {
