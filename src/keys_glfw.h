@@ -3,7 +3,7 @@
 
 void InitKeyMappings()
 {
-    uinteger_Map_Init(&InputController.KeyMappings,HashIntKeys, GLFW_KEY_LAST);
+    integer_Map_Init(&InputController.KeyMappings,HashIntKeys, GLFW_KEY_LAST);
     InputController.KeyMappings[GLFW_KEY_UNKNOWN] = Key_Unknown;
     InputController.KeyMappings[GLFW_KEY_APOSTROPHE] = Key_Apostrophe;
     InputController.KeyMappings[GLFW_KEY_COMMA] = Key_Comma;
@@ -130,7 +130,7 @@ void InitKeyMappings()
 
 void InitMouseButtonMappings()
 {
-    uinteger_Map_Init(&InputController.MouseButtonMappings,HashIntKeys,7);
+    integer_Map_Init(&InputController.MouseButtonMappings,HashIntKeys,7);
     InputController.MouseButtonMappings[GLFW_MOUSE_BUTTON_LEFT] = Mouse_Left;
     InputController.MouseButtonMappings[GLFW_MOUSE_BUTTON_RIGHT] = Mouse_Right;
     InputController.MouseButtonMappings[GLFW_MOUSE_BUTTON_MIDDLE] = Mouse_Middle;

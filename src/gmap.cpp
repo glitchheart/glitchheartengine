@@ -54,8 +54,8 @@ u32 HashInt(u32 Size, const void* A)
     return K & (Size - 1);
 }*/
 
-inline u64 HashIntKeys(u64 Size, u32 Key)
+inline u64 HashIntKeys(u64 Size, i32 Key)
 {
-    u32 K = *(u32)(Key);
+    u64 K = (u64)((i32)(Key));
     return K % ((u32)Size - 1);
 }
