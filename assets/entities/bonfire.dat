@@ -3,8 +3,8 @@ active 1
 layer Layer_Player
 iskinematic 0
 center 0.5 0.5
-scale 1
-animation bonfire
+scale 0.5
+animation streetlight
 collider -0.5 -0.7 0.35 0.2 0
-pointlight type 0 active 1 intensity 2.3 color 0.77 0.30 0.0 1.0 atten 3.5 5.1 4.7 shouldglow 1 glowtimer 0.55 glowincrease 0.0005
+pointlight type 0 active 1 offset 0 1 intensity 2.3 color 0.4 0.4 0.7 1.0 atten 3.5 5.1 4.7 shouldglow 1 glowtimer 0.55 glowincrease 0.0005
 #bonfire

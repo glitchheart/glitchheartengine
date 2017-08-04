@@ -186,6 +186,8 @@ struct light_source
         {
             r32 Intensity;
             math::v2 Position;
+            math::v2 RenderPosition;
+            math::v2 Offset;
             r32 ConstantAtten;
             r32 LinearAtten;
             r32 ExponentialAtten;
@@ -265,7 +267,7 @@ struct entity
     i32 FramesForDestination;
     math::v2 Center;
     math::v3 Rotation;
-
+    
     r32 Scale;
     b32 IsFlipped;
     b32 IsTemporary;

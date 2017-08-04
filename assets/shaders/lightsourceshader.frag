@@ -20,8 +20,8 @@ void main()
 	for(int i = 0; i < NUM_POINTLIGHTS; i++)
 	{
 		float dist = distance(PointLightPos[i], (inverse(P * V)) * vec4(
-			(gl_FragCoord.x/screenSize.x - 0.5) * 2.0,
-			(gl_FragCoord.y/screenSize.y - 0.5) * 2.0,0,1));
+			(gl_FragCoord.x / screenSize.x - 0.5) * 2.0,
+			(gl_FragCoord.y / screenSize.y - 0.5) * 2.0, 0, 1));
 
 		vec4 dir = normalize(PointLightPos[i] - ((inverse(P*V)) * vec4((gl_FragCoord.x/screenSize.x - 0.5) * 2.0,
 			(gl_FragCoord.y/screenSize.y - 0.5) * 2.0,0,1)));
