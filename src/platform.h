@@ -48,6 +48,7 @@ typedef i32 b32;
 typedef float r32;
 typedef double r64;
 
+#include <glm/gtc/matrix_transform.hpp>
 #include <GLFW/glfw3.h>
 #include <cmath>
 
@@ -948,6 +949,29 @@ namespace math
             Res.W = this->M * Vec.X + this->N * Vec.Y + this->O * Vec.Z + this->P * Vec.W;
             return Res;
         }
+        
+        m4 operator*(r32 S)
+        {
+            m4 Res(*this);
+            Res.M11 *= S;
+            Res.M12 *= S;
+            Res.M13 *= S;
+            Res.M14 *= S;
+            Res.M21 *= S;
+            Res.M22 *= S;
+            Res.M23 *= S;
+            Res.M24 *= S;
+            Res.M31 *= S;
+            Res.M32 *= S;
+            Res.M33 *= S;
+            Res.M34 *= S;
+            Res.M41 *= S;
+            Res.M42 *= S;
+            Res.M43 *= S;
+            Res.M44 *= S;
+            return Res;
+        }
+        
     };
     
     
@@ -961,11 +985,25 @@ namespace math
         return Res;
     }
     
+    r32 Determinant(const m4& In)
+    {
+        return In.M11 * In.M22 * In.M33 * In.M44 + In.M11 * In.M23 * In.M34 * In.M42 + In.M11 * In.M24 * In.M32 * In.M43 + 
+            In.M12 * In.M21 * In.M34 * In.M43 + In.M12 * In.M23 * In.M31 * In.M44 + In.M12 * In.M24 * In.M33 * In.M41 +
+            In.M13 * In.M21 * In.M32 * In.M44 + In.M13 * In.M22 * In.M34 * In.M41 + In.M13 * In.M24 * In.M31 * In.M42 +
+            In.M14 * In.M21 * In.M33 * In.M42 + In.M14 * In.M22 * In.M31 * In.M43 + In.M14 * In.M23 * In.M32 * In.M41 -
+            In.M11 * In.M22 * In.M34 * In.M43 - In.M11 * In.M23 * In.M32 * In.M44 - In.M11 * In.M24 * In.M33 * In.M42 -
+            In.M12 * In.M21 * In.M33 * In.M44 - In.M12 * In.M23 * In.M34 * In.M41 - In.M12 * In.M24 * In.M31 * In.M43 -
+            In.M13 * In.M21 * In.M34 * In.M42 - In.M13 * In.M22 * In.M31 * In.M44 - In.M13 * In.M24 * In.M32 * In.M41 -
+            In.M14 * In.M21 * In.M32 * In.M43 - In.M14 * In.M22 * In.M33 * In.M41 - In.M14 * In.M23 * In.M31 * In.M42;
+        
+    }
+    
+    // Inverse is tested against glm::inverse and seems to work
     m4 Inverse(const m4& In)
     {
         m4 Res(0.0f);
         Res.M11 =
-            In.M22 * In.M33 * In.M44 + In.M23 * In.M34 * In.M42 + In.M24* In.M32* In.M43
+            In.M22 * In.M33 * In.M44 + In.M23 * In.M34 * In.M42 + In.M24* In.M32 * In.M43
             -In.M22 * In.M34 * In.M43 - In.M23 * In.M32 * In.M44 - In.M24 * In.M33 * In.M42;
         Res.M12 =
             In.M12 * In.M34 * In.M43 + In.M13 * In.M32 * In.M44 + In.M14 * In.M33 * In.M42
@@ -980,7 +1018,7 @@ namespace math
             In.M21 * In.M34 * In.M43 + In.M23 * In.M31 * In.M44 + In.M24 * In.M33 * In.M41 
             -In.M21 * In.M33 * In.M44 - In.M23 * In.M34 * In.M41 - In.M24 * In.M31 * In.M43;
         Res.M22 = 
-            In.M11 * In.M33 * In.M44 + In.M13 * In.M34 * In.M41 + In.M41 * In.M31 * In.M43
+            In.M11 * In.M33 * In.M44 + In.M13 * In.M34 * In.M41 + In.M14 * In.M31 * In.M43
             -In.M11 * In.M34 * In.M43 - In.M13 * In.M31 * In.M44 - In.M14 * In.M33 * In.M41;
         Res.M23 =
             In.M11 * In.M24 * In.M43 + In.M13 * In.M21 * In.M44 + In.M14 * In.M23 * In.M41
@@ -1013,6 +1051,9 @@ namespace math
             In.M11 * In.M22 * In.M33 + In.M12 * In.M23 * In.M31 + In.M13 * In.M21 * In.M32 
             - In.M11 * In.M23 * In.M32 - In.M12 * In.M21 * In.M33 - In.M13 * In.M22 * In.M31;
         
+        auto Det = Determinant(In);
+        auto InvDet = 1.0f/Det;
+        Res = Res * InvDet;
         return Res;
     }
     
