@@ -1849,7 +1849,7 @@ static void LoadBlobData(game_state* GameState, i32 Handle = -1, math::v2 Positi
     
 }
 
-static void PlaceCheckpoint(game_state* GameState, sound_queue* SoundQueue, entity* Entity)
+void PlaceCheckpoint(game_state* GameState, sound_queue* SoundQueue, entity* Entity)
 {
     auto CheckpointPos = math::v2(Entity->Position.x, Entity->Position.y - 0.5f);
     if(!GameState->CharacterData.HasCheckpoint)
@@ -2048,7 +2048,7 @@ static void LoadPlayerData(game_state* GameState, sound_queue* SoundQueue, i32 H
     }
 }
 
-static void CheckWillPickup(game_state* GameState, input_controller* InputController, object_entity* Will,entity* Player)
+void CheckWillPickup(game_state* GameState, input_controller* InputController, object_entity* Will,entity* Player)
 {
     if(GameState->CharacterData.RenderWillButtonHint && GetActionButtonDown(Action_Interact, InputController))
     {
@@ -2065,7 +2065,7 @@ static void CheckWillPickup(game_state* GameState, input_controller* InputContro
 }
 
 
-static void CheckLootPickup(game_state* GameState, input_controller* InputController,loot* Loot, entity* Player)
+void CheckLootPickup(game_state* GameState, input_controller* InputController,loot* Loot, entity* Player)
 {
     if(Loot->RenderButtonHint && GetActionButtonDown(Action_Interact, InputController))
     {
@@ -2110,6 +2110,7 @@ static void CheckLootPickup(game_state* GameState, input_controller* InputContro
 
 void UpdatePlayer(entity* Entity, game_state* GameState, sound_queue* SoundQueue,input_controller* InputController, r64 DeltaTime)
 {
+    
     // Collision check
     collision_info CollisionInfo;
     CheckCollision(GameState, Entity, &CollisionInfo);
@@ -2122,6 +2123,8 @@ void UpdatePlayer(entity* Entity, game_state* GameState, sound_queue* SoundQueue
     r32 DY = 0.0f;
     
     r32 Scale = 2.0f;
+    
+    auto NewDirection = North;
     
     if(XInput > 0)
     {
@@ -2144,57 +2147,49 @@ void UpdatePlayer(entity* Entity, game_state* GameState, sound_queue* SoundQueue
     if(DX < 0 && DY > 0)
     {
         DX = 0;
-        Entity->LookDirection = NorthWest;
+        NewDirection = NorthWest;
     }
     else if(DX == 0.0f && DY > 0)
     {
         DX = 1.0f;
         Scale = 1.0f;
         Entity->LookDirection = North;
-        //DX = 0;
-        //DY = 0;
     }
     else if(DX > 0 && DY > 0)
     {
         DY = 0.0f;
         Scale = 1.0f;
-        Entity->LookDirection = NorthEast;
+        NewDirection = NorthEast;
     }
     else if(DX > 0 && DY == 0.0f)
     {
         DY = -1.0f;
-        Entity->LookDirection = East;
-        //DX = 0;
-        //DY = 0;
+        NewDirection = East;
     }
     else if(DX > 0 && DY < 0)
     {
         DX = 0.0f;
-        Entity->LookDirection = SouthEast;
+        NewDirection = SouthEast;
     }
     else if(DX == 0.0f && DY < 0)
     {
         DX = -1.0f;
         Scale = 1.0f;
-        Entity->LookDirection = South;
-        //DX = 0;
-        //DY = 0;
+        NewDirection = South;
     }
     else if(DX < 0 && DY < 0)
     {
         DY = 0.0f;
         Scale = 1.0f;
-        Entity->LookDirection = SouthWest;
+        NewDirection = SouthWest;
     }
     else if(DX < 0 && DY == 0.0f)
     {
         DY = 1.0f;
-        Entity->LookDirection = West;
-        //DX = 0;
-        //DY = 0;
+        NewDirection = West;
     }
     
-    Entity->IsFlipped = DX < 0;
+    //Entity->IsFlipped = DX < 0;
     
     r32 Speed = Entity->Player.WalkingSpeed;
     
@@ -2220,22 +2215,90 @@ void UpdatePlayer(entity* Entity, game_state* GameState, sound_queue* SoundQueue
         if(DX != 0.0f || DY != 0.0f)
         {
             Entity->CurrentDestination = math::v2(Entity->CurrentTile.x, Entity->CurrentTile.y) + math::v2(DX, DY);
+            Entity->LookDirection = NewDirection;
         }
     }
     else
         Entity->Velocity = math::v2(Direction.x * Speed, Direction.y * Speed);
     
-    // Set animation
-    if(Abs(Entity->Velocity.x) > 0.0f || Abs(Entity->Velocity.y) > 0.0f)
-        PlayAnimation(Entity, "swordsman_walk", GameState);
-    else
-        PlayAnimation(Entity, "swordsman_idle", GameState);
+    char* AnimationName = "";
+    
+    b32 Walking = Abs(XInput) > 0.0f || Abs(YInput) > 0.0f || Abs(Entity->Velocity.x) > 0.0f || Abs(Entity->Velocity.y) > 0.0f;
+    
+    switch(Entity->LookDirection)
+    {
+        case North:
+        {
+            if(Walking)
+                AnimationName = "man_walk_north";
+            else
+                AnimationName = "man_idle_north";
+        }
+        break;
+        case NorthEast:
+        {
+            if(Walking)
+                AnimationName = "man_walk_northeast";
+            else
+                AnimationName = "man_idle_northeast";
+        }
+        break;
+        case East:
+        {
+            if(Walking)
+                AnimationName = "man_walk_east";
+            else
+                AnimationName = "man_idle_east";
+        }
+        break;
+        case SouthEast:
+        {if(Walking)
+                AnimationName = "man_walk_southeast";
+            else
+                AnimationName = "man_idle_southeast";
+        }
+        break;
+        case South:
+        {if(Walking)
+                AnimationName = "man_walk_south";
+            else
+                AnimationName = "man_idle_south";
+        }
+        break;
+        case SouthWest:
+        {
+            if(Walking)
+                AnimationName = "man_walk_southwest";
+            else
+                AnimationName = "man_idle_southwest";
+        }
+        break;
+        case West:
+        {
+            if(Walking)
+                AnimationName = "man_walk_west";
+            else
+                AnimationName = "man_idle_west";
+        }
+        break;
+        case NorthWest:
+        {
+            if(Walking)
+                AnimationName = "man_walk_northwest";
+            else
+                AnimationName = "man_idle_northwest";
+        }
+        break;
+    }
+    
+    PlayAnimation(Entity, AnimationName, GameState);
     
     Entity->Position += math::v2(Entity->Velocity.x * DeltaTime, Entity->Velocity.y * DeltaTime);
     
     
     // Update camera if centered on player
     GameState->GameCamera.CenterTarget = Entity->Position;
+    
 }
 
 static void UpdateWeapon(entity* Entity, game_state* GameState, sound_queue* SoundQueue, r64 DeltaTime)

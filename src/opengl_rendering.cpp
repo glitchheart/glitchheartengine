@@ -974,7 +974,7 @@ static void InitializeOpenGL(game_memory* GameMemory, config_data* ConfigData)
     
     ControllerPresent();
     
-    texture_Map_Init(&RenderState.Textures, HashStringJenkins, 512);
+    texture_Map_Init(&RenderState.Textures, HashStringJenkins, 4048);
     LoadTextures(&RenderState, "../assets/textures/");
     LoadTextures(&RenderState, "../assets/textures/spritesheets/");
     RenderSetup(&RenderState);
@@ -1606,11 +1606,21 @@ static void RenderEntity(game_state *GameState, render_entity* RenderEntity, mat
     
     if(RenderEntity->Rendered && Active)
     {
+        if(RenderEntity->RenderType == Render_Type_Entity)
+        {
+            if(RenderEntity->Entity->Type == Entity_Player)
+            {
+                //printf("Current tile %d %d\n", RenderEntity->Entity->TilePosition.X, RenderEntity->Entity->TilePosition.Y);
+                
+                auto CurrentTilePos = ToIsometric(math::v2(RenderEntity->Entity->CurrentDestination.x, RenderEntity->Entity->CurrentDestination.y + 1));
+                RenderIsometricRect(RenderState, math::v4(0.3, 0.3, 0, 0.2), CurrentTilePos.x, CurrentTilePos.y, 1, 0.5f, ProjectionMatrix, View);
+            }
+        }
+        
         math::m4 Model(1.0f);
         
         if(CurrentAnimation) 
         {
-            
             r32 WidthInUnits = (r32)CurrentAnimation->FrameSize.x / (r32)PIXELS_PER_UNIT;
             r32 HeightInUnits = (r32)CurrentAnimation->FrameSize.y / (r32)PIXELS_PER_UNIT;
             
@@ -1621,7 +1631,7 @@ static void RenderEntity(game_state *GameState, render_entity* RenderEntity, mat
             auto CorrectPos = ToIsometric(Position);
             
             CorrectPos.x = CorrectPos.x - RemoveInX;
-            CorrectPos.y = CorrectPos.y - (IsFlipped ? CurrentAnimation->Center.y : 0);
+            CorrectPos.y = CorrectPos.y - CurrentAnimation->Center.y;
             
             Model = math::Translate(Model, math::v3(CorrectPos.x, CorrectPos.y, 0.0f));
             

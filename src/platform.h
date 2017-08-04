@@ -533,6 +533,9 @@ namespace math
         v4(i32 X, i32 Y, i32 Z, r32 W) : 
         X((r32)X), Y((r32)Y), Z((r32)Z), W(W) {}
         
+        v4(r64 X, r64 Y, i32 Z, r64 W) : 
+        X((r32)X), Y((r32)Y), Z((r32)Z), W((r32)W) {}
+        
         v4(v3 O, r32 W) : X(O.X), Y(O.Y), Z(O.Z), W(W) {}
         
         v4 operator* (v4 O)
