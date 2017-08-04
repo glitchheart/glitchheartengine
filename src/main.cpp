@@ -168,6 +168,7 @@ int main(void)
         ResetSoundQueue(&SoundQueue);
         SoundDevice.SFXVolume = ConfigData.SFXVolume;
         SoundDevice.MusicVolume = ConfigData.MusicVolume;
+        SoundDevice.Muted = ConfigData.Muted;
     }
     
     r64 LastFrame = GetTime();

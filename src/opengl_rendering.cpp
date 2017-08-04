@@ -959,6 +959,10 @@ static void InitializeOpenGL(game_memory* GameMemory, config_data* ConfigData)
     glDisable(GL_DITHER);
     glLineWidth(2.0f);
     
+    //glFrontFace(GL_CCW);
+    //glCullFace(GL_FRONT);
+    //glEnable(GL_CULL_FACE);
+    
     DEBUG_PRINT("%s\n", glGetString(GL_VERSION));
     
     glfwSetWindowUserPointer(RenderState.Window, GameState);
@@ -974,7 +978,7 @@ static void InitializeOpenGL(game_memory* GameMemory, config_data* ConfigData)
     
     ControllerPresent();
     
-    texture_Map_Init(&RenderState.Textures, HashStringJenkins, 4048);
+    texture_Map_Init(&RenderState.Textures, HashString, 8096);
     LoadTextures(&RenderState, "../assets/textures/");
     LoadTextures(&RenderState, "../assets/textures/spritesheets/");
     RenderSetup(&RenderState);
@@ -1594,10 +1598,10 @@ static void RenderEntity(game_state *GameState, render_entity* RenderEntity, mat
     auto Shader = RenderState->Shaders[RenderEntity->ShaderIndex];
     
     b32 Active = RenderEntity->RenderType == Render_Type_Entity ? RenderEntity->Entity->Active : RenderEntity->Object->Active;
-    b32 IsFlipped = RenderEntity->RenderType == Render_Type_Entity ? RenderEntity->Entity->IsFlipped : RenderEntity->Object->IsFlipped;
     math::v2 Position = RenderEntity->RenderType == Render_Type_Entity ? RenderEntity->Entity->Position : RenderEntity->Object->Position;
     math::v2 Center = RenderEntity->RenderType == Render_Type_Entity ? RenderEntity->Entity->Center : RenderEntity->Object->Center;
     r32 EntityScale = RenderEntity->RenderType == Render_Type_Entity ? RenderEntity->Entity->Scale : RenderEntity->Object->Scale;
+    i32 LightSourceHandle = RenderEntity->RenderType == Render_Type_Entity ? RenderEntity->Entity->LightSourceHandle : RenderEntity->Object->LightSourceHandle;
     
     animation* CurrentAnimation =  RenderEntity->RenderType == Render_Type_Entity ? RenderEntity->Entity->CurrentAnimation : RenderEntity->Object->CurrentAnimation;
     animation_info AnimationInfo = RenderEntity->RenderType == Render_Type_Entity ? RenderEntity->Entity->AnimationInfo : RenderEntity->Object->AnimationInfo;
@@ -1610,38 +1614,37 @@ static void RenderEntity(game_state *GameState, render_entity* RenderEntity, mat
         {
             if(RenderEntity->Entity->Type == Entity_Player)
             {
-                //printf("Current tile %d %d\n", RenderEntity->Entity->TilePosition.X, RenderEntity->Entity->TilePosition.Y);
+                //printf("Current tile %f %f\n", RenderEntity->Entity->CurrentDestination.x, RenderEntity->Entity->CurrentDestination.y);
                 
-                auto CurrentTilePos = ToIsometric(math::v2(RenderEntity->Entity->CurrentDestination.x, RenderEntity->Entity->CurrentDestination.y + 1));
+                auto CurrentTilePos = ToIsometric(math::v2(RenderEntity->Entity->CurrentDestination.x, RenderEntity->Entity->CurrentDestination.y));
                 RenderIsometricRect(RenderState, math::v4(0.3, 0.3, 0, 0.2), CurrentTilePos.x, CurrentTilePos.y, 1, 0.5f, ProjectionMatrix, View);
             }
         }
         
         math::m4 Model(1.0f);
         
-        if(CurrentAnimation) 
+        if(CurrentAnimation)
         {
             r32 WidthInUnits = (r32)CurrentAnimation->FrameSize.x / (r32)PIXELS_PER_UNIT;
             r32 HeightInUnits = (r32)CurrentAnimation->FrameSize.y / (r32)PIXELS_PER_UNIT;
             
             math::v3 Scale = math::v3(WidthInUnits * EntityScale, HeightInUnits * EntityScale, 1);
             
-            r32 RemoveInX = IsFlipped ? 1.0f * Scale.x - CurrentAnimation->Center.x * Scale.x : CurrentAnimation->Center.x * Scale.x;
-            
             auto CorrectPos = ToIsometric(Position);
             
-            CorrectPos.x = CorrectPos.x - RemoveInX;
-            CorrectPos.y = CorrectPos.y - CurrentAnimation->Center.y;
+            CorrectPos.x -= CurrentAnimation->Center.x * Scale.x;
+            CorrectPos.y -= CurrentAnimation->Center.y * Scale.y;
             
-            Model = math::Translate(Model, math::v3(CorrectPos.x, CorrectPos.y, 0.0f));
+            CorrectPos.x += 0.5f; //We want the sprite to be centered in the tile
+            CorrectPos.y += 0.25f;
             
-            if(IsFlipped)
+            if(LightSourceHandle != -1)
             {
-                Model = math::Translate(Model, math::v3(Scale.x, 0, 0));
-                Scale = math::v3(-Scale.x, Scale.y, 1);
+                GameState->LightSources[LightSourceHandle].Pointlight.RenderPosition = CorrectPos + math::v2(CurrentAnimation->Center.x * Scale.x, CurrentAnimation->Center.y * Scale.y);
             }
             
             Model = math::Scale(Model, math::v3(Scale.x, Scale.y, Scale.z));
+            Model = math::Translate(Model, math::v3(CorrectPos.x, CorrectPos.y, 0.0f));
             
             animation* Animation = CurrentAnimation;
             
@@ -1674,7 +1677,6 @@ static void RenderEntity(game_state *GameState, render_entity* RenderEntity, mat
         } 
         else 
         {
-            
             auto CorrectPos = ToIsometric(math::v2(Position.x, Position.y));
             
             r32 CorrectX = CorrectPos.x;
@@ -1686,12 +1688,6 @@ static void RenderEntity(game_state *GameState, render_entity* RenderEntity, mat
             r32 HeightInUnits = RenderEntity->Texture->Height / (r32)PIXELS_PER_UNIT;
             
             math::v3 Scale = math::v3(WidthInUnits * EntityScale, HeightInUnits * EntityScale, 1);
-            
-            if(IsFlipped)
-            {
-                Scale = math::v3(-Scale.x, Scale.y, 1);
-                Model = math::Translate(Model, math::v3(EntityScale, 0, 0));
-            }
             
             Model = math::Scale(Model, math::v3(Scale.x, Scale.y, Scale.z));
             
@@ -2057,7 +2053,7 @@ void RenderUI(game_state* GameState)
             {
                 if((i32)Index == GameState->MainMenu.SelectedIndex)
                 {
-                    RenderRect(Render_Fill, &GameState->RenderState, math::v4(1, 1, 1, 1), (r32)GameState->RenderState.WindowWidth / 2 - 200, (r32)GameState->RenderState.WindowHeight / 2 - 10 - 40 * Index, 400, 40);
+                    RenderRect(Render_Fill, &GameState->RenderState, math::v4(1, 1, 1, 1), (r32)GameState->RenderState.WindowWidth / 2 - 200, (r32)GameState->RenderState.WindowHeight / 2.0f - 10 - 40 * Index, 400, 40);
                     
                     TextColor = math::v4(0, 0, 0, 1);
                 }
@@ -2586,6 +2582,8 @@ static void RenderDebugInfo(game_state* GameState)
                    math::v4(1, 1, 1, 1), FPS, GameState->RenderState.WindowWidth / 2.0f, 
                    GameState->RenderState.WindowHeight - 20.0f, 1.0f);
         
+        printf("%s\n", FPS);
+        
         i32 X = (i32)math::Floor(Pos.x);
         i32 Y = (i32)math::Floor(Pos.y);
         char MousePos[32];
@@ -2630,13 +2628,10 @@ static void RenderLightSources(game_state* GameState)
                     {
                         math::m4 Model(1.0f);
                         
-                        auto Position = GameState->CurrentLevel.Type == Level_Isometric ?ToIsometric(math::v2(LightSource.Pointlight.Position.x + 0.7f, LightSource.Pointlight.Position.y + 0.2f)) : LightSource.Pointlight.Position + 1.5f;
+                        auto Position = LightSource.Pointlight.RenderPosition + LightSource.Pointlight.Offset;
                         
-                        r32 CorrectX = Position.x;
-                        r32 CorrectY = Position.y;
-                        
-                        Model = math::Translate(Model,math::v3(CorrectX,CorrectY,0));
-                        PointlightPositions[NumOfPointLights] = Model * math::v4(0.0f, 0.0f, 0.0f,1.0f);
+                        Model = math::Translate(Model, math::v3(Position.x, Position.y, 0));
+                        PointlightPositions[NumOfPointLights] = Model * math::v4(0.0f, 0.0f, 0.0f, 1.0f);
                         PointlightIntensities[NumOfPointLights] = LightSource.Pointlight.Intensity;
                         PointlightColors[NumOfPointLights] = LightSource.Color;
                         PointlightConstantAtt[NumOfPointLights] = LightSource.Pointlight.ConstantAtten;
@@ -2648,8 +2643,6 @@ static void RenderLightSources(game_state* GameState)
                 }
             }
         }
-        
-        math::v4 Color = math::v4(0.5,0.2,0.0,0.6);
         
         auto Shader = GameState->RenderState.LightSourceShader;
         
@@ -2663,7 +2656,7 @@ static void RenderLightSources(game_state* GameState)
         SetFloatArrayUniform(Shader.Program, "PointLightLinearAtt", PointlightLinearAtt, NumOfPointLights);
         SetFloatArrayUniform(Shader.Program, "PointLightExpAtt", PointlightExponentialAtt, NumOfPointLights);
         SetIntUniform(Shader.Program, "NUM_POINTLIGHTS", NumOfPointLights);
-        SetVec4ArrayUniform(Shader.Program, "PointLightPos",PointlightPositions,NumOfPointLights);
+        SetVec4ArrayUniform(Shader.Program, "PointLightPos",PointlightPositions, NumOfPointLights);
         SetVec2Uniform(Shader.Program, "screenSize", math::v2((r32)GameState->RenderState.WindowWidth,(r32)GameState->RenderState.WindowHeight));
         
         glDrawElements(GL_TRIANGLES, sizeof(GameState->RenderState.QuadIndices), GL_UNSIGNED_INT, (void*)0);

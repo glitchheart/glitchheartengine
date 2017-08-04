@@ -2,7 +2,7 @@ name bonfire
 type sprite
 framecount 4
 framesize 16 16
-center 0.5 0.00000
+center 0.5 0
 loop 1
 timeperframe 0.100000
 frames

@@ -10,7 +10,7 @@ static inline void PrintEntityInfo(const entity& Entity)
     DEBUG_PRINT("Entity: Name %s, position x %f y %f, rotation x %f y %f z %f\n", Entity.Name, Entity.Position.x, Entity.Position.y, Entity.Rotation.x, Entity.Rotation.y, Entity.Rotation.z);
 }
 
-static i32 LoadPointlight(game_state* GameState, math::v4 Color = math::v4(), r32 Intensity = 0.0f, r32 ConstantAtten = 0.0f, r32 LinearAtten = 0.0f, r32 ExponentialAtten = 0.0f,math::v2 InitPosition = math::v2(), b32 ShouldGlow = false, r64 GlowTimerMax = 0.0f, r32 GlowIncrease = 0.0f)
+static i32 LoadPointlight(game_state* GameState, math::rgba Color = math::v4(), r32 Intensity = 0.0f, r32 ConstantAtten = 0.0f, r32 LinearAtten = 0.0f, r32 ExponentialAtten = 0.0f,math::v2 InitPosition = math::v2(), b32 ShouldGlow = false, r64 GlowTimerMax = 0.0f, r32 GlowIncrease = 0.0f)
 {
     light_source LightSource;
     
@@ -38,12 +38,14 @@ static i32 LoadLight(game_state* GameState, char* LineBuffer, math::v2 InitPosit
 {
     b32 ShouldGlow = false;
     light_source LightSource;
+    
     if(StartsWith(LineBuffer, "pointlight"))
     {
         r64 GlowTimerMax = 0.0;
         r32 GlowIncrease;
-        sscanf(LineBuffer, "pointlight type %d active %d intensity %f color %f %f %f %f atten %f %f %f shouldglow %d glowtimer %lf glowincrease %f",
-               &LightSource.Type , &LightSource.Active,&LightSource.Pointlight.Intensity,&LightSource.Color.x, &LightSource.Color.y, &LightSource.Color.z,&LightSource.Color.w, &LightSource.Pointlight.ConstantAtten, &LightSource.Pointlight.LinearAtten, &LightSource.Pointlight.ExponentialAtten, &ShouldGlow, &GlowTimerMax, &GlowIncrease);
+        sscanf(LineBuffer, "pointlight type %d active %d offset %f %f intensity %f color %f %f %f %f atten %f %f %f shouldglow %d glowtimer %lf glowincrease %f",
+               &LightSource.Type, &LightSource.Active, &LightSource.Pointlight.Offset.x, &LightSource.Pointlight.Offset.y, &LightSource.Pointlight.Intensity, &LightSource.Color.x, &LightSource.Color.y, &LightSource.Color.z, &LightSource.Color.w, &LightSource.Pointlight.ConstantAtten, &LightSource.Pointlight.LinearAtten, &LightSource.Pointlight.ExponentialAtten, &ShouldGlow, &GlowTimerMax, &GlowIncrease);
+        
         if(ShouldGlow)
         {
             LightSource.Pointlight.GlowTimer.TimerHandle = -1;
@@ -76,7 +78,6 @@ static i32 LoadLight(game_state* GameState, char* LineBuffer, math::v2 InitPosit
         return GameState->LightSourceCount - 1;
     }
 }
-
 
 static void DeleteEntity(game_state* GameState, u32 EntityIndex)
 {
@@ -1851,15 +1852,15 @@ static void LoadBlobData(game_state* GameState, i32 Handle = -1, math::v2 Positi
 
 void PlaceCheckpoint(game_state* GameState, sound_queue* SoundQueue, entity* Entity)
 {
-    auto CheckpointPos = math::v2(Entity->Position.x, Entity->Position.y - 0.5f);
+    auto CheckpointPos = math::v2(Entity->Position.x, Entity->Position.y);
+    
     if(!GameState->CharacterData.HasCheckpoint)
     {
-        LoadBonfireData(GameState,SoundQueue, -1,CheckpointPos, true);
+        LoadBonfireData(GameState, SoundQueue, -1, CheckpointPos, true);
         GameState->CharacterData.CheckpointHandle = GameState->EntityCount - 1;
     }
     else
     {
-        DEBUG_PRINT("New area\n");
         GameState->Entities[GameState->CharacterData.CheckpointHandle].Position = CheckpointPos;
     }
     
@@ -2010,7 +2011,7 @@ static void LoadPlayerData(game_state* GameState, sound_queue* SoundQueue, i32 H
         {
             if(GameState->CharacterData.HasCheckpoint)
             {
-                Entity->Position = math::v2(GameState->CharacterData.CurrentCheckpoint.x + 0.5f,GameState->CharacterData.CurrentCheckpoint.y + 0.5f);
+                Entity->Position = math::v2(GameState->CharacterData.CurrentCheckpoint.x, GameState->CharacterData.CurrentCheckpoint.y);
             }
             else
             {
@@ -2020,9 +2021,9 @@ static void LoadPlayerData(game_state* GameState, sound_queue* SoundQueue, i32 H
                 
             }
             
-            Entity->Position = math::v2(floor(Entity->Position.x), floor(Entity->Position.y));
+            Entity->Position = math::v2(Entity->Position.x, Entity->Position.y);
             
-            LoadBonfireData(GameState, SoundQueue, -1,GameState->CharacterData.CurrentCheckpoint, true);
+            LoadBonfireData(GameState, SoundQueue, -1, GameState->CharacterData.CurrentCheckpoint, true);
             GameState->CharacterData.CheckpointHandle = GameState->EntityCount - 1;
             GameState->LastCharacterData.CheckpointHandle = GameState->EntityCount - 1;
             GameState->LastCharacterData.CurrentCheckpoint = GameState->CharacterData.CurrentCheckpoint;
@@ -2042,7 +2043,6 @@ static void LoadPlayerData(game_state* GameState, sound_queue* SoundQueue, i32 H
             }
         }
         Entity->Player.Inventory.HasCheckpoint = true;
-        Entity->Position = math::Floor(Entity->Position);
         Entity->CurrentTile = Entity->Position;
         Entity->CurrentDestination = Entity->Position;
     }
@@ -2108,9 +2108,8 @@ void CheckLootPickup(game_state* GameState, input_controller* InputController,lo
     }
 }
 
-void UpdatePlayer(entity* Entity, game_state* GameState, sound_queue* SoundQueue,input_controller* InputController, r64 DeltaTime)
+void UpdatePlayer(entity* Entity, game_state* GameState, sound_queue* SoundQueue, input_controller* InputController, r64 DeltaTime)
 {
-    
     // Collision check
     collision_info CollisionInfo;
     CheckCollision(GameState, Entity, &CollisionInfo);
@@ -2221,80 +2220,103 @@ void UpdatePlayer(entity* Entity, game_state* GameState, sound_queue* SoundQueue
     else
         Entity->Velocity = math::v2(Direction.x * Speed, Direction.y * Speed);
     
-    char* AnimationName = "";
-    
-    b32 Walking = Abs(XInput) > 0.0f || Abs(YInput) > 0.0f || Abs(Entity->Velocity.x) > 0.0f || Abs(Entity->Velocity.y) > 0.0f;
-    
-    switch(Entity->LookDirection)
+    if(!StartsWith(Entity->CurrentAnimation->Name, "man_attack") || !Entity->AnimationInfo.Playing)
     {
-        case North:
+        char* AnimationName = "";
+        
+        b32 Walking = Abs(XInput) > 0.0f || Abs(YInput) > 0.0f || Abs(Entity->Velocity.x) > 0.0f || Abs(Entity->Velocity.y) > 0.0f;
+        b32 Attacking = ACTION_DOWN(Action_Attack);
+        
+        switch(Entity->LookDirection)
         {
-            if(Walking)
-                AnimationName = "man_walk_north";
-            else
-                AnimationName = "man_idle_north";
+            case North:
+            {
+                if(Attacking)
+                    AnimationName = "man_attack_north";
+                else if(Walking)
+                    AnimationName = "man_walk_north";
+                else
+                    AnimationName = "man_idle_north";
+            }
+            break;
+            case NorthEast:
+            {
+                if(Attacking)
+                    AnimationName = "man_attack_northeast";
+                else if(Walking)
+                    AnimationName = "man_walk_northeast";
+                else
+                    AnimationName = "man_idle_northeast";
+            }
+            break;
+            case East:
+            {
+                if(Attacking)
+                    AnimationName = "man_attack_east";
+                else if(Walking)
+                    AnimationName = "man_walk_east";
+                else
+                    AnimationName = "man_idle_east";
+            }
+            break;
+            case SouthEast:
+            {
+                if(Attacking)
+                    AnimationName = "man_attack_southeast";
+                else if(Walking)
+                    AnimationName = "man_walk_southeast";
+                else
+                    AnimationName = "man_idle_southeast";
+            }
+            break;
+            case South:
+            {
+                if(Attacking)
+                    AnimationName = "man_attack_south";
+                else if(Walking)
+                    AnimationName = "man_walk_south";
+                else
+                    AnimationName = "man_idle_south";
+            }
+            break;
+            case SouthWest:
+            {
+                if(Attacking)
+                    AnimationName = "man_attack_southwest";
+                else if(Walking)
+                    AnimationName = "man_walk_southwest";
+                else
+                    AnimationName = "man_idle_southwest";
+            }
+            break;
+            case West:
+            {
+                if(Attacking)
+                    AnimationName = "man_attack_west";
+                else if(Walking)
+                    AnimationName = "man_walk_west";
+                else
+                    AnimationName = "man_idle_west";
+            }
+            break;
+            case NorthWest:
+            {
+                if(Attacking)
+                    AnimationName = "man_attack_northwest";
+                else if(Walking)
+                    AnimationName = "man_walk_northwest";
+                else
+                    AnimationName = "man_idle_northwest";
+            }
+            break;
         }
-        break;
-        case NorthEast:
-        {
-            if(Walking)
-                AnimationName = "man_walk_northeast";
-            else
-                AnimationName = "man_idle_northeast";
-        }
-        break;
-        case East:
-        {
-            if(Walking)
-                AnimationName = "man_walk_east";
-            else
-                AnimationName = "man_idle_east";
-        }
-        break;
-        case SouthEast:
-        {if(Walking)
-                AnimationName = "man_walk_southeast";
-            else
-                AnimationName = "man_idle_southeast";
-        }
-        break;
-        case South:
-        {if(Walking)
-                AnimationName = "man_walk_south";
-            else
-                AnimationName = "man_idle_south";
-        }
-        break;
-        case SouthWest:
-        {
-            if(Walking)
-                AnimationName = "man_walk_southwest";
-            else
-                AnimationName = "man_idle_southwest";
-        }
-        break;
-        case West:
-        {
-            if(Walking)
-                AnimationName = "man_walk_west";
-            else
-                AnimationName = "man_idle_west";
-        }
-        break;
-        case NorthWest:
-        {
-            if(Walking)
-                AnimationName = "man_walk_northwest";
-            else
-                AnimationName = "man_idle_northwest";
-        }
-        break;
+        
+        PlayAnimation(Entity, AnimationName, GameState);
+        
+        printf("%s\n", AnimationName);
     }
     
-    PlayAnimation(Entity, AnimationName, GameState);
-    
     Entity->Position += math::v2(Entity->Velocity.x * DeltaTime, Entity->Velocity.y * DeltaTime);
-    
     
     // Update camera if centered on player
     GameState->GameCamera.CenterTarget = Entity->Position;
@@ -2877,7 +2899,7 @@ static void UpdateGeneral(entity* Entity, game_state* GameState, r64 DeltaTime)
     
     if(Entity->LightSourceHandle != -1)
     {
-        GameState->LightSources[Entity->LightSourceHandle].Pointlight.Position = math::v2(Entity->Position.x - Entity->Center.x, Entity->Position.y);
+        GameState->LightSources[Entity->LightSourceHandle].Pointlight.Position = math::v2(Entity->Position.x, Entity->Position.y);
     }
     
     auto& RenderEntity = GameState->RenderState.RenderEntities[Entity->RenderEntityHandle];

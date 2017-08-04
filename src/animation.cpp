@@ -151,7 +151,7 @@ static void LoadAnimationFromFile(const char* FilePath, game_state* GameState)
 
 static void LoadAnimations(game_state* GameState)
 {
-    animation_Map_Init(&GameState->AnimationMap, HashStringJenkins, 2048);
+    animation_Map_Init(&GameState->AnimationMap, HashStringJenkins, 4048);
     directory_data DirData;
     FindFilesWithExtensions("../assets/animations/", "pownim", &DirData);
     

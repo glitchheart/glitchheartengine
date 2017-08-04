@@ -1,0 +1,10 @@
+name streetlight
+type sprite
+framecount 1
+framesize 128 128
+center 0.48 0.1
+loop 1
+timeperframe 0.100000
+frames
+0 0
+texture streetlight
