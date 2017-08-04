@@ -258,11 +258,14 @@ struct entity
     Entity_Type Type;
     char* Name;
     u32 EntityIndex;
+    
     math::v2 Position;
     math::v2 CurrentTile;
     math::v2 CurrentDestination;
+    i32 FramesForDestination;
     math::v2 Center;
     math::v3 Rotation;
+
     r32 Scale;
     b32 IsFlipped;
     b32 IsTemporary;

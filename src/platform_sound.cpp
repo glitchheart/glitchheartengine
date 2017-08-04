@@ -300,7 +300,7 @@ static void PlaySounds(sound_device* Device, sound_queue* SoundQueue, math::v2* 
     }
     else
     {
-        for (u32 Sound = 0;
+        for (i32 Sound = 0;
              Sound < SoundQueue->SoundCount;
              Sound++)
         {
