@@ -1571,7 +1571,6 @@ static void LoadBonfireData(game_state* GameState, sound_queue* SoundQueue, i32 
         
         if(Handle == -1)
         {
-            DEBUG_PRINT("Entityhandle: %d\n", Entity->EntityIndex);
             Entity->Position = math::v2(Position.x, Position.y);
             PLAY_SOUND(Bonfire, 1.0f, Entity->Position.x, Entity->Position.y, 10.0f, true, Entity->EntityIndex);
         }
@@ -2312,8 +2311,6 @@ void UpdatePlayer(entity* Entity, game_state* GameState, sound_queue* SoundQueue
         }
         
         PlayAnimation(Entity, AnimationName, GameState);
-        
-        printf("%s\n", AnimationName);
     }
     
     Entity->Position += math::v2(Entity->Velocity.x * DeltaTime, Entity->Velocity.y * DeltaTime);

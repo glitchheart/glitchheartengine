@@ -34,7 +34,7 @@ inline u64 HashStringJenkins(u64 Size, const void* Key)
 }
 
 inline u64 HashInt(u64 Size, const void* Key) {
-    u64 K = *(u64*)(Key);
+    u64 K = (u64)(*(i32*)(Key));
     K = ((K >> 16) ^ K) * 0x45d9f3b;
     K = ((K >> 16) ^ K) * 0x45d9f3b;
     K = (K >> 16) ^ K;
@@ -57,5 +57,5 @@ u32 HashInt(u32 Size, const void* A)
 inline u64 HashIntKeys(u64 Size, const void* Key)
 {
     u32 K = *(u32*)(Key);
-    return K % (Size - 1);
+    return K % ((u32)Size - 1);
 }

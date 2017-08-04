@@ -2582,8 +2582,6 @@ static void RenderDebugInfo(game_state* GameState)
                    math::v4(1, 1, 1, 1), FPS, GameState->RenderState.WindowWidth / 2.0f, 
                    GameState->RenderState.WindowHeight - 20.0f, 1.0f);
         
-        printf("%s\n", FPS);
-        
         i32 X = (i32)math::Floor(Pos.x);
         i32 Y = (i32)math::Floor(Pos.y);
         char MousePos[32];

@@ -51,7 +51,7 @@ static game_code LoadGameCode()
     
     if (!Result.IsValid)
     {
-        DEBUG_PRINT("Invalid\n");
+        DEBUG_PRINT("Invalid game code\n");
         Result.Update = UpdateStub;
     }
     
