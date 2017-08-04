@@ -48,7 +48,6 @@ typedef i32 b32;
 typedef float r32;
 typedef double r64;
 
-#include "glm/gtc/matrix_transform.hpp"
 #include <GLFW/glfw3.h>
 #include <cmath>
 
@@ -1132,7 +1131,7 @@ namespace math
     
     v2 Normalize(v2 V)
     {
-        v2 Res;
+        v2 Res(V);
         auto L = Length(V);
         Res /= L;
         return Res;
@@ -1140,7 +1139,7 @@ namespace math
     
     v3 Normalize(v3 V)
     {
-        v3 Res;
+        v3 Res(V);
         auto L = Length(V);
         Res /= L;
         return Res;
@@ -1157,12 +1156,9 @@ namespace math
     m4 Scale(m4 In, v3 Scale)
     {
         m4 Res(In);
-        m4 S(Scale.X,0,      0,      0,
-             0,      Scale.Y,0,      0,
-             0,      0,      Scale.Z,0,
-             0,      0,      0,      1);
-        
-        Res = S * Res;
+        Res.M11 = Scale.X * Res.M11;
+        Res.M22 = Scale.Y * Res.M22;
+        Res.M33 = Scale.Z * Res.M33;
         
         return Res;
     }

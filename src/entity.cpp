@@ -2231,7 +2231,9 @@ void UpdatePlayer(entity* Entity, game_state* GameState, sound_queue* SoundQueue
     else
         PlayAnimation(Entity, "swordsman_idle", GameState);
     
+    DebugPrintVec2(Entity->Velocity);
     Entity->Position += math::v2(Entity->Velocity.x * DeltaTime, Entity->Velocity.y * DeltaTime);
+    
     
     // Update camera if centered on player
     GameState->GameCamera.CenterTarget = Entity->Position;
@@ -2449,8 +2451,6 @@ static void UpdateBlob(entity* Entity, game_state* GameState, sound_queue* Sound
         }
     }
     
-    Entity->Position.x += Entity->Velocity.x * (r32)DeltaTime;
-    Entity->Position.y += Entity->Velocity.y * (r32)DeltaTime;
 }
 
 static void DetermineLoot(game_state* GameState, entity* Entity)
