@@ -117,7 +117,7 @@ struct entity_healthbar
 
 struct game_state;
 
-typedef void (*AIFunction)(entity*, game_state*, sound_queue*, r64);
+using AIFunction = void(*)(entity*, game_state*, sound_queue*, r64);
 #define AI_FUNC(name) void name(entity* Entity, game_state* GameState, sound_queue* SoundQueue, r64 DeltaTime)
 
 #define AI_FUNCS(entityname) Entity->Enemy.Idle = & ## entityname ## Idle; \

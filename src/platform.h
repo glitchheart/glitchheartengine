@@ -34,21 +34,20 @@
 #include <sys/types.h>  
 #include <sys/stat.h>  
 
-typedef uint8_t u8;
-typedef uint16_t u16;
-typedef uint32_t u32;
-typedef uint64_t u64;
+using u8 = uint8_t;
+using u16 = uint16_t;
+using u32 = uint32_t;
+using u64 = uint64_t;
 
-typedef int8_t i8;
-typedef int16_t i16;
-typedef int32_t i32;
-typedef int64_t i64;
-typedef i32 b32;
+using i8 = int8_t;
+using i16 = int16_t;
+using i32 = int32_t;
+using i64 = int64_t;
+using b32 = i32;
 
-typedef float r32;
-typedef double r64;
+using r32 = float;
+using r64 = double;
 
-#include <glm/gtc/matrix_transform.hpp>
 #include <GLFW/glfw3.h>
 #include <cmath>
 
@@ -63,6 +62,118 @@ struct timer
     char* Name;
 };
 
+#ifdef GLM
+#include <glm/gtc/matrix_transform.hpp>
+namespace math
+{
+    using v2 = glm::vec2;
+    using v3 = glm::vec3;
+    using v4 = glm::vec4;
+    using m4 = glm::mat4;
+    using v2i = glm::i32vec2;
+    using v3i = glm::i32vec3;
+    
+    r32 Dot(v2 V1, v2 V2)
+    {
+        return glm::dot(V1,V2);
+    }
+    
+    r32 Dot(v3 V1, v3 V2)
+    {
+        return glm::dot(V1,V2);
+    }
+    
+    r32 Dot(v4 V1, v4 V2)
+    {
+        return glm::dot(V1,V2);
+    }
+    
+    r32 Distance(v2 V1, v2 V2)
+    {
+        return glm::distance(V1,V2);
+    }
+    
+    m4 Translate(m4 M, v3 V)
+    {
+        return glm::translate(M,V);
+    }
+    
+    m4 Transpose(m4 M)
+    {
+        return glm::transpose(M);
+    }
+    
+    v3 Project(v3 V, m4 M, m4 P, v4 Vp)
+    {
+        return glm::project(V,M,P,Vp);
+    }
+    
+    v3 UnProject(v3 V, m4 M, m4 P, v4 Vp)
+    {
+        return glm::unProject(V,M,P,Vp);
+    }
+    
+    m4 Scale(m4 M, v3 S)
+    {
+        return glm::scale(M,S);
+    }
+    
+    m4 Ortho(r32 L, r32 R, r32 B, r32 T, r32 N, r32 F)
+    {
+        return glm::ortho(L,R,B,T,N,F);
+    }
+    
+    v2 Normalize(v2 V)
+    {
+        return glm::normalize(V);
+    }
+    
+    v3 Normalize(v3 V)
+    {
+        return glm::normalize(V);
+    }
+    
+    v4 Normalize(v4 V)
+    {
+        return glm::normalize(V);
+    }
+    
+    r32 Floor(r32 V)
+    {
+        return glm::floor(V);
+    }
+    
+    v2 Floor(v2 V)
+    {
+        return glm::floor(V);
+    }
+    
+    r32 Ceil(r32 V)
+    {
+        return glm::ceil(V);
+    }
+    
+    v2 Ceil(v2 V)
+    {
+        return glm::ceil(V);
+    }
+    
+    r32 Length(v2 V)
+    {
+        return glm::length(V);
+    }
+    
+    r32 Length(v3 V)
+    {
+        return glm::length(V);
+    }
+    
+    r32 Length(v4 V)
+    {
+        return glm::length(V);
+    }
+}
+#else
 namespace math
 {
     
@@ -859,6 +970,11 @@ namespace math
         };
         r32 V[4][4];
         
+        r32* operator[](i32 Idx)
+        {
+            return this->V[Idx];
+        }
+        
         m4() : V{{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0}} {}
         m4(r32 M11, r32 M12, r32 M13, r32 M14, 
            r32 M21, r32 M22, r32 M23, r32 M24,
@@ -888,7 +1004,7 @@ namespace math
             {O.V[1][0],O.V[1][1],O.V[1][2],O.V[1][3]}, 
             {O.V[2][0],O.V[2][1],O.V[2][2],O.V[2][3]}, 
             {O.V[3][0],O.V[3][1],O.V[3][2],O.V[3][3]}} {}
-        
+        /*
         m4 operator*(m4 Other)
         {
             m4 Res(*this);
@@ -906,8 +1022,8 @@ namespace math
             }
             
             return Res;
-        }
-        /*
+        }*/
+        
         m4 operator*(m4 Other)
         {
             m4 Res(*this);
@@ -929,7 +1045,7 @@ namespace math
             Res.M43 = this->M41 * Other.M13 + this->M42 * Other.M23 + this->M43 * Other.M33 + this->M44 * Other.M43;
             Res.M44 = this->M41 * Other.M14 + this->M42 * Other.M24 + this->M43 * Other.M34 + this->M44 * Other.M44;
             return Res;
-        }*/
+        }
         
         v3 operator*(v3& Vec)
         {
@@ -1238,22 +1354,11 @@ namespace math
         Res.M34 = -((Far + Near)/(Far - Near));
         Res.M14 = -((Right + Left)/(Right - Left));
         Res.M24 = -((Top + Bottom)/(Top - Bottom));
-        //Res.M44 = 1.0f;
+        Res.M44 = 1.0f;
         
         return Res;
     }
-    /*
-    v3 UnProject(v3 In, m4 Model, m4 Projection, v4 Viewport)
-    {
-        v3 Res;
-        //(Viewport * Projection * View * Model)^-1 * projected;
-        m4 VP(1.0f);
-        VP = Ortho(Viewport.X,Viewport.Y,Viewport.Z,Viewport.W,-1.0f,1.0f);
-        auto IV = Inverse(VP * Projection * Model);
-        Res = IV * In;
-        return Res;
-    }
-    */
+    
     v3 UnProject(v3 In, m4 Model, m4 Projection, v4 Viewport)
     {
         auto Inv = Inverse(Projection * Model);
@@ -1261,7 +1366,7 @@ namespace math
         auto Tmp = v4(In,1.0f);
         Tmp.X = (Tmp.X - Viewport.X) / Viewport.Z;
         Tmp.Y = (Tmp.Y - Viewport.Y) / Viewport.W;
-        Tmp *= (2 - 1); // Wut?
+        Tmp = Tmp * 2 - 1;
         
         auto Obj = Inv * Tmp;
         Obj /= Obj.W;
@@ -1269,6 +1374,7 @@ namespace math
         return v3(Obj.X,Obj.Y,Obj.Z);
     }
 }
+#endif
 
 struct entity_file_reload_data
 {

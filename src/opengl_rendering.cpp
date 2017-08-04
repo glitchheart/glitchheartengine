@@ -562,8 +562,7 @@ static void RenderSetup(render_state *RenderState)
         GL_TEXTURE_2D, 0, GL_RGB, RenderState->WindowWidth, RenderState->WindowHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL
         );
     glFramebufferTexture2D(
-        GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, RenderState->LightingTextureColorBuffer, 0
-        );
+        GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, RenderState->LightingTextureColorBuffer, 0);
     
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -1049,9 +1048,13 @@ static void SetVec4Uniform(GLuint ShaderHandle, const char *UniformName, math::v
 
 static void SetMat4Uniform(GLuint ShaderHandle, const char *UniformName, math::m4 Value)
 {
+#ifndef GLM
     // math::m4 is in RowMajor, OpenGL expects in ColumnMajor
-    auto V = Transpose(Value);
-    glUniformMatrix4fv(glGetUniformLocation(ShaderHandle, UniformName), 1, GL_FALSE, &V.V[0][0]);
+    auto V = math::Transpose(Value);
+#else
+    auto V = Value;
+#endif
+    glUniformMatrix4fv(glGetUniformLocation(ShaderHandle, UniformName), 1, GL_FALSE, &V[0][0]);
 }
 
 static void SetVec4ArrayUniform(GLuint ShaderHandle, const char *UniformName, math::v4* Value, u32 Length)
@@ -1571,7 +1574,7 @@ static void RenderHealthbar(render_state* RenderState,
         math::m4 Model = math::m4(1.0f) * ViewMatrix;
         
         math::v3 Projected =
-            Project(math::v3(EntityPosition.x, EntityPosition.y, 0), Model, ProjectionMatrix, math::v4(RenderState->Viewport[0], RenderState->Viewport[1], RenderState->Viewport[2], RenderState->Viewport[3]));
+            math::Project(math::v3(EntityPosition.x, EntityPosition.y, 0), Model, ProjectionMatrix, math::v4(RenderState->Viewport[0], RenderState->Viewport[1], RenderState->Viewport[2], RenderState->Viewport[3]));
         
         for(i32 Index = 0; Index < 10; Index++)
         {
@@ -1742,7 +1745,7 @@ static void RenderEntity(game_state *GameState, render_entity* RenderEntity, mat
                 math::m4 Model = math::m4(1.0f) * View;
                 
                 math::v3 Projected =
-                    Project(math::v3(Entity.Position.x, Entity.Position.y, 0), Model, ProjectionMatrix, math::v4(GameState->RenderState.Viewport[0], GameState->RenderState.Viewport[1], GameState->RenderState.Viewport[2], GameState->RenderState.Viewport[3]));
+                    math::Project(math::v3(Entity.Position.x, Entity.Position.y, 0), Model, ProjectionMatrix, math::v4(GameState->RenderState.Viewport[0], GameState->RenderState.Viewport[1], GameState->RenderState.Viewport[2], GameState->RenderState.Viewport[3]));
                 
                 char* State = "State MISSING";
                 State = AIEnumToStr(Entity.Enemy.AIState);
@@ -1802,13 +1805,13 @@ static void RenderEntity(game_state *GameState, render_entity* RenderEntity, mat
                     auto Point1 = Entity.Enemy.Waypoints[Index - 1];
                     auto Point2 = Entity.Enemy.Waypoints[Index];
                     
-                    RenderLine(*RenderState, math::v4(1, 1, 1, 1), Point1.X + 0.5f, Point1.Y + 0.5f, Point2.X + 0.5f, Point2.Y + 0.5f, false, ProjectionMatrix, View);
+                    RenderLine(*RenderState, math::v4(1, 1, 1, 1), Point1.x + 0.5f, Point1.y + 0.5f, Point2.x + 0.5f, Point2.y + 0.5f, false, ProjectionMatrix, View);
                 }
                 
                 for(i32 Index = 0; Index < Entity.Enemy.WaypointCount; Index++)
                 {
                     auto Point = Entity.Enemy.Waypoints[Index];
-                    RenderRect(Render_Fill, RenderState, math::v4(0, 1, 0, 0.5), Point.X + 0.25f, Point.Y + 0.25f, 0.5f, 0.5f, RenderState->Textures["circle"]->TextureHandle, false, ProjectionMatrix, View);
+                    RenderRect(Render_Fill, RenderState, math::v4(0, 1, 0, 0.5), Point.x + 0.25f, Point.y + 0.25f, 0.5f, 0.5f, RenderState->Textures["circle"]->TextureHandle, false, ProjectionMatrix, View);
                 }
             }
         }
@@ -2557,10 +2560,10 @@ static void CheckLevelVAO(game_memory* GameMemory)
 
 static void RenderDebugInfo(game_state* GameState)
 {
-    auto Pos = UnProject(math::v3(InputController.MouseX, GameState->RenderState.Viewport[3] - InputController.MouseY, 0),
-                         GameState->Camera.ViewMatrix,
-                         GameState->Camera.ProjectionMatrix,
-                         math::v4(0, 0, GameState->RenderState.Viewport[2], GameState->RenderState.Viewport[3]));
+    auto Pos = math::UnProject(math::v3(InputController.MouseX, GameState->RenderState.Viewport[3] - InputController.MouseY, 0),
+                               GameState->Camera.ViewMatrix,
+                               GameState->Camera.ProjectionMatrix,
+                               math::v4(0, 0, GameState->RenderState.Viewport[2], GameState->RenderState.Viewport[3]));
     
     if(GameState->Console.CurrentTime > 0)
         RenderConsole(GameState, &GameState->Console);

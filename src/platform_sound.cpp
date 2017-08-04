@@ -343,7 +343,7 @@ static void PlaySounds(sound_device* Device, sound_queue* SoundQueue, math::v2* 
                     
                     if(EntityPositions)
                     {
-                        r32 DistanceToEntity = Distance(math::v2(Sound.SoundInfo.Position[0], Sound.SoundInfo.Position[1]), EntityPositions[0]);
+                        r32 DistanceToEntity = math::Distance(math::v2(Sound.SoundInfo.Position[0], Sound.SoundInfo.Position[1]), EntityPositions[0]);
                         r32 VolFactor = 1.0f - (DistanceToEntity/Sound.SoundInfo.Rolloff);
                         alSourcef(Device->Sources[SourceIndex],AL_GAIN,Max(0.0f,VolFactor) * Device->SFXVolume);
                         Device->SourceGain[SourceIndex] = Max(0.0f,VolFactor) * Device->SFXVolume;

@@ -308,8 +308,8 @@ static b32 LoadLevelFromFile(char* FilePath, level* Level, game_state* GameState
                     
                     for(i32 Index = 0; Index < WaypointCount; Index++)
                     {
-                        Entity.Enemy.Waypoints[Index].X = (u32)strtol(PathPtr, &PathPtr, 10);
-                        Entity.Enemy.Waypoints[Index].Y = (u32)strtol(PathPtr, &PathPtr, 10);
+                        Entity.Enemy.Waypoints[Index].x = (u32)strtol(PathPtr, &PathPtr, 10);
+                        Entity.Enemy.Waypoints[Index].y = (u32)strtol(PathPtr, &PathPtr, 10);
                     }
                 }
             }
@@ -442,11 +442,11 @@ static void SaveLevelToFile(const char* FilePath, level* Level, game_state* Game
                                 {
                                     if(Index == Entity->Enemy.WaypointCount - 1)
                                     {
-                                        fprintf(File, "%d %d\n", Entity->Enemy.Waypoints[Index].X, Entity->Enemy.Waypoints[Index].Y);
+                                        fprintf(File, "%d %d\n", Entity->Enemy.Waypoints[Index].x, Entity->Enemy.Waypoints[Index].y);
                                     }
                                     else
                                     {
-                                        fprintf(File, "%d %d ", Entity->Enemy.Waypoints[Index].X, Entity->Enemy.Waypoints[Index].Y);
+                                        fprintf(File, "%d %d ", Entity->Enemy.Waypoints[Index].x, Entity->Enemy.Waypoints[Index].y);
                                     }
                                 }
                             }
