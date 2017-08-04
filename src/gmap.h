@@ -3,7 +3,7 @@
 
 #define INIT_SIZE 1024
 
-using hash_function = u32(*)(u32 Size, const void* Key);
+using hash_function = u64(*)(u64 Size, const void* Key);
 
 #define GENERIC_MAP(NAME,TYPE) \
 struct NAME ## _map \
