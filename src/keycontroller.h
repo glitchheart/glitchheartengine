@@ -357,8 +357,8 @@ struct input_controller
     char CurrentCharacter;
     b32 DeleteCharacter = false;
     
-    uinteger_map KeyMappings;
-    uinteger_map MouseButtonMappings;
+    integer_map KeyMappings;
+    integer_map MouseButtonMappings;
     integer_map ControllerMappings;
     
 };
