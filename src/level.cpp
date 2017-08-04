@@ -151,7 +151,7 @@ static b32 LoadLevelFromFile(char* FilePath, level* Level, game_state* GameState
         if(fgets(LineBuffer, 255, File))
             sscanf(LineBuffer, "%f %f", &Level->PlayerStartPosition.x, &Level->PlayerStartPosition.y);
         
-        LoadPlayerData(GameState, SoundQueue, -1, Level->PlayerStartPosition);
+        LoadPlayerData(GameState, SoundQueue, -1, math::Floor(Level->PlayerStartPosition));
         
         if(fgets(LineBuffer, 255, File))
             sscanf(LineBuffer, "%d", &MapWidth);
@@ -250,41 +250,48 @@ static b32 LoadLevelFromFile(char* FilePath, level* Level, game_state* GameState
             if(StartsWith(LineBuffer, "skeleton"))
             {
                 math::v2 Pos;
+                Pos = math::Floor(Pos);
                 sscanf(LineBuffer, "skeleton %f %f%n", &Pos.x, &Pos.y, &PathIndex);
                 LoadSkeletonData(GameState, -1, Pos);
             }
             else if(StartsWith(LineBuffer, "minotaur"))
             {
                 math::v2 Pos;
+                Pos = math::Floor(Pos);
                 sscanf(LineBuffer, "minotaur %f %f%n", &Pos.x, &Pos.y, &PathIndex);
                 LoadMinotaurData(GameState, -1, Pos);
             }
             else if(StartsWith(LineBuffer, "blob"))
             {
                 math::v2 Pos;
+                Pos = math::Floor(Pos);
                 sscanf(LineBuffer, "blob %f %f%n", &Pos.x, &Pos.y, &PathIndex);
                 LoadBlobData(GameState, -1, Pos);
             }
             else if(StartsWith(LineBuffer, "wraith"))
             {
                 math::v2 Pos;
+                Pos = math::Floor(Pos);
                 sscanf(LineBuffer, "wraith %f %f%n", &Pos.x, &Pos.y, &PathIndex);
                 LoadWraithData(GameState, -1, Pos);
             }
             else if(StartsWith(LineBuffer, "barrel"))
             {
                 math::v2 Pos;
+                Pos = math::Floor(Pos);
                 sscanf(LineBuffer, "barrel %f %f", &Pos.x, &Pos.y);
             }
             else if(StartsWith(LineBuffer, "bonfire"))
             {
                 math::v2 Pos;
+                Pos = math::Floor(Pos);
                 sscanf(LineBuffer, "bonfire %f %f", &Pos.x, &Pos.y);
                 LoadBonfireData(GameState, SoundQueue, -1, Pos);
             }
             else if(StartsWith(LineBuffer, "tree"))
             {
                 math::v2 Pos;
+                Pos = math::Floor(Pos);
                 sscanf(LineBuffer, "tree %f %f", &Pos.x, &Pos.y);
                 SpawnTree(GameState, Pos);
             }

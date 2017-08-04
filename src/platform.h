@@ -176,7 +176,6 @@ namespace math
 #else
 namespace math
 {
-    
     union v2
     {
         struct
@@ -1372,7 +1371,11 @@ namespace math
         
         return v3(Obj.X,Obj.Y,Obj.Z);
     }
+    
+    using rgb = v3;
+    using rgba = v4;
 }
+
 #endif
 
 struct entity_file_reload_data

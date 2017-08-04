@@ -1,9 +1,9 @@
-name man_idle_southwest
+name man_attack_southeast
 type sprite
 framecount 10
 framesize 128 128
 center 0.5 0.3
-loop 1
+loop 0
 timeperframe 0.1
 frames
 0 0
@@ -16,5 +16,6 @@ frames
 896 0
 1024 0
 1152 0
-texture man_idle_southwest
+texture man_attack_southeast
+
 
