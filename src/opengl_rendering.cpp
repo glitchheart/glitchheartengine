@@ -1959,12 +1959,15 @@ int CompareFunction(const void* a, const void* b)
     render_entity APtr = *(render_entity*)a;
     render_entity BPtr = *(render_entity*)b;
     
-    collision_AABB BoxA = APtr.Entity->CollisionAABB;
-    collision_AABB BoxB = BPtr.Entity->CollisionAABB;
+    math::v2 PositionA = APtr.RenderType == Render_Type_Entity ? APtr.Entity->Position : APtr.Object->Position;
+    math::v2 PositionB = BPtr.RenderType == Render_Type_Entity ? BPtr.Entity->Position : BPtr.Object->Position;
     
-    if(APtr.Background || BoxA.Center.y - BoxA.Extents.y > BoxB.Center.y - BoxB.Extents.y)
+    PositionA = ToIsometric(PositionA);
+    PositionB = ToIsometric(PositionB);
+    
+    if(APtr.Background || PositionA.y > PositionB.y)
         return -1;
-    if(BPtr.Background || BoxA.Center.y  - BoxA.Extents.y < BoxB.Center.y - BoxB.Extents.y)
+    if(BPtr.Background || PositionA.y < PositionB.y)
         return 1;
     return 0;
 }
@@ -2288,8 +2291,9 @@ void RenderUI(game_state* GameState)
                         {
                             case Editor_Placement_Tile:
                             {
-                                RenderRect(Render_Outline, &GameState->RenderState, math::v4(1.0f, 0.0f, 0.0f, 1.0f), 0, 0, (r32)GameState->CurrentLevel.Tilemap.Width, (r32)GameState->CurrentLevel.Tilemap.Height, 0, false, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
-                                RenderRect(Render_Outline, &GameState->RenderState, math::v4(1.0f, 0.0f, 0.0f, 1.0f), 0, 0, (r32)GameState->CurrentLevel.Tilemap.Width, (r32)GameState->CurrentLevel.Tilemap.Height, 0, false, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
+                                RenderIsometricOutline(&GameState->RenderState, math::v4(0.7f, 0.4f, 0.0f, 1.0f), -24.5, 0, 50, 25, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
+                                //RenderRect(Render_Outline, &GameState->RenderState, math::v4(1.0f, 0.0f, 0.0f, 1.0f), 0, 0, (r32)GameState->CurrentLevel.Tilemap.Width, (r32)GameState->CurrentLevel.Tilemap.Height, 0, false, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
+                                //RenderRect(Render_Outline, &GameState->RenderState, math::v4(1.0f, 0.0f, 0.0f, 1.0f), 0, 0, (r32)GameState->CurrentLevel.Tilemap.Width, (r32)GameState->CurrentLevel.Tilemap.Height, 0, false, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
                                 
                                 math::v2 TextureOffset = GameState->CurrentLevel.Tilemap.Tiles[GameState->EditorState.SelectedTileType + 1].TextureOffset;
                                 
