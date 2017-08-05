@@ -83,8 +83,6 @@ void NAME ##_Map_Init(NAME ## _map* Map, hash_function_ ## NAME Hash, i32 InitSi
     Map->KeyCount = 0;\
     Map->Count = InitSize; \
     Map->Hash = Hash; \
-    DEBUG_PRINT("Hashedpair size: %zd\n",sizeof(hashed_pair_ ## NAME));\
-    DEBUG_PRINT("Hashedpair total size: %lf\n",sizeof(hashed_pair_ ## NAME) * (8192.0/1000/1000));\
 }\
 Map_Status Scan(NAME ## _map* Map, u64 HashedKey, KEYTYPE Key)\
 {\
