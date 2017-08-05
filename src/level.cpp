@@ -353,11 +353,11 @@ static void SaveLevelToFile(const char* FilePath, level* Level, game_state* Game
         if(Level->AmbientLightHandle != -1)
         {
             auto& Light = GameState->LightSources[Level->AmbientLightHandle];
-            fprintf(File, "ambient type %d active %d intensity %f color %f %f %f %f",Light.Type,Light.Active,Light.Ambient.Intensity,Light.Color.x,Light.Color.y,Light.Color.z,Light.Color.w);
+            fprintf(File, "ambient type %d active %d intensity %f color %f %f %f %f\n",Light.Type,Light.Active,Light.Ambient.Intensity,Light.Color.x,Light.Color.y,Light.Color.z,Light.Color.w);
         }
         else
         {
-            fprintf(File, "ambient type %d active %d intensity %f color %f %f %f %f", 1,1,0.0f,0.0f,0.0f,0.0f,0.0f);
+            fprintf(File, "ambient type %d active %d intensity %f color %f %f %f %f\n", 1,1,0.0f,0.0f,0.0f,0.0f,0.0f);
         }
         
         for(i32 Layer = 0; Layer < TILEMAP_LAYERS; Layer++)

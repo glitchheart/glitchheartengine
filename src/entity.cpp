@@ -1462,7 +1462,7 @@ static void LoadMinotaurData(game_state* GameState, i32 Handle = -1, math::v2 Po
 
 void PlaceCheckpoint(game_state* GameState, sound_queue* SoundQueue, entity* Entity)
 {
-    auto CheckpointPos = math::v2(Entity->Position.x, Entity->Position.y);
+    auto CheckpointPos = math::v2(Entity->Position.x + 1, Entity->Position.y + 1);
     
     if(!GameState->CharacterData.HasCheckpoint)
     {
@@ -1626,7 +1626,7 @@ static void LoadPlayerData(game_state* GameState, sound_queue* SoundQueue, i32 H
             else
             {
                 Entity->Position = Position;
-                GameState->CharacterData.CurrentCheckpoint = Position;
+                GameState->CharacterData.CurrentCheckpoint = Position + math::v2(1, 1);
                 GameState->CharacterData.HasCheckpoint = true;
                 
             }
