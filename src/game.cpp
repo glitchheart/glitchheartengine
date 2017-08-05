@@ -67,49 +67,49 @@ extern "C" UPDATE(Update)
     
     if(!GameState->IsInitialized)
     {
-        GameState->InitialZoom = GameMemory->ConfigData.Zoom;
-        GameState->LevelPath = GameMemory->ConfigData.StartingLevelFilePath;
-        GameState->ShouldReload = GameMemory->ShouldReload;
-        GameState->Console = {};
-        GameState->RenderGame = true;
-        GameState->RenderLight = true;
-        GameState->ClearTilePositionFrame = false;
-        GameState->StatGainModeOn = false;
-        GameState->SelectedGainIndex = 0;
-        GameState->CurrentLootCount = 0;
-        GameState->AIDebugModeOn = false;
-        GameState->GodModeOn = false;
-        GameState->GodModePanSpeed = 10.0f;
-        GameState->GodModeZoomSpeed = 45.0f;
-        GameState->GodModeMinZoom = 5.0f;
-        GameState->GodModeMaxZoom = 100.0f;
-        GameState->PlayerState = Player_Alive;
-        
-        GameState->DeathScreenTimer.TimerMax = 1.0f;
-        GameState->DeathScreenTimer.TimerHandle = -1;
-        
-        GameState->EditorState.MenuOptions[0] = "Game";
-        GameState->EditorState.MenuOptions[1] = "Level editor";
-        GameState->EditorState.MenuOptions[2] = "Animation";
-        GameState->EditorState.Loaded = false;
-        GameState->EditorState.Mode = Editor_Level;
-        GameState->EditorState.PlacementMode = Editor_Placement_Tile;
-        GameState->EditorState.SelectedTileType = 1;
-        GameState->EditorState.CurrentTilemapLayer = 1;
-        GameState->EditorState.RenderAllLayers = true;
-        GameState->EditorState.ZoomingSpeed = 50;
-        GameState->EditorState.PanningSpeed = 500;
-        GameState->EditorState.MinZoom = 5;
-        GameState->EditorState.MaxZoom = 100;
-        GameState->EditorState.RenderedTileSize = 30.0f;
-        GameState->EditorState.TileBrushSize = math::v2(1, 1);
-        GameState->EditorState.ToolbarScrollSpeed = 30000;
-        GameState->EditorState.ToolbarScrollOffsetY = 0.0f;
-        GameState->EditorState.IsInCreateWaypointMode = false;
-        GameState->EditorState.SelectedAnimation = 0;
-        
         if(GameState->ShouldReload)
         {
+            GameState->InitialZoom = GameMemory->ConfigData.Zoom;
+            GameState->LevelPath = GameMemory->ConfigData.StartingLevelFilePath;
+            GameState->ShouldReload = GameMemory->ShouldReload;
+            GameState->Console = {};
+            GameState->RenderGame = true;
+            GameState->RenderLight = true;
+            GameState->ClearTilePositionFrame = false;
+            GameState->StatGainModeOn = false;
+            GameState->SelectedGainIndex = 0;
+            GameState->CurrentLootCount = 0;
+            GameState->AIDebugModeOn = false;
+            GameState->GodModeOn = false;
+            GameState->GodModePanSpeed = 10.0f;
+            GameState->GodModeZoomSpeed = 45.0f;
+            GameState->GodModeMinZoom = 5.0f;
+            GameState->GodModeMaxZoom = 100.0f;
+            GameState->PlayerState = Player_Alive;
+            
+            GameState->DeathScreenTimer.TimerMax = 1.0f;
+            GameState->DeathScreenTimer.TimerHandle = -1;
+            
+            GameState->EditorState.MenuOptions[0] = "Game";
+            GameState->EditorState.MenuOptions[1] = "Level editor";
+            GameState->EditorState.MenuOptions[2] = "Animation";
+            GameState->EditorState.Loaded = false;
+            GameState->EditorState.Mode = Editor_Level;
+            GameState->EditorState.PlacementMode = Editor_Placement_Tile;
+            GameState->EditorState.SelectedTileType = 1;
+            GameState->EditorState.CurrentTilemapLayer = 1;
+            GameState->EditorState.RenderAllLayers = true;
+            GameState->EditorState.ZoomingSpeed = 50;
+            GameState->EditorState.PanningSpeed = 500;
+            GameState->EditorState.MinZoom = 5;
+            GameState->EditorState.MaxZoom = 100;
+            GameState->EditorState.RenderedTileSize = 30.0f;
+            GameState->EditorState.TileBrushSize = math::v2(1, 1);
+            GameState->EditorState.ToolbarScrollSpeed = 30000;
+            GameState->EditorState.ToolbarScrollOffsetY = 0.0f;
+            GameState->EditorState.IsInCreateWaypointMode = false;
+            GameState->EditorState.SelectedAnimation = 0;
+            
             sound_manager SoundManager = {};
             memcpy(&SoundManager.SoundEffects, SoundEffects, sizeof(sound_effect) * (64 + 32));
             SoundManager.Muted = GameMemory->ConfigData.Muted;
@@ -237,10 +237,12 @@ extern "C" UPDATE(Update)
                 ReloadCurrentLevel(GameState);
                 GameState->GameMode = Mode_Editor;
                 GameState->Paused = false;
+                GameState->RenderLight = false;
                 GameState->EditorCamera.Center = GameState->GameCamera.Center;
             }
             else
             {
+                GameState->RenderLight = true;
                 GameState->GodModeOn = false;
                 SaveLevelToFile(GameState->LevelPath, &GameState->CurrentLevel, GameState);
                 ReloadCurrentLevel(GameState);

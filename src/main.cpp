@@ -146,6 +146,7 @@ int main(void)
     //@Incomplete: We really want to get ALL of game state out of main!!!
     game_state* GameState = (game_state*)GameMemory.PermanentStorage;
     GameMemory.ShouldReload = true;
+    GameState->ShouldReload = true;
     GameMemory.ConfigData = ConfigData;
     InitializeOpenGL(&GameMemory, &ConfigData);
     

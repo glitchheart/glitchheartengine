@@ -1616,11 +1616,12 @@ static void LoadPlayerData(game_state* GameState, sound_queue* SoundQueue, i32 H
         fclose(File);
         
         LoadGame(GameState);
+        
         if(Handle == -1)
         {
             if(GameState->CharacterData.HasCheckpoint)
             {
-                Entity->Position = math::v2(GameState->CharacterData.CurrentCheckpoint.x, GameState->CharacterData.CurrentCheckpoint.y);
+                Entity->Position = math::v2(GameState->CharacterData.CurrentCheckpoint.x - 1, GameState->CharacterData.CurrentCheckpoint.y - 1);
             }
             else
             {
@@ -1648,9 +1649,10 @@ static void LoadPlayerData(game_state* GameState, sound_queue* SoundQueue, i32 H
             
             if(GameState->CharacterData.HasLostWill)
             {
-                SpawnWillDrop(GameState,GameState->CharacterData.LostWillPosition,&GameState->CharacterData.LostWillObjectHandle);
+                SpawnWillDrop(GameState, GameState->CharacterData.LostWillPosition, &GameState->CharacterData.LostWillObjectHandle);
             }
         }
+        
         Entity->Player.Inventory.HasCheckpoint = true;
         Entity->CurrentTile = Entity->Position;
         Entity->CurrentDestination = Entity->Position;
@@ -1672,7 +1674,6 @@ void CheckWillPickup(game_state* GameState, input_controller* InputController, o
         GameState->CharacterData.RenderWillButtonHint= false;
     }
 }
-
 
 void CheckLootPickup(game_state* GameState, input_controller* InputController,loot* Loot, entity* Player)
 {

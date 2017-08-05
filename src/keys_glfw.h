@@ -306,6 +306,7 @@ static void KeyCallback(GLFWwindow *Window, int Key, int Scancode, int Action, i
     {
         InputController.KeysUp[InputController.KeyMappings[Key]] = true;
         InputController.KeysJustPressed[InputController.KeyMappings[Key]] = Key_NotPressed;
+        
         InputController.KeysDown[InputController.KeyMappings[Key]] = false;
     }
 }
