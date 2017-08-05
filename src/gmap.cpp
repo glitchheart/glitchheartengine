@@ -33,6 +33,34 @@ inline u64 HashStringJenkins(u64 Size, char* Key)
     return Hash & (Size - 1);
 }
 
+// Use folding on a string, summed 4 bytes at a time
+inline u64 SFold(u64 M, char* s) {
+    i32 intLength = (i32)strlen(s) / 4;
+    unsigned long sum = 0;
+    for (int j = 0; j < intLength; j++) 
+    {
+        char c[32];
+        memcpy(c,&s[j * 4],(j * 4) + 4);
+        
+        unsigned long mult = 1;
+        for (int k = 0; k < strlen(c); k++) {
+            sum += c[k] * mult;
+            mult *= 256;
+        }
+    }
+    
+    char c[32];
+    memcpy(c,&s[intLength * 4],strlen(s) - 1);
+    unsigned long mult = 1;
+    for (int k = 0; k < strlen(c); k++) 
+    {
+        sum += c[k] * mult;
+        mult *= 256;
+    }
+    
+    return(sum & (M - 1));
+}
+
 inline u64 HashInt(u64 Size, i32 Key) {
     u64 K = (u64)((i32)Key);
     K = ((K >> 16) ^ K) * 0x45d9f3b;
