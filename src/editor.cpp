@@ -754,13 +754,86 @@ static void EditorUpdateEntities(game_state* GameState, input_controller* InputC
                             
                             GameState->EditorState.TileIsSolidCheckbox->Active = true;
                             
-                            math::v2 NewPos = ToCartesian(math::v2(Pos.x, Pos.y));
+                            math::v2 SquarePos = math::v2(Pos.x, Pos.y / 0.5f);
                             
-                            i32 X = (i32)floor(NewPos.x / 0.5f);
-                            i32 Y = (i32)floor(NewPos.y / 0.5f);
+                            math::v2 CartesianPos = ToCartesian(math::Floor(math::v2(SquarePos.x, SquarePos.y)));
                             
-                            GameState->EditorState.TileX = (r32)X;
-                            GameState->EditorState.TileY = (r32)Y;
+                            i32 X = (i32)(CartesianPos.x);
+                            i32 Y = (i32)(CartesianPos.y);
+                            
+                            i32 FlooredIsometricX = math::Floor(SquarePos.x);
+                            i32 FlooredIsometricY = math::Floor(SquarePos.y);
+                            
+                            //printf("X %d Y %d\n", X, Y);
+                            
+                            r32 OffsetInX = SquarePos.x - FlooredIsometricX;
+                            r32 OffsetInY = SquarePos.y - FlooredIsometricY;
+                            
+                            if(OffsetInY > 0.5f)
+                            {
+                                OffsetInY -= 0.5f;
+                            }
+                            
+                            //printf("Offset bobo %f %f\n", OffsetInX, OffsetInY);
+                            
+                            i32 DX = 0;
+                            i32 DY = 0;
+                            
+                            if(PointInTriangle(
+                                math::v2(OffsetInX, OffsetInY), 
+                                math::v2(0.0f, 0.0f), 
+                                math::v2(0.0f, 0.25f), 
+                                math::v2(0.5f, 0.0f)))
+                            {
+                                // Bottom left
+                                DX = -1;
+                                DY = 0;
+                                printf("Bottom left\n");
+                            } 
+                            else if(PointInTriangle(
+                                math::v2(OffsetInX, OffsetInY), 
+                                math::v2(0.0f, 0.5f), 
+                                math::v2(0.5f, 0.5f), 
+                                math::v2(0.0f, 0.25f)))
+                            {
+                                // Top left
+                                DX = 0;
+                                DY = 1;
+                                printf("Top left\n");
+                            }
+                            else if(PointInTriangle(
+                                math::v2(OffsetInX, OffsetInY), 
+                                math::v2(0.5f, 0.5f), 
+                                math::v2(1.0f, 0.5f), 
+                                math::v2(1.0f, 0.25f)))
+                            {
+                                // Top right
+                                DX = 1;
+                                DY = 0;
+                                printf("Top right\n");
+                            }
+                            else if(PointInTriangle(
+                                math::v2(OffsetInX, OffsetInY), 
+                                math::v2(0.5f, 0.0f), 
+                                math::v2(1.0f, 0.25f), 
+                                math::v2(1.0f, 0.0f)))
+                            {
+                                // Bottom right
+                                DX = 0;
+                                DY = -1;
+                                printf("Bottom right\n");
+                            }
+                            else
+                                printf("Center\n");
+                            
+                            GameState->EditorState.TileX = (r32)X + DX;
+                            GameState->EditorState.TileY = (r32)Y + DY;
+                            X = GameState->EditorState.TileX;
+                            Y = GameState->EditorState.TileY;
+                            
+                            printf("X %d Y %d\n", X, Y);
+                            
+                            //printf("DAMN BOYO %f %f\n", GameState->EditorState.TileX, GameState->EditorState.TileY);
                             
                             if(MOUSE(Mouse_Left))
                             {

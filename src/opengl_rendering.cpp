@@ -383,7 +383,7 @@ static void LoadEditorTileBuffer(render_state* RenderState, editor_render_info& 
         r32 TexCoordX = (Tile->TextureOffset.x) / Width;
         r32 TexCoordY = (Tile->TextureOffset.y) / Height; 
         r32 TexCoordXHigh = (Tile->TextureOffset.x + Tilemap.TileWidth) / Width;
-        r32 TexCoordYHigh = (Tile->TextureOffset.y + Tilemap.TileHeight) / Height; 
+        r32 TexCoordYHigh = (Tile->TextureOffset.y + Tilemap.TileHeight) / Height;
         
         VertexBuffer[Current++] = (GLfloat)X;
         VertexBuffer[Current++] = (GLfloat)Y + 1.0f;
@@ -453,7 +453,6 @@ static void LoadTilemapWireframeBuffer(const tilemap& Tilemap, render_state* Ren
     {
         for(i32 Y = 0; Y < Tilemap.Height; Y++)
         {
-            
             math::v2 CorrectPosition = ToIsometric(math::v2(X, Y));
             r32 CorrectX = CorrectPosition.x;
             r32 CorrectY = CorrectPosition.y;
@@ -1835,8 +1834,7 @@ static void RenderTile(render_state* RenderState, r32 X, r32 Y, u32 TilesheetInd
     glBindVertexArray(RenderState->SpriteSheetVAO);
     math::m4 Model(1.0f);
     
-    math::v2 Position = ToIsometric(math::v2(X, Y - 1));
-    Model = math::Translate(Model, math::v3(Position.x, Position.y, 0.0f));
+    Model = math::Translate(Model, math::v3(X, Y, 0.0f));
     Model = math::Scale(Model, math::v3(1, 0.5f, 1));
     
     glBindTexture(GL_TEXTURE_2D, RenderState->Tilesheets[TilesheetIndex].Texture.TextureHandle);
@@ -2297,7 +2295,7 @@ void RenderUI(game_state* GameState)
                                 
                                 math::v2 TextureOffset = GameState->CurrentLevel.Tilemap.Tiles[GameState->EditorState.SelectedTileType + 1].TextureOffset;
                                 
-                                if(GameState->EditorState.TileX >= 0 && GameState->EditorState.TileX < GameState->CurrentLevel.Tilemap.Width && GameState->EditorState.TileY > 0 && GameState->EditorState.TileY <= GameState->CurrentLevel.Tilemap.Height)
+                                if(GameState->EditorState.TileX >= 0 && GameState->EditorState.TileX < GameState->CurrentLevel.Tilemap.Width && GameState->EditorState.TileY >= 0 && GameState->EditorState.TileY <= GameState->CurrentLevel.Tilemap.Height)
                                 {
                                     const tilesheet& Tilesheet = GameState->RenderState.Tilesheets[GameState->CurrentLevel.TilesheetIndex];
                                     
@@ -2307,11 +2305,10 @@ void RenderUI(game_state* GameState)
                                     {
                                         for(i32 Y = 0;Y < GameState->EditorState.TileBrushSize.y && Y + GameState->EditorState.TileY < GameState->CurrentLevel.Tilemap.Height; Y++)
                                         {
-                                            math::v2 CorrectPosition = ToIsometric(math::v2(X, Y));
-                                            r32 CorrectX = GameState->EditorState.TileX + CorrectPosition.x;
-                                            r32 CorrectY = GameState->EditorState.TileY + CorrectPosition.y + 1.0f;
+                                            math::v2 CorrectPosition = ToIsometric(math::v2(GameState->EditorState.TileX + X, GameState->EditorState.TileY + Y));
                                             
-                                            RenderTile(&GameState->RenderState, CorrectX, CorrectY, GameState->CurrentLevel.TilesheetIndex, GameState->CurrentLevel.Tilemap.TileWidth, GameState->CurrentLevel.Tilemap.TileHeight, TextureOffset, SheetSize, math::v4(1, 1, 1, 1),  GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
+                                            printf("Tile x %f y %f\n", GameState->EditorState.TileX, GameState->EditorState.TileY);
+                                            RenderTile(&GameState->RenderState, CorrectPosition.x, CorrectPosition.y, GameState->CurrentLevel.TilesheetIndex, GameState->CurrentLevel.Tilemap.TileWidth, GameState->CurrentLevel.Tilemap.TileHeight, TextureOffset, SheetSize, math::v4(1, 1, 1, 1),  GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
                                         }
                                     }
                                 }
