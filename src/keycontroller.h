@@ -45,7 +45,7 @@ enum Key_Mode
     Key_Invalid
 };
 
-#define NUM_KEYS 66
+#define NUM_KEYS 124
 
 #define Key_Left 0
 #define Key_Right 1
