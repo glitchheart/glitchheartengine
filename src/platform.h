@@ -1335,12 +1335,16 @@ namespace math
     inline v3 Project(v3 In, m4 M, m4 P, v4 Viewport)
     {
         v3 Res(1.0f);
+        auto Tmp = v4(In, 1.0f);
+        Tmp = M * Tmp;
+        Tmp = P * Tmp;
+        Tmp /= Tmp.W;
         
-        m4 V = Translate(m4(1.0f),v3(Viewport.X,Viewport.Y,Viewport.Z));
-        auto Temp = P * V * M;
-        Res = v3(Temp.M14,Temp.M24,Temp.M34);
+        Tmp = Tmp * 0.5f + 0.5f;
+        Tmp.X = Tmp.X * Viewport.Z + Viewport.X;
+        Tmp.Y = Tmp.Y * Viewport.W + Viewport.Y;
         
-        return Res;
+        return v3(Tmp.X,Tmp.Y,Tmp.Z);
     }
     
     inline m4 Ortho(r32 Left, r32 Right, r32 Bottom, r32 Top, r32 Near, r32 Far)
