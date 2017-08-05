@@ -190,7 +190,7 @@ static b32 LoadLevelFromFile(char* FilePath, level* Level, game_state* GameState
         for(i32 Layer = 0; Layer < TILEMAP_LAYERS; Layer++)
         {
             Level->Tilemap.Data[Layer] = (tile_data**)malloc(MapWidth * sizeof(tile_data*));
-            GameState->EntityTilePositions = (tile_position**)malloc(MapWidth * sizeof(tile_position*));
+            GameState->EntityTilePositions = (i32**)malloc(MapWidth * sizeof(i32*));
         }
         
         for(i32 Layer = 0; Layer < TILEMAP_LAYERS; Layer++)
@@ -198,7 +198,7 @@ static b32 LoadLevelFromFile(char* FilePath, level* Level, game_state* GameState
             for(u32 I = 0; I < MapWidth; I++)
             {
                 Level->Tilemap.Data[Layer][I] = (tile_data *)calloc(MapHeight, sizeof(tile_data));
-                GameState->EntityTilePositions[I] = (tile_position*)malloc(MapHeight * sizeof(tile_position));
+                GameState->EntityTilePositions[I] = (i32*)malloc(MapHeight * sizeof(i32));
             }
         }
         
@@ -260,20 +260,6 @@ static b32 LoadLevelFromFile(char* FilePath, level* Level, game_state* GameState
                 Pos = math::Floor(Pos);
                 sscanf(LineBuffer, "minotaur %f %f%n", &Pos.x, &Pos.y, &PathIndex);
                 LoadMinotaurData(GameState, -1, Pos);
-            }
-            else if(StartsWith(LineBuffer, "blob"))
-            {
-                math::v2 Pos;
-                Pos = math::Floor(Pos);
-                sscanf(LineBuffer, "blob %f %f%n", &Pos.x, &Pos.y, &PathIndex);
-                LoadBlobData(GameState, -1, Pos);
-            }
-            else if(StartsWith(LineBuffer, "wraith"))
-            {
-                math::v2 Pos;
-                Pos = math::Floor(Pos);
-                sscanf(LineBuffer, "wraith %f %f%n", &Pos.x, &Pos.y, &PathIndex);
-                LoadWraithData(GameState, -1, Pos);
             }
             else if(StartsWith(LineBuffer, "barrel"))
             {

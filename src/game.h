@@ -100,12 +100,6 @@ struct character_data
 
 #define NUM_TIMERS 1024
 
-struct tile_position
-{
-    i32 Entities[20];
-    i32 Count;
-};
-
 struct game_state
 {
     b32 IsInitialized;
@@ -160,7 +154,7 @@ struct game_state
     i32 ObjectCount;
     object_entity Objects[NUM_ENTITIES];
     
-    tile_position** EntityTilePositions;
+    i32** EntityTilePositions;
     
     player_ui PlayerUI;
     health_bar HealthBar;
