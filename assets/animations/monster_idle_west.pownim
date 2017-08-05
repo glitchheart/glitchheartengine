@@ -1,10 +1,10 @@
-name man_attack_west
+name monster_idle_west
 type sprite
 framecount 10
 framesize 128 128
-center 0.5 0.3
-loop 0
-timeperframe 0.1
+center 0.5 0.25
+loop 1
+timeperframe 0.15
 frames
 0 0
 128 0
@@ -16,4 +16,4 @@ frames
 896 0
 1024 0
 1152 0
-texture man_attack_west
+texture monster_idle_west
