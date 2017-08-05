@@ -978,7 +978,7 @@ static void InitializeOpenGL(game_memory* GameMemory, config_data* ConfigData)
     
     ControllerPresent();
     
-    texture_Map_Init(&RenderState.Textures, HashStringJenkins, 4096);
+    texture_Map_Init(&RenderState.Textures, HashStringJenkins, 64);
     LoadTextures(&RenderState, "../assets/textures/");
     LoadTextures(&RenderState, "../assets/textures/spritesheets/");
     RenderSetup(&RenderState);
@@ -2075,6 +2075,7 @@ void RenderUI(game_state* GameState)
             
             if(!InputController.ControllerPresent)
             {
+                auto Tex = GameState->RenderState.Textures["cross"];
                 RenderRect(Render_Fill, &GameState->RenderState, math::v4(1, 1, 1, 1), (r32)InputController.MouseX - 20.0f, (r32)GameState->RenderState.WindowHeight - (r32)InputController.MouseY - 20.0f, 40.0f, 40.0f, 
                            GameState->RenderState.Textures["cross"]->TextureHandle, true, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
             }

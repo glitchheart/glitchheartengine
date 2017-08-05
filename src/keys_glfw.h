@@ -4,7 +4,6 @@
 void InitKeyMappings()
 {
     integer_Map_Init(&InputController.KeyMappings,HashIntKeys, GLFW_KEY_LAST);
-    InputController.KeyMappings[GLFW_KEY_UNKNOWN] = Key_Unknown;
     InputController.KeyMappings[GLFW_KEY_APOSTROPHE] = Key_Apostrophe;
     InputController.KeyMappings[GLFW_KEY_COMMA] = Key_Comma;
     InputController.KeyMappings[GLFW_KEY_MINUS] = Key_Minus;
