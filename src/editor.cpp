@@ -754,7 +754,7 @@ static void EditorUpdateEntities(game_state* GameState, input_controller* InputC
                             math::m4 IsoTransform(1.0f);
                             IsoTransform = math::Translate(IsoTransform, math::v3(0.0f, 0.25f, 0.0f));
                             IsoTransform = math::Scale(IsoTransform, math::v3((r32)(sqrt(2.0) / 2.0), (r32)(sqrt(2.0) / 4.0), 1.0f));
-                            IsoTransform = math::Rotate(IsoTransform, math::v3(0.0f, 0.0f, 0.0f), -45.0f * 0.0174532925f);
+                            IsoTransform = math::Rotate(IsoTransform, -45.0f, math::v3(0.0f, 0.0f, 0.0f));
                             IsoTransform = math::Inverse(IsoTransform);
                             
                             math::v4 NewPos = IsoTransform * math::v4(Pos.x, Pos.y, Pos.z, 1.0f);
