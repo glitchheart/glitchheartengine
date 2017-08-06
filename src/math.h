@@ -1400,10 +1400,18 @@ namespace math
         return R;
     }
     
-    inline m4 Rotate(r32 XAngle, r32 YAngle, r32 ZAngle)
+    inline m4 CreateRotate(r32 XAngle, r32 YAngle, r32 ZAngle)
     {
         m4 R = YRotate(YAngle) * XRotate(XAngle) * ZRotate(ZAngle);
         return R;
+    }
+    
+    inline m4 Rotate(m4 In, v3 Rotation)
+    {
+        m4 Result(In);
+        auto R = CreateRotate(Rotation.X,Rotation.Y,Rotation.Z);
+        Result = R * Result;
+        return Result;
     }
     
     inline v3 Project(v3 In, m4 M, m4 P, v4 Viewport)
