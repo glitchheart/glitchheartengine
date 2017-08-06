@@ -746,6 +746,11 @@ static void EditorUpdateEntities(game_state* GameState, input_controller* InputC
                         break;
                         case Editor_Placement_Tile:
                         {
+                            math::m4 IsoTransform(1.0f);
+                            IsoTransform = math::Translate(IsoTransform, math::v3(0.0f, 0.25f, 0.0f));
+                            IsoTransform = Scale(IsoTransform, math::v3((r32)(sqrt(2.0) / 2.0), (r32)(sqrt(2.0) / 4.0), 1.0f));
+                            IsoTransform.rotate(0.0f, 0.0f, 1.0f, -45.0f);
+                            
                             GameState->EditorState.TileBrushWidthField->Active = true;
                             GameState->EditorState.TileBrushHeightField->Active = true;
                             
@@ -754,27 +759,23 @@ static void EditorUpdateEntities(game_state* GameState, input_controller* InputC
                             
                             GameState->EditorState.TileIsSolidCheckbox->Active = true;
                             
-                            math::v2 SquarePos = math::v2(Pos.x, Pos.y / 0.5f);
+                            math::v2 SquarePos = math::v2(math::Floor(Pos.x), math::Floor(Pos.y / 0.5f));
                             
-                            math::v2 CartesianPos = ToCartesian(math::Floor(math::v2(SquarePos.x, SquarePos.y)));
+                            math::v2 CartesianPos = ToCartesian(math::v2(SquarePos.x * 2.0f, SquarePos.y));
                             
-                            i32 X = (i32)(CartesianPos.x);
-                            i32 Y = (i32)(CartesianPos.y);
+                            i32 X = (i32)math::Floor(CartesianPos.x);
+                            i32 Y = (i32)math::Floor(CartesianPos.y);
                             
-                            i32 FlooredIsometricX = math::Floor(SquarePos.x);
-                            i32 FlooredIsometricY = math::Floor(SquarePos.y);
+                            i32 FlooredIsometricX = math::Floor(Pos.x);
+                            i32 FlooredIsometricY = math::Floor(Pos.y);
                             
-                            //printf("X %d Y %d\n", X, Y);
-                            
-                            r32 OffsetInX = SquarePos.x - FlooredIsometricX;
-                            r32 OffsetInY = SquarePos.y - FlooredIsometricY;
+                            r32 OffsetInX = Pos.x - FlooredIsometricX;
+                            r32 OffsetInY = Pos.y - FlooredIsometricY;
                             
                             if(OffsetInY > 0.5f)
                             {
                                 OffsetInY -= 0.5f;
                             }
-                            
-                            //printf("Offset bobo %f %f\n", OffsetInX, OffsetInY);
                             
                             i32 DX = 0;
                             i32 DY = 0;
@@ -788,7 +789,6 @@ static void EditorUpdateEntities(game_state* GameState, input_controller* InputC
                                 // Bottom left
                                 DX = -1;
                                 DY = 0;
-                                printf("Bottom left\n");
                             } 
                             else if(PointInTriangle(
                                 math::v2(OffsetInX, OffsetInY), 
@@ -799,7 +799,6 @@ static void EditorUpdateEntities(game_state* GameState, input_controller* InputC
                                 // Top left
                                 DX = 0;
                                 DY = 1;
-                                printf("Top left\n");
                             }
                             else if(PointInTriangle(
                                 math::v2(OffsetInX, OffsetInY), 
@@ -810,7 +809,6 @@ static void EditorUpdateEntities(game_state* GameState, input_controller* InputC
                                 // Top right
                                 DX = 1;
                                 DY = 0;
-                                printf("Top right\n");
                             }
                             else if(PointInTriangle(
                                 math::v2(OffsetInX, OffsetInY), 
@@ -821,19 +819,12 @@ static void EditorUpdateEntities(game_state* GameState, input_controller* InputC
                                 // Bottom right
                                 DX = 0;
                                 DY = -1;
-                                printf("Bottom right\n");
                             }
-                            else
-                                printf("Center\n");
                             
                             GameState->EditorState.TileX = (r32)X + DX;
                             GameState->EditorState.TileY = (r32)Y + DY;
                             X = GameState->EditorState.TileX;
                             Y = GameState->EditorState.TileY;
-                            
-                            printf("X %d Y %d\n", X, Y);
-                            
-                            //printf("DAMN BOYO %f %f\n", GameState->EditorState.TileX, GameState->EditorState.TileY);
                             
                             if(MOUSE(Mouse_Left))
                             {
