@@ -194,6 +194,7 @@ struct light_source
             timer GlowTimer;
             r32 GlowIncrease;
             b32 IncreasingGlow;
+            r32 EmissionIntensity;
         } Pointlight;
         struct
         {

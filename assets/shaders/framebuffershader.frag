@@ -9,6 +9,9 @@ uniform sampler2D lightingTex;
 uniform bool ignoreLight;
 uniform float contrast;
 uniform float brightness;
+uniform mat4 P;
+uniform mat4 V;
+uniform vec2 screenSize;
 
 out vec4 outColor;
 
@@ -16,13 +19,13 @@ void main()
 {
 	vec4 lightingColor = texture(lightingTex, Texcoord);
 	vec4 endColor = texture(tex, Texcoord);
-	
-	vec4 ambient = clamp(ambientColor * endColor *  ambientIntensity,0.0,1.0);
+
+	vec4 ambient = clamp(ambientColor  *  ambientIntensity,0.0,1.0);
 	vec4 linearColor = lightingColor;
-	linearColor = clamp(linearColor,0.0,1.0);
-    linearColor = linearColor + ambient;
-	linearColor = clamp(linearColor, 0.0,1.0);
-	
+	linearColor.rgb = clamp(linearColor.rgb,0.0,1.0);
+    linearColor.rgb = linearColor.rgb + ambient.rgb;
+	linearColor.rgb = clamp(linearColor.rgb, 0.0,1.0);
+
 	if(!ignoreLight)
 	{
 		endColor = endColor * vec4(linearColor.rgb, lightingColor.a);
@@ -33,7 +36,7 @@ void main()
 		endColor.rgb += (endColor.rgb - 0.5) * (contrast) + 0.5f;
 		
 		// Brightness
-		endColor.rgb += brightness;
+		endColor.rgb += brightness - 0.01;
 
 		endColor.rgb *= endColor.a;
 
