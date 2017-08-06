@@ -37,14 +37,14 @@ void main()
 		endColor.rgb /= endColor.a;
 
 		//Contrast
-		endColor.rgb += (endColor.rgb - 0.5) * contrast + 0.5f;
+		endColor.rgb += (endColor.rgb - 0.5) * (contrast + 2.0) + 0.5f;
 		
 		// Brightness
-		endColor.rgb += brightness - 0.5;
+		endColor.rgb += brightness + 0.1;
 
 		endColor.rgb *= endColor.a;
 
-		float gamma = 1.1;
+		float gamma = 1.0;
 		endColor.rgb = pow(endColor.rgb, vec3(1.0/gamma));
 	}
 	
