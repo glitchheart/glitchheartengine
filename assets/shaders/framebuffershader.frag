@@ -24,7 +24,7 @@ void main()
 	vec4 endColor = texture(tex, Texcoord);
 	
 	if(!ignoreLight)
-		endColor.rgb *= 0.55;
+		endColor.rgb *= 1.0;
 	
 	vec4 ambient = ambientColor * endColor * ambientIntensity;
 	vec4 linearColor = (ambient + lightingColor + color);
@@ -32,12 +32,12 @@ void main()
 	//outColor = endColor * (color + lightingColor + ambient);
 	if(!ignoreLight)
 	{
-		endColor = endColor + vec4(linearColor.rgb, lightingColor.a);
+		endColor = endColor * vec4(linearColor.rgb, lightingColor.a);
 		
 		endColor.rgb /= endColor.a;
 
 		//Contrast
-		endColor.rgb += (endColor.rgb - 0.5) * (contrast + 2.0) + 0.5f;
+		endColor.rgb += (endColor.rgb - 0.5) * (contrast + 0.35) + 0.5f;
 		
 		// Brightness
 		endColor.rgb += brightness + 0.1;

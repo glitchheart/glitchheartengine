@@ -17,7 +17,7 @@ attackmovetimer 0.05
 attackmovespeed 2
 attacklowframeindex 3
 attackhighframeindex 6
-pointlight type 0 active 1 offset 0 0 intensity 2.8 color 1.0 1.0 1.0 1.0 atten 8.5 1.3 0.2 shouldglow 0 glowtimer 0.0 glowincrease 0.0
+pointlight type 0 active 1 offset 0 0 intensity 3.5 color 1.0 1.0 1.0 1.0 atten 8.5 1.3 0.2 shouldglow 0 glowtimer 0.0 glowincrease 0.0
 #player
 stamina 100
 staminagaincooldowntimer 0.8
