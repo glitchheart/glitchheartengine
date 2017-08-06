@@ -16,7 +16,7 @@ out vec4 outColor;
 void main()
 {
 	vec4 finalColor = vec4(0.0,0.0,0.0,0.0);
-	
+
 	for(int i = 0; i < NUM_POINTLIGHTS; i++)
 	{
 		float dist = distance(PointLightPos[i], (inverse(P * V)) * vec4(
@@ -25,9 +25,11 @@ void main()
 
 		vec4 dir = normalize(PointLightPos[i] - ((inverse(P*V)) * vec4((gl_FragCoord.x/screenSize.x - 0.5) * 2.0,
 			(gl_FragCoord.y/screenSize.y - 0.5) * 2.0,0,1)));
+
 		float attenuation = 1/(PointLightConstantAtt[i] + PointLightLinearAtt[i] * dist + PointLightExpAtt[i] * dist *  dist);     	
-		finalColor += (attenuation *  PointLightColors[i]) * PointLightIntensity[i];
+		//finalColor += clamp((attenuation *  PointLightColors[i]) * PointLightIntensity[i],0.0,1.0);
+		finalColor += (attenuation *  PointLightIntensity[i]) * PointLightColors[i] * 0.8 / dist;
 	}
 	
-	outColor = finalColor;
+	outColor = clamp(finalColor, 0.0,1.0);
 }

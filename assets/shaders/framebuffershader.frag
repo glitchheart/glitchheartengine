@@ -14,22 +14,15 @@ out vec4 outColor;
 
 void main()
 {
-	float distance =  1 - distance(vec2(Texcoord.x, Texcoord.y), vec2(0.5,0.5)) * 1.5;
-	distance -= -0.2;
-	vec4 color = vec4(distance, distance, distance, 1.0) * 0.3;
-	distance = 0.15;
-	color = vec4(distance, distance, distance, 1.0) ;
-
 	vec4 lightingColor = texture(lightingTex, Texcoord);
 	vec4 endColor = texture(tex, Texcoord);
 	
-	if(!ignoreLight)
-		endColor.rgb *= 1.0;
+	vec4 ambient = clamp(ambientColor * endColor *  ambientIntensity,0.0,1.0);
+	vec4 linearColor = lightingColor;
+	linearColor = clamp(linearColor,0.0,1.0);
+    linearColor = linearColor + ambient;
+	linearColor = clamp(linearColor, 0.0,1.0);
 	
-	vec4 ambient = ambientColor * endColor * ambientIntensity;
-	vec4 linearColor = (ambient + lightingColor + color);
-	
-	//outColor = endColor * (color + lightingColor + ambient);
 	if(!ignoreLight)
 	{
 		endColor = endColor * vec4(linearColor.rgb, lightingColor.a);
@@ -37,14 +30,14 @@ void main()
 		endColor.rgb /= endColor.a;
 
 		//Contrast
-		endColor.rgb += (endColor.rgb - 0.5) * (contrast + 0.35) + 0.5f;
+		endColor.rgb += (endColor.rgb - 0.5) * (contrast) + 0.5f;
 		
 		// Brightness
-		endColor.rgb += brightness + 0.1;
+		endColor.rgb += brightness;
 
 		endColor.rgb *= endColor.a;
 
-		float gamma = 1.0;
+		float gamma = 2.2;
 		endColor.rgb = pow(endColor.rgb, vec3(1.0/gamma));
 	}
 	

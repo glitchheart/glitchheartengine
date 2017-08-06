@@ -126,8 +126,7 @@ static void SetMouseInvalidKeys()
     InputController.ScrollY = 0;
 }
 
-#include <glm/gtc/matrix_transform.hpp>
-
+#ifdef GLM
 void PrintGLMMatrix(glm::mat4 In)
 {
     DEBUG_PRINT("GLM: \n");
@@ -136,6 +135,7 @@ void PrintGLMMatrix(glm::mat4 In)
     DEBUG_PRINT("%f %f %f %f\n", In[0][2],In[1][2],In[2][2],In[3][2]);
     DEBUG_PRINT("%f %f %f %f\n", In[0][3],In[1][3],In[2][3],In[3][3]);
 }
+#endif
 
 int main(void)
 {
@@ -186,18 +186,6 @@ int main(void)
     r64 LastFrame = GetTime();
     r64 CurrentFrame = 0.0;
     r64 DeltaTime;
-    
-    math::m4 M(1.0f);
-    M = math::Translate(M,math::v3(2.0f,3.0f,7.0f));
-    
-    glm::mat4 GM(1.0f);
-    GM = glm::translate(GM, glm::vec3(2.0f,3.0f,7.0f));
-    
-    M = math::Rotate(M, -45.0f, math::v3(1.0f, 0.0f, 0.0f));
-    GM = glm::rotate(GM, -45.0f, glm::vec3(1.0f, 0.0f, 0.0f));
-    
-    PrintMatrix(M);
-    PrintGLMMatrix(GM);
     
     while (!ShouldCloseWindow(&GameState->RenderState) && !GameState->RenderState.ShouldClose)
     {
