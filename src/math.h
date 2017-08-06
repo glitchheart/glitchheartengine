@@ -1515,19 +1515,20 @@ namespace math
     inline v2 ToCartesian(v2 Position)
     {
         v2 TempPt;
-        TempPt.x = (2 * Position.y + Position.x) / 2;
+        TempPt.x = (2 * Position.y + Position.x);
         TempPt.y = (2 * Position.y - Position.x) / 2;
         return TempPt;
     }
     
     inline v2 ToIsometric(v2 Position)
     {
-        Position.x *= 0.5f;
-        Position.y *= 0.5f;
+        // @Cleanup: Move these to a global variable or similar
+        r32 TileWidthHalf = 0.5f;
+        r32 TileHeightHalf = 0.25f;
         
         v2 TempPt;
-        TempPt.x = Position.x - Position.y;
-        TempPt.y = (Position.x + Position.y) / 2.0f;
+        TempPt.x = (Position.x - Position.y) * TileWidthHalf;
+        TempPt.y = (Position.x + Position.y) * TileHeightHalf;
         return TempPt;
     }
     

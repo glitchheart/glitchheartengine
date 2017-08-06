@@ -1613,8 +1613,6 @@ static void RenderEntity(game_state *GameState, render_entity* RenderEntity, mat
         {
             if(RenderEntity->Entity->Type == Entity_Player)
             {
-                //printf("Current tile %f %f\n", RenderEntity->Entity->CurrentDestination.x, RenderEntity->Entity->CurrentDestination.y);
-                
                 auto CurrentTilePos = ToIsometric(math::v2(RenderEntity->Entity->CurrentDestination.x, RenderEntity->Entity->CurrentDestination.y));
                 RenderIsometricRect(RenderState, math::v4(0.3, 0.3, 0, 0.2), CurrentTilePos.x, CurrentTilePos.y, 1, 0.5f, ProjectionMatrix, View);
             }
@@ -1634,8 +1632,12 @@ static void RenderEntity(game_state *GameState, render_entity* RenderEntity, mat
             CorrectPos.x -= CurrentAnimation->Center.x * Scale.x;
             CorrectPos.y -= CurrentAnimation->Center.y * Scale.y;
             
-            CorrectPos.x += 0.5f; //We want the sprite to be centered in the tile
-            CorrectPos.y += 0.25f;
+            // @Cleanup: Move these to a global variable or similar
+            r32 TileWidthHalf = 0.5f;
+            r32 TileHeightHalf = 0.25f;
+            
+            CorrectPos.x += TileWidthHalf; //We want the sprite to be centered in the tile
+            CorrectPos.y += TileHeightHalf;
             
             if(LightSourceHandle != -1)
             {
@@ -2307,7 +2309,7 @@ void RenderUI(game_state* GameState)
                                         {
                                             math::v2 CorrectPosition = ToIsometric(math::v2(GameState->EditorState.TileX + X, GameState->EditorState.TileY + Y));
                                             
-                                            printf("Tile x %f y %f\n", GameState->EditorState.TileX, GameState->EditorState.TileY);
+                                            //printf("Tile x %f y %f\n", GameState->EditorState.TileX, GameState->EditorState.TileY);
                                             RenderTile(&GameState->RenderState, CorrectPosition.x, CorrectPosition.y, GameState->CurrentLevel.TilesheetIndex, GameState->CurrentLevel.Tilemap.TileWidth, GameState->CurrentLevel.Tilemap.TileHeight, TextureOffset, SheetSize, math::v4(1, 1, 1, 1),  GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
                                         }
                                     }
