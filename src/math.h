@@ -1,6 +1,4 @@
-
 #include <cmath>
-
 
 
 #ifdef GLM
@@ -13,6 +11,8 @@ namespace math
     using m4 = glm::mat4;
     using v2i = glm::i32vec2;
     using v3i = glm::i32vec3;
+    using rgb = v3;
+    using rgba = v4;
     
     PrintMatrix(m4 In)
     {
@@ -46,6 +46,16 @@ namespace math
     m4 Translate(m4 M, v3 V)
     {
         return glm::translate(M,V);
+    }
+    
+    m4 Rotate(m4 M, v3 V, r32 Angle)
+    {
+        return glm::rotate(M, Angle, V);
+    }
+    
+    m4 Inverse(m4 M)
+    {
+        return glm::inverse(M);
     }
     
     m4 Transpose(m4 M)
@@ -1550,42 +1560,6 @@ namespace math
         return Max(Minimum, Min(Value,Maximum));
     }
     
-    
-    inline v2 ToCartesian(v2 Position)
-    {
-        v2 TempPt;
-        TempPt.x = (2 * Position.y + Position.x) / 2;
-        TempPt.y = (2 * Position.y - Position.x) / 2;
-        return TempPt;
-    }
-    
-    inline v2 ToIsometric(v2 Position)
-    {
-        Position.x *= 0.5f;
-        Position.y *= 0.5f;
-        
-        v2 TempPt;
-        TempPt.x = Position.x - Position.y;
-        TempPt.y = (Position.x + Position.y) / 2.0f;
-        return TempPt;
-    }
-    
-    inline r32 Sign(v2 P1, v2 P2, v2 P3)
-    {
-        return (P1.x - P3.x) * (P2.y - P3.y) - (P2.x - P3.x) * (P1.y - P3.y);
-    }
-    
-    inline b32 PointInTriangle(v2 Pt, v2 V1, v2 V2, v2 V3)
-    {
-        bool B1, B2, B3;
-        
-        B1 = Sign(Pt, V1, V2) < 0.0f;
-        B2 = Sign(Pt, V2, V3) < 0.0f;
-        B3 = Sign(Pt, V3, V1) < 0.0f;
-        
-        return ((B1 == B2) && (B2 == B3));
-    }
-    
     inline r32 RandomFloat(r32 From, r32 To)
     {
         r32 Rand = Min(Max(From, ((r32)rand()/(r32)(RAND_MAX)) * To),To);
@@ -1596,8 +1570,46 @@ namespace math
     using rgba = v4;
 }
 
-
-
 #endif
 
+inline r32 Sign(math::v2 P1, math::v2 P2, math::v2 P3)
+{
+    return (P1.x - P3.x) * (P2.y - P3.y) - (P2.x - P3.x) * (P1.y - P3.y);
+}
+
+inline math::v2 ToCartesian(math::v2 Position)
+{
+    // @Cleanup: Move these to a global variable or similar
+    r32 TileWidthHalf = 0.5f;
+    r32 TileHeightHalf = 0.25f;
+    
+    math::v2 TempPt;
+    
+    TempPt.x = (Position.x / TileWidthHalf + Position.y / TileHeightHalf) / 2.0f;
+    TempPt.y = (Position.y / TileHeightHalf - Position.x / TileWidthHalf) / 2.0f;
+    return TempPt;
+}
+
+inline math::v2 ToIsometric(math::v2 Position)
+{
+    // @Cleanup: Move these to a global variable or similar
+    r32 TileWidthHalf = 0.5f;
+    r32 TileHeightHalf = 0.25f;
+    
+    math::v2 TempPt;
+    TempPt.x = (Position.x - Position.y) * TileWidthHalf;
+    TempPt.y = (Position.x + Position.y) * TileHeightHalf;
+    return TempPt;
+}
+
+inline b32 PointInTriangle(math::v2 Pt, math::v2 V1, math::v2 V2, math::v2 V3)
+{
+    bool B1, B2, B3;
+    
+    B1 = Sign(Pt, V1, V2) < 0.0f;
+    B2 = Sign(Pt, V2, V3) < 0.0f;
+    B3 = Sign(Pt, V3, V1) < 0.0f;
+    
+    return ((B1 == B2) && (B2 == B3));
+}
 
