@@ -370,9 +370,8 @@ static void LoadEntityData(FILE* File, entity* Entity, game_state* GameState, b3
         Entity->ShowAttackTiles = false;
         Entity->AnimationInfo.FreezeFrame = false;
         
-        Entity->TilePosition.x = 0;
-        Entity->TilePosition.y = 0;
-        Entity->TilePosition.z = 0;
+        Entity->CurrentTile.x = 0;
+        Entity->CurrentTile.y = 0;
         
         hit_tile_extents HitExtents;
         HitExtents.StartX = 0;
@@ -1659,7 +1658,7 @@ static void LoadPlayerData(game_state* GameState, sound_queue* SoundQueue, i32 H
         }
         
         Entity->Player.Inventory.HasCheckpoint = true;
-        Entity->CurrentTile = Entity->Position;
+        Entity->CurrentTile = math::v2i((i32)Entity->Position.x, (i32)Entity->Position.y);
         Entity->CurrentDestination = Entity->Position;
     }
 }
@@ -1886,13 +1885,13 @@ void UpdatePlayer(entity* Entity, game_state* GameState, sound_queue* SoundQueue
         
         GameState->EntityTilePositions[(i32)Entity->CurrentTile.x][(i32)Entity->CurrentTile.y] = 0;
         
-        Entity->CurrentTile = Entity->Position;
+        Entity->CurrentTile = math::v2i((i32)Entity->Position.x, (i32)Entity->Position.y);
         
         Entity->Velocity = math::v2(0, 0);
         
         if(DX != 0.0f || DY != 0.0f)
         {
-            if(!TileIsOccupied((i32)Entity->CurrentTile.x + (i32)DX, (i32)Entity->CurrentTile.y + (i32)DY, GameState))
+            if(!TileIsOccupied(Entity->CurrentTile.x + (i32)DX, Entity->CurrentTile.y + (i32)DY, GameState))
             {
                 Entity->CurrentDestination = math::v2(Entity->CurrentTile.x, Entity->CurrentTile.y) + math::v2(DX, DY);
             }
@@ -2007,8 +2006,8 @@ void UpdatePlayer(entity* Entity, game_state* GameState, sound_queue* SoundQueue
         
         DetermineDeltaForDirection(Entity->LookDirection, &DeltaX, &DeltaY);
         
-        i32 TileX = (i32)Entity->TilePosition.x + (i32)DeltaX;
-        i32 TileY = (i32)Entity->TilePosition.y + (i32)DeltaY;
+        i32 TileX = (i32)Entity->CurrentTile.x + (i32)DeltaX;
+        i32 TileY = (i32)Entity->CurrentTile.y + (i32)DeltaY;
         
         i32 Handle = GameState->EntityTilePositions[TileX][TileY];
         
@@ -2112,9 +2111,9 @@ static void UpdateWeapon(entity* Entity, game_state* GameState, sound_queue* Sou
         {
             for(i32 Y = HitExtents.StartY; Y < HitExtents.EndY; Y++)
             {
-                if(Entity->TilePosition.x + X >= 0 && Entity->TilePosition.y + Y >= 0 && Entity->TilePosition.x + X < GameState->CurrentLevel.Tilemap.Width && Entity->TilePosition.y + Y < GameState->CurrentLevel.Tilemap.Height)
+                if(Entity->CurrentTile.x + X >= 0 && Entity->CurrentTile.y + Y >= 0 && Entity->CurrentTile.x + X < GameState->CurrentLevel.Tilemap.Width && Entity->CurrentTile.y + Y < GameState->CurrentLevel.Tilemap.Height)
                 {
-                    i32 Handle = GameState->EntityTilePositions[Entity->TilePosition.x + X][Entity->TilePosition.y + Y] - 1;
+                    i32 Handle = GameState->EntityTilePositions[Entity->CurrentTile.x + X][Entity->CurrentTile.y + Y] - 1;
                     
                     if(Handle >= 0 && Handle < GameState->EntityCount)
                     {
@@ -2477,7 +2476,7 @@ static void UpdateGeneral(entity* Entity, game_state* GameState, r64 DeltaTime)
 {
     GameState->RenderState.RenderEntities[Entity->RenderEntityHandle].Rendered = math::Distance(Entity->Position, GameState->Entities[0].Position) < 15;
     
-    GameState->EntityTilePositions[Entity->TilePosition.x][Entity->TilePosition.y] = 0;
+    GameState->EntityTilePositions[Entity->CurrentTile.x][Entity->CurrentTile.y] = 0;
     
     if(Entity->LightSourceHandle != -1)
     {

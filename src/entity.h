@@ -225,8 +225,6 @@ struct object_entity
     i32 RenderEntityHandle;
     i32 LightSourceHandle;
     
-    math::v2i TilePosition;
-    
     animation* CurrentAnimation;
     animation_info AnimationInfo;
     
@@ -262,7 +260,7 @@ struct entity
     u32 EntityIndex;
     
     math::v2 Position;
-    math::v2 CurrentTile;
+    math::v2i CurrentTile;
     math::v2 CurrentDestination;
     i32 FramesForDestination;
     math::v2 Center;
@@ -272,8 +270,6 @@ struct entity
     b32 IsFlipped;
     b32 IsTemporary;
     b32 ShowAttackTiles;
-    
-    math::v3i TilePosition;
     
     Look_Direction LookDirection;
     Entity_Layer Layer;
