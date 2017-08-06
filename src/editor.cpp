@@ -613,6 +613,11 @@ static void EditorUpdateEntities(game_state* GameState, input_controller* InputC
                                            GameState->Camera.ProjectionMatrix,
                                            math::v4(0, 0, GameState->RenderState.Viewport[2], GameState->RenderState.Viewport[3]));
                 
+                math::v2 CartesianPos = ToCartesian(math::v2(Pos.x, Pos.y));
+                
+                i32 X = (i32)math::Round(CartesianPos.x - 0.5f) - 1;
+                i32 Y = (i32)math::Round(CartesianPos.y + 0.5f) - 1;
+                
                 GameState->EditorState.CreateNewAnimationButton->Active = false;
                 
                 if(KEY_DOWN(Key_E))
@@ -671,16 +676,6 @@ static void EditorUpdateEntities(game_state* GameState, input_controller* InputC
                             }
                             else
                             {
-                                math::v2 NewPos = ToCartesian(math::v2(Pos.x, Pos.y));
-                                
-                                NewPos.x /= 0.5f;
-                                NewPos.y /= 0.5f;
-                                
-                                math::v2 ExactPos = NewPos;
-                                
-                                NewPos.x = (r32)math::Floor(NewPos.x);
-                                NewPos.y = (r32)math::Floor(NewPos.y);
-                                
                                 if(MOUSE_DOWN(Mouse_Left))
                                 {
                                     entity* Selected = 0;
@@ -691,12 +686,27 @@ static void EditorUpdateEntities(game_state* GameState, input_controller* InputC
                                     {
                                         entity* Entity = &GameState->Entities[EntityIndex];
                                         
-                                        if(Entity->Type != Entity_Weapon && NewPos.x >= Entity->Position.x - Entity->Scale && NewPos.y < Entity->Position.y + Entity->Scale && NewPos.x < Entity->Position.x + Entity->Scale && NewPos.y > Entity->Position.y)
+                                        if(X == (i32)Entity->Position.x && Y == (i32)Entity->Position.y)
                                         {
+                                            if(GameState->EditorState.SelectedEntity)
+                                            {
+                                                render_entity* RenderEntity = &GameState->RenderState.RenderEntities[GameState->EditorState.SelectedEntity->RenderEntityHandle];
+                                                RenderEntity->Color = math::rgba(1.0f, 1.0f, 1.0f, 1.0f);
+                                            }
+                                            
                                             Selected = Entity;
-                                            GameState->EditorState.CurrentSelectedEntityOffset = Entity->Position - ExactPos;
+                                            
+                                            render_entity* RenderEntity = &GameState->RenderState.RenderEntities[Selected->RenderEntityHandle];
+                                            RenderEntity->Color = math::rgba(0.8f, 0.5f, 0.0f, 1.0f);
+                                            
                                             break;
                                         }
+                                    }
+                                    
+                                    if(!Selected && GameState->EditorState.SelectedEntity)
+                                    {
+                                        render_entity* RenderEntity = &GameState->RenderState.RenderEntities[GameState->EditorState.SelectedEntity->RenderEntityHandle];
+                                        RenderEntity->Color = math::rgba(1.0f, 1.0f, 1.0f, 1.0f);
                                     }
                                     
                                     GameState->EditorState.SelectedEntity = Selected;
@@ -704,7 +714,7 @@ static void EditorUpdateEntities(game_state* GameState, input_controller* InputC
                                 
                                 if(GameState->EditorState.SelectedEntity && MOUSE(Mouse_Left))
                                 {
-                                    GameState->EditorState.SelectedEntity->Position = math::v2(NewPos.x + GameState->EditorState.CurrentSelectedEntityOffset.x, NewPos.y - GameState->EditorState.SelectedEntity->Scale / 2 + GameState->EditorState.CurrentSelectedEntityOffset.y);
+                                    GameState->EditorState.SelectedEntity->Position = math::v2(X, Y);
                                 }
                             }
                         }
@@ -713,21 +723,16 @@ static void EditorUpdateEntities(game_state* GameState, input_controller* InputC
                         {
                             if(MOUSE_DOWN(Mouse_Left))
                             {
-                                math::v2 NewPos = ToCartesian(math::v2(Pos.x, Pos.y));
-                                
-                                NewPos.x = floor(NewPos.x / 0.5f);
-                                NewPos.y = floor(NewPos.y / 0.5f);
-                                
                                 switch(GameState->EditorState.PlacementEntity)
                                 {
                                     case Placement_Entity_Skeleton:
                                     {
-                                        LoadSkeletonData(GameState, -1, math::v2(NewPos.x, NewPos.y));
+                                        LoadSkeletonData(GameState, -1, math::v2(X, Y));
                                     }
                                     break;
                                     case Placement_Entity_Minotaur:
                                     {
-                                        LoadMinotaurData(GameState, -1, math::v2(NewPos.x, NewPos.y));
+                                        LoadMinotaurData(GameState, -1, math::v2(X, Y));
                                     }
                                     break;
                                     case Placement_Entity_Barrel:
@@ -735,7 +740,7 @@ static void EditorUpdateEntities(game_state* GameState, input_controller* InputC
                                     break;
                                     case Placement_Entity_Bonfire:
                                     {
-                                        LoadBonfireData(GameState, SoundQueue, -1, math::v2(NewPos.x, NewPos.y));
+                                        LoadBonfireData(GameState, SoundQueue, -1, math::v2(X, Y));
                                     }
                                     break;
                                 }
@@ -748,8 +753,13 @@ static void EditorUpdateEntities(game_state* GameState, input_controller* InputC
                         {
                             math::m4 IsoTransform(1.0f);
                             IsoTransform = math::Translate(IsoTransform, math::v3(0.0f, 0.25f, 0.0f));
-                            IsoTransform = Scale(IsoTransform, math::v3((r32)(sqrt(2.0) / 2.0), (r32)(sqrt(2.0) / 4.0), 1.0f));
-                            IsoTransform.rotate(0.0f, 0.0f, 1.0f, -45.0f);
+                            IsoTransform = math::Scale(IsoTransform, math::v3((r32)(sqrt(2.0) / 2.0), (r32)(sqrt(2.0) / 4.0), 1.0f));
+                            IsoTransform = math::Rotate(IsoTransform, math::v3(0.0f, 0.0f, 0.0f), -45.0f * 0.0174532925f);
+                            IsoTransform = math::Inverse(IsoTransform);
+                            
+                            math::v4 NewPos = IsoTransform * math::v4(Pos.x, Pos.y, Pos.z, 1.0f);
+                            
+                            printf("New pos %d %d\n", (i32)NewPos.x, (i32)NewPos.y);
                             
                             GameState->EditorState.TileBrushWidthField->Active = true;
                             GameState->EditorState.TileBrushHeightField->Active = true;
@@ -759,72 +769,8 @@ static void EditorUpdateEntities(game_state* GameState, input_controller* InputC
                             
                             GameState->EditorState.TileIsSolidCheckbox->Active = true;
                             
-                            math::v2 SquarePos = math::v2(math::Floor(Pos.x), math::Floor(Pos.y / 0.5f));
-                            
-                            math::v2 CartesianPos = ToCartesian(math::v2(SquarePos.x * 2.0f, SquarePos.y));
-                            
-                            i32 X = (i32)math::Floor(CartesianPos.x);
-                            i32 Y = (i32)math::Floor(CartesianPos.y);
-                            
-                            i32 FlooredIsometricX = math::Floor(Pos.x);
-                            i32 FlooredIsometricY = math::Floor(Pos.y);
-                            
-                            r32 OffsetInX = Pos.x - FlooredIsometricX;
-                            r32 OffsetInY = Pos.y - FlooredIsometricY;
-                            
-                            if(OffsetInY > 0.5f)
-                            {
-                                OffsetInY -= 0.5f;
-                            }
-                            
-                            i32 DX = 0;
-                            i32 DY = 0;
-                            
-                            if(PointInTriangle(
-                                math::v2(OffsetInX, OffsetInY), 
-                                math::v2(0.0f, 0.0f), 
-                                math::v2(0.0f, 0.25f), 
-                                math::v2(0.5f, 0.0f)))
-                            {
-                                // Bottom left
-                                DX = -1;
-                                DY = 0;
-                            } 
-                            else if(PointInTriangle(
-                                math::v2(OffsetInX, OffsetInY), 
-                                math::v2(0.0f, 0.5f), 
-                                math::v2(0.5f, 0.5f), 
-                                math::v2(0.0f, 0.25f)))
-                            {
-                                // Top left
-                                DX = 0;
-                                DY = 1;
-                            }
-                            else if(PointInTriangle(
-                                math::v2(OffsetInX, OffsetInY), 
-                                math::v2(0.5f, 0.5f), 
-                                math::v2(1.0f, 0.5f), 
-                                math::v2(1.0f, 0.25f)))
-                            {
-                                // Top right
-                                DX = 1;
-                                DY = 0;
-                            }
-                            else if(PointInTriangle(
-                                math::v2(OffsetInX, OffsetInY), 
-                                math::v2(0.5f, 0.0f), 
-                                math::v2(1.0f, 0.25f), 
-                                math::v2(1.0f, 0.0f)))
-                            {
-                                // Bottom right
-                                DX = 0;
-                                DY = -1;
-                            }
-                            
-                            GameState->EditorState.TileX = (r32)X + DX;
-                            GameState->EditorState.TileY = (r32)Y + DY;
-                            X = GameState->EditorState.TileX;
-                            Y = GameState->EditorState.TileY;
+                            GameState->EditorState.TileX = (r32)X;
+                            GameState->EditorState.TileY = (r32)Y;
                             
                             if(MOUSE(Mouse_Left))
                             {

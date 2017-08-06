@@ -125,7 +125,6 @@ struct editor_state
     Editor_Placement_Mode PlacementMode = Editor_Placement_Tile;
     
     entity* SelectedEntity;
-    math::v2 CurrentSelectedEntityOffset;
     u32 SelectedTileType = 1;
     math::v2 SelectedTilePosition;
     Entity_Placement_Type PlacementEntity;
