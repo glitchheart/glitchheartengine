@@ -6,5 +6,5 @@ center 0.5 0.5
 scale 0.5
 animation streetlight
 collider -0.5 -0.7 0.35 0.2 0
-pointlight type 0 active 1 offset 0 1 intensity 1.7 color 0.1 0.1 0.7 1.0 atten 2.0 0.6 0.2 shouldglow 1 glowtimer 1.0 glowincrease 0.000001
+pointlight type 0 active 1 offset 0 1 intensity 0.5 color 0.3 0.3 1.0 1.0 atten 0.5 0.0 2.2 emissionintensity 0.01 shouldglow 1 glowtimer 1.0 glowincrease 0.000001
 #bonfire

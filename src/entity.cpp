@@ -15,7 +15,7 @@ static inline void PrintEntityInfo(const entity& Entity)
     DEBUG_PRINT("Entity: Name %s, position x %f y %f, rotation x %f y %f z %f\n", Entity.Name, Entity.Position.x, Entity.Position.y, Entity.Rotation.x, Entity.Rotation.y, Entity.Rotation.z);
 }
 
-static i32 LoadPointlight(game_state* GameState, math::rgba Color = math::v4(), r32 Intensity = 0.0f, r32 ConstantAtten = 0.0f, r32 LinearAtten = 0.0f, r32 ExponentialAtten = 0.0f,math::v2 InitPosition = math::v2(), b32 ShouldGlow = false, r64 GlowTimerMax = 0.0f, r32 GlowIncrease = 0.0f)
+static i32 LoadPointlight(game_state* GameState, math::rgba Color = math::v4(), r32 Intensity = 0.0f, r32 ConstantAtten = 0.0f, r32 LinearAtten = 0.0f, r32 ExponentialAtten = 0.0f,math::v2 InitPosition = math::v2(), b32 ShouldGlow = false, r64 GlowTimerMax = 0.0f, r32 GlowIncrease = 0.0f, r32 EmissionIntensity = 0.0f)
 {
     light_source LightSource;
     
@@ -35,6 +35,7 @@ static i32 LoadPointlight(game_state* GameState, math::rgba Color = math::v4(), 
     LightSource.Pointlight.ConstantAtten = ConstantAtten;
     LightSource.Pointlight.LinearAtten = LinearAtten;
     LightSource.Pointlight.ExponentialAtten = ExponentialAtten;
+    LightSource.Pointlight.EmissionIntensity = EmissionIntensity;
     GameState->LightSources[GameState->LightSourceCount++] = LightSource;
     return GameState->LightSourceCount - 1;
 }
@@ -48,8 +49,8 @@ static i32 LoadLight(game_state* GameState, char* LineBuffer, math::v2 InitPosit
     {
         r64 GlowTimerMax = 0.0;
         r32 GlowIncrease;
-        sscanf(LineBuffer, "pointlight type %d active %d offset %f %f intensity %f color %f %f %f %f atten %f %f %f shouldglow %d glowtimer %lf glowincrease %f",
-               &LightSource.Type, &LightSource.Active, &LightSource.Pointlight.Offset.x, &LightSource.Pointlight.Offset.y, &LightSource.Pointlight.Intensity, &LightSource.Color.x, &LightSource.Color.y, &LightSource.Color.z, &LightSource.Color.w, &LightSource.Pointlight.ConstantAtten, &LightSource.Pointlight.LinearAtten, &LightSource.Pointlight.ExponentialAtten, &ShouldGlow, &GlowTimerMax, &GlowIncrease);
+        sscanf(LineBuffer, "pointlight type %d active %d offset %f %f intensity %f color %f %f %f %f atten %f %f %f emissionintensity %f shouldglow %d glowtimer %lf glowincrease %f",
+               &LightSource.Type, &LightSource.Active, &LightSource.Pointlight.Offset.x, &LightSource.Pointlight.Offset.y, &LightSource.Pointlight.Intensity, &LightSource.Color.x, &LightSource.Color.y, &LightSource.Color.z, &LightSource.Color.w, &LightSource.Pointlight.ConstantAtten, &LightSource.Pointlight.LinearAtten, &LightSource.Pointlight.ExponentialAtten, &LightSource.Pointlight.EmissionIntensity, &ShouldGlow, &GlowTimerMax, &GlowIncrease);
         
         if(ShouldGlow)
         {
@@ -1832,6 +1833,10 @@ void DetermineDeltaForDirection(Look_Direction LookDirection, r32* DX, r32* DY)
 
 void UpdatePlayer(entity* Entity, game_state* GameState, sound_queue* SoundQueue, input_controller* InputController, r64 DeltaTime)
 {
+    // Collision check
+    //collision_info CollisionInfo;
+    //CheckCollision(GameState, Entity, &CollisionInfo);
+    
     // Input + movement
     r32 XInput = GetInputX(InputController);
     r32 YInput = GetInputY(InputController);
@@ -1902,35 +1907,6 @@ void UpdatePlayer(entity* Entity, game_state* GameState, sound_queue* SoundQueue
     {
         b32 Walking = Abs(XInput) > 0.0f || Abs(YInput) > 0.0f || Abs(Entity->Velocity.x) > 0.0f || Abs(Entity->Velocity.y) > 0.0f;
         b32 Attacking = ACTION_DOWN(Action_Attack);
-        
-        r32 InputXRightStick = INPUT_X(Stick_Right);
-        r32 InputYRightStick = INPUT_Y(Stick_Right);
-        
-        if(!Walking && (Abs(InputXRightStick) > 0.1f || Abs(InputYRightStick) > 0.1f))
-        {
-            DX = 0.0f;
-            DY = 0.0f;
-            
-            if(InputXRightStick > 0)
-            {
-                DX = 1;
-            }
-            else if(InputXRightStick < 0)
-            {
-                DX = -1;
-            }
-            
-            if(InputYRightStick > 0)
-            {
-                DY = 1;
-            }
-            else if(InputYRightStick < 0)
-            {
-                DY = -1;
-            }
-            
-            Entity->LookDirection = DetermineDirection(&DX, &DY);
-        }
         
         char* AnimationName = "";
         
@@ -2664,12 +2640,12 @@ static void UpdateEntities(game_state* GameState, input_controller* InputControl
     
     /*if(GameState->ClearTilePositionFrame)
     {
-    for(i32 X = 0; X < GameState->CurrentLevel.Tilemap.Width; X++)
-    {
-    for(i32 Y = 0; Y < GameState->CurrentLevel.Tilemap.Height; Y++)
-    {
-    GameState->EntityTilePositions[X][Y] = 0;
-    }
-    }
+        for(i32 X = 0; X < GameState->CurrentLevel.Tilemap.Width; X++)
+        {
+            for(i32 Y = 0; Y < GameState->CurrentLevel.Tilemap.Height; Y++)
+            {
+                GameState->EntityTilePositions[X][Y] = 0;
+            }
+        }
     }*/
 }

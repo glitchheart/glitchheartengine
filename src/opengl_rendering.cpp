@@ -2715,6 +2715,10 @@ static void Render(game_memory* GameMemory)
         SetFloatUniform(GameState->RenderState.FrameBufferShader.Program, "contrast", GameState->RenderState.Contrast);
         SetFloatUniform(GameState->RenderState.FrameBufferShader.Program, "brightness", GameState->RenderState.Brightness);
         SetIntUniform(GameState->RenderState.FrameBufferShader.Program, "ignoreLight",  !GameState->RenderLight);
+        SetMat4Uniform(GameState->RenderState.FrameBufferShader.Program,"P",GameState->Camera.ProjectionMatrix);
+        SetMat4Uniform(GameState->RenderState.FrameBufferShader.Program,"V",GameState->Camera.ViewMatrix);
+        SetVec2Uniform(GameState->RenderState.FrameBufferShader.Program, "screenSize", math::v2((r32)GameState->RenderState.WindowWidth,(r32)GameState->RenderState.WindowHeight));
+        
         
         glUniform1i(GameState->RenderState.FrameBufferTex0Loc, 0);
         glUniform1i(GameState->RenderState.FrameBufferTex1Loc, 1);
