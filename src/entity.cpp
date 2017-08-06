@@ -1,3 +1,8 @@
+static inline b32 TileIsOccupied(i32 X, i32 Y, game_state* GameState)
+{
+    return GameState->EntityTilePositions[X][Y] > 0;
+}
+
 static inline void AddTimer(const char* LineBuffer, const char* Format, char* Name, timer* Timer)
 {
     sscanf(LineBuffer, Format, &Timer->TimerMax);
@@ -1878,16 +1883,21 @@ void UpdatePlayer(entity* Entity, game_state* GameState, sound_queue* SoundQueue
     if(Abs(math::Distance(Entity->Position, Entity->CurrentDestination)) < 0.01f)
     {
         Entity->Position = Entity->CurrentDestination;
+        
+        GameState->EntityTilePositions[(i32)Entity->CurrentTile.x][(i32)Entity->CurrentTile.y] = 0;
+        
         Entity->CurrentTile = Entity->Position;
         
         Entity->Velocity = math::v2(0, 0);
         
         if(DX != 0.0f || DY != 0.0f)
         {
-            Entity->CurrentDestination = math::v2(Entity->CurrentTile.x, Entity->CurrentTile.y) + math::v2(DX, DY);
-            Entity->LookDirection = NewDirection;
+            if(!TileIsOccupied((i32)Entity->CurrentTile.x + (i32)DX, (i32)Entity->CurrentTile.y + (i32)DY, GameState))
+            {
+                Entity->CurrentDestination = math::v2(Entity->CurrentTile.x, Entity->CurrentTile.y) + math::v2(DX, DY);
+            }
             
-            printf("Current destination %f %f\n", Entity->CurrentDestination.x, Entity->CurrentDestination.y);
+            Entity->LookDirection = NewDirection;
         }
     }
     else
@@ -2447,15 +2457,19 @@ static void UpdateStaticEntity(entity* Entity, game_state* GameState, r64 DeltaT
 
 static void UpdateTilePosition(entity& Entity, game_state* GameState, r64 DeltaTime)
 {
-    r32 CartesianX = floor(Entity.Position.x - 0.5f);
-    r32 CartesianY = ceil(Entity.Position.y - 0.5f);
-    
-    if(CartesianX >= 0 && CartesianX < GameState->CurrentLevel.Tilemap.Width && CartesianY >= 0 && CartesianY < GameState->CurrentLevel.Tilemap.Height)
+    if(Entity.Type == Entity_Player)
     {
-        Entity.TilePosition.x = (i32)CartesianX;
-        Entity.TilePosition.y = (i32)CartesianY;
+        GameState->EntityTilePositions[(i32)Entity.CurrentDestination.x][(i32)Entity.CurrentDestination.y] = Entity.EntityIndex + 1;
+    }
+    else
+    {
+        i32 X = (i32)Entity.Position.x;
+        i32 Y = (i32)Entity.Position.y;
         
-        GameState->EntityTilePositions[Entity.TilePosition.x][Entity.TilePosition.y] = Entity.EntityIndex + 1;
+        if(X >= 0 && X < GameState->CurrentLevel.Tilemap.Width && Y >= 0 && Y < GameState->CurrentLevel.Tilemap.Height)
+        {
+            GameState->EntityTilePositions[X][Y] = Entity.EntityIndex + 1;
+        }
     }
 }
 
@@ -2612,11 +2626,11 @@ static void UpdateEntities(game_state* GameState, input_controller* InputControl
                 break;
             }
             
-            if(!GameState->ClearTilePositionFrame)
-            {
-                if(Entity->Active && !Entity->Dead)
-                    UpdateTilePosition(*Entity, GameState, DeltaTime);
-            }
+            //if(!GameState->ClearTilePositionFrame)
+            //{
+            if(Entity->Active && !Entity->Dead)
+                UpdateTilePosition(*Entity, GameState, DeltaTime);
+            //}
             
             if(Entity->Active && Entity->CurrentAnimation && Entity->AnimationInfo.Playing)
                 TickAnimation(&Entity->AnimationInfo, Entity->CurrentAnimation, DeltaTime);
@@ -2624,7 +2638,7 @@ static void UpdateEntities(game_state* GameState, input_controller* InputControl
         GameState->EntityPositions[EntityIndex] = Entity->Position;
     }
     
-    if(GameState->ClearTilePositionFrame)
+    /*if(GameState->ClearTilePositionFrame)
     {
         for(i32 X = 0; X < GameState->CurrentLevel.Tilemap.Width; X++)
         {
@@ -2633,5 +2647,5 @@ static void UpdateEntities(game_state* GameState, input_controller* InputControl
                 GameState->EntityTilePositions[X][Y] = 0;
             }
         }
-    }
+    }*/
 }

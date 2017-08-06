@@ -2377,8 +2377,8 @@ void RenderUI(game_state* GameState)
                             break;
                             case Editor_Placement_SelectEntity:
                             {
-                                if(GameState->EditorState.SelectedEntity)
-                                    RenderWireframe(&GameState->RenderState, GameState->EditorState.SelectedEntity, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
+                                //if(GameState->EditorState.SelectedEntity)
+                                //RenderWireframe(&GameState->RenderState, GameState->EditorState.SelectedEntity, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
                             }
                             break;
                         }
