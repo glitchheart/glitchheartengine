@@ -1886,6 +1886,8 @@ void UpdatePlayer(entity* Entity, game_state* GameState, sound_queue* SoundQueue
         {
             Entity->CurrentDestination = math::v2(Entity->CurrentTile.x, Entity->CurrentTile.y) + math::v2(DX, DY);
             Entity->LookDirection = NewDirection;
+            
+            printf("Current destination %f %f\n", Entity->CurrentDestination.x, Entity->CurrentDestination.y);
         }
     }
     else
