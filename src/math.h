@@ -1094,6 +1094,15 @@ namespace math
         return Result;
     }
     
+    inline v3 operator*(const v3& V, const m4& M)
+    {
+        v3 Result(0.0f);
+        Result.X = M.A * V.X + M.B * V.Y + M.C * V.Z + M.D * 1.0f;
+        Result.Y = M.E * V.X + M.F * V.Y + M.G * V.Z + M.H * 1.0f;
+        Result.Z = M.I * V.X + M.J * V.Y + M.K * V.Z + M.L * 1.0f;
+        return Result;
+    }
+    
     inline r32 Determinant(const m4& In)
     {
         return In.M11 * In.M22 * In.M33 * In.M44 + In.M11 * In.M23 * In.M34 * In.M42 + In.M11 * In.M24 * In.M32 * In.M43 + 
@@ -1282,6 +1291,16 @@ namespace math
         return V * V;
     }
     
+    inline r32 Sin(r32 V)
+    {
+        return sin(V);
+    }
+    
+    inline r32 Cos(r32 V)
+    {
+        return cos(V);
+    }
+    
     inline r32 Length(v2 V)
     {
         return sqrt(pow(V.X,2) + pow(V.Y,2));
@@ -1342,6 +1361,51 @@ namespace math
         return Result;
     }
     
+    inline m4 XRotate(r32 Angle)
+    {
+        r32 C = Cos(Angle);
+        r32 S = Sin(Angle);
+        
+        m4 R(1,0, 0,0,
+             0,C,-S,0,
+             0,S, C,0,
+             0,0, 0,1);
+        
+        return R;
+    }
+    
+    inline m4 YRotate(r32 Angle)
+    {
+        r32 C = Cos(Angle);
+        r32 S = Sin(Angle);
+        
+        m4 R(C, 0,S,0,
+             0, 1,0,0,
+             -S,0,C,0,
+             0, 0,0,1);
+        
+        return R;
+    }
+    
+    inline m4 ZRotate(r32 Angle)
+    {
+        r32 C = Cos(Angle);
+        r32 S = Sin(Angle);
+        
+        m4 R(C,-S,0,0,
+             S,C,0,0,
+             0,0,1,0,
+             0,0,0,1);
+        
+        return R;
+    }
+    
+    inline m4 Rotate(r32 X, r32 Y, r32 Z, r32 Angle)
+    {
+        m4 R = YRotate(Angle) * XRotate(Angle) * ZRotate(Angle);
+        return R;
+    }
+    
     inline v3 Project(v3 In, m4 M, m4 P, v4 Viewport)
     {
         v3 Result(1.0f);
@@ -1388,7 +1452,38 @@ namespace math
     
     inline r32 Lerp(r32 A, r32 T, r32 B)
     {
+        Assert(T <= 1.0f);
         r32 Result = (1.0f - T) * A + T * B;
+        return Result;
+    }
+    
+    inline v2 Lerp(v2 A, r32 T, v2 B)
+    {
+        Assert(T <= 1.0f);
+        v2 Result(0.0f);
+        Result.X = Lerp(A.X,T,B.X);
+        Result.Y = Lerp(A.Y,T,B.Y);
+        return Result;
+    }
+    
+    inline v3 Lerp(v3 A, r32 T, v3 B)
+    {
+        Assert(T <= 1.0f);
+        v3 Result(0.0f);
+        Result.X = Lerp(A.X,T,B.X);
+        Result.Y = Lerp(A.Y,T,B.Y);
+        Result.Z = Lerp(A.Z,T,B.Z);
+        return Result;
+    }
+    
+    inline v4 Lerp(v4 A, r32 T, v4 B)
+    {
+        Assert(T <= 1.0f);
+        v4 Result(0.0f);
+        Result.X = Lerp(A.X,T,B.X);
+        Result.Y = Lerp(A.Y,T,B.Y);
+        Result.Z = Lerp(A.Z,T,B.Z);
+        Result.W = Lerp(A.W,T,B.W);
         return Result;
     }
     
