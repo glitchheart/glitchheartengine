@@ -1400,9 +1400,9 @@ namespace math
         return R;
     }
     
-    inline m4 Rotate(r32 X, r32 Y, r32 Z, r32 Angle)
+    inline m4 Rotate(r32 XAngle, r32 YAngle, r32 ZAngle)
     {
-        m4 R = YRotate(Angle) * XRotate(Angle) * ZRotate(Angle);
+        m4 R = YRotate(YAngle) * XRotate(XAngle) * ZRotate(ZAngle);
         return R;
     }
     
