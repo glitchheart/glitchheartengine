@@ -262,18 +262,38 @@ namespace math
     
     union v3
     {
-        struct
+        struct 
         {
-            r32 X, Y, Z;
+            union
+            {
+                v2 xy;
+                v2 XY;
+                struct
+                {
+                    r32 x, y;
+                };
+                struct 
+                {
+                    r32 X, Y;
+                };
+            };
+            union
+            {
+                r32 z;
+                r32 Z;
+            };
+            
         };
         struct
         {
-            r32 x, y, z;
+            union
+            {
+                r32 R, G, B;
+                r32 r, g, b;
+            };
+            
         };
-        struct
-        {
-            r32 R, G, B;
-        };
+        
         r32 E[3];
         v3(r32 X, r32 Y, r32 Z) : X(X), Y(Y), Z(Z) {}
         v3() : X(0.0f), Y(0.0f), Z(0.0f) {}
@@ -436,8 +456,12 @@ namespace math
                     r32 X, Y, Z;
                 };
             };
-            r32 w;
-            r32 W;
+            union
+            {
+                r32 w;
+                r32 W;
+            };
+            
         };
         struct 
         {
@@ -454,11 +478,15 @@ namespace math
                     r32 R, G, B;
                 };
             };
-            r32 a;
-            r32 A;
+            union
+            {
+                r32 a;
+                r32 A;
+            };
+            
         };
-        
         r32 E[4];
+        
         v4(r32 X, r32 Y, r32 Z, r32 W) : X(X), Y(Y), Z(Z), W(W) {}
         v4() : X(0.0f), Y(0.0f), Z(0.0f), W(0.0f) {}
         v4(r32 I) : E{I,I,I,I} {}
@@ -1256,17 +1284,17 @@ namespace math
     
     inline r32 Length(v2 V)
     {
-        return sqrt(Square(V.X) + Square(V.Y));
+        return sqrt(pow(V.X,2) + pow(V.Y,2));
     }
     
     inline r32 Length(v3 V)
     {
-        return sqrt(Square(V.X) + Square(V.Y) + Square(V.Z));
+        return sqrt(pow(V.X,2) + pow(V.Y,2) + pow(V.Z,2));
     }
     
     inline r32 Length(v4 V)
     {
-        return sqrt(Square(V.X) + Square(V.Y) + Square(V.Z) + Square(V.W));
+        return sqrt(pow(V.X,2) + pow(V.Y,2) + pow(V.Z,2) + pow(V.W,2));
     }
     
     inline v2 Normalize(v2 V)
