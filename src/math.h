@@ -1,6 +1,8 @@
 
 #include <cmath>
 
+
+
 #ifdef GLM
 #include <glm/gtc/matrix_transform.hpp>
 namespace math
@@ -11,6 +13,15 @@ namespace math
     using m4 = glm::mat4;
     using v2i = glm::i32vec2;
     using v3i = glm::i32vec3;
+    
+    PrintMatrix(m4 In)
+    {
+        DEBUG_PRINT("GLM: \n");
+        DEBUG_PRINT("%f %f %f %f\n", In[0][0],In[1][0],In[2][0],In[3][0]);
+        DEBUG_PRINT("%f %f %f %f\n", In[0][1],In[1][1],In[2][1],In[3][1]);
+        DEBUG_PRINT("%f %f %f %f\n", In[0][2],In[1][2],In[2][2],In[3][2]);
+        DEBUG_PRINT("%f %f %f %f\n", In[0][3],In[1][3],In[3][3],In[3][3]);
+    }
     
     r32 Dot(v2 V1, v2 V2)
     {
@@ -997,7 +1008,7 @@ namespace math
             {O.V[1][0],O.V[1][1],O.V[1][2],O.V[1][3]}, 
             {O.V[2][0],O.V[2][1],O.V[2][2],O.V[2][3]}, 
             {O.V[3][0],O.V[3][1],O.V[3][2],O.V[3][3]}} {}
-        /*
+        
         m4 operator*(m4 Other)
         {
             m4 Result(*this);
@@ -1013,10 +1024,16 @@ namespace math
                     Result.V[Inner][Outer] = Sum;
                 }
             }
-            
             return Result;
-        }*/
+        }
         
+        // Only __absolute__ convenience: __always__ better to control order yourself
+        void operator *= (m4 Other)
+        {
+            memcpy(this->V,(Other * (*this)).V, sizeof(r32) * 4 * 4);
+        }
+        
+        /*
         inline m4 operator*(m4 Other)
         {
             m4 Result(*this);
@@ -1038,7 +1055,7 @@ namespace math
             Result.M43 = this->M41 * Other.M13 + this->M42 * Other.M23 + this->M43 * Other.M33 + this->M44 * Other.M43;
             Result.M44 = this->M41 * Other.M14 + this->M42 * Other.M24 + this->M43 * Other.M34 + this->M44 * Other.M44;
             return Result;
-        }
+        }*/
         
         inline v3 operator*(v3& Vec)
         {
@@ -1082,6 +1099,17 @@ namespace math
         }
         
     };
+    
+    
+    void PrintMatrix(m4 In)
+    {
+        DEBUG_PRINT("Math: \n");
+        DEBUG_PRINT("%f %f %f %f\n", In[0][0],In[0][1],In[0][2],In[0][3]);
+        DEBUG_PRINT("%f %f %f %f\n", In[1][0],In[1][1],In[1][2],In[1][3]);
+        DEBUG_PRINT("%f %f %f %f\n", In[2][0],In[2][1],In[2][2],In[2][3]);
+        DEBUG_PRINT("%f %f %f %f\n", In[3][0],In[3][1],In[3][2],In[3][3]);
+        
+    }
     
     
     inline v4 operator*(const v4& V, const m4& M)
@@ -1361,6 +1389,16 @@ namespace math
         return Result;
     }
     
+    inline r32 Deg2Rad(r32 D)
+    {
+        return D * 0.0175f;
+    }
+    
+    inline r32 Rad2Deg(r32 R)
+    {
+        return R * 57.296f;
+    }
+    
     inline m4 XRotate(r32 Angle)
     {
         r32 C = Cos(Angle);
@@ -1379,9 +1417,9 @@ namespace math
         r32 C = Cos(Angle);
         r32 S = Sin(Angle);
         
-        m4 R(C, 0,S,0,
+        m4 R(C, 0,-S,0,
              0, 1,0,0,
-             -S,0,C,0,
+             S,0,C,0,
              0, 0,0,1);
         
         return R;
@@ -1400,17 +1438,18 @@ namespace math
         return R;
     }
     
-    inline m4 CreateRotate(r32 XAngle, r32 YAngle, r32 ZAngle)
+    inline m4 CreateRotation(r32 XAngle, r32 YAngle, r32 ZAngle)
     {
-        m4 R = YRotate(YAngle) * XRotate(XAngle) * ZRotate(ZAngle);
-        return R;
+        m4 Result(1.0f);
+        Result = YRotate(YAngle) * XRotate(XAngle) * ZRotate(ZAngle) * Result;
+        return Result;
     }
     
-    inline m4 Rotate(m4 In, v3 Rotation)
+    inline m4 Rotate(m4 In, r32 A, v3 Axis)
     {
         m4 Result(In);
-        auto R = CreateRotate(Rotation.X,Rotation.Y,Rotation.Z);
-        Result = R * Result;
+        auto R = CreateRotation(A * Axis.X, A * Axis.Y, A * Axis.Z);
+        Result = Result * R;
         return Result;
     }
     
@@ -1515,20 +1554,19 @@ namespace math
     inline v2 ToCartesian(v2 Position)
     {
         v2 TempPt;
-        TempPt.x = (2 * Position.y + Position.x);
+        TempPt.x = (2 * Position.y + Position.x) / 2;
         TempPt.y = (2 * Position.y - Position.x) / 2;
         return TempPt;
     }
     
     inline v2 ToIsometric(v2 Position)
     {
-        // @Cleanup: Move these to a global variable or similar
-        r32 TileWidthHalf = 0.5f;
-        r32 TileHeightHalf = 0.25f;
+        Position.x *= 0.5f;
+        Position.y *= 0.5f;
         
         v2 TempPt;
-        TempPt.x = (Position.x - Position.y) * TileWidthHalf;
-        TempPt.y = (Position.x + Position.y) * TileHeightHalf;
+        TempPt.x = Position.x - Position.y;
+        TempPt.y = (Position.x + Position.y) / 2.0f;
         return TempPt;
     }
     

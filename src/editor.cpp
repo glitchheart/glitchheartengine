@@ -749,7 +749,7 @@ static void EditorUpdateEntities(game_state* GameState, input_controller* InputC
                             math::m4 IsoTransform(1.0f);
                             IsoTransform = math::Translate(IsoTransform, math::v3(0.0f, 0.25f, 0.0f));
                             IsoTransform = Scale(IsoTransform, math::v3((r32)(sqrt(2.0) / 2.0), (r32)(sqrt(2.0) / 4.0), 1.0f));
-                            IsoTransform.rotate(0.0f, 0.0f, 1.0f, -45.0f);
+                            
                             
                             GameState->EditorState.TileBrushWidthField->Active = true;
                             GameState->EditorState.TileBrushHeightField->Active = true;
