@@ -1832,10 +1832,6 @@ void DetermineDeltaForDirection(Look_Direction LookDirection, r32* DX, r32* DY)
 
 void UpdatePlayer(entity* Entity, game_state* GameState, sound_queue* SoundQueue, input_controller* InputController, r64 DeltaTime)
 {
-    // Collision check
-    //collision_info CollisionInfo;
-    //CheckCollision(GameState, Entity, &CollisionInfo);
-    
     // Input + movement
     r32 XInput = GetInputX(InputController);
     r32 YInput = GetInputY(InputController);
@@ -1906,6 +1902,35 @@ void UpdatePlayer(entity* Entity, game_state* GameState, sound_queue* SoundQueue
     {
         b32 Walking = Abs(XInput) > 0.0f || Abs(YInput) > 0.0f || Abs(Entity->Velocity.x) > 0.0f || Abs(Entity->Velocity.y) > 0.0f;
         b32 Attacking = ACTION_DOWN(Action_Attack);
+        
+        r32 InputXRightStick = INPUT_X(Stick_Right);
+        r32 InputYRightStick = INPUT_Y(Stick_Right);
+        
+        if(!Walking && (Abs(InputXRightStick) > 0.1f || Abs(InputYRightStick) > 0.1f))
+        {
+            DX = 0.0f;
+            DY = 0.0f;
+            
+            if(InputXRightStick > 0)
+            {
+                DX = 1;
+            }
+            else if(InputXRightStick < 0)
+            {
+                DX = -1;
+            }
+            
+            if(InputYRightStick > 0)
+            {
+                DY = 1;
+            }
+            else if(InputYRightStick < 0)
+            {
+                DY = -1;
+            }
+            
+            Entity->LookDirection = DetermineDirection(&DX, &DY);
+        }
         
         char* AnimationName = "";
         
@@ -2639,12 +2664,12 @@ static void UpdateEntities(game_state* GameState, input_controller* InputControl
     
     /*if(GameState->ClearTilePositionFrame)
     {
-        for(i32 X = 0; X < GameState->CurrentLevel.Tilemap.Width; X++)
-        {
-            for(i32 Y = 0; Y < GameState->CurrentLevel.Tilemap.Height; Y++)
-            {
-                GameState->EntityTilePositions[X][Y] = 0;
-            }
-        }
+    for(i32 X = 0; X < GameState->CurrentLevel.Tilemap.Width; X++)
+    {
+    for(i32 Y = 0; Y < GameState->CurrentLevel.Tilemap.Height; Y++)
+    {
+    GameState->EntityTilePositions[X][Y] = 0;
+    }
+    }
     }*/
 }
