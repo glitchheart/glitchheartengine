@@ -1,3 +1,6 @@
+#ifndef MATH_H
+#define MATH_H
+
 #include <cmath>
 
 
@@ -1613,3 +1616,4 @@ inline b32 PointInTriangle(math::v2 Pt, math::v2 V1, math::v2 V2, math::v2 V3)
     return ((B1 == B2) && (B2 == B3));
 }
 
+#endif
