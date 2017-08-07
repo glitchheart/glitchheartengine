@@ -51,7 +51,7 @@ struct render_command
         } Line;
         struct
         {
-            char* Text;
+            char Text[256];
             math::v2 Position;
             i32 FontHandle;
             math::rgba Color;
@@ -60,10 +60,11 @@ struct render_command
         struct
         {
             math::v2 Position;
-            math::v2 Size;
+            math::v3 Scale;
             
-            math::v2 TextureCoords;
-            i32 TextureHandle;
+            math::v2 Frame;
+            math::v2 TextureOffset;
+            char* TextureName;
             math::rgba Color;
         } Sprite;
         struct
@@ -82,7 +83,7 @@ struct render_command
 
 #define RENDER_COMMAND_MAX 400
 
-struct render_command_buffer
+struct renderer
 {
     render_command Buffer[RENDER_COMMAND_MAX];
     i32 CommandCount;
