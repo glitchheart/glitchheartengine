@@ -1495,6 +1495,20 @@ namespace math
         return Result;
     }
     
+    inline m4 Perspective(r32 Left, r32 Right, r32 Bottom, r32 Top, r32 Near, r32 Far)
+    {
+        m4 Result(1.0f);
+        Result.M11 = (2 * Near)/(Right - Left);
+        Result.M13 = (Right + Left)/(Right - Left);
+        Result.M22 = (2 * Near)/(Top - Bottom);
+        Result.M23 = (Top + Bottom)/(Top - Bottom);
+        Result.M33 = -((Far + Near)/(Far - Near));
+        Result.M34 = -((2 * Far * Near)/(Far - Near));
+        Result.M44 = 0;
+        Result.M43 = -1;
+        return Result;
+    }
+    
     inline v3 UnProject(v3 In, m4 Model, m4 Projection, v4 Viewport)
     {
         auto Inv = Inverse(Projection * Model);
