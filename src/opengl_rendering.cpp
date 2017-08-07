@@ -2751,7 +2751,7 @@ static void RenderSprite(const render_command& Command, render_state& RenderStat
     glBindVertexArray(0);
 }
 
-static void RenderBuffer(const render_command& Command, render_state& RenderState)
+static void RenderBuffer(const render_command& Command, render_state& RenderState, math::m4 Projection, math::v4 View)
 {
     
 }
@@ -2809,7 +2809,7 @@ static void Render(game_memory* GameMemory)
                         break;
                         case RenderCommand_Buffer:
                         {
-                            RenderBuffer(Command, GameState->RenderState);
+                            RenderBuffer(Command, GameState->RenderState, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
                         }
                         break;
                     }
