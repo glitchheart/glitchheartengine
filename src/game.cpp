@@ -659,7 +659,7 @@ extern "C" UPDATE(Update)
                                                      (GameState->Camera.ViewportHeight / GameState->Camera.Zoom),
                                                      -1.0f,
                                                      1.0f);
-    
+    //GameState->Camera.ViewMatrix = math::Rotate(GameState->Camera.ViewMatrix, 45.0f, math::v3(0.0f, 0.0f, 0.0f));
     GameState->Camera.ViewMatrix = math::Translate(math::m4(1.0f),
                                                    math::v3(-Center.x + GameState->Camera.ViewportWidth / GameState->Camera.Zoom / 2,
                                                             -Center.y + GameState->Camera.ViewportHeight / GameState->Camera.Zoom / 2,
