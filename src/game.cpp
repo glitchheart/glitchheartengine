@@ -173,7 +173,7 @@ extern "C" UPDATE(Update)
     {
         if(GameState->ReloadData->ReloadPlayerFile)
         {
-            LoadPlayerData(GameState, SoundQueue, -1);
+            LoadPlayerData(GameState, SoundQueue, 0);
             GameState->ReloadData->ReloadPlayerFile = false;
         }
         
