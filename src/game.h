@@ -7,6 +7,7 @@
 
 #include "platform.h"
 
+#include "rendering.h"
 #include "opengl_rendering.h"
 #include "sound.h"
 #include "animation.h"
@@ -138,6 +139,7 @@ struct game_state
     Game_Mode GameMode;
     main_menu MainMenu;
     render_state RenderState;
+    renderer Renderer;
     
     camera Camera;
     camera GameCamera;

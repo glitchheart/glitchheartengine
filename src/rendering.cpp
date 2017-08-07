@@ -1,7 +1,7 @@
-                                          static void PushLine(render_command_buffer* CommandBuffer, math::v2 Point1, math::v2 Point2, r32 LineWidth, math::rgba Color, b32 IsUI = false)
+                                          static void PushLine(renderer* Renderer, math::v2 Point1, math::v2 Point2, r32 LineWidth, math::rgba Color, b32 IsUI = false)
                                           {
-                                              render_command* RenderCommand = &CommandBuffer->Buffer[CommandBuffer->CommandCount++];
-                                              RenderCommand->Type = Render_Command_Line;
+                                              render_command* RenderCommand = &Renderer->Buffer[Renderer->CommandCount++];
+                                              RenderCommand->Type = RenderCommand_Line;
                                               RenderCommand->Line.Point1 = Point1;
                                               RenderCommand->Line.Point2 = Point2;
                                               RenderCommand->Line.LineWidth = LineWidth;
@@ -9,14 +9,11 @@
                                               RenderCommand->IsUI = IsUI;
                                           }
                                           
-                                          static void PushText(render_command_buffer* CommandBuffer, const char* Text, math::v2 Position, i32 FontHandle, math::rgba Color, Alignment Alignment = Alignment_Left, b32 IsUI = true)
+                                          static void PushText(renderer* Renderer, const char* Text, math::v2 Position, i32 FontHandle, math::rgba Color, Alignment Alignment = Alignment_Left, b32 IsUI = true)
                                           {
-                                              render_command* RenderCommand = &CommandBuffer->Buffer[CommandBuffer->CommandCount++];
-                                              RenderCommand->Type = Render_Command_Text;
+                                              render_command* RenderCommand = &Renderer->Buffer[Renderer->CommandCount++];
+                                              RenderCommand->Type = RenderCommand_Text;
                                               
-                                              if(RenderCommand->Text)
-                                                  free(Text);
-                                              RenderCommand->Text.Text = (char*)malloc(strlen(Text) + 1);
                                               strcpy(RenderCommand->Text.Text, Text);
                                               
                                               RenderCommand->Text.Position = Position;
@@ -26,10 +23,10 @@
                                               RenderCommand->IsUI = IsUI;
                                           }
                                           
-                                          static void PushFilledRect(render_command_buffer* CommandBuffer, math::v2 Position, math::v2 Size, math::rgba Color, b32 IsUI = false)
+                                          static void PushFilledRect(renderer* Renderer, math::v2 Position, math::v2 Size, math::rgba Color, b32 IsUI = true)
                                           {
-                                              render_command* RenderCommand = &CommandBuffer->Buffer[CommandBuffer->CommandCount++];
-                                              RenderCommand->Type = Render_Command_Rect;
+                                              render_command* RenderCommand = &Renderer->Buffer[Renderer->CommandCount++];
+                                              RenderCommand->Type = RenderCommand_Rect;
                                               RenderCommand->Rect.Position = Position;
                                               RenderCommand->Rect.Size = Size;
                                               RenderCommand->Rect.Color = Color;
@@ -37,10 +34,10 @@
                                               RenderCommand->IsUI = IsUI;
                                           }
                                           
-                                          static void PushOutlinedRect(render_command_buffer* CommandBuffer, math::v2 Position, math::v2 Size, math::rgba Color, b32 IsUI = false)
+                                          static void PushOutlinedRect(renderer* Renderer, math::v2 Position, math::v2 Size, math::rgba Color, b32 IsUI = false)
                                           {
-                                              render_command* RenderCommand = &CommandBuffer->Buffer[CommandBuffer->CommandCount++];
-                                              RenderCommand->Type = Render_Command_Rect;
+                                              render_command* RenderCommand = &Renderer->Buffer[Renderer->CommandCount++];
+                                              RenderCommand->Type = RenderCommand_Rect;
                                               RenderCommand->Rect.Position = Position;
                                               RenderCommand->Rect.Size = Size;
                                               RenderCommand->Rect.Color = Color;
@@ -48,22 +45,31 @@
                                               RenderCommand->IsUI = IsUI;
                                           }
                                           
-                                          static void PushSprite(render_command_buffer* CommandBuffer, math::v2 Position, math::v2 Size, math::v2 TextureCoords, i32 TextureHandle, math::rgba Color, b32 IsUI = false)
+                                          static void PushSprite(renderer* Renderer, math::v2 Position, math::v3 Scale, math::v2 Frame, math::v2 TextureOffset, const char* TextureName, math::rgba Color, b32 IsUI = false)
                                           {
-                                              render_command* RenderCommand = &CommandBuffer->Buffer[CommandBuffer->CommandCount++];
-                                              RenderCommand->Type = Render_Command_Sprite;
+                                              render_command* RenderCommand = &Renderer->Buffer[Renderer->CommandCount++];
+                                              RenderCommand->Type = RenderCommand_Sprite;
                                               RenderCommand->Sprite.Position = Position;
-                                              RenderCommand->Sprite.Size = Size;
-                                              RenderCommand->Sprite.TextureCoords = TextureCoords;
-                                              RenderCommand->Sprite.TextureHandle = TextureHandle;
+                                              RenderCommand->Sprite.Scale = Scale;
+                                              RenderCommand->Sprite.Frame = Frame;
+                                              RenderCommand->Sprite.TextureOffset = TextureOffset;
+                                              
+                                              if(RenderCommand->Sprite.TextureName)
+                                              {
+                                                  free(RenderCommand->Sprite.TextureName);
+                                              }
+                                              
+                                              RenderCommand->Sprite.TextureName = (char*)malloc(sizeof(char) * strlen(TextureName) + 1);
+                                              strcpy(RenderCommand->Sprite.TextureName, TextureName);
+                                              
                                               RenderCommand->Sprite.Color = Color;
                                               RenderCommand->IsUI = IsUI;
                                           }
                                           
-                                          static void PushBuffer(render_command_buffer* CommandBuffer, i32 BufferHandle)
+                                          static void PushBuffer(renderer* Renderer, i32 BufferHandle)
                                           {
-                                              render_command* RenderCommand = &CommandBuffer->Buffer[CommandBuffer->CommandCount++];
-                                              RenderCommand->Type = Render_Command_Buffer;
+                                              render_command* RenderCommand = &Renderer->Buffer[Renderer->CommandCount++];
+                                              RenderCommand->Type = RenderCommand_Buffer;
                                               RenderCommand->Buffer.BufferHandle;
-                                              RenderCommand->IsUI = IsUI;
+                                              RenderCommand->IsUI = false;
                                           }

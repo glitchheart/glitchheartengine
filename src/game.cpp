@@ -1,4 +1,5 @@
 #include "game.h"
+#include "rendering.cpp"
 #include "keycontroller.cpp"
 #include "sound.cpp"
 #define ANIMATION_GAME
@@ -671,6 +672,8 @@ extern "C" UPDATE(Update)
     
     GameUpdateStruct->EntityCount = GameState->EntityCount;
     memcpy(&GameUpdateStruct->EntityPositions,&GameState->EntityPositions,sizeof(math::v2) * NUM_ENTITIES);
+    
+    PushFilledRect(&GameState->Renderer, math::v2(200, 200), math::v2(200, 200), math::rgba(1.0f, 0.0f, 0.0f, 1.0f));
 }
 
  

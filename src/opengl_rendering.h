@@ -9,25 +9,6 @@
 
 #define PIXELS_PER_UNIT 32
 
-enum Shader_Type
-{
-    Shader_Texture,
-    Shader_Tile,
-    Shader_Rect,
-    Shader_TextureRect,
-    Shader_StandardFont,
-    Shader_Spritesheet,
-    Shader_Wireframe,
-    Shader_UISprite,
-    Shader_ErrorSprite,
-    Shader_ErrorUI,
-    Shader_AStarPath,
-    Shader_FrameBuffer,
-    Shader_LightSource,
-    
-    Shader_Count
-};
-
 #define SHADERPAIR(name) {Shader_ ## name, "Shader_" "" #name}
 
 
@@ -177,13 +158,6 @@ struct shader
     GLuint Program;
     GLuint VertexShader;
     GLuint FragmentShader;
-};
-
-enum Alignment
-{
-    Alignment_Left,
-    Alignment_Right,
-    Alignment_Center
 };
 
 struct render_font
