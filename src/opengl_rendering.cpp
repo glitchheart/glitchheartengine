@@ -250,6 +250,48 @@ static void InitializeFreeTypeFont(char* FontPath, int FontSize, FT_Library Libr
     glBindVertexArray(0);
 }
 
+static void RegisterModelBuffers(render_state* RenderState, GLfloat* VertexBuffer, i32 VertexSize, GLint* IndexBuffer, i32 IndexBufferSize, i32* ModelHandle)
+{
+    
+}
+
+static void RegisterBuffer(render_state& RenderState, GLfloat* BufferData, i32 Size, Shader_Type ShaderType, i32 BufferHandle = -1)
+{
+    buffer* Buffer = &RenderState.Buffers[BufferHandle == -1 ? RenderState.BufferCount : BufferHandle];
+    
+    Buffer->Size = Size;
+    if(Buffer->VAO == 0)
+        glGenVertexArrays(1, &Buffer->VAO);
+    
+    glBindVertexArray(Buffer->VAO);
+    
+    if(Buffer->VBO == 0)
+        glGenBuffers(1, &Buffer->VBO);
+    
+    glBindBuffer(GL_ARRAY_BUFFER, Buffer->VBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * Size, BufferData, GL_STATIC_DRAW);
+    
+    if(!RenderState.Shaders[ShaderType].Loaded)
+    {
+        LoadShader(ShaderPaths[ShaderType], &RenderState.Shaders[ShaderType]);
+    }
+    else
+        UseShader(&RenderState.Shaders[ShaderType]);
+    
+    auto PositionLocation = glGetAttribLocation(RenderState.TileShader.Program, "pos");
+    auto TexcoordLocation = glGetAttribLocation(RenderState.TileShader.Program, "texcoord");
+    
+    glEnableVertexAttribArray(PositionLocation);
+    glVertexAttribPointer(PositionLocation, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
+    glEnableVertexAttribArray(TexcoordLocation);
+    glVertexAttribPointer(TexcoordLocation, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *)(2 * sizeof(float)));
+    
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    
+    if(BufferHandle == -1)
+        RenderState.BufferCount++;
+}
+
 static void LoadTilemapBuffer(render_state* RenderState, i32 Layer, GLuint* VAO, GLuint* VBO, i32* Size, const tilemap& Tilemap, Level_Type LevelType)
 {
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, RenderState->QuadIndexBuffer);
@@ -261,80 +303,39 @@ static void LoadTilemapBuffer(render_state* RenderState, i32 Layer, GLuint* VAO,
     r32 Width = (r32)Tilemap.RenderEntity.Texture->Width;
     r32 Height = (r32)Tilemap.RenderEntity.Texture->Height;
     
-    if(LevelType == Level_Orthogonal)
+    for(i32 X = 0; X < Tilemap.Width; X++)
     {
-        for(i32 X = 0; X < Tilemap.Width; X++)
+        for(i32 Y = 0; Y < Tilemap.Height; Y++)
         {
-            for(i32 Y = 0; Y < Tilemap.Height; Y++)
+            tile_data* Tile = &Tilemap.Data[Layer][X][Y];
+            
+            if(Tile->TypeIndex != -1)
             {
-                tile_data* Tile = &Tilemap.Data[Layer][X][Y];
+                r32 TexCoordX = (Tile->TextureOffset.x) / Width;
+                r32 TexCoordY = (Tile->TextureOffset.y) / Height; 
+                r32 TexCoordXHigh = (Tile->TextureOffset.x + Tilemap.TileWidth) / Width;
+                r32 TexCoordYHigh = (Tile->TextureOffset.y + Tilemap.TileHeight) / Height; 
                 
-                if(Tile->TypeIndex != -1)
-                {
-                    r32 TexCoordX = (Tile->TextureOffset.x) / Width;
-                    r32 TexCoordY = (Tile->TextureOffset.y) / Height; 
-                    r32 TexCoordXHigh = (Tile->TextureOffset.x + Tilemap.TileWidth) / Width;
-                    r32 TexCoordYHigh = (Tile->TextureOffset.y + Tilemap.TileHeight) / Height; 
-                    
-                    r32 CorrectY = (r32)Y;
-                    
-                    VertexBuffer[Current++] = (GLfloat)X;
-                    VertexBuffer[Current++] = (GLfloat)CorrectY + 1.0f;
-                    VertexBuffer[Current++] = (GLfloat)TexCoordX;
-                    VertexBuffer[Current++] =  (GLfloat)TexCoordY;
-                    VertexBuffer[Current++] = (GLfloat)X + 1;
-                    VertexBuffer[Current++] = (GLfloat)CorrectY + 1;
-                    VertexBuffer[Current++] = (GLfloat)TexCoordXHigh;
-                    VertexBuffer[Current++] =  (GLfloat)TexCoordY;
-                    VertexBuffer[Current++] = (GLfloat)X + 1;
-                    VertexBuffer[Current++] = (GLfloat)CorrectY;
-                    VertexBuffer[Current++] = (GLfloat)TexCoordXHigh;
-                    VertexBuffer[Current++] = (GLfloat)TexCoordYHigh;
-                    VertexBuffer[Current++] = (GLfloat)X;
-                    VertexBuffer[Current++] = (GLfloat)CorrectY;
-                    VertexBuffer[Current++] =(GLfloat)TexCoordX;
-                    VertexBuffer[Current++] = (GLfloat)TexCoordYHigh;
-                }
-            }
-        }
-        
-    }
-    else
-    {
-        for(i32 X = 0; X < Tilemap.Width; X++)
-        {
-            for(i32 Y = 0; Y < Tilemap.Height; Y++)
-            {
-                tile_data* Tile = &Tilemap.Data[Layer][X][Y];
+                math::v2 CorrectPosition = ToIsometric(math::v2(X, Y));
+                r32 CorrectX = CorrectPosition.x;
+                r32 CorrectY = CorrectPosition.y;
                 
-                if(Tile->TypeIndex != -1)
-                {
-                    r32 TexCoordX = (Tile->TextureOffset.x) / Width;
-                    r32 TexCoordY = (Tile->TextureOffset.y) / Height; 
-                    r32 TexCoordXHigh = (Tile->TextureOffset.x + Tilemap.TileWidth) / Width;
-                    r32 TexCoordYHigh = (Tile->TextureOffset.y + Tilemap.TileHeight) / Height; 
-                    
-                    math::v2 CorrectPosition = ToIsometric(math::v2(X, Y));
-                    r32 CorrectX = CorrectPosition.x;
-                    r32 CorrectY = CorrectPosition.y;
-                    
-                    VertexBuffer[Current++] = (GLfloat)CorrectX;
-                    VertexBuffer[Current++] = (GLfloat)CorrectY + 0.5f;
-                    VertexBuffer[Current++] = (GLfloat)TexCoordX;
-                    VertexBuffer[Current++] =  (GLfloat)TexCoordY;
-                    VertexBuffer[Current++] = (GLfloat)CorrectX + 1;
-                    VertexBuffer[Current++] = (GLfloat)CorrectY + 0.5f;
-                    VertexBuffer[Current++] = (GLfloat)TexCoordXHigh;
-                    VertexBuffer[Current++] =  (GLfloat)TexCoordY;
-                    VertexBuffer[Current++] = (GLfloat)CorrectX + 1;
-                    VertexBuffer[Current++] = (GLfloat)CorrectY;
-                    VertexBuffer[Current++] = (GLfloat)TexCoordXHigh;
-                    VertexBuffer[Current++] = (GLfloat)TexCoordYHigh;
-                    VertexBuffer[Current++] = (GLfloat)CorrectX;
-                    VertexBuffer[Current++] = (GLfloat)CorrectY;
-                    VertexBuffer[Current++] =(GLfloat)TexCoordX;
-                    VertexBuffer[Current++] = (GLfloat)TexCoordYHigh;
-                }
+                VertexBuffer[Current++] = (GLfloat)CorrectX;
+                VertexBuffer[Current++] = (GLfloat)CorrectY + 0.5f;
+                VertexBuffer[Current++] = (GLfloat)TexCoordX;
+                VertexBuffer[Current++] =  (GLfloat)TexCoordY;
+                VertexBuffer[Current++] = (GLfloat)CorrectX + 1;
+                VertexBuffer[Current++] = (GLfloat)CorrectY + 0.5f;
+                VertexBuffer[Current++] = (GLfloat)TexCoordXHigh;
+                VertexBuffer[Current++] =  (GLfloat)TexCoordY;
+                VertexBuffer[Current++] = (GLfloat)CorrectX + 1;
+                VertexBuffer[Current++] = (GLfloat)CorrectY;
+                VertexBuffer[Current++] = (GLfloat)TexCoordXHigh;
+                VertexBuffer[Current++] = (GLfloat)TexCoordYHigh;
+                VertexBuffer[Current++] = (GLfloat)CorrectX;
+                VertexBuffer[Current++] = (GLfloat)CorrectY;
+                VertexBuffer[Current++] =(GLfloat)TexCoordX;
+                VertexBuffer[Current++] = (GLfloat)TexCoordYHigh;
             }
         }
     }
@@ -880,7 +881,7 @@ static void LoadTextures(render_state* RenderState, const char* Directory)
         Texture->Name = (char*)malloc((strlen(DirData.FileNames[FileIndex]) + 1) * sizeof(char));
         strcpy(Texture->Name, DirData.FileNames[FileIndex]);
         LoadTexture(DirData.FilePaths[FileIndex], Texture);
-        RenderState->Textures[Texture->Name] =  Texture;
+        RenderState->Textures[Texture->Name] = Texture;
     }
     
     free(DirData.FilePaths);
@@ -904,6 +905,11 @@ static void LoadTilesheetTextures(render_state* RenderState)
             
             char* Path = Concat(Concat("../assets/textures/tilesheets/", RenderState->Tilesheets[Index].Name), ".png");
             LoadTexture(Path, &RenderState->Tilesheets[Index].Texture);
+            
+            RenderState->Tilesheets[Index].Texture.Name = (char*)malloc((strlen(RenderState->Tilesheets[Index].Name) + 1) * sizeof(char));
+            strcpy(RenderState->Tilesheets[Index].Texture.Name, RenderState->Tilesheets[Index].Name);
+            
+            RenderState->Textures[RenderState->Tilesheets[Index].Texture.Name] = &RenderState->Tilesheets[Index].Texture;
             
             free(Path);
             Index++;
@@ -2021,17 +2027,17 @@ static void RenderInGameMode(game_state* GameState)
                 }
             }
             
-            for(i32 Index = 0; Index < GameState->RenderState.RenderEntityCount; Index++) 
+            /*for(i32 Index = 0; Index < GameState->RenderState.RenderEntityCount; Index++) 
             {
-                render_entity* Render = &GameState->RenderState.RenderEntities[Index];
-                
-                if(Render->RenderType == Render_Type_Entity)
-                    Render->Entity->RenderEntityHandle = Index;
-                else if(Render->RenderType == Render_Type_Object)
-                    Render->Object->RenderEntityHandle = Index;
-                
-                RenderEntity(GameState, Render, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
-            }
+            render_entity* Render = &GameState->RenderState.RenderEntities[Index];
+            
+            if(Render->RenderType == Render_Type_Entity)
+            Render->Entity->RenderEntityHandle = Index;
+            else if(Render->RenderType == Render_Type_Object)
+            Render->Object->RenderEntityHandle = Index;
+            
+            RenderEntity(GameState, Render, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
+            }*/
         }
     }
 }
@@ -2040,7 +2046,7 @@ void RenderGame(game_state* GameState)
 {
     if(GameState->GameMode == Mode_InGame || (GameState->GameMode == Mode_Editor && !GameState->EditorState.MenuOpen))
     {
-        RenderInGameMode(GameState);
+        //RenderInGameMode(GameState);
     }
 }
 
@@ -2751,9 +2757,79 @@ static void RenderSprite(const render_command& Command, render_state& RenderStat
     glBindVertexArray(0);
 }
 
-static void RenderBuffer(const render_command& Command, render_state& RenderState, math::m4 Projection, math::v4 View)
+static void RenderBuffer(const render_command& Command, render_state& RenderState, math::m4 Projection, math::m4 View)
 {
+    buffer Buffer = RenderState.Buffers[Command.Buffer.BufferHandle];
     
+    glBindVertexArray(Buffer.VAO);
+    
+    texture* Texture = RenderState.Textures[Command.Buffer.TextureName];
+    if (RenderState.BoundTexture != Texture->TextureHandle)
+    {
+        glBindTexture(GL_TEXTURE_2D, Texture->TextureHandle);
+        RenderState.BoundTexture = Texture->TextureHandle;
+    }
+    
+    auto Shader = RenderState.TileShader;
+    UseShader(&Shader);
+    
+    math::m4 Model(1.0f);
+    Model = math::Scale(Model, math::v3(1, 1, 1.0f));
+    
+    SetFloatUniform(Shader.Program, "isUI", 0);
+    SetMat4Uniform(Shader.Program, "Projection", Projection);
+    SetMat4Uniform(Shader.Program, "View", View);
+    SetMat4Uniform(Shader.Program, "Model", Model);
+    SetVec4Uniform(Shader.Program, "Color", math::rgba(1.0f, 1.0f, 1.0f, 1.0f));
+    
+    glDrawArrays(GL_QUADS, 0, Buffer.Size / 4);
+    glBindVertexArray(0);
+}
+
+static void Render(render_state& RenderState, renderer& Renderer)
+{
+    for(i32 Index = RenderState.BufferCount; Index < Renderer.BufferCount; Index++)
+    {
+        buffer_data Data = Renderer.Buffers[Index];
+        RegisterBuffer(RenderState, Data.Buffer, Data.Size, Data.ShaderType, Data.ExistingHandle);
+        free(Data.Buffer);
+    }
+    
+    for(i32 Index = 0; Index < Renderer.CommandCount; Index++)
+    {
+        const render_command& Command = Renderer.Buffer[Index];
+        
+        switch(Command.Type)
+        {
+            case RenderCommand_Line:
+            {
+                RenderLine(Command, RenderState, Renderer.Camera.ProjectionMatrix, Renderer.Camera.ViewMatrix);
+            }
+            break;
+            case RenderCommand_Text:
+            {
+                RenderText(Command, RenderState);
+            }
+            break;
+            case RenderCommand_Rect:
+            {
+                RenderRect(Command, RenderState, Renderer.Camera.ProjectionMatrix, Renderer.Camera.ViewMatrix);
+            }
+            break;
+            case RenderCommand_Sprite:
+            {
+                RenderSprite(Command, RenderState, Renderer.Camera.ProjectionMatrix, Renderer.Camera.ViewMatrix);
+            }
+            break;
+            case RenderCommand_Buffer:
+            {
+                RenderBuffer(Command, RenderState, Renderer.Camera.ProjectionMatrix, Renderer.Camera.ViewMatrix);
+            }
+            break;
+        }
+    }
+    
+    Renderer.CommandCount = 0;
 }
 
 static void Render(game_memory* GameMemory)
@@ -2781,39 +2857,7 @@ static void Render(game_memory* GameMemory)
             if(GameState->RenderGame)
             {
                 RenderGame(GameState);
-                
-                for(i32 Index = 0; Index < GameState->Renderer.CommandCount; Index++)
-                {
-                    const render_command& Command = GameState->Renderer.Buffer[Index];
-                    switch(Command.Type)
-                    {
-                        case RenderCommand_Line:
-                        {
-                            RenderLine(Command, GameState->RenderState, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
-                        }
-                        break;
-                        case RenderCommand_Text:
-                        {
-                            RenderText(Command, GameState->RenderState);
-                        }
-                        break;
-                        case RenderCommand_Rect:
-                        {
-                            RenderRect(Command, GameState->RenderState, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
-                        }
-                        break;
-                        case RenderCommand_Sprite:
-                        {
-                            RenderSprite(Command, GameState->RenderState, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
-                        }
-                        break;
-                        case RenderCommand_Buffer:
-                        {
-                            RenderBuffer(Command, GameState->RenderState, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
-                        }
-                        break;
-                    }
-                }
+                Render(GameState->RenderState, GameState->Renderer);
             }
             
             RenderLightSources(GameState);

@@ -53,6 +53,7 @@ using r64 = double;
 #include "gmap.h"
 #include "gmap.cpp"
 #include "keycontroller.h"
+#include "rendering.h"
 
 struct timer
 {

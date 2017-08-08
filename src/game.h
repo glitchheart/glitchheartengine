@@ -6,8 +6,6 @@
 #include <cstdio>
 
 #include "platform.h"
-
-#include "rendering.h"
 #include "opengl_rendering.h"
 #include "sound.h"
 #include "animation.h"
@@ -24,35 +22,6 @@
 #include "ui.h"
 
 GENERIC_MAP(animation,animation*, char*, StrCmp, NULL, "%s", STR_ASSIGN)
-
-enum Fading_Mode
-{
-    Fading_None,
-    Fading_In,
-    Fading_Out,
-    Fading_OutIn
-};
-
-struct camera
-{
-    i32 ViewportWidth;
-    i32 ViewportHeight;
-    r32 Zoom; //NOTE(Daniel) The higher the number the closer you are zoomed in. 1.0f is NORMAL
-    math::v2 Center;
-    math::v2 CenterTarget;
-    r32 FollowSpeed;
-    math::m4 ViewMatrix;
-    math::m4 ProjectionMatrix;
-    timer ScreenShakeTimer;
-    
-    Fading_Mode FadingMode = Fading_None;
-    math::v3 FadingTint;
-    
-    b32 FadingIn;
-    r32 EndAlpha;
-    r32 FadingAlpha = 0.0f;
-    r32 FadingSpeed;
-};
 
 enum Game_Mode
 {

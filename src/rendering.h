@@ -34,6 +34,20 @@ enum Alignment
     Alignment_Center
 };
 
+struct shader
+{
+    Shader_Type Type;
+    b32 Loaded;
+    u32 Program;
+    u32 VertexShader;
+    u32 FragmentShader;
+};
+
+struct model
+{
+    i32 BufferHandle;
+};
+
 struct render_command
 {
     Render_Command_Type Type;
@@ -61,7 +75,6 @@ struct render_command
         {
             math::v2 Position;
             math::v3 Scale;
-            
             math::v2 Frame;
             math::v2 TextureOffset;
             char* TextureName;
@@ -77,15 +90,59 @@ struct render_command
         struct
         {
             i32 BufferHandle;
+            char* TextureName;
         } Buffer;
     };
 };
 
+enum Fading_Mode
+{
+    Fading_None,
+    Fading_In,
+    Fading_Out,
+    Fading_OutIn
+};
+
+struct camera
+{
+    i32 ViewportWidth;
+    i32 ViewportHeight;
+    r32 Zoom;
+    math::v2 Center;
+    math::v2 CenterTarget;
+    r32 FollowSpeed;
+    math::m4 ViewMatrix;
+    math::m4 ProjectionMatrix;
+    
+    Fading_Mode FadingMode = Fading_None;
+    math::v3 FadingTint;
+    
+    b32 FadingIn;
+    r32 EndAlpha;
+    r32 FadingAlpha = 0.0f;
+    r32 FadingSpeed;
+};
+
 #define RENDER_COMMAND_MAX 400
+#define BUFFER_ARRAY_SIZE 20
+
+struct buffer_data
+{
+    r32* Buffer;
+    i32 Size;
+    Shader_Type ShaderType;
+    i32 ExistingHandle = -1;
+};
 
 struct renderer
 {
     render_command Buffer[RENDER_COMMAND_MAX];
     i32 CommandCount;
+    
+    buffer_data Buffers[BUFFER_ARRAY_SIZE];
+    i32 BufferHandles[BUFFER_ARRAY_SIZE];
+    i32 BufferCount;
+    
+    camera Camera;
 };
 

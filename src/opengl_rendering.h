@@ -152,14 +152,6 @@ struct render_entity
     i32 RenderLayer = 0;
 };
 
-struct shader
-{
-    Shader_Type Type;
-    GLuint Program;
-    GLuint VertexShader;
-    GLuint FragmentShader;
-};
-
 struct render_font
 {
     FT_Face Face;
@@ -193,6 +185,13 @@ struct point
     GLfloat Y;
     GLfloat S;
     GLfloat T;
+};
+
+struct buffer
+{
+    GLuint VAO;
+    GLuint VBO;
+    GLint Size;
 };
 
 struct render_state
@@ -319,6 +318,9 @@ struct render_state
         0.0f, 0.0f,
         0.0f, 1.0f
     };
+    
+    buffer Buffers[BUFFER_ARRAY_SIZE];
+    i32 BufferCount;
     
     GLuint AStarPathVAO;
     GLuint AStarPathQuadVBO;
