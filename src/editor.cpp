@@ -813,6 +813,7 @@ static void EditorUpdateEntities(game_state* GameState, input_controller* InputC
                                                     }
                                                     
                                                     Tilemap->RenderInfo.Dirty = true;
+                                                    LoadTilemapBuffer(GameState->Renderer, *Tilemap);
                                                 }
                                             }
                                         }

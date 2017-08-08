@@ -231,6 +231,7 @@ int main(void)
         game_update_return GameUpdateStruct = {};Game.Update(DeltaTime, &GameMemory, &InputController, &SoundQueue, &GameUpdateStruct, &SoundEffects);
         
         CheckLevelVAO(&GameMemory);
+        
         Render(&GameMemory);
         PlaySounds(&SoundDevice, &SoundQueue, GameUpdateStruct.EntityPositions, GameUpdateStruct.EntityCount);
         

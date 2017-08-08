@@ -145,8 +145,8 @@ static void Hit(game_state* GameState, sound_queue* SoundQueue, entity* ByEntity
         }
         else
         {
-            if(TimerDone(GameState, GameState->GameCamera.ScreenShakeTimer))
-                StartTimer(GameState, GameState->GameCamera.ScreenShakeTimer);
+            //if(TimerDone(GameState, GameState->GameCamera.ScreenShakeTimer))
+            //StartTimer(GameState, GameState->GameCamera.ScreenShakeTimer);
             
             //StartTimer(GameState, HitEntity->StaggerCooldownTimer);
             

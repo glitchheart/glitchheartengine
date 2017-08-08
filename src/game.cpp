@@ -61,6 +61,117 @@ static void LoadGameDataFile(game_state* GameState)
     }
 }
 
+int CompareFunction(const void* a, const void* b)
+{
+    render_entity APtr = *(render_entity*)a;
+    render_entity BPtr = *(render_entity*)b;
+    
+    math::v2 PositionA = APtr.RenderType == Render_Type_Entity ? APtr.Entity->Position : APtr.Object->Position;
+    math::v2 PositionB = BPtr.RenderType == Render_Type_Entity ? BPtr.Entity->Position : BPtr.Object->Position;
+    
+    PositionA = ToIsometric(PositionA);
+    PositionB = ToIsometric(PositionB);
+    
+    if(APtr.Background || PositionA.y > PositionB.y)
+        return -1;
+    if(BPtr.Background || PositionA.y < PositionB.y)
+        return 1;
+    return 0;
+}
+
+static void PushTilemapRenderCommands(game_state* GameState)
+{
+    PushBuffer(GameState->Renderer, GameState->CurrentLevel.Tilemap.BufferHandle, GameState->CurrentLevel.Tilemap.RenderEntity.Texture->Name);
+}
+
+static void PushEntityRenderCommands(game_state* GameState)
+{
+    qsort(GameState->RenderState.RenderEntities, GameState->RenderState.RenderEntityCount, sizeof(render_entity), CompareFunction);
+    
+    for(i32 Index = 0; Index < GameState->RenderState.RenderEntityCount; Index++) 
+    {
+        render_entity* RenderEntity = &GameState->RenderState.RenderEntities[Index];
+        
+        if(RenderEntity->RenderType == Render_Type_Entity)
+            RenderEntity->Entity->RenderEntityHandle = Index;
+        else if(RenderEntity->RenderType == Render_Type_Object)
+            RenderEntity->Object->RenderEntityHandle = Index;
+        
+        b32 Active = RenderEntity->RenderType == Render_Type_Entity ? RenderEntity->Entity->Active : RenderEntity->Object->Active;
+        math::v2 Position = RenderEntity->RenderType == Render_Type_Entity ? RenderEntity->Entity->Position : RenderEntity->Object->Position;
+        math::v2 Center = RenderEntity->RenderType == Render_Type_Entity ? RenderEntity->Entity->Center : RenderEntity->Object->Center;
+        r32 EntityScale = RenderEntity->RenderType == Render_Type_Entity ? RenderEntity->Entity->Scale : RenderEntity->Object->Scale;
+        i32 LightSourceHandle = RenderEntity->RenderType == Render_Type_Entity ? RenderEntity->Entity->LightSourceHandle : RenderEntity->Object->LightSourceHandle;
+        
+        animation* CurrentAnimation =  RenderEntity->RenderType == Render_Type_Entity ? RenderEntity->Entity->CurrentAnimation : RenderEntity->Object->CurrentAnimation;
+        animation_info AnimationInfo = RenderEntity->RenderType == Render_Type_Entity ? RenderEntity->Entity->AnimationInfo : RenderEntity->Object->AnimationInfo;
+        
+        math::v2 CurrentPosition;
+        math::v3 CurrentScale;
+        math::v2 CurrentFrame;
+        math::v2 CurrentTextureOffset;
+        math::rgba CurrentColor;
+        char* CurrentTexture;
+        
+        if(CurrentAnimation)
+        {
+            r32 WidthInUnits = (r32)CurrentAnimation->FrameSize.x / (r32)PIXELS_PER_UNIT;
+            r32 HeightInUnits = (r32)CurrentAnimation->FrameSize.y / (r32)PIXELS_PER_UNIT;
+            
+            math::v3 Scale = math::v3(WidthInUnits * EntityScale, HeightInUnits * EntityScale, 1);
+            
+            auto CorrectPos = ToIsometric(Position);
+            
+            CorrectPos.x -= CurrentAnimation->Center.x * Scale.x;
+            CorrectPos.y -= CurrentAnimation->Center.y * Scale.y;
+            
+            // @Cleanup: Move these to a global variable or similar
+            r32 TileWidthHalf = 0.5f;
+            r32 TileHeightHalf = 0.25f;
+            
+            CorrectPos.x += TileWidthHalf; //We want the sprite to be centered in the tile
+            CorrectPos.y += TileHeightHalf;
+            
+            if(LightSourceHandle != -1)
+            {
+                GameState->LightSources[LightSourceHandle].Pointlight.RenderPosition = CorrectPos + math::v2(CurrentAnimation->Center.x * Scale.x, CurrentAnimation->Center.y * Scale.y);
+            }
+            
+            CurrentPosition = CorrectPos;
+            CurrentScale = Scale;
+            
+            animation* Animation = CurrentAnimation;
+            CurrentTexture = Animation->Texture->Name;
+            
+            CurrentTextureOffset = math::v2(Animation->Frames[AnimationInfo.FrameIndex].X, Animation->Frames[AnimationInfo.FrameIndex].Y);
+            
+            CurrentColor = RenderEntity->Color;
+            CurrentFrame = Animation->FrameSize;
+        } 
+        else 
+        {
+            auto CorrectPos = ToIsometric(math::v2(Position.x, Position.y));
+            
+            r32 CorrectX = CorrectPos.x;
+            r32 CorrectY = CorrectPos.y;
+            
+            CurrentPosition = CorrectPos;
+            
+            r32 WidthInUnits = RenderEntity->Texture->Width / (r32)PIXELS_PER_UNIT;
+            r32 HeightInUnits = RenderEntity->Texture->Height / (r32)PIXELS_PER_UNIT;
+            
+            CurrentScale = math::v3(WidthInUnits * EntityScale, HeightInUnits * EntityScale, 1);
+            
+            CurrentTexture = RenderEntity->Texture->Name;
+            
+            CurrentFrame = math::v2(RenderEntity->Texture->Width, RenderEntity->Texture->Height);
+        }
+        
+        // @Incomplete: Glow and special parameters
+        PushSprite(GameState->Renderer, CurrentPosition, CurrentScale, CurrentFrame, CurrentTextureOffset, CurrentTexture, CurrentColor);
+    }
+}
+
 extern "C" UPDATE(Update)
 {
     game_state* GameState = (game_state*)GameMemory->PermanentStorage;
@@ -68,6 +179,9 @@ extern "C" UPDATE(Update)
     
     if(!GameState->IsInitialized)
     {
+        model Model;
+        LoadOBJFile("../assets/test.obj", &Model);
+        
         if(GameState->ShouldReload)
         {
             GameState->InitialZoom = GameMemory->ConfigData.Zoom;
@@ -139,8 +253,6 @@ extern "C" UPDATE(Update)
         GameState->GameCamera.Zoom = GameState->InitialZoom;
         GameState->GameCamera.ViewportWidth = GameState->RenderState.WindowWidth;
         GameState->GameCamera.ViewportHeight = GameState->RenderState.WindowHeight;
-        GameState->GameCamera.ScreenShakeTimer.TimerHandle = -1;
-        GameState->GameCamera.ScreenShakeTimer.TimerMax = 0.2f;
         GameState->GameCamera.FollowSpeed = 10.0f; 
         GameState->GameCamera.FadingSpeed = 0.6f;
         
@@ -485,14 +597,14 @@ extern "C" UPDATE(Update)
                 
                 TickTimers(GameState, DeltaTime);
                 
-                if(!TimerDone(GameState, GameState->GameCamera.ScreenShakeTimer))
+                /*if(!TimerDone(GameState, GameState->GameCamera.ScreenShakeTimer))
                 {
-                    r32 Radius = 0.05f;
-                    i32 RandomAngle = rand() % 360;
-                    math::v2 Offset = math::v2(sin(RandomAngle) * Radius, cos(RandomAngle) * Radius);
-                    Center.x += Offset.x / 1.5f;
-                    Center.y += Offset.y;
-                }
+                r32 Radius = 0.05f;
+                i32 RandomAngle = rand() % 360;
+                math::v2 Offset = math::v2(sin(RandomAngle) * Radius, cos(RandomAngle) * Radius);
+                Center.x += Offset.x / 1.5f;
+                Center.y += Offset.y;
+                }*/
                 
                 if(!GameState->GodModeOn)
                 {
@@ -673,7 +785,9 @@ extern "C" UPDATE(Update)
     GameUpdateStruct->EntityCount = GameState->EntityCount;
     memcpy(&GameUpdateStruct->EntityPositions,&GameState->EntityPositions,sizeof(math::v2) * NUM_ENTITIES);
     
-    PushFilledRect(&GameState->Renderer, math::v2(200, 200), math::v2(200, 200), math::rgba(1.0f, 0.0f, 0.0f, 1.0f));
+    GameState->Renderer.Camera = GameState->Camera;
+    PushTilemapRenderCommands(GameState);
+    PushEntityRenderCommands(GameState);
 }
 
  
