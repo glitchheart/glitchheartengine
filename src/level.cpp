@@ -367,7 +367,7 @@
                                       }
                                       Level->Tilemap.RenderInfo.Dirty = true;
                                       
-                                      GameState->Camera.Center = GameState->Entities[0].Position;
+                                      GameState->Camera.Center = math::v3(GameState->Entities[0].Position.x, GameState->Entities[0].Position.y, GameState->Camera.Center.z);
                                       
                                       return true;
                                   }

@@ -70,23 +70,37 @@
                                           {
                                               render_command* RenderCommand = &Renderer.Buffer[Renderer.CommandCount++];
                                               RenderCommand->Type = RenderCommand_Buffer;
-                                              RenderCommand->Buffer.BufferHandle;
+                                              RenderCommand->Buffer.BufferHandle = BufferHandle;
                                               RenderCommand->Buffer.TextureName = TextureName;
+                                              RenderCommand->IsUI = false;
+                                          }
+                                          
+                                          static void PushModel(renderer& Renderer, model& Model)
+                                          {
+                                              render_command* RenderCommand = &Renderer.Buffer[Renderer.CommandCount++];
+                                              RenderCommand->Type = RenderCommand_Model;
+                                              RenderCommand->Model.Position = Model.Position;
+                                              RenderCommand->Model.Scale = Model.Scale;
+                                              RenderCommand->Model.Rotation = Model.Rotation;
+                                              RenderCommand->Model.BufferHandle = Model.BufferHandle;
+                                              RenderCommand->Model.Color = math::rgba(1.0f, 0.0f, 0.0f, 1.0f);
+                                              //RenderCommand->Model.TextureName = TextureName;
                                               RenderCommand->IsUI = false;
                                           }
                                           
                                           static void LoadBuffer(renderer& Renderer, r32* Buffer, i32 BufferSize, i32* BufferHandle)
                                           {
                                               buffer_data Data = {};
-                                              Data.Buffer = Buffer;
-                                              Data.Size = BufferSize;
+                                              Data.VertexBuffer = Buffer;
+                                              Data.VertexBufferSize = BufferSize;
+                                              Data.IndexBufferSize = 0;
                                               Renderer.Buffers[Renderer.BufferCount] = Data;
                                               
                                               if(*BufferHandle == 0)
                                                   *BufferHandle = Renderer.BufferCount++;
                                           }
                                           
-                                          static void LoadOBJFile(char* FilePath, model* Model)
+                                          static void LoadOBJFile(renderer& Renderer, char* FilePath, model* Model)
                                           {
                                               FILE* File = fopen(FilePath, "r");
                                               
@@ -94,6 +108,10 @@
                                               
                                               if(File)
                                               {
+                                                  buffer_data Data = {};
+                                                  
+                                                  Model->BufferHandle = Renderer.BufferCount++;
+                                                  
                                                   i32 VertexSize = 0;
                                                   i32 IndexSize = 0;
                                                   
@@ -109,8 +127,11 @@
                                                       }
                                                   }
                                                   
-                                                  r32* VertexBuffer = (r32*)malloc(sizeof(r32) * VertexSize * 3);
-                                                  i32* IndexBuffer = (i32*)malloc(sizeof(i32) * IndexSize * 3);
+                                                  Data.VertexBuffer = (r32*)malloc(sizeof(r32) * VertexSize * 3);
+                                                  Data.IndexBuffer = (i32*)malloc(sizeof(i32) * IndexSize * 3);
+                                                  
+                                                  Data.VertexBufferSize = VertexSize * 3;
+                                                  Data.IndexBufferSize = IndexSize * 3;
                                                   
                                                   rewind(File);
                                                   
@@ -123,9 +144,9 @@
                                                           r32 Z;
                                                           
                                                           sscanf(LineBuffer, "v %f %f %f", &X, &Y, &Z);
-                                                          *VertexBuffer++ = X;
-                                                          *VertexBuffer++ = Y;
-                                                          *VertexBuffer++ = Z;
+                                                          *Data.VertexBuffer++ = X;
+                                                          *Data.VertexBuffer++ = Y;
+                                                          *Data.VertexBuffer++ = Z;
                                                       }
                                                       else if(StartsWith(LineBuffer, "f "))
                                                       {
@@ -134,13 +155,17 @@
                                                           i32 Third;
                                                           
                                                           sscanf(LineBuffer, "f %d %d %d", &First, &Second, &Third);
-                                                          *IndexBuffer++ = First;
-                                                          *IndexBuffer++ = Second;
-                                                          *IndexBuffer++ = Third;
+                                                          *Data.IndexBuffer++ = First;
+                                                          *Data.IndexBuffer++ = Second;
+                                                          *Data.IndexBuffer++ = Third;
                                                       }
-                                                      fclose(File);
-                                                      
-                                                      //RegisterModelBuffers(VertexBuffer, VertexSize, IndexBuffer, IndexSize, &Model->BufferHandle);
                                                   }
+                                                  
+                                                  fclose(File);
+                                                  
+                                                  Data.VertexBuffer -= Data.VertexBufferSize;
+                                                  Data.IndexBuffer -= Data.IndexBufferSize;
+                                                  
+                                                  Renderer.Buffers[Renderer.BufferCount - 1] = Data;
                                               }
                                       }

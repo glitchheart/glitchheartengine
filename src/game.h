@@ -72,6 +72,8 @@ struct character_data
 
 struct game_state
 {
+    model* TESTMODEL;
+    
     b32 IsInitialized;
     b32 Paused;
     b32 ShouldReload;
