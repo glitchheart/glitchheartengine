@@ -875,7 +875,7 @@ static void EditorUpdateEntities(game_state* GameState, input_controller* InputC
                     
                     math::v2 Direction = math::v2(InputController->MouseX - GameState->EditorState.LastKnownMouseX, InputController->MouseY - GameState->EditorState.LastKnownMouseY);
                     
-                    GameState->EditorCamera.Center -= math::v2(Direction.x / GameState->EditorCamera.Zoom * GameState->EditorState.PanningSpeed * DeltaTime, Direction.y / GameState->EditorCamera.Zoom * -GameState->EditorState.PanningSpeed * DeltaTime);
+                    GameState->EditorCamera.Center -= math::v3(Direction.x / GameState->EditorCamera.Zoom * GameState->EditorState.PanningSpeed * DeltaTime, Direction.y / GameState->EditorCamera.Zoom * -GameState->EditorState.PanningSpeed * DeltaTime, 0);
                     
                     GameState->EditorState.LastKnownMouseX = (r32)InputController->MouseX;
                     GameState->EditorState.LastKnownMouseY = (r32)InputController->MouseY;

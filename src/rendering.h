@@ -13,6 +13,7 @@ enum Shader_Type
     Shader_AStarPath,
     Shader_FrameBuffer,
     Shader_LightSource,
+    Shader_SimpleModel,
     
     Shader_Count
 };
@@ -24,6 +25,7 @@ enum Render_Command_Type
     RenderCommand_Sprite,
     RenderCommand_Rect,
     RenderCommand_Buffer,
+    RenderCommand_Model,
     RenderCommand_Count
 };
 
@@ -45,6 +47,10 @@ struct shader
 
 struct model
 {
+    math::v3 Position;
+    math::v3 Scale;
+    math::v3 Rotation;
+    math::rgba Color;
     i32 BufferHandle;
 };
 
@@ -92,6 +98,14 @@ struct render_command
             i32 BufferHandle;
             char* TextureName;
         } Buffer;
+        struct
+        {
+            math::v3 Position;
+            math::v3 Scale;
+            math::v3 Rotation;
+            i32 BufferHandle;
+            math::rgba Color;
+        } Model;
     };
 };
 
@@ -108,7 +122,7 @@ struct camera
     i32 ViewportWidth;
     i32 ViewportHeight;
     r32 Zoom;
-    math::v2 Center;
+    math::v3 Center;
     math::v2 CenterTarget;
     r32 FollowSpeed;
     math::m4 ViewMatrix;
@@ -128,8 +142,11 @@ struct camera
 
 struct buffer_data
 {
-    r32* Buffer;
-    i32 Size;
+    r32* VertexBuffer;
+    i32 VertexBufferSize;
+    i32* IndexBuffer;
+    i32 IndexBufferSize;
+    
     Shader_Type ShaderType;
     i32 ExistingHandle = -1;
 };

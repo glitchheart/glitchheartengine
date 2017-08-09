@@ -179,8 +179,12 @@ extern "C" UPDATE(Update)
     
     if(!GameState->IsInitialized)
     {
-        model Model;
-        LoadOBJFile("../assets/test.obj", &Model);
+        GameState->TESTMODEL = (model*)malloc(sizeof(model));
+        
+        LoadOBJFile(GameState->Renderer, "../assets/cube.obj", GameState->TESTMODEL);
+        
+        GameState->TESTMODEL->Position = math::v3(0, 0, -1);
+        GameState->TESTMODEL->Scale = math::v3(1, 1, 1);
         
         if(GameState->ShouldReload)
         {
@@ -263,15 +267,14 @@ extern "C" UPDATE(Update)
         if(GameState->CurrentLevel.Type == Level_Isometric)
         {
             auto PlayerPos = GameState->Entities[0].Position;
-            GameState->GameCamera.Center = math::v2((PlayerPos.x + PlayerPos.y) * 0.5f,(PlayerPos.x - PlayerPos.y) * 0.25f);; // Set center to player's position!
+            GameState->GameCamera.Center = math::v3((PlayerPos.x + PlayerPos.y) * 0.5f,(PlayerPos.x - PlayerPos.y) * 0.25f, GameState->GameCamera.Center.z); // Set center to player's position!
             GameState->GameCamera.CenterTarget = math::v2((PlayerPos.x + PlayerPos.y) * 0.5f,(PlayerPos.x - PlayerPos.y) * 0.25f);
         }
         else
         {
-            GameState->GameCamera.Center = GameState->Entities[0].Position; // Set center to player's position!
+            GameState->GameCamera.Center = math::v3(GameState->Entities[0].Position.x, GameState->Entities[0].Position.y, GameState->GameCamera.Center.z); // Set center to player's position!
             GameState->GameCamera.CenterTarget = GameState->Entities[0].Position;
         }
-        
         
         GameState->IsInitialized = true;
         GameMemory->IsInitialized = true;
@@ -369,8 +372,8 @@ extern "C" UPDATE(Update)
             if(!GameState->GodModeOn)
             {
                 auto Player = GameState->Entities[0];
-                GameState->GameCamera.Center = math::v2(Player.Position.x, Player.Position.y);
-                GameState->Camera.Center = math::v2(Player.Position.x, Player.Position.y);
+                GameState->GameCamera.Center = math::v3(Player.Position.x, Player.Position.y, GameState->GameCamera.Center.z);
+                GameState->Camera.Center = math::v3(Player.Position.x, Player.Position.y, GameState->GameCamera.Center.z);
                 GameState->GameCamera.Zoom = GameState->ZoomBeforeGodMode;
             }
             else
@@ -533,7 +536,7 @@ extern "C" UPDATE(Update)
         break;
     }
     
-    math::v2 Center = GameState->GameCamera.Center;
+    math::v3 Center = GameState->GameCamera.Center;
     
     if(GameState->GodModeOn)
     {
@@ -563,21 +566,25 @@ extern "C" UPDATE(Update)
         
         if(KEY(Key_Add))
         {
+            GameState->GameCamera.Center.z += 10.0f * DeltaTime;
             Zoom += (r32)(GameState->GodModeZoomSpeed / Factor * DeltaTime);
         }
         else if(KEY(Key_Subtract))
         {
-            Zoom += (r32)(-GameState->GodModeZoomSpeed / Factor * DeltaTime);
+            GameState->GameCamera.Center.z += -10.0f * DeltaTime;
+            //Zoom += (r32)(-GameState->GodModeZoomSpeed / Factor * DeltaTime);
         }
+        
+        printf("Z %f\n", GameState->GameCamera.Center.z);
         
         Direction = math::Normalize(Direction);
         
         if(Abs(Direction.x) > 0.0 || Abs(Direction.y) > 0.0)
         {
-            GameState->GameCamera.Center = Center + math::v2(Direction.x * GameState->GodModePanSpeed * Factor * DeltaTime, Direction.y * GameState->GodModePanSpeed * Factor * DeltaTime);
+            GameState->GameCamera.Center = Center + math::v3(Direction.x * GameState->GodModePanSpeed * Factor * DeltaTime, Direction.y * GameState->GodModePanSpeed * Factor * DeltaTime, 0);
         }
         
-        GameState->GameCamera.Zoom = Min(Max(Zoom, GameState->GodModeMinZoom), GameState->GodModeMaxZoom);
+        //GameState->GameCamera.Zoom = Min(Max(Zoom, GameState->GodModeMinZoom), GameState->GodModeMaxZoom);
     }
     
     if(KEY_DOWN(Key_L) && KEY(Key_LeftCtrl))
@@ -608,18 +615,19 @@ extern "C" UPDATE(Update)
                 
                 if(!GameState->GodModeOn)
                 {
-                    if(math::Distance(GameState->GameCamera.CenterTarget, Center) > 0.01f)
+                    if(math::Distance(GameState->GameCamera.CenterTarget, math::v2(Center.x, Center.y)) > 0.01f)
                     {
-                        auto Direction = math::Normalize(GameState->GameCamera.CenterTarget - Center);
+                        auto Direction = math::Normalize(GameState->GameCamera.CenterTarget - math::v2(Center.x, Center.y));
                         
                         if(GameState->CurrentLevel.Type == Level_Isometric)
                         {
                             auto PlayerPos = GameState->Entities[0].Position;
-                            Center = ToIsometric(PlayerPos);
+                            auto Pos = ToIsometric(PlayerPos);
+                            Center = math::v3(Pos.x, Pos.y, 0);
                         }
                         else
                         {
-                            Center = GameState->Entities[0].Position;
+                            Center = math::v3(GameState->Entities[0].Position.x, GameState->Entities[0].Position.y, 0);
                         }
                         // math::v2(Center.x + Direction.x * GameState->GameCamera.FollowSpeed * DeltaTime, Center.y + Direction.y  * GameState->GameCamera.FollowSpeed * DeltaTime);
                         
@@ -769,13 +777,13 @@ extern "C" UPDATE(Update)
                                                      (GameState->Camera.ViewportWidth / GameState->Camera.Zoom),
                                                      0.0f,
                                                      (GameState->Camera.ViewportHeight / GameState->Camera.Zoom),
-                                                     -1.0f,
-                                                     1.0f);
-    //GameState->Camera.ViewMatrix = math::Rotate(GameState->Camera.ViewMatrix, 45.0f, math::v3(0.0f, 0.0f, 0.0f));
+                                                     -10.0f,
+                                                     1000.0f);
+    
     GameState->Camera.ViewMatrix = math::Translate(math::m4(1.0f),
                                                    math::v3(-Center.x + GameState->Camera.ViewportWidth / GameState->Camera.Zoom / 2,
                                                             -Center.y + GameState->Camera.ViewportHeight / GameState->Camera.Zoom / 2,
-                                                            0));
+                                                            -20));
     
     InputController->CurrentCharacter = 0;
     GameState->RenderState.DeltaTime = DeltaTime;
@@ -788,6 +796,8 @@ extern "C" UPDATE(Update)
     GameState->Renderer.Camera = GameState->Camera;
     PushTilemapRenderCommands(GameState);
     PushEntityRenderCommands(GameState);
+    
+    PushModel(GameState->Renderer, *GameState->TESTMODEL);
 }
 
  

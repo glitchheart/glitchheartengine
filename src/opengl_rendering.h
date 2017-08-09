@@ -31,7 +31,8 @@ const static struct
     SHADERPAIR(ErrorUI),
     SHADERPAIR(AStarPath),
     SHADERPAIR(FrameBuffer),
-    SHADERPAIR(LightSource)
+    SHADERPAIR(LightSource),
+    SHADERPAIR(SimpleModel)
 };
 
 char* ShaderEnumToStr(Shader_Type Shader)
@@ -62,6 +63,7 @@ const char* ShaderPaths[Shader_Count] =
     "../assets/shaders/astarpathshader",
     "../assets/shaders/framebuffershader",
     "../assets/shaders/lightsourceshader",
+    "../assets/shaders/simple_model_shader"
 };
 
 
@@ -191,7 +193,9 @@ struct buffer
 {
     GLuint VAO;
     GLuint VBO;
-    GLint Size;
+    GLuint IBO;
+    GLint VertexBufferSize;
+    GLint IndexBufferSize;
 };
 
 struct render_state
@@ -350,6 +354,7 @@ struct render_state
             shader AStarPathShader;
             shader FrameBufferShader;
             shader LightSourceShader;
+            shader SimpleModelShader;
         };
     };
     

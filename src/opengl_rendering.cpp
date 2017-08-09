@@ -250,16 +250,46 @@ static void InitializeFreeTypeFont(char* FontPath, int FontSize, FT_Library Libr
     glBindVertexArray(0);
 }
 
-static void RegisterModelBuffers(render_state* RenderState, GLfloat* VertexBuffer, i32 VertexSize, GLint* IndexBuffer, i32 IndexBufferSize, i32* ModelHandle)
-{
-    
-}
-
-static void RegisterBuffer(render_state& RenderState, GLfloat* BufferData, i32 Size, Shader_Type ShaderType, i32 BufferHandle = -1)
+static void RegisterBuffers(render_state& RenderState, GLfloat* VertexBuffer, i32 VertexBufferSize, GLint* IndexBuffer, i32 IndexBufferSize, i32 BufferHandle = -1)
 {
     buffer* Buffer = &RenderState.Buffers[BufferHandle == -1 ? RenderState.BufferCount : BufferHandle];
     
-    Buffer->Size = Size;
+    Buffer->VertexBufferSize = VertexBufferSize;
+    Buffer->IndexBufferSize = IndexBufferSize;
+    
+    if(Buffer->VAO == 0)
+        glGenVertexArrays(1, &Buffer->VAO);
+    
+    glBindVertexArray(Buffer->VAO);
+    
+    if(Buffer->VBO == 0)
+        glGenBuffers(1, &Buffer->VBO);
+    
+    glBindBuffer(GL_ARRAY_BUFFER, Buffer->VBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * VertexBufferSize, VertexBuffer, GL_STATIC_DRAW);
+    
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    
+    glGenBuffers(1, &Buffer->IBO);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, Buffer->IBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(IndexBufferSize), IndexBuffer, GL_STATIC_DRAW);
+    
+    if(BufferHandle == -1)
+        RenderState.BufferCount++;
+    
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    
+    glBindVertexArray(0);
+}
+
+static void RegisterVertexBuffer(render_state& RenderState, GLfloat* BufferData, i32 Size, Shader_Type ShaderType, i32 BufferHandle = -1)
+{
+    buffer* Buffer = &RenderState.Buffers[BufferHandle == -1 ? RenderState.BufferCount : BufferHandle];
+    
+    Buffer->VertexBufferSize = Size;
+    Buffer->IndexBufferSize = 0;
+    Buffer->IBO = 0;
+    
     if(Buffer->VAO == 0)
         glGenVertexArrays(1, &Buffer->VAO);
     
@@ -838,6 +868,9 @@ static void RenderSetup(render_state *RenderState)
     // Light sources
     RenderState->LightSourceShader.Type = Shader_LightSource;
     LoadShader(ShaderPaths[Shader_LightSource], &RenderState->LightSourceShader);
+    
+    RenderState->SimpleModelShader.Type = Shader_SimpleModel;
+    LoadShader(ShaderPaths[Shader_SimpleModel], &RenderState->SimpleModelShader);
 }
 
 static GLuint LoadTexture(const char* FilePath, texture* Texture)
@@ -2757,6 +2790,30 @@ static void RenderSprite(const render_command& Command, render_state& RenderStat
     glBindVertexArray(0);
 }
 
+static void RenderModel(const render_command& Command, render_state& RenderState, math::m4 Projection, math::m4 View)
+{
+    buffer Buffer = RenderState.Buffers[Command.Model.BufferHandle];
+    
+    glBindVertexArray(Buffer.VAO);
+    
+    // @Incomplete: Missing shader switching
+    auto Shader = RenderState.SimpleModelShader;
+    UseShader(&Shader);
+    
+    math::m4 Model(1.0f);
+    Model = math::Scale(Model, Command.Model.Scale);
+    Model = math::Translate(Model, Command.Model.Position);
+    
+    SetMat4Uniform(Shader.Program, "projection", Projection);
+    SetMat4Uniform(Shader.Program, "view", View);
+    SetMat4Uniform(Shader.Program, "model", Model);
+    SetVec4Uniform(Shader.Program, "color", math::rgba(1.0f, 1.0f, 1.0f, 1.0f));
+    
+    glDrawElements(GL_TRIANGLES, sizeof(Buffer.IndexBufferSize), GL_UNSIGNED_INT, (void*)0);
+    
+    glBindVertexArray(0);
+}
+
 static void RenderBuffer(const render_command& Command, render_state& RenderState, math::m4 Projection, math::m4 View)
 {
     buffer Buffer = RenderState.Buffers[Command.Buffer.BufferHandle];
@@ -2782,7 +2839,7 @@ static void RenderBuffer(const render_command& Command, render_state& RenderStat
     SetMat4Uniform(Shader.Program, "Model", Model);
     SetVec4Uniform(Shader.Program, "Color", math::rgba(1.0f, 1.0f, 1.0f, 1.0f));
     
-    glDrawArrays(GL_QUADS, 0, Buffer.Size / 4);
+    glDrawArrays(GL_QUADS, 0, Buffer.VertexBufferSize / 4);
     glBindVertexArray(0);
 }
 
@@ -2791,8 +2848,18 @@ static void Render(render_state& RenderState, renderer& Renderer)
     for(i32 Index = RenderState.BufferCount; Index < Renderer.BufferCount; Index++)
     {
         buffer_data Data = Renderer.Buffers[Index];
-        RegisterBuffer(RenderState, Data.Buffer, Data.Size, Data.ShaderType, Data.ExistingHandle);
-        free(Data.Buffer);
+        if(Data.IndexBufferSize == 0)
+        {
+            printf("HERE\n");
+            RegisterVertexBuffer(RenderState, Data.VertexBuffer, Data.VertexBufferSize, Data.ShaderType, Data.ExistingHandle);
+            free(Data.VertexBuffer);
+        }
+        else
+        {
+            RegisterBuffers(RenderState, Data.VertexBuffer, Data.VertexBufferSize, Data.IndexBuffer, Data.IndexBufferSize, Data.ExistingHandle);
+            free(Data.VertexBuffer);
+            free(Data.IndexBuffer);
+        }
     }
     
     for(i32 Index = 0; Index < Renderer.CommandCount; Index++)
@@ -2819,6 +2886,11 @@ static void Render(render_state& RenderState, renderer& Renderer)
             case RenderCommand_Sprite:
             {
                 RenderSprite(Command, RenderState, Renderer.Camera.ProjectionMatrix, Renderer.Camera.ViewMatrix);
+            }
+            break;
+            case RenderCommand_Model:
+            {
+                RenderModel(Command, RenderState, Renderer.Camera.ProjectionMatrix, Renderer.Camera.ViewMatrix);
             }
             break;
             case RenderCommand_Buffer:
