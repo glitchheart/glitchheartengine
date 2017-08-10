@@ -1,9 +1,7 @@
 #ifndef GAMESTATE_H
 #define GAMESTATE_H
 
-#include "windows.h"
 #include <time.h>
-#include <cstdio>
 
 #include "platform.h"
 #include "opengl_rendering.h"
