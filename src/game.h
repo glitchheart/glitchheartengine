@@ -109,7 +109,6 @@ struct game_state
     
     Game_Mode GameMode;
     main_menu MainMenu;
-    render_state RenderState;
     renderer Renderer;
     
     camera Camera;
@@ -126,6 +125,9 @@ struct game_state
     
     i32 ObjectCount;
     object_entity Objects[NUM_ENTITIES];
+    
+    render_entity RenderEntities[NUM_ENTITIES];
+    i32 RenderEntityCount;
     
     i32** EntityTilePositions;
     

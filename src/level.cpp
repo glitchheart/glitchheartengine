@@ -1,11 +1,13 @@
-                              static void LoadTilemapBuffer(renderer& Renderer, tilemap& Tilemap)
+                              static void LoadTilemapBuffer(renderer& Renderer, render_state& RenderState, tilemap& Tilemap)
                               {
                                   GLfloat* VertexBuffer = (GLfloat*)malloc(sizeof(GLfloat) * 16 * Tilemap.Width * Tilemap.Height);
                                   
                                   i32 Size = 0;
                                   
-                                  r32 Width = (r32)Tilemap.RenderEntity.Texture->Width;
-                                  r32 Height = (r32)Tilemap.RenderEntity.Texture->Height;
+                                  texture* Texture = RenderState.Textures[Tilemap.TextureName];
+                                  
+                                  r32 Width = (r32)Texture->Width;
+                                  r32 Height = (r32)Texture->Height;
                                   
                                   for(i32 X = 0; X < Tilemap.Width; X++)
                                   {
@@ -59,7 +61,7 @@
                                   }
                               }
                               
-                              static void SaveTilesheetMetaFile(const char* FilePath, render_state* RenderState, level& Level, b32 New = false)
+                              static void SaveTilesheetMetaFile(const char* FilePath, render_state& RenderState, level& Level, b32 New = false)
                               {
                                   FILE* File;
                                   File = fopen(FilePath, "w");
@@ -70,28 +72,28 @@
                                       {
                                           u32 TextureIndex = 0;
                                           
-                                          for(u32 Index = 0; RenderState->TilesheetCount; Index++)
+                                          for(u32 Index = 0; RenderState.TilesheetCount; Index++)
                                           {
-                                              if(strcmp(Level.SheetName, RenderState->Tilesheets[Index].Name) == 0)
+                                              if(strcmp(Level.SheetName, RenderState.Tilesheets[Index].Name) == 0)
                                               {
                                                   TextureIndex = Index;
                                                   break;
                                               }
                                           }
                                           
-                                          const texture& Texture = RenderState->Tilesheets[TextureIndex].Texture;
+                                          const texture& Texture = RenderState.Tilesheets[TextureIndex].Texture;
                                           
-                                          fprintf(File, "%d\n", Texture.Width / RenderState->Tilesheets[TextureIndex].TileWidth * Texture.Height / RenderState->Tilesheets[TextureIndex].TileHeight);
+                                          fprintf(File, "%d\n", Texture.Width / RenderState.Tilesheets[TextureIndex].TileWidth * Texture.Height / RenderState.Tilesheets[TextureIndex].TileHeight);
                                           
                                           fprintf(File, "%d\n", 16);
                                           
                                           i32 Index = 0;
                                           
-                                          for(u32 Y = 0; Y < (u32)Texture.Height / RenderState->Tilesheets[TextureIndex].TileHeight; Y++)
+                                          for(u32 Y = 0; Y < (u32)Texture.Height / RenderState.Tilesheets[TextureIndex].TileHeight; Y++)
                                           {
-                                              for(u32 X = 0; X < (u32)Texture.Width / RenderState->Tilesheets[TextureIndex].TileWidth; X++)
+                                              for(u32 X = 0; X < (u32)Texture.Width / RenderState.Tilesheets[TextureIndex].TileWidth; X++)
                                               {
-                                                  fprintf(File, "%d %d %d %d %d %d %f %f\n", Index, (i32)X * RenderState->Tilesheets[TextureIndex].TileWidth, (i32)Y * RenderState->Tilesheets[TextureIndex].TileHeight, RenderState->Tilesheets[TextureIndex].TileWidth, RenderState->Tilesheets[TextureIndex].TileHeight, 0, 0.5f, 0.5);
+                                                  fprintf(File, "%d %d %d %d %d %d %f %f\n", Index, (i32)X * RenderState.Tilesheets[TextureIndex].TileWidth, (i32)Y * RenderState.Tilesheets[TextureIndex].TileHeight, RenderState.Tilesheets[TextureIndex].TileWidth, RenderState.Tilesheets[TextureIndex].TileHeight, 0, 0.5f, 0.5);
                                                   Index++;
                                               }
                                           }
@@ -111,7 +113,7 @@
                                   }
                               }
                               
-                              static void LoadTilesheetMetaFile(char* FilePath, level* Level, tilemap* Tilemap, game_state* GameState)
+                              static void LoadTilesheetMetaFile(char* FilePath, level* Level, tilemap* Tilemap, game_state* GameState, render_state& RenderState)
                               {
                                   if(FileExists(FilePath))
                                   {
@@ -157,12 +159,12 @@
                                   }
                                   else
                                   {
-                                      SaveTilesheetMetaFile(FilePath, &GameState->RenderState, *Level, true);
-                                      LoadTilesheetMetaFile(FilePath, Level, Tilemap, GameState);
+                                      SaveTilesheetMetaFile(FilePath, RenderState, *Level, true);
+                                      LoadTilesheetMetaFile(FilePath, Level, Tilemap, GameState, RenderState);
                                   }
                               }
                               
-                              static b32 LoadLevelFromFile(char* FilePath, level* Level, game_state* GameState, sound_queue* SoundQueue)
+                              static b32 LoadLevelFromFile(char* FilePath, level* Level, game_state* GameState, render_state& RenderState, renderer& Renderer, sound_queue* SoundQueue)
                               {
                                   //read the file manmain
                                   FILE* File;
@@ -171,8 +173,6 @@
                                   
                                   u32 MapWidth = 0;
                                   u32 MapHeight = 0;
-                                  
-                                  Level->Tilemap.RenderEntity.ShaderIndex = Shader_Tile;
                                   
                                   if(File)
                                   {
@@ -184,18 +184,18 @@
                                       if(fgets(LineBuffer, 255, File))
                                           sscanf(LineBuffer, "%s", Level->SheetName);
                                       
-                                      for(i32 Index = 0; Index < (i32)GameState->RenderState.TilesheetCount; Index++)
+                                      for(i32 Index = 0; Index < (i32)RenderState.TilesheetCount; Index++)
                                       {
-                                          if(strcmp(Level->SheetName, GameState->RenderState.Tilesheets[Index].Name) == 0)
+                                          if(strcmp(Level->SheetName, RenderState.Tilesheets[Index].Name) == 0)
                                           {
                                               Level->TilesheetIndex = Index;
                                               break;
                                           }
                                       }
                                       
-                                      Level->Tilemap.RenderEntity.Texture = &GameState->RenderState.Tilesheets[Level->TilesheetIndex].Texture;
+                                      Level->Tilemap.TextureName = RenderState.Tilesheets[Level->TilesheetIndex].Texture.Name;
                                       
-                                      LoadTilesheetMetaFile(Concat(Concat("../assets/textures/tilesheets/", Level->SheetName), ".tm"), Level, &Level->Tilemap, GameState);
+                                      LoadTilesheetMetaFile(Concat(Concat("../assets/textures/tilesheets/", Level->SheetName), ".tm"), Level, &Level->Tilemap, GameState, RenderState);
                                       
                                       if(fgets(LineBuffer, 255, File))
                                           sscanf(LineBuffer, "%f %f", &Level->PlayerStartPosition.x, &Level->PlayerStartPosition.y);
@@ -292,7 +292,7 @@
                                           IndexHeight = 0;
                                       }
                                       
-                                      LoadTilemapBuffer(GameState->Renderer, Level->Tilemap);
+                                      LoadTilemapBuffer(Renderer, RenderState, Level->Tilemap);
                                       
                                       u32 PathIndex = 0;
                                       
@@ -374,14 +374,14 @@
                                   return false;
                               }
                               
-                              static void SaveLevelToFile(const char* FilePath, level* Level, game_state* GameState, b32 New = false)
+                              static void SaveLevelToFile(const char* FilePath, level* Level, game_state* GameState, render_state& RenderState, b32 New = false)
                               {
                                   FILE* File;
                                   File = fopen(FilePath, "w");
                                   
                                   if(File)
                                   {
-                                      SaveTilesheetMetaFile(Concat(Concat("../assets/textures/tilesheets/", Level->SheetName),".tm"), &GameState->RenderState, *Level, New);
+                                      SaveTilesheetMetaFile(Concat(Concat("../assets/textures/tilesheets/", Level->SheetName),".tm"), RenderState, *Level, New);
                                       
                                       fprintf(File, "%s\n", Level->Name);
                                       fprintf(File, "%s\n", Level->SheetName);
@@ -508,7 +508,7 @@
                                   }
                               }
                               
-                              static void CreateNewLevelWithSize(char* FilePath, u32 Width, u32 Height, level* NewLevel, game_state* GameState, sound_queue* SoundQueue)
+                              static void CreateNewLevelWithSize(char* FilePath, u32 Width, u32 Height, level* NewLevel, render_state& RenderState, renderer& Renderer, game_state* GameState, sound_queue* SoundQueue)
                               {
                                   NewLevel->Tilemap.Width = Width;
                                   NewLevel->Tilemap.Height = Height;
@@ -527,7 +527,7 @@
                                   }
                                   
                                   
-                                  SaveLevelToFile(FilePath, NewLevel, GameState, true);
-                                  LoadTilesheetMetaFile(Concat(Concat("../assets/textures/tilesheets/", NewLevel->SheetName), ".tm"), NewLevel, &NewLevel->Tilemap, GameState);
-                                  LoadLevelFromFile(FilePath, NewLevel, GameState, SoundQueue);
+                                  SaveLevelToFile(FilePath, NewLevel, GameState, RenderState, true);
+                                  LoadTilesheetMetaFile(Concat(Concat("../assets/textures/tilesheets/", NewLevel->SheetName), ".tm"), NewLevel, &NewLevel->Tilemap, GameState, RenderState);
+                                  LoadLevelFromFile(FilePath, NewLevel, GameState, RenderState, Renderer, SoundQueue);
 }

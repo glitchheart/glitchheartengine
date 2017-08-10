@@ -45,7 +45,7 @@ static void SaveAnimationToFile(game_state* GameState, const animation& Animatio
     }
 }
 
-static void LoadAnimationFromFile(const char* FilePath, game_state* GameState)
+static void LoadAnimationFromFile(const char* FilePath, game_state* GameState, render_state& RenderState)
 {
     animation Animation;
     
@@ -125,9 +125,9 @@ static void LoadAnimationFromFile(const char* FilePath, game_state* GameState)
             sscanf(LineBuffer, "texture %s%n", TextureNameBuffer, &Length);
             char* TextureName = (char*)malloc(70 * sizeof(char));
             strcpy(TextureName, TextureNameBuffer);
-            if (strcmp(TextureName, "") != 0 && GameState->RenderState.Textures[TextureName])
+            if (strcmp(TextureName, "") != 0 && RenderState.Textures[TextureName])
             {
-                Animation.Texture = GameState->RenderState.Textures[TextureName];
+                Animation.Texture = RenderState.Textures[TextureName];
             }
             else
             {
@@ -149,7 +149,7 @@ static void LoadAnimationFromFile(const char* FilePath, game_state* GameState)
         DEBUG_PRINT("Animation-file not loaded: '%s'\n", FilePath);
 }
 
-static void LoadAnimations(game_state* GameState)
+static void LoadAnimations(game_state* GameState, render_state& RenderState)
 {
     animation_Map_Init(&GameState->AnimationMap, HashStringJenkins, 2048);
     directory_data DirData;
@@ -157,7 +157,7 @@ static void LoadAnimations(game_state* GameState)
     
     for (i32 FileIndex = 0; FileIndex < DirData.FilesLength; FileIndex++)
     {
-        LoadAnimationFromFile(DirData.FilePaths[FileIndex], GameState);
+        LoadAnimationFromFile(DirData.FilePaths[FileIndex], GameState, RenderState);
     }
     
     free(DirData.FilePaths);

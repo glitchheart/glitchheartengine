@@ -129,31 +129,6 @@ struct tilemap_render_info
     GLuint WireframeVBOSize;
 };
 
-enum Render_Type
-{
-    Render_Type_Entity,
-    Render_Type_Object
-};
-
-struct render_entity
-{
-    Render_Type RenderType = Render_Type_Entity;
-    
-    union
-    {
-        entity* Entity;
-        object_entity* Object;
-    };
-    
-    b32 Rendered = true;
-    b32 Background = false;
-    texture* Texture;
-    u32 ShaderIndex;
-    math::v4 Color = math::v4(1, 1, 1, 1);
-    
-    i32 RenderLayer = 0;
-};
-
 struct render_font
 {
     FT_Face Face;
@@ -209,9 +184,6 @@ struct render_state
     GLfloat ScaleY;
     GLint Viewport[4];
     r64 DeltaTime;
-    
-    render_entity RenderEntities[NUM_ENTITIES];
-    i32 RenderEntityCount;
     
     b32 RenderColliders;
     b32 RenderFPS;
