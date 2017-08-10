@@ -144,7 +144,7 @@ struct buffer_data
 {
     r32* VertexBuffer;
     i32 VertexBufferSize;
-    i32* IndexBuffer;
+    u32* IndexBuffer;
     i32 IndexBufferSize;
     
     Shader_Type ShaderType;

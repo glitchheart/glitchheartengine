@@ -128,7 +128,7 @@
                                                   }
                                                   
                                                   Data.VertexBuffer = (r32*)malloc(sizeof(r32) * VertexSize * 3);
-                                                  Data.IndexBuffer = (i32*)malloc(sizeof(i32) * IndexSize * 3);
+                                                  Data.IndexBuffer = (u32*)malloc(sizeof(u32) * IndexSize * 3);
                                                   
                                                   Data.VertexBufferSize = VertexSize * 3;
                                                   Data.IndexBufferSize = IndexSize * 3;
