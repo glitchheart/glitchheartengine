@@ -1495,17 +1495,24 @@ namespace math
         return Result;
     }
     
-    inline m4 Perspective(r32 Left, r32 Right, r32 Bottom, r32 Top, r32 Near, r32 Far)
+    inline m4 Perspective(r32 AspectWidthOverHeight, r32 FocalLength, r32 Near, r32 Far)
     {
-        m4 Result(1.0f);
-        Result.M11 = (2 * Near)/(Right - Left);
-        Result.M13 = (Right + Left)/(Right - Left);
-        Result.M22 = (2 * Near)/(Top - Bottom);
-        Result.M23 = (Top + Bottom)/(Top - Bottom);
-        Result.M33 = -((Far + Near)/(Far - Near));
-        Result.M34 = -((2 * Far * Near)/(Far - Near));
-        Result.M44 = 0;
-        Result.M43 = -1;
+        r32 A = 1.0f;
+        r32 B = AspectWidthOverHeight;
+        r32 C = FocalLength;
+        
+        r32 N = Near;
+        r32 F = Far;
+        
+        r32 D = (N + F) / (N - F);
+        r32 E = (2 * F * N) / (N - F);
+        
+        m4 Result(
+            A * C, 0.0f,  0.0f, 0.0f,
+            0,     B * C, 0.0f, 0.0f,
+            0.0f,  0.0f,  D,    E,
+            0.0f,  0.0f, -1.0f, 0.0f
+            );
         return Result;
     }
     
