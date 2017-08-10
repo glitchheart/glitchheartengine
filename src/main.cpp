@@ -4,13 +4,16 @@
 //#include <crtdbg.h>  
 
 #define DEBUG
+//#include "windows.h"
 #include <glad/glad.h>
 #include "al.h"
 #include "alc.h"
 
-#include "game.h"
+//#include "game.h"
 
 #include "platform.h"
+#include "console.h"
+#include "opengl_rendering.h"
 #include "keycontroller.cpp"
 #include "sound.h"
 #include "platform_sound.h"
@@ -155,9 +158,7 @@ int main(void)
                                                PAGE_READWRITE);
     
     //@Incomplete: We really want to get ALL of game state out of main!!!
-    game_state* GameState = (game_state*)GameMemory.PermanentStorage;
     GameMemory.ShouldReload = true;
-    GameState->ShouldReload = true;
     GameMemory.ConfigData = ConfigData;
     
     render_state RenderState;
@@ -224,7 +225,7 @@ int main(void)
         }
         
         ReloadAssets(RenderState, &AssetManager);
-        GameState->ReloadData = &AssetManager.ReloadData;
+        GameMemory.ReloadData = &AssetManager.ReloadData;
         ReloadDlls(&Game);
         
         game_update_return GameUpdateStruct = {};

@@ -317,11 +317,13 @@ static void RegisterVertexBuffer(render_state& RenderState, GLfloat* BufferData,
         RenderState.BufferCount++;
 }
 
-static void LoadTilemapBuffer(render_state* RenderState, renderer& Renderer, i32 Layer, GLuint* VAO, GLuint* VBO, i32* Size, const tilemap& Tilemap, Level_Type LevelType)
+//@Incomplete: This is done somewhere else now?
+/*
+static void LoadTilemapBuffer(render_state& RenderState, renderer& Renderer, i32 Layer, GLuint* VAO, GLuint* VBO, i32* Size, const tilemap& Tilemap, Level_Type LevelType)
 {
     texture_data* Texture = Renderer.TextureMap[Tilemap.TextureName];
     
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, RenderState->QuadIndexBuffer);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, RenderState.QuadIndexBuffer);
     
     GLfloat* VertexBuffer = (GLfloat*)malloc(sizeof(GLfloat) * 16 * Tilemap.Width * Tilemap.Height);
     
@@ -371,18 +373,18 @@ static void LoadTilemapBuffer(render_state* RenderState, renderer& Renderer, i32
     
     if(*VBO == 0)
         glGenBuffers(1, VBO);
-    
+        
     glBindBuffer(GL_ARRAY_BUFFER, *VBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * *Size, VertexBuffer, GL_DYNAMIC_DRAW);
     
-    if(RenderState->TileShader.Type != Shader_Tile)
+    if(RenderState.TileShader.Type != Shader_Tile)
     {
-        RenderState->TileShader.Type = Shader_Tile;
-        LoadShader(ShaderPaths[Shader_Tile], &RenderState->TileShader);
+        RenderState.TileShader.Type = Shader_Tile;
+        LoadShader(ShaderPaths[Shader_Tile], &RenderState.TileShader);
     }
     
-    auto PositionLocation = glGetAttribLocation(RenderState->TileShader.Program, "pos");
-    auto TexcoordLocation = glGetAttribLocation(RenderState->TileShader.Program, "texcoord");
+    auto PositionLocation = glGetAttribLocation(RenderState.TileShader.Program, "pos");
+    auto TexcoordLocation = glGetAttribLocation(RenderState.TileShader.Program, "texcoord");
     
     glEnableVertexAttribArray(PositionLocation);
     glVertexAttribPointer(PositionLocation, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
@@ -391,7 +393,10 @@ static void LoadTilemapBuffer(render_state* RenderState, renderer& Renderer, i32
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     free(VertexBuffer);
 }
+*/
 
+//@Incomplete: In game?
+/*
 static void LoadEditorTileBuffer(render_state* RenderState, renderer& Renderer,  editor_render_info& EditorRenderInfo, const tilemap& Tilemap)
 {
     texture_data* Texture = Renderer.TextureMap[Tilemap.TextureName];
@@ -445,18 +450,18 @@ static void LoadEditorTileBuffer(render_state* RenderState, renderer& Renderer, 
     
     if(EditorRenderInfo.VBO == 0)
         glGenBuffers(1, &EditorRenderInfo.VBO);
-    
+        
     glBindBuffer(GL_ARRAY_BUFFER, EditorRenderInfo.VBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * EditorRenderInfo.VBOSize, VertexBuffer, GL_STATIC_DRAW);
     
-    if(RenderState->TileShader.Type != Shader_Tile)
+    if(RenderState.TileShader.Type != Shader_Tile)
     {
-        RenderState->TileShader.Type = Shader_Tile;
-        LoadShader(ShaderPaths[Shader_Tile], &RenderState->TileShader);
+        RenderState.TileShader.Type = Shader_Tile;
+        LoadShader(ShaderPaths[Shader_Tile], &RenderState.TileShader);
     }
     
-    auto PositionLocation = glGetAttribLocation(RenderState->TileShader.Program, "pos");
-    auto TexcoordLocation = glGetAttribLocation(RenderState->TileShader.Program, "texcoord");
+    auto PositionLocation = glGetAttribLocation(RenderState.TileShader.Program, "pos");
+    auto TexcoordLocation = glGetAttribLocation(RenderState.TileShader.Program, "texcoord");
     
     glEnableVertexAttribArray(PositionLocation);
     glVertexAttribPointer(PositionLocation, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
@@ -466,7 +471,10 @@ static void LoadEditorTileBuffer(render_state* RenderState, renderer& Renderer, 
     EditorRenderInfo.Dirty = false;
     free(VertexBuffer);
 }
+*/
 
+//@Incomplete: Both of these functions are not used here anymore?
+/*
 static void LoadTilemapWireframeBuffer(const tilemap& Tilemap, render_state* RenderState, renderer& Renderer, u32* VAO, u32* VBO, u32* Size)
 {
     texture_data* Texture = Renderer.TextureMap[Tilemap.TextureName];
@@ -504,17 +512,17 @@ static void LoadTilemapWireframeBuffer(const tilemap& Tilemap, render_state* Ren
     
     if(*VBO == 0)
         glGenBuffers(1, VBO);
-    
+        
     glBindBuffer(GL_ARRAY_BUFFER, *VBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * *Size, WireframeVertexBuffer, GL_STATIC_DRAW);
     
-    if(RenderState->WireframeShader.Type != Shader_Wireframe)
+    if(RenderState.WireframeShader.Type != Shader_Wireframe)
     {
-        RenderState->TileShader.Type = Shader_Wireframe;
-        LoadShader(ShaderPaths[Shader_Wireframe], &RenderState->WireframeShader);
+        RenderState.TileShader.Type = Shader_Wireframe;
+        LoadShader(ShaderPaths[Shader_Wireframe], &RenderState.WireframeShader);
     }
     
-    auto PositionLocation = glGetAttribLocation(RenderState->WireframeShader.Program, "pos");
+    auto PositionLocation = glGetAttribLocation(RenderState.WireframeShader.Program, "pos");
     
     glEnableVertexAttribArray(PositionLocation);
     glVertexAttribPointer(PositionLocation, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
@@ -554,6 +562,7 @@ static void CreateTilemapVAO(render_state* RenderState, renderer& Renderer, cons
         LoadEditorTileBuffer(RenderState, Renderer, *EditorRenderInfo, Tilemap);
     }
 }
+*/
 
 static void RenderSetup(render_state *RenderState)
 {
@@ -1411,9 +1420,11 @@ static void RenderConsole(render_state& RenderState, console* Console)
     }
 }
 
+//@Incomplete: All this entity shit maaaan
+/*
 static void RenderColliderWireframe(render_state* RenderState, entity* Entity, math::m4 ProjectionMatrix, math::m4 View)
 {
-    
+
     if(Entity->Active)
     {
         math::m4 Model(1.0f);
@@ -1436,7 +1447,7 @@ static void RenderColliderWireframe(render_state* RenderState, entity* Entity, m
         
         if(Entity->CollisionAABB.IsTrigger)
             Color = math::v4(0, 0, 1, 1);
-        
+            
         RenderIsometricOutline(RenderState, Color, CorrectX, CorrectY, 1, 0.5f, ProjectionMatrix, View);
     }
 }
@@ -1493,7 +1504,10 @@ static void RenderAStarPath(render_state* RenderState, entity* Entity, math::m4 
         }
     }
 }
+*/
 
+//@Incomplete: Should be pushed from game/editor...
+/*
 static void RenderAnimationPreview(render_state& RenderState, renderer& Renderer, const animation_info& AnimationInfo, const animation& Animation, math::v2 ScreenPosition, r32 Scale)
 {
     r32 Ratio = Animation.FrameSize.y / Animation.FrameSize.x;
@@ -1533,13 +1547,16 @@ static void RenderAnimationPreview(render_state& RenderState, renderer& Renderer
     SetVec4Uniform(Shader.Program, "color", math::v4(1, 1, 1, 1));
     SetVec2Uniform(Shader.Program,"sheetSize",
                    math::v2(TextureData->Width, TextureData->Height));
-    
+                   
     SetMat4Uniform(Shader.Program, "Model", Model);
     
     glDrawElements(GL_TRIANGLES, sizeof(RenderState.QuadIndices), GL_UNSIGNED_INT, (void*)0);
     glBindVertexArray(0);
 }
+*/
 
+//@Incomplete: All this shit that needs to be moved my god
+/*
 static void RenderHealthbar(render_state& RenderState,
                             entity* Entity, const entity_healthbar& Healthbar, math::m4 ProjectionMatrix, math::m4 ViewMatrix)
 {
@@ -1547,22 +1564,22 @@ static void RenderHealthbar(render_state& RenderState,
     
     RenderRect(Render_Fill, RenderState, math::v4(0.6, 0, 0, 1), EntityPosition.x + Healthbar.Offset.x, EntityPosition.y + Healthbar.Offset.y, 1.0f
                / (r32)Entity->FullHealth * (r32)Entity->Health , 0.05f, 0, false, ProjectionMatrix, ViewMatrix);
-    
-    
+               
+               
     if(Entity->HealthLost > 0)
     {
         r32 StartX = EntityPosition.x + Healthbar.Offset.x + 1.0f
             / (r32)Entity->FullHealth * (r32)Entity->Health;
         r32 Width = 1.0f
             / (r32)Entity->FullHealth * (r32)Entity->HealthLost;
-        
+            
         RenderRect(Render_Fill, RenderState, math::v4(1, 1, 1, 1), StartX, EntityPosition.y + Healthbar.Offset.y, Width, 0.05f, 0, false, ProjectionMatrix, ViewMatrix);
         
         math::m4 Model = math::m4(1.0f) * ViewMatrix;
         
         math::v3 Projected =
             math::Project(math::v3(EntityPosition.x, EntityPosition.y, 0), Model, ProjectionMatrix, math::v4(RenderState.Viewport[0], RenderState.Viewport[1], RenderState.Viewport[2], RenderState.Viewport[3]));
-        
+            
         for(i32 Index = 0; Index < 10; Index++)
         {
             auto& HealthCount = Entity->Enemy.HealthCounts[Index];
@@ -1813,8 +1830,9 @@ static void RenderEntity(game_state *GameState, render_entity* RenderEntity, mat
             
         if(RenderState->RenderPaths && Entity.Type == Entity_Enemy)
             RenderAStarPath(RenderState,&Entity,ProjectionMatrix,View);
-    }*/
+    }
 }
+*/
 
 //@Incomplete: I guess we don't need this?
 /*
@@ -1845,6 +1863,8 @@ static void RenderTile(render_state* RenderState, r32 X, r32 Y, u32 TilesheetInd
 }
 */
 
+//@Incomplete: This commented out code is getting out of hand
+/*
 void RenderButton(render_state& RenderState, renderer& Renderer, const button& Button)
 {
     RenderRect(Render_Fill, RenderState, math::v4(0.26, 0.525, 0.95, 1), Button.ScreenPosition.x, Button.ScreenPosition.y, Button.Size.x, Button.Size.y, Renderer.TextureMap["button"]->Handle);
@@ -1963,6 +1983,7 @@ int CompareFunction(const void* a, const void* b)
         return 1;
     return 0;
 }
+*/
 
 // @Incomplete: Is this used????
 /*
@@ -2029,7 +2050,7 @@ static void RenderInGameMode(game_state* GameState)
 }
 }
 */
-
+/*
 void RenderGame(game_state* GameState)
 {
     if(GameState->GameMode == Mode_InGame || (GameState->GameMode == Mode_Editor && !GameState->EditorState.MenuOpen))
@@ -2037,6 +2058,7 @@ void RenderGame(game_state* GameState)
         //RenderInGameMode(GameState);
     }
 }
+*/
 
 //@Incomplete: This was commented out below
 /*

@@ -176,6 +176,9 @@ static void PushEntityRenderCommands(renderer& Renderer, game_state& GameState)
 extern "C" UPDATE(Update)
 {
     game_state* GameState = (game_state*)GameMemory->PermanentStorage;
+    
+    //@Incomplete: Hmmmm
+    GameState->ReloadData = GameMemory->ReloadData;
     Assert(GameState);
     
     if(!GameState->IsInitialized)

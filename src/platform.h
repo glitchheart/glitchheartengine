@@ -28,8 +28,11 @@
 
 #define PI 3.141592653589793f
 
+//@Incomplete: We want a platform API for all of these functions!!!!!!!
+#include <windows.h>
 #include <stdint.h>
 #include <malloc.h>
+#include <cstdio>
 #include <sys/types.h>  
 #include <sys/stat.h>  
 
@@ -87,11 +90,14 @@ struct config_data
     r32 Zoom;
 };
 
+struct entity_file_reload_data;
+
 struct game_memory
 {
     b32 IsInitialized;
     b32 ShouldReload;
     config_data ConfigData;
+    entity_file_reload_data* ReloadData;
     
     u64 PermanentStorageSize;
     void* PermanentStorage;
