@@ -319,7 +319,7 @@ static void RegisterVertexBuffer(render_state& RenderState, GLfloat* BufferData,
 
 static void LoadTilemapBuffer(render_state* RenderState, i32 Layer, GLuint* VAO, GLuint* VBO, i32* Size, const tilemap& Tilemap, Level_Type LevelType)
 {
-    texture* Texture = RenderState->Textures[Tilemap.TextureName];
+    texture_data* Texture = Render->Textures[Tilemap.TextureName];
     
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, RenderState->QuadIndexBuffer);
     
@@ -874,7 +874,7 @@ static void RenderSetup(render_state *RenderState)
     LoadShader(ShaderPaths[Shader_SimpleModel], &RenderState->SimpleModelShader);
 }
 
-static GLuint LoadTexture(const char* FilePath, texture* Texture)
+static GLuint LoadTexture(texture_data& Data, texture* Texture)
 { 
     GLuint TextureHandle;
     
@@ -890,69 +890,13 @@ static GLuint LoadTexture(const char* FilePath, texture* Texture)
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     
-    unsigned char* Image = stbi_load(FilePath, &Texture->Width, &Texture->Height, 0, STBI_rgb_alpha);
-    
-    if (!Image)
-        return GL_FALSE;
-    
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, Texture->Width, Texture->Height, 0, GL_RGBA,
-                 GL_UNSIGNED_BYTE, (GLvoid*) Image);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, TextureData.Width, TextureData.Height, 0, GL_RGBA,
+                 GL_UNSIGNED_BYTE, (GLvoid*) TextureData.ImageData);
     
     Texture->TextureHandle = TextureHandle;
-    stbi_image_free(Image);
+    stbi_image_free(TextureData.Image);
     
     return GL_TRUE;
-}
-
-static void LoadTextures(render_state* RenderState, const char* Directory)
-{
-    directory_data DirData = {};
-    FindFilesWithExtensions(Directory, "png", &DirData);
-    
-    for(i32 FileIndex = 0; FileIndex < DirData.FilesLength; FileIndex++)
-    {
-        texture* Texture = &RenderState->TextureArray[RenderState->TextureIndex++];
-        Texture->Name = (char*)malloc((strlen(DirData.FileNames[FileIndex]) + 1) * sizeof(char));
-        strcpy(Texture->Name, DirData.FileNames[FileIndex]);
-        LoadTexture(DirData.FilePaths[FileIndex], Texture);
-        RenderState->Textures[Texture->Name] = Texture;
-    }
-    
-    free(DirData.FilePaths);
-    free(DirData.FileNames);
-}
-
-static void LoadTilesheetTextures(render_state* RenderState)
-{
-    FILE* File;
-    File = fopen("../assets/textures/tilesheets/.tilesheets", "r");
-    char LineBuffer[255];
-    
-    if(File)
-    {
-        u32 Index = 0;
-        
-        while(fgets(LineBuffer, 255, File))
-        {
-            RenderState->Tilesheets[Index].Name= (char*)malloc(sizeof(char) * 20);
-            sscanf(LineBuffer, "%s %d %d", RenderState->Tilesheets[Index].Name, &RenderState->Tilesheets[Index].TileWidth, &RenderState->Tilesheets[Index].TileHeight);
-            
-            char* Path = Concat(Concat("../assets/textures/tilesheets/", RenderState->Tilesheets[Index].Name), ".png");
-            LoadTexture(Path, &RenderState->Tilesheets[Index].Texture);
-            
-            RenderState->Tilesheets[Index].Texture.Name = (char*)malloc((strlen(RenderState->Tilesheets[Index].Name) + 1) * sizeof(char));
-            strcpy(RenderState->Tilesheets[Index].Texture.Name, RenderState->Tilesheets[Index].Name);
-            
-            RenderState->Textures[RenderState->Tilesheets[Index].Texture.Name] = &RenderState->Tilesheets[Index].Texture;
-            
-            free(Path);
-            Index++;
-        }
-        
-        RenderState->TilesheetCount = Index;
-        
-        fclose(File);
-    }
 }
 
 static void InitializeOpenGL(render_state& RenderState, config_data* ConfigData)
@@ -996,12 +940,8 @@ static void InitializeOpenGL(render_state& RenderState, config_data* ConfigData)
     glDisable(GL_DITHER);
     glLineWidth(2.0f);
     
-    //glFrontFace(GL_CCW);
-    //glCullFace(GL_FRONT);
-    //glEnable(GL_CULL_FACE);
     glDisable(GL_CULL_FACE);
     
-    //glEnable(GL_DEPTH_TEST);
     DEBUG_PRINT("%s\n", glGetString(GL_VERSION));
     
     glfwSetWindowUserPointer(RenderState.Window, &RenderState);
@@ -2905,8 +2845,18 @@ static void RenderCommands(render_state& RenderState, renderer& Renderer)
     Renderer.CommandCount = 0;
 }
 
+static void LoadTextures(render_state& RenderState, renderer& Renderer)
+{
+    for(i32 Index = TextureIndex; Index < Renderer.TextureCount; Index++)
+    {
+        LoadTexture(Renderer.TextureData[Index], RenderState->TextureArray[RenderState->TextureIndex++]);
+    }
+}
+
 static void Render(render_state& RenderState, renderer& Renderer)
 {
+    LoadTextures(Renderer);
+    
     Renderer.Camera.ViewportWidth = RenderState.WindowWidth;
     Renderer.Camera.ViewportHeight = RenderState.WindowHeight;
     
@@ -2941,8 +2891,8 @@ static void Render(render_state& RenderState, renderer& Renderer)
     auto AmbientLightHandle = GameState->CurrentLevel.AmbientLightHandle;
     if(AmbientLightHandle != -1)
     {
-        SetVec4Uniform(RenderState.FrameBufferShader.Program, "ambientColor", GameState->LightSources[AmbientLightHandle].Color);
-        SetFloatUniform(RenderState.FrameBufferShader.Program, "ambientIntensity", GameState->LightSources[AmbientLightHandle].Ambient.Intensity);
+    SetVec4Uniform(RenderState.FrameBufferShader.Program, "ambientColor", GameState->LightSources[AmbientLightHandle].Color);
+    SetFloatUniform(RenderState.FrameBufferShader.Program, "ambientIntensity", GameState->LightSources[AmbientLightHandle].Ambient.Intensity);
     }*/
     
     SetFloatUniform(RenderState.FrameBufferShader.Program, "contrast", RenderState.Contrast);

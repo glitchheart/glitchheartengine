@@ -145,11 +145,14 @@ struct camera
 struct texture_data
 {
     i32 Handle;
+    char* Name;
     i32 Width;
     i32 Height;
     unsigned char* ImageData;
     
 };
+
+GENERIC_MAP(texture_data, texture_data*, char*, StrCmp, NULL, "%s", STR_ASSIGN);
 
 struct buffer_data
 {
@@ -174,8 +177,11 @@ struct renderer
     texture_data TextureData[TEXTURE_ARRAY_SIZE];
     i32 TextureCount;
     
+    texture_data_map TextureMap;
+    
     camera Camera;
     
+    i32 Viewport[4];
     i32 WindowWidth;
     i32 WindowHeight;
 };
