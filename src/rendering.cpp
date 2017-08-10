@@ -1,21 +1,27 @@
-                                          static void LoadTexture(const char* TexturePath, renderer& Renderer)
+                                          static void LoadTexture(char* TextureName, const char* FullTexturePath, renderer& Renderer)
                                           {
-                                              texture_data* TextureData = &Renderer.TextureData[Renderer.TextureCount++];
-                                              TextureData->ImageData = stbi_load(TexturePath, &TextureData->Width, &TextureData->Height, 0, STBI_rgb_alpha);
+                                              texture_data* TextureData = &Renderer.TextureData[Renderer.TextureCount];
+                                              
+                                              TextureData->Handle = Renderer.TextureCount++;
+                                              
+                                              TextureData->ImageData = stbi_load(FullTexturePath, &TextureData->Width, &TextureData->Height, 0, STBI_rgb_alpha);
+                                              
+                                              TextureData->Name = (char*)malloc((strlen(TextureName) + 1) * sizeof(char));
+                                              strcpy(TextureData->Name, TextureName);
+                                              
+                                              Renderer.TextureMap[TextureName] = TextureData;
                                           }
                                           
                                           static void LoadTextures(renderer& Renderer)
                                           {
+                                              texture_data_Map_Init(&Renderer.TextureMap, HashStringJenkins, 64);
+                                              
                                               directory_data DirData = {};
-                                              FindFilesWithExtensions("../assets/textures/", "png", &DirData);
+                                              FindFilesWithExtensions("../assets/textures/", "png", &DirData, true);
                                               
                                               for(i32 FileIndex = 0; FileIndex < DirData.FilesLength; FileIndex++)
                                               {
-                                                  //texture* Texture = &RenderState->TextureArray[RenderState->TextureIndex++];
-                                                  //Texture->Name = (char*)malloc((strlen(DirData.FileNames[FileIndex]) + 1) * sizeof(char));
-                                                  //strcpy(Texture->Name, DirData.FileNames[FileIndex]);
-                                                  LoadTexture(DirData.FilePaths[FileIndex], Renderer);
-                                                  //RenderState->Textures[Texture->Name] = Texture;
+                                                  LoadTexture(DirData.FileNames[FileIndex], DirData.FilePaths[FileIndex], Renderer);
                                               }
                                               
                                               free(DirData.FilePaths);

@@ -77,13 +77,8 @@ struct object_entity;
 
 struct texture 
 {
-    char* Name;
     GLuint TextureHandle;
-    i32 Width;
-    i32 Height;
 };
-
-GENERIC_MAP(texture, texture*, char*, StrCmp, NULL, "%s", STR_ASSIGN);
 
 #define TILESHEET_MAX 10
 
@@ -305,9 +300,6 @@ struct render_state
     GLuint TextureRectVAO;
     GLuint NormalQuadVBO;
     
-    tilesheet Tilesheets[TILESHEET_MAX];
-    u32 TilesheetCount;
-    
     union 
     {
         shader Shaders[Shader_Count];
@@ -332,7 +324,6 @@ struct render_state
     
     texture TextureArray[150];
     i32 TextureIndex;
-    texture_map Textures;
     
     //freetype
     FT_Library FTLibrary;

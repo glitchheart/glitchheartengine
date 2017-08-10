@@ -84,7 +84,7 @@ static void PushTilemapRenderCommands(renderer& Renderer, game_state& GameState)
     PushBuffer(Renderer, GameState.CurrentLevel.Tilemap.BufferHandle, GameState.CurrentLevel.Tilemap.TextureName);
 }
 
-static void PushEntityRenderCommands(renderer& Renderer, game_state& GameState, render_state& RenderState)
+static void PushEntityRenderCommands(renderer& Renderer, game_state& GameState)
 {
     qsort(GameState.RenderEntities, GameState.RenderEntityCount, sizeof(render_entity), CompareFunction);
     
@@ -141,7 +141,7 @@ static void PushEntityRenderCommands(renderer& Renderer, game_state& GameState, 
             CurrentScale = Scale;
             
             animation* Animation = CurrentAnimation;
-            CurrentTexture = Animation->Texture->Name;
+            CurrentTexture = Animation->Texture;
             
             CurrentTextureOffset = math::v2(Animation->Frames[AnimationInfo.FrameIndex].X, Animation->Frames[AnimationInfo.FrameIndex].Y);
             
@@ -151,7 +151,7 @@ static void PushEntityRenderCommands(renderer& Renderer, game_state& GameState, 
         else 
         {
             CurrentTexture = RenderEntity->TextureName;
-            texture* Texture = RenderState.Textures[RenderEntity->TextureName];
+            texture_data* Texture = Renderer.TextureMap[RenderEntity->TextureName];
             
             auto CorrectPos = ToIsometric(math::v2(Position.x, Position.y));
             
@@ -240,7 +240,7 @@ extern "C" UPDATE(Update)
             LoadGameDataFile(GameState);
             srand((u32)time(NULL));
             
-            LoadAnimations(GameState, RenderState);
+            LoadAnimations(GameState, Renderer);
             InitCommands();
             
             GameState->EditorCamera.Zoom = GameState->InitialZoom; 
@@ -253,7 +253,7 @@ extern "C" UPDATE(Update)
             PLAY_TRACK(Brugt);
         }
         
-        LoadLevelFromFile(GameState->LevelPath, &GameState->CurrentLevel, GameState, RenderState, Renderer, SoundQueue);
+        LoadLevelFromFile(GameState->LevelPath, &GameState->CurrentLevel, GameState, Renderer, SoundQueue);
         
         GameState->GameCamera.Zoom = GameState->InitialZoom;
         GameState->GameCamera.ViewportWidth = RenderState.WindowWidth;
@@ -342,7 +342,7 @@ extern "C" UPDATE(Update)
     CheckConsoleInput(GameState, InputController, DeltaTime);
     
     if(GameState->GameMode == Mode_Editor)
-        CheckEditorUIInput(GameState, RenderState, InputController, DeltaTime);
+        CheckEditorUIInput(GameState, Renderer, InputController, DeltaTime);
     
     if((KEY(Key_LeftCtrl) || KEY(Key_RightCtrl)))
     {
@@ -361,7 +361,7 @@ extern "C" UPDATE(Update)
             {
                 GameState->RenderLight = true;
                 GameState->GodModeOn = false;
-                SaveLevelToFile(GameState->LevelPath, &GameState->CurrentLevel, GameState, RenderState);
+                SaveLevelToFile(GameState->LevelPath, &GameState->CurrentLevel, GameState, Renderer);
                 ReloadCurrentLevel(GameState);
                 GameState->GameMode = Mode_InGame;
             }
@@ -717,7 +717,7 @@ extern "C" UPDATE(Update)
         case Mode_Editor:
         {
             Center = GameState->EditorCamera.Center;
-            EditorUpdateEntities(GameState,InputController, SoundQueue, DeltaTime);
+            EditorUpdateEntities(GameState, Renderer, InputController, SoundQueue, DeltaTime);
             
             switch(GameState->EditorState.PlacementMode)
             {
@@ -790,7 +790,6 @@ extern "C" UPDATE(Update)
                                                             -20.0f));
     
     InputController->CurrentCharacter = 0;
-    GameState->RenderState.DeltaTime = DeltaTime;
     GameState->ClearTilePositionFrame = !GameState->ClearTilePositionFrame;
     GetActionButtonsForQueue(InputController);
     

@@ -259,7 +259,7 @@ static void CreateEditorButtons(game_state* GameState, render_state& RenderState
     GameState->EditorState.Loaded = true;
 }
 
-static void CheckEditorUIInput(game_state* GameState, render_state& RenderState, input_controller* InputController, r64 DeltaTime)
+static void CheckEditorUIInput(game_state* GameState, renderer& Renderer, input_controller* InputController, r64 DeltaTime)
 {
     switch(GameState->EditorState.Mode)
     {
@@ -330,12 +330,12 @@ static void CheckEditorUIInput(game_state* GameState, render_state& RenderState,
     if(GameState->EditorState.SelectedEntity && KEY_DOWN(Key_Delete))
     {
         DeleteEntity(GameState,GameState->EditorState.SelectedEntity->EntityIndex);
-        SaveLevelToFile(GameState->LevelPath, &GameState->CurrentLevel, GameState, RenderState);
+        SaveLevelToFile(GameState->LevelPath, &GameState->CurrentLevel, GameState, Renderer);
     }
 }
 
 
-static void EditorUpdateEntities(game_state* GameState, render_state& RenderState, renderer& Renderer, input_controller* InputController, sound_queue* SoundQueue, r64 DeltaTime)
+static void EditorUpdateEntities(game_state* GameState, renderer& Renderer, input_controller* InputController, sound_queue* SoundQueue, r64 DeltaTime)
 {
     if(KEY_DOWN(Key_Escape))
     {
@@ -404,7 +404,7 @@ static void EditorUpdateEntities(game_state* GameState, render_state& RenderStat
                     ToggleAnimationFields(&GameState->EditorState, false);
                     if(GameState->EditorState.Mode == Editor_Level)
                     {
-                        SaveLevelToFile(GameState->LevelPath, &GameState->CurrentLevel, GameState, RenderState);
+                        SaveLevelToFile(GameState->LevelPath, &GameState->CurrentLevel, GameState, Renderer);
                     }
                     
                     ReloadCurrentLevel(GameState);
@@ -416,7 +416,7 @@ static void EditorUpdateEntities(game_state* GameState, render_state& RenderStat
     }
     else
     {
-        b32 InToolbar = RenderState.WindowHeight - InputController->MouseY >= RenderState.WindowHeight;
+        b32 InToolbar = Renderer.WindowHeight - InputController->MouseY >= Renderer.WindowHeight;
         
         for(u32 ButtonIndex = 0; ButtonIndex < 10; ButtonIndex++)
         {
@@ -426,7 +426,7 @@ static void EditorUpdateEntities(game_state* GameState, render_state& RenderStat
             if(MOUSE_DOWN(Mouse_Left))
             {
                 if(Button->Active && InputController->MouseX >= Button->ScreenPosition.x && InputController->MouseX <= Button->ScreenPosition.x + Button->Size.x && 
-                   RenderState.WindowHeight - InputController->MouseY >= Button->ScreenPosition.y && RenderState.WindowHeight - InputController->MouseY <= Button->ScreenPosition.y + Button->Size.y)
+                   Renderer.WindowHeight - InputController->MouseY >= Button->ScreenPosition.y && Renderer.WindowHeight - InputController->MouseY <= Button->ScreenPosition.y + Button->Size.y)
                 {
                     Button->Clicked = true;
                     PLAY_SOUND(ButtonClick);
@@ -442,7 +442,7 @@ static void EditorUpdateEntities(game_state* GameState, render_state& RenderStat
                         break;
                         case Button_SaveAndExit:
                         {
-                            SaveLevelToFile(GameState->LevelPath, &GameState->CurrentLevel, GameState, RenderState);
+                            SaveLevelToFile(GameState->LevelPath, &GameState->CurrentLevel, GameState, Renderer);
                             ReloadCurrentLevel(GameState);
                             GameState->GameMode = Mode_InGame;
                         }
@@ -491,7 +491,7 @@ static void EditorUpdateEntities(game_state* GameState, render_state& RenderStat
             
             if(MOUSE_DOWN(Mouse_Left))
             {
-                if(Checkbox->Active && InputController->MouseX >= Checkbox->ScreenPosition.x && InputController->MouseX <= Checkbox->ScreenPosition.x + 25 && RenderState.WindowHeight - InputController->MouseY >= Checkbox->ScreenPosition.y && RenderState.WindowHeight - InputController->MouseY <= Checkbox->ScreenPosition.y + 25)
+                if(Checkbox->Active && InputController->MouseX >= Checkbox->ScreenPosition.x && InputController->MouseX <= Checkbox->ScreenPosition.x + 25 && Renderer.WindowHeight - InputController->MouseY >= Checkbox->ScreenPosition.y && Renderer.WindowHeight - InputController->MouseY <= Checkbox->ScreenPosition.y + 25)
                 {
                     Checkbox->Checked = !Checkbox->Checked;
                     Checkbox->JustChecked = true;
@@ -504,7 +504,7 @@ static void EditorUpdateEntities(game_state* GameState, render_state& RenderStat
             u32 SelectedTile = GameState->EditorState.SelectedTileType;
             GameState->CurrentLevel.Tilemap.Tiles[SelectedTile].IsSolid = GameState->EditorState.TileIsSolidCheckbox->Checked;
             UpdateTileData(SelectedTile, GameState->CurrentLevel.Tilemap.Tiles[SelectedTile].IsSolid, &GameState->CurrentLevel.Tilemap);
-            SaveTilesheetMetaFile(Concat(Concat("../assets/textures/tilesheets/", GameState->CurrentLevel.SheetName), ".tm"), RenderState, GameState->CurrentLevel, false);
+            SaveTilesheetMetaFile(Concat(Concat("../assets/textures/tilesheets/", GameState->CurrentLevel.SheetName), ".tm"), Renderer, GameState->CurrentLevel, false);
             
             // @Incomplete: Should call SaveTilesheetMetafile!!!!
         }
@@ -519,7 +519,7 @@ static void EditorUpdateEntities(game_state* GameState, render_state& RenderStat
             if(MOUSE_DOWN(Mouse_Left))
             {
                 if(Textfield->Active && InputController->MouseX >= Textfield->ScreenPosition.x && InputController->MouseX <= Textfield->ScreenPosition.x + Textfield->Size.x && 
-                   RenderState.WindowHeight - InputController->MouseY >= Textfield->ScreenPosition.y && RenderState.WindowHeight - InputController->MouseY <= Textfield->ScreenPosition.y + Textfield->Size.y)
+                   Renderer.WindowHeight - InputController->MouseY >= Textfield->ScreenPosition.y && Renderer.WindowHeight - InputController->MouseY <= Textfield->ScreenPosition.y + Textfield->Size.y)
                 {
                     GameState->EditorState.FocusedTextfield = Index;
                     Textfield->InFocus = true;
@@ -592,7 +592,7 @@ static void EditorUpdateEntities(game_state* GameState, render_state& RenderStat
             {
                 if(KEY_DOWN(Key_S))
                 {
-                    SaveLevelToFile(GameState->LevelPath, &GameState->CurrentLevel, GameState, RenderState);
+                    SaveLevelToFile(GameState->LevelPath, &GameState->CurrentLevel, GameState, Renderer);
                 }
                 
                 if(GameState->EditorState.CreateNewLevelButton->Clicked)
@@ -601,14 +601,14 @@ static void EditorUpdateEntities(game_state* GameState, render_state& RenderStat
                     Level.SheetName = "overworld1";
                     Level.Name = "test_level";
                     
-                    CreateNewLevelWithSize("../assets/levels/level_new.plv", 200, 120, &Level,  RenderState, Renderer, GameState, SoundQueue);
+                    CreateNewLevelWithSize("../assets/levels/level_new.plv", 200, 120, &Level,  Renderer, GameState, SoundQueue);
                     GameState->CurrentLevel = Level;
                 }
                 
-                auto Pos = math::UnProject(math::v3(InputController->MouseX, RenderState.Viewport[3] - InputController->MouseY, 0),
+                auto Pos = math::UnProject(math::v3(InputController->MouseX, Renderer.Viewport[3] - InputController->MouseY, 0),
                                            GameState->Camera.ViewMatrix,
                                            GameState->Camera.ProjectionMatrix,
-                                           math::v4(0, 0, RenderState.Viewport[2], RenderState.Viewport[3]));
+                                           math::v4(0, 0, Renderer.Viewport[2], Renderer.Viewport[3]));
                 
                 math::v2 CartesianPos = ToCartesian(math::v2(Pos.x, Pos.y));
                 
@@ -742,7 +742,7 @@ static void EditorUpdateEntities(game_state* GameState, render_state& RenderStat
                                     break;
                                 }
                                 
-                                SaveLevelToFile(GameState->LevelPath, &GameState->CurrentLevel, GameState, RenderState);
+                                SaveLevelToFile(GameState->LevelPath, &GameState->CurrentLevel, GameState, Renderer);
                             }
                         }
                         break;
@@ -771,7 +771,7 @@ static void EditorUpdateEntities(game_state* GameState, render_state& RenderStat
                             
                             if(MOUSE(Mouse_Left))
                             {
-                                texture* Texture = RenderState.Textures[GameState->CurrentLevel.Tilemap.TextureName];
+                                texture_data* Texture = Renderer.TextureMap[GameState->CurrentLevel.Tilemap.TextureName];
                                 
                                 i32 TilesheetWidth = Texture->Width / GameState->CurrentLevel.Tilemap.TileWidth;
                                 i32 TilesheetHeight = Texture->Height / GameState->CurrentLevel.Tilemap.TileHeight;
@@ -779,10 +779,10 @@ static void EditorUpdateEntities(game_state* GameState, render_state& RenderStat
                                 r32 ToolbarX = GameState->EditorState.ToolbarX + GameState->EditorState.TilemapOffset.x;
                                 r32 ToolbarY = GameState->EditorState.ToolbarY + GameState->EditorState.TilemapOffset.y;
                                 
-                                if(InputController->MouseX >= ToolbarX && InputController->MouseX <= ToolbarX + TilesheetWidth * GameState->EditorState.RenderedTileSize && RenderState.WindowHeight - InputController->MouseY > ToolbarY && RenderState.WindowHeight - InputController->MouseY <=  ToolbarY + TilesheetHeight * GameState->EditorState.RenderedTileSize)
+                                if(InputController->MouseX >= ToolbarX && InputController->MouseX <= ToolbarX + TilesheetWidth * GameState->EditorState.RenderedTileSize && Renderer.WindowHeight - InputController->MouseY > ToolbarY && Renderer.WindowHeight - InputController->MouseY <=  ToolbarY + TilesheetHeight * GameState->EditorState.RenderedTileSize)
                                 {
                                     i32 X = (i32)((InputController->MouseX - (GameState->EditorState.ToolbarX + GameState->EditorState.TilemapOffset.x)) / GameState->EditorState.RenderedTileSize);
-                                    i32 Y = (i32)((RenderState.WindowHeight - InputController->MouseY - (GameState->EditorState.ToolbarY + GameState->EditorState.TilemapOffset.y)) / GameState->EditorState.RenderedTileSize);
+                                    i32 Y = (i32)((Renderer.WindowHeight - InputController->MouseY - (GameState->EditorState.ToolbarY + GameState->EditorState.TilemapOffset.y)) / GameState->EditorState.RenderedTileSize);
                                     
                                     GameState->EditorState.SelectedTilePosition = math::v2((r32)X, (r32)Y);
                                     i32 Selected = X + Y * TilesheetWidth;
@@ -812,7 +812,7 @@ static void EditorUpdateEntities(game_state* GameState, render_state& RenderStat
                                                     }
                                                     
                                                     Tilemap->RenderInfo.Dirty = true;
-                                                    LoadTilemapBuffer(Renderer, RenderState, *Tilemap);
+                                                    LoadTilemapBuffer(Renderer, *Tilemap);
                                                 }
                                             }
                                         }
@@ -927,7 +927,9 @@ static void EditorUpdateEntities(game_state* GameState, render_state& RenderStat
                             GameState->EditorState.LoadedAnimation->FrameOffset = math::v2(0, 0);
                             GameState->EditorState.LoadedAnimation->TimePerFrame = 0.0f;
                             GameState->EditorState.LoadedAnimation->Loop = 1;
-                            GameState->EditorState.LoadedAnimation->Texture = &RenderState.TextureArray[GameState->EditorState.SelectedTexture];
+                            
+                            // @Incomplete
+                            //GameState->EditorState.LoadedAnimation->Texture = GameState->EditorState.SelectedTexture];
                             
                             for(i32 Index = 0; Index < TEXTFIELD_LENGTH; Index++)
                             {
@@ -944,7 +946,8 @@ static void EditorUpdateEntities(game_state* GameState, render_state& RenderStat
                         {
                             ToggleAnimationFields(&GameState->EditorState, false);
                             GameState->EditorState.LoadedAnimation->Loop = GameState->EditorState.ShouldLoop;
-                            SaveAnimationToFile(GameState, *GameState->EditorState.LoadedAnimation);
+                            
+                            SaveAnimationToFile(GameState, *GameState->EditorState.LoadedAnimation, Renderer);
                             GameState->EditorState.LoadedAnimation = 0;
                             GameState->EditorState.HasLoadedAnimations = false;
                         }
@@ -984,11 +987,13 @@ static void EditorUpdateEntities(game_state* GameState, render_state& RenderStat
                         
                         i32 FrameIndex = 0;
                         
+                        texture_data* TextureData = Renderer.TextureMap[LoadedAnimation->Texture];
+                        
                         while(FrameIndex < (i32)LoadedAnimation->FrameCount)
                         {
                             if(FrameIndex > 0)
                             {
-                                if(X + (i32)LoadedAnimation->FrameSize.x < LoadedAnimation->Texture->Width)
+                                if(X + (i32)LoadedAnimation->FrameSize.x < TextureData->Width)
                                     X += (i32)LoadedAnimation->FrameSize.x;
                                 else
                                 {

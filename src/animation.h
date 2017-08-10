@@ -19,7 +19,7 @@ struct animation
 {
     char* Name;
     r32 TimePerFrame;
-    texture* Texture;
+    char* Texture;
     i32 FrameCount = 0;
     math::v2 FrameSize;
     math::v2 Center;
