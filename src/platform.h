@@ -108,7 +108,7 @@ struct game_update_return
     i32 EntityCount;
 };
 
-#define UPDATE(name)void name(r64 DeltaTime, game_memory* GameMemory, render_state& RenderState, renderer& Renderer, input_controller* InputController, sound_queue* SoundQueue, game_update_return* GameUpdateStruct, sound_effects* SoundEffects)
+#define UPDATE(name)void name(r64 DeltaTime, game_memory* GameMemory, renderer& Renderer, input_controller* InputController, sound_queue* SoundQueue, game_update_return* GameUpdateStruct, sound_effects* SoundEffects)
 typedef UPDATE(update);
 UPDATE(UpdateStub)
 {

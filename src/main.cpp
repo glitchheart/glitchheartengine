@@ -161,10 +161,9 @@ int main(void)
     GameMemory.ConfigData = ConfigData;
     
     render_state RenderState;
-    
-    InitializeOpenGL(RenderState, &ConfigData);
-    
     renderer Renderer = {};
+    
+    InitializeOpenGL(RenderState, Renderer, &ConfigData);
     
     game_code Game = LoadGameCode();
     
@@ -192,7 +191,7 @@ int main(void)
     r64 CurrentFrame = 0.0;
     r64 DeltaTime;
     
-    while (!ShouldCloseWindow(&GameState->RenderState) && !GameState->RenderState.ShouldClose)
+    while (!ShouldCloseWindow(RenderState) && !RenderState.ShouldClose)
     {
         //calculate deltatime
         CurrentFrame = GetTime();
@@ -202,13 +201,8 @@ int main(void)
         
         if(GameMemory.IsInitialized)
         {
-            GameState->RenderState.FPS = FPS;
-            
-            if(GameState->GameMode == Mode_Exit)
-            {
-                DEBUG_PRINT("Quit\n");
-                glfwSetWindowShouldClose(GameState->RenderState.Window, GLFW_TRUE);
-            }
+            //DEBUG_PRINT("Quit\n");
+            //glfwSetWindowShouldClose(RenderState.Window, GLFW_TRUE);
         }
         
         if(GetKeyDown(Key_F3, &InputController))
@@ -229,14 +223,14 @@ int main(void)
             SoundDevice.Paused = !SoundDevice.Paused;
         }
         
-        ReloadAssets(&GameMemory, &AssetManager);
+        ReloadAssets(RenderState, &AssetManager);
         GameState->ReloadData = &AssetManager.ReloadData;
         ReloadDlls(&Game);
         
         game_update_return GameUpdateStruct = {};
         Game.Update(DeltaTime, &GameMemory, Renderer, &InputController, &SoundQueue, &GameUpdateStruct, &SoundEffects);
         
-        CheckLevelVAO(&GameMemory);
+        //CheckLevelVAO(&GameMemory);
         
         Render(RenderState, Renderer);
         PlaySounds(&SoundDevice, &SoundQueue, GameUpdateStruct.EntityPositions, GameUpdateStruct.EntityCount);
@@ -261,6 +255,6 @@ int main(void)
     }
     
     CleanupSound(&SoundDevice);
-    CloseWindow(&GameState->RenderState);
+    CloseWindow(RenderState);
     //_CrtDumpMemoryLeaks();
 }

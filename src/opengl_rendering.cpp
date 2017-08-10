@@ -39,16 +39,16 @@ inline static void PollEvents()
     glfwPollEvents();
 }
 
-static void CloseWindow(render_state* RenderState)
+static void CloseWindow(render_state& RenderState)
 {
-    glfwDestroyWindow(RenderState->Window);
+    glfwDestroyWindow(RenderState.Window);
     glfwTerminate();
     exit(EXIT_SUCCESS);
 }
 
-static b32 ShouldCloseWindow(render_state* RenderState)
+static b32 ShouldCloseWindow(render_state& RenderState)
 {
-    return glfwWindowShouldClose(RenderState->Window); 
+    return glfwWindowShouldClose(RenderState.Window); 
 }
 
 static GLint ShaderCompilationErrorChecking(const char* ShaderName, GLuint Shader)
@@ -317,9 +317,9 @@ static void RegisterVertexBuffer(render_state& RenderState, GLfloat* BufferData,
         RenderState.BufferCount++;
 }
 
-static void LoadTilemapBuffer(render_state* RenderState, i32 Layer, GLuint* VAO, GLuint* VBO, i32* Size, const tilemap& Tilemap, Level_Type LevelType)
+static void LoadTilemapBuffer(render_state* RenderState, renderer& Renderer, i32 Layer, GLuint* VAO, GLuint* VBO, i32* Size, const tilemap& Tilemap, Level_Type LevelType)
 {
-    texture_data* Texture = Render->Textures[Tilemap.TextureName];
+    texture_data* Texture = Renderer.TextureMap[Tilemap.TextureName];
     
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, RenderState->QuadIndexBuffer);
     
@@ -392,9 +392,9 @@ static void LoadTilemapBuffer(render_state* RenderState, i32 Layer, GLuint* VAO,
     free(VertexBuffer);
 }
 
-static void LoadEditorTileBuffer(render_state* RenderState, editor_render_info& EditorRenderInfo, const tilemap& Tilemap)
+static void LoadEditorTileBuffer(render_state* RenderState, renderer& Renderer,  editor_render_info& EditorRenderInfo, const tilemap& Tilemap)
 {
-    texture* Texture = RenderState->Textures[Tilemap.TextureName];
+    texture_data* Texture = Renderer.TextureMap[Tilemap.TextureName];
     
     GLfloat* VertexBuffer = (GLfloat*)malloc(sizeof(GLfloat) * 16 * Tilemap.TileCount);
     
@@ -467,9 +467,9 @@ static void LoadEditorTileBuffer(render_state* RenderState, editor_render_info& 
     free(VertexBuffer);
 }
 
-static void LoadTilemapWireframeBuffer(const tilemap& Tilemap, render_state* RenderState, u32* VAO, u32* VBO, u32* Size)
+static void LoadTilemapWireframeBuffer(const tilemap& Tilemap, render_state* RenderState, renderer& Renderer, u32* VAO, u32* VBO, u32* Size)
 {
-    texture* Texture = RenderState->Textures[Tilemap.TextureName];
+    texture_data* Texture = Renderer.TextureMap[Tilemap.TextureName];
     
     glGenVertexArrays(1, VAO);
     glBindVertexArray(*VAO);
@@ -522,14 +522,14 @@ static void LoadTilemapWireframeBuffer(const tilemap& Tilemap, render_state* Ren
     free(WireframeVertexBuffer);
 }
 
-static void CreateTilemapVAO(render_state* RenderState, const tilemap& Tilemap, Level_Type LevelType, editor_render_info* EditorRenderInfo, tilemap_render_info* TilemapRenderInfo, i32 OnlyLayer = -1)
+static void CreateTilemapVAO(render_state* RenderState, renderer& Renderer, const tilemap& Tilemap, Level_Type LevelType, editor_render_info* EditorRenderInfo, tilemap_render_info* TilemapRenderInfo, i32 OnlyLayer = -1)
 {
     if(OnlyLayer != -1)
     {
         TilemapRenderInfo->VBOS[OnlyLayer] = 0;
         glGenVertexArrays(1, &TilemapRenderInfo->VAOS[OnlyLayer]);
         glBindVertexArray(TilemapRenderInfo->VAOS[OnlyLayer]);
-        LoadTilemapBuffer(RenderState, OnlyLayer, &TilemapRenderInfo->VAOS[OnlyLayer], &TilemapRenderInfo->VBOS[OnlyLayer], &TilemapRenderInfo->VBOSizes[OnlyLayer], Tilemap, LevelType);
+        LoadTilemapBuffer(RenderState, Renderer, OnlyLayer, &TilemapRenderInfo->VAOS[OnlyLayer], &TilemapRenderInfo->VBOS[OnlyLayer], &TilemapRenderInfo->VBOSizes[OnlyLayer], Tilemap, LevelType);
     }
     else
     {
@@ -538,7 +538,7 @@ static void CreateTilemapVAO(render_state* RenderState, const tilemap& Tilemap, 
             TilemapRenderInfo->VBOS[Layer] = 0;
             glGenVertexArrays(1, &TilemapRenderInfo->VAOS[Layer]);
             glBindVertexArray(TilemapRenderInfo->VAOS[Layer]);
-            LoadTilemapBuffer(RenderState, Layer, &TilemapRenderInfo->VAOS[Layer], &TilemapRenderInfo->VBOS[Layer], &TilemapRenderInfo->VBOSizes[Layer], Tilemap, LevelType);
+            LoadTilemapBuffer(RenderState, Renderer, Layer, &TilemapRenderInfo->VAOS[Layer], &TilemapRenderInfo->VBOS[Layer], &TilemapRenderInfo->VBOSizes[Layer], Tilemap, LevelType);
             
         }
     }
@@ -551,7 +551,7 @@ static void CreateTilemapVAO(render_state* RenderState, const tilemap& Tilemap, 
         glBindVertexArray(EditorRenderInfo->VAO);
         
         EditorRenderInfo->VBO = 0;
-        LoadEditorTileBuffer(RenderState, *EditorRenderInfo, Tilemap);
+        LoadEditorTileBuffer(RenderState, Renderer, *EditorRenderInfo, Tilemap);
     }
 }
 
@@ -890,16 +890,24 @@ static GLuint LoadTexture(texture_data& Data, texture* Texture)
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, TextureData.Width, TextureData.Height, 0, GL_RGBA,
-                 GL_UNSIGNED_BYTE, (GLvoid*) TextureData.ImageData);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, Data.Width, Data.Height, 0, GL_RGBA,
+                 GL_UNSIGNED_BYTE, (GLvoid*) Data.ImageData);
     
     Texture->TextureHandle = TextureHandle;
-    stbi_image_free(TextureData.Image);
+    stbi_image_free(Data.ImageData);
     
     return GL_TRUE;
 }
 
-static void InitializeOpenGL(render_state& RenderState, config_data* ConfigData)
+static void LoadTextures(render_state& RenderState, renderer& Renderer)
+{
+    for(i32 Index = RenderState.TextureIndex; Index < Renderer.TextureCount; Index++)
+    {
+        LoadTexture(Renderer.TextureData[Index], &RenderState.TextureArray[RenderState.TextureIndex++]);
+    }
+}
+
+static void InitializeOpenGL(render_state& RenderState, renderer& Renderer, config_data* ConfigData)
 {
     if (!glfwInit())
         exit(EXIT_FAILURE);
@@ -957,12 +965,13 @@ static void InitializeOpenGL(render_state& RenderState, config_data* ConfigData)
     
     ControllerPresent();
     
-    texture_Map_Init(&RenderState.Textures, HashStringJenkins, 64);
-    LoadTextures(&RenderState, "../assets/textures/");
-    LoadTextures(&RenderState, "../assets/textures/spritesheets/");
+    //@Incomplete: Don't load textures here I suppose?
+    LoadTextures(RenderState, Renderer);
+    LoadTextures(RenderState, Renderer);
     RenderSetup(&RenderState);
     
-    LoadTilesheetTextures(&RenderState);
+    //@Incomplete I DUNNO
+    //LoadTilesheetTextures(&RenderState);
 }
 
 static void ReloadVertexShader(Shader_Type Type, render_state* RenderState)
@@ -979,22 +988,21 @@ static void ReloadFragmentShader(Shader_Type Type, render_state* RenderState)
     LoadFragmentShader(ShaderPaths[Type], &RenderState->Shaders[Type]);
 }
 
-static void ReloadAssets(game_memory* GameMemory, asset_manager* AssetManager)
+static void ReloadAssets(render_state& RenderState, asset_manager* AssetManager)
 {
-    game_state* GameState = (game_state*)GameMemory->PermanentStorage;
     for(int i = 0; i < Shader_Count; i++)
     {
         if(AssetManager->DirtyVertexShaderIndices[i] == 1)
         {
             DEBUG_PRINT("Reloading vertex shader type: %s\n", ShaderEnumToStr((Shader_Type)i));
-            ReloadVertexShader((Shader_Type)i, &GameState->RenderState);
+            ReloadVertexShader((Shader_Type)i, &RenderState);
             AssetManager->DirtyVertexShaderIndices[i] = 0;
         }
         
         if(AssetManager->DirtyFragmentShaderIndices[i] == 1)
         {
             DEBUG_PRINT("Reloading fragment shader type: %s\n", ShaderEnumToStr((Shader_Type)i));
-            ReloadFragmentShader((Shader_Type)i, &GameState->RenderState);
+            ReloadFragmentShader((Shader_Type)i, &RenderState);
             AssetManager->DirtyFragmentShaderIndices[i] = 0;
         }
     }
@@ -1175,39 +1183,39 @@ static void RenderIsometricOutline(render_state* RenderState, math::v4 Color, r3
     glBindVertexArray(0);
 }
 
-static void RenderRect(Render_Mode Mode, render_state* RenderState, math::v4 Color, r32 X, r32 Y, r32 Width, r32 Height, u32 TextureHandle = 0, b32 IsUI = true, math::m4 ProjectionMatrix = math::m4(), math::m4 ViewMatrix = math::m4())
+static void RenderRect(Render_Mode Mode, render_state& RenderState, math::v4 Color, r32 X, r32 Y, r32 Width, r32 Height, u32 TextureHandle = 0, b32 IsUI = true, math::m4 ProjectionMatrix = math::m4(), math::m4 ViewMatrix = math::m4())
 {
     if(IsUI)
     {
-        X *= RenderState->ScaleX;
+        X *= RenderState.ScaleX;
         X -= 1;
-        Y *= RenderState->ScaleY;
+        Y *= RenderState.ScaleY;
         Y -= 1;
         
-        Width *= RenderState->ScaleX;
-        Height *= RenderState->ScaleY;
+        Width *= RenderState.ScaleX;
+        Height *= RenderState.ScaleY;
     }
     
     switch(Mode)
     {
         case Render_Fill:
         {
-            auto Shader = RenderState->RectShader;
+            auto Shader = RenderState.RectShader;
             
             if(TextureHandle != 0)
             {
-                glBindVertexArray(RenderState->TextureRectVAO);
+                glBindVertexArray(RenderState.TextureRectVAO);
             }
             else
             {
-                glBindVertexArray(RenderState->RectVAO);
+                glBindVertexArray(RenderState.RectVAO);
             }
             
             if(TextureHandle != 0)
             {
                 glBindTexture(GL_TEXTURE_2D, TextureHandle);
-                Shader = RenderState->TextureRectShader;
-                RenderState->BoundTexture = TextureHandle;
+                Shader = RenderState.TextureRectShader;
+                RenderState.BoundTexture = TextureHandle;
             } 
             
             UseShader(&Shader);
@@ -1227,7 +1235,7 @@ static void RenderRect(Render_Mode Mode, render_state* RenderState, math::v4 Col
             SetMat4Uniform(Shader.Program, "M", Model);
             SetVec4Uniform(Shader.Program, "color", Color);
             
-            glDrawElements(GL_TRIANGLES, sizeof(RenderState->QuadIndices), GL_UNSIGNED_INT, (void*)0);
+            glDrawElements(GL_TRIANGLES, sizeof(RenderState.QuadIndices), GL_UNSIGNED_INT, (void*)0);
         }
         break;
         case Render_Outline:
@@ -1236,9 +1244,9 @@ static void RenderRect(Render_Mode Mode, render_state* RenderState, math::v4 Col
             Model = math::Translate(Model, math::v3(X, Y, 0));
             Model = math::Scale(Model, math::v3(Width, Height, 1));
             
-            glBindVertexArray(RenderState->WireframeVAO);
+            glBindVertexArray(RenderState.WireframeVAO);
             
-            auto Shader = RenderState->RectShader;
+            auto Shader = RenderState.RectShader;
             UseShader(&Shader);
             
             if(!IsUI)
@@ -1282,18 +1290,18 @@ static void MeasureText(const render_font& Font, const char* Text, float* Width,
 }
 
 //rendering methods
-static void RenderText(render_state* RenderState, const render_font& Font, const math::v4& Color, const char* Text, r32 X, r32 Y, Alignment Alignment = Alignment_Left, b32 AlignCenterY = true) 
+static void RenderText(render_state& RenderState, const render_font& Font, const math::v4& Color, const char* Text, r32 X, r32 Y, Alignment Alignment = Alignment_Left, b32 AlignCenterY = true) 
 {
     glBindVertexArray(Font.VAO);
-    auto Shader = RenderState->Shaders[Shader_StandardFont];
+    auto Shader = RenderState.Shaders[Shader_StandardFont];
     UseShader(&Shader);
     SetVec4Uniform(Shader.Program, "color", Color);
     SetVec4Uniform(Shader.Program, "alphaColor", Font.AlphaColor);
     
-    if (RenderState->BoundTexture != Font.Texture) //never bind the same texture if it's already bound
+    if (RenderState.BoundTexture != Font.Texture) //never bind the same texture if it's already bound
     {
         glBindTexture(GL_TEXTURE_2D, Font.Texture);
-        RenderState->BoundTexture = Font.Texture;
+        RenderState.BoundTexture = Font.Texture;
     }
     
     point* Coords = (point*)malloc(sizeof(point) * 6 * strlen(Text));
@@ -1328,22 +1336,22 @@ static void RenderText(render_state* RenderState, const render_font& Font, const
     if((i32)Y % 2 != 0)
         Y -= 1.0f;
     
-    X *= RenderState->ScaleX;
+    X *= RenderState.ScaleX;
     X -= 1.0f;
-    Y *= RenderState->ScaleY;
+    Y *= RenderState.ScaleY;
     Y -= 1.0f;
     
     for(const char *P = Text; *P; P++) 
     { 
-        r32 W = Font.CharacterInfo[*P].BW * RenderState->ScaleX;
-        r32 H = Font.CharacterInfo[*P].BH * RenderState->ScaleY;
+        r32 W = Font.CharacterInfo[*P].BW * RenderState.ScaleX;
+        r32 H = Font.CharacterInfo[*P].BH * RenderState.ScaleY;
         
-        r32 X2 =  X + Font.CharacterInfo[*P ].BL * RenderState->ScaleX;
-        r32 Y2 = -Y - Font.CharacterInfo[*P ].BT * RenderState->ScaleY;
+        r32 X2 =  X + Font.CharacterInfo[*P ].BL * RenderState.ScaleX;
+        r32 Y2 = -Y - Font.CharacterInfo[*P ].BT * RenderState.ScaleY;
         
         /* Advance the cursor to the start of the next character */
-        X += Font.CharacterInfo[*P].AX * RenderState->ScaleX;
-        Y += Font.CharacterInfo[*P].AY * RenderState->ScaleY;
+        X += Font.CharacterInfo[*P].AX * RenderState.ScaleX;
+        Y += Font.CharacterInfo[*P].AY * RenderState.ScaleY;
         
         /* Skip glyphs that have no pixels */
         if(!W || !H)
@@ -1365,30 +1373,28 @@ static void RenderText(render_state* RenderState, const render_font& Font, const
     glBindVertexArray(0);
 }
 
-static void RenderConsole(game_state* GameState, console* Console)
+static void RenderConsole(render_state& RenderState, console* Console)
 {
-    render_state* RenderState = &GameState->RenderState;
-    
-    glBindVertexArray(RenderState->RectVAO);
+    glBindVertexArray(RenderState.RectVAO);
     
     r32 PercentAnimated = 1.0f + 1.0f - (r32)Console->CurrentTime / (r32)Console->TimeToAnimate;
     
     //draw upper part
-    RenderRect(Render_Fill, &GameState->RenderState, math::v4(0.0f, 0.4f, 0.3f, 0.6f), 0.0f, (r32)RenderState->WindowHeight * 0.77f * PercentAnimated, (r32)RenderState->WindowWidth, (r32)RenderState->WindowHeight * 0.23f);
+    RenderRect(Render_Fill, RenderState, math::v4(0.0f, 0.4f, 0.3f, 0.6f), 0.0f, (r32)RenderState.WindowHeight * 0.77f * PercentAnimated, (r32)RenderState.WindowWidth, (r32)RenderState.WindowHeight * 0.23f);
     
     //draw lower bar
-    RenderRect(Render_Fill, &GameState->RenderState, math::v4(0.0f, 0.2f, 0.2f, 0.6f), 0.0f, (r32)RenderState->WindowHeight * 0.77f * PercentAnimated, (r32)RenderState->WindowWidth, 20);  
+    RenderRect(Render_Fill, RenderState, math::v4(0.0f, 0.2f, 0.2f, 0.6f), 0.0f, (r32)RenderState.WindowHeight * 0.77f * PercentAnimated, (r32)RenderState.WindowWidth, 20);  
     
     GLfloat TimeValue = (r32)glfwGetTime();
     GLfloat AlphaValue = (r32)((sin(TimeValue * 4) / 2) + 0.5f);
     r32 Width;
     r32 Height;
-    MeasureText(RenderState->InconsolataFont, &Console->Buffer[0], &Width, &Height);
+    MeasureText(RenderState.InconsolataFont, &Console->Buffer[0], &Width, &Height);
     
     //draw cursor
-    RenderRect(Render_Fill, &GameState->RenderState, math::v4(AlphaValue, 1, AlphaValue, 1), 5 / 1920.0f * (r32)RenderState->WindowWidth + Width, RenderState->WindowHeight * 0.77f * PercentAnimated, 10, 20);
+    RenderRect(Render_Fill, RenderState, math::v4(AlphaValue, 1, AlphaValue, 1), 5 / 1920.0f * (r32)RenderState.WindowWidth + Width, RenderState.WindowHeight * 0.77f * PercentAnimated, 10, 20);
     
-    RenderText(RenderState, RenderState->InconsolataFont, math::v4(0, 0.8, 0, 1),  &Console->Buffer[0],  5 / 1920.0f * (r32)RenderState->WindowWidth, (r32)RenderState->WindowHeight * 0.775f * PercentAnimated);
+    RenderText(RenderState, RenderState.InconsolataFont, math::v4(0, 0.8, 0, 1),  &Console->Buffer[0],  5 / 1920.0f * (r32)RenderState.WindowWidth, (r32)RenderState.WindowHeight * 0.775f * PercentAnimated);
     
     int index = 0;
     
@@ -1401,7 +1407,7 @@ static void RenderConsole(game_state* GameState, console* Console)
         else
             Color = math::v4(1, 1, 1, 1);
         
-        RenderText(RenderState, RenderState->InconsolataFont, Color, &Console->HistoryBuffer[Index][0], 5 / 1920.0f * (r32)RenderState->WindowWidth, (r32)RenderState->WindowHeight * 0.78f * PercentAnimated + (Index + 1) * 20 * PercentAnimated);
+        RenderText(RenderState, RenderState.InconsolataFont, Color, &Console->HistoryBuffer[Index][0], 5 / 1920.0f * (r32)RenderState.WindowWidth, (r32)RenderState.WindowHeight * 0.78f * PercentAnimated + (Index + 1) * 20 * PercentAnimated);
     }
 }
 
@@ -1488,7 +1494,7 @@ static void RenderAStarPath(render_state* RenderState, entity* Entity, math::m4 
     }
 }
 
-static void RenderAnimationPreview(render_state* RenderState, const animation_info& AnimationInfo, const animation& Animation, math::v2 ScreenPosition, r32 Scale)
+static void RenderAnimationPreview(render_state& RenderState, renderer& Renderer, const animation_info& AnimationInfo, const animation& Animation, math::v2 ScreenPosition, r32 Scale)
 {
     r32 Ratio = Animation.FrameSize.y / Animation.FrameSize.x;
     
@@ -1497,24 +1503,26 @@ static void RenderAnimationPreview(render_state* RenderState, const animation_in
     
     RenderRect(Render_Fill, RenderState, math::v4(1, 1, 1, 1), ScreenPosition.x, ScreenPosition.y, MaxWidth, MaxHeight);
     
-    ScreenPosition.x *= RenderState->ScaleX;
+    ScreenPosition.x *= RenderState.ScaleX;
     ScreenPosition.x -= 1;
-    ScreenPosition.y *= RenderState->ScaleY;
+    ScreenPosition.y *= RenderState.ScaleY;
     ScreenPosition.y -= 1;
     
-    auto Shader = RenderState->SpritesheetShader;
+    auto Shader = RenderState.SpritesheetShader;
     
     math::m4 Model(1.0f);
     Model = math::Translate(Model, math::v3(ScreenPosition.x, ScreenPosition.y, 0.0f));
-    Model = math::Scale(Model, math::v3(MaxWidth * RenderState->ScaleX, MaxHeight * RenderState->ScaleY, 1));
+    Model = math::Scale(Model, math::v3(MaxWidth * RenderState.ScaleX, MaxHeight * RenderState.ScaleY, 1));
     
-    if (RenderState->BoundTexture != Animation.Texture->TextureHandle) //never bind the same texture if it's already bound
+    auto TextureData = Renderer.TextureMap[Animation.Texture];
+    
+    if ((i32)RenderState.BoundTexture != TextureData->Handle) //never bind the same texture if it's already bound
     {
-        glBindTexture(GL_TEXTURE_2D, Animation.Texture->TextureHandle);
-        RenderState->BoundTexture = Animation.Texture->TextureHandle;
+        glBindTexture(GL_TEXTURE_2D, TextureData->Handle);
+        RenderState.BoundTexture = TextureData->Handle;
     }
     
-    glBindVertexArray(RenderState->SpriteSheetVAO);
+    glBindVertexArray(RenderState.SpriteSheetVAO);
     
     UseShader(&Shader);
     auto Frame = Animation.Frames[AnimationInfo.FrameIndex];
@@ -1524,15 +1532,15 @@ static void RenderAnimationPreview(render_state* RenderState, const animation_in
     SetFloatUniform(Shader.Program, "frameHeight", Animation.FrameSize.y);
     SetVec4Uniform(Shader.Program, "color", math::v4(1, 1, 1, 1));
     SetVec2Uniform(Shader.Program,"sheetSize",
-                   math::v2(Animation.Texture->Width, Animation.Texture->Height));
+                   math::v2(TextureData->Width, TextureData->Height));
     
     SetMat4Uniform(Shader.Program, "Model", Model);
     
-    glDrawElements(GL_TRIANGLES, sizeof(RenderState->QuadIndices), GL_UNSIGNED_INT, (void*)0);
+    glDrawElements(GL_TRIANGLES, sizeof(RenderState.QuadIndices), GL_UNSIGNED_INT, (void*)0);
     glBindVertexArray(0);
 }
 
-static void RenderHealthbar(render_state* RenderState,
+static void RenderHealthbar(render_state& RenderState,
                             entity* Entity, const entity_healthbar& Healthbar, math::m4 ProjectionMatrix, math::m4 ViewMatrix)
 {
     auto EntityPosition = ToIsometric(Entity->Position);
@@ -1553,14 +1561,14 @@ static void RenderHealthbar(render_state* RenderState,
         math::m4 Model = math::m4(1.0f) * ViewMatrix;
         
         math::v3 Projected =
-            math::Project(math::v3(EntityPosition.x, EntityPosition.y, 0), Model, ProjectionMatrix, math::v4(RenderState->Viewport[0], RenderState->Viewport[1], RenderState->Viewport[2], RenderState->Viewport[3]));
+            math::Project(math::v3(EntityPosition.x, EntityPosition.y, 0), Model, ProjectionMatrix, math::v4(RenderState.Viewport[0], RenderState.Viewport[1], RenderState.Viewport[2], RenderState.Viewport[3]));
         
         for(i32 Index = 0; Index < 10; Index++)
         {
             auto& HealthCount = Entity->Enemy.HealthCounts[Index];
             if(HealthCount.Visible)
             {
-                RenderText(RenderState, RenderState->DamageFont, math::v4(1, 0, 0, 1), HealthCount.Count, Projected.x + HealthCount.Position.x, Projected.y + HealthCount.Position.y);
+                RenderText(RenderState, RenderState.DamageFont, math::v4(1, 0, 0, 1), HealthCount.Count, Projected.x + HealthCount.Position.x, Projected.y + HealthCount.Position.y);
             }
         }
     }
@@ -1808,6 +1816,8 @@ static void RenderEntity(game_state *GameState, render_entity* RenderEntity, mat
     }*/
 }
 
+//@Incomplete: I guess we don't need this?
+/*
 static void RenderTile(render_state* RenderState, r32 X, r32 Y, u32 TilesheetIndex, i32 TileWidth, i32 TileHeight, math::v2 TextureOffset, math::v2 SheetSize, math::v4 Color,  math::m4 ProjectionMatrix, math::m4 View)
 {
     glBindVertexArray(RenderState->SpriteSheetVAO);
@@ -1833,19 +1843,20 @@ static void RenderTile(render_state* RenderState, r32 X, r32 Y, u32 TilesheetInd
     glDrawElements(GL_TRIANGLES, sizeof(RenderState->QuadIndices), GL_UNSIGNED_INT, (void*)0);
     glBindVertexArray(0);
 }
+*/
 
-void RenderButton(render_state* RenderState, const button& Button)
+void RenderButton(render_state& RenderState, renderer& Renderer, const button& Button)
 {
-    RenderRect(Render_Fill, RenderState, math::v4(0.26, 0.525, 0.95, 1), Button.ScreenPosition.x, Button.ScreenPosition.y, Button.Size.x, Button.Size.y, RenderState->Textures["button"]->TextureHandle);
-    RenderText(RenderState, RenderState->ButtonFont, Button.TextColor, Button.Text, Button.ScreenPosition.x + Button.Size.x / 2, Button.ScreenPosition.y + Button.Size.y / 2, Alignment_Center);
+    RenderRect(Render_Fill, RenderState, math::v4(0.26, 0.525, 0.95, 1), Button.ScreenPosition.x, Button.ScreenPosition.y, Button.Size.x, Button.Size.y, Renderer.TextureMap["button"]->Handle);
+    RenderText(RenderState, RenderState.ButtonFont, Button.TextColor, Button.Text, Button.ScreenPosition.x + Button.Size.x / 2, Button.ScreenPosition.y + Button.Size.y / 2, Alignment_Center);
 }
 
-void RenderTextfield(render_state* RenderState, const textfield& Textfield)
+void RenderTextfield(render_state& RenderState, const textfield& Textfield)
 {
     RenderRect(Render_Fill, RenderState, math::v4(1, 1, 1, 1), Textfield.ScreenPosition.x, Textfield.ScreenPosition.y, Textfield.Size.x, Textfield.Size.y);
     
-    RenderText(RenderState, RenderState->RobotoFont, math::v4(1, 1, 1, 1), Textfield.Label, Textfield.ScreenPosition.x, Textfield.ScreenPosition.y + 35);
-    RenderText(RenderState, RenderState->RobotoFont, math::v4(0, 0, 0, 1), Textfield.Text, Textfield.ScreenPosition.x, Textfield.ScreenPosition.y + 10);
+    RenderText(RenderState, RenderState.RobotoFont, math::v4(1, 1, 1, 1), Textfield.Label, Textfield.ScreenPosition.x, Textfield.ScreenPosition.y + 35);
+    RenderText(RenderState, RenderState.RobotoFont, math::v4(0, 0, 0, 1), Textfield.Text, Textfield.ScreenPosition.x, Textfield.ScreenPosition.y + 10);
     
     if(Textfield.InFocus)
     {
@@ -1854,17 +1865,17 @@ void RenderTextfield(render_state* RenderState, const textfield& Textfield)
         // Draw cursor
         r32 Width;
         r32 Height;
-        MeasureText(RenderState->RobotoFont, Textfield.Text, &Width, &Height);
+        MeasureText(RenderState.RobotoFont, Textfield.Text, &Width, &Height);
         RenderRect(Render_Fill, RenderState, math::v4(0.5, 0.3, 0.57, 1), Textfield.ScreenPosition.x + Width + 2, Textfield.ScreenPosition.y + 7, 10, 20);
     }
     
 }
 
-void RenderCheckbox(render_state* RenderState, const checkbox& Checkbox)
+void RenderCheckbox(render_state& RenderState, const checkbox& Checkbox)
 {
     RenderRect(Render_Fill, RenderState, math::v4(1, 1, 1, 1),Checkbox.ScreenPosition.x, Checkbox.ScreenPosition.y, 25, 25);
     
-    RenderText(RenderState, RenderState->RobotoFont, math::v4(1, 1, 1, 1), Checkbox.Label, Checkbox.ScreenPosition.x, Checkbox.ScreenPosition.y + 35);
+    RenderText(RenderState, RenderState.RobotoFont, math::v4(1, 1, 1, 1), Checkbox.Label, Checkbox.ScreenPosition.x, Checkbox.ScreenPosition.y + 35);
     
     if(Checkbox.Checked)
     {
@@ -1873,19 +1884,19 @@ void RenderCheckbox(render_state* RenderState, const checkbox& Checkbox)
 }
 
 
-static void RenderTilemap(i32 Layer, render_state* RenderState, const tilemap& Tilemap, math::m4 ProjectionMatrix, math::m4 View, math::v4 Color = math::v4(1, 1, 1, 1))
+static void RenderTilemap(i32 Layer, render_state& RenderState, renderer& Renderer,  const tilemap& Tilemap, math::m4 ProjectionMatrix, math::m4 View, math::v4 Color = math::v4(1, 1, 1, 1))
 {
-    texture* Texture = RenderState->Textures[Tilemap.TextureName];
+    texture_data* Texture = Renderer.TextureMap[Tilemap.TextureName];
     
-    if (RenderState->BoundTexture != Texture->TextureHandle)
+    if ((i32)RenderState.BoundTexture != Texture->Handle)
     {
-        glBindTexture(GL_TEXTURE_2D, Texture->TextureHandle);
-        RenderState->BoundTexture = Texture->TextureHandle;
+        glBindTexture(GL_TEXTURE_2D, Texture->Handle);
+        RenderState.BoundTexture = Texture->Handle;
     }
     
     glBindVertexArray(Tilemap.RenderInfo.VAOS[Layer]);
     
-    auto Shader = RenderState->TileShader;
+    auto Shader = RenderState.TileShader;
     UseShader(&Shader);
     
     math::m4 Model(1.0f);
@@ -1898,34 +1909,34 @@ static void RenderTilemap(i32 Layer, render_state* RenderState, const tilemap& T
     SetVec4Uniform(Shader.Program, "Color", Color);
     
     // @Incomplete: Change to glDrawElements
-    //glDrawElements(GL_TRIANGLES, sizeof(RenderState->QuadIndices), GL_UNSIGNED_INT, (void*)0); 
+    //glDrawElements(GL_TRIANGLES, sizeof(RenderState.QuadIndices), GL_UNSIGNED_INT, (void*)0); 
     glDrawArrays(GL_QUADS, 0, Tilemap.RenderInfo.VBOSizes[Layer] / 4);
     glBindVertexArray(0);
 }
 
-static void EditorRenderTilemap(math::v2 ScreenPosition, r32 Size, render_state* RenderState, const tilemap& Tilemap)
+static void EditorRenderTilemap(math::v2 ScreenPosition, r32 Size, render_state& RenderState, renderer& Renderer, const tilemap& Tilemap)
 {
-    texture* Texture = RenderState->Textures[Tilemap.TextureName];
+    texture_data* Texture = Renderer.TextureMap[Tilemap.TextureName];
     
-    r32 X = ScreenPosition.x * RenderState->ScaleX;
+    r32 X = ScreenPosition.x * RenderState.ScaleX;
     X -= 1;
-    r32 Y = ScreenPosition.y * RenderState->ScaleY;
+    r32 Y = ScreenPosition.y * RenderState.ScaleY;
     Y -= 1;
     
     glBindVertexArray(Tilemap.EditorRenderInfo.VAO);
     
-    if (RenderState->BoundTexture != Texture->TextureHandle)
+    if ((i32)RenderState.BoundTexture != Texture->Handle)
     {
-        glBindTexture(GL_TEXTURE_2D, Texture->TextureHandle);
-        RenderState->BoundTexture = Texture->TextureHandle;
+        glBindTexture(GL_TEXTURE_2D, Texture->Handle);
+        RenderState.BoundTexture = Texture->Handle;
     }
     
-    auto Shader = RenderState->TileShader;
+    auto Shader = RenderState.TileShader;
     UseShader(&Shader);
     
     math::m4 Model(1.0f);
     Model = math::Translate(Model, math::v3(X, Y, 0));
-    Model = math::Scale(Model, math::v3(Size * RenderState->ScaleX, Size * RenderState->ScaleY, 0.1));
+    Model = math::Scale(Model, math::v3(Size * RenderState.ScaleX, Size * RenderState.ScaleY, 0.1));
     SetFloatUniform(Shader.Program, "isUI", 1);
     SetMat4Uniform(Shader.Program, "Model", Model);
     SetVec4Uniform(Shader.Program, "Color", math::v4(1, 1, 1, 1));
@@ -1953,6 +1964,8 @@ int CompareFunction(const void* a, const void* b)
     return 0;
 }
 
+// @Incomplete: Is this used????
+/*
 static void RenderInGameMode(game_state* GameState)
 {
     qsort(GameState->RenderEntities, GameState->RenderEntityCount, sizeof(render_entity), CompareFunction);
@@ -1962,13 +1975,13 @@ static void RenderInGameMode(game_state* GameState)
         if(!GameState->EditorState.RenderAllLayers)
         {
             if(GameState->EditorState.CurrentTilemapLayer == Layer)
-                RenderTilemap(Layer, &GameState->RenderState, GameState->CurrentLevel.Tilemap, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
+                RenderTilemap(Layer, RenderState, GameState->CurrentLevel.Tilemap, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
             else
                 RenderTilemap(Layer, &GameState->RenderState, GameState->CurrentLevel.Tilemap, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix, math::v4(1, 1, 1, 0.2));
         }
         else
             RenderTilemap(Layer, &GameState->RenderState, GameState->CurrentLevel.Tilemap, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
-        
+            
         if(Layer == 1)
         {
             for(i32 Index = 0; Index < GameState->RenderEntityCount; Index++)
@@ -2011,10 +2024,11 @@ static void RenderInGameMode(game_state* GameState)
             Render->Object->RenderEntityHandle = Index;
             
             RenderEntity(GameState, Render, GameState->Camera.ProjectionMatrix, GameState->Camera.ViewMatrix);
-            }*/
-        }
-    }
+            }
 }
+}
+}
+*/
 
 void RenderGame(game_state* GameState)
 {
@@ -2024,6 +2038,8 @@ void RenderGame(game_state* GameState)
     }
 }
 
+//@Incomplete: This was commented out below
+/*
 void RenderUI(game_state* GameState)
 {
     switch(GameState->GameMode)
@@ -2055,7 +2071,7 @@ void RenderUI(game_state* GameState)
             
             if(GameState->Paused)
                 RenderText(&GameState->RenderState, GameState->RenderState.MenuFont, math::v4(0.5, 1, 1, 1), "PAUSED", (r32)GameState->RenderState.WindowWidth / 2, 40, Alignment_Center);
-            
+                
             if(!InputController.ControllerPresent)
             {
                 auto Tex = GameState->RenderState.Textures["cross"];
@@ -2157,11 +2173,11 @@ void RenderUI(game_state* GameState)
                             break;
                             case Loot_LevelItem:
                             {
-                                
+                            
                                 char LootText[64];
                                 if(GameState->Entities[0].Player.Will >= GameState->StatData[GameState->CharacterData.Level].WillForLevel)
                                 {
-                                    
+                                
                                     sprintf(LootText,"Spend %d will to gain power", GameState->StatData[GameState->CharacterData.Level].WillForLevel);
                                 }
                                 else
@@ -2301,7 +2317,7 @@ void RenderUI(game_state* GameState)
                                 
                                 RenderRect(Render_Fill, &GameState->RenderState, math::v4(1, 0, 0, 1), GameState->EditorState.ToolbarX + GameState->EditorState.TilemapOffset.x + GameState->EditorState.SelectedTilePosition.x * GameState->EditorState.RenderedTileSize,
                                            GameState->EditorState.ToolbarY + GameState->EditorState.TilemapOffset.y + GameState->EditorState.SelectedTilePosition.y * GameState->EditorState.RenderedTileSize, GameState->EditorState.RenderedTileSize, GameState->EditorState.RenderedTileSize, GameState->RenderState.Textures["selected_tile"]->TextureHandle);
-                                
+                                           
                                 char Text[255]; sprintf(Text,"Type index: %d Is solid: %d",GameState->CurrentLevel.Tilemap.Tiles[GameState->EditorState.SelectedTileType].TypeIndex,GameState->CurrentLevel.Tilemap.Tiles[GameState->EditorState.SelectedTileType].IsSolid);
                                 
                                 RenderText(&GameState->RenderState, GameState->RenderState.MenuFont, math::v4(1, 1, 1, 1), Text, GameState->RenderState.WindowWidth * 0.6f, (r32)GameState->RenderState.WindowHeight - 90);
@@ -2518,8 +2534,11 @@ void RenderUI(game_state* GameState)
         RenderText(&GameState->RenderState, GameState->RenderState.TitleFont, math::v4(1, 1, 1, 1), "Press any key to restart. . .", (r32)GameState->RenderState.WindowWidth / 2 - Width / 2, (r32)GameState->RenderState.WindowHeight / 2 - Height * 2);
     }
 }
+*/
 
 // @Inefficient: Maybe find a way to update only parts of the tilemap when placing tiles
+// @Incomplete: Do it differently?
+/*
 static void CheckLevelVAO(game_memory* GameMemory)
 {
     game_state* GameState = (game_state*)GameMemory->PermanentStorage;
@@ -2547,17 +2566,20 @@ static void CheckLevelVAO(game_memory* GameMemory)
         }
     }
 }
+*/
 
+//@Incomplete: DebugInfo should be pushed just like other rendering from game
+/*
 static void RenderDebugInfo(game_state* GameState)
 {
     auto Pos = math::UnProject(math::v3(InputController.MouseX, GameState->RenderState.Viewport[3] - InputController.MouseY, 0),
                                GameState->Camera.ViewMatrix,
                                GameState->Camera.ProjectionMatrix,
                                math::v4(0, 0, GameState->RenderState.Viewport[2], GameState->RenderState.Viewport[3]));
-    
+                               
     if(GameState->Console.CurrentTime > 0)
         RenderConsole(GameState, &GameState->Console);
-    
+        
     if(GameState->RenderState.RenderFPS)
     {
         char FPS[32];
@@ -2565,7 +2587,7 @@ static void RenderDebugInfo(game_state* GameState)
         RenderText(&GameState->RenderState, GameState->RenderState.InconsolataFont, 
                    math::v4(1, 1, 1, 1), FPS, GameState->RenderState.WindowWidth / 2.0f, 
                    GameState->RenderState.WindowHeight - 20.0f);
-        
+                   
         i32 X = (i32)math::Floor(Pos.x);
         i32 Y = (i32)math::Floor(Pos.y);
         char MousePos[32];
@@ -2574,9 +2596,11 @@ static void RenderDebugInfo(game_state* GameState)
                    math::v4(1, 1, 1, 1), MousePos, GameState->RenderState.WindowWidth / 2.0f - 200, 
                    GameState->RenderState.WindowHeight - 20.0f);
     }
-    
 }
+*/
 
+//@Incomplete: We need to push light sources and do it differently as well!!!
+/*
 static void RenderLightSources(game_state* GameState)
 {
     glBindVertexArray(GameState->RenderState.FrameBufferVAO);
@@ -2646,6 +2670,7 @@ static void RenderLightSources(game_state* GameState)
         glBindVertexArray(0);
     }
 }
+*/
 
 static void RenderLine(const render_command& Command, render_state& RenderState, math::m4 Projection, math::m4 View)
 {
@@ -2655,7 +2680,7 @@ static void RenderLine(const render_command& Command, render_state& RenderState,
 static void RenderText(const render_command& Command, render_state& RenderState)
 {
     // @Incomplete: Need to set a font
-    RenderText(&RenderState, RenderState.InconsolataFont, Command.Text.Color, Command.Text.Text, Command.Text.Position.x, Command.Text.Position.y);
+    RenderText(RenderState, RenderState.InconsolataFont, Command.Text.Color, Command.Text.Text, Command.Text.Position.x, Command.Text.Position.y);
 }
 
 static void RenderRect(const render_command& Command, render_state& RenderState, math::m4 Projection, math::m4 View)
@@ -2663,7 +2688,7 @@ static void RenderRect(const render_command& Command, render_state& RenderState,
     if(Command.IsUI)
     {
         RenderRect(Command.Rect.Outlined ? Render_Outline : Render_Fill, 
-                   &RenderState, 
+                   RenderState, 
                    Command.Rect.Color, 
                    Command.Rect.Position.x, 
                    Command.Rect.Position.y, 
@@ -2673,7 +2698,7 @@ static void RenderRect(const render_command& Command, render_state& RenderState,
     else
     {
         RenderRect(Command.Rect.Outlined ? Render_Outline : Render_Fill, 
-                   &RenderState, 
+                   RenderState, 
                    Command.Rect.Color, 
                    Command.Rect.Position.x, 
                    Command.Rect.Position.y,  
@@ -2686,14 +2711,14 @@ static void RenderRect(const render_command& Command, render_state& RenderState,
     }
 }
 
-static void RenderSprite(const render_command& Command, render_state& RenderState, math::m4 Projection, math::m4 View)
+static void RenderSprite(const render_command& Command, render_state& RenderState, renderer& Renderer,  math::m4 Projection, math::m4 View)
 {
-    texture* Texture = RenderState.Textures[Command.Sprite.TextureName];
+    texture_data* Texture = Renderer.TextureMap[Command.Sprite.TextureName];
     
-    if (RenderState.BoundTexture != Texture->TextureHandle)
+    if ((i32)RenderState.BoundTexture != Texture->Handle)
     {
-        glBindTexture(GL_TEXTURE_2D, Texture->TextureHandle);
-        RenderState.BoundTexture = Texture->TextureHandle;
+        glBindTexture(GL_TEXTURE_2D, Texture->Handle);
+        RenderState.BoundTexture = Texture->Handle;
     }
     
     shader Shader = RenderState.SpritesheetShader;
@@ -2755,17 +2780,17 @@ static void RenderModel(const render_command& Command, render_state& RenderState
     glBindVertexArray(0);
 }
 
-static void RenderBuffer(const render_command& Command, render_state& RenderState, math::m4 Projection, math::m4 View)
+static void RenderBuffer(const render_command& Command, render_state& RenderState, renderer& Renderer,  math::m4 Projection, math::m4 View)
 {
     buffer Buffer = RenderState.Buffers[Command.Buffer.BufferHandle];
     
     glBindVertexArray(Buffer.VAO);
     
-    texture* Texture = RenderState.Textures[Command.Buffer.TextureName];
-    if (RenderState.BoundTexture != Texture->TextureHandle)
+    texture_data* Texture = Renderer.TextureMap[Command.Buffer.TextureName];
+    if ((i32)RenderState.BoundTexture != Texture->Handle)
     {
-        glBindTexture(GL_TEXTURE_2D, Texture->TextureHandle);
-        RenderState.BoundTexture = Texture->TextureHandle;
+        glBindTexture(GL_TEXTURE_2D, Texture->Handle);
+        RenderState.BoundTexture = Texture->Handle;
     }
     
     auto Shader = RenderState.TileShader;
@@ -2826,7 +2851,7 @@ static void RenderCommands(render_state& RenderState, renderer& Renderer)
             break;
             case RenderCommand_Sprite:
             {
-                RenderSprite(Command, RenderState, Renderer.Camera.ProjectionMatrix, Renderer.Camera.ViewMatrix);
+                RenderSprite(Command, RenderState, Renderer, Renderer.Camera.ProjectionMatrix, Renderer.Camera.ViewMatrix);
             }
             break;
             case RenderCommand_Model:
@@ -2836,7 +2861,7 @@ static void RenderCommands(render_state& RenderState, renderer& Renderer)
             break;
             case RenderCommand_Buffer:
             {
-                RenderBuffer(Command, RenderState, Renderer.Camera.ProjectionMatrix, Renderer.Camera.ViewMatrix);
+                RenderBuffer(Command, RenderState, Renderer, Renderer.Camera.ProjectionMatrix, Renderer.Camera.ViewMatrix);
             }
             break;
         }
@@ -2845,17 +2870,9 @@ static void RenderCommands(render_state& RenderState, renderer& Renderer)
     Renderer.CommandCount = 0;
 }
 
-static void LoadTextures(render_state& RenderState, renderer& Renderer)
-{
-    for(i32 Index = TextureIndex; Index < Renderer.TextureCount; Index++)
-    {
-        LoadTexture(Renderer.TextureData[Index], RenderState->TextureArray[RenderState->TextureIndex++]);
-    }
-}
-
 static void Render(render_state& RenderState, renderer& Renderer)
 {
-    LoadTextures(Renderer);
+    LoadTextures(RenderState, Renderer);
     
     Renderer.Camera.ViewportWidth = RenderState.WindowWidth;
     Renderer.Camera.ViewportHeight = RenderState.WindowHeight;
