@@ -250,7 +250,7 @@ static void InitializeFreeTypeFont(char* FontPath, int FontSize, FT_Library Libr
     glBindVertexArray(0);
 }
 
-static void RegisterBuffers(render_state& RenderState, GLfloat* VertexBuffer, i32 VertexBufferSize, GLint* IndexBuffer, i32 IndexBufferSize, i32 BufferHandle = -1)
+static void RegisterBuffers(render_state& RenderState, GLfloat* VertexBuffer, i32 VertexBufferSize, GLuint* IndexBuffer, i32 IndexBufferSize, i32 BufferHandle = -1)
 {
     buffer* Buffer = &RenderState.Buffers[BufferHandle == -1 ? RenderState.BufferCount : BufferHandle];
     
@@ -268,11 +268,16 @@ static void RegisterBuffers(render_state& RenderState, GLfloat* VertexBuffer, i3
     glBindBuffer(GL_ARRAY_BUFFER, Buffer->VBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * VertexBufferSize, VertexBuffer, GL_STATIC_DRAW);
     
+    auto PositionLocation = glGetAttribLocation(RenderState.SimpleModelShader.Program, "position");
+    
+    glEnableVertexAttribArray(PositionLocation);
+    glVertexAttribPointer(PositionLocation, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     
     glGenBuffers(1, &Buffer->IBO);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, Buffer->IBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(IndexBufferSize), IndexBuffer, GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(u32) * IndexBufferSize, IndexBuffer, GL_STATIC_DRAW);
     
     if(BufferHandle == -1)
         RenderState.BufferCount++;
@@ -1000,7 +1005,7 @@ static void InitializeOpenGL(game_memory* GameMemory, config_data* ConfigData)
     //glFrontFace(GL_CCW);
     //glCullFace(GL_FRONT);
     //glEnable(GL_CULL_FACE);
-    
+    glDisable(GL_CULL_FACE);
     DEBUG_PRINT("%s\n", glGetString(GL_VERSION));
     
     glfwSetWindowUserPointer(RenderState.Window, GameState);
@@ -2801,8 +2806,8 @@ static void RenderModel(const render_command& Command, render_state& RenderState
     UseShader(&Shader);
     
     math::m4 Model(1.0f);
-    Model = math::Scale(Model, Command.Model.Scale);
-    Model = math::Translate(Model, Command.Model.Position);
+    Model = math::Scale(Model, math::v3(1, 1, 1));
+    Model = math::Translate(Model, math::v3(0, 0, 10));
     
     SetMat4Uniform(Shader.Program, "projection", Projection);
     SetMat4Uniform(Shader.Program, "view", View);
@@ -2810,7 +2815,6 @@ static void RenderModel(const render_command& Command, render_state& RenderState
     SetVec4Uniform(Shader.Program, "color", math::rgba(1.0f, 1.0f, 1.0f, 1.0f));
     
     glDrawElements(GL_TRIANGLES, sizeof(Buffer.IndexBufferSize), GL_UNSIGNED_INT, (void*)0);
-    
     glBindVertexArray(0);
 }
 
@@ -2857,8 +2861,8 @@ static void Render(render_state& RenderState, renderer& Renderer)
         else
         {
             RegisterBuffers(RenderState, Data.VertexBuffer, Data.VertexBufferSize, Data.IndexBuffer, Data.IndexBufferSize, Data.ExistingHandle);
-            free(Data.VertexBuffer);
-            free(Data.IndexBuffer);
+            //free(Data.VertexBuffer);
+            //free(Data.IndexBuffer);
         }
     }
     
