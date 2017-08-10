@@ -268,21 +268,17 @@ static void RegisterBuffers(render_state& RenderState, GLfloat* VertexBuffer, i3
     glBindBuffer(GL_ARRAY_BUFFER, Buffer->VBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * VertexBufferSize, VertexBuffer, GL_STATIC_DRAW);
     
-    auto PositionLocation = glGetAttribLocation(RenderState.SimpleModelShader.Program, "position");
-    
-    glEnableVertexAttribArray(PositionLocation);
-    glVertexAttribPointer(PositionLocation, 3, GL_FLOAT, GL_FALSE, 0, 0);
-    
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
     
     glGenBuffers(1, &Buffer->IBO);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, Buffer->IBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(u32) * IndexBufferSize, IndexBuffer, GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint) * IndexBufferSize, IndexBuffer, GL_STATIC_DRAW);
     
     if(BufferHandle == -1)
         RenderState.BufferCount++;
     
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    //glBindBuffer(GL_ARRAY_BUFFER, 0);
     
     glBindVertexArray(0);
 }
@@ -1006,6 +1002,8 @@ static void InitializeOpenGL(game_memory* GameMemory, config_data* ConfigData)
     //glCullFace(GL_FRONT);
     //glEnable(GL_CULL_FACE);
     glDisable(GL_CULL_FACE);
+    
+    //glEnable(GL_DEPTH_TEST);
     DEBUG_PRINT("%s\n", glGetString(GL_VERSION));
     
     glfwSetWindowUserPointer(RenderState.Window, GameState);
@@ -2806,15 +2804,16 @@ static void RenderModel(const render_command& Command, render_state& RenderState
     UseShader(&Shader);
     
     math::m4 Model(1.0f);
-    Model = math::Scale(Model, math::v3(1, 1, 1));
-    Model = math::Translate(Model, math::v3(0, 0, 10));
+    Model = math::Scale(Model, math::v3(2, 2, 2));
+    Model = math::Rotate(Model, 45.0f, math::v3(0.0f, 1.0f, 0.0f));
+    Model = math::Translate(Model, math::v3(0, 20, 0));
     
     SetMat4Uniform(Shader.Program, "projection", Projection);
     SetMat4Uniform(Shader.Program, "view", View);
     SetMat4Uniform(Shader.Program, "model", Model);
     SetVec4Uniform(Shader.Program, "color", math::rgba(1.0f, 1.0f, 1.0f, 1.0f));
     
-    glDrawElements(GL_TRIANGLES, sizeof(Buffer.IndexBufferSize), GL_UNSIGNED_INT, (void*)0);
+    glDrawElements(GL_TRIANGLES, Buffer.IndexBufferSize, GL_UNSIGNED_INT, (void*)0);
     glBindVertexArray(0);
 }
 
@@ -2861,8 +2860,8 @@ static void Render(render_state& RenderState, renderer& Renderer)
         else
         {
             RegisterBuffers(RenderState, Data.VertexBuffer, Data.VertexBufferSize, Data.IndexBuffer, Data.IndexBufferSize, Data.ExistingHandle);
-            //free(Data.VertexBuffer);
-            //free(Data.IndexBuffer);
+            free(Data.VertexBuffer);
+            free(Data.IndexBuffer);
         }
     }
     

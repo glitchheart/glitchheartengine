@@ -181,10 +181,10 @@ extern "C" UPDATE(Update)
     {
         GameState->TESTMODEL = (model*)malloc(sizeof(model));
         
-        LoadOBJFile(GameState->Renderer, "../assets/cube.obj", GameState->TESTMODEL);
+        LoadOBJFile(GameState->Renderer, "../assets/test.obj", GameState->TESTMODEL);
         
         GameState->TESTMODEL->Position = math::v3(0, 0, 0);
-        GameState->TESTMODEL->Scale = math::v3(2, 2, 2);
+        GameState->TESTMODEL->Scale = math::v3(1, 1, 1);
         
         if(GameState->ShouldReload)
         {
@@ -568,10 +568,12 @@ extern "C" UPDATE(Update)
         
         if(KEY(Key_Add))
         {
+            GameState->GameCamera.Center.z += 1.0f * DeltaTime;
             Zoom += (r32)(GameState->GodModeZoomSpeed / Factor * DeltaTime);
         }
         else if(KEY(Key_Subtract))
         {
+            GameState->GameCamera.Center.z -= 1.0f * DeltaTime;
             Zoom += (r32)(-GameState->GodModeZoomSpeed / Factor * DeltaTime);
         }
         
@@ -582,7 +584,7 @@ extern "C" UPDATE(Update)
             GameState->GameCamera.Center = Center + math::v3(Direction.x * GameState->GodModePanSpeed * Factor * DeltaTime, Direction.y * GameState->GodModePanSpeed * Factor * DeltaTime, 0);
         }
         
-        GameState->GameCamera.Zoom = Min(Max(Zoom, GameState->GodModeMinZoom), GameState->GodModeMaxZoom);
+        //GameState->GameCamera.Zoom = Min(Max(Zoom, GameState->GodModeMinZoom), GameState->GodModeMaxZoom);
     }
     
     if(KEY_DOWN(Key_L) && KEY(Key_LeftCtrl))
@@ -778,13 +780,13 @@ extern "C" UPDATE(Update)
                                                      -10.0f,
                                                      1000.0f);*/
     
-    GameState->Camera.ProjectionMatrix = math::Perspective((GameState->Camera.ViewportWidth / GameState->Camera.Zoom / 2) / (GameState->Camera.ViewportHeight / GameState->Camera.Zoom / 2), 60.0f,0.1f,1000.0f);
+    GameState->Camera.ProjectionMatrix = math::Perspective((GameState->Camera.ViewportWidth / GameState->Camera.Zoom) / (GameState->Camera.ViewportHeight / GameState->Camera.Zoom), 0.6f, 0.1f, 100.0f);
     
     
     GameState->Camera.ViewMatrix = math::Translate(math::m4(1.0f),
                                                    math::v3(-Center.x + GameState->Camera.ViewportWidth / GameState->Camera.Zoom / 2,
                                                             -Center.y + GameState->Camera.ViewportHeight / GameState->Camera.Zoom / 2,
-                                                            -700.0f));
+                                                            -20.0f));
     
     InputController->CurrentCharacter = 0;
     GameState->RenderState.DeltaTime = DeltaTime;
