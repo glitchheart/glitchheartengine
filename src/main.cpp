@@ -159,7 +159,12 @@ int main(void)
     GameMemory.ShouldReload = true;
     GameState->ShouldReload = true;
     GameMemory.ConfigData = ConfigData;
-    InitializeOpenGL(&GameMemory, &ConfigData);
+    
+    render_state RenderState;
+    
+    InitializeOpenGL(RenderState, &ConfigData);
+    
+    renderer Renderer = {};
     
     game_code Game = LoadGameCode();
     
@@ -228,11 +233,12 @@ int main(void)
         GameState->ReloadData = &AssetManager.ReloadData;
         ReloadDlls(&Game);
         
-        game_update_return GameUpdateStruct = {};Game.Update(DeltaTime, &GameMemory, &InputController, &SoundQueue, &GameUpdateStruct, &SoundEffects);
+        game_update_return GameUpdateStruct = {};
+        Game.Update(DeltaTime, &GameMemory, Renderer, &InputController, &SoundQueue, &GameUpdateStruct, &SoundEffects);
         
         CheckLevelVAO(&GameMemory);
         
-        Render(&GameMemory);
+        Render(RenderState, Renderer);
         PlaySounds(&SoundDevice, &SoundQueue, GameUpdateStruct.EntityPositions, GameUpdateStruct.EntityCount);
         
         SetControllerInvalidKeys();

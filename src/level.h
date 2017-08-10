@@ -31,10 +31,11 @@ struct tilemap
     i32 TilesheetWidth = 0;
     i32 TilesheetHeight = 0;
     
+    char* TextureName;
+    
     i32 BufferHandle = 0;
     tilemap_render_info RenderInfo;
     editor_render_info EditorRenderInfo;
-    render_entity RenderEntity;
     
     tile_data* Tiles;
     u32 TileCount;

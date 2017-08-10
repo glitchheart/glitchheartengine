@@ -87,24 +87,24 @@ static i32 LoadLight(game_state* GameState, char* LineBuffer, math::v2 InitPosit
 
 static void DeleteEntity(game_state* GameState, u32 EntityIndex)
 {
-    if(GameState->EntityCount == 0 || GameState->RenderState.RenderEntityCount == 0)
+    if(GameState->EntityCount == 0 || GameState->RenderEntityCount == 0)
         return;
     
     entity* Entity = &GameState->Entities[EntityIndex];
     
     u32 RenderEntityHandle = Entity->RenderEntityHandle;
     
-    for(i32 RenderIndex = RenderEntityHandle; RenderIndex < GameState->RenderState.RenderEntityCount; RenderIndex++)
+    for(i32 RenderIndex = RenderEntityHandle; RenderIndex < GameState->RenderEntityCount; RenderIndex++)
     {
-        GameState->RenderState.RenderEntities[RenderIndex] = GameState->RenderState.RenderEntities[RenderIndex + 1];
+        GameState->RenderEntities[RenderIndex] = GameState->RenderEntities[RenderIndex + 1];
         
-        if(GameState->RenderState.RenderEntities[RenderIndex].Entity)
+        if(GameState->RenderEntities[RenderIndex].Entity)
         {
-            GameState->RenderState.RenderEntities[RenderIndex].Entity->RenderEntityHandle = RenderIndex;
+            GameState->RenderEntities[RenderIndex].Entity->RenderEntityHandle = RenderIndex;
         }
     }
     
-    GameState->RenderState.RenderEntityCount = Max(GameState->RenderState.RenderEntityCount - 1, 0);
+    GameState->RenderEntityCount = Max(GameState->RenderEntityCount - 1, 0);
     
     if(GameState->EditorState.SelectedEntity)
         GameState->EditorState.SelectedEntity = 0;
@@ -113,7 +113,7 @@ static void DeleteEntity(game_state* GameState, u32 EntityIndex)
     {
         GameState->Entities[Index] = GameState->Entities[Index + 1];
         GameState->Entities[Index].EntityIndex = Index;
-        GameState->RenderState.RenderEntities[GameState->Entities[Index].RenderEntityHandle].Entity = &GameState->Entities[Index];
+        GameState->RenderEntities[GameState->Entities[Index].RenderEntityHandle].Entity = &GameState->Entities[Index];
     }
     
     GameState->EntityCount--;
@@ -216,17 +216,17 @@ static void SpawnShadow(game_state* GameState, math::v2 Position, i32* Handle)
     
     PlayAnimation(Shadow, "big_shadow", GameState);
     
-    render_entity* RenderEntity = &GameState->RenderState.RenderEntities[GameState->RenderState.RenderEntityCount];
+    render_entity* RenderEntity = &GameState->RenderEntities[GameState->RenderEntityCount];
     RenderEntity->RenderType = Render_Type_Object;
-    Shadow->RenderEntityHandle = GameState->RenderState.RenderEntityCount;
+    Shadow->RenderEntityHandle = GameState->RenderEntityCount;
     
-    RenderEntity->ShaderIndex = Shader_Spritesheet;
+    RenderEntity->Shader = Shader_Spritesheet;
     RenderEntity->Rendered = true;
     RenderEntity->Background = true;
     RenderEntity->RenderType = Render_Type_Object;
     RenderEntity->Object = &*Shadow;
     
-    Shadow->RenderEntityHandle = GameState->RenderState.RenderEntityCount++;
+    Shadow->RenderEntityHandle = GameState->RenderEntityCount++;
     RenderEntity->Color = math::v4(1, 1, 1, 1);
     DEBUG_PRINT("Shadow\n");
     GameState->Objects[GameState->ObjectCount++];
@@ -243,18 +243,18 @@ static void SpawnLoot(game_state* GameState, math::v2 Position, i32* Handle)
     Loot->Position = math::v2(Position.x, Position.y - 0.5f);
     Loot->UsesTransparency = true;
     
-    render_entity* RenderEntity = &GameState->RenderState.RenderEntities[GameState->RenderState.RenderEntityCount];
+    render_entity* RenderEntity = &GameState->RenderEntities[GameState->RenderEntityCount];
     RenderEntity->RenderType = Render_Type_Object;
-    RenderEntity->Texture = GameState->RenderState.Textures["basic_loot"];
-    Loot->RenderEntityHandle = GameState->RenderState.RenderEntityCount;
+    RenderEntity->TextureName = "basic_loot";
+    Loot->RenderEntityHandle = GameState->RenderEntityCount;
     
-    RenderEntity->ShaderIndex = Shader_Texture;
+    RenderEntity->Shader = Shader_Texture;
     RenderEntity->Rendered = true;
     RenderEntity->Background = false;
     RenderEntity->RenderType = Render_Type_Object;
     RenderEntity->Object = &*Loot;
     
-    Loot->RenderEntityHandle = GameState->RenderState.RenderEntityCount++;
+    Loot->RenderEntityHandle = GameState->RenderEntityCount++;
     DEBUG_PRINT("Loot\n");
     RenderEntity->Color = math::v4(1, 1, 1, 1);
     
@@ -274,16 +274,16 @@ static void SpawnWillDrop(game_state* GameState, math::v2 Position, i32* Handle)
     
     PlayAnimation(Will, "will_glow", GameState);
     
-    render_entity* RenderEntity = &GameState->RenderState.RenderEntities[GameState->RenderState.RenderEntityCount];
+    render_entity* RenderEntity = &GameState->RenderEntities[GameState->RenderEntityCount];
     RenderEntity->RenderType = Render_Type_Object;
     
-    RenderEntity->ShaderIndex = Shader_Spritesheet;
+    RenderEntity->Shader = Shader_Spritesheet;
     RenderEntity->Rendered = true;
     RenderEntity->Background = false;
     RenderEntity->RenderType = Render_Type_Object;
     RenderEntity->Object = &*Will;
     
-    Will->RenderEntityHandle = GameState->RenderState.RenderEntityCount++;
+    Will->RenderEntityHandle = GameState->RenderEntityCount++;
     
     RenderEntity->Color = math::v4(1, 1, 1, 1);
     
@@ -304,18 +304,18 @@ static void SpawnTree(game_state* GameState, math::v2 Position, i32* Handle = 0)
     Tree->Position = math::v2(Position.x - 1.4f, Position.y - 1.5f);
     Tree->UsesTransparency = true;
     
-    render_entity* RenderEntity = &GameState->RenderState.RenderEntities[GameState->RenderState.RenderEntityCount];
+    render_entity* RenderEntity = &GameState->RenderEntities[GameState->RenderEntityCount];
     RenderEntity->RenderType = Render_Type_Object;
-    Tree->RenderEntityHandle = GameState->RenderState.RenderEntityCount;
+    Tree->RenderEntityHandle = GameState->RenderEntityCount;
     
-    RenderEntity->ShaderIndex = Shader_Texture;
+    RenderEntity->Shader = Shader_Texture;
     RenderEntity->Rendered = true;
     RenderEntity->Background = false;
     RenderEntity->RenderType = Render_Type_Object;
     RenderEntity->Object = &*Tree;
-    RenderEntity->Texture = GameState->RenderState.Textures["big_tree"];
+    RenderEntity->TextureName = "big_tree";
     
-    Tree->RenderEntityHandle = GameState->RenderState.RenderEntityCount++;
+    Tree->RenderEntityHandle = GameState->RenderEntityCount++;
     RenderEntity->Color = math::v4(1, 1, 1, 1);
     
     GameState->Objects[GameState->ObjectCount++];
@@ -327,13 +327,13 @@ static void LoadEntityData(FILE* File, entity* Entity, game_state* GameState, b3
     {
         Entity->EntityIndex = GameState->EntityCount++;
         
-        render_entity* RenderEntity = &GameState->RenderState.RenderEntities[GameState->RenderState.RenderEntityCount];
-        RenderEntity->ShaderIndex = Shader_Spritesheet;
+        render_entity* RenderEntity = &GameState->RenderEntities[GameState->RenderEntityCount];
+        RenderEntity->Shader = Shader_Spritesheet;
         RenderEntity->Rendered = true;
         RenderEntity->Background = false;
         RenderEntity->RenderType = Render_Type_Entity;
         RenderEntity->Entity = &*Entity;
-        Entity->RenderEntityHandle = GameState->RenderState.RenderEntityCount++;
+        Entity->RenderEntityHandle = GameState->RenderEntityCount++;
         RenderEntity->Color = math::v4(1, 1, 1, 1);
         
         Entity->LookDirection = South;
@@ -797,7 +797,7 @@ AI_FUNC(SkeletonFollowing)
             PlayAnimation(Entity, "skeleton_idle", GameState);
             StartTimer(GameState, Skeleton.ChargingTimer);
             Enemy.AIState = AI_Charging;
-            render_entity* RenderEntity = &GameState->RenderState.RenderEntities[Entity->RenderEntityHandle];
+            render_entity* RenderEntity = &GameState->RenderEntities[Entity->RenderEntityHandle];
         }
         else if(DistanceToPlayer > Entity->Enemy.MaxFollowDistance)
         {
@@ -1010,7 +1010,7 @@ AI_FUNC(MinotaurFollowing)
             PlayAnimation(Entity, "minotaur_idle", GameState);
             StartTimer(GameState, Minotaur.ChargingTimer);
             Enemy.AIState = AI_Charging;
-            render_entity* RenderEntity = &GameState->RenderState.RenderEntities[Entity->RenderEntityHandle];
+            render_entity* RenderEntity = &GameState->RenderEntities[Entity->RenderEntityHandle];
         }
         else if(DistanceToPlayer <= Entity->Enemy.SlowdownDistance)
         {
@@ -1062,7 +1062,7 @@ AI_FUNC(MinotaurCharging)
 
 AI_FUNC(MinotaurDefending)
 {
-    auto& RenderEntity = GameState->RenderState.RenderEntities[Entity->RenderEntityHandle];
+    auto& RenderEntity = GameState->RenderEntities[Entity->RenderEntityHandle];
     
     if(!TimerDone(GameState, Entity->Enemy.DefendingTimer))
     {
@@ -2294,7 +2294,7 @@ static void UpdateSkeleton(entity* Entity, game_state* GameState, sound_queue* S
             Entity->IsFlipped = Entity->Velocity.x < 0;
         }
         
-        render_entity* RenderEntity = &GameState->RenderState.RenderEntities[Entity->RenderEntityHandle];
+        render_entity* RenderEntity = &GameState->RenderEntities[Entity->RenderEntityHandle];
         
         Entity->Velocity = math::v2(0,0);
         
@@ -2388,7 +2388,7 @@ static void UpdateMinotaur(entity* Entity, game_state* GameState, sound_queue* S
             Entity->IsFlipped = Entity->Velocity.x > 0;
         }
         
-        render_entity* RenderEntity = &GameState->RenderState.RenderEntities[Entity->RenderEntityHandle];
+        render_entity* RenderEntity = &GameState->RenderEntities[Entity->RenderEntityHandle];
         
         Entity->Velocity = math::v2(0,0);
         
@@ -2475,7 +2475,7 @@ static void UpdateTilePosition(entity& Entity, game_state* GameState, r64 DeltaT
 
 static void UpdateGeneral(entity* Entity, game_state* GameState, r64 DeltaTime)
 {
-    GameState->RenderState.RenderEntities[Entity->RenderEntityHandle].Rendered = math::Distance(Entity->Position, GameState->Entities[0].Position) < 15;
+    GameState->RenderEntities[Entity->RenderEntityHandle].Rendered = math::Distance(Entity->Position, GameState->Entities[0].Position) < 15;
     
     GameState->EntityTilePositions[Entity->CurrentTile.x][Entity->CurrentTile.y] = 0;
     
@@ -2484,7 +2484,7 @@ static void UpdateGeneral(entity* Entity, game_state* GameState, r64 DeltaTime)
         GameState->LightSources[Entity->LightSourceHandle].Pointlight.Position = math::v2(Entity->Position.x, Entity->Position.y);
     }
     
-    auto& RenderEntity = GameState->RenderState.RenderEntities[Entity->RenderEntityHandle];
+    auto& RenderEntity = GameState->RenderEntities[Entity->RenderEntityHandle];
     
     if(Entity->HitFlickerFramesLeft > 0 && TimerDone(GameState, Entity->HitFlickerTimer))
     {

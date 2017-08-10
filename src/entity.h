@@ -157,7 +157,6 @@ struct player_inventory
     b32 HasCheckpoint;
 };
 
-
 enum Loot_Type
 {
     Loot_Nothing,
@@ -212,6 +211,30 @@ enum Object_Type
     Object_Loot,
     Object_Will,
     Object_Tree
+};
+
+enum Render_Type
+{
+    Render_Type_Entity,
+    Render_Type_Object
+};
+
+struct render_entity
+{
+    Render_Type RenderType = Render_Type_Entity;
+    
+    union
+    {
+        entity* Entity;
+        object_entity* Object;
+    };
+    
+    b32 Rendered = true;
+    b32 Background = false;
+    
+    char* TextureName;
+    Shader_Type Shader;
+    math::v4 Color = math::v4(1, 1, 1, 1);
 };
 
 struct object_entity

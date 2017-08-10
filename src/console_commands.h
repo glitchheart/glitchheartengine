@@ -55,11 +55,11 @@ static char* LoadLevel(game_state* GameState, char** Arguments)
             for(i32 Index = 0; Index < GameState->EntityCount; Index++)
                 GameState->Entities[Index] = {};
             
-            for(i32 Index = 0; Index < GameState->RenderState.RenderEntityCount; Index++)
-                GameState->RenderState.RenderEntities[Index] = {};
+            for(i32 Index = 0; Index < GameState->RenderEntityCount; Index++)
+                GameState->RenderEntities[Index] = {};
             
             GameState->EntityCount = 0;
-            GameState->RenderState.RenderEntityCount = 0;
+            GameState->RenderEntityCount = 0;
             
             sprintf(Result, "Loaded level");
             
@@ -107,7 +107,7 @@ static void ReloadCurrentLevel(game_state* GameState)
     GameState->LightSourceCount = 0;
     GameState->EntityCount = 0;
     GameState->ObjectCount = 0;
-    GameState->RenderState.RenderEntityCount = 0;
+    GameState->RenderEntityCount = 0;
 }
 
 
@@ -119,9 +119,9 @@ static char* Reset(game_state* GameState, char** Arguments)
     return Result;
 }
 
-static char* Exit(game_state* GameState, char** Arguments)
+static char* Exit(render_state& RenderState, char** Arguments)
 {
-    GameState->RenderState.ShouldClose = true;
+    RenderState.ShouldClose = true;
     return "Exited";
 }
 

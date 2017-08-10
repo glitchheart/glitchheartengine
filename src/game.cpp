@@ -79,18 +79,18 @@ int CompareFunction(const void* a, const void* b)
     return 0;
 }
 
-static void PushTilemapRenderCommands(game_state* GameState)
+static void PushTilemapRenderCommands(renderer& Renderer, game_state& GameState)
 {
-    PushBuffer(GameState->Renderer, GameState->CurrentLevel.Tilemap.BufferHandle, GameState->CurrentLevel.Tilemap.RenderEntity.Texture->Name);
+    PushBuffer(Renderer, GameState.CurrentLevel.Tilemap.BufferHandle, GameState.CurrentLevel.Tilemap.TextureName);
 }
 
-static void PushEntityRenderCommands(game_state* GameState)
+static void PushEntityRenderCommands(renderer& Renderer, game_state& GameState, render_state& RenderState)
 {
-    qsort(GameState->RenderState.RenderEntities, GameState->RenderState.RenderEntityCount, sizeof(render_entity), CompareFunction);
+    qsort(GameState.RenderEntities, GameState.RenderEntityCount, sizeof(render_entity), CompareFunction);
     
-    for(i32 Index = 0; Index < GameState->RenderState.RenderEntityCount; Index++) 
+    for(i32 Index = 0; Index < GameState.RenderEntityCount; Index++) 
     {
-        render_entity* RenderEntity = &GameState->RenderState.RenderEntities[Index];
+        render_entity* RenderEntity = &GameState.RenderEntities[Index];
         
         if(RenderEntity->RenderType == Render_Type_Entity)
             RenderEntity->Entity->RenderEntityHandle = Index;
@@ -134,7 +134,7 @@ static void PushEntityRenderCommands(game_state* GameState)
             
             if(LightSourceHandle != -1)
             {
-                GameState->LightSources[LightSourceHandle].Pointlight.RenderPosition = CorrectPos + math::v2(CurrentAnimation->Center.x * Scale.x, CurrentAnimation->Center.y * Scale.y);
+                GameState.LightSources[LightSourceHandle].Pointlight.RenderPosition = CorrectPos + math::v2(CurrentAnimation->Center.x * Scale.x, CurrentAnimation->Center.y * Scale.y);
             }
             
             CurrentPosition = CorrectPos;
@@ -150,6 +150,9 @@ static void PushEntityRenderCommands(game_state* GameState)
         } 
         else 
         {
+            CurrentTexture = RenderEntity->TextureName;
+            texture* Texture = RenderState.Textures[RenderEntity->TextureName];
+            
             auto CorrectPos = ToIsometric(math::v2(Position.x, Position.y));
             
             r32 CorrectX = CorrectPos.x;
@@ -157,18 +160,16 @@ static void PushEntityRenderCommands(game_state* GameState)
             
             CurrentPosition = CorrectPos;
             
-            r32 WidthInUnits = RenderEntity->Texture->Width / (r32)PIXELS_PER_UNIT;
-            r32 HeightInUnits = RenderEntity->Texture->Height / (r32)PIXELS_PER_UNIT;
+            r32 WidthInUnits = Texture->Width / (r32)PIXELS_PER_UNIT;
+            r32 HeightInUnits = Texture->Height / (r32)PIXELS_PER_UNIT;
             
             CurrentScale = math::v3(WidthInUnits * EntityScale, HeightInUnits * EntityScale, 1);
             
-            CurrentTexture = RenderEntity->Texture->Name;
-            
-            CurrentFrame = math::v2(RenderEntity->Texture->Width, RenderEntity->Texture->Height);
+            CurrentFrame = math::v2(Texture->Width, Texture->Height);
         }
         
         // @Incomplete: Glow and special parameters
-        PushSprite(GameState->Renderer, CurrentPosition, CurrentScale, CurrentFrame, CurrentTextureOffset, CurrentTexture, CurrentColor);
+        PushSprite(Renderer, CurrentPosition, CurrentScale, CurrentFrame, CurrentTextureOffset, CurrentTexture, CurrentColor);
     }
 }
 
@@ -239,12 +240,12 @@ extern "C" UPDATE(Update)
             LoadGameDataFile(GameState);
             srand((u32)time(NULL));
             
-            LoadAnimations(GameState);
+            LoadAnimations(GameState, RenderState);
             InitCommands();
             
             GameState->EditorCamera.Zoom = GameState->InitialZoom; 
-            GameState->EditorCamera.ViewportWidth = GameState->RenderState.WindowWidth;
-            GameState->EditorCamera.ViewportHeight = GameState->RenderState.WindowHeight;
+            GameState->EditorCamera.ViewportWidth = RenderState.WindowWidth;
+            GameState->EditorCamera.ViewportHeight = RenderState.WindowHeight;
             
             GameState->GameMode = Mode_InGame;
             GameState->ShouldReload = false;
@@ -252,11 +253,11 @@ extern "C" UPDATE(Update)
             PLAY_TRACK(Brugt);
         }
         
-        LoadLevelFromFile(GameState->LevelPath, &GameState->CurrentLevel, GameState, SoundQueue);
+        LoadLevelFromFile(GameState->LevelPath, &GameState->CurrentLevel, GameState, RenderState, Renderer, SoundQueue);
         
         GameState->GameCamera.Zoom = GameState->InitialZoom;
-        GameState->GameCamera.ViewportWidth = GameState->RenderState.WindowWidth;
-        GameState->GameCamera.ViewportHeight = GameState->RenderState.WindowHeight;
+        GameState->GameCamera.ViewportWidth = RenderState.WindowWidth;
+        GameState->GameCamera.ViewportHeight = RenderState.WindowHeight;
         GameState->GameCamera.FollowSpeed = 10.0f; 
         GameState->GameCamera.FadingSpeed = 0.6f;
         
@@ -341,7 +342,7 @@ extern "C" UPDATE(Update)
     CheckConsoleInput(GameState, InputController, DeltaTime);
     
     if(GameState->GameMode == Mode_Editor)
-        CheckEditorUIInput(GameState,InputController, DeltaTime);
+        CheckEditorUIInput(GameState, RenderState, InputController, DeltaTime);
     
     if((KEY(Key_LeftCtrl) || KEY(Key_RightCtrl)))
     {
@@ -360,7 +361,7 @@ extern "C" UPDATE(Update)
             {
                 GameState->RenderLight = true;
                 GameState->GodModeOn = false;
-                SaveLevelToFile(GameState->LevelPath, &GameState->CurrentLevel, GameState);
+                SaveLevelToFile(GameState->LevelPath, &GameState->CurrentLevel, GameState, RenderState);
                 ReloadCurrentLevel(GameState);
                 GameState->GameMode = Mode_InGame;
             }
@@ -387,25 +388,25 @@ extern "C" UPDATE(Update)
     
     if(!GameState->EditorState.Loaded)
     {
-        InitEditorFields(GameState);
-        CreateEditorButtons(GameState);
+        InitEditorFields(GameState, RenderState);
+        CreateEditorButtons(GameState, RenderState);
     }
     
     
 #if GLITCH_DEBUG
     if(KEY_DOWN(Key_F1))
     {
-        GameState->RenderState.RenderColliders = !GameState->RenderState.RenderColliders;
+        RenderState.RenderColliders = !RenderState.RenderColliders;
     }
     
     if(KEY_DOWN(Key_F2))
     {
-        GameState->RenderState.RenderFPS = !GameState->RenderState.RenderFPS;
+        RenderState.RenderFPS = !RenderState.RenderFPS;
     }
     
     if(KEY_DOWN(Key_F4))
     {
-        GameState->RenderState.RenderPaths = !GameState->RenderState.RenderPaths;
+        RenderState.RenderPaths = !RenderState.RenderPaths;
     }
     
     if(KEY_DOWN(Key_F7))
@@ -796,11 +797,11 @@ extern "C" UPDATE(Update)
     GameUpdateStruct->EntityCount = GameState->EntityCount;
     memcpy(&GameUpdateStruct->EntityPositions,&GameState->EntityPositions,sizeof(math::v2) * NUM_ENTITIES);
     
-    GameState->Renderer.Camera = GameState->Camera;
-    //PushTilemapRenderCommands(GameState);
-    PushEntityRenderCommands(GameState);
+    Renderer.Camera = GameState->Camera;
     
-    PushModel(GameState->Renderer, *GameState->TESTMODEL);
+    PushTilemapRenderCommands(Renderer, *GameState);
+    PushEntityRenderCommands(Renderer, *GameState);
+    PushModel(Renderer, *GameState->TESTMODEL);
 }
 
  

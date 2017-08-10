@@ -107,6 +107,7 @@ struct render_command
             math::rgba Color;
         } Model;
     };
+    render_command() {}
 };
 
 enum Fading_Mode
@@ -139,6 +140,16 @@ struct camera
 
 #define RENDER_COMMAND_MAX 400
 #define BUFFER_ARRAY_SIZE 20
+#define TEXTURE_ARRAY_SIZE 100
+
+struct texture_data
+{
+    i32 Handle;
+    i32 Width;
+    i32 Height;
+    unsigned char* ImageData;
+    
+};
 
 struct buffer_data
 {
@@ -160,6 +171,12 @@ struct renderer
     i32 BufferHandles[BUFFER_ARRAY_SIZE];
     i32 BufferCount;
     
+    texture_data TextureData[TEXTURE_ARRAY_SIZE];
+    i32 TextureCount;
+    
     camera Camera;
+    
+    i32 WindowWidth;
+    i32 WindowHeight;
 };
 

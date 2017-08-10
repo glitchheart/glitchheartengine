@@ -16,7 +16,7 @@ static void InitCommands()
 {
     AddCommand("zoom", &Zoom);
     AddCommand("jump", &Jump);
-    AddCommand("exit", &Exit);
+    //AddCommand("exit", &Exit);
     AddCommand("view", &View);
     AddCommand("editor", &Editor);
     AddCommand("reset", &Reset);

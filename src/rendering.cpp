@@ -1,3 +1,27 @@
+                                          static void LoadTexture(const char* TexturePath, renderer& Renderer)
+                                          {
+                                              texture_data* TextureData = &Renderer.TextureData[Renderer.TextureCount++];
+                                              TextureData->ImageData = stbi_load(TexturePath, &TextureData->Width, &TextureData->Height, 0, STBI_rgb_alpha);
+                                          }
+                                          
+                                          static void LoadTextures(renderer& Renderer)
+                                          {
+                                              directory_data DirData = {};
+                                              FindFilesWithExtensions("../assets/textures/", "png", &DirData);
+                                              
+                                              for(i32 FileIndex = 0; FileIndex < DirData.FilesLength; FileIndex++)
+                                              {
+                                                  //texture* Texture = &RenderState->TextureArray[RenderState->TextureIndex++];
+                                                  //Texture->Name = (char*)malloc((strlen(DirData.FileNames[FileIndex]) + 1) * sizeof(char));
+                                                  //strcpy(Texture->Name, DirData.FileNames[FileIndex]);
+                                                  LoadTexture(DirData.FilePaths[FileIndex], Renderer);
+                                                  //RenderState->Textures[Texture->Name] = Texture;
+                                              }
+                                              
+                                              free(DirData.FilePaths);
+                                              free(DirData.FileNames);
+                                          }
+                                          
                                           static void PushLine(renderer& Renderer, math::v2 Point1, math::v2 Point2, r32 LineWidth, math::rgba Color, b32 IsUI = false)
                                           {
                                               render_command* RenderCommand = &Renderer.Buffer[Renderer.CommandCount++];
