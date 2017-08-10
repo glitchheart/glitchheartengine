@@ -244,8 +244,8 @@ extern "C" UPDATE(Update)
             InitCommands();
             
             GameState->EditorCamera.Zoom = GameState->InitialZoom; 
-            GameState->EditorCamera.ViewportWidth = RenderState.WindowWidth;
-            GameState->EditorCamera.ViewportHeight = RenderState.WindowHeight;
+            GameState->EditorCamera.ViewportWidth = Renderer.WindowWidth;
+            GameState->EditorCamera.ViewportHeight = Renderer.WindowHeight;
             
             GameState->GameMode = Mode_InGame;
             GameState->ShouldReload = false;
@@ -256,8 +256,8 @@ extern "C" UPDATE(Update)
         LoadLevelFromFile(GameState->LevelPath, &GameState->CurrentLevel, GameState, Renderer, SoundQueue);
         
         GameState->GameCamera.Zoom = GameState->InitialZoom;
-        GameState->GameCamera.ViewportWidth = RenderState.WindowWidth;
-        GameState->GameCamera.ViewportHeight = RenderState.WindowHeight;
+        GameState->GameCamera.ViewportWidth = Renderer.WindowWidth;
+        GameState->GameCamera.ViewportHeight = Renderer.WindowHeight;
         GameState->GameCamera.FollowSpeed = 10.0f; 
         GameState->GameCamera.FadingSpeed = 0.6f;
         
@@ -388,25 +388,25 @@ extern "C" UPDATE(Update)
     
     if(!GameState->EditorState.Loaded)
     {
-        InitEditorFields(GameState, RenderState);
-        CreateEditorButtons(GameState, RenderState);
+        InitEditorFields(GameState, Renderer);
+        CreateEditorButtons(GameState, Renderer);
     }
     
     
 #if GLITCH_DEBUG
     if(KEY_DOWN(Key_F1))
     {
-        RenderState.RenderColliders = !RenderState.RenderColliders;
+        //RenderState.RenderColliders = !RenderState.RenderColliders;
     }
     
     if(KEY_DOWN(Key_F2))
     {
-        RenderState.RenderFPS = !RenderState.RenderFPS;
+        //RenderState.RenderFPS = !RenderState.RenderFPS;
     }
     
     if(KEY_DOWN(Key_F4))
     {
-        RenderState.RenderPaths = !RenderState.RenderPaths;
+        //RenderState.RenderPaths = !RenderState.RenderPaths;
     }
     
     if(KEY_DOWN(Key_F7))
