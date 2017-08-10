@@ -1,9 +1,11 @@
-#version 150
+#version 330 core
+
+layout(location = 0)in vec3 position;
+
 uniform mat4 projection;
 uniform mat4 view;
 uniform mat4 model;
 uniform vec4 color;
-in vec3 position;
 
 out vec4 c;
 
