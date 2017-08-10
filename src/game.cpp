@@ -770,19 +770,21 @@ extern "C" UPDATE(Update)
         }
         break;
     }
-    
+    /*
     GameState->Camera.ProjectionMatrix = math::Ortho(0.0f,
                                                      (GameState->Camera.ViewportWidth / GameState->Camera.Zoom),
                                                      0.0f,
                                                      (GameState->Camera.ViewportHeight / GameState->Camera.Zoom),
                                                      -10.0f,
-                                                     1000.0f);
+                                                     1000.0f);*/
+    
+    GameState->Camera.ProjectionMatrix = math::Perspective((GameState->Camera.ViewportWidth / GameState->Camera.Zoom / 2) / (GameState->Camera.ViewportHeight / GameState->Camera.Zoom / 2), 60.0f,0.1f,1000.0f);
     
     
     GameState->Camera.ViewMatrix = math::Translate(math::m4(1.0f),
                                                    math::v3(-Center.x + GameState->Camera.ViewportWidth / GameState->Camera.Zoom / 2,
                                                             -Center.y + GameState->Camera.ViewportHeight / GameState->Camera.Zoom / 2,
-                                                            -20));
+                                                            -700.0f));
     
     InputController->CurrentCharacter = 0;
     GameState->RenderState.DeltaTime = DeltaTime;
