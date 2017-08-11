@@ -1,8 +1,5 @@
-#ifndef RENDERING_H
-#define RENDERING_H
-
-#define STB_IMAGE_IMPLEMENTATION
-#include <stb/stb_image.h>
+#ifndef OPENGL_H
+#define OPENGL_H
 
 #include <ft2build.h>
 #include FT_FREETYPE_H
@@ -10,7 +7,6 @@
 #define PIXELS_PER_UNIT 32
 
 #define SHADERPAIR(name) {Shader_ ## name, "Shader_" "" #name}
-
 
 const static struct
 {
@@ -88,40 +84,6 @@ struct tilesheet
     texture Texture;
     i32 TileWidth;
     i32 TileHeight;
-};
-
-struct ui_render_info
-{
-    b32 Rendered = true;
-    
-    texture* Texture;
-    math::v2 TextureOffset;
-    math::v2 FrameSize;
-    u32 ShaderIndex;
-    math::v2 Size = math::v2(1, 1);
-    math::v4 Color = math::v4(1, 1, 1, 1);
-};
-
-struct editor_render_info
-{
-    b32 Dirty = false;
-    GLuint VAO;
-    GLuint VBO;
-    i32 VBOSize;
-};
-
-#define TILEMAP_LAYERS 5
-struct tilemap_render_info
-{
-    b32 Dirty = true;
-    i32 DirtyLayer = -1;
-    GLuint VAOS[TILEMAP_LAYERS];
-    GLuint VBOS[TILEMAP_LAYERS];
-    i32 VBOSizes[TILEMAP_LAYERS];
-    
-    GLuint WireframeVBO;
-    GLuint WireframeVAO;
-    GLuint WireframeVBOSize;
 };
 
 struct render_font

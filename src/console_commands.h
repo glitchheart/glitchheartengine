@@ -119,11 +119,13 @@ static char* Reset(game_state* GameState, char** Arguments)
     return Result;
 }
 
+/*
 static char* Exit(render_state& RenderState, char** Arguments)
 {
     RenderState.ShouldClose = true;
     return "Exited";
 }
+*/
 
 static char* View(game_state* GameState, char** Arguments)
 {

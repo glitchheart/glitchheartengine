@@ -219,24 +219,6 @@ enum Render_Type
     Render_Type_Object
 };
 
-struct render_entity
-{
-    Render_Type RenderType = Render_Type_Entity;
-    
-    union
-    {
-        entity* Entity;
-        object_entity* Object;
-    };
-    
-    b32 Rendered = true;
-    b32 Background = false;
-    
-    char* TextureName;
-    Shader_Type Shader;
-    math::v4 Color = math::v4(1, 1, 1, 1);
-};
-
 struct object_entity
 {
     b32 Active;
@@ -267,6 +249,24 @@ struct object_entity
     };
     
     object_entity(){}
+};
+
+struct render_entity
+{
+    Render_Type RenderType = Render_Type_Entity;
+    
+    union
+    {
+        entity* Entity;
+        object_entity* Object;
+    };
+    
+    b32 Rendered = true;
+    b32 Background = false;
+    
+    char* TextureName;
+    Shader_Type Shader;
+    math::v4 Color = math::v4(1, 1, 1, 1);
 };
 
 struct hit_tile_extents

@@ -1,6 +1,6 @@
                               static void LoadTilemapBuffer(renderer& Renderer, tilemap& Tilemap)
                               {
-                                  GLfloat* VertexBuffer = (GLfloat*)malloc(sizeof(GLfloat) * 16 * Tilemap.Width * Tilemap.Height);
+                                  r32* VertexBuffer = (r32*)malloc(sizeof(r32) * 16 * Tilemap.Width * Tilemap.Height);
                                   
                                   i32 Size = 0;
                                   
@@ -26,22 +26,22 @@
                                               r32 CorrectX = CorrectPosition.x;
                                               r32 CorrectY = CorrectPosition.y;
                                               
-                                              VertexBuffer[Size++] = (GLfloat)CorrectX;
-                                              VertexBuffer[Size++] = (GLfloat)CorrectY + 0.5f;
-                                              VertexBuffer[Size++] = (GLfloat)TexCoordX;
-                                              VertexBuffer[Size++] =  (GLfloat)TexCoordY;
-                                              VertexBuffer[Size++] = (GLfloat)CorrectX + 1;
-                                              VertexBuffer[Size++] = (GLfloat)CorrectY + 0.5f;
-                                              VertexBuffer[Size++] = (GLfloat)TexCoordXHigh;
-                                              VertexBuffer[Size++] =  (GLfloat)TexCoordY;
-                                              VertexBuffer[Size++] = (GLfloat)CorrectX + 1;
-                                              VertexBuffer[Size++] = (GLfloat)CorrectY;
-                                              VertexBuffer[Size++] = (GLfloat)TexCoordXHigh;
-                                              VertexBuffer[Size++] = (GLfloat)TexCoordYHigh;
-                                              VertexBuffer[Size++] = (GLfloat)CorrectX;
-                                              VertexBuffer[Size++] = (GLfloat)CorrectY;
-                                              VertexBuffer[Size++] =(GLfloat)TexCoordX;
-                                              VertexBuffer[Size++] = (GLfloat)TexCoordYHigh;
+                                              VertexBuffer[Size++] = (r32)CorrectX;
+                                              VertexBuffer[Size++] = (r32)CorrectY + 0.5f;
+                                              VertexBuffer[Size++] = (r32)TexCoordX;
+                                              VertexBuffer[Size++] =  (r32)TexCoordY;
+                                              VertexBuffer[Size++] = (r32)CorrectX + 1;
+                                              VertexBuffer[Size++] = (r32)CorrectY + 0.5f;
+                                              VertexBuffer[Size++] = (r32)TexCoordXHigh;
+                                              VertexBuffer[Size++] =  (r32)TexCoordY;
+                                              VertexBuffer[Size++] = (r32)CorrectX + 1;
+                                              VertexBuffer[Size++] = (r32)CorrectY;
+                                              VertexBuffer[Size++] = (r32)TexCoordXHigh;
+                                              VertexBuffer[Size++] = (r32)TexCoordYHigh;
+                                              VertexBuffer[Size++] = (r32)CorrectX;
+                                              VertexBuffer[Size++] = (r32)CorrectY;
+                                              VertexBuffer[Size++] =(r32)TexCoordX;
+                                              VertexBuffer[Size++] = (r32)TexCoordYHigh;
                                           }
                                       }
                                   };
@@ -343,12 +343,14 @@
                                       
                                       fclose(File);
                                       
+                                      //@Incomplete: Daniel says this is dumb.
+                                      /*
                                       for(i32 Layer = 0; Layer < TILEMAP_LAYERS; Layer++)
                                       {
                                           Level->Tilemap.RenderInfo.VAOS[Layer] = 0;
                                       }
                                       Level->Tilemap.RenderInfo.Dirty = true;
-                                      
+                                      */
                                       GameState->Camera.Center = math::v3(GameState->Entities[0].Position.x, GameState->Entities[0].Position.y, GameState->Camera.Center.z);
                                       
                                       return true;

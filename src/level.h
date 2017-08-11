@@ -18,7 +18,24 @@ struct tile_data
     Tile_Layer Layer;
 };
 
+
+
+struct editor_render_info
+{
+    b32 Dirty = false;
+    i32 BufferHandle;
+};
+
 #define TILEMAP_LAYERS 5
+
+
+struct tilemap_render_info
+{
+    b32 Dirty = true;
+    i32 DirtyLayer = -1;
+    i32 BufferHandles[TILEMAP_LAYERS];
+    i32 WireframeBufferHandle;
+};
 
 struct tilemap
 {
