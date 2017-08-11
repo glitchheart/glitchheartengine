@@ -840,13 +840,7 @@ static void InitializeOpenGL(render_state& RenderState, renderer& Renderer, conf
     
     ControllerPresent();
     
-    //@Incomplete: Don't load textures here I suppose?
-    LoadTextures(RenderState, Renderer);
-    LoadTextures(RenderState, Renderer);
     RenderSetup(&RenderState);
-    
-    //@Incomplete I DUNNO
-    //LoadTilesheetTextures(&RenderState);
 }
 
 static void ReloadVertexShader(Shader_Type Type, render_state* RenderState)
