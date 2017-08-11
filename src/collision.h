@@ -17,6 +17,8 @@
  
 #define NUM_OTHERS 40 //@Improvement: We need a more dynamic way for this. This gives us bugs, when we try to write to more than the size allows.
  
+ struct entity;
+ 
  struct collision_info
  {
      Collision_Side Side;

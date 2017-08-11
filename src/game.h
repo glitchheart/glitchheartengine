@@ -4,7 +4,6 @@
 #include <time.h>
 
 #include "platform.h"
-#include "opengl_rendering.h"
 #include "sound.h"
 #include "animation.h"
 

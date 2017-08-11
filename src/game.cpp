@@ -181,7 +181,7 @@ extern "C" UPDATE(Update)
     GameState->ReloadData = GameMemory->ReloadData;
     Assert(GameState);
     
-    if(!GameState->IsInitialized)
+    if(!GameState->IsInitialized || !GameMemory->IsInitialized)
     {
         GameState->TESTMODEL = (model*)malloc(sizeof(model));
         
@@ -190,10 +190,12 @@ extern "C" UPDATE(Update)
         GameState->TESTMODEL->Position = math::v3(0, 0, 0);
         GameState->TESTMODEL->Scale = math::v3(1, 1, 1);
         
-        if(GameState->ShouldReload)
+        if(GameState->ShouldReload || GameMemory->ShouldReload)
         {
+            LoadTextures(Renderer);
             GameState->InitialZoom = GameMemory->ConfigData.Zoom;
-            GameState->LevelPath = GameMemory->ConfigData.StartingLevelFilePath;
+            GameState->LevelPath = (char*)malloc(sizeof(char) * (strlen(GameMemory->ConfigData.StartingLevelFilePath) + 1));
+            strcpy(GameState->LevelPath, GameMemory->ConfigData.StartingLevelFilePath);
             GameState->ShouldReload = GameMemory->ShouldReload;
             GameState->Console = {};
             GameState->RenderGame = true;

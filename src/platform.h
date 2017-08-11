@@ -30,11 +30,15 @@
 
 //@Incomplete: We want a platform API for all of these functions!!!!!!!
 #include <windows.h>
+#include <tchar.h>
 #include <stdint.h>
 #include <malloc.h>
 #include <cstdio>
 #include <sys/types.h>  
 #include <sys/stat.h>  
+
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb/stb_image.h>
 
 using u8 = uint8_t;
 using u16 = uint16_t;
@@ -234,8 +238,8 @@ inline void FindFilesWithExtensions(const char* DirectoryPath, const char* Exten
 {
     if(DirectoryData->FilesLength == 0)
     {
-        DirectoryData->FileNames = (char**)malloc(128 * sizeof(char*));
-        DirectoryData->FilePaths = (char**)malloc(128 * sizeof(char*));
+        DirectoryData->FileNames = (char**)malloc(512 * sizeof(char*));
+        DirectoryData->FilePaths = (char**)malloc(512 * sizeof(char*));
     }
     
     WIN32_FIND_DATA FindFile;
@@ -243,54 +247,65 @@ inline void FindFilesWithExtensions(const char* DirectoryPath, const char* Exten
     
     char Path[2048];
     
-    sprintf(Path, "%s\\*.%s", DirectoryPath, Extension);
-    
-    if((hFind = FindFirstFile(Path, &FindFile)) == INVALID_HANDLE_VALUE)
+    //Process directories
+    sprintf(Path, "%s*", DirectoryPath);
+    hFind = FindFirstFile(Path, &FindFile);
+    if(hFind != INVALID_HANDLE_VALUE)
+    {
+        do
+        {
+            if(FindFile.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+            {
+                if(strcmp(FindFile.cFileName, ".") != 0
+                   && strcmp(FindFile.cFileName, "..") != 0)
+                {
+                    sprintf(Path, "%s%s/", DirectoryPath, FindFile.cFileName);
+                    FindFilesWithExtensions(Path, Extension, DirectoryData, WithSubDirectories);
+                }
+                
+            }
+        } while(FindNextFile(hFind, &FindFile));
+        FindClose(hFind);
+    }
+    else
     {
         DEBUG_PRINT("Path not found: %s\n", DirectoryPath);
         return;
     }
     
-    if(FindFile.dwFileAttributes &FILE_ATTRIBUTE_DIRECTORY)
+    //Process files
+    sprintf(Path, "%s\\*.%s", DirectoryPath, Extension);
+    hFind = FindFirstFile(Path, &FindFile);
+    if(hFind != INVALID_HANDLE_VALUE)
     {
-        if(WithSubDirectories)
-            FindFilesWithExtensions(Concat(DirectoryPath, FindFile.cFileName), Extension, DirectoryData, true);
+        do
+        {
+            if(!(FindFile.dwFileAttributes &FILE_ATTRIBUTE_DIRECTORY))
+            {
+                if(strcmp(FindFile.cFileName, ".") != 0
+                   && strcmp(FindFile.cFileName, "..") != 0)
+                {
+                    
+                    
+                    char* ConcatStr = Concat(DirectoryPath, FindFile.cFileName);
+                    char* FileName = strtok(FindFile.cFileName, ".");
+                    
+                    DirectoryData->FilePaths[DirectoryData->FilesLength] = (char*)malloc((strlen(ConcatStr) + 1) * sizeof(char));
+                    DirectoryData->FileNames[DirectoryData->FilesLength] = (char*)malloc((strlen(FileName)  + 1) * sizeof(char));
+                    strcpy(DirectoryData->FilePaths[DirectoryData->FilesLength], ConcatStr);
+                    strcpy(DirectoryData->FileNames[DirectoryData->FilesLength], FileName);
+                    DirectoryData->FilesLength++;
+                }
+            }
+        } while (FindNextFile(hFind, &FindFile));
+        FindClose(hFind);
     }
     else
     {
-        char* ConcatStr = Concat(DirectoryPath, FindFile.cFileName);
-        char* FileName = strtok(FindFile.cFileName, ".");
-        
-        DirectoryData->FilePaths[DirectoryData->FilesLength] = (char*)malloc((strlen(ConcatStr) + 1) * sizeof(char));
-        DirectoryData->FileNames[DirectoryData->FilesLength] = (char*)malloc((strlen(FileName) + 1) * sizeof(char));
-        strcpy(DirectoryData->FilePaths[DirectoryData->FilesLength], ConcatStr);
-        strcpy(DirectoryData->FileNames[DirectoryData->FilesLength], FileName);
-        DirectoryData->FilesLength++;
+        DEBUG_PRINT("Path not found: %s\n", DirectoryPath);
+        return;
     }
     
-    while(FindNextFile(hFind, &FindFile))
-    {
-        if(strcmp(FindFile.cFileName, ".") != 0
-           && strcmp(FindFile.cFileName, "..") != 0)
-        {
-            if(FindFile.dwFileAttributes &FILE_ATTRIBUTE_DIRECTORY)
-            {
-                if(WithSubDirectories)
-                    FindFilesWithExtensions(Path, Extension, DirectoryData, true);
-            }
-            else
-            {
-                char* ConcatStr = Concat(DirectoryPath, FindFile.cFileName);
-                char* FileName = strtok(FindFile.cFileName, ".");
-                
-                DirectoryData->FilePaths[DirectoryData->FilesLength] = (char*)malloc((strlen(ConcatStr) + 1) * sizeof(char));
-                DirectoryData->FileNames[DirectoryData->FilesLength] = (char*)malloc((strlen(FileName)  + 1) * sizeof(char));
-                strcpy(DirectoryData->FilePaths[DirectoryData->FilesLength], ConcatStr);
-                strcpy(DirectoryData->FileNames[DirectoryData->FilesLength], FileName);
-                DirectoryData->FilesLength++;
-            }
-        }
-    }
 }
 
 inline void DebugPrintVec2(math::v2 Vec2, const char* Msg = "")

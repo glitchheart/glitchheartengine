@@ -1,3 +1,8 @@
+#ifndef RENDERING_H
+#define RENDERING_H
+
+#define PIXELS_PER_UNIT 32
+
 enum Shader_Type
 {
     Shader_Texture,
@@ -140,7 +145,7 @@ struct camera
 
 #define RENDER_COMMAND_MAX 400
 #define BUFFER_ARRAY_SIZE 20
-#define TEXTURE_ARRAY_SIZE 100
+#define TEXTURE_ARRAY_SIZE 512
 
 struct texture_data
 {
@@ -150,6 +155,18 @@ struct texture_data
     i32 Height;
     unsigned char* ImageData;
     
+};
+
+struct ui_render_info
+{
+    b32 Rendered = true;
+    
+    i32 TextureHandle;
+    math::v2 TextureOffset;
+    math::v2 FrameSize;
+    u32 ShaderIndex;
+    math::v2 Size = math::v2(1, 1);
+    math::v4 Color = math::v4(1, 1, 1, 1);
 };
 
 GENERIC_MAP(texture_data, texture_data*, char*, StrCmp, NULL, "%s", STR_ASSIGN);
@@ -186,3 +203,4 @@ struct renderer
     i32 WindowHeight;
 };
 
+#endif
