@@ -157,9 +157,9 @@ int main(void)
                                                MEM_RESERVE|MEM_COMMIT,
                                                PAGE_READWRITE);
     
-    //@Incomplete: We really want to get ALL of game state out of main!!!
     GameMemory.ShouldReload = true;
     GameMemory.ConfigData = ConfigData;
+    GameMemory.ExitGame = false;
     
     render_state RenderState;
     renderer Renderer = {};
@@ -200,10 +200,10 @@ int main(void)
         LastFrame = CurrentFrame;
         r64 FPS = 1.0/DeltaTime;
         
-        if(GameMemory.IsInitialized)
+        if(GameMemory.IsInitialized && GameMemory.ExitGame)
         {
-            //DEBUG_PRINT("Quit\n");
-            //glfwSetWindowShouldClose(RenderState.Window, GLFW_TRUE);
+            DEBUG_PRINT("Quit\n");
+            glfwSetWindowShouldClose(RenderState.Window, GLFW_TRUE);
         }
         
         if(GetKeyDown(Key_F3, &InputController))

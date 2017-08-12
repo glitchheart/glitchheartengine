@@ -27,7 +27,7 @@
 #define Terabytes(Value) (Gigabytes(Value)*1024LL)
 
 #define PI 3.141592653589793f
-#define DEGREE_IN_RADIANS 0.0174532925
+#define DEGREE_IN_RADIANS 0.0174532925f
 
 //@Incomplete: We want a platform API for all of these functions!!!!!!!
 #include <windows.h>
@@ -101,6 +101,7 @@ struct game_memory
 {
     b32 IsInitialized;
     b32 ShouldReload;
+    b32 ExitGame;
     config_data ConfigData;
     entity_file_reload_data* ReloadData;
     
