@@ -659,15 +659,12 @@ static void EditorUpdateEntities(game_state* GameState, renderer& Renderer, inpu
                             {
                                 if(MOUSE_DOWN(Mouse_Left) && GameState->EditorState.SelectedEntity->Enemy.WaypointCount < 10)
                                 {
+                                    i32 X = (i32)math::Floor(Pos.x / 0.5f);
+                                    i32 Z = (i32)math::Floor(Pos.z / 0.5f);
                                     
-                                    math::v2 NewPos = ToCartesian(math::v2(Pos.x, Pos.y));
-                                    
-                                    i32 X = (i32)math::Floor(NewPos.x / 0.5f);
-                                    i32 Y = (i32)math::Floor(NewPos.y / 0.5f);
-                                    
-                                    if(!GameState->CurrentLevel.Tilemap.Data[1][X][Y].IsSolid)
+                                    if(!GameState->CurrentLevel.Tilemap.Data[1][X][Z].IsSolid)
                                     {
-                                        GameState->EditorState.SelectedEntity->Enemy.Waypoints[GameState->EditorState.SelectedEntity->Enemy.WaypointCount++] = math::v2i(X,Y);
+                                        GameState->EditorState.SelectedEntity->Enemy.Waypoints[GameState->EditorState.SelectedEntity->Enemy.WaypointCount++] = math::v3i(X,0,Z);
                                     }
                                 }
                             }
@@ -711,7 +708,7 @@ static void EditorUpdateEntities(game_state* GameState, renderer& Renderer, inpu
                                 
                                 if(GameState->EditorState.SelectedEntity && MOUSE(Mouse_Left))
                                 {
-                                    GameState->EditorState.SelectedEntity->Position = math::v2(X, Y);
+                                    GameState->EditorState.SelectedEntity->Position = math::v3(X, 0.0f, Z);
                                 }
                             }
                         }

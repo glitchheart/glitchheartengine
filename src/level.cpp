@@ -305,8 +305,8 @@
                                                   {
                                                       Data = Level->Tilemap.Tiles[TypeIndex - 1];
                                                       collision_AABB CollisionAABB;
-                                                      CollisionAABB.Center = math::v2(IndexWidth + 0.5f, MapHeight - IndexHeight - 0.5f);
-                                                      CollisionAABB.Extents = math::v2(0.5, 0.5);
+                                                      CollisionAABB.Center = math::v3(IndexWidth + 0.5f, 0.0f, MapHeight - IndexHeight - 0.5f);
+                                                      CollisionAABB.Extents = math::v3(0.5, 0.5, 0.5);
                                                       CollisionAABB.IsTrigger = false;
                                                       
                                                       Data.CollisionAABB = CollisionAABB;
@@ -333,23 +333,23 @@
                                       {
                                           if(StartsWith(LineBuffer, "skeleton"))
                                           {
-                                              math::v2 Pos;
+                                              math::v3 Pos;
                                               Pos = math::Floor(Pos);
-                                              sscanf(LineBuffer, "skeleton %f %f%n", &Pos.x, &Pos.y, &PathIndex);
+                                              sscanf(LineBuffer, "skeleton %f %f %f%n", &Pos.x, &Pos.y, &Pos.z, &PathIndex);
                                               LoadSkeletonData(GameState, -1, Pos);
                                           }
                                           else if(StartsWith(LineBuffer, "bonfire"))
                                           {
-                                              math::v2 Pos;
+                                              math::v3 Pos;
                                               Pos = math::Floor(Pos);
-                                              sscanf(LineBuffer, "bonfire %f %f", &Pos.x, &Pos.y);
+                                              sscanf(LineBuffer, "bonfire %f %f %f", &Pos.x, &Pos.y, &Pos.z);
                                               LoadBonfireData(GameState, SoundQueue, -1, Pos);
                                           }
                                           else if(StartsWith(LineBuffer, "tree"))
                                           {
-                                              math::v2 Pos;
+                                              math::v3 Pos;
                                               Pos = math::Floor(Pos);
-                                              sscanf(LineBuffer, "tree %f %f", &Pos.x, &Pos.y);
+                                              sscanf(LineBuffer, "tree %f %f %f", &Pos.x, &Pos.y, &Pos.z);
                                               SpawnTree(GameState, Pos);
                                           }
                                           

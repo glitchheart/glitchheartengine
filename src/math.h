@@ -115,6 +115,11 @@ namespace math
         return glm::floor(V);
     }
     
+    v3 Floor(v3 V)
+    {
+        return glm::floor(V);
+    }
+    
     r32 Ceil(r32 V)
     {
         return glm::ceil(V);
@@ -1328,6 +1333,15 @@ namespace math
         return Result;
     }
     
+    inline v3 Floor(v3 V)
+    {
+        v3 Result(V);
+        Result.X = (r32)Floor(V.X);
+        Result.Y = (r32)Floor(V.Y);
+        Result.Z = (r32)Floor(V.Z);
+        return Result;
+    }
+    
     inline i32 Ceil(r32 V)
     {
         return (i32)ceil(V);
@@ -1338,6 +1352,15 @@ namespace math
         v2 Result(V);
         Result.X = (r32)Ceil(V.X);
         Result.Y = (r32)Ceil(V.Y);
+        return Result;
+    }
+    
+    inline v3 Ceil(v3 V)
+    {
+        v3 Result(V);
+        Result.X = (r32)Ceil(V.X);
+        Result.Y = (r32)Ceil(V.Y);
+        Result.Z = (r32)Ceil(V.Z);
         return Result;
     }
     

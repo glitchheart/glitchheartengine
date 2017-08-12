@@ -272,15 +272,15 @@ static void AStar(entity* Entity, game_state* GameState, math::v3 StartPos, math
 static void FindPath(game_state* GameState, entity* Entity, entity& TargetEntity,astar_path* Path)
 {
     r64 DistanceToTargetEntity = abs(math::Distance(Entity->Position, TargetEntity.Position));
-    math::v3 EntityPosition = math::v3(Entity->Position.x + Entity->Center.x * Entity->Scale, 0.0f,Entity->Position.z + Entity->Center.z * Entity->Scale);
+    math::v3 EntityPosition = math::v3(Entity->Position.x + Entity->Center.x * Entity->Scale, Entity->Position.y + Entity->Center.y * Entity->Scale,Entity->Position.z + Entity->Center.z * Entity->Scale);
     
     if(TimerDone(GameState, Path->AStarCooldownTimer) || !Path->AStarPath || (Path->AStarPathLength <= Path->PathIndex && DistanceToTargetEntity >= 3.0f)) 
     {
         Path->PathIndex = 0;
         StartTimer(GameState, Path->AStarCooldownTimer);
         math::v3 StartPosition = EntityPosition;
-        math::v3 TargetPosition = math::v3(TargetEntity.Position.x + TargetEntity.Center.x * TargetEntity.Scale, 0.0f,
-                                           TargetEntity.Position.y + TargetEntity.Center.y * TargetEntity.Scale);
+        math::v3 TargetPosition = math::v3(TargetEntity.Position.x + TargetEntity.Center.x * TargetEntity.Scale, TargetEntity.Position.y + TargetEntity.Center.y * TargetEntity.Scale,
+                                           TargetEntity.Position.z + TargetEntity.Center.z * TargetEntity.Scale);
         AStar(Entity,GameState,StartPosition,TargetPosition);
     }
     
@@ -298,11 +298,11 @@ static void FollowPath(game_state* GameState, entity* Entity,entity& TargetEntit
         
         if(DistanceToNode > 0.1f) 
         {
-            math::v3 FollowDirection = math::v3(NewPos.X, 0.0f, NewPos.Z) - EntityPosition;
+            math::v3 FollowDirection = math::v3(NewPos.X, Entity->Position.y, NewPos.Z) - EntityPosition;
             FollowDirection = math::Normalize(FollowDirection);
             
             Entity->Velocity = math::v3(FollowDirection.x * Entity->Enemy.WalkingSpeed,
-                                        0.0f,
+                                        Entity->Position.y,
                                         FollowDirection.z * Entity->Enemy.WalkingSpeed);
         }
         else
