@@ -4,7 +4,7 @@
 struct astar_node
 {
     i32 X = -1;
-    i32 Y = -1;
+    i32 Z = -1;
     i32 WorkingListIndex = -1;
     u32 FCost = 0;
     u32 GCost = 0;
@@ -16,7 +16,7 @@ struct astar_node
 struct path_node
 {
     i32 X;
-    i32 Y;
+    i32 Z;
 };
 
 #define OPENSET_COUNT 512

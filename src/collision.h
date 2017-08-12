@@ -28,12 +28,12 @@
  
  struct collision_AABB
  {
-     math::v2 Center;
-     math::v2 Offset;
-     math::v2 Extents;
-     math::v2 Min;
-     math::v2 Max;
-     math::v2 Size;
+     math::v3 Center;
+     math::v3 Offset;
+     math::v3 Extents;
+     math::v3 Min;
+     math::v3 Max;
+     math::v3 Size;
      b32 IsTrigger;
      b32 IsColliding;
  };

@@ -55,14 +55,9 @@ struct character_data
     i32 Stamina = 0;
     i32 Strength = 0;
     i32 HealthPotionCount = 3;
-    math::v2 CurrentCheckpoint;
+    math::v3 CurrentCheckpoint;
     b32 HasCheckpoint;
     i32 CheckpointHandle = -1;
-    b32 HasLostWill;
-    i32 LostWill;
-    i32 LostWillObjectHandle = -1;
-    math::v2 LostWillPosition;
-    b32 RenderWillButtonHint = false;
 };
 
 #define NUM_TIMERS 1024
@@ -96,7 +91,7 @@ struct game_state
     
     r32 InitialZoom;
     
-    math::v2 EntityPositions[NUM_ENTITIES];
+    math::v3 EntityPositions[NUM_ENTITIES];
     
     Player_State PlayerState = Player_Alive;
     timer DeathScreenTimer;
