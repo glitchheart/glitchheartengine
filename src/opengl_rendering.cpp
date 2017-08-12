@@ -244,7 +244,7 @@ static void InitializeFreeTypeFont(char* FontPath, int FontSize, FT_Library Libr
     glBindVertexArray(0);
 }
 
-static void RegisterBuffers(render_state& RenderState, GLfloat* VertexBuffer, i32 VertexBufferSize, GLuint* IndexBuffer, i32 IndexBufferSize, i32 BufferHandle = -1)
+static void RegisterBuffers(render_state& RenderState, GLfloat* VertexBuffer, i32 VertexBufferSize, GLuint* IndexBuffer, i32 IndexBufferSize, b32 HasNormals, b32 HasUVs, i32 BufferHandle = -1)
 {
     buffer* Buffer = &RenderState.Buffers[BufferHandle == -1 ? RenderState.BufferCount : BufferHandle];
     
@@ -263,7 +263,27 @@ static void RegisterBuffers(render_state& RenderState, GLfloat* VertexBuffer, i3
     glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * VertexBufferSize, VertexBuffer, GL_STATIC_DRAW);
     
     glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    
+    if(HasNormals && HasUVs)
+    {
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), 0);
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void*)(3 * sizeof(GLfloat)));
+        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void*)(6 * sizeof(GLfloat)));
+    }
+    else if(HasNormals)
+    {
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), 0);
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void*)(3 * sizeof(GLfloat)));
+    }
+    else if(HasUVs)
+    {
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), 0);
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (void*)(3 * sizeof(GLfloat)));
+    }
+    else
+    {
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    }
     
     glGenBuffers(1, &Buffer->IBO);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, Buffer->IBO);
@@ -344,6 +364,12 @@ static void RenderSetup(render_state *RenderState)
     
     if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
         DEBUG_PRINT("ERROR::FRAMEBUFFER:: Framebuffer is not complete!");
+    
+    GLuint DepthBuffer;
+    glGenRenderbuffers(1, &DepthBuffer);
+    glBindRenderbuffer(GL_RENDERBUFFER, DepthBuffer);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, RenderState->WindowWidth, RenderState->WindowHeight);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, DepthBuffer);
     
     glGenFramebuffers(1, &RenderState->LightingFrameBuffer);
     glBindFramebuffer(GL_FRAMEBUFFER, RenderState->LightingFrameBuffer);
@@ -711,6 +737,8 @@ static void InitializeOpenGL(render_state& RenderState, renderer& Renderer, conf
     glLineWidth(2.0f);
     
     glDisable(GL_CULL_FACE);
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LESS);
     
     DEBUG_PRINT("%s\n", glGetString(GL_VERSION));
     
@@ -1292,7 +1320,7 @@ static void RenderCommands(render_state& RenderState, renderer& Renderer)
         }
         else
         {
-            RegisterBuffers(RenderState, Data.VertexBuffer, Data.VertexBufferSize, Data.IndexBuffer, Data.IndexBufferSize, Data.ExistingHandle);
+            RegisterBuffers(RenderState, Data.VertexBuffer, Data.VertexBufferSize, Data.IndexBuffer, Data.IndexBufferSize, Data.HasNormals, Data.HasUVs, Data.ExistingHandle);
             free(Data.VertexBuffer);
             free(Data.IndexBuffer);
         }
@@ -1350,13 +1378,15 @@ static void Render(render_state& RenderState, renderer& Renderer)
     Camera.ViewportWidth = RenderState.WindowWidth;
     Camera.ViewportHeight = RenderState.WindowHeight;
     
-    //CheckLevelVAO(GameMemory);
-    
     RenderState.ScaleX = 2.0f / RenderState.WindowWidth;
     RenderState.ScaleY = 2.0f / RenderState.WindowHeight;
     
     glBindFramebuffer(GL_FRAMEBUFFER, RenderState.FrameBuffer);
     glBindTexture(GL_TEXTURE_2D, RenderState.TextureColorBuffer);
+    
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LESS);
+    
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     
     glClearColor(0, 0, 0, 1.0f);
@@ -1370,7 +1400,8 @@ static void Render(render_state& RenderState, renderer& Renderer)
     // Second pass
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glClearColor(0, 0, 0, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT);
+    
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     
     glBindVertexArray(RenderState.FrameBufferVAO);
@@ -1391,7 +1422,6 @@ static void Render(render_state& RenderState, renderer& Renderer)
     SetMat4Uniform(RenderState.FrameBufferShader.Program,"P", Camera.ProjectionMatrix);
     SetMat4Uniform(RenderState.FrameBufferShader.Program,"V", Camera.ViewMatrix);
     SetVec2Uniform(RenderState.FrameBufferShader.Program, "screenSize", math::v2((r32)RenderState.WindowWidth,(r32)RenderState.WindowHeight));
-    
     
     glUniform1i(RenderState.FrameBufferTex0Loc, 0);
     glUniform1i(RenderState.FrameBufferTex1Loc, 1);
