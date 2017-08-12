@@ -107,9 +107,9 @@ struct game_state
     Game_Mode GameMode;
     main_menu MainMenu;
     
-    camera Camera;
-    camera GameCamera;
-    camera EditorCamera;
+    //camera Camera;
+    //camera GameCamera;
+    //camera EditorCamera;
     
     i32 PlayerIndex;
     char * LevelPath;
@@ -146,6 +146,9 @@ struct game_state
     animation_map AnimationMap;
     
     entity_file_reload_data* ReloadData;
+    
+    i32 GameCameraHandle;
+    i32 EditorCameraHandle;
 };
 
 void StartTimer(game_state* GameState, timer& Timer)

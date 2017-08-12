@@ -163,7 +163,6 @@ int main(void)
     
     render_state RenderState;
     renderer Renderer = {};
-    Renderer.Camera.Zoom = ConfigData.Zoom;
     InitializeOpenGL(RenderState, Renderer, &ConfigData);
     
     game_code Game = LoadGameCode();

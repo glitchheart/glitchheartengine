@@ -192,6 +192,10 @@ extern "C" UPDATE(Update)
         
         if(GameState->ShouldReload || GameMemory->ShouldReload)
         {
+            GameState->GameCameraHandle = 0;
+            GameState->EditorCameraHandle = 1;
+            Renderer.CurrentCameraHandle = GameState->GameCameraHandle;
+            Renderer.Cameras[GameState->GameCameraHandle].Zoom = GameMemory->ConfigData.Zoom;
             LoadTextures(Renderer);
             GameState->InitialZoom = GameMemory->ConfigData.Zoom;
             GameState->LevelPath = (char*)malloc(sizeof(char) * (strlen(GameMemory->ConfigData.StartingLevelFilePath) + 1));
@@ -248,9 +252,11 @@ extern "C" UPDATE(Update)
             LoadAnimations(GameState, Renderer);
             InitCommands();
             
-            GameState->EditorCamera.Zoom = GameState->InitialZoom; 
-            GameState->EditorCamera.ViewportWidth = Renderer.WindowWidth;
-            GameState->EditorCamera.ViewportHeight = Renderer.WindowHeight;
+            auto& EditorCamera = Renderer.Cameras[GameState->EditorCameraHandle];
+            
+            EditorCamera.Zoom = GameState->InitialZoom; 
+            EditorCamera.ViewportWidth = Renderer.WindowWidth;
+            EditorCamera.ViewportHeight = Renderer.WindowHeight;
             
             GameState->GameMode = Mode_InGame;
             GameState->ShouldReload = false;
@@ -260,26 +266,28 @@ extern "C" UPDATE(Update)
         
         LoadLevelFromFile(GameState->LevelPath, &GameState->CurrentLevel, GameState, Renderer, SoundQueue);
         
-        GameState->GameCamera.Zoom = GameState->InitialZoom;
-        GameState->GameCamera.ViewportWidth = Renderer.WindowWidth;
-        GameState->GameCamera.ViewportHeight = Renderer.WindowHeight;
-        GameState->GameCamera.FollowSpeed = 10.0f; 
-        GameState->GameCamera.FadingSpeed = 0.6f;
+        auto& GameCamera = Renderer.Cameras[GameState->GameCameraHandle];
         
-        StartFade(GameState->GameCamera, Fading_In, 0.6f, math::v3(0, 0, 0), 1.0f, 0.0f);
+        GameCamera.Zoom = GameState->InitialZoom;
+        GameCamera.ViewportWidth = Renderer.WindowWidth;
+        GameCamera.ViewportHeight = Renderer.WindowHeight;
+        GameCamera.FollowSpeed = 10.0f; 
+        GameCamera.FadingSpeed = 0.6f;
+        
+        StartFade(GameCamera, Fading_In, 0.6f, math::v3(0, 0, 0), 1.0f, 0.0f);
         
         // @Incomplete: This is not the right value, it is only set so high to remove smooth following as of now, since it needs to be done a little differently
         
         if(GameState->CurrentLevel.Type == Level_Isometric)
         {
             auto PlayerPos = GameState->Entities[0].Position;
-            GameState->GameCamera.Center = math::v3((PlayerPos.x + PlayerPos.y) * 0.5f,(PlayerPos.x - PlayerPos.y) * 0.25f, GameState->GameCamera.Center.z); // Set center to player's position!
-            GameState->GameCamera.CenterTarget = math::v2((PlayerPos.x + PlayerPos.y) * 0.5f,(PlayerPos.x - PlayerPos.y) * 0.25f);
+            GameCamera.Center = math::v3((PlayerPos.x + PlayerPos.y) * 0.5f,(PlayerPos.x - PlayerPos.y) * 0.25f, GameCamera.Center.z); // Set center to player's position!
+            GameCamera.CenterTarget = math::v2((PlayerPos.x + PlayerPos.y) * 0.5f,(PlayerPos.x - PlayerPos.y) * 0.25f);
         }
         else
         {
-            GameState->GameCamera.Center = math::v3(GameState->Entities[0].Position.x, GameState->Entities[0].Position.y, GameState->GameCamera.Center.z); // Set center to player's position!
-            GameState->GameCamera.CenterTarget = GameState->Entities[0].Position;
+            GameCamera.Center = math::v3(GameState->Entities[0].Position.x, GameState->Entities[0].Position.y, GameCamera.Center.z); // Set center to player's position!
+            GameCamera.CenterTarget = GameState->Entities[0].Position;
         }
         
         GameState->IsInitialized = true;
@@ -311,19 +319,6 @@ extern "C" UPDATE(Update)
                 }
             }
             GameState->ReloadData->ReloadSkeletonFile = false;
-        }
-        
-        if(GameState->ReloadData->ReloadMinotaurFile)
-        {
-            for(u32 EntityIndex = 0; EntityIndex < GameState->EntityCount; EntityIndex++)
-            {
-                auto Entity = GameState->Entities[EntityIndex];
-                if(Entity.Type == Entity_Enemy && Entity.Enemy.EnemyType == Enemy_Minotaur && !Entity.Dead)
-                {
-                    LoadMinotaurData(GameState, EntityIndex);
-                }
-            }
-            GameState->ReloadData->ReloadMinotaurFile = false;
         }
         
         if(GameState->ReloadData->ReloadBonfireFile)
@@ -361,7 +356,7 @@ extern "C" UPDATE(Update)
                 GameState->GameMode = Mode_Editor;
                 GameState->Paused = false;
                 GameState->RenderLight = false;
-                GameState->EditorCamera.Center = GameState->GameCamera.Center;
+                Renderer.Cameras[GameState->EditorCameraHandle].Center = Renderer.Cameras[GameState->GameCameraHandle].Center;
             }
             else
             {
@@ -380,13 +375,13 @@ extern "C" UPDATE(Update)
             {
                 auto Player = GameState->Entities[0];
                 auto IsometricPos = ToIsometric(Player.Position);
-                GameState->GameCamera.Center = math::v3(IsometricPos.x, IsometricPos.y, GameState->GameCamera.Center.z);
-                GameState->Camera.Center = math::v3(IsometricPos.x, IsometricPos.y, GameState->GameCamera.Center.z);
-                GameState->GameCamera.Zoom = GameState->ZoomBeforeGodMode;
+                Renderer.Cameras[GameState->GameCameraHandle].Center = math::v3(IsometricPos.x, IsometricPos.y, Renderer.Cameras[GameState->GameCameraHandle].Center.z);
+                Renderer.Cameras[GameState->GameCameraHandle].Center = math::v3(IsometricPos.x, IsometricPos.y, Renderer.Cameras[GameState->GameCameraHandle].Center.z);
+                Renderer.Cameras[GameState->GameCameraHandle].Zoom = GameState->ZoomBeforeGodMode;
             }
             else
             {
-                GameState->ZoomBeforeGodMode = GameState->GameCamera.Zoom;
+                GameState->ZoomBeforeGodMode = Renderer.Cameras[GameState->GameCameraHandle].Zoom;
             }
         }
     }
@@ -495,61 +490,62 @@ extern "C" UPDATE(Update)
         }
     }
     
-    switch(GameState->GameCamera.FadingMode)
+    auto& GameCamera = Renderer.Cameras[GameState->GameCameraHandle];
+    switch(GameCamera.FadingMode)
     {
         case Fading_In:
         {
-            GameState->GameCamera.FadingAlpha -= GameState->GameCamera.FadingSpeed * (r32)DeltaTime;
+            GameCamera.FadingAlpha -= GameCamera.FadingSpeed * (r32)DeltaTime;
             
-            if(GameState->GameCamera.FadingAlpha <= 0.0f)
+            if(GameCamera.FadingAlpha <= 0.0f)
             {
-                GameState->GameCamera.FadingAlpha = 0.0f;
-                GameState->GameCamera.FadingMode = Fading_None;
+                GameCamera.FadingAlpha = 0.0f;
+                GameCamera.FadingMode = Fading_None;
             }
         }
         break;
         case Fading_Out:
         {
-            GameState->GameCamera.FadingAlpha += GameState->GameCamera.FadingSpeed * (r32)DeltaTime;
+            GameCamera.FadingAlpha += GameCamera.FadingSpeed * (r32)DeltaTime;
             
-            if(GameState->GameCamera.FadingAlpha >= 1.0f)
+            if(GameCamera.FadingAlpha >= 1.0f)
             {
-                GameState->GameCamera.FadingAlpha = 1.0f;
-                GameState->GameCamera.FadingMode = Fading_None;
+                GameCamera.FadingAlpha = 1.0f;
+                GameCamera.FadingMode = Fading_None;
             }
         }
         case Fading_OutIn:
         {
-            if(GameState->GameCamera.FadingIn)
+            if(GameCamera.FadingIn)
             {
-                GameState->GameCamera.FadingAlpha -= GameState->GameCamera.FadingSpeed * (r32)DeltaTime;
+                GameCamera.FadingAlpha -= GameCamera.FadingSpeed * (r32)DeltaTime;
                 
-                if(GameState->GameCamera.FadingAlpha <= 0.0f)
+                if(GameCamera.FadingAlpha <= 0.0f)
                 {
-                    GameState->GameCamera.FadingAlpha = 0.0f;
-                    GameState->GameCamera.FadingMode = Fading_None;
-                    GameState->GameCamera.FadingIn = false;
+                    GameCamera.FadingAlpha = 0.0f;
+                    GameCamera.FadingMode = Fading_None;
+                    GameCamera.FadingIn = false;
                 }
             }
             else
             {
-                GameState->GameCamera.FadingAlpha += GameState->GameCamera.FadingSpeed * (r32)DeltaTime;
+                GameCamera.FadingAlpha += GameCamera.FadingSpeed * (r32)DeltaTime;
                 
-                if(GameState->GameCamera.FadingAlpha >= GameState->GameCamera.EndAlpha)
+                if(GameCamera.FadingAlpha >= GameCamera.EndAlpha)
                 {
-                    GameState->GameCamera.FadingAlpha = GameState->GameCamera.EndAlpha;
-                    GameState->GameCamera.FadingIn = true;
+                    GameCamera.FadingAlpha = GameCamera.EndAlpha;
+                    GameCamera.FadingIn = true;
                 }
             }
         }
         break;
     }
     
-    math::v3 Center = math::v3(GameState->GameCamera.CenterTarget.x, GameState->GameCamera.CenterTarget.y, 0);
+    math::v3 Center = math::v3(GameCamera.CenterTarget.x, GameCamera.CenterTarget.y, 0);
     
     if(GameState->GodModeOn)
     {
-        r32 Zoom = Renderer.Camera.Zoom;
+        r32 Zoom = GameCamera.Zoom;
         
         math::v2 Direction = math::v2(0, 0);
         
@@ -571,7 +567,7 @@ extern "C" UPDATE(Update)
             Direction.x = 1;
         }
         
-        r32 Factor = 72.0f / Renderer.Camera.Zoom;
+        r32 Factor = 72.0f / GameCamera.Zoom;
         
         if(KEY(Key_Add))
         {
@@ -586,10 +582,10 @@ extern "C" UPDATE(Update)
         
         if(Abs(Direction.x) > 0.0 || Abs(Direction.y) > 0.0)
         {
-            GameState->GameCamera.Center = Center + math::v3(Direction.x * GameState->GodModePanSpeed * Factor * DeltaTime, Direction.y * GameState->GodModePanSpeed * Factor * DeltaTime, 0);
+            GameCamera.Center = Center + math::v3(Direction.x * GameState->GodModePanSpeed * Factor * DeltaTime, Direction.y * GameState->GodModePanSpeed * Factor * DeltaTime, 0);
         }
         
-        Renderer.Camera.Zoom = Min(Max(Zoom, GameState->GodModeMinZoom), GameState->GodModeMaxZoom);
+        GameCamera.Zoom = Min(Max(Zoom, GameState->GodModeMinZoom), GameState->GodModeMaxZoom);
     }
     
     if(KEY_DOWN(Key_L) && KEY(Key_LeftCtrl))
@@ -604,7 +600,7 @@ extern "C" UPDATE(Update)
         {
             if(!GameState->Paused && !GameState->StatGainModeOn)
             {
-                UpdateEntities(GameState, InputController, SoundQueue, DeltaTime);
+                UpdateEntities(GameState, Renderer, InputController, SoundQueue, DeltaTime);
                 UpdateObjects(GameState, DeltaTime);
                 
                 TickTimers(GameState, DeltaTime);
@@ -620,9 +616,9 @@ extern "C" UPDATE(Update)
                 
                 if(!GameState->GodModeOn)
                 {
-                    if(math::Distance(GameState->GameCamera.CenterTarget, math::v2(Center.x, Center.y)) > 0.01f)
+                    if(math::Distance(GameCamera.CenterTarget, math::v2(Center.x, Center.y)) > 0.01f)
                     {
-                        auto Direction = math::Normalize(GameState->GameCamera.CenterTarget - math::v2(Center.x, Center.y));
+                        auto Direction = math::Normalize(GameCamera.CenterTarget - math::v2(Center.x, Center.y));
                         
                         if(GameState->CurrentLevel.Type == Level_Isometric)
                         {
@@ -636,7 +632,7 @@ extern "C" UPDATE(Update)
                         }
                         // math::v2(Center.x + Direction.x * GameState->GameCamera.FollowSpeed * DeltaTime, Center.y + Direction.y  * GameState->GameCamera.FollowSpeed * DeltaTime);
                         
-                        GameState->GameCamera.Center = Center;
+                        GameCamera.Center = Center;
                     }
                 }
             }
@@ -714,13 +710,11 @@ extern "C" UPDATE(Update)
                     ReloadCurrentLevel(GameState);
                 }
             }
-            
-            GameState->Camera = GameState->GameCamera;
         }
         break;
         case Mode_Editor:
         {
-            Center = GameState->EditorCamera.Center;
+            Center = Renderer.Cameras[GameState->EditorCameraHandle].Center;
             EditorUpdateEntities(GameState, Renderer, InputController, SoundQueue, DeltaTime);
             
             switch(GameState->EditorState.PlacementMode)
@@ -772,30 +766,30 @@ extern "C" UPDATE(Update)
                 break;
             }
             
-            GameState->Camera = GameState->EditorCamera;
+            GameCamera = Renderer.Cameras[GameState->EditorCameraHandle];
             TickTimers(GameState, DeltaTime);
         }
         break;
     }
     
-    Renderer.Camera.ProjectionMatrix = math::Ortho(0.0f,
-                                                   (Renderer.Camera.ViewportWidth / Renderer.Camera.Zoom),
-                                                   0.0f,
-                                                   (Renderer.Camera.ViewportHeight / Renderer.Camera.Zoom),
-                                                   -100.0f,
-                                                   1000.0f);
+    GameCamera.ProjectionMatrix = math::Ortho(0.0f,
+                                              (GameCamera.ViewportWidth / GameCamera.Zoom),
+                                              0.0f,
+                                              (GameCamera.ViewportHeight / GameCamera.Zoom),
+                                              -100.0f,
+                                              1000.0f);
     
-    Renderer.Camera.ViewMatrix = math::Rotate(math::m4(1.0f), 45.0f, math::v3(0,1,0));
-    Renderer.Camera.ViewMatrix = math::Rotate(Renderer.Camera.ViewMatrix, 35.264f, math::v3(1,0,0));
+    GameCamera.ViewMatrix = math::Rotate(math::m4(1.0f), 45.0f, math::v3(0,1,0));
+    GameCamera.ViewMatrix = math::Rotate(GameCamera.ViewMatrix, 35.264f, math::v3(1,0,0));
     
     
     //Renderer.Camera.ProjectionMatrix = math::Perspective((Renderer.Camera.ViewportWidth / Renderer.Camera.Zoom) / (Renderer.Camera.ViewportHeight / Renderer.Camera.Zoom), 0.6f, 0.1f, 100.0f);
     
     
-    Renderer.Camera.ViewMatrix = math::Translate(Renderer.Camera.ViewMatrix,
-                                                 math::v3(-Center.x + Renderer.Camera.ViewportWidth / Renderer.Camera.Zoom / 2,
-                                                          -Center.y + 25 + Renderer.Camera.ViewportHeight / Renderer.Camera.Zoom / 2,
-                                                          -50.0f));
+    GameCamera.ViewMatrix = math::Translate(GameCamera.ViewMatrix,
+                                            math::v3(-Center.x + GameCamera.ViewportWidth / GameCamera.Zoom / 2,
+                                                     -Center.y + 25 + GameCamera.ViewportHeight / GameCamera.Zoom / 2,
+                                                     -50.0f));
     
     InputController->CurrentCharacter = 0;
     GameState->ClearTilePositionFrame = !GameState->ClearTilePositionFrame;
@@ -819,7 +813,6 @@ extern "C" UPDATE(Update)
         GameState->TESTMODEL->Rotation.z += (r32)(2 * DeltaTime);
     }
     
-    //Renderer.Camera = GameState->Camera;
     PushTilemapRenderCommands(Renderer, *GameState);
     PushEntityRenderCommands(Renderer, *GameState);
     PushModel(Renderer, *GameState->TESTMODEL);
