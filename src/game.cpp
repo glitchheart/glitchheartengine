@@ -288,6 +288,7 @@ extern "C" UPDATE(Update)
     
     if(KEY_DOWN(Key_Q) && KEY(Key_LeftCtrl))
     {
+        GameMemory->ExitGame = true;
         GameState->GameMode = Mode_Exit;
     }
     
@@ -805,17 +806,17 @@ extern "C" UPDATE(Update)
     
     if(KEY(Key_X))
     {
-        GameState->TESTMODEL->Rotation.x += 20 * DeltaTime;
+        GameState->TESTMODEL->Rotation.x += (r32)(20 * DeltaTime);
     }
     
     if(KEY(Key_Y))
     {
-        GameState->TESTMODEL->Rotation.y += 2 * DeltaTime;
+        GameState->TESTMODEL->Rotation.y += (r32)(2 * DeltaTime);
     }
     
     if(KEY(Key_Z))
     {
-        GameState->TESTMODEL->Rotation.z += 2 * DeltaTime;
+        GameState->TESTMODEL->Rotation.z += (r32)(2 * DeltaTime);
     }
     
     //Renderer.Camera = GameState->Camera;
