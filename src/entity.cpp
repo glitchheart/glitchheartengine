@@ -1308,6 +1308,7 @@ void UpdatePlayer(entity* Entity, game_state* GameState, renderer& Renderer, sou
     
     Entity->Velocity = math::YRotate(45) * Entity->Velocity;
     
+    
     Entity->Position += math::v3(Entity->Velocity.x * DeltaTime, Entity->Velocity.y * DeltaTime, -Entity->Velocity.z * DeltaTime);
     Entity->Position = math::v3(Entity->Position.x, Entity->Position.y, Entity->Position.z);
     

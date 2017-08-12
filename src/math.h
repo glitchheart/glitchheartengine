@@ -180,6 +180,11 @@ namespace math
         v2(r64 X, i32 Y) : X((r32)X), Y((r32)Y) {}
         v2(r64 X, r32 Y) : X((r32)X), Y(Y) {}
         
+        r32 operator[](i32 I)
+        {
+            return this->E[I];
+        }
+        
         inline v2 operator* (v2 O)
         {
             v2 Result(*this);
@@ -356,6 +361,11 @@ namespace math
         v3(i32 X, i32 Y, r32 Z) : X((r32)X), Y((r32)Y), Z(Z) {}
         v3(r32 X, r32 Y, r64 Z) : X(X), Y(Y), Z((r32)Z) {}
         v3(r64 X, r32 Y, r64 Z) : X((r32)X), Y(Y), Z((r32)Z) {}
+        
+        r32 operator[](i32 I)
+        {
+            return this->E[I];
+        }
         
         inline v3 operator-()
         {
@@ -583,6 +593,11 @@ namespace math
         X((r32)X), Y((r32)Y), Z((r32)Z), W((r32)W) {}
         
         v4(v3 O, r32 W) : X(O.X), Y(O.Y), Z(O.Z), W(W) {}
+        
+        r32 operator[](i32 I)
+        {
+            return this->E[I];
+        }
         
         inline v4 operator* (v4 O)
         {
