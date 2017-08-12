@@ -894,51 +894,6 @@ void RenderCircle(render_state& RenderState, math::v4 Color, r32 CenterX, r32 Ce
     glDrawArrays(GL_LINE_LOOP, 0, 720);
 }
 
-static void RenderIsometricRect(render_state* RenderState, math::v4 Color, r32 X, r32 Y, r32 Width, r32 Height, math::m4 ProjectionMatrix, math::m4 ViewMatrix)
-{
-    math::m4 Model(1.0f);
-    Model = math::Translate(Model, math::v3(X, Y, 0));
-    Model = math::Scale(Model, math::v3(Width, Height, 1));
-    
-    glBindVertexArray(RenderState->IsometricVAO);
-    
-    auto Shader = RenderState->RectShader;
-    UseShader(&Shader);
-    
-    SetMat4Uniform(Shader.Program, "Projection", ProjectionMatrix);
-    SetMat4Uniform(Shader.Program, "View", ViewMatrix);
-    
-    SetFloatUniform(Shader.Program, "isUI", (r32)false);
-    SetMat4Uniform(Shader.Program, "M", Model);
-    SetVec4Uniform(Shader.Program, "color", Color);
-    
-    glDrawElements(GL_TRIANGLES, sizeof(RenderState->QuadIndices), GL_UNSIGNED_INT, (void*)0);
-    
-    glBindVertexArray(0);
-}
-
-static void RenderIsometricOutline(render_state* RenderState, math::v4 Color, r32 X, r32 Y, r32 Width, r32 Height, math::m4 ProjectionMatrix, math::m4 ViewMatrix)
-{
-    math::m4 Model(1.0f);
-    Model = math::Translate(Model, math::v3(X, Y, 0));
-    Model = math::Scale(Model, math::v3(Width, Height, 1));
-    
-    glBindVertexArray(RenderState->IsometricVAO);
-    
-    auto Shader = RenderState->RectShader;
-    UseShader(&Shader);
-    
-    SetMat4Uniform(Shader.Program, "Projection", ProjectionMatrix);
-    SetMat4Uniform(Shader.Program, "View", ViewMatrix);
-    
-    SetFloatUniform(Shader.Program, "isUI", (r32)false);
-    SetMat4Uniform(Shader.Program, "M", Model);
-    SetVec4Uniform(Shader.Program, "color", Color);
-    
-    glDrawArrays(GL_LINE_LOOP, 0, 4);
-    glBindVertexArray(0);
-}
-
 static void RenderRect(Render_Mode Mode, render_state& RenderState, math::v4 Color, r32 X, r32 Y, r32 Width, r32 Height, u32 TextureHandle = 0, b32 IsUI = true, math::m4 ProjectionMatrix = math::m4(), math::m4 ViewMatrix = math::m4())
 {
     if(IsUI)
