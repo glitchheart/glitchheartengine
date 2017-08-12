@@ -396,7 +396,7 @@ static void EditorUpdateEntities(game_state* GameState, renderer& Renderer, inpu
                     ReloadCurrentLevel(GameState);
                     GameState->GameMode = Mode_Editor;
                     GameState->Paused = false;
-                    GameState->EditorCamera.Center = GameState->GameCamera.Center;
+                    Renderer.Cameras[GameState->EditorCameraHandle].Center = Renderer.Cameras[GameState->GameCameraHandle].Center;
                 }
                 break;
                 case Editor_Menu_Game:
@@ -606,8 +606,8 @@ static void EditorUpdateEntities(game_state* GameState, renderer& Renderer, inpu
                 }
                 
                 auto Pos = math::UnProject(math::v3(InputController->MouseX, Renderer.Viewport[3] - InputController->MouseY, 0),
-                                           GameState->Camera.ViewMatrix,
-                                           GameState->Camera.ProjectionMatrix,
+                                           Renderer.Cameras[GameState->GameCameraHandle].ViewMatrix,
+                                           Renderer.Cameras[GameState->GameCameraHandle].ProjectionMatrix,
                                            math::v4(0, 0, Renderer.Viewport[2], Renderer.Viewport[3]));
                 
                 math::v2 CartesianPos = ToCartesian(math::v2(Pos.x, Pos.y));
@@ -726,14 +726,6 @@ static void EditorUpdateEntities(game_state* GameState, renderer& Renderer, inpu
                                     {
                                         LoadSkeletonData(GameState, -1, math::v2(X, Y));
                                     }
-                                    break;
-                                    case Placement_Entity_Minotaur:
-                                    {
-                                        LoadMinotaurData(GameState, -1, math::v2(X, Y));
-                                    }
-                                    break;
-                                    case Placement_Entity_Barrel:
-                                    {}
                                     break;
                                     case Placement_Entity_Bonfire:
                                     {
@@ -860,8 +852,8 @@ static void EditorUpdateEntities(game_state* GameState, renderer& Renderer, inpu
                 }
                 else
                 {
-                    GameState->EditorCamera.Zoom += (r32)InputController->ScrollY * GameState->EditorState.ZoomingSpeed * (r32)DeltaTime * GameState->EditorCamera.Zoom;
-                    GameState->EditorCamera.Zoom = Max(Min(GameState->EditorCamera.Zoom, GameState->EditorState.MaxZoom), GameState->EditorState.MinZoom);
+                    Renderer.Cameras[GameState->EditorCameraHandle].Zoom += (r32)InputController->ScrollY * GameState->EditorState.ZoomingSpeed * (r32)DeltaTime * Renderer.Cameras[GameState->EditorCameraHandle].Zoom;
+                    Renderer.Cameras[GameState->EditorCameraHandle].Zoom = Max(Min(Renderer.Cameras[GameState->EditorCameraHandle].Zoom, GameState->EditorState.MaxZoom), GameState->EditorState.MinZoom);
                 }
                 
                 if(MOUSE(Mouse_Right))
@@ -874,7 +866,8 @@ static void EditorUpdateEntities(game_state* GameState, renderer& Renderer, inpu
                     
                     math::v2 Direction = math::v2(InputController->MouseX - GameState->EditorState.LastKnownMouseX, InputController->MouseY - GameState->EditorState.LastKnownMouseY);
                     
-                    GameState->EditorCamera.Center -= math::v3(Direction.x / GameState->EditorCamera.Zoom * GameState->EditorState.PanningSpeed * DeltaTime, Direction.y / GameState->EditorCamera.Zoom * -GameState->EditorState.PanningSpeed * DeltaTime, 0);
+                    auto& EditorCamera = Renderer.Cameras[GameState->EditorCameraHandle];
+                    EditorCamera.Center -= math::v3(Direction.x / EditorCamera.Zoom * GameState->EditorState.PanningSpeed * DeltaTime, Direction.y / EditorCamera.Zoom * -GameState->EditorState.PanningSpeed * DeltaTime, 0);
                     
                     GameState->EditorState.LastKnownMouseX = (r32)InputController->MouseX;
                     GameState->EditorState.LastKnownMouseY = (r32)InputController->MouseY;

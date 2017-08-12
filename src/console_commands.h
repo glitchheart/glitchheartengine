@@ -4,7 +4,8 @@
 static char* Zoom(game_state* GameState, char** Arguments)
 {
     r32 ZoomAmount = (r32) strtod(Arguments[0], NULL);
-    GameState->GameCamera.Zoom = ZoomAmount;
+    //@Incomplete: Should be renderer.camera
+    //GameCamera.Zoom = ZoomAmount;
     return Concat("Zoom set to ", Arguments[0]);
 }
 

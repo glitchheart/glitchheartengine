@@ -1297,6 +1297,8 @@ static void RenderCommands(render_state& RenderState, renderer& Renderer)
         }
     }
     
+    auto& Camera = Renderer.Cameras[Renderer.CurrentCameraHandle];
+    
     for(i32 Index = 0; Index < Renderer.CommandCount; Index++)
     {
         const render_command& Command = Renderer.Buffer[Index];
@@ -1305,7 +1307,7 @@ static void RenderCommands(render_state& RenderState, renderer& Renderer)
         {
             case RenderCommand_Line:
             {
-                RenderLine(Command, RenderState, Renderer.Camera.ProjectionMatrix, Renderer.Camera.ViewMatrix);
+                RenderLine(Command, RenderState, Camera.ProjectionMatrix, Camera.ViewMatrix);
             }
             break;
             case RenderCommand_Text:
@@ -1315,22 +1317,22 @@ static void RenderCommands(render_state& RenderState, renderer& Renderer)
             break;
             case RenderCommand_Rect:
             {
-                RenderRect(Command, RenderState, Renderer.Camera.ProjectionMatrix, Renderer.Camera.ViewMatrix);
+                RenderRect(Command, RenderState, Camera.ProjectionMatrix, Camera.ViewMatrix);
             }
             break;
             case RenderCommand_Sprite:
             {
-                RenderSprite(Command, RenderState, Renderer, Renderer.Camera.ProjectionMatrix, Renderer.Camera.ViewMatrix);
+                RenderSprite(Command, RenderState, Renderer, Camera.ProjectionMatrix, Camera.ViewMatrix);
             }
             break;
             case RenderCommand_Model:
             {
-                RenderModel(Command, RenderState, Renderer.Camera.ProjectionMatrix, Renderer.Camera.ViewMatrix);
+                RenderModel(Command, RenderState, Camera.ProjectionMatrix, Camera.ViewMatrix);
             }
             break;
             case RenderCommand_Buffer:
             {
-                RenderBuffer(Command, RenderState, Renderer, Renderer.Camera.ProjectionMatrix, Renderer.Camera.ViewMatrix);
+                RenderBuffer(Command, RenderState, Renderer, Camera.ProjectionMatrix, Camera.ViewMatrix);
             }
             break;
         }
@@ -1343,8 +1345,9 @@ static void Render(render_state& RenderState, renderer& Renderer)
 {
     LoadTextures(RenderState, Renderer);
     
-    Renderer.Camera.ViewportWidth = RenderState.WindowWidth;
-    Renderer.Camera.ViewportHeight = RenderState.WindowHeight;
+    auto& Camera = Renderer.Cameras[Renderer.CurrentCameraHandle];
+    Camera.ViewportWidth = RenderState.WindowWidth;
+    Camera.ViewportHeight = RenderState.WindowHeight;
     
     //CheckLevelVAO(GameMemory);
     
@@ -1384,8 +1387,8 @@ static void Render(render_state& RenderState, renderer& Renderer)
     SetFloatUniform(RenderState.FrameBufferShader.Program, "contrast", RenderState.Contrast);
     SetFloatUniform(RenderState.FrameBufferShader.Program, "brightness", RenderState.Brightness);
     SetIntUniform(RenderState.FrameBufferShader.Program, "ignoreLight",  true); // @Incomplete: Lighting
-    SetMat4Uniform(RenderState.FrameBufferShader.Program,"P", Renderer.Camera.ProjectionMatrix);
-    SetMat4Uniform(RenderState.FrameBufferShader.Program,"V", Renderer.Camera.ViewMatrix);
+    SetMat4Uniform(RenderState.FrameBufferShader.Program,"P", Camera.ProjectionMatrix);
+    SetMat4Uniform(RenderState.FrameBufferShader.Program,"V", Camera.ViewMatrix);
     SetVec2Uniform(RenderState.FrameBufferShader.Program, "screenSize", math::v2((r32)RenderState.WindowWidth,(r32)RenderState.WindowHeight));
     
     

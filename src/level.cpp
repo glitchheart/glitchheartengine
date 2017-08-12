@@ -338,19 +338,6 @@
                                               sscanf(LineBuffer, "skeleton %f %f%n", &Pos.x, &Pos.y, &PathIndex);
                                               LoadSkeletonData(GameState, -1, Pos);
                                           }
-                                          else if(StartsWith(LineBuffer, "minotaur"))
-                                          {
-                                              math::v2 Pos;
-                                              Pos = math::Floor(Pos);
-                                              sscanf(LineBuffer, "minotaur %f %f%n", &Pos.x, &Pos.y, &PathIndex);
-                                              LoadMinotaurData(GameState, -1, Pos);
-                                          }
-                                          else if(StartsWith(LineBuffer, "barrel"))
-                                          {
-                                              math::v2 Pos;
-                                              Pos = math::Floor(Pos);
-                                              sscanf(LineBuffer, "barrel %f %f", &Pos.x, &Pos.y);
-                                          }
                                           else if(StartsWith(LineBuffer, "bonfire"))
                                           {
                                               math::v2 Pos;
@@ -402,7 +389,7 @@
                                       }
                                       Level->Tilemap.RenderInfo.Dirty = true;
                                       */
-                                      GameState->Camera.Center = math::v3(GameState->Entities[0].Position.x, GameState->Entities[0].Position.y, GameState->Camera.Center.z);
+                                      Renderer.Cameras[GameState->GameCameraHandle].Center = math::v3(GameState->Entities[0].Position.x, GameState->Entities[0].Position.y, Renderer.Cameras[GameState->GameCameraHandle].Center.z);
                                       
                                       return true;
                                   }

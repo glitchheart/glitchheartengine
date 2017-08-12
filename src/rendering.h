@@ -183,6 +183,8 @@ struct buffer_data
     i32 ExistingHandle = -1;
 };
 
+#define MAX_CAMERAS 8
+
 struct renderer
 {
     render_command Buffer[RENDER_COMMAND_MAX];
@@ -197,7 +199,9 @@ struct renderer
     
     texture_data_map TextureMap;
     
-    camera Camera;
+    //camera Camera;
+    camera Cameras[MAX_CAMERAS];
+    i32 CurrentCameraHandle;
     
     i32 Viewport[4];
     i32 WindowWidth;
