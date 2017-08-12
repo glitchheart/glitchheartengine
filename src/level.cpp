@@ -1,3 +1,53 @@
+                              static void LoadOrthogonalTilemapBuffer(renderer& Renderer, tilemap& Tilemap)
+                              {
+                                  r32* VertexBuffer = (r32*)malloc(sizeof(r32) * 16 * Tilemap.Width * Tilemap.Height);
+                                  
+                                  i32 Size = 0;
+                                  
+                                  texture_data* TextureData = Renderer.TextureMap[Tilemap.TextureName];
+                                  
+                                  r32 Width = (r32)TextureData->Width;
+                                  r32 Height = (r32)TextureData->Height;
+                                  
+                                  for(i32 X = 0; X < Tilemap.Width; X++)
+                                  {
+                                      for(i32 Y = 0; Y < Tilemap.Height; Y++)
+                                      {
+                                          tile_data* Tile = &Tilemap.Data[0][X][Y];
+                                          
+                                          if(Tile->TypeIndex != -1)
+                                          {
+                                              r32 TexCoordX = (Tile->TextureOffset.x) / Width;
+                                              r32 TexCoordY = (Tile->TextureOffset.y) / Height; 
+                                              r32 TexCoordXHigh = (Tile->TextureOffset.x + 16) / Width;
+                                              r32 TexCoordYHigh = (Tile->TextureOffset.y + 16) / Height;
+                                              
+                                              r32 CorrectY = (r32)Y;
+                                              
+                                              VertexBuffer[Size++] = (r32)X;
+                                              VertexBuffer[Size++] = (r32)CorrectY + 1.0f;
+                                              VertexBuffer[Size++] = (r32)TexCoordX;
+                                              VertexBuffer[Size++] =  (r32)TexCoordY;
+                                              VertexBuffer[Size++] = (r32)X + 1;
+                                              VertexBuffer[Size++] = (r32)CorrectY + 1;
+                                              VertexBuffer[Size++] = (r32)TexCoordXHigh;
+                                              VertexBuffer[Size++] =  (r32)TexCoordY;
+                                              VertexBuffer[Size++] = (r32)X + 1;
+                                              VertexBuffer[Size++] = (r32)CorrectY;
+                                              VertexBuffer[Size++] = (r32)TexCoordXHigh;
+                                              VertexBuffer[Size++] = (r32)TexCoordYHigh;
+                                              VertexBuffer[Size++] = (r32)X;
+                                              VertexBuffer[Size++] = (r32)CorrectY;
+                                              VertexBuffer[Size++] =(r32)TexCoordX;
+                                              VertexBuffer[Size++] = (r32)TexCoordYHigh;
+                                          }
+                                      }
+                                  }
+                                  
+                                  Tilemap.BufferHandle = 0;
+                                  LoadBuffer(Renderer, VertexBuffer, Size, &Tilemap.BufferHandle);
+                              }
+                              
                               static void LoadTilemapBuffer(renderer& Renderer, tilemap& Tilemap)
                               {
                                   r32* VertexBuffer = (r32*)malloc(sizeof(r32) * 16 * Tilemap.Width * Tilemap.Height);
@@ -46,6 +96,7 @@
                                       }
                                   };
                                   
+                                  Tilemap.BufferHandle = 0;
                                   LoadBuffer(Renderer, VertexBuffer, Size, &Tilemap.BufferHandle);
                               }
                               
@@ -274,7 +325,7 @@
                                           IndexHeight = 0;
                                       }
                                       
-                                      LoadTilemapBuffer(Renderer, Level->Tilemap);
+                                      LoadOrthogonalTilemapBuffer(Renderer, Level->Tilemap);
                                       
                                       u32 PathIndex = 0;
                                       

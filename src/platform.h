@@ -27,6 +27,7 @@
 #define Terabytes(Value) (Gigabytes(Value)*1024LL)
 
 #define PI 3.141592653589793f
+#define DEGREE_IN_RADIANS 0.0174532925
 
 //@Incomplete: We want a platform API for all of these functions!!!!!!!
 #include <windows.h>

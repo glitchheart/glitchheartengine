@@ -3,7 +3,6 @@
 
 #include <cmath>
 
-
 #ifdef GLM
 #include <glm/gtc/matrix_transform.hpp>
 namespace math
@@ -17,14 +16,14 @@ namespace math
     using rgb = v3;
     using rgba = v4;
     
-    PrintMatrix(m4 In)
+    /*PrintMatrix(m4 In)
     {
         DEBUG_PRINT("GLM: \n");
         DEBUG_PRINT("%f %f %f %f\n", In[0][0],In[1][0],In[2][0],In[3][0]);
         DEBUG_PRINT("%f %f %f %f\n", In[0][1],In[1][1],In[2][1],In[3][1]);
         DEBUG_PRINT("%f %f %f %f\n", In[0][2],In[1][2],In[2][2],In[3][2]);
         DEBUG_PRINT("%f %f %f %f\n", In[0][3],In[1][3],In[3][3],In[3][3]);
-    }
+    }*/
     
     r32 Dot(v2 V1, v2 V2)
     {
@@ -51,7 +50,7 @@ namespace math
         return glm::translate(M,V);
     }
     
-    m4 Rotate(m4 M, v3 V, r32 Angle)
+    m4 Rotate(m4 M, r32 Angle, v3 V)
     {
         return glm::rotate(M, Angle, V);
     }
@@ -99,6 +98,11 @@ namespace math
     v4 Normalize(v4 V)
     {
         return glm::normalize(V);
+    }
+    
+    inline i32 Round(r32 V)
+    {
+        return glm::round(V);
     }
     
     r32 Floor(r32 V)
@@ -308,12 +312,25 @@ namespace math
             };
             
         };
-        struct
+        struct 
         {
             union
             {
-                r32 R, G, B;
-                r32 r, g, b;
+                v2 rg;
+                v2 RG;
+                struct
+                {
+                    r32 r, g;
+                };
+                struct 
+                {
+                    r32 R, G;
+                };
+            };
+            union
+            {
+                r32 b;
+                r32 B;
             };
             
         };
@@ -1414,6 +1431,8 @@ namespace math
     
     inline m4 XRotate(r32 Angle)
     {
+        Angle *= DEGREE_IN_RADIANS;
+        
         r32 C = Cos(Angle);
         r32 S = Sin(Angle);
         
@@ -1427,12 +1446,14 @@ namespace math
     
     inline m4 YRotate(r32 Angle)
     {
+        Angle *= DEGREE_IN_RADIANS;
+        
         r32 C = Cos(Angle);
         r32 S = Sin(Angle);
         
-        m4 R(C, 0,-S,0,
+        m4 R(C, 0,S,0,
              0, 1,0,0,
-             S,0,C,0,
+             -S,0,C,0,
              0, 0,0,1);
         
         return R;
@@ -1440,6 +1461,8 @@ namespace math
     
     inline m4 ZRotate(r32 Angle)
     {
+        Angle *= DEGREE_IN_RADIANS;
+        
         r32 C = Cos(Angle);
         r32 S = Sin(Angle);
         
@@ -1462,7 +1485,7 @@ namespace math
     {
         m4 Result(In);
         auto R = CreateRotation(A * Axis.X, A * Axis.Y, A * Axis.Z);
-        Result = Result * R;
+        Result = R * Result;
         return Result;
     }
     

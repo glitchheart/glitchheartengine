@@ -2025,7 +2025,7 @@ void UpdatePlayer(entity* Entity, game_state* GameState, sound_queue* SoundQueue
     Entity->Position += math::v2(Entity->Velocity.x * DeltaTime, Entity->Velocity.y * DeltaTime);
     
     // Update camera if centered on player
-    GameState->GameCamera.CenterTarget = Entity->Position;
+    GameState->GameCamera.CenterTarget = ToIsometric(Entity->Position);
 }
 
 static void UpdateWeapon(entity* Entity, game_state* GameState, sound_queue* SoundQueue, r64 DeltaTime)

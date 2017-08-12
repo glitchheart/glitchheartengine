@@ -18,5 +18,5 @@ void main()
 	if(isUI == 1)
 		gl_Position = Model * vec4(pos.xy, 0.0, 1.0);
 	else
-		gl_Position = Projection * View * vec4(pos.xy, 0.0, 1.0);
+		gl_Position = Projection * View * Model * vec4(pos.xy, 0.0, 1.0);
 }

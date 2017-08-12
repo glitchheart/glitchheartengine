@@ -65,6 +65,8 @@ struct render_command
     Shader_Type ShaderType;
     b32 IsUI;
     
+    math::v3 Rotation;
+    
     union
     {
         struct
@@ -107,7 +109,6 @@ struct render_command
         {
             math::v3 Position;
             math::v3 Scale;
-            math::v3 Rotation;
             i32 BufferHandle;
             math::rgba Color;
         } Model;
