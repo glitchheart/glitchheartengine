@@ -782,13 +782,12 @@ extern "C" UPDATE(Update)
     GameCamera.ViewMatrix = math::Rotate(math::m4(1.0f), 45.0f, math::v3(0,1,0));
     GameCamera.ViewMatrix = math::Rotate(GameCamera.ViewMatrix, 35.264f, math::v3(1,0,0));
     
-    
     //Renderer.Camera.ProjectionMatrix = math::Perspective((Renderer.Camera.ViewportWidth / Renderer.Camera.Zoom) / (Renderer.Camera.ViewportHeight / Renderer.Camera.Zoom), 0.6f, 0.1f, 100.0f);
     
-    
+    auto EntityPos = GameState->Entities[0].Position;
     GameCamera.ViewMatrix = math::Translate(GameCamera.ViewMatrix,
-                                            math::v3(-Center.x + GameCamera.ViewportWidth / GameCamera.Zoom / 2,
-                                                     -Center.y + 25 + GameCamera.ViewportHeight / GameCamera.Zoom / 2,
+                                            math::v3(-20.0f + GameCamera.ViewportWidth / GameCamera.Zoom / 2,
+                                                     -20.0f + GameCamera.ViewportHeight / GameCamera.Zoom / 2,
                                                      -50.0f));
     
     InputController->CurrentCharacter = 0;
@@ -800,17 +799,17 @@ extern "C" UPDATE(Update)
     
     if(KEY(Key_X))
     {
-        GameState->TESTMODEL->Rotation.x += (r32)(20 * DeltaTime);
+        GameState->TESTMODEL->Rotation.x += (r32)(40 * DeltaTime);
     }
     
     if(KEY(Key_Y))
     {
-        GameState->TESTMODEL->Rotation.y += (r32)(2 * DeltaTime);
+        GameState->TESTMODEL->Rotation.y += (r32)(40 * DeltaTime);
     }
     
     if(KEY(Key_Z))
     {
-        GameState->TESTMODEL->Rotation.z += (r32)(2 * DeltaTime);
+        GameState->TESTMODEL->Rotation.z += (r32)(40 * DeltaTime);
     }
     
     PushTilemapRenderCommands(Renderer, *GameState);

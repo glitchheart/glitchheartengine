@@ -13,10 +13,12 @@ static char* Jump(game_state* GameState, char** Arguments)
 {
     r32 X = (r32) strtod(Arguments[0], NULL);
     r32 Y = (r32) strtod(Arguments[1], NULL);
+    r32 Z = (r32) strtod(Arguments[2], NULL);
     
-    GameState->Entities[GameState->PlayerIndex].Position = math::v2(X, Y);
+    
+    GameState->Entities[GameState->PlayerIndex].Position = math::v3(X, Y, Z);
     char* Result = (char*)malloc(40 * sizeof(char));
-    sprintf(Result, "Jumped to position %.2f %.2f", X, Y);
+    sprintf(Result, "Jumped to position %.2f %.2f %.2f", X, Y, Z);
     return Result;
 }
 

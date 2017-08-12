@@ -15,7 +15,7 @@ static inline void PrintEntityInfo(const entity& Entity)
     DEBUG_PRINT("Entity: Name %s, position x %f y %f, rotation x %f y %f z %f\n", Entity.Name, Entity.Position.x, Entity.Position.y, Entity.Rotation.x, Entity.Rotation.y, Entity.Rotation.z);
 }
 
-static i32 LoadPointlight(game_state* GameState, math::rgba Color = math::v4(), r32 Intensity = 0.0f, r32 ConstantAtten = 0.0f, r32 LinearAtten = 0.0f, r32 ExponentialAtten = 0.0f,math::v2 InitPosition = math::v2(), b32 ShouldGlow = false, r64 GlowTimerMax = 0.0f, r32 GlowIncrease = 0.0f, r32 EmissionIntensity = 0.0f)
+static i32 LoadPointlight(game_state* GameState, math::rgba Color = math::v4(), r32 Intensity = 0.0f, r32 ConstantAtten = 0.0f, r32 LinearAtten = 0.0f, r32 ExponentialAtten = 0.0f,math::v3 InitPosition = math::v3(), b32 ShouldGlow = false, r64 GlowTimerMax = 0.0f, r32 GlowIncrease = 0.0f, r32 EmissionIntensity = 0.0f)
 {
     light_source LightSource;
     
@@ -40,7 +40,7 @@ static i32 LoadPointlight(game_state* GameState, math::rgba Color = math::v4(), 
     return GameState->LightSourceCount - 1;
 }
 
-static i32 LoadLight(game_state* GameState, char* LineBuffer, math::v2 InitPosition = math::v2(), i32 Handle = -1)
+static i32 LoadLight(game_state* GameState, char* LineBuffer, math::v3 InitPosition = math::v3(), i32 Handle = -1)
 {
     b32 ShouldGlow = false;
     light_source LightSource;
@@ -261,37 +261,6 @@ static void SpawnLoot(game_state* GameState, math::v2 Position, i32* Handle)
     GameState->Objects[GameState->ObjectCount++];
 }
 
-static void SpawnWillDrop(game_state* GameState, math::v2 Position, i32* Handle)
-{
-    *Handle = GameState->ObjectCount;
-    
-    auto Will  = &GameState->Objects[GameState->ObjectCount++];
-    Will->Active = true;
-    Will->Scale = 0.5f;
-    Will->Type = Object_Will;
-    Will->Position = math::v2(Position.x, Position.y - 0.5f);
-    Will->UsesTransparency = true;
-    
-    PlayAnimation(Will, "will_glow", GameState);
-    
-    render_entity* RenderEntity = &GameState->RenderEntities[GameState->RenderEntityCount];
-    RenderEntity->RenderType = Render_Type_Object;
-    
-    RenderEntity->Shader = Shader_Spritesheet;
-    RenderEntity->Rendered = true;
-    RenderEntity->Background = false;
-    RenderEntity->RenderType = Render_Type_Object;
-    RenderEntity->Object = &*Will;
-    
-    Will->RenderEntityHandle = GameState->RenderEntityCount++;
-    
-    RenderEntity->Color = math::v4(1, 1, 1, 1);
-    
-    Will->LightSourceHandle = LoadPointlight(GameState, math::v4(0.2f, 0.15f, 0.65f, 0.3f), 0.45f, 0.2f, 1.0f,0.2f, GameState->CharacterData.LostWillPosition, true, 0.9, 0.0007f);
-    
-    GameState->Objects[GameState->ObjectCount++];
-}
-
 static void SpawnTree(game_state* GameState, math::v2 Position, i32* Handle = 0)
 {
     if(Handle)
@@ -354,7 +323,7 @@ static void LoadEntityData(FILE* File, entity* Entity, game_state* GameState, b3
         Entity->HealthDecreaseTimer.TimerHandle = -1;
         Entity->HealthDecreaseTimer.Name = "Health Decrease";
         Entity->Dead = false;
-        Entity->Center = math::v2(0.5, 0.5);
+        Entity->Center = math::v3(0.5, 0.5, 0.5);
         Entity->CurrentAnimation = 0;
         Entity->Active = true;
         Entity->IsKinematic = false;
@@ -701,9 +670,10 @@ static void EnemyWander(game_state* GameState, entity* Entity)
         PlayAnimation(Entity, WalkString, GameState);
         free(WalkString);
         
-        auto CurrentWaypoint = math::v2(Entity->Enemy.Waypoints[Entity->Enemy.WaypointIndex].x, Entity->Enemy.Waypoints[Entity->Enemy.WaypointIndex].y);
+        auto CurrentWaypoint = math::v3(Entity->Enemy.Waypoints[Entity->Enemy.WaypointIndex].x,
+                                        0.0f, Entity->Enemy.Waypoints[Entity->Enemy.WaypointIndex].z);
         
-        auto DistanceToWaypoint = math::Distance(CurrentWaypoint, math::v2(Entity->Position.x, Entity->Position.y - 0.5f));
+        auto DistanceToWaypoint = math::Distance(CurrentWaypoint, Entity->Position);
         
         if(DistanceToWaypoint < 0.01f)
         {
@@ -733,10 +703,11 @@ static void EnemyWander(game_state* GameState, entity* Entity)
             }
         }
         
-        CurrentWaypoint =  math::v2(Entity->Enemy.Waypoints[Entity->Enemy.WaypointIndex].x, Entity->Enemy.Waypoints[Entity->Enemy.WaypointIndex].y);
-        auto Direction = math::Normalize(CurrentWaypoint - math::v2(Entity->Position.x, Entity->Position.y - 0.5f));
+        CurrentWaypoint =  math::v3(Entity->Enemy.Waypoints[Entity->Enemy.WaypointIndex].x, 0.0f, Entity->Enemy.Waypoints[Entity->Enemy.WaypointIndex].z);
+        auto Direction = math::Normalize(CurrentWaypoint - Entity->Position);
         
-        Entity->Velocity = math::v2(Direction.x * Entity->Enemy.WanderingSpeed, Direction.y * Entity->Enemy.WanderingSpeed);
+        Entity->Velocity = math::v2(Direction.x * Entity->Enemy.WanderingSpeed, 0.0f,
+                                    Direction.z * Entity->Enemy.WanderinSpeed);
     }
     
     entity& Player = GameState->Entities[GameState->PlayerIndex];
@@ -1610,7 +1581,11 @@ void UpdatePlayer(entity* Entity, game_state* GameState, renderer& Renderer, sou
         }
     }
     
+    Entity->Velocity.x = GetInputX(InputController) * 10.0f;
+    Entity->Velocity.y = GetInputY(InputController) * 10.0f;
+    
     Entity->Position += math::v2(Entity->Velocity.x * DeltaTime, Entity->Velocity.y * DeltaTime);
+    Entity->Position = math::v2(Entity->Position.x, Max(0.0f, Entity->Position.y));
     
     // Update camera if centered on player
     Renderer.Cameras[GameState->GameCameraHandle].CenterTarget = ToIsometric(Entity->Position);
@@ -2072,12 +2047,12 @@ static void UpdateEntities(game_state* GameState, renderer& Renderer, input_cont
     
     /*if(GameState->ClearTilePositionFrame)
     {
-        for(i32 X = 0; X < GameState->CurrentLevel.Tilemap.Width; X++)
-        {
-            for(i32 Y = 0; Y < GameState->CurrentLevel.Tilemap.Height; Y++)
-            {
-                GameState->EntityTilePositions[X][Y] = 0;
-            }
-        }
+    for(i32 X = 0; X < GameState->CurrentLevel.Tilemap.Width; X++)
+    {
+    for(i32 Y = 0; Y < GameState->CurrentLevel.Tilemap.Height; Y++)
+    {
+    GameState->EntityTilePositions[X][Y] = 0;
+    }
+    }
     }*/
 }

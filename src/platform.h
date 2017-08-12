@@ -116,7 +116,7 @@ struct render_state;
 
 struct game_update_return
 {
-    math::v2 EntityPositions[NUM_ENTITIES];
+    math::v3 EntityPositions[NUM_ENTITIES];
     i32 EntityCount;
 };
 

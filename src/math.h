@@ -351,6 +351,16 @@ namespace math
         v3(i32 X, i32 Y, r32 Z) : X((r32)X), Y((r32)Y), Z(Z) {}
         v3(r32 X, r32 Y, r64 Z) : X(X), Y(Y), Z((r32)Z) {}
         
+        
+        inline v3 operator-()
+        {
+            v3 Result(1.0f);
+            Result.X = -this->X;
+            Result.Y = -this->Y;
+            Result.Z = -this->Z;
+            return Result;
+        }
+        
         inline v3 operator* (v3 O)
         {
             v3 Result(*this);
@@ -1646,7 +1656,8 @@ inline math::v2 ToIsometric(math::v2 Position)
     math::v2 TempPt;
     TempPt.x = (Position.x - Position.y) * TileWidthHalf;
     TempPt.y = (Position.x + Position.y) * TileHeightHalf;
-    return TempPt;
+    //return TempPt;
+    return Position;
 }
 
 inline b32 PointInTriangle(math::v2 Pt, math::v2 V1, math::v2 V2, math::v2 V3)

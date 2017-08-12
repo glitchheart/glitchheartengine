@@ -10,7 +10,7 @@ static void AABBMax(collision_AABB* Coll)
 
 static void AABBSize(collision_AABB* Coll)
 {
-    Coll->Size = math::v2(Coll->Extents.x * 2, Coll->Extents.y * 2);
+    Coll->Size = math::v3(Coll->Extents.x * 2, Coll->Extents.y * 2, Coll->Extents.z * 2);
 }
 
 static void MinkowskiDifference(collision_AABB* Coll, collision_AABB* Other, collision_AABB* Out)
@@ -21,10 +21,10 @@ static void MinkowskiDifference(collision_AABB* Coll, collision_AABB* Other, col
     AABBMin(Other);
     AABBMax(Other);
     AABBSize(Other);
-    math::v2 TopLeft = Coll->Min - Other->Max;
-    math::v2 FullSize = Coll->Size + Other->Size;
-    math::v2 Center = math::v2(TopLeft.x + (FullSize.x / 2), TopLeft.y + (FullSize.y /2));
-    math::v2 Extents = math::v2(FullSize.x / 2, FullSize.y / 2);
+    math::v3 TopLeft = Coll->Min - Other->Max;
+    math::v3 FullSize = Coll->Size + Other->Size;
+    math::v3 Center = TopLeft + (FullSize / 2);
+    math::v3 Extents = FullSize / 2;
     Out->Center = Center;
     Out->Extents = Extents;
     AABBMin(Out);
@@ -32,34 +32,34 @@ static void MinkowskiDifference(collision_AABB* Coll, collision_AABB* Other, col
     AABBSize(Out);
 }
 
-static void ClosestPointsOnBoundsToPoint(collision_AABB* Coll, math::v2 Point, math::v2* Out)
+static void ClosestPointsOnBoundsToPoint(collision_AABB* Coll, math::v3 Point, math::v3* Out)
 {  
     r32 MinDist = Abs(Point.x - Coll->Min.x);
     
-    *Out = math::v2(Coll->Min.x, Point.y);
+    *Out = math::v3(Coll->Min.x, 0.0f, Point.z);
     
     if(Abs(Coll->Max.x - Point.x) < MinDist)
     {
         MinDist = Abs(Coll->Max.x - Point.x);
-        *Out = math::v2(Coll->Max.x, Point.y);
+        *Out = math::v3(Coll->Max.x, 0.0f, Point.z);
     }
     
-    if(Abs(Coll->Max.y - Point.y) < MinDist)
+    if(Abs(Coll->Max.z - Point.z) < MinDist)
     {
-        MinDist = Abs(Coll->Max.y - Point.y);
-        *Out = math::v2(Point.x, Coll->Max.y);
+        MinDist = Abs(Coll->Max.z - Point.z);
+        *Out = math::v3(Point.x, 0.0f, Coll->Max.z);
     }
-    if(Abs(Coll->Min.y - Point.y) < MinDist)
+    if(Abs(Coll->Min.z - Point.z) < MinDist)
     {
-        MinDist = Abs(Coll->Min.y - Point.y);
-        *Out = math::v2(Point.x, Coll->Min.y);
+        MinDist = Abs(Coll->Min.z - Point.z);
+        *Out = math::v3(Point.x, 0.0f, Coll->Min.z);
     }
 }
 
-static r32 GetRayIntersectionFractionOfFirstRay(math::v2 OriginA, math::v2 EndA,math::v2 OriginB, math::v2 EndB)
+static r32 GetRayIntersectionFractionOfFirstRay(math::v3 OriginA, math::v3 EndA,math::v3 OriginB, math::v3 EndB)
 {
-    math::v2 R = EndA - OriginA;
-    math::v2 S = EndB - OriginB;
+    math::v3 R = EndA - OriginA;
+    math::v3 S = EndB - OriginB;
     
     r32 Numerator = math::Dot((OriginB - OriginA),  R);
     r32 Denominator = math::Dot(R , S);
@@ -85,29 +85,29 @@ static r32 GetRayIntersectionFractionOfFirstRay(math::v2 OriginA, math::v2 EndA,
     return INFINITY;
 }
 
-r32 GetRayIntersectionFraction(collision_AABB* Coll, math::v2 Origin, math::v2 Direction)
+r32 GetRayIntersectionFraction(collision_AABB* Coll, math::v3 Origin, math::v3 Direction)
 {
     AABBMin(Coll);
     AABBMax(Coll);
-    math::v2 End = Origin + Direction;
+    math::v3 End = Origin + Direction;
     
-    r32 MinT = GetRayIntersectionFractionOfFirstRay(Origin,End,math::v2(Coll->Min.x, Coll->Min.y),
-                                                    math::v2(Coll->Min.x, Coll->Max.y));
+    r32 MinT = GetRayIntersectionFractionOfFirstRay(Origin,End,math::v3(Coll->Min.x, 0.0f, Coll->Min.z),
+                                                    math::v3(Coll->Min.x, 0.0f, Coll->Max.z));
     r32 X;
-    X = GetRayIntersectionFractionOfFirstRay(Origin,End, math::v2(Coll->Min.x, Coll->Max.y),
-                                             math::v2(Coll->Max.x, Coll->Max.y));
+    X = GetRayIntersectionFractionOfFirstRay(Origin,End, math::v3(Coll->Min.x, 0.0f, Coll->Max.z),
+                                             math::v3(Coll->Max.x, 0.0f, Coll->Max.z));
     if(X < MinT)
     {
         MinT = X;
     }
-    X = GetRayIntersectionFractionOfFirstRay(Origin,End, math::v2(Coll->Max.x, Coll->Max.y),
-                                             math::v2(Coll->Max.x, Coll->Min.y));
+    X = GetRayIntersectionFractionOfFirstRay(Origin,End, math::v3(Coll->Max.x, 0.0f, Coll->Max.z),
+                                             math::v3(Coll->Max.x, 0.0f, Coll->Min.z));
     if(X < MinT)
     {
         MinT = X;
     }
-    X = GetRayIntersectionFractionOfFirstRay(Origin,End, math::v2(Coll->Max.x, Coll->Min.y),
-                                             math::v2(Coll->Min.x, Coll->Min.y));
+    X = GetRayIntersectionFractionOfFirstRay(Origin,End, math::v3(Coll->Max.x, 0.0f, Coll->Min.z),
+                                             math::v3(Coll->Min.x, 0.0f, Coll->Min.z));
     if(X < MinT)
     {
         MinT = X;
@@ -138,8 +138,8 @@ void CheckWeaponCollision(game_state* GameState, entity_weapon* Entity, collisio
                 MinkowskiDifference(&OtherEntity->HitTrigger, &Entity->CollisionAABB, &MdHit);
                 if(MdHit.Min.x <= 0 &&
                    MdHit.Max.x >= 0 &&
-                   MdHit.Min.y <= 0 &&
-                   MdHit.Max.y >= 0)
+                   MdHit.Min.z <= 0 &&
+                   MdHit.Max.z >= 0)
                 {
                     CollisionInfo->Other[CollisionInfo->OtherCount++] = OtherEntity;
                     
@@ -160,19 +160,19 @@ static void CheckCollision(game_state* GameState, entity* Entity, collision_info
     
     if(!Entity->IsKinematic && Entity->Active)
     {
-        Entity->CollisionAABB.Center = math::v2(Entity->Position.x + Entity->Center.x * Entity->Scale + Entity->CollisionAABB.Offset.x, Entity->Position.y + Entity->Center.y * Entity->Scale + Entity->CollisionAABB.Offset.y);
+        Entity->CollisionAABB.Center = math::v3(Entity->Position.x + Entity->Center.x * Entity->Scale + Entity->CollisionAABB.Offset.x, 0.0f, Entity->Position.z + Entity->Center.z * Entity->Scale + Entity->CollisionAABB.Offset.z);
         
         if(Entity->Type == Entity_Enemy)
         {
-            Entity->Enemy.EnemyCollider.Center = math::v2(Entity->Position.x + Entity->Center.x * Entity->Scale + Entity->Enemy.EnemyCollider.Offset.x, Entity->Position.y + Entity->Center.y * Entity->Scale + Entity->Enemy.EnemyCollider.Offset.y);
+            Entity->Enemy.EnemyCollider.Center = math::v3(Entity->Position.x + Entity->Center.x * Entity->Scale + Entity->Enemy.EnemyCollider.Offset.x, 0.0f, Entity->Position.z + Entity->Center.z * Entity->Scale + Entity->Enemy.EnemyCollider.Offset.z);
         }
         
         if(Entity->HasHitTrigger)
         {
-            Entity->HitTrigger.Center = math::v2(Entity->Position.x + Entity->Center.x * Entity->Scale + Entity->HitTrigger.Offset.x, Entity->Position.y + Entity->Center.y * Entity->Scale + Entity->HitTrigger.Offset.y);
+            Entity->HitTrigger.Center = math::v3(Entity->Position.x + Entity->Center.x * Entity->Scale + Entity->HitTrigger.Offset.x, 0.0f, Entity->Position.z + Entity->Center.z * Entity->Scale + Entity->HitTrigger.Offset.z);
         }
         
-        math::v2 PV;
+        math::v3 PV;
         CollisionInfo->OtherCount = 0;
         
         for(u32 OtherEntityIndex = 0;
@@ -191,8 +191,8 @@ static void CheckCollision(game_state* GameState, entity* Entity, collision_info
                     MinkowskiDifference(&OtherEntity->HitTrigger, &Entity->CollisionAABB, &MdHit);
                     if(MdHit.Min.x <= 0 &&
                        MdHit.Max.x >= 0 &&
-                       MdHit.Min.y <= 0 &&
-                       MdHit.Max.y >= 0)
+                       MdHit.Min.z <= 0 &&
+                       MdHit.Max.z >= 0)
                     {
                         CollisionInfo->Other[CollisionInfo->OtherCount++] = OtherEntity;
                         
@@ -214,8 +214,8 @@ static void CheckCollision(game_state* GameState, entity* Entity, collision_info
                 
                 if(Md.Min.x <= 0 &&
                    Md.Max.x >= 0 &&
-                   Md.Min.y <= 0 &&
-                   Md.Max.y >= 0)
+                   Md.Min.z <= 0 &&
+                   Md.Max.z >= 0)
                 {
                     CollisionInfo->Other[CollisionInfo->OtherCount++] = OtherEntity;
                     
@@ -230,10 +230,10 @@ static void CheckCollision(game_state* GameState, entity* Entity, collision_info
                         AABBMin(&Md);
                         AABBMax(&Md);
                         AABBSize(&Md);
-                        math::v2 PenetrationVector;
-                        ClosestPointsOnBoundsToPoint(&Md, math::v2(0,0), &PenetrationVector);
+                        math::v3 PenetrationVector;
+                        ClosestPointsOnBoundsToPoint(&Md, math::v3(0, 0, 0), &PenetrationVector);
                         
-                        if(Abs(PenetrationVector.x) > Abs(PenetrationVector.y))
+                        if(Abs(PenetrationVector.x) > Abs(PenetrationVector.z))
                         {
                             if(PenetrationVector.x > 0)
                                 CollisionInfo->Side = CollisionInfo->Side | Side_Left;
@@ -242,9 +242,9 @@ static void CheckCollision(game_state* GameState, entity* Entity, collision_info
                         }
                         else
                         {
-                            if(PenetrationVector.y > 0)
+                            if(PenetrationVector.z > 0)
                                 CollisionInfo->Side = CollisionInfo->Side | Side_Bottom;
-                            else if(PenetrationVector.y < 0) 
+                            else if(PenetrationVector.z < 0) 
                                 CollisionInfo->Side = CollisionInfo->Side | Side_Top;
                         }
                         
@@ -253,9 +253,9 @@ static void CheckCollision(game_state* GameState, entity* Entity, collision_info
                             PV.x = PenetrationVector.x;
                         }
                         
-                        if(PenetrationVector.y != 0)
+                        if(PenetrationVector.z != 0)
                         {
-                            PV.y = PenetrationVector.y;
+                            PV.z = PenetrationVector.z;
                         }
                     }
                 }
@@ -270,20 +270,20 @@ static void CheckCollision(game_state* GameState, entity* Entity, collision_info
         level* Level = &GameState->CurrentLevel;
         
         i32 XPos = (i32)(Entity->Position.x + Entity->Center.x * Entity->Scale);
-        i32 YPos = (i32)(Entity->Position.y + Entity->Center.y * Entity->Scale);
+        i32 ZPos = (i32)(Entity->Position.z + Entity->Center.z * Entity->Scale);
         
         //@Improvement Is it necessary to go 2 tiles out?
         i32 MinX = Max(0, XPos - 2);
         i32 MaxX = Max(0, Min((i32)Level->Tilemap.Width, XPos + 2));
-        i32 MinY = Max(0, YPos - 2);
-        i32 MaxY = Max(0, Min((i32)Level->Tilemap.Height, YPos + 2));
+        i32 MinZ = Max(0, ZPos - 2);
+        i32 MaxZ = Max(0, Min((i32)Level->Tilemap.Height, ZPos + 2));
         
         //check tile collision
         for(i32 X = MinX; X < MaxX; X++)
         {
-            for(i32 Y = MinY; Y < MaxY; Y++)
+            for(i32 Z = MinZ; Z < MaxZ; Z++)
             {
-                tile_data Tile = Level->Tilemap.Data[1][X][Y];
+                tile_data Tile = Level->Tilemap.Data[1][X][Z];
                 
                 if(Tile.IsSolid)
                 {
@@ -292,8 +292,8 @@ static void CheckCollision(game_state* GameState, entity* Entity, collision_info
                     MinkowskiDifference(&Tile.CollisionAABB, &Entity->CollisionAABB, &Md);
                     if(Md.Min.x <= 0 &&
                        Md.Max.x >= 0 &&
-                       Md.Min.y <= 0 &&
-                       Md.Max.y >= 0)
+                       Md.Min.z <= 0 &&
+                       Md.Max.z >= 0)
                     {
                         Entity->IsColliding = true;
                         Entity->CollisionAABB.IsColliding = true;
@@ -307,10 +307,10 @@ static void CheckCollision(game_state* GameState, entity* Entity, collision_info
                         AABBMin(&Md);
                         AABBMax(&Md);
                         AABBSize(&Md);
-                        math::v2 PenetrationVector;
-                        ClosestPointsOnBoundsToPoint(&Md, math::v2(0,0), &PenetrationVector);
+                        math::v3 PenetrationVector;
+                        ClosestPointsOnBoundsToPoint(&Md, math::v3(0,0,0), &PenetrationVector);
                         
-                        if(Abs(PenetrationVector.x) > Abs(PenetrationVector.y))
+                        if(Abs(PenetrationVector.x) > Abs(PenetrationVector.z))
                         {
                             if(PenetrationVector.x > 0)
                                 CollisionInfo->Side = CollisionInfo->Side | Side_Left;
@@ -319,9 +319,9 @@ static void CheckCollision(game_state* GameState, entity* Entity, collision_info
                         }
                         else
                         {
-                            if(PenetrationVector.y < 0)
+                            if(PenetrationVector.z < 0)
                                 CollisionInfo->Side = CollisionInfo->Side | Side_Bottom;
-                            else if(PenetrationVector.y > 0) 
+                            else if(PenetrationVector.z > 0) 
                                 CollisionInfo->Side = CollisionInfo->Side | Side_Top;
                         }
                         
@@ -330,14 +330,14 @@ static void CheckCollision(game_state* GameState, entity* Entity, collision_info
                             PV.x = PenetrationVector.x * 1.001f; // This is necessary to prevent the player from getting stuck
                         }
                         
-                        if(PenetrationVector.y != 0)
+                        if(PenetrationVector.z != 0)
                         {
-                            PV.y = PenetrationVector.y * 1.001f; // This is necessary to prevent the player from getting stuck
+                            PV.z = PenetrationVector.z * 1.001f; // This is necessary to prevent the player from getting stuck
                         }
                         
                         if(Entity->Type == Entity_Barrel)
                         {
-                            Entity->Velocity = math::v2(0.0f,0.0f);
+                            Entity->Velocity = math::v3(0.0f, 0.0f, 0.0f);
                         }
                     }
                 }
@@ -347,7 +347,10 @@ static void CheckCollision(game_state* GameState, entity* Entity, collision_info
         if(!Entity->CollisionAABB.IsTrigger)
         {
             Entity->Position += PV;
-            Entity->CollisionAABB.Center = math::v2(Entity->Position.x + Entity->Center.x * Entity->Scale + Entity->CollisionAABB.Offset.x, Entity->Position.y + Entity->Center.y * Entity->Scale + Entity->CollisionAABB.Offset.y);
+            Entity->CollisionAABB.Center = math::v3
+                (Entity->Position.x + Entity->Center.x * Entity->Scale + Entity->CollisionAABB.Offset.x, 
+                 0.0f,
+                 Entity->Position.z + Entity->Center.z * Entity->Scale + Entity->CollisionAABB.Offset.z);
         }
     }
 }

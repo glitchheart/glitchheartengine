@@ -184,9 +184,9 @@ struct light_source
         struct
         {
             r32 Intensity;
-            math::v2 Position;
-            math::v2 RenderPosition;
-            math::v2 Offset;
+            math::v3 Position;
+            math::v3 RenderPosition;
+            math::v3 Offset;
             r32 ConstantAtten;
             r32 LinearAtten;
             r32 ExponentialAtten;
@@ -283,11 +283,11 @@ struct entity
     char* Name;
     u32 EntityIndex;
     
-    math::v2 Position;
+    math::v3 Position;
     math::v2i CurrentTile;
     math::v2 CurrentDestination;
     i32 FramesForDestination;
-    math::v2 Center;
+    math::v3 Center;
     math::v3 Rotation;
     
     r32 Scale;
@@ -315,7 +315,7 @@ struct entity
     
     i32 LightSourceHandle;
     
-    math::v2 Velocity;
+    math::v3 Velocity;
     
     b32 Hit;
     
@@ -338,7 +338,7 @@ struct entity
     timer RecoilTimer;
     timer StaggerCooldownTimer;
     r32 HitRecoilSpeed;
-    math::v2 HitRecoilDirection;
+    math::v3 HitRecoilDirection;
     
     r32 AttackMoveSpeed;
     timer AttackMoveTimer;
@@ -459,7 +459,7 @@ struct entity
             AIFunction Wandering;
             
             i32 WaypointCount;
-            math::v2i Waypoints[10];
+            math::v3i Waypoints[10];
             i32 WaypointIndex;
             b32 WanderingForward;
             
