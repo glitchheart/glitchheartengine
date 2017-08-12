@@ -118,11 +118,13 @@ static void PushEntityRenderCommands(renderer& Renderer, game_state& GameState)
             math::v3 Scale = math::v3(WidthInUnits * EntityScale, HeightInUnits * EntityScale, 1.0f);
             
             auto CorrectPos = Position;
-            
+            /*
             CorrectPos.x -= CurrentAnimation->Center.x * Scale.x;
             CorrectPos.y -= CurrentAnimation->Center.y * Scale.y;
+            */
             
             CurrentPosition = CorrectPos;
+            
             
             CurrentScale = Scale;
             
@@ -750,34 +752,27 @@ extern "C" UPDATE(Update)
                                               -100.0f,
                                               1000.0f);
     
-    auto EntityPos = GameState->Entities[0].Position;
+    auto EntityPos = GameState->Entities[0].Position;//GameState->Entities[0].Position;
     
     GameCamera.ViewMatrix = math::m4(1.0f);
-    
-    GameCamera.ViewMatrix = math::Translate(GameCamera.ViewMatrix, math::v3(-EntityPos.x + GameCamera.ViewportWidth / GameCamera.Zoom / 2,  -GameCamera.ViewportHeight / GameCamera.Zoom / 2,
-                                                                            -EntityPos.z));
     /*
+    GameCamera.ViewMatrix = math::Translate(GameCamera.ViewMatrix, math::v3(-EntityPos.x + GameCamera.ViewportWidth / GameCamera.Zoom / 2,  -GameCamera.ViewportHeight / GameCamera.Zoom / 2,
+                                                                            0.0f));
+    */
+    
+    GameCamera.ViewMatrix = math::Translate(GameCamera.ViewMatrix,math::v3(-EntityPos.x, EntityPos.y, -EntityPos.z));
+    
     GameCamera.ViewMatrix = math::Rotate(GameCamera.ViewMatrix, 45.0f, math::v3(0,1,0));
     GameCamera.ViewMatrix = math::Rotate(GameCamera.ViewMatrix, 35.264f, math::v3(1,0,0));
-    */
-    //GameCamera.ViewMatrix = math::Translate(GameCamera.ViewMatrix, math::v3(0.0f,0.0f,-50.0f));
     
+    GameCamera.ViewMatrix = math::Translate(GameCamera.ViewMatrix, math::v3(GameCamera.ViewportWidth / GameCamera.Zoom / 2.0f, GameCamera.ViewportHeight / GameCamera.Zoom / 2.0f,-50.0f));
+    
+    
+    printf("(%f, %f, %f)\n", EntityPos.x, EntityPos.y, EntityPos.z);
+    //PrintMatrix(GameCamera.ViewMatrix);
     
     //Renderer.Camera.ProjectionMatrix = math::Perspective((Renderer.Camera.ViewportWidth / Renderer.Camera.Zoom) / (Renderer.Camera.ViewportHeight / Renderer.Camera.Zoom), 0.6f, 0.1f, 100.0f);
     
-    /*
-    auto EntityPos = GameState->Entities[0].Position;
-    GameCamera.ViewMatrix = math::Translate(GameCamera.ViewMatrix,
-                                            math::v3(-EntityPos.x + GameCamera.ViewportWidth / GameCamera.Zoom / 2,
-                                                     EntityPos.z + GameCamera.ViewportHeight / GameCamera.Zoom / 2,
-                                                     -50.0f));*/
-    
-    /*
-    GameCamera.ViewMatrix = math::Translate(GameCamera.ViewMatrix,
-                                            math::v3(-20.0f + GameCamera.ViewportWidth / GameCamera.Zoom / 2,
-                                                     -40.0f + GameCamera.ViewportHeight / GameCamera.Zoom / 2,
-                                                     -50.0f));
-    */
     InputController->CurrentCharacter = 0;
     GameState->ClearTilePositionFrame = !GameState->ClearTilePositionFrame;
     GetActionButtonsForQueue(InputController);

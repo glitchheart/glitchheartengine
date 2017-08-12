@@ -231,7 +231,7 @@
                                       LoadTilesheetMetaFile(Concat(Concat("../assets/textures/tilesheets/", Level->SheetName), ".tm"), Level, &Level->Tilemap, GameState, Renderer);
                                       
                                       if(fgets(LineBuffer, 255, File))
-                                          sscanf(LineBuffer, "%f %f", &Level->PlayerStartPosition.x, &Level->PlayerStartPosition.y);
+                                          sscanf(LineBuffer, "%f %f %f", &Level->PlayerStartPosition.x, &Level->PlayerStartPosition.y, &Level->PlayerStartPosition.z);
                                       
                                       LoadPlayerData(GameState, SoundQueue, -1, math::Floor(Level->PlayerStartPosition));
                                       
@@ -382,7 +382,7 @@
                                       }
                                       Level->Tilemap.RenderInfo.Dirty = true;
                                       */
-                                      Renderer.Cameras[GameState->GameCameraHandle].Center = math::v3(GameState->Entities[0].Position.x, GameState->Entities[0].Position.y, Renderer.Cameras[GameState->GameCameraHandle].Center.z);
+                                      Renderer.Cameras[GameState->GameCameraHandle].Center = math::v3(GameState->Entities[0].Position.x, GameState->Entities[0].Position.y, GameState->Entities[0].Position.z);
                                       
                                       return true;
                                   }
@@ -402,7 +402,7 @@
                                       fprintf(File, "%s\n", Level->SheetName);
                                       
                                       entity* Player = &GameState->Entities[GameState->PlayerIndex];
-                                      fprintf(File, "%f %f\n", Player->Position.x, Player->Position.y);
+                                      fprintf(File, "%f %f %f\n", Player->Position.x, Player->Position.y, Player->Position.z);
                                       
                                       fprintf(File, "%d\n", Level->Tilemap.Width);
                                       fprintf(File, "%d\n", Level->Tilemap.Height);
