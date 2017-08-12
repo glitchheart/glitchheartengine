@@ -32,7 +32,7 @@ rollstaminacost 18
 attackstaminacost 15
 mindiffstamina 8
 healthdecreasetimer 0.8
-walkingspeed 3
+walkingspeed 20
 crosshairradius 4
 targetingdistance 10
 attackcooldowntimer 0.17

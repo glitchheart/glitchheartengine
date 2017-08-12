@@ -106,7 +106,6 @@ struct game_state
     
     Game_Mode GameMode;
     main_menu MainMenu;
-    renderer Renderer;
     
     camera Camera;
     camera GameCamera;

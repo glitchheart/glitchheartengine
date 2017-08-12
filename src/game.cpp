@@ -81,7 +81,7 @@ int CompareFunction(const void* a, const void* b)
 
 static void PushTilemapRenderCommands(renderer& Renderer, game_state& GameState)
 {
-    PushBuffer(Renderer, GameState.CurrentLevel.Tilemap.BufferHandle, GameState.CurrentLevel.Tilemap.TextureName);
+    PushBuffer(Renderer, GameState.CurrentLevel.Tilemap.BufferHandle, GameState.CurrentLevel.Tilemap.TextureName, math::v3(90, 0, 0));
 }
 
 static void PushEntityRenderCommands(renderer& Renderer, game_state& GameState)
@@ -185,7 +185,7 @@ extern "C" UPDATE(Update)
     {
         GameState->TESTMODEL = (model*)malloc(sizeof(model));
         
-        LoadOBJFile(GameState->Renderer, "../assets/test.obj", GameState->TESTMODEL);
+        LoadOBJFile(Renderer, "../assets/test.obj", GameState->TESTMODEL);
         
         GameState->TESTMODEL->Position = math::v3(0, 0, 0);
         GameState->TESTMODEL->Scale = math::v3(1, 1, 1);
@@ -544,11 +544,11 @@ extern "C" UPDATE(Update)
         break;
     }
     
-    math::v3 Center = GameState->GameCamera.Center;
+    math::v3 Center = math::v3(GameState->GameCamera.CenterTarget.x, GameState->GameCamera.CenterTarget.y, 0);
     
     if(GameState->GodModeOn)
     {
-        r32 Zoom = GameState->Camera.Zoom;
+        r32 Zoom = Renderer.Camera.Zoom;
         
         math::v2 Direction = math::v2(0, 0);
         
@@ -570,16 +570,14 @@ extern "C" UPDATE(Update)
             Direction.x = 1;
         }
         
-        r32 Factor = 72.0f / GameState->GameCamera.Zoom;
+        r32 Factor = 72.0f / Renderer.Camera.Zoom;
         
         if(KEY(Key_Add))
         {
-            GameState->GameCamera.Center.z += 1.0f * DeltaTime;
             Zoom += (r32)(GameState->GodModeZoomSpeed / Factor * DeltaTime);
         }
         else if(KEY(Key_Subtract))
         {
-            GameState->GameCamera.Center.z -= 1.0f * DeltaTime;
             Zoom += (r32)(-GameState->GodModeZoomSpeed / Factor * DeltaTime);
         }
         
@@ -590,7 +588,7 @@ extern "C" UPDATE(Update)
             GameState->GameCamera.Center = Center + math::v3(Direction.x * GameState->GodModePanSpeed * Factor * DeltaTime, Direction.y * GameState->GodModePanSpeed * Factor * DeltaTime, 0);
         }
         
-        //GameState->GameCamera.Zoom = Min(Max(Zoom, GameState->GodModeMinZoom), GameState->GodModeMaxZoom);
+        Renderer.Camera.Zoom = Min(Max(Zoom, GameState->GodModeMinZoom), GameState->GodModeMaxZoom);
     }
     
     if(KEY_DOWN(Key_L) && KEY(Key_LeftCtrl))
@@ -778,21 +776,25 @@ extern "C" UPDATE(Update)
         }
         break;
     }
-    /*
-    GameState->Camera.ProjectionMatrix = math::Ortho(0.0f,
-                                                     (GameState->Camera.ViewportWidth / GameState->Camera.Zoom),
-                                                     0.0f,
-                                                     (GameState->Camera.ViewportHeight / GameState->Camera.Zoom),
-                                                     -10.0f,
-                                                     1000.0f);*/
     
-    GameState->Camera.ProjectionMatrix = math::Perspective((GameState->Camera.ViewportWidth / GameState->Camera.Zoom) / (GameState->Camera.ViewportHeight / GameState->Camera.Zoom), 0.6f, 0.1f, 100.0f);
+    Renderer.Camera.ProjectionMatrix = math::Ortho(0.0f,
+                                                   (Renderer.Camera.ViewportWidth / Renderer.Camera.Zoom),
+                                                   0.0f,
+                                                   (Renderer.Camera.ViewportHeight / Renderer.Camera.Zoom),
+                                                   -100.0f,
+                                                   1000.0f);
+    
+    Renderer.Camera.ViewMatrix = math::Rotate(math::m4(1.0f), 45.0f, math::v3(0,1,0));
+    Renderer.Camera.ViewMatrix = math::Rotate(Renderer.Camera.ViewMatrix, 35.264f, math::v3(1,0,0));
     
     
-    GameState->Camera.ViewMatrix = math::Translate(math::m4(1.0f),
-                                                   math::v3(-Center.x + GameState->Camera.ViewportWidth / GameState->Camera.Zoom / 2,
-                                                            -Center.y + GameState->Camera.ViewportHeight / GameState->Camera.Zoom / 2,
-                                                            -20.0f));
+    //Renderer.Camera.ProjectionMatrix = math::Perspective((Renderer.Camera.ViewportWidth / Renderer.Camera.Zoom) / (Renderer.Camera.ViewportHeight / Renderer.Camera.Zoom), 0.6f, 0.1f, 100.0f);
+    
+    
+    Renderer.Camera.ViewMatrix = math::Translate(Renderer.Camera.ViewMatrix,
+                                                 math::v3(-Center.x + Renderer.Camera.ViewportWidth / Renderer.Camera.Zoom / 2,
+                                                          -Center.y + 25 + Renderer.Camera.ViewportHeight / Renderer.Camera.Zoom / 2,
+                                                          -50.0f));
     
     InputController->CurrentCharacter = 0;
     GameState->ClearTilePositionFrame = !GameState->ClearTilePositionFrame;
@@ -801,11 +803,23 @@ extern "C" UPDATE(Update)
     GameUpdateStruct->EntityCount = GameState->EntityCount;
     memcpy(&GameUpdateStruct->EntityPositions,&GameState->EntityPositions,sizeof(math::v2) * NUM_ENTITIES);
     
-    Renderer.Camera = GameState->Camera;
+    if(KEY(Key_X))
+    {
+        GameState->TESTMODEL->Rotation.x += 20 * DeltaTime;
+    }
     
+    if(KEY(Key_Y))
+    {
+        GameState->TESTMODEL->Rotation.y += 2 * DeltaTime;
+    }
+    
+    if(KEY(Key_Z))
+    {
+        GameState->TESTMODEL->Rotation.z += 2 * DeltaTime;
+    }
+    
+    //Renderer.Camera = GameState->Camera;
     PushTilemapRenderCommands(Renderer, *GameState);
     PushEntityRenderCommands(Renderer, *GameState);
     PushModel(Renderer, *GameState->TESTMODEL);
 }
-
- 

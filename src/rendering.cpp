@@ -96,12 +96,13 @@
                                               RenderCommand->IsUI = IsUI;
                                           }
                                           
-                                          static void PushBuffer(renderer& Renderer, i32 BufferHandle, char* TextureName)
+                                          static void PushBuffer(renderer& Renderer, i32 BufferHandle, char* TextureName, math::v3 Rotation)
                                           {
                                               render_command* RenderCommand = &Renderer.Buffer[Renderer.CommandCount++];
                                               RenderCommand->Type = RenderCommand_Buffer;
                                               RenderCommand->Buffer.BufferHandle = BufferHandle;
                                               RenderCommand->Buffer.TextureName = TextureName;
+                                              RenderCommand->Rotation = Rotation;
                                               RenderCommand->IsUI = false;
                                           }
                                           
@@ -111,7 +112,7 @@
                                               RenderCommand->Type = RenderCommand_Model;
                                               RenderCommand->Model.Position = Model.Position;
                                               RenderCommand->Model.Scale = Model.Scale;
-                                              RenderCommand->Model.Rotation = Model.Rotation;
+                                              RenderCommand->Rotation = Model.Rotation;
                                               RenderCommand->Model.BufferHandle = Model.BufferHandle;
                                               RenderCommand->Model.Color = math::rgba(1.0f, 0.0f, 0.0f, 1.0f);
                                               //RenderCommand->Model.TextureName = TextureName;
@@ -126,8 +127,7 @@
                                               Data.IndexBufferSize = 0;
                                               Renderer.Buffers[Renderer.BufferCount] = Data;
                                               
-                                              if(*BufferHandle == 0)
-                                                  *BufferHandle = Renderer.BufferCount++;
+                                              *BufferHandle = Renderer.BufferCount++;
                                           }
                                           
                                           static void LoadOBJFile(renderer& Renderer, char* FilePath, model* Model)
