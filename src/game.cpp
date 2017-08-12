@@ -172,7 +172,7 @@ extern "C" UPDATE(Update)
     {
         GameState->TESTMODEL = (model*)malloc(sizeof(model));
         
-        LoadOBJFile(Renderer, "../assets/test.obj", GameState->TESTMODEL);
+        LoadOBJFile(Renderer, "../assets/models/test.obj", GameState->TESTMODEL);
         
         GameState->TESTMODEL->Position = math::v3(0, 0, 0);
         GameState->TESTMODEL->Scale = math::v3(1, 1, 1);
@@ -313,6 +313,7 @@ extern "C" UPDATE(Update)
             GameState->ReloadData->ReloadBonfireFile = false;
         }
     }
+    
     if(GameState->Console.Open)
     {
         if(GameState->Console.BufferIndex < CONSOLE_BUFFER_SIZE - 1 && InputController->CurrentCharacter != 0)
@@ -756,10 +757,10 @@ extern "C" UPDATE(Update)
     
     GameCamera.ViewMatrix = math::Translate(GameCamera.ViewMatrix, math::v3(-EntityPos.x + GameCamera.ViewportWidth / GameCamera.Zoom / 2,  -GameCamera.ViewportHeight / GameCamera.Zoom / 2,
                                                                             -EntityPos.z));
-    /*
-    GameCamera.ViewMatrix = math::Rotate(GameCamera.ViewMatrix, 45.0f, math::v3(0,1,0));
-    GameCamera.ViewMatrix = math::Rotate(GameCamera.ViewMatrix, 35.264f, math::v3(1,0,0));
-    */
+    
+    GameCamera.ViewMatrix = math::Rotate(GameCamera.ViewMatrix, 45.0f, math::v3(0, 1, 0));
+    GameCamera.ViewMatrix = math::Rotate(GameCamera.ViewMatrix, 35.264f, math::v3(1, 0, 0));
+    
     //GameCamera.ViewMatrix = math::Translate(GameCamera.ViewMatrix, math::v3(0.0f,0.0f,-50.0f));
     
     

@@ -144,54 +144,179 @@
                                                   
                                                   i32 VertexSize = 0;
                                                   i32 IndexSize = 0;
+                                                  i32 NormalSize = 0;
+                                                  i32 UVSize = 0;
                                                   
                                                   while(fgets(LineBuffer, 256, File))
                                                   {
-                                                      if(StartsWith(LineBuffer, "v "))
+                                                      if(StartsWith(LineBuffer, "v ")) // Vertex
                                                       {
                                                           VertexSize++;
                                                       }
-                                                      else if(StartsWith(LineBuffer, "f "))
+                                                      else if(StartsWith(LineBuffer, "f ")) // Face
                                                       {
                                                           IndexSize++;
                                                       }
+                                                      else if(StartsWith(LineBuffer, "vn ")) // Normal
+                                                      {
+                                                          NormalSize++;
+                                                      }
+                                                      else if(StartsWith(LineBuffer, "vt ")) // UV
+                                                      {
+                                                          UVSize++;
+                                                      }
                                                   }
                                                   
-                                                  Data.VertexBuffer = (r32*)malloc(sizeof(r32) * VertexSize * 3);
+                                                  Data.HasNormals = NormalSize > 0;
+                                                  Data.HasUVs = UVSize > 0;
+                                                  
+                                                  r32* Vertices = (r32*)malloc(sizeof(r32) * VertexSize * 3);
+                                                  r32* Normals = (r32*)malloc(sizeof(r32) * NormalSize * 3);
+                                                  r32* UVs = (r32*)malloc(sizeof(r32) * UVSize * 2);
+                                                  
+                                                  Data.VertexBuffer = (r32*)malloc(sizeof(r32) * (VertexSize * 3 + NormalSize * 3 + UVSize * 2));
                                                   Data.IndexBuffer = (u32*)malloc(sizeof(u32) * IndexSize * 3);
                                                   
-                                                  Data.VertexBufferSize = VertexSize * 3;
+                                                  Data.VertexBufferSize = VertexSize * 3 + NormalSize * 3 + UVSize * 2;
                                                   Data.IndexBufferSize = IndexSize * 3;
                                                   
                                                   rewind(File);
                                                   
+                                                  i32 VerticesIndex = 0;
+                                                  i32 NormalIndex = 0;
+                                                  i32 UVIndex = 0;
+                                                  
+                                                  i32 IncrementCount = 0;
+                                                  
                                                   while(fgets(LineBuffer, 256, File))
                                                   {
                                                       if(StartsWith(LineBuffer, "v "))
                                                       {
-                                                          r32 X;
-                                                          r32 Y;
-                                                          r32 Z;
-                                                          
-                                                          sscanf(LineBuffer, "v %f %f %f", &X, &Y, &Z);
-                                                          *Data.VertexBuffer++ = X;
-                                                          *Data.VertexBuffer++ = Y;
-                                                          *Data.VertexBuffer++ = Z;
+                                                          sscanf(LineBuffer, "v %f %f %f", &Vertices[VerticesIndex * 3], &Vertices[VerticesIndex * 3 + 1], &Vertices[VerticesIndex * 3 + 2]);
+                                                          VerticesIndex++;
+                                                      }
+                                                      else if(StartsWith(LineBuffer, "vn "))
+                                                      {
+                                                          sscanf(LineBuffer, "vn %f %f %f", &Normals[NormalIndex * 3], &Normals[NormalIndex * 3 + 1], &Normals[NormalIndex * 3 + 2]);
+                                                          NormalIndex++;
+                                                      }
+                                                      else if(StartsWith(LineBuffer, "vt "))
+                                                      {
+                                                          sscanf(LineBuffer, "vt %f %f", &UVs[UVIndex * 2], &UVs[UVIndex * 2 + 1]);
+                                                          UVIndex++;
                                                       }
                                                       else if(StartsWith(LineBuffer, "f "))
                                                       {
-                                                          i32 First;
-                                                          i32 Second;
-                                                          i32 Third;
-                                                          
-                                                          sscanf(LineBuffer, "f %d %d %d", &First, &Second, &Third);
-                                                          *Data.IndexBuffer++ = First;
-                                                          *Data.IndexBuffer++ = Second;
-                                                          *Data.IndexBuffer++ = Third;
+                                                          if(NormalSize > 0 && UVSize > 0)
+                                                          {
+                                                              math::v3i VertexIndex;
+                                                              math::v3i NormalIndex;
+                                                              math::v3i UVIndex;
+                                                              
+                                                              sscanf(LineBuffer, "f %d/%d/%d %d/%d/%d %d/%d/%d\n", 
+                                                                     &VertexIndex.x, &NormalIndex.x, &UVIndex.x, 
+                                                                     &VertexIndex.y, &NormalIndex.y, &UVIndex.y, 
+                                                                     &VertexIndex.z, &NormalIndex.z, &UVIndex.z);
+                                                              
+                                                              *Data.IndexBuffer++ = (u32)VertexIndex.x - 1;
+                                                              *Data.IndexBuffer++ = (u32)VertexIndex.y - 1;
+                                                              *Data.IndexBuffer++ = (u32)VertexIndex.z - 1;
+                                                              
+                                                              IncrementCount += 3;
+                                                              printf("%d\n", IncrementCount);
+                                                          }
+                                                          else if(UVSize > 0)
+                                                          {
+                                                              math::v3i VertexIndex;
+                                                              math::v3i UVIndex;
+                                                              
+                                                              sscanf(LineBuffer, "f %d/%d %d/%d %d/%d", 
+                                                                     &VertexIndex.x, &UVIndex.x,
+                                                                     &VertexIndex.y, &UVIndex.x,
+                                                                     &VertexIndex.z, &UVIndex.x);
+                                                              
+                                                              *Data.IndexBuffer++ = VertexIndex.x - 1;
+                                                              *Data.IndexBuffer++ = VertexIndex.y - 1;
+                                                              *Data.IndexBuffer++ = VertexIndex.z - 1;
+                                                          }
+                                                          else if(NormalSize > 0)
+                                                          {
+                                                              math::v3i VertexIndex;
+                                                              math::v3i NormalIndex;
+                                                              
+                                                              sscanf(LineBuffer, "f %d//%d %d//%d %d//%d", 
+                                                                     &VertexIndex.x, &NormalIndex.x,
+                                                                     &VertexIndex.y, &NormalIndex.y,
+                                                                     &VertexIndex.z, &NormalIndex.z);
+                                                              
+                                                              *Data.IndexBuffer++ = VertexIndex.x - 1;
+                                                              *Data.IndexBuffer++ = VertexIndex.y - 1;
+                                                              *Data.IndexBuffer++ = VertexIndex.z - 1;
+                                                              
+                                                          }
+                                                          else
+                                                          {
+                                                              math::v3i VertexIndex;
+                                                              
+                                                              sscanf(LineBuffer, "f %d %d %d", 
+                                                                     &VertexIndex.x,
+                                                                     &VertexIndex.y,
+                                                                     &VertexIndex.z);
+                                                              
+                                                              *Data.IndexBuffer++ = VertexIndex.x - 1;
+                                                              *Data.IndexBuffer++ = VertexIndex.y - 1;
+                                                              *Data.IndexBuffer++ = VertexIndex.z - 1;
+                                                          }
                                                       }
                                                   }
                                                   
                                                   fclose(File);
+                                                  
+                                                  for(i32 Index = 0; Index < VertexSize; Index++)
+                                                  {
+                                                      if(Data.HasNormals && Data.HasUVs)
+                                                      {
+                                                          *Data.VertexBuffer++ = Vertices[Index * 8];
+                                                          *Data.VertexBuffer++ = Vertices[Index * 8 + 1];
+                                                          *Data.VertexBuffer++ = Vertices[Index * 8 + 2];
+                                                          
+                                                          *Data.VertexBuffer++ = Normals[Index * 8];
+                                                          *Data.VertexBuffer++ = Normals[Index * 8 + 1];
+                                                          *Data.VertexBuffer++ = Normals[Index * 8 + 2];
+                                                          
+                                                          *Data.VertexBuffer++ = UVs[Index * 8];
+                                                          *Data.VertexBuffer++ = UVs[Index * 8 + 1];
+                                                      }
+                                                      else if(Data.HasNormals)
+                                                      {
+                                                          *Data.VertexBuffer++ = Vertices[Index * 6];
+                                                          *Data.VertexBuffer++ = Vertices[Index * 6 + 1];
+                                                          *Data.VertexBuffer++ = Vertices[Index * 6 + 2];
+                                                          
+                                                          *Data.VertexBuffer++ = Normals[Index * 6];
+                                                          *Data.VertexBuffer++ = Normals[Index * 6 + 1];
+                                                          *Data.VertexBuffer++ = Normals[Index * 6 + 2];
+                                                      }
+                                                      else if(Data.HasUVs)
+                                                      {
+                                                          *Data.VertexBuffer++ = Vertices[Index * 5];
+                                                          *Data.VertexBuffer++ = Vertices[Index * 5 + 1];
+                                                          *Data.VertexBuffer++ = Vertices[Index * 5 + 2];
+                                                          
+                                                          *Data.VertexBuffer++ = UVs[Index * 5];
+                                                          *Data.VertexBuffer++ = UVs[Index * 5 + 1];
+                                                      }
+                                                      else
+                                                      {
+                                                          *Data.VertexBuffer++ = Vertices[Index * 3];
+                                                          *Data.VertexBuffer++ = Vertices[Index * 3 + 1];
+                                                          *Data.VertexBuffer++ = Vertices[Index * 3 + 2];
+                                                      }
+                                                  }
+                                                  
+                                                  free(Vertices);
+                                                  free(Normals);
+                                                  free(UVs);
                                                   
                                                   Data.VertexBuffer -= Data.VertexBufferSize;
                                                   Data.IndexBuffer -= Data.IndexBufferSize;

@@ -179,6 +179,9 @@ struct buffer_data
     u32* IndexBuffer;
     i32 IndexBufferSize;
     
+    b32 HasNormals;
+    b32 HasUVs;
+    
     Shader_Type ShaderType;
     i32 ExistingHandle = -1;
 };
