@@ -345,13 +345,6 @@
                                               sscanf(LineBuffer, "bonfire %f %f %f", &Pos.x, &Pos.y, &Pos.z);
                                               LoadBonfireData(GameState, SoundQueue, -1, Pos);
                                           }
-                                          else if(StartsWith(LineBuffer, "tree"))
-                                          {
-                                              math::v3 Pos;
-                                              Pos = math::Floor(Pos);
-                                              sscanf(LineBuffer, "tree %f %f %f", &Pos.x, &Pos.y, &Pos.z);
-                                              SpawnTree(GameState, Pos);
-                                          }
                                           
                                           if(PathIndex != 0)
                                           {
@@ -373,7 +366,7 @@
                                                   for(i32 Index = 0; Index < WaypointCount; Index++)
                                                   {
                                                       Entity.Enemy.Waypoints[Index].x = (u32)strtol(PathPtr, &PathPtr, 10);
-                                                      Entity.Enemy.Waypoints[Index].y = (u32)strtol(PathPtr, &PathPtr, 10);
+                                                      Entity.Enemy.Waypoints[Index].z = (u32)strtol(PathPtr, &PathPtr, 10);
                                                   }
                                               }
                                           }

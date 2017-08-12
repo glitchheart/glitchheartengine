@@ -610,10 +610,8 @@ static void EditorUpdateEntities(game_state* GameState, renderer& Renderer, inpu
                                            Renderer.Cameras[GameState->GameCameraHandle].ProjectionMatrix,
                                            math::v4(0, 0, Renderer.Viewport[2], Renderer.Viewport[3]));
                 
-                math::v2 CartesianPos = ToCartesian(math::v2(Pos.x, Pos.y));
-                
-                i32 X = (i32)math::Round(CartesianPos.x - 0.5f) - 1;
-                i32 Y = (i32)math::Round(CartesianPos.y + 0.5f) - 1;
+                i32 X = (i32)Pos.x;
+                i32 Z = (i32)Pos.y;
                 
                 GameState->EditorState.CreateNewAnimationButton->Active = false;
                 
@@ -664,7 +662,7 @@ static void EditorUpdateEntities(game_state* GameState, renderer& Renderer, inpu
                                     
                                     if(!GameState->CurrentLevel.Tilemap.Data[1][X][Z].IsSolid)
                                     {
-                                        GameState->EditorState.SelectedEntity->Enemy.Waypoints[GameState->EditorState.SelectedEntity->Enemy.WaypointCount++] = math::v3i(X,0,Z);
+                                        GameState->EditorState.SelectedEntity->Enemy.Waypoints[GameState->EditorState.SelectedEntity->Enemy.WaypointCount++] = math::v3i(X, 0, Z);
                                     }
                                 }
                             }
@@ -680,7 +678,7 @@ static void EditorUpdateEntities(game_state* GameState, renderer& Renderer, inpu
                                     {
                                         entity* Entity = &GameState->Entities[EntityIndex];
                                         
-                                        if(X == (i32)Entity->Position.x && Y == (i32)Entity->Position.y)
+                                        if(X == (i32)Entity->Position.x && Z == (i32)Entity->Position.z)
                                         {
                                             if(GameState->EditorState.SelectedEntity)
                                             {
@@ -721,12 +719,12 @@ static void EditorUpdateEntities(game_state* GameState, renderer& Renderer, inpu
                                 {
                                     case Placement_Entity_Skeleton:
                                     {
-                                        LoadSkeletonData(GameState, -1, math::v2(X, Y));
+                                        LoadSkeletonData(GameState, -1, math::v3(X, 0.0f, Z));
                                     }
                                     break;
                                     case Placement_Entity_Bonfire:
                                     {
-                                        LoadBonfireData(GameState, SoundQueue, -1, math::v2(X, Y));
+                                        LoadBonfireData(GameState, SoundQueue, -1, math::v3(X, 0.0f,  Z));
                                     }
                                     break;
                                 }
@@ -756,7 +754,7 @@ static void EditorUpdateEntities(game_state* GameState, renderer& Renderer, inpu
                             GameState->EditorState.TileIsSolidCheckbox->Active = true;
                             
                             GameState->EditorState.TileX = (r32)X;
-                            GameState->EditorState.TileY = (r32)Y;
+                            GameState->EditorState.TileZ = (r32)Z;
                             
                             if(MOUSE(Mouse_Left))
                             {
@@ -782,7 +780,7 @@ static void EditorUpdateEntities(game_state* GameState, renderer& Renderer, inpu
                                 else
                                 {
                                     if(X >= 0 && X < (i32)GameState->CurrentLevel.Tilemap.Width 
-                                       && Y >= 0 && Y < (i32)GameState->CurrentLevel.Tilemap.Height)
+                                       && Z >= 0 && Z < (i32)GameState->CurrentLevel.Tilemap.Height)
                                     {
                                         tilemap* Tilemap = &GameState->CurrentLevel.Tilemap;
                                         
@@ -790,13 +788,13 @@ static void EditorUpdateEntities(game_state* GameState, renderer& Renderer, inpu
                                         {
                                             for(i32 IndexX = 0; IndexX < Tilemap->Width; IndexX++)
                                             {
-                                                for(i32 IndexY = 0; IndexY < Tilemap->Height; IndexY++)
+                                                for(i32 IndexZ = 0; IndexZ < Tilemap->Height; IndexZ++)
                                                 {
                                                     for(i32 X = 0; X < (i32)GameState->EditorState.TileBrushSize.x && X + IndexX < Tilemap->Width; X++)
                                                     {
-                                                        for(i32 Y = 0; Y < (i32)GameState->EditorState.TileBrushSize.y && Y + IndexY < Tilemap->Height; Y++)
+                                                        for(i32 Z = 0; Z < (i32)GameState->EditorState.TileBrushSize.y && Z + IndexZ < Tilemap->Height; Z++)
                                                         {
-                                                            Tilemap->Data[GameState->EditorState.CurrentTilemapLayer][IndexX + X][IndexY + Y] = Tilemap->Tiles[GameState->EditorState.SelectedTileType + 1];
+                                                            Tilemap->Data[GameState->EditorState.CurrentTilemapLayer][IndexX + X][IndexZ + Z] = Tilemap->Tiles[GameState->EditorState.SelectedTileType + 1];
                                                         }
                                                     }
                                                     
@@ -808,13 +806,13 @@ static void EditorUpdateEntities(game_state* GameState, renderer& Renderer, inpu
                                         else
                                         {
                                             
-                                            for(i32 IndexY = 0; IndexY < Tilemap->Height; IndexY++)
+                                            for(i32 IndexZ = 0; IndexZ < Tilemap->Height; IndexZ++)
                                             {
                                                 for(i32 RelativeX = 0; RelativeX < GameState->EditorState.TileBrushSize.x && RelativeX + X < Tilemap->Width; RelativeX++)
                                                 {
-                                                    for(i32 RelativeY = 0; RelativeY < GameState->EditorState.TileBrushSize.y && RelativeY + Y < Tilemap->Height; RelativeY++)
+                                                    for(i32 RelativeZ = 0; RelativeZ < GameState->EditorState.TileBrushSize.y && RelativeZ + Z < Tilemap->Height; RelativeZ++)
                                                     {
-                                                        Tilemap->Data[GameState->EditorState.CurrentTilemapLayer][X + RelativeX][Y + RelativeY] = Tilemap->Tiles[GameState->EditorState.SelectedTileType + 1];
+                                                        Tilemap->Data[GameState->EditorState.CurrentTilemapLayer][X + RelativeX][Z + RelativeZ] = Tilemap->Tiles[GameState->EditorState.SelectedTileType + 1];
                                                     }
                                                 }
                                             }
@@ -827,9 +825,9 @@ static void EditorUpdateEntities(game_state* GameState, renderer& Renderer, inpu
                             }
                             if(MOUSE(Mouse_Left) && KEY(Key_LeftShift))
                             {
-                                if(X >= 0 && X < (i32)GameState->CurrentLevel.Tilemap.Width && Y >= 0 && Y < (i32)GameState->CurrentLevel.Tilemap.Height)
+                                if(X >= 0 && X < (i32)GameState->CurrentLevel.Tilemap.Width && Z >= 0 && Z < (i32)GameState->CurrentLevel.Tilemap.Height)
                                 {
-                                    GameState->CurrentLevel.Tilemap.Data[GameState->EditorState.CurrentTilemapLayer][X][Y].TypeIndex = -1;
+                                    GameState->CurrentLevel.Tilemap.Data[GameState->EditorState.CurrentTilemapLayer][X][Z].TypeIndex = -1;
                                 }
                             }
                         }

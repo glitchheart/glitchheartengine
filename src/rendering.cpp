@@ -28,7 +28,7 @@
                                               free(DirData.FileNames);
                                           }
                                           
-                                          static void PushLine(renderer& Renderer, math::v2 Point1, math::v2 Point2, r32 LineWidth, math::rgba Color, b32 IsUI = false)
+                                          static void PushLine(renderer& Renderer, math::v3 Point1, math::v3 Point2, r32 LineWidth, math::rgba Color, b32 IsUI = false)
                                           {
                                               render_command* RenderCommand = &Renderer.Buffer[Renderer.CommandCount++];
                                               RenderCommand->Type = RenderCommand_Line;
@@ -39,7 +39,7 @@
                                               RenderCommand->IsUI = IsUI;
                                           }
                                           
-                                          static void PushText(renderer& Renderer, const char* Text, math::v2 Position, i32 FontHandle, math::rgba Color, Alignment Alignment = Alignment_Left, b32 IsUI = true)
+                                          static void PushText(renderer& Renderer, const char* Text, math::v3 Position, i32 FontHandle, math::rgba Color, Alignment Alignment = Alignment_Left, b32 IsUI = true)
                                           {
                                               render_command* RenderCommand = &Renderer.Buffer[Renderer.CommandCount++];
                                               RenderCommand->Type = RenderCommand_Text;
@@ -53,7 +53,7 @@
                                               RenderCommand->IsUI = IsUI;
                                           }
                                           
-                                          static void PushFilledRect(renderer& Renderer, math::v2 Position, math::v2 Size, math::rgba Color, b32 IsUI = true)
+                                          static void PushFilledRect(renderer& Renderer, math::v3 Position, math::v3 Size, math::rgba Color, b32 IsUI = true)
                                           {
                                               render_command* RenderCommand = &Renderer.Buffer[Renderer.CommandCount++];
                                               RenderCommand->Type = RenderCommand_Rect;
@@ -64,7 +64,7 @@
                                               RenderCommand->IsUI = IsUI;
                                           }
                                           
-                                          static void PushOutlinedRect(renderer& Renderer, math::v2 Position, math::v2 Size, math::rgba Color, b32 IsUI = false)
+                                          static void PushOutlinedRect(renderer& Renderer, math::v3 Position, math::v3 Size, math::rgba Color, b32 IsUI = false)
                                           {
                                               render_command* RenderCommand = &Renderer.Buffer[Renderer.CommandCount++];
                                               RenderCommand->Type = RenderCommand_Rect;
@@ -75,7 +75,7 @@
                                               RenderCommand->IsUI = IsUI;
                                           }
                                           
-                                          static void PushSprite(renderer& Renderer, math::v2 Position, math::v3 Scale, math::v2 Frame, math::v2 TextureOffset, const char* TextureName, math::rgba Color, b32 IsUI = false)
+                                          static void PushSprite(renderer& Renderer, math::v3 Position, math::v3 Scale, math::v2 Frame, math::v2 TextureOffset, const char* TextureName, math::rgba Color, b32 IsUI = false)
                                           {
                                               render_command* RenderCommand = &Renderer.Buffer[Renderer.CommandCount++];
                                               RenderCommand->Type = RenderCommand_Sprite;

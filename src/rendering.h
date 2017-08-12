@@ -71,22 +71,22 @@ struct render_command
     {
         struct
         {
-            math::v2 Point1;
-            math::v2 Point2;
+            math::v3 Point1;
+            math::v3 Point2;
             r32 LineWidth;
             math::rgba Color;
         } Line;
         struct
         {
             char Text[256];
-            math::v2 Position;
+            math::v3 Position;
             i32 FontHandle;
             math::rgba Color;
             Alignment Alignment;
         } Text;
         struct
         {
-            math::v2 Position;
+            math::v3 Position;
             math::v3 Scale;
             math::v2 Frame;
             math::v2 TextureOffset;
@@ -95,8 +95,8 @@ struct render_command
         } Sprite;
         struct
         {
-            math::v2 Position;
-            math::v2 Size;
+            math::v3 Position;
+            math::v3 Size;
             math::rgba Color;
             b32 Outlined;
         } Rect;

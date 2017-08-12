@@ -66,15 +66,12 @@ int CompareFunction(const void* a, const void* b)
     render_entity APtr = *(render_entity*)a;
     render_entity BPtr = *(render_entity*)b;
     
-    math::v2 PositionA = APtr.RenderType == Render_Type_Entity ? APtr.Entity->Position : APtr.Object->Position;
-    math::v2 PositionB = BPtr.RenderType == Render_Type_Entity ? BPtr.Entity->Position : BPtr.Object->Position;
+    math::v3 PositionA = APtr.RenderType == Render_Type_Entity ? APtr.Entity->Position : APtr.Object->Position;
+    math::v3 PositionB = BPtr.RenderType == Render_Type_Entity ? BPtr.Entity->Position : BPtr.Object->Position;
     
-    PositionA = ToIsometric(PositionA);
-    PositionB = ToIsometric(PositionB);
-    
-    if(APtr.Background || PositionA.y > PositionB.y)
+    if(APtr.Background || PositionA.z > PositionB.z)
         return -1;
-    if(BPtr.Background || PositionA.y < PositionB.y)
+    if(BPtr.Background || PositionA.z < PositionB.z)
         return 1;
     return 0;
 }
@@ -98,15 +95,15 @@ static void PushEntityRenderCommands(renderer& Renderer, game_state& GameState)
             RenderEntity->Object->RenderEntityHandle = Index;
         
         b32 Active = RenderEntity->RenderType == Render_Type_Entity ? RenderEntity->Entity->Active : RenderEntity->Object->Active;
-        math::v2 Position = RenderEntity->RenderType == Render_Type_Entity ? RenderEntity->Entity->Position : RenderEntity->Object->Position;
-        math::v2 Center = RenderEntity->RenderType == Render_Type_Entity ? RenderEntity->Entity->Center : RenderEntity->Object->Center;
+        math::v3 Position = RenderEntity->RenderType == Render_Type_Entity ? RenderEntity->Entity->Position : RenderEntity->Object->Position;
+        math::v3 Center = RenderEntity->RenderType == Render_Type_Entity ? RenderEntity->Entity->Center : RenderEntity->Object->Center;
         r32 EntityScale = RenderEntity->RenderType == Render_Type_Entity ? RenderEntity->Entity->Scale : RenderEntity->Object->Scale;
         i32 LightSourceHandle = RenderEntity->RenderType == Render_Type_Entity ? RenderEntity->Entity->LightSourceHandle : RenderEntity->Object->LightSourceHandle;
         
         animation* CurrentAnimation =  RenderEntity->RenderType == Render_Type_Entity ? RenderEntity->Entity->CurrentAnimation : RenderEntity->Object->CurrentAnimation;
         animation_info AnimationInfo = RenderEntity->RenderType == Render_Type_Entity ? RenderEntity->Entity->AnimationInfo : RenderEntity->Object->AnimationInfo;
         
-        math::v2 CurrentPosition;
+        math::v3 CurrentPosition;
         math::v3 CurrentScale;
         math::v2 CurrentFrame;
         math::v2 CurrentTextureOffset;
@@ -118,26 +115,15 @@ static void PushEntityRenderCommands(renderer& Renderer, game_state& GameState)
             r32 WidthInUnits = (r32)CurrentAnimation->FrameSize.x / (r32)PIXELS_PER_UNIT;
             r32 HeightInUnits = (r32)CurrentAnimation->FrameSize.y / (r32)PIXELS_PER_UNIT;
             
-            math::v3 Scale = math::v3(WidthInUnits * EntityScale, HeightInUnits * EntityScale, 1);
+            math::v3 Scale = math::v3(WidthInUnits * EntityScale, HeightInUnits * EntityScale, 1.0f);
             
-            auto CorrectPos = ToIsometric(Position);
+            auto CorrectPos = Position;
             
             CorrectPos.x -= CurrentAnimation->Center.x * Scale.x;
             CorrectPos.y -= CurrentAnimation->Center.y * Scale.y;
             
-            // @Cleanup: Move these to a global variable or similar
-            r32 TileWidthHalf = 0.5f;
-            r32 TileHeightHalf = 0.25f;
-            
-            CorrectPos.x += TileWidthHalf; //We want the sprite to be centered in the tile
-            CorrectPos.y += TileHeightHalf;
-            
-            if(LightSourceHandle != -1)
-            {
-                GameState.LightSources[LightSourceHandle].Pointlight.RenderPosition = CorrectPos + math::v2(CurrentAnimation->Center.x * Scale.x, CurrentAnimation->Center.y * Scale.y);
-            }
-            
             CurrentPosition = CorrectPos;
+            
             CurrentScale = Scale;
             
             animation* Animation = CurrentAnimation;
@@ -153,17 +139,18 @@ static void PushEntityRenderCommands(renderer& Renderer, game_state& GameState)
             CurrentTexture = RenderEntity->TextureName;
             texture_data* Texture = Renderer.TextureMap[RenderEntity->TextureName];
             
-            auto CorrectPos = ToIsometric(math::v2(Position.x, Position.y));
+            auto CorrectPos = math::v3(Position.x, Position.y, Position.z);
             
             r32 CorrectX = CorrectPos.x;
             r32 CorrectY = CorrectPos.y;
+            r32 CorrectZ = CorrectPos.z;
             
             CurrentPosition = CorrectPos;
             
             r32 WidthInUnits = Texture->Width / (r32)PIXELS_PER_UNIT;
             r32 HeightInUnits = Texture->Height / (r32)PIXELS_PER_UNIT;
             
-            CurrentScale = math::v3(WidthInUnits * EntityScale, HeightInUnits * EntityScale, 1);
+            CurrentScale = math::v3(WidthInUnits * EntityScale, HeightInUnits * EntityScale, 1.0f);
             
             CurrentFrame = math::v2(Texture->Width, Texture->Height);
         }
@@ -278,17 +265,9 @@ extern "C" UPDATE(Update)
         
         // @Incomplete: This is not the right value, it is only set so high to remove smooth following as of now, since it needs to be done a little differently
         
-        if(GameState->CurrentLevel.Type == Level_Isometric)
-        {
-            auto PlayerPos = GameState->Entities[0].Position;
-            GameCamera.Center = math::v3((PlayerPos.x + PlayerPos.y) * 0.5f,(PlayerPos.x - PlayerPos.y) * 0.25f, GameCamera.Center.z); // Set center to player's position!
-            GameCamera.CenterTarget = math::v2((PlayerPos.x + PlayerPos.y) * 0.5f,(PlayerPos.x - PlayerPos.y) * 0.25f);
-        }
-        else
-        {
-            GameCamera.Center = math::v3(GameState->Entities[0].Position.x, GameState->Entities[0].Position.y, GameCamera.Center.z); // Set center to player's position!
-            GameCamera.CenterTarget = GameState->Entities[0].Position;
-        }
+        GameCamera.Center = math::v3(GameState->Entities[0].Position.x, GameState->Entities[0].Position.y, GameCamera.Center.z); // Set center to player's position!
+        GameCamera.CenterTarget = GameState->Entities[0].Position;
+        
         
         GameState->IsInitialized = true;
         GameMemory->IsInitialized = true;
@@ -312,7 +291,7 @@ extern "C" UPDATE(Update)
         {
             for(u32 EntityIndex = 0; EntityIndex < GameState->EntityCount; EntityIndex++)
             {
-                auto Entity = GameState->Entities[EntityIndex];
+                auto& Entity = GameState->Entities[EntityIndex];
                 if(Entity.Type == Entity_Enemy && Entity.Enemy.EnemyType == Enemy_Skeleton && !Entity.Dead)
                 {
                     LoadSkeletonData(GameState,EntityIndex);
@@ -325,7 +304,7 @@ extern "C" UPDATE(Update)
         {
             for(u32 EntityIndex = 0; EntityIndex < GameState->EntityCount; EntityIndex++)
             {
-                auto Entity = GameState->Entities[EntityIndex];
+                auto& Entity = GameState->Entities[EntityIndex];
                 if(Entity.Type == Entity_Bonfire)
                 {
                     LoadBonfireData(GameState, SoundQueue, EntityIndex);
@@ -373,10 +352,10 @@ extern "C" UPDATE(Update)
             
             if(!GameState->GodModeOn)
             {
-                auto Player = GameState->Entities[0];
-                auto IsometricPos = ToIsometric(Player.Position);
-                Renderer.Cameras[GameState->GameCameraHandle].Center = math::v3(IsometricPos.x, IsometricPos.y, Renderer.Cameras[GameState->GameCameraHandle].Center.z);
-                Renderer.Cameras[GameState->GameCameraHandle].Center = math::v3(IsometricPos.x, IsometricPos.y, Renderer.Cameras[GameState->GameCameraHandle].Center.z);
+                auto& Player = GameState->Entities[0];
+                auto Pos = Player.Position;
+                Renderer.Cameras[GameState->GameCameraHandle].Center = math::v3(Pos.x, Pos.y, Pos.z);
+                Renderer.Cameras[GameState->GameCameraHandle].Center = math::v3(Pos.x, Pos.y, Pos.z);
                 Renderer.Cameras[GameState->GameCameraHandle].Zoom = GameState->ZoomBeforeGodMode;
             }
             else
@@ -385,7 +364,7 @@ extern "C" UPDATE(Update)
             }
         }
     }
-    auto Player = GameState->Entities[0];
+    auto& Player = GameState->Entities[0];
     
     if(!GameState->EditorState.Loaded)
     {
@@ -616,20 +595,12 @@ extern "C" UPDATE(Update)
                 
                 if(!GameState->GodModeOn)
                 {
-                    if(math::Distance(GameCamera.CenterTarget, math::v2(Center.x, Center.y)) > 0.01f)
+                    if(math::Distance(GameCamera.CenterTarget, math::v3(Center.x, Center.y, Center.z)) > 0.01f)
                     {
-                        auto Direction = math::Normalize(GameCamera.CenterTarget - math::v2(Center.x, Center.y));
+                        auto Direction = math::Normalize(GameCamera.CenterTarget - math::v3(Center.x, Center.y, Center.z));
                         
-                        if(GameState->CurrentLevel.Type == Level_Isometric)
-                        {
-                            auto PlayerPos = GameState->Entities[0].Position;
-                            auto Pos = ToIsometric(PlayerPos);
-                            Center = math::v3(Pos.x, Pos.y, 0);
-                        }
-                        else
-                        {
-                            Center = math::v3(GameState->Entities[0].Position.x, GameState->Entities[0].Position.y, 0);
-                        }
+                        Center = math::v3(GameState->Entities[0].Position.x, GameState->Entities[0].Position.y, 0);
+                        
                         // math::v2(Center.x + Direction.x * GameState->GameCamera.FollowSpeed * DeltaTime, Center.y + Direction.y  * GameState->GameCamera.FollowSpeed * DeltaTime);
                         
                         GameCamera.Center = Center;
@@ -659,7 +630,7 @@ extern "C" UPDATE(Update)
                 
                 if(ACTION_DOWN(Action_Interact) || KEY_DOWN(Key_Enter))
                 {
-                    auto Player = GameState->Entities[0];
+                    auto& Player = GameState->Entities[0];
                     
                     GameState->LastCharacterData = GameState->CharacterData;
                     
@@ -779,17 +750,34 @@ extern "C" UPDATE(Update)
                                               -100.0f,
                                               1000.0f);
     
-    GameCamera.ViewMatrix = math::Rotate(math::m4(1.0f), 45.0f, math::v3(0,1,0));
+    auto EntityPos = GameState->Entities[0].Position;
+    
+    GameCamera.ViewMatrix = math::m4(1.0f);
+    
+    GameCamera.ViewMatrix = math::Translate(GameCamera.ViewMatrix, math::v3(-EntityPos.x + GameCamera.ViewportWidth / GameCamera.Zoom / 2,  -GameCamera.ViewportHeight / GameCamera.Zoom / 2,
+                                                                            -EntityPos.z));
+    /*
+    GameCamera.ViewMatrix = math::Rotate(GameCamera.ViewMatrix, 45.0f, math::v3(0,1,0));
     GameCamera.ViewMatrix = math::Rotate(GameCamera.ViewMatrix, 35.264f, math::v3(1,0,0));
+    */
+    //GameCamera.ViewMatrix = math::Translate(GameCamera.ViewMatrix, math::v3(0.0f,0.0f,-50.0f));
+    
     
     //Renderer.Camera.ProjectionMatrix = math::Perspective((Renderer.Camera.ViewportWidth / Renderer.Camera.Zoom) / (Renderer.Camera.ViewportHeight / Renderer.Camera.Zoom), 0.6f, 0.1f, 100.0f);
     
+    /*
     auto EntityPos = GameState->Entities[0].Position;
     GameCamera.ViewMatrix = math::Translate(GameCamera.ViewMatrix,
-                                            math::v3(-20.0f + GameCamera.ViewportWidth / GameCamera.Zoom / 2,
-                                                     -20.0f + GameCamera.ViewportHeight / GameCamera.Zoom / 2,
-                                                     -50.0f));
+                                            math::v3(-EntityPos.x + GameCamera.ViewportWidth / GameCamera.Zoom / 2,
+                                                     EntityPos.z + GameCamera.ViewportHeight / GameCamera.Zoom / 2,
+                                                     -50.0f));*/
     
+    /*
+    GameCamera.ViewMatrix = math::Translate(GameCamera.ViewMatrix,
+                                            math::v3(-20.0f + GameCamera.ViewportWidth / GameCamera.Zoom / 2,
+                                                     -40.0f + GameCamera.ViewportHeight / GameCamera.Zoom / 2,
+                                                     -50.0f));
+    */
     InputController->CurrentCharacter = 0;
     GameState->ClearTilePositionFrame = !GameState->ClearTilePositionFrame;
     GetActionButtonsForQueue(InputController);
