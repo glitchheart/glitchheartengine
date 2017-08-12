@@ -355,7 +355,7 @@ namespace math
         v3(r32 X, i32 Y, i32 Z) : X(X), Y((r32)Y), Z((r32)Z) {}
         v3(i32 X, i32 Y, r32 Z) : X((r32)X), Y((r32)Y), Z(Z) {}
         v3(r32 X, r32 Y, r64 Z) : X(X), Y(Y), Z((r32)Z) {}
-        
+        v3(r64 X, r32 Y, r64 Z) : X((r32)X), Y(Y), Z((r32)Z) {}
         
         inline v3 operator-()
         {
@@ -1537,6 +1537,17 @@ namespace math
         return v3(Tmp.X,Tmp.Y,Tmp.Z);
     }
     
+    inline v3 Cross(v3 A, v3 B)
+    {
+        v3 Result;
+        
+        Result.x = A.y*B.z - A.z*B.y;
+        Result.y = A.z*B.x - A.x*B.z;
+        Result.z = A.x*B.y - A.y*B.x;
+        
+        return Result;
+    }
+    
     inline m4 Ortho(r32 Left, r32 Right, r32 Bottom, r32 Top, r32 Near, r32 Far)
     {
         m4 Result(1.0f);
@@ -1547,6 +1558,26 @@ namespace math
         Result.M14 = -((Right + Left)/(Right - Left));
         Result.M24 = -((Top + Bottom)/(Top - Bottom));
         Result.M44 = 1.0f;
+        
+        return Result;
+    }
+    
+    inline m4 LookAt(v3 P, v3 T)
+    {
+        auto F = -Normalize(P - T);
+        auto U = v3(0.0f,1.0f,0.0f);
+        auto R = Cross(U, F);
+        U = Cross(F, R);
+        
+        m4 Result(
+            R.x, R.y, R.z, 0,
+            U.x, U.y, U.z, 0,
+            F.x, F.y, F.z, 0,
+            0,   0,   0,   1
+            );
+        
+        m4 Tr = Translate(m4(1.0f), -P);
+        Result = Result * Tr;
         
         return Result;
     }
