@@ -224,9 +224,9 @@ struct object_entity
     b32 Active;
     Object_Type Type;
     b32 UsesTransparency;
-    math::v2 Position;
+    math::v3 Position;
     r32 Scale;
-    math::v2 Center;
+    math::v3 Center;
     b32 IsFlipped;
     i32 RenderEntityHandle;
     i32 LightSourceHandle;
@@ -240,7 +240,7 @@ struct object_entity
         {
             b32 IsKinematic;
             collision_AABB Collider;
-            math::v2 Velocity;
+            math::v3 Velocity;
         } Moving;
         struct
         {

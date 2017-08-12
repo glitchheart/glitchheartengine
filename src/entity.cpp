@@ -203,35 +203,6 @@ static void Hit(game_state* GameState, renderer& Renderer, sound_queue* SoundQue
     }
 }
 
-static void SpawnTree(game_state* GameState, math::v3 Position, i32* Handle = 0)
-{
-    if(Handle)
-        *Handle = GameState->ObjectCount;
-    
-    auto Tree = &GameState->Objects[GameState->ObjectCount++];
-    Tree->Active = true;
-    Tree->Scale = 1.0f;
-    Tree->Type = Object_Tree,
-    Tree->Position = math::v2(Position.x - 1.4f, Position.y - 1.5f);
-    Tree->UsesTransparency = true;
-    
-    render_entity* RenderEntity = &GameState->RenderEntities[GameState->RenderEntityCount];
-    RenderEntity->RenderType = Render_Type_Object;
-    Tree->RenderEntityHandle = GameState->RenderEntityCount;
-    
-    RenderEntity->Shader = Shader_Texture;
-    RenderEntity->Rendered = true;
-    RenderEntity->Background = false;
-    RenderEntity->RenderType = Render_Type_Object;
-    RenderEntity->Object = &*Tree;
-    RenderEntity->TextureName = "big_tree";
-    
-    Tree->RenderEntityHandle = GameState->RenderEntityCount++;
-    RenderEntity->Color = math::v4(1, 1, 1, 1);
-    
-    GameState->Objects[GameState->ObjectCount++];
-}
-
 static void LoadEntityData(FILE* File, entity* Entity, game_state* GameState, b32 IsReload = false)
 {
     if(!IsReload)
@@ -1333,7 +1304,9 @@ void UpdatePlayer(entity* Entity, game_state* GameState, renderer& Renderer, sou
     Entity->Velocity.x = XInput * Speed;
     Entity->Velocity.z = YInput * Speed;
     
-    Entity->Position += math::v3(Entity->Velocity.x * DeltaTime, Entity->Velocity.y * DeltaTime, Entity->Velocity.z * DeltaTime);
+    Entity->Velocity = math::YRotate(45) * Entity->Velocity;;
+    
+    Entity->Position += math::v3(Entity->Velocity.x * DeltaTime, Entity->Velocity.y * DeltaTime, -Entity->Velocity.z * DeltaTime);
     Entity->Position = math::v3(Entity->Position.x, Entity->Position.y, Entity->Position.z);
     
     // Update camera if centered on player
@@ -1553,10 +1526,9 @@ static void UpdateEntities(game_state* GameState, renderer& Renderer, input_cont
             {
                 case Entity_Player: 
                 {
-                    if(!GameState->GodModeOn)
-                    {
-                        UpdatePlayer(Entity, GameState, Renderer, SoundQueue, InputController, DeltaTime);
-                    }
+                    
+                    UpdatePlayer(Entity, GameState, Renderer, SoundQueue, InputController, DeltaTime);
+                    
                 }
                 break;
                 case Entity_Enemy:

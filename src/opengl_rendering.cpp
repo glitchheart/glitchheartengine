@@ -413,9 +413,9 @@ static void RenderSetup(render_state *RenderState)
     auto TexcoordLocation = glGetAttribLocation(RenderState->TextureShader.Program, "texcoord");
     
     glEnableVertexAttribArray(PositionLocation);
-    glVertexAttribPointer(PositionLocation, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
+    glVertexAttribPointer(PositionLocation, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), 0);
     glEnableVertexAttribArray(TexcoordLocation);
-    glVertexAttribPointer(TexcoordLocation, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *)(2 * sizeof(float)));
+    glVertexAttribPointer(TexcoordLocation, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *)(3 * sizeof(float)));
     glBindVertexArray(0);
     
     //Animation
@@ -1085,6 +1085,7 @@ static void RenderText(render_state& RenderState, const render_font& Font, const
     glBindVertexArray(0);
 }
 
+
 static void RenderConsole(render_state& RenderState, console* Console)
 {
     glBindVertexArray(RenderState.RectVAO);
@@ -1195,7 +1196,7 @@ static void RenderSprite(const render_command& Command, render_state& RenderStat
     Model = math::XRotate(Command.Rotation.x) * Model;
     Model = math::ZRotate(Command.Rotation.z) * Model;
     
-    Model = math::Translate(Model, math::v3(Command.Sprite.Position.x, Command.Sprite.Position.y, 0.0f));
+    Model = math::Translate(Model, math::v3(Command.Sprite.Position.x, Command.Sprite.Position.y, Command.Sprite.Position.z));
     
     SetVec4Uniform(Shader.Program, "spriteColor", Command.Sprite.Color);
     SetFloatUniform(Shader.Program, "isUI", 0);

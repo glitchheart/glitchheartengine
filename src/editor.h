@@ -140,7 +140,7 @@ struct editor_state
     r32 MaxZoom = 100;
     
     r32 TileX;
-    r32 TileY;
+    r32 TileZ;
     
     math::v2 TilemapOffset;
     r32 RenderedTileSize = 30.0f;
