@@ -70,7 +70,7 @@ struct level
     char* Name;
     char* SheetName;
     Level_Type Type = Level_Orthogonal;
-    math::v2 PlayerStartPosition;
+    math::v3 PlayerStartPosition;
     tilemap Tilemap;
     char* TilesheetPath;
     u32 TilesheetIndex;

@@ -203,65 +203,7 @@ static void Hit(game_state* GameState, renderer& Renderer, sound_queue* SoundQue
     }
 }
 
-static void SpawnShadow(game_state* GameState, math::v2 Position, i32* Handle)
-{
-    *Handle = GameState->ObjectCount;
-    
-    auto Shadow = &GameState->Objects[GameState->ObjectCount++];
-    Shadow->Active = true;
-    Shadow->Scale = 1;
-    Shadow->Type = Object_Shadow;
-    Shadow->Position = math::v2(Position.x - 1.4f, Position.y - 1.5f);
-    Shadow->UsesTransparency = true;
-    
-    PlayAnimation(Shadow, "big_shadow", GameState);
-    
-    render_entity* RenderEntity = &GameState->RenderEntities[GameState->RenderEntityCount];
-    RenderEntity->RenderType = Render_Type_Object;
-    Shadow->RenderEntityHandle = GameState->RenderEntityCount;
-    
-    RenderEntity->Shader = Shader_Spritesheet;
-    RenderEntity->Rendered = true;
-    RenderEntity->Background = true;
-    RenderEntity->RenderType = Render_Type_Object;
-    RenderEntity->Object = &*Shadow;
-    
-    Shadow->RenderEntityHandle = GameState->RenderEntityCount++;
-    RenderEntity->Color = math::v4(1, 1, 1, 1);
-    DEBUG_PRINT("Shadow\n");
-    GameState->Objects[GameState->ObjectCount++];
-}
-
-static void SpawnLoot(game_state* GameState, math::v2 Position, i32* Handle)
-{
-    *Handle = GameState->ObjectCount;
-    
-    auto Loot = &GameState->Objects[GameState->ObjectCount++];
-    Loot->Active = true;
-    Loot->Scale = 1;
-    Loot->Type = Object_Loot;
-    Loot->Position = math::v2(Position.x, Position.y - 0.5f);
-    Loot->UsesTransparency = true;
-    
-    render_entity* RenderEntity = &GameState->RenderEntities[GameState->RenderEntityCount];
-    RenderEntity->RenderType = Render_Type_Object;
-    RenderEntity->TextureName = "basic_loot";
-    Loot->RenderEntityHandle = GameState->RenderEntityCount;
-    
-    RenderEntity->Shader = Shader_Texture;
-    RenderEntity->Rendered = true;
-    RenderEntity->Background = false;
-    RenderEntity->RenderType = Render_Type_Object;
-    RenderEntity->Object = &*Loot;
-    
-    Loot->RenderEntityHandle = GameState->RenderEntityCount++;
-    DEBUG_PRINT("Loot\n");
-    RenderEntity->Color = math::v4(1, 1, 1, 1);
-    
-    GameState->Objects[GameState->ObjectCount++];
-}
-
-static void SpawnTree(game_state* GameState, math::v2 Position, i32* Handle = 0)
+static void SpawnTree(game_state* GameState, math::v3 Position, i32* Handle = 0)
 {
     if(Handle)
         *Handle = GameState->ObjectCount;
@@ -706,8 +648,8 @@ static void EnemyWander(game_state* GameState, entity* Entity)
         CurrentWaypoint =  math::v3(Entity->Enemy.Waypoints[Entity->Enemy.WaypointIndex].x, 0.0f, Entity->Enemy.Waypoints[Entity->Enemy.WaypointIndex].z);
         auto Direction = math::Normalize(CurrentWaypoint - Entity->Position);
         
-        Entity->Velocity = math::v2(Direction.x * Entity->Enemy.WanderingSpeed, 0.0f,
-                                    Direction.z * Entity->Enemy.WanderinSpeed);
+        Entity->Velocity = math::v3(Direction.x * Entity->Enemy.WanderingSpeed, 0.0f,
+                                    Direction.z * Entity->Enemy.WanderingSpeed);
     }
     
     entity& Player = GameState->Entities[GameState->PlayerIndex];
@@ -815,8 +757,8 @@ AI_FUNC(SkeletonCharging)
     else
     {
         PlayAnimation(Entity, "skeleton_walk", GameState);
-        math::v2 Direction = math::Normalize(Player.Position - Entity->Position);
-        Entity->Velocity = math::v2((Direction.x + 0.1f) * Entity->Enemy.CloseToPlayerSpeed, (Direction.y + 0.1f) * Entity->Enemy.CloseToPlayerSpeed);
+        math::v3 Direction = math::Normalize(Player.Position - Entity->Position);
+        Entity->Velocity = math::v3((Direction.x + 0.1f) * Entity->Enemy.CloseToPlayerSpeed, 0.0f, (Direction.z + 0.1f) * Entity->Enemy.CloseToPlayerSpeed);
     }
 }
 
@@ -841,7 +783,9 @@ AI_FUNC(SkeletonAttacking)
     {
         if(!TimerDone(GameState, Entity->AttackMoveTimer))
         {
-            Entity->Velocity = math::v2(Enemy.LastAttackMoveDirection.x * Entity->AttackMoveSpeed, Enemy.LastAttackMoveDirection.y * Entity->AttackMoveSpeed);
+            Entity->Velocity = math::v3(Enemy.LastAttackMoveDirection.x * Entity->AttackMoveSpeed,
+                                        0.0f,
+                                        Enemy.LastAttackMoveDirection.z * Entity->AttackMoveSpeed);
         }
         
         if(Entity->AnimationInfo.FrameIndex >= Entity->AttackLowFrameIndex - 2 &&Entity->AnimationInfo.FrameIndex < Entity->AttackHighFrameIndex && !Entity->IsAttacking && strcmp(Entity->CurrentAnimation->Name, "skeleton_idle") != 0)
@@ -890,7 +834,8 @@ AI_FUNC(SkeletonHit)
     auto& Enemy = Entity->Enemy;
     if(!TimerDone(GameState, Entity->RecoilTimer))
     {
-        Entity->Velocity = math::v2(Entity->HitRecoilDirection.x * Entity->HitRecoilSpeed, Entity->HitRecoilDirection.y * Entity->HitRecoilSpeed);
+        Entity->Velocity = math::v3(Entity->HitRecoilDirection.x * Entity->HitRecoilSpeed, 
+                                    Entity->HitRecoilDirection.y * Entity->HitRecoilSpeed, Entity->HitRecoilDirection.z * Entity->HitRecoilSpeed);
     }
     
     if(!Entity->AnimationInfo.Playing)
@@ -915,7 +860,7 @@ AI_FUNC(SkeletonWandering)
     EnemyWander(GameState,Entity);
 }
 
-static void LoadBonfireData(game_state* GameState, sound_queue* SoundQueue, i32 Handle = -1, math::v2 Position = math::v2(), b32 IsTemporary = false)
+static void LoadBonfireData(game_state* GameState, sound_queue* SoundQueue, i32 Handle = -1, math::v3 Position = math::v3(), b32 IsTemporary = false)
 {
     FILE* File;
     File = fopen("../assets/entities/bonfire.dat", "r");
@@ -948,15 +893,15 @@ static void LoadBonfireData(game_state* GameState, sound_queue* SoundQueue, i32 
         
         if(Handle == -1)
         {
-            Entity->Position = math::v2(Position.x, Position.y);
-            PLAY_SOUND(Bonfire, 1.0f, Entity->Position.x, Entity->Position.y, 10.0f, true, Entity->EntityIndex);
+            Entity->Position = math::v3(Position.x, Position.y, Position.z);
+            PLAY_SOUND(Bonfire, 1.0f, Entity->Position.x, Entity->Position.z, 10.0f, true, Entity->EntityIndex);
         }
         
         fclose(File);
     }
 }
 
-static void LoadSkeletonData(game_state* GameState, i32 Handle = -1, math::v2 Position = math::v2())
+static void LoadSkeletonData(game_state* GameState, i32 Handle = -1, math::v3 Position = math::v3())
 {
     FILE* File;
     File = fopen("../assets/entities/skeleton.dat", "r");
@@ -979,10 +924,12 @@ static void LoadSkeletonData(game_state* GameState, i32 Handle = -1, math::v2 Po
         LoadEnemyData(File,Entity, GameState);
         
         Entity->Enemy.EnemyCollider = Entity->CollisionAABB;
-        Entity->Enemy.EnemyCollider.Extents = math::v2(Entity->Enemy.EnemyCollider.Extents.x * 3, Entity->Enemy.EnemyCollider.Extents.y * 3);
+        Entity->Enemy.EnemyCollider.Extents = math::v3(Entity->Enemy.EnemyCollider.Extents.x * 3, 
+                                                       Entity->Enemy.EnemyCollider.Extents.y * 3,
+                                                       Entity->Enemy.EnemyCollider.Extents.z * 3);
         
         if(Handle == -1)
-            Entity->Position = math::v2(Position.x, Position.y);
+            Entity->Position = math::v3(Position.x, Position.y, Position.z);
         
         char LineBuffer[255];
         
@@ -1025,7 +972,7 @@ static void LoadSkeletonData(game_state* GameState, i32 Handle = -1, math::v2 Po
 
 void PlaceCheckpoint(game_state* GameState, sound_queue* SoundQueue, entity* Entity)
 {
-    auto CheckpointPos = math::v2(Entity->Position.x + 1, Entity->Position.y + 1);
+    auto CheckpointPos = math::v3(Entity->Position.x + 1, Entity->Position.y, Entity->Position.z + 1);
     
     if(!GameState->CharacterData.HasCheckpoint)
     {
@@ -1046,7 +993,7 @@ void PlaceCheckpoint(game_state* GameState, sound_queue* SoundQueue, entity* Ent
     SaveGame(GameState);
 }
 
-static void LoadPlayerData(game_state* GameState, sound_queue* SoundQueue, i32 Handle = -1, math::v2 Position = math::v2())
+static void LoadPlayerData(game_state* GameState, sound_queue* SoundQueue, i32 Handle = -1, math::v3 Position = math::v3())
 {
     FILE* File;
     File = fopen("../assets/entities/player.dat", "r");
@@ -1185,17 +1132,19 @@ static void LoadPlayerData(game_state* GameState, sound_queue* SoundQueue, i32 H
         {
             if(GameState->CharacterData.HasCheckpoint)
             {
-                Entity->Position = math::v2(GameState->CharacterData.CurrentCheckpoint.x - 1, GameState->CharacterData.CurrentCheckpoint.y - 1);
+                Entity->Position = math::v3(GameState->CharacterData.CurrentCheckpoint.x - 1,
+                                            0.0f,
+                                            GameState->CharacterData.CurrentCheckpoint.z - 1);
             }
             else
             {
                 Entity->Position = Position;
-                GameState->CharacterData.CurrentCheckpoint = Position + math::v2(1, 1);
+                GameState->CharacterData.CurrentCheckpoint = Position + math::v3(1, 0, 1);
                 GameState->CharacterData.HasCheckpoint = true;
                 
             }
             
-            Entity->Position = math::v2(Entity->Position.x, Entity->Position.y);
+            Entity->Position = math::v3(Entity->Position.x, Entity->Position.y, Entity->Position.z);
             
             LoadBonfireData(GameState, SoundQueue, -1, GameState->CharacterData.CurrentCheckpoint, true);
             GameState->CharacterData.CheckpointHandle = GameState->EntityCount - 1;
@@ -1210,32 +1159,11 @@ static void LoadPlayerData(game_state* GameState, sound_queue* SoundQueue, i32 H
                 GameState->CharacterData.Stamina = Entity->Player.Stamina;
                 GameState->CharacterData.Strength = Entity->Weapon.Damage;
             }
-            
-            if(GameState->CharacterData.HasLostWill)
-            {
-                SpawnWillDrop(GameState, GameState->CharacterData.LostWillPosition, &GameState->CharacterData.LostWillObjectHandle);
-            }
         }
         
         Entity->Player.Inventory.HasCheckpoint = true;
-        Entity->CurrentTile = math::v2i((i32)Entity->Position.x, (i32)Entity->Position.y);
-        Entity->CurrentDestination = Entity->Position;
-    }
-}
-
-void CheckWillPickup(game_state* GameState, input_controller* InputController, object_entity* Will,entity* Player)
-{
-    if(GameState->CharacterData.RenderWillButtonHint && GetActionButtonDown(Action_Interact, InputController))
-    {
-        Player->Player.Will += GameState->CharacterData.LostWill;
-        GameState->CharacterData.HasLostWill = false;
+        Entity->CurrentTile = math::v2i((i32)Entity->Position.x, (i32)Entity->Position.z);
         
-        GameState->CharacterData.LostWillPosition = math::v2();
-        GameState->CharacterData.LostWill = 0;
-        GameState->Objects[GameState->CharacterData.LostWillObjectHandle].Active = false;
-        auto LightSourceHandle = GameState->Objects[GameState->CharacterData.LostWillObjectHandle].LightSourceHandle;
-        GameState->LightSources[LightSourceHandle].Active = false;
-        GameState->CharacterData.RenderWillButtonHint= false;
     }
 }
 
@@ -1400,310 +1328,16 @@ void UpdatePlayer(entity* Entity, game_state* GameState, renderer& Renderer, sou
     r32 XInput = GetInputX(InputController);
     r32 YInput = GetInputY(InputController);
     
-    r32 DX = 0.0f;
-    r32 DY = 0.0f;
-    
-    auto NewDirection = North;
-    
-    if(XInput > 0)
-    {
-        DX = 1;
-    }
-    else if(XInput < 0)
-    {
-        DX = -1;
-    }
-    
-    if(YInput > 0)
-    {
-        DY = 1;
-    }
-    else if(YInput < 0)
-    {
-        DY = -1;
-    }
-    
-    NewDirection = DetermineDirection(&DX, &DY);
-    
     r32 Speed = Entity->Player.WalkingSpeed;
     
-    r32 Len = math::Length(Entity->CurrentDestination - Entity->Position);
-    math::v2 Direction;
+    Entity->Velocity.x = XInput * Speed;
+    Entity->Velocity.z = YInput * Speed;
     
-    if(Len != 0.0f)
-    {
-        Direction = math::Normalize(Entity->CurrentDestination - Entity->Position);
-    }
-    else
-    {
-        Direction = math::v2(0, 0);
-    }
-    
-    if(Abs(math::Distance(Entity->Position, Entity->CurrentDestination)) < 0.01f)
-    {
-        Entity->Position = Entity->CurrentDestination;
-        
-        GameState->EntityTilePositions[(i32)Entity->CurrentTile.x][(i32)Entity->CurrentTile.y] = 0;
-        
-        Entity->CurrentTile = math::v2i((i32)Entity->Position.x, (i32)Entity->Position.y);
-        
-        Entity->Velocity = math::v2(0, 0);
-        
-        if(DX != 0.0f || DY != 0.0f)
-        {
-            if(!TileIsOccupied(Entity->CurrentTile.x + (i32)DX, Entity->CurrentTile.y + (i32)DY, GameState))
-            {
-                Entity->CurrentDestination = math::v2(Entity->CurrentTile.x, Entity->CurrentTile.y) + math::v2(DX, DY);
-            }
-            
-            Entity->LookDirection = NewDirection;
-        }
-    }
-    else
-        Entity->Velocity = math::v2(Direction.x * Speed, Direction.y * Speed);
-    
-    if(!StartsWith(Entity->CurrentAnimation->Name, "man_attack") || !Entity->AnimationInfo.Playing)
-    {
-        b32 Walking = Abs(XInput) > 0.0f || Abs(YInput) > 0.0f || Abs(Entity->Velocity.x) > 0.0f || Abs(Entity->Velocity.y) > 0.0f;
-        b32 Attacking = ACTION_DOWN(Action_Attack);
-        
-        char* AnimationName = "";
-        
-        switch(Entity->LookDirection)
-        {
-            case North:
-            {
-                if(Attacking)
-                    AnimationName = "man_attack_north";
-                else if(Walking)
-                    AnimationName = "man_walk_north";
-                else
-                    AnimationName = "man_idle_north";
-            }
-            break;
-            case NorthEast:
-            {
-                if(Attacking)
-                    AnimationName = "man_attack_northeast";
-                else if(Walking)
-                    AnimationName = "man_walk_northeast";
-                else
-                    AnimationName = "man_idle_northeast";
-            }
-            break;
-            case East:
-            {
-                if(Attacking)
-                    AnimationName = "man_attack_east";
-                else if(Walking)
-                    AnimationName = "man_walk_east";
-                else
-                    AnimationName = "man_idle_east";
-            }
-            break;
-            case SouthEast:
-            {
-                if(Attacking)
-                    AnimationName = "man_attack_southeast";
-                else if(Walking)
-                    AnimationName = "man_walk_southeast";
-                else
-                    AnimationName = "man_idle_southeast";
-            }
-            break;
-            case South:
-            {
-                if(Attacking)
-                    AnimationName = "man_attack_south";
-                else if(Walking)
-                    AnimationName = "man_walk_south";
-                else
-                    AnimationName = "man_idle_south";
-            }
-            break;
-            case SouthWest:
-            {
-                if(Attacking)
-                    AnimationName = "man_attack_southwest";
-                else if(Walking)
-                    AnimationName = "man_walk_southwest";
-                else
-                    AnimationName = "man_idle_southwest";
-            }
-            break;
-            case West:
-            {
-                if(Attacking)
-                    AnimationName = "man_attack_west";
-                else if(Walking)
-                    AnimationName = "man_walk_west";
-                else
-                    AnimationName = "man_idle_west";
-            }
-            break;
-            case NorthWest:
-            {
-                if(Attacking)
-                    AnimationName = "man_attack_northwest";
-                else if(Walking)
-                    AnimationName = "man_walk_northwest";
-                else
-                    AnimationName = "man_idle_northwest";
-            }
-            break;
-        }
-        
-        PlayAnimation(Entity, AnimationName, GameState);
-        
-        Entity->IsAttacking = Attacking;
-    }
-    else
-    {
-        Entity->IsAttacking = true;
-        
-        r32 DeltaX;
-        r32 DeltaY;
-        
-        DetermineDeltaForDirection(Entity->LookDirection, &DeltaX, &DeltaY);
-        
-        i32 TileX = (i32)Entity->CurrentTile.x + (i32)DeltaX;
-        i32 TileY = (i32)Entity->CurrentTile.y + (i32)DeltaY;
-        
-        i32 Handle = GameState->EntityTilePositions[TileX][TileY];
-        
-        if(Handle != 0)
-        {
-            Handle -= 1;
-            // Damage it!
-            entity* HitEntity = &GameState->Entities[Handle];
-            if(HitEntity->Active && !HitEntity->Dead && (Entity->Type == Entity_Enemy && HitEntity->Type == Entity_Player) || (Entity->Type == Entity_Player && HitEntity->Type == Entity_Enemy))
-                Hit(GameState,  Renderer, SoundQueue, Entity, HitEntity);
-        }
-    }
-    
-    Entity->Velocity.x = GetInputX(InputController) * 10.0f;
-    Entity->Velocity.y = GetInputY(InputController) * 10.0f;
-    
-    Entity->Position += math::v2(Entity->Velocity.x * DeltaTime, Entity->Velocity.y * DeltaTime);
-    Entity->Position = math::v2(Entity->Position.x, Max(0.0f, Entity->Position.y));
+    Entity->Position += math::v3(Entity->Velocity.x * DeltaTime, Entity->Velocity.y * DeltaTime, Entity->Velocity.z * DeltaTime);
+    Entity->Position = math::v3(Entity->Position.x, Entity->Position.y, Entity->Position.z);
     
     // Update camera if centered on player
-    Renderer.Cameras[GameState->GameCameraHandle].CenterTarget = ToIsometric(Entity->Position);
-}
-
-static void UpdateWeapon(entity* Entity, game_state* GameState, renderer& Renderer, sound_queue* SoundQueue, r64 DeltaTime)
-{
-    b32 IsAttacking = Entity->IsAttacking;
-    
-    switch(Entity->Type)
-    {
-        case Entity_Player:
-        {
-            auto WeaponColliderInfo = Entity->WeaponColliderInfo;
-            
-            switch(Entity->LookDirection)
-            {
-                case North:
-                {
-                    Entity->Weapon.CollisionAABB.Offset = math::v2(WeaponColliderInfo.OffsetUp.x, WeaponColliderInfo.OffsetUp.y);
-                    Entity->Weapon.CollisionAABB.Extents = math::v2(WeaponColliderInfo.ExtentsUp.x, WeaponColliderInfo.ExtentsUp.y);
-                }
-                break;
-                case South:
-                {
-                    Entity->Weapon.CollisionAABB.Offset = math::v2(WeaponColliderInfo.OffsetDown.x, WeaponColliderInfo.OffsetDown.y);
-                    Entity->Weapon.CollisionAABB.Extents = math::v2(WeaponColliderInfo.ExtentsDown.x, WeaponColliderInfo.ExtentsDown.y);
-                }
-                break;
-                case West:
-                {
-                    Entity->Weapon.CollisionAABB.Offset = math::v2(WeaponColliderInfo.OffsetLeft.x, WeaponColliderInfo.OffsetLeft.y);
-                    Entity->Weapon.CollisionAABB.Extents = math::v2(WeaponColliderInfo.ExtentsLeft.x, WeaponColliderInfo.ExtentsLeft.y);
-                }
-                break;
-                case East:
-                {
-                    Entity->Weapon.CollisionAABB.Offset = math::v2(WeaponColliderInfo.OffsetRight.x, WeaponColliderInfo.OffsetRight.y);
-                    Entity->Weapon.CollisionAABB.Extents = math::v2(WeaponColliderInfo.ExtentsRight.x, WeaponColliderInfo.ExtentsRight.y);
-                }
-                break;
-            }
-        }
-        break;
-        case Entity_Enemy:
-        {
-            auto WeaponColliderInfo = Entity->WeaponColliderInfo;
-            
-            switch(Entity->LookDirection)
-            {
-                case North:
-                {
-                    Entity->Weapon.CollisionAABB.Offset = math::v2(WeaponColliderInfo.OffsetUp.x, WeaponColliderInfo.OffsetUp.y);
-                    Entity->Weapon.CollisionAABB.Extents = math::v2(WeaponColliderInfo.ExtentsUp.x, WeaponColliderInfo.ExtentsUp.y);
-                }
-                break;
-                case South:
-                {
-                    Entity->Weapon.CollisionAABB.Offset = math::v2(WeaponColliderInfo.OffsetDown.x, WeaponColliderInfo.OffsetDown.y);
-                    Entity->Weapon.CollisionAABB.Extents = math::v2(WeaponColliderInfo.ExtentsDown.x, WeaponColliderInfo.ExtentsDown.y);
-                }
-                break;
-                case West:
-                {
-                    Entity->Weapon.CollisionAABB.Offset = math::v2(WeaponColliderInfo.OffsetLeft.x, WeaponColliderInfo.OffsetLeft.y);
-                    Entity->Weapon.CollisionAABB.Extents = math::v2(WeaponColliderInfo.ExtentsLeft.x, WeaponColliderInfo.ExtentsLeft.y);
-                }
-                break;
-                case East:
-                {
-                    Entity->Weapon.CollisionAABB.Offset = math::v2(WeaponColliderInfo.OffsetRight.x, WeaponColliderInfo.OffsetRight.y);
-                    Entity->Weapon.CollisionAABB.Extents = math::v2(WeaponColliderInfo.ExtentsRight.x, WeaponColliderInfo.ExtentsRight.y);
-                }
-                break;
-            }
-        }
-        break;
-    }
-    
-    Entity->Weapon.CollisionAABB.Center = math::v2(Entity->Position.x + Entity->Weapon.Center.x * Entity->Weapon.Scale.x + Entity->Weapon.CollisionAABB.Offset.x, Entity->Position.y + Entity->Weapon.Center.y * Entity->Weapon.Scale.y + Entity->Weapon.CollisionAABB.Offset.y);
-    
-    if(IsAttacking && Entity->AnimationInfo.FrameIndex >= Entity->AttackLowFrameIndex && Entity->AnimationInfo.FrameIndex <= Entity->AttackHighFrameIndex)
-    {
-        hit_tile_extents HitExtents = Entity->HitExtents[Entity->LookDirection];
-        
-        for(i32 X = HitExtents.StartX; X < HitExtents.EndX; X++)
-        {
-            for(i32 Y = HitExtents.StartY; Y < HitExtents.EndY; Y++)
-            {
-                if(Entity->CurrentTile.x + X >= 0 && Entity->CurrentTile.y + Y >= 0 && Entity->CurrentTile.x + X < GameState->CurrentLevel.Tilemap.Width && Entity->CurrentTile.y + Y < GameState->CurrentLevel.Tilemap.Height)
-                {
-                    i32 Handle = GameState->EntityTilePositions[Entity->CurrentTile.x + X][Entity->CurrentTile.y + Y] - 1;
-                    
-                    if(Handle >= 0 && Handle < GameState->EntityCount)
-                    {
-                        entity* HitEntity = &GameState->Entities[Handle];
-                        if(HitEntity->Active && !HitEntity->Dead && (Entity->Type == Entity_Enemy && HitEntity->Type == Entity_Player) || (Entity->Type == Entity_Player && HitEntity->Type == Entity_Enemy))
-                            Hit(GameState, Renderer, SoundQueue, Entity, HitEntity);
-                    }
-                }
-            }
-        }
-        
-        //collision_info CollisionInfo;
-        //CheckWeaponCollision(GameState, &Entity->Weapon, &CollisionInfo);
-        
-        /*for(i32 Index = 0; Index < CollisionInfo.OtherCount; Index++)
-        {
-        if((Entity->Type == Entity_Player && CollisionInfo.Other[Index]->Type == Entity_Enemy && CollisionInfo.Other[Index]->Enemy.AIState != AI_Dying) ||
-        (Entity->Type == Entity_Enemy && CollisionInfo.Other[Index]->Type == Entity_Player && !CollisionInfo.Other[Index]->Player.IsDashing))
-        {
-        if(Entity->AnimationInfo.FrameIndex >= Entity->AttackLowFrameIndex && Entity->AnimationInfo.FrameIndex <= Entity->AttackHighFrameIndex)
-        {
-        Hit(GameState, Entity, CollisionInfo.Other[Index]);
-        }
-        }
-        }*/
-    }
+    Renderer.Cameras[GameState->GameCameraHandle].CenterTarget = Entity->Position;
 }
 
 static void UpdateAI(entity* Entity, game_state* GameState, sound_queue* SoundQueue, r64 DeltaTime)
@@ -1758,32 +1392,6 @@ static void UpdateAI(entity* Entity, game_state* GameState, sound_queue* SoundQu
     }
 }
 
-static void DetermineLoot(game_state* GameState, entity* Entity)
-{
-    b32 HasLoot = false;
-    loot Loot;
-    i32 RNG = rand() % 100;
-    if(RNG > 90)
-    {
-        HasLoot = true;
-        Loot.Type = Loot_Checkpoint;
-    }
-    else if(RNG > 0 && RNG < 10)
-    {
-        HasLoot = true;
-        Loot.Type = Loot_LevelItem;
-    }
-    
-    if(HasLoot)
-    {
-        Entity->Enemy.HasLoot = HasLoot;
-        SpawnLoot(GameState, Entity->Position, &Loot.OwnerHandle);
-        
-        Loot.Handle = GameState->CurrentLootCount;
-        GameState->CurrentLoot[GameState->CurrentLootCount++] = Loot;
-    }
-}
-
 static void UpdateSkeleton(entity* Entity, game_state* GameState, sound_queue* SoundQueue, r64 DeltaTime)
 {
     auto& Enemy = Entity->Enemy;
@@ -1803,7 +1411,6 @@ static void UpdateSkeleton(entity* Entity, game_state* GameState, sound_queue* S
                 Entity->AnimationInfo.FreezeFrame = true;
                 Enemy.AIState = AI_Dying;
                 SaveGame(GameState);
-                DetermineLoot(GameState,Entity);
             }
             else if(strcmp(Entity->CurrentAnimation->Name, "skeleton_attack") != 0 && Enemy.AIState != AI_Dying)
             {
@@ -1818,48 +1425,17 @@ static void UpdateSkeleton(entity* Entity, game_state* GameState, sound_queue* S
             }
         }
         
-        Entity->Velocity = math::v2(0,0); //@Cleanup: This is not good. Do this in AI
+        Entity->Velocity = math::v3(0, 0, 0); //@Cleanup: This is not good. Do this in AI
         
         //UpdateAI(Entity,GameState, SoundQueue,DeltaTime);
         
         Entity->Position.x += Entity->Velocity.x * (r32)DeltaTime;
         Entity->Position.y += Entity->Velocity.y * (r32)DeltaTime;
-        
-        math::v2 Direction = math::Normalize(Player->Position - Entity->Position);
-        
-        if(Entity->Enemy.AIState != AI_Attacking && !Entity->IsAttacking)
-        {
-            math::v2 Direction = math::Normalize(Player->Position - Entity->Position);
-            
-            if(Abs(Direction.x) < 0.6f)
-            {
-                if(Direction.y > 0)
-                {
-                    Entity->LookDirection = North;
-                }
-                else
-                {
-                    Entity->LookDirection = South;
-                }
-            }
-            else
-            {
-                if(Direction.x < 0)
-                    Entity->LookDirection = West;
-                else
-                    Entity->LookDirection = East;
-            }
-            
-            Entity->IsFlipped = Direction.x < 0;
-        }
-        else if(!TimerDone(GameState, Entity->AttackMoveTimer))
-        {
-            Entity->IsFlipped = Entity->Velocity.x < 0;
-        }
+        Entity->Position.z += Entity->Velocity.z * (r32)DeltaTime;
         
         render_entity* RenderEntity = &GameState->RenderEntities[Entity->RenderEntityHandle];
         
-        Entity->Velocity = math::v2(0,0);
+        Entity->Velocity = math::v3(0, 0, 0);
         
         Entity->Hit = false;
         
@@ -1876,34 +1452,11 @@ static void UpdateStaticEntity(entity* Entity, game_state* GameState, r64 DeltaT
     CheckCollision(GameState, Entity, &CollisionInfo);
 }
 
-static void UpdateTilePosition(entity& Entity, game_state* GameState, r64 DeltaTime)
-{
-    if(Entity.Type == Entity_Player)
-    {
-        GameState->EntityTilePositions[(i32)Entity.CurrentDestination.x][(i32)Entity.CurrentDestination.y] = Entity.EntityIndex + 1;
-    }
-    else
-    {
-        i32 X = (i32)Entity.Position.x;
-        i32 Y = (i32)Entity.Position.y;
-        
-        if(X >= 0 && X < GameState->CurrentLevel.Tilemap.Width && Y >= 0 && Y < GameState->CurrentLevel.Tilemap.Height)
-        {
-            GameState->EntityTilePositions[X][Y] = Entity.EntityIndex + 1;
-        }
-    }
-}
-
 static void UpdateGeneral(entity* Entity, game_state* GameState, r64 DeltaTime)
 {
     GameState->RenderEntities[Entity->RenderEntityHandle].Rendered = math::Distance(Entity->Position, GameState->Entities[0].Position) < 15;
     
     GameState->EntityTilePositions[Entity->CurrentTile.x][Entity->CurrentTile.y] = 0;
-    
-    if(Entity->LightSourceHandle != -1)
-    {
-        GameState->LightSources[Entity->LightSourceHandle].Pointlight.Position = math::v2(Entity->Position.x, Entity->Position.y);
-    }
     
     auto& RenderEntity = GameState->RenderEntities[Entity->RenderEntityHandle];
     
@@ -2003,7 +1556,6 @@ static void UpdateEntities(game_state* GameState, renderer& Renderer, input_cont
                     if(!GameState->GodModeOn)
                     {
                         UpdatePlayer(Entity, GameState, Renderer, SoundQueue, InputController, DeltaTime);
-                        //UpdateWeapon(Entity, GameState, SoundQueue, DeltaTime);
                     }
                 }
                 break;
@@ -2014,11 +1566,6 @@ static void UpdateEntities(game_state* GameState, renderer& Renderer, input_cont
                         case Enemy_Skeleton:
                         {
                             UpdateSkeleton(Entity, GameState, SoundQueue, DeltaTime);
-                            
-                            if(!Entity->Dead)
-                            {
-                                UpdateWeapon(Entity, GameState, Renderer, SoundQueue, DeltaTime);
-                            }
                         }
                         break;
                     }
@@ -2032,12 +1579,6 @@ static void UpdateEntities(game_state* GameState, renderer& Renderer, input_cont
                 }
                 break;
             }
-            
-            //if(!GameState->ClearTilePositionFrame)
-            //{
-            if(Entity->Active && !Entity->Dead)
-                UpdateTilePosition(*Entity, GameState, DeltaTime);
-            //}
             
             if(Entity->Active && Entity->CurrentAnimation && Entity->AnimationInfo.Playing)
                 TickAnimation(&Entity->AnimationInfo, Entity->CurrentAnimation, DeltaTime);

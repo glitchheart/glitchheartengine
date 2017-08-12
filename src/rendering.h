@@ -130,7 +130,7 @@ struct camera
     i32 ViewportHeight;
     r32 Zoom;
     math::v3 Center;
-    math::v2 CenterTarget;
+    math::v3 CenterTarget;
     r32 FollowSpeed;
     math::m4 ViewMatrix;
     math::m4 ProjectionMatrix;

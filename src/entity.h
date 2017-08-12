@@ -285,8 +285,7 @@ struct entity
     
     math::v3 Position;
     math::v2i CurrentTile;
-    math::v2 CurrentDestination;
-    i32 FramesForDestination;
+    
     math::v3 Center;
     math::v3 Rotation;
     
@@ -464,7 +463,7 @@ struct entity
             b32 WanderingForward;
             
             timer DefendingTimer;
-            math::v2 LastAttackMoveDirection;
+            math::v3 LastAttackMoveDirection;
             
             union
             {
