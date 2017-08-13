@@ -602,8 +602,6 @@ extern "C" UPDATE(Update)
                     {
                         auto Direction = math::Normalize(GameCamera.CenterTarget - math::v3(Center.x, Center.y, Center.z));
                         
-                        
-                        
                         Center = math::v3(Center.x + Direction.x * GameCamera.FollowSpeed * DeltaTime, Center.y + Direction.y  * GameCamera.FollowSpeed * DeltaTime,Center.z + Direction.z * GameCamera.FollowSpeed * DeltaTime);
                         
                         GameCamera.Center = Center;
