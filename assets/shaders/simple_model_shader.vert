@@ -10,10 +10,14 @@ uniform mat4 model;
 uniform vec4 color;
 
 out vec4 c;
+out vec3 n;
+out vec3 pos;
 
 void main()
 {
     gl_Position = projection * view * model * vec4(position, 1.0);
 	float DepthColor = position.z;
 	c = vec4(DepthColor, DepthColor, DepthColor, color.a);
+	n = normal;
+	pos = vec3(model * vec4(position, 1.0));
 }
