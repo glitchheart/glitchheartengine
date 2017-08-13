@@ -174,11 +174,9 @@
                                                   r32* Normals = (r32*)malloc(sizeof(r32) * NormalSize * 3);
                                                   r32* UVs = (r32*)malloc(sizeof(r32) * UVSize * 2);
                                                   
-                                                  Data.VertexBuffer = (r32*)malloc(sizeof(r32) * (VertexSize * 3 + NormalSize * 3 + UVSize * 2));
-                                                  Data.IndexBuffer = (u32*)malloc(sizeof(u32) * IndexSize * 3);
-                                                  
-                                                  Data.VertexBufferSize = VertexSize * 3 + NormalSize * 3 + UVSize * 2;
-                                                  Data.IndexBufferSize = IndexSize * 3;
+                                                  u32* VertexIndices = (u32*)malloc(sizeof(u32) * IndexSize * 3);
+                                                  u32* NormalIndices = (u32*)malloc(sizeof(u32) * IndexSize * 3);
+                                                  u32* UVIndices = (u32*)malloc(sizeof(u32) * IndexSize * 3);
                                                   
                                                   rewind(File);
                                                   
@@ -186,7 +184,7 @@
                                                   i32 NormalIndex = 0;
                                                   i32 UVIndex = 0;
                                                   
-                                                  i32 IncrementCount = 0;
+                                                  i32 IndexCount = 0;
                                                   
                                                   while(fgets(LineBuffer, 256, File))
                                                   {
@@ -209,21 +207,10 @@
                                                       {
                                                           if(NormalSize > 0 && UVSize > 0)
                                                           {
-                                                              math::v3i VertexIndex;
-                                                              math::v3i NormalIndex;
-                                                              math::v3i UVIndex;
-                                                              
                                                               sscanf(LineBuffer, "f %d/%d/%d %d/%d/%d %d/%d/%d\n", 
-                                                                     &VertexIndex.x, &NormalIndex.x, &UVIndex.x, 
-                                                                     &VertexIndex.y, &NormalIndex.y, &UVIndex.y, 
-                                                                     &VertexIndex.z, &NormalIndex.z, &UVIndex.z);
-                                                              
-                                                              *Data.IndexBuffer++ = (u32)VertexIndex.x - 1;
-                                                              *Data.IndexBuffer++ = (u32)VertexIndex.y - 1;
-                                                              *Data.IndexBuffer++ = (u32)VertexIndex.z - 1;
-                                                              
-                                                              IncrementCount += 3;
-                                                              printf("%d\n", IncrementCount);
+                                                                     &VertexIndices[IndexCount], &NormalIndices[IndexCount], &UVIndices[IndexCount], 
+                                                                     &VertexIndices[IndexCount + 1], &NormalIndices[IndexCount + 1], &UVIndices[IndexCount + 1], 
+                                                                     &VertexIndices[IndexCount + 2], &NormalIndices[IndexCount + 2], &UVIndices[IndexCount + 2]);
                                                           }
                                                           else if(UVSize > 0)
                                                           {
@@ -235,9 +222,9 @@
                                                                      &VertexIndex.y, &UVIndex.x,
                                                                      &VertexIndex.z, &UVIndex.x);
                                                               
-                                                              *Data.IndexBuffer++ = VertexIndex.x - 1;
-                                                              *Data.IndexBuffer++ = VertexIndex.y - 1;
-                                                              *Data.IndexBuffer++ = VertexIndex.z - 1;
+                                                              //*Data.IndexBuffer++ = VertexIndex.x - 1;
+                                                              //*Data.IndexBuffer++ = VertexIndex.y - 1;
+                                                              //*Data.IndexBuffer++ = VertexIndex.z - 1;
                                                           }
                                                           else if(NormalSize > 0)
                                                           {
@@ -263,63 +250,141 @@
                                                                      &VertexIndex.y,
                                                                      &VertexIndex.z);
                                                               
-                                                              *Data.IndexBuffer++ = VertexIndex.x - 1;
-                                                              *Data.IndexBuffer++ = VertexIndex.y - 1;
-                                                              *Data.IndexBuffer++ = VertexIndex.z - 1;
+                                                              //*Data.IndexBuffer++ = VertexIndex.x - 1;
+                                                              //*Data.IndexBuffer++ = VertexIndex.y - 1;
+                                                              //*Data.IndexBuffer++ = VertexIndex.z - 1;
                                                           }
+                                                          IndexCount++;
                                                       }
                                                   }
                                                   
                                                   fclose(File);
                                                   
-                                                  for(i32 Index = 0; Index < VertexSize; Index++)
+                                                  if(NormalSize == VertexSize || UVSize == VertexSize || NormalSize == 0 && UVSize == 0)
                                                   {
-                                                      if(Data.HasNormals && Data.HasUVs)
+                                                      Data.VertexBuffer = (r32*)malloc(sizeof(r32) * (VertexSize * 3 + NormalSize * 3 + UVSize * 2));
+                                                      Data.IndexBuffer = (u32*)malloc(sizeof(u32) * IndexSize);
+                                                      Data.VertexBufferSize = VertexSize * 3 + NormalSize * 3 + UVSize * 2;
+                                                      Data.IndexBufferSize = IndexSize;
+                                                      
+                                                      memcpy(Data.IndexBuffer, VertexIndices, sizeof(u32) * IndexSize * 3);
+                                                      
+                                                      for(i32 Index = 0; Index < VertexSize; Index++)
                                                       {
-                                                          *Data.VertexBuffer++ = Vertices[Index * 8];
-                                                          *Data.VertexBuffer++ = Vertices[Index * 8 + 1];
-                                                          *Data.VertexBuffer++ = Vertices[Index * 8 + 2];
-                                                          
-                                                          *Data.VertexBuffer++ = Normals[Index * 8];
-                                                          *Data.VertexBuffer++ = Normals[Index * 8 + 1];
-                                                          *Data.VertexBuffer++ = Normals[Index * 8 + 2];
-                                                          
-                                                          *Data.VertexBuffer++ = UVs[Index * 8];
-                                                          *Data.VertexBuffer++ = UVs[Index * 8 + 1];
+                                                          if(Data.HasNormals && Data.HasUVs)
+                                                          {
+                                                              *Data.VertexBuffer++ = Vertices[Index * 8];
+                                                              *Data.VertexBuffer++ = Vertices[Index * 8 + 1];
+                                                              *Data.VertexBuffer++ = Vertices[Index * 8 + 2];
+                                                              
+                                                              *Data.VertexBuffer++ = Normals[Index * 8];
+                                                              *Data.VertexBuffer++ = Normals[Index * 8 + 1];
+                                                              *Data.VertexBuffer++ = Normals[Index * 8 + 2];
+                                                              
+                                                              *Data.VertexBuffer++ = UVs[Index * 8];
+                                                              *Data.VertexBuffer++ = UVs[Index * 8 + 1];
+                                                          }
+                                                          else if(Data.HasNormals)
+                                                          {
+                                                              *Data.VertexBuffer++ = Vertices[Index * 6];
+                                                              *Data.VertexBuffer++ = Vertices[Index * 6 + 1];
+                                                              *Data.VertexBuffer++ = Vertices[Index * 6 + 2];
+                                                              
+                                                              *Data.VertexBuffer++ = Normals[Index * 6];
+                                                              *Data.VertexBuffer++ = Normals[Index * 6 + 1];
+                                                              *Data.VertexBuffer++ = Normals[Index * 6 + 2];
+                                                          }
+                                                          else if(Data.HasUVs)
+                                                          {
+                                                              *Data.VertexBuffer++ = Vertices[Index * 5];
+                                                              *Data.VertexBuffer++ = Vertices[Index * 5 + 1];
+                                                              *Data.VertexBuffer++ = Vertices[Index * 5 + 2];
+                                                              
+                                                              *Data.VertexBuffer++ = UVs[Index * 5];
+                                                              *Data.VertexBuffer++ = UVs[Index * 5 + 1];
+                                                          }
+                                                          else
+                                                          {
+                                                              *Data.VertexBuffer++ = Vertices[Index * 3];
+                                                              *Data.VertexBuffer++ = Vertices[Index * 3 + 1];
+                                                              *Data.VertexBuffer++ = Vertices[Index * 3 + 2];
+                                                          }
                                                       }
-                                                      else if(Data.HasNormals)
+                                                      
+                                                      Data.VertexBuffer -= Data.VertexBufferSize;
+                                                      Data.IndexBuffer -= Data.IndexBufferSize;
+                                                  }
+                                                  else
+                                                  {
+                                                      Data.VertexBuffer = (r32*)malloc(sizeof(r32) * VertexSize * 3);
+                                                      Data.IndexBuffer = (u32*)calloc(IndexSize, sizeof(u32));
+                                                      
+                                                      u32 ActualVertexCount = 0;
+                                                      u32 ActualIndexSize = 0;
+                                                      
+                                                      for(i32 I = 0; I < IndexSize; I++)
                                                       {
-                                                          *Data.VertexBuffer++ = Vertices[Index * 6];
-                                                          *Data.VertexBuffer++ = Vertices[Index * 6 + 1];
-                                                          *Data.VertexBuffer++ = Vertices[Index * 6 + 2];
+                                                          u32 VIndex = VertexIndices[I];
+                                                          u32 NIndex = NormalIndices[I];
+                                                          u32 UVIndex = UVIndices[I];
                                                           
-                                                          *Data.VertexBuffer++ = Normals[Index * 6];
-                                                          *Data.VertexBuffer++ = Normals[Index * 6 + 1];
-                                                          *Data.VertexBuffer++ = Normals[Index * 6 + 2];
-                                                      }
-                                                      else if(Data.HasUVs)
-                                                      {
-                                                          *Data.VertexBuffer++ = Vertices[Index * 5];
-                                                          *Data.VertexBuffer++ = Vertices[Index * 5 + 1];
-                                                          *Data.VertexBuffer++ = Vertices[Index * 5 + 2];
+                                                          math::v3 CurrentVertex(Vertices[VIndex * 3], Vertices[VIndex * 3 + 1], Vertices[VIndex * 3 + 2]);
+                                                          math::v3 CurrentNormal(Normals[NIndex * 3], Normals[NIndex * 3 + 1], Normals[NIndex * 3 + 2]);
+                                                          math::v2 CurrentUV(UVs[UVIndex * 2], UVs[UVIndex * 2 + 1]);
                                                           
-                                                          *Data.VertexBuffer++ = UVs[Index * 5];
-                                                          *Data.VertexBuffer++ = UVs[Index * 5 + 1];
+                                                          b32 Found = false;
+                                                          u32 ExistingIndex = 0;
+                                                          
+                                                          for(u32 J = 0; J < ActualIndexSize; J++)
+                                                          {
+                                                              u32 CurrentIndex = Data.IndexBuffer[J];
+                                                              
+                                                              if(Abs(Data.VertexBuffer[CurrentIndex * 8] - CurrentVertex.x) < 0.01f
+                                                                 && Abs(Data.VertexBuffer[CurrentIndex * 8 + 1] - CurrentVertex.y) < 0.01f
+                                                                 && Abs(Data.VertexBuffer[CurrentIndex * 8 + 2] - CurrentVertex.z) < 0.01f 
+                                                                 && Abs(Data.VertexBuffer[CurrentIndex * 8 + 3] - CurrentNormal.x) < 0.01f
+                                                                 && Abs(Data.VertexBuffer[CurrentIndex * 8 + 4] - CurrentNormal.y) < 0.01f
+                                                                 && Abs(Data.VertexBuffer[CurrentIndex * 8 + 5] - CurrentNormal.z) < 0.01f
+                                                                 && Abs(Data.VertexBuffer[CurrentIndex * 8 + 6] - CurrentUV.x) < 0.01f
+                                                                 && Abs(Data.VertexBuffer[CurrentIndex * 8 + 7] - CurrentUV.y) < 0.01f)
+                                                              {
+                                                                  Found = true;
+                                                                  ExistingIndex = CurrentIndex;
+                                                                  break;
+                                                              }
+                                                          }
+                                                          
+                                                          if(Found)
+                                                          {
+                                                              Data.IndexBuffer[ActualIndexSize] = ExistingIndex;
+                                                              Found = false;
+                                                          }
+                                                          else
+                                                          {
+                                                              Data.VertexBuffer[ActualVertexCount * 8] = CurrentVertex.x;
+                                                              Data.VertexBuffer[ActualVertexCount * 8 + 1] = CurrentVertex.y;
+                                                              Data.VertexBuffer[ActualVertexCount * 8 + 2] = CurrentVertex.z;
+                                                              Data.VertexBuffer[ActualVertexCount * 8 + 3] = CurrentNormal.x;
+                                                              Data.VertexBuffer[ActualVertexCount * 8 + 4] = CurrentNormal.y;
+                                                              Data.VertexBuffer[ActualVertexCount * 8 + 5] = CurrentNormal.z;
+                                                              Data.VertexBuffer[ActualVertexCount * 8 + 6] = CurrentUV.x;
+                                                              Data.VertexBuffer[ActualVertexCount * 8 + 7] = CurrentUV.y;
+                                                              
+                                                              Data.IndexBuffer[ActualIndexSize] = ActualVertexCount;
+                                                              
+                                                              ActualVertexCount++;
+                                                          }
+                                                          
+                                                          ActualIndexSize++;
                                                       }
-                                                      else
-                                                      {
-                                                          *Data.VertexBuffer++ = Vertices[Index * 3];
-                                                          *Data.VertexBuffer++ = Vertices[Index * 3 + 1];
-                                                          *Data.VertexBuffer++ = Vertices[Index * 3 + 2];
-                                                      }
+                                                      
+                                                      Data.VertexBufferSize = ActualVertexCount * 8;
+                                                      Data.IndexBufferSize = ActualIndexSize;
                                                   }
                                                   
                                                   free(Vertices);
                                                   free(Normals);
                                                   free(UVs);
-                                                  
-                                                  Data.VertexBuffer -= Data.VertexBufferSize;
-                                                  Data.IndexBuffer -= Data.IndexBufferSize;
                                                   
                                                   Renderer.Buffers[Renderer.BufferCount - 1] = Data;
                                               }
