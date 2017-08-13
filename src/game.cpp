@@ -118,11 +118,13 @@ static void PushEntityRenderCommands(renderer& Renderer, game_state& GameState)
             math::v3 Scale = math::v3(WidthInUnits * EntityScale, HeightInUnits * EntityScale, 1.0f);
             
             auto CorrectPos = Position;
-            
+            /*
             CorrectPos.x -= CurrentAnimation->Center.x * Scale.x;
             CorrectPos.y -= CurrentAnimation->Center.y * Scale.y;
+            */
             
             CurrentPosition = CorrectPos;
+            
             
             CurrentScale = Scale;
             
@@ -258,16 +260,15 @@ extern "C" UPDATE(Update)
         GameCamera.Zoom = GameState->InitialZoom;
         GameCamera.ViewportWidth = Renderer.WindowWidth;
         GameCamera.ViewportHeight = Renderer.WindowHeight;
-        GameCamera.FollowSpeed = 10.0f; 
+        GameCamera.FollowSpeed = 3.5f; 
         GameCamera.FadingSpeed = 0.6f;
         
         StartFade(GameCamera, Fading_In, 0.6f, math::v3(0, 0, 0), 1.0f, 0.0f);
         
         // @Incomplete: This is not the right value, it is only set so high to remove smooth following as of now, since it needs to be done a little differently
         
-        GameCamera.Center = math::v3(GameState->Entities[0].Position.x, GameState->Entities[0].Position.y, GameCamera.Center.z); // Set center to player's position!
+        GameCamera.Center = math::v3(GameState->Entities[0].Position.x, GameState->Entities[0].Position.y, GameState->Entities[0].Position.z); // Set center to player's position!
         GameCamera.CenterTarget = GameState->Entities[0].Position;
-        
         
         GameState->IsInitialized = true;
         GameMemory->IsInitialized = true;
@@ -521,7 +522,8 @@ extern "C" UPDATE(Update)
         break;
     }
     
-    math::v3 Center = math::v3(GameCamera.CenterTarget.x, GameCamera.CenterTarget.y, 0);
+    //math::v3 Center = math::v3(GameCamera.CenterTarget.x, GameCamera.CenterTarget.y, GameCamera.CenterTarget.z);
+    math::v3 Center = GameCamera.Center;
     
     if(GameState->GodModeOn)
     {
@@ -600,9 +602,9 @@ extern "C" UPDATE(Update)
                     {
                         auto Direction = math::Normalize(GameCamera.CenterTarget - math::v3(Center.x, Center.y, Center.z));
                         
-                        Center = math::v3(GameState->Entities[0].Position.x, GameState->Entities[0].Position.y, 0);
                         
-                        // math::v2(Center.x + Direction.x * GameState->GameCamera.FollowSpeed * DeltaTime, Center.y + Direction.y  * GameState->GameCamera.FollowSpeed * DeltaTime);
+                        
+                        Center = math::v3(Center.x + Direction.x * GameCamera.FollowSpeed * DeltaTime, Center.y + Direction.y  * GameCamera.FollowSpeed * DeltaTime,Center.z + Direction.z * GameCamera.FollowSpeed * DeltaTime);
                         
                         GameCamera.Center = Center;
                     }
@@ -751,34 +753,15 @@ extern "C" UPDATE(Update)
                                               -100.0f,
                                               1000.0f);
     
-    auto EntityPos = GameState->Entities[0].Position;
-    
     GameCamera.ViewMatrix = math::m4(1.0f);
     
-    GameCamera.ViewMatrix = math::Translate(GameCamera.ViewMatrix, math::v3(-EntityPos.x + GameCamera.ViewportWidth / GameCamera.Zoom / 2,  -GameCamera.ViewportHeight / GameCamera.Zoom / 2,
-                                                                            -EntityPos.z));
+    GameCamera.ViewMatrix = math::Translate(GameCamera.ViewMatrix,math::v3(-GameCamera.Center.x - 0.5f, GameCamera.Center.y - 1.0f, -GameCamera.Center.z));
     
-    GameCamera.ViewMatrix = math::Rotate(GameCamera.ViewMatrix, 45.0f, math::v3(0, 1, 0));
-    GameCamera.ViewMatrix = math::Rotate(GameCamera.ViewMatrix, 35.264f, math::v3(1, 0, 0));
+    GameCamera.ViewMatrix = math::Rotate(GameCamera.ViewMatrix, 45.0f, math::v3(0,1,0));
+    GameCamera.ViewMatrix = math::Rotate(GameCamera.ViewMatrix, 35.264f, math::v3(1,0,0));
     
-    //GameCamera.ViewMatrix = math::Translate(GameCamera.ViewMatrix, math::v3(0.0f,0.0f,-50.0f));
+    GameCamera.ViewMatrix = math::Translate(GameCamera.ViewMatrix, math::v3(GameCamera.ViewportWidth / GameCamera.Zoom / 2.0f, GameCamera.ViewportHeight / GameCamera.Zoom / 2.0f,-50.0f));
     
-    
-    //Renderer.Camera.ProjectionMatrix = math::Perspective((Renderer.Camera.ViewportWidth / Renderer.Camera.Zoom) / (Renderer.Camera.ViewportHeight / Renderer.Camera.Zoom), 0.6f, 0.1f, 100.0f);
-    
-    /*
-    auto EntityPos = GameState->Entities[0].Position;
-    GameCamera.ViewMatrix = math::Translate(GameCamera.ViewMatrix,
-                                            math::v3(-EntityPos.x + GameCamera.ViewportWidth / GameCamera.Zoom / 2,
-                                                     EntityPos.z + GameCamera.ViewportHeight / GameCamera.Zoom / 2,
-                                                     -50.0f));*/
-    
-    /*
-    GameCamera.ViewMatrix = math::Translate(GameCamera.ViewMatrix,
-                                            math::v3(-20.0f + GameCamera.ViewportWidth / GameCamera.Zoom / 2,
-                                                     -40.0f + GameCamera.ViewportHeight / GameCamera.Zoom / 2,
-                                                     -50.0f));
-    */
     InputController->CurrentCharacter = 0;
     GameState->ClearTilePositionFrame = !GameState->ClearTilePositionFrame;
     GetActionButtonsForQueue(InputController);
