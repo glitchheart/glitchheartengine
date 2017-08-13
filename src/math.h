@@ -1117,25 +1117,6 @@ namespace math
             return Result;
         }*/
         
-        inline v3 operator*(v3& Vec)
-        {
-            v3 Result(0.0f);
-            Result.X = this->A * Vec.X + this->B * Vec.Y + this->C * Vec.Z + this->D * 1.0f;
-            Result.Y = this->E * Vec.X + this->F * Vec.Y + this->G * Vec.Z + this->H * 1.0f;
-            Result.Z = this->I * Vec.X + this->J * Vec.Y + this->K * Vec.Z + this->L * 1.0f;
-            return Result;
-        }
-        
-        inline v4 operator*(v4 Vec)
-        {
-            v4 Result(0.0f);
-            Result.X = this->A * Vec.X + this->B * Vec.Y + this->C * Vec.Z + this->D * Vec.W;
-            Result.Y = this->E * Vec.X + this->F * Vec.Y + this->G * Vec.Z + this->H * Vec.W;
-            Result.Z = this->I * Vec.X + this->J * Vec.Y + this->K * Vec.Z + this->L * Vec.W;
-            Result.W = this->M * Vec.X + this->N * Vec.Y + this->O * Vec.Z + this->P * Vec.W;
-            return Result;
-        }
-        
         inline m4 operator*(r32 S)
         {
             m4 Result(*this);
@@ -1160,6 +1141,31 @@ namespace math
         
     };
     
+    
+    inline v4 Transform(m4& M, const v4& V)
+    {
+        v4 R(0.0f);
+        
+        R.x = V.x * M[0][0] + V.y * M[0][1] + V.z * M[0][2] + V.w * M[0][3];
+        R.y = V.x * M[1][0] + V.y * M[1][1] + V.z * M[1][2] + V.w * M[1][3];
+        R.z = V.x * M[2][0] + V.y * M[2][1] + V.z * M[2][2] + V.w * M[2][3];
+        R.w = V.x * M[3][0] + V.y * M[3][1] + V.z * M[3][2] + V.w * M[3][3];
+        
+        return R;
+    }
+    
+    
+    inline v3 operator*(m4 M, const v3& V)
+    {
+        v3 R = Transform(M,v4(V,1.0f)).xyz;
+        return R;
+    }
+    
+    inline v4 operator*(m4 M, const v4& V)
+    {
+        v4 R = Transform(M,V);
+        return R;
+    }
     
     void PrintMatrix(m4 In)
     {
@@ -1459,22 +1465,10 @@ namespace math
     inline m4 Translate(m4 In, v3 Translate)
     {
         m4 Result(In);
-        m4 T(1.0f);
-        T.M14 = Translate.X;
-        T.M24 = Translate.Y;
-        T.M34 = Translate.Z;
-        Result = T * Result;
+        Result.M14 += Translate.X;
+        Result.M24 += Translate.Y;
+        Result.M34 += Translate.Z;
         return Result;
-    }
-    
-    inline r32 Deg2Rad(r32 D)
-    {
-        return D * 0.0175f;
-    }
-    
-    inline r32 Rad2Deg(r32 R)
-    {
-        return R * 57.296f;
     }
     
     inline m4 XRotate(r32 Angle)
