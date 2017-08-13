@@ -9,7 +9,7 @@ uniform vec2 textureSize;
 uniform float isUI;
 
 in vec2 texcoord;
-in vec2 pos;
+in vec3 pos;
 out vec2 Texcoord;
 out vec2 TextureSize;
 out vec2 TextureOffset;
@@ -24,5 +24,5 @@ void main()
 	if(isUI == 1.0)
 		gl_Position = Model * vec4(pos.xy, 0.0, 1.0);
 	else
-    	gl_Position = Projection * View * Model * vec4(pos.xy, 0.0, 1.0);
+    	gl_Position = Projection * View * Model * vec4(pos.xyz, 1.0);
 }
