@@ -174,10 +174,10 @@ extern "C" UPDATE(Update)
     {
         GameState->TESTMODEL = (model*)malloc(sizeof(model));
         
-        LoadOBJFile(Renderer, "../assets/models/pumpkin.obj", GameState->TESTMODEL);
+        LoadOBJFile(Renderer, "../assets/models/car.obj", GameState->TESTMODEL);
         
         GameState->TESTMODEL->Position = math::v3(0, 0, 0);
-        GameState->TESTMODEL->Scale = math::v3(1, 1, 1);
+        GameState->TESTMODEL->Scale = math::v3(0.01, 0.01, 0.01);
         
         if(GameState->ShouldReload || GameMemory->ShouldReload)
         {
@@ -752,6 +752,8 @@ extern "C" UPDATE(Update)
                                               1000.0f);
     
     GameCamera.ViewMatrix = math::m4(1.0f);
+    
+    GameCamera.Center = GameState->TESTMODEL->Position;
     
     GameCamera.ViewMatrix = math::Translate(GameCamera.ViewMatrix,math::v3(-GameCamera.Center.x - 0.5f, GameCamera.Center.y - 1.0f, -GameCamera.Center.z));
     

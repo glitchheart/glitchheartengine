@@ -1243,30 +1243,33 @@ static void RenderSprite(const render_command& Command, render_state& RenderStat
 
 static void RenderModel(const render_command& Command, render_state& RenderState, math::m4 Projection, math::m4 View)
 {
-    buffer Buffer = RenderState.Buffers[Command.Model.BufferHandle];
-    
-    glBindVertexArray(Buffer.VAO);
-    
-    // @Incomplete: Missing shader switching
-    auto Shader = RenderState.SimpleModelShader;
-    UseShader(&Shader);
-    
-    math::m4 Model(1.0f);
-    Model = math::Scale(Model, math::v3(2, 2, 2));
-    
-    Model = math::YRotate(Command.Rotation.y) * Model;
-    Model = math::XRotate(Command.Rotation.x) * Model;
-    Model = math::ZRotate(Command.Rotation.z) * Model;
-    
-    Model = math::Translate(Model, Command.Model.Position);
-    
-    SetMat4Uniform(Shader.Program, "projection", Projection);
-    SetMat4Uniform(Shader.Program, "view", View);
-    SetMat4Uniform(Shader.Program, "model", Model);
-    SetVec4Uniform(Shader.Program, "color", math::rgba(1.0f, 1.0f, 1.0f, 1.0f));
-    
-    glDrawElements(GL_TRIANGLES, Buffer.IndexBufferSize, GL_UNSIGNED_INT, (void*)0);
-    glBindVertexArray(0);
+    for(i32 HandleIndex = 0; HandleIndex < Command.Model.HandleCount; HandleIndex++)
+    {
+        buffer Buffer = RenderState.Buffers[Command.Model.BufferHandles[HandleIndex]];
+        
+        glBindVertexArray(Buffer.VAO);
+        
+        // @Incomplete: Missing shader switching
+        auto Shader = RenderState.SimpleModelShader;
+        UseShader(&Shader);
+        
+        math::m4 Model(1.0f);
+        Model = math::Scale(Model, Command.Scale);
+        
+        Model = math::YRotate(Command.Rotation.y) * Model;
+        Model = math::XRotate(Command.Rotation.x) * Model;
+        Model = math::ZRotate(Command.Rotation.z) * Model;
+        
+        Model = math::Translate(Model, Command.Position);
+        
+        SetMat4Uniform(Shader.Program, "projection", Projection);
+        SetMat4Uniform(Shader.Program, "view", View);
+        SetMat4Uniform(Shader.Program, "model", Model);
+        SetVec4Uniform(Shader.Program, "color", math::rgba(1.0f, 1.0f, 1.0f, 1.0f));
+        
+        glDrawElements(GL_TRIANGLES, Buffer.IndexBufferSize, GL_UNSIGNED_INT, (void*)0);
+        glBindVertexArray(0);
+    }
 }
 
 static void RenderBuffer(const render_command& Command, render_state& RenderState, renderer& Renderer,  math::m4 Projection, math::m4 View)

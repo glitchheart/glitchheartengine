@@ -2,6 +2,7 @@
 #define RENDERING_H
 
 #define PIXELS_PER_UNIT 32
+#define MAX_MESHES 100
 
 enum Shader_Type
 {
@@ -50,13 +51,20 @@ struct shader
     u32 FragmentShader;
 };
 
+struct mesh
+{
+    i32 BufferHandle;
+};
+
 struct model
 {
     math::v3 Position;
     math::v3 Scale;
     math::v3 Rotation;
     math::rgba Color;
-    i32 BufferHandle;
+    
+    mesh Meshes[MAX_MESHES];
+    i32 MeshCount;
 };
 
 struct render_command
@@ -65,6 +73,8 @@ struct render_command
     Shader_Type ShaderType;
     b32 IsUI;
     
+    math::v3 Position;
+    math::v3 Scale;
     math::v3 Rotation;
     
     union
@@ -107,9 +117,8 @@ struct render_command
         } Buffer;
         struct
         {
-            math::v3 Position;
-            math::v3 Scale;
-            i32 BufferHandle;
+            i32 BufferHandles[MAX_MESHES];
+            i32 HandleCount;
             math::rgba Color;
         } Model;
     };
@@ -145,7 +154,7 @@ struct camera
 };
 
 #define RENDER_COMMAND_MAX 400
-#define BUFFER_ARRAY_SIZE 20
+#define BUFFER_ARRAY_SIZE 200
 #define TEXTURE_ARRAY_SIZE 512
 
 struct texture_data
