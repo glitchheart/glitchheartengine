@@ -166,7 +166,7 @@ enum Key_Mode
 #define Key_KP7 116
 #define Key_KP8 117
 #define Key_KP9 118
-#define Key_KPDecimal 119
+#define Key_KPDecimal 182
 #define Key_KPDivide 120
 #define Key_KPMultiply 121
 #define Key_KPEnter 122
