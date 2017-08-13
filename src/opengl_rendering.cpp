@@ -1260,7 +1260,7 @@ static void RenderModel(const render_command& Command, render_state& RenderState
     Model = math::XRotate(Command.Rotation.x) * Model;
     Model = math::ZRotate(Command.Rotation.z) * Model;
     
-    Model = math::Translate(Model, math::v3(0, 20, 0));
+    Model = math::Translate(Model, Command.Model.Position);
     
     SetMat4Uniform(Shader.Program, "projection", Projection);
     SetMat4Uniform(Shader.Program, "view", View);
