@@ -1579,7 +1579,7 @@ namespace math
     
     inline m4 LookAt(v3 P, v3 T)
     {
-        auto F = -Normalize(P - T);
+        auto F = Normalize(P - T);
         auto U = v3(0.0f,1.0f,0.0f);
         auto R = Cross(U, F);
         U = Cross(F, R);
