@@ -272,8 +272,8 @@ static void RegisterBuffers(render_state& RenderState, GLfloat* VertexBuffer, i3
     }
     else if(HasNormals)
     {
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), 0);
-        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void*)(3 * sizeof(GLfloat)));
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), 0);
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (void*)(3 * sizeof(GLfloat)));
     }
     else if(HasUVs)
     {
@@ -291,8 +291,6 @@ static void RegisterBuffers(render_state& RenderState, GLfloat* VertexBuffer, i3
     
     if(BufferHandle == -1)
         RenderState.BufferCount++;
-    
-    //glBindBuffer(GL_ARRAY_BUFFER, 0);
     
     glBindVertexArray(0);
 }
@@ -1312,15 +1310,16 @@ static void RenderCommands(render_state& RenderState, renderer& Renderer)
     for(i32 Index = RenderState.BufferCount; Index < Renderer.BufferCount; Index++)
     {
         buffer_data Data = Renderer.Buffers[Index];
+        
         if(Data.IndexBufferSize == 0)
         {
-            printf("HERE\n");
             RegisterVertexBuffer(RenderState, Data.VertexBuffer, Data.VertexBufferSize, Data.ShaderType, Data.ExistingHandle);
             free(Data.VertexBuffer);
         }
         else
         {
             RegisterBuffers(RenderState, Data.VertexBuffer, Data.VertexBufferSize, Data.IndexBuffer, Data.IndexBufferSize, Data.HasNormals, Data.HasUVs, Data.ExistingHandle);
+            
             free(Data.VertexBuffer);
             free(Data.IndexBuffer);
         }

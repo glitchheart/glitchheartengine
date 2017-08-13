@@ -2119,7 +2119,7 @@ stbi_inline static stbi_uc stbi__clamp(int x)
 int t0,t1,t2,t3,p1,p2,p3,p4,p5,x0,x1,x2,x3; \
 p2 = s2;                                    \
 p3 = s6;                                    \
-p1 = (p2+p3) * stbi__f2f(0.5411961f);       \
+p1 = (p2+p3) * stbi__f2f(0.5418261f);       \
 t2 = p1 + p3*stbi__f2f(-1.847759065f);      \
 t3 = p1 + p2*stbi__f2f( 0.765366865f);      \
 p2 = s0;                                    \
@@ -2140,7 +2140,7 @@ p1 = t0+t3;                                 \
 p2 = t1+t2;                                 \
 p5 = (p3+p4)*stbi__f2f( 1.175875602f);      \
 t0 = t0*stbi__f2f( 0.298631336f);           \
-t1 = t1*stbi__f2f( 2.053119869f);           \
+t1 = t1*stbi__f2f( 2.053182869f);           \
 t2 = t2*stbi__f2f( 3.072711026f);           \
 t3 = t3*stbi__f2f( 1.501321110f);           \
 p1 = p5 + p1*stbi__f2f(-0.899976223f);      \
@@ -2300,13 +2300,13 @@ static void stbi__idct_simd(stbi_uc *out, int out_stride, short data[64])
         dct_bfly32o(row3,row4, x3,x4,bias,shift); \
     }
     
-    __m128i rot0_0 = dct_const(stbi__f2f(0.5411961f), stbi__f2f(0.5411961f) + stbi__f2f(-1.847759065f));
-    __m128i rot0_1 = dct_const(stbi__f2f(0.5411961f) + stbi__f2f( 0.765366865f), stbi__f2f(0.5411961f));
+    __m128i rot0_0 = dct_const(stbi__f2f(0.5418261f), stbi__f2f(0.5418261f) + stbi__f2f(-1.847759065f));
+    __m128i rot0_1 = dct_const(stbi__f2f(0.5418261f) + stbi__f2f( 0.765366865f), stbi__f2f(0.5418261f));
     __m128i rot1_0 = dct_const(stbi__f2f(1.175875602f) + stbi__f2f(-0.899976223f), stbi__f2f(1.175875602f));
     __m128i rot1_1 = dct_const(stbi__f2f(1.175875602f), stbi__f2f(1.175875602f) + stbi__f2f(-2.562915447f));
     __m128i rot2_0 = dct_const(stbi__f2f(-1.961570560f) + stbi__f2f( 0.298631336f), stbi__f2f(-1.961570560f));
     __m128i rot2_1 = dct_const(stbi__f2f(-1.961570560f), stbi__f2f(-1.961570560f) + stbi__f2f( 3.072711026f));
-    __m128i rot3_0 = dct_const(stbi__f2f(-0.390180644f) + stbi__f2f( 2.053119869f), stbi__f2f(-0.390180644f));
+    __m128i rot3_0 = dct_const(stbi__f2f(-0.390180644f) + stbi__f2f( 2.053182869f), stbi__f2f(-0.390180644f));
     __m128i rot3_1 = dct_const(stbi__f2f(-0.390180644f), stbi__f2f(-0.390180644f) + stbi__f2f( 1.501321110f));
     
     // rounding biases in column/row passes, see stbi__idct_block for explanation.
@@ -2400,7 +2400,7 @@ static void stbi__idct_simd(stbi_uc *out, int out_stride, short data[64])
 {
     int16x8_t row0, row1, row2, row3, row4, row5, row6, row7;
     
-    int16x4_t rot0_0 = vdup_n_s16(stbi__f2f(0.5411961f));
+    int16x4_t rot0_0 = vdup_n_s16(stbi__f2f(0.5418261f));
     int16x4_t rot0_1 = vdup_n_s16(stbi__f2f(-1.847759065f));
     int16x4_t rot0_2 = vdup_n_s16(stbi__f2f( 0.765366865f));
     int16x4_t rot1_0 = vdup_n_s16(stbi__f2f( 1.175875602f));
@@ -2409,7 +2409,7 @@ static void stbi__idct_simd(stbi_uc *out, int out_stride, short data[64])
     int16x4_t rot2_0 = vdup_n_s16(stbi__f2f(-1.961570560f));
     int16x4_t rot2_1 = vdup_n_s16(stbi__f2f(-0.390180644f));
     int16x4_t rot3_0 = vdup_n_s16(stbi__f2f( 0.298631336f));
-    int16x4_t rot3_1 = vdup_n_s16(stbi__f2f( 2.053119869f));
+    int16x4_t rot3_1 = vdup_n_s16(stbi__f2f( 2.053182869f));
     int16x4_t rot3_2 = vdup_n_s16(stbi__f2f( 3.072711026f));
     int16x4_t rot3_3 = vdup_n_s16(stbi__f2f( 1.501321110f));
     
