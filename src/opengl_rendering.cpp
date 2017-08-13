@@ -823,6 +823,7 @@ static void SetMat4Uniform(GLuint ShaderHandle, const char *UniformName, math::m
 #else
     auto V = Value;
 #endif
+    
     glUniformMatrix4fv(glGetUniformLocation(ShaderHandle, UniformName), 1, GL_FALSE, &V[0][0]);
 }
 
