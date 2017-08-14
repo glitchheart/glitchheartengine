@@ -177,7 +177,7 @@ extern "C" UPDATE(Update)
         LoadOBJFile(Renderer, "../assets/models/suzanne.obj", GameState->TESTMODEL);
         
         GameState->TESTMODEL->Position = math::v3(0, 0, 0);
-        GameState->TESTMODEL->Scale = math::v3(0.01, 0.01, 0.01);
+        GameState->TESTMODEL->Scale = math::v3(1, 1, 1);
         
         if(GameState->ShouldReload || GameMemory->ShouldReload)
         {
@@ -251,6 +251,7 @@ extern "C" UPDATE(Update)
             GameState->ShouldReload = false;
             GameMemory->ShouldReload = false;
             PLAY_TRACK(Brugt);
+            
         }
         
         LoadLevelFromFile(GameState->LevelPath, &GameState->CurrentLevel, GameState, Renderer, SoundQueue);
@@ -262,6 +263,7 @@ extern "C" UPDATE(Update)
         GameCamera.ViewportHeight = Renderer.WindowHeight;
         GameCamera.FollowSpeed = 3.5f; 
         GameCamera.FadingSpeed = 0.6f;
+        GameCamera.Center = GameState->TESTMODEL->Position;
         
         StartFade(GameCamera, Fading_In, 0.6f, math::v3(0, 0, 0), 1.0f, 0.0f);
         
@@ -533,20 +535,22 @@ extern "C" UPDATE(Update)
         
         if(KEY(Key_W) || KEY(Key_Up))
         {
-            Direction.y = 1;
+            Direction.y = -1;
         }
         else if(KEY(Key_S) || KEY(Key_Down))
         {
-            Direction.y = -1;
+            Direction.y = 1;
         }
         
         if(KEY(Key_A) || KEY(Key_Left))
         {
             Direction.x = -1;
+            Direction.y = -0.5;
         }
         else if(KEY(Key_D) || KEY(Key_Right))
         {
             Direction.x = 1;
+            Direction.y = 0.5;
         }
         
         r32 Factor = 72.0f / GameCamera.Zoom;
@@ -564,7 +568,7 @@ extern "C" UPDATE(Update)
         
         if(Abs(Direction.x) > 0.0 || Abs(Direction.y) > 0.0)
         {
-            GameCamera.Center = Center + math::v3(Direction.x * GameState->GodModePanSpeed * Factor * DeltaTime, Direction.y * GameState->GodModePanSpeed * Factor * DeltaTime, 0);
+            GameCamera.Center += math::v3(Direction.x * GameState->GodModePanSpeed * Factor * DeltaTime, Direction.y * GameState->GodModePanSpeed * Factor * DeltaTime, 0);
         }
         
         GameCamera.Zoom = Min(Max(Zoom, GameState->GodModeMinZoom), GameState->GodModeMaxZoom);
@@ -752,8 +756,6 @@ extern "C" UPDATE(Update)
                                               1000.0f);
     
     GameCamera.ViewMatrix = math::m4(1.0f);
-    
-    GameCamera.Center = GameState->TESTMODEL->Position;
     
     GameCamera.ViewMatrix = math::Translate(GameCamera.ViewMatrix,math::v3(-GameCamera.Center.x - 0.5f, GameCamera.Center.y - 1.0f, -GameCamera.Center.z));
     
