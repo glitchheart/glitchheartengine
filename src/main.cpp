@@ -25,6 +25,8 @@ input_controller InputController;
 #include "keys_glfw.h"
 #include "opengl_rendering.cpp"
 
+#include "modelformat.h"
+
 struct game_code
 {
     HMODULE GameCodeDLL;
@@ -140,11 +142,24 @@ void PrintGLMMatrix(glm::mat4 In)
 }
 #endif
 
+void LoadHeader()
+{
+    model_header Header = {};
+    FILE *File = fopen("../assets/models/TestBin.raw", "rb");
+    if(File)
+    {
+        fread(&Header,sizeof(model_header), 1, File);
+        printf("%s\n", Header.Format);
+    }
+}
+
 int main(void)
 {
     DEBUG_PRINT("Initializing gamestate\n");
     
     InitKeys();
+    
+    LoadHeader();
     
     config_data ConfigData;
     LoadConfig("../assets/.config", &ConfigData);
