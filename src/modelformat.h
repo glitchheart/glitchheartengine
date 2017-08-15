@@ -8,10 +8,10 @@ struct model_header
 
 struct mesh_header
 {
-    long NumFaces;
-    long FacesChunkSize;
     long NumVertices;
     long VertexChunkSize;
+    long NumFaces;
+    long FacesChunkSize;
     /*long NumUVs;
    long UVChunkSize;
    long NumNormals;
