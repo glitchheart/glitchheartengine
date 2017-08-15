@@ -136,6 +136,87 @@ static void LoadBuffer(renderer& Renderer, r32* Buffer, i32 BufferSize, i32* Buf
     *BufferHandle = Renderer.BufferCount++;
 }
 
+
+static b32 IsEOF(chunk_format& Format)
+{
+    return Format.Format[0] == 'E' &&
+        Format.Format[1] == 'O' &&
+        Format.Format[2] == 'F' && 
+        Format.Format[3] == ' ';
+}
+
+static void LoadModel(renderer& Renderer, char* FilePath, model* Model)
+{
+    model_header Header = {};
+    
+    FILE *File = fopen(FilePath, "rb");
+    if(File)
+    {
+        fread(&Header,sizeof(model_header), 1, File);
+        printf("%c%c%c%c\n", Header.Format[0],Header.Format[1], Header.Format[2], Header.Format[3]);
+        
+        chunk_format Format = {};
+        fread(&Format, sizeof(chunk_format), 1, File);
+        
+        i32 MeshCount = 0;
+        
+        while(!IsEOF(Format))
+        {
+            if(Format.Format[0] == 'M' &&
+               Format.Format[1] == 'E' &&
+               Format.Format[2] == 'S' &&
+               Format.Format[3] == 'H')
+            {
+                mesh_header MHeader;
+                fread(&MHeader, sizeof(mesh_header), 1, File);
+                
+                printf("%ld\n", MHeader.NumVertices);
+                printf("%ld\n", MHeader.VertexChunkSize);
+                
+                printf("%ld\n", MHeader.NumFaces);
+                printf("%ld\n", MHeader.FacesChunkSize);
+                
+                r32* VertexBuffer = (r32*)malloc(MHeader.VertexChunkSize);
+                fread(VertexBuffer, MHeader.VertexChunkSize, 1, File);
+                
+                i32* IndexBuffer = (i32*)malloc(MHeader.FacesChunkSize);
+                fread(IndexBuffer, MHeader.FacesChunkSize, 1, File);
+                
+                buffer_data Data = {};
+                
+                Data.VertexBuffer = (r32*)malloc(MHeader.VertexChunkSize);
+                memcpy(Data.VertexBuffer, VertexBuffer, MHeader.VertexChunkSize);
+                Data.VertexBufferSize = MHeader.NumVertices * 3;
+                
+                Data.IndexBuffer = (u32*)malloc(MHeader.FacesChunkSize);
+                memcpy(Data.IndexBuffer, IndexBuffer, MHeader.FacesChunkSize);
+                
+                Data.IndexBufferSize = MHeader.NumFaces * 3;
+                Model->Meshes[MeshCount++].BufferHandle = Renderer.BufferCount++;
+                Renderer.Buffers[Renderer.BufferCount - 1] = Data;
+                
+                free(VertexBuffer);
+                free(IndexBuffer);
+            }
+            else
+            {
+                ERR("Malformed model file");
+                break;
+            }
+            fread(&Format, sizeof(chunk_format), 1, File);
+        }
+        
+        printf("MeshCount: %d\n", MeshCount);
+        
+        Model->MeshCount = MeshCount;
+        
+        printf("End of file\n");
+        
+        fclose(File);
+    }
+}
+
+
 static void LoadOBJFile(renderer& Renderer, char* FilePath, model* Model)
 {
     FILE* File = fopen(FilePath, "r");

@@ -12,6 +12,11 @@ void main()
 {
 	vec4 color = texture(tex, Texcoord);
 
+	if(color.a < 0.01)
+	{
+		discard;
+	}
+
 	if(glow)
 	{
 		if(color.a == 0.0)
