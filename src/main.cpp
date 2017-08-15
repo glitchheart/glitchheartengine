@@ -142,14 +142,33 @@ void PrintGLMMatrix(glm::mat4 In)
 }
 #endif
 
-void LoadHeader()
+b32 IsEOF(chunk_format& Format)
+{
+    return FirstFormat.Format[0] == 'E' &&
+        FirstFormat.Format[1] == 'O' &&
+        FirstFormat.Format[2] == 'F' && 
+        FirstFormat.Format[3] == ' ';
+}
+
+void LoadModel()
 {
     model_header Header = {};
-    FILE *File = fopen("../assets/models/TestBin.raw", "rb");
+    
+    FILE *File = fopen("../assets/models/peepee.modl", "rb");
     if(File)
     {
         fread(&Header,sizeof(model_header), 1, File);
-        printf("%s\n", Header.Format);
+        printf("%c%c%c%c\n", Header.Format[0],Header.Format[1], Header.Format[2], Header.Format[3]);
+        
+        chunk_format Format = {};
+        fread(&Format, sizeof(chunk_format), 1, File);
+        
+        while(!IsEOF(Format))
+        {
+            printf("End of file\n");
+        }
+        
+        fclose(File);
     }
 }
 
@@ -159,7 +178,7 @@ int main(void)
     
     InitKeys();
     
-    LoadHeader();
+    LoadModel();
     
     config_data ConfigData;
     LoadConfig("../assets/.config", &ConfigData);

@@ -6,19 +6,23 @@ struct model_header
     char Format[4]; // M O D L ?
 };
 
-struct faces_chunk
+struct mesh_header
 {
-    char FacesChunkID[4]; // F C E S
+    long NumFaces;
     long FacesChunkSize;
-    unsigned char* FacesData; // Index buffer?
+    long NumVertices;
+    long VertexChunkSize;
+    /*long NumUVs;
+   long UVChunkSize;
+   long NumNormals;
+   long NormalsChunkSize;
+   long NumColors;
+   long ColorsChunkSize;*/
 };
 
-struct vertex_buffer_chunk
+struct chunk_format
 {
-    char ChunkID[4]; // V B O _
-    char Format[4]; // V U N C / V U N _ / V N _ _ / V _ _ _
-    long ChunkSize;
-    unsigned char* Data; // This is the VBO data in the format specified
+    char Format[4]; // M E S H / E O F
 };
 
 #endif
