@@ -177,7 +177,7 @@ extern "C" UPDATE(Update)
         GameState->TESTMODEL = (model*)malloc(sizeof(model));
         
         //LoadOBJFile(Renderer, "../assets/models/suzanne.obj", GameState->TESTMODEL);
-        LoadModel(Renderer, "../assets/models/monkey_test.modl", GameState->TESTMODEL);
+        LoadModel(Renderer, "../assets/models/female_character.modl", GameState->TESTMODEL);
         
         GameState->TESTMODEL->Position = math::v3(0, 0, 0);
         GameState->TESTMODEL->Scale = math::v3(1, 1, 1);
@@ -316,6 +316,7 @@ extern "C" UPDATE(Update)
                     LoadBonfireData(GameState, SoundQueue, EntityIndex);
                 }
             }
+            
             GameState->ReloadData->ReloadBonfireFile = false;
         }
     }
@@ -613,6 +614,21 @@ extern "C" UPDATE(Update)
                         
                         GameCamera.Center = Center;
                     }
+                }
+                else
+                {
+                    r32 XInput = GetInputX(InputController);
+                    r32 YInput = GetInputY(InputController);
+                    
+                    math::v3 Velocity;
+                    Velocity.x = XInput * 10.0f;
+                    Velocity.z = YInput * 10.0f;
+                    
+                    // @Incomplete: This does not work that well when zooming out.
+                    Velocity = math::YRotate(45) * Velocity;
+                    
+                    
+                    GameCamera.Center += math::v3(Velocity.x * DeltaTime, Velocity.y * DeltaTime, -Velocity.z * DeltaTime);
                 }
             }
             else if(GameState->StatGainModeOn)
