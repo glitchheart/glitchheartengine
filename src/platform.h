@@ -30,13 +30,11 @@
 #define DEGREE_IN_RADIANS 0.0174532925f
 
 //@Incomplete: We want a platform API for all of these functions!!!!!!!
-#include <windows.h>
-#include <tchar.h>
+
 #include <stdint.h>
 #include <malloc.h>
 #include <cstdio>
-#include <sys/types.h>  
-#include <sys/stat.h>  
+
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb/stb_image.h>
@@ -55,7 +53,6 @@ using b32 = i32;
 using r32 = float;
 using r64 = double;
 
-#include <GLFW/glfw3.h>
 #include "math.h"
 
 #include "gmap.h"
@@ -96,6 +93,29 @@ struct config_data
     r32 Zoom;
 };
 
+
+struct directory_data
+{
+    char** FilePaths;
+    char** FileNames;
+    i32 FilesLength = 0;
+};
+
+
+#define PLATFORM_GET_ALL_FILES_WITH_EXTENSION(name) void name(const char* Path, const char* Extension, directory_data* DirectoryData, b32 WithSubDirectories)
+typedef PLATFORM_GET_ALL_FILES_WITH_EXTENSION(platform_get_all_files_with_extension);
+
+#define PLATFORM_FILE_EXISTS(name) b32 name(const char* FilePath)
+typedef PLATFORM_FILE_EXISTS(platform_file_exists);
+
+struct platform_api
+{
+    platform_get_all_files_with_extension *GetAllFilesWithExtension;
+    platform_file_exists *FileExists;
+};
+
+extern platform_api Platform;
+
 struct entity_file_reload_data;
 
 struct game_memory
@@ -105,6 +125,7 @@ struct game_memory
     b32 ExitGame;
     config_data ConfigData;
     entity_file_reload_data* ReloadData;
+    platform_api PlatformAPI;
     
     u64 PermanentStorageSize;
     void* PermanentStorage;
@@ -230,96 +251,9 @@ inline void LoadConfig(const char* FilePath, config_data* ConfigData)
     }
 }
 
-struct directory_data
-{
-    char** FilePaths;
-    char** FileNames;
-    i32 FilesLength = 0;
-};
-
-inline void FindFilesWithExtensions(const char* DirectoryPath, const char* Extension, directory_data* DirectoryData, b32 WithSubDirectories = false)
-{
-    if(DirectoryData->FilesLength == 0)
-    {
-        DirectoryData->FileNames = (char**)malloc(512 * sizeof(char*));
-        DirectoryData->FilePaths = (char**)malloc(512 * sizeof(char*));
-    }
-    
-    WIN32_FIND_DATA FindFile;
-    HANDLE hFind = NULL;
-    
-    char Path[2048];
-    
-    //Process directories
-    sprintf(Path, "%s*", DirectoryPath);
-    hFind = FindFirstFile(Path, &FindFile);
-    if(hFind != INVALID_HANDLE_VALUE)
-    {
-        do
-        {
-            if(FindFile.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
-            {
-                if(strcmp(FindFile.cFileName, ".") != 0
-                   && strcmp(FindFile.cFileName, "..") != 0)
-                {
-                    sprintf(Path, "%s%s/", DirectoryPath, FindFile.cFileName);
-                    FindFilesWithExtensions(Path, Extension, DirectoryData, WithSubDirectories);
-                }
-                
-            }
-        } while(FindNextFile(hFind, &FindFile));
-        FindClose(hFind);
-    }
-    else
-    {
-        DEBUG_PRINT("Path not found: %s\n", DirectoryPath);
-        return;
-    }
-    
-    //Process files
-    sprintf(Path, "%s\\*.%s", DirectoryPath, Extension);
-    hFind = FindFirstFile(Path, &FindFile);
-    if(hFind != INVALID_HANDLE_VALUE)
-    {
-        do
-        {
-            if(!(FindFile.dwFileAttributes &FILE_ATTRIBUTE_DIRECTORY))
-            {
-                if(strcmp(FindFile.cFileName, ".") != 0
-                   && strcmp(FindFile.cFileName, "..") != 0)
-                {
-                    
-                    
-                    char* ConcatStr = Concat(DirectoryPath, FindFile.cFileName);
-                    char* FileName = strtok(FindFile.cFileName, ".");
-                    
-                    DirectoryData->FilePaths[DirectoryData->FilesLength] = (char*)malloc((strlen(ConcatStr) + 1) * sizeof(char));
-                    DirectoryData->FileNames[DirectoryData->FilesLength] = (char*)malloc((strlen(FileName)  + 1) * sizeof(char));
-                    strcpy(DirectoryData->FilePaths[DirectoryData->FilesLength], ConcatStr);
-                    strcpy(DirectoryData->FileNames[DirectoryData->FilesLength], FileName);
-                    DirectoryData->FilesLength++;
-                }
-            }
-        } while (FindNextFile(hFind, &FindFile));
-        FindClose(hFind);
-    }
-    else
-    {
-        DEBUG_PRINT("Path not found: %s\n", DirectoryPath);
-        return;
-    }
-    
-}
-
 inline void DebugPrintVec2(math::v2 Vec2, const char* Msg = "")
 {
     DEBUG_PRINT(Concat(Msg, " (%f,%f)\n"),Vec2.x,Vec2.y);
-}
-
-inline b32 FileExists(char* FilePath)
-{
-    struct stat Buffer;
-    return (stat(FilePath,&Buffer) == 0);
 }
 
 

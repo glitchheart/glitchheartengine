@@ -157,7 +157,7 @@ static void LoadAnimations(game_state* GameState, renderer& Renderer)
 {
     animation_Map_Init(&GameState->AnimationMap, HashStringJenkins, 2048);
     directory_data DirData;
-    FindFilesWithExtensions("../assets/animations/", "pownim", &DirData);
+    Platform.GetAllFilesWithExtension("../assets/animations/", "pownim", &DirData, false);
     
     for (i32 FileIndex = 0; FileIndex < DirData.FilesLength; FileIndex++)
     {

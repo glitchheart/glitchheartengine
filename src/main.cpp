@@ -8,9 +8,11 @@
 #include <glad/glad.h>
 #include "al.h"
 #include "alc.h"
+#include <windows.h>
+#include <sys/types.h>  
+#include <sys/stat.h>  
 
-//#include "game.h"
-
+#include <GLFW/glfw3.h>
 #include "platform.h"
 #include "console.h"
 #include "opengl_rendering.h"
@@ -160,6 +162,9 @@ int main(void)
     GameMemory.ShouldReload = true;
     GameMemory.ConfigData = ConfigData;
     GameMemory.ExitGame = false;
+    
+    GameMemory.PlatformAPI.GetAllFilesWithExtension = Win32FindFilesWithExtensions;
+    GameMemory.PlatformAPI.FileExists = Win32FileExists;
     
     render_state RenderState;
     renderer Renderer = {};

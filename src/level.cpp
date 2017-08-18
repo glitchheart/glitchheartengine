@@ -157,7 +157,7 @@
                               
                               static void LoadTilesheetMetaFile(char* FilePath, level* Level, tilemap* Tilemap, game_state* GameState, renderer& Renderer)
                               {
-                                  if(FileExists(FilePath))
+                                  if(Platform.FileExists(FilePath))
                                   {
                                       FILE* File;
                                       File = fopen(FilePath, "r");

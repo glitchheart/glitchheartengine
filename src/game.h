@@ -229,7 +229,7 @@ void LoadGame(game_state* GameState)
 {
     FILE* File;
     char* FilePath = "../savefile1.gs";
-    if(FileExists(FilePath))
+    if(Platform.FileExists(FilePath))
     {
         File = fopen(FilePath, "rb");
         if(File)

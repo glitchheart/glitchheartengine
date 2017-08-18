@@ -162,8 +162,10 @@ static void PushEntityRenderCommands(renderer& Renderer, game_state& GameState)
     }
 }
 
+platform_api Platform;
 extern "C" UPDATE(Update)
 {
+    Platform = GameMemory->PlatformAPI;
     game_state* GameState = (game_state*)GameMemory->PermanentStorage;
     
     //@Incomplete: Hmmmm
@@ -175,10 +177,10 @@ extern "C" UPDATE(Update)
         GameState->TESTMODEL = (model*)malloc(sizeof(model));
         
         //LoadOBJFile(Renderer, "../assets/models/suzanne.obj", GameState->TESTMODEL);
-        LoadModel(Renderer, "../assets/models/pickle.modl", GameState->TESTMODEL);
+        LoadModel(Renderer, "../assets/models/does_this_work.modl", GameState->TESTMODEL);
         
         GameState->TESTMODEL->Position = math::v3(0, 0, 0);
-        GameState->TESTMODEL->Scale = math::v3(1, 1, 1);
+        GameState->TESTMODEL->Scale = math::v3(0.1, 0.1, 0.1);
         
         if(GameState->ShouldReload || GameMemory->ShouldReload)
         {
