@@ -16,10 +16,10 @@ out vec3 v;
 
 void main()
 {
-    gl_Position = projection * view * model * vec4(position, 1.0);
-	float DepthColor = position.z;
-	c = vec4(DepthColor, DepthColor, DepthColor, color.a);
+	v = vec3(view * model * vec4(position,1.0)).xyz;
 	n = normalize(mat3(transpose(inverse(view * model))) * normal);
-	v = (view * model * vec4(position, 1.0)).xyz;
 	pos = vec3(model * vec4(position, 1.0));
+	c = vec4(0.3,0.3,0.3,1.0);
+
+	gl_Position = projection * view * model * vec4(position,1.0);
 }

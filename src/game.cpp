@@ -177,10 +177,10 @@ extern "C" UPDATE(Update)
         GameState->TESTMODEL = (model*)malloc(sizeof(model));
         
         //LoadOBJFile(Renderer, "../assets/models/suzanne.obj", GameState->TESTMODEL);
-        LoadModel(Renderer, "../assets/models/does_this_work.modl", GameState->TESTMODEL);
+        LoadModel(Renderer, "../assets/models/monkey_test.modl", GameState->TESTMODEL);
         
         GameState->TESTMODEL->Position = math::v3(0, 0, 0);
-        GameState->TESTMODEL->Scale = math::v3(0.1, 0.1, 0.1);
+        GameState->TESTMODEL->Scale = math::v3(1, 1, 1);
         
         if(GameState->ShouldReload || GameMemory->ShouldReload)
         {
@@ -204,7 +204,7 @@ extern "C" UPDATE(Update)
             GameState->GodModeOn = false;
             GameState->GodModePanSpeed = 10.0f;
             GameState->GodModeZoomSpeed = 45.0f;
-            GameState->GodModeMinZoom = 5.0f;
+            GameState->GodModeMinZoom = 2.0f;
             GameState->GodModeMaxZoom = 100.0f;
             GameState->PlayerState = Player_Alive;
             
