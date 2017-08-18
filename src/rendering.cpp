@@ -17,7 +17,7 @@ static void LoadTextures(renderer& Renderer)
     texture_data_Map_Init(&Renderer.TextureMap, HashStringJenkins, 64);
     
     directory_data DirData = {};
-    FindFilesWithExtensions("../assets/textures/", "png", &DirData, true);
+    Platform.GetAllFilesWithExtension("../assets/textures/", "png", &DirData, true);
     
     for (i32 FileIndex = 0; FileIndex < DirData.FilesLength; FileIndex++)
     {
@@ -153,7 +153,6 @@ static void LoadModel(renderer& Renderer, char* FilePath, model* Model)
     if(File)
     {
         fread(&Header,sizeof(model_header), 1, File);
-        printf("%c%c%c%c\n", Header.Format[0],Header.Format[1], Header.Format[2], Header.Format[3]);
         
         chunk_format Format = {};
         fread(&Format, sizeof(chunk_format), 1, File);
@@ -167,26 +166,27 @@ static void LoadModel(renderer& Renderer, char* FilePath, model* Model)
                Format.Format[2] == 'S' &&
                Format.Format[3] == 'H')
             {
+                buffer_data Data = {};
+                
                 mesh_header MHeader;
+                
                 fread(&MHeader, sizeof(mesh_header), 1, File);
-                
-                printf("%ld\n", MHeader.NumVertices);
-                printf("%ld\n", MHeader.VertexChunkSize);
-                
-                printf("%ld\n", MHeader.NumFaces);
-                printf("%ld\n", MHeader.FacesChunkSize);
                 
                 r32* VertexBuffer = (r32*)malloc(MHeader.VertexChunkSize);
                 fread(VertexBuffer, MHeader.VertexChunkSize, 1, File);
                 
+                if(MHeader.NumNormals > 0)
+                {
+                    Data.HasNormals = true;
+                }
+                
                 i32* IndexBuffer = (i32*)malloc(MHeader.FacesChunkSize);
                 fread(IndexBuffer, MHeader.FacesChunkSize, 1, File);
                 
-                buffer_data Data = {};
-                
                 Data.VertexBuffer = (r32*)malloc(MHeader.VertexChunkSize);
                 memcpy(Data.VertexBuffer, VertexBuffer, MHeader.VertexChunkSize);
-                Data.VertexBufferSize = MHeader.NumVertices * 3;
+                
+                Data.VertexBufferSize = MHeader.NumVertices * 3 + MHeader.NumNormals * 3;
                 
                 Data.IndexBuffer = (u32*)malloc(MHeader.FacesChunkSize);
                 memcpy(Data.IndexBuffer, IndexBuffer, MHeader.FacesChunkSize);
@@ -206,11 +206,7 @@ static void LoadModel(renderer& Renderer, char* FilePath, model* Model)
             fread(&Format, sizeof(chunk_format), 1, File);
         }
         
-        printf("MeshCount: %d\n", MeshCount);
-        
         Model->MeshCount = MeshCount;
-        
-        printf("End of file\n");
         
         fclose(File);
     }

@@ -10,6 +10,8 @@ struct mesh_header
 {
     long NumVertices;
     long VertexChunkSize;
+    long NumNormals;
+    long NormalsChunkSize;
     long NumFaces;
     long FacesChunkSize;
     /*long NumUVs;

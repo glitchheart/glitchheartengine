@@ -156,4 +156,87 @@ static void ListenToFileChanges(asset_manager* AssetManager)
     }
 }
 
+
+inline void Win32FindFilesWithExtensions(const char* DirectoryPath, const char* Extension, directory_data* DirectoryData, b32 WithSubDirectories = false)
+{
+    if(DirectoryData->FilesLength == 0)
+    {
+        DirectoryData->FileNames = (char**)malloc(512 * sizeof(char*));
+        DirectoryData->FilePaths = (char**)malloc(512 * sizeof(char*));
+    }
+    
+    WIN32_FIND_DATA FindFile;
+    HANDLE hFind = NULL;
+    
+    char Path[2048];
+    
+    //Process directories
+    sprintf(Path, "%s*", DirectoryPath);
+    hFind = FindFirstFile(Path, &FindFile);
+    if(hFind != INVALID_HANDLE_VALUE)
+    {
+        do
+        {
+            if(FindFile.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+            {
+                if(strcmp(FindFile.cFileName, ".") != 0
+                   && strcmp(FindFile.cFileName, "..") != 0)
+                {
+                    char SubPath[2048];
+                    sprintf(SubPath, "%s%s/", DirectoryPath, FindFile.cFileName);
+                    Win32FindFilesWithExtensions(SubPath, Extension, DirectoryData, WithSubDirectories);
+                }
+                
+            }
+        } while(FindNextFile(hFind, &FindFile));
+        FindClose(hFind);
+    }
+    else
+    {
+        DEBUG_PRINT("No files with extension %s found in %s\n", Extension, DirectoryPath);
+        return;
+    }
+    
+    //Process files
+    sprintf(Path, "%s*.%s", DirectoryPath, Extension);
+    hFind = FindFirstFile(Path, &FindFile);
+    if(hFind != INVALID_HANDLE_VALUE)
+    {
+        do
+        {
+            if(!(FindFile.dwFileAttributes &FILE_ATTRIBUTE_DIRECTORY))
+            {
+                if(strcmp(FindFile.cFileName, ".") != 0
+                   && strcmp(FindFile.cFileName, "..") != 0)
+                {
+                    
+                    
+                    char* ConcatStr = Concat(DirectoryPath, FindFile.cFileName);
+                    char* FileName = strtok(FindFile.cFileName, ".");
+                    
+                    DirectoryData->FilePaths[DirectoryData->FilesLength] = (char*)malloc((strlen(ConcatStr) + 1) * sizeof(char));
+                    DirectoryData->FileNames[DirectoryData->FilesLength] = (char*)malloc((strlen(FileName)  + 1) * sizeof(char));
+                    strcpy(DirectoryData->FilePaths[DirectoryData->FilesLength], ConcatStr);
+                    strcpy(DirectoryData->FileNames[DirectoryData->FilesLength], FileName);
+                    DirectoryData->FilesLength++;
+                }
+            }
+        } while (FindNextFile(hFind, &FindFile));
+        FindClose(hFind);
+    }
+    else
+    {
+        DEBUG_PRINT("No files with extension %s found in %s\n", Extension, DirectoryPath);
+        return;
+    }
+    
+}
+
+
+inline b32 Win32FileExists(const char* FilePath)
+{
+    struct stat Buffer;
+    return (stat(FilePath,&Buffer) == 0);
+}
+
 #endif
