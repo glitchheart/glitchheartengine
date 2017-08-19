@@ -20,10 +20,5 @@ void main()
 	gl_Position = projection * view * model * vec4(position,1.0);
 	n = normalize(((view * model * vec4(normal, 0.0)).xyz));
 	v = (view * model * vec4(position, 1.0)).xyz;
-	lPos = (view * vec4(3.0 ,2.0,-20,1.0)).xyz;
-	
-	float brightness = dot(normalize(vec3(10.0,10.0,5.0) - position), n);
-	c = vec4(brightness, brightness, brightness, 1.0);
-	
-	//c = vec4(n,1.0);
+	lPos = (vec4(-10.0 , 5.0, 0,1.0)).xyz;
 }
