@@ -177,10 +177,69 @@ extern "C" UPDATE(Update)
         GameState->TESTMODEL = (model*)malloc(sizeof(model));
         
         //LoadOBJFile(Renderer, "../assets/models/suzanne.obj", GameState->TESTMODEL);
-        LoadModel(Renderer, "../assets/models/female_character.modl", GameState->TESTMODEL);
+        LoadModel(Renderer, "../assets/models/pickle_test.modl", GameState->TESTMODEL);
         
         GameState->TESTMODEL->Position = math::v3(0, 0, 0);
         GameState->TESTMODEL->Scale = math::v3(1, 1, 1);
+        
+        model Model1;
+        Model1.Position = math::v3(-5, 5, 0);
+        Model1.Scale = math::v3(1.0, 1.0, 1.0);
+        
+        model Model2;
+        Model2.Position = math::v3(0, 5, 0);
+        Model2.Scale = math::v3(1.0, 1.0, 1.0);
+        
+        model Model3;
+        Model3.Position = math::v3(5, 5, 0);
+        Model3.Scale = math::v3(1.0, 1.0, 1.0);
+        
+        model Model4;
+        Model4.Position = math::v3(5, 5, 0);
+        Model4.Scale = math::v3(1.0, 1.0, 1.0);
+        Model4.Rotation.x = -90;
+        
+        model Model5;
+        Model5.Position = math::v3(0, 0, -0);
+        Model5.Scale = math::v3(100.0, 1.0, 100.0);
+        
+        LoadModel(Renderer, "../assets/models/cube.modl", &Model1);
+        LoadModel(Renderer, "../assets/models/cube.modl", &Model2);
+        LoadModel(Renderer, "../assets/models/teapot.modl", &Model3);
+        LoadModel(Renderer, "../assets/models/female_character.modl", &Model4);
+        LoadModel(Renderer, "../assets/models/cube.modl", &Model5);
+        
+        
+        GameState->TestModels[0] = Model1;
+        GameState->TestModels[1] = Model2;
+        GameState->TestModels[2] = Model3;
+        GameState->TestModels[3] = Model4;
+        GameState->TestModels[4] = Model5;
+        
+        GameState->Models = 5;
+        
+        i32 OffsetX = 44;
+        i32 OffsetZ = 0;
+        /*
+        model Model;
+        Model.Position = math::v3(OffsetX, 1, OffsetZ);
+        Model.Scale = math::v3(0.1, 0.1, 0.1);
+        LoadModel(Renderer, "../assets/models/obj.modl", &Model);
+        GameState->TestModels[GameState->Models++] = Model;
+        */
+        /*
+        for(i32 I = OffsetX; I < 10 + OffsetX; I++)
+        {
+            for(i32 J = OffsetZ; J < 10 + OffsetZ; J++)
+            {
+                model Model;
+                Model.Position = math::v3(I, 1, J);
+                Model.Scale = math::v3(1, 1, 1);
+                LoadModel(Renderer, "../assets/models/cube.modl", &Model);
+                GameState->TestModels[GameState->Models++] = Model;
+            }
+        }
+        */
         
         if(GameState->ShouldReload || GameMemory->ShouldReload)
         {
@@ -205,7 +264,7 @@ extern "C" UPDATE(Update)
             GameState->GodModePanSpeed = 10.0f;
             GameState->GodModeZoomSpeed = 45.0f;
             GameState->GodModeMinZoom = 2.0f;
-            GameState->GodModeMaxZoom = 100.0f;
+            GameState->GodModeMaxZoom = 200.0f;
             GameState->PlayerState = Player_Alive;
             
             GameState->DeathScreenTimer.TimerMax = 1.0f;
@@ -223,7 +282,7 @@ extern "C" UPDATE(Update)
             GameState->EditorState.ZoomingSpeed = 50;
             GameState->EditorState.PanningSpeed = 500;
             GameState->EditorState.MinZoom = 5;
-            GameState->EditorState.MaxZoom = 100;
+            GameState->EditorState.MaxZoom = 150;
             GameState->EditorState.RenderedTileSize = 30.0f;
             GameState->EditorState.TileBrushSize = math::v2(1, 1);
             GameState->EditorState.ToolbarScrollSpeed = 30000;
@@ -793,19 +852,40 @@ extern "C" UPDATE(Update)
     if(KEY(Key_X))
     {
         GameState->TESTMODEL->Rotation.x += (r32)(40 * DeltaTime);
+        
+        for(i32 i = 0; i < 4; i++)
+        {
+            GameState->TestModels[i].Rotation.x += (r32)(40 * DeltaTime);
+        }
     }
     
     if(KEY(Key_Y))
     {
         GameState->TESTMODEL->Rotation.y += (r32)(40 * DeltaTime);
+        
+        for(i32 i = 0; i < 4; i++)
+        {
+            GameState->TestModels[i].Rotation.y += (r32)(40 * DeltaTime);
+        }
     }
     
     if(KEY(Key_Z))
     {
         GameState->TESTMODEL->Rotation.z += (r32)(40 * DeltaTime);
+        
+        for(i32 i = 0; i < 4; i++)
+        {
+            GameState->TestModels[i].Rotation.z += (r32)(40 * DeltaTime);
+        }
     }
     
-    PushTilemapRenderCommands(Renderer, *GameState);
+    //PushTilemapRenderCommands(Renderer, *GameState);
     PushEntityRenderCommands(Renderer, *GameState);
-    PushModel(Renderer, *GameState->TESTMODEL);
+    
+    for(i32 Index = 0; Index < GameState->Models; Index++)
+    {
+        PushModel(Renderer, GameState->TestModels[Index]);
+    }
+    
+    //PushModel(Renderer, *GameState->TESTMODEL);
 }

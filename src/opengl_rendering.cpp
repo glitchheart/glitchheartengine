@@ -1263,6 +1263,9 @@ static void RenderModel(const render_command& Command, render_state& RenderState
         
         Model = math::Translate(Model, Command.Position);
         
+        math::m4 NormalMatrix = math::Transpose(math::Inverse(View * Model));
+        
+        SetMat4Uniform(Shader.Program, "normalMatrix", NormalMatrix);
         SetMat4Uniform(Shader.Program, "projection", Projection);
         SetMat4Uniform(Shader.Program, "view", View);
         SetMat4Uniform(Shader.Program, "model", Model);

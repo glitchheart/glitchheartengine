@@ -3,6 +3,7 @@
 
 #include <cmath>
 
+//#define GLM
 #ifdef GLM
 #include <glm/gtc/matrix_transform.hpp>
 namespace math
