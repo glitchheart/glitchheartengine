@@ -51,9 +51,16 @@ struct shader
     u32 FragmentShader;
 };
 
+struct material
+{
+    char* TextureName;
+    math::rgba Color;
+};
+
 struct mesh
 {
     i32 BufferHandle;
+    material Material;
 };
 
 struct model
