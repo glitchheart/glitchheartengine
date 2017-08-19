@@ -18,7 +18,12 @@ out vec3 lPos;
 void main()
 {
 	gl_Position = projection * view * model * vec4(position,1.0);
-	n = normalize(((view * model * vec4(normal, 0.0)).xyz));
 	v = (view * model * vec4(position, 1.0)).xyz;
-	lPos = (vec4(-10.0 , 5.0, 0,1.0)).xyz;
+	n = normalize((transpose(inverse(model)) * vec4(normal, 0.0)).xyz);	
+
+	lPos = (vec4(1000000.0 , 50000.0, 100000,1.0)).xyz;
+
+
+	n = normalize(((view * model * vec4(normal, 0.0)).xyz));
+	//n = ((view * model) * vec4(normal, 0.0)).xyz;
 }
