@@ -16,6 +16,8 @@ struct mesh_header
     long NormalsChunkSize;
     long NumFaces;
     long FacesChunkSize;
+    bool HasTexture;
+    char TextureFile[100];
     /*long NumUVs;
    long UVChunkSize;
    long NumNormals;

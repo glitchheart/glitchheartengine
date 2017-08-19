@@ -174,10 +174,12 @@ extern "C" UPDATE(Update)
     
     if(!GameState->IsInitialized || !GameMemory->IsInitialized)
     {
+        LoadTextures(Renderer);
+        
         GameState->TESTMODEL = (model*)malloc(sizeof(model));
         
         //LoadOBJFile(Renderer, "../assets/models/suzanne.obj", GameState->TESTMODEL);
-        LoadModel(Renderer, "../assets/models/chair.modl", GameState->TESTMODEL);
+        //LoadModel(Renderer, "../assets/models/chair.modl", GameState->TESTMODEL);
         
         GameState->TESTMODEL->Position = math::v3(0, 0, 0);
         GameState->TESTMODEL->Scale = math::v3(1, 1, 1);
@@ -201,19 +203,18 @@ extern "C" UPDATE(Update)
         
         model Model5;
         Model5.Position = math::v3(0, 0, -0);
-        Model5.Scale = math::v3(1.0, 1.0, 1.0);
+        Model5.Scale = math::v3(100.0, 1.0, 100.0);
         
         model Model6; // Light source position
         Model6.Position = math::v3(-10.0f, 5.0f, 0);
         Model6.Scale = math::v3(1.0, 1.0, 1.0);
         
-        
-        LoadModel(Renderer, "../assets/models/cube.modl", &Model1);
-        LoadModel(Renderer, "../assets/models/cube.modl", &Model2);
-        LoadModel(Renderer, "../assets/models/teapot.modl", &Model3);
+        LoadModel(Renderer, "../assets/models/capsule.modl", &Model1);
+        LoadModel(Renderer, "../assets/models/capsule.modl", &Model2);
+        LoadModel(Renderer, "../assets/models/capsule.modl", &Model3);
         LoadModel(Renderer, "../assets/models/female_character.modl", &Model4);
-        LoadModel(Renderer, "../assets/models/monkey_test.modl", &Model5);
-        LoadModel(Renderer, "../assets/models/cube.modl", &Model6);
+        LoadModel(Renderer, "../assets/models/cube.modl", &Model5);
+        LoadModel(Renderer, "../assets/models/capsule.modl", &Model6);
         
         GameState->TestModels[0] = Model1;
         GameState->TestModels[1] = Model2;
@@ -224,25 +225,28 @@ extern "C" UPDATE(Update)
         
         GameState->Models = 6;
         
-        
-        
-        i32 OffsetX = 0;
+        i32 OffsetX = 44;
         i32 OffsetZ = 0;
-        
-        
+        /*
+        model Model;
+        Model.Position = math::v3(OffsetX, 1, OffsetZ);
+        Model.Scale = math::v3(0.1, 0.1, 0.1);
+        LoadModel(Renderer, "../assets/models/obj.modl", &Model);
+        GameState->TestModels[GameState->Models++] = Model;
+        */
+        /*
         for(i32 I = OffsetX; I < 10 + OffsetX; I++)
         {
             for(i32 J = OffsetZ; J < 10 + OffsetZ; J++)
             {
                 model Model;
-                Model.Position = math::v3(I, 0, J);
+                Model.Position = math::v3(I, 1, J);
                 Model.Scale = math::v3(1, 1, 1);
-                Model.Rotation.z = -90;
                 LoadModel(Renderer, "../assets/models/cube.modl", &Model);
                 GameState->TestModels[GameState->Models++] = Model;
             }
         }
-        
+        */
         
         if(GameState->ShouldReload || GameMemory->ShouldReload)
         {
@@ -250,7 +254,6 @@ extern "C" UPDATE(Update)
             GameState->EditorCameraHandle = 1;
             Renderer.CurrentCameraHandle = GameState->GameCameraHandle;
             Renderer.Cameras[GameState->GameCameraHandle].Zoom = GameMemory->ConfigData.Zoom;
-            LoadTextures(Renderer);
             GameState->InitialZoom = GameMemory->ConfigData.Zoom;
             GameState->LevelPath = (char*)malloc(sizeof(char) * (strlen(GameMemory->ConfigData.StartingLevelFilePath) + 1));
             strcpy(GameState->LevelPath, GameMemory->ConfigData.StartingLevelFilePath);
@@ -844,22 +847,6 @@ extern "C" UPDATE(Update)
     GameCamera.ViewMatrix = math::Rotate(GameCamera.ViewMatrix, 35.264f, math::v3(1,0,0));
     
     GameCamera.ViewMatrix = math::Translate(GameCamera.ViewMatrix, math::v3(GameCamera.ViewportWidth / GameCamera.Zoom / 2.0f, GameCamera.ViewportHeight / GameCamera.Zoom / 2.0f,-50.0f));
-    
-    auto MouseX = InputController->MouseX;
-    auto MouseY = InputController->MouseY;
-    
-    auto Pos = math::UnProject(math::v3(MouseX, Renderer.Viewport[3] - MouseY, 0),
-                               GameCamera.ViewMatrix,
-                               GameCamera.ProjectionMatrix,
-                               math::v4(0, 0, Renderer.Viewport[2], Renderer.Viewport[3]));
-    
-    if(Renderer.ZDepthBuffer)
-    {
-        printf("Depth: %f\n", Renderer.ZDepthBuffer[Renderer.WindowWidth * (i32)MouseY + (i32)MouseX]); // Debug value
-    }
-    //DEBUG_PRINT("Mouse In: (%f, %f), Mouse UnProject: (%f, %f)\n", MouseX, MouseY, Pos.X, Pos.Y);
-    
-    //printf("Depth: %d\n", Renderer.ZDepthBuffer[(i32)MouseX + (i32)MouseY]);
     
     InputController->CurrentCharacter = 0;
     GameState->ClearTilePositionFrame = !GameState->ClearTilePositionFrame;

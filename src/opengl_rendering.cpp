@@ -726,7 +726,7 @@ static void InitializeOpenGL(render_state& RenderState, renderer& Renderer, conf
     
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
-    //glfwSetInputMode(RenderState.Window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+    glfwSetInputMode(RenderState.Window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
     
     glfwSetWindowAspectRatio(RenderState.Window, 16, 9);
     
@@ -1254,9 +1254,21 @@ static void RenderModel(const render_command& Command, render_state& RenderState
 {
     for(i32 HandleIndex = 0; HandleIndex < Command.Model.HandleCount; HandleIndex++)
     {
-        buffer Buffer = RenderState.Buffers[Command.Model.BufferHandles[HandleIndex]];
+        mesh_render_data RenderData = Command.Model.RenderData[HandleIndex];
+        
+        buffer Buffer = RenderState.Buffers[RenderData.BufferHandle];
         
         glBindVertexArray(Buffer.VAO);
+        
+        if(RenderData.Material.HasTexture)
+        {
+            texture Texture = RenderState.TextureArray[RenderData.Material.TextureHandle];
+            if(RenderState.BoundTexture != Texture.TextureHandle)
+            {
+                glBindTexture(GL_TEXTURE_2D, Texture.TextureHandle);
+                RenderState.BoundTexture = Texture.TextureHandle;
+            }
+        }
         
         // @Incomplete: Missing shader switching
         auto Shader = RenderState.SimpleModelShader;
@@ -1278,6 +1290,7 @@ static void RenderModel(const render_command& Command, render_state& RenderState
         SetMat4Uniform(Shader.Program, "view", View);
         SetMat4Uniform(Shader.Program, "model", Model);
         SetVec4Uniform(Shader.Program, "color", math::rgba(1.0f, 1.0f, 1.0f, 1.0f));
+        SetFloatUniform(Shader.Program, "hasUVs", RenderData.Material.HasTexture);
         
         glDrawElements(GL_TRIANGLES, Buffer.IndexBufferSize, GL_UNSIGNED_INT, (void*)0);
         glBindVertexArray(0);
@@ -1458,16 +1471,6 @@ static void Render(render_state& RenderState, renderer& Renderer)
     // @Incomplete: PUSH THIS SHIT INSTEAD
     //RenderUI(GameState);
     //RenderDebugInfo(GameState);
-    
-    
-    if(Renderer.ZDepthBuffer)
-    {
-        free(Renderer.ZDepthBuffer);
-    }
-    
-    Renderer.ZDepthBuffer = (r32*)malloc(sizeof(r32) * Renderer.WindowWidth * Renderer.WindowHeight);
-    
-    glReadPixels(0, 0, Renderer.WindowWidth, Renderer.WindowHeight, GL_DEPTH_COMPONENT, GL_FLOAT, Renderer.ZDepthBuffer);
     
     glfwSwapBuffers(RenderState.Window);
     }

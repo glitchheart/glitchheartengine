@@ -116,7 +116,10 @@ static void PushModel(renderer& Renderer, model& Model)
     
     for (i32 Index = 0; Index < Model.MeshCount; Index++)
     {
-        RenderCommand->Model.BufferHandles[Index] = Model.Meshes[Index].BufferHandle;
+        mesh_render_data RenderInfo;
+        RenderInfo.BufferHandle = Model.Meshes[Index].BufferHandle;
+        RenderInfo.Material = Model.Meshes[Index].Material;
+        RenderCommand->Model.RenderData[Index] = RenderInfo;
     }
     
     RenderCommand->Model.HandleCount = Model.MeshCount;
@@ -155,11 +158,9 @@ static void LoadModel(renderer& Renderer, char* FilePath, model* Model)
         fread(&Header,sizeof(model_header), 1, File);
         
         if(Header.Version[0] != '1' ||
-           Header.Version[1] != '1')
+           Header.Version[1] != '2')
         {
-            char Msg[255];
-            sprintf(Msg, "Wrong file version. Expected version 1.1: %s",FilePath);
-            ERR(Msg);
+            ERR("Wrong file version. Expected version 1.2.");
             return;
         }
         
@@ -199,18 +200,20 @@ static void LoadModel(renderer& Renderer, char* FilePath, model* Model)
                 memcpy(Data.IndexBuffer, IndexBuffer, MHeader.FacesChunkSize);
                 
                 Data.IndexBufferSize = MHeader.NumFaces * 3;
-                Model->Meshes[MeshCount++].BufferHandle = Renderer.BufferCount++;
+                
+                Model->Meshes[MeshCount].BufferHandle = Renderer.BufferCount++;
+                
+                Model->Meshes[MeshCount].Material.HasTexture = MHeader.HasTexture;
+                if(Model->Meshes[MeshCount].Material.HasTexture)
+                    Model->Meshes[MeshCount].Material.TextureHandle = Renderer.TextureMap[MHeader.TextureFile]->Handle;
+                
+                Model->Meshes[MeshCount].Material.Color = math::rgba(1, 1, 1, 1);
+                MeshCount++;
+                
+                Assert(MeshCount <= MAX_MESHES);
+                
                 Renderer.Buffers[Renderer.BufferCount - 1] = Data;
-                /*
-                if(Data.HasNormals && Data.HasUVs)
-                {
-                    for(i32 Index = 0; Index < Data.VertexBufferSize; Index++)
-                    {
-                        printf("Normal %f %f %f\n", Data.VertexBuffer[Index * 8 + 3], Data.VertexBuffer[Index * 8 + 4], Data.VertexBuffer[Index * 8 + 5]);
-                    }
-                    
-                }
-                */
+                
                 free(VertexBuffer);
                 free(IndexBuffer);
             }
