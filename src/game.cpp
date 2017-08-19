@@ -183,19 +183,19 @@ extern "C" UPDATE(Update)
         GameState->TESTMODEL->Scale = math::v3(1, 1, 1);
         
         model Model1;
-        Model1.Position = math::v3(-5, 5, 0);
+        Model1.Position = math::v3(-5, 0, 0);
         Model1.Scale = math::v3(1.0, 1.0, 1.0);
         
         model Model2;
-        Model2.Position = math::v3(0, 5, 0);
+        Model2.Position = math::v3(0, 0, 0);
         Model2.Scale = math::v3(1.0, 1.0, 1.0);
         
         model Model3;
-        Model3.Position = math::v3(5, 5, 0);
+        Model3.Position = math::v3(5, 0, 0);
         Model3.Scale = math::v3(1.0, 1.0, 1.0);
         
         model Model4;
-        Model4.Position = math::v3(5, 5, 0);
+        Model4.Position = math::v3(5, 0, 0);
         Model4.Scale = math::v3(1.0, 1.0, 1.0);
         //Model4.Rotation.x = -90;
         
@@ -204,16 +204,16 @@ extern "C" UPDATE(Update)
         Model5.Scale = math::v3(1.0, 1.0, 1.0);
         
         model Model6; // Light source position
-        Model6.Position = math::v3(-10.0f, 5.0f, 0);
+        Model6.Position = math::v3(0.0f, 3.0f, 0);
         Model6.Scale = math::v3(1.0, 1.0, 1.0);
         
         
-        LoadModel(Renderer, "../assets/models/cube.modl", &Model1);
-        LoadModel(Renderer, "../assets/models/cube.modl", &Model2);
+        LoadModel(Renderer, "../assets/models/pyramid.modl", &Model1);
+        LoadModel(Renderer, "../assets/models/pyramid.modl", &Model2);
         LoadModel(Renderer, "../assets/models/teapot.modl", &Model3);
         LoadModel(Renderer, "../assets/models/female_character.modl", &Model4);
         LoadModel(Renderer, "../assets/models/monkey_test.modl", &Model5);
-        LoadModel(Renderer, "../assets/models/cube.modl", &Model6);
+        LoadModel(Renderer, "../assets/models/pyramid.modl", &Model6);
         
         GameState->TestModels[0] = Model1;
         GameState->TestModels[1] = Model2;
@@ -230,13 +230,13 @@ extern "C" UPDATE(Update)
         i32 OffsetZ = 0;
         
         
-        for(i32 I = OffsetX; I < 10 + OffsetX; I++)
+        for(i32 I = 0; I < 10 + OffsetX; I++)
         {
-            for(i32 J = OffsetZ; J < 10 + OffsetZ; J++)
+            for(i32 J = 0; J < 10 + OffsetZ; J++)
             {
                 model Model;
-                Model.Position = math::v3(I, 0, J);
-                Model.Scale = math::v3(1, 1, 1);
+                Model.Position = math::v3(-5 + I, 0, - 5 + J);
+                Model.Scale = math::v3(1, -2, 1);
                 Model.Rotation.z = -90;
                 LoadModel(Renderer, "../assets/models/cube.modl", &Model);
                 GameState->TestModels[GameState->Models++] = Model;
@@ -845,18 +845,6 @@ extern "C" UPDATE(Update)
     
     GameCamera.ViewMatrix = math::Translate(GameCamera.ViewMatrix, math::v3(GameCamera.ViewportWidth / GameCamera.Zoom / 2.0f, GameCamera.ViewportHeight / GameCamera.Zoom / 2.0f,-50.0f));
     
-    auto MouseX = InputController->MouseX;
-    auto MouseY = InputController->MouseY;
-    
-    auto Pos = math::UnProject(math::v3(MouseX, Renderer.Viewport[3] - MouseY, 0),
-                               GameCamera.ViewMatrix,
-                               GameCamera.ProjectionMatrix,
-                               math::v4(0, 0, Renderer.Viewport[2], Renderer.Viewport[3]));
-    
-    if(Renderer.ZDepthBuffer)
-    {
-        printf("Depth: %f\n", Renderer.ZDepthBuffer[Renderer.WindowWidth * (i32)MouseY + (i32)MouseX]); // Debug value
-    }
     //DEBUG_PRINT("Mouse In: (%f, %f), Mouse UnProject: (%f, %f)\n", MouseX, MouseY, Pos.X, Pos.Y);
     
     //printf("Depth: %d\n", Renderer.ZDepthBuffer[(i32)MouseX + (i32)MouseY]);

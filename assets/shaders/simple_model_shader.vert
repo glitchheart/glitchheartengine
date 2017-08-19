@@ -9,21 +9,30 @@ uniform mat4 projection;
 uniform mat4 view;
 uniform mat4 model;
 uniform vec4 color;
+uniform float time;
 
 out vec4 c;
 out vec3 n;
-out vec3 v;
-out vec3 lPos;
+out vec3 fragPos;
+out vec3 lightPos;
+out vec3 viewPos;
+out float t;
 
 void main()
 {
 	gl_Position = projection * view * model * vec4(position,1.0);
-	v = (view * model * vec4(position, 1.0)).xyz;
-	n = normalize((transpose(inverse(model)) * vec4(normal, 0.0)).xyz);	
+	n = mat3(transpose(inverse(view * model))) * normal;
+	fragPos = vec3(view * model * vec4(position, 1.0));
+	lightPos = (view * vec4(-2.0, .7, 0.0,1.0)).xyz;
+    viewPos = vec3(0); // eye in view coords
+	t = time;
 
-	lPos = (vec4(1000000.0 , 50000.0, 100000,1.0)).xyz;
 
+//	v = (view * model * vec4(position, 1.0)).xyz;
+//	n = normalize((transpose(inverse(model)) * vec4(normal, 0.0)).xyz);	
 
-	n = normalize(((view * model * vec4(normal, 0.0)).xyz));
+//	lPos = (view * (vec4(5.0 , 30.0, -5.0, 1.0))).xyz;
+
+	//n = normalize(((view * model * vec4(normal, 0.0)).xyz));
 	//n = ((view * model) * vec4(normal, 0.0)).xyz;
 }
