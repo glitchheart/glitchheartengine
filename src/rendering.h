@@ -161,7 +161,7 @@ struct camera
 };
 
 #define RENDER_COMMAND_MAX 400
-#define BUFFER_ARRAY_SIZE 200
+#define BUFFER_ARRAY_SIZE 500
 #define TEXTURE_ARRAY_SIZE 512
 
 struct texture_data
@@ -225,6 +225,7 @@ struct renderer
     i32 Viewport[4];
     i32 WindowWidth;
     i32 WindowHeight;
+    r32* ZDepthBuffer;
 };
 
 #endif
