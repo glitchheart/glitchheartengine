@@ -61,10 +61,14 @@ struct character_data
 };
 
 #define NUM_TIMERS 1024
+#define MAX_MODELS 3000
 
 struct game_state
 {
     model* TESTMODEL;
+    
+    model TestModels[MAX_MODELS];
+    i32 Models;
     
     b32 IsInitialized;
     b32 Paused;
