@@ -200,7 +200,11 @@ int main(void)
     {
         Renderer.WindowWidth = RenderState.WindowWidth;
         Renderer.WindowHeight = RenderState.WindowHeight;
+        
         memcpy(Renderer.Viewport, RenderState.Viewport, sizeof(i32) * 4);
+        
+        
+        
         //calculate deltatime
         CurrentFrame = GetTime();
         DeltaTime = Min(CurrentFrame - LastFrame, 0.1);
@@ -239,6 +243,8 @@ int main(void)
         Game.Update(DeltaTime, &GameMemory, Renderer, &InputController, &SoundQueue, &GameUpdateStruct, &SoundEffects);
         
         //CheckLevelVAO(&GameMemory);
+        
+        
         
         Render(RenderState, Renderer);
         PlaySounds(&SoundDevice, &SoundQueue, GameUpdateStruct.EntityPositions, GameUpdateStruct.EntityCount);
