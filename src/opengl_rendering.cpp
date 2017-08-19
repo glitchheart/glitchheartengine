@@ -1273,6 +1273,8 @@ static void RenderModel(const render_command& Command, render_state& RenderState
         
         math::m4 NormalMatrix = math::Transpose(math::Inverse(View * Model));
         
+        
+        SetFloatUniform(Shader.Program, "time", glfwGetTime());
         SetMat4Uniform(Shader.Program, "normalMatrix", NormalMatrix);
         SetMat4Uniform(Shader.Program, "projection", Projection);
         SetMat4Uniform(Shader.Program, "view", View);
@@ -1458,16 +1460,6 @@ static void Render(render_state& RenderState, renderer& Renderer)
     // @Incomplete: PUSH THIS SHIT INSTEAD
     //RenderUI(GameState);
     //RenderDebugInfo(GameState);
-    
-    
-    if(Renderer.ZDepthBuffer)
-    {
-        free(Renderer.ZDepthBuffer);
-    }
-    
-    Renderer.ZDepthBuffer = (r32*)malloc(sizeof(r32) * Renderer.WindowWidth * Renderer.WindowHeight);
-    
-    glReadPixels(0, 0, Renderer.WindowWidth, Renderer.WindowHeight, GL_DEPTH_COMPONENT, GL_FLOAT, Renderer.ZDepthBuffer);
     
     glfwSwapBuffers(RenderState.Window);
     }
