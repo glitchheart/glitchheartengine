@@ -4,6 +4,7 @@
 struct model_header
 {
     char Format[4]; // M O D L ?
+    char Version[4];
 };
 
 struct mesh_header
@@ -11,6 +12,7 @@ struct mesh_header
     long NumVertices;
     long VertexChunkSize;
     long NumNormals;
+    long NumUVs;
     long NormalsChunkSize;
     long NumFaces;
     long FacesChunkSize;

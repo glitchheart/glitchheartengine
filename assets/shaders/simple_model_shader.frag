@@ -12,6 +12,6 @@ void main()
 	vec4 Idiff = max(dot(n, L), 0.0) * vec4(1.0, 1.0, 0.0, 1.0);
 	Idiff = clamp(Idiff, 0.0, 1.0);
 
-	outColor = c + Idiff
+	outColor = c + Idiff;
 }
 
