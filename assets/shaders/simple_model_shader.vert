@@ -13,6 +13,7 @@ uniform vec4 color;
 out vec4 c;
 out vec3 n;
 out vec3 v;
+out vec2 texCoord;
 out vec3 lPos;
 
 void main()
@@ -23,7 +24,7 @@ void main()
 
 	lPos = (vec4(1000000.0 , 50000.0, 100000,1.0)).xyz;
 
-
 	n = normalize(((view * model * vec4(normal, 0.0)).xyz));
 	//n = ((view * model) * vec4(normal, 0.0)).xyz;
+	texCoord = uv;
 }

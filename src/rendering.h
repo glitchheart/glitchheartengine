@@ -2,7 +2,7 @@
 #define RENDERING_H
 
 #define PIXELS_PER_UNIT 32
-#define MAX_MESHES 100
+#define MAX_MESHES 60
 
 enum Shader_Type
 {
@@ -53,7 +53,8 @@ struct shader
 
 struct material
 {
-    char* TextureName;
+    b32 HasTexture;
+    i32 TextureHandle; // This handle is a handle to the render API's array
     math::rgba Color;
 };
 
@@ -72,6 +73,12 @@ struct model
     
     mesh Meshes[MAX_MESHES];
     i32 MeshCount;
+};
+
+struct mesh_render_data
+{
+    i32 BufferHandle;
+    material Material;
 };
 
 struct render_command
@@ -124,7 +131,7 @@ struct render_command
         } Buffer;
         struct
         {
-            i32 BufferHandles[MAX_MESHES];
+            mesh_render_data RenderData[MAX_MESHES];
             i32 HandleCount;
             math::rgba Color;
         } Model;
@@ -161,7 +168,7 @@ struct camera
 };
 
 #define RENDER_COMMAND_MAX 400
-#define BUFFER_ARRAY_SIZE 500
+#define BUFFER_ARRAY_SIZE 200
 #define TEXTURE_ARRAY_SIZE 512
 
 struct texture_data
@@ -171,7 +178,6 @@ struct texture_data
     i32 Width;
     i32 Height;
     unsigned char* ImageData;
-    
 };
 
 struct ui_render_info
@@ -225,7 +231,6 @@ struct renderer
     i32 Viewport[4];
     i32 WindowWidth;
     i32 WindowHeight;
-    r32* ZDepthBuffer;
 };
 
 #endif
