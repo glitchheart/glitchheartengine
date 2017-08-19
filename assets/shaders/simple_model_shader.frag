@@ -10,7 +10,6 @@ void main()
 {
 	vec3 light = normalize(lPos - v);
 	float diffuse = max(dot(light, n), 0.0);
-//	outColor = vec4(diffuse, diffuse, diffuse, 1.0);
-	outColor = c;
+	outColor = vec4(diffuse, diffuse, diffuse, 1.0);
 }
 

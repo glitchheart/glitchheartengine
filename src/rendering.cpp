@@ -121,7 +121,7 @@ static void PushModel(renderer& Renderer, model& Model)
     
     RenderCommand->Model.HandleCount = Model.MeshCount;
     
-    RenderCommand->Model.Color = math::rgba(1.0f, 0.0f, 0.0f, 1.0f);
+    RenderCommand->Model.Color = math::rgba(1.0f, 1.0f, 1.0f, 1.0f);
     RenderCommand->IsUI = false;
 }
 
@@ -154,6 +154,13 @@ static void LoadModel(renderer& Renderer, char* FilePath, model* Model)
     {
         fread(&Header,sizeof(model_header), 1, File);
         
+        if(Header.Version[0] != '1' ||
+           Header.Version[1] != '1')
+        {
+            ERR("Wrong file version. Expected version 1.1.");
+            return;
+        }
+        
         chunk_format Format = {};
         fread(&Format, sizeof(chunk_format), 1, File);
         
@@ -164,7 +171,7 @@ static void LoadModel(renderer& Renderer, char* FilePath, model* Model)
             if(Format.Format[0] == 'M' &&
                Format.Format[1] == 'E' &&
                Format.Format[2] == 'S' &&
-               Format.Format[3] == 'H')
+               Format.Format[3] == 'H') // Checking version number
             {
                 buffer_data Data = {};
                 
@@ -175,10 +182,8 @@ static void LoadModel(renderer& Renderer, char* FilePath, model* Model)
                 r32* VertexBuffer = (r32*)malloc(MHeader.VertexChunkSize);
                 fread(VertexBuffer, MHeader.VertexChunkSize, 1, File);
                 
-                if(MHeader.NumNormals > 0)
-                {
-                    Data.HasNormals = true;
-                }
+                Data.HasNormals = MHeader.NumNormals > 0;
+                Data.HasUVs = MHeader.NumUVs > 0;
                 
                 i32* IndexBuffer = (i32*)malloc(MHeader.FacesChunkSize);
                 fread(IndexBuffer, MHeader.FacesChunkSize, 1, File);
@@ -186,7 +191,7 @@ static void LoadModel(renderer& Renderer, char* FilePath, model* Model)
                 Data.VertexBuffer = (r32*)malloc(MHeader.VertexChunkSize);
                 memcpy(Data.VertexBuffer, VertexBuffer, MHeader.VertexChunkSize);
                 
-                Data.VertexBufferSize = MHeader.NumVertices * 3 + MHeader.NumNormals * 3;
+                Data.VertexBufferSize = MHeader.NumVertices * 3 + MHeader.NumNormals * 3 + MHeader.NumUVs * 2;
                 
                 Data.IndexBuffer = (u32*)malloc(MHeader.FacesChunkSize);
                 memcpy(Data.IndexBuffer, IndexBuffer, MHeader.FacesChunkSize);
@@ -194,7 +199,16 @@ static void LoadModel(renderer& Renderer, char* FilePath, model* Model)
                 Data.IndexBufferSize = MHeader.NumFaces * 3;
                 Model->Meshes[MeshCount++].BufferHandle = Renderer.BufferCount++;
                 Renderer.Buffers[Renderer.BufferCount - 1] = Data;
-                
+                /*
+                if(Data.HasNormals && Data.HasUVs)
+                {
+                    for(i32 Index = 0; Index < Data.VertexBufferSize; Index++)
+                    {
+                        printf("Normal %f %f %f\n", Data.VertexBuffer[Index * 8 + 3], Data.VertexBuffer[Index * 8 + 4], Data.VertexBuffer[Index * 8 + 5]);
+                    }
+                    
+                }
+                */
                 free(VertexBuffer);
                 free(IndexBuffer);
             }
