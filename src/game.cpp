@@ -226,17 +226,17 @@ extern "C" UPDATE(Update)
         
         GameState->Models = 6;
         
-        i32 OffsetX = 44;
-        i32 OffsetZ = 0;
+        i32 OffsetX = 5;
+        i32 OffsetZ = 5;
         
         /*
-        for(i32 I = 0; I < 10+ OffsetX; I++)
+        for(i32 I = 0; I < 5 + OffsetX; I++)
         {
-            for(i32 J = 0; J < 10 + OffsetZ; J++)
+            for(i32 J = 0; J < 5 + OffsetZ; J++)
             {
                 model Model;
                 Model.Position = math::v3(-5 + I, 0, - 5 + J);
-                Model.Scale = math::v3(1, -2, 1);
+                Model.Scale = math::v3(10, -2, 10);
                 Model.Rotation.z = -90;
                 LoadModel(Renderer, "../assets/models/cube.modl", &Model);
                 GameState->TestModels[GameState->Models++] = Model;
