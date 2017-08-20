@@ -1285,6 +1285,8 @@ static void RenderModel(const render_command& Command, render_state& RenderState
         
         math::m4 NormalMatrix = math::Transpose(math::Inverse(View * Model));
         
+        
+        SetFloatUniform(Shader.Program, "time", glfwGetTime());
         SetMat4Uniform(Shader.Program, "normalMatrix", NormalMatrix);
         SetMat4Uniform(Shader.Program, "projection", Projection);
         SetMat4Uniform(Shader.Program, "view", View);

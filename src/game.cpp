@@ -185,27 +185,28 @@ extern "C" UPDATE(Update)
         GameState->TESTMODEL->Scale = math::v3(1, 1, 1);
         
         model Model1;
-        Model1.Position = math::v3(-5, 5, 0);
+        Model1.Position = math::v3(-5, 0, 0);
         Model1.Scale = math::v3(1.0, 1.0, 1.0);
         
         model Model2;
-        Model2.Position = math::v3(0, 5, 0);
+        Model2.Position = math::v3(0, 0, 0);
         Model2.Scale = math::v3(1.0, 1.0, 1.0);
         
         model Model3;
-        Model3.Position = math::v3(5, 5, 0);
+        Model3.Position = math::v3(5, 0, 0);
         Model3.Scale = math::v3(1.0, 1.0, 1.0);
         
         model Model4;
-        Model4.Position = math::v3(5, 5, 0);
+        Model4.Position = math::v3(5, 0, 0);
         Model4.Scale = math::v3(1.0, 1.0, 1.0);
         //Model4.Rotation.x = -90;
         
         model Model5;
         Model5.Position = math::v3(0, 0, -0);
-        Model5.Scale = math::v3(100.0, 1.0, 100.0);
+        Model5.Scale = math::v3(1.0, 1.0, 1.0);
         
         model Model6; // Light source position
+        
         Model6.Position = math::v3(-10.0f, 5.0f, 0);
         Model6.Scale = math::v3(5.0, 5.0, 5.0);
         
@@ -216,6 +217,7 @@ extern "C" UPDATE(Update)
         LoadModel(Renderer, "../assets/models/cube.modl", &Model5);
         LoadModel(Renderer, "../assets/models/panther_monster.modl", &Model6);
         
+        
         GameState->TestModels[0] = Model1;
         GameState->TestModels[1] = Model2;
         GameState->TestModels[2] = Model3;
@@ -223,25 +225,21 @@ extern "C" UPDATE(Update)
         GameState->TestModels[4] = Model5;
         GameState->TestModels[5] = Model6;
         
+        
         GameState->Models = 6;
         
         i32 OffsetX = 44;
         i32 OffsetZ = 0;
+        
         /*
-        model Model;
-        Model.Position = math::v3(OffsetX, 1, OffsetZ);
-        Model.Scale = math::v3(0.1, 0.1, 0.1);
-        LoadModel(Renderer, "../assets/models/obj.modl", &Model);
-        GameState->TestModels[GameState->Models++] = Model;
-        */
-        /*
-        for(i32 I = OffsetX; I < 10 + OffsetX; I++)
+        for(i32 I = 0; I < 10+ OffsetX; I++)
         {
-            for(i32 J = OffsetZ; J < 10 + OffsetZ; J++)
+            for(i32 J = 0; J < 10 + OffsetZ; J++)
             {
                 model Model;
-                Model.Position = math::v3(I, 1, J);
-                Model.Scale = math::v3(1, 1, 1);
+                Model.Position = math::v3(-5 + I, 0, - 5 + J);
+                Model.Scale = math::v3(1, -2, 1);
+                Model.Rotation.z = -90;
                 LoadModel(Renderer, "../assets/models/cube.modl", &Model);
                 GameState->TestModels[GameState->Models++] = Model;
             }
