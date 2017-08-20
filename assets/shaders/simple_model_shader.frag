@@ -116,7 +116,7 @@ void CreatePointLight(out PointLight pointLight)
 	pointLight.quadratic = 0.032;
 	
 	pointLight.ambient = vec3(0.1);
-	pointLight.diffuse = vec3(0.5,0.3,0.1);
+	pointLight.diffuse = vec3(1,1,1);
 	pointLight.specular = vec3(1.0, 1.0, 1.0);
 }
 
@@ -149,7 +149,7 @@ void main()
 
 	DirLight dirLight;
 	dirLight.direction = vec3(-0.2, -1.0, -0.3);
-	dirLight.ambient = vec3(0.0, 0.0, 0.0);
+	dirLight.ambient = vec3(0.1, 0.1, 0.1);
 	dirLight.diffuse = vec3(0.4, 0.2, 0.25);
 	dirLight.specular = vec3(1.0, 1.0, 1.0);
 	vec3 result = CalcDirLight(dirLight, norm, viewDir, material);
@@ -172,7 +172,8 @@ void main()
 
 	for(int i = 0; i < 1; i++)
 		result += CalcPointLight(pointLights[i], norm, fragPos, viewDir, material);
-
-	outColor = vec4(result, 1.0);
+	
+//outColor = vec4(1, 1, 1, 1);
+	outColor = vec4(texture(tex, texCoord));
+	//outColor = vec4(result, 1.0);
 } 
-
