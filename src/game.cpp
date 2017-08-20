@@ -174,10 +174,12 @@ extern "C" UPDATE(Update)
     
     if(!GameState->IsInitialized || !GameMemory->IsInitialized)
     {
+        LoadTextures(Renderer);
+        
         GameState->TESTMODEL = (model*)malloc(sizeof(model));
         
         //LoadOBJFile(Renderer, "../assets/models/suzanne.obj", GameState->TESTMODEL);
-        LoadModel(Renderer, "../assets/models/pickle_test.modl", GameState->TESTMODEL);
+        //LoadModel(Renderer, "../assets/models/chair.modl", GameState->TESTMODEL);
         
         GameState->TESTMODEL->Position = math::v3(0, 0, 0);
         GameState->TESTMODEL->Scale = math::v3(1, 1, 1);
@@ -208,12 +210,20 @@ extern "C" UPDATE(Update)
         Model6.Scale = math::v3(1.0, 1.0, 1.0);
         
         
-        LoadModel(Renderer, "../assets/models/pyramid.modl", &Model1);
-        LoadModel(Renderer, "../assets/models/pyramid.modl", &Model2);
-        LoadModel(Renderer, "../assets/models/teapot.modl", &Model3);
+        // LoadModel(Renderer, "../assets/models/pyramid.modl", &Model1);
+        // LoadModel(Renderer, "../assets/models/pyramid.modl", &Model2);
+        // LoadModel(Renderer, "../assets/models/teapot.modl", &Model3);
+        // LoadModel(Renderer, "../assets/models/female_character.modl", &Model4);
+        // LoadModel(Renderer, "../assets/models/monkey_test.modl", &Model5);
+        // LoadModel(Renderer, "../assets/models/pyramid.modl", &Model6);
+        
+        LoadModel(Renderer, "../assets/models/capsule.modl", &Model1);
+        LoadModel(Renderer, "../assets/models/capsule.modl", &Model2);
+        LoadModel(Renderer, "../assets/models/capsule.modl", &Model3);
         LoadModel(Renderer, "../assets/models/female_character.modl", &Model4);
-        LoadModel(Renderer, "../assets/models/monkey_test.modl", &Model5);
-        LoadModel(Renderer, "../assets/models/pyramid.modl", &Model6);
+        LoadModel(Renderer, "../assets/models/cube.modl", &Model5);
+        LoadModel(Renderer, "../assets/models/capsule.modl", &Model6);
+        
         
         GameState->TestModels[0] = Model1;
         GameState->TestModels[1] = Model2;
@@ -222,15 +232,14 @@ extern "C" UPDATE(Update)
         GameState->TestModels[4] = Model5;
         GameState->TestModels[5] = Model6;
         
+        
         GameState->Models = 6;
         
-        
-        
-        i32 OffsetX = 0;
+        i32 OffsetX = 44;
         i32 OffsetZ = 0;
         
-        
-        for(i32 I = 0; I < 10 + OffsetX; I++)
+        /*
+        for(i32 I = 0; I < 10+ OffsetX; I++)
         {
             for(i32 J = 0; J < 10 + OffsetZ; J++)
             {
@@ -242,7 +251,7 @@ extern "C" UPDATE(Update)
                 GameState->TestModels[GameState->Models++] = Model;
             }
         }
-        
+        */
         
         if(GameState->ShouldReload || GameMemory->ShouldReload)
         {
@@ -250,7 +259,6 @@ extern "C" UPDATE(Update)
             GameState->EditorCameraHandle = 1;
             Renderer.CurrentCameraHandle = GameState->GameCameraHandle;
             Renderer.Cameras[GameState->GameCameraHandle].Zoom = GameMemory->ConfigData.Zoom;
-            LoadTextures(Renderer);
             GameState->InitialZoom = GameMemory->ConfigData.Zoom;
             GameState->LevelPath = (char*)malloc(sizeof(char) * (strlen(GameMemory->ConfigData.StartingLevelFilePath) + 1));
             strcpy(GameState->LevelPath, GameMemory->ConfigData.StartingLevelFilePath);
@@ -844,10 +852,6 @@ extern "C" UPDATE(Update)
     GameCamera.ViewMatrix = math::Rotate(GameCamera.ViewMatrix, 35.264f, math::v3(1,0,0));
     
     GameCamera.ViewMatrix = math::Translate(GameCamera.ViewMatrix, math::v3(GameCamera.ViewportWidth / GameCamera.Zoom / 2.0f, GameCamera.ViewportHeight / GameCamera.Zoom / 2.0f,-50.0f));
-    
-    //DEBUG_PRINT("Mouse In: (%f, %f), Mouse UnProject: (%f, %f)\n", MouseX, MouseY, Pos.X, Pos.Y);
-    
-    //printf("Depth: %d\n", Renderer.ZDepthBuffer[(i32)MouseX + (i32)MouseY]);
     
     InputController->CurrentCharacter = 0;
     GameState->ClearTilePositionFrame = !GameState->ClearTilePositionFrame;
