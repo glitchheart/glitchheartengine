@@ -186,7 +186,7 @@ extern "C" UPDATE(Update)
         
         model Model1;
         Model1.Position = math::v3(-5, 0, 0);
-        Model1.Scale = math::v3(1.0, 1.0, 1.0);
+        Model1.Scale = math::v3(5.0, 5.0, 5.0);
         
         model Model2;
         Model2.Position = math::v3(0, 0, 0);
@@ -206,24 +206,16 @@ extern "C" UPDATE(Update)
         Model5.Scale = math::v3(1.0, 1.0, 1.0);
         
         model Model6; // Light source position
-        Model6.Position = math::v3(0.0f, 3.0f, 0);
-        Model6.Scale = math::v3(1.0, 1.0, 1.0);
         
-        
-        // LoadModel(Renderer, "../assets/models/pyramid.modl", &Model1);
-        // LoadModel(Renderer, "../assets/models/pyramid.modl", &Model2);
-        // LoadModel(Renderer, "../assets/models/teapot.modl", &Model3);
-        // LoadModel(Renderer, "../assets/models/female_character.modl", &Model4);
-        // LoadModel(Renderer, "../assets/models/monkey_test.modl", &Model5);
-        // LoadModel(Renderer, "../assets/models/pyramid.modl", &Model6);
+        Model6.Position = math::v3(-10.0f, 5.0f, 0);
+        Model6.Scale = math::v3(5.0, 5.0, 5.0);
         
         LoadModel(Renderer, "../assets/models/capsule.modl", &Model1);
-        LoadModel(Renderer, "../assets/models/capsule.modl", &Model2);
+        LoadModel(Renderer, "../assets/models/red_riding.modl", &Model2);
         LoadModel(Renderer, "../assets/models/capsule.modl", &Model3);
         LoadModel(Renderer, "../assets/models/female_character.modl", &Model4);
         LoadModel(Renderer, "../assets/models/cube.modl", &Model5);
-        LoadModel(Renderer, "../assets/models/capsule.modl", &Model6);
-        
+        LoadModel(Renderer, "../assets/models/panther_monster.modl", &Model6);
         
         GameState->TestModels[0] = Model1;
         GameState->TestModels[1] = Model2;
@@ -231,7 +223,6 @@ extern "C" UPDATE(Update)
         GameState->TestModels[3] = Model4;
         GameState->TestModels[4] = Model5;
         GameState->TestModels[5] = Model6;
-        
         
         GameState->Models = 6;
         
