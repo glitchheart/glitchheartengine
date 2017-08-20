@@ -853,6 +853,19 @@ extern "C" UPDATE(Update)
     
     GameCamera.ViewMatrix = math::Translate(GameCamera.ViewMatrix, math::v3(GameCamera.ViewportWidth / GameCamera.Zoom / 2.0f, GameCamera.ViewportHeight / GameCamera.Zoom / 2.0f,-50.0f));
     
+    auto MouseX = InputController->MouseX;
+    auto MouseY = InputController->MouseY;
+    
+    if(Renderer.ZDepth)
+    {
+        auto Depth = Renderer.ZDepth[(i32)MouseX + (i32)MouseY * Renderer.WindowWidth];
+        
+        auto Pos = math::UnProject(math::v3((r32)InputController->MouseX, (r32)InputController->MouseY, Depth),
+                                   GameCamera.ViewMatrix,
+                                   GameCamera.ProjectionMatrix,
+                                   math::v4(0, 0, Renderer.Viewport[2], Renderer.Viewport[3]));
+    }
+    
     InputController->CurrentCharacter = 0;
     GameState->ClearTilePositionFrame = !GameState->ClearTilePositionFrame;
     GetActionButtonsForQueue(InputController);

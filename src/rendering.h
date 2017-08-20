@@ -231,6 +231,7 @@ struct renderer
     i32 Viewport[4];
     i32 WindowWidth;
     i32 WindowHeight;
+    r32* ZDepth;
 };
 
 #endif
