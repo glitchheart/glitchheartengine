@@ -211,7 +211,7 @@ extern "C" UPDATE(Update)
         Model6.Scale = math::v3(5.0, 5.0, 5.0);
         
         LoadModel(Renderer, "../assets/models/capsule.modl", &Model1);
-        LoadModel(Renderer, "../assets/models/mask_man.modl", &Model2);
+        LoadModel(Renderer, "../assets/models/red_riding.modl", &Model2);
         LoadModel(Renderer, "../assets/models/capsule.modl", &Model3);
         LoadModel(Renderer, "../assets/models/female_character.modl", &Model4);
         LoadModel(Renderer, "../assets/models/cube.modl", &Model5);
