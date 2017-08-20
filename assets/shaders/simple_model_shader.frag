@@ -4,7 +4,11 @@ in vec3 n;
 in vec3 fragPos;
 in vec3 lightPos;
 in vec3 viewPos;
+in vec2 texCoord;
+
 in float t;
+uniform bool hasUVs;
+uniform sampler2D tex;
 
 struct Material
 {
@@ -64,6 +68,12 @@ vec3 CalcDirLight(DirLight light, vec3 normal, vec3 viewDir, Material material)
 	
 	vec3 ambient = light.ambient;
 	vec3 diffuse = light.diffuse * diff;
+
+	if(hasUVs)
+		diffuse *= vec3(texture(tex, texCoord));
+	else
+		diffuse *= material.diffuse;
+
 	vec3 specular = light.specular * spec;
 	return (ambient + diffuse + specular);
 }
@@ -83,6 +93,12 @@ vec3 CalcPointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir, M
 
 	vec3 ambient = light.ambient;
 	vec3 diffuse = light.diffuse * diff;
+
+	if(hasUVs)
+		diffuse *= vec3(texture(tex, texCoord));
+	else
+		diffuse *= material.diffuse;
+
 	vec3 specular = light.specular * spec;
 	ambient *= attenuation;
 	diffuse *= attenuation;
@@ -99,12 +115,20 @@ void CreatePointLight(out PointLight pointLight)
 	pointLight.linear = 0.09;
 	pointLight.quadratic = 0.032;
 	
-	pointLight.ambient = vec3(0.0,0.0,0.0);
+	pointLight.ambient = vec3(0.1);
 	pointLight.diffuse = vec3(0.5,0.3,0.1);
 	pointLight.specular = vec3(1.0, 1.0, 1.0);
 }
 
 void setMaterial(out Material material)
+{
+	material.ambient = vec3(0.0);
+	material.diffuse = vec3(1.0, 1.0, 1.0);
+	material.specular = vec3(1.0, 1.0, 1.0);
+	material.shininess = 32.0;
+}
+
+void textureMaterial(out Material material)
 {
 	material.ambient = vec3(1.0, 0.5, 0.31);
 	material.diffuse = vec3(0.5, 0.5, 0.31);
@@ -112,32 +136,24 @@ void setMaterial(out Material material)
 	material.shininess = 32.0;
 }
 
-void whitePlastic(out Material material)
-{
-	material.ambient = vec3(0.0);
-	material.diffuse = vec3(0.55);
-	material.specular = vec3(0.70);
-	material.shininess = 0.25;
-}
-
-
-
 void main()
 {
 	Material material;
-	setMaterial(material);
+	if(hasUVs)
+		textureMaterial(material);
+	else
+		setMaterial(material);
 
 	vec3 norm = normalize(n);
 	vec3 viewDir = normalize(viewPos - fragPos);	
 
 	DirLight dirLight;
 	dirLight.direction = vec3(-0.2, -1.0, -0.3);
-	dirLight.ambient = vec3(0.2, 0.2, 0.2);
+	dirLight.ambient = vec3(0.0, 0.0, 0.0);
 	dirLight.diffuse = vec3(0.4, 0.2, 0.25);
 	dirLight.specular = vec3(1.0, 1.0, 1.0);
 	vec3 result = CalcDirLight(dirLight, norm, viewDir, material);
-	result = vec3(0);	
-
+	
 	PointLight pointLights[4];
 	PointLight point1;
 	PointLight point2;
@@ -154,7 +170,7 @@ void main()
 	pointLights[2] = point3;
 	pointLights[3] = point4;
 
-	for(int i = 0; i < 4; i++)
+	for(int i = 0; i < 1; i++)
 		result += CalcPointLight(pointLights[i], norm, fragPos, viewDir, material);
 
 	outColor = vec4(result, 1.0);
