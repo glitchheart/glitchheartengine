@@ -157,7 +157,7 @@ static void ListenToFileChanges(asset_manager* AssetManager)
 }
 
 
-inline void Win32FindFilesWithExtensions(const char* DirectoryPath, const char* Extension, directory_data* DirectoryData, b32 WithSubDirectories = false)
+inline PLATFORM_GET_ALL_FILES_WITH_EXTENSION(Win32FindFilesWithExtensions)
 {
     if(DirectoryData->FilesLength == 0)
     {
@@ -233,7 +233,7 @@ inline void Win32FindFilesWithExtensions(const char* DirectoryPath, const char* 
 }
 
 
-inline b32 Win32FileExists(const char* FilePath)
+inline PLATFORM_FILE_EXISTS(Win32FileExists)
 {
     struct stat Buffer;
     return (stat(FilePath,&Buffer) == 0);
