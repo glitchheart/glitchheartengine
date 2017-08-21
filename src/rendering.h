@@ -4,6 +4,65 @@
 #define PIXELS_PER_UNIT 32
 #define MAX_MESHES 60
 
+#define MAX_LIGHTS 20
+
+struct spotlight
+{
+    r32 Position[4];
+    r32 Direction[4];
+    
+    r32 CutOff;
+    r32 OuterCutOff;
+    
+    r32 Ambient[4];
+    r32 Diffuse[4];
+    r32 Specular[4];
+    
+    r32 Constant;
+    r32 Linear;
+    r32 Quadratic;
+};
+
+struct directional_light
+{
+    r32 Direction[4];
+    
+    r32 Ambient[4];
+    r32 Diffuse[4];
+    r32 Specular[4];
+};
+
+struct point_light
+{
+    r32 Position[4];
+    
+    r32 Constant;
+    r32 Linear;
+    r32 Quadratic;
+    
+    r32 Ambient[4];
+    r32 Diffuse[4];
+    r32 Specular[4];
+};
+
+struct spotlight_data
+{
+    i32 NumLights;
+    spotlight Spotlights[MAX_LIGHTS];
+};
+
+struct directional_light_data
+{
+    i32 NumLights;
+    directional_light DirectionalLights[MAX_LIGHTS];
+};
+
+struct point_light_data
+{
+    i32 NumLights;
+    point_light PointLights[MAX_LIGHTS];
+};
+
 enum Shader_Type
 {
     Shader_Texture,
@@ -30,6 +89,11 @@ enum Render_Command_Type
     RenderCommand_Text,
     RenderCommand_Sprite,
     RenderCommand_Rect,
+    
+    RenderCommand_Spotlight,
+    RenderCommand_DirectionalLight,
+    RenderCommand_PointLight,
+    
     RenderCommand_Buffer,
     RenderCommand_Model,
     RenderCommand_Count
@@ -126,6 +190,37 @@ struct render_command
         } Rect;
         struct
         {
+            math::v3 Direction;
+            r32 CutOff;
+            r32 OuterCutOff;
+            math::v3 Ambient;
+            math::v3 Diffuse;
+            math::v3 Specular;
+            
+            r32 Constant;
+            r32 Linear;
+            r32 Quadratic;
+        } Spotlight;
+        struct 
+        {
+            math::v3 Direction;
+            math::v3 Ambient;
+            math::v3 Diffuse;
+            math::v3 Specular;
+        } DirectionalLight;
+        struct
+        {
+            math::v3 Direction;
+            math::v3 Ambient;
+            math::v3 Diffuse;
+            math::v3 Specular;
+            
+            r32 Constant;
+            r32 Linear;
+            r32 Quadratic;
+        } PointLight;
+        struct
+        {
             i32 BufferHandle;
             char* TextureName;
         } Buffer;
@@ -167,7 +262,7 @@ struct camera
     r32 FadingSpeed;
 };
 
-#define RENDER_COMMAND_MAX 400
+#define RENDER_COMMAND_MAX 100
 #define BUFFER_ARRAY_SIZE 200
 #define TEXTURE_ARRAY_SIZE 512
 
@@ -214,6 +309,9 @@ struct renderer
 {
     render_command Buffer[RENDER_COMMAND_MAX];
     i32 CommandCount;
+    
+    render_command LightCommands[RENDER_COMMAND_MAX];
+    i32 LightCommandCount;
     
     buffer_data Buffers[BUFFER_ARRAY_SIZE];
     i32 BufferHandles[BUFFER_ARRAY_SIZE];

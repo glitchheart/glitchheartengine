@@ -96,9 +96,57 @@ static void PushSprite(renderer& Renderer, math::v3 Position, math::v3 Scale, ma
     RenderCommand->IsUI = IsUI;
 }
 
-static void PushBuffer(renderer& Renderer, i32 BufferHandle, char* TextureName, math::v3 Rotation)
+static void PushSpotlight(renderer& Renderer, math::v3 Position, math::v3 Direction, r32 CutOff, r32 OuterCutOff, math::v3 Ambient, math::v3 Diffuse, math::v3 Specular, r32 Constant, r32 Linear, r32 Quadratic)
 {
     render_command* RenderCommand = &Renderer.Buffer[Renderer.CommandCount++];
+    RenderCommand->Type = RenderCommand_Spotlight;
+    
+    RenderCommand->Position = Position;
+    
+    auto& Spotlight = RenderCommand->Spotlight;
+    Spotlight.Direction = Direction;
+    Spotlight.CutOff = CutOff;
+    Spotlight.OuterCutOff = OuterCutOff;
+    Spotlight.Ambient = Ambient;
+    Spotlight.Diffuse = Diffuse;
+    Spotlight.Specular = Specular;
+    Spotlight.Constant = Constant;
+    Spotlight.Linear = Linear;
+    Spotlight.Quadratic = Quadratic;
+}
+
+static void PushDirectionalLight(renderer& Renderer, math::v3 Direction, math::v3 Ambient, math::v3 Diffuse, math::v3 Specular)
+{
+    render_command* RenderCommand = &Renderer.LightCommands[Renderer.LightCommandCount++];
+    RenderCommand->Type = RenderCommand_DirectionalLight;
+    
+    auto& DirectionalLight = RenderCommand->DirectionalLight;
+    DirectionalLight.Direction = Direction;
+    DirectionalLight.Ambient = Ambient;
+    DirectionalLight.Diffuse = Diffuse;
+    DirectionalLight.Specular = Specular;
+}
+
+static void PushPointLight(renderer& Renderer, math::v3 Position, math::v3 Direction, r32 CutOff, r32 OuterCutOff, math::v3 Ambient, math::v3 Diffuse, math::v3 Specular, r32 Constant, r32 Linear, r32 Quadratic)
+{
+    render_command* RenderCommand = &Renderer.LightCommands[Renderer.LightCommandCount++];
+    RenderCommand->Type = RenderCommand_PointLight;
+    
+    RenderCommand->Position = Position;
+    
+    auto& PointLight = RenderCommand->PointLight;
+    PointLight.Direction = Direction;
+    PointLight.Ambient = Ambient;
+    PointLight.Diffuse = Diffuse;
+    PointLight.Specular = Specular;
+    PointLight.Constant = Constant;
+    PointLight.Linear = Linear;
+    PointLight.Quadratic = Quadratic;
+}
+
+static void PushBuffer(renderer& Renderer, i32 BufferHandle, char* TextureName, math::v3 Rotation)
+{
+    render_command* RenderCommand = &Renderer.LightCommands[Renderer.LightCommandCount++];
     RenderCommand->Type = RenderCommand_Buffer;
     RenderCommand->Buffer.BufferHandle = BufferHandle;
     RenderCommand->Buffer.TextureName = TextureName;

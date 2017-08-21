@@ -155,6 +155,15 @@ struct render_state
     GLuint FrameBufferTex1Loc;
     GLuint TextureColorBuffer;
     
+    // Lighting data
+    spotlight_data SpotlightData;
+    directional_light_data DirectionalLightData;
+    point_light_data PointLightData;
+    
+    GLuint SpotlightUBO;
+    GLuint DirectionalLightUBO;
+    GLuint PointLightUBO;
+    
     // Lighting map
     GLuint LightingFrameBuffer;
     GLuint LightingTextureColorBuffer;
