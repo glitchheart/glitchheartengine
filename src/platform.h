@@ -102,7 +102,7 @@ struct directory_data
 };
 
 
-#define PLATFORM_GET_ALL_FILES_WITH_EXTENSION(name) void name(const char* Path, const char* Extension, directory_data* DirectoryData, b32 WithSubDirectories)
+#define PLATFORM_GET_ALL_FILES_WITH_EXTENSION(name) void name(const char* DirectoryPath, const char* Extension, directory_data* DirectoryData, b32 WithSubDirectories)
 typedef PLATFORM_GET_ALL_FILES_WITH_EXTENSION(platform_get_all_files_with_extension);
 
 #define PLATFORM_FILE_EXISTS(name) b32 name(const char* FilePath)
