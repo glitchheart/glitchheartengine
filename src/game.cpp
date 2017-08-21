@@ -652,6 +652,7 @@ extern "C" UPDATE(Update)
             if(!GameState->Paused && !GameState->StatGainModeOn)
             {
                 UpdateEntities(GameState, Renderer, InputController, SoundQueue, DeltaTime);
+                
                 UpdateObjects(GameState, DeltaTime);
                 
                 TickTimers(GameState, DeltaTime);

@@ -102,11 +102,6 @@ static void ReconstructPath(astar_path* Path, game_state* GameState, astar_node&
         
         if(Length > 0) 
         {
-            if(Path->AStarPath)
-            {
-                free(Path->AStarPath);
-            }
-            
             Path->AStarPath = (path_node*)malloc(sizeof(path_node) * Length + 1);
             
             u32 Index = Length - 1;
@@ -172,7 +167,8 @@ static void AStar(entity* Entity, game_state* GameState, math::v3 StartPos, math
        StartX >= 0 && StartZ >= 0 && TargetX < GameState->CurrentLevel.Tilemap.Width && TargetZ < GameState->CurrentLevel.Tilemap.Height &&
        TargetX >= 0 && TargetZ >= 0)
     {
-        astar_working_data* AStarWorkingData = (astar_working_data*)malloc(sizeof(astar_working_data));
+        astar_working_data Data = {};
+        astar_working_data* AStarWorkingData = &Data; //(astar_working_data*)malloc(sizeof(astar_working_data));
         tile_data StartTile = GameState->CurrentLevel.Tilemap.Data[1][StartX][StartZ];
         tile_data TargetTile = GameState->CurrentLevel.Tilemap.Data[1][TargetX][TargetZ];
         math::v3 CurrentPos = StartPos;
@@ -203,6 +199,7 @@ static void AStar(entity* Entity, game_state* GameState, math::v3 StartPos, math
         {
             for(u32 OpenIndex = 0; OpenIndex < OpenSetCount; OpenIndex++)
             {
+                
                 if(AStarWorkingData->OpenSet[OpenIndex].FCost < LowestFcost)
                 {
                     LowestFcost = AStarWorkingData->OpenSet[OpenIndex].FCost;
@@ -218,7 +215,7 @@ static void AStar(entity* Entity, game_state* GameState, math::v3 StartPos, math
                 ReconstructPath(GetAStarPath(Entity),GameState,Current,AStarWorkingData, StartNode);
                 
                 // We're done with the path
-                free(AStarWorkingData);
+                //free(AStarWorkingData);
                 return;
             }
             
@@ -265,7 +262,7 @@ static void AStar(entity* Entity, game_state* GameState, math::v3 StartPos, math
             LowestFcost = 10000000;
             WorkingIndex = -1;
         }
-        free(AStarWorkingData);
+        //free(AStarWorkingData);
     }
 }
 
