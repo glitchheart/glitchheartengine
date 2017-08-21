@@ -86,13 +86,21 @@ vec3 CalcDirLight(DirLight light, vec3 normal, vec3 viewDir, Material material)
 	
 	vec3 ambient = light.ambient.xyz;
 	vec3 diffuse = light.diffuse.xyz * diff;
+	vec3 specular = light.specular.xyz * spec;
 
 	if(hasUVs)
+	{
 		diffuse *= vec3(texture(tex, texCoord));
+		ambient *= vec3(texture(tex, texCoord));
+		specular *= vec3(texture(tex, texCoord));
+	}
 	else
+	{
 		diffuse *= material.diffuse;
+		ambient *= material.ambient;
+		specular *= material.specular;
+	}
 
-	vec3 specular = light.specular.xyz * spec;
 	return (ambient + diffuse + specular);
 }
 
@@ -109,15 +117,24 @@ vec3 CalcPointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir, M
 	float attenuation = 1.0 / (light.constant + light.linear * distance 
 							 + light.quadratic * (distance * distance));
 
+<<<<<<< HEAD
 	vec3 ambient = light.ambient.xyz;
 	vec3 diffuse = light.diffuse.xyz * diff;
+	vec3 specular = light.specular.xyz * spec;
 
 	if(hasUVs)
+	{
 		diffuse *= vec3(texture(tex, texCoord));
+		ambient *= vec3(texture(tex, texCoord));	
+		specular *= vec3(texture(tex, texCoord));
+	}
 	else
+	{
 		diffuse *= material.diffuse;
+		ambient *= material.ambient;
+		specular *= material.specular;
+	}
 
-	vec3 specular = light.specular.xyz * spec;
 	ambient *= attenuation;
 	diffuse *= attenuation;
 	specular *= attenuation;
@@ -140,10 +157,10 @@ void CreatePointLight(out PointLight pointLight)
 
 void setMaterial(out Material material)
 {
-	material.ambient = vec3(0.0);
-	material.diffuse = vec3(1.0, 1.0, 1.0);
-	material.specular = vec3(1.0, 1.0, 1.0);
-	material.shininess = 32.0;
+	material.ambient = vec3(0.135, 0.2225, 0.1575);
+	material.diffuse = vec3(0.54, 0.89, 0.63);
+	material.specular = vec3(0.316228, 0.316228, 0.316228);
+	material.shininess = 0.1 * 128;
 }
 
 void textureMaterial(out Material material)
@@ -186,7 +203,9 @@ void main()
 
 	for(int i = 0; i < 1; i++)
 		result += CalcPointLight(pointLights[i], norm, fragPos, viewDir, material);
+
 */	
+	
     //outColor = vec4(1, 1, 1, 1);
 	//outColor = vec4(texture(tex, texCoord));
 	outColor = vec4(result, 1.0);

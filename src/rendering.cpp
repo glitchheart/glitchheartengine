@@ -208,7 +208,7 @@ static void LoadModel(renderer& Renderer, char* FilePath, model* Model)
         if(Header.Version[0] != '1' ||
            Header.Version[1] != '2')
         {
-            ERR("Wrong file version. Expected version 1.2.");
+            ERR("Wrong file version. Expected version 1.2");
             return;
         }
         

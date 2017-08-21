@@ -226,17 +226,17 @@ extern "C" UPDATE(Update)
         
         GameState->Models = 6;
         
-        i32 OffsetX = 44;
-        i32 OffsetZ = 0;
+        i32 OffsetX = 5;
+        i32 OffsetZ = 5;
         
         /*
-        for(i32 I = 0; I < 10+ OffsetX; I++)
+        for(i32 I = 0; I < 5 + OffsetX; I++)
         {
-            for(i32 J = 0; J < 10 + OffsetZ; J++)
+            for(i32 J = 0; J < 5 + OffsetZ; J++)
             {
                 model Model;
                 Model.Position = math::v3(-5 + I, 0, - 5 + J);
-                Model.Scale = math::v3(1, -2, 1);
+                Model.Scale = math::v3(10, -2, 10);
                 Model.Rotation.z = -90;
                 LoadModel(Renderer, "../assets/models/cube.modl", &Model);
                 GameState->TestModels[GameState->Models++] = Model;
@@ -652,6 +652,7 @@ extern "C" UPDATE(Update)
             if(!GameState->Paused && !GameState->StatGainModeOn)
             {
                 UpdateEntities(GameState, Renderer, InputController, SoundQueue, DeltaTime);
+                
                 UpdateObjects(GameState, DeltaTime);
                 
                 TickTimers(GameState, DeltaTime);
@@ -843,6 +844,19 @@ extern "C" UPDATE(Update)
     GameCamera.ViewMatrix = math::Rotate(GameCamera.ViewMatrix, 35.264f, math::v3(1,0,0));
     
     GameCamera.ViewMatrix = math::Translate(GameCamera.ViewMatrix, math::v3(GameCamera.ViewportWidth / GameCamera.Zoom / 2.0f, GameCamera.ViewportHeight / GameCamera.Zoom / 2.0f,-50.0f));
+    
+    auto MouseX = InputController->MouseX;
+    auto MouseY = InputController->MouseY;
+    
+    if(Renderer.ZDepth)
+    {
+        auto Depth = Renderer.ZDepth[(i32)MouseX + (i32)MouseY * Renderer.WindowWidth];
+        
+        auto Pos = math::UnProject(math::v3((r32)InputController->MouseX, (r32)InputController->MouseY, Depth),
+                                   GameCamera.ViewMatrix,
+                                   GameCamera.ProjectionMatrix,
+                                   math::v4(0, 0, Renderer.Viewport[2], Renderer.Viewport[3]));
+    }
     
     InputController->CurrentCharacter = 0;
     GameState->ClearTilePositionFrame = !GameState->ClearTilePositionFrame;

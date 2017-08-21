@@ -1562,6 +1562,17 @@ static void Render(render_state& RenderState, renderer& Renderer)
     //RenderLightSources(GameState);
     
     // Second pass
+    
+    if(Renderer.ZDepth)
+    {
+        free(Renderer.ZDepth);
+    }
+    
+    Renderer.ZDepth = (r32*)malloc(sizeof(r32*) * Renderer.WindowWidth * Renderer.WindowHeight);
+    glReadPixels(0,0,Renderer.WindowWidth, Renderer.WindowHeight, GL_DEPTH_COMPONENT, GL_FLOAT, Renderer.ZDepth);
+    
+    
+    
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glClearColor(0, 0, 0, 1.0f);
     
