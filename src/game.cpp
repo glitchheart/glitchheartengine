@@ -213,7 +213,7 @@ extern "C" UPDATE(Update)
         LoadModel(Renderer, "../assets/models/capsule.modl", &Model1);
         LoadModel(Renderer, "../assets/models/red_riding.modl", &Model2);
         LoadModel(Renderer, "../assets/models/capsule.modl", &Model3);
-        LoadModel(Renderer, "../assets/models/female_character.modl", &Model4);
+        LoadModel(Renderer, "../assets/models/mask_boy.modl", &Model4);
         LoadModel(Renderer, "../assets/models/cube.modl", &Model5);
         LoadModel(Renderer, "../assets/models/panther_monster.modl", &Model6);
         
@@ -882,6 +882,7 @@ extern "C" UPDATE(Update)
     }
     
     //PushTilemapRenderCommands(Renderer, *GameState);
+    PushDirectionalLight(Renderer, math::v3(-0.2, -1.0, -0.3), math::v3(0.2f, 0.2f, 0.2f), math::v3(1, 0, 0), math::v3(0.1, 0.1, 0.1));
     PushEntityRenderCommands(Renderer, *GameState);
     
     for(i32 Index = 0; Index < GameState->Models; Index++)

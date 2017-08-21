@@ -664,6 +664,51 @@ static void RenderSetup(render_state *RenderState)
     
     RenderState->SimpleModelShader.Type = Shader_SimpleModel;
     LoadShader(ShaderPaths[Shader_SimpleModel], &RenderState->SimpleModelShader);
+    
+    RenderState->SpotlightData.NumLights = 0;
+    glGenBuffers(1, &RenderState->SpotlightUBO);
+    glBindBufferBase(GL_UNIFORM_BUFFER, 0, RenderState->SpotlightUBO);
+    glBufferData(GL_UNIFORM_BUFFER, sizeof(spotlight_data), &RenderState->SpotlightData, GL_DYNAMIC_DRAW);
+    
+    u32 BlockIndex = glGetUniformBlockIndex(RenderState->SimpleModelShader.Program, "spotlights");
+    glUniformBlockBinding(RenderState->SimpleModelShader.Program, BlockIndex, 0);
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+    
+    RenderState->DirectionalLightData.NumLights = 0;
+    glGenBuffers(1, &RenderState->DirectionalLightUBO);
+    glBindBufferBase(GL_UNIFORM_BUFFER, 1, RenderState->DirectionalLightUBO);
+    glBufferData(GL_UNIFORM_BUFFER, sizeof(directional_light_data), &RenderState->DirectionalLightData, GL_DYNAMIC_DRAW);
+    
+    BlockIndex = glGetUniformBlockIndex(RenderState->SimpleModelShader.Program, "directionalLights");
+    glUniformBlockBinding(RenderState->SimpleModelShader.Program, BlockIndex, 1);
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+    
+    RenderState->PointLightData.NumLights = 0;
+    glGenBuffers(1, &RenderState->PointLightUBO);
+    glBindBufferBase(GL_UNIFORM_BUFFER, 2, RenderState->PointLightUBO);
+    glBufferData(GL_UNIFORM_BUFFER, sizeof(point_light_data), &RenderState->PointLightData, GL_DYNAMIC_DRAW);
+    
+    BlockIndex = glGetUniformBlockIndex(RenderState->SimpleModelShader.Program, "pointLights");
+    glUniformBlockBinding(RenderState->SimpleModelShader.Program, BlockIndex, 2);
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+}
+
+static void UpdateLightingData(const render_state& RenderState)
+{
+    glBindBuffer(GL_UNIFORM_BUFFER, RenderState.SpotlightUBO);
+    GLvoid* P = glMapBuffer(GL_UNIFORM_BUFFER, GL_WRITE_ONLY);
+    memcpy(P, &RenderState.SpotlightData, sizeof(spotlight_data));
+    glUnmapBuffer(GL_UNIFORM_BUFFER);
+    
+    glBindBuffer(GL_UNIFORM_BUFFER, RenderState.DirectionalLightUBO);
+    P = glMapBuffer(GL_UNIFORM_BUFFER, GL_WRITE_ONLY);
+    memcpy(P, &RenderState.DirectionalLightData, sizeof(directional_light_data));
+    glUnmapBuffer(GL_UNIFORM_BUFFER);
+    
+    glBindBuffer(GL_UNIFORM_BUFFER, RenderState.PointLightUBO);
+    P = glMapBuffer(GL_UNIFORM_BUFFER, GL_WRITE_ONLY);
+    memcpy(P, &RenderState.PointLightData, sizeof(point_light_data));
+    glUnmapBuffer(GL_UNIFORM_BUFFER);
 }
 
 static GLuint LoadTexture(texture_data& Data, texture* Texture)
@@ -722,8 +767,9 @@ static void InitializeOpenGL(render_state& RenderState, renderer& Renderer, conf
     glfwGetFramebufferSize(RenderState.Window, &Width, &Height);
     glfwSetWindowPos(RenderState.Window, Mode->width / 2 - Width / 2, Mode->height / 2 - Height / 2);
     
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwSetInputMode(RenderState.Window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
     
     glfwSetWindowAspectRatio(RenderState.Window, 16, 9);
@@ -1353,6 +1399,95 @@ static void RenderCommands(render_state& RenderState, renderer& Renderer)
     
     auto& Camera = Renderer.Cameras[Renderer.CurrentCameraHandle];
     
+    for(i32 Index = 0; Index < Renderer.LightCommandCount; Index++)
+    {
+        const render_command& Command = Renderer.LightCommands[Index];
+        
+        switch(Command.Type)
+        {
+            case RenderCommand_Spotlight:
+            {
+                spotlight& Spotlight = RenderState.SpotlightData.Spotlights[RenderState.SpotlightData.NumLights++];
+                
+                Spotlight.Position[0] = Command.Position.x;
+                Spotlight.Position[1] = Command.Position.y;
+                Spotlight.Position[2] = Command.Position.z;
+                
+                Spotlight.Direction[0] = Command.Spotlight.Direction.x;
+                Spotlight.Direction[1] = Command.Spotlight.Direction.y;
+                Spotlight.Direction[2] = Command.Spotlight.Direction.z;
+                
+                Spotlight.CutOff = Command.Spotlight.CutOff;
+                Spotlight.OuterCutOff = Command.Spotlight.OuterCutOff;
+                
+                Spotlight.Ambient[0] = Command.Spotlight.Ambient.x;
+                Spotlight.Ambient[1] = Command.Spotlight.Ambient.y;
+                Spotlight.Ambient[2] = Command.Spotlight.Ambient.z;
+                
+                Spotlight.Diffuse[0] = Command.Spotlight.Diffuse.x;
+                Spotlight.Diffuse[1] = Command.Spotlight.Diffuse.y;
+                Spotlight.Diffuse[2] = Command.Spotlight.Diffuse.z;
+                Spotlight.Specular[0] = Command.Spotlight.Specular.x;
+                Spotlight.Specular[1] = Command.Spotlight.Specular.y;
+                Spotlight.Specular[2] = Command.Spotlight.Specular.z;
+                
+                Spotlight.Constant = Command.Spotlight.Constant;
+                Spotlight.Linear = Command.Spotlight.Linear;
+                Spotlight.Quadratic = Command.Spotlight.Quadratic;
+            }
+            break;
+            case RenderCommand_DirectionalLight:
+            {
+                directional_light& DirectionalLight = RenderState.DirectionalLightData.DirectionalLights[RenderState.DirectionalLightData.NumLights++];
+                
+                DirectionalLight.Direction[0] = Command.DirectionalLight.Direction.x;
+                DirectionalLight.Direction[1] = Command.DirectionalLight.Direction.y;
+                DirectionalLight.Direction[2] = Command.DirectionalLight.Direction.z;
+                DirectionalLight.Direction[3] = 0;
+                
+                DirectionalLight.Ambient[0] = Command.DirectionalLight.Ambient.x;
+                DirectionalLight.Ambient[1] = Command.DirectionalLight.Ambient.y;
+                DirectionalLight.Ambient[2] = Command.DirectionalLight.Ambient.z;
+                DirectionalLight.Ambient[3] = 0;
+                DirectionalLight.Diffuse[0] = Command.DirectionalLight.Diffuse.x;
+                DirectionalLight.Diffuse[1] = Command.DirectionalLight.Diffuse.y;
+                DirectionalLight.Diffuse[2] = Command.DirectionalLight.Diffuse.z;
+                DirectionalLight.Diffuse[3] = 0;
+                DirectionalLight.Specular[0] = Command.DirectionalLight.Specular.x;
+                DirectionalLight.Specular[1] = Command.DirectionalLight.Specular.y;
+                DirectionalLight.Specular[2] = Command.DirectionalLight.Specular.z;
+                DirectionalLight.Specular[3] = 0;
+            }
+            break;
+            case RenderCommand_PointLight:
+            {
+                point_light& PointLight = RenderState.PointLightData.PointLights[RenderState.PointLightData.NumLights++];
+                
+                PointLight.Position[0] = Command.Position.x;
+                PointLight.Position[1] = Command.Position.y;
+                PointLight.Position[2] = Command.Position.z;
+                
+                PointLight.Ambient[0] = Command.PointLight.Ambient.x;
+                PointLight.Ambient[1] = Command.PointLight.Ambient.y;
+                PointLight.Ambient[2] = Command.PointLight.Ambient.z;
+                PointLight.Diffuse[0] = Command.PointLight.Diffuse.x;
+                PointLight.Diffuse[1] = Command.PointLight.Diffuse.y;
+                PointLight.Diffuse[2] = Command.PointLight.Diffuse.z;
+                PointLight.Specular[0] = Command.PointLight.Specular.x;
+                PointLight.Specular[1] = Command.PointLight.Specular.y;
+                PointLight.Specular[2] = Command.PointLight.Specular.z;
+                
+                PointLight.Constant = Command.PointLight.Constant;
+                PointLight.Linear = Command.PointLight.Linear;
+                PointLight.Quadratic = Command.PointLight.Quadratic;
+            }
+            break;
+        }
+    }
+    
+    UpdateLightingData(RenderState);
+    Renderer.LightCommandCount = 0;
+    
     for(i32 Index = 0; Index < Renderer.CommandCount; Index++)
     {
         const render_command& Command = Renderer.Buffer[Index];
@@ -1393,6 +1528,10 @@ static void RenderCommands(render_state& RenderState, renderer& Renderer)
     }
     
     Renderer.CommandCount = 0;
+    
+    RenderState.SpotlightData.NumLights = 0;
+    RenderState.DirectionalLightData.NumLights = 0;
+    RenderState.PointLightData.NumLights = 0;
 }
 
 static void Render(render_state& RenderState, renderer& Renderer)
