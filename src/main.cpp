@@ -13,7 +13,9 @@
 #include <sys/stat.h>  
 
 #include <GLFW/glfw3.h>
-#include "platform.h"
+
+#include "main.h"
+
 #include "console.h"
 #include "opengl_rendering.h"
 #include "keycontroller.cpp"
@@ -157,7 +159,6 @@ PLATFORM_DEALLOCATE_MEMORY(Win32DeallocateMemory)
     }
 }
 
-
 int main(void)
 {
     DEBUG_PRINT("Initializing gamestate\n");
@@ -167,13 +168,26 @@ int main(void)
     config_data ConfigData;
     LoadConfig("../assets/.config", &ConfigData);
     
+    win32_memory Win32Memory;
+    Win32Memory.PermanentStorageSize = Megabytes(256);
+    Win32Memory.PermanentStorage = VirtualAlloc(0, Win32Memory.PermanentStorageSize, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+    
+    Win32Memory.TemporaryStorageSize = Megabytes(256);
+    Win32Memory.TemporaryStorage = VirtualAlloc(0, Win32Memory.TemporaryStorageSize, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+    
+    win32_state Win32State;
+    InitializeArena(&Win32State.PermArena, Win32Memory.PermanentStorageSize, (u8*)Win32Memory.PermanentStorage);
+    InitializeArena(&Win32State.TempArena, Win32Memory.TemporaryStorageSize, (u8*)Win32Memory.TemporaryStorage);
+    
     LPVOID BaseAddress = 0;
     game_memory GameMemory = {};
-    GameMemory.PermanentStorageSize = Megabytes(512);
+    GameMemory.PermanentStorageSize = Megabytes(128);
     u64 TotalSize = GameMemory.PermanentStorageSize;
     GameMemory.PermanentStorage = VirtualAlloc(BaseAddress, (size_t)TotalSize,
                                                MEM_RESERVE|MEM_COMMIT,
                                                PAGE_READWRITE);
+    GameMemory.TemporaryStorageSize = Megabytes(128);
+    GameMemory.TemporaryStorage = VirtualAlloc(0, GameMemory.TemporaryStorageSize, MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE);
     
     GameMemory.ShouldReload = true;
     GameMemory.ConfigData = ConfigData;
@@ -187,13 +201,13 @@ int main(void)
     render_state RenderState;
     renderer Renderer = {};
     
-    InitializeOpenGL(RenderState, Renderer, &ConfigData);
+    InitializeOpenGL(RenderState, Renderer, &ConfigData, &Win32State.PermArena);
     
     game_code Game = LoadGameCode();
     
     //setup asset reloading
     asset_manager AssetManager = {};
-    StartupFileTimeChecks(&AssetManager);
+    StartupFileTimeChecks(&AssetManager, &Win32State.TempArena);
     
     u32 FrameCounterForAssetCheck = 0;
     
@@ -252,7 +266,7 @@ int main(void)
             SoundDevice.Paused = !SoundDevice.Paused;
         }
         
-        ReloadAssets(RenderState, &AssetManager);
+        ReloadAssets(RenderState, &AssetManager, &Win32State.TempArena);
         GameMemory.ReloadData = &AssetManager.ReloadData;
         ReloadDlls(&Game);
         
@@ -263,7 +277,7 @@ int main(void)
         
         
         
-        Render(RenderState, Renderer);
+        Render(RenderState, Renderer, &Win32State.TempArena);
         PlaySounds(&SoundDevice, &SoundQueue, GameUpdateStruct.EntityPositions, GameUpdateStruct.EntityCount);
         
         SetControllerInvalidKeys();
@@ -280,9 +294,11 @@ int main(void)
         FrameCounterForAssetCheck++;
         if(FrameCounterForAssetCheck == 10)
         {
-            ListenToFileChanges(&AssetManager);
+            ListenToFileChanges(&AssetManager, &Win32State.TempArena);
             FrameCounterForAssetCheck = 0;
         }
+        
+        Reset(&Win32State.TempArena);
     }
     
     CleanupSound(&SoundDevice);

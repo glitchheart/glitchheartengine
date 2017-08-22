@@ -2,7 +2,7 @@ static void SaveAnimationToFile(game_state* GameState, const animation& Animatio
 {
     FILE* File;
     
-    File = fopen(Concat(Concat("../assets/animations/", Animation.Name), ".pownim"), "w");
+    File = fopen(Concat(Concat("../assets/animations/", Animation.Name, &GameState->TempArena), ".pownim", &GameState->TempArena), "w");
     if (File)
     {
         texture_data* TextureData = Renderer.TextureMap[Animation.Texture];
@@ -157,15 +157,15 @@ static void LoadAnimations(game_state* GameState, renderer& Renderer)
 {
     animation_Map_Init(&GameState->AnimationMap, HashStringJenkins, 2048);
     directory_data DirData;
-    Platform.GetAllFilesWithExtension("../assets/animations/", "pownim", &DirData, false);
+    Platform.GetAllFilesWithExtension("../assets/animations/", "pownim", &DirData, false, &GameState->TempArena);
     
     for (i32 FileIndex = 0; FileIndex < DirData.FilesLength; FileIndex++)
     {
         LoadAnimationFromFile(DirData.FilePaths[FileIndex], GameState, Renderer);
     }
     
-    free(DirData.FilePaths);
-    free(DirData.FileNames);
+    //free(DirData.FilePaths);
+    //free(DirData.FileNames);
 }
 
 static inline void PlayAnimation(entity* Entity, char* AnimationName, game_state* GameState)

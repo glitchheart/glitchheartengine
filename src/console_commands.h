@@ -1,15 +1,15 @@
 #ifndef CONSOLE_COMMANDS_H
 #define CONSOLE_COMMANDS_H
 
-static char* Zoom(game_state* GameState, char** Arguments)
+static char* Zoom(game_state* GameState, char** Arguments, memory_arena* TempArena)
 {
     r32 ZoomAmount = (r32) strtod(Arguments[0], NULL);
     //@Incomplete: Should be renderer.camera
     //GameCamera.Zoom = ZoomAmount;
-    return Concat("Zoom set to ", Arguments[0]);
+    return Concat("Zoom set to ", Arguments[0], TempArena);
 }
 
-static char* Jump(game_state* GameState, char** Arguments)
+static char* Jump(game_state* GameState, char** Arguments, memory_arena* TempArena)
 {
     r32 X = (r32) strtod(Arguments[0], NULL);
     r32 Y = (r32) strtod(Arguments[1], NULL);
@@ -22,7 +22,7 @@ static char* Jump(game_state* GameState, char** Arguments)
     return Result;
 }
 
-static char* LoadLevel(game_state* GameState, char** Arguments)
+static char* LoadLevel(game_state* GameState, char** Arguments, memory_arena* TempArena)
 {
     char* Result = (char*)malloc(25 * sizeof(char));
     
@@ -33,7 +33,7 @@ static char* LoadLevel(game_state* GameState, char** Arguments)
         char* PathPrefix = "../assets/levels/";
         char* PathSuffix = ".plv";
         
-        char* Path = Concat(Concat(PathPrefix, Arguments[0]), PathSuffix);
+        char* Path = Concat(Concat(PathPrefix, Arguments[0], TempArena), PathSuffix, TempArena);
         
         DEBUG_PRINT("String allocation\n");
         
@@ -114,7 +114,7 @@ static void ReloadCurrentLevel(game_state* GameState)
 }
 
 
-static char* Reset(game_state* GameState, char** Arguments)
+static char* Reset(game_state* GameState, char** Arguments, memory_arena* TempArena)
 {
     ReloadCurrentLevel(GameState);
     char* Result = (char*)malloc(12 * sizeof(char));
@@ -130,7 +130,7 @@ static char* Exit(render_state& RenderState, char** Arguments)
 }
 */
 
-static char* View(game_state* GameState, char** Arguments)
+static char* View(game_state* GameState, char** Arguments, memory_arena* TempArena)
 {
     if(Arguments) 
     {
@@ -138,7 +138,7 @@ static char* View(game_state* GameState, char** Arguments)
     return "Error: No arguments provided";
 }
 
-static char* Editor(game_state* GameState, char** Arguments)
+static char* Editor(game_state* GameState, char** Arguments, memory_arena* TempArena)
 {
     if(Arguments)
     {

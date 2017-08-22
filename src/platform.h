@@ -106,7 +106,7 @@ struct directory_data
 };
 
 
-#define PLATFORM_GET_ALL_FILES_WITH_EXTENSION(name) void name(const char* DirectoryPath, const char* Extension, directory_data* DirectoryData, b32 WithSubDirectories)
+#define PLATFORM_GET_ALL_FILES_WITH_EXTENSION(name) void name(const char* DirectoryPath, const char* Extension, directory_data* DirectoryData, b32 WithSubDirectories, memory_arena* TempArena)
 typedef PLATFORM_GET_ALL_FILES_WITH_EXTENSION(platform_get_all_files_with_extension);
 
 #define PLATFORM_FILE_EXISTS(name) b32 name(const char* FilePath)
@@ -141,6 +141,9 @@ struct game_memory
     
     u64 PermanentStorageSize;
     void* PermanentStorage;
+    
+    u64 TemporaryStorageSize;
+    void* TemporaryStorage;
 };
 
 struct input_controller;
@@ -179,10 +182,14 @@ struct CompareCStrings
     }
 };
 
+#define STRINGIFY(x) #x
+#define TOSTRING(x) STRINGIFY(x)
+#define AT __FILE__ ":" TOSTRING(__LINE__)
+
 //Remember to free string after usage
-inline char* Concat(const char *s1, const char *s2)
+inline char* Concat(const char *s1, const char *s2, memory_arena* Arena)
 {
-    char *result = (char*)malloc(strlen(s1)+strlen(s2)+1);//+1 for the zero-terminator
+    char* result = PushString(Arena, (u32)(strlen(s1) + strlen(s2)));
     strcpy(result, s1);
     strcat(result, s2);
     return result;
@@ -265,13 +272,5 @@ inline void LoadConfig(const char* FilePath, config_data* ConfigData)
         fclose(File);
     }
 }
-
-inline void DebugPrintVec2(math::v2 Vec2, const char* Msg = "")
-{
-    DEBUG_PRINT(Concat(Msg, " (%f,%f)\n"),Vec2.x,Vec2.y);
-}
-
-
-
 
 #endif

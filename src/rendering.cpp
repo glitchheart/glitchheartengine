@@ -12,20 +12,20 @@ static void LoadTexture(char* TextureName, const char* FullTexturePath, renderer
     Renderer.TextureMap[TextureName] = TextureData;
 }
 
-static void LoadTextures(renderer& Renderer)
+static void LoadTextures(renderer& Renderer, memory_arena* TempArena)
 {
     texture_data_Map_Init(&Renderer.TextureMap, HashStringJenkins, 64);
     
     directory_data DirData = {};
-    Platform.GetAllFilesWithExtension("../assets/textures/", "png", &DirData, true);
+    Platform.GetAllFilesWithExtension("../assets/textures/", "png", &DirData, true, TempArena);
     
     for (i32 FileIndex = 0; FileIndex < DirData.FilesLength; FileIndex++)
     {
         LoadTexture(DirData.FileNames[FileIndex], DirData.FilePaths[FileIndex], Renderer);
     }
     
-    free(DirData.FilePaths);
-    free(DirData.FileNames);
+    //free(DirData.FilePaths);
+    //free(DirData.FileNames);
 }
 
 static void PushLine(renderer& Renderer, math::v3 Point1, math::v3 Point2, r32 LineWidth, math::rgba Color, b32 IsUI = false)
