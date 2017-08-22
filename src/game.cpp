@@ -218,13 +218,13 @@ extern "C" UPDATE(Update)
         LoadModel(Renderer, "../assets/models/panther_monster.modl", &Model6);
         
         GameState->TestModels[0] = Model1;
-        //GameState->TestModels[1] = Model2;
-        //GameState->TestModels[2] = Model3;
-        //GameState->TestModels[3] = Model4;
-        //GameState->TestModels[4] = Model5;
-        //GameState->TestModels[5] = Model6;
+        GameState->TestModels[1] = Model2;
+        GameState->TestModels[2] = Model3;
+        GameState->TestModels[3] = Model4;
+        GameState->TestModels[4] = Model5;
+        GameState->TestModels[5] = Model6;
         
-        GameState->Models = 1;
+        GameState->Models = 6;
         
         i32 OffsetX = 5;
         i32 OffsetZ = 5;
@@ -899,7 +899,7 @@ extern "C" UPDATE(Update)
     
     PushDirectionalLight(Renderer, math::v3(-0.2, -1.0, -0.3), math::v3(0.1f, 0.1f, 0.1f), math::v3(0, 0, 0), math::v3(0.1, 0.1, 0.1));
     
-    PushSpotlight(Renderer, math::v3(0.0f,0.0f,0.0f), math::v3(0.0f, -1.0f, 0.0f), DEGREE_IN_RADIANS * 12.5f, DEGREE_IN_RADIANS * 17.5f, math::v3(0.1f, 0.1f, 0.1f), math::v3(0.8f, 0.8f, 0.8f), math::v3(1.0, 1.0, 1.0), 1.0f, 0.09f, 0.032f);
+    PushSpotlight(Renderer, math::v3(0.0f,0.0f,0.0f), math::v3(0.0f, -1.0f, 0.0f), DEGREE_IN_RADIANS * 12.5f, DEGREE_IN_RADIANS * 17.5f, math::v3(0.1f, 0.1f, 0.1f), math::v3(5.8f, 5.8f, 5.8f), math::v3(1.0, 1.0, 1.0), 1.0f, 0.09f, 0.032f);
     
     PushPointLight(Renderer, math::v3(0.0f, 0.0f, 0.0f), math::v3(0.0f, 1.0f, 0.0f), math::v3(1.0f, 1.0f, 0.0), math::v3(1.0, 1.0, 1.0), 1.0f, 0.09f, 0.032f);
     
