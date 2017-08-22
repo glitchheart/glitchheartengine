@@ -142,6 +142,22 @@ void PrintGLMMatrix(glm::mat4 In)
 }
 #endif
 
+PLATFORM_ALLOCATE_MEMORY(Win32AllocateMemory)
+{
+    void* Result = VirtualAlloc(0, Size, MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE);
+    
+    return Result;
+}
+
+PLATFORM_DEALLOCATE_MEMORY(Win32DeallocateMemory)
+{
+    if(Memory)
+    {
+        VirtualFree(Memory, 0, MEM_RELEASE);
+    }
+}
+
+
 int main(void)
 {
     DEBUG_PRINT("Initializing gamestate\n");
@@ -165,9 +181,12 @@ int main(void)
     
     GameMemory.PlatformAPI.GetAllFilesWithExtension = Win32FindFilesWithExtensions;
     GameMemory.PlatformAPI.FileExists = Win32FileExists;
+    GameMemory.PlatformAPI.AllocateMemory = Win32AllocateMemory;
+    GameMemory.PlatformAPI.DeallocateMemory = Win32DeallocateMemory;
     
     render_state RenderState;
     renderer Renderer = {};
+    
     InitializeOpenGL(RenderState, Renderer, &ConfigData);
     
     game_code Game = LoadGameCode();
@@ -202,8 +221,6 @@ int main(void)
         Renderer.WindowHeight = RenderState.WindowHeight;
         
         memcpy(Renderer.Viewport, RenderState.Viewport, sizeof(i32) * 4);
-        
-        
         
         //calculate deltatime
         CurrentFrame = GetTime();

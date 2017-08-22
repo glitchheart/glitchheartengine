@@ -6,7 +6,7 @@ static void LoadTexture(char* TextureName, const char* FullTexturePath, renderer
     
     TextureData->ImageData = stbi_load(FullTexturePath, &TextureData->Width, &TextureData->Height, 0, STBI_rgb_alpha);
     
-    TextureData->Name = (char*)malloc((strlen(TextureName) + 1) * sizeof(char));
+    TextureData->Name = (char*)Platform.AllocateMemory((strlen(TextureName) + 1 * sizeof(char)));
     strcpy(TextureData->Name, TextureName);
     
     Renderer.TextureMap[TextureName] = TextureData;
@@ -30,7 +30,8 @@ static void LoadTextures(renderer& Renderer)
 
 static void PushLine(renderer& Renderer, math::v3 Point1, math::v3 Point2, r32 LineWidth, math::rgba Color, b32 IsUI = false)
 {
-    render_command* RenderCommand = &Renderer.Buffer[Renderer.CommandCount++];
+    render_command* RenderCommand = PushStruct(&Renderer.Buffer, render_command);
+    Renderer.CommandCount++;
     RenderCommand->Type = RenderCommand_Line;
     RenderCommand->Line.Point1 = Point1;
     RenderCommand->Line.Point2 = Point2;
@@ -41,7 +42,8 @@ static void PushLine(renderer& Renderer, math::v3 Point1, math::v3 Point2, r32 L
 
 static void PushText(renderer& Renderer, const char* Text, math::v3 Position, i32 FontHandle, math::rgba Color, Alignment Alignment = Alignment_Left, b32 IsUI = true)
 {
-    render_command* RenderCommand = &Renderer.Buffer[Renderer.CommandCount++];
+    render_command* RenderCommand = PushStruct(&Renderer.Buffer, render_command);
+    Renderer.CommandCount++;
     RenderCommand->Type = RenderCommand_Text;
     
     strcpy(RenderCommand->Text.Text, Text);
@@ -55,7 +57,9 @@ static void PushText(renderer& Renderer, const char* Text, math::v3 Position, i3
 
 static void PushFilledRect(renderer& Renderer, math::v3 Position, math::v3 Size, math::rgba Color, b32 IsUI = true)
 {
-    render_command* RenderCommand = &Renderer.Buffer[Renderer.CommandCount++];
+    render_command* RenderCommand = PushStruct(&Renderer.Buffer, render_command);
+    Renderer.CommandCount++;
+    
     RenderCommand->Type = RenderCommand_Rect;
     RenderCommand->Rect.Position = Position;
     RenderCommand->Rect.Size = Size;
@@ -66,7 +70,9 @@ static void PushFilledRect(renderer& Renderer, math::v3 Position, math::v3 Size,
 
 static void PushOutlinedRect(renderer& Renderer, math::v3 Position, math::v3 Size, math::rgba Color, b32 IsUI = false)
 {
-    render_command* RenderCommand = &Renderer.Buffer[Renderer.CommandCount++];
+    render_command* RenderCommand = PushStruct(&Renderer.Buffer, render_command);
+    Renderer.CommandCount++;
+    
     RenderCommand->Type = RenderCommand_Rect;
     RenderCommand->Rect.Position = Position;
     RenderCommand->Rect.Size = Size;
@@ -77,7 +83,9 @@ static void PushOutlinedRect(renderer& Renderer, math::v3 Position, math::v3 Siz
 
 static void PushSprite(renderer& Renderer, math::v3 Position, math::v3 Scale, math::v2 Frame, math::v2 TextureOffset, const char* TextureName, math::rgba Color, b32 IsUI = false)
 {
-    render_command* RenderCommand = &Renderer.Buffer[Renderer.CommandCount++];
+    render_command* RenderCommand = PushStruct(&Renderer.Buffer, render_command);
+    Renderer.CommandCount++;
+    
     RenderCommand->Type = RenderCommand_Sprite;
     RenderCommand->Sprite.Position = Position;
     RenderCommand->Sprite.Scale = Scale;
@@ -98,7 +106,9 @@ static void PushSprite(renderer& Renderer, math::v3 Position, math::v3 Scale, ma
 
 static void PushSpotlight(renderer& Renderer, math::v3 Position, math::v3 Direction, r32 CutOff, r32 OuterCutOff, math::v3 Ambient, math::v3 Diffuse, math::v3 Specular, r32 Constant, r32 Linear, r32 Quadratic)
 {
-    render_command* RenderCommand = &Renderer.LightCommands[Renderer.LightCommandCount++];
+    render_command* RenderCommand = PushStruct(&Renderer.LightCommands, render_command);
+    Renderer.LightCommandCount++;
+    
     RenderCommand->Type = RenderCommand_Spotlight;
     
     RenderCommand->Position = Position;
@@ -117,7 +127,9 @@ static void PushSpotlight(renderer& Renderer, math::v3 Position, math::v3 Direct
 
 static void PushDirectionalLight(renderer& Renderer, math::v3 Direction, math::v3 Ambient, math::v3 Diffuse, math::v3 Specular)
 {
-    render_command* RenderCommand = &Renderer.LightCommands[Renderer.LightCommandCount++];
+    render_command* RenderCommand = PushStruct(&Renderer.LightCommands, render_command);
+    Renderer.LightCommandCount++;
+    
     RenderCommand->Type = RenderCommand_DirectionalLight;
     
     auto& DirectionalLight = RenderCommand->DirectionalLight;
@@ -129,7 +141,9 @@ static void PushDirectionalLight(renderer& Renderer, math::v3 Direction, math::v
 
 static void PushPointLight(renderer& Renderer, math::v3 Position, math::v3 Ambient, math::v3 Diffuse, math::v3 Specular, r32 Constant, r32 Linear, r32 Quadratic)
 {
-    render_command* RenderCommand = &Renderer.LightCommands[Renderer.LightCommandCount++];
+    render_command* RenderCommand = PushStruct(&Renderer.LightCommands, render_command);
+    Renderer.LightCommandCount++;
+    
     RenderCommand->Type = RenderCommand_PointLight;
     
     RenderCommand->Position = Position;
@@ -145,7 +159,9 @@ static void PushPointLight(renderer& Renderer, math::v3 Position, math::v3 Ambie
 
 static void PushBuffer(renderer& Renderer, i32 BufferHandle, char* TextureName, math::v3 Rotation)
 {
-    render_command* RenderCommand = &Renderer.LightCommands[Renderer.LightCommandCount++];
+    render_command* RenderCommand = PushStruct(&Renderer.Buffer, render_command);
+    Renderer.CommandCount++;
+    
     RenderCommand->Type = RenderCommand_Buffer;
     RenderCommand->Buffer.BufferHandle = BufferHandle;
     RenderCommand->Buffer.TextureName = TextureName;
@@ -155,7 +171,8 @@ static void PushBuffer(renderer& Renderer, i32 BufferHandle, char* TextureName, 
 
 static void PushModel(renderer& Renderer, model& Model)
 {
-    render_command* RenderCommand = &Renderer.Buffer[Renderer.CommandCount++];
+    render_command* RenderCommand = PushStruct(&Renderer.Buffer, render_command);
+    Renderer.CommandCount++;
     RenderCommand->Type = RenderCommand_Model;
     RenderCommand->Position = Model.Position;
     RenderCommand->Scale = Model.Scale;

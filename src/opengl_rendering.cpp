@@ -1400,10 +1400,11 @@ static void RenderCommands(render_state& RenderState, renderer& Renderer)
     }
     
     auto& Camera = Renderer.Cameras[Renderer.CurrentCameraHandle];
+    auto& V = Camera.ViewMatrix;
     
     for(i32 Index = 0; Index < Renderer.LightCommandCount; Index++)
     {
-        const render_command& Command = Renderer.LightCommands[Index];
+        const render_command& Command = *((render_command*)Renderer.LightCommands.Base + Index);
         
         switch(Command.Type)
         {
@@ -1411,9 +1412,11 @@ static void RenderCommands(render_state& RenderState, renderer& Renderer)
             {
                 spotlight& Spotlight = RenderState.SpotlightData.Spotlights[RenderState.SpotlightData.NumLights++];
                 
-                Spotlight.Position[0] = Command.Position.x;
-                Spotlight.Position[1] = Command.Position.y;
-                Spotlight.Position[2] = Command.Position.z;
+                auto Pos = V * math::v4(Command.Position, 1.0f);
+                
+                Spotlight.Position[0] = Pos.x;
+                Spotlight.Position[1] = Pos.y;
+                Spotlight.Position[2] = Pos.z;
                 Spotlight.Position[3] = 1;
                 
                 Spotlight.Direction[0] = Command.Spotlight.Direction.x;
@@ -1470,9 +1473,11 @@ static void RenderCommands(render_state& RenderState, renderer& Renderer)
             {
                 point_light& PointLight = RenderState.PointLightData.PointLights[RenderState.PointLightData.NumLights++];
                 
-                PointLight.Position[0] = Command.Position.x;
-                PointLight.Position[1] = Command.Position.y;
-                PointLight.Position[2] = Command.Position.z;
+                auto Pos = V * math::v4(Command.Position, 1.0f);
+                
+                PointLight.Position[0] = Pos.x;
+                PointLight.Position[1] = Pos.y;
+                PointLight.Position[2] = Pos.z;
                 PointLight.Position[3] = 1.0f;
                 
                 PointLight.Ambient[0] = Command.PointLight.Ambient.x;
@@ -1500,7 +1505,7 @@ static void RenderCommands(render_state& RenderState, renderer& Renderer)
     
     for(i32 Index = 0; Index < Renderer.CommandCount; Index++)
     {
-        const render_command& Command = Renderer.Buffer[Index];
+        const render_command& Command = *((render_command*)Renderer.Buffer.Base + Index);
         
         switch(Command.Type)
         {

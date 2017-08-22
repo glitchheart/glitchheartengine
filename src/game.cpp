@@ -176,7 +176,12 @@ extern "C" UPDATE(Update)
     {
         LoadTextures(Renderer);
         
-        GameState->TESTMODEL = (model*)malloc(sizeof(model));
+        InitializeArena(&Renderer.Buffer, sizeof(render_command) * RENDER_COMMAND_MAX, (u8*)GameMemory->PermanentStorage + sizeof(game_state));
+        
+        InitializeArena(&Renderer.LightCommands, sizeof(render_command) * RENDER_COMMAND_MAX, Renderer.Buffer.Base + Renderer.Buffer.Size);
+        
+        GameState->TESTMODEL = (model*)Platform.AllocateMemory(sizeof(model));
+        //GameState->TESTMODEL = (model*)malloc(sizeof(model));
         
         //LoadOBJFile(Renderer, "../assets/models/suzanne.obj", GameState->TESTMODEL);
         //LoadModel(Renderer, "../assets/models/chair.modl", GameState->TESTMODEL);
@@ -229,20 +234,20 @@ extern "C" UPDATE(Update)
         i32 OffsetX = 5;
         i32 OffsetZ = 5;
         
-        /*
+        
         for(i32 I = 0; I < 10 + OffsetX; I++)
         {
             for(i32 J = 0; J < 10 + OffsetZ; J++)
             {
                 model Model;
-                Model.Position = math::v3(-5 + I, 0, - 5 + J);
-                Model.Scale = math::v3(1, -2, 1);
-                Model.Rotation.z = -90;
+                Model.Position = math::v3((r32)I * 5.0f, 0, (r32)J * 5.0f);
+                Model.Scale = math::v3(5, 5, 1);
+                Model.Rotation.x = -90;
                 LoadModel(Renderer, "../assets/models/cube.modl", &Model);
                 GameState->TestModels[GameState->Models++] = Model;
             }
         }
-        */
+        
         
         if(GameState->ShouldReload || GameMemory->ShouldReload)
         {
@@ -251,7 +256,8 @@ extern "C" UPDATE(Update)
             Renderer.CurrentCameraHandle = GameState->GameCameraHandle;
             Renderer.Cameras[GameState->GameCameraHandle].Zoom = GameMemory->ConfigData.Zoom;
             GameState->InitialZoom = GameMemory->ConfigData.Zoom;
-            GameState->LevelPath = (char*)malloc(sizeof(char) * (strlen(GameMemory->ConfigData.StartingLevelFilePath) + 1));
+            GameState->LevelPath = (char*)Platform.AllocateMemory(sizeof(char) * (strlen(GameMemory->ConfigData.StartingLevelFilePath) + 1));
+            
             strcpy(GameState->LevelPath, GameMemory->ConfigData.StartingLevelFilePath);
             GameState->ShouldReload = GameMemory->ShouldReload;
             GameState->Console = {};
@@ -899,9 +905,11 @@ extern "C" UPDATE(Update)
     
     PushDirectionalLight(Renderer, math::v3(-0.2, -1.0, -0.3), math::v3(0.1f, 0.1f, 0.1f), math::v3(0, 0, 0), math::v3(0.1, 0.1, 0.1));
     
-    PushSpotlight(Renderer, math::v3(0.0f,0.0f,0.0f), math::v3(0.0f, -1.0f, 0.0f), DEGREE_IN_RADIANS * 12.5f, DEGREE_IN_RADIANS * 17.5f, math::v3(0.1f, 0.1f, 0.1f), math::v3(5.8f, 5.8f, 5.8f), math::v3(1.0, 1.0, 1.0), 1.0f, 0.09f, 0.032f);
-    
-    PushPointLight(Renderer, math::v3(0.0f, 0.0f, 0.0f), math::v3(0.0f, 1.0f, 0.0f), math::v3(1.0f, 1.0f, 0.0), math::v3(1.0, 1.0, 1.0), 1.0f, 0.09f, 0.032f);
+    for(i32 I = 0; I < MAX_LIGHTS; I++)
+    {
+        PushPointLight(Renderer, math::v3((r32)I * 5, 0.0f, 0.0f), math::v3(0.0f, 1.0f, 0.0f), math::v3(1.0f, 1.0f, 0.0), math::v3(1.0, 1.0, 1.0), 1.0f, 0.09f, 0.032f);
+        
+    }
     
     PushEntityRenderCommands(Renderer, *GameState);
     

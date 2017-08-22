@@ -4,7 +4,7 @@
 #define PIXELS_PER_UNIT 32
 #define MAX_MESHES 60
 
-#define MAX_LIGHTS 5
+#define MAX_LIGHTS 20
 
 struct spotlight
 {
@@ -41,6 +41,7 @@ struct point_light
     r32 Constant;
     r32 Linear;
     r32 Quadratic;
+    r32 Padding;
     
     r32 Ambient[4];
     r32 Diffuse[4];
@@ -266,7 +267,7 @@ struct camera
     r32 FadingSpeed;
 };
 
-#define RENDER_COMMAND_MAX 100
+#define RENDER_COMMAND_MAX 400
 #define BUFFER_ARRAY_SIZE 200
 #define TEXTURE_ARRAY_SIZE 512
 
@@ -311,10 +312,12 @@ struct buffer_data
 
 struct renderer
 {
-    render_command Buffer[RENDER_COMMAND_MAX];
+    //render_command Buffer[RENDER_COMMAND_MAX];
+    memory_arena Buffer;
     i32 CommandCount;
     
-    render_command LightCommands[RENDER_COMMAND_MAX];
+    //render_command LightCommands[RENDER_COMMAND_MAX];
+    memory_arena LightCommands;
     i32 LightCommandCount;
     
     buffer_data Buffers[BUFFER_ARRAY_SIZE];
