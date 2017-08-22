@@ -98,7 +98,7 @@ static void PushSprite(renderer& Renderer, math::v3 Position, math::v3 Scale, ma
 
 static void PushSpotlight(renderer& Renderer, math::v3 Position, math::v3 Direction, r32 CutOff, r32 OuterCutOff, math::v3 Ambient, math::v3 Diffuse, math::v3 Specular, r32 Constant, r32 Linear, r32 Quadratic)
 {
-    render_command* RenderCommand = &Renderer.Buffer[Renderer.CommandCount++];
+    render_command* RenderCommand = &Renderer.LightCommands[Renderer.LightCommandCount++];
     RenderCommand->Type = RenderCommand_Spotlight;
     
     RenderCommand->Position = Position;
@@ -127,7 +127,7 @@ static void PushDirectionalLight(renderer& Renderer, math::v3 Direction, math::v
     DirectionalLight.Specular = Specular;
 }
 
-static void PushPointLight(renderer& Renderer, math::v3 Position, math::v3 Direction, r32 CutOff, r32 OuterCutOff, math::v3 Ambient, math::v3 Diffuse, math::v3 Specular, r32 Constant, r32 Linear, r32 Quadratic)
+static void PushPointLight(renderer& Renderer, math::v3 Position, math::v3 Ambient, math::v3 Diffuse, math::v3 Specular, r32 Constant, r32 Linear, r32 Quadratic)
 {
     render_command* RenderCommand = &Renderer.LightCommands[Renderer.LightCommandCount++];
     RenderCommand->Type = RenderCommand_PointLight;
@@ -135,7 +135,6 @@ static void PushPointLight(renderer& Renderer, math::v3 Position, math::v3 Direc
     RenderCommand->Position = Position;
     
     auto& PointLight = RenderCommand->PointLight;
-    PointLight.Direction = Direction;
     PointLight.Ambient = Ambient;
     PointLight.Diffuse = Diffuse;
     PointLight.Specular = Specular;

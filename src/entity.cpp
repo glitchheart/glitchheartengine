@@ -15,7 +15,7 @@ static inline void PrintEntityInfo(const entity& Entity)
     DEBUG_PRINT("Entity: Name %s, position x %f y %f, rotation x %f y %f z %f\n", Entity.Name, Entity.Position.x, Entity.Position.y, Entity.Rotation.x, Entity.Rotation.y, Entity.Rotation.z);
 }
 
-static i32 LoadPointlight(game_state* GameState, math::rgba Color = math::v4(), r32 Intensity = 0.0f, r32 ConstantAtten = 0.0f, r32 LinearAtten = 0.0f, r32 ExponentialAtten = 0.0f,math::v3 InitPosition = math::v3(), b32 ShouldGlow = false, r64 GlowTimerMax = 0.0f, r32 GlowIncrease = 0.0f, r32 EmissionIntensity = 0.0f)
+i32 LoadPointlight(game_state* GameState, math::rgba Color = math::v4(), r32 Intensity = 0.0f, r32 ConstantAtten = 0.0f, r32 LinearAtten = 0.0f, r32 ExponentialAtten = 0.0f,math::v3 InitPosition = math::v3(), b32 ShouldGlow = false, r64 GlowTimerMax = 0.0f, r32 GlowIncrease = 0.0f, r32 EmissionIntensity = 0.0f)
 {
     light_source LightSource;
     
@@ -128,7 +128,7 @@ static void DecreaseStamina(entity* Entity, game_state* GameState, i32 Cost)
     StartTimer(GameState,Entity->Player.StaminaGainCooldownTimer);
 }
 
-static void Hit(game_state* GameState, renderer& Renderer, sound_queue* SoundQueue, entity* ByEntity, entity* HitEntity)
+void Hit(game_state* GameState, renderer& Renderer, sound_queue* SoundQueue, entity* ByEntity, entity* HitEntity)
 {
     if(HitEntity->HitAttackCountId != ByEntity->AttackCount)
     {
@@ -1316,7 +1316,7 @@ void UpdatePlayer(entity* Entity, game_state* GameState, renderer& Renderer, sou
     Renderer.Cameras[GameState->GameCameraHandle].CenterTarget = Entity->Position;
 }
 
-static void UpdateAI(entity* Entity, game_state* GameState, sound_queue* SoundQueue, r64 DeltaTime)
+void UpdateAI(entity* Entity, game_state* GameState, sound_queue* SoundQueue, r64 DeltaTime)
 {
     switch(Entity->Enemy.AIState)
     {

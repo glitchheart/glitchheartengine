@@ -185,7 +185,7 @@ extern "C" UPDATE(Update)
         GameState->TESTMODEL->Scale = math::v3(1, 1, 1);
         
         model Model1;
-        Model1.Position = math::v3(-5, 0, 0);
+        Model1.Position = math::v3(0, 0, 0);
         Model1.Scale = math::v3(5.0, 5.0, 5.0);
         
         model Model2;
@@ -202,7 +202,7 @@ extern "C" UPDATE(Update)
         //Model4.Rotation.x = -90;
         
         model Model5;
-        Model5.Position = math::v3(0, 0, -0);
+        Model5.Position = math::v3(0, 0, 0);
         Model5.Scale = math::v3(1.0, 1.0, 1.0);
         
         model Model6; // Light source position
@@ -218,25 +218,25 @@ extern "C" UPDATE(Update)
         LoadModel(Renderer, "../assets/models/panther_monster.modl", &Model6);
         
         GameState->TestModels[0] = Model1;
-        GameState->TestModels[1] = Model2;
-        GameState->TestModels[2] = Model3;
-        GameState->TestModels[3] = Model4;
-        GameState->TestModels[4] = Model5;
-        GameState->TestModels[5] = Model6;
+        //GameState->TestModels[1] = Model2;
+        //GameState->TestModels[2] = Model3;
+        //GameState->TestModels[3] = Model4;
+        //GameState->TestModels[4] = Model5;
+        //GameState->TestModels[5] = Model6;
         
-        GameState->Models = 6;
+        GameState->Models = 1;
         
         i32 OffsetX = 5;
         i32 OffsetZ = 5;
         
         /*
-        for(i32 I = 0; I < 5 + OffsetX; I++)
+        for(i32 I = 0; I < 10 + OffsetX; I++)
         {
-            for(i32 J = 0; J < 5 + OffsetZ; J++)
+            for(i32 J = 0; J < 10 + OffsetZ; J++)
             {
                 model Model;
                 Model.Position = math::v3(-5 + I, 0, - 5 + J);
-                Model.Scale = math::v3(10, -2, 10);
+                Model.Scale = math::v3(1, -2, 1);
                 Model.Rotation.z = -90;
                 LoadModel(Renderer, "../assets/models/cube.modl", &Model);
                 GameState->TestModels[GameState->Models++] = Model;
@@ -896,7 +896,13 @@ extern "C" UPDATE(Update)
     }
     
     //PushTilemapRenderCommands(Renderer, *GameState);
-    PushDirectionalLight(Renderer, math::v3(-0.2, -1.0, -0.3), math::v3(0.2f, 0.2f, 0.2f), math::v3(1, 0, 0), math::v3(0.1, 0.1, 0.1));
+    
+    PushDirectionalLight(Renderer, math::v3(-0.2, -1.0, -0.3), math::v3(0.1f, 0.1f, 0.1f), math::v3(0, 0, 0), math::v3(0.1, 0.1, 0.1));
+    
+    PushSpotlight(Renderer, math::v3(0.0f,0.0f,0.0f), math::v3(0.0f, -1.0f, 0.0f), DEGREE_IN_RADIANS * 12.5f, DEGREE_IN_RADIANS * 17.5f, math::v3(0.1f, 0.1f, 0.1f), math::v3(0.8f, 0.8f, 0.8f), math::v3(1.0, 1.0, 1.0), 1.0f, 0.09f, 0.032f);
+    
+    PushPointLight(Renderer, math::v3(0.0f, 0.0f, 0.0f), math::v3(0.0f, 1.0f, 0.0f), math::v3(1.0f, 1.0f, 0.0), math::v3(1.0, 1.0, 1.0), 1.0f, 0.09f, 0.032f);
+    
     PushEntityRenderCommands(Renderer, *GameState);
     
     for(i32 Index = 0; Index < GameState->Models; Index++)
