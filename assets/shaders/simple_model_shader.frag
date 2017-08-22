@@ -46,7 +46,7 @@ struct PointLight
 	float quadratic;
 };
 
-#define MAX_LIGHTS 5
+#define MAX_LIGHTS 20
 
 layout(std140) uniform spotlights
 { 
@@ -59,7 +59,6 @@ layout(std140) uniform directionalLights
   int numDirLights;
   DirLight dLights[MAX_LIGHTS];
 };
-
 
 layout(std140) uniform pointLights
 { 
@@ -108,7 +107,7 @@ vec3 CalcDirLight(DirLight light, vec3 normal, vec3 viewDir, Material material)
 
 vec3 CalcSpotLight(SpotLight light, vec3 normal, vec3 fragPos, vec3 viewDir, Material material)
 {
-	light.position = vec4(lightPos, 1.0); // Get actual position of light!!
+	//light.position = vec4(lightPos, 1.0); // Get actual position of light!!
 	vec3 lightDir = normalize(light.position.xyz - fragPos);
 
 	float theta = dot(lightDir, normalize(-light.direction.xyz));
@@ -151,7 +150,7 @@ vec3 CalcSpotLight(SpotLight light, vec3 normal, vec3 fragPos, vec3 viewDir, Mat
 
 vec3 CalcPointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir, Material material)
 {
-	light.position = vec4(lightPos,1.0); // Get actual position from lights
+	//light.position = vec4(lightPos,1.0); // Get actual position from lights
 	vec3 lightDir = normalize(light.position.xyz - fragPos);
 	
 	float diff = max(dot(normal, lightDir), 0.0);

@@ -54,8 +54,10 @@ using r32 = float;
 using r64 = double;
 
 using sz = size_t; // Platform dependent 32/64 bit
+using umm = uintptr_t;
 
 #include "math.h"
+#include "memory.h"
 
 #include "gmap.h"
 #include "gmap.cpp"
@@ -110,10 +112,18 @@ typedef PLATFORM_GET_ALL_FILES_WITH_EXTENSION(platform_get_all_files_with_extens
 #define PLATFORM_FILE_EXISTS(name) b32 name(const char* FilePath)
 typedef PLATFORM_FILE_EXISTS(platform_file_exists);
 
+#define PLATFORM_ALLOCATE_MEMORY(name) void* name(sz Size)
+typedef PLATFORM_ALLOCATE_MEMORY(platform_allocate_memory);
+
+#define PLATFORM_DEALLOCATE_MEMORY(name) void name(void* Memory)
+typedef PLATFORM_DEALLOCATE_MEMORY(platform_deallocate_memory);
+
 struct platform_api
 {
     platform_get_all_files_with_extension *GetAllFilesWithExtension;
     platform_file_exists *FileExists;
+    platform_allocate_memory *AllocateMemory;
+    platform_deallocate_memory *DeallocateMemory;
 };
 
 extern platform_api Platform;
@@ -260,6 +270,8 @@ inline void DebugPrintVec2(math::v2 Vec2, const char* Msg = "")
 {
     DEBUG_PRINT(Concat(Msg, " (%f,%f)\n"),Vec2.x,Vec2.y);
 }
+
+
 
 
 #endif
