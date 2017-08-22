@@ -4,7 +4,7 @@
 #define PIXELS_PER_UNIT 32
 #define MAX_MESHES 60
 
-#define MAX_LIGHTS 20
+#define MAX_LIGHTS 5
 
 struct spotlight
 {
@@ -13,6 +13,8 @@ struct spotlight
     
     r32 CutOff;
     r32 OuterCutOff;
+    r32 P1;
+    r32 P2;
     
     r32 Ambient[4];
     r32 Diffuse[4];
@@ -21,12 +23,12 @@ struct spotlight
     r32 Constant;
     r32 Linear;
     r32 Quadratic;
+    r32 P3;
 };
 
 struct directional_light
 {
     r32 Direction[4];
-    
     r32 Ambient[4];
     r32 Diffuse[4];
     r32 Specular[4];
@@ -47,19 +49,22 @@ struct point_light
 
 struct spotlight_data
 {
-    i32 NumLights;
+    i32 NumLights; // GLSL: 16, x64: 4: We need 12 bytes of padding
+    math::v3 Padding; // 3 * r32 = 3 * 4 = 12 bytes of padding!
     spotlight Spotlights[MAX_LIGHTS];
 };
 
-struct directional_light_data
+struct directional_light_data // GLSL: 96, x64: 68 -> 96 - 68 = 24
 {
-    i32 NumLights;
+    i32 NumLights; // GLSL: 16, x64: 4: We need 12 bytes of padding
+    math::v3 Padding; // 3 * r32 = 3 * 4 = 12 bytes of padding!
     directional_light DirectionalLights[MAX_LIGHTS];
 };
 
 struct point_light_data
 {
-    i32 NumLights;
+    i32 NumLights; // GLSL: 16, x64: 4: We need 12 bytes of padding
+    math::v3 Padding; // 3 * r32 = 3 * 4 = 12 bytes of padding!
     point_light PointLights[MAX_LIGHTS];
 };
 
@@ -210,7 +215,6 @@ struct render_command
         } DirectionalLight;
         struct
         {
-            math::v3 Direction;
             math::v3 Ambient;
             math::v3 Diffuse;
             math::v3 Specular;

@@ -53,6 +53,8 @@ using b32 = i32;
 using r32 = float;
 using r64 = double;
 
+using sz = size_t; // Platform dependent 32/64 bit
+
 #include "math.h"
 
 #include "gmap.h"

@@ -671,6 +671,7 @@ static void RenderSetup(render_state *RenderState)
     glBufferData(GL_UNIFORM_BUFFER, sizeof(spotlight_data), &RenderState->SpotlightData, GL_DYNAMIC_DRAW);
     
     u32 BlockIndex = glGetUniformBlockIndex(RenderState->SimpleModelShader.Program, "spotlights");
+    
     glUniformBlockBinding(RenderState->SimpleModelShader.Program, BlockIndex, 0);
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
     
@@ -682,6 +683,7 @@ static void RenderSetup(render_state *RenderState)
     BlockIndex = glGetUniformBlockIndex(RenderState->SimpleModelShader.Program, "directionalLights");
     glUniformBlockBinding(RenderState->SimpleModelShader.Program, BlockIndex, 1);
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
+    
     
     RenderState->PointLightData.NumLights = 0;
     glGenBuffers(1, &RenderState->PointLightUBO);
@@ -1412,10 +1414,12 @@ static void RenderCommands(render_state& RenderState, renderer& Renderer)
                 Spotlight.Position[0] = Command.Position.x;
                 Spotlight.Position[1] = Command.Position.y;
                 Spotlight.Position[2] = Command.Position.z;
+                Spotlight.Position[3] = 1;
                 
                 Spotlight.Direction[0] = Command.Spotlight.Direction.x;
                 Spotlight.Direction[1] = Command.Spotlight.Direction.y;
                 Spotlight.Direction[2] = Command.Spotlight.Direction.z;
+                Spotlight.Direction[3] = 0;
                 
                 Spotlight.CutOff = Command.Spotlight.CutOff;
                 Spotlight.OuterCutOff = Command.Spotlight.OuterCutOff;
@@ -1423,13 +1427,16 @@ static void RenderCommands(render_state& RenderState, renderer& Renderer)
                 Spotlight.Ambient[0] = Command.Spotlight.Ambient.x;
                 Spotlight.Ambient[1] = Command.Spotlight.Ambient.y;
                 Spotlight.Ambient[2] = Command.Spotlight.Ambient.z;
+                Spotlight.Ambient[3] = 1.0f;
                 
                 Spotlight.Diffuse[0] = Command.Spotlight.Diffuse.x;
                 Spotlight.Diffuse[1] = Command.Spotlight.Diffuse.y;
                 Spotlight.Diffuse[2] = Command.Spotlight.Diffuse.z;
+                Spotlight.Diffuse[3] = 1.0f;
                 Spotlight.Specular[0] = Command.Spotlight.Specular.x;
                 Spotlight.Specular[1] = Command.Spotlight.Specular.y;
                 Spotlight.Specular[2] = Command.Spotlight.Specular.z;
+                Spotlight.Specular[3] = 1.0f;
                 
                 Spotlight.Constant = Command.Spotlight.Constant;
                 Spotlight.Linear = Command.Spotlight.Linear;
@@ -1448,15 +1455,15 @@ static void RenderCommands(render_state& RenderState, renderer& Renderer)
                 DirectionalLight.Ambient[0] = Command.DirectionalLight.Ambient.x;
                 DirectionalLight.Ambient[1] = Command.DirectionalLight.Ambient.y;
                 DirectionalLight.Ambient[2] = Command.DirectionalLight.Ambient.z;
-                DirectionalLight.Ambient[3] = 0;
+                DirectionalLight.Ambient[3] = 1;
                 DirectionalLight.Diffuse[0] = Command.DirectionalLight.Diffuse.x;
                 DirectionalLight.Diffuse[1] = Command.DirectionalLight.Diffuse.y;
                 DirectionalLight.Diffuse[2] = Command.DirectionalLight.Diffuse.z;
-                DirectionalLight.Diffuse[3] = 0;
+                DirectionalLight.Diffuse[3] = 1;
                 DirectionalLight.Specular[0] = Command.DirectionalLight.Specular.x;
                 DirectionalLight.Specular[1] = Command.DirectionalLight.Specular.y;
                 DirectionalLight.Specular[2] = Command.DirectionalLight.Specular.z;
-                DirectionalLight.Specular[3] = 0;
+                DirectionalLight.Specular[3] = 1;
             }
             break;
             case RenderCommand_PointLight:
@@ -1466,13 +1473,16 @@ static void RenderCommands(render_state& RenderState, renderer& Renderer)
                 PointLight.Position[0] = Command.Position.x;
                 PointLight.Position[1] = Command.Position.y;
                 PointLight.Position[2] = Command.Position.z;
+                PointLight.Position[3] = 1.0f;
                 
                 PointLight.Ambient[0] = Command.PointLight.Ambient.x;
                 PointLight.Ambient[1] = Command.PointLight.Ambient.y;
                 PointLight.Ambient[2] = Command.PointLight.Ambient.z;
+                
                 PointLight.Diffuse[0] = Command.PointLight.Diffuse.x;
                 PointLight.Diffuse[1] = Command.PointLight.Diffuse.y;
                 PointLight.Diffuse[2] = Command.PointLight.Diffuse.z;
+                
                 PointLight.Specular[0] = Command.PointLight.Specular.x;
                 PointLight.Specular[1] = Command.PointLight.Specular.y;
                 PointLight.Specular[2] = Command.PointLight.Specular.z;
@@ -1553,7 +1563,7 @@ static void Render(render_state& RenderState, renderer& Renderer)
     
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     
-    glClearColor(0, 0, 0, 1.0f);
+    glClearColor(0.5, 0.5, 0.5, 1.0f);
     
     //RenderGame(GameState);
     RenderCommands(RenderState, Renderer);
@@ -1574,7 +1584,7 @@ static void Render(render_state& RenderState, renderer& Renderer)
     
     
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glClearColor(0, 0, 0, 1.0f);
+    glClearColor(0.5, 0.5, 0.5, 1.0f);
     
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);

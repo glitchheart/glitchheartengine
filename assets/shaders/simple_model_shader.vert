@@ -24,7 +24,9 @@ void main()
 	gl_Position = projection * view * model * vec4(position,1.0);
 	n = mat3(transpose(inverse(view * model))) * normal;
 	fragPos = vec3(view * model * vec4(position, 1.0));
-	lightPos = (view * vec4(-2.0, 2.0, 0.0,1.0)).xyz;
+
+//	lightPos = (view * vec4(-2.0, 2.0, 0.0,1.0)).xyz;
+    lightPos = (view * vec4(0.0f, 6.0f, 0, 1.0)).xyz; // Get actual position from lights
     viewPos = vec3(0); // eye in view coords
 	t = time;
 	texCoord = uv;

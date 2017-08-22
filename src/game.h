@@ -61,7 +61,7 @@ struct character_data
 };
 
 #define NUM_TIMERS 1024
-#define MAX_MODELS 3000
+#define MAX_MODELS 300
 
 struct game_state
 {
