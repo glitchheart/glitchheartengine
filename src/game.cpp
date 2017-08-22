@@ -902,7 +902,8 @@ extern "C" UPDATE(Update)
     */
     //PushTilemapRenderCommands(Renderer, *GameState);
     
-    PushDirectionalLight(Renderer, math::v3(-0.2, -1.0, -0.3), math::v3(0.1f, 0.1f, 0.1f), math::v3(0.2, 0.2, 0.2), math::v3(0.1, 0.1, 0.1));
+    PushDirectionalLight(Renderer, math::v3(-0.2, -1.0, -0.3), 
+                         math::v3(0.1f, 0.1f, 0.1f), math::v3(0.2, 0.2, 0.2), math::v3(0.1, 0.1, 0.1));
     
     
     GameState->TestModels[3].Position = math::v3(-2.0f, 7.0f, 0.0f);
