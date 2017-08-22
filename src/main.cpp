@@ -226,7 +226,7 @@ int main(void)
         CurrentFrame = GetTime();
         DeltaTime = Min(CurrentFrame - LastFrame, 0.1);
         LastFrame = CurrentFrame;
-        r64 FPS = 1.0/DeltaTime;
+        Renderer.FPS = 1.0/DeltaTime;
         
         if(GameMemory.IsInitialized && GameMemory.ExitGame)
         {

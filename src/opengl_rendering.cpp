@@ -1601,20 +1601,15 @@ static void Render(render_state& RenderState, renderer& Renderer)
     //RenderGame(GameState);
     RenderCommands(RenderState, Renderer);
     
-    // @Incomplete: Lighting
-    //RenderLightSources(GameState);
-    
     // Second pass
     
-    if(Renderer.ZDepth)
-    {
-        free(Renderer.ZDepth);
-    }
+    //if(Renderer.ZDepth)
+    //{
+    //free(Renderer.ZDepth);
+    //}
     
-    Renderer.ZDepth = (r32*)malloc(sizeof(r32*) * Renderer.WindowWidth * Renderer.WindowHeight);
-    glReadPixels(0,0,Renderer.WindowWidth, Renderer.WindowHeight, GL_DEPTH_COMPONENT, GL_FLOAT, Renderer.ZDepth);
-    
-    
+    //Renderer.ZDepth = (r32*)malloc(sizeof(r32*) * Renderer.WindowWidth * Renderer.WindowHeight);
+    //glReadPixels(0,0,Renderer.WindowWidth, Renderer.WindowHeight, GL_DEPTH_COMPONENT, GL_FLOAT, Renderer.ZDepth);
     
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glClearColor(0.5, 0.5, 0.5, 1.0f);
@@ -1624,15 +1619,6 @@ static void Render(render_state& RenderState, renderer& Renderer)
     
     glBindVertexArray(RenderState.FrameBufferVAO);
     UseShader(&RenderState.FrameBufferShader);
-    
-    // @Incomplete: BOYOOOO
-    /*
-    auto AmbientLightHandle = GameState->CurrentLevel.AmbientLightHandle;
-    if(AmbientLightHandle != -1)
-    {
-    SetVec4Uniform(RenderState.FrameBufferShader.Program, "ambientColor", GameState->LightSources[AmbientLightHandle].Color);
-    SetFloatUniform(RenderState.FrameBufferShader.Program, "ambientIntensity", GameState->LightSources[AmbientLightHandle].Ambient.Intensity);
-    }*/
     
     SetFloatUniform(RenderState.FrameBufferShader.Program, "contrast", RenderState.Contrast);
     SetFloatUniform(RenderState.FrameBufferShader.Program, "brightness", RenderState.Brightness);
@@ -1658,10 +1644,6 @@ static void Render(render_state& RenderState, renderer& Renderer)
     
     glDrawElements(GL_TRIANGLES, sizeof(RenderState.QuadIndices), GL_UNSIGNED_INT, (void*)0); 
     glActiveTexture(GL_TEXTURE0);
-    
-    // @Incomplete: PUSH THIS SHIT INSTEAD
-    //RenderUI(GameState);
-    //RenderDebugInfo(GameState);
     
     glfwSwapBuffers(RenderState.Window);
     }
