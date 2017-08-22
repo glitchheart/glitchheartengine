@@ -1176,9 +1176,7 @@ namespace math
         DEBUG_PRINT("%f %f %f %f\n", In[1][0],In[1][1],In[1][2],In[1][3]);
         DEBUG_PRINT("%f %f %f %f\n", In[2][0],In[2][1],In[2][2],In[2][3]);
         DEBUG_PRINT("%f %f %f %f\n", In[3][0],In[3][1],In[3][2],In[3][3]);
-        
     }
-    
     
     inline v4 operator*(const v4& V, const m4& M)
     {

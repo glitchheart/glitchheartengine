@@ -14,8 +14,10 @@ struct SpotLight
 {
 	vec4 position;
 	vec4 direction;
+
 	float cutOff;
 	float outerCutOff;
+
 	vec4 ambient;
 	vec4 diffuse;
 	vec4 specular;
@@ -37,13 +39,13 @@ struct PointLight
 {
 	vec4 position;
 
-	vec4 ambient;
-	vec4 diffuse;
-	vec4 specular;	
-
 	float constant;
 	float linear;
 	float quadratic;
+
+	vec4 ambient;
+	vec4 diffuse;
+	vec4 specular;	
 };
 
 #define MAX_LIGHTS 20
@@ -150,7 +152,6 @@ vec3 CalcSpotLight(SpotLight light, vec3 normal, vec3 fragPos, vec3 viewDir, Mat
 
 vec3 CalcPointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir, Material material)
 {
-	//light.position = vec4(lightPos,1.0); // Get actual position from lights
 	vec3 lightDir = normalize(light.position.xyz - fragPos);
 	
 	float diff = max(dot(normal, lightDir), 0.0);
@@ -209,10 +210,10 @@ void setMaterial(out Material material)
 
 void textureMaterial(out Material material)
 {
-	material.ambient = vec3(1.0, 0.5, 0.31);
-	material.diffuse = vec3(0.5, 0.5, 0.31);
+	material.ambient = vec3(1.0, 1.0, 1.0);
+	material.diffuse = vec3(1.0, 1.0, 1.0);
 	material.specular = vec3(1.0, 1.0, 1.0);
-	material.shininess = 0.5 * 128.0;
+	material.shininess = 1.0 * 128.0;
 }
 
 void main()
@@ -234,7 +235,6 @@ void main()
 	
 	for(int i = 0; i < numSpotlights; i++)
 		result += CalcSpotLight(sLights[i], norm, fragPos, viewDir, material);
-	
 	
     //outColor = vec4(1, 1, 1, 1);
 	//outColor = vec4(texture(tex, texCoord));

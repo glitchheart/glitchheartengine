@@ -24,5 +24,10 @@ void* PushSize_(memory_arena* Arena, sz Size)
     return Result;
 }
 
+static void Clear(memory_arena *Arena)
+{
+    Arena->Used = 0;
+}
+
 
 

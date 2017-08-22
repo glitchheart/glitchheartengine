@@ -822,6 +822,32 @@ static void ReloadFragmentShader(Shader_Type Type, render_state* RenderState)
     glDeleteProgram(RenderState->Shaders[Type].Program);
     glDeleteShader(RenderState->Shaders[Type].FragmentShader);
     LoadFragmentShader(ShaderPaths[Type], &RenderState->Shaders[Type]);
+    
+    RenderState->SpotlightData.NumLights = 0;
+    glBindBufferBase(GL_UNIFORM_BUFFER, 0, RenderState->SpotlightUBO);
+    glBufferData(GL_UNIFORM_BUFFER, sizeof(spotlight_data), &RenderState->SpotlightData, GL_DYNAMIC_DRAW);
+    
+    u32 BlockIndex = glGetUniformBlockIndex(RenderState->SimpleModelShader.Program, "spotlights");
+    
+    glUniformBlockBinding(RenderState->SimpleModelShader.Program, BlockIndex, 0);
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+    
+    RenderState->DirectionalLightData.NumLights = 0;
+    glBindBufferBase(GL_UNIFORM_BUFFER, 1, RenderState->DirectionalLightUBO);
+    glBufferData(GL_UNIFORM_BUFFER, sizeof(directional_light_data), &RenderState->DirectionalLightData, GL_DYNAMIC_DRAW);
+    
+    BlockIndex = glGetUniformBlockIndex(RenderState->SimpleModelShader.Program, "directionalLights");
+    glUniformBlockBinding(RenderState->SimpleModelShader.Program, BlockIndex, 1);
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+    
+    
+    RenderState->PointLightData.NumLights = 0;
+    glBindBufferBase(GL_UNIFORM_BUFFER, 2, RenderState->PointLightUBO);
+    glBufferData(GL_UNIFORM_BUFFER, sizeof(point_light_data), &RenderState->PointLightData, GL_DYNAMIC_DRAW);
+    
+    BlockIndex = glGetUniformBlockIndex(RenderState->SimpleModelShader.Program, "pointLights");
+    glUniformBlockBinding(RenderState->SimpleModelShader.Program, BlockIndex, 2);
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
 }
 
 static void ReloadAssets(render_state& RenderState, asset_manager* AssetManager)
@@ -1502,6 +1528,7 @@ static void RenderCommands(render_state& RenderState, renderer& Renderer)
     
     UpdateLightingData(RenderState);
     Renderer.LightCommandCount = 0;
+    Clear(&Renderer.LightCommands);
     
     for(i32 Index = 0; Index < Renderer.CommandCount; Index++)
     {
@@ -1543,6 +1570,7 @@ static void RenderCommands(render_state& RenderState, renderer& Renderer)
     }
     
     Renderer.CommandCount = 0;
+    Clear(&Renderer.Buffer);
     
     RenderState.SpotlightData.NumLights = 0;
     RenderState.DirectionalLightData.NumLights = 0;

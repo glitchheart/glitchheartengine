@@ -13,8 +13,8 @@ struct spotlight
     
     r32 CutOff;
     r32 OuterCutOff;
+    r32 P;
     r32 P1;
-    r32 P2;
     
     r32 Ambient[4];
     r32 Diffuse[4];
@@ -268,7 +268,7 @@ struct camera
 };
 
 #define RENDER_COMMAND_MAX 400
-#define BUFFER_ARRAY_SIZE 200
+#define BUFFER_ARRAY_SIZE 400
 #define TEXTURE_ARRAY_SIZE 512
 
 struct texture_data
