@@ -174,10 +174,15 @@ extern "C" UPDATE(Update)
     
     if(!GameState->IsInitialized || !GameMemory->IsInitialized)
     {
-        LoadTextures(Renderer);
         InitializeArena(&Renderer.Buffer, sizeof(render_command) * RENDER_COMMAND_MAX, (u8*)GameMemory->PermanentStorage + sizeof(game_state));
         
         InitializeArena(&Renderer.LightCommands, sizeof(render_command) * RENDER_COMMAND_MAX, Renderer.Buffer.Base + Renderer.Buffer.Size);
+        
+        InitializeArena(&GameState->TempArena, GameMemory->TemporaryStorageSize, (u8*)GameMemory->TemporaryStorage);
+        
+        InitializeArena(&GameState->PermArena, GameMemory->PermanentStorageSize - sizeof(game_state) - Renderer.Buffer.Size - Renderer.LightCommands.Size, Renderer.LightCommands.Base + Renderer.LightCommands.Size);
+        
+        LoadTextures(Renderer, &GameState->TempArena);
         
         GameState->TESTMODEL = (model*)Platform.AllocateMemory(sizeof(model));
         //GameState->TESTMODEL = (model*)malloc(sizeof(model));
@@ -852,16 +857,6 @@ extern "C" UPDATE(Update)
     auto MouseX = InputController->MouseX;
     auto MouseY = InputController->MouseY;
     
-    if(Renderer.ZDepth)
-    {
-        auto Depth = Renderer.ZDepth[(i32)MouseX + (i32)MouseY * Renderer.WindowWidth];
-        
-        auto Pos = math::UnProject(math::v3((r32)InputController->MouseX, (r32)InputController->MouseY, Depth),
-                                   GameCamera.ViewMatrix,
-                                   GameCamera.ProjectionMatrix,
-                                   math::v4(0, 0, Renderer.Viewport[2], Renderer.Viewport[3]));
-    }
-    
     InputController->CurrentCharacter = 0;
     GameState->ClearTilePositionFrame = !GameState->ClearTilePositionFrame;
     GetActionButtonsForQueue(InputController);
@@ -923,4 +918,7 @@ extern "C" UPDATE(Update)
     }
     
     //PushModel(Renderer, *GameState->TESTMODEL);
+    
+    
+    Reset(&GameState->TempArena);
 }

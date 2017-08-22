@@ -65,6 +65,9 @@ struct character_data
 
 struct game_state
 {
+    memory_arena TempArena;
+    memory_arena PermArena;
+    
     model* TESTMODEL;
     
     model TestModels[MAX_MODELS];

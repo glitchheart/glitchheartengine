@@ -72,12 +72,12 @@ static GLint ShaderCompilationErrorChecking(const char* ShaderName, GLuint Shade
     return IsCompiled;
 }
 
-static GLuint LoadShader(const char* FilePath, shader *Shd)
+static GLuint LoadShader(const char* FilePath, shader *Shd, memory_arena* TempArena)
 {
     Shd->VertexShader = glCreateShader(GL_VERTEX_SHADER);
-    char* VertexString = Concat(FilePath,".vert");
-    GLchar *VertexText = LoadShaderFromFile(VertexString);
-    free(VertexString);
+    char* VertexString = Concat(FilePath,".vert", TempArena);
+    GLchar *VertexText = LoadShaderFromFile(VertexString, TempArena);
+    //free(VertexString);
     
     glShaderSource(Shd->VertexShader, 1, &VertexText, NULL);
     glCompileShader(Shd->VertexShader);
@@ -89,9 +89,9 @@ static GLuint LoadShader(const char* FilePath, shader *Shd)
     }
     
     Shd->FragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    char* FragmentString = Concat(FilePath,".frag");
-    GLchar *FragmentText = LoadShaderFromFile(FragmentString);
-    free(FragmentString);
+    char* FragmentString = Concat(FilePath,".frag", TempArena);
+    GLchar *FragmentText = LoadShaderFromFile(FragmentString, TempArena);
+    //free(FragmentString);
     
     glShaderSource(Shd->FragmentShader, 1, &FragmentText, NULL);
     glCompileShader(Shd->FragmentShader);
@@ -111,16 +111,16 @@ static GLuint LoadShader(const char* FilePath, shader *Shd)
     return GL_TRUE;
 }
 
-static GLuint LoadVertexShader(const char* FilePath, shader *Shd)
+static GLuint LoadVertexShader(const char* FilePath, shader *Shd, memory_arena* TempArena)
 {
     Shd->Program = glCreateProgram();
     
     Shd->VertexShader = glCreateShader(GL_VERTEX_SHADER);
-    char* VertexString = Concat(FilePath,".vert");
-    GLchar *VertexText = LoadShaderFromFile(VertexString);
+    char* VertexString = Concat(FilePath,".vert", TempArena);
+    GLchar *VertexText = LoadShaderFromFile(VertexString, TempArena);
     glShaderSource(Shd->VertexShader, 1, &VertexText, NULL);
     glCompileShader(Shd->VertexShader);
-    free(VertexString);
+    //free(VertexString);
     
     if (!ShaderCompilationErrorChecking(FilePath, Shd->VertexShader))
     {
@@ -136,16 +136,16 @@ static GLuint LoadVertexShader(const char* FilePath, shader *Shd)
     return GL_TRUE;
 }
 
-static GLuint LoadFragmentShader(const char* FilePath, shader *Shd)
+static GLuint LoadFragmentShader(const char* FilePath, shader *Shd, memory_arena* TempArena)
 {
     Shd->Program = glCreateProgram();
     
     Shd->FragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    char* FragmentString = Concat(FilePath,".frag");
-    GLchar *FragmentText = LoadShaderFromFile(FragmentString);
+    char* FragmentString = Concat(FilePath,".frag", TempArena);
+    GLchar *FragmentText = LoadShaderFromFile(FragmentString, TempArena);
     glShaderSource(Shd->FragmentShader, 1, &FragmentText, NULL);
     glCompileShader(Shd->FragmentShader);
-    free(FragmentString);
+    //free(FragmentString);
     
     if (!ShaderCompilationErrorChecking(FilePath, Shd->FragmentShader))
     {
@@ -301,7 +301,7 @@ static void RegisterBuffers(render_state& RenderState, GLfloat* VertexBuffer, i3
     glBindVertexArray(0);
 }
 
-static void RegisterVertexBuffer(render_state& RenderState, GLfloat* BufferData, i32 Size, Shader_Type ShaderType, i32 BufferHandle = -1)
+static void RegisterVertexBuffer(render_state& RenderState, GLfloat* BufferData, i32 Size, Shader_Type ShaderType, memory_arena* TempArena, i32 BufferHandle = -1)
 {
     buffer* Buffer = &RenderState.Buffers[BufferHandle == -1 ? RenderState.BufferCount : BufferHandle];
     
@@ -322,7 +322,7 @@ static void RegisterVertexBuffer(render_state& RenderState, GLfloat* BufferData,
     
     if(!RenderState.Shaders[ShaderType].Loaded)
     {
-        LoadShader(ShaderPaths[ShaderType], &RenderState.Shaders[ShaderType]);
+        LoadShader(ShaderPaths[ShaderType], &RenderState.Shaders[ShaderType], TempArena);
     }
     else
         UseShader(&RenderState.Shaders[ShaderType]);
@@ -341,7 +341,7 @@ static void RegisterVertexBuffer(render_state& RenderState, GLfloat* BufferData,
         RenderState.BufferCount++;
 }
 
-static void RenderSetup(render_state *RenderState)
+static void RenderSetup(render_state *RenderState, memory_arena* TempArena)
 {
     if(FT_Init_FreeType(&RenderState->FTLibrary)) 
     {
@@ -404,7 +404,7 @@ static void RenderSetup(render_state *RenderState)
     
     RenderState->FrameBufferShader.Type = Shader_FrameBuffer;
     
-    LoadShader(ShaderPaths[Shader_FrameBuffer], &RenderState->FrameBufferShader);
+    LoadShader(ShaderPaths[Shader_FrameBuffer], &RenderState->FrameBufferShader, TempArena);
     
     auto PosLoc = glGetAttribLocation(RenderState->FrameBufferShader.Program, "pos");
     auto TexLoc = glGetAttribLocation(RenderState->FrameBufferShader.Program, "texcoord");
@@ -437,7 +437,7 @@ static void RenderSetup(render_state *RenderState)
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, RenderState->QuadIndexBuffer);
     
     RenderState->TextureShader.Type = Shader_Texture;
-    LoadShader(ShaderPaths[Shader_Texture], &RenderState->TextureShader);
+    LoadShader(ShaderPaths[Shader_Texture], &RenderState->TextureShader, TempArena);
     
     auto PositionLocation = glGetAttribLocation(RenderState->TextureShader.Program, "pos");
     auto TexcoordLocation = glGetAttribLocation(RenderState->TextureShader.Program, "texcoord");
@@ -458,7 +458,7 @@ static void RenderSetup(render_state *RenderState)
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, RenderState->QuadIndexBuffer);
     
     RenderState->TextureShader.Type = Shader_Spritesheet;
-    LoadShader(ShaderPaths[Shader_Spritesheet], &RenderState->SpritesheetShader);
+    LoadShader(ShaderPaths[Shader_Spritesheet], &RenderState->SpritesheetShader, TempArena);
     
     PositionLocation = glGetAttribLocation(RenderState->SpritesheetShader.Program, "pos");
     TexcoordLocation = glGetAttribLocation(RenderState->SpritesheetShader.Program, "texcoord");
@@ -477,7 +477,7 @@ static void RenderSetup(render_state *RenderState)
     glBufferData(GL_ARRAY_BUFFER, RenderState->SpriteQuadVerticesSize, RenderState->SpriteQuadVertices, GL_STATIC_DRAW);
     
     RenderState->ErrorShaderSprite.Type = Shader_ErrorSprite;
-    LoadShader(ShaderPaths[Shader_ErrorSprite], &RenderState->ErrorShaderSprite);
+    LoadShader(ShaderPaths[Shader_ErrorSprite], &RenderState->ErrorShaderSprite, TempArena);
     
     PositionLocation = glGetAttribLocation(RenderState->ErrorShaderSprite.Program, "pos");
     TexcoordLocation = glGetAttribLocation(RenderState->ErrorShaderSprite.Program, "texcoord");
@@ -496,7 +496,7 @@ static void RenderSetup(render_state *RenderState)
     glBufferData(GL_ARRAY_BUFFER, RenderState->SpriteQuadVerticesSize, RenderState->SpriteQuadVertices, GL_STATIC_DRAW);
     
     RenderState->UISpriteShader.Type = Shader_UISprite;
-    LoadShader(ShaderPaths[Shader_UISprite], &RenderState->UISpriteShader);
+    LoadShader(ShaderPaths[Shader_UISprite], &RenderState->UISpriteShader, TempArena);
     
     PositionLocation = glGetAttribLocation(RenderState->UISpriteShader.Program, "pos");
     TexcoordLocation = glGetAttribLocation(RenderState->UISpriteShader.Program, "texcoord");
@@ -517,7 +517,7 @@ static void RenderSetup(render_state *RenderState)
     
     //error shader
     RenderState->ErrorShaderUI.Type = Shader_ErrorUI;
-    LoadShader(ShaderPaths[Shader_ErrorUI], &RenderState->ErrorShaderUI);
+    LoadShader(ShaderPaths[Shader_ErrorUI], &RenderState->ErrorShaderUI, TempArena);
     
     PositionLocation = glGetAttribLocation(RenderState->ErrorShaderUI.Program, "pos");
     TexcoordLocation = glGetAttribLocation(RenderState->ErrorShaderUI.Program, "texcoord");
@@ -536,7 +536,7 @@ static void RenderSetup(render_state *RenderState)
     glBufferData(GL_ARRAY_BUFFER, RenderState->TileQuadVerticesSize, RenderState->TileQuadVertices, GL_STATIC_DRAW);
     
     RenderState->TileShader.Type = Shader_Tile;
-    LoadShader(ShaderPaths[Shader_Tile], &RenderState->TileShader);
+    LoadShader(ShaderPaths[Shader_Tile], &RenderState->TileShader, TempArena);
     
     auto PositionLocation2 = glGetAttribLocation(RenderState->TileShader.Program, "pos");
     auto TexcoordLocation2 = glGetAttribLocation(RenderState->TileShader.Program, "texcoord");
@@ -557,7 +557,7 @@ static void RenderSetup(render_state *RenderState)
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, RenderState->QuadIndexBuffer);
     
     RenderState->RectShader.Type = Shader_Rect;
-    LoadShader(ShaderPaths[Shader_Rect], &RenderState->RectShader);
+    LoadShader(ShaderPaths[Shader_Rect], &RenderState->RectShader, TempArena);
     
     auto PositionLocation3 = glGetAttribLocation(RenderState->RectShader.Program, "pos");
     glEnableVertexAttribArray(PositionLocation3);
@@ -571,7 +571,7 @@ static void RenderSetup(render_state *RenderState)
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, RenderState->QuadIndexBuffer);
     
     RenderState->TextureRectShader.Type = Shader_TextureRect;
-    LoadShader(ShaderPaths[Shader_TextureRect], &RenderState->TextureRectShader);
+    LoadShader(ShaderPaths[Shader_TextureRect], &RenderState->TextureRectShader, TempArena);
     
     PositionLocation2 = glGetAttribLocation(RenderState->TextureRectShader.Program, "pos");
     TexcoordLocation2 = glGetAttribLocation(RenderState->TextureRectShader.Program, "texcoord");
@@ -591,7 +591,7 @@ static void RenderSetup(render_state *RenderState)
     glBufferData(GL_ARRAY_BUFFER, RenderState->WireframeQuadVerticesSize, RenderState->WireframeQuadVertices, GL_DYNAMIC_DRAW);
     
     RenderState->RectShader.Type = Shader_Wireframe;
-    LoadShader(ShaderPaths[Shader_Wireframe], &RenderState->WireframeShader);
+    LoadShader(ShaderPaths[Shader_Wireframe], &RenderState->WireframeShader, TempArena);
     
     PositionLocation3 = glGetAttribLocation(RenderState->WireframeShader.Program, "pos");
     glEnableVertexAttribArray(PositionLocation3);
@@ -608,7 +608,7 @@ static void RenderSetup(render_state *RenderState)
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, RenderState->QuadIndexBuffer);
     
     RenderState->RectShader.Type = Shader_Wireframe;
-    LoadShader(ShaderPaths[Shader_Wireframe], &RenderState->WireframeShader);
+    LoadShader(ShaderPaths[Shader_Wireframe], &RenderState->WireframeShader, TempArena);
     
     PositionLocation3 = glGetAttribLocation(RenderState->WireframeShader.Program, "pos");
     glEnableVertexAttribArray(PositionLocation3);
@@ -633,7 +633,7 @@ static void RenderSetup(render_state *RenderState)
     glBufferData(GL_ARRAY_BUFFER, RenderState->AStarPathQuadVerticesSize,
                  RenderState->AStarPathQuadVertices,GL_DYNAMIC_DRAW);
     
-    LoadShader(ShaderPaths[Shader_AStarPath], &RenderState->AStarPathShader);
+    LoadShader(ShaderPaths[Shader_AStarPath], &RenderState->AStarPathShader, TempArena);
     
     PositionLocation3 = glGetAttribLocation(RenderState->AStarPathShader.Program, "pos");
     glEnableVertexAttribArray(PositionLocation3);
@@ -643,7 +643,7 @@ static void RenderSetup(render_state *RenderState)
     
     //font
     RenderState->StandardFontShader.Type = Shader_StandardFont;
-    LoadShader(ShaderPaths[Shader_StandardFont], &RenderState->StandardFontShader);
+    LoadShader(ShaderPaths[Shader_StandardFont], &RenderState->StandardFontShader, TempArena);
     
     RenderState->RobotoFont = {};
     InitializeFreeTypeFont("../assets/fonts/roboto/Roboto-Regular.ttf", 20, RenderState->FTLibrary, &RenderState->RobotoFont, &RenderState->StandardFontShader);
@@ -660,10 +660,10 @@ static void RenderSetup(render_state *RenderState)
     
     // Light sources
     RenderState->LightSourceShader.Type = Shader_LightSource;
-    LoadShader(ShaderPaths[Shader_LightSource], &RenderState->LightSourceShader);
+    LoadShader(ShaderPaths[Shader_LightSource], &RenderState->LightSourceShader, TempArena);
     
     RenderState->SimpleModelShader.Type = Shader_SimpleModel;
-    LoadShader(ShaderPaths[Shader_SimpleModel], &RenderState->SimpleModelShader);
+    LoadShader(ShaderPaths[Shader_SimpleModel], &RenderState->SimpleModelShader, TempArena);
     
     RenderState->SpotlightData.NumLights = 0;
     glGenBuffers(1, &RenderState->SpotlightUBO);
@@ -746,12 +746,12 @@ static void LoadTextures(render_state& RenderState, renderer& Renderer)
     }
 }
 
-static void InitializeOpenGL(render_state& RenderState, renderer& Renderer, config_data* ConfigData)
+static void InitializeOpenGL(render_state& RenderState, renderer& Renderer, config_data* ConfigData, memory_arena* TempArena)
 {
     if (!glfwInit())
         exit(EXIT_FAILURE);
     
-    RenderState.Window = glfwCreateWindow(ConfigData->ScreenWidth, ConfigData->ScreenHeight, Concat(Concat(ConfigData->Title, " "), ConfigData->Version), ConfigData->Fullscreen ? glfwGetPrimaryMonitor() : NULL, 
+    RenderState.Window = glfwCreateWindow(ConfigData->ScreenWidth, ConfigData->ScreenHeight, Concat(Concat(ConfigData->Title, " ", TempArena), ConfigData->Version, TempArena),  ConfigData->Fullscreen ? glfwGetPrimaryMonitor() : NULL, 
                                           NULL);
     RenderState.Contrast = ConfigData->Contrast;
     RenderState.Brightness = ConfigData->Brightness;
@@ -807,21 +807,21 @@ static void InitializeOpenGL(render_state& RenderState, renderer& Renderer, conf
     
     ControllerPresent();
     
-    RenderSetup(&RenderState);
+    RenderSetup(&RenderState, TempArena);
 }
 
-static void ReloadVertexShader(Shader_Type Type, render_state* RenderState)
+static void ReloadVertexShader(Shader_Type Type, render_state* RenderState, memory_arena* TempArena)
 {
     glDeleteProgram(RenderState->Shaders[Type].Program);
     glDeleteShader(RenderState->Shaders[Type].VertexShader);
-    LoadVertexShader(ShaderPaths[Type], &RenderState->Shaders[Type]);
+    LoadVertexShader(ShaderPaths[Type], &RenderState->Shaders[Type], TempArena);
 }
 
-static void ReloadFragmentShader(Shader_Type Type, render_state* RenderState)
+static void ReloadFragmentShader(Shader_Type Type, render_state* RenderState, memory_arena* TempArena)
 {
     glDeleteProgram(RenderState->Shaders[Type].Program);
     glDeleteShader(RenderState->Shaders[Type].FragmentShader);
-    LoadFragmentShader(ShaderPaths[Type], &RenderState->Shaders[Type]);
+    LoadFragmentShader(ShaderPaths[Type], &RenderState->Shaders[Type], TempArena);
     
     RenderState->SpotlightData.NumLights = 0;
     glBindBufferBase(GL_UNIFORM_BUFFER, 0, RenderState->SpotlightUBO);
@@ -850,21 +850,21 @@ static void ReloadFragmentShader(Shader_Type Type, render_state* RenderState)
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
 }
 
-static void ReloadAssets(render_state& RenderState, asset_manager* AssetManager)
+static void ReloadAssets(render_state& RenderState, asset_manager* AssetManager, memory_arena* TempArena)
 {
     for(int i = 0; i < Shader_Count; i++)
     {
         if(AssetManager->DirtyVertexShaderIndices[i] == 1)
         {
             DEBUG_PRINT("Reloading vertex shader type: %s\n", ShaderEnumToStr((Shader_Type)i));
-            ReloadVertexShader((Shader_Type)i, &RenderState);
+            ReloadVertexShader((Shader_Type)i, &RenderState, TempArena);
             AssetManager->DirtyVertexShaderIndices[i] = 0;
         }
         
         if(AssetManager->DirtyFragmentShaderIndices[i] == 1)
         {
             DEBUG_PRINT("Reloading fragment shader type: %s\n", ShaderEnumToStr((Shader_Type)i));
-            ReloadFragmentShader((Shader_Type)i, &RenderState);
+            ReloadFragmentShader((Shader_Type)i, &RenderState, TempArena);
             AssetManager->DirtyFragmentShaderIndices[i] = 0;
         }
     }
@@ -1405,7 +1405,7 @@ static void RenderBuffer(const render_command& Command, render_state& RenderStat
     glBindVertexArray(0);
 }
 
-static void RenderCommands(render_state& RenderState, renderer& Renderer)
+static void RenderCommands(render_state& RenderState, renderer& Renderer, memory_arena* TempArena)
 {
     for(i32 Index = RenderState.BufferCount; Index < Renderer.BufferCount; Index++)
     {
@@ -1413,7 +1413,7 @@ static void RenderCommands(render_state& RenderState, renderer& Renderer)
         
         if(Data.IndexBufferSize == 0)
         {
-            RegisterVertexBuffer(RenderState, Data.VertexBuffer, Data.VertexBufferSize, Data.ShaderType, Data.ExistingHandle);
+            RegisterVertexBuffer(RenderState, Data.VertexBuffer, Data.VertexBufferSize, Data.ShaderType, TempArena, Data.ExistingHandle);
             free(Data.VertexBuffer);
         }
         else
@@ -1528,7 +1528,7 @@ static void RenderCommands(render_state& RenderState, renderer& Renderer)
     
     UpdateLightingData(RenderState);
     Renderer.LightCommandCount = 0;
-    Clear(&Renderer.LightCommands);
+    Reset(&Renderer.LightCommands);
     
     for(i32 Index = 0; Index < Renderer.CommandCount; Index++)
     {
@@ -1570,14 +1570,14 @@ static void RenderCommands(render_state& RenderState, renderer& Renderer)
     }
     
     Renderer.CommandCount = 0;
-    Clear(&Renderer.Buffer);
+    Reset(&Renderer.Buffer);
     
     RenderState.SpotlightData.NumLights = 0;
     RenderState.DirectionalLightData.NumLights = 0;
     RenderState.PointLightData.NumLights = 0;
 }
 
-static void Render(render_state& RenderState, renderer& Renderer)
+static void Render(render_state& RenderState, renderer& Renderer, memory_arena* TempArena)
 {
     LoadTextures(RenderState, Renderer);
     
@@ -1599,21 +1599,12 @@ static void Render(render_state& RenderState, renderer& Renderer)
     glClearColor(0.5, 0.5, 0.5, 1.0f);
     
     //RenderGame(GameState);
-    RenderCommands(RenderState, Renderer);
+    RenderCommands(RenderState, Renderer, TempArena);
     
     // @Incomplete: Lighting
     //RenderLightSources(GameState);
     
     // Second pass
-    
-    if(Renderer.ZDepth)
-    {
-        free(Renderer.ZDepth);
-    }
-    
-    Renderer.ZDepth = (r32*)malloc(sizeof(r32*) * Renderer.WindowWidth * Renderer.WindowHeight);
-    glReadPixels(0,0,Renderer.WindowWidth, Renderer.WindowHeight, GL_DEPTH_COMPONENT, GL_FLOAT, Renderer.ZDepth);
-    
     
     
     glBindFramebuffer(GL_FRAMEBUFFER, 0);

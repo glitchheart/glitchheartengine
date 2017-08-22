@@ -218,17 +218,19 @@
                                   
                                   if(File)
                                   {
-                                      Level->Name = (char*)malloc(sizeof(char) * 30);
+                                      //Level->Name = (char*)malloc(sizeof(char) * 30);
+                                      Level->Name = PushString(&GameState->PermArena, 30);
                                       if(fgets(LineBuffer, 255, File))
                                           sscanf(LineBuffer, "%s", Level->Name);
                                       
-                                      Level->SheetName = (char*)malloc(sizeof(char) * 30);
+                                      //Level->SheetName = (char*)malloc(sizeof(char) * 30);
+                                      Level->SheetName = PushString(&GameState->PermArena, 30);
                                       if(fgets(LineBuffer, 255, File))
                                           sscanf(LineBuffer, "%s", Level->SheetName);
                                       
                                       Level->Tilemap.TextureName = Level->SheetName;
                                       
-                                      LoadTilesheetMetaFile(Concat(Concat("../assets/textures/tilesheets/", Level->SheetName), ".tm"), Level, &Level->Tilemap, GameState, Renderer);
+                                      LoadTilesheetMetaFile(Concat(Concat("../assets/textures/tilesheets/", Level->SheetName, &GameState->TempArena), ".tm", &GameState->TempArena), Level, &Level->Tilemap, GameState, Renderer);
                                       
                                       if(fgets(LineBuffer, 255, File))
                                           sscanf(LineBuffer, "%f %f %f", &Level->PlayerStartPosition.x, &Level->PlayerStartPosition.y, &Level->PlayerStartPosition.z);
@@ -271,16 +273,20 @@
                                       
                                       for(i32 Layer = 0; Layer < TILEMAP_LAYERS; Layer++)
                                       {
-                                          Level->Tilemap.Data[Layer] = (tile_data**)malloc(MapWidth * sizeof(tile_data*));
-                                          GameState->EntityTilePositions = (i32**)malloc(MapWidth * sizeof(i32*));
+                                          Level->Tilemap.Data[Layer] = PushArray(&GameState->PermArena, MapWidth, tile_data*);
+                                          //Level->Tilemap.Data[Layer] = (tile_data**)malloc(MapWidth * sizeof(tile_data*));
+                                          GameState->EntityTilePositions = PushArray(&GameState->PermArena, MapWidth, i32*);
+                                          //GameState->EntityTilePositions = (i32**)malloc(MapWidth * sizeof(i32*));
                                       }
                                       
                                       for(i32 Layer = 0; Layer < TILEMAP_LAYERS; Layer++)
                                       {
                                           for(u32 I = 0; I < MapWidth; I++)
                                           {
-                                              Level->Tilemap.Data[Layer][I] = (tile_data *)calloc(MapHeight, sizeof(tile_data));
-                                              GameState->EntityTilePositions[I] = (i32*)malloc(MapHeight * sizeof(i32));
+                                              Level->Tilemap.Data[Layer][I] = PushArray(&GameState->PermArena, MapHeight, tile_data);
+                                              //Level->Tilemap.Data[Layer][I] = (tile_data *)calloc(MapHeight, sizeof(tile_data));
+                                              GameState->EntityTilePositions[I] = PushArray(&GameState->PermArena, MapHeight, i32);
+                                              //GameState->EntityTilePositions[I] = (i32*)malloc(MapHeight * sizeof(i32));
                                           }
                                       }
                                       
@@ -396,7 +402,7 @@
                                   
                                   if(File)
                                   {
-                                      SaveTilesheetMetaFile(Concat(Concat("../assets/textures/tilesheets/", Level->SheetName),".tm"), Renderer, *Level, New);
+                                      SaveTilesheetMetaFile(Concat(Concat("../assets/textures/tilesheets/", Level->SheetName, &GameState->TempArena),".tm", &GameState->TempArena), Renderer, *Level, New);
                                       
                                       fprintf(File, "%s\n", Level->Name);
                                       fprintf(File, "%s\n", Level->SheetName);
@@ -543,6 +549,6 @@
                                   
                                   
                                   SaveLevelToFile(FilePath, NewLevel, GameState, Renderer, true);
-                                  LoadTilesheetMetaFile(Concat(Concat("../assets/textures/tilesheets/", NewLevel->SheetName), ".tm"), NewLevel, &NewLevel->Tilemap, GameState, Renderer);
+                                  LoadTilesheetMetaFile(Concat(Concat("../assets/textures/tilesheets/", NewLevel->SheetName, &GameState->TempArena), ".tm", &GameState->TempArena), NewLevel, &NewLevel->Tilemap, GameState, Renderer);
                                   LoadLevelFromFile(FilePath, NewLevel, GameState, Renderer, SoundQueue);
 }
