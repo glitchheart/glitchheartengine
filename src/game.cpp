@@ -175,7 +175,6 @@ extern "C" UPDATE(Update)
     if(!GameState->IsInitialized || !GameMemory->IsInitialized)
     {
         LoadTextures(Renderer);
-        
         InitializeArena(&Renderer.Buffer, sizeof(render_command) * RENDER_COMMAND_MAX, (u8*)GameMemory->PermanentStorage + sizeof(game_state));
         
         InitializeArena(&Renderer.LightCommands, sizeof(render_command) * RENDER_COMMAND_MAX, Renderer.Buffer.Base + Renderer.Buffer.Size);
@@ -191,7 +190,7 @@ extern "C" UPDATE(Update)
         
         model Model1;
         Model1.Position = math::v3(0, 0, 0);
-        Model1.Scale = math::v3(5.0, 5.0, 5.0);
+        Model1.Scale = math::v3(50.0, 5.0, 50.0);
         
         model Model2;
         Model2.Position = math::v3(0, 0, 0);
@@ -213,7 +212,7 @@ extern "C" UPDATE(Update)
         model Model6; // Light source position
         
         Model6.Position = math::v3(-10.0f, 5.0f, 0);
-        Model6.Scale = math::v3(5.0, 5.0, 5.0);
+        Model6.Scale = math::v3(1.0, 1.0, 1.0);
         
         LoadModel(Renderer, "../assets/models/capsule.modl", &Model1);
         LoadModel(Renderer, "../assets/models/red_riding.modl", &Model2);
@@ -222,19 +221,18 @@ extern "C" UPDATE(Update)
         LoadModel(Renderer, "../assets/models/cube.modl", &Model5);
         LoadModel(Renderer, "../assets/models/panther_monster.modl", &Model6);
         
-        GameState->TestModels[0] = Model1;
-        GameState->TestModels[1] = Model2;
-        GameState->TestModels[2] = Model3;
-        GameState->TestModels[3] = Model4;
-        GameState->TestModels[4] = Model5;
-        GameState->TestModels[5] = Model6;
-        
-        GameState->Models = 6;
+        GameState->TestModels[GameState->Models++] = Model1;
+        //GameState->TestModels[GameState->Models++] = Model2;
+        GameState->TestModels[GameState->Models++] = Model3;
+        //GameState->TestModels[GameState->Models++] = Model4;
+        //GameState->TestModels[GameState->Models++] = Model5;
+        GameState->TestModels[GameState->Models++] = Model6;
+        GameState->TestModels[GameState->Models++] = Model5;
         
         i32 OffsetX = 5;
         i32 OffsetZ = 5;
         
-        
+        /*
         for(i32 I = 0; I < 10 + OffsetX; I++)
         {
             for(i32 J = 0; J < 10 + OffsetZ; J++)
@@ -247,7 +245,7 @@ extern "C" UPDATE(Update)
                 GameState->TestModels[GameState->Models++] = Model;
             }
         }
-        
+        */
         
         if(GameState->ShouldReload || GameMemory->ShouldReload)
         {
@@ -871,6 +869,7 @@ extern "C" UPDATE(Update)
     GameUpdateStruct->EntityCount = GameState->EntityCount;
     memcpy(&GameUpdateStruct->EntityPositions,&GameState->EntityPositions,sizeof(math::v2) * NUM_ENTITIES);
     
+    /*
     if(KEY(Key_X))
     {
         GameState->TESTMODEL->Rotation.x += (r32)(40 * DeltaTime);
@@ -900,18 +899,22 @@ extern "C" UPDATE(Update)
             GameState->TestModels[i].Rotation.z += (r32)(40 * DeltaTime);
         }
     }
-    
+    */
     //PushTilemapRenderCommands(Renderer, *GameState);
     
-    PushDirectionalLight(Renderer, math::v3(-0.2, -1.0, -0.3), math::v3(0.1f, 0.1f, 0.1f), math::v3(0, 0, 0), math::v3(0.1, 0.1, 0.1));
+    PushDirectionalLight(Renderer, math::v3(-0.2, -1.0, -0.3), math::v3(0.1f, 0.1f, 0.1f), math::v3(0.2, 0.2, 0.2), math::v3(0.1, 0.1, 0.1));
     
-    for(i32 I = 0; I < MAX_LIGHTS; I++)
-    {
-        PushPointLight(Renderer, math::v3((r32)I * 5, 0.0f, 0.0f), math::v3(0.0f, 1.0f, 0.0f), math::v3(1.0f, 1.0f, 0.0), math::v3(1.0, 1.0, 1.0), 1.0f, 0.09f, 0.032f);
-        
-    }
     
-    PushEntityRenderCommands(Renderer, *GameState);
+    GameState->TestModels[3].Position = math::v3(-2.0f, 7.0f, 0.0f);
+    GameState->TestModels[3].Scale = math::v3(0.4f, 0.4f, 0.4f);
+    //PushPointLight(Renderer, GameState->TestModels[3].Position, math::v3(0.1f, 0.1f, 0.1f), math::v3(10.0f, 1.0f, 0.0), math::v3(1.1, 1.1, 1.1), 1.0f, 0.09f, 0.032f);
+    
+    
+    PushSpotlight(Renderer, GameState->TestModels[3].Position, math::v3(0.0f, 1.0f, 0.0f), DEGREE_IN_RADIANS * 12.5f, DEGREE_IN_RADIANS * 17.5f, math::v3(0.1f, 0.1f, 0.1f), math::v3(5.0f, 5.0f, 5.0), math::v3(1.0, 1.0, 1.0), 1.0f, 0.09f, 0.032f);
+    
+    
+    
+    //PushEntityRenderCommands(Renderer, *GameState);
     
     for(i32 Index = 0; Index < GameState->Models; Index++)
     {

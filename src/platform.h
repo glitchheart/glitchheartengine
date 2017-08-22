@@ -162,11 +162,11 @@ UPDATE(UpdateStub)
 
 inline void HandleError(char const *File, i32 LineNum, char const *msg)
 {
-    if(File)
+    /*if(File)
     {
         fprintf(stderr, "Error on in file %s on line %d\n", File, LineNum);
         fprintf(stderr, "%s\n", msg);
-    }
+    }*/
 }
 
 #define ERR(msg) HandleError(__FILE__,__LINE__,msg)
