@@ -579,9 +579,9 @@ static void EnemyWander(game_state* GameState, entity* Entity)
 {
     if(Entity->Enemy.WaypointCount > 0)
     {
-        auto WalkString = Concat(Entity->Name,"_walk");
+        auto WalkString = Concat(Entity->Name,"_walk", &GameState->TempArena);
         PlayAnimation(Entity, WalkString, GameState);
-        free(WalkString);
+        //free(WalkString);
         
         auto CurrentWaypoint = math::v3(Entity->Enemy.Waypoints[Entity->Enemy.WaypointIndex].x,
                                         0.0f, Entity->Enemy.Waypoints[Entity->Enemy.WaypointIndex].z);

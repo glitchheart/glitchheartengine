@@ -504,7 +504,7 @@ static void EditorUpdateEntities(game_state* GameState, renderer& Renderer, inpu
             u32 SelectedTile = GameState->EditorState.SelectedTileType;
             GameState->CurrentLevel.Tilemap.Tiles[SelectedTile].IsSolid = GameState->EditorState.TileIsSolidCheckbox->Checked;
             UpdateTileData(SelectedTile, GameState->CurrentLevel.Tilemap.Tiles[SelectedTile].IsSolid, &GameState->CurrentLevel.Tilemap);
-            SaveTilesheetMetaFile(Concat(Concat("../assets/textures/tilesheets/", GameState->CurrentLevel.SheetName), ".tm"), Renderer, GameState->CurrentLevel, false);
+            SaveTilesheetMetaFile(Concat(Concat("../assets/textures/tilesheets/", GameState->CurrentLevel.SheetName, &GameState->TempArena), ".tm", &GameState->TempArena), Renderer, GameState->CurrentLevel, false);
             
             // @Incomplete: Should call SaveTilesheetMetafile!!!!
         }
