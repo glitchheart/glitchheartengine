@@ -58,7 +58,6 @@ inline void ZeroSize(sz Size, void *Ptr)
     }
 }
 
-
 #define PushStruct(Arena, type, ...) (type *)PushSize_(Arena, sizeof(type), __VA_ARGS__)
 #define PushArray(Arena, Count, type, ...) (type*)PushSize_(Arena, (Count)*sizeof(type), __VA_ARGS__)
 #define PushSize(Arena, Size, type, ...) (type*)PushSize_(Arena, Size)
