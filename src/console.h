@@ -5,11 +5,12 @@
 #define HISTORY_BUFFER_LINES 7
 
 struct game_state;
+struct transient_state;
 
 struct command_info
 {
     char* Name;
-    char* (*FunctionPointer)(game_state*, char**);
+    char* (*FunctionPointer)(game_state*, transient_state*, char**);
 };
 
 #define COMMAND_ARRAY_SIZE 10

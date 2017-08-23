@@ -138,16 +138,78 @@ static void SetMouseInvalidKeys()
     InputController.ScrollY = 0;
 }
 
-#ifdef GLM
-void PrintGLMMatrix(glm::mat4 In)
+
+inline void LoadConfig(const char* FilePath, config_data* ConfigData, memory_arena* PermArena)
 {
-    DEBUG_PRINT("GLM: \n");
-    DEBUG_PRINT("%f %f %f %f\n", In[0][0],In[1][0],In[2][0],In[3][0]);
-    DEBUG_PRINT("%f %f %f %f\n", In[0][1],In[1][1],In[2][1],In[3][1]);
-    DEBUG_PRINT("%f %f %f %f\n", In[0][2],In[1][2],In[2][2],In[3][2]);
-    DEBUG_PRINT("%f %f %f %f\n", In[0][3],In[1][3],In[2][3],In[3][3]);
+    FILE* File;
+    File = fopen(FilePath, "r");
+    char LineBuffer[255];
+    
+    ConfigData->Title = PushString(PermArena, 40);
+    ConfigData->Version = PushString(PermArena, 40);
+    
+    if(File)
+    {
+        while(fgets(LineBuffer, 255, File))
+        {
+            if(StartsWith(LineBuffer, "title"))
+            {
+                sscanf(LineBuffer, "title %s", ConfigData->Title);
+            }
+            else if(StartsWith(LineBuffer, "version"))
+            {
+                sscanf(LineBuffer, "version %s", ConfigData->Version);
+            }
+            else if(StartsWith(LineBuffer, "screen_width"))
+            {
+                sscanf(LineBuffer, "screen_width %d", &ConfigData->ScreenWidth);
+            }
+            else if(StartsWith(LineBuffer, "screen_height"))
+            {
+                sscanf(LineBuffer, "screen_height %d", &ConfigData->ScreenHeight);
+            }
+            else if(StartsWith(LineBuffer, "screen_height"))
+            {
+                sscanf(LineBuffer, "screen_height %d", &ConfigData->ScreenHeight);
+            }
+            else if(StartsWith(LineBuffer, "contrast"))
+            {
+                sscanf(LineBuffer, "contrast %f", &ConfigData->Contrast);
+            }
+            else if(StartsWith(LineBuffer, "brightness"))
+            {
+                sscanf(LineBuffer, "brightness %f", &ConfigData->Brightness);
+            }
+            else if(StartsWith(LineBuffer, "fullscreen"))
+            {
+                sscanf(LineBuffer, "fullscreen %d", &ConfigData->Fullscreen);
+            } 
+            else if(StartsWith(LineBuffer, "muted"))
+            {
+                sscanf(LineBuffer, "muted %d", &ConfigData->Muted);
+            }
+            else if(StartsWith(LineBuffer, "sfx_volume"))
+            {
+                sscanf(LineBuffer, "sfx_volume %f", &ConfigData->SFXVolume);
+            }
+            else if(StartsWith(LineBuffer, "music_volume"))
+            {
+                sscanf(LineBuffer, "music_volume %f", &ConfigData->MusicVolume);
+            }
+            else if(StartsWith(LineBuffer, "starting_level_path"))
+            {
+                ConfigData->StartingLevelFilePath = PushString(PermArena, 40);
+                sscanf(LineBuffer, "starting_level_path %s", ConfigData->StartingLevelFilePath);
+            }
+            else if(StartsWith(LineBuffer, "zoom"))
+            {
+                sscanf(LineBuffer, "zoom %f", &ConfigData->Zoom);
+            }
+        }
+        
+        fclose(File);
+    }
 }
-#endif
 
 PLATFORM_ALLOCATE_MEMORY(Win32AllocateMemory)
 {
@@ -177,6 +239,8 @@ int main(void)
     InitializeArena(&Win32State.PermArena, Win32Memory.PermanentStorageSize, (u8*)Win32Memory.PermanentStorage);
     InitializeArena(&Win32State.TempArena, Win32Memory.TemporaryStorageSize, (u8*)Win32Memory.TemporaryStorage);
     
+    win32_state* Win32State = BootstrapPushStruct(win32_state, PermArena);
+    
     LPVOID BaseAddress = 0;
     game_memory GameMemory = {};
     GameMemory.PermanentStorageSize = Megabytes(64);
@@ -184,6 +248,7 @@ int main(void)
     GameMemory.PermanentStorage = VirtualAlloc(BaseAddress, (size_t)TotalSize,
                                                MEM_RESERVE|MEM_COMMIT,
                                                PAGE_READWRITE);
+    
     GameMemory.TemporaryStorageSize = Megabytes(64);
     GameMemory.TemporaryStorage = VirtualAlloc(0, GameMemory.TemporaryStorageSize, MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE);
     
@@ -278,8 +343,6 @@ int main(void)
         
         //CheckLevelVAO(&GameMemory);
         
-        
-        
         Render(RenderState, Renderer, &Win32State.TempArena);
         PlaySounds(&SoundDevice, &SoundQueue, GameUpdateStruct.EntityPositions, GameUpdateStruct.EntityCount);
         
@@ -302,6 +365,10 @@ int main(void)
         }
         
         Reset(&Win32State.TempArena);
+        
+        VirtualFree(GameMemory.TemporaryStorage, 0, MEM_RELEASE);
+        GameMemory.TemporaryStorage = VirtualAlloc(0, GameMemory.TemporaryStorageSize, MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE);
+        
     }
     
     CleanupSound(&SoundDevice);

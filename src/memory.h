@@ -3,18 +3,27 @@
 
 struct memory_block
 {
+    u64 Flags;
     u64 Size;
     u8* Base;
+    umm Used;
     memory_block* Prev;
 };
 
 struct memory_arena
 {
-    u64 Flags;
-    u64 Size;
-    u8 *Base;
+    memory_block* CurrentBlock;
+    u64 MinimumBlockSize;
+    
+    u64 AllocationFlags;
+    u32 TempCount;
+};
+
+struct temporary_memory
+{
+    memory_arena* Arena;
+    memory_block* Block;
     umm Used;
-    memory_block Prev;
 };
 
 enum Arena_Flags
@@ -22,37 +31,35 @@ enum Arena_Flags
     AFlag_Zero = 0x1
 };
 
-struct arena_params
+struct arena_push_params
 {
     u32 Flags;
     u32 Alignment;
 };
 
-static void InitializeArena(memory_arena *Arena, sz Size, u8* Base)
+struct arena_bootstrap_params
 {
-    Arena->Size = Size;
-    Arena->Base = Base;
-    Arena->Used = 0;
+    u64 AllocationFlags;
+    umm MinimumBlockSize;
+};
+
+inline arena_bootstrap_params DefaultBootstrapParams()
+{
+    arena_bootstrap_params Params = {};
+    return Params;
 }
 
-static void SubArena(memory_arena* Arena, memory_arena* SubArena, sz Size)
+inline arena_push_params DefaultArenaParams()
 {
-    SubArena->Size = Size;
-    SubArena->Base = Arena->Base + Arena->Used;
-    Arena->Used += Size;
-}
-
-inline arena_params DefaultParams()
-{
-    arena_params Params;
+    arena_push_params Params;
     Params.Flags = AFlag_Zero;
     Params.Alignment = 4;
     return Params;
 }
 
-inline arena_params NoClear()
+inline arena_push_params NoClear()
 {
-    arena_params Params;
+    arena_push_params Params;
     Params.Flags &= ~AFlag_Zero;
 }
 
@@ -67,42 +74,96 @@ inline void ZeroSize(sz Size, void *Ptr)
     }
 }
 
+inline sz GetAlignmentOffset(memory_arena* Arena, sz Alignment)
+{
+    sz AlignmentOffset = 0;
+    
+    sz ResultPointer = (sz)Arena->CurrentBlock->Base + Arena->CurrentBlock->Used;
+    sz AlignmentMask = Alignment - 1;
+    if(ResultPointer & AlignmentMask)
+    {
+        AlignmentOffset = Alignment - (ResultPointer & AlignmentMask);
+    }
+    return AlignmentOffset;
+}
+
+
+inline sz GetEffectiveSizeFor(memory_arena* Arena, sz SizeInit, arena_push_params Params = DefaultArenaParams())
+{
+    sz Size = SizeInit;
+    
+    sz AlignmentOffset = GetAlignmentOffset(Arena, Params.Alignment);
+    
+    Size += AlignmentOffset;
+    return Size;
+}
+
 #define PushStruct(Arena, type, ...) (type *)PushSize_(Arena, sizeof(type), __VA_ARGS__)
 #define PushArray(Arena, Count, type, ...) (type*)PushSize_(Arena, (Count)*sizeof(type), __VA_ARGS__)
 #define PushSize(Arena, Size, type, ...) (type*)PushSize_(Arena, Size, __VA_ARGS__)
-void* PushSize_(memory_arena* Arena, sz Size, arena_params Params = DefaultParams())
+void* PushSize_(memory_arena* Arena, sz SizeInit, arena_push_params Params = DefaultArenaParams())
 {
-    sz ResultPointer = (sz)Arena->Base + Arena->Used;
-    sz AlignmentOffset = 0;
+    void* Result = 0;
     
-    sz AlignmentMask = Params.Alignment - 1;
-    if(ResultPointer & AlignmentMask)
+    sz Size = 0;
+    
+    if(Arena->CurrentBlock)
     {
-        AlignmentOffset = Params.Alignment - (ResultPointer & AlignmentMask);
+        Size = GetEffectiveSizeFor(Arena, SizeInit, Params);
     }
-    Size += AlignmentOffset;
     
-    Assert((Arena->Used + Size) <= Arena->Size);
-    Arena->Used += Size;
-    
-    void* Result = (void*)(ResultPointer + AlignmentOffset);
-    
-    memory_block Block;
-    Block.Size = Size;
-    Block.Base = (u8*)Result;
-    
-    if(Arena->Prev.Size > 0)
+    if(!Arena->CurrentBlock || (Arena->CurrentBlock->Used + Size) > Arena->CurrentBlock->Size)
     {
-        Block.Prev = &Arena->Prev;
+        Size = SizeInit;
+        //@Incomplete: Do some overflow checking for aligning (Like Casey?)
+        
+        if(!Arena->MinimumBlockSize)
+        {
+            Arena->MinimumBlockSize = 1024 * 1024;
+        }
+        
+        sz BlockSize = Max(Size, Arena->MinimumBlockSize);
+        
+        //@Incomplete: Send some sort of allocation flags here
+        memory_block* NewBlock = Platform.AllocateMemory(BlockSize);
+        
+        NewBlock->Prev = Arena->CurrentBlock;
+        Arena->CurrentBlock = NewBlock;
     }
-    Arena->Prev = Block;
+    
+    Assert((Arena->CurrentBlock->Used + Size) <= Arena->CurrentBlock->Size);
+    sz AlignmentOffset = GetAlignmentOffset(Arena, Params.Alignment);
+    Result = Arena->CurrentBlock->Base + Arena->CurrentBlock->Used + AlignmentOffset;
+    Arena->CurrentBlock->Used += Size;
+    
+    Assert(Size >= SizeInit);
     
     if(Params.Flags & AFlag_Zero)
     {
-        ZeroSize(Size, Result);
+        ZeroSize(SizeInit, Result);
     }
     
     return Result;
+}
+
+
+#define Copy(Dest, Src, Size, Arena, type) Dest = PushSize(Arena, Size, type);\
+memcpy(Dest, Src, Size);
+
+
+void FreeLastBlock(memory_arena* Arena)
+{
+    memory_block* Free = Arena->CurrentBlock;
+    Arena->CurrentBlock = Free->Prev;
+    Platform.DeallocateMemory(Free);
+}
+
+static void Clear(memory_arena *Arena)
+{
+    while(Arena->CurrentBlock)
+    {
+        FreeLastBlock(Arena);
+    }
 }
 
 char* PushString(memory_arena* Arena, u32 Length)
@@ -167,21 +228,18 @@ char* PushString(memory_arena* Arena, sz Length, char* Source)
     return PushString(Arena, (u32)Length, Source);
 }
 
-#define Copy(Dest, Src, Size, Arena, type) Dest = PushSize(Arena, Size, type);\
-memcpy(Dest, Src, Size);
-
-static void Reset(memory_arena *Arena, sz Size = 0)
+#define BootstrapPushStruct(type, Member, ...) (type*)BootstrapPushSize_(sizeof(type), OffsetOf(type, Member), __VA_ARGS__)
+inline void* BootStrapPushSize_(umm StructSize, umm OffsetToArena,
+                                arena_bootstrap_params BootstrapParams = DefaultBootstrapParams(),
+                                arena_push_params Params = DefaultArenaParams())
 {
-    Arena->Used = 0;
-}
-
-void FreeLastBlock(memory_arena* Arena)
-{
-    Arena->Used -= Arena->Prev.Size;
-    if(Arena->Prev.Prev)
-    {
-        Arena->Prev = *Arena->Prev.Prev;
-    }
+    memory_arena Bootstrap = {};
+    Bootstrap.AllocationFlags = BootstrapParams.AllocationFlags;
+    Bootstrap.MinimumBlockSize = BootstrapParams.MinimumBlockSize;
+    void* Struct = PushSize(&Bootstrap, StructSize, void*, Params);
+    *(memory_arena*)((u8*)Struct + OffsetToArena) = Bootstrap;
+    
+    return Struct;
 }
 
 #endif

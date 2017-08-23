@@ -167,35 +167,43 @@ platform_api Platform;
 extern "C" UPDATE(Update)
 {
     Platform = GameMemory->PlatformAPI;
-    game_state* GameState = (game_state*)GameMemory->PermanentStorage;
+    //game_state* GameState = (game_state*)GameMemory->PermanentStorage;
     
-    //@Incomplete: Hmmmm
-    GameState->ReloadData = GameMemory->ReloadData;
-    Assert(GameState);
     
-    Reset(&GameState->TempArena);
     
-    if(!GameState->IsInitialized || !GameMemory->IsInitialized)
+    // Maybe reset transient arena here???
+    
+    game_state* GameState = GameMemory->GameState;
+    
+    if(!GameState)
     {
         DEBUG_PRINT("Initializing gamestate\n");
-        InitializeArena(&Renderer.Commands, sizeof(render_command) * RENDER_COMMAND_MAX, (u8*)GameMemory->PermanentStorage + sizeof(game_state));
         
-        InitializeArena(&Renderer.UICommands, sizeof(render_command) * RENDER_COMMAND_MAX, Renderer.Commands.Base + Renderer.Commands.Size);
+        GameState = GameMemory->GameState = BootstrapPushStruct(game_state, TotalArena);
+    }
+    
+    Assert(GameState);
+    //@Incomplete: Hmmmm
+    //GameState->ReloadData = GameMemory->ReloadData;
+    
+    transient_state* TransientState = GameMemory->TransientState;
+    
+    if(!TransientState)
+    {
+        DEBUG_PRINT("Initializing transient state\n");
         
-        InitializeArena(&Renderer.LightCommands, sizeof(render_command) * RENDER_COMMAND_MAX, Renderer.UICommands.Base + Renderer.UICommands.Size);
-        
-        InitializeArena(&GameState->WorldArena, Megabytes(32), Renderer.LightCommands.Base + Renderer.LightCommands.Size);
-        
-        InitializeArena(&GameState->TempArena, GameMemory->TemporaryStorageSize, (u8*)GameMemory->TemporaryStorage);
-        
-        InitializeArena(&GameState->PermArena, GameMemory->PermanentStorageSize - sizeof(game_state) - Renderer.Commands.Size - Renderer.UICommands.Size - Renderer.LightCommands.Size - GameState->WorldArena.Size, GameState->WorldArena.Base + GameState->WorldArena.Size);
-        
-        GameState->TESTMODEL = PushStruct(&GameState->PermArena, model);
+        TranState = GameMemory->TransientState = BootstrapStruct(transient_state, TranArena);
+    }
+    Assert(TransientState);
+    
+    if(!GameState->IsInitialized || GameMemory->IsInitialized)
+    {
+        GameState->TESTMODEL = PushStruct(&GameState->TotalArena, model);
         
         GameState->TESTMODEL->Position = math::v3(0, 0, 0);
         GameState->TESTMODEL->Scale = math::v3(1, 1, 1);
         
-        LoadTextures(Renderer, &GameState->TempArena);
+        LoadTextures(Renderer, &TransientState->TranArena);
         
         model Model1;
         Model1.Position = math::v3(0, 0, 0);
@@ -223,12 +231,12 @@ extern "C" UPDATE(Update)
         Model6.Position = math::v3(-10.0f, 5.0f, 0);
         Model6.Scale = math::v3(1.0, 1.0, 1.0);
         
-        LoadModel(Renderer, "../assets/models/knight.modl", &Model1, &GameState->TempArena);
-        LoadModel(Renderer, "../assets/models/red_riding.modl", &Model2, &GameState->TempArena);
-        LoadModel(Renderer, "../assets/models/capsule.modl", &Model3, &GameState->TempArena);
-        LoadModel(Renderer, "../assets/models/mask_boy.modl", &Model4, &GameState->TempArena);
-        LoadModel(Renderer, "../assets/models/cube.modl", &Model5, &GameState->TempArena);
-        LoadModel(Renderer, "../assets/models/panther_monster.modl", &Model6, &GameState->TempArena);
+        LoadModel(Renderer, "../assets/models/knight.modl", &Model1, &TransientState->TranArena);
+        LoadModel(Renderer, "../assets/models/red_riding.modl", &Model2, &TransientState->TranArena);
+        LoadModel(Renderer, "../assets/models/capsule.modl", &Model3, &TransientState->TranArena);
+        LoadModel(Renderer, "../assets/models/mask_boy.modl", &Model4, &TransientState->TranArena);
+        LoadModel(Renderer, "../assets/models/cube.modl", &Model5, &TransientState->TranArena);
+        LoadModel(Renderer, "../assets/models/panther_monster.modl", &Model6, &TransientState->TranArena);
         
         GameState->TestModels[GameState->Models++] = Model1;
         //GameState->TestModels[GameState->Models++] = Model2;

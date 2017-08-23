@@ -1,8 +1,8 @@
-static void SaveAnimationToFile(game_state* GameState, const animation& Animation, renderer& Renderer)
+static void SaveAnimationToFile(game_state* GameState, transient_state* TranState, const animation& Animation, renderer& Renderer)
 {
     FILE* File;
     
-    File = fopen(Concat(Concat("../assets/animations/", Animation.Name, &GameState->TempArena), ".pownim", &GameState->TempArena), "w");
+    File = fopen(Concat(Concat("../assets/animations/", Animation.Name, &TranState->TranArena), ".pownim", &TranState->TranArena), "w");
     if (File)
     {
         texture_data* TextureData = Renderer.TextureMap[Animation.Texture];
@@ -47,7 +47,7 @@ static void SaveAnimationToFile(game_state* GameState, const animation& Animatio
     }
 }
 
-static void LoadAnimationFromFile(const char* FilePath, game_state* GameState, renderer& Renderer)
+static void LoadAnimationFromFile(const char* FilePath, game_state* GameState, transient_state* TranState, renderer& Renderer)
 {
     animation Animation;
     
@@ -55,7 +55,7 @@ static void LoadAnimationFromFile(const char* FilePath, game_state* GameState, r
     File = fopen(FilePath, "r");
     char LineBuffer[255];
     
-    Animation.Name = PushString(&GameState->PermArena, 30);
+    Animation.Name = PushString(&GameState->TotalArena, 30);
     
     if (File)
     {
@@ -104,7 +104,7 @@ static void LoadAnimationFromFile(const char* FilePath, game_state* GameState, r
         //frames
         fgets(LineBuffer, 255, File);
         
-        Animation.Frames = PushArray(&GameState->PermArena, Animation.FrameCount, sprite_sheet_frame);
+        Animation.Frames = PushArray(&GameState->TotalArena, Animation.FrameCount, sprite_sheet_frame);
         
         for (i32 i = 0; i < Animation.FrameCount; i++)
         {
@@ -126,12 +126,12 @@ static void LoadAnimationFromFile(const char* FilePath, game_state* GameState, r
             
             sscanf(LineBuffer, "texture %s%n", TextureNameBuffer, &Length);
             
-            char* TextureName = PushString(&GameState->TempArena, 70);
+            char* TextureName = PushString(&TranState->TranArena, 70);
             strcpy(TextureName, TextureNameBuffer);
             
             if (strcmp(TextureName, "") != 0 && Renderer.TextureMap[TextureName])
             {
-                Copy(Animation.Texture, TextureName, 70 * sizeof(char), &GameState->TempArena, char);
+                Copy(Animation.Texture, TextureName, 70 * sizeof(char), &TranState->TranArena, char);
             }
             else
             {
@@ -151,15 +151,15 @@ static void LoadAnimationFromFile(const char* FilePath, game_state* GameState, r
         DEBUG_PRINT("Animation-file not loaded: '%s'\n", FilePath);
 }
 
-static void LoadAnimations(game_state* GameState, renderer& Renderer)
+static void LoadAnimations(game_state* GameState, transient_state* TranState, renderer& Renderer)
 {
     animation_Map_Init(&GameState->AnimationMap, HashStringJenkins, 2048);
     directory_data DirData;
-    Platform.GetAllFilesWithExtension("../assets/animations/", "pownim", &DirData, false, &GameState->TempArena);
+    Platform.GetAllFilesWithExtension("../assets/animations/", "pownim", &DirData, false, &TranState->TranArena);
     
     for (i32 FileIndex = 0; FileIndex < DirData.FilesLength; FileIndex++)
     {
-        LoadAnimationFromFile(DirData.FilePaths[FileIndex], GameState, Renderer);
+        LoadAnimationFromFile(DirData.FilePaths[FileIndex], GameState, TranState, Renderer);
     }
 }
 
