@@ -94,7 +94,7 @@ static void PushEntityRenderCommands(renderer& Renderer, game_state& GameState)
         else if(RenderEntity->RenderType == Render_Type_Object)
             RenderEntity->Object->RenderEntityHandle = Index;
         
-        b32 Active = RenderEntity->RenderType == Render_Type_Entity ? RenderEntity->Entity->Active : RenderEntity->Object->Active;
+        b32 Active = RenderEntity->RenderType == Render_Type_Entity ? IsSet(RenderEntity->Entity, EFlag_Active) : IsSet(RenderEntity->Object, EFlag_Active);
         math::v3 Position = RenderEntity->RenderType == Render_Type_Entity ? RenderEntity->Entity->Position : RenderEntity->Object->Position;
         math::v3 Center = RenderEntity->RenderType == Render_Type_Entity ? RenderEntity->Entity->Center : RenderEntity->Object->Center;
         r32 EntityScale = RenderEntity->RenderType == Render_Type_Entity ? RenderEntity->Entity->Scale : RenderEntity->Object->Scale;
@@ -260,9 +260,8 @@ extern "C" UPDATE(Update)
             Renderer.CurrentCameraHandle = GameState->GameCameraHandle;
             Renderer.Cameras[GameState->GameCameraHandle].Zoom = GameMemory->ConfigData.Zoom;
             GameState->InitialZoom = GameMemory->ConfigData.Zoom;
-            GameState->LevelPath = (char*)Platform.AllocateMemory(sizeof(char) * (strlen(GameMemory->ConfigData.StartingLevelFilePath) + 1));
+            GameState->LevelPath = PushString(&GameState->PermArena, GameMemory->ConfigData.StartingLevelFilePath);
             
-            strcpy(GameState->LevelPath, GameMemory->ConfigData.StartingLevelFilePath);
             GameState->ShouldReload = GameMemory->ShouldReload;
             GameState->Console = {};
             GameState->RenderGame = true;
@@ -270,7 +269,6 @@ extern "C" UPDATE(Update)
             GameState->ClearTilePositionFrame = false;
             GameState->StatGainModeOn = false;
             GameState->SelectedGainIndex = 0;
-            GameState->CurrentLootCount = 0;
             GameState->AIDebugModeOn = false;
             GameState->GodModeOn = false;
             GameState->GodModePanSpeed = 10.0f;
@@ -368,8 +366,8 @@ extern "C" UPDATE(Update)
         {
             for(u32 EntityIndex = 0; EntityIndex < GameState->EntityCount; EntityIndex++)
             {
-                auto& Entity = GameState->Entities[EntityIndex];
-                if(Entity.Type == Entity_Enemy && Entity.Enemy.EnemyType == Enemy_Skeleton && !Entity.Dead)
+                auto Entity = &GameState->Entities[EntityIndex];
+                if(Entity->Type == Entity_Enemy && Entity->Enemy.EnemyType == Enemy_Skeleton && !IsSet(Entity, EFlag_Dead))
                 {
                     LoadSkeletonData(GameState,EntityIndex);
                 }
@@ -704,7 +702,7 @@ extern "C" UPDATE(Update)
                 }
             }
             
-            if(GameState->PlayerState == Player_Alive && GameState->Entities[0].Dead)
+            if(GameState->PlayerState == Player_Alive && IsSet(&GameState->Entities[0], EFlag_Dead))
             {
                 GameState->PlayerState = Player_Dead;
                 StartTimer(GameState, GameState->DeathScreenTimer);
@@ -844,7 +842,6 @@ extern "C" UPDATE(Update)
     //PushPointLight(Renderer, GameState->TestModels[3].Position, math::v3(0.1f, 0.1f, 0.1f), math::v3(10.0f, 1.0f, 0.0), math::v3(1.1, 1.1, 1.1), 1.0f, 0.09f, 0.032f);
     
     PushSpotlight(Renderer, GameState->TestModels[3].Position, math::v3(0.0f, 1.0f, 0.0f), DEGREE_IN_RADIANS * 12.5f, DEGREE_IN_RADIANS * 17.5f, math::v3(0.1f, 0.1f, 0.1f), math::v3(5.0f, 5.0f, 5.0), math::v3(1.0, 1.0, 1.0), 1.0f, 0.09f, 0.032f);
-    
     
     char FPSBuffer[20];
     sprintf(FPSBuffer, "%f", Renderer.FPS);

@@ -1,4 +1,4 @@
-static void LoadTexture(char* TextureName, const char* FullTexturePath, renderer& Renderer)
+static void LoadTexture(char* TextureName, const char* FullTexturePath, renderer& Renderer, memory_arena* PermArena)
 {
     texture_data* TextureData = &Renderer.TextureData[Renderer.TextureCount];
     
@@ -6,8 +6,7 @@ static void LoadTexture(char* TextureName, const char* FullTexturePath, renderer
     
     TextureData->ImageData = stbi_load(FullTexturePath, &TextureData->Width, &TextureData->Height, 0, STBI_rgb_alpha);
     
-    TextureData->Name = (char*)Platform.AllocateMemory((strlen(TextureName) + 1 * sizeof(char)));
-    strcpy(TextureData->Name, TextureName);
+    TextureData->Name = PushString(PermArena, strlen(TextureName), TextureName);
     
     Renderer.TextureMap[TextureName] = TextureData;
 }
@@ -21,7 +20,7 @@ static void LoadTextures(renderer& Renderer, memory_arena* TempArena)
     
     for (i32 FileIndex = 0; FileIndex < DirData.FilesLength; FileIndex++)
     {
-        LoadTexture(DirData.FileNames[FileIndex], DirData.FilePaths[FileIndex], Renderer);
+        LoadTexture(DirData.FileNames[FileIndex], DirData.FilePaths[FileIndex], Renderer, TempArena);
     }
 }
 

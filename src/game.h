@@ -86,9 +86,6 @@ struct game_state
     
     i32 SelectedGainIndex = 0;
     
-    loot CurrentLoot[64];
-    i32 CurrentLootCount = 0;
-    
     b32 AIDebugModeOn = false;
     b32 GodModeOn = false;
     r32 GodModePanSpeed = 10.0f;
@@ -135,9 +132,6 @@ struct game_state
     
     u32 TimerCount;
     r64 Timers[NUM_TIMERS];
-    
-    light_source LightSources[32];
-    u32 LightSourceCount;
     
     // Editor
     console Console;
@@ -224,9 +218,7 @@ void SaveGame(game_state* GameState)
         
         fwrite(&GameState->CharacterData,sizeof(character_data), 1, File);
         fwrite(&GameState->LastCharacterData,sizeof(character_data), 1, File);
-        fwrite(&Entity.Player.Will,sizeof(i32), 1, File);
         fwrite(&Entity.Position,sizeof(math::v2), 1, File);
-        fwrite(&Entity.Player.Inventory,sizeof(player_inventory), 1, File);
         
         fclose(File);
         DEBUG_PRINT("Saved game!\n");
@@ -244,9 +236,7 @@ void LoadGame(game_state* GameState)
         {
             fread(&GameState->CharacterData, sizeof(character_data), 1, File);
             fread(&GameState->LastCharacterData, sizeof(character_data), 1, File);
-            fread(&GameState->Entities[0].Player.Will, sizeof(i32), 1, File);
             fread(&GameState->Entities[0].Position, sizeof(math::v2),1,File);
-            fread(&GameState->Entities[0].Player.Inventory, sizeof(player_inventory), 1 , File);
             
             fclose(File);
             DEBUG_PRINT("Loaded game!\n");

@@ -256,14 +256,6 @@
                                           }
                                       }
                                       
-                                      if(fgets(LineBuffer, 255, File))
-                                      {
-                                          if(StartsWith(LineBuffer, "ambient"))
-                                          {
-                                              GameState->CurrentLevel.AmbientLightHandle = LoadLight(GameState,LineBuffer);
-                                          }
-                                      }
-                                      
                                       Assert(MapWidth > 0 && MapHeight > 0);
                                       
                                       Level->Tilemap.Width = MapWidth;
@@ -416,16 +408,6 @@
                                           fprintf(File,"isometric\n");
                                       }
                                       
-                                      if(Level->AmbientLightHandle != -1)
-                                      {
-                                          auto& Light = GameState->LightSources[Level->AmbientLightHandle];
-                                          fprintf(File, "ambient type %d active %d intensity %f color %f %f %f %f\n",Light.Type,Light.Active,Light.Ambient.Intensity,Light.Color.x,Light.Color.y,Light.Color.z,Light.Color.w);
-                                      }
-                                      else
-                                      {
-                                          fprintf(File, "ambient type %d active %d intensity %f color %f %f %f %f\n", 1, 1, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
-                                      }
-                                      
                                       for(i32 Layer = 0; Layer < TILEMAP_LAYERS; Layer++)
                                       {
                                           for(i32 Y = 0; Y < Level->Tilemap.Height; Y++)
@@ -447,9 +429,9 @@
                                           {
                                               if(Index != GameState->PlayerIndex)
                                               {
-                                                  const entity* Entity = &GameState->Entities[Index];
+                                                  entity* Entity = &GameState->Entities[Index];
                                                   char* TypeName = 0;
-                                                  if(!Entity->IsTemporary)
+                                                  if(!IsSet(Entity, EFlag_IsTemporary))
                                                   {
                                                       switch(Entity->Type)
                                                       {

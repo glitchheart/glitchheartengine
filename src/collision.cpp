@@ -115,50 +115,11 @@ r32 GetRayIntersectionFraction(collision_AABB* Coll, math::v3 Origin, math::v3 D
     return MinT;
 }
 
-void CheckWeaponCollision(game_state* GameState, entity_weapon* Entity, collision_info* CollisionInfo)
-{
-    CollisionInfo->OtherCount = -1;
-    
-    math::v2 PV;
-    CollisionInfo->OtherCount = 0;
-    
-    for(u32 OtherEntityIndex = 0;
-        OtherEntityIndex < GameState->EntityCount;
-        OtherEntityIndex++)
-    {
-        entity* OtherEntity = &GameState->Entities[OtherEntityIndex];
-        
-        if(!(OtherEntity->Layer & Entity->IgnoreLayers)
-           && !(Entity->Layer & OtherEntity->IgnoreLayers)
-           && !OtherEntity->IsKinematic && OtherEntity->Active)
-        {
-            if(OtherEntity->HasHitTrigger)
-            {
-                collision_AABB MdHit;
-                MinkowskiDifference(&OtherEntity->HitTrigger, &Entity->CollisionAABB, &MdHit);
-                if(MdHit.Min.x <= 0 &&
-                   MdHit.Max.x >= 0 &&
-                   MdHit.Min.z <= 0 &&
-                   MdHit.Max.z >= 0)
-                {
-                    CollisionInfo->Other[CollisionInfo->OtherCount++] = OtherEntity;
-                    
-                    OtherEntity->HitTrigger.IsColliding = true;
-                }
-                else 
-                {
-                    OtherEntity->HitTrigger.IsColliding = false;
-                }
-            }
-        }
-    }
-}
-
 static void CheckCollision(game_state* GameState, entity* Entity, collision_info* CollisionInfo)
 {
     CollisionInfo->OtherCount = -1;
     
-    if(!Entity->IsKinematic && Entity->Active)
+    if(!IsSet(Entity, EFlag_IsKinematic) && IsSet(Entity, EFlag_Active))
     {
         Entity->CollisionAABB.Center = math::v3(Entity->Position.x + Entity->Center.x * Entity->Scale + Entity->CollisionAABB.Offset.x, 0.0f, Entity->Position.z + Entity->Center.z * Entity->Scale + Entity->CollisionAABB.Offset.z);
         
@@ -183,7 +144,7 @@ static void CheckCollision(game_state* GameState, entity* Entity, collision_info
             
             if(!(OtherEntity->Layer & Entity->IgnoreLayers) && !(Entity->Layer & OtherEntity->IgnoreLayers) 
                && OtherEntity->EntityIndex != Entity->EntityIndex 
-               && !OtherEntity->IsKinematic && OtherEntity->Active)
+               && !IsSet(OtherEntity, EFlag_IsKinematic) && IsSet(OtherEntity, EFlag_Active))
             {
                 if(OtherEntity->HasHitTrigger)
                 {
