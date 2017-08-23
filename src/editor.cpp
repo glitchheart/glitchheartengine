@@ -158,7 +158,6 @@ static void CreateEditorButtons(game_state* GameState, renderer& Renderer)
     GameState->EditorState.ToolbarWidth = 500.0f;
     GameState->EditorState.ToolbarHeight = (r32)Renderer.WindowHeight;
     
-    GameState->EditorState.Buttons[0].Text = (char*)malloc(sizeof(char) * 20);
     GameState->EditorState.Buttons[0].Text = "Create/Edit animation";
     GameState->EditorState.Buttons[0].ScreenPosition = math::v2(5, (r32)Renderer.WindowHeight - 150);
     GameState->EditorState.Buttons[0].Size = math::v2(320, 60);
@@ -169,7 +168,6 @@ static void CreateEditorButtons(game_state* GameState, renderer& Renderer)
     GameState->EditorState.Buttons[0].ClickAnimationTimer.TimerMax = 0.2f;
     GameState->EditorState.Buttons[0].ClickAnimationTimer.TimerHandle = -1;
     
-    GameState->EditorState.Buttons[1].Text = (char*)malloc(sizeof(char) * 20);
     GameState->EditorState.Buttons[1].Text = "Create/Edit tilesheet";
     GameState->EditorState.Buttons[1].ScreenPosition = math::v2(330, (r32)Renderer.WindowHeight - 150);
     GameState->EditorState.Buttons[1].Size = math::v2(320, 60);
@@ -180,7 +178,6 @@ static void CreateEditorButtons(game_state* GameState, renderer& Renderer)
     GameState->EditorState.Buttons[1].ClickAnimationTimer.TimerMax = 0.2f;
     GameState->EditorState.Buttons[1].ClickAnimationTimer.TimerHandle = -1;
     
-    GameState->EditorState.Buttons[2].Text = (char*)malloc(sizeof(char) * 20);
     GameState->EditorState.Buttons[2].Text = "Switch mode";
     GameState->EditorState.Buttons[2].ScreenPosition = math::v2(655, (r32)Renderer.WindowHeight - 150);
     GameState->EditorState.Buttons[2].Size = math::v2(320, 60);
@@ -191,7 +188,6 @@ static void CreateEditorButtons(game_state* GameState, renderer& Renderer)
     GameState->EditorState.Buttons[2].ClickAnimationTimer.TimerMax = 0.2f;
     GameState->EditorState.Buttons[2].ClickAnimationTimer.TimerHandle = -1;
     
-    GameState->EditorState.Buttons[3].Text = (char*)malloc(sizeof(char) * 20);
     GameState->EditorState.Buttons[3].Text = "Save and exit";
     GameState->EditorState.Buttons[3].ScreenPosition = math::v2(980, (r32)Renderer.WindowHeight - 150);
     GameState->EditorState.Buttons[3].Size = math::v2(320, 60);
@@ -202,7 +198,6 @@ static void CreateEditorButtons(game_state* GameState, renderer& Renderer)
     GameState->EditorState.Buttons[3].ClickAnimationTimer.TimerMax = 0.2f;
     GameState->EditorState.Buttons[3].ClickAnimationTimer.TimerHandle = -1;
     
-    GameState->EditorState.Buttons[4].Text = (char*)malloc(sizeof(char) * 20);
     GameState->EditorState.Buttons[4].Text = "Exit";
     GameState->EditorState.Buttons[4].ScreenPosition = math::v2(1305, (r32)Renderer.WindowHeight - 150);
     GameState->EditorState.Buttons[4].Size = math::v2(280, 60);
@@ -213,7 +208,6 @@ static void CreateEditorButtons(game_state* GameState, renderer& Renderer)
     GameState->EditorState.Buttons[4].ClickAnimationTimer.TimerMax = 0.2f;
     GameState->EditorState.Buttons[4].ClickAnimationTimer.TimerHandle = -1;
     
-    GameState->EditorState.Buttons[5].Text = (char*)malloc(sizeof(char) * 20);
     GameState->EditorState.Buttons[5].Text = "Create animation";
     GameState->EditorState.Buttons[5].ScreenPosition = math::v2(10, 20);
     GameState->EditorState.Buttons[5].Size = math::v2(300, 50);
@@ -225,7 +219,6 @@ static void CreateEditorButtons(game_state* GameState, renderer& Renderer)
     GameState->EditorState.Buttons[5].ClickAnimationTimer.TimerHandle = -1;
     GameState->EditorState.CreateNewAnimationButton = &GameState->EditorState.Buttons[5];
     
-    GameState->EditorState.Buttons[6].Text = (char*)malloc(sizeof(char) * 20);
     GameState->EditorState.Buttons[6].Text = "Save animation";
     GameState->EditorState.Buttons[6].ScreenPosition = math::v2(10, Renderer.WindowHeight - 700);
     GameState->EditorState.Buttons[6].Size = math::v2(300, 50);
@@ -237,7 +230,6 @@ static void CreateEditorButtons(game_state* GameState, renderer& Renderer)
     GameState->EditorState.Buttons[6].ClickAnimationTimer.TimerHandle = -1;
     GameState->EditorState.SaveAnimationButton = &GameState->EditorState.Buttons[6];
     
-    GameState->EditorState.Buttons[7].Text = (char*)malloc(sizeof(char) * 20);
     GameState->EditorState.Buttons[7].Text = "Create new level";
     GameState->EditorState.Buttons[7].ScreenPosition = math::v2(700, 20);
     GameState->EditorState.Buttons[7].Size = math::v2(320, 60);
@@ -799,7 +791,7 @@ static void EditorUpdateEntities(game_state* GameState, renderer& Renderer, inpu
                                                     }
                                                     
                                                     Tilemap->RenderInfo.Dirty = true;
-                                                    LoadTilemapBuffer(Renderer, *Tilemap);
+                                                    LoadTilemapBuffer(Renderer, *Tilemap, &GameState->TempArena);
                                                 }
                                             }
                                         }
@@ -968,7 +960,7 @@ static void EditorUpdateEntities(game_state* GameState, renderer& Renderer, inpu
                     
                     if(LoadedAnimation->FrameCount > 0)
                     {
-                        LoadedAnimation->Frames = (sprite_sheet_frame*)malloc(LoadedAnimation->FrameCount * sizeof(sprite_sheet_frame));
+                        LoadedAnimation->Frames = PushArray(&GameState->PermArena, LoadedAnimation->FrameCount, sprite_sheet_frame);
                         
                         i32 X = (i32)LoadedAnimation->FrameSize.x * (i32)LoadedAnimation->FrameOffset.x;
                         i32 Y = (i32)LoadedAnimation->FrameSize.y * (i32)LoadedAnimation->FrameOffset.y;

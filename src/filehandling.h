@@ -42,7 +42,7 @@ static GLchar* LoadShaderFromFile(const char* Path, memory_arena* Arena)
         fseek(File, 0, SEEK_SET);
         
         Source = PushSize(Arena, Size + 1, GLchar);
-        //Source = (GLchar *)malloc(Size+1);
+        
         fread(Source, Size, 1, File); 
         Source[Size] = '\0';
         
@@ -116,13 +116,11 @@ static void StartupFileTimeChecks(asset_manager* AssetManager, memory_arena* Tem
         struct stat sb1;
         auto ConcatedVertexShaderString = Concat(ShaderPaths[i], ".vert", TempArena);
         stat(ConcatedVertexShaderString, &sb1);
-        //free(ConcatedVertexShaderString);
         AssetManager->VertexShaderTimes[i] =  sb1.st_mtime;
         
         struct stat sb2;
         auto ConcatedFragmentShaderString = Concat(ShaderPaths[i], ".frag", TempArena);
         stat(ConcatedFragmentShaderString, &sb2);
-        //free(ConcatedFragmentShaderString);
         AssetManager->FragmentShaderTimes[i] =  sb2.st_mtime;
     }
 }
@@ -141,8 +139,6 @@ static void ListenToFileChanges(asset_manager* AssetManager, memory_arena* TempA
             CheckDirty(VertexPath, AssetManager->VertexShaderTimes[i], &AssetManager->DirtyVertexShaderIndices[i], &AssetManager->VertexShaderTimes[i]);
             CheckDirty(FragmentPath, AssetManager->FragmentShaderTimes[i], &AssetManager->DirtyFragmentShaderIndices[i], &AssetManager->FragmentShaderTimes[i]);
             
-            //free(VertexPath);
-            //free(FragmentPath);
         }
         
         CheckDirty(AssetManager->TilesetTexturePath, AssetManager->TilesetTime, &AssetManager->DirtyTileset, &AssetManager->TilesetTime);
@@ -162,8 +158,6 @@ inline PLATFORM_GET_ALL_FILES_WITH_EXTENSION(Win32FindFilesWithExtensions)
 {
     if(DirectoryData->FilesLength == 0)
     {
-        //DirectoryData->FileNames = (char**)malloc(512 * sizeof(char*));
-        //DirectoryData->FilePaths = (char**)malloc(512 * sizeof(char*));
         DirectoryData->FileNames = PushArray(TempArena, 512, char*);
         DirectoryData->FilePaths = PushArray(TempArena, 512, char*);
     }
@@ -218,11 +212,7 @@ inline PLATFORM_GET_ALL_FILES_WITH_EXTENSION(Win32FindFilesWithExtensions)
                     char* FileName = strtok(FindFile.cFileName, ".");
                     
                     DirectoryData->FilePaths[DirectoryData->FilesLength] = PushString(TempArena, ConcatStr);
-                    //DirectoryData->FilePaths[DirectoryData->FilesLength] = (char*)malloc((strlen(ConcatStr) + 1) * sizeof(char));
                     DirectoryData->FileNames[DirectoryData->FilesLength] = PushString(TempArena, FileName);
-                    //DirectoryData->FileNames[DirectoryData->FilesLength] = (char*)malloc((strlen(FileName)  + 1) * sizeof(char));
-                    //strcpy(DirectoryData->FilePaths[DirectoryData->FilesLength], ConcatStr);
-                    //strcpy(DirectoryData->FileNames[DirectoryData->FilesLength], FileName);
                     DirectoryData->FilesLength++;
                 }
             }

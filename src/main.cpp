@@ -161,16 +161,12 @@ PLATFORM_DEALLOCATE_MEMORY(Win32DeallocateMemory)
 
 int main(void)
 {
-    DEBUG_PRINT("Initializing gamestate\n");
-    
     InitKeys();
     
-    config_data ConfigData;
-    LoadConfig("../assets/.config", &ConfigData);
-    
     win32_memory Win32Memory;
-    Win32Memory.PermanentStorageSize = Megabytes(256);
+    Win32Memory.PermanentStorageSize = Megabytes(128);
     Win32Memory.PermanentStorage = VirtualAlloc(0, Win32Memory.PermanentStorageSize, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+    
     
     Win32Memory.TemporaryStorageSize = Megabytes(256);
     Win32Memory.TemporaryStorage = VirtualAlloc(0, Win32Memory.TemporaryStorageSize, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
@@ -188,6 +184,9 @@ int main(void)
                                                PAGE_READWRITE);
     GameMemory.TemporaryStorageSize = Megabytes(128);
     GameMemory.TemporaryStorage = VirtualAlloc(0, GameMemory.TemporaryStorageSize, MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE);
+    
+    config_data ConfigData;
+    LoadConfig("../assets/.config", &ConfigData, &Win32State.PermArena);
     
     GameMemory.ShouldReload = true;
     GameMemory.ConfigData = ConfigData;
@@ -218,7 +217,7 @@ int main(void)
     sound_effects SoundEffects = {};
     if (SoundDevice.IsInitialized)
     {
-        LoadSounds(&SoundEffects,&SoundDevice);
+        LoadSounds(&SoundEffects, &SoundDevice, &Win32State.TempArena);
         ResetSoundQueue(&SoundQueue);
         SoundDevice.SFXVolume = ConfigData.SFXVolume;
         SoundDevice.MusicVolume = ConfigData.MusicVolume;

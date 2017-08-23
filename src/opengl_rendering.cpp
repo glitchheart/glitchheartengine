@@ -51,7 +51,7 @@ static b32 ShouldCloseWindow(render_state& RenderState)
     return glfwWindowShouldClose(RenderState.Window); 
 }
 
-static GLint ShaderCompilationErrorChecking(const char* ShaderName, GLuint Shader)
+static GLint ShaderCompilationErrorChecking(const char* ShaderName, GLuint Shader, memory_arena* TempArena)
 {
     GLint IsCompiled = 0;
     glGetShaderiv(Shader, GL_COMPILE_STATUS, &IsCompiled);
@@ -61,7 +61,8 @@ static GLint ShaderCompilationErrorChecking(const char* ShaderName, GLuint Shade
         glGetShaderiv(Shader, GL_INFO_LOG_LENGTH, &MaxLength);
         
         // The maxLength includes the NULL character
-        GLchar* ErrorLog = (GLchar*)malloc(MaxLength);
+        GLchar* ErrorLog = PushSize(TempArena, MaxLength, GLchar);
+        
         glGetShaderInfoLog(Shader, MaxLength, &MaxLength, ErrorLog);
         
         DEBUG_PRINT("SHADER Compilation error - %s\n", ShaderName);
@@ -77,12 +78,11 @@ static GLuint LoadShader(const char* FilePath, shader *Shd, memory_arena* TempAr
     Shd->VertexShader = glCreateShader(GL_VERTEX_SHADER);
     char* VertexString = Concat(FilePath,".vert", TempArena);
     GLchar *VertexText = LoadShaderFromFile(VertexString, TempArena);
-    //free(VertexString);
     
     glShaderSource(Shd->VertexShader, 1, &VertexText, NULL);
     glCompileShader(Shd->VertexShader);
     
-    if (!ShaderCompilationErrorChecking(FilePath, Shd->VertexShader))
+    if (!ShaderCompilationErrorChecking(FilePath, Shd->VertexShader, TempArena))
     {
         Shd->Program = 0;
         return GL_FALSE;
@@ -91,12 +91,11 @@ static GLuint LoadShader(const char* FilePath, shader *Shd, memory_arena* TempAr
     Shd->FragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
     char* FragmentString = Concat(FilePath,".frag", TempArena);
     GLchar *FragmentText = LoadShaderFromFile(FragmentString, TempArena);
-    //free(FragmentString);
     
     glShaderSource(Shd->FragmentShader, 1, &FragmentText, NULL);
     glCompileShader(Shd->FragmentShader);
     
-    if (!ShaderCompilationErrorChecking(FilePath, Shd->FragmentShader))
+    if (!ShaderCompilationErrorChecking(FilePath, Shd->FragmentShader, TempArena))
     {
         Shd->Program = 0;
         return GL_FALSE;
@@ -120,9 +119,8 @@ static GLuint LoadVertexShader(const char* FilePath, shader *Shd, memory_arena* 
     GLchar *VertexText = LoadShaderFromFile(VertexString, TempArena);
     glShaderSource(Shd->VertexShader, 1, &VertexText, NULL);
     glCompileShader(Shd->VertexShader);
-    //free(VertexString);
     
-    if (!ShaderCompilationErrorChecking(FilePath, Shd->VertexShader))
+    if (!ShaderCompilationErrorChecking(FilePath, Shd->VertexShader, TempArena))
     {
         Shd->Program = 0;
         return GL_FALSE;
@@ -145,9 +143,8 @@ static GLuint LoadFragmentShader(const char* FilePath, shader *Shd, memory_arena
     GLchar *FragmentText = LoadShaderFromFile(FragmentString, TempArena);
     glShaderSource(Shd->FragmentShader, 1, &FragmentText, NULL);
     glCompileShader(Shd->FragmentShader);
-    //free(FragmentString);
     
-    if (!ShaderCompilationErrorChecking(FilePath, Shd->FragmentShader))
+    if (!ShaderCompilationErrorChecking(FilePath, Shd->FragmentShader, TempArena))
     {
         Shd->Program = 0;
         return GL_FALSE;
@@ -1005,7 +1002,6 @@ static void RenderRect(Render_Mode Mode, render_state& RenderState, math::v4 Col
 {
     if(IsUI)
     {
-        printf("Scale x %f y %f\n", RenderState.ScaleX, RenderState.ScaleY);
         X *= RenderState.ScaleX;
         X -= 1;
         Y *= RenderState.ScaleY;
@@ -1109,7 +1105,8 @@ static void MeasureText(const render_font& Font, const char* Text, float* Width,
 }
 
 //rendering methods
-static void RenderText(render_state& RenderState, const render_font& Font, const math::v4& Color, const char* Text, r32 X, r32 Y, Alignment Alignment = Alignment_Left, b32 AlignCenterY = true) 
+static void RenderText(render_state& RenderState, const render_font& Font, const math::v4& Color, const char* Text, r32 X, r32 Y,
+                       memory_arena* TempArena, Alignment Alignment = Alignment_Left,  b32 AlignCenterY = true) 
 {
     glBindVertexArray(Font.VAO);
     auto Shader = RenderState.Shaders[Shader_StandardFont];
@@ -1123,7 +1120,7 @@ static void RenderText(render_state& RenderState, const render_font& Font, const
         RenderState.BoundTexture = Font.Texture;
     }
     
-    point* Coords = (point*)malloc(sizeof(point) * 6 * strlen(Text));
+    point* Coords = PushArray(TempArena, 6 * strlen(Text), point);
     
     int N = 0;
     
@@ -1187,13 +1184,13 @@ static void RenderText(render_state& RenderState, const render_font& Font, const
     glBindBuffer(GL_ARRAY_BUFFER, Font.VBO);
     glBufferData(GL_ARRAY_BUFFER, 6 * strlen(Text) * sizeof(point), Coords, GL_DYNAMIC_DRAW);
     glDrawArrays(GL_TRIANGLES, 0, N);
-    free(Coords);
+    
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
 }
 
 
-static void RenderConsole(render_state& RenderState, console* Console)
+static void RenderConsole(render_state& RenderState, console* Console, memory_arena* TempArena)
 {
     glBindVertexArray(RenderState.RectVAO);
     
@@ -1214,7 +1211,7 @@ static void RenderConsole(render_state& RenderState, console* Console)
     //draw cursor
     RenderRect(Render_Fill, RenderState, math::v4(AlphaValue, 1, AlphaValue, 1), 5 / 1920.0f * (r32)RenderState.WindowWidth + Width, RenderState.WindowHeight * 0.77f * PercentAnimated, 10, 20);
     
-    RenderText(RenderState, RenderState.InconsolataFont, math::v4(0, 0.8, 0, 1),  &Console->Buffer[0],  5 / 1920.0f * (r32)RenderState.WindowWidth, (r32)RenderState.WindowHeight * 0.775f * PercentAnimated);
+    RenderText(RenderState, RenderState.InconsolataFont, math::v4(0, 0.8, 0, 1),  &Console->Buffer[0],  5 / 1920.0f * (r32)RenderState.WindowWidth, (r32)RenderState.WindowHeight * 0.775f * PercentAnimated, TempArena);
     
     int index = 0;
     
@@ -1227,7 +1224,7 @@ static void RenderConsole(render_state& RenderState, console* Console)
         else
             Color = math::v4(1, 1, 1, 1);
         
-        RenderText(RenderState, RenderState.InconsolataFont, Color, &Console->HistoryBuffer[Index][0], 5 / 1920.0f * (r32)RenderState.WindowWidth, (r32)RenderState.WindowHeight * 0.78f * PercentAnimated + (Index + 1) * 20 * PercentAnimated);
+        RenderText(RenderState, RenderState.InconsolataFont, Color, &Console->HistoryBuffer[Index][0], 5 / 1920.0f * (r32)RenderState.WindowWidth, (r32)RenderState.WindowHeight * 0.78f * PercentAnimated + (Index + 1) * 20 * PercentAnimated, TempArena);
     }
 }
 
@@ -1236,10 +1233,10 @@ static void RenderLine(const render_command& Command, render_state& RenderState,
     
 }
 
-static void RenderText(const render_command& Command, render_state& RenderState)
+static void RenderText(const render_command& Command, render_state& RenderState, memory_arena* TempArena)
 {
     // @Incomplete: Need to set a font
-    RenderText(RenderState, RenderState.InconsolataFont, Command.Text.Color, Command.Text.Text, Command.Text.Position.x, Command.Text.Position.y);
+    RenderText(RenderState, RenderState.InconsolataFont, Command.Text.Color, Command.Text.Text, Command.Text.Position.x, Command.Text.Position.y, TempArena);
 }
 
 static void RenderRect(const render_command& Command, render_state& RenderState, math::m4 Projection, math::m4 View)
@@ -1414,14 +1411,11 @@ static void RenderCommands(render_state& RenderState, renderer& Renderer, memory
         if(Data.IndexBufferSize == 0)
         {
             RegisterVertexBuffer(RenderState, Data.VertexBuffer, Data.VertexBufferSize, Data.ShaderType, TempArena, Data.ExistingHandle);
-            free(Data.VertexBuffer);
         }
         else
         {
             RegisterBuffers(RenderState, Data.VertexBuffer, Data.VertexBufferSize, Data.IndexBuffer, Data.IndexBufferSize, Data.HasNormals, Data.HasUVs, Data.ExistingHandle);
             
-            free(Data.VertexBuffer);
-            free(Data.IndexBuffer);
         }
     }
     
@@ -1543,7 +1537,7 @@ static void RenderCommands(render_state& RenderState, renderer& Renderer, memory
             break;
             case RenderCommand_Text:
             {
-                RenderText(Command, RenderState);
+                RenderText(Command, RenderState, TempArena);
             }
             break;
             case RenderCommand_Rect:

@@ -158,7 +158,7 @@ static void PushEntityRenderCommands(renderer& Renderer, game_state& GameState)
         }
         
         // @Incomplete: Glow and special parameters
-        PushSprite(Renderer, CurrentPosition, CurrentScale, CurrentFrame, CurrentTextureOffset, CurrentTexture, CurrentColor);
+        PushSprite(Renderer, CurrentPosition, CurrentScale, CurrentFrame, CurrentTextureOffset, CurrentTexture, CurrentColor, &GameState.TempArena);
     }
 }
 
@@ -172,26 +172,27 @@ extern "C" UPDATE(Update)
     GameState->ReloadData = GameMemory->ReloadData;
     Assert(GameState);
     
+    Reset(&GameState->TempArena);
+    
     if(!GameState->IsInitialized || !GameMemory->IsInitialized)
     {
+        DEBUG_PRINT("Initializing gamestate\n");
         InitializeArena(&Renderer.Buffer, sizeof(render_command) * RENDER_COMMAND_MAX, (u8*)GameMemory->PermanentStorage + sizeof(game_state));
         
         InitializeArena(&Renderer.LightCommands, sizeof(render_command) * RENDER_COMMAND_MAX, Renderer.Buffer.Base + Renderer.Buffer.Size);
         
+        InitializeArena(&GameState->WorldArena, Megabytes(32), Renderer.LightCommands.Base + Renderer.LightCommands.Size);
+        
         InitializeArena(&GameState->TempArena, GameMemory->TemporaryStorageSize, (u8*)GameMemory->TemporaryStorage);
         
-        InitializeArena(&GameState->PermArena, GameMemory->PermanentStorageSize - sizeof(game_state) - Renderer.Buffer.Size - Renderer.LightCommands.Size, Renderer.LightCommands.Base + Renderer.LightCommands.Size);
+        InitializeArena(&GameState->PermArena, GameMemory->PermanentStorageSize - sizeof(game_state) - Renderer.Buffer.Size - Renderer.LightCommands.Size - GameState->WorldArena.Size, GameState->WorldArena.Base + GameState->WorldArena.Size);
         
-        LoadTextures(Renderer, &GameState->TempArena);
-        
-        GameState->TESTMODEL = (model*)Platform.AllocateMemory(sizeof(model));
-        //GameState->TESTMODEL = (model*)malloc(sizeof(model));
-        
-        //LoadOBJFile(Renderer, "../assets/models/suzanne.obj", GameState->TESTMODEL);
-        //LoadModel(Renderer, "../assets/models/chair.modl", GameState->TESTMODEL);
+        GameState->TESTMODEL = PushStruct(&GameState->PermArena, model);
         
         GameState->TESTMODEL->Position = math::v3(0, 0, 0);
         GameState->TESTMODEL->Scale = math::v3(1, 1, 1);
+        
+        LoadTextures(Renderer, &GameState->TempArena);
         
         model Model1;
         Model1.Position = math::v3(0, 0, 0);
@@ -219,12 +220,12 @@ extern "C" UPDATE(Update)
         Model6.Position = math::v3(-10.0f, 5.0f, 0);
         Model6.Scale = math::v3(1.0, 1.0, 1.0);
         
-        LoadModel(Renderer, "../assets/models/capsule.modl", &Model1);
-        LoadModel(Renderer, "../assets/models/red_riding.modl", &Model2);
-        LoadModel(Renderer, "../assets/models/capsule.modl", &Model3);
-        LoadModel(Renderer, "../assets/models/mask_boy.modl", &Model4);
-        LoadModel(Renderer, "../assets/models/cube.modl", &Model5);
-        LoadModel(Renderer, "../assets/models/panther_monster.modl", &Model6);
+        LoadModel(Renderer, "../assets/models/capsule.modl", &Model1, &GameState->TempArena);
+        LoadModel(Renderer, "../assets/models/red_riding.modl", &Model2, &GameState->TempArena);
+        LoadModel(Renderer, "../assets/models/capsule.modl", &Model3, &GameState->TempArena);
+        LoadModel(Renderer, "../assets/models/mask_boy.modl", &Model4, &GameState->TempArena);
+        LoadModel(Renderer, "../assets/models/cube.modl", &Model5, &GameState->TempArena);
+        LoadModel(Renderer, "../assets/models/panther_monster.modl", &Model6, &GameState->TempArena);
         
         GameState->TestModels[GameState->Models++] = Model1;
         //GameState->TestModels[GameState->Models++] = Model2;
@@ -702,65 +703,6 @@ extern "C" UPDATE(Update)
                     GameCamera.Center += math::v3(Velocity.x * DeltaTime, Velocity.y * DeltaTime, -Velocity.z * DeltaTime);
                 }
             }
-            else if(GameState->StatGainModeOn)
-            {
-                b32 ControllerPresent = InputController->ControllerPresent;
-                
-                b32 UpPressed = ControllerPresent ? JOYSTICK_AXIS_Y_DOWN(true) : KEY_DOWN(Key_W) || KEY_DOWN(Key_Up);
-                b32 DownPressed = ControllerPresent ? JOYSTICK_AXIS_Y_DOWN(false) : KEY_DOWN(Key_S) || KEY_DOWN(Key_Down);
-                
-                if(UpPressed)
-                {
-                    GameState->SelectedGainIndex--;
-                    
-                    if(GameState->SelectedGainIndex == -1)
-                        GameState->SelectedGainIndex = 2;
-                }
-                else if(DownPressed)
-                {
-                    GameState->SelectedGainIndex++;
-                    if(GameState->SelectedGainIndex == 3)
-                        GameState->SelectedGainIndex = 0;
-                }
-                
-                if(ACTION_DOWN(Action_Interact) || KEY_DOWN(Key_Enter))
-                {
-                    auto& Player = GameState->Entities[0];
-                    
-                    GameState->LastCharacterData = GameState->CharacterData;
-                    
-                    switch((Player_Gain_Type)GameState->SelectedGainIndex)
-                    {
-                        case Gain_Health:
-                        {
-                            r32 Ratio = (r32)Player.Health / (r32)GameState->CharacterData.Health;
-                            GameState->CharacterData.Health += 5;
-                            Player.Health = (i16)(GameState->CharacterData.Health * Ratio);
-                        }
-                        break;
-                        case Gain_Stamina:
-                        {
-                            r32 Ratio = (r32)Player.Player.Stamina / (r32)GameState->CharacterData.Stamina;
-                            GameState->CharacterData.Stamina += 5;
-                            Player.Player.Stamina = (i16)(GameState->CharacterData.Stamina * Ratio);
-                        }
-                        break;
-                        case Gain_Strength:
-                        {
-                            GameState->CharacterData.Strength += 1;
-                        }
-                        break;
-                    }
-                    //@Incomplete: Play sound!
-                    
-                    Player.Player.Will -= GameState->StatData[GameState->CharacterData.Level].WillForLevel;
-                    GameState->CharacterData.Level++;
-                    Player.Weapon.Damage = GameState->CharacterData.Strength;
-                    GameState->SelectedGainIndex = 0;
-                    GameState->StatGainModeOn = false;
-                    SaveGame(GameState);
-                }
-            }
             
             if(GameState->PlayerState == Player_Alive && GameState->Entities[0].Dead)
             {
@@ -854,9 +796,6 @@ extern "C" UPDATE(Update)
     
     GameCamera.ViewMatrix = math::Translate(GameCamera.ViewMatrix, math::v3(GameCamera.ViewportWidth / GameCamera.Zoom / 2.0f, GameCamera.ViewportHeight / GameCamera.Zoom / 2.0f,-50.0f));
     
-    auto MouseX = InputController->MouseX;
-    auto MouseY = InputController->MouseY;
-    
     InputController->CurrentCharacter = 0;
     GameState->ClearTilePositionFrame = !GameState->ClearTilePositionFrame;
     GetActionButtonsForQueue(InputController);
@@ -900,15 +839,11 @@ extern "C" UPDATE(Update)
     PushDirectionalLight(Renderer, math::v3(-0.2, -1.0, -0.3), 
                          math::v3(0.1f, 0.1f, 0.1f), math::v3(0.2, 0.2, 0.2), math::v3(0.1, 0.1, 0.1));
     
-    
     GameState->TestModels[3].Position = math::v3(-2.0f, 7.0f, 0.0f);
     GameState->TestModels[3].Scale = math::v3(0.4f, 0.4f, 0.4f);
     //PushPointLight(Renderer, GameState->TestModels[3].Position, math::v3(0.1f, 0.1f, 0.1f), math::v3(10.0f, 1.0f, 0.0), math::v3(1.1, 1.1, 1.1), 1.0f, 0.09f, 0.032f);
     
-    
     PushSpotlight(Renderer, GameState->TestModels[3].Position, math::v3(0.0f, 1.0f, 0.0f), DEGREE_IN_RADIANS * 12.5f, DEGREE_IN_RADIANS * 17.5f, math::v3(0.1f, 0.1f, 0.1f), math::v3(5.0f, 5.0f, 5.0), math::v3(1.0, 1.0, 1.0), 1.0f, 0.09f, 0.032f);
-    
-    
     
     //PushEntityRenderCommands(Renderer, *GameState);
     
@@ -917,8 +852,9 @@ extern "C" UPDATE(Update)
         PushModel(Renderer, GameState->TestModels[Index]);
     }
     
+    PushFilledRect(Renderer, math::v3(50.0f,50.0f, 0.0f), math::v3(40.0f,40.0f,40.0f), math::rgba(1.0,0.0,0.0,1.0), true);
+    
+    PushOutlinedRect(Renderer, math::v3(150.0f,50.0f, 0.0f), math::v3(40.0f,40.0f,40.0f), math::rgba(1.0,0.0,0.0,1.0), true);
+    
     //PushModel(Renderer, *GameState->TESTMODEL);
-    
-    
-    Reset(&GameState->TempArena);
 }

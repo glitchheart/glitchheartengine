@@ -322,7 +322,7 @@ static void LoadEntityData(FILE* File, entity* Entity, game_state* GameState, b3
         }
         else if(StartsWith(LineBuffer, "name"))
         {
-            Entity->Name = (char*)malloc(30 * sizeof(char));
+            Entity->Name = PushString(&GameState->PermArena, 30);
             sscanf(LineBuffer, "name %s", Entity->Name);
         }
         else if(StartsWith(LineBuffer, "active"))
@@ -333,7 +333,7 @@ static void LoadEntityData(FILE* File, entity* Entity, game_state* GameState, b3
         }
         else if(StartsWith(LineBuffer, "layer"))
         {
-            char* LayerName = (char*)malloc(30 * sizeof(char));
+            char* LayerName = PushString(&GameState->TempArena, 30);
             sscanf(LineBuffer, "layer %s", LayerName);
             
             if(strcmp(LayerName, "Layer_Player") == 0)
@@ -344,8 +344,6 @@ static void LoadEntityData(FILE* File, entity* Entity, game_state* GameState, b3
             {
                 Entity->Layer = Layer_Enemy;
             }
-            
-            free(LayerName);
         }
         else if(StartsWith(LineBuffer, "iskinematic"))
         {
@@ -368,14 +366,12 @@ static void LoadEntityData(FILE* File, entity* Entity, game_state* GameState, b3
         }
         else if(StartsWith(LineBuffer, "animation"))
         {
-            char* AnimationName = (char*)malloc(30 * sizeof(char)); 
+            char* AnimationName = PushString(&GameState->TempArena, 30);
             sscanf(LineBuffer, "animation %s", AnimationName);
             PlayAnimation(Entity, AnimationName, GameState);
-            free(AnimationName);
         }
         else if(StartsWith(LineBuffer, "renderbuttonoffset"))
         {
-            char* AnimationName = (char*)malloc(30 * sizeof(char)); 
             sscanf(LineBuffer, "renderbuttonoffset %f %f", &Entity->RenderButtonOffset.x, &Entity->RenderButtonOffset.y);
         }
         else if(StartsWith(LineBuffer, "staggercooldowntimer"))
@@ -581,7 +577,6 @@ static void EnemyWander(game_state* GameState, entity* Entity)
     {
         auto WalkString = Concat(Entity->Name,"_walk", &GameState->TempArena);
         PlayAnimation(Entity, WalkString, GameState);
-        //free(WalkString);
         
         auto CurrentWaypoint = math::v3(Entity->Enemy.Waypoints[Entity->Enemy.WaypointIndex].x,
                                         0.0f, Entity->Enemy.Waypoints[Entity->Enemy.WaypointIndex].z);

@@ -35,7 +35,6 @@
 #include <malloc.h>
 #include <cstdio>
 
-
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb/stb_image.h>
 
@@ -97,14 +96,12 @@ struct config_data
     r32 Zoom;
 };
 
-
 struct directory_data
 {
     char** FilePaths;
     char** FileNames;
     i32 FilesLength = 0;
 };
-
 
 #define PLATFORM_GET_ALL_FILES_WITH_EXTENSION(name) void name(const char* DirectoryPath, const char* Extension, directory_data* DirectoryData, b32 WithSubDirectories, memory_arena* TempArena)
 typedef PLATFORM_GET_ALL_FILES_WITH_EXTENSION(platform_get_all_files_with_extension);
@@ -186,7 +183,6 @@ struct CompareCStrings
 #define TOSTRING(x) STRINGIFY(x)
 #define AT __FILE__ ":" TOSTRING(__LINE__)
 
-//Remember to free string after usage
 inline char* Concat(const char *s1, const char *s2, memory_arena* Arena)
 {
     char* result = PushString(Arena, (u32)(strlen(s1) + strlen(s2)));
@@ -201,14 +197,14 @@ inline b32 StartsWith(const char *A, const char *B)
     return 0;
 }
 
-inline void LoadConfig(const char* FilePath, config_data* ConfigData)
+inline void LoadConfig(const char* FilePath, config_data* ConfigData, memory_arena* PermArena)
 {
     FILE* File;
     File = fopen(FilePath, "r");
     char LineBuffer[255];
     
-    ConfigData->Title = (char*)malloc(sizeof(char) * 40);
-    ConfigData->Version = (char*)malloc(sizeof(char) * 40);
+    ConfigData->Title = PushString(PermArena, 40);
+    ConfigData->Version = PushString(PermArena, 40);
     
     if(File)
     {
@@ -260,7 +256,7 @@ inline void LoadConfig(const char* FilePath, config_data* ConfigData)
             }
             else if(StartsWith(LineBuffer, "starting_level_path"))
             {
-                ConfigData->StartingLevelFilePath = (char*)malloc(40 * sizeof(char));
+                ConfigData->StartingLevelFilePath = PushString(PermArena, 40);
                 sscanf(LineBuffer, "starting_level_path %s", ConfigData->StartingLevelFilePath);
             }
             else if(StartsWith(LineBuffer, "zoom"))
