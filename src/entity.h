@@ -1,6 +1,18 @@
 #ifndef ENTITY_H
 #define ENTITY_H
 
+enum Entity_Flags
+{
+    EFlag_Active = (1 << 0),
+    EFlag_Dead = (1 << 1),
+    EFlag_IsKinematic = (1 << 2),
+    EFlag_IsTemporary = (1 << 3),
+    EFlag_IsStatic = (1 << 4),
+    EFlag_IsAttacking = (1 << 5),
+    EFlag_Invincible = (1 << 6),
+    EFlag_HasWeapon = (1 << 7),
+};
+
 enum Entity_Layer
 {
     Layer_Player = 1 << 0,
@@ -151,59 +163,6 @@ struct enemy_health_count
     math::v2 Position = math::v2(0, 0);
 };
 
-struct player_inventory
-{
-    i32 HealthPotionCount;
-    b32 HasCheckpoint;
-};
-
-enum Loot_Type
-{
-    Loot_Nothing,
-    Loot_Health,
-    Loot_Checkpoint,
-    Loot_LevelItem
-};
-
-struct loot
-{
-    Loot_Type Type;
-    b32 RenderButtonHint;
-    i32 Handle = -1;
-    i32 OwnerHandle;
-};
-
-
-struct light_source
-{
-    Light_Type Type;
-    b32 Active;
-    math::v4 Color;
-    union
-    {
-        struct
-        {
-            r32 Intensity;
-            math::v3 Position;
-            math::v3 RenderPosition;
-            math::v3 Offset;
-            r32 ConstantAtten;
-            r32 LinearAtten;
-            r32 ExponentialAtten;
-            timer GlowTimer;
-            r32 GlowIncrease;
-            b32 IncreasingGlow;
-            r32 EmissionIntensity;
-        } Pointlight;
-        struct
-        {
-            r32 Intensity;
-        } Ambient;
-    };
-    
-    light_source(){}
-};
-
 enum Object_Type
 {
     Object_Shadow,
@@ -221,7 +180,8 @@ enum Render_Type
 
 struct object_entity
 {
-    b32 Active;
+    u32 Flags;
+    
     Object_Type Type;
     b32 UsesTransparency;
     math::v3 Position;
@@ -279,6 +239,7 @@ struct hit_tile_extents
 
 struct entity
 {
+    u32 Flags;
     Entity_Type Type;
     char* Name;
     u32 EntityIndex;
@@ -291,7 +252,6 @@ struct entity
     
     r32 Scale;
     b32 IsFlipped;
-    b32 IsTemporary;
     b32 ShowAttackTiles;
     
     Look_Direction LookDirection;
@@ -303,12 +263,8 @@ struct entity
     
     u32 RenderEntityHandle;
     
-    b32 Active;
-    b32 Dead;
     collision_AABB CollisionAABB;
-    b32 IsKinematic;
     b32 IsColliding;
-    b32 IsStatic; // For stuff that can't be moved by collision
     b32 HasHitTrigger;
     collision_AABB HitTrigger;
     
@@ -324,8 +280,6 @@ struct entity
     
     timer HitAttackCountIdResetTimer;
     
-    b32 IsAttacking;
-    b32 Invincible;
     i32 FullHealth;
     i32 Health;
     i32 HealthLost;
@@ -344,7 +298,6 @@ struct entity
     i32 AttackLowFrameIndex;
     i32 AttackHighFrameIndex;
     
-    b32 HasWeapon;
     entity_weapon Weapon;
     weapon_collider_info WeaponColliderInfo;
     
@@ -355,8 +308,6 @@ struct entity
         struct
         {
             i32 Level;
-            i32 Will;
-            b32 IsChargingCheckpoint;
             
             i32 FullStamina;
             i32 Stamina;
@@ -365,8 +316,6 @@ struct entity
             i32 RollStaminaCost;
             i32 AttackStaminaCost;
             i32 MinDiffStamina;
-            
-            player_inventory Inventory;
             
             timer StaminaGainCooldownTimer;
             timer StaminaGainTimer;
@@ -383,12 +332,9 @@ struct entity
             timer DashCooldownTimer;
             timer HealthPotionTimer;
             
-            b32 TakingHealthPotion;
-            
             r64 CurrentAttackCooldownTime;
             r64 AttackCooldown;
             
-            b32 IsDashing;
             r32 DashCounterDivider;
             r64 CurrentDashTime;
             r64 MaxDashTime;
@@ -398,13 +344,11 @@ struct entity
             r32 DashSpeed;
             u32 DashCount;
             
-            b32 IsDefending;
             
             r64 CurrentDashCooldownTime;
             r64 DashCooldown;
             
             r32 WalkingSpeed;
-            b32 RenderCrosshair;
             r32 CrosshairRadius;
             r32 CrosshairPositionX;
             r32 CrosshairPositionY;
@@ -423,22 +367,15 @@ struct entity
             
             entity_healthbar* Healthbar;
             
-            i32 Will;
             i32 HealthCountIndex;
             enemy_health_count HealthCounts[10];
             math::v2 HealthCountStart;
             
             i32 TimesHit;
             
-            b32 HasLoot;
-            loot Loot;
-            
             i32 AttackMode;
             AI_State AIState;
             astar_path AStarPath;
-            b32 IsTargeted;
-            r32 TargetingPositionX;
-            r32 TargetingPositionY;
             r32 MinDistanceToPlayer;
             r32 MaxAlertDistance;
             r32 SlowdownDistance;
@@ -497,5 +434,51 @@ struct entity
     
     entity(){}
 };
+
+
+inline b32
+IsSet(entity *Entity, u32 Flag)
+{
+    b32 Result = Entity->Flags & Flag;
+    
+    return(Result);
+}
+
+
+inline void
+AddFlags(entity *Entity, u32 Flag)
+{
+    Entity->Flags |= Flag;
+}
+
+inline void
+ClearFlags(entity *Entity, u32 Flag)
+{
+    Entity->Flags &= ~Flag;
+}
+
+
+inline b32
+IsSet(object_entity *Entity, u32 Flag)
+{
+    b32 Result = Entity->Flags & Flag;
+    
+    return(Result);
+}
+
+
+inline void
+AddFlags(object_entity *Entity, u32 Flag)
+{
+    Entity->Flags |= Flag;
+}
+
+inline void
+ClearFlags(object_entity *Entity, u32 Flag)
+{
+    Entity->Flags &= ~Flag;
+}
+
+
 
 #endif

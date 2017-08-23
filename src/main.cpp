@@ -164,11 +164,11 @@ int main(void)
     InitKeys();
     
     win32_memory Win32Memory;
-    Win32Memory.PermanentStorageSize = Megabytes(128);
+    Win32Memory.PermanentStorageSize = Megabytes(64);
     Win32Memory.PermanentStorage = VirtualAlloc(0, Win32Memory.PermanentStorageSize, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
     
     
-    Win32Memory.TemporaryStorageSize = Megabytes(256);
+    Win32Memory.TemporaryStorageSize = Megabytes(64);
     Win32Memory.TemporaryStorage = VirtualAlloc(0, Win32Memory.TemporaryStorageSize, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
     
     win32_state Win32State;
@@ -177,12 +177,12 @@ int main(void)
     
     LPVOID BaseAddress = 0;
     game_memory GameMemory = {};
-    GameMemory.PermanentStorageSize = Megabytes(128);
+    GameMemory.PermanentStorageSize = Megabytes(64);
     u64 TotalSize = GameMemory.PermanentStorageSize;
     GameMemory.PermanentStorage = VirtualAlloc(BaseAddress, (size_t)TotalSize,
                                                MEM_RESERVE|MEM_COMMIT,
                                                PAGE_READWRITE);
-    GameMemory.TemporaryStorageSize = Megabytes(128);
+    GameMemory.TemporaryStorageSize = Megabytes(64);
     GameMemory.TemporaryStorage = VirtualAlloc(0, GameMemory.TemporaryStorageSize, MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE);
     
     config_data ConfigData;

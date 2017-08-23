@@ -15,76 +15,6 @@ static inline void PrintEntityInfo(const entity& Entity)
     DEBUG_PRINT("Entity: Name %s, position x %f y %f, rotation x %f y %f z %f\n", Entity.Name, Entity.Position.x, Entity.Position.y, Entity.Rotation.x, Entity.Rotation.y, Entity.Rotation.z);
 }
 
-i32 LoadPointlight(game_state* GameState, math::rgba Color = math::v4(), r32 Intensity = 0.0f, r32 ConstantAtten = 0.0f, r32 LinearAtten = 0.0f, r32 ExponentialAtten = 0.0f,math::v3 InitPosition = math::v3(), b32 ShouldGlow = false, r64 GlowTimerMax = 0.0f, r32 GlowIncrease = 0.0f, r32 EmissionIntensity = 0.0f)
-{
-    light_source LightSource;
-    
-    LightSource.Type = Light_Pointlight;
-    LightSource.Active = true;
-    LightSource.Color = Color;
-    
-    if(ShouldGlow)
-    {
-        LightSource.Pointlight.GlowTimer.TimerHandle = -1;
-        LightSource.Pointlight.GlowTimer.TimerMax = GlowTimerMax;
-        LightSource.Pointlight.GlowIncrease = GlowIncrease;
-    }
-    
-    LightSource.Pointlight.Intensity = Intensity;
-    LightSource.Pointlight.Position = InitPosition;
-    LightSource.Pointlight.ConstantAtten = ConstantAtten;
-    LightSource.Pointlight.LinearAtten = LinearAtten;
-    LightSource.Pointlight.ExponentialAtten = ExponentialAtten;
-    LightSource.Pointlight.EmissionIntensity = EmissionIntensity;
-    GameState->LightSources[GameState->LightSourceCount++] = LightSource;
-    return GameState->LightSourceCount - 1;
-}
-
-static i32 LoadLight(game_state* GameState, char* LineBuffer, math::v3 InitPosition = math::v3(), i32 Handle = -1)
-{
-    b32 ShouldGlow = false;
-    light_source LightSource;
-    
-    if(StartsWith(LineBuffer, "pointlight"))
-    {
-        r64 GlowTimerMax = 0.0;
-        r32 GlowIncrease;
-        sscanf(LineBuffer, "pointlight type %d active %d offset %f %f intensity %f color %f %f %f %f atten %f %f %f emissionintensity %f shouldglow %d glowtimer %lf glowincrease %f",
-               &LightSource.Type, &LightSource.Active, &LightSource.Pointlight.Offset.x, &LightSource.Pointlight.Offset.y, &LightSource.Pointlight.Intensity, &LightSource.Color.x, &LightSource.Color.y, &LightSource.Color.z, &LightSource.Color.w, &LightSource.Pointlight.ConstantAtten, &LightSource.Pointlight.LinearAtten, &LightSource.Pointlight.ExponentialAtten, &LightSource.Pointlight.EmissionIntensity, &ShouldGlow, &GlowTimerMax, &GlowIncrease);
-        
-        if(ShouldGlow)
-        {
-            LightSource.Pointlight.GlowTimer.TimerHandle = -1;
-            LightSource.Pointlight.GlowTimer.TimerMax = GlowTimerMax;
-            LightSource.Pointlight.GlowIncrease = GlowIncrease;
-            LightSource.Pointlight.IncreasingGlow = true;
-        }
-    }
-    else if(StartsWith(LineBuffer, "ambient"))
-    {
-        sscanf(LineBuffer, "ambient type %d active %d intensity %f color %f %f %f %f",&LightSource.Type, &LightSource.Active, &LightSource.Ambient.Intensity, &LightSource.Color.x, &LightSource.Color.y, &LightSource.Color.z, &LightSource.Color.w);
-    }
-    
-    if(Handle != -1)
-    {
-        GameState->LightSources[Handle] = LightSource;
-        if(ShouldGlow)
-        {
-            StartTimer(GameState,GameState->LightSources[Handle].Pointlight.GlowTimer);
-        }
-        return Handle;
-    }
-    else
-    {
-        GameState->LightSources[GameState->LightSourceCount++] = LightSource;
-        if(ShouldGlow)
-        {
-            StartTimer(GameState,GameState->LightSources[GameState->LightSourceCount - 1].Pointlight.GlowTimer);
-        }
-        return GameState->LightSourceCount - 1;
-    }
-}
-
 static void DeleteEntity(game_state* GameState, u32 EntityIndex)
 {
     if(GameState->EntityCount == 0 || GameState->RenderEntityCount == 0)
@@ -135,7 +65,7 @@ void Hit(game_state* GameState, renderer& Renderer, sound_queue* SoundQueue, ent
         HitEntity->HitAttackCountId = ByEntity->AttackCount;
         StartTimer(GameState, HitEntity->HitAttackCountIdResetTimer);
         
-        if(HitEntity->Invincible)
+        if(IsSet(HitEntity, EFlag_Invincible))
         {
             if(ByEntity->Type == Entity_Player)
             {
@@ -177,11 +107,6 @@ void Hit(game_state* GameState, renderer& Renderer, sound_queue* SoundQueue, ent
             
             if(HitEntity->Type == Entity_Enemy)
             {
-                if(HitEntity->Health <= 0)
-                {
-                    GameState->Entities[0].Player.Will += HitEntity->Enemy.Will;
-                }
-                
                 HitEntity->Enemy.HealthCounts[HitEntity->Enemy.HealthCountIndex].Visible = true;
                 HitEntity->Enemy.HealthCounts[HitEntity->Enemy.HealthCountIndex].Position = HitEntity->Enemy.HealthCountStart;
                 
@@ -232,24 +157,24 @@ static void LoadEntityData(FILE* File, entity* Entity, game_state* GameState, b3
         Entity->HitAttackCountIdResetTimer.TimerMax = 1.0f;
         Entity->HitAttackCountIdResetTimer.Name = "Hit Attack Count Id Reset";
         
+        AddFlags(Entity, EFlag_Active);
+        
+        Entity->IsColliding = false;
         Entity->HealthDecreaseTimer.TimerMax = 0.8;
         Entity->HealthDecreaseTimer.TimerHandle = -1;
         Entity->HealthDecreaseTimer.Name = "Health Decrease";
-        Entity->Dead = false;
+        
         Entity->Center = math::v3(0.5, 0.5, 0.5);
         Entity->CurrentAnimation = 0;
-        Entity->Active = true;
-        Entity->IsKinematic = false;
-        Entity->IsColliding = false;
-        Entity->IsStatic = false;
+        
         Entity->HasHitTrigger = false;
         Entity->LightSourceHandle = -1;
         Entity->Hit = false;
-        Entity->Invincible = false;
+        
         Entity->Health = -1;
         Entity->HitAttackCountId = -1;
-        Entity->HasWeapon = false;
-        Entity->IsTemporary = false;
+        
+        
         Entity->ShowAttackTiles = false;
         Entity->AnimationInfo.FreezeFrame = false;
         
@@ -307,7 +232,7 @@ static void LoadEntityData(FILE* File, entity* Entity, game_state* GameState, b3
     }
     else
     {
-        Entity->Active = true;
+        AddFlags(Entity, EFlag_Active);
     }
     
     Entity->AttackCount = 0;
@@ -329,7 +254,11 @@ static void LoadEntityData(FILE* File, entity* Entity, game_state* GameState, b3
         {
             b32 Active;
             sscanf(LineBuffer, "active %d", &Active);
-            Entity->Active = Active;
+            
+            if(Active)
+            {
+                AddFlags(Entity, EFlag_Active);
+            }
         }
         else if(StartsWith(LineBuffer, "layer"))
         {
@@ -349,7 +278,11 @@ static void LoadEntityData(FILE* File, entity* Entity, game_state* GameState, b3
         {
             b32 IsKinematic;
             sscanf(LineBuffer, "iskinematic %d", &IsKinematic);
-            Entity->IsKinematic = IsKinematic;
+            
+            if(IsKinematic)
+            {
+                AddFlags(Entity, EFlag_IsKinematic);
+            }
         }
         else if(StartsWith(LineBuffer, "scale"))
         {
@@ -428,7 +361,7 @@ static void LoadEntityData(FILE* File, entity* Entity, game_state* GameState, b3
         }
         else if(StartsWith(LineBuffer, "weaponinfo"))
         {
-            Entity->HasWeapon = true;
+            AddFlags(Entity, EFlag_HasWeapon);
             sscanf(LineBuffer, "weaponinfo %d up %f %f %f %f down %f %f %f %f left %f %f %f %f right %f %f %f %f", 
                    &Entity->Weapon.Damage,
                    &Entity->WeaponColliderInfo.OffsetUp.x, 
@@ -449,25 +382,18 @@ static void LoadEntityData(FILE* File, entity* Entity, game_state* GameState, b3
                    &Entity->WeaponColliderInfo.ExtentsRight.y);
             Entity->Weapon.Layer = Entity->Layer;
         }
-        else if(StartsWith(LineBuffer,"pointlight"))
-        {
-            Entity->LightSourceHandle = LoadLight(GameState, LineBuffer, Entity->Position, Entity->LightSourceHandle);
-        }
     }
     GameState->EntityPositions[Entity->EntityIndex] = Entity->Position;
 }
 
 static void LoadEnemyData(FILE* File, entity* Entity, game_state* GameState)
 {
-    Entity->Enemy.IsTargeted = false;
     Entity->Enemy.AIState = AI_Idle;
     Entity->Type = Entity_Enemy;
     Entity->Enemy.AStarPath = {};
     Entity->Enemy.HealthCountStart = math::v2(-10, 50);
-    Entity->Enemy.HasLoot = false;
     Entity->Enemy.Healthbar = 0;
     Entity->Enemy.HealthCountIndex = 0;
-    Entity->Enemy.IsTargeted = false;
     Entity->Enemy.WaypointCount = 0;
     Entity->Enemy.WaypointIndex = 0;
     Entity->Enemy.WanderingForward = true;
@@ -500,10 +426,6 @@ static void LoadEnemyData(FILE* File, entity* Entity, game_state* GameState)
             {
                 sscanf(LineBuffer, "walkingspeed %f", &Entity->Enemy.WalkingSpeed);
             }
-            else if(StartsWith(LineBuffer, "will"))
-            {
-                sscanf(LineBuffer, "will %d", &Entity->Enemy.Will);
-            }
             else if(StartsWith(LineBuffer, "wanderingspeed"))
             {
                 sscanf(LineBuffer, "wanderingspeed %f", &Entity->Enemy.WanderingSpeed);
@@ -511,10 +433,6 @@ static void LoadEnemyData(FILE* File, entity* Entity, game_state* GameState)
             else if(StartsWith(LineBuffer, "closetoplayerspeed"))
             {
                 sscanf(LineBuffer, "closetoplayerspeed %f", &Entity->Enemy.CloseToPlayerSpeed);
-            }
-            else if(StartsWith(LineBuffer, "targetingposition"))
-            {
-                sscanf(LineBuffer, "targetingposition %f %f", &Entity->Enemy.TargetingPositionX, &Entity->Enemy.TargetingPositionY);
             }
             else if(StartsWith(LineBuffer, "maxalertdistance"))
             {
@@ -631,101 +549,22 @@ static void EnemyWander(game_state* GameState, entity* Entity)
 
 AI_FUNC(SkeletonIdle)
 {
-    PlayAnimation(Entity, "skeleton_idle", GameState);
-    entity& Player = GameState->Entities[GameState->PlayerIndex];
-    auto& Enemy = Entity->Enemy;
-    r64 DistanceToPlayer = math::Distance(Entity->Position, Player.Position);
     
-    if(DistanceToPlayer <= Entity->Enemy.MaxAlertDistance)
-    {
-        Enemy.AIState = AI_Alerted;
-        StartTimer(GameState,Entity->Enemy.Skeleton.AlertedTimer);
-    }
-    else
-    {
-        Enemy.AIState = AI_Wandering;
-        PlayAnimation(Entity, "skeleton_walk", GameState);
-    }
 }
 
 AI_FUNC(SkeletonAlerted)
 {
-    entity& Player = GameState->Entities[GameState->PlayerIndex];
-    auto& Enemy = Entity->Enemy;
-    r64 DistanceToPlayer = math::Distance(Entity->Position, Player.Position);
     
-    if(TimerDone(GameState,Entity->Enemy.Skeleton.AlertedTimer) && DistanceToPlayer <= Entity->Enemy.MaxAlertDistance)
-    {
-        Enemy.AIState = AI_Following;
-        PlayAnimation(Entity, "skeleton_walk", GameState);
-    }
 }
 
 AI_FUNC(SkeletonFollowing)
 {
-    entity& Player = GameState->Entities[GameState->PlayerIndex];
-    auto& Enemy = Entity->Enemy;
-    auto& Skeleton = Entity->Enemy.Skeleton;
     
-    r64 DistanceToPlayer = math::Distance(Entity->Position, Player.Position);
-    
-    if(!Player.Dead && Player.Active)
-    {
-        if(DistanceToPlayer < Entity->Enemy.MinDistanceToPlayer)
-        {
-            PlayAnimation(Entity, "skeleton_idle", GameState);
-            StartTimer(GameState, Skeleton.ChargingTimer);
-            Enemy.AIState = AI_Charging;
-            render_entity* RenderEntity = &GameState->RenderEntities[Entity->RenderEntityHandle];
-        }
-        else if(DistanceToPlayer > Entity->Enemy.MaxFollowDistance)
-        {
-            PlayAnimation(Entity, "skeleton_walk", GameState);
-            Enemy.AIState = AI_Wandering;
-        }
-        /*else if(DistanceToPlayer <= Entity->Enemy.SlowdownDistance)
-        {
-            PlayAnimation(Entity, "skeleton_walk", GameState);
-            math::v2 Direction = math::Normalize(Player.Position - Entity->Position);
-            Entity->Velocity = math::v2(Direction.x * Entity->Enemy.CloseToPlayerSpeed, Direction.y * Entity->Enemy.CloseToPlayerSpeed);
-        }*/
-        else
-        {
-            PlayAnimation(Entity, "skeleton_walk", GameState);
-            FindPath(GameState, Entity, Player, &Entity->Enemy.AStarPath);
-            FollowPath(GameState, Entity, Player, &Entity->Enemy.AStarPath);
-        }
-    }
-    else
-    {
-        PlayAnimation(Entity, "skeleton_idle", GameState);
-    }
 }
 
 AI_FUNC(SkeletonCharging)
 {
-    entity& Player = GameState->Entities[GameState->PlayerIndex];
-    auto& Enemy = Entity->Enemy;
-    auto& Skeleton = Entity->Enemy.Skeleton;
     
-    r64 DistanceToPlayer = math::Distance(Entity->Position, Player.Position);
-    
-    if(DistanceToPlayer >= Enemy.MaxAlertDistance)
-    {
-        Enemy.AIState = AI_Following;
-    }
-    else if(TimerDone(GameState, Skeleton.ChargingTimer) && DistanceToPlayer <= Enemy.AttackDistance)
-    {
-        Enemy.AIState = AI_Attacking;
-        Enemy.LastAttackMoveDirection = math::Normalize(Player.Position - Entity->Position);
-        PlayAnimation(Entity, "skeleton_attack", GameState);
-    }
-    else
-    {
-        PlayAnimation(Entity, "skeleton_walk", GameState);
-        math::v3 Direction = math::Normalize(Player.Position - Entity->Position);
-        Entity->Velocity = math::v3((Direction.x + 0.1f) * Entity->Enemy.CloseToPlayerSpeed, 0.0f, (Direction.z + 0.1f) * Entity->Enemy.CloseToPlayerSpeed);
-    }
 }
 
 AI_FUNC(SkeletonDefending)
@@ -733,97 +572,22 @@ AI_FUNC(SkeletonDefending)
 
 AI_FUNC(SkeletonAttacking)
 {
-    Entity->ShowAttackTiles = true;
-    entity& Player = GameState->Entities[GameState->PlayerIndex];
-    auto& Enemy = Entity->Enemy;
-    auto& Skeleton = Entity->Enemy.Skeleton;
-    r64 DistanceToPlayer = math::Distance(Entity->Position, Player.Position);
     
-    if(Player.Dead)
-    {
-        Entity->IsAttacking = false;
-        Entity->ShowAttackTiles = false;
-        Enemy.AIState = AI_Idle;
-    }
-    else
-    {
-        if(!TimerDone(GameState, Entity->AttackMoveTimer))
-        {
-            Entity->Velocity = math::v3(Enemy.LastAttackMoveDirection.x * Entity->AttackMoveSpeed,
-                                        0.0f,
-                                        Enemy.LastAttackMoveDirection.z * Entity->AttackMoveSpeed);
-        }
-        
-        if(Entity->AnimationInfo.FrameIndex >= Entity->AttackLowFrameIndex - 2 &&Entity->AnimationInfo.FrameIndex < Entity->AttackHighFrameIndex && !Entity->IsAttacking && strcmp(Entity->CurrentAnimation->Name, "skeleton_idle") != 0)
-        {
-            StartTimer(GameState, Entity->AttackMoveTimer);
-            
-            if(Entity->AnimationInfo.FrameIndex >= Entity->AttackLowFrameIndex && Entity->AnimationInfo.FrameIndex <= Entity->AttackHighFrameIndex)
-            {
-                Entity->IsAttacking = true;
-                
-                Entity->AttackCount++;
-                if(Entity->AttackCount == 3)
-                    Entity->AttackCount = 0;
-                
-                StartTimer(GameState, Skeleton.AttackCooldownTimer);
-            }
-        }
-        else if(!Entity->AnimationInfo.Playing)
-        {
-            PlayAnimation(Entity, "skeleton_idle", GameState);
-        }
-        
-        if(Entity->IsAttacking && strcmp(Entity->CurrentAnimation->Name, "skeleton_attack") == 0 && Entity->AnimationInfo.FrameIndex >= Entity->AttackHighFrameIndex)
-        {
-            Entity->IsAttacking = false;
-            Entity->ShowAttackTiles = false;
-            if(DistanceToPlayer > Entity->Enemy.MinDistanceToPlayer)
-            {
-                Enemy.AIState = AI_Following;
-            }
-            else if(DistanceToPlayer > Entity->Enemy.MaxAlertDistance)
-            {
-                Enemy.AIState = AI_Wandering;
-            }
-            else
-            {
-                Entity->Enemy.AIState = AI_Charging;
-                StartTimer(GameState, Skeleton.ChargingTimer);
-            }
-        }
-    }
 }
 
 AI_FUNC(SkeletonHit)
 {
-    auto& Enemy = Entity->Enemy;
-    if(!TimerDone(GameState, Entity->RecoilTimer))
-    {
-        Entity->Velocity = math::v3(Entity->HitRecoilDirection.x * Entity->HitRecoilSpeed, 
-                                    Entity->HitRecoilDirection.y * Entity->HitRecoilSpeed, Entity->HitRecoilDirection.z * Entity->HitRecoilSpeed);
-    }
     
-    if(!Entity->AnimationInfo.Playing)
-    {
-        Enemy.AIState = AI_Idle;
-        PlayAnimation(Entity, "skeleton_idle", GameState);
-    }
 }
 
 AI_FUNC(SkeletonDying)
 {
-    Entity->IsKinematic = true;
-    if(!Entity->AnimationInfo.Playing)
-    {
-        Entity->Dead = true;
-        Entity->IsKinematic = true;
-    }
+    
 }
 
 AI_FUNC(SkeletonWandering)
 {
-    EnemyWander(GameState,Entity);
+    
 }
 
 static void LoadBonfireData(game_state* GameState, sound_queue* SoundQueue, i32 Handle = -1, math::v3 Position = math::v3(), b32 IsTemporary = false)
@@ -843,7 +607,23 @@ static void LoadBonfireData(game_state* GameState, sound_queue* SoundQueue, i32 
     if(File)
     {
         LoadEntityData(File, Entity, GameState, Handle != -1);
-        Entity->IsTemporary = IsTemporary;
+        if(IsTemporary)
+        {
+            AddFlags(Entity, EFlag_IsTemporary);
+        }
+        else
+        {
+            ClearFlags(Entity, EFlag_IsTemporary);
+        }
+        
+        if(IsTemporary)
+        {
+            AddFlags(Entity, EFlag_IsTemporary);
+        }
+        else
+        {
+            ClearFlags(Entity, EFlag_IsTemporary);
+        }
         
         char LineBuffer[255];
         
@@ -854,8 +634,6 @@ static void LoadBonfireData(game_state* GameState, sound_queue* SoundQueue, i32 
                 break;
             }
         }
-        
-        StartTimer(GameState,GameState->LightSources[Entity->LightSourceHandle].Pointlight.GlowTimer);
         
         if(Handle == -1)
         {
@@ -876,8 +654,6 @@ static void LoadSkeletonData(game_state* GameState, i32 Handle = -1, math::v3 Po
     
     Entity->Enemy.Skeleton = {};
     Entity->AnimationInfo.FreezeFrame = false;
-    Entity->Dead = false;
-    Entity->IsAttacking = false;
     
     if(Handle == -1)
     {
@@ -954,7 +730,6 @@ void PlaceCheckpoint(game_state* GameState, sound_queue* SoundQueue, entity* Ent
     GameState->LastCharacterData.CheckpointHandle = GameState->CharacterData.CheckpointHandle;
     GameState->CharacterData.CurrentCheckpoint = CheckpointPos;
     GameState->CharacterData.HasCheckpoint = true;
-    GameState->Entities[0].Player.Inventory.HealthPotionCount = GameState->CharacterData.HealthPotionCount;
     GameState->LastCharacterData.HasCheckpoint = true;
     SaveGame(GameState);
 }
@@ -972,17 +747,14 @@ static void LoadPlayerData(game_state* GameState, sound_queue* SoundQueue, i32 H
     Entity->Player.LastKnownDirectionX = 1.0f;
     Entity->Player.LastKnownDirectionY = 0;
     
-    Entity->Player.RenderCrosshair = false;
-    Entity->IsAttacking = false;
-    Entity->Player.IsDashing = false;
-    Entity->Player.IsDefending = false;
     Entity->IgnoreLayers = (Entity_Layer)0;
     Entity->Layer = (Entity_Layer)1;
     Entity->Weapon.IgnoreLayers = (Entity_Layer)0;
     
     if(File)
     {
-        Entity->Dead = false;
+        ClearFlags(Entity, EFlag_Dead);
+        
         LoadEntityData(File, Entity, GameState, Handle != -1);
         
         char LineBuffer[255];
@@ -1119,7 +891,6 @@ static void LoadPlayerData(game_state* GameState, sound_queue* SoundQueue, i32 H
             GameState->LastCharacterData.CheckpointHandle = GameState->EntityCount - 1;
             GameState->LastCharacterData.CurrentCheckpoint = GameState->CharacterData.CurrentCheckpoint;
             GameState->LastCharacterData.HasCheckpoint = true;
-            Entity->Player.Inventory.HealthPotionCount = GameState->CharacterData.HealthPotionCount;
             
             if(GameState->CharacterData.Health == 0)
             {
@@ -1129,52 +900,8 @@ static void LoadPlayerData(game_state* GameState, sound_queue* SoundQueue, i32 H
             }
         }
         
-        Entity->Player.Inventory.HasCheckpoint = true;
         Entity->CurrentTile = math::v2i((i32)Entity->Position.x, (i32)Entity->Position.z);
         
-    }
-}
-
-void CheckLootPickup(game_state* GameState, input_controller* InputController,loot* Loot, entity* Player)
-{
-    if(Loot->RenderButtonHint && GetActionButtonDown(Action_Interact, InputController))
-    {
-        b32 CanLoot = false;
-        switch(Loot->Type)
-        {
-            case Loot_Health:
-            {
-                Player->Player.Inventory.HealthPotionCount = Player->Player.Inventory.HealthPotionCount;
-                CanLoot = true;
-            }
-            break;
-            case Loot_Checkpoint:
-            {
-                Player->Player.Inventory.HasCheckpoint = true;
-                CanLoot = true;
-            }
-            break;
-            case Loot_LevelItem:
-            {
-                if(Player->Player.Will >= GameState->StatData[GameState->CharacterData.Level].WillForLevel)
-                {
-                    GameState->StatGainModeOn = true;
-                    CanLoot = true;
-                }
-            }
-            break;
-        }
-        if(CanLoot)
-        {
-            GameState->Entities[Loot->OwnerHandle].Enemy.HasLoot = false;
-            Loot->RenderButtonHint= false;
-            GameState->Objects[Loot->OwnerHandle].Active = false;
-            for(i32 Index = Loot->Handle; Index < GameState->CurrentLootCount; Index++)
-            {
-                GameState->CurrentLoot[Index] = GameState->CurrentLoot[Index + 1];
-            }
-            GameState->CurrentLootCount--;
-        }
     }
 }
 
@@ -1369,15 +1096,14 @@ static void UpdateSkeleton(entity* Entity, game_state* GameState, sound_queue* S
     auto& Skeleton = Entity->Enemy.Skeleton;
     
     auto Player = &GameState->Entities[0];
-    Entity->RenderButtonHint = Entity->Enemy.HasLoot && Entity->Dead && math::Distance(Player->Position, Entity->Position) < 1.5f;
     
-    if(Entity->Active && !Entity->Dead)
+    if(IsSet(Entity, EFlag_Active) && !IsSet(Entity, EFlag_Dead))
     {
         if(Entity->Hit)
         {
             if(Entity->Health <= 0)
             {
-                Entity->IsAttacking = false;
+                ClearFlags(Entity, EFlag_IsAttacking);
                 PlayAnimation(Entity, "skeleton_dead", GameState);
                 Entity->AnimationInfo.FreezeFrame = true;
                 Enemy.AIState = AI_Dying;
@@ -1476,35 +1202,14 @@ static void UpdateGeneral(entity* Entity, game_state* GameState, r64 DeltaTime)
     }
 }
 
-
-static void LightGlow(game_state* GameState, i32 LightHandle)
-{
-    auto Light = &GameState->LightSources[LightHandle].Pointlight;
-    if(!TimerDone(GameState,Light->GlowTimer))
-    {
-        GameState->LightSources[LightHandle].Pointlight.Intensity += Light->IncreasingGlow ? Light->GlowIncrease : -Light->GlowIncrease;
-    }
-    else
-    {
-        Light->IncreasingGlow = !Light->IncreasingGlow;
-        StartTimer(GameState,Light->GlowTimer);
-    }
-}
-
 static void UpdateObjects(game_state* GameState, r64 DeltaTime)
 {
     for(i32 Index = 0; Index < GameState->ObjectCount; Index++)
     {
-        auto& Object = GameState->Objects[Index];
+        auto Object = &GameState->Objects[Index];
         
-        if(Object.Active && Object.CurrentAnimation && Object.AnimationInfo.Playing)
-            TickAnimation(&Object.AnimationInfo, Object.CurrentAnimation, DeltaTime);
-        
-        if(Object.Type == Object_Will)
-        {
-            LightGlow(GameState, Object.LightSourceHandle);
-            
-        }
+        if(IsSet(Object,EFlag_Active) && Object->CurrentAnimation && Object->AnimationInfo.Playing)
+            TickAnimation(&Object->AnimationInfo, Object->CurrentAnimation, DeltaTime);
     }
 }
 
@@ -1516,7 +1221,7 @@ static void UpdateEntities(game_state* GameState, renderer& Renderer, input_cont
     {
         entity* Entity = &GameState->Entities[EntityIndex];
         
-        if(Entity->Active)
+        if(IsSet(Entity, EFlag_Active))
         {
             UpdateGeneral(Entity, GameState, DeltaTime);
             
@@ -1544,13 +1249,11 @@ static void UpdateEntities(game_state* GameState, renderer& Renderer, input_cont
                 case Entity_Bonfire:
                 {
                     UpdateStaticEntity(Entity, GameState, DeltaTime);
-                    
-                    LightGlow(GameState,Entity->LightSourceHandle);
                 }
                 break;
             }
             
-            if(Entity->Active && Entity->CurrentAnimation && Entity->AnimationInfo.Playing)
+            if(IsSet(Entity, EFlag_Active) && Entity->CurrentAnimation && Entity->AnimationInfo.Playing)
                 TickAnimation(&Entity->AnimationInfo, Entity->CurrentAnimation, DeltaTime);
         }
         GameState->EntityPositions[EntityIndex] = Entity->Position;

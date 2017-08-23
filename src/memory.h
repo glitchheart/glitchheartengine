@@ -17,6 +17,16 @@ struct memory_arena
     memory_block Prev;
 };
 
+enum Arena_Flags
+{
+    AFlag_Zero = 0x1
+};
+
+struct arena_params
+{
+    u32 Flags;
+};
+
 static void InitializeArena(memory_arena *Arena, sz Size, u8* Base)
 {
     Arena->Size = Size;
@@ -24,10 +34,35 @@ static void InitializeArena(memory_arena *Arena, sz Size, u8* Base)
     Arena->Used = 0;
 }
 
-#define PushStruct(Arena, type) (type *)PushSize_(Arena, sizeof(type))
-#define PushArray(Arena, Count, type) (type*)PushSize_(Arena, (Count)*sizeof(type))
-#define PushSize(Arena, Size, type) (type*)PushSize_(Arena, Size)
-void* PushSize_(memory_arena* Arena, sz Size)
+inline arena_params DefaultParams()
+{
+    arena_params Params;
+    Params.Flags = AFlag_Zero;
+    return Params;
+}
+
+inline arena_params NoClear()
+{
+    arena_params Params;
+    Params.Flags &= ~AFlag_Zero;
+}
+
+#define ZeroStruct(Instance) ZeroSize(sizeof(Instance), &(Instance)
+#define ZeroArray(Count, Pointer) ZeroSize(Count * sizeof((Pointer[0]), Pointer)
+inline void ZeroSize(sz Size, void *Ptr)
+{
+    u8* Byte = (u8*)Ptr;
+    while(Size--)
+    {
+        *Byte++ = 0;
+    }
+}
+
+
+#define PushStruct(Arena, type, ...) (type *)PushSize_(Arena, sizeof(type), __VA_ARGS__)
+#define PushArray(Arena, Count, type, ...) (type*)PushSize_(Arena, (Count)*sizeof(type), __VA_ARGS__)
+#define PushSize(Arena, Size, type, ...) (type*)PushSize_(Arena, Size)
+void* PushSize_(memory_arena* Arena, sz Size, arena_params Params = DefaultParams())
 {
     Assert((Arena->Used + Size) <= Arena->Size);
     void* Result = Arena->Base + Arena->Used;
@@ -43,16 +78,12 @@ void* PushSize_(memory_arena* Arena, sz Size)
     }
     Arena->Prev = Block;
     
-    return Result;
-}
-
-void FreeLastBlock(memory_arena* Arena)
-{
-    Arena->Used -= Arena->Prev.Size;
-    if(Arena->Prev.Prev)
+    if(Params.Flags & AFlag_Zero)
     {
-        Arena->Prev = *Arena->Prev.Prev;
+        ZeroSize(Size, Result);
     }
+    
+    return Result;
 }
 
 char* PushString(memory_arena* Arena, u32 Length)
@@ -118,6 +149,15 @@ memcpy(Dest, Src, Size);
 static void Reset(memory_arena *Arena, sz Size = 0)
 {
     Arena->Used = 0;
+}
+
+void FreeLastBlock(memory_arena* Arena)
+{
+    Arena->Used -= Arena->Prev.Size;
+    if(Arena->Prev.Prev)
+    {
+        Arena->Prev = *Arena->Prev.Prev;
+    }
 }
 
 #endif
