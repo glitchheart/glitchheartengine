@@ -298,7 +298,7 @@ static void LoadModel(renderer& Renderer, char* FilePath, model* Model, memory_a
                 
                 fread(&MHeader, sizeof(mesh_header), 1, File);
                 
-                r32* VertexBuffer = PushSize(TempArena, MHeader.VertexChunkSize, r32);
+                r32* VertexBuffer = PushSize(TempArena, MHeader.VertexChunkSize,  r32);
                 
                 fread(VertexBuffer, MHeader.VertexChunkSize, 1, File);
                 

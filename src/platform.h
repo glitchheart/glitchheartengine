@@ -29,6 +29,9 @@
 #define PI 3.141592653589793f
 #define DEGREE_IN_RADIANS 0.0174532925f
 
+#define OffsetOf(type, Member) (umm)&(((type *)0)->Member)
+
+
 #include <stdint.h>
 #include <cstdio>
 
@@ -132,6 +135,9 @@ struct game_memory
     entity_file_reload_data* ReloadData;
     platform_api PlatformAPI;
     
+    struct game_state* GameState;
+    struct transient_state* TransientState;
+    
     u64 PermanentStorageSize;
     void* PermanentStorage;
     
@@ -156,15 +162,6 @@ UPDATE(UpdateStub)
 {
 }
 
-inline void HandleError(char const *File, i32 LineNum, char const *msg)
-{
-    /*if(File)
-    {
-        fprintf(stderr, "Error on in file %s on line %d\n", File, LineNum);
-        fprintf(stderr, "%s\n", msg);
-    }*/
-}
-
 #define ERR(msg) HandleError(__FILE__,__LINE__,msg)
 
 struct CompareCStrings 
@@ -174,95 +171,5 @@ struct CompareCStrings
         return strcmp(lhs, rhs) < 0;
     }
 };
-
-#define STRINGIFY(x) #x
-#define TOSTRING(x) STRINGIFY(x)
-#define AT __FILE__ ":" TOSTRING(__LINE__)
-
-inline char* Concat(const char *s1, const char *s2, memory_arena* Arena)
-{
-    char* result = PushString(Arena, (u32)(strlen(s1) + strlen(s2)));
-    strcpy(result, s1);
-    strcat(result, s2);
-    return result;
-}
-
-inline b32 StartsWith(const char *A, const char *B)
-{
-    if(strncmp(A, B, strlen(B)) == 0) return 1;
-    return 0;
-}
-
-inline void LoadConfig(const char* FilePath, config_data* ConfigData, memory_arena* PermArena)
-{
-    FILE* File;
-    File = fopen(FilePath, "r");
-    char LineBuffer[255];
-    
-    ConfigData->Title = PushString(PermArena, 40);
-    ConfigData->Version = PushString(PermArena, 40);
-    
-    if(File)
-    {
-        while(fgets(LineBuffer, 255, File))
-        {
-            if(StartsWith(LineBuffer, "title"))
-            {
-                sscanf(LineBuffer, "title %s", ConfigData->Title);
-            }
-            else if(StartsWith(LineBuffer, "version"))
-            {
-                sscanf(LineBuffer, "version %s", ConfigData->Version);
-            }
-            else if(StartsWith(LineBuffer, "screen_width"))
-            {
-                sscanf(LineBuffer, "screen_width %d", &ConfigData->ScreenWidth);
-            }
-            else if(StartsWith(LineBuffer, "screen_height"))
-            {
-                sscanf(LineBuffer, "screen_height %d", &ConfigData->ScreenHeight);
-            }
-            else if(StartsWith(LineBuffer, "screen_height"))
-            {
-                sscanf(LineBuffer, "screen_height %d", &ConfigData->ScreenHeight);
-            }
-            else if(StartsWith(LineBuffer, "contrast"))
-            {
-                sscanf(LineBuffer, "contrast %f", &ConfigData->Contrast);
-            }
-            else if(StartsWith(LineBuffer, "brightness"))
-            {
-                sscanf(LineBuffer, "brightness %f", &ConfigData->Brightness);
-            }
-            else if(StartsWith(LineBuffer, "fullscreen"))
-            {
-                sscanf(LineBuffer, "fullscreen %d", &ConfigData->Fullscreen);
-            } 
-            else if(StartsWith(LineBuffer, "muted"))
-            {
-                sscanf(LineBuffer, "muted %d", &ConfigData->Muted);
-            }
-            else if(StartsWith(LineBuffer, "sfx_volume"))
-            {
-                sscanf(LineBuffer, "sfx_volume %f", &ConfigData->SFXVolume);
-            }
-            else if(StartsWith(LineBuffer, "music_volume"))
-            {
-                sscanf(LineBuffer, "music_volume %f", &ConfigData->MusicVolume);
-            }
-            else if(StartsWith(LineBuffer, "starting_level_path"))
-            {
-                ConfigData->StartingLevelFilePath = PushString(PermArena, 40);
-                sscanf(LineBuffer, "starting_level_path %s", ConfigData->StartingLevelFilePath);
-            }
-            else if(StartsWith(LineBuffer, "zoom"))
-            {
-                sscanf(LineBuffer, "zoom %f", &ConfigData->Zoom);
-            }
-        }
-        
-        fclose(File);
-    }
-}
 
 #endif

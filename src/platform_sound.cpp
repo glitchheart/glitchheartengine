@@ -85,7 +85,6 @@ static void LoadWavFile(const char *Filename, sound_effect *LoadedSound, memory_
         alGenBuffers(1, &LoadedSound->Buffer);
         alBufferData(LoadedSound->Buffer, Format, (void*)Data, Size, Frequency);
         
-        FreeLastBlock(TempArena);
         fclose(SoundFile);
     }
 }

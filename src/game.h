@@ -4,6 +4,7 @@
 #include <time.h>
 
 #include "platform.h"
+#include "shared.h"
 
 #include "sound.h"
 #include "animation.h"
@@ -67,8 +68,7 @@ struct character_data
 
 struct game_state
 {
-    memory_arena TempArena;
-    memory_arena PermArena;
+    memory_arena TotalArena;
     memory_arena WorldArena;
     
     model* TESTMODEL;
@@ -148,6 +148,11 @@ struct game_state
     
     i32 GameCameraHandle;
     i32 EditorCameraHandle;
+};
+
+struct transient_state
+{
+    memory_arena TranArena;
 };
 
 void StartTimer(game_state* GameState, timer& Timer)
