@@ -845,7 +845,12 @@ extern "C" UPDATE(Update)
     
     PushSpotlight(Renderer, GameState->TestModels[3].Position, math::v3(0.0f, 1.0f, 0.0f), DEGREE_IN_RADIANS * 12.5f, DEGREE_IN_RADIANS * 17.5f, math::v3(0.1f, 0.1f, 0.1f), math::v3(5.0f, 5.0f, 5.0), math::v3(1.0, 1.0, 1.0), 1.0f, 0.09f, 0.032f);
     
-    //PushEntityRenderCommands(Renderer, *GameState);
+    
+    char FPSBuffer[20];
+    sprintf(FPSBuffer, "%f", Renderer.FPS);
+    
+    PushText(Renderer, FPSBuffer, math::v3(200, 200, 2), 0, math::rgba(1, 0, 0, 1));
+    PushEntityRenderCommands(Renderer, *GameState);
     
     for(i32 Index = 0; Index < GameState->Models; Index++)
     {
