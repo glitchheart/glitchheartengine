@@ -265,6 +265,8 @@ struct camera
     r32 EndAlpha;
     r32 FadingAlpha = 0.0f;
     r32 FadingSpeed;
+    
+    math::v3 P;
 };
 
 #define RENDER_COMMAND_MAX 400
