@@ -12,60 +12,7 @@
 #include "level.cpp"
 #include "editor.cpp"
 
-
 #define DEBUG
-
-enum Camera_Flags
-{
-    CFlag_Isometric = (1 << 0),
-    CFlag_Orthographic = (1 << 1),
-    CFlag_Perspective = (1 << 2),
-};
-
-// @Incomplete
-static inline void CameraTransform(renderer& Renderer, camera& Camera, math::v3 Target, r32 Zoom, r32 Near, r32 Far, u32 CameraFlags)
-{
-    if(CameraFlags & CFlag_Orthographic)
-    {
-        Camera.ProjectionMatrix = math::Ortho(0.0f, Renderer.Viewport[2] / Zoom, 0.0f, Renderer.Viewport[3] / Zoom, 0.1f, 1000.0f);
-        Camera.ViewMatrix = math::m4(1.0f);
-        Camera.ViewMatrix = math::Translate(Camera.ViewMatrix, math::v3(-Target.x, Target.y, -Target.z));
-        
-        if(CameraFlags & CFlag_Isometric)
-        {
-            Camera.ViewMatrix = math::Rotate(Camera.ViewMatrix, 45.0f, math::v3(0,1,0));
-            Camera.ViewMatrix = math::Rotate(Camera.ViewMatrix, 35.264f, math::v3(1,0,0));
-        }
-        
-        Camera.ViewMatrix = math::Translate(Camera.ViewMatrix, math::v3(Renderer.Viewport[2] / Zoom / 2, Renderer.Viewport[3] / Zoom / 2, 0.0f));
-    }
-    else if(CameraFlags & CFlag_Perspective)
-    {
-        //Camera.ProjectionMatrix = math::Perspective(Renderer.Viewport[2] / Renderer.Viewport[3], 0.78f, Near, Far);
-        
-        r32 N = 0.01f;
-        r32 F = 100.0f;
-        r32 B, T, L, R;
-        r32 AngleOfView = 90.0f;
-        
-        //math::Perspective(AngleOfView, Renderer.Viewport[2] / Renderer.Viewport[3], N, F, B, T, L, R);
-        //math::m4 Frustum = math::Frustum(B, T, L, R, N, F);
-        
-        //Camera.ProjectionMatrix = Frustum;
-        
-        Camera.ProjectionMatrix = math::Perspective((r32)Renderer.Viewport[2] / (r32)Renderer.Viewport[3], 0.60f, 0.1f, 100.0f);
-        
-        Camera.ViewMatrix = math::m4(1.0f);
-        Camera.ViewMatrix = math::Translate(Camera.ViewMatrix, Camera.P);
-        Camera.ViewMatrix = math::Rotate(Camera.ViewMatrix, 54.0f, math::v3(1,0,0));
-        
-        Camera.ViewMatrix = math::LookAt(Camera.P, math::v3(0,0,0));
-        
-        if(CameraFlags & CFlag_Isometric)
-        {
-        }
-    }
-}
 
 static inline void TickTimers(game_state* GameState, r64 DeltaTime)
 {
@@ -231,15 +178,17 @@ extern "C" UPDATE(Update)
     if(!GameState->IsInitialized || !GameMemory->IsInitialized)
     {
         DEBUG_PRINT("Initializing gamestate\n");
-        InitializeArena(&Renderer.Buffer, sizeof(render_command) * RENDER_COMMAND_MAX, (u8*)GameMemory->PermanentStorage + sizeof(game_state));
+        InitializeArena(&Renderer.Commands, sizeof(render_command) * RENDER_COMMAND_MAX, (u8*)GameMemory->PermanentStorage + sizeof(game_state));
         
-        InitializeArena(&Renderer.LightCommands, sizeof(render_command) * RENDER_COMMAND_MAX, Renderer.Buffer.Base + Renderer.Buffer.Size);
+        InitializeArena(&Renderer.UICommands, sizeof(render_command) * RENDER_COMMAND_MAX, Renderer.Commands.Base + Renderer.Commands.Size);
+        
+        InitializeArena(&Renderer.LightCommands, sizeof(render_command) * RENDER_COMMAND_MAX, Renderer.UICommands.Base + Renderer.UICommands.Size);
         
         InitializeArena(&GameState->WorldArena, Megabytes(32), Renderer.LightCommands.Base + Renderer.LightCommands.Size);
         
         InitializeArena(&GameState->TempArena, GameMemory->TemporaryStorageSize, (u8*)GameMemory->TemporaryStorage);
         
-        InitializeArena(&GameState->PermArena, GameMemory->PermanentStorageSize - sizeof(game_state) - Renderer.Buffer.Size - Renderer.LightCommands.Size - GameState->WorldArena.Size, GameState->WorldArena.Base + GameState->WorldArena.Size);
+        InitializeArena(&GameState->PermArena, GameMemory->PermanentStorageSize - sizeof(game_state) - Renderer.Commands.Size - Renderer.UICommands.Size - Renderer.LightCommands.Size - GameState->WorldArena.Size, GameState->WorldArena.Base + GameState->WorldArena.Size);
         
         GameState->TESTMODEL = PushStruct(&GameState->PermArena, model);
         
@@ -250,8 +199,8 @@ extern "C" UPDATE(Update)
         
         model Model1;
         Model1.Position = math::v3(0, 0, 0);
-        Model1.Scale = math::v3(50.0, 5.0, 50.0);
-        
+        Model1.Scale = math::v3(0.5, 0.5, 0.5);
+        Model1.Rotation = math::v3(-90, 0, 0);
         model Model2;
         Model2.Position = math::v3(0, 0, 0);
         Model2.Scale = math::v3(1.0, 1.0, 1.0);
@@ -274,7 +223,7 @@ extern "C" UPDATE(Update)
         Model6.Position = math::v3(-10.0f, 5.0f, 0);
         Model6.Scale = math::v3(1.0, 1.0, 1.0);
         
-        LoadModel(Renderer, "../assets/models/capsule.modl", &Model1, &GameState->TempArena);
+        LoadModel(Renderer, "../assets/models/knight.modl", &Model1, &GameState->TempArena);
         LoadModel(Renderer, "../assets/models/red_riding.modl", &Model2, &GameState->TempArena);
         LoadModel(Renderer, "../assets/models/capsule.modl", &Model3, &GameState->TempArena);
         LoadModel(Renderer, "../assets/models/mask_boy.modl", &Model4, &GameState->TempArena);
@@ -389,15 +338,14 @@ extern "C" UPDATE(Update)
         GameCamera.ViewportHeight = Renderer.WindowHeight;
         GameCamera.FollowSpeed = 3.5f; 
         GameCamera.FadingSpeed = 0.6f;
-        GameCamera.Center = GameState->TESTMODEL->Position;
         GameCamera.P = math::v3(-5.0f, 15.0f, -50.0f);
         
         StartFade(GameCamera, Fading_In, 0.6f, math::v3(0, 0, 0), 1.0f, 0.0f);
         
         // @Incomplete: This is not the right value, it is only set so high to remove smooth following as of now, since it needs to be done a little differently
         
-        GameCamera.Center = math::v3(GameState->Entities[0].Position.x, GameState->Entities[0].Position.y, GameState->Entities[0].Position.z); // Set center to player's position!
-        GameCamera.CenterTarget = GameState->Entities[0].Position;
+        GameCamera.Center = math::v3(GameState->Entities[0].Position.x, GameState->Entities[0].Position.y, GameState->Entities[0].Position.z + 40.0f); // Set center to player's position!
+        GameCamera.CenterTarget = GameCamera.Center;
         
         GameState->IsInitialized = true;
         GameMemory->IsInitialized = true;
@@ -847,9 +795,7 @@ extern "C" UPDATE(Update)
     
     GameCamera.P += math::v3((r32)(X * DeltaTime * PanSpeed), (r32)(Y * DeltaTime * PanSpeed), 0.0f);
     
-    
-    
-    CameraTransform(Renderer, GameCamera, GameCamera.Center, GameCamera.Zoom, 0.1f, 100.0f, CFlag_Perspective);
+    CameraTransform(Renderer, GameCamera, GameCamera.Center, GameCamera.Zoom, -20.0f, 200.0f, CFlag_Orthographic);
     
     InputController->CurrentCharacter = 0;
     GameState->ClearTilePositionFrame = !GameState->ClearTilePositionFrame;
@@ -902,8 +848,6 @@ extern "C" UPDATE(Update)
     
     char FPSBuffer[20];
     sprintf(FPSBuffer, "%f", Renderer.FPS);
-    
-    PushText(Renderer, FPSBuffer, math::v3(200, 200, 2), 0, math::rgba(1, 0, 0, 1));
     PushEntityRenderCommands(Renderer, *GameState);
     
     for(i32 Index = 0; Index < GameState->Models; Index++)
@@ -911,9 +855,11 @@ extern "C" UPDATE(Update)
         PushModel(Renderer, GameState->TestModels[Index]);
     }
     
-    PushFilledRect(Renderer, math::v3(50.0f,50.0f, 0.0f), math::v3(40.0f,40.0f,40.0f), math::rgba(1.0,0.0,0.0,1.0), true);
+    PushFilledRect(Renderer, math::v3(50.0f,50.0f, 0.0f), math::v3(40.0f, 40.0f, 40.0f), math::rgba(1.0, 0.0, 0.0, 1.0), true);
     
-    PushOutlinedRect(Renderer, math::v3(150.0f,50.0f, 0.0f), math::v3(40.0f,40.0f,40.0f), math::rgba(1.0,0.0,0.0,1.0), true);
+    PushOutlinedRect(Renderer, math::v3(150.0f, 50.0f, 0.0f), math::v3(40.0f, 40.0f, 40.0f), math::rgba(1.0, 0.0, 0.0, 1.0), true);
+    
+    PushText(Renderer, FPSBuffer, math::v3(200, 200, 2), 0, math::rgba(1, 0, 0, 1));
     
     //PushModel(Renderer, *GameState->TESTMODEL);
 }

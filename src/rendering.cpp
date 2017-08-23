@@ -1,3 +1,55 @@
+enum Camera_Flags
+{
+    CFlag_Isometric = (1 << 0),
+    CFlag_Orthographic = (1 << 1),
+    CFlag_Perspective = (1 << 2),
+};
+
+// @Incomplete
+static inline void CameraTransform(renderer& Renderer, camera& Camera, math::v3 Target, r32 Zoom, r32 Near, r32 Far, u32 CameraFlags)
+{
+    if(CameraFlags & CFlag_Orthographic)
+    {
+        Camera.ProjectionMatrix = math::Ortho(0.0f, Renderer.Viewport[2] / Zoom, 0.0f, Renderer.Viewport[3] / Zoom, 0.1f, 1000.0f);
+        Camera.ViewMatrix = math::m4(1.0f);
+        Camera.ViewMatrix = math::Translate(Camera.ViewMatrix, math::v3(-Target.x, Target.y, -Target.z));
+        
+        if(CameraFlags & CFlag_Isometric)
+        {
+            Camera.ViewMatrix = math::Rotate(Camera.ViewMatrix, 45.0f, math::v3(0,1,0));
+            Camera.ViewMatrix = math::Rotate(Camera.ViewMatrix, 35.264f, math::v3(1,0,0));
+        }
+        
+        Camera.ViewMatrix = math::Translate(Camera.ViewMatrix, math::v3(Renderer.Viewport[2] / Zoom / 2, Renderer.Viewport[3] / Zoom / 2, 0.0f));
+    }
+    else if(CameraFlags & CFlag_Perspective)
+    {
+        //Camera.ProjectionMatrix = math::Perspective(Renderer.Viewport[2] / Renderer.Viewport[3], 0.78f, Near, Far);
+        
+        r32 N = 0.01f;
+        r32 F = 100.0f;
+        r32 B, T, L, R;
+        r32 AngleOfView = 90.0f;
+        
+        //math::Perspective(AngleOfView, Renderer.Viewport[2] / Renderer.Viewport[3], N, F, B, T, L, R);
+        //math::m4 Frustum = math::Frustum(B, T, L, R, N, F);
+        
+        //Camera.ProjectionMatrix = Frustum;
+        
+        Camera.ProjectionMatrix = math::Perspective((r32)Renderer.Viewport[2] / (r32)Renderer.Viewport[3], 0.60f, 0.1f, 100.0f);
+        
+        Camera.ViewMatrix = math::m4(1.0f);
+        Camera.ViewMatrix = math::Translate(Camera.ViewMatrix, Camera.P);
+        Camera.ViewMatrix = math::Rotate(Camera.ViewMatrix, 54.0f, math::v3(1,0,0));
+        
+        Camera.ViewMatrix = math::LookAt(Camera.P, math::v3(0,0,0));
+        
+        if(CameraFlags & CFlag_Isometric)
+        {
+        }
+    }
+}
+
 static void LoadTexture(char* TextureName, const char* FullTexturePath, renderer& Renderer, memory_arena* PermArena)
 {
     texture_data* TextureData = &Renderer.TextureData[Renderer.TextureCount];
@@ -24,10 +76,24 @@ static void LoadTextures(renderer& Renderer, memory_arena* TempArena)
     }
 }
 
+static render_command* PushNextCommand(renderer& Renderer, b32 IsUI)
+{
+    if(IsUI)
+    {
+        Renderer.UICommandCount++;
+        return PushStruct(&Renderer.UICommands, render_command);
+    }
+    else
+    {
+        Renderer.CommandCount++;
+        return PushStruct(&Renderer.Commands, render_command);
+    }
+}
+
 static void PushLine(renderer& Renderer, math::v3 Point1, math::v3 Point2, r32 LineWidth, math::rgba Color, b32 IsUI = false)
 {
-    render_command* RenderCommand = PushStruct(&Renderer.Buffer, render_command);
-    Renderer.CommandCount++;
+    render_command* RenderCommand = PushNextCommand(Renderer, IsUI);
+    
     RenderCommand->Type = RenderCommand_Line;
     RenderCommand->Line.Point1 = Point1;
     RenderCommand->Line.Point2 = Point2;
@@ -39,8 +105,8 @@ static void PushLine(renderer& Renderer, math::v3 Point1, math::v3 Point2, r32 L
 // @Incomplete: We still need to do something with fonts!
 static void PushText(renderer& Renderer, const char* Text, math::v3 Position, i32 FontHandle, math::rgba Color, Alignment Alignment = Alignment_Left, b32 IsUI = true)
 {
-    render_command* RenderCommand = PushStruct(&Renderer.Buffer, render_command);
-    Renderer.CommandCount++;
+    render_command* RenderCommand = PushNextCommand(Renderer, IsUI);
+    
     RenderCommand->Type = RenderCommand_Text;
     
     strcpy(RenderCommand->Text.Text, Text);
@@ -54,8 +120,7 @@ static void PushText(renderer& Renderer, const char* Text, math::v3 Position, i3
 
 static void PushFilledRect(renderer& Renderer, math::v3 Position, math::v3 Size, math::rgba Color, b32 IsUI = true)
 {
-    render_command* RenderCommand = PushStruct(&Renderer.Buffer, render_command);
-    Renderer.CommandCount++;
+    render_command* RenderCommand = PushNextCommand(Renderer, IsUI);
     
     RenderCommand->Type = RenderCommand_Rect;
     RenderCommand->Rect.Position = Position;
@@ -67,8 +132,7 @@ static void PushFilledRect(renderer& Renderer, math::v3 Position, math::v3 Size,
 
 static void PushOutlinedRect(renderer& Renderer, math::v3 Position, math::v3 Size, math::rgba Color, b32 IsUI = false)
 {
-    render_command* RenderCommand = PushStruct(&Renderer.Buffer, render_command);
-    Renderer.CommandCount++;
+    render_command* RenderCommand = PushNextCommand(Renderer, IsUI);
     
     RenderCommand->Type = RenderCommand_Rect;
     RenderCommand->Rect.Position = Position;
@@ -80,8 +144,7 @@ static void PushOutlinedRect(renderer& Renderer, math::v3 Position, math::v3 Siz
 
 static void PushSprite(renderer& Renderer, math::v3 Position, math::v3 Scale, math::v2 Frame, math::v2 TextureOffset, const char* TextureName, math::rgba Color, memory_arena* TempArena, b32 IsUI = false)
 {
-    render_command* RenderCommand = PushStruct(&Renderer.Buffer, render_command);
-    Renderer.CommandCount++;
+    render_command* RenderCommand = PushNextCommand(Renderer, IsUI);
     
     RenderCommand->Type = RenderCommand_Sprite;
     RenderCommand->Sprite.Position = Position;
@@ -148,22 +211,20 @@ static void PushPointLight(renderer& Renderer, math::v3 Position, math::v3 Ambie
     PointLight.Quadratic = Quadratic;
 }
 
-static void PushBuffer(renderer& Renderer, i32 BufferHandle, char* TextureName, math::v3 Rotation)
+static void PushBuffer(renderer& Renderer, i32 BufferHandle, char* TextureName, math::v3 Rotation, b32 IsUI = false)
 {
-    render_command* RenderCommand = PushStruct(&Renderer.Buffer, render_command);
-    Renderer.CommandCount++;
+    render_command* RenderCommand = PushNextCommand(Renderer, IsUI);
     
     RenderCommand->Type = RenderCommand_Buffer;
     RenderCommand->Buffer.BufferHandle = BufferHandle;
     RenderCommand->Buffer.TextureName = TextureName;
     RenderCommand->Rotation = Rotation;
-    RenderCommand->IsUI = false;
+    RenderCommand->IsUI = IsUI;
 }
 
 static void PushModel(renderer& Renderer, model& Model)
 {
-    render_command* RenderCommand = PushStruct(&Renderer.Buffer, render_command);
-    Renderer.CommandCount++;
+    render_command* RenderCommand = PushNextCommand(Renderer, false);
     RenderCommand->Type = RenderCommand_Model;
     RenderCommand->Position = Model.Position;
     RenderCommand->Scale = Model.Scale;

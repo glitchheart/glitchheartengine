@@ -1515,11 +1515,16 @@ static void RenderCommands(render_state& RenderState, renderer& Renderer, memory
     
     UpdateLightingData(RenderState);
     Renderer.LightCommandCount = 0;
+    RenderState.SpotlightData.NumLights = 0;
+    RenderState.DirectionalLightData.NumLights = 0;
+    RenderState.PointLightData.NumLights = 0;
     Reset(&Renderer.LightCommands);
+    
+    glEnable(GL_DEPTH_TEST);
     
     for(i32 Index = 0; Index < Renderer.CommandCount; Index++)
     {
-        const render_command& Command = *((render_command*)Renderer.Buffer.Base + Index);
+        const render_command& Command = *((render_command*)Renderer.Commands.Base + Index);
         
         switch(Command.Type)
         {
@@ -1557,11 +1562,51 @@ static void RenderCommands(render_state& RenderState, renderer& Renderer, memory
     }
     
     Renderer.CommandCount = 0;
-    Reset(&Renderer.Buffer);
+    Reset(&Renderer.Commands);
     
-    RenderState.SpotlightData.NumLights = 0;
-    RenderState.DirectionalLightData.NumLights = 0;
-    RenderState.PointLightData.NumLights = 0;
+    glDisable(GL_DEPTH_TEST);
+    
+    for(i32 Index = 0; Index < Renderer.UICommandCount; Index++)
+    {
+        const render_command& Command = *((render_command*)Renderer.UICommands.Base + Index);
+        
+        switch(Command.Type)
+        {
+            case RenderCommand_Line:
+            {
+                RenderLine(Command, RenderState, Camera.ProjectionMatrix, Camera.ViewMatrix);
+            }
+            break;
+            case RenderCommand_Text:
+            {
+                RenderText(Command, RenderState, TempArena);
+            }
+            break;
+            case RenderCommand_Rect:
+            {
+                RenderRect(Command, RenderState, Camera.ProjectionMatrix, Camera.ViewMatrix);
+            }
+            break;
+            case RenderCommand_Sprite:
+            {
+                RenderSprite(Command, RenderState, Renderer, Camera.ProjectionMatrix, Camera.ViewMatrix);
+            }
+            break;
+            case RenderCommand_Model:
+            {
+                RenderModel(Command, RenderState, Camera.ProjectionMatrix, Camera.ViewMatrix);
+            }
+            break;
+            case RenderCommand_Buffer:
+            {
+                RenderBuffer(Command, RenderState, Renderer, Camera.ProjectionMatrix, Camera.ViewMatrix);
+            }
+            break;
+        }
+    }
+    
+    Renderer.UICommandCount = 0;
+    Reset(&Renderer.UICommands);
 }
 
 static void Render(render_state& RenderState, renderer& Renderer, memory_arena* TempArena)
