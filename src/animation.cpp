@@ -56,7 +56,6 @@ static void LoadAnimationFromFile(const char* FilePath, game_state* GameState, r
     char LineBuffer[255];
     
     Animation.Name = PushString(&GameState->PermArena, 30);
-    //Animation.Name = (char*)malloc(sizeof(char) * 30);
     
     if (File)
     {
@@ -133,9 +132,6 @@ static void LoadAnimationFromFile(const char* FilePath, game_state* GameState, r
             if (strcmp(TextureName, "") != 0 && Renderer.TextureMap[TextureName])
             {
                 Copy(Animation.Texture, TextureName, 70 * sizeof(char), &GameState->TempArena, char);
-                
-                //Animation.Texture = (char*)malloc(70 * sizeof(char));
-                //strcpy(Animation.Texture, TextureName);
             }
             else
             {

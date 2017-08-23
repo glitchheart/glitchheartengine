@@ -41,7 +41,6 @@ void ExecuteCommand(game_state *GameState)
         
         int Count = 0;
         
-        //char** ArgumentBuffer = (char**)malloc(10 * sizeof(char*));
         char** ArgumentBuffer = PushArray(&GameState->TempArena, 10, char*);
         
         while(Pointer != NULL)

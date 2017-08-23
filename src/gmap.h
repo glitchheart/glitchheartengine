@@ -3,6 +3,9 @@
 
 #define INIT_SIZE 1024
 
+void* AllocateMemory(size_t Size);
+void DeallocateMemory(void* Memory);
+
 enum Map_Status
 {
     Not_Found,
@@ -78,8 +81,8 @@ struct NAME ## _map \
 }; \
 void NAME ##_Map_Init(NAME ## _map* Map, hash_function_ ## NAME Hash, i32 InitSize = INIT_SIZE) \
 { \
-    Map->HashedPairs = (hashed_pair_ ## NAME*)calloc(InitSize, sizeof(hashed_pair_ ## NAME));\
-    Map->ScanPairs = (hashed_pair_ ## NAME*)calloc(1024, sizeof(hashed_pair_ ## NAME));\
+    Map->HashedPairs = (hashed_pair_ ## NAME*)AllocateMemory(InitSize * sizeof(hashed_pair_ ## NAME));\
+    Map->ScanPairs = (hashed_pair_ ## NAME*)AllocateMemory(1024 * sizeof(hashed_pair_ ## NAME));\
     Map->KeyCount = 0;\
     Map->Count = InitSize; \
     Map->Hash = Hash; \
@@ -112,8 +115,8 @@ void Rehash(NAME ## _map* Map)\
         Map->ScanPairs[I].Val = Val;\
     }\
     Map->Count = Map->Count * 2;\
-    free(Map->HashedPairs);\
-    Map->HashedPairs = (hashed_pair_ ## NAME*)calloc(Map->Count, sizeof(hashed_pair_ ## NAME));\
+    DeallocateMemory(Map->HashedPairs);\
+    Map->HashedPairs = (hashed_pair_ ## NAME*)AllocateMemory(Map->Count * sizeof(hashed_pair_ ## NAME));\
     for(i32 I = 0; I < Map->KeyCount; I++)\
     {\
         Assert(COMPARE(INVALID,Map->ScanPairs[I].Key) != 0);\
@@ -147,7 +150,7 @@ i32 StrCmp(char* L, char* R)
     }
 }
 
-#define STR_ASSIGN(Dst,Src) Dst = (char*)malloc(sizeof(char) * (strlen(Src) + 1)); \
+#define STR_ASSIGN(Dst,Src) Dst = (char*)AllocateMemory(sizeof(char) * (strlen(Src) + 1)); \
 strcpy(Dst,Src)
 #define INT_ASSIGN(Dst,Src) Dst = Src
 

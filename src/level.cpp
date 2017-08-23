@@ -514,11 +514,11 @@
                                   
                                   for(i32 Layer = 0; Layer < TILEMAP_LAYERS; Layer++)
                                   {
-                                      NewLevel->Tilemap.Data[Layer] = (tile_data**)calloc(Width, sizeof(tile_data*));
+                                      NewLevel->Tilemap.Data[Layer] = PushArray(&GameState->WorldArena, Width, tile_data*);
                                       
                                       for(u32 I = 0; I < Width; I++)
                                       {
-                                          NewLevel->Tilemap.Data[Layer][I] = (tile_data *)calloc(Height, sizeof(tile_data));
+                                          NewLevel->Tilemap.Data[Layer][I] = PushArray(&GameState->WorldArena, Height, tile_data);
                                           NewLevel->Tilemap.Data[Layer][I]->TypeIndex = 0;
                                       }
                                   }

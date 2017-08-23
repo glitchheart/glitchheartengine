@@ -87,3 +87,13 @@ inline u64 HashIntKeys(u64 Size, i32 Key)
     u64 K = (u64)((i32)(Key));
     return K % ((u32)Size - 1);
 }
+
+void* AllocateMemory(size_t Size)
+{
+    return Platform.AllocateMemory(Size);
+}
+
+void DeallocateMemory(void* Memory)
+{
+    return Platform.DeallocateMemory(Memory);
+}

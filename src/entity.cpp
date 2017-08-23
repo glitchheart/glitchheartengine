@@ -475,7 +475,7 @@ static void LoadEnemyData(FILE* File, entity* Entity, game_state* GameState)
             }
             else if(StartsWith(LineBuffer, "healthbar"))
             {
-                Entity->Enemy.Healthbar = (entity_healthbar*)malloc(sizeof(entity_healthbar));
+                Entity->Enemy.Healthbar = PushStruct(&GameState->PermArena, entity_healthbar);
                 sscanf(LineBuffer, "healthbar offset %f %f scale %f %f",&Entity->Enemy.Healthbar->Offset.x,
                        &Entity->Enemy.Healthbar->Offset.y,&Entity->Enemy.Healthbar->Scale.x,
                        &Entity->Enemy.Healthbar->Scale.y);
@@ -489,7 +489,7 @@ static void LoadEnemyData(FILE* File, entity* Entity, game_state* GameState)
     }
 }
 
-static void EnemyWander(game_state* GameState, entity* Entity)
+void EnemyWander(game_state* GameState, entity* Entity)
 {
     if(Entity->Enemy.WaypointCount > 0)
     {

@@ -899,9 +899,9 @@ static void EditorUpdateEntities(game_state* GameState, renderer& Renderer, inpu
                         {
                             GameState->EditorState.AnimationMode = Animation_Create;
                             
-                            GameState->EditorState.LoadedAnimation = (animation*)malloc(sizeof(animation));
+                            GameState->EditorState.LoadedAnimation = (animation*)Platform.AllocateMemory(sizeof(animation));
                             
-                            GameState->EditorState.LoadedAnimation->Name = (char*) calloc(30, sizeof(char));
+                            GameState->EditorState.LoadedAnimation->Name = (char*)Platform.AllocateMemory(sizeof(char) * 30);
                             GameState->EditorState.LoadedAnimation->FrameCount = 0;
                             GameState->EditorState.LoadedAnimation->FrameSize = math::v2(0, 0);
                             GameState->EditorState.LoadedAnimation->FrameOffset = math::v2(0, 0);

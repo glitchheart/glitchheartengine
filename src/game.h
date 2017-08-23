@@ -4,6 +4,7 @@
 #include <time.h>
 
 #include "platform.h"
+
 #include "sound.h"
 #include "animation.h"
 
@@ -17,6 +18,7 @@
 #include "editor.h"
 #include "menu.h"
 #include "ui.h"
+
 
 GENERIC_MAP(animation,animation*, char*, StrCmp, NULL, "%s", STR_ASSIGN)
 

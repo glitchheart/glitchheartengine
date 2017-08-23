@@ -22,9 +22,11 @@ enum Arena_Flags
     AFlag_Zero = 0x1
 };
 
+
 struct arena_params
 {
     u32 Flags;
+    u32 Alignment;
 };
 
 static void InitializeArena(memory_arena *Arena, sz Size, u8* Base)
@@ -38,6 +40,7 @@ inline arena_params DefaultParams()
 {
     arena_params Params;
     Params.Flags = AFlag_Zero;
+    Params.Alignment = 4;
     return Params;
 }
 
@@ -60,12 +63,23 @@ inline void ZeroSize(sz Size, void *Ptr)
 
 #define PushStruct(Arena, type, ...) (type *)PushSize_(Arena, sizeof(type), __VA_ARGS__)
 #define PushArray(Arena, Count, type, ...) (type*)PushSize_(Arena, (Count)*sizeof(type), __VA_ARGS__)
-#define PushSize(Arena, Size, type, ...) (type*)PushSize_(Arena, Size)
+#define PushSize(Arena, Size, type, ...) (type*)PushSize_(Arena, Size, __VA_ARGS__)
 void* PushSize_(memory_arena* Arena, sz Size, arena_params Params = DefaultParams())
 {
+    sz ResultPointer = (sz)Arena->Base + Arena->Used;
+    sz AlignmentOffset = 0;
+    
+    sz AlignmentMask = Params.Alignment - 1;
+    if(ResultPointer & AlignmentMask)
+    {
+        AlignmentOffset = Params.Alignment - (ResultPointer & AlignmentMask);
+    }
+    Size += AlignmentOffset;
+    
     Assert((Arena->Used + Size) <= Arena->Size);
-    void* Result = Arena->Base + Arena->Used;
     Arena->Used += Size;
+    
+    void* Result = (void*)(ResultPointer + AlignmentOffset);
     
     memory_block Block;
     Block.Size = Size;
@@ -140,6 +154,11 @@ char* PushString(memory_arena* Arena, u32 Length, const char* Source)
     Dest[Length] = 0;
     
     return Dest;
+}
+
+char* PushString(memory_arena* Arena, sz Length, char* Source)
+{
+    return PushString(Arena, (u32)Length, Source);
 }
 
 #define Copy(Dest, Src, Size, Arena, type) Dest = PushSize(Arena, Size, type);\

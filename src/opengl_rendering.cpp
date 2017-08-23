@@ -892,16 +892,9 @@ static void SetVec4Uniform(GLuint ShaderHandle, const char *UniformName, math::v
     glUniform4f(glGetUniformLocation(ShaderHandle, UniformName), Value.x, Value.y, Value.z, Value.w);
 }
 
-static void SetMat4Uniform(GLuint ShaderHandle, const char *UniformName, math::m4 Value)
+static void SetMat4Uniform(GLuint ShaderHandle, const char *UniformName, math::m4 V)
 {
-#ifndef GLM
-    // math::m4 is in RowMajor, OpenGL expects in ColumnMajor
-    auto V = math::Transpose(Value);
-#else
-    auto V = Value;
-#endif
-    
-    glUniformMatrix4fv(glGetUniformLocation(ShaderHandle, UniformName), 1, GL_FALSE, &V[0][0]);
+    glUniformMatrix4fv(glGetUniformLocation(ShaderHandle, UniformName), 1, GL_TRUE, &V[0][0]);
 }
 
 static void SetVec4ArrayUniform(GLuint ShaderHandle, const char *UniformName, math::v4* Value, u32 Length)
@@ -1359,7 +1352,7 @@ static void RenderModel(const render_command& Command, render_state& RenderState
         SetMat4Uniform(Shader.Program, "view", View);
         SetMat4Uniform(Shader.Program, "model", Model);
         SetVec4Uniform(Shader.Program, "color", math::rgba(1.0f, 1.0f, 1.0f, 1.0f));
-        SetFloatUniform(Shader.Program, "hasUVs", RenderData.Material.HasTexture);
+        SetIntUniform(Shader.Program, "hasUVs", RenderData.Material.HasTexture);
         
         glDrawElements(GL_TRIANGLES, Buffer.IndexBufferSize, GL_UNSIGNED_INT, (void*)0);
         glBindVertexArray(0);

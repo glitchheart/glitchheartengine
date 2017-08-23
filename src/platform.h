@@ -29,10 +29,7 @@
 #define PI 3.141592653589793f
 #define DEGREE_IN_RADIANS 0.0174532925f
 
-//@Incomplete: We want a platform API for all of these functions!!!!!!!
-
 #include <stdint.h>
-#include <malloc.h>
 #include <cstdio>
 
 #define STB_IMAGE_IMPLEMENTATION
@@ -59,8 +56,7 @@ using umm = uintptr_t;
 #include "memory.h"
 
 #include "gmap.h"
-#include "gmap.cpp"
-#include "keycontroller.h"
+
 #include "modelformat.h"
 #include "rendering.h"
 
