@@ -255,4 +255,4 @@ static inline r32 GetInputY(input_controller* InputController, Stick Stick = Sti
 #define ACTION_DOWN(Action) GetActionButtonDown(Action, InputController)
 #define ACTION(Action) GetActionButton(Action, InputController)
 #define INPUT_X(...) GetInputX(InputController,__VA_ARGS__)
-#define INPUT_Y(...) GetInputX(InputController,__VA_ARGS__)
+#define INPUT_Y(...) GetInputY(InputController,__VA_ARGS__)

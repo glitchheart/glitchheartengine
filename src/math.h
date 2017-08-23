@@ -1612,6 +1612,56 @@ namespace math
         
         return Result;
     }
+    /*
+    inline void Perspective(r32& AngleOfView, r32 AspectRatio, r32 Near,
+                            r32 Far, r32& Bottom, r32& Top, r32& Left, r32& Right)
+    {
+        r32 Scale = tan(AngleOfView * 0.5f * PI / 180) * Near;
+        Right = AspectRatio  * Scale;
+        Left = -Right;
+        Top = Scale;
+        Bottom = -Top;
+    }
+    */
+    inline m4 Frustum(r32 Bottom, r32 Top, r32 Left, r32 Right,
+                      r32 Near, r32 Far)
+    {
+        
+        auto A = 2 * Near / (Right - Left);
+        auto B = 2 * Near / (Top - Bottom);
+        auto C = (Right + Left) / (Right - Left);
+        auto D = (Top + Bottom) / (Top - Bottom);
+        auto E = -(Far + Near) / (Far - Near);
+        auto F = -2 * Far * Near / (Far - Near);
+        
+        m4 Result(
+            A,    0.0f, C,     0.0f,
+            0.0f, B,    D,     0.0f,
+            0.0f, 0.0f, E,     F,
+            0.0f, 0.0f, -1.0f, 0.0f
+            );
+        
+        return Result;
+    }
+    
+    inline v3 MultPointMatrix(v3 In, m4 M)
+    {
+        math::v3 Result(0.0f);
+        Result.X = In.x * M[0][0] + In.y * M[0][1] + In.z * M[0][2] + M[0][3];
+        Result.Y = In.x * M[1][0] + In.y * M[1][1] + In.z * M[1][2] + M[1][3];
+        Result.Z = In.x * M[2][0] + In.y * M[2][1] + In.z * M[2][2] + M[2][3];
+        r32 W = In.x * M[3][0] + In.y * M[3][1] + In.z * M[3][2] + M[3][3];
+        
+        if(W != 1)
+        {
+            Result.X /= W;
+            Result.Y /= W;
+            Result.Z /= W;
+        }
+        
+        return Result;
+    }
+    
     
     inline v3 UnProject(v3 In, m4 Model, m4 Projection, v4 Viewport)
     {

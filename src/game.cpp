@@ -15,6 +15,58 @@
 
 #define DEBUG
 
+enum Camera_Flags
+{
+    CFlag_Isometric = (1 << 0),
+    CFlag_Orthographic = (1 << 1),
+    CFlag_Perspective = (1 << 2),
+};
+
+// @Incomplete
+static inline void CameraTransform(renderer& Renderer, camera& Camera, math::v3 Target, r32 Zoom, r32 Near, r32 Far, u32 CameraFlags)
+{
+    if(CameraFlags & CFlag_Orthographic)
+    {
+        Camera.ProjectionMatrix = math::Ortho(0.0f, Renderer.Viewport[2] / Zoom, 0.0f, Renderer.Viewport[3] / Zoom, 0.1f, 1000.0f);
+        Camera.ViewMatrix = math::m4(1.0f);
+        Camera.ViewMatrix = math::Translate(Camera.ViewMatrix, math::v3(-Target.x, Target.y, -Target.z));
+        
+        if(CameraFlags & CFlag_Isometric)
+        {
+            Camera.ViewMatrix = math::Rotate(Camera.ViewMatrix, 45.0f, math::v3(0,1,0));
+            Camera.ViewMatrix = math::Rotate(Camera.ViewMatrix, 35.264f, math::v3(1,0,0));
+        }
+        
+        Camera.ViewMatrix = math::Translate(Camera.ViewMatrix, math::v3(Renderer.Viewport[2] / Zoom / 2, Renderer.Viewport[3] / Zoom / 2, 0.0f));
+    }
+    else if(CameraFlags & CFlag_Perspective)
+    {
+        //Camera.ProjectionMatrix = math::Perspective(Renderer.Viewport[2] / Renderer.Viewport[3], 0.78f, Near, Far);
+        
+        r32 N = 0.01f;
+        r32 F = 100.0f;
+        r32 B, T, L, R;
+        r32 AngleOfView = 90.0f;
+        
+        //math::Perspective(AngleOfView, Renderer.Viewport[2] / Renderer.Viewport[3], N, F, B, T, L, R);
+        //math::m4 Frustum = math::Frustum(B, T, L, R, N, F);
+        
+        //Camera.ProjectionMatrix = Frustum;
+        
+        Camera.ProjectionMatrix = math::Perspective((r32)Renderer.Viewport[2] / (r32)Renderer.Viewport[3], 0.60f, 0.1f, 100.0f);
+        
+        Camera.ViewMatrix = math::m4(1.0f);
+        Camera.ViewMatrix = math::Translate(Camera.ViewMatrix, Camera.P);
+        Camera.ViewMatrix = math::Rotate(Camera.ViewMatrix, 54.0f, math::v3(1,0,0));
+        
+        Camera.ViewMatrix = math::LookAt(Camera.P, math::v3(0,0,0));
+        
+        if(CameraFlags & CFlag_Isometric)
+        {
+        }
+    }
+}
+
 static inline void TickTimers(game_state* GameState, r64 DeltaTime)
 {
     for(u32 Index = 0; Index < NUM_TIMERS; Index++)
@@ -243,15 +295,15 @@ extern "C" UPDATE(Update)
         /*
         for(i32 I = 0; I < 10 + OffsetX; I++)
         {
-            for(i32 J = 0; J < 10 + OffsetZ; J++)
-            {
-                model Model;
-                Model.Position = math::v3((r32)I * 5.0f, 0, (r32)J * 5.0f);
-                Model.Scale = math::v3(5, 5, 1);
-                Model.Rotation.x = -90;
-                LoadModel(Renderer, "../assets/models/cube.modl", &Model);
-                GameState->TestModels[GameState->Models++] = Model;
-            }
+        for(i32 J = 0; J < 10 + OffsetZ; J++)
+        {
+        model Model;
+        Model.Position = math::v3((r32)I * 5.0f, 0, (r32)J * 5.0f);
+        Model.Scale = math::v3(5, 5, 1);
+        Model.Rotation.x = -90;
+        LoadModel(Renderer, "../assets/models/cube.modl", &Model);
+        GameState->TestModels[GameState->Models++] = Model;
+        }
         }
         */
         
@@ -338,6 +390,7 @@ extern "C" UPDATE(Update)
         GameCamera.FollowSpeed = 3.5f; 
         GameCamera.FadingSpeed = 0.6f;
         GameCamera.Center = GameState->TESTMODEL->Position;
+        GameCamera.P = math::v3(-5.0f, 15.0f, -50.0f);
         
         StartFade(GameCamera, Fading_In, 0.6f, math::v3(0, 0, 0), 1.0f, 0.0f);
         
@@ -676,16 +729,17 @@ extern "C" UPDATE(Update)
                 Center.y += Offset.y;
                 }*/
                 
+                
                 if(!GameState->GodModeOn)
                 {
-                    if(math::Distance(GameCamera.CenterTarget, math::v3(Center.x, Center.y, Center.z)) > 0.01f)
+                    /*if(math::Distance(GameCamera.CenterTarget, math::v3(Center.x, Center.y, Center.z)) > 0.01f)
                     {
-                        auto Direction = math::Normalize(GameCamera.CenterTarget - math::v3(Center.x, Center.y, Center.z));
-                        
-                        Center = math::v3(Center.x + Direction.x * GameCamera.FollowSpeed * DeltaTime, Center.y + Direction.y  * GameCamera.FollowSpeed * DeltaTime,Center.z + Direction.z * GameCamera.FollowSpeed * DeltaTime);
-                        
-                        GameCamera.Center = Center;
-                    }
+                    auto Direction = math::Normalize(GameCamera.CenterTarget - math::v3(Center.x, Center.y, Center.z));
+                    
+                    Center = math::v3(Center.x + Direction.x * GameCamera.FollowSpeed * DeltaTime, Center.y + Direction.y  * GameCamera.FollowSpeed * DeltaTime,Center.z + Direction.z * GameCamera.FollowSpeed * DeltaTime);
+                    
+                    GameCamera.Center = Center;
+                    }*/
                 }
                 else
                 {
@@ -780,21 +834,22 @@ extern "C" UPDATE(Update)
         break;
     }
     
-    GameCamera.ProjectionMatrix = math::Ortho(0.0f,
-                                              (GameCamera.ViewportWidth / GameCamera.Zoom),
-                                              0.0f,
-                                              (GameCamera.ViewportHeight / GameCamera.Zoom),
-                                              -100.0f,
-                                              1000.0f);
+    //CameraTransform(Renderer, GameCamera, GameCamera.Center, GameCamera.Zoom, 0.1f, 1000.0f, CFlag_Isometric | CFlag_Orthographic);
     
-    GameCamera.ViewMatrix = math::m4(1.0f);
     
-    GameCamera.ViewMatrix = math::Translate(GameCamera.ViewMatrix,math::v3(-GameCamera.Center.x - 0.5f, GameCamera.Center.y - 1.0f, -GameCamera.Center.z));
+    static r32 X = 0.0f;
+    static r32 Y = 0.0f;
     
-    GameCamera.ViewMatrix = math::Rotate(GameCamera.ViewMatrix, 45.0f, math::v3(0,1,0));
-    GameCamera.ViewMatrix = math::Rotate(GameCamera.ViewMatrix, 35.264f, math::v3(1,0,0));
+    X = INPUT_X();
+    Y = INPUT_Y();
     
-    GameCamera.ViewMatrix = math::Translate(GameCamera.ViewMatrix, math::v3(GameCamera.ViewportWidth / GameCamera.Zoom / 2.0f, GameCamera.ViewportHeight / GameCamera.Zoom / 2.0f,-50.0f));
+    r32 PanSpeed = 5.0f;
+    
+    GameCamera.P += math::v3((r32)(X * DeltaTime * PanSpeed), (r32)(Y * DeltaTime * PanSpeed), 0.0f);
+    
+    
+    
+    CameraTransform(Renderer, GameCamera, GameCamera.Center, GameCamera.Zoom, 0.1f, 100.0f, CFlag_Perspective);
     
     InputController->CurrentCharacter = 0;
     GameState->ClearTilePositionFrame = !GameState->ClearTilePositionFrame;
@@ -806,32 +861,32 @@ extern "C" UPDATE(Update)
     /*
     if(KEY(Key_X))
     {
-        GameState->TESTMODEL->Rotation.x += (r32)(40 * DeltaTime);
-        
-        for(i32 i = 0; i < 4; i++)
-        {
-            GameState->TestModels[i].Rotation.x += (r32)(40 * DeltaTime);
-        }
+    GameState->TESTMODEL->Rotation.x += (r32)(40 * DeltaTime);
+    
+    for(i32 i = 0; i < 4; i++)
+    {
+    GameState->TestModels[i].Rotation.x += (r32)(40 * DeltaTime);
+    }
     }
     
     if(KEY(Key_Y))
     {
-        GameState->TESTMODEL->Rotation.y += (r32)(40 * DeltaTime);
-        
-        for(i32 i = 0; i < 4; i++)
-        {
-            GameState->TestModels[i].Rotation.y += (r32)(40 * DeltaTime);
-        }
+    GameState->TESTMODEL->Rotation.y += (r32)(40 * DeltaTime);
+    
+    for(i32 i = 0; i < 4; i++)
+    {
+    GameState->TestModels[i].Rotation.y += (r32)(40 * DeltaTime);
+    }
     }
     
     if(KEY(Key_Z))
     {
-        GameState->TESTMODEL->Rotation.z += (r32)(40 * DeltaTime);
-        
-        for(i32 i = 0; i < 4; i++)
-        {
-            GameState->TestModels[i].Rotation.z += (r32)(40 * DeltaTime);
-        }
+    GameState->TESTMODEL->Rotation.z += (r32)(40 * DeltaTime);
+    
+    for(i32 i = 0; i < 4; i++)
+    {
+    GameState->TestModels[i].Rotation.z += (r32)(40 * DeltaTime);
+    }
     }
     */
     //PushTilemapRenderCommands(Renderer, *GameState);

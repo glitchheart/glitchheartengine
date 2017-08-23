@@ -21,7 +21,19 @@ out vec2 texCoord;
 
 void main()
 {
-	gl_Position = projection * view * model * vec4(position,1.0);
+	//gl_Position = projection * view * model * vec4(position,1.0);
+
+	vec4 p = projection * view * model * vec4(position, 1.0);
+	
+	if(p.w != 1)
+	{
+//		p.x = p.x / p.w;
+//		p.y = p.y / p.w;
+//		p.z = p.z / p.w;
+	}
+
+	gl_Position = p;
+
 	n = mat3(transpose(inverse(view * model))) * normal;
 	fragPos = vec3(view * model * vec4(position, 1.0));
 
