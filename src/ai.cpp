@@ -264,7 +264,7 @@ static void AStar(entity* Entity, game_state* GameState, math::v3 StartPos, math
     }
 }
 
-static void FindPath(game_state* GameState, entity* Entity, entity& TargetEntity,astar_path* Path)
+void FindPath(game_state* GameState, entity* Entity, entity& TargetEntity,astar_path* Path)
 {
     r64 DistanceToTargetEntity = abs(math::Distance(Entity->Position, TargetEntity.Position));
     math::v3 EntityPosition = math::v3(Entity->Position.x + Entity->Center.x * Entity->Scale, Entity->Position.y + Entity->Center.y * Entity->Scale,Entity->Position.z + Entity->Center.z * Entity->Scale);
@@ -281,7 +281,7 @@ static void FindPath(game_state* GameState, entity* Entity, entity& TargetEntity
     
 }
 
-static void FollowPath(game_state* GameState, entity* Entity,entity& TargetEntity,  astar_path* Path)
+void FollowPath(game_state* GameState, entity* Entity,entity& TargetEntity,  astar_path* Path)
 {
     math::v3 EntityPosition = Entity->Position;
     

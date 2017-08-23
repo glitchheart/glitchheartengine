@@ -1,4 +1,5 @@
 //#define _CRTDBG_MAP_ALLOC  
+//#define _DEBUG
 
 //#include <stdlib.h>  
 //#include <crtdbg.h>  
@@ -11,10 +12,14 @@
 #include <windows.h>
 #include <sys/types.h>  
 #include <sys/stat.h>  
-
 #include <GLFW/glfw3.h>
 
 #include "main.h"
+
+platform_api Platform;
+
+#include "gmap.cpp"
+#include "keycontroller.h"
 
 #include "console.h"
 #include "opengl_rendering.h"
@@ -161,12 +166,9 @@ PLATFORM_DEALLOCATE_MEMORY(Win32DeallocateMemory)
 
 int main(void)
 {
-    InitKeys();
-    
     win32_memory Win32Memory;
     Win32Memory.PermanentStorageSize = Megabytes(64);
     Win32Memory.PermanentStorage = VirtualAlloc(0, Win32Memory.PermanentStorageSize, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
-    
     
     Win32Memory.TemporaryStorageSize = Megabytes(64);
     Win32Memory.TemporaryStorage = VirtualAlloc(0, Win32Memory.TemporaryStorageSize, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
@@ -196,7 +198,9 @@ int main(void)
     GameMemory.PlatformAPI.FileExists = Win32FileExists;
     GameMemory.PlatformAPI.AllocateMemory = Win32AllocateMemory;
     GameMemory.PlatformAPI.DeallocateMemory = Win32DeallocateMemory;
+    Platform = GameMemory.PlatformAPI;
     
+    InitKeys();
     render_state RenderState;
     renderer Renderer = {};
     
@@ -303,4 +307,6 @@ int main(void)
     CleanupSound(&SoundDevice);
     CloseWindow(RenderState);
     //_CrtDumpMemoryLeaks();
+    //_CrtMemState MemState;
+    //_CrtMemDumpStatistics(&MemState);
 }

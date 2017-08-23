@@ -111,7 +111,7 @@ static void ReloadCurrentLevel(game_state* GameState)
 static char* Reset(game_state* GameState, char** Arguments)
 {
     ReloadCurrentLevel(GameState);
-    char* Result = (char*)malloc(12 * sizeof(char));
+    char* Result = PushString(&GameState->TempArena, 12);
     sprintf(Result, "Reset level");
     return Result;
 }

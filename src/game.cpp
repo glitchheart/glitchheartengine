@@ -1,4 +1,5 @@
 #include "game.h"
+#include "gmap.cpp"
 #include "rendering.cpp"
 #include "keycontroller.cpp"
 #include "sound.cpp"
@@ -10,6 +11,7 @@
 #include "entity.cpp"
 #include "level.cpp"
 #include "editor.cpp"
+
 
 #define DEBUG
 
