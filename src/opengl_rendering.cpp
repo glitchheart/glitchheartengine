@@ -1595,11 +1595,7 @@ static void Render(render_state& RenderState, renderer& Renderer, memory_arena* 
     //RenderGame(GameState);
     RenderCommands(RenderState, Renderer, TempArena);
     
-    // @Incomplete: Lighting
-    //RenderLightSources(GameState);
-    
     // Second pass
-    
     
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glClearColor(0.5, 0.5, 0.5, 1.0f);
@@ -1609,15 +1605,6 @@ static void Render(render_state& RenderState, renderer& Renderer, memory_arena* 
     
     glBindVertexArray(RenderState.FrameBufferVAO);
     UseShader(&RenderState.FrameBufferShader);
-    
-    // @Incomplete: BOYOOOO
-    /*
-    auto AmbientLightHandle = GameState->CurrentLevel.AmbientLightHandle;
-    if(AmbientLightHandle != -1)
-    {
-    SetVec4Uniform(RenderState.FrameBufferShader.Program, "ambientColor", GameState->LightSources[AmbientLightHandle].Color);
-    SetFloatUniform(RenderState.FrameBufferShader.Program, "ambientIntensity", GameState->LightSources[AmbientLightHandle].Ambient.Intensity);
-    }*/
     
     SetFloatUniform(RenderState.FrameBufferShader.Program, "contrast", RenderState.Contrast);
     SetFloatUniform(RenderState.FrameBufferShader.Program, "brightness", RenderState.Brightness);
@@ -1643,10 +1630,6 @@ static void Render(render_state& RenderState, renderer& Renderer, memory_arena* 
     
     glDrawElements(GL_TRIANGLES, sizeof(RenderState.QuadIndices), GL_UNSIGNED_INT, (void*)0); 
     glActiveTexture(GL_TEXTURE0);
-    
-    // @Incomplete: PUSH THIS SHIT INSTEAD
-    //RenderUI(GameState);
-    //RenderDebugInfo(GameState);
     
     glfwSwapBuffers(RenderState.Window);
     }
