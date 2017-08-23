@@ -22,7 +22,6 @@ enum Arena_Flags
     AFlag_Zero = 0x1
 };
 
-
 struct arena_params
 {
     u32 Flags;
@@ -34,6 +33,13 @@ static void InitializeArena(memory_arena *Arena, sz Size, u8* Base)
     Arena->Size = Size;
     Arena->Base = Base;
     Arena->Used = 0;
+}
+
+static void SubArena(memory_arena* Arena, memory_arena* SubArena, sz Size)
+{
+    SubArena->Size = Size;
+    SubArena->Base = Arena->Base + Arena->Used;
+    Arena->Used += Size;
 }
 
 inline arena_params DefaultParams()

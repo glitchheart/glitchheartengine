@@ -316,8 +316,11 @@ struct renderer
 {
     r64 FPS;
     //render_command Buffer[RENDER_COMMAND_MAX];
-    memory_arena Buffer;
+    memory_arena Commands;
     i32 CommandCount;
+    
+    memory_arena UICommands;
+    i32 UICommandCount;
     
     //render_command LightCommands[RENDER_COMMAND_MAX];
     memory_arena LightCommands;
