@@ -30,9 +30,11 @@ struct astar_working_data
     astar_node WorkingList[WORKING_LIST_COUNT];
 };
 
+#define MAX_PATH_LENGTH 32
+
 struct astar_path
 {
-    path_node* AStarPath = 0;
+    path_node AStarPath[MAX_PATH_LENGTH];
     u32 AStarPathLength = 0;
     u32 PathIndex = 0;
     timer AStarCooldownTimer;

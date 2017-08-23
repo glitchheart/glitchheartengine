@@ -55,7 +55,8 @@ static void LoadAnimationFromFile(const char* FilePath, game_state* GameState, r
     File = fopen(FilePath, "r");
     char LineBuffer[255];
     
-    Animation.Name = (char*)malloc(sizeof(char) * 30);
+    Animation.Name = PushString(&GameState->PermArena, 30);
+    //Animation.Name = (char*)malloc(sizeof(char) * 30);
     
     if (File)
     {
@@ -104,7 +105,7 @@ static void LoadAnimationFromFile(const char* FilePath, game_state* GameState, r
         //frames
         fgets(LineBuffer, 255, File);
         
-        Animation.Frames = (sprite_sheet_frame*)malloc(sizeof(sprite_sheet_frame) * Animation.FrameCount);
+        Animation.Frames = PushArray(&GameState->PermArena, Animation.FrameCount, sprite_sheet_frame);
         
         for (i32 i = 0; i < Animation.FrameCount; i++)
         {
@@ -125,21 +126,22 @@ static void LoadAnimationFromFile(const char* FilePath, game_state* GameState, r
             int Length;
             
             sscanf(LineBuffer, "texture %s%n", TextureNameBuffer, &Length);
-            char* TextureName = (char*)malloc(70 * sizeof(char));
+            
+            char* TextureName = PushString(&GameState->TempArena, 70);
             strcpy(TextureName, TextureNameBuffer);
             
             if (strcmp(TextureName, "") != 0 && Renderer.TextureMap[TextureName])
             {
-                Animation.Texture = (char*)malloc(70 * sizeof(char));
-                strcpy(Animation.Texture, TextureName);
+                Copy(Animation.Texture, TextureName, 70 * sizeof(char), &GameState->TempArena, char);
+                
+                //Animation.Texture = (char*)malloc(70 * sizeof(char));
+                //strcpy(Animation.Texture, TextureName);
             }
             else
             {
                 DEBUG_PRINT("Texture: '%s' could not be found. Animation '%s' will not be loaded. Please add the missing texture.\n", TextureName, Animation.Name);
-                free(TextureName);
                 return;
             }
-            free(TextureName);
         }
         
         GameState->AnimationArray[GameState->AnimationIndex] = Animation;
@@ -163,9 +165,6 @@ static void LoadAnimations(game_state* GameState, renderer& Renderer)
     {
         LoadAnimationFromFile(DirData.FilePaths[FileIndex], GameState, Renderer);
     }
-    
-    //free(DirData.FilePaths);
-    //free(DirData.FileNames);
 }
 
 static inline void PlayAnimation(entity* Entity, char* AnimationName, game_state* GameState)

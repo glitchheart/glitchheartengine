@@ -1,30 +1,29 @@
 #ifndef CONSOLE_COMMANDS_H
 #define CONSOLE_COMMANDS_H
 
-static char* Zoom(game_state* GameState, char** Arguments, memory_arena* TempArena)
+static char* Zoom(game_state* GameState, char** Arguments)
 {
     r32 ZoomAmount = (r32) strtod(Arguments[0], NULL);
     //@Incomplete: Should be renderer.camera
     //GameCamera.Zoom = ZoomAmount;
-    return Concat("Zoom set to ", Arguments[0], TempArena);
+    return Concat("Zoom set to ", Arguments[0], &GameState->TempArena);
 }
 
-static char* Jump(game_state* GameState, char** Arguments, memory_arena* TempArena)
+static char* Jump(game_state* GameState, char** Arguments)
 {
     r32 X = (r32) strtod(Arguments[0], NULL);
     r32 Y = (r32) strtod(Arguments[1], NULL);
     r32 Z = (r32) strtod(Arguments[2], NULL);
     
-    
     GameState->Entities[GameState->PlayerIndex].Position = math::v3(X, Y, Z);
-    char* Result = (char*)malloc(40 * sizeof(char));
+    char* Result = PushString(&GameState->TempArena, 40);
     sprintf(Result, "Jumped to position %.2f %.2f %.2f", X, Y, Z);
     return Result;
 }
 
-static char* LoadLevel(game_state* GameState, char** Arguments, memory_arena* TempArena)
+static char* LoadLevel(game_state* GameState, char** Arguments)
 {
-    char* Result = (char*)malloc(25 * sizeof(char));
+    char* Result = PushString(&GameState->TempArena, 25);
     
     if(Arguments)
     {
@@ -33,7 +32,7 @@ static char* LoadLevel(game_state* GameState, char** Arguments, memory_arena* Te
         char* PathPrefix = "../assets/levels/";
         char* PathSuffix = ".plv";
         
-        char* Path = Concat(Concat(PathPrefix, Arguments[0], TempArena), PathSuffix, TempArena);
+        char* Path = Concat(Concat(PathPrefix, Arguments[0], &GameState->TempArena), PathSuffix, &GameState->TempArena);
         
         DEBUG_PRINT("String allocation\n");
         
@@ -47,11 +46,7 @@ static char* LoadLevel(game_state* GameState, char** Arguments, memory_arena* Te
             GameState->IsInitialized = false;
             GameState->ShouldReload = true;
             
-            for(i32 X = 0; X < GameState->CurrentLevel.Tilemap.Width; X++)
-            {
-                free(GameState->CurrentLevel.Tilemap.Data[X]);
-            }
-            free(GameState->CurrentLevel.Tilemap.Data);
+            Reset(&GameState->WorldArena);
             
             GameState->CurrentLevel = {};
             
@@ -114,7 +109,7 @@ static void ReloadCurrentLevel(game_state* GameState)
 }
 
 
-static char* Reset(game_state* GameState, char** Arguments, memory_arena* TempArena)
+static char* Reset(game_state* GameState, char** Arguments)
 {
     ReloadCurrentLevel(GameState);
     char* Result = (char*)malloc(12 * sizeof(char));
@@ -130,7 +125,7 @@ static char* Exit(render_state& RenderState, char** Arguments)
 }
 */
 
-static char* View(game_state* GameState, char** Arguments, memory_arena* TempArena)
+static char* View(game_state* GameState, char** Arguments)
 {
     if(Arguments) 
     {
@@ -138,7 +133,7 @@ static char* View(game_state* GameState, char** Arguments, memory_arena* TempAre
     return "Error: No arguments provided";
 }
 
-static char* Editor(game_state* GameState, char** Arguments, memory_arena* TempArena)
+static char* Editor(game_state* GameState, char** Arguments)
 {
     if(Arguments)
     {

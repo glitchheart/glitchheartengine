@@ -1,9 +1,20 @@
+#ifndef MEMORY_H
+#define MEMORY_H
+
+struct memory_block
+{
+    u64 Size;
+    u8* Base;
+    memory_block* Prev;
+};
+
 struct memory_arena
 {
     u64 Flags;
     u64 Size;
     u8 *Base;
     umm Used;
+    memory_block Prev;
 };
 
 static void InitializeArena(memory_arena *Arena, sz Size, u8* Base)
@@ -22,16 +33,49 @@ void* PushSize_(memory_arena* Arena, sz Size)
     void* Result = Arena->Base + Arena->Used;
     Arena->Used += Size;
     
+    memory_block Block;
+    Block.Size = Size;
+    Block.Base = (u8*)Result;
+    
+    if(Arena->Prev.Size > 0)
+    {
+        Block.Prev = &Arena->Prev;
+    }
+    Arena->Prev = Block;
+    
     return Result;
+}
+
+void FreeLastBlock(memory_arena* Arena)
+{
+    Arena->Used -= Arena->Prev.Size;
+    if(Arena->Prev.Prev)
+    {
+        Arena->Prev = *Arena->Prev.Prev;
+    }
 }
 
 char* PushString(memory_arena* Arena, u32 Length)
 {
-    auto Result = (char*)PushSize_(Arena, (Length + 1) * sizeof(char));
+    auto Result = (char*)PushSize_(Arena, (Length + 1));
+    Result[Length + 1] = 0;
     return Result;
 }
 
 char* PushString(memory_arena* Arena, char* Source)
+{
+    auto Length = strlen(Source);
+    char* Dest = PushString(Arena, (u32)Length);
+    for(u32 CharIndex = 0; CharIndex < Length + 1; CharIndex++)
+    {
+        Dest[CharIndex] = Source[CharIndex];
+    }
+    Dest[Length + 1] = 0;
+    
+    return Dest;
+}
+
+char* PushString(memory_arena* Arena, const char* Source)
 {
     auto Length = strlen(Source);
     char* Dest = PushString(Arena, (u32)Length);
@@ -56,7 +100,24 @@ char* PushString(memory_arena* Arena, u32 Length, char* Source)
     return Dest;
 }
 
-static void Reset(memory_arena *Arena)
+char* PushString(memory_arena* Arena, u32 Length, const char* Source)
+{
+    char* Dest = (char*)PushSize_(Arena, Length + 1);
+    for(u32 CharIndex = 0; CharIndex < Length; CharIndex++)
+    {
+        Dest[CharIndex] = Source[CharIndex];
+    }
+    Dest[Length] = 0;
+    
+    return Dest;
+}
+
+#define Copy(Dest, Src, Size, Arena, type) Dest = PushSize(Arena, Size, type);\
+memcpy(Dest, Src, Size);
+
+static void Reset(memory_arena *Arena, sz Size = 0)
 {
     Arena->Used = 0;
 }
+
+#endif

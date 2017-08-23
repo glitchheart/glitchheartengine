@@ -102,8 +102,7 @@ static void ReconstructPath(astar_path* Path, game_state* GameState, astar_node&
         
         if(Length > 0) 
         {
-            Path->AStarPath = (path_node*)malloc(sizeof(path_node) * Length + 1);
-            
+            Assert(Length < MAX_PATH_LENGTH);
             u32 Index = Length - 1;
             Path->AStarPath[Length] = {Current.X,Current.Z};
             PathNode = AStarWorkingData->WorkingList[Current.ParentIndex];
@@ -168,7 +167,8 @@ static void AStar(entity* Entity, game_state* GameState, math::v3 StartPos, math
        TargetX >= 0 && TargetZ >= 0)
     {
         astar_working_data Data = {};
-        astar_working_data* AStarWorkingData = &Data; //(astar_working_data*)malloc(sizeof(astar_working_data));
+        astar_working_data* AStarWorkingData = &Data; 
+        
         tile_data StartTile = GameState->CurrentLevel.Tilemap.Data[1][StartX][StartZ];
         tile_data TargetTile = GameState->CurrentLevel.Tilemap.Data[1][TargetX][TargetZ];
         math::v3 CurrentPos = StartPos;
@@ -215,7 +215,6 @@ static void AStar(entity* Entity, game_state* GameState, math::v3 StartPos, math
                 ReconstructPath(GetAStarPath(Entity),GameState,Current,AStarWorkingData, StartNode);
                 
                 // We're done with the path
-                //free(AStarWorkingData);
                 return;
             }
             
@@ -262,7 +261,6 @@ static void AStar(entity* Entity, game_state* GameState, math::v3 StartPos, math
             LowestFcost = 10000000;
             WorkingIndex = -1;
         }
-        //free(AStarWorkingData);
     }
 }
 

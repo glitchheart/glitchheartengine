@@ -1,6 +1,6 @@
-                              static void LoadOrthogonalTilemapBuffer(renderer& Renderer, tilemap& Tilemap)
+                              static void LoadOrthogonalTilemapBuffer(renderer& Renderer, tilemap& Tilemap, memory_arena* TempArena)
                               {
-                                  r32* VertexBuffer = (r32*)malloc(sizeof(r32) * 16 * Tilemap.Width * Tilemap.Height);
+                                  r32* VertexBuffer = PushArray(TempArena, 16 * Tilemap.Width * Tilemap.Height, r32);
                                   
                                   i32 Size = 0;
                                   
@@ -48,9 +48,9 @@
                                   LoadBuffer(Renderer, VertexBuffer, Size, &Tilemap.BufferHandle);
                               }
                               
-                              static void LoadTilemapBuffer(renderer& Renderer, tilemap& Tilemap)
+                              static void LoadTilemapBuffer(renderer& Renderer, tilemap& Tilemap, memory_arena* TempArena)
                               {
-                                  r32* VertexBuffer = (r32*)malloc(sizeof(r32) * 16 * Tilemap.Width * Tilemap.Height);
+                                  r32* VertexBuffer = PushArray(TempArena, 16 * Tilemap.Width * Tilemap.Height, r32);
                                   
                                   i32 Size = 0;
                                   
@@ -170,7 +170,7 @@
                                           if(fgets(LineBuffer, 255, File))
                                           {
                                               sscanf(LineBuffer, "%d", &NumTiles);
-                                              Tilemap->Tiles = (tile_data*)malloc(sizeof(tile_data) * NumTiles);
+                                              Tilemap->Tiles = PushArray(&GameState->WorldArena, NumTiles, tile_data);
                                           }
                                           
                                           if(fgets(LineBuffer, 255, File))
@@ -218,13 +218,11 @@
                                   
                                   if(File)
                                   {
-                                      //Level->Name = (char*)malloc(sizeof(char) * 30);
-                                      Level->Name = PushString(&GameState->PermArena, 30);
+                                      Level->Name = PushString(&GameState->WorldArena, 30);
                                       if(fgets(LineBuffer, 255, File))
                                           sscanf(LineBuffer, "%s", Level->Name);
                                       
-                                      //Level->SheetName = (char*)malloc(sizeof(char) * 30);
-                                      Level->SheetName = PushString(&GameState->PermArena, 30);
+                                      Level->SheetName = PushString(&GameState->WorldArena, 30);
                                       if(fgets(LineBuffer, 255, File))
                                           sscanf(LineBuffer, "%s", Level->SheetName);
                                       
@@ -273,20 +271,16 @@
                                       
                                       for(i32 Layer = 0; Layer < TILEMAP_LAYERS; Layer++)
                                       {
-                                          Level->Tilemap.Data[Layer] = PushArray(&GameState->PermArena, MapWidth, tile_data*);
-                                          //Level->Tilemap.Data[Layer] = (tile_data**)malloc(MapWidth * sizeof(tile_data*));
-                                          GameState->EntityTilePositions = PushArray(&GameState->PermArena, MapWidth, i32*);
-                                          //GameState->EntityTilePositions = (i32**)malloc(MapWidth * sizeof(i32*));
+                                          Level->Tilemap.Data[Layer] = PushArray(&GameState->WorldArena, MapWidth, tile_data*);
+                                          GameState->EntityTilePositions = PushArray(&GameState->WorldArena, MapWidth, i32*);
                                       }
                                       
                                       for(i32 Layer = 0; Layer < TILEMAP_LAYERS; Layer++)
                                       {
                                           for(u32 I = 0; I < MapWidth; I++)
                                           {
-                                              Level->Tilemap.Data[Layer][I] = PushArray(&GameState->PermArena, MapHeight, tile_data);
-                                              //Level->Tilemap.Data[Layer][I] = (tile_data *)calloc(MapHeight, sizeof(tile_data));
-                                              GameState->EntityTilePositions[I] = PushArray(&GameState->PermArena, MapHeight, i32);
-                                              //GameState->EntityTilePositions[I] = (i32*)malloc(MapHeight * sizeof(i32));
+                                              Level->Tilemap.Data[Layer][I] = PushArray(&GameState->WorldArena, MapHeight, tile_data);
+                                              GameState->EntityTilePositions[I] = PushArray(&GameState->WorldArena, MapHeight, i32);
                                           }
                                       }
                                       
@@ -331,7 +325,7 @@
                                           IndexHeight = 0;
                                       }
                                       
-                                      LoadOrthogonalTilemapBuffer(Renderer, Level->Tilemap);
+                                      LoadOrthogonalTilemapBuffer(Renderer, Level->Tilemap, &GameState->TempArena);
                                       
                                       u32 PathIndex = 0;
                                       

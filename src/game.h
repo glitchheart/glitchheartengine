@@ -67,6 +67,7 @@ struct game_state
 {
     memory_arena TempArena;
     memory_arena PermArena;
+    memory_arena WorldArena;
     
     model* TESTMODEL;
     

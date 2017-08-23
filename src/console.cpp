@@ -5,7 +5,7 @@ void ReloadLevel(game_state* GameState)
     ReloadCurrentLevel(GameState);
 }
 
-void AddCommand(char* Name, char* (*FunctionPointer)(game_state*, char**, memory_arena*))
+void AddCommand(char* Name, char* (*FunctionPointer)(game_state*, char**))
 {
     command_info Info = { Name, FunctionPointer };
     Commands[CommandCount++] = Info;
@@ -61,12 +61,11 @@ void ExecuteCommand(game_state *GameState)
             if(strcmp(CommandName, Commands[i].Name) == 0)
             {
                 Found = true;
-                Result = Commands[i].FunctionPointer(GameState, Count > 0 ? ArgumentBuffer : 0, &GameState->TempArena);
+                Result = Commands[i].FunctionPointer(GameState, Count > 0 ? ArgumentBuffer : 0);
                 break;
             }
         }
         
-        //free(ArgumentBuffer);
         
         if(!Found)
         {
@@ -81,8 +80,6 @@ void ExecuteCommand(game_state *GameState)
         
         sprintf(GameState->Console.HistoryBuffer[0], Result);
         sprintf(GameState->Console.HistoryBuffer[1], &GameState->Console.Buffer[0]);
-        
-        //free(Result);
         
         for(int i = 0; i < CONSOLE_BUFFER_SIZE; i++)
             GameState->Console.Buffer[i] = 0;
