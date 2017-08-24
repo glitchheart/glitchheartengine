@@ -56,12 +56,10 @@ using sz = size_t; // Platform dependent 32/64 bit
 using umm = uintptr_t;
 
 #include "math.h"
-#include "memory.h"
-
 #include "gmap.h"
 
 #include "modelformat.h"
-#include "rendering.h"
+
 
 struct timer
 {
@@ -102,16 +100,27 @@ struct directory_data
     i32 FilesLength = 0;
 };
 
+struct memory_arena;
+
+struct platform_memory_block
+{
+    u64 Flags;
+    u64 Size;
+    u8* Base;
+    umm Used;
+    platform_memory_block* Prev;
+};
+
 #define PLATFORM_GET_ALL_FILES_WITH_EXTENSION(name) void name(const char* DirectoryPath, const char* Extension, directory_data* DirectoryData, b32 WithSubDirectories, memory_arena* TempArena)
 typedef PLATFORM_GET_ALL_FILES_WITH_EXTENSION(platform_get_all_files_with_extension);
 
 #define PLATFORM_FILE_EXISTS(name) b32 name(const char* FilePath)
 typedef PLATFORM_FILE_EXISTS(platform_file_exists);
 
-#define PLATFORM_ALLOCATE_MEMORY(name) void* name(sz Size)
+#define PLATFORM_ALLOCATE_MEMORY(name) platform_memory_block* name(sz Size)
 typedef PLATFORM_ALLOCATE_MEMORY(platform_allocate_memory);
 
-#define PLATFORM_DEALLOCATE_MEMORY(name) void name(void* Memory)
+#define PLATFORM_DEALLOCATE_MEMORY(name) void name(platform_memory_block* Block)
 typedef PLATFORM_DEALLOCATE_MEMORY(platform_deallocate_memory);
 
 struct platform_api
@@ -120,8 +129,7 @@ struct platform_api
     platform_file_exists *FileExists;
     platform_allocate_memory *AllocateMemory;
     platform_deallocate_memory *DeallocateMemory;
-};
-
+} ;
 extern platform_api Platform;
 
 struct entity_file_reload_data;
@@ -136,13 +144,7 @@ struct game_memory
     platform_api PlatformAPI;
     
     struct game_state* GameState;
-    struct transient_state* TransientState;
-    
-    u64 PermanentStorageSize;
-    void* PermanentStorage;
-    
-    u64 TemporaryStorageSize;
-    void* TemporaryStorage;
+    struct transient_state* TranState;
 };
 
 struct input_controller;
@@ -155,6 +157,8 @@ struct game_update_return
     math::v3 EntityPositions[NUM_ENTITIES];
     i32 EntityCount;
 };
+
+struct renderer;
 
 #define UPDATE(name)void name(r64 DeltaTime, game_memory* GameMemory, renderer& Renderer, input_controller* InputController, sound_queue* SoundQueue, game_update_return* GameUpdateStruct, sound_effects* SoundEffects)
 typedef UPDATE(update);

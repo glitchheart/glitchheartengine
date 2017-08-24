@@ -6,6 +6,10 @@
 
 #define DEBUG
 //#include "windows.h"
+
+#include "platform.h"
+#include "shared.h"
+
 #include <glad/glad.h>
 #include "al.h"
 #include "alc.h"
@@ -213,50 +217,40 @@ inline void LoadConfig(const char* FilePath, config_data* ConfigData, memory_are
 
 PLATFORM_ALLOCATE_MEMORY(Win32AllocateMemory)
 {
-    void* Result = VirtualAlloc(0, Size, MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE);
+    umm TotalSize = Size + sizeof(win32_memory_block);
+    umm BaseOffset = sizeof(win32_memory_block);
     
-    return Result;
+    
+    win32_memory_block* Block  = (win32_memory_block*)VirtualAlloc(0, TotalSize, MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE);
+    
+    Assert(Block);
+    Block->Block.Base = (u8*)Block + BaseOffset;
+    Assert(Block->Block.Used == 0);
+    Assert(Block->Block.Prev == 0);
+    
+    Block->Block.Size = Size;
+    //Block->Block.Flags = Flags;
+    
+    platform_memory_block* PlatBlock =&Block->Block;
+    
+    return PlatBlock;
 }
 
 PLATFORM_DEALLOCATE_MEMORY(Win32DeallocateMemory)
 {
-    if(Memory)
+    if(Block)
     {
-        VirtualFree(Memory, 0, MEM_RELEASE);
+        win32_memory_block *Win32Block =((win32_memory_block*)Block);
+        VirtualFree(Block, 0, MEM_RELEASE);
     }
 }
 
 int main(void)
 {
-    win32_memory Win32Memory;
-    Win32Memory.PermanentStorageSize = Megabytes(64);
-    Win32Memory.PermanentStorage = VirtualAlloc(0, Win32Memory.PermanentStorageSize, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
-    
-    Win32Memory.TemporaryStorageSize = Megabytes(64);
-    Win32Memory.TemporaryStorage = VirtualAlloc(0, Win32Memory.TemporaryStorageSize, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
-    
-    win32_state Win32State;
-    InitializeArena(&Win32State.PermArena, Win32Memory.PermanentStorageSize, (u8*)Win32Memory.PermanentStorage);
-    InitializeArena(&Win32State.TempArena, Win32Memory.TemporaryStorageSize, (u8*)Win32Memory.TemporaryStorage);
-    
-    win32_state* Win32State = BootstrapPushStruct(win32_state, PermArena);
-    
-    LPVOID BaseAddress = 0;
     game_memory GameMemory = {};
-    GameMemory.PermanentStorageSize = Megabytes(64);
-    u64 TotalSize = GameMemory.PermanentStorageSize;
-    GameMemory.PermanentStorage = VirtualAlloc(BaseAddress, (size_t)TotalSize,
-                                               MEM_RESERVE|MEM_COMMIT,
-                                               PAGE_READWRITE);
-    
-    GameMemory.TemporaryStorageSize = Megabytes(64);
-    GameMemory.TemporaryStorage = VirtualAlloc(0, GameMemory.TemporaryStorageSize, MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE);
-    
-    config_data ConfigData;
-    LoadConfig("../assets/.config", &ConfigData, &Win32State.PermArena);
     
     GameMemory.ShouldReload = true;
-    GameMemory.ConfigData = ConfigData;
+    
     GameMemory.ExitGame = false;
     
     GameMemory.PlatformAPI.GetAllFilesWithExtension = Win32FindFilesWithExtensions;
@@ -265,17 +259,24 @@ int main(void)
     GameMemory.PlatformAPI.DeallocateMemory = Win32DeallocateMemory;
     Platform = GameMemory.PlatformAPI;
     
+    win32_state* Win32State = BootstrapPushStruct(win32_state, PermArena);
+    
+    config_data ConfigData;
+    LoadConfig("../assets/.config", &ConfigData, &Win32State->PermArena);
+    
+    GameMemory.ConfigData = ConfigData;
+    
     InitKeys();
     render_state RenderState;
     renderer Renderer = {};
     
-    InitializeOpenGL(RenderState, Renderer, &ConfigData, &Win32State.PermArena);
+    InitializeOpenGL(RenderState, Renderer, &ConfigData, &Win32State->PermArena);
     
     game_code Game = LoadGameCode();
     
     //setup asset reloading
     asset_manager AssetManager = {};
-    StartupFileTimeChecks(&AssetManager, &Win32State.TempArena);
+    StartupFileTimeChecks(&AssetManager, &Win32State->TempArena);
     
     u32 FrameCounterForAssetCheck = 0;
     
@@ -286,7 +287,7 @@ int main(void)
     sound_effects SoundEffects = {};
     if (SoundDevice.IsInitialized)
     {
-        LoadSounds(&SoundEffects, &SoundDevice, &Win32State.TempArena);
+        LoadSounds(&SoundEffects, &SoundDevice, &Win32State->TempArena);
         ResetSoundQueue(&SoundQueue);
         SoundDevice.SFXVolume = ConfigData.SFXVolume;
         SoundDevice.MusicVolume = ConfigData.MusicVolume;
@@ -334,7 +335,7 @@ int main(void)
             SoundDevice.Paused = !SoundDevice.Paused;
         }
         
-        ReloadAssets(RenderState, &AssetManager, &Win32State.TempArena);
+        ReloadAssets(RenderState, &AssetManager, &Win32State->TempArena);
         GameMemory.ReloadData = &AssetManager.ReloadData;
         ReloadDlls(&Game);
         
@@ -343,7 +344,7 @@ int main(void)
         
         //CheckLevelVAO(&GameMemory);
         
-        Render(RenderState, Renderer, &Win32State.TempArena);
+        Render(RenderState, Renderer, &Win32State->TempArena);
         PlaySounds(&SoundDevice, &SoundQueue, GameUpdateStruct.EntityPositions, GameUpdateStruct.EntityCount);
         
         SetControllerInvalidKeys();
@@ -360,15 +361,13 @@ int main(void)
         FrameCounterForAssetCheck++;
         if(FrameCounterForAssetCheck == 10)
         {
-            ListenToFileChanges(&AssetManager, &Win32State.TempArena);
+            ListenToFileChanges(&AssetManager, &Win32State->TempArena);
             FrameCounterForAssetCheck = 0;
         }
         
-        Reset(&Win32State.TempArena);
-        
-        VirtualFree(GameMemory.TemporaryStorage, 0, MEM_RELEASE);
-        GameMemory.TemporaryStorage = VirtualAlloc(0, GameMemory.TemporaryStorageSize, MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE);
-        
+        // NOTE(Niels): Do this for game transient state as well?
+        // Or maybe Game itself should do this.. Hmmmm
+        Clear(&Win32State->TempArena);
     }
     
     CleanupSound(&SoundDevice);

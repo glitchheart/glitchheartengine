@@ -82,7 +82,7 @@ static void PushTilemapRenderCommands(renderer& Renderer, game_state& GameState)
     PushBuffer(Renderer, GameState.CurrentLevel.Tilemap.BufferHandle, GameState.CurrentLevel.Tilemap.TextureName, math::v3(90, 0, 0));
 }
 
-static void PushEntityRenderCommands(renderer& Renderer, game_state& GameState)
+static void PushEntityRenderCommands(renderer& Renderer, game_state& GameState, transient_state* TranState)
 {
     qsort(GameState.RenderEntities, GameState.RenderEntityCount, sizeof(render_entity), CompareFunction);
     
@@ -159,7 +159,7 @@ static void PushEntityRenderCommands(renderer& Renderer, game_state& GameState)
         }
         
         // @Incomplete: Glow and special parameters
-        PushSprite(Renderer, CurrentPosition, CurrentScale, CurrentFrame, CurrentTextureOffset, CurrentTexture, CurrentColor, &GameState.TempArena);
+        PushSprite(Renderer, CurrentPosition, CurrentScale, CurrentFrame, CurrentTextureOffset, CurrentTexture, CurrentColor, &TranState->TranArena);
     }
 }
 
@@ -168,8 +168,6 @@ extern "C" UPDATE(Update)
 {
     Platform = GameMemory->PlatformAPI;
     //game_state* GameState = (game_state*)GameMemory->PermanentStorage;
-    
-    
     
     // Maybe reset transient arena here???
     
@@ -184,26 +182,26 @@ extern "C" UPDATE(Update)
     
     Assert(GameState);
     //@Incomplete: Hmmmm
-    //GameState->ReloadData = GameMemory->ReloadData;
+    GameState->ReloadData = GameMemory->ReloadData;
     
-    transient_state* TransientState = GameMemory->TransientState;
+    transient_state* TranState = GameMemory->TranState;
     
-    if(!TransientState)
+    if(!TranState)
     {
         DEBUG_PRINT("Initializing transient state\n");
         
-        TranState = GameMemory->TransientState = BootstrapStruct(transient_state, TranArena);
+        TranState = GameMemory->TranState = BootstrapPushStruct(transient_state, TranArena);
     }
-    Assert(TransientState);
+    Assert(TranState);
     
-    if(!GameState->IsInitialized || GameMemory->IsInitialized)
+    if(!GameState->IsInitialized || !GameMemory->IsInitialized)
     {
         GameState->TESTMODEL = PushStruct(&GameState->TotalArena, model);
         
         GameState->TESTMODEL->Position = math::v3(0, 0, 0);
         GameState->TESTMODEL->Scale = math::v3(1, 1, 1);
         
-        LoadTextures(Renderer, &TransientState->TranArena);
+        LoadTextures(Renderer, &TranState->TranArena);
         
         model Model1;
         Model1.Position = math::v3(0, 0, 0);
@@ -231,12 +229,12 @@ extern "C" UPDATE(Update)
         Model6.Position = math::v3(-10.0f, 5.0f, 0);
         Model6.Scale = math::v3(1.0, 1.0, 1.0);
         
-        LoadModel(Renderer, "../assets/models/knight.modl", &Model1, &TransientState->TranArena);
-        LoadModel(Renderer, "../assets/models/red_riding.modl", &Model2, &TransientState->TranArena);
-        LoadModel(Renderer, "../assets/models/capsule.modl", &Model3, &TransientState->TranArena);
-        LoadModel(Renderer, "../assets/models/mask_boy.modl", &Model4, &TransientState->TranArena);
-        LoadModel(Renderer, "../assets/models/cube.modl", &Model5, &TransientState->TranArena);
-        LoadModel(Renderer, "../assets/models/panther_monster.modl", &Model6, &TransientState->TranArena);
+        LoadModel(Renderer, "../assets/models/knight.modl", &Model1, &TranState->TranArena);
+        LoadModel(Renderer, "../assets/models/red_riding.modl", &Model2, &TranState->TranArena);
+        LoadModel(Renderer, "../assets/models/capsule.modl", &Model3, &TranState->TranArena);
+        LoadModel(Renderer, "../assets/models/mask_boy.modl", &Model4, &TranState->TranArena);
+        LoadModel(Renderer, "../assets/models/cube.modl", &Model5, &TranState->TranArena);
+        LoadModel(Renderer, "../assets/models/panther_monster.modl", &Model6, &TranState->TranArena);
         
         GameState->TestModels[GameState->Models++] = Model1;
         //GameState->TestModels[GameState->Models++] = Model2;
@@ -271,7 +269,7 @@ extern "C" UPDATE(Update)
             Renderer.CurrentCameraHandle = GameState->GameCameraHandle;
             Renderer.Cameras[GameState->GameCameraHandle].Zoom = GameMemory->ConfigData.Zoom;
             GameState->InitialZoom = GameMemory->ConfigData.Zoom;
-            GameState->LevelPath = PushString(&GameState->PermArena, GameMemory->ConfigData.StartingLevelFilePath);
+            GameState->LevelPath = PushString(&GameState->TotalArena, GameMemory->ConfigData.StartingLevelFilePath);
             
             GameState->ShouldReload = GameMemory->ShouldReload;
             GameState->Console = {};
@@ -321,7 +319,7 @@ extern "C" UPDATE(Update)
             LoadGameDataFile(GameState);
             srand((u32)time(NULL));
             
-            LoadAnimations(GameState, Renderer);
+            LoadAnimations(GameState, TranState, Renderer);
             InitCommands();
             
             auto& EditorCamera = Renderer.Cameras[GameState->EditorCameraHandle];
@@ -337,7 +335,7 @@ extern "C" UPDATE(Update)
             
         }
         
-        LoadLevelFromFile(GameState->LevelPath, &GameState->CurrentLevel, GameState, Renderer, SoundQueue);
+        LoadLevelFromFile(GameState->LevelPath, &GameState->CurrentLevel, GameState, TranState,  Renderer, SoundQueue);
         
         auto& GameCamera = Renderer.Cameras[GameState->GameCameraHandle];
         
@@ -369,7 +367,7 @@ extern "C" UPDATE(Update)
     {
         if(GameState->ReloadData->ReloadPlayerFile)
         {
-            LoadPlayerData(GameState, SoundQueue, 0);
+            LoadPlayerData(GameState, TranState, SoundQueue, 0);
             GameState->ReloadData->ReloadPlayerFile = false;
         }
         
@@ -380,7 +378,7 @@ extern "C" UPDATE(Update)
                 auto Entity = &GameState->Entities[EntityIndex];
                 if(Entity->Type == Entity_Enemy && Entity->Enemy.EnemyType == Enemy_Skeleton && !IsSet(Entity, EFlag_Dead))
                 {
-                    LoadSkeletonData(GameState,EntityIndex);
+                    LoadSkeletonData(GameState, TranState, EntityIndex);
                 }
             }
             GameState->ReloadData->ReloadSkeletonFile = false;
@@ -393,7 +391,7 @@ extern "C" UPDATE(Update)
                 auto& Entity = GameState->Entities[EntityIndex];
                 if(Entity.Type == Entity_Bonfire)
                 {
-                    LoadBonfireData(GameState, SoundQueue, EntityIndex);
+                    LoadBonfireData(GameState, TranState, SoundQueue, EntityIndex);
                 }
             }
             
@@ -407,10 +405,10 @@ extern "C" UPDATE(Update)
             GameState->Console.Buffer[GameState->Console.BufferIndex++] = InputController->CurrentCharacter;
     }
     
-    CheckConsoleInput(GameState, InputController, DeltaTime);
+    CheckConsoleInput(GameState, TranState, InputController, DeltaTime);
     
     if(GameState->GameMode == Mode_Editor)
-        CheckEditorUIInput(GameState, Renderer, InputController, DeltaTime);
+        CheckEditorUIInput(GameState, TranState, Renderer, InputController, DeltaTime);
     
     if((KEY(Key_LeftCtrl) || KEY(Key_RightCtrl)))
     {
@@ -429,7 +427,7 @@ extern "C" UPDATE(Update)
             {
                 GameState->RenderLight = true;
                 GameState->GodModeOn = false;
-                SaveLevelToFile(GameState->LevelPath, &GameState->CurrentLevel, GameState, Renderer);
+                SaveLevelToFile(GameState->LevelPath, &GameState->CurrentLevel, GameState, TranState, Renderer);
                 ReloadCurrentLevel(GameState);
                 GameState->GameMode = Mode_InGame;
             }
@@ -733,7 +731,7 @@ extern "C" UPDATE(Update)
         case Mode_Editor:
         {
             Center = Renderer.Cameras[GameState->EditorCameraHandle].Center;
-            EditorUpdateEntities(GameState, Renderer, InputController, SoundQueue, DeltaTime);
+            EditorUpdateEntities(GameState, TranState, Renderer, InputController, SoundQueue, DeltaTime);
             
             switch(GameState->EditorState.PlacementMode)
             {
@@ -856,7 +854,7 @@ extern "C" UPDATE(Update)
     
     char FPSBuffer[20];
     sprintf(FPSBuffer, "%f", Renderer.FPS);
-    PushEntityRenderCommands(Renderer, *GameState);
+    PushEntityRenderCommands(Renderer, *GameState, TranState);
     
     for(i32 Index = 0; Index < GameState->Models; Index++)
     {

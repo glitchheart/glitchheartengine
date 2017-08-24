@@ -93,7 +93,8 @@ void* AllocateMemory(size_t Size)
     return Platform.AllocateMemory(Size);
 }
 
-void DeallocateMemory(void* Memory)
+
+void DeallocateMemory(void* Block)
 {
-    return Platform.DeallocateMemory(Memory);
+    return Platform.DeallocateMemory((platform_memory_block*)Block);
 }
