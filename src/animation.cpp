@@ -138,8 +138,6 @@ static void LoadAnimationFromFile(const char* FilePath, game_state* GameState, r
                 DEBUG_PRINT("Texture: '%s' could not be found. Animation '%s' will not be loaded. Please add the missing texture.\n", TextureName, Animation.Name);
                 return;
             }
-            
-            printf("dix\n");
         }
         
         GameState->AnimationArray[GameState->AnimationIndex] = Animation;
