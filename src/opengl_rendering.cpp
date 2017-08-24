@@ -1417,7 +1417,7 @@ static void RenderCommands(render_state& RenderState, renderer& Renderer, memory
     
     for(i32 Index = 0; Index < Renderer.LightCommandCount; Index++)
     {
-        const render_command& Command = *((render_command*)Renderer.LightCommands.Base + Index);
+        const render_command& Command =*((render_command*)Renderer.LightCommands.CurrentBlock->Base + Index);
         
         switch(Command.Type)
         {
@@ -1518,13 +1518,13 @@ static void RenderCommands(render_state& RenderState, renderer& Renderer, memory
     RenderState.SpotlightData.NumLights = 0;
     RenderState.DirectionalLightData.NumLights = 0;
     RenderState.PointLightData.NumLights = 0;
-    Reset(&Renderer.LightCommands);
+    Clear(&Renderer.LightCommands);
     
     glEnable(GL_DEPTH_TEST);
     
     for(i32 Index = 0; Index < Renderer.CommandCount; Index++)
     {
-        const render_command& Command = *((render_command*)Renderer.Commands.Base + Index);
+        const render_command& Command = *((render_command*)Renderer.Commands.CurrentBlock->Base + Index);
         
         switch(Command.Type)
         {
@@ -1562,13 +1562,13 @@ static void RenderCommands(render_state& RenderState, renderer& Renderer, memory
     }
     
     Renderer.CommandCount = 0;
-    Reset(&Renderer.Commands);
+    Clear(&Renderer.Commands);
     
     glDisable(GL_DEPTH_TEST);
     
     for(i32 Index = 0; Index < Renderer.UICommandCount; Index++)
     {
-        const render_command& Command = *((render_command*)Renderer.UICommands.Base + Index);
+        const render_command& Command = *((render_command*)Renderer.UICommands.CurrentBlock->Base + Index);
         
         switch(Command.Type)
         {
@@ -1606,7 +1606,7 @@ static void RenderCommands(render_state& RenderState, renderer& Renderer, memory
     }
     
     Renderer.UICommandCount = 0;
-    Reset(&Renderer.UICommands);
+    Clear(&Renderer.UICommands);
 }
 
 static void Render(render_state& RenderState, renderer& Renderer, memory_arena* TempArena)

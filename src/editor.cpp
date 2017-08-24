@@ -251,7 +251,7 @@ static void CreateEditorButtons(game_state* GameState, renderer& Renderer)
     GameState->EditorState.Loaded = true;
 }
 
-static void CheckEditorUIInput(game_state* GameState, renderer& Renderer, input_controller* InputController, r64 DeltaTime)
+static void CheckEditorUIInput(game_state* GameState, transient_state* TranState, renderer& Renderer, input_controller* InputController, r64 DeltaTime)
 {
     switch(GameState->EditorState.Mode)
     {
@@ -322,12 +322,12 @@ static void CheckEditorUIInput(game_state* GameState, renderer& Renderer, input_
     if(GameState->EditorState.SelectedEntity && KEY_DOWN(Key_Delete))
     {
         DeleteEntity(GameState,GameState->EditorState.SelectedEntity->EntityIndex);
-        SaveLevelToFile(GameState->LevelPath, &GameState->CurrentLevel, GameState, Renderer);
+        SaveLevelToFile(GameState->LevelPath, &GameState->CurrentLevel, GameState, TranState,  Renderer);
     }
 }
 
 
-static void EditorUpdateEntities(game_state* GameState, renderer& Renderer, input_controller* InputController, sound_queue* SoundQueue, r64 DeltaTime)
+static void EditorUpdateEntities(game_state* GameState, transient_state* TranState, renderer& Renderer, input_controller* InputController, sound_queue* SoundQueue, r64 DeltaTime)
 {
     if(KEY_DOWN(Key_Escape))
     {
@@ -396,7 +396,7 @@ static void EditorUpdateEntities(game_state* GameState, renderer& Renderer, inpu
                     ToggleAnimationFields(&GameState->EditorState, false);
                     if(GameState->EditorState.Mode == Editor_Level)
                     {
-                        SaveLevelToFile(GameState->LevelPath, &GameState->CurrentLevel, GameState, Renderer);
+                        SaveLevelToFile(GameState->LevelPath, &GameState->CurrentLevel, GameState, TranState, Renderer);
                     }
                     
                     ReloadCurrentLevel(GameState);
@@ -434,7 +434,7 @@ static void EditorUpdateEntities(game_state* GameState, renderer& Renderer, inpu
                         break;
                         case Button_SaveAndExit:
                         {
-                            SaveLevelToFile(GameState->LevelPath, &GameState->CurrentLevel, GameState, Renderer);
+                            SaveLevelToFile(GameState->LevelPath, &GameState->CurrentLevel, GameState, TranState, Renderer);
                             ReloadCurrentLevel(GameState);
                             GameState->GameMode = Mode_InGame;
                         }
@@ -496,7 +496,7 @@ static void EditorUpdateEntities(game_state* GameState, renderer& Renderer, inpu
             u32 SelectedTile = GameState->EditorState.SelectedTileType;
             GameState->CurrentLevel.Tilemap.Tiles[SelectedTile].IsSolid = GameState->EditorState.TileIsSolidCheckbox->Checked;
             UpdateTileData(SelectedTile, GameState->CurrentLevel.Tilemap.Tiles[SelectedTile].IsSolid, &GameState->CurrentLevel.Tilemap);
-            SaveTilesheetMetaFile(Concat(Concat("../assets/textures/tilesheets/", GameState->CurrentLevel.SheetName, &GameState->TempArena), ".tm", &GameState->TempArena), Renderer, GameState->CurrentLevel, false);
+            SaveTilesheetMetaFile(Concat(Concat("../assets/textures/tilesheets/", GameState->CurrentLevel.SheetName, &TranState->TranArena), ".tm", &TranState->TranArena), Renderer, GameState->CurrentLevel, false);
             
             // @Incomplete: Should call SaveTilesheetMetafile!!!!
         }
@@ -584,7 +584,7 @@ static void EditorUpdateEntities(game_state* GameState, renderer& Renderer, inpu
             {
                 if(KEY_DOWN(Key_S))
                 {
-                    SaveLevelToFile(GameState->LevelPath, &GameState->CurrentLevel, GameState, Renderer);
+                    SaveLevelToFile(GameState->LevelPath, &GameState->CurrentLevel, GameState, TranState, Renderer);
                 }
                 
                 if(GameState->EditorState.CreateNewLevelButton->Clicked)
@@ -593,7 +593,7 @@ static void EditorUpdateEntities(game_state* GameState, renderer& Renderer, inpu
                     Level.SheetName = "overworld1";
                     Level.Name = "test_level";
                     
-                    CreateNewLevelWithSize("../assets/levels/level_new.plv", 200, 120, &Level,  Renderer, GameState, SoundQueue);
+                    CreateNewLevelWithSize("../assets/levels/level_new.plv", 200, 120, &Level,  Renderer, GameState, TranState, SoundQueue);
                     GameState->CurrentLevel = Level;
                 }
                 
@@ -711,17 +711,17 @@ static void EditorUpdateEntities(game_state* GameState, renderer& Renderer, inpu
                                 {
                                     case Placement_Entity_Skeleton:
                                     {
-                                        LoadSkeletonData(GameState, -1, math::v3(X, 0.0f, Z));
+                                        LoadSkeletonData(GameState, TranState, -1, math::v3(X, 0.0f, Z));
                                     }
                                     break;
                                     case Placement_Entity_Bonfire:
                                     {
-                                        LoadBonfireData(GameState, SoundQueue, -1, math::v3(X, 0.0f,  Z));
+                                        LoadBonfireData(GameState, TranState, SoundQueue, -1, math::v3(X, 0.0f,  Z));
                                     }
                                     break;
                                 }
                                 
-                                SaveLevelToFile(GameState->LevelPath, &GameState->CurrentLevel, GameState, Renderer);
+                                SaveLevelToFile(GameState->LevelPath, &GameState->CurrentLevel, GameState, TranState, Renderer);
                             }
                         }
                         break;
@@ -791,7 +791,7 @@ static void EditorUpdateEntities(game_state* GameState, renderer& Renderer, inpu
                                                     }
                                                     
                                                     Tilemap->RenderInfo.Dirty = true;
-                                                    LoadTilemapBuffer(Renderer, *Tilemap, &GameState->TempArena);
+                                                    LoadTilemapBuffer(Renderer, *Tilemap, &TranState->TranArena);
                                                 }
                                             }
                                         }
@@ -927,7 +927,7 @@ static void EditorUpdateEntities(game_state* GameState, renderer& Renderer, inpu
                             ToggleAnimationFields(&GameState->EditorState, false);
                             GameState->EditorState.LoadedAnimation->Loop = GameState->EditorState.ShouldLoop;
                             
-                            SaveAnimationToFile(GameState, *GameState->EditorState.LoadedAnimation, Renderer);
+                            SaveAnimationToFile(GameState, TranState, *GameState->EditorState.LoadedAnimation, Renderer);
                             GameState->EditorState.LoadedAnimation = 0;
                             GameState->EditorState.HasLoadedAnimations = false;
                         }
@@ -960,7 +960,7 @@ static void EditorUpdateEntities(game_state* GameState, renderer& Renderer, inpu
                     
                     if(LoadedAnimation->FrameCount > 0)
                     {
-                        LoadedAnimation->Frames = PushArray(&GameState->PermArena, LoadedAnimation->FrameCount, sprite_sheet_frame);
+                        LoadedAnimation->Frames = PushArray(&GameState->TotalArena, LoadedAnimation->FrameCount, sprite_sheet_frame);
                         
                         i32 X = (i32)LoadedAnimation->FrameSize.x * (i32)LoadedAnimation->FrameOffset.x;
                         i32 Y = (i32)LoadedAnimation->FrameSize.y * (i32)LoadedAnimation->FrameOffset.y;

@@ -128,7 +128,7 @@ void Hit(game_state* GameState, renderer& Renderer, sound_queue* SoundQueue, ent
     }
 }
 
-static void LoadEntityData(FILE* File, entity* Entity, game_state* GameState, b32 IsReload = false)
+static void LoadEntityData(FILE* File, entity* Entity, game_state* GameState, transient_state* TranState, b32 IsReload = false)
 {
     if(!IsReload)
     {
@@ -247,7 +247,7 @@ static void LoadEntityData(FILE* File, entity* Entity, game_state* GameState, b3
         }
         else if(StartsWith(LineBuffer, "name"))
         {
-            Entity->Name = PushString(&GameState->PermArena, 30);
+            Entity->Name = PushString(&GameState->TotalArena, 30);
             sscanf(LineBuffer, "name %s", Entity->Name);
         }
         else if(StartsWith(LineBuffer, "active"))
@@ -262,7 +262,7 @@ static void LoadEntityData(FILE* File, entity* Entity, game_state* GameState, b3
         }
         else if(StartsWith(LineBuffer, "layer"))
         {
-            char* LayerName = PushString(&GameState->TempArena, 30);
+            char* LayerName = PushString(&TranState->TranArena, 30);
             sscanf(LineBuffer, "layer %s", LayerName);
             
             if(strcmp(LayerName, "Layer_Player") == 0)
@@ -299,7 +299,7 @@ static void LoadEntityData(FILE* File, entity* Entity, game_state* GameState, b3
         }
         else if(StartsWith(LineBuffer, "animation"))
         {
-            char* AnimationName = PushString(&GameState->TempArena, 30);
+            char* AnimationName = PushString(&TranState->TranArena, 30);
             sscanf(LineBuffer, "animation %s", AnimationName);
             PlayAnimation(Entity, AnimationName, GameState);
         }
@@ -475,7 +475,7 @@ static void LoadEnemyData(FILE* File, entity* Entity, game_state* GameState)
             }
             else if(StartsWith(LineBuffer, "healthbar"))
             {
-                Entity->Enemy.Healthbar = PushStruct(&GameState->PermArena, entity_healthbar);
+                Entity->Enemy.Healthbar = PushStruct(&GameState->TotalArena, entity_healthbar);
                 sscanf(LineBuffer, "healthbar offset %f %f scale %f %f",&Entity->Enemy.Healthbar->Offset.x,
                        &Entity->Enemy.Healthbar->Offset.y,&Entity->Enemy.Healthbar->Scale.x,
                        &Entity->Enemy.Healthbar->Scale.y);
@@ -489,11 +489,11 @@ static void LoadEnemyData(FILE* File, entity* Entity, game_state* GameState)
     }
 }
 
-void EnemyWander(game_state* GameState, entity* Entity)
+void EnemyWander(game_state* GameState, transient_state* TranState, entity* Entity)
 {
     if(Entity->Enemy.WaypointCount > 0)
     {
-        auto WalkString = Concat(Entity->Name,"_walk", &GameState->TempArena);
+        auto WalkString = Concat(Entity->Name,"_walk", &TranState->TranArena);
         PlayAnimation(Entity, WalkString, GameState);
         
         auto CurrentWaypoint = math::v3(Entity->Enemy.Waypoints[Entity->Enemy.WaypointIndex].x,
@@ -590,7 +590,7 @@ AI_FUNC(SkeletonWandering)
     
 }
 
-static void LoadBonfireData(game_state* GameState, sound_queue* SoundQueue, i32 Handle = -1, math::v3 Position = math::v3(), b32 IsTemporary = false)
+static void LoadBonfireData(game_state* GameState, transient_state* TranState, sound_queue* SoundQueue, i32 Handle = -1, math::v3 Position = math::v3(), b32 IsTemporary = false)
 {
     FILE* File;
     File = fopen("../assets/entities/bonfire.dat", "r");
@@ -606,7 +606,7 @@ static void LoadBonfireData(game_state* GameState, sound_queue* SoundQueue, i32 
     
     if(File)
     {
-        LoadEntityData(File, Entity, GameState, Handle != -1);
+        LoadEntityData(File, Entity, GameState, TranState, Handle != -1);
         if(IsTemporary)
         {
             AddFlags(Entity, EFlag_IsTemporary);
@@ -645,7 +645,7 @@ static void LoadBonfireData(game_state* GameState, sound_queue* SoundQueue, i32 
     }
 }
 
-static void LoadSkeletonData(game_state* GameState, i32 Handle = -1, math::v3 Position = math::v3())
+static void LoadSkeletonData(game_state* GameState, transient_state* TranState, i32 Handle = -1, math::v3 Position = math::v3())
 {
     FILE* File;
     File = fopen("../assets/entities/skeleton.dat", "r");
@@ -662,7 +662,7 @@ static void LoadSkeletonData(game_state* GameState, i32 Handle = -1, math::v3 Po
     
     if(File)
     {
-        LoadEntityData(File,Entity, GameState, Handle != -1);
+        LoadEntityData(File,Entity, GameState, TranState, Handle != -1);
         LoadEnemyData(File,Entity, GameState);
         
         Entity->Enemy.EnemyCollider = Entity->CollisionAABB;
@@ -712,13 +712,13 @@ static void LoadSkeletonData(game_state* GameState, i32 Handle = -1, math::v3 Po
     }
 }
 
-void PlaceCheckpoint(game_state* GameState, sound_queue* SoundQueue, entity* Entity)
+void PlaceCheckpoint(game_state* GameState, transient_state* TranState, sound_queue* SoundQueue, entity* Entity)
 {
     auto CheckpointPos = math::v3(Entity->Position.x + 1, Entity->Position.y, Entity->Position.z + 1);
     
     if(!GameState->CharacterData.HasCheckpoint)
     {
-        LoadBonfireData(GameState, SoundQueue, -1, CheckpointPos, true);
+        LoadBonfireData(GameState, TranState, SoundQueue, -1, CheckpointPos, true);
         GameState->CharacterData.CheckpointHandle = GameState->EntityCount - 1;
     }
     else
@@ -734,7 +734,7 @@ void PlaceCheckpoint(game_state* GameState, sound_queue* SoundQueue, entity* Ent
     SaveGame(GameState);
 }
 
-static void LoadPlayerData(game_state* GameState, sound_queue* SoundQueue, i32 Handle = -1, math::v3 Position = math::v3())
+static void LoadPlayerData(game_state* GameState, transient_state* TranState, sound_queue* SoundQueue, i32 Handle = -1, math::v3 Position = math::v3())
 {
     FILE* File;
     File = fopen("../assets/entities/player.dat", "r");
@@ -755,7 +755,7 @@ static void LoadPlayerData(game_state* GameState, sound_queue* SoundQueue, i32 H
     {
         ClearFlags(Entity, EFlag_Dead);
         
-        LoadEntityData(File, Entity, GameState, Handle != -1);
+        LoadEntityData(File, Entity, GameState, TranState,  Handle != -1);
         
         char LineBuffer[255];
         
@@ -886,7 +886,7 @@ static void LoadPlayerData(game_state* GameState, sound_queue* SoundQueue, i32 H
             
             Entity->Position = math::v3(Entity->Position.x, Entity->Position.y, Entity->Position.z);
             
-            LoadBonfireData(GameState, SoundQueue, -1, GameState->CharacterData.CurrentCheckpoint, true);
+            LoadBonfireData(GameState, TranState, SoundQueue, -1, GameState->CharacterData.CurrentCheckpoint, true);
             GameState->CharacterData.CheckpointHandle = GameState->EntityCount - 1;
             GameState->LastCharacterData.CheckpointHandle = GameState->EntityCount - 1;
             GameState->LastCharacterData.CurrentCheckpoint = GameState->CharacterData.CurrentCheckpoint;

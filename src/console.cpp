@@ -87,7 +87,7 @@ void ExecuteCommand(game_state *GameState, transient_state* TranState)
     }
 }
 
-static void CheckConsoleInput(game_state* GameState, input_controller* InputController, r64 DeltaTime)
+static void CheckConsoleInput(game_state* GameState, transient_state* TranState,  input_controller* InputController, r64 DeltaTime)
 {
     if(GameState->Console.Open && GameState->Console.CurrentTime < GameState->Console.TimeToAnimate)
     {
@@ -129,6 +129,6 @@ static void CheckConsoleInput(game_state* GameState, input_controller* InputCont
     
     if (GetKeyDown(Key_Enter, InputController) && GameState->Console.Open)
     {
-        ExecuteCommand(GameState);
+        ExecuteCommand(GameState, TranState);
     }
 }

@@ -1,15 +1,9 @@
 #ifndef MAIN_H
 #define MAIN_H
 
-#include "platform.h"
-
-struct win32_memory
+struct win32_memory_block
 {
-    u64 PermanentStorageSize;
-    void* PermanentStorage;
-    
-    u64 TemporaryStorageSize;
-    void* TemporaryStorage;
+    platform_memory_block Block;
 };
 
 struct win32_state
@@ -17,7 +11,6 @@ struct win32_state
     memory_arena PermArena;
     memory_arena TempArena;
 };
-
 
 
 #endif

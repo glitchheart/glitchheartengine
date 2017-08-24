@@ -1,29 +1,14 @@
 #ifndef MEMORY_H
 #define MEMORY_H
 
-struct memory_block
-{
-    u64 Flags;
-    u64 Size;
-    u8* Base;
-    umm Used;
-    memory_block* Prev;
-};
+struct memory_arena;
 
 struct memory_arena
 {
-    memory_block* CurrentBlock;
+    platform_memory_block* CurrentBlock;
     u64 MinimumBlockSize;
     
     u64 AllocationFlags;
-    u32 TempCount;
-};
-
-struct temporary_memory
-{
-    memory_arena* Arena;
-    memory_block* Block;
-    umm Used;
 };
 
 enum Arena_Flags
@@ -125,7 +110,7 @@ void* PushSize_(memory_arena* Arena, sz SizeInit, arena_push_params Params = Def
         sz BlockSize = Max(Size, Arena->MinimumBlockSize);
         
         //@Incomplete: Send some sort of allocation flags here
-        memory_block* NewBlock = Platform.AllocateMemory(BlockSize);
+        platform_memory_block* NewBlock = Platform.AllocateMemory(BlockSize);
         
         NewBlock->Prev = Arena->CurrentBlock;
         Arena->CurrentBlock = NewBlock;
@@ -146,17 +131,17 @@ void* PushSize_(memory_arena* Arena, sz SizeInit, arena_push_params Params = Def
     return Result;
 }
 
-
 #define Copy(Dest, Src, Size, Arena, type) Dest = PushSize(Arena, Size, type);\
 memcpy(Dest, Src, Size);
 
 
-void FreeLastBlock(memory_arena* Arena)
+inline void FreeLastBlock(memory_arena* Arena)
 {
-    memory_block* Free = Arena->CurrentBlock;
+    platform_memory_block* Free = Arena->CurrentBlock;
     Arena->CurrentBlock = Free->Prev;
     Platform.DeallocateMemory(Free);
 }
+
 
 static void Clear(memory_arena *Arena)
 {
@@ -229,7 +214,7 @@ char* PushString(memory_arena* Arena, sz Length, char* Source)
 }
 
 #define BootstrapPushStruct(type, Member, ...) (type*)BootstrapPushSize_(sizeof(type), OffsetOf(type, Member), __VA_ARGS__)
-inline void* BootStrapPushSize_(umm StructSize, umm OffsetToArena,
+inline void* BootstrapPushSize_(umm StructSize, umm OffsetToArena,
                                 arena_bootstrap_params BootstrapParams = DefaultBootstrapParams(),
                                 arena_push_params Params = DefaultArenaParams())
 {

@@ -1,10 +1,8 @@
 #ifndef SHARED_H
 #define SHARED_H
 
-#include "math.h"
 #include "memory.h"
-
-
+#include "rendering.h"
 
 inline char* Concat(const char *s1, const char *s2, memory_arena* Arena)
 {
