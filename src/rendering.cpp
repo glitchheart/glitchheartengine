@@ -28,19 +28,12 @@ static inline void CameraTransform(renderer& Renderer, camera& Camera, math::v3 
         
         r32 N = 0.01f;
         r32 F = 100.0f;
-        r32 B, T, L, R;
         r32 AngleOfView = 90.0f;
-        
-        //math::Perspective(AngleOfView, Renderer.Viewport[2] / Renderer.Viewport[3], N, F, B, T, L, R);
-        //math::m4 Frustum = math::Frustum(B, T, L, R, N, F);
-        
-        //Camera.ProjectionMatrix = Frustum;
         
         Camera.ProjectionMatrix = math::Perspective((r32)Renderer.Viewport[2] / (r32)Renderer.Viewport[3], 0.60f, 0.1f, 100.0f);
         
         Camera.ViewMatrix = math::m4(1.0f);
         Camera.ViewMatrix = math::Translate(Camera.ViewMatrix, Camera.P);
-        Camera.ViewMatrix = math::Rotate(Camera.ViewMatrix, 54.0f, math::v3(1,0,0));
         
         Camera.ViewMatrix = math::LookAt(Camera.P, math::v3(0,0,0));
         
@@ -63,16 +56,16 @@ static void LoadTexture(char* TextureName, const char* FullTexturePath, renderer
     Renderer.TextureMap[TextureName] = TextureData;
 }
 
-static void LoadTextures(renderer& Renderer, memory_arena* TempArena)
+static void LoadTextures(renderer& Renderer, memory_arena* PermArena)
 {
     texture_data_Map_Init(&Renderer.TextureMap, HashStringJenkins, 64);
     
     directory_data DirData = {};
-    Platform.GetAllFilesWithExtension("../assets/textures/", "png", &DirData, true, TempArena);
+    Platform.GetAllFilesWithExtension("../assets/textures/", "png", &DirData, true);
     
     for (i32 FileIndex = 0; FileIndex < DirData.FilesLength; FileIndex++)
     {
-        LoadTexture(DirData.FileNames[FileIndex], DirData.FilePaths[FileIndex], Renderer, TempArena);
+        LoadTexture(DirData.FileNames[FileIndex], DirData.FilePaths[FileIndex], Renderer, PermArena);
     }
 }
 
@@ -142,7 +135,7 @@ static void PushOutlinedRect(renderer& Renderer, math::v3 Position, math::v3 Siz
     RenderCommand->IsUI = IsUI;
 }
 
-static void PushSprite(renderer& Renderer, math::v3 Position, math::v3 Scale, math::v2 Frame, math::v2 TextureOffset, const char* TextureName, math::rgba Color, memory_arena* TempArena, b32 IsUI = false)
+static void PushSprite(renderer& Renderer, math::v3 Position, math::v3 Scale, math::v2 Frame, math::v2 TextureOffset, const char* TextureName, math::rgba Color, b32 IsUI = false)
 {
     render_command* RenderCommand = PushNextCommand(Renderer, IsUI);
     
@@ -152,7 +145,7 @@ static void PushSprite(renderer& Renderer, math::v3 Position, math::v3 Scale, ma
     RenderCommand->Sprite.Frame = Frame;
     RenderCommand->Sprite.TextureOffset = TextureOffset;
     
-    RenderCommand->Sprite.TextureName = PushString(TempArena, (u32)strlen(TextureName), TextureName);
+    RenderCommand->Sprite.TextureName = PushTempString(TextureName);
     
     RenderCommand->Sprite.Color = Color;
     RenderCommand->IsUI = IsUI;
@@ -264,7 +257,7 @@ static b32 IsEOF(chunk_format& Format)
         Format.Format[3] == ' ';
 }
 
-static void LoadModel(renderer& Renderer, char* FilePath, model* Model, memory_arena* TempArena)
+static void LoadModel(renderer& Renderer, char* FilePath, model* Model)
 {
     model_header Header = {};
     
@@ -298,22 +291,22 @@ static void LoadModel(renderer& Renderer, char* FilePath, model* Model, memory_a
                 
                 fread(&MHeader, sizeof(mesh_header), 1, File);
                 
-                r32* VertexBuffer = PushSize(TempArena, MHeader.VertexChunkSize,  r32);
+                r32* VertexBuffer = PushTempSize(MHeader.VertexChunkSize,  r32);
                 
                 fread(VertexBuffer, MHeader.VertexChunkSize, 1, File);
                 
                 Data.HasNormals = MHeader.NumNormals > 0;
                 Data.HasUVs = MHeader.NumUVs > 0;
                 
-                i32* IndexBuffer = PushSize(TempArena, MHeader.FacesChunkSize, i32);
+                i32* IndexBuffer = PushTempSize(MHeader.FacesChunkSize, i32);
                 
                 fread(IndexBuffer, MHeader.FacesChunkSize, 1, File);
                 
-                Copy(Data.VertexBuffer, VertexBuffer, MHeader.VertexChunkSize, TempArena, r32);
+                CopyTemp(Data.VertexBuffer, VertexBuffer, MHeader.VertexChunkSize, r32);
                 
                 Data.VertexBufferSize = MHeader.NumVertices * 3 + MHeader.NumNormals * 3 + MHeader.NumUVs * 2;
                 
-                Copy(Data.IndexBuffer, IndexBuffer, MHeader.FacesChunkSize, TempArena, u32);
+                CopyTemp(Data.IndexBuffer, IndexBuffer, MHeader.FacesChunkSize, u32);
                 
                 Data.IndexBufferSize = MHeader.NumFaces * 3;
                 

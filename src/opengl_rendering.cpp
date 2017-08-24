@@ -51,7 +51,7 @@ static b32 ShouldCloseWindow(render_state& RenderState)
     return glfwWindowShouldClose(RenderState.Window); 
 }
 
-static GLint ShaderCompilationErrorChecking(const char* ShaderName, GLuint Shader, memory_arena* TempArena)
+static GLint ShaderCompilationErrorChecking(const char* ShaderName, GLuint Shader)
 {
     GLint IsCompiled = 0;
     glGetShaderiv(Shader, GL_COMPILE_STATUS, &IsCompiled);
@@ -61,7 +61,7 @@ static GLint ShaderCompilationErrorChecking(const char* ShaderName, GLuint Shade
         glGetShaderiv(Shader, GL_INFO_LOG_LENGTH, &MaxLength);
         
         // The maxLength includes the NULL character
-        GLchar* ErrorLog = PushSize(TempArena, MaxLength, GLchar);
+        GLchar* ErrorLog = PushTempSize(MaxLength, GLchar);
         
         glGetShaderInfoLog(Shader, MaxLength, &MaxLength, ErrorLog);
         
@@ -73,29 +73,29 @@ static GLint ShaderCompilationErrorChecking(const char* ShaderName, GLuint Shade
     return IsCompiled;
 }
 
-static GLuint LoadShader(const char* FilePath, shader *Shd, memory_arena* TempArena)
+static GLuint LoadShader(const char* FilePath, shader *Shd, memory_arena* PermArena)
 {
     Shd->VertexShader = glCreateShader(GL_VERTEX_SHADER);
-    char* VertexString = Concat(FilePath,".vert", TempArena);
-    GLchar *VertexText = LoadShaderFromFile(VertexString, TempArena);
+    char* VertexString = Concat(FilePath,".vert");
+    GLchar *VertexText = LoadShaderFromFile(VertexString, PermArena);
     
     glShaderSource(Shd->VertexShader, 1, &VertexText, NULL);
     glCompileShader(Shd->VertexShader);
     
-    if (!ShaderCompilationErrorChecking(FilePath, Shd->VertexShader, TempArena))
+    if (!ShaderCompilationErrorChecking(FilePath, Shd->VertexShader))
     {
         Shd->Program = 0;
         return GL_FALSE;
     }
     
     Shd->FragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    char* FragmentString = Concat(FilePath,".frag", TempArena);
-    GLchar *FragmentText = LoadShaderFromFile(FragmentString, TempArena);
+    char* FragmentString = Concat(FilePath,".frag");
+    GLchar *FragmentText = LoadShaderFromFile(FragmentString, PermArena);
     
     glShaderSource(Shd->FragmentShader, 1, &FragmentText, NULL);
     glCompileShader(Shd->FragmentShader);
     
-    if (!ShaderCompilationErrorChecking(FilePath, Shd->FragmentShader, TempArena))
+    if (!ShaderCompilationErrorChecking(FilePath, Shd->FragmentShader))
     {
         Shd->Program = 0;
         return GL_FALSE;
@@ -110,17 +110,17 @@ static GLuint LoadShader(const char* FilePath, shader *Shd, memory_arena* TempAr
     return GL_TRUE;
 }
 
-static GLuint LoadVertexShader(const char* FilePath, shader *Shd, memory_arena* TempArena)
+static GLuint LoadVertexShader(const char* FilePath, shader *Shd, memory_arena* PermArena)
 {
     Shd->Program = glCreateProgram();
     
     Shd->VertexShader = glCreateShader(GL_VERTEX_SHADER);
-    char* VertexString = Concat(FilePath,".vert", TempArena);
-    GLchar *VertexText = LoadShaderFromFile(VertexString, TempArena);
+    char* VertexString = Concat(FilePath,".vert");
+    GLchar *VertexText = LoadShaderFromFile(VertexString, PermArena);
     glShaderSource(Shd->VertexShader, 1, &VertexText, NULL);
     glCompileShader(Shd->VertexShader);
     
-    if (!ShaderCompilationErrorChecking(FilePath, Shd->VertexShader, TempArena))
+    if (!ShaderCompilationErrorChecking(FilePath, Shd->VertexShader))
     {
         Shd->Program = 0;
         return GL_FALSE;
@@ -134,17 +134,17 @@ static GLuint LoadVertexShader(const char* FilePath, shader *Shd, memory_arena* 
     return GL_TRUE;
 }
 
-static GLuint LoadFragmentShader(const char* FilePath, shader *Shd, memory_arena* TempArena)
+static GLuint LoadFragmentShader(const char* FilePath, shader *Shd, memory_arena* PermArena)
 {
     Shd->Program = glCreateProgram();
     
     Shd->FragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    char* FragmentString = Concat(FilePath,".frag", TempArena);
-    GLchar *FragmentText = LoadShaderFromFile(FragmentString, TempArena);
+    char* FragmentString = Concat(FilePath,".frag");
+    GLchar *FragmentText = LoadShaderFromFile(FragmentString, PermArena);
     glShaderSource(Shd->FragmentShader, 1, &FragmentText, NULL);
     glCompileShader(Shd->FragmentShader);
     
-    if (!ShaderCompilationErrorChecking(FilePath, Shd->FragmentShader, TempArena))
+    if (!ShaderCompilationErrorChecking(FilePath, Shd->FragmentShader))
     {
         Shd->Program = 0;
         return GL_FALSE;
@@ -298,7 +298,7 @@ static void RegisterBuffers(render_state& RenderState, GLfloat* VertexBuffer, i3
     glBindVertexArray(0);
 }
 
-static void RegisterVertexBuffer(render_state& RenderState, GLfloat* BufferData, i32 Size, Shader_Type ShaderType, memory_arena* TempArena, i32 BufferHandle = -1)
+static void RegisterVertexBuffer(render_state& RenderState, GLfloat* BufferData, i32 Size, Shader_Type ShaderType,memory_arena* PermArena, i32 BufferHandle = -1)
 {
     buffer* Buffer = &RenderState.Buffers[BufferHandle == -1 ? RenderState.BufferCount : BufferHandle];
     
@@ -319,7 +319,7 @@ static void RegisterVertexBuffer(render_state& RenderState, GLfloat* BufferData,
     
     if(!RenderState.Shaders[ShaderType].Loaded)
     {
-        LoadShader(ShaderPaths[ShaderType], &RenderState.Shaders[ShaderType], TempArena);
+        LoadShader(ShaderPaths[ShaderType], &RenderState.Shaders[ShaderType], PermArena);
     }
     else
         UseShader(&RenderState.Shaders[ShaderType]);
@@ -338,7 +338,7 @@ static void RegisterVertexBuffer(render_state& RenderState, GLfloat* BufferData,
         RenderState.BufferCount++;
 }
 
-static void RenderSetup(render_state *RenderState, memory_arena* TempArena)
+static void RenderSetup(render_state *RenderState, memory_arena* PermArena)
 {
     if(FT_Init_FreeType(&RenderState->FTLibrary)) 
     {
@@ -401,7 +401,7 @@ static void RenderSetup(render_state *RenderState, memory_arena* TempArena)
     
     RenderState->FrameBufferShader.Type = Shader_FrameBuffer;
     
-    LoadShader(ShaderPaths[Shader_FrameBuffer], &RenderState->FrameBufferShader, TempArena);
+    LoadShader(ShaderPaths[Shader_FrameBuffer], &RenderState->FrameBufferShader, PermArena);
     
     auto PosLoc = glGetAttribLocation(RenderState->FrameBufferShader.Program, "pos");
     auto TexLoc = glGetAttribLocation(RenderState->FrameBufferShader.Program, "texcoord");
@@ -434,7 +434,7 @@ static void RenderSetup(render_state *RenderState, memory_arena* TempArena)
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, RenderState->QuadIndexBuffer);
     
     RenderState->TextureShader.Type = Shader_Texture;
-    LoadShader(ShaderPaths[Shader_Texture], &RenderState->TextureShader, TempArena);
+    LoadShader(ShaderPaths[Shader_Texture], &RenderState->TextureShader, PermArena);
     
     auto PositionLocation = glGetAttribLocation(RenderState->TextureShader.Program, "pos");
     auto TexcoordLocation = glGetAttribLocation(RenderState->TextureShader.Program, "texcoord");
@@ -455,7 +455,7 @@ static void RenderSetup(render_state *RenderState, memory_arena* TempArena)
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, RenderState->QuadIndexBuffer);
     
     RenderState->TextureShader.Type = Shader_Spritesheet;
-    LoadShader(ShaderPaths[Shader_Spritesheet], &RenderState->SpritesheetShader, TempArena);
+    LoadShader(ShaderPaths[Shader_Spritesheet], &RenderState->SpritesheetShader, PermArena);
     
     PositionLocation = glGetAttribLocation(RenderState->SpritesheetShader.Program, "pos");
     TexcoordLocation = glGetAttribLocation(RenderState->SpritesheetShader.Program, "texcoord");
@@ -474,7 +474,7 @@ static void RenderSetup(render_state *RenderState, memory_arena* TempArena)
     glBufferData(GL_ARRAY_BUFFER, RenderState->SpriteQuadVerticesSize, RenderState->SpriteQuadVertices, GL_STATIC_DRAW);
     
     RenderState->ErrorShaderSprite.Type = Shader_ErrorSprite;
-    LoadShader(ShaderPaths[Shader_ErrorSprite], &RenderState->ErrorShaderSprite, TempArena);
+    LoadShader(ShaderPaths[Shader_ErrorSprite], &RenderState->ErrorShaderSprite, PermArena);
     
     PositionLocation = glGetAttribLocation(RenderState->ErrorShaderSprite.Program, "pos");
     TexcoordLocation = glGetAttribLocation(RenderState->ErrorShaderSprite.Program, "texcoord");
@@ -493,7 +493,7 @@ static void RenderSetup(render_state *RenderState, memory_arena* TempArena)
     glBufferData(GL_ARRAY_BUFFER, RenderState->SpriteQuadVerticesSize, RenderState->SpriteQuadVertices, GL_STATIC_DRAW);
     
     RenderState->UISpriteShader.Type = Shader_UISprite;
-    LoadShader(ShaderPaths[Shader_UISprite], &RenderState->UISpriteShader, TempArena);
+    LoadShader(ShaderPaths[Shader_UISprite], &RenderState->UISpriteShader, PermArena);
     
     PositionLocation = glGetAttribLocation(RenderState->UISpriteShader.Program, "pos");
     TexcoordLocation = glGetAttribLocation(RenderState->UISpriteShader.Program, "texcoord");
@@ -514,7 +514,7 @@ static void RenderSetup(render_state *RenderState, memory_arena* TempArena)
     
     //error shader
     RenderState->ErrorShaderUI.Type = Shader_ErrorUI;
-    LoadShader(ShaderPaths[Shader_ErrorUI], &RenderState->ErrorShaderUI, TempArena);
+    LoadShader(ShaderPaths[Shader_ErrorUI], &RenderState->ErrorShaderUI, PermArena);
     
     PositionLocation = glGetAttribLocation(RenderState->ErrorShaderUI.Program, "pos");
     TexcoordLocation = glGetAttribLocation(RenderState->ErrorShaderUI.Program, "texcoord");
@@ -533,7 +533,7 @@ static void RenderSetup(render_state *RenderState, memory_arena* TempArena)
     glBufferData(GL_ARRAY_BUFFER, RenderState->TileQuadVerticesSize, RenderState->TileQuadVertices, GL_STATIC_DRAW);
     
     RenderState->TileShader.Type = Shader_Tile;
-    LoadShader(ShaderPaths[Shader_Tile], &RenderState->TileShader, TempArena);
+    LoadShader(ShaderPaths[Shader_Tile], &RenderState->TileShader, PermArena);
     
     auto PositionLocation2 = glGetAttribLocation(RenderState->TileShader.Program, "pos");
     auto TexcoordLocation2 = glGetAttribLocation(RenderState->TileShader.Program, "texcoord");
@@ -554,7 +554,7 @@ static void RenderSetup(render_state *RenderState, memory_arena* TempArena)
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, RenderState->QuadIndexBuffer);
     
     RenderState->RectShader.Type = Shader_Rect;
-    LoadShader(ShaderPaths[Shader_Rect], &RenderState->RectShader, TempArena);
+    LoadShader(ShaderPaths[Shader_Rect], &RenderState->RectShader, PermArena);
     
     auto PositionLocation3 = glGetAttribLocation(RenderState->RectShader.Program, "pos");
     glEnableVertexAttribArray(PositionLocation3);
@@ -568,7 +568,7 @@ static void RenderSetup(render_state *RenderState, memory_arena* TempArena)
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, RenderState->QuadIndexBuffer);
     
     RenderState->TextureRectShader.Type = Shader_TextureRect;
-    LoadShader(ShaderPaths[Shader_TextureRect], &RenderState->TextureRectShader, TempArena);
+    LoadShader(ShaderPaths[Shader_TextureRect], &RenderState->TextureRectShader, PermArena);
     
     PositionLocation2 = glGetAttribLocation(RenderState->TextureRectShader.Program, "pos");
     TexcoordLocation2 = glGetAttribLocation(RenderState->TextureRectShader.Program, "texcoord");
@@ -588,7 +588,7 @@ static void RenderSetup(render_state *RenderState, memory_arena* TempArena)
     glBufferData(GL_ARRAY_BUFFER, RenderState->WireframeQuadVerticesSize, RenderState->WireframeQuadVertices, GL_DYNAMIC_DRAW);
     
     RenderState->RectShader.Type = Shader_Wireframe;
-    LoadShader(ShaderPaths[Shader_Wireframe], &RenderState->WireframeShader, TempArena);
+    LoadShader(ShaderPaths[Shader_Wireframe], &RenderState->WireframeShader, PermArena);
     
     PositionLocation3 = glGetAttribLocation(RenderState->WireframeShader.Program, "pos");
     glEnableVertexAttribArray(PositionLocation3);
@@ -605,7 +605,7 @@ static void RenderSetup(render_state *RenderState, memory_arena* TempArena)
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, RenderState->QuadIndexBuffer);
     
     RenderState->RectShader.Type = Shader_Wireframe;
-    LoadShader(ShaderPaths[Shader_Wireframe], &RenderState->WireframeShader, TempArena);
+    LoadShader(ShaderPaths[Shader_Wireframe], &RenderState->WireframeShader, PermArena);
     
     PositionLocation3 = glGetAttribLocation(RenderState->WireframeShader.Program, "pos");
     glEnableVertexAttribArray(PositionLocation3);
@@ -630,7 +630,7 @@ static void RenderSetup(render_state *RenderState, memory_arena* TempArena)
     glBufferData(GL_ARRAY_BUFFER, RenderState->AStarPathQuadVerticesSize,
                  RenderState->AStarPathQuadVertices,GL_DYNAMIC_DRAW);
     
-    LoadShader(ShaderPaths[Shader_AStarPath], &RenderState->AStarPathShader, TempArena);
+    LoadShader(ShaderPaths[Shader_AStarPath], &RenderState->AStarPathShader, PermArena);
     
     PositionLocation3 = glGetAttribLocation(RenderState->AStarPathShader.Program, "pos");
     glEnableVertexAttribArray(PositionLocation3);
@@ -640,7 +640,7 @@ static void RenderSetup(render_state *RenderState, memory_arena* TempArena)
     
     //font
     RenderState->StandardFontShader.Type = Shader_StandardFont;
-    LoadShader(ShaderPaths[Shader_StandardFont], &RenderState->StandardFontShader, TempArena);
+    LoadShader(ShaderPaths[Shader_StandardFont], &RenderState->StandardFontShader, PermArena);
     
     RenderState->RobotoFont = {};
     InitializeFreeTypeFont("../assets/fonts/roboto/Roboto-Regular.ttf", 20, RenderState->FTLibrary, &RenderState->RobotoFont, &RenderState->StandardFontShader);
@@ -657,10 +657,10 @@ static void RenderSetup(render_state *RenderState, memory_arena* TempArena)
     
     // Light sources
     RenderState->LightSourceShader.Type = Shader_LightSource;
-    LoadShader(ShaderPaths[Shader_LightSource], &RenderState->LightSourceShader, TempArena);
+    LoadShader(ShaderPaths[Shader_LightSource], &RenderState->LightSourceShader, PermArena);
     
     RenderState->SimpleModelShader.Type = Shader_SimpleModel;
-    LoadShader(ShaderPaths[Shader_SimpleModel], &RenderState->SimpleModelShader, TempArena);
+    LoadShader(ShaderPaths[Shader_SimpleModel], &RenderState->SimpleModelShader, PermArena);
     
     RenderState->SpotlightData.NumLights = 0;
     glGenBuffers(1, &RenderState->SpotlightUBO);
@@ -743,12 +743,12 @@ static void LoadTextures(render_state& RenderState, renderer& Renderer)
     }
 }
 
-static void InitializeOpenGL(render_state& RenderState, renderer& Renderer, config_data* ConfigData, memory_arena* TempArena)
+static void InitializeOpenGL(render_state& RenderState, renderer& Renderer, config_data* ConfigData, memory_arena* PermArena)
 {
     if (!glfwInit())
         exit(EXIT_FAILURE);
     
-    RenderState.Window = glfwCreateWindow(ConfigData->ScreenWidth, ConfigData->ScreenHeight, Concat(Concat(ConfigData->Title, " ", TempArena), ConfigData->Version, TempArena),  ConfigData->Fullscreen ? glfwGetPrimaryMonitor() : NULL, 
+    RenderState.Window = glfwCreateWindow(ConfigData->ScreenWidth, ConfigData->ScreenHeight, Concat(Concat(ConfigData->Title, " "), ConfigData->Version),  ConfigData->Fullscreen ? glfwGetPrimaryMonitor() : NULL, 
                                           NULL);
     RenderState.Contrast = ConfigData->Contrast;
     RenderState.Brightness = ConfigData->Brightness;
@@ -804,21 +804,21 @@ static void InitializeOpenGL(render_state& RenderState, renderer& Renderer, conf
     
     ControllerPresent();
     
-    RenderSetup(&RenderState, TempArena);
+    RenderSetup(&RenderState, PermArena);
 }
 
-static void ReloadVertexShader(Shader_Type Type, render_state* RenderState, memory_arena* TempArena)
+static void ReloadVertexShader(Shader_Type Type, render_state* RenderState, memory_arena* PermArena)
 {
     glDeleteProgram(RenderState->Shaders[Type].Program);
     glDeleteShader(RenderState->Shaders[Type].VertexShader);
-    LoadVertexShader(ShaderPaths[Type], &RenderState->Shaders[Type], TempArena);
+    LoadVertexShader(ShaderPaths[Type], &RenderState->Shaders[Type], PermArena);
 }
 
-static void ReloadFragmentShader(Shader_Type Type, render_state* RenderState, memory_arena* TempArena)
+static void ReloadFragmentShader(Shader_Type Type, render_state* RenderState, memory_arena* PermArena)
 {
     glDeleteProgram(RenderState->Shaders[Type].Program);
     glDeleteShader(RenderState->Shaders[Type].FragmentShader);
-    LoadFragmentShader(ShaderPaths[Type], &RenderState->Shaders[Type], TempArena);
+    LoadFragmentShader(ShaderPaths[Type], &RenderState->Shaders[Type], PermArena);
     
     RenderState->SpotlightData.NumLights = 0;
     glBindBufferBase(GL_UNIFORM_BUFFER, 0, RenderState->SpotlightUBO);
@@ -847,21 +847,21 @@ static void ReloadFragmentShader(Shader_Type Type, render_state* RenderState, me
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
 }
 
-static void ReloadAssets(render_state& RenderState, asset_manager* AssetManager, memory_arena* TempArena)
+static void ReloadAssets(render_state& RenderState, asset_manager* AssetManager, memory_arena* PermArena)
 {
     for(int i = 0; i < Shader_Count; i++)
     {
         if(AssetManager->DirtyVertexShaderIndices[i] == 1)
         {
             DEBUG_PRINT("Reloading vertex shader type: %s\n", ShaderEnumToStr((Shader_Type)i));
-            ReloadVertexShader((Shader_Type)i, &RenderState, TempArena);
+            ReloadVertexShader((Shader_Type)i, &RenderState, PermArena);
             AssetManager->DirtyVertexShaderIndices[i] = 0;
         }
         
         if(AssetManager->DirtyFragmentShaderIndices[i] == 1)
         {
             DEBUG_PRINT("Reloading fragment shader type: %s\n", ShaderEnumToStr((Shader_Type)i));
-            ReloadFragmentShader((Shader_Type)i, &RenderState, TempArena);
+            ReloadFragmentShader((Shader_Type)i, &RenderState, PermArena);
             AssetManager->DirtyFragmentShaderIndices[i] = 0;
         }
     }
@@ -1099,7 +1099,7 @@ static void MeasureText(const render_font& Font, const char* Text, float* Width,
 
 //rendering methods
 static void RenderText(render_state& RenderState, const render_font& Font, const math::v4& Color, const char* Text, r32 X, r32 Y,
-                       memory_arena* TempArena, Alignment Alignment = Alignment_Left,  b32 AlignCenterY = true) 
+                       Alignment Alignment = Alignment_Left,  b32 AlignCenterY = true) 
 {
     glBindVertexArray(Font.VAO);
     auto Shader = RenderState.Shaders[Shader_StandardFont];
@@ -1113,7 +1113,7 @@ static void RenderText(render_state& RenderState, const render_font& Font, const
         RenderState.BoundTexture = Font.Texture;
     }
     
-    point* Coords = PushArray(TempArena, 6 * strlen(Text), point);
+    point* Coords = PushTempArray(6 * strlen(Text), point);
     
     int N = 0;
     
@@ -1182,8 +1182,7 @@ static void RenderText(render_state& RenderState, const render_font& Font, const
     glBindVertexArray(0);
 }
 
-
-static void RenderConsole(render_state& RenderState, console* Console, memory_arena* TempArena)
+static void RenderConsole(render_state& RenderState, console* Console)
 {
     glBindVertexArray(RenderState.RectVAO);
     
@@ -1204,7 +1203,7 @@ static void RenderConsole(render_state& RenderState, console* Console, memory_ar
     //draw cursor
     RenderRect(Render_Fill, RenderState, math::v4(AlphaValue, 1, AlphaValue, 1), 5 / 1920.0f * (r32)RenderState.WindowWidth + Width, RenderState.WindowHeight * 0.77f * PercentAnimated, 10, 20);
     
-    RenderText(RenderState, RenderState.InconsolataFont, math::v4(0, 0.8, 0, 1),  &Console->Buffer[0],  5 / 1920.0f * (r32)RenderState.WindowWidth, (r32)RenderState.WindowHeight * 0.775f * PercentAnimated, TempArena);
+    RenderText(RenderState, RenderState.InconsolataFont, math::v4(0, 0.8, 0, 1),  &Console->Buffer[0],  5 / 1920.0f * (r32)RenderState.WindowWidth, (r32)RenderState.WindowHeight * 0.775f * PercentAnimated);
     
     int index = 0;
     
@@ -1217,7 +1216,7 @@ static void RenderConsole(render_state& RenderState, console* Console, memory_ar
         else
             Color = math::v4(1, 1, 1, 1);
         
-        RenderText(RenderState, RenderState.InconsolataFont, Color, &Console->HistoryBuffer[Index][0], 5 / 1920.0f * (r32)RenderState.WindowWidth, (r32)RenderState.WindowHeight * 0.78f * PercentAnimated + (Index + 1) * 20 * PercentAnimated, TempArena);
+        RenderText(RenderState, RenderState.InconsolataFont, Color, &Console->HistoryBuffer[Index][0], 5 / 1920.0f * (r32)RenderState.WindowWidth, (r32)RenderState.WindowHeight * 0.78f * PercentAnimated + (Index + 1) * 20 * PercentAnimated);
     }
 }
 
@@ -1226,10 +1225,10 @@ static void RenderLine(const render_command& Command, render_state& RenderState,
     
 }
 
-static void RenderText(const render_command& Command, render_state& RenderState, memory_arena* TempArena)
+static void RenderText(const render_command& Command, render_state& RenderState)
 {
     // @Incomplete: Need to set a font
-    RenderText(RenderState, RenderState.InconsolataFont, Command.Text.Color, Command.Text.Text, Command.Text.Position.x, Command.Text.Position.y, TempArena);
+    RenderText(RenderState, RenderState.InconsolataFont, Command.Text.Color, Command.Text.Text, Command.Text.Position.x, Command.Text.Position.y);
 }
 
 static void RenderRect(const render_command& Command, render_state& RenderState, math::m4 Projection, math::m4 View)
@@ -1395,7 +1394,7 @@ static void RenderBuffer(const render_command& Command, render_state& RenderStat
     glBindVertexArray(0);
 }
 
-static void RenderCommands(render_state& RenderState, renderer& Renderer, memory_arena* TempArena)
+static void RenderCommands(render_state& RenderState, renderer& Renderer, memory_arena* PermArena)
 {
     for(i32 Index = RenderState.BufferCount; Index < Renderer.BufferCount; Index++)
     {
@@ -1403,7 +1402,7 @@ static void RenderCommands(render_state& RenderState, renderer& Renderer, memory
         
         if(Data.IndexBufferSize == 0)
         {
-            RegisterVertexBuffer(RenderState, Data.VertexBuffer, Data.VertexBufferSize, Data.ShaderType, TempArena, Data.ExistingHandle);
+            RegisterVertexBuffer(RenderState, Data.VertexBuffer, Data.VertexBufferSize, Data.ShaderType, PermArena, Data.ExistingHandle);
         }
         else
         {
@@ -1535,7 +1534,7 @@ static void RenderCommands(render_state& RenderState, renderer& Renderer, memory
             break;
             case RenderCommand_Text:
             {
-                RenderText(Command, RenderState, TempArena);
+                RenderText(Command, RenderState);
             }
             break;
             case RenderCommand_Rect:
@@ -1579,7 +1578,7 @@ static void RenderCommands(render_state& RenderState, renderer& Renderer, memory
             break;
             case RenderCommand_Text:
             {
-                RenderText(Command, RenderState, TempArena);
+                RenderText(Command, RenderState);
             }
             break;
             case RenderCommand_Rect:
@@ -1609,7 +1608,7 @@ static void RenderCommands(render_state& RenderState, renderer& Renderer, memory
     Clear(&Renderer.UICommands);
 }
 
-static void Render(render_state& RenderState, renderer& Renderer, memory_arena* TempArena)
+static void Render(render_state& RenderState, renderer& Renderer, memory_arena* PermArena)
 {
     LoadTextures(RenderState, Renderer);
     
@@ -1631,7 +1630,7 @@ static void Render(render_state& RenderState, renderer& Renderer, memory_arena* 
     glClearColor(0.5, 0.5, 0.5, 1.0f);
     
     //RenderGame(GameState);
-    RenderCommands(RenderState, Renderer, TempArena);
+    RenderCommands(RenderState, Renderer, PermArena);
     
     // Second pass
     

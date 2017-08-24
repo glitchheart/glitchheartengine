@@ -10,7 +10,6 @@ struct win32_memory_block
 struct win32_state
 {
     memory_arena PermArena;
-    memory_arena TempArena;
 };
 
 
@@ -25,5 +24,13 @@ struct game_code
     const char *TempDllPath = "game_temp.dll";
 };
 
+#define MAX_TEMP_BLOCKS 2048
+
+struct win32_temp_memory
+{
+    // Will this work thoooo
+    platform_memory_block* Blocks[MAX_TEMP_BLOCKS];
+    i32 TempCount;
+};
 
 #endif
