@@ -95,11 +95,9 @@ static void PushEntityRenderCommands(renderer& Renderer, game_state& GameState)
         else if(RenderEntity->RenderType == Render_Type_Object)
             RenderEntity->Object->RenderEntityHandle = Index;
         
-        b32 Active = RenderEntity->RenderType == Render_Type_Entity ? IsSet(RenderEntity->Entity, EFlag_Active) : IsSet(RenderEntity->Object, EFlag_Active);
         math::v3 Position = RenderEntity->RenderType == Render_Type_Entity ? RenderEntity->Entity->Position : RenderEntity->Object->Position;
         math::v3 Center = RenderEntity->RenderType == Render_Type_Entity ? RenderEntity->Entity->Center : RenderEntity->Object->Center;
         r32 EntityScale = RenderEntity->RenderType == Render_Type_Entity ? RenderEntity->Entity->Scale : RenderEntity->Object->Scale;
-        i32 LightSourceHandle = RenderEntity->RenderType == Render_Type_Entity ? RenderEntity->Entity->LightSourceHandle : RenderEntity->Object->LightSourceHandle;
         
         animation* CurrentAnimation =  RenderEntity->RenderType == Render_Type_Entity ? RenderEntity->Entity->CurrentAnimation : RenderEntity->Object->CurrentAnimation;
         animation_info AnimationInfo = RenderEntity->RenderType == Render_Type_Entity ? RenderEntity->Entity->AnimationInfo : RenderEntity->Object->AnimationInfo;
@@ -145,10 +143,6 @@ static void PushEntityRenderCommands(renderer& Renderer, game_state& GameState)
             texture_data* Texture = Renderer.TextureMap[RenderEntity->TextureName];
             
             auto CorrectPos = math::v3(Position.x, Position.y, Position.z);
-            
-            r32 CorrectX = CorrectPos.x;
-            r32 CorrectY = CorrectPos.y;
-            r32 CorrectZ = CorrectPos.z;
             
             CurrentPosition = CorrectPos;
             
@@ -231,24 +225,6 @@ extern "C" UPDATE(Update)
         //GameState->TestModels[GameState->Models++] = Model5;
         GameState->TestModels[GameState->Models++] = Model6;
         GameState->TestModels[GameState->Models++] = Model5;
-        
-        i32 OffsetX = 5;
-        i32 OffsetZ = 5;
-        
-        /*
-        for(i32 I = 0; I < 10 + OffsetX; I++)
-        {
-        for(i32 J = 0; J < 10 + OffsetZ; J++)
-        {
-        model Model;
-        Model.Position = math::v3((r32)I * 5.0f, 0, (r32)J * 5.0f);
-        Model.Scale = math::v3(5, 5, 1);
-        Model.Rotation.x = -90;
-        LoadModel(Renderer, "../assets/models/cube.modl", &Model);
-        GameState->TestModels[GameState->Models++] = Model;
-        }
-        }
-        */
         
         if(GameState->ShouldReload || GameMemory->ShouldReload)
         {
@@ -438,7 +414,6 @@ extern "C" UPDATE(Update)
             }
         }
     }
-    auto& Player = GameState->Entities[0];
     
     if(!GameState->EditorState.Loaded)
     {

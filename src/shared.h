@@ -30,11 +30,11 @@ inline b32 StartsWith(const char *A, const char *B)
 
 inline void HandleError(char const *File, i32 LineNum, char const *msg)
 {
-    /*if(File)
+    if(File)
     {
         fprintf(stderr, "Error on in file %s on line %d\n", File, LineNum);
         fprintf(stderr, "%s\n", msg);
-    }*/
+    }
 }
 
 #endif

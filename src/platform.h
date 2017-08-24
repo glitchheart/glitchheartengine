@@ -54,8 +54,7 @@ using b32 = i32;
 using r32 = float;
 using r64 = double;
 
-using sz = size_t; // Platform dependent 32/64 bit
-using umm = uintptr_t;
+using umm = uintptr_t; // Casey uses this for sizes (why?)
 
 #include "math.h"
 #include "gmap.h"
@@ -124,7 +123,7 @@ typedef PLATFORM_GET_ALL_FILES_WITH_EXTENSION(platform_get_all_files_with_extens
 #define PLATFORM_FILE_EXISTS(name) b32 name(const char* FilePath)
 typedef PLATFORM_FILE_EXISTS(platform_file_exists);
 
-#define PLATFORM_ALLOCATE_MEMORY(name) platform_memory_block* name(sz Size, u64 Flags)
+#define PLATFORM_ALLOCATE_MEMORY(name) platform_memory_block* name(umm Size, u64 Flags)
 typedef PLATFORM_ALLOCATE_MEMORY(platform_allocate_memory);
 
 #define PLATFORM_DEALLOCATE_MEMORY(name) void name(platform_memory_block* Block)

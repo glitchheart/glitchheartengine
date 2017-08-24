@@ -264,7 +264,7 @@ PLATFORM_DEALLOCATE_MEMORY(Win32DeallocateMemory)
     if(Block)
     {
         win32_memory_block *Win32Block =  ((win32_memory_block*)Block);
-        VirtualFree(Block, 0, MEM_RELEASE);
+        VirtualFree(Win32Block, 0, MEM_RELEASE);
     }
 }
 

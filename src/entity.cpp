@@ -168,7 +168,6 @@ static void LoadEntityData(FILE* File, entity* Entity, game_state* GameState, b3
         Entity->CurrentAnimation = 0;
         
         Entity->HasHitTrigger = false;
-        Entity->LightSourceHandle = -1;
         Entity->Hit = false;
         
         Entity->Health = -1;
@@ -1093,7 +1092,6 @@ void UpdateAI(entity* Entity, game_state* GameState, sound_queue* SoundQueue, r6
 static void UpdateSkeleton(entity* Entity, game_state* GameState, sound_queue* SoundQueue, r64 DeltaTime)
 {
     auto& Enemy = Entity->Enemy;
-    auto& Skeleton = Entity->Enemy.Skeleton;
     
     auto Player = &GameState->Entities[0];
     
@@ -1129,8 +1127,6 @@ static void UpdateSkeleton(entity* Entity, game_state* GameState, sound_queue* S
         Entity->Position.x += Entity->Velocity.x * (r32)DeltaTime;
         Entity->Position.y += Entity->Velocity.y * (r32)DeltaTime;
         Entity->Position.z += Entity->Velocity.z * (r32)DeltaTime;
-        
-        render_entity* RenderEntity = &GameState->RenderEntities[Entity->RenderEntityHandle];
         
         Entity->Velocity = math::v3(0, 0, 0);
         

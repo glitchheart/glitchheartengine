@@ -479,15 +479,15 @@
                                                           if(Entity->Type == Entity_Enemy && Entity->Enemy.WaypointCount > 0)
                                                           {
                                                               fprintf(File, "%s %f %f path %d ", TypeName, Entity->Position.x, Entity->Position.y, Entity->Enemy.WaypointCount);
-                                                              for(i32 Index = 0; Index < Entity->Enemy.WaypointCount; Index++)
+                                                              for(i32 WIndex = 0; WIndex < Entity->Enemy.WaypointCount; WIndex++)
                                                               {
-                                                                  if(Index == Entity->Enemy.WaypointCount - 1)
+                                                                  if(WIndex == Entity->Enemy.WaypointCount - 1)
                                                                   {
-                                                                      fprintf(File, "%d %d\n", Entity->Enemy.Waypoints[Index].x, Entity->Enemy.Waypoints[Index].y);
+                                                                      fprintf(File, "%d %d\n", Entity->Enemy.Waypoints[WIndex].x, Entity->Enemy.Waypoints[WIndex].y);
                                                                   }
                                                                   else
                                                                   {
-                                                                      fprintf(File, "%d %d ", Entity->Enemy.Waypoints[Index].x, Entity->Enemy.Waypoints[Index].y);
+                                                                      fprintf(File, "%d %d ", Entity->Enemy.Waypoints[WIndex].x, Entity->Enemy.Waypoints[WIndex].y);
                                                                   }
                                                               }
                                                           }
