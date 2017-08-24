@@ -13,4 +13,16 @@ struct win32_state
 };
 
 
+struct game_code
+{
+    HMODULE GameCodeDLL;
+    FILETIME LastDllWriteTime;
+    update *Update;
+    
+    b32 IsValid;
+    const char *DllPath = "game.dll";
+    const char *TempDllPath = "game_temp.dll";
+};
+
+
 #endif
