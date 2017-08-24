@@ -1,4 +1,4 @@
-static void LoadWavFile(const char *Filename, sound_effect *LoadedSound, memory_arena* TempArena)
+static void LoadWavFile(const char *Filename, sound_effect *LoadedSound)
 {
     FILE *SoundFile = 0;
     wave_format WaveFormat;
@@ -48,7 +48,7 @@ static void LoadWavFile(const char *Filename, sound_effect *LoadedSound, memory_
             ERR("Wave data malformed");
         }
         
-        unsigned char *Data = PushSize(TempArena, WaveData.SubChunk2Size, unsigned char);
+        unsigned char *Data = PushTempSize(WaveData.SubChunk2Size, unsigned char);
         
         if (!fread(Data, WaveData.SubChunk2Size, 1, SoundFile))
         {
@@ -147,9 +147,9 @@ static void InitAudio(sound_device *SoundDevice)
     source_to_sound_Map_Init(&SoundDevice->SourceToSound, HashInt, 32);
 }
 
-static inline void LoadSound(const char *filename, sound_effect *LoadedSound, sound_device* SoundDevice, memory_arena* TempArena, char* Name = "")
+static inline void LoadSound(const char *filename, sound_effect *LoadedSound, sound_device* SoundDevice, char* Name = "")
 {
-    LoadWavFile(filename, LoadedSound, TempArena);
+    LoadWavFile(filename, LoadedSound);
     LoadedSound->SoundInfo.Pitch = 1.0f;
     LoadedSound->SoundInfo.Position[0] = 0.0f;
     LoadedSound->SoundInfo.Position[1] = 0.0f;
@@ -162,32 +162,32 @@ static inline void LoadSound(const char *filename, sound_effect *LoadedSound, so
     SoundDevice->Buffers[SoundDevice->BufferCount++] = LoadedSound->Buffer;
 }
 
-static inline void LoadSounds(sound_effects* SoundEffects, sound_device* SoundDevice, memory_arena* TempArena)
+static inline void LoadSounds(sound_effects* SoundEffects, sound_device* SoundDevice)
 {
-    LoadSound("../assets/audio/Countdown_1.wav", &SoundEffects->Effect01,SoundDevice, TempArena);
-    LoadSound("../assets/audio/mainmenu.wav", &SoundEffects->MainMenuTrack,SoundDevice, TempArena);
-    LoadSound("../assets/audio/sword_slash_01.wav", &SoundEffects->SwordSlash01,SoundDevice, TempArena);
-    LoadSound("../assets/audio/sword_hit_01.wav",  &SoundEffects->SwordHit01,SoundDevice, TempArena);
-    LoadSound("../assets/audio/sword_hit_02.wav",  &SoundEffects->SwordHit02, SoundDevice, TempArena);
-    LoadSound("../assets/audio/dash.wav", &SoundEffects->Dash,SoundDevice, TempArena);
-    LoadSound("../assets/audio/explosion.wav", &SoundEffects->Explosion, SoundDevice, TempArena);
-    LoadSound("../assets/audio/ui/button_click.wav", &SoundEffects->ButtonClick, SoundDevice, TempArena);
-    LoadSound("../assets/audio/barrel_break.wav", &SoundEffects->BarrelBreak, SoundDevice, TempArena);
-    LoadSound("../assets/audio/throw.wav", &SoundEffects->Throw, SoundDevice, TempArena);
-    LoadSound("../assets/audio/slide_1.wav", &SoundEffects->Slide01, SoundDevice, TempArena);
-    LoadSound("../assets/audio/use_health.wav", &SoundEffects->UseHealth, SoundDevice, TempArena);
+    LoadSound("../assets/audio/Countdown_1.wav", &SoundEffects->Effect01,SoundDevice);
+    LoadSound("../assets/audio/mainmenu.wav", &SoundEffects->MainMenuTrack,SoundDevice);
+    LoadSound("../assets/audio/sword_slash_01.wav", &SoundEffects->SwordSlash01,SoundDevice);
+    LoadSound("../assets/audio/sword_hit_01.wav",  &SoundEffects->SwordHit01,SoundDevice);
+    LoadSound("../assets/audio/sword_hit_02.wav",  &SoundEffects->SwordHit02, SoundDevice);
+    LoadSound("../assets/audio/dash.wav", &SoundEffects->Dash,SoundDevice);
+    LoadSound("../assets/audio/explosion.wav", &SoundEffects->Explosion, SoundDevice);
+    LoadSound("../assets/audio/ui/button_click.wav", &SoundEffects->ButtonClick, SoundDevice);
+    LoadSound("../assets/audio/barrel_break.wav", &SoundEffects->BarrelBreak, SoundDevice);
+    LoadSound("../assets/audio/throw.wav", &SoundEffects->Throw, SoundDevice);
+    LoadSound("../assets/audio/slide_1.wav", &SoundEffects->Slide01, SoundDevice);
+    LoadSound("../assets/audio/use_health.wav", &SoundEffects->UseHealth, SoundDevice);
     
-    LoadSound("../assets/audio/enemies/minotaur/minotaur_grunt01.wav", &SoundEffects->MinotaurGrunt01, SoundDevice, TempArena);
-    LoadSound("../assets/audio/enemies/minotaur/minotaur_grunt02.wav",  &SoundEffects->MinotaurGrunt02, SoundDevice, TempArena);
-    LoadSound("../assets/audio/enemies/minotaur/minotaur_hit.wav", &SoundEffects->MinotaurHit, SoundDevice, TempArena);
-    LoadSound("../assets/audio/enemies/minotaur/minotaur_death.wav", &SoundEffects->MinotaurDeath, SoundDevice, TempArena);
-    LoadSound("../assets/audio/enemies/minotaur/stomp.wav", &SoundEffects->MinotaurStomp, SoundDevice, TempArena);
-    LoadSound("../assets/audio/enemies/shield_impact.wav", &SoundEffects->ShieldImpact, SoundDevice, TempArena);
-    LoadSound("../assets/audio/splash_01.wav", &SoundEffects->Splash01, SoundDevice, TempArena);
+    LoadSound("../assets/audio/enemies/minotaur/minotaur_grunt01.wav", &SoundEffects->MinotaurGrunt01, SoundDevice);
+    LoadSound("../assets/audio/enemies/minotaur/minotaur_grunt02.wav",  &SoundEffects->MinotaurGrunt02, SoundDevice);
+    LoadSound("../assets/audio/enemies/minotaur/minotaur_hit.wav", &SoundEffects->MinotaurHit, SoundDevice);
+    LoadSound("../assets/audio/enemies/minotaur/minotaur_death.wav", &SoundEffects->MinotaurDeath, SoundDevice);
+    LoadSound("../assets/audio/enemies/minotaur/stomp.wav", &SoundEffects->MinotaurStomp, SoundDevice);
+    LoadSound("../assets/audio/enemies/shield_impact.wav", &SoundEffects->ShieldImpact, SoundDevice);
+    LoadSound("../assets/audio/splash_01.wav", &SoundEffects->Splash01, SoundDevice);
     
-    LoadSound("../assets/audio/bonfire.wav", &SoundEffects->Bonfire, SoundDevice, TempArena);
+    LoadSound("../assets/audio/bonfire.wav", &SoundEffects->Bonfire, SoundDevice);
     
-    LoadSound("../assets/audio/music/Brugt.wav", &SoundEffects->Brugt, SoundDevice, TempArena, "Brugt");
+    LoadSound("../assets/audio/music/Brugt.wav", &SoundEffects->Brugt, SoundDevice,"Brugt");
     
     // // Add more sounds here if necessary
 }

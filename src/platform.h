@@ -104,8 +104,9 @@ struct directory_data
 
 enum platform_memory_block_flags
 {
-    PM_OverflowCheck = 0x1,
-    PM_UnderflowCheck = 0x2
+    PM_OverflowCheck =  (1 << 0),
+    PM_UnderflowCheck = (1 << 1),
+    PM_Temporary =      (1 << 2)
 };
 
 struct platform_memory_block
@@ -117,9 +118,7 @@ struct platform_memory_block
     platform_memory_block* Prev;
 };
 
-struct memory_arena;
-
-#define PLATFORM_GET_ALL_FILES_WITH_EXTENSION(name) void name(const char* DirectoryPath, const char* Extension, directory_data* DirectoryData, b32 WithSubDirectories, memory_arena* TempArena)
+#define PLATFORM_GET_ALL_FILES_WITH_EXTENSION(name) void name(const char* DirectoryPath, const char* Extension, directory_data* DirectoryData, b32 WithSubDirectories)
 typedef PLATFORM_GET_ALL_FILES_WITH_EXTENSION(platform_get_all_files_with_extension);
 
 #define PLATFORM_FILE_EXISTS(name) b32 name(const char* FilePath)

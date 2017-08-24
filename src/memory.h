@@ -1,8 +1,6 @@
 #ifndef MEMORY_H
 #define MEMORY_H
 
-struct memory_arena;
-
 struct memory_arena
 {
     platform_memory_block* CurrentBlock;
@@ -134,9 +132,50 @@ void* PushSize_(memory_arena* Arena, sz SizeInit, arena_push_params Params = Def
     return Result;
 }
 
-#define Copy(Dest, Src, Size, Arena, type) Dest = PushSize(Arena, Size, type);\
-memcpy(Dest, Src, Size);
+#define PushTempArray(Count, type, ...) (type*)PushTempSize_((Count)*sizeof(type), __VA_ARGS__)
+#define PushTempSize(Size, type, ...) (type*)PushTempSize_( Size, __VA_ARGS__)
+inline void* PushTempSize_(sz Size)
+{
+    platform_memory_block* Block = Platform.AllocateMemory(Size, PM_Temporary);
+    void* Result = Block->Base;
+    return Result;
+}
 
+inline char* PushTempString(u32 Length)
+{
+    platform_memory_block* Block = Platform.AllocateMemory(Length, PM_Temporary);
+    char* Result = (char*)Block->Base;
+    Result[Length + 1] = 0;
+    return Result;
+}
+
+inline char* PushTempString(char* Source)
+{
+    auto Length = strlen(Source);
+    char* Dest = PushTempString((u32)Length);
+    for(u32 CharIndex = 0; CharIndex < Length; CharIndex++)
+    {
+        Dest[CharIndex] = Source[CharIndex];
+    }
+    Dest[Length + 1] = 0;
+    return Dest;
+}
+
+inline char* PushTempString(const char* Source)
+{
+    auto Length = strlen(Source);
+    char* Dest = PushTempString((u32)Length);
+    for(u32 CharIndex = 0; CharIndex < Length; CharIndex++)
+    {
+        Dest[CharIndex] = Source[CharIndex];
+    }
+    Dest[Length + 1] = 0;
+    return Dest;
+}
+
+#define Copy(Arena, Dest, Src, Size, type) Dest = PushSize(Arena, Size, type); memcpy(Dest, Src, Size);
+
+#define CopyTemp(Dest, Src, Size, type) Dest = PushTempSize(Size, type); memcpy(Dest, Src, Size);
 
 inline void FreeLastBlock(memory_arena* Arena)
 {
