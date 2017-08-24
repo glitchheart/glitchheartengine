@@ -90,7 +90,7 @@ void* PushSize_(memory_arena* Arena, sz SizeInit, arena_push_params Params = Def
 {
     void* Result = 0;
     
-    sz Size = 0;
+    umm Size = 0;
     
     if(Arena->CurrentBlock)
     {
@@ -100,9 +100,12 @@ void* PushSize_(memory_arena* Arena, sz SizeInit, arena_push_params Params = Def
     if(!Arena->CurrentBlock || (Arena->CurrentBlock->Used + Size) > Arena->CurrentBlock->Size)
     {
         Size = SizeInit;
-        //@Incomplete: Do some overflow checking for aligning (Like Casey?)
-        
-        if(!Arena->MinimumBlockSize)
+        if(Arena->AllocationFlags & (PM_OverflowCheck | PM_UnderflowCheck))
+        {
+            Arena->MinimumBlockSize = 0;
+            Size = AlignPow2((u32)Size, Params.Alignment);
+        }
+        else if(!Arena->MinimumBlockSize)
         {
             Arena->MinimumBlockSize = 1024 * 1024;
         }
@@ -110,7 +113,7 @@ void* PushSize_(memory_arena* Arena, sz SizeInit, arena_push_params Params = Def
         sz BlockSize = Max(Size, Arena->MinimumBlockSize);
         
         //@Incomplete: Send some sort of allocation flags here
-        platform_memory_block* NewBlock = Platform.AllocateMemory(BlockSize);
+        platform_memory_block* NewBlock = Platform.AllocateMemory(BlockSize, Arena->AllocationFlags);
         
         NewBlock->Prev = Arena->CurrentBlock;
         Arena->CurrentBlock = NewBlock;
@@ -222,7 +225,7 @@ inline void* BootstrapPushSize_(umm StructSize, umm OffsetToArena,
     Bootstrap.AllocationFlags = BootstrapParams.AllocationFlags;
     Bootstrap.MinimumBlockSize = BootstrapParams.MinimumBlockSize;
     void* Struct = PushSize(&Bootstrap, StructSize, void*, Params);
-    *(memory_arena*)((u8*)Struct + OffsetToArena) = Bootstrap;
+    *(memory_arena *)((u8 *)Struct + OffsetToArena) = Bootstrap;
     
     return Struct;
 }

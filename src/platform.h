@@ -12,7 +12,7 @@
 #endif
 
 #if GLITCH_DEBUG
-#define Assert(Expression) if(!(Expression)) {DEBUG_PRINT("Assertion failed in: %s on line %d\n",__FILE__,__LINE__); exit(EXIT_FAILURE);}
+#define Assert(Expression) if(!(Expression)) {DEBUG_PRINT("Assertion failed in: %s on line %d\n",__FILE__,__LINE__); *(int*)0 = 0;}
 #else
 #define Assert(Expression)
 #endif
@@ -25,6 +25,8 @@
 #define Megabytes(Value) (Kilobytes(Value)*1024LL)
 #define Gigabytes(Value) (Megabytes(Value)*1024LL)
 #define Terabytes(Value) (Gigabytes(Value)*1024LL)
+
+#define AlignPow2(Value, Alignment) ((Value + ((Alignment) - 1)) & ~((Alignment) - 1))
 
 #define PI 3.141592653589793f
 #define DEGREE_IN_RADIANS 0.0174532925f
@@ -100,7 +102,11 @@ struct directory_data
     i32 FilesLength = 0;
 };
 
-struct memory_arena;
+enum platform_memory_block_flags
+{
+    PM_OverflowCheck = 0x1,
+    PM_UnderflowCheck = 0x2
+};
 
 struct platform_memory_block
 {
@@ -111,13 +117,15 @@ struct platform_memory_block
     platform_memory_block* Prev;
 };
 
+struct memory_arena;
+
 #define PLATFORM_GET_ALL_FILES_WITH_EXTENSION(name) void name(const char* DirectoryPath, const char* Extension, directory_data* DirectoryData, b32 WithSubDirectories, memory_arena* TempArena)
 typedef PLATFORM_GET_ALL_FILES_WITH_EXTENSION(platform_get_all_files_with_extension);
 
 #define PLATFORM_FILE_EXISTS(name) b32 name(const char* FilePath)
 typedef PLATFORM_FILE_EXISTS(platform_file_exists);
 
-#define PLATFORM_ALLOCATE_MEMORY(name) platform_memory_block* name(sz Size)
+#define PLATFORM_ALLOCATE_MEMORY(name) platform_memory_block* name(sz Size, u64 Flags)
 typedef PLATFORM_ALLOCATE_MEMORY(platform_allocate_memory);
 
 #define PLATFORM_DEALLOCATE_MEMORY(name) void name(platform_memory_block* Block)

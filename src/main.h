@@ -4,6 +4,7 @@
 struct win32_memory_block
 {
     platform_memory_block Block;
+    u64 Pad[3];
 };
 
 struct win32_state
