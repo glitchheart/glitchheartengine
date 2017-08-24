@@ -5,7 +5,7 @@ void ReloadLevel(game_state* GameState)
     ReloadCurrentLevel(GameState);
 }
 
-void AddCommand(char* Name, char* (*FunctionPointer)(game_state*, transient_state*, char**))
+void AddCommand(char* Name, char* (*FunctionPointer)(game_state*, char**))
 {
     command_info Info = { Name, FunctionPointer };
     Commands[CommandCount++] = Info;
@@ -23,7 +23,7 @@ static void InitCommands()
     AddCommand("loadlevel", &LoadLevel);
 }
 
-void ExecuteCommand(game_state *GameState, transient_state* TranState)
+void ExecuteCommand(game_state *GameState)
 {
     if(strcmp(" ",  GameState->Console.Buffer) != 0
        && strcmp("",  GameState->Console.Buffer) != 0) //NOTE(Daniel) if the command isn't an empty string
@@ -41,7 +41,7 @@ void ExecuteCommand(game_state *GameState, transient_state* TranState)
         
         int Count = 0;
         
-        char** ArgumentBuffer = PushArray(&TranState->TranArena, 10, char*);
+        char** ArgumentBuffer = PushTempArray(10, char*);
         
         while(Pointer != NULL)
         {
@@ -60,7 +60,7 @@ void ExecuteCommand(game_state *GameState, transient_state* TranState)
             if(strcmp(CommandName, Commands[i].Name) == 0)
             {
                 Found = true;
-                Result = Commands[i].FunctionPointer(GameState,TranState, Count > 0 ? ArgumentBuffer : 0);
+                Result = Commands[i].FunctionPointer(GameState, Count > 0 ? ArgumentBuffer : 0);
                 break;
             }
         }
@@ -68,7 +68,7 @@ void ExecuteCommand(game_state *GameState, transient_state* TranState)
         
         if(!Found)
         {
-            Result = Concat(Result, ": Command not found", &TranState->TranArena);
+            Result = Concat(Result, ": Command not found");
         }
         
         //Copy the command into the history buffer
@@ -87,7 +87,7 @@ void ExecuteCommand(game_state *GameState, transient_state* TranState)
     }
 }
 
-static void CheckConsoleInput(game_state* GameState, transient_state* TranState,  input_controller* InputController, r64 DeltaTime)
+static void CheckConsoleInput(game_state* GameState,  input_controller* InputController, r64 DeltaTime)
 {
     if(GameState->Console.Open && GameState->Console.CurrentTime < GameState->Console.TimeToAnimate)
     {
@@ -129,6 +129,6 @@ static void CheckConsoleInput(game_state* GameState, transient_state* TranState,
     
     if (GetKeyDown(Key_Enter, InputController) && GameState->Console.Open)
     {
-        ExecuteCommand(GameState, TranState);
+        ExecuteCommand(GameState);
     }
 }

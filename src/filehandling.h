@@ -85,7 +85,7 @@ static void CheckDirty(const char* FilePath, time_t LastTime, b32* DirtyId, time
     *Time = time;
 }
 
-static void StartupFileTimeChecks(asset_manager* AssetManager, memory_arena* TempArena)
+static void StartupFileTimeChecks(asset_manager* AssetManager)
 {
     if(!AssetManager->IsInitialized)
     {
@@ -114,18 +114,18 @@ static void StartupFileTimeChecks(asset_manager* AssetManager, memory_arena* Tem
     for (int i = 0; i < Shader_Count; i++) 
     {
         struct stat sb1;
-        auto ConcatedVertexShaderString = Concat(ShaderPaths[i], ".vert", TempArena);
+        auto ConcatedVertexShaderString = Concat(ShaderPaths[i], ".vert");
         stat(ConcatedVertexShaderString, &sb1);
         AssetManager->VertexShaderTimes[i] =  sb1.st_mtime;
         
         struct stat sb2;
-        auto ConcatedFragmentShaderString = Concat(ShaderPaths[i], ".frag", TempArena);
+        auto ConcatedFragmentShaderString = Concat(ShaderPaths[i], ".frag");
         stat(ConcatedFragmentShaderString, &sb2);
         AssetManager->FragmentShaderTimes[i] =  sb2.st_mtime;
     }
 }
 
-static void ListenToFileChanges(asset_manager* AssetManager, memory_arena* TempArena)
+static void ListenToFileChanges(asset_manager* AssetManager)
 {
     AssetManager->ListenForChanges = true;
     
@@ -133,8 +133,8 @@ static void ListenToFileChanges(asset_manager* AssetManager, memory_arena* TempA
     {
         for (int i = 0; i < Shader_Count; i++)
         {
-            char* VertexPath = Concat(ShaderPaths[i], ".vert", TempArena);
-            char* FragmentPath = Concat(ShaderPaths[i], ".frag", TempArena);
+            char* VertexPath = Concat(ShaderPaths[i], ".vert");
+            char* FragmentPath = Concat(ShaderPaths[i], ".frag");
             
             CheckDirty(VertexPath, AssetManager->VertexShaderTimes[i], &AssetManager->DirtyVertexShaderIndices[i], &AssetManager->VertexShaderTimes[i]);
             CheckDirty(FragmentPath, AssetManager->FragmentShaderTimes[i], &AssetManager->DirtyFragmentShaderIndices[i], &AssetManager->FragmentShaderTimes[i]);
@@ -158,8 +158,8 @@ inline PLATFORM_GET_ALL_FILES_WITH_EXTENSION(Win32FindFilesWithExtensions)
 {
     if(DirectoryData->FilesLength == 0)
     {
-        DirectoryData->FileNames = PushArray(TempArena, 512, char*);
-        DirectoryData->FilePaths = PushArray(TempArena, 512, char*);
+        DirectoryData->FileNames = PushTempArray(512, char*);
+        DirectoryData->FilePaths = PushTempArray(512, char*);
     }
     
     WIN32_FIND_DATA FindFile;
@@ -181,7 +181,7 @@ inline PLATFORM_GET_ALL_FILES_WITH_EXTENSION(Win32FindFilesWithExtensions)
                 {
                     char SubPath[2048];
                     sprintf(SubPath, "%s%s/", DirectoryPath, FindFile.cFileName);
-                    Win32FindFilesWithExtensions(SubPath, Extension, DirectoryData, WithSubDirectories, TempArena);
+                    Win32FindFilesWithExtensions(SubPath, Extension, DirectoryData, WithSubDirectories);
                 }
                 
             }
@@ -208,11 +208,11 @@ inline PLATFORM_GET_ALL_FILES_WITH_EXTENSION(Win32FindFilesWithExtensions)
                 {
                     
                     
-                    char* ConcatStr = Concat(DirectoryPath, FindFile.cFileName, TempArena);
+                    char* ConcatStr = Concat(DirectoryPath, FindFile.cFileName);
                     char* FileName = strtok(FindFile.cFileName, ".");
                     
-                    DirectoryData->FilePaths[DirectoryData->FilesLength] = PushString(TempArena, ConcatStr);
-                    DirectoryData->FileNames[DirectoryData->FilesLength] = PushString(TempArena, FileName);
+                    DirectoryData->FilePaths[DirectoryData->FilesLength] = PushTempString(ConcatStr);
+                    DirectoryData->FileNames[DirectoryData->FilesLength] = PushTempString(FileName);
                     DirectoryData->FilesLength++;
                 }
             }

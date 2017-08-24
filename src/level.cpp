@@ -1,6 +1,6 @@
-                              static void LoadOrthogonalTilemapBuffer(renderer& Renderer, tilemap& Tilemap, memory_arena* TempArena)
+                              static void LoadOrthogonalTilemapBuffer(renderer& Renderer, tilemap& Tilemap)
                               {
-                                  r32* VertexBuffer = PushArray(TempArena, 16 * Tilemap.Width * Tilemap.Height, r32);
+                                  r32* VertexBuffer = PushTempArray(16 * Tilemap.Width * Tilemap.Height, r32);
                                   
                                   i32 Size = 0;
                                   
@@ -48,9 +48,9 @@
                                   LoadBuffer(Renderer, VertexBuffer, Size, &Tilemap.BufferHandle);
                               }
                               
-                              static void LoadTilemapBuffer(renderer& Renderer, tilemap& Tilemap, memory_arena* TempArena)
+                              static void LoadTilemapBuffer(renderer& Renderer, tilemap& Tilemap)
                               {
-                                  r32* VertexBuffer = PushArray(TempArena, 16 * Tilemap.Width * Tilemap.Height, r32);
+                                  r32* VertexBuffer = PushTempArray(16 * Tilemap.Width * Tilemap.Height, r32);
                                   
                                   i32 Size = 0;
                                   
@@ -206,7 +206,7 @@
                                   }
                               }
                               
-                              static b32 LoadLevelFromFile(char* FilePath, level* Level, game_state* GameState, transient_state* TranState, renderer& Renderer, sound_queue* SoundQueue)
+                              static b32 LoadLevelFromFile(char* FilePath, level* Level, game_state* GameState, renderer& Renderer, sound_queue* SoundQueue)
                               {
                                   //read the file manmain
                                   FILE* File;
@@ -228,12 +228,12 @@
                                       
                                       Level->Tilemap.TextureName = Level->SheetName;
                                       
-                                      LoadTilesheetMetaFile(Concat(Concat("../assets/textures/tilesheets/", Level->SheetName, &TranState->TranArena), ".tm", &TranState->TranArena), Level, &Level->Tilemap, GameState, Renderer);
+                                      LoadTilesheetMetaFile(Concat(Concat("../assets/textures/tilesheets/", Level->SheetName), ".tm"), Level, &Level->Tilemap, GameState, Renderer);
                                       
                                       if(fgets(LineBuffer, 255, File))
                                           sscanf(LineBuffer, "%f %f %f", &Level->PlayerStartPosition.x, &Level->PlayerStartPosition.y, &Level->PlayerStartPosition.z);
                                       
-                                      LoadPlayerData(GameState, TranState, SoundQueue, -1, math::Floor(Level->PlayerStartPosition));
+                                      LoadPlayerData(GameState, SoundQueue, -1, math::Floor(Level->PlayerStartPosition));
                                       
                                       if(fgets(LineBuffer, 255, File))
                                           sscanf(LineBuffer, "%d", &MapWidth);
@@ -317,7 +317,7 @@
                                           IndexHeight = 0;
                                       }
                                       
-                                      LoadOrthogonalTilemapBuffer(Renderer, Level->Tilemap, &TranState->TranArena);
+                                      LoadOrthogonalTilemapBuffer(Renderer, Level->Tilemap);
                                       
                                       u32 PathIndex = 0;
                                       
@@ -328,14 +328,14 @@
                                               math::v3 Pos;
                                               Pos = math::Floor(Pos);
                                               sscanf(LineBuffer, "skeleton %f %f %f%n", &Pos.x, &Pos.y, &Pos.z, &PathIndex);
-                                              LoadSkeletonData(GameState, TranState, -1, Pos);
+                                              LoadSkeletonData(GameState, -1, Pos);
                                           }
                                           else if(StartsWith(LineBuffer, "bonfire"))
                                           {
                                               math::v3 Pos;
                                               Pos = math::Floor(Pos);
                                               sscanf(LineBuffer, "bonfire %f %f %f", &Pos.x, &Pos.y, &Pos.z);
-                                              LoadBonfireData(GameState, TranState, SoundQueue, -1, Pos);
+                                              LoadBonfireData(GameState, SoundQueue, -1, Pos);
                                           }
                                           
                                           if(PathIndex != 0)
@@ -381,14 +381,14 @@
                                   return false;
                               }
                               
-                              static void SaveLevelToFile(const char* FilePath, level* Level, game_state* GameState, transient_state* TranState, renderer& Renderer, b32 New = false)
+                              static void SaveLevelToFile(const char* FilePath, level* Level, game_state* GameState, renderer& Renderer, b32 New = false)
                               {
                                   FILE* File;
                                   File = fopen(FilePath, "w");
                                   
                                   if(File)
                                   {
-                                      SaveTilesheetMetaFile(Concat(Concat("../assets/textures/tilesheets/", Level->SheetName, &TranState->TranArena),".tm", &TranState->TranArena), Renderer, *Level, New);
+                                      SaveTilesheetMetaFile(Concat(Concat("../assets/textures/tilesheets/", Level->SheetName),".tm"), Renderer, *Level, New);
                                       
                                       fprintf(File, "%s\n", Level->Name);
                                       fprintf(File, "%s\n", Level->SheetName);
@@ -505,7 +505,7 @@
                                   }
                               }
                               
-                              static void CreateNewLevelWithSize(char* FilePath, u32 Width, u32 Height, level* NewLevel, renderer& Renderer, game_state* GameState, transient_state* TranState, sound_queue* SoundQueue)
+                              static void CreateNewLevelWithSize(char* FilePath, u32 Width, u32 Height, level* NewLevel, renderer& Renderer, game_state* GameState, sound_queue* SoundQueue)
                               {
                                   NewLevel->Tilemap.Width = Width;
                                   NewLevel->Tilemap.Height = Height;
@@ -524,7 +524,7 @@
                                   }
                                   
                                   
-                                  SaveLevelToFile(FilePath, NewLevel, GameState, TranState, Renderer, true);
-                                  LoadTilesheetMetaFile(Concat(Concat("../assets/textures/tilesheets/", NewLevel->SheetName, &TranState->TranArena), ".tm", &TranState->TranArena), NewLevel, &NewLevel->Tilemap, GameState, Renderer);
-                                  LoadLevelFromFile(FilePath, NewLevel, GameState, TranState, Renderer, SoundQueue);
+                                  SaveLevelToFile(FilePath, NewLevel, GameState, Renderer, true);
+                                  LoadTilesheetMetaFile(Concat(Concat("../assets/textures/tilesheets/", NewLevel->SheetName), ".tm"), NewLevel, &NewLevel->Tilemap, GameState, Renderer);
+                                  LoadLevelFromFile(FilePath, NewLevel, GameState, Renderer, SoundQueue);
 }

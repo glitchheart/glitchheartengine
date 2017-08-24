@@ -150,11 +150,6 @@ struct game_state
     i32 EditorCameraHandle;
 };
 
-struct transient_state
-{
-    memory_arena TranArena;
-};
-
 void StartTimer(game_state* GameState, timer& Timer)
 {
     if(Timer.TimerHandle == -1)

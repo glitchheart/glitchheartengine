@@ -204,11 +204,32 @@ inline void LoadConfig(const char* FilePath, config_data* ConfigData, memory_are
     }
 }
 
+// Global
+win32_temp_memory Win32TempMemory;
+
 PLATFORM_ALLOCATE_MEMORY(Win32AllocateMemory)
 {
+    Assert(sizeof(win32_memory_block) == 64);
+    
+    umm PageSize = 4096; //TODO: Not really always correct?
     umm TotalSize = Size + sizeof(win32_memory_block);
     umm BaseOffset = sizeof(win32_memory_block);
+    umm ProtectOffset = 0;
     
+    if(Flags & PM_UnderflowCheck)
+    {
+        TotalSize = Size + 2 * PageSize;
+        BaseOffset = 2 * PageSize;
+        ProtectOffset = PageSize;
+    }
+    
+    if(Flags & PM_OverflowCheck)
+    {
+        umm SizeRoundedUp = AlignPow2(Size, PageSize);
+        TotalSize = SizeRoundedUp + 2 * PageSize;
+        BaseOffset = PageSize + SizeRoundedUp - Size;
+        ProtectOffset = PageSize + SizeRoundedUp;
+    }
     
     win32_memory_block* Block  = (win32_memory_block*)VirtualAlloc(0, TotalSize, MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE);
     
@@ -217,10 +238,23 @@ PLATFORM_ALLOCATE_MEMORY(Win32AllocateMemory)
     Assert(Block->Block.Used == 0);
     Assert(Block->Block.Prev == 0);
     
-    Block->Block.Size = Size;
-    //Block->Block.Flags = Flags;
+    if(Flags & (PM_UnderflowCheck | PM_OverflowCheck))
+    {
+        DWORD OldProtect = 0;
+        BOOL Protected = VirtualProtect((u8*)Block + ProtectOffset, PageSize, PAGE_NOACCESS, &OldProtect);
+        Assert(Protected);
+    }
     
-    platform_memory_block* PlatBlock =&Block->Block;
+    Block->Block.Size = Size;
+    Block->Block.Flags = Flags;
+    
+    platform_memory_block* PlatBlock = &Block->Block;
+    
+    if(Flags & PM_Temporary)
+    {
+        Assert((Win32TempMemory.TempCount + 1) < MAX_TEMP_BLOCKS);
+        Win32TempMemory.Blocks[Win32TempMemory.TempCount++] = PlatBlock;
+    }
     
     return PlatBlock;
 }
@@ -234,8 +268,19 @@ PLATFORM_DEALLOCATE_MEMORY(Win32DeallocateMemory)
     }
 }
 
+static void ClearTempMemory()
+{
+    for(i32 Temp = 0; Temp < Win32TempMemory.TempCount; Temp++)
+    {
+        Win32DeallocateMemory(Win32TempMemory.Blocks[Temp]);
+    }
+    Win32TempMemory.TempCount = 0;
+}
+
 int main(void)
 {
+    
+    Win32TempMemory.TempCount = 0;
     game_memory GameMemory = {};
     
     GameMemory.ShouldReload = true;
@@ -265,7 +310,7 @@ int main(void)
     
     //setup asset reloading
     asset_manager AssetManager = {};
-    StartupFileTimeChecks(&AssetManager, &Win32State->TempArena);
+    StartupFileTimeChecks(&AssetManager);
     
     u32 FrameCounterForAssetCheck = 0;
     
@@ -276,7 +321,7 @@ int main(void)
     sound_effects SoundEffects = {};
     if (SoundDevice.IsInitialized)
     {
-        LoadSounds(&SoundEffects, &SoundDevice, &Win32State->TempArena);
+        LoadSounds(&SoundEffects, &SoundDevice);
         ResetSoundQueue(&SoundQueue);
         SoundDevice.SFXVolume = ConfigData.SFXVolume;
         SoundDevice.MusicVolume = ConfigData.MusicVolume;
@@ -286,6 +331,8 @@ int main(void)
     r64 LastFrame = GetTime();
     r64 CurrentFrame = 0.0;
     r64 DeltaTime;
+    
+    printf("%zd\n", sizeof(win32_memory_block));
     
     while (!ShouldCloseWindow(RenderState) && !RenderState.ShouldClose)
     {
@@ -324,7 +371,7 @@ int main(void)
             SoundDevice.Paused = !SoundDevice.Paused;
         }
         
-        ReloadAssets(RenderState, &AssetManager, &Win32State->TempArena);
+        ReloadAssets(RenderState, &AssetManager, &Win32State->PermArena);
         GameMemory.ReloadData = &AssetManager.ReloadData;
         ReloadDlls(&Game);
         
@@ -333,7 +380,7 @@ int main(void)
         
         //CheckLevelVAO(&GameMemory);
         
-        Render(RenderState, Renderer, &Win32State->TempArena);
+        Render(RenderState, Renderer, &Win32State->PermArena);
         PlaySounds(&SoundDevice, &SoundQueue, GameUpdateStruct.EntityPositions, GameUpdateStruct.EntityCount);
         
         SetControllerInvalidKeys();
@@ -350,13 +397,14 @@ int main(void)
         FrameCounterForAssetCheck++;
         if(FrameCounterForAssetCheck == 10)
         {
-            ListenToFileChanges(&AssetManager, &Win32State->TempArena);
+            ListenToFileChanges(&AssetManager);
             FrameCounterForAssetCheck = 0;
         }
         
         // NOTE(Niels): Do this for game transient state as well?
         // Or maybe Game itself should do this.. Hmmmm
-        Clear(&Win32State->TempArena);
+        //Clear(&Win32State->TempArena);
+        ClearTempMemory();
     }
     
     CleanupSound(&SoundDevice);

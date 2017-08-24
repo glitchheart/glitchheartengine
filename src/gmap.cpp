@@ -90,9 +90,8 @@ inline u64 HashIntKeys(u64 Size, i32 Key)
 
 void* AllocateMemory(size_t Size)
 {
-    return Platform.AllocateMemory(Size);
+    return Platform.AllocateMemory(Size, PM_UnderflowCheck | PM_OverflowCheck);
 }
-
 
 void DeallocateMemory(void* Block)
 {

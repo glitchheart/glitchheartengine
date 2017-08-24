@@ -4,9 +4,18 @@
 #include "memory.h"
 #include "rendering.h"
 
-inline char* Concat(const char *s1, const char *s2, memory_arena* Arena)
+inline char* Concat(const char *s1, const char *s2, memory_arena* Arena = 0)
 {
-    char* result = PushString(Arena, (u32)(strlen(s1) + strlen(s2)));
+    char* result;
+    if(Arena)
+    {
+        result = PushString(Arena, (u32)(strlen(s1) + strlen(s2)));
+    }
+    else
+    {
+        result = PushTempString((u32)(strlen(s1) + strlen(s2)));
+    }
+    
     strcpy(result, s1);
     strcat(result, s2);
     return result;
