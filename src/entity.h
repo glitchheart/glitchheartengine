@@ -189,7 +189,6 @@ struct object_entity
     math::v3 Center;
     b32 IsFlipped;
     i32 RenderEntityHandle;
-    i32 LightSourceHandle;
     
     animation* CurrentAnimation;
     animation_info AnimationInfo;
@@ -267,8 +266,6 @@ struct entity
     b32 IsColliding;
     b32 HasHitTrigger;
     collision_AABB HitTrigger;
-    
-    i32 LightSourceHandle;
     
     math::v3 Velocity;
     

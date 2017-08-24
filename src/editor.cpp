@@ -302,7 +302,6 @@ static void CheckEditorUIInput(game_state* GameState, renderer& Renderer, input_
                     
                     GameState->EditorState.ShouldLoop = GameState->EditorState.LoadedAnimation->Loop;
                     
-                    animation* LoadedAnimation = GameState->EditorState.LoadedAnimation;
                     GameState->EditorState.LoadedAnimation->Loop = 1;
                     //InitEditorFields(GameState);
                     SetFieldValues(GameState, true);
@@ -313,11 +312,6 @@ static void CheckEditorUIInput(game_state* GameState, renderer& Renderer, input_
     }
     
     InputController->DeleteCharacter = KEY_DOWN(Key_Backspace);
-    
-    auto MouseX = InputController->MouseX;
-    auto MouseY = InputController->MouseY;
-    
-    int ListRectWidth = 120;
     
     if(GameState->EditorState.SelectedEntity && KEY_DOWN(Key_Delete))
     {

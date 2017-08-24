@@ -26,11 +26,7 @@ static inline void CameraTransform(renderer& Renderer, camera& Camera, math::v3 
     {
         //Camera.ProjectionMatrix = math::Perspective(Renderer.Viewport[2] / Renderer.Viewport[3], 0.78f, Near, Far);
         
-        r32 N = 0.01f;
-        r32 F = 100.0f;
-        r32 AngleOfView = 90.0f;
-        
-        Camera.ProjectionMatrix = math::Perspective((r32)Renderer.Viewport[2] / (r32)Renderer.Viewport[3], 0.60f, 0.1f, 100.0f);
+        Camera.ProjectionMatrix = math::Perspective((r32)Renderer.Viewport[2] / (r32)Renderer.Viewport[3], 0.60f, Near, Far);
         
         Camera.ViewMatrix = math::m4(1.0f);
         Camera.ViewMatrix = math::Translate(Camera.ViewMatrix, Camera.P);

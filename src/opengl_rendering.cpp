@@ -235,7 +235,7 @@ static void InitializeFreeTypeFont(char* FontPath, int FontSize, FT_Library Libr
     
     glGenBuffers(1, &Font->VBO);
     glBindBuffer(GL_ARRAY_BUFFER, Font->VBO);
-    auto TexcoordLocation = glGetAttribLocation(Shader->Program, "coord");
+    
     glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, 0);
     glEnableVertexAttribArray(0);
     glBindVertexArray(0);
@@ -1205,11 +1205,9 @@ static void RenderConsole(render_state& RenderState, console* Console)
     
     RenderText(RenderState, RenderState.InconsolataFont, math::v4(0, 0.8, 0, 1),  &Console->Buffer[0],  5 / 1920.0f * (r32)RenderState.WindowWidth, (r32)RenderState.WindowHeight * 0.775f * PercentAnimated);
     
-    int index = 0;
-    
     math::v4 Color;
     
-    for(int Index = 0; Index < HISTORY_BUFFER_LINES; Index++)
+    for(i32 Index = 0; Index < HISTORY_BUFFER_LINES; Index++)
     {
         if(Index % 2 != 0)
             Color = math::v4(0, 1, 0, 1);
