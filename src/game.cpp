@@ -205,12 +205,11 @@ extern "C" UPDATE(Update)
         
         model Model1;
         Model1.Position = math::v3(0, 0, 0);
-        Model1.Scale = math::v3(0.5, 0.5, 0.5);
-        Model1.Rotation = math::v3(-90, 0, 0);
+        Model1.Scale = math::v3(1, 1, 1);
+        Model1.Rotation = math::v3(0, 0, 0);
         model Model2;
         Model2.Position = math::v3(0, 0, 0);
         Model2.Scale = math::v3(1.0, 1.0, 1.0);
-        
         model Model3;
         Model3.Position = math::v3(5, 0, 0);
         Model3.Scale = math::v3(1.0, 1.0, 1.0);
@@ -229,7 +228,7 @@ extern "C" UPDATE(Update)
         Model6.Position = math::v3(-10.0f, 5.0f, 0);
         Model6.Scale = math::v3(1.0, 1.0, 1.0);
         
-        LoadModel(Renderer, "../assets/models/knight.modl", &Model1, &TranState->TranArena);
+        LoadModel(Renderer, "../assets/models/animated_test.modl", &Model1, &TranState->TranArena);
         LoadModel(Renderer, "../assets/models/red_riding.modl", &Model2, &TranState->TranArena);
         LoadModel(Renderer, "../assets/models/capsule.modl", &Model3, &TranState->TranArena);
         LoadModel(Renderer, "../assets/models/mask_boy.modl", &Model4, &TranState->TranArena);
@@ -344,13 +343,13 @@ extern "C" UPDATE(Update)
         GameCamera.ViewportHeight = Renderer.WindowHeight;
         GameCamera.FollowSpeed = 3.5f; 
         GameCamera.FadingSpeed = 0.6f;
-        GameCamera.P = math::v3(-5.0f, 15.0f, -50.0f);
+        GameCamera.P = math::v3(-5.0f, 15.0f, -20.0f);
         
         StartFade(GameCamera, Fading_In, 0.6f, math::v3(0, 0, 0), 1.0f, 0.0f);
         
         // @Incomplete: This is not the right value, it is only set so high to remove smooth following as of now, since it needs to be done a little differently
         
-        GameCamera.Center = math::v3(GameState->Entities[0].Position.x, GameState->Entities[0].Position.y, GameState->Entities[0].Position.z + 40.0f); // Set center to player's position!
+        GameCamera.Center = math::v3(GameState->Entities[0].Position.x, GameState->Entities[0].Position.y, GameState->Entities[0].Position.z + 100.0f); // Set center to player's position!
         GameCamera.CenterTarget = GameCamera.Center;
         
         GameState->IsInitialized = true;
@@ -801,7 +800,7 @@ extern "C" UPDATE(Update)
     
     GameCamera.P += math::v3((r32)(X * DeltaTime * PanSpeed), (r32)(Y * DeltaTime * PanSpeed), 0.0f);
     
-    CameraTransform(Renderer, GameCamera, GameCamera.Center, GameCamera.Zoom, -20.0f, 200.0f, CFlag_Orthographic);
+    CameraTransform(Renderer, GameCamera, GameCamera.Center, GameCamera.Zoom, -200.0f, 2000.0f, CFlag_Orthographic);
     
     InputController->CurrentCharacter = 0;
     GameState->ClearTilePositionFrame = !GameState->ClearTilePositionFrame;
@@ -866,6 +865,4 @@ extern "C" UPDATE(Update)
     PushOutlinedRect(Renderer, math::v3(150.0f, 50.0f, 0.0f), math::v3(40.0f, 40.0f, 40.0f), math::rgba(1.0, 0.0, 0.0, 1.0), true);
     
     PushText(Renderer, FPSBuffer, math::v3(200, 200, 2), 0, math::rgba(1, 0, 0, 1));
-    
-    //PushModel(Renderer, *GameState->TESTMODEL);
 }
