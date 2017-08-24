@@ -1,29 +1,29 @@
 #ifndef CONSOLE_COMMANDS_H
 #define CONSOLE_COMMANDS_H
 
-static char* Zoom(game_state* GameState, transient_state* TranState, char** Arguments)
+static char* Zoom(game_state* GameState, memory_arena* TempArena, char** Arguments)
 {
     r32 ZoomAmount = (r32) strtod(Arguments[0], NULL);
     //@Incomplete: Should be renderer.camera
     //GameCamera.Zoom = ZoomAmount;
-    return Concat("Zoom set to ", Arguments[0], &TranState->TranArena);
+    return Concat("Zoom set to ", Arguments[0], TempArena);
 }
 
-static char* Jump(game_state* GameState, transient_state* TranState, char** Arguments)
+static char* Jump(game_state* GameState, memory_arena* TempArena, char** Arguments)
 {
     r32 X = (r32) strtod(Arguments[0], NULL);
     r32 Y = (r32) strtod(Arguments[1], NULL);
     r32 Z = (r32) strtod(Arguments[2], NULL);
     
     GameState->Entities[GameState->PlayerIndex].Position = math::v3(X, Y, Z);
-    char* Result = PushString(&TranState->TranArena, 40);
+    char* Result = PushString(TempArena, 40);
     sprintf(Result, "Jumped to position %.2f %.2f %.2f", X, Y, Z);
     return Result;
 }
 
-static char* LoadLevel(game_state* GameState, transient_state* TranState,char** Arguments)
+static char* LoadLevel(game_state* GameState, memory_arena* TempArena,char** Arguments)
 {
-    char* Result = PushString(&TranState->TranArena, 25);
+    char* Result = PushString(TempArena, 25);
     
     if(Arguments)
     {
@@ -32,7 +32,7 @@ static char* LoadLevel(game_state* GameState, transient_state* TranState,char** 
         char* PathPrefix = "../assets/levels/";
         char* PathSuffix = ".plv";
         
-        char* Path = Concat(Concat(PathPrefix, Arguments[0], &TranState->TranArena), PathSuffix, &TranState->TranArena);
+        char* Path = Concat(Concat(PathPrefix, Arguments[0], TempArena), PathSuffix, TempArena);
         
         DEBUG_PRINT("String allocation\n");
         
@@ -110,10 +110,10 @@ static void ReloadCurrentLevel(game_state* GameState)
 }
 
 
-static char* Reset(game_state* GameState, transient_state* TranState,char** Arguments)
+static char* Reset(game_state* GameState, memory_arena* TempArena,char** Arguments)
 {
     ReloadCurrentLevel(GameState);
-    char* Result = PushString(&TranState->TranArena, 12);
+    char* Result = PushString(TempArena, 12);
     sprintf(Result, "Reset level");
     return Result;
 }
@@ -126,7 +126,7 @@ static char* Exit(render_state& RenderState, char** Arguments)
 }
 */
 
-static char* View(game_state* GameState, transient_state* TranState,char** Arguments)
+static char* View(game_state* GameState, memory_arena* TempArena,char** Arguments)
 {
     if(Arguments) 
     {
@@ -134,7 +134,7 @@ static char* View(game_state* GameState, transient_state* TranState,char** Argum
     return "Error: No arguments provided";
 }
 
-static char* Editor(game_state* GameState, transient_state* TranState,char** Arguments)
+static char* Editor(game_state* GameState, memory_arena* TempArena,char** Arguments)
 {
     if(Arguments)
     {

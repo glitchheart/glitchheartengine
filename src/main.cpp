@@ -206,9 +206,27 @@ inline void LoadConfig(const char* FilePath, config_data* ConfigData, memory_are
 
 PLATFORM_ALLOCATE_MEMORY(Win32AllocateMemory)
 {
+    Assert(sizeof(win32_memory_block) == 64);
+    
+    umm PageSize = 4096; //TODO: Not really always correct?
     umm TotalSize = Size + sizeof(win32_memory_block);
     umm BaseOffset = sizeof(win32_memory_block);
+    umm ProtectOffset = 0;
     
+    if(Flags & PM_UnderflowCheck)
+    {
+        TotalSize = Size + 2 * PageSize;
+        BaseOffset = 2 * PageSize;
+        ProtectOffset = PageSize;
+    }
+    
+    if(Flags & PM_OverflowCheck)
+    {
+        umm SizeRoundedUp = AlignPow2(Size, PageSize);
+        TotalSize = SizeRoundedUp + 2 * PageSize;
+        BaseOffset = PageSize + SizeRoundedUp - Size;
+        ProtectOffset = PageSize + SizeRoundedUp;
+    }
     
     win32_memory_block* Block  = (win32_memory_block*)VirtualAlloc(0, TotalSize, MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE);
     
@@ -217,10 +235,17 @@ PLATFORM_ALLOCATE_MEMORY(Win32AllocateMemory)
     Assert(Block->Block.Used == 0);
     Assert(Block->Block.Prev == 0);
     
-    Block->Block.Size = Size;
-    //Block->Block.Flags = Flags;
+    if(Flags & (PM_UnderflowCheck | PM_OverflowCheck))
+    {
+        DWORD OldProtect = 0;
+        BOOL Protected = VirtualProtect((u8*)Block + ProtectOffset, PageSize, PAGE_NOACCESS, &OldProtect);
+        Assert(Protected);
+    }
     
-    platform_memory_block* PlatBlock =&Block->Block;
+    Block->Block.Size = Size;
+    Block->Block.Flags = Flags;
+    
+    platform_memory_block* PlatBlock = &Block->Block;
     
     return PlatBlock;
 }
@@ -286,6 +311,8 @@ int main(void)
     r64 LastFrame = GetTime();
     r64 CurrentFrame = 0.0;
     r64 DeltaTime;
+    
+    printf("%zd\n", sizeof(win32_memory_block));
     
     while (!ShouldCloseWindow(RenderState) && !RenderState.ShouldClose)
     {
