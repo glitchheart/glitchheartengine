@@ -178,7 +178,6 @@ extern "C" UPDATE(Update)
         
         GameState = GameMemory->GameState = BootstrapPushStruct(game_state, TotalArena);
     }
-    
     Assert(GameState);
     
     //@Incomplete: Hmmmm

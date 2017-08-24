@@ -11,10 +11,10 @@ struct memory_arena
 
 enum Arena_Flags
 {
-    AFlag_Zero = 0x1
+    AFlag_Zero = (1 << 0)
 };
 
-struct arena_push_params
+struct push_params
 {
     u32 Flags;
     u32 Alignment;
@@ -32,17 +32,17 @@ inline arena_bootstrap_params DefaultBootstrapParams()
     return Params;
 }
 
-inline arena_push_params DefaultArenaParams()
+inline push_params DefaultPushParams()
 {
-    arena_push_params Params;
+    push_params Params;
     Params.Flags = AFlag_Zero;
     Params.Alignment = 4;
     return Params;
 }
 
-inline arena_push_params NoClear()
+inline push_params NoClear()
 {
-    arena_push_params Params;
+    push_params Params;
     Params.Flags &= ~AFlag_Zero;
 }
 
@@ -71,7 +71,7 @@ inline sz GetAlignmentOffset(memory_arena* Arena, sz Alignment)
 }
 
 
-inline sz GetEffectiveSizeFor(memory_arena* Arena, sz SizeInit, arena_push_params Params = DefaultArenaParams())
+inline sz GetEffectiveSizeFor(memory_arena* Arena, sz SizeInit, push_params Params = DefaultPushParams())
 {
     sz Size = SizeInit;
     
@@ -84,7 +84,7 @@ inline sz GetEffectiveSizeFor(memory_arena* Arena, sz SizeInit, arena_push_param
 #define PushStruct(Arena, type, ...) (type *)PushSize_(Arena, sizeof(type), __VA_ARGS__)
 #define PushArray(Arena, Count, type, ...) (type*)PushSize_(Arena, (Count)*sizeof(type), __VA_ARGS__)
 #define PushSize(Arena, Size, type, ...) (type*)PushSize_(Arena, Size, __VA_ARGS__)
-void* PushSize_(memory_arena* Arena, sz SizeInit, arena_push_params Params = DefaultArenaParams())
+void* PushSize_(memory_arena* Arena, sz SizeInit, push_params Params = DefaultPushParams())
 {
     void* Result = 0;
     
@@ -132,11 +132,17 @@ void* PushSize_(memory_arena* Arena, sz SizeInit, arena_push_params Params = Def
     return Result;
 }
 
+inline u64 DefaultFlags()
+{
+    return PM_OverflowCheck | PM_UnderflowCheck;
+}
+
+#define PushTempStruct(type, ...) (type *)PushTempSize_(sizeof(type), __VA_ARGS__)
 #define PushTempArray(Count, type, ...) (type*)PushTempSize_((Count)*sizeof(type), __VA_ARGS__)
 #define PushTempSize(Size, type, ...) (type*)PushTempSize_( Size, __VA_ARGS__)
-inline void* PushTempSize_(sz Size)
+inline void* PushTempSize_(sz Size, push_params = DefaultPushParams(), u64 Flags = DefaultFlags())
 {
-    platform_memory_block* Block = Platform.AllocateMemory(Size, PM_Temporary);
+    platform_memory_block* Block = Platform.AllocateMemory(Size, Flags | PM_Temporary);
     void* Result = Block->Base;
     return Result;
 }
@@ -258,7 +264,7 @@ char* PushString(memory_arena* Arena, sz Length, char* Source)
 #define BootstrapPushStruct(type, Member, ...) (type*)BootstrapPushSize_(sizeof(type), OffsetOf(type, Member), __VA_ARGS__)
 inline void* BootstrapPushSize_(umm StructSize, umm OffsetToArena,
                                 arena_bootstrap_params BootstrapParams = DefaultBootstrapParams(),
-                                arena_push_params Params = DefaultArenaParams())
+                                push_params Params = DefaultPushParams())
 {
     memory_arena Bootstrap = {};
     Bootstrap.AllocationFlags = BootstrapParams.AllocationFlags;
