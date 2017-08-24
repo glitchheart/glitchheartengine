@@ -342,4 +342,8 @@ static void LoadModel(renderer& Renderer, char* FilePath, model* Model, memory_a
         
         fclose(File);
     }
+    else
+    {
+        printf("Model file not found: %s", FilePath);
+    }
 }
