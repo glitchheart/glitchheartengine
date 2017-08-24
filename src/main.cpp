@@ -38,17 +38,6 @@ input_controller InputController;
 #include "keys_glfw.h"
 #include "opengl_rendering.cpp"
 
-struct game_code
-{
-    HMODULE GameCodeDLL;
-    FILETIME LastDllWriteTime;
-    update *Update;
-    
-    b32 IsValid;
-    const char *DllPath = "game.dll";
-    const char *TempDllPath = "game_temp.dll";
-};
-
 static game_code LoadGameCode()
 {
     game_code Result = {};
@@ -240,7 +229,7 @@ PLATFORM_DEALLOCATE_MEMORY(Win32DeallocateMemory)
 {
     if(Block)
     {
-        win32_memory_block *Win32Block =((win32_memory_block*)Block);
+        win32_memory_block *Win32Block =  ((win32_memory_block*)Block);
         VirtualFree(Block, 0, MEM_RELEASE);
     }
 }
