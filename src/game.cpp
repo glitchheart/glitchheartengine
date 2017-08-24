@@ -217,12 +217,12 @@ extern "C" UPDATE(Update)
         Model6.Position = math::v3(-10.0f, 5.0f, 0);
         Model6.Scale = math::v3(1.0, 1.0, 1.0);
         
-        LoadModel(Renderer, "../assets/models/animated_test.modl", &Model1, &TranState->TranArena);
-        LoadModel(Renderer, "../assets/models/red_riding.modl", &Model2, &TranState->TranArena);
-        LoadModel(Renderer, "../assets/models/capsule.modl", &Model3, &TranState->TranArena);
-        LoadModel(Renderer, "../assets/models/mask_boy.modl", &Model4, &TranState->TranArena);
-        LoadModel(Renderer, "../assets/models/cube.modl", &Model5, &TranState->TranArena);
-        LoadModel(Renderer, "../assets/models/panther_monster.modl", &Model6, &TranState->TranArena);
+        LoadModel(Renderer, "../assets/models/animated_test.modl", &Model1);
+        LoadModel(Renderer, "../assets/models/red_riding.modl", &Model2);
+        LoadModel(Renderer, "../assets/models/capsule.modl", &Model3);
+        LoadModel(Renderer, "../assets/models/mask_boy.modl", &Model4);
+        LoadModel(Renderer, "../assets/models/cube.modl", &Model5);
+        LoadModel(Renderer, "../assets/models/panther_monster.modl", &Model6);
         
         GameState->TestModels[GameState->Models++] = Model1;
         //GameState->TestModels[GameState->Models++] = Model2;
