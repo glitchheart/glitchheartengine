@@ -330,6 +330,7 @@ static void MouseButtonCallback(GLFWwindow *Window, int Button, int Action, int 
     }
     else if (Action == GLFW_RELEASE)
     {
+        InputController.MouseButtonsUp[InputController.MouseButtonMappings[Button]] = true;
         InputController.MouseButtonJustPressed[InputController.MouseButtonMappings[Button]] = Key_NotPressed;
         InputController.MouseButtonDown[InputController.MouseButtonMappings[Button]] = false;
     }

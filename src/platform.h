@@ -56,11 +56,14 @@ using r64 = double;
 
 using umm = uintptr_t; // Casey uses this for sizes (why?)
 
+#include "math.h"
+
+
 #if GLITCH_DEBUG
 #include "debug.h"
 #endif
 
-#include "math.h"
+
 #include "gmap.h"
 
 #include "modelformat.h"

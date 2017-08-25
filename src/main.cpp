@@ -126,6 +126,7 @@ static void SetMouseInvalidKeys()
         {
             InputController.MouseButtonJustPressed[KeyCode] = Key_Invalid;
         }
+        InputController.MouseButtonsUp[KeyCode] = false;
     }
     InputController.ScrollX = 0;
     InputController.ScrollY = 0;
@@ -296,6 +297,9 @@ int main(void)
     
     game_memory GameMemory = {};
     
+    GameMemory.DebugState.DebugMemoryInfo.DebugRect.RectOrigin = math::v2(50, 780);
+    GameMemory.DebugState.DebugMemoryInfo.DebugRect.RectSize = math::v2(300,300);
+    
     GameMemory.ShouldReload = true;
     
     GameMemory.ExitGame = false;
@@ -396,6 +400,14 @@ int main(void)
         if(GetKeyDown(Key_Home, &InputController))
         {
             GameMemory.DebugState.DebugMemory = !GameMemory.DebugState.DebugMemory;
+            if(GameMemory.DebugState.DebugMemory)
+            {
+                glfwSetInputMode(RenderState.Window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+            }
+            else
+            {
+                glfwSetInputMode(RenderState.Window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+            }
         }
         
         ReloadAssets(RenderState, &AssetManager, &Win32State->PermArena);
