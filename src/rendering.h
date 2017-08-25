@@ -315,6 +315,9 @@ struct buffer_data
 struct renderer
 {
     r64 FPS;
+    r64 AverageFPS;
+    r64 FPSSum;
+    u64 CurrentFrame;
     //render_command Buffer[RENDER_COMMAND_MAX];
     memory_arena Commands;
     i32 CommandCount;
