@@ -163,7 +163,7 @@ struct game_memory
 };
 
 struct input_controller;
-struct sound_queue;
+struct sound_commands;
 struct sound_effects;
 struct render_state;
 
@@ -175,7 +175,7 @@ struct game_update_return
 
 struct renderer;
 
-#define UPDATE(name)void name(r64 DeltaTime, game_memory* GameMemory, renderer& Renderer, input_controller* InputController, sound_queue* SoundQueue, game_update_return* GameUpdateStruct, sound_effects* SoundEffects)
+#define UPDATE(name)void name(r64 DeltaTime, game_memory* GameMemory, renderer& Renderer, input_controller* InputController, sound_commands* SoundCommands, game_update_return* GameUpdateStruct, sound_effects* SoundEffects)
 typedef UPDATE(update);
 UPDATE(UpdateStub)
 {

@@ -16,7 +16,7 @@ struct command_info
 #define COMMAND_ARRAY_SIZE 10
 
 static u32 CommandCount;
-static command_info Commands[COMMAND_ARRAY_SIZE];
+static command_info ConsoleCommands[COMMAND_ARRAY_SIZE];
 
 struct console
 {

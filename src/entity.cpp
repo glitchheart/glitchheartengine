@@ -58,7 +58,7 @@ static void DecreaseStamina(entity* Entity, game_state* GameState, i32 Cost)
     StartTimer(GameState,Entity->Player.StaminaGainCooldownTimer);
 }
 
-void Hit(game_state* GameState, renderer& Renderer, sound_queue* SoundQueue, entity* ByEntity, entity* HitEntity)
+void Hit(game_state* GameState, renderer& Renderer, sound_commands* SoundCommands, entity* ByEntity, entity* HitEntity)
 {
     if(HitEntity->HitAttackCountId != ByEntity->AttackCount)
     {
@@ -589,7 +589,7 @@ AI_FUNC(SkeletonWandering)
     
 }
 
-static void LoadBonfireData(game_state* GameState, sound_queue* SoundQueue, i32 Handle = -1, math::v3 Position = math::v3(), b32 IsTemporary = false)
+static void LoadBonfireData(game_state* GameState, sound_commands* SoundCommands, i32 Handle = -1, math::v3 Position = math::v3(), b32 IsTemporary = false)
 {
     FILE* File;
     File = fopen("../assets/entities/bonfire.dat", "r");
@@ -711,13 +711,13 @@ static void LoadSkeletonData(game_state* GameState, i32 Handle = -1, math::v3 Po
     }
 }
 
-void PlaceCheckpoint(game_state* GameState, sound_queue* SoundQueue, entity* Entity)
+void PlaceCheckpoint(game_state* GameState, sound_commands* SoundCommands, entity* Entity)
 {
     auto CheckpointPos = math::v3(Entity->Position.x + 1, Entity->Position.y, Entity->Position.z + 1);
     
     if(!GameState->CharacterData.HasCheckpoint)
     {
-        LoadBonfireData(GameState, SoundQueue, -1, CheckpointPos, true);
+        LoadBonfireData(GameState, SoundCommands, -1, CheckpointPos, true);
         GameState->CharacterData.CheckpointHandle = GameState->EntityCount - 1;
     }
     else
@@ -733,7 +733,7 @@ void PlaceCheckpoint(game_state* GameState, sound_queue* SoundQueue, entity* Ent
     SaveGame(GameState);
 }
 
-static void LoadPlayerData(game_state* GameState, sound_queue* SoundQueue, i32 Handle = -1, math::v3 Position = math::v3())
+static void LoadPlayerData(game_state* GameState, sound_commands* SoundCommands, i32 Handle = -1, math::v3 Position = math::v3())
 {
     FILE* File;
     File = fopen("../assets/entities/player.dat", "r");
@@ -885,7 +885,7 @@ static void LoadPlayerData(game_state* GameState, sound_queue* SoundQueue, i32 H
             
             Entity->Position = math::v3(Entity->Position.x, Entity->Position.y, Entity->Position.z);
             
-            LoadBonfireData(GameState, SoundQueue, -1, GameState->CharacterData.CurrentCheckpoint, true);
+            LoadBonfireData(GameState, SoundCommands, -1, GameState->CharacterData.CurrentCheckpoint, true);
             GameState->CharacterData.CheckpointHandle = GameState->EntityCount - 1;
             GameState->LastCharacterData.CheckpointHandle = GameState->EntityCount - 1;
             GameState->LastCharacterData.CurrentCheckpoint = GameState->CharacterData.CurrentCheckpoint;
@@ -1012,7 +1012,7 @@ void DetermineDeltaForDirection(Look_Direction LookDirection, r32* DX, r32* DY)
     }
 }
 
-void UpdatePlayer(entity* Entity, game_state* GameState, renderer& Renderer, sound_queue* SoundQueue, input_controller* InputController, r64 DeltaTime)
+void UpdatePlayer(entity* Entity, game_state* GameState, renderer& Renderer, sound_commands* SoundCommands, input_controller* InputController, r64 DeltaTime)
 {
     // Collision check
     //collision_info CollisionInfo;
@@ -1037,59 +1037,59 @@ void UpdatePlayer(entity* Entity, game_state* GameState, renderer& Renderer, sou
     Renderer.Cameras[GameState->GameCameraHandle].CenterTarget = Entity->Position;
 }
 
-void UpdateAI(entity* Entity, game_state* GameState, sound_queue* SoundQueue, r64 DeltaTime)
+void UpdateAI(entity* Entity, game_state* GameState, sound_commands* SoundCommands, r64 DeltaTime)
 {
     switch(Entity->Enemy.AIState)
     {
         case AI_Idle:
         {
-            Entity->Enemy.Idle(Entity,GameState, SoundQueue, DeltaTime);
+            Entity->Enemy.Idle(Entity,GameState, SoundCommands, DeltaTime);
         }
         break;
         case AI_Alerted:
         {
-            Entity->Enemy.Alerted(Entity,GameState, SoundQueue,DeltaTime);
+            Entity->Enemy.Alerted(Entity,GameState, SoundCommands,DeltaTime);
         }
         break;
         case AI_Following:
         {
-            Entity->Enemy.Following(Entity,GameState, SoundQueue,DeltaTime);
+            Entity->Enemy.Following(Entity,GameState, SoundCommands,DeltaTime);
         }
         break;
         case AI_Charging:
         {
-            Entity->Enemy.Charging(Entity,GameState, SoundQueue,DeltaTime);
+            Entity->Enemy.Charging(Entity,GameState, SoundCommands,DeltaTime);
         }
         break;
         case AI_Defending:
         {
-            Entity->Enemy.Defending(Entity,GameState, SoundQueue,DeltaTime);
+            Entity->Enemy.Defending(Entity,GameState, SoundCommands,DeltaTime);
         }
         break;
         case AI_Attacking:
         {
-            Entity->Enemy.Attacking(Entity,GameState, SoundQueue,DeltaTime);
+            Entity->Enemy.Attacking(Entity,GameState, SoundCommands,DeltaTime);
         }
         break;
         case AI_Hit:
         {
-            Entity->Enemy.Hit(Entity,GameState, SoundQueue,DeltaTime);
+            Entity->Enemy.Hit(Entity,GameState, SoundCommands,DeltaTime);
         }
         break;
         case AI_Dying:
         {
-            Entity->Enemy.Dying(Entity,GameState, SoundQueue,DeltaTime);
+            Entity->Enemy.Dying(Entity,GameState, SoundCommands,DeltaTime);
         }
         break;
         case AI_Wandering:
         {
-            Entity->Enemy.Wandering(Entity,GameState, SoundQueue,DeltaTime);
+            Entity->Enemy.Wandering(Entity,GameState, SoundCommands,DeltaTime);
         }
         break;
     }
 }
 
-static void UpdateSkeleton(entity* Entity, game_state* GameState, sound_queue* SoundQueue, r64 DeltaTime)
+static void UpdateSkeleton(entity* Entity, game_state* GameState, sound_commands* SoundCommands, r64 DeltaTime)
 {
     auto& Enemy = Entity->Enemy;
     
@@ -1122,7 +1122,7 @@ static void UpdateSkeleton(entity* Entity, game_state* GameState, sound_queue* S
         
         Entity->Velocity = math::v3(0, 0, 0); //@Cleanup: This is not good. Do this in AI
         
-        //UpdateAI(Entity,GameState, SoundQueue,DeltaTime);
+        //UpdateAI(Entity,GameState, SoundCommands,DeltaTime);
         
         Entity->Position.x += Entity->Velocity.x * (r32)DeltaTime;
         Entity->Position.y += Entity->Velocity.y * (r32)DeltaTime;
@@ -1209,7 +1209,7 @@ static void UpdateObjects(game_state* GameState, r64 DeltaTime)
     }
 }
 
-static void UpdateEntities(game_state* GameState, renderer& Renderer, input_controller* InputController, sound_queue* SoundQueue, r64 DeltaTime)
+static void UpdateEntities(game_state* GameState, renderer& Renderer, input_controller* InputController, sound_commands* SoundCommands, r64 DeltaTime)
 {
     for(u32 EntityIndex = 0;
         EntityIndex < GameState->EntityCount;
@@ -1226,7 +1226,7 @@ static void UpdateEntities(game_state* GameState, renderer& Renderer, input_cont
                 case Entity_Player: 
                 {
                     
-                    UpdatePlayer(Entity, GameState, Renderer, SoundQueue, InputController, DeltaTime);
+                    UpdatePlayer(Entity, GameState, Renderer, SoundCommands, InputController, DeltaTime);
                     
                 }
                 break;
@@ -1236,7 +1236,7 @@ static void UpdateEntities(game_state* GameState, renderer& Renderer, input_cont
                     {
                         case Enemy_Skeleton:
                         {
-                            UpdateSkeleton(Entity, GameState, SoundQueue, DeltaTime);
+                            UpdateSkeleton(Entity, GameState, SoundCommands, DeltaTime);
                         }
                         break;
                     }

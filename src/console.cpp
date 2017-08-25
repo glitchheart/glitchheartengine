@@ -8,7 +8,7 @@ void ReloadLevel(game_state* GameState)
 void AddCommand(char* Name, char* (*FunctionPointer)(game_state*, char**))
 {
     command_info Info = { Name, FunctionPointer };
-    Commands[CommandCount++] = Info;
+    ConsoleCommands[CommandCount++] = Info;
 }
 
 //call this before using the console
@@ -57,10 +57,10 @@ void ExecuteCommand(game_state *GameState)
         
         for(u32 i = 0; i < CommandCount; i++)
         {
-            if(strcmp(CommandName, Commands[i].Name) == 0)
+            if(strcmp(CommandName, ConsoleCommands[i].Name) == 0)
             {
                 Found = true;
-                Result = Commands[i].FunctionPointer(GameState, Count > 0 ? ArgumentBuffer : 0);
+                Result = ConsoleCommands[i].FunctionPointer(GameState, Count > 0 ? ArgumentBuffer : 0);
                 break;
             }
         }

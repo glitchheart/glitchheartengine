@@ -321,7 +321,7 @@ static void CheckEditorUIInput(game_state* GameState, renderer& Renderer, input_
 }
 
 
-static void EditorUpdateEntities(game_state* GameState, renderer& Renderer, input_controller* InputController, sound_queue* SoundQueue, r64 DeltaTime)
+static void EditorUpdateEntities(game_state* GameState, renderer& Renderer, input_controller* InputController, sound_commands* SoundCommands, r64 DeltaTime)
 {
     if(KEY_DOWN(Key_Escape))
     {
@@ -587,7 +587,7 @@ static void EditorUpdateEntities(game_state* GameState, renderer& Renderer, inpu
                     Level.SheetName = "overworld1";
                     Level.Name = "test_level";
                     
-                    CreateNewLevelWithSize("../assets/levels/level_new.plv", 200, 120, &Level,  Renderer, GameState, SoundQueue);
+                    CreateNewLevelWithSize("../assets/levels/level_new.plv", 200, 120, &Level,  Renderer, GameState, SoundCommands);
                     GameState->CurrentLevel = Level;
                 }
                 
@@ -710,7 +710,7 @@ static void EditorUpdateEntities(game_state* GameState, renderer& Renderer, inpu
                                     break;
                                     case Placement_Entity_Bonfire:
                                     {
-                                        LoadBonfireData(GameState, SoundQueue, -1, math::v3(X, 0.0f,  Z));
+                                        LoadBonfireData(GameState, SoundCommands, -1, math::v3(X, 0.0f,  Z));
                                     }
                                     break;
                                 }

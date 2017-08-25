@@ -21,10 +21,16 @@ struct sound_effect
     sound_info SoundInfo;
 };
 
-struct sound_queue
+struct sound_commands
 {
     i32 SoundCount;
     memory_arena SoundArena;
+    
+    r32 SFXVolume;
+    r32 MusicVolume;
+    b32 Muted;
+    b32 Paused;
+    b32 Stopped;
 };
 
 
@@ -71,13 +77,8 @@ struct sound_effects
     };
 };
 
-struct sound_manager
+struct sounds
 {
-    r32 SFXGain;
-    r32 MusicGain;
-    b32 Muted;
-    b32 Paused;
-    b32 Stopped;
     sound_effects SoundEffects;
 };
 

@@ -89,10 +89,10 @@ static void LoadWavFile(const char *Filename, sound_effect *LoadedSound)
     }
 }
 
-static inline void ResetSoundQueue(sound_queue* SoundQueue)
+static inline void ResetCommands(sound_commands* Commands)
 {
-    Clear(&SoundQueue->SoundArena);
-    SoundQueue->SoundCount = 0;
+    Clear(&Commands->SoundArena);
+    Commands->SoundCount = 0;
 }
 
 static void InitAudio(sound_device *SoundDevice)
@@ -273,51 +273,55 @@ static inline void PauseSound(sound_device* SoundDevice)
     }
 }
 
-static void PlaySounds(sound_device* Device, sound_queue* SoundQueue, math::v3* EntityPositions, i32 EntityCount)
+static void PlaySounds(sound_device* Device, sound_commands* Commands, math::v3* EntityPositions, i32 EntityCount)
 {
-    
-    if(Device->Muted && !Device->PrevMuted)
+    if(Commands->Muted && !Device->PrevMuted)
     {
+        Device->PrevMuted = true;
         for(u32 SourceIndex = 0; SourceIndex < SOURCES; SourceIndex++)
         {
             alSourcef(Device->Sources[SourceIndex],AL_GAIN,0);
         }
     }
-    else
+    else if(!Commands->Muted)
     {
+        Device->PrevMuted = false;
         for(u32 SourceIndex = 0; SourceIndex < SOURCES; SourceIndex++)
         {
             alSourcef(Device->Sources[SourceIndex],AL_GAIN,Device->SourceGain[SourceIndex]);
         }
     }
     
-    if(Device->Stopped && !Device->PrevStopped)
+    if(Commands->Stopped && !Device->PrevStopped)
     {
+        Device->PrevStopped = true;
         StopSound(Device);
-        ResetSoundQueue(SoundQueue);
+        ResetCommands(Commands);
     }
     else
     {
+        Device->PrevStopped = false;
         for (i32 Sound = 0;
-             Sound < SoundQueue->SoundCount;
+             Sound < Commands->SoundCount;
              Sound++)
         {
-            PlaySound((sound_effect*)&SoundQueue->SoundArena.CurrentBlock->Base[Sound],Device);
+            PlaySound((sound_effect*)&Commands->SoundArena.CurrentBlock->Base[Sound],Device);
         }
-        ResetSoundQueue(SoundQueue);
+        ResetCommands(Commands);
     }
     
-    if(Device->Paused && !Device->PrevPaused)
+    if(Commands->Paused && !Device->PrevPaused)
     {
+        Device->PrevPaused = true;
         PauseSound(Device);
     }
-    else if(!Device->Paused && Device->PrevPaused)
+    else if(!Commands->Paused && Device->PrevPaused)
     {
         Device->PrevPaused = false;
         alSourcePlayv(SOURCES,Device->Sources);
     }
     
-    if(!Device->Paused && !Device->Stopped && !Device->Muted)
+    if(!Commands->Muted && !Commands->Paused && !Commands->Stopped)
     {
         for(i32 SourceIndex = 0; SourceIndex < SOURCES; SourceIndex++)
         {
@@ -329,6 +333,7 @@ static void PlaySounds(sound_device* Device, sound_queue* SoundQueue, math::v3* 
             {
                 if(Sound.SoundInfo.Rolloff > 0)
                 {
+                    //@Incomplete: Should do rolloff in game code...
                     if(Sound.SoundInfo.EntityHandle != -1)
                     {
                         if(EntityPositions)
@@ -342,10 +347,10 @@ static void PlaySounds(sound_device* Device, sound_queue* SoundQueue, math::v3* 
                     if(EntityPositions)
                     {
                         r32 DistanceToEntity = math::Distance(math::v3(Sound.SoundInfo.Position[0], Sound.SoundInfo.Position[1],
-                                                                       Sound.SoundInfo.Position[2]), EntityPositions[0]);
+                                                                       Sound.SoundInfo.Position[2]), math::v3(0,0,0));
                         r32 VolFactor = 1.0f - (DistanceToEntity/Sound.SoundInfo.Rolloff);
-                        alSourcef(Device->Sources[SourceIndex],AL_GAIN,Max(0.0f,VolFactor) * Device->SFXVolume);
-                        Device->SourceGain[SourceIndex] = Max(0.0f,VolFactor) * Device->SFXVolume;
+                        alSourcef(Device->Sources[SourceIndex],AL_GAIN,Max(0.0f,VolFactor) * Commands->SFXVolume);
+                        Device->SourceGain[SourceIndex] = Max(0.0f,VolFactor) * Commands->SFXVolume;
                     }
                 }
             }
