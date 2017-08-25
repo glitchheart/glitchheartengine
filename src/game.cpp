@@ -166,7 +166,7 @@ extern "C" UPDATE(Update)
     Platform = GameMemory->PlatformAPI;
     
 #if GLITCH_DEBUG
-    debug_state* DebugState = &GameMemory->DebugState;
+    debug_state* DebugState = GameMemory->DebugState;
 #endif
     
     game_state* GameState = GameMemory->GameState;

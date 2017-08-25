@@ -10,6 +10,10 @@
 #include "platform.h"
 #include "shared.h"
 
+#if GLITCH_DEBUG
+#include "debug.h"
+#endif
+
 #include <glad/glad.h>
 #include "al.h"
 #include "alc.h"
@@ -297,9 +301,6 @@ int main(void)
     
     game_memory GameMemory = {};
     
-    GameMemory.DebugState.DebugMemoryInfo.DebugRect.RectOrigin = math::v2(50, 780);
-    GameMemory.DebugState.DebugMemoryInfo.DebugRect.RectSize = math::v2(300,300);
-    
     GameMemory.ShouldReload = true;
     
     GameMemory.ExitGame = false;
@@ -311,6 +312,14 @@ int main(void)
     Platform = GameMemory.PlatformAPI;
     
     win32_state* Win32State = BootstrapPushStruct(win32_state, PermArena);
+    
+    memory_arena DebugArena = {};
+    
+    GameMemory.DebugState = PushStruct(&Win32State->PermArena, debug_state);
+    
+    GameMemory.DebugState->DebugMemoryInfo.DebugRect.RectOrigin = math::v2(50, 780);
+    GameMemory.DebugState->DebugMemoryInfo.DebugRect.RectSize = math::v2(300,0);
+    
     
     config_data ConfigData;
     LoadConfig("../assets/.config", &ConfigData, &Win32State->PermArena);
@@ -350,7 +359,7 @@ int main(void)
     r64 CurrentFrame = 0.0;
     r64 DeltaTime;
     
-    printf("%zd\n", sizeof(win32_memory_block));
+    
     
     while (!ShouldCloseWindow(RenderState) && !RenderState.ShouldClose)
     {
@@ -399,8 +408,8 @@ int main(void)
         
         if(GetKeyDown(Key_Home, &InputController))
         {
-            GameMemory.DebugState.DebugMemory = !GameMemory.DebugState.DebugMemory;
-            if(GameMemory.DebugState.DebugMemory)
+            GameMemory.DebugState->DebugMemory = !GameMemory.DebugState->DebugMemory;
+            if(GameMemory.DebugState->DebugMemory)
             {
                 glfwSetInputMode(RenderState.Window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
             }
@@ -444,15 +453,31 @@ int main(void)
         // Or maybe Game itself should do this.. Hmmmm
         //Clear(&Win32State->TempArena);
 #if GLITCH_DEBUG
-        GameMemory.DebugState.DebugMemoryInfo.TempBlockCount = Win32MemoryState.TempCount;
-        GameMemory.DebugState.DebugMemoryInfo.TempSizeAllocated = Win32MemoryState.TempSizeAllocated;
-        //GameMemory.DebugMemoryInfo.BlocksAllocated = Win32MemoryState.BlocksAllocated;
-        //GameMemory.DebugMemoryInfo.SizeAllocated = Win32MemoryState.SizeAllocated;
-        GameMemory.DebugState.DebugMemoryInfo.BlocksAllocated = Win32MemoryState.TempCount + Win32MemoryState.PermanentBlocks;
-        GameMemory.DebugState.DebugMemoryInfo.SizeAllocated = Win32MemoryState.TempSizeAllocated + Win32MemoryState.PermanentSizeAllocated;
-        GameMemory.DebugState.DebugMemoryInfo.PermanentBlocks = Win32MemoryState.PermanentBlocks;
-        GameMemory.DebugState.DebugMemoryInfo.PermanentSizeAllocated = Win32MemoryState.PermanentSizeAllocated;
+        Clear(&DebugArena);
+        GameMemory.DebugState->DebugMemoryInfo.DebugInfoCount = 0;
+        debug_info TempDebugInfo = {};
+        TempDebugInfo.Header = PushString(&DebugArena, "Temporary memory");
+        AddDebugValue(&DebugArena, &TempDebugInfo, "Blocks", Win32MemoryState.TempCount);
+        AddDebugValue(&DebugArena, &TempDebugInfo, "Total allocated", Win32MemoryState.TempSizeAllocated);
         
+        auto DebugMemoryInfo = GameMemory.DebugState->DebugMemoryInfo;
+        
+        GameMemory.DebugState->DebugMemoryInfo.DebugInfo[GameMemory.DebugState->DebugMemoryInfo.DebugInfoCount++] = TempDebugInfo;
+        
+        
+        debug_info PermDebugInfo = {};
+        PermDebugInfo.Header = PushString(&DebugArena, "Permanent memory");
+        AddDebugValue(&DebugArena, &PermDebugInfo, "Blocks", Win32MemoryState.PermanentBlocks);
+        AddDebugValue(&DebugArena, &PermDebugInfo, "Total allocated", Win32MemoryState.PermanentSizeAllocated);
+        
+        GameMemory.DebugState->DebugMemoryInfo.DebugInfo[GameMemory.DebugState->DebugMemoryInfo.DebugInfoCount++] = PermDebugInfo;
+        
+        debug_info TotalDebugInfo = {};
+        TotalDebugInfo.Header = PushString(&DebugArena, "Total memory");
+        AddDebugValue(&DebugArena, &TotalDebugInfo, "Blocks", Win32MemoryState.TempCount + Win32MemoryState.PermanentBlocks);
+        AddDebugValue(&DebugArena, &TotalDebugInfo, "Total allocated", Win32MemoryState.TempSizeAllocated + Win32MemoryState.PermanentSizeAllocated);
+        
+        GameMemory.DebugState->DebugMemoryInfo.DebugInfo[GameMemory.DebugState->DebugMemoryInfo.DebugInfoCount++] = TotalDebugInfo;
 #endif
         ClearTempMemory();
     }

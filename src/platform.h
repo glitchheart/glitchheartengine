@@ -58,12 +58,6 @@ using umm = uintptr_t; // Casey uses this for sizes (why?)
 
 #include "math.h"
 
-
-#if GLITCH_DEBUG
-#include "debug.h"
-#endif
-
-
 #include "gmap.h"
 
 #include "modelformat.h"
@@ -148,6 +142,7 @@ struct platform_api
 extern platform_api Platform;
 
 struct entity_file_reload_data;
+struct debug_state;
 
 struct game_memory
 {
@@ -162,7 +157,7 @@ struct game_memory
     struct transient_state* TranState;
     
 #if GLITCH_DEBUG
-    debug_state DebugState;
+    debug_state* DebugState;
 #endif
     
 };
