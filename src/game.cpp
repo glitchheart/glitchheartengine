@@ -3,7 +3,6 @@
 #include "rendering.cpp"
 #include "keycontroller.cpp"
 #include "sound.cpp"
-#define ANIMATION_GAME
 #include "animation.cpp"
 #include "collision.cpp"
 #include "console.cpp"
@@ -278,12 +277,8 @@ extern "C" UPDATE(Update)
             GameState->EditorState.IsInCreateWaypointMode = false;
             GameState->EditorState.SelectedAnimation = 0;
             
-            sound_manager SoundManager = {};
-            memcpy(&SoundManager.SoundEffects, SoundEffects, sizeof(sound_effect) * (64 + 32));
-            SoundManager.Muted = GameMemory->ConfigData.Muted;
-            SoundManager.SFXGain = GameMemory->ConfigData.SFXVolume;
-            SoundManager.MusicGain = GameMemory->ConfigData.MusicVolume;
-            GameState->SoundManager = SoundManager;
+            sounds Sounds = {};
+            memcpy(&GameState->Sounds.SoundEffects, SoundEffects, sizeof(sound_effect) * (64 + 32));
             
             LoadGameDataFile(GameState);
             srand((u32)time(NULL));
@@ -304,7 +299,7 @@ extern "C" UPDATE(Update)
             
         }
         
-        LoadLevelFromFile(GameState->LevelPath, &GameState->CurrentLevel, GameState,  Renderer, SoundQueue);
+        LoadLevelFromFile(GameState->LevelPath, &GameState->CurrentLevel, GameState,  Renderer, SoundCommands);
         
         auto& GameCamera = Renderer.Cameras[GameState->GameCameraHandle];
         
@@ -336,7 +331,7 @@ extern "C" UPDATE(Update)
     {
         if(GameState->ReloadData->ReloadPlayerFile)
         {
-            LoadPlayerData(GameState, SoundQueue, 0);
+            LoadPlayerData(GameState, SoundCommands, 0);
             GameState->ReloadData->ReloadPlayerFile = false;
         }
         
@@ -360,7 +355,7 @@ extern "C" UPDATE(Update)
                 auto& Entity = GameState->Entities[EntityIndex];
                 if(Entity.Type == Entity_Bonfire)
                 {
-                    LoadBonfireData(GameState, SoundQueue, EntityIndex);
+                    LoadBonfireData(GameState, SoundCommands, EntityIndex);
                 }
             }
             
@@ -438,9 +433,27 @@ extern "C" UPDATE(Update)
         //RenderState.RenderFPS = !RenderState.RenderFPS;
     }
     
+    
+    if(KEY_DOWN(Key_F3))
+    {
+        SoundCommands->Muted = !SoundCommands->Muted;
+    }
+    
+    
     if(KEY_DOWN(Key_F4))
     {
         //RenderState.RenderPaths = !RenderState.RenderPaths;
+    }
+    
+    if(KEY_DOWN(Key_F5))
+    {
+        SoundCommands->Paused = !SoundCommands->Paused;
+    }
+    
+    
+    if(KEY_DOWN(Key_F6))
+    {
+        SoundCommands->Stopped = !SoundCommands->Stopped;
     }
     
     if(KEY_DOWN(Key_F7))
@@ -636,7 +649,7 @@ extern "C" UPDATE(Update)
         {
             if(!GameState->Paused && !GameState->StatGainModeOn)
             {
-                UpdateEntities(GameState, Renderer, InputController, SoundQueue, DeltaTime);
+                UpdateEntities(GameState, Renderer, InputController, SoundCommands, DeltaTime);
                 
                 UpdateObjects(GameState, DeltaTime);
                 
@@ -695,7 +708,7 @@ extern "C" UPDATE(Update)
         case Mode_Editor:
         {
             Center = Renderer.Cameras[GameState->EditorCameraHandle].Center;
-            EditorUpdateEntities(GameState, Renderer, InputController, SoundQueue, DeltaTime);
+            EditorUpdateEntities(GameState, Renderer, InputController, SoundCommands, DeltaTime);
             
             switch(GameState->EditorState.PlacementMode)
             {
@@ -774,39 +787,6 @@ extern "C" UPDATE(Update)
     GameUpdateStruct->EntityCount = GameState->EntityCount;
     memcpy(&GameUpdateStruct->EntityPositions,&GameState->EntityPositions,sizeof(math::v2) * NUM_ENTITIES);
     
-    /*
-    if(KEY(Key_X))
-    {
-    GameState->TESTMODEL->Rotation.x += (r32)(40 * DeltaTime);
-    
-    for(i32 i = 0; i < 4; i++)
-    {
-    GameState->TestModels[i].Rotation.x += (r32)(40 * DeltaTime);
-    }
-    }
-    
-    if(KEY(Key_Y))
-    {
-    GameState->TESTMODEL->Rotation.y += (r32)(40 * DeltaTime);
-    
-    for(i32 i = 0; i < 4; i++)
-    {
-    GameState->TestModels[i].Rotation.y += (r32)(40 * DeltaTime);
-    }
-    }
-    
-    if(KEY(Key_Z))
-    {
-    GameState->TESTMODEL->Rotation.z += (r32)(40 * DeltaTime);
-    
-    for(i32 i = 0; i < 4; i++)
-    {
-    GameState->TestModels[i].Rotation.z += (r32)(40 * DeltaTime);
-    }
-    }
-    */
-    //PushTilemapRenderCommands(Renderer, *GameState);
-    
     PushDirectionalLight(Renderer, math::v3(-0.2, -1.0, -0.3), 
                          math::v3(0.1f, 0.1f, 0.1f), math::v3(0.2, 0.2, 0.2), math::v3(0.1, 0.1, 0.1));
     
@@ -820,6 +800,11 @@ extern "C" UPDATE(Update)
     sprintf(FPSBuffer, "FPS: %.2f - AVG FPS: %.2f - dt: %.10lf", Renderer.FPS, Renderer.AverageFPS, DeltaTime);
     
     PushEntityRenderCommands(Renderer, *GameState);
+    
+    if(KEY_DOWN(Key_Home))
+    {
+        DebugState->DebugMemory = !DebugState->DebugMemory;
+    }
     
     PushDebugRender(Renderer, DebugState, InputController);
     

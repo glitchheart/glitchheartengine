@@ -120,7 +120,7 @@ struct game_state
     i32 PlayerIndex;
     char * LevelPath;
     level CurrentLevel;
-    sound_manager SoundManager;
+    sound_effects Sounds;
     
     u16 EntityCount;
     entity Entities[NUM_ENTITIES];

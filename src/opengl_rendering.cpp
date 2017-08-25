@@ -3,6 +3,18 @@ static void ErrorCallback(int Error, const char *Description)
     fprintf(stderr, "Error: %s\n", Description);
 }
 
+static void ShowMouseCursor(render_state& RenderState, b32 Show)
+{
+    if(Show)
+    {
+        glfwSetInputMode(RenderState.Window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+    }
+    else
+    {
+        glfwSetInputMode(RenderState.Window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+    }
+}
+
 void FramebufferSizeCallback(GLFWwindow *Window, int Width, int Height)
 {
     render_state* RenderState = (render_state*)glfwGetWindowUserPointer(Window);

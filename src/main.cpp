@@ -343,23 +343,21 @@ int main(void)
     sound_device SoundDevice = {};
     InitAudio(&SoundDevice);
     
-    sound_queue SoundQueue = {};
+    sound_commands SoundCommands = {};
     
     sound_effects SoundEffects = {};
     if (SoundDevice.IsInitialized)
     {
         LoadSounds(&SoundEffects, &SoundDevice);
-        ResetSoundQueue(&SoundQueue);
-        SoundDevice.SFXVolume = ConfigData.SFXVolume;
-        SoundDevice.MusicVolume = ConfigData.MusicVolume;
-        SoundDevice.Muted = ConfigData.Muted;
+        ResetCommands(&SoundCommands);
+        SoundCommands.SFXVolume = ConfigData.SFXVolume;
+        SoundCommands.MusicVolume = ConfigData.MusicVolume;
+        SoundCommands.Muted = ConfigData.Muted;
     }
     
     r64 LastFrame = GetTime();
     r64 CurrentFrame = 0.0;
     r64 DeltaTime;
-    
-    
     
     while (!ShouldCloseWindow(RenderState) && !RenderState.ShouldClose)
     {
@@ -382,54 +380,23 @@ int main(void)
             Renderer.FPSSum = 0.0;
         }
         
-        if(GameMemory.IsInitialized && GameMemory.ExitGame)
+        if(GameMemory.ExitGame)
         {
             DEBUG_PRINT("Quit\n");
             glfwSetWindowShouldClose(RenderState.Window, GLFW_TRUE);
         }
         
-        if(GetKeyDown(Key_F3, &InputController))
-        {
-            SoundDevice.PrevMuted = SoundDevice.Muted;
-            SoundDevice.Muted = !SoundDevice.Muted;
-        }
-        
-        if(GetKeyDown(Key_F5, &InputController))
-        {
-            SoundDevice.PrevStopped = SoundDevice.Stopped;
-            SoundDevice.Stopped = !SoundDevice.Stopped;
-        }
-        
-        if(GetKeyDown(Key_F6, &InputController))
-        {
-            SoundDevice.PrevPaused = SoundDevice.Paused;
-            SoundDevice.Paused = !SoundDevice.Paused;
-        }
-        
-        if(GetKeyDown(Key_Home, &InputController))
-        {
-            GameMemory.DebugState->DebugMemory = !GameMemory.DebugState->DebugMemory;
-            if(GameMemory.DebugState->DebugMemory)
-            {
-                glfwSetInputMode(RenderState.Window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-            }
-            else
-            {
-                glfwSetInputMode(RenderState.Window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
-            }
-        }
+        ShowMouseCursor(RenderState, GameMemory.DebugState->DebugMemory);
         
         ReloadAssets(RenderState, &AssetManager, &Win32State->PermArena);
         GameMemory.ReloadData = &AssetManager.ReloadData;
         ReloadDlls(&Game);
         
         game_update_return GameUpdateStruct = {};
-        Game.Update(DeltaTime, &GameMemory, Renderer, &InputController, &SoundQueue, &GameUpdateStruct, &SoundEffects);
-        
-        //CheckLevelVAO(&GameMemory);
+        Game.Update(DeltaTime, &GameMemory, Renderer, &InputController, &SoundCommands, &GameUpdateStruct, &SoundEffects);
         
         Render(RenderState, Renderer, &Win32State->PermArena);
-        PlaySounds(&SoundDevice, &SoundQueue, GameUpdateStruct.EntityPositions, GameUpdateStruct.EntityCount);
+        PlaySounds(&SoundDevice, &SoundCommands, GameUpdateStruct.EntityPositions, GameUpdateStruct.EntityCount);
         
         SetControllerInvalidKeys();
         SetInvalidKeys();
@@ -449,9 +416,6 @@ int main(void)
             FrameCounterForAssetCheck = 0;
         }
         
-        // NOTE(Niels): Do this for game transient state as well?
-        // Or maybe Game itself should do this.. Hmmmm
-        //Clear(&Win32State->TempArena);
 #if GLITCH_DEBUG
         Clear(&DebugArena);
         GameMemory.DebugState->DebugMemoryInfo.DebugInfoCount = 0;
