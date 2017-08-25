@@ -335,7 +335,9 @@ struct input_controller
     Key_Mode KeysJustPressed[NUM_KEYS];
     
     b32 MouseButtonDown[NUM_MOUSE_BUTTONS];
+    b32 MouseButtonsUp[NUM_MOUSE_BUTTONS];
     Key_Mode MouseButtonJustPressed[NUM_MOUSE_BUTTONS];
+    
     
     b32 JoystickKeysDown[NUM_JOYSTICK_KEYS];
     Key_Mode JoystickKeysJustPressed[NUM_JOYSTICK_KEYS];

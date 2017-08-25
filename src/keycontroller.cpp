@@ -8,6 +8,11 @@ static inline b32 GetMouseButtonDown(Mouse_Code Key, input_controller* InputCont
     return InputController->MouseButtonJustPressed[Key] == Key_JustPressed;
 }
 
+static inline b32 GetMouseButtonUp(Mouse_Code Key, input_controller* InputController)
+{
+    return InputController->MouseButtonsUp[Key];
+}
+
 static inline b32 GetKey(Key_Code Key, input_controller* InputController)
 {
     if(Key == Key_MouseLeft)
@@ -252,6 +257,7 @@ static inline r32 GetInputY(input_controller* InputController, Stick Stick = Sti
 #define JOYSTICK_AXIS_Y_DOWN(Up, ...) GetJoystickAxisYDown(InputController,Up, __VA_ARGS__)
 #define MOUSE(Key) GetMouseButton(Key, InputController)
 #define MOUSE_DOWN(Key) GetMouseButtonDown(Key, InputController)
+#define MOUSE_UP(Key) GetMouseButtonUp(Key, InputController)
 #define ACTION_DOWN(Action) GetActionButtonDown(Action, InputController)
 #define ACTION(Action) GetActionButton(Action, InputController)
 #define INPUT_X(...) GetInputX(InputController,__VA_ARGS__)

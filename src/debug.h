@@ -3,6 +3,14 @@
 
 #if GLITCH_DEBUG
 
+struct debug_rect
+{
+    math::v2 RectOrigin;
+    math::v2 RectSize;
+    
+    b32 Selected;
+};
+
 struct debug_memory_info
 {
     i32 TempBlockCount;
@@ -13,6 +21,8 @@ struct debug_memory_info
     
     i32 PermanentBlocks;
     u64 PermanentSizeAllocated;
+    
+    debug_rect DebugRect;
 };
 
 struct debug_state
