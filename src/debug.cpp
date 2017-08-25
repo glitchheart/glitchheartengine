@@ -24,8 +24,9 @@ static void MoveRect(renderer& Renderer, debug_rect* DebugRect, input_controller
     
     if(MOUSE(Mouse_Left) && DebugRect->Selected)
     {
-        DebugRect->RectOrigin.x += X - CurrentX - (Width / 2.0f);
-        DebugRect->RectOrigin.y += Y - CurrentY + (Height / 2.0f);
+        //@Incomplete: Assuming middle drag. Not perfect
+        DebugRect->RectOrigin.x += (r32)X - CurrentX - (Width / 2.0f);
+        DebugRect->RectOrigin.y += (r32)Y - CurrentY + (Height / 2.0f);
     }
     
 }
@@ -34,74 +35,81 @@ static void PushMemoryDebug(renderer& Renderer, debug_memory_info* DebugMemoryIn
 {
     debug_rect* DebugRect = &DebugMemoryInfo->DebugRect;
     
+    auto TotalHeight = 0.0f;
+    
+    for(i32 I = 0; I < DebugMemoryInfo->DebugInfoCount; I++)
+    {
+        TotalHeight += 32.0f;
+        TotalHeight += 32.0f * DebugMemoryInfo->DebugInfo[I].DebugValueCount;
+    }
+    
+    r32 Height = Max(DebugRect->RectSize.y, TotalHeight);
+    DebugRect->RectSize.y = Height;
+    
     MoveRect(Renderer, DebugRect, InputController);
     
     r32 CurrentX = DebugRect->RectOrigin.x;
     r32 CurrentY = DebugRect->RectOrigin.y;
     r32 Width = DebugRect->RectSize.x;
-    r32 Height = DebugRect->RectSize.y;
     
     r32 Offset = 30;
     
-    PushFilledRect(Renderer, math::v3(CurrentX, CurrentY - Height, 2), math::v3(Width,Height, 0.0f), math::rgba(0,1,0,0.2));
+    auto OriginalY = DebugRect->RectOrigin.y;
     
     CurrentY -= Offset;
     
     CurrentX += 5.0f;
     
-    char DebugBuffer[255];
-    sprintf(DebugBuffer, "Temporary memory");
-    PushText(Renderer, DebugBuffer, math::v3(CurrentX, CurrentY, 2), 0, math::rgba(0, 0, 1, 1));
     
-    CurrentY -= Offset;
     
-    sprintf(DebugBuffer,"\tBlocks: %d", DebugMemoryInfo->TempBlockCount);
-    PushText(Renderer, DebugBuffer, math::v3(CurrentX, CurrentY, 2), 0, math::rgba(1, 0, 1, 1));
+    PushFilledRect(Renderer, math::v3(CurrentX, OriginalY - Height, 2), math::v3(Width, Height, 0.0f), math::rgba(0,1,0,0.2));
     
-    CurrentY -= Offset;
+    for(i32 InfoIndex = 0; InfoIndex < DebugMemoryInfo->DebugInfoCount; InfoIndex++)
+    {
+        auto Info = DebugMemoryInfo->DebugInfo[InfoIndex];
+        char DebugBuffer[255];
+        sprintf(DebugBuffer, Info.Header);
+        PushText(Renderer, DebugBuffer, math::v3(CurrentX, CurrentY, 2), 0, math::rgba(0, 0, 1, 1));
+        
+        for(i32 ValueIndex = 0; ValueIndex < Info.DebugValueCount; ValueIndex++)
+        {
+            CurrentY -= Offset;
+            debug_value Next = Info.DebugValues[ValueIndex];
+            switch(Next.Type)
+            {
+                case DB_Float:
+                {
+                    sprintf(DebugBuffer, Next.Format, Next.Float.Value);
+                } break;
+                case DB_Int:
+                {
+                    sprintf(DebugBuffer, Next.Format, Next.Int.Value);
+                } break;
+                case DB_U64:
+                {
+                    sprintf(DebugBuffer, Next.Format, Next.U64.Value);
+                } break;
+            }
+            
+            PushText(Renderer, DebugBuffer, math::v3(CurrentX, CurrentY, 2), 0, math::rgba(1, 0, 1, 1));
+            
+        }
+        CurrentY -= Offset;
+        
+    }
     
-    sprintf(DebugBuffer,"\tTotal allocated: %llu bytes", DebugMemoryInfo->TempSizeAllocated);
-    PushText(Renderer, DebugBuffer, math::v3(CurrentX, CurrentY, 2), 0, math::rgba(1, 0, 1, 1));
     
-    CurrentY -= Offset;
-    
-    sprintf(DebugBuffer, "Permanent memory");
-    PushText(Renderer, DebugBuffer, math::v3(CurrentX, CurrentY, 2), 0, math::rgba(0, 0, 1, 1));
-    
-    CurrentY -= Offset;
-    
-    sprintf(DebugBuffer,"\tBlocks: %d", DebugMemoryInfo->PermanentBlocks);
-    PushText(Renderer, DebugBuffer, math::v3(CurrentX, CurrentY, 2), 0, math::rgba(1, 0, 1, 1));
-    CurrentY -= Offset;
-    
-    sprintf(DebugBuffer,"\tTotal allocated: %llu bytes", DebugMemoryInfo->PermanentSizeAllocated);
-    PushText(Renderer, DebugBuffer, math::v3(CurrentX, CurrentY, 2), 0, math::rgba(1, 0, 1, 1));
-    
-    CurrentY -= Offset;
-    
-    sprintf(DebugBuffer, "Total memory");
-    PushText(Renderer, DebugBuffer, math::v3(CurrentX, CurrentY, 2), 0, math::rgba(0, 0, 1, 1));
-    
-    CurrentY -= Offset;
-    
-    sprintf(DebugBuffer,"\tBlocks: %d", DebugMemoryInfo->BlocksAllocated);
-    PushText(Renderer, DebugBuffer, math::v3(CurrentX, CurrentY, 2), 0, math::rgba(1, 0, 1, 1));
-    CurrentY -= Offset;
-    
-    sprintf(DebugBuffer,"\tTotal allocated: %llu bytes", DebugMemoryInfo->SizeAllocated);
-    PushText(Renderer, DebugBuffer, math::v3(CurrentX, CurrentY, 2), 0, math::rgba(1, 0, 1, 1));
 }
 
 
 static void PushDebugRender(renderer& Renderer, debug_state* DebugState, input_controller* InputController)
 {
-#if GLITCH_DEBUG
+    
     if(DebugState->DebugMemory)
     {
         PushMemoryDebug(Renderer, &DebugState->DebugMemoryInfo, InputController);
     }
     
-#endif
 }
 
 
