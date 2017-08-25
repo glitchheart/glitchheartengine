@@ -49,15 +49,6 @@ struct debug_info
 
 struct debug_memory_info
 {
-    i32 TempBlockCount;
-    u64 TempSizeAllocated;
-    
-    i32 BlocksAllocated;
-    u64 SizeAllocated;
-    
-    i32 PermanentBlocks;
-    u64 PermanentSizeAllocated;
-    
     debug_rect DebugRect;
     debug_info DebugInfo[16];
     i32 DebugInfoCount;
