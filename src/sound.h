@@ -24,13 +24,12 @@ struct sound_effect
 struct sound_queue
 {
     i32 SoundCount;
-    sound_effect Sounds[32];
+    memory_arena SoundArena;
 };
 
 
 struct sound_effects
 {
-    
     union 
     {
         sound_effect SoundEffects[64];
@@ -72,7 +71,6 @@ struct sound_effects
     };
 };
 
-
 struct sound_manager
 {
     r32 SFXGain;
@@ -82,6 +80,5 @@ struct sound_manager
     b32 Stopped;
     sound_effects SoundEffects;
 };
-
 
 #endif

@@ -205,7 +205,7 @@ inline void LoadConfig(const char* FilePath, config_data* ConfigData, memory_are
 }
 
 // Global
-win32_temp_memory Win32TempMemory;
+win32_memory_state Win32MemoryState;
 
 PLATFORM_ALLOCATE_MEMORY(Win32AllocateMemory)
 {
@@ -252,8 +252,14 @@ PLATFORM_ALLOCATE_MEMORY(Win32AllocateMemory)
     
     if(Flags & PM_Temporary)
     {
-        Assert((Win32TempMemory.TempCount + 1) < MAX_TEMP_BLOCKS);
-        Win32TempMemory.Blocks[Win32TempMemory.TempCount++] = PlatBlock;
+        Assert((Win32MemoryState.TempCount + 1) < MAX_TEMP_BLOCKS);
+        Win32MemoryState.TempSizeAllocated += TotalSize;
+        Win32MemoryState.Blocks[Win32MemoryState.TempCount++] = PlatBlock;
+    }
+    else
+    {
+        Win32MemoryState.PermanentBlocks++;
+        Win32MemoryState.PermanentSizeAllocated += TotalSize;
     }
     
     return PlatBlock;
@@ -263,6 +269,12 @@ PLATFORM_DEALLOCATE_MEMORY(Win32DeallocateMemory)
 {
     if(Block)
     {
+        if((Block->Flags & PM_Temporary) == 0)
+        {
+            Win32MemoryState.PermanentBlocks--;
+            Win32MemoryState.PermanentSizeAllocated -= (Block->Size + sizeof(win32_memory_block));
+        }
+        
         win32_memory_block *Win32Block =  ((win32_memory_block*)Block);
         VirtualFree(Win32Block, 0, MEM_RELEASE);
     }
@@ -270,17 +282,18 @@ PLATFORM_DEALLOCATE_MEMORY(Win32DeallocateMemory)
 
 static void ClearTempMemory()
 {
-    for(i32 Temp = 0; Temp < Win32TempMemory.TempCount; Temp++)
+    for(i32 Temp = 0; Temp < Win32MemoryState.TempCount; Temp++)
     {
-        Win32DeallocateMemory(Win32TempMemory.Blocks[Temp]);
+        Win32DeallocateMemory(Win32MemoryState.Blocks[Temp]);
     }
-    Win32TempMemory.TempCount = 0;
+    
+    Win32MemoryState.TempCount = 0;
+    Win32MemoryState.TempSizeAllocated = 0;
 }
 
 int main(void)
 {
     
-    Win32TempMemory.TempCount = 0;
     game_memory GameMemory = {};
     
     GameMemory.ShouldReload = true;
@@ -318,6 +331,7 @@ int main(void)
     InitAudio(&SoundDevice);
     
     sound_queue SoundQueue = {};
+    
     sound_effects SoundEffects = {};
     if (SoundDevice.IsInitialized)
     {
@@ -346,6 +360,14 @@ int main(void)
         DeltaTime = Min(CurrentFrame - LastFrame, 0.1);
         LastFrame = CurrentFrame;
         Renderer.FPS = 1.0/DeltaTime;
+        Renderer.CurrentFrame++;
+        Renderer.FPSSum += Renderer.FPS;
+        if(Renderer.CurrentFrame == 60)
+        {
+            Renderer.CurrentFrame = 0;
+            Renderer.AverageFPS = Renderer.FPSSum / 60.0;
+            Renderer.FPSSum = 0.0;
+        }
         
         if(GameMemory.IsInitialized && GameMemory.ExitGame)
         {
@@ -369,6 +391,11 @@ int main(void)
         {
             SoundDevice.PrevPaused = SoundDevice.Paused;
             SoundDevice.Paused = !SoundDevice.Paused;
+        }
+        
+        if(GetKeyDown(Key_Home, &InputController))
+        {
+            GameMemory.DebugState.DebugMemory = !GameMemory.DebugState.DebugMemory;
         }
         
         ReloadAssets(RenderState, &AssetManager, &Win32State->PermArena);
@@ -404,6 +431,17 @@ int main(void)
         // NOTE(Niels): Do this for game transient state as well?
         // Or maybe Game itself should do this.. Hmmmm
         //Clear(&Win32State->TempArena);
+#if GLITCH_DEBUG
+        GameMemory.DebugState.DebugMemoryInfo.TempBlockCount = Win32MemoryState.TempCount;
+        GameMemory.DebugState.DebugMemoryInfo.TempSizeAllocated = Win32MemoryState.TempSizeAllocated;
+        //GameMemory.DebugMemoryInfo.BlocksAllocated = Win32MemoryState.BlocksAllocated;
+        //GameMemory.DebugMemoryInfo.SizeAllocated = Win32MemoryState.SizeAllocated;
+        GameMemory.DebugState.DebugMemoryInfo.BlocksAllocated = Win32MemoryState.TempCount + Win32MemoryState.PermanentBlocks;
+        GameMemory.DebugState.DebugMemoryInfo.SizeAllocated = Win32MemoryState.TempSizeAllocated + Win32MemoryState.PermanentSizeAllocated;
+        GameMemory.DebugState.DebugMemoryInfo.PermanentBlocks = Win32MemoryState.PermanentBlocks;
+        GameMemory.DebugState.DebugMemoryInfo.PermanentSizeAllocated = Win32MemoryState.PermanentSizeAllocated;
+        
+#endif
         ClearTempMemory();
     }
     

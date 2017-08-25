@@ -26,11 +26,17 @@ struct game_code
 
 #define MAX_TEMP_BLOCKS 2048
 
-struct win32_temp_memory
+struct win32_memory_state
 {
     // Will this work thoooo
     platform_memory_block* Blocks[MAX_TEMP_BLOCKS];
     i32 TempCount;
+    u64 TempSizeAllocated;
+    
+    i32 PermanentBlocks;
+    u64 PermanentSizeAllocated;
 };
+
+
 
 #endif

@@ -44,6 +44,7 @@ inline push_params NoClear()
 {
     push_params Params;
     Params.Flags &= ~AFlag_Zero;
+    return Params;
 }
 
 #define ZeroStruct(Instance) ZeroSize(sizeof(Instance), &(Instance)
@@ -200,6 +201,8 @@ static void Clear(memory_arena *Arena)
 
 char* PushString(memory_arena* Arena, u32 Length)
 {
+    //@Incomplete: Fix NoClear() bug here. 
+    // We don't care about zeroing
     auto Result = (char*)PushSize_(Arena, (Length + 1));
     Result[Length + 1] = 0;
     return Result;

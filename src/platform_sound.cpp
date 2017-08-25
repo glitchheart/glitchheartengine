@@ -91,10 +91,7 @@ static void LoadWavFile(const char *Filename, sound_effect *LoadedSound)
 
 static inline void ResetSoundQueue(sound_queue* SoundQueue)
 {
-    for(i32 Sound = 0; Sound < SoundQueue->SoundCount; Sound++)
-    {
-        SoundQueue->Sounds[Sound].Buffer = 0;
-    }
+    Clear(&SoundQueue->SoundArena);
     SoundQueue->SoundCount = 0;
 }
 
@@ -305,7 +302,7 @@ static void PlaySounds(sound_device* Device, sound_queue* SoundQueue, math::v3* 
              Sound < SoundQueue->SoundCount;
              Sound++)
         {
-            PlaySound(&SoundQueue->Sounds[Sound],Device);
+            PlaySound((sound_effect*)&SoundQueue->SoundArena.CurrentBlock->Base[Sound],Device);
         }
         ResetSoundQueue(SoundQueue);
     }

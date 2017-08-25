@@ -11,6 +11,7 @@
 #include "entity.cpp"
 #include "level.cpp"
 #include "editor.cpp"
+#include "debug.cpp"
 
 #define DEBUG
 
@@ -163,6 +164,10 @@ platform_api Platform;
 extern "C" UPDATE(Update)
 {
     Platform = GameMemory->PlatformAPI;
+    
+#if GLITCH_DEBUG
+    debug_state DebugState = GameMemory->DebugState;
+#endif
     
     game_state* GameState = GameMemory->GameState;
     
@@ -667,10 +672,6 @@ extern "C" UPDATE(Update)
                     Velocity.x = XInput * 10.0f;
                     Velocity.z = YInput * 10.0f;
                     
-                    // @Incomplete: This does not work that well when zooming out.
-                    Velocity = math::YRotate(45) * Velocity;
-                    
-                    
                     GameCamera.Center += math::v3(Velocity.x * DeltaTime, Velocity.y * DeltaTime, -Velocity.z * DeltaTime);
                 }
             }
@@ -815,9 +816,12 @@ extern "C" UPDATE(Update)
     
     PushSpotlight(Renderer, GameState->TestModels[3].Position, math::v3(0.0f, 1.0f, 0.0f), DEGREE_IN_RADIANS * 12.5f, DEGREE_IN_RADIANS * 17.5f, math::v3(0.1f, 0.1f, 0.1f), math::v3(5.0f, 5.0f, 5.0), math::v3(1.0, 1.0, 1.0), 1.0f, 0.09f, 0.032f);
     
-    char FPSBuffer[20];
-    sprintf(FPSBuffer, "%f", Renderer.FPS);
+    char FPSBuffer[64];
+    sprintf(FPSBuffer, "FPS: %.2f - AVG FPS: %.2f - dt: %.10lf", Renderer.FPS, Renderer.AverageFPS, DeltaTime);
+    
     PushEntityRenderCommands(Renderer, *GameState);
+    
+    PushDebugRender(Renderer, DebugState);
     
     for(i32 Index = 0; Index < GameState->Models; Index++)
     {
@@ -828,5 +832,5 @@ extern "C" UPDATE(Update)
     
     PushOutlinedRect(Renderer, math::v3(150.0f, 50.0f, 0.0f), math::v3(40.0f, 40.0f, 40.0f), math::rgba(1.0, 0.0, 0.0, 1.0), true);
     
-    PushText(Renderer, FPSBuffer, math::v3(200, 200, 2), 0, math::rgba(1, 0, 0, 1));
+    PushText(Renderer, FPSBuffer, math::v3(50, 850, 2), 0, math::rgba(1, 0, 0, 1));
 }

@@ -24,8 +24,6 @@ static inline void CameraTransform(renderer& Renderer, camera& Camera, math::v3 
     }
     else if(CameraFlags & CFlag_Perspective)
     {
-        //Camera.ProjectionMatrix = math::Perspective(Renderer.Viewport[2] / Renderer.Viewport[3], 0.78f, Near, Far);
-        
         Camera.ProjectionMatrix = math::Perspective((r32)Renderer.Viewport[2] / (r32)Renderer.Viewport[3], 0.60f, Near, Far);
         
         Camera.ViewMatrix = math::m4(1.0f);

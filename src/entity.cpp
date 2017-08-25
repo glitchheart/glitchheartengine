@@ -1133,7 +1133,7 @@ static void UpdateSkeleton(entity* Entity, game_state* GameState, sound_queue* S
         Entity->Hit = false;
         
         collision_info CollisionInfo;
-        CheckCollision(GameState, Entity, &CollisionInfo);
+        //CheckCollision(GameState, Entity, &CollisionInfo);
         
         Entity->Enemy.Healthbar->CurrentFrame = 4 - Entity->Health;
     }
@@ -1142,7 +1142,7 @@ static void UpdateSkeleton(entity* Entity, game_state* GameState, sound_queue* S
 static void UpdateStaticEntity(entity* Entity, game_state* GameState, r64 DeltaTime)
 {
     collision_info CollisionInfo;
-    CheckCollision(GameState, Entity, &CollisionInfo);
+    //CheckCollision(GameState, Entity, &CollisionInfo);
 }
 
 static void UpdateGeneral(entity* Entity, game_state* GameState, r64 DeltaTime)
