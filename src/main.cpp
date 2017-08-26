@@ -33,8 +33,8 @@ platform_api Platform;
 #include "opengl_rendering.h"
 #include "keycontroller.cpp"
 #include "sound.h"
-#include "platform_sound.h"
-#include "platform_sound.cpp"
+#include "openal_sound.h"
+#include "openal_sound.cpp"
 #include "filehandling.h"
 
 input_controller InputController;
