@@ -6,6 +6,17 @@
 
 #define MAX_LIGHTS 20
 
+enum Font_Type
+{
+    Font_Inconsolata,
+    Font_InconsolataSmall,
+    Font_Button,
+    Font_Roboto,
+    Font_Title,
+    
+    Font_Count
+};
+
 struct spotlight
 {
     r32 Position[4];
@@ -178,7 +189,7 @@ struct render_command
         {
             char Text[256];
             math::v3 Position;
-            i32 FontHandle;
+            Font_Type FontType;
             math::rgba Color;
             Alignment Alignment;
         } Text;

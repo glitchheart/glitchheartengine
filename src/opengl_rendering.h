@@ -298,14 +298,20 @@ struct render_state
     
     //freetype
     FT_Library FTLibrary;
-    render_font InconsolataFont;
-    render_font SmallerInconsolataFont;
-    render_font MenuFont;
-    render_font ButtonFont;
-    render_font RobotoFont;
-    render_font TitleFont;
-    render_font DamageFont;
-    render_font OutlineFont;
+    
+    union
+    {
+        render_font Fonts[Font_Count];
+        struct
+        {
+            render_font InconsolataFont;
+            render_font SmallInconsolataFont;
+            render_font MenuFont;
+            render_font ButtonFont;
+            render_font RobotoFont;
+            render_font TitleFont;
+        };
+    };
 };
 
 #endif

@@ -1014,27 +1014,32 @@ void DetermineDeltaForDirection(Look_Direction LookDirection, r32* DX, r32* DY)
 
 void UpdatePlayer(entity* Entity, game_state* GameState, renderer& Renderer, sound_commands* SoundCommands, input_controller* InputController, r64 DeltaTime)
 {
-    // Collision check
-    //collision_info CollisionInfo;
-    //CheckCollision(GameState, Entity, &CollisionInfo);
+    math::v3 Direction;
     
-    // Input + movement
-    r32 XInput = GetInputX(InputController);
-    r32 YInput = GetInputY(InputController);
-    
-    r32 Speed = Entity->Player.WalkingSpeed;
-    
-    Entity->Velocity.x = XInput * Speed;
-    Entity->Velocity.z = YInput * Speed;
-    
-    Entity->Velocity = math::YRotate(45) * Entity->Velocity;
+    if(KEY(Key_W))
+    {
+        Direction.X = 1.0f;
+    }
+    else if(KEY(Key_S))
+    {
+        Direction.X = -1.0f;
+    }
     
     
-    Entity->Position += math::v3(Entity->Velocity.x * DeltaTime, Entity->Velocity.y * DeltaTime, -Entity->Velocity.z * DeltaTime);
-    Entity->Position = math::v3(Entity->Position.x, Entity->Position.y, Entity->Position.z);
+    if(KEY(Key_A))
+    {
+        Direction.Z = -1.0f;
+    }
+    else if(KEY(Key_D))
+    {
+        Direction.Z = 1.0f;
+    }
     
-    // Update camera if centered on player
-    Renderer.Cameras[GameState->GameCameraHandle].CenterTarget = Entity->Position;
+    Direction = math::YRotate(45.0f) * Direction;
+    
+    GameState->PlayerModel.Position += Direction * 10.0f * DeltaTime;
+    
+    Renderer.Cameras[0].Center = math::v3(GameState->PlayerModel.Position.X, GameState->PlayerModel.Position.Y, GameState->PlayerModel.Position.Z);
 }
 
 void UpdateAI(entity* Entity, game_state* GameState, sound_commands* SoundCommands, r64 DeltaTime)

@@ -9,7 +9,7 @@ static b32 PushButton(renderer& Renderer, const char* Text, math::v2 Position, m
     b32 MouseDown = MOUSE(Mouse_Left);
     
     PushFilledRect(Renderer, math::v3(Position.X, Position.Y, 0), math::v3(Size.X, Size.Y, 0), Clicked && MouseDown ? math::rgba(1, 1, 1, 1) : BackgroundColor);
-    PushText(Renderer, Text, math::v3(Position.X + Size.X / 2, Position.Y + Size.Y / 2, 0), 0, Clicked && MouseDown ? math::rgba(0, 0, 0, 1) : TextColor, Alignment_Center);
+    PushText(Renderer, Text, math::v3(Position.X + Size.X / 2, Position.Y + Size.Y / 2, 0), Font_Button, Clicked && MouseDown ? math::rgba(0, 0, 0, 1) : TextColor, Alignment_Center);
     
     return MOUSE_DOWN(Mouse_Left) && Clicked;
 }
