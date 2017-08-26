@@ -117,6 +117,20 @@ static void PushFilledRect(renderer& Renderer, math::v3 Position, math::v3 Size,
     RenderCommand->IsUI = IsUI;
 }
 
+
+static void PushFilledRect(renderer& Renderer, rect Rect, math::rgba Color, b32 IsUI = true)
+{
+    render_command* RenderCommand = PushNextCommand(Renderer, IsUI);
+    
+    RenderCommand->Type = RenderCommand_Rect;
+    RenderCommand->Rect.Position = math::v3(Rect.X, Rect.Y, 0);
+    RenderCommand->Rect.Size = math::v3(Rect.Width, Rect.Height, 0);
+    RenderCommand->Rect.Color = Color;
+    RenderCommand->Rect.Outlined = false;
+    RenderCommand->IsUI = IsUI;
+}
+
+
 static void PushOutlinedRect(renderer& Renderer, math::v3 Position, math::v3 Size, math::rgba Color, b32 IsUI = false)
 {
     render_command* RenderCommand = PushNextCommand(Renderer, IsUI);

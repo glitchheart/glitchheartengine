@@ -2,6 +2,7 @@
 #include "gmap.cpp"
 #include "rendering.cpp"
 #include "keycontroller.cpp"
+#include "ui.cpp"
 #include "sound.cpp"
 #include "animation.cpp"
 #include "collision.cpp"
@@ -814,8 +815,11 @@ extern "C" UPDATE(Update)
     }
     
     PushFilledRect(Renderer, math::v3(50.0f,50.0f, 0.0f), math::v3(40.0f, 40.0f, 40.0f), math::rgba(1.0, 0.0, 0.0, 1.0), true);
-    
     PushOutlinedRect(Renderer, math::v3(150.0f, 50.0f, 0.0f), math::v3(40.0f, 40.0f, 40.0f), math::rgba(1.0, 0.0, 0.0, 1.0), true);
-    
     PushText(Renderer, FPSBuffer, math::v3(50, 850, 2), 0, math::rgba(1, 0, 0, 1));
+    
+    if(PushButton(Renderer, "TEST BUTTON", rect(200, 200, 100, 50), math::rgba(1, 0, 0, 1), math::rgba(1, 1, 1, 1), InputController))
+    {
+        printf("Mouse clicked\n");
+    }
 }
