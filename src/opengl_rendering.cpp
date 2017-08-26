@@ -1238,7 +1238,7 @@ static void RenderLine(const render_command& Command, render_state& RenderState,
 static void RenderText(const render_command& Command, render_state& RenderState)
 {
     // @Incomplete: Need to set a font
-    RenderText(RenderState, RenderState.InconsolataFont, Command.Text.Color, Command.Text.Text, Command.Text.Position.x, Command.Text.Position.y);
+    RenderText(RenderState, RenderState.InconsolataFont, Command.Text.Color, Command.Text.Text, Command.Text.Position.x, Command.Text.Position.y, Command.Text.Alignment);
 }
 
 static void RenderRect(const render_command& Command, render_state& RenderState, math::m4 Projection, math::m4 View)
