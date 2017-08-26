@@ -1,5 +1,5 @@
-#ifndef PLATFORM_SOUND_H
-#define PLATFORM_SOUND_H
+#ifndef OPENAL_SOUND_H
+#define OPENAL_SOUND_H
 
 #define SOURCES 64
 #define SOUNDS 64

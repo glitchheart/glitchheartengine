@@ -1095,30 +1095,6 @@ namespace math
             memcpy(this->V,(Other * (*this)).V, sizeof(r32) * 4 * 4);
         }
         
-        /*
-        inline m4 operator*(m4 Other)
-        {
-            m4 Result(*this);
-            Result.M11 = 
-                this->M11 * Other.M11 + this->M12 * Other.M21 + this->M13 * Other.M31 + this->M14 * Other.M41;
-            Result.M12 = this->M11 * Other.M12 + this->M12 * Other.M22 + this->M13 * Other.M32 + this->M14 * Other.M42;
-            Result.M13 = this->M11 * Other.M13 + this->M12 * Other.M23+ this->M13 * Other.M33 + this->M14 * Other.M43;
-            Result.M14 = this->M11 * Other.M14 + this->M12 * Other.M24 + this->M13 * Other.M34 + this->M14 * Other.M44;
-            Result.M21 = this->M21 * Other.M11 + this->M22 * Other.M21 + this->M23 * Other.M31 + this->M24 * Other.M41;
-            Result.M22 = this->M21 * Other.M12 + this->M22 * Other.M22 + this->M23 * Other.M32 + this->M24 * Other.M42;
-            Result.M23 = this->M21 * Other.M13 + this->M22 * Other.M23 + this->M23 * Other.M33 + this->M24 * Other.M43;
-            Result.M24 = this->M21 * Other.M14 + this->M22 * Other.M24 + this->M23 * Other.M34 + this->M24 * Other.M44;
-            Result.M31 = this->M31 * Other.M11 + this->M32 * Other.M21 + this->M33 * Other.M31 + this->M34 * Other.M41;
-            Result.M32 = this->M31 * Other.M12 + this->M32 * Other.M22 + this->M33 * Other.M32 + this->M34 * Other.M42;
-            Result.M33 = this->M31 * Other.M13 + this->M32 * Other.M23 + this->M33 * Other.M33 + this->M34 * Other.M43;
-            Result.M34 = this->M31 * Other.M14 + this->M32 * Other.M24 + this->M33 * Other.M34 + this->M34 * Other.M44;
-            Result.M41 = this->M41 * Other.M11 + this->M42 * Other.M21 + this->M43 * Other.M31 + this->M44 * Other.M41;
-            Result.M42 = this->M41 * Other.M12 + this->M42 * Other.M22 + this->M43 * Other.M32 + this->M44 * Other.M42;
-            Result.M43 = this->M41 * Other.M13 + this->M42 * Other.M23 + this->M43 * Other.M33 + this->M44 * Other.M43;
-            Result.M44 = this->M41 * Other.M14 + this->M42 * Other.M24 + this->M43 * Other.M34 + this->M44 * Other.M44;
-            return Result;
-        }*/
-        
         inline m4 operator*(r32 S)
         {
             m4 Result(*this);
@@ -1143,6 +1119,20 @@ namespace math
         
     };
     
+    union quat
+    {
+        struct
+        {
+            r32 x, y, z, w;
+        };
+        struct
+        {
+            r32 X, Y, Z, W;
+        };
+        // Identity quaternion
+        quat() : X(0.0f), Y(0.0f), Z(0.0f), W(1.0f) {}
+        
+    };
     
     inline v4 Transform(m4& M, const v4& V)
     {
