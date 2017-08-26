@@ -12,7 +12,6 @@ struct win32_state
     memory_arena PermArena;
 };
 
-
 struct game_code
 {
     HMODULE GameCodeDLL;

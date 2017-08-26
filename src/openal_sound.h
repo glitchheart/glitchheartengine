@@ -16,11 +16,11 @@ struct sound_device
     ALuint Buffers[SOUNDS];
     u32 BufferCount;
     b32 PrevMuted;
-    b32 Muted;
+    
     b32 PrevPaused;
-    b32 Paused;
+    
     b32 PrevStopped;
-    b32 Stopped;
+    
     r32 SourceGain[SOURCES];
     r32 SFXVolume;
     r32 MusicVolume;

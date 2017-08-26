@@ -194,26 +194,35 @@ extern "C" UPDATE(Update)
         Model1.Position = math::v3(0, 0, 0);
         Model1.Scale = math::v3(1, 1, 1);
         Model1.Rotation = math::v3(0, 0, 0);
+        Model1.Orientation = math::quat(0.0f, 0.0f, 0.0f, 1.0f);
+        //Model1.Orientation = Normalize(Model1.Orientation);
+        
         model Model2;
         Model2.Position = math::v3(0, 0, 0);
         Model2.Scale = math::v3(1.0, 1.0, 1.0);
+        Model2.Orientation = math::quat();
+        
         model Model3;
         Model3.Position = math::v3(5, 0, 0);
         Model3.Scale = math::v3(1.0, 1.0, 1.0);
+        Model3.Orientation = math::quat();
         
         model Model4;
         Model4.Position = math::v3(5, 0, 0);
         Model4.Scale = math::v3(1.0, 1.0, 1.0);
+        Model4.Orientation = math::quat();
         //Model4.Rotation.x = -90;
         
         model Model5;
         Model5.Position = math::v3(0, 0, 0);
         Model5.Scale = math::v3(1.0, 1.0, 1.0);
+        Model5.Orientation = math::quat();
         
         model Model6; // Light source position
         
         Model6.Position = math::v3(-10.0f, 5.0f, 0);
         Model6.Scale = math::v3(1.0, 1.0, 1.0);
+        Model6.Orientation = math::quat();
         
         LoadModel(Renderer, "../assets/models/animated_test.modl", &Model1);
         LoadModel(Renderer, "../assets/models/red_riding.modl", &Model2);
@@ -278,6 +287,7 @@ extern "C" UPDATE(Update)
             GameState->EditorState.SelectedAnimation = 0;
             
             sounds Sounds = {};
+            //@Incomplete: Get actual sizes, this is retarded
             memcpy(&GameState->Sounds.SoundEffects, SoundEffects, sizeof(sound_effect) * (64 + 32));
             
             LoadGameDataFile(GameState);
@@ -297,6 +307,7 @@ extern "C" UPDATE(Update)
             GameMemory->ShouldReload = false;
             PLAY_TRACK(Brugt);
             
+            Renderer.ClearColor = math::rgba(0.2f, 0.2f, 0.2f, 1.0f);
         }
         
         LoadLevelFromFile(GameState->LevelPath, &GameState->CurrentLevel, GameState,  Renderer, SoundCommands);
@@ -421,7 +432,6 @@ extern "C" UPDATE(Update)
         CreateEditorButtons(GameState, Renderer);
     }
     
-    
 #if GLITCH_DEBUG
     if(KEY_DOWN(Key_F1))
     {
@@ -433,12 +443,10 @@ extern "C" UPDATE(Update)
         //RenderState.RenderFPS = !RenderState.RenderFPS;
     }
     
-    
     if(KEY_DOWN(Key_F3))
     {
         SoundCommands->Muted = !SoundCommands->Muted;
     }
-    
     
     if(KEY_DOWN(Key_F4))
     {
@@ -449,7 +457,6 @@ extern "C" UPDATE(Update)
     {
         SoundCommands->Paused = !SoundCommands->Paused;
     }
-    
     
     if(KEY_DOWN(Key_F6))
     {
@@ -808,14 +815,50 @@ extern "C" UPDATE(Update)
     
     PushDebugRender(Renderer, DebugState, InputController);
     
+    
+    static b32 UseSlerp = false;
+    
+    if(KEY_DOWN(Key_O))
+    {
+        UseSlerp = !UseSlerp;
+    }
+    
+    if(KEY(Key_X) || KEY(Key_Y) || KEY(Key_Z))
+    {
+        static r32 TotalTime = 1.0f;
+        static r32 Delta = 0.0f;
+        static math::quat StartOrientation = GameState->TestModels[0].Orientation;
+        
+        static r32 R = 45.0f;
+        if(Delta > TotalTime)
+        {
+            Delta = 0.0f;
+            R += 45.0f;
+            StartOrientation = GameState->TestModels[0].Orientation;
+        }
+        Delta += DeltaTime;
+        r32 T =  Delta/TotalTime;
+        
+        math::quat RotX = math::quat(1.0f, 0.0f, 0.0f, DEGREE_IN_RADIANS * R);
+        RotX = math::Normalize(RotX);
+        
+        if(UseSlerp)
+        {
+            DEBUG_PRINT("Slerp\n");
+            GameState->TestModels[0].Orientation = Slerp(StartOrientation, RotX, T);
+        }
+        else
+        {
+            DEBUG_PRINT("NLerp\n");
+            GameState->TestModels[0].Orientation = NLerp(StartOrientation, RotX, T);
+        }
+        
+    }
+    
     for(i32 Index = 0; Index < GameState->Models; Index++)
     {
         PushModel(Renderer, GameState->TestModels[Index]);
     }
-    
-    PushFilledRect(Renderer, math::v3(50.0f,50.0f, 0.0f), math::v3(40.0f, 40.0f, 40.0f), math::rgba(1.0, 0.0, 0.0, 1.0), true);
-    
-    PushOutlinedRect(Renderer, math::v3(150.0f, 50.0f, 0.0f), math::v3(40.0f, 40.0f, 40.0f), math::rgba(1.0, 0.0, 0.0, 1.0), true);
     
     PushText(Renderer, FPSBuffer, math::v3(50, 850, 2), 0, math::rgba(1, 0, 0, 1));
 }

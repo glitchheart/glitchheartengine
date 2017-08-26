@@ -1348,9 +1348,13 @@ static void RenderModel(const render_command& Command, render_state& RenderState
         math::m4 Model(1.0f);
         Model = math::Scale(Model, Command.Scale);
         
-        Model = math::YRotate(Command.Rotation.y) * Model;
-        Model = math::XRotate(Command.Rotation.x) * Model;
-        Model = math::ZRotate(Command.Rotation.z) * Model;
+        //Model = math::YRotate(Command.Rotation.y) * Model;
+        //Model = math::XRotate(Command.Rotation.x) * Model;
+        //Model = math::ZRotate(Command.Rotation.z) * Model;
+        
+        math::m4 Rot = ToMatrix(Command.Orientation);
+        
+        Model = Rot * Model;
         
         Model = math::Translate(Model, Command.Position);
         
@@ -1637,7 +1641,7 @@ static void Render(render_state& RenderState, renderer& Renderer, memory_arena* 
     
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     
-    glClearColor(0.5, 0.5, 0.5, 1.0f);
+    glClearColor(Renderer.ClearColor.r, Renderer.ClearColor.g, Renderer.ClearColor.b, Renderer.ClearColor.a);
     
     //RenderGame(GameState);
     RenderCommands(RenderState, Renderer, PermArena);
@@ -1645,7 +1649,7 @@ static void Render(render_state& RenderState, renderer& Renderer, memory_arena* 
     // Second pass
     
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glClearColor(0.5, 0.5, 0.5, 1.0f);
+    glClearColor(Renderer.ClearColor.r, Renderer.ClearColor.g, Renderer.ClearColor.b, Renderer.ClearColor.a);
     
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
