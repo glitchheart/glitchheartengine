@@ -90,7 +90,7 @@ static void PushLine(renderer& Renderer, math::v3 Point1, math::v3 Point2, r32 L
 }
 
 // @Incomplete: We still need to do something with fonts!
-static void PushText(renderer& Renderer, const char* Text, math::v3 Position, i32 FontHandle, math::rgba Color, Alignment Alignment = Alignment_Left, b32 IsUI = true)
+static void PushText(renderer& Renderer, const char* Text, math::v3 Position, Font_Type FontType, math::rgba Color, Alignment Alignment = Alignment_Left, b32 IsUI = true)
 {
     render_command* RenderCommand = PushNextCommand(Renderer, IsUI);
     
@@ -99,7 +99,7 @@ static void PushText(renderer& Renderer, const char* Text, math::v3 Position, i3
     strcpy(RenderCommand->Text.Text, Text);
     
     RenderCommand->Text.Position = Position;
-    RenderCommand->Text.FontHandle = FontHandle;
+    RenderCommand->Text.FontType = FontType;
     RenderCommand->Text.Color = Color;
     RenderCommand->Text.Alignment = Alignment;
     RenderCommand->IsUI = IsUI;
