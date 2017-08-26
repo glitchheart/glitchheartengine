@@ -1348,10 +1348,6 @@ static void RenderModel(const render_command& Command, render_state& RenderState
         math::m4 Model(1.0f);
         Model = math::Scale(Model, Command.Scale);
         
-        //Model = math::YRotate(Command.Rotation.y) * Model;
-        //Model = math::XRotate(Command.Rotation.x) * Model;
-        //Model = math::ZRotate(Command.Rotation.z) * Model;
-        
         math::m4 Rot = ToMatrix(Command.Orientation);
         
         Model = Rot * Model;

@@ -215,7 +215,6 @@ static void PushModel(renderer& Renderer, model& Model)
     RenderCommand->Type = RenderCommand_Model;
     RenderCommand->Position = Model.Position;
     RenderCommand->Scale = Model.Scale;
-    RenderCommand->Rotation = Model.Rotation;
     RenderCommand->Orientation = Model.Orientation;
     
     for (i32 Index = 0; Index < Model.MeshCount; Index++)

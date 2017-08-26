@@ -1272,7 +1272,7 @@ namespace math
     }
     
     //@Incomplete JBlow, CaseyM, ShawnM say don't use this
-    inline quat Slerp(quat Q0, quat Q1, r64 T)
+    inline quat Slerp(quat Q0, quat Q1, r32 T)
     {
         Q0 = Normalize(Q0);
         Q1 = Normalize(Q1);
@@ -1304,7 +1304,7 @@ namespace math
         return (1.0f - T) * Q0 + T * Q1;
     }
     
-    inline quat NLerp(quat Q0, quat Q1, r64 T)
+    inline quat NLerp(quat Q0, quat Q1, r32 T)
     {
         Q0 = Normalize(Q0);
         Q1 = Normalize(Q1);

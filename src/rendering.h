@@ -138,9 +138,7 @@ struct model
 {
     math::v3 Position;
     math::v3 Scale;
-    math::v3 Rotation;
     
-    //@Incomplete Test this!!!
     math::quat Orientation;
     
     math::rgba Color;
@@ -165,7 +163,6 @@ struct render_command
     math::v3 Scale;
     math::v3 Rotation;
     
-    //@Incomplete: Test!!!
     math::quat Orientation;
     
     union
