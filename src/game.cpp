@@ -844,12 +844,10 @@ extern "C" UPDATE(Update)
         
         if(UseSlerp)
         {
-            DEBUG_PRINT("Slerp\n");
             GameState->TestModels[0].Orientation = Slerp(StartOrientation, RotX, T);
         }
         else
         {
-            DEBUG_PRINT("NLerp\n");
             GameState->TestModels[0].Orientation = NLerp(StartOrientation, RotX, T);
         }
         
