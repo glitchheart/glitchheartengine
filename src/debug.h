@@ -25,7 +25,7 @@ struct debug_value
     
     union
     {
-        struct 
+        struct
         {
             r32 Value;
         } Float;

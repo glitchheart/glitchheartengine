@@ -247,7 +247,8 @@ struct entity
     math::v2i CurrentTile;
     
     math::v3 Center;
-    math::v3 Rotation;
+    math::v3 Rotation; // This should probably be a quaternion?
+    
     
     r32 Scale;
     b32 IsFlipped;

@@ -353,6 +353,9 @@ int main(void)
         SoundCommands.SFXVolume = ConfigData.SFXVolume;
         SoundCommands.MusicVolume = ConfigData.MusicVolume;
         SoundCommands.Muted = ConfigData.Muted;
+        SoundDevice.PrevMuted = !ConfigData.Muted;
+        SoundDevice.PrevStopped = false;
+        SoundDevice.PrevPaused = false;
     }
     
     r64 LastFrame = GetTime();
