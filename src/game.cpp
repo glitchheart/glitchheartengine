@@ -193,7 +193,6 @@ extern "C" UPDATE(Update)
         model Model1;
         Model1.Position = math::v3(0, 0, 0);
         Model1.Scale = math::v3(1, 1, 1);
-        Model1.Rotation = math::v3(0, 0, 0);
         Model1.Orientation = math::quat(0.0f, 0.0f, 0.0f, 1.0f);
         //Model1.Orientation = Normalize(Model1.Orientation);
         
@@ -211,7 +210,6 @@ extern "C" UPDATE(Update)
         Model4.Position = math::v3(5, 0, 0);
         Model4.Scale = math::v3(1.0, 1.0, 1.0);
         Model4.Orientation = math::quat();
-        //Model4.Rotation.x = -90;
         
         model Model5;
         Model5.Position = math::v3(0, 0, 0);
@@ -826,7 +824,7 @@ extern "C" UPDATE(Update)
     if(KEY(Key_X) || KEY(Key_Y) || KEY(Key_Z))
     {
         static r32 TotalTime = 1.0f;
-        static r32 Delta = 0.0f;
+        static r64 Delta = 0.0f;
         static math::quat StartOrientation = GameState->TestModels[0].Orientation;
         
         static r32 R = 45.0f;
@@ -837,7 +835,7 @@ extern "C" UPDATE(Update)
             StartOrientation = GameState->TestModels[0].Orientation;
         }
         Delta += DeltaTime;
-        r32 T =  Delta/TotalTime;
+        r32 T =  (r32)Delta/TotalTime;
         
         math::quat RotX = math::quat(1.0f, 0.0f, 0.0f, DEGREE_IN_RADIANS * R);
         RotX = math::Normalize(RotX);
