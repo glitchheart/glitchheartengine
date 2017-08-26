@@ -93,10 +93,7 @@ static void PushMemoryDebug(renderer& Renderer, debug_memory_info* DebugMemoryIn
             
         }
         CurrentY -= Offset;
-        
     }
-    
-    
 }
 
 
