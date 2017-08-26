@@ -10,7 +10,7 @@ static inline void CameraTransform(renderer& Renderer, camera& Camera, math::v3 
 {
     if(CameraFlags & CFlag_Orthographic)
     {
-        Camera.ProjectionMatrix = math::Ortho(0.0f, Renderer.Viewport[2] / Zoom, 0.0f, Renderer.Viewport[3] / Zoom, 0.1f, 1000.0f);
+        Camera.ProjectionMatrix = math::Ortho(0.0f, Renderer.Viewport[2] / Zoom, 0.0f, Renderer.Viewport[3] / Zoom, Near, Far);
         Camera.ViewMatrix = math::m4(1.0f);
         Camera.ViewMatrix = math::Translate(Camera.ViewMatrix, math::v3(-Target.x, Target.y, -Target.z));
         
@@ -216,6 +216,7 @@ static void PushModel(renderer& Renderer, model& Model)
     RenderCommand->Position = Model.Position;
     RenderCommand->Scale = Model.Scale;
     RenderCommand->Rotation = Model.Rotation;
+    RenderCommand->Orientation = Model.Orientation;
     
     for (i32 Index = 0; Index < Model.MeshCount; Index++)
     {

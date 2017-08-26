@@ -149,6 +149,24 @@ namespace math
 #else
 namespace math
 {
+    
+    inline i32 Clamp(i32 Minimum, i32 Value, i32 Maximum)
+    {
+        i32 Result = Max(Minimum, Min(Value,Maximum));
+        return Result;
+    }
+    
+    inline r32 Clamp(r32 Minimum, r32 Value, r32 Maximum)
+    {
+        return Max(Minimum, Min(Value,Maximum));
+    }
+    
+    inline r64 Clamp(r64 Minimum, r64 Value, r64 Maximum)
+    {
+        return Max(Minimum, Min(Value,Maximum));
+    }
+    
+    
     union v2
     {
         struct
@@ -1129,10 +1147,237 @@ namespace math
         {
             r32 X, Y, Z, W;
         };
+        struct
+        {
+            v4 AxisAngle;
+        };
+        struct
+        {
+            v3 Axis;
+            r32 Angle;
+        };
+        
         // Identity quaternion
         quat() : X(0.0f), Y(0.0f), Z(0.0f), W(1.0f) {}
+        quat(r32 X, r32 Y, r32 Z, r32 Angle) : Axis(v3(X * sin(Angle / 2.0f), Y * sin(Angle / 2.0f), Z * sin(Angle / 2.0f))), Angle(cos(Angle / 2.0f)) {}
+        quat(v3 Axis, r32 Angle) : 
+        Axis(v3(Axis.X * sin(Angle / 2.0f), Axis.Y * sin(Angle / 2.0f), Axis.Z * sin(Angle / 2.0f))),
+        Angle(cos(Angle / 2.0f)) {}
+        quat(const quat& O) : Axis(O.Axis), Angle(O.Angle) {}
         
+        inline quat operator+ (quat In)
+        {
+            quat Result(*this);
+            Result.x += In.X;
+            Result.y += In.Y;
+            Result.z += In.Z;
+            Result.w += In.W;
+            return Result;
+        }
+        
+        inline void operator+= (quat In)
+        {
+            this->X += In.X;
+            this->Y += In.Y;
+            this->Z += In.Z;
+            this->W += In.W;
+        }
+        
+        inline quat operator- (quat In)
+        {
+            quat Result(*this);
+            Result.x -= In.X;
+            Result.y -= In.Y;
+            Result.z -= In.Z;
+            Result.w -= In.W;
+            return Result;
+        }
+        
+        inline quat operator* (quat In)
+        {
+            quat Result(*this);
+            Result.w = this->w * In.w - this->x * In.x - this->y * In.y - this->z * In.z;
+            Result.x = this->w * In.x + this->x * In.w + this->y * In.z - this->z * In.y;
+            Result.y = this->w * In.y - this->x * In.z + this->y * In.w + this->z * In.z;
+            Result.z = this->w * In.z + this->x * In.y - this->y * In.x + this->z * In.z;
+            return Result;
+        }
+        
+        inline void operator*= (quat In)
+        {
+            auto Result = *this * In;
+            this->X = Result.X;
+            this->Y = Result.Y;
+            this->Z = Result.Z;
+            this->W = Result.W;
+        }
+        
+        inline quat operator* (r32 V)
+        {
+            quat Result(*this);
+            Result.w *= V;
+            Result.x *= V;
+            Result.y *= V;
+            Result.z *= V;
+            return Result;
+        }
+        
+        inline quat operator/ (r32 V)
+        {
+            quat Result(*this);
+            
+            Result.W /= V;
+            Result.X /= V;
+            Result.Y /= V;
+            Result.Z /= V;
+            
+            return Result;
+        }
     };
+    
+    inline quat operator* (r32 V, quat Q)
+    {
+        quat Result(Q);
+        Result.w *= V;
+        Result.x *= V;
+        Result.y *= V;
+        Result.z *= V;
+        return Result;
+    }
+    
+    inline r32 Dot(quat Q1, quat Q2)
+    {
+        r32 Result;
+        Result = Q1.w * Q2.w + Q1.x * Q2.x + Q1.y * Q2.y + Q1.z * Q2.z;
+        return Result;
+    }
+    
+    inline quat Conjugate(quat In)
+    {
+        quat Result(-In.Axis, In.w);
+        return Result;
+    }
+    
+    inline r32 Magnitude(quat In)
+    {
+        r32 Result = 0.0f;
+        Result = In.W * In.W + In.X * In.X + In.Y * In.Y + In.Z * In.Z;
+        Result = sqrt(Result);
+        return Result;
+    }
+    
+    inline quat Normalize(quat In)
+    {
+        return In / Magnitude(In);
+    }
+    
+    //@Incomplete JBlow, CaseyM, ShawnM say don't use this
+    inline quat Slerp(quat Q0, quat Q1, r64 T)
+    {
+        Q0 = Normalize(Q0);
+        Q1 = Normalize(Q1);
+        
+        auto DotP = Dot(Q0, Q1);
+        
+        const r64 DOT_THRESHOLD = 0.9995;
+        if(DotP > DOT_THRESHOLD)
+        {
+            quat Result = Q0 + (1.0f - T) * (Q1 - Q0);
+            Result = Normalize(Result);
+            return Result;
+        }
+        
+        Clamp(DotP, -1.0f, 1.0f);
+        auto Theta_0 = acos(DotP);
+        auto Theta = Theta_0 * T;
+        
+        auto Q2 = Q1 - Q0 * DotP;
+        Q2 = Normalize(Q2);
+        
+        auto Result = Q0 * cos(Theta) + Q2 * sin(Theta);
+        Result = Normalize(Result);
+        return Result;
+    }
+    
+    inline quat Lerp(quat Q0, r32 T, quat Q1)
+    {
+        return (1.0f - T) * Q0 + T * Q1;
+    }
+    
+    inline quat NLerp(quat Q0, quat Q1, r64 T)
+    {
+        Q0 = Normalize(Q0);
+        Q1 = Normalize(Q1);
+        return Normalize(Lerp(Q0, T, Q1));
+    }
+    
+    inline m4 Transpose(m4 In)
+    {
+        m4 Result(In);
+        Result.M11 = In.M11;
+        Result.M12 = In.M21;
+        Result.M13 = In.M31;
+        Result.M14 = In.M41;
+        Result.M21 = In.M12;
+        Result.M22 = In.M22;
+        Result.M23 = In.M32;
+        Result.M24 = In.M42;
+        Result.M31 = In.M13;
+        Result.M32 = In.M23;
+        Result.M33 = In.M33;
+        Result.M34 = In.M43;
+        Result.M41 = In.M14;
+        Result.M42 = In.M24;
+        Result.M43 = In.M34;
+        Result.M44 = In.M44;
+        return Result;
+    }
+    
+    inline m4 ToMatrix(quat In)
+    {
+        /*m4 Result(1.0f);
+        Result[0][0] = In.W * In.W + In.X * In.X - In.Y * In.Y - In.Z * In.Z;
+        Result[1][0] = 2 * In.X * In.Y + 2 * In.W * In.Z;
+        Result[2][0] = 2 * In.X * In.Z - 2 * In.W * In.Y;
+        Result[3][0] = 0.0f;
+        Result[0][1] = 2 * In.X * In.Y - 2 * In.W * In.Z;
+        Result[1][1] = In.W * In.W - In.X * In.X + In.Y * In.Y - In.Z * In.Z;
+        Result[2][1] = 2 * In.Y * In.Z - 2 * In.W * In.X;
+        Result[3][1] = 2 * In.Y * In.Z + 2 * In.W * In.X;
+        Result[0][2] = 2 * In.X * In.Z + 2 * In.W * In.Y;
+        Result[1][2] = 2 * In.Y * In.Z + 2 * In.W * In.X;
+        Result[2][2] = In.W * In.W - In.X * In.X + In.Y * In.Y + In.Z * In.Z;
+        Result[3][2] = 0.0f;
+        Result[0][3] = 0.0f;
+        Result[1][3] = 0.0f;
+        Result[2][3] = 0.0f;
+        Result[3][3] = 1.0f;
+        
+        Result = Transpose(Result);
+        */
+        
+        m4 Result(1.0f);
+        Result[0][0] = 1.0f - 2.0f * In.Y * In.Y - 2.0f * In.Z * In.Z;
+        Result[1][0] = 2.0f * In.X * In.Y + 2.0f * In.Z * In.W;
+        Result[2][0] = 2.0f * In.X * In.Z - 2.0f * In.Y * In.W;
+        Result[3][0] = 0.0f;
+        Result[0][1] = 2.0f * In.X * In.Y - 2.0f * In.Z * In.W;
+        Result[1][1] = 1.0f - 2.0f * In.X * In.X - 2.0f * In.Z * In.Z;
+        Result[2][1] = 2.0f * In.Y * In.Z + 2.0f * In.X * In.W;
+        Result[3][1] = 0.0f;
+        Result[0][2] = 2.0f * In.X * In.Z + 2.0f * In.Y * In.W;
+        Result[1][2] = 2.0f * In.Y * In.Z - 2.0f * In.X * In.W;
+        Result[2][2] = 1.0f - 2.0f * In.X * In.X - 2.0f * In.Y * In.Y;
+        Result[3][2] = 0.0f;
+        Result[0][3] = 0.0f;
+        Result[1][3] = 0.0f;
+        Result[2][3] = 0.0f;
+        Result[3][3] = 1.0f;
+        
+        Result = Transpose(Result);
+        
+        return Result;
+    }
     
     inline v4 Transform(m4& M, const v4& V)
     {
@@ -1145,7 +1390,6 @@ namespace math
         
         return R;
     }
-    
     
     inline v3 operator*(m4 M, const v3& V)
     {
@@ -1256,28 +1500,6 @@ namespace math
         auto Det = Determinant(In);
         auto InvDet = 1.0f/Det;
         Result = Result * InvDet;
-        return Result;
-    }
-    
-    inline m4 Transpose(m4 In)
-    {
-        m4 Result(In);
-        Result.M11 = In.M11;
-        Result.M12 = In.M21;
-        Result.M13 = In.M31;
-        Result.M14 = In.M41;
-        Result.M21 = In.M12;
-        Result.M22 = In.M22;
-        Result.M23 = In.M32;
-        Result.M24 = In.M42;
-        Result.M31 = In.M13;
-        Result.M32 = In.M23;
-        Result.M33 = In.M33;
-        Result.M34 = In.M43;
-        Result.M41 = In.M14;
-        Result.M42 = In.M24;
-        Result.M43 = In.M34;
-        Result.M44 = In.M44;
         return Result;
     }
     
@@ -1604,13 +1826,13 @@ namespace math
     }
     /*
     inline void Perspective(r32& AngleOfView, r32 AspectRatio, r32 Near,
-                            r32 Far, r32& Bottom, r32& Top, r32& Left, r32& Right)
+    r32 Far, r32& Bottom, r32& Top, r32& Left, r32& Right)
     {
-        r32 Scale = tan(AngleOfView * 0.5f * PI / 180) * Near;
-        Right = AspectRatio  * Scale;
-        Left = -Right;
-        Top = Scale;
-        Bottom = -Top;
+    r32 Scale = tan(AngleOfView * 0.5f * PI / 180) * Near;
+    Right = AspectRatio  * Scale;
+    Left = -Right;
+    Top = Scale;
+    Bottom = -Top;
     }
     */
     inline m4 Frustum(r32 Bottom, r32 Top, r32 Left, r32 Right,
@@ -1703,22 +1925,6 @@ namespace math
         Result.Z = Lerp(A.Z,T,B.Z);
         Result.W = Lerp(A.W,T,B.W);
         return Result;
-    }
-    
-    inline i32 Clamp(i32 Minimum, i32 Value, i32 Maximum)
-    {
-        i32 Result = Max(Minimum, Min(Value,Maximum));
-        return Result;
-    }
-    
-    inline r32 Clamp(r32 Minimum, r32 Value, r32 Maximum)
-    {
-        return Max(Minimum, Min(Value,Maximum));
-    }
-    
-    inline r64 Clamp(r64 Minimum, r64 Value, r64 Maximum)
-    {
-        return Max(Minimum, Min(Value,Maximum));
     }
     
     inline r32 RandomFloat(r32 From, r32 To)

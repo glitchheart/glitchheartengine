@@ -133,9 +133,6 @@ static void InitAudio(sound_device *SoundDevice)
     
     alGenSources((ALuint)SOURCES,SoundDevice->Sources);
     
-    SoundDevice->Stopped = false;
-    SoundDevice->Paused = false;
-    SoundDevice->Muted = false;
     SoundDevice->PrevStopped = false;
     SoundDevice->PrevPaused = false;
     SoundDevice->PrevMuted = false;
@@ -200,7 +197,7 @@ static inline void CleanupSound(sound_device* SoundDevice)
     alcCloseDevice(SoundDevice->Device);
 }
 
-static inline void PlaySound(sound_effect *SoundEffect,sound_device* Device)
+static inline void PlaySound(sound_effect *SoundEffect, sound_device* Device, sound_commands* Commands)
 {
     if (SoundEffect)
     {
@@ -228,7 +225,7 @@ static inline void PlaySound(sound_effect *SoundEffect,sound_device* Device)
         alSourcef(Source, AL_ROLLOFF_FACTOR, 1.0f);
         alSourcei(Source, AL_BUFFER, SoundEffect->Buffer);
         alSourcef(Source, AL_PITCH, SoundEffect->SoundInfo.Pitch);
-        alSourcef(Source, AL_GAIN, Device->Muted ? 0 : SoundEffect->SoundInfo.Gain);
+        alSourcef(Source, AL_GAIN, Commands->Muted ? 0 : SoundEffect->SoundInfo.Gain);
         alSource3f(Source, AL_POSITION, SoundEffect->SoundInfo.Position[0], SoundEffect->SoundInfo.Position[1], SoundEffect->SoundInfo.Position[2]);
         alSource3f(Source, AL_VELOCITY, SoundEffect->SoundInfo.Velocity[0], SoundEffect->SoundInfo.Velocity[1], SoundEffect->SoundInfo.Velocity[2]);
         alSourcei(Source, AL_LOOPING, SoundEffect->SoundInfo.Loop);
@@ -237,21 +234,21 @@ static inline void PlaySound(sound_effect *SoundEffect,sound_device* Device)
     }
 }
 
-static inline void StopSound(sound_device* SoundDevice)
+static inline void StopSound(sound_device* SoundDevice, sound_commands* Commands)
 {
     for(u32 SourceIndex = 0; SourceIndex < SOURCES; SourceIndex++)
     {
         alSourcef(SoundDevice->Sources[SourceIndex],AL_GAIN,0);
         alSourceStop(SoundDevice->Sources[SourceIndex]);
         alSourcei(SoundDevice->Sources[SourceIndex],AL_BUFFER,0);
-        if(!SoundDevice->Muted)
+        if(!Commands->Muted)
         {
             alSourcef(SoundDevice->Sources[SourceIndex],AL_GAIN,SoundDevice->SourceGain[SourceIndex]);
         }
     }
 }
 
-static inline void PauseSound(sound_device* SoundDevice)
+static inline void PauseSound(sound_device* SoundDevice, sound_commands* Commands)
 {
     for(u32 SourceIndex = 0; SourceIndex < SOURCES; SourceIndex++)
     {
@@ -266,7 +263,7 @@ static inline void PauseSound(sound_device* SoundDevice)
         {
             alSourcei(SoundDevice->Sources[SourceIndex],AL_BUFFER,0);
         }
-        if(!SoundDevice->Muted)
+        if(!Commands->Muted)
         {
             alSourcef(SoundDevice->Sources[SourceIndex],AL_GAIN,SoundDevice->SourceGain[SourceIndex]);
         }
@@ -280,10 +277,10 @@ static void PlaySounds(sound_device* Device, sound_commands* Commands, math::v3*
         Device->PrevMuted = true;
         for(u32 SourceIndex = 0; SourceIndex < SOURCES; SourceIndex++)
         {
-            alSourcef(Device->Sources[SourceIndex],AL_GAIN,0);
+            alSourcef(Device->Sources[SourceIndex], AL_GAIN, 0);
         }
     }
-    else if(!Commands->Muted)
+    else if(!Commands->Muted && Device->PrevMuted)
     {
         Device->PrevMuted = false;
         for(u32 SourceIndex = 0; SourceIndex < SOURCES; SourceIndex++)
@@ -292,10 +289,11 @@ static void PlaySounds(sound_device* Device, sound_commands* Commands, math::v3*
         }
     }
     
+    
     if(Commands->Stopped && !Device->PrevStopped)
     {
         Device->PrevStopped = true;
-        StopSound(Device);
+        StopSound(Device, Commands);
         ResetCommands(Commands);
     }
     else
@@ -305,7 +303,8 @@ static void PlaySounds(sound_device* Device, sound_commands* Commands, math::v3*
              Sound < Commands->SoundCount;
              Sound++)
         {
-            PlaySound((sound_effect*)&Commands->SoundArena.CurrentBlock->Base[Sound],Device);
+            auto SoundEffect = (sound_effect*)&Commands->SoundArena.CurrentBlock->Base[Sound];
+            PlaySound(SoundEffect, Device, Commands);
         }
         ResetCommands(Commands);
     }
@@ -313,7 +312,7 @@ static void PlaySounds(sound_device* Device, sound_commands* Commands, math::v3*
     if(Commands->Paused && !Device->PrevPaused)
     {
         Device->PrevPaused = true;
-        PauseSound(Device);
+        PauseSound(Device, Commands);
     }
     else if(!Commands->Paused && Device->PrevPaused)
     {

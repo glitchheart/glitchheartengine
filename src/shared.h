@@ -27,7 +27,6 @@ inline b32 StartsWith(const char *A, const char *B)
     return 0;
 }
 
-
 inline void HandleError(char const *File, i32 LineNum, char const *msg)
 {
     if(File)

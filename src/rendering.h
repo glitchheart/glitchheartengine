@@ -13,8 +13,8 @@ struct spotlight
     
     r32 CutOff;
     r32 OuterCutOff;
-    r32 P;
-    r32 P1;
+    r32 P; // Padding
+    r32 P1; // Padding
     
     r32 Ambient[4];
     r32 Diffuse[4];
@@ -23,7 +23,7 @@ struct spotlight
     r32 Constant;
     r32 Linear;
     r32 Quadratic;
-    r32 P3;
+    r32 P3; // Padding
 };
 
 struct directional_light
@@ -139,6 +139,10 @@ struct model
     math::v3 Position;
     math::v3 Scale;
     math::v3 Rotation;
+    
+    //@Incomplete Test this!!!
+    math::quat Orientation;
+    
     math::rgba Color;
     
     mesh Meshes[MAX_MESHES];
@@ -160,6 +164,9 @@ struct render_command
     math::v3 Position;
     math::v3 Scale;
     math::v3 Rotation;
+    
+    //@Incomplete: Test!!!
+    math::quat Orientation;
     
     union
     {
@@ -318,14 +325,13 @@ struct renderer
     r64 AverageFPS;
     r64 FPSSum;
     u64 CurrentFrame;
-    //render_command Buffer[RENDER_COMMAND_MAX];
+    
     memory_arena Commands;
     i32 CommandCount;
     
     memory_arena UICommands;
     i32 UICommandCount;
     
-    //render_command LightCommands[RENDER_COMMAND_MAX];
     memory_arena LightCommands;
     i32 LightCommandCount;
     
@@ -338,13 +344,14 @@ struct renderer
     
     texture_data_map TextureMap;
     
-    //camera Camera;
     camera Cameras[MAX_CAMERAS];
     i32 CurrentCameraHandle;
     
     i32 Viewport[4];
     i32 WindowWidth;
     i32 WindowHeight;
+    
+    math::rgba ClearColor;
 };
 
 #endif

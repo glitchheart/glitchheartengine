@@ -60,8 +60,6 @@ static void PushMemoryDebug(renderer& Renderer, debug_memory_info* DebugMemoryIn
     
     CurrentX += 5.0f;
     
-    
-    
     PushFilledRect(Renderer, math::v3(CurrentX, OriginalY - Height, 2), math::v3(Width, Height, 0.0f), math::rgba(0,1,0,0.2));
     
     for(i32 InfoIndex = 0; InfoIndex < DebugMemoryInfo->DebugInfoCount; InfoIndex++)
