@@ -312,6 +312,8 @@ struct render_state
             render_font TitleFont;
         };
     };
+    
+    render_state() {}
 };
 
 #endif
