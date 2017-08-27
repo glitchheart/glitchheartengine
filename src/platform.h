@@ -84,7 +84,7 @@ struct config_data
     char* StartingLevelFilePath;
     u32 ScreenWidth;
     u32 ScreenHeight;
-    b32 Fullscreen;
+    i32 Fullscreen;
     r32 Contrast;
     r32 Brightness;
     b32 Muted;
