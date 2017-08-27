@@ -1922,6 +1922,18 @@ namespace math
 
 #endif
 
+struct rect
+{
+    r32 X;
+    r32 Y;
+    r32 Width;
+    r32 Height;
+    
+    rect() {}
+    rect(r32 X, r32 Y, r32 Width, r32 Height) : X(X), Y(Y), Width(Width), Height(Height) {}
+    rect(i32 X, i32 Y, i32 Width, i32 Height) : X((r32)X), Y((r32)Y), Width((r32)Width), Height((r32)Height) {}
+};
+
 inline r32 Sign(math::v2 P1, math::v2 P2, math::v2 P3)
 {
     return (P1.x - P3.x) * (P2.y - P3.y) - (P2.x - P3.x) * (P1.y - P3.y);

@@ -659,13 +659,11 @@ static void RenderSetup(render_state *RenderState, memory_arena* PermArena)
     
     RenderState->InconsolataFont = {};
     InitializeFreeTypeFont("../assets/fonts/inconsolata/Inconsolata-Regular.ttf", 18, RenderState->FTLibrary, &RenderState->InconsolataFont, &RenderState->StandardFontShader);
-    InitializeFreeTypeFont("../assets/fonts/inconsolata/Inconsolata-Regular.ttf", 12, RenderState->FTLibrary, &RenderState->SmallerInconsolataFont, &RenderState->StandardFontShader);
+    InitializeFreeTypeFont("../assets/fonts/inconsolata/Inconsolata-Regular.ttf", 12, RenderState->FTLibrary, &RenderState->SmallInconsolataFont, &RenderState->StandardFontShader);
     
     InitializeFreeTypeFont("../assets/fonts/inconsolata/Inconsolata-Regular.ttf", 40, RenderState->FTLibrary, &RenderState->MenuFont, &RenderState->StandardFontShader);
     InitializeFreeTypeFont("../assets/fonts/roboto/Roboto-Regular.ttf", 30, RenderState->FTLibrary, &RenderState->ButtonFont, &RenderState->StandardFontShader);
     InitializeFreeTypeFont("../assets/fonts/rubber-biscuit/RUBBBB__.ttf", 50, RenderState->FTLibrary, &RenderState->TitleFont, &RenderState->StandardFontShader);
-    InitializeFreeTypeFont("../assets/fonts/pixelmix.ttf", 18, RenderState->FTLibrary, &RenderState->DamageFont, &RenderState->StandardFontShader);
-    InitializeFreeTypeFont("../assets/fonts/Arialic-Hollow.ttf", 18, RenderState->FTLibrary, &RenderState->OutlineFont, &RenderState->StandardFontShader);
     
     // Light sources
     RenderState->LightSourceShader.Type = Shader_LightSource;
@@ -1238,7 +1236,7 @@ static void RenderLine(const render_command& Command, render_state& RenderState,
 static void RenderText(const render_command& Command, render_state& RenderState)
 {
     // @Incomplete: Need to set a font
-    RenderText(RenderState, RenderState.InconsolataFont, Command.Text.Color, Command.Text.Text, Command.Text.Position.x, Command.Text.Position.y);
+    RenderText(RenderState, RenderState.InconsolataFont, Command.Text.Color, Command.Text.Text, Command.Text.Position.x, Command.Text.Position.y, Command.Text.Alignment);
 }
 
 static void RenderRect(const render_command& Command, render_state& RenderState, math::m4 Projection, math::m4 View)

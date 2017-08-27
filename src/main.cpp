@@ -327,7 +327,7 @@ int main(void)
     GameMemory.ConfigData = ConfigData;
     
     InitKeys();
-    render_state RenderState;
+    render_state RenderState = {};
     renderer Renderer = {};
     
     InitializeOpenGL(RenderState, Renderer, &ConfigData, &Win32State->PermArena);

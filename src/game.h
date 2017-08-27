@@ -75,11 +75,6 @@ struct game_state
     memory_arena TotalArena;
     memory_arena WorldArena;
     
-    model* TESTMODEL;
-    
-    model TestModels[MAX_MODELS];
-    i32 Models;
-    
     b32 IsInitialized;
     b32 Paused;
     b32 ShouldReload;
@@ -113,14 +108,12 @@ struct game_state
     Game_Mode GameMode;
     main_menu MainMenu;
     
-    //camera Camera;
-    //camera GameCamera;
-    //camera EditorCamera;
-    
     i32 PlayerIndex;
     char * LevelPath;
     level CurrentLevel;
     sound_effects Sounds;
+    
+    model PlayerModel;
     
     u16 EntityCount;
     entity Entities[NUM_ENTITIES];
