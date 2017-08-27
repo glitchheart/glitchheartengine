@@ -1,3 +1,4 @@
+// @Incomplete: We might want an easier way to render buttons, where the size is calculated for you
 static b32 PushButton(renderer& Renderer, const char* Text, math::v2 Position, math::v2 Size, math::rgba BackgroundColor, math::rgba TextColor, input_controller* InputController)
 {
     b32 Clicked = false;

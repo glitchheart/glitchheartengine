@@ -7,6 +7,12 @@ struct model_header
     char Version[4];
 };
 
+struct bone_header
+{
+    long NumBones;
+    long BoneChunkSize;
+};
+
 struct mesh_header
 {
     long NumVertices;
@@ -18,17 +24,11 @@ struct mesh_header
     long FacesChunkSize;
     bool HasTexture;
     char TextureFile[100];
-    /*long NumUVs;
-   long UVChunkSize;
-   long NumNormals;
-   long NormalsChunkSize;
-   long NumColors;
-   long ColorsChunkSize;*/
 };
 
 struct chunk_format
 {
-    char Format[4]; // M E S H / E O F
+    char Format[4]; // M E S H / E O F / B O N E / A N I M
 };
 
 #endif

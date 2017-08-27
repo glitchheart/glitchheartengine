@@ -3,6 +3,7 @@
 
 #define PIXELS_PER_UNIT 32
 #define MAX_MESHES 60
+#define MAX_BONES 85
 
 #define MAX_LIGHTS 20
 
@@ -10,6 +11,7 @@ enum Font_Type
 {
     Font_Inconsolata,
     Font_InconsolataSmall,
+    Font_Menu,
     Font_Button,
     Font_Roboto,
     Font_Title,
@@ -139,6 +141,22 @@ struct material
     math::rgba Color;
 };
 
+struct bone
+{
+    char Name[30];
+    u32 Id;
+    i32 Parent;
+    u32 Children[5];
+    u32 ParentedNodes[5];
+    
+    math::v3 Translation;
+    math::v3 Scale;
+    math::quat Rotation;
+    
+    math::quat RotationOrientation;
+    math::quat BoneOrientation;
+};
+
 struct mesh
 {
     i32 BufferHandle;
@@ -156,6 +174,9 @@ struct model
     
     mesh Meshes[MAX_MESHES];
     i32 MeshCount;
+    
+    bone Bones[MAX_BONES];
+    i32 BoneCount;
 };
 
 struct mesh_render_data
