@@ -183,7 +183,7 @@ extern "C" UPDATE(Update)
         model PlayerModel;
         LoadModel(Renderer, "../assets/models/animated_test.modl", &PlayerModel);
         PlayerModel.Position = math::v3(0, 0, 0);
-        PlayerModel.Scale = math::v3(0.1, 0.1, 0.1);
+        PlayerModel.Scale = math::v3(0.05, 0.05, 0.05);
         GameState->PlayerModel = PlayerModel;
         
         LoadTextures(Renderer, &GameState->TotalArena);
@@ -745,7 +745,7 @@ extern "C" UPDATE(Update)
     
     //PushPointLight(Renderer, GameState->TestModels[3].Position, math::v3(0.1f, 0.1f, 0.1f), math::v3(10.0f, 1.0f, 0.0), math::v3(1.1, 1.1, 1.1), 1.0f, 0.09f, 0.032f);
     
-    PushSpotlight(Renderer, GameState->PlayerModel.Position, math::v3(0.0f, 1.0f, 0.0f), DEGREE_IN_RADIANS * 12.5f, DEGREE_IN_RADIANS * 17.5f, math::v3(0.1f, 0.1f, 0.1f), math::v3(5.0f, 5.0f, 5.0), math::v3(1.0, 1.0, 1.0), 1.0f, 0.09f, 0.032f);
+    PushSpotlight(Renderer, GameState->PlayerModel.Position, math::v3(0.0f, -1.0f, 0.0f), DEGREE_IN_RADIANS * 12.5f, DEGREE_IN_RADIANS * 17.5f, math::v3(0.1f, 0.1f, 0.1f), math::v3(1.0f, 1.0f, 1.0), math::v3(1.0, 1.0, 1.0), 1.0f, 0.09f, 0.032f);
     
     char FPSBuffer[64];
     sprintf(FPSBuffer, "FPS: %.2f - AVG FPS: %.2f - dt: %.10lf", Renderer.FPS, Renderer.AverageFPS, DeltaTime);
@@ -759,17 +759,11 @@ extern "C" UPDATE(Update)
     
     PushDebugRender(Renderer, DebugState, InputController);
     
-    static b32 UseSlerp = false;
-    
-    if(KEY_DOWN(Key_O))
-    {
-        UseSlerp = !UseSlerp;
-    }
-    
     PushTilemapRenderCommands(Renderer, *GameState);
     PushModel(Renderer, GameState->PlayerModel);
     PushText(Renderer, FPSBuffer, math::v3(50, 850, 2), Font_Inconsolata, math::rgba(1, 0, 0, 1));
     
+    //This is this is pretty cool
     if(PushButton(Renderer, "TEST BUTTON", rect(200, 200, 100, 50), math::rgba(1, 0, 0, 1), math::rgba(1, 1, 1, 1), InputController))
     {
         printf("Mouse clicked\n");

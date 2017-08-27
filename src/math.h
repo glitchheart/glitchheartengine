@@ -1165,10 +1165,6 @@ namespace math
         Angle(cos(Angle / 2.0f)) {}
         quat(const quat& O) : Axis(O.Axis), Angle(O.Angle) {}
         
-        inline v3 GetAxis(quat Q)
-        {
-        }
-        
         inline quat operator+ (quat Q)
         {
             quat Result(*this);
@@ -1644,6 +1640,21 @@ namespace math
         v4 Result(V);
         auto L = Length(V);
         Result /= L;
+        return Result;
+    }
+    
+    inline r32 GetAngleInRadians(quat Q)
+    {
+        return acos(Q.w) * 2.0f;
+    }
+    
+    inline v3 GetAxis(quat Q)
+    {
+        r32 Angle = GetAngleInRadians(Q);
+        v3 Result;
+        Result.x = Q.x / sin(Angle / 2.0f);
+        Result.y = Q.y / sin(Angle / 2.0f); 
+        Result.z = Q.z / sin(Angle / 2.0f); 
         return Result;
     }
     
