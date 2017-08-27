@@ -4,8 +4,6 @@
                                   
                                   i32 Size = 0;
                                   
-                                  char damn;
-                                  
                                   texture_data* TextureData = Renderer.TextureMap[Tilemap.TextureName];
                                   
                                   r32 Width = (r32)TextureData->Width;

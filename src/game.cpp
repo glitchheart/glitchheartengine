@@ -63,7 +63,7 @@ static void LoadGameDataFile(game_state* GameState)
     }
 }
 
-int CompareFunction(const void* a, const void* b)
+i32 CompareFunction(const void* a, const void* b)
 {
     render_entity APtr = *(render_entity*)a;
     render_entity BPtr = *(render_entity*)b;

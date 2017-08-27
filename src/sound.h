@@ -33,7 +33,6 @@ struct sound_commands
     b32 Stopped;
 };
 
-
 struct sound_effects
 {
     union 

@@ -758,8 +758,35 @@ static void InitializeOpenGL(render_state& RenderState, renderer& Renderer, conf
     if (!glfwInit())
         exit(EXIT_FAILURE);
     
-    RenderState.Window = glfwCreateWindow(ConfigData->ScreenWidth, ConfigData->ScreenHeight, Concat(Concat(ConfigData->Title, " "), ConfigData->Version),  ConfigData->Fullscreen ? glfwGetPrimaryMonitor() : NULL, 
-                                          NULL);
+    auto monitor = glfwGetPrimaryMonitor();
+    
+    const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+    
+    
+    if(ConfigData->Fullscreen == 2)
+    {
+        glfwWindowHint(GLFW_RED_BITS, mode->redBits);
+        glfwWindowHint(GLFW_GREEN_BITS, mode->greenBits);
+        glfwWindowHint(GLFW_BLUE_BITS, mode->blueBits);
+        glfwWindowHint(GLFW_REFRESH_RATE, mode->refreshRate);
+        
+        RenderState.Window = glfwCreateWindow(mode->width, mode->height, Concat(Concat(ConfigData->Title, " "), ConfigData->Version),  monitor, 
+                                              NULL);
+        
+    }
+    else if(ConfigData->Fullscreen == 1)
+    {
+        
+        RenderState.Window = glfwCreateWindow(ConfigData->ScreenWidth, ConfigData->ScreenHeight, Concat(Concat(ConfigData->Title, " "), ConfigData->Version),  monitor, 
+                                              NULL);
+    }
+    else
+    {
+        RenderState.Window = glfwCreateWindow(ConfigData->ScreenWidth, ConfigData->ScreenHeight, Concat(Concat(ConfigData->Title, " "), ConfigData->Version),   NULL, 
+                                              NULL);
+    }
+    
+    
     RenderState.Contrast = ConfigData->Contrast;
     RenderState.Brightness = ConfigData->Brightness;
     
