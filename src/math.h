@@ -1165,47 +1165,51 @@ namespace math
         Angle(cos(Angle / 2.0f)) {}
         quat(const quat& O) : Axis(O.Axis), Angle(O.Angle) {}
         
-        inline quat operator+ (quat In)
+        inline v3 GetAxis(quat Q)
+        {
+        }
+        
+        inline quat operator+ (quat Q)
         {
             quat Result(*this);
-            Result.x += In.X;
-            Result.y += In.Y;
-            Result.z += In.Z;
-            Result.w += In.W;
+            Result.x += Q.X;
+            Result.y += Q.Y;
+            Result.z += Q.Z;
+            Result.w += Q.W;
             return Result;
         }
         
-        inline void operator+= (quat In)
+        inline void operator+= (quat Q)
         {
-            this->X += In.X;
-            this->Y += In.Y;
-            this->Z += In.Z;
-            this->W += In.W;
+            this->X += Q.X;
+            this->Y += Q.Y;
+            this->Z += Q.Z;
+            this->W += Q.W;
         }
         
-        inline quat operator- (quat In)
+        inline quat operator- (quat Q)
         {
             quat Result(*this);
-            Result.x -= In.X;
-            Result.y -= In.Y;
-            Result.z -= In.Z;
-            Result.w -= In.W;
+            Result.x -= Q.X;
+            Result.y -= Q.Y;
+            Result.z -= Q.Z;
+            Result.w -= Q.W;
             return Result;
         }
         
-        inline quat operator* (quat In)
+        inline quat operator* (quat Q)
         {
             quat Result(*this);
-            Result.w = this->w * In.w - this->x * In.x - this->y * In.y - this->z * In.z;
-            Result.x = this->w * In.x + this->x * In.w + this->y * In.z - this->z * In.y;
-            Result.y = this->w * In.y - this->x * In.z + this->y * In.w + this->z * In.z;
-            Result.z = this->w * In.z + this->x * In.y - this->y * In.x + this->z * In.z;
+            Result.w = this->w * Q.w - this->x * Q.x - this->y * Q.y - this->z * Q.z;
+            Result.x = this->w * Q.x + this->x * Q.w + this->y * Q.z - this->z * Q.y;
+            Result.y = this->w * Q.y - this->x * Q.z + this->y * Q.w + this->z * Q.z;
+            Result.z = this->w * Q.z + this->x * Q.y - this->y * Q.x + this->z * Q.z;
             return Result;
         }
         
-        inline void operator*= (quat In)
+        inline void operator*= (quat Q)
         {
-            auto Result = *this * In;
+            auto Result = *this * Q;
             this->X = Result.X;
             this->Y = Result.Y;
             this->Z = Result.Z;
@@ -1252,23 +1256,23 @@ namespace math
         return Result;
     }
     
-    inline quat Conjugate(quat In)
+    inline quat Conjugate(quat Q)
     {
-        quat Result(-In.Axis, In.w);
+        quat Result(-Q.Axis, Q.w);
         return Result;
     }
     
-    inline r32 Magnitude(quat In)
+    inline r32 Magnitude(quat Q)
     {
         r32 Result = 0.0f;
-        Result = In.W * In.W + In.X * In.X + In.Y * In.Y + In.Z * In.Z;
+        Result = Q.W * Q.W + Q.X * Q.X + Q.Y * Q.Y + Q.Z * Q.Z;
         Result = sqrt(Result);
         return Result;
     }
     
-    inline quat Normalize(quat In)
+    inline quat Normalize(quat Q)
     {
-        return In / Magnitude(In);
+        return Q / Magnitude(Q);
     }
     
     //@Incomplete JBlow, CaseyM, ShawnM say don't use this
@@ -1333,41 +1337,20 @@ namespace math
         return Result;
     }
     
-    inline m4 ToMatrix(quat In)
+    inline m4 ToMatrix(quat Q)
     {
-        /*m4 Result(1.0f);
-        Result[0][0] = In.W * In.W + In.X * In.X - In.Y * In.Y - In.Z * In.Z;
-        Result[1][0] = 2 * In.X * In.Y + 2 * In.W * In.Z;
-        Result[2][0] = 2 * In.X * In.Z - 2 * In.W * In.Y;
-        Result[3][0] = 0.0f;
-        Result[0][1] = 2 * In.X * In.Y - 2 * In.W * In.Z;
-        Result[1][1] = In.W * In.W - In.X * In.X + In.Y * In.Y - In.Z * In.Z;
-        Result[2][1] = 2 * In.Y * In.Z - 2 * In.W * In.X;
-        Result[3][1] = 2 * In.Y * In.Z + 2 * In.W * In.X;
-        Result[0][2] = 2 * In.X * In.Z + 2 * In.W * In.Y;
-        Result[1][2] = 2 * In.Y * In.Z + 2 * In.W * In.X;
-        Result[2][2] = In.W * In.W - In.X * In.X + In.Y * In.Y + In.Z * In.Z;
-        Result[3][2] = 0.0f;
-        Result[0][3] = 0.0f;
-        Result[1][3] = 0.0f;
-        Result[2][3] = 0.0f;
-        Result[3][3] = 1.0f;
-        
-        Result = Transpose(Result);
-        */
-        
         m4 Result(1.0f);
-        Result[0][0] = 1.0f - 2.0f * In.Y * In.Y - 2.0f * In.Z * In.Z;
-        Result[1][0] = 2.0f * In.X * In.Y + 2.0f * In.Z * In.W;
-        Result[2][0] = 2.0f * In.X * In.Z - 2.0f * In.Y * In.W;
+        Result[0][0] = 1.0f - 2.0f * Q.Y * Q.Y - 2.0f * Q.Z * Q.Z;
+        Result[1][0] = 2.0f * Q.X * Q.Y + 2.0f * Q.Z * Q.W;
+        Result[2][0] = 2.0f * Q.X * Q.Z - 2.0f * Q.Y * Q.W;
         Result[3][0] = 0.0f;
-        Result[0][1] = 2.0f * In.X * In.Y - 2.0f * In.Z * In.W;
-        Result[1][1] = 1.0f - 2.0f * In.X * In.X - 2.0f * In.Z * In.Z;
-        Result[2][1] = 2.0f * In.Y * In.Z + 2.0f * In.X * In.W;
+        Result[0][1] = 2.0f * Q.X * Q.Y - 2.0f * Q.Z * Q.W;
+        Result[1][1] = 1.0f - 2.0f * Q.X * Q.X - 2.0f * Q.Z * Q.Z;
+        Result[2][1] = 2.0f * Q.Y * Q.Z + 2.0f * Q.X * Q.W;
         Result[3][1] = 0.0f;
-        Result[0][2] = 2.0f * In.X * In.Z + 2.0f * In.Y * In.W;
-        Result[1][2] = 2.0f * In.Y * In.Z - 2.0f * In.X * In.W;
-        Result[2][2] = 1.0f - 2.0f * In.X * In.X - 2.0f * In.Y * In.Y;
+        Result[0][2] = 2.0f * Q.X * Q.Z + 2.0f * Q.Y * Q.W;
+        Result[1][2] = 2.0f * Q.Y * Q.Z - 2.0f * Q.X * Q.W;
+        Result[2][2] = 1.0f - 2.0f * Q.X * Q.X - 2.0f * Q.Y * Q.Y;
         Result[3][2] = 0.0f;
         Result[0][3] = 0.0f;
         Result[1][3] = 0.0f;
