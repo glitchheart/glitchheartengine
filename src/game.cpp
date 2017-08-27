@@ -2,6 +2,7 @@
 #include "gmap.cpp"
 #include "rendering.cpp"
 #include "keycontroller.cpp"
+#include "ui.cpp"
 #include "sound.cpp"
 #include "animation.cpp"
 #include "collision.cpp"
@@ -117,13 +118,8 @@ static void PushEntityRenderCommands(renderer& Renderer, game_state& GameState)
             math::v3 Scale = math::v3(WidthInUnits * EntityScale, HeightInUnits * EntityScale, 1.0f);
             
             auto CorrectPos = Position;
-            /*
-            CorrectPos.x -= CurrentAnimation->Center.x * Scale.x;
-            CorrectPos.y -= CurrentAnimation->Center.y * Scale.y;
-            */
             
             CurrentPosition = CorrectPos;
-            
             
             CurrentScale = Scale;
             
@@ -183,59 +179,14 @@ extern "C" UPDATE(Update)
     
     if(!GameState->IsInitialized || !GameMemory->IsInitialized)
     {
-        GameState->TESTMODEL = PushStruct(&GameState->TotalArena, model);
         
-        GameState->TESTMODEL->Position = math::v3(0, 0, 0);
-        GameState->TESTMODEL->Scale = math::v3(1, 1, 1);
+        model PlayerModel;
+        LoadModel(Renderer, "../assets/models/animated_test.modl", &PlayerModel);
+        PlayerModel.Position = math::v3(0, 0, 0);
+        PlayerModel.Scale = math::v3(0.1, 0.1, 0.1);
+        GameState->PlayerModel = PlayerModel;
         
         LoadTextures(Renderer, &GameState->TotalArena);
-        
-        model Model1;
-        Model1.Position = math::v3(0, 0, 0);
-        Model1.Scale = math::v3(1, 1, 1);
-        Model1.Orientation = math::quat(0.0f, 0.0f, 0.0f, 1.0f);
-        //Model1.Orientation = Normalize(Model1.Orientation);
-        
-        model Model2;
-        Model2.Position = math::v3(0, 0, 0);
-        Model2.Scale = math::v3(1.0, 1.0, 1.0);
-        Model2.Orientation = math::quat();
-        
-        model Model3;
-        Model3.Position = math::v3(5, 0, 0);
-        Model3.Scale = math::v3(1.0, 1.0, 1.0);
-        Model3.Orientation = math::quat();
-        
-        model Model4;
-        Model4.Position = math::v3(5, 0, 0);
-        Model4.Scale = math::v3(1.0, 1.0, 1.0);
-        Model4.Orientation = math::quat();
-        
-        model Model5;
-        Model5.Position = math::v3(0, 0, 0);
-        Model5.Scale = math::v3(1.0, 1.0, 1.0);
-        Model5.Orientation = math::quat();
-        
-        model Model6; // Light source position
-        
-        Model6.Position = math::v3(-10.0f, 5.0f, 0);
-        Model6.Scale = math::v3(1.0, 1.0, 1.0);
-        Model6.Orientation = math::quat();
-        
-        LoadModel(Renderer, "../assets/models/animated_test.modl", &Model1);
-        LoadModel(Renderer, "../assets/models/red_riding.modl", &Model2);
-        LoadModel(Renderer, "../assets/models/capsule.modl", &Model3);
-        LoadModel(Renderer, "../assets/models/mask_boy.modl", &Model4);
-        LoadModel(Renderer, "../assets/models/cube.modl", &Model5);
-        LoadModel(Renderer, "../assets/models/panther_monster.modl", &Model6);
-        
-        GameState->TestModels[GameState->Models++] = Model1;
-        //GameState->TestModels[GameState->Models++] = Model2;
-        GameState->TestModels[GameState->Models++] = Model3;
-        //GameState->TestModels[GameState->Models++] = Model4;
-        //GameState->TestModels[GameState->Models++] = Model5;
-        GameState->TestModels[GameState->Models++] = Model6;
-        GameState->TestModels[GameState->Models++] = Model5;
         
         if(GameState->ShouldReload || GameMemory->ShouldReload)
         {
@@ -323,7 +274,7 @@ extern "C" UPDATE(Update)
         
         // @Incomplete: This is not the right value, it is only set so high to remove smooth following as of now, since it needs to be done a little differently
         
-        GameCamera.Center = math::v3(GameState->Entities[0].Position.x, GameState->Entities[0].Position.y, GameState->Entities[0].Position.z + 100.0f); // Set center to player's position!
+        // Set center to player's position!
         GameCamera.CenterTarget = GameCamera.Center;
         
         GameState->IsInitialized = true;
@@ -770,9 +721,6 @@ extern "C" UPDATE(Update)
         break;
     }
     
-    //CameraTransform(Renderer, GameCamera, GameCamera.Center, GameCamera.Zoom, 0.1f, 1000.0f, CFlag_Isometric | CFlag_Orthographic);
-    
-    
     static r32 X = 0.0f;
     static r32 Y = 0.0f;
     
@@ -783,7 +731,7 @@ extern "C" UPDATE(Update)
     
     GameCamera.P += math::v3((r32)(X * DeltaTime * PanSpeed), (r32)(Y * DeltaTime * PanSpeed), 0.0f);
     
-    CameraTransform(Renderer, GameCamera, GameCamera.Center, GameCamera.Zoom, -200.0f, 2000.0f, CFlag_Orthographic);
+    CameraTransform(Renderer, GameCamera, GameCamera.Center, GameCamera.Zoom, -200.0f, 2000.0f, CFlag_Isometric | CFlag_Orthographic);
     
     InputController->CurrentCharacter = 0;
     GameState->ClearTilePositionFrame = !GameState->ClearTilePositionFrame;
@@ -795,11 +743,9 @@ extern "C" UPDATE(Update)
     PushDirectionalLight(Renderer, math::v3(-0.2, -1.0, -0.3), 
                          math::v3(0.1f, 0.1f, 0.1f), math::v3(0.2, 0.2, 0.2), math::v3(0.1, 0.1, 0.1));
     
-    GameState->TestModels[3].Position = math::v3(-2.0f, 7.0f, 0.0f);
-    GameState->TestModels[3].Scale = math::v3(0.4f, 0.4f, 0.4f);
     //PushPointLight(Renderer, GameState->TestModels[3].Position, math::v3(0.1f, 0.1f, 0.1f), math::v3(10.0f, 1.0f, 0.0), math::v3(1.1, 1.1, 1.1), 1.0f, 0.09f, 0.032f);
     
-    PushSpotlight(Renderer, GameState->TestModels[3].Position, math::v3(0.0f, 1.0f, 0.0f), DEGREE_IN_RADIANS * 12.5f, DEGREE_IN_RADIANS * 17.5f, math::v3(0.1f, 0.1f, 0.1f), math::v3(5.0f, 5.0f, 5.0), math::v3(1.0, 1.0, 1.0), 1.0f, 0.09f, 0.032f);
+    PushSpotlight(Renderer, GameState->PlayerModel.Position, math::v3(0.0f, 1.0f, 0.0f), DEGREE_IN_RADIANS * 12.5f, DEGREE_IN_RADIANS * 17.5f, math::v3(0.1f, 0.1f, 0.1f), math::v3(5.0f, 5.0f, 5.0), math::v3(1.0, 1.0, 1.0), 1.0f, 0.09f, 0.032f);
     
     char FPSBuffer[64];
     sprintf(FPSBuffer, "FPS: %.2f - AVG FPS: %.2f - dt: %.10lf", Renderer.FPS, Renderer.AverageFPS, DeltaTime);
@@ -813,7 +759,6 @@ extern "C" UPDATE(Update)
     
     PushDebugRender(Renderer, DebugState, InputController);
     
-    
     static b32 UseSlerp = false;
     
     if(KEY_DOWN(Key_O))
@@ -821,40 +766,12 @@ extern "C" UPDATE(Update)
         UseSlerp = !UseSlerp;
     }
     
-    if(KEY(Key_X) || KEY(Key_Y) || KEY(Key_Z))
-    {
-        static r32 TotalTime = 1.0f;
-        static r64 Delta = 0.0f;
-        static math::quat StartOrientation = GameState->TestModels[0].Orientation;
-        
-        static r32 R = 45.0f;
-        if(Delta > TotalTime)
-        {
-            Delta = 0.0f;
-            R += 45.0f;
-            StartOrientation = GameState->TestModels[0].Orientation;
-        }
-        Delta += DeltaTime;
-        r32 T =  (r32)Delta/TotalTime;
-        
-        math::quat RotX = math::quat(1.0f, 0.0f, 0.0f, DEGREE_IN_RADIANS * R);
-        RotX = math::Normalize(RotX);
-        
-        if(UseSlerp)
-        {
-            GameState->TestModels[0].Orientation = Slerp(StartOrientation, RotX, T);
-        }
-        else
-        {
-            GameState->TestModels[0].Orientation = NLerp(StartOrientation, RotX, T);
-        }
-        
-    }
+    PushTilemapRenderCommands(Renderer, *GameState);
+    PushModel(Renderer, GameState->PlayerModel);
+    PushText(Renderer, FPSBuffer, math::v3(50, 850, 2), Font_Inconsolata, math::rgba(1, 0, 0, 1));
     
-    for(i32 Index = 0; Index < GameState->Models; Index++)
+    if(PushButton(Renderer, "TEST BUTTON", rect(200, 200, 100, 50), math::rgba(1, 0, 0, 1), math::rgba(1, 1, 1, 1), InputController))
     {
-        PushModel(Renderer, GameState->TestModels[Index]);
+        printf("Mouse clicked\n");
     }
-    
-    PushText(Renderer, FPSBuffer, math::v3(50, 850, 2), 0, math::rgba(1, 0, 0, 1));
 }
