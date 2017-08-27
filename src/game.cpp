@@ -181,7 +181,7 @@ extern "C" UPDATE(Update)
     {
         
         model PlayerModel;
-        LoadModel(Renderer, "../assets/models/animated_test.modl", &PlayerModel);
+        LoadModel(Renderer, "../assets/models/testing.modl", &PlayerModel);
         PlayerModel.Position = math::v3(0, 0, 0);
         PlayerModel.Scale = math::v3(0.05, 0.05, 0.05);
         GameState->PlayerModel = PlayerModel;
@@ -743,8 +743,6 @@ extern "C" UPDATE(Update)
     PushDirectionalLight(Renderer, math::v3(-0.2, -1.0, -0.3), 
                          math::v3(0.1f, 0.1f, 0.1f), math::v3(0.2, 0.2, 0.2), math::v3(0.1, 0.1, 0.1));
     
-    //PushPointLight(Renderer, GameState->TestModels[3].Position, math::v3(0.1f, 0.1f, 0.1f), math::v3(10.0f, 1.0f, 0.0), math::v3(1.1, 1.1, 1.1), 1.0f, 0.09f, 0.032f);
-    
     PushSpotlight(Renderer, GameState->PlayerModel.Position, math::v3(0.0f, -1.0f, 0.0f), DEGREE_IN_RADIANS * 12.5f, DEGREE_IN_RADIANS * 17.5f, math::v3(0.1f, 0.1f, 0.1f), math::v3(1.0f, 1.0f, 1.0), math::v3(1.0, 1.0, 1.0), 1.0f, 0.09f, 0.032f);
     
     char FPSBuffer[64];
@@ -763,9 +761,8 @@ extern "C" UPDATE(Update)
     PushModel(Renderer, GameState->PlayerModel);
     PushText(Renderer, FPSBuffer, math::v3(50, 850, 2), Font_Inconsolata, math::rgba(1, 0, 0, 1));
     
-    //This is this is pretty cool
-    if(PushButton(Renderer, "TEST BUTTON", rect(200, 200, 100, 50), math::rgba(1, 0, 0, 1), math::rgba(1, 1, 1, 1), InputController))
+    if(PushButton(Renderer, "Reset player", rect(5, 5, 200, 50), math::rgba(1, 0, 0, 1), math::rgba(1, 1, 1, 1), InputController))
     {
-        printf("Mouse clicked\n");
+        GameState->PlayerModel.Position = math::v3();
     }
 }

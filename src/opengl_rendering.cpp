@@ -271,33 +271,35 @@ static void RegisterBuffers(render_state& RenderState, GLfloat* VertexBuffer, i3
     glBindBuffer(GL_ARRAY_BUFFER, Buffer->VBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * VertexBufferSize, VertexBuffer, GL_STATIC_DRAW);
     
+    i32 BoneInfoSize = 11;
+    
     if(HasNormals && HasUVs)
     {
         glEnableVertexAttribArray(0);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), 0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, (8 + BoneInfoSize) * sizeof(GLfloat), 0);
         glEnableVertexAttribArray(1);
-        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void*)(3 * sizeof(GLfloat)));
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, (8 + BoneInfoSize) * sizeof(GLfloat), (void*)(3 * sizeof(GLfloat)));
         glEnableVertexAttribArray(2);
-        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void*)(6 * sizeof(GLfloat)));
+        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, (8 + BoneInfoSize) * sizeof(GLfloat), (void*)(6 * sizeof(GLfloat)));
     }
     else if(HasNormals)
     {
         glEnableVertexAttribArray(0);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), 0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, (6 + BoneInfoSize) * sizeof(GLfloat), 0);
         glEnableVertexAttribArray(1);
-        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (void*)(3 * sizeof(GLfloat)));
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, (6 + BoneInfoSize) * sizeof(GLfloat), (void*)(3 * sizeof(GLfloat)));
     }
     else if(HasUVs)
     {
         glEnableVertexAttribArray(0);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), 0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, (5 + BoneInfoSize) * sizeof(GLfloat), 0);
         glEnableVertexAttribArray(1);
-        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (void*)(3 * sizeof(GLfloat)));
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, (5 + BoneInfoSize) * sizeof(GLfloat), (void*)(3 * sizeof(GLfloat)));
     }
     else
     {
         glEnableVertexAttribArray(0);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 + BoneInfoSize * sizeof(GLfloat), 0);
     }
     
     glGenBuffers(1, &Buffer->IBO);
@@ -1262,8 +1264,43 @@ static void RenderLine(const render_command& Command, render_state& RenderState,
 
 static void RenderText(const render_command& Command, render_state& RenderState)
 {
-    // @Incomplete: Need to set a font
-    RenderText(RenderState, RenderState.InconsolataFont, Command.Text.Color, Command.Text.Text, Command.Text.Position.x, Command.Text.Position.y, Command.Text.Alignment);
+    render_font RenderFont;
+    
+    switch(Command.Text.FontType)
+    {
+        case Font_Inconsolata:
+        {
+            RenderFont = RenderState.InconsolataFont;
+        }
+        break;
+        case Font_InconsolataSmall:
+        {
+            RenderFont = RenderState.SmallInconsolataFont;
+        }
+        break;
+        case Font_Menu:
+        {
+            RenderFont = RenderState.MenuFont;
+        }
+        break;
+        case Font_Button:
+        {
+            RenderFont = RenderState.ButtonFont;
+        }
+        break;
+        case Font_Roboto:
+        {
+            RenderFont = RenderState.RobotoFont;
+        }
+        break;
+        case Font_Title:
+        {
+            RenderFont = RenderState.TitleFont;
+        }
+        break;
+    }
+    
+    RenderText(RenderState, RenderFont, Command.Text.Color, Command.Text.Text, Command.Text.Position.x, Command.Text.Position.y, Command.Text.Alignment);
 }
 
 static void RenderRect(const render_command& Command, render_state& RenderState, math::m4 Projection, math::m4 View)

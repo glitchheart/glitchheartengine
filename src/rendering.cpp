@@ -275,7 +275,7 @@ static void LoadModel(renderer& Renderer, char* FilePath, model* Model)
         fread(&Header,sizeof(model_header), 1, File);
         
         if(Header.Version[0] != '1' ||
-           Header.Version[1] != '2')
+           Header.Version[1] != '3')
         {
             ERR("Wrong file version. Expected version 1.2");
             return;
@@ -291,7 +291,7 @@ static void LoadModel(renderer& Renderer, char* FilePath, model* Model)
             if(Format.Format[0] == 'M' &&
                Format.Format[1] == 'E' &&
                Format.Format[2] == 'S' &&
-               Format.Format[3] == 'H') // Checking version number
+               Format.Format[3] == 'H')
             {
                 buffer_data Data = {};
                 
@@ -312,7 +312,9 @@ static void LoadModel(renderer& Renderer, char* FilePath, model* Model)
                 
                 CopyTemp(Data.VertexBuffer, VertexBuffer, MHeader.VertexChunkSize, r32);
                 
-                Data.VertexBufferSize = MHeader.NumVertices * 3 + MHeader.NumNormals * 3 + MHeader.NumUVs * 2;
+                i32 BoneInfoSize = 11;
+                
+                Data.VertexBufferSize = MHeader.NumVertices * (3 + BoneInfoSize) + MHeader.NumNormals * 3 + MHeader.NumUVs * 2;
                 
                 CopyTemp(Data.IndexBuffer, IndexBuffer, MHeader.FacesChunkSize, u32);
                 
@@ -321,6 +323,7 @@ static void LoadModel(renderer& Renderer, char* FilePath, model* Model)
                 Model->Meshes[MeshCount].BufferHandle = Renderer.BufferCount++;
                 
                 Model->Meshes[MeshCount].Material.HasTexture = MHeader.HasTexture;
+                
                 if(Model->Meshes[MeshCount].Material.HasTexture)
                     Model->Meshes[MeshCount].Material.TextureHandle = Renderer.TextureMap[MHeader.TextureFile]->Handle;
                 
@@ -331,6 +334,17 @@ static void LoadModel(renderer& Renderer, char* FilePath, model* Model)
                 
                 Renderer.Buffers[Renderer.BufferCount - 1] = Data;
             }
+            else if(Format.Format[0] == 'B' &&
+                    Format.Format[1] == 'O' &&
+                    Format.Format[2] == 'N' &&
+                    Format.Format[3] == 'E')
+            {
+                bone_header BHeader;
+                fread(&BHeader, sizeof(bone_header), 1, File);
+                Model->BoneCount = BHeader.NumBones;
+                
+                fread(Model->Bones, sizeof(bone) * Model->BoneCount, 1, File);
+            }
             else
             {
                 ERR("Malformed model file");
@@ -340,6 +354,7 @@ static void LoadModel(renderer& Renderer, char* FilePath, model* Model)
         }
         
         Model->MeshCount = MeshCount;
+        printf("Mesh count %d\n", MeshCount);
         
         fclose(File);
     }
