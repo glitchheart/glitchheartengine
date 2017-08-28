@@ -3,7 +3,7 @@
 
 #define PIXELS_PER_UNIT 32
 #define MAX_MESHES 60
-#define MAX_BONES 85
+#define MAX_BONES 100
 
 #define MAX_LIGHTS 20
 
@@ -155,6 +155,27 @@ struct bone
     
     math::quat RotationOrientation;
     math::quat BoneOrientation;
+};
+
+struct bone_transformation
+{
+    math::v3 Translation;
+    math::quat Rotation;
+    math::v3 Scale;
+};
+
+struct animation_frame
+{
+    i32 BoneCount;
+    bone_transformation BoneTransformations[MAX_BONES]; // @Incomplete: We might want to create a dynamic array
+};
+
+struct animation_cycle
+{
+    r64 StartTime;
+    r64 EndTime;
+    i32 NumFrames;
+    animation_frame* Frames;
 };
 
 struct mesh
