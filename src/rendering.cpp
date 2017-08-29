@@ -345,6 +345,12 @@ static void LoadModel(renderer& Renderer, char* FilePath, model* Model)
                 
                 fread(Model->Bones, sizeof(bone) * Model->BoneCount, 1, File);
             }
+            else if(Format.Format[0] == 'A' &&
+                    Format.Format[1] == 'N' &&
+                    Format.Format[2] == 'I' &&
+                    Format.Format[3] == 'M')
+            {
+            }
             else
             {
                 ERR("Malformed model file");
