@@ -10,6 +10,7 @@ uniform mat4 view;
 uniform mat4 model;
 uniform vec4 color;
 uniform float time;
+uniform mat4 bones[100];
 
 out vec4 c;
 out vec3 n;

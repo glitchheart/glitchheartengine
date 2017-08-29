@@ -1,6 +1,7 @@
 #include "game.h"
 #include "gmap.cpp"
 #include "rendering.cpp"
+#include "skeletal_animation.cpp"
 #include "keycontroller.cpp"
 #include "ui.cpp"
 #include "sound.cpp"
@@ -739,6 +740,10 @@ extern "C" UPDATE(Update)
     
     GameUpdateStruct->EntityCount = GameState->EntityCount;
     memcpy(&GameUpdateStruct->EntityPositions,&GameState->EntityPositions,sizeof(math::v2) * NUM_ENTITIES);
+    
+    GameState->PlayerModel.CurrentPose = Renderer.AnimationCycles[0].Frames[0];
+    
+    CalculatePose(GameState->PlayerModel.Bones, &GameState->PlayerModel.CurrentPose, 0, -1);
     
     PushDirectionalLight(Renderer, math::v3(-0.2, -1.0, -0.3), 
                          math::v3(0.1f, 0.1f, 0.1f), math::v3(0.2, 0.2, 0.2), math::v3(0.1, 0.1, 0.1));

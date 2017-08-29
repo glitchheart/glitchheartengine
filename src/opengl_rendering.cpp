@@ -1366,6 +1366,11 @@ static void RenderSprite(const render_command& Command, render_state& RenderStat
     
     Model = math::Translate(Model, math::v3(Command.Sprite.Position.x, Command.Sprite.Position.y, Command.Sprite.Position.z));
     
+    for(i32 BoneIndex = 0; BoneIndex < Command.Model.BoneCount; BoneIndex++)
+    {
+        SetMat4Uniform(Shader.Program, "bones[BoneIndex]", Command.Model.BoneTransforms[BoneIndex].Transformation);
+    }
+    
     SetVec4Uniform(Shader.Program, "spriteColor", Command.Sprite.Color);
     SetFloatUniform(Shader.Program, "isUI", 0);
     SetVec2Uniform(Shader.Program,"textureOffset", Command.Sprite.TextureOffset);
