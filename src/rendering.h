@@ -147,6 +147,7 @@ struct bone
     u32 Id;
     i32 Parent;
     u32 Children[5];
+    i32 ChildCount;
     u32 ParentedNodes[5];
     
     math::v3 Translation;
@@ -164,6 +165,7 @@ struct bone_transform
     math::v3 Translation;
     math::quat Rotation;
     math::v3 Scale;
+    math::m4 Transformation;
 };
 
 struct animation_frame
@@ -200,6 +202,8 @@ struct model
     
     bone Bones[MAX_BONES];
     i32 BoneCount;
+    
+    animation_frame CurrentPose;
 };
 
 struct mesh_render_data
@@ -293,6 +297,8 @@ struct render_command
             mesh_render_data RenderData[MAX_MESHES];
             i32 HandleCount;
             math::rgba Color;
+            bone_transform BoneTransforms[MAX_BONES]; // @Speed: This is so inefficient
+            i32 BoneCount;
         } Model;
     };
     render_command() {}
