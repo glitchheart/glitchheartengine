@@ -153,11 +153,13 @@ struct bone
     math::v3 Scale;
     math::quat Rotation;
     
+    math::m4 BindInverse;
+    
     math::quat RotationOrientation;
     math::quat BoneOrientation;
 };
 
-struct bone_transformation
+struct bone_transform
 {
     math::v3 Translation;
     math::quat Rotation;
@@ -166,14 +168,14 @@ struct bone_transformation
 
 struct animation_frame
 {
+    r64 TimeStamp;
     i32 BoneCount;
-    bone_transformation BoneTransformations[MAX_BONES]; // @Incomplete: We might want to create a dynamic array
+    bone_transform BoneTransforms[MAX_BONES]; // @Incomplete: We might want to create a dynamic array
 };
 
 struct animation_cycle
 {
-    r64 StartTime;
-    r64 EndTime;
+    r64 TotalTime;
     i32 NumFrames;
     animation_frame* Frames;
 };
@@ -402,6 +404,10 @@ struct renderer
     i32 WindowHeight;
     
     math::rgba ClearColor;
+    
+    memory_arena AnimationArena;
+    animation_cycle AnimationCycles[1];
+    i32 AnimationCycleCount;
 };
 
 #endif

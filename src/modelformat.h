@@ -13,6 +13,12 @@ struct bone_header
     long BoneChunkSize;
 };
 
+struct animation_header
+{
+    r64 TotalTime;
+    i32 NumFrames;
+};
+
 struct mesh_header
 {
     long NumVertices;
