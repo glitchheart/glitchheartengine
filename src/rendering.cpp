@@ -350,6 +350,17 @@ static void LoadModel(renderer& Renderer, char* FilePath, model* Model)
                     Format.Format[2] == 'I' &&
                     Format.Format[3] == 'M')
             {
+                animation_header AHeader;
+                fread(&AHeader, sizeof(animation_header), 1, File);
+                
+                animation_cycle AnimationCycle;
+                AnimationCycle.NumFrames = AHeader.NumFrames;
+                AnimationCycle.TotalTime = AHeader.TotalTime;
+                AnimationCycle.Frames = PushArray(&Renderer.AnimationArena, AnimationCycle.NumFrames, animation_frame);
+                
+                fread(AnimationCycle.Frames, sizeof(animation_frame) * AnimationCycle.NumFrames, 1, File);
+                
+                Renderer.AnimationCycles[Renderer.AnimationCycleCount++] = AnimationCycle;
             }
             else
             {
