@@ -4,7 +4,7 @@ layout(location = 0)in vec3 position;
 layout(location = 1)in vec3 normal;
 layout(location = 2)in vec2 uv;
 layout(location = 3)in int boneCount;
-layout(location = 4)in vec4 boneIndices;
+layout(location = 4)in ivec4 boneIndices;
 layout(location = 5)in vec4 weights;
 
 uniform mat4 normalMatrix;
@@ -28,12 +28,12 @@ void main()
 	vec4 totalLocalPos = vec4(0.0);
 	vec4 totalNormal = vec4(0.0);
 	
-	for(int i = 0; i < int(boneCount); i++)
+	for(int i = 0; i < 4; i++)
 	{
-		mat4 boneTransform = bones[int(boneIndices[i])];
+		mat4 boneTransform = bones[boneIndices[i]];
 		vec4 posePosition = boneTransform * vec4(position, 1.0);
-		//vec4 test = posePosition * weights[i]; 		
-//totalLocalPos += ;
+		 		
+		totalLocalPos += posePosition;// * weights[i];
 		
 		//vec4 worldNormal = boneTransform * vec4(in_normal, 0.0);
 		//totalNormal += worldNormal * in_weights[i];

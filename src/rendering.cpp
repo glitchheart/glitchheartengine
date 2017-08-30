@@ -240,7 +240,8 @@ static void PushModel(renderer& Renderer, model& Model)
     }
     
     RenderCommand->Model.HandleCount = Model.MeshCount;
-    
+    RenderCommand->Model.BoneCount = Model.BoneCount;
+    memcpy(RenderCommand->Model.BoneTransforms, Model.CurrentPose.BoneTransforms, sizeof(bone_transform) * MAX_BONES);
     RenderCommand->Model.Color = math::rgba(1.0f, 1.0f, 1.0f, 1.0f);
     RenderCommand->IsUI = false;
 }
