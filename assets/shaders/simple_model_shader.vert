@@ -3,6 +3,9 @@
 layout(location = 0)in vec3 position;
 layout(location = 1)in vec3 normal;
 layout(location = 2)in vec2 uv;
+layout(location = 3)in int boneCount;
+layout(location = 4)in vec4 boneIndices;
+layout(location = 5)in vec4 weights;
 
 uniform mat4 normalMatrix;
 uniform mat4 projection;
@@ -22,18 +25,25 @@ out vec2 texCoord;
 
 void main()
 {
-	//gl_Position = projection * view * model * vec4(position,1.0);
-
-	vec4 p = projection * view * model * vec4(position, 1.0);
+	vec4 totalLocalPos = vec4(0.0);
+	vec4 totalNormal = vec4(0.0);
 	
-	if(p.w != 1)
+	for(int i = 0; i < int(boneCount); i++)
 	{
-//		p.x = p.x / p.w;
-//		p.y = p.y / p.w;
-//		p.z = p.z / p.w;
+		mat4 boneTransform = bones[int(boneIndices[i])];
+		vec4 posePosition = boneTransform * vec4(position, 1.0);
+		//vec4 test = posePosition * weights[i]; 		
+//totalLocalPos += ;
+		
+		//vec4 worldNormal = boneTransform * vec4(in_normal, 0.0);
+		//totalNormal += worldNormal * in_weights[i];
 	}
+	
+	gl_Position = projection * view * model * totalLocalPos;
 
-	gl_Position = p;
+	//vec4 p = projection * view * model * vec4(position, 1.0);
+
+//	gl_Position = p;
 
 	n = mat3(transpose(inverse(view * model))) * normal;
 	fragPos = vec3(view * model * vec4(position, 1.0));
