@@ -289,7 +289,7 @@ static void RegisterBuffers(render_state& RenderState, GLfloat* VertexBuffer, i3
         
         // Bone indices
         glEnableVertexAttribArray(4);
-        glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, (8 + BoneInfoSize) * sizeof(GLfloat), (void*)(9 * sizeof(GLfloat)));
+        glVertexAttribPointer(4, 4, GL_INT, GL_FALSE, (8 + BoneInfoSize) * sizeof(GLfloat), (void*)(9 * sizeof(GLfloat)));
         
         // Weights
         glEnableVertexAttribArray(5);
@@ -1468,7 +1468,6 @@ static void RenderModel(const render_command& Command, render_state& RenderState
         Model = math::Translate(Model, Command.Position);
         
         math::m4 NormalMatrix = math::Transpose(math::Inverse(View * Model));
-        
         
         for(i32 Index = 0; Index < Command.Model.BoneCount; Index++)
         {

@@ -182,7 +182,7 @@ extern "C" UPDATE(Update)
     {
         
         model PlayerModel;
-        LoadModel(Renderer, "../assets/models/testing.modl", &PlayerModel);
+        LoadModel(Renderer, "../assets/models/sss.modl", &PlayerModel);
         PlayerModel.Position = math::v3(0, 0, 0);
         PlayerModel.Scale = math::v3(0.05, 0.05, 0.05);
         GameState->PlayerModel = PlayerModel;
@@ -741,7 +741,7 @@ extern "C" UPDATE(Update)
     GameUpdateStruct->EntityCount = GameState->EntityCount;
     memcpy(&GameUpdateStruct->EntityPositions,&GameState->EntityPositions,sizeof(math::v2) * NUM_ENTITIES);
     
-    GameState->PlayerModel.CurrentPose = Renderer.AnimationCycles[0].Frames[0];
+    GameState->PlayerModel.CurrentPose = Renderer.AnimationCycles[0].Frames[100];
     
     CalculatePose(GameState->PlayerModel.Bones, &GameState->PlayerModel.CurrentPose, 0, -1);
     
