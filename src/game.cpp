@@ -187,6 +187,17 @@ extern "C" UPDATE(Update)
         PlayerModel.Scale = math::v3(0.05, 0.05, 0.05);
         GameState->PlayerModel = PlayerModel;
         
+        model Cube;
+        LoadModel(Renderer, "../assets/models/cube_many_tris.modl", &Cube);
+        
+        GameState->Models[GameState->ModelCount++] = Cube;
+        GameState->Models[0].Position = math::v3(-10, -1.5f, 0);
+        GameState->Models[0].Scale = math::v3(10, 1.0f, 10);
+        
+        GameState->Models[GameState->ModelCount++] = Cube;
+        GameState->Models[1].Position = math::v3(-9.0f, 0.0f, -2.0f);
+        GameState->Models[1].Scale = math::v3(1.0f);
+        
         LoadTextures(Renderer, &GameState->TotalArena);
         
         if(GameState->ShouldReload || GameMemory->ShouldReload)
@@ -748,7 +759,7 @@ extern "C" UPDATE(Update)
     PushDirectionalLight(Renderer, math::v3(-0.2, -1.0, -0.3), 
                          math::v3(0.1f, 0.1f, 0.1f), math::v3(0.2, 0.2, 0.2), math::v3(0.1, 0.1, 0.1));
     
-    PushSpotlight(Renderer, GameState->PlayerModel.Position, math::v3(0.0f, -1.0f, 0.0f), DEGREE_IN_RADIANS * 12.5f, DEGREE_IN_RADIANS * 17.5f, math::v3(0.1f, 0.1f, 0.1f), math::v3(1.0f, 1.0f, 1.0), math::v3(1.0, 1.0, 1.0), 1.0f, 0.09f, 0.032f);
+    
     
     char FPSBuffer[64];
     sprintf(FPSBuffer, "FPS: %.2f - AVG FPS: %.2f - dt: %.10lf", Renderer.FPS, Renderer.AverageFPS, DeltaTime);
@@ -765,6 +776,12 @@ extern "C" UPDATE(Update)
     PushTilemapRenderCommands(Renderer, *GameState);
     PushModel(Renderer, GameState->PlayerModel);
     PushText(Renderer, FPSBuffer, math::v3(50, 850, 2), Font_Inconsolata, math::rgba(1, 0, 0, 1));
+    
+    for(i32 Index = 0; Index < GameState->ModelCount; Index++)
+    {
+        PushModel(Renderer, GameState->Models[Index]);
+        PushSpotlight(Renderer, GameState->Models[Index].Position, math::v3(1.0f, 0.0f, 0.0f), DEGREE_IN_RADIANS * 12.5f, DEGREE_IN_RADIANS * 17.5f, math::v3(0.1f, 0.1f, 0.1f), math::v3(1.0f, 1.0f, 1.0), math::v3(1.0, 1.0, 1.0), 1.0f, 0.09f, 0.032f);
+    }
     
     if(PushButton(Renderer, "Reset player", rect(5, 5, 200, 50), math::rgba(1, 0, 0, 1), math::rgba(1, 1, 1, 1), InputController))
     {

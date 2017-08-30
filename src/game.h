@@ -115,6 +115,9 @@ struct game_state
     
     model PlayerModel;
     
+    model Models[16];
+    i32 ModelCount;
+    
     u16 EntityCount;
     entity Entities[NUM_ENTITIES];
     
