@@ -312,7 +312,7 @@ static void LoadModel(renderer& Renderer, char* FilePath, model* Model)
                 
                 CopyTemp(Data.VertexBuffer, VertexBuffer, MHeader.VertexChunkSize, r32);
                 
-                i32 BoneInfoSize = 11;
+                i32 BoneInfoSize = 9;
                 
                 Data.VertexBufferSize = MHeader.NumVertices * (3 + BoneInfoSize) + MHeader.NumNormals * 3 + MHeader.NumUVs * 2;
                 
