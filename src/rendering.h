@@ -98,6 +98,7 @@ enum Shader_Type
     Shader_FrameBuffer,
     Shader_LightSource,
     Shader_SimpleModel,
+    Shader_Passthrough,
     
     Shader_Count
 };
@@ -406,7 +407,7 @@ struct renderer
     union
     {
         i32 Viewport[4];
-        math::v4 V;
+        math::v4i V;
         struct
         {
             i32 ViewportX;

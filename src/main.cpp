@@ -398,6 +398,7 @@ int main(void)
         game_update_return GameUpdateStruct = {};
         Game.Update(DeltaTime, &GameMemory, Renderer, &InputController, &SoundCommands, &GameUpdateStruct, &SoundEffects);
         
+        
         Render(RenderState, Renderer, &Win32State->PermArena);
         PlaySounds(&SoundDevice, &SoundCommands, GameUpdateStruct.EntityPositions, GameUpdateStruct.EntityCount);
         

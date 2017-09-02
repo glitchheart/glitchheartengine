@@ -192,11 +192,15 @@ extern "C" UPDATE(Update)
         
         GameState->Models[GameState->ModelCount++] = Cube;
         GameState->Models[0].Position = math::v3(-10, -1.5f, 0);
-        GameState->Models[0].Scale = math::v3(10, 1.0f, 10);
+        GameState->Models[0].Scale = math::v3(100, 1.0f, 100);
         
         GameState->Models[GameState->ModelCount++] = Cube;
         GameState->Models[1].Position = math::v3(-9.0f, 0.0f, -2.0f);
         GameState->Models[1].Scale = math::v3(1.0f);
+        
+        GameState->Models[GameState->ModelCount++] = Cube;
+        GameState->Models[2].Position = math::v3();
+        GameState->Models[2].Scale = math::v3(1.0f);
         
         LoadTextures(Renderer, &GameState->TotalArena);
         
@@ -732,11 +736,37 @@ extern "C" UPDATE(Update)
         break;
     }
     
-    CameraTransform(Renderer, GameCamera, GameCamera.Center, GameCamera.Zoom, -100.0f, 1000.0f, CFlag_Isometric | CFlag_Orthographic);
+    r32 Near = -100.0f;
+    r32 Far = 1000.0f;
     
-    auto Ray = CastRay(InputController->MouseX, InputController->MouseY, GameCamera.ViewMatrix, GameCamera.ProjectionMatrix, Renderer.V);
+    CameraTransform(Renderer, GameCamera, GameCamera.Center, GameCamera.Zoom, Near, Far, CFlag_Isometric | CFlag_Orthographic);
+    math::v3 CamPos = math::v3(1.0f, -1.0f, -1.0f);
     
-    DEBUG_PRINT("Fucking ray: (%f, %f, %f)\n", Ray.x, Ray.y, Ray.z);
+    GameState->Models[2].Position = CamPos;
+    
+    math::m4 Model = math::m4(1.0f);
+    Model = math::Translate(Model, CamPos);
+    auto M = GameCamera.ViewMatrix * Model;
+    
+    auto Ray = CastRay(InputController->MouseX, InputController->MouseY, Renderer.ViewportWidth, Renderer.ViewportHeight, GameCamera.ProjectionMatrix, M, Near);
+    
+    //DEBUG_PRINT("Ray: (%f, %f, %f)\n", Ray.x, Ray.y, Ray.z);
+    
+    //Ray = math::v3(-1.0f, 1.0f, 1.0f);
+    //Ray = Normalize(Ray);
+    //auto Ray = CastRay(InputController->MouseX, InputController->MouseY, Model, GameCamera.ProjectionMatrix, Renderer.V);
+    
+    PushLine(Renderer, CamPos, CamPos + Ray * 500.0f, 5.0f, math::rgba(1.0f, 0.0f, 0.0f, 1.0f));
+    
+    GameState->Models[1].Position = CamPos + Ray * 10.0f;
+    
+    auto R = 10.0f;
+    auto Pos = GameState->PlayerModel.Position;
+    auto B = Dot(Ray, GameCamera.Center - Pos);
+    auto C = Dot(GameCamera.Center - Pos, GameCamera.Center - Pos) - (R * R);
+    
+    auto T = -B + sqrt(B * B - C);
+    //DEBUG_PRINT("T: %f\n", T);
     
     InputController->CurrentCharacter = 0;
     GameState->ClearTilePositionFrame = !GameState->ClearTilePositionFrame;
@@ -764,7 +794,7 @@ extern "C" UPDATE(Update)
     
     PushDebugRender(Renderer, DebugState, InputController);
     
-    PushTilemapRenderCommands(Renderer, *GameState);
+    //PushTilemapRenderCommands(Renderer, *GameState);
     PushModel(Renderer, GameState->PlayerModel);
     PushText(Renderer, FPSBuffer, math::v3(50, 850, 2), Font_Inconsolata, math::rgba(1, 0, 0, 1));
     

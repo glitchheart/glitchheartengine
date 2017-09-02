@@ -679,12 +679,13 @@ static void RenderSetup(render_state *RenderState, memory_arena* PermArena)
     glBindVertexArray(0);
     
     // Lines
+    glGenVertexArrays(1, &RenderState->PrimitiveVAO);
+    glBindVertexArray(RenderState->PrimitiveVAO);
     glGenBuffers(1, &RenderState->PrimitiveVBO);
     glBindBuffer(GL_ARRAY_BUFFER, RenderState->PrimitiveVBO);
     
-    PositionLocation3 = glGetAttribLocation(RenderState->WireframeShader.Program, "pos");
-    glEnableVertexAttribArray(PositionLocation3);
-    glVertexAttribPointer(PositionLocation3, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), 0);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), 0);
     glBindVertexArray(0);
     
     //astar tile
@@ -702,6 +703,9 @@ static void RenderSetup(render_state *RenderState, memory_arena* PermArena)
     glVertexAttribPointer(PositionLocation3, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), 0);
     
     glBindVertexArray(0);
+    
+    // Passthrough
+    LoadShader(ShaderPaths[Shader_Passthrough], &RenderState->PassthroughShader, PermArena);
     
     //font
     RenderState->StandardFontShader.Type = Shader_StandardFont;
@@ -995,6 +999,31 @@ static void SetVec4ArrayUniform(GLuint ShaderHandle, const char *UniformName, ma
 static void SetFloatArrayUniform(GLuint ShaderHandle, const char *UniformName, r32* Value, u32 Length)
 {
     glUniform1fv(glGetUniformLocation(ShaderHandle, UniformName), Length, (GLfloat*)&Value[0]);
+}
+
+static void RenderRay(render_state& RenderState, math::v4 Color, math::v3 Start, math::v3 End,  math::m4 ProjectionMatrix = math::m4(), math::m4 ViewMatrix = math::m4())
+{
+    glBindBuffer(GL_ARRAY_BUFFER, RenderState.PrimitiveVBO);
+    
+    //glEnableVertexAttribArray(0);
+    //glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(r32), 0);
+    
+    GLfloat Points[6] = {Start.x, Start.y, Start.z, End.x, End.y, End.z};
+    glBufferData(GL_ARRAY_BUFFER, 6 * sizeof(GLfloat), &Points[0], GL_DYNAMIC_DRAW);
+    
+    glBindVertexArray(RenderState.PrimitiveVAO);
+    
+    auto& Shader = RenderState.PassthroughShader;
+    UseShader(&Shader);
+    
+    SetMat4Uniform(Shader.Program, "Projection", ProjectionMatrix);
+    SetMat4Uniform(Shader.Program, "View", ViewMatrix);
+    
+    SetMat4Uniform(Shader.Program, "Model", math::m4(1.0f));
+    
+    SetVec4Uniform(Shader.Program, "Color", Color);
+    
+    glDrawArrays(GL_LINES, 0, 6);
 }
 
 static void RenderLine(render_state& RenderState, math::v4 Color, r32 X1, r32 Y1, r32 X2, r32 Y2, b32 IsUI = true, math::m4 ProjectionMatrix = math::m4(), math::m4 ViewMatrix = math::m4())
@@ -1310,7 +1339,7 @@ static void RenderConsole(render_state& RenderState, console* Console)
 
 static void RenderLine(const render_command& Command, render_state& RenderState, math::m4 Projection, math::m4 View)
 {
-    
+    RenderRay(RenderState, Command.Line.Color, Command.Line.Point1, Command.Line.Point2, Projection, View);
 }
 
 static void RenderText(const render_command& Command, render_state& RenderState)
