@@ -28,7 +28,8 @@ const static struct
     SHADERPAIR(AStarPath),
     SHADERPAIR(FrameBuffer),
     SHADERPAIR(LightSource),
-    SHADERPAIR(SimpleModel)
+    SHADERPAIR(SimpleModel),
+    SHADERPAIR(Passthrough)
 };
 
 char* ShaderEnumToStr(Shader_Type Shader)
@@ -59,7 +60,8 @@ const char* ShaderPaths[Shader_Count] =
     "../assets/shaders/astarpathshader",
     "../assets/shaders/framebuffershader",
     "../assets/shaders/lightsourceshader",
-    "../assets/shaders/simple_model_shader"
+    "../assets/shaders/simple_model_shader",
+    "../assets/shaders/passthroughshader"
 };
 
 
@@ -227,6 +229,7 @@ struct render_state
         0.0f, 0.0f
     };
     
+    GLuint PrimitiveVAO;
     GLuint PrimitiveVBO;
     
     GLfloat WireframeQuadVertices[10] =
@@ -290,6 +293,7 @@ struct render_state
             shader FrameBufferShader;
             shader LightSourceShader;
             shader SimpleModelShader;
+            shader PassthroughShader;
         };
     };
     

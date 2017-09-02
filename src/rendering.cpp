@@ -14,15 +14,14 @@ static inline void CameraTransform(renderer& Renderer, camera& Camera, math::v3 
         Camera.ViewMatrix = math::m4(1.0f);
         
         Camera.ViewMatrix = math::Translate(Camera.ViewMatrix, math::v3(-Camera.Center.x, Camera.Center.y, -Camera.Center.z));
-        
+        /*
         if(CameraFlags & CFlag_Isometric)
         {
             Camera.ViewMatrix = math::Rotate(Camera.ViewMatrix, 45.0f, math::v3(0,1,0));
             Camera.ViewMatrix = math::Rotate(Camera.ViewMatrix, 35.264f, math::v3(1,0,0));
         }
-        
+        */
         Camera.ViewMatrix = math::Translate(Camera.ViewMatrix, math::v3(Renderer.Viewport[2] / Zoom / 2, Renderer.Viewport[3] / Zoom / 2, 0.0f));
-        
     }
     else if(CameraFlags & CFlag_Perspective)
     {

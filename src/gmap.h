@@ -81,6 +81,14 @@ struct NAME ## _map \
 }; \
 void NAME ##_Map_Init(NAME ## _map* Map, hash_function_ ## NAME Hash, i32 InitSize = INIT_SIZE) \
 { \
+    if(Map->HashedPairs)\
+    {\
+        DeallocateMemory(Map->HashedPairs);\
+    }\
+    if(Map->ScanPairs)\
+    {\
+        DeallocateMemory(Map->ScanPairs);\
+    }\
     Map->HashedPairs = (hashed_pair_ ## NAME*)AllocateMemory(InitSize * sizeof(hashed_pair_ ## NAME));\
     Map->ScanPairs = (hashed_pair_ ## NAME*)AllocateMemory(1024 * sizeof(hashed_pair_ ## NAME));\
     Map->KeyCount = 0;\

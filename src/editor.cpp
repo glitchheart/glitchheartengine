@@ -594,7 +594,7 @@ static void EditorUpdateEntities(game_state* GameState, renderer& Renderer, inpu
                 auto Pos = math::UnProject(math::v3(InputController->MouseX, Renderer.Viewport[3] - InputController->MouseY, 0),
                                            Renderer.Cameras[GameState->GameCameraHandle].ViewMatrix,
                                            Renderer.Cameras[GameState->GameCameraHandle].ProjectionMatrix,
-                                           math::v4(0, 0, Renderer.Viewport[2], Renderer.Viewport[3]));
+                                           math::v4i(0, 0, Renderer.Viewport[2], Renderer.Viewport[3]));
                 
                 i32 X = (i32)Pos.x;
                 i32 Z = (i32)Pos.y;
