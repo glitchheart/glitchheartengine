@@ -2248,20 +2248,29 @@ namespace math
     //@Link:       http://antongerdelan.net/opengl/raycasting.html
     inline v3 CastRay(r32 MouseX, r32 MouseY, r32 Width, r32 Height, m4 P, m4 V, r32 Near)
     {
+        // Convert to Normalized Device Coordinates
         r32 X = (2.0f * MouseX) / Width - 1.0f;
         r32 Y = 1.0f - (2.0f * MouseY) / Height;
         r32 Z = 1.0f; // This is not necessarily needed here yet
-        DEBUG_PRINT("NDC: (%f, %f, %f)\n", X, Y, Z);
-        v3 RayNDS = v3(X, Y, Z);
-        v4 RayClip = v4(RayNDS.xy, -1.0, 1.0);
+        v3 RayNDC = v3(X, Y, Z);
+        
+        // We don't need to reverse the perspective division
+        v4 RayClip = v4(RayNDC.xy, -1.0, 1.0);
+        
+        // Convert to eye coords by inverting the projection
         v4 RayEye = Inverse(P) * RayClip;
-        RayEye = v4(RayEye.xy, -Near, 0.0);
+        
+        // Point the ray the right direction in Z
+        RayEye = v4(RayEye.xy, Near, 0.0);
+        
+        // Convert to world coordinates
         v3 RayWorld = (Inverse(V) * RayEye).xyz;
         RayWorld = Normalize(RayWorld);
         
         return RayWorld;
     }
     
+    //@Incomplete: This definitely didn't seem to work at all
     inline v3 CastRay(r32 MouseX, r32 MouseY, m4 V, m4 P, v4i Viewport)
     {
         auto PosNear = UnProject(math::v3(MouseX, Viewport.w - MouseY, 0.0f), V, P, Viewport);

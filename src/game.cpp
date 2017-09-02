@@ -736,11 +736,11 @@ extern "C" UPDATE(Update)
         break;
     }
     
-    r32 Near = -100.0f;
-    r32 Far = 1000.0f;
+    r32 Near = -1.0.0f;
+    r32 Far = 1.0f;
     
     CameraTransform(Renderer, GameCamera, GameCamera.Center, GameCamera.Zoom, Near, Far, CFlag_Isometric | CFlag_Orthographic);
-    math::v3 CamPos = math::v3(1.0f, -1.0f, -1.0f);
+    math::v3 CamPos = math::v3(0.0f);
     
     GameState->Models[2].Position = CamPos;
     
@@ -748,9 +748,9 @@ extern "C" UPDATE(Update)
     Model = math::Translate(Model, CamPos);
     auto M = GameCamera.ViewMatrix * Model;
     
-    auto Ray = CastRay(InputController->MouseX, InputController->MouseY, Renderer.ViewportWidth, Renderer.ViewportHeight, GameCamera.ProjectionMatrix, M, Near);
+    auto Ray = CastRay(InputController->MouseX, InputController->MouseY, Renderer.ViewportWidth, Renderer.ViewportHeight, GameCamera.ProjectionMatrix, GameCamera.ViewMatrix, Near);
     
-    //DEBUG_PRINT("Ray: (%f, %f, %f)\n", Ray.x, Ray.y, Ray.z);
+    DEBUG_PRINT("Ray: (%f, %f, %f)\n", Ray.x, Ray.y, Ray.z);
     
     //Ray = math::v3(-1.0f, 1.0f, 1.0f);
     //Ray = Normalize(Ray);

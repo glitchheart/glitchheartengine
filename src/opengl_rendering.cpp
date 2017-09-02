@@ -1005,9 +1005,6 @@ static void RenderRay(render_state& RenderState, math::v4 Color, math::v3 Start,
 {
     glBindBuffer(GL_ARRAY_BUFFER, RenderState.PrimitiveVBO);
     
-    //glEnableVertexAttribArray(0);
-    //glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(r32), 0);
-    
     GLfloat Points[6] = {Start.x, Start.y, Start.z, End.x, End.y, End.z};
     glBufferData(GL_ARRAY_BUFFER, 6 * sizeof(GLfloat), &Points[0], GL_DYNAMIC_DRAW);
     
