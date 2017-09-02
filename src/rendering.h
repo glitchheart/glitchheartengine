@@ -330,8 +330,6 @@ struct camera
     r32 EndAlpha;
     r32 FadingAlpha = 0.0f;
     r32 FadingSpeed;
-    
-    math::v3 P;
 };
 
 #define RENDER_COMMAND_MAX 400
@@ -405,7 +403,19 @@ struct renderer
     camera Cameras[MAX_CAMERAS];
     i32 CurrentCameraHandle;
     
-    i32 Viewport[4];
+    union
+    {
+        i32 Viewport[4];
+        math::v4 V;
+        struct
+        {
+            i32 ViewportX;
+            i32 ViewportY;
+            i32 ViewportWidth;
+            i32 ViewportHeight;
+        };
+    };
+    
     i32 WindowWidth;
     i32 WindowHeight;
     

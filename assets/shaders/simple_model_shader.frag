@@ -81,11 +81,12 @@ out vec4 outColor;
 vec3 CalcDirLight(DirLight light, vec3 normal, vec3 viewDir, Material material)
 {
 	vec3 lightDir = normalize(-light.direction).xyz;
-	
+	vec3 halfwayDir = normalize(lightDir + viewDir);	
+
 	float diff = max(dot(normal, lightDir), 0.0);
 	
 	vec3 reflectDir = reflect(-lightDir, normal);
-	float spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess);
+	float spec = pow(max(dot(viewDir, halfwayDir), 0.0), material.shininess);
 	
 	vec3 ambient = light.ambient.xyz;
 	vec3 diffuse = light.diffuse.xyz * diff;
@@ -103,7 +104,7 @@ vec3 CalcDirLight(DirLight light, vec3 normal, vec3 viewDir, Material material)
 		ambient *= material.ambient;
 		specular *= material.specular;
 	}
-
+;
 	return (ambient + diffuse + specular);
 }
 
@@ -111,6 +112,7 @@ vec3 CalcSpotLight(SpotLight light, vec3 normal, vec3 fragPos, vec3 viewDir, Mat
 {
 	//light.position = vec4(lightPos, 1.0); // Get actual position of light!!
 	vec3 lightDir = normalize(light.position.xyz - fragPos);
+	vec3 halfwayDir = normalize(lightDir + viewDir);
 
 	float theta = dot(lightDir, normalize(-light.direction.xyz));
 	float epsilon = light.cutOff - light.outerCutOff;
@@ -119,7 +121,7 @@ vec3 CalcSpotLight(SpotLight light, vec3 normal, vec3 fragPos, vec3 viewDir, Mat
 	float diff = max(dot(normal, lightDir), 0.0);
 		
 	vec3 reflectDir = reflect(-lightDir, normal);
-	float spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess);
+	float spec = pow(max(dot(viewDir, halfwayDir), 0.0), material.shininess);
 	vec3 ambient = light.ambient.xyz;
 	vec3 diffuse = light.diffuse.xyz * diff;
 	vec3 specular = light.specular.xyz * spec;
@@ -153,11 +155,12 @@ vec3 CalcSpotLight(SpotLight light, vec3 normal, vec3 fragPos, vec3 viewDir, Mat
 vec3 CalcPointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir, Material material)
 {
 	vec3 lightDir = normalize(light.position.xyz - fragPos);
-	
+	vec3 halfwayDir = normalize(lightDir + viewDir);	
+
 	float diff = max(dot(normal, lightDir), 0.0);
 
 	vec3 reflectDir = reflect(-lightDir, normal);
-	float spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess);
+	float spec = pow(max(dot(viewDir, halfwayDir), 0.0), material.shininess);
 
 	float distance = length(light.position.xyz - fragPos);
 	float attenuation = 1.0 / (light.constant + light.linear * distance 
@@ -238,5 +241,7 @@ void main()
 	
     //outColor = vec4(1, 1, 1, 1);
 	//outColor = vec4(texture(tex, texCoord));
+	//float gamma = 2.2;
+	//result.rgb = pow(result.rgb, vec3(1.0/gamma));
 	outColor = vec4(result, 1.0);
 } 

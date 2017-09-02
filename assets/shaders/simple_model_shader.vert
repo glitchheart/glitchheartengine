@@ -28,22 +28,20 @@ void main()
 	vec4 totalLocalPos = vec4(0.0);
 	vec4 totalNormal = vec4(0.0);
 	
-	for(int i = 0; i < int(boneCount); i++)
-	{
-		mat4 boneTransform = bones[int(boneIndices[i])];
-		vec4 posePosition = boneTransform * vec4(position, 1.0);
+//	for(int i = 0; i < int(boneCount); i++)
+//	{
+		//mat4 boneTransform = bones[int(boneIndices[i])];
+		//vec4 posePosition = boneTransform * vec4(position, 1.0);
 		//vec4 test = posePosition * weights[i]; 		
 //totalLocalPos += ;
 		
 		//vec4 worldNormal = boneTransform * vec4(in_normal, 0.0);
 		//totalNormal += worldNormal * in_weights[i];
-	}
+	//}
 	
-	gl_Position = projection * view * model * totalLocalPos;
+//	gl_Position = projection * view * model * totalLocalPos;
 
-	//vec4 p = projection * view * model * vec4(position, 1.0);
-
-//	gl_Position = p;
+	gl_Position = projection * view * model * vec4(position, 1.0);
 
 	n = mat3(transpose(inverse(view * model))) * normal;
 	fragPos = vec3(view * model * vec4(position, 1.0));
