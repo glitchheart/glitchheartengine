@@ -280,7 +280,6 @@ extern "C" UPDATE(Update)
         GameCamera.ViewportHeight = Renderer.WindowHeight;
         GameCamera.FollowSpeed = 3.5f; 
         GameCamera.FadingSpeed = 0.6f;
-        GameCamera.P = math::v3(-5.0f, 15.0f, -20.0f);
         
         StartFade(GameCamera, Fading_In, 0.6f, math::v3(0, 0, 0), 1.0f, 0.0f);
         
@@ -733,17 +732,11 @@ extern "C" UPDATE(Update)
         break;
     }
     
-    static r32 X = 0.0f;
-    static r32 Y = 0.0f;
+    CameraTransform(Renderer, GameCamera, GameCamera.Center, GameCamera.Zoom, -100.0f, 1000.0f, CFlag_Isometric | CFlag_Orthographic);
     
-    X = INPUT_X();
-    Y = INPUT_Y();
+    auto Ray = CastRay(InputController->MouseX, InputController->MouseY, GameCamera.ViewMatrix, GameCamera.ProjectionMatrix, Renderer.V);
     
-    r32 PanSpeed = 5.0f;
-    
-    GameCamera.P += math::v3((r32)(X * DeltaTime * PanSpeed), (r32)(Y * DeltaTime * PanSpeed), 0.0f);
-    
-    CameraTransform(Renderer, GameCamera, GameCamera.Center, GameCamera.Zoom, -200.0f, 2000.0f, CFlag_Isometric | CFlag_Orthographic);
+    DEBUG_PRINT("Fucking ray: (%f, %f, %f)\n", Ray.x, Ray.y, Ray.z);
     
     InputController->CurrentCharacter = 0;
     GameState->ClearTilePositionFrame = !GameState->ClearTilePositionFrame;
@@ -758,8 +751,6 @@ extern "C" UPDATE(Update)
     
     PushDirectionalLight(Renderer, math::v3(-0.2, -1.0, -0.3), 
                          math::v3(0.1f, 0.1f, 0.1f), math::v3(0.2, 0.2, 0.2), math::v3(0.1, 0.1, 0.1));
-    
-    
     
     char FPSBuffer[64];
     sprintf(FPSBuffer, "FPS: %.2f - AVG FPS: %.2f - dt: %.10lf", Renderer.FPS, Renderer.AverageFPS, DeltaTime);

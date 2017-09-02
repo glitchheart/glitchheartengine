@@ -541,6 +541,19 @@ namespace math
                 {
                     r32 X, Y, Z;
                 };
+                struct
+                {
+                    union
+                    {
+                        v2 xy;
+                        v2 XY;
+                    };
+                    union
+                    {
+                        r32 z;
+                        r32 Z;
+                    };
+                };
             };
             union
             {
@@ -613,6 +626,8 @@ namespace math
         X((r32)X), Y((r32)Y), Z((r32)Z), W((r32)W) {}
         
         v4(v3 O, r32 W) : X(O.X), Y(O.Y), Z(O.Z), W(W) {}
+        
+        v4(v2 V, r32 Z, r32 W) : X(V.X), Y(V.Y), Z(Z), W(W) {} 
         
         r32 operator[](i32 I)
         {
@@ -914,6 +929,7 @@ namespace math
             v3i Result(*this);
             Result.X *= O.X;
             Result.Y *= O.Y;
+            Result.Z *= O.Z;
             return Result;
         }
         
@@ -922,6 +938,7 @@ namespace math
             v3i Result(*this);
             Result.X += O.X;
             Result.Y += O.Y;
+            Result.Z += O.Z;
             return Result;
         }
         
@@ -1028,6 +1045,170 @@ namespace math
         }
         
     };
+    
+    
+    union v4i
+    {
+        struct
+        {
+            i32 X, Y, Z, W;
+        };
+        struct
+        {
+            i32 x, y, z, w;
+        };
+        i32 E[4];
+        v4i(i32 X, i32 Y, i32 Z, i32 W) : X(X), Y(Y), Z(Z), W(W){}
+        v4i() : X(0), Y(0), Z(0), W(0) {}
+        v4i(i32 I) : X(I), Y(I), Z(I), W(I) {}
+        v4i(i32 E[4]) : E{E[0],E[1], E[2], E[3]} {}
+        
+        inline v4i operator* (v4i O)
+        {
+            v4i Result(*this);
+            Result.X *= O.X;
+            Result.Y *= O.Y;
+            Result.Z *= O.Z;
+            Result.W *= O.W;
+            return Result;
+        }
+        
+        inline v4i operator+ (v4i O)
+        {
+            v4i Result(*this);
+            Result.X += O.X;
+            Result.Y += O.Y;
+            Result.Z += O.Z;
+            Result.W += O.W;
+            return Result;
+        }
+        
+        inline void operator*= (v4i O)
+        {
+            this->X *= O.X;
+            this->Y *= O.Y;
+            this->Z *= O.Z;
+            this->W *= O.W;
+        }
+        
+        inline void operator+= (v4i O)
+        {
+            this->X += O.X;
+            this->Y += O.Y;
+            this->Z += O.Z;
+            this->W += O.W;
+        }
+        
+        inline v4i operator+ (i32 S)
+        {
+            v4i Result(*this);
+            Result.X += S;
+            Result.Y += S;
+            Result.Z += S;
+            Result.W += S;
+            return Result;
+        }
+        
+        inline v4i operator* (i32 S)
+        {
+            v4i Result(*this);
+            Result.X *= S;
+            Result.Y *= S;
+            Result.Z *= S;
+            Result.W *= S;
+            return Result;
+        }
+        
+        inline v4i operator/ (i32 S)
+        {
+            v4i Result(*this);
+            Result.X /= S;
+            Result.Y /= S;
+            Result.Z /= S;
+            Result.W /= S;
+            return Result;
+        }
+        
+        inline void operator+= (i32 S)
+        {
+            this->X += S;
+            this->Y += S;
+            this->Z += S;
+            this->W += S;
+        }
+        
+        inline void operator*= (i32 S)
+        {
+            this->X *= S;
+            this->Y *= S;
+            this->Z *= S;
+            this->W *= S;
+        }
+        
+        inline void operator/= (i32 S)
+        {
+            this->X /= S;
+            this->Y /= S;
+            this->Z /= S;
+            this->W /= S;
+        }
+        
+        inline void operator-= (i32 S)
+        {
+            this->X -= S;
+            this->Y -= S;
+            this->Z -= S;
+            this->W -= S;
+        }
+        
+        inline v4i operator- (v4i O)
+        {
+            v4i Result(*this);
+            Result.X -= O.X;
+            Result.Y -= O.Y;
+            Result.Z -= O.Z;
+            Result.W -= O.W;
+            return Result;
+        }
+        
+        inline void operator-= (v4i O)
+        {
+            this->X -= O.X;
+            this->Y -= O.Y;
+            this->Z -= O.Z;
+            this->W -= O.W;
+        }
+        
+        inline v4i operator- (i32 S)
+        {
+            v4i Result(*this);
+            Result.X -= S;
+            Result.Y -= S;
+            Result.Z -= S;
+            Result.W -= S;
+            return Result;
+        }
+        
+        inline v4i operator/ (v4i O)
+        {
+            v4i Result(*this);
+            Result.X /= O.X;
+            Result.Y /= O.Y;
+            Result.Z /= O.Z;
+            Result.W /= O.W;
+            return Result;
+        }
+        
+        inline void operator/= (v4i O)
+        {
+            this->X /= O.X;
+            this->Y /= O.Y;
+            this->Z /= O.Z;
+            this->W /= O.W;
+        }
+        
+    };
+    
     
     union m4
     {
@@ -1925,6 +2106,31 @@ namespace math
     {
         r32 Rand = Min(Max(From, ((r32)rand()/(r32)(RAND_MAX)) * To),To);
         return Rand;
+    }
+    
+    //@Incomplete: This this. Seems to not line up with the tutorial
+    //@Link:       http://antongerdelan.net/opengl/raycasting.html
+    inline v3 CastRay(r32 MouseX, r32 MouseY, r32 Width, r32 Height, m4 P, m4 V)
+    {
+        r32 X = (2.0f * MouseX) / Width - 1.0f;
+        r32 Y = 1.0f - (2.0f * MouseY) / Height;
+        r32 Z = 1.0f; // This is not necessarily needed here yet
+        v3 RayNDS = v3(X, Y, Z);
+        v4 RayClip = v4(RayNDS.xy, -1.0, 1.0);
+        v4 RayEye = Inverse(P) * RayClip;
+        RayEye = v4(RayEye.xy, -1.0, 0.0);
+        v3 RayWorld = (Inverse(V) * RayEye).xyz;
+        RayWorld = Normalize(RayWorld);
+        
+        return RayWorld;
+    }
+    
+    inline v3 CastRay(r32 MouseX, r32 MouseY, m4 V, m4 P, v4 Viewport)
+    {
+        auto PosNear = UnProject(math::v3(MouseX, MouseY, 0.0f), V, P, Viewport);
+        auto PosFar = UnProject(math::v3(MouseX, MouseY, 1.0f), V, P, Viewport);
+        
+        return PosNear - PosFar;
     }
     
     using rgb = v3;
