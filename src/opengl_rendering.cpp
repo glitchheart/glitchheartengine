@@ -878,6 +878,7 @@ static void InitializeOpenGL(render_state& RenderState, renderer& Renderer, conf
     glViewport(0, 0, RenderState.WindowWidth, RenderState.WindowHeight);
     glDisable(GL_DITHER);
     glLineWidth(2.0f);
+    glEnable(GL_LINE_SMOOTH);
     
     glDisable(GL_CULL_FACE);
     glEnable(GL_DEPTH_TEST);
@@ -1001,8 +1002,23 @@ static void SetFloatArrayUniform(GLuint ShaderHandle, const char *UniformName, r
     glUniform1fv(glGetUniformLocation(ShaderHandle, UniformName), Length, (GLfloat*)&Value[0]);
 }
 
-static void RenderRay(render_state& RenderState, math::v4 Color, math::v3 Start, math::v3 End,  math::m4 ProjectionMatrix = math::m4(), math::m4 ViewMatrix = math::m4())
+static void RenderLine(render_state& RenderState, math::v4 Color, math::v3 Start, math::v3 End, math::m4 ProjectionMatrix = math::m4(), math::m4 ViewMatrix = math::m4(), r32 LineWidth = 1.0f, b32 IsUI = false)
 {
+    if(IsUI)
+    {
+        Start.x *= RenderState.ScaleX;
+        Start.x -= 1;
+        Start.y *= RenderState.ScaleY;
+        Start.y -= 1;
+        End.x *= RenderState.ScaleX;
+        End.x -= 1;
+        End.y *= RenderState.ScaleY;
+        End.y -= 1;
+        Start.z = 0.0f;
+        End.z = 0.0f;
+    }
+    
+    glLineWidth(LineWidth);
     glBindBuffer(GL_ARRAY_BUFFER, RenderState.PrimitiveVBO);
     
     GLfloat Points[6] = {Start.x, Start.y, Start.z, End.x, End.y, End.z};
@@ -1021,44 +1037,7 @@ static void RenderRay(render_state& RenderState, math::v4 Color, math::v3 Start,
     SetVec4Uniform(Shader.Program, "Color", Color);
     
     glDrawArrays(GL_LINES, 0, 6);
-}
-
-static void RenderLine(render_state& RenderState, math::v4 Color, r32 X1, r32 Y1, r32 X2, r32 Y2, b32 IsUI = true, math::m4 ProjectionMatrix = math::m4(), math::m4 ViewMatrix = math::m4())
-{
-    if(IsUI)
-    {
-        X1 *= RenderState.ScaleX;
-        X1 -= 1;
-        Y1 *= RenderState.ScaleY;
-        Y1 -= 1;
-        X2 *= RenderState.ScaleX;
-        X2 -= 1;
-        Y2 *= RenderState.ScaleY;
-        Y2 -= 1;
-    }
-    
-    glBindBuffer(GL_ARRAY_BUFFER, RenderState.PrimitiveVBO);
-    
-    GLfloat Points[4] = { X1, Y1, X2, Y2 };
-    glBufferData(GL_ARRAY_BUFFER, 4 * sizeof(GLfloat), &Points[0], GL_DYNAMIC_DRAW);
-    
-    auto& Shader = RenderState.RectShader;
-    UseShader(&Shader);
-    
-    //draw upper part
-    math::m4 Model(1.0f);
-    
-    if(!IsUI)
-    {
-        SetMat4Uniform(Shader.Program, "Projection", ProjectionMatrix);
-        SetMat4Uniform(Shader.Program, "View", ViewMatrix);
-    }
-    
-    SetFloatUniform(Shader.Program, "isUI", (r32)IsUI);
-    SetMat4Uniform(Shader.Program, "M", Model);
-    SetVec4Uniform(Shader.Program, "color", Color);
-    
-    glDrawArrays(GL_LINES, 0, 4);
+    glLineWidth(1.0f);
 }
 
 // NOTE(Niels): Possible future use but buggy
@@ -1336,7 +1315,7 @@ static void RenderConsole(render_state& RenderState, console* Console)
 
 static void RenderLine(const render_command& Command, render_state& RenderState, math::m4 Projection, math::m4 View)
 {
-    RenderRay(RenderState, Command.Line.Color, Command.Line.Point1, Command.Line.Point2, Projection, View);
+    RenderLine(RenderState, Command.Line.Color, Command.Line.Point1, Command.Line.Point2, Projection, View, Command.Line.LineWidth);
 }
 
 static void RenderText(const render_command& Command, render_state& RenderState)
