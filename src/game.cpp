@@ -182,7 +182,7 @@ extern "C" UPDATE(Update)
     {
         
         model PlayerModel;
-        LoadModel(Renderer, "../assets/models/skinned_wolf.modl", &PlayerModel);
+        LoadGLIMModel(Renderer, "../assets/models/exported.glim", &PlayerModel);
         PlayerModel.Position = math::v3(0, 0, 0);
         PlayerModel.Scale = math::v3(10, 10, 10);
         

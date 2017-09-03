@@ -253,7 +253,7 @@ static void InitializeFreeTypeFont(char* FontPath, int FontSize, FT_Library Libr
     glBindVertexArray(0);
 }
 
-static void RegisterBuffers(render_state& RenderState, GLfloat* VertexBuffer, long VertexBufferSize, GLushort* IndexBuffer, i32 IndexBufferCount, long IndexBufferSize, b32 HasNormals, b32 HasUVs, i32 BufferHandle = -1)
+static void RegisterBuffers(render_state& RenderState, GLfloat* VertexBuffer, long VertexBufferSize, GLuint* IndexBuffer, i32 IndexBufferCount, long IndexBufferSize, b32 HasNormals, b32 HasUVs, i32 BufferHandle = -1)
 {
     buffer* Buffer = &RenderState.Buffers[BufferHandle == -1 ? RenderState.BufferCount : BufferHandle];
     
@@ -1480,7 +1480,7 @@ static void RenderModel(const render_command& Command, render_state& RenderState
         SetVec4Uniform(Shader.Program, "color", math::rgba(1.0f, 1.0f, 1.0f, 1.0f));
         SetIntUniform(Shader.Program, "hasUVs", RenderData.Material.HasTexture);
         
-        glDrawElements(GL_TRIANGLES, Buffer.IndexBufferCount, GL_UNSIGNED_SHORT, (void*)0);
+        glDrawElements(GL_TRIANGLES, Buffer.IndexBufferCount, GL_UNSIGNED_INT, (void*)0);
         glBindVertexArray(0);
     }
 }
