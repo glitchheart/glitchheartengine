@@ -149,6 +149,19 @@ struct animation_frame
     math::v3 Scale;
 };
 
+struct joint_animation
+{
+    i32 JointIndex;
+    animation_frames* Frames;
+    i32 FrameCount;
+};
+
+struct skeletal_animation
+{
+    joint_transforms JointTransforms[MAX_JOINTS];
+    i32 JointCount;
+};
+
 struct joint
 {
     math::v3 Translation;
