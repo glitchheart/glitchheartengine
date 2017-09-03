@@ -347,6 +347,7 @@ static void LoadModel(renderer& Renderer, char* FilePath, model* Model)
                     Format.Format[2] == 'I' &&
                     Format.Format[3] == 'M')
             {
+                
                 /*animation_header AHeader;
                 fread(&AHeader, sizeof(animation_header), 1, File);
                 
