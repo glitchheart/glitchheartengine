@@ -763,11 +763,33 @@ extern "C" UPDATE(Update)
     Mouse.z = -1.0f;
     Mouse = Inverse(GameCamera.ViewMatrix) * Mouse;
     
+    Middle = Inverse(GameCamera.ProjectionMatrix) * math::v3((r32)MouseX, (r32)MouseY, -1.0f);
+    Middle.z = 1.0f;
+    Middle = Inverse(GameCamera.ViewMatrix) * Middle;
+    
     auto TempRay = math::v4(Mouse - Middle, 0.0f);
     TempRay = Normalize(TempRay);
     Ray = TempRay.xyz;
     
-    auto D = math::Distance(Mouse, Middle);
+    auto Cen = GameState->PlayerModel.Position;
+    auto Radius = 3.0f;
+    
+    PushOutlinedRect(Renderer, GameState->PlayerModel.Position - math::v3(Radius / 2, -Radius / 2, 0.0f), math::v3(Radius, Radius, 1.0f), math::rgba(0.0f, 1.0f, 0.0f, 1.0f));
+    
+    auto B = Dot(Ray, Middle - Cen);
+    auto C = Dot(Middle - Cen, Middle - Cen) - pow(Radius, 2);
+    auto PreCalc = pow(B, 2) - C;
+    
+    if(PreCalc >= 0.0f)
+    {
+        auto T1 = -B + sqrt(PreCalc);
+        auto T2 = -B - sqrt(PreCalc);
+        
+        //DEBUG_PRINT("T1: %f, T2: %f\n", T1, T2);
+        
+        auto Pick = Middle + Ray * Min(T1, T2);
+        DEBUG_PRINT("Pick: (%f, %f, %f)\n", Pick.x, Pick.y, Pick.z);
+    }
     
     PushLine(Renderer, Middle, Middle + Ray * 5000.0f, 1.0f, math::rgba(1.0f, 0.0f, 1.0f, 1.0f));
     
@@ -777,7 +799,15 @@ extern "C" UPDATE(Update)
     
     PushLine(Renderer, Middle, Middle + Right * 40.0f, 1.0f, math::rgba(0.0f, 1.0f, 0.0f, 1.0f));
     
-    GameState->Models[1].Position = Middle + Ray * 100.0f;
+    GameState->Models[1].Position = Middle + Ray * -10.0f;
+    
+    if(MOUSE_DOWN(Mouse_Left))
+    {
+        auto CurI = GameState->ModelCount;
+        GameState->Models[CurI] = GameState->Models[1];
+        GameState->Models[CurI].Position = Middle + Ray * -10.0f;
+        GameState->ModelCount++;
+    }
     
     InputController->CurrentCharacter = 0;
     GameState->ClearTilePositionFrame = !GameState->ClearTilePositionFrame;

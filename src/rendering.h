@@ -5,7 +5,7 @@
 #define MAX_MESHES 60
 #define MAX_BONES 100
 
-#define MAX_LIGHTS 20
+#define MAX_LIGHTS 150
 
 enum Font_Type
 {
