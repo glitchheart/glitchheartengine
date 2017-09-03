@@ -1018,24 +1018,25 @@ void UpdatePlayer(entity* Entity, game_state* GameState, renderer& Renderer, sou
     
     if(KEY(Key_W))
     {
-        Direction.X = 1.0f;
+        Direction.X = -1.0f;
     }
     else if(KEY(Key_S))
     {
-        Direction.X = -1.0f;
+        Direction.X = 1.0f;
     }
     
     
     if(KEY(Key_A))
     {
-        Direction.Z = -1.0f;
+        Direction.Z = 1.0f;
     }
     else if(KEY(Key_D))
     {
-        Direction.Z = 1.0f;
+        Direction.Z = -1.0f;
     }
     
-    Direction = math::YRotate(45.0f) * Direction;
+    Direction = math::YRotate(-45.0f) * Direction;
+    Direction = Normalize(Direction);
     
     GameState->PlayerModel.Position += Direction * 10.0f * DeltaTime;
     

@@ -185,6 +185,7 @@ extern "C" UPDATE(Update)
         LoadModel(Renderer, "../assets/models/testing.modl", &PlayerModel);
         PlayerModel.Position = math::v3(0, 0, 0);
         PlayerModel.Scale = math::v3(0.05, 0.05, 0.05);
+        PlayerModel.Orientation = math::quat();
         GameState->PlayerModel = PlayerModel;
         
         model Cube;
@@ -197,10 +198,6 @@ extern "C" UPDATE(Update)
         GameState->Models[GameState->ModelCount++] = Cube;
         GameState->Models[1].Position = math::v3(-9.0f, 0.0f, -2.0f);
         GameState->Models[1].Scale = math::v3(1.0f);
-        
-        GameState->Models[GameState->ModelCount++] = Cube;
-        GameState->Models[2].Position = math::v3();
-        GameState->Models[2].Scale = math::v3(1.0f);
         
         LoadTextures(Renderer, &GameState->TotalArena);
         
@@ -290,7 +287,7 @@ extern "C" UPDATE(Update)
         // @Incomplete: This is not the right value, it is only set so high to remove smooth following as of now, since it needs to be done a little differently
         
         // Set center to player's position!
-        GameCamera.CenterTarget = GameCamera.Center;
+        GameCamera.Target = GameCamera.Center;
         
         GameState->IsInitialized = true;
         GameMemory->IsInitialized = true;
@@ -379,7 +376,6 @@ extern "C" UPDATE(Update)
             {
                 auto& Player = GameState->Entities[0];
                 auto Pos = Player.Position;
-                Renderer.Cameras[GameState->GameCameraHandle].Center = math::v3(Pos.x, Pos.y, Pos.z);
                 Renderer.Cameras[GameState->GameCameraHandle].Center = math::v3(Pos.x, Pos.y, Pos.z);
                 Renderer.Cameras[GameState->GameCameraHandle].Zoom = GameState->ZoomBeforeGodMode;
             }
@@ -736,37 +732,60 @@ extern "C" UPDATE(Update)
         break;
     }
     
-    r32 Near = -1.0.0f;
-    r32 Far = 1.0f;
+    r32 Near = -100.0f;
+    r32 Far = 1000.0f;
     
-    CameraTransform(Renderer, GameCamera, GameCamera.Center, GameCamera.Zoom, Near, Far, CFlag_Isometric | CFlag_Orthographic);
-    math::v3 CamPos = math::v3(0.0f);
+    CameraTransform(Renderer, GameCamera, GameCamera.Center, math::quat(), math::v3(), GameCamera.Zoom, Near, Far, CFlag_Orthographic);
     
-    GameState->Models[2].Position = CamPos;
-    
-    math::m4 Model = math::m4(1.0f);
-    Model = math::Translate(Model, CamPos);
-    auto M = GameCamera.ViewMatrix * Model;
+    math::v3 CamPos = GameCamera.Position;
     
     auto Ray = CastRay(InputController->MouseX, InputController->MouseY, Renderer.ViewportWidth, Renderer.ViewportHeight, GameCamera.ProjectionMatrix, GameCamera.ViewMatrix, Near);
     
+    auto Forward = math::v3(GameCamera.ViewMatrix[2][0],
+                            GameCamera.ViewMatrix[2][1],
+                            GameCamera.ViewMatrix[2][2]);
+    auto Up = math::v3(GameCamera.ViewMatrix[1][0],
+                       GameCamera.ViewMatrix[1][1],
+                       GameCamera.ViewMatrix[1][2]);
+    auto Right = math::v3(GameCamera.ViewMatrix[0][0],
+                          GameCamera.ViewMatrix[0][1],
+                          GameCamera.ViewMatrix[0][2]);
+    
+    auto Middle = math::v3(0.0f, 0.0f, -1.0f);
+    
+    Middle = Inverse(GameCamera.ProjectionMatrix) * Middle;
+    Middle = Inverse(GameCamera.ViewMatrix) * Middle;
+    
+    auto MouseX = (2.0f * InputController->MouseX) / Renderer.ViewportWidth - 1.0f;
+    auto MouseY = 1.0f - (2.0f * InputController->MouseY / Renderer.ViewportHeight);
+    
+    auto Mouse = Inverse(GameCamera.ProjectionMatrix) * math::v3((r32)MouseX, (r32)MouseY, 1.0f);
+    Mouse = Inverse(GameCamera.ViewMatrix) * Mouse;
+    
+    auto TempRay = math::v4(Mouse - Middle, 0.0f);
+    TempRay = Normalize(TempRay);
+    Ray = TempRay.xyz;
+    
+    auto D = math::Distance(Mouse, Middle);
+    
+    PushLine(Renderer, Middle, Middle + Ray * D, 5.0f, math::rgba(1.0f, 0.0f, 0.0f, 1.0f));
+    
+    PushLine(Renderer, Middle, Middle + Forward * 40.0f, 5.0f, math::rgba(0.0f, 0.0f, 1.0f, 1.0f));
+    
+    PushLine(Renderer, Middle, Middle + Up * 40.0f, 5.0f, math::rgba(0.0f, 0.0f, 1.0f, 1.0f));
+    
+    PushLine(Renderer, Middle, Middle + Right * 40.0f, 5.0f, math::rgba(0.0f, 1.0f, 0.0f, 1.0f));
+    
+    GameState->Models[1].Position = Middle + Ray * D / 10.0f;
+    auto P = GameState->Models[1].Position;
+    
+    //DEBUG_PRINT("Pos: (%f, %f, %f)\n", GameState->PlayerModel.Position.x, GameState->PlayerModel.Position.y, GameState->PlayerModel.Position.z);
+    
+    auto Dist = Middle + Ray * -50.0f;
+    
+    //DEBUG_PRINT("Mouse: (%f, %f, %f)\n", Mouse.x, Mouse.y, Mouse.z);
+    //DEBUG_PRINT("Middle: (%f, %f, %f)\n", Middle.x, Middle.y, Middle.z);
     DEBUG_PRINT("Ray: (%f, %f, %f)\n", Ray.x, Ray.y, Ray.z);
-    
-    //Ray = math::v3(-1.0f, 1.0f, 1.0f);
-    //Ray = Normalize(Ray);
-    //auto Ray = CastRay(InputController->MouseX, InputController->MouseY, Model, GameCamera.ProjectionMatrix, Renderer.V);
-    
-    PushLine(Renderer, CamPos, CamPos + Ray * 500.0f, 5.0f, math::rgba(1.0f, 0.0f, 0.0f, 1.0f));
-    
-    GameState->Models[1].Position = CamPos + Ray * 10.0f;
-    
-    auto R = 10.0f;
-    auto Pos = GameState->PlayerModel.Position;
-    auto B = Dot(Ray, GameCamera.Center - Pos);
-    auto C = Dot(GameCamera.Center - Pos, GameCamera.Center - Pos) - (R * R);
-    
-    auto T = -B + sqrt(B * B - C);
-    //DEBUG_PRINT("T: %f\n", T);
     
     InputController->CurrentCharacter = 0;
     GameState->ClearTilePositionFrame = !GameState->ClearTilePositionFrame;

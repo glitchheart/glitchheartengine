@@ -1,27 +1,37 @@
 enum Camera_Flags
 {
-    CFlag_Isometric = (1 << 0),
-    CFlag_Orthographic = (1 << 1),
-    CFlag_Perspective = (1 << 2),
+    CFlag_Orthographic = (1 << 0),
+    CFlag_Perspective = (1 << 1),
 };
 
 // @Incomplete
-static inline void CameraTransform(renderer& Renderer, camera& Camera, math::v3 Target, r32 Zoom, r32 Near, r32 Far, u32 CameraFlags)
+static inline void CameraTransform(renderer& Renderer, camera& Camera, math::v3 Position = math::v3(), math::quat Orientation = math::quat(), math::v3 Target = math::v3(), r32 Zoom = 1.0f, r32 Near = -1.0f, r32 Far = 1.0f, u32 CameraFlags = CFlag_Orthographic)
 {
     if(CameraFlags & CFlag_Orthographic)
     {
         Camera.ProjectionMatrix = math::Ortho(0.0f, Renderer.Viewport[2] / Zoom, 0.0f, Renderer.Viewport[3] / Zoom, Near, Far);
         Camera.ViewMatrix = math::m4(1.0f);
         
-        Camera.ViewMatrix = math::Translate(Camera.ViewMatrix, math::v3(-Camera.Center.x, Camera.Center.y, -Camera.Center.z));
-        /*
-        if(CameraFlags & CFlag_Isometric)
+        if(!IsIdentity(Orientation))
         {
-            Camera.ViewMatrix = math::Rotate(Camera.ViewMatrix, 45.0f, math::v3(0,1,0));
-            Camera.ViewMatrix = math::Rotate(Camera.ViewMatrix, 35.264f, math::v3(1,0,0));
+            Camera.ViewMatrix = ToMatrix(Orientation) * Camera.ViewMatrix;
         }
-        */
+        
+        auto Dist = sqrt(1.0f / 3.0f);
+        
+        Camera.ViewMatrix = math::LookAt(math::v3(Dist, Dist, Dist), math::v3(0.0f));
+        
+        auto Pos = math::YRotate(-45.0f) * Position;
+        
+        auto Factor = 1.0f - 35.264f / 90.0f;
+        
+        Camera.ViewMatrix = math::Translate(Camera.ViewMatrix, math::v3(-Pos.x, Pos.z * Factor, 0.0f));
+        
         Camera.ViewMatrix = math::Translate(Camera.ViewMatrix, math::v3(Renderer.Viewport[2] / Zoom / 2, Renderer.Viewport[3] / Zoom / 2, 0.0f));
+        
+        Camera.Position = Position;
+        Camera.Orientation = Orientation;
+        Camera.Target = Target;
     }
     else if(CameraFlags & CFlag_Perspective)
     {
@@ -31,10 +41,6 @@ static inline void CameraTransform(renderer& Renderer, camera& Camera, math::v3 
         Camera.ViewMatrix = math::Translate(Camera.ViewMatrix, Camera.Center);
         
         Camera.ViewMatrix = math::LookAt(Camera.Center, math::v3(-Target.x, Target.y, -Target.z));
-        
-        if(CameraFlags & CFlag_Isometric)
-        {
-        }
     }
 }
 
