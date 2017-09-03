@@ -1447,6 +1447,11 @@ namespace math
         }
     };
     
+    inline b32 IsIdentity(quat Q)
+    {
+        return Q.X == 0.0f && Q.Y == 0.0f && Q.Z == 0.0f && Q.W == 1.0f;
+    }
+    
     inline quat operator* (r32 V, quat Q)
     {
         quat Result(Q);
@@ -1941,6 +1946,10 @@ namespace math
     {
         v2 Result(V);
         auto L = Length(V);
+        if(L == 0.0f)
+        {
+            return Result;
+        }
         Result /= L;
         return Result;
     }
@@ -1949,6 +1958,10 @@ namespace math
     {
         v3 Result(V);
         auto L = Length(V);
+        if(L == 0.0f)
+        {
+            return Result;
+        }
         Result /= L;
         return Result;
     }
@@ -1957,6 +1970,10 @@ namespace math
     {
         v4 Result(V);
         auto L = Length(V);
+        if(L == 0.0f)
+        {
+            return Result;
+        }
         Result /= L;
         return Result;
     }
@@ -2047,11 +2064,11 @@ namespace math
         return Result;
     }
     
-    inline m4 Rotate(m4 In, r32 A, v3 Axis)
+    inline quat Rotate(quat In, r32 A, v3 Axis)
     {
-        m4 Result(In);
-        auto R = CreateRotation(A * Axis.X, A * Axis.Y, A * Axis.Z);
-        Result = R * Result;
+        quat Result(In);
+        auto Q = math::quat(Axis.x, Axis.y, Axis.z, DEGREE_IN_RADIANS * A);
+        Result = Result * Q;
         return Result;
     }
     
@@ -2098,9 +2115,9 @@ namespace math
     inline m4 LookAt(v3 P, v3 T)
     {
         auto F = Normalize(P - T);
-        auto U = v3(0.0f,1.0f,0.0f);
-        auto R = Cross(U, F);
-        U = Cross(F, R);
+        auto U = v3(0.0f, 1.0f, 0.0f);
+        auto R = Normalize(Cross(U, F));
+        U = Normalize(Cross(F, R));
         
         m4 Result(
             R.x, R.y, R.z, 0,
@@ -2135,17 +2152,7 @@ namespace math
         
         return Result;
     }
-    /*
-    inline void Perspective(r32& AngleOfView, r32 AspectRatio, r32 Near,
-    r32 Far, r32& Bottom, r32& Top, r32& Left, r32& Right)
-    {
-    r32 Scale = tan(AngleOfView * 0.5f * PI / 180) * Near;
-    Right = AspectRatio  * Scale;
-    Left = -Right;
-    Top = Scale;
-    Bottom = -Top;
-    }
-    */
+    
     inline m4 Frustum(r32 Bottom, r32 Top, r32 Left, r32 Right,
                       r32 Near, r32 Far)
     {
@@ -2253,6 +2260,7 @@ namespace math
         r32 Y = 1.0f - (2.0f * MouseY) / Height;
         r32 Z = 1.0f; // This is not necessarily needed here yet
         v3 RayNDC = v3(X, Y, Z);
+        //DEBUG_PRINT("(%f, %f)\n", X, Y);
         
         // We don't need to reverse the perspective division
         v4 RayClip = v4(RayNDC.xy, -1.0, 1.0);
@@ -2261,25 +2269,13 @@ namespace math
         v4 RayEye = Inverse(P) * RayClip;
         
         // Point the ray the right direction in Z
-        RayEye = v4(RayEye.xy, Near, 0.0);
+        RayEye = v4(RayEye.xy, -1.0f, 0.0);
         
         // Convert to world coordinates
         v3 RayWorld = (Inverse(V) * RayEye).xyz;
         RayWorld = Normalize(RayWorld);
         
         return RayWorld;
-    }
-    
-    //@Incomplete: This definitely didn't seem to work at all
-    inline v3 CastRay(r32 MouseX, r32 MouseY, m4 V, m4 P, v4i Viewport)
-    {
-        auto PosNear = UnProject(math::v3(MouseX, Viewport.w - MouseY, 0.0f), V, P, Viewport);
-        auto PosFar = UnProject(math::v3(MouseX, Viewport.w - MouseY, 1.0f), V, P, Viewport);
-        
-        auto Ray = PosFar - PosNear;
-        Ray = Normalize(Ray);
-        
-        return Ray;
     }
     
     using rgb = v3;
