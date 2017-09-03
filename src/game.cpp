@@ -760,6 +760,7 @@ extern "C" UPDATE(Update)
     auto MouseY = 1.0f - (2.0f * InputController->MouseY / Renderer.ViewportHeight);
     
     auto Mouse = Inverse(GameCamera.ProjectionMatrix) * math::v3((r32)MouseX, (r32)MouseY, 1.0f);
+    Mouse.z = -1.0f;
     Mouse = Inverse(GameCamera.ViewMatrix) * Mouse;
     
     auto TempRay = math::v4(Mouse - Middle, 0.0f);
@@ -768,24 +769,15 @@ extern "C" UPDATE(Update)
     
     auto D = math::Distance(Mouse, Middle);
     
-    PushLine(Renderer, Middle, Middle + Ray * D, 5.0f, math::rgba(1.0f, 0.0f, 0.0f, 1.0f));
+    PushLine(Renderer, Middle, Middle + Ray * 5000.0f, 1.0f, math::rgba(1.0f, 0.0f, 1.0f, 1.0f));
     
-    PushLine(Renderer, Middle, Middle + Forward * 40.0f, 5.0f, math::rgba(0.0f, 0.0f, 1.0f, 1.0f));
+    PushLine(Renderer, Middle, Middle + Forward * 40.0f, 1.0f, math::rgba(0.0f, 0.0f, 1.0f, 1.0f));
     
-    PushLine(Renderer, Middle, Middle + Up * 40.0f, 5.0f, math::rgba(0.0f, 0.0f, 1.0f, 1.0f));
+    PushLine(Renderer, Middle, Middle + Up * 40.0f, 1.0f, math::rgba(0.0f, 0.0f, 1.0f, 1.0f));
     
-    PushLine(Renderer, Middle, Middle + Right * 40.0f, 5.0f, math::rgba(0.0f, 1.0f, 0.0f, 1.0f));
+    PushLine(Renderer, Middle, Middle + Right * 40.0f, 1.0f, math::rgba(0.0f, 1.0f, 0.0f, 1.0f));
     
-    GameState->Models[1].Position = Middle + Ray * D / 10.0f;
-    auto P = GameState->Models[1].Position;
-    
-    //DEBUG_PRINT("Pos: (%f, %f, %f)\n", GameState->PlayerModel.Position.x, GameState->PlayerModel.Position.y, GameState->PlayerModel.Position.z);
-    
-    auto Dist = Middle + Ray * -50.0f;
-    
-    //DEBUG_PRINT("Mouse: (%f, %f, %f)\n", Mouse.x, Mouse.y, Mouse.z);
-    //DEBUG_PRINT("Middle: (%f, %f, %f)\n", Middle.x, Middle.y, Middle.z);
-    DEBUG_PRINT("Ray: (%f, %f, %f)\n", Ray.x, Ray.y, Ray.z);
+    GameState->Models[1].Position = Middle + Ray * 100.0f;
     
     InputController->CurrentCharacter = 0;
     GameState->ClearTilePositionFrame = !GameState->ClearTilePositionFrame;
