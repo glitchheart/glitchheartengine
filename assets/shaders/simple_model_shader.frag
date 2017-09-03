@@ -48,7 +48,7 @@ struct PointLight
 	vec4 specular;	
 };
 
-#define MAX_LIGHTS 20
+#define MAX_LIGHTS 150
 
 layout(std140) uniform spotlights
 { 
