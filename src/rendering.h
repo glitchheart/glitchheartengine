@@ -141,36 +141,9 @@ struct material
     math::rgba Color;
 };
 
-struct animation_frame
+struct bone
 {
-    r32 TimeStamp;
-    math::v3 Translation;
-    math::quat Rotation;
-    math::v3 Scale;
-};
-
-struct joint_animation
-{
-    i32 JointIndex;
-    animation_frames* Frames;
-    i32 FrameCount;
-};
-
-struct skeletal_animation
-{
-    joint_transforms JointTransforms[MAX_JOINTS];
-    i32 JointCount;
-};
-
-struct joint
-{
-    math::v3 Translation;
-    math::quat Rotation;
-    math::v3 Scale;
-    math::m4 InverseBindMatrix;
-    
-    u32 ChildCount;
-    u32 Children[20];
+    math::m4 Transform;
 };
 
 struct mesh
@@ -190,9 +163,6 @@ struct model
     
     mesh Meshes[MAX_MESHES];
     i32 MeshCount;
-    
-    joint Joints[MAX_JOINTS];
-    i32 JointCount;
 };
 
 struct mesh_render_data
@@ -352,7 +322,7 @@ struct buffer_data
 {
     r32* VertexBuffer;
     long VertexBufferSize;
-    unsigned short* IndexBuffer;
+    u32* IndexBuffer;
     i32 IndexBufferCount;
     long IndexBufferSize;
     b32 HasNormals;

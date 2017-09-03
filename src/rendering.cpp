@@ -290,15 +290,15 @@ static void LoadModel(renderer& Renderer, char* FilePath, model* Model)
                Format.Format[2] == 'S' &&
                Format.Format[3] == 'H')
             {
-                buffer_data Data = {};
+                /*buffer_data Data = {};
                 
                 mesh_data_info MeshInfo;
                 
                 fread(&MeshInfo, sizeof(mesh_data_info), 1, File);
                 
-                unsigned short* IndexBuffer = PushTempSize(MeshInfo.IndexBufferByteLength, unsigned short);
+                u32* IndexBuffer = PushTempSize(MeshInfo.IndexBufferByteLength, unsigned short);
                 fread(IndexBuffer, MeshInfo.IndexBufferByteLength, 1, File);
-                CopyTemp(Data.IndexBuffer, IndexBuffer, MeshInfo.IndexBufferByteLength, unsigned short);
+                CopyTemp(Data.IndexBuffer, IndexBuffer, MeshInfo.IndexBufferByteLength, u32);
                 
                 r32* VertexBuffer = PushTempSize(MeshInfo.VertexBufferByteLength, r32);
                 fread(VertexBuffer, MeshInfo.VertexBufferByteLength, 1, File);
@@ -337,17 +337,14 @@ static void LoadModel(renderer& Renderer, char* FilePath, model* Model)
                     Format.Format[2] == 'I' &&
                     Format.Format[3] == 'N')
             {
-                joint_header JointHeader;
-                fread(&JointHeader, sizeof(joint_header), 1, File);
-                fread(Model->Joints, sizeof(joint) * JointHeader.JointCount, 1, File);
-                Model->JointCount = JointHeader.JointCount;
+            
             }
             else if(Format.Format[0] == 'A' &&
                     Format.Format[1] == 'N' &&
                     Format.Format[2] == 'I' &&
                     Format.Format[3] == 'M')
             {
-                
+            
                 /*animation_header AHeader;
                 fread(&AHeader, sizeof(animation_header), 1, File);
                 
@@ -371,6 +368,79 @@ static void LoadModel(renderer& Renderer, char* FilePath, model* Model)
         Model->MeshCount = MeshCount;
         printf("Mesh count %d\n", MeshCount);
         
+        fclose(File);
+    }
+    else
+    {
+        printf("Model file not found: %s", FilePath);
+    }
+}
+
+
+static void LoadGLIMModel(renderer& Renderer, char* FilePath, model* Model)
+{
+    model_header Header = {};
+    
+    FILE *File = fopen(FilePath, "rb");
+    if(File)
+    {
+        fread(&Header,sizeof(model_header), 1, File);
+        
+        if(strcmp(Header.Version, "1.5") != 0)
+        {
+            ERR("Wrong file version. Expected version 1.5");
+            return;
+        }
+        
+        model_data ModelData;
+        fread(&ModelData, sizeof(model_data), 1, File);
+        
+        mesh_data* MeshData;
+        MeshData = PushTempSize(ModelData.MeshChunkSize, mesh_data);
+        fread(MeshData, ModelData.MeshChunkSize, 1, File);
+        
+        r32* VertexBuffer = PushTempSize(ModelData.VertexBufferChunkSize, r32);
+        fread(VertexBuffer, ModelData.VertexBufferChunkSize, 1, File);
+        u32* IndexBuffer = PushTempSize(ModelData.IndexBufferChunkSize, u32);
+        fread(IndexBuffer, ModelData.IndexBufferChunkSize, 1, File);
+        
+        bone* Bones = PushTempSize(ModelData.BoneChunkSize, bone);
+        fread(Bones, ModelData.BoneChunkSize, 1, File);
+        
+        
+        buffer_data Data = {};
+        
+        CopyTemp(Data.VertexBuffer, VertexBuffer, ModelData.VertexBufferChunkSize, r32);
+        CopyTemp(Data.IndexBuffer, IndexBuffer, ModelData.IndexBufferChunkSize, u32);
+        
+        // @Incomplete: Do we really always have normals and uvs?????
+        Data.HasNormals = true;
+        Data.HasUVs = true;
+        
+        Data.VertexBufferSize = ModelData.VertexBufferChunkSize;
+        Data.IndexBufferSize = ModelData.IndexBufferChunkSize;
+        Data.IndexBufferCount = ModelData.NumIndices;
+        
+        Model->Meshes[0].BufferHandle = Renderer.BufferCount++;
+        
+        // @Incomplete: IMPORTANT
+        // @Incomplete: IMPORTANT
+        // @Incomplete: IMPORTANT
+        // @Incomplete: IMPORTANT
+        // @Incomplete: IMPORTANT
+        // @Incomplete: IMPORTANT
+        Model->Meshes[0].Material.HasTexture = false;
+        
+        //if(Model->Meshes[MeshCount].Material.HasTexture)
+        //Model->Meshes[MeshCount].Material.TextureHandle = Renderer.TextureMap[MHeader.TextureFile]->Handle;
+        
+        Model->Meshes[0].Material.Color = math::rgba(1, 1, 1, 1);
+        
+        //Assert(MeshCount <= MAX_MESHES);
+        
+        Renderer.Buffers[Renderer.BufferCount - 1] = Data;
+        
+        Model->MeshCount = 1;
         fclose(File);
     }
     else

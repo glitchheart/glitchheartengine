@@ -7,6 +7,28 @@ struct model_header
     char Version[4];
 };
 
+struct mesh_data
+{
+    i32 BaseVertex;
+    i32 BaseIndex;
+    i32 MaterialIndex;
+    i32 NumIndices;
+};
+
+struct model_data
+{
+    i32 NumMeshes;
+    i32 NumVertices;
+    i32 NumIndices;
+    i32 NumBones;
+    i32 NumMaterials;
+    
+    long MeshChunkSize;
+    long VertexBufferChunkSize;
+    long IndexBufferChunkSize;
+    long BoneChunkSize;
+};
+
 struct bone_header
 {
     long NumBones;
@@ -58,14 +80,6 @@ struct mesh_data_info
     
     //b32 HasTexture; // @Incomplete: Load these at the same time as the buffers
     //char TextureName[100];
-};
-
-struct mesh_data
-{
-    mesh_data_info Info;
-    u32* IndexBuffer;
-    r32* VertexBuffer;
-    //vertex_attribute* VertexAttributes;
 };
 
 struct chunk_format
