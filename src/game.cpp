@@ -182,9 +182,10 @@ extern "C" UPDATE(Update)
     {
         
         model PlayerModel;
-        LoadModel(Renderer, "../assets/models/sss.modl", &PlayerModel);
+        LoadModel(Renderer, "../assets/models/skinned_wolf.modl", &PlayerModel);
         PlayerModel.Position = math::v3(0, 0, 0);
-        PlayerModel.Scale = math::v3(0.05, 0.05, 0.05);
+        PlayerModel.Scale = math::v3(10, 10, 10);
+        
         GameState->PlayerModel = PlayerModel;
         
         LoadTextures(Renderer, &GameState->TotalArena);
@@ -464,7 +465,6 @@ extern "C" UPDATE(Update)
         }
     }
     
-    
     if(GameState->GameMode == Mode_MainMenu)
     {
         if(KEY_DOWN(Key_Up))
@@ -732,18 +732,18 @@ extern "C" UPDATE(Update)
     
     GameCamera.P += math::v3((r32)(X * DeltaTime * PanSpeed), (r32)(Y * DeltaTime * PanSpeed), 0.0f);
     
-    CameraTransform(Renderer, GameCamera, GameCamera.Center, GameCamera.Zoom, -200.0f, 2000.0f, CFlag_Isometric | CFlag_Orthographic);
+    CameraTransform(Renderer, GameCamera, GameCamera.Center, GameCamera.Zoom, -200.0f, 2000.0f,  CFlag_Orthographic);
     
     InputController->CurrentCharacter = 0;
     GameState->ClearTilePositionFrame = !GameState->ClearTilePositionFrame;
     GetActionButtonsForQueue(InputController);
     
     GameUpdateStruct->EntityCount = GameState->EntityCount;
-    memcpy(&GameUpdateStruct->EntityPositions,&GameState->EntityPositions,sizeof(math::v2) * NUM_ENTITIES);
+    memcpy(&GameUpdateStruct->EntityPositions, &GameState->EntityPositions, sizeof(math::v2) * NUM_ENTITIES);
     
-    GameState->PlayerModel.CurrentPose = Renderer.AnimationCycles[0].Frames[100];
+    //GameState->PlayerModel.CurrentPose = Renderer.AnimationCycles[0].Frames[10];
     
-    CalculatePose(GameState->PlayerModel.Bones, &GameState->PlayerModel.CurrentPose, 0, -1);
+    //CalculatePose(GameState->PlayerModel.Bones, &GameState->PlayerModel.CurrentPose, 0, -1);
     
     PushDirectionalLight(Renderer, math::v3(-0.2, -1.0, -0.3), 
                          math::v3(0.1f, 0.1f, 0.1f), math::v3(0.2, 0.2, 0.2), math::v3(0.1, 0.1, 0.1));

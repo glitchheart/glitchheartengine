@@ -240,8 +240,8 @@ static void PushModel(renderer& Renderer, model& Model)
     }
     
     RenderCommand->Model.HandleCount = Model.MeshCount;
-    RenderCommand->Model.BoneCount = Model.BoneCount;
-    memcpy(RenderCommand->Model.BoneTransforms, Model.CurrentPose.BoneTransforms, sizeof(bone_transform) * MAX_BONES);
+    //RenderCommand->Model.BoneCount = Model.BoneCount;
+    //memcpy(RenderCommand->Model.BoneTransforms, Model.CurrentPose.BoneTransforms, sizeof(bone_transform) * MAX_BONES);
     RenderCommand->Model.Color = math::rgba(1.0f, 1.0f, 1.0f, 1.0f);
     RenderCommand->IsUI = false;
 }
@@ -251,7 +251,7 @@ static void LoadBuffer(renderer& Renderer, r32* Buffer, i32 BufferSize, i32* Buf
     buffer_data Data = {};
     Data.VertexBuffer = Buffer;
     Data.VertexBufferSize = BufferSize;
-    Data.IndexBufferSize = 0;
+    Data.IndexBufferCount = 0;
     Renderer.Buffers[Renderer.BufferCount] = Data;
     
     *BufferHandle = Renderer.BufferCount++;
@@ -260,10 +260,7 @@ static void LoadBuffer(renderer& Renderer, r32* Buffer, i32 BufferSize, i32* Buf
 
 static b32 IsEOF(chunk_format& Format)
 {
-    return Format.Format[0] == 'E' &&
-        Format.Format[1] == 'O' &&
-        Format.Format[2] == 'F' && 
-        Format.Format[3] == ' ';
+    return strcmp(Format.Format, "EOF") == 0;
 }
 
 static void LoadModel(renderer& Renderer, char* FilePath, model* Model)
@@ -275,10 +272,9 @@ static void LoadModel(renderer& Renderer, char* FilePath, model* Model)
     {
         fread(&Header,sizeof(model_header), 1, File);
         
-        if(Header.Version[0] != '1' ||
-           Header.Version[1] != '3')
+        if(strcmp(Header.Version, "1.4") != 0)
         {
-            ERR("Wrong file version. Expected version 1.2");
+            ERR("Wrong file version. Expected version 1.4");
             return;
         }
         
@@ -296,37 +292,38 @@ static void LoadModel(renderer& Renderer, char* FilePath, model* Model)
             {
                 buffer_data Data = {};
                 
-                mesh_header MHeader;
+                mesh_data_info MeshInfo;
                 
-                fread(&MHeader, sizeof(mesh_header), 1, File);
+                fread(&MeshInfo, sizeof(mesh_data_info), 1, File);
                 
-                r32* VertexBuffer = PushTempSize(MHeader.VertexChunkSize,  r32);
+                unsigned short* IndexBuffer = PushTempSize(MeshInfo.IndexBufferByteLength, unsigned short);
+                fread(IndexBuffer, MeshInfo.IndexBufferByteLength, 1, File);
+                CopyTemp(Data.IndexBuffer, IndexBuffer, MeshInfo.IndexBufferByteLength, unsigned short);
                 
-                fread(VertexBuffer, MHeader.VertexChunkSize, 1, File);
+                r32* VertexBuffer = PushTempSize(MeshInfo.VertexBufferByteLength, r32);
+                fread(VertexBuffer, MeshInfo.VertexBufferByteLength, 1, File);
+                CopyTemp(Data.VertexBuffer, VertexBuffer, MeshInfo.VertexBufferByteLength, r32);
                 
-                Data.HasNormals = MHeader.NumNormals > 0;
-                Data.HasUVs = MHeader.NumUVs > 0;
+                // @Incomplete: Do we really always have normals and uvs?????
+                Data.HasNormals = true;
+                Data.HasUVs = true;
                 
-                i32* IndexBuffer = PushTempSize(MHeader.FacesChunkSize, i32);
-                
-                fread(IndexBuffer, MHeader.FacesChunkSize, 1, File);
-                
-                CopyTemp(Data.VertexBuffer, VertexBuffer, MHeader.VertexChunkSize, r32);
-                
-                i32 BoneInfoSize = 9;
-                
-                Data.VertexBufferSize = MHeader.NumVertices * (3 + BoneInfoSize) + MHeader.NumNormals * 3 + MHeader.NumUVs * 2;
-                
-                CopyTemp(Data.IndexBuffer, IndexBuffer, MHeader.FacesChunkSize, u32);
-                
-                Data.IndexBufferSize = MHeader.NumFaces * 3;
+                Data.VertexBufferSize = MeshInfo.VertexBufferByteLength;
+                Data.IndexBufferSize = MeshInfo.IndexBufferByteLength;
+                Data.IndexBufferCount = MeshInfo.IndexCount;
                 
                 Model->Meshes[MeshCount].BufferHandle = Renderer.BufferCount++;
                 
-                Model->Meshes[MeshCount].Material.HasTexture = MHeader.HasTexture;
+                // @Incomplete: IMPORTANT
+                // @Incomplete: IMPORTANT
+                // @Incomplete: IMPORTANT
+                // @Incomplete: IMPORTANT
+                // @Incomplete: IMPORTANT
+                // @Incomplete: IMPORTANT
+                Model->Meshes[MeshCount].Material.HasTexture = false;
                 
-                if(Model->Meshes[MeshCount].Material.HasTexture)
-                    Model->Meshes[MeshCount].Material.TextureHandle = Renderer.TextureMap[MHeader.TextureFile]->Handle;
+                //if(Model->Meshes[MeshCount].Material.HasTexture)
+                //Model->Meshes[MeshCount].Material.TextureHandle = Renderer.TextureMap[MHeader.TextureFile]->Handle;
                 
                 Model->Meshes[MeshCount].Material.Color = math::rgba(1, 1, 1, 1);
                 MeshCount++;
@@ -335,23 +332,22 @@ static void LoadModel(renderer& Renderer, char* FilePath, model* Model)
                 
                 Renderer.Buffers[Renderer.BufferCount - 1] = Data;
             }
-            else if(Format.Format[0] == 'B' &&
-                    Format.Format[1] == 'O' &&
-                    Format.Format[2] == 'N' &&
-                    Format.Format[3] == 'E')
+            else if(Format.Format[0] == 'S' &&
+                    Format.Format[1] == 'K' &&
+                    Format.Format[2] == 'I' &&
+                    Format.Format[3] == 'N')
             {
-                bone_header BHeader;
-                fread(&BHeader, sizeof(bone_header), 1, File);
-                Model->BoneCount = BHeader.NumBones;
-                
-                fread(Model->Bones, sizeof(bone) * Model->BoneCount, 1, File);
+                joint_header JointHeader;
+                fread(&JointHeader, sizeof(joint_header), 1, File);
+                fread(Model->Joints, sizeof(joint) * JointHeader.JointCount, 1, File);
+                Model->JointCount = JointHeader.JointCount;
             }
             else if(Format.Format[0] == 'A' &&
                     Format.Format[1] == 'N' &&
                     Format.Format[2] == 'I' &&
                     Format.Format[3] == 'M')
             {
-                animation_header AHeader;
+                /*animation_header AHeader;
                 fread(&AHeader, sizeof(animation_header), 1, File);
                 
                 animation_cycle AnimationCycle;
@@ -361,7 +357,7 @@ static void LoadModel(renderer& Renderer, char* FilePath, model* Model)
                 
                 fread(AnimationCycle.Frames, sizeof(animation_frame) * AnimationCycle.NumFrames, 1, File);
                 
-                Renderer.AnimationCycles[Renderer.AnimationCycleCount++] = AnimationCycle;
+                Renderer.AnimationCycles[Renderer.AnimationCycleCount++] = AnimationCycle;*/
             }
             else
             {

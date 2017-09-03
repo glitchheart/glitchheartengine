@@ -19,6 +19,11 @@ struct animation_header
     i32 NumFrames;
 };
 
+struct joint_header
+{
+    i32 JointCount;
+};
+
 struct mesh_header
 {
     long NumVertices;
@@ -30,6 +35,37 @@ struct mesh_header
     long FacesChunkSize;
     bool HasTexture;
     char TextureFile[100];
+};
+
+struct vertex_attribute
+{
+    i32 Position;
+    long Type;
+    long Stride;
+    long Offset;
+};
+
+struct mesh_data_info
+{
+    long IndexBufferTarget; // If it's GL_UNSIGNED_SHORT etc.
+    i32 IndexCount;
+    long IndexBufferByteLength;
+    long VertexBufferByteLength;
+    
+    b32 HasSkin;
+    //i32 VertexAttributeCount;
+    // @Incomplete: Skinning and animation
+    
+    //b32 HasTexture; // @Incomplete: Load these at the same time as the buffers
+    //char TextureName[100];
+};
+
+struct mesh_data
+{
+    mesh_data_info Info;
+    u32* IndexBuffer;
+    r32* VertexBuffer;
+    //vertex_attribute* VertexAttributes;
 };
 
 struct chunk_format

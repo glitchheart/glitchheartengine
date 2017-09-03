@@ -3,7 +3,7 @@
 
 #define PIXELS_PER_UNIT 32
 #define MAX_MESHES 60
-#define MAX_BONES 100
+#define MAX_JOINTS 100
 
 #define MAX_LIGHTS 20
 
@@ -141,45 +141,23 @@ struct material
     math::rgba Color;
 };
 
-struct bone
-{
-    char Name[30];
-    u32 Id;
-    i32 Parent;
-    u32 Children[5];
-    i32 ChildCount;
-    u32 ParentedNodes[5];
-    
-    math::v3 Translation;
-    math::v3 Scale;
-    math::quat Rotation;
-    
-    math::m4 BindInverse;
-    
-    math::quat RotationOrientation;
-    math::quat BoneOrientation;
-};
-
-struct bone_transform
-{
-    math::v3 Translation;
-    math::quat Rotation;
-    math::v3 Scale;
-    math::m4 Transformation;
-};
-
 struct animation_frame
 {
-    r64 TimeStamp;
-    i32 BoneCount;
-    bone_transform BoneTransforms[MAX_BONES]; // @Incomplete: We might want to create a dynamic array
+    r32 TimeStamp;
+    math::v3 Translation;
+    math::quat Rotation;
+    math::v3 Scale;
 };
 
-struct animation_cycle
+struct joint
 {
-    r64 TotalTime;
-    i32 NumFrames;
-    animation_frame* Frames;
+    math::v3 Translation;
+    math::quat Rotation;
+    math::v3 Scale;
+    math::m4 InverseBindMatrix;
+    
+    u32 ChildCount;
+    u32 Children[20];
 };
 
 struct mesh
@@ -200,10 +178,8 @@ struct model
     mesh Meshes[MAX_MESHES];
     i32 MeshCount;
     
-    bone Bones[MAX_BONES];
-    i32 BoneCount;
-    
-    animation_frame CurrentPose;
+    joint Joints[MAX_JOINTS];
+    i32 JointCount;
 };
 
 struct mesh_render_data
@@ -297,8 +273,6 @@ struct render_command
             mesh_render_data RenderData[MAX_MESHES];
             i32 HandleCount;
             math::rgba Color;
-            bone_transform BoneTransforms[MAX_BONES]; // @Speed: This is so inefficient
-            i32 BoneCount;
         } Model;
     };
     render_command() {}
@@ -364,10 +338,10 @@ GENERIC_MAP(texture_data, texture_data*, char*, StrCmp, NULL, "%s", STR_ASSIGN);
 struct buffer_data
 {
     r32* VertexBuffer;
-    i32 VertexBufferSize;
-    u32* IndexBuffer;
-    i32 IndexBufferSize;
-    
+    long VertexBufferSize;
+    unsigned short* IndexBuffer;
+    i32 IndexBufferCount;
+    long IndexBufferSize;
     b32 HasNormals;
     b32 HasUVs;
     
@@ -412,8 +386,6 @@ struct renderer
     math::rgba ClearColor;
     
     memory_arena AnimationArena;
-    animation_cycle AnimationCycles[1];
-    i32 AnimationCycleCount;
 };
 
 #endif
