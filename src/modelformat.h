@@ -37,13 +37,20 @@ struct bone_header
 
 struct animation_header
 {
-    r64 TotalTime;
-    i32 NumFrames;
+    i32 NumAnimations;
 };
 
-struct joint_header
+struct animation_channel_header
 {
-    i32 JointCount;
+    i32 NumBoneChannels;
+};
+
+struct bone_animation_header
+{
+    i32 BoneIndex;
+    i32 NumPositionChannels;
+    i32 NumRotationChannels;
+    i32 NumScalingChannels;
 };
 
 struct mesh_header

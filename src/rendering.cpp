@@ -404,9 +404,8 @@ static void LoadGLIMModel(renderer& Renderer, char* FilePath, model* Model)
         u32* IndexBuffer = PushTempSize(ModelData.IndexBufferChunkSize, u32);
         fread(IndexBuffer, ModelData.IndexBufferChunkSize, 1, File);
         
-        bone* Bones = PushTempSize(ModelData.BoneChunkSize, bone);
-        fread(Bones, ModelData.BoneChunkSize, 1, File);
-        
+        Model->Bones = PushTempSize(ModelData.BoneChunkSize, bone);
+        fread(Model->Bones, ModelData.BoneChunkSize, 1, File);
         
         buffer_data Data = {};
         
@@ -441,6 +440,52 @@ static void LoadGLIMModel(renderer& Renderer, char* FilePath, model* Model)
         Renderer.Buffers[Renderer.BufferCount - 1] = Data;
         
         Model->MeshCount = 1;
+        
+        // Load animations
+        animation_header AHeader;
+        fread(&AHeader, sizeof(animation_header), 1, File);
+        
+        Model->AnimationCount = AHeader.NumAnimations;
+        Model->Animations = PushArray(&Renderer.AnimationArena, AHeader.NumAnimations, skeletal_animation);
+        
+        for(i32 Index = 0; Index < Model->AnimationCount; Index++)
+        {
+            animation_channel_header ACHeader;
+            fread(&ACHeader, sizeof(animation_channel_header), 1, File);
+            
+            skeletal_animation* Animation = &Model->Animations[Index];
+            Animation->NumBoneChannels = ACHeader.NumBoneChannels;
+            
+            Animation->BoneChannels = PushArray(&Renderer.AnimationArena, Animation->NumBoneChannels, bone_channel);
+            
+            for(i32 BoneChannelIndex = 0; BoneChannelIndex < Animation->NumBoneChannels; BoneChannelIndex++)
+            {
+                bone_animation_header BAHeader;
+                fread(&BAHeader, sizeof(bone_animation_header), 1, File);
+                
+                bone_channel* BoneChannel = &Animation->BoneChannels[BoneChannelIndex];
+                BoneChannel->BoneIndex = BAHeader.BoneIndex;
+                
+                BoneChannel->PositionKeys.NumKeys = BAHeader.NumPositionChannels;
+                BoneChannel->PositionKeys.TimeStamps = PushArray(&Renderer.AnimationArena, BoneChannel->PositionKeys.NumKeys, r32);
+                BoneChannel->PositionKeys.Values = PushArray(&Renderer.AnimationArena, BoneChannel->PositionKeys.NumKeys, math::v3);
+                fread(BoneChannel->PositionKeys.TimeStamps, sizeof(r32) * BoneChannel->PositionKeys.NumKeys, 1, File);
+                fread(BoneChannel->PositionKeys.Values, sizeof(math::v3) * BoneChannel->PositionKeys.NumKeys, 1, File);
+                
+                BoneChannel->RotationKeys.NumKeys = BAHeader.NumRotationChannels;
+                BoneChannel->RotationKeys.TimeStamps = PushArray(&Renderer.AnimationArena, BoneChannel->RotationKeys.NumKeys, r32);
+                BoneChannel->RotationKeys.Values = PushArray(&Renderer.AnimationArena, BoneChannel->RotationKeys.NumKeys, math::quat);
+                fread(BoneChannel->RotationKeys.TimeStamps, sizeof(r32) * BoneChannel->RotationKeys.NumKeys, 1, File);
+                fread(BoneChannel->RotationKeys.Values, sizeof(math::quat) * BoneChannel->RotationKeys.NumKeys, 1, File);
+                
+                BoneChannel->ScalingKeys.NumKeys = BAHeader.NumScalingChannels;
+                BoneChannel->ScalingKeys.TimeStamps = PushArray(&Renderer.AnimationArena, BoneChannel->ScalingKeys.NumKeys, r32);
+                BoneChannel->ScalingKeys.Values = PushArray(&Renderer.AnimationArena, BoneChannel->ScalingKeys.NumKeys, math::v3);
+                fread(BoneChannel->ScalingKeys.TimeStamps, sizeof(r32) * BoneChannel->ScalingKeys.NumKeys, 1, File);
+                fread(BoneChannel->ScalingKeys.Values, sizeof(math::v3) * BoneChannel->ScalingKeys.NumKeys, 1, File);
+            }
+        }
+        
         fclose(File);
     }
     else
