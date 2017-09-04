@@ -771,24 +771,64 @@ extern "C" UPDATE(Update)
     TempRay = Normalize(TempRay);
     Ray = TempRay.xyz;
     
-    auto Cen = GameState->PlayerModel.Position;
-    auto Radius = 3.0f;
     
-    PushOutlinedRect(Renderer, GameState->PlayerModel.Position - math::v3(Radius / 2, -Radius / 2, 0.0f), math::v3(Radius, Radius, 1.0f), math::rgba(0.0f, 1.0f, 0.0f, 1.0f));
+    auto Radius = 3.0f;
+    auto Cen = GameState->PlayerModel.Position + math::v3(0.0f, Radius / 2.0f, 0.0f);
+    
+    
     
     auto B = Dot(Ray, Middle - Cen);
     auto C = Dot(Middle - Cen, Middle - Cen) - pow(Radius, 2);
     auto PreCalc = pow(B, 2) - C;
+    
+    if(MOUSE_DOWN(Mouse_Left))
+    {
+        GameState->SelectedModel = NULL;
+    }
     
     if(PreCalc >= 0.0f)
     {
         auto T1 = -B + sqrt(PreCalc);
         auto T2 = -B - sqrt(PreCalc);
         
-        //DEBUG_PRINT("T1: %f, T2: %f\n", T1, T2);
+        auto Pick1 = Middle + Ray * Min(T1, T2);
+        DEBUG_PRINT("Pos: (%f, %f, %f)\n", Cen.x, Cen.y, Cen.z);
+        DEBUG_PRINT("Pick1: (%f, %f, %f)\n", Pick1.x, Pick1.y, Pick1.z);
+        DEBUG_PRINT("Distance: %f\n", Distance(Cen, Pick1));
+        auto Pick2 = Middle + Ray * Max(T1, T2);
+        DEBUG_PRINT("Pick2: (%f, %f, %f)\n", Pick2.x, Pick2.y, Pick2.z);
+        DEBUG_PRINT("Distance: %f\n", Distance(Cen, Pick2));
+        auto Dist = Min(Distance(Cen, Pick1), Distance(Cen, Pick2));
         
-        auto Pick = Middle + Ray * Min(T1, T2);
-        DEBUG_PRINT("Pick: (%f, %f, %f)\n", Pick.x, Pick.y, Pick.z);
+        if(MOUSE_DOWN(Mouse_Left) && Dist < 10.0f)
+        {
+            GameState->SelectedModel = &GameState->PlayerModel;
+        }
+    }
+    
+    if(GameState->SelectedModel)
+    {
+        auto MPos = GameState->SelectedModel->Position;
+        
+        auto Or = ToMatrix(GameState->SelectedModel->Orientation);
+        
+        auto MForward = math::v3(Or[2][0],
+                                 Or[2][1],
+                                 Or[2][2]);
+        auto MUp = math::v3(Or[1][0],
+                            Or[1][1],
+                            Or[1][2]);
+        auto MRight = math::v3(Or[0][0],
+                               Or[0][1],
+                               Or[0][2]);
+        
+        PushLine(Renderer, MPos, MPos + MForward * 5.0f, 1.0f, math::rgba(1.0f, 0.0f, 0.0f, 1.0f));
+        
+        PushLine(Renderer, MPos, MPos + MUp * 5.0f, 1.0f, math::rgba(0.0f, 0.0f, 1.0f, 1.0f));
+        
+        PushLine(Renderer, MPos, MPos + MRight * 5.0f, 1.0f, math::rgba(0.0f, 1.0f, 0.0f, 1.0f));
+        
+        //PushOutlinedRect(Renderer, MPos, math::v3(Radius, Radius, 1.0f), math::rgba(0.0f, 1.0f, 0.0f, 1.0f));
     }
     
     PushLine(Renderer, Middle, Middle + Ray * 5000.0f, 1.0f, math::rgba(1.0f, 0.0f, 1.0f, 1.0f));
@@ -801,13 +841,6 @@ extern "C" UPDATE(Update)
     
     GameState->Models[1].Position = Middle + Ray * -10.0f;
     
-    if(MOUSE_DOWN(Mouse_Left))
-    {
-        auto CurI = GameState->ModelCount;
-        GameState->Models[CurI] = GameState->Models[1];
-        GameState->Models[CurI].Position = Middle + Ray * -10.0f;
-        GameState->ModelCount++;
-    }
     
     InputController->CurrentCharacter = 0;
     GameState->ClearTilePositionFrame = !GameState->ClearTilePositionFrame;
