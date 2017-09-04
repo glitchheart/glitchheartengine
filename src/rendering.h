@@ -3,8 +3,8 @@
 
 #define PIXELS_PER_UNIT 32
 #define MAX_MESHES 60
-#define MAX_JOINTS 100
-
+#define MAX_BONES 50
+#define MAX_CHILDREN 10
 #define MAX_LIGHTS 20
 
 enum Font_Type
@@ -141,9 +141,39 @@ struct material
     math::rgba Color;
 };
 
+struct vec3_keys
+{
+    i32 NumKeys;
+    r32* TimeStamps;
+    math::v3* Values;
+};
+
+struct quat_keys
+{
+    i32 NumKeys;
+    r32* TimeStamps;
+    math::quat* Values;
+};
+
+struct bone_channel
+{
+    i32 BoneIndex;
+    vec3_keys PositionKeys;
+    quat_keys RotationKeys;
+    vec3_keys ScalingKeys;
+};
+
+struct skeletal_animation
+{
+    i32 NumBoneChannels;
+    bone_channel* BoneChannels;
+};
+
 struct bone
 {
-    math::m4 Transform;
+    i32 ParentId;
+    u32 Children[MAX_CHILDREN];
+    i32 ChildCount;
 };
 
 struct mesh
@@ -163,6 +193,12 @@ struct model
     
     mesh Meshes[MAX_MESHES];
     i32 MeshCount;
+    
+    bone* Bones;
+    i32 BoneCount;
+    
+    skeletal_animation* Animations;
+    i32 AnimationCount;
 };
 
 struct mesh_render_data
