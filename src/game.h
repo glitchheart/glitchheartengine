@@ -120,6 +120,7 @@ struct game_state
     sound_effects Sounds;
     
     model PlayerModel;
+    model* SelectedModel;
     
     model Models[MAX_MODELS];
     i32 ModelCount;
