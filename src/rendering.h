@@ -174,6 +174,9 @@ struct bone
     i32 ParentId;
     u32 Children[MAX_CHILDREN];
     i32 ChildCount;
+    
+    math::m4 Transformation;
+    math::m4 BoneOffset;
 };
 
 struct mesh
@@ -197,8 +200,12 @@ struct model
     bone* Bones;
     i32 BoneCount;
     
+    math::m4* CurrentPoses;
+    
     skeletal_animation* Animations;
     i32 AnimationCount;
+    
+    math::m4 GlobalInverseTransform;
 };
 
 struct mesh_render_data
@@ -292,6 +299,8 @@ struct render_command
             mesh_render_data RenderData[MAX_MESHES];
             i32 HandleCount;
             math::rgba Color;
+            math::m4* BoneTransforms;
+            i32 BoneCount;
         } Model;
     };
     render_command() {}

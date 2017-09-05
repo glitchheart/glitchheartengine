@@ -753,6 +753,11 @@ extern "C" UPDATE(Update)
     char FPSBuffer[64];
     sprintf(FPSBuffer, "FPS: %.2f - AVG FPS: %.2f - dt: %.10lf", Renderer.FPS, Renderer.AverageFPS, DeltaTime);
     
+    skeletal_animation Animation;
+    
+    GameState->PlayerModel.CurrentPoses = PushTempSize(sizeof(math::m4) * GameState->PlayerModel.BoneCount, math::m4);
+    CalculateBoneTransformsForAnimation(Animation, 0.0f, GameState->PlayerModel.Bones, GameState->PlayerModel.CurrentPoses, GameState->PlayerModel.BoneCount, GameState->PlayerModel.GlobalInverseTransform);
+    
     PushEntityRenderCommands(Renderer, *GameState);
     
     if(KEY_DOWN(Key_Home))

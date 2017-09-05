@@ -240,7 +240,12 @@ static void PushModel(renderer& Renderer, model& Model)
     }
     
     RenderCommand->Model.HandleCount = Model.MeshCount;
-    //RenderCommand->Model.BoneCount = Model.BoneCount;
+    RenderCommand->Model.BoneCount = Model.BoneCount;
+    RenderCommand->Model.BoneTransforms = PushTempSize(sizeof(math::m4) * Model.BoneCount, math::m4);
+    for(i32 Index = 0; Index < Model.BoneCount; Index++)
+    {
+        RenderCommand->Model.BoneTransforms[Index] = Model.CurrentPoses[Index];
+    }
     //memcpy(RenderCommand->Model.BoneTransforms, Model.CurrentPose.BoneTransforms, sizeof(bone_transform) * MAX_BONES);
     RenderCommand->Model.Color = math::rgba(1.0f, 1.0f, 1.0f, 1.0f);
     RenderCommand->IsUI = false;
@@ -404,7 +409,9 @@ static void LoadGLIMModel(renderer& Renderer, char* FilePath, model* Model)
         u32* IndexBuffer = PushTempSize(ModelData.IndexBufferChunkSize, u32);
         fread(IndexBuffer, ModelData.IndexBufferChunkSize, 1, File);
         
-        Model->Bones = PushTempSize(ModelData.BoneChunkSize, bone);
+        Model->GlobalInverseTransform = ModelData.GlobalInverseTransform;
+        Model->Bones = PushArray(&Renderer.AnimationArena, ModelData.NumBones, bone);
+        Model->BoneCount = ModelData.NumBones;
         fread(Model->Bones, ModelData.BoneChunkSize, 1, File);
         
         buffer_data Data = {};

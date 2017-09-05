@@ -1465,14 +1465,14 @@ static void RenderModel(const render_command& Command, render_state& RenderState
         Model = math::Translate(Model, Command.Position);
         
         math::m4 NormalMatrix = math::Transpose(math::Inverse(View * Model));
-        /*
+        
         for(i32 Index = 0; Index < Command.Model.BoneCount; Index++)
         {
             char Buffer[20];
             sprintf(Buffer, "bones[%d]", Index);
-            SetMat4Uniform(Shader.Program, Buffer, Command.Model.BoneTransforms[Index].Transformation);
+            SetMat4Uniform(Shader.Program, Buffer, Command.Model.BoneTransforms[Index]);
         }
-        */
+        
         SetMat4Uniform(Shader.Program, "normalMatrix", NormalMatrix);
         SetMat4Uniform(Shader.Program, "projection", Projection);
         SetMat4Uniform(Shader.Program, "view", View);

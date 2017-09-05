@@ -24,8 +24,14 @@ out vec2 texCoord;
 
 void main()
 {
-	vec4 p = projection * view * model * vec4(position, 1.0);
+    mat4 boneTransform = bones[int(boneIndices[0])] * weights[0];
+    boneTransform += bones[int(boneIndices[1])] * weights[1];
+    boneTransform += bones[int(boneIndices[2])] * weights[2];
+    boneTransform += bones[int(boneIndices[3])] * weights[3];
 
+	vec4 pos = boneTransform * vec4(position, 1.0);
+	vec4 p = projection * view * model * vec4(pos.xyz, 1.0);
+	
 	gl_Position = p;
 
 	n = mat3(transpose(inverse(view * model))) * normal;
