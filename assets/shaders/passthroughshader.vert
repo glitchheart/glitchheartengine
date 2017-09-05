@@ -12,5 +12,3 @@ void main()
 	gl_Position = Projection * View * Model * vec4(Pos, 1.0);
 	c = Color;
 }
-
-

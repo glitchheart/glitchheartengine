@@ -202,11 +202,13 @@ struct render_state
     GLuint SpriteVAO;
     GLuint SpriteQuadVBO;
     GLuint QuadIndexBuffer;
+    
     GLuint UISpriteVAO;
     GLuint SpriteSheetVAO;
     
     GLuint SpriteErrorVAO;
     GLuint UIErrorVAO;
+    GLuint PassthroughVAO;
     
     //tiles
     GLfloat TileQuadVertices[16] =
@@ -240,6 +242,24 @@ struct render_state
         0.0f, 0.0f
     };
     
+    GLfloat WireframeCubeVertices[24] =
+    {
+        0.0f, 0.0f, 0.0f,
+        1.0f, 0.0f, 0.0f,
+        1.0f, 1.0f, 0.0f,
+        0.0f, 1.0f, 0.0f,
+        0.0f, 1.0f, 1.0f,
+        0.0f, 0.0f, 1.0f,
+        1.0f, 1.0f, 1.0f,
+        1.0f, 0.0f, 1.0f
+    };
+    
+#define CUBE_INDICES 18
+    GLuint WireframeCubeIndices[CUBE_INDICES] = 
+    {
+        0, 1, 2, 3, 0, 3, 4, 5, 0, 5, 7, 6, 4, 6, 2, 1, 7
+    };
+    GLuint CubeIndexBuffer;
     
     GLfloat IsometricQuadVertices[8] =
     {
@@ -251,6 +271,8 @@ struct render_state
     
     GLuint WireframeVAO;
     GLuint WireframeQuadVBO;
+    GLuint WireframeCubeVAO;
+    GLuint WireframeCubeVBO;
     
     GLuint IsometricVAO;
     GLuint IsometricQuadVBO;
