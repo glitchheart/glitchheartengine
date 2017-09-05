@@ -1,28 +1,31 @@
-/*
-static void CalculatePose(bone* Bones, animation_frame* CurrentPose, i32 BoneId, bone_transform ParentBoneTransform)
+static void CalculateThroughBones(const skeletal_animation& Animation, r32 Time, bone* Bones, math::m4* Transforms, i32 NumBones, i32 BoneIndex, math::m4 ParentTransform, math::m4 GlobalInverseTransform)
 {
-    bone Bone;
-    i32 BoneIndex;
+    // @Incomplete: Animation stuff!
+    bone Bone = Bones[BoneIndex];
+    math::m4 BoneTransform = Bone.Transformation;
     
-    bone ParentBone;
-    i32 ParentBoneIndex;
+    math::m4 GlobalTransform = ParentTransform * BoneTransform;
+    Transforms[BoneIndex] = GlobalInverseTransform * GlobalTransform * Bone.BoneOffset;
     
-    // @Incomplete: We're missing checking if bone was found
-    if(GetBoneWithId(BoneId, Bones, &Bone, &BoneIndex) && (ParentBoneId >= 0 || GetBoneWithId(ParentBoneId, Bones, &Bone, &ParentBoneIndex)))
+    for(i32 ChildIndex = 0; ChildIndex < Bone.ChildCount; ChildIndex++)
     {
-        math::m4& BoneTransform = CurrentPose->BoneTransforms[BoneIndex].Transformation;
-        math::m4& ParentTransform = ParentBoneId == -1 ? math::m4(1.0f) : CurrentPose->BoneTransforms[ParentBoneIndex].Transformation;
-        
-        BoneTransform = ParentTransform * BoneTransform;
-        
-        for(i32 Index = 0; Index < Bone.ChildCount; Index++)
-        {
-            CalculatePose(Bones, CurrentPose, Bone.Children[Index], Bone);
-        }
-        
-        BoneTransform = BoneTransform * Bone.BindInverse;
+        CalculateThroughBones(Animation, Time, Bones, Transforms, NumBones, Bone.Children[ChildIndex], GlobalTransform, GlobalInverseTransform);
     }
-    else
-        printf("Couldn't find bone with id %d.", BoneId);
 }
-*/
+
+static void CalculateBoneTransformsForAnimation(const skeletal_animation& Animation, r32 Time, bone* Bones, math::m4* Transforms, i32 NumBones, math::m4 GlobalInverseTransform)
+{
+    math::m4 Identity(1.0f);
+    
+    i32 RootIndex = 0; // @Speed: We have to set this when exporting the model in the first place
+    for(i32 Index = 0; Index < NumBones; Index++)
+    {
+        if(Bones[Index].ParentId == -1)
+        {
+            RootIndex = Index;
+            break;
+        }
+    }
+    
+    CalculateThroughBones(Animation, 0.0f, Bones, Transforms, NumBones, RootIndex, Identity, GlobalInverseTransform);
+}

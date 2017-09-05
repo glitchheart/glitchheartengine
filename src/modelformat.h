@@ -27,6 +27,8 @@ struct model_data
     long VertexBufferChunkSize;
     long IndexBufferChunkSize;
     long BoneChunkSize;
+    
+    math::m4 GlobalInverseTransform;
 };
 
 struct bone_header
