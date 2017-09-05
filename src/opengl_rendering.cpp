@@ -661,6 +661,22 @@ static void RenderSetup(render_state *RenderState, memory_arena* PermArena)
     
     glBindVertexArray(0);
     
+    //
+    
+    glGenVertexArrays(1, &RenderState->WireframeCubeVAO);
+    glBindVertexArray(RenderState->WireframeCubeVAO);
+    glGenBuffers(1, &RenderState->WireframeCubeVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, RenderState->WireframeCubeVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 24, RenderState->WireframeCubeVertices, GL_DYNAMIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(r32), 0);
+    glGenBuffers(1, &RenderState->CubeIndexBuffer);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, RenderState->CubeIndexBuffer);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint) * CUBE_INDICES, RenderState->WireframeCubeIndices, GL_STATIC_DRAW);
+    glBindVertexArray(0);
+    
+    //
+    
     glGenVertexArrays(1, &RenderState->IsometricVAO);
     glBindVertexArray(RenderState->IsometricVAO);
     glGenBuffers(1, &RenderState->IsometricQuadVBO);
@@ -706,6 +722,11 @@ static void RenderSetup(render_state *RenderState, memory_arena* PermArena)
     
     // Passthrough
     LoadShader(ShaderPaths[Shader_Passthrough], &RenderState->PassthroughShader, PermArena);
+    glGenVertexArrays(1, &RenderState->PassthroughVAO);
+    glBindVertexArray(RenderState->PassthroughVAO);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(r32), 0);
+    glBindVertexArray(0);
     
     //font
     RenderState->StandardFontShader.Type = Shader_StandardFont;
@@ -1277,6 +1298,27 @@ static void RenderText(render_state& RenderState, const render_font& Font, const
     glBindVertexArray(0);
 }
 
+static void RenderWireframeCube(render_state& RenderState, math::m4 Projection, math::m4 View)
+{
+    glBindVertexArray(RenderState.WireframeCubeVAO);
+    
+    auto Shader = RenderState.PassthroughShader;
+    UseShader(&Shader);
+    
+    math::m4 Model = math::m4(1.0f);
+    Model = math::Scale(Model, math::v3(5.0f, 2.3f, 1.0f));
+    Model = ToMatrix(math::Rotate(math::quat(), 90.0f, math::v3(0, 1, 0))) * Model;
+    Model = math::Translate(Model, math::v3(0.0f, 5.0f, 0.0f));
+    
+    SetMat4Uniform(Shader.Program, "Model", Model);
+    SetMat4Uniform(Shader.Program, "Projection", Projection);
+    SetMat4Uniform(Shader.Program, "View", View);
+    SetVec4Uniform(Shader.Program, "Color", math::rgba(1.0f, 0.0f, 0.0f, 1.0f));
+    
+    glDrawElements(GL_LINE_STRIP, 17, GL_UNSIGNED_INT, (void*)0);
+    glBindVertexArray(0);
+}
+
 static void RenderConsole(render_state& RenderState, console* Console)
 {
     glBindVertexArray(RenderState.RectVAO);
@@ -1767,6 +1809,10 @@ static void Render(render_state& RenderState, renderer& Renderer, memory_arena* 
     
     //RenderGame(GameState);
     RenderCommands(RenderState, Renderer, PermArena);
+    
+    auto& V = Camera.ViewMatrix;
+    auto& P = Camera.ProjectionMatrix;
+    RenderWireframeCube(RenderState, P, V);
     
     // Second pass
     

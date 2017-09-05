@@ -833,7 +833,7 @@ extern "C" UPDATE(Update)
     
     PushLine(Renderer, Middle, Middle + Ray * 5000.0f, 1.0f, math::rgba(1.0f, 0.0f, 1.0f, 1.0f));
     
-    PushLine(Renderer, Middle, Middle + Forward * 40.0f, 1.0f, math::rgba(0.0f, 0.0f, 1.0f, 1.0f));
+    PushLine(Renderer, Middle, Middle + Forward * 40.0f, 1.0f, math::rgba(0.0f, 1.0f, 0.0f, 1.0f));
     
     PushLine(Renderer, Middle, Middle + Up * 40.0f, 1.0f, math::rgba(0.0f, 0.0f, 1.0f, 1.0f));
     
