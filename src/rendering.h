@@ -4,7 +4,7 @@
 #define PIXELS_PER_UNIT 32
 #define MAX_MESHES 60
 #define MAX_BONES 50
-#define MAX_CHILDREN 10
+#define MAX_CHILDREN 30
 #define MAX_LIGHTS 20
 
 enum Font_Type
@@ -165,6 +165,7 @@ struct bone_channel
 
 struct skeletal_animation
 {
+    r32 Duration;
     i32 NumBoneChannels;
     bone_channel* BoneChannels;
 };
@@ -206,6 +207,7 @@ struct model
     i32 AnimationCount;
     
     math::m4 GlobalInverseTransform;
+    r32 AnimationTime;
 };
 
 struct mesh_render_data

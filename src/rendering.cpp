@@ -242,10 +242,12 @@ static void PushModel(renderer& Renderer, model& Model)
     RenderCommand->Model.HandleCount = Model.MeshCount;
     RenderCommand->Model.BoneCount = Model.BoneCount;
     RenderCommand->Model.BoneTransforms = PushTempSize(sizeof(math::m4) * Model.BoneCount, math::m4);
+    
     for(i32 Index = 0; Index < Model.BoneCount; Index++)
     {
         RenderCommand->Model.BoneTransforms[Index] = Model.CurrentPoses[Index];
     }
+    
     //memcpy(RenderCommand->Model.BoneTransforms, Model.CurrentPose.BoneTransforms, sizeof(bone_transform) * MAX_BONES);
     RenderCommand->Model.Color = math::rgba(1.0f, 1.0f, 1.0f, 1.0f);
     RenderCommand->IsUI = false;
@@ -451,7 +453,7 @@ static void LoadGLIMModel(renderer& Renderer, char* FilePath, model* Model)
         // Load animations
         animation_header AHeader;
         fread(&AHeader, sizeof(animation_header), 1, File);
-        
+        ;
         Model->AnimationCount = AHeader.NumAnimations;
         Model->Animations = PushArray(&Renderer.AnimationArena, AHeader.NumAnimations, skeletal_animation);
         
@@ -461,6 +463,7 @@ static void LoadGLIMModel(renderer& Renderer, char* FilePath, model* Model)
             fread(&ACHeader, sizeof(animation_channel_header), 1, File);
             
             skeletal_animation* Animation = &Model->Animations[Index];
+            Animation->Duration = ACHeader.Duration;
             Animation->NumBoneChannels = ACHeader.NumBoneChannels;
             
             Animation->BoneChannels = PushArray(&Renderer.AnimationArena, Animation->NumBoneChannels, bone_channel);

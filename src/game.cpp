@@ -182,7 +182,8 @@ extern "C" UPDATE(Update)
     {
         
         model PlayerModel;
-        LoadGLIMModel(Renderer, "../assets/models/with_animations.glim", &PlayerModel);
+        LoadGLIMModel(Renderer, "../assets/models/knight.glim", &PlayerModel);
+        PlayerModel.AnimationTime = 0.0f;
         PlayerModel.Position = math::v3(0, 0, 0);
         PlayerModel.Scale = math::v3(10, 10, 10);
         
@@ -741,10 +742,6 @@ extern "C" UPDATE(Update)
     GameUpdateStruct->EntityCount = GameState->EntityCount;
     memcpy(&GameUpdateStruct->EntityPositions, &GameState->EntityPositions, sizeof(math::v2) * NUM_ENTITIES);
     
-    //GameState->PlayerModel.CurrentPose = Renderer.AnimationCycles[0].Frames[10];
-    
-    //CalculatePose(GameState->PlayerModel.Bones, &GameState->PlayerModel.CurrentPose, 0, -1);
-    
     PushDirectionalLight(Renderer, math::v3(-0.2, -1.0, -0.3), 
                          math::v3(0.1f, 0.1f, 0.1f), math::v3(0.2, 0.2, 0.2), math::v3(0.1, 0.1, 0.1));
     
@@ -753,10 +750,16 @@ extern "C" UPDATE(Update)
     char FPSBuffer[64];
     sprintf(FPSBuffer, "FPS: %.2f - AVG FPS: %.2f - dt: %.10lf", Renderer.FPS, Renderer.AverageFPS, DeltaTime);
     
-    skeletal_animation Animation;
-    
+    skeletal_animation Animation = GameState->PlayerModel.Animations[0];
     GameState->PlayerModel.CurrentPoses = PushTempSize(sizeof(math::m4) * GameState->PlayerModel.BoneCount, math::m4);
-    CalculateBoneTransformsForAnimation(Animation, 0.0f, GameState->PlayerModel.Bones, GameState->PlayerModel.CurrentPoses, GameState->PlayerModel.BoneCount, GameState->PlayerModel.GlobalInverseTransform);
+    CalculateBoneTransformsForAnimation(Animation, GameState->PlayerModel.AnimationTime, GameState->PlayerModel.Bones, GameState->PlayerModel.CurrentPoses, GameState->PlayerModel.BoneCount, GameState->PlayerModel.GlobalInverseTransform);
+    
+    GameState->PlayerModel.AnimationTime += DeltaTime / 2.0f;
+    
+    if(GameState->PlayerModel.AnimationTime >= Animation.Duration)
+    {
+        GameState->PlayerModel.AnimationTime = 0.0f;
+    }
     
     PushEntityRenderCommands(Renderer, *GameState);
     
