@@ -1459,7 +1459,6 @@ static void RenderModel(const render_command& Command, render_state& RenderState
         Model = math::Scale(Model, Command.Scale);
         
         math::m4 Rot = ToMatrix(Command.Orientation);
-        
         Model = Rot * Model;
         
         Model = math::Translate(Model, Command.Position);

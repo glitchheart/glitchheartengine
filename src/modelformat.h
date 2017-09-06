@@ -44,6 +44,7 @@ struct animation_header
 
 struct animation_channel_header
 {
+    r32 Duration;
     i32 NumBoneChannels;
 };
 

@@ -31,7 +31,7 @@ void main()
 
 	vec4 pos = boneTransform * vec4(position, 1.0);
 	vec4 p = projection * view * model * vec4(pos.xyz, 1.0);
-	
+	//vec4 p = projection * view * model * vec4(position, 1.0f);
 	gl_Position = p;
 
 	n = mat3(transpose(inverse(view * model))) * normal;
