@@ -174,6 +174,7 @@ struct skeletal_animation
 
 struct bone
 {
+    char Name[30];
     i32 ParentId;
     u32 Children[MAX_CHILDREN];
     i32 ChildCount;

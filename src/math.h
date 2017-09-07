@@ -1528,6 +1528,48 @@ namespace math
         return Normalize(Lerp(Q0, T, Q1));
     }
     
+    inline quat Interpolate(quat Q0, quat Q1, r32 F)
+    {
+        r32 Cosom = Q0.x * Q1.x + Q0.y * Q1.y + Q0.z * Q1.z + Q0.w * Q1.w;
+        auto End = Q1;
+        
+        if(Cosom < 0.0f)
+        {
+            Cosom = -Cosom;
+            End.x = -End.x;   // Reverse all signs
+            End.y = -End.y;
+            End.z = -End.z;
+            End.w = -End.w;
+        }
+        
+        // Calculate coefficients
+        r32 Sclp, Sclq;
+        
+        if((1.0f - Cosom) > 0.0001f) // 0.0001 -> some epsillon
+        {
+            // Standard case (slerp)
+            r32 Omega, Sinom;
+            Omega = acos(Cosom); // extract theta from dot product's cos theta
+            Sinom = sin(Omega);
+            Sclp = sin((1.0f - F) * Omega) / Sinom;
+            Sclq = sin(F * Omega) / Sinom;
+        } 
+        else
+        {
+            // Very close, do linear interp (because it's faster)
+            Sclp = 1.0f - F;
+            Sclq = F;
+        }
+        
+        quat Out;
+        
+        Out.x = Sclp * Q0.x + Sclq * End.x;
+        Out.y = Sclp * Q0.y + Sclq * End.y;
+        Out.z = Sclp * Q0.z + Sclq * End.z;
+        Out.w = Sclp * Q0.w + Sclq * End.w;
+        return Out;
+    }
+    
     inline m4 Transpose(m4 In)
     {
         m4 Result(In);

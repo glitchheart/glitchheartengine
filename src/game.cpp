@@ -855,7 +855,7 @@ extern "C" UPDATE(Update)
     GameState->PlayerModel.CurrentPoses = PushTempSize(sizeof(math::m4) * GameState->PlayerModel.BoneCount, math::m4);
     CalculateBoneTransformsForAnimation(Animation, GameState->PlayerModel.AnimationTime, GameState->PlayerModel.Bones, GameState->PlayerModel.CurrentPoses, GameState->PlayerModel.BoneCount, GameState->PlayerModel.GlobalInverseTransform);
     
-    GameState->PlayerModel.AnimationTime += DeltaTime / 2.0f;
+    GameState->PlayerModel.AnimationTime += DeltaTime;
     
     if(GameState->PlayerModel.AnimationTime >= Animation.Duration)
     {
