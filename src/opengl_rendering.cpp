@@ -253,12 +253,12 @@ static void InitializeFreeTypeFont(char* FontPath, int FontSize, FT_Library Libr
     glBindVertexArray(0);
 }
 
-static void RegisterBuffers(render_state& RenderState, GLfloat* VertexBuffer, i32 VertexBufferSize, GLuint* IndexBuffer, i32 IndexBufferSize, b32 HasNormals, b32 HasUVs, i32 BufferHandle = -1)
+static void RegisterBuffers(render_state& RenderState, GLfloat* VertexBuffer, long VertexBufferSize, GLuint* IndexBuffer, i32 IndexBufferCount, long IndexBufferSize, b32 HasNormals, b32 HasUVs, i32 BufferHandle = -1)
 {
     buffer* Buffer = &RenderState.Buffers[BufferHandle == -1 ? RenderState.BufferCount : BufferHandle];
     
     Buffer->VertexBufferSize = VertexBufferSize;
-    Buffer->IndexBufferSize = IndexBufferSize;
+    Buffer->IndexBufferCount = IndexBufferCount;
     
     if(Buffer->VAO == 0)
         glGenVertexArrays(1, &Buffer->VAO);
@@ -269,9 +269,9 @@ static void RegisterBuffers(render_state& RenderState, GLfloat* VertexBuffer, i3
         glGenBuffers(1, &Buffer->VBO);
     
     glBindBuffer(GL_ARRAY_BUFFER, Buffer->VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * VertexBufferSize, VertexBuffer, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, VertexBufferSize, VertexBuffer, GL_STATIC_DRAW);
     
-    i32 BoneInfoSize = 9;
+    i32 BoneInfoSize = 8;
     
     if(HasNormals && HasUVs)
     {
@@ -280,20 +280,17 @@ static void RegisterBuffers(render_state& RenderState, GLfloat* VertexBuffer, i3
         
         glEnableVertexAttribArray(1);
         glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, (8 + BoneInfoSize) * sizeof(GLfloat), (void*)(3 * sizeof(GLfloat)));
+        
         glEnableVertexAttribArray(2);
         glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, (8 + BoneInfoSize) * sizeof(GLfloat), (void*)(6 * sizeof(GLfloat)));
         
-        // Bone count
-        glEnableVertexAttribArray(3);
-        glVertexAttribPointer(3, 1, GL_INT, GL_FALSE, (8 + BoneInfoSize) * sizeof(GLfloat), (void*)(8 * sizeof(GLfloat)));
-        
         // Bone indices
-        glEnableVertexAttribArray(4);
-        glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, (8 + BoneInfoSize) * sizeof(GLfloat), (void*)(9 * sizeof(GLfloat)));
+        glEnableVertexAttribArray(3);
+        glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, (8 + BoneInfoSize) * sizeof(GLfloat), (void*)(8 * sizeof(GLfloat)));
         
         // Weights
-        glEnableVertexAttribArray(5);
-        glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, (8 + BoneInfoSize) * sizeof(GLfloat), (void*)(13 * sizeof(GLfloat)));
+        glEnableVertexAttribArray(4);
+        glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, (8 + BoneInfoSize) * sizeof(GLfloat), (void*)(12 * sizeof(GLfloat)));
     }
     else if(HasNormals)
     {
@@ -355,7 +352,7 @@ static void RegisterBuffers(render_state& RenderState, GLfloat* VertexBuffer, i3
     
     glGenBuffers(1, &Buffer->IBO);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, Buffer->IBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint) * IndexBufferSize, IndexBuffer, GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, IndexBufferSize, IndexBuffer, GL_STATIC_DRAW);
     
     if(BufferHandle == -1)
         RenderState.BufferCount++;
@@ -1508,20 +1505,19 @@ static void RenderModel(const render_command& Command, render_state& RenderState
         math::m4 Model(1.0f);
         Model = math::Scale(Model, Command.Scale);
         
-        math::m4 Rot = ToMatrix(Command.Orientation);
         
+        math::m4 Rot = ToMatrix(Command.Orientation);
         Model = Rot * Model;
         
         Model = math::Translate(Model, Command.Position);
         
         math::m4 NormalMatrix = math::Transpose(math::Inverse(View * Model));
         
-        
         for(i32 Index = 0; Index < Command.Model.BoneCount; Index++)
         {
             char Buffer[20];
             sprintf(Buffer, "bones[%d]", Index);
-            SetMat4Uniform(Shader.Program, Buffer, Command.Model.BoneTransforms[Index].Transformation);
+            SetMat4Uniform(Shader.Program, Buffer, Command.Model.BoneTransforms[Index]);
         }
         
         SetMat4Uniform(Shader.Program, "normalMatrix", NormalMatrix);
@@ -1531,7 +1527,7 @@ static void RenderModel(const render_command& Command, render_state& RenderState
         SetVec4Uniform(Shader.Program, "color", math::rgba(1.0f, 1.0f, 1.0f, 1.0f));
         SetIntUniform(Shader.Program, "hasUVs", RenderData.Material.HasTexture);
         
-        glDrawElements(GL_TRIANGLES, Buffer.IndexBufferSize, GL_UNSIGNED_INT, (void*)0);
+        glDrawElements(GL_TRIANGLES, Buffer.IndexBufferCount, GL_UNSIGNED_INT, (void*)0);
         glBindVertexArray(0);
     }
 }
@@ -1578,13 +1574,13 @@ static void RenderCommands(render_state& RenderState, renderer& Renderer, memory
     {
         buffer_data Data = Renderer.Buffers[Index];
         
-        if(Data.IndexBufferSize == 0)
+        if(Data.IndexBufferCount == 0)
         {
             RegisterVertexBuffer(RenderState, Data.VertexBuffer, Data.VertexBufferSize, Data.ShaderType, PermArena, Data.ExistingHandle);
         }
         else
         {
-            RegisterBuffers(RenderState, Data.VertexBuffer, Data.VertexBufferSize, Data.IndexBuffer, Data.IndexBufferSize, Data.HasNormals, Data.HasUVs, Data.ExistingHandle);
+            RegisterBuffers(RenderState, Data.VertexBuffer, Data.VertexBufferSize, Data.IndexBuffer, Data.IndexBufferCount, Data.IndexBufferSize, Data.HasNormals, Data.HasUVs, Data.ExistingHandle);
             
         }
     }
