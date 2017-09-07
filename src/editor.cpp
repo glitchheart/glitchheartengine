@@ -594,7 +594,7 @@ static void EditorUpdateEntities(game_state* GameState, renderer& Renderer, inpu
                 auto Pos = math::UnProject(math::v3(InputController->MouseX, Renderer.Viewport[3] - InputController->MouseY, 0),
                                            Renderer.Cameras[GameState->GameCameraHandle].ViewMatrix,
                                            Renderer.Cameras[GameState->GameCameraHandle].ProjectionMatrix,
-                                           math::v4(0, 0, Renderer.Viewport[2], Renderer.Viewport[3]));
+                                           math::v4i(0, 0, Renderer.Viewport[2], Renderer.Viewport[3]));
                 
                 i32 X = (i32)Pos.x;
                 i32 Z = (i32)Pos.y;
@@ -724,8 +724,8 @@ static void EditorUpdateEntities(game_state* GameState, renderer& Renderer, inpu
                             math::m4 IsoTransform(1.0f);
                             IsoTransform = math::Translate(IsoTransform, math::v3(0.0f, 0.25f, 0.0f));
                             IsoTransform = math::Scale(IsoTransform, math::v3((r32)(sqrt(2.0) / 2.0), (r32)(sqrt(2.0) / 4.0), 1.0f));
-                            IsoTransform = math::Rotate(IsoTransform, -45, math::v3(0.0f, 0.0f, 0.0f));
-                            IsoTransform = math::Inverse(IsoTransform);
+                            //IsoTransform = math::Rotate(IsoTransform, -45, math::v3(0.0f, 0.0f, 0.0f));
+                            //IsoTransform = math::Inverse(IsoTransform);
                             
                             math::v4 NewPos = IsoTransform * math::v4(Pos.x, Pos.y, Pos.z, 1.0f);
                             

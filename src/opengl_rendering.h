@@ -28,7 +28,8 @@ const static struct
     SHADERPAIR(AStarPath),
     SHADERPAIR(FrameBuffer),
     SHADERPAIR(LightSource),
-    SHADERPAIR(SimpleModel)
+    SHADERPAIR(SimpleModel),
+    SHADERPAIR(Passthrough)
 };
 
 char* ShaderEnumToStr(Shader_Type Shader)
@@ -59,7 +60,8 @@ const char* ShaderPaths[Shader_Count] =
     "../assets/shaders/astarpathshader",
     "../assets/shaders/framebuffershader",
     "../assets/shaders/lightsourceshader",
-    "../assets/shaders/simple_model_shader"
+    "../assets/shaders/simple_model_shader",
+    "../assets/shaders/passthroughshader"
 };
 
 
@@ -201,11 +203,13 @@ struct render_state
     GLuint SpriteVAO;
     GLuint SpriteQuadVBO;
     GLuint QuadIndexBuffer;
+    
     GLuint UISpriteVAO;
     GLuint SpriteSheetVAO;
     
     GLuint SpriteErrorVAO;
     GLuint UIErrorVAO;
+    GLuint PassthroughVAO;
     
     //tiles
     GLfloat TileQuadVertices[16] =
@@ -228,6 +232,7 @@ struct render_state
         0.0f, 0.0f
     };
     
+    GLuint PrimitiveVAO;
     GLuint PrimitiveVBO;
     
     GLfloat WireframeQuadVertices[10] =
@@ -238,6 +243,24 @@ struct render_state
         0.0f, 0.0f
     };
     
+    GLfloat WireframeCubeVertices[24] =
+    {
+        0.0f, 0.0f, 0.0f,
+        1.0f, 0.0f, 0.0f,
+        1.0f, 1.0f, 0.0f,
+        0.0f, 1.0f, 0.0f,
+        0.0f, 1.0f, 1.0f,
+        0.0f, 0.0f, 1.0f,
+        1.0f, 1.0f, 1.0f,
+        1.0f, 0.0f, 1.0f
+    };
+    
+#define CUBE_INDICES 18
+    GLuint WireframeCubeIndices[CUBE_INDICES] = 
+    {
+        0, 1, 2, 3, 0, 3, 4, 5, 0, 5, 7, 6, 4, 6, 2, 1, 7
+    };
+    GLuint CubeIndexBuffer;
     
     GLfloat IsometricQuadVertices[8] =
     {
@@ -249,6 +272,8 @@ struct render_state
     
     GLuint WireframeVAO;
     GLuint WireframeQuadVBO;
+    GLuint WireframeCubeVAO;
+    GLuint WireframeCubeVBO;
     
     GLuint IsometricVAO;
     GLuint IsometricQuadVBO;
@@ -291,6 +316,7 @@ struct render_state
             shader FrameBufferShader;
             shader LightSourceShader;
             shader SimpleModelShader;
+            shader PassthroughShader;
         };
     };
     

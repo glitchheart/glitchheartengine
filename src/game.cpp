@@ -189,6 +189,18 @@ extern "C" UPDATE(Update)
         
         GameState->PlayerModel = PlayerModel;
         
+        model Cube;
+        //LoadModel(Renderer, "../assets/models/cube_many_tris.modl", &Cube);
+        LoadGLIMModel(Renderer, "../assets/models/cube.glim", &Cube);
+        
+        GameState->Models[GameState->ModelCount++] = Cube;
+        GameState->Models[0].Position = math::v3(-10, -1.5f, 0);
+        GameState->Models[0].Scale = math::v3(100, 1.0f, 100);
+        
+        GameState->Models[GameState->ModelCount++] = Cube;
+        GameState->Models[1].Position = math::v3(-9.0f, 0.0f, -2.0f);
+        GameState->Models[1].Scale = math::v3(1.0f);
+        
         LoadTextures(Renderer, &GameState->TotalArena);
         
         if(GameState->ShouldReload || GameMemory->ShouldReload)
@@ -271,14 +283,13 @@ extern "C" UPDATE(Update)
         GameCamera.ViewportHeight = Renderer.WindowHeight;
         GameCamera.FollowSpeed = 3.5f; 
         GameCamera.FadingSpeed = 0.6f;
-        GameCamera.P = math::v3(-5.0f, 15.0f, -20.0f);
         
         StartFade(GameCamera, Fading_In, 0.6f, math::v3(0, 0, 0), 1.0f, 0.0f);
         
         // @Incomplete: This is not the right value, it is only set so high to remove smooth following as of now, since it needs to be done a little differently
         
         // Set center to player's position!
-        GameCamera.CenterTarget = GameCamera.Center;
+        GameCamera.Target = GameCamera.Center;
         
         GameState->IsInitialized = true;
         GameMemory->IsInitialized = true;
@@ -367,7 +378,6 @@ extern "C" UPDATE(Update)
             {
                 auto& Player = GameState->Entities[0];
                 auto Pos = Player.Position;
-                Renderer.Cameras[GameState->GameCameraHandle].Center = math::v3(Pos.x, Pos.y, Pos.z);
                 Renderer.Cameras[GameState->GameCameraHandle].Center = math::v3(Pos.x, Pos.y, Pos.z);
                 Renderer.Cameras[GameState->GameCameraHandle].Zoom = GameState->ZoomBeforeGodMode;
             }
@@ -723,17 +733,110 @@ extern "C" UPDATE(Update)
         break;
     }
     
-    static r32 X = 0.0f;
-    static r32 Y = 0.0f;
+    r32 Near = -100.0f;
+    r32 Far = 1000.0f;
     
-    X = INPUT_X();
-    Y = INPUT_Y();
+    CameraTransform(Renderer, GameCamera, GameCamera.Center, math::quat(), math::v3(), GameCamera.Zoom, Near, Far, CFlag_Orthographic);
     
-    r32 PanSpeed = 5.0f;
+    math::v3 CamPos = GameCamera.Position;
     
-    GameCamera.P += math::v3((r32)(X * DeltaTime * PanSpeed), (r32)(Y * DeltaTime * PanSpeed), 0.0f);
+    auto Ray = CastRay(InputController->MouseX, InputController->MouseY, Renderer.ViewportWidth, Renderer.ViewportHeight, GameCamera.ProjectionMatrix, GameCamera.ViewMatrix, Near);
     
-    CameraTransform(Renderer, GameCamera, GameCamera.Center, GameCamera.Zoom, -200.0f, 2000.0f,  CFlag_Orthographic);
+    auto Forward = math::v3(GameCamera.ViewMatrix[2][0],
+                            GameCamera.ViewMatrix[2][1],
+                            GameCamera.ViewMatrix[2][2]);
+    auto Up = math::v3(GameCamera.ViewMatrix[1][0],
+                       GameCamera.ViewMatrix[1][1],
+                       GameCamera.ViewMatrix[1][2]);
+    auto Right = math::v3(GameCamera.ViewMatrix[0][0],
+                          GameCamera.ViewMatrix[0][1],
+                          GameCamera.ViewMatrix[0][2]);
+    
+    auto Middle = math::v3(0.0f, 0.0f, -1.0f);
+    
+    Middle = Inverse(GameCamera.ProjectionMatrix) * Middle;
+    Middle = Inverse(GameCamera.ViewMatrix) * Middle;
+    
+    auto MouseX = (2.0f * InputController->MouseX) / Renderer.ViewportWidth - 1.0f;
+    auto MouseY = 1.0f - (2.0f * InputController->MouseY / Renderer.ViewportHeight);
+    
+    auto Mouse = Inverse(GameCamera.ProjectionMatrix) * math::v3((r32)MouseX, (r32)MouseY, 1.0f);
+    Mouse.z = -1.0f;
+    Mouse = Inverse(GameCamera.ViewMatrix) * Mouse;
+    
+    Middle = Inverse(GameCamera.ProjectionMatrix) * math::v3((r32)MouseX, (r32)MouseY, -1.0f);
+    Middle.z = 1.0f;
+    Middle = Inverse(GameCamera.ViewMatrix) * Middle;
+    
+    auto TempRay = math::v4(Mouse - Middle, 0.0f);
+    TempRay = Normalize(TempRay);
+    Ray = TempRay.xyz;
+    
+    
+    auto Radius = 3.0f;
+    auto Cen = GameState->PlayerModel.Position + math::v3(0.0f, Radius / 2.0f, 0.0f);
+    
+    
+    
+    auto B = Dot(Ray, Middle - Cen);
+    auto C = Dot(Middle - Cen, Middle - Cen) - pow(Radius, 2);
+    auto PreCalc = pow(B, 2) - C;
+    
+    if(MOUSE_DOWN(Mouse_Left))
+    {
+        GameState->SelectedModel = NULL;
+    }
+    
+    if(PreCalc >= 0.0f)
+    {
+        auto T1 = -B + sqrt(PreCalc);
+        auto T2 = -B - sqrt(PreCalc);
+        
+        auto Pick1 = Middle + Ray * Min(T1, T2);
+        auto Pick2 = Middle + Ray * Max(T1, T2);
+        auto Dist = Min(Distance(Cen, Pick1), Distance(Cen, Pick2));
+        
+        if(MOUSE_DOWN(Mouse_Left) && Dist < 10.0f)
+        {
+            GameState->SelectedModel = &GameState->PlayerModel;
+        }
+    }
+    
+    if(GameState->SelectedModel)
+    {
+        auto MPos = GameState->SelectedModel->Position;
+        
+        auto Or = ToMatrix(GameState->SelectedModel->Orientation);
+        
+        auto MForward = math::v3(Or[2][0],
+                                 Or[2][1],
+                                 Or[2][2]);
+        auto MUp = math::v3(Or[1][0],
+                            Or[1][1],
+                            Or[1][2]);
+        auto MRight = math::v3(Or[0][0],
+                               Or[0][1],
+                               Or[0][2]);
+        
+        PushLine(Renderer, MPos, MPos + MForward * 5.0f, 1.0f, math::rgba(1.0f, 0.0f, 0.0f, 1.0f));
+        
+        PushLine(Renderer, MPos, MPos + MUp * 5.0f, 1.0f, math::rgba(0.0f, 0.0f, 1.0f, 1.0f));
+        
+        PushLine(Renderer, MPos, MPos + MRight * 5.0f, 1.0f, math::rgba(0.0f, 1.0f, 0.0f, 1.0f));
+        
+        //PushOutlinedRect(Renderer, MPos, math::v3(Radius, Radius, 1.0f), math::rgba(0.0f, 1.0f, 0.0f, 1.0f));
+    }
+    
+    PushLine(Renderer, Middle, Middle + Ray * 5000.0f, 1.0f, math::rgba(1.0f, 0.0f, 1.0f, 1.0f));
+    
+    PushLine(Renderer, Middle, Middle + Forward * 40.0f, 1.0f, math::rgba(0.0f, 1.0f, 0.0f, 1.0f));
+    
+    PushLine(Renderer, Middle, Middle + Up * 40.0f, 1.0f, math::rgba(0.0f, 0.0f, 1.0f, 1.0f));
+    
+    PushLine(Renderer, Middle, Middle + Right * 40.0f, 1.0f, math::rgba(0.0f, 1.0f, 0.0f, 1.0f));
+    
+    GameState->Models[1].Position = Middle + Ray * -10.0f;
+    
     
     InputController->CurrentCharacter = 0;
     GameState->ClearTilePositionFrame = !GameState->ClearTilePositionFrame;
@@ -744,8 +847,6 @@ extern "C" UPDATE(Update)
     
     PushDirectionalLight(Renderer, math::v3(-0.2, -1.0, -0.3), 
                          math::v3(0.1f, 0.1f, 0.1f), math::v3(0.2, 0.2, 0.2), math::v3(0.1, 0.1, 0.1));
-    
-    PushSpotlight(Renderer, GameState->PlayerModel.Position, math::v3(0.0f, -1.0f, 0.0f), DEGREE_IN_RADIANS * 12.5f, DEGREE_IN_RADIANS * 17.5f, math::v3(0.1f, 0.1f, 0.1f), math::v3(1.0f, 1.0f, 1.0), math::v3(1.0, 1.0, 1.0), 1.0f, 0.09f, 0.032f);
     
     char FPSBuffer[64];
     sprintf(FPSBuffer, "FPS: %.2f - AVG FPS: %.2f - dt: %.10lf", Renderer.FPS, Renderer.AverageFPS, DeltaTime);
@@ -770,9 +871,15 @@ extern "C" UPDATE(Update)
     
     PushDebugRender(Renderer, DebugState, InputController);
     
-    PushTilemapRenderCommands(Renderer, *GameState);
+    //PushTilemapRenderCommands(Renderer, *GameState);
     PushModel(Renderer, GameState->PlayerModel);
     PushText(Renderer, FPSBuffer, math::v3(50, 850, 2), Font_Inconsolata, math::rgba(1, 0, 0, 1));
+    
+    for(i32 Index = 0; Index < GameState->ModelCount; Index++)
+    {
+        PushModel(Renderer, GameState->Models[Index]);
+        PushSpotlight(Renderer, GameState->Models[Index].Position, math::v3(1.0f, 0.0f, 0.0f), DEGREE_IN_RADIANS * 12.5f, DEGREE_IN_RADIANS * 17.5f, math::v3(0.1f, 0.1f, 0.1f), math::v3(1.0f, 1.0f, 1.0), math::v3(1.0, 1.0, 1.0), 1.0f, 0.09f, 0.032f);
+    }
     
     if(PushButton(Renderer, "Reset player", rect(5, 5, 200, 50), math::rgba(1, 0, 0, 1), math::rgba(1, 1, 1, 1), InputController))
     {
