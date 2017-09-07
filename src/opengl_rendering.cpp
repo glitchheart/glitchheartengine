@@ -658,6 +658,22 @@ static void RenderSetup(render_state *RenderState, memory_arena* PermArena)
     
     glBindVertexArray(0);
     
+    //
+    
+    glGenVertexArrays(1, &RenderState->WireframeCubeVAO);
+    glBindVertexArray(RenderState->WireframeCubeVAO);
+    glGenBuffers(1, &RenderState->WireframeCubeVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, RenderState->WireframeCubeVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 24, RenderState->WireframeCubeVertices, GL_DYNAMIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(r32), 0);
+    glGenBuffers(1, &RenderState->CubeIndexBuffer);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, RenderState->CubeIndexBuffer);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint) * CUBE_INDICES, RenderState->WireframeCubeIndices, GL_STATIC_DRAW);
+    glBindVertexArray(0);
+    
+    //
+    
     glGenVertexArrays(1, &RenderState->IsometricVAO);
     glBindVertexArray(RenderState->IsometricVAO);
     glGenBuffers(1, &RenderState->IsometricQuadVBO);
@@ -676,12 +692,13 @@ static void RenderSetup(render_state *RenderState, memory_arena* PermArena)
     glBindVertexArray(0);
     
     // Lines
+    glGenVertexArrays(1, &RenderState->PrimitiveVAO);
+    glBindVertexArray(RenderState->PrimitiveVAO);
     glGenBuffers(1, &RenderState->PrimitiveVBO);
     glBindBuffer(GL_ARRAY_BUFFER, RenderState->PrimitiveVBO);
     
-    PositionLocation3 = glGetAttribLocation(RenderState->WireframeShader.Program, "pos");
-    glEnableVertexAttribArray(PositionLocation3);
-    glVertexAttribPointer(PositionLocation3, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), 0);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), 0);
     glBindVertexArray(0);
     
     //astar tile
@@ -698,6 +715,14 @@ static void RenderSetup(render_state *RenderState, memory_arena* PermArena)
     glEnableVertexAttribArray(PositionLocation3);
     glVertexAttribPointer(PositionLocation3, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), 0);
     
+    glBindVertexArray(0);
+    
+    // Passthrough
+    LoadShader(ShaderPaths[Shader_Passthrough], &RenderState->PassthroughShader, PermArena);
+    glGenVertexArrays(1, &RenderState->PassthroughVAO);
+    glBindVertexArray(RenderState->PassthroughVAO);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(r32), 0);
     glBindVertexArray(0);
     
     //font
@@ -871,6 +896,7 @@ static void InitializeOpenGL(render_state& RenderState, renderer& Renderer, conf
     glViewport(0, 0, RenderState.WindowWidth, RenderState.WindowHeight);
     glDisable(GL_DITHER);
     glLineWidth(2.0f);
+    glEnable(GL_LINE_SMOOTH);
     
     glDisable(GL_CULL_FACE);
     glEnable(GL_DEPTH_TEST);
@@ -994,42 +1020,42 @@ static void SetFloatArrayUniform(GLuint ShaderHandle, const char *UniformName, r
     glUniform1fv(glGetUniformLocation(ShaderHandle, UniformName), Length, (GLfloat*)&Value[0]);
 }
 
-static void RenderLine(render_state& RenderState, math::v4 Color, r32 X1, r32 Y1, r32 X2, r32 Y2, b32 IsUI = true, math::m4 ProjectionMatrix = math::m4(), math::m4 ViewMatrix = math::m4())
+static void RenderLine(render_state& RenderState, math::v4 Color, math::v3 Start, math::v3 End, math::m4 ProjectionMatrix = math::m4(), math::m4 ViewMatrix = math::m4(), r32 LineWidth = 1.0f, b32 IsUI = false)
 {
     if(IsUI)
     {
-        X1 *= RenderState.ScaleX;
-        X1 -= 1;
-        Y1 *= RenderState.ScaleY;
-        Y1 -= 1;
-        X2 *= RenderState.ScaleX;
-        X2 -= 1;
-        Y2 *= RenderState.ScaleY;
-        Y2 -= 1;
+        Start.x *= RenderState.ScaleX;
+        Start.x -= 1;
+        Start.y *= RenderState.ScaleY;
+        Start.y -= 1;
+        End.x *= RenderState.ScaleX;
+        End.x -= 1;
+        End.y *= RenderState.ScaleY;
+        End.y -= 1;
+        Start.z = 0.0f;
+        End.z = 0.0f;
     }
     
+    glLineWidth(LineWidth);
     glBindBuffer(GL_ARRAY_BUFFER, RenderState.PrimitiveVBO);
     
-    GLfloat Points[4] = { X1, Y1, X2, Y2 };
-    glBufferData(GL_ARRAY_BUFFER, 4 * sizeof(GLfloat), &Points[0], GL_DYNAMIC_DRAW);
+    GLfloat Points[6] = {Start.x, Start.y, Start.z, End.x, End.y, End.z};
+    glBufferData(GL_ARRAY_BUFFER, 6 * sizeof(GLfloat), &Points[0], GL_DYNAMIC_DRAW);
     
-    auto& Shader = RenderState.RectShader;
+    glBindVertexArray(RenderState.PrimitiveVAO);
+    
+    auto& Shader = RenderState.PassthroughShader;
     UseShader(&Shader);
     
-    //draw upper part
-    math::m4 Model(1.0f);
+    SetMat4Uniform(Shader.Program, "Projection", ProjectionMatrix);
+    SetMat4Uniform(Shader.Program, "View", ViewMatrix);
     
-    if(!IsUI)
-    {
-        SetMat4Uniform(Shader.Program, "Projection", ProjectionMatrix);
-        SetMat4Uniform(Shader.Program, "View", ViewMatrix);
-    }
+    SetMat4Uniform(Shader.Program, "Model", math::m4(1.0f));
     
-    SetFloatUniform(Shader.Program, "isUI", (r32)IsUI);
-    SetMat4Uniform(Shader.Program, "M", Model);
-    SetVec4Uniform(Shader.Program, "color", Color);
+    SetVec4Uniform(Shader.Program, "Color", Color);
     
-    glDrawArrays(GL_LINES, 0, 4);
+    glDrawArrays(GL_LINES, 0, 6);
+    glLineWidth(1.0f);
 }
 
 // NOTE(Niels): Possible future use but buggy
@@ -1269,6 +1295,27 @@ static void RenderText(render_state& RenderState, const render_font& Font, const
     glBindVertexArray(0);
 }
 
+static void RenderWireframeCube(render_state& RenderState, math::m4 Projection, math::m4 View)
+{
+    glBindVertexArray(RenderState.WireframeCubeVAO);
+    
+    auto Shader = RenderState.PassthroughShader;
+    UseShader(&Shader);
+    
+    math::m4 Model = math::m4(1.0f);
+    Model = math::Scale(Model, math::v3(5.0f, 2.3f, 1.0f));
+    Model = ToMatrix(math::Rotate(math::quat(), 90.0f, math::v3(0, 1, 0))) * Model;
+    Model = math::Translate(Model, math::v3(0.0f, 5.0f, 0.0f));
+    
+    SetMat4Uniform(Shader.Program, "Model", Model);
+    SetMat4Uniform(Shader.Program, "Projection", Projection);
+    SetMat4Uniform(Shader.Program, "View", View);
+    SetVec4Uniform(Shader.Program, "Color", math::rgba(1.0f, 0.0f, 0.0f, 1.0f));
+    
+    glDrawElements(GL_LINE_STRIP, 17, GL_UNSIGNED_INT, (void*)0);
+    glBindVertexArray(0);
+}
+
 static void RenderConsole(render_state& RenderState, console* Console)
 {
     glBindVertexArray(RenderState.RectVAO);
@@ -1307,7 +1354,7 @@ static void RenderConsole(render_state& RenderState, console* Console)
 
 static void RenderLine(const render_command& Command, render_state& RenderState, math::m4 Projection, math::m4 View)
 {
-    
+    RenderLine(RenderState, Command.Line.Color, Command.Line.Point1, Command.Line.Point2, Projection, View, Command.Line.LineWidth);
 }
 
 static void RenderText(const render_command& Command, render_state& RenderState)
@@ -1457,6 +1504,7 @@ static void RenderModel(const render_command& Command, render_state& RenderState
         
         math::m4 Model(1.0f);
         Model = math::Scale(Model, Command.Scale);
+        
         
         math::m4 Rot = ToMatrix(Command.Orientation);
         Model = Rot * Model;
@@ -1757,6 +1805,10 @@ static void Render(render_state& RenderState, renderer& Renderer, memory_arena* 
     
     //RenderGame(GameState);
     RenderCommands(RenderState, Renderer, PermArena);
+    
+    auto& V = Camera.ViewMatrix;
+    auto& P = Camera.ProjectionMatrix;
+    RenderWireframeCube(RenderState, P, V);
     
     // Second pass
     

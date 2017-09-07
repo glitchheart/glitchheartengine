@@ -541,6 +541,19 @@ namespace math
                 {
                     r32 X, Y, Z;
                 };
+                struct
+                {
+                    union
+                    {
+                        v2 xy;
+                        v2 XY;
+                    };
+                    union
+                    {
+                        r32 z;
+                        r32 Z;
+                    };
+                };
             };
             union
             {
@@ -613,6 +626,8 @@ namespace math
         X((r32)X), Y((r32)Y), Z((r32)Z), W((r32)W) {}
         
         v4(v3 O, r32 W) : X(O.X), Y(O.Y), Z(O.Z), W(W) {}
+        
+        v4(v2 V, r32 Z, r32 W) : X(V.X), Y(V.Y), Z(Z), W(W) {} 
         
         r32 operator[](i32 I)
         {
@@ -914,6 +929,7 @@ namespace math
             v3i Result(*this);
             Result.X *= O.X;
             Result.Y *= O.Y;
+            Result.Z *= O.Z;
             return Result;
         }
         
@@ -922,6 +938,7 @@ namespace math
             v3i Result(*this);
             Result.X += O.X;
             Result.Y += O.Y;
+            Result.Z += O.Z;
             return Result;
         }
         
@@ -929,12 +946,14 @@ namespace math
         {
             this->X *= O.X;
             this->Y *= O.Y;
+            this->Z *= O.Z;
         }
         
         inline void operator+= (v3i O)
         {
             this->X += O.X;
             this->Y += O.Y;
+            this->Z += O.Z;
         }
         
         inline v3i operator+ (i32 S)
@@ -942,6 +961,7 @@ namespace math
             v3i Result(*this);
             Result.X += S;
             Result.Y += S;
+            Result.Z += S;
             return Result;
         }
         
@@ -950,6 +970,7 @@ namespace math
             v3i Result(*this);
             Result.X *= S;
             Result.Y *= S;
+            Result.Z *= S;
             return Result;
         }
         
@@ -958,6 +979,7 @@ namespace math
             v3i Result(*this);
             Result.X /= S;
             Result.Y /= S;
+            Result.Z /= S;
             return Result;
         }
         
@@ -965,18 +987,21 @@ namespace math
         {
             this->X += S;
             this->Y += S;
+            this->Z += S;
         }
         
         inline void operator*= (i32 S)
         {
             this->X *= S;
             this->Y *= S;
+            this->Z *= S;
         }
         
         inline void operator/= (i32 S)
         {
             this->X /= S;
             this->Y /= S;
+            this->Z /= S;
         }
         
         inline void operator-= (i32 S)
@@ -1029,6 +1054,170 @@ namespace math
         
     };
     
+    
+    union v4i
+    {
+        struct
+        {
+            i32 X, Y, Z, W;
+        };
+        struct
+        {
+            i32 x, y, z, w;
+        };
+        i32 E[4];
+        v4i(i32 X, i32 Y, i32 Z, i32 W) : X(X), Y(Y), Z(Z), W(W){}
+        v4i() : X(0), Y(0), Z(0), W(0) {}
+        v4i(i32 I) : X(I), Y(I), Z(I), W(I) {}
+        v4i(i32 E[4]) : E{E[0],E[1], E[2], E[3]} {}
+        
+        inline v4i operator* (v4i O)
+        {
+            v4i Result(*this);
+            Result.X *= O.X;
+            Result.Y *= O.Y;
+            Result.Z *= O.Z;
+            Result.W *= O.W;
+            return Result;
+        }
+        
+        inline v4i operator+ (v4i O)
+        {
+            v4i Result(*this);
+            Result.X += O.X;
+            Result.Y += O.Y;
+            Result.Z += O.Z;
+            Result.W += O.W;
+            return Result;
+        }
+        
+        inline void operator*= (v4i O)
+        {
+            this->X *= O.X;
+            this->Y *= O.Y;
+            this->Z *= O.Z;
+            this->W *= O.W;
+        }
+        
+        inline void operator+= (v4i O)
+        {
+            this->X += O.X;
+            this->Y += O.Y;
+            this->Z += O.Z;
+            this->W += O.W;
+        }
+        
+        inline v4i operator+ (i32 S)
+        {
+            v4i Result(*this);
+            Result.X += S;
+            Result.Y += S;
+            Result.Z += S;
+            Result.W += S;
+            return Result;
+        }
+        
+        inline v4i operator* (i32 S)
+        {
+            v4i Result(*this);
+            Result.X *= S;
+            Result.Y *= S;
+            Result.Z *= S;
+            Result.W *= S;
+            return Result;
+        }
+        
+        inline v4i operator/ (i32 S)
+        {
+            v4i Result(*this);
+            Result.X /= S;
+            Result.Y /= S;
+            Result.Z /= S;
+            Result.W /= S;
+            return Result;
+        }
+        
+        inline void operator+= (i32 S)
+        {
+            this->X += S;
+            this->Y += S;
+            this->Z += S;
+            this->W += S;
+        }
+        
+        inline void operator*= (i32 S)
+        {
+            this->X *= S;
+            this->Y *= S;
+            this->Z *= S;
+            this->W *= S;
+        }
+        
+        inline void operator/= (i32 S)
+        {
+            this->X /= S;
+            this->Y /= S;
+            this->Z /= S;
+            this->W /= S;
+        }
+        
+        inline void operator-= (i32 S)
+        {
+            this->X -= S;
+            this->Y -= S;
+            this->Z -= S;
+            this->W -= S;
+        }
+        
+        inline v4i operator- (v4i O)
+        {
+            v4i Result(*this);
+            Result.X -= O.X;
+            Result.Y -= O.Y;
+            Result.Z -= O.Z;
+            Result.W -= O.W;
+            return Result;
+        }
+        
+        inline void operator-= (v4i O)
+        {
+            this->X -= O.X;
+            this->Y -= O.Y;
+            this->Z -= O.Z;
+            this->W -= O.W;
+        }
+        
+        inline v4i operator- (i32 S)
+        {
+            v4i Result(*this);
+            Result.X -= S;
+            Result.Y -= S;
+            Result.Z -= S;
+            Result.W -= S;
+            return Result;
+        }
+        
+        inline v4i operator/ (v4i O)
+        {
+            v4i Result(*this);
+            Result.X /= O.X;
+            Result.Y /= O.Y;
+            Result.Z /= O.Z;
+            Result.W /= O.W;
+            return Result;
+        }
+        
+        inline void operator/= (v4i O)
+        {
+            this->X /= O.X;
+            this->Y /= O.Y;
+            this->Z /= O.Z;
+            this->W /= O.W;
+        }
+        
+    };
+    
+    
     union m4
     {
         struct
@@ -1053,6 +1242,7 @@ namespace math
             r32 M3[4];
         };
         r32 V[4][4];
+        r32 Q[16];
         
         inline r32* operator[](i32 Idx)
         {
@@ -1136,6 +1326,28 @@ namespace math
         }
         
     };
+    
+    inline m4 operator*(r32 S, m4 M)
+    {
+        m4 Result(M);
+        Result.M11 *= S;
+        Result.M12 *= S;
+        Result.M13 *= S;
+        Result.M14 *= S;
+        Result.M21 *= S;
+        Result.M22 *= S;
+        Result.M23 *= S;
+        Result.M24 *= S;
+        Result.M31 *= S;
+        Result.M32 *= S;
+        Result.M33 *= S;
+        Result.M34 *= S;
+        Result.M41 *= S;
+        Result.M42 *= S;
+        Result.M43 *= S;
+        Result.M44 *= S;
+        return Result;
+    }
     
     union quat
     {
@@ -1234,6 +1446,11 @@ namespace math
             return Result;
         }
     };
+    
+    inline b32 IsIdentity(quat Q)
+    {
+        return Q.X == 0.0f && Q.Y == 0.0f && Q.Z == 0.0f && Q.W == 1.0f;
+    }
     
     inline quat operator* (r32 V, quat Q)
     {
@@ -1423,62 +1640,168 @@ namespace math
         
     }
     
-    // Inverse is tested against glm::inverse and seems to work
-    inline m4 Inverse(const m4& In)
+    /*
+      * I got this shit from stackoverflow and it took long enough to do
+     * Has been tested by doing: Matrix * Inverse(Matrix) = I checks and seems to 
+     * consistently work! 
+     * Link: https://stackoverflow.com/questions/1148309/inverting-a-4x4-matrix
+    */
+    inline m4 Inverse(m4 M)
     {
         m4 Result(0.0f);
-        Result.M11 =
-            In.M22 * In.M33 * In.M44 + In.M23 * In.M34 * In.M42 + In.M24* In.M32 * In.M43
-            -In.M22 * In.M34 * In.M43 - In.M23 * In.M32 * In.M44 - In.M24 * In.M33 * In.M42;
-        Result.M12 =
-            In.M12 * In.M34 * In.M43 + In.M13 * In.M32 * In.M44 + In.M14 * In.M33 * In.M42
-            -In.M12 * In.M33 * In.M44 - In.M13 * In.M34 * In.M42 - In.M14 * In.M32 - In.M43;
-        Result.M13 =
-            In.M12 * In.M23 * In.M44 + In.M13 * In.M24 * In.M42 + In.M14 * In.M22 * In.M43
-            -In.M12 * In.M24 * In.M43 - In.M13 * In.M22 * In.M44 - In.M14 * In.M23 * In.M42;
-        Result.M14 = 
-            In.M12 * In.M24 * In.M33 + In.M13 * In.M22 * In.M34 + In.M14 * In.M23 * In.M32
-            -In.M12 * In.M23 * In.M34 - In.M13 * In.M24 * In.M32 - In.M14 * In.M22 * In.M33;
-        Result.M21 = 
-            In.M21 * In.M34 * In.M43 + In.M23 * In.M31 * In.M44 + In.M24 * In.M33 * In.M41 
-            -In.M21 * In.M33 * In.M44 - In.M23 * In.M34 * In.M41 - In.M24 * In.M31 * In.M43;
-        Result.M22 = 
-            In.M11 * In.M33 * In.M44 + In.M13 * In.M34 * In.M41 + In.M14 * In.M31 * In.M43
-            -In.M11 * In.M34 * In.M43 - In.M13 * In.M31 * In.M44 - In.M14 * In.M33 * In.M41;
-        Result.M23 =
-            In.M11 * In.M24 * In.M43 + In.M13 * In.M21 * In.M44 + In.M14 * In.M23 * In.M41
-            -In.M11 * In.M23 * In.M44 - In.M13 * In.M24 * In.M41- In.M14 * In.M21 * In.M43;
-        Result.M24 = 
-            In.M11 * In.M23 * In.M34 + In.M13 * In.M24 * In.M31 + In.M14 * In.M21 * In.M33 
-            -In.M11 * In.M24 * In.M33 - In.M13 * In.M21 * In.M34 - In.M14 * In.M23 * In.M31;
-        Result.M31 = 
-            In.M21 * In.M32 * In.M44 + In.M22 * In.M34 * In.M41 + In.M24 * In.M31 * In.M42 
-            - In.M21 * In.M34 * In.M42 - In.M22 * In.M31 * In.M44 - In.M24 * In.M32 * In.M41;
-        Result.M32 = 
-            In.M11 * In.M34 * In.M42 + In.M12 * In.M31 * In.M44 + In.M14 * In.M32 * In.M41 
-            -In.M11 * In.M32 * In.M44 - In.M12 * In.M34 * In.M41 - In.M14 * In.M31 * In.M42;
-        Result.M33 = 
-            In.M11 * In.M22 * In.M44 + In.M12 * In.M24 * In.M41 + In.M14 * In.M21 * In.M42 
-            - In.M11 * In.M24 * In.M42 - In.M12 * In.M21 * In.M44 - In.M14 * In.M22 * In.M41;
-        Result.M34 = 
-            In.M11 * In.M24 * In.M32 + In.M12 * In.M21 * In.M34 + In.M14 * In.M22 * In.M31 
-            - In.M11 * In.M22 * In.M34 - In.M12 * In.M24 * In.M31 - In.M14 * In.M21 * In.M32;
-        Result.M41 = 
-            In.M21 * In.M33 * In.M42 + In.M22 * In.M31 * In.M43 + In.M23 * In.M32 * In.M41 
-            - In.M21 * In.M32 * In.M43 - In.M22 * In.M33 * In.M41 - In.M23 * In.M31 * In.M42;
-        Result.M42 = 
-            In.M11 * In.M32 * In.M43 + In.M12 * In.M33 * In.M41 + In.M13 * In.M31 * In.M42 
-            - In.M11 * In.M33 * In.M42 - In.M12 * In.M31 * In.M43 - In.M13 * In.M32 * In.M41;
-        Result.M43 = 
-            In.M11 * In.M23 * In.M42 + In.M12 * In.M21 * In.M43 + In.M13 * In.M22 * In.M41 
-            - In.M11 * In.M22 * In.M43 - In.M12 * In.M23 * In.M41 - In.M13 * In.M21 * In.M42;
-        Result.M44 = 
-            In.M11 * In.M22 * In.M33 + In.M12 * In.M23 * In.M31 + In.M13 * In.M21 * In.M32 
-            - In.M11 * In.M23 * In.M32 - In.M12 * In.M21 * In.M33 - In.M13 * In.M22 * In.M31;
         
-        auto Det = Determinant(In);
-        auto InvDet = 1.0f/Det;
-        Result = Result * InvDet;
+        auto E = M.Q;
+        
+        Result.Q[0] = 
+            E[5]  *   E[10] * E[15] - 
+            E[5]  *   E[11] * E[14] -
+            E[9]  *   E[6]  * E[15] +
+            E[9]  *   E[7]  * E[14] +
+            E[13] *   E[6]  * E[11] -
+            E[13] *   E[7]  * E[10];
+        
+        // DONE
+        
+        Result.Q[4] = 
+            -E[4] *   E[10] * E[15] +
+            E[4]  *   E[11] * E[14] +
+            E[8]  *   E[6]  * E[15] -
+            E[8]  *   E[7]  * E[14] -
+            E[12] *   E[6]  * E[11] +
+            E[12] *   E[7]  * E[10];
+        
+        // DONE
+        
+        Result.Q[8] = 
+            E[4]  *   E[9]  * E[15] - 
+            E[4]  *   E[11] * E[13] -
+            E[8]  *   E[5]  * E[15] +
+            E[8]  *   E[7]  * E[13] +
+            E[12] *   E[5]  * E[11] -
+            E[12] *   E[7]  * E[9];
+        //DONE
+        
+        Result.Q[12] = 
+            -E[4] *   E[9]  * E[14] +
+            E[4]  *   E[10] * E[13] +
+            E[8]  *   E[5]  * E[14] -
+            E[8]  *   E[6]  * E[13] -
+            E[12] *   E[5]  * E[10] +
+            E[12] *   E[6]  * E[9];
+        //DONE
+        
+        Result.Q[1] = 
+            -E[1] *   E[10] * E[15] +
+            E[1]  *   E[11] * E[14] +
+            E[9]  *   E[2]  * E[15] -
+            E[9]  *   E[3]  * E[14] -
+            E[13] *   E[2]  * E[11] +
+            E[13] *   E[3]  * E[10];
+        //DONE
+        
+        Result.Q[5] = 
+            E[0]  *   E[10] * E[15] - 
+            E[0]  *   E[11] * E[14] -
+            E[8]  *   E[2]  * E[15] +
+            E[8]  *   E[3]  * E[14] +
+            E[12] *   E[2]  * E[11] -
+            E[12] *   E[3]  * E[10];
+        //DONE
+        
+        Result.Q[9] = 
+            -E[0] *   E[9]  * E[15] + 
+            E[0]  *   E[11] * E[13] +
+            E[8]  *   E[1]  * E[15] -
+            E[8]  *   E[3]  * E[13] -
+            E[12] *   E[1]  * E[11] +
+            E[12] *   E[3]  * E[9];
+        //DONE
+        
+        Result.Q[13] = 
+            E[0]  *   E[9]  * E[14] - 
+            E[0]  *   E[10] * E[13] -
+            E[8]  *   E[1]  * E[14] +
+            E[8]  *   E[2]  * E[13] +
+            E[12] *   E[1]  * E[10] -
+            E[12] *   E[2]  * E[9];
+        //DONE
+        
+        Result.Q[2] = 
+            E[1]  *   E[6]  * E[15] - 
+            E[1]  *   E[7]  * E[14] -
+            E[5]  *   E[2]  * E[15] +
+            E[5]  *   E[3]  * E[14] +
+            E[13] *   E[2]  * E[7]  -
+            E[13] *   E[3]  * E[6];
+        //DONE
+        
+        Result.Q[6] = 
+            -E[0] *   E[6]  * E[15] + 
+            E[0]  *   E[7]  * E[14] +
+            E[4]  *   E[2]  * E[15] -
+            E[4]  *   E[3]  * E[14] -
+            E[12] *   E[2]  * E[7]  +
+            E[12] *   E[3]  * E[6];
+        //DONE
+        
+        Result.Q[10] = 
+            E[0]  *   E[5]  * E[15] - 
+            E[0]  *   E[7]  * E[13] -
+            E[4]  *   E[1]  * E[15] +
+            E[4]  *   E[3]  * E[13] +
+            E[12] *   E[1]  * E[7]  -
+            E[12] *   E[3]  * E[5];
+        //DONE
+        
+        Result.Q[14] = 
+            -E[0] *   E[5]  * E[14] +
+            E[0]  *   E[6]  * E[13] +
+            E[4]  *   E[1]  * E[14] -
+            E[4]  *   E[2]  * E[13] -
+            E[12] *   E[1]  * E[6]  +
+            E[12] *   E[2]  * E[5];
+        //DONE
+        
+        Result.Q[3] = 
+            -E[1]  *   E[6]  * E[11] + 
+            E[1]   *   E[7]  * E[10] +
+            E[5]   *   E[2]  * E[11] -
+            E[5]   *   E[3]  * E[10] -
+            E[9]   *   E[2]  * E[7]  +
+            E[9]   *   E[3]  * E[6];
+        //DONE
+        
+        Result.Q[7] = 
+            E[0]  *   E[6]  * E[11] - 
+            E[0]  *   E[7]  * E[10] -
+            E[4]  *   E[2]  * E[11] +
+            E[4]  *   E[3]  * E[10] +
+            E[8]  *   E[2]  * E[7]  -
+            E[8]  *   E[3]  * E[6];
+        //DONE
+        
+        Result.Q[11] =  
+            -E[0]  *   E[5]  * E[11] +
+            E[0]   *   E[7]  * E[9]  +
+            E[4]   *   E[1]  * E[11] -
+            E[4]   *   E[3]  * E[9]  -
+            E[8]   *   E[1]  * E[7]  +
+            E[8]   *   E[3]  * E[5];
+        //DONE
+        
+        Result.Q[15] = 
+            E[0]  *   E[5]  * E[10] - 
+            E[0]  *   E[6]  * E[9]  -
+            E[4]  *   E[1]  * E[10] +
+            E[4]  *   E[2]  * E[9]  +
+            E[8]  *   E[1]  * E[6]  -
+            E[8]  *   E[2]  * E[5];
+        
+        auto Det = Determinant(M);
+        Det = 1.0f / Det;
+        
+        Result = Result * Det;
+        
         return Result;
     }
     
@@ -1623,6 +1946,10 @@ namespace math
     {
         v2 Result(V);
         auto L = Length(V);
+        if(L == 0.0f)
+        {
+            return Result;
+        }
         Result /= L;
         return Result;
     }
@@ -1631,6 +1958,10 @@ namespace math
     {
         v3 Result(V);
         auto L = Length(V);
+        if(L == 0.0f)
+        {
+            return Result;
+        }
         Result /= L;
         return Result;
     }
@@ -1639,6 +1970,10 @@ namespace math
     {
         v4 Result(V);
         auto L = Length(V);
+        if(L == 0.0f)
+        {
+            return Result;
+        }
         Result /= L;
         return Result;
     }
@@ -1729,11 +2064,11 @@ namespace math
         return Result;
     }
     
-    inline m4 Rotate(m4 In, r32 A, v3 Axis)
+    inline quat Rotate(quat In, r32 A, v3 Axis)
     {
-        m4 Result(In);
-        auto R = CreateRotation(A * Axis.X, A * Axis.Y, A * Axis.Z);
-        Result = R * Result;
+        quat Result(In);
+        auto Q = math::quat(Axis.x, Axis.y, Axis.z, DEGREE_IN_RADIANS * A);
+        Result = Result * Q;
         return Result;
     }
     
@@ -1780,9 +2115,9 @@ namespace math
     inline m4 LookAt(v3 P, v3 T)
     {
         auto F = Normalize(P - T);
-        auto U = v3(0.0f,1.0f,0.0f);
-        auto R = Cross(U, F);
-        U = Cross(F, R);
+        auto U = v3(0.0f, 1.0f, 0.0f);
+        auto R = Normalize(Cross(U, F));
+        U = Normalize(Cross(F, R));
         
         m4 Result(
             R.x, R.y, R.z, 0,
@@ -1791,8 +2126,7 @@ namespace math
             0,   0,   0,   1
             );
         
-        m4 Tr = Translate(m4(1.0f), -P);
-        Result = Result * Tr;
+        Result = Translate(Result, -P);
         
         return Result;
     }
@@ -1818,17 +2152,7 @@ namespace math
         
         return Result;
     }
-    /*
-    inline void Perspective(r32& AngleOfView, r32 AspectRatio, r32 Near,
-    r32 Far, r32& Bottom, r32& Top, r32& Left, r32& Right)
-    {
-    r32 Scale = tan(AngleOfView * 0.5f * PI / 180) * Near;
-    Right = AspectRatio  * Scale;
-    Left = -Right;
-    Top = Scale;
-    Bottom = -Top;
-    }
-    */
+    
     inline m4 Frustum(r32 Bottom, r32 Top, r32 Left, r32 Right,
                       r32 Near, r32 Far)
     {
@@ -1869,7 +2193,7 @@ namespace math
     }
     
     
-    inline v3 UnProject(v3 In, m4 Model, m4 Projection, v4 Viewport)
+    inline v3 UnProject(v3 In, m4 Model, m4 Projection, v4i Viewport)
     {
         auto Inv = Inverse(Projection * Model);
         
@@ -1925,6 +2249,33 @@ namespace math
     {
         r32 Rand = Min(Max(From, ((r32)rand()/(r32)(RAND_MAX)) * To),To);
         return Rand;
+    }
+    
+    //@Incomplete: This this. Seems to not line up with the tutorial
+    //@Link:       http://antongerdelan.net/opengl/raycasting.html
+    inline v3 CastRay(r32 MouseX, r32 MouseY, r32 Width, r32 Height, m4 P, m4 V, r32 Near)
+    {
+        // Convert to Normalized Device Coordinates
+        r32 X = (2.0f * MouseX) / Width - 1.0f;
+        r32 Y = 1.0f - (2.0f * MouseY) / Height;
+        r32 Z = 1.0f; // This is not necessarily needed here yet
+        v3 RayNDC = v3(X, Y, Z);
+        //DEBUG_PRINT("(%f, %f)\n", X, Y);
+        
+        // We don't need to reverse the perspective division
+        v4 RayClip = v4(RayNDC.xy, -1.0, 1.0);
+        
+        // Convert to eye coords by inverting the projection
+        v4 RayEye = Inverse(P) * RayClip;
+        
+        // Point the ray the right direction in Z
+        RayEye = v4(RayEye.xy, -1.0f, 0.0);
+        
+        // Convert to world coordinates
+        v3 RayWorld = (Inverse(V) * RayEye).xyz;
+        RayWorld = Normalize(RayWorld);
+        
+        return RayWorld;
     }
     
     using rgb = v3;

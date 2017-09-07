@@ -70,6 +70,12 @@ struct character_data
 #define NUM_TIMERS 1024
 #define MAX_MODELS 300
 
+struct ray
+{
+    math::v3 Origin;
+    math::v3 Direction;
+};
+
 struct game_state
 {
     memory_arena TotalArena;
@@ -114,6 +120,10 @@ struct game_state
     sound_effects Sounds;
     
     model PlayerModel;
+    model* SelectedModel;
+    
+    model Models[MAX_MODELS];
+    i32 ModelCount;
     
     u16 EntityCount;
     entity Entities[NUM_ENTITIES];

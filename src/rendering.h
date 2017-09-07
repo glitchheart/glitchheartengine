@@ -3,9 +3,10 @@
 
 #define PIXELS_PER_UNIT 32
 #define MAX_MESHES 60
+
+#define MAX_LIGHTS 150
 #define MAX_BONES 50
 #define MAX_CHILDREN 30
-#define MAX_LIGHTS 20
 
 enum Font_Type
 {
@@ -98,6 +99,7 @@ enum Shader_Type
     Shader_FrameBuffer,
     Shader_LightSource,
     Shader_SimpleModel,
+    Shader_Passthrough,
     
     Shader_Count
 };
@@ -322,7 +324,10 @@ struct camera
     i32 ViewportHeight;
     r32 Zoom;
     math::v3 Center;
-    math::v3 CenterTarget;
+    math::v3 Position;
+    math::quat Orientation;
+    math::v3 Target;
+    
     r32 FollowSpeed;
     math::m4 ViewMatrix;
     math::m4 ProjectionMatrix;
@@ -334,8 +339,6 @@ struct camera
     r32 EndAlpha;
     r32 FadingAlpha = 0.0f;
     r32 FadingSpeed;
-    
-    math::v3 P;
 };
 
 #define RENDER_COMMAND_MAX 400
@@ -409,7 +412,19 @@ struct renderer
     camera Cameras[MAX_CAMERAS];
     i32 CurrentCameraHandle;
     
-    i32 Viewport[4];
+    union
+    {
+        i32 Viewport[4];
+        math::v4i V;
+        struct
+        {
+            i32 ViewportX;
+            i32 ViewportY;
+            i32 ViewportWidth;
+            i32 ViewportHeight;
+        };
+    };
+    
     i32 WindowWidth;
     i32 WindowHeight;
     
