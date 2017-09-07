@@ -115,7 +115,7 @@ static void CalculateInterpolatedRotation(const quat_keys& RotationKeys, math::q
     math::quat& Start = RotationKeys.Values[Index];
     math::quat& End = RotationKeys.Values[NextIndex];
     
-    OutRotation = NLerp(Start, End, Factor);
+    OutRotation = Slerp(Start, End, Factor);
 }
 
 static b32 FindBoneChannel(i32 BoneIndex, const skeletal_animation& Animation, bone_channel& Out)
@@ -131,7 +131,7 @@ static b32 FindBoneChannel(i32 BoneIndex, const skeletal_animation& Animation, b
     return false;
 }
 
-static void CalculateThroughBones(const skeletal_animation& Animation, r32 AnimationTime, bone* Bones, math::m4* Transforms, i32 NumBones, i32 BoneIndex, math::m4 ParentTransform, math::m4 GlobalInverseTransform)
+static void CalculateThroughBones(const skeletal_animation& Animation, r32 AnimationTime, bone* Bones, math::m4* Transforms, i32 NumBones, u32 BoneIndex, math::m4 ParentTransform, math::m4 GlobalInverseTransform)
 {
     // @Incomplete: Animation stuff!
     bone Bone = Bones[BoneIndex];
@@ -139,7 +139,7 @@ static void CalculateThroughBones(const skeletal_animation& Animation, r32 Anima
     
     bone_channel BoneChannel;
     
-    if (FindBoneChannel(BoneIndex, Animation, BoneChannel))
+    if (false && FindBoneChannel(BoneIndex, Animation, BoneChannel))
     {
         math::v3 Translation;
         CalculateInterpolatedPosition(BoneChannel.PositionKeys, Translation, AnimationTime);
@@ -151,7 +151,7 @@ static void CalculateThroughBones(const skeletal_animation& Animation, r32 Anima
         math::m4 ScalingMatrix(1.0f);
         ScalingMatrix = math::Scale(ScalingMatrix, Scaling);
         
-        math::quat Rotation;
+        math::quat Rotation = math::quat();
         CalculateInterpolatedRotation(BoneChannel.RotationKeys, Rotation, AnimationTime);
         math::m4 RotationMatrix = ToMatrix(Rotation);
         
@@ -163,7 +163,7 @@ static void CalculateThroughBones(const skeletal_animation& Animation, r32 Anima
     
     for(i32 ChildIndex = 0; ChildIndex < Bone.ChildCount; ChildIndex++)
     {
-        CalculateThroughBones(Animation, AnimationTime, Bones, Transforms, NumBones, (i32)Bone.Children[ChildIndex], GlobalTransform, GlobalInverseTransform);
+        CalculateThroughBones(Animation, AnimationTime, Bones, Transforms, NumBones, Bone.Children[ChildIndex], GlobalTransform, GlobalInverseTransform);
     }
 }
 
