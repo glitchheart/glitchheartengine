@@ -130,6 +130,7 @@ struct buffer
     GLuint IBO;
     GLint VertexBufferSize;
     GLint IndexBufferSize;
+    GLint IndexBufferCount;
 };
 
 struct render_state

@@ -247,7 +247,15 @@ static void PushModel(renderer& Renderer, model& Model)
     }
     
     RenderCommand->Model.HandleCount = Model.MeshCount;
+    RenderCommand->Model.BoneCount = Model.BoneCount;
+    RenderCommand->Model.BoneTransforms = PushTempSize(sizeof(math::m4) * Model.BoneCount, math::m4);
     
+    for(i32 Index = 0; Index < Model.BoneCount; Index++)
+    {
+        RenderCommand->Model.BoneTransforms[Index] = Model.CurrentPoses[Index];
+    }
+    
+    //memcpy(RenderCommand->Model.BoneTransforms, Model.CurrentPose.BoneTransforms, sizeof(bone_transform) * MAX_BONES);
     RenderCommand->Model.Color = math::rgba(1.0f, 1.0f, 1.0f, 1.0f);
     RenderCommand->IsUI = false;
 }
@@ -257,7 +265,7 @@ static void LoadBuffer(renderer& Renderer, r32* Buffer, i32 BufferSize, i32* Buf
     buffer_data Data = {};
     Data.VertexBuffer = Buffer;
     Data.VertexBufferSize = BufferSize;
-    Data.IndexBufferSize = 0;
+    Data.IndexBufferCount = 0;
     Renderer.Buffers[Renderer.BufferCount] = Data;
     
     *BufferHandle = Renderer.BufferCount++;
@@ -266,10 +274,7 @@ static void LoadBuffer(renderer& Renderer, r32* Buffer, i32 BufferSize, i32* Buf
 
 static b32 IsEOF(chunk_format& Format)
 {
-    return Format.Format[0] == 'E' &&
-        Format.Format[1] == 'O' &&
-        Format.Format[2] == 'F' && 
-        Format.Format[3] == ' ';
+    return strcmp(Format.Format, "EOF") == 0;
 }
 
 static void LoadModel(renderer& Renderer, char* FilePath, model* Model)
@@ -281,10 +286,9 @@ static void LoadModel(renderer& Renderer, char* FilePath, model* Model)
     {
         fread(&Header,sizeof(model_header), 1, File);
         
-        if(Header.Version[0] != '1' ||
-           Header.Version[1] != '3')
+        if(strcmp(Header.Version, "1.4") != 0)
         {
-            ERR("Wrong file version. Expected version 1.2");
+            ERR("Wrong file version. Expected version 1.4");
             return;
         }
         
@@ -300,39 +304,40 @@ static void LoadModel(renderer& Renderer, char* FilePath, model* Model)
                Format.Format[2] == 'S' &&
                Format.Format[3] == 'H')
             {
-                buffer_data Data = {};
+                /*buffer_data Data = {};
                 
-                mesh_header MHeader;
+                mesh_data_info MeshInfo;
                 
-                fread(&MHeader, sizeof(mesh_header), 1, File);
+                fread(&MeshInfo, sizeof(mesh_data_info), 1, File);
                 
-                r32* VertexBuffer = PushTempSize(MHeader.VertexChunkSize,  r32);
+                u32* IndexBuffer = PushTempSize(MeshInfo.IndexBufferByteLength, unsigned short);
+                fread(IndexBuffer, MeshInfo.IndexBufferByteLength, 1, File);
+                CopyTemp(Data.IndexBuffer, IndexBuffer, MeshInfo.IndexBufferByteLength, u32);
                 
-                fread(VertexBuffer, MHeader.VertexChunkSize, 1, File);
+                r32* VertexBuffer = PushTempSize(MeshInfo.VertexBufferByteLength, r32);
+                fread(VertexBuffer, MeshInfo.VertexBufferByteLength, 1, File);
+                CopyTemp(Data.VertexBuffer, VertexBuffer, MeshInfo.VertexBufferByteLength, r32);
                 
-                Data.HasNormals = MHeader.NumNormals > 0;
-                Data.HasUVs = MHeader.NumUVs > 0;
+                // @Incomplete: Do we really always have normals and uvs?????
+                Data.HasNormals = true;
+                Data.HasUVs = true;
                 
-                i32* IndexBuffer = PushTempSize(MHeader.FacesChunkSize, i32);
-                
-                fread(IndexBuffer, MHeader.FacesChunkSize, 1, File);
-                
-                CopyTemp(Data.VertexBuffer, VertexBuffer, MHeader.VertexChunkSize, r32);
-                
-                i32 BoneInfoSize = 9;
-                
-                Data.VertexBufferSize = MHeader.NumVertices * (3 + BoneInfoSize) + MHeader.NumNormals * 3 + MHeader.NumUVs * 2;
-                
-                CopyTemp(Data.IndexBuffer, IndexBuffer, MHeader.FacesChunkSize, u32);
-                
-                Data.IndexBufferSize = MHeader.NumFaces * 3;
+                Data.VertexBufferSize = MeshInfo.VertexBufferByteLength;
+                Data.IndexBufferSize = MeshInfo.IndexBufferByteLength;
+                Data.IndexBufferCount = MeshInfo.IndexCount;
                 
                 Model->Meshes[MeshCount].BufferHandle = Renderer.BufferCount++;
                 
-                Model->Meshes[MeshCount].Material.HasTexture = MHeader.HasTexture;
+                // @Incomplete: IMPORTANT
+                // @Incomplete: IMPORTANT
+                // @Incomplete: IMPORTANT
+                // @Incomplete: IMPORTANT
+                // @Incomplete: IMPORTANT
+                // @Incomplete: IMPORTANT
+                Model->Meshes[MeshCount].Material.HasTexture = false;
                 
-                if(Model->Meshes[MeshCount].Material.HasTexture)
-                    Model->Meshes[MeshCount].Material.TextureHandle = Renderer.TextureMap[MHeader.TextureFile]->Handle;
+                //if(Model->Meshes[MeshCount].Material.HasTexture)
+                //Model->Meshes[MeshCount].Material.TextureHandle = Renderer.TextureMap[MHeader.TextureFile]->Handle;
                 
                 Model->Meshes[MeshCount].Material.Color = math::rgba(1, 1, 1, 1);
                 MeshCount++;
@@ -341,23 +346,20 @@ static void LoadModel(renderer& Renderer, char* FilePath, model* Model)
                 
                 Renderer.Buffers[Renderer.BufferCount - 1] = Data;
             }
-            else if(Format.Format[0] == 'B' &&
-                    Format.Format[1] == 'O' &&
-                    Format.Format[2] == 'N' &&
-                    Format.Format[3] == 'E')
+            else if(Format.Format[0] == 'S' &&
+                    Format.Format[1] == 'K' &&
+                    Format.Format[2] == 'I' &&
+                    Format.Format[3] == 'N')
             {
-                bone_header BHeader;
-                fread(&BHeader, sizeof(bone_header), 1, File);
-                Model->BoneCount = BHeader.NumBones;
-                
-                fread(Model->Bones, sizeof(bone) * Model->BoneCount, 1, File);
+            
             }
             else if(Format.Format[0] == 'A' &&
                     Format.Format[1] == 'N' &&
                     Format.Format[2] == 'I' &&
                     Format.Format[3] == 'M')
             {
-                animation_header AHeader;
+            
+                /*animation_header AHeader;
                 fread(&AHeader, sizeof(animation_header), 1, File);
                 
                 animation_cycle AnimationCycle;
@@ -367,7 +369,7 @@ static void LoadModel(renderer& Renderer, char* FilePath, model* Model)
                 
                 fread(AnimationCycle.Frames, sizeof(animation_frame) * AnimationCycle.NumFrames, 1, File);
                 
-                Renderer.AnimationCycles[Renderer.AnimationCycleCount++] = AnimationCycle;
+                Renderer.AnimationCycles[Renderer.AnimationCycleCount++] = AnimationCycle;*/
             }
             else
             {
@@ -379,6 +381,127 @@ static void LoadModel(renderer& Renderer, char* FilePath, model* Model)
         
         Model->MeshCount = MeshCount;
         printf("Mesh count %d\n", MeshCount);
+        
+        fclose(File);
+    }
+    else
+    {
+        printf("Model file not found: %s", FilePath);
+    }
+}
+
+
+static void LoadGLIMModel(renderer& Renderer, char* FilePath, model* Model)
+{
+    model_header Header = {};
+    
+    FILE *File = fopen(FilePath, "rb");
+    if(File)
+    {
+        fread(&Header,sizeof(model_header), 1, File);
+        
+        if(strcmp(Header.Version, "1.5") != 0)
+        {
+            ERR("Wrong file version. Expected version 1.5");
+            return;
+        }
+        
+        model_data ModelData;
+        fread(&ModelData, sizeof(model_data), 1, File);
+        
+        mesh_data* MeshData;
+        MeshData = PushTempSize(ModelData.MeshChunkSize, mesh_data);
+        fread(MeshData, ModelData.MeshChunkSize, 1, File);
+        
+        r32* VertexBuffer = PushTempSize(ModelData.VertexBufferChunkSize, r32);
+        fread(VertexBuffer, ModelData.VertexBufferChunkSize, 1, File);
+        u32* IndexBuffer = PushTempSize(ModelData.IndexBufferChunkSize, u32);
+        fread(IndexBuffer, ModelData.IndexBufferChunkSize, 1, File);
+        
+        Model->GlobalInverseTransform = ModelData.GlobalInverseTransform;
+        Model->Bones = PushArray(&Renderer.AnimationArena, ModelData.NumBones, bone);
+        Model->BoneCount = ModelData.NumBones;
+        fread(Model->Bones, ModelData.BoneChunkSize, 1, File);
+        
+        buffer_data Data = {};
+        
+        CopyTemp(Data.VertexBuffer, VertexBuffer, ModelData.VertexBufferChunkSize, r32);
+        CopyTemp(Data.IndexBuffer, IndexBuffer, ModelData.IndexBufferChunkSize, u32);
+        
+        // @Incomplete: Do we really always have normals and uvs?????
+        Data.HasNormals = true;
+        Data.HasUVs = true;
+        
+        Data.VertexBufferSize = ModelData.VertexBufferChunkSize;
+        Data.IndexBufferSize = ModelData.IndexBufferChunkSize;
+        Data.IndexBufferCount = ModelData.NumIndices;
+        
+        Model->Meshes[0].BufferHandle = Renderer.BufferCount++;
+        
+        // @Incomplete: IMPORTANT
+        // @Incomplete: IMPORTANT
+        // @Incomplete: IMPORTANT
+        // @Incomplete: IMPORTANT
+        // @Incomplete: IMPORTANT
+        // @Incomplete: IMPORTANT
+        Model->Meshes[0].Material.HasTexture = false;
+        
+        //if(Model->Meshes[MeshCount].Material.HasTexture)
+        //Model->Meshes[MeshCount].Material.TextureHandle = Renderer.TextureMap[MHeader.TextureFile]->Handle;
+        
+        Model->Meshes[0].Material.Color = math::rgba(1, 1, 1, 1);
+        
+        //Assert(MeshCount <= MAX_MESHES);
+        
+        Renderer.Buffers[Renderer.BufferCount - 1] = Data;
+        
+        Model->MeshCount = 1;
+        
+        // Load animations
+        animation_header AHeader;
+        fread(&AHeader, sizeof(animation_header), 1, File);
+        ;
+        Model->AnimationCount = AHeader.NumAnimations;
+        Model->Animations = PushArray(&Renderer.AnimationArena, AHeader.NumAnimations, skeletal_animation);
+        
+        for(i32 Index = 0; Index < Model->AnimationCount; Index++)
+        {
+            animation_channel_header ACHeader;
+            fread(&ACHeader, sizeof(animation_channel_header), 1, File);
+            
+            skeletal_animation* Animation = &Model->Animations[Index];
+            Animation->Duration = ACHeader.Duration;
+            Animation->NumBoneChannels = ACHeader.NumBoneChannels;
+            
+            Animation->BoneChannels = PushArray(&Renderer.AnimationArena, Animation->NumBoneChannels, bone_channel);
+            
+            for(i32 BoneChannelIndex = 0; BoneChannelIndex < Animation->NumBoneChannels; BoneChannelIndex++)
+            {
+                bone_animation_header BAHeader;
+                fread(&BAHeader, sizeof(bone_animation_header), 1, File);
+                
+                bone_channel* BoneChannel = &Animation->BoneChannels[BoneChannelIndex];
+                BoneChannel->BoneIndex = BAHeader.BoneIndex;
+                
+                BoneChannel->PositionKeys.NumKeys = BAHeader.NumPositionChannels;
+                BoneChannel->PositionKeys.TimeStamps = PushArray(&Renderer.AnimationArena, BoneChannel->PositionKeys.NumKeys, r32);
+                BoneChannel->PositionKeys.Values = PushArray(&Renderer.AnimationArena, BoneChannel->PositionKeys.NumKeys, math::v3);
+                fread(BoneChannel->PositionKeys.TimeStamps, sizeof(r32) * BoneChannel->PositionKeys.NumKeys, 1, File);
+                fread(BoneChannel->PositionKeys.Values, sizeof(math::v3) * BoneChannel->PositionKeys.NumKeys, 1, File);
+                
+                BoneChannel->RotationKeys.NumKeys = BAHeader.NumRotationChannels;
+                BoneChannel->RotationKeys.TimeStamps = PushArray(&Renderer.AnimationArena, BoneChannel->RotationKeys.NumKeys, r32);
+                BoneChannel->RotationKeys.Values = PushArray(&Renderer.AnimationArena, BoneChannel->RotationKeys.NumKeys, math::quat);
+                fread(BoneChannel->RotationKeys.TimeStamps, sizeof(r32) * BoneChannel->RotationKeys.NumKeys, 1, File);
+                fread(BoneChannel->RotationKeys.Values, sizeof(math::quat) * BoneChannel->RotationKeys.NumKeys, 1, File);
+                
+                BoneChannel->ScalingKeys.NumKeys = BAHeader.NumScalingChannels;
+                BoneChannel->ScalingKeys.TimeStamps = PushArray(&Renderer.AnimationArena, BoneChannel->ScalingKeys.NumKeys, r32);
+                BoneChannel->ScalingKeys.Values = PushArray(&Renderer.AnimationArena, BoneChannel->ScalingKeys.NumKeys, math::v3);
+                fread(BoneChannel->ScalingKeys.TimeStamps, sizeof(r32) * BoneChannel->ScalingKeys.NumKeys, 1, File);
+                fread(BoneChannel->ScalingKeys.Values, sizeof(math::v3) * BoneChannel->ScalingKeys.NumKeys, 1, File);
+            }
+        }
         
         fclose(File);
     }

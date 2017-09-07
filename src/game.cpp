@@ -182,14 +182,16 @@ extern "C" UPDATE(Update)
     {
         
         model PlayerModel;
-        LoadModel(Renderer, "../assets/models/testing.modl", &PlayerModel);
+        LoadGLIMModel(Renderer, "../assets/models/knight.glim", &PlayerModel);
+        PlayerModel.AnimationTime = 0.0f;
         PlayerModel.Position = math::v3(0, 0, 0);
-        PlayerModel.Scale = math::v3(0.05, 0.05, 0.05);
-        PlayerModel.Orientation = math::quat();
+        PlayerModel.Scale = math::v3(10, 10, 10);
+        
         GameState->PlayerModel = PlayerModel;
         
         model Cube;
-        LoadModel(Renderer, "../assets/models/cube_many_tris.modl", &Cube);
+        //LoadModel(Renderer, "../assets/models/cube_many_tris.modl", &Cube);
+        LoadGLIMModel(Renderer, "../assets/models/cube.glim", &Cube);
         
         GameState->Models[GameState->ModelCount++] = Cube;
         GameState->Models[0].Position = math::v3(-10, -1.5f, 0);
@@ -473,7 +475,6 @@ extern "C" UPDATE(Update)
             break;
         }
     }
-    
     
     if(GameState->GameMode == Mode_MainMenu)
     {
@@ -792,12 +793,7 @@ extern "C" UPDATE(Update)
         auto T2 = -B - sqrt(PreCalc);
         
         auto Pick1 = Middle + Ray * Min(T1, T2);
-        DEBUG_PRINT("Pos: (%f, %f, %f)\n", Cen.x, Cen.y, Cen.z);
-        DEBUG_PRINT("Pick1: (%f, %f, %f)\n", Pick1.x, Pick1.y, Pick1.z);
-        DEBUG_PRINT("Distance: %f\n", Distance(Cen, Pick1));
         auto Pick2 = Middle + Ray * Max(T1, T2);
-        DEBUG_PRINT("Pick2: (%f, %f, %f)\n", Pick2.x, Pick2.y, Pick2.z);
-        DEBUG_PRINT("Distance: %f\n", Distance(Cen, Pick2));
         auto Dist = Min(Distance(Cen, Pick1), Distance(Cen, Pick2));
         
         if(MOUSE_DOWN(Mouse_Left) && Dist < 10.0f)
@@ -847,17 +843,24 @@ extern "C" UPDATE(Update)
     GetActionButtonsForQueue(InputController);
     
     GameUpdateStruct->EntityCount = GameState->EntityCount;
-    memcpy(&GameUpdateStruct->EntityPositions,&GameState->EntityPositions,sizeof(math::v2) * NUM_ENTITIES);
-    
-    GameState->PlayerModel.CurrentPose = Renderer.AnimationCycles[0].Frames[0];
-    
-    CalculatePose(GameState->PlayerModel.Bones, &GameState->PlayerModel.CurrentPose, 0, -1);
+    memcpy(&GameUpdateStruct->EntityPositions, &GameState->EntityPositions, sizeof(math::v2) * NUM_ENTITIES);
     
     PushDirectionalLight(Renderer, math::v3(-0.2, -1.0, -0.3), 
                          math::v3(0.1f, 0.1f, 0.1f), math::v3(0.2, 0.2, 0.2), math::v3(0.1, 0.1, 0.1));
     
     char FPSBuffer[64];
     sprintf(FPSBuffer, "FPS: %.2f - AVG FPS: %.2f - dt: %.10lf", Renderer.FPS, Renderer.AverageFPS, DeltaTime);
+    
+    skeletal_animation Animation = GameState->PlayerModel.Animations[0];
+    GameState->PlayerModel.CurrentPoses = PushTempSize(sizeof(math::m4) * GameState->PlayerModel.BoneCount, math::m4);
+    CalculateBoneTransformsForAnimation(Animation, GameState->PlayerModel.AnimationTime, GameState->PlayerModel.Bones, GameState->PlayerModel.CurrentPoses, GameState->PlayerModel.BoneCount, GameState->PlayerModel.GlobalInverseTransform);
+    
+    GameState->PlayerModel.AnimationTime += DeltaTime / 2.0f;
+    
+    if(GameState->PlayerModel.AnimationTime >= Animation.Duration)
+    {
+        GameState->PlayerModel.AnimationTime = 0.0f;
+    }
     
     PushEntityRenderCommands(Renderer, *GameState);
     

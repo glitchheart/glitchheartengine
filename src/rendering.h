@@ -3,9 +3,10 @@
 
 #define PIXELS_PER_UNIT 32
 #define MAX_MESHES 60
-#define MAX_BONES 100
 
 #define MAX_LIGHTS 150
+#define MAX_BONES 50
+#define MAX_CHILDREN 30
 
 enum Font_Type
 {
@@ -142,45 +143,43 @@ struct material
     math::rgba Color;
 };
 
+struct vec3_keys
+{
+    i32 NumKeys;
+    r32* TimeStamps;
+    math::v3* Values;
+};
+
+struct quat_keys
+{
+    i32 NumKeys;
+    r32* TimeStamps;
+    math::quat* Values;
+};
+
+struct bone_channel
+{
+    i32 BoneIndex;
+    vec3_keys PositionKeys;
+    quat_keys RotationKeys;
+    vec3_keys ScalingKeys;
+};
+
+struct skeletal_animation
+{
+    r32 Duration;
+    i32 NumBoneChannels;
+    bone_channel* BoneChannels;
+};
+
 struct bone
 {
-    char Name[30];
-    u32 Id;
-    i32 Parent;
-    u32 Children[5];
+    i32 ParentId;
+    u32 Children[MAX_CHILDREN];
     i32 ChildCount;
-    u32 ParentedNodes[5];
     
-    math::v3 Translation;
-    math::v3 Scale;
-    math::quat Rotation;
-    
-    math::m4 BindInverse;
-    
-    math::quat RotationOrientation;
-    math::quat BoneOrientation;
-};
-
-struct bone_transform
-{
-    math::v3 Translation;
-    math::quat Rotation;
-    math::v3 Scale;
     math::m4 Transformation;
-};
-
-struct animation_frame
-{
-    r64 TimeStamp;
-    i32 BoneCount;
-    bone_transform BoneTransforms[MAX_BONES]; // @Incomplete: We might want to create a dynamic array
-};
-
-struct animation_cycle
-{
-    r64 TotalTime;
-    i32 NumFrames;
-    animation_frame* Frames;
+    math::m4 BoneOffset;
 };
 
 struct mesh
@@ -201,10 +200,16 @@ struct model
     mesh Meshes[MAX_MESHES];
     i32 MeshCount;
     
-    bone Bones[MAX_BONES];
+    bone* Bones;
     i32 BoneCount;
     
-    animation_frame CurrentPose;
+    math::m4* CurrentPoses;
+    
+    skeletal_animation* Animations;
+    i32 AnimationCount;
+    
+    math::m4 GlobalInverseTransform;
+    r32 AnimationTime;
 };
 
 struct mesh_render_data
@@ -298,7 +303,7 @@ struct render_command
             mesh_render_data RenderData[MAX_MESHES];
             i32 HandleCount;
             math::rgba Color;
-            bone_transform BoneTransforms[MAX_BONES]; // @Speed: This is so inefficient
+            math::m4* BoneTransforms;
             i32 BoneCount;
         } Model;
     };
@@ -366,10 +371,10 @@ GENERIC_MAP(texture_data, texture_data*, char*, StrCmp, NULL, "%s", STR_ASSIGN);
 struct buffer_data
 {
     r32* VertexBuffer;
-    i32 VertexBufferSize;
+    long VertexBufferSize;
     u32* IndexBuffer;
-    i32 IndexBufferSize;
-    
+    i32 IndexBufferCount;
+    long IndexBufferSize;
     b32 HasNormals;
     b32 HasUVs;
     
@@ -426,8 +431,6 @@ struct renderer
     math::rgba ClearColor;
     
     memory_arena AnimationArena;
-    animation_cycle AnimationCycles[1];
-    i32 AnimationCycleCount;
 };
 
 #endif
