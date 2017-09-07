@@ -182,7 +182,7 @@ extern "C" UPDATE(Update)
     {
         
         model PlayerModel;
-        LoadGLIMModel(Renderer, "../assets/models/knight.glim", &PlayerModel);
+        LoadGLIMModel(Renderer, "../assets/models/exported.glim", &PlayerModel);
         PlayerModel.AnimationTime = 0.0f;
         PlayerModel.Position = math::v3(0, 0, 0);
         PlayerModel.Scale = math::v3(10, 10, 10);

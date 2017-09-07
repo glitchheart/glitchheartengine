@@ -8,6 +8,8 @@ static i32 FindAnimationPosition(const vec3_keys& PositionKeys, r32 AnimationTim
         }
     }
     
+    Assert(0);
+    
     return 0;
 }
 
@@ -21,6 +23,8 @@ static i32 FindAnimationScaling(const vec3_keys& ScalingKeys, r32 AnimationTime)
         }
     }
     
+    Assert(0);
+    
     return 0;
 }
 
@@ -33,6 +37,8 @@ static i32 FindAnimationRotation(const quat_keys& RotationKeys, r32 AnimationTim
             return Index;
         }
     }
+    
+    Assert(0);
     
     return 0;
 }
@@ -110,10 +116,6 @@ static void CalculateInterpolatedRotation(const quat_keys& RotationKeys, math::q
     math::quat& End = RotationKeys.Values[NextIndex];
     
     OutRotation = NLerp(Start, End, Factor);
-    OutRotation = Normalize(OutRotation);
-    
-    math::quat Delta = End - Start;
-    OutRotation = Start + Factor * Delta;
 }
 
 static b32 FindBoneChannel(i32 BoneIndex, const skeletal_animation& Animation, bone_channel& Out)
@@ -137,7 +139,7 @@ static void CalculateThroughBones(const skeletal_animation& Animation, r32 Anima
     
     bone_channel BoneChannel;
     
-    if (false && FindBoneChannel(BoneIndex, Animation, BoneChannel))
+    if (FindBoneChannel(BoneIndex, Animation, BoneChannel))
     {
         math::v3 Translation;
         CalculateInterpolatedPosition(BoneChannel.PositionKeys, Translation, AnimationTime);
