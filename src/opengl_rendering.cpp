@@ -1295,7 +1295,7 @@ static void RenderText(render_state& RenderState, const render_font& Font, const
     glBindVertexArray(0);
 }
 
-static void RenderWireframeCube(render_state& RenderState, math::m4 Projection, math::m4 View)
+static void RenderWireframeCube(const render_command& Command, render_state& RenderState, math::m4 Projection = math::m4(1.0f), math::m4 View = math::m4(1.0f))
 {
     glBindVertexArray(RenderState.WireframeCubeVAO);
     
@@ -1303,14 +1303,14 @@ static void RenderWireframeCube(render_state& RenderState, math::m4 Projection, 
     UseShader(&Shader);
     
     math::m4 Model = math::m4(1.0f);
-    Model = math::Scale(Model, math::v3(5.0f, 2.3f, 1.0f));
-    Model = ToMatrix(math::Rotate(math::quat(), 90.0f, math::v3(0, 1, 0))) * Model;
-    Model = math::Translate(Model, math::v3(0.0f, 5.0f, 0.0f));
+    Model = math::Scale(Model, Command.Scale);
+    Model = ToMatrix(Command.Orientation) * Model;
+    Model = math::Translate(Model, Command.Position);
     
     SetMat4Uniform(Shader.Program, "Model", Model);
     SetMat4Uniform(Shader.Program, "Projection", Projection);
     SetMat4Uniform(Shader.Program, "View", View);
-    SetVec4Uniform(Shader.Program, "Color", math::rgba(1.0f, 0.0f, 0.0f, 1.0f));
+    SetVec4Uniform(Shader.Program, "Color", Command.WireframeCube.Color);
     
     glDrawElements(GL_LINE_STRIP, 17, GL_UNSIGNED_INT, (void*)0);
     glBindVertexArray(0);
@@ -1731,6 +1731,11 @@ static void RenderCommands(render_state& RenderState, renderer& Renderer, memory
                 RenderBuffer(Command, RenderState, Renderer, Camera.ProjectionMatrix, Camera.ViewMatrix);
             }
             break;
+            case RenderCommand_WireframeCube:
+            {
+                RenderWireframeCube(Command, RenderState, Camera.ProjectionMatrix, Camera.ViewMatrix);
+            }
+            break;
         }
     }
     
@@ -1805,10 +1810,6 @@ static void Render(render_state& RenderState, renderer& Renderer, memory_arena* 
     
     //RenderGame(GameState);
     RenderCommands(RenderState, Renderer, PermArena);
-    
-    auto& V = Camera.ViewMatrix;
-    auto& P = Camera.ProjectionMatrix;
-    RenderWireframeCube(RenderState, P, V);
     
     // Second pass
     

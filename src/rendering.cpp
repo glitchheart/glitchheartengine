@@ -150,6 +150,18 @@ static void PushOutlinedRect(renderer& Renderer, math::v3 Position, math::v3 Siz
     RenderCommand->IsUI = IsUI;
 }
 
+static void PushWireframeCube(renderer& Renderer, math::v3 Position, math::v3 Scale, math::quat Orientation, math::rgba Color)
+{
+    render_command* RenderCommand = PushNextCommand(Renderer, false);
+    
+    RenderCommand->Type = RenderCommand_WireframeCube;
+    RenderCommand->WireframeCube.Color = Color;
+    RenderCommand->Position = Position;
+    RenderCommand->Scale = Scale;
+    RenderCommand->Orientation = Orientation;
+    RenderCommand->IsUI = false;
+}
+
 static void PushSprite(renderer& Renderer, math::v3 Position, math::v3 Scale, math::v2 Frame, math::v2 TextureOffset, const char* TextureName, math::rgba Color, b32 IsUI = false)
 {
     render_command* RenderCommand = PushNextCommand(Renderer, IsUI);
@@ -344,20 +356,20 @@ static void LoadModel(renderer& Renderer, char* FilePath, model* Model)
                 Assert(MeshCount <= MAX_MESHES);
                 
                 Renderer.Buffers[Renderer.BufferCount - 1] = Data;
-            }
-            else if(Format.Format[0] == 'S' &&
-                    Format.Format[1] == 'K' &&
-                    Format.Format[2] == 'I' &&
-                    Format.Format[3] == 'N')
-            {
-            
-            }
-            else if(Format.Format[0] == 'A' &&
-                    Format.Format[1] == 'N' &&
-                    Format.Format[2] == 'I' &&
-                    Format.Format[3] == 'M')
-            {
-            
+                }
+                else if(Format.Format[0] == 'S' &&
+                Format.Format[1] == 'K' &&
+                Format.Format[2] == 'I' &&
+                Format.Format[3] == 'N')
+                {
+                
+                }
+                else if(Format.Format[0] == 'A' &&
+                Format.Format[1] == 'N' &&
+                Format.Format[2] == 'I' &&
+                Format.Format[3] == 'M')
+                {
+                
                 /*animation_header AHeader;
                 fread(&AHeader, sizeof(animation_header), 1, File);
                 
