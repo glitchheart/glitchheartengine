@@ -1542,6 +1542,13 @@ namespace math
         Q0 = Normalize(Q0);
         Q1 = Normalize(Q1);
         
+        auto DotP = Dot(Q0, Q1);
+        
+        if(DotP < 0.0f)
+        {
+            Q1 = -Q1;
+        }
+        
         return Normalize(Lerp(Q0, Q1, T));
     }
     
