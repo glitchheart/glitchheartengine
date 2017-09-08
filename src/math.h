@@ -1377,6 +1377,16 @@ namespace math
         Angle(cos(Angle / 2.0f)) {}
         quat(const quat& O) : Axis(O.Axis), Angle(O.Angle) {}
         
+        inline quat operator-()
+        {
+            quat Result(*this);
+            Result.X = -this->X;
+            Result.Y = -this->Y;
+            Result.Z = -this->Z;
+            Result.W = -this->W;
+            return Result;
+        }
+        
         inline quat operator+ (quat Q)
         {
             quat Result(*this);
@@ -1499,9 +1509,15 @@ namespace math
         const r64 DOT_THRESHOLD = 0.9995;
         if(DotP > DOT_THRESHOLD)
         {
-            quat Result = Q0 + (1.0f - T) * (Q1 - Q0);
+            quat Result = Q0 + T * (Q1 - Q0);
             Result = Normalize(Result);
             return Result;
+        }
+        
+        if(DotP < 0.0f)
+        {
+            Q1 = -Q1;
+            DotP = -DotP;
         }
         
         Clamp(DotP, -1.0f, 1.0f);
@@ -1516,16 +1532,17 @@ namespace math
         return Result;
     }
     
-    inline quat Lerp(quat Q0, r32 T, quat Q1)
+    inline quat Lerp(quat Q0, quat Q1, r32 T)
     {
         return (1.0f - T) * Q0 + T * Q1;
     }
     
-    inline quat NLerp(quat Q0, quat Q1, r32 T)
+    inline quat Nlerp(quat Q0, quat Q1, r32 T)
     {
         Q0 = Normalize(Q0);
         Q1 = Normalize(Q1);
-        return Normalize(Lerp(Q0, T, Q1));
+        
+        return Normalize(Lerp(Q0, Q1, T));
     }
     
     inline quat Interpolate(quat Q0, quat Q1, r32 F)
