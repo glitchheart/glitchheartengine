@@ -204,15 +204,9 @@ static void Pick(game_state* GameState, input_controller* InputController, rende
         
         auto Or = ToMatrix(GameState->SelectedModel->Orientation);
         
-        auto MForward = math::v3(Or[2][0],
-                                 Or[2][1],
-                                 Or[2][2]);
-        auto MUp = math::v3(Or[1][0],
-                            Or[1][1],
-                            Or[1][2]);
-        auto MRight = math::v3(Or[0][0],
-                               Or[0][1],
-                               Or[0][2]);
+        auto MForward = math::Forward(Or);
+        auto MUp = math::Up(Or);
+        auto MRight = math::Right(Or);
         r32 LineLength = 100.0f;
         
         PushLine(Renderer, MPos, MPos + MForward * LineLength, 1.0f, math::rgba(1.0f, 0.0f, 0.0f, 1.0f));
@@ -268,7 +262,6 @@ extern "C" UPDATE(Update)
         GameState->PlayerModel = &GameState->Models[GameState->ModelCount - 1];
         
         model Cube;
-        //LoadModel(Renderer, "../assets/models/cube_many_tris.modl", &Cube);
         LoadGLIMModel(Renderer, "../assets/models/cube.glim", &Cube);
         
         GameState->Models[GameState->ModelCount++] = Cube;
