@@ -156,6 +156,83 @@ static void PushEntityRenderCommands(renderer& Renderer, game_state& GameState)
     }
 }
 
+static void Pick(game_state* GameState, input_controller* InputController, renderer& Renderer)
+{
+    
+    if(MOUSE_DOWN(Mouse_Left))
+    {
+        GameState->SelectedModel = NULL;
+    }
+    
+    auto Camera = Renderer.Cameras[Renderer.CurrentCameraHandle];
+    
+    auto RayCast = math::CastPickingRay((r32)InputController->MouseX, (r32)InputController->MouseY, Camera.ProjectionMatrix, Camera.ViewMatrix, (r32)Renderer.ViewportWidth, (r32)Renderer.ViewportHeight);
+    
+    auto Ray = RayCast.Ray;
+    auto Origin = RayCast.Origin;
+    auto Target = RayCast.Target;
+    
+    auto Radius = 30.0f;
+    
+    for(i32 Index = 0; Index < GameState->ModelCount; Index++)
+    {
+        auto Cen = GameState->Models[Index].Position + math::v3(0.0f, Radius / 2.0f, 0.0f);
+        
+        auto B = Dot(Ray, Origin - Cen);
+        auto C = Dot(Origin - Cen, Origin - Cen) - pow(Radius, 2);
+        auto PreCalc = pow(B, 2) - C;
+        
+        if(PreCalc >= 0.0f)
+        {
+            auto T1 = -B + sqrt(PreCalc);
+            auto T2 = -B - sqrt(PreCalc);
+            
+            auto Pick1 = Origin + Ray * Min(T1, T2);
+            auto Pick2 = Origin + Ray * Max(T1, T2);
+            auto Dist = Min(Distance(Cen, Pick1), Distance(Cen, Pick2));
+            
+            if(MOUSE_DOWN(Mouse_Left) && (Dist < Radius || T1 == T2))
+            {
+                GameState->SelectedModel = &GameState->Models[Index];
+            }
+        }
+    }
+    
+    if(GameState->SelectedModel)
+    {
+        auto MPos = GameState->SelectedModel->Position;
+        
+        auto Or = ToMatrix(GameState->SelectedModel->Orientation);
+        
+        auto MForward = math::v3(Or[2][0],
+                                 Or[2][1],
+                                 Or[2][2]);
+        auto MUp = math::v3(Or[1][0],
+                            Or[1][1],
+                            Or[1][2]);
+        auto MRight = math::v3(Or[0][0],
+                               Or[0][1],
+                               Or[0][2]);
+        r32 LineLength = 100.0f;
+        
+        PushLine(Renderer, MPos, MPos + MForward * LineLength, 1.0f, math::rgba(1.0f, 0.0f, 0.0f, 1.0f));
+        
+        PushLine(Renderer, MPos, MPos + MUp * LineLength, 1.0f, math::rgba(0.0f, 0.0f, 1.0f, 1.0f));
+        
+        PushLine(Renderer, MPos, MPos + MRight * LineLength, 1.0f, math::rgba(0.0f, 1.0f, 0.0f, 1.0f));
+        
+        PushWireframeCube(Renderer, MPos - math::v3(0.0f, 50.0f, 0.0f), math::v3(30.0f, 80.0f, 30.0f), GameState->SelectedModel->Orientation, math::rgba(1.0f, 0.0f, 1.0f, 1.0f));
+        
+        if(MOUSE(Mouse_Left))
+        {
+            GameState->SelectedModel->Position = Origin + Ray * -10.0f;
+        }
+    }
+    
+    
+    
+}
+
 platform_api Platform;
 extern "C" UPDATE(Update)
 {
@@ -187,19 +264,20 @@ extern "C" UPDATE(Update)
         PlayerModel.Position = math::v3(0, 0, 0);
         PlayerModel.Scale = math::v3(10, 10, 10);
         
-        GameState->PlayerModel = PlayerModel;
+        GameState->Models[GameState->ModelCount++] = PlayerModel;
+        GameState->PlayerModel = &GameState->Models[GameState->ModelCount - 1];
         
         model Cube;
         //LoadModel(Renderer, "../assets/models/cube_many_tris.modl", &Cube);
         LoadGLIMModel(Renderer, "../assets/models/cube.glim", &Cube);
         
         GameState->Models[GameState->ModelCount++] = Cube;
-        GameState->Models[0].Position = math::v3(-10, -1.5f, 0);
-        GameState->Models[0].Scale = math::v3(100, 1.0f, 100);
+        GameState->Models[GameState->ModelCount - 1].Position = math::v3(-10, -1.5f, 0);
+        GameState->Models[GameState->ModelCount - 1].Scale = math::v3(100, 1.0f, 100);
         
         GameState->Models[GameState->ModelCount++] = Cube;
-        GameState->Models[1].Position = math::v3(-9.0f, 0.0f, -2.0f);
-        GameState->Models[1].Scale = math::v3(1.0f);
+        GameState->Models[GameState->ModelCount - 1].Position = math::v3(-9.0f, 0.0f, -2.0f);
+        GameState->Models[GameState->ModelCount - 1].Scale = math::v3(1.0f);
         
         LoadTextures(Renderer, &GameState->TotalArena);
         
@@ -740,103 +818,11 @@ extern "C" UPDATE(Update)
     
     math::v3 CamPos = GameCamera.Position;
     
-    auto Ray = CastRay(InputController->MouseX, InputController->MouseY, Renderer.ViewportWidth, Renderer.ViewportHeight, GameCamera.ProjectionMatrix, GameCamera.ViewMatrix, Near);
+    auto Forward = math::Forward(GameCamera.ViewMatrix);
+    auto Up = math::Up(GameCamera.ViewMatrix);
+    auto Right = math::Right(GameCamera.ViewMatrix);
     
-    auto Forward = math::v3(GameCamera.ViewMatrix[2][0],
-                            GameCamera.ViewMatrix[2][1],
-                            GameCamera.ViewMatrix[2][2]);
-    auto Up = math::v3(GameCamera.ViewMatrix[1][0],
-                       GameCamera.ViewMatrix[1][1],
-                       GameCamera.ViewMatrix[1][2]);
-    auto Right = math::v3(GameCamera.ViewMatrix[0][0],
-                          GameCamera.ViewMatrix[0][1],
-                          GameCamera.ViewMatrix[0][2]);
-    
-    auto Middle = math::v3(0.0f, 0.0f, -1.0f);
-    
-    Middle = Inverse(GameCamera.ProjectionMatrix) * Middle;
-    Middle = Inverse(GameCamera.ViewMatrix) * Middle;
-    
-    auto MouseX = (2.0f * InputController->MouseX) / Renderer.ViewportWidth - 1.0f;
-    auto MouseY = 1.0f - (2.0f * InputController->MouseY / Renderer.ViewportHeight);
-    
-    auto Mouse = Inverse(GameCamera.ProjectionMatrix) * math::v3((r32)MouseX, (r32)MouseY, 1.0f);
-    Mouse.z = -1.0f;
-    Mouse = Inverse(GameCamera.ViewMatrix) * Mouse;
-    
-    Middle = Inverse(GameCamera.ProjectionMatrix) * math::v3((r32)MouseX, (r32)MouseY, -1.0f);
-    Middle.z = 1.0f;
-    Middle = Inverse(GameCamera.ViewMatrix) * Middle;
-    
-    auto TempRay = math::v4(Mouse - Middle, 0.0f);
-    TempRay = Normalize(TempRay);
-    Ray = TempRay.xyz;
-    
-    
-    auto Radius = 3.0f;
-    auto Cen = GameState->PlayerModel.Position + math::v3(0.0f, Radius / 2.0f, 0.0f);
-    
-    
-    
-    auto B = Dot(Ray, Middle - Cen);
-    auto C = Dot(Middle - Cen, Middle - Cen) - pow(Radius, 2);
-    auto PreCalc = pow(B, 2) - C;
-    
-    if(MOUSE_DOWN(Mouse_Left))
-    {
-        GameState->SelectedModel = NULL;
-    }
-    
-    if(PreCalc >= 0.0f)
-    {
-        auto T1 = -B + sqrt(PreCalc);
-        auto T2 = -B - sqrt(PreCalc);
-        
-        auto Pick1 = Middle + Ray * Min(T1, T2);
-        auto Pick2 = Middle + Ray * Max(T1, T2);
-        auto Dist = Min(Distance(Cen, Pick1), Distance(Cen, Pick2));
-        
-        if(MOUSE_DOWN(Mouse_Left) && Dist < 10.0f)
-        {
-            GameState->SelectedModel = &GameState->PlayerModel;
-        }
-    }
-    
-    if(GameState->SelectedModel)
-    {
-        auto MPos = GameState->SelectedModel->Position;
-        
-        auto Or = ToMatrix(GameState->SelectedModel->Orientation);
-        
-        auto MForward = math::v3(Or[2][0],
-                                 Or[2][1],
-                                 Or[2][2]);
-        auto MUp = math::v3(Or[1][0],
-                            Or[1][1],
-                            Or[1][2]);
-        auto MRight = math::v3(Or[0][0],
-                               Or[0][1],
-                               Or[0][2]);
-        
-        PushLine(Renderer, MPos, MPos + MForward * 5.0f, 1.0f, math::rgba(1.0f, 0.0f, 0.0f, 1.0f));
-        
-        PushLine(Renderer, MPos, MPos + MUp * 5.0f, 1.0f, math::rgba(0.0f, 0.0f, 1.0f, 1.0f));
-        
-        PushLine(Renderer, MPos, MPos + MRight * 5.0f, 1.0f, math::rgba(0.0f, 1.0f, 0.0f, 1.0f));
-        
-        //PushOutlinedRect(Renderer, MPos, math::v3(Radius, Radius, 1.0f), math::rgba(0.0f, 1.0f, 0.0f, 1.0f));
-    }
-    
-    PushLine(Renderer, Middle, Middle + Ray * 5000.0f, 1.0f, math::rgba(1.0f, 0.0f, 1.0f, 1.0f));
-    
-    PushLine(Renderer, Middle, Middle + Forward * 40.0f, 1.0f, math::rgba(0.0f, 1.0f, 0.0f, 1.0f));
-    
-    PushLine(Renderer, Middle, Middle + Up * 40.0f, 1.0f, math::rgba(0.0f, 0.0f, 1.0f, 1.0f));
-    
-    PushLine(Renderer, Middle, Middle + Right * 40.0f, 1.0f, math::rgba(0.0f, 1.0f, 0.0f, 1.0f));
-    
-    GameState->Models[1].Position = Middle + Ray * -10.0f;
-    
+    Pick(GameState, InputController, Renderer);
     
     InputController->CurrentCharacter = 0;
     GameState->ClearTilePositionFrame = !GameState->ClearTilePositionFrame;
@@ -851,15 +837,15 @@ extern "C" UPDATE(Update)
     char FPSBuffer[64];
     sprintf(FPSBuffer, "FPS: %.2f - AVG FPS: %.2f - dt: %.10lf", Renderer.FPS, Renderer.AverageFPS, DeltaTime);
     
-    skeletal_animation Animation = GameState->PlayerModel.Animations[0];
-    GameState->PlayerModel.CurrentPoses = PushTempSize(sizeof(math::m4) * GameState->PlayerModel.BoneCount, math::m4);
-    CalculateBoneTransformsForAnimation(Animation, GameState->PlayerModel.AnimationTime, GameState->PlayerModel.Bones, GameState->PlayerModel.CurrentPoses, GameState->PlayerModel.BoneCount, GameState->PlayerModel.GlobalInverseTransform);
+    skeletal_animation Animation = GameState->PlayerModel->Animations[0];
+    GameState->PlayerModel->CurrentPoses = PushTempSize(sizeof(math::m4) * GameState->PlayerModel->BoneCount, math::m4);
+    CalculateBoneTransformsForAnimation(Animation, GameState->PlayerModel->AnimationTime, GameState->PlayerModel->Bones, GameState->PlayerModel->CurrentPoses, GameState->PlayerModel->BoneCount, GameState->PlayerModel->GlobalInverseTransform);
     
-    GameState->PlayerModel.AnimationTime += DeltaTime;
+    GameState->PlayerModel->AnimationTime += DeltaTime;
     
-    if(GameState->PlayerModel.AnimationTime >= Animation.Duration)
+    if(GameState->PlayerModel->AnimationTime >= Animation.Duration)
     {
-        GameState->PlayerModel.AnimationTime = 0.0f;
+        GameState->PlayerModel->AnimationTime = 0.0f;
     }
     
     PushEntityRenderCommands(Renderer, *GameState);
@@ -872,7 +858,7 @@ extern "C" UPDATE(Update)
     PushDebugRender(Renderer, DebugState, InputController);
     
     //PushTilemapRenderCommands(Renderer, *GameState);
-    PushModel(Renderer, GameState->PlayerModel);
+    PushModel(Renderer, *GameState->PlayerModel);
     PushText(Renderer, FPSBuffer, math::v3(50, 850, 2), Font_Inconsolata, math::rgba(1, 0, 0, 1));
     
     for(i32 Index = 0; Index < GameState->ModelCount; Index++)
@@ -883,6 +869,6 @@ extern "C" UPDATE(Update)
     
     if(PushButton(Renderer, "Reset player", rect(5, 5, 200, 50), math::rgba(1, 0, 0, 1), math::rgba(1, 1, 1, 1), InputController))
     {
-        GameState->PlayerModel.Position = math::v3();
+        GameState->PlayerModel->Position = math::v3();
     }
 }

@@ -1038,9 +1038,9 @@ void UpdatePlayer(entity* Entity, game_state* GameState, renderer& Renderer, sou
     Direction = math::YRotate(-45.0f) * Direction;
     Direction = Normalize(Direction);
     
-    GameState->PlayerModel.Position += Direction * 10.0f * DeltaTime;
+    GameState->PlayerModel->Position += Direction * 10.0f * DeltaTime;
     
-    Renderer.Cameras[0].Center = math::v3(GameState->PlayerModel.Position.X, GameState->PlayerModel.Position.Y, GameState->PlayerModel.Position.Z);
+    Renderer.Cameras[0].Center = math::v3(GameState->PlayerModel->Position.X, GameState->PlayerModel->Position.Y, GameState->PlayerModel->Position.Z);
 }
 
 void UpdateAI(entity* Entity, game_state* GameState, sound_commands* SoundCommands, r64 DeltaTime)

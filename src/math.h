@@ -1457,6 +1457,79 @@ namespace math
         }
     };
     
+    b32 IsIdentity(quat Q);
+    r32 Dot(quat Q1, quat Q2);
+    r32 Dot(v2 V1, v2 V2);
+    r32 Dot(v3 V1, v3 V2);
+    r32 Dot(v4 V1, v4 V2);
+    i32 Dot(v2i V1, v2i V2);
+    i32 Dot(v3i V1, v3i V2);
+    r32 Distance(v2 V1, v2 V2);
+    r32 Distance(v3 V1, v3 V2);
+    r32 Distance(v4 V1, v4 V2);
+    i32 Distance(v2i V1, v2i V2);
+    i32 Distance(v3i V1, v3i V2);
+    i32 Floor(r32 V);
+    v2 Floor(v2 V);
+    v3 Floor(v3 V);
+    i32 Ceil(r32 V);
+    v2 Ceil(v2 V);
+    v3 Ceil(v3 V);
+    i32 Round(r32 V);
+    r32 Square(r32 V);
+    r32 Sin(r32 V);
+    r32 Cos(r32 V);
+    r32 Length(v2 V);
+    r32 Length(v3 V);
+    r32 Length(v4 V);
+    v2 Normalize(v2 V);
+    v3 Normalize(v3 V);
+    v4 Normalize(v4 V);
+    quat Normalize(quat Q);
+    m4 Scale(m4 In, v3 Scale);
+    m4 Translate(m4 In, v3 Translate);
+    m4 XRotate(r32 Angle);
+    m4 YRotate(r32 Angle);
+    m4 ZRotate(r32 Angle);
+    m4 CreateRotation(r32 XAngle, r32 YAngle, r32 ZAngle);
+    
+    quat Rotate(quat In, r32 A, v3 Axis);
+    quat Conjugate(quat Q);
+    r32 Magnitude(quat Q);
+    r32 GetAngleInRadians(quat Q);
+    v3 GetAxis(quat Q);
+    v3 Right(m4 M);
+    v3 Up(m4 M);
+    v3 Forward(m4 M);
+    v3 Translation(m4 M);
+    v3 Scale(m4 M);
+    v3 Project(v3 In, m4 M, m4 P, v4 Viewport);
+    v3 Cross(v3 A, v3 B);
+    m4 Ortho(r32 Left, r32 Right, r32 Bottom, r32 Top, r32 Near, r32 Far);
+    m4 LookAt(v3 P, v3 T);
+    m4 Perspective(r32 AspectWidthOverHeight, r32 FocalLength, r32 Near, r32 Far);
+    m4 Frustum(r32 Bottom, r32 Top, r32 Left, r32 Right,
+               r32 Near, r32 Far);
+    v3 MultPointMatrix(v3 In, m4 M);
+    v3 UnProject(v3 In, m4 Model, m4 Projection, v4i Viewport);
+    
+    r32 RandomFloat(r32 From, r32 To);
+    v3 CastRay(r32 MouseX, r32 MouseY, r32 Width, r32 Height, m4 P, m4 V, r32 Near);
+    
+    quat Slerp(quat Q0, quat Q1, r32 T);
+    r32 Lerp(r32 A, r32 T, r32 B);
+    v2 Lerp(v2 A, r32 T, v2 B);
+    v3 Lerp(v3 A, r32 T, v3 B);
+    v4 Lerp(v4 A, r32 T, v4 B);
+    quat Lerp(quat Q0, quat Q1, r32 T);
+    quat Nlerp(quat Q0, quat Q1, r32 T);
+    quat Interpolate(quat Q0, quat Q1, r32 F);
+    m4 Transpose(m4 In);
+    m4 ToMatrix(quat Q);
+    v4 Transform(m4& M, const v4& V);
+    r32 Determinant(const m4& In);
+    m4 Inverse(m4 M);
+    
     inline b32 IsIdentity(quat Q)
     {
         return Q.X == 0.0f && Q.Y == 0.0f && Q.Z == 0.0f && Q.W == 1.0f;
@@ -2138,6 +2211,43 @@ namespace math
         return Result;
     }
     
+    inline v3 Right(m4 M)
+    {
+        return math::v3(M[0][0],
+                        M[0][1],
+                        M[0][2]);
+    }
+    
+    inline v3 Up(m4 M)
+    {
+        return math::v3(M[1][0],
+                        M[1][1],
+                        M[1][2]);
+    }
+    
+    inline v3 Forward(m4 M)
+    {
+        return math::v3(M[2][0],
+                        M[2][1],
+                        M[2][2]);
+    }
+    
+    inline v3 Translation(m4 M)
+    {
+        return math::v3(M[0][3],
+                        M[1][3],
+                        M[2][3]);
+    }
+    
+    inline v3 Scale(m4 M)
+    {
+        math::v3 Result;
+        Result.x = Length(Right(M));
+        Result.y = Length(Up(M));
+        Result.z = Length(Forward(M));
+        return Result;
+    }
+    
     inline v3 Project(v3 In, m4 M, m4 P, v4 Viewport)
     {
         v3 Result(1.0f);
@@ -2342,6 +2452,47 @@ namespace math
         RayWorld = Normalize(RayWorld);
         
         return RayWorld;
+    }
+    
+    struct ray
+    {
+        v3 Origin;
+        v3 Target;
+        v3 Ray;
+    };
+    
+    inline ray CastPickingRay(r32 MouseX, r32 MouseY, m4 P, m4 V, r32 Width, r32 Height)
+    {
+        auto MX = (2.0f * MouseX) / Width - 1.0f;
+        auto MY = 1.0f - (2.0f * MouseY / Height);
+        
+        // 1.0f is the far plane in NDC
+        auto Mouse = Inverse(P) * math::v3(MX, MY, 1.0f);
+        Mouse.z = -1.0f;
+        Mouse = Inverse(V) * Mouse;
+        
+        // -1.0f is the near plane in NDC
+        auto Origin = Inverse(P) * math::v3(MX, MY, -1.0f);
+        Origin.z = 1.0f;
+        Origin = Inverse(V) * Origin;
+        
+        auto TempRay = math::v4(Mouse - Origin, 0.0f);
+        TempRay = Normalize(TempRay);
+        
+        ray Ray;
+        Ray.Origin = Origin;
+        Ray.Target = Mouse;
+        Ray.Ray = TempRay.xyz;
+        return Ray;
+    }
+    
+    inline ray CastRay(v3 Origin, v3 Target)
+    {
+        ray Ray;
+        Ray.Origin = Origin;
+        Ray.Target = Target;
+        Ray.Ray = Normalize(math::v4(Target - Origin, 0.0f)).xyz;
+        return Ray;
     }
     
     using rgb = v3;

@@ -117,6 +117,7 @@ enum Render_Command_Type
     
     RenderCommand_Buffer,
     RenderCommand_Model,
+    RenderCommand_WireframeCube,
     RenderCommand_Count
 };
 
@@ -264,6 +265,10 @@ struct render_command
             math::rgba Color;
             b32 Outlined;
         } Rect;
+        struct
+        {
+            math::rgba Color;
+        } WireframeCube;
         struct
         {
             math::v3 Direction;

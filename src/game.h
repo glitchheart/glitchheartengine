@@ -119,7 +119,7 @@ struct game_state
     level CurrentLevel;
     sound_effects Sounds;
     
-    model PlayerModel;
+    model* PlayerModel;
     model* SelectedModel;
     
     model Models[MAX_MODELS];
