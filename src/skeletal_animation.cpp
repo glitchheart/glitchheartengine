@@ -115,7 +115,7 @@ static void CalculateInterpolatedRotation(const quat_keys& RotationKeys, math::q
     math::quat& Start = RotationKeys.Values[Index];
     math::quat& End = RotationKeys.Values[NextIndex];
     
-    OutRotation = Slerp(Start, End, Factor);
+    OutRotation = Nlerp(Start, End, Factor);
 }
 
 static b32 FindBoneChannel(i32 BoneIndex, const skeletal_animation& Animation, bone_channel& Out)
