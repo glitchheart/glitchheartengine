@@ -254,12 +254,13 @@ extern "C" UPDATE(Update)
         
         model PlayerModel;
         LoadGLIMModel(Renderer, "../assets/models/hatman.glim", &PlayerModel);
-        PlayerModel.AnimationTime = 0.0f;
         PlayerModel.Position = math::v3(0, 0, 0);
         PlayerModel.Scale = math::v3(10, 10, 10);
         
         GameState->Models[GameState->ModelCount++] = PlayerModel;
         GameState->PlayerModel = &GameState->Models[GameState->ModelCount - 1];
+        
+        PlayAnimation(0, *GameState->PlayerModel, true);
         
         model Cube;
         LoadGLIMModel(Renderer, "../assets/models/cube.glim", &Cube);
@@ -830,16 +831,7 @@ extern "C" UPDATE(Update)
     char FPSBuffer[64];
     sprintf(FPSBuffer, "FPS: %.2f - AVG FPS: %.2f - dt: %.10lf", Renderer.FPS, Renderer.AverageFPS, DeltaTime);
     
-    skeletal_animation Animation = GameState->PlayerModel->Animations[0];
-    GameState->PlayerModel->CurrentPoses = PushTempSize(sizeof(math::m4) * GameState->PlayerModel->BoneCount, math::m4);
-    CalculateBoneTransformsForAnimation(Animation, GameState->PlayerModel->AnimationTime, GameState->PlayerModel->Bones, GameState->PlayerModel->CurrentPoses, GameState->PlayerModel->BoneCount, GameState->PlayerModel->GlobalInverseTransform);
-    
-    GameState->PlayerModel->AnimationTime += DeltaTime;
-    
-    if(GameState->PlayerModel->AnimationTime >= Animation.Duration)
-    {
-        GameState->PlayerModel->AnimationTime = 0.0f;
-    }
+    TickAnimation(*GameState->PlayerModel, DeltaTime);
     
     PushEntityRenderCommands(Renderer, *GameState);
     

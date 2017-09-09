@@ -450,6 +450,10 @@ static void LoadGLIMModel(renderer& Renderer, char* FilePath, model* Model)
         
         Model->Meshes[0].BufferHandle = Renderer.BufferCount++;
         
+        Model->AnimationState.Playing = false;
+        Model->AnimationState.Loop = false;
+        Model->AnimationState.CurrentTime = 0.0f;
+        
         // @Incomplete: IMPORTANT
         // @Incomplete: IMPORTANT
         // @Incomplete: IMPORTANT
@@ -472,7 +476,7 @@ static void LoadGLIMModel(renderer& Renderer, char* FilePath, model* Model)
         // Load animations
         animation_header AHeader;
         fread(&AHeader, sizeof(animation_header), 1, File);
-        ;
+        
         Model->AnimationCount = AHeader.NumAnimations;
         Model->Animations = PushArray(&Renderer.AnimationArena, AHeader.NumAnimations, skeletal_animation);
         

@@ -8,9 +8,7 @@ static i32 FindAnimationPosition(const vec3_keys& PositionKeys, r32 AnimationTim
         }
     }
     
-    Assert(0);
-    
-    return 0;
+    return PositionKeys.NumKeys - 1;;
 }
 
 static i32 FindAnimationScaling(const vec3_keys& ScalingKeys, r32 AnimationTime)
@@ -23,9 +21,7 @@ static i32 FindAnimationScaling(const vec3_keys& ScalingKeys, r32 AnimationTime)
         }
     }
     
-    Assert(0);
-    
-    return 0;
+    return ScalingKeys.NumKeys - 1;
 }
 
 static i32 FindAnimationRotation(const quat_keys& RotationKeys, r32 AnimationTime)
@@ -38,9 +34,7 @@ static i32 FindAnimationRotation(const quat_keys& RotationKeys, r32 AnimationTim
         }
     }
     
-    Assert(0);
-    
-    return 0;
+    return RotationKeys.NumKeys - 1;
 }
 
 static void CalculateInterpolatedPosition(const vec3_keys& PositionKeys, math::v3& OutPosition, r32 AnimationTime)
@@ -54,11 +48,15 @@ static void CalculateInterpolatedPosition(const vec3_keys& PositionKeys, math::v
     i32 PositionIndex = FindAnimationPosition(PositionKeys, AnimationTime);
     i32 NextPositionIndex = PositionIndex + 1;
     
-    Assert(NextPositionIndex < PositionKeys.NumKeys);
+    if(NextPositionIndex >= PositionKeys.NumKeys)
+        NextPositionIndex = 0;
     
     r32 DeltaTime = PositionKeys.TimeStamps[NextPositionIndex] - PositionKeys.TimeStamps[PositionIndex];
     
-    r32 Factor = (AnimationTime - (r32)PositionKeys.TimeStamps[PositionIndex]) / DeltaTime;
+    r32 Factor = (AnimationTime - (r32)PositionKeys.TimeStamps[PositionIndex]) / Abs(DeltaTime);
+    
+    if(Factor != Factor)
+        Factor = 0.0f;
     
     Assert(Factor >= 0.0f && Factor <= 1.0f);
     
@@ -79,11 +77,15 @@ static void CalculateInterpolatedScaling(const vec3_keys& ScalingKeys, math::v3&
     i32 Index = FindAnimationPosition(ScalingKeys, AnimationTime);
     i32 NextIndex = Index + 1;
     
-    Assert(NextIndex < ScalingKeys.NumKeys);
+    if(NextIndex >= ScalingKeys.NumKeys)
+        NextIndex = 0;
     
     r32 DeltaTime = ScalingKeys.TimeStamps[NextIndex] - ScalingKeys.TimeStamps[Index];
     
-    r32 Factor = (AnimationTime - (r32)ScalingKeys.TimeStamps[Index]) / DeltaTime;
+    r32 Factor = (AnimationTime - (r32)ScalingKeys.TimeStamps[Index]) / Abs(DeltaTime);
+    
+    if(Factor != Factor)
+        Factor = 0.0f;
     
     Assert(Factor >= 0.0f && Factor <= 1.0f);
     
@@ -104,12 +106,15 @@ static void CalculateInterpolatedRotation(const quat_keys& RotationKeys, math::q
     i32 Index = FindAnimationRotation(RotationKeys, AnimationTime);
     i32 NextIndex = Index + 1;
     
-    Assert(NextIndex < RotationKeys.NumKeys);
+    if(NextIndex >= RotationKeys.NumKeys)
+        NextIndex = 0;
     
     r32 DeltaTime = RotationKeys.TimeStamps[NextIndex] - RotationKeys.TimeStamps[Index];
     
-    r32 Factor = (AnimationTime - (r32)RotationKeys.TimeStamps[Index]) / DeltaTime;
+    r32 Factor = (AnimationTime - (r32)RotationKeys.TimeStamps[Index]) / Abs(DeltaTime);
     
+    if(Factor != Factor)
+        Factor = 0.0f;
     Assert(Factor >= 0.0f && Factor <= 1.0f);
     
     math::quat& Start = RotationKeys.Values[Index];
@@ -135,7 +140,7 @@ static void CalculateThroughBones(const skeletal_animation& Animation, r32 Anima
 {
     // @Incomplete: Animation stuff!
     bone Bone = Bones[BoneIndex];
-    math::m4 BoneTransformation = Bone.Transformation;
+    math::m4 BoneTransformation = Bone.Transformation * Bone.BoneOffset;
     
     bone_channel BoneChannel;
     
@@ -151,7 +156,7 @@ static void CalculateThroughBones(const skeletal_animation& Animation, r32 Anima
         math::m4 ScalingMatrix(1.0f);
         ScalingMatrix = math::Scale(ScalingMatrix, Scaling);
         
-        math::quat Rotation = math::quat();
+        math::quat Rotation;
         CalculateInterpolatedRotation(BoneChannel.RotationKeys, Rotation, AnimationTime);
         math::m4 RotationMatrix = ToMatrix(Rotation);
         
@@ -182,4 +187,46 @@ static void CalculateBoneTransformsForAnimation(const skeletal_animation& Animat
     }
     
     CalculateThroughBones(Animation, AnimationTime, Bones, Transforms, NumBones, RootIndex, Identity, GlobalInverseTransform);
+}
+
+static void PlayAnimation(i32 Index, model& Model, b32 Loop = false)
+{
+    Model.RunningAnimationIndex = Index;
+    Model.AnimationState.Playing = true;
+    Model.AnimationState.Loop = Loop;
+}
+
+static void PlayAnimation(const char* AnimationName, model& Model, b32 Loop = false)
+{
+    for(i32 AnimationIndex = 0; AnimationIndex < Model.AnimationCount; AnimationIndex++)
+    {
+        if(strcmp(AnimationName, Model.Animations[AnimationIndex].Name) == 0)
+        {
+            PlayAnimation(AnimationIndex, Model, Loop);
+            break;
+        }
+    }
+}
+
+static void TickAnimation(model& Model, r32 DeltaTime)
+{
+    skeletal_animation& Animation = Model.Animations[Model.RunningAnimationIndex];
+    
+    if(Model.AnimationState.Playing)
+    {
+        Model.CurrentPoses = PushTempSize(sizeof(math::m4) * Model.BoneCount, math::m4);
+        CalculateBoneTransformsForAnimation(Animation, Model.AnimationState.CurrentTime, Model.Bones, Model.CurrentPoses, Model.BoneCount, Model.GlobalInverseTransform);
+        
+        Model.AnimationState.CurrentTime += DeltaTime;
+        
+        if(Model.AnimationState.CurrentTime >= Animation.Duration)
+        {
+            Model.AnimationState.CurrentTime = 0.0f;
+            
+            if(!Model.AnimationState.Loop)
+            {
+                Model.AnimationState.Playing = false;
+            }
+        }
+    }
 }

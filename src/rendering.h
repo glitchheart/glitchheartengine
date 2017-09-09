@@ -168,9 +168,17 @@ struct bone_channel
 
 struct skeletal_animation
 {
+    char* Name;
     r32 Duration;
     i32 NumBoneChannels;
     bone_channel* BoneChannels;
+};
+
+struct skeletal_animation_state
+{
+    b32 Playing;
+    b32 Loop;
+    r32 CurrentTime;
 };
 
 struct bone
@@ -205,13 +213,13 @@ struct model
     bone* Bones;
     i32 BoneCount;
     
+    skeletal_animation_state AnimationState;
+    i32 RunningAnimationIndex;
     math::m4* CurrentPoses;
-    
     skeletal_animation* Animations;
     i32 AnimationCount;
     
     math::m4 GlobalInverseTransform;
-    r32 AnimationTime;
 };
 
 struct mesh_render_data
