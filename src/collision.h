@@ -38,4 +38,63 @@
      b32 IsColliding;
  };
  
+ struct collision_volume
+ {
+     math::v3 Center;
+     math::v3 Extents;
+     math::quat Orientation; // Need this to get Up/Right/Forward
+     
+     //@Incomplete: Volumes always cubes as of now
+     math::v4 Vertices[8] =
+     {
+         math::v4(-0.5, -0.5, -0.5, 1.0),
+         math::v4(0.5, -0.5, -0.5, 1.0),
+         math::v4(0.5,  0.5, -0.5, 1.0),
+         math::v4(-0.5,  0.5, -0.5, 1.0),
+         math::v4(-0.5, -0.5,  0.5, 1.0),
+         math::v4(0.5, -0.5,  0.5, 1.0),
+         math::v4(0.5,  0.5,  0.5, 1.0),
+         math::v4(-0.5,  0.5,  0.5, 1.0),
+     };
+     
+     math::v3 Normals[6] = 
+     {
+         math::v3(1.0f, 0.0f, 0.0f),
+         math::v3(0.0f, 1.0f, 0.0f),
+         math::v3(0.0f, 0.0f, 1.0f),
+         math::v3(-1.0f, 0.0f, 0.0f),
+         math::v3(0.0f, -1.0f, 0.0f),
+         math::v3(0.0f, 0.0f, -1.0f)
+     };
+ };
+ 
+ inline void SAT(collision_volume& V1, collision_volume& V2)
+ {
+     
+ }
+ 
+ math::v2 Project(math::v3* Vertices, math::v3 Axis, i32 VertexCount)
+ {
+     if(VertexCount > 0)
+     {
+         r32 Min = math::Dot(Axis, Vertices[0]);
+         r32 Max = Min;
+         for(i32 I = 1; I < VertexCount; I++)
+         {
+             r32 P = Dot(Axis, Vertices[I]);
+             if(P < Min)
+             {
+                 Min = P;
+             }
+             else if(P > Max)
+             {
+                 Max = P;
+             }
+         }
+         return math::v2(Min, Max);
+     }
+     
+     return math::v2();
+ }
+ 
 #endif
