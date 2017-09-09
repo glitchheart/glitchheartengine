@@ -1494,6 +1494,7 @@ namespace math
     m4 CreateRotation(r32 XAngle, r32 YAngle, r32 ZAngle);
     
     quat Rotate(quat In, r32 A, v3 Axis);
+    m4 Rotate(m4 M, r32 A, v3 Axis);
     quat Conjugate(quat Q);
     r32 Magnitude(quat Q);
     r32 GetAngleInRadians(quat Q);
@@ -2211,6 +2212,13 @@ namespace math
         return Result;
     }
     
+    inline m4 Rotate(m4 M, quat R)
+    {
+        m4 Result(1.0f);
+        Result = ToMatrix(R) * M;
+        return Result;
+    }
+    
     inline v3 Right(m4 M)
     {
         return math::v3(M[0][0],
@@ -2427,33 +2435,6 @@ namespace math
         return Rand;
     }
     
-    //@Incomplete: This this. Seems to not line up with the tutorial
-    //@Link:       http://antongerdelan.net/opengl/raycasting.html
-    inline v3 CastRay(r32 MouseX, r32 MouseY, r32 Width, r32 Height, m4 P, m4 V, r32 Near)
-    {
-        // Convert to Normalized Device Coordinates
-        r32 X = (2.0f * MouseX) / Width - 1.0f;
-        r32 Y = 1.0f - (2.0f * MouseY) / Height;
-        r32 Z = 1.0f; // This is not necessarily needed here yet
-        v3 RayNDC = v3(X, Y, Z);
-        //DEBUG_PRINT("(%f, %f)\n", X, Y);
-        
-        // We don't need to reverse the perspective division
-        v4 RayClip = v4(RayNDC.xy, -1.0, 1.0);
-        
-        // Convert to eye coords by inverting the projection
-        v4 RayEye = Inverse(P) * RayClip;
-        
-        // Point the ray the right direction in Z
-        RayEye = v4(RayEye.xy, -1.0f, 0.0);
-        
-        // Convert to world coordinates
-        v3 RayWorld = (Inverse(V) * RayEye).xyz;
-        RayWorld = Normalize(RayWorld);
-        
-        return RayWorld;
-    }
-    
     struct ray
     {
         v3 Origin;
@@ -2478,7 +2459,6 @@ namespace math
         
         auto TempRay = math::v4(Mouse - Origin, 0.0f);
         TempRay = Normalize(TempRay);
-        
         ray Ray;
         Ray.Origin = Origin;
         Ray.Target = Mouse;

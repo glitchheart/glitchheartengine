@@ -101,6 +101,9 @@ struct game_state
     r32 GodModeMinZoom = 5.0f;
     r32 GodModeMaxZoom = 100.0f;
     
+    r32 PrevMouseX;
+    r32 PrevMouseY;
+    
     r32 InitialZoom;
     
     math::v3 EntityPositions[NUM_ENTITIES];
@@ -119,8 +122,8 @@ struct game_state
     level CurrentLevel;
     sound_effects Sounds;
     
-    model* PlayerModel;
-    model* SelectedModel;
+    i32 PlayerModel;
+    i32 SelectedModel;
     
     model Models[MAX_MODELS];
     i32 ModelCount;
