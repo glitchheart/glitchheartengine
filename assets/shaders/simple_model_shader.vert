@@ -3,7 +3,7 @@
 layout(location = 0)in vec3 position;
 layout(location = 1)in vec3 normal;
 layout(location = 2)in vec2 uv;
-layout(location = 3)in vec4 boneIndices;
+layout(location = 3)in ivec4 boneIndices;
 layout(location = 4)in vec4 weights;
 
 uniform mat4 normalMatrix;
@@ -24,13 +24,13 @@ out vec2 texCoord;
 
 void main()
 {
-    mat4 boneTransform = bones[int(boneIndices[0])] * weights[0];
-    boneTransform += bones[int(boneIndices[1])] * weights[1];
-    boneTransform += bones[int(boneIndices[2])] * weights[2];
-    boneTransform += bones[int(boneIndices[3])] * weights[3];
+    mat4 boneTransform = bones[int(boneIndices.x)] * weights.x;
+    boneTransform += bones[int(boneIndices.y)] * weights.y;
+    boneTransform += bones[int(boneIndices.z)] * weights.z;
+    boneTransform += bones[int(boneIndices.w)] * weights.w;
 
 	vec4 pos = boneTransform * vec4(position, 1.0);
-	vec4 p = projection * view * model * vec4(pos.xyz, 1.0);
+	vec4 p = projection * view * model * pos;
 	//vec4 p = projection * view * model * vec4(position, 1.0f);
 	gl_Position = p;
 
