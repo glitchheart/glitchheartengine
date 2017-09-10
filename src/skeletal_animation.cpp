@@ -113,6 +113,7 @@ static void CalculateInterpolatedRotation(const quat_keys& RotationKeys, math::q
     Assert(Factor >= 0.0f && Factor <= 1.0f);
     
     math::quat& Start = RotationKeys.Values[Index];
+    math::PrintQuat(Start);
     math::quat& End = RotationKeys.Values[NextIndex];
     
     OutRotation = Nlerp(Start, End, Factor);
