@@ -7,25 +7,23 @@ struct model_header
     char Version[4];
 };
 
-struct mesh_data
-{
-    i32 BaseVertex;
-    i32 BaseIndex;
-    i32 MaterialIndex;
-    i32 NumIndices;
-};
-
 struct model_data
 {
+    i32 ModelType;
+    
     i32 NumMeshes;
     i32 NumVertices;
     i32 NumIndices;
     i32 NumBones;
     i32 NumMaterials;
     
+    b32 HasNormals;
+    b32 HasUVs;
+    
     long MeshChunkSize;
     long VertexBufferChunkSize;
     long IndexBufferChunkSize;
+    long MaterialChunkSize;
     long BoneChunkSize;
     
     math::m4 GlobalInverseTransform;

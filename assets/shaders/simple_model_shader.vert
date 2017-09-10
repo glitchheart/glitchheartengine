@@ -33,8 +33,9 @@ void main()
 	vec4 p = projection * view * model * pos;
 	//vec4 p = projection * view * model * vec4(position, 1.0f);
 	gl_Position = p;
-
-	n = mat3(transpose(inverse(view * model))) * normal;
+	
+	vec4 norm = boneTransform * vec4(normal, 1.0);
+	n = mat3(transpose(inverse(view * model))) * norm.xyz;
 	fragPos = vec3(view * model * vec4(position, 1.0));
 
     lightPos = (view * vec4(6.0f, 6.0f, 0, 1.0)).xyz; // Get actual position from lights

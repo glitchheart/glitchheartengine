@@ -137,11 +137,16 @@ struct shader
     u32 FragmentShader;
 };
 
+struct texture_info
+{
+    b32 HasData;
+    char TextureName[50];
+    i32 TextureHandle;
+};
+
 struct material
 {
-    b32 HasTexture;
-    i32 TextureHandle; // This handle is a handle to the render API's array
-    math::rgba Color;
+    texture_info DiffuseTexture;
 };
 
 struct vec3_keys
@@ -192,14 +197,26 @@ struct bone
     math::m4 BoneOffset;
 };
 
-struct mesh
+struct mesh_data
 {
-    i32 BufferHandle;
-    material Material;
+    i32 BaseVertex;
+    i32 BaseIndex;
+    i32 MaterialIndex;
+    i32 NumIndices;
+};
+
+enum Model_Type
+{
+    Model_Static,
+    Model_Skinned
 };
 
 struct model
 {
+    Model_Type Type;
+    
+    i32 BufferHandle;
+    
     math::v3 Position;
     math::v3 Scale;
     
@@ -207,7 +224,10 @@ struct model
     
     math::rgba Color;
     
-    mesh Meshes[MAX_MESHES];
+    material Materials[10];
+    i32 MaterialCount;
+    
+    mesh_data Meshes[MAX_MESHES];
     i32 MeshCount;
     
     bone* Bones;
@@ -220,12 +240,6 @@ struct model
     i32 AnimationCount;
     
     math::m4 GlobalInverseTransform;
-};
-
-struct mesh_render_data
-{
-    i32 BufferHandle;
-    material Material;
 };
 
 struct render_command
@@ -314,8 +328,12 @@ struct render_command
         } Buffer;
         struct
         {
-            mesh_render_data RenderData[MAX_MESHES];
-            i32 HandleCount;
+            Model_Type Type;
+            i32 BufferHandle;
+            mesh_data Meshes[MAX_MESHES];
+            i32 MeshCount;
+            material Materials[10];
+            i32 MaterialCount;
             math::rgba Color;
             math::m4* BoneTransforms;
             i32 BoneCount;
@@ -391,6 +409,7 @@ struct buffer_data
     long IndexBufferSize;
     b32 HasNormals;
     b32 HasUVs;
+    b32 Skinned;
     
     Shader_Type ShaderType;
     i32 ExistingHandle = -1;

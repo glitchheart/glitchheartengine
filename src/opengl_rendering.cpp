@@ -253,7 +253,7 @@ static void InitializeFreeTypeFont(char* FontPath, int FontSize, FT_Library Libr
     glBindVertexArray(0);
 }
 
-static void RegisterBuffers(render_state& RenderState, GLfloat* VertexBuffer, long VertexBufferSize, GLuint* IndexBuffer, i32 IndexBufferCount, long IndexBufferSize, b32 HasNormals, b32 HasUVs, i32 BufferHandle = -1)
+static void RegisterBuffers(render_state& RenderState, GLfloat* VertexBuffer, long VertexBufferSize, GLuint* IndexBuffer, i32 IndexBufferCount, long IndexBufferSize, b32 HasNormals, b32 HasUVs, b32 Skinned, i32 BufferHandle = -1)
 {
     buffer* Buffer = &RenderState.Buffers[BufferHandle == -1 ? RenderState.BufferCount : BufferHandle];
     
@@ -271,7 +271,7 @@ static void RegisterBuffers(render_state& RenderState, GLfloat* VertexBuffer, lo
     glBindBuffer(GL_ARRAY_BUFFER, Buffer->VBO);
     glBufferData(GL_ARRAY_BUFFER, VertexBufferSize, VertexBuffer, GL_STATIC_DRAW);
     
-    i32 BoneInfoSize = 8;
+    i32 BoneInfoSize = Skinned ? 8 : 0;
     
     if(HasNormals && HasUVs)
     {
@@ -302,7 +302,7 @@ static void RegisterBuffers(render_state& RenderState, GLfloat* VertexBuffer, lo
         
         // Bone count
         glEnableVertexAttribArray(2);
-        glVertexAttribPointer(2, 1, GL_INT, GL_FALSE, (8 + BoneInfoSize) * sizeof(GLfloat), (void*)(6 * sizeof(GLfloat)));
+        glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, (8 + BoneInfoSize) * sizeof(GLfloat), (void*)(6 * sizeof(GLfloat)));
         
         // Bone indices
         glEnableVertexAttribArray(3);
@@ -322,7 +322,7 @@ static void RegisterBuffers(render_state& RenderState, GLfloat* VertexBuffer, lo
         
         // Bone count
         glEnableVertexAttribArray(2);
-        glVertexAttribPointer(2, 1, GL_INT, GL_FALSE, (8 + BoneInfoSize) * sizeof(GLfloat), (void*)(5 * sizeof(GLfloat)));
+        glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, (8 + BoneInfoSize) * sizeof(GLfloat), (void*)(5 * sizeof(GLfloat)));
         
         // Bone indices
         glEnableVertexAttribArray(3);
@@ -339,7 +339,7 @@ static void RegisterBuffers(render_state& RenderState, GLfloat* VertexBuffer, lo
         
         // Bone count
         glEnableVertexAttribArray(1);
-        glVertexAttribPointer(1, 1, GL_INT, GL_FALSE, (8 + BoneInfoSize) * sizeof(GLfloat), (void*)(3 * sizeof(GLfloat)));
+        glVertexAttribPointer(1, 1, GL_FLOAT, GL_FALSE, (8 + BoneInfoSize) * sizeof(GLfloat), (void*)(3 * sizeof(GLfloat)));
         
         // Bone indices
         glEnableVertexAttribArray(2);
@@ -1485,17 +1485,17 @@ static void RenderSprite(const render_command& Command, render_state& RenderStat
 
 static void RenderModel(const render_command& Command, render_state& RenderState, math::m4 Projection, math::m4 View)
 {
-    for(i32 HandleIndex = 0; HandleIndex < Command.Model.HandleCount; HandleIndex++)
+    buffer Buffer = RenderState.Buffers[Command.Model.BufferHandle];
+    glBindVertexArray(Buffer.VAO);
+    
+    for(i32 MeshIndex = 0; MeshIndex < Command.Model.MeshCount; MeshIndex++)
     {
-        mesh_render_data RenderData = Command.Model.RenderData[HandleIndex];
+        mesh_data MeshData = Command.Model.Meshes[MeshIndex];
+        material Material = Command.Model.Materials[MeshData.MaterialIndex];
         
-        buffer Buffer = RenderState.Buffers[RenderData.BufferHandle];
-        
-        glBindVertexArray(Buffer.VAO);
-        
-        if(RenderData.Material.HasTexture)
+        if(Material.DiffuseTexture.HasData)
         {
-            texture Texture = RenderState.TextureArray[RenderData.Material.TextureHandle];
+            texture Texture = RenderState.TextureArray[Material.DiffuseTexture.TextureHandle];
             if(RenderState.BoundTexture != Texture.TextureHandle)
             {
                 glBindTexture(GL_TEXTURE_2D, Texture.TextureHandle);
@@ -1503,32 +1503,38 @@ static void RenderModel(const render_command& Command, render_state& RenderState
             }
         }
         
-        // @Incomplete: Missing shader switching
-        auto Shader = RenderState.SimpleModelShader;
-        UseShader(&Shader);
+        shader Shader;
+        
+        if(Command.Model.Type == Model_Skinned)
+        {
+            Shader = RenderState.SimpleModelShader;
+            UseShader(&Shader);
+            
+            for(i32 Index = 0; Index < Command.Model.BoneCount; Index++)
+            {
+                char Buffer[20];
+                sprintf(Buffer, "bones[%d]", Index);
+                SetMat4Uniform(Shader.Program, Buffer, Command.Model.BoneTransforms[Index]);
+            }
+        }
+        else
+        {
+            // @Incomplete: We need a shader that isn't using the bone data
+        }
         
         math::m4 Model(1.0f);
         Model = math::Scale(Model, Command.Scale);
-        
         Model = math::Rotate(Model, Command.Orientation);
-        
         Model = math::Translate(Model, Command.Position);
         
         math::m4 NormalMatrix = math::Transpose(math::Inverse(View * Model));
-        
-        for(i32 Index = 0; Index < Command.Model.BoneCount; Index++)
-        {
-            char Buffer[20];
-            sprintf(Buffer, "bones[%d]", Index);
-            SetMat4Uniform(Shader.Program, Buffer, Command.Model.BoneTransforms[Index]);
-        }
         
         SetMat4Uniform(Shader.Program, "normalMatrix", NormalMatrix);
         SetMat4Uniform(Shader.Program, "projection", Projection);
         SetMat4Uniform(Shader.Program, "view", View);
         SetMat4Uniform(Shader.Program, "model", Model);
         SetVec4Uniform(Shader.Program, "color", math::rgba(1.0f, 1.0f, 1.0f, 1.0f));
-        SetIntUniform(Shader.Program, "hasUVs", RenderData.Material.HasTexture);
+        SetIntUniform(Shader.Program, "hasUVs", Material.DiffuseTexture.HasData);
         
         glDrawElements(GL_TRIANGLES, Buffer.IndexBufferCount, GL_UNSIGNED_INT, (void*)0);
         glBindVertexArray(0);
@@ -1583,7 +1589,7 @@ static void RenderCommands(render_state& RenderState, renderer& Renderer, memory
         }
         else
         {
-            RegisterBuffers(RenderState, Data.VertexBuffer, Data.VertexBufferSize, Data.IndexBuffer, Data.IndexBufferCount, Data.IndexBufferSize, Data.HasNormals, Data.HasUVs, Data.ExistingHandle);
+            RegisterBuffers(RenderState, Data.VertexBuffer, Data.VertexBufferSize, Data.IndexBuffer, Data.IndexBufferCount, Data.IndexBufferSize, Data.HasNormals, Data.HasUVs, Data.Skinned, Data.ExistingHandle);
             
         }
     }
