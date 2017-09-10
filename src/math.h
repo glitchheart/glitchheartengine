@@ -1475,6 +1475,10 @@ namespace math
     i32 Ceil(r32 V);
     v2 Ceil(v2 V);
     v3 Ceil(v3 V);
+    i32 Absolute(r32 V);
+    v2 Absolute(v2 V);
+    v3 Absolute(v3 V);
+    v4 Absolute(v4 V);
     i32 Round(r32 V);
     r32 Square(r32 V);
     r32 Sin(r32 V);
@@ -2043,6 +2047,7 @@ namespace math
         return Result;
     }
     
+    
     inline i32 Round(r32 V)
     {
         r32 HalfCeil = ((r32)Ceil(V))/2.0f;
@@ -2054,6 +2059,22 @@ namespace math
         {
             return Floor(V);
         }
+    }
+    
+    
+    v2 Absolute(v2 V)
+    {
+        return math::v2(Abs(V.x), Abs(V.y));
+    }
+    
+    v3 Absolute(v3 V)
+    {
+        return math::v3(Abs(V.x), Abs(V.y), Abs(V.z));
+    }
+    
+    v4 Absolute(v4 V)
+    {
+        return math::v4((r32)Abs(V.x), (r32)Abs(V.y), (r32)Abs(V.z), (r32)Abs(V.w));
     }
     
     inline r32 Square(r32 V)
