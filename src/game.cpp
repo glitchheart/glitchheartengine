@@ -912,6 +912,8 @@ extern "C" UPDATE(Update)
         PushSpotlight(Renderer, GameState->Models[Index].Position, math::v3(1.0f, 0.0f, 0.0f), DEGREE_IN_RADIANS * 12.5f, DEGREE_IN_RADIANS * 17.5f, math::v3(0.1f, 0.1f, 0.1f), math::v3(1.0f, 1.0f, 1.0), math::v3(1.0, 1.0, 1.0), 1.0f, 0.09f, 0.032f);
     }
     
+    //PushFilledQuad(Renderer, math::v3(0, 0, 0), math::v3(1000, 1000, 0), math::v3(0, 0, 0),  math::rgba(1, 1, 1, 1), "play_button");
+    
     if(PushButton(Renderer, "Reset player", rect(5, 5, 200, 50), math::rgba(1, 0, 0, 1), math::rgba(1, 1, 1, 1), InputController))
     {
         PlayerModel.Position = math::v3();
