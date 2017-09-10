@@ -1104,17 +1104,17 @@ void RenderCircle(render_state& RenderState, math::v4 Color, r32 CenterX, r32 Ce
     glDrawArrays(GL_LINE_LOOP, 0, 720);
 }
 
-static void RenderRect(Render_Mode Mode, render_state& RenderState, math::v4 Color, r32 X, r32 Y, r32 Width, r32 Height, u32 TextureHandle = 0, b32 IsUI = true, math::m4 ProjectionMatrix = math::m4(), math::m4 ViewMatrix = math::m4())
+static void RenderQuad(Render_Mode Mode, render_state& RenderState, math::v4 Color, math::v3 Position, math::v3 Size, math::v3 Rotation,  b32 IsUI = true, i32 TextureHandle = 0, math::m4 ProjectionMatrix = math::m4(), math::m4 ViewMatrix = math::m4())
 {
     if(IsUI)
     {
-        X *= RenderState.ScaleX;
-        X -= 1;
-        Y *= RenderState.ScaleY;
-        Y -= 1;
+        Position.x *= RenderState.ScaleX;
+        Position.x -= 1;
+        Position.y *= RenderState.ScaleY;
+        Position.y -= 1;
         
-        Width *= RenderState.ScaleX;
-        Height *= RenderState.ScaleY;
+        Size.x *= RenderState.ScaleX;
+        Size.y *= RenderState.ScaleY;
     }
     
     switch(Mode)
@@ -1143,8 +1143,11 @@ static void RenderRect(Render_Mode Mode, render_state& RenderState, math::v4 Col
             
             //draw upper part
             math::m4 Model(1.0f);
-            Model = math::Translate(Model, math::v3(X, Y, 0));
-            Model = math::Scale(Model, math::v3(Width, Height, 1));
+            Model = math::Scale(Model, Size);
+            Model = math::Translate(Model, Position);
+            Model = math::YRotate(Rotation.y) * Model;
+            Model = math::XRotate(Rotation.x) * Model;
+            Model = math::ZRotate(Rotation.z) * Model;
             
             if(!IsUI)
             {
@@ -1162,8 +1165,12 @@ static void RenderRect(Render_Mode Mode, render_state& RenderState, math::v4 Col
         case Render_Outline:
         {
             math::m4 Model(1.0f);
-            Model = math::Translate(Model, math::v3(X, Y, 0));
-            Model = math::Scale(Model, math::v3(Width, Height, 1));
+            
+            Model = math::Scale(Model, Size);
+            Model = math::Translate(Model, Position);
+            Model = math::YRotate(Rotation.y) * Model;
+            Model = math::XRotate(Rotation.x) * Model;
+            Model = math::ZRotate(Rotation.z) * Model;
             
             glBindVertexArray(RenderState.WireframeVAO);
             
@@ -1328,10 +1335,10 @@ static void RenderConsole(render_state& RenderState, console* Console)
     r32 PercentAnimated = 1.0f + 1.0f - (r32)Console->CurrentTime / (r32)Console->TimeToAnimate;
     
     //draw upper part
-    RenderRect(Render_Fill, RenderState, math::v4(0.0f, 0.4f, 0.3f, 0.6f), 0.0f, (r32)RenderState.WindowHeight * 0.77f * PercentAnimated, (r32)RenderState.WindowWidth, (r32)RenderState.WindowHeight * 0.23f);
+    RenderQuad(Render_Fill, RenderState, math::v4(0.0f, 0.4f, 0.3f, 0.6f), math::v3(0.0f, (r32)RenderState.WindowHeight * 0.77f * PercentAnimated, 0.0f), math::v3((r32)RenderState.WindowWidth, (r32)RenderState.WindowHeight * 0.23f, 0.0f), math::v3());
     
     //draw lower bar
-    RenderRect(Render_Fill, RenderState, math::v4(0.0f, 0.2f, 0.2f, 0.6f), 0.0f, (r32)RenderState.WindowHeight * 0.77f * PercentAnimated, (r32)RenderState.WindowWidth, 20);  
+    RenderQuad(Render_Fill, RenderState, math::v4(0.0f, 0.2f, 0.2f, 0.6f), math::v3(0.0f, (r32)RenderState.WindowHeight * 0.77f * PercentAnimated, 0.0f), math::v3((r32)RenderState.WindowWidth, 0.0f, 0.0f), math::v3(), 20);  
     
     GLfloat TimeValue = (r32)glfwGetTime();
     GLfloat AlphaValue = (r32)((sin(TimeValue * 4) / 2) + 0.5f);
@@ -1340,7 +1347,7 @@ static void RenderConsole(render_state& RenderState, console* Console)
     MeasureText(RenderState.InconsolataFont, &Console->Buffer[0], &Width, &Height);
     
     //draw cursor
-    RenderRect(Render_Fill, RenderState, math::v4(AlphaValue, 1, AlphaValue, 1), 5 / 1920.0f * (r32)RenderState.WindowWidth + Width, RenderState.WindowHeight * 0.77f * PercentAnimated, 10, 20);
+    RenderQuad(Render_Fill, RenderState, math::v4(AlphaValue, 1, AlphaValue, 1), math::v3(5 / 1920.0f * (r32)RenderState.WindowWidth + Width, RenderState.WindowHeight * 0.77f * PercentAnimated, 0.0f), math::v3(10, 20, 0.0f), math::v3());
     
     RenderText(RenderState, RenderState.InconsolataFont, math::v4(0, 0.8, 0, 1),  &Console->Buffer[0],  5 / 1920.0f * (r32)RenderState.WindowWidth, (r32)RenderState.WindowHeight * 0.775f * PercentAnimated);
     
@@ -1403,29 +1410,29 @@ static void RenderText(const render_command& Command, render_state& RenderState)
     RenderText(RenderState, RenderFont, Command.Text.Color, Command.Text.Text, Command.Text.Position.x, Command.Text.Position.y, Command.Text.Alignment);
 }
 
-static void RenderRect(const render_command& Command, render_state& RenderState, math::m4 Projection, math::m4 View)
+static void RenderQuad(const render_command& Command, render_state& RenderState, math::m4 Projection, math::m4 View)
 {
     if(Command.IsUI)
     {
-        RenderRect(Command.Rect.Outlined ? Render_Outline : Render_Fill, 
+        RenderQuad(Command.Quad.Outlined ? Render_Outline : Render_Fill, 
                    RenderState, 
-                   Command.Rect.Color, 
-                   Command.Rect.Position.x, 
-                   Command.Rect.Position.y, 
-                   Command.Rect.Size.x, 
-                   Command.Rect.Size.y, 0, true);
+                   Command.Quad.Color, 
+                   Command.Position,
+                   Command.Scale,
+                   Command.Rotation,
+                   Command.IsUI,
+                   Command.Quad.TextureHandle);
     }
     else
     {
-        RenderRect(Command.Rect.Outlined ? Render_Outline : Render_Fill, 
+        RenderQuad(Command.Quad.Outlined ? Render_Outline : Render_Fill, 
                    RenderState, 
-                   Command.Rect.Color, 
-                   Command.Rect.Position.x, 
-                   Command.Rect.Position.y,  
-                   Command.Rect.Size.x, 
-                   Command.Rect.Size.y, 
-                   0,
+                   Command.Quad.Color, 
+                   Command.Position,
+                   Command.Scale,
+                   Command.Rotation,
                    Command.IsUI,
+                   Command.Quad.TextureHandle,
                    Projection, 
                    View);
     }
@@ -1720,9 +1727,9 @@ static void RenderCommands(render_state& RenderState, renderer& Renderer, memory
                 RenderText(Command, RenderState);
             }
             break;
-            case RenderCommand_Rect:
+            case RenderCommand_Quad:
             {
-                RenderRect(Command, RenderState, Camera.ProjectionMatrix, Camera.ViewMatrix);
+                RenderQuad(Command, RenderState, Camera.ProjectionMatrix, Camera.ViewMatrix);
             }
             break;
             case RenderCommand_Sprite:
@@ -1769,9 +1776,9 @@ static void RenderCommands(render_state& RenderState, renderer& Renderer, memory
                 RenderText(Command, RenderState);
             }
             break;
-            case RenderCommand_Rect:
+            case RenderCommand_Quad:
             {
-                RenderRect(Command, RenderState, Camera.ProjectionMatrix, Camera.ViewMatrix);
+                RenderQuad(Command, RenderState, Camera.ProjectionMatrix, Camera.ViewMatrix);
             }
             break;
             case RenderCommand_Sprite:
