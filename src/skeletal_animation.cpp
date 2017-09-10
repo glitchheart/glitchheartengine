@@ -140,7 +140,7 @@ static void CalculateThroughBones(const skeletal_animation& Animation, r32 Anima
 {
     // @Incomplete: Animation stuff!
     bone Bone = Bones[BoneIndex];
-    math::m4 BoneTransformation = Bone.Transformation * Bone.BoneOffset;
+    math::m4 BoneTransformation = Bone.Transformation;
     
     bone_channel BoneChannel;
     

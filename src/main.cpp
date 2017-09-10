@@ -420,6 +420,7 @@ int main(void)
             FrameCounterForAssetCheck = 0;
         }
         
+        
 #if GLITCH_DEBUG
         Clear(&DebugArena);
         GameMemory.DebugState->DebugMemoryInfo.DebugInfoCount = 0;

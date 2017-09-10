@@ -12,6 +12,12 @@
 #endif
 
 #if GLITCH_DEBUG
+#define DEBUG_PRINT_V3(vec, ...) printf(__VA_ARGS__ "" "(%f, %f, %f)\n", vec.x, vec.y, vec.z)
+#else
+#define DEBUG_PRINT_V3(vec, ...)
+#endif
+
+#if GLITCH_DEBUG
 #define Assert(Expression) if(!(Expression)) {DEBUG_PRINT("Assertion failed in: %s on line %d\n",__FILE__,__LINE__); *(int*)0 = 0;}
 #else
 #define Assert(Expression)
@@ -150,7 +156,6 @@ struct game_memory
     platform_api PlatformAPI;
     
     struct game_state* GameState;
-    struct transient_state* TranState;
     
 #if GLITCH_DEBUG
     debug_state* DebugState;
