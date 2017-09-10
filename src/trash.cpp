@@ -1107,3 +1107,55 @@ static void RenderLightSources(game_state* GameState)
 */
 
 
+/*
+auto& GameCamera = Renderer.Cameras[GameState->GameCameraHandle];
+switch(GameCamera.FadingMode)
+{
+    case Fading_In:
+    {
+        GameCamera.FadingAlpha -= GameCamera.FadingSpeed * (r32)DeltaTime;
+        
+        if(GameCamera.FadingAlpha <= 0.0f)
+        {
+            GameCamera.FadingAlpha = 0.0f;
+            GameCamera.FadingMode = Fading_None;
+        }
+    }
+    break;
+    case Fading_Out:
+    {
+        GameCamera.FadingAlpha += GameCamera.FadingSpeed * (r32)DeltaTime;
+        
+        if(GameCamera.FadingAlpha >= 1.0f)
+        {
+            GameCamera.FadingAlpha = 1.0f;
+            GameCamera.FadingMode = Fading_None;
+        }
+    }
+    case Fading_OutIn:
+    {
+        if(GameCamera.FadingIn)
+        {
+            GameCamera.FadingAlpha -= GameCamera.FadingSpeed * (r32)DeltaTime;
+            
+            if(GameCamera.FadingAlpha <= 0.0f)
+            {
+                GameCamera.FadingAlpha = 0.0f;
+                GameCamera.FadingMode = Fading_None;
+                GameCamera.FadingIn = false;
+            }
+        }
+        else
+        {
+            GameCamera.FadingAlpha += GameCamera.FadingSpeed * (r32)DeltaTime;
+            
+            if(GameCamera.FadingAlpha >= GameCamera.EndAlpha)
+            {
+                GameCamera.FadingAlpha = GameCamera.EndAlpha;
+                GameCamera.FadingIn = true;
+            }
+        }
+    }
+    break;
+}
+    */

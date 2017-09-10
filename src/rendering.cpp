@@ -12,22 +12,25 @@ static inline void CameraTransform(renderer& Renderer, camera& Camera, math::v3 
         Camera.ProjectionMatrix = math::Ortho(0.0f, Renderer.Viewport[2] / Zoom, 0.0f, Renderer.Viewport[3] / Zoom, Near, Far);
         Camera.ViewMatrix = math::m4(1.0f);
         
-        if(!IsIdentity(Orientation))
-        {
-            Camera.ViewMatrix = ToMatrix(Orientation) * Camera.ViewMatrix;
-        }
-        
         auto Dist = sqrt(1.0f / 3.0f);
         
         Camera.ViewMatrix = math::LookAt(math::v3(Dist, Dist, Dist), math::v3(0.0f));
         
+        /*
         auto Pos = math::YRotate(-45.0f) * Position;
         
         auto Factor = 1.0f - 35.264f / 90.0f;
         
         Camera.ViewMatrix = math::Translate(Camera.ViewMatrix, math::v3(-Pos.x, Pos.z * Factor, 0.0f));
+        */
         
+        Camera.ViewMatrix = math::Translate(Camera.ViewMatrix, Position);
         Camera.ViewMatrix = math::Translate(Camera.ViewMatrix, math::v3(Renderer.Viewport[2] / Zoom / 2, Renderer.Viewport[3] / Zoom / 2, 0.0f));
+        
+        if(!IsIdentity(Orientation))
+        {
+            Camera.ViewMatrix = ToMatrix(Orientation) * Camera.ViewMatrix;
+        }
         
         Camera.Position = Position;
         Camera.Orientation = Orientation;
@@ -35,12 +38,26 @@ static inline void CameraTransform(renderer& Renderer, camera& Camera, math::v3 
     }
     else if(CameraFlags & CFlag_Perspective)
     {
-        Camera.ProjectionMatrix = math::Perspective((r32)Renderer.Viewport[2] / (r32)Renderer.Viewport[3], 0.60f, Near, Far);
+        Camera.ProjectionMatrix = math::Perspective((r32)Renderer.Viewport[2] / (r32)Renderer.Viewport[3], 0.60f, 0.1f, 100.0f);
         
         Camera.ViewMatrix = math::m4(1.0f);
-        Camera.ViewMatrix = math::Translate(Camera.ViewMatrix, Camera.Center);
         
-        Camera.ViewMatrix = math::LookAt(Camera.Center, math::v3(-Target.x, Target.y, -Target.z));
+        auto Dist = sqrt(1.0f / 3.0f);
+        
+        Dist = 20.0f;
+        
+        Camera.ViewMatrix = math::LookAt(math::v3(Dist, Dist, Dist), Target);
+        
+        
+        if(!IsIdentity(Orientation))
+        {
+            Camera.ViewMatrix = ToMatrix(Orientation) * Camera.ViewMatrix;
+        }
+        
+        
+        Camera.Position = Position;
+        Camera.Orientation = Orientation;
+        Camera.Target = Target;
     }
 }
 

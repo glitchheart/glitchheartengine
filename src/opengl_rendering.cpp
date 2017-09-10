@@ -664,9 +664,9 @@ static void RenderSetup(render_state *RenderState, memory_arena* PermArena)
     glBindVertexArray(RenderState->WireframeCubeVAO);
     glGenBuffers(1, &RenderState->WireframeCubeVBO);
     glBindBuffer(GL_ARRAY_BUFFER, RenderState->WireframeCubeVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 24, RenderState->WireframeCubeVertices, GL_DYNAMIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 32, RenderState->WireframeCubeVertices, GL_STATIC_DRAW);
     glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(r32), 0);
+    glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, 0);
     glGenBuffers(1, &RenderState->CubeIndexBuffer);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, RenderState->CubeIndexBuffer);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint) * CUBE_INDICES, RenderState->WireframeCubeIndices, GL_STATIC_DRAW);
@@ -1304,7 +1304,7 @@ static void RenderWireframeCube(const render_command& Command, render_state& Ren
     
     math::m4 Model = math::m4(1.0f);
     Model = math::Scale(Model, Command.Scale);
-    Model = ToMatrix(Command.Orientation) * Model;
+    Model = math::Rotate(Model, Command.Orientation);
     Model = math::Translate(Model, Command.Position);
     
     SetMat4Uniform(Shader.Program, "Model", Model);
@@ -1312,7 +1312,12 @@ static void RenderWireframeCube(const render_command& Command, render_state& Ren
     SetMat4Uniform(Shader.Program, "View", View);
     SetVec4Uniform(Shader.Program, "Color", Command.WireframeCube.Color);
     
-    glDrawElements(GL_LINE_STRIP, 17, GL_UNSIGNED_INT, (void*)0);
+    glDrawElements(GL_LINE_LOOP, 4, GL_UNSIGNED_INT, 0);
+    glDrawElements(GL_LINE_LOOP, 4, GL_UNSIGNED_INT, (GLvoid*)(4 * sizeof(GLuint)));
+    glDrawElements(GL_LINES, 8, GL_UNSIGNED_INT, (GLvoid*)(8 * sizeof(GLuint)));
+    
+    
+    //glDrawElements(GL_LINE_STRIP, 17, GL_UNSIGNED_INT, (void*)0);
     glBindVertexArray(0);
 }
 
@@ -1505,9 +1510,7 @@ static void RenderModel(const render_command& Command, render_state& RenderState
         math::m4 Model(1.0f);
         Model = math::Scale(Model, Command.Scale);
         
-        
-        math::m4 Rot = ToMatrix(Command.Orientation);
-        Model = Rot * Model;
+        Model = math::Rotate(Model, Command.Orientation);
         
         Model = math::Translate(Model, Command.Position);
         

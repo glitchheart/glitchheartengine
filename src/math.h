@@ -1494,6 +1494,7 @@ namespace math
     m4 CreateRotation(r32 XAngle, r32 YAngle, r32 ZAngle);
     
     quat Rotate(quat In, r32 A, v3 Axis);
+    m4 Rotate(m4 M, r32 A, v3 Axis);
     quat Conjugate(quat Q);
     r32 Magnitude(quat Q);
     r32 GetAngleInRadians(quat Q);
@@ -1692,17 +1693,17 @@ namespace math
     inline m4 ToMatrix(quat Q)
     {
         m4 Result(1.0f);
-        Result[0][0] = 1.0f - 2.0f * Q.Y * Q.Y - 2.0f * Q.Z * Q.Z;
-        Result[1][0] = 2.0f * Q.X * Q.Y + 2.0f * Q.Z * Q.W;
-        Result[2][0] = 2.0f * Q.X * Q.Z - 2.0f * Q.Y * Q.W;
+        Result[0][0] = 1.0f - 2.0f * Q.y * Q.y - 2.0f * Q.z * Q.z;
+        Result[1][0] = 2.0f * Q.x * Q.y - 2.0f * Q.w * Q.z;
+        Result[2][0] = 2.0f * Q.x * Q.z + 2.0f * Q.w * Q.y;
         Result[3][0] = 0.0f;
-        Result[0][1] = 2.0f * Q.X * Q.Y - 2.0f * Q.Z * Q.W;
-        Result[1][1] = 1.0f - 2.0f * Q.X * Q.X - 2.0f * Q.Z * Q.Z;
-        Result[2][1] = 2.0f * Q.Y * Q.Z + 2.0f * Q.X * Q.W;
+        Result[0][1] = 2.0f * Q.x * Q.y + 2.0f * Q.w * Q.z;
+        Result[1][1] = 1.0f - 2.0f * Q.x * Q.x - 2.0f * Q.z * Q.z;
+        Result[2][1] = 2.0f * Q.y * Q.z - 2.0f * Q.w * Q.x;
         Result[3][1] = 0.0f;
-        Result[0][2] = 2.0f * Q.X * Q.Z + 2.0f * Q.Y * Q.W;
-        Result[1][2] = 2.0f * Q.Y * Q.Z - 2.0f * Q.X * Q.W;
-        Result[2][2] = 1.0f - 2.0f * Q.X * Q.X - 2.0f * Q.Y * Q.Y;
+        Result[0][2] = 2.0f * Q.x * Q.z - 2.0f * Q.w * Q.y;
+        Result[1][2] = 2.0f * Q.y * Q.z + 2.0f * Q.w * Q.x;
+        Result[2][2] = 1.0f - 2.0f * Q.x * Q.x - 2.0f * Q.y * Q.y;
         Result[3][2] = 0.0f;
         Result[0][3] = 0.0f;
         Result[1][3] = 0.0f;
@@ -1740,11 +1741,15 @@ namespace math
     
     void PrintMatrix(m4 In)
     {
-        DEBUG_PRINT("Math: \n");
         DEBUG_PRINT("%f %f %f %f\n", In[0][0],In[0][1],In[0][2],In[0][3]);
         DEBUG_PRINT("%f %f %f %f\n", In[1][0],In[1][1],In[1][2],In[1][3]);
         DEBUG_PRINT("%f %f %f %f\n", In[2][0],In[2][1],In[2][2],In[2][3]);
         DEBUG_PRINT("%f %f %f %f\n", In[3][0],In[3][1],In[3][2],In[3][3]);
+    }
+    
+    void PrintQuat(quat Q)
+    {
+        DEBUG_PRINT("(%f, %f, %f, %f)\n", Q.x, Q.y, Q.z, Q.w);
     }
     
     inline v4 operator*(const v4& V, const m4& M)
@@ -1780,10 +1785,10 @@ namespace math
     }
     
     /*
-      * I got this shit from stackoverflow and it took long enough to do
-     * Has been tested by doing: Matrix * Inverse(Matrix) = I checks and seems to 
-     * consistently work! 
-     * Link: https://stackoverflow.com/questions/1148309/inverting-a-4x4-matrix
+    * I got this shit from stackoverflow and it took long enough to do
+    * Has been tested by doing: Matrix * Inverse(Matrix) = I checks and seems to 
+    * consistently work! 
+    * Link: https://stackoverflow.com/questions/1148309/inverting-a-4x4-matrix
     */
     inline m4 Inverse(m4 M)
     {
@@ -2211,6 +2216,13 @@ namespace math
         return Result;
     }
     
+    inline m4 Rotate(m4 M, quat R)
+    {
+        m4 Result(1.0f);
+        Result = ToMatrix(R) * M;
+        return Result;
+    }
+    
     inline v3 Right(m4 M)
     {
         return math::v3(M[0][0],
@@ -2427,33 +2439,6 @@ namespace math
         return Rand;
     }
     
-    //@Incomplete: This this. Seems to not line up with the tutorial
-    //@Link:       http://antongerdelan.net/opengl/raycasting.html
-    inline v3 CastRay(r32 MouseX, r32 MouseY, r32 Width, r32 Height, m4 P, m4 V, r32 Near)
-    {
-        // Convert to Normalized Device Coordinates
-        r32 X = (2.0f * MouseX) / Width - 1.0f;
-        r32 Y = 1.0f - (2.0f * MouseY) / Height;
-        r32 Z = 1.0f; // This is not necessarily needed here yet
-        v3 RayNDC = v3(X, Y, Z);
-        //DEBUG_PRINT("(%f, %f)\n", X, Y);
-        
-        // We don't need to reverse the perspective division
-        v4 RayClip = v4(RayNDC.xy, -1.0, 1.0);
-        
-        // Convert to eye coords by inverting the projection
-        v4 RayEye = Inverse(P) * RayClip;
-        
-        // Point the ray the right direction in Z
-        RayEye = v4(RayEye.xy, -1.0f, 0.0);
-        
-        // Convert to world coordinates
-        v3 RayWorld = (Inverse(V) * RayEye).xyz;
-        RayWorld = Normalize(RayWorld);
-        
-        return RayWorld;
-    }
-    
     struct ray
     {
         v3 Origin;
@@ -2478,7 +2463,6 @@ namespace math
         
         auto TempRay = math::v4(Mouse - Origin, 0.0f);
         TempRay = Normalize(TempRay);
-        
         ray Ray;
         Ray.Origin = Origin;
         Ray.Target = Mouse;

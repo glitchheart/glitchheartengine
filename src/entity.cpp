@@ -1014,33 +1014,40 @@ void DetermineDeltaForDirection(Look_Direction LookDirection, r32* DX, r32* DY)
 
 void UpdatePlayer(entity* Entity, game_state* GameState, renderer& Renderer, sound_commands* SoundCommands, input_controller* InputController, r64 DeltaTime)
 {
-    math::v3 Direction;
     
-    if(KEY(Key_W))
+    if(!GameState->GodModeOn)
     {
-        Direction.X = -1.0f;
+        
+        
+        math::v3 Direction;
+        
+        if(KEY(Key_W))
+        {
+            Direction.X = -1.0f;
+        }
+        else if(KEY(Key_S))
+        {
+            Direction.X = 1.0f;
+        }
+        
+        
+        if(KEY(Key_A))
+        {
+            Direction.Z = 1.0f;
+        }
+        else if(KEY(Key_D))
+        {
+            Direction.Z = -1.0f;
+        }
+        
+        Direction = math::YRotate(-45.0f) * Direction;
+        Direction = Normalize(Direction);
+        
+        auto& PlayerModel = GameState->Models[GameState->PlayerModel];
+        PlayerModel.Position += Direction * 10.0f * DeltaTime;
+        
+        Renderer.Cameras[0].Center = math::v3(PlayerModel.Position.X, PlayerModel.Position.Y, PlayerModel.Position.Z);
     }
-    else if(KEY(Key_S))
-    {
-        Direction.X = 1.0f;
-    }
-    
-    
-    if(KEY(Key_A))
-    {
-        Direction.Z = 1.0f;
-    }
-    else if(KEY(Key_D))
-    {
-        Direction.Z = -1.0f;
-    }
-    
-    Direction = math::YRotate(-45.0f) * Direction;
-    Direction = Normalize(Direction);
-    
-    GameState->PlayerModel->Position += Direction * 10.0f * DeltaTime;
-    
-    Renderer.Cameras[0].Center = math::v3(GameState->PlayerModel->Position.X, GameState->PlayerModel->Position.Y, GameState->PlayerModel->Position.Z);
 }
 
 void UpdateAI(entity* Entity, game_state* GameState, sound_commands* SoundCommands, r64 DeltaTime)
