@@ -1318,7 +1318,6 @@ static void RenderWireframeCube(const render_command& Command, render_state& Ren
     glDrawElements(GL_LINES, 8, GL_UNSIGNED_INT, (GLvoid*)(8 * sizeof(GLuint)));
     
     glLineWidth(1.0f);
-    //glDrawElements(GL_LINE_STRIP, 17, GL_UNSIGNED_INT, (void*)0);
     glBindVertexArray(0);
 }
 

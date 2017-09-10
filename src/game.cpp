@@ -290,9 +290,9 @@ extern "C" UPDATE(Update)
         C1.Orientation = math::quat();
         
         collision_volume C2;
-        C2.Center = math::v3(5.0f, 3.0f, 4.0f);
+        C2.Center = math::v3(4.5f, 0.0f, 0.0f);
         C2.Extents = math::v3(3.0f, 3.0f, 1.0f);
-        C2.Orientation = math::Rotate(math::quat(), 45.0f, math::v3(1.0f, 0.0f, 0.0f));
+        C2.Orientation = math::quat();
         
         GameState->CollisionVolumes[GameState->CollisionVolumeCount++] = C1;
         GameState->CollisionVolumes[GameState->CollisionVolumeCount++] = C2;
@@ -959,6 +959,16 @@ extern "C" UPDATE(Update)
     for(i32 Index = 0; Index < GameState->CollisionVolumeCount; Index++)
     {
         auto& C = GameState->CollisionVolumes[Index];
+        C.Colliding = false;
+        for(i32 J = 0; J < GameState->CollisionVolumeCount; J++)
+        {
+            if(J == Index)
+                continue;
+            
+            C.Colliding = CheckSATCollision(C, GameState->CollisionVolumes[J]);
+            PushLine(Renderer, C.Center, GameState->CollisionVolumes[J].Center, 3.0f, math::rgba(0.5f, 0.7f, 0.3f, 1.0f));
+        }
+        
         PushCollisionVolume(Renderer, C, true);
     }
     

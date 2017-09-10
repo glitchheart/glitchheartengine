@@ -7,25 +7,23 @@ static b32 CheckSATCollision(collision_volume& CA, collision_volume& CB)
 {
     auto PA = CA.Center;
     auto AO = math::ToMatrix(CA.Orientation);
-    auto AX = math::Forward(AO);
+    auto AX = math::Right(AO);
     auto AY = math::Up(AO);
-    auto AZ = math::Right(AO);
-    auto WA = CA.Extents.x;
-    auto HA = CA.Extents.y;
-    auto DA = CA.Extents.z;
+    auto AZ = math::Forward(AO);
+    auto WA = CA.Extents.x / 2.0f;
+    auto HA = CA.Extents.y / 2.0f;
+    auto DA = CA.Extents.z / 2.0f;
     
     auto PB = CB.Center;
     auto BO = math::ToMatrix(CB.Orientation);
-    auto BX = math::Forward(BO);
+    auto BX = math::Right(BO);
     auto BY = math::Up(BO);
-    auto BZ = math::Right(BO);
-    auto WB = CB.Extents.x;
-    auto HB = CB.Extents.y;
-    auto DB = CB.Extents.z;
+    auto BZ = math::Forward(BO);
+    auto WB = CB.Extents.x / 2.0f;
+    auto HB = CB.Extents.y / 2.0f;
+    auto DB = CB.Extents.z / 2.0f;
     
     auto T = PB - PA;
-    
-    
     
     auto RXX = math::Dot(AX, BX);
     auto RXY = math::Dot(AX, BY);
@@ -41,6 +39,7 @@ static b32 CheckSATCollision(collision_volume& CA, collision_volume& CB)
     auto LHS = math::Absolute(math::Dot(T, AX));
     auto RHS = WA + math::Absolute(WB * RXX) + math::Absolute(HB * RXY) + math::Absolute(DB * RXZ);
     
+    DEBUG_PRINT("AX: %f %f\n", LHS, RHS);
     if(LHS > RHS)
         return false;
     
@@ -48,6 +47,7 @@ static b32 CheckSATCollision(collision_volume& CA, collision_volume& CB)
     LHS = math::Absolute(math::Dot(T, AY));
     RHS = HA + math::Absolute(WB * RYX) + math::Absolute(HB * RYY) + math::Absolute(DB * RYZ);
     
+    DEBUG_PRINT("AY: %f %f\n", LHS, RHS);
     if(LHS > RHS)
         return false;
     
@@ -55,6 +55,7 @@ static b32 CheckSATCollision(collision_volume& CA, collision_volume& CB)
     LHS = math::Absolute(math::Dot(T, AZ));
     RHS = DA + math::Absolute(WB * RZX) + math::Absolute(HB * RZY) + math::Absolute(DB * RZZ);
     
+    DEBUG_PRINT("AZ: %f %f\n", LHS, RHS);
     if(LHS > RHS)
         return false;
     
@@ -62,6 +63,7 @@ static b32 CheckSATCollision(collision_volume& CA, collision_volume& CB)
     LHS = math::Absolute(math::Dot(T, BX));
     RHS = math::Absolute(WA * RXX) + math::Absolute(HA * RYX) + math::Absolute(DA * RZX) + WB;
     
+    DEBUG_PRINT("BX: %f %f\n", LHS, RHS);
     if(LHS > RHS)
         return false;
     
@@ -69,6 +71,7 @@ static b32 CheckSATCollision(collision_volume& CA, collision_volume& CB)
     LHS = math::Absolute(math::Dot(T, BY));
     RHS = math::Absolute(WA * RXY) + math::Absolute(HA * RYY) + math::Absolute(DA * RZY) + HB;
     
+    DEBUG_PRINT("BY: %f %f\n", LHS, RHS);
     if(LHS > RHS)
         return false;
     
@@ -76,6 +79,7 @@ static b32 CheckSATCollision(collision_volume& CA, collision_volume& CB)
     LHS = math::Absolute(math::Dot(T, BZ));
     RHS = math::Absolute(WA * RXZ) + math::Absolute(HA * RYZ) + math::Absolute(DA * RZZ) + DB;
     
+    DEBUG_PRINT("BZ: %f %f\n", LHS, RHS);
     if(LHS > RHS)
         return false;
     
@@ -83,30 +87,84 @@ static b32 CheckSATCollision(collision_volume& CA, collision_volume& CB)
     LHS = math::Absolute((math::Dot(T, AZ) * RYX - (math::Dot(T, AY) * RZX)));
     RHS = math::Absolute(HA * RZX) + math::Absolute(DA * RYX) + math::Absolute(HB * RXZ) + math::Absolute(DB * RXY);
     
+    DEBUG_PRINT("AX X BX: %f %f\n", LHS, RHS);
+    if(LHS > RHS)
+        return false;
+    
     //L = AX X BY
     LHS = math::Absolute((math::Dot(T, AZ) * RYY - (math::Dot(T, AY) * RZY)));
     RHS = math::Absolute(HA * RZY) + math::Absolute(DA * RYY) + math::Absolute(WB * RXZ) + math::Absolute(DB * RXX);
     
+    DEBUG_PRINT("AX X BY: %f %f\n", LHS, RHS);
+    if(LHS > RHS)
+        return false;
+    
     //L = AX X BZ
+    LHS = math::Absolute((math::Dot(T, AZ) * RYZ - (math::Dot(T, AY) * RZZ)));
+    RHS = math::Absolute(HA * RZZ) + math::Absolute(DA * RYZ) + math::Absolute(WB * RXY) + math::Absolute(HB * RXX);
+    
+    DEBUG_PRINT("AX X BZ: %f %f\n", LHS, RHS);
+    if(LHS > RHS)
+        return false;
     
     //L = AY X BX
+    LHS = math::Absolute((math::Dot(T, AX) * RZX - (math::Dot(T, AZ) * RXX)));
+    RHS = math::Absolute(WA * RZX) + math::Absolute(DA * RXX) + math::Absolute(HB * RYZ) + math::Absolute(DB * RYY);
+    
+    DEBUG_PRINT("AY X BX: %f %f\n", LHS, RHS);
+    if(LHS > RHS)
+        return false;
     
     //L = AY X BY
+    LHS = math::Absolute((math::Dot(T, AX) * RZY - (math::Dot(T, AZ) * RXY)));
+    RHS = math::Absolute(WA * RZY) + math::Absolute(DA * RXY) + math::Absolute(WB * RYZ) + math::Absolute(DB * RYX);
+    
+    DEBUG_PRINT("AY X BY: %f %f\n", LHS, RHS);
+    if(LHS > RHS)
+        return false;
     
     //L = AY X BZ
+    LHS = math::Absolute((math::Dot(T, AX) * RZZ - (math::Dot(T, AZ) * RXZ)));
+    RHS = math::Absolute(WA * RZZ) + math::Absolute(DA * RXZ) + math::Absolute(WB * RYY) + math::Absolute(HB * RYX);
+    
+    DEBUG_PRINT("AY X BZ: %f %f\n", LHS, RHS);
+    if(LHS > RHS)
+        return false;
     
     //L = AZ X BX
+    LHS = math::Absolute((math::Dot(T, AY) * RXX - (math::Dot(T, AX) * RYX)));
+    RHS = math::Absolute(WA * RYX) + math::Absolute(HA * RXX) + math::Absolute(HB * RZZ) + math::Absolute(DB * RZY);
+    
+    DEBUG_PRINT("AZ X BX: %f %f\n", LHS, RHS);
+    if(LHS > RHS)
+        return false;
     
     //L = AZ X BY
+    LHS = math::Absolute((math::Dot(T, AY) * RXY - (math::Dot(T, AX) * RYY)));
+    RHS = math::Absolute(WA * RYY) + math::Absolute(HA * RXY) + math::Absolute(WB * RZZ) + math::Absolute(DB * RZX);
+    
+    DEBUG_PRINT("AZ X BY: %f %f\n", LHS, RHS);
+    if(LHS > RHS)
+        return false;
+    
     
     //L = AZ X BZ
+    LHS = math::Absolute((math::Dot(T, AY) * RXZ - (math::Dot(T, AX) * RYZ)));
+    RHS = math::Absolute(WA * RYZ) + math::Absolute(HA * RXZ) + math::Absolute(WB * RZY) + math::Absolute(HB * RZX);
     
+    DEBUG_PRINT("AZ X BZ: %f %f\n", LHS, RHS);
+    if(LHS > RHS)
+        return false;
     
+    DEBUG_PRINT("We done\n");
+    return true;
 }
 
-static void PushCollisionVolume(renderer& Renderer, collision_volume& C, b32 DrawAxes = false)
+static void PushCollisionVolume(renderer& Renderer, collision_volume& C,  b32 DrawAxes = false)
 {
-    PushWireframeCube(Renderer, C.Center, C.Extents, C.Orientation, math::rgba(0.0f, 1.0f, 0.0f, 1.0f), 1.5f);
+    auto Color = C.Colliding ? math::rgba(1.0f, 0.0f, 0.0f, 1.0f) : math::rgba(0.0f, 1.0f, 0.0f, 1.0f);
+    
+    PushWireframeCube(Renderer, C.Center, C.Extents, C.Orientation, Color, 1.5f);
     
     auto AO = math::ToMatrix(C.Orientation);
     
