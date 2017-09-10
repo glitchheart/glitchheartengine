@@ -208,7 +208,7 @@ static void Pick(game_state* GameState, input_controller* InputController, rende
         auto MForward = math::Forward(Or);
         auto MUp = math::Up(Or);
         auto MRight = math::Right(Or);
-        r32 LineLength = 100.0f;
+        r32 LineLength = 20.0f;
         
         PushLine(Renderer, MPos, MPos + MForward * LineLength, 1.0f, math::rgba(1.0f, 0.0f, 0.0f, 1.0f));
         
@@ -216,7 +216,15 @@ static void Pick(game_state* GameState, input_controller* InputController, rende
         
         PushLine(Renderer, MPos, MPos + MRight * LineLength, 1.0f, math::rgba(0.0f, 1.0f, 0.0f, 1.0f));
         
-        PushWireframeCube(Renderer, MPos + math::v3(0.0f, 10.0f, 0.0f), math::v3(5.0f, 10.0f, 5.0f), Selected.Orientation, math::rgba(1.0f, 0.0f, 1.0f, 1.0f));
+        math::v3 CubeScale = math::v3(5.0f, 10.0f, 5.0f);
+        math::v3 CubePos = MPos + math::v3(0.0f, 10.0f, 0.0f);
+        
+        PushWireframeCube(Renderer, CubePos, CubeScale, Selected.Orientation, math::rgba(1.0f, 0.0f, 1.0f, 1.0f), 1.0f);
+        
+        math::v3 LineP1 = CubePos;
+        math::v3 LineP2 = LineP1 + MRight * LineLength;
+        
+        PushLine(Renderer, LineP1, LineP2, 2.0f, math::rgba(1.0f, 1.0f, 1.0f, 1.0f));
         
         if(MOUSE(Mouse_Left))
         {
@@ -275,6 +283,19 @@ extern "C" UPDATE(Update)
         
         LoadTextures(Renderer, &GameState->TotalArena);
         GameState->SelectedModel = -1;
+        
+        collision_volume C1;
+        C1.Center = math::v3(0.0f, 0.0f, 0.0f);
+        C1.Extents = math::v3(5.0f, 3.0f, 7.0f);
+        C1.Orientation = math::quat();
+        
+        collision_volume C2;
+        C2.Center = math::v3(5.0f, 3.0f, 4.0f);
+        C2.Extents = math::v3(3.0f, 3.0f, 1.0f);
+        C2.Orientation = math::Rotate(math::quat(), 33.0f, math::v3(1.0f, 0.0f, 0.0f));
+        
+        GameState->CollisionVolumes[GameState->CollisionVolumeCount++] = C1;
+        GameState->CollisionVolumes[GameState->CollisionVolumeCount++] = C2;
         
         if(GameState->ShouldReload || GameMemory->ShouldReload)
         {
@@ -345,6 +366,7 @@ extern "C" UPDATE(Update)
             PLAY_TRACK(Brugt);
             
             Renderer.ClearColor = math::rgba(0.2f, 0.2f, 0.2f, 1.0f);
+            Renderer.LineWidth = 1.0f;
         }
         
         LoadLevelFromFile(GameState->LevelPath, &GameState->CurrentLevel, GameState,  Renderer, SoundCommands);
@@ -616,6 +638,17 @@ extern "C" UPDATE(Update)
         else if(KEY(Key_Subtract))
         {
             Zoom += (r32)(-GameState->GodModeZoomSpeed / Factor * DeltaTime);
+        }
+        
+        r32 ScrollFactor = 1.0f / GameCamera.Zoom;
+        
+        if(InputController->ScrollY > 0.0)
+        {
+            Zoom += (r32)(GameState->GodModeZoomSpeed / ScrollFactor * DeltaTime);
+        }
+        else if(InputController->ScrollY < 0.0)
+        {
+            Zoom += (r32)(-GameState->GodModeZoomSpeed / ScrollFactor * DeltaTime);
         }
         
         Direction = math::Normalize(Direction);
@@ -910,6 +943,12 @@ extern "C" UPDATE(Update)
     {
         PushModel(Renderer, GameState->Models[Index]);
         PushSpotlight(Renderer, GameState->Models[Index].Position, math::v3(1.0f, 0.0f, 0.0f), DEGREE_IN_RADIANS * 12.5f, DEGREE_IN_RADIANS * 17.5f, math::v3(0.1f, 0.1f, 0.1f), math::v3(1.0f, 1.0f, 1.0), math::v3(1.0, 1.0, 1.0), 1.0f, 0.09f, 0.032f);
+    }
+    
+    for(i32 Index = 0; Index < GameState->CollisionVolumeCount; Index++)
+    {
+        auto& C = GameState->CollisionVolumes[Index];
+        PushCollisionVolume(Renderer, C, true, true);
     }
     
     if(PushButton(Renderer, "Reset player", rect(5, 5, 200, 50), math::rgba(1, 0, 0, 1), math::rgba(1, 1, 1, 1), InputController))
