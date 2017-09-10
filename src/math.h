@@ -1475,7 +1475,7 @@ namespace math
     i32 Ceil(r32 V);
     v2 Ceil(v2 V);
     v3 Ceil(v3 V);
-    i32 Absolute(r32 V);
+    r32 Absolute(r32 V);
     v2 Absolute(v2 V);
     v3 Absolute(v3 V);
     v4 Absolute(v4 V);
@@ -2061,6 +2061,10 @@ namespace math
         }
     }
     
+    r32 Absolute(r32 V)
+    {
+        return Abs(V);
+    }
     
     v2 Absolute(v2 V)
     {
@@ -2246,23 +2250,23 @@ namespace math
     
     inline v3 Right(m4 M)
     {
-        return math::v3(M[0][0],
-                        M[0][1],
-                        M[0][2]);
+        return Normalize(math::v3(M[0][0],
+                                  M[0][1],
+                                  M[0][2]));
     }
     
     inline v3 Up(m4 M)
     {
-        return math::v3(M[1][0],
-                        M[1][1],
-                        M[1][2]);
+        return Normalize(math::v3(M[1][0],
+                                  M[1][1],
+                                  M[1][2]));
     }
     
     inline v3 Forward(m4 M)
     {
-        return math::v3(M[2][0],
-                        M[2][1],
-                        M[2][2]);
+        return Normalize(math::v3(M[2][0],
+                                  M[2][1],
+                                  M[2][2]));
     }
     
     inline v3 Translation(m4 M)

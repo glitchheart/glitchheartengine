@@ -43,6 +43,7 @@
      math::v3 Center;
      math::v3 Extents;
      math::quat Orientation; // Need this to get Up/Right/Forward
+     b32 Colliding;
      
      //@Incomplete: Volumes always cubes as of now
      math::v4 Vertices[8] =
