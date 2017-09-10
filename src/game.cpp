@@ -252,10 +252,11 @@ extern "C" UPDATE(Update)
     if(!GameState->IsInitialized || !GameMemory->IsInitialized)
     {
         model PlayerModel;
-        LoadGLIMModel(Renderer, "../assets/models/hatman.glim", &PlayerModel);
+        LoadGLIMModel(Renderer, "../assets/models/knight.glim", &PlayerModel);
         PlayerModel.AnimationTime = 0.0f;
         PlayerModel.Position = math::v3(0, 0, 0);
         PlayerModel.Scale = math::v3(2, 2, 2);
+        PlayerModel.Orientation = math::quat(1.0f, 0.0f, 0.0f, DEGREE_IN_RADIANS * 180.0f);
         
         GameState->Models[GameState->ModelCount++] = PlayerModel;
         GameState->PlayerModel = GameState->ModelCount - 1;
