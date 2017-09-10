@@ -292,7 +292,7 @@ extern "C" UPDATE(Update)
         collision_volume C2;
         C2.Center = math::v3(5.0f, 3.0f, 4.0f);
         C2.Extents = math::v3(3.0f, 3.0f, 1.0f);
-        C2.Orientation = math::Rotate(math::quat(), 33.0f, math::v3(1.0f, 0.0f, 0.0f));
+        C2.Orientation = math::Rotate(math::quat(), 45.0f, math::v3(1.0f, 0.0f, 0.0f));
         
         GameState->CollisionVolumes[GameState->CollisionVolumeCount++] = C1;
         GameState->CollisionVolumes[GameState->CollisionVolumeCount++] = C2;
@@ -945,10 +945,21 @@ extern "C" UPDATE(Update)
         PushSpotlight(Renderer, GameState->Models[Index].Position, math::v3(1.0f, 0.0f, 0.0f), DEGREE_IN_RADIANS * 12.5f, DEGREE_IN_RADIANS * 17.5f, math::v3(0.1f, 0.1f, 0.1f), math::v3(1.0f, 1.0f, 1.0), math::v3(1.0, 1.0, 1.0), 1.0f, 0.09f, 0.032f);
     }
     
+    if(KEY(Key_X))
+    {
+        auto Angle = 20.0f;
+        if(KEY(Key_LeftShift))
+        {
+            Angle = -20.0f;
+        }
+        
+        GameState->CollisionVolumes[1].Orientation = math::Rotate(GameState->CollisionVolumes[1].Orientation, Angle * DeltaTime, math::v3(1.0f, 0.0f, 0.0f));
+    }
+    
     for(i32 Index = 0; Index < GameState->CollisionVolumeCount; Index++)
     {
         auto& C = GameState->CollisionVolumes[Index];
-        PushCollisionVolume(Renderer, C, true, true);
+        PushCollisionVolume(Renderer, C, true);
     }
     
     if(PushButton(Renderer, "Reset player", rect(5, 5, 200, 50), math::rgba(1, 0, 0, 1), math::rgba(1, 1, 1, 1), InputController))

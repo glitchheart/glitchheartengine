@@ -69,33 +69,4 @@
      };*/
  };
  
- inline void SAT(collision_volume& V1, collision_volume& V2)
- {
-     
- }
- 
- math::v2 Project(math::v3* Vertices, math::v3 Axis, i32 VertexCount)
- {
-     if(VertexCount > 0)
-     {
-         r32 Min = math::Dot(Axis, Vertices[0]);
-         r32 Max = Min;
-         for(i32 I = 1; I < VertexCount; I++)
-         {
-             r32 P = Dot(Axis, Vertices[I]);
-             if(P < Min)
-             {
-                 Min = P;
-             }
-             else if(P > Max)
-             {
-                 Max = P;
-             }
-         }
-         return math::v2(Min, Max);
-     }
-     
-     return math::v2();
- }
- 
 #endif
