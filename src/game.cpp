@@ -262,7 +262,8 @@ extern "C" UPDATE(Update)
         PlayAnimation(0, GameState->Models[GameState->PlayerModel], true);
         
         model Cube;
-        LoadGLIMModel(Renderer, "../assets/models/cube.glim", &Cube);
+        
+        //LoadGLIMModel(Renderer, "../assets/models/cube.glim", &Cube);
         
         //GameState->Models[GameState->ModelCount++] = Cube;
         //GameState->Models[GameState->ModelCount - 1].Position = math::v3(-10, -1.5f, 0);

@@ -266,22 +266,33 @@ static void PushModel(renderer& Renderer, model& Model)
     RenderCommand->Position = Model.Position;
     RenderCommand->Scale = Model.Scale;
     RenderCommand->Orientation = Model.Orientation;
+    RenderCommand->Model.BufferHandle = Model.BufferHandle;
     
-    for (i32 Index = 0; Index < Model.MeshCount; Index++)
+    for(i32 Index = 0; Index < Model.MaterialCount; Index++)
     {
-        mesh_render_data RenderInfo;
-        RenderInfo.BufferHandle = Model.Meshes[Index].BufferHandle;
-        RenderInfo.Material = Model.Meshes[Index].Material;
-        RenderCommand->Model.RenderData[Index] = RenderInfo;
+        if(Model.Materials[Index].DiffuseTexture.HasData && Model.Materials[Index].DiffuseTexture.TextureHandle == -1)
+        {
+            Model.Materials[Index].DiffuseTexture.TextureHandle = Renderer.TextureMap[Model.Materials[Index].DiffuseTexture.TextureName]->Handle;
+        }
     }
     
-    RenderCommand->Model.HandleCount = Model.MeshCount;
-    RenderCommand->Model.BoneCount = Model.BoneCount;
-    RenderCommand->Model.BoneTransforms = PushTempSize(sizeof(math::m4) * Model.BoneCount, math::m4);
+    memcpy(&RenderCommand->Model.Meshes, Model.Meshes, sizeof(Model.Meshes));
+    memcpy(&RenderCommand->Model.Materials, Model.Materials, sizeof(Model.Materials));
     
-    for(i32 Index = 0; Index < Model.BoneCount; Index++)
+    // @Incomplete: Check if the texture handle has been set for the materials
+    RenderCommand->Model.Type = Model.Type;
+    RenderCommand->Model.MeshCount = Model.MeshCount;
+    RenderCommand->Model.MaterialCount = Model.MaterialCount;
+    RenderCommand->Model.BoneCount = Model.BoneCount;
+    
+    if(Model.Type == Model_Skinned)
     {
-        RenderCommand->Model.BoneTransforms[Index] = Model.CurrentPoses[Index];
+        RenderCommand->Model.BoneTransforms = PushTempSize(sizeof(math::m4) * Model.BoneCount, math::m4);
+        
+        for(i32 Index = 0; Index < Model.BoneCount; Index++)
+        {
+            RenderCommand->Model.BoneTransforms[Index] = Model.CurrentPoses[Index];
+        }
     }
     
     RenderCommand->Model.Color = math::rgba(1.0f, 1.0f, 1.0f, 1.0f);
@@ -428,67 +439,57 @@ static void LoadGLIMModel(renderer& Renderer, char* FilePath, model* Model)
     {
         fread(&Header,sizeof(model_header), 1, File);
         
-        if(strcmp(Header.Version, "1.5") != 0)
+        if(strcmp(Header.Version, "1.6") != 0)
         {
-            ERR("Wrong file version. Expected version 1.5");
+            ERR("Wrong file version. Expected version 1.6");
             return;
         }
         
         model_data ModelData;
         fread(&ModelData, sizeof(model_data), 1, File);
+        fread(Model->Meshes, ModelData.MeshChunkSize, 1, File);
         
-        mesh_data* MeshData;
-        MeshData = PushTempSize(ModelData.MeshChunkSize, mesh_data);
-        fread(MeshData, ModelData.MeshChunkSize, 1, File);
+        Model->Type = (Model_Type)ModelData.ModelType;
+        Model->MeshCount = ModelData.NumMeshes;
         
         r32* VertexBuffer = PushTempSize(ModelData.VertexBufferChunkSize, r32);
         fread(VertexBuffer, ModelData.VertexBufferChunkSize, 1, File);
         u32* IndexBuffer = PushTempSize(ModelData.IndexBufferChunkSize, u32);
         fread(IndexBuffer, ModelData.IndexBufferChunkSize, 1, File);
         
+        Model->MaterialCount = ModelData.NumMaterials;
+        if(ModelData.NumMaterials > 0)
+            fread(&Model->Materials, ModelData.MaterialChunkSize, 1, File);
+        
         Model->GlobalInverseTransform = ModelData.GlobalInverseTransform;
-        Model->Bones = PushArray(&Renderer.AnimationArena, ModelData.NumBones, bone);
+        
         Model->BoneCount = ModelData.NumBones;
-        Model->CurrentPoses = PushArray(&Renderer.AnimationArena, ModelData.NumBones, math::m4);
-        fread(Model->Bones, ModelData.BoneChunkSize, 1, File);
+        if(ModelData.NumBones > 0)
+        {
+            Model->Bones = PushArray(&Renderer.AnimationArena, ModelData.NumBones, bone);
+            Model->CurrentPoses = PushArray(&Renderer.AnimationArena, ModelData.NumBones, math::m4);
+            fread(Model->Bones, ModelData.BoneChunkSize, 1, File);
+        }
         
         buffer_data Data = {};
-        
+        Data.Skinned = Model->BoneCount > 0;
         CopyTemp(Data.VertexBuffer, VertexBuffer, ModelData.VertexBufferChunkSize, r32);
         CopyTemp(Data.IndexBuffer, IndexBuffer, ModelData.IndexBufferChunkSize, u32);
         
-        // @Incomplete: Do we really always have normals and uvs?????
-        Data.HasNormals = true;
-        Data.HasUVs = true;
+        Data.HasNormals = ModelData.HasNormals;
+        Data.HasUVs = ModelData.HasUVs;
         
         Data.VertexBufferSize = ModelData.VertexBufferChunkSize;
         Data.IndexBufferSize = ModelData.IndexBufferChunkSize;
         Data.IndexBufferCount = ModelData.NumIndices;
         
-        Model->Meshes[0].BufferHandle = Renderer.BufferCount++;
+        Model->BufferHandle = Renderer.BufferCount++;
         
         Model->AnimationState.Playing = false;
         Model->AnimationState.Loop = false;
         Model->AnimationState.CurrentTime = 0.0f;
         
-        // @Incomplete: IMPORTANT
-        // @Incomplete: IMPORTANT
-        // @Incomplete: IMPORTANT
-        // @Incomplete: IMPORTANT
-        // @Incomplete: IMPORTANT
-        // @Incomplete: IMPORTANT
-        Model->Meshes[0].Material.HasTexture = false;
-        
-        //if(Model->Meshes[MeshCount].Material.HasTexture)
-        //Model->Meshes[MeshCount].Material.TextureHandle = Renderer.TextureMap[MHeader.TextureFile]->Handle;
-        
-        Model->Meshes[0].Material.Color = math::rgba(1, 1, 1, 1);
-        
-        //Assert(MeshCount <= MAX_MESHES);
-        
         Renderer.Buffers[Renderer.BufferCount - 1] = Data;
-        
-        Model->MeshCount = 1;
         
         // Load animations
         animation_header AHeader;

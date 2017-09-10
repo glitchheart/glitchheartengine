@@ -55,8 +55,8 @@ static void CalculateInterpolatedPosition(const vec3_keys& PositionKeys, math::v
     
     r32 Factor = (AnimationTime - (r32)PositionKeys.TimeStamps[PositionIndex]) / Abs(DeltaTime);
     
-    if(Factor != Factor)
-        Factor = 0.0f;
+    if(Factor > 1.0f)
+        Factor = 1.0f;
     
     Assert(Factor >= 0.0f && Factor <= 1.0f);
     
@@ -84,8 +84,8 @@ static void CalculateInterpolatedScaling(const vec3_keys& ScalingKeys, math::v3&
     
     r32 Factor = (AnimationTime - (r32)ScalingKeys.TimeStamps[Index]) / Abs(DeltaTime);
     
-    if(Factor != Factor)
-        Factor = 0.0f;
+    if(Factor > 1.0f)
+        Factor = 1.0f;
     
     Assert(Factor >= 0.0f && Factor <= 1.0f);
     
@@ -113,8 +113,9 @@ static void CalculateInterpolatedRotation(const quat_keys& RotationKeys, math::q
     
     r32 Factor = (AnimationTime - (r32)RotationKeys.TimeStamps[Index]) / Abs(DeltaTime);
     
-    if(Factor != Factor)
-        Factor = 0.0f;
+    if(Factor > 1.0f)
+        Factor = 1.0f;
+    
     Assert(Factor >= 0.0f && Factor <= 1.0f);
     
     math::quat& Start = RotationKeys.Values[Index];
