@@ -57,6 +57,7 @@
          math::v4(-0.5,  0.5,  0.5, 1.0),
      };
      
+     /*
      math::v3 Normals[6] = 
      {
          math::v3(1.0f, 0.0f, 0.0f),
@@ -65,7 +66,7 @@
          math::v3(-1.0f, 0.0f, 0.0f),
          math::v3(0.0f, -1.0f, 0.0f),
          math::v3(0.0f, 0.0f, -1.0f)
-     };
+     };*/
  };
  
  inline void SAT(collision_volume& V1, collision_volume& V2)

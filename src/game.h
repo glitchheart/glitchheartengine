@@ -128,6 +128,9 @@ struct game_state
     model Models[MAX_MODELS];
     i32 ModelCount;
     
+    collision_volume CollisionVolumes[16];
+    i32 CollisionVolumeCount;
+    
     u16 EntityCount;
     entity Entities[NUM_ENTITIES];
     

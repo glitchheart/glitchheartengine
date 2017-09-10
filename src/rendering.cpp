@@ -167,12 +167,13 @@ static void PushOutlinedRect(renderer& Renderer, math::v3 Position, math::v3 Siz
     RenderCommand->IsUI = IsUI;
 }
 
-static void PushWireframeCube(renderer& Renderer, math::v3 Position, math::v3 Scale, math::quat Orientation, math::rgba Color)
+static void PushWireframeCube(renderer& Renderer, math::v3 Position, math::v3 Scale, math::quat Orientation, math::rgba Color, r32 LineWidth)
 {
     render_command* RenderCommand = PushNextCommand(Renderer, false);
     
     RenderCommand->Type = RenderCommand_WireframeCube;
     RenderCommand->WireframeCube.Color = Color;
+    RenderCommand->WireframeCube.LineWidth = LineWidth;
     RenderCommand->Position = Position;
     RenderCommand->Scale = Scale;
     RenderCommand->Orientation = Orientation;

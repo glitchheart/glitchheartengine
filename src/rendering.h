@@ -219,7 +219,6 @@ struct model
     
     math::v3 Position;
     math::v3 Scale;
-    
     math::quat Orientation;
     
     math::rgba Color;
@@ -290,6 +289,7 @@ struct render_command
         struct
         {
             math::rgba Color;
+            r32 LineWidth;
         } WireframeCube;
         struct
         {
@@ -462,6 +462,8 @@ struct renderer
     i32 WindowHeight;
     
     math::rgba ClearColor;
+    r32 LineWidth;
+    
     
     memory_arena AnimationArena;
 };

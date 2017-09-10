@@ -1,3 +1,54 @@
+
+// Link: http://bit.ly/2vNXAJI
+// The above link gives a great description of SAT both in 2D and 3D
+// 2D needs a total of 4 axes to check for separating axes
+// 3D needs a total of 15 axes because of both face and edge separation
+static b32 CheckSATCollision(collision_volume& CA, collision_volume& CB)
+{
+    auto PA = CA.Center;
+    auto AO = math::ToMatrix(CA.Orientation);
+    auto AX = math::Forward(AO);
+    auto AY = math::Up(AO);
+    auto AZ = math::Right(AO);
+    auto WA = CA.Extents.x;
+    auto HA = CA.Extents.y;
+    auto DA = CA.Extents.z;
+    
+    auto PB = CB.Center;
+    auto BO = math::ToMatrix(CB.Orientation);
+    auto BX = math::Forward(BO);
+    auto BY = math::Up(BO);
+    auto BZ = math::Right(BO);
+    auto WB = CB.Extents.x;
+    auto HB = CB.Extents.y;
+    auto DB = CB.Extents.z;
+    
+    
+}
+
+static void PushCollisionVolume(renderer& Renderer, collision_volume& C, b32 DrawAxes = false, b32 DrawExtents = false)
+{
+    PushWireframeCube(Renderer, C.Center, C.Extents, C.Orientation, math::rgba(0.0f, 1.0f, 0.0f, 1.0f), 1.5f);
+    
+    auto AO = math::ToMatrix(C.Orientation);
+    auto AX = math::Forward(AO);
+    auto AY = math::Up(AO);
+    auto AZ = math::Right(AO);
+    
+    if(DrawAxes)
+    {
+        PushLine(Renderer, C.Center, C.Center + AX * 5.0f, 1.0f, math::rgba(0.0f, 0.0f, 1.0f, 1.0f));
+        PushLine(Renderer, C.Center, C.Center + AY * 5.0f, 1.0f, math::rgba(0.0f, 1.0f, 0.0f, 1.0f));
+        PushLine(Renderer, C.Center, C.Center + AZ * 5.0f, 1.0f, math::rgba(1.0f, 0.0f, 0.0f, 1.0f));
+    }
+    
+    if(DrawExtents)
+    {
+    }
+    
+}
+
+
 static void AABBMin(collision_AABB* Coll)
 {
     Coll->Min = Coll->Center - Coll->Extents;
