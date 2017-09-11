@@ -42,9 +42,11 @@ input_controller InputController;
 #include "keys_glfw.h"
 #include "opengl_rendering.cpp"
 
-static game_code LoadGameCode()
+static game_code LoadGameCode(char* DllPath, char* TempDllPath)
 {
     game_code Result = {};
+    Result.DllPath = DllPath;
+    Result.TempDllPath = TempDllPath;
     
     CopyFile(Result.DllPath, Result.TempDllPath, false);
     Result.Update = UpdateStub;
@@ -79,20 +81,20 @@ static void UnloadGameCode(game_code *GameCode)
     GameCode->Update = UpdateStub;
 }
 
-static void ReloadGameCode(game_code *GameCode)
+static void ReloadGameCode(game_code *GameCode, char* DllPath, char* TempDllPath)
 {
     UnloadGameCode(GameCode);
-    *GameCode = LoadGameCode();
+    *GameCode = LoadGameCode(DllPath, TempDllPath);
 }
 
-static void ReloadDlls(game_code *Game)
+static void ReloadDlls(game_code *Game, char* DllPath, char* TempDllPath)
 {
     FILETIME LastWriteTime = GetLastWriteTime(Game->DllPath);
     
     if (CompareFileTime(&Game->LastDllWriteTime, &LastWriteTime) != 0)
     {
         DEBUG_PRINT("RELOAD\n");
-        ReloadGameCode(Game);
+        ReloadGameCode(Game, DllPath, TempDllPath);
     }
 }
 
@@ -296,9 +298,8 @@ static void ClearTempMemory()
     Win32MemoryState.TempSizeAllocated = 0;
 }
 
-int main(void)
+int main(int Argc, char** Args)
 {
-    
     game_memory GameMemory = {};
     
     GameMemory.ShouldReload = true;
@@ -313,13 +314,21 @@ int main(void)
     
     win32_state* Win32State = BootstrapPushStruct(win32_state, PermArena);
     
+    char* DllPath = "game.dll";
+    char* TempDllPath = "game_temp.dll";
+    
+    if(Argc == 2)
+    {
+        DllPath = Concat(Args[1], "_game.dll", &Win32State->PermArena);
+        TempDllPath = Concat(Args[1], "_game_temp.dll", &Win32State->PermArena);
+    }
+    
     memory_arena DebugArena = {};
     
     GameMemory.DebugState = PushStruct(&Win32State->PermArena, debug_state);
     
     GameMemory.DebugState->DebugMemoryInfo.DebugRect.RectOrigin = math::v2(50, 780);
     GameMemory.DebugState->DebugMemoryInfo.DebugRect.RectSize = math::v2(300,0);
-    
     
     config_data ConfigData;
     LoadConfig("../assets/.config", &ConfigData, &Win32State->PermArena);
@@ -332,7 +341,7 @@ int main(void)
     
     InitializeOpenGL(RenderState, Renderer, &ConfigData, &Win32State->PermArena);
     
-    game_code Game = LoadGameCode();
+    game_code Game = LoadGameCode(DllPath, TempDllPath);
     
     //setup asset reloading
     asset_manager AssetManager = {};
@@ -393,7 +402,7 @@ int main(void)
         
         ReloadAssets(RenderState, &AssetManager, &Win32State->PermArena);
         GameMemory.ReloadData = &AssetManager.ReloadData;
-        ReloadDlls(&Game);
+        ReloadDlls(&Game, DllPath, TempDllPath);
         
         game_update_return GameUpdateStruct = {};
         Game.Update(DeltaTime, &GameMemory, Renderer, &InputController, &SoundCommands, &GameUpdateStruct, &SoundEffects);
