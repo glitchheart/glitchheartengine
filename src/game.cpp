@@ -151,7 +151,6 @@ static void PushEntityRenderCommands(renderer& Renderer, game_state& GameState)
             CurrentFrame = math::v2(Texture->Width, Texture->Height);
         }
         
-        // @Incomplete: Glow and special parameters
         PushSprite(Renderer, CurrentPosition, CurrentScale, CurrentFrame, CurrentTextureOffset, CurrentTexture, CurrentColor);
     }
 }
