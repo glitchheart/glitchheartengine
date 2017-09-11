@@ -5,7 +5,7 @@
 
 #include "platform.h"
 #include "shared.h"
-
+#include "math.h"
 #if GLITCH_DEBUG
 #include "debug.h"
 #endif
