@@ -24,7 +24,6 @@
 #include "menu.h"
 #include "ui.h"
 
-
 GENERIC_MAP(animation,animation*, char*, StrCmp, NULL, "%s", STR_ASSIGN)
 
 enum Game_Mode
