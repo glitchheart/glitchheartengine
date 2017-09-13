@@ -34,58 +34,66 @@ extern "C" UPDATE(Update)
     entity& Player = GameState->Player;
     if(!GameState->Loaded)
     {
-        Player.Player.Offset = math::v3(-105, 30, 0);
-        Player.Player.Size = math::v3(150, 20, 0);
+        Player.Player.MovementSpeed = 40.0f;
+        Player.Player.Offset = math::v3(-10.5f, 3, 0);
+        Player.Player.Size = math::v3(12, 1, 0);
         GameState->Loaded = true;
+        
+        Renderer.ClearColor = math::rgba(1, 1, 1, 1);
+        Renderer.CurrentCameraHandle = 0;
+        Renderer.Cameras[0].Zoom = 5.0f;
+        Renderer.Cameras[0].ViewportWidth = Renderer.WindowWidth;
+        Renderer.Cameras[0].ViewportHeight = Renderer.WindowHeight;
+        CameraTransform(Renderer, Renderer.Cameras[0], math::v3(), math::quat(), math::v3(), Renderer.Cameras[0].Zoom);
     }
     
     if(KEY(Key_W))
     {
-        Player.Position.y += 400.0f * DeltaTime;
+        Player.Position.y += 40.0f * DeltaTime;
     }
     else if(KEY(Key_S))
     {
-        Player.Position.y += -400.0f * DeltaTime;
+        Player.Position.y += -40.0f * DeltaTime;
     }
     
     if(KEY(Key_A))
     {
-        Player.Position.x += -400.0f * DeltaTime;
+        Player.Position.x += -40.0f * DeltaTime;
     }
     else if(KEY(Key_D))
     {
-        Player.Position.x += 400.0f * DeltaTime;
+        Player.Position.x += 40.0f * DeltaTime;
     }
     
     if(KEY_DOWN(Key_Up))
     {
-        Player.Player.Offset = math::v3(30, 40, 0);
-        Player.Player.Size = math::v3(20, 150, 0);
+        Player.Player.Offset = math::v3(3, 4, 0);
+        Player.Player.Size = math::v3(1, 12, 0);
     }
     else if(KEY_DOWN(Key_Down))
     {
-        Player.Player.Offset = math::v3(30, -105, 0);
-        Player.Player.Size = math::v3(20, 150, 0);
+        Player.Player.Offset = math::v3(3, -10.5f, 0);
+        Player.Player.Size = math::v3(1, 12, 0);
     }
     else if(KEY_DOWN(Key_Left))
     {
-        Player.Player.Offset = math::v3(-105, 30, 0);
-        Player.Player.Size = math::v3(150, 20, 0);
+        Player.Player.Offset = math::v3(-10.5f, 3, 0);
+        Player.Player.Size = math::v3(12, 1, 0);
     }
     else if(KEY_DOWN(Key_Right))
     {
-        Player.Player.Offset = math::v3(40, 30, 0);
-        Player.Player.Size = math::v3(150, 20, 0);
+        Player.Player.Offset = math::v3(4, 3, 0);
+        Player.Player.Size = math::v3(12, 1, 0);
     }
     
     for(i32 X = 0; X < 10; X++)
     {
         for(i32 Y = 0; Y < 10; Y++)
         {
-            PushFilledQuad(Renderer, math::v3(Renderer.WindowWidth / 2 - 500 + 100 * X, 10 + 100 * Y, 0), math::v3(95, 95, 0), math::v3(), math::rgba(0.2, 0.5, 0.6, 1.0));
+            PushFilledQuad(Renderer, math::v3((5 * 8) + 8 * X, 5 + 8 * Y, 0), math::v3(7.5f, 7.5f, 0), math::v3(), math::rgba(0.2, 0.5, 0.6, 1.0), 0, false);
         }
     }
     
-    PushFilledQuad(Renderer, math::v3(Player.Position.x + Player.Player.Offset.x, Player.Position.y + Player.Player.Offset.y, 0), Player.Player.Size, math::v3(), math::rgba(0, 0, 1, 1));
-    PushFilledQuad(Renderer, Player.Position, math::v3(80, 80, 0), math::v3(), math::rgba(1, 1, 1, 1));
+    PushFilledQuad(Renderer, Player.Position, math::v3(8, 8, 0), math::v3(), math::rgba(0, 0, 0, 1), 0, false);
+    PushFilledQuad(Renderer, math::v3(Player.Position.x + Player.Player.Offset.x, Player.Position.y + Player.Player.Offset.y, 0), Player.Player.Size, math::v3(), math::rgba(0.2, 0.2, 0.2, 1), 0, false);
 }

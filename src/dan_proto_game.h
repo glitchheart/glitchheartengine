@@ -25,7 +25,6 @@ struct entity
     
     math::v3 Position;
     math::v3 Velocity;
-    r32 MovementSpeed;
     
     model Model;
     
@@ -33,8 +32,10 @@ struct entity
     {
         struct
         {
+            math::v2i CurrentTile;
             math::v3 Offset;
             math::v3 Size;
+            r32 MovementSpeed;
         } Player;
         struct
         {

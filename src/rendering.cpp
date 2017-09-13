@@ -14,7 +14,8 @@ static inline void CameraTransform(renderer& Renderer, camera& Camera, math::v3 
         
         auto Dist = sqrt(1.0f / 3.0f);
         
-        Camera.ViewMatrix = math::LookAt(math::v3(Dist, Dist, Dist), math::v3(0.0f));
+        // @Incomplete: Do we need LookAt for an orthographic view?
+        Camera.ViewMatrix = math::m4(1);//math::LookAt(math::v3(Dist, Dist, Dist), math::v3(0.0f));
         
         /*
         auto Pos = math::YRotate(-45.0f) * Position;
