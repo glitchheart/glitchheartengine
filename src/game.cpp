@@ -290,7 +290,7 @@ extern "C" UPDATE(Update)
         C1.Orientation = math::quat();
         
         collision_volume C2;
-        C2.Center = math::v3(4.5f, 0.0f, 0.0f);
+        C2.Center = math::v3(2.0f, 0.0f, 0.0f);
         C2.Extents = math::v3(3.0f, 3.0f, 1.0f);
         C2.Orientation = math::quat();
         
@@ -950,10 +950,22 @@ extern "C" UPDATE(Update)
         auto Angle = 20.0f;
         if(KEY(Key_LeftShift))
         {
-            Angle = -20.0f;
+            Angle = -Angle;
         }
         
         GameState->CollisionVolumes[1].Orientation = math::Rotate(GameState->CollisionVolumes[1].Orientation, Angle * DeltaTime, math::v3(1.0f, 0.0f, 0.0f));
+    }
+    
+    if(KEY(Key_Y))
+    {
+        auto Translate = 1.0f;
+        if(KEY(Key_LeftShift))
+        {
+            Translate = -Translate;
+        }
+        
+        GameState->CollisionVolumes[1].Center += math::v3(Translate * DeltaTime, 0.0f, 0.0f);
+        
     }
     
     for(i32 Index = 0; Index < GameState->CollisionVolumeCount; Index++)
@@ -969,7 +981,7 @@ extern "C" UPDATE(Update)
             PushLine(Renderer, C.Center, GameState->CollisionVolumes[J].Center, 3.0f, math::rgba(0.5f, 0.7f, 0.3f, 1.0f));
         }
         
-        PushCollisionVolume(Renderer, C, true);
+        PushCollisionVolume(Renderer, C, true, true);
     }
     
     if(PushButton(Renderer, "Reset player", rect(5, 5, 200, 50), math::rgba(1, 0, 0, 1), math::rgba(1, 1, 1, 1), InputController))
