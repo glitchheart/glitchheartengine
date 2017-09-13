@@ -381,6 +381,7 @@ namespace math
         v3(r32 X, r32 Y, r64 Z) : X(X), Y(Y), Z((r32)Z) {}
         v3(r32 X, i32 Y, r32 Z) : X(X), Y((r32)Y), Z(Z) {}
         v3(r64 X, r32 Y, r64 Z) : X((r32)X), Y(Y), Z((r32)Z) {}
+        v3(r64 X, r32 Y, r32 Z) : X((r32)X), Y(Y), Z(Z) {}
         
         r32 operator[](i32 I)
         {
@@ -2251,21 +2252,21 @@ namespace math
     inline v3 Right(m4 M)
     {
         return Normalize(math::v3(M[0][0],
-                                  M[0][1],
-                                  M[0][2]));
+                                  M[1][0],
+                                  M[2][0]));
     }
     
     inline v3 Up(m4 M)
     {
-        return Normalize(math::v3(M[1][0],
+        return Normalize(math::v3(M[0][1],
                                   M[1][1],
-                                  M[1][2]));
+                                  M[2][1]));
     }
     
     inline v3 Forward(m4 M)
     {
-        return Normalize(math::v3(M[2][0],
-                                  M[2][1],
+        return Normalize(math::v3(M[0][2],
+                                  M[1][2],
                                   M[2][2]));
     }
     
