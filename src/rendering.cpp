@@ -19,7 +19,6 @@ static inline void CameraTransform(renderer& Renderer, camera& Camera, math::v3 
         }
         else if(CameraFlags & ~CFlag_NoLookAt)
         {
-            DEBUG_PRINT("Poopi\n");
             auto Dist = sqrt(1.0f / 3.0f);
             math::LookAt(math::v3(Dist, Dist, Dist), math::v3(0.0f));
         }
