@@ -857,59 +857,9 @@ extern "C" UPDATE(Update)
     auto Up = math::Up(GameCamera.ViewMatrix);
     auto Right = math::Right(GameCamera.ViewMatrix);
     
-    
     if(GameState->GodModeOn)
     {
-        r32 Vertices[32] =
-        {
-            -0.5, -0.5, -0.5, 1.0,
-            0.5, -0.5, -0.5, 1.0,
-            0.5,  0.5, -0.5, 1.0,
-            -0.5,  0.5, -0.5, 1.0,
-            -0.5, -0.5,  0.5, 1.0,
-            0.5, -0.5,  0.5, 1.0,
-            0.5,  0.5,  0.5, 1.0,
-            -0.5,  0.5,  0.5, 1.0,
-        };
-        
         Pick(GameState, InputController, Renderer);
-        
-        if(GameState->SelectedModel != -1)
-        {
-            auto N1 = math::v3(1.0f, 0.0f, 0.0f);
-            auto N2 = math::v3(0.0f, 1.0f, 0.0f);
-            auto N3 = math::v3(0.0f, 0.0f, 1.0f);
-            auto N4 = math::v3(-1.0f, 0.0f, 0.0f);
-            auto N5 = math::v3(0.0f, -1.0f, 0.0f);
-            auto N6 = math::v3(0.0f, 0.0f, -1.0f);
-            
-            auto P11 = math::v3(5.0f, 2.5f, 2.5f);
-            auto P12 = P11 + N1 * 5.0f;
-            
-            auto P21 = math::v3(2.5f, 5.0f, 2.5f);
-            auto P22 = P21 + N2 * 5.0f;
-            
-            auto P31 = math::v3(2.5f, 2.5f, 5.0f);
-            auto P32 = P31 + N3 * 5.0f;
-            
-            auto P41 = math::v3(-5.0f, 2.5f, 2.5f);
-            auto P42 = P41 + N4 * 5.0f;
-            
-            auto P51 = math::v3(2.5f, -5.0f, 2.5f);
-            auto P52 = P51 + N5 * 5.0f;
-            
-            auto P61 = math::v3(2.5f, 2.5f, -5.0f);
-            auto P62 = P61 + N6 * 5.0f;
-            
-            PushLine(Renderer, P11, P12, 1.0f, math::rgba(1.0f, 1.0f, 0.0f, 1.0f));
-            PushLine(Renderer, P21, P22, 1.0f, math::rgba(1.0f, 1.0f, 0.0f, 1.0f));
-            PushLine(Renderer, P31, P32, 1.0f, math::rgba(1.0f, 1.0f, 0.0f, 1.0f));
-            PushLine(Renderer, P41, P42, 1.0f, math::rgba(1.0f, 1.0f, 0.0f, 1.0f));
-            PushLine(Renderer, P51, P52, 1.0f, math::rgba(1.0f, 1.0f, 0.0f, 1.0f));
-            PushLine(Renderer, P61, P62, 1.0f, math::rgba(1.0f, 1.0f, 0.0f, 1.0f));
-            
-            
-        }
     }
     
     InputController->CurrentCharacter = 0;
@@ -968,9 +918,12 @@ extern "C" UPDATE(Update)
         
     }
     
+    static i32 Coll = 0;
+    
     for(i32 Index = 0; Index < GameState->CollisionVolumeCount; Index++)
     {
         auto& C = GameState->CollisionVolumes[Index];
+        C.Colliding = false;
         for(i32 J = 0; J < GameState->CollisionVolumeCount; J++)
         {
             if(J == Index)
@@ -979,9 +932,11 @@ extern "C" UPDATE(Update)
             CheckSATCollision(C, GameState->CollisionVolumes[J], &CollisionInfo);
             C.Colliding = CollisionInfo.Colliding;
             
-            if(!C.Static)
+            if(!C.Static && C.Colliding)
             {
-                GameState->CollisionVolumes[Index].Center -= CollisionInfo.PV * CollisionInfo.Overlap;
+                auto PV = CollisionInfo.PV;
+                DEBUG_PRINT("Colliding! %d, (%f, %f, %f)\n", Coll++, PV.x, PV.y, PV.z);
+                GameState->CollisionVolumes[Index].Center += PV * CollisionInfo.Overlap;
             }
             
             PushLine(Renderer, C.Center, GameState->CollisionVolumes[J].Center, 3.0f, math::rgba(0.5f, 0.7f, 0.3f, 1.0f));
