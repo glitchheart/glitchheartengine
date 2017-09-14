@@ -19,8 +19,8 @@ struct game_code
     update *Update;
     
     b32 IsValid;
-    const char *DllPath = "game.dll";
-    const char *TempDllPath = "game_temp.dll";
+    char *DllPath = "game.dll";
+    char *TempDllPath = "game_temp.dll";
 };
 
 #define MAX_TEMP_BLOCKS 2048

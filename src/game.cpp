@@ -151,7 +151,6 @@ static void PushEntityRenderCommands(renderer& Renderer, game_state& GameState)
             CurrentFrame = math::v2(Texture->Width, Texture->Height);
         }
         
-        // @Incomplete: Glow and special parameters
         PushSprite(Renderer, CurrentPosition, CurrentScale, CurrentFrame, CurrentTextureOffset, CurrentTexture, CurrentColor);
     }
 }
@@ -991,6 +990,7 @@ extern "C" UPDATE(Update)
         
         PushCollisionVolume(Renderer, C, true, true);
     }
+    //PushFilledQuad(Renderer, math::v3(0, 0, 0), math::v3(1000, 1000, 0), math::v3(0, 0, 0),  math::rgba(1, 1, 1, 1), "play_button");
     
     if(PushButton(Renderer, "Reset player", rect(5, 5, 200, 50), math::rgba(1, 0, 0, 1), math::rgba(1, 1, 1, 1), InputController))
     {

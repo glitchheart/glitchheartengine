@@ -109,7 +109,7 @@ enum Render_Command_Type
     RenderCommand_Line,
     RenderCommand_Text,
     RenderCommand_Sprite,
-    RenderCommand_Rect,
+    RenderCommand_Quad,
     
     RenderCommand_Spotlight,
     RenderCommand_DirectionalLight,
@@ -250,7 +250,6 @@ struct render_command
     math::v3 Position;
     math::v3 Scale;
     math::v3 Rotation;
-    
     math::quat Orientation;
     
     union
@@ -281,11 +280,10 @@ struct render_command
         } Sprite;
         struct
         {
-            math::v3 Position;
-            math::v3 Size;
+            i32 TextureHandle;
             math::rgba Color;
             b32 Outlined;
-        } Rect;
+        } Quad;
         struct
         {
             math::rgba Color;
