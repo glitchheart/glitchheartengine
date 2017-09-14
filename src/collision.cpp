@@ -7,23 +7,23 @@ static b32 CheckSATCollision(collision_volume& CA, collision_volume& CB, sat_col
 {
     auto PA = CA.Center;
     auto AO = math::ToMatrix(CA.Orientation);
-    AO = Transpose(AO);
+    //AO = Transpose(AO);
     auto AX = math::Right(AO);
     auto AY = math::Up(AO);
     auto AZ = math::Forward(AO);
-    auto WA = CA.Extents.x;
-    auto HA = CA.Extents.y;
-    auto DA = CA.Extents.z;
+    auto WA = CA.Extents.x * 1.05f;
+    auto HA = CA.Extents.y * 1.05f;
+    auto DA = CA.Extents.z * 1.05f;
     
     auto PB = CB.Center;
     auto BO = math::ToMatrix(CB.Orientation);
-    BO = Transpose(BO);
+    //BO = Transpose(BO);
     auto BX = math::Right(BO);
     auto BY = math::Up(BO);
     auto BZ = math::Forward(BO);
-    auto WB = CB.Extents.x;
-    auto HB = CB.Extents.y;
-    auto DB = CB.Extents.z;
+    auto WB = CB.Extents.x * 1.05f;
+    auto HB = CB.Extents.y * 1.05f;
+    auto DB = CB.Extents.z * 1.05f;
     
     auto T = PB - PA;
     
@@ -174,8 +174,8 @@ static b32 CheckSATCollision(collision_volume& CA, collision_volume& CB, sat_col
     GetCurrentMin(MinVec, math::Cross(AZ, BZ), MinVal, RHS - LHS, &MinVec, &MinVal);
     
     CollisionInfo->Colliding = true;
-    CollisionInfo->PV =  Normalize(MinVec);
-    CollisionInfo->Overlap = MinVal;
+    CollisionInfo->PV        = Normalize(MinVec);
+    CollisionInfo->Overlap   = MinVal;
     
     
     return true;
@@ -188,7 +188,7 @@ static void PushCollisionVolume(renderer& Renderer, collision_volume& C,  b32 Dr
     PushWireframeCube(Renderer, C.Center, C.Extents * 2.0f, C.Orientation, Color, 1.5f);
     
     auto AO = math::ToMatrix(C.Orientation);
-    
+    //AO = Transpose(AO);
     auto AX = math::Right(AO);
     auto AY = math::Up(AO);
     auto AZ = math::Forward(AO);
@@ -202,9 +202,9 @@ static void PushCollisionVolume(renderer& Renderer, collision_volume& C,  b32 Dr
     
     if(DrawExtents)
     {
-        PushLine(Renderer, C.Center, C.Center + AX * C.Extents.x, 9.0f, math::rgba(0.0f, 0.0f, 0.0f, 1.0f));
-        PushLine(Renderer, C.Center, C.Center + AY * C.Extents.y, 9.0f, math::rgba(0.0f, 0.0f, 0.0f, 1.0f));
-        PushLine(Renderer, C.Center, C.Center + AZ * C.Extents.z, 9.0f, math::rgba(0.0f, 0.0f, 0.0f, 1.0f));
+        PushLine(Renderer, C.Center, C.Center - AX * C.Extents.x, 9.0f, math::rgba(0.0f, 0.0f, 0.0f, 1.0f));
+        PushLine(Renderer, C.Center, C.Center - AY * C.Extents.y, 9.0f, math::rgba(0.0f, 0.0f, 0.0f, 1.0f));
+        PushLine(Renderer, C.Center, C.Center - AZ * C.Extents.z, 9.0f, math::rgba(0.0f, 0.0f, 0.0f, 1.0f));
     }
 }
 
