@@ -36,4 +36,16 @@ inline void HandleError(char const *File, i32 LineNum, char const *msg)
     }
 }
 
+inline void GetCurrentMin(math::v3 V1, math::v3 V2, r32 Val1, r32 Val2, math::v3* OutVec, r32* OutVal)
+{
+    if(Val1 < Val2)
+    {
+        *OutVec = V1;
+        *OutVal = Val1;
+        return;
+    }
+    *OutVec = V2;
+    *OutVal = Val2;
+}
+
 #endif

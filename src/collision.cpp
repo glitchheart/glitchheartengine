@@ -3,10 +3,11 @@
 // The above link gives a great description of SAT both in 2D and 3D
 // 2D needs a total of 4 axes to check for separating axes
 // 3D needs a total of 15 axes because of both face and edge separation
-static b32 CheckSATCollision(collision_volume& CA, collision_volume& CB)
+static b32 CheckSATCollision(collision_volume& CA, collision_volume& CB, sat_collision_info* CollisionInfo)
 {
     auto PA = CA.Center;
     auto AO = math::ToMatrix(CA.Orientation);
+    AO = Transpose(AO);
     auto AX = math::Right(AO);
     auto AY = math::Up(AO);
     auto AZ = math::Forward(AO);
@@ -16,6 +17,7 @@ static b32 CheckSATCollision(collision_volume& CA, collision_volume& CB)
     
     auto PB = CB.Center;
     auto BO = math::ToMatrix(CB.Orientation);
+    BO = Transpose(BO);
     auto BX = math::Right(BO);
     auto BY = math::Up(BO);
     auto BZ = math::Forward(BO);
@@ -42,12 +44,17 @@ static b32 CheckSATCollision(collision_volume& CA, collision_volume& CB)
     if(LHS > RHS)
         return false;
     
+    r32 MinVal = RHS - LHS;
+    math::v3 MinVec = AX;
+    
     //L = AY
     LHS = math::Absolute(math::Dot(T, AY));
     RHS = HA + math::Absolute(WB * RYX) + math::Absolute(HB * RYY) + math::Absolute(DB * RYZ);
     
     if(LHS > RHS)
         return false;
+    
+    GetCurrentMin(MinVec, AY, MinVal, RHS - LHS, &MinVec, &MinVal);
     
     //L = AZ
     LHS = math::Absolute(math::Dot(T, AZ));
@@ -56,12 +63,16 @@ static b32 CheckSATCollision(collision_volume& CA, collision_volume& CB)
     if(LHS > RHS)
         return false;
     
+    GetCurrentMin(MinVec, AZ, MinVal, RHS - LHS, &MinVec, &MinVal);
+    
     //L = BX
     LHS = math::Absolute(math::Dot(T, BX));
     RHS = math::Absolute(WA * RXX) + math::Absolute(HA * RYX) + math::Absolute(DA * RZX) + WB;
     
     if(LHS > RHS)
         return false;
+    
+    GetCurrentMin(MinVec, BX, MinVal, RHS - LHS, &MinVec, &MinVal);
     
     //L = BY
     LHS = math::Absolute(math::Dot(T, BY));
@@ -70,12 +81,16 @@ static b32 CheckSATCollision(collision_volume& CA, collision_volume& CB)
     if(LHS > RHS)
         return false;
     
+    GetCurrentMin(MinVec, BY, MinVal, RHS - LHS, &MinVec, &MinVal);
+    
     //L = BZ
     LHS = math::Absolute(math::Dot(T, BZ));
     RHS = math::Absolute(WA * RXZ) + math::Absolute(HA * RYZ) + math::Absolute(DA * RZZ) + DB;
     
     if(LHS > RHS)
         return false;
+    
+    GetCurrentMin(MinVec, BZ, MinVal, RHS - LHS, &MinVec, &MinVal);
     
     //L = AX X BX
     LHS = math::Absolute((math::Dot(T, AZ) * RYX - (math::Dot(T, AY) * RZX)));
@@ -84,12 +99,16 @@ static b32 CheckSATCollision(collision_volume& CA, collision_volume& CB)
     if(LHS > RHS)
         return false;
     
+    GetCurrentMin(MinVec, math::Cross(AX, BX), MinVal, RHS - LHS, &MinVec, &MinVal);
+    
     //L = AX X BY
     LHS = math::Absolute((math::Dot(T, AZ) * RYY - (math::Dot(T, AY) * RZY)));
     RHS = math::Absolute(HA * RZY) + math::Absolute(DA * RYY) + math::Absolute(WB * RXZ) + math::Absolute(DB * RXX);
     
     if(LHS > RHS)
         return false;
+    
+    GetCurrentMin(MinVec, math::Cross(AX, BY), MinVal, RHS - LHS, &MinVec, &MinVal);
     
     //L = AX X BZ
     LHS = math::Absolute((math::Dot(T, AZ) * RYZ - (math::Dot(T, AY) * RZZ)));
@@ -98,12 +117,16 @@ static b32 CheckSATCollision(collision_volume& CA, collision_volume& CB)
     if(LHS > RHS)
         return false;
     
+    GetCurrentMin(MinVec, math::Cross(AX, BZ), MinVal, RHS - LHS, &MinVec, &MinVal);
+    
     //L = AY X BX
     LHS = math::Absolute((math::Dot(T, AX) * RZX - (math::Dot(T, AZ) * RXX)));
     RHS = math::Absolute(WA * RZX) + math::Absolute(DA * RXX) + math::Absolute(HB * RYZ) + math::Absolute(DB * RYY);
     
     if(LHS > RHS)
         return false;
+    
+    GetCurrentMin(MinVec, math::Cross(AY, BX), MinVal, RHS - LHS, &MinVec, &MinVal);
     
     //L = AY X BY
     LHS = math::Absolute((math::Dot(T, AX) * RZY - (math::Dot(T, AZ) * RXY)));
@@ -112,12 +135,16 @@ static b32 CheckSATCollision(collision_volume& CA, collision_volume& CB)
     if(LHS > RHS)
         return false;
     
+    GetCurrentMin(MinVec, math::Cross(AY, BY), MinVal, RHS - LHS, &MinVec, &MinVal);
+    
     //L = AY X BZ
     LHS = math::Absolute((math::Dot(T, AX) * RZZ - (math::Dot(T, AZ) * RXZ)));
     RHS = math::Absolute(WA * RZZ) + math::Absolute(DA * RXZ) + math::Absolute(WB * RYY) + math::Absolute(HB * RYX);
     
     if(LHS > RHS)
         return false;
+    
+    GetCurrentMin(MinVec, math::Cross(AY, BZ), MinVal, RHS - LHS, &MinVec, &MinVal);
     
     //L = AZ X BX
     LHS = math::Absolute((math::Dot(T, AY) * RXX - (math::Dot(T, AX) * RYX)));
@@ -126,12 +153,16 @@ static b32 CheckSATCollision(collision_volume& CA, collision_volume& CB)
     if(LHS > RHS)
         return false;
     
+    GetCurrentMin(MinVec, math::Cross(AZ, BX), MinVal, RHS - LHS, &MinVec, &MinVal);
+    
     //L = AZ X BY
     LHS = math::Absolute((math::Dot(T, AY) * RXY - (math::Dot(T, AX) * RYY)));
     RHS = math::Absolute(WA * RYY) + math::Absolute(HA * RXY) + math::Absolute(WB * RZZ) + math::Absolute(DB * RZX);
     
     if(LHS > RHS)
         return false;
+    
+    GetCurrentMin(MinVec, math::Cross(AZ, BY), MinVal, RHS - LHS, &MinVec, &MinVal);
     
     //L = AZ X BZ
     LHS = math::Absolute((math::Dot(T, AY) * RXZ - (math::Dot(T, AX) * RYZ)));
@@ -140,7 +171,13 @@ static b32 CheckSATCollision(collision_volume& CA, collision_volume& CB)
     if(LHS > RHS)
         return false;
     
-    DEBUG_PRINT("Collision!\n");
+    GetCurrentMin(MinVec, math::Cross(AZ, BZ), MinVal, RHS - LHS, &MinVec, &MinVal);
+    
+    CollisionInfo->Colliding = true;
+    CollisionInfo->PV =  Normalize(MinVec);
+    CollisionInfo->Overlap = MinVal;
+    
+    
     return true;
 }
 

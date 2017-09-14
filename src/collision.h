@@ -38,36 +38,20 @@
      b32 IsColliding;
  };
  
+ struct sat_collision_info
+ {
+     math::v3 PV;
+     r32 Overlap;
+     b32 Colliding;
+ };
+ 
  struct collision_volume
  {
      math::v3 Center;
      math::v3 Extents;
      math::quat Orientation; // Need this to get Up/Right/Forward
      b32 Colliding;
-     
-     //@Incomplete: Volumes always cubes as of now
-     math::v4 Vertices[8] =
-     {
-         math::v4(-0.5, -0.5, -0.5, 1.0),
-         math::v4(0.5, -0.5, -0.5, 1.0),
-         math::v4(0.5,  0.5, -0.5, 1.0),
-         math::v4(-0.5,  0.5, -0.5, 1.0),
-         math::v4(-0.5, -0.5,  0.5, 1.0),
-         math::v4(0.5, -0.5,  0.5, 1.0),
-         math::v4(0.5,  0.5,  0.5, 1.0),
-         math::v4(-0.5,  0.5,  0.5, 1.0),
-     };
-     
-     /*
-     math::v3 Normals[6] = 
-     {
-         math::v3(1.0f, 0.0f, 0.0f),
-         math::v3(0.0f, 1.0f, 0.0f),
-         math::v3(0.0f, 0.0f, 1.0f),
-         math::v3(-1.0f, 0.0f, 0.0f),
-         math::v3(0.0f, -1.0f, 0.0f),
-         math::v3(0.0f, 0.0f, -1.0f)
-     };*/
+     b32 Static;
  };
  
 #endif
