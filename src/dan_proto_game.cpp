@@ -1,5 +1,4 @@
 #include "dan_proto_game.h"
-
 #include "gmap.cpp"
 #include "rendering.cpp"
 #include "skeletal_animation.cpp"
@@ -18,21 +17,17 @@ static void RenderGrid(game_state* GameState, renderer& Renderer)
     {
         for(i32 Y = 0; Y < 10; Y++)
         {
-            PushFilledQuad(Renderer, math::v3(8 * GameState->TileScale * X,  8 * GameState->TileScale * Y, 1), math::v3(8.0f * GameState->TileScale, 8.0f * GameState->TileScale, 0), math::v3(), math::rgba(0.2, 0.5, 0.6, 1.0), 0, false);
+            PushFilledQuad(Renderer, math::v3(8 * GameState->TileScale * X, 8 * GameState->TileScale * Y, 1), math::v3(7.8f * GameState->TileScale, 7.8f * GameState->TileScale, 0), math::v3(), math::rgba(0.2, 0.5, 0.6, 1.0), 0, false);
         }
     }
 }
 
 static void RenderPlayer(game_state* GameState, renderer& Renderer, entity& Player)
 {
-    PushFilledQuad(Renderer, Player.Position, math::v3(4 * GameState->TileScale, 4 * GameState->TileScale, 0), math::v3(), math::rgba(0, 0, 0, 1), 0, false);
-    PushFilledQuad(Renderer, math::v3(Player.Position.x + Player.Player.Offset.x, Player.Position.y + Player.Player.Offset.y, 0), Player.Player.Size, math::v3(), math::rgba(0.2, 0.2, 0.2, 1), 0, false);
-}
-
-static void RenderBoxes(game_state* GameState, renderer& Renderer)
-{
-    auto Position = math::v3((5 * 8 * GameState->TileScale) + 8 * 3 * GameState->TileScale + 1.25f * GameState->TileScale, 8 * 3 * GameState->TileScale + 1.25f * GameState->TileScale, 0);
-    PushFilledQuad(Renderer, Position, math::v3(5 * GameState->TileScale, 5 * GameState->TileScale, 0), math::v3(), math::rgba(1, 0, 0, 1), 0, false);
+    PushFilledQuad(Renderer, Player.Position + math::v3(1.0f, 1.0f, 0), math::v3(6 * GameState->TileScale, 6 * GameState->TileScale, 0), math::v3(), math::rgba(0, 0, 0, 1), 0, false);
+    PushFilledQuad(Renderer, Player.Position + math::v3(1.0f, 1.0f, 0), math::v3(1 * GameState->TileScale, 6 * GameState->TileScale, 0), math::v3(), math::rgba(0, 0, 1, 1), 0, false);
+    //PushFilledQuad(Renderer, Player.Position + math::v3(1.0f, 1.0f, 0), math::v3(6 * GameState->TileScale, 6 * GameState->TileScale, 0), math::v3(), math::rgba(0, 0, 0, 1), 0, false);
+    //PushFilledQuad(Renderer, math::v3(Player.Position.x + Player.Player.Offset.x, Player.Position.y + Player.Player.Offset.y, 0), Player.Player.Size, math::v3(), math::rgba(0.2, 0.2, 0.2, 1), 0, false);
 }
 
 extern "C" UPDATE(Update)
@@ -59,20 +54,22 @@ extern "C" UPDATE(Update)
     
     if(!GameState->Loaded)
     {
-        GameState->TileScale = 2;
-        Player.Player.MovementSpeed = 40.0f;
+        GameState->TileScale = 1.0f;
+        Player.Player.MovementSpeed = 20.0f;
         Player.Player.Offset = math::v3(1.5f * GameState->TileScale, 4 * GameState->TileScale, 0);
         Player.Player.Size = math::v3(1 * GameState->TileScale, 5 * GameState->TileScale, 0);
-        Player.Player.TargetTile = math::v2i(0, 2);
+        
+        Player.Player.TargetTile = math::v2i(0, 1);
         GameState->Loaded = true;
         
         Renderer.ClearColor = math::rgba(1, 1, 1, 1);
         Renderer.CurrentCameraHandle = 0;
-        Renderer.Cameras[0].Zoom = 4.0f;
         Renderer.Cameras[0].ViewportWidth = Renderer.WindowWidth;
         Renderer.Cameras[0].ViewportHeight = Renderer.WindowHeight;
-        CameraTransform(Renderer, Renderer.Cameras[0], math::v3(120, 70, 0), math::quat(), math::v3(), Renderer.Cameras[0].Zoom);
     }
+    
+    Renderer.Cameras[0].Zoom = 8.0f;
+    CameraTransform(Renderer, Renderer.Cameras[0], math::v3(30, 40, 0), math::quat(), math::v3(), Renderer.Cameras[0].Zoom);
     
     auto CurrentDirection = Player.Player.CurrentDirection;
     
@@ -106,28 +103,31 @@ extern "C" UPDATE(Update)
         }
     }
     
-    if(KEY_DOWN(Key_Up))
+    switch(Player.Player.CurrentDirection)
     {
-        Player.Player.Offset = math::v3(1.5f * GameState->TileScale, 4 * GameState->TileScale, 0);
-        Player.Player.Size = math::v3(1 * GameState->TileScale, 5 * GameState->TileScale, 0);
-    }
-    else if(KEY_DOWN(Key_Down))
-    {
-        Player.Player.Offset = math::v3(1.5f * GameState->TileScale, -5 * GameState->TileScale, 0);
-        Player.Player.Size = math::v3(1 * GameState->TileScale, 5* GameState->TileScale, 0);
-    }
-    else if(KEY_DOWN(Key_Left))
-    {
-        Player.Player.Offset = math::v3(-5.0f * GameState->TileScale, 1.5f * GameState->TileScale, 0);
-        Player.Player.Size = math::v3(5* GameState->TileScale, 1 * GameState->TileScale, 0);
-    }
-    else if(KEY_DOWN(Key_Right))
-    {
-        Player.Player.Offset = math::v3(4 * GameState->TileScale, 1.5f * GameState->TileScale, 0);
-        Player.Player.Size = math::v3(5 * GameState->TileScale, 1 * GameState->TileScale, 0);
+        case Up:
+        {
+            Player.Position.y += Player.Player.MovementSpeed * DeltaTime;
+        }
+        break;
+        case Down:
+        {
+            Player.Position.y += -Player.Player.MovementSpeed * DeltaTime;
+        }
+        break;
+        case Left:
+        {
+            Player.Position.x += -Player.Player.MovementSpeed * DeltaTime;
+        }
+        break;
+        case Right:
+        {
+            Player.Position.x += Player.Player.MovementSpeed * DeltaTime;
+        }
+        break;
     }
     
-    if(Abs(Player.Position.x / GameState->TileScale - Player.Player.TargetTile.x) < 0.07f && Abs(Player.Position.y / GameState->TileScale - Player.Player.TargetTile.y) < 0.07f)
+    if(Abs(Player.Position.x - (r32)Player.Player.TargetTile.x * 8) < 0.08f && Abs(Player.Position.y - (r32)Player.Player.TargetTile.y * 8) < 0.08f)
     {
         Player.Player.CurrentDirection = Player.Player.QueuedDirection;
         
@@ -140,6 +140,7 @@ extern "C" UPDATE(Update)
                 {
                     Player.Player.TargetTile.y -= 2;
                     Player.Player.CurrentDirection = Down;
+                    Player.Player.QueuedDirection = Player.Player.CurrentDirection;
                 }
             }
             break;
@@ -174,35 +175,12 @@ extern "C" UPDATE(Update)
             }
             break;
         }
-    }
-    
-    switch(Player.Player.CurrentDirection)
-    {
-        case Up:
-        {
-            Player.Position.y += Player.Player.MovementSpeed * DeltaTime;
-        }
-        break;
-        case Down:
-        {
-            Player.Position.y += -Player.Player.MovementSpeed * DeltaTime;
-        }
-        break;
-        case Left:
-        {
-            Player.Position.x += -Player.Player.MovementSpeed * DeltaTime;
-        }
-        break;
-        case Right:
-        {
-            Player.Position.x += Player.Player.MovementSpeed * DeltaTime;
-        }
-        break;
+        
+        Player.Player.QueuedDirection = Player.Player.CurrentDirection;
     }
     
     DisableDepthTest(Renderer);
     RenderGrid(GameState, Renderer);
     RenderPlayer(GameState, Renderer, Player);
-    RenderBoxes(GameState, Renderer);
     EnableDepthTest(Renderer);
 }
