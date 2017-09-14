@@ -288,11 +288,13 @@ extern "C" UPDATE(Update)
         C1.Center = math::v3(0.0f, 0.0f, 0.0f);
         C1.Extents = math::v3(5.0f, 3.0f, 7.0f);
         C1.Orientation = math::quat();
+        C1.Static = true;
         
         collision_volume C2;
-        C2.Center = math::v3(2.0f, 0.0f, 0.0f);
+        C2.Center = math::v3(10.0f, 0.0f, 0.0f);
         C2.Extents = math::v3(3.0f, 3.0f, 1.0f);
         C2.Orientation = math::quat();
+        C2.Static = false;
         
         GameState->CollisionVolumes[GameState->CollisionVolumeCount++] = C1;
         GameState->CollisionVolumes[GameState->CollisionVolumeCount++] = C2;
@@ -971,13 +973,19 @@ extern "C" UPDATE(Update)
     for(i32 Index = 0; Index < GameState->CollisionVolumeCount; Index++)
     {
         auto& C = GameState->CollisionVolumes[Index];
-        C.Colliding = false;
         for(i32 J = 0; J < GameState->CollisionVolumeCount; J++)
         {
             if(J == Index)
                 continue;
+            sat_collision_info CollisionInfo;
+            CheckSATCollision(C, GameState->CollisionVolumes[J], &CollisionInfo);
+            C.Colliding = CollisionInfo.Colliding;
             
-            C.Colliding = CheckSATCollision(C, GameState->CollisionVolumes[J]);
+            if(!C.Static)
+            {
+                GameState->CollisionVolumes[Index].Center -= CollisionInfo.PV * CollisionInfo.Overlap;
+            }
+            
             PushLine(Renderer, C.Center, GameState->CollisionVolumes[J].Center, 3.0f, math::rgba(0.5f, 0.7f, 0.3f, 1.0f));
         }
         
