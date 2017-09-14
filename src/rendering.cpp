@@ -23,9 +23,8 @@ static inline void CameraTransform(renderer& Renderer, camera& Camera, math::v3 
             math::LookAt(math::v3(Dist, Dist, Dist), math::v3(0.0f));
         }
         
-        Camera.ViewMatrix = math::Translate(Camera.ViewMatrix, Position);
+        Camera.ViewMatrix = math::Translate(Camera.ViewMatrix, math::v3(-Position.x, -Position.y, Position.z));
         Camera.ViewMatrix = math::Translate(Camera.ViewMatrix, math::v3(Renderer.Viewport[2] / Zoom / 2, Renderer.Viewport[3] / Zoom / 2, 0.0f));
-        
         
         Camera.Position = Position;
         Camera.Orientation = Orientation;
@@ -94,6 +93,20 @@ static render_command* PushNextCommand(renderer& Renderer, b32 IsUI)
         Renderer.CommandCount++;
         return PushStruct(&Renderer.Commands, render_command);
     }
+}
+
+static void EnableDepthTest(renderer& Renderer)
+{
+    render_command* RenderCommand = PushNextCommand(Renderer, false);
+    RenderCommand->Type = RenderCommand_DepthTest;
+    RenderCommand->DepthTest.On = true;
+}
+
+static void DisableDepthTest(renderer& Renderer)
+{
+    render_command* RenderCommand = PushNextCommand(Renderer, false);
+    RenderCommand->Type = RenderCommand_DepthTest;
+    RenderCommand->DepthTest.On = false;
 }
 
 static void PushLine(renderer& Renderer, math::v3 Point1, math::v3 Point2, r32 LineWidth, math::rgba Color, b32 IsUI = false)

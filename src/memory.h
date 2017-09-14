@@ -190,7 +190,6 @@ inline void FreeLastBlock(memory_arena* Arena)
     Platform.DeallocateMemory(Free);
 }
 
-
 static void Clear(memory_arena *Arena)
 {
     while(Arena->CurrentBlock)

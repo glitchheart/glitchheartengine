@@ -106,5 +106,3 @@ static void PushDebugRender(renderer& Renderer, debug_state* DebugState, input_c
     }
     
 }
-
-
