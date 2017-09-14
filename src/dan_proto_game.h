@@ -19,6 +19,14 @@ enum Entity_Type
     Box
 };
 
+enum Direction
+{
+    Up,
+    Down,
+    Left,
+    Right
+};
+
 struct entity
 {
     Entity_Type Type;
@@ -32,6 +40,10 @@ struct entity
     {
         struct
         {
+            Direction CurrentDirection;
+            Direction QueuedDirection;
+            
+            math::v2i TargetTile;
             math::v2i CurrentTile;
             math::v3 Offset;
             math::v3 Size;
@@ -50,6 +62,7 @@ struct game_state
     
     b32 Loaded = false;
     
+    r32 TileScale;
     entity Player;
 };
 

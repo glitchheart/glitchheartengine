@@ -1752,6 +1752,18 @@ static void RenderCommands(render_state& RenderState, renderer& Renderer, memory
                 RenderWireframeCube(Command, RenderState, Camera.ProjectionMatrix, Camera.ViewMatrix);
             }
             break;
+            case RenderCommand_DepthTest:
+            {
+                if(Command.DepthTest.On)
+                {
+                    glEnable(GL_DEPTH_TEST);
+                }
+                else
+                {
+                    glDisable(GL_DEPTH_TEST);
+                }
+            }
+            break;
         }
     }
     
@@ -1794,6 +1806,11 @@ static void RenderCommands(render_state& RenderState, renderer& Renderer, memory
             case RenderCommand_Buffer:
             {
                 RenderBuffer(Command, RenderState, Renderer, Camera.ProjectionMatrix, Camera.ViewMatrix);
+            }
+            break;
+            case RenderCommand_DepthTest:
+            {
+                // @Incomplete: Do we need depth test commands for UI stuff?
             }
             break;
         }

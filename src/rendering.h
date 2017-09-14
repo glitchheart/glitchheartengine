@@ -118,6 +118,7 @@ enum Render_Command_Type
     RenderCommand_Buffer,
     RenderCommand_Model,
     RenderCommand_WireframeCube,
+    RenderCommand_DepthTest,
     RenderCommand_Count
 };
 
@@ -336,6 +337,10 @@ struct render_command
             math::m4* BoneTransforms;
             i32 BoneCount;
         } Model;
+        struct
+        {
+            b32 On;
+        } DepthTest;
     };
     render_command() {}
 };
