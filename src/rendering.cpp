@@ -14,7 +14,8 @@ static inline void CameraTransform(renderer& Renderer, camera& Camera, math::v3 
         
         auto Dist = sqrt(1.0f / 3.0f);
         
-        Camera.ViewMatrix = math::LookAt(math::v3(Dist, Dist, Dist), math::v3(0.0f));
+        // @Incomplete: Do we need LookAt for an orthographic view?
+        Camera.ViewMatrix = math::m4(1);//math::LookAt(math::v3(Dist, Dist, Dist), math::v3(0.0f));
         
         /*
         auto Pos = math::YRotate(-45.0f) * Position;
@@ -129,41 +130,37 @@ static void PushText(renderer& Renderer, const char* Text, math::v3 Position, Fo
     RenderCommand->IsUI = IsUI;
 }
 
-static void PushFilledRect(renderer& Renderer, math::v3 Position, math::v3 Size, math::rgba Color, b32 IsUI = true)
+static void PushFilledQuad(renderer& Renderer, math::v3 Position, math::v3 Size, math::v3 Rotation, math::rgba Color, char* TextureName = 0, b32 IsUI = true)
 {
     render_command* RenderCommand = PushNextCommand(Renderer, IsUI);
     
-    RenderCommand->Type = RenderCommand_Rect;
-    RenderCommand->Rect.Position = Position;
-    RenderCommand->Rect.Size = Size;
-    RenderCommand->Rect.Color = Color;
-    RenderCommand->Rect.Outlined = false;
+    RenderCommand->Type = RenderCommand_Quad;
+    RenderCommand->Position = Position;
+    RenderCommand->Rotation = Rotation;
+    RenderCommand->Scale = Size;
+    RenderCommand->Quad.Color = Color;
+    RenderCommand->Quad.Outlined = false;
+    RenderCommand->Quad.TextureHandle = 0;
+    
+    if(TextureName)
+    {
+        RenderCommand->Quad.TextureHandle = Renderer.TextureMap[TextureName]->Handle;
+    }
+    
     RenderCommand->IsUI = IsUI;
 }
 
-
-static void PushFilledRect(renderer& Renderer, rect Rect, math::rgba Color, b32 IsUI = true)
+static void PushOutlinedQuad(renderer& Renderer, math::v3 Position,  math::v3 Size, math::v3 Rotation, math::rgba Color, b32 IsUI = false)
 {
     render_command* RenderCommand = PushNextCommand(Renderer, IsUI);
     
-    RenderCommand->Type = RenderCommand_Rect;
-    RenderCommand->Rect.Position = math::v3(Rect.X, Rect.Y, 0);
-    RenderCommand->Rect.Size = math::v3(Rect.Width, Rect.Height, 0);
-    RenderCommand->Rect.Color = Color;
-    RenderCommand->Rect.Outlined = false;
-    RenderCommand->IsUI = IsUI;
-}
-
-
-static void PushOutlinedRect(renderer& Renderer, math::v3 Position, math::v3 Size, math::rgba Color, b32 IsUI = false)
-{
-    render_command* RenderCommand = PushNextCommand(Renderer, IsUI);
-    
-    RenderCommand->Type = RenderCommand_Rect;
-    RenderCommand->Rect.Position = Position;
-    RenderCommand->Rect.Size = Size;
-    RenderCommand->Rect.Color = Color;
-    RenderCommand->Rect.Outlined = true;
+    RenderCommand->Type = RenderCommand_Quad;
+    RenderCommand->Position = Position;
+    RenderCommand->Rotation = Rotation;
+    RenderCommand->Scale = Size;
+    RenderCommand->Quad.Color = Color;
+    RenderCommand->Quad.Outlined = true;
+    RenderCommand->Quad.TextureHandle = 0;
     RenderCommand->IsUI = IsUI;
 }
 
