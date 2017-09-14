@@ -292,7 +292,7 @@ extern "C" UPDATE(Update)
         collision_volume C2;
         C2.Center = math::v3(10.0f, 0.0f, 0.0f);
         C2.Extents = math::v3(3.0f, 3.0f, 1.0f);
-        C2.Orientation = math::quat();
+        C2.Orientation = math::quat(0.0f, 1.0f, 0.0f, DEGREE_IN_RADIANS * 90.0f);
         C2.Static = false;
         
         GameState->CollisionVolumes[GameState->CollisionVolumeCount++] = C1;
@@ -844,7 +844,6 @@ extern "C" UPDATE(Update)
             {
                 Position.x += 1.0f;
             }
-            
         }
         
         CameraTransform(Renderer, GameCamera, Position, Orientation, Target, GameCamera.Zoom, Near, Far, CFlag_Orthographic);
