@@ -165,7 +165,7 @@ static void Pick(game_state* GameState, input_controller* InputController, rende
     
     auto Camera = Renderer.Cameras[Renderer.CurrentCameraHandle];
     
-    auto RayCast = math::CastPickingRay((r32)InputController->MouseX, InputController->MouseY, Camera.ProjectionMatrix, Camera.ViewMatrix, (r32)Renderer.ViewportWidth, (r32)Renderer.ViewportHeight);
+    auto RayCast = math::CastPickingRay((r32)InputController->MouseX, (r32)InputController->MouseY, Camera.ProjectionMatrix, Camera.ViewMatrix, (r32)Renderer.ViewportWidth, (r32)Renderer.ViewportHeight);
     
     auto Ray = RayCast.Ray;
     auto Origin = RayCast.Origin;
@@ -283,13 +283,13 @@ extern "C" UPDATE(Update)
         LoadTextures(Renderer, &GameState->TotalArena);
         GameState->SelectedModel = -1;
         
-        collision_volume C1;
+        collision_volume C1 = {};
         C1.Center = math::v3(0.0f, 0.0f, 0.0f);
         C1.Extents = math::v3(5.0f, 3.0f, 7.0f);
         C1.Orientation = math::quat();
         C1.Static = true;
         
-        collision_volume C2;
+        collision_volume C2 = {};
         C2.Center = math::v3(10.0f, 0.0f, 0.0f);
         C2.Extents = math::v3(3.0f, 3.0f, 1.0f);
         C2.Orientation = math::quat(0.0f, 1.0f, 0.0f, DEGREE_IN_RADIANS * 90.0f);
@@ -872,8 +872,7 @@ extern "C" UPDATE(Update)
     PushDirectionalLight(Renderer, math::v3(-0.2, -1.0, -0.3), 
                          math::v3(0.1f, 0.1f, 0.1f), math::v3(0.2, 0.2, 0.2), math::v3(0.1, 0.1, 0.1));
     
-    char FPSBuffer[64];
-    sprintf(FPSBuffer, "FPS: %.2f - AVG FPS: %.2f - dt: %.10lf", Renderer.FPS, Renderer.AverageFPS, DeltaTime);
+    
     TickAnimation(PlayerModel, DeltaTime);
     
     PushEntityRenderCommands(Renderer, *GameState);
@@ -887,6 +886,8 @@ extern "C" UPDATE(Update)
     
     //PushTilemapRenderCommands(Renderer, *GameState);
     
+    char FPSBuffer[64];
+    sprintf(FPSBuffer, "FPS: %.2f - AVG FPS: %.2f - dt: %.10lf", Renderer.FPS, Renderer.AverageFPS, DeltaTime);
     PushText(Renderer, FPSBuffer, math::v3(50, 850, 2), Font_Inconsolata, math::rgba(1, 0, 0, 1));
     
     for(i32 Index = 0; Index < GameState->ModelCount; Index++)
@@ -918,8 +919,6 @@ extern "C" UPDATE(Update)
         
     }
     
-    static i32 Coll = 0;
-    
     for(i32 Index = 0; Index < GameState->CollisionVolumeCount; Index++)
     {
         auto& C = GameState->CollisionVolumes[Index];
@@ -929,19 +928,26 @@ extern "C" UPDATE(Update)
             if(J == Index)
                 continue;
             sat_collision_info CollisionInfo;
-            CheckSATCollision(C, GameState->CollisionVolumes[J], &CollisionInfo);
+            CheckSATCollision(C, GameState->CollisionVolumes[J], &CollisionInfo, Renderer);
+            //auto Coll = TestOBBOBB(C, GameState->CollisionVolumes[J]);
             C.Colliding = CollisionInfo.Colliding;
+            //DEBUG_PRINT("%d\n", Coll);
+            //C.Colliding = Coll;
             
-            if(!C.Static && C.Colliding)
+            if(C.Colliding)
             {
                 auto PV = CollisionInfo.PV;
-                DEBUG_PRINT("Colliding! %d, (%f, %f, %f)\n", Coll++, PV.x, PV.y, PV.z);
-                GameState->CollisionVolumes[Index].Center += PV * CollisionInfo.Overlap;
+                
+                if(C.Static)
+                {
+                    //GameState->CollisionVolumes[J].Center -= PV * CollisionInfo.Overlap;
+                }
+                else
+                {
+                    C.Center += PV * CollisionInfo.Overlap;
+                }
             }
-            
-            PushLine(Renderer, C.Center, GameState->CollisionVolumes[J].Center, 3.0f, math::rgba(0.5f, 0.7f, 0.3f, 1.0f));
         }
-        
         PushCollisionVolume(Renderer, C, true, true);
     }
     //PushFilledQuad(Renderer, math::v3(0, 0, 0), math::v3(1000, 1000, 0), math::v3(0, 0, 0),  math::rgba(1, 1, 1, 1), "play_button");

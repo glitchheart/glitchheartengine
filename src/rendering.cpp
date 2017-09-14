@@ -26,7 +26,6 @@ static inline void CameraTransform(renderer& Renderer, camera& Camera, math::v3 
         Camera.ViewMatrix = math::Translate(Camera.ViewMatrix, Position);
         Camera.ViewMatrix = math::Translate(Camera.ViewMatrix, math::v3(Renderer.Viewport[2] / Zoom / 2, Renderer.Viewport[3] / Zoom / 2, 0.0f));
         
-        
         Camera.Position = Position;
         Camera.Orientation = Orientation;
         Camera.Target = Target;

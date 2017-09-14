@@ -1044,7 +1044,7 @@ void UpdatePlayer(entity* Entity, game_state* GameState, renderer& Renderer, sou
         Direction = Normalize(Direction);
         
         auto& PlayerModel = GameState->Models[GameState->PlayerModel];
-        PlayerModel.Position += Direction * 10.0f * DeltaTime;
+        PlayerModel.Position += Direction * 10.0f * (r32)DeltaTime;
         
         Renderer.Cameras[0].Center = math::v3(PlayerModel.Position.X, PlayerModel.Position.Y, PlayerModel.Position.Z);
     }

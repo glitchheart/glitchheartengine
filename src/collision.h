@@ -47,8 +47,20 @@
  
  struct collision_volume
  {
-     math::v3 Center;
-     math::v3 Extents;
+     union
+     {
+         math::v3 Center;
+         r32 c[3];
+     };
+     
+     union
+     {
+         math::v3 Extents;
+         r32 e[3];
+     };
+     
+     math::v3 u[3];
+     
      math::quat Orientation; // Need this to get Up/Right/Forward
      b32 Colliding;
      b32 Static;
