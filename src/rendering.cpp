@@ -23,7 +23,9 @@ static inline void CameraTransform(renderer& Renderer, camera& Camera, math::v3 
             math::LookAt(math::v3(Dist, Dist, Dist), math::v3(0.0f));
         }
         
-        Camera.ViewMatrix = math::Translate(Camera.ViewMatrix, math::v3(-Position.x, -Position.y, Position.z));
+        //Camera.ViewMatrix = math::Translate(Camera.ViewMatrix, math::v3(-Position.x, -Position.y, Position.z));
+        
+        Camera.ViewMatrix = math::Translate(Camera.ViewMatrix, Position);
         Camera.ViewMatrix = math::Translate(Camera.ViewMatrix, math::v3(Renderer.Viewport[2] / Zoom / 2, Renderer.Viewport[3] / Zoom / 2, 0.0f));
         
         Camera.Position = Position;
@@ -47,7 +49,6 @@ static inline void CameraTransform(renderer& Renderer, camera& Camera, math::v3 
         {
             Camera.ViewMatrix = ToMatrix(Orientation) * Camera.ViewMatrix;
         }
-        
         
         Camera.Position = Position;
         Camera.Orientation = Orientation;
@@ -275,7 +276,7 @@ static void PushModel(renderer& Renderer, model& Model)
     
     for(i32 Index = 0; Index < Model.MaterialCount; Index++)
     {
-        if(Model.Materials[Index].DiffuseTexture.HasData && Model.Materials[Index].DiffuseTexture.TextureHandle == -1)
+        if(Model.Materials[Index].DiffuseTexture.HasData && Model.Materials[Index].DiffuseTexture.TextureHandle == -1 && strlen(Model.Materials[Index].DiffuseTexture.TextureName) > 0)
         {
             Model.Materials[Index].DiffuseTexture.TextureHandle = Renderer.TextureMap[Model.Materials[Index].DiffuseTexture.TextureName]->Handle;
         }
@@ -501,7 +502,7 @@ static void LoadGLIMModel(renderer& Renderer, char* FilePath, model* Model)
         fread(&AHeader, sizeof(animation_header), 1, File);
         
         Model->AnimationCount = AHeader.NumAnimations;
-        Model->Animations = PushArray(&Renderer.AnimationArena, AHeader.NumAnimations, skeletal_animation);
+        Model->Animations = AHeader.NumAnimations > 0 ? PushArray(&Renderer.AnimationArena, AHeader.NumAnimations, skeletal_animation) : 0;
         
         for(i32 Index = 0; Index < Model->AnimationCount; Index++)
         {
