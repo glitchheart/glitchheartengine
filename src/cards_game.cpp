@@ -16,6 +16,7 @@ static entity* AddCube(game_state* GameState, renderer& Renderer, Entity_Type Ty
     if(!GameState->CubeInitialized)
     {
         LoadGLIMModel(Renderer, "../assets/models/cube.glim", &GameState->Cube);
+        GameState->CubeInitialized = true;
     }
     
     auto* Entity = &GameState->Entities[GameState->EntityCount++];

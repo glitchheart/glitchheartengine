@@ -23,9 +23,9 @@ static inline void CameraTransform(renderer& Renderer, camera& Camera, math::v3 
             math::LookAt(math::v3(Dist, Dist, Dist), math::v3(0.0f));
         }
         
-        //Camera.ViewMatrix = math::Translate(Camera.ViewMatrix, math::v3(-Position.x, -Position.y, Position.z));
+        Camera.ViewMatrix = math::Translate(Camera.ViewMatrix, math::v3(-Position.x, -Position.y, Position.z));
         
-        Camera.ViewMatrix = math::Translate(Camera.ViewMatrix, Position);
+        //Camera.ViewMatrix = math::Translate(Camera.ViewMatrix, Position);
         Camera.ViewMatrix = math::Translate(Camera.ViewMatrix, math::v3(Renderer.Viewport[2] / Zoom / 2, Renderer.Viewport[3] / Zoom / 2, 0.0f));
         
         Camera.Position = Position;
