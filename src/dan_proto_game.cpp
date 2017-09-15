@@ -17,17 +17,24 @@ static void RenderGrid(game_state* GameState, renderer& Renderer)
     {
         for(i32 Y = 0; Y < 10; Y++)
         {
-            PushFilledQuad(Renderer, math::v3(8 * GameState->TileScale * X, 8 * GameState->TileScale * Y, 1), math::v3(7.8f * GameState->TileScale, 7.8f * GameState->TileScale, 0), math::v3(), math::rgba(0.2, 0.5, 0.6, 1.0), 0, false);
+            PushFilledQuad(Renderer, math::v3(8 * GameState->TileScale * X, 8 * GameState->TileScale * Y, 1), math::v3(7.8f * GameState->TileScale, 7.8f * GameState->TileScale, 0), math::v3(), math::rgba(0.5, 0.1, 0.1, 1.0), 0, false);
         }
     }
 }
 
 static void RenderPlayer(game_state* GameState, renderer& Renderer, entity& Player)
 {
-    PushFilledQuad(Renderer, Player.Position + math::v3(1.0f, 1.0f, 0), math::v3(6 * GameState->TileScale, 6 * GameState->TileScale, 0), math::v3(), math::rgba(0, 0, 0, 1), 0, false);
-    PushFilledQuad(Renderer, Player.Position + math::v3(1.0f, 1.0f, 0), math::v3(1 * GameState->TileScale, 6 * GameState->TileScale, 0), math::v3(), math::rgba(0, 0, 1, 1), 0, false);
-    //PushFilledQuad(Renderer, Player.Position + math::v3(1.0f, 1.0f, 0), math::v3(6 * GameState->TileScale, 6 * GameState->TileScale, 0), math::v3(), math::rgba(0, 0, 0, 1), 0, false);
-    //PushFilledQuad(Renderer, math::v3(Player.Position.x + Player.Player.Offset.x, Player.Position.y + Player.Player.Offset.y, 0), Player.Player.Size, math::v3(), math::rgba(0.2, 0.2, 0.2, 1), 0, false);
+    PushFilledQuad(Renderer, Player.Position + math::v3(1.0f, 1.0f, 0), math::v3(6 * GameState->TileScale, 6 * GameState->TileScale, 0), math::v3(), math::rgba(0.1, 0.4, 0.1, 1), 0, false);
+    PushFilledQuad(Renderer, Player.Position + Player.Player.Offset * GameState->TileScale, Player.Player.Size * GameState->TileScale, math::v3(), math::rgba(0.2, 0.2, 0.2, 1), 0, false);
+}
+
+static void RenderBoxes(game_state* GameState, renderer& Renderer)
+{
+    for(i32 Index = 0; Index < 5; Index++)
+    {
+        entity& Box = GameState->Boxes[Index];
+        PushFilledQuad(Renderer, Box.Position * 8.0f + math::v3(1.0f, 1.0f, 0), math::v3(6 * GameState->TileScale, 6 * GameState->TileScale, 0), math::v3(), math::rgba(0.7, 0.4, 0.4, 1), 0, false);
+    }
 }
 
 extern "C" UPDATE(Update)
@@ -55,17 +62,42 @@ extern "C" UPDATE(Update)
     if(!GameState->Loaded)
     {
         GameState->TileScale = 1.0f;
-        Player.Player.MovementSpeed = 20.0f;
-        Player.Player.Offset = math::v3(1.5f * GameState->TileScale, 4 * GameState->TileScale, 0);
-        Player.Player.Size = math::v3(1 * GameState->TileScale, 5 * GameState->TileScale, 0);
+        Player.Player.MovementSpeed = 40.0f;
         
-        Player.Player.TargetTile = math::v2i(0, 1);
+        Player.Player.HorizontalSize = math::v3(5, 0.5f, 0);
+        Player.Player.VerticalSize = math::v3(0.5f, 5, 0);
+        
+        Player.Player.UpOffset = math::v3(3.5f, 7.0f, 0);
+        Player.Player.DownOffset = math::v3(3.5f, -4.0f, 0);
+        Player.Player.LeftOffset = math::v3(-4.0f, 3.5f, 0);
+        Player.Player.RightOffset = math::v3(7.0f, 3.5f, 0);
+        
+        Player.Player.TargetTile = math::v2i(0, 0);
         GameState->Loaded = true;
         
-        Renderer.ClearColor = math::rgba(1, 1, 1, 1);
+        Renderer.ClearColor = math::rgba(0, 0, 0, 1);
         Renderer.CurrentCameraHandle = 0;
         Renderer.Cameras[0].ViewportWidth = Renderer.WindowWidth;
         Renderer.Cameras[0].ViewportHeight = Renderer.WindowHeight;
+        
+        // Create test boxes
+        entity& Box1 = GameState->Boxes[0];
+        entity& Box2 = GameState->Boxes[1];
+        entity& Box3 = GameState->Boxes[2];
+        entity& Box4 = GameState->Boxes[3];
+        entity& Box5 = GameState->Boxes[4];
+        
+        Box1.Box.Size = math::v3(4, 4, 0);
+        Box2.Box.Size = math::v3(4, 4, 0);
+        Box3.Box.Size = math::v3(4, 4, 0);
+        Box4.Box.Size = math::v3(4, 4, 0);
+        Box5.Box.Size = math::v3(4, 4, 0);
+        
+        Box1.Position = math::v3(2, 6, 0);
+        Box2.Position = math::v3(1, 8, 0);
+        Box3.Position = math::v3(0, 4, 0);
+        Box4.Position = math::v3(4, 0, 0);
+        Box5.Position = math::v3(9, 2, 0);
     }
     
     Renderer.Cameras[0].Zoom = 8.0f;
@@ -73,114 +105,92 @@ extern "C" UPDATE(Update)
     
     auto CurrentDirection = Player.Player.CurrentDirection;
     
-    if(KEY_DOWN(Key_W))
+    if(!Player.Player.IsMoving)
     {
-        if(CurrentDirection == Left || CurrentDirection == Right)
+        if(KEY_DOWN(Key_W) && Player.Player.TargetTile.y < 9)
         {
-            Player.Player.QueuedDirection = Up;
+            Player.Player.CurrentDirection = Up;
+            Player.Player.IsMoving = true;
+            Player.Player.TargetTile.y += 1;
         }
-    }
-    else if(KEY_DOWN(Key_S))
-    {
-        if(CurrentDirection == Left || CurrentDirection == Right)
+        else if(KEY_DOWN(Key_S) && Player.Player.TargetTile.y > 0)
         {
-            Player.Player.QueuedDirection = Down;
+            Player.Player.CurrentDirection = Down;
+            Player.Player.IsMoving = true;
+            Player.Player.TargetTile.y -= 1;
         }
-    }
-    
-    if(KEY_DOWN(Key_A))
-    {
-        if(CurrentDirection == Up || CurrentDirection == Down)
-        {
-            Player.Player.QueuedDirection = Left;
-        }
-    }
-    else if(KEY_DOWN(Key_D))
-    {
-        if(CurrentDirection == Up || CurrentDirection == Down)
-        {
-            Player.Player.QueuedDirection = Right;
-        }
-    }
-    
-    switch(Player.Player.CurrentDirection)
-    {
-        case Up:
-        {
-            Player.Position.y += Player.Player.MovementSpeed * DeltaTime;
-        }
-        break;
-        case Down:
-        {
-            Player.Position.y += -Player.Player.MovementSpeed * DeltaTime;
-        }
-        break;
-        case Left:
-        {
-            Player.Position.x += -Player.Player.MovementSpeed * DeltaTime;
-        }
-        break;
-        case Right:
-        {
-            Player.Position.x += Player.Player.MovementSpeed * DeltaTime;
-        }
-        break;
-    }
-    
-    if(Abs(Player.Position.x - (r32)Player.Player.TargetTile.x * 8) < 0.08f && Abs(Player.Position.y - (r32)Player.Player.TargetTile.y * 8) < 0.08f)
-    {
-        Player.Player.CurrentDirection = Player.Player.QueuedDirection;
         
+        if(KEY_DOWN(Key_A) && Player.Player.TargetTile.x > 0)
+        {
+            Player.Player.CurrentDirection = Left;
+            Player.Player.IsMoving = true;
+            Player.Player.TargetTile.x -= 1;
+        }
+        else if(KEY_DOWN(Key_D) && Player.Player.TargetTile.x < 9)
+        {
+            Player.Player.CurrentDirection = Right;
+            Player.Player.IsMoving = true;
+            Player.Player.TargetTile.x += 1;
+        }
+        
+        if(KEY_DOWN(Key_Up))
+        {
+            Player.Player.Size = Player.Player.VerticalSize;
+            Player.Player.Offset = Player.Player.UpOffset;
+        }
+        else if(KEY_DOWN(Key_Down))
+        {
+            Player.Player.Size = Player.Player.VerticalSize;
+            Player.Player.Offset = Player.Player.DownOffset;
+        }
+        else if(KEY_DOWN(Key_Left))
+        {
+            Player.Player.Size = Player.Player.HorizontalSize;
+            Player.Player.Offset = Player.Player.LeftOffset;
+        }
+        else if(KEY_DOWN(Key_Right))
+        {
+            Player.Player.Size = Player.Player.HorizontalSize;
+            Player.Player.Offset = Player.Player.RightOffset;
+        }
+    }
+    
+    if(Player.Player.IsMoving)
+    {
         switch(Player.Player.CurrentDirection)
         {
             case Up:
             {
-                Player.Player.TargetTile.y += 1;
-                if(Player.Player.TargetTile.y == 10)
-                {
-                    Player.Player.TargetTile.y -= 2;
-                    Player.Player.CurrentDirection = Down;
-                    Player.Player.QueuedDirection = Player.Player.CurrentDirection;
-                }
+                Player.Position.y += Player.Player.MovementSpeed * DeltaTime;
             }
             break;
             case Down:
             {
-                Player.Player.TargetTile.y -= 1;
-                if(Player.Player.TargetTile.y == -1)
-                {
-                    Player.Player.TargetTile.y += 2;
-                    Player.Player.CurrentDirection = Up;
-                }
+                Player.Position.y += -Player.Player.MovementSpeed * DeltaTime;
             }
             break;
             case Left:
             {
-                Player.Player.TargetTile.x -= 1;
-                if(Player.Player.TargetTile.x == -1)
-                {
-                    Player.Player.TargetTile.x += 2;
-                    Player.Player.CurrentDirection = Right;
-                }
+                Player.Position.x += -Player.Player.MovementSpeed * DeltaTime;
             }
             break;
             case Right:
             {
-                Player.Player.TargetTile.x += 1;
-                if(Player.Player.TargetTile.x == 10)
-                {
-                    Player.Player.TargetTile.x -= 2;
-                    Player.Player.CurrentDirection = Left;
-                }
+                Player.Position.x += Player.Player.MovementSpeed * DeltaTime;
             }
             break;
         }
         
-        Player.Player.QueuedDirection = Player.Player.CurrentDirection;
+        if(Abs(Player.Position.x - (r32)Player.Player.TargetTile.x * 8) < 0.08f && Abs(Player.Position.y - (r32)Player.Player.TargetTile.y * 8) < 0.08f)
+        {
+            Player.Position = math::v3(Player.Player.TargetTile.x * 8.0f, Player.Player.TargetTile.y * 8.0f, 0);
+            Player.Player.IsMoving = false;
+        }
     }
     
     DisableDepthTest(Renderer);
     RenderGrid(GameState, Renderer);
     RenderPlayer(GameState, Renderer, Player);
+    RenderBoxes(GameState, Renderer);
     EnableDepthTest(Renderer);
 }
