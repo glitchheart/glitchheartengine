@@ -21,6 +21,7 @@ enum Entity_Type
 
 enum Direction
 {
+    None,
     Up,
     Down,
     Left,
@@ -40,8 +41,29 @@ struct entity
     {
         struct
         {
+            union
+            {
+                math::v3 SwordSizes[2];
+                struct
+                {
+                    math::v3 HorizontalSize;
+                    math::v3 VerticalSize;
+                };
+            };
+            union
+            {
+                math::v3 SwordOffset[4];
+                struct
+                {
+                    math::v3 UpOffset;
+                    math::v3 DownOffset;
+                    math::v3 LeftOffset;
+                    math::v3 RightOffset;
+                };
+            };
+            
             Direction CurrentDirection;
-            Direction QueuedDirection;
+            b32 IsMoving;
             
             math::v2i TargetTile;
             math::v2i CurrentTile;
@@ -51,6 +73,9 @@ struct entity
         } Player;
         struct
         {
+            math::rgba Color;
+            math::v2i CurrentTile;
+            math::v3 Size;
         } Box;
     };
 };
@@ -64,6 +89,7 @@ struct game_state
     
     r32 TileScale;
     entity Player;
+    entity Boxes[5];
 };
 
 #endif
