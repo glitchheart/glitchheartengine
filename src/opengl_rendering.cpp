@@ -1843,7 +1843,6 @@ static void Render(render_state& RenderState, renderer& Renderer, memory_arena* 
     
     //RenderGame(GameState);
     RenderCommands(RenderState, Renderer, PermArena);
-    
     // Second pass
     
     glBindFramebuffer(GL_FRAMEBUFFER, 0);

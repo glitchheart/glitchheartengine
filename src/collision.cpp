@@ -460,6 +460,7 @@ r32 GetRayIntersectionFraction(collision_AABB* Coll, math::v3 Origin, math::v3 D
     return MinT;
 }
 
+/*
 static void CheckCollision(game_state* GameState, entity* Entity, collision_info* CollisionInfo)
 {
     CollisionInfo->OtherCount = -1;
@@ -659,4 +660,4 @@ static void CheckCollision(game_state* GameState, entity* Entity, collision_info
                  Entity->Position.z + Entity->Center.z * Entity->Scale + Entity->CollisionAABB.Offset.z);
         }
     }
-}
+}*/

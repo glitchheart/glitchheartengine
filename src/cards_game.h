@@ -60,6 +60,8 @@ struct game_state
     
     r32 PrevMouseX;
     r32 PrevMouseY;
+    
+    sound_effects Sounds;
 };
 
 #define FOR_ENT(Label) for(i32 Label = 0; Label < GameState->EntityCount; Label++) 
