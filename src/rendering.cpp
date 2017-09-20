@@ -8,10 +8,16 @@ enum Camera_Flags
 // @Incomplete
 static inline void CameraTransform(renderer& Renderer, camera& Camera, math::v3 Position = math::v3(), math::quat Orientation = math::quat(), math::v3 Target = math::v3(), r32 Zoom = 1.0f, r32 Near = -1.0f, r32 Far = 1.0f, u32 CameraFlags = CFlag_Orthographic | CFlag_NoLookAt)
 {
+    Camera.ViewportWidth = Renderer.WindowWidth;
+    Camera.ViewportHeight = Renderer.WindowHeight;
     if(CameraFlags & CFlag_Orthographic)
     {
         Camera.ProjectionMatrix = math::Ortho(0.0f, Renderer.Viewport[2] / Zoom, 0.0f, Renderer.Viewport[3] / Zoom, Near, Far);
         Camera.ViewMatrix = math::m4(1.0f);
+        
+        Camera.Position = Position;
+        Camera.Orientation = Orientation;
+        Camera.Target = Target;
         
         if(!IsIdentity(Orientation))
         {
@@ -20,17 +26,16 @@ static inline void CameraTransform(renderer& Renderer, camera& Camera, math::v3 
         else if(CameraFlags & ~CFlag_NoLookAt)
         {
             auto Dist = sqrt(1.0f / 3.0f);
-            math::LookAt(math::v3(Dist, Dist, Dist), math::v3(0.0f));
+            Camera.ViewMatrix = math::LookAt(math::v3(Dist, Dist, Dist), math::v3(0.0f));
+            
         }
         
-        Camera.ViewMatrix = math::Translate(Camera.ViewMatrix, math::v3(-Position.x, -Position.y, Position.z));
+        //Camera.ViewMatrix = math::Translate(Camera.ViewMatrix, math::v3(-Position.x, -Position.y, Position.z));
         
-        //Camera.ViewMatrix = math::Translate(Camera.ViewMatrix, Position);
+        Camera.ViewMatrix = math::Translate(Camera.ViewMatrix, Position);
         Camera.ViewMatrix = math::Translate(Camera.ViewMatrix, math::v3(Renderer.Viewport[2] / Zoom / 2, Renderer.Viewport[3] / Zoom / 2, 0.0f));
         
-        Camera.Position = Position;
-        Camera.Orientation = Orientation;
-        Camera.Target = Target;
+        
     }
     else if(CameraFlags & CFlag_Perspective)
     {

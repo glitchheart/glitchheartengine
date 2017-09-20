@@ -467,6 +467,7 @@ struct renderer
     math::rgba ClearColor;
     r32 LineWidth;
     
+    b32 ShowMouseCursor;
     
     memory_arena AnimationArena;
 };

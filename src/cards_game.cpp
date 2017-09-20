@@ -5,6 +5,7 @@
 #include "keycontroller.cpp"
 #include "ui.cpp"
 #include "sound.cpp"
+#include "collision.cpp"
 #if GLITCH_DEBUG
 #include "debug.cpp"
 #endif
@@ -29,6 +30,17 @@ static entity* AddCube(game_state* GameState, renderer& Renderer, Entity_Type Ty
     return Entity;
 }
 
+static entity* AddEntity(game_state* GameState, renderer& Renderer, Entity_Type Type, math::v3 P = math::v3(), math::quat O = math::quat(),  math::v3 S = math::v3(1.0f))
+{
+    auto* Entity = &GameState->Entities[GameState->EntityCount++];
+    Entity->Position = P;
+    Entity->Orientation = O;
+    Entity->Scale = S;
+    Entity->Type = Type;
+    
+    return Entity;
+}
+
 extern "C" UPDATE(Update)
 {
     Platform = GameMemory->PlatformAPI;
@@ -47,60 +59,32 @@ extern "C" UPDATE(Update)
     
     Assert(GameState);
     
-    if(!GameState->IsInitialized)
+    if(!GameState->IsInitialized || !GameMemory->IsInitialized)
     {
-        auto* Player = AddCube(GameState, Renderer, Entity_Player);
+        //auto* Player = AddCube(GameState, Renderer, Entity_Player);
+        auto* Player = AddEntity(GameState, Renderer, Entity_Player);
         Renderer.CurrentCameraHandle = 0;
         Renderer.ClearColor = math::rgba(0.1f, 0.1f, 0.1f, 1.0f);
-        GameState->EntityCount = 1;
+        Renderer.Cameras[Renderer.CurrentCameraHandle].Zoom = 20.0f;
+        Renderer.Cameras[Renderer.CurrentCameraHandle].ViewportWidth = Renderer.WindowWidth;
+        Renderer.Cameras[Renderer.CurrentCameraHandle].ViewportHeight = Renderer.WindowHeight;
+        Renderer.Cameras[Renderer.CurrentCameraHandle];
+        
+        //GameState->EntityCount = 1;
+        
+        sounds Sounds = {};
+        //@Incomplete: Get actual sizes, this is retarded
+        memcpy(&GameState->Sounds.SoundEffects, SoundEffects, sizeof(sound_effect) * (64 + 32));
+        
+        //LoadTextures(Renderer, &GameState->TotalArena);
+        
         
         GameState->IsInitialized = true;
+        GameMemory->IsInitialized = true;
     }
     
     auto& Camera = Renderer.Cameras[Renderer.CurrentCameraHandle];
     
-    for(i32 Index = 0; Index < GameState->EntityCount; Index++)
-    {
-        auto* Entity = &GameState->Entities[Index];
-        
-        switch(Entity->Type)
-        {
-            case Entity_Player:
-            {
-                auto V = math::v3();
-                if(KEY(Key_W))
-                {
-                    V.y = 1.0f;
-                }
-                else if(KEY(Key_S))
-                {
-                    V.y = -1.0f;
-                }
-                
-                if(KEY(Key_A))
-                {
-                    V.x = -1.0f;
-                }
-                else if(KEY(Key_D))
-                {
-                    V.x = 1.0f;
-                }
-                
-                Entity->Velocity = V;
-                
-                Entity->Position += V * (r32)DeltaTime;
-                
-                // Entity code
-                Entity->Model.Position = Entity->Position;
-                Entity->Model.Orientation = Entity->Orientation;
-                Entity->Model.Scale = Entity->Scale;
-                PushModel(Renderer, Entity->Model);
-            }
-            break;
-        }
-    }
-    
-    PushDirectionalLight(Renderer, Normalize(Camera.Position - GameState->Entities[0].Position), math::v3(1.0f, 1.0f, 1.0f), math::v3(1.0f, 1.0f, 1.0f), math::v3(1.0f, 1.0f, 1.0f));
     
     auto Target = math::v3();
     auto DeltaX = InputController->MouseX - GameState->PrevMouseX;
@@ -154,15 +138,61 @@ extern "C" UPDATE(Update)
     auto Near = -100.0f;
     auto Far = 1000.0f;
     
-    CameraTransform(Renderer, Camera, Position, Orientation, Target, 1.0f, Near, Far, CFlag_Orthographic);
     
-    //CameraTransform(Renderer, Camera, math::v3(1.0f, 1.0f, 1.0f), math::quat(), math::v3(), 1.0f, -100.0f, 1000.0f, CFlag_Orthographic |~ CFlag_NoLookAt);
+    CameraTransform(Renderer, Renderer.Cameras[Renderer.CurrentCameraHandle], Position, Orientation, math::v3(), Renderer.Cameras[Renderer.CurrentCameraHandle].Zoom, Near, Far, CFlag_Orthographic & ~CFlag_NoLookAt);
     
+    
+    for(i32 Index = 0; Index < GameState->EntityCount; Index++)
+    {
+        auto* Entity = &GameState->Entities[Index];
+        
+        switch(Entity->Type)
+        {
+            case Entity_Player:
+            {
+                auto V = math::v3();
+                if(KEY(Key_W))
+                {
+                    V.y = 1.0f;
+                }
+                else if(KEY(Key_S))
+                {
+                    V.y = -1.0f;
+                }
+                
+                if(KEY(Key_A))
+                {
+                    V.x = -1.0f;
+                }
+                else if(KEY(Key_D))
+                {
+                    V.x = 1.0f;
+                }
+                
+                Entity->Velocity = V;
+                
+                Entity->Position += V * (r32)DeltaTime;
+                
+                // Entity code
+                /*Entity->Model.Position = Entity->Position;
+                Entity->Model.Orientation = Entity->Orientation;
+                Entity->Model.Scale = Entity->Scale;
+                Entity->Model.Position = math::v3(0.0f, 5.0f, 0.0f);*/
+                PushFilledQuad(Renderer, Entity->Position, Entity->Scale, math::v3(), math::rgba(1.0f, 0.0f, 0.0f, 1.0f), 0, false);
+                
+                //PushModel(Renderer, Entity->Model);
+            }
+            break;
+        }
+    }
     
     if(KEY_DOWN(Key_Escape))
     {
         GameMemory->ExitGame = true;
     }
+    
+    
+    Renderer.ShowMouseCursor = true;
     
     GameState->PrevMouseX = (r32)InputController->MouseX;
     GameState->PrevMouseY = (r32)InputController->MouseY;
