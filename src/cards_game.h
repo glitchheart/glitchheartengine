@@ -15,6 +15,8 @@
 #include "collision.h"
 #include "keycontroller.h"
 
+#define CARDS_ASSETS "../cards/assets/"
+
 enum Entity_Type
 {
     Entity_Player
@@ -55,11 +57,11 @@ struct game_state
     entity Entities[MAX_ENTITIES];
     i32 EntityCount;
     
-    model Cube;
-    b32 CubeInitialized;
-    
     r32 PrevMouseX;
     r32 PrevMouseY;
+    
+    math::v2 Grid;
+    r32 GridScale;
     
     sound_effects Sounds;
 };

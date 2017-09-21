@@ -284,6 +284,7 @@ struct render_command
             i32 TextureHandle;
             math::rgba Color;
             b32 Outlined;
+            r32 LineWidth;
         } Quad;
         struct
         {
@@ -469,6 +470,7 @@ struct renderer
     
     b32 ShowMouseCursor;
     
+    memory_arena TextureArena;
     memory_arena AnimationArena;
 };
 
