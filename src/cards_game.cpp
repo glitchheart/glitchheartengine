@@ -12,24 +12,6 @@
 
 platform_api Platform;
 
-static entity* AddCube(game_state* GameState, renderer& Renderer, Entity_Type Type, math::v3 P = math::v3(), math::quat O = math::quat(), math::v3 S = math::v3(1.0f))
-{
-    if(!GameState->CubeInitialized)
-    {
-        LoadGLIMModel(Renderer, "../assets/models/cube.glim", &GameState->Cube);
-        GameState->CubeInitialized = true;
-    }
-    
-    auto* Entity = &GameState->Entities[GameState->EntityCount++];
-    Entity->Position = P;
-    Entity->Orientation = O;
-    Entity->Scale = S;
-    Entity->Type = Type;
-    Entity->Model = GameState->Cube;
-    
-    return Entity;
-}
-
 static entity* AddEntity(game_state* GameState, renderer& Renderer, Entity_Type Type, math::v3 P = math::v3(), math::quat O = math::quat(),  math::v3 S = math::v3(1.0f))
 {
     auto* Entity = &GameState->Entities[GameState->EntityCount++];
@@ -61,23 +43,22 @@ extern "C" UPDATE(Update)
     
     if(!GameState->IsInitialized || !GameMemory->IsInitialized)
     {
-        //auto* Player = AddCube(GameState, Renderer, Entity_Player);
         auto* Player = AddEntity(GameState, Renderer, Entity_Player);
         Renderer.CurrentCameraHandle = 0;
-        Renderer.ClearColor = math::rgba(0.1f, 0.1f, 0.1f, 1.0f);
+        Renderer.ClearColor = math::rgba(0.3f, 0.3f, 0.3f, 1.0f);
         Renderer.Cameras[Renderer.CurrentCameraHandle].Zoom = 20.0f;
         Renderer.Cameras[Renderer.CurrentCameraHandle].ViewportWidth = Renderer.WindowWidth;
         Renderer.Cameras[Renderer.CurrentCameraHandle].ViewportHeight = Renderer.WindowHeight;
-        Renderer.Cameras[Renderer.CurrentCameraHandle];
+        Renderer.Cameras[Renderer.CurrentCameraHandle].Position = math::v3(32.5f, 15, 0);
         
-        //GameState->EntityCount = 1;
+        GameState->Grid = math::v2(16, 8);
+        GameState->GridScale = 4.0f;
         
         sounds Sounds = {};
         //@Incomplete: Get actual sizes, this is retarded
         memcpy(&GameState->Sounds.SoundEffects, SoundEffects, sizeof(sound_effect) * (64 + 32));
         
-        //LoadTextures(Renderer, &GameState->TotalArena);
-        
+        LoadTextures(Renderer, &Renderer.TextureArena, Concat(CARDS_ASSETS, "textures/"));
         
         GameState->IsInitialized = true;
         GameMemory->IsInitialized = true;
@@ -85,62 +66,22 @@ extern "C" UPDATE(Update)
     
     auto& Camera = Renderer.Cameras[Renderer.CurrentCameraHandle];
     
-    
-    auto Target = math::v3();
-    auto DeltaX = InputController->MouseX - GameState->PrevMouseX;
-    auto DeltaY = InputController->MouseY - GameState->PrevMouseY;
-    math::quat Orientation = Camera.Orientation;
-    if(MOUSE(Mouse_Right))
-    {
-        if(DeltaY > 0.0)
-        {
-            Orientation = math::Rotate(Camera.Orientation, 1.0f, math::v3(1.0f, 0.0f, 0.0f));
-        }
-        else if(DeltaY < 0.0)
-        {
-            Orientation = math::Rotate(Camera.Orientation, -1.0f, math::v3(1.0f, 0.0f, 0.0f));
-        }
-        
-        if(DeltaX > 0.0)
-        {
-            Orientation = math::Rotate(Camera.Orientation, 1.0f, math::v3(0.0f, 1.0f, 0.0f));
-        }
-        else if(DeltaX < 0.0)
-        {
-            Orientation = math::Rotate(Camera.Orientation, -1.0f, math::v3(0.0f, 1.0f, 0.0f));
-        }
-        
-    }
-    
-    math::v3 Position = Camera.Position;
-    if(MOUSE(Mouse_Middle))
-    {
-        
-        if(DeltaY > 0.0)
-        {
-            Position.y += 1.0f;
-        }
-        else if(DeltaY < 0.0)
-        {
-            Position.y += -1.0f;
-        }
-        
-        if(DeltaX > 0.0)
-        {
-            Position.x += -1.0f;
-        }
-        else if(DeltaX < 0.0)
-        {
-            Position.x += 1.0f;
-        }
-    }
-    
     auto Near = -100.0f;
     auto Far = 1000.0f;
     
+    CameraTransform(Renderer, Camera, Camera.Position, Camera.Orientation, Camera.Target, Camera.Zoom, Near, Far);
     
-    CameraTransform(Renderer, Renderer.Cameras[Renderer.CurrentCameraHandle], Position, Orientation, math::v3(), Renderer.Cameras[Renderer.CurrentCameraHandle].Zoom, Near, Far, CFlag_Orthographic & ~CFlag_NoLookAt);
+    DisableDepthTest(Renderer);
     
+    for(i32 I = 0; I < GameState->Grid.x; I++)
+    {
+        for(i32 J = 0; J < GameState->Grid.y; J++)
+        {
+            PushOutlinedQuad(Renderer, math::v3(I * GameState->GridScale, J * GameState->GridScale, 0), math::v3(GameState->GridScale, GameState->GridScale, 0), math::v3(0.0f, 0.0f, 0.0f), math::rgba(0.0f, 0.0f, 0.0f, 0.0f), false);
+            PushFilledQuad(Renderer, math::v3(I * GameState->GridScale, J * GameState->GridScale, 0), math::v3(GameState->GridScale, GameState->GridScale, 0), math::v3(0.0f, 0.0f, 0.0f), math::rgba(0.0f, 0.0f, 0.0f, 0.0f), "card_ace_1", false);
+            
+        }
+    }
     
     for(i32 Index = 0; Index < GameState->EntityCount; Index++)
     {
@@ -173,18 +114,14 @@ extern "C" UPDATE(Update)
                 
                 Entity->Position += V * (r32)DeltaTime;
                 
-                // Entity code
-                /*Entity->Model.Position = Entity->Position;
-                Entity->Model.Orientation = Entity->Orientation;
-                Entity->Model.Scale = Entity->Scale;
-                Entity->Model.Position = math::v3(0.0f, 5.0f, 0.0f);*/
                 PushFilledQuad(Renderer, Entity->Position, Entity->Scale, math::v3(), math::rgba(1.0f, 0.0f, 0.0f, 1.0f), 0, false);
                 
-                //PushModel(Renderer, Entity->Model);
             }
             break;
         }
     }
+    
+    EnableDepthTest(Renderer);
     
     if(KEY_DOWN(Key_Escape))
     {
