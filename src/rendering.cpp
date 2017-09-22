@@ -5,32 +5,64 @@ enum Camera_Flags
     CFlag_NoLookAt     = (1 << 2)
 };
 
-// @Incomplete
-static inline void CameraTransform(renderer& Renderer, camera& Camera, math::v3 Position = math::v3(), math::quat Orientation = math::quat(), math::v3 Target = math::v3(), r32 Zoom = 1.0f, r32 Near = -1.0f, r32 Far = 1.0f, u32 CameraFlags = CFlag_Orthographic | CFlag_NoLookAt)
+struct camera_params
 {
-    if(CameraFlags & CFlag_Orthographic)
+    u32 ViewFlags;
+};
+
+static camera_params DefaultCameraParams()
+{
+    camera_params Params;
+    Params.ViewFlags = CFlag_Orthographic | CFlag_NoLookAt;
+    return Params;
+}
+
+static camera_params OrthographicCameraParams()
+{
+    camera_params Params;
+    Params.ViewFlags = CFlag_Orthographic;
+    return Params;
+}
+
+static camera_params PerspectiveCameraParams()
+{
+    camera_params Params;
+    Params.ViewFlags = CFlag_Perspective;
+    return Params;
+}
+
+// @Incomplete
+static inline void CameraTransform(renderer& Renderer, camera& Camera, math::v3 Position = math::v3(), math::quat Orientation = math::quat(), math::v3 Target = math::v3(), r32 Zoom = 1.0f, r32 Near = -1.0f, r32 Far = 1.0f, camera_params Params = DefaultCameraParams())
+{
+    Camera.ViewportWidth = Renderer.WindowWidth;
+    Camera.ViewportHeight = Renderer.WindowHeight;
+    if(Params.ViewFlags & CFlag_Orthographic)
     {
         Camera.ProjectionMatrix = math::Ortho(0.0f, Renderer.Viewport[2] / Zoom, 0.0f, Renderer.Viewport[3] / Zoom, Near, Far);
         Camera.ViewMatrix = math::m4(1.0f);
+        
+        Camera.Position = Position;
+        Camera.Orientation = Orientation;
+        Camera.Target = Target;
         
         if(!IsIdentity(Orientation))
         {
             Camera.ViewMatrix = ToMatrix(Orientation) * Camera.ViewMatrix;
         }
-        else if(CameraFlags & ~CFlag_NoLookAt)
+        else if(!(Params.ViewFlags & CFlag_NoLookAt))
         {
             auto Dist = sqrt(1.0f / 3.0f);
-            math::LookAt(math::v3(Dist, Dist, Dist), math::v3(0.0f));
+            Camera.ViewMatrix = math::LookAt(math::v3(Dist, Dist, Dist), math::v3(0.0f));
         }
         
         Camera.ViewMatrix = math::Translate(Camera.ViewMatrix, math::v3(-Position.x, -Position.y, Position.z));
+        
+        //Camera.ViewMatrix = math::Translate(Camera.ViewMatrix, Position);
         Camera.ViewMatrix = math::Translate(Camera.ViewMatrix, math::v3(Renderer.Viewport[2] / Zoom / 2, Renderer.Viewport[3] / Zoom / 2, 0.0f));
         
-        Camera.Position = Position;
-        Camera.Orientation = Orientation;
-        Camera.Target = Target;
+        
     }
-    else if(CameraFlags & CFlag_Perspective)
+    else if(Params.ViewFlags & CFlag_Perspective)
     {
         Camera.ProjectionMatrix = math::Perspective((r32)Renderer.Viewport[2] / (r32)Renderer.Viewport[3], 0.60f, 0.1f, 100.0f);
         
@@ -47,7 +79,6 @@ static inline void CameraTransform(renderer& Renderer, camera& Camera, math::v3 
         {
             Camera.ViewMatrix = ToMatrix(Orientation) * Camera.ViewMatrix;
         }
-        
         
         Camera.Position = Position;
         Camera.Orientation = Orientation;
@@ -68,17 +99,23 @@ static void LoadTexture(char* TextureName, const char* FullTexturePath, renderer
     Renderer.TextureMap[TextureName] = TextureData;
 }
 
-static void LoadTextures(renderer& Renderer, memory_arena* PermArena)
+static void LoadTextures(renderer& Renderer, memory_arena* PermArena, const char* Path)
 {
     texture_data_Map_Init(&Renderer.TextureMap, HashStringJenkins, 64);
     
     directory_data DirData = {};
-    Platform.GetAllFilesWithExtension("../assets/textures/", "png", &DirData, true);
+    Platform.GetAllFilesWithExtension(Path, "png", &DirData, true);
     
     for (i32 FileIndex = 0; FileIndex < DirData.FilesLength; FileIndex++)
     {
         LoadTexture(DirData.FileNames[FileIndex], DirData.FilePaths[FileIndex], Renderer, PermArena);
     }
+}
+
+
+static void LoadTextures(renderer& Renderer, memory_arena* PermArena)
+{
+    LoadTextures(Renderer, PermArena, "../assets/textures/");
 }
 
 static render_command* PushNextCommand(renderer& Renderer, b32 IsUI)
@@ -151,13 +188,14 @@ static void PushFilledQuad(renderer& Renderer, math::v3 Position, math::v3 Size,
     
     if(TextureName)
     {
-        RenderCommand->Quad.TextureHandle = Renderer.TextureMap[TextureName]->Handle;
+        auto* Texture = Renderer.TextureMap[TextureName];
+        RenderCommand->Quad.TextureHandle = Texture->Handle;
     }
     
     RenderCommand->IsUI = IsUI;
 }
 
-static void PushOutlinedQuad(renderer& Renderer, math::v3 Position,  math::v3 Size, math::v3 Rotation, math::rgba Color, b32 IsUI = false)
+static void PushOutlinedQuad(renderer& Renderer, math::v3 Position,  math::v3 Size, math::v3 Rotation, math::rgba Color, b32 IsUI = false, r32 LineWidth = 1.0f)
 {
     render_command* RenderCommand = PushNextCommand(Renderer, IsUI);
     
@@ -168,6 +206,7 @@ static void PushOutlinedQuad(renderer& Renderer, math::v3 Position,  math::v3 Si
     RenderCommand->Quad.Color = Color;
     RenderCommand->Quad.Outlined = true;
     RenderCommand->Quad.TextureHandle = 0;
+    RenderCommand->Quad.LineWidth = LineWidth;
     RenderCommand->IsUI = IsUI;
 }
 
@@ -275,7 +314,7 @@ static void PushModel(renderer& Renderer, model& Model)
     
     for(i32 Index = 0; Index < Model.MaterialCount; Index++)
     {
-        if(Model.Materials[Index].DiffuseTexture.HasData && Model.Materials[Index].DiffuseTexture.TextureHandle == -1)
+        if(Model.Materials[Index].DiffuseTexture.HasData && Model.Materials[Index].DiffuseTexture.TextureHandle == -1 && strlen(Model.Materials[Index].DiffuseTexture.TextureName) > 0)
         {
             Model.Materials[Index].DiffuseTexture.TextureHandle = Renderer.TextureMap[Model.Materials[Index].DiffuseTexture.TextureName]->Handle;
         }
@@ -501,7 +540,7 @@ static void LoadGLIMModel(renderer& Renderer, char* FilePath, model* Model)
         fread(&AHeader, sizeof(animation_header), 1, File);
         
         Model->AnimationCount = AHeader.NumAnimations;
-        Model->Animations = PushArray(&Renderer.AnimationArena, AHeader.NumAnimations, skeletal_animation);
+        Model->Animations = AHeader.NumAnimations > 0 ? PushArray(&Renderer.AnimationArena, AHeader.NumAnimations, skeletal_animation) : 0;
         
         for(i32 Index = 0; Index < Model->AnimationCount; Index++)
         {

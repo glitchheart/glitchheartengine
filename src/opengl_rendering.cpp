@@ -1182,7 +1182,6 @@ static void RenderQuad(Render_Mode Mode, render_state& RenderState, math::v4 Col
                 SetMat4Uniform(Shader.Program, "Projection", ProjectionMatrix);
                 SetMat4Uniform(Shader.Program, "View", ViewMatrix);
             }
-            
             SetFloatUniform(Shader.Program, "isUI", (r32)IsUI);
             SetMat4Uniform(Shader.Program, "M", Model);
             SetVec4Uniform(Shader.Program, "color", Color);
@@ -1843,7 +1842,6 @@ static void Render(render_state& RenderState, renderer& Renderer, memory_arena* 
     
     //RenderGame(GameState);
     RenderCommands(RenderState, Renderer, PermArena);
-    
     // Second pass
     
     glBindFramebuffer(GL_FRAMEBUFFER, 0);

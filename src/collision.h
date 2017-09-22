@@ -17,12 +17,12 @@
  
 #define NUM_OTHERS 40 //@Improvement: We need a more dynamic way for this. This gives us bugs, when we try to write to more than the size allows.
  
- struct entity;
+ struct collision_AABB;
  
  struct collision_info
  {
      Collision_Side Side;
-     entity* Other[NUM_OTHERS]; 
+     collision_AABB* Other[NUM_OTHERS]; 
      i32 OtherCount = 0;
  };
  
