@@ -8,7 +8,7 @@
 #include "debug.h"
 #endif
 
-#define DEBUG
+//#define DEBUG
 
 #include "rendering.h"
 #include "sound.h"
@@ -17,9 +17,9 @@
 
 #define CARDS_ASSETS "../cards/assets/"
 
-enum Entity_Type
+enum EType
 {
-    Entity_Player
+    EType_Player
 };
 
 enum Entity_Flags
@@ -33,12 +33,23 @@ enum Entity_Flags
 
 struct entity
 {
-    Entity_Type Type;
+    EType Type;
     
     math::v3 Position;
     math::v3 Velocity;
     math::quat Orientation;
     math::v3 Scale;
+    
+    union
+    {
+        struct
+        {
+            r32 Speed;
+        } Player;
+        struct
+        {
+        } Playerrr;
+    };
     
     u32 Flags;
     
@@ -67,6 +78,7 @@ struct game_state
 };
 
 #define FOR_ENT(Label) for(i32 Label = 0; Label < GameState->EntityCount; Label++) 
+#define GET_ENT(e, EntType_) ((e)->Type == EType_##EntType_ ? &(e)->EntType_ : 0)
 
 inline b32
 IsSet(entity *Entity, u32 Flag)
@@ -75,7 +87,6 @@ IsSet(entity *Entity, u32 Flag)
     
     return(Result);
 }
-
 
 inline void
 AddFlags(entity *Entity, u32 Flag)

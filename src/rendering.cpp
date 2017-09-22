@@ -99,7 +99,6 @@ static void LoadTexture(char* TextureName, const char* FullTexturePath, renderer
     Renderer.TextureMap[TextureName] = TextureData;
 }
 
-
 static void LoadTextures(renderer& Renderer, memory_arena* PermArena, const char* Path)
 {
     texture_data_Map_Init(&Renderer.TextureMap, HashStringJenkins, 64);
@@ -189,7 +188,8 @@ static void PushFilledQuad(renderer& Renderer, math::v3 Position, math::v3 Size,
     
     if(TextureName)
     {
-        RenderCommand->Quad.TextureHandle = Renderer.TextureMap[TextureName]->Handle;
+        auto* Texture = Renderer.TextureMap[TextureName];
+        RenderCommand->Quad.TextureHandle = Texture->Handle;
     }
     
     RenderCommand->IsUI = IsUI;

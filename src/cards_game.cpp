@@ -12,7 +12,7 @@
 
 platform_api Platform;
 
-static entity* AddEntity(game_state* GameState, renderer& Renderer, Entity_Type Type, math::v3 P = math::v3(), math::quat O = math::quat(),  math::v3 S = math::v3(1.0f))
+static entity* AddEntity(game_state* GameState, renderer& Renderer, EType Type, math::v3 P = math::v3(), math::quat O = math::quat(),  math::v3 S = math::v3(1.0f))
 {
     auto* Entity = &GameState->Entities[GameState->EntityCount++];
     Entity->Position = P;
@@ -43,7 +43,8 @@ extern "C" UPDATE(Update)
     
     if(!GameState->IsInitialized || !GameMemory->IsInitialized)
     {
-        auto* Player = AddEntity(GameState, Renderer, Entity_Player);
+        auto* Player = AddEntity(GameState, Renderer, EType_Player);
+        Player->Player.Speed = 10.0f;
         Renderer.CurrentCameraHandle = 0;
         Renderer.ClearColor = math::rgba(0.3f, 0.3f, 0.3f, 1.0f);
         Renderer.Cameras[Renderer.CurrentCameraHandle].Zoom = 20.0f;
@@ -77,47 +78,40 @@ extern "C" UPDATE(Update)
     {
         for(i32 J = 0; J < GameState->Grid.y; J++)
         {
-            PushOutlinedQuad(Renderer, math::v3(I * GameState->GridScale, J * GameState->GridScale, 0), math::v3(GameState->GridScale, GameState->GridScale, 0), math::v3(0.0f, 0.0f, 0.0f), math::rgba(0.0f, 0.0f, 0.0f, 0.0f), false);
-            PushFilledQuad(Renderer, math::v3(I * GameState->GridScale, J * GameState->GridScale, 0), math::v3(GameState->GridScale, GameState->GridScale, 0), math::v3(0.0f, 0.0f, 0.0f), math::rgba(0.0f, 0.0f, 0.0f, 0.0f), "card_ace_1", false);
-            
+            PushFilledQuad(Renderer, math::v3(I * GameState->GridScale, J * GameState->GridScale, 0), math::v3(GameState->GridScale, GameState->GridScale, 1.0f), math::v3(), math::rgba(0.0f, 0.0f, 0.0f, 1.0f), "card_ace_1", false);
+            PushOutlinedQuad(Renderer, math::v3(I * GameState->GridScale, J * GameState->GridScale, 0), math::v3(GameState->GridScale, GameState->GridScale, 1.0f), math::v3(), math::rgba(1.0f, 1.0f, 1.0f, 1.0f), false);
         }
     }
     
-    for(i32 Index = 0; Index < GameState->EntityCount; Index++)
+    FOR_ENT(Index)
     {
         auto* Entity = &GameState->Entities[Index];
-        
-        switch(Entity->Type)
+        if(auto* Player = GET_ENT(Entity, Player))
         {
-            case Entity_Player:
+            auto V = math::v3();
+            if(KEY(Key_W))
             {
-                auto V = math::v3();
-                if(KEY(Key_W))
-                {
-                    V.y = 1.0f;
-                }
-                else if(KEY(Key_S))
-                {
-                    V.y = -1.0f;
-                }
-                
-                if(KEY(Key_A))
-                {
-                    V.x = -1.0f;
-                }
-                else if(KEY(Key_D))
-                {
-                    V.x = 1.0f;
-                }
-                
-                Entity->Velocity = V;
-                
-                Entity->Position += V * (r32)DeltaTime;
-                
-                PushFilledQuad(Renderer, Entity->Position, Entity->Scale, math::v3(), math::rgba(1.0f, 0.0f, 0.0f, 1.0f), 0, false);
-                
+                V.y = 1.0f;
             }
-            break;
+            else if(KEY(Key_S))
+            {
+                V.y = -1.0f;
+            }
+            
+            if(KEY(Key_A))
+            {
+                V.x = -1.0f;
+            }
+            else if(KEY(Key_D))
+            {
+                V.x = 1.0f;
+            }
+            
+            Entity->Velocity = V;
+            
+            Entity->Position += V * (r32)DeltaTime * Player->Speed;
+            
+            PushFilledQuad(Renderer, Entity->Position, Entity->Scale, math::v3(), math::rgba(1.0f, 0.0f, 0.0f, 1.0f), 0, false);
         }
     }
     

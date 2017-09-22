@@ -128,6 +128,7 @@ struct entity_healthbar
 };
 
 struct game_state;
+struct entity;
 
 using AIFunction = void(*)(entity*, game_state*, sound_commands*, r64);
 #define AI_FUNC(name) void name(entity* Entity, game_state* GameState, sound_commands* SoundCommands, r64 DeltaTime)

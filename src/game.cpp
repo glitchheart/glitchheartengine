@@ -846,11 +846,11 @@ extern "C" UPDATE(Update)
             }
         }
         
-        CameraTransform(Renderer, GameCamera, Position, Orientation, Target, GameCamera.Zoom, Near, Far, CFlag_Orthographic);
+        CameraTransform(Renderer, GameCamera, Position, Orientation, Target, GameCamera.Zoom, Near, Far, OrthographicCameraParams());
     }
     else
     {
-        CameraTransform(Renderer, GameCamera, GameCamera.Center, math::quat(), math::v3(), GameCamera.Zoom, Near, Far, CFlag_Orthographic & ~CFlag_NoLookAt);
+        CameraTransform(Renderer, GameCamera, GameCamera.Center, math::quat(), math::v3(), GameCamera.Zoom, Near, Far, DefaultCameraParams());
     }
     
     auto Forward = math::Forward(GameCamera.ViewMatrix);
