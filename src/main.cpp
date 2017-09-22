@@ -398,7 +398,7 @@ int main(int Argc, char** Args)
             glfwSetWindowShouldClose(RenderState.Window, GLFW_TRUE);
         }
         
-        ShowMouseCursor(RenderState, GameMemory.DebugState->DebugMemory);
+        ShowMouseCursor(RenderState, Renderer.ShowMouseCursor);
         
         ReloadAssets(RenderState, &AssetManager, &Win32State->PermArena);
         GameMemory.ReloadData = &AssetManager.ReloadData;

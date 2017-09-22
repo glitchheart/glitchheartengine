@@ -140,7 +140,7 @@ struct platform_api
     platform_file_exists *FileExists;
     platform_allocate_memory *AllocateMemory;
     platform_deallocate_memory *DeallocateMemory;
-} ;
+};
 extern platform_api Platform;
 
 struct entity_file_reload_data;
