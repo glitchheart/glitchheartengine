@@ -95,6 +95,7 @@ static void ReloadDlls(game_code *Game, char* DllPath, char* TempDllPath)
     {
         DEBUG_PRINT("RELOAD\n");
         ReloadGameCode(Game, DllPath, TempDllPath);
+        Assert(Game);
     }
 }
 
