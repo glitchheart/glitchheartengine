@@ -78,10 +78,10 @@ extern "C" UPDATE(Update)
     {
         for(i32 J = 0; J < GameState->Grid.y; J++)
         {
-            PushFilledQuad(Renderer, math::v3(I * GameState->GridScale, J * GameState->GridScale, 0), math::v3(GameState->GridScale, GameState->GridScale, 1.0f), math::v3(), math::rgba(0.0f, 0.0f, 0.0f, 1.0f), "card_ace_1", false);
+            PushFilledQuad(Renderer, math::v3(I * GameState->GridScale, J * GameState->GridScale, 0), math::v3(GameState->GridScale, GameState->GridScale, 1.0f), math::v3(), math::rgba(1.0f, 0.0f, 0.0f, 0.4f), "card_ace_1", false);
             PushOutlinedQuad(Renderer, math::v3(I * GameState->GridScale, J * GameState->GridScale, 0), math::v3(GameState->GridScale, GameState->GridScale, 1.0f), math::v3(), math::rgba(1.0f, 1.0f, 1.0f, 1.0f), false);
         }
-    }
+    } 
     
     FOR_ENT(Index)
     {
