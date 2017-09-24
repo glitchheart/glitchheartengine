@@ -1420,7 +1420,7 @@ static void RenderQuad(const render_command& Command, render_state& RenderState,
                    Command.Scale,
                    Command.Rotation,
                    Command.IsUI,
-                   Command.Quad.TextureHandle);
+                   RenderState.TextureArray[Command.Quad.TextureHandle].TextureHandle);
     }
     else
     {
@@ -1431,7 +1431,7 @@ static void RenderQuad(const render_command& Command, render_state& RenderState,
                    Command.Scale,
                    Command.Rotation,
                    Command.IsUI,
-                   Command.Quad.TextureHandle,
+                   RenderState.TextureArray[Command.Quad.TextureHandle].TextureHandle,
                    Projection, 
                    View);
     }
