@@ -55,8 +55,8 @@ struct entity
 #define MAX_ENTITIES 30
 #define NUM_TIMERS 64
 
-#define GRID_X 16
-#define GRID_Y 8
+#define GRID_X 5
+#define GRID_Y 5
 #define CARDS 9
 
 struct grid_tile
@@ -70,6 +70,7 @@ struct grid
     math::v2 Size;
     r32 TileScale;
     grid_tile Grid[GRID_X][GRID_Y];
+    math::v3 GridOffset;
 };
 
 struct game_state
