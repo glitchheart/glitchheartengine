@@ -186,7 +186,7 @@ static void PushFilledQuad(renderer& Renderer, math::v3 Position, math::v3 Size,
     RenderCommand->Quad.Outlined = false;
     RenderCommand->Quad.TextureHandle = 0;
     
-    if(TextureName)
+    if(TextureName && Renderer.TextureMap.KeyCount > 0)
     {
         auto* Texture = Renderer.TextureMap[TextureName];
         RenderCommand->Quad.TextureHandle = Texture->Handle;

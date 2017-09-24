@@ -40,12 +40,17 @@ struct NAME ## _map \
     hashed_pair_ ## NAME* ScanPairs;\
     i32 KeyCount;\
     i32 Count; \
+    b32 Initialized = false;\
     hash_function_ ## NAME Hash; \
     \
     TYPE& operator[](KEYTYPE Key) \
     { \
+        Assert(this->Initialized);\
+        Assert(this->HashedPairs)\
+        Assert(this->ScanPairs)\
         Assert(COMPARE(INVALID,Key) != 0);\
-        auto HashV = this->Hash(this->Count,Key);\
+        Assert(this->Hash);\
+        auto HashV = this->Hash(this->Count, Key);\
         auto Res = Scan(this,HashV,Key);\
         switch(Res)\
         {\
@@ -94,6 +99,7 @@ void NAME ##_Map_Init(NAME ## _map* Map, hash_function_ ## NAME Hash, i32 InitSi
     Map->KeyCount = 0;\
     Map->Count = InitSize; \
     Map->Hash = Hash; \
+    Map->Initialized = true;\
 }\
 Map_Status Scan(NAME ## _map* Map, u64 HashedKey, KEYTYPE Key)\
 {\
