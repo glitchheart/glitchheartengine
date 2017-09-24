@@ -27,12 +27,13 @@ static void InitGrid(game_state* GameState)
 {
     GameState->Grid.Size = math::v2(GRID_X, GRID_Y);
     GameState->Grid.TileScale = 4.0f;
+    GameState->Grid.GridOffset = math::v3(10.0f, 8.0f, 0.0f);
     for(i32 I = 0; I < GameState->Grid.Size.x; I++)
     {
         for(i32 J = 0; J < GameState->Grid.Size.y; J++)
         {
             auto& Tile = GameState->Grid.Grid[I][J];
-            auto IsEmpty = math::RandomInt(0,5) > 2;
+            auto IsEmpty = math::RandomInt(0,4) > 2;
             i32 R = IsEmpty ? 0 : math::RandomInt(1, CARDS + 1);
             Tile.Type = R;
             Tile.Walked = false;
@@ -120,15 +121,18 @@ extern "C" UPDATE(Update)
             char* Texture = Type == 0 ? "none" : Concat("card", ToString(Type));
             auto C = math::rgba(1.0f, 1.0f, 1.0f, 1.0f);
             
-            PushFilledQuad(Renderer, math::v3(I * GameState->Grid.TileScale, J * GameState->Grid.TileScale, 0), math::v3(GameState->Grid.TileScale, GameState->Grid.TileScale, 1.0f), math::v3(), C, Texture, false);
+            auto TilePos = math::v3(I * GameState->Grid.TileScale, J * GameState->Grid.TileScale, 0.0f);
             
-            if(GameState->Grid.Grid[I][J].Walked)
+            PushFilledQuad(Renderer, TilePos, math::v3(GameState->Grid.TileScale, GameState->Grid.TileScale, 1.0f), math::v3(), C, Texture, false);
+            
+            if(GameState->Grid.Grid[I][J].Type > 0)
             {
-                C = math::rgba(0.0f, 1.0f, 1.0f, 0.3f);
-                PushFilledQuad(Renderer, math::v3(I * GameState->Grid.TileScale, J * GameState->Grid.TileScale, 0), math::v3(GameState->Grid.TileScale, GameState->Grid.TileScale, 1.0f), math::v3(), C, 0, false);
+                auto Walked = GameState->Grid.Grid[I][J].Walked;
+                C = math::rgba(0.0f, 1.0f, 1.0f, 1.0f - (Walked / 4.0f));
+                PushFilledQuad(Renderer, TilePos, math::v3(GameState->Grid.TileScale, GameState->Grid.TileScale, 1.0f), math::v3(), C, 0, false);
             }
             
-            PushFilledQuad(Renderer, math::v3(I * GameState->Grid.TileScale, J * GameState->Grid.TileScale, 0), math::v3(GameState->Grid.TileScale, GameState->Grid.TileScale, 1.0f), math::v3(), math::rgba(1.0f, 1.0f, 1.0f, 1.0f), "border", false);
+            PushFilledQuad(Renderer, TilePos, math::v3(GameState->Grid.TileScale, GameState->Grid.TileScale, 1.0f), math::v3(), math::rgba(1.0f, 1.0f, 1.0f, 1.0f), "border", false);
         }
     } 
     
@@ -174,7 +178,7 @@ extern "C" UPDATE(Update)
             
             auto NextTile = GameState->Grid.Grid[(i32)NextPos.x / (i32) GameState->Grid.TileScale][(i32)NextPos.y / (i32)GameState->Grid.TileScale];
             
-            if(NextTile.Walked || NextTile.Type == 0)
+            if(NextTile.Type == 0)
             {
                 Entity->Velocity = math::v3();
             }
@@ -191,7 +195,8 @@ extern "C" UPDATE(Update)
             
             auto& CurrentTile = GameState->Grid.Grid[(i32)Entity->Position.x / (i32)GameState->Grid.TileScale][(i32)Entity->Position.y / (i32)GameState->Grid.TileScale];
             
-            CurrentTile.Walked = true;
+            if(math::Length(Entity->Velocity) > 0.0f)
+                CurrentTile.Walked++;
             
             if(KEY_DOWN(Key_Enter))
             {
@@ -207,14 +212,12 @@ extern "C" UPDATE(Update)
         }
     }
     
-    
     EnableDepthTest(Renderer);
     
     if(KEY_DOWN(Key_Escape))
     {
         GameMemory->ExitGame = true;
     }
-    
     
     Renderer.ShowMouseCursor = true;
     
