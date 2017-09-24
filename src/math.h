@@ -924,6 +924,7 @@ namespace math
         v3i() : X(0), Y(0), Z(0) {}
         v3i(i32 I) : X(I), Y(I), Z(I) {}
         v3i(i32 E[3]) : E{E[0],E[1], E[2]} {}
+        v3i(v3 V) : E{(i32)V.E[0], (i32)V.E[1], (i32)V.E[2]} {}
         
         inline v3i operator* (v3i O)
         {
@@ -1470,6 +1471,7 @@ namespace math
     r32 Distance(v4 V1, v4 V2);
     i32 Distance(v2i V1, v2i V2);
     i32 Distance(v3i V1, v3i V2);
+    r32 Distance(v3i V1, v3 V2);
     i32 Floor(r32 V);
     v2 Floor(v2 V);
     v3 Floor(v3 V);
@@ -2004,6 +2006,11 @@ namespace math
         return (i32)sqrt(pow(V1.X - V2.X, 2) + pow(V1.Y - V2.Y, 2) + pow(V1.Z - V2.Z, 2));
     }
     
+    inline r32 Distance(v3i V1, v3 V2)
+    {
+        return sqrt(pow(V1.X - V2.X, 2) + pow(V1.Y - V2.Y, 2) + pow(V1.Z - V2.Z, 2));
+    }
+    
     inline i32 Floor(r32 V)
     {
         return (i32)floor(V);
@@ -2463,6 +2470,13 @@ namespace math
     {
         r32 Rand = Min(Max(From, ((r32)rand()/(r32)(RAND_MAX)) * To),To);
         return Rand;
+    }
+    
+    inline i32 RandomInt(i32 From, i32 To)
+    {
+        i32 Result = rand() % (To - From);
+        Result += From;
+        return Result;
     }
     
     struct ray

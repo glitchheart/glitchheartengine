@@ -45,18 +45,32 @@ struct entity
         struct
         {
             r32 Speed;
+            timer MoveTimer;
         } Player;
-        struct
-        {
-        } Playerrr;
     };
     
     u32 Flags;
-    
-    model Model;
 };
 
 #define MAX_ENTITIES 30
+#define NUM_TIMERS 64
+
+#define GRID_X 16
+#define GRID_Y 8
+#define CARDS 9
+
+struct grid_tile
+{
+    i32 Type;
+    i32 Walked;
+};
+
+struct grid
+{
+    math::v2 Size;
+    r32 TileScale;
+    grid_tile Grid[GRID_X][GRID_Y];
+};
 
 struct game_state
 {
@@ -71,8 +85,10 @@ struct game_state
     r32 PrevMouseX;
     r32 PrevMouseY;
     
-    math::v2 Grid;
-    r32 GridScale;
+    grid Grid;
+    
+    r64 Timers[NUM_TIMERS];
+    i32 TimerCount;
     
     sound_effects Sounds;
 };
@@ -100,6 +116,53 @@ ClearFlags(entity *Entity, u32 Flag)
     Entity->Flags &= ~Flag;
 }
 
+
+
+void StartTimer(game_state* GameState, timer& Timer)
+{
+    if(Timer.TimerHandle == -1)
+    {
+        Timer.TimerHandle = GameState->TimerCount;
+        GameState->TimerCount++;
+        Assert(GameState->TimerCount < NUM_TIMERS);
+    }
+    
+    GameState->Timers[Timer.TimerHandle] = Timer.TimerMax;
+}
+
+b32 TimerDone(game_state* GameState, timer& Timer)
+{
+    if(Timer.TimerHandle == -1)
+        return true;
+    
+    return GameState->Timers[Timer.TimerHandle] <= 0;;
+}
+
+r64 ElapsedTimer(game_state* GameState, timer& Timer)
+{
+    if(Timer.TimerHandle == -1)
+        return 1.0;
+    return GameState->Timers[Timer.TimerHandle];
+}
+
+r64 ElapsedTimerFrac(game_state* GameState, timer& Timer)
+{
+    return ElapsedTimer(GameState,Timer) / Timer.TimerMax;
+}
+
+
+static inline void TickTimers(game_state* GameState, r64 DeltaTime)
+{
+    for(u32 Index = 0; Index < NUM_TIMERS; Index++)
+    {
+        if(GameState->Timers[Index] > 0)
+            GameState->Timers[Index] -= DeltaTime;
+        else
+        {
+            GameState->Timers[Index] = 0;
+        }
+    }
+}
 
 
 #endif
