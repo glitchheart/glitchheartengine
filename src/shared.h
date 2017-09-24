@@ -21,6 +21,27 @@ inline char* Concat(const char *s1, const char *s2, memory_arena* Arena = 0)
     return result;
 }
 
+inline char* ToString(i32 I)
+{
+    char* V = PushTempString(64);
+    sprintf(V, "%d", I);
+    return V;
+}
+
+inline char* ToString(r64 R)
+{
+    char* Result = PushTempString(64);
+    sprintf(Result, "%lf", R);
+    return Result;
+}
+
+inline char* ToString(r32 R)
+{
+    char* Result = PushTempString(64);
+    sprintf(Result, "%f", R);
+    return Result;
+}
+
 inline b32 StartsWith(const char *A, const char *B)
 {
     if(strncmp(A, B, strlen(B)) == 0) return 1;
