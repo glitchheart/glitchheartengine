@@ -55,22 +55,40 @@ struct entity
 #define MAX_ENTITIES 30
 #define NUM_TIMERS 64
 
-#define GRID_X 5
-#define GRID_Y 5
-#define CARDS 9
+#define CARDS 12
+
+enum Suit_Type
+{
+    Suit_B1,
+    Suit_B2,
+    Suit_R1,
+    Suit_R2
+};
+
+struct card
+{
+    Suit_Type Type;
+    char* TextureName;
+};
 
 struct grid_tile
 {
-    i32 Type;
-    i32 Walked;
+    card Card;
+    b32 Walked;
 };
 
 struct grid
 {
     math::v2 Size;
     r32 TileScale;
-    grid_tile Grid[GRID_X][GRID_Y];
-    math::v3 GridOffset;
+    grid_tile** Grid;
+};
+
+struct level
+{
+    grid Grid;
+    card Cards[52];
+    i32 CardCount;
 };
 
 struct game_state
@@ -86,7 +104,7 @@ struct game_state
     r32 PrevMouseX;
     r32 PrevMouseY;
     
-    grid Grid;
+    level CurrentLevel;
     
     r64 Timers[NUM_TIMERS];
     i32 TimerCount;

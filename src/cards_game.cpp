@@ -25,41 +25,60 @@ static entity* AddEntity(game_state* GameState, renderer& Renderer, EType Type, 
 
 static void InitGrid(game_state* GameState)
 {
-    GameState->Grid.Size = math::v2(GRID_X, GRID_Y);
-    GameState->Grid.TileScale = 4.0f;
-    GameState->Grid.GridOffset = math::v3(10.0f, 8.0f, 0.0f);
-    for(i32 I = 0; I < GameState->Grid.Size.x; I++)
+    auto& Grid = GameState->CurrentLevel.Grid;
+    i32 X = 2;
+    i32 Y = 2;
+    Grid.Size = math::v2(X, Y);
+    Grid.TileScale = 4.0f;
+    grid_tile Tile = {};
+    
+    Grid.Grid = PushArray(&GameState->WorldArena, X * Y, grid_tile*);
+    
+    for(i32 I = 0; I < X; I++)
     {
-        for(i32 J = 0; J < GameState->Grid.Size.y; J++)
-        {
-            auto& Tile = GameState->Grid.Grid[I][J];
-            auto IsEmpty = math::RandomInt(0,4) > 2;
-            i32 R = IsEmpty ? 0 : math::RandomInt(1, CARDS + 1);
-            Tile.Type = R;
-            Tile.Walked = false;
-        }
-    } 
+        Grid.Grid[I] = PushArray(&GameState->WorldArena, Y, grid_tile);
+    }
+    
+    Grid.Grid[0][0].Card = GameState->CurrentLevel.Cards[0];
+    Grid.Grid[1][0].Card = GameState->CurrentLevel.Cards[1];
+    Grid.Grid[0][1].Card = GameState->CurrentLevel.Cards[2];
+    Grid.Grid[1][1].Card = GameState->CurrentLevel.Cards[3];
 }
 
-static math::v3 FindNonEmptyPosition(game_state* GameState)
+static void AddCard(level* Level, Suit_Type Type, char* TextureName)
 {
-    for(i32 I = 0; I < GameState->Grid.Size.x; I++)
-    {
-        for(i32 J = 0; J < GameState->Grid.Size.y; J++)
-        {
-            if(GameState->Grid.Grid[I][J].Type != 0)
-                return math::v3(I * GameState->Grid.TileScale, J * GameState->Grid.TileScale, 0);
-        }
-    }
-    return math::v3();
+    card Card;
+    Card.Type = Type;
+    Card.TextureName = TextureName;
+    Level->Cards[Level->CardCount++] = Card;
 }
 
 static void InitializeLevel(game_state* GameState, entity* Player)
 {
+    level Level = {};
+    
+    AddCard(&Level, Suit_B1, "card1");
+    AddCard(&Level, Suit_B1, "card2");
+    AddCard(&Level, Suit_B1, "card3");
+    
+    AddCard(&Level, Suit_B2, "card4");
+    AddCard(&Level, Suit_B2, "card5");
+    AddCard(&Level, Suit_B2, "card6");
+    
+    AddCard(&Level, Suit_R1, "card7");
+    AddCard(&Level, Suit_R1, "card8");
+    AddCard(&Level, Suit_R1, "card9");
+    
+    AddCard(&Level, Suit_R2, "card10");
+    AddCard(&Level, Suit_R2, "card11");
+    AddCard(&Level, Suit_R2, "card12");
+    
+    GameState->CurrentLevel = Level;
+    
     InitGrid(GameState);
-    Player->Position = FindNonEmptyPosition(GameState);
+    
+    Player->Position = math::v3(0.0f, -16.0f, 0.0f) / GameState->CurrentLevel.Grid.TileScale;
 }
-
 
 extern "C" UPDATE(Update)
 {
@@ -85,11 +104,11 @@ extern "C" UPDATE(Update)
         Player->Player.MoveTimer.TimerMax = 0.05f;
         Player->Player.Speed = 10.0f;
         Renderer.CurrentCameraHandle = 0;
-        Renderer.ClearColor = math::rgba(0.3f, 0.3f, 0.3f, 1.0f);
+        Renderer.ClearColor = math::rgba(0.0f);
         Renderer.Cameras[Renderer.CurrentCameraHandle].Zoom = 20.0f;
         Renderer.Cameras[Renderer.CurrentCameraHandle].ViewportWidth = Renderer.WindowWidth;
         Renderer.Cameras[Renderer.CurrentCameraHandle].ViewportHeight = Renderer.WindowHeight;
-        Renderer.Cameras[Renderer.CurrentCameraHandle].Position = math::v3(32.5f, 15, 0);
+        Renderer.Cameras[Renderer.CurrentCameraHandle].Position = math::v3(5.0f, 0, 0);
         
         sounds Sounds = {};
         //@Incomplete: Get actual sizes, this is retarded
@@ -112,27 +131,31 @@ extern "C" UPDATE(Update)
     
     DisableDepthTest(Renderer);
     
-    for(i32 I = 0; I < GameState->Grid.Size.x; I++)
+    auto Grid = GameState->CurrentLevel.Grid;
+    
+    PushFilledQuad(Renderer, math::v3() - Grid.Size.x * Grid.TileScale * 0.5f, math::v3(2.0f * Grid.Size.x * Grid.TileScale, 2.0f * Grid.Size.y * Grid.TileScale, 0.0f), math::v3(), math::rgba(1.0f, 0.0f, 1.0f, 0.2f), 0, false);
+    
+    for(i32 I = 0; I < Grid.Size.x; I++)
     {
-        for(i32 J = 0; J < GameState->Grid.Size.y; J++)
+        for(i32 J = 0; J < Grid.Size.y; J++)
         {
-            auto Type = GameState->Grid.Grid[I][J].Type;
+            auto Card = Grid.Grid[I][J].Card;
             
-            char* Texture = Type == 0 ? "none" : Concat("card", ToString(Type));
+            char* Texture = Card.TextureName;
             auto C = math::rgba(1.0f, 1.0f, 1.0f, 1.0f);
             
-            auto TilePos = math::v3(I * GameState->Grid.TileScale, J * GameState->Grid.TileScale, 0.0f);
+            auto TilePos = math::v3(I * Grid.TileScale, J * Grid.TileScale, 0.0f);
             
-            PushFilledQuad(Renderer, TilePos, math::v3(GameState->Grid.TileScale, GameState->Grid.TileScale, 1.0f), math::v3(), C, Texture, false);
+            PushFilledQuad(Renderer, TilePos, math::v3(Grid.TileScale, Grid.TileScale, 1.0f), math::v3(), C, Texture, false);
             
-            if(GameState->Grid.Grid[I][J].Type > 0)
+            auto Walked = Grid.Grid[I][J].Walked;
+            if(Walked) //@Incomplete: Remember empty tiles
             {
-                auto Walked = GameState->Grid.Grid[I][J].Walked;
-                C = math::rgba(0.0f, 1.0f, 1.0f, 1.0f - (Walked / 4.0f));
-                PushFilledQuad(Renderer, TilePos, math::v3(GameState->Grid.TileScale, GameState->Grid.TileScale, 1.0f), math::v3(), C, 0, false);
+                C = math::rgba(0.0f, 1.0f, 1.0f, 0.2f);
+                PushFilledQuad(Renderer, TilePos, math::v3(Grid.TileScale, Grid.TileScale, 1.0f), math::v3(), C, 0, false);
             }
             
-            PushFilledQuad(Renderer, TilePos, math::v3(GameState->Grid.TileScale, GameState->Grid.TileScale, 1.0f), math::v3(), math::rgba(1.0f, 1.0f, 1.0f, 1.0f), "border", false);
+            PushFilledQuad(Renderer, TilePos, math::v3(Grid.TileScale, Grid.TileScale, 1.0f), math::v3(), math::rgba(1.0f, 1.0f, 1.0f, 1.0f), "border", false);
         }
     } 
     
@@ -160,54 +183,43 @@ extern "C" UPDATE(Update)
                 V.x = 1;
             }
             
-            if(Entity->Position.x / GameState->Grid.TileScale == 0 && V.x < 0)
+            if(Entity->Position.x / Grid.TileScale == 0 && V.x < 0)
                 V.x = 0;
             
-            if(Entity->Position.x / GameState->Grid.TileScale == GameState->Grid.Size.x - 1 && V.x > 0)
+            if(Entity->Position.x / Grid.TileScale == Grid.Size.x - 1 && V.x > 0)
                 V.x = 0;
             
-            if(Entity->Position.y / GameState->Grid.TileScale == 0 && V.y < 0)
+            if(Entity->Position.y / Grid.TileScale == 0 && V.y < 0)
                 V.y = 0;
             
-            if(Entity->Position.y / GameState->Grid.TileScale == GameState->Grid.Size.y - 1&& V.y > 0)
+            if(Entity->Position.y / Grid.TileScale == Grid.Size.y - 1 && V.y > 0)
                 V.y = 0;
             
             Entity->Velocity = math::v3(V.x, V.y, V.z);
             
-            auto NextPos = Entity->Position + Entity->Velocity * GameState->Grid.TileScale;
-            
-            auto NextTile = GameState->Grid.Grid[(i32)NextPos.x / (i32) GameState->Grid.TileScale][(i32)NextPos.y / (i32)GameState->Grid.TileScale];
-            
-            if(NextTile.Type == 0)
+            if(math::Length(Entity->Velocity) > 0.0f && TimerDone(GameState, Player->MoveTimer))
             {
-                Entity->Velocity = math::v3();
-            }
-            else
-            {
-                if(math::Length(Entity->Velocity) > 0.0f && TimerDone(GameState, Player->MoveTimer))
-                {
-                    Entity->Position += Entity->Velocity * GameState->Grid.TileScale;
-                    StartTimer(GameState, Player->MoveTimer);
-                }
-                
-                PushText(Renderer, ToString(GameState->Timers[Player->MoveTimer.TimerHandle]), math::v3(50.0f, 50.0f, 0.0f), Font_Inconsolata, math::rgba(1.0f, 1.0f, 1.0f, 1.0f));
+                Entity->Position += Entity->Velocity * Grid.TileScale;
+                StartTimer(GameState, Player->MoveTimer);
             }
             
-            auto& CurrentTile = GameState->Grid.Grid[(i32)Entity->Position.x / (i32)GameState->Grid.TileScale][(i32)Entity->Position.y / (i32)GameState->Grid.TileScale];
+            PushText(Renderer, ToString(GameState->Timers[Player->MoveTimer.TimerHandle]), math::v3(50.0f, 50.0f, 0.0f), Font_Inconsolata, math::rgba(1.0f, 1.0f, 1.0f, 1.0f));
+            
+            auto& CurrentTile = Grid.Grid[(i32)Entity->Position.x / (i32)Grid.TileScale][(i32)Entity->Position.y / (i32)Grid.TileScale];
             
             if(math::Length(Entity->Velocity) > 0.0f)
-                CurrentTile.Walked++;
-            
-            if(KEY_DOWN(Key_Enter))
-            {
-                CurrentTile.Type = math::RandomInt(1, CARDS + 1);
-            }
+                CurrentTile.Walked = true;
             
             PushFilledQuad(Renderer, Entity->Position, Entity->Scale, math::v3(), math::rgba(1.0f, 0.0f, 0.0f, 1.0f), "player", false);
             
             if(KEY_DOWN(Key_R))
             {
                 InitializeLevel(GameState, Entity);
+            }
+            
+            if(KEY_DOWN(Key_Enter))
+            {
+                //@Incomplete: Check if level was solved here
             }
         }
     }
