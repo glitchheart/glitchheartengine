@@ -26,8 +26,8 @@ static entity* AddEntity(game_state* GameState, renderer& Renderer, EType Type, 
 static void InitGrid(game_state* GameState)
 {
     auto& Grid = GameState->CurrentLevel.Grid;
-    i32 X = 2;
-    i32 Y = 2;
+    i32 X = 1;
+    i32 Y = 1;
     Grid.Size = math::v2(X, Y);
     Grid.TileScale = 4.0f;
     grid_tile Tile = {};
@@ -39,39 +39,47 @@ static void InitGrid(game_state* GameState)
         Grid.Grid[I] = PushArray(&GameState->WorldArena, Y, grid_tile);
     }
     
-    Grid.Grid[0][0].Card = GameState->CurrentLevel.Cards[0];
-    Grid.Grid[1][0].Card = GameState->CurrentLevel.Cards[1];
-    Grid.Grid[0][1].Card = GameState->CurrentLevel.Cards[2];
-    Grid.Grid[1][1].Card = GameState->CurrentLevel.Cards[3];
+    Grid.Grid[0][0].Card = GameState->Cards[1];
+    //Grid.Grid[1][0].Card = GameState->Cards[1];
+    //Grid.Grid[0][1].Card = GameState->Cards[2];
+    //Grid.Grid[1][1].Card = GameState->Cards[3];
 }
 
-static void AddCard(level* Level, Suit_Type Type, char* TextureName)
+static void AddCard(game_state* GameState, Suit_Type Type, char* TextureName, i32 Rank)
 {
     card Card;
     Card.Type = Type;
     Card.TextureName = TextureName;
-    Level->Cards[Level->CardCount++] = Card;
+    Card.Rank = Rank;
+    GameState->Cards[GameState->CardCount++] = Card;
+}
+
+static void InitializeCards(game_state* GameState)
+{
+    AddCard(GameState, Suit_B1, "card1", 1);
+    AddCard(GameState, Suit_B1, "card2", 2);
+    AddCard(GameState, Suit_B1, "card3", 3);
+    
+    AddCard(GameState, Suit_R1, "card4", 1);
+    AddCard(GameState, Suit_R1, "card5", 2);
+    AddCard(GameState, Suit_R1, "card6", 3);
+    
+    AddCard(GameState, Suit_B2, "card7", 1);
+    AddCard(GameState, Suit_B2, "card8", 2);
+    AddCard(GameState, Suit_B2, "card9", 3);
+    
+    AddCard(GameState, Suit_R2, "card10", 1);
+    AddCard(GameState, Suit_R2, "card11", 2);
+    AddCard(GameState, Suit_R2, "card12", 3);
+    
 }
 
 static void InitializeLevel(game_state* GameState, entity* Player)
 {
     level Level = {};
     
-    AddCard(&Level, Suit_B1, "card1");
-    AddCard(&Level, Suit_B1, "card2");
-    AddCard(&Level, Suit_B1, "card3");
-    
-    AddCard(&Level, Suit_B2, "card4");
-    AddCard(&Level, Suit_B2, "card5");
-    AddCard(&Level, Suit_B2, "card6");
-    
-    AddCard(&Level, Suit_R1, "card7");
-    AddCard(&Level, Suit_R1, "card8");
-    AddCard(&Level, Suit_R1, "card9");
-    
-    AddCard(&Level, Suit_R2, "card10");
-    AddCard(&Level, Suit_R2, "card11");
-    AddCard(&Level, Suit_R2, "card12");
+    Level.CurrentScore = 0;
+    Level.TargetScore = 2;
     
     GameState->CurrentLevel = Level;
     
@@ -108,7 +116,7 @@ extern "C" UPDATE(Update)
         Renderer.Cameras[Renderer.CurrentCameraHandle].Zoom = 20.0f;
         Renderer.Cameras[Renderer.CurrentCameraHandle].ViewportWidth = Renderer.WindowWidth;
         Renderer.Cameras[Renderer.CurrentCameraHandle].ViewportHeight = Renderer.WindowHeight;
-        Renderer.Cameras[Renderer.CurrentCameraHandle].Position = math::v3(5.0f, 0, 0);
+        Renderer.Cameras[Renderer.CurrentCameraHandle].Position = math::v3(5.0f, 5.0f, 0);
         
         sounds Sounds = {};
         //@Incomplete: Get actual sizes, this is retarded
@@ -116,6 +124,7 @@ extern "C" UPDATE(Update)
         
         LoadTextures(Renderer, &Renderer.TextureArena, Concat(CARDS_ASSETS, "textures/"));
         
+        InitializeCards(GameState);
         InitializeLevel(GameState, Player);
         
         GameState->IsInitialized = true;
@@ -158,6 +167,8 @@ extern "C" UPDATE(Update)
             PushFilledQuad(Renderer, TilePos, math::v3(Grid.TileScale, Grid.TileScale, 1.0f), math::v3(), math::rgba(1.0f, 1.0f, 1.0f, 1.0f), "border", false);
         }
     } 
+    
+    PushText(Renderer, ToString(GameState->CurrentLevel.TargetScore), math::v3(Renderer.ViewportWidth / 2.0f - 20.0f, Renderer.ViewportHeight / 2.0f + 100.0f, 0.0f), Font_Inconsolata, math::rgba(1.0f, 1.0f, 1.0f, 1.0f), Alignment_Center);
     
     FOR_ENT(Index)
     {
@@ -207,8 +218,51 @@ extern "C" UPDATE(Update)
             
             auto& CurrentTile = Grid.Grid[(i32)Entity->Position.x / (i32)Grid.TileScale][(i32)Entity->Position.y / (i32)Grid.TileScale];
             
+            auto PreviouslyWalked = CurrentTile.Walked;
+            
+            auto& Level = GameState->CurrentLevel;
+            
             if(math::Length(Entity->Velocity) > 0.0f)
+            {
                 CurrentTile.Walked = true;
+                if(!PreviouslyWalked)
+                {
+                    switch(CurrentTile.Card.Type)
+                    {
+                        case Suit_B1:
+                        {
+                            // Add from 1 -> 13
+                            DEBUG_PRINT("Black 1\n");
+                            Level.CurrentScore += CurrentTile.Card.Rank;
+                        }
+                        break;
+                        case Suit_B2:
+                        {
+                            // Add from 13 -> 1
+                            DEBUG_PRINT("Black 2\n");
+                            Level.CurrentScore += (13 - CurrentTile.Card.Rank);
+                        }
+                        break;
+                        case Suit_R1:
+                        {
+                            // Subtract from 1 -> 13
+                            DEBUG_PRINT("Red 1\n");
+                            Level.CurrentScore -= CurrentTile.Card.Rank;
+                        }
+                        break;
+                        case Suit_R2:
+                        {
+                            // Subtract from 13 -> 1
+                            DEBUG_PRINT("Red 2\n");
+                            Level.CurrentScore -= (13 - CurrentTile.Card.Rank);
+                        }
+                        break;
+                    }
+                }
+            }
+            
+            //PushText(Renderer, ToString(Level.CurrentScore), math::v3(Renderer.ViewportWidth / 2.0f - 20.0f, Renderer.ViewportHeight / 2.0f + 200.0f, 0.0f), Font_Inconsolata, math::rgba(1.0f, 1.0f, 1.0f, 1.0f));
+            
             
             PushFilledQuad(Renderer, Entity->Position, Entity->Scale, math::v3(), math::rgba(1.0f, 0.0f, 0.0f, 1.0f), "player", false);
             
@@ -219,7 +273,18 @@ extern "C" UPDATE(Update)
             
             if(KEY_DOWN(Key_Enter))
             {
+                if(Level.TargetScore == Level.CurrentScore)
+                {
+                    //InitializeLevel(GameState, Entity);
+                    Level.Won = true;
+                }
                 //@Incomplete: Check if level was solved here
+            }
+            
+            if(Level.Won)
+            {
+                PushText(Renderer, "YOU WON!!!", math::v3(Renderer.ViewportWidth / 2.0f - 20.0f, Renderer.ViewportHeight / 2.0f + 200.0f, 0.0f), Font_Inconsolata, math::rgba(1.0f, 1.0f, 1.0f, 1.0f));
+                
             }
         }
     }
