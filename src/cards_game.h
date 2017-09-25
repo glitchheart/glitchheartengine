@@ -69,6 +69,7 @@ struct card
 {
     Suit_Type Type;
     char* TextureName;
+    i32 Rank;
 };
 
 struct grid_tile
@@ -87,8 +88,10 @@ struct grid
 struct level
 {
     grid Grid;
-    card Cards[52];
-    i32 CardCount;
+    
+    b32 Won;
+    i32 CurrentScore;
+    i32 TargetScore;
 };
 
 struct game_state
@@ -108,6 +111,9 @@ struct game_state
     
     r64 Timers[NUM_TIMERS];
     i32 TimerCount;
+    
+    card Cards[52];
+    i32 CardCount;
     
     sound_effects Sounds;
 };
