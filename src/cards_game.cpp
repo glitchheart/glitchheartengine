@@ -56,22 +56,62 @@ static void AddCard(game_state* GameState, Suit_Type Type, char* TextureName, i3
 
 static void InitializeCards(game_state* GameState)
 {
-    AddCard(GameState, Suit_B1, "card1", 1);
-    AddCard(GameState, Suit_B1, "card2", 2);
-    AddCard(GameState, Suit_B1, "card3", 3);
+    AddCard(GameState, Suit_B1, "card_b1_1", 1);
+    AddCard(GameState, Suit_B1, "card_b1_2", 2);
+    AddCard(GameState, Suit_B1, "card_b1_3", 3);
+    AddCard(GameState, Suit_B1, "card_b1_4", 4);
+    AddCard(GameState, Suit_B1, "card_b1_5", 5);
+    AddCard(GameState, Suit_B1, "card_b1_6", 6);
+    AddCard(GameState, Suit_B1, "card_b1_7", 7);
+    AddCard(GameState, Suit_B1, "card_b1_8", 8);
+    AddCard(GameState, Suit_B1, "card_b1_9", 9);
+    AddCard(GameState, Suit_B1, "card_b1_10", 10);
+    AddCard(GameState, Suit_B1, "card_b1_11", 11);
+    AddCard(GameState, Suit_B1, "card_b1_12", 12);
+    AddCard(GameState, Suit_B1, "card_b1_13", 13);
     
-    AddCard(GameState, Suit_R1, "card4", 1);
-    AddCard(GameState, Suit_R1, "card5", 2);
-    AddCard(GameState, Suit_R1, "card6", 3);
     
-    AddCard(GameState, Suit_B2, "card7", 1);
-    AddCard(GameState, Suit_B2, "card8", 2);
-    AddCard(GameState, Suit_B2, "card9", 3);
+    AddCard(GameState, Suit_B2, "card_b2_1", 1);
+    AddCard(GameState, Suit_B2, "card_b2_2", 2);
+    AddCard(GameState, Suit_B2, "card_b2_3", 3);
+    AddCard(GameState, Suit_B2, "card_b2_4", 4);
+    AddCard(GameState, Suit_B2, "card_b2_5", 5);
+    AddCard(GameState, Suit_B2, "card_b2_6", 6);
+    AddCard(GameState, Suit_B2, "card_b2_7", 7);
+    AddCard(GameState, Suit_B2, "card_b2_8", 8);
+    AddCard(GameState, Suit_B2, "card_b2_9", 9);
+    AddCard(GameState, Suit_B2, "card_b2_10", 10);
+    AddCard(GameState, Suit_B2, "card_b2_11", 11);
+    AddCard(GameState, Suit_B2, "card_b2_12", 12);
+    AddCard(GameState, Suit_B2, "card_b2_13", 13);
     
-    AddCard(GameState, Suit_R2, "card10", 1);
-    AddCard(GameState, Suit_R2, "card11", 2);
-    AddCard(GameState, Suit_R2, "card12", 3);
+    AddCard(GameState, Suit_R1, "card_r1_1", 1);
+    AddCard(GameState, Suit_R1, "card_r1_2", 2);
+    AddCard(GameState, Suit_R1, "card_r1_3", 3);
+    AddCard(GameState, Suit_R1, "card_r1_4", 4);
+    AddCard(GameState, Suit_R1, "card_r1_5", 5);
+    AddCard(GameState, Suit_R1, "card_r1_6", 6);
+    AddCard(GameState, Suit_R1, "card_r1_7", 7);
+    AddCard(GameState, Suit_R1, "card_r1_8", 8);
+    AddCard(GameState, Suit_R1, "card_r1_9", 9);
+    AddCard(GameState, Suit_R1, "card_r1_10", 10);
+    AddCard(GameState, Suit_R1, "card_r1_11", 11);
+    AddCard(GameState, Suit_R1, "card_r1_12", 12);
+    AddCard(GameState, Suit_R1, "card_r1_13", 13);
     
+    AddCard(GameState, Suit_R2, "card_r2_1", 1);
+    AddCard(GameState, Suit_R2, "card_r2_2", 2);
+    AddCard(GameState, Suit_R2, "card_r2_3", 3);
+    AddCard(GameState, Suit_R2, "card_r2_4", 4);
+    AddCard(GameState, Suit_R2, "card_r2_5", 5);
+    AddCard(GameState, Suit_R2, "card_r2_6", 6);
+    AddCard(GameState, Suit_R2, "card_r2_7", 7);
+    AddCard(GameState, Suit_R2, "card_r2_8", 8);
+    AddCard(GameState, Suit_R2, "card_r2_9", 9);
+    AddCard(GameState, Suit_R2, "card_r2_10", 10);
+    AddCard(GameState, Suit_R2, "card_r2_11", 11);
+    AddCard(GameState, Suit_R2, "card_r2_12", 12);
+    AddCard(GameState, Suit_R2, "card_r2_13", 13);
 }
 
 static void InitializeLevel(game_state* GameState, entity* Player)

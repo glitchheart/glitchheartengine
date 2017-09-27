@@ -55,7 +55,7 @@ struct entity
 #define MAX_ENTITIES 30
 #define NUM_TIMERS 64
 
-#define CARDS 12
+#define CARDS 52
 
 enum Suit_Type
 {
@@ -112,7 +112,7 @@ struct game_state
     r64 Timers[NUM_TIMERS];
     i32 TimerCount;
     
-    card Cards[52];
+    card Cards[CARDS];
     i32 CardCount;
     
     sound_effects Sounds;
