@@ -59,6 +59,9 @@ struct entity
 
 enum Suit_Type
 {
+    Suit_Start,
+    Suit_End,
+    Suit_None,
     Suit_B1,
     Suit_B2,
     Suit_R1,
@@ -108,6 +111,7 @@ struct game_state
     r32 PrevMouseY;
     
     level CurrentLevel;
+    level Levels[16];
     
     r64 Timers[NUM_TIMERS];
     i32 TimerCount;
