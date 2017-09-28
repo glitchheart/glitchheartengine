@@ -23,26 +23,176 @@ static entity* AddEntity(game_state* GameState, renderer& Renderer, EType Type, 
     return Entity;
 }
 
-static void InitGrid(game_state* GameState)
+
+static void InitGrid(memory_arena* WorldArena, level* Level, i32 X, i32 Y)
 {
-    auto& Grid = GameState->CurrentLevel.Grid;
-    i32 X = 1;
-    i32 Y = 1;
+    auto& Grid = Level->Grid;
     Grid.Size = math::v2(X, Y);
     Grid.TileScale = 4.0f;
-    grid_tile Tile = {};
     
-    Grid.Grid = PushArray(&GameState->WorldArena, X * Y, grid_tile*);
+    Grid.Grid = PushArray(WorldArena, X * Y, grid_tile*);
     
     for(i32 I = 0; I < X; I++)
     {
-        Grid.Grid[I] = PushArray(&GameState->WorldArena, Y, grid_tile);
+        Grid.Grid[I] = PushArray(WorldArena, Y, grid_tile);
     }
     
-    Grid.Grid[0][0].Card = GameState->Cards[1];
-    //Grid.Grid[1][0].Card = GameState->Cards[1];
-    //Grid.Grid[0][1].Card = GameState->Cards[2];
-    //Grid.Grid[1][1].Card = GameState->Cards[3];
+    card Unwalkable;
+    Unwalkable.Type = Suit_None;
+    Unwalkable.Rank = -1;
+    Unwalkable.TextureName = 0;
+    
+    for(i32 I = 0;  I < X; I++)
+    {
+        for(i32 J = 0;  J < X; J++)
+        {
+            Grid.Grid[I][J].Card = Unwalkable;
+        }
+    }
+}
+
+
+static void LoadLevel(game_state* GameState, level* Level, const char* FilePath)
+{
+    FILE* File;
+    File = fopen(FilePath, "r");
+    char LineBuffer[255];
+    
+    if(File)
+    {
+        
+        if(fgets(LineBuffer, 255, File))
+            sscanf(LineBuffer, "goal %d", &Level->TargetScore);
+        
+        i32 Height = 0;
+        i32 Width = 0;
+        
+        if(fgets(LineBuffer, 255, File))
+            sscanf(LineBuffer, "x %d y %d", &Height, &Width);
+        
+        Assert(Height > 0 && Width > 0);
+        
+        i32 IndexHeight = 0;
+        char Line[1024];
+        
+        InitGrid(&GameState->WorldArena, Level, Height, Width);
+        
+        card Unwalkable;
+        Unwalkable.Type = Suit_None;
+        Unwalkable.Rank = -1;
+        Unwalkable.TextureName = 0;
+        
+        card Start;
+        Start.Type = Suit_Start;
+        Start.Rank = 0;
+        Start.TextureName = 0;
+        
+        card End;
+        End.Type = Suit_End;
+        End.Rank = 0;
+        End.TextureName = 0;
+        
+        
+        while(IndexHeight < Height)
+        {
+            fgets(Line, sizeof(Line), File);
+            char* Ptr = &Line[0];
+            
+            for(i32 IndexWidth = 0; IndexWidth < Width; IndexWidth++)
+            {
+                i32 Rank = 0;
+                Suit_Type Suit = Suit_None;
+                i32 Offset = 0;
+                b32 Card = false;
+                auto Tok = strtok(Ptr, " ");
+                if(strcmp(Tok, "B1") == 0)
+                {
+                    DEBUG_PRINT("B1\n");
+                    Suit = Suit_B1;
+                    Offset = 0;
+                    Card = true;
+                }
+                else if(strcmp(Tok, "B2") == 0)
+                {
+                    DEBUG_PRINT("B2\n");
+                    Suit = Suit_B2;
+                    Offset = 13;
+                    Card = true;
+                }
+                else if(strcmp(Tok, "R1") == 0)
+                {
+                    DEBUG_PRINT("R1\n");
+                    Suit = Suit_R1;
+                    Offset = 26;
+                    Card = true;
+                }
+                else if(strcmp(Tok, "R2") == 0)
+                {
+                    DEBUG_PRINT("R2\n");
+                    Suit = Suit_R2;
+                    Offset = 39;
+                    Card = true;
+                }
+                else if(strcmp(Tok, "E") == 0)
+                {
+                    DEBUG_PRINT("END\n");
+                    Suit = Suit_End;
+                }
+                else if(strcmp(Tok, "S") == 0)
+                {
+                    DEBUG_PRINT("START\n");
+                    Suit = Suit_Start;
+                }
+                else
+                {
+                    Suit = Suit_None;
+                }
+                
+                if(Card)
+                {
+                    Rank = (i32)strtol(Ptr, &Ptr, 10);
+                    DEBUG_PRINT("Ptr: %s\n", Ptr);
+                    DEBUG_PRINT("Tok: %s\n", Tok);
+                    Level->Grid.Grid[IndexHeight][IndexWidth].Card = GameState->Cards[Offset + Rank];
+                }
+                else
+                {
+                    switch(Suit)
+                    {
+                        case Suit_End:
+                        {
+                            Level->Grid.Grid[IndexHeight][IndexWidth].Card = End;
+                        }
+                        break;
+                        case Suit_Start:
+                        {
+                            Level->Grid.Grid[IndexHeight][IndexWidth].Card = Start;
+                        }
+                        break;
+                        case Suit_None:
+                        {
+                            Level->Grid.Grid[IndexHeight][IndexWidth].Card = Unwalkable;
+                        }
+                        break;
+                    }
+                }
+            }
+            IndexHeight++;
+        }
+        
+        fclose(File);
+        
+        Level->Won = false;
+        Level->CurrentScore = 0;
+        /*
+        Level->Grid.Grid[0][2].Card = GameState->Cards[0];
+        Level->Grid.Grid[0][1].Card = GameState->Cards[1];
+        Level->Grid.Grid[1][1].Card = GameState->Cards[2];
+        Level->Grid.Grid[1][2].Card = GameState->Cards[3];
+        Level->Grid.Grid[0][0].Card = Start;
+        Level->Grid.Grid[2][2].Card = End;
+        */
+    }
 }
 
 static void AddCard(game_state* GameState, Suit_Type Type, char* TextureName, i32 Rank)
@@ -69,7 +219,6 @@ static void InitializeCards(game_state* GameState)
     AddCard(GameState, Suit_B1, "card_b1_11", 11);
     AddCard(GameState, Suit_B1, "card_b1_12", 12);
     AddCard(GameState, Suit_B1, "card_b1_13", 13);
-    
     
     AddCard(GameState, Suit_B2, "card_b2_1", 1);
     AddCard(GameState, Suit_B2, "card_b2_2", 2);
@@ -123,9 +272,9 @@ static void InitializeLevel(game_state* GameState, entity* Player)
     
     GameState->CurrentLevel = Level;
     
-    InitGrid(GameState);
+    LoadLevel(GameState, &GameState->CurrentLevel, Concat(CARDS_ASSETS, "levels/level_01.clv"));
     
-    Player->Position = math::v3(0.0f, -16.0f, 0.0f) / GameState->CurrentLevel.Grid.TileScale;
+    Player->Position = math::v3(0.0f, 0.0f, 0.0f) / GameState->CurrentLevel.Grid.TileScale;
 }
 
 extern "C" UPDATE(Update)
@@ -190,21 +339,48 @@ extern "C" UPDATE(Update)
         {
             auto Card = Grid.Grid[I][J].Card;
             
-            char* Texture = Card.TextureName;
-            auto C = math::rgba(1.0f, 1.0f, 1.0f, 1.0f);
-            
             auto TilePos = math::v3(I * Grid.TileScale, J * Grid.TileScale, 0.0f);
             
-            PushFilledQuad(Renderer, TilePos, math::v3(Grid.TileScale, Grid.TileScale, 1.0f), math::v3(), C, Texture, false);
-            
-            auto Walked = Grid.Grid[I][J].Walked;
-            if(Walked) //@Incomplete: Remember empty tiles
+            switch(Card.Type)
             {
-                C = math::rgba(0.0f, 1.0f, 1.0f, 0.2f);
-                PushFilledQuad(Renderer, TilePos, math::v3(Grid.TileScale, Grid.TileScale, 1.0f), math::v3(), C, 0, false);
+                case Suit_Start:
+                {
+                    PushFilledQuad(Renderer, TilePos, math::v3(Grid.TileScale, Grid.TileScale, 1.0f), math::v3(), math::rgba(1.0f, 0.0f, 1.0f, 0.3f), 0, false);
+                }
+                break;
+                case Suit_End:
+                {
+                    PushFilledQuad(Renderer, TilePos, math::v3(Grid.TileScale, Grid.TileScale, 1.0f), math::v3(), math::rgba(1.0f, 0.0f, 0.0f, 0.3f), 0, false);
+                }
+                break;
+                case Suit_None:
+                {
+                    PushFilledQuad(Renderer, TilePos, math::v3(Grid.TileScale, Grid.TileScale, 1.0f), math::v3(), math::rgba(1.0f, 1.0f, 1.0f, 0.3f), 0, false);
+                }
+                break;
+                case Suit_B1:
+                case Suit_B2:
+                case Suit_R1:
+                case Suit_R2:
+                {
+                    char* Texture = Card.TextureName;
+                    auto C = math::rgba(1.0f, 1.0f, 1.0f, 1.0f);
+                    
+                    PushFilledQuad(Renderer, TilePos, math::v3(Grid.TileScale, Grid.TileScale, 1.0f), math::v3(), C, Texture, false);
+                    
+                    auto Walked = Grid.Grid[I][J].Walked;
+                    if(Walked) //@Incomplete: Remember empty tiles
+                    {
+                        C = math::rgba(0.0f, 1.0f, 1.0f, 0.2f);
+                        PushFilledQuad(Renderer, TilePos, math::v3(Grid.TileScale, Grid.TileScale, 1.0f), math::v3(), C, 0, false);
+                    }
+                    
+                    //PushFilledQuad(Renderer, TilePos, math::v3(Grid.TileScale, Grid.TileScale, 1.0f), math::v3(), math::rgba(1.0f, 1.0f, 1.0f, 1.0f), "border", false);
+                }
+                break;
             }
             
-            PushFilledQuad(Renderer, TilePos, math::v3(Grid.TileScale, Grid.TileScale, 1.0f), math::v3(), math::rgba(1.0f, 1.0f, 1.0f, 1.0f), "border", false);
+            
         }
     } 
     
@@ -248,10 +424,17 @@ extern "C" UPDATE(Update)
             
             Entity->Velocity = math::v3(V.x, V.y, V.z);
             
-            if(math::Length(Entity->Velocity) > 0.0f && TimerDone(GameState, Player->MoveTimer))
+            if(math::Length(Entity->Velocity) > 0.0f && TimerDone(GameState, Player->MoveTimer) )
             {
-                Entity->Position += Entity->Velocity * Grid.TileScale;
-                StartTimer(GameState, Player->MoveTimer);
+                auto& NextTile = Grid.Grid
+                    [(i32)(Entity->Position.x + Entity->Velocity.x * Grid.TileScale) / (i32)Grid.TileScale]
+                    [(i32)(Entity->Position.y + Entity->Velocity.y * Grid.TileScale) / (i32)Grid.TileScale];
+                
+                if(NextTile.Card.Type != Suit_None)
+                {
+                    Entity->Position += Entity->Velocity * Grid.TileScale;
+                    StartTimer(GameState, Player->MoveTimer);
+                }
             }
             
             PushText(Renderer, ToString(GameState->Timers[Player->MoveTimer.TimerHandle]), math::v3(50.0f, 50.0f, 0.0f), Font_Inconsolata, math::rgba(1.0f, 1.0f, 1.0f, 1.0f));
@@ -272,29 +455,25 @@ extern "C" UPDATE(Update)
                         case Suit_B1:
                         {
                             // Add from 1 -> 13
-                            DEBUG_PRINT("Black 1\n");
                             Level.CurrentScore += CurrentTile.Card.Rank;
                         }
                         break;
                         case Suit_B2:
                         {
                             // Add from 13 -> 1
-                            DEBUG_PRINT("Black 2\n");
-                            Level.CurrentScore += (13 - CurrentTile.Card.Rank);
+                            Level.CurrentScore += (13 - (CurrentTile.Card.Rank - 1));
                         }
                         break;
                         case Suit_R1:
                         {
                             // Subtract from 1 -> 13
-                            DEBUG_PRINT("Red 1\n");
                             Level.CurrentScore -= CurrentTile.Card.Rank;
                         }
                         break;
                         case Suit_R2:
                         {
                             // Subtract from 13 -> 1
-                            DEBUG_PRINT("Red 2\n");
-                            Level.CurrentScore -= (13 - CurrentTile.Card.Rank);
+                            Level.CurrentScore -= (13 - (CurrentTile.Card.Rank - 1));
                         }
                         break;
                     }
@@ -302,7 +481,6 @@ extern "C" UPDATE(Update)
             }
             
             //PushText(Renderer, ToString(Level.CurrentScore), math::v3(Renderer.ViewportWidth / 2.0f - 20.0f, Renderer.ViewportHeight / 2.0f + 200.0f, 0.0f), Font_Inconsolata, math::rgba(1.0f, 1.0f, 1.0f, 1.0f));
-            
             
             PushFilledQuad(Renderer, Entity->Position, Entity->Scale, math::v3(), math::rgba(1.0f, 0.0f, 0.0f, 1.0f), "player", false);
             

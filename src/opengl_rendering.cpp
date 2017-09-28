@@ -1424,6 +1424,7 @@ static void RenderQuad(const render_command& Command, render_state& RenderState,
     }
     else
     {
+        auto Handle = Command.Quad.TextureHandle != -1 ? RenderState.TextureArray[Command.Quad.TextureHandle].TextureHandle : 0;
         RenderQuad(Command.Quad.Outlined ? Render_Outline : Render_Fill, 
                    RenderState, 
                    Command.Quad.Color, 
@@ -1431,7 +1432,7 @@ static void RenderQuad(const render_command& Command, render_state& RenderState,
                    Command.Scale,
                    Command.Rotation,
                    Command.IsUI,
-                   Command.Quad.TextureHandle != -1 ? RenderState.TextureArray[Command.Quad.TextureHandle].TextureHandle : 0,
+                   Handle,
                    Projection, 
                    View);
     }
@@ -1509,7 +1510,7 @@ static void RenderModel(const render_command& Command, render_state& RenderState
             }
         }
         
-        shader Shader;
+        shader Shader = {};
         
         if(Command.Model.Type == Model_Skinned)
         {
