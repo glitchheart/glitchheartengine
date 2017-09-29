@@ -72,7 +72,7 @@ static void LoadLevel(game_state* GameState, level* Level, const char* FilePath)
         
         Assert(Height > 0 && Width > 0);
         
-        i32 IndexHeight = 0;
+        i32 IndexHeight = Height;
         char Line[1024];
         
         InitGrid(&GameState->WorldArena, Level, Height, Width);
@@ -92,55 +92,52 @@ static void LoadLevel(game_state* GameState, level* Level, const char* FilePath)
         End.Rank = 0;
         End.TextureName = 0;
         
-        
-        while(IndexHeight < Height)
+        while(IndexHeight > 0)
         {
             fgets(Line, sizeof(Line), File);
-            char* Ptr = &Line[0];
+            DEBUG_PRINT("Line %s\n", Line);
+            
+            char* S = Line;
             
             for(i32 IndexWidth = 0; IndexWidth < Width; IndexWidth++)
             {
+                auto Tok = StrSep(&S, " ");
+                DEBUG_PRINT("Tok: %s\n", Tok);
                 i32 Rank = 0;
                 Suit_Type Suit = Suit_None;
                 i32 Offset = 0;
                 b32 Card = false;
-                auto Tok = strtok(Ptr, " ");
-                if(strcmp(Tok, "B1") == 0)
+                
+                if(strncmp(Tok, "B1", 2) == 0)
                 {
-                    DEBUG_PRINT("B1\n");
                     Suit = Suit_B1;
                     Offset = 0;
                     Card = true;
                 }
-                else if(strcmp(Tok, "B2") == 0)
+                else if(strncmp(Tok, "B2", 2) == 0)
                 {
-                    DEBUG_PRINT("B2\n");
                     Suit = Suit_B2;
                     Offset = 13;
                     Card = true;
                 }
-                else if(strcmp(Tok, "R1") == 0)
+                else if(strncmp(Tok, "R1", 2) == 0)
                 {
-                    DEBUG_PRINT("R1\n");
                     Suit = Suit_R1;
                     Offset = 26;
                     Card = true;
                 }
-                else if(strcmp(Tok, "R2") == 0)
+                else if(strncmp(Tok, "R2", 2) == 0)
                 {
-                    DEBUG_PRINT("R2\n");
                     Suit = Suit_R2;
                     Offset = 39;
                     Card = true;
                 }
-                else if(strcmp(Tok, "E") == 0)
+                else if(strncmp(Tok, "E", 1) == 0)
                 {
-                    DEBUG_PRINT("END\n");
                     Suit = Suit_End;
                 }
-                else if(strcmp(Tok, "S") == 0)
+                else if(strncmp(Tok, "S", 1) == 0)
                 {
-                    DEBUG_PRINT("START\n");
                     Suit = Suit_Start;
                 }
                 else
@@ -150,10 +147,9 @@ static void LoadLevel(game_state* GameState, level* Level, const char* FilePath)
                 
                 if(Card)
                 {
-                    Rank = (i32)strtol(Ptr, &Ptr, 10);
-                    DEBUG_PRINT("Ptr: %s\n", Ptr);
-                    DEBUG_PRINT("Tok: %s\n", Tok);
-                    Level->Grid.Grid[IndexHeight][IndexWidth].Card = GameState->Cards[Offset + Rank];
+                    Tok = StrSep(&S, " ");
+                    Rank = (i32)atoi(Tok);
+                    Level->Grid.Grid[IndexWidth][IndexHeight - 1].Card = GameState->Cards[Offset + Rank - 1];
                 }
                 else
                 {
@@ -161,37 +157,30 @@ static void LoadLevel(game_state* GameState, level* Level, const char* FilePath)
                     {
                         case Suit_End:
                         {
-                            Level->Grid.Grid[IndexHeight][IndexWidth].Card = End;
+                            DEBUG_PRINT("End: %d %d \n", IndexWidth, IndexHeight - 1);
+                            Level->Grid.Grid[IndexWidth][IndexHeight - 1].Card = End;
                         }
                         break;
                         case Suit_Start:
                         {
-                            Level->Grid.Grid[IndexHeight][IndexWidth].Card = Start;
+                            Level->Grid.Grid[IndexWidth][IndexHeight - 1].Card = Start;
                         }
                         break;
                         case Suit_None:
                         {
-                            Level->Grid.Grid[IndexHeight][IndexWidth].Card = Unwalkable;
+                            Level->Grid.Grid[IndexWidth][IndexHeight - 1].Card = Unwalkable;
                         }
                         break;
                     }
                 }
             }
-            IndexHeight++;
+            IndexHeight--;
         }
         
         fclose(File);
         
         Level->Won = false;
         Level->CurrentScore = 0;
-        /*
-        Level->Grid.Grid[0][2].Card = GameState->Cards[0];
-        Level->Grid.Grid[0][1].Card = GameState->Cards[1];
-        Level->Grid.Grid[1][1].Card = GameState->Cards[2];
-        Level->Grid.Grid[1][2].Card = GameState->Cards[3];
-        Level->Grid.Grid[0][0].Card = Start;
-        Level->Grid.Grid[2][2].Card = End;
-        */
     }
 }
 
