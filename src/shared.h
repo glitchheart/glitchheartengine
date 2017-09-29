@@ -4,6 +4,25 @@
 #include "memory.h"
 #include "rendering.h"
 
+inline char* StrSep(char** S, const char* Delim)
+{
+    char* Start = *S;
+    char* P;
+    
+    P = (Start != NULL) ? strpbrk(Start, Delim) : NULL;
+    
+    if(P == NULL)
+    {
+        *S = NULL;
+    }
+    else
+    {
+        *P = '\0';
+        *S = P + 1;
+    }
+    return Start;
+}
+
 inline char* Concat(const char *s1, const char *s2, memory_arena* Arena = 0)
 {
     char* result;
