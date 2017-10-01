@@ -23,7 +23,6 @@ static entity* AddEntity(game_state* GameState, renderer& Renderer, EType Type, 
     return Entity;
 }
 
-
 static void InitGrid(memory_arena* WorldArena, level* Level, i32 X, i32 Y)
 {
     auto& Grid = Level->Grid;
@@ -51,7 +50,6 @@ static void InitGrid(memory_arena* WorldArena, level* Level, i32 X, i32 Y)
     }
 }
 
-
 static void LoadLevel(game_state* GameState, level* Level, const char* FilePath)
 {
     FILE* File;
@@ -72,14 +70,14 @@ static void LoadLevel(game_state* GameState, level* Level, const char* FilePath)
         i32 Width = 0;
         
         if(fgets(LineBuffer, 255, File))
-            sscanf(LineBuffer, "x %d y %d", &Height, &Width);
+            sscanf(LineBuffer, "x %d y %d", &Width, &Height);
         
         Assert(Height > 0 && Width > 0);
         
         i32 IndexHeight = Height;
         char Line[1024];
         
-        InitGrid(&GameState->WorldArena, Level, Height, Width);
+        InitGrid(&GameState->WorldArena, Level, Width, Height);
         
         card Unwalkable;
         Unwalkable.Type = Suit_None;
@@ -165,6 +163,7 @@ static void LoadLevel(game_state* GameState, level* Level, const char* FilePath)
                         case Suit_Start:
                         {
                             Level->Grid.Grid[IndexWidth][IndexHeight - 1].Card = Start;
+                            Level->StartTile = math::v2i(IndexWidth, IndexHeight - 1);
                         }
                         break;
                         case Suit_None:
@@ -188,7 +187,7 @@ static void LoadLevel(game_state* GameState, level* Level, const char* FilePath)
 static void LoadLevels(const char* FilePath, game_state* GameState)
 {
     directory_data DirData = {};
-    Platform.GetAllFilesWithExtension(FilePath, "clv", &DirData, false);
+    Platform.GetAllFilesWithExtension(FilePath, "clv", &DirData, true);
     
     for(i32 FileIndex = 0; FileIndex < DirData.FilesLength; FileIndex++)
     {
@@ -268,8 +267,19 @@ static void InitializeCards(game_state* GameState)
 static void InitializeLevel(game_state* GameState, entity* Player, i32 Level)
 {
     GameState->CurrentLevel = Level;
+    auto& L = GameState->Levels[GameState->CurrentLevel];
+    for(i32 I = 0; I < L.Grid.Size.x; I++)
+    {
+        for(i32 J = 0; J < L.Grid.Size.y; J++)
+        {
+            L.Grid.Grid[I][J].Walked = false;
+        }
+    }
     
-    Player->Position = math::v3(0.0f, 0.0f, 0.0f) / GameState->Levels[GameState->CurrentLevel].Grid.TileScale;
+    L.CurrentScore = 0;
+    L.Won = false;
+    
+    Player->Position = math::v3(L.StartTile.x * L.Grid.TileScale, L.StartTile.y * L.Grid.TileScale, 0.0f);
 }
 
 extern "C" UPDATE(Update)
@@ -302,10 +312,7 @@ extern "C" UPDATE(Update)
         Renderer.Cameras[Renderer.CurrentCameraHandle].ViewportHeight = Renderer.WindowHeight;
         Renderer.Cameras[Renderer.CurrentCameraHandle].Position = math::v3(5.0f, 5.0f, 0);
         
-        sounds Sounds = {};
-        //@Incomplete: Get actual sizes, this is retarded
-        memcpy(&GameState->Sounds.SoundEffects, SoundEffects, sizeof(sound_effect) * (64 + 32));
-        
+        LoadSounds(SoundCommands, Concat(CARDS_ASSETS, "sounds/"));
         LoadTextures(Renderer, &Renderer.TextureArena, Concat(CARDS_ASSETS, "textures/"));
         
         InitializeCards(GameState);
@@ -328,10 +335,6 @@ extern "C" UPDATE(Update)
     auto Grid = GameState->Levels[GameState->CurrentLevel].Grid;
     
     PushFilledQuad(Renderer, math::v3() - Grid.Size.x * Grid.TileScale * 0.5f, math::v3(2.0f * Grid.Size.x * Grid.TileScale, 2.0f * Grid.Size.y * Grid.TileScale, 0.0f), math::v3(), GameState->Levels[GameState->CurrentLevel].BackgroundColor, 0, false);
-    
-    auto* B = Renderer.TextureMap["border"];
-    auto* N = Renderer.TextureMap["none"];
-    auto* C = Renderer.TextureMap["card_r1_9"];
     
     for(i32 I = 0; I < Grid.Size.x; I++)
     {
@@ -374,19 +377,42 @@ extern "C" UPDATE(Update)
                         C = math::rgba(0.0f, 1.0f, 1.0f, 0.2f);
                         PushFilledQuad(Renderer, TilePos, math::v3(Grid.TileScale, Grid.TileScale, 1.0f), math::v3(), C, 0, false);
                     }
-                    
-                    
                 }
                 break;
-                
             }
             PushFilledQuad(Renderer, TilePos, math::v3(Grid.TileScale, Grid.TileScale, 1.0f), math::v3(), math::rgba(1.0f, 1.0f, 1.0f, 1.0f), "border", false);
-            
-            
         }
-    } 
+    }
     
-    PushText(Renderer, ToString(GameState->Levels[GameState->CurrentLevel].TargetScore), math::v3(Renderer.ViewportWidth / 2.0f - 20.0f, Renderer.ViewportHeight / 2.0f + 100.0f, 0.0f), Font_Inconsolata, math::rgba(1.0f, 1.0f, 1.0f, 1.0f), Alignment_Center);
+    PushText(Renderer, ToString(GameState->Levels[GameState->CurrentLevel].TargetScore), math::v3(Renderer.ViewportWidth / 2.0f - 20.0f, Renderer.ViewportHeight / 2.0f + 300.0f , 0.0f), Font_Inconsolata, math::rgba(1.0f, 1.0f, 1.0f, 1.0f), Alignment_Center);
+    
+    PushText(Renderer, "W", math::v3(Renderer.ViewportWidth / 2.0f - 20.0f, 70.0f, 0.0f), Font_Inconsolata, math::rgba(1.0f, 1.0f, 1.0f, 1.0f), Alignment_Center);
+    
+    PushText(Renderer, "A", math::v3(Renderer.ViewportWidth / 2.0f - 40.0f, 52.0f, 0.0f), Font_Inconsolata, math::rgba(1.0f, 1.0f, 1.0f, 1.0f), Alignment_Center);
+    
+    PushText(Renderer, "S", math::v3(Renderer.ViewportWidth / 2.0f - 20.0f, 50.0f, 0.0f), Font_Inconsolata, math::rgba(1.0f, 1.0f, 1.0f, 1.0f), Alignment_Center);
+    
+    PushText(Renderer, "D", math::v3(Renderer.ViewportWidth / 2.0f + 0.0f, 50.0f, 0.0f), 
+             Font_Inconsolata, math::rgba(1.0f, 1.0f, 1.0f, 1.0f), Alignment_Center);
+    
+    
+    PushText(Renderer, "End", math::v3(250.0f, 140.0f, 0.0f), Font_Inconsolata, math::rgba(1.0f, 1.0f, 1.0f, 1.0f), Alignment_Center);
+    
+    PushFilledQuad(Renderer, math::v3(150.0f, 120.0f, 0.0f), math::v3(50.0f), math::v3(), math::rgba(1.0f, 1.0f, 1.0f, 1.0f), "end");
+    
+    PushText(Renderer, "Start", math::v3(250.0f, 220.0f, 0.0f), Font_Inconsolata, math::rgba(1.0f, 1.0f, 1.0f, 1.0f), Alignment_Center);
+    
+    PushFilledQuad(Renderer, math::v3(150.0f, 200.0f, 0.0f), math::v3(50.0f), math::v3(), math::rgba(1.0f, 1.0f, 1.0f, 1.0f), "start");
+    
+    
+    PushText(Renderer, "Press ENTER when you think you are done", math::v3(230.0f, 100.0f, 0.0f), Font_Inconsolata, math::rgba(1.0f, 1.0f, 1.0f, 1.0f), Alignment_Center);
+    
+    
+    PushText(Renderer, "Press R to restart this level", math::v3(230.0f, 300.0f, 0.0f), Font_Inconsolata, math::rgba(1.0f, 1.0f, 1.0f, 1.0f), Alignment_Center);
+    
+    
+    PushText(Renderer, "Press END to restart all levels", math::v3(230.0f, 400.0f, 0.0f), Font_Inconsolata, math::rgba(1.0f, 1.0f, 1.0f, 1.0f), Alignment_Center);
+    
     
     FOR_ENT(Index)
     {
@@ -432,14 +458,12 @@ extern "C" UPDATE(Update)
                     [(i32)(Entity->Position.x + Entity->Velocity.x * Grid.TileScale) / (i32)Grid.TileScale]
                     [(i32)(Entity->Position.y + Entity->Velocity.y * Grid.TileScale) / (i32)Grid.TileScale];
                 
-                if(NextTile.Card.Type != Suit_None)
+                if(NextTile.Card.Type != Suit_None && !NextTile.Walked)
                 {
                     Entity->Position += Entity->Velocity * Grid.TileScale;
                     StartTimer(GameState, Player->MoveTimer);
                 }
             }
-            
-            PushText(Renderer, ToString(GameState->Timers[Player->MoveTimer.TimerHandle]), math::v3(50.0f, 50.0f, 0.0f), Font_Inconsolata, math::rgba(1.0f, 1.0f, 1.0f, 1.0f));
             
             auto& CurrentTile = Grid.Grid[(i32)Entity->Position.x / (i32)Grid.TileScale][(i32)Entity->Position.y / (i32)Grid.TileScale];
             
@@ -480,7 +504,7 @@ extern "C" UPDATE(Update)
                         break;
                     }
                 }
-                DEBUG_PRINT("Current Score: %d\n", Level.CurrentScore);
+                //DEBUG_PRINT("Current Score: %d\n", Level.CurrentScore);
             }
             
             
@@ -489,6 +513,11 @@ extern "C" UPDATE(Update)
             PushFilledQuad(Renderer, Entity->Position, Entity->Scale, math::v3(), math::rgba(1.0f, 0.0f, 0.0f, 1.0f), "player", false);
             
             if(KEY_DOWN(Key_R))
+            {
+                InitializeLevel(GameState, Entity, GameState->CurrentLevel);
+            }
+            
+            if(KEY_DOWN(Key_End))
             {
                 InitializeLevel(GameState, Entity, 0);
             }

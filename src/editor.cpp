@@ -415,7 +415,7 @@ static void EditorUpdateEntities(game_state* GameState, renderer& Renderer, inpu
                    Renderer.WindowHeight - InputController->MouseY >= Button->ScreenPosition.y && Renderer.WindowHeight - InputController->MouseY <= Button->ScreenPosition.y + Button->Size.y)
                 {
                     Button->Clicked = true;
-                    PLAY_SOUND(ButtonClick);
+                    PLAY_SOUND("ButtonClick");
                     
                     StartTimer(GameState, Button->ClickAnimationTimer);
                     

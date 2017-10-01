@@ -12,9 +12,7 @@ char* ToString(sound_effect Sound)
     return Result;
 }
 
-
 GENERIC_MAP(source_to_sound, sound_effect, i32, CmpInt, -1, "%d", INT_ASSIGN, VAL_COPY);
-struct sound_effect;
 
 struct sound_device
 {
@@ -34,6 +32,9 @@ struct sound_device
     r32 SFXVolume;
     r32 MusicVolume;
     source_to_sound_map SourceToSound;
+    
+    i32 SoundIndex;
+    u32 SoundArray[SOUNDS];
 };
 
 struct RIFF_header

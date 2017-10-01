@@ -281,6 +281,7 @@ extern "C" UPDATE(Update)
         //GameState->Models[GameState->ModelCount - 1].Scale = math::v3(1.0f);
         
         LoadTextures(Renderer, &GameState->TotalArena);
+        LoadSounds(SoundCommands, "../assets/audio/");
         GameState->SelectedModel = -1;
         
         collision_volume C1 = {};
@@ -345,9 +346,6 @@ extern "C" UPDATE(Update)
             GameState->EditorState.IsInCreateWaypointMode = false;
             GameState->EditorState.SelectedAnimation = 0;
             
-            sounds Sounds = {};
-            //@Incomplete: Get actual sizes, this is retarded
-            memcpy(&GameState->Sounds.SoundEffects, SoundEffects, sizeof(sound_effect) * (64 + 32));
             
             LoadGameDataFile(GameState);
             srand((u32)time(NULL));
@@ -364,7 +362,7 @@ extern "C" UPDATE(Update)
             GameState->GameMode = Mode_InGame;
             GameState->ShouldReload = false;
             GameMemory->ShouldReload = false;
-            PLAY_TRACK(Brugt);
+            PLAY_TRACK("Brugt");
             
             Renderer.ClearColor = math::rgba(0.2f, 0.2f, 0.2f, 1.0f);
             Renderer.LineWidth = 1.0f;

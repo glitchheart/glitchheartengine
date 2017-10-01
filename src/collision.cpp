@@ -426,11 +426,7 @@ static void CheckCollision(game_state* GameState, entity* Entity, collision_info
                 }
                 
                 collision_AABB Md;
-                //if(Entity->Type == Entity_Enemy && OtherEntity->Type == Entity_Enemy)
-                //{
-                //MinkowskiDifference(&OtherEntity->Enemy.EnemyCollider, &Entity->Enemy.EnemyCollider, &Md);
-                //}
-                //else
+                
                 MinkowskiDifference(&OtherEntity->CollisionAABB, &Entity->CollisionAABB, &Md);
                 
                 if(Md.Min.x <= 0 &&

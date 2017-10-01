@@ -355,10 +355,9 @@ int main(int Argc, char** Args)
     
     sound_commands SoundCommands = {};
     
-    sound_effects SoundEffects = {};
     if (SoundDevice.IsInitialized)
     {
-        LoadSounds(&SoundEffects, &SoundDevice);
+        //LoadSounds(&SoundEffects, &SoundDevice);
         ResetCommands(&SoundCommands);
         SoundCommands.SFXVolume = ConfigData.SFXVolume;
         SoundCommands.MusicVolume = ConfigData.MusicVolume;
@@ -406,7 +405,7 @@ int main(int Argc, char** Args)
         ReloadDlls(&Game, DllPath, TempDllPath);
         
         game_update_return GameUpdateStruct = {};
-        Game.Update(DeltaTime, &GameMemory, Renderer, &InputController, &SoundCommands, &GameUpdateStruct, &SoundEffects);
+        Game.Update(DeltaTime, &GameMemory, Renderer, &InputController, &SoundCommands, &GameUpdateStruct);
         
         
         Render(RenderState, Renderer, &Win32State->PermArena);

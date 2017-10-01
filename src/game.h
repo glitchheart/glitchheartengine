@@ -119,7 +119,7 @@ struct game_state
     i32 PlayerIndex;
     char * LevelPath;
     level CurrentLevel;
-    sound_effects Sounds;
+    
     
     i32 PlayerModel;
     i32 SelectedModel;

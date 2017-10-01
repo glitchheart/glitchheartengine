@@ -1,4 +1,4 @@
-static void LoadWavFile(const char *Filename, sound_effect *LoadedSound)
+static void LoadWavFile(const char *Filename, u32 *SoundBuffer)
 {
     FILE *SoundFile = 0;
     wave_format WaveFormat;
@@ -82,8 +82,8 @@ static void LoadWavFile(const char *Filename, sound_effect *LoadedSound)
             }
         }
         
-        alGenBuffers(1, &LoadedSound->Buffer);
-        alBufferData(LoadedSound->Buffer, Format, (void*)Data, Size, Frequency);
+        alGenBuffers(1, SoundBuffer);
+        alBufferData(*SoundBuffer, Format, (void*)Data, Size, Frequency);
         
         fclose(SoundFile);
     }
@@ -141,49 +141,25 @@ static void InitAudio(sound_device *SoundDevice)
     source_to_sound_Map_Init(&SoundDevice->SourceToSound, HashInt, 32);
 }
 
-static inline void LoadSound(const char *filename, sound_effect *LoadedSound, sound_device* SoundDevice, char* Name = "")
+static void LoadSound(const char *FilePath, sound_device* SoundDevice, u32* BufferHandle, char* Name = "")
 {
-    LoadWavFile(filename, LoadedSound);
-    LoadedSound->SoundInfo.Pitch = 1.0f;
-    LoadedSound->SoundInfo.Position[0] = 0.0f;
-    LoadedSound->SoundInfo.Position[1] = 0.0f;
-    LoadedSound->SoundInfo.Position[2] = 0.0f;
-    LoadedSound->SoundInfo.Rolloff = 0.0;
-    LoadedSound->SoundInfo.Loop = false;
-    LoadedSound->SoundInfo.EntityHandle = -1;
-    LoadedSound->SoundInfo.Gain = 0.0f;
-    LoadedSound->SoundInfo.Name = Name;
-    SoundDevice->Buffers[SoundDevice->BufferCount++] = LoadedSound->Buffer;
+    LoadWavFile(FilePath, BufferHandle);
+    SoundDevice->Buffers[SoundDevice->BufferCount++] = *BufferHandle;
 }
 
-static inline void LoadSounds(sound_effects* SoundEffects, sound_device* SoundDevice)
+static inline void LoadSounds(sound_device* SoundDevice, sound_commands* Commands)
 {
-    LoadSound("../assets/audio/Countdown_1.wav", &SoundEffects->Effect01,SoundDevice);
-    LoadSound("../assets/audio/mainmenu.wav", &SoundEffects->MainMenuTrack,SoundDevice);
-    LoadSound("../assets/audio/sword_slash_01.wav", &SoundEffects->SwordSlash01,SoundDevice);
-    LoadSound("../assets/audio/sword_hit_01.wav",  &SoundEffects->SwordHit01,SoundDevice);
-    LoadSound("../assets/audio/sword_hit_02.wav",  &SoundEffects->SwordHit02, SoundDevice);
-    LoadSound("../assets/audio/dash.wav", &SoundEffects->Dash,SoundDevice);
-    LoadSound("../assets/audio/explosion.wav", &SoundEffects->Explosion, SoundDevice);
-    LoadSound("../assets/audio/ui/button_click.wav", &SoundEffects->ButtonClick, SoundDevice);
-    LoadSound("../assets/audio/barrel_break.wav", &SoundEffects->BarrelBreak, SoundDevice);
-    LoadSound("../assets/audio/throw.wav", &SoundEffects->Throw, SoundDevice);
-    LoadSound("../assets/audio/slide_1.wav", &SoundEffects->Slide01, SoundDevice);
-    LoadSound("../assets/audio/use_health.wav", &SoundEffects->UseHealth, SoundDevice);
-    
-    LoadSound("../assets/audio/enemies/minotaur/minotaur_grunt01.wav", &SoundEffects->MinotaurGrunt01, SoundDevice);
-    LoadSound("../assets/audio/enemies/minotaur/minotaur_grunt02.wav",  &SoundEffects->MinotaurGrunt02, SoundDevice);
-    LoadSound("../assets/audio/enemies/minotaur/minotaur_hit.wav", &SoundEffects->MinotaurHit, SoundDevice);
-    LoadSound("../assets/audio/enemies/minotaur/minotaur_death.wav", &SoundEffects->MinotaurDeath, SoundDevice);
-    LoadSound("../assets/audio/enemies/minotaur/stomp.wav", &SoundEffects->MinotaurStomp, SoundDevice);
-    LoadSound("../assets/audio/enemies/shield_impact.wav", &SoundEffects->ShieldImpact, SoundDevice);
-    LoadSound("../assets/audio/splash_01.wav", &SoundEffects->Splash01, SoundDevice);
-    
-    LoadSound("../assets/audio/bonfire.wav", &SoundEffects->Bonfire, SoundDevice);
-    
-    LoadSound("../assets/audio/music/Brugt.wav", &SoundEffects->Brugt, SoundDevice,"Brugt");
-    
-    // // Add more sounds here if necessary
+    if(Commands->LoadSounds)
+    {
+        auto DirData = Commands->SoundsToLoad;
+        
+        for(i32 FileIndex = 0; FileIndex < DirData.FilesLength; FileIndex++)
+        {
+            LoadSound(DirData.FilePaths[FileIndex], SoundDevice, &SoundDevice->SoundArray[Commands->SoundMap[DirData.FileNames[FileIndex]]], DirData.FileNames[FileIndex]);
+        }
+        
+        Commands->LoadSounds = false;
+    }
 }
 
 static inline void CleanupSound(sound_device* SoundDevice)
@@ -223,7 +199,7 @@ static inline void PlaySound(sound_effect *SoundEffect, sound_device* Device, so
         alSourcef(Source,AL_MAX_DISTANCE,1.0);
         alSourcef(Source,AL_REFERENCE_DISTANCE,1.0);
         alSourcef(Source, AL_ROLLOFF_FACTOR, 1.0f);
-        alSourcei(Source, AL_BUFFER, SoundEffect->Buffer);
+        alSourcei(Source, AL_BUFFER, Device->SoundArray[SoundEffect->Buffer]);
         alSourcef(Source, AL_PITCH, SoundEffect->SoundInfo.Pitch);
         alSourcef(Source, AL_GAIN, Commands->Muted ? 0 : SoundEffect->SoundInfo.Gain);
         alSource3f(Source, AL_POSITION, SoundEffect->SoundInfo.Position[0], SoundEffect->SoundInfo.Position[1], SoundEffect->SoundInfo.Position[2]);
@@ -261,7 +237,7 @@ static inline void PauseSound(sound_device* SoundDevice, sound_commands* Command
         }
         else
         {
-            alSourcei(SoundDevice->Sources[SourceIndex],AL_BUFFER,0);
+            alSourcei(SoundDevice->Sources[SourceIndex], AL_BUFFER,0);
         }
         if(!Commands->Muted)
         {
@@ -272,84 +248,89 @@ static inline void PauseSound(sound_device* SoundDevice, sound_commands* Command
 
 static void PlaySounds(sound_device* Device, sound_commands* Commands, math::v3* EntityPositions, i32 EntityCount)
 {
-    if(Commands->Muted && !Device->PrevMuted)
+    if(Device && Commands)
     {
-        Device->PrevMuted = true;
-        for(u32 SourceIndex = 0; SourceIndex < SOURCES; SourceIndex++)
+        LoadSounds(Device, Commands);
+        
+        if(Commands->Muted && !Device->PrevMuted)
         {
-            alSourcef(Device->Sources[SourceIndex], AL_GAIN, 0);
-        }
-    }
-    else if(!Commands->Muted && Device->PrevMuted)
-    {
-        Device->PrevMuted = false;
-        for(u32 SourceIndex = 0; SourceIndex < SOURCES; SourceIndex++)
-        {
-            alSourcef(Device->Sources[SourceIndex],AL_GAIN,Device->SourceGain[SourceIndex]);
-        }
-    }
-    
-    
-    if(Commands->Stopped && !Device->PrevStopped)
-    {
-        Device->PrevStopped = true;
-        StopSound(Device, Commands);
-        ResetCommands(Commands);
-    }
-    else
-    {
-        Device->PrevStopped = false;
-        for (i32 Sound = 0;
-             Sound < Commands->SoundCount;
-             Sound++)
-        {
-            auto SoundEffect = (sound_effect*)&Commands->SoundArena.CurrentBlock->Base[Sound];
-            PlaySound(SoundEffect, Device, Commands);
-        }
-        ResetCommands(Commands);
-    }
-    
-    if(Commands->Paused && !Device->PrevPaused)
-    {
-        Device->PrevPaused = true;
-        PauseSound(Device, Commands);
-    }
-    else if(!Commands->Paused && Device->PrevPaused)
-    {
-        Device->PrevPaused = false;
-        alSourcePlayv(SOURCES,Device->Sources);
-    }
-    
-    if(!Commands->Muted && !Commands->Paused && !Commands->Stopped)
-    {
-        for(i32 SourceIndex = 0; SourceIndex < SOURCES; SourceIndex++)
-        {
-            auto Source = Device->Sources[SourceIndex];
-            ALint SourceState;
-            alGetSourcei(Source,AL_SOURCE_STATE,&SourceState);
-            auto Sound = Device->SourceToSound[Source];
-            if(SourceState == AL_PLAYING)
+            Device->PrevMuted = true;
+            for(u32 SourceIndex = 0; SourceIndex < SOURCES; SourceIndex++)
             {
-                if(Sound.SoundInfo.Rolloff > 0)
+                alSourcef(Device->Sources[SourceIndex], AL_GAIN, 0);
+            }
+        }
+        else if(!Commands->Muted && Device->PrevMuted)
+        {
+            Device->PrevMuted = false;
+            for(u32 SourceIndex = 0; SourceIndex < SOURCES; SourceIndex++)
+            {
+                alSourcef(Device->Sources[SourceIndex],AL_GAIN,Device->SourceGain[SourceIndex]);
+            }
+        }
+        
+        
+        if(Commands->Stopped && !Device->PrevStopped)
+        {
+            Device->PrevStopped = true;
+            StopSound(Device, Commands);
+            ResetCommands(Commands);
+        }
+        else
+        {
+            Device->PrevStopped = false;
+            for (i32 Sound = 0;
+                 Sound < Commands->SoundCount;
+                 Sound++)
+            {
+                auto SoundEffect = (sound_effect*)&Commands->SoundArena.CurrentBlock->Base[Sound];
+                PlaySound(SoundEffect, Device, Commands);
+            }
+            ResetCommands(Commands);
+        }
+        
+        if(Commands->Paused && !Device->PrevPaused)
+        {
+            Device->PrevPaused = true;
+            PauseSound(Device, Commands);
+        }
+        else if(!Commands->Paused && Device->PrevPaused)
+        {
+            Device->PrevPaused = false;
+            alSourcePlayv(SOURCES,Device->Sources);
+        }
+        
+        if(!Commands->Muted && !Commands->Paused && !Commands->Stopped)
+        {
+            for(i32 SourceIndex = 0; SourceIndex < SOURCES; SourceIndex++)
+            {
+                auto Source = Device->Sources[SourceIndex];
+                ALint SourceState;
+                alGetSourcei(Source,AL_SOURCE_STATE,&SourceState);
+                auto Sound = Device->SourceToSound[Source];
+                if(SourceState == AL_PLAYING)
                 {
-                    //@Incomplete: Should do rolloff in game code...
-                    if(Sound.SoundInfo.EntityHandle != -1)
+                    if(Sound.SoundInfo.Rolloff > 0)
                     {
+                        //@Incomplete: Should do rolloff in game code...
+                        if(Sound.SoundInfo.EntityHandle != -1)
+                        {
+                            if(EntityPositions)
+                            {
+                                auto Position = EntityPositions[Sound.SoundInfo.EntityHandle];
+                                Device->SourceToSound[Source].SoundInfo.Position[0] = Position.x;
+                                Device->SourceToSound[Source].SoundInfo.Position[1] = Position.y;
+                            }
+                        }
+                        
                         if(EntityPositions)
                         {
-                            auto Position = EntityPositions[Sound.SoundInfo.EntityHandle];
-                            Device->SourceToSound[Source].SoundInfo.Position[0] = Position.x;
-                            Device->SourceToSound[Source].SoundInfo.Position[1] = Position.y;
+                            r32 DistanceToEntity = math::Distance(math::v3(Sound.SoundInfo.Position[0], Sound.SoundInfo.Position[1],
+                                                                           Sound.SoundInfo.Position[2]), math::v3(0,0,0));
+                            r32 VolFactor = 1.0f - (DistanceToEntity/Sound.SoundInfo.Rolloff);
+                            alSourcef(Device->Sources[SourceIndex],AL_GAIN,Max(0.0f,VolFactor) * Commands->SFXVolume);
+                            Device->SourceGain[SourceIndex] = Max(0.0f,VolFactor) * Commands->SFXVolume;
                         }
-                    }
-                    
-                    if(EntityPositions)
-                    {
-                        r32 DistanceToEntity = math::Distance(math::v3(Sound.SoundInfo.Position[0], Sound.SoundInfo.Position[1],
-                                                                       Sound.SoundInfo.Position[2]), math::v3(0,0,0));
-                        r32 VolFactor = 1.0f - (DistanceToEntity/Sound.SoundInfo.Rolloff);
-                        alSourcef(Device->Sources[SourceIndex],AL_GAIN,Max(0.0f,VolFactor) * Commands->SFXVolume);
-                        Device->SourceGain[SourceIndex] = Max(0.0f,VolFactor) * Commands->SFXVolume;
                     }
                 }
             }
