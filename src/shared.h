@@ -1,6 +1,7 @@
 #ifndef SHARED_H
 #define SHARED_H
 
+#include "gmap.h"
 #include "memory.h"
 #include "rendering.h"
 
@@ -58,6 +59,15 @@ inline char* ToString(r32 R)
 {
     char* Result = PushTempString(64);
     sprintf(Result, "%f", R);
+    return Result;
+}
+
+struct texture_data;
+
+char* ToString(texture_data* Data)
+{
+    char* Result = PushTempString(64);
+    sprintf(Result, "{Handle: %d, \n Name: %s, \n Width: %d, \n Height: %d,}", Data->Handle, Data->Name, Data->Width, Data->Height);
     return Result;
 }
 

@@ -62,8 +62,15 @@ using r64 = double;
 
 using umm = uintptr_t; // Casey uses this for sizes (why?)
 
+struct texture_data;
+
+inline char* ToString(i32 I);
+inline char* ToString(r64 R);
+inline char* ToString(r32 R);
+char* ToString(texture_data* Data);
+
 #include "math.h"
-#include "gmap.h"
+//#include "gmap.h"
 
 #include "modelformat.h"
 

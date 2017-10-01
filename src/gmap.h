@@ -21,8 +21,9 @@ enum Map_Status
 *  INVALID: The value that is seen as invalid (used in assertions)
 *  FORMAT:  The format identifer for printf
 *  ASSIGN:  The assignment macro. Strings need to be alloc'ed as an example
+*  COPY:    The copy operator/function for the value type
 */
-#define GENERIC_MAP(NAME, TYPE, KEYTYPE, COMPARE, INVALID, FORMAT, ASSIGN) \
+#define GENERIC_MAP(NAME, TYPE, KEYTYPE, COMPARE, INVALID, FORMAT, ASSIGN, COPY) \
 \
 using hash_function_ ## NAME = u64(*)(u64 Size, KEYTYPE Key);\
 struct hashed_pair_## NAME\
@@ -125,8 +126,11 @@ void Rehash(NAME ## _map* Map)\
     for(i32 I = 0; I < Map->KeyCount; I++)\
     {\
         auto Pair = Map->ScanPairs[I];\
-        auto Val = Map->HashedPairs[Pair.HashedKey].Val;\
-        Map->ScanPairs[I].Val = Val;\
+        /* If the following does not hold, then we need to add the value anyway, since this is the collision!*/\
+        if(COMPARE(Pair.Key, Map->HashedPairs[Pair.HashedKey].Key) == 0)\
+        {\
+            COPY(Map->ScanPairs[I].Val, Map->HashedPairs[Pair.HashedKey].Val, TYPE);\
+        }\
     }\
     Map->Count = Map->Count * 2;\
     DeallocateMemory(Map->HashedPairs);\
@@ -135,7 +139,7 @@ void Rehash(NAME ## _map* Map)\
     {\
         Assert(COMPARE(INVALID,Map->ScanPairs[I].Key) != 0);\
         auto NewHash = Map->Hash(Map->Count, Map->ScanPairs[I].Key);\
-        Map->HashedPairs[NewHash].Val = Map->ScanPairs[I].Val;\
+        COPY(Map->HashedPairs[NewHash].Val, Map->ScanPairs[I].Val, TYPE);\
         ASSIGN(Map->HashedPairs[NewHash].Key,Map->ScanPairs[I].Key);\
         Map->HashedPairs[NewHash].HashedKey = NewHash;\
         Map->ScanPairs[I].HashedKey = NewHash;\
@@ -167,7 +171,10 @@ i32 StrCmp(char* L, char* R)
 #define STR_ASSIGN(Dst,Src) Dst = (char*)AllocateMemory(sizeof(char) * (strlen(Src) + 1)); \
 strcpy(Dst,Src)
 #define INT_ASSIGN(Dst,Src) Dst = Src
+#define VAL_COPY(Dst, Src, TYPE) Dst = Src
 
-GENERIC_MAP(integer, i32, i32, CmpInt, -1, "%d", INT_ASSIGN)
+#define PTR_COPY(Dst, Src, TYPE) if(Dst) { *Dst = *Src; } else {Dst = (TYPE)AllocateMemory(sizeof(TYPE)); *Dst = *Src;}
+
+GENERIC_MAP(integer, i32, i32, CmpInt, -1, "%d", INT_ASSIGN, VAL_COPY)
 
 #endif

@@ -4,7 +4,16 @@
 #define SOURCES 64
 #define SOUNDS 64
 
-GENERIC_MAP(source_to_sound,sound_effect, i32, CmpInt, -1, "%d", INT_ASSIGN);
+
+char* ToString(sound_effect Sound)
+{
+    char* Result = PushTempString(64);
+    sprintf(Result, "{Buffer: %d, \n Source: %d, \n SourceState: %d}", Sound.Buffer, Sound.Source, Sound.SourceState);
+    return Result;
+}
+
+
+GENERIC_MAP(source_to_sound, sound_effect, i32, CmpInt, -1, "%d", INT_ASSIGN, VAL_COPY);
 struct sound_effect;
 
 struct sound_device
