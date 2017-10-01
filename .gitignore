@@ -4,6 +4,7 @@
 
 libgame.a
 build/
+.sln
 
 4ed.bat
 project.4coder
