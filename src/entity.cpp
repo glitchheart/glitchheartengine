@@ -69,7 +69,7 @@ void Hit(game_state* GameState, renderer& Renderer, sound_commands* SoundCommand
         {
             if(ByEntity->Type == Entity_Player)
             {
-                PLAY_SOUND(ShieldImpact);
+                PLAY_SOUND("ShieldImpact");
                 StartTimer(GameState, ByEntity->StaggerCooldownTimer);
             }
         }
@@ -84,11 +84,11 @@ void Hit(game_state* GameState, renderer& Renderer, sound_commands* SoundCommand
             
             if(ran == 0)
             {
-                PLAY_SOUND(Splash01, 0.95f);
+                PLAY_SOUND("Splash01", 0.95f);
             }
             else
             {
-                PLAY_SOUND(Splash01, 0.85f);
+                PLAY_SOUND("Splash01", 0.85f);
             }
             
             HitEntity->HitRecoilDirection = math::Normalize(HitEntity->Position - ByEntity->Position);
@@ -637,7 +637,7 @@ static void LoadBonfireData(game_state* GameState, sound_commands* SoundCommands
         if(Handle == -1)
         {
             Entity->Position = math::v3(Position.x, Position.y, Position.z);
-            PLAY_SOUND(Bonfire, 1.0f, Entity->Position.x, Entity->Position.z, 10.0f, true, Entity->EntityIndex);
+            PLAY_SOUND("Bonfire", 1.0f, Entity->Position.x, Entity->Position.z, 10.0f, true, Entity->EntityIndex);
         }
         
         fclose(File);

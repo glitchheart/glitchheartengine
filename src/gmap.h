@@ -47,8 +47,8 @@ struct NAME ## _map \
     TYPE& operator[](KEYTYPE Key) \
     { \
         Assert(this->Initialized);\
-        Assert(this->HashedPairs)\
-        Assert(this->ScanPairs)\
+        Assert(this->HashedPairs);\
+        Assert(this->ScanPairs);\
         Assert(COMPARE(INVALID,Key) != 0);\
         Assert(this->Hash);\
         auto HashV = this->Hash(this->Count, Key);\

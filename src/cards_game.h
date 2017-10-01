@@ -96,6 +96,8 @@ struct level
     i32 CurrentScore;
     i32 TargetScore;
     
+    math::v2i StartTile;
+    
     math::rgba BackgroundColor;
 };
 
@@ -121,8 +123,6 @@ struct game_state
     
     card Cards[CARDS];
     i32 CardCount;
-    
-    sound_effects Sounds;
 };
 
 #define FOR_ENT(Label) for(i32 Label = 0; Label < GameState->EntityCount; Label++) 

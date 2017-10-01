@@ -23,6 +23,14 @@
 #define Assert(Expression)
 #endif
 
+
+#if GLITCH_DEBUG
+#define Static_Assert(Expression)  int i = 1/(i32)Expression
+#else
+#define Static_Assert(Expression)
+#endif
+
+
 #define Min(A,B) ((A < B) ? (A) : (B))
 #define Max(A,B) ((A > B) ? (A) : (B))
 #define Abs(x) ((x) < 0 ? -(x) : (x))
@@ -171,7 +179,6 @@ struct game_memory
 
 struct input_controller;
 struct sound_commands;
-struct sound_effects;
 struct render_state;
 
 struct game_update_return
@@ -182,7 +189,7 @@ struct game_update_return
 
 struct renderer;
 
-#define UPDATE(name)void name(r64 DeltaTime, game_memory* GameMemory, renderer& Renderer, input_controller* InputController, sound_commands* SoundCommands, game_update_return* GameUpdateStruct, sound_effects* SoundEffects)
+#define UPDATE(name)void name(r64 DeltaTime, game_memory* GameMemory, renderer& Renderer, input_controller* InputController, sound_commands* SoundCommands, game_update_return* GameUpdateStruct)
 typedef UPDATE(update);
 UPDATE(UpdateStub)
 {

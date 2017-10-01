@@ -21,64 +21,24 @@ struct sound_effect
     sound_info SoundInfo;
 };
 
+GENERIC_MAP(sound_buffer, i32, char*, StrCmp,  NULL, "%s", STR_ASSIGN, VAL_COPY);
+
 struct sound_commands
 {
     i32 SoundCount;
     memory_arena SoundArena;
+    
+    directory_data SoundsToLoad;
+    b32 LoadSounds;
+    
+    i32 Sounds;
+    sound_buffer_map SoundMap;
     
     r32 SFXVolume;
     r32 MusicVolume;
     b32 Muted;
     b32 Paused;
     b32 Stopped;
-};
-
-struct sound_effects
-{
-    union 
-    {
-        sound_effect SoundEffects[64];
-        struct
-        {
-            sound_effect Effect01;
-            sound_effect SwordSlash01;
-            sound_effect SwordHit01;
-            sound_effect SwordHit02;
-            sound_effect Dash;
-            sound_effect Explosion;
-            sound_effect Throw;
-            sound_effect BarrelBreak;
-            sound_effect Slide01;
-            sound_effect ButtonClick;
-            sound_effect UseHealth;
-            
-            sound_effect ShieldImpact;
-            
-            sound_effect MinotaurGrunt01;
-            sound_effect MinotaurGrunt02;
-            sound_effect MinotaurHit;
-            sound_effect MinotaurDeath;
-            sound_effect MinotaurStomp;
-            sound_effect Splash01;
-            sound_effect Bonfire;
-        };
-    };
-    
-    union 
-    {
-        sound_effect MusicTracks[32];
-        struct
-        {
-            sound_effect Track01;
-            sound_effect MainMenuTrack;
-            sound_effect Brugt;
-        };
-    };
-};
-
-struct sounds
-{
-    sound_effects SoundEffects;
 };
 
 #endif
