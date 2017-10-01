@@ -410,7 +410,6 @@ extern "C" UPDATE(Update)
     
     PushText(Renderer, "Press R to restart this level", math::v3(230.0f, 300.0f, 0.0f), Font_Inconsolata, math::rgba(1.0f, 1.0f, 1.0f, 1.0f), Alignment_Center);
     
-    
     PushText(Renderer, "Press END to restart all levels", math::v3(230.0f, 400.0f, 0.0f), Font_Inconsolata, math::rgba(1.0f, 1.0f, 1.0f, 1.0f), Alignment_Center);
     
     
