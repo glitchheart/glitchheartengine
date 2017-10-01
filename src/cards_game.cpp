@@ -64,6 +64,10 @@ static void LoadLevel(game_state* GameState, level* Level, const char* FilePath)
         if(fgets(LineBuffer, 255, File))
             sscanf(LineBuffer, "goal %d", &Level->TargetScore);
         
+        if(fgets(LineBuffer, 255, File))
+            sscanf(LineBuffer, "bg %f %f %f", &Level->BackgroundColor.r, &Level->BackgroundColor.g, &Level->BackgroundColor.b);
+        Level->BackgroundColor.a = 1.0f;
+        
         i32 Height = 0;
         i32 Width = 0;
         
@@ -95,14 +99,12 @@ static void LoadLevel(game_state* GameState, level* Level, const char* FilePath)
         while(IndexHeight > 0)
         {
             fgets(Line, sizeof(Line), File);
-            DEBUG_PRINT("Line %s\n", Line);
             
             char* S = Line;
             
             for(i32 IndexWidth = 0; IndexWidth < Width; IndexWidth++)
             {
                 auto Tok = StrSep(&S, " ");
-                DEBUG_PRINT("Tok: %s\n", Tok);
                 i32 Rank = 0;
                 Suit_Type Suit = Suit_None;
                 i32 Offset = 0;
@@ -157,7 +159,6 @@ static void LoadLevel(game_state* GameState, level* Level, const char* FilePath)
                     {
                         case Suit_End:
                         {
-                            DEBUG_PRINT("End: %d %d \n", IndexWidth, IndexHeight - 1);
                             Level->Grid.Grid[IndexWidth][IndexHeight - 1].Card = End;
                         }
                         break;
@@ -182,6 +183,18 @@ static void LoadLevel(game_state* GameState, level* Level, const char* FilePath)
         Level->Won = false;
         Level->CurrentScore = 0;
     }
+}
+
+static void LoadLevels(const char* FilePath, game_state* GameState)
+{
+    directory_data DirData = {};
+    Platform.GetAllFilesWithExtension(FilePath, "clv", &DirData, false);
+    
+    for(i32 FileIndex = 0; FileIndex < DirData.FilesLength; FileIndex++)
+    {
+        LoadLevel(GameState, &GameState->Levels[GameState->LoadedLevels++], DirData.FilePaths[FileIndex]);
+    }
+    
 }
 
 static void AddCard(game_state* GameState, Suit_Type Type, char* TextureName, i32 Rank)
@@ -252,18 +265,11 @@ static void InitializeCards(game_state* GameState)
     AddCard(GameState, Suit_R2, "card_r2_13", 13);
 }
 
-static void InitializeLevel(game_state* GameState, entity* Player)
+static void InitializeLevel(game_state* GameState, entity* Player, i32 Level)
 {
-    level Level = {};
-    
-    Level.CurrentScore = 0;
-    Level.TargetScore = 2;
-    
     GameState->CurrentLevel = Level;
     
-    LoadLevel(GameState, &GameState->CurrentLevel, Concat(CARDS_ASSETS, "levels/level_01.clv"));
-    
-    Player->Position = math::v3(0.0f, 0.0f, 0.0f) / GameState->CurrentLevel.Grid.TileScale;
+    Player->Position = math::v3(0.0f, 0.0f, 0.0f) / GameState->Levels[GameState->CurrentLevel].Grid.TileScale;
 }
 
 extern "C" UPDATE(Update)
@@ -303,7 +309,8 @@ extern "C" UPDATE(Update)
         LoadTextures(Renderer, &Renderer.TextureArena, Concat(CARDS_ASSETS, "textures/"));
         
         InitializeCards(GameState);
-        InitializeLevel(GameState, Player);
+        LoadLevels(Concat(CARDS_ASSETS, "levels/"), GameState);
+        InitializeLevel(GameState, Player, 0);
         
         GameState->IsInitialized = true;
         GameMemory->IsInitialized = true;
@@ -318,9 +325,13 @@ extern "C" UPDATE(Update)
     
     DisableDepthTest(Renderer);
     
-    auto Grid = GameState->CurrentLevel.Grid;
+    auto Grid = GameState->Levels[GameState->CurrentLevel].Grid;
     
-    PushFilledQuad(Renderer, math::v3() - Grid.Size.x * Grid.TileScale * 0.5f, math::v3(2.0f * Grid.Size.x * Grid.TileScale, 2.0f * Grid.Size.y * Grid.TileScale, 0.0f), math::v3(), math::rgba(1.0f, 0.0f, 1.0f, 0.2f), 0, false);
+    PushFilledQuad(Renderer, math::v3() - Grid.Size.x * Grid.TileScale * 0.5f, math::v3(2.0f * Grid.Size.x * Grid.TileScale, 2.0f * Grid.Size.y * Grid.TileScale, 0.0f), math::v3(), GameState->Levels[GameState->CurrentLevel].BackgroundColor, 0, false);
+    
+    auto* B = Renderer.TextureMap["border"];
+    auto* N = Renderer.TextureMap["none"];
+    auto* C = Renderer.TextureMap["card_r1_9"];
     
     for(i32 I = 0; I < Grid.Size.x; I++)
     {
@@ -334,17 +345,17 @@ extern "C" UPDATE(Update)
             {
                 case Suit_Start:
                 {
-                    PushFilledQuad(Renderer, TilePos, math::v3(Grid.TileScale, Grid.TileScale, 1.0f), math::v3(), math::rgba(1.0f, 0.0f, 1.0f, 0.3f), 0, false);
+                    PushFilledQuad(Renderer, TilePos, math::v3(Grid.TileScale, Grid.TileScale, 1.0f), math::v3(), math::rgba(1.0f), "start", false);
                 }
                 break;
                 case Suit_End:
                 {
-                    PushFilledQuad(Renderer, TilePos, math::v3(Grid.TileScale, Grid.TileScale, 1.0f), math::v3(), math::rgba(1.0f, 0.0f, 0.0f, 0.3f), 0, false);
+                    PushFilledQuad(Renderer, TilePos, math::v3(Grid.TileScale, Grid.TileScale, 1.0f), math::v3(), math::rgba(1.0f), "end", false);
                 }
                 break;
                 case Suit_None:
                 {
-                    PushFilledQuad(Renderer, TilePos, math::v3(Grid.TileScale, Grid.TileScale, 1.0f), math::v3(), math::rgba(1.0f, 1.0f, 1.0f, 0.3f), 0, false);
+                    PushFilledQuad(Renderer, TilePos, math::v3(Grid.TileScale, Grid.TileScale, 1.0f), math::v3(), math::rgba(1.0f), "none", false);
                 }
                 break;
                 case Suit_B1:
@@ -364,16 +375,18 @@ extern "C" UPDATE(Update)
                         PushFilledQuad(Renderer, TilePos, math::v3(Grid.TileScale, Grid.TileScale, 1.0f), math::v3(), C, 0, false);
                     }
                     
-                    //PushFilledQuad(Renderer, TilePos, math::v3(Grid.TileScale, Grid.TileScale, 1.0f), math::v3(), math::rgba(1.0f, 1.0f, 1.0f, 1.0f), "border", false);
+                    
                 }
                 break;
+                
             }
+            PushFilledQuad(Renderer, TilePos, math::v3(Grid.TileScale, Grid.TileScale, 1.0f), math::v3(), math::rgba(1.0f, 1.0f, 1.0f, 1.0f), "border", false);
             
             
         }
     } 
     
-    PushText(Renderer, ToString(GameState->CurrentLevel.TargetScore), math::v3(Renderer.ViewportWidth / 2.0f - 20.0f, Renderer.ViewportHeight / 2.0f + 100.0f, 0.0f), Font_Inconsolata, math::rgba(1.0f, 1.0f, 1.0f, 1.0f), Alignment_Center);
+    PushText(Renderer, ToString(GameState->Levels[GameState->CurrentLevel].TargetScore), math::v3(Renderer.ViewportWidth / 2.0f - 20.0f, Renderer.ViewportHeight / 2.0f + 100.0f, 0.0f), Font_Inconsolata, math::rgba(1.0f, 1.0f, 1.0f, 1.0f), Alignment_Center);
     
     FOR_ENT(Index)
     {
@@ -432,7 +445,7 @@ extern "C" UPDATE(Update)
             
             auto PreviouslyWalked = CurrentTile.Walked;
             
-            auto& Level = GameState->CurrentLevel;
+            auto& Level = GameState->Levels[GameState->CurrentLevel];
             
             if(math::Length(Entity->Velocity) > 0.0f)
             {
@@ -475,7 +488,7 @@ extern "C" UPDATE(Update)
             
             if(KEY_DOWN(Key_R))
             {
-                InitializeLevel(GameState, Entity);
+                InitializeLevel(GameState, Entity, 0);
             }
             
             if(KEY_DOWN(Key_Enter))
@@ -492,6 +505,11 @@ extern "C" UPDATE(Update)
             {
                 PushText(Renderer, "YOU WON!!!", math::v3(Renderer.ViewportWidth / 2.0f - 20.0f, Renderer.ViewportHeight / 2.0f + 200.0f, 0.0f), Font_Inconsolata, math::rgba(1.0f, 1.0f, 1.0f, 1.0f));
                 
+                if(KEY_DOWN(Key_Enter))
+                {
+                    GameState->CurrentLevel++;
+                    InitializeLevel(GameState, Entity, Min(GameState->CurrentLevel, GameState->LoadedLevels - 1));
+                }
             }
         }
     }

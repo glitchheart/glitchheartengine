@@ -402,7 +402,7 @@ struct ui_render_info
     math::v4 Color = math::v4(1, 1, 1, 1);
 };
 
-GENERIC_MAP(texture_data, texture_data*, char*, StrCmp, NULL, "%s", STR_ASSIGN);
+GENERIC_MAP(texture_data, texture_data*, char*, StrCmp, NULL, "%s", STR_ASSIGN, PTR_COPY);
 
 struct buffer_data
 {

@@ -95,6 +95,8 @@ struct level
     b32 Won;
     i32 CurrentScore;
     i32 TargetScore;
+    
+    math::rgba BackgroundColor;
 };
 
 struct game_state
@@ -110,7 +112,8 @@ struct game_state
     r32 PrevMouseX;
     r32 PrevMouseY;
     
-    level CurrentLevel;
+    i32 CurrentLevel;
+    i32 LoadedLevels;
     level Levels[16];
     
     r64 Timers[NUM_TIMERS];
