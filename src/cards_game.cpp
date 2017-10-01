@@ -480,7 +480,9 @@ extern "C" UPDATE(Update)
                         break;
                     }
                 }
+                DEBUG_PRINT("Current Score: %d\n", Level.CurrentScore);
             }
+            
             
             //PushText(Renderer, ToString(Level.CurrentScore), math::v3(Renderer.ViewportWidth / 2.0f - 20.0f, Renderer.ViewportHeight / 2.0f + 200.0f, 0.0f), Font_Inconsolata, math::rgba(1.0f, 1.0f, 1.0f, 1.0f));
             
@@ -520,6 +522,14 @@ extern "C" UPDATE(Update)
     {
         GameMemory->ExitGame = true;
     }
+    
+    
+    if(KEY_DOWN(Key_Home))
+    {
+        DebugState->DebugMemory = !DebugState->DebugMemory;
+    }
+    
+    PushDebugRender(Renderer, DebugState, InputController);
     
     Renderer.ShowMouseCursor = true;
     

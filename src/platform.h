@@ -70,7 +70,6 @@ inline char* ToString(r32 R);
 char* ToString(texture_data* Data);
 
 #include "math.h"
-//#include "gmap.h"
 
 #include "modelformat.h"
 
