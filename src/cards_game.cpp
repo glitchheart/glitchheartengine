@@ -521,16 +521,6 @@ extern "C" UPDATE(Update)
                 InitializeLevel(GameState, Entity, 0);
             }
             
-            if(KEY_DOWN(Key_Enter))
-            {
-                if(Level.TargetScore == Level.CurrentScore)
-                {
-                    //InitializeLevel(GameState, Entity);
-                    Level.Won = true;
-                }
-                //@Incomplete: Check if level was solved here
-            }
-            
             if(Level.Won)
             {
                 PushText(Renderer, "YOU WON!!!", math::v3(Renderer.ViewportWidth / 2.0f - 20.0f, Renderer.ViewportHeight / 2.0f + 200.0f, 0.0f), Font_Inconsolata, math::rgba(1.0f, 1.0f, 1.0f, 1.0f));
@@ -541,6 +531,16 @@ extern "C" UPDATE(Update)
                     InitializeLevel(GameState, Entity, Min(GameState->CurrentLevel, GameState->LoadedLevels - 1));
                 }
             }
+            
+            if(KEY_DOWN(Key_Enter) && CurrentTile.Card.Type == Suit_End)
+            {
+                if(Level.TargetScore == Level.CurrentScore)
+                {
+                    Level.Won = true;
+                }
+            }
+            
+            
         }
     }
     
