@@ -24,6 +24,8 @@
 
 #include "main.h"
 
+#include "load_oal.cpp"
+
 platform_api Platform;
 
 #include "gmap.cpp"
@@ -67,6 +69,18 @@ static game_code LoadGameCode(char* DllPath, char* TempDllPath)
     }
     
     return Result;
+}
+
+struct dll
+{
+    HMODULE DLL;
+    
+    
+};
+
+static void LoadOpenAL(char* DLLPath)
+{
+    
 }
 
 static void UnloadGameCode(game_code *GameCode)
