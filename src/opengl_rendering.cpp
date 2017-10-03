@@ -729,6 +729,7 @@ static void RenderSetup(render_state *RenderState, memory_arena* PermArena)
     RenderState->StandardFontShader.Type = Shader_StandardFont;
     LoadShader(ShaderPaths[Shader_StandardFont], &RenderState->StandardFontShader, PermArena);
     
+    /*
     RenderState->RobotoFont = {};
     InitializeFreeTypeFont("../assets/fonts/roboto/Roboto-Regular.ttf", 20, RenderState->FTLibrary, &RenderState->RobotoFont, &RenderState->StandardFontShader);
     
@@ -739,6 +740,7 @@ static void RenderSetup(render_state *RenderState, memory_arena* PermArena)
     InitializeFreeTypeFont("../assets/fonts/inconsolata/Inconsolata-Regular.ttf", 40, RenderState->FTLibrary, &RenderState->MenuFont, &RenderState->StandardFontShader);
     InitializeFreeTypeFont("../assets/fonts/roboto/Roboto-Regular.ttf", 30, RenderState->FTLibrary, &RenderState->ButtonFont, &RenderState->StandardFontShader);
     InitializeFreeTypeFont("../assets/fonts/rubber-biscuit/RUBBBB__.ttf", 50, RenderState->FTLibrary, &RenderState->TitleFont, &RenderState->StandardFontShader);
+    */
     
     // Light sources
     RenderState->LightSourceShader.Type = Shader_LightSource;
@@ -1343,12 +1345,12 @@ static void RenderConsole(render_state& RenderState, console* Console)
     GLfloat AlphaValue = (r32)((sin(TimeValue * 4) / 2) + 0.5f);
     r32 Width;
     r32 Height;
-    MeasureText(RenderState.InconsolataFont, &Console->Buffer[0], &Width, &Height);
+    MeasureText(RenderState.Fonts[0], &Console->Buffer[0], &Width, &Height);
     
     //draw cursor
     RenderQuad(Render_Fill, RenderState, math::v4(AlphaValue, 1, AlphaValue, 1), math::v3(5 / 1920.0f * (r32)RenderState.WindowWidth + Width, RenderState.WindowHeight * 0.77f * PercentAnimated, 0.0f), math::v3(10, 20, 0.0f), math::v3());
     
-    RenderText(RenderState, RenderState.InconsolataFont, math::v4(0, 0.8, 0, 1),  &Console->Buffer[0],  5 / 1920.0f * (r32)RenderState.WindowWidth, (r32)RenderState.WindowHeight * 0.775f * PercentAnimated);
+    RenderText(RenderState, RenderState.Fonts[0], math::v4(0, 0.8, 0, 1),  &Console->Buffer[0],  5 / 1920.0f * (r32)RenderState.WindowWidth, (r32)RenderState.WindowHeight * 0.775f * PercentAnimated);
     
     math::v4 Color;
     
@@ -1359,7 +1361,7 @@ static void RenderConsole(render_state& RenderState, console* Console)
         else
             Color = math::v4(1, 1, 1, 1);
         
-        RenderText(RenderState, RenderState.InconsolataFont, Color, &Console->HistoryBuffer[Index][0], 5 / 1920.0f * (r32)RenderState.WindowWidth, (r32)RenderState.WindowHeight * 0.78f * PercentAnimated + (Index + 1) * 20 * PercentAnimated);
+        RenderText(RenderState, RenderState.Fonts[0], Color, &Console->HistoryBuffer[Index][0], 5 / 1920.0f * (r32)RenderState.WindowWidth, (r32)RenderState.WindowHeight * 0.78f * PercentAnimated + (Index + 1) * 20 * PercentAnimated);
     }
 }
 
@@ -1372,6 +1374,8 @@ static void RenderText(const render_command& Command, render_state& RenderState)
 {
     render_font RenderFont;
     
+    RenderFont = RenderState.Fonts[Command.Text.FontHandle];
+    /*
     switch(Command.Text.FontType)
     {
         case Font_Inconsolata:
@@ -1405,7 +1409,7 @@ static void RenderText(const render_command& Command, render_state& RenderState)
         }
         break;
     }
-    
+    */
     RenderText(RenderState, RenderFont, Command.Text.Color, Command.Text.Text, Command.Text.Position.x, Command.Text.Position.y, Command.Text.Alignment);
 }
 
@@ -1584,6 +1588,13 @@ static void RenderBuffer(const render_command& Command, render_state& RenderStat
     glBindVertexArray(0);
 }
 
+
+static void LoadFont(render_state& RenderState, char* Path, i32 Size, char* Name)
+{
+    InitializeFreeTypeFont(Path, Size, RenderState.FTLibrary, &RenderState.Fonts[RenderState.FontCount++], &RenderState.StandardFontShader);
+}
+
+
 static void RenderCommands(render_state& RenderState, renderer& Renderer, memory_arena* PermArena)
 {
     for(i32 Index = RenderState.BufferCount; Index < Renderer.BufferCount; Index++)
@@ -1599,6 +1610,13 @@ static void RenderCommands(render_state& RenderState, renderer& Renderer, memory
             RegisterBuffers(RenderState, Data.VertexBuffer, Data.VertexBufferSize, Data.IndexBuffer, Data.IndexBufferCount, Data.IndexBufferSize, Data.HasNormals, Data.HasUVs, Data.Skinned, Data.ExistingHandle);
             
         }
+    }
+    
+    for(i32 Index = RenderState.FontCount; Index < Renderer.FontCount; Index++)
+    {
+        font_data Data = Renderer.Fonts[Index];
+        
+        LoadFont(RenderState, Data.Path, Data.Size, Data.Name);
     }
     
     auto& Camera = Renderer.Cameras[Renderer.CurrentCameraHandle];

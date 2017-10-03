@@ -20,6 +20,13 @@ enum Font_Type
     Font_Count
 };
 
+struct font_data
+{
+    char* Path;
+    i32 Size;
+    char* Name;
+};
+
 struct spotlight
 {
     r32 Position[4];
@@ -267,6 +274,7 @@ struct render_command
             char Text[256];
             math::v3 Position;
             Font_Type FontType;
+            i32 FontHandle;
             math::rgba Color;
             Alignment Alignment;
         } Text;
@@ -470,8 +478,12 @@ struct renderer
     
     b32 ShowMouseCursor;
     
+    font_data Fonts[64];
+    i32 FontCount;
+    
     memory_arena TextureArena;
     memory_arena AnimationArena;
+    memory_arena FontArena;
 };
 
 #endif

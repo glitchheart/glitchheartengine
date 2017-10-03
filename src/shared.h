@@ -41,6 +41,25 @@ inline char* Concat(const char *s1, const char *s2, memory_arena* Arena = 0)
     return result;
 }
 
+
+inline char* FontPath(Font_Type Font)
+{
+    char* V = PushTempString(64);
+    switch(Font)
+    {
+        case Font_Inconsolata:
+        {
+            sprintf(V, "%s", "Inconsolata-Regular");
+        }
+        break;
+        case Font_Roboto:
+        {
+            sprintf(V, "%s", "Roboto");
+        }
+        break;
+    }
+}
+
 inline char* ToString(i32 I)
 {
     char* V = PushTempString(64);
