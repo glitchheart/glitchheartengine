@@ -319,6 +319,26 @@ extern "C" UPDATE(Update)
         LoadLevels(Concat(CARDS_ASSETS, "levels/"), GameState);
         InitializeLevel(GameState, Player, 0);
         
+        font_handle_Map_Init(&GameState->FontMap, HashStringJenkins, 64);
+        
+        GameState->FontMap["Inconsolata_12"] = LoadFont(Renderer, "../assets/fonts/inconsolata/Inconsolata-Bold.ttf", 12, "Inconsolata");
+        
+        GameState->FontMap["Inconsolata_14"] =LoadFont(Renderer, "../assets/fonts/inconsolata/Inconsolata-Bold.ttf", 14, "Inconsolata");
+        
+        GameState->FontMap["Inconsolata_16"] =LoadFont(Renderer, "../assets/fonts/inconsolata/Inconsolata-Bold.ttf", 16, "Inconsolata");
+        
+        GameState->FontMap["Inconsolata_18"] =LoadFont(Renderer, "../assets/fonts/inconsolata/Inconsolata-Bold.ttf", 18, "Inconsolata");
+        
+        GameState->FontMap["Inconsolata_20"] =LoadFont(Renderer, "../assets/fonts/inconsolata/Inconsolata-Bold.ttf", 20, "Inconsolata");
+        
+        GameState->FontMap["Inconsolata_24"] =LoadFont(Renderer, "../assets/fonts/inconsolata/Inconsolata-Bold.ttf", 24, "Inconsolata");
+        
+        GameState->FontMap["Inconsolata_28"] =LoadFont(Renderer, "../assets/fonts/inconsolata/Inconsolata-Bold.ttf", 28, "Inconsolata");
+        
+        GameState->FontMap["Inconsolata_32"] =LoadFont(Renderer, "../assets/fonts/inconsolata/Inconsolata-Bold.ttf", 32, "Inconsolata");
+        
+        GameState->FontMap["Inconsolata_36"] =LoadFont(Renderer, "../assets/fonts/inconsolata/Inconsolata-Bold.ttf", 36, "Inconsolata");
+        
         GameState->IsInitialized = true;
         GameMemory->IsInitialized = true;
     }
@@ -384,33 +404,33 @@ extern "C" UPDATE(Update)
         }
     }
     
-    PushText(Renderer, ToString(GameState->Levels[GameState->CurrentLevel].TargetScore), math::v3(Renderer.ViewportWidth / 2.0f - 20.0f, Renderer.ViewportHeight / 2.0f + 300.0f , 0.0f), Font_Inconsolata, math::rgba(1.0f, 1.0f, 1.0f, 1.0f), Alignment_Center);
+    PushText(Renderer, ToString(GameState->Levels[GameState->CurrentLevel].TargetScore), math::v3(Renderer.ViewportWidth / 2.0f - 10.0f, Renderer.ViewportHeight / 2.0f + 300.0f , 0.0f), GameState->FontMap["Inconsolata_36"], math::rgba(1.0f, 1.0f, 1.0f, 1.0f), Alignment_Center);
     
-    PushText(Renderer, "W", math::v3(Renderer.ViewportWidth / 2.0f - 20.0f, 70.0f, 0.0f), Font_Inconsolata, math::rgba(1.0f, 1.0f, 1.0f, 1.0f), Alignment_Center);
+    PushText(Renderer, "W", math::v3(Renderer.ViewportWidth / 2.0f - 20.0f, 70.0f, 0.0f), GameState->FontMap["Inconsolata_20"], math::rgba(1.0f, 1.0f, 1.0f, 1.0f), Alignment_Center);
     
-    PushText(Renderer, "A", math::v3(Renderer.ViewportWidth / 2.0f - 40.0f, 52.0f, 0.0f), Font_Inconsolata, math::rgba(1.0f, 1.0f, 1.0f, 1.0f), Alignment_Center);
+    PushText(Renderer, "A", math::v3(Renderer.ViewportWidth / 2.0f - 40.0f, 50.0f, 0.0f), GameState->FontMap["Inconsolata_20"], math::rgba(1.0f, 1.0f, 1.0f, 1.0f), Alignment_Center);
     
-    PushText(Renderer, "S", math::v3(Renderer.ViewportWidth / 2.0f - 20.0f, 50.0f, 0.0f), Font_Inconsolata, math::rgba(1.0f, 1.0f, 1.0f, 1.0f), Alignment_Center);
+    PushText(Renderer, "S", math::v3(Renderer.ViewportWidth / 2.0f - 20.0f, 50.0f, 0.0f), GameState->FontMap["Inconsolata_20"], math::rgba(1.0f, 1.0f, 1.0f, 1.0f), Alignment_Center);
     
     PushText(Renderer, "D", math::v3(Renderer.ViewportWidth / 2.0f + 0.0f, 50.0f, 0.0f), 
-             Font_Inconsolata, math::rgba(1.0f, 1.0f, 1.0f, 1.0f), Alignment_Center);
+             GameState->FontMap["Inconsolata_20"], math::rgba(1.0f, 1.0f, 1.0f, 1.0f), Alignment_Center);
     
     
-    PushText(Renderer, "End", math::v3(250.0f, 140.0f, 0.0f), Font_Inconsolata, math::rgba(1.0f, 1.0f, 1.0f, 1.0f), Alignment_Center);
+    PushText(Renderer, "End", math::v3(250.0f, 140.0f, 0.0f), GameState->FontMap["Inconsolata_20"], math::rgba(1.0f, 1.0f, 1.0f, 1.0f), Alignment_Center);
     
     PushFilledQuad(Renderer, math::v3(150.0f, 120.0f, 0.0f), math::v3(50.0f), math::v3(), math::rgba(1.0f, 1.0f, 1.0f, 1.0f), "end");
     
-    PushText(Renderer, "Start", math::v3(250.0f, 220.0f, 0.0f), Font_Inconsolata, math::rgba(1.0f, 1.0f, 1.0f, 1.0f), Alignment_Center);
+    PushText(Renderer, "Start", math::v3(250.0f, 220.0f, 0.0f), GameState->FontMap["Inconsolata_20"], math::rgba(1.0f, 1.0f, 1.0f, 1.0f), Alignment_Center);
     
     PushFilledQuad(Renderer, math::v3(150.0f, 200.0f, 0.0f), math::v3(50.0f), math::v3(), math::rgba(1.0f, 1.0f, 1.0f, 1.0f), "start");
     
     
-    PushText(Renderer, "Press ENTER when you think you are done", math::v3(230.0f, 100.0f, 0.0f), Font_Inconsolata, math::rgba(1.0f, 1.0f, 1.0f, 1.0f), Alignment_Center);
+    PushText(Renderer, "Press ENTER when you think you are done", math::v3(230.0f, 100.0f, 0.0f), GameState->FontMap["Inconsolata_20"], math::rgba(1.0f, 1.0f, 1.0f, 1.0f), Alignment_Center);
     
     
-    PushText(Renderer, "Press R to restart this level", math::v3(230.0f, 300.0f, 0.0f), Font_Inconsolata, math::rgba(1.0f, 1.0f, 1.0f, 1.0f), Alignment_Center);
+    PushText(Renderer, "Press R to restart this level", math::v3(230.0f, 300.0f, 0.0f), GameState->FontMap["Inconsolata_20"], math::rgba(1.0f, 1.0f, 1.0f, 1.0f), Alignment_Center);
     
-    PushText(Renderer, "Press END to restart all levels", math::v3(230.0f, 400.0f, 0.0f), Font_Inconsolata, math::rgba(1.0f, 1.0f, 1.0f, 1.0f), Alignment_Center);
+    PushText(Renderer, "Press END to restart all levels", math::v3(230.0f, 400.0f, 0.0f), GameState->FontMap["Inconsolata_20"], math::rgba(1.0f, 1.0f, 1.0f, 1.0f), Alignment_Center);
     
     
     FOR_ENT(Index)
@@ -523,7 +543,7 @@ extern "C" UPDATE(Update)
             
             if(Level.Won)
             {
-                PushText(Renderer, "YOU WON!!!", math::v3(Renderer.ViewportWidth / 2.0f - 20.0f, Renderer.ViewportHeight / 2.0f + 200.0f, 0.0f), Font_Inconsolata, math::rgba(1.0f, 1.0f, 1.0f, 1.0f));
+                PushText(Renderer, "Press ENTER", math::v3(Renderer.ViewportWidth / 2.0f - 100.0f, Renderer.ViewportHeight / 2.0f + 250.0f, 0.0f), GameState->FontMap["Inconsolata_32"], math::rgba(1.0f, 1.0f, 1.0f, 1.0f));
                 
                 if(KEY_DOWN(Key_Enter))
                 {
@@ -539,8 +559,6 @@ extern "C" UPDATE(Update)
                     Level.Won = true;
                 }
             }
-            
-            
         }
     }
     

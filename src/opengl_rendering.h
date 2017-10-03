@@ -328,6 +328,10 @@ struct render_state
     //freetype
     FT_Library FTLibrary;
     
+    render_font Fonts[64];
+    i32 FontCount;
+    
+    /*
     union
     {
         render_font Fonts[Font_Count];
@@ -341,6 +345,7 @@ struct render_state
             render_font TitleFont;
         };
     };
+    */
     
     render_state() {}
 };

@@ -101,6 +101,8 @@ struct level
     math::rgba BackgroundColor;
 };
 
+GENERIC_MAP(font_handle, i32, char*, StrCmp, NULL, "%s", STR_ASSIGN, VAL_COPY);
+
 struct game_state
 {
     memory_arena TotalArena;
@@ -123,6 +125,8 @@ struct game_state
     
     card Cards[CARDS];
     i32 CardCount;
+    
+    font_handle_map FontMap;
 };
 
 #define FOR_ENT(Label) for(i32 Label = 0; Label < GameState->EntityCount; Label++) 
