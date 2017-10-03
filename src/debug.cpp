@@ -67,7 +67,7 @@ static void PushMemoryDebug(renderer& Renderer, debug_memory_info* DebugMemoryIn
         auto Info = DebugMemoryInfo->DebugInfo[InfoIndex];
         char DebugBuffer[255];
         sprintf(DebugBuffer, Info.Header);
-        PushText(Renderer, DebugBuffer, math::v3(CurrentX, CurrentY, 2), Font_Inconsolata, math::rgba(0, 0, 1, 1));
+        PushText(Renderer, DebugBuffer, math::v3(CurrentX, CurrentY, 2), 2, math::rgba(0, 0, 1, 1));
         
         for(i32 ValueIndex = 0; ValueIndex < Info.DebugValueCount; ValueIndex++)
         {
@@ -89,7 +89,7 @@ static void PushMemoryDebug(renderer& Renderer, debug_memory_info* DebugMemoryIn
                 } break;
             }
             
-            PushText(Renderer, DebugBuffer, math::v3(CurrentX, CurrentY, 2), Font_Inconsolata, math::rgba(1, 0, 1, 1));
+            PushText(Renderer, DebugBuffer, math::v3(CurrentX, CurrentY, 2), 2, math::rgba(1, 0, 1, 1));
             
         }
         CurrentY -= Offset;

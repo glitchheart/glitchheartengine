@@ -8,18 +8,6 @@
 #define MAX_BONES 50
 #define MAX_CHILDREN 30
 
-enum Font_Type
-{
-    Font_Inconsolata,
-    Font_InconsolataSmall,
-    Font_Menu,
-    Font_Button,
-    Font_Roboto,
-    Font_Title,
-    
-    Font_Count
-};
-
 struct font_data
 {
     char* Path;
@@ -273,7 +261,6 @@ struct render_command
         {
             char Text[256];
             math::v3 Position;
-            Font_Type FontType;
             i32 FontHandle;
             math::rgba Color;
             Alignment Alignment;
