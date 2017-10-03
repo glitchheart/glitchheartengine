@@ -729,19 +729,6 @@ static void RenderSetup(render_state *RenderState, memory_arena* PermArena)
     RenderState->StandardFontShader.Type = Shader_StandardFont;
     LoadShader(ShaderPaths[Shader_StandardFont], &RenderState->StandardFontShader, PermArena);
     
-    /*
-    RenderState->RobotoFont = {};
-    InitializeFreeTypeFont("../assets/fonts/roboto/Roboto-Regular.ttf", 20, RenderState->FTLibrary, &RenderState->RobotoFont, &RenderState->StandardFontShader);
-    
-    RenderState->InconsolataFont = {};
-    InitializeFreeTypeFont("../assets/fonts/inconsolata/Inconsolata-Regular.ttf", 18, RenderState->FTLibrary, &RenderState->InconsolataFont, &RenderState->StandardFontShader);
-    InitializeFreeTypeFont("../assets/fonts/inconsolata/Inconsolata-Regular.ttf", 12, RenderState->FTLibrary, &RenderState->SmallInconsolataFont, &RenderState->StandardFontShader);
-    
-    InitializeFreeTypeFont("../assets/fonts/inconsolata/Inconsolata-Regular.ttf", 40, RenderState->FTLibrary, &RenderState->MenuFont, &RenderState->StandardFontShader);
-    InitializeFreeTypeFont("../assets/fonts/roboto/Roboto-Regular.ttf", 30, RenderState->FTLibrary, &RenderState->ButtonFont, &RenderState->StandardFontShader);
-    InitializeFreeTypeFont("../assets/fonts/rubber-biscuit/RUBBBB__.ttf", 50, RenderState->FTLibrary, &RenderState->TitleFont, &RenderState->StandardFontShader);
-    */
-    
     // Light sources
     RenderState->LightSourceShader.Type = Shader_LightSource;
     LoadShader(ShaderPaths[Shader_LightSource], &RenderState->LightSourceShader, PermArena);
