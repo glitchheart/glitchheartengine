@@ -886,7 +886,7 @@ extern "C" UPDATE(Update)
     
     char FPSBuffer[64];
     sprintf(FPSBuffer, "FPS: %.2f - AVG FPS: %.2f - dt: %.10lf", Renderer.FPS, Renderer.AverageFPS, DeltaTime);
-    PushText(Renderer, FPSBuffer, math::v3(50, 850, 2), Font_Inconsolata, math::rgba(1, 0, 0, 1));
+    PushText(Renderer, FPSBuffer, math::v3(50, 850, 2), 1, math::rgba(1, 0, 0, 1));
     
     for(i32 Index = 0; Index < GameState->ModelCount; Index++)
     {
