@@ -310,7 +310,7 @@ extern "C" UPDATE(Update)
         Renderer.Cameras[Renderer.CurrentCameraHandle].Zoom = 20.0f;
         Renderer.Cameras[Renderer.CurrentCameraHandle].ViewportWidth = Renderer.WindowWidth;
         Renderer.Cameras[Renderer.CurrentCameraHandle].ViewportHeight = Renderer.WindowHeight;
-        Renderer.Cameras[Renderer.CurrentCameraHandle].Position = math::v3(5.0f, 5.0f, 0);
+        Renderer.Cameras[Renderer.CurrentCameraHandle].Position = math::v3(4.0f, 5.0f, 0);
         
         LoadSounds(SoundCommands, Concat(CARDS_ASSETS, "sounds/"));
         LoadTextures(Renderer, &Renderer.TextureArena, Concat(CARDS_ASSETS, "textures/"));
@@ -321,23 +321,25 @@ extern "C" UPDATE(Update)
         
         font_handle_Map_Init(&GameState->FontMap, HashStringJenkins, 64);
         
-        GameState->FontMap["Inconsolata_12"] = LoadFont(Renderer, "../assets/fonts/inconsolata/Inconsolata-Bold.ttf", 12, "Inconsolata");
+        GameState->FontMap["Inconsolata_12"] = LoadFont(Renderer, Concat(CARDS_ASSETS, "/fonts/inconsolata/Inconsolata-Bold.ttf"), 12, "Inconsolata");
         
-        GameState->FontMap["Inconsolata_14"] =LoadFont(Renderer, "../assets/fonts/inconsolata/Inconsolata-Bold.ttf", 14, "Inconsolata");
+        GameState->FontMap["Inconsolata_14"] = LoadFont(Renderer, Concat(CARDS_ASSETS, "/fonts/inconsolata/Inconsolata-Bold.ttf"), 14, "Inconsolata");
         
-        GameState->FontMap["Inconsolata_16"] =LoadFont(Renderer, "../assets/fonts/inconsolata/Inconsolata-Bold.ttf", 16, "Inconsolata");
+        GameState->FontMap["Inconsolata_16"] = LoadFont(Renderer, Concat(CARDS_ASSETS, "/fonts/inconsolata/Inconsolata-Bold.ttf"), 16, "Inconsolata");
         
-        GameState->FontMap["Inconsolata_18"] =LoadFont(Renderer, "../assets/fonts/inconsolata/Inconsolata-Bold.ttf", 18, "Inconsolata");
+        GameState->FontMap["Inconsolata_18"] = LoadFont(Renderer, Concat(CARDS_ASSETS, "/fonts/inconsolata/Inconsolata-Bold.ttf"), 18, "Inconsolata");
         
-        GameState->FontMap["Inconsolata_20"] =LoadFont(Renderer, "../assets/fonts/inconsolata/Inconsolata-Bold.ttf", 20, "Inconsolata");
+        GameState->FontMap["Inconsolata_20"] = LoadFont(Renderer, Concat(CARDS_ASSETS, "/fonts/inconsolata/Inconsolata-Bold.ttf"), 20, "Inconsolata");
         
-        GameState->FontMap["Inconsolata_24"] =LoadFont(Renderer, "../assets/fonts/inconsolata/Inconsolata-Bold.ttf", 24, "Inconsolata");
+        GameState->FontMap["Inconsolata_24"] = LoadFont(Renderer, Concat(CARDS_ASSETS, "/fonts/inconsolata/Inconsolata-Bold.ttf"), 24, "Inconsolata");
         
-        GameState->FontMap["Inconsolata_28"] =LoadFont(Renderer, "../assets/fonts/inconsolata/Inconsolata-Bold.ttf", 28, "Inconsolata");
+        GameState->FontMap["Inconsolata_28"] = LoadFont(Renderer, Concat(CARDS_ASSETS, "/fonts/inconsolata/Inconsolata-Bold.ttf"), 28, "Inconsolata");
         
-        GameState->FontMap["Inconsolata_32"] =LoadFont(Renderer, "../assets/fonts/inconsolata/Inconsolata-Bold.ttf", 32, "Inconsolata");
+        GameState->FontMap["Inconsolata_32"] = LoadFont(Renderer, Concat(CARDS_ASSETS, "/fonts/inconsolata/Inconsolata-Bold.ttf"), 32, "Inconsolata");
         
-        GameState->FontMap["Inconsolata_36"] =LoadFont(Renderer, "../assets/fonts/inconsolata/Inconsolata-Bold.ttf", 36, "Inconsolata");
+        
+        GameState->FontMap["Inconsolata_36"] = LoadFont(Renderer, Concat(CARDS_ASSETS, "/fonts/inconsolata/Inconsolata-Bold.ttf"), 36, "Inconsolata");
+        
         
         GameState->IsInitialized = true;
         GameMemory->IsInitialized = true;
@@ -345,16 +347,18 @@ extern "C" UPDATE(Update)
     
     auto& Camera = Renderer.Cameras[Renderer.CurrentCameraHandle];
     
-    auto Near = -100.0f;
-    auto Far = 1000.0f;
+    auto Near = -1.0f;
+    auto Far = 10.0f;
+    
+    auto Grid = GameState->Levels[GameState->CurrentLevel].Grid;
+    
+    Renderer.Cameras[Renderer.CurrentCameraHandle].Position = math::v3(Grid.Size.x * Grid.TileScale * 0.5f, 5.0f + Grid.Size.y * Grid.TileScale * 0.25f, 0);
     
     CameraTransform(Renderer, Camera, Camera.Position, Camera.Orientation, Camera.Target, Camera.Zoom, Near, Far);
     
     DisableDepthTest(Renderer);
     
-    auto Grid = GameState->Levels[GameState->CurrentLevel].Grid;
-    
-    PushFilledQuad(Renderer, math::v3() - Grid.Size.x * Grid.TileScale * 0.5f, math::v3(2.0f * Grid.Size.x * Grid.TileScale, 2.0f * Grid.Size.y * Grid.TileScale, 0.0f), math::v3(), GameState->Levels[GameState->CurrentLevel].BackgroundColor, 0, false);
+    PushFilledQuad(Renderer, math::v3(-Grid.Size.x * Grid.TileScale * 0.5f, -Grid.Size.y * Grid.TileScale * 0.5f, 0.0f), math::v3(2.0f * Grid.Size.x * Grid.TileScale, 2.0f * Grid.Size.y * Grid.TileScale, 0.0f), math::v3(), GameState->Levels[GameState->CurrentLevel].BackgroundColor, 0, false);
     
     for(i32 I = 0; I < Grid.Size.x; I++)
     {
@@ -406,13 +410,13 @@ extern "C" UPDATE(Update)
     
     PushText(Renderer, ToString(GameState->Levels[GameState->CurrentLevel].TargetScore), math::v3(Renderer.ViewportWidth / 2.0f - 10.0f, Renderer.ViewportHeight / 2.0f + 300.0f , 0.0f), GameState->FontMap["Inconsolata_36"], math::rgba(1.0f, 1.0f, 1.0f, 1.0f), Alignment_Center);
     
-    PushText(Renderer, "W", math::v3(Renderer.ViewportWidth / 2.0f - 20.0f, 70.0f, 0.0f), GameState->FontMap["Inconsolata_20"], math::rgba(1.0f, 1.0f, 1.0f, 1.0f), Alignment_Center);
+    PushText(Renderer, "W", math::v3(Renderer.ViewportWidth / 2.0f, 70.0f, 0.0f), GameState->FontMap["Inconsolata_20"], math::rgba(1.0f, 1.0f, 1.0f, 1.0f), Alignment_Center);
     
-    PushText(Renderer, "A", math::v3(Renderer.ViewportWidth / 2.0f - 40.0f, 50.0f, 0.0f), GameState->FontMap["Inconsolata_20"], math::rgba(1.0f, 1.0f, 1.0f, 1.0f), Alignment_Center);
+    PushText(Renderer, "A", math::v3(Renderer.ViewportWidth / 2.0f - 20.0f, 50.0f, 0.0f), GameState->FontMap["Inconsolata_20"], math::rgba(1.0f, 1.0f, 1.0f, 1.0f), Alignment_Center);
     
-    PushText(Renderer, "S", math::v3(Renderer.ViewportWidth / 2.0f - 20.0f, 50.0f, 0.0f), GameState->FontMap["Inconsolata_20"], math::rgba(1.0f, 1.0f, 1.0f, 1.0f), Alignment_Center);
+    PushText(Renderer, "S", math::v3(Renderer.ViewportWidth / 2.0f, 50.0f, 0.0f), GameState->FontMap["Inconsolata_20"], math::rgba(1.0f, 1.0f, 1.0f, 1.0f), Alignment_Center);
     
-    PushText(Renderer, "D", math::v3(Renderer.ViewportWidth / 2.0f + 0.0f, 50.0f, 0.0f), 
+    PushText(Renderer, "D", math::v3(Renderer.ViewportWidth / 2.0f + 20.0f, 50.0f, 0.0f), 
              GameState->FontMap["Inconsolata_20"], math::rgba(1.0f, 1.0f, 1.0f, 1.0f), Alignment_Center);
     
     
