@@ -94,6 +94,11 @@ static void LoadLevel(game_state* GameState, level* Level, const char* FilePath)
         End.Rank = 0;
         End.TextureName = 0;
         
+        card Empty;
+        Empty.Type = Suit_Empty;
+        Empty.Rank = 0;
+        Empty.TextureName = 0;
+        
         while(IndexHeight > 0)
         {
             fgets(Line, sizeof(Line), File);
@@ -140,9 +145,13 @@ static void LoadLevel(game_state* GameState, level* Level, const char* FilePath)
                 {
                     Suit = Suit_Start;
                 }
-                else
+                else if(strncmp(Tok, "-1", 2) == 0)
                 {
                     Suit = Suit_None;
+                }
+                else if(strncmp(Tok, "I", 1) == 0)
+                {
+                    Suit = Suit_Empty;
                 }
                 
                 if(Card)
@@ -170,6 +179,11 @@ static void LoadLevel(game_state* GameState, level* Level, const char* FilePath)
                         {
                             Level->Grid.Grid[IndexWidth][IndexHeight - 1].Card = Unwalkable;
                         }
+                        break;
+                        case Suit_Empty:
+                        {
+                            Level->Grid.Grid[IndexWidth][IndexHeight - 1].Card = Empty;
+                        } 
                         break;
                     }
                 }
@@ -337,9 +351,7 @@ extern "C" UPDATE(Update)
         
         GameState->FontMap["Inconsolata_32"] = LoadFont(Renderer, Concat(CARDS_ASSETS, "/fonts/inconsolata/Inconsolata-Bold.ttf"), 32, "Inconsolata");
         
-        
         GameState->FontMap["Inconsolata_36"] = LoadFont(Renderer, Concat(CARDS_ASSETS, "/fonts/inconsolata/Inconsolata-Bold.ttf"), 36, "Inconsolata");
-        
         
         GameState->IsInitialized = true;
         GameMemory->IsInitialized = true;
@@ -380,9 +392,16 @@ extern "C" UPDATE(Update)
                     PushFilledQuad(Renderer, TilePos, math::v3(Grid.TileScale, Grid.TileScale, 1.0f), math::v3(), math::rgba(1.0f), "end", false);
                 }
                 break;
-                case Suit_None:
+                case Suit_Empty:
                 {
-                    PushFilledQuad(Renderer, TilePos, math::v3(Grid.TileScale, Grid.TileScale, 1.0f), math::v3(), math::rgba(1.0f), "none", false);
+                    PushFilledQuad(Renderer, TilePos, math::v3(Grid.TileScale, Grid.TileScale, 1.0f), math::v3(), math::rgba(220.0f/255.0f, 255.0f/255.0f, 80.0f/255.0f, 1.0f), 0, false);
+                    
+                    auto Walked = Grid.Grid[I][J].Walked;
+                    if(Walked)
+                    {
+                        auto C = math::rgba(0.0f, 0.0f, 0.0f, 0.4f);
+                        PushFilledQuad(Renderer, TilePos, math::v3(Grid.TileScale, Grid.TileScale, 1.0f), math::v3(), C, 0, false);
+                    }
                 }
                 break;
                 case Suit_B1:
@@ -393,18 +412,24 @@ extern "C" UPDATE(Update)
                     char* Texture = Card.TextureName;
                     auto C = math::rgba(1.0f, 1.0f, 1.0f, 1.0f);
                     
+                    
                     PushFilledQuad(Renderer, TilePos, math::v3(Grid.TileScale, Grid.TileScale, 1.0f), math::v3(), C, Texture, false);
                     
                     auto Walked = Grid.Grid[I][J].Walked;
-                    if(Walked) //@Incomplete: Remember empty tiles
+                    if(Walked)
                     {
-                        C = math::rgba(0.0f, 1.0f, 1.0f, 0.2f);
+                        C = math::rgba(0.0f, 0.0f, 0.0f, 0.4f);
                         PushFilledQuad(Renderer, TilePos, math::v3(Grid.TileScale, Grid.TileScale, 1.0f), math::v3(), C, 0, false);
                     }
                 }
                 break;
             }
-            PushFilledQuad(Renderer, TilePos, math::v3(Grid.TileScale, Grid.TileScale, 1.0f), math::v3(), math::rgba(1.0f, 1.0f, 1.0f, 1.0f), "border", false);
+            
+            if(Card.Type != Suit_None)
+            {
+                PushFilledQuad(Renderer, TilePos, math::v3(Grid.TileScale, Grid.TileScale, 1.0f), math::v3(), math::rgba(1.0f, 1.0f, 1.0f, 1.0f), "border", false);
+            }
+            
         }
     }
     

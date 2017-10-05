@@ -65,7 +65,8 @@ enum Suit_Type
     Suit_B1,
     Suit_B2,
     Suit_R1,
-    Suit_R2
+    Suit_R2,
+    Suit_Empty
 };
 
 struct card
