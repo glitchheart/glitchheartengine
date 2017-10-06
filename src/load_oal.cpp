@@ -9,28 +9,24 @@ enum dll_arch
     A_64
 };
 
-ALboolean LoadOAL11Library(char* szOALFullPathName, oal_api* lpOALFnTable)
+ALboolean LoadOAL11Library(char* FilePath, oal_api* OALFunctions)
 {
-    if(!lpOALFnTable)
+    if(!OALFunctions)
         return AL_FALSE;
     
     dll_arch Arch = A_64;
     
-    if(szOALFullPathName)
-        g_hOpenALDLL = LoadLibrary(szOALFullPathName);
+    if(FilePath)
+        g_hOpenALDLL = LoadLibrary(FilePath);
     else
     {
         
         
 #if defined(_WIN64)
-        /*CopyFile("../libs/openal/dll/Win64/openal32.dll", "openal32.dll", FALSE);
-        CopyFile("../libs/openal/dll/Win64/wrap_oal.dll", "wrap_oal.dll", FALSE);*/
         CopyFile("../libs/soft_oal/dll/Win64/soft_oal.dll", "soft_oal.dll", FALSE);
         Arch = A_64;
 #else
         CopyFile("../libs/soft_oal/dll/Win32/soft_oal.dll", "soft_oal.dll", FALSE);
-        /*CopyFile("../libs/openal/dll/Win32/openal32.dll", "openal32.dll", FALSE);
-        CopyFile("../libs/openal/dll/Win32/wrap_oal.dll", "wrap_oal.dll", FALSE);*/
         Arch = A_32;
 #endif
         g_hOpenALDLL = LoadLibrary("soft_oal.dll");
@@ -40,427 +36,398 @@ ALboolean LoadOAL11Library(char* szOALFullPathName, oal_api* lpOALFnTable)
     {
         i32 Err = GetLastError();
         DEBUG_PRINT("Could not load OpenAL: %d\n", Err);
-        
-        if(Err == ERROR_BAD_EXE_FORMAT)
-        {
-            switch(Arch)
-            {
-                case A_32:
-                {
-                    //@Incomplete: Ignore for now
-                    ERR("32 bit architecture not supported");
-                }
-                break;
-                case A_64:
-                {
-                    CopyFile("../libs/soft_oal/dll/Win32/soft_oal.dll", "soft_oal.dll", FALSE);
-                    /*CopyFile("../libs/openal/dll/Win32/openal32.dll", "openal32.dll", FALSE);
-                    CopyFile("../libs/openal/dll/Win32/wrap_oal.dll", "wrap_oal.dll", FALSE);*/
-                    g_hOpenALDLL = LoadLibrary("soft_oal.dll");
-                    CopyFile("../libs/soft_oal/dll/Win64/soft_oal.dll", "soft_oal.dll", FALSE);
-                    /*CopyFile("../libs/openal/dll/Win64/openal32.dll", "openal32.dll", FALSE);
-                    CopyFile("../libs/openal/dll/Win64/wrap_oal.dll", "wrap_oal.dll", FALSE);*/
-                }
-                break;
-            }
-            if(!g_hOpenALDLL)
-            {
-                return AL_FALSE;
-            }
-        }
-        
     }
     
-    memset(lpOALFnTable, 0, sizeof(oal_api));
+    memset(OALFunctions, 0, sizeof(oal_api));
     
-    lpOALFnTable->alEnable = (LPALENABLE)GetProcAddress(g_hOpenALDLL, "alEnable");
-    if(lpOALFnTable->alEnable == NULL)
+    OALFunctions->alEnable = (LPALENABLE)GetProcAddress(g_hOpenALDLL, "alEnable");
+    if(OALFunctions->alEnable == NULL)
     {
-        OutputDebugString("Failed to retrieve 'alEnable' function address\n");
+        DEBUG_PRINT("Failed to retrieve 'alEnable' function address\n");
         return AL_FALSE;
     }
-    lpOALFnTable->alDisable = (LPALDISABLE)GetProcAddress(g_hOpenALDLL, "alDisable");
-    if (lpOALFnTable->alDisable == NULL)
+    OALFunctions->alDisable = (LPALDISABLE)GetProcAddress(g_hOpenALDLL, "alDisable");
+    if (OALFunctions->alDisable == NULL)
     {
-        OutputDebugString("Failed to retrieve 'alDisable' function address\n");
+        DEBUG_PRINT("Failed to retrieve 'alDisable' function address\n");
         return AL_FALSE;
     }
-    lpOALFnTable->alIsEnabled = (LPALISENABLED)GetProcAddress(g_hOpenALDLL, "alIsEnabled");
-    if (lpOALFnTable->alIsEnabled == NULL)
+    OALFunctions->alIsEnabled = (LPALISENABLED)GetProcAddress(g_hOpenALDLL, "alIsEnabled");
+    if (OALFunctions->alIsEnabled == NULL)
     {
-        OutputDebugString("Failed to retrieve 'alIsEnabled' function address\n");
+        DEBUG_PRINT("Failed to retrieve 'alIsEnabled' function address\n");
         return AL_FALSE;
     }
-    lpOALFnTable->alGetBoolean = (LPALGETBOOLEAN)GetProcAddress(g_hOpenALDLL, "alGetBoolean");
-    if (lpOALFnTable->alGetBoolean == NULL)
+    OALFunctions->alGetBoolean = (LPALGETBOOLEAN)GetProcAddress(g_hOpenALDLL, "alGetBoolean");
+    if (OALFunctions->alGetBoolean == NULL)
     {
-        OutputDebugString("Failed to retrieve 'alGetBoolean' function address\n");
+        DEBUG_PRINT("Failed to retrieve 'alGetBoolean' function address\n");
         return AL_FALSE;
     }
-    lpOALFnTable->alGetInteger = (LPALGETINTEGER)GetProcAddress(g_hOpenALDLL, "alGetInteger");
-    if (lpOALFnTable->alGetInteger == NULL)
+    OALFunctions->alGetInteger = (LPALGETINTEGER)GetProcAddress(g_hOpenALDLL, "alGetInteger");
+    if (OALFunctions->alGetInteger == NULL)
     {
-        OutputDebugString("Failed to retrieve 'alGetInteger' function address\n");
+        DEBUG_PRINT("Failed to retrieve 'alGetInteger' function address\n");
         return AL_FALSE;
     }
-    lpOALFnTable->alGetFloat = (LPALGETFLOAT)GetProcAddress(g_hOpenALDLL, "alGetFloat");
-    if (lpOALFnTable->alGetFloat == NULL)
+    OALFunctions->alGetFloat = (LPALGETFLOAT)GetProcAddress(g_hOpenALDLL, "alGetFloat");
+    if (OALFunctions->alGetFloat == NULL)
     {
-        OutputDebugString("Failed to retrieve 'alGetFloat' function address\n");
+        DEBUG_PRINT("Failed to retrieve 'alGetFloat' function address\n");
         return AL_FALSE;
     }
-    lpOALFnTable->alGetDouble = (LPALGETDOUBLE)GetProcAddress(g_hOpenALDLL, "alGetDouble");
-    if (lpOALFnTable->alGetDouble == NULL)
+    OALFunctions->alGetDouble = (LPALGETDOUBLE)GetProcAddress(g_hOpenALDLL, "alGetDouble");
+    if (OALFunctions->alGetDouble == NULL)
     {
-        OutputDebugString("Failed to retrieve 'alGetDouble' function address\n");
+        DEBUG_PRINT("Failed to retrieve 'alGetDouble' function address\n");
         return AL_FALSE;
     }
-    lpOALFnTable->alGetBooleanv = (LPALGETBOOLEANV)GetProcAddress(g_hOpenALDLL, "alGetBooleanv");
-    if (lpOALFnTable->alGetBooleanv == NULL)
+    OALFunctions->alGetBooleanv = (LPALGETBOOLEANV)GetProcAddress(g_hOpenALDLL, "alGetBooleanv");
+    if (OALFunctions->alGetBooleanv == NULL)
     {
-        OutputDebugString("Failed to retrieve 'alGetBooleanv' function address\n");
+        DEBUG_PRINT("Failed to retrieve 'alGetBooleanv' function address\n");
         return AL_FALSE;
     }
-    lpOALFnTable->alGetIntegerv = (LPALGETINTEGERV)GetProcAddress(g_hOpenALDLL, "alGetIntegerv");
-    if (lpOALFnTable->alGetIntegerv == NULL)
+    OALFunctions->alGetIntegerv = (LPALGETINTEGERV)GetProcAddress(g_hOpenALDLL, "alGetIntegerv");
+    if (OALFunctions->alGetIntegerv == NULL)
     {
-        OutputDebugString("Failed to retrieve 'alGetIntegerv' function address\n");
+        DEBUG_PRINT("Failed to retrieve 'alGetIntegerv' function address\n");
         return AL_FALSE;
     }
-    lpOALFnTable->alGetFloatv = (LPALGETFLOATV)GetProcAddress(g_hOpenALDLL, "alGetFloatv");
-    if (lpOALFnTable->alGetFloatv == NULL)
+    OALFunctions->alGetFloatv = (LPALGETFLOATV)GetProcAddress(g_hOpenALDLL, "alGetFloatv");
+    if (OALFunctions->alGetFloatv == NULL)
     {
-        OutputDebugString("Failed to retrieve 'alGetFloatv' function address\n");
+        DEBUG_PRINT("Failed to retrieve 'alGetFloatv' function address\n");
         return AL_FALSE;
     }
-    lpOALFnTable->alGetDoublev = (LPALGETDOUBLEV)GetProcAddress(g_hOpenALDLL, "alGetDoublev");
-    if (lpOALFnTable->alGetDoublev == NULL)
+    OALFunctions->alGetDoublev = (LPALGETDOUBLEV)GetProcAddress(g_hOpenALDLL, "alGetDoublev");
+    if (OALFunctions->alGetDoublev == NULL)
     {
-        OutputDebugString("Failed to retrieve 'alGetDoublev' function address\n");
+        DEBUG_PRINT("Failed to retrieve 'alGetDoublev' function address\n");
         return AL_FALSE;
     }
-    lpOALFnTable->alGetString = (LPALGETSTRING)GetProcAddress(g_hOpenALDLL, "alGetString");
-    if (lpOALFnTable->alGetString == NULL)
+    OALFunctions->alGetString = (LPALGETSTRING)GetProcAddress(g_hOpenALDLL, "alGetString");
+    if (OALFunctions->alGetString == NULL)
     {
-        OutputDebugString("Failed to retrieve 'alGetString' function address\n");
+        DEBUG_PRINT("Failed to retrieve 'alGetString' function address\n");
         return AL_FALSE;
     }
-    lpOALFnTable->alGetError = (LPALGETERROR)GetProcAddress(g_hOpenALDLL, "alGetError");
-    if (lpOALFnTable->alGetError == NULL)
+    OALFunctions->alGetError = (LPALGETERROR)GetProcAddress(g_hOpenALDLL, "alGetError");
+    if (OALFunctions->alGetError == NULL)
     {
-        OutputDebugString("Failed to retrieve 'alGetError' function address\n");
+        DEBUG_PRINT("Failed to retrieve 'alGetError' function address\n");
         return AL_FALSE;
     }
-    lpOALFnTable->alIsExtensionPresent = (LPALISEXTENSIONPRESENT)GetProcAddress(g_hOpenALDLL, "alIsExtensionPresent");
-    if (lpOALFnTable->alIsExtensionPresent == NULL)
+    OALFunctions->alIsExtensionPresent = (LPALISEXTENSIONPRESENT)GetProcAddress(g_hOpenALDLL, "alIsExtensionPresent");
+    if (OALFunctions->alIsExtensionPresent == NULL)
     {
-        OutputDebugString("Failed to retrieve 'alIsExtensionPresent' function address\n");
+        DEBUG_PRINT("Failed to retrieve 'alIsExtensionPresent' function address\n");
         return AL_FALSE;
     }
-    lpOALFnTable->alGetProcAddress = (LPALGETPROCADDRESS)GetProcAddress(g_hOpenALDLL, "alGetProcAddress");
-    if (lpOALFnTable->alGetProcAddress == NULL)
+    OALFunctions->alGetProcAddress = (LPALGETPROCADDRESS)GetProcAddress(g_hOpenALDLL, "alGetProcAddress");
+    if (OALFunctions->alGetProcAddress == NULL)
     {
-        OutputDebugString("Failed to retrieve 'alGetProcAddress' function address\n");
+        DEBUG_PRINT("Failed to retrieve 'alGetProcAddress' function address\n");
         return AL_FALSE;
     }
-    lpOALFnTable->alGetEnumValue = (LPALGETENUMVALUE)GetProcAddress(g_hOpenALDLL, "alGetEnumValue");
-    if (lpOALFnTable->alGetEnumValue == NULL)
+    OALFunctions->alGetEnumValue = (LPALGETENUMVALUE)GetProcAddress(g_hOpenALDLL, "alGetEnumValue");
+    if (OALFunctions->alGetEnumValue == NULL)
     {
-        OutputDebugString("Failed to retrieve 'alGetEnumValue' function address\n");
+        DEBUG_PRINT("Failed to retrieve 'alGetEnumValue' function address\n");
         return AL_FALSE;
     }
-    lpOALFnTable->alListeneri = (LPALLISTENERI)GetProcAddress(g_hOpenALDLL, "alListeneri");
-    if (lpOALFnTable->alListeneri == NULL)
+    OALFunctions->alListeneri = (LPALLISTENERI)GetProcAddress(g_hOpenALDLL, "alListeneri");
+    if (OALFunctions->alListeneri == NULL)
     {
-        OutputDebugString("Failed to retrieve 'alListeneri' function address\n");
+        DEBUG_PRINT("Failed to retrieve 'alListeneri' function address\n");
         return AL_FALSE;
     }
-    lpOALFnTable->alListenerf = (LPALLISTENERF)GetProcAddress(g_hOpenALDLL, "alListenerf");
-    if (lpOALFnTable->alListenerf == NULL)
+    OALFunctions->alListenerf = (LPALLISTENERF)GetProcAddress(g_hOpenALDLL, "alListenerf");
+    if (OALFunctions->alListenerf == NULL)
     {
-        OutputDebugString("Failed to retrieve 'alListenerf' function address\n");
+        DEBUG_PRINT("Failed to retrieve 'alListenerf' function address\n");
         return AL_FALSE;
     }
-    lpOALFnTable->alListener3f = (LPALLISTENER3F)GetProcAddress(g_hOpenALDLL, "alListener3f");
-    if (lpOALFnTable->alListener3f == NULL)
+    OALFunctions->alListener3f = (LPALLISTENER3F)GetProcAddress(g_hOpenALDLL, "alListener3f");
+    if (OALFunctions->alListener3f == NULL)
     {
-        OutputDebugString("Failed to retrieve 'alListener3f' function address\n");
+        DEBUG_PRINT("Failed to retrieve 'alListener3f' function address\n");
         return AL_FALSE;
     }
-    lpOALFnTable->alListenerfv = (LPALLISTENERFV)GetProcAddress(g_hOpenALDLL, "alListenerfv");
-    if (lpOALFnTable->alListenerfv == NULL)
+    OALFunctions->alListenerfv = (LPALLISTENERFV)GetProcAddress(g_hOpenALDLL, "alListenerfv");
+    if (OALFunctions->alListenerfv == NULL)
     {
-        OutputDebugString("Failed to retrieve 'alListenerfv' function address\n");
+        DEBUG_PRINT("Failed to retrieve 'alListenerfv' function address\n");
         return AL_FALSE;
     }
-    lpOALFnTable->alGetListeneri = (LPALGETLISTENERI)GetProcAddress(g_hOpenALDLL, "alGetListeneri");
-    if (lpOALFnTable->alGetListeneri == NULL)
+    OALFunctions->alGetListeneri = (LPALGETLISTENERI)GetProcAddress(g_hOpenALDLL, "alGetListeneri");
+    if (OALFunctions->alGetListeneri == NULL)
     {
-        OutputDebugString("Failed to retrieve 'alGetListeneri' function address\n");
+        DEBUG_PRINT("Failed to retrieve 'alGetListeneri' function address\n");
         return AL_FALSE;
     }
-    lpOALFnTable->alGetListenerf =(LPALGETLISTENERF)GetProcAddress(g_hOpenALDLL, "alGetListenerf");
-    if (lpOALFnTable->alGetListenerf == NULL)
+    OALFunctions->alGetListenerf =(LPALGETLISTENERF)GetProcAddress(g_hOpenALDLL, "alGetListenerf");
+    if (OALFunctions->alGetListenerf == NULL)
     {
-        OutputDebugString("Failed to retrieve 'alGetListenerf' function address\n");
+        DEBUG_PRINT("Failed to retrieve 'alGetListenerf' function address\n");
         return AL_FALSE;
     }
-    lpOALFnTable->alGetListener3f = (LPALGETLISTENER3F)GetProcAddress(g_hOpenALDLL, "alGetListener3f");
-    if (lpOALFnTable->alGetListener3f == NULL)
+    OALFunctions->alGetListener3f = (LPALGETLISTENER3F)GetProcAddress(g_hOpenALDLL, "alGetListener3f");
+    if (OALFunctions->alGetListener3f == NULL)
     {
-        OutputDebugString("Failed to retrieve 'alGetListener3f' function address\n");
+        DEBUG_PRINT("Failed to retrieve 'alGetListener3f' function address\n");
         return AL_FALSE;
     }
-    lpOALFnTable->alGetListenerfv = (LPALGETLISTENERFV)GetProcAddress(g_hOpenALDLL, "alGetListenerfv");
-    if (lpOALFnTable->alGetListenerfv == NULL)
+    OALFunctions->alGetListenerfv = (LPALGETLISTENERFV)GetProcAddress(g_hOpenALDLL, "alGetListenerfv");
+    if (OALFunctions->alGetListenerfv == NULL)
     {
-        OutputDebugString("Failed to retrieve 'alGetListenerfv' function address\n");
+        DEBUG_PRINT("Failed to retrieve 'alGetListenerfv' function address\n");
         return AL_FALSE;
     }
-    lpOALFnTable->alGenSources = (LPALGENSOURCES)GetProcAddress(g_hOpenALDLL, "alGenSources");
-    if (lpOALFnTable->alGenSources == NULL)
+    OALFunctions->alGenSources = (LPALGENSOURCES)GetProcAddress(g_hOpenALDLL, "alGenSources");
+    if (OALFunctions->alGenSources == NULL)
     {
-        OutputDebugString("Failed to retrieve 'alGenSources' function address\n");
+        DEBUG_PRINT("Failed to retrieve 'alGenSources' function address\n");
         return AL_FALSE;
     }
-    lpOALFnTable->alDeleteSources = (LPALDELETESOURCES)GetProcAddress(g_hOpenALDLL, "alDeleteSources");
-    if (lpOALFnTable->alDeleteSources == NULL)
+    OALFunctions->alDeleteSources = (LPALDELETESOURCES)GetProcAddress(g_hOpenALDLL, "alDeleteSources");
+    if (OALFunctions->alDeleteSources == NULL)
     {
-        OutputDebugString("Failed to retrieve 'alDeleteSources' function address\n");
+        DEBUG_PRINT("Failed to retrieve 'alDeleteSources' function address\n");
         return AL_FALSE;
     }
-    lpOALFnTable->alIsSource = (LPALISSOURCE)GetProcAddress(g_hOpenALDLL, "alIsSource");
-    if (lpOALFnTable->alIsSource == NULL)
+    OALFunctions->alIsSource = (LPALISSOURCE)GetProcAddress(g_hOpenALDLL, "alIsSource");
+    if (OALFunctions->alIsSource == NULL)
     {
-        OutputDebugString("Failed to retrieve 'alIsSource' function address\n");
+        DEBUG_PRINT("Failed to retrieve 'alIsSource' function address\n");
         return AL_FALSE;
     }
-    lpOALFnTable->alSourcei = (LPALSOURCEI)GetProcAddress(g_hOpenALDLL, "alSourcei");
-    if (lpOALFnTable->alSourcei == NULL)
+    OALFunctions->alSourcei = (LPALSOURCEI)GetProcAddress(g_hOpenALDLL, "alSourcei");
+    if (OALFunctions->alSourcei == NULL)
     {
-        OutputDebugString("Failed to retrieve 'alSourcei' function address\n");
+        DEBUG_PRINT("Failed to retrieve 'alSourcei' function address\n");
         return AL_FALSE;
     }
-    lpOALFnTable->alSourcef = (LPALSOURCEF)GetProcAddress(g_hOpenALDLL, "alSourcef");
-    if (lpOALFnTable->alSourcef == NULL)
+    OALFunctions->alSourcef = (LPALSOURCEF)GetProcAddress(g_hOpenALDLL, "alSourcef");
+    if (OALFunctions->alSourcef == NULL)
     {
-        OutputDebugString("Failed to retrieve 'alSourcef' function address\n");
+        DEBUG_PRINT("Failed to retrieve 'alSourcef' function address\n");
         return AL_FALSE;
     }
-    lpOALFnTable->alSource3f = (LPALSOURCE3F)GetProcAddress(g_hOpenALDLL, "alSource3f");
-    if (lpOALFnTable->alSource3f == NULL)
+    OALFunctions->alSource3f = (LPALSOURCE3F)GetProcAddress(g_hOpenALDLL, "alSource3f");
+    if (OALFunctions->alSource3f == NULL)
     {
-        OutputDebugString("Failed to retrieve 'alSource3f' function address\n");
+        DEBUG_PRINT("Failed to retrieve 'alSource3f' function address\n");
         return AL_FALSE;
     }
-    lpOALFnTable->alSourcefv = (LPALSOURCEFV)GetProcAddress(g_hOpenALDLL, "alSourcefv");
-    if (lpOALFnTable->alSourcefv == NULL)
+    OALFunctions->alSourcefv = (LPALSOURCEFV)GetProcAddress(g_hOpenALDLL, "alSourcefv");
+    if (OALFunctions->alSourcefv == NULL)
     {
-        OutputDebugString("Failed to retrieve 'alSourcefv' function address\n");
+        DEBUG_PRINT("Failed to retrieve 'alSourcefv' function address\n");
         return AL_FALSE;
     }
-    lpOALFnTable->alGetSourcei = (LPALGETSOURCEI)GetProcAddress(g_hOpenALDLL, "alGetSourcei");
-    if (lpOALFnTable->alGetSourcei == NULL)
+    OALFunctions->alGetSourcei = (LPALGETSOURCEI)GetProcAddress(g_hOpenALDLL, "alGetSourcei");
+    if (OALFunctions->alGetSourcei == NULL)
     {
-        OutputDebugString("Failed to retrieve 'alGetSourcei' function address\n");
+        DEBUG_PRINT("Failed to retrieve 'alGetSourcei' function address\n");
         return AL_FALSE;
     }
-    lpOALFnTable->alGetSourcef = (LPALGETSOURCEF)GetProcAddress(g_hOpenALDLL, "alGetSourcef");
-    if (lpOALFnTable->alGetSourcef == NULL)
+    OALFunctions->alGetSourcef = (LPALGETSOURCEF)GetProcAddress(g_hOpenALDLL, "alGetSourcef");
+    if (OALFunctions->alGetSourcef == NULL)
     {
-        OutputDebugString("Failed to retrieve 'alGetSourcef' function address\n");
+        DEBUG_PRINT("Failed to retrieve 'alGetSourcef' function address\n");
         return AL_FALSE;
     }
-    lpOALFnTable->alGetSourcefv = (LPALGETSOURCEFV)GetProcAddress(g_hOpenALDLL, "alGetSourcefv");
-    if (lpOALFnTable->alGetSourcefv == NULL)
+    OALFunctions->alGetSourcefv = (LPALGETSOURCEFV)GetProcAddress(g_hOpenALDLL, "alGetSourcefv");
+    if (OALFunctions->alGetSourcefv == NULL)
     {
-        OutputDebugString("Failed to retrieve 'alGetSourcefv' function address\n");
+        DEBUG_PRINT("Failed to retrieve 'alGetSourcefv' function address\n");
         return AL_FALSE;
     }
-    lpOALFnTable->alSourcePlayv = (LPALSOURCEPLAYV)GetProcAddress(g_hOpenALDLL, "alSourcePlayv");
-    if (lpOALFnTable->alSourcePlayv == NULL)
+    OALFunctions->alSourcePlayv = (LPALSOURCEPLAYV)GetProcAddress(g_hOpenALDLL, "alSourcePlayv");
+    if (OALFunctions->alSourcePlayv == NULL)
     {
-        OutputDebugString("Failed to retrieve 'alSourcePlayv' function address\n");
+        DEBUG_PRINT("Failed to retrieve 'alSourcePlayv' function address\n");
         return AL_FALSE;
     }
-    lpOALFnTable->alSourceStopv = (LPALSOURCESTOPV)GetProcAddress(g_hOpenALDLL, "alSourceStopv");
-    if (lpOALFnTable->alSourceStopv == NULL)
+    OALFunctions->alSourceStopv = (LPALSOURCESTOPV)GetProcAddress(g_hOpenALDLL, "alSourceStopv");
+    if (OALFunctions->alSourceStopv == NULL)
     {
-        OutputDebugString("Failed to retrieve 'alSourceStopv' function address\n");
+        DEBUG_PRINT("Failed to retrieve 'alSourceStopv' function address\n");
         return AL_FALSE;
     }
-    lpOALFnTable->alSourcePlay = (LPALSOURCEPLAY)GetProcAddress(g_hOpenALDLL, "alSourcePlay");
-    if (lpOALFnTable->alSourcePlay == NULL)
+    OALFunctions->alSourcePlay = (LPALSOURCEPLAY)GetProcAddress(g_hOpenALDLL, "alSourcePlay");
+    if (OALFunctions->alSourcePlay == NULL)
     {
-        OutputDebugString("Failed to retrieve 'alSourcePlay' function address\n");
+        DEBUG_PRINT("Failed to retrieve 'alSourcePlay' function address\n");
         return AL_FALSE;
     }
-    lpOALFnTable->alSourcePause = (LPALSOURCEPAUSE)GetProcAddress(g_hOpenALDLL, "alSourcePause");
-    if (lpOALFnTable->alSourcePause == NULL)
+    OALFunctions->alSourcePause = (LPALSOURCEPAUSE)GetProcAddress(g_hOpenALDLL, "alSourcePause");
+    if (OALFunctions->alSourcePause == NULL)
     {
-        OutputDebugString("Failed to retrieve 'alSourcePause' function address\n");
+        DEBUG_PRINT("Failed to retrieve 'alSourcePause' function address\n");
         return AL_FALSE;
     }
-    lpOALFnTable->alSourceStop = (LPALSOURCESTOP)GetProcAddress(g_hOpenALDLL, "alSourceStop");
-    if (lpOALFnTable->alSourceStop == NULL)
+    OALFunctions->alSourceStop = (LPALSOURCESTOP)GetProcAddress(g_hOpenALDLL, "alSourceStop");
+    if (OALFunctions->alSourceStop == NULL)
     {
-        OutputDebugString("Failed to retrieve 'alSourceStop' function address\n");
+        DEBUG_PRINT("Failed to retrieve 'alSourceStop' function address\n");
         return AL_FALSE;
     }
-    lpOALFnTable->alGenBuffers = (LPALGENBUFFERS)GetProcAddress(g_hOpenALDLL, "alGenBuffers");
-    if (lpOALFnTable->alGenBuffers == NULL)
+    OALFunctions->alGenBuffers = (LPALGENBUFFERS)GetProcAddress(g_hOpenALDLL, "alGenBuffers");
+    if (OALFunctions->alGenBuffers == NULL)
     {
-        OutputDebugString("Failed to retrieve 'alGenBuffers' function address\n");
+        DEBUG_PRINT("Failed to retrieve 'alGenBuffers' function address\n");
         return AL_FALSE;
     }
-    lpOALFnTable->alDeleteBuffers = (LPALDELETEBUFFERS)GetProcAddress(g_hOpenALDLL, "alDeleteBuffers");
-    if (lpOALFnTable->alDeleteBuffers == NULL)
+    OALFunctions->alDeleteBuffers = (LPALDELETEBUFFERS)GetProcAddress(g_hOpenALDLL, "alDeleteBuffers");
+    if (OALFunctions->alDeleteBuffers == NULL)
     {
-        OutputDebugString("Failed to retrieve 'alDeleteBuffers' function address\n");
+        DEBUG_PRINT("Failed to retrieve 'alDeleteBuffers' function address\n");
         return AL_FALSE;
     }
-    lpOALFnTable->alIsBuffer = (LPALISBUFFER)GetProcAddress(g_hOpenALDLL, "alIsBuffer");
-    if (lpOALFnTable->alIsBuffer == NULL)
+    OALFunctions->alIsBuffer = (LPALISBUFFER)GetProcAddress(g_hOpenALDLL, "alIsBuffer");
+    if (OALFunctions->alIsBuffer == NULL)
     {
-        OutputDebugString("Failed to retrieve 'alIsBuffer' function address\n");
+        DEBUG_PRINT("Failed to retrieve 'alIsBuffer' function address\n");
         return AL_FALSE;
     }
-    lpOALFnTable->alBufferData = (LPALBUFFERDATA)GetProcAddress(g_hOpenALDLL, "alBufferData");
-    if (lpOALFnTable->alBufferData == NULL)
+    OALFunctions->alBufferData = (LPALBUFFERDATA)GetProcAddress(g_hOpenALDLL, "alBufferData");
+    if (OALFunctions->alBufferData == NULL)
     {
-        OutputDebugString("Failed to retrieve 'alBufferData' function address\n");
+        DEBUG_PRINT("Failed to retrieve 'alBufferData' function address\n");
         return AL_FALSE;
     }
-    lpOALFnTable->alGetBufferi = (LPALGETBUFFERI)GetProcAddress(g_hOpenALDLL, "alGetBufferi");
-    if (lpOALFnTable->alGetBufferi == NULL)
+    OALFunctions->alGetBufferi = (LPALGETBUFFERI)GetProcAddress(g_hOpenALDLL, "alGetBufferi");
+    if (OALFunctions->alGetBufferi == NULL)
     {
-        OutputDebugString("Failed to retrieve 'alGetBufferi' function address\n");
+        DEBUG_PRINT("Failed to retrieve 'alGetBufferi' function address\n");
         return AL_FALSE;
     }
-    lpOALFnTable->alGetBufferf = (LPALGETBUFFERF)GetProcAddress(g_hOpenALDLL, "alGetBufferf");
-    if (lpOALFnTable->alGetBufferf == NULL)
+    OALFunctions->alGetBufferf = (LPALGETBUFFERF)GetProcAddress(g_hOpenALDLL, "alGetBufferf");
+    if (OALFunctions->alGetBufferf == NULL)
     {
-        OutputDebugString("Failed to retrieve 'alGetBufferf' function address\n");
+        DEBUG_PRINT("Failed to retrieve 'alGetBufferf' function address\n");
         return AL_FALSE;
     }
-    lpOALFnTable->alSourceQueueBuffers = (LPALSOURCEQUEUEBUFFERS)GetProcAddress(g_hOpenALDLL, "alSourceQueueBuffers");
-    if (lpOALFnTable->alSourceQueueBuffers == NULL)
+    OALFunctions->alSourceQueueBuffers = (LPALSOURCEQUEUEBUFFERS)GetProcAddress(g_hOpenALDLL, "alSourceQueueBuffers");
+    if (OALFunctions->alSourceQueueBuffers == NULL)
     {
-        OutputDebugString("Failed to retrieve 'alSourceQueueBuffers' function address\n");
+        DEBUG_PRINT("Failed to retrieve 'alSourceQueueBuffers' function address\n");
         return AL_FALSE;
     }
-    lpOALFnTable->alSourceUnqueueBuffers = (LPALSOURCEUNQUEUEBUFFERS)GetProcAddress(g_hOpenALDLL, "alSourceUnqueueBuffers");
-    if (lpOALFnTable->alSourceUnqueueBuffers == NULL)
+    OALFunctions->alSourceUnqueueBuffers = (LPALSOURCEUNQUEUEBUFFERS)GetProcAddress(g_hOpenALDLL, "alSourceUnqueueBuffers");
+    if (OALFunctions->alSourceUnqueueBuffers == NULL)
     {
-        OutputDebugString("Failed to retrieve 'alSourceUnqueueBuffers' function address\n");
+        DEBUG_PRINT("Failed to retrieve 'alSourceUnqueueBuffers' function address\n");
         return AL_FALSE;
     }
-    lpOALFnTable->alDistanceModel = (LPALDISTANCEMODEL)GetProcAddress(g_hOpenALDLL, "alDistanceModel");
-    if (lpOALFnTable->alDistanceModel == NULL)
+    OALFunctions->alDistanceModel = (LPALDISTANCEMODEL)GetProcAddress(g_hOpenALDLL, "alDistanceModel");
+    if (OALFunctions->alDistanceModel == NULL)
     {
-        OutputDebugString("Failed to retrieve 'alDistanceModel' function address\n");
+        DEBUG_PRINT("Failed to retrieve 'alDistanceModel' function address\n");
         return AL_FALSE;
     }
-    lpOALFnTable->alDopplerFactor = (LPALDOPPLERFACTOR)GetProcAddress(g_hOpenALDLL, "alDopplerFactor");
-    if (lpOALFnTable->alDopplerFactor == NULL)
+    OALFunctions->alDopplerFactor = (LPALDOPPLERFACTOR)GetProcAddress(g_hOpenALDLL, "alDopplerFactor");
+    if (OALFunctions->alDopplerFactor == NULL)
     {
-        OutputDebugString("Failed to retrieve 'alDopplerFactor' function address\n");
+        DEBUG_PRINT("Failed to retrieve 'alDopplerFactor' function address\n");
         return AL_FALSE;
     }
-    lpOALFnTable->alDopplerVelocity = (LPALDOPPLERVELOCITY)GetProcAddress(g_hOpenALDLL, "alDopplerVelocity");
-    if (lpOALFnTable->alDopplerVelocity == NULL)
+    OALFunctions->alDopplerVelocity = (LPALDOPPLERVELOCITY)GetProcAddress(g_hOpenALDLL, "alDopplerVelocity");
+    if (OALFunctions->alDopplerVelocity == NULL)
     {
-        OutputDebugString("Failed to retrieve 'alDopplerVelocity' function address\n");
+        DEBUG_PRINT("Failed to retrieve 'alDopplerVelocity' function address\n");
         return AL_FALSE;
     }
-    lpOALFnTable->alcGetString = (LPALCGETSTRING)GetProcAddress(g_hOpenALDLL, "alcGetString");
-    if (lpOALFnTable->alcGetString == NULL)
+    OALFunctions->alcGetString = (LPALCGETSTRING)GetProcAddress(g_hOpenALDLL, "alcGetString");
+    if (OALFunctions->alcGetString == NULL)
     {
-        OutputDebugString("Failed to retrieve 'alcGetString' function address\n");
+        DEBUG_PRINT("Failed to retrieve 'alcGetString' function address\n");
         return AL_FALSE;
     }
-    lpOALFnTable->alcGetIntegerv = (LPALCGETINTEGERV)GetProcAddress(g_hOpenALDLL, "alcGetIntegerv");
-    if (lpOALFnTable->alcGetIntegerv == NULL)
+    OALFunctions->alcGetIntegerv = (LPALCGETINTEGERV)GetProcAddress(g_hOpenALDLL, "alcGetIntegerv");
+    if (OALFunctions->alcGetIntegerv == NULL)
     {
-        OutputDebugString("Failed to retrieve 'alcGetIntegerv' function address\n");
+        DEBUG_PRINT("Failed to retrieve 'alcGetIntegerv' function address\n");
         return AL_FALSE;
     }
-    lpOALFnTable->alcOpenDevice = (LPALCOPENDEVICE)GetProcAddress(g_hOpenALDLL, "alcOpenDevice");
-    if (lpOALFnTable->alcOpenDevice == NULL)
+    OALFunctions->alcOpenDevice = (LPALCOPENDEVICE)GetProcAddress(g_hOpenALDLL, "alcOpenDevice");
+    if (OALFunctions->alcOpenDevice == NULL)
     {
-        OutputDebugString("Failed to retrieve 'alcOpenDevice' function address\n");
+        DEBUG_PRINT("Failed to retrieve 'alcOpenDevice' function address\n");
         return AL_FALSE;
     }
-    lpOALFnTable->alcCloseDevice = (LPALCCLOSEDEVICE)GetProcAddress(g_hOpenALDLL, "alcCloseDevice");
-    if (lpOALFnTable->alcCloseDevice == NULL)
+    OALFunctions->alcCloseDevice = (LPALCCLOSEDEVICE)GetProcAddress(g_hOpenALDLL, "alcCloseDevice");
+    if (OALFunctions->alcCloseDevice == NULL)
     {
-        OutputDebugString("Failed to retrieve 'alcCloseDevice' function address\n");
+        DEBUG_PRINT("Failed to retrieve 'alcCloseDevice' function address\n");
         return AL_FALSE;
     }
-    lpOALFnTable->alcCreateContext = (LPALCCREATECONTEXT)GetProcAddress(g_hOpenALDLL, "alcCreateContext");
-    if (lpOALFnTable->alcCreateContext == NULL)
+    OALFunctions->alcCreateContext = (LPALCCREATECONTEXT)GetProcAddress(g_hOpenALDLL, "alcCreateContext");
+    if (OALFunctions->alcCreateContext == NULL)
     {
-        OutputDebugString("Failed to retrieve 'alcCreateContext' function address\n");
+        DEBUG_PRINT("Failed to retrieve 'alcCreateContext' function address\n");
         return AL_FALSE;
     }
-    lpOALFnTable->alcMakeContextCurrent = (LPALCMAKECONTEXTCURRENT)GetProcAddress(g_hOpenALDLL, "alcMakeContextCurrent");
-    if (lpOALFnTable->alcMakeContextCurrent == NULL)
+    OALFunctions->alcMakeContextCurrent = (LPALCMAKECONTEXTCURRENT)GetProcAddress(g_hOpenALDLL, "alcMakeContextCurrent");
+    if (OALFunctions->alcMakeContextCurrent == NULL)
     {
-        OutputDebugString("Failed to retrieve 'alcMakeContextCurrent' function address\n");
+        DEBUG_PRINT("Failed to retrieve 'alcMakeContextCurrent' function address\n");
         return AL_FALSE;
     }
-    lpOALFnTable->alcProcessContext = (LPALCPROCESSCONTEXT)GetProcAddress(g_hOpenALDLL, "alcProcessContext");
-    if (lpOALFnTable->alcProcessContext == NULL)
+    OALFunctions->alcProcessContext = (LPALCPROCESSCONTEXT)GetProcAddress(g_hOpenALDLL, "alcProcessContext");
+    if (OALFunctions->alcProcessContext == NULL)
     {
-        OutputDebugString("Failed to retrieve 'alcProcessContext' function address\n");
+        DEBUG_PRINT("Failed to retrieve 'alcProcessContext' function address\n");
         return AL_FALSE;
     }
-    lpOALFnTable->alcGetCurrentContext = (LPALCGETCURRENTCONTEXT)GetProcAddress(g_hOpenALDLL, "alcGetCurrentContext");
-    if (lpOALFnTable->alcGetCurrentContext == NULL)
+    OALFunctions->alcGetCurrentContext = (LPALCGETCURRENTCONTEXT)GetProcAddress(g_hOpenALDLL, "alcGetCurrentContext");
+    if (OALFunctions->alcGetCurrentContext == NULL)
     {
-        OutputDebugString("Failed to retrieve 'alcGetCurrentContext' function address\n");
+        DEBUG_PRINT("Failed to retrieve 'alcGetCurrentContext' function address\n");
         return AL_FALSE;
     }
-    lpOALFnTable->alcGetContextsDevice = (LPALCGETCONTEXTSDEVICE)GetProcAddress(g_hOpenALDLL, "alcGetContextsDevice");
-    if (lpOALFnTable->alcGetContextsDevice == NULL)
+    OALFunctions->alcGetContextsDevice = (LPALCGETCONTEXTSDEVICE)GetProcAddress(g_hOpenALDLL, "alcGetContextsDevice");
+    if (OALFunctions->alcGetContextsDevice == NULL)
     {
-        OutputDebugString("Failed to retrieve 'alcGetContextsDevice' function address\n");
+        DEBUG_PRINT("Failed to retrieve 'alcGetContextsDevice' function address\n");
         return AL_FALSE;
     }
-    lpOALFnTable->alcSuspendContext = (LPALCSUSPENDCONTEXT)GetProcAddress(g_hOpenALDLL, "alcSuspendContext");
-    if (lpOALFnTable->alcSuspendContext == NULL)
+    OALFunctions->alcSuspendContext = (LPALCSUSPENDCONTEXT)GetProcAddress(g_hOpenALDLL, "alcSuspendContext");
+    if (OALFunctions->alcSuspendContext == NULL)
     {
-        OutputDebugString("Failed to retrieve 'alcSuspendContext' function address\n");
+        DEBUG_PRINT("Failed to retrieve 'alcSuspendContext' function address\n");
         return AL_FALSE;
     }
-    lpOALFnTable->alcDestroyContext = (LPALCDESTROYCONTEXT)GetProcAddress(g_hOpenALDLL, "alcDestroyContext");
-    if (lpOALFnTable->alcDestroyContext == NULL)
+    OALFunctions->alcDestroyContext = (LPALCDESTROYCONTEXT)GetProcAddress(g_hOpenALDLL, "alcDestroyContext");
+    if (OALFunctions->alcDestroyContext == NULL)
     {
-        OutputDebugString("Failed to retrieve 'alcDestroyContext' function address\n");
+        DEBUG_PRINT("Failed to retrieve 'alcDestroyContext' function address\n");
         return AL_FALSE;
     }
-    lpOALFnTable->alcGetError = (LPALCGETERROR)GetProcAddress(g_hOpenALDLL, "alcGetError");
-    if (lpOALFnTable->alcGetError == NULL)
+    OALFunctions->alcGetError = (LPALCGETERROR)GetProcAddress(g_hOpenALDLL, "alcGetError");
+    if (OALFunctions->alcGetError == NULL)
     {
-        OutputDebugString("Failed to retrieve 'alcGetError' function address\n");
+        DEBUG_PRINT("Failed to retrieve 'alcGetError' function address\n");
         return AL_FALSE;
     }
-    lpOALFnTable->alcIsExtensionPresent = (LPALCISEXTENSIONPRESENT)GetProcAddress(g_hOpenALDLL, "alcIsExtensionPresent");
-    if (lpOALFnTable->alcIsExtensionPresent == NULL)
+    OALFunctions->alcIsExtensionPresent = (LPALCISEXTENSIONPRESENT)GetProcAddress(g_hOpenALDLL, "alcIsExtensionPresent");
+    if (OALFunctions->alcIsExtensionPresent == NULL)
     {
-        OutputDebugString("Failed to retrieve 'alcIsExtensionPresent' function address\n");
+        DEBUG_PRINT("Failed to retrieve 'alcIsExtensionPresent' function address\n");
         return AL_FALSE;
     }
-    lpOALFnTable->alcGetProcAddress = (LPALCGETPROCADDRESS)GetProcAddress(g_hOpenALDLL, "alcGetProcAddress");
-    if (lpOALFnTable->alcGetProcAddress == NULL)
+    OALFunctions->alcGetProcAddress = (LPALCGETPROCADDRESS)GetProcAddress(g_hOpenALDLL, "alcGetProcAddress");
+    if (OALFunctions->alcGetProcAddress == NULL)
     {
-        OutputDebugString("Failed to retrieve 'alcGetProcAddress' function address\n");
+        DEBUG_PRINT("Failed to retrieve 'alcGetProcAddress' function address\n");
         return AL_FALSE;
     }
-    lpOALFnTable->alcGetEnumValue = (LPALCGETENUMVALUE)GetProcAddress(g_hOpenALDLL, "alcGetEnumValue");
-    if (lpOALFnTable->alcGetEnumValue == NULL)
+    OALFunctions->alcGetEnumValue = (LPALCGETENUMVALUE)GetProcAddress(g_hOpenALDLL, "alcGetEnumValue");
+    if (OALFunctions->alcGetEnumValue == NULL)
     {
-        OutputDebugString("Failed to retrieve 'alcGetEnumValue' function address\n");
+        DEBUG_PRINT("Failed to retrieve 'alcGetEnumValue' function address\n");
         return AL_FALSE;
     }
     
