@@ -21,7 +21,6 @@ ALboolean LoadOAL11Library(char* szOALFullPathName, oal_api* lpOALFnTable)
         g_hOpenALDLL = LoadLibrary("openal32.dll");
     }
     
-    
     if(!g_hOpenALDLL)
     {
         DEBUG_PRINT("Could not load OpenAL: %d\n", GetLastError());
