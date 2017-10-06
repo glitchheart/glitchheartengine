@@ -1,4 +1,4 @@
-static void LoadWavFile(const char *Filename, u32 *SoundBuffer)
+static void LoadWavFile(sound_device* SoundDevice, const char *Filename, u32 *SoundBuffer)
 {
     FILE *SoundFile = 0;
     wave_format WaveFormat;
@@ -82,8 +82,8 @@ static void LoadWavFile(const char *Filename, u32 *SoundBuffer)
             }
         }
         
-        alGenBuffers(1, SoundBuffer);
-        alBufferData(*SoundBuffer, Format, (void*)Data, Size, Frequency);
+        OpenALApi.alGenBuffers(1, SoundBuffer);
+        OpenALApi.alBufferData(*SoundBuffer, Format, (void*)Data, Size, Frequency);
         
         fclose(SoundFile);
     }
@@ -95,9 +95,106 @@ static inline void ResetCommands(sound_commands* Commands)
     Commands->SoundCount = 0;
 }
 
-static void InitAudio(sound_device *SoundDevice)
+static void InitAudio(sound_device *SoundDevice, oal_devices_list* DevicesList)
 {
-    SoundDevice->Device = alcOpenDevice(0);
+    auto Result = LoadOAL11Library(0, &OpenALApi);
+    
+    if(!Result)
+    {
+        ERR("Could not load OpenAL library");
+    }
+    
+    if(OpenALApi.alcIsExtensionPresent(NULL, "ALC_ENUMERATION_EXT"))
+    {
+        char* Devices = (char*)OpenALApi.alcGetString(NULL, ALC_DEVICE_SPECIFIER);
+        char* DefaultDeviceName = (char*)OpenALApi.alcGetString(NULL, ALC_DEFAULT_DEVICE_SPECIFIER);
+        const char* ActualDeviceName;
+        
+        if(!strlen(Devices))
+        {
+            ERR("No sound devices found\n");
+        }
+        
+        sound_device_info ALDeviceInfo;
+        
+        i32 DefaultDeviceIndex = 0;
+        i32 Index = 0;
+        
+        while(*Devices != NULL)
+        {
+            if(strcmp(DefaultDeviceName, Devices) == 0)
+            {
+                DefaultDeviceIndex = Index;
+            }
+            ALCdevice* Device = OpenALApi.alcOpenDevice(Devices);
+            if(Device)
+            {
+                ALCcontext* Context = OpenALApi.alcCreateContext(Device, NULL);
+                if(Context)
+                {
+                    ActualDeviceName = OpenALApi.alcGetString(Device, ALC_DEVICE_SPECIFIER);
+                    b32 NewName = true;
+                    for(i32 I = 0; I < DevicesList->DeviceCount; I++)
+                    {
+                        if(strcmp(DevicesList->DeviceInfo[I].DeviceName, ActualDeviceName) == 0)
+                        {
+                            NewName = false;
+                        }
+                    }
+                    if((NewName) && (ActualDeviceName != NULL) && (strlen(ActualDeviceName) > 0))
+                    {
+                        memset(&ALDeviceInfo, 0, sizeof(sound_device_info));
+                        ALDeviceInfo.Selected = true;
+                        ALDeviceInfo.DeviceName = ActualDeviceName;
+                        OpenALApi.alcGetIntegerv(Device, ALC_MAJOR_VERSION, sizeof(i32), &ALDeviceInfo.MajorVersion);
+                        OpenALApi.alcGetIntegerv(Device, ALC_MINOR_VERSION, sizeof(i32), &ALDeviceInfo.MinorVersion);
+                        
+                        // Check for ALC Extensions
+                        if (OpenALApi.alcIsExtensionPresent(Device, "ALC_EXT_CAPTURE") == AL_TRUE)
+                            ALDeviceInfo.Extensions[ALDeviceInfo.ExtensionCount++] = ("ALC_EXT_CAPTURE");
+                        if (OpenALApi.alcIsExtensionPresent(Device, "ALC_EXT_EFX") == AL_TRUE)
+                            ALDeviceInfo.Extensions[ALDeviceInfo.ExtensionCount++] = "ALC_EXT_EFX";
+                        
+                        // Check for AL Extensions
+                        if (OpenALApi.alIsExtensionPresent("AL_EXT_OFFSET") == AL_TRUE)
+                            ALDeviceInfo.Extensions[ALDeviceInfo.ExtensionCount++] = "AL_EXT_OFFSET";
+                        
+                        if (OpenALApi.alIsExtensionPresent("AL_EXT_LINEAR_DISTANCE") == AL_TRUE)
+                            ALDeviceInfo.Extensions[ALDeviceInfo.ExtensionCount++] = "AL_EXT_LINEAR_DISTANCE";
+                        if (OpenALApi.alIsExtensionPresent("AL_EXT_EXPONENT_DISTANCE") == AL_TRUE)
+                            ALDeviceInfo.Extensions[ALDeviceInfo.ExtensionCount++] = "AL_EXT_EXPONENT_DISTANCE";
+                        
+                        if (OpenALApi.alIsExtensionPresent("EAX2.0") == AL_TRUE)
+                            ALDeviceInfo.Extensions[ALDeviceInfo.ExtensionCount++] = "EAX2.0";
+                        if (OpenALApi.alIsExtensionPresent("EAX3.0") == AL_TRUE)
+                            ALDeviceInfo.Extensions[ALDeviceInfo.ExtensionCount++] = "EAX3.0";
+                        if (OpenALApi.alIsExtensionPresent("EAX4.0") == AL_TRUE)
+                            ALDeviceInfo.Extensions[ALDeviceInfo.ExtensionCount++] = "EAX4.0";
+                        if (OpenALApi.alIsExtensionPresent("EAX5.0") == AL_TRUE)
+                            ALDeviceInfo.Extensions[ALDeviceInfo.ExtensionCount++] = "EAX5.0";
+                        
+                        if (OpenALApi.alIsExtensionPresent("EAX-RAM") == AL_TRUE)
+                            ALDeviceInfo.Extensions[ALDeviceInfo.ExtensionCount++] = "EAX-RAM";
+                        DevicesList->DeviceInfo[DevicesList->DeviceCount++] = ALDeviceInfo;
+                    }
+                    OpenALApi.alcMakeContextCurrent(NULL);
+                    OpenALApi.alcDestroyContext(Context);
+                }
+                OpenALApi.alcCloseDevice(Device);
+            }
+            Devices += strlen(Devices) + 1;
+            Index += 1;
+        }
+    }
+    
+    if(DevicesList->DeviceCount > 0)
+    {
+        auto& Device = DevicesList->DeviceInfo[0];
+        SoundDevice->Device = OpenALApi.alcOpenDevice(0);
+        Device.Selected = true;
+        SoundDevice->DeviceInfo = Device;
+    }
+    
     if (!SoundDevice->Device)
     {
         SoundDevice->Device = 0;
@@ -110,28 +207,28 @@ static void InitAudio(sound_device *SoundDevice)
     ALfloat ListenerPosition[] = {5.0f, 5.0f, 5.0f};
     
     
-    Enumeration = alcIsExtensionPresent(0, "ALC_ENUMERATION_EXT");
+    Enumeration = OpenALApi.alcIsExtensionPresent(0, "ALC_ENUMERATION_EXT");
     if (!Enumeration)
     {
         ERR("Enumeration extension not supported");
         exit(EXIT_FAILURE);
     }
     
-    SoundDevice->Context = alcCreateContext(SoundDevice->Device, 0);
-    alcMakeContextCurrent(SoundDevice->Context);
+    SoundDevice->Context = OpenALApi.alcCreateContext(SoundDevice->Device, 0);
+    OpenALApi.alcMakeContextCurrent(SoundDevice->Context);
     if (!SoundDevice->Context)
     {
         ERR("Could not set sound context");
         SoundDevice->Context = 0;
     }
     
-    alListenerfv(AL_ORIENTATION, ListenerOrientation);
-    alListenerfv(AL_POSITION, ListenerPosition);
-    alListenerf(AL_GAIN,0.95f);
+    OpenALApi.alListenerfv(AL_ORIENTATION, ListenerOrientation);
+    OpenALApi.alListenerfv(AL_POSITION, ListenerPosition);
+    OpenALApi.alListenerf(AL_GAIN,0.95f);
     
-    alDistanceModel(AL_LINEAR_DISTANCE_CLAMPED);
+    OpenALApi.alDistanceModel(AL_LINEAR_DISTANCE_CLAMPED);
     
-    alGenSources((ALuint)SOURCES,SoundDevice->Sources);
+    OpenALApi.alGenSources((ALuint)SOURCES,SoundDevice->Sources);
     
     SoundDevice->PrevStopped = false;
     SoundDevice->PrevPaused = false;
@@ -143,7 +240,7 @@ static void InitAudio(sound_device *SoundDevice)
 
 static void LoadSound(const char *FilePath, sound_device* SoundDevice, u32* BufferHandle, char* Name = "")
 {
-    LoadWavFile(FilePath, BufferHandle);
+    LoadWavFile(SoundDevice, FilePath, BufferHandle);
     SoundDevice->Buffers[SoundDevice->BufferCount++] = *BufferHandle;
 }
 
@@ -164,16 +261,16 @@ static inline void LoadSounds(sound_device* SoundDevice, sound_commands* Command
 
 static inline void CleanupSound(sound_device* SoundDevice)
 {
-    alDeleteSources(SOURCES, SoundDevice->Sources);
-    alDeleteBuffers(SoundDevice->BufferCount, SoundDevice->Buffers);
+    OpenALApi.alDeleteSources(SOURCES, SoundDevice->Sources);
+    OpenALApi.alDeleteBuffers(SoundDevice->BufferCount, SoundDevice->Buffers);
     
-    SoundDevice->Device = alcGetContextsDevice(SoundDevice->Context);
-    alcMakeContextCurrent(0);
-    alcDestroyContext(SoundDevice->Context);
-    alcCloseDevice(SoundDevice->Device);
+    SoundDevice->Device = OpenALApi.alcGetContextsDevice(SoundDevice->Context);
+    OpenALApi.alcMakeContextCurrent(0);
+    OpenALApi.alcDestroyContext(SoundDevice->Context);
+    OpenALApi.alcCloseDevice(SoundDevice->Device);
 }
 
-static inline void PlaySound(sound_effect *SoundEffect, sound_device* Device, sound_commands* Commands)
+static inline void PlaySound(sound_effect *SoundEffect, sound_device* SoundDevice, sound_commands* Commands)
 {
     if (SoundEffect)
     {
@@ -182,31 +279,31 @@ static inline void PlaySound(sound_effect *SoundEffect, sound_device* Device, so
         i32 SourceState;
         for(u32 SourceIndex = 0; SourceIndex < SOURCES; SourceIndex++)
         {
-            alGetSourcei(Device->Sources[SourceIndex],AL_SOURCE_STATE,&SourceState);
+            OpenALApi.alGetSourcei(SoundDevice->Sources[SourceIndex],AL_SOURCE_STATE,&SourceState);
             if(SourceState != AL_PLAYING)
             {
-                Source = Device->Sources[SourceIndex];
-                Device->SourceGain[SourceIndex] = SoundEffect->SoundInfo.Gain;
+                Source = SoundDevice->Sources[SourceIndex];
+                SoundDevice->SourceGain[SourceIndex] = SoundEffect->SoundInfo.Gain;
                 sound_effect SoundToStore;
                 SoundToStore.Buffer = SoundEffect->Buffer;
                 SoundToStore.Source = SoundEffect->Source;
                 SoundToStore.SourceState = SoundEffect->SourceState;
                 SoundToStore.SoundInfo = SoundEffect->SoundInfo;
-                Device->SourceToSound[Device->Sources[SourceIndex]] = SoundToStore;
+                SoundDevice->SourceToSound[SoundDevice->Sources[SourceIndex]] = SoundToStore;
                 break;
             }
         }
-        alSourcef(Source,AL_MAX_DISTANCE,1.0);
-        alSourcef(Source,AL_REFERENCE_DISTANCE,1.0);
-        alSourcef(Source, AL_ROLLOFF_FACTOR, 1.0f);
-        alSourcei(Source, AL_BUFFER, Device->SoundArray[SoundEffect->Buffer]);
-        alSourcef(Source, AL_PITCH, SoundEffect->SoundInfo.Pitch);
-        alSourcef(Source, AL_GAIN, Commands->Muted ? 0 : SoundEffect->SoundInfo.Gain);
-        alSource3f(Source, AL_POSITION, SoundEffect->SoundInfo.Position[0], SoundEffect->SoundInfo.Position[1], SoundEffect->SoundInfo.Position[2]);
-        alSource3f(Source, AL_VELOCITY, SoundEffect->SoundInfo.Velocity[0], SoundEffect->SoundInfo.Velocity[1], SoundEffect->SoundInfo.Velocity[2]);
-        alSourcei(Source, AL_LOOPING, SoundEffect->SoundInfo.Loop);
-        alSourcePlay(Source);
-        alGetSourcei(SoundEffect->Source, AL_SOURCE_STATE, &SoundEffect->SourceState);
+        OpenALApi.alSourcef(Source,AL_MAX_DISTANCE,1.0);
+        OpenALApi.alSourcef(Source,AL_REFERENCE_DISTANCE,1.0);
+        OpenALApi.alSourcef(Source, AL_ROLLOFF_FACTOR, 1.0f);
+        OpenALApi.alSourcei(Source, AL_BUFFER, SoundDevice->SoundArray[SoundEffect->Buffer]);
+        OpenALApi.alSourcef(Source, AL_PITCH, SoundEffect->SoundInfo.Pitch);
+        OpenALApi.alSourcef(Source, AL_GAIN, Commands->Muted ? 0 : SoundEffect->SoundInfo.Gain);
+        OpenALApi.alSource3f(Source, AL_POSITION, SoundEffect->SoundInfo.Position[0], SoundEffect->SoundInfo.Position[1], SoundEffect->SoundInfo.Position[2]);
+        OpenALApi.alSource3f(Source, AL_VELOCITY, SoundEffect->SoundInfo.Velocity[0], SoundEffect->SoundInfo.Velocity[1], SoundEffect->SoundInfo.Velocity[2]);
+        OpenALApi.alSourcei(Source, AL_LOOPING, SoundEffect->SoundInfo.Loop);
+        OpenALApi.alSourcePlay(Source);
+        OpenALApi.alGetSourcei(SoundEffect->Source, AL_SOURCE_STATE, &SoundEffect->SourceState);
     }
 }
 
@@ -214,12 +311,12 @@ static inline void StopSound(sound_device* SoundDevice, sound_commands* Commands
 {
     for(u32 SourceIndex = 0; SourceIndex < SOURCES; SourceIndex++)
     {
-        alSourcef(SoundDevice->Sources[SourceIndex],AL_GAIN,0);
-        alSourceStop(SoundDevice->Sources[SourceIndex]);
-        alSourcei(SoundDevice->Sources[SourceIndex],AL_BUFFER,0);
+        OpenALApi.alSourcef(SoundDevice->Sources[SourceIndex],AL_GAIN,0);
+        OpenALApi.alSourceStop(SoundDevice->Sources[SourceIndex]);
+        OpenALApi.alSourcei(SoundDevice->Sources[SourceIndex],AL_BUFFER,0);
         if(!Commands->Muted)
         {
-            alSourcef(SoundDevice->Sources[SourceIndex],AL_GAIN,SoundDevice->SourceGain[SourceIndex]);
+            OpenALApi.alSourcef(SoundDevice->Sources[SourceIndex],AL_GAIN,SoundDevice->SourceGain[SourceIndex]);
         }
     }
 }
@@ -228,86 +325,86 @@ static inline void PauseSound(sound_device* SoundDevice, sound_commands* Command
 {
     for(u32 SourceIndex = 0; SourceIndex < SOURCES; SourceIndex++)
     {
-        alSourcef(SoundDevice->Sources[SourceIndex],AL_GAIN,0);
+        OpenALApi.alSourcef(SoundDevice->Sources[SourceIndex],AL_GAIN,0);
         ALint SourceState;
-        alGetSourcei(SoundDevice->Sources[SourceIndex],AL_SOURCE_STATE,&SourceState);
+        OpenALApi.alGetSourcei(SoundDevice->Sources[SourceIndex],AL_SOURCE_STATE,&SourceState);
         if(SourceState == AL_PLAYING)
         {
-            alSourcePause(SoundDevice->Sources[SourceIndex]);
+            OpenALApi.alSourcePause(SoundDevice->Sources[SourceIndex]);
         }
         else
         {
-            alSourcei(SoundDevice->Sources[SourceIndex], AL_BUFFER,0);
+            OpenALApi.alSourcei(SoundDevice->Sources[SourceIndex], AL_BUFFER,0);
         }
         if(!Commands->Muted)
         {
-            alSourcef(SoundDevice->Sources[SourceIndex],AL_GAIN,SoundDevice->SourceGain[SourceIndex]);
+            OpenALApi.alSourcef(SoundDevice->Sources[SourceIndex],AL_GAIN,SoundDevice->SourceGain[SourceIndex]);
         }
     }
 }
 
-static void PlaySounds(sound_device* Device, sound_commands* Commands, math::v3* EntityPositions, i32 EntityCount)
+static void PlaySounds(sound_device* SoundDevice, sound_commands* Commands, math::v3* EntityPositions, i32 EntityCount)
 {
-    if(Device && Commands)
+    if(SoundDevice && Commands)
     {
-        LoadSounds(Device, Commands);
+        LoadSounds(SoundDevice, Commands);
         
-        if(Commands->Muted && !Device->PrevMuted)
+        if(Commands->Muted && !SoundDevice->PrevMuted)
         {
-            Device->PrevMuted = true;
+            SoundDevice->PrevMuted = true;
             for(u32 SourceIndex = 0; SourceIndex < SOURCES; SourceIndex++)
             {
-                alSourcef(Device->Sources[SourceIndex], AL_GAIN, 0);
+                OpenALApi.alSourcef(SoundDevice->Sources[SourceIndex], AL_GAIN, 0);
             }
         }
-        else if(!Commands->Muted && Device->PrevMuted)
+        else if(!Commands->Muted && SoundDevice->PrevMuted)
         {
-            Device->PrevMuted = false;
+            SoundDevice->PrevMuted = false;
             for(u32 SourceIndex = 0; SourceIndex < SOURCES; SourceIndex++)
             {
-                alSourcef(Device->Sources[SourceIndex],AL_GAIN,Device->SourceGain[SourceIndex]);
+                OpenALApi.alSourcef(SoundDevice->Sources[SourceIndex],AL_GAIN,SoundDevice->SourceGain[SourceIndex]);
             }
         }
         
         
-        if(Commands->Stopped && !Device->PrevStopped)
+        if(Commands->Stopped && !SoundDevice->PrevStopped)
         {
-            Device->PrevStopped = true;
-            StopSound(Device, Commands);
+            SoundDevice->PrevStopped = true;
+            StopSound(SoundDevice, Commands);
             ResetCommands(Commands);
         }
         else
         {
-            Device->PrevStopped = false;
+            SoundDevice->PrevStopped = false;
             for (i32 Sound = 0;
                  Sound < Commands->SoundCount;
                  Sound++)
             {
                 auto SoundEffect = (sound_effect*)&Commands->SoundArena.CurrentBlock->Base[Sound];
-                PlaySound(SoundEffect, Device, Commands);
+                PlaySound(SoundEffect, SoundDevice, Commands);
             }
             ResetCommands(Commands);
         }
         
-        if(Commands->Paused && !Device->PrevPaused)
+        if(Commands->Paused && !SoundDevice->PrevPaused)
         {
-            Device->PrevPaused = true;
-            PauseSound(Device, Commands);
+            SoundDevice->PrevPaused = true;
+            PauseSound(SoundDevice, Commands);
         }
-        else if(!Commands->Paused && Device->PrevPaused)
+        else if(!Commands->Paused && SoundDevice->PrevPaused)
         {
-            Device->PrevPaused = false;
-            alSourcePlayv(SOURCES,Device->Sources);
+            SoundDevice->PrevPaused = false;
+            OpenALApi.alSourcePlayv(SOURCES,SoundDevice->Sources);
         }
         
         if(!Commands->Muted && !Commands->Paused && !Commands->Stopped)
         {
             for(i32 SourceIndex = 0; SourceIndex < SOURCES; SourceIndex++)
             {
-                auto Source = Device->Sources[SourceIndex];
+                auto Source = SoundDevice->Sources[SourceIndex];
                 ALint SourceState;
-                alGetSourcei(Source,AL_SOURCE_STATE,&SourceState);
-                auto Sound = Device->SourceToSound[Source];
+                OpenALApi.alGetSourcei(Source,AL_SOURCE_STATE,&SourceState);
+                auto Sound = SoundDevice->SourceToSound[Source];
                 if(SourceState == AL_PLAYING)
                 {
                     if(Sound.SoundInfo.Rolloff > 0)
@@ -318,8 +415,8 @@ static void PlaySounds(sound_device* Device, sound_commands* Commands, math::v3*
                             if(EntityPositions)
                             {
                                 auto Position = EntityPositions[Sound.SoundInfo.EntityHandle];
-                                Device->SourceToSound[Source].SoundInfo.Position[0] = Position.x;
-                                Device->SourceToSound[Source].SoundInfo.Position[1] = Position.y;
+                                SoundDevice->SourceToSound[Source].SoundInfo.Position[0] = Position.x;
+                                SoundDevice->SourceToSound[Source].SoundInfo.Position[1] = Position.y;
                             }
                         }
                         
@@ -328,8 +425,8 @@ static void PlaySounds(sound_device* Device, sound_commands* Commands, math::v3*
                             r32 DistanceToEntity = math::Distance(math::v3(Sound.SoundInfo.Position[0], Sound.SoundInfo.Position[1],
                                                                            Sound.SoundInfo.Position[2]), math::v3(0,0,0));
                             r32 VolFactor = 1.0f - (DistanceToEntity/Sound.SoundInfo.Rolloff);
-                            alSourcef(Device->Sources[SourceIndex],AL_GAIN,Max(0.0f,VolFactor) * Commands->SFXVolume);
-                            Device->SourceGain[SourceIndex] = Max(0.0f,VolFactor) * Commands->SFXVolume;
+                            OpenALApi.alSourcef(SoundDevice->Sources[SourceIndex],AL_GAIN,Max(0.0f,VolFactor) * Commands->SFXVolume);
+                            SoundDevice->SourceGain[SourceIndex] = Max(0.0f,VolFactor) * Commands->SFXVolume;
                         }
                     }
                 }

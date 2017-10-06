@@ -14,18 +14,35 @@ char* ToString(sound_effect Sound)
 
 GENERIC_MAP(source_to_sound, sound_effect, i32, CmpInt, -1, "%d", INT_ASSIGN, VAL_COPY);
 
+struct sound_device_info
+{
+    const char* DeviceName;
+    i32 MajorVersion;
+    i32 MinorVersion;
+    u32 SourceCount;
+    const char* Extensions[32];
+    i32 ExtensionCount;
+    b32 Selected;
+};
+
+struct oal_devices_list
+{
+    sound_device_info DeviceInfo[32];
+    i32 DeviceCount;
+};
+
 struct sound_device
 {
     ALCdevice *Device;
+    sound_device_info DeviceInfo;
     ALCcontext *Context;
     b32 IsInitialized;
     ALuint Sources[SOURCES];
     ALuint Buffers[SOUNDS];
     u32 BufferCount;
+    
     b32 PrevMuted;
-    
     b32 PrevPaused;
-    
     b32 PrevStopped;
     
     r32 SourceGain[SOURCES];

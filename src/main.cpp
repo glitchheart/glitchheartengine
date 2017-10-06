@@ -71,18 +71,6 @@ static game_code LoadGameCode(char* DllPath, char* TempDllPath)
     return Result;
 }
 
-struct dll
-{
-    HMODULE DLL;
-    
-    
-};
-
-static void LoadOpenAL(char* DLLPath)
-{
-    
-}
-
 static void UnloadGameCode(game_code *GameCode)
 {
     if (GameCode->GameCodeDLL)
@@ -365,7 +353,8 @@ int main(int Argc, char** Args)
     u32 FrameCounterForAssetCheck = 0;
     
     sound_device SoundDevice = {};
-    InitAudio(&SoundDevice);
+    oal_devices_list DevicesList = {};
+    InitAudio(&SoundDevice, &DevicesList);
     
     sound_commands SoundCommands = {};
     

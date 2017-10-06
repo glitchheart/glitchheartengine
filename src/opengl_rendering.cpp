@@ -701,22 +701,6 @@ static void RenderSetup(render_state *RenderState, memory_arena* PermArena)
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), 0);
     glBindVertexArray(0);
     
-    //astar tile
-    glGenVertexArrays(1, &RenderState->AStarPathVAO);
-    glBindVertexArray(RenderState->AStarPathVAO);
-    glGenBuffers(1, &RenderState->AStarPathQuadVBO);
-    glBindBuffer(GL_ARRAY_BUFFER, RenderState->AStarPathQuadVBO);
-    glBufferData(GL_ARRAY_BUFFER, RenderState->AStarPathQuadVerticesSize,
-                 RenderState->AStarPathQuadVertices,GL_DYNAMIC_DRAW);
-    
-    LoadShader(ShaderPaths[Shader_AStarPath], &RenderState->AStarPathShader, PermArena);
-    
-    PositionLocation3 = glGetAttribLocation(RenderState->AStarPathShader.Program, "pos");
-    glEnableVertexAttribArray(PositionLocation3);
-    glVertexAttribPointer(PositionLocation3, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), 0);
-    
-    glBindVertexArray(0);
-    
     // Passthrough
     LoadShader(ShaderPaths[Shader_Passthrough], &RenderState->PassthroughShader, PermArena);
     glGenVertexArrays(1, &RenderState->PassthroughVAO);
