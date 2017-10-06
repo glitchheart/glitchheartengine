@@ -14,10 +14,11 @@ ALboolean LoadOAL11Library(char* szOALFullPathName, oal_api* lpOALFnTable)
     else
     {
 #if defined(_WIN64)
-        g_hOpenALDLL = LoadLibrary("../libs/openal/dll/Win32/openal32.dll");
+        MoveFile("../libs/openal/dll/Win64/openal32.dll", "openal32.dll");
 #else
-        g_hOpenALDLL = LoadLibrary("../libs/openal/dll/Win32/openal32.dll");
+        MoveFile("../libs/openal/dll/Win32/openal32.dll", "openal32.dll");
 #endif
+        g_hOpenALDLL = LoadLibrary("openal32.dll");
     }
     
     
@@ -32,7 +33,7 @@ ALboolean LoadOAL11Library(char* szOALFullPathName, oal_api* lpOALFnTable)
     lpOALFnTable->alEnable = (LPALENABLE)GetProcAddress(g_hOpenALDLL, "alEnable");
     if(lpOALFnTable->alEnable == NULL)
     {
-        OutputDebugString("Failed to retrieve 'alenable' function address\n");
+        OutputDebugString("Failed to retrieve 'alEnable' function address\n");
         return AL_FALSE;
     }
     lpOALFnTable->alDisable = (LPALDISABLE)GetProcAddress(g_hOpenALDLL, "alDisable");
