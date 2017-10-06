@@ -3,28 +3,63 @@
 
 HINSTANCE g_hOpenALDLL = NULL;
 
+enum dll_arch
+{
+    A_32,
+    A_64
+};
 
 ALboolean LoadOAL11Library(char* szOALFullPathName, oal_api* lpOALFnTable)
 {
     if(!lpOALFnTable)
         return AL_FALSE;
     
+    dll_arch Arch = A_64;
+    
     if(szOALFullPathName)
         g_hOpenALDLL = LoadLibrary(szOALFullPathName);
     else
     {
+        
+        
 #if defined(_WIN64)
         CopyFile("../libs/openal/dll/Win64/openal32.dll", "openal32.dll", FALSE);
+        Arch = A_64;
 #else
         CopyFile("../libs/openal/dll/Win32/openal32.dll", "openal32.dll", FALSE);
+        Arch = A_32;
 #endif
         g_hOpenALDLL = LoadLibrary("openal32.dll");
     }
     
     if(!g_hOpenALDLL)
     {
-        DEBUG_PRINT("Could not load OpenAL: %d\n", GetLastError());
-        return AL_FALSE;
+        i32 Err = GetLastError();
+        DEBUG_PRINT("Could not load OpenAL: %d\n", Err);
+        
+        if(Err == ERROR_BAD_EXE_FORMAT)
+        {
+            switch(Arch)
+            {
+                case A_32:
+                {
+                    //@Incomplete: Ignore for now
+                    ERR("32 bit architecture not supported");
+                }
+                break;
+                case A_64:
+                {
+                    CopyFile("../libs/openal/dll/Win32/openal32.dll", "openal32.dll", FALSE);
+                    g_hOpenALDLL = LoadLibrary("openal32.dll");
+                    CopyFile("../libs/openal/dll/Win64/openal32.dll", "openal32.dll", FALSE);
+                }
+                break;
+            }
+        }
+        else
+        {
+            return AL_FALSE;
+        }
     }
     
     memset(lpOALFnTable, 0, sizeof(oal_api));
