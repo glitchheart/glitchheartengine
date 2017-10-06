@@ -27,7 +27,7 @@ struct game_code
 
 struct win32_memory_state
 {
-    // Will this work thoooo
+    // Will this work thoooo (apparently yes!)
     platform_memory_block* Blocks[MAX_TEMP_BLOCKS];
     i32 TempCount;
     u64 TempSizeAllocated;

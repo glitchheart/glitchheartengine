@@ -21,7 +21,7 @@ del *.pdb > NUL 2> NUL
 
 echo Compilation started on: %time%
 cl %CommonCompilerFlags% ..\src\cards_game.cpp   -LD /DLL /link -incremental:no  -PDB:game%random%.pdb -EXPORT:Update  
-cl %CommonCompilerFlags% ..\src\main.cpp  /link %ExtraLinkerFlags% %CommonLinkerFlags%
+cl %CommonCompilerFlags% ..\src\win32_main.cpp  /link %ExtraLinkerFlags% %CommonLinkerFlags%
 echo Compilation finished on: %time%
 popd
 
