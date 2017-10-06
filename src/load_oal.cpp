@@ -14,9 +14,9 @@ ALboolean LoadOAL11Library(char* szOALFullPathName, oal_api* lpOALFnTable)
     else
     {
 #if defined(_WIN64)
-        MoveFile("../libs/openal/dll/Win64/openal32.dll", "openal32.dll");
+        CopyFile("../libs/openal/dll/Win64/openal32.dll", "openal32.dll", FALSE);
 #else
-        MoveFile("../libs/openal/dll/Win32/openal32.dll", "openal32.dll");
+        CopyFile("../libs/openal/dll/Win32/openal32.dll", "openal32.dll", FALSE);
 #endif
         g_hOpenALDLL = LoadLibrary("openal32.dll");
     }
