@@ -10,12 +10,22 @@ ALboolean LoadOAL11Library(char* szOALFullPathName, oal_api* lpOALFnTable)
         return AL_FALSE;
     
     if(szOALFullPathName)
-        g_hOpenALDLL = LoadLibraryA(szOALFullPathName);
+        g_hOpenALDLL = LoadLibrary(szOALFullPathName);
     else
-        g_hOpenALDLL = LoadLibraryA("openal32.dll");
+    {
+#if defined(_WIN64)
+        g_hOpenALDLL = LoadLibrary("../libs/openal/dll/Win32/openal32.dll");
+#else
+        g_hOpenALDLL = LoadLibrary("../libs/openal/dll/Win32/openal32.dll");
+#endif
+    }
+    
     
     if(!g_hOpenALDLL)
+    {
+        DEBUG_PRINT("Could not load OpenAL: %d\n", GetLastError());
         return AL_FALSE;
+    }
     
     memset(lpOALFnTable, 0, sizeof(oal_api));
     
