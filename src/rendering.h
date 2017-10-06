@@ -90,7 +90,6 @@ enum Shader_Type
     Shader_UISprite,
     Shader_ErrorSprite,
     Shader_ErrorUI,
-    Shader_AStarPath,
     Shader_FrameBuffer,
     Shader_LightSource,
     Shader_SimpleModel,

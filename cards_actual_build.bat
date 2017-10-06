@@ -10,7 +10,7 @@ WHERE cl
 IF %ERRORLEVEL% NEQ 0 call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" x64
 
 set CommonCompilerFlags=/MD -nologo -Od -Oi- -W4 -Gm- -EHsc -FC -Z7 %PRP% %WIGNORED% %DEBUG% %GLM% /I..\libs /I..\libs\glfw\include /I..\libs\openal\include /I..\libs\freetype\include /I..\libs\glad\include 
-set CommonLinkerFlags= kernel32.lib user32.lib gdi32.lib winmm.lib opengl32.lib shell32.lib ..\libs\openal\libs\Win64\OpenAL32.lib ..\libs\glfw\lib-vc2015\glfw3.lib ..\libs\glad\glad.obj ..\libs\freetype\lib\freetype271d.lib
+set CommonLinkerFlags= kernel32.lib user32.lib gdi32.lib winmm.lib opengl32.lib shell32.lib  ..\libs\glfw\lib-vc2015\glfw3.lib ..\libs\glad\glad.obj ..\libs\freetype\lib\freetype271d.lib
 set ExtraLinkerFlags=/NODEFAULTLIB:"LIBCMT" -incremental:no -opt:ref /ignore:4099
 
 IF NOT EXIST build mkdir build

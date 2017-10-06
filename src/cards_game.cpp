@@ -353,6 +353,8 @@ extern "C" UPDATE(Update)
         
         GameState->FontMap["Inconsolata_36"] = LoadFont(Renderer, Concat(CARDS_ASSETS, "/fonts/inconsolata/Inconsolata-Bold.ttf"), 36, "Inconsolata");
         
+        PLAY_TRACK("Brugt");
+        
         GameState->IsInitialized = true;
         GameMemory->IsInitialized = true;
     }

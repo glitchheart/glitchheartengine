@@ -25,7 +25,6 @@ const static struct
     SHADERPAIR(UISprite),
     SHADERPAIR(ErrorSprite),
     SHADERPAIR(ErrorUI),
-    SHADERPAIR(AStarPath),
     SHADERPAIR(FrameBuffer),
     SHADERPAIR(LightSource),
     SHADERPAIR(SimpleModel),
@@ -57,7 +56,6 @@ const char* ShaderPaths[Shader_Count] =
     "../assets/shaders/spriteuishader",
     "../assets/shaders/errorshadersprite",
     "../assets/shaders/errorshaderui",
-    "../assets/shaders/astarpathshader",
     "../assets/shaders/framebuffershader",
     "../assets/shaders/lightsourceshader",
     "../assets/shaders/simple_model_shader",
@@ -145,9 +143,6 @@ struct render_state
     GLint Viewport[4];
     r64 DeltaTime;
     
-    b32 RenderColliders;
-    b32 RenderFPS;
-    b32 RenderPaths;
     b32 ShouldClose;
     r64 FPS;
     
@@ -175,7 +170,6 @@ struct render_state
     size_t TileQuadVerticesSize = 16 * sizeof(GLfloat);
     size_t NormalQuadVerticesSize = 8 * sizeof(GLfloat);
     size_t WireframeQuadVerticesSize = 8 * sizeof(GLfloat);
-    size_t AStarPathQuadVerticesSize = 10 * sizeof(GLfloat);
     GLuint BoundVertexBuffer;
     GLuint BoundTexture;
     
@@ -280,20 +274,8 @@ struct render_state
     GLuint IsometricVAO;
     GLuint IsometricQuadVBO;
     
-    GLfloat AStarPathQuadVertices[10] =
-    {
-        0.0f, 1.0f,
-        1.0f, 1.0f,
-        1.0f, 0.0f,
-        0.0f, 0.0f,
-        0.0f, 1.0f
-    };
-    
     buffer Buffers[BUFFER_ARRAY_SIZE];
     i32 BufferCount;
-    
-    GLuint AStarPathVAO;
-    GLuint AStarPathQuadVBO;
     
     GLuint RectVAO;
     GLuint TextureRectVAO;
@@ -314,7 +296,6 @@ struct render_state
             shader UISpriteShader;
             shader ErrorShaderSprite;
             shader ErrorShaderUI;
-            shader AStarPathShader;
             shader FrameBufferShader;
             shader LightSourceShader;
             shader SimpleModelShader;
@@ -330,22 +311,6 @@ struct render_state
     
     render_font Fonts[64];
     i32 FontCount;
-    
-    /*
-    union
-    {
-        render_font Fonts[Font_Count];
-        struct
-        {
-            render_font InconsolataFont;
-            render_font SmallInconsolataFont;
-            render_font MenuFont;
-            render_font ButtonFont;
-            render_font RobotoFont;
-            render_font TitleFont;
-        };
-    };
-    */
     
     render_state() {}
 };
