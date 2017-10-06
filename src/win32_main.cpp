@@ -22,9 +22,10 @@
 #include <sys/stat.h>  
 #include <GLFW/glfw3.h>
 
-#include "main.h"
+#include "win32_main.h"
 
-#include "load_oal.cpp"
+#include "win32_load_oal.h"
+#include "win32_load_oal.cpp"
 
 platform_api Platform;
 

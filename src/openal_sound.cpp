@@ -97,14 +97,16 @@ static inline void ResetCommands(sound_commands* Commands)
 
 static void InitAudio(sound_device *SoundDevice, oal_devices_list* DevicesList)
 {
-    auto Result = LoadOAL11Library(0, &OpenALApi);
+    HMODULE OpenALDLL = {};
+    auto Result = LoadOAL11Library(0, &OpenALApi, OpenALDLL);
     
     if(!Result)
     {
         ERR("Could not load OpenAL library");
     }
     
-    if(OpenALApi.alcIsExtensionPresent(NULL, "ALC_ENUMERATION_EXT"))
+    if(OpenALApi.
+       alcIsExtensionPresent(NULL, "ALC_ENUMERATION_EXT"))
     {
         char* Devices = (char*)OpenALApi.alcGetString(NULL, ALC_DEVICE_SPECIFIER);
         char* DefaultDeviceName = (char*)OpenALApi.alcGetString(NULL, ALC_DEFAULT_DEVICE_SPECIFIER);

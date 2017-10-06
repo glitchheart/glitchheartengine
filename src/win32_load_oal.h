@@ -1,5 +1,3 @@
-#include "al.h"
-#include "alc.h"
 
 #ifndef LOAD_OPENAL
 #define LOAD_OPENAL
@@ -158,7 +156,7 @@ oal_api OpenALApi;
 #endif
 
 
-ALboolean LoadOAL11Library(char* szOALFullPathName, oal_api* lpOALFnTable);
-ALvoid UnloadOAL11Library();
+ALboolean LoadOAL11Library(char* FilePath, oal_api* OALFunctions, HMODULE OpenALDLL);
+ALvoid UnloadOAL11Library(HMODULE OpenALDLL);
 
 
