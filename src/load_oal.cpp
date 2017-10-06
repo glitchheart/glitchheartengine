@@ -55,11 +55,12 @@ ALboolean LoadOAL11Library(char* szOALFullPathName, oal_api* lpOALFnTable)
                 }
                 break;
             }
+            if(!g_hOpenALDLL)
+            {
+                return AL_FALSE;
+            }
         }
-        else
-        {
-            return AL_FALSE;
-        }
+        
     }
     
     memset(lpOALFnTable, 0, sizeof(oal_api));
