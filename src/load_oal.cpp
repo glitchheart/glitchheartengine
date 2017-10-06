@@ -23,15 +23,17 @@ ALboolean LoadOAL11Library(char* szOALFullPathName, oal_api* lpOALFnTable)
         
         
 #if defined(_WIN64)
-        CopyFile("../libs/openal/dll/Win64/openal32.dll", "openal32.dll", FALSE);
-        CopyFile("../libs/openal/dll/Win64/wrap_oal.dll", "wrap_oal.dll", FALSE);
+        /*CopyFile("../libs/openal/dll/Win64/openal32.dll", "openal32.dll", FALSE);
+        CopyFile("../libs/openal/dll/Win64/wrap_oal.dll", "wrap_oal.dll", FALSE);*/
+        CopyFile("../libs/soft_oal/dll/Win64/soft_oal.dll", "soft_oal.dll", FALSE);
         Arch = A_64;
 #else
-        CopyFile("../libs/openal/dll/Win32/openal32.dll", "openal32.dll", FALSE);
-        CopyFile("../libs/openal/dll/Win32/wrap_oal.dll", "wrap_oal.dll", FALSE);
+        CopyFile("../libs/soft_oal/dll/Win32/soft_oal.dll", "soft_oal.dll", FALSE);
+        /*CopyFile("../libs/openal/dll/Win32/openal32.dll", "openal32.dll", FALSE);
+        CopyFile("../libs/openal/dll/Win32/wrap_oal.dll", "wrap_oal.dll", FALSE);*/
         Arch = A_32;
 #endif
-        g_hOpenALDLL = LoadLibrary("openal32.dll");
+        g_hOpenALDLL = LoadLibrary("soft_oal.dll");
     }
     
     if(!g_hOpenALDLL)
@@ -51,11 +53,13 @@ ALboolean LoadOAL11Library(char* szOALFullPathName, oal_api* lpOALFnTable)
                 break;
                 case A_64:
                 {
-                    CopyFile("../libs/openal/dll/Win32/openal32.dll", "openal32.dll", FALSE);
-                    CopyFile("../libs/openal/dll/Win32/wrap_oal.dll", "wrap_oal.dll", FALSE);
-                    g_hOpenALDLL = LoadLibrary("openal32.dll");
-                    CopyFile("../libs/openal/dll/Win64/openal32.dll", "openal32.dll", FALSE);
-                    CopyFile("../libs/openal/dll/Win64/wrap_oal.dll", "wrap_oal.dll", FALSE);
+                    CopyFile("../libs/soft_oal/dll/Win32/soft_oal.dll", "soft_oal.dll", FALSE);
+                    /*CopyFile("../libs/openal/dll/Win32/openal32.dll", "openal32.dll", FALSE);
+                    CopyFile("../libs/openal/dll/Win32/wrap_oal.dll", "wrap_oal.dll", FALSE);*/
+                    g_hOpenALDLL = LoadLibrary("soft_oal.dll");
+                    CopyFile("../libs/soft_oal/dll/Win64/soft_oal.dll", "soft_oal.dll", FALSE);
+                    /*CopyFile("../libs/openal/dll/Win64/openal32.dll", "openal32.dll", FALSE);
+                    CopyFile("../libs/openal/dll/Win64/wrap_oal.dll", "wrap_oal.dll", FALSE);*/
                 }
                 break;
             }
