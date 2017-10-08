@@ -256,7 +256,6 @@ static inline void LoadSounds(sound_device* SoundDevice, sound_commands* Command
         {
             LoadSound(DirData.FilePaths[FileIndex], SoundDevice, &SoundDevice->SoundArray[Commands->SoundMap[DirData.FileNames[FileIndex]]], DirData.FileNames[FileIndex]);
         }
-        
         Commands->LoadSounds = false;
     }
 }
