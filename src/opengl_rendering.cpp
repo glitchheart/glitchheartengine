@@ -1117,10 +1117,16 @@ static void RenderQuad(Render_Mode Mode, render_state& RenderState, math::v4 Col
             //draw upper part
             math::m4 Model(1.0f);
             Model = math::Scale(Model, Size);
-            Model = math::Translate(Model, Position);
+            
+            // @Incomplete: We should be using an origin point for this
+            Model = math::Translate(Model, math::v3(-Size.x / 2.0f, -Size.y / 2.0f, -Size.z / 2.0f));
             Model = math::YRotate(Rotation.y) * Model;
             Model = math::XRotate(Rotation.x) * Model;
             Model = math::ZRotate(Rotation.z) * Model;
+            // @Incomplete: We should be using an origin point for this
+            Model = math::Translate(Model, math::v3(Size.x / 2.0f, Size.y / 2.0f, Size.z / 2.0f));
+            
+            Model = math::Translate(Model, Position);
             
             if(!IsUI)
             {

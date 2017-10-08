@@ -33,6 +33,7 @@ struct entity
     Entity_Type Type;
     
     math::v3 Position;
+    math::v3 Rotation;
     math::v3 Velocity;
     
     model Model;
@@ -41,34 +42,10 @@ struct entity
     {
         struct
         {
-            union
-            {
-                math::v3 SwordSizes[2];
-                struct
-                {
-                    math::v3 HorizontalSize;
-                    math::v3 VerticalSize;
-                };
-            };
-            union
-            {
-                math::v3 SwordOffset[4];
-                struct
-                {
-                    math::v3 UpOffset;
-                    math::v3 DownOffset;
-                    math::v3 LeftOffset;
-                    math::v3 RightOffset;
-                };
-            };
-            
+            r32 Thrust;
+            math::v3 Acceleration;
             Direction CurrentDirection;
             b32 IsMoving;
-            
-            math::v2i TargetTile;
-            math::v2i CurrentTile;
-            math::v3 Offset;
-            math::v3 Size;
             r32 MovementSpeed;
         } Player;
         struct
