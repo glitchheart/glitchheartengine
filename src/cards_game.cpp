@@ -372,7 +372,7 @@ extern "C" UPDATE(Update)
     
     DisableDepthTest(Renderer);
     
-    PushFilledQuad(Renderer, math::v3(-Grid.Size.x * Grid.TileScale * 0.5f, -Grid.Size.y * Grid.TileScale * 0.5f, 0.0f), math::v3(2.0f * Grid.Size.x * Grid.TileScale, 2.0f * Grid.Size.y * Grid.TileScale, 0.0f), math::v3(), GameState->Levels[GameState->CurrentLevel].BackgroundColor, 0, false);
+    //PushFilledQuad(Renderer, math::v3(-Grid.Size.x * Grid.TileScale * 0.5f, -Grid.Size.y * Grid.TileScale * 0.5f, 0.0f), math::v3(2.0f * Grid.Size.x * Grid.TileScale, 2.0f * Grid.Size.y * Grid.TileScale, 0.0f), math::v3(), GameState->Levels[GameState->CurrentLevel].BackgroundColor, 0, false);
     
     for(i32 I = 0; I < Grid.Size.x; I++)
     {

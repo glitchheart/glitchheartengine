@@ -361,7 +361,6 @@ int main(int Argc, char** Args)
     
     if (SoundDevice.IsInitialized)
     {
-        //LoadSounds(&SoundEffects, &SoundDevice);
         ResetCommands(&SoundCommands);
         SoundCommands.SFXVolume = ConfigData.SFXVolume;
         SoundCommands.MusicVolume = ConfigData.MusicVolume;
