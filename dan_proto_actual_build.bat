@@ -1,6 +1,6 @@
 @echo off
 
-call "B:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvarsall.bat" x64
+call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvarsall.bat" x64
 REM call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" x64
 set WERROR=
 set DEBUG=-DGLITCH_DEBUG=1
@@ -25,8 +25,7 @@ REM 64-bit build
 del *.pdb > NUL 2> NUL
 
 echo Compilation started on: %time%
-cl %CommonCompilerFlags% ..\src\dan_proto_game.cpp  -LD /DLL /link -incremental:no -PDB:game%random%.pdb -EXPORT:Update  
+cl %CommonCompilerFlags% ..\src\dan_proto_game.cpp  -LD /DLL /link -incremental:no -PDB:game%random%.pdb -EXPORT:Update
 cl %CommonCompilerFlags% ..\src\win32_main.cpp -Femain  /link %ExtraLinkerFlags% %CommonLinkerFlags%
 echo Compilation finished on: %time%
 popd
-
