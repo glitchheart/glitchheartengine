@@ -59,6 +59,7 @@ struct entity
 
 struct game_state
 {
+    i32 PixelArtFontHandle;
     memory_arena TotalArena;
     memory_arena WorldArena;
     
