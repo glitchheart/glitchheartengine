@@ -438,6 +438,8 @@ struct renderer
     texture_data TextureData[TEXTURE_ARRAY_SIZE];
     i32 TextureCount;
     
+    i32 TextureHandles[TEXTURE_ARRAY_SIZE];
+    
     texture_data_map TextureMap;
     
     camera Cameras[MAX_CAMERAS];
