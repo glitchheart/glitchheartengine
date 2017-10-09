@@ -86,7 +86,7 @@ static inline void CameraTransform(renderer& Renderer, camera& Camera, math::v3 
     }
 }
 
-static void LoadTexture(char* TextureName, const char* FullTexturePath, renderer& Renderer, memory_arena* PermArena)
+static void LoadTexture(char* TextureName, const char* FullTexturePath, renderer& Renderer, memory_arena* PermArena, i32* Handle = 0)
 {
     texture_data* TextureData = &Renderer.TextureData[Renderer.TextureCount];
     
@@ -96,7 +96,8 @@ static void LoadTexture(char* TextureName, const char* FullTexturePath, renderer
     
     TextureData->Name = PushString(PermArena, strlen(TextureName), TextureName);
     
-    Renderer.TextureMap[TextureName] = TextureData;
+    if(Handle)
+        *Handle = TextureData->Handle;
 }
 
 static void LoadTextures(renderer& Renderer, memory_arena* PermArena, const char* Path)
@@ -175,7 +176,7 @@ static void PushText(renderer& Renderer, const char* Text, math::v3 Position, i3
     RenderCommand->IsUI = IsUI;
 }
 
-static void PushFilledQuad(renderer& Renderer, math::v3 Position, math::v3 Size, math::v3 Rotation, math::rgba Color, char* TextureName = 0, b32 IsUI = true)
+static void PushFilledQuad(renderer& Renderer, math::v3 Position, math::v3 Size, math::v3 Rotation, math::rgba Color, i32 TextureHandle = 0, b32 IsUI = true)
 {
     render_command* RenderCommand = PushNextCommand(Renderer, IsUI);
     
@@ -185,13 +186,7 @@ static void PushFilledQuad(renderer& Renderer, math::v3 Position, math::v3 Size,
     RenderCommand->Scale = Size;
     RenderCommand->Quad.Color = Color;
     RenderCommand->Quad.Outlined = false;
-    RenderCommand->Quad.TextureHandle = -1;
-    
-    if(TextureName)
-    {
-        auto* Texture = Renderer.TextureMap[TextureName];
-        RenderCommand->Quad.TextureHandle = Texture->Handle;
-    }
+    RenderCommand->Quad.TextureHandle = TextureHandle;
     
     RenderCommand->IsUI = IsUI;
 }

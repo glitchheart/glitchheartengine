@@ -28,6 +28,20 @@ enum Direction
     Right
 };
 
+enum Bullet_Type
+{
+    Bullet_Simple
+};
+
+struct bullet
+{
+    Bullet_Type Type;
+    math::v3 Position;
+    math::v3 Velocity;
+    math::v3 Direction;
+    r32 Speed;
+};
+
 struct entity
 {
     Entity_Type Type;
@@ -38,6 +52,8 @@ struct entity
     
     model Model;
     
+    i32 TextureHandle;
+    
     union
     {
         struct
@@ -47,6 +63,8 @@ struct entity
             Direction CurrentDirection;
             b32 IsMoving;
             r32 MovementSpeed;
+            bullet Bullets[100];
+            i32 BulletCount;
         } Player;
         struct
         {
@@ -59,6 +77,8 @@ struct entity
 
 struct game_state
 {
+    i32 BulletTextureHandle;
+    i32 StarEnemyTextureHandle;
     i32 PixelArtFontHandle;
     memory_arena TotalArena;
     memory_arena WorldArena;
@@ -67,7 +87,8 @@ struct game_state
     
     r32 TileScale;
     entity Player;
-    entity Boxes[5];
+    math::v3 LowestPositionInWorld;
+    math::v3 HighestPositionInWorld;
 };
 
 #endif

@@ -166,7 +166,6 @@ namespace math
         return Max(Minimum, Min(Value,Maximum));
     }
     
-    
     union v2
     {
         struct
@@ -386,6 +385,11 @@ namespace math
         r32 operator[](i32 I)
         {
             return this->E[I];
+        }
+        
+        inline v3 operator= (v2 O)
+        {
+            return v3(O.x, O.y, 0);
         }
         
         inline v3 operator-()
@@ -2463,6 +2467,14 @@ namespace math
         Result.Y = Lerp(A.Y,T,B.Y);
         Result.Z = Lerp(A.Z,T,B.Z);
         Result.W = Lerp(A.W,T,B.W);
+        return Result;
+    }
+    
+    inline v2 RotateByAngle(v2 In, r32 Angle)
+    {
+        math::v2 Result;
+        Result.x = In.x * Cos(Angle) - In.y * Sin(Angle);
+        Result.y = In.x * Sin(Angle) + In.y * Cos(Angle);
         return Result;
     }
     

@@ -11,15 +11,31 @@
 
 platform_api Platform;
 
-static void UpdatePlayer(input_controller* InputController, game_state* GameState, entity& Player, math::v3 Lowest, math::v3 Highest, r64 DeltaTime)
+static void InitializePlayer(game_state* GameState, renderer& Renderer, entity& Player)
+{
+    Player.Player.BulletCount = 0;
+    LoadTexture("spaceship", "../assets/textures/spaceship.png", Renderer, &GameState->TotalArena, &Player.TextureHandle);
+}
+
+static void AddBullet(entity& Player)
+{
+    auto Dir = RotateByAngle(math::v2(0, 1.0f), Player.Rotation.z * 0.0174532925f);
+    Player.Player.Bullets[Player.Player.BulletCount].Direction = math::v3(Dir.x, Dir.y, 0.0f);
+    
+    Player.Player.Bullets[Player.Player.BulletCount].Position = math::v3(Player.Position.x + 4.0f, Player.Position.y + 4.0f, 0.0f) + Player.Player.Bullets[Player.Player.BulletCount].Direction * 4.0f;
+    Player.Player.Bullets[Player.Player.BulletCount].Speed = 35.0f;
+    Player.Player.BulletCount++;
+}
+
+static void UpdatePlayer(input_controller* InputController, game_state* GameState, entity& Player, r64 DeltaTime)
 {
     if(KEY(Key_Left))
     {
-        Player.Rotation.z += 50.0f * DeltaTime;
+        Player.Rotation.z += 120.0f * DeltaTime;
     }
     else if(KEY(Key_Right))
     {
-        Player.Rotation.z -= 50.0f * DeltaTime;
+        Player.Rotation.z -= 120.0f * DeltaTime;
     }
     
     if(KEY(Key_Space))
@@ -29,6 +45,13 @@ static void UpdatePlayer(input_controller* InputController, game_state* GameStat
     else
     {
         Player.Player.Thrust = 0.0f;
+        Player.Velocity.x *= (1.0f - 0.3f * DeltaTime);
+        Player.Velocity.y *= (1.0f - 0.3f * DeltaTime);
+    }
+    
+    if(KEY_DOWN(Key_Z))
+    {
+        AddBullet(Player);
     }
     
     // Handle physics
@@ -41,6 +64,9 @@ static void UpdatePlayer(input_controller* InputController, game_state* GameStat
     Player.Velocity.x += Player.Player.Acceleration.x * 2.0f * DeltaTime;
     Player.Velocity.y += Player.Player.Acceleration.y * 2.0f * DeltaTime;
     Player.Player.Acceleration = math::v3(0.0f, 0.0f, 0.0f);
+    
+    auto Lowest = GameState->LowestPositionInWorld;
+    auto Highest = GameState->HighestPositionInWorld;
     
     // If the player gets out of viewport bounds
     if(Player.Position.x < Lowest.x - 1.0f)
@@ -60,11 +86,18 @@ static void UpdatePlayer(input_controller* InputController, game_state* GameStat
     {
         Player.Position.y = Lowest.y + 1.0f;
     }
+    
+    for(i32 Index = 0; Index < Player.Player.BulletCount; Index++)
+    {
+        bullet& Bullet = Player.Player.Bullets[Index];
+        Bullet.Position.x += Bullet.Direction.x * Bullet.Speed * DeltaTime;
+        Bullet.Position.y += Bullet.Direction.y * Bullet.Speed * DeltaTime;
+    }
 }
 
 static void RenderPlayer(game_state* GameState, renderer& Renderer, entity& Player)
 {
-    PushFilledQuad(Renderer, Player.Position + math::v3(1.0f, 1.0f, 0), math::v3(6 * GameState->TileScale, 6 * GameState->TileScale, 0), math::v3(Player.Rotation.x, Player.Rotation.y, Player.Rotation.z), math::rgba(1.0, 1.0, 1.0, 1.0), "spaceship", false);
+    PushFilledQuad(Renderer, Player.Position, math::v3(8, 8, 0), math::v3(Player.Rotation.x, Player.Rotation.y, Player.Rotation.z), math::rgba(1.0, 1.0, 1.0, 1.0), Player.TextureHandle, false);
 }
 
 extern "C" UPDATE(Update)
@@ -79,12 +112,12 @@ extern "C" UPDATE(Update)
     
     if(!GameState)
     {
-        DEBUG_PRINT("Initializing gamestate\n");
-        
         GameState = GameMemory->GameState = BootstrapPushStruct(game_state, TotalArena);
         GameState->Loaded = false;
-        LoadTextures(Renderer, &GameState->TotalArena);
         LoadFont(Renderer, Concat("../assets/", "/fonts/pixelart.ttf"), 60, "Pixelart");
+        InitializePlayer(GameState, Renderer, GameState->Player);
+        LoadTexture("bullet_simple", "../assets/textures/bullet_simple.png", Renderer, &GameState->TotalArena, &GameState->BulletTextureHandle);
+        LoadTexture("enemy_star", "../assets/textures/enemy_star.png", Renderer, &GameState->TotalArena, &GameState->StarEnemyTextureHandle);
     }
     
     Assert(GameState);
@@ -102,28 +135,32 @@ extern "C" UPDATE(Update)
         Renderer.CurrentCameraHandle = 0;
         Renderer.Cameras[0].ViewportWidth = Renderer.WindowWidth;
         Renderer.Cameras[0].ViewportHeight = Renderer.WindowHeight;
+        
+        Renderer.Cameras[0].Zoom = 8.0f;
+        CameraTransform(Renderer, Renderer.Cameras[0], math::v3(30, 40, 0), math::quat(), math::v3(), Renderer.Cameras[0].Zoom);
+        GameState->LowestPositionInWorld = math::UnProject(math::v3(0, Renderer.Viewport[3]  - Renderer.ViewportHeight, 0),
+                                                           Renderer.Cameras[0].ViewMatrix,
+                                                           Renderer.Cameras[0].ProjectionMatrix,
+                                                           math::v4i(0, 0, Renderer.Viewport[2], Renderer.Viewport[3]));
+        GameState->HighestPositionInWorld = UnProject(math::v3(Renderer.ViewportWidth, Renderer.Viewport[3], 0),
+                                                      Renderer.Cameras[0].ViewMatrix,
+                                                      Renderer.Cameras[0].ProjectionMatrix,
+                                                      math::v4i(0, 0, Renderer.Viewport[2], Renderer.Viewport[3]));
     }
     
-    Renderer.Cameras[0].Zoom = 8.0f;
-    CameraTransform(Renderer, Renderer.Cameras[0], math::v3(30, 40, 0), math::quat(), math::v3(), Renderer.Cameras[0].Zoom);
-    
-    // @Speed: These numbers will not change, so they should only be returned once
-    // @Speed: These numbers will not change, so they should only be returned once
-    // @Speed: These numbers will not change, so they should only be returned once
-    // @Speed: These numbers will not change, so they should only be returned once
-    auto ZeroPos = math::UnProject(math::v3(0, Renderer.Viewport[3]  - Renderer.ViewportHeight, 0),
-                                   Renderer.Cameras[0].ViewMatrix,
-                                   Renderer.Cameras[0].ProjectionMatrix,
-                                   math::v4i(0, 0, Renderer.Viewport[2], Renderer.Viewport[3]));
-    auto HighestPos = UnProject(math::v3(Renderer.ViewportWidth, Renderer.Viewport[3], 0),
-                                Renderer.Cameras[0].ViewMatrix,
-                                Renderer.Cameras[0].ProjectionMatrix,
-                                math::v4i(0, 0, Renderer.Viewport[2], Renderer.Viewport[3]));
-    
-    UpdatePlayer(InputController, GameState, Player, ZeroPos, HighestPos, DeltaTime);
+    UpdatePlayer(InputController, GameState, Player, DeltaTime);
     
     DisableDepthTest(Renderer);
     RenderPlayer(GameState, Renderer, Player);
     PushText(Renderer, "GEGENSCHEIN", math::v3(Renderer.ViewportWidth / 2, Renderer.ViewportHeight / 2, 0), GameState->PixelArtFontHandle, math::rgba(1.0f, 1.0f, 1.0f, 1.0f), Alignment_Center);
+    
+    for(i32 Index = 0; Index < Player.Player.BulletCount; Index++)
+    {
+        PushFilledQuad(Renderer, Player.Player.Bullets[Index].Position, math::v3(2.0f, 2.0f, 0.0f), math::v3(), math::rgba(1.0, 1.0, 1.0, 1.0), GameState->BulletTextureHandle, false);
+    }
+    
+    PushFilledQuad(Renderer, math::v3(10, 10, 0), math::v3(8, 8, 0), math::v3(), math::rgba(1.0, 1.0, 1.0, 1.0), GameState->StarEnemyTextureHandle, false);
+    PushFilledQuad(Renderer, math::v3(30, 5, 0), math::v3(8, 8, 0), math::v3(), math::rgba(1.0, 1.0, 1.0, 1.0), GameState->StarEnemyTextureHandle, false);
+    
     EnableDepthTest(Renderer);
 }
