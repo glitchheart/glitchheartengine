@@ -1,0 +1,22 @@
+@echo off 
+set WERROR=
+set DEBUG=-DGLITCH_DEBUG=1
+set GLM= 
+set PRP= 
+set WIGNORED=-wd4201 -wd4100 -wd4189 -wd4530 -wd4577 -wd4996 -wd4456 -wd4706 -wd4390 -wd4127 
+
+WHERE cl 
+IF %ERRORLEVEL% NEQ 0 call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" x64 
+
+set CommonCompilerFlags=/MD -nologo -Od -Oi- -W4 -Gm- -EHsc -FC -Z7 %PRP% %WIGNORED% %DEBUG% %GLM% /I..\..\libs /I..\..\libs\glfw\include /I ..\..\libs\freetype\include /I ..\..\libs\soft_oal\include /I..\..\libs\glad\include /I..\..\src 
+
+IF NOT EXIST build mkdir build 
+pushd build 
+
+REM 64-bit build 
+del *.pdb > NUL 2> NUL 
+
+echo Compilation started on: %time% 
+cl %CommonCompilerFlags% ..\src\game.cpp -LD /DLL /link -incremental:no -PDB:game%random%.pdb -EXPORT:Update  
+echo Compilation finished on: %time% 
+popd

@@ -29,3 +29,4 @@ cl %CommonCompilerFlags% ..\src\game.cpp  -LD /DLL /link -incremental:no -PDB:ga
 cl %CommonCompilerFlags% ..\src\win32_main.cpp -Femain  /link %ExtraLinkerFlags% %CommonLinkerFlags%
 echo Compilation finished on: %time%
 popd
+
