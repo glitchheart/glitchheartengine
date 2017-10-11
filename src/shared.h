@@ -2,7 +2,7 @@
 #define SHARED_H
 
 #include "gmap.h"
-#include "memory.h"
+#include "engine_memory.h"
 #include "rendering.h"
 
 inline char* StrSep(char** S, const char* Delim)

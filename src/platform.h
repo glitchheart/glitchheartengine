@@ -77,7 +77,7 @@ inline char* ToString(r64 R);
 inline char* ToString(r32 R);
 char* ToString(texture_data* Data);
 
-#include "math.h"
+#include "engine_math.h"
 
 #include "modelformat.h"
 
