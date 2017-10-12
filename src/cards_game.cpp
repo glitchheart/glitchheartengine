@@ -39,7 +39,7 @@ static void InitGrid(memory_arena* WorldArena, level* Level, i32 X, i32 Y)
     card Unwalkable;
     Unwalkable.Type = Suit_None;
     Unwalkable.Rank = -1;
-    Unwalkable.TextureHandle = 0;
+    Unwalkable.TextureHandle = -1;
     
     for(i32 I = 0;  I < X; I++)
     {
@@ -82,25 +82,25 @@ static void LoadLevel(game_state* GameState, renderer& Renderer, level* Level, c
         card Unwalkable;
         Unwalkable.Type = Suit_None;
         Unwalkable.Rank = -1;
-        Unwalkable.TextureHandle = 0;
+        Unwalkable.TextureHandle = -1;
         
         
         card Start;
         Start.Type = Suit_Start;
         Start.Rank = 0;
-        LoadTexture("start", Concat(CARDS_ASSETS, "textures/"), Renderer, &Renderer.TextureArena, &GameState->StartTexture);
+        LoadTexture("start", Concat(CARDS_ASSETS, "textures/start.png"), Renderer, &Renderer.TextureArena, &GameState->StartTexture);
         Start.TextureHandle = GameState->StartTexture;
         
         card End;
         End.Type = Suit_End;
         End.Rank = 0;
-        LoadTexture("end", Concat(CARDS_ASSETS, "textures/"), Renderer, &Renderer.TextureArena,&GameState->EndTexture);
+        LoadTexture("end", Concat(CARDS_ASSETS, "textures/end.png"), Renderer, &Renderer.TextureArena,&GameState->EndTexture);
         End.TextureHandle = GameState->EndTexture;
         
         card Empty;
         Empty.Type = Suit_Empty;
         Empty.Rank = 0;
-        Empty.TextureHandle = 0;
+        Empty.TextureHandle = -1;
         
         
         while(IndexHeight > 0)
@@ -212,7 +212,7 @@ static void LoadLevels(const char* FilePath, game_state* GameState, renderer& Re
         LoadLevel(GameState, Renderer, &GameState->Levels[GameState->LoadedLevels++], DirData.FilePaths[FileIndex]);
     }
     
-    LoadTexture("player", Concat(CARDS_ASSETS, "textures/"), Renderer, &Renderer.TextureArena,&GameState->PlayerTexture);
+    LoadTexture("player", Concat(CARDS_ASSETS, "textures/player.png"), Renderer, &Renderer.TextureArena,&GameState->PlayerTexture);
     
 }
 
@@ -220,7 +220,6 @@ static void AddCard(game_state* GameState, renderer& Renderer, Suit_Type Type, c
 {
     card Card;
     Card.Type = Type;
-    DEBUG_PRINT("Tex: %s\n", Concat(Concat(Concat(CARDS_ASSETS, "textures/"), TextureName), ".png"));
     LoadTexture(TextureName, Concat(Concat(Concat(CARDS_ASSETS, "textures/"), TextureName), ".png"), Renderer, &Renderer.TextureArena ,&Card.TextureHandle);
     Card.Rank = Rank;
     GameState->Cards[GameState->CardCount++] = Card;
@@ -361,8 +360,9 @@ extern "C" UPDATE(Update)
         
         PLAY_TRACK("Brugt");
         
-        LoadTexture("border.png", Concat(CARDS_ASSETS, "textures/"), Renderer, &Renderer.TextureArena, &GameState->BorderTexture);
-        DEBUG_PRINT("Border: %d\n", GameState->BorderTexture);
+        LoadTexture("border.png", Concat(CARDS_ASSETS, "textures/border.png"), Renderer, &Renderer.TextureArena, &GameState->BorderTexture);
+        
+        
         
         GameState->IsInitialized = true;
         GameMemory->IsInitialized = true;
@@ -381,7 +381,7 @@ extern "C" UPDATE(Update)
     
     DisableDepthTest(Renderer);
     
-    //PushFilledQuad(Renderer, math::v3(-Grid.Size.x * Grid.TileScale * 0.5f, -Grid.Size.y * Grid.TileScale * 0.5f, 0.0f), math::v3(2.0f * Grid.Size.x * Grid.TileScale, 2.0f * Grid.Size.y * Grid.TileScale, 0.0f), math::v3(), GameState->Levels[GameState->CurrentLevel].BackgroundColor, 0, false);
+    PushFilledQuad(Renderer, math::v3(-Grid.Size.x * Grid.TileScale * 0.5f, -Grid.Size.y * Grid.TileScale * 0.5f, 0.0f), math::v3(2.0f * Grid.Size.x * Grid.TileScale, 2.0f * Grid.Size.y * Grid.TileScale, 0.0f), math::v3(), GameState->Levels[GameState->CurrentLevel].BackgroundColor, -1, false);
     
     for(i32 I = 0; I < Grid.Size.x; I++)
     {
@@ -405,13 +405,13 @@ extern "C" UPDATE(Update)
                 break;
                 case Suit_Empty:
                 {
-                    PushFilledQuad(Renderer, TilePos, math::v3(Grid.TileScale, Grid.TileScale, 1.0f), math::v3(), math::rgba(220.0f/255.0f, 255.0f/255.0f, 80.0f/255.0f, 1.0f), 0, false);
+                    PushFilledQuad(Renderer, TilePos, math::v3(Grid.TileScale, Grid.TileScale, 1.0f), math::v3(), math::rgba(220.0f/255.0f, 255.0f/255.0f, 80.0f/255.0f, 1.0f), -1, false);
                     
                     auto Walked = Grid.Grid[I][J].Walked;
                     if(Walked)
                     {
                         auto C = math::rgba(0.0f, 0.0f, 0.0f, 0.4f);
-                        PushFilledQuad(Renderer, TilePos, math::v3(Grid.TileScale, Grid.TileScale, 1.0f), math::v3(), C, 0, false);
+                        PushFilledQuad(Renderer, TilePos, math::v3(Grid.TileScale, Grid.TileScale, 1.0f), math::v3(), C, -1, false);
                     }
                 }
                 break;
@@ -428,7 +428,7 @@ extern "C" UPDATE(Update)
                     if(Walked)
                     {
                         C = math::rgba(0.0f, 0.0f, 0.0f, 0.4f);
-                        PushFilledQuad(Renderer, TilePos, math::v3(Grid.TileScale, Grid.TileScale, 1.0f), math::v3(), C, 0, false);
+                        PushFilledQuad(Renderer, TilePos, math::v3(Grid.TileScale, Grid.TileScale, 1.0f), math::v3(), C, -1, false);
                     }
                 }
                 break;
