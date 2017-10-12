@@ -39,7 +39,7 @@ static void InitGrid(memory_arena* WorldArena, level* Level, i32 X, i32 Y)
     card Unwalkable;
     Unwalkable.Type = Suit_None;
     Unwalkable.Rank = -1;
-    Unwalkable.TextureName = 0;
+    Unwalkable.TextureHandle = 0;
     
     for(i32 I = 0;  I < X; I++)
     {
@@ -50,7 +50,7 @@ static void InitGrid(memory_arena* WorldArena, level* Level, i32 X, i32 Y)
     }
 }
 
-static void LoadLevel(game_state* GameState, level* Level, const char* FilePath)
+static void LoadLevel(game_state* GameState, renderer& Renderer, level* Level, const char* FilePath)
 {
     FILE* File;
     File = fopen(FilePath, "r");
@@ -82,22 +82,26 @@ static void LoadLevel(game_state* GameState, level* Level, const char* FilePath)
         card Unwalkable;
         Unwalkable.Type = Suit_None;
         Unwalkable.Rank = -1;
-        Unwalkable.TextureName = 0;
+        Unwalkable.TextureHandle = 0;
+        
         
         card Start;
         Start.Type = Suit_Start;
         Start.Rank = 0;
-        Start.TextureName = 0;
+        LoadTexture("start", Concat(CARDS_ASSETS, "textures/"), Renderer, &Renderer.TextureArena, &GameState->StartTexture);
+        Start.TextureHandle = GameState->StartTexture;
         
         card End;
         End.Type = Suit_End;
         End.Rank = 0;
-        End.TextureName = 0;
+        LoadTexture("end", Concat(CARDS_ASSETS, "textures/"), Renderer, &Renderer.TextureArena,&GameState->EndTexture);
+        End.TextureHandle = GameState->EndTexture;
         
         card Empty;
         Empty.Type = Suit_Empty;
         Empty.Rank = 0;
-        Empty.TextureName = 0;
+        Empty.TextureHandle = 0;
+        
         
         while(IndexHeight > 0)
         {
@@ -198,84 +202,87 @@ static void LoadLevel(game_state* GameState, level* Level, const char* FilePath)
     }
 }
 
-static void LoadLevels(const char* FilePath, game_state* GameState)
+static void LoadLevels(const char* FilePath, game_state* GameState, renderer& Renderer)
 {
     directory_data DirData = {};
     Platform.GetAllFilesWithExtension(FilePath, "clv", &DirData, true);
     
     for(i32 FileIndex = 0; FileIndex < DirData.FilesLength; FileIndex++)
     {
-        LoadLevel(GameState, &GameState->Levels[GameState->LoadedLevels++], DirData.FilePaths[FileIndex]);
+        LoadLevel(GameState, Renderer, &GameState->Levels[GameState->LoadedLevels++], DirData.FilePaths[FileIndex]);
     }
+    
+    LoadTexture("player", Concat(CARDS_ASSETS, "textures/"), Renderer, &Renderer.TextureArena,&GameState->PlayerTexture);
     
 }
 
-static void AddCard(game_state* GameState, Suit_Type Type, char* TextureName, i32 Rank)
+static void AddCard(game_state* GameState, renderer& Renderer, Suit_Type Type, char* TextureName, i32 Rank)
 {
     card Card;
     Card.Type = Type;
-    Card.TextureName = TextureName;
+    DEBUG_PRINT("Tex: %s\n", Concat(Concat(Concat(CARDS_ASSETS, "textures/"), TextureName), ".png"));
+    LoadTexture(TextureName, Concat(Concat(Concat(CARDS_ASSETS, "textures/"), TextureName), ".png"), Renderer, &Renderer.TextureArena ,&Card.TextureHandle);
     Card.Rank = Rank;
     GameState->Cards[GameState->CardCount++] = Card;
 }
 
-static void InitializeCards(game_state* GameState)
+static void InitializeCards(game_state* GameState, renderer& Renderer)
 {
-    AddCard(GameState, Suit_B1, "card_b1_1", 1);
-    AddCard(GameState, Suit_B1, "card_b1_2", 2);
-    AddCard(GameState, Suit_B1, "card_b1_3", 3);
-    AddCard(GameState, Suit_B1, "card_b1_4", 4);
-    AddCard(GameState, Suit_B1, "card_b1_5", 5);
-    AddCard(GameState, Suit_B1, "card_b1_6", 6);
-    AddCard(GameState, Suit_B1, "card_b1_7", 7);
-    AddCard(GameState, Suit_B1, "card_b1_8", 8);
-    AddCard(GameState, Suit_B1, "card_b1_9", 9);
-    AddCard(GameState, Suit_B1, "card_b1_10", 10);
-    AddCard(GameState, Suit_B1, "card_b1_11", 11);
-    AddCard(GameState, Suit_B1, "card_b1_12", 12);
-    AddCard(GameState, Suit_B1, "card_b1_13", 13);
+    AddCard(GameState, Renderer, Suit_B1, "card_b1_1", 1);
+    AddCard(GameState, Renderer, Suit_B1, "card_b1_2", 2);
+    AddCard(GameState, Renderer, Suit_B1, "card_b1_3", 3);
+    AddCard(GameState, Renderer, Suit_B1, "card_b1_4", 4);
+    AddCard(GameState, Renderer, Suit_B1, "card_b1_5", 5);
+    AddCard(GameState, Renderer, Suit_B1, "card_b1_6", 6);
+    AddCard(GameState, Renderer, Suit_B1, "card_b1_7", 7);
+    AddCard(GameState, Renderer, Suit_B1, "card_b1_8", 8);
+    AddCard(GameState, Renderer, Suit_B1, "card_b1_9", 9);
+    AddCard(GameState, Renderer, Suit_B1, "card_b1_10", 10);
+    AddCard(GameState, Renderer, Suit_B1, "card_b1_11", 11);
+    AddCard(GameState, Renderer, Suit_B1, "card_b1_12", 12);
+    AddCard(GameState, Renderer, Suit_B1, "card_b1_13", 13);
     
-    AddCard(GameState, Suit_B2, "card_b2_1", 1);
-    AddCard(GameState, Suit_B2, "card_b2_2", 2);
-    AddCard(GameState, Suit_B2, "card_b2_3", 3);
-    AddCard(GameState, Suit_B2, "card_b2_4", 4);
-    AddCard(GameState, Suit_B2, "card_b2_5", 5);
-    AddCard(GameState, Suit_B2, "card_b2_6", 6);
-    AddCard(GameState, Suit_B2, "card_b2_7", 7);
-    AddCard(GameState, Suit_B2, "card_b2_8", 8);
-    AddCard(GameState, Suit_B2, "card_b2_9", 9);
-    AddCard(GameState, Suit_B2, "card_b2_10", 10);
-    AddCard(GameState, Suit_B2, "card_b2_11", 11);
-    AddCard(GameState, Suit_B2, "card_b2_12", 12);
-    AddCard(GameState, Suit_B2, "card_b2_13", 13);
+    AddCard(GameState, Renderer, Suit_B2, "card_b2_1", 1);
+    AddCard(GameState, Renderer, Suit_B2, "card_b2_2", 2);
+    AddCard(GameState, Renderer, Suit_B2, "card_b2_3", 3);
+    AddCard(GameState, Renderer, Suit_B2, "card_b2_4", 4);
+    AddCard(GameState, Renderer, Suit_B2, "card_b2_5", 5);
+    AddCard(GameState, Renderer, Suit_B2, "card_b2_6", 6);
+    AddCard(GameState, Renderer, Suit_B2, "card_b2_7", 7);
+    AddCard(GameState, Renderer, Suit_B2, "card_b2_8", 8);
+    AddCard(GameState, Renderer, Suit_B2, "card_b2_9", 9);
+    AddCard(GameState, Renderer, Suit_B2, "card_b2_10", 10);
+    AddCard(GameState, Renderer, Suit_B2, "card_b2_11", 11);
+    AddCard(GameState, Renderer, Suit_B2, "card_b2_12", 12);
+    AddCard(GameState, Renderer, Suit_B2, "card_b2_13", 13);
     
-    AddCard(GameState, Suit_R1, "card_r1_1", 1);
-    AddCard(GameState, Suit_R1, "card_r1_2", 2);
-    AddCard(GameState, Suit_R1, "card_r1_3", 3);
-    AddCard(GameState, Suit_R1, "card_r1_4", 4);
-    AddCard(GameState, Suit_R1, "card_r1_5", 5);
-    AddCard(GameState, Suit_R1, "card_r1_6", 6);
-    AddCard(GameState, Suit_R1, "card_r1_7", 7);
-    AddCard(GameState, Suit_R1, "card_r1_8", 8);
-    AddCard(GameState, Suit_R1, "card_r1_9", 9);
-    AddCard(GameState, Suit_R1, "card_r1_10", 10);
-    AddCard(GameState, Suit_R1, "card_r1_11", 11);
-    AddCard(GameState, Suit_R1, "card_r1_12", 12);
-    AddCard(GameState, Suit_R1, "card_r1_13", 13);
+    AddCard(GameState, Renderer, Suit_R1, "card_r1_1", 1);
+    AddCard(GameState, Renderer, Suit_R1, "card_r1_2", 2);
+    AddCard(GameState, Renderer, Suit_R1, "card_r1_3", 3);
+    AddCard(GameState, Renderer, Suit_R1, "card_r1_4", 4);
+    AddCard(GameState, Renderer, Suit_R1, "card_r1_5", 5);
+    AddCard(GameState, Renderer, Suit_R1, "card_r1_6", 6);
+    AddCard(GameState, Renderer, Suit_R1, "card_r1_7", 7);
+    AddCard(GameState, Renderer, Suit_R1, "card_r1_8", 8);
+    AddCard(GameState, Renderer, Suit_R1, "card_r1_9", 9);
+    AddCard(GameState, Renderer, Suit_R1, "card_r1_10", 10);
+    AddCard(GameState, Renderer, Suit_R1, "card_r1_11", 11);
+    AddCard(GameState, Renderer, Suit_R1, "card_r1_12", 12);
+    AddCard(GameState, Renderer, Suit_R1, "card_r1_13", 13);
     
-    AddCard(GameState, Suit_R2, "card_r2_1", 1);
-    AddCard(GameState, Suit_R2, "card_r2_2", 2);
-    AddCard(GameState, Suit_R2, "card_r2_3", 3);
-    AddCard(GameState, Suit_R2, "card_r2_4", 4);
-    AddCard(GameState, Suit_R2, "card_r2_5", 5);
-    AddCard(GameState, Suit_R2, "card_r2_6", 6);
-    AddCard(GameState, Suit_R2, "card_r2_7", 7);
-    AddCard(GameState, Suit_R2, "card_r2_8", 8);
-    AddCard(GameState, Suit_R2, "card_r2_9", 9);
-    AddCard(GameState, Suit_R2, "card_r2_10", 10);
-    AddCard(GameState, Suit_R2, "card_r2_11", 11);
-    AddCard(GameState, Suit_R2, "card_r2_12", 12);
-    AddCard(GameState, Suit_R2, "card_r2_13", 13);
+    AddCard(GameState, Renderer, Suit_R2, "card_r2_1", 1);
+    AddCard(GameState, Renderer, Suit_R2, "card_r2_2", 2);
+    AddCard(GameState, Renderer, Suit_R2, "card_r2_3", 3);
+    AddCard(GameState, Renderer, Suit_R2, "card_r2_4", 4);
+    AddCard(GameState, Renderer, Suit_R2, "card_r2_5", 5);
+    AddCard(GameState, Renderer, Suit_R2, "card_r2_6", 6);
+    AddCard(GameState, Renderer, Suit_R2, "card_r2_7", 7);
+    AddCard(GameState, Renderer, Suit_R2, "card_r2_8", 8);
+    AddCard(GameState, Renderer, Suit_R2, "card_r2_9", 9);
+    AddCard(GameState, Renderer, Suit_R2, "card_r2_10", 10);
+    AddCard(GameState, Renderer, Suit_R2, "card_r2_11", 11);
+    AddCard(GameState, Renderer, Suit_R2, "card_r2_12", 12);
+    AddCard(GameState, Renderer, Suit_R2, "card_r2_13", 13);
 }
 
 static void InitializeLevel(game_state* GameState, entity* Player, i32 Level)
@@ -327,10 +334,9 @@ extern "C" UPDATE(Update)
         Renderer.Cameras[Renderer.CurrentCameraHandle].Position = math::v3(4.0f, 5.0f, 0);
         
         LoadSounds(SoundCommands, Concat(CARDS_ASSETS, "sounds/"));
-        LoadTextures(Renderer, &Renderer.TextureArena, Concat(CARDS_ASSETS, "textures/"));
         
-        InitializeCards(GameState);
-        LoadLevels(Concat(CARDS_ASSETS, "levels/"), GameState);
+        InitializeCards(GameState, Renderer);
+        LoadLevels(Concat(CARDS_ASSETS, "levels/"), GameState, Renderer);
         InitializeLevel(GameState, Player, 0);
         
         font_handle_Map_Init(&GameState->FontMap, HashStringJenkins, 64);
@@ -354,6 +360,9 @@ extern "C" UPDATE(Update)
         GameState->FontMap["Inconsolata_36"] = LoadFont(Renderer, Concat(CARDS_ASSETS, "/fonts/inconsolata/Inconsolata-Bold.ttf"), 36, "Inconsolata");
         
         PLAY_TRACK("Brugt");
+        
+        LoadTexture("border.png", Concat(CARDS_ASSETS, "textures/"), Renderer, &Renderer.TextureArena, &GameState->BorderTexture);
+        DEBUG_PRINT("Border: %d\n", GameState->BorderTexture);
         
         GameState->IsInitialized = true;
         GameMemory->IsInitialized = true;
@@ -386,12 +395,12 @@ extern "C" UPDATE(Update)
             {
                 case Suit_Start:
                 {
-                    PushFilledQuad(Renderer, TilePos, math::v3(Grid.TileScale, Grid.TileScale, 1.0f), math::v3(), math::rgba(1.0f), "start", false);
+                    PushFilledQuad(Renderer, TilePos, math::v3(Grid.TileScale, Grid.TileScale, 1.0f), math::v3(), math::rgba(1.0f), Card.TextureHandle, false);
                 }
                 break;
                 case Suit_End:
                 {
-                    PushFilledQuad(Renderer, TilePos, math::v3(Grid.TileScale, Grid.TileScale, 1.0f), math::v3(), math::rgba(1.0f), "end", false);
+                    PushFilledQuad(Renderer, TilePos, math::v3(Grid.TileScale, Grid.TileScale, 1.0f), math::v3(), math::rgba(1.0f), Card.TextureHandle, false);
                 }
                 break;
                 case Suit_Empty:
@@ -411,11 +420,9 @@ extern "C" UPDATE(Update)
                 case Suit_R1:
                 case Suit_R2:
                 {
-                    char* Texture = Card.TextureName;
                     auto C = math::rgba(1.0f, 1.0f, 1.0f, 1.0f);
                     
-                    
-                    PushFilledQuad(Renderer, TilePos, math::v3(Grid.TileScale, Grid.TileScale, 1.0f), math::v3(), C, Texture, false);
+                    PushFilledQuad(Renderer, TilePos, math::v3(Grid.TileScale, Grid.TileScale, 1.0f), math::v3(), C, Card.TextureHandle, false);
                     
                     auto Walked = Grid.Grid[I][J].Walked;
                     if(Walked)
@@ -429,9 +436,8 @@ extern "C" UPDATE(Update)
             
             if(Card.Type != Suit_None)
             {
-                PushFilledQuad(Renderer, TilePos, math::v3(Grid.TileScale, Grid.TileScale, 1.0f), math::v3(), math::rgba(1.0f, 1.0f, 1.0f, 1.0f), "border", false);
+                PushFilledQuad(Renderer, TilePos, math::v3(Grid.TileScale, Grid.TileScale, 1.0f), math::v3(), math::rgba(1.0f, 1.0f, 1.0f, 1.0f), GameState->BorderTexture, false);
             }
-            
         }
     }
     
@@ -446,18 +452,15 @@ extern "C" UPDATE(Update)
     PushText(Renderer, "D", math::v3(Renderer.ViewportWidth / 2.0f + 20.0f, 50.0f, 0.0f), 
              GameState->FontMap["Inconsolata_20"], math::rgba(1.0f, 1.0f, 1.0f, 1.0f), Alignment_Center);
     
-    
     PushText(Renderer, "End", math::v3(250.0f, 140.0f, 0.0f), GameState->FontMap["Inconsolata_20"], math::rgba(1.0f, 1.0f, 1.0f, 1.0f), Alignment_Center);
     
-    PushFilledQuad(Renderer, math::v3(150.0f, 120.0f, 0.0f), math::v3(50.0f), math::v3(), math::rgba(1.0f, 1.0f, 1.0f, 1.0f), "end");
+    PushFilledQuad(Renderer, math::v3(150.0f, 120.0f, 0.0f), math::v3(50.0f), math::v3(), math::rgba(1.0f, 1.0f, 1.0f, 1.0f), GameState->EndTexture);
     
     PushText(Renderer, "Start", math::v3(250.0f, 220.0f, 0.0f), GameState->FontMap["Inconsolata_20"], math::rgba(1.0f, 1.0f, 1.0f, 1.0f), Alignment_Center);
     
-    PushFilledQuad(Renderer, math::v3(150.0f, 200.0f, 0.0f), math::v3(50.0f), math::v3(), math::rgba(1.0f, 1.0f, 1.0f, 1.0f), "start");
-    
+    PushFilledQuad(Renderer, math::v3(150.0f, 200.0f, 0.0f), math::v3(50.0f), math::v3(), math::rgba(1.0f, 1.0f, 1.0f, 1.0f), GameState->StartTexture);
     
     PushText(Renderer, "Press ENTER when you think you are done", math::v3(230.0f, 100.0f, 0.0f), GameState->FontMap["Inconsolata_20"], math::rgba(1.0f, 1.0f, 1.0f, 1.0f), Alignment_Center);
-    
     
     PushText(Renderer, "Press R to restart this level", math::v3(230.0f, 300.0f, 0.0f), GameState->FontMap["Inconsolata_20"], math::rgba(1.0f, 1.0f, 1.0f, 1.0f), Alignment_Center);
     
@@ -560,7 +563,7 @@ extern "C" UPDATE(Update)
             
             //PushText(Renderer, ToString(Level.CurrentScore), math::v3(Renderer.ViewportWidth / 2.0f - 20.0f, Renderer.ViewportHeight / 2.0f + 200.0f, 0.0f), Font_Inconsolata, math::rgba(1.0f, 1.0f, 1.0f, 1.0f));
             
-            PushFilledQuad(Renderer, Entity->Position, Entity->Scale, math::v3(), math::rgba(1.0f, 0.0f, 0.0f, 1.0f), "player", false);
+            PushFilledQuad(Renderer, Entity->Position, Entity->Scale, math::v3(), math::rgba(1.0f, 0.0f, 0.0f, 1.0f), GameState->PlayerTexture, false);
             
             if(KEY_DOWN(Key_R))
             {
