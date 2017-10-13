@@ -72,7 +72,7 @@ enum Suit_Type
 struct card
 {
     Suit_Type Type;
-    char* TextureName;
+    i32 TextureHandle;
     i32 Rank;
 };
 
@@ -126,6 +126,11 @@ struct game_state
     
     card Cards[CARDS];
     i32 CardCount;
+    
+    i32 BorderTexture;
+    i32 StartTexture;
+    i32 EndTexture;
+    i32 PlayerTexture;
     
     font_handle_map FontMap;
 };
