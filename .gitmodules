@@ -1,0 +1,3 @@
+[submodule "glitch_tool"]
+	path = glitch_tool
+	url = git@gitlab.com:glitchheart/glitch_tool.git
