@@ -189,7 +189,7 @@ struct game_update_return
 
 struct renderer;
 
-#define UPDATE(name)void name(r64 DeltaTime, game_memory* GameMemory, renderer& Renderer, input_controller* InputController, sound_commands* SoundCommands, game_update_return* GameUpdateStruct)
+#define UPDATE(name)void name(r64 DeltaTime, game_memory* GameMemory, renderer& Renderer, input_controller* InputController, sound_commands* SoundCommands)
 typedef UPDATE(update);
 UPDATE(UpdateStub)
 {

@@ -237,7 +237,6 @@ static void InitAudio(sound_device *SoundDevice, oal_devices_list* DevicesList)
     SoundDevice->PrevMuted = false;
     
     SoundDevice->IsInitialized = SoundDevice->Device && SoundDevice->Context;
-    source_to_sound_Map_Init(&SoundDevice->SourceToSound, HashInt, 32);
 }
 
 static void LoadSound(const char *FilePath, sound_device* SoundDevice, u32* BufferHandle, char* Name = "")
@@ -254,9 +253,10 @@ static inline void LoadSounds(sound_device* SoundDevice, sound_commands* Command
         
         for(i32 FileIndex = 0; FileIndex < DirData.FilesLength; FileIndex++)
         {
-            LoadSound(DirData.FilePaths[FileIndex], SoundDevice, &SoundDevice->SoundArray[Commands->SoundMap[DirData.FileNames[FileIndex]]], DirData.FileNames[FileIndex]);
+            LoadSound(DirData.FilePaths[FileIndex], SoundDevice, &SoundDevice->SoundArray[SoundDevice->SoundIndex++], DirData.FileNames[FileIndex]);
         }
         Commands->LoadSounds = false;
+        Commands->SoundsToLoad.FilesLength = 0;
     }
 }
 
@@ -290,7 +290,7 @@ static inline void PlaySound(sound_effect *SoundEffect, sound_device* SoundDevic
                 SoundToStore.Source = SoundEffect->Source;
                 SoundToStore.SourceState = SoundEffect->SourceState;
                 SoundToStore.SoundInfo = SoundEffect->SoundInfo;
-                SoundDevice->SourceToSound[SoundDevice->Sources[SourceIndex]] = SoundToStore;
+                SoundDevice->SourceToSound[SourceIndex] = SoundToStore;
                 break;
             }
         }
@@ -344,7 +344,7 @@ static inline void PauseSound(sound_device* SoundDevice, sound_commands* Command
     }
 }
 
-static void PlaySounds(sound_device* SoundDevice, sound_commands* Commands, math::v3* EntityPositions, i32 EntityCount)
+static void PlaySounds(sound_device* SoundDevice, sound_commands* Commands)
 {
     if(SoundDevice && Commands)
     {
@@ -366,7 +366,6 @@ static void PlaySounds(sound_device* SoundDevice, sound_commands* Commands, math
                 OpenALApi.alSourcef(SoundDevice->Sources[SourceIndex],AL_GAIN,SoundDevice->SourceGain[SourceIndex]);
             }
         }
-        
         
         if(Commands->Stopped && !SoundDevice->PrevStopped)
         {
@@ -410,25 +409,7 @@ static void PlaySounds(sound_device* SoundDevice, sound_commands* Commands, math
                 {
                     if(Sound.SoundInfo.Rolloff > 0)
                     {
-                        //@Incomplete: Should do rolloff in game code...
-                        if(Sound.SoundInfo.EntityHandle != -1)
-                        {
-                            if(EntityPositions)
-                            {
-                                auto Position = EntityPositions[Sound.SoundInfo.EntityHandle];
-                                SoundDevice->SourceToSound[Source].SoundInfo.Position[0] = Position.x;
-                                SoundDevice->SourceToSound[Source].SoundInfo.Position[1] = Position.y;
-                            }
-                        }
-                        
-                        if(EntityPositions)
-                        {
-                            r32 DistanceToEntity = math::Distance(math::v3(Sound.SoundInfo.Position[0], Sound.SoundInfo.Position[1],
-                                                                           Sound.SoundInfo.Position[2]), math::v3(0,0,0));
-                            r32 VolFactor = 1.0f - (DistanceToEntity/Sound.SoundInfo.Rolloff);
-                            OpenALApi.alSourcef(SoundDevice->Sources[SourceIndex],AL_GAIN,Max(0.0f,VolFactor) * Commands->SFXVolume);
-                            SoundDevice->SourceGain[SourceIndex] = Max(0.0f,VolFactor) * Commands->SFXVolume;
-                        }
+                        //@Incomplete: Implement rolloff in game code or at least differently
                     }
                 }
             }

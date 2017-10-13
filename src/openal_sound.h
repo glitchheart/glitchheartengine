@@ -12,8 +12,6 @@ char* ToString(sound_effect Sound)
     return Result;
 }
 
-GENERIC_MAP(source_to_sound, sound_effect, i32, CmpInt, -1, "%d", INT_ASSIGN, VAL_COPY);
-
 struct sound_device_info
 {
     const char* DeviceName;
@@ -48,7 +46,7 @@ struct sound_device
     r32 SourceGain[SOURCES];
     r32 SFXVolume;
     r32 MusicVolume;
-    source_to_sound_map SourceToSound;
+    sound_effect SourceToSound[SOURCES];
     
     i32 SoundIndex;
     u32 SoundArray[SOUNDS];

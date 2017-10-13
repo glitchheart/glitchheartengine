@@ -206,8 +206,6 @@ inline PLATFORM_GET_ALL_FILES_WITH_EXTENSION(Win32FindFilesWithExtensions)
                 if(strcmp(FindFile.cFileName, ".") != 0
                    && strcmp(FindFile.cFileName, "..") != 0)
                 {
-                    
-                    
                     char* ConcatStr = Concat(DirectoryPath, FindFile.cFileName);
                     char* FileName = strtok(FindFile.cFileName, ".");
                     

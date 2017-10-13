@@ -77,6 +77,31 @@ inline b32 StartsWith(const char *A, const char *B)
     return 0;
 }
 
+inline char* GetFileNameFromPath(char* Path, char* Extension = 0)
+{
+    char* CompareString = ".";
+    if(Extension)
+    {
+        CompareString = Concat(".", Extension);
+    }
+    
+    auto Tok = StrSep(&Path, ".");
+    Tok = StrSep(&Tok, "/");
+    while(Tok)
+    {
+        if(strstr(Tok, CompareString))
+        {
+            Tok = StrSep(&Tok, ".");
+            return Tok;
+        }
+        else 
+        {
+            Tok = StrSep(&Path, "/");
+        }
+    }
+    return 0;
+}
+
 inline void HandleError(char const *File, i32 LineNum, char const *msg)
 {
     if(File)

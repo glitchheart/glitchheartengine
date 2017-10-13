@@ -21,8 +21,6 @@ struct sound_effect
     sound_info SoundInfo;
 };
 
-GENERIC_MAP(sound_buffer, i32, char*, StrCmp,  NULL, "%s", STR_ASSIGN, VAL_COPY);
-
 struct sound_commands
 {
     i32 SoundCount;
@@ -32,7 +30,6 @@ struct sound_commands
     b32 LoadSounds;
     
     i32 Sounds;
-    sound_buffer_map SoundMap;
     
     r32 SFXVolume;
     r32 MusicVolume;
