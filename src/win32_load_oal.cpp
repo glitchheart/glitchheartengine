@@ -1,27 +1,13 @@
-enum dll_arch
-{
-    A_32,
-    A_64
-};
 
 ALboolean LoadOAL11Library(char* FilePath, oal_api* OALFunctions, HMODULE OpenALDLL)
 {
     if(!OALFunctions)
         return AL_FALSE;
     
-    dll_arch Arch = A_64;
-    
     if(FilePath)
         OpenALDLL = LoadLibrary(FilePath);
     else
     {
-        /*
-#if defined(_WIN64)
-        CopyFile("../libs/soft_oal/dll/Win64/soft_oal.dll", "soft_oal.dll", FALSE);
-#else
-        CopyFile("../libs/soft_oal/dll/Win32/soft_oal.dll", "soft_oal.dll", FALSE);
-#endif*/
-        //OpenALDLL = LoadLibrary("soft_oal.dll");
         OpenALDLL = LoadLibrary("OpenAL32.dll");
     }
     
