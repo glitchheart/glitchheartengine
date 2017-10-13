@@ -292,7 +292,7 @@ void ScrollCallback(GLFWwindow* Window, double XOffset, double YOffset)
 
 static void KeyCallback(GLFWwindow *Window, int Key, int Scancode, int Action, int Mods)
 {
-    if (Action == GLFW_PRESS)
+    if (Action == GLFW_PRESS && Key >= 0)
     {
         InputController.AnyKeyPressed = true;
         if (InputController.KeysJustPressed[InputController.KeyMappings[Key]] == Key_NotPressed)
@@ -302,7 +302,7 @@ static void KeyCallback(GLFWwindow *Window, int Key, int Scancode, int Action, i
         
         InputController.KeysDown[InputController.KeyMappings[Key]] = true;
     }
-    else if (Action == GLFW_RELEASE)
+    else if (Action == GLFW_RELEASE && Key >= 0)
     {
         InputController.KeysUp[InputController.KeyMappings[Key]] = true;
         InputController.KeysJustPressed[InputController.KeyMappings[Key]] = Key_NotPressed;

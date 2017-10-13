@@ -1,28 +1,45 @@
- static void LoadSounds(sound_commands* Commands, const char* FilePath)
+ static void LoadSound(sound_commands* Commands, char* FilePath, i32* Handle)
  {
-     if(!Commands->SoundMap.Initialized)
+     if(Commands->SoundsToLoad.FilesLength == 0)
      {
-         sound_buffer_Map_Init(&Commands->SoundMap, HashStringJenkins, 64);
+         Commands->SoundsToLoad.FileNames = PushTempArray(512, char*);
+         Commands->SoundsToLoad.FilePaths = PushTempArray(512, char*);
      }
      
+     char Path[255];
+     strcpy(Path, FilePath);
+     auto FileName = GetFileNameFromPath(Path, "wav");
+     
+     if(Handle)
+         *Handle = Commands->Sounds++;
+     Commands->LoadSounds = true;
+     Commands->SoundsToLoad.FilePaths[Commands->SoundsToLoad.FilesLength] = PushTempString(FilePath);
+     Commands->SoundsToLoad.FileNames[Commands->SoundsToLoad.FilesLength] = PushTempString(FileName);
+     Commands->SoundsToLoad.FilesLength++;
+ }
+ 
+ static i32* LoadSounds(sound_commands* Commands, const char* FilePath, memory_arena* Arena)
+ {
      directory_data DirData = {};
      Platform.GetAllFilesWithExtension(FilePath, "wav", &DirData, true);
      
+     auto Handles = PushArray(Arena, DirData.FilesLength, i32);
+     
      for(i32 FileIndex = 0; FileIndex < DirData.FilesLength; FileIndex++)
      {
-         Commands->SoundMap[DirData.FileNames[FileIndex]] = Commands->Sounds++;
+         Handles[FileIndex]= Commands->Sounds++;
      }
      
      Commands->LoadSounds = true;
      Commands->SoundsToLoad = DirData;
+     return Handles;
  }
  
- static inline void PlaySoundEffect(sound_commands* SoundCommands, char* Sound, r32 Pitch = 1.0f, r32 X = 0.0f, r32 Y = 0.0f, r32 RollOff = 0.0f, b32 Loop = false, i32 EntityHandle = -1)
+ static inline void PlaySoundEffect(sound_commands* SoundCommands, i32 BufferHandle, r32 Pitch = 1.0f, r32 X = 0.0f, r32 Y = 0.0f, r32 RollOff = 0.0f, b32 Loop = false, i32 EntityHandle = -1)
  {
      sound_effect* SoundEffect = PushStruct(&SoundCommands->SoundArena, sound_effect);
      SoundCommands->SoundCount++;
-     auto& Buffer = SoundCommands->SoundMap[Sound];
-     SoundEffect->Buffer = Buffer;
+     SoundEffect->Buffer = BufferHandle;
      SoundEffect->SoundInfo.Pitch = Pitch;
      SoundEffect->SoundInfo.Position[0] = X; 
      SoundEffect->SoundInfo.Position[1] = Y;
@@ -33,17 +50,16 @@
      SoundEffect->SoundInfo.Gain = SoundCommands->SFXVolume;
  }
  
- static inline void PlayMusicTrack(sound_commands* SoundCommands, char* Sound, r32 Pitch = 1.0f, b32 Loop = true)
+ static inline void PlayMusicTrack(sound_commands* SoundCommands, i32 BufferHandle, r32 Pitch = 1.0f, b32 Loop = true)
  {
      sound_effect* SoundEffect = PushStruct(&SoundCommands->SoundArena, sound_effect);
      SoundCommands->SoundCount++;
-     auto& Buffer = SoundCommands->SoundMap[Sound];
-     SoundEffect->Buffer = Buffer;
+     SoundEffect->Buffer = BufferHandle;
      SoundEffect->SoundInfo.Pitch = Pitch;
      SoundEffect->SoundInfo.Rolloff = 0.0f;
      SoundEffect->SoundInfo.Loop = Loop;
      SoundEffect->SoundInfo.Gain = SoundCommands->MusicVolume;
  }
  
-#define PLAY_SOUND(Sound,...) PlaySoundEffect(SoundCommands, Sound, __VA_ARGS__)
-#define PLAY_TRACK(Track,...) PlayMusicTrack(SoundCommands, Track, __VA_ARGS__)
+#define PLAY_SOUND(SoundHandle,...) PlaySoundEffect(SoundCommands, SoundHandle, __VA_ARGS__)
+#define PLAY_TRACK(TrackHandle,...) PlayMusicTrack(SoundCommands, TrackHandle, __VA_ARGS__)

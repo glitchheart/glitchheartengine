@@ -131,6 +131,7 @@ struct game_state
     i32 StartTexture;
     i32 EndTexture;
     i32 PlayerTexture;
+    i32 BrugtHandle;
     
     font_handle_map FontMap;
 };

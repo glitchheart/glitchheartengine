@@ -332,7 +332,8 @@ extern "C" UPDATE(Update)
         Renderer.Cameras[Renderer.CurrentCameraHandle].ViewportHeight = Renderer.WindowHeight;
         Renderer.Cameras[Renderer.CurrentCameraHandle].Position = math::v3(4.0f, 5.0f, 0);
         
-        LoadSounds(SoundCommands, Concat(CARDS_ASSETS, "sounds/"));
+        char* Str = Concat(CARDS_ASSETS, "sounds/music/Brugt.wav");
+        LoadSound(SoundCommands, Str, &GameState->BrugtHandle);
         
         InitializeCards(GameState, Renderer);
         LoadLevels(Concat(CARDS_ASSETS, "levels/"), GameState, Renderer);
@@ -358,7 +359,7 @@ extern "C" UPDATE(Update)
         
         GameState->FontMap["Inconsolata_36"] = LoadFont(Renderer, Concat(CARDS_ASSETS, "/fonts/inconsolata/Inconsolata-Bold.ttf"), 36, "Inconsolata");
         
-        PLAY_TRACK("Brugt");
+        PLAY_TRACK(GameState->BrugtHandle);
         
         LoadTexture("border.png", Concat(CARDS_ASSETS, "textures/border.png"), Renderer, &Renderer.TextureArena, &GameState->BorderTexture);
         

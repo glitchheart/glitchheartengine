@@ -407,12 +407,11 @@ int main(int Argc, char** Args)
         GameMemory.ReloadData = &AssetManager.ReloadData;
         ReloadDlls(&Game, DllPath, TempDllPath);
         
-        game_update_return GameUpdateStruct = {};
-        Game.Update(DeltaTime, &GameMemory, Renderer, &InputController, &SoundCommands, &GameUpdateStruct);
+        Game.Update(DeltaTime, &GameMemory, Renderer, &InputController, &SoundCommands);
         
         
         Render(RenderState, Renderer, &Win32State->PermArena);
-        PlaySounds(&SoundDevice, &SoundCommands, GameUpdateStruct.EntityPositions, GameUpdateStruct.EntityCount);
+        PlaySounds(&SoundDevice, &SoundCommands);
         
         SetControllerInvalidKeys();
         SetInvalidKeys();
