@@ -15,15 +15,14 @@ ALboolean LoadOAL11Library(char* FilePath, oal_api* OALFunctions, HMODULE OpenAL
         OpenALDLL = LoadLibrary(FilePath);
     else
     {
-        
+        /*
 #if defined(_WIN64)
         CopyFile("../libs/soft_oal/dll/Win64/soft_oal.dll", "soft_oal.dll", FALSE);
-        Arch = A_64;
 #else
         CopyFile("../libs/soft_oal/dll/Win32/soft_oal.dll", "soft_oal.dll", FALSE);
-        Arch = A_32;
-#endif
-        OpenALDLL = LoadLibrary("soft_oal.dll");
+#endif*/
+        //OpenALDLL = LoadLibrary("soft_oal.dll");
+        OpenALDLL = LoadLibrary("OpenAL32.dll");
     }
     
     if(!OpenALDLL)
