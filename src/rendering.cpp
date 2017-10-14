@@ -86,18 +86,15 @@ static inline void CameraTransform(renderer& Renderer, camera& Camera, math::v3 
     }
 }
 
-static void LoadTexture(char* TextureName, const char* FullTexturePath, renderer& Renderer, memory_arena* PermArena, i32* Handle = 0)
+static void LoadTexture(const char* FullTexturePath, renderer& Renderer, memory_arena* PermArena, i32* Handle = 0)
 {
     texture_data* TextureData = &Renderer.TextureData[Renderer.TextureCount];
     
     TextureData->Handle = Renderer.TextureCount++;
     
     TextureData->ImageData = stbi_load(FullTexturePath, &TextureData->Width, &TextureData->Height, 0, STBI_rgb_alpha);
-    
-    TextureData->Name = PushString(PermArena, strlen(TextureName), TextureName);
-    
     if(Handle)
-        *Handle = TextureData->Handle;
+        *Handle = TextureData->Handle + 1; // We add one to the handle, since we want 0 to be an invalid handle
 }
 
 static void LoadTextures(renderer& Renderer, memory_arena* PermArena, const char* Path)
@@ -109,7 +106,7 @@ static void LoadTextures(renderer& Renderer, memory_arena* PermArena, const char
     
     for (i32 FileIndex = 0; FileIndex < DirData.FilesLength; FileIndex++)
     {
-        LoadTexture(DirData.FileNames[FileIndex], DirData.FilePaths[FileIndex], Renderer, PermArena);
+        LoadTexture(DirData.FilePaths[FileIndex], Renderer, PermArena);
     }
 }
 
@@ -186,7 +183,7 @@ static void PushFilledQuad(renderer& Renderer, math::v3 Position, math::v3 Size,
     RenderCommand->Scale = Size;
     RenderCommand->Quad.Color = Color;
     RenderCommand->Quad.Outlined = false;
-    RenderCommand->Quad.TextureHandle = TextureHandle;
+    RenderCommand->Quad.TextureHandle = TextureHandle - 1;
     
     RenderCommand->IsUI = IsUI;
 }
@@ -358,7 +355,6 @@ static i32 LoadFont(renderer& Renderer, char* Path, i32 Size, char* Name)
     Data.Name = PushString(&Renderer.FontArena, Name);
     
     Renderer.Fonts[Renderer.FontCount] = Data;
-    
     return Renderer.FontCount++;
 }
 

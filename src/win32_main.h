@@ -36,6 +36,4 @@ struct win32_memory_state
     u64 PermanentSizeAllocated;
 };
 
-
-
 #endif

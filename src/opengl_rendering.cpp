@@ -88,7 +88,7 @@ static GLint ShaderCompilationErrorChecking(const char* ShaderName, GLuint Shade
 static GLuint LoadShader(const char* FilePath, shader *Shd, memory_arena* PermArena)
 {
     Shd->VertexShader = glCreateShader(GL_VERTEX_SHADER);
-    char* VertexString = Concat(FilePath,".vert");
+    char* VertexString = Concat(FilePath, ".vert");
     GLchar *VertexText = LoadShaderFromFile(VertexString, PermArena);
     
     glShaderSource(Shd->VertexShader, 1, &VertexText, NULL);
@@ -101,7 +101,7 @@ static GLuint LoadShader(const char* FilePath, shader *Shd, memory_arena* PermAr
     }
     
     Shd->FragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    char* FragmentString = Concat(FilePath,".frag");
+    char* FragmentString = Concat(FilePath, ".frag");
     GLchar *FragmentText = LoadShaderFromFile(FragmentString, PermArena);
     
     glShaderSource(Shd->FragmentShader, 1, &FragmentText, NULL);
@@ -810,7 +810,6 @@ static void InitializeOpenGL(render_state& RenderState, renderer& Renderer, conf
     
     const GLFWvidmode* mode = glfwGetVideoMode(monitor);
     
-    
     if(ConfigData->Fullscreen == 2)
     {
         glfwWindowHint(GLFW_RED_BITS, mode->redBits);
@@ -824,7 +823,6 @@ static void InitializeOpenGL(render_state& RenderState, renderer& Renderer, conf
     }
     else if(ConfigData->Fullscreen == 1)
     {
-        
         RenderState.Window = glfwCreateWindow(ConfigData->ScreenWidth, ConfigData->ScreenHeight, Concat(Concat(ConfigData->Title, " "), ConfigData->Version),  monitor, 
                                               NULL);
     }
@@ -833,7 +831,6 @@ static void InitializeOpenGL(render_state& RenderState, renderer& Renderer, conf
         RenderState.Window = glfwCreateWindow(ConfigData->ScreenWidth, ConfigData->ScreenHeight, Concat(Concat(ConfigData->Title, " "), ConfigData->Version),   NULL, 
                                               NULL);
     }
-    
     
     RenderState.Contrast = ConfigData->Contrast;
     RenderState.Brightness = ConfigData->Brightness;
@@ -889,6 +886,16 @@ static void InitializeOpenGL(render_state& RenderState, renderer& Renderer, conf
     memcpy(RenderState.Viewport, Viewport, sizeof(GLint) * 4);
     
     ControllerPresent();
+    
+    char* EnginePath = getenv("GLITCH_ENGINE");
+    
+    for(i32 Index = 0; Index < Shader_Count; Index++)
+    {
+        char* NewPath = Concat(EnginePath, ShaderPaths[Index]);
+        //free(ShaderPaths[Index]); // Shouldn't we call this or is the string on the stakc somehow?
+        ShaderPaths[Index] = PushString(PermArena, strlen(NewPath) + 1);
+        strcpy(ShaderPaths[Index], NewPath);
+    }
     
     RenderSetup(&RenderState, PermArena);
 }
