@@ -14,7 +14,20 @@ platform_api Platform;
 static void InitializePlayer(game_state* GameState, renderer& Renderer, entity& Player)
 {
     Player.Player.BulletCount = 0;
-    LoadTexture("spaceship", "../assets/textures/spaceship.png", Renderer, &GameState->TotalArena, &Player.TextureHandle);
+    LoadTexture("../assets/textures/spaceship.png", Renderer, &GameState->TotalArena, &Player.TextureHandle);
+}
+
+static void CreateLevel(game_state* GameState, i32 ChunkWidth, i32 ChunkHeight)
+{
+    GameState->Level.ChunkWidth = ChunkWidth;
+    GameState->Level.ChunkHeight = ChunkHeight;
+    
+    GameState->Level.Chunks = PushArray(&GameState->WorldArena, ChunkWidth, level_chunk*);
+    
+    for(i32 Index = 0; Index < ChunkHeight; Index++)
+    {
+        GameState->Level.Chunks[Index] = PushArray(&GameState->WorldArena, ChunkHeight, level_chunk);
+    }
 }
 
 static void AddBullet(entity& Player)
@@ -116,8 +129,9 @@ extern "C" UPDATE(Update)
         GameState->Loaded = false;
         LoadFont(Renderer, Concat("../assets/", "/fonts/pixelart.ttf"), 60, "Pixelart");
         InitializePlayer(GameState, Renderer, GameState->Player);
-        LoadTexture("bullet_simple", "../assets/textures/bullet_simple.png", Renderer, &GameState->TotalArena, &GameState->BulletTextureHandle);
-        LoadTexture("enemy_star", "../assets/textures/enemy_star.png", Renderer, &GameState->TotalArena, &GameState->StarEnemyTextureHandle);
+        CreateLevel(GameState, 20, 20);
+        LoadTexture("../assets/textures/bullet_simple.png", Renderer, &GameState->TotalArena, &GameState->BulletTextureHandle);
+        LoadTexture("../assets/textures/enemy_star.png", Renderer, &GameState->TotalArena, &GameState->StarEnemyTextureHandle);
     }
     
     Assert(GameState);
@@ -137,7 +151,7 @@ extern "C" UPDATE(Update)
         Renderer.Cameras[0].ViewportHeight = Renderer.WindowHeight;
         
         Renderer.Cameras[0].Zoom = 8.0f;
-        CameraTransform(Renderer, Renderer.Cameras[0], math::v3(30, 40, 0), math::quat(), math::v3(), Renderer.Cameras[0].Zoom);
+        CameraTransform(Renderer, Renderer.Cameras[0], Player.Position, math::quat(), math::v3(), Renderer.Cameras[0].Zoom);
         GameState->LowestPositionInWorld = math::UnProject(math::v3(0, Renderer.Viewport[3]  - Renderer.ViewportHeight, 0),
                                                            Renderer.Cameras[0].ViewMatrix,
                                                            Renderer.Cameras[0].ProjectionMatrix,
@@ -149,6 +163,7 @@ extern "C" UPDATE(Update)
     }
     
     UpdatePlayer(InputController, GameState, Player, DeltaTime);
+    CameraTransform(Renderer, Renderer.Cameras[0], Player.Position, math::quat(), math::v3(), Renderer.Cameras[0].Zoom);
     
     DisableDepthTest(Renderer);
     RenderPlayer(GameState, Renderer, Player);
@@ -158,9 +173,6 @@ extern "C" UPDATE(Update)
     {
         PushFilledQuad(Renderer, Player.Player.Bullets[Index].Position, math::v3(2.0f, 2.0f, 0.0f), math::v3(), math::rgba(1.0, 1.0, 1.0, 1.0), GameState->BulletTextureHandle, false);
     }
-    
-    PushFilledQuad(Renderer, math::v3(10, 10, 0), math::v3(8, 8, 0), math::v3(), math::rgba(1.0, 1.0, 1.0, 1.0), GameState->StarEnemyTextureHandle, false);
-    PushFilledQuad(Renderer, math::v3(30, 5, 0), math::v3(8, 8, 0), math::v3(), math::rgba(1.0, 1.0, 1.0, 1.0), GameState->StarEnemyTextureHandle, false);
     
     EnableDepthTest(Renderer);
 }

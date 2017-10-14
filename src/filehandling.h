@@ -185,7 +185,9 @@ inline PLATFORM_GET_ALL_FILES_WITH_EXTENSION(Win32FindFilesWithExtensions)
                 }
                 
             }
-        } while(FindNextFile(hFind, &FindFile));
+        }
+        
+        while(FindNextFile(hFind, &FindFile));
         FindClose(hFind);
     }
     else

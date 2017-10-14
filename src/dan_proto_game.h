@@ -42,6 +42,19 @@ struct bullet
     r32 Speed;
 };
 
+struct level_chunk
+{
+    math::v2* Stars;
+    i32 StarCount;
+};
+
+struct level
+{
+    level_chunk** Chunks;
+    i32 ChunkWidth;
+    i32 ChunkHeight;
+};
+
 struct entity
 {
     Entity_Type Type;
@@ -77,6 +90,7 @@ struct entity
 
 struct game_state
 {
+    level Level;
     i32 BulletTextureHandle;
     i32 StarEnemyTextureHandle;
     i32 PixelArtFontHandle;
