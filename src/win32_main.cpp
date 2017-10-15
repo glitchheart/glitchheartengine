@@ -374,7 +374,7 @@ int main(int Argc, char** Args)
     r64 CurrentFrame = 0.0;
     r64 DeltaTime;
     
-    while (!ShouldCloseWindow(RenderState) && !RenderState.ShouldClose)
+    while (!ShouldCloseWindow(RenderState) && !Renderer.ShouldClose)
     {
         Renderer.WindowWidth = RenderState.WindowWidth;
         Renderer.WindowHeight = RenderState.WindowHeight;

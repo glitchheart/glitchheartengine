@@ -2478,6 +2478,11 @@ namespace math
         return Result;
     }
     
+    inline void SeedRandom(u32 Seed)
+    {
+        srand(Seed);
+    }
+    
     inline r32 RandomFloat(r32 From, r32 To)
     {
         r32 Rand = Min(Max(From, ((r32)rand()/(r32)(RAND_MAX)) * To),To);

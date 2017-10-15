@@ -417,6 +417,7 @@ struct buffer_data
 
 struct renderer
 {
+    b32 ShouldClose;
     r64 FPS;
     r64 AverageFPS;
     r64 FPSSum;

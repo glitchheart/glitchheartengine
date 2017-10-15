@@ -47,7 +47,6 @@
 
 #define OffsetOf(type, Member) (umm)&(((type *)0)->Member)
 
-
 #include <stdint.h>
 #include <cstdio>
 
