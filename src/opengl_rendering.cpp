@@ -897,6 +897,7 @@ static void InitializeOpenGL(render_state& RenderState, renderer& Renderer, conf
         strcpy(ShaderPaths[Index], NewPath);
     }
     
+    Renderer.ShouldClose = false;
     RenderSetup(&RenderState, PermArena);
 }
 
