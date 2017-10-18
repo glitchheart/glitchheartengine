@@ -180,12 +180,6 @@ struct input_controller;
 struct sound_commands;
 struct render_state;
 
-struct game_update_return
-{
-    math::v3 EntityPositions[NUM_ENTITIES];
-    i32 EntityCount;
-};
-
 struct renderer;
 
 #define UPDATE(name)void name(r64 DeltaTime, game_memory* GameMemory, renderer& Renderer, input_controller* InputController, sound_commands* SoundCommands)
