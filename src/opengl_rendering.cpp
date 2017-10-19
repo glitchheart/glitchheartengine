@@ -1104,7 +1104,7 @@ static void RenderQuad(Render_Mode Mode, render_state& RenderState, math::v4 Col
         {
             auto Shader = RenderState.RectShader;
             
-            if(TextureHandle != 0)
+            if(TextureHandle > 0)
             {
                 glBindVertexArray(RenderState.TextureRectVAO);
             }
@@ -1113,7 +1113,7 @@ static void RenderQuad(Render_Mode Mode, render_state& RenderState, math::v4 Col
                 glBindVertexArray(RenderState.RectVAO);
             }
             
-            if(TextureHandle != 0)
+            if(TextureHandle > 0)
             {
                 glBindTexture(GL_TEXTURE_2D, TextureHandle);
                 Shader = RenderState.TextureRectShader;
@@ -1402,6 +1402,7 @@ static void RenderQuad(const render_command& Command, render_state& RenderState,
 {
     if(Command.IsUI)
     {
+        auto Handle = Command.Quad.TextureHandle != -1 ? RenderState.TextureArray[Command.Quad.TextureHandle].TextureHandle : 0;
         RenderQuad(Command.Quad.Outlined ? Render_Outline : Render_Fill, 
                    RenderState, 
                    Command.Quad.Color, 
@@ -1409,7 +1410,7 @@ static void RenderQuad(const render_command& Command, render_state& RenderState,
                    Command.Scale,
                    Command.Rotation,
                    Command.IsUI,
-                   RenderState.TextureArray[Command.Quad.TextureHandle].TextureHandle);
+                   Handle);
     }
     else
     {
