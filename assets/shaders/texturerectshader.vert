@@ -16,5 +16,6 @@ void main()
     	gl_Position = M * vec4(pos.xy, 0.0, 1.0);
 	else
 		gl_Position = Projection * View *  M * vec4(pos.xy, 0.0, 1.0);
+
 	c = color;
 }
