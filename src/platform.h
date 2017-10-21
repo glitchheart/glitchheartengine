@@ -179,12 +179,4 @@ UPDATE(UpdateStub)
 
 #define ERR(msg) HandleError(__FILE__,__LINE__,msg)
 
-struct CompareCStrings 
-{
-    bool operator()(const char* lhs, const char* rhs) const
-    {
-        return strcmp(lhs, rhs) < 0;
-    }
-};
-
 #endif
