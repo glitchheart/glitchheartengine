@@ -87,15 +87,6 @@ struct timer
     char* Name;
 };
 
-struct entity_file_reload_data
-{
-    b32 ReloadPlayerFile;
-    b32 ReloadSkeletonFile;
-    b32 ReloadMinotaurFile;
-    b32 ReloadWraithFile;
-    b32 ReloadBonfireFile;
-};
-
 struct config_data
 {
     char* Title;
@@ -156,7 +147,6 @@ struct platform_api
 };
 extern platform_api Platform;
 
-struct entity_file_reload_data;
 struct debug_state;
 
 struct game_memory
@@ -165,7 +155,6 @@ struct game_memory
     b32 ShouldReload;
     b32 ExitGame;
     config_data ConfigData;
-    entity_file_reload_data* ReloadData;
     platform_api PlatformAPI;
     
     struct game_state* GameState;

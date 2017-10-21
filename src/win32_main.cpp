@@ -398,7 +398,7 @@ int main(int Argc, char** Args)
         ShowMouseCursor(RenderState, Renderer.ShowMouseCursor);
         
         ReloadAssets(RenderState, &AssetManager, &Win32State->PermArena);
-        GameMemory.ReloadData = &AssetManager.ReloadData;
+        
         ReloadDlls(&Game, DllPath, TempDllPath);
         
         Game.Update(DeltaTime, &GameMemory, Renderer, &InputController, &SoundCommands);
