@@ -321,12 +321,6 @@ int main(int Argc, char** Args)
     char* DllPath = "game.dll";
     char* TempDllPath = "game_temp.dll";
     
-    if(Argc == 2)
-    {
-        DllPath = Concat(Args[1], "_game.dll", &Win32State->PermArena);
-        TempDllPath = Concat(Args[1], "_game_temp.dll", &Win32State->PermArena);
-    }
-    
     memory_arena DebugArena = {};
     
     GameMemory.DebugState = PushStruct(&Win32State->PermArena, debug_state);
@@ -335,7 +329,7 @@ int main(int Argc, char** Args)
     GameMemory.DebugState->DebugMemoryInfo.DebugRect.RectSize = math::v2(300,0);
     
     config_data ConfigData;
-    LoadConfig("../assets/.config", &ConfigData, &Win32State->PermArena);
+    LoadConfig("../.config", &ConfigData, &Win32State->PermArena);
     
     GameMemory.ConfigData = ConfigData;
     
