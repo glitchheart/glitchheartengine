@@ -200,11 +200,6 @@ inline void LoadConfig(const char* FilePath, config_data* ConfigData, memory_are
             {
                 sscanf(LineBuffer, "music_volume %f", &ConfigData->MusicVolume);
             }
-            else if(StartsWith(LineBuffer, "starting_level_path"))
-            {
-                ConfigData->StartingLevelFilePath = PushString(PermArena, 40);
-                sscanf(LineBuffer, "starting_level_path %s", ConfigData->StartingLevelFilePath);
-            }
             else if(StartsWith(LineBuffer, "zoom"))
             {
                 sscanf(LineBuffer, "zoom %f", &ConfigData->Zoom);
@@ -402,7 +397,6 @@ int main(int Argc, char** Args)
         ReloadDlls(&Game, DllPath, TempDllPath);
         
         Game.Update(DeltaTime, &GameMemory, Renderer, &InputController, &SoundCommands);
-        
         
         Render(RenderState, Renderer, &Win32State->PermArena);
         PlaySounds(&SoundDevice, &SoundCommands);
