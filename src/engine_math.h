@@ -2478,6 +2478,11 @@ namespace math
         return Result;
     }
     
+    inline r32 AngleFromDirection(v2 In)
+    {
+        return (r32)atan2(In.x, In.y);
+    }
+    
     inline void SeedRandom(u32 Seed)
     {
         srand(Seed);
