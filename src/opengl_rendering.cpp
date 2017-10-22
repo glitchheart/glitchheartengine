@@ -893,7 +893,7 @@ static void InitializeOpenGL(render_state& RenderState, renderer& Renderer, conf
     {
         char* NewPath = Concat(EnginePath, ShaderPaths[Index]);
         //free(ShaderPaths[Index]); // Shouldn't we call this or is the string on the stakc somehow?
-        ShaderPaths[Index] = PushString(PermArena, strlen(NewPath) + 1);
+        ShaderPaths[Index] = PushString(PermArena, (u32)strlen(NewPath) + 1);
         strcpy(ShaderPaths[Index], NewPath);
     }
     
