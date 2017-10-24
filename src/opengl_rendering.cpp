@@ -1118,7 +1118,7 @@ static void RenderQuad(Render_Mode Mode, render_state& RenderState, math::v4 Col
                 glBindTexture(GL_TEXTURE_2D, TextureHandle);
                 Shader = RenderState.TextureRectShader;
                 RenderState.BoundTexture = TextureHandle;
-            } 
+            }
             
             UseShader(&Shader);
             
