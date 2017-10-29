@@ -86,6 +86,53 @@ static inline void CameraTransform(renderer& Renderer, camera& Camera, math::v3 
     }
 }
 
+static void LoadShader(const char* FullShaderPath, renderer& Renderer, i32* Handle)
+{
+    shader_data* ShaderData = &Renderer.ShaderData[Renderer.ShaderCount];
+    ShaderData->Handle = Renderer.ShaderCount++;
+    ShaderData->VertexShaderContent = 0;
+    ShaderData->FragmentShaderContent = 0;
+    
+    int Size = 0;
+    FILE* File;
+    
+    File = fopen(Concat(FullShaderPath, ".vert"), "r");
+    
+    if(File)
+    {
+        fseek(File, 0, SEEK_END);
+        Size = ftell(File);
+        rewind(File);
+        
+        // @Incomplete: Use built-in memory arena
+        ShaderData->VertexShaderContent = (char*) malloc(sizeof(char) * Size);
+        fread(ShaderData->VertexShaderContent, 1, Size, File);
+        fclose(File);
+    }
+    else
+    {
+        printf("Invalid file path: '%s'\n", FullShaderPath);
+    }
+    
+    File = fopen(Concat(FullShaderPath, ".frag"), "r");
+    
+    if(File)
+    {
+        fseek(File, 0, SEEK_END);
+        Size = ftell(File);
+        rewind(File);
+        
+        // @Incomplete: Use built-in memory arena
+        ShaderData->FragmentShaderContent = (char*) malloc(sizeof(char) * Size);
+        fread(ShaderData->FragmentShaderContent, 1, Size, File);
+        fclose(File);
+    }
+    else
+    {
+        printf("Invalid file path: '%s'\n", FullShaderPath);
+    }
+}
+
 static void LoadTexture(const char* FullTexturePath, renderer& Renderer, memory_arena* PermArena, i32* Handle = 0)
 {
     texture_data* TextureData = &Renderer.TextureData[Renderer.TextureCount];
@@ -142,6 +189,21 @@ static void DisableDepthTest(renderer& Renderer)
     render_command* RenderCommand = PushNextCommand(Renderer, false);
     RenderCommand->Type = RenderCommand_DepthTest;
     RenderCommand->DepthTest.On = false;
+}
+
+static void PushShader(renderer& Renderer, i32 ShaderHandle, shader_attribute* Attributes, i32 AttributeCount)
+{
+    render_command* RenderCommand = PushNextCommand(Renderer, false);
+    RenderCommand->Type = RenderCommand_ShaderStart;
+    RenderCommand->Shader.Handle = ShaderHandle;
+    RenderCommand->Shader.Attributes = Attributes;
+    RenderCommand->Shader.AttributeCount = AttributeCount;
+}
+
+static void EndShader(renderer& Renderer)
+{
+    render_command* RenderCommand = PushNextCommand(Renderer, false);
+    RenderCommand->Type = RenderCommand_ShaderEnd;
 }
 
 static void PushLine(renderer& Renderer, math::v3 Point1, math::v3 Point2, r32 LineWidth, math::rgba Color, b32 IsUI = false)
