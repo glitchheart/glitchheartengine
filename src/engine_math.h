@@ -381,6 +381,7 @@ namespace math
         v3(r32 X, i32 Y, r32 Z) : X(X), Y((r32)Y), Z(Z) {}
         v3(r64 X, r32 Y, r64 Z) : X((r32)X), Y(Y), Z((r32)Z) {}
         v3(r64 X, r32 Y, r32 Z) : X((r32)X), Y(Y), Z(Z) {}
+        v3(v2 V, r32 Z) : X(V.X), Y(V.Y), Z(Z) {}
         
         r32 operator[](i32 I)
         {
