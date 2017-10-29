@@ -85,6 +85,40 @@ static GLint ShaderCompilationErrorChecking(const char* ShaderName, GLuint Shade
     return IsCompiled;
 }
 
+static GLuint LoadExtraShader(shader_data& ShaderData, render_state& RenderState)
+{
+    // @Incomplete: vertexAttribPointers?
+    shader* Shader = &RenderState.ExtraShaders[RenderState.ExtraShaderIndex++];
+    Shader->VertexShader = glCreateShader(GL_VERTEX_SHADER);
+    glShaderSource(Shader->VertexShader, 1, &ShaderData.VertexShaderContent, NULL);
+    glCompileShader(Shader->VertexShader);
+    
+    if (!ShaderCompilationErrorChecking("", Shader->VertexShader))
+    {
+        Shader->Program = 0;
+        return GL_FALSE;
+    }
+    
+    Shader->FragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+    
+    glShaderSource(Shader->FragmentShader, 1, &ShaderData.FragmentShaderContent, NULL);
+    glCompileShader(Shader->FragmentShader);
+    
+    if (!ShaderCompilationErrorChecking("", Shader->FragmentShader))
+    {
+        Shader->Program = 0;
+        return GL_FALSE;
+    }
+    
+    Shader->Program = glCreateProgram();
+    
+    glAttachShader(Shader->Program, Shader->VertexShader);
+    glAttachShader(Shader->Program, Shader->FragmentShader);
+    glLinkProgram(Shader->Program);
+    
+    return GL_TRUE;
+}
+
 static GLuint LoadShader(const char* FilePath, shader *Shd, memory_arena* PermArena)
 {
     Shd->VertexShader = glCreateShader(GL_VERTEX_SHADER);
@@ -801,6 +835,14 @@ static void LoadTextures(render_state& RenderState, renderer& Renderer)
     }
 }
 
+static void LoadExtraShaders(render_state& RenderState, renderer& Renderer)
+{
+    for(i32 Index = RenderState.ExtraShaderIndex; Index < Renderer.ShaderCount; Index++)
+    {
+        LoadExtraShader(Renderer.ShaderData[Index], RenderState);
+    }
+}
+
 static void InitializeOpenGL(render_state& RenderState, renderer& Renderer, config_data* ConfigData, memory_arena* PermArena)
 {
     if (!glfwInit())
@@ -1120,6 +1162,11 @@ static void RenderQuad(Render_Mode Mode, render_state& RenderState, math::v4 Col
                 RenderState.BoundTexture = TextureHandle;
             }
             
+            if(RenderState.CurrentExtraShader != -1)
+            {
+                Shader = RenderState.ExtraShaders[RenderState.CurrentExtraShader];
+            }
+            
             UseShader(&Shader);
             
             //draw upper part
@@ -1145,6 +1192,52 @@ static void RenderQuad(Render_Mode Mode, render_state& RenderState, math::v4 Col
             SetFloatUniform(Shader.Program, "isUI", (r32)IsUI);
             SetMat4Uniform(Shader.Program, "M", Model);
             SetVec4Uniform(Shader.Program, "color", Color);
+            
+            if(RenderState.CurrentExtraShader != -1)
+            {
+                for(i32 Index = 0; Index < RenderState.ShaderAttributeCount; Index++)
+                {
+                    shader_attribute& Attribute = RenderState.ShaderAttributes[Index];
+                    switch(Attribute.Type)
+                    {
+                        case Attribute_Float:
+                        {
+                            SetFloatUniform(Shader.Program, Attribute.Name, Attribute.FloatVar);
+                        }
+                        break;
+                        case Attribute_Float2:
+                        {
+                            SetVec2Uniform(Shader.Program, Attribute.Name, Attribute.Float2Var);
+                        }
+                        break;
+                        case Attribute_Float3:
+                        {
+                            SetVec3Uniform(Shader.Program, Attribute.Name, Attribute.Float3Var);
+                        }
+                        break;
+                        case Attribute_Float4:
+                        {
+                            SetVec4Uniform(Shader.Program, Attribute.Name, Attribute.Float4Var);
+                        }
+                        break;
+                        case Attribute_Integer:
+                        {
+                            SetIntUniform(Shader.Program, Attribute.Name, Attribute.IntegerVar);
+                        }
+                        break;
+                        case Attribute_Boolean:
+                        {
+                            SetIntUniform(Shader.Program, Attribute.Name, Attribute.BooleanVar);
+                        }
+                        break;
+                        case Attribute_Matrix4:
+                        {
+                            SetMat4Uniform(Shader.Program, Attribute.Name, Attribute.Matrix4Var);
+                        }
+                        break;
+                    }
+                }
+            }
             
             glDrawElements(GL_TRIANGLES, sizeof(RenderState.QuadIndices), GL_UNSIGNED_INT, (void*)0);
         }
@@ -1363,36 +1456,36 @@ static void RenderText(const render_command& Command, render_state& RenderState)
     /*
     switch(Command.Text.FontType)
     {
-        case Font_Inconsolata:
-        {
-            RenderFont = RenderState.InconsolataFont;
-        }
-        break;
-        case Font_InconsolataSmall:
-        {
-            RenderFont = RenderState.SmallInconsolataFont;
-        }
-        break;
-        case Font_Menu:
-        {
-            RenderFont = RenderState.MenuFont;
-        }
-        break;
-        case Font_Button:
-        {
-            RenderFont = RenderState.ButtonFont;
-        }
-        break;
-        case Font_Roboto:
-        {
-            RenderFont = RenderState.RobotoFont;
-        }
-        break;
-        case Font_Title:
-        {
-            RenderFont = RenderState.TitleFont;
-        }
-        break;
+    case Font_Inconsolata:
+    {
+    RenderFont = RenderState.InconsolataFont;
+    }
+    break;
+    case Font_InconsolataSmall:
+    {
+    RenderFont = RenderState.SmallInconsolataFont;
+    }
+    break;
+    case Font_Menu:
+    {
+    RenderFont = RenderState.MenuFont;
+    }
+    break;
+    case Font_Button:
+    {
+    RenderFont = RenderState.ButtonFont;
+    }
+    break;
+    case Font_Roboto:
+    {
+    RenderFont = RenderState.RobotoFont;
+    }
+    break;
+    case Font_Title:
+    {
+    RenderFont = RenderState.TitleFont;
+    }
+    break;
     }
     */
     RenderText(RenderState, RenderFont, Command.Text.Color, Command.Text.Text, Command.Text.Position.x, Command.Text.Position.y, Command.Text.Alignment);
@@ -1768,6 +1861,20 @@ static void RenderCommands(render_state& RenderState, renderer& Renderer, memory
                 }
             }
             break;
+            case RenderCommand_ShaderStart:
+            {
+                RenderState.CurrentExtraShader = Command.Shader.Handle;
+                RenderState.ShaderAttributes = Command.Shader.Attributes;
+                RenderState.ShaderAttributeCount = Command.Shader.AttributeCount;
+            }
+            break;
+            case RenderCommand_ShaderEnd:
+            {
+                RenderState.CurrentExtraShader = -1;
+                RenderState.ShaderAttributes = 0;
+                RenderState.ShaderAttributeCount = 0;
+            }
+            break;
         }
     }
     
@@ -1817,6 +1924,20 @@ static void RenderCommands(render_state& RenderState, renderer& Renderer, memory
                 // @Incomplete: Do we need depth test commands for UI stuff?
             }
             break;
+            case RenderCommand_ShaderStart:
+            {
+                RenderState.CurrentExtraShader = Command.Shader.Handle;
+                RenderState.ShaderAttributes = Command.Shader.Attributes;
+                RenderState.ShaderAttributeCount = Command.Shader.AttributeCount;
+            }
+            break;
+            case RenderCommand_ShaderEnd:
+            {
+                RenderState.CurrentExtraShader = -1;
+                RenderState.ShaderAttributes = 0;
+                RenderState.ShaderAttributeCount = 0;
+            }
+            break;
         }
     }
     
@@ -1826,7 +1947,11 @@ static void RenderCommands(render_state& RenderState, renderer& Renderer, memory
 
 static void Render(render_state& RenderState, renderer& Renderer, memory_arena* PermArena)
 {
+    LoadExtraShaders(RenderState, Renderer);
     LoadTextures(RenderState, Renderer);
+    
+    RenderState.CurrentExtraShader = -1;
+    RenderState.ShaderAttributeCount = 0;
     
     auto& Camera = Renderer.Cameras[Renderer.CurrentCameraHandle];
     Camera.ViewportWidth = RenderState.WindowWidth;

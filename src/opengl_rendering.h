@@ -303,6 +303,13 @@ struct render_state
         };
     };
     
+    shader ExtraShaders[150];
+    i32 ExtraShaderIndex;
+    
+    i32 CurrentExtraShader;
+    shader_attribute* ShaderAttributes;
+    i32 ShaderAttributeCount;
+    
     texture TextureArray[150];
     i32 TextureIndex;
     

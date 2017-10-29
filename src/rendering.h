@@ -112,6 +112,8 @@ enum Render_Command_Type
     RenderCommand_Buffer,
     RenderCommand_Model,
     RenderCommand_WireframeCube,
+    RenderCommand_ShaderStart,
+    RenderCommand_ShaderEnd,
     RenderCommand_DepthTest,
     RenderCommand_Count
 };
@@ -236,6 +238,33 @@ struct model
     math::m4 GlobalInverseTransform;
 };
 
+enum Shader_Attribute_Type
+{
+    Attribute_Float,
+    Attribute_Float2,
+    Attribute_Float3,
+    Attribute_Float4,
+    Attribute_Integer,
+    Attribute_Boolean,
+    Attribute_Matrix4
+};
+
+struct shader_attribute
+{
+    Shader_Attribute_Type Type;
+    char* Name;
+    union
+    {
+        r32 FloatVar;
+        math::v2 Float2Var;
+        math::v3 Float3Var;
+        math::v4 Float4Var;
+        i32 IntegerVar;
+        b32 BooleanVar;
+        math::m4 Matrix4Var;
+    };
+};
+
 struct render_command
 {
     Render_Command_Type Type;
@@ -334,6 +363,12 @@ struct render_command
         } Model;
         struct
         {
+            i32 Handle;
+            shader_attribute* Attributes;
+            i32 AttributeCount;
+        } Shader;
+        struct
+        {
             b32 On;
         } DepthTest;
     };
@@ -374,6 +409,7 @@ struct camera
 #define RENDER_COMMAND_MAX 400
 #define BUFFER_ARRAY_SIZE 400
 #define TEXTURE_ARRAY_SIZE 512
+#define SHADER_ARRAY_SIZE 512
 
 struct texture_data
 {
@@ -382,6 +418,14 @@ struct texture_data
     i32 Width;
     i32 Height;
     unsigned char* ImageData;
+};
+
+struct shader_data
+{
+    i32 Handle;
+    char* Name;
+    char* VertexShaderContent;
+    char* FragmentShaderContent;
 };
 
 struct ui_render_info
@@ -442,6 +486,9 @@ struct renderer
     i32 TextureHandles[TEXTURE_ARRAY_SIZE];
     
     texture_data_map TextureMap;
+    
+    shader_data ShaderData[SHADER_ARRAY_SIZE];
+    i32 ShaderCount;
     
     camera Cameras[MAX_CAMERAS];
     i32 CurrentCameraHandle;
