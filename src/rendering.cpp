@@ -168,12 +168,16 @@ static render_command* PushNextCommand(renderer& Renderer, b32 IsUI)
     if(IsUI)
     {
         Renderer.UICommandCount++;
-        return PushStruct(&Renderer.UICommands, render_command);
+        render_command* Command = PushStruct(&Renderer.UICommands, render_command);
+        Command->ShaderHandle = -1;
+        return Command;
     }
     else
     {
         Renderer.CommandCount++;
-        return PushStruct(&Renderer.Commands, render_command);
+        render_command* Command = PushStruct(&Renderer.Commands, render_command);
+        Command->ShaderHandle = -1;
+        return Command;
     }
 }
 
@@ -235,7 +239,7 @@ static void PushText(renderer& Renderer, const char* Text, math::v3 Position, i3
     RenderCommand->IsUI = IsUI;
 }
 
-static void PushFilledQuad(renderer& Renderer, math::v3 Position, math::v3 Size, math::v3 Rotation, math::rgba Color, i32 TextureHandle = 0, b32 IsUI = true)
+static void PushFilledQuad(renderer& Renderer, math::v3 Position, math::v3 Size, math::v3 Rotation, math::rgba Color, i32 TextureHandle = 0, b32 IsUI = true, i32 ShaderHandle = -1, shader_attribute* ShaderAttributes = 0, i32 ShaderAttributeCount = 0)
 {
     render_command* RenderCommand = PushNextCommand(Renderer, IsUI);
     
@@ -246,6 +250,10 @@ static void PushFilledQuad(renderer& Renderer, math::v3 Position, math::v3 Size,
     RenderCommand->Quad.Color = Color;
     RenderCommand->Quad.Outlined = false;
     RenderCommand->Quad.TextureHandle = TextureHandle - 1;
+    
+    RenderCommand->ShaderHandle = ShaderHandle;
+    RenderCommand->ShaderAttributes = ShaderAttributes;
+    RenderCommand->ShaderAttributeCount = ShaderAttributeCount;
     
     RenderCommand->IsUI = IsUI;
 }

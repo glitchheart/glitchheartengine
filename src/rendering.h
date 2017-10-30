@@ -276,6 +276,10 @@ struct render_command
     math::v3 Rotation;
     math::quat Orientation;
     
+    i32 ShaderHandle;
+    shader_attribute* ShaderAttributes;
+    i32 ShaderAttributeCount;
+    
     union
     {
         struct
