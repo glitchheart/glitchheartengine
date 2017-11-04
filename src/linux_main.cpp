@@ -4,7 +4,6 @@
 //#include <stdlib.h>  
 //#include <crtdbg.h>  
 
-#define DEBUG
 //#include "windows.h"
 
 #include "platform.h"
@@ -21,8 +20,13 @@
 #include <dlfcn.h>
 #include <sys/types.h>  
 #include <sys/stat.h>  
+#include <sys/sendfile.h>
+#include <sys/mman.h>
 #include <GLFW/glfw3.h>
+#include <fcntl.h>
+#include <time.h>
 
+#include "unistd.h"
 #include "linux_main.h"
 
 #include "linux_load_oal.h"
@@ -46,6 +50,52 @@ input_controller InputController;
 #include "keys_glfw.h"
 #include "opengl_rendering.cpp"
 
+static b32 CopyFile(const char* Src, const char* Dst, b32 OverwriteExisting)
+{
+    if(!OverwriteExisting && (access(Src, F_OK) != -1))
+    {
+        return false;
+    }
+    
+    i32 ReadFD;
+    i32 WriteFD;
+    struct stat StatBuf;
+    off_t Offset = 0;
+    
+    if((ReadFD = open(Src, O_RDONLY) == -1))
+        return false;
+    
+    if(fstat(ReadFD, &StatBuf) == -1) 
+    {
+        return false;
+    }
+    
+    WriteFD = open(Dst, O_WRONLY | O_CREAT | O_TRUNC, StatBuf.st_mode);
+    if(WriteFD == -1)
+    {
+        close(ReadFD);
+        return false;
+    }
+    
+    i32 Result = sendfile(WriteFD, ReadFD, &Offset, StatBuf.st_size);
+    close(ReadFD);
+    close(WriteFD);
+    return Result > 0;
+}
+
+
+static time_t GetLastWriteTime(const char* FilePath)
+{
+    struct stat Result;
+    if(stat(FilePath, &Result) == 0)
+    {
+        auto ModTime = Result.st_mtime;
+        return ModTime;
+    }
+    return 0;
+}
+
+
 static game_code LoadGameCode(char* LibPath, char* TempLibPath)
 {
     game_code Result = {};
@@ -55,7 +105,7 @@ static game_code LoadGameCode(char* LibPath, char* TempLibPath)
     //TODO: Find Linux equivalent of CopyFile
     CopyFile(Result.LibPath, Result.TempLibPath, false);
     Result.Update = UpdateStub;
-
+    
     //TODO: Find lib load function for linux
     Result.GameCodeLib = dlopen(Result.TempLibPath, RTLD_LAZY);
     
@@ -80,7 +130,7 @@ static game_code LoadGameCode(char* LibPath, char* TempLibPath)
 
 static void UnloadGameCode(game_code *GameCode)
 {
-    if (GameCode->GameCodeDLL)
+    if (GameCode->GameCodeLib)
     {
         //TODO: Linux freelibrary
         dlclose(GameCode->GameCodeLib);
@@ -103,7 +153,7 @@ static void ReloadLibs(game_code *Game, char* LibPath, char* TempLibPath)
     FILETIME LastWriteTime = GetLastWriteTime(Game->LibPath);
     
     //TODO: Replace with linux
-    if (CompareFileTime(&Game->LastLibWriteTime, &LastWriteTime) != 0)
+    if (difftime(Game->LastLibWriteTime, LastWriteTime) != 0)
     {
         DEBUG_PRINT("RELOAD\n");
         ReloadGameCode(Game, LibPath, TempLibPath);
@@ -247,8 +297,9 @@ PLATFORM_ALLOCATE_MEMORY(LinuxAllocateMemory)
     }
     
     //TODO: Linux
-    linux_memory_block* Block = (linux_memory_block*)mmap(0, TotalSize, PROT_READ | PROT_WRITE, MAP_PRIVATE)
-
+    //linux_memory_block* Block = (linux_memory_block*)mmap(0, TotalSize, PROT_READ | PROT_WRITE, MAP_PRIVATE, 0, 0);
+    linux_memory_block* Block = (linux_memory_block*)calloc(1, TotalSize);
+    
     Assert(Block);
     Block->Block.Base = (u8*)Block + BaseOffset;
     Assert(Block->Block.Used == 0);
@@ -257,8 +308,8 @@ PLATFORM_ALLOCATE_MEMORY(LinuxAllocateMemory)
     if(Flags & (PM_UnderflowCheck | PM_OverflowCheck))
     {
         //TODO Linux types and function
-        i32 Protected = mprotect((u8*)Block + ProtectOffset, PageSize, PROT_NONE);
-        Assert(Protected);
+        // i32 Protected = mprotect((u8*)Block + ProtectOffset, PageSize, PROT_NONE);
+        // Assert(Protected);
     }
     
     Block->Block.Size = Size;
@@ -293,7 +344,8 @@ PLATFORM_DEALLOCATE_MEMORY(LinuxDeallocateMemory)
         
         linux_memory_block *LinuxBlock =  ((linux_memory_block*)Block);
         //TODO: Linux
-        munmap(LinuxBlock, LinuxBlock->Block->Size);
+        //munmap(LinuxBlock, LinuxBlock->Block.Size);
+        free(LinuxBlock);
     }
 }
 
@@ -308,16 +360,6 @@ static void ClearTempMemory()
     LinuxMemoryState.TempSizeAllocated = 0;
 }
 
-static time_t GetLastWriteTime(const char* FilePath)
-{
-    struct stat Result;
-    if(stat(FilePath, &Result) == 0)
-    {
-        auto ModTime = Result.st_mtime;
-        return ModTime;
-    }
-}
-
 int main(int Argc, char** Args)
 {
     game_memory GameMemory = {};
@@ -326,13 +368,13 @@ int main(int Argc, char** Args)
     
     GameMemory.ExitGame = false;
     
-    GameMemory.PlatformAPI.GetAllFilesWithExtension = LinuxFindFilesWithExtensions;
-    GameMemory.PlatformAPI.FileExists = LinuxFileExists;
+    //GameMemory.PlatformAPI.GetAllFilesWithExtension = LinuxFindFilesWithExtensions;
+    //GameMemory.PlatformAPI.FileExists = LinuxFileExists;
     GameMemory.PlatformAPI.AllocateMemory = LinuxAllocateMemory;
     GameMemory.PlatformAPI.DeallocateMemory = LinuxDeallocateMemory;
     Platform = GameMemory.PlatformAPI;
     
-    linux_state* Linuxtate = BootstrapPushStruct(linux_state, PermArena);
+    linux_state* LinuxState = BootstrapPushStruct(linux_state, PermArena);
     
     char* LibPath = "libgame.so";
     char* TempLibPath = "libgame_temp.so";
@@ -352,6 +394,7 @@ int main(int Argc, char** Args)
     InitKeys();
     render_state RenderState = {};
     renderer Renderer = {};
+    DEBUG_PRINT("FUCK\n");
     
     InitializeOpenGL(RenderState, Renderer, &ConfigData, &LinuxState->PermArena);
     
@@ -359,7 +402,7 @@ int main(int Argc, char** Args)
     
     //setup asset reloading
     asset_manager AssetManager = {};
-    StartupFileTimeChecks(&AssetManager);
+    StartupFileTimeChecks(&AssetManager, LibPath);
     
     u32 FrameCounterForAssetCheck = 0;
     
@@ -413,9 +456,9 @@ int main(int Argc, char** Args)
         
         ShowMouseCursor(RenderState, Renderer.ShowMouseCursor);
         
-        ReloadAssets(RenderState, &AssetManager, &Win32State->PermArena);
+        ReloadAssets(RenderState, &AssetManager, &LinuxState->PermArena);
         
-        ReloadDlls(&Game, LibPath, TempLibPath);
+        ReloadLibs(&Game, LibPath, TempLibPath);
         
         Game.Update(DeltaTime, &GameMemory, Renderer, &InputController, &SoundCommands);
         

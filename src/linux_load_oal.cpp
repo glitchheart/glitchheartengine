@@ -1,20 +1,20 @@
 
-ALboolean LoadOAL11Library(char* FilePath, oal_api* OALFunctions, HMODULE OpenALDLL)
+ALboolean LoadOAL11Library(char* FilePath, oal_api* OALFunctions, HMODULE OpenALLib)
 {
     if(!OALFunctions)
         return AL_FALSE;
     
     if(FilePath)
-        OpenALLib = dlopen(FilePath);
+        OpenALLib = dlopen(FilePath, RTLD_LAZY);
     else
     {
-        OpenALLib = dlopen("libopenal.so");
+        OpenALLib = dlopen("libopenal.so", RTLD_LAZY);
     }
     
     if(!OpenALLib)
     {
-        i32 Err = dlerror();
-        DEBUG_PRINT("Could not load OpenAL: %d\n", Err);
+        char* Err = dlerror();
+        DEBUG_PRINT("Could not load OpenAL: %s\n", Err);
     }
     
     memset(OALFunctions, 0, sizeof(oal_api));
