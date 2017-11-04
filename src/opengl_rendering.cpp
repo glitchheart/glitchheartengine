@@ -121,6 +121,7 @@ static GLuint LoadExtraShader(shader_data& ShaderData, render_state& RenderState
 
 static GLuint LoadShader(const char* FilePath, shader *Shd, memory_arena* PermArena)
 {
+    DEBUG_PRINT("Shader: %s\n", FilePath);
     Shd->VertexShader = glCreateShader(GL_VERTEX_SHADER);
     char* VertexString = Concat(FilePath, ".vert");
     GLchar *VertexText = LoadShaderFromFile(VertexString, PermArena);
@@ -470,7 +471,7 @@ static void RenderSetup(render_state *RenderState, memory_arena* PermArena)
     
     glGenFramebuffers(1, &RenderState->LightingFrameBuffer);
     glBindFramebuffer(GL_FRAMEBUFFER, RenderState->LightingFrameBuffer);
-    
+
     glGenTextures(1, &RenderState->LightingTextureColorBuffer);
     glBindTexture(GL_TEXTURE_2D, RenderState->LightingTextureColorBuffer);
     
@@ -851,6 +852,7 @@ static void InitializeOpenGL(render_state& RenderState, renderer& Renderer, conf
     auto monitor = glfwGetPrimaryMonitor();
     
     const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+    glfwSetErrorCallback(ErrorCallback);
     
     if(ConfigData->Fullscreen == 2)
     {
@@ -889,15 +891,14 @@ static void InitializeOpenGL(render_state& RenderState, renderer& Renderer, conf
     
     glfwGetFramebufferSize(RenderState.Window, &Width, &Height);
     glfwSetWindowPos(RenderState.Window, Mode->width / 2 - Width / 2, Mode->height / 2 - Height / 2);
-    
+
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwSetInputMode(RenderState.Window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
     
     glfwSetWindowAspectRatio(RenderState.Window, 16, 9);
     
-    glfwSetErrorCallback(ErrorCallback);
     glfwSetFramebufferSizeCallback(RenderState.Window, FramebufferSizeCallback);
     
     glfwMakeContextCurrent(RenderState.Window);
@@ -1283,7 +1284,7 @@ static void RenderQuad(Render_Mode Mode, render_state& RenderState, math::v4 Col
 
 static void MeasureText(const render_font& Font, const char* Text, float* Width, float* Height)
 {
-    int Count;
+    size_t Count;
     
     if (!Text) 
     {
@@ -1809,6 +1810,8 @@ static void RenderCommands(render_state& RenderState, renderer& Renderer, memory
                 PointLight.Linear = Command.PointLight.Linear;
                 PointLight.Quadratic = Command.PointLight.Quadratic;
             }
+            break;
+            default:
             break;
         }
     }

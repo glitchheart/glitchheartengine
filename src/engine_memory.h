@@ -81,9 +81,9 @@ inline umm GetEffectiveSizeFor(memory_arena* Arena, umm SizeInit, push_params Pa
     return Size;
 }
 
-#define PushStruct(Arena, type, ...) (type *)PushSize_(Arena, sizeof(type), __VA_ARGS__)
-#define PushArray(Arena, Count, type, ...) (type*)PushSize_(Arena, (Count)*sizeof(type), __VA_ARGS__)
-#define PushSize(Arena, Size, type, ...) (type*)PushSize_(Arena, Size, __VA_ARGS__)
+#define PushStruct(Arena, type, ...) (type *)PushSize_(Arena, sizeof(type), ## __VA_ARGS__)
+#define PushArray(Arena, Count, type, ...) (type*)PushSize_(Arena, (Count)*sizeof(type), ## __VA_ARGS__)
+#define PushSize(Arena, Size, type, ...) (type*)PushSize_(Arena, Size, ## __VA_ARGS__)
 void* PushSize_(memory_arena* Arena, umm SizeInit, push_params Params = DefaultPushParams())
 {
     void* Result = 0;
@@ -137,9 +137,9 @@ inline u64 DefaultFlags()
     return PM_OverflowCheck | PM_UnderflowCheck;
 }
 
-#define PushTempStruct(type, ...) (type *)PushTempSize_(sizeof(type), __VA_ARGS__)
-#define PushTempArray(Count, type, ...) (type*)PushTempSize_((Count)*sizeof(type), __VA_ARGS__)
-#define PushTempSize(Size, type, ...) (type*)PushTempSize_( Size, __VA_ARGS__)
+#define PushTempStruct(type, ...) (type *)PushTempSize_(sizeof(type), ## __VA_ARGS__)
+#define PushTempArray(Count, type, ...) (type*)PushTempSize_((Count)*sizeof(type), ## __VA_ARGS__)
+#define PushTempSize(Size, type, ...) (type*)PushTempSize_( Size, ## __VA_ARGS__)
 inline void* PushTempSize_(umm Size, push_params = DefaultPushParams(), u64 Flags = DefaultFlags())
 {
     platform_memory_block* Block = Platform.AllocateMemory(Size, Flags | PM_Temporary);
@@ -262,7 +262,7 @@ char* PushString(memory_arena* Arena, umm Length, char* Source)
     return PushString(Arena, (u32)Length, Source);
 }
 
-#define BootstrapPushStruct(type, Member, ...) (type*)BootstrapPushSize_(sizeof(type), OffsetOf(type, Member), __VA_ARGS__)
+#define BootstrapPushStruct(type, Member, ...) (type*)BootstrapPushSize_(sizeof(type), OffsetOf(type, Member), ## __VA_ARGS__)
 inline void* BootstrapPushSize_(umm StructSize, umm OffsetToArena,
                                 arena_bootstrap_params BootstrapParams = DefaultBootstrapParams(),
                                 push_params Params = DefaultPushParams())

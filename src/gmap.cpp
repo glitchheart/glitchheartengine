@@ -8,7 +8,7 @@ inline u64 HashString(u64 Size, char* Key)
     char* K = Key;
     u64 C;
     
-    while (C = *K++)
+    while ((C = *K++))
         Hash = ((Hash << 5) + Hash) + C; /* hash * 33 + c */
     
     return Hash & (Size - 1);
@@ -43,7 +43,7 @@ inline u64 SFold(u64 M, char* s) {
         memcpy(c,&s[j * 4],(j * 4) + 4);
         
         unsigned long mult = 1;
-        for (int k = 0; k < strlen(c); k++) {
+        for (size_t k = 0; k < strlen(c); k++) {
             sum += c[k] * mult;
             mult *= 256;
         }
@@ -52,7 +52,7 @@ inline u64 SFold(u64 M, char* s) {
     char c[32];
     memcpy(c,&s[intLength * 4],strlen(s) - 1);
     unsigned long mult = 1;
-    for (int k = 0; k < strlen(c); k++) 
+    for (size_t k = 0; k < strlen(c); k++) 
     {
         sum += c[k] * mult;
         mult *= 256;

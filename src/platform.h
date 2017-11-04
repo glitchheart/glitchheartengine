@@ -6,7 +6,7 @@
 #define ArrayCount(Array) (sizeof(Array) / sizeof(Array[0])) 
 
 #if GLITCH_DEBUG
-#define DEBUG_PRINT(format, ...) printf(format, __VA_ARGS__)
+#define DEBUG_PRINT(format, ...) printf(format, ## __VA_ARGS__)
 #else
 #define DEBUG_PRINT(format, ...)
 #endif

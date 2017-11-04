@@ -6,6 +6,8 @@ struct asset_manager
     b32 IsInitialized;
     b32 ListenForChanges;
     
+    memory_arena Arena;
+    
     //shaders
     b32 DirtyVertexShaderIndices[Shader_Count]; //set to 1 if they should be reloaded
     b32 DirtyFragmentShaderIndices[Shader_Count];
@@ -18,9 +20,9 @@ struct asset_manager
     time_t TilesetTime;
     
     //dll's
-    char* DllPaths[1];
-    u32 DirtyGameDll;
-    FILETIME GameDllTime;
+    char* LibPaths[1];
+    u32 DirtyGameLib;
+    
     
 };
 
@@ -67,12 +69,12 @@ static void CheckDirty(const char* FilePath, time_t LastTime, b32* DirtyId, time
     *Time = time;
 }
 
-static void StartupFileTimeChecks(asset_manager* AssetManager, char* DllPath)
+static void StartupFileTimeChecks(asset_manager* AssetManager, char* LibPath)
 {
     if(!AssetManager->IsInitialized)
     {
         AssetManager->TilesetTexturePath = "../assets/textures/tiles.png";
-        AssetManager->DllPaths[0] = PushString(DllPath);
+        AssetManager->LibPaths[0] = PushString(&AssetManager->Arena, LibPath);
         AssetManager->IsInitialized = true;
     }
     

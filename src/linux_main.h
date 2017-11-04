@@ -13,16 +13,17 @@ struct linux_state
 };
 
 using HMODULE = void*;
+using FILETIME = time_t;
 
 struct game_code
 {
-    HMODULE GameCodeDLL;
-//    FILETIME LastDllWriteTime;
+    HMODULE GameCodeLib;
+    FILETIME LastLibWriteTime;
     update *Update;
     
     b32 IsValid;
-    char *LibPath = "libgame.so";
-    char *TempLibPath = "libgame_temp.so";
+    const char *LibPath = "libgame.so";
+    const char *TempLibPath = "libgame_temp.so";
     //TODO: Replace above with linux library stuff
 };
 

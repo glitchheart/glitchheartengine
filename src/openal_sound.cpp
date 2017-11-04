@@ -122,7 +122,7 @@ static void InitAudio(sound_device *SoundDevice, oal_devices_list* DevicesList)
         i32 DefaultDeviceIndex = 0;
         i32 Index = 0;
         
-        while(*Devices != NULL)
+        while(Devices != NULL)
         {
             if(strcmp(DefaultDeviceName, Devices) == 0)
             {

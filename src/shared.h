@@ -79,7 +79,7 @@ inline b32 StartsWith(const char *A, const char *B)
 
 inline char* GetFileNameFromPath(char* Path, char* Extension = 0)
 {
-    char* CompareString = ".";
+    const char* CompareString = ".";
     if(Extension)
     {
         CompareString = Concat(".", Extension);
