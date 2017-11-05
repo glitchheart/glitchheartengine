@@ -121,11 +121,10 @@ static GLuint LoadExtraShader(shader_data& ShaderData, render_state& RenderState
 
 static GLuint LoadShader(const char* FilePath, shader *Shd, memory_arena* PermArena)
 {
-    DEBUG_PRINT("Shader: %s\n", FilePath);
     Shd->VertexShader = glCreateShader(GL_VERTEX_SHADER);
     char* VertexString = Concat(FilePath, ".vert");
     GLchar *VertexText = LoadShaderFromFile(VertexString, PermArena);
-
+    
     glShaderSource(Shd->VertexShader, 1, &VertexText, NULL);
     glCompileShader(Shd->VertexShader);
     
@@ -442,6 +441,8 @@ static void RenderSetup(render_state *RenderState, memory_arena* PermArena)
         fprintf(stderr, "Could not init freetype library\n");
     }
     
+    RenderState->FontCount = 0;
+    
     // Framebuffer
     glGenFramebuffers(1, &RenderState->FrameBuffer);
     glBindFramebuffer(GL_FRAMEBUFFER, RenderState->FrameBuffer);
@@ -471,7 +472,7 @@ static void RenderSetup(render_state *RenderState, memory_arena* PermArena)
     
     glGenFramebuffers(1, &RenderState->LightingFrameBuffer);
     glBindFramebuffer(GL_FRAMEBUFFER, RenderState->LightingFrameBuffer);
-
+    
     glGenTextures(1, &RenderState->LightingTextureColorBuffer);
     glBindTexture(GL_TEXTURE_2D, RenderState->LightingTextureColorBuffer);
     
@@ -856,7 +857,7 @@ static void InitializeOpenGL(render_state& RenderState, renderer& Renderer, conf
     
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
-
+    
     if(ConfigData->Fullscreen == 2)
     {
         glfwWindowHint(GLFW_RED_BITS, mode->redBits);
@@ -896,7 +897,7 @@ static void InitializeOpenGL(render_state& RenderState, renderer& Renderer, conf
     
     glfwGetFramebufferSize(RenderState.Window, &Width, &Height);
     glfwSetWindowPos(RenderState.Window, Mode->width / 2 - Width / 2, Mode->height / 2 - Height / 2);
-
+    
     glfwSetInputMode(RenderState.Window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
     
     glfwSetWindowAspectRatio(RenderState.Window, 16, 9);

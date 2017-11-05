@@ -51,39 +51,70 @@ input_controller InputController;
 #include "keys_glfw.h"
 #include "opengl_rendering.cpp"
 
-static b32 CopyFile(const char* Src, const char* Dst, b32 OverwriteExisting)
-{
-    if(!OverwriteExisting && (access(Src, F_OK) != -1))
-    {
-        return false;
-    }
-    
-    i32 ReadFD;
-    i32 WriteFD;
-    struct stat StatBuf;
-    off_t Offset = 0;
-    
-    if((ReadFD = open(Src, O_RDONLY) == -1))
-        return false;
-    
-    if(fstat(ReadFD, &StatBuf) == -1) 
-    {
-        return false;
-    }
-    
-    WriteFD = open(Dst, O_WRONLY | O_CREAT | O_TRUNC, StatBuf.st_mode);
-    if(WriteFD == -1)
-    {
-        close(ReadFD);
-        return false;
-    }
-    
-    i32 Result = sendfile(WriteFD, ReadFD, &Offset, StatBuf.st_size);
-    close(ReadFD);
-    close(WriteFD);
-    return Result > 0;
-}
 
+static void CopyFile(const char* Src, const char* Dst, b32 Overwrite, b32 Binary = false)
+{
+    FILE* In;
+    FILE* Out;
+    
+    if(Binary)
+    {
+        In = fopen(Src, "rb");
+    }
+    else
+    {
+        In = fopen(Src, "r");
+    }
+    
+    if(In == NULL)
+    {
+        printf("Failed in\n");
+        return;
+    }
+    
+    if(Binary)
+    {
+        Out = fopen(Dst, "wb");
+    }
+    else
+    {
+        Out = fopen(Dst, "w");
+    }
+    
+    if(Out == NULL)
+    {
+        fclose(In);
+        printf("Failed out\n");
+        return;
+    }
+    
+    size_t N,M;
+    unsigned char Buff[8192];
+    do
+    {
+        N = fread(Buff, 1, sizeof(Buff), In);
+        if(N)
+        {
+            M = fwrite(Buff, 1, N, Out);
+        }
+        else
+        {
+            M = 0;
+        }
+    } while ((N > 0) && (N == M));
+    if(M)
+    {
+        printf("COPY\n");
+    }
+    
+    fclose(Out);
+    fclose(In);
+    
+    if(Binary)
+    {
+        system(Concat("chmod +xr ", Dst));
+    }
+}
 
 static time_t GetLastWriteTime(const char* FilePath)
 {
@@ -96,7 +127,6 @@ static time_t GetLastWriteTime(const char* FilePath)
     return 0;
 }
 
-
 static game_code LoadGameCode(char* LibPath, char* TempLibPath)
 {
     game_code Result = {};
@@ -104,11 +134,12 @@ static game_code LoadGameCode(char* LibPath, char* TempLibPath)
     Result.TempLibPath = TempLibPath;
     
     //TODO: Find Linux equivalent of CopyFile
-    CopyFile(Result.LibPath, Result.TempLibPath, false);
+    CopyFile(Result.LibPath, Result.TempLibPath, false, true);
     Result.Update = UpdateStub;
     
     //TODO: Find lib load function for linux
     Result.GameCodeLib = dlopen(Result.TempLibPath, RTLD_LAZY);
+    printf("Temp: %s\n", Result.TempLibPath);
     
     //TODO: Find last write time function for linux
     Result.LastLibWriteTime = GetLastWriteTime(Result.LibPath);
@@ -377,8 +408,11 @@ int main(int Argc, char** Args)
     
     linux_state* LinuxState = BootstrapPushStruct(linux_state, PermArena);
     
-    char* LibPath = "libgame.so";
-    char* TempLibPath = "libgame_temp.so";
+    char DirBuffer[256];
+    getcwd(DirBuffer, 256);
+    
+    char* LibPath = Concat(DirBuffer, "/libgame.so");
+    char* TempLibPath = Concat(DirBuffer, "/libgame_temp.so");
     
     memory_arena DebugArena = {};
     

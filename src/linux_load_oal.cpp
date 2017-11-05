@@ -8,7 +8,10 @@ ALboolean LoadOAL11Library(char* FilePath, oal_api* OALFunctions, HMODULE OpenAL
         OpenALLib = dlopen(FilePath, RTLD_LAZY);
     else
     {
-        OpenALLib = dlopen("/home/bross/code/glitchheartgame2017/build/libopenal.so", RTLD_LAZY);
+        char Dir[256];
+        getcwd(Dir, 256);
+        
+        OpenALLib = dlopen(Concat(Dir, "/libopenal.so"), RTLD_LAZY);
     }
     
     if(!OpenALLib)
