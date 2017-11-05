@@ -81,9 +81,9 @@ inline umm GetEffectiveSizeFor(memory_arena* Arena, umm SizeInit, push_params Pa
     return Size;
 }
 
-#define PushStruct(Arena, type, ...) (type *)PushSize_(Arena, sizeof(type), __VA_ARGS__)
-#define PushArray(Arena, Count, type, ...) (type*)PushSize_(Arena, (Count)*sizeof(type), __VA_ARGS__)
-#define PushSize(Arena, Size, type, ...) (type*)PushSize_(Arena, Size, __VA_ARGS__)
+#define PushStruct(Arena, type, ...) (type *)PushSize_(Arena, sizeof(type), ## __VA_ARGS__)
+#define PushArray(Arena, Count, type, ...) (type*)PushSize_(Arena, (Count)*sizeof(type), ## __VA_ARGS__)
+#define PushSize(Arena, Size, type, ...) (type*)PushSize_(Arena, Size, ## __VA_ARGS__)
 void* PushSize_(memory_arena* Arena, umm SizeInit, push_params Params = DefaultPushParams())
 {
     void* Result = 0;
@@ -137,9 +137,9 @@ inline u64 DefaultFlags()
     return PM_OverflowCheck | PM_UnderflowCheck;
 }
 
-#define PushTempStruct(type, ...) (type *)PushTempSize_(sizeof(type), __VA_ARGS__)
-#define PushTempArray(Count, type, ...) (type*)PushTempSize_((Count)*sizeof(type), __VA_ARGS__)
-#define PushTempSize(Size, type, ...) (type*)PushTempSize_( Size, __VA_ARGS__)
+#define PushTempStruct(type, ...) (type *)PushTempSize_(sizeof(type), ## __VA_ARGS__)
+#define PushTempArray(Count, type, ...) (type*)PushTempSize_((Count)*sizeof(type), ## __VA_ARGS__)
+#define PushTempSize(Size, type, ...) (type*)PushTempSize_( Size, ## __VA_ARGS__)
 inline void* PushTempSize_(umm Size, push_params = DefaultPushParams(), u64 Flags = DefaultFlags())
 {
     platform_memory_block* Block = Platform.AllocateMemory(Size, Flags | PM_Temporary);
@@ -149,9 +149,9 @@ inline void* PushTempSize_(umm Size, push_params = DefaultPushParams(), u64 Flag
 
 inline char* PushTempString(u32 Length)
 {
-    platform_memory_block* Block = Platform.AllocateMemory(Length, PM_Temporary);
+    platform_memory_block* Block = Platform.AllocateMemory(Length + 1, PM_Temporary);
     char* Result = (char*)Block->Base;
-    Result[Length + 1] = 0;
+    Result[Length] = 0;
     return Result;
 }
 
@@ -163,7 +163,7 @@ inline char* PushTempString(char* Source)
     {
         Dest[CharIndex] = Source[CharIndex];
     }
-    Dest[Length + 1] = 0;
+    Dest[Length] = 0;
     return Dest;
 }
 
@@ -175,7 +175,7 @@ inline char* PushTempString(const char* Source)
     {
         Dest[CharIndex] = Source[CharIndex];
     }
-    Dest[Length + 1] = 0;
+    Dest[Length] = 0;
     return Dest;
 }
 
@@ -203,7 +203,7 @@ char* PushString(memory_arena* Arena, u32 Length)
     //@Incomplete: Fix NoClear() bug here. 
     // We don't care about zeroing
     auto Result = (char*)PushSize_(Arena, (Length + 1));
-    Result[Length + 1] = 0;
+    Result[Length] = 0;
     return Result;
 }
 
@@ -211,11 +211,11 @@ char* PushString(memory_arena* Arena, char* Source)
 {
     auto Length = strlen(Source);
     char* Dest = PushString(Arena, (u32)Length);
-    for(u32 CharIndex = 0; CharIndex < Length + 1; CharIndex++)
+    for(u32 CharIndex = 0; CharIndex < Length; CharIndex++)
     {
         Dest[CharIndex] = Source[CharIndex];
     }
-    Dest[Length + 1] = 0;
+    Dest[Length] = 0;
     
     return Dest;
 }
@@ -228,7 +228,7 @@ char* PushString(memory_arena* Arena, const char* Source)
     {
         Dest[CharIndex] = Source[CharIndex];
     }
-    Dest[Length + 1] = 0;
+    Dest[Length] = 0;
     
     return Dest;
 }
@@ -262,7 +262,7 @@ char* PushString(memory_arena* Arena, umm Length, char* Source)
     return PushString(Arena, (u32)Length, Source);
 }
 
-#define BootstrapPushStruct(type, Member, ...) (type*)BootstrapPushSize_(sizeof(type), OffsetOf(type, Member), __VA_ARGS__)
+#define BootstrapPushStruct(type, Member, ...) (type*)BootstrapPushSize_(sizeof(type), OffsetOf(type, Member), ## __VA_ARGS__)
 inline void* BootstrapPushSize_(umm StructSize, umm OffsetToArena,
                                 arena_bootstrap_params BootstrapParams = DefaultBootstrapParams(),
                                 push_params Params = DefaultPushParams())

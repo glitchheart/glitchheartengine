@@ -187,7 +187,7 @@ namespace math
         v2(r32 X, r32 Y) : X(X), Y(Y){}
         v2() : X(0.0f), Y(0.0f) {}
         v2(r32 I) : E{I,I} {}
-        v2(r32 E[2]) : E{E[0],E[1]} {}
+        v2(r32 I[2]) : E{I[0],I[1]} {}
         v2(const v2& O) = default;
         v2(i32 X, i32 Y) : X((r32)X), Y((r32)Y) {}
         v2(r64 X, r64 Y) : X((r32)X), Y((r32)Y) {}
@@ -367,7 +367,7 @@ namespace math
         v3(r32 X, r32 Y, r32 Z) : X(X), Y(Y), Z(Z) {}
         v3() : X(0.0f), Y(0.0f), Z(0.0f) {}
         v3(r32 I) : E{I,I,I} {}
-        v3(r32 E[3]) : E{E[0],E[1], E[2]} {}
+        v3(r32 I[3]) : E{I[0],I[1], I[2]} {}
         v3(const v3& O) : E{O.X, O.Y, O.Z} {}
         v3(r64 X, r64 Y, r64 Z) : X((r32)X), Y((r32)Y), Z((r32)Z) {}
         v3(r64 X, i32 Y, r64 Z) : X((r32)X), Y((r32)Y), Z((r32)Z) {}
@@ -554,11 +554,6 @@ namespace math
                         v2 xy;
                         v2 XY;
                     };
-                    union
-                    {
-                        r32 z;
-                        r32 Z;
-                    };
                 };
             };
             union
@@ -595,7 +590,7 @@ namespace math
         v4(r32 X, r32 Y, r32 Z, r32 W) : X(X), Y(Y), Z(Z), W(W) {}
         v4() : X(0.0f), Y(0.0f), Z(0.0f), W(0.0f) {}
         v4(r32 I) : E{I,I,I,I} {}
-        v4(r32 E[4]) : E{E[0],E[1], E[2], E[3]} {}
+        v4(r32 I[4]) : E{I[0], I[1], I[2], I[3]} {}
         v4(const v4& O) : X(O.X), Y(O.Y), Z(O.Z), W(O.W) {}
         
         v4(i32 X, i32 Y, i32 Z, i32 W) : 
@@ -799,7 +794,7 @@ namespace math
         v2i(i32 X, i32 Y) : X(X), Y(Y){}
         v2i() : X(0),Y(0) {}
         v2i(i32 I) : X(I), Y(I) {}
-        v2i(i32 E[2]) : E{E[0],E[1]} {}
+        v2i(i32 I[2]) : E{I[0],I[1]} {}
         
         inline v2i operator* (v2i O)
         {
@@ -928,7 +923,7 @@ namespace math
         v3i(i32 X, i32 Y, i32 Z) : X(X), Y(Y), Z(Z){}
         v3i() : X(0), Y(0), Z(0) {}
         v3i(i32 I) : X(I), Y(I), Z(I) {}
-        v3i(i32 E[3]) : E{E[0],E[1], E[2]} {}
+        v3i(i32 I[3]) : E{I[0], I[1], I[2]} {}
         v3i(v3 V) : E{(i32)V.E[0], (i32)V.E[1], (i32)V.E[2]} {}
         
         inline v3i operator* (v3i O)
@@ -1076,7 +1071,7 @@ namespace math
         v4i(i32 X, i32 Y, i32 Z, i32 W) : X(X), Y(Y), Z(Z), W(W){}
         v4i() : X(0), Y(0), Z(0), W(0) {}
         v4i(i32 I) : X(I), Y(I), Z(I), W(I) {}
-        v4i(i32 E[4]) : E{E[0],E[1], E[2], E[3]} {}
+        v4i(i32 I[4]) : E{I[0], I[1], I[2], I[3]} {}
         
         inline v4i operator* (v4i O)
         {
@@ -1272,11 +1267,11 @@ namespace math
         M2 {M2[0],M2[1],M2[2],M2[3]}, 
         M3 {M3[0],M3[1],M3[2],M3[3]} {}
         
-        m4(r32 V[4][4]) : 
-        V{ {V[0][0],V[0][1],V[0][2],V[0][3]}, 
-            {V[1][0],V[1][1],V[1][2],V[1][3]}, 
-            {V[2][0],V[2][1],V[2][2],V[2][3]}, 
-            {V[3][0],V[3][1],V[3][2],V[3][3]}}
+        m4(r32 I[4][4]) : 
+        V{ {I[0][0],I[0][1],I[0][2],I[0][3]}, 
+            {I[1][0],I[1][1],I[1][2],I[1][3]}, 
+            {I[2][0],I[2][1],I[2][2],I[2][3]}, 
+            {I[3][0],I[3][1],I[3][2],I[3][3]}}
         {}
         
         m4(r32 I) : V {{I,0,0,0},{0,I,0,0},{0,0,I,0},{0,0,0,I}} {}

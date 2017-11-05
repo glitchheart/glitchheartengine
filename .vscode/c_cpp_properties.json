@@ -25,7 +25,10 @@
             "name": "Linux",
             "includePath": [
                 "/usr/include",
-                "/usr/local/include"
+                "/usr/local/include",
+                "${workspaceRoot}/libs/openal/include",
+                "/usr/include/linux",
+                "/usr/include/c++/5"
             ],
             "browse": {
                 "limitSymbolsToIncludedHeaders": true,
