@@ -79,16 +79,18 @@ inline b32 StartsWith(const char *A, const char *B)
 
 inline char* GetFileNameFromPath(char* Path, char* Extension = 0)
 {
-    char* CompareString = ".";
+    const char* CompareString = ".";
     if(Extension)
     {
         CompareString = Concat(".", Extension);
     }
     
-    auto Tok = StrSep(&Path, ".");
+    char* P = PushTempString(Path);
+    auto Tok = StrSep(&P, ".");
     Tok = StrSep(&Tok, "/");
     while(Tok)
     {
+        
         if(strstr(Tok, CompareString))
         {
             Tok = StrSep(&Tok, ".");

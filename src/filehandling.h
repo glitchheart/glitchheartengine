@@ -6,6 +6,8 @@ struct asset_manager
     b32 IsInitialized;
     b32 ListenForChanges;
     
+    memory_arena Arena;
+    
     //shaders
     b32 DirtyVertexShaderIndices[Shader_Count]; //set to 1 if they should be reloaded
     b32 DirtyFragmentShaderIndices[Shader_Count];
@@ -17,11 +19,9 @@ struct asset_manager
     b32 DirtyTileset;
     time_t TilesetTime;
     
-    //dll's
-    char* DllPaths[1];
-    u32 DirtyGameDll;
-    FILETIME GameDllTime;
-    
+    //libs
+    char* LibPaths[1];
+    u32 DirtyGameLib;
 };
 
 static GLchar* LoadShaderFromFile(const char* Path, memory_arena* Arena)
@@ -30,6 +30,8 @@ static GLchar* LoadShaderFromFile(const char* Path, memory_arena* Arena)
     
     FILE *File;
     File = fopen(Path, "rb");
+    char* Err = strerror(errno);
+    
     if(File)
     {
         fseek(File, 0, SEEK_END);
@@ -51,20 +53,7 @@ static GLchar* LoadShaderFromFile(const char* Path, memory_arena* Arena)
     return Source;
 }
 
-static FILETIME GetLastWriteTime(const char* FilePath)
-{
-    FILETIME LastWriteTime = {};
-    
-    WIN32_FIND_DATA FindData;
-    HANDLE FindHandle = FindFirstFileA(FilePath, &FindData);
-    
-    if(FindHandle != INVALID_HANDLE_VALUE)
-    {
-        LastWriteTime = FindData.ftLastWriteTime;
-        FindClose(FindHandle);
-    }
-    return LastWriteTime;
-}
+
 
 static void CheckDirty(const char* FilePath, time_t LastTime, b32* DirtyId, time_t* Time)
 {
@@ -80,12 +69,12 @@ static void CheckDirty(const char* FilePath, time_t LastTime, b32* DirtyId, time
     *Time = time;
 }
 
-static void StartupFileTimeChecks(asset_manager* AssetManager)
+static void StartupFileTimeChecks(asset_manager* AssetManager, char* LibPath)
 {
     if(!AssetManager->IsInitialized)
     {
         AssetManager->TilesetTexturePath = "../assets/textures/tiles.png";
-        AssetManager->DllPaths[0] = "game.dll";
+        AssetManager->LibPaths[0] = PushString(&AssetManager->Arena, LibPath);
         AssetManager->IsInitialized = true;
     }
     
@@ -122,84 +111,5 @@ static void ListenToFileChanges(asset_manager* AssetManager)
 }
 
 
-inline PLATFORM_GET_ALL_FILES_WITH_EXTENSION(Win32FindFilesWithExtensions)
-{
-    if(DirectoryData->FilesLength == 0)
-    {
-        DirectoryData->FileNames = PushTempArray(512, char*);
-        DirectoryData->FilePaths = PushTempArray(512, char*);
-    }
-    
-    WIN32_FIND_DATA FindFile;
-    HANDLE hFind = NULL;
-    
-    char Path[2048];
-    
-    //Process directories
-    sprintf(Path, "%s*", DirectoryPath);
-    hFind = FindFirstFile(Path, &FindFile);
-    if(hFind != INVALID_HANDLE_VALUE)
-    {
-        do
-        {
-            if(FindFile.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
-            {
-                if(strcmp(FindFile.cFileName, ".") != 0
-                   && strcmp(FindFile.cFileName, "..") != 0)
-                {
-                    char SubPath[2048];
-                    sprintf(SubPath, "%s%s/", DirectoryPath, FindFile.cFileName);
-                    Win32FindFilesWithExtensions(SubPath, Extension, DirectoryData, WithSubDirectories);
-                }
-                
-            }
-        }
-        
-        while(FindNextFile(hFind, &FindFile));
-        FindClose(hFind);
-    }
-    else
-    {
-        DEBUG_PRINT("No files with extension %s found in %s\n", Extension, DirectoryPath);
-        return;
-    }
-    
-    //Process files
-    sprintf(Path, "%s*.%s", DirectoryPath, Extension);
-    hFind = FindFirstFile(Path, &FindFile);
-    if(hFind != INVALID_HANDLE_VALUE)
-    {
-        do
-        {
-            if(!(FindFile.dwFileAttributes &FILE_ATTRIBUTE_DIRECTORY))
-            {
-                if(strcmp(FindFile.cFileName, ".") != 0
-                   && strcmp(FindFile.cFileName, "..") != 0)
-                {
-                    char* ConcatStr = Concat(DirectoryPath, FindFile.cFileName);
-                    char* FileName = strtok(FindFile.cFileName, ".");
-                    
-                    DirectoryData->FilePaths[DirectoryData->FilesLength] = PushTempString(ConcatStr);
-                    DirectoryData->FileNames[DirectoryData->FilesLength] = PushTempString(FileName);
-                    DirectoryData->FilesLength++;
-                }
-            }
-        } while (FindNextFile(hFind, &FindFile));
-        FindClose(hFind);
-    }
-    else
-    {
-        DEBUG_PRINT("No files with extension %s found in %s\n", Extension, DirectoryPath);
-        return;
-    }
-    
-}
-
-
-inline PLATFORM_FILE_EXISTS(Win32FileExists)
-{
-    struct stat Buffer;
-    return (stat(FilePath,&Buffer) == 0);
-}
 
 #endif

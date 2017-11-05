@@ -441,6 +441,8 @@ static void RenderSetup(render_state *RenderState, memory_arena* PermArena)
         fprintf(stderr, "Could not init freetype library\n");
     }
     
+    RenderState->FontCount = 0;
+    
     // Framebuffer
     glGenFramebuffers(1, &RenderState->FrameBuffer);
     glBindFramebuffer(GL_FRAMEBUFFER, RenderState->FrameBuffer);
@@ -851,6 +853,17 @@ static void InitializeOpenGL(render_state& RenderState, renderer& Renderer, conf
     auto monitor = glfwGetPrimaryMonitor();
     
     const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+    glfwSetErrorCallback(ErrorCallback);
+    
+    
+    //@Incomplete: Figure something out here. Ask for comptabible version etc
+#ifdef _WIN32
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
+#elif __linux
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+#endif
     
     if(ConfigData->Fullscreen == 2)
     {
@@ -887,17 +900,15 @@ static void InitializeOpenGL(render_state& RenderState, renderer& Renderer, conf
     const GLFWvidmode *Mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
     int Width, Height;
     
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    
     glfwGetFramebufferSize(RenderState.Window, &Width, &Height);
     glfwSetWindowPos(RenderState.Window, Mode->width / 2 - Width / 2, Mode->height / 2 - Height / 2);
     
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwSetInputMode(RenderState.Window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
     
     glfwSetWindowAspectRatio(RenderState.Window, 16, 9);
     
-    glfwSetErrorCallback(ErrorCallback);
     glfwSetFramebufferSizeCallback(RenderState.Window, FramebufferSizeCallback);
     
     glfwMakeContextCurrent(RenderState.Window);
@@ -1283,7 +1294,7 @@ static void RenderQuad(Render_Mode Mode, render_state& RenderState, math::v4 Col
 
 static void MeasureText(const render_font& Font, const char* Text, float* Width, float* Height)
 {
-    int Count;
+    size_t Count;
     
     if (!Text) 
     {
@@ -1809,6 +1820,8 @@ static void RenderCommands(render_state& RenderState, renderer& Renderer, memory
                 PointLight.Linear = Command.PointLight.Linear;
                 PointLight.Quadratic = Command.PointLight.Quadratic;
             }
+            break;
+            default:
             break;
         }
     }

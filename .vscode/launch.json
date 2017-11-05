@@ -3,19 +3,26 @@
 	"configurations": [
 
 		{
-			"name": "C++ Launch (Windows)",
-			"type": "cppvsdbg",
+			"name": "C++ Launch",
+			"type": "cppdbg",
 			"request": "launch",
-			"program": "${workspaceRoot}/build/main.exe",
+			"program": "${workspaceRoot}/build/main",
 			"args": [],
 			"stopAtEntry": false,
-			"cwd": "${workspaceRoot}",
+			"cwd": "${workspaceRoot}/build",
 			"environment": [],
-			"externalConsole": false
+			"externalConsole": false,
+			"MIMode": "gdb",
+			"miDebuggerPath": "/usr/bin/gdb",
+			"logging": {
+				"moduleLoad": false,
+				"trace": true,
+				"programOutput": true
+			}
 		},
 		{
-			"name": "C++ Attach (Windows)",
-			"type": "cppvsdbg",
+			"name": "C++ Attach",
+			"type": "cppdbg",
 			"request": "attach",
 			"processId": "${command:pickProcess}"
 		}

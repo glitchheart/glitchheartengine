@@ -4,7 +4,6 @@
 //#include <stdlib.h>  
 //#include <crtdbg.h>  
 
-#define DEBUG
 //#include "windows.h"
 
 #include "platform.h"
@@ -17,15 +16,22 @@
 #include <glad/glad.h>
 #include "al.h"
 #include "alc.h"
-#include <windows.h>
+//#include <windows.h>
+#include <dlfcn.h>
 #include <sys/types.h>  
 #include <sys/stat.h>  
+#include <sys/sendfile.h>
+#include <sys/mman.h>
 #include <GLFW/glfw3.h>
+#include <fcntl.h>
+#include <time.h>
+#include <errno.h>
 
-#include "win32_main.h"
+#include "unistd.h"
+#include "linux_main.h"
 
-#include "win32_load_oal.h"
-#include "win32_load_oal.cpp"
+#include "linux_load_oal.h"
+#include "linux_load_oal.cpp"
 
 platform_api Platform;
 
@@ -46,38 +52,102 @@ input_controller InputController;
 #include "opengl_rendering.cpp"
 
 
-static FILETIME GetLastWriteTime(const char* FilePath)
+static void CopyFile(const char* Src, const char* Dst, b32 Overwrite, b32 Binary = false)
 {
-    FILETIME LastWriteTime = {};
+    FILE* In;
+    FILE* Out;
     
-    WIN32_FIND_DATA FindData;
-    HANDLE FindHandle = FindFirstFileA(FilePath, &FindData);
-    
-    if(FindHandle != INVALID_HANDLE_VALUE)
+    if(Binary)
     {
-        LastWriteTime = FindData.ftLastWriteTime;
-        FindClose(FindHandle);
+        In = fopen(Src, "rb");
     }
-    return LastWriteTime;
+    else
+    {
+        In = fopen(Src, "r");
+    }
+    
+    if(In == NULL)
+    {
+        printf("Failed in\n");
+        return;
+    }
+    
+    if(Binary)
+    {
+        Out = fopen(Dst, "wb");
+    }
+    else
+    {
+        Out = fopen(Dst, "w");
+    }
+    
+    if(Out == NULL)
+    {
+        fclose(In);
+        printf("Failed out\n");
+        return;
+    }
+    
+    size_t N,M;
+    unsigned char Buff[8192];
+    do
+    {
+        N = fread(Buff, 1, sizeof(Buff), In);
+        if(N)
+        {
+            M = fwrite(Buff, 1, N, Out);
+        }
+        else
+        {
+            M = 0;
+        }
+    } while ((N > 0) && (N == M));
+    if(M)
+    {
+        printf("COPY\n");
+    }
+    
+    fclose(Out);
+    fclose(In);
+    
+    if(Binary)
+    {
+        system(Concat("chmod +xr ", Dst));
+    }
 }
 
+static time_t GetLastWriteTime(const char* FilePath)
+{
+    struct stat Result;
+    if(stat(FilePath, &Result) == 0)
+    {
+        auto ModTime = Result.st_mtime;
+        return ModTime;
+    }
+    return 0;
+}
 
-
-static game_code LoadGameCode(char* DllPath, char* TempDllPath)
+static game_code LoadGameCode(char* LibPath, char* TempLibPath)
 {
     game_code Result = {};
-    Result.DllPath = DllPath;
-    Result.TempDllPath = TempDllPath;
     
-    CopyFile(Result.DllPath, Result.TempDllPath, false);
+    Result.LibPath = LibPath;
+    Result.TempLibPath = TempLibPath;
+    
+    //TODO: Find Linux equivalent of CopyFile
+    CopyFile(Result.LibPath, Result.TempLibPath, false, true);
     Result.Update = UpdateStub;
-    Result.GameCodeDLL = LoadLibraryA(Result.TempDllPath);
     
-    Result.LastDllWriteTime = GetLastWriteTime(Result.DllPath);
+    //TODO: Find lib load function for linux
+    Result.GameCodeLib = dlopen(Result.TempLibPath, RTLD_LAZY);
     
-    if (Result.GameCodeDLL)
+    //TODO: Find last write time function for linux
+    Result.LastLibWriteTime = GetLastWriteTime(Result.LibPath);
+    
+    if (Result.GameCodeLib)
     {
-        Result.Update = (update *)GetProcAddress(Result.GameCodeDLL, "Update");
+        //TODO: Get Proc address equivalent for linux
+        Result.Update = (update *)dlsym(Result.GameCodeLib, "Update");
         Result.IsValid = Result.Update != 0;
     }
     
@@ -92,31 +162,33 @@ static game_code LoadGameCode(char* DllPath, char* TempDllPath)
 
 static void UnloadGameCode(game_code *GameCode)
 {
-    if (GameCode->GameCodeDLL)
+    if (GameCode->GameCodeLib)
     {
-        FreeLibrary(GameCode->GameCodeDLL);
-        GameCode->GameCodeDLL = 0;
+        //TODO: Linux freelibrary
+        dlclose(GameCode->GameCodeLib);
+        GameCode->GameCodeLib = 0;
     }
     
     GameCode->IsValid = false;
     GameCode->Update = UpdateStub;
 }
 
-static void ReloadGameCode(game_code *GameCode, char* DllPath, char* TempDllPath)
+static void ReloadGameCode(game_code *GameCode, char* LibPath, char* TempLibPath)
 {
     UnloadGameCode(GameCode);
-    *GameCode = LoadGameCode(DllPath, TempDllPath);
+    *GameCode = LoadGameCode(LibPath, TempLibPath);
 }
 
-
-static void ReloadDlls(game_code *Game, char* DllPath, char* TempDllPath)
+static void ReloadLibs(game_code *Game, char* LibPath, char* TempLibPath)
 {
-    FILETIME LastWriteTime = GetLastWriteTime(Game->DllPath);
+    //TODO: Replace with Linux
+    FILETIME LastWriteTime = GetLastWriteTime(Game->LibPath);
     
-    if (CompareFileTime(&Game->LastDllWriteTime, &LastWriteTime) != 0)
+    //TODO: Replace with linux
+    if (difftime(Game->LastLibWriteTime, LastWriteTime) != 0)
     {
         DEBUG_PRINT("RELOAD\n");
-        ReloadGameCode(Game, DllPath, TempDllPath);
+        ReloadGameCode(Game, LibPath, TempLibPath);
         Assert(Game);
     }
 }
@@ -230,15 +302,15 @@ inline void LoadConfig(const char* FilePath, config_data* ConfigData, memory_are
 }
 
 // Global
-win32_memory_state Win32MemoryState;
+linux_memory_state LinuxMemoryState;
 
-PLATFORM_ALLOCATE_MEMORY(Win32AllocateMemory)
+PLATFORM_ALLOCATE_MEMORY(LinuxAllocateMemory)
 {
-    Assert(sizeof(win32_memory_block) == 64);
+    Assert(sizeof(linux_memory_block) == 64);
     
     umm PageSize = 4096; //TODO: Not really always correct?
-    umm TotalSize = Size + sizeof(win32_memory_block);
-    umm BaseOffset = sizeof(win32_memory_block);
+    umm TotalSize = Size + sizeof(linux_memory_block);
+    umm BaseOffset = sizeof(linux_memory_block);
     umm ProtectOffset = 0;
     
     if(Flags & PM_UnderflowCheck)
@@ -256,7 +328,9 @@ PLATFORM_ALLOCATE_MEMORY(Win32AllocateMemory)
         ProtectOffset = PageSize + SizeRoundedUp;
     }
     
-    win32_memory_block* Block  = (win32_memory_block*)VirtualAlloc(0, TotalSize, MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE);
+    //TODO: Linux
+    //linux_memory_block* Block = (linux_memory_block*)mmap(0, TotalSize, PROT_READ | PROT_WRITE, MAP_PRIVATE, 0, 0);
+    linux_memory_block* Block = (linux_memory_block*)calloc(1, TotalSize);
     
     Assert(Block);
     Block->Block.Base = (u8*)Block + BaseOffset;
@@ -265,9 +339,9 @@ PLATFORM_ALLOCATE_MEMORY(Win32AllocateMemory)
     
     if(Flags & (PM_UnderflowCheck | PM_OverflowCheck))
     {
-        DWORD OldProtect = 0;
-        BOOL Protected = VirtualProtect((u8*)Block + ProtectOffset, PageSize, PAGE_NOACCESS, &OldProtect);
-        Assert(Protected);
+        //TODO Linux types and function
+        // i32 Protected = mprotect((u8*)Block + ProtectOffset, PageSize, PROT_NONE);
+        // Assert(Protected);
     }
     
     Block->Block.Size = Size;
@@ -277,124 +351,45 @@ PLATFORM_ALLOCATE_MEMORY(Win32AllocateMemory)
     
     if(Flags & PM_Temporary)
     {
-        Assert((Win32MemoryState.TempCount + 1) < MAX_TEMP_BLOCKS);
-        Win32MemoryState.TempSizeAllocated += TotalSize;
-        Win32MemoryState.Blocks[Win32MemoryState.TempCount++] = PlatBlock;
+        Assert((LinuxMemoryState.TempCount + 1) < MAX_TEMP_BLOCKS);
+        LinuxMemoryState.TempSizeAllocated += TotalSize;
+        LinuxMemoryState.Blocks[LinuxMemoryState.TempCount++] = PlatBlock;
     }
     else
     {
-        Win32MemoryState.PermanentBlocks++;
-        Win32MemoryState.PermanentSizeAllocated += TotalSize;
+        LinuxMemoryState.PermanentBlocks++;
+        LinuxMemoryState.PermanentSizeAllocated += TotalSize;
     }
     
     return PlatBlock;
 }
 
-PLATFORM_DEALLOCATE_MEMORY(Win32DeallocateMemory)
+PLATFORM_DEALLOCATE_MEMORY(LinuxDeallocateMemory)
 {
     if(Block)
     {
         if((Block->Flags & PM_Temporary) == 0)
         {
-            Win32MemoryState.PermanentBlocks--;
-            Win32MemoryState.PermanentSizeAllocated -= (Block->Size + sizeof(win32_memory_block));
+            LinuxMemoryState.PermanentBlocks--;
+            LinuxMemoryState.PermanentSizeAllocated -= (Block->Size + sizeof(linux_memory_block));
         }
         
-        win32_memory_block *Win32Block =  ((win32_memory_block*)Block);
-        VirtualFree(Win32Block, 0, MEM_RELEASE);
+        linux_memory_block *LinuxBlock =  ((linux_memory_block*)Block);
+        //TODO: Linux
+        //munmap(LinuxBlock, LinuxBlock->Block.Size);
+        free(LinuxBlock);
     }
 }
 
 static void ClearTempMemory()
 {
-    for(i32 Temp = 0; Temp < Win32MemoryState.TempCount; Temp++)
+    for(i32 Temp = 0; Temp < LinuxMemoryState.TempCount; Temp++)
     {
-        Win32DeallocateMemory(Win32MemoryState.Blocks[Temp]);
+        LinuxDeallocateMemory(LinuxMemoryState.Blocks[Temp]);
     }
     
-    Win32MemoryState.TempCount = 0;
-    Win32MemoryState.TempSizeAllocated = 0;
-}
-
-
-inline PLATFORM_GET_ALL_FILES_WITH_EXTENSION(Win32FindFilesWithExtensions)
-{
-    if(DirectoryData->FilesLength == 0)
-    {
-        DirectoryData->FileNames = PushTempArray(512, char*);
-        DirectoryData->FilePaths = PushTempArray(512, char*);
-    }
-    
-    WIN32_FIND_DATA FindFile;
-    HANDLE hFind = NULL;
-    
-    char Path[2048];
-    
-    //Process directories
-    sprintf(Path, "%s*", DirectoryPath);
-    hFind = FindFirstFile(Path, &FindFile);
-    if(hFind != INVALID_HANDLE_VALUE)
-    {
-        do
-        {
-            if(FindFile.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
-            {
-                if(strcmp(FindFile.cFileName, ".") != 0
-                   && strcmp(FindFile.cFileName, "..") != 0)
-                {
-                    char SubPath[2048];
-                    sprintf(SubPath, "%s%s/", DirectoryPath, FindFile.cFileName);
-                    Win32FindFilesWithExtensions(SubPath, Extension, DirectoryData, WithSubDirectories);
-                }
-                
-            }
-        }
-        
-        while(FindNextFile(hFind, &FindFile));
-        FindClose(hFind);
-    }
-    else
-    {
-        DEBUG_PRINT("No files with extension %s found in %s\n", Extension, DirectoryPath);
-        return;
-    }
-    
-    //Process files
-    sprintf(Path, "%s*.%s", DirectoryPath, Extension);
-    hFind = FindFirstFile(Path, &FindFile);
-    if(hFind != INVALID_HANDLE_VALUE)
-    {
-        do
-        {
-            if(!(FindFile.dwFileAttributes &FILE_ATTRIBUTE_DIRECTORY))
-            {
-                if(strcmp(FindFile.cFileName, ".") != 0
-                   && strcmp(FindFile.cFileName, "..") != 0)
-                {
-                    char* ConcatStr = Concat(DirectoryPath, FindFile.cFileName);
-                    char* FileName = strtok(FindFile.cFileName, ".");
-                    
-                    DirectoryData->FilePaths[DirectoryData->FilesLength] = PushTempString(ConcatStr);
-                    DirectoryData->FileNames[DirectoryData->FilesLength] = PushTempString(FileName);
-                    DirectoryData->FilesLength++;
-                }
-            }
-        } while (FindNextFile(hFind, &FindFile));
-        FindClose(hFind);
-    }
-    else
-    {
-        DEBUG_PRINT("No files with extension %s found in %s\n", Extension, DirectoryPath);
-        return;
-    }
-    
-}
-
-
-inline PLATFORM_FILE_EXISTS(Win32FileExists)
-{
-    struct stat Buffer;
-    return (stat(FilePath,&Buffer) == 0);
+    LinuxMemoryState.TempCount = 0;
+    LinuxMemoryState.TempSizeAllocated = 0;
 }
 
 int main(int Argc, char** Args)
@@ -405,26 +400,29 @@ int main(int Argc, char** Args)
     
     GameMemory.ExitGame = false;
     
-    GameMemory.PlatformAPI.GetAllFilesWithExtension = Win32FindFilesWithExtensions;
-    GameMemory.PlatformAPI.FileExists = Win32FileExists;
-    GameMemory.PlatformAPI.AllocateMemory = Win32AllocateMemory;
-    GameMemory.PlatformAPI.DeallocateMemory = Win32DeallocateMemory;
+    //GameMemory.PlatformAPI.GetAllFilesWithExtension = LinuxFindFilesWithExtensions;
+    //GameMemory.PlatformAPI.FileExists = LinuxFileExists;
+    GameMemory.PlatformAPI.AllocateMemory = LinuxAllocateMemory;
+    GameMemory.PlatformAPI.DeallocateMemory = LinuxDeallocateMemory;
     Platform = GameMemory.PlatformAPI;
     
-    win32_state* Win32State = BootstrapPushStruct(win32_state, PermArena);
+    linux_state* LinuxState = BootstrapPushStruct(linux_state, PermArena);
     
-    char* DllPath = "game.dll";
-    char* TempDllPath = "game_temp.dll";
+    char DirBuffer[256];
+    getcwd(DirBuffer, 256);
+    
+    char* LibPath = Concat(DirBuffer, "/libgame.so", &LinuxState->PermArena);
+    char* TempLibPath = Concat(DirBuffer, "/libgame_temp.so", &LinuxState->PermArena);
     
     memory_arena DebugArena = {};
     
-    GameMemory.DebugState = PushStruct(&Win32State->PermArena, debug_state);
+    GameMemory.DebugState = PushStruct(&LinuxState->PermArena, debug_state);
     
     GameMemory.DebugState->DebugMemoryInfo.DebugRect.RectOrigin = math::v2(50, 780);
     GameMemory.DebugState->DebugMemoryInfo.DebugRect.RectSize = math::v2(300,0);
     
     config_data ConfigData;
-    LoadConfig("../.config", &ConfigData, &Win32State->PermArena);
+    LoadConfig("../.config", &ConfigData, &LinuxState->PermArena);
     
     GameMemory.ConfigData = ConfigData;
     
@@ -432,13 +430,13 @@ int main(int Argc, char** Args)
     render_state RenderState = {};
     renderer Renderer = {};
     
-    InitializeOpenGL(RenderState, Renderer, &ConfigData, &Win32State->PermArena);
+    InitializeOpenGL(RenderState, Renderer, &ConfigData, &LinuxState->PermArena);
     
-    game_code Game = LoadGameCode(DllPath, TempDllPath);
+    game_code Game = LoadGameCode(LibPath, TempLibPath);
     
     //setup asset reloading
     asset_manager AssetManager = {};
-    StartupFileTimeChecks(&AssetManager, DllPath);
+    StartupFileTimeChecks(&AssetManager, LibPath);
     
     u32 FrameCounterForAssetCheck = 0;
     
@@ -492,13 +490,13 @@ int main(int Argc, char** Args)
         
         ShowMouseCursor(RenderState, Renderer.ShowMouseCursor);
         
-        ReloadAssets(RenderState, &AssetManager, &Win32State->PermArena);
+        ReloadAssets(RenderState, &AssetManager, &LinuxState->PermArena);
         
-        ReloadDlls(&Game, DllPath, TempDllPath);
+        ReloadLibs(&Game, LibPath, TempLibPath);
         
         Game.Update(DeltaTime, &GameMemory, Renderer, &InputController, &SoundCommands);
         
-        Render(RenderState, Renderer, &Win32State->PermArena);
+        Render(RenderState, Renderer, &LinuxState->PermArena);
         PlaySounds(&SoundDevice, &SoundCommands);
         
         SetControllerInvalidKeys();
@@ -525,8 +523,8 @@ int main(int Argc, char** Args)
         GameMemory.DebugState->DebugMemoryInfo.DebugInfoCount = 0;
         debug_info TempDebugInfo = {};
         TempDebugInfo.Header = PushString(&DebugArena, "Temporary memory");
-        AddDebugValue(&DebugArena, &TempDebugInfo, "Blocks", Win32MemoryState.TempCount);
-        AddDebugValue(&DebugArena, &TempDebugInfo, "Total allocated", Win32MemoryState.TempSizeAllocated);
+        AddDebugValue(&DebugArena, &TempDebugInfo, "Blocks", LinuxMemoryState.TempCount);
+        AddDebugValue(&DebugArena, &TempDebugInfo, "Total allocated", LinuxMemoryState.TempSizeAllocated);
         
         auto DebugMemoryInfo = GameMemory.DebugState->DebugMemoryInfo;
         
@@ -535,15 +533,15 @@ int main(int Argc, char** Args)
         
         debug_info PermDebugInfo = {};
         PermDebugInfo.Header = PushString(&DebugArena, "Permanent memory");
-        AddDebugValue(&DebugArena, &PermDebugInfo, "Blocks", Win32MemoryState.PermanentBlocks);
-        AddDebugValue(&DebugArena, &PermDebugInfo, "Total allocated", Win32MemoryState.PermanentSizeAllocated);
+        AddDebugValue(&DebugArena, &PermDebugInfo, "Blocks", LinuxMemoryState.PermanentBlocks);
+        AddDebugValue(&DebugArena, &PermDebugInfo, "Total allocated", LinuxMemoryState.PermanentSizeAllocated);
         
         GameMemory.DebugState->DebugMemoryInfo.DebugInfo[GameMemory.DebugState->DebugMemoryInfo.DebugInfoCount++] = PermDebugInfo;
         
         debug_info TotalDebugInfo = {};
         TotalDebugInfo.Header = PushString(&DebugArena, "Total memory");
-        AddDebugValue(&DebugArena, &TotalDebugInfo, "Blocks", Win32MemoryState.TempCount + Win32MemoryState.PermanentBlocks);
-        AddDebugValue(&DebugArena, &TotalDebugInfo, "Total allocated", Win32MemoryState.TempSizeAllocated + Win32MemoryState.PermanentSizeAllocated);
+        AddDebugValue(&DebugArena, &TotalDebugInfo, "Blocks", LinuxMemoryState.TempCount + LinuxMemoryState.PermanentBlocks);
+        AddDebugValue(&DebugArena, &TotalDebugInfo, "Total allocated", LinuxMemoryState.TempSizeAllocated + LinuxMemoryState.PermanentSizeAllocated);
         
         GameMemory.DebugState->DebugMemoryInfo.DebugInfo[GameMemory.DebugState->DebugMemoryInfo.DebugInfoCount++] = TotalDebugInfo;
 #endif
