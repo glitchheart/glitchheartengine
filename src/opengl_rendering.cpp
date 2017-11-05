@@ -394,7 +394,7 @@ static void RegisterBuffers(render_state& RenderState, GLfloat* VertexBuffer, lo
     glBindVertexArray(0);
 }
 
-static void RegisterVertexBuffer(render_state& RenderState, GLfloat* BufferData, i32 Size, Shader_Type ShaderType,memory_arena* PermArena, i32 BufferHandle = -1)
+static void RegisterVertexBuffer(render_state& RenderState, GLfloat* BufferData, i32 Size, Shader_Type ShaderType, memory_arena* PermArena, i32 BufferHandle = -1)
 {
     buffer* Buffer = &RenderState.Buffers[BufferHandle == -1 ? RenderState.BufferCount : BufferHandle];
     
@@ -859,7 +859,7 @@ static void InitializeOpenGL(render_state& RenderState, renderer& Renderer, conf
     //@Incomplete: Figure something out here. Ask for comptabible version etc
 #ifdef _WIN32
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
 #elif __linux
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
@@ -1662,14 +1662,12 @@ static void RenderBuffer(const render_command& Command, render_state& RenderStat
     
     glBindVertexArray(Buffer.VAO);
     
-    texture_data* TextureData = Renderer.TextureMap[Command.Buffer.TextureName];
+    u32 TextureHandle = Command.Buffer.TextureHandle != -1 ? RenderState.TextureArray[Command.Buffer.TextureHandle].TextureHandle : 0;
     
-    const texture& Texture = RenderState.TextureArray[TextureData->Handle];
-    
-    if (RenderState.BoundTexture != Texture.TextureHandle)
+    if (TextureHandle != 0 && RenderState.BoundTexture != TextureHandle)
     {
-        glBindTexture(GL_TEXTURE_2D, Texture.TextureHandle);
-        RenderState.BoundTexture = Texture.TextureHandle;
+        glBindTexture(GL_TEXTURE_2D, TextureHandle);
+        RenderState.BoundTexture = TextureHandle;
     }
     
     auto Shader = RenderState.TileShader;
@@ -1678,9 +1676,9 @@ static void RenderBuffer(const render_command& Command, render_state& RenderStat
     math::m4 Model(1.0f);
     Model = math::Scale(Model, math::v3(1, 1, 1.0f));
     
-    Model = math::YRotate(Command.Rotation.y) * Model;
-    Model = math::XRotate(Command.Rotation.x) * Model;
-    Model = math::ZRotate(Command.Rotation.z) * Model;
+    //Model = math::YRotate(Command.Rotation.y) * Model;
+    //Model = math::XRotate(Command.Rotation.x) * Model;
+    //Model = math::ZRotate(Command.Rotation.z) * Model;
     
     SetFloatUniform(Shader.Program, "isUI", 0);
     SetMat4Uniform(Shader.Program, "Projection", Projection);

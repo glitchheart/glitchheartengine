@@ -163,7 +163,6 @@ static void LoadTextures(renderer& Renderer, memory_arena* PermArena, const char
     }
 }
 
-
 static void LoadTextures(renderer& Renderer, memory_arena* PermArena)
 {
     LoadTextures(Renderer, PermArena, "../assets/textures/");
@@ -361,15 +360,19 @@ static void PushPointLight(renderer& Renderer, math::v3 Position, math::v3 Ambie
     PointLight.Quadratic = Quadratic;
 }
 
-static void PushBuffer(renderer& Renderer, i32 BufferHandle, char* TextureName, math::v3 Rotation, b32 IsUI = false)
+static void PushBuffer(renderer& Renderer, i32 BufferHandle, i32 TextureHandle, math::v3 Rotation, b32 IsUI = false)
 {
     render_command* RenderCommand = PushNextCommand(Renderer, IsUI);
     
     RenderCommand->Type = RenderCommand_Buffer;
     RenderCommand->Buffer.BufferHandle = BufferHandle;
-    RenderCommand->Buffer.TextureName = TextureName;
+    RenderCommand->Buffer.TextureHandle = TextureHandle - 1;
     RenderCommand->Rotation = Rotation;
     RenderCommand->IsUI = IsUI;
+    
+    RenderCommand->ShaderHandle = -1;
+    RenderCommand->ShaderAttributes = 0;
+    RenderCommand->ShaderAttributeCount = 0;
 }
 
 static void PushModel(renderer& Renderer, model& Model)
