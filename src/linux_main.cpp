@@ -130,6 +130,7 @@ static time_t GetLastWriteTime(const char* FilePath)
 static game_code LoadGameCode(char* LibPath, char* TempLibPath)
 {
     game_code Result = {};
+    
     Result.LibPath = LibPath;
     Result.TempLibPath = TempLibPath;
     
@@ -139,7 +140,6 @@ static game_code LoadGameCode(char* LibPath, char* TempLibPath)
     
     //TODO: Find lib load function for linux
     Result.GameCodeLib = dlopen(Result.TempLibPath, RTLD_LAZY);
-    printf("Temp: %s\n", Result.TempLibPath);
     
     //TODO: Find last write time function for linux
     Result.LastLibWriteTime = GetLastWriteTime(Result.LibPath);
@@ -411,8 +411,8 @@ int main(int Argc, char** Args)
     char DirBuffer[256];
     getcwd(DirBuffer, 256);
     
-    char* LibPath = Concat(DirBuffer, "/libgame.so");
-    char* TempLibPath = Concat(DirBuffer, "/libgame_temp.so");
+    char* LibPath = Concat(DirBuffer, "/libgame.so", &LinuxState->PermArena);
+    char* TempLibPath = Concat(DirBuffer, "/libgame_temp.so", &LinuxState->PermArena);
     
     memory_arena DebugArena = {};
     
