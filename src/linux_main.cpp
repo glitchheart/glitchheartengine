@@ -25,6 +25,7 @@
 #include <GLFW/glfw3.h>
 #include <fcntl.h>
 #include <time.h>
+#include <errno.h>
 
 #include "unistd.h"
 #include "linux_main.h"
@@ -394,7 +395,6 @@ int main(int Argc, char** Args)
     InitKeys();
     render_state RenderState = {};
     renderer Renderer = {};
-    DEBUG_PRINT("FUCK\n");
     
     InitializeOpenGL(RenderState, Renderer, &ConfigData, &LinuxState->PermArena);
     

@@ -12,6 +12,8 @@
 			"cwd": "${workspaceRoot}/build",
 			"environment": [],
 			"externalConsole": false,
+			"MIMode": "gdb",
+			"miDebuggerPath": "/usr/bin/gdb",
 			"logging": {
 				"moduleLoad": false,
 				"trace": true,

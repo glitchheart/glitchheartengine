@@ -122,7 +122,7 @@ static void InitAudio(sound_device *SoundDevice, oal_devices_list* DevicesList)
         i32 DefaultDeviceIndex = 0;
         i32 Index = 0;
         
-        while(Devices != NULL)
+        while(*Devices != NULL)
         {
             if(strcmp(DefaultDeviceName, Devices) == 0)
             {
@@ -201,7 +201,8 @@ static void InitAudio(sound_device *SoundDevice, oal_devices_list* DevicesList)
     {
         SoundDevice->Device = 0;
         ERR("Could not load Sound device");
-        exit(EXIT_FAILURE);
+        return;
+        //exit(EXIT_FAILURE);
     }
     
     ALboolean Enumeration;
@@ -346,7 +347,7 @@ static inline void PauseSound(sound_device* SoundDevice, sound_commands* Command
 
 static void PlaySounds(sound_device* SoundDevice, sound_commands* Commands)
 {
-    if(SoundDevice && Commands)
+    if(SoundDevice && Commands && SoundDevice->Device)
     {
         LoadSounds(SoundDevice, Commands);
         
