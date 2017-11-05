@@ -140,6 +140,12 @@ static void LoadTexture(const char* FullTexturePath, renderer& Renderer, memory_
     TextureData->Handle = Renderer.TextureCount++;
     
     TextureData->ImageData = stbi_load(FullTexturePath, &TextureData->Width, &TextureData->Height, 0, STBI_rgb_alpha);
+    
+    if(!TextureData->ImageData)
+    {
+        printf("Texture cold not be loaded: %s\n", FullTexturePath);
+    }
+    
     if(Handle)
         *Handle = TextureData->Handle + 1; // We add one to the handle, since we want 0 to be an invalid handle
 }
@@ -426,6 +432,16 @@ static i32 LoadFont(renderer& Renderer, char* Path, i32 Size, char* Name)
     
     Renderer.Fonts[Renderer.FontCount] = Data;
     return Renderer.FontCount++;
+}
+
+static void LoadFont(renderer& Renderer, char* Path, i32 Size, i32* Handle)
+{
+    font_data Data = {};
+    Data.Path = PushString(&Renderer.FontArena, Path);
+    Data.Size = Size;
+    
+    Renderer.Fonts[Renderer.FontCount] = Data;
+    *Handle = Renderer.FontCount++;
 }
 
 static b32 IsEOF(chunk_format& Format)
