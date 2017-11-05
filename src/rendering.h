@@ -351,7 +351,7 @@ struct render_command
         struct
         {
             i32 BufferHandle;
-            char* TextureName;
+            i32 TextureHandle;
         } Buffer;
         struct
         {

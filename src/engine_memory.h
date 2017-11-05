@@ -98,6 +98,7 @@ void* PushSize_(memory_arena* Arena, umm SizeInit, push_params Params = DefaultP
     if(!Arena->CurrentBlock || (Arena->CurrentBlock->Used + Size) > Arena->CurrentBlock->Size)
     {
         Size = SizeInit;
+        
         if(Arena->AllocationFlags & (PM_OverflowCheck | PM_UnderflowCheck))
         {
             Arena->MinimumBlockSize = 0;
@@ -117,7 +118,7 @@ void* PushSize_(memory_arena* Arena, umm SizeInit, push_params Params = DefaultP
         Arena->CurrentBlock = NewBlock;
     }
     
-    Assert((Arena->CurrentBlock->Used + Size) <= Arena->CurrentBlock->Size);
+    Assert((Arena->CurrentBlock->Used + SizeInit) <= Arena->CurrentBlock->Size);
     umm AlignmentOffset = GetAlignmentOffset(Arena, Params.Alignment);
     Result = Arena->CurrentBlock->Base + Arena->CurrentBlock->Used + AlignmentOffset;
     Arena->CurrentBlock->Used += Size;
