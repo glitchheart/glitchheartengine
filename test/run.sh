@@ -1,5 +1,5 @@
 #!/bin/bash 
 
  pushd build
- gnome-terminal -x sh -c './main ; exec /bin/bash -i'
+ gnome-terminal -x sh -c 'padsp ./main ; exec /bin/bash -i'
  popd
