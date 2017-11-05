@@ -32,6 +32,8 @@ static GLchar* LoadShaderFromFile(const char* Path, memory_arena* Arena)
     
     FILE *File;
     File = fopen(Path, "rb");
+    char* Err = strerror(errno);
+    DEBUG_PRINT("Error: %s\n", Err);
     if(File)
     {
         fseek(File, 0, SEEK_END);

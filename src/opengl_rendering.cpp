@@ -125,7 +125,7 @@ static GLuint LoadShader(const char* FilePath, shader *Shd, memory_arena* PermAr
     Shd->VertexShader = glCreateShader(GL_VERTEX_SHADER);
     char* VertexString = Concat(FilePath, ".vert");
     GLchar *VertexText = LoadShaderFromFile(VertexString, PermArena);
-    
+
     glShaderSource(Shd->VertexShader, 1, &VertexText, NULL);
     glCompileShader(Shd->VertexShader);
     
@@ -854,6 +854,9 @@ static void InitializeOpenGL(render_state& RenderState, renderer& Renderer, conf
     const GLFWvidmode* mode = glfwGetVideoMode(monitor);
     glfwSetErrorCallback(ErrorCallback);
     
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+
     if(ConfigData->Fullscreen == 2)
     {
         glfwWindowHint(GLFW_RED_BITS, mode->redBits);
@@ -889,12 +892,11 @@ static void InitializeOpenGL(render_state& RenderState, renderer& Renderer, conf
     const GLFWvidmode *Mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
     int Width, Height;
     
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    
     glfwGetFramebufferSize(RenderState.Window, &Width, &Height);
     glfwSetWindowPos(RenderState.Window, Mode->width / 2 - Width / 2, Mode->height / 2 - Height / 2);
 
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwSetInputMode(RenderState.Window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
     
     glfwSetWindowAspectRatio(RenderState.Window, 16, 9);

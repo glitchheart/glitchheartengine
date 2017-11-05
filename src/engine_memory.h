@@ -149,9 +149,9 @@ inline void* PushTempSize_(umm Size, push_params = DefaultPushParams(), u64 Flag
 
 inline char* PushTempString(u32 Length)
 {
-    platform_memory_block* Block = Platform.AllocateMemory(Length, PM_Temporary);
+    platform_memory_block* Block = Platform.AllocateMemory(Length + 1, PM_Temporary);
     char* Result = (char*)Block->Base;
-    Result[Length + 1] = 0;
+    Result[Length] = 0;
     return Result;
 }
 
@@ -163,7 +163,7 @@ inline char* PushTempString(char* Source)
     {
         Dest[CharIndex] = Source[CharIndex];
     }
-    Dest[Length + 1] = 0;
+    Dest[Length] = 0;
     return Dest;
 }
 
@@ -175,7 +175,7 @@ inline char* PushTempString(const char* Source)
     {
         Dest[CharIndex] = Source[CharIndex];
     }
-    Dest[Length + 1] = 0;
+    Dest[Length] = 0;
     return Dest;
 }
 
@@ -203,7 +203,7 @@ char* PushString(memory_arena* Arena, u32 Length)
     //@Incomplete: Fix NoClear() bug here. 
     // We don't care about zeroing
     auto Result = (char*)PushSize_(Arena, (Length + 1));
-    Result[Length + 1] = 0;
+    Result[Length] = 0;
     return Result;
 }
 
@@ -211,11 +211,11 @@ char* PushString(memory_arena* Arena, char* Source)
 {
     auto Length = strlen(Source);
     char* Dest = PushString(Arena, (u32)Length);
-    for(u32 CharIndex = 0; CharIndex < Length + 1; CharIndex++)
+    for(u32 CharIndex = 0; CharIndex < Length; CharIndex++)
     {
         Dest[CharIndex] = Source[CharIndex];
     }
-    Dest[Length + 1] = 0;
+    Dest[Length] = 0;
     
     return Dest;
 }
@@ -228,7 +228,7 @@ char* PushString(memory_arena* Arena, const char* Source)
     {
         Dest[CharIndex] = Source[CharIndex];
     }
-    Dest[Length + 1] = 0;
+    Dest[Length] = 0;
     
     return Dest;
 }
