@@ -54,27 +54,27 @@ struct sound_device
 
 struct RIFF_header
 {
-    char ChunkID[4];
-    long ChunkSize;
-    char Format[4];
+    unsigned char ChunkID[4];
+    unsigned int ChunkSize;
+    unsigned char Format[4];
 };
 
 struct wave_format
 {
-    char SubChunkID[4];
-    long SubChunkSize;
+    unsigned char SubChunkID[4];
+    unsigned int SubChunkSize;
     short AudioFormat;
     short NumChannels;
-    long SampleRate;
-    long ByteRate;
+    unsigned int SampleRate;
+    unsigned int ByteRate;
     short BlockAlign;
     short BitsPerSample;
 };
 
 struct wave_data
 {
-    char SubChunkID[4];
-    long SubChunk2Size;
+    unsigned char SubChunkID[4];
+    unsigned int SubChunk2Size;
 };
 
 #endif

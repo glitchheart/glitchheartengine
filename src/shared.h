@@ -85,10 +85,12 @@ inline char* GetFileNameFromPath(char* Path, char* Extension = 0)
         CompareString = Concat(".", Extension);
     }
     
-    auto Tok = StrSep(&Path, ".");
+    char* P = PushTempString(Path);
+    auto Tok = StrSep(&P, ".");
     Tok = StrSep(&Tok, "/");
     while(Tok)
     {
+        
         if(strstr(Tok, CompareString))
         {
             Tok = StrSep(&Tok, ".");

@@ -15,6 +15,7 @@
      Commands->LoadSounds = true;
      Commands->SoundsToLoad.FilePaths[Commands->SoundsToLoad.FilesLength] = PushTempString(FilePath);
      Commands->SoundsToLoad.FileNames[Commands->SoundsToLoad.FilesLength] = PushTempString(FileName);
+     
      Commands->SoundsToLoad.FilesLength++;
  }
  
@@ -61,5 +62,5 @@
      SoundEffect->SoundInfo.Gain = SoundCommands->MusicVolume;
  }
  
-#define PLAY_SOUND(SoundHandle,...) PlaySoundEffect(SoundCommands, SoundHandle, __VA_ARGS__)
-#define PLAY_TRACK(TrackHandle,...) PlayMusicTrack(SoundCommands, TrackHandle, __VA_ARGS__)
+#define PLAY_SOUND(SoundHandle,...) PlaySoundEffect(SoundCommands, SoundHandle, ##__VA_ARGS__)
+#define PLAY_TRACK(TrackHandle,...) PlayMusicTrack(SoundCommands, TrackHandle, ##__VA_ARGS__)

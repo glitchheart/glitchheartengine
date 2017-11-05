@@ -9,6 +9,7 @@ static void LoadWavFile(sound_device* SoundDevice, const char *Filename, u32 *So
     
     if (SoundFile)
     {
+        DEBUG_PRINT("File: %s\n", Filename);
         fread(&RiffHeader, sizeof(RIFF_header), 1, SoundFile);
         
         if ((RiffHeader.ChunkID[0] != 'R' ||
@@ -20,6 +21,8 @@ static void LoadWavFile(sound_device* SoundDevice, const char *Filename, u32 *So
               RiffHeader.Format[2] != 'V' ||
               RiffHeader.Format[3] != 'E')))
         {
+            printf("Riff: %s\n", RiffHeader.ChunkID);
+            printf("Fmt: %s\n", RiffHeader.Format);
             ERR("Riff header malformed");
         }
         
@@ -347,6 +350,7 @@ static inline void PauseSound(sound_device* SoundDevice, sound_commands* Command
 
 static void PlaySounds(sound_device* SoundDevice, sound_commands* Commands)
 {
+    
     if(SoundDevice && Commands && SoundDevice->Device)
     {
         LoadSounds(SoundDevice, Commands);
