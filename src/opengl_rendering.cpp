@@ -632,6 +632,7 @@ static void RenderSetup(render_state *RenderState, memory_arena* PermArena)
     
     RenderState->TileShader.Type = Shader_Tile;
     LoadShader(ShaderPaths[Shader_Tile], &RenderState->TileShader, PermArena);
+    RenderState->TileShader.Loaded = true;
     
     auto PositionLocation2 = glGetAttribLocation(RenderState->TileShader.Program, "pos");
     auto TexcoordLocation2 = glGetAttribLocation(RenderState->TileShader.Program, "texcoord");
@@ -858,8 +859,8 @@ static void InitializeOpenGL(render_state& RenderState, renderer& Renderer, conf
     
     //@Incomplete: Figure something out here. Ask for comptabible version etc
 #ifdef _WIN32
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+    //glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    //glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
 #elif __linux
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
@@ -1675,6 +1676,7 @@ static void RenderBuffer(const render_command& Command, render_state& RenderStat
     
     math::m4 Model(1.0f);
     Model = math::Scale(Model, math::v3(1, 1, 1.0f));
+    Model = math::Translate(Model, math::v3(0, 0, 0));
     
     //Model = math::YRotate(Command.Rotation.y) * Model;
     //Model = math::XRotate(Command.Rotation.x) * Model;
@@ -1689,7 +1691,6 @@ static void RenderBuffer(const render_command& Command, render_state& RenderStat
     glDrawArrays(GL_QUADS, 0, Buffer.VertexBufferSize / 4);
     glBindVertexArray(0);
 }
-
 
 static void LoadFont(render_state& RenderState, char* Path, i32 Size, char* Name)
 {
