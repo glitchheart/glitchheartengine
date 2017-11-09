@@ -111,7 +111,6 @@ void* PushSize_(memory_arena* Arena, umm SizeInit, push_params Params = DefaultP
         
         umm BlockSize = Max(Size, Arena->MinimumBlockSize);
         
-        //@Incomplete: Send some sort of allocation flags here
         platform_memory_block* NewBlock = Platform.AllocateMemory(BlockSize, Arena->AllocationFlags);
         
         NewBlock->Prev = Arena->CurrentBlock;
