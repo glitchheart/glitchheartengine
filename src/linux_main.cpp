@@ -430,6 +430,10 @@ int main(int Argc, char** Args)
     render_state RenderState = {};
     renderer Renderer = {};
     
+    Renderer.Commands.MinimumBlockSize = sizeof(render_command) * MAX_RENDER_COMMANDS;
+    Renderer.UICommands.MinimumBlockSize = sizeof(render_command) * MAX_UI_COMMANDS;
+    Renderer.LightCommands.MinimumBlockSize = sizeof(render_command) * MAX_LIGHT_COMMANDS;
+    
     InitializeOpenGL(RenderState, Renderer, &ConfigData, &LinuxState->PermArena);
     
     game_code Game = LoadGameCode(LibPath, TempLibPath);
