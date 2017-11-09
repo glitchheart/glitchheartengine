@@ -432,9 +432,9 @@ int main(int Argc, char** Args)
     render_state RenderState = {};
     renderer Renderer = {};
     
-    Renderer.Commands.MinimumBlockSize = sizeof(render_command) * MAX_RENDER_COMMAND;
-    Renderer.UICommands.MinimumBlockSize = sizeof(render_command) * MAX_UI_COMMAND;
-    Renderer.LightCommands.MinimumBlockSize = sizeof(render_command) * MAX_LIGHT_COMMAND;
+    Renderer.Commands.MinimumBlockSize = sizeof(render_command) * MAX_RENDER_COMMANDS;
+    Renderer.UICommands.MinimumBlockSize = sizeof(render_command) * MAX_UI_COMMANDS;
+    Renderer.LightCommands.MinimumBlockSize = sizeof(render_command) * MAX_LIGHT_COMMANDS;
     
     InitializeOpenGL(RenderState, Renderer, &ConfigData, &Win32State->PermArena);
     
