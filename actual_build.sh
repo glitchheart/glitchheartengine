@@ -10,6 +10,6 @@ CommonLinkerFlags=" ../libs/glad/glad.o -L/usr/local/lib -ldl -lfreetype -lglfw 
 
 pushd build
 
-clang --std=c++14 -Weverything $WIGNORE $WIGNORETEMP -DGLITCH_DEBUG=1 $CommonCompilerFlags -O0 ../src/linux_main.cpp $CommonLinkerFlags
+clang --std=c++14 -Weverything $WIGNORE -DGLITCH_DEBUG=1 $CommonCompilerFlags -O0 ../src/linux_main.cpp $CommonLinkerFlags
 
 popd
