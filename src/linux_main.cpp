@@ -1,11 +1,3 @@
-//#define _CRTDBG_MAP_ALLOC  
-//#define _DEBUG
-
-//#include <stdlib.h>  
-//#include <crtdbg.h>  
-
-//#include "windows.h"
-
 #include "platform.h"
 #include "shared.h"
 
@@ -16,7 +8,7 @@
 #include <glad/glad.h>
 #include "al.h"
 #include "alc.h"
-//#include <windows.h>
+
 #include <dlfcn.h>
 #include <sys/types.h>  
 #include <sys/stat.h>  
@@ -134,19 +126,15 @@ static game_code LoadGameCode(char* LibPath, char* TempLibPath)
     Result.LibPath = LibPath;
     Result.TempLibPath = TempLibPath;
     
-    //TODO: Find Linux equivalent of CopyFile
     CopyFile(Result.LibPath, Result.TempLibPath, false, true);
     Result.Update = UpdateStub;
     
-    //TODO: Find lib load function for linux
     Result.GameCodeLib = dlopen(Result.TempLibPath, RTLD_LAZY);
     
-    //TODO: Find last write time function for linux
     Result.LastLibWriteTime = GetLastWriteTime(Result.LibPath);
     
     if (Result.GameCodeLib)
     {
-        //TODO: Get Proc address equivalent for linux
         Result.Update = (update *)dlsym(Result.GameCodeLib, "Update");
         Result.IsValid = Result.Update != 0;
     }
@@ -164,7 +152,6 @@ static void UnloadGameCode(game_code *GameCode)
 {
     if (GameCode->GameCodeLib)
     {
-        //TODO: Linux freelibrary
         dlclose(GameCode->GameCodeLib);
         GameCode->GameCodeLib = 0;
     }
@@ -181,10 +168,8 @@ static void ReloadGameCode(game_code *GameCode, char* LibPath, char* TempLibPath
 
 static void ReloadLibs(game_code *Game, char* LibPath, char* TempLibPath)
 {
-    //TODO: Replace with Linux
     FILETIME LastWriteTime = GetLastWriteTime(Game->LibPath);
     
-    //TODO: Replace with linux
     if (difftime(Game->LastLibWriteTime, LastWriteTime) != 0)
     {
         DEBUG_PRINT("RELOAD\n");
