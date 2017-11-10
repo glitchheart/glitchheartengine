@@ -177,7 +177,34 @@ inline void LoadConfig(const char* FilePath, config_data* ConfigData, memory_are
         {
             if(StartsWith(LineBuffer, "title"))
             {
-                sscanf(LineBuffer, "title %s", ConfigData->Title);
+                // @Speed: This can probably be done much better and efficient
+                i32 Index = 0;
+                char TitleBuffer[50];
+                
+                b32 AfterTitle = false;
+                
+                for(i32 BufferIndex = 0; BufferIndex < strlen(LineBuffer); BufferIndex++)
+                {
+                    if(AfterTitle)
+                    {
+                        char Character = LineBuffer[BufferIndex];
+                        if(Character == '\n' || Character == '\r')
+                        {
+                            break;
+                        }
+                        else
+                        {
+                            TitleBuffer[Index++] = Character;
+                        }
+                    }
+                    
+                    if(LineBuffer[BufferIndex] == ' ')
+                    {
+                        AfterTitle = true;
+                    }
+                }
+                
+                sprintf(ConfigData->Title, "%s", TitleBuffer);
             }
             else if(StartsWith(LineBuffer, "version"))
             {
