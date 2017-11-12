@@ -463,6 +463,10 @@ struct buffer_data
 
 #define MAX_CAMERAS 8
 
+#define MAX_RENDER_COMMANDS 1024
+#define MAX_UI_COMMANDS 1024
+#define MAX_LIGHT_COMMANDS 1024
+
 struct renderer
 {
     b32 ShouldClose;
