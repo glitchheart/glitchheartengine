@@ -32,7 +32,7 @@ void FramebufferSizeCallback(GLFWwindow *Window, int Width, int Height)
     //@Incomplete: This should be done with lower resolutions and just be upscaled maybe? We need fixed resolutions
     glBindTexture(GL_TEXTURE_2D, RenderState->TextureColorBuffer);
     glTexImage2D(
-        GL_TEXTURE_2D, 0, GL_RGB, RenderState->WindowWidth, RenderState->WindowHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+        GL_TEXTURE_2D, 0, GL_RGB, RenderState->ScaleFromWidth, RenderState->ScaleFromHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
     glFramebufferTexture2D(
         GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, RenderState->TextureColorBuffer, 0);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -456,8 +456,8 @@ static void RenderSetup(render_state *RenderState, memory_arena* PermArena)
     glFramebufferTexture2D(
         GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, RenderState->TextureColorBuffer, 0
         );
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     
     glBindTexture(GL_TEXTURE_2D, 0);
     
@@ -489,6 +489,24 @@ static void RenderSetup(render_state *RenderState, memory_arena* PermArena)
     
     if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
         DEBUG_PRINT("ERROR::FRAMEBUFFER:: Framebuffer is not complete!");
+    
+    /*
+    glGenFramebuffers(1, &RenderState->OriginalFrameBuffer);
+    glBindFramebuffer(GL_FRAMEBUFFER, RenderState->OriginalFrameBuffer);
+    
+    glGenTextures(1, &RenderState->OriginalTextureColorBuffer);
+    glBindTexture(GL_TEXTURE_2D, RenderState->OriginalTextureColorBuffer);
+    
+    glTexImage2D(
+        GL_TEXTURE_2D, 0, GL_RGB, RenderState->ScaleFromWidth, RenderState->ScaleFromHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL
+        );
+    glFramebufferTexture2D(
+        GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, RenderState->OriginalTextureColorBuffer, 0
+        );
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    */
     
     // FrameBuffer VAO
     glGenVertexArrays(1, &RenderState->FrameBufferVAO);
@@ -856,6 +874,8 @@ static void InitializeOpenGL(render_state& RenderState, renderer& Renderer, conf
     const GLFWvidmode* mode = glfwGetVideoMode(monitor);
     glfwSetErrorCallback(ErrorCallback);
     
+    RenderState.ScaleFromWidth = ConfigData->ScaleFromWidth;
+    RenderState.ScaleFromHeight = ConfigData->ScaleFromHeight;
     
     //@Incomplete: Figure something out here. Ask for comptabible version etc
 #ifdef _WIN32

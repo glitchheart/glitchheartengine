@@ -191,6 +191,14 @@ inline void LoadConfig(const char* FilePath, config_data* ConfigData, memory_are
             {
                 sscanf(LineBuffer, "screen_height %d", &ConfigData->ScreenHeight);
             }
+            else if(StartsWith(LineBuffer, "scale_from_width"))
+            {
+                sscanf(LineBuffer, "scale_from_width %d", &ConfigData->ScaleFromWidth);
+            }
+            else if(StartsWith(LineBuffer, "scale_from_height"))
+            {
+                sscanf(LineBuffer, "scale_from_height %d", &ConfigData->ScaleFromHeight);
+            }
             else if(StartsWith(LineBuffer, "screen_height"))
             {
                 sscanf(LineBuffer, "screen_height %d", &ConfigData->ScreenHeight);
