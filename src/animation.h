@@ -1,32 +1,34 @@
 #ifndef ANIMATION_H
 #define ANIMATION_H
 
-struct sprite_sheet_frame
+struct spritesheet_frame
 {
+    r64 Duration;
     r32 X;
     r32 Y;
+    u32 FrameWidth;
+    u32 FrameHeight;
 };
 
-struct animation_info
+struct spritesheet_animation_info
 {
-    i32 FrameIndex = 0;
-    b32 Playing = false;
-    r64 CurrentTime = 0;
-    b32 FreezeFrame = false;
+    i32 FrameIndex;
+    b32 Playing;
+    r64 CurrentTime;
+    b32 FreezeFrame;
+    i32 AnimationHandle;
 };
 
-struct animation
+struct spritesheet_animation
 {
     char* Name;
-    r32 TimePerFrame;
-    char* Texture;
+    i32 TextureHandle;
     i32 FrameCount = 0;
     math::v2 FrameSize;
-    math::v2 Center;
     b32 Loop;
     
     math::v2 FrameOffset;
-    sprite_sheet_frame* Frames;
+    spritesheet_frame* Frames;
 };
 
 #endif

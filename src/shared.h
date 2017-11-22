@@ -3,6 +3,7 @@
 
 #include "gmap.h"
 #include "engine_memory.h"
+#include "animation.h"
 #include "rendering.h"
 
 inline char* StrSep(char** S, const char* Delim)
