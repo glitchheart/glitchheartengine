@@ -18,7 +18,6 @@ static void ShowMouseCursor(render_state& RenderState, b32 Show)
 void FramebufferSizeCallback(GLFWwindow *Window, int Width, int Height)
 {
     render_state* RenderState = (render_state*)glfwGetWindowUserPointer(Window);
-    
     glfwSetWindowAspectRatio(Window, 16, 9);
     glViewport(0, 0, Width, Height);
     GLint Viewport[4];
@@ -35,8 +34,8 @@ void FramebufferSizeCallback(GLFWwindow *Window, int Width, int Height)
         GL_TEXTURE_2D, 0, GL_RGB, RenderState->ScaleFromWidth, RenderState->ScaleFromHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
     glFramebufferTexture2D(
         GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, RenderState->TextureColorBuffer, 0);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     
     glBindTexture(GL_TEXTURE_2D, 0);
 }
@@ -436,6 +435,13 @@ static void RegisterVertexBuffer(render_state& RenderState, GLfloat* BufferData,
 
 static void RenderSetup(render_state *RenderState, memory_arena* PermArena)
 {
+    // @Cleanup: Not sure if a fallback is a good way of dealing with this
+    if(RenderState->ScaleFromWidth == 0 || RenderState->ScaleFromHeight == 0)
+    {
+        RenderState->ScaleFromWidth = RenderState->WindowWidth;
+        RenderState->ScaleFromHeight = RenderState->WindowHeight;
+    }
+    
     if(FT_Init_FreeType(&RenderState->FTLibrary)) 
     {
         fprintf(stderr, "Could not init freetype library\n");
@@ -443,7 +449,7 @@ static void RenderSetup(render_state *RenderState, memory_arena* PermArena)
     
     RenderState->FontCount = 0;
     
-    // Framebuffer
+    // Framebuffer 1
     glGenFramebuffers(1, &RenderState->FrameBuffer);
     glBindFramebuffer(GL_FRAMEBUFFER, RenderState->FrameBuffer);
     
@@ -451,7 +457,7 @@ static void RenderSetup(render_state *RenderState, memory_arena* PermArena)
     glBindTexture(GL_TEXTURE_2D, RenderState->TextureColorBuffer);
     
     glTexImage2D(
-        GL_TEXTURE_2D, 0, GL_RGB, RenderState->WindowWidth, RenderState->WindowHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL
+        GL_TEXTURE_2D, 0, GL_RGB, RenderState->ScaleFromWidth, RenderState->ScaleFromHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL
         );
     glFramebufferTexture2D(
         GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, RenderState->TextureColorBuffer, 0
@@ -467,7 +473,7 @@ static void RenderSetup(render_state *RenderState, memory_arena* PermArena)
     GLuint DepthBuffer;
     glGenRenderbuffers(1, &DepthBuffer);
     glBindRenderbuffer(GL_RENDERBUFFER, DepthBuffer);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, RenderState->WindowWidth, RenderState->WindowHeight);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, RenderState->ScaleFromWidth, RenderState->ScaleFromHeight);
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, DepthBuffer);
     
     glGenFramebuffers(1, &RenderState->LightingFrameBuffer);
@@ -477,7 +483,7 @@ static void RenderSetup(render_state *RenderState, memory_arena* PermArena)
     glBindTexture(GL_TEXTURE_2D, RenderState->LightingTextureColorBuffer);
     
     glTexImage2D(
-        GL_TEXTURE_2D, 0, GL_RGB, RenderState->WindowWidth, RenderState->WindowHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL
+        GL_TEXTURE_2D, 0, GL_RGB, RenderState->ScaleFromWidth, RenderState->ScaleFromHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL
         );
     glFramebufferTexture2D(
         GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, RenderState->LightingTextureColorBuffer, 0);
@@ -489,24 +495,6 @@ static void RenderSetup(render_state *RenderState, memory_arena* PermArena)
     
     if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
         DEBUG_PRINT("ERROR::FRAMEBUFFER:: Framebuffer is not complete!");
-    
-    /*
-    glGenFramebuffers(1, &RenderState->OriginalFrameBuffer);
-    glBindFramebuffer(GL_FRAMEBUFFER, RenderState->OriginalFrameBuffer);
-    
-    glGenTextures(1, &RenderState->OriginalTextureColorBuffer);
-    glBindTexture(GL_TEXTURE_2D, RenderState->OriginalTextureColorBuffer);
-    
-    glTexImage2D(
-        GL_TEXTURE_2D, 0, GL_RGB, RenderState->ScaleFromWidth, RenderState->ScaleFromHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL
-        );
-    glFramebufferTexture2D(
-        GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, RenderState->OriginalTextureColorBuffer, 0
-        );
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glBindTexture(GL_TEXTURE_2D, 0);
-    */
     
     // FrameBuffer VAO
     glGenVertexArrays(1, &RenderState->FrameBufferVAO);
@@ -526,11 +514,6 @@ static void RenderSetup(render_state *RenderState, memory_arena* PermArena)
     glVertexAttribPointer(PosLoc, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
     glEnableVertexAttribArray(TexLoc);
     glVertexAttribPointer(TexLoc, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *)(2 * sizeof(float)));
-    
-    //auto TexLoc = glGetUniformLocation(GameState->RenderState.FrameBufferShader.Program, "tex");
-    //glUniform1i(TexLoc, 0);
-    //TexLoc = glGetUniformLocation(GameState->RenderState.FrameBufferShader.Program, "lightingTex");
-    //glUniform1i(TexLoc, 1);
     
     RenderState->FrameBufferTex0Loc = glGetUniformLocation(RenderState->FrameBufferShader.Program, "tex");
     RenderState->FrameBufferTex1Loc = glGetUniformLocation(RenderState->FrameBufferShader.Program, "lightingTex");
@@ -899,12 +882,12 @@ static void InitializeOpenGL(render_state& RenderState, renderer& Renderer, conf
     }
     else if(ConfigData->Fullscreen == 1)
     {
-        RenderState.Window = glfwCreateWindow(ConfigData->ScreenWidth, ConfigData->ScreenHeight, Concat(Concat(ConfigData->Title, " "), ConfigData->Version),  monitor, 
+        RenderState.Window = glfwCreateWindow(ConfigData->ScreenWidth, ConfigData->ScreenHeight, Concat(Concat(ConfigData->Title, " "), ConfigData->Version), monitor, 
                                               NULL);
     }
     else
     {
-        RenderState.Window = glfwCreateWindow(ConfigData->ScreenWidth, ConfigData->ScreenHeight, Concat(Concat(ConfigData->Title, " "), ConfigData->Version),   NULL, 
+        RenderState.Window = glfwCreateWindow(ConfigData->ScreenWidth, ConfigData->ScreenHeight, Concat(Concat(ConfigData->Title, " "), ConfigData->Version), NULL, 
                                               NULL);
     }
     
@@ -928,7 +911,7 @@ static void InitializeOpenGL(render_state& RenderState, renderer& Renderer, conf
     
     glfwSetInputMode(RenderState.Window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
     
-    glfwSetWindowAspectRatio(RenderState.Window, 16, 9);
+    //glfwSetWindowAspectRatio(RenderState.Window, 16, 9);
     
     glfwSetFramebufferSizeCallback(RenderState.Window, FramebufferSizeCallback);
     
@@ -1159,7 +1142,7 @@ void RenderCircle(render_state& RenderState, math::v4 Color, r32 CenterX, r32 Ce
     glDrawArrays(GL_LINE_LOOP, 0, 720);
 }
 
-static void RenderQuad(Render_Mode Mode, render_state& RenderState, math::v4 Color, math::v3 Position, math::v3 Size, math::v3 Rotation, i32 ShaderHandle, shader_attribute* ShaderAttributes, i32 ShaderAttributeCount, b32 IsUI = true, i32 TextureHandle = 0, math::m4 ProjectionMatrix = math::m4(), math::m4 ViewMatrix = math::m4())
+static void RenderQuad(Render_Mode Mode, render_state& RenderState, math::v4 Color, math::v3 Position, math::v3 Size, math::v3 Rotation, i32 ShaderHandle, shader_attribute* ShaderAttributes, i32 ShaderAttributeCount, b32 IsUI = true, i32 TextureHandle = 0, b32 ForAnimation = false, math::v2 TextureSize = math::v2(), math::v2i FrameSize = math::v2i(), math::v2 TextureOffset = math::v2(), math::m4 ProjectionMatrix = math::m4(), math::m4 ViewMatrix = math::m4())
 {
     if(IsUI)
     {
@@ -1190,7 +1173,12 @@ static void RenderQuad(Render_Mode Mode, render_state& RenderState, math::v4 Col
             if(TextureHandle > 0)
             {
                 glBindTexture(GL_TEXTURE_2D, TextureHandle);
-                Shader = RenderState.TextureRectShader;
+                
+                if(ForAnimation)
+                    Shader = RenderState.SpritesheetShader;
+                else
+                    Shader = RenderState.TextureRectShader;
+                
                 RenderState.BoundTexture = TextureHandle;
             }
             
@@ -1229,6 +1217,13 @@ static void RenderQuad(Render_Mode Mode, render_state& RenderState, math::v4 Col
             SetFloatUniform(Shader.Program, "isUI", (r32)IsUI);
             SetMat4Uniform(Shader.Program, "M", Model);
             SetVec4Uniform(Shader.Program, "color", Color);
+            
+            if(ForAnimation)
+            {
+                SetVec2Uniform(Shader.Program, "textureOffset", TextureOffset);
+                SetVec2Uniform(Shader.Program, "textureSize", TextureSize);
+                SetVec2Uniform(Shader.Program, "frameSize", math::v2((r32)FrameSize.x, (r32)FrameSize.y));
+            }
             
             if(RenderState.CurrentExtraShader != -1 || ShaderHandle != -1)
             {
@@ -1546,7 +1541,11 @@ static void RenderQuad(const render_command& Command, render_state& RenderState,
                    Command.ShaderAttributes,
                    Command.ShaderAttributeCount,
                    Command.IsUI,
-                   Handle);
+                   Handle,
+                   Command.Quad.ForAnimation,
+                   Command.Quad.TextureSize,
+                   Command.Quad.FrameSize,
+                   Command.Quad.TextureOffset);
     }
     else
     {
@@ -1562,61 +1561,13 @@ static void RenderQuad(const render_command& Command, render_state& RenderState,
                    Command.ShaderAttributeCount,
                    Command.IsUI,
                    Handle,
+                   Command.Quad.ForAnimation,
+                   Command.Quad.TextureSize,
+                   Command.Quad.FrameSize,
+                   Command.Quad.TextureOffset,
                    Projection, 
                    View);
     }
-}
-
-static void RenderSprite(const render_command& Command, render_state& RenderState, renderer& Renderer,  math::m4 Projection, math::m4 View)
-{
-    texture_data* TextureData = Renderer.TextureMap[Command.Sprite.TextureName];
-    
-    const texture& Texture = RenderState.TextureArray[TextureData->Handle];
-    
-    if (RenderState.BoundTexture != Texture.TextureHandle)
-    {
-        glBindTexture(GL_TEXTURE_2D, Texture.TextureHandle);
-        RenderState.BoundTexture = Texture.TextureHandle;
-    }
-    
-    shader Shader = RenderState.SpritesheetShader;
-    
-    if(Shader.Program == 0)
-    {
-        Shader = RenderState.ErrorShaderSprite;
-        glBindVertexArray(RenderState.SpriteErrorVAO);
-    }
-    else
-    {
-        glBindVertexArray(RenderState.SpriteSheetVAO);
-    }
-    
-    UseShader(&Shader);
-    
-    math::m4 Model(1.0f);
-    Model = math::Scale(Model, math::v3(Command.Sprite.Scale.x, Command.Sprite.Scale.y, Command.Sprite.Scale.z));
-    
-    Model = math::YRotate(Command.Rotation.y) * Model;
-    Model = math::XRotate(Command.Rotation.x) * Model;
-    Model = math::ZRotate(Command.Rotation.z) * Model;
-    
-    Model = math::Translate(Model, math::v3(Command.Sprite.Position.x, Command.Sprite.Position.y, Command.Sprite.Position.z));
-    
-    SetVec4Uniform(Shader.Program, "spriteColor", Command.Sprite.Color);
-    SetFloatUniform(Shader.Program, "isUI", 0);
-    SetVec2Uniform(Shader.Program,"textureOffset", Command.Sprite.TextureOffset);
-    SetFloatUniform(Shader.Program, "frameWidth", Command.Sprite.Frame.x);
-    SetFloatUniform(Shader.Program, "frameHeight", Command.Sprite.Frame.y);
-    SetVec2Uniform(Shader.Program,"textureSize",
-                   math::v2(TextureData->Width, TextureData->Height));
-    
-    SetFloatUniform(Shader.Program, "time", (r32)GetTime());
-    SetMat4Uniform(Shader.Program, "Projection", Projection);
-    SetMat4Uniform(Shader.Program, "View", View);
-    SetMat4Uniform(Shader.Program, "Model", Model);
-    
-    glDrawElements(GL_TRIANGLES, sizeof(RenderState.QuadIndices), GL_UNSIGNED_INT, (void*)0);
-    glBindVertexArray(0);
 }
 
 static void RenderModel(const render_command& Command, render_state& RenderState, math::m4 Projection, math::m4 View)
@@ -1877,7 +1828,7 @@ static void RenderCommands(render_state& RenderState, renderer& Renderer, memory
             break;
             case RenderCommand_Sprite:
             {
-                RenderSprite(Command, RenderState, Renderer, Camera.ProjectionMatrix, Camera.ViewMatrix);
+                //RenderSprite(Command, RenderState, Renderer, Camera.ProjectionMatrix, Camera.ViewMatrix);
             }
             break;
             case RenderCommand_Model:
@@ -1952,7 +1903,7 @@ static void RenderCommands(render_state& RenderState, renderer& Renderer, memory
             break;
             case RenderCommand_Sprite:
             {
-                RenderSprite(Command, RenderState, Renderer, Camera.ProjectionMatrix, Camera.ViewMatrix);
+                //RenderSprite(Command, RenderState, Renderer, Camera.ProjectionMatrix, Camera.ViewMatrix);
             }
             break;
             case RenderCommand_Model:
@@ -1995,13 +1946,14 @@ static void Render(render_state& RenderState, renderer& Renderer, memory_arena* 
 {
     LoadExtraShaders(RenderState, Renderer);
     LoadTextures(RenderState, Renderer);
-    
     RenderState.CurrentExtraShader = -1;
     RenderState.ShaderAttributeCount = 0;
     
     auto& Camera = Renderer.Cameras[Renderer.CurrentCameraHandle];
-    Camera.ViewportWidth = RenderState.WindowWidth;
-    Camera.ViewportHeight = RenderState.WindowHeight;
+    Camera.ViewportWidth = RenderState.ScaleFromWidth;
+    Camera.ViewportHeight = RenderState.ScaleFromHeight;
+    Renderer.ViewportWidth = RenderState.ScaleFromWidth;
+    Renderer.ViewportHeight = RenderState.ScaleFromHeight;
     
     RenderState.ScaleX = 2.0f / RenderState.WindowWidth;
     RenderState.ScaleY = 2.0f / RenderState.WindowHeight;

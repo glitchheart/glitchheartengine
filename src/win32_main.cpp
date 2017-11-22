@@ -226,10 +226,6 @@ inline void LoadConfig(const char* FilePath, config_data* ConfigData, memory_are
             {
                 sscanf(LineBuffer, "scale_from_height %d", &ConfigData->ScaleFromHeight);
             }
-            else if(StartsWith(LineBuffer, "screen_height"))
-            {
-                sscanf(LineBuffer, "screen_height %d", &ConfigData->ScreenHeight);
-            }
             else if(StartsWith(LineBuffer, "contrast"))
             {
                 sscanf(LineBuffer, "contrast %f", &ConfigData->Contrast);
@@ -470,6 +466,8 @@ int main(int Argc, char** Args)
     Renderer.Commands.MinimumBlockSize = sizeof(render_command) * MAX_RENDER_COMMANDS;
     Renderer.UICommands.MinimumBlockSize = sizeof(render_command) * MAX_UI_COMMANDS;
     Renderer.LightCommands.MinimumBlockSize = sizeof(render_command) * MAX_LIGHT_COMMANDS;
+    Renderer.SpritesheetAnimationCount = 0;
+    Renderer.SpritesheetAnimationInfoCount = 0;
     
     InitializeOpenGL(RenderState, Renderer, &ConfigData, &Win32State->PermArena);
     

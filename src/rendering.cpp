@@ -1,3 +1,5 @@
+#include "animation.h"
+
 enum Camera_Flags
 {
     CFlag_Orthographic = (1 << 0),
@@ -84,6 +86,55 @@ static inline void CameraTransform(renderer& Renderer, camera& Camera, math::v3 
         Camera.Orientation = Orientation;
         Camera.Target = Target;
     }
+}
+
+static void TickAnimations(renderer& Renderer, r64 DeltaTime)
+{
+    for(i32 Index = 0; Index < Renderer.SpritesheetAnimationInfoCount; Index++)
+    {
+        spritesheet_animation_info& Info = Renderer.SpritesheetAnimationInfos[Index];
+        spritesheet_animation& Animation = Renderer.SpritesheetAnimations[Info.AnimationHandle];
+        
+        if (Info.Playing)
+        {
+            Info.CurrentTime += DeltaTime;
+            if (Info.CurrentTime >= Animation.Frames[Info.FrameIndex].Duration)
+            {
+                Info.FrameIndex++;
+                Info.CurrentTime = 0.0;
+                
+                if (Info.FrameIndex >= Animation.FrameCount)
+                {
+                    if (!Info.FreezeFrame)
+                        Info.FrameIndex = 0;
+                    else
+                        Info.FrameIndex = Animation.FrameCount - 1;
+                    
+                    if (!Animation.Loop)
+                    {
+                        // @Incomplete
+                        //StopAnimation(Info);
+                    }
+                }
+            }
+        }
+    }
+}
+
+static void AddAnimation(renderer& Renderer, spritesheet_animation Animation, i32* InfoHandle)
+{
+    *InfoHandle = Renderer.SpritesheetAnimationInfoCount;
+    spritesheet_animation_info& Info = Renderer.SpritesheetAnimationInfos[Renderer.SpritesheetAnimationInfoCount++];
+    Info.AnimationHandle = Renderer.SpritesheetAnimationCount;
+    Info.FrameIndex = 0;
+    Info.Playing = true;
+    Info.CurrentTime = 0.0f;
+    Info.FreezeFrame = false;
+    
+    Renderer.SpritesheetAnimations[Renderer.SpritesheetAnimationCount++] = Animation;
+    
+    Assert(Renderer.SpritesheetAnimationCount < MAX_SPRITESHEET_ANIMATIONS);
+    Assert(Renderer.SpritesheetAnimationCount < MAX_SPRITESHEET_ANIMATION_INFOS);
 }
 
 static void LoadShader(const char* FullShaderPath, renderer& Renderer, i32* Handle)
@@ -244,7 +295,7 @@ static void PushText(renderer& Renderer, const char* Text, math::v3 Position, i3
     RenderCommand->IsUI = IsUI;
 }
 
-static void PushFilledQuad(renderer& Renderer, math::v3 Position, math::v3 Size, math::v3 Rotation, math::rgba Color, i32 TextureHandle = 0, b32 IsUI = true, i32 ShaderHandle = -1, shader_attribute* ShaderAttributes = 0, i32 ShaderAttributeCount = 0)
+static void PushFilledQuad(renderer& Renderer, math::v3 Position, math::v3 Size, math::v3 Rotation, math::rgba Color, i32 TextureHandle = 0, b32 IsUI = true, i32 AnimationInfoHandle = -1,i32 ShaderHandle = -1, shader_attribute* ShaderAttributes = 0, i32 ShaderAttributeCount = 0)
 {
     render_command* RenderCommand = PushNextCommand(Renderer, IsUI);
     
@@ -255,6 +306,18 @@ static void PushFilledQuad(renderer& Renderer, math::v3 Position, math::v3 Size,
     RenderCommand->Quad.Color = Color;
     RenderCommand->Quad.Outlined = false;
     RenderCommand->Quad.TextureHandle = TextureHandle - 1;
+    
+    if(AnimationInfoHandle != -1)
+    {
+        spritesheet_animation_info& Info = Renderer.SpritesheetAnimationInfos[AnimationInfoHandle];
+        spritesheet_animation& Animation = Renderer.SpritesheetAnimations[Info.AnimationHandle];
+        spritesheet_frame& Frame = Animation.Frames[Info.FrameIndex];
+        RenderCommand->Quad.TextureHandle = Animation.TextureHandle - 1; // @Incomplete: Do we subtract one from this too?
+        RenderCommand->Quad.TextureSize = math::v2((r32)Renderer.TextureData[RenderCommand->Quad.TextureHandle].Width, (r32)Renderer.TextureData[RenderCommand->Quad.TextureHandle].Height);
+        RenderCommand->Quad.FrameSize = math::v2i(Frame.FrameWidth, Frame.FrameHeight);
+        RenderCommand->Quad.TextureOffset = math::v2(Frame.X, Frame.Y);
+        RenderCommand->Quad.ForAnimation = true;
+    }
     
     RenderCommand->ShaderHandle = ShaderHandle;
     RenderCommand->ShaderAttributes = ShaderAttributes;
@@ -289,22 +352,6 @@ static void PushWireframeCube(renderer& Renderer, math::v3 Position, math::v3 Sc
     RenderCommand->Scale = Scale;
     RenderCommand->Orientation = Orientation;
     RenderCommand->IsUI = false;
-}
-
-static void PushSprite(renderer& Renderer, math::v3 Position, math::v3 Scale, math::v2 Frame, math::v2 TextureOffset, const char* TextureName, math::rgba Color, b32 IsUI = false)
-{
-    render_command* RenderCommand = PushNextCommand(Renderer, IsUI);
-    
-    RenderCommand->Type = RenderCommand_Sprite;
-    RenderCommand->Sprite.Position = Position;
-    RenderCommand->Sprite.Scale = Scale;
-    RenderCommand->Sprite.Frame = Frame;
-    RenderCommand->Sprite.TextureOffset = TextureOffset;
-    
-    RenderCommand->Sprite.TextureName = PushTempString(TextureName);
-    
-    RenderCommand->Sprite.Color = Color;
-    RenderCommand->IsUI = IsUI;
 }
 
 static void PushSpotlight(renderer& Renderer, math::v3 Position, math::v3 Direction, r32 CutOff, r32 OuterCutOff, math::v3 Ambient, math::v3 Diffuse, math::v3 Specular, r32 Constant, r32 Linear, r32 Quadratic)

@@ -7,6 +7,8 @@
 #define MAX_LIGHTS 150
 #define MAX_BONES 50
 #define MAX_CHILDREN 30
+#define MAX_SPRITESHEET_ANIMATIONS 64
+#define MAX_SPRITESHEET_ANIMATION_INFOS 128
 
 struct font_data
 {
@@ -299,11 +301,6 @@ struct render_command
         } Text;
         struct
         {
-            math::v3 Position;
-            math::v3 Scale;
-            math::v2 Frame;
-            math::v2 TextureOffset;
-            char* TextureName;
             math::rgba Color;
         } Sprite;
         struct
@@ -312,6 +309,10 @@ struct render_command
             math::rgba Color;
             b32 Outlined;
             r32 LineWidth;
+            b32 ForAnimation;
+            math::v2 TextureSize;
+            math::v2i FrameSize;
+            math::v2 TextureOffset;
         } Quad;
         struct
         {
@@ -500,6 +501,11 @@ struct renderer
     
     camera Cameras[MAX_CAMERAS];
     i32 CurrentCameraHandle;
+    
+    spritesheet_animation_info SpritesheetAnimationInfos[MAX_SPRITESHEET_ANIMATION_INFOS];
+    i32 SpritesheetAnimationInfoCount;
+    spritesheet_animation SpritesheetAnimations[MAX_SPRITESHEET_ANIMATIONS];
+    i32 SpritesheetAnimationCount;
     
     union
     {

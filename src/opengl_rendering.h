@@ -148,6 +148,10 @@ struct render_state
     b32 ShouldClose;
     r64 FPS;
     
+    GLuint OriginalFrameBufferVAO;
+    GLuint OriginalFrameBufferVBO;
+    GLuint OriginalFrameBuffer;
+    
     GLuint FrameBufferVAO;
     GLuint FrameBufferVBO;
     GLuint FrameBuffer;
