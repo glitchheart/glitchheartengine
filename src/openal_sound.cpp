@@ -98,7 +98,7 @@ static inline void ResetCommands(sound_commands* Commands)
     Commands->SoundCount = 0;
 }
 
-static void InitAudio(sound_device *SoundDevice, oal_devices_list* DevicesList)
+static void InitAudio_OpenAL(sound_device *SoundDevice, oal_devices_list* DevicesList)
 {
     HMODULE OpenALDLL = {};
     auto Result = LoadOAL11Library(0, &OpenALApi, OpenALDLL);
@@ -246,7 +246,6 @@ static void InitAudio(sound_device *SoundDevice, oal_devices_list* DevicesList)
 static void LoadSound(const char *FilePath, sound_device* SoundDevice, u32* BufferHandle, char* Name = "")
 {
     LoadWavFile(SoundDevice, FilePath, BufferHandle);
-    SoundDevice->Buffers[SoundDevice->BufferCount++] = *BufferHandle;
 }
 
 static inline void LoadSounds(sound_device* SoundDevice, sound_commands* Commands)
@@ -350,7 +349,6 @@ static inline void PauseSound(sound_device* SoundDevice, sound_commands* Command
 
 static void PlaySounds(sound_device* SoundDevice, sound_commands* Commands)
 {
-    
     if(SoundDevice && Commands && SoundDevice->Device)
     {
         LoadSounds(SoundDevice, Commands);

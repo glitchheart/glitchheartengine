@@ -15,17 +15,15 @@
 #endif
 
 #include <glad/glad.h>
-#include "al.h"
-#include "alc.h"
+#include "fmod.h"
+#include "fmod_errors.h"
+
 #include <windows.h>
 #include <sys/types.h>  
 #include <sys/stat.h>  
 #include <GLFW/glfw3.h>
 
 #include "win32_main.h"
-
-#include "win32_load_oal.h"
-#include "win32_load_oal.cpp"
 
 platform_api Platform;
 
@@ -36,8 +34,10 @@ platform_api Platform;
 #include "opengl_rendering.h"
 #include "keycontroller.cpp"
 #include "sound.h"
-#include "openal_sound.h"
-#include "openal_sound.cpp"
+//#include "openal_sound.h"
+//#include "openal_sound.cpp"
+#include "fmod_sound.h"
+#include "fmod_sound.cpp"
 #include "filehandling.h"
 
 input_controller InputController;
@@ -479,8 +479,7 @@ int main(int Argc, char** Args)
     u32 FrameCounterForAssetCheck = 0;
     
     sound_device SoundDevice = {};
-    oal_devices_list DevicesList = {};
-    InitAudio(&SoundDevice, &DevicesList);
+    InitAudio_FMOD(&SoundDevice);
     
     sound_commands SoundCommands = {};
     
@@ -490,9 +489,9 @@ int main(int Argc, char** Args)
         SoundCommands.SFXVolume = ConfigData.SFXVolume;
         SoundCommands.MusicVolume = ConfigData.MusicVolume;
         SoundCommands.Muted = ConfigData.Muted;
-        SoundDevice.PrevMuted = !ConfigData.Muted;
-        SoundDevice.PrevStopped = false;
-        SoundDevice.PrevPaused = false;
+        //SoundDevice.PrevMuted = !ConfigData.Muted;
+        //SoundDevice.PrevStopped = false;
+        //SoundDevice.PrevPaused = false;
     }
     
     r64 LastFrame = GetTime();
