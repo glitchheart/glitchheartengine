@@ -4,7 +4,6 @@
 #define SOURCES 64
 #define SOUNDS 64
 
-
 char* ToString(sound_effect Sound)
 {
     char* Result = PushTempString(64);

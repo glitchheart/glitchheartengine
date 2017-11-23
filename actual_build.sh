@@ -5,8 +5,8 @@ WIGNORE="-Wno-nested-anon-types -Wno-variadic-macros -Wno-old-style-cast -Wno-si
 WIGNORETEMP="-Wno-shadow -Wno-deprecated -Wno-switch-enum -Wno-switch "
 W="-Wno-null-dereference"
 
-CommonCompilerFlags="-I ../libs -I ../libs/glfw/include -I ../libs/openal/include -I ../libs/FreeType/include -I ../libs/glad/include -g"
-CommonLinkerFlags=" ../libs/glad/glad.o -L/usr/local/lib -ldl -lfreetype -lglfw -lm -lpng -lz -o main"
+CommonCompilerFlags="-I ../libs -I ../libs/glfw/include -I ../libs/openal/include -I ../libs/FreeType/include -I ../libs/glad/include -I ../libs/fmod/include -g"
+CommonLinkerFlags=" ../libs/glad/glad.o -L/usr/local/lib -ldl -lfreetype -lglfw -lm -lpng -lz -lfmod -o main"
 
 pushd build
 

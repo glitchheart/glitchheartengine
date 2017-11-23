@@ -108,7 +108,6 @@ static void ReloadGameCode(game_code *GameCode, char* DllPath, char* TempDllPath
     *GameCode = LoadGameCode(DllPath, TempDllPath);
 }
 
-
 static void ReloadDlls(game_code *Game, char* DllPath, char* TempDllPath)
 {
     FILETIME LastWriteTime = GetLastWriteTime(Game->DllPath);
