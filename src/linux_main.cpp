@@ -8,6 +8,9 @@
 #include <glad/glad.h>
 #include "al.h"
 #include "alc.h"
+#include "fmod.h"
+#include "fmod_errors.h"
+#include "fmod_sound.cpp"
 
 #include <dlfcn.h>
 #include <sys/types.h>  
@@ -122,13 +125,11 @@ static time_t GetLastWriteTime(const char* FilePath)
 static game_code LoadGameCode(char* LibPath, char* TempLibPath)
 {
     game_code Result = {};
-    
     Result.LibPath = LibPath;
     Result.TempLibPath = TempLibPath;
     
     CopyFile(Result.LibPath, Result.TempLibPath, false, true);
     Result.Update = UpdateStub;
-    
     Result.GameCodeLib = dlopen(Result.TempLibPath, RTLD_LAZY);
     
     Result.LastLibWriteTime = GetLastWriteTime(Result.LibPath);
@@ -227,6 +228,8 @@ inline void LoadConfig(const char* FilePath, config_data* ConfigData, memory_are
     
     ConfigData->Title = PushString(PermArena, 40);
     ConfigData->Version = PushString(PermArena, 40);
+    ConfigData->ScaleFromWidth = 0;
+    ConfigData->ScaleFromHeight = 0;
     
     if(File)
     {
@@ -248,9 +251,13 @@ inline void LoadConfig(const char* FilePath, config_data* ConfigData, memory_are
             {
                 sscanf(LineBuffer, "screen_height %d", &ConfigData->ScreenHeight);
             }
-            else if(StartsWith(LineBuffer, "screen_height"))
+            else if(StartsWith(LineBuffer, "scale_from_width"))
             {
-                sscanf(LineBuffer, "screen_height %d", &ConfigData->ScreenHeight);
+                sscanf(LineBuffer, "scale_from_width %d", &ConfigData->ScaleFromWidth);
+            }
+            else if(StartsWith(LineBuffer, "scale_from_height"))
+            {
+                sscanf(LineBuffer, "scale_from_height %d", &ConfigData->ScaleFromHeight);
             }
             else if(StartsWith(LineBuffer, "contrast"))
             {
@@ -432,6 +439,7 @@ int main(int Argc, char** Args)
     sound_device SoundDevice = {};
     oal_devices_list DevicesList = {};
     InitAudio(&SoundDevice, &DevicesList);
+    InitAudio_FMOD();
     
     sound_commands SoundCommands = {};
     
