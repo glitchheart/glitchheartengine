@@ -1,10 +1,94 @@
-
 static void FMODError(FMOD_RESULT Err)
 {
     DEBUG_PRINT("FMOD Error! (%d) %s\n", Err, FMOD_ErrorString(Err));
 }
 
-static void InitAudio_FMOD()
+static void LoadSound(const char* FilePath, sound_device* SoundDevice)
+{
+    //@Incomplete: Find out the exact parameters for a sound
+    auto Result = FMOD_System_CreateSound(SoundDevice->System, FilePath, FMOD_DEFAULT, 0, &SoundDevice->Sounds[SoundDevice->SoundCount++]);
+    if(Result != FMOD_OK)
+    {
+        FMODError(Result);
+    }
+}
+
+static void LoadSounds(sound_device* SoundDevice, sound_commands* Commands)
+{
+    if(Commands->LoadSounds)
+    {
+        auto DirData = Commands->SoundsToLoad;
+        
+        for(i32 FileIndex = 0; FileIndex < DirData.FilesLength; FileIndex++)
+        {
+            LoadSound(DirData.FilePaths[FileIndex], SoundDevice);
+        }
+        Commands->LoadSounds = false;
+        Commands->SoundsToLoad.FilesLength = 0;
+    }
+}
+
+
+static void CleanupSound(sound_device* SoundDevice)
+{
+    //@Incomplete: Cleanup FMOD
+}
+
+static void PlaySound(sound_effect* SoundEffect, sound_device* SoundDevice, sound_commands* Commands)
+{
+    if(SoundEffect)
+    {
+        auto Sound = SoundDevice->Sounds[SoundEffect->Buffer];
+        FMOD_CHANNEL* Channel;
+        auto Result = FMOD_System_PlaySound(SoundDevice->System, Sound, 0, Commands->Paused, &Channel);
+        FMOD_Channel_SetChannelGroup(Channel, SoundDevice->MasterGroup);
+        if(Result != FMOD_OK)
+        {
+            FMODError(Result);
+        }
+    }
+}
+
+static inline void ResetCommands(sound_commands* Commands)
+{
+    Clear(&Commands->SoundArena);
+    Commands->SoundCount = 0;
+}
+
+static void PlaySounds(sound_device* SoundDevice, sound_commands* Commands)
+{
+    if(SoundDevice && Commands && SoundDevice->System)
+    {
+        
+        LoadSounds(SoundDevice, Commands);
+        
+        FMOD_System_GetMasterChannelGroup(SoundDevice->System, &SoundDevice->MasterGroup);
+        
+        FMOD_ChannelGroup_SetVolume(SoundDevice->MasterGroup, Commands->SFXVolume);
+        FMOD_ChannelGroup_SetMute(SoundDevice->MasterGroup, Commands->Muted);
+        FMOD_ChannelGroup_SetPaused(SoundDevice->MasterGroup, Commands->Paused);
+        
+        if(Commands->Stopped)
+        {
+            FMOD_ChannelGroup_Stop(SoundDevice->MasterGroup);
+            ResetCommands(Commands);
+        }
+        
+        if(!Commands->Muted && !Commands->Paused && !Commands->Stopped)
+        {
+            for(i32 Sound = 0;
+                Sound < Commands->SoundCount;
+                Sound++)
+            {
+                auto SoundEffect = (sound_effect*)&Commands->SoundArena.CurrentBlock->Base[Sound];
+                PlaySound(SoundEffect, SoundDevice, Commands);
+            }
+            ResetCommands(Commands);
+        }
+    }
+}
+
+static void InitAudio_FMOD(sound_device* SoundDevice)
 {
     FMOD_RESULT Result;
     FMOD_SYSTEM* System;
@@ -29,16 +113,15 @@ static void InitAudio_FMOD()
         DEBUG_PRINT("Version error\n");
     }
     
-    FMOD_SOUND* Sound;
-    FMOD_System_CreateSound(System, "/home/bross/code/glitchheartgame2017/assets/audio/explosion.wav", FMOD_DEFAULT, 0, &Sound);
+    SoundDevice->System = System;
+    SoundDevice->IsInitialized = true;
     
-    if(!Sound)
+    Result = FMOD_System_GetMasterChannelGroup(SoundDevice->System, &SoundDevice->MasterGroup);
+    if(Result != FMOD_OK)
     {
-        DEBUG_PRINT("No sound!\n");
+        FMODError(Result);
+        return;
     }
-    
-    FMOD_CHANNEL* Channel;
-    FMOD_System_PlaySound(System, Sound, 0, false, &Channel);
 }
 
 

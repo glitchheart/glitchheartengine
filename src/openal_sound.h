@@ -35,7 +35,7 @@ struct sound_device
     ALCcontext *Context;
     b32 IsInitialized;
     ALuint Sources[SOURCES];
-    ALuint Buffers[SOUNDS];
+    
     u32 BufferCount;
     
     b32 PrevMuted;

@@ -10,7 +10,7 @@
 #include "alc.h"
 #include "fmod.h"
 #include "fmod_errors.h"
-#include "fmod_sound.cpp"
+
 
 #include <dlfcn.h>
 #include <sys/types.h>  
@@ -37,8 +37,8 @@ platform_api Platform;
 #include "opengl_rendering.h"
 #include "keycontroller.cpp"
 #include "sound.h"
-#include "openal_sound.h"
-#include "openal_sound.cpp"
+#include "fmod_sound.cpp"
+#include "fmod_sound.h"
 #include "filehandling.h"
 
 input_controller InputController;
@@ -438,8 +438,7 @@ int main(int Argc, char** Args)
     
     sound_device SoundDevice = {};
     oal_devices_list DevicesList = {};
-    InitAudio(&SoundDevice, &DevicesList);
-    InitAudio_FMOD();
+    InitAudio_FMOD(&SoundDevice);
     
     sound_commands SoundCommands = {};
     
