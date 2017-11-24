@@ -5,8 +5,6 @@
 //#include <crtdbg.h>  
 
 #define DEBUG
-//#include "windows.h"
-
 #include "platform.h"
 #include "shared.h"
 
@@ -34,8 +32,6 @@ platform_api Platform;
 #include "opengl_rendering.h"
 #include "keycontroller.cpp"
 #include "sound.h"
-//#include "openal_sound.h"
-//#include "openal_sound.cpp"
 #include "fmod_sound.h"
 #include "fmod_sound.cpp"
 #include "filehandling.h"
