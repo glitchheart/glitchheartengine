@@ -25,9 +25,6 @@
 #include "unistd.h"
 #include "linux_main.h"
 
-#include "linux_load_oal.h"
-#include "linux_load_oal.cpp"
-
 platform_api Platform;
 
 #include "gmap.cpp"
@@ -37,8 +34,8 @@ platform_api Platform;
 #include "opengl_rendering.h"
 #include "keycontroller.cpp"
 #include "sound.h"
-#include "fmod_sound.cpp"
 #include "fmod_sound.h"
+#include "fmod_sound.cpp"
 #include "filehandling.h"
 
 input_controller InputController;
@@ -320,9 +317,8 @@ PLATFORM_ALLOCATE_MEMORY(LinuxAllocateMemory)
         ProtectOffset = PageSize + SizeRoundedUp;
     }
     
-    //TODO: Linux
-    //linux_memory_block* Block = (linux_memory_block*)mmap(0, TotalSize, PROT_READ | PROT_WRITE, MAP_PRIVATE, 0, 0);
-    linux_memory_block* Block = (linux_memory_block*)calloc(1, TotalSize);
+    linux_memory_block* Block = (linux_memory_block*)malloc(TotalSize);
+    memset(Block, 0, TotalSize);
     
     Assert(Block);
     Block->Block.Base = (u8*)Block + BaseOffset;
@@ -332,8 +328,8 @@ PLATFORM_ALLOCATE_MEMORY(LinuxAllocateMemory)
     if(Flags & (PM_UnderflowCheck | PM_OverflowCheck))
     {
         //TODO Linux types and function
-        // i32 Protected = mprotect((u8*)Block + ProtectOffset, PageSize, PROT_NONE);
-        // Assert(Protected);
+        i32 Protected = mprotect((u8*)Block + ProtectOffset, PageSize, PROT_NONE);
+        Assert(Protected);
     }
     
     Block->Block.Size = Size;
@@ -368,7 +364,6 @@ PLATFORM_DEALLOCATE_MEMORY(LinuxDeallocateMemory)
         
         linux_memory_block *LinuxBlock =  ((linux_memory_block*)Block);
         //TODO: Linux
-        //munmap(LinuxBlock, LinuxBlock->Block.Size);
         free(LinuxBlock);
     }
 }
@@ -437,7 +432,6 @@ int main(int Argc, char** Args)
     u32 FrameCounterForAssetCheck = 0;
     
     sound_device SoundDevice = {};
-    oal_devices_list DevicesList = {};
     InitAudio_FMOD(&SoundDevice);
     
     sound_commands SoundCommands = {};
@@ -448,9 +442,6 @@ int main(int Argc, char** Args)
         SoundCommands.SFXVolume = ConfigData.SFXVolume;
         SoundCommands.MusicVolume = ConfigData.MusicVolume;
         SoundCommands.Muted = ConfigData.Muted;
-        SoundDevice.PrevMuted = !ConfigData.Muted;
-        SoundDevice.PrevStopped = false;
-        SoundDevice.PrevPaused = false;
     }
     
     r64 LastFrame = GetTime();
