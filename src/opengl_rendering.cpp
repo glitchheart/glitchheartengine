@@ -944,16 +944,6 @@ static void InitializeOpenGL(render_state& RenderState, renderer& Renderer, conf
     
     ControllerPresent();
     
-    char* EnginePath = getenv("GLITCH_ENGINE");
-    
-    for(i32 Index = 0; Index < Shader_Count; Index++)
-    {
-        char* NewPath = Concat(EnginePath, ShaderPaths[Index]);
-        //free(ShaderPaths[Index]); // Shouldn't we call this or is the string on the stakc somehow?
-        ShaderPaths[Index] = PushString(PermArena, (u32)strlen(NewPath) + 1);
-        strcpy(ShaderPaths[Index], NewPath);
-    }
-    
     Renderer.ShouldClose = false;
     RenderSetup(&RenderState, PermArena);
 }
@@ -2007,4 +1997,4 @@ static void Render(render_state& RenderState, renderer& Renderer, memory_arena* 
     glActiveTexture(GL_TEXTURE0);
     
     glfwSwapBuffers(RenderState.Window);
-    }
+}

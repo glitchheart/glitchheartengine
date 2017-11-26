@@ -46,20 +46,20 @@ char* ShaderEnumToStr(Shader_Type Shader)
 
 char* ShaderPaths[Shader_Count] =
 {
-    "/assets/shaders/textureshader",
-    "/assets/shaders/tileshader",
-    "/assets/shaders/rectshader",
-    "/assets/shaders/texturerectshader",
-    "/assets/shaders/standardfontshader",
-    "/assets/shaders/spritesheetanimationshader",
-    "/assets/shaders/wireframeshader",
-    "/assets/shaders/spriteuishader",
-    "/assets/shaders/errorshadersprite",
-    "/assets/shaders/errorshaderui",
-    "/assets/shaders/framebuffershader",
-    "/assets/shaders/lightsourceshader",
-    "/assets/shaders/simple_model_shader",
-    "/assets/shaders/passthroughshader"
+    "../engine_assets/shaders/textureshader",
+    "../engine_assets/shaders/tileshader",
+    "../engine_assets/shaders/rectshader",
+    "../engine_assets/shaders/texturerectshader",
+    "../engine_assets/shaders/standardfontshader",
+    "../engine_assets/shaders/spritesheetanimationshader",
+    "../engine_assets/shaders/wireframeshader",
+    "../engine_assets/shaders/spriteuishader",
+    "../engine_assets/shaders/errorshadersprite",
+    "../engine_assets/shaders/errorshaderui",
+    "../engine_assets/shaders/framebuffershader",
+    "../engine_assets/shaders/lightsourceshader",
+    "../engine_assets/shaders/simple_model_shader",
+    "../engine_assets/shaders/passthroughshader"
 };
 
 
