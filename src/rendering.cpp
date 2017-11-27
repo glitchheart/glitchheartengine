@@ -88,6 +88,11 @@ static inline void CameraTransform(renderer& Renderer, camera& Camera, math::v3 
     }
 }
 
+static b32 AnimationIsPlaying(i32 InfoHandle, renderer& Renderer)
+{
+    return Renderer.SpritesheetAnimationInfos[InfoHandle].Playing;
+}
+
 static void StartAnimation(i32 InfoHandle, renderer& Renderer, b32 Reset = true)
 {
     spritesheet_animation_info& Info = Renderer.SpritesheetAnimationInfos[InfoHandle];
