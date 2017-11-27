@@ -34,6 +34,41 @@ static void CleanupSound(sound_device* SoundDevice)
     //@Incomplete: Cleanup FMOD
 }
 
+FMOD_RESULT F_CALLBACK ChannelControlCallback(FMOD_CHANNELCONTROL *ChanControl, FMOD_CHANNELCONTROL_TYPE ControlType, FMOD_CHANNELCONTROL_CALLBACK_TYPE CallbackType, void *CommandData1, void *CommandData2)
+{
+    switch(CallbackType)
+    {
+        case FMOD_CHANNELCONTROL_CALLBACK_END:
+        {
+            if(ControlType == FMOD_CHANNELCONTROL_CHANNEL)
+            {
+                FMOD_CHANNEL* Channel = (FMOD_CHANNEL*)ChanControl;
+                i32 LoopCount;
+                FMOD_Channel_GetLoopCount(Channel, &LoopCount);
+                DEBUG_PRINT("Channel loopCount: %d\n", LoopCount);
+            }
+        }
+        break;
+        case FMOD_CHANNELCONTROL_CALLBACK_VIRTUALVOICE:
+        {
+            
+        }
+        break;
+        case FMOD_CHANNELCONTROL_CALLBACK_SYNCPOINT:
+        {
+            
+        }
+        break;
+        case FMOD_CHANNELCONTROL_CALLBACK_OCCLUSION:
+        {
+            
+        }
+        break;
+    }
+    
+    return FMOD_OK;
+}
+
 static void PlaySound(sound_effect* SoundEffect, sound_device* SoundDevice, sound_commands* Commands)
 {
     if(SoundEffect)
@@ -41,6 +76,15 @@ static void PlaySound(sound_effect* SoundEffect, sound_device* SoundDevice, soun
         auto Sound = SoundDevice->Sounds[SoundEffect->Buffer];
         FMOD_CHANNEL* Channel;
         auto Result = FMOD_System_PlaySound(SoundDevice->System, Sound, 0, Commands->Paused, &Channel);
+        FMOD_Channel_SetPitch(Channel, SoundEffect->SoundInfo.Pitch);
+        
+        if(SoundEffect->SoundInfo.Loop)
+        {
+            i32 LoopCount = SoundEffect->SoundInfo.LoopCount != 1 ? -1 : 1;
+            FMOD_Channel_SetMode(Channel, FMOD_LOOP_NORMAL);
+            FMOD_Channel_SetLoopCount(Channel, LoopCount);
+        }
+        
         FMOD_Channel_SetChannelGroup(Channel, SoundDevice->MasterGroup);
         if(Result != FMOD_OK)
         {
@@ -59,7 +103,6 @@ static void PlaySounds(sound_device* SoundDevice, sound_commands* Commands)
 {
     if(SoundDevice && Commands && SoundDevice->System)
     {
-        
         LoadSounds(SoundDevice, Commands);
         
         FMOD_System_GetMasterChannelGroup(SoundDevice->System, &SoundDevice->MasterGroup);
@@ -84,6 +127,10 @@ static void PlaySounds(sound_device* SoundDevice, sound_commands* Commands)
                 PlaySound(SoundEffect, SoundDevice, Commands);
             }
             ResetCommands(Commands);
+        }
+        if(FMOD_System_Update(SoundDevice->System) != FMOD_OK)
+        {
+            DEBUG_PRINT("FMOD Failed updating\n");
         }
     }
 }
