@@ -869,6 +869,8 @@ static void InitializeOpenGL(render_state& RenderState, renderer& Renderer, conf
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
 #endif
     
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    
     if(ConfigData->Fullscreen == 2)
     {
         glfwWindowHint(GLFW_RED_BITS, mode->redBits);
@@ -891,6 +893,7 @@ static void InitializeOpenGL(render_state& RenderState, renderer& Renderer, conf
                                               NULL);
     }
     
+    
     RenderState.Contrast = ConfigData->Contrast;
     RenderState.Brightness = ConfigData->Brightness;
     
@@ -903,8 +906,6 @@ static void InitializeOpenGL(render_state& RenderState, renderer& Renderer, conf
     //center window on screen
     const GLFWvidmode *Mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
     int Width, Height;
-    
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     
     glfwGetFramebufferSize(RenderState.Window, &Width, &Height);
     glfwSetWindowPos(RenderState.Window, Mode->width / 2 - Width / 2, Mode->height / 2 - Height / 2);
@@ -930,6 +931,8 @@ static void InitializeOpenGL(render_state& RenderState, renderer& Renderer, conf
     glDepthFunc(GL_LESS);
     
     DEBUG_PRINT("%s\n", glGetString(GL_VERSION));
+    DEBUG_PRINT("Shading language supported: %s\n", glGetString(GL_SHADING_LANGUAGE_VERSION));
+    DEBUG_PRINT("Glad Version: %d.%d\n", GLVersion.major, GLVersion.minor);
     
     glfwSetWindowUserPointer(RenderState.Window, &RenderState);
     glfwSetKeyCallback(RenderState.Window, KeyCallback);

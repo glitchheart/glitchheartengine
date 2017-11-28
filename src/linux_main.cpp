@@ -6,8 +6,6 @@
 #endif
 
 #include <glad/glad.h>
-#include "al.h"
-#include "alc.h"
 #include "fmod.h"
 #include "fmod_errors.h"
 
