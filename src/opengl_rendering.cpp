@@ -859,14 +859,15 @@ static void InitializeOpenGL(render_state& RenderState, renderer& Renderer, conf
     
     RenderState.ScaleFromWidth = ConfigData->ScaleFromWidth;
     RenderState.ScaleFromHeight = ConfigData->ScaleFromHeight;
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     
     //@Incomplete: Figure something out here. Ask for comptabible version etc
 #ifdef _WIN32
-    //glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-    //glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
 #elif __linux
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
 #endif
     
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
@@ -918,6 +919,7 @@ static void InitializeOpenGL(render_state& RenderState, renderer& Renderer, conf
     
     glfwMakeContextCurrent(RenderState.Window);
     gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
+    
     glfwSwapInterval(0);
     
     glfwGetFramebufferSize(RenderState.Window, &RenderState.WindowWidth, &RenderState.WindowHeight);
@@ -928,6 +930,7 @@ static void InitializeOpenGL(render_state& RenderState, renderer& Renderer, conf
     
     glDisable(GL_CULL_FACE);
     glEnable(GL_DEPTH_TEST);
+    
     glDepthFunc(GL_LESS);
     
     DEBUG_PRINT("%s\n", glGetString(GL_VERSION));
@@ -943,6 +946,7 @@ static void InitializeOpenGL(render_state& RenderState, renderer& Renderer, conf
     
     GLint Viewport[4];
     glGetIntegerv(GL_VIEWPORT, Viewport);
+    
     memcpy(RenderState.Viewport, Viewport, sizeof(GLint) * 4);
     
     ControllerPresent();
@@ -1626,7 +1630,6 @@ static void RenderBuffer(const render_command& Command, render_state& RenderStat
     buffer Buffer = RenderState.Buffers[Command.Buffer.BufferHandle];
     
     glBindVertexArray(Buffer.VAO);
-    
     u32 TextureHandle = Command.Buffer.TextureHandle != -1 ? RenderState.TextureArray[Command.Buffer.TextureHandle].TextureHandle : 0;
     
     if (TextureHandle != 0 && RenderState.BoundTexture != TextureHandle)
@@ -1652,7 +1655,8 @@ static void RenderBuffer(const render_command& Command, render_state& RenderStat
     SetMat4Uniform(Shader.Program, "Model", Model);
     SetVec4Uniform(Shader.Program, "Color", math::rgba(1.0f, 1.0f, 1.0f, 1.0f));
     
-    glDrawArrays(GL_QUADS, 0, Buffer.VertexBufferSize / 4);
+    glDrawArrays(
+        GL_TRIANGLES, 0, Buffer.VertexBufferSize / 3);
     glBindVertexArray(0);
 }
 
@@ -1797,7 +1801,6 @@ static void RenderCommands(render_state& RenderState, renderer& Renderer, memory
     Clear(&Renderer.LightCommands);
     
     glEnable(GL_DEPTH_TEST);
-    
     for(i32 Index = 0; Index < Renderer.CommandCount; Index++)
     {
         const render_command& Command = *((render_command*)Renderer.Commands.CurrentBlock->Base + Index);
@@ -1827,6 +1830,7 @@ static void RenderCommands(render_state& RenderState, renderer& Renderer, memory
             case RenderCommand_Model:
             {
                 RenderModel(Command, RenderState, Camera.ProjectionMatrix, Camera.ViewMatrix);
+                
             }
             break;
             case RenderCommand_Buffer:
@@ -1933,12 +1937,15 @@ static void RenderCommands(render_state& RenderState, renderer& Renderer, memory
     
     Renderer.UICommandCount = 0;
     Clear(&Renderer.UICommands);
+    
 }
 
 static void Render(render_state& RenderState, renderer& Renderer, memory_arena* PermArena)
 {
     LoadExtraShaders(RenderState, Renderer);
+    
     LoadTextures(RenderState, Renderer);
+    
     RenderState.CurrentExtraShader = -1;
     RenderState.ShaderAttributeCount = 0;
     
@@ -1952,9 +1959,11 @@ static void Render(render_state& RenderState, renderer& Renderer, memory_arena* 
     RenderState.ScaleY = 2.0f / RenderState.WindowHeight;
     
     glBindFramebuffer(GL_FRAMEBUFFER, RenderState.FrameBuffer);
+    
     glBindTexture(GL_TEXTURE_2D, RenderState.TextureColorBuffer);
     
     glEnable(GL_DEPTH_TEST);
+    
     glDepthFunc(GL_LESS);
     
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -1966,12 +1975,15 @@ static void Render(render_state& RenderState, renderer& Renderer, memory_arena* 
     // Second pass
     
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    
     glClearColor(Renderer.ClearColor.r, Renderer.ClearColor.g, Renderer.ClearColor.b, Renderer.ClearColor.a);
     
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     
     glBindVertexArray(RenderState.FrameBufferVAO);
+    
     UseShader(&RenderState.FrameBufferShader);
     
     SetFloatUniform(RenderState.FrameBufferShader.Program, "contrast", RenderState.Contrast);
@@ -1982,21 +1994,19 @@ static void Render(render_state& RenderState, renderer& Renderer, memory_arena* 
     SetVec2Uniform(RenderState.FrameBufferShader.Program, "screenSize", math::v2((r32)RenderState.WindowWidth,(r32)RenderState.WindowHeight));
     
     glUniform1i(RenderState.FrameBufferTex0Loc, 0);
+    
     glUniform1i(RenderState.FrameBufferTex1Loc, 1);
-    
     glActiveTexture(GL_TEXTURE0);
-    glEnable(GL_TEXTURE_2D);
     glBindTexture(GL_TEXTURE_2D, RenderState.TextureColorBuffer);
-    
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, RenderState.LightingTextureColorBuffer);
-    
     RenderState.BoundTexture = RenderState.LightingTextureColorBuffer;
     
     //Enable this if we don't do gamma correction in framebuffer shader
     //glEnable(GL_FRAMEBUFFER_SRGB);
     
     glDrawElements(GL_TRIANGLES, sizeof(RenderState.QuadIndices), GL_UNSIGNED_INT, (void*)0); 
+    
     glActiveTexture(GL_TEXTURE0);
     
     glfwSwapBuffers(RenderState.Window);
