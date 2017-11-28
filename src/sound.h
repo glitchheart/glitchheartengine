@@ -10,7 +10,7 @@ struct sound_info
     r32 Velocity[3];
     r32 Rolloff;
     b32 Loop;
-    i32 EntityHandle;
+    i32 LoopCount;
 };
 
 struct sound_effect
