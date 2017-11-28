@@ -6,7 +6,7 @@ WIGNORETEMP="-Wno-shadow -Wno-deprecated -Wno-switch-enum -Wno-switch "
 W="-Wno-null-dereference"
 
 CommonCompilerFlags="-I ../libs -I ../libs/glfw/include -I ../libs/openal/include -I ../libs/FreeType/include -I ../libs/glad/include -I ../libs/fmod/include -g"
-CommonLinkerFlags=" ../libs/glad/glad.o -L/usr/local/lib -L../libs/glfw -L../libs/fmod/lib -L./build -ldl -lfreetype -lglfw -lm -lpng -lz -lfmod -o main"
+CommonLinkerFlags=" ../libs/glad/glad.so -L/usr/local/lib -L../libs/glfw -L../libs/fmod/lib -L./build -ldl -lfreetype -lglfw -lm -lpng -lz -lfmod -o main"
 
 pushd build
 
