@@ -61,6 +61,8 @@ static void CopyFile(const char* Src, const char* Dst, b32 Overwrite, b32 Binary
     if(In == NULL)
     {
         printf("Failed in\n");
+        printf("Src: %s\n", Src);
+        printf("Dst: %s\n", Dst);
         return;
     }
     
@@ -139,7 +141,7 @@ static game_code LoadGameCode(char* LibPath, char* TempLibPath)
     
     if (!Result.IsValid)
     {
-        DEBUG_PRINT("Invalid game code\n");
+        DEBUG_PRINT("Invalid or no game code\n");
         Result.Update = UpdateStub;
     }
     
