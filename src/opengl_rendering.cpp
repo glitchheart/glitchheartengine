@@ -1,6 +1,6 @@
 static void ErrorCallback(int Error, const char *Description)
 {
-    fprintf(stderr, "Error: %s\n", Description);
+    fprintf(stderr, "Error: %d - %s\n", Error, Description);
 }
 
 static void ShowMouseCursor(render_state& RenderState, b32 Show)
@@ -50,6 +50,7 @@ inline static void PollEvents()
     glfwPollEvents();
 }
 
+[[noreturn]]
 static void CloseWindow(render_state& RenderState)
 {
     glfwDestroyWindow(RenderState.Window);
@@ -206,7 +207,7 @@ static void UseShader(shader *Shader)
     glUseProgram(Shader->Program);
 }
 
-static void InitializeFreeTypeFont(char* FontPath, int FontSize, FT_Library Library, render_font* Font, shader* Shader)
+static void InitializeFreeTypeFont(char* FontPath, int FontSize, FT_Library Library, render_font* Font)
 {
     if(FT_New_Face(Library, FontPath, 0, &Font->Face)) 
     {
@@ -290,8 +291,8 @@ static void RegisterBuffers(render_state& RenderState, GLfloat* VertexBuffer, lo
 {
     buffer* Buffer = &RenderState.Buffers[BufferHandle == -1 ? RenderState.BufferCount : BufferHandle];
     
-    Buffer->VertexBufferSize = VertexBufferSize;
-    Buffer->IndexBufferCount = IndexBufferCount;
+    Buffer->VertexBufferSize = (GLint)VertexBufferSize;
+    Buffer->IndexBufferCount = (GLint)IndexBufferCount;
     
     if(Buffer->VAO == 0)
         glGenVertexArrays(1, &Buffer->VAO);
@@ -1045,12 +1046,12 @@ static void SetMat4Uniform(GLuint ShaderHandle, const char *UniformName, math::m
     glUniformMatrix4fv(glGetUniformLocation(ShaderHandle, UniformName), 1, GL_TRUE, &V[0][0]);
 }
 
-static void SetVec4ArrayUniform(GLuint ShaderHandle, const char *UniformName, math::v4* Value, u32 Length)
+void SetVec4ArrayUniform(GLuint ShaderHandle, const char *UniformName, math::v4* Value, u32 Length)
 {
     glUniform4fv(glGetUniformLocation(ShaderHandle, UniformName), Length, (GLfloat*)&Value[0]);
 }
 
-static void SetFloatArrayUniform(GLuint ShaderHandle, const char *UniformName, r32* Value, u32 Length)
+void SetFloatArrayUniform(GLuint ShaderHandle, const char *UniformName, r32* Value, u32 Length)
 {
     glUniform1fv(glGetUniformLocation(ShaderHandle, UniformName), Length, (GLfloat*)&Value[0]);
 }
@@ -1114,8 +1115,8 @@ void RenderCircle(render_state& RenderState, math::v4 Color, r32 CenterX, r32 Ce
     for(i32 Index = 0; Index < 360; Index++)
     {
         r32 Radians = (Index * PI) / 180.0f;
-        Points[PointIndex++] = cos(Radians * Radius);
-        Points[PointIndex++] = sin(Radians * Radius);
+        Points[PointIndex++] = math::Cos(Radians * Radius);
+        Points[PointIndex++] = math::Sin(Radians * Radius);
     }
     
     glBufferData(GL_ARRAY_BUFFER, 720 * sizeof(GLfloat), &Points[0], GL_DYNAMIC_DRAW);
@@ -1224,7 +1225,7 @@ static void RenderQuad(Render_Mode Mode, render_state& RenderState, math::v4 Col
             
             if(RenderState.CurrentExtraShader != -1 || ShaderHandle != -1)
             {
-                shader_attribute* Attributes = ShaderHandle != -1 ? ShaderAttributes : RenderState.ShaderAttributes;
+                //shader_attribute* Attributes = ShaderHandle != -1 ? ShaderAttributes : RenderState.ShaderAttributes;
                 i32 AttributeCount = ShaderHandle != -1 ? ShaderAttributeCount : RenderState.ShaderAttributeCount;
                 
                 for(i32 Index = 0; Index < AttributeCount; Index++)
@@ -1394,7 +1395,7 @@ static void RenderText(render_state& RenderState, const render_font& Font, const
         Y += Font.CharacterInfo[*P].AY * RenderState.ScaleY;
         
         /* Skip glyphs that have no pixels */
-        if(!W || !H)
+        if(!(i32)W || !(i32)H)
             continue;
         
         Coords[N++] = { X2, -Y2, Font.CharacterInfo[*P].TX, 0 };
@@ -1439,7 +1440,8 @@ static void RenderWireframeCube(const render_command& Command, render_state& Ren
     glBindVertexArray(0);
 }
 
-static void RenderConsole(render_state& RenderState, console* Console)
+//@Deprecated: Uses old-style rendering
+void RenderConsole(render_state& RenderState, console* Console)
 {
     glBindVertexArray(RenderState.RectVAO);
     
@@ -1596,9 +1598,9 @@ static void RenderModel(const render_command& Command, render_state& RenderState
             
             for(i32 Index = 0; Index < Command.Model.BoneCount; Index++)
             {
-                char Buffer[20];
-                sprintf(Buffer, "bones[%d]", Index);
-                SetMat4Uniform(Shader.Program, Buffer, Command.Model.BoneTransforms[Index]);
+                char SBuffer[20];
+                sprintf(SBuffer, "bones[%d]", Index);
+                SetMat4Uniform(Shader.Program, SBuffer, Command.Model.BoneTransforms[Index]);
             }
         }
         else
@@ -1660,9 +1662,9 @@ static void RenderBuffer(const render_command& Command, render_state& RenderStat
     glBindVertexArray(0);
 }
 
-static void LoadFont(render_state& RenderState, char* Path, i32 Size, char* Name)
+static void LoadFont(render_state& RenderState, char* Path, i32 Size)
 {
-    InitializeFreeTypeFont(Path, Size, RenderState.FTLibrary, &RenderState.Fonts[RenderState.FontCount++], &RenderState.StandardFontShader);
+    InitializeFreeTypeFont(Path, Size, RenderState.FTLibrary, &RenderState.Fonts[RenderState.FontCount++]);
 }
 
 
@@ -1674,7 +1676,7 @@ static void RenderCommands(render_state& RenderState, renderer& Renderer, memory
         
         if(Data.IndexBufferCount == 0)
         {
-            RegisterVertexBuffer(RenderState, Data.VertexBuffer, Data.VertexBufferSize, Data.ShaderType, PermArena, Data.ExistingHandle);
+            RegisterVertexBuffer(RenderState, Data.VertexBuffer, (i32)Data.VertexBufferSize, Data.ShaderType, PermArena, Data.ExistingHandle);
         }
         else
         {
@@ -1687,7 +1689,7 @@ static void RenderCommands(render_state& RenderState, renderer& Renderer, memory
     {
         font_data Data = Renderer.Fonts[Index];
         
-        LoadFont(RenderState, Data.Path, Data.Size, Data.Name);
+        LoadFont(RenderState, Data.Path, Data.Size);
     }
     
     auto& Camera = Renderer.Cameras[Renderer.CurrentCameraHandle];
@@ -1869,6 +1871,8 @@ static void RenderCommands(render_state& RenderState, renderer& Renderer, memory
                 RenderState.ShaderAttributeCount = 0;
             }
             break;
+            default:
+            break;
         }
     }
     
@@ -1931,6 +1935,8 @@ static void RenderCommands(render_state& RenderState, renderer& Renderer, memory
                 RenderState.ShaderAttributes = 0;
                 RenderState.ShaderAttributeCount = 0;
             }
+            break;
+            default:
             break;
         }
     }

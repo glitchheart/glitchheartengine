@@ -14,14 +14,14 @@
 #include "fmod.h"
 
 #ifdef __GNUC__ 
-static const char *FMOD_ErrorString(FMOD_RESULT errcode) __attribute__((unused));
+//static const char *FMOD_ErrorString(FMOD_RESULT errcode) __attribute__((unused));
 #endif
 
 static const char *FMOD_ErrorString(FMOD_RESULT errcode)
 {
     switch (errcode)
     {
-/*$ preserve end $*/
+        /*$ preserve end $*/
         case FMOD_OK:                            return "No errors.";
         case FMOD_ERR_BADCOMMAND:                return "Tried to call a function on a data type that does not allow this type of functionality (ie calling Sound::lock on a streaming sound).";
         case FMOD_ERR_CHANNEL_ALLOC:             return "Error trying to allocate a channel.";
@@ -105,7 +105,7 @@ static const char *FMOD_ErrorString(FMOD_RESULT errcode)
         case FMOD_ERR_RECORD_DISCONNECTED:       return "The specified recording driver has been disconnected.";
         case FMOD_ERR_TOOMANYSAMPLES:            return "The length provided exceeds the allowable limit.";
         default :                                return "Unknown error.";
-/*$ preserve start $*/
+        /*$ preserve start $*/
     };
 }
 

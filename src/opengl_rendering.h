@@ -44,7 +44,7 @@ char* ShaderEnumToStr(Shader_Type Shader)
     return 0;
 }
 
-char* ShaderPaths[Shader_Count] =
+static char* ShaderPaths[Shader_Count] =
 {
     "../engine_assets/shaders/textureshader",
     "../engine_assets/shaders/tileshader",

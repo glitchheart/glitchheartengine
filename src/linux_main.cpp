@@ -36,7 +36,7 @@ platform_api Platform;
 #include "fmod_sound.cpp"
 #include "filehandling.h"
 
-input_controller InputController;
+static input_controller InputController;
 
 #include "keys_glfw.h"
 #include "opengl_rendering.cpp"
@@ -46,6 +46,9 @@ static void CopyFile(const char* Src, const char* Dst, b32 Overwrite, b32 Binary
 {
     FILE* In;
     FILE* Out;
+    
+    //@Incomplete (Niels): Check if file exists + Overwrite
+    (void)Overwrite;
     
     if(Binary)
     {
@@ -291,7 +294,7 @@ inline void LoadConfig(const char* FilePath, config_data* ConfigData, memory_are
 }
 
 // Global
-linux_memory_state LinuxMemoryState;
+static linux_memory_state LinuxMemoryState;
 
 PLATFORM_ALLOCATE_MEMORY(LinuxAllocateMemory)
 {
@@ -511,9 +514,10 @@ int main(int Argc, char** Args)
         debug_info TempDebugInfo = {};
         TempDebugInfo.Header = PushString(&DebugArena, "Temporary memory");
         AddDebugValue(&DebugArena, &TempDebugInfo, "Blocks", LinuxMemoryState.TempCount);
-        AddDebugValue(&DebugArena, &TempDebugInfo, "Total allocated", LinuxMemoryState.TempSizeAllocated);
+        AddDebugValue(&DebugArena, &TempDebugInfo, "Total allocated", (i32)LinuxMemoryState.TempSizeAllocated);
         
         auto DebugMemoryInfo = GameMemory.DebugState->DebugMemoryInfo;
+        (void)DebugMemoryInfo;
         
         GameMemory.DebugState->DebugMemoryInfo.DebugInfo[GameMemory.DebugState->DebugMemoryInfo.DebugInfoCount++] = TempDebugInfo;
         
@@ -521,14 +525,14 @@ int main(int Argc, char** Args)
         debug_info PermDebugInfo = {};
         PermDebugInfo.Header = PushString(&DebugArena, "Permanent memory");
         AddDebugValue(&DebugArena, &PermDebugInfo, "Blocks", LinuxMemoryState.PermanentBlocks);
-        AddDebugValue(&DebugArena, &PermDebugInfo, "Total allocated", LinuxMemoryState.PermanentSizeAllocated);
+        AddDebugValue(&DebugArena, &PermDebugInfo, "Total allocated", (i32)LinuxMemoryState.PermanentSizeAllocated);
         
         GameMemory.DebugState->DebugMemoryInfo.DebugInfo[GameMemory.DebugState->DebugMemoryInfo.DebugInfoCount++] = PermDebugInfo;
         
         debug_info TotalDebugInfo = {};
         TotalDebugInfo.Header = PushString(&DebugArena, "Total memory");
         AddDebugValue(&DebugArena, &TotalDebugInfo, "Blocks", LinuxMemoryState.TempCount + LinuxMemoryState.PermanentBlocks);
-        AddDebugValue(&DebugArena, &TotalDebugInfo, "Total allocated", LinuxMemoryState.TempSizeAllocated + LinuxMemoryState.PermanentSizeAllocated);
+        AddDebugValue(&DebugArena, &TotalDebugInfo, "Total allocated", (i32)(LinuxMemoryState.TempSizeAllocated + LinuxMemoryState.PermanentSizeAllocated));
         
         GameMemory.DebugState->DebugMemoryInfo.DebugInfo[GameMemory.DebugState->DebugMemoryInfo.DebugInfoCount++] = TotalDebugInfo;
 #endif

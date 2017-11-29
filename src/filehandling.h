@@ -30,12 +30,11 @@ static GLchar* LoadShaderFromFile(const char* Path, memory_arena* Arena)
     
     FILE *File;
     File = fopen(Path, "rb");
-    char* Err = strerror(errno);
     
     if(File)
     {
         fseek(File, 0, SEEK_END);
-        u32 Size = ftell(File);
+        u32 Size = (u32)ftell(File);
         fseek(File, 0, SEEK_SET);
         
         Source = PushSize(Arena, Size + 1, GLchar);

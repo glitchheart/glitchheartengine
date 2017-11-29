@@ -31,6 +31,7 @@ static void LoadSounds(sound_device* SoundDevice, sound_commands* Commands)
 
 static void CleanupSound(sound_device* SoundDevice)
 {
+    (void)SoundDevice;
     //@Incomplete: Cleanup FMOD
 }
 
@@ -63,6 +64,8 @@ FMOD_RESULT F_CALLBACK ChannelControlCallback(FMOD_CHANNELCONTROL *ChanControl, 
         {
             
         }
+        break;
+        default:
         break;
     }
     
