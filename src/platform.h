@@ -5,14 +5,16 @@
 
 #define ArrayCount(Array) (sizeof(Array) / sizeof(Array[0])) 
 
+#define COMMA_IF_PARENS(...) ,
+
 #if GLITCH_DEBUG
-#define DEBUG_PRINT(format, ...) printf(format, ## __VA_ARGS__)
+#define DEBUG_PRINT(format, ...) printf(format , ## __VA_ARGS__)
 #else
 #define DEBUG_PRINT(format, ...)
 #endif
 
 #if GLITCH_DEBUG
-#define DEBUG_PRINT_V3(vec, ...) printf(__VA_ARGS__ "" "(%f, %f, %f)\n", vec.x, vec.y, vec.z)
+#define DEBUG_PRINT_V3(vec, ...) printf(## __VA_ARGS__ "" "(%f, %f, %f)\n", vec.x, vec.y, vec.z)
 #else
 #define DEBUG_PRINT_V3(vec, ...)
 #endif

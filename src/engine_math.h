@@ -198,6 +198,8 @@ namespace math
         v2(r64 X, i32 Y) : X((r32)X), Y((r32)Y) {}
         v2(r64 X, r32 Y) : X((r32)X), Y(Y) {}
         
+        v2& operator=(const v2& V) = default;
+        
         r32 operator[](i32 I)
         {
             return this->E[I];
@@ -382,6 +384,8 @@ namespace math
         v3(r64 X, r32 Y, r64 Z) : X((r32)X), Y(Y), Z((r32)Z) {}
         v3(r64 X, r32 Y, r32 Z) : X((r32)X), Y(Y), Z(Z) {}
         v3(v2 V, r32 Z) : X(V.X), Y(V.Y), Z(Z) {}
+        
+        v3& operator=(const v3& V) = default;
         
         r32 operator[](i32 I)
         {
@@ -629,6 +633,8 @@ namespace math
         v4(v3 O, r32 W) : X(O.X), Y(O.Y), Z(O.Z), W(W) {}
         
         v4(v2 V, r32 Z, r32 W) : X(V.X), Y(V.Y), Z(Z), W(W) {} 
+        
+        v4& operator=(const v4& V) = default;
         
         r32 operator[](i32 I)
         {
@@ -1251,6 +1257,8 @@ namespace math
             return this->V[Idx];
         }
         
+        m4& operator=(const m4& M) = default;
+        
         m4() : V{{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0}} {}
         m4(r32 M11, r32 M12, r32 M13, r32 M14, 
            r32 M21, r32 M22, r32 M23, r32 M24,
@@ -1373,11 +1381,13 @@ namespace math
         
         // Identity quaternion
         quat() : X(0.0f), Y(0.0f), Z(0.0f), W(1.0f) {}
-        quat(r32 X, r32 Y, r32 Z, r32 Angle) : Axis(v3(X * sin(Angle / 2.0f), Y * sin(Angle / 2.0f), Z * sin(Angle / 2.0f))), Angle(cos(Angle / 2.0f)) {}
+        quat(r32 X, r32 Y, r32 Z, r32 Angle) : Axis(v3(X * (r32)sin(Angle / 2.0f), Y * (r32)sin(Angle / 2.0f), Z * (r32)sin(Angle / 2.0f))), Angle((r32)cos(Angle / 2.0f)) {}
         quat(v3 Axis, r32 Angle) : 
-        Axis(v3(Axis.X * sin(Angle / 2.0f), Axis.Y * sin(Angle / 2.0f), Axis.Z * sin(Angle / 2.0f))),
-        Angle(cos(Angle / 2.0f)) {}
+        Axis(v3(Axis.X * (r32)sin(Angle / 2.0f), Axis.Y * (r32)sin(Angle / 2.0f), Axis.Z * (r32)sin(Angle / 2.0f))),
+        Angle((r32)cos(Angle / 2.0f)) {}
         quat(const quat& O) : Axis(O.Axis), Angle(O.Angle) {}
+        
+        quat& operator=(const quat& Q) = default;
         
         inline quat operator-()
         {
@@ -1486,6 +1496,10 @@ namespace math
     r32 Square(r32 V);
     r32 Sin(r32 V);
     r32 Cos(r32 V);
+    r32 Acos(r32 V);
+    r32 Sqrt(r32 V);
+    r32 Pow(r32 V, r32 E);
+    r32 Pow(r32 V, i32 E);
     r32 Length(v2 V);
     r32 Length(v3 V);
     r32 Length(v4 V);
@@ -1570,7 +1584,7 @@ namespace math
     {
         r32 Result = 0.0f;
         Result = Q.W * Q.W + Q.X * Q.X + Q.Y * Q.Y + Q.Z * Q.Z;
-        Result = sqrt(Result);
+        Result = Sqrt(Result);
         return Result;
     }
     
@@ -1602,13 +1616,13 @@ namespace math
         }
         
         Clamp(DotP, -1.0f, 1.0f);
-        auto Theta_0 = acos(DotP);
+        auto Theta_0 = Acos(DotP);
         auto Theta = Theta_0 * T;
         
         auto Q2 = Q1 - Q0 * DotP;
         Q2 = Normalize(Q2);
         
-        auto Result = Q0 * cos(Theta) + Q2 * sin(Theta);
+        auto Result = Q0 * Cos(Theta) + Q2 * Sin(Theta);
         Result = Normalize(Result);
         return Result;
     }
@@ -1654,10 +1668,10 @@ namespace math
         {
             // Standard case (slerp)
             r32 Omega, Sinom;
-            Omega = acos(Cosom); // extract theta from dot product's cos theta
-            Sinom = sin(Omega);
-            Sclp = sin((1.0f - F) * Omega) / Sinom;
-            Sclq = sin(F * Omega) / Sinom;
+            Omega = Acos(Cosom); // extract theta from dot product's cos theta
+            Sinom = Sin(Omega);
+            Sclp = Sin((1.0f - F) * Omega) / Sinom;
+            Sclq = Sin(F * Omega) / Sinom;
         } 
         else
         {
@@ -1983,32 +1997,32 @@ namespace math
     
     inline r32 Distance(v2 V1, v2 V2)
     {
-        return sqrt(pow(V1.X - V2.X, 2.0f) + pow(V1.Y - V2.Y, 2.0f));
+        return Sqrt(Pow(V1.X - V2.X, 2.0f) + Pow(V1.Y - V2.Y, 2.0f));
     }
     
     inline r32 Distance(v3 V1, v3 V2)
     {
-        return sqrt(pow(V1.X - V2.X, 2.0f) + pow(V1.Y - V2.Y, 2.0f) + pow(V1.Z - V2.Z, 2.0f));
+        return Sqrt(Pow(V1.X - V2.X, 2.0f) + Pow(V1.Y - V2.Y, 2.0f) + Pow(V1.Z - V2.Z, 2.0f));
     }
     
     inline r32 Distance(v4 V1, v4 V2)
     {
-        return sqrt(pow(V1.X - V2.X, 2.0f) + pow(V1.Y - V2.Y, 2.0f) + pow(V1.Z - V2.Z, 2.0f) + pow(V1.W - V2.W,2.0f));
+        return Sqrt(Pow(V1.X - V2.X, 2.0f) + Pow(V1.Y - V2.Y, 2.0f) + Pow(V1.Z - V2.Z, 2.0f) + Pow(V1.W - V2.W,2.0f));
     }
     
     inline i32 Distance(v2i V1, v2i V2)
     {
-        return (i32)sqrt(pow(V1.X - V2.X, 2) + pow(V1.Y - V2.Y, 2));
+        return (i32)Sqrt(Pow(V1.X - V2.X, 2) + Pow(V1.Y - V2.Y, 2));
     }
     
     inline i32 Distance(v3i V1, v3i V2)
     {
-        return (i32)sqrt(pow(V1.X - V2.X, 2) + pow(V1.Y - V2.Y, 2) + pow(V1.Z - V2.Z, 2));
+        return (i32)Sqrt(Pow(V1.X - V2.X, 2) + Pow(V1.Y - V2.Y, 2) + Pow(V1.Z - V2.Z, 2));
     }
     
     inline r32 Distance(v3i V1, v3 V2)
     {
-        return sqrt(pow(V1.X - V2.X, 2) + pow(V1.Y - V2.Y, 2) + pow(V1.Z - V2.Z, 2));
+        return Sqrt(Pow(V1.X - V2.X, 2) + Pow(V1.Y - V2.Y, 2) + Pow(V1.Z - V2.Z, 2));
     }
     
     inline i32 Floor(r32 V)
@@ -2032,6 +2046,38 @@ namespace math
         Result.Z = (r32)Floor(V.Z);
         return Result;
     }
+    
+    
+    inline r32 Cos(r32 V)
+    {
+        return (r32)cos(V);
+    }
+    
+    inline r32 Sin(r32 V)
+    {
+        return (r32)sin(V);
+    }
+    
+    inline r32 Acos(r32 V)
+    {
+        return (r32)acos(V);
+    }
+    
+    inline r32 Sqrt(r32 V)
+    {
+        return (r32)sqrt(V);
+    }
+    
+    inline r32 Pow(r32 V, r32 E)
+    {
+        return (r32)pow(V, E);
+    }
+    
+    inline r32 Pow(r32 V, i32 E)
+    {
+        return (r32)pow(V, E);
+    }
+    
     
     inline i32 Ceil(r32 V)
     {
@@ -2094,29 +2140,19 @@ namespace math
         return V * V;
     }
     
-    inline r32 Sin(r32 V)
-    {
-        return sin(V);
-    }
-    
-    inline r32 Cos(r32 V)
-    {
-        return cos(V);
-    }
-    
     inline r32 Length(v2 V)
     {
-        return sqrt(pow(V.X,2) + pow(V.Y,2));
+        return Sqrt(Pow(V.X,2) + Pow(V.Y,2));
     }
     
     inline r32 Length(v3 V)
     {
-        return sqrt(pow(V.X,2) + pow(V.Y,2) + pow(V.Z,2));
+        return Sqrt(Pow(V.X, 2) + Pow(V.Y,2) + Pow(V.Z,2));
     }
     
     inline r32 Length(v4 V)
     {
-        return sqrt(pow(V.X,2) + pow(V.Y,2) + pow(V.Z,2) + pow(V.W,2));
+        return Sqrt(Pow(V.X,2) + Pow(V.Y,2) + Pow(V.Z,2) + Pow(V.W,2));
     }
     
     inline v2 Normalize(v2 V)
@@ -2157,16 +2193,16 @@ namespace math
     
     inline r32 GetAngleInRadians(quat Q)
     {
-        return acos(Q.w) * 2.0f;
+        return Acos(Q.w) * 2.0f;
     }
     
     inline v3 GetAxis(quat Q)
     {
         r32 Angle = GetAngleInRadians(Q);
         v3 Result;
-        Result.x = Q.x / sin(Angle / 2.0f);
-        Result.y = Q.y / sin(Angle / 2.0f); 
-        Result.z = Q.z / sin(Angle / 2.0f); 
+        Result.x = Q.x / Sin(Angle / 2.0f);
+        Result.y = Q.y / Sin(Angle / 2.0f); 
+        Result.z = Q.z / Sin(Angle / 2.0f); 
         return Result;
     }
     
@@ -2554,8 +2590,8 @@ struct rect
     r32 Height;
     
     rect() {}
-    rect(r32 X, r32 Y, r32 Width, r32 Height) : X(X), Y(Y), Width(Width), Height(Height) {}
-    rect(i32 X, i32 Y, i32 Width, i32 Height) : X((r32)X), Y((r32)Y), Width((r32)Width), Height((r32)Height) {}
+    rect(r32 X_, r32 Y_, r32 Width_, r32 Height_) : X(X_), Y(Y_), Width(Width_), Height(Height_) {}
+    rect(i32 X_, i32 Y_, i32 Width_, i32 Height_) : X((r32)X_), Y((r32)Y_), Width((r32)Width_), Height((r32)Height_) {}
 };
 
 inline r32 Sign(math::v2 P1, math::v2 P2, math::v2 P3)

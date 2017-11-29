@@ -62,7 +62,7 @@ struct debug_state
 
 struct memory_arena;
 
-inline void AddDebugValue(memory_arena* DebugArena, debug_info* DebugInfo, char* Description, i32 Value)
+inline void AddDebugValue(memory_arena* DebugArena, debug_info* DebugInfo, const char* Description, i32 Value)
 {
     debug_value DebugValue = {};
     DebugValue.Type = DB_Int;

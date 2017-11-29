@@ -41,7 +41,7 @@ static inline b32 GetJoystickKey(Controller_Code Key, input_controller* InputCon
     return InputController->JoystickKeysDown[Key];
 }
 
-static r32 GetJoystickAxisValue(input_controller* InputController, Stick Stick = Stick_Left)
+r32 GetJoystickAxisValue(input_controller* InputController, Stick Stick = Stick_Left)
 {
     i32 Axis = Stick == Stick_Left ? 0 : 2;
     return InputController->Axes[Axis];
@@ -259,12 +259,12 @@ static inline r32 GetInputY(input_controller* InputController, Stick Stick = Sti
 #define KEY_UP(Key) GetKeyUp(Key, InputController)
 #define JOYSTICK_KEY(Key) GetJoystickKey(Key, InputController)
 #define JOYSTICK_KEY_DOWN(Key) GetJoystickKeyDown(Key, InputController)
-#define JOYSTICK_AXIS_X_DOWN(...) GetJoystickAxisXDown(InputController,__VA_ARGS__)
-#define JOYSTICK_AXIS_Y_DOWN(Up, ...) GetJoystickAxisYDown(InputController,Up, __VA_ARGS__)
+#define JOYSTICK_AXIS_X_DOWN(...) GetJoystickAxisXDown(InputController ,##__VA_ARGS__)
+#define JOYSTICK_AXIS_Y_DOWN(Up, ...) GetJoystickAxisYDown(InputController,Up , ##__VA_ARGS__)
 #define MOUSE(Key) GetMouseButton(Key, InputController)
 #define MOUSE_DOWN(Key) GetMouseButtonDown(Key, InputController)
 #define MOUSE_UP(Key) GetMouseButtonUp(Key, InputController)
 #define ACTION_DOWN(Action) GetActionButtonDown(Action, InputController)
 #define ACTION(Action) GetActionButton(Action, InputController)
-#define INPUT_X(...) GetInputX(InputController,__VA_ARGS__)
-#define INPUT_Y(...) GetInputY(InputController,__VA_ARGS__)
+#define INPUT_X(...) GetInputX(InputController , ##__VA_ARGS__)
+#define INPUT_Y(...) GetInputY(InputController , ##__VA_ARGS__)

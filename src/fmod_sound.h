@@ -17,5 +17,3 @@ struct sound_device
     FMOD_CHANNELGROUP* ChannelGroups;
     FMOD_CHANNELGROUP* MasterGroup;
 };
-
-
