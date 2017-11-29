@@ -1,2 +1,2 @@
 run-build:
-  script: -build
+  script: ./build.sh
