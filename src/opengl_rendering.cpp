@@ -865,7 +865,7 @@ static void InitializeOpenGL(render_state& RenderState, renderer& Renderer, conf
     //@Incomplete: Figure something out here. Ask for comptabible version etc
 #ifdef _WIN32
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 #elif __linux
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
@@ -1485,43 +1485,7 @@ static void RenderLine(const render_command& Command, render_state& RenderState,
 static void RenderText(const render_command& Command, render_state& RenderState)
 {
     render_font RenderFont;
-    
     RenderFont = RenderState.Fonts[Command.Text.FontHandle];
-    /*
-    switch(Command.Text.FontType)
-    {
-    case Font_Inconsolata:
-    {
-    RenderFont = RenderState.InconsolataFont;
-    }
-    break;
-    case Font_InconsolataSmall:
-    {
-    RenderFont = RenderState.SmallInconsolataFont;
-    }
-    break;
-    case Font_Menu:
-    {
-    RenderFont = RenderState.MenuFont;
-    }
-    break;
-    case Font_Button:
-    {
-    RenderFont = RenderState.ButtonFont;
-    }
-    break;
-    case Font_Roboto:
-    {
-    RenderFont = RenderState.RobotoFont;
-    }
-    break;
-    case Font_Title:
-    {
-    RenderFont = RenderState.TitleFont;
-    }
-    break;
-    }
-    */
     RenderText(RenderState, RenderFont, Command.Text.Color, Command.Text.Text, Command.Text.Position.x, Command.Text.Position.y, Command.Text.Alignment);
 }
 

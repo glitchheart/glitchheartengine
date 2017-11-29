@@ -149,7 +149,21 @@ static void TickAnimations(renderer& Renderer, r64 DeltaTime)
     }
 }
 
-static void AddAnimation(renderer& Renderer, spritesheet_animation Animation, i32* InfoHandle)
+static void RegisterAnimationInfo(i32* InfoHandle, i32 WithAnimationHandle, renderer& Renderer)
+{
+    *InfoHandle = Renderer.SpritesheetAnimationInfoCount;
+    spritesheet_animation_info& Info = Renderer.SpritesheetAnimationInfos[Renderer.SpritesheetAnimationInfoCount++];
+    Info.AnimationHandle = WithAnimationHandle;
+    Info.FrameIndex = 0;
+    Info.Playing = true;
+    Info.CurrentTime = 0.0f;
+    Info.FreezeFrame = false;
+    
+    Assert(Renderer.SpritesheetAnimationCount < MAX_SPRITESHEET_ANIMATION_INFOS);
+}
+
+// The InfoHandle is used to be able to reference the same animation without having to load the animation again. 
+static void AddAnimation(renderer& Renderer, spritesheet_animation Animation, i32* InfoHandle, i32* AnimationHandle)
 {
     *InfoHandle = Renderer.SpritesheetAnimationInfoCount;
     spritesheet_animation_info& Info = Renderer.SpritesheetAnimationInfos[Renderer.SpritesheetAnimationInfoCount++];
@@ -158,6 +172,8 @@ static void AddAnimation(renderer& Renderer, spritesheet_animation Animation, i3
     Info.Playing = true;
     Info.CurrentTime = 0.0f;
     Info.FreezeFrame = false;
+    
+    *AnimationHandle = Info.AnimationHandle;
     
     Renderer.SpritesheetAnimations[Renderer.SpritesheetAnimationCount++] = Animation;
     
