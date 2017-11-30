@@ -41,28 +41,18 @@ FMOD_RESULT F_CALLBACK ChannelControlCallback(FMOD_CHANNELCONTROL *ChanControl, 
     {
         case FMOD_CHANNELCONTROL_CALLBACK_END:
         {
-            if(ControlType == FMOD_CHANNELCONTROL_CHANNEL)
-            {
-                FMOD_CHANNEL* Channel = (FMOD_CHANNEL*)ChanControl;
-                i32 LoopCount;
-                FMOD_Channel_GetLoopCount(Channel, &LoopCount);
-                DEBUG_PRINT("Channel loopCount: %d\n", LoopCount);
-            }
         }
         break;
         case FMOD_CHANNELCONTROL_CALLBACK_VIRTUALVOICE:
         {
-            
         }
         break;
         case FMOD_CHANNELCONTROL_CALLBACK_SYNCPOINT:
         {
-            
         }
         break;
         case FMOD_CHANNELCONTROL_CALLBACK_OCCLUSION:
         {
-            
         }
         break;
         default:
@@ -72,34 +62,38 @@ FMOD_RESULT F_CALLBACK ChannelControlCallback(FMOD_CHANNELCONTROL *ChanControl, 
     return FMOD_OK;
 }
 
-static void PlaySound(sound_effect* SoundEffect, sound_device* SoundDevice, sound_commands* Commands)
+static void PlaySound(const sound_effect& SoundEffect, sound_device* SoundDevice, sound_commands* Commands)
 {
-    if(SoundEffect)
+    auto Sound = SoundDevice->Sounds[SoundEffect.Buffer];
+    FMOD_CHANNEL* Channel;
+    auto Result = FMOD_System_PlaySound(SoundDevice->System, Sound, 0, Commands->Paused, &Channel);
+    FMOD_Channel_SetPitch(Channel, SoundEffect.SoundInfo.Pitch);
+    
+    Assert(SoundEffect.SoundInfo.Loop >= -1);
+    
+    if(SoundEffect.SoundInfo.Loop)
     {
-        auto Sound = SoundDevice->Sounds[SoundEffect->Buffer];
-        FMOD_CHANNEL* Channel;
-        auto Result = FMOD_System_PlaySound(SoundDevice->System, Sound, 0, Commands->Paused, &Channel);
-        FMOD_Channel_SetPitch(Channel, SoundEffect->SoundInfo.Pitch);
-        
-        if(SoundEffect->SoundInfo.Loop)
-        {
-            i32 LoopCount = SoundEffect->SoundInfo.LoopCount != 1 ? -1 : 1;
-            FMOD_Channel_SetMode(Channel, FMOD_LOOP_NORMAL);
-            FMOD_Channel_SetLoopCount(Channel, LoopCount);
-        }
-        
-        FMOD_Channel_SetChannelGroup(Channel, SoundDevice->MasterGroup);
-        if(Result != FMOD_OK)
-        {
-            FMODError(Result);
-        }
+        i32 LoopCount = SoundEffect.SoundInfo.LoopCount != 1 ? -1 : 1;
+        FMOD_Channel_SetMode(Channel, FMOD_DEFAULT | FMOD_LOOP_NORMAL);
+        FMOD_Channel_SetLoopCount(Channel, LoopCount);
+    }
+    else
+    {
+        FMOD_Channel_SetMode(Channel, FMOD_DEFAULT | FMOD_LOOP_OFF);
+        FMOD_Channel_SetLoopCount(Channel, 0);
+    }
+    
+    FMOD_Channel_SetChannelGroup(Channel, SoundDevice->MasterGroup);
+    if(Result != FMOD_OK)
+    {
+        FMODError(Result);
     }
 }
 
 static inline void ResetCommands(sound_commands* Commands)
 {
-    Clear(&Commands->SoundArena);
     Commands->SoundCount = 0;
+    Clear(&Commands->SoundArena);
 }
 
 static void PlaySounds(sound_device* SoundDevice, sound_commands* Commands)
@@ -126,15 +120,17 @@ static void PlaySounds(sound_device* SoundDevice, sound_commands* Commands)
                 Sound < Commands->SoundCount;
                 Sound++)
             {
-                auto SoundEffect = (sound_effect*)&Commands->SoundArena.CurrentBlock->Base[Sound];
+                const sound_effect& SoundEffect = *((sound_effect*)Commands->SoundArena.CurrentBlock->Base + Sound);
+                
                 PlaySound(SoundEffect, SoundDevice, Commands);
             }
-            ResetCommands(Commands);
         }
-        if(FMOD_System_Update(SoundDevice->System) != FMOD_OK)
+        
+        /*if(FMOD_System_Update(SoundDevice->System) != FMOD_OK)
         {
             DEBUG_PRINT("FMOD Failed updating\n");
-        }
+        }*/
+        ResetCommands(Commands);
     }
 }
 
