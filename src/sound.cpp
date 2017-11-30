@@ -12,6 +12,7 @@ static void LoadSound(sound_commands* Commands, char* FilePath, i32* Handle)
     
     if(Handle)
         *Handle = Commands->Sounds++;
+    
     Commands->LoadSounds = true;
     Commands->SoundsToLoad.FilePaths[Commands->SoundsToLoad.FilesLength] = PushTempString(FilePath);
     Commands->SoundsToLoad.FileNames[Commands->SoundsToLoad.FilesLength] = PushTempString(FileName);
@@ -42,16 +43,13 @@ static inline void PlaySoundEffect(sound_commands* SoundCommands, i32 BufferHand
     SoundCommands->SoundCount++;
     SoundEffect->Buffer = BufferHandle;
     SoundEffect->SoundInfo.Pitch = Pitch;
-    SoundEffect->SoundInfo.Position[0] = X; 
-    SoundEffect->SoundInfo.Position[1] = Y;
-    SoundEffect->SoundInfo.Position[2] = 1.0f;
     SoundEffect->SoundInfo.Rolloff = RollOff;
     SoundEffect->SoundInfo.Loop = Loop;
     SoundEffect->SoundInfo.LoopCount = LoopCount;
     SoundEffect->SoundInfo.Gain = SoundCommands->SFXVolume;
 }
 
-static inline void PlayMusicTrack(sound_commands* SoundCommands, i32 BufferHandle, r32 Pitch = 1.0f, b32 Loop = true, i32 LoopCount = -1)
+static inline void PlayMusicTrack(sound_commands* SoundCommands, i32 BufferHandle, r32 Pitch = 1.0f, b32 Loop = false, i32 LoopCount = -1)
 {
     sound_effect* SoundEffect = PushStruct(&SoundCommands->SoundArena, sound_effect);
     SoundCommands->SoundCount++;
