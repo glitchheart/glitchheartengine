@@ -163,17 +163,9 @@ static void RegisterAnimationInfo(i32* InfoHandle, i32 WithAnimationHandle, rend
 }
 
 // The InfoHandle is used to be able to reference the same animation without having to load the animation again. 
-static void AddAnimation(renderer& Renderer, spritesheet_animation Animation, i32* InfoHandle, i32* AnimationHandle)
+static void AddAnimation(renderer& Renderer, spritesheet_animation Animation, i32* AnimationHandle)
 {
-    *InfoHandle = Renderer.SpritesheetAnimationInfoCount;
-    spritesheet_animation_info& Info = Renderer.SpritesheetAnimationInfos[Renderer.SpritesheetAnimationInfoCount++];
-    Info.AnimationHandle = Renderer.SpritesheetAnimationCount;
-    Info.FrameIndex = 0;
-    Info.Playing = true;
-    Info.CurrentTime = 0.0f;
-    Info.FreezeFrame = false;
-    
-    *AnimationHandle = Info.AnimationHandle;
+    *AnimationHandle = Renderer.SpritesheetAnimationCount;
     
     Renderer.SpritesheetAnimations[Renderer.SpritesheetAnimationCount++] = Animation;
     
