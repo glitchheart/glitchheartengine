@@ -868,7 +868,7 @@ static void InitializeOpenGL(render_state& RenderState, renderer& Renderer, conf
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 #elif __linux
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
 #endif
     
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
