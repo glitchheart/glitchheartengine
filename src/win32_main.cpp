@@ -5,7 +5,7 @@
 //#include <crtdbg.h>  
 
 #define DEBUG
-#include "platform.h"
+//#include "platform.h"
 #include "shared.h"
 
 #if GLITCH_DEBUG
@@ -24,6 +24,7 @@
 #include "win32_main.h"
 
 platform_api Platform;
+log_state LogState;
 
 #include "gmap.cpp"
 #include "keycontroller.h"
@@ -56,8 +57,6 @@ static FILETIME GetLastWriteTime(const char* FilePath)
     }
     return LastWriteTime;
 }
-
-
 
 static game_code LoadGameCode(char* DllPath, char* TempDllPath)
 {
@@ -425,6 +424,7 @@ inline PLATFORM_FILE_EXISTS(Win32FileExists)
 
 int main(int Argc, char** Args)
 {
+    
     game_memory GameMemory = {};
     
     GameMemory.ShouldReload = true;
@@ -438,6 +438,10 @@ int main(int Argc, char** Args)
     Platform = GameMemory.PlatformAPI;
     
     win32_state* Win32State = BootstrapPushStruct(win32_state, PermArena);
+    
+    LogState = GameMemory.LogState;
+    InitLog(LFlag_File | LFlag_Debug, Concat("../log_", "", &Win32State->PermArena));
+    
     
     char* DllPath = "game.dll";
     char* TempDllPath = "game_temp.dll";
@@ -500,6 +504,7 @@ int main(int Argc, char** Args)
         Renderer.WindowHeight = RenderState.WindowHeight;
         
         memcpy(Renderer.Viewport, RenderState.Viewport, sizeof(i32) * 4);
+        
         
         //calculate deltatime
         CurrentFrame = GetTime();
@@ -578,9 +583,11 @@ int main(int Argc, char** Args)
         
         GameMemory.DebugState->DebugMemoryInfo.DebugInfo[GameMemory.DebugState->DebugMemoryInfo.DebugInfoCount++] = TotalDebugInfo;
 #endif
+        UpdateLog();
         ClearTempMemory();
     }
     
+    CloseLog();
     CleanupSound(&SoundDevice);
     CloseWindow(RenderState);
     //_CrtDumpMemoryLeaks();
