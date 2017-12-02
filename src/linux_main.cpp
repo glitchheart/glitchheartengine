@@ -398,6 +398,9 @@ int main(int Argc, char** Args)
     
     linux_state* LinuxState = BootstrapPushStruct(linux_state, PermArena);
     
+    LogState = GameMemory.LogState;
+    InitLog(LFlag_File | LFlag_Debug, Concat("../log_", "", &LinuxState->PermArena));
+    
     char DirBuffer[256];
     getcwd(DirBuffer, 256);
     
@@ -536,6 +539,7 @@ int main(int Argc, char** Args)
         
         GameMemory.DebugState->DebugMemoryInfo.DebugInfo[GameMemory.DebugState->DebugMemoryInfo.DebugInfoCount++] = TotalDebugInfo;
 #endif
+        UpdateLog();
         ClearTempMemory();
     }
     

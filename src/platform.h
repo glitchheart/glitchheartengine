@@ -49,11 +49,14 @@
 
 #define OffsetOf(type, Member) (umm)&(((type *)0)->Member)
 
-#include <stdint.h>
+
 #include <cstdio>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb/stb_image.h>
+
+#include <stdint.h>
+
 
 using u8 = uint8_t;
 using u16 = uint16_t;
@@ -71,6 +74,8 @@ using r64 = double;
 
 using umm = uintptr_t; // Casey uses this for sizes (why?)
 
+
+
 struct texture_data;
 
 inline char* ToString(i32 I);
@@ -78,8 +83,8 @@ inline char* ToString(r64 R);
 inline char* ToString(r32 R);
 char* ToString(texture_data* Data);
 
+#include "log_state.h"
 #include "engine_math.h"
-
 #include "modelformat.h"
 
 struct timer
@@ -160,6 +165,7 @@ struct game_memory
     b32 ExitGame;
     config_data ConfigData;
     platform_api PlatformAPI;
+    log_state LogState;
     
     struct game_state* GameState;
     
@@ -182,5 +188,7 @@ UPDATE(UpdateStub)
 }
 
 #define ERR(msg) HandleError(__FILE__,__LINE__,msg)
+
+
 
 #endif

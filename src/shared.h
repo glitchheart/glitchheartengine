@@ -1,8 +1,17 @@
 #ifndef SHARED_H
 #define SHARED_H
 
-#include "gmap.h"
+struct memory_arena;
+inline char* Concat(const char *s1, const char *s2, memory_arena* Arena = 0);
+
+#include "types.h"
+
+#include "platform.h"
 #include "engine_memory.h"
+#include "log.h"
+
+#include "gmap.h"
+
 #include "animation.h"
 #include "rendering.h"
 
@@ -25,7 +34,7 @@ inline char* StrSep(char** S, const char* Delim)
     return Start;
 }
 
-inline char* Concat(const char *s1, const char *s2, memory_arena* Arena = 0)
+inline char* Concat(const char *s1, const char *s2, memory_arena* Arena)
 {
     char* result;
     if(Arena)
