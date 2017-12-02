@@ -47,7 +47,6 @@ static inline void PlaySoundEffect(sound_commands* SoundCommands, i32 BufferHand
     SoundEffect->SoundInfo.Loop = Loop;
     SoundEffect->SoundInfo.LoopCount = LoopCount;
     SoundEffect->SoundInfo.Gain = Gain > -1.0f ? Gain : SoundCommands->SFXVolume;
-    DEBUG_PRINT("Gain: %f\n", SoundCommands->SFXVolume);
 }
 
 static inline void PlayMusicTrack(sound_commands* SoundCommands, i32 BufferHandle,b32 Loop = false, i32 LoopCount = -1, r32 Gain = -1.0f, r32 Pitch = 1.0f)
