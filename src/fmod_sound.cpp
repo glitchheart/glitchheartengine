@@ -68,20 +68,18 @@ static void PlaySound(const sound_effect& SoundEffect, sound_device* SoundDevice
     FMOD_CHANNEL* Channel;
     auto Result = FMOD_System_PlaySound(SoundDevice->System, Sound, 0, Commands->Paused, &Channel);
     FMOD_Channel_SetPitch(Channel, SoundEffect.SoundInfo.Pitch);
+    FMOD_Channel_SetVolume(Channel, SoundEffect.SoundInfo.Gain);
+    //DEBUG_PRINT("Gain: %f\n", SoundEffect.SoundInfo.Gain);
     
-    Assert(SoundEffect.SoundInfo.Loop >= -1);
+    r32 Vol;
+    FMOD_Channel_GetVolume(Channel, &Vol);
+    //DEBUG_PRINT("Gain: %f\n", Vol);
     
-    if(SoundEffect.SoundInfo.Loop)
-    {
-        i32 LoopCount = SoundEffect.SoundInfo.LoopCount != 1 ? -1 : 1;
-        FMOD_Channel_SetMode(Channel, FMOD_DEFAULT | FMOD_LOOP_NORMAL);
-        FMOD_Channel_SetLoopCount(Channel, LoopCount);
-    }
-    else
-    {
-        FMOD_Channel_SetMode(Channel, FMOD_DEFAULT | FMOD_LOOP_OFF);
-        FMOD_Channel_SetLoopCount(Channel, 0);
-    }
+    Assert(SoundEffect.SoundInfo.LoopCount >= -1);
+    
+    FMOD_Channel_SetMode(Channel, FMOD_DEFAULT | (SoundEffect.SoundInfo.Loop ? FMOD_LOOP_NORMAL : FMOD_LOOP_OFF));
+    FMOD_Channel_SetLoopCount(Channel, SoundEffect.SoundInfo.LoopCount);
+    
     
     FMOD_Channel_SetChannelGroup(Channel, SoundDevice->MasterGroup);
     if(Result != FMOD_OK)
@@ -128,7 +126,7 @@ static void PlaySounds(sound_device* SoundDevice, sound_commands* Commands)
         
         /*if(FMOD_System_Update(SoundDevice->System) != FMOD_OK)
         {
-            DEBUG_PRINT("FMOD Failed updating\n");
+        DEBUG_PRINT("FMOD Failed updating\n");
         }*/
         ResetCommands(Commands);
     }
