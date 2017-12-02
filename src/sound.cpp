@@ -37,7 +37,7 @@ static i32* LoadSounds(sound_commands* Commands, const char* FilePath, memory_ar
     return Handles;
 }
 
-static inline void PlaySoundEffect(sound_commands* SoundCommands, i32 BufferHandle, b32 Loop = false, i32 LoopCount = -1, r32 Pitch = 1.0f, r32 RollOff = 0.0f, r32 X = 0.0f, r32 Y = 0.0f)
+static inline void PlaySoundEffect(sound_commands* SoundCommands, i32 BufferHandle, b32 Loop = false, i32 LoopCount = -1, r32 Gain = -1.0f,  r32 Pitch = 1.0f, r32 RollOff = 0.0f, r32 X = 0.0f, r32 Y = 0.0f)
 {
     sound_effect* SoundEffect = PushStruct(&SoundCommands->SoundArena, sound_effect);
     SoundCommands->SoundCount++;
@@ -46,10 +46,11 @@ static inline void PlaySoundEffect(sound_commands* SoundCommands, i32 BufferHand
     SoundEffect->SoundInfo.Rolloff = RollOff;
     SoundEffect->SoundInfo.Loop = Loop;
     SoundEffect->SoundInfo.LoopCount = LoopCount;
-    SoundEffect->SoundInfo.Gain = SoundCommands->SFXVolume;
+    SoundEffect->SoundInfo.Gain = Gain > -1.0f ? Gain : SoundCommands->SFXVolume;
+    DEBUG_PRINT("Gain: %f\n", SoundCommands->SFXVolume);
 }
 
-static inline void PlayMusicTrack(sound_commands* SoundCommands, i32 BufferHandle, r32 Pitch = 1.0f, b32 Loop = false, i32 LoopCount = -1)
+static inline void PlayMusicTrack(sound_commands* SoundCommands, i32 BufferHandle,b32 Loop = false, i32 LoopCount = -1, r32 Gain = -1.0f, r32 Pitch = 1.0f)
 {
     sound_effect* SoundEffect = PushStruct(&SoundCommands->SoundArena, sound_effect);
     SoundCommands->SoundCount++;
@@ -57,7 +58,7 @@ static inline void PlayMusicTrack(sound_commands* SoundCommands, i32 BufferHandl
     SoundEffect->SoundInfo.Pitch = Pitch;
     SoundEffect->SoundInfo.Rolloff = 0.0f;
     SoundEffect->SoundInfo.Loop = Loop;
-    SoundEffect->SoundInfo.Gain = SoundCommands->MusicVolume;
+    SoundEffect->SoundInfo.Gain = Gain > -1.0f ? Gain : SoundCommands->MusicVolume;
 }
 
 #define PLAY_SOUND(SoundHandle,...) PlaySoundEffect(SoundCommands, SoundHandle, ##__VA_ARGS__)
