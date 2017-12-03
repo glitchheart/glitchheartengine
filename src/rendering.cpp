@@ -173,7 +173,7 @@ static void AddAnimation(renderer& Renderer, spritesheet_animation Animation, i3
     Assert(Renderer.SpritesheetAnimationCount < MAX_SPRITESHEET_ANIMATION_INFOS);
 }
 
-static void LoadShader(const char* FullShaderPath, renderer& Renderer, i32* Handle)
+static void LoadShader(const char* FullShaderPath, renderer& Renderer)
 {
     shader_data* ShaderData = &Renderer.ShaderData[Renderer.ShaderCount];
     ShaderData->Handle = Renderer.ShaderCount++;
@@ -220,7 +220,7 @@ static void LoadShader(const char* FullShaderPath, renderer& Renderer, i32* Hand
     }
 }
 
-static void LoadTexture(const char* FullTexturePath, renderer& Renderer, memory_arena* PermArena, i32* Handle = 0)
+static void LoadTexture(const char* FullTexturePath, renderer& Renderer, i32* Handle = 0)
 {
     texture_data* TextureData = &Renderer.TextureData[Renderer.TextureCount];
     
@@ -237,7 +237,7 @@ static void LoadTexture(const char* FullTexturePath, renderer& Renderer, memory_
         *Handle = TextureData->Handle + 1; // We add one to the handle, since we want 0 to be an invalid handle
 }
 
-static void LoadTextures(renderer& Renderer, memory_arena* PermArena, const char* Path)
+static void LoadTextures(renderer& Renderer, const char* Path)
 {
     texture_data_Map_Init(&Renderer.TextureMap, HashStringJenkins, 64);
     
@@ -246,13 +246,13 @@ static void LoadTextures(renderer& Renderer, memory_arena* PermArena, const char
     
     for (i32 FileIndex = 0; FileIndex < DirData.FilesLength; FileIndex++)
     {
-        LoadTexture(DirData.FilePaths[FileIndex], Renderer, PermArena);
+        LoadTexture(DirData.FilePaths[FileIndex], Renderer);
     }
 }
 
-static void LoadTextures(renderer& Renderer, memory_arena* PermArena)
+static void LoadTextures(renderer& Renderer)
 {
-    LoadTextures(Renderer, PermArena, "../assets/textures/");
+    LoadTextures(Renderer, "../assets/textures/");
 }
 
 static render_command* PushNextCommand(renderer& Renderer, b32 IsUI)
@@ -537,6 +537,7 @@ static b32 IsEOF(chunk_format& Format)
 
 static void LoadModel(renderer& Renderer, char* FilePath, model* Model)
 {
+    (void)Renderer;
     model_header Header = {};
     
     FILE *File = fopen(FilePath, "rb");

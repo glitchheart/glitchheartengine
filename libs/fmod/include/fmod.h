@@ -1,3 +1,6 @@
+#ifdef _WIN32
+#pragma warning(push, 0)
+#endif
 /*$ preserve start $*/
 
 /* ======================================================================================== */
@@ -716,3 +719,6 @@ extern "C"
 #endif /* _FMOD_H */
 
 /*$ preserve end $*/
+#ifdef _WIN32
+#pragma warning(pop)
+#endif

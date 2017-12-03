@@ -40,7 +40,7 @@ static void UpdateLog()
     {
         for(i32 Log = 0; Log < LogState.LogCount; Log++)
         {
-            DEBUG_PRINT(LogState.LogBuffer[Log]);
+            DEBUG_PRINT("%s", LogState.LogBuffer[Log]);
         }
         LogState.LogCount = 0;
     }

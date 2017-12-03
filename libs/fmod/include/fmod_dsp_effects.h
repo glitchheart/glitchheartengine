@@ -1,3 +1,6 @@
+#ifdef _WIN32
+#pragma warning(push, 0)
+#endif
 /* ========================================================================================== */
 /* FMOD Studio - Built-in effects header file.                                                */
 /* Copyright (c), Firelight Technologies Pty, Ltd. 2004-2017.                                 */
@@ -15,12 +18,12 @@
 [
     [DESCRIPTION]
     These definitions can be used for creating FMOD defined special effects or DSP units.
-
+    
     [REMARKS]
     To get them to be active, first create the unit, then add it somewhere into the DSP network, 
     either at the front of the network near the soundcard unit to affect the global output
     (by using System::getDSPHead), or on a single channel (using Channel::getDSPHead).
-
+    
     [SEE_ALSO]
     System::createDSPByType
 ]
@@ -64,17 +67,17 @@ typedef enum
     FMOD_DSP_TYPE_TRANSCEIVER,        /* This unit 'sends' and 'receives' from a selection of up to 32 different slots.  It is like a send/return but it uses global slots rather than returns as the destination.  It also has other features.  Multiple transceivers can receive from a single channel, or multiple transceivers can send to a single channel, or a combination of both. */
     FMOD_DSP_TYPE_OBJECTPAN,          /* This unit sends the signal to a 3d object encoder like Dolby Atmos.   Supports a subset of the FMOD_DSP_TYPE_PAN parameters. */
     FMOD_DSP_TYPE_MULTIBAND_EQ,       /* This unit is a flexible five band parametric equalizer. */
-
+    
     FMOD_DSP_TYPE_MAX,                /* Maximum number of pre-defined DSP types. */
     FMOD_DSP_TYPE_FORCEINT = 65536    /* Makes sure this enum is signed 32bit. */
 } FMOD_DSP_TYPE;
 
 /*
     ===================================================================================================
-
+    
     FMOD built in effect parameters.  
     Use DSP::setParameter with these enums for the 'index' parameter.
-
+    
     ===================================================================================================
 */
 
@@ -83,9 +86,9 @@ typedef enum
 [
     [DESCRIPTION]
     Parameter types for the FMOD_DSP_TYPE_OSCILLATOR filter.
-
+    
     [REMARKS]
-
+    
     [SEE_ALSO]
     DSP::setParameterFloat
     DSP::setParameterInt
@@ -106,10 +109,10 @@ typedef enum
 [
     [DESCRIPTION]
     Parameter types for the FMOD_DSP_TYPE_LOWPASS filter.
-
+    
     [REMARKS]
     Deprecated and will be removed in a future release, to emulate with FMOD_DSP_TYPE_MULTIBAND_EQ:
-
+    
         // Configure a single band (band A) as a lowpass (all other bands default to off).
         // 24dB rolloff to approximate the old effect curve.
         // Cutoff frequency can be used the same as with the old effect.
@@ -117,7 +120,7 @@ typedef enum
         FMOD_DSP_SetParameterInt(multiband, FMOD_DSP_MULTIBAND_EQ_A_FILTER, FMOD_DSP_MULTIBAND_EQ_FILTER_LOWPASS_24DB);
         FMOD_DSP_SetParameterFloat(multiband, FMOD_DSP_MULTIBAND_EQ_A_FREQUENCY, frequency);
         FMOD_DSP_SetParameterFloat(multiband, FMOD_DSP_MULTIBAND_EQ_A_Q, resonance);
-
+        
     [SEE_ALSO]
     DSP::setParameterFloat
     DSP::getParameterFloat
@@ -139,13 +142,13 @@ typedef enum
     This is different to the default FMOD_DSP_TYPE_ITLOWPASS filter in that it uses a different quality algorithm and is 
     the filter used to produce the correct sounding playback in .IT files.<br> 
     FMOD Studio's .IT playback uses this filter.<br>
-
+    
     [REMARKS]
     Note! This filter actually has a limited cutoff frequency below the specified maximum, due to its limited design, 
     so for a more  open range filter use FMOD_DSP_LOWPASS or if you don't mind not having resonance, 
     FMOD_DSP_LOWPASS_SIMPLE.<br>
     The effective maximum cutoff is about 8060hz.
-
+    
     [SEE_ALSO]
     DSP::setParameterFloat
     DSP::getParameterFloat
@@ -164,10 +167,10 @@ typedef enum
 [
     [DESCRIPTION]
     Parameter types for the FMOD_DSP_TYPE_HIGHPASS filter.
-
+    
     [REMARKS]
     Deprecated and will be removed in a future release, to emulate with FMOD_DSP_TYPE_MULTIBAND_EQ:
-
+    
         // Configure a single band (band A) as a highpass (all other bands default to off).
         // 12dB rolloff to approximate the old effect curve.
         // Cutoff frequency can be used the same as with the old effect.
@@ -175,7 +178,7 @@ typedef enum
         FMOD_DSP_SetParameterInt(multiband, FMOD_DSP_MULTIBAND_EQ_A_FILTER, FMOD_DSP_MULTIBAND_EQ_FILTER_HIGHPASS_12DB);
         FMOD_DSP_SetParameterFloat(multiband, FMOD_DSP_MULTIBAND_EQ_A_FREQUENCY, frequency);
         FMOD_DSP_SetParameterFloat(multiband, FMOD_DSP_MULTIBAND_EQ_A_Q, resonance);
-
+        
     [SEE_ALSO]
     DSP::setParameterFloat
     DSP::getParameterFloat
@@ -194,11 +197,11 @@ typedef enum
 [
     [DESCRIPTION]
     Parameter types for the FMOD_DSP_TYPE_ECHO filter.
-
+    
     [REMARKS]
     Note.  Every time the delay is changed, the plugin re-allocates the echo buffer.  This means the echo will dissapear at that time while it refills its new buffer.<br>
     Larger echo delays result in larger amounts of memory allocated.<br>
-
+    
     [SEE_ALSO]
     DSP::setParameterFloat
     DSP::getParameterFloat
@@ -219,9 +222,9 @@ typedef enum
 [
     [DESCRIPTION]
     Parameter types for the FMOD_DSP_TYPE_FADER filter.
-
+    
     [REMARKS]
-
+    
     [SEE_ALSO]
     DSP::setParameterFloat
     DSP::getParameterFloat
@@ -239,13 +242,13 @@ typedef enum FMOD_DSP_FADER
 [
     [DESCRIPTION]
     Parameter types for the FMOD_DSP_TYPE_FLANGE filter.
-
+    
     [REMARKS]
     Flange is an effect where the signal is played twice at the same time, and one copy slides back and forth creating a whooshing or flanging effect.<br>
     As there are 2 copies of the same signal, by default each signal is given 50% mix, so that the total is not louder than the original unaffected signal.<br>
     <br>
     Flange depth is a percentage of a 10ms shift from the original signal.  Anything above 10ms is not considered flange because to the ear it begins to 'echo' so 10ms is the highest value possible.<br>
-
+    
     [SEE_ALSO]
     DSP::setParameterFloat
     DSP::getParameterFloat
@@ -265,9 +268,9 @@ typedef enum
 [
     [DESCRIPTION]
     Parameter types for the FMOD_DSP_TYPE_DISTORTION filter.
-
+    
     [REMARKS]
-
+    
     [SEE_ALSO]
     DSP::setParameterFloat
     DSP::getParameterFloat
@@ -285,7 +288,7 @@ typedef enum
 [
     [DESCRIPTION]
     Parameter types for the FMOD_DSP_TYPE_NORMALIZE filter.
-
+    
     [REMARKS]
     Normalize amplifies the sound based on the maximum peaks within the signal.<br>
     For example if the maximum peaks in the signal were 50% of the bandwidth, it would scale the whole sound by 2.<br>
@@ -293,7 +296,7 @@ typedef enum
     <br>
     Because FMOD is a realtime audio processor, it doesn't have the luxury of knowing the peak for the whole sound (ie it can't see into the future), so it has to process data as it comes in.<br>
     To avoid very sudden changes in volume level based on small samples of new data, fmod fades towards the desired amplification which makes for smooth gain control.  The fadetime parameter can control this.<br>
-
+    
     [SEE_ALSO]
     DSP::setParameterFloat
     DSP::getParameterFloat
@@ -313,9 +316,9 @@ typedef enum
 [
     [DESCRIPTION]
     Parameter types for the FMOD_DSP_TYPE_LIMITER filter.
-
+    
     [REMARKS]
-
+    
     [SEE_ALSO]
     DSP::setParameterFloat
     DSP::getParameterFloat
@@ -336,10 +339,10 @@ typedef enum
 [
     [DESCRIPTION]
     Parameter types for the FMOD_DSP_TYPE_PARAMEQ filter.
-
+    
     [REMARKS]
     Deprecated and will be removed in a future release, to emulate with FMOD_DSP_TYPE_MULTIBAND_EQ:
-
+    
         // Configure a single band (band A) as a peaking EQ (all other bands default to off).
         // Center frequency can be used as with the old effect.
         // Bandwidth can be applied by setting the 'Q' value of the new effect.
@@ -348,11 +351,11 @@ typedef enum
         FMOD_DSP_SetParameterFloat(multiband, FMOD_DSP_MULTIBAND_EQ_A_FREQUENCY, center);
         FMOD_DSP_SetParameterFloat(multiband, FMOD_DSP_MULTIBAND_EQ_A_Q, bandwidth);
         FMOD_DSP_SetParameterFloat(multiband, FMOD_DSP_MULTIBAND_EQ_A_GAIN, gain);
-
+        
     Parametric EQ is a single band peaking EQ filter that attenuates or amplifies a selected frequency and its neighbouring frequencies.
-
+    
     When a frequency has its gain set to 1.0, the sound will be unaffected and represents the original signal exactly.
-
+    
     [SEE_ALSO]
     DSP::setParameterFloat
     DSP::getParameterFloat
@@ -372,10 +375,10 @@ typedef enum
 [
     [DESCRIPTION]
     Parameter types for the FMOD_DSP_TYPE_MULTIBAND_EQ filter.
-
+    
     [REMARKS]
     Flexible five band parametric equalizer.
-
+    
     [SEE_ALSO]
     DSP::setParameterInt
     DSP::getParameterInt
@@ -414,9 +417,9 @@ typedef enum FMOD_DSP_MULTIBAND_EQ
 [
     [DESCRIPTION]
     Filter types for FMOD_DSP_MULTIBAND_EQ.
-
+    
     [REMARKS]
-
+    
     [SEE_ALSO]
     FMOD_DSP_MULTIBAND_EQ
 ]
@@ -444,7 +447,7 @@ typedef enum FMOD_DSP_MULTIBAND_EQ_FILTER_TYPE
 [
     [DESCRIPTION]
     Parameter types for the FMOD_DSP_TYPE_PITCHSHIFT filter.
-
+    
     [REMARKS]
     This pitch shifting unit can be used to change the pitch of a sound without speeding it up or slowing it down.<br>
     It can also be used for time stretching or scaling, for example if the pitch was doubled, and the frequency of the sound was halved, the pitch of the sound would sound correct but it would be twice as slow.<br>
@@ -462,7 +465,7 @@ typedef enum FMOD_DSP_MULTIBAND_EQ_FILTER_TYPE
     If a channel pitch shift is set to a lower number than the sound's channel count that is coming in, it will not pitch shift the sound.<br>
     <br>
     <b>NOTE!</b> Not supported on PlayStation 3.<br>
-
+    
     [SEE_ALSO]
     DSP::setParameterFloat
     DSP::getParameterFloat
@@ -484,10 +487,10 @@ typedef enum
 [
     [DESCRIPTION]
     Parameter types for the FMOD_DSP_TYPE_CHORUS filter.
-
+    
     [REMARKS]
     Chorus is an effect where the sound is more 'spacious' due to 1 to 3 versions of the sound being played along side the original signal but with the pitch of each copy modulating on a sine wave.<br>
-
+    
     [SEE_ALSO]
     DSP::setParameterFloat
     DSP::getParameterFloat
@@ -508,7 +511,7 @@ typedef enum
     [DESCRIPTION]
     Parameter types for the FMOD_DSP_TYPE_ITECHO filter.<br>
     This is effectively a software based echo filter that emulates the DirectX DMO echo effect.  Impulse tracker files can support this, and FMOD will produce the effect on ANY platform, not just those that support DirectX effects!<br>
-
+    
     [REMARKS]
     Note.  Every time the delay is changed, the plugin re-allocates the echo buffer.  This means the echo will dissapear at that time while it refills its new buffer.<br>
     Larger echo delays result in larger amounts of memory allocated.<br>
@@ -516,7 +519,7 @@ typedef enum
     As this is a stereo filter made mainly for IT playback, it is targeted for stereo signals.<br>
     With mono signals only the FMOD_DSP_ITECHO_LEFTDELAY is used.<br>
     For multichannel signals (>2) there will be no echo on those channels.<br>
-
+    
     [SEE_ALSO]
     DSP::setParameterFloat
     DSP::getParameterFloat
@@ -538,7 +541,7 @@ typedef enum
     [DESCRIPTION]
     Parameter types for the FMOD_DSP_TYPE_COMPRESSOR unit.
     This is a multichannel software limiter that is uniform across the whole spectrum.
-
+    
     [REMARKS]
     The limiter is not guaranteed to catch every peak above the threshold level,
     because it cannot apply gain reduction instantaneously - the time delay is
@@ -547,7 +550,7 @@ typedef enum
     using a short attack time - but not too short, and setting the threshold a few
     decibels below the critical level.
     <br>
-
+    
     [SEE_ALSO]
     DSP::setParameterFloat
     DSP::getParameterFloat
@@ -578,7 +581,7 @@ typedef enum
     On top of the I3DL2 property set, "Dry Level" is also included to allow the dry mix to be changed.<br>
     <br>
     These properties can be set with presets in FMOD_REVERB_PRESETS.
-
+    
     [SEE_ALSO]
     DSP::setParameterFloat
     DSP::getParameterFloat
@@ -608,21 +611,21 @@ typedef enum
 [
     [DESCRIPTION]
     Parameter types for the FMOD_DSP_TYPE_LOWPASS_SIMPLE filter.
-
+    
     [REMARKS]
     Deprecated and will be removed in a future release, to emulate with FMOD_DSP_TYPE_MULTIBAND_EQ:
-
+    
         //  Configure a single band (band A) as a lowpass (all other bands default to off).
         //  12dB rolloff to approximate the old effect curve.
         //  Cutoff frequency can be used the same as with the old effect.
         //  Resonance / 'Q' should remain at default 0.707.
         FMOD_DSP_SetParameterInt(multiband, FMOD_DSP_MULTIBAND_EQ_A_FILTER, FMOD_DSP_MULTIBAND_EQ_FILTER_LOWPASS_12DB);
         FMOD_DSP_SetParameterFloat(multiband, FMOD_DSP_MULTIBAND_EQ_A_FREQUENCY, frequency);
-
+        
     This is a very simple low pass filter, based on two single-pole RC time-constant modules.
-
+    
     The emphasis is on speed rather than accuracy, so this should not be used for task requiring critical filtering.
-
+    
     [SEE_ALSO]
     DSP::setParameterFloat
     DSP::getParameterFloat
@@ -640,14 +643,14 @@ typedef enum
 [
     [DESCRIPTION]
     Parameter types for the FMOD_DSP_TYPE_DELAY filter.
-
+    
     [REMARKS]
     Note.  Every time MaxDelay is changed, the plugin re-allocates the delay buffer.  This means the delay will dissapear at that time while it refills its new buffer.<br>
     A larger MaxDelay results in larger amounts of memory allocated.<br>
     Channel delays above MaxDelay will be clipped to MaxDelay and the delay buffer will not be resized.<br>
     <br>
     <b>NOTE!</b> Not supported on PlayStation 3.
-
+    
     [SEE_ALSO]
     DSP::setParameterFloat
     DSP::getParameterFloat
@@ -681,7 +684,7 @@ typedef enum
 [
     [DESCRIPTION]
     Parameter types for the FMOD_DSP_TYPE_TREMOLO filter.
-
+    
     [REMARKS]
     The tremolo effect varies the amplitude of a sound. Depending on the settings, this unit can produce a tremolo, chopper or auto-pan effect.<br>
     <br>
@@ -689,7 +692,7 @@ typedef enum
     FMOD_DSP_TREMOLO_DUTY and FMOD_DSP_TREMOLO_SQUARE are useful for a chopper-type effect where the first controls the on-time duration and second controls the flatness of the envelope.<br>
     FMOD_DSP_TREMOLO_SPREAD varies the LFO phase between channels to get an auto-pan effect. This works best with a sine shape LFO.<br>
     The LFO can be synchronized using the FMOD_DSP_TREMOLO_PHASE parameter which sets its instantaneous phase.<br>
-
+    
     [SEE_ALSO]
     DSP::setParameterFloat
     DSP::getParameterFloat
@@ -714,9 +717,9 @@ typedef enum
 [
     [DESCRIPTION]
     Parameter types for the FMOD_DSP_TYPE_SEND DSP.
-
+    
     [REMARKS]
-
+    
     [SEE_ALSO]
     DSP::setParameterInt
     DSP::getParameterInt
@@ -737,9 +740,9 @@ typedef enum
 [
     [DESCRIPTION]
     Parameter types for the FMOD_DSP_TYPE_RETURN DSP.
-
+    
     [REMARKS]
-
+    
     [SEE_ALSO]
     DSP::setParameterInt
     DSP::getParameterInt
@@ -758,21 +761,21 @@ typedef enum
 [
     [DESCRIPTION]
     Parameter types for the FMOD_DSP_TYPE_HIGHPASS_SIMPLE filter.
-
+    
     [REMARKS]
     Deprecated and will be removed in a future release, to emulate with FMOD_DSP_TYPE_MULTIBAND_EQ:
-
+    
         // Configure a single band (band A) as a highpass (all other bands default to off).
         // 12dB rolloff to approximate the old effect curve.
         // Cutoff frequency can be used the same as with the old effect.
         // Resonance / 'Q' should remain at default 0.707.
         FMOD_DSP_SetParameterInt(multiband, FMOD_DSP_MULTIBAND_EQ_A_FILTER, FMOD_DSP_MULTIBAND_EQ_FILTER_HIGHPASS_12DB);
         FMOD_DSP_SetParameterFloat(multiband, FMOD_DSP_MULTIBAND_EQ_A_FREQUENCY, frequency);
-
+        
     This is a very simple single-order high pass filter.
-
+    
     The emphasis is on speed rather than accuracy, so this should not be used for task requiring critical filtering.
-
+    
     [SEE_ALSO]
     DSP::setParameterFloat
     DSP::getParameterFloat
@@ -790,9 +793,9 @@ typedef enum
 [
     [DESCRIPTION]
     Parameter values for the FMOD_DSP_PAN_2D_STEREO_MODE parameter of the FMOD_DSP_TYPE_PAN DSP.
-
+    
     [REMARKS]
-
+    
     [SEE_ALSO]
     FMOD_DSP_PAN
 ]
@@ -809,9 +812,9 @@ typedef enum
 [
     [DESCRIPTION]
     Parameter values for the FMOD_DSP_PAN_MODE parameter of the FMOD_DSP_TYPE_PAN DSP.
-
+    
     [REMARKS]
-
+    
     [SEE_ALSO]
     FMOD_DSP_PAN
 ]
@@ -829,9 +832,9 @@ typedef enum
 [
     [DESCRIPTION]
     Parameter values for the FMOD_DSP_PAN_3D_ROLLOFF parameter of the FMOD_DSP_TYPE_PAN DSP.
-
+    
     [REMARKS]
-
+    
     [SEE_ALSO]
     FMOD_DSP_PAN
 ]
@@ -851,9 +854,9 @@ typedef enum
 [
     [DESCRIPTION]
     Parameter values for the FMOD_DSP_PAN_3D_EXTENT_MODE parameter of the FMOD_DSP_TYPE_PAN DSP.
-
+    
     [REMARKS]
-
+    
     [SEE_ALSO]
     FMOD_DSP_PAN
 ]
@@ -871,20 +874,20 @@ typedef enum
 [
     [DESCRIPTION]
     Parameter types for the FMOD_DSP_TYPE_PAN DSP.
-
+    
     [REMARKS]
     FMOD_DSP_PAN_3D_PAN_BLEND controls the percentage of the effect supplied by FMOD_DSP_PAN_2D_DIRECTION and FMOD_DSP_PAN_2D_EXTENT.
-
+    
     For FMOD_DSP_PAN_3D_POSITION, the following members in the FMOD_DSP_PARAMETER_3DATTRIBUTES_MULTI struct should be non zero.
     - numlisteners                   - This is typically 1, can be up to 8.  Typically more than 1 is only used for split screen purposes.  The FMOD Panner will average angles and produce the best compromise for panning and attenuation.
     - relative[listenernum].position - This is the delta between the listener position and the sound position.  Typically the listener position is subtracted from the sound position.
     - relative[listenernum].forward  - This is the sound's forward vector.  Optional, set to 0,0,1 if not needed.  This is only relevant for more than mono sounds in 3D, that are spread amongst the destination speakers at the time of panning.   
                                        If the sound rotates then the L/R part of a stereo sound will rotate amongst its destination speakers.
                                        If the sound has moved and pinpointed into a single speaker, rotation of the sound will have no effect as at that point the channels are collapsed into a single point.
-
+                                       
     For FMOD_DSP_PAN_2D_STEREO_MODE, when it is set to FMOD_DSP_PAN_2D_STEREO_MODE_DISCRETE, only FMOD_DSP_PAN_2D_STEREO_SEPARATION and FMOD_DSP_PAN_2D_STEREO_AXIS are used.
     When it is set to FMOD_DSP_PAN_2D_STEREO_MODE_DISTRIBUTED, then standard FMOD_DSP_PAN_2D_DIRECTION/FMOD_DSP_PAN_2D_EXTENT parameters are used.
-
+    
     [SEE_ALSO]
     DSP::setParameterFloat
     DSP::getParameterFloat
@@ -927,9 +930,9 @@ typedef enum
 [
     [DESCRIPTION]
     Parameter values for the FMOD_DSP_THREE_EQ_CROSSOVERSLOPE parameter of the FMOD_DSP_TYPE_THREE_EQ DSP.
-
+    
     [REMARKS]
-
+    
     [SEE_ALSO]
     FMOD_DSP_THREE_EQ
 ]
@@ -947,9 +950,9 @@ typedef enum
 [
     [DESCRIPTION]
     Parameter types for the FMOD_DSP_TYPE_THREE_EQ filter.
-
+    
     [REMARKS]
-
+    
     [SEE_ALSO]
     DSP::setParameterFloat
     DSP::getParameterFloat
@@ -977,7 +980,7 @@ typedef enum
     List of windowing methods for the FMOD_DSP_TYPE_FFT unit.  Used in spectrum analysis to reduce leakage / transient signals intefering with the analysis.<br>
     This is a problem with analysis of continuous signals that only have a small portion of the signal sample (the fft window size).<br>
     Windowing the signal with a curve or triangle tapers the sides of the fft window to help alleviate this problem.
-
+    
     [REMARKS]
     Cyclic signals such as a sine wave that repeat their cycle in a multiple of the window size do not need windowing.<br>
     I.e. If the sine wave repeats every 1024, 512, 256 etc samples and the FMOD fft window is 1024, then the signal would not need windowing.<br>
@@ -1024,11 +1027,11 @@ typedef enum
 [
     [DESCRIPTION]
     Parameter types for the FMOD_DSP_TYPE_FFT dsp effect.
-
+    
     [REMARKS]
     Set the attributes for the spectrum analysis with FMOD_DSP_FFT_WINDOWSIZE and FMOD_DSP_FFT_WINDOWTYPE, and retrieve the results with FMOD_DSP_FFT_SPECTRUM and FMOD_DSP_FFT_DOMINANT_FREQ.
     FMOD_DSP_FFT_SPECTRUM stores its data in the FMOD_DSP_PARAMETER_DATA_TYPE_FFT.  You will need to cast to this structure to get the right data.
-
+    
     [SEE_ALSO]
     DSP::setParameterFloat
     DSP::getParameterFloat
@@ -1054,16 +1057,16 @@ typedef enum
 [  
     [DESCRIPTION]
     Deprecated and will be removed in a future release.
-
+    
     Parameter types for the FMOD_DSP_TYPE_ENVELOPEFOLLOWER unit.
     This is a simple envelope follower for tracking the signal level.<br>
-
+    
     [REMARKS]
     Deprecated and will be removed in a future release.
-
+    
     This unit does not affect the incoming signal.
     <br>
-
+    
     [SEE_ALSO]
     DSP::setParameterFloat
     DSP::getParameterFloat
@@ -1085,10 +1088,10 @@ typedef enum
 [
     [DESCRIPTION]
     Parameter types for the FMOD_DSP_TYPE_CONVOLUTIONREVERB filter.
-
+    
     [REMARKS]
     Convolution Reverb reverb IR.<br>
-
+    
     [SEE_ALSO]
     DSP::setParameterFloat
     DSP::getParameterFloat
@@ -1110,9 +1113,9 @@ typedef enum
 [
     [DESCRIPTION]
     Parameter types for the FMOD_DSP_CHANNELMIX_OUTPUTGROUPING parameter for FMOD_DSP_TYPE_CHANNELMIX effect.
-
+    
     [REMARKS]
-
+    
     [SEE_ALSO]
     DSP::setParameterInt
     DSP::getParameterInt
@@ -1135,7 +1138,7 @@ typedef enum
 [
     [DESCRIPTION]
     Parameter types for the FMOD_DSP_TYPE_CHANNELMIX filter.
-
+    
     [REMARKS]
     For FMOD_DSP_CHANNELMIX_OUTPUTGROUPING, this value will set the output speaker format for the DSP, and also map the incoming channels to the 
     outgoing channels in a round-robin fashion.  Use this for example play a 32 channel input signal as if it were a repeating group of output signals.
@@ -1146,7 +1149,7 @@ typedef enum
                                             If there are more, then it will repeat the input pattern to the output like it did with the stereo case, ie 12 incoming channels are mapped as 0-5 mixed to the 
                                             5.1 output and 6 to 11 mapped to the 5.1 output.
     FMOD_DSP_CHANNELMIX_OUTPUT_ALLLFE     = all incoming channels are mixed to a 5.1 output but via the LFE channel only.
-
+    
     [SEE_ALSO]
     DSP::setParameterInt
     DSP::getParameterInt
@@ -1197,18 +1200,18 @@ typedef enum
 [
     [DESCRIPTION]
     Parameter types for the FMOD_DSP_TRANSCEIVER_SPEAKERMODE parameter for FMOD_DSP_TYPE_TRANSCEIVER effect.
-
+    
     [REMARKS]
     The speaker mode of a transceiver buffer (of which there are up to 32 of) is determined automatically depending on the signal flowing through the transceiver effect, or it can be forced.
     Use a smaller fixed speaker mode buffer to save memory.
-
+    
     Only relevant for transmitter dsps, as they control the format of the transceiver channel's buffer.
-
+    
     If multiple transceivers transmit to a single buffer in different speaker modes, it will allocate memory for each speaker mode.   This uses more memory than a single speaker mode.
     If there are multiple receivers reading from a channel with multiple speaker modes, it will read them all and mix them together.
-
+    
     If the system's speaker mode is stereo or mono, it will not create a 3rd buffer, it will just use the mono/stereo speaker mode buffer.
-
+    
     [SEE_ALSO]
     DSP::setParameterInt
     DSP::getParameterInt
@@ -1229,7 +1232,7 @@ typedef enum
 [
     [DESCRIPTION]
     Parameter types for the FMOD_DSP_TYPE_TRANSCEIVER filter.
-
+    
     [REMARKS]
     The transceiver only transmits and receives to a global array of 32 channels.   The transceiver can be set to receiver mode (like a return) and can receive the signal at a variable gain (FMOD_DSP_TRANSCEIVER_GAIN).
     The transceiver can also be set to transmit to a chnnel (like a send) and can transmit the signal with a variable gain (FMOD_DSP_TRANSCEIVER_GAIN).
@@ -1238,11 +1241,11 @@ typedef enum
     the speaker mode of the user's choice.   Receiving from a mono channel, is cheaper than receiving from a surround channel for example.
     The 3 speaker modes FMOD_DSP_TRANSCEIVER_SPEAKERMODE_MONO, FMOD_DSP_TRANSCEIVER_SPEAKERMODE_STEREO, FMOD_DSP_TRANSCEIVER_SPEAKERMODE_SURROUND are stored as seperate buffers in memory for a tranmitter channel.
     To save memory, use 1 common speaker mode for a transmitter.
-
+    
     The transceiver is double buffered to avoid desyncing of transmitters and receivers.   This means there will be a 1 block delay on a receiver, compared to the data sent from a transmitter.
-
+    
     Multiple transmitters sending to the same channel will be mixed together.
-
+    
     [SEE_ALSO]
     DSP::setParameterFloat
     DSP::getParameterFloat
@@ -1268,9 +1271,9 @@ typedef enum
     [DESCRIPTION]
     Parameter types for the FMOD_DSP_TYPE_OBJECTPAN DSP.  3D Object panners are meant for hardware 3d object systems like Dolby Atmos or Sony Morpheus.
     These object panners take input in, and send it to the 7.1 bed, but do not send the signal further down the DSP chain (the output of the dsp is silence).
-
+    
     [REMARKS]
-
+    
     [SEE_ALSO]
     DSP::setParameterFloat
     DSP::getParameterFloat
@@ -1296,3 +1299,6 @@ typedef enum
 
 #endif
 
+#ifdef _WIN32
+#pragma warning(pop)
+#endif

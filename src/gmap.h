@@ -26,15 +26,20 @@ enum Map_Status
 #define GENERIC_MAP(NAME, TYPE, KEYTYPE, COMPARE, INVALID, FORMAT, ASSIGN, COPY) \
 \
 using hash_function_ ## NAME = u64(*)(u64 Size, KEYTYPE Key);\
+\
 struct hashed_pair_## NAME\
 {\
     KEYTYPE Key;\
     u64 HashedKey;\
     TYPE Val;\
 };\
+\
 struct NAME ## _map;\
+\
 Map_Status Scan(NAME ## _map* Map, u64 HashedKey, KEYTYPE Key);\
+\
 void Rehash(NAME ## _map* Map);\
+\
 struct NAME ## _map \
 { \
     hashed_pair_ ## NAME* HashedPairs;\
@@ -51,7 +56,7 @@ struct NAME ## _map \
         Assert(this->ScanPairs);\
         Assert(COMPARE(INVALID,Key) != 0);\
         Assert(this->Hash);\
-        auto HashV = this->Hash(this->Count, Key);\
+        auto HashV = this->Hash((u64)this->Count, Key);\
         auto Res = Scan(this,HashV,Key);\
         switch(Res)\
         {\
@@ -71,7 +76,7 @@ struct NAME ## _map \
             case Collision:\
             {\
                 Rehash(this);\
-                auto NewHash = this->Hash(this->Count, Key);\
+                auto NewHash = this->Hash((u64)this->Count, Key);\
                 ASSIGN(this->HashedPairs[NewHash].Key,Key);\
                 this->HashedPairs[NewHash].HashedKey = NewHash;\
                 ASSIGN(this->ScanPairs[KeyCount].Key,Key);\
@@ -138,7 +143,7 @@ void Rehash(NAME ## _map* Map)\
     for(i32 I = 0; I < Map->KeyCount; I++)\
     {\
         Assert(COMPARE(INVALID,Map->ScanPairs[I].Key) != 0);\
-        auto NewHash = Map->Hash(Map->Count, Map->ScanPairs[I].Key);\
+        auto NewHash = Map->Hash((u64)Map->Count, Map->ScanPairs[I].Key);\
         COPY(Map->HashedPairs[NewHash].Val, Map->ScanPairs[I].Val, TYPE);\
         ASSIGN(Map->HashedPairs[NewHash].Key,Map->ScanPairs[I].Key);\
         Map->HashedPairs[NewHash].HashedKey = NewHash;\

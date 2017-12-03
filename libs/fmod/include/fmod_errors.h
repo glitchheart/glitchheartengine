@@ -1,3 +1,6 @@
+#ifdef _WIN32
+#pragma warning(push, 0)
+#endif
 /*$ preserve start $*/
 
 /* ================================================================================================== */
@@ -111,3 +114,6 @@ static const char *FMOD_ErrorString(FMOD_RESULT errcode)
 
 #endif
 /*$ preserve end $*/
+#ifdef _WIN32
+#pragma warning(pop)
+#endif

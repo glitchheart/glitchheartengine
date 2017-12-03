@@ -139,7 +139,7 @@ inline u64 DefaultFlags()
 
 #define PushTempStruct(type, ...) (type *)PushTempSize_(sizeof(type), ## __VA_ARGS__)
 #define PushTempArray(Count, type, ...) (type*)PushTempSize_((Count)*sizeof(type), ## __VA_ARGS__)
-#define PushTempSize(Size, type, ...) (type*)PushTempSize_( Size, ## __VA_ARGS__)
+#define PushTempSize(Size, type, ...) (type*)PushTempSize_((umm)Size, ## __VA_ARGS__)
 inline void* PushTempSize_(umm Size, push_params = DefaultPushParams(), u64 Flags = DefaultFlags())
 {
     platform_memory_block* Block = Platform.AllocateMemory(Size, Flags | PM_Temporary);

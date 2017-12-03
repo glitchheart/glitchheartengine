@@ -134,10 +134,10 @@ struct buffer
 struct render_state
 {
     GLFWwindow *Window;
-    int WindowWidth;
-    int WindowHeight;
-    u32 ScaleFromWidth;
-    u32 ScaleFromHeight;
+    i32 WindowWidth;
+    i32 WindowHeight;
+    i32 ScaleFromWidth;
+    i32 ScaleFromHeight;
     r32 Contrast;
     r32 Brightness;
     GLfloat ScaleX;

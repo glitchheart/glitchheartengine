@@ -177,7 +177,7 @@ inline void LoadConfig(const char* FilePath, config_data* ConfigData, memory_are
                 
                 b32 AfterTitle = false;
                 
-                for(i32 BufferIndex = 0; BufferIndex < strlen(LineBuffer); BufferIndex++)
+                for(i32 BufferIndex = 0; BufferIndex < (i32)strlen(LineBuffer); BufferIndex++)
                 {
                     if(AfterTitle)
                     {

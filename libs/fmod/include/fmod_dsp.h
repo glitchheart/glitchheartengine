@@ -1,3 +1,6 @@
+#ifdef _WIN32
+#pragma warning(push, 0)
+#endif
 /* ========================================================================================== */
 /* FMOD Studio - DSP header file. Copyright (c), Firelight Technologies Pty, Ltd. 2004-2017.  */
 /*                                                                                            */
@@ -21,11 +24,11 @@ typedef struct FMOD_DSP_STATE FMOD_DSP_STATE;
 [
     [DESCRIPTION]
     Structure for FMOD_DSP_PROCESS_CALLBACK input and output buffers.
-
+    
     [REMARKS]
     Members marked with [r] mean the variable is modified by FMOD and is for reading purposes only.  Do not change this value.<br>
     Members marked with [w] mean the variable can be written to.  The user can set the value.<br>
-
+    
     [SEE_ALSO]    
     FMOD_DSP_DESCRIPTION
 ]
@@ -45,7 +48,7 @@ typedef struct FMOD_DSP_BUFFER_ARRAY
 [
     [DESCRIPTION]
     Operation type for FMOD_DSP_PROCESS_CALLBACK.
-
+    
     [REMARKS]
     A process callback will be called twice per mix for a DSP unit.  Once with the FMOD_DSP_PROCESS_QUERY command, then conditionally, FMOD_DSP_PROCESS_PERFORM.<br>
     FMOD_DSP_PROCESS_QUERY is to be handled only by filling out the outputarray information, and returning a relevant return code.<br>
@@ -57,7 +60,7 @@ typedef struct FMOD_DSP_BUFFER_ARRAY
     <br>
     FMOD_DSP_PROCESS_PROCESS  is to be handled by reading the data from the input, processing it, and writing it to the output.  Always write to the output buffer and fill it fully to avoid unpredictable audio output.<br>
     Always return FMOD_OK, the return value is ignored from the process stage.
-
+    
     [SEE_ALSO]
     FMOD_DSP_DESCRIPTION
 ]
@@ -74,9 +77,9 @@ typedef enum
 [
     [DESCRIPTION]
     Complex number structure used for holding FFT frequency domain-data for FMOD_FFTREAL and FMOD_IFFTREAL DSP functions.
-
+    
     [REMARKS]
-
+    
     [SEE_ALSO]    
     FMOD_DSP_STATE_FUNCTIONS
     FMOD_DSP_STATE_DFT_FUNCTIONS
@@ -94,10 +97,10 @@ typedef struct FMOD_COMPLEX
 [
     [DESCRIPTION]
     Flags for the FMOD_DSP_PAN_SUMSURROUNDMATRIX_FUNC function.
-
+    
     [REMARKS]
     This functionality is experimental, please contact support@fmod.org for more information.
-
+    
     [SEE_ALSO]
     FMOD_DSP_STATE_PAN_FUNCTIONS
 ]
@@ -106,7 +109,7 @@ typedef enum FMOD_DSP_PAN_SURROUND_FLAGS
 {
     FMOD_DSP_PAN_SURROUND_DEFAULT = 0,
     FMOD_DSP_PAN_SURROUND_ROTATION_NOT_BIASED = 1,
-
+    
     FMOD_DSP_PAN_SURROUND_FLAGS_FORCEINT = 65536     /* Makes sure this enum is signed 32bit. */
 } FMOD_DSP_PAN_SURROUND_FLAGS;
 
@@ -188,9 +191,9 @@ typedef FMOD_RESULT (F_CALL *FMOD_DSP_PAN_GETROLLOFFGAIN_FUNC)            (FMOD_
 [
     [DESCRIPTION]   
     DSP parameter types.
-
+    
     [REMARKS]
-
+    
     [SEE_ALSO]
     FMOD_DSP_PARAMETER_DESC
 ]
@@ -201,7 +204,7 @@ typedef enum
     FMOD_DSP_PARAMETER_TYPE_INT,                /* FMOD_DSP_PARAMETER_DESC will use the FMOD_DSP_PARAMETER_DESC_INT. */
     FMOD_DSP_PARAMETER_TYPE_BOOL,               /* FMOD_DSP_PARAMETER_DESC will use the FMOD_DSP_PARAMETER_DESC_BOOL. */
     FMOD_DSP_PARAMETER_TYPE_DATA,               /* FMOD_DSP_PARAMETER_DESC will use the FMOD_DSP_PARAMETER_DESC_DATA. */
-
+    
     FMOD_DSP_PARAMETER_TYPE_MAX,                /* Maximum number of DSP parameter types. */
     FMOD_DSP_PARAMETER_TYPE_FORCEINT = 65536    /* Makes sure this enum is signed 32bit. */
 } FMOD_DSP_PARAMETER_TYPE;
@@ -212,10 +215,10 @@ typedef enum
 [
     [DESCRIPTION]   
     DSP float parameter mappings. These determine how values are mapped across dials and automation curves.
-
+    
     [REMARKS]
     FMOD_DSP_PARAMETER_FLOAT_MAPPING_TYPE_AUTO generates a mapping based on range and units. For example, if the units are in Hertz and the range is with-in the audio spectrum, a Bark scale will be chosen. Logarithmic scales may also be generated for ranges above zero spanning several orders of magnitude.
-
+    
     [SEE_ALSO]
     FMOD_DSP_PARAMETER_FLOAT_MAPPING
 ]
@@ -225,7 +228,7 @@ typedef enum
     FMOD_DSP_PARAMETER_FLOAT_MAPPING_TYPE_LINEAR,               /* Values mapped linearly across range. */
     FMOD_DSP_PARAMETER_FLOAT_MAPPING_TYPE_AUTO,                 /* A mapping is automatically chosen based on range and units.  See remarks. */
     FMOD_DSP_PARAMETER_FLOAT_MAPPING_TYPE_PIECEWISE_LINEAR,     /* Values mapped in a piecewise linear fashion defined by FMOD_DSP_PARAMETER_FLOAT_MAPPING_PIECEWISE_LINEAR. */
-
+    
     FMOD_DSP_PARAMETER_FLOAT_MAPPING_TYPE_FORCEINT = 65536      /* Makes sure this enum is signed 32bit. */
 } FMOD_DSP_PARAMETER_FLOAT_MAPPING_TYPE;
 
@@ -234,11 +237,11 @@ typedef enum
 [
     [DESCRIPTION]
     Structure to define a piecewise linear mapping.
-
+    
     [REMARKS]
     Members marked with [r] mean the variable is modified by FMOD and is for reading purposes only.  Do not change this value.<br>
     Members marked with [w] mean the variable can be written to.  The user can set the value.<br>
-
+    
     [SEE_ALSO]    
     FMOD_DSP_PARAMETER_FLOAT_MAPPING_TYPE
     FMOD_DSP_PARAMETER_FLOAT_MAPPING
@@ -257,11 +260,11 @@ typedef struct FMOD_DSP_PARAMETER_FLOAT_MAPPING_PIECEWISE_LINEAR
 [
     [DESCRIPTION]
     Structure to define a mapping for a DSP unit's float parameter.
-
+    
     [REMARKS]
     Members marked with [r] mean the variable is modified by FMOD and is for reading purposes only.  Do not change this value.<br>
     Members marked with [w] mean the variable can be written to.  The user can set the value.<br>
-
+    
     [SEE_ALSO]    
     FMOD_DSP_PARAMETER_FLOAT_MAPPING_TYPE
     FMOD_DSP_PARAMETER_FLOAT_MAPPING_PIECEWISE_LINEAR
@@ -280,11 +283,11 @@ typedef struct FMOD_DSP_PARAMETER_FLOAT_MAPPING
 [
     [DESCRIPTION]
     Structure to define a float parameter for a DSP unit.
-
+    
     [REMARKS]
     Members marked with [r] mean the variable is modified by FMOD and is for reading purposes only.  Do not change this value.<br>
     Members marked with [w] mean the variable can be written to.  The user can set the value.<br>
-
+    
     [SEE_ALSO]    
     System::createDSP
     DSP::setParameterFloat
@@ -307,11 +310,11 @@ typedef struct FMOD_DSP_PARAMETER_DESC_FLOAT
 [
     [DESCRIPTION]
     Structure to define a int parameter for a DSP unit.
-
+    
     [REMARKS]
     Members marked with [r] mean the variable is modified by FMOD and is for reading purposes only.  Do not change this value.<br>
     Members marked with [w] mean the variable can be written to.  The user can set the value.<br>
-
+    
     [SEE_ALSO]    
     System::createDSP
     DSP::setParameterInt
@@ -334,11 +337,11 @@ typedef struct FMOD_DSP_PARAMETER_DESC_INT
 [
     [DESCRIPTION]
     Structure to define a boolean parameter for a DSP unit.
-
+    
     [REMARKS]
     Members marked with [r] mean the variable is modified by FMOD and is for reading purposes only.  Do not change this value.<br>
     Members marked with [w] mean the variable can be written to.  The user can set the value.<br>
-
+    
     [SEE_ALSO]    
     System::createDSP
     DSP::setParameterBool
@@ -358,11 +361,11 @@ typedef struct FMOD_DSP_PARAMETER_DESC_BOOL
 [
     [DESCRIPTION]
     Structure to define a data parameter for a DSP unit.  Use 0 or above for custom types.  This parameter will be treated specially by the system if set to one of the FMOD_DSP_PARAMETER_DATA_TYPE values.
-
+    
     [REMARKS]
     Members marked with [r] mean the variable is modified by FMOD and is for reading purposes only.  Do not change this value.<br>
     Members marked with [w] mean the variable can be written to.  The user can set the value.<br>
-
+    
     [SEE_ALSO]    
     System::createDSP
     DSP::setParameterData
@@ -382,11 +385,11 @@ typedef struct FMOD_DSP_PARAMETER_DESC_DATA
 [
     [DESCRIPTION]
     Base Structure for DSP parameter descriptions.
-
+    
     [REMARKS]
     Members marked with [r] mean the variable is modified by FMOD and is for reading purposes only.  Do not change this value.<br>
     Members marked with [w] mean the variable can be written to.  The user can set the value.<br>
-
+    
     [SEE_ALSO]    
     System::createDSP
     DSP::setParameterFloat
@@ -410,7 +413,7 @@ typedef struct FMOD_DSP_PARAMETER_DESC
     char                      name[16];             /* [w] Name of the parameter to be displayed (ie "Cutoff frequency"). */
     char                      label[16];            /* [w] Short string to be put next to value to denote the unit type (ie "hz"). */
     const char               *description;          /* [w] Description of the parameter to be displayed as a help item / tooltip for this parameter. */
-
+    
     union
     {
         FMOD_DSP_PARAMETER_DESC_FLOAT   floatdesc;  /* [w] Struct containing information about the parameter in floating point format.  Use when type is FMOD_DSP_PARAMETER_TYPE_FLOAT. */
@@ -426,9 +429,9 @@ typedef struct FMOD_DSP_PARAMETER_DESC
 [
     [DESCRIPTION]   
     Built-in types for the 'datatype' member of FMOD_DSP_PARAMETER_DESC_DATA.  Data parameters of type other than FMOD_DSP_PARAMETER_DATA_TYPE_USER will be treated specially by the system. 
-
+    
     [REMARKS]
-
+    
     [SEE_ALSO]
     FMOD_DSP_PARAMETER_DESC_DATA
     FMOD_DSP_PARAMETER_OVERALLGAIN
@@ -457,11 +460,11 @@ typedef enum
     Structure for data parameters of type FMOD_DSP_PARAMETER_DATA_TYPE_OVERALLGAIN.
     A parameter of this type is used in effects that affect the overgain of the signal in a predictable way.
     This parameter is read by the system to determine the effect's gain for voice virtualization.
-
+    
     [REMARKS]
     Members marked with [r] mean the variable is modified by FMOD and is for reading purposes only.  Do not change this value.<br>
     Members marked with [w] mean the variable can be written to.  The user can set the value.<br>
-
+    
     [SEE_ALSO]    
     FMOD_DSP_PARAMETER_DATA_TYPE
     FMOD_DSP_PARAMETER_DESC
@@ -481,18 +484,18 @@ typedef struct FMOD_DSP_PARAMETER_OVERALLGAIN
     Structure for data parameters of type FMOD_DSP_PARAMETER_DATA_TYPE_3DATTRIBUTES.
     
     A parameter of this type is used in effects that respond to a 3D position.
-
+    
     [REMARKS]
     The FMOD::Studio::System will set this parameter automatically if an FMOD::Studio::EventInstance position
     changes, however if using the low level FMOD::System you must set this DSP parameter explicitly.
-
+    
     Attributes must use a coordinate system with the positive Y axis being up and the positive X axis being
     right. FMOD will convert passed in coordinates to left-handed for the plugin if the System was initialized
     with the FMOD_INIT_3D_RIGHTHANDED flag.
-
+    
     Members marked with [r] mean the variable is modified by FMOD and is for reading purposes only.  Do not change this value.<br>
     Members marked with [w] mean the variable can be written to.  The user can set the value.<br>
-
+    
     [SEE_ALSO]    
     FMOD_DSP_PARAMETER_DATA_TYPE
     FMOD_DSP_PARAMETER_DESC
@@ -510,20 +513,20 @@ typedef struct FMOD_DSP_PARAMETER_3DATTRIBUTES
 [
     [DESCRIPTION]
     Structure for data parameters of type FMOD_DSP_PARAMETER_DATA_TYPE_3DATTRIBUTES_MULTI.
-
+    
     A parameter of this type is used in effects that respond to a 3D position and support multiple listeners.
-
+    
     [REMARKS]
     The FMOD::Studio::System will set this parameter automatically if an FMOD::Studio::EventInstance position
     changes, however if using the low level FMOD::System you must set this DSP parameter explicitly.
-
+    
     Attributes must use a coordinate system with the positive Y axis being up and the positive X axis being
     right. FMOD will convert passed in coordinates to left-handed for the plugin if the System was initialized
     with the FMOD_INIT_3D_RIGHTHANDED flag.
-
+    
     Members marked with [r] mean the variable is modified by FMOD and is for reading purposes only.  Do not change this value.<br>
     Members marked with [w] mean the variable can be written to.  The user can set the value.<br>
-
+    
     [SEE_ALSO]    
     FMOD_DSP_PARAMETER_DATA_TYPE
     FMOD_DSP_PARAMETER_DESC
@@ -544,11 +547,11 @@ typedef struct FMOD_DSP_PARAMETER_3DATTRIBUTES_MULTI
     [DESCRIPTION]
     Structure for data parameters of type FMOD_DSP_PARAMETER_DATA_TYPE_SIDECHAIN.
     A parameter of this type is declared for effects which support sidechaining.
-
+    
     [REMARKS]
     Members marked with [r] mean the variable is modified by FMOD and is for reading purposes only.  Do not change this value.<br>
     Members marked with [w] mean the variable can be written to.  The user can set the value.<br>
-
+    
     [SEE_ALSO]    
     FMOD_DSP_PARAMETER_DATA_TYPE
     FMOD_DSP_PARAMETER_DESC
@@ -566,7 +569,7 @@ typedef struct FMOD_DSP_PARAMETER_SIDECHAIN
     [DESCRIPTION]
     Structure for data parameters of type FMOD_DSP_PARAMETER_DATA_TYPE_FFT.
     A parameter of this type is declared for the FMOD_DSP_TYPE_FFT effect.
-
+    
     [REMARKS]
     Members marked with [r] mean the variable is modified by FMOD and is for reading purposes only.  Do not change this value.<br>
     Members marked with [w] mean the variable can be written to.  The user can set the value.<br>
@@ -575,7 +578,7 @@ typedef struct FMOD_DSP_PARAMETER_SIDECHAIN
     Each top level array represents one PCM channel of data.<br>
     Address data as spectrum[channel][bin].  A bin is 1 fft window entry.<br>
     Only read/display half of the buffer typically for analysis as the 2nd half is usually the same data reversed due to the nature of the way FFT works.<br>
-
+    
     [SEE_ALSO]    
     FMOD_DSP_PARAMETER_DATA_TYPE
     FMOD_DSP_PARAMETER_DESC
@@ -596,70 +599,70 @@ typedef struct FMOD_DSP_PARAMETER_FFT
     Helpers for declaring parameters in custom DSPSs
 */
 #define FMOD_DSP_INIT_PARAMDESC_FLOAT(_paramstruct, _name, _label, _description, _min, _max, _defaultval) \
-    memset(&(_paramstruct), 0, sizeof(_paramstruct)); \
-    (_paramstruct).type         = FMOD_DSP_PARAMETER_TYPE_FLOAT; \
-    strncpy((_paramstruct).name,  _name,  15); \
-    strncpy((_paramstruct).label, _label, 15); \
-    (_paramstruct).description  = _description; \
-    (_paramstruct).floatdesc.min          = _min; \
-    (_paramstruct).floatdesc.max          = _max; \
-    (_paramstruct).floatdesc.defaultval   = _defaultval; \
-    (_paramstruct).floatdesc.mapping.type = FMOD_DSP_PARAMETER_FLOAT_MAPPING_TYPE_AUTO;
+memset(&(_paramstruct), 0, sizeof(_paramstruct)); \
+(_paramstruct).type         = FMOD_DSP_PARAMETER_TYPE_FLOAT; \
+strncpy((_paramstruct).name,  _name,  15); \
+strncpy((_paramstruct).label, _label, 15); \
+(_paramstruct).description  = _description; \
+(_paramstruct).floatdesc.min          = _min; \
+(_paramstruct).floatdesc.max          = _max; \
+(_paramstruct).floatdesc.defaultval   = _defaultval; \
+(_paramstruct).floatdesc.mapping.type = FMOD_DSP_PARAMETER_FLOAT_MAPPING_TYPE_AUTO;
 
 #define FMOD_DSP_INIT_PARAMDESC_FLOAT_WITH_MAPPING(_paramstruct, _name, _label, _description, _defaultval, _values, _positions); \
-    memset(&(_paramstruct), 0, sizeof(_paramstruct)); \
-    (_paramstruct).type         = FMOD_DSP_PARAMETER_TYPE_FLOAT; \
-    strncpy((_paramstruct).name,  _name , 15); \
-    strncpy((_paramstruct).label, _label, 15); \
-    (_paramstruct).description  = _description; \
-    (_paramstruct).floatdesc.min          = _values[0]; \
-    (_paramstruct).floatdesc.max          = _values[sizeof(_values) / sizeof(float) - 1]; \
-    (_paramstruct).floatdesc.defaultval   = _defaultval; \
-    (_paramstruct).floatdesc.mapping.type = FMOD_DSP_PARAMETER_FLOAT_MAPPING_TYPE_PIECEWISE_LINEAR; \
-    (_paramstruct).floatdesc.mapping.piecewiselinearmapping.numpoints = sizeof(_values) / sizeof(float); \
-    (_paramstruct).floatdesc.mapping.piecewiselinearmapping.pointparamvalues = _values; \
-    (_paramstruct).floatdesc.mapping.piecewiselinearmapping.pointpositions = _positions;
+memset(&(_paramstruct), 0, sizeof(_paramstruct)); \
+(_paramstruct).type         = FMOD_DSP_PARAMETER_TYPE_FLOAT; \
+strncpy((_paramstruct).name,  _name , 15); \
+strncpy((_paramstruct).label, _label, 15); \
+(_paramstruct).description  = _description; \
+(_paramstruct).floatdesc.min          = _values[0]; \
+(_paramstruct).floatdesc.max          = _values[sizeof(_values) / sizeof(float) - 1]; \
+(_paramstruct).floatdesc.defaultval   = _defaultval; \
+(_paramstruct).floatdesc.mapping.type = FMOD_DSP_PARAMETER_FLOAT_MAPPING_TYPE_PIECEWISE_LINEAR; \
+(_paramstruct).floatdesc.mapping.piecewiselinearmapping.numpoints = sizeof(_values) / sizeof(float); \
+(_paramstruct).floatdesc.mapping.piecewiselinearmapping.pointparamvalues = _values; \
+(_paramstruct).floatdesc.mapping.piecewiselinearmapping.pointpositions = _positions;
 
 #define FMOD_DSP_INIT_PARAMDESC_INT(_paramstruct, _name, _label, _description, _min, _max, _defaultval, _goestoinf, _valuenames) \
-    memset(&(_paramstruct), 0, sizeof(_paramstruct)); \
-    (_paramstruct).type         = FMOD_DSP_PARAMETER_TYPE_INT; \
-    strncpy((_paramstruct).name,  _name , 15); \
-    strncpy((_paramstruct).label, _label, 15); \
-    (_paramstruct).description  = _description; \
-    (_paramstruct).intdesc.min          = _min; \
-    (_paramstruct).intdesc.max          = _max; \
-    (_paramstruct).intdesc.defaultval   = _defaultval; \
-    (_paramstruct).intdesc.goestoinf    = _goestoinf; \
-    (_paramstruct).intdesc.valuenames   = _valuenames;
+memset(&(_paramstruct), 0, sizeof(_paramstruct)); \
+(_paramstruct).type         = FMOD_DSP_PARAMETER_TYPE_INT; \
+strncpy((_paramstruct).name,  _name , 15); \
+strncpy((_paramstruct).label, _label, 15); \
+(_paramstruct).description  = _description; \
+(_paramstruct).intdesc.min          = _min; \
+(_paramstruct).intdesc.max          = _max; \
+(_paramstruct).intdesc.defaultval   = _defaultval; \
+(_paramstruct).intdesc.goestoinf    = _goestoinf; \
+(_paramstruct).intdesc.valuenames   = _valuenames;
 
 #define FMOD_DSP_INIT_PARAMDESC_INT_ENUMERATED(_paramstruct, _name, _label, _description, _defaultval, _valuenames) \
-    memset(&(_paramstruct), 0, sizeof(_paramstruct)); \
-    (_paramstruct).type         = FMOD_DSP_PARAMETER_TYPE_INT; \
-    strncpy((_paramstruct).name,  _name , 15); \
-    strncpy((_paramstruct).label, _label, 15); \
-    (_paramstruct).description  = _description; \
-    (_paramstruct).intdesc.min          = 0; \
-    (_paramstruct).intdesc.max          = sizeof(_valuenames) / sizeof(char*) - 1; \
-    (_paramstruct).intdesc.defaultval   = _defaultval; \
-    (_paramstruct).intdesc.goestoinf    = false; \
-    (_paramstruct).intdesc.valuenames   = _valuenames;
+memset(&(_paramstruct), 0, sizeof(_paramstruct)); \
+(_paramstruct).type         = FMOD_DSP_PARAMETER_TYPE_INT; \
+strncpy((_paramstruct).name,  _name , 15); \
+strncpy((_paramstruct).label, _label, 15); \
+(_paramstruct).description  = _description; \
+(_paramstruct).intdesc.min          = 0; \
+(_paramstruct).intdesc.max          = sizeof(_valuenames) / sizeof(char*) - 1; \
+(_paramstruct).intdesc.defaultval   = _defaultval; \
+(_paramstruct).intdesc.goestoinf    = false; \
+(_paramstruct).intdesc.valuenames   = _valuenames;
 
 #define FMOD_DSP_INIT_PARAMDESC_BOOL(_paramstruct, _name, _label, _description, _defaultval, _valuenames) \
-    memset(&(_paramstruct), 0, sizeof(_paramstruct)); \
-    (_paramstruct).type         = FMOD_DSP_PARAMETER_TYPE_BOOL; \
-    strncpy((_paramstruct).name,  _name , 15); \
-    strncpy((_paramstruct).label, _label, 15); \
-    (_paramstruct).description  = _description; \
-    (_paramstruct).booldesc.defaultval   = _defaultval; \
-    (_paramstruct).booldesc.valuenames   = _valuenames;
+memset(&(_paramstruct), 0, sizeof(_paramstruct)); \
+(_paramstruct).type         = FMOD_DSP_PARAMETER_TYPE_BOOL; \
+strncpy((_paramstruct).name,  _name , 15); \
+strncpy((_paramstruct).label, _label, 15); \
+(_paramstruct).description  = _description; \
+(_paramstruct).booldesc.defaultval   = _defaultval; \
+(_paramstruct).booldesc.valuenames   = _valuenames;
 
 #define FMOD_DSP_INIT_PARAMDESC_DATA(_paramstruct, _name, _label, _description, _datatype) \
-    memset(&(_paramstruct), 0, sizeof(_paramstruct)); \
-    (_paramstruct).type         = FMOD_DSP_PARAMETER_TYPE_DATA; \
-    strncpy((_paramstruct).name,  _name , 15); \
-    strncpy((_paramstruct).label, _label, 15); \
-    (_paramstruct).description  = _description; \
-    (_paramstruct).datadesc.datatype     = _datatype;
+memset(&(_paramstruct), 0, sizeof(_paramstruct)); \
+(_paramstruct).type         = FMOD_DSP_PARAMETER_TYPE_DATA; \
+strncpy((_paramstruct).name,  _name , 15); \
+strncpy((_paramstruct).label, _label, 15); \
+(_paramstruct).description  = _description; \
+(_paramstruct).datadesc.datatype     = _datatype;
 
 #define FMOD_PLUGIN_SDK_VERSION 110
 
@@ -668,7 +671,7 @@ typedef struct FMOD_DSP_PARAMETER_FFT
 [
     [DESCRIPTION]
     When creating a DSP unit, declare one of these and provide the relevant callbacks and name for FMOD to use when it creates and uses a DSP unit of this type.
-
+    
     [REMARKS]
     Members marked with [r] mean the variable is modified by FMOD and is for reading purposes only.  Do not change this value.<br>
     Members marked with [w] mean the variable can be written to.  The user can set the value.<br>
@@ -676,7 +679,7 @@ typedef struct FMOD_DSP_PARAMETER_FFT
     There are 2 different ways to change a parameter in this architecture.<br>
     One is to use DSP::setParameterFloat / DSP::setParameterInt / DSP::setParameterBool / DSP::setParameterData.  This is platform independant and is dynamic, so new unknown plugins can have their parameters enumerated and used.<br>
     The other is to use DSP::showConfigDialog.  This is platform specific and requires a GUI, and will display a dialog box to configure the plugin.<br>
-
+    
     [SEE_ALSO]    
     System::createDSP
     DSP::setParameterFloat
@@ -718,7 +721,7 @@ typedef struct FMOD_DSP_DESCRIPTION
     FMOD_DSP_READ_CALLBACK              read;               /* [w] Read callback.  Processing is done here.  Can be null. */
     FMOD_DSP_PROCESS_CALLBACK           process;            /* [w] Process callback.  Can be specified instead of the read callback if any channel format changes occur between input and output.  This also replaces shouldiprocess and should return an error if the effect is to be bypassed.  Can be null. */
     FMOD_DSP_SETPOSITION_CALLBACK       setposition;        /* [w] Set position callback.  This is called if the unit wants to update its position info but not process data, or reset a cursor position internally if it is reading data from a certain source.  Can be null. */
-
+    
     int                                 numparameters;      /* [w] Number of parameters used in this filter.  The user finds this with DSP::getNumParameters */
     FMOD_DSP_PARAMETER_DESC           **paramdesc;          /* [w] Variable number of parameter structures. */
     FMOD_DSP_SETPARAM_FLOAT_CALLBACK    setparameterfloat;  /* [w] This is called when the user calls DSP::setParameterFloat. Can be null. */
@@ -731,11 +734,11 @@ typedef struct FMOD_DSP_DESCRIPTION
     FMOD_DSP_GETPARAM_DATA_CALLBACK     getparameterdata;   /* [w] This is called when the user calls DSP::getParameterData.  Can be null. */
     FMOD_DSP_SHOULDIPROCESS_CALLBACK    shouldiprocess;     /* [w] This is called before processing.  You can detect if inputs are idle and return FMOD_OK to process, or any other error code to avoid processing the effect.  Use a count down timer to allow effect tails to process before idling! */
     void                               *userdata;           /* [w] Optional. Specify 0 to ignore. This is user data to be attached to the DSP unit during creation.  Access via FMOD_DSP_STATE_FUNCTIONS::getuserdata. */
-
+    
     FMOD_DSP_SYSTEM_REGISTER_CALLBACK   sys_register;       /* [w] Register callback.  This is called when DSP unit is loaded/registered.  Useful for 'global'/per system object init for plugin.  Can be null. */
     FMOD_DSP_SYSTEM_DEREGISTER_CALLBACK sys_deregister;     /* [w] Deregister callback.  This is called when DSP unit is unloaded/deregistered.  Useful as 'global'/per system object shutdown for plugin.  Can be null. */
     FMOD_DSP_SYSTEM_MIX_CALLBACK        sys_mix;            /* [w] System mix stage callback.  This is called when the mixer starts to execute or is just finishing executing.  Useful for 'global'/per system object once a mix update calls for a plugin.  Can be null. */
-
+    
 } FMOD_DSP_DESCRIPTION;
 
 
@@ -744,12 +747,12 @@ typedef struct FMOD_DSP_DESCRIPTION
 [
     [DESCRIPTION]
     Struct containing DFT functions to enable a plugin to perform optimized time-frequency domain conversion.
-
+    
     [REMARKS]
     Members marked with [r] mean read only for the developer, read/write for the FMOD system.
-
+    
     Members marked with [w] mean read/write for the developer, read only for the FMOD system.
-
+    
     [SEE_ALSO]
     FMOD_DSP_STATE_FUNCTIONS
 ]
@@ -766,14 +769,14 @@ typedef struct FMOD_DSP_STATE_DFT_FUNCTIONS
 [
     [DESCRIPTION]
     Struct containing panning helper functions for spatialization plugins.
-
+    
     [REMARKS]
     These are experimental, please contact support@fmod.org for more information.
-
+    
     Members marked with [r] mean read only for the developer, read/write for the FMOD system.
-
+    
     Members marked with [w] mean read/write for the developer, read only for the FMOD system.
-
+    
     [SEE_ALSO]
     FMOD_DSP_STATE_FUNCTIONS
     FMOD_DSP_PAN_SURROUND_FLAGS
@@ -795,12 +798,12 @@ typedef struct FMOD_DSP_STATE_PAN_FUNCTIONS
 [
     [DESCRIPTION]
     Struct containing functions to give plugin developers the ability to query system state, access system level functionality and helpers.
-
+    
     [REMARKS]
     Members marked with [r] mean read only for the developer, read/write for the FMOD system.
-
+    
     Members marked with [w] mean read/write for the developer, read only for the FMOD system.
-
+    
     [SEE_ALSO]
     FMOD_DSP_STATE
     FMOD_DSP_STATE_DFT_FUNCTIONS
@@ -829,14 +832,14 @@ typedef struct FMOD_DSP_STATE_FUNCTIONS
 [
     [DESCRIPTION]
     DSP plugin structure that is passed into each callback.
-
+    
     [REMARKS]
     Members marked with [r] mean the variable is modified by FMOD and is for reading purposes only.  Do not change this value.<br>
     Members marked with [w] mean the variable can be written to.  The user can set the value.<br>
     <br>
     'systemobject' is an integer that relates to the System object that created the DSP or registered the DSP plugin.  If only 1 System object is created then it should be 0.  A second object would be 1 and so on.
     FMOD_DSP_STATE_FUNCTIONS::getsamplerate/getblocksize/getspeakermode could return different results so it could be relevant to plugin developers to monitor which object is being used.
-
+    
     [SEE_ALSO]
     FMOD_DSP_DESCRIPTION
     FMOD_DSP_STATE_FUNCTIONS
@@ -859,41 +862,41 @@ struct FMOD_DSP_STATE
     Macro helpers for accessing FMOD_DSP_STATE_FUNCTIONS
 */
 #define FMOD_DSP_ALLOC(_state, _size) \
-    (_state)->functions->alloc(_size, FMOD_MEMORY_NORMAL, __FILE__)
+(_state)->functions->alloc(_size, FMOD_MEMORY_NORMAL, __FILE__)
 #define FMOD_DSP_REALLOC(_state, _ptr, _size) \
-    (_state)->functions->realloc(_ptr, _size, FMOD_MEMORY_NORMAL, __FILE__)
+(_state)->functions->realloc(_ptr, _size, FMOD_MEMORY_NORMAL, __FILE__)
 #define FMOD_DSP_FREE(_state, _ptr) \
-    (_state)->functions->free(_ptr, FMOD_MEMORY_NORMAL, __FILE__)
+(_state)->functions->free(_ptr, FMOD_MEMORY_NORMAL, __FILE__)
 #define FMOD_DSP_LOG(_state, _level, _location, _format, ...) \
-    (_state)->functions->log(_level, __FILE__, __LINE__, _location, _format, __VA_ARGS__)
+(_state)->functions->log(_level, __FILE__, __LINE__, _location, _format, __VA_ARGS__)
 #define FMOD_DSP_GETSAMPLERATE(_state, _rate) \
-    (_state)->functions->getsamplerate(_state, _rate)
+(_state)->functions->getsamplerate(_state, _rate)
 #define FMOD_DSP_GETBLOCKSIZE(_state, _blocksize) \
-    (_state)->functions->getblocksize(_state, _blocksize)
+(_state)->functions->getblocksize(_state, _blocksize)
 #define FMOD_DSP_GETSPEAKERMODE(_state, _speakermodemix, _speakermodeout) \
-    (_state)->functions->getspeakermode(_state, _speakermodemix, _speakermodeout)
+(_state)->functions->getspeakermode(_state, _speakermodemix, _speakermodeout)
 #define FMOD_DSP_GETCLOCK(_state, _clock, _offset, _length) \
-    (_state)->functions->getclock(_state, _clock, _offset, _length)
+(_state)->functions->getclock(_state, _clock, _offset, _length)
 #define FMOD_DSP_GETLISTENERATTRIBUTES(_state, _numlisteners, _attributes) \
-    (_state)->functions->getlistenerattributes(_state, _numlisteners, _attributes)
+(_state)->functions->getlistenerattributes(_state, _numlisteners, _attributes)
 #define FMOD_DSP_GETUSERDATA(_state, _userdata) \
-    (_state)->functions->getuserdata(_state, _userdata)
+(_state)->functions->getuserdata(_state, _userdata)
 #define FMOD_DSP_DFT_FFTREAL(_state, _size, _signal, _dft, _window, _signalhop) \
-    (_state)->functions->dft->fftreal(_state, _size, _signal, _dft, _window, _signalhop)
+(_state)->functions->dft->fftreal(_state, _size, _signal, _dft, _window, _signalhop)
 #define FMOD_DSP_DFT_IFFTREAL(_state, _size, _dft, _signal, _window, _signalhop) \
-    (_state)->functions->dft->inversefftreal(_state, _size, _dft, _signal, _window, _signalhop)
+(_state)->functions->dft->inversefftreal(_state, _size, _dft, _signal, _window, _signalhop)
 #define FMOD_DSP_PAN_SUMMONOMATRIX(_state, _sourcespeakermode, _lowfrequencygain, _overallgain, _matrix) \
-    (_state)->functions->pan->summonomatrix(_state, _sourcespeakermode, _lowfrequencygain, _overallgain, _matrix)
+(_state)->functions->pan->summonomatrix(_state, _sourcespeakermode, _lowfrequencygain, _overallgain, _matrix)
 #define FMOD_DSP_PAN_SUMSTEREOMATRIX(_state, _sourcespeakermode, _pan, _lowfrequencygain, _overallgain, _matrixhop, _matrix) \
-    (_state)->functions->pan->sumstereomatrix(_state, _sourcespeakermode, _pan, _lowfrequencygain, _overallgain, _matrixhop, _matrix)
+(_state)->functions->pan->sumstereomatrix(_state, _sourcespeakermode, _pan, _lowfrequencygain, _overallgain, _matrixhop, _matrix)
 #define FMOD_DSP_PAN_SUMSURROUNDMATRIX(_state, _sourcespeakermode, _targetspeakermode, _direction, _extent, _rotation, _lowfrequencygain, _overallgain, _matrixhop, _matrix, _flags) \
-    (_state)->functions->pan->sumsurroundmatrix(_state, _sourcespeakermode, _targetspeakermode, _direction, _extent, _rotation, _lowfrequencygain, _overallgain, _matrixhop, _matrix, _flags)
+(_state)->functions->pan->sumsurroundmatrix(_state, _sourcespeakermode, _targetspeakermode, _direction, _extent, _rotation, _lowfrequencygain, _overallgain, _matrixhop, _matrix, _flags)
 #define FMOD_DSP_PAN_SUMMONOTOSURROUNDMATRIX(_state, _targetspeakermode, _direction, _extent, _lowfrequencygain, _overallgain, _matrixhop, _matrix) \
-    (_state)->functions->pan->summonotosurroundmatrix(_state, _targetspeakermode, _direction, _extent, _lowfrequencygain, _overallgain, _matrixhop, _matrix)
+(_state)->functions->pan->summonotosurroundmatrix(_state, _targetspeakermode, _direction, _extent, _lowfrequencygain, _overallgain, _matrixhop, _matrix)
 #define FMOD_DSP_PAN_SUMSTEREOTOSURROUNDMATRIX(_state, _targetspeakermode, _direction, _extent, _rotation, _lowfrequencygain, _overallgain, matrixhop, _matrix) \
-    (_state)->functions->pan->sumstereotosurroundmatrix(_state, _targetspeakermode, _direction, _extent, _rotation, _lowfrequencygain, _overallgain, matrixhop, _matrix)
+(_state)->functions->pan->sumstereotosurroundmatrix(_state, _targetspeakermode, _direction, _extent, _rotation, _lowfrequencygain, _overallgain, matrixhop, _matrix)
 #define FMOD_DSP_PAN_GETROLLOFFGAIN(_state, _rolloff, _distance, _mindistance, _maxdistance, _gain) \
-    (_state)->functions->pan->getrolloffgain(_state, _rolloff, _distance, _mindistance, _maxdistance, _gain)
+(_state)->functions->pan->getrolloffgain(_state, _rolloff, _distance, _mindistance, _maxdistance, _gain)
 
 
 /*
@@ -901,11 +904,11 @@ struct FMOD_DSP_STATE
 [
     [DESCRIPTION]
     DSP metering info used for retrieving metering info with DSP::getMeteringInfo
-
+    
     [REMARKS]
     Members marked with [r] mean the variable is modified by FMOD and is for reading purposes only.  Do not change this value.<br>
     Members marked with [w] mean the variable can be written to.  The user can set the value.<br>
-
+    
     [SEE_ALSO]
     FMOD_SPEAKER
     DSP::getMeteringInfo
@@ -921,3 +924,6 @@ typedef struct FMOD_DSP_METERING_INFO
 
 #endif
 
+#ifdef _WIN32
+#pragma warning(pop)
+#endif
