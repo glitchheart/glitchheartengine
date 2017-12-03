@@ -24,6 +24,7 @@
 #include "linux_main.h"
 
 platform_api Platform;
+log_state LogState;
 
 #include "gmap.cpp"
 #include "keycontroller.h"
