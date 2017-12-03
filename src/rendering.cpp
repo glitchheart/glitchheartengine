@@ -193,7 +193,7 @@ static void LoadShader(const char* FullShaderPath, renderer& Renderer)
         
         // @Incomplete: Use built-in memory arena
         ShaderData->VertexShaderContent = (char*) malloc(sizeof(char) * Size);
-        fread(ShaderData->VertexShaderContent, 1, Size, File);
+        fread(ShaderData->VertexShaderContent, 1, (size_t)Size, File);
         fclose(File);
     }
     else
@@ -211,7 +211,7 @@ static void LoadShader(const char* FullShaderPath, renderer& Renderer)
         
         // @Incomplete: Use built-in memory arena
         ShaderData->FragmentShaderContent = (char*) malloc(sizeof(char) * Size);
-        fread(ShaderData->FragmentShaderContent, 1, Size, File);
+        fread(ShaderData->FragmentShaderContent, 1, (size_t)Size, File);
         fclose(File);
     }
     else
@@ -667,19 +667,19 @@ static void LoadGLIMModel(renderer& Renderer, char* FilePath, model* Model)
         
         model_data ModelData;
         fread(&ModelData, sizeof(model_data), 1, File);
-        fread(Model->Meshes, ModelData.MeshChunkSize, 1, File);
+        fread(Model->Meshes, (size_t)ModelData.MeshChunkSize, 1, File);
         
         Model->Type = (Model_Type)ModelData.ModelType;
         Model->MeshCount = ModelData.NumMeshes;
         
         r32* VertexBuffer = PushTempSize(ModelData.VertexBufferChunkSize, r32);
-        fread(VertexBuffer, ModelData.VertexBufferChunkSize, 1, File);
+        fread(VertexBuffer, (size_t)ModelData.VertexBufferChunkSize, 1, File);
         u32* IndexBuffer = PushTempSize(ModelData.IndexBufferChunkSize, u32);
-        fread(IndexBuffer, ModelData.IndexBufferChunkSize, 1, File);
+        fread(IndexBuffer, (size_t)ModelData.IndexBufferChunkSize, 1, File);
         
         Model->MaterialCount = ModelData.NumMaterials;
         if(ModelData.NumMaterials > 0)
-            fread(&Model->Materials, ModelData.MaterialChunkSize, 1, File);
+            fread(&Model->Materials, (size_t)ModelData.MaterialChunkSize, 1, File);
         
         Model->GlobalInverseTransform = ModelData.GlobalInverseTransform;
         
@@ -688,13 +688,13 @@ static void LoadGLIMModel(renderer& Renderer, char* FilePath, model* Model)
         {
             Model->Bones = PushArray(&Renderer.AnimationArena, ModelData.NumBones, bone);
             Model->CurrentPoses = PushArray(&Renderer.AnimationArena, ModelData.NumBones, math::m4);
-            fread(Model->Bones, ModelData.BoneChunkSize, 1, File);
+            fread(Model->Bones, (size_t)ModelData.BoneChunkSize, 1, File);
         }
         
         buffer_data Data = {};
         Data.Skinned = Model->BoneCount > 0;
-        CopyTemp(Data.VertexBuffer, VertexBuffer, ModelData.VertexBufferChunkSize, r32);
-        CopyTemp(Data.IndexBuffer, IndexBuffer, ModelData.IndexBufferChunkSize, u32);
+        CopyTemp(Data.VertexBuffer, VertexBuffer, (size_t)ModelData.VertexBufferChunkSize, r32);
+        CopyTemp(Data.IndexBuffer, IndexBuffer, (size_t)ModelData.IndexBufferChunkSize, u32);
         
         Data.HasNormals = ModelData.HasNormals;
         Data.HasUVs = ModelData.HasUVs;

@@ -14,7 +14,7 @@ struct sound_info
 
 struct sound_effect
 {
-    u32 Buffer;
+    i32 Buffer;
     sound_info SoundInfo;
 };
 
