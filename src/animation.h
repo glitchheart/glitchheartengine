@@ -6,8 +6,8 @@ struct spritesheet_frame
     r64 Duration;
     r32 X;
     r32 Y;
-    u32 FrameWidth;
-    u32 FrameHeight;
+    i32 FrameWidth;
+    i32 FrameHeight;
 };
 
 struct spritesheet_animation_info
