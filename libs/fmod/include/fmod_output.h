@@ -1,3 +1,6 @@
+#ifdef _WIN32
+#pragma warning(push, 0)
+#endif
 /* ======================================================================================================== */
 /* FMOD Studio - output development header file. Copyright (c), Firelight Technologies Pty, Ltd. 2004-2017. */
 /*                                                                                                          */
@@ -56,21 +59,21 @@ typedef void        (F_CALL *FMOD_OUTPUT_LOG_FUNC)                  (FMOD_DEBUG_
 [
     [DESCRIPTION]
     When creating an output, declare one of these and provide the relevant callbacks and name for FMOD to use when it creates and uses an output of this type.
-
+    
     [REMARKS]
     There are several methods for driving the FMOD mixer to service the audio hardware.
-
+    
     * Polled: if the audio hardware must be polled regularly set 'polling' to TRUE, FMOD will create a mixer thread that calls back via FMOD_OUTPUT_GETPOSITION_CALLBACK. Once an entire block of samples have played FMOD will call FMOD_OUTPUT_LOCK_CALLBACK to allow you to provide a destination pointer to write the next mix.
     * Callback: if the audio hardware provides a callback where you must provide a buffer of samples then set 'polling' to FALSE and directly call FMOD_OUTPUT_READFROMMIXER.
     * Synchronization: if the audio hardware provides a synchronization primitive to wait on then set 'polling' to FALSE and give a FMOD_OUTPUT_MIXER_CALLBACK pointer. FMOD will create a mixer thread and call you repeatedly once FMOD_OUTPUT_START_CALLBACK has finished, you must wait on your primitive in this callback and upon wake call FMOD_OUTPUT_READFROMMIXER.
     * Non-realtime: if you are writing a file or driving a non-realtime output call FMOD_OUTPUT_READFROMMIXER from FMOD_OUTPUT_UPDATE_CALLBACK.
-
+    
     Callbacks marked with 'user thread' will be called in response to the user of the FMOD low level API, in the case of the Studio runtime API, the user is the Studio Update thread.
-
+    
     Members marked with [r] mean read only for the developer, read/write for the FMOD system.
-
+    
     Members marked with [w] mean read/write for the developer, read only for the FMOD system.
-
+    
     [SEE_ALSO]
     FMOD_OUTPUT_STATE
     FMOD_OUTPUT_GETNUMDRIVERS_CALLBACK
@@ -123,11 +126,11 @@ typedef struct FMOD_OUTPUT_DESCRIPTION
 [
     [DESCRIPTION]
     Output object state passed into every callback provides access to plugin developers data and system functionality.
-
+    
     [REMARKS]
     Members marked with [r] mean read only for the developer, read/write for the FMOD system.
     Members marked with [w] mean read/write for the developer, read only for the FMOD system.
-
+    
     [SEE_ALSO]
     FMOD_OUTPUT_DESCRIPTION
 ]
@@ -150,7 +153,7 @@ struct FMOD_OUTPUT_STATE
     [DESCRIPTION]
     This structure is passed to the plugin via FMOD_OUTPUT_OBJECT3DUPDATE_CALLBACK, so that whatever object based panning solution available can position it in the speakers correctly.
     Object based panning is a 3D panning solution that sends a mono only signal to a hardware device, such as Dolby Atmos or other similar panning solutions.
-
+    
     [REMARKS]
     FMOD does not attenuate the buffer, but provides a 'gain' parameter that the user must use to scale the buffer by.  Rather than pre-attenuating the buffer, the plugin developer
     can access untouched data for other purposes, like reverb sending for example.
@@ -158,7 +161,7 @@ struct FMOD_OUTPUT_STATE
     
     Members marked with [r] mean read only for the developer, read/write for the FMOD system.
     Members marked with [w] mean read/write for the developer, read only for the FMOD system.
-
+    
     [SEE_ALSO]
     FMOD_OUTPUT_OBJECT3DUPDATE_CALLBACK
 ]
@@ -178,16 +181,19 @@ struct FMOD_OUTPUT_OBJECT3DINFO
     Macro helpers for accessing FMOD_OUTPUT_STATE functions
 */
 #define FMOD_OUTPUT_READFROMMIXER(_state, _buffer, _length) \
-    (_state)->readfrommixer(_state, _buffer, _length)
+(_state)->readfrommixer(_state, _buffer, _length)
 #define FMOD_OUTPUT_ALLOC(_state, _size, _align) \
-    (_state)->alloc(_size, _align, __FILE__, __LINE__)
+(_state)->alloc(_size, _align, __FILE__, __LINE__)
 #define FMOD_OUTPUT_FREE(_state, _ptr) \
-    (_state)->free(_ptr, __FILE__, __LINE__)
+(_state)->free(_ptr, __FILE__, __LINE__)
 #define FMOD_OUTPUT_LOG(_state, _level, _location, _format, ...) \
-    (_state)->log(_level, __FILE__, __LINE__, _location, _format, __VA_ARGS__)
+(_state)->log(_level, __FILE__, __LINE__, _location, _format, __VA_ARGS__)
 #define FMOD_OUTPUT_COPYPORT(_state, _id, _buffer, _length) \
-    (_state)->copyport(_state, _id, _buffer, _length)
+(_state)->copyport(_state, _id, _buffer, _length)
 #define FMOD_OUTPUT_REQUESTRESET(_state) \
-    (_state)->requestreset(_state)
+(_state)->requestreset(_state)
 
 #endif /* _FMOD_OUTPUT_H */
+#ifdef _WIN32
+#pragma warning(pop)
+#endif

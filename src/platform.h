@@ -99,10 +99,10 @@ struct config_data
     char* Title;
     char* Version;
     char* StartingLevelFilePath;
-    u32 ScreenWidth;
-    u32 ScreenHeight;
-    u32 ScaleFromWidth;
-    u32 ScaleFromHeight;
+    i32 ScreenWidth;
+    i32 ScreenHeight;
+    i32 ScaleFromWidth;
+    i32 ScaleFromHeight;
     i32 Fullscreen;
     r32 Contrast;
     r32 Brightness;

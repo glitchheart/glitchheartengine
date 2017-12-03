@@ -1,3 +1,6 @@
+#ifdef _WIN32
+#pragma warning(push, 0)
+#endif
 /*$ preserve start $*/
 
 /* ================================================================================================== */
@@ -1748,3 +1751,6 @@ typedef struct FMOD_ADVANCEDSETTINGS
 #endif
 
 /*$ preserve end $*/
+#ifdef _WIN32
+#pragma warning(pop)
+#endif

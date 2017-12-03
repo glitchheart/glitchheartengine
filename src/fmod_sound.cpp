@@ -69,17 +69,16 @@ static void PlaySound(const sound_effect& SoundEffect, sound_device* SoundDevice
     auto Result = FMOD_System_PlaySound(SoundDevice->System, Sound, 0, Commands->Paused, &Channel);
     FMOD_Channel_SetPitch(Channel, SoundEffect.SoundInfo.Pitch);
     FMOD_Channel_SetVolume(Channel, SoundEffect.SoundInfo.Gain);
-    //DEBUG_PRINT("Gain: %f\n", SoundEffect.SoundInfo.Gain);
     
     r32 Vol;
     FMOD_Channel_GetVolume(Channel, &Vol);
-    //DEBUG_PRINT("Gain: %f\n", Vol);
     
     Assert(SoundEffect.SoundInfo.LoopCount >= -1);
     
-    FMOD_Channel_SetMode(Channel, FMOD_DEFAULT | (SoundEffect.SoundInfo.Loop ? FMOD_LOOP_NORMAL : FMOD_LOOP_OFF));
-    FMOD_Channel_SetLoopCount(Channel, SoundEffect.SoundInfo.LoopCount);
+    auto FMODMode = SoundEffect.SoundInfo.Loop ? FMOD_LOOP_NORMAL : FMOD_LOOP_OFF;
     
+    FMOD_Channel_SetMode(Channel, (FMOD_MODE)(FMOD_DEFAULT | FMODMode));
+    FMOD_Channel_SetLoopCount(Channel, SoundEffect.SoundInfo.LoopCount);
     
     FMOD_Channel_SetChannelGroup(Channel, SoundDevice->MasterGroup);
     if(Result != FMOD_OK)
@@ -118,16 +117,16 @@ static void PlaySounds(sound_device* SoundDevice, sound_commands* Commands)
                 Sound < Commands->SoundCount;
                 Sound++)
             {
-                const sound_effect& SoundEffect = *((sound_effect*)Commands->SoundArena.CurrentBlock->Base + Sound);
+                //const sound_effect& SoundEffect = *((sound_effect*)Commands->SoundArena.CurrentBlock->Base + Sound);
+                sound_effect* SoundEffect =(sound_effect*)&Commands->SoundArena.CurrentBlock->Base[Sound];
                 
-                PlaySound(SoundEffect, SoundDevice, Commands);
+                PlaySound(*SoundEffect, SoundDevice, Commands);
             }
         }
-        
-        /*if(FMOD_System_Update(SoundDevice->System) != FMOD_OK)
+        if(FMOD_System_Update(SoundDevice->System) != FMOD_OK)
         {
-        DEBUG_PRINT("FMOD Failed updating\n");
-        }*/
+            DEBUG_PRINT("FMOD Failed updating\n");
+        }
         ResetCommands(Commands);
     }
 }

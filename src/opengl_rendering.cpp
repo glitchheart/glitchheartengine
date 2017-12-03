@@ -31,7 +31,7 @@ void FramebufferSizeCallback(GLFWwindow *Window, int Width, int Height)
     //@Incomplete: This should be done with lower resolutions and just be upscaled maybe? We need fixed resolutions
     glBindTexture(GL_TEXTURE_2D, RenderState->TextureColorBuffer);
     glTexImage2D(
-        GL_TEXTURE_2D, 0, GL_RGB, RenderState->ScaleFromWidth, RenderState->ScaleFromHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+        GL_TEXTURE_2D, 0, GL_RGB, (GLsizei)RenderState->ScaleFromWidth, (GLsizei)RenderState->ScaleFromHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
     glFramebufferTexture2D(
         GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, RenderState->TextureColorBuffer, 0);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -78,7 +78,7 @@ static GLint ShaderCompilationErrorChecking(const char* ShaderName, GLuint Shade
         glGetShaderInfoLog(Shader, MaxLength, &MaxLength, ErrorLog);
         
         DEBUG_PRINT("SHADER Compilation error - %s\n", ShaderName);
-        DEBUG_PRINT(ErrorLog);
+        DEBUG_PRINT("%s", ErrorLog);
         
         glDeleteShader(Shader); // Don't leak the shader.
     }
@@ -214,7 +214,7 @@ static void InitializeFreeTypeFont(char* FontPath, int FontSize, FT_Library Libr
         fprintf(stderr, "Could not open font\n");
     }
     
-    FT_Set_Pixel_Sizes(Font->Face, 0, FontSize);
+    FT_Set_Pixel_Sizes(Font->Face, 0, (FT_UInt)FontSize);
     
     FT_Select_Charmap(Font->Face , ft_encoding_unicode);
     
@@ -224,11 +224,11 @@ static void InitializeFreeTypeFont(char* FontPath, int FontSize, FT_Library Libr
     unsigned int W = 0;
     unsigned int H = 0;
     
-    for(int i = 0; i < 255; i++) 
+    for(int I = 0; I < 255; I++)
     {
-        if(FT_Load_Char(Font->Face, i, FT_LOAD_RENDER))
+        if(FT_Load_Char(Font->Face, (FT_ULong)I, FT_LOAD_RENDER))
         {
-            fprintf(stderr, "Loading character %c failed!\n", i);
+            fprintf(stderr, "Loading character %c failed!\n", I);
             continue;
         }
         
@@ -243,7 +243,7 @@ static void InitializeFreeTypeFont(char* FontPath, int FontSize, FT_Library Libr
     glGenTextures(1, &Font->Texture);
     glBindTexture(GL_TEXTURE_2D, Font->Texture);
     
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_R8, Font->AtlasWidth, Font->AtlasHeight, 0, GL_RED, GL_UNSIGNED_BYTE, 0);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_R8, (GLsizei)Font->AtlasWidth, (GLsizei)Font->AtlasHeight, 0, GL_RED, GL_UNSIGNED_BYTE, 0);
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     
     /* Clamping to edges is important to prevent artifacts when scaling */
@@ -255,23 +255,23 @@ static void InitializeFreeTypeFont(char* FontPath, int FontSize, FT_Library Libr
     
     unsigned int X = 0;
     
-    for(int i = 0; i < 255; i++) 
+    for(int I = 0; I < 255; I++) 
     {
-        if(FT_Load_Char(Font->Face, i, FT_LOAD_RENDER))
+        if(FT_Load_Char(Font->Face, (FT_ULong)I, FT_LOAD_RENDER))
             continue;
         
-        glTexSubImage2D(GL_TEXTURE_2D, 0, X, 0, G->bitmap.width, G->bitmap.rows, GL_RED, GL_UNSIGNED_BYTE, G->bitmap.buffer);
+        glTexSubImage2D(GL_TEXTURE_2D, 0, (GLsizei)X, 0, (GLsizei)G->bitmap.width, (GLsizei)G->bitmap.rows, GL_RED, GL_UNSIGNED_BYTE, G->bitmap.buffer);
         
-        Font->CharacterInfo[i].AX = (r32)(G->advance.x >> 6);
-        Font->CharacterInfo[i].AY = (r32)(G->advance.y >> 6);
+        Font->CharacterInfo[I].AX = (r32)(G->advance.x >> 6);
+        Font->CharacterInfo[I].AY = (r32)(G->advance.y >> 6);
         
-        Font->CharacterInfo[i].BW = (r32)G->bitmap.width;
-        Font->CharacterInfo[i].BH = (r32)G->bitmap.rows;
+        Font->CharacterInfo[I].BW = (r32)G->bitmap.width;
+        Font->CharacterInfo[I].BH = (r32)G->bitmap.rows;
         
-        Font->CharacterInfo[i].BL = (r32)G->bitmap_left;
-        Font->CharacterInfo[i].BT = (r32)G->bitmap_top;
+        Font->CharacterInfo[I].BL = (r32)G->bitmap_left;
+        Font->CharacterInfo[I].BT = (r32)G->bitmap_top;
         
-        Font->CharacterInfo[i].TX = (r32)X / Font->AtlasWidth;
+        Font->CharacterInfo[I].TX = (r32)X / Font->AtlasWidth;
         
         X += G->bitmap.width;
     }
@@ -310,78 +310,78 @@ static void RegisterBuffers(render_state& RenderState, GLfloat* VertexBuffer, lo
     if(HasNormals && HasUVs)
     {
         glEnableVertexAttribArray(0);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, (8 + BoneInfoSize) * sizeof(GLfloat), 0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, (GLsizei)((8 + BoneInfoSize) * sizeof(GLfloat)), 0);
         
         glEnableVertexAttribArray(1);
-        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, (8 + BoneInfoSize) * sizeof(GLfloat), (void*)(3 * sizeof(GLfloat)));
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, (GLsizei)((8 + BoneInfoSize) * sizeof(GLfloat)), (void*)(3 * sizeof(GLfloat)));
         
         glEnableVertexAttribArray(2);
-        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, (8 + BoneInfoSize) * sizeof(GLfloat), (void*)(6 * sizeof(GLfloat)));
+        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, (GLsizei)((8 + BoneInfoSize) * sizeof(GLfloat)), (void*)(6 * sizeof(GLfloat)));
         
         // Bone indices
         glEnableVertexAttribArray(3);
-        glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, (8 + BoneInfoSize) * sizeof(GLfloat), (void*)(8 * sizeof(GLfloat)));
+        glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, (GLsizei)((8 + BoneInfoSize) * sizeof(GLfloat)), (void*)(8 * sizeof(GLfloat)));
         
         // Weights
         glEnableVertexAttribArray(4);
-        glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, (8 + BoneInfoSize) * sizeof(GLfloat), (void*)(12 * sizeof(GLfloat)));
+        glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, (GLsizei)((8 + BoneInfoSize) * sizeof(GLfloat)), (void*)(12 * sizeof(GLfloat)));
     }
     else if(HasNormals)
     {
         glEnableVertexAttribArray(0);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, (6 + BoneInfoSize) * sizeof(GLfloat), 0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, (GLsizei)((6 + BoneInfoSize) * sizeof(GLfloat)), 0);
         
         glEnableVertexAttribArray(1);
-        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, (6 + BoneInfoSize) * sizeof(GLfloat), (void*)(3 * sizeof(GLfloat)));
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, (GLsizei)((6 + BoneInfoSize) * sizeof(GLfloat)), (void*)(3 * sizeof(GLfloat)));
         
         // Bone count
         glEnableVertexAttribArray(2);
-        glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, (8 + BoneInfoSize) * sizeof(GLfloat), (void*)(6 * sizeof(GLfloat)));
+        glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, (GLsizei)((8 + BoneInfoSize) * sizeof(GLfloat)), (void*)(6 * sizeof(GLfloat)));
         
         // Bone indices
         glEnableVertexAttribArray(3);
-        glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, (8 + BoneInfoSize) * sizeof(GLfloat), (void*)(7 * sizeof(GLfloat)));
+        glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, (GLsizei)((8 + BoneInfoSize) * sizeof(GLfloat)), (void*)(7 * sizeof(GLfloat)));
         
         // Weights
         glEnableVertexAttribArray(4);
-        glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, (8 + BoneInfoSize) * sizeof(GLfloat), (void*)(11 * sizeof(GLfloat)));
+        glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, (GLsizei)((8 + BoneInfoSize) * sizeof(GLfloat)), (void*)(11 * sizeof(GLfloat)));
     }
     else if(HasUVs)
     {
         glEnableVertexAttribArray(0);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, (5 + BoneInfoSize) * sizeof(GLfloat), 0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, (GLsizei)((5 + BoneInfoSize) * sizeof(GLfloat)), 0);
         
         glEnableVertexAttribArray(1);
-        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, (5 + BoneInfoSize) * sizeof(GLfloat), (void*)(3 * sizeof(GLfloat)));
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, (GLsizei)((5 + BoneInfoSize) * sizeof(GLfloat)), (void*)(3 * sizeof(GLfloat)));
         
         // Bone count
         glEnableVertexAttribArray(2);
-        glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, (8 + BoneInfoSize) * sizeof(GLfloat), (void*)(5 * sizeof(GLfloat)));
+        glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, (GLsizei)((8 + BoneInfoSize) * sizeof(GLfloat)), (void*)(5 * sizeof(GLfloat)));
         
         // Bone indices
         glEnableVertexAttribArray(3);
-        glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, (8 + BoneInfoSize) * sizeof(GLfloat), (void*)(6 * sizeof(GLfloat)));
+        glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, (GLsizei)((8 + BoneInfoSize) * sizeof(GLfloat)), (void*)(6 * sizeof(GLfloat)));
         
         // Weights
         glEnableVertexAttribArray(4);
-        glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, (8 + BoneInfoSize) * sizeof(GLfloat), (void*)(10 * sizeof(GLfloat)));
+        glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, (GLsizei)((8 + BoneInfoSize) * sizeof(GLfloat)), (void*)(10 * sizeof(GLfloat)));
     }
     else
     {
         glEnableVertexAttribArray(0);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 + BoneInfoSize * sizeof(GLfloat), 0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, (GLsizei)(3 + BoneInfoSize * sizeof(GLfloat)), 0);
         
         // Bone count
         glEnableVertexAttribArray(1);
-        glVertexAttribPointer(1, 1, GL_FLOAT, GL_FALSE, (8 + BoneInfoSize) * sizeof(GLfloat), (void*)(3 * sizeof(GLfloat)));
+        glVertexAttribPointer(1, 1, GL_FLOAT, GL_FALSE, (GLsizei)((8 + BoneInfoSize) * sizeof(GLfloat)), (void*)(3 * sizeof(GLfloat)));
         
         // Bone indices
         glEnableVertexAttribArray(2);
-        glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, (8 + BoneInfoSize) * sizeof(GLfloat), (void*)(4 * sizeof(GLfloat)));
+        glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, (GLsizei)((8 + BoneInfoSize) * sizeof(GLfloat)), (void*)(4 * sizeof(GLfloat)));
         
         // Weights
         glEnableVertexAttribArray(3);
-        glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, (8 + BoneInfoSize) * sizeof(GLfloat), (void*)(8 * sizeof(GLfloat)));
+        glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, (GLsizei)((8 + BoneInfoSize) * sizeof(GLfloat)), (void*)(8 * sizeof(GLfloat)));
     }
     
     glGenBuffers(1, &Buffer->IBO);
@@ -411,7 +411,7 @@ static void RegisterVertexBuffer(render_state& RenderState, GLfloat* BufferData,
         glGenBuffers(1, &Buffer->VBO);
     
     glBindBuffer(GL_ARRAY_BUFFER, Buffer->VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * Size, BufferData, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, (GLsizei)(sizeof(GLfloat) * Size), BufferData, GL_STATIC_DRAW);
     
     if(!RenderState.Shaders[ShaderType].Loaded)
     {
@@ -420,8 +420,8 @@ static void RegisterVertexBuffer(render_state& RenderState, GLfloat* BufferData,
     else
         UseShader(&RenderState.Shaders[ShaderType]);
     
-    auto PositionLocation = glGetAttribLocation(RenderState.TileShader.Program, "pos");
-    auto TexcoordLocation = glGetAttribLocation(RenderState.TileShader.Program, "texcoord");
+    auto PositionLocation = (GLuint)glGetAttribLocation(RenderState.TileShader.Program, "pos");
+    auto TexcoordLocation = (GLuint)glGetAttribLocation(RenderState.TileShader.Program, "texcoord");
     
     glEnableVertexAttribArray(PositionLocation);
     glVertexAttribPointer(PositionLocation, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
@@ -502,22 +502,22 @@ static void RenderSetup(render_state *RenderState, memory_arena* PermArena)
     glBindVertexArray(RenderState->FrameBufferVAO);
     glGenBuffers(1, &RenderState->FrameBufferVBO);
     glBindBuffer(GL_ARRAY_BUFFER, RenderState->FrameBufferVBO);
-    glBufferData(GL_ARRAY_BUFFER, RenderState->SpriteQuadVerticesSize, RenderState->FrameBufferVertices, GL_DYNAMIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)RenderState->SpriteQuadVerticesSize, RenderState->FrameBufferVertices, GL_DYNAMIC_DRAW);
     
     RenderState->FrameBufferShader.Type = Shader_FrameBuffer;
     
     LoadShader(ShaderPaths[Shader_FrameBuffer], &RenderState->FrameBufferShader, PermArena);
     
-    auto PosLoc = glGetAttribLocation(RenderState->FrameBufferShader.Program, "pos");
-    auto TexLoc = glGetAttribLocation(RenderState->FrameBufferShader.Program, "texcoord");
+    auto PosLoc = (GLuint)glGetAttribLocation(RenderState->FrameBufferShader.Program, "pos");
+    auto TexLoc = (GLuint)glGetAttribLocation(RenderState->FrameBufferShader.Program, "texcoord");
     
     glEnableVertexAttribArray(PosLoc);
     glVertexAttribPointer(PosLoc, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
     glEnableVertexAttribArray(TexLoc);
     glVertexAttribPointer(TexLoc, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *)(2 * sizeof(float)));
     
-    RenderState->FrameBufferTex0Loc = glGetUniformLocation(RenderState->FrameBufferShader.Program, "tex");
-    RenderState->FrameBufferTex1Loc = glGetUniformLocation(RenderState->FrameBufferShader.Program, "lightingTex");
+    RenderState->FrameBufferTex0Loc = (GLuint)glGetUniformLocation(RenderState->FrameBufferShader.Program, "tex");
+    RenderState->FrameBufferTex1Loc = (GLuint)glGetUniformLocation(RenderState->FrameBufferShader.Program, "lightingTex");
     
     glGenBuffers(1, &RenderState->QuadIndexBuffer);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, RenderState->QuadIndexBuffer);
@@ -530,14 +530,14 @@ static void RenderSetup(render_state *RenderState, memory_arena* PermArena)
     glBindVertexArray(RenderState->SpriteVAO);
     glGenBuffers(1, &RenderState->SpriteQuadVBO);
     glBindBuffer(GL_ARRAY_BUFFER, RenderState->SpriteQuadVBO);
-    glBufferData(GL_ARRAY_BUFFER, RenderState->SpriteQuadVerticesSize, RenderState->SpriteQuadVertices, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)RenderState->SpriteQuadVerticesSize, RenderState->SpriteQuadVertices, GL_STATIC_DRAW);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, RenderState->QuadIndexBuffer);
     
     RenderState->TextureShader.Type = Shader_Texture;
     LoadShader(ShaderPaths[Shader_Texture], &RenderState->TextureShader, PermArena);
     
-    auto PositionLocation = glGetAttribLocation(RenderState->TextureShader.Program, "pos");
-    auto TexcoordLocation = glGetAttribLocation(RenderState->TextureShader.Program, "texcoord");
+    auto PositionLocation = (GLuint)glGetAttribLocation(RenderState->TextureShader.Program, "pos");
+    auto TexcoordLocation = (GLuint)glGetAttribLocation(RenderState->TextureShader.Program, "texcoord");
     
     glEnableVertexAttribArray(PositionLocation);
     glVertexAttribPointer(PositionLocation, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), 0);
@@ -551,14 +551,14 @@ static void RenderSetup(render_state *RenderState, memory_arena* PermArena)
     glBindVertexArray(RenderState->SpriteSheetVAO);
     glGenBuffers(1, &RenderState->SpriteQuadVBO);
     glBindBuffer(GL_ARRAY_BUFFER, RenderState->SpriteQuadVBO);
-    glBufferData(GL_ARRAY_BUFFER, RenderState->SpriteQuadVerticesSize, RenderState->SpriteQuadVertices, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)RenderState->SpriteQuadVerticesSize, RenderState->SpriteQuadVertices, GL_STATIC_DRAW);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, RenderState->QuadIndexBuffer);
     
     RenderState->TextureShader.Type = Shader_Spritesheet;
     LoadShader(ShaderPaths[Shader_Spritesheet], &RenderState->SpritesheetShader, PermArena);
     
-    PositionLocation = glGetAttribLocation(RenderState->SpritesheetShader.Program, "pos");
-    TexcoordLocation = glGetAttribLocation(RenderState->SpritesheetShader.Program, "texcoord");
+    PositionLocation = (GLuint)glGetAttribLocation(RenderState->SpritesheetShader.Program, "pos");
+    TexcoordLocation = (GLuint)glGetAttribLocation(RenderState->SpritesheetShader.Program, "texcoord");
     
     glEnableVertexAttribArray(PositionLocation);
     glVertexAttribPointer(PositionLocation, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
@@ -571,13 +571,13 @@ static void RenderSetup(render_state *RenderState, memory_arena* PermArena)
     glBindVertexArray(RenderState->SpriteErrorVAO);
     glGenBuffers(1, &RenderState->SpriteQuadVBO);
     glBindBuffer(GL_ARRAY_BUFFER, RenderState->SpriteQuadVBO);
-    glBufferData(GL_ARRAY_BUFFER, RenderState->SpriteQuadVerticesSize, RenderState->SpriteQuadVertices, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)RenderState->SpriteQuadVerticesSize, RenderState->SpriteQuadVertices, GL_STATIC_DRAW);
     
     RenderState->ErrorShaderSprite.Type = Shader_ErrorSprite;
     LoadShader(ShaderPaths[Shader_ErrorSprite], &RenderState->ErrorShaderSprite, PermArena);
     
-    PositionLocation = glGetAttribLocation(RenderState->ErrorShaderSprite.Program, "pos");
-    TexcoordLocation = glGetAttribLocation(RenderState->ErrorShaderSprite.Program, "texcoord");
+    PositionLocation = (GLuint)glGetAttribLocation(RenderState->ErrorShaderSprite.Program, "pos");
+    TexcoordLocation = (GLuint)glGetAttribLocation(RenderState->ErrorShaderSprite.Program, "texcoord");
     
     glEnableVertexAttribArray(PositionLocation);
     glVertexAttribPointer(PositionLocation, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
@@ -590,13 +590,13 @@ static void RenderSetup(render_state *RenderState, memory_arena* PermArena)
     glBindVertexArray(RenderState->UISpriteVAO);
     glGenBuffers(1, &RenderState->SpriteQuadVBO);
     glBindBuffer(GL_ARRAY_BUFFER, RenderState->SpriteQuadVBO);
-    glBufferData(GL_ARRAY_BUFFER, RenderState->SpriteQuadVerticesSize, RenderState->SpriteQuadVertices, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)RenderState->SpriteQuadVerticesSize, RenderState->SpriteQuadVertices, GL_STATIC_DRAW);
     
     RenderState->UISpriteShader.Type = Shader_UISprite;
     LoadShader(ShaderPaths[Shader_UISprite], &RenderState->UISpriteShader, PermArena);
     
-    PositionLocation = glGetAttribLocation(RenderState->UISpriteShader.Program, "pos");
-    TexcoordLocation = glGetAttribLocation(RenderState->UISpriteShader.Program, "texcoord");
+    PositionLocation = (GLuint)glGetAttribLocation(RenderState->UISpriteShader.Program, "pos");
+    TexcoordLocation = (GLuint)glGetAttribLocation(RenderState->UISpriteShader.Program, "texcoord");
     
     glEnableVertexAttribArray(PositionLocation);
     glVertexAttribPointer(PositionLocation, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
@@ -609,15 +609,15 @@ static void RenderSetup(render_state *RenderState, memory_arena* PermArena)
     glBindVertexArray(RenderState->UIErrorVAO);
     glGenBuffers(1, &RenderState->SpriteQuadVBO);
     glBindBuffer(GL_ARRAY_BUFFER, RenderState->SpriteQuadVBO);
-    glBufferData(GL_ARRAY_BUFFER, RenderState->SpriteQuadVerticesSize, RenderState->SpriteQuadVertices, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)RenderState->SpriteQuadVerticesSize, RenderState->SpriteQuadVertices, GL_STATIC_DRAW);
     glBindVertexArray(0);
     
     //error shader
     RenderState->ErrorShaderUI.Type = Shader_ErrorUI;
     LoadShader(ShaderPaths[Shader_ErrorUI], &RenderState->ErrorShaderUI, PermArena);
     
-    PositionLocation = glGetAttribLocation(RenderState->ErrorShaderUI.Program, "pos");
-    TexcoordLocation = glGetAttribLocation(RenderState->ErrorShaderUI.Program, "texcoord");
+    PositionLocation = (GLuint)glGetAttribLocation(RenderState->ErrorShaderUI.Program, "pos");
+    TexcoordLocation = (GLuint)glGetAttribLocation(RenderState->ErrorShaderUI.Program, "texcoord");
     
     glEnableVertexAttribArray(PositionLocation);
     glVertexAttribPointer(PositionLocation, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
@@ -630,14 +630,14 @@ static void RenderSetup(render_state *RenderState, memory_arena* PermArena)
     glBindVertexArray(RenderState->TileVAO);
     glGenBuffers(1, &RenderState->TileQuadVBO);
     glBindBuffer(GL_ARRAY_BUFFER, RenderState->TileQuadVBO);
-    glBufferData(GL_ARRAY_BUFFER, RenderState->TileQuadVerticesSize, RenderState->TileQuadVertices, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)RenderState->TileQuadVerticesSize, RenderState->TileQuadVertices, GL_STATIC_DRAW);
     
     RenderState->TileShader.Type = Shader_Tile;
     LoadShader(ShaderPaths[Shader_Tile], &RenderState->TileShader, PermArena);
     RenderState->TileShader.Loaded = true;
     
-    auto PositionLocation2 = glGetAttribLocation(RenderState->TileShader.Program, "pos");
-    auto TexcoordLocation2 = glGetAttribLocation(RenderState->TileShader.Program, "texcoord");
+    auto PositionLocation2 = (GLuint)glGetAttribLocation(RenderState->TileShader.Program, "pos");
+    auto TexcoordLocation2 = (GLuint)glGetAttribLocation(RenderState->TileShader.Program, "texcoord");
     
     glEnableVertexAttribArray(PositionLocation2);
     glVertexAttribPointer(PositionLocation2, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
@@ -650,14 +650,14 @@ static void RenderSetup(render_state *RenderState, memory_arena* PermArena)
     glBindVertexArray(RenderState->RectVAO);
     glGenBuffers(1, &RenderState->NormalQuadVBO);
     glBindBuffer(GL_ARRAY_BUFFER, RenderState->NormalQuadVBO);
-    glBufferData(GL_ARRAY_BUFFER, RenderState->NormalQuadVerticesSize, RenderState->NormalQuadVertices, GL_DYNAMIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)RenderState->NormalQuadVerticesSize, RenderState->NormalQuadVertices, GL_DYNAMIC_DRAW);
     
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, RenderState->QuadIndexBuffer);
     
     RenderState->RectShader.Type = Shader_Rect;
     LoadShader(ShaderPaths[Shader_Rect], &RenderState->RectShader, PermArena);
     
-    auto PositionLocation3 = glGetAttribLocation(RenderState->RectShader.Program, "pos");
+    auto PositionLocation3 = (GLuint)glGetAttribLocation(RenderState->RectShader.Program, "pos");
     glEnableVertexAttribArray(PositionLocation3);
     glVertexAttribPointer(PositionLocation3, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), 0);
     
@@ -671,8 +671,8 @@ static void RenderSetup(render_state *RenderState, memory_arena* PermArena)
     RenderState->TextureRectShader.Type = Shader_TextureRect;
     LoadShader(ShaderPaths[Shader_TextureRect], &RenderState->TextureRectShader, PermArena);
     
-    PositionLocation2 = glGetAttribLocation(RenderState->TextureRectShader.Program, "pos");
-    TexcoordLocation2 = glGetAttribLocation(RenderState->TextureRectShader.Program, "texcoord");
+    PositionLocation2 = (GLuint)glGetAttribLocation(RenderState->TextureRectShader.Program, "pos");
+    TexcoordLocation2 = (GLuint)glGetAttribLocation(RenderState->TextureRectShader.Program, "texcoord");
     
     glEnableVertexAttribArray(PositionLocation2);
     glVertexAttribPointer(PositionLocation2, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
@@ -686,12 +686,12 @@ static void RenderSetup(render_state *RenderState, memory_arena* PermArena)
     glBindVertexArray(RenderState->WireframeVAO);
     glGenBuffers(1, &RenderState->WireframeQuadVBO);
     glBindBuffer(GL_ARRAY_BUFFER, RenderState->WireframeQuadVBO);
-    glBufferData(GL_ARRAY_BUFFER, RenderState->WireframeQuadVerticesSize, RenderState->WireframeQuadVertices, GL_DYNAMIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)RenderState->WireframeQuadVerticesSize, RenderState->WireframeQuadVertices, GL_DYNAMIC_DRAW);
     
     RenderState->RectShader.Type = Shader_Wireframe;
     LoadShader(ShaderPaths[Shader_Wireframe], &RenderState->WireframeShader, PermArena);
     
-    PositionLocation3 = glGetAttribLocation(RenderState->WireframeShader.Program, "pos");
+    PositionLocation3 = (GLuint)glGetAttribLocation(RenderState->WireframeShader.Program, "pos");
     glEnableVertexAttribArray(PositionLocation3);
     glVertexAttribPointer(PositionLocation3, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), 0);
     
@@ -717,14 +717,14 @@ static void RenderSetup(render_state *RenderState, memory_arena* PermArena)
     glBindVertexArray(RenderState->IsometricVAO);
     glGenBuffers(1, &RenderState->IsometricQuadVBO);
     glBindBuffer(GL_ARRAY_BUFFER, RenderState->IsometricQuadVBO);
-    glBufferData(GL_ARRAY_BUFFER, RenderState->WireframeQuadVerticesSize, RenderState->IsometricQuadVertices, GL_DYNAMIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)RenderState->WireframeQuadVerticesSize, RenderState->IsometricQuadVertices, GL_DYNAMIC_DRAW);
     
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, RenderState->QuadIndexBuffer);
     
     RenderState->RectShader.Type = Shader_Wireframe;
     LoadShader(ShaderPaths[Shader_Wireframe], &RenderState->WireframeShader, PermArena);
     
-    PositionLocation3 = glGetAttribLocation(RenderState->WireframeShader.Program, "pos");
+    PositionLocation3 = (GLuint)glGetAttribLocation(RenderState->WireframeShader.Program, "pos");
     glEnableVertexAttribArray(PositionLocation3);
     glVertexAttribPointer(PositionLocation3, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), 0);
     
@@ -1048,12 +1048,12 @@ static void SetMat4Uniform(GLuint ShaderHandle, const char *UniformName, math::m
 
 void SetVec4ArrayUniform(GLuint ShaderHandle, const char *UniformName, math::v4* Value, u32 Length)
 {
-    glUniform4fv(glGetUniformLocation(ShaderHandle, UniformName), Length, (GLfloat*)&Value[0]);
+    glUniform4fv(glGetUniformLocation(ShaderHandle, UniformName), (GLsizei)Length, (GLfloat*)&Value[0]);
 }
 
 void SetFloatArrayUniform(GLuint ShaderHandle, const char *UniformName, r32* Value, u32 Length)
 {
-    glUniform1fv(glGetUniformLocation(ShaderHandle, UniformName), Length, (GLfloat*)&Value[0]);
+    glUniform1fv(glGetUniformLocation(ShaderHandle, UniformName), (GLsizei)Length, (GLfloat*)&Value[0]);
 }
 
 static void RenderLine(render_state& RenderState, math::v4 Color, math::v3 Start, math::v3 End, math::m4 ProjectionMatrix = math::m4(), math::m4 ViewMatrix = math::m4(), r32 LineWidth = 1.0f, b32 IsUI = false)
@@ -1170,14 +1170,14 @@ static void RenderQuad(Render_Mode Mode, render_state& RenderState, math::v4 Col
             
             if(TextureHandle > 0)
             {
-                glBindTexture(GL_TEXTURE_2D, TextureHandle);
+                glBindTexture(GL_TEXTURE_2D, (GLuint)TextureHandle);
                 
                 if(ForAnimation)
                     Shader = RenderState.SpritesheetShader;
                 else
                     Shader = RenderState.TextureRectShader;
                 
-                RenderState.BoundTexture = TextureHandle;
+                RenderState.BoundTexture = (GLuint)TextureHandle;
             }
             
             if(RenderState.CurrentExtraShader != -1)
@@ -1407,7 +1407,7 @@ static void RenderText(render_state& RenderState, const render_font& Font, const
     }
     
     glBindBuffer(GL_ARRAY_BUFFER, Font.VBO);
-    glBufferData(GL_ARRAY_BUFFER, 6 * strlen(Text) * sizeof(point), Coords, GL_DYNAMIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)(6 * strlen(Text) * sizeof(point)), Coords, GL_DYNAMIC_DRAW);
     glDrawArrays(GL_TRIANGLES, 0, N);
     
     glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -1504,7 +1504,7 @@ static void RenderQuad(const render_command& Command, render_state& RenderState,
                    Command.ShaderAttributes,
                    Command.ShaderAttributeCount,
                    Command.IsUI,
-                   Handle,
+                   (i32)Handle,
                    Command.Quad.ForAnimation,
                    Command.Quad.TextureSize,
                    Command.Quad.FrameSize,
@@ -1523,7 +1523,7 @@ static void RenderQuad(const render_command& Command, render_state& RenderState,
                    Command.ShaderAttributes,
                    Command.ShaderAttributeCount,
                    Command.IsUI,
-                   Handle,
+                   (i32)Handle,
                    Command.Quad.ForAnimation,
                    Command.Quad.TextureSize,
                    Command.Quad.FrameSize,
@@ -1591,7 +1591,7 @@ static void RenderModel(const render_command& Command, render_state& RenderState
     }
 }
 
-static void RenderBuffer(const render_command& Command, render_state& RenderState, renderer& Renderer,  math::m4 Projection, math::m4 View)
+static void RenderBuffer(const render_command& Command, render_state& RenderState, math::m4 Projection, math::m4 View)
 {
     buffer Buffer = RenderState.Buffers[Command.Buffer.BufferHandle];
     
@@ -1801,7 +1801,7 @@ static void RenderCommands(render_state& RenderState, renderer& Renderer, memory
             break;
             case RenderCommand_Buffer:
             {
-                RenderBuffer(Command, RenderState, Renderer, Camera.ProjectionMatrix, Camera.ViewMatrix);
+                RenderBuffer(Command, RenderState, Camera.ProjectionMatrix, Camera.ViewMatrix);
             }
             break;
             case RenderCommand_WireframeCube:
@@ -1878,7 +1878,7 @@ static void RenderCommands(render_state& RenderState, renderer& Renderer, memory
             break;
             case RenderCommand_Buffer:
             {
-                RenderBuffer(Command, RenderState, Renderer, Camera.ProjectionMatrix, Camera.ViewMatrix);
+                RenderBuffer(Command, RenderState, Camera.ProjectionMatrix, Camera.ViewMatrix);
             }
             break;
             case RenderCommand_DepthTest:
@@ -1963,9 +1963,9 @@ static void Render(render_state& RenderState, renderer& Renderer, memory_arena* 
     SetMat4Uniform(RenderState.FrameBufferShader.Program,"V", Camera.ViewMatrix);
     SetVec2Uniform(RenderState.FrameBufferShader.Program, "screenSize", math::v2((r32)RenderState.WindowWidth,(r32)RenderState.WindowHeight));
     
-    glUniform1i(RenderState.FrameBufferTex0Loc, 0);
+    glUniform1i((GLint)RenderState.FrameBufferTex0Loc, 0);
     
-    glUniform1i(RenderState.FrameBufferTex1Loc, 1);
+    glUniform1i((GLint)RenderState.FrameBufferTex1Loc, 1);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, RenderState.TextureColorBuffer);
     glActiveTexture(GL_TEXTURE1);

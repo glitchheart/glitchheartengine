@@ -8,7 +8,7 @@ inline u64 HashString(u64 Size, char* Key)
     char* K = Key;
     u64 C;
     
-    while ((C = *K++))
+    while ((C = (u64)*K++))
         Hash = ((Hash << 5) + Hash) + C; /* hash * 33 + c */
     
     return Hash & (Size - 1);
@@ -34,31 +34,31 @@ inline u64 HashStringJenkins(u64 Size, char* Key)
 }
 
 // Use folding on a string, summed 4 bytes at a time
-inline u64 SFold(u64 M, char* s) {
-    i32 intLength = (i32)strlen(s) / 4;
-    unsigned long sum = 0;
-    for (int j = 0; j < intLength; j++) 
+inline u64 SFold(u64 M, char* S) {
+    i32 IntLength = (i32)strlen(S) / 4;
+    u64 Sum = 0;
+    for(i32 J = 0; J < IntLength; J++) 
     {
-        char c[32];
-        memcpy(c,&s[j * 4],(j * 4) + 4);
+        char C[32];
+        memcpy(C, &S[J * 4], (u64)(J * 4) + 4);
         
-        unsigned long mult = 1;
-        for (size_t k = 0; k < strlen(c); k++) {
-            sum += c[k] * mult;
-            mult *= 256;
+        u64 Mult = 1;
+        for(size_t K = 0; K < strlen(C); K++) {
+            Sum += C[K] * Mult;
+            Mult *= 256;
         }
     }
     
-    char c[32];
-    memcpy(c,&s[intLength * 4],strlen(s) - 1);
-    unsigned long mult = 1;
-    for (size_t k = 0; k < strlen(c); k++) 
+    char C[32];
+    memcpy(C,&S[IntLength * 4], strlen(S) - 1);
+    u64 Mult = 1;
+    for(size_t K = 0; K < strlen(C); K++) 
     {
-        sum += c[k] * mult;
-        mult *= 256;
+        Sum += C[K] * Mult;
+        Mult *= 256;
     }
     
-    return(sum & (M - 1));
+    return(Sum & (M - 1));
 }
 
 inline u64 HashInt(u64 Size, i32 Key) {

@@ -216,14 +216,14 @@ static void ControllerKeyCallback(int Key, int Action)
     }
 }
 
-static void ControllerKeys(u32 Joystick)
+static void ControllerKeys(i32 Joystick)
 {
     i32 Count;
-    const unsigned char* ButtonState = glfwGetJoystickButtons(Joystick,&Count);
+    const unsigned char* ButtonState = glfwGetJoystickButtons(Joystick, &Count);
     
-    for(i32 i = 0; i < Count; i++)
+    for(i32 I = 0; I < Count; I++)
     {
-        ControllerKeyCallback(i,ButtonState[i]);
+        ControllerKeyCallback(I, ButtonState[I]);
     }
     
     const float* Axes = glfwGetJoystickAxes(GLFW_JOYSTICK_1, &Count);

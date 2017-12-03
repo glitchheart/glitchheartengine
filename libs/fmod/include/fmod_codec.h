@@ -1,3 +1,6 @@
+#ifdef _WIN32
+#pragma warning(push, 0)
+#endif
 /* ======================================================================================================== */
 /* FMOD Studio - codec development header file. Copyright (c), Firelight Technologies Pty, Ltd. 2004-2017.  */
 /*                                                                                                          */
@@ -32,11 +35,11 @@ typedef FMOD_RESULT (F_CALLBACK *FMOD_CODEC_GETWAVEFORMAT_CALLBACK)(FMOD_CODEC_S
 [
     [DESCRIPTION]
     When creating a codec, declare one of these and provide the relevant callbacks and name for FMOD to use when it opens and reads a file.
-
+    
     [REMARKS]
     Members marked with [r] mean the variable is modified by FMOD and is for reading purposes only.  Do not change this value.<br>
     Members marked with [w] mean the variable can be written to.  The user can set the value.<br>
-
+    
     [SEE_ALSO]
     FMOD_CODEC_STATE
     FMOD_CODEC_WAVEFORMAT
@@ -66,7 +69,7 @@ typedef struct FMOD_CODEC_DESCRIPTION
     Set these values marked to tell fmod what sort of sound to create when the codec open callback is called.<br>
     The format, channels, frequency and lengthpcm tell FMOD what sort of sound buffer to create when you initialize your code. <br>
     If you wrote an MP3 codec that decoded to stereo 16bit integer PCM for a 44khz sound, you would specify FMOD_SOUND_FORMAT_PCM16, and channels would be equal to 2, and frequency would be 44100.<br>
-
+    
     [REMARKS]
     Members marked with [r] mean the variable is modified by FMOD and is for reading purposes only.  Do not change this value.<br>
     Members marked with [w] mean the variable can be written to.  The user can set the value.<br>
@@ -111,13 +114,13 @@ struct FMOD_CODEC_WAVEFORMAT
 [
     [NAME]
     FMOD_CODEC_WAVEFORMAT_VERSION
-
+    
     [DESCRIPTION]
     Version number of FMOD_CODEC_WAVEFORMAT structure.  Should be set into FMOD_CODEC_STATE in the FMOD_CODEC_OPEN_CALLBACK.
-
+    
     [REMARKS]
     Use this for binary compatibility and for future expansion.
-
+    
     [SEE_ALSO]
     FMOD_CODEC_STATE
     FMOD_CODEC_DESCRIPTION
@@ -135,7 +138,7 @@ struct FMOD_CODEC_WAVEFORMAT
     Codec plugin structure that is passed into each callback.<br>
     <br>
     Optionally set the numsubsounds and waveformat members when called in FMOD_CODEC_OPEN_CALLBACK to tell fmod what sort of sound to create.<br>
-
+    
     [REMARKS]
     Members marked with [r] mean the variable is modified by FMOD and is for reading purposes only.  Do not change this value.<br>
     Members marked with [w] mean the variable can be written to.  The user can set the value.<br>
@@ -163,16 +166,19 @@ struct FMOD_CODEC_STATE
     int                          numsubsounds;      /* [w] Number of 'subsounds' in this sound.  Anything other than 0 makes it a 'container' format (ie DLS/FSB etc which contain 1 or more subsounds).  For most normal, single sound codec such as WAV/AIFF/MP3, this should be 0 as they are not a container for subsounds, they are the sound by itself. */
     FMOD_CODEC_WAVEFORMAT       *waveformat;        /* [w] Pointer to an array of format structures containing information about each sample.  Can be 0 or NULL if FMOD_CODEC_GETWAVEFORMAT_CALLBACK callback is preferred.  The number of entries here must equal the number of subsounds defined in the subsound parameter. If numsubsounds = 0 then there should be 1 instance of this structure. */
     void                        *plugindata;        /* [w] Plugin writer created data the codec author wants to attach to this object. */
-                                               
+    
     void                        *filehandle;        /* [r] This will return an internal FMOD file handle to use with the callbacks provided.  */
     unsigned int                 filesize;          /* [r] This will contain the size of the file in bytes. */
     FMOD_FILE_READ_CALLBACK      fileread;          /* [r] This will return a callable FMOD file function to use from codec. */
     FMOD_FILE_SEEK_CALLBACK      fileseek;          /* [r] This will return a callable FMOD file function to use from codec.  */
     FMOD_CODEC_METADATA_CALLBACK metadata;          /* [r] This will return a callable FMOD metadata function to use from codec.  */
-
+    
     int                          waveformatversion; /* [w] Must be set to FMOD_CODEC_WAVEFORMAT_VERSION in the FMOD_CODEC_OPEN_CALLBACK. */
 };
 
+#endif
+#ifdef _WIN32
+#pragma warning(pop)
 #endif
 
 
