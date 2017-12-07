@@ -353,6 +353,7 @@ struct input_controller
     r64 ScrollY;
     
     r32 ControllerDeadzone = 0.2f;
+    
     b32 ControllerPresent;
     Controller_Type ControllerType;
     

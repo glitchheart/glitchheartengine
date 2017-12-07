@@ -41,12 +41,6 @@ static inline b32 GetJoystickKey(Controller_Code Key, input_controller* InputCon
     return InputController->JoystickKeysDown[Key];
 }
 
-r32 GetJoystickAxisValue(input_controller* InputController, Stick Stick = Stick_Left)
-{
-    i32 Axis = Stick == Stick_Left ? 0 : 2;
-    return InputController->Axes[Axis];
-}
-
 //@Incomplete: Needs direction bool
 static inline b32 GetJoystickAxisXDown(input_controller* InputController, Stick Stick = Stick_Left)
 {
@@ -209,11 +203,11 @@ static inline r32 GetInputX(input_controller* InputController, Stick Stick = Sti
     if(Abs(InputController->Axes[Axis]) > InputController->ControllerDeadzone)
         InputX = InputController->Axes[Axis]; 
     
-    if (GetKey(Key_A, InputController))
+    if (GetKey(Key_Left, InputController))
     {
         InputX += -1;
     }
-    else if (GetKey(Key_D, InputController))
+    else if (GetKey(Key_Right, InputController))
     {
         InputX += 1;
     }
