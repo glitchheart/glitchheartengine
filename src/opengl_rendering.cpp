@@ -911,7 +911,7 @@ static void InitializeOpenGL(render_state& RenderState, renderer& Renderer, conf
     //@Incomplete: Figure something out here. Ask for compatible version etc
 #ifdef _WIN32
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 4);
 #elif __linux
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
@@ -1353,6 +1353,7 @@ static void RenderText(render_state& RenderState, const render_font& Font, const
     glBindVertexArray(Font.VAO);
     auto Shader = RenderState.Shaders[Shader_StandardFont];
     UseShader(&Shader);
+    
     SetVec4Uniform(Shader.Program, "color", Color);
     SetVec4Uniform(Shader.Program, "alphaColor", Font.AlphaColor);
     
