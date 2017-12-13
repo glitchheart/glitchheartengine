@@ -140,6 +140,11 @@ struct render_state
     i32 ScaleFromHeight;
     r32 Contrast;
     r32 Brightness;
+    
+    char* WindowTitle;
+    
+    Window_Mode WindowMode;
+    
     GLfloat ScaleX;
     GLfloat ScaleY;
     GLint Viewport[4];
@@ -326,6 +331,8 @@ struct render_state
     i32 FontCount;
     
     render_state() {}
+    
+    memory_arena Arena;
 };
 
 #endif

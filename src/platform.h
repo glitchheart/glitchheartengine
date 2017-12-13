@@ -98,6 +98,16 @@ struct timer
     char* Name;
 };
 
+
+enum Window_Mode
+{
+    FM_Windowed = 0,
+    FM_Full = 1,
+    FM_Borderless = 2
+    
+};
+
+
 struct config_data
 {
     char* Title;
@@ -107,7 +117,7 @@ struct config_data
     i32 ScreenHeight;
     i32 ScaleFromWidth;
     i32 ScaleFromHeight;
-    i32 Fullscreen;
+    Window_Mode Fullscreen;
     r32 Contrast;
     r32 Brightness;
     b32 Muted;
