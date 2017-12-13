@@ -239,6 +239,7 @@ static void InitializeFreeTypeFont(char* FontPath, int FontSize, FT_Library Libr
     Font->AtlasWidth = W;
     Font->AtlasHeight = H;
     Font->GlyphWidth = (GLfloat)G->bitmap.width;
+    
     glActiveTexture(GL_TEXTURE0);
     glGenTextures(1, &Font->Texture);
     glBindTexture(GL_TEXTURE_2D, Font->Texture);
@@ -1411,7 +1412,7 @@ static void RenderText(render_state& RenderState, const render_font& Font, const
         Y += Font.CharacterInfo[*P].AY * RenderState.ScaleY;
         
         /* Skip glyphs that have no pixels */
-        if(!(i32)W || !(i32)H)
+        if(!(i32)Font.CharacterInfo[*P].BW || !(i32)Font.CharacterInfo[*P].BH)
             continue;
         
         Coords[N++] = { X2, -Y2, Font.CharacterInfo[*P].TX, 0 };
