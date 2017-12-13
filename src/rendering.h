@@ -476,6 +476,8 @@ struct renderer
     r64 FPSSum;
     u64 CurrentFrame;
     
+    Window_Mode WindowMode;
+    
     memory_arena Commands;
     i32 CommandCount;
     

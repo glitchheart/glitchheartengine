@@ -793,17 +793,27 @@ static void UpdateLightingData(const render_state& RenderState)
 {
     glBindBuffer(GL_UNIFORM_BUFFER, RenderState.SpotlightUBO);
     GLvoid* P = glMapBuffer(GL_UNIFORM_BUFFER, GL_WRITE_ONLY);
-    memcpy(P, &RenderState.SpotlightData, sizeof(spotlight_data));
+    if(P)
+    {
+        memcpy(P, &RenderState.SpotlightData, sizeof(spotlight_data));
+    }
     glUnmapBuffer(GL_UNIFORM_BUFFER);
+    
     
     glBindBuffer(GL_UNIFORM_BUFFER, RenderState.DirectionalLightUBO);
     P = glMapBuffer(GL_UNIFORM_BUFFER, GL_WRITE_ONLY);
-    memcpy(P, &RenderState.DirectionalLightData, sizeof(directional_light_data));
+    if(P)
+    {
+        memcpy(P, &RenderState.DirectionalLightData, sizeof(directional_light_data));
+    }
     glUnmapBuffer(GL_UNIFORM_BUFFER);
     
     glBindBuffer(GL_UNIFORM_BUFFER, RenderState.PointLightUBO);
     P = glMapBuffer(GL_UNIFORM_BUFFER, GL_WRITE_ONLY);
-    memcpy(P, &RenderState.PointLightData, sizeof(point_light_data));
+    if(P)
+    {
+        memcpy(P, &RenderState.PointLightData, sizeof(point_light_data));
+    }
     glUnmapBuffer(GL_UNIFORM_BUFFER);
 }
 
@@ -848,21 +858,56 @@ static void LoadExtraShaders(render_state& RenderState, renderer& Renderer)
     }
 }
 
+static void CreateOpenGLWindow(render_state& RenderState, Window_Mode WindowMode, const char* Title, i32 Width, i32 Height)
+{
+    GLFWmonitor* Monitor = glfwGetPrimaryMonitor();
+    i32 ScreenWidth = Width;
+    i32 ScreenHeight = Height;
+    
+    const GLFWvidmode* Mode = glfwGetVideoMode(Monitor);
+    RenderState.WindowMode = WindowMode;
+    RenderState.WindowTitle = PushString(&RenderState.Arena, Title);
+    
+    if(WindowMode == FM_Borderless)
+    {
+        glfwWindowHint(GLFW_RED_BITS, Mode->redBits);
+        glfwWindowHint(GLFW_GREEN_BITS, Mode->greenBits);
+        glfwWindowHint(GLFW_BLUE_BITS, Mode->blueBits);
+        glfwWindowHint(GLFW_REFRESH_RATE, Mode->refreshRate);
+        ScreenWidth = Mode->width;
+        ScreenHeight = Mode->height;
+    }
+    
+    if(WindowMode == FM_Windowed)
+    {
+        Monitor = NULL;
+    }
+    
+    RenderState.Window = glfwCreateWindow(ScreenWidth, ScreenHeight, Title, Monitor, 
+                                          NULL);
+    
+    //center window on screen (windowed?)
+    
+    if(WindowMode == FM_Windowed)
+    {
+        int FrameBufferWidth, FrameBufferHeight;
+        
+        glfwGetFramebufferSize(RenderState.Window, &FrameBufferWidth, &FrameBufferHeight);
+        glfwSetWindowPos(RenderState.Window, Mode->width / 2 - Width / 2, Mode->height / 2 - Height / 2);
+    }
+}
+
 static void InitializeOpenGL(render_state& RenderState, renderer& Renderer, config_data* ConfigData, memory_arena* PermArena)
 {
     if (!glfwInit())
         exit(EXIT_FAILURE);
     
-    auto monitor = glfwGetPrimaryMonitor();
-    
-    const GLFWvidmode* mode = glfwGetVideoMode(monitor);
     glfwSetErrorCallback(ErrorCallback);
     
     RenderState.ScaleFromWidth = ConfigData->ScaleFromWidth;
     RenderState.ScaleFromHeight = ConfigData->ScaleFromHeight;
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     
-    //@Incomplete: Figure something out here. Ask for comptabible version etc
+    //@Incomplete: Figure something out here. Ask for compatible version etc
 #ifdef _WIN32
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
@@ -873,31 +918,11 @@ static void InitializeOpenGL(render_state& RenderState, renderer& Renderer, conf
     
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     
-    if(ConfigData->Fullscreen == 2)
-    {
-        glfwWindowHint(GLFW_RED_BITS, mode->redBits);
-        glfwWindowHint(GLFW_GREEN_BITS, mode->greenBits);
-        glfwWindowHint(GLFW_BLUE_BITS, mode->blueBits);
-        glfwWindowHint(GLFW_REFRESH_RATE, mode->refreshRate);
-        
-        RenderState.Window = glfwCreateWindow(mode->width, mode->height, Concat(Concat(ConfigData->Title, " "), ConfigData->Version),  monitor, 
-                                              NULL);
-        
-    }
-    else if(ConfigData->Fullscreen == 1)
-    {
-        RenderState.Window = glfwCreateWindow(ConfigData->ScreenWidth, ConfigData->ScreenHeight, Concat(Concat(ConfigData->Title, " "), ConfigData->Version), monitor, 
-                                              NULL);
-    }
-    else
-    {
-        RenderState.Window = glfwCreateWindow(ConfigData->ScreenWidth, ConfigData->ScreenHeight, Concat(Concat(ConfigData->Title, " "), ConfigData->Version), NULL, 
-                                              NULL);
-    }
-    
-    
     RenderState.Contrast = ConfigData->Contrast;
     RenderState.Brightness = ConfigData->Brightness;
+    
+    CreateOpenGLWindow(RenderState, ConfigData->Fullscreen, Concat(Concat(ConfigData->Title, " "), ConfigData->Version), ConfigData->ScreenWidth, ConfigData->ScreenHeight);
+    Renderer.WindowMode = RenderState.WindowMode;
     
     if (!RenderState.Window)
     {
@@ -905,16 +930,7 @@ static void InitializeOpenGL(render_state& RenderState, renderer& Renderer, conf
         exit(EXIT_FAILURE);
     }
     
-    //center window on screen
-    const GLFWvidmode *Mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
-    int Width, Height;
-    
-    glfwGetFramebufferSize(RenderState.Window, &Width, &Height);
-    glfwSetWindowPos(RenderState.Window, Mode->width / 2 - Width / 2, Mode->height / 2 - Height / 2);
-    
     glfwSetInputMode(RenderState.Window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
-    
-    //glfwSetWindowAspectRatio(RenderState.Window, 16, 9);
     
     glfwSetFramebufferSizeCallback(RenderState.Window, FramebufferSizeCallback);
     
@@ -1912,6 +1928,41 @@ static void RenderCommands(render_state& RenderState, renderer& Renderer, memory
 
 static void Render(render_state& RenderState, renderer& Renderer, memory_arena* PermArena)
 {
+    if(Renderer.WindowMode != RenderState.WindowMode)
+    {
+        glfwDestroyWindow(RenderState.Window);
+        CreateOpenGLWindow(RenderState, Renderer.WindowMode, RenderState.WindowTitle, RenderState.WindowWidth, RenderState.WindowHeight);
+        glfwSetInputMode(RenderState.Window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+        glfwSetFramebufferSizeCallback(RenderState.Window, FramebufferSizeCallback);
+        
+        glfwMakeContextCurrent(RenderState.Window);
+        
+        glfwSwapInterval(0);
+        
+        glfwGetFramebufferSize(RenderState.Window, &RenderState.WindowWidth, &RenderState.WindowHeight);
+        glViewport(0, 0, RenderState.WindowWidth, RenderState.WindowHeight);
+        glDisable(GL_DITHER);
+        glLineWidth(2.0f);
+        glEnable(GL_LINE_SMOOTH);
+        
+        glDisable(GL_CULL_FACE);
+        glEnable(GL_DEPTH_TEST);
+        
+        glDepthFunc(GL_LESS);
+        
+        glfwSetWindowUserPointer(RenderState.Window, &RenderState);
+        glfwSetKeyCallback(RenderState.Window, KeyCallback);
+        glfwSetCharCallback(RenderState.Window, CharacterCallback);
+        glfwSetCursorPosCallback(RenderState.Window, CursorPositionCallback);
+        glfwSetMouseButtonCallback(RenderState.Window, MouseButtonCallback);
+        glfwSetScrollCallback(RenderState.Window, ScrollCallback);
+        
+        GLint Viewport[4];
+        glGetIntegerv(GL_VIEWPORT, Viewport);
+        
+        memcpy(RenderState.Viewport, Viewport, sizeof(GLint) * 4);
+    }
+    
     LoadExtraShaders(RenderState, Renderer);
     
     LoadTextures(RenderState, Renderer);
