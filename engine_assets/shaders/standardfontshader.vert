@@ -1,5 +1,6 @@
-attribute vec4 coord;
-varying vec2 texcoord;
+#version 150
+in vec4 coord;
+out vec2 texcoord;
 
 void main(void) 
 {
