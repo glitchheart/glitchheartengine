@@ -77,7 +77,7 @@ using r32 = float;
 using r64 = double;
 
 using umm = uintptr_t; // Casey uses this for sizes (why?)
-
+using imm = intptr_t;
 
 
 struct texture_data;
@@ -149,6 +149,11 @@ struct platform_memory_block
     platform_memory_block* Prev;
 };
 
+enum platform_file_flags
+{
+    PM_Append = (1 << 0)
+};
+
 struct platform_file
 {
     FILE* File;
@@ -168,8 +173,11 @@ typedef PLATFORM_ALLOCATE_MEMORY(platform_allocate_memory);
 #define PLATFORM_DEALLOCATE_MEMORY(name) void name(platform_memory_block* Block)
 typedef PLATFORM_DEALLOCATE_MEMORY(platform_deallocate_memory);
 
-#define PLATFORM_OPEN_FILE_WITH_DIALOG(name) platform_file name()
+#define PLATFORM_OPEN_FILE_WITH_DIALOG(name) platform_file name(char* Extension)
 typedef PLATFORM_OPEN_FILE_WITH_DIALOG(platform_open_file_with_dialog);
+
+#define PLATFORM_SAVE_FILE_WITH_DIALOG(name) platform_file name(char* Extension, u64 Flags)
+typedef PLATFORM_SAVE_FILE_WITH_DIALOG(platform_save_file_with_dialog);
 
 struct platform_api
 {
@@ -178,6 +186,7 @@ struct platform_api
     platform_allocate_memory *AllocateMemory;
     platform_deallocate_memory *DeallocateMemory;
     platform_open_file_with_dialog* OpenFileWithDialog;
+    platform_save_file_with_dialog* SaveFileWithDialog;
 };
 extern platform_api Platform;
 
