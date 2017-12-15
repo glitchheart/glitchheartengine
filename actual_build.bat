@@ -11,7 +11,7 @@ IF %ERRORLEVEL% NEQ 0 call %VCVARSALL% x64
 
 echo %cd%
 set CommonCompilerFlags=/MD -nologo -Od -Oi -Wall -Gm- -EHsc -FC -Z7 %PRP% %WIGNORED% %DEBUG% %GLM% /I..\libs /I..\libs\glfw\include /I..\libs\freetype\include /I..\libs\glad\include /I ..\libs\fmod\include
-set CommonLinkerFlags= kernel32.lib user32.lib gdi32.lib winmm.lib opengl32.lib shell32.lib  ..\libs\glfw\lib-vc2015\glfw3.lib ..\libs\glad\glad.obj ..\libs\freetype\lib\freetype271d.lib ..\libs\fmod\lib\fmod64_vc.lib
+set CommonLinkerFlags= Comdlg32.lib Ole32.lib kernel32.lib user32.lib gdi32.lib winmm.lib opengl32.lib shell32.lib  ..\libs\glfw\lib-vc2015\glfw3.lib ..\libs\glad\glad.obj ..\libs\freetype\lib\freetype271d.lib ..\libs\fmod\lib\fmod64_vc.lib
 set ExtraLinkerFlags=/NODEFAULTLIB:"LIBCMT" -incremental:no -opt:ref /ignore:4099
 
 IF NOT EXIST build mkdir build

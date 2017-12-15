@@ -149,6 +149,13 @@ struct platform_memory_block
     platform_memory_block* Prev;
 };
 
+struct platform_file
+{
+    FILE* File;
+    char Path[260];
+    char Extension[16];
+};
+
 #define PLATFORM_GET_ALL_FILES_WITH_EXTENSION(name) void name(const char* DirectoryPath, const char* Extension, directory_data* DirectoryData, b32 WithSubDirectories)
 typedef PLATFORM_GET_ALL_FILES_WITH_EXTENSION(platform_get_all_files_with_extension);
 
@@ -161,12 +168,16 @@ typedef PLATFORM_ALLOCATE_MEMORY(platform_allocate_memory);
 #define PLATFORM_DEALLOCATE_MEMORY(name) void name(platform_memory_block* Block)
 typedef PLATFORM_DEALLOCATE_MEMORY(platform_deallocate_memory);
 
+#define PLATFORM_OPEN_FILE_WITH_DIALOG(name) platform_file name()
+typedef PLATFORM_OPEN_FILE_WITH_DIALOG(platform_open_file_with_dialog);
+
 struct platform_api
 {
     platform_get_all_files_with_extension *GetAllFilesWithExtension;
     platform_file_exists *FileExists;
     platform_allocate_memory *AllocateMemory;
     platform_deallocate_memory *DeallocateMemory;
+    platform_open_file_with_dialog* OpenFileWithDialog;
 };
 extern platform_api Platform;
 

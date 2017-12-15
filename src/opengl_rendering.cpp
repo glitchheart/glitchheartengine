@@ -1189,7 +1189,7 @@ static void RenderQuad(Render_Mode Mode, render_state& RenderState, math::v4 Col
             {
                 glBindTexture(GL_TEXTURE_2D, (GLuint)TextureHandle);
                 
-                if(ForAnimation)
+                if(ForAnimation || (TextureOffset.X >= 0.0f && TextureOffset.Y >= 0.0f))
                     Shader = RenderState.SpritesheetShader;
                 else
                     Shader = RenderState.TextureRectShader;
@@ -1214,12 +1214,12 @@ static void RenderQuad(Render_Mode Mode, render_state& RenderState, math::v4 Col
             Model = math::Scale(Model, Size);
             
             // @Incomplete: We should be using an origin point for this
-            Model = math::Translate(Model, math::v3(-Size.x / 2.0f, -Size.y / 2.0f, -Size.z / 2.0f));
+            //Model = math::Translate(Model, math::v3(-Size.x / 2.0f, -Size.y / 2.0f, -Size.z / 2.0f));
             Model = math::YRotate(Rotation.y) * Model;
             Model = math::XRotate(Rotation.x) * Model;
             Model = math::ZRotate(Rotation.z) * Model;
             // @Incomplete: We should be using an origin point for this
-            Model = math::Translate(Model, math::v3(Size.x / 2.0f, Size.y / 2.0f, Size.z / 2.0f));
+            //Model = math::Translate(Model, math::v3(Size.x / 2.0f, Size.y / 2.0f, Size.z / 2.0f));
             
             Model = math::Translate(Model, Position);
             
@@ -1233,9 +1233,16 @@ static void RenderQuad(Render_Mode Mode, render_state& RenderState, math::v4 Col
             SetMat4Uniform(Shader.Program, "M", Model);
             SetVec4Uniform(Shader.Program, "color", Color);
             
-            if(ForAnimation)
+            if(TextureOffset.X >= 0.0f && TextureOffset.Y >= 0.0f)
             {
                 SetVec2Uniform(Shader.Program, "textureOffset", TextureOffset);
+                SetVec2Uniform(Shader.Program, "textureSize", TextureSize);
+                SetVec2Uniform(Shader.Program, "frameSize", math::v2((r32)FrameSize.x, (r32)FrameSize.y));
+            }
+            
+            if(ForAnimation)
+            {
+                
                 SetVec2Uniform(Shader.Program, "textureSize", TextureSize);
                 SetVec2Uniform(Shader.Program, "frameSize", math::v2((r32)FrameSize.x, (r32)FrameSize.y));
             }
