@@ -16,6 +16,7 @@
 #include "fmod.h"
 #include "fmod_errors.h"
 
+#include "Commdlg.h"
 #include <windows.h>
 #include <sys/types.h>  
 #include <sys/stat.h>  
@@ -422,9 +423,43 @@ inline PLATFORM_FILE_EXISTS(Win32FileExists)
     return (stat(FilePath,&Buffer) == 0);
 }
 
+inline PLATFORM_OPEN_FILE_WITH_DIALOG(Win32OpenFileWithDialog)
+{
+    OPENFILENAME Ofn;
+    char SzFile[260];
+    platform_file Result;
+    
+    HANDLE Hf;
+    
+    ZeroMemory(&Ofn, sizeof(Ofn));
+    Ofn.lStructSize = sizeof(Ofn);
+    Ofn.hwndOwner = 0;
+    Ofn.lpstrFile = SzFile;
+    Ofn.lpstrFile[0] = '\0';
+    Ofn.nMaxFile = sizeof(SzFile);
+    Ofn.lpstrFilter = "All\0*.*\0";
+    Ofn.nFilterIndex = 1;
+    Ofn.lpstrFileTitle = NULL;
+    Ofn.nMaxFileTitle = 0;
+    Ofn.lpstrInitialDir = NULL;
+    Ofn.Flags = 0;
+    
+    if(GetOpenFileName(&Ofn) == TRUE)
+    {
+        Hf = CreateFile(Ofn.lpstrFile, GENERIC_READ, 0, (LPSECURITY_ATTRIBUTES)NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, (HANDLE)NULL);
+        
+        Result.File = (FILE*)Hf;
+        strcpy(Result.Path, Ofn.lpstrFile);
+        char* P = PushTempString(Result.Path);
+        auto Tok = StrSep(&P, ".");
+        Tok = StrSep(&P, ".");
+        strcpy(Result.Extension, Tok);
+    }
+    return Result;
+}
+
 int main(int Argc, char** Args)
 {
-    
     game_memory GameMemory = {};
     
     GameMemory.ShouldReload = true;
@@ -435,6 +470,7 @@ int main(int Argc, char** Args)
     GameMemory.PlatformAPI.FileExists = Win32FileExists;
     GameMemory.PlatformAPI.AllocateMemory = Win32AllocateMemory;
     GameMemory.PlatformAPI.DeallocateMemory = Win32DeallocateMemory;
+    GameMemory.PlatformAPI.OpenFileWithDialog = Win32OpenFileWithDialog;
     Platform = GameMemory.PlatformAPI;
     
     win32_state* Win32State = BootstrapPushStruct(win32_state, PermArena);
