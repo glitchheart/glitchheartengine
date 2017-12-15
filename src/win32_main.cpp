@@ -16,10 +16,12 @@
 #include "fmod.h"
 #include "fmod_errors.h"
 
+#include "io.h"
 #include "Commdlg.h"
 #include <windows.h>
 #include <sys/types.h>  
 #include <sys/stat.h>  
+#include <fcntl.h>
 #include <GLFW/glfw3.h>
 
 #include "win32_main.h"
@@ -427,7 +429,7 @@ inline PLATFORM_OPEN_FILE_WITH_DIALOG(Win32OpenFileWithDialog)
 {
     OPENFILENAME Ofn;
     char SzFile[260];
-    platform_file Result;
+    platform_file Result = {};
     
     HANDLE Hf;
     
@@ -437,7 +439,15 @@ inline PLATFORM_OPEN_FILE_WITH_DIALOG(Win32OpenFileWithDialog)
     Ofn.lpstrFile = SzFile;
     Ofn.lpstrFile[0] = '\0';
     Ofn.nMaxFile = sizeof(SzFile);
-    Ofn.lpstrFilter = "All\0*.*\0";
+    if(Extension)
+    {
+        Ofn.lpstrFilter = Concat(Extension, "\0*.*\0");
+    }
+    else
+    {
+        Ofn.lpstrFilter = "All\0*.*\0";
+    }
+    
     Ofn.nFilterIndex = 1;
     Ofn.lpstrFileTitle = NULL;
     Ofn.nMaxFileTitle = 0;
@@ -448,12 +458,76 @@ inline PLATFORM_OPEN_FILE_WITH_DIALOG(Win32OpenFileWithDialog)
     {
         Hf = CreateFile(Ofn.lpstrFile, GENERIC_READ, 0, (LPSECURITY_ATTRIBUTES)NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, (HANDLE)NULL);
         
-        Result.File = (FILE*)Hf;
-        strcpy(Result.Path, Ofn.lpstrFile);
-        char* P = PushTempString(Result.Path);
-        auto Tok = StrSep(&P, ".");
-        Tok = StrSep(&P, ".");
-        strcpy(Result.Extension, Tok);
+        if(Hf != INVALID_HANDLE_VALUE)
+        {
+            Result.File = _fdopen(_open_osfhandle((imm)Hf, 0), "r");
+            strcpy(Result.Path, Ofn.lpstrFile);
+            char* P = PushTempString(Result.Path);
+            auto Tok = StrSep(&P, ".");
+            Tok = StrSep(&P, ".");
+            strcpy(Result.Extension, Tok);
+        }
+    }
+    return Result;
+}
+
+
+inline PLATFORM_SAVE_FILE_WITH_DIALOG(Win32SaveFileWithDialog)
+{
+    OPENFILENAME Ofn;
+    char SzFile[260];
+    platform_file Result = {};
+    
+    HANDLE Hf;
+    
+    ZeroMemory(&Ofn, sizeof(Ofn));
+    Ofn.lStructSize = sizeof(Ofn);
+    Ofn.hwndOwner = 0;
+    Ofn.lpstrFile = SzFile;
+    Ofn.lpstrFile[0] = '\0';
+    Ofn.nMaxFile = sizeof(SzFile);
+    if(Extension)
+    {
+        Ofn.lpstrFilter = Concat(Extension, "\0*.*\0");
+    }
+    else
+    {
+        Ofn.lpstrFilter = "All\0*.*\0";
+    }
+    
+    Ofn.nFilterIndex = 1;
+    Ofn.lpstrFileTitle = NULL;
+    Ofn.nMaxFileTitle = 0;
+    Ofn.lpstrInitialDir = NULL;
+    Ofn.Flags = OFN_SHOWHELP | OFN_OVERWRITEPROMPT;
+    
+    if(GetSaveFileName(&Ofn) == TRUE)
+    {
+        if(Extension && !strstr(Ofn.lpstrFile, Extension))
+        {
+            Hf = CreateFile(Concat(Concat(Ofn.lpstrFile, "."), Extension), GENERIC_READ | GENERIC_WRITE, 0, (LPSECURITY_ATTRIBUTES)NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, (HANDLE)NULL);
+        }
+        else
+        {
+            Hf = CreateFile(Ofn.lpstrFile, GENERIC_READ | GENERIC_WRITE, 0, (LPSECURITY_ATTRIBUTES)NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, (HANDLE)NULL);
+        }
+        auto Err = GetLastError();
+        if(Hf != INVALID_HANDLE_VALUE)
+        {
+            auto OFlags = Flags & PM_Append ? _O_APPEND : 0;
+            auto FDFlags = Flags & PM_Append ? "a" : "w";
+            DEBUG_PRINT("Flags: %d\n", OFlags);
+            Result.File = _fdopen(_open_osfhandle((imm)Hf, OFlags), FDFlags);
+            strcpy(Result.Path, Ofn.lpstrFile);
+            if(Extension)
+            {
+                strcpy(Result.Extension, Extension);
+            }
+        }
+        else
+        {
+            DEBUG_PRINT("Open file for saving failed with error: %ld\n", Err);
+        }
     }
     return Result;
 }
@@ -471,6 +545,7 @@ int main(int Argc, char** Args)
     GameMemory.PlatformAPI.AllocateMemory = Win32AllocateMemory;
     GameMemory.PlatformAPI.DeallocateMemory = Win32DeallocateMemory;
     GameMemory.PlatformAPI.OpenFileWithDialog = Win32OpenFileWithDialog;
+    GameMemory.PlatformAPI.SaveFileWithDialog = Win32SaveFileWithDialog;
     Platform = GameMemory.PlatformAPI;
     
     win32_state* Win32State = BootstrapPushStruct(win32_state, PermArena);
