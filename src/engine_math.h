@@ -1990,27 +1990,27 @@ namespace math
     
     inline r32 Distance(v2 V1, v2 V2)
     {
-        return Sqrt(Pow(V1.X - V2.X, 2.0f) + Pow(V1.Y - V2.Y, 2.0f));
+        return Sqrt(Pow(V1.X - V2.X, 2) + Pow(V1.Y - V2.Y, 2));
     }
     
     inline r32 Distance(v3 V1, v3 V2)
     {
-        return Sqrt(Pow(V1.X - V2.X, 2.0f) + Pow(V1.Y - V2.Y, 2.0f) + Pow(V1.Z - V2.Z, 2.0f));
+        return Sqrt(Pow(V1.X - V2.X, 2) + Pow(V1.Y - V2.Y, 2) + Pow(V1.Z - V2.Z, 2));
     }
     
     inline r32 Distance(v4 V1, v4 V2)
     {
-        return Sqrt(Pow(V1.X - V2.X, 2.0f) + Pow(V1.Y - V2.Y, 2.0f) + Pow(V1.Z - V2.Z, 2.0f) + Pow(V1.W - V2.W,2.0f));
+        return Sqrt(Pow(V1.X - V2.X, 2) + Pow(V1.Y - V2.Y, 2) + Pow(V1.Z - V2.Z, 2) + Pow(V1.W - V2.W,2));
     }
     
     inline i32 Distance(v2i V1, v2i V2)
     {
-        return (i32)Sqrt(Pow(V1.X - V2.X, 2) + Pow(V1.Y - V2.Y, 2));
+        return (i32)(Sqrt(Pow((r32)V1.X - (r32)V2.X, 2) + Pow((r32)V1.Y - (r32)V2.Y, 2)));
     }
     
     inline i32 Distance(v3i V1, v3i V2)
     {
-        return (i32)Sqrt(Pow(V1.X - V2.X, 2) + Pow(V1.Y - V2.Y, 2) + Pow(V1.Z - V2.Z, 2));
+        return (i32)Sqrt(Pow((r32)V1.X - V2.X, 2) + Pow((r32)V1.Y - V2.Y, 2) + Pow((r32)V1.Z - V2.Z, 2));
     }
     
     inline r32 Distance(v3i V1, v3 V2)
