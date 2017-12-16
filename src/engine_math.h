@@ -2501,6 +2501,7 @@ namespace math
         srand(Seed);
     }
     
+    // @Incomplete:(Niels): Doesn't work (I think)
     inline r32 RandomFloat(r32 From, r32 To)
     {
         r32 Rand = Min(Max(From, ((r32)rand()/(r32)(RAND_MAX)) * To),To);
