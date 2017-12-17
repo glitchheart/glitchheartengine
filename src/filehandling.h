@@ -46,8 +46,12 @@ static GLchar* LoadShaderFromFile(const char* Path, memory_arena* Arena)
     }
     else
     {
+        char Buffer[512];
+        u32 BufferLength = 512;
+        GetCurrentDirectory(BufferLength, Buffer);
+        DEBUG_PRINT("%s\n", Buffer);
         fprintf(stderr, "Could not read file %s. File does not exist.\n",Path);
-    }	
+    }
     
     return Source;
 }
