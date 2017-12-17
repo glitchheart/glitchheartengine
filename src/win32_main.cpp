@@ -452,7 +452,7 @@ inline PLATFORM_OPEN_FILE_WITH_DIALOG(Win32OpenFileWithDialog)
     Ofn.lpstrFileTitle = NULL;
     Ofn.nMaxFileTitle = 0;
     Ofn.lpstrInitialDir = NULL;
-    Ofn.Flags = 0;
+    Ofn.Flags = OFN_NOCHANGEDIR;
     
     if(GetOpenFileName(&Ofn) == TRUE)
     {
@@ -499,7 +499,7 @@ inline PLATFORM_SAVE_FILE_WITH_DIALOG(Win32SaveFileWithDialog)
     Ofn.lpstrFileTitle = NULL;
     Ofn.nMaxFileTitle = 0;
     Ofn.lpstrInitialDir = NULL;
-    Ofn.Flags = OFN_SHOWHELP | OFN_OVERWRITEPROMPT;
+    Ofn.Flags = OFN_SHOWHELP | OFN_OVERWRITEPROMPT |OFN_NOCHANGEDIR ;
     
     if(GetSaveFileName(&Ofn) == TRUE)
     {

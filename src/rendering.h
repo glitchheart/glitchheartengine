@@ -491,6 +491,9 @@ struct renderer
     i32 BufferHandles[BUFFER_ARRAY_SIZE];
     i32 BufferCount;
     
+    i32 UpdatedBufferHandles[BUFFER_ARRAY_SIZE];
+    i32 UpdatedBufferHandleCount;
+    
     texture_data TextureData[TEXTURE_ARRAY_SIZE];
     i32 TextureCount;
     

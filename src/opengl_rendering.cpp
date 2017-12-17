@@ -125,35 +125,39 @@ static GLuint LoadShader(const char* FilePath, shader *Shd, memory_arena* PermAr
     char* VertexString = Concat(FilePath, ".vert");
     GLchar *VertexText = LoadShaderFromFile(VertexString, PermArena);
     
-    glShaderSource(Shd->VertexShader, 1, &VertexText, NULL);
-    glCompileShader(Shd->VertexShader);
-    
-    if (!ShaderCompilationErrorChecking(FilePath, Shd->VertexShader))
+    if(VertexText)
     {
-        Shd->Program = 0;
-        return GL_FALSE;
+        glShaderSource(Shd->VertexShader, 1, &VertexText, NULL);
+        glCompileShader(Shd->VertexShader);
+        
+        if (!ShaderCompilationErrorChecking(FilePath, Shd->VertexShader))
+        {
+            Shd->Program = 0;
+            return GL_FALSE;
+        }
+        
+        Shd->FragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+        char* FragmentString = Concat(FilePath, ".frag");
+        GLchar *FragmentText = LoadShaderFromFile(FragmentString, PermArena);
+        
+        glShaderSource(Shd->FragmentShader, 1, &FragmentText, NULL);
+        glCompileShader(Shd->FragmentShader);
+        
+        if (!ShaderCompilationErrorChecking(FilePath, Shd->FragmentShader))
+        {
+            Shd->Program = 0;
+            return GL_FALSE;
+        }
+        
+        Shd->Program = glCreateProgram();
+        
+        glAttachShader(Shd->Program, Shd->VertexShader);
+        glAttachShader(Shd->Program, Shd->FragmentShader);
+        glLinkProgram(Shd->Program);
+        
+        return GL_TRUE;
     }
-    
-    Shd->FragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    char* FragmentString = Concat(FilePath, ".frag");
-    GLchar *FragmentText = LoadShaderFromFile(FragmentString, PermArena);
-    
-    glShaderSource(Shd->FragmentShader, 1, &FragmentText, NULL);
-    glCompileShader(Shd->FragmentShader);
-    
-    if (!ShaderCompilationErrorChecking(FilePath, Shd->FragmentShader))
-    {
-        Shd->Program = 0;
-        return GL_FALSE;
-    }
-    
-    Shd->Program = glCreateProgram();
-    
-    glAttachShader(Shd->Program, Shd->VertexShader);
-    glAttachShader(Shd->Program, Shd->FragmentShader);
-    glLinkProgram(Shd->Program);
-    
-    return GL_TRUE;
+    return GL_FALSE;
 }
 
 static GLuint LoadVertexShader(const char* FilePath, shader *Shd, memory_arena* PermArena)
@@ -1629,18 +1633,33 @@ static void RenderBuffer(const render_command& Command, render_state& RenderStat
         RenderState.BoundTexture = TextureHandle;
     }
     
+    math::v3 Position = Command.Position;
+    math::v3 Size = Command.Scale;
+    
+    if(Command.IsUI)
+    {
+        Position.x *= RenderState.ScaleX;
+        Position.x -= 1;
+        Position.y *= RenderState.ScaleY;
+        Position.y -= 1;
+        
+        Size.x *= RenderState.ScaleX;
+        Size.y *= RenderState.ScaleY;
+    }
+    
+    
     auto Shader = RenderState.TileShader;
     UseShader(&Shader);
     
     math::m4 Model(1.0f);
-    Model = math::Scale(Model, math::v3(1, 1, 1.0f));
-    Model = math::Translate(Model, math::v3(0, 0, 0));
+    Model = math::Scale(Model, Size);
+    Model = math::Translate(Model, Position);
     
     //Model = math::YRotate(Command.Rotation.y) * Model;
     //Model = math::XRotate(Command.Rotation.x) * Model;
     //Model = math::ZRotate(Command.Rotation.z) * Model;
     
-    SetFloatUniform(Shader.Program, "isUI", 0);
+    SetFloatUniform(Shader.Program, "isUI", (r32)Command.IsUI);
     SetMat4Uniform(Shader.Program, "Projection", Projection);
     SetMat4Uniform(Shader.Program, "View", View);
     SetMat4Uniform(Shader.Program, "Model", Model);
@@ -1673,6 +1692,21 @@ static void RenderCommands(render_state& RenderState, renderer& Renderer, memory
             
         }
     }
+    
+    for(i32 Index = 0; Index < Renderer.UpdatedBufferHandleCount; Index++)
+    {
+        buffer_data Data = Renderer.Buffers[Renderer.UpdatedBufferHandles[Index]];
+        if(Data.IndexBufferCount == 0)
+        {
+            RegisterVertexBuffer(RenderState, Data.VertexBuffer, (i32)Data.VertexBufferSize, Data.ShaderType, PermArena, Data.ExistingHandle);
+        }
+        else
+        {
+            RegisterBuffers(RenderState, Data.VertexBuffer, Data.VertexBufferSize, Data.IndexBuffer, Data.IndexBufferCount, Data.IndexBufferSize, Data.HasNormals, Data.HasUVs, Data.Skinned, Data.ExistingHandle);
+            
+        }
+    }
+    Renderer.UpdatedBufferHandleCount = 0;
     
     for(i32 Index = RenderState.FontCount; Index < Renderer.FontCount; Index++)
     {

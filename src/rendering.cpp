@@ -460,7 +460,7 @@ static void PushPointLight(renderer& Renderer, math::v3 Position, math::v3 Ambie
     PointLight.Quadratic = Quadratic;
 }
 
-static void PushBuffer(renderer& Renderer, i32 BufferHandle, i32 TextureHandle, math::v3 Rotation, b32 IsUI = false)
+static void PushBuffer(renderer& Renderer, i32 BufferHandle, i32 TextureHandle, math::v3 Rotation = math::v3(), b32 IsUI = false, math::v3 Position = math::v3(), math::v3 Scale = math::v3(1.0f))
 {
     render_command* RenderCommand = PushNextCommand(Renderer, IsUI);
     
@@ -468,6 +468,8 @@ static void PushBuffer(renderer& Renderer, i32 BufferHandle, i32 TextureHandle, 
     RenderCommand->Buffer.BufferHandle = BufferHandle;
     RenderCommand->Buffer.TextureHandle = TextureHandle - 1;
     RenderCommand->Rotation = Rotation;
+    RenderCommand->Position = Position;
+    RenderCommand->Scale = Scale;
     RenderCommand->IsUI = IsUI;
     
     RenderCommand->ShaderHandle = -1;
@@ -515,15 +517,27 @@ static void PushModel(renderer& Renderer, model& Model)
     RenderCommand->IsUI = false;
 }
 
-static void LoadBuffer(renderer& Renderer, r32* Buffer, i32 BufferSize, i32* BufferHandle)
+static void LoadBuffer(renderer& Renderer, r32* Buffer, i32 BufferSize, i32* BufferHandle, b32 Dynamic = false)
 {
     buffer_data Data = {};
     Data.VertexBuffer = Buffer;
     Data.VertexBufferSize = BufferSize;
     Data.IndexBufferCount = 0;
+    
     Renderer.Buffers[Renderer.BufferCount] = Data;
     
     *BufferHandle = Renderer.BufferCount++;
+}
+
+static void UpdateBuffer(renderer& Renderer, r32* Buffer, i32 BufferSize, i32 BufferHandle)
+{
+    buffer_data Data = {};
+    Data.VertexBuffer = Buffer;
+    Data.VertexBufferSize = BufferSize;
+    Data.IndexBufferCount = 0;
+    Data.ExistingHandle = BufferHandle;
+    Renderer.Buffers[BufferHandle] = Data;
+    Renderer.UpdatedBufferHandles[Renderer.UpdatedBufferHandleCount++] = BufferHandle;
 }
 
 static i32 LoadFont(renderer& Renderer, char* Path, i32 Size, char* Name)
