@@ -220,12 +220,12 @@ static void LoadShader(const char* FullShaderPath, renderer& Renderer)
     }
 }
 
-#define GET_TEXTURE_SIZE(Handle) GetTextureHandle(Handle, Renderer)
+#define GET_TEXTURE_SIZE(Handle) GetTextureSize(Handle, Renderer)
 static math::v2i GetTextureSize(i32 TextureHandle, renderer Renderer)
 {
-    if(TextureHandle < Renderer.TextureCount)
+    if(TextureHandle <= Renderer.TextureCount)
     {
-        texture_data Data = Renderer.TextureData[TextureHandle];
+        texture_data Data = Renderer.TextureData[TextureHandle - 1];
         return math::v2i(Data.Width, Data.Height);
     }
     return math::v2i();
