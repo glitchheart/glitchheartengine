@@ -1161,7 +1161,7 @@ void RenderCircle(render_state& RenderState, math::v4 Color, r32 CenterX, r32 Ce
     glDrawArrays(GL_LINE_LOOP, 0, 720);
 }
 
-static void RenderQuad(Render_Mode Mode, render_state& RenderState, math::v4 Color, math::v3 Position, math::v3 Size, math::v3 Rotation, i32 ShaderHandle, shader_attribute* ShaderAttributes, i32 ShaderAttributeCount, b32 IsUI = true, i32 TextureHandle = 0, b32 ForAnimation = false, math::v2 TextureSize = math::v2(), math::v2i FrameSize = math::v2i(), math::v2 TextureOffset = math::v2(), math::m4 ProjectionMatrix = math::m4(), math::m4 ViewMatrix = math::m4())
+static void RenderQuad(Render_Mode Mode, render_state& RenderState, math::v4 Color, math::v3 Position, math::v3 Size, math::quat Orientation, i32 ShaderHandle, shader_attribute* ShaderAttributes, i32 ShaderAttributeCount, b32 IsUI = true, i32 TextureHandle = 0, b32 ForAnimation = false, math::v2 TextureSize = math::v2(), math::v2i FrameSize = math::v2i(), math::v2 TextureOffset = math::v2(), math::m4 ProjectionMatrix = math::m4(), math::m4 ViewMatrix = math::m4())
 {
     if(IsUI)
     {
@@ -1219,9 +1219,9 @@ static void RenderQuad(Render_Mode Mode, render_state& RenderState, math::v4 Col
             
             // @Incomplete: We should be using an origin point for this
             //Model = math::Translate(Model, math::v3(-Size.x / 2.0f, -Size.y / 2.0f, -Size.z / 2.0f));
-            Model = math::YRotate(Rotation.y) * Model;
-            Model = math::XRotate(Rotation.x) * Model;
-            Model = math::ZRotate(Rotation.z) * Model;
+            
+            Model = ToMatrix(Orientation) * Model;
+            
             // @Incomplete: We should be using an origin point for this
             //Model = math::Translate(Model, math::v3(Size.x / 2.0f, Size.y / 2.0f, Size.z / 2.0f));
             
@@ -1309,9 +1309,7 @@ static void RenderQuad(Render_Mode Mode, render_state& RenderState, math::v4 Col
             
             Model = math::Scale(Model, Size);
             Model = math::Translate(Model, Position);
-            Model = math::YRotate(Rotation.y) * Model;
-            Model = math::XRotate(Rotation.x) * Model;
-            Model = math::ZRotate(Rotation.z) * Model;
+            Model = math::ToMatrix(Orientation) * Model;
             
             glBindVertexArray(RenderState.WireframeVAO);
             
@@ -1470,6 +1468,7 @@ static void RenderWireframeCube(const render_command& Command, render_state& Ren
 }
 
 //@Deprecated: Uses old-style rendering
+/*
 void RenderConsole(render_state& RenderState, console* Console)
 {
     glBindVertexArray(RenderState.RectVAO);
@@ -1501,10 +1500,10 @@ void RenderConsole(render_state& RenderState, console* Console)
             Color = math::v4(0, 1, 0, 1);
         else
             Color = math::v4(1, 1, 1, 1);
-        
+            
         RenderText(RenderState, RenderState.Fonts[0], Color, &Console->HistoryBuffer[Index][0], 5 / 1920.0f * (r32)RenderState.WindowWidth, (r32)RenderState.WindowHeight * 0.78f * PercentAnimated + (Index + 1) * 20 * PercentAnimated);
     }
-}
+}*/
 
 static void RenderLine(const render_command& Command, render_state& RenderState, math::m4 Projection, math::m4 View)
 {
@@ -1528,7 +1527,7 @@ static void RenderQuad(const render_command& Command, render_state& RenderState,
                    Command.Quad.Color, 
                    Command.Position,
                    Command.Scale,
-                   Command.Rotation,
+                   Command.Orientation,
                    Command.ShaderHandle,
                    Command.ShaderAttributes,
                    Command.ShaderAttributeCount,
@@ -1547,7 +1546,7 @@ static void RenderQuad(const render_command& Command, render_state& RenderState,
                    Command.Quad.Color, 
                    Command.Position,
                    Command.Scale,
-                   Command.Rotation,
+                   Command.Orientation,
                    Command.ShaderHandle,
                    Command.ShaderAttributes,
                    Command.ShaderAttributeCount,

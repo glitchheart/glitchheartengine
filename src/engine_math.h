@@ -1422,10 +1422,10 @@ namespace math
         inline quat operator* (quat Q)
         {
             quat Result(*this);
-            Result.w = this->w * Q.w - this->x * Q.x - this->y * Q.y - this->z * Q.z;
-            Result.x = this->w * Q.x + this->x * Q.w + this->y * Q.z - this->z * Q.y;
+            Result.w = this->w * Q.w - (this->x * Q.x + this->y * Q.y + this->z * Q.z);
+            Result.x = this->w * Q.x + this->x * Q.w + this->y * Q.z - this->z * Q.y; 
             Result.y = this->w * Q.y - this->x * Q.z + this->y * Q.w + this->z * Q.z;
-            Result.z = this->w * Q.z + this->x * Q.y - this->y * Q.x + this->z * Q.z;
+            Result.z = this->w * Q.z + this->x * Q.y - this->y * Q.x + this->z * Q.w;
             return Result;
         }
         
@@ -1707,24 +1707,16 @@ namespace math
     inline m4 ToMatrix(quat Q)
     {
         m4 Result(1.0f);
-        Result[0][0] = 1.0f - 2.0f * Q.y * Q.y - 2.0f * Q.z * Q.z;
-        Result[1][0] = 2.0f * Q.x * Q.y - 2.0f * Q.w * Q.z;
-        Result[2][0] = 2.0f * Q.x * Q.z + 2.0f * Q.w * Q.y;
-        Result[3][0] = 0.0f;
-        Result[0][1] = 2.0f * Q.x * Q.y + 2.0f * Q.w * Q.z;
-        Result[1][1] = 1.0f - 2.0f * Q.x * Q.x - 2.0f * Q.z * Q.z;
-        Result[2][1] = 2.0f * Q.y * Q.z - 2.0f * Q.w * Q.x;
-        Result[3][1] = 0.0f;
-        Result[0][2] = 2.0f * Q.x * Q.z - 2.0f * Q.w * Q.y;
-        Result[1][2] = 2.0f * Q.y * Q.z + 2.0f * Q.w * Q.x;
-        Result[2][2] = 1.0f - 2.0f * Q.x * Q.x - 2.0f * Q.y * Q.y;
-        Result[3][2] = 0.0f;
-        Result[0][3] = 0.0f;
-        Result[1][3] = 0.0f;
-        Result[2][3] = 0.0f;
-        Result[3][3] = 1.0f;
         
-        Result = Transpose(Result);
+        Result[0][0] = 1.0f - 2.0f * Q.y * Q.y - 2.0f * Q.z * Q.z;
+        Result[0][1] = 2.0f * Q.x * Q.y + 2.0f * Q.z * Q.w;
+        Result[0][2] = 2.0f * Q.x * Q.z - 2.0f * Q.y * Q.w;
+        Result[1][0] = 2.0f * Q.x * Q.y - 2.0f * Q.z * Q.w;
+        Result[1][1] = 1.0f - 2.0f * Q.x * Q.x - 2.0f * Q.z * Q.z;
+        Result[1][2] = 2.0f * Q.y * Q.z + 2.0f * Q.x * Q.w;
+        Result[2][0] = 2.0f * Q.x * Q.z + 2.0f * Q.y * Q.w;
+        Result[2][1] = 2.0f * Q.y * Q.z - 2.0f * Q.x * Q.w;
+        Result[2][2] = 1.0f - 2.0f * Q.x * Q.x - 2.0f * Q.y * Q.y;
         
         return Result;
     }
@@ -2121,6 +2113,11 @@ namespace math
         return (r32)cos(V);
     }
     
+    inline r32 ACos(r32 V)
+    {
+        return (r32)acos(V);
+    }
+    
     inline r32 Length(v2 V)
     {
         return Sqrt(Pow(V.X,2) + Pow(V.Y,2));
@@ -2134,6 +2131,11 @@ namespace math
     inline r32 Length(v4 V)
     {
         return Sqrt(Pow(V.X,2) + Pow(V.Y,2) + Pow(V.Z,2) + Pow(V.W,2));
+    }
+    
+    inline r32 Length(quat Q)
+    {
+        return Sqrt(Pow(Q.x, 2) + Pow(Q.y, 2) + Pow(Q.z, 2) + Pow(Q.w, 2));
     }
     
     inline v2 Normalize(v2 V)
@@ -2262,7 +2264,20 @@ namespace math
     {
         quat Result(In);
         auto Q = math::quat(Axis.x, Axis.y, Axis.z, DEGREE_IN_RADIANS * A);
-        Result = Result * Q;
+        Result = In * Q;
+        return Result;
+    }
+    
+    // https://gamedev.stackexchange.com/a/50545
+    inline v3 Rotate(v3 In, quat Q)
+    {
+        math::v3 U(Q.x, Q.y, Q.z);
+        
+        r32 S = Q.w;
+        
+        auto Result = 2.0f * Dot(U, In) * U 
+            + (S * S - Dot(U,U)) * In 
+            + 2.0f * S * Cross(U, In);
         return Result;
     }
     

@@ -23,7 +23,7 @@ struct game_code
     char *TempDllPath = "game_temp.dll";
 };
 
-#define MAX_TEMP_BLOCKS 2048
+#define MAX_TEMP_BLOCKS 4096
 
 struct win32_memory_state
 {
