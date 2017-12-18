@@ -1161,7 +1161,7 @@ void RenderCircle(render_state& RenderState, math::v4 Color, r32 CenterX, r32 Ce
     glDrawArrays(GL_LINE_LOOP, 0, 720);
 }
 
-static void RenderQuad(Render_Mode Mode, render_state& RenderState, math::v4 Color, math::v3 Position, math::v3 Size, math::quat Orientation, i32 ShaderHandle, shader_attribute* ShaderAttributes, i32 ShaderAttributeCount, b32 IsUI = true, i32 TextureHandle = 0, b32 ForAnimation = false, math::v2 TextureSize = math::v2(), math::v2i FrameSize = math::v2i(), math::v2 TextureOffset = math::v2(), math::m4 ProjectionMatrix = math::m4(), math::m4 ViewMatrix = math::m4())
+static void RenderQuad(Render_Mode Mode, render_state& RenderState, math::v4 Color, math::v3 Position, math::v3 Size, math::v3 Rotation, i32 ShaderHandle, shader_attribute* ShaderAttributes, i32 ShaderAttributeCount, b32 IsUI = true, i32 TextureHandle = 0, b32 ForAnimation = false, math::v2 TextureSize = math::v2(), math::v2i FrameSize = math::v2i(), math::v2 TextureOffset = math::v2(), math::m4 ProjectionMatrix = math::m4(), math::m4 ViewMatrix = math::m4())
 {
     if(IsUI)
     {
@@ -1219,6 +1219,14 @@ static void RenderQuad(Render_Mode Mode, render_state& RenderState, math::v4 Col
             
             // @Incomplete: We should be using an origin point for this
             //Model = math::Translate(Model, math::v3(-Size.x / 2.0f, -Size.y / 2.0f, -Size.z / 2.0f));
+            auto XAxis = Rotation.x > 0.0f ? 1.0f : 0.0f;
+            auto YAxis = Rotation.y > 0.0f ? 1.0f : 0.0f;
+            auto ZAxis = Rotation.z > 0.0f ? 1.0f : 0.0f;
+            
+            auto Orientation = math::quat();
+            Orientation = math::Rotate(Orientation, Rotation.x, math::v3(XAxis, 0.0f, 0.0f));
+            Orientation = math::Rotate(Orientation, Rotation.y, math::v3(0.0f, YAxis, 0.0f));
+            Orientation = math::Rotate(Orientation, Rotation.z, math::v3(0.0f, 0.0f, ZAxis));
             
             Model = ToMatrix(Orientation) * Model;
             
@@ -1308,6 +1316,16 @@ static void RenderQuad(Render_Mode Mode, render_state& RenderState, math::v4 Col
             math::m4 Model(1.0f);
             
             Model = math::Scale(Model, Size);
+            
+            auto XAxis = Rotation.x > 0.0f ? 1.0f : 0.0f;
+            auto YAxis = Rotation.y > 0.0f ? 1.0f : 0.0f;
+            auto ZAxis = Rotation.z > 0.0f ? 1.0f : 0.0f;
+            
+            auto Orientation = math::quat();
+            Orientation = math::Rotate(Orientation, Rotation.x, math::v3(XAxis, 0.0f, 0.0f));
+            Orientation = math::Rotate(Orientation, Rotation.y, math::v3(0.0f, YAxis, 0.0f));
+            Orientation = math::Rotate(Orientation, Rotation.z, math::v3(0.0f, 0.0f, ZAxis));
+            
             Model = math::ToMatrix(Orientation) * Model;
             Model = math::Translate(Model, Position);
             
@@ -1471,38 +1489,38 @@ static void RenderWireframeCube(const render_command& Command, render_state& Ren
 /*
 void RenderConsole(render_state& RenderState, console* Console)
 {
-    glBindVertexArray(RenderState.RectVAO);
-    
-    r32 PercentAnimated = 1.0f + 1.0f - (r32)Console->CurrentTime / (r32)Console->TimeToAnimate;
-    
-    //draw upper part
-    RenderQuad(Render_Fill, RenderState, math::v4(0.0f, 0.4f, 0.3f, 0.6f), math::v3(0.0f, (r32)RenderState.WindowHeight * 0.77f * PercentAnimated, 0.0f), math::v3((r32)RenderState.WindowWidth, (r32)RenderState.WindowHeight * 0.23f, 0.0f), math::v3(), -1, 0, 0);
-    
-    //draw lower bar
-    RenderQuad(Render_Fill, RenderState, math::v4(0.0f, 0.2f, 0.2f, 0.6f), math::v3(0.0f, (r32)RenderState.WindowHeight * 0.77f * PercentAnimated, 0.0f), math::v3((r32)RenderState.WindowWidth, 0.0f, 0.0f), math::v3(), -1, 0L, 0);  
-    
-    GLfloat TimeValue = (r32)glfwGetTime();
-    GLfloat AlphaValue = (r32)((sin(TimeValue * 4) / 2) + 0.5f);
-    r32 Width;
-    r32 Height;
-    MeasureText(RenderState.Fonts[0], &Console->Buffer[0], &Width, &Height);
-    
-    //draw cursor
-    RenderQuad(Render_Fill, RenderState, math::v4(AlphaValue, 1, AlphaValue, 1), math::v3(5 / 1920.0f * (r32)RenderState.WindowWidth + Width, RenderState.WindowHeight * 0.77f * PercentAnimated, 0.0f), math::v3(10, 20, 0.0f), math::v3(), -1, 0, 0);
-    
-    RenderText(RenderState, RenderState.Fonts[0], math::v4(0, 0.8, 0, 1),  &Console->Buffer[0],  5 / 1920.0f * (r32)RenderState.WindowWidth, (r32)RenderState.WindowHeight * 0.775f * PercentAnimated);
-    
-    math::v4 Color;
-    
-    for(i32 Index = 0; Index < HISTORY_BUFFER_LINES; Index++)
-    {
-        if(Index % 2 != 0)
-            Color = math::v4(0, 1, 0, 1);
-        else
-            Color = math::v4(1, 1, 1, 1);
-            
-        RenderText(RenderState, RenderState.Fonts[0], Color, &Console->HistoryBuffer[Index][0], 5 / 1920.0f * (r32)RenderState.WindowWidth, (r32)RenderState.WindowHeight * 0.78f * PercentAnimated + (Index + 1) * 20 * PercentAnimated);
-    }
+glBindVertexArray(RenderState.RectVAO);
+
+r32 PercentAnimated = 1.0f + 1.0f - (r32)Console->CurrentTime / (r32)Console->TimeToAnimate;
+
+//draw upper part
+RenderQuad(Render_Fill, RenderState, math::v4(0.0f, 0.4f, 0.3f, 0.6f), math::v3(0.0f, (r32)RenderState.WindowHeight * 0.77f * PercentAnimated, 0.0f), math::v3((r32)RenderState.WindowWidth, (r32)RenderState.WindowHeight * 0.23f, 0.0f), math::v3(), -1, 0, 0);
+
+//draw lower bar
+RenderQuad(Render_Fill, RenderState, math::v4(0.0f, 0.2f, 0.2f, 0.6f), math::v3(0.0f, (r32)RenderState.WindowHeight * 0.77f * PercentAnimated, 0.0f), math::v3((r32)RenderState.WindowWidth, 0.0f, 0.0f), math::v3(), -1, 0L, 0);  
+
+GLfloat TimeValue = (r32)glfwGetTime();
+GLfloat AlphaValue = (r32)((sin(TimeValue * 4) / 2) + 0.5f);
+r32 Width;
+r32 Height;
+MeasureText(RenderState.Fonts[0], &Console->Buffer[0], &Width, &Height);
+
+//draw cursor
+RenderQuad(Render_Fill, RenderState, math::v4(AlphaValue, 1, AlphaValue, 1), math::v3(5 / 1920.0f * (r32)RenderState.WindowWidth + Width, RenderState.WindowHeight * 0.77f * PercentAnimated, 0.0f), math::v3(10, 20, 0.0f), math::v3(), -1, 0, 0);
+
+RenderText(RenderState, RenderState.Fonts[0], math::v4(0, 0.8, 0, 1),  &Console->Buffer[0],  5 / 1920.0f * (r32)RenderState.WindowWidth, (r32)RenderState.WindowHeight * 0.775f * PercentAnimated);
+
+math::v4 Color;
+
+for(i32 Index = 0; Index < HISTORY_BUFFER_LINES; Index++)
+{
+if(Index % 2 != 0)
+Color = math::v4(0, 1, 0, 1);
+else
+Color = math::v4(1, 1, 1, 1);
+
+RenderText(RenderState, RenderState.Fonts[0], Color, &Console->HistoryBuffer[Index][0], 5 / 1920.0f * (r32)RenderState.WindowWidth, (r32)RenderState.WindowHeight * 0.78f * PercentAnimated + (Index + 1) * 20 * PercentAnimated);
+}
 }*/
 
 static void RenderLine(const render_command& Command, render_state& RenderState, math::m4 Projection, math::m4 View)
@@ -1527,7 +1545,7 @@ static void RenderQuad(const render_command& Command, render_state& RenderState,
                    Command.Quad.Color, 
                    Command.Position,
                    Command.Scale,
-                   Command.Orientation,
+                   Command.Rotation,
                    Command.ShaderHandle,
                    Command.ShaderAttributes,
                    Command.ShaderAttributeCount,
@@ -1546,7 +1564,7 @@ static void RenderQuad(const render_command& Command, render_state& RenderState,
                    Command.Quad.Color, 
                    Command.Position,
                    Command.Scale,
-                   Command.Orientation,
+                   Command.Rotation,
                    Command.ShaderHandle,
                    Command.ShaderAttributes,
                    Command.ShaderAttributeCount,

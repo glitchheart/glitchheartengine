@@ -2265,6 +2265,7 @@ namespace math
         quat Result(In);
         auto Q = math::quat(Axis.x, Axis.y, Axis.z, DEGREE_IN_RADIANS * A);
         Result = In * Q;
+        Result = Normalize(Result);
         return Result;
     }
     
