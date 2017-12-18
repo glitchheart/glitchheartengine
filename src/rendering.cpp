@@ -342,13 +342,13 @@ static void PushText(renderer& Renderer, const char* Text, math::v3 Position, i3
     RenderCommand->IsUI = IsUI;
 }
 
-static void PushFilledQuad(renderer& Renderer, math::v3 Position, math::v3 Size, math::v3 Rotation, math::rgba Color, i32 TextureHandle = 0, b32 IsUI = true, i32 AnimationInfoHandle = -1,i32 ShaderHandle = -1, shader_attribute* ShaderAttributes = 0, i32 ShaderAttributeCount = 0, math::v2 TextureOffset = math::v2(-1.0f, -1.0f), math::v2 TextureSize = math::v2(-1.0f, -1.0f), math::v2i FrameSize = math::v2i(-1, -1))
+static void PushFilledQuad(renderer& Renderer, math::v3 Position, math::v3 Size, math::quat Orientation = math::quat(), math::rgba Color = math::rgba(1.0f, 1.0f, 1.0f, 1.0f), i32 TextureHandle = 0, b32 IsUI = true, i32 AnimationInfoHandle = -1,i32 ShaderHandle = -1, shader_attribute* ShaderAttributes = 0, i32 ShaderAttributeCount = 0, math::v2 TextureOffset = math::v2(-1.0f, -1.0f), math::v2 TextureSize = math::v2(-1.0f, -1.0f), math::v2i FrameSize = math::v2i(-1, -1))
 {
     render_command* RenderCommand = PushNextCommand(Renderer, IsUI);
     
     RenderCommand->Type = RenderCommand_Quad;
     RenderCommand->Position = Position;
-    RenderCommand->Rotation = Rotation;
+    RenderCommand->Orientation = Orientation;
     RenderCommand->Scale = Size;
     RenderCommand->Quad.Color = Color;
     RenderCommand->Quad.Outlined = false;
