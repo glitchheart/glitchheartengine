@@ -379,13 +379,13 @@ static void PushFilledQuad(renderer& Renderer, math::v3 Position, math::v3 Size,
     RenderCommand->IsUI = IsUI;
 }
 
-static void PushOutlinedQuad(renderer& Renderer, math::v3 Position,  math::v3 Size, math::v3 Rotation, math::rgba Color, b32 IsUI = false, r32 LineWidth = 1.0f)
+static void PushOutlinedQuad(renderer& Renderer, math::v3 Position,  math::v3 Size, math::quat Orientation, math::rgba Color, b32 IsUI = false, r32 LineWidth = 1.0f)
 {
     render_command* RenderCommand = PushNextCommand(Renderer, IsUI);
     
     RenderCommand->Type = RenderCommand_Quad;
     RenderCommand->Position = Position;
-    RenderCommand->Rotation = Rotation;
+    RenderCommand->Orientation = Orientation;
     RenderCommand->Scale = Size;
     RenderCommand->Quad.Color = Color;
     RenderCommand->Quad.Outlined = true;
