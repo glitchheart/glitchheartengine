@@ -1308,8 +1308,8 @@ static void RenderQuad(Render_Mode Mode, render_state& RenderState, math::v4 Col
             math::m4 Model(1.0f);
             
             Model = math::Scale(Model, Size);
-            Model = math::Translate(Model, Position);
             Model = math::ToMatrix(Orientation) * Model;
+            Model = math::Translate(Model, Position);
             
             glBindVertexArray(RenderState.WireframeVAO);
             
