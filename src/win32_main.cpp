@@ -532,6 +532,12 @@ inline PLATFORM_SAVE_FILE_WITH_DIALOG(Win32SaveFileWithDialog)
     return Result;
 }
 
+
+inline PLATFORM_GET_TIME_OF_DAY(Win32GetTimeOfDay)
+{
+    
+}
+
 int main(int Argc, char** Args)
 {
     game_memory GameMemory = {};
