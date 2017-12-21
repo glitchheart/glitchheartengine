@@ -179,6 +179,9 @@ typedef PLATFORM_OPEN_FILE_WITH_DIALOG(platform_open_file_with_dialog);
 #define PLATFORM_SAVE_FILE_WITH_DIALOG(name) platform_file name(char* Extension, u64 Flags)
 typedef PLATFORM_SAVE_FILE_WITH_DIALOG(platform_save_file_with_dialog);
 
+#define PLATFORM_GET_TIME_OF_DAY(name) u32 name()
+typedef PLATFORM_GET_TIME_OF_DAY(platform_get_time_of_day);
+
 struct platform_api
 {
     platform_get_all_files_with_extension *GetAllFilesWithExtension;
@@ -187,6 +190,7 @@ struct platform_api
     platform_deallocate_memory *DeallocateMemory;
     platform_open_file_with_dialog* OpenFileWithDialog;
     platform_save_file_with_dialog* SaveFileWithDialog;
+    platform_get_time_of_day* GetTimeOfDay;
 };
 extern platform_api Platform;
 

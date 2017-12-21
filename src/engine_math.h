@@ -2526,12 +2526,7 @@ namespace math
     
     inline i32 RandomInt(i32 From, i32 To)
     {
-        if(From == To)
-            return From;
-        
-        i32 Result = rand() % (To - From);
-        Result += From;
-        return Result;
+        return rand() % To + From;
     }
     
     struct ray
