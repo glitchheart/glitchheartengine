@@ -91,13 +91,6 @@ char* ToString(texture_data* Data);
 #include "engine_math.h"
 #include "modelformat.h"
 
-struct timer
-{
-    i32 TimerHandle = -1;
-    r64 TimerMax = 0.0;
-    char* Name;
-};
-
 enum Window_Mode
 {
     FM_Windowed = 0,
@@ -228,8 +221,9 @@ struct sound_commands;
 struct render_state;
 
 struct renderer;
+struct timer_controller;
 
-#define UPDATE(name)void name(r64 DeltaTime, game_memory* GameMemory, renderer& Renderer, input_controller* InputController, sound_commands* SoundCommands)
+#define UPDATE(name)void name(r64 DeltaTime, game_memory* GameMemory, renderer& Renderer, input_controller* InputController, sound_commands* SoundCommands, timer_controller& TimerController)
 typedef UPDATE(update);
 UPDATE(UpdateStub)
 {

@@ -37,6 +37,7 @@ memory_state MemoryState;
 #include "opengl_rendering.h"
 #include "keycontroller.cpp"
 #include "sound.h"
+#include "timers.h"
 #include "fmod_sound.h"
 #include "fmod_sound.cpp"
 #include "filehandling.h"
@@ -285,8 +286,12 @@ int main(int Argc, char** Args)
     
     InitializeOpenGL(RenderState, Renderer, &ConfigData, &PlatformState->PermArena);
     
+    
     game_code Game = {};
     LoadGameCode(Game, GameLibraryPath, TempGameLibraryPath);
+    
+    timer_controller TimerController;
+    TimerController.TimerCount = 0;
     
     //setup asset reloading
     asset_manager AssetManager = {};
@@ -345,7 +350,8 @@ int main(int Argc, char** Args)
         
         ReloadLibraries(&Game, GameLibraryPath, TempGameLibraryPath);
         
-        Game.Update(DeltaTime, &GameMemory, Renderer, &InputController, &SoundCommands);
+        Game.Update(DeltaTime, &GameMemory, Renderer, &InputController, &SoundCommands, TimerController);
+        TickTimers(TimerController, DeltaTime);
         
         Render(RenderState, Renderer, &PlatformState->PermArena);
         PlaySounds(&SoundDevice, &SoundCommands);
