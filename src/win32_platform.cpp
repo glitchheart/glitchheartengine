@@ -2,8 +2,6 @@
 #include "Commdlg.h"
 #include <windows.h>
 
-
-
 static FILETIME GetLastWriteTime(const char* FilePath)
 {
     FILETIME LastWriteTime = {};
