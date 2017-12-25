@@ -1,11 +1,5 @@
-//#define _CRTDBG_MAP_ALLOC  
-//#define _DEBUG
-
-//#include <stdlib.h>  
-//#include <crtdbg.h>  
-
 #define DEBUG
-//#include "platform.h"
+
 #include "shared.h"
 
 #if GLITCH_DEBUG
@@ -16,18 +10,24 @@
 #include "fmod.h"
 #include "fmod_errors.h"
 
-#include "io.h"
-#include "Commdlg.h"
-#include <windows.h>
 #include <sys/types.h>  
 #include <sys/stat.h>  
 #include <fcntl.h>
 #include <GLFW/glfw3.h>
 
-#include "win32_main.h"
+#include "main.h"
 
+// Global
 platform_api Platform;
 log_state LogState;
+memory_state MemoryState;
+// Global
+
+#ifdef _WIN32
+#include "win32_platform.cpp"
+#elif __linux
+#include "linux_platform.cpp"
+#endif
 
 #include "gmap.cpp"
 #include "keycontroller.h"
@@ -46,36 +46,21 @@ input_controller InputController;
 #include "opengl_rendering.cpp"
 
 
-static FILETIME GetLastWriteTime(const char* FilePath)
-{
-    FILETIME LastWriteTime = {};
-    
-    WIN32_FIND_DATA FindData;
-    HANDLE FindHandle = FindFirstFileA(FilePath, &FindData);
-    
-    if(FindHandle != INVALID_HANDLE_VALUE)
-    {
-        LastWriteTime = FindData.ftLastWriteTime;
-        FindClose(FindHandle);
-    }
-    return LastWriteTime;
-}
-
-static game_code LoadGameCode(char* DllPath, char* TempDllPath)
+static game_code LoadGameCode(char* GameLibraryPath, char* TempGameLibraryPath)
 {
     game_code Result = {};
-    Result.DllPath = DllPath;
-    Result.TempDllPath = TempDllPath;
+    Result.GameLibraryPath = GameLibraryPath;
+    Result.TempGameLibraryPath = TempGameLibraryPath;
     
-    CopyFile(Result.DllPath, Result.TempDllPath, false);
+    CopyFile(Result.GameLibraryPath, Result.TempGameLibraryPath, false);
     Result.Update = UpdateStub;
-    Result.GameCodeDLL = LoadLibraryA(Result.TempDllPath);
+    Result.GameCodeLibrary = LoadLibrary(Result.TempGameLibraryPath);
     
-    Result.LastDllWriteTime = GetLastWriteTime(Result.DllPath);
+    Result.LastLibraryWriteTime = GetLastWriteTime(Result.GameLibraryPath);
     
-    if (Result.GameCodeDLL)
+    if (Result.GameCodeLibrary)
     {
-        Result.Update = (update *)GetProcAddress(Result.GameCodeDLL, "Update");
+        Result.Update = (update *)Platform.LoadSymbol(Result.GameCodeLibrary, "Update");
         Result.IsValid = Result.Update != 0;
     }
     
@@ -90,30 +75,30 @@ static game_code LoadGameCode(char* DllPath, char* TempDllPath)
 
 static void UnloadGameCode(game_code *GameCode)
 {
-    if (GameCode->GameCodeDLL)
+    if (GameCode->GameCodeLibrary)
     {
-        FreeLibrary(GameCode->GameCodeDLL);
-        GameCode->GameCodeDLL = 0;
+        FreeLibrary(GameCode->GameCodeLibrary);
+        GameCode->GameCodeLibrary = 0;
     }
     
     GameCode->IsValid = false;
     GameCode->Update = UpdateStub;
 }
 
-static void ReloadGameCode(game_code *GameCode, char* DllPath, char* TempDllPath)
+static void ReloadGameCode(game_code *GameCode, char* GameLibraryPath, char* TempGameLibraryPath)
 {
     UnloadGameCode(GameCode);
-    *GameCode = LoadGameCode(DllPath, TempDllPath);
+    *GameCode = LoadGameCode(GameLibraryPath, TempGameLibraryPath);
 }
 
-static void ReloadDlls(game_code *Game, char* DllPath, char* TempDllPath)
+static void ReloadLibraries(game_code *Game, char* GameLibraryPath, char* TempGameLibraryPath)
 {
-    FILETIME LastWriteTime = GetLastWriteTime(Game->DllPath);
+    FILETIME LastWriteTime = GetLastWriteTime(GameLibraryPath);
     
-    if (CompareFileTime(&Game->LastDllWriteTime, &LastWriteTime) != 0)
+    if (CompareFileTime(&Game->LastLibraryWriteTime, &LastWriteTime) != 0)
     {
         DEBUG_PRINT("RELOAD\n");
-        ReloadGameCode(Game, DllPath, TempDllPath);
+        ReloadGameCode(Game, GameLibraryPath, TempGameLibraryPath);
         Assert(Game);
     }
 }
@@ -251,291 +236,14 @@ inline void LoadConfig(const char* FilePath, config_data* ConfigData, memory_are
             {
                 sscanf(LineBuffer, "zoom %f", &ConfigData->Zoom);
             }
+            else if(StartsWith(LineBuffer, "skipsplashscreen"))
+            {
+                sscanf(LineBuffer, "skipsplashscreen %d", &ConfigData->SkipSplashScreen);
+            }
         }
         
         fclose(File);
     }
-}
-
-// Global
-win32_memory_state Win32MemoryState;
-
-PLATFORM_ALLOCATE_MEMORY(Win32AllocateMemory)
-{
-    Assert(sizeof(win32_memory_block) == 64);
-    
-    umm PageSize = 4096; //TODO: Not really always correct?
-    umm TotalSize = Size + sizeof(win32_memory_block);
-    umm BaseOffset = sizeof(win32_memory_block);
-    umm ProtectOffset = 0;
-    
-    if(Flags & PM_UnderflowCheck)
-    {
-        TotalSize = Size + 2 * PageSize;
-        BaseOffset = 2 * PageSize;
-        ProtectOffset = PageSize;
-    }
-    
-    if(Flags & PM_OverflowCheck)
-    {
-        umm SizeRoundedUp = AlignPow2(Size, PageSize);
-        TotalSize = SizeRoundedUp + 2 * PageSize;
-        BaseOffset = PageSize + SizeRoundedUp - Size;
-        ProtectOffset = PageSize + SizeRoundedUp;
-    }
-    
-    win32_memory_block* Block  = (win32_memory_block*)VirtualAlloc(0, TotalSize, MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE);
-    
-    Assert(Block);
-    Block->Block.Base = (u8*)Block + BaseOffset;
-    Assert(Block->Block.Used == 0);
-    Assert(Block->Block.Prev == 0);
-    
-    if(Flags & (PM_UnderflowCheck | PM_OverflowCheck))
-    {
-        DWORD OldProtect = 0;
-        BOOL Protected = VirtualProtect((u8*)Block + ProtectOffset, PageSize, PAGE_NOACCESS, &OldProtect);
-        Assert(Protected);
-    }
-    
-    Block->Block.Size = Size;
-    Block->Block.Flags = Flags;
-    
-    platform_memory_block* PlatBlock = &Block->Block;
-    
-    if(Flags & PM_Temporary)
-    {
-        Assert((Win32MemoryState.TempCount + 1) < MAX_TEMP_BLOCKS);
-        Win32MemoryState.TempSizeAllocated += TotalSize;
-        Win32MemoryState.Blocks[Win32MemoryState.TempCount++] = PlatBlock;
-    }
-    else
-    {
-        Win32MemoryState.PermanentBlocks++;
-        Win32MemoryState.PermanentSizeAllocated += TotalSize;
-    }
-    
-    return PlatBlock;
-}
-
-PLATFORM_DEALLOCATE_MEMORY(Win32DeallocateMemory)
-{
-    if(Block)
-    {
-        if((Block->Flags & PM_Temporary) == 0)
-        {
-            Win32MemoryState.PermanentBlocks--;
-            Win32MemoryState.PermanentSizeAllocated -= (Block->Size + sizeof(win32_memory_block));
-        }
-        
-        win32_memory_block *Win32Block =  ((win32_memory_block*)Block);
-        VirtualFree(Win32Block, 0, MEM_RELEASE);
-    }
-}
-
-static void ClearTempMemory()
-{
-    for(i32 Temp = 0; Temp < Win32MemoryState.TempCount; Temp++)
-    {
-        Win32DeallocateMemory(Win32MemoryState.Blocks[Temp]);
-    }
-    
-    Win32MemoryState.TempCount = 0;
-    Win32MemoryState.TempSizeAllocated = 0;
-}
-
-
-inline PLATFORM_GET_ALL_FILES_WITH_EXTENSION(Win32FindFilesWithExtensions)
-{
-    if(DirectoryData->FilesLength == 0)
-    {
-        DirectoryData->FileNames = PushTempArray(512, char*);
-        DirectoryData->FilePaths = PushTempArray(512, char*);
-    }
-    
-    WIN32_FIND_DATA FindFile;
-    HANDLE hFind = NULL;
-    
-    char Path[2048];
-    
-    //Process directories
-    sprintf(Path, "%s*", DirectoryPath);
-    hFind = FindFirstFile(Path, &FindFile);
-    if(hFind != INVALID_HANDLE_VALUE)
-    {
-        do
-        {
-            if(FindFile.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
-            {
-                if(strcmp(FindFile.cFileName, ".") != 0
-                   && strcmp(FindFile.cFileName, "..") != 0)
-                {
-                    char SubPath[2048];
-                    sprintf(SubPath, "%s%s/", DirectoryPath, FindFile.cFileName);
-                    Win32FindFilesWithExtensions(SubPath, Extension, DirectoryData, WithSubDirectories);
-                }
-                
-            }
-        }
-        
-        while(FindNextFile(hFind, &FindFile));
-        FindClose(hFind);
-    }
-    else
-    {
-        DEBUG_PRINT("No files with extension %s found in %s\n", Extension, DirectoryPath);
-        return;
-    }
-    
-    //Process files
-    sprintf(Path, "%s*.%s", DirectoryPath, Extension);
-    hFind = FindFirstFile(Path, &FindFile);
-    if(hFind != INVALID_HANDLE_VALUE)
-    {
-        do
-        {
-            if(!(FindFile.dwFileAttributes &FILE_ATTRIBUTE_DIRECTORY))
-            {
-                if(strcmp(FindFile.cFileName, ".") != 0
-                   && strcmp(FindFile.cFileName, "..") != 0)
-                {
-                    char* ConcatStr = Concat(DirectoryPath, FindFile.cFileName);
-                    char* FileName = strtok(FindFile.cFileName, ".");
-                    
-                    DirectoryData->FilePaths[DirectoryData->FilesLength] = PushTempString(ConcatStr);
-                    DirectoryData->FileNames[DirectoryData->FilesLength] = PushTempString(FileName);
-                    DirectoryData->FilesLength++;
-                }
-            }
-        } while (FindNextFile(hFind, &FindFile));
-        FindClose(hFind);
-    }
-    else
-    {
-        DEBUG_PRINT("No files with extension %s found in %s\n", Extension, DirectoryPath);
-        return;
-    }
-    
-}
-
-
-inline PLATFORM_FILE_EXISTS(Win32FileExists)
-{
-    struct stat Buffer;
-    return (stat(FilePath,&Buffer) == 0);
-}
-
-inline PLATFORM_OPEN_FILE_WITH_DIALOG(Win32OpenFileWithDialog)
-{
-    OPENFILENAME Ofn;
-    char SzFile[260];
-    platform_file Result = {};
-    
-    HANDLE Hf;
-    
-    ZeroMemory(&Ofn, sizeof(Ofn));
-    Ofn.lStructSize = sizeof(Ofn);
-    Ofn.hwndOwner = 0;
-    Ofn.lpstrFile = SzFile;
-    Ofn.lpstrFile[0] = '\0';
-    Ofn.nMaxFile = sizeof(SzFile);
-    if(Extension)
-    {
-        Ofn.lpstrFilter = Concat(Extension, "\0*.*\0");
-    }
-    else
-    {
-        Ofn.lpstrFilter = "All\0*.*\0";
-    }
-    
-    Ofn.nFilterIndex = 1;
-    Ofn.lpstrFileTitle = NULL;
-    Ofn.nMaxFileTitle = 0;
-    Ofn.lpstrInitialDir = NULL;
-    Ofn.Flags = OFN_NOCHANGEDIR;
-    
-    if(GetOpenFileName(&Ofn) == TRUE)
-    {
-        Hf = CreateFile(Ofn.lpstrFile, GENERIC_READ, 0, (LPSECURITY_ATTRIBUTES)NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, (HANDLE)NULL);
-        
-        if(Hf != INVALID_HANDLE_VALUE)
-        {
-            Result.File = _fdopen(_open_osfhandle((imm)Hf, 0), "r");
-            strcpy(Result.Path, Ofn.lpstrFile);
-            char* P = PushTempString(Result.Path);
-            auto Tok = StrSep(&P, ".");
-            Tok = StrSep(&P, ".");
-            strcpy(Result.Extension, Tok);
-        }
-    }
-    return Result;
-}
-
-
-inline PLATFORM_SAVE_FILE_WITH_DIALOG(Win32SaveFileWithDialog)
-{
-    OPENFILENAME Ofn;
-    char SzFile[260];
-    platform_file Result = {};
-    
-    HANDLE Hf;
-    
-    ZeroMemory(&Ofn, sizeof(Ofn));
-    Ofn.lStructSize = sizeof(Ofn);
-    Ofn.hwndOwner = 0;
-    Ofn.lpstrFile = SzFile;
-    Ofn.lpstrFile[0] = '\0';
-    Ofn.nMaxFile = sizeof(SzFile);
-    if(Extension)
-    {
-        Ofn.lpstrFilter = Concat(Extension, "\0*.*\0");
-    }
-    else
-    {
-        Ofn.lpstrFilter = "All\0*.*\0";
-    }
-    
-    Ofn.nFilterIndex = 1;
-    Ofn.lpstrFileTitle = NULL;
-    Ofn.nMaxFileTitle = 0;
-    Ofn.lpstrInitialDir = NULL;
-    Ofn.Flags = OFN_SHOWHELP | OFN_OVERWRITEPROMPT |OFN_NOCHANGEDIR ;
-    
-    if(GetSaveFileName(&Ofn) == TRUE)
-    {
-        if(Extension && !strstr(Ofn.lpstrFile, Extension))
-        {
-            Hf = CreateFile(Concat(Concat(Ofn.lpstrFile, "."), Extension), GENERIC_READ | GENERIC_WRITE, 0, (LPSECURITY_ATTRIBUTES)NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, (HANDLE)NULL);
-        }
-        else
-        {
-            Hf = CreateFile(Ofn.lpstrFile, GENERIC_READ | GENERIC_WRITE, 0, (LPSECURITY_ATTRIBUTES)NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, (HANDLE)NULL);
-        }
-        auto Err = GetLastError();
-        if(Hf != INVALID_HANDLE_VALUE)
-        {
-            auto OFlags = Flags & PM_Append ? _O_APPEND : 0;
-            auto FDFlags = Flags & PM_Append ? "a" : "w";
-            DEBUG_PRINT("Flags: %d\n", OFlags);
-            Result.File = _fdopen(_open_osfhandle((imm)Hf, OFlags), FDFlags);
-            strcpy(Result.Path, Ofn.lpstrFile);
-            if(Extension)
-            {
-                strcpy(Result.Extension, Extension);
-            }
-        }
-        else
-        {
-            DEBUG_PRINT("Open file for saving failed with error: %ld\n", Err);
-        }
-    }
-    return Result;
-}
-
-
-inline PLATFORM_GET_TIME_OF_DAY(Win32GetTimeOfDay)
-{
-    
 }
 
 int main(int Argc, char** Args)
@@ -546,32 +254,27 @@ int main(int Argc, char** Args)
     
     GameMemory.ExitGame = false;
     
-    GameMemory.PlatformAPI.GetAllFilesWithExtension = Win32FindFilesWithExtensions;
-    GameMemory.PlatformAPI.FileExists = Win32FileExists;
-    GameMemory.PlatformAPI.AllocateMemory = Win32AllocateMemory;
-    GameMemory.PlatformAPI.DeallocateMemory = Win32DeallocateMemory;
-    GameMemory.PlatformAPI.OpenFileWithDialog = Win32OpenFileWithDialog;
-    GameMemory.PlatformAPI.SaveFileWithDialog = Win32SaveFileWithDialog;
+    InitPlatform(GameMemory.PlatformAPI);
+    
     Platform = GameMemory.PlatformAPI;
     
-    win32_state* Win32State = BootstrapPushStruct(win32_state, PermArena);
+    platform_state* PlatformState = BootstrapPushStruct(platform_state, PermArena);
     
     LogState = GameMemory.LogState;
-    InitLog(LFlag_File | LFlag_Debug, Concat("../log_", "", &Win32State->PermArena));
+    InitLog(LFlag_File | LFlag_Debug, Concat("../log_", "", &PlatformState->PermArena));
     
-    
-    char* DllPath = "game.dll";
-    char* TempDllPath = "game_temp.dll";
+    char* GameLibraryPath = "game.dll";
+    char* TempGameLibraryPath = "game_temp.dll";
     
     memory_arena DebugArena = {};
     
-    GameMemory.DebugState = PushStruct(&Win32State->PermArena, debug_state);
+    GameMemory.DebugState = PushStruct(&PlatformState->PermArena, debug_state);
     
     GameMemory.DebugState->DebugMemoryInfo.DebugRect.RectOrigin = math::v2(50, 780);
     GameMemory.DebugState->DebugMemoryInfo.DebugRect.RectSize = math::v2(300,0);
     
     config_data ConfigData;
-    LoadConfig("../.config", &ConfigData, &Win32State->PermArena);
+    LoadConfig("../.config", &ConfigData, &PlatformState->PermArena);
     
     GameMemory.ConfigData = ConfigData;
     
@@ -585,13 +288,13 @@ int main(int Argc, char** Args)
     Renderer.SpritesheetAnimationCount = 0;
     Renderer.SpritesheetAnimationInfoCount = 0;
     
-    InitializeOpenGL(RenderState, Renderer, &ConfigData, &Win32State->PermArena);
+    InitializeOpenGL(RenderState, Renderer, &ConfigData, &PlatformState->PermArena);
     
-    game_code Game = LoadGameCode(DllPath, TempDllPath);
+    game_code Game = LoadGameCode(GameLibraryPath, TempGameLibraryPath);
     
     //setup asset reloading
     asset_manager AssetManager = {};
-    StartupFileTimeChecks(&AssetManager, DllPath);
+    StartupFileTimeChecks(&AssetManager, GameLibraryPath);
     
     u32 FrameCounterForAssetCheck = 0;
     
@@ -642,13 +345,13 @@ int main(int Argc, char** Args)
         
         ShowMouseCursor(RenderState, Renderer.ShowMouseCursor);
         
-        ReloadAssets(RenderState, &AssetManager, &Win32State->PermArena);
+        ReloadAssets(RenderState, &AssetManager, &PlatformState->PermArena);
         
-        ReloadDlls(&Game, DllPath, TempDllPath);
+        ReloadLibraries(&Game, GameLibraryPath, TempGameLibraryPath);
         
         Game.Update(DeltaTime, &GameMemory, Renderer, &InputController, &SoundCommands);
         
-        Render(RenderState, Renderer, &Win32State->PermArena);
+        Render(RenderState, Renderer, &PlatformState->PermArena);
         PlaySounds(&SoundDevice, &SoundCommands);
         
         SetControllerInvalidKeys();
@@ -676,7 +379,4 @@ int main(int Argc, char** Args)
     CloseLog();
     CleanupSound(&SoundDevice);
     CloseWindow(RenderState);
-    //_CrtDumpMemoryLeaks();
-    //_CrtMemState MemState;
-    //_CrtMemDumpStatistics(&MemState);
 }

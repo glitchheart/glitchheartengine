@@ -124,6 +124,7 @@ struct config_data
     r32 SFXVolume;
     r32 MusicVolume;
     r32 Zoom;
+    b32 SkipSplashScreen;
 };
 
 struct directory_data
@@ -182,6 +183,16 @@ typedef PLATFORM_SAVE_FILE_WITH_DIALOG(platform_save_file_with_dialog);
 #define PLATFORM_GET_TIME_OF_DAY(name) u32 name()
 typedef PLATFORM_GET_TIME_OF_DAY(platform_get_time_of_day);
 
+#define PLATFORM_LOAD_LIBRARY(name) void* name(const char* Path)
+typedef PLATFORM_LOAD_LIBRARY(platform_load_library);
+
+#define PLATFORM_FREE_LIBRARY(name) void name(void* Library)
+typedef PLATFORM_FREE_LIBRARY(platform_free_library);
+
+#define PLATFORM_LOAD_SYMBOL(name) void* name(void* Library, const char* Symbol)
+typedef PLATFORM_LOAD_SYMBOL(platform_load_symbol);
+
+
 struct platform_api
 {
     platform_get_all_files_with_extension *GetAllFilesWithExtension;
@@ -191,6 +202,9 @@ struct platform_api
     platform_open_file_with_dialog* OpenFileWithDialog;
     platform_save_file_with_dialog* SaveFileWithDialog;
     platform_get_time_of_day* GetTimeOfDay;
+    platform_load_library* LoadLibrary;
+    platform_free_library* FreeLibrary;
+    platform_load_symbol* LoadSymbol;
 };
 extern platform_api Platform;
 
