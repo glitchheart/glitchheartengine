@@ -98,15 +98,12 @@ struct timer
     char* Name;
 };
 
-
 enum Window_Mode
 {
     FM_Windowed = 0,
     FM_Full = 1,
     FM_Borderless = 2
-    
 };
-
 
 struct config_data
 {
