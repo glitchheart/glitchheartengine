@@ -288,6 +288,10 @@ inline void LoadConfig(const char* FilePath, config_data* ConfigData, memory_are
             {
                 sscanf(LineBuffer, "zoom %f", &ConfigData->Zoom);
             }
+            else if(StartsWith(LineBuffer, "skipsplashscreen"))
+            {
+                sscanf(LineBuffer, "skipsplashscreen %d", &ConfigData->SkipSplashScreen);
+            }
         }
         
         fclose(File);
@@ -331,7 +335,6 @@ PLATFORM_ALLOCATE_MEMORY(LinuxAllocateMemory)
     
     if(Flags & (PM_UnderflowCheck | PM_OverflowCheck))
     {
-        //TODO Linux types and function
         i32 Protected = mprotect((u8*)Block + ProtectOffset, PageSize, PROT_NONE);
         Assert(Protected);
     }
@@ -367,7 +370,6 @@ PLATFORM_DEALLOCATE_MEMORY(LinuxDeallocateMemory)
         }
         
         linux_memory_block *LinuxBlock =  ((linux_memory_block*)Block);
-        //TODO: Linux
         free(LinuxBlock);
     }
 }
