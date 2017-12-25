@@ -2,7 +2,16 @@
 #include "Commdlg.h"
 #include <windows.h>
 
-static FILETIME GetLastWriteTime(const char* FilePath)
+time_t FileTimeToTimeT(const FILETIME& FT)
+{
+    ULARGE_INTEGER Ull;
+    Ull.LowPart = FT.dwLowDateTime;
+    Ull.HighPart = FT.dwHighDateTime;
+    
+    return (time_t)(Ull.QuadPart / 10000000ULL - 11644473600ULL);
+}
+
+static time_t GetLastWriteTime(const char* FilePath)
 {
     FILETIME LastWriteTime = {};
     
@@ -14,20 +23,18 @@ static FILETIME GetLastWriteTime(const char* FilePath)
         LastWriteTime = FindData.ftLastWriteTime;
         FindClose(FindHandle);
     }
-    return LastWriteTime;
+    
+    return FileTimeToTimeT(LastWriteTime);
 }
 
 PLATFORM_LOAD_LIBRARY(Win32LoadLibrary)
 {
-    return LoadLibrary(Path);
+    return LoadLibraryA(Path);
 }
 
 PLATFORM_FREE_LIBRARY(Win32FreeLibrary)
 {
-    if(Library)
-    {
-        FreeLibrary((HMODULE)Library);
-    }
+    FreeLibrary((HMODULE)Library);
 }
 
 PLATFORM_LOAD_SYMBOL(Win32LoadSymbol)
@@ -321,4 +328,6 @@ static void InitPlatform(platform_api& PlatformAPI)
     PlatformAPI.OpenFileWithDialog = Win32OpenFileWithDialog;
     PlatformAPI.SaveFileWithDialog = Win32SaveFileWithDialog;
     PlatformAPI.LoadSymbol = Win32LoadSymbol;
+    PlatformAPI.FreeDynamicLibrary = Win32FreeLibrary;
+    PlatformAPI.LoadDynamicLibrary = Win32LoadLibrary;
 }

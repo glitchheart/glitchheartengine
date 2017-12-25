@@ -1,7 +1,7 @@
 #ifndef TIMERS_H
 #define TIMERS_H
 #ifndef TIMER_MAX
-#define TIMER_MAX 256
+#define TIMER_MAX 1024
 #endif
 
 #define REGISTER_TIMER(HandlePtr, TimerMax) RegisterTimer(HandlePtr, TimerMax, TimerController)
@@ -66,6 +66,7 @@ static b32 TimerDone(i32 Handle, timer_controller& TimerController)
 
 static void TickTimers(timer_controller& TimerController, r64 DeltaTime)
 {
+    printf("Ticking\n");
     for(i32 Index = 0; Index < TimerController.TimerCount; Index++)
     {
         TimerController.Timers[Index].CurrentTime += DeltaTime;

@@ -14,13 +14,11 @@ struct platform_state
 
 struct game_code
 {
-    HMODULE GameCodeLibrary;
-    FILETIME LastLibraryWriteTime;
+    void* GameCodeLibrary;
+    time_t LastLibraryWriteTime;
     update *Update;
     
     b32 IsValid;
-    char* GameLibraryPath;
-    char* TempGameLibraryPath;
 };
 
 #define MAX_TEMP_BLOCKS 4096
