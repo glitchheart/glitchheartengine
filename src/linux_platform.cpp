@@ -5,13 +5,22 @@
 #include "unistd.h"
 
 
+inline PLATFORM_FILE_EXISTS(LinuxFileExists)
+{
+    struct stat Buffer;
+    return (stat(FilePath,&Buffer) == 0);
+}
+
+
 static void CopyFile(const char* Src, const char* Dst, b32 Overwrite, b32 Binary = false)
 {
     FILE* In;
     FILE* Out;
     
-    //@Incomplete (Niels): Check if file exists + Overwrite
-    (void)Overwrite;
+    if(LinuxFileExists(Dst) && !Overwrite)
+    {
+        return;
+    }
     
     if(Binary)
     {
@@ -73,7 +82,6 @@ static void CopyFile(const char* Src, const char* Dst, b32 Overwrite, b32 Binary
         system(Concat("chmod +xr ", Dst));
     }
 }
-
 
 static time_t GetLastWriteTime(const char* FilePath)
 {

@@ -46,30 +46,25 @@ input_controller InputController;
 #include "keys_glfw.h"
 #include "opengl_rendering.cpp"
 
-
-static game_code LoadGameCode(char* GameLibraryPath, char* TempGameLibraryPath)
+static void LoadGameCode(game_code& GameCode, char* GameLibraryPath, char* TempGameLibraryPath)
 {
-    game_code Result = {};
+    if(!CopyFile(GameLibraryPath, TempGameLibraryPath, false)) return;
     
-    Result.Update = UpdateStub;
+    GameCode.Update = UpdateStub;
+    GameCode.LastLibraryWriteTime = GetLastWriteTime(GameLibraryPath);
+    GameCode.GameCodeLibrary = Platform.LoadDynamicLibrary(TempGameLibraryPath);
     
-    Result.LastLibraryWriteTime = GetLastWriteTime(GameLibraryPath);
-    CopyFile(GameLibraryPath, TempGameLibraryPath, false);
-    Result.GameCodeLibrary = Platform.LoadDynamicLibrary(TempGameLibraryPath);
-    
-    if (Result.GameCodeLibrary)
+    if (GameCode.GameCodeLibrary)
     {
-        Result.Update = (update *)Platform.LoadSymbol(Result.GameCodeLibrary, "Update");
-        Result.IsValid = Result.Update != 0;
+        GameCode.Update = (update *)Platform.LoadSymbol(GameCode.GameCodeLibrary, "Update");
+        GameCode.IsValid = GameCode.Update != 0;
     }
     
-    if (!Result.IsValid)
+    if (!GameCode.IsValid)
     {
         DEBUG_PRINT("Invalid game code\n");
-        Result.Update = UpdateStub;
+        GameCode.Update = UpdateStub;
     }
-    
-    return Result;
 }
 
 static void UnloadGameCode(game_code *GameCode)
@@ -87,15 +82,14 @@ static void UnloadGameCode(game_code *GameCode)
 static void ReloadGameCode(game_code *GameCode, char* GameLibraryPath, char* TempGameLibraryPath)
 {
     UnloadGameCode(GameCode);
-    Sleep(100);
-    *GameCode = LoadGameCode(GameLibraryPath, TempGameLibraryPath);
+    //Sleep(100);
+    LoadGameCode(*GameCode, GameLibraryPath, TempGameLibraryPath);
 }
 
 static void ReloadLibraries(game_code *Game, char* GameLibraryPath, char* TempGameLibraryPath)
 {
     time_t LastWriteTime = GetLastWriteTime(GameLibraryPath);
     
-    //if(CompareFileTime(&Game->LastLibraryWriteTime, &LastWriteTime))
     if(difftime(Game->LastLibraryWriteTime, LastWriteTime) != 0)
     {
         DEBUG_PRINT("RELOAD\n");
@@ -291,7 +285,8 @@ int main(int Argc, char** Args)
     
     InitializeOpenGL(RenderState, Renderer, &ConfigData, &PlatformState->PermArena);
     
-    game_code Game = LoadGameCode(GameLibraryPath, TempGameLibraryPath);
+    game_code Game = {};
+    LoadGameCode(Game, GameLibraryPath, TempGameLibraryPath);
     
     //setup asset reloading
     asset_manager AssetManager = {};

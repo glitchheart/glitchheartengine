@@ -16,6 +16,7 @@ struct game_code
 {
     void* GameCodeLibrary;
     time_t LastLibraryWriteTime;
+    
     update *Update;
     
     b32 IsValid;
