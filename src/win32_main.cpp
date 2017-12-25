@@ -31,6 +31,7 @@ memory_state MemoryState;
 
 #include "gmap.cpp"
 #include "keycontroller.h"
+#include "timers.h"
 
 #include "console.h"
 #include "opengl_rendering.h"
@@ -44,7 +45,6 @@ input_controller InputController;
 
 #include "keys_glfw.h"
 #include "opengl_rendering.cpp"
-
 
 static game_code LoadGameCode(char* GameLibraryPath, char* TempGameLibraryPath)
 {
@@ -290,6 +290,9 @@ int main(int Argc, char** Args)
     
     InitializeOpenGL(RenderState, Renderer, &ConfigData, &PlatformState->PermArena);
     
+    timer_controller TimerController;
+    TimerController.TimerCount = 0;
+    
     game_code Game = LoadGameCode(GameLibraryPath, TempGameLibraryPath);
     
     //setup asset reloading
@@ -349,8 +352,8 @@ int main(int Argc, char** Args)
         
         ReloadLibraries(&Game, GameLibraryPath, TempGameLibraryPath);
         
-        Game.Update(DeltaTime, &GameMemory, Renderer, &InputController, &SoundCommands);
-        
+        Game.Update(DeltaTime, &GameMemory, Renderer, &InputController, &SoundCommands, TimerController);
+        TickTimers(TimerController, DeltaTime);
         Render(RenderState, Renderer, &PlatformState->PermArena);
         PlaySounds(&SoundDevice, &SoundCommands);
         
