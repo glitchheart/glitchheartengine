@@ -107,14 +107,7 @@ PLATFORM_FREE_LIBRARY(LinuxFreeLibrary)
 
 PLATFORM_LOAD_SYMBOL(LinuxLoadSymbolLibrary)
 {
-    if(Library)
-    {
-        return dlsym(Library, Symbol);
-    }
-    else
-    {
-        return NULL;
-    }
+    return dlsym(Library, Symbol);
 }
 
 
