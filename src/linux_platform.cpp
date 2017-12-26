@@ -3,7 +3,7 @@
 #include <sys/sendfile.h>
 #include <sys/mman.h>
 #include "unistd.h"
-
+#include "dlfcn.h"
 
 inline PLATFORM_FILE_EXISTS(LinuxFileExists)
 {
@@ -12,14 +12,14 @@ inline PLATFORM_FILE_EXISTS(LinuxFileExists)
 }
 
 
-static void CopyFile(const char* Src, const char* Dst, b32 Overwrite, b32 Binary = false)
+static b32 CopyFile(const char* Src, const char* Dst, b32 Overwrite, b32 Binary = false)
 {
     FILE* In;
     FILE* Out;
     
     if(LinuxFileExists(Dst) && !Overwrite)
     {
-        return;
+        return false;
     }
     
     if(Binary)
@@ -36,7 +36,7 @@ static void CopyFile(const char* Src, const char* Dst, b32 Overwrite, b32 Binary
         printf("Failed in\n");
         printf("Src: %s\n", Src);
         printf("Dst: %s\n", Dst);
-        return;
+        return false;
     }
     
     if(Binary)
@@ -52,7 +52,7 @@ static void CopyFile(const char* Src, const char* Dst, b32 Overwrite, b32 Binary
     {
         fclose(In);
         printf("Failed out\n");
-        return;
+        return false;
     }
     
     size_t N,M;
@@ -81,6 +81,7 @@ static void CopyFile(const char* Src, const char* Dst, b32 Overwrite, b32 Binary
     {
         system(Concat("chmod +xr ", Dst));
     }
+    return true;
 }
 
 static time_t GetLastWriteTime(const char* FilePath)
@@ -105,7 +106,7 @@ PLATFORM_FREE_LIBRARY(LinuxFreeLibrary)
     dlclose(Library);
 }
 
-PLATFORM_LOAD_SYMBOL(LinuxLoadSymbolLibrary)
+PLATFORM_LOAD_SYMBOL(LinuxLoadSymbol)
 {
     return dlsym(Library, Symbol);
 }
@@ -201,5 +202,5 @@ static void InitPlatform(platform_api& PlatformAPI)
     PlatformAPI.DeallocateMemory = LinuxDeallocateMemory;
     PlatformAPI.LoadDynamicLibrary = LinuxLoadLibrary;
     PlatformAPI.FreeDynamicLibrary = LinuxFreeLibrary;
-    PlatformAPI.LoadSymbolLibrary = LinuxLoadSymbolLibrary;
+    PlatformAPI.LoadSymbol = LinuxLoadSymbol;
 }
