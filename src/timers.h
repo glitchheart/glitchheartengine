@@ -11,6 +11,8 @@
 #define CURRENT_TIME(Handle) GetCurrentTimerTime(Handle, TimerController)
 #define MAX_TIME(Handle) GetMaxTimerTime(Handle, TimerController)
 #define RESET_TIMERS() ResetTimers(TimerController)
+#define PAUSE_TIMERS() PauseTimers(TimerController)
+#define RESUME_TIMERS() ResumeTimers(TimerController)
 
 struct timer
 {
@@ -22,12 +24,14 @@ struct timer
 
 struct timer_controller
 {
+    b32 Paused;
     timer Timers[TIMER_MAX];
     i32 TimerCount;
 };
 
 static void ResetTimers(timer_controller& TimerController)
 {
+    TimerController.Paused = false;
     TimerController.TimerCount = 0;
 }
 
@@ -66,10 +70,23 @@ static b32 TimerDone(i32 Handle, timer_controller& TimerController)
 
 static void TickTimers(timer_controller& TimerController, r64 DeltaTime)
 {
-    for(i32 Index = 0; Index < TimerController.TimerCount; Index++)
+    if(!TimerController.Paused)
     {
-        TimerController.Timers[Index].CurrentTime += DeltaTime;
+        for(i32 Index = 0; Index < TimerController.TimerCount; Index++)
+        {
+            TimerController.Timers[Index].CurrentTime += DeltaTime;
+        }
     }
+}
+
+static void PauseTimers(timer_controller& TimerController)
+{
+    TimerController.Paused = true;
+}
+
+static void ResumeTimers(timer_controller& TimerController)
+{
+    TimerController.Paused = false;
 }
 
 #endif
