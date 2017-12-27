@@ -1213,12 +1213,12 @@ static void RenderQuad(Render_Mode Mode, render_state& RenderState, math::v4 Col
             
             UseShader(&Shader);
             
-            //draw upper part
             math::m4 Model(1.0f);
-            Model = math::Scale(Model, Size);
             
-            // @Incomplete: We should be using an origin point for this
-            //Model = math::Translate(Model, math::v3(-Size.x / 2.0f, -Size.y / 2.0f, -Size.z / 2.0f));
+            
+            Model = math::Scale(Model, Size);
+            Model = math::Translate(Model, math::v3(Size.x / -2.0f, Size.y / -Size.y, 0.0f));
+            
             auto XAxis = Rotation.x > 0.0f ? 1.0f : 0.0f;
             auto YAxis = Rotation.y > 0.0f ? 1.0f : 0.0f;
             auto ZAxis = Rotation.z > 0.0f ? 1.0f : 0.0f;
@@ -1229,10 +1229,12 @@ static void RenderQuad(Render_Mode Mode, render_state& RenderState, math::v4 Col
             Orientation = math::Rotate(Orientation, Rotation.z, math::v3(0.0f, 0.0f, ZAxis));
             
             Model = ToMatrix(Orientation) * Model;
+            Model = math::Translate(Model, math::v3(Size.x / 2.0f, Size.y / Size.y, 0.0f));
             
-            // @Incomplete: We should be using an origin point for this
-            //Model = math::Translate(Model, math::v3(Size.x / 2.0f, Size.y / 2.0f, Size.z / 2.0f));
-            
+            if(Size.x < 0.0f)
+            {
+                Model = math::Translate(Model, math::v3(-Size.x, 0.0f, 0.0f));
+            }
             Model = math::Translate(Model, Position);
             
             if(!IsUI)
