@@ -149,7 +149,7 @@ static void TickAnimations(renderer& Renderer, r64 DeltaTime)
     }
 }
 
-static void RegisterAnimationInfo(i32* InfoHandle, i32 WithAnimationHandle, renderer& Renderer)
+static void RegisterAnimationInfo(i32* InfoHandle, i32 WithAnimationHandle, renderer& Renderer, b32 FreezeFrame = false)
 {
     *InfoHandle = Renderer.SpritesheetAnimationInfoCount;
     spritesheet_animation_info& Info = Renderer.SpritesheetAnimationInfos[Renderer.SpritesheetAnimationInfoCount++];
@@ -157,7 +157,7 @@ static void RegisterAnimationInfo(i32* InfoHandle, i32 WithAnimationHandle, rend
     Info.FrameIndex = 0;
     Info.Playing = true;
     Info.CurrentTime = 0.0f;
-    Info.FreezeFrame = false;
+    Info.FreezeFrame = FreezeFrame;
     
     Assert(Renderer.SpritesheetAnimationCount < MAX_SPRITESHEET_ANIMATION_INFOS);
 }
