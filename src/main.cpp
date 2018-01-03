@@ -28,6 +28,8 @@ memory_state MemoryState;
 #include "win32_platform.cpp"
 #elif __linux
 #include "linux_platform.cpp"
+#elif __APPLE__
+#include "osx_platform.cpp"
 #endif
 
 #include "gmap.cpp"

@@ -24,6 +24,8 @@
 #define Assert(Expression) if(!(Expression)) {DEBUG_PRINT("Assertion failed in: %s on line %d\n",__FILE__,__LINE__); __debugbreak();}
 #elif __linux
 #define Assert(Expression) if(!(Expression)) {DEBUG_PRINT("Assertion failed in: %s on line %d\n",__FILE__,__LINE__); abort();}
+#elif __APPLE__
+#define Assert(Expression) if(!(Expression)) {DEBUG_PRINT("Assertion failed in: %s on line %d\n",__FILE__,__LINE__); abort();}
 #endif
 #else
 #define Assert(Expression)
