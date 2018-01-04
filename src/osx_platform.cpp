@@ -123,7 +123,7 @@ PLATFORM_ALLOCATE_MEMORY(OSXAllocateMemory)
 {
     Assert(sizeof(memory_block) == 64);
     
-    umm PageSize = 4096; //TODO: Not really always correct?
+    umm PageSize = sysconf(_SC_PAGE_SIZE);
     umm TotalSize = Size + sizeof(memory_block);
     umm BaseOffset = sizeof(memory_block);
     umm ProtectOffset = 0;
@@ -151,13 +151,13 @@ PLATFORM_ALLOCATE_MEMORY(OSXAllocateMemory)
     Assert(Block->Block.Used == 0);
     Assert(Block->Block.Prev == 0);
     
-    if(Flags & (PM_UnderflowCheck | PM_OverflowCheck))
-    {
-        i32 Protected = mprotect((u8*)Block + ProtectOffset, PageSize, PROT_NONE);
-        printf("Last error: %d\n", Protected);
-        printf("Error %d\n", errno);
-        Assert(Protected == 0);
-    }
+    //if(Flags & (PM_UnderflowCheck | PM_OverflowCheck))
+    //{
+    //i32 Protected = mprotect((u8*)Block + ProtectOffset, PageSize, PROT_NONE);
+    //printf("Last error: %d\n", Protected);
+    //printf("Error %d\n", errno);
+    //Assert(Protected == 0);
+    //}
     
     Block->Block.Size = Size;
     Block->Block.Flags = Flags;
