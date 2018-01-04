@@ -261,8 +261,8 @@ int main(int Argc, char** Args)
     LogState = GameMemory.LogState;
     InitLog(LFlag_File | LFlag_Debug, Concat("../log_", "", &PlatformState->PermArena));
     
-    char* GameLibraryPath = "game.dll";
-    char* TempGameLibraryPath = "game_temp.dll";
+    char* GameLibraryPath = "libgame.dylib";
+    char* TempGameLibraryPath = "libgame_temp.dylib";
     
     memory_arena DebugArena = {};
     
@@ -288,10 +288,8 @@ int main(int Argc, char** Args)
     
     InitializeOpenGL(RenderState, Renderer, &ConfigData, &PlatformState->PermArena);
     
-    
     game_code Game = {};
     LoadGameCode(Game, GameLibraryPath, TempGameLibraryPath);
-    
     timer_controller TimerController;
     TimerController.TimerCount = 0;
     
@@ -353,6 +351,7 @@ int main(int Argc, char** Args)
         ReloadLibraries(&Game, GameLibraryPath, TempGameLibraryPath);
         
         Game.Update(DeltaTime, &GameMemory, Renderer, &InputController, &SoundCommands, TimerController);
+        
         TickTimers(TimerController, DeltaTime);
         
         Render(RenderState, Renderer, &PlatformState->PermArena);
