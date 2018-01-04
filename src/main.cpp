@@ -53,6 +53,7 @@ static void LoadGameCode(game_code& GameCode, char* GameLibraryPath, char* TempG
 {
     if(!CopyFile(GameLibraryPath, TempGameLibraryPath, false)) return;
     
+    printf("DAMNNNN\n");
     GameCode.Update = UpdateStub;
     GameCode.LastLibraryWriteTime = GetLastWriteTime(GameLibraryPath);
     GameCode.GameCodeLibrary = Platform.LoadDynamicLibrary(TempGameLibraryPath);
