@@ -10,6 +10,7 @@
 #include <sys/mman.h>
 #include "unistd.h"
 #include "dlfcn.h"
+#include <mach/error.h>
 
 inline PLATFORM_FILE_EXISTS(OSXFileExists)
 {
@@ -153,7 +154,9 @@ PLATFORM_ALLOCATE_MEMORY(OSXAllocateMemory)
     if(Flags & (PM_UnderflowCheck | PM_OverflowCheck))
     {
         i32 Protected = mprotect((u8*)Block + ProtectOffset, PageSize, PROT_NONE);
-        Assert(Protected);
+        printf("Last error: %d\n", Protected);
+        printf("Error %d\n", errno);
+        Assert(Protected == 0);
     }
     
     Block->Block.Size = Size;

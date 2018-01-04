@@ -109,6 +109,4 @@ static void ListenToFileChanges(asset_manager* AssetManager)
     }
 }
 
-
-
 #endif

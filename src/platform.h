@@ -233,6 +233,4 @@ UPDATE(UpdateStub)
 
 #define ERR(msg) HandleError(__FILE__,__LINE__,msg)
 
-
-
 #endif
