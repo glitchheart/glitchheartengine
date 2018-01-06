@@ -1,12 +1,7 @@
 #include <time.h>
 #include <errno.h>
-//#include <sys/sendfile.h>
-
-// @Incomplete: TEMPORARY FOR INCLUDING THE SAME AS LINUX with sendfile.h. Check later if all are necessary
-#include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/uio.h>
-
 #include <sys/mman.h>
 #include "unistd.h"
 #include "dlfcn.h"
