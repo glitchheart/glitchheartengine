@@ -91,6 +91,7 @@ static void ReloadGameCode(game_code *GameCode, char* GameLibraryPath, char* Tem
 
 static void ReloadLibraries(game_code *Game, char* GameLibraryPath, char* TempGameLibraryPath)
 {
+    // @Bug: Not working on Mac
     time_t LastWriteTime = GetLastWriteTime(GameLibraryPath);
     
     if(difftime(Game->LastLibraryWriteTime, LastWriteTime) != 0)
