@@ -51,7 +51,7 @@ input_controller InputController;
 
 static void LoadGameCode(game_code& GameCode, char* GameLibraryPath, char* TempGameLibraryPath)
 {
-    if(GameCode.IsValid && !CopyFile(GameLibraryPath, TempGameLibraryPath, false)) return;
+    if(!CopyFile(GameLibraryPath, TempGameLibraryPath, false)) return;
     
     GameCode.Update = UpdateStub;
     GameCode.LastLibraryWriteTime = GetLastWriteTime(GameLibraryPath);
@@ -94,11 +94,14 @@ static void ReloadLibraries(game_code *Game, char* GameLibraryPath, char* TempGa
     // @Bug: Not working on Mac
     time_t LastWriteTime = GetLastWriteTime(GameLibraryPath);
     
-    if(difftime(Game->LastLibraryWriteTime, LastWriteTime) != 0)
+    if(LastWriteTime != 0)
     {
-        DEBUG_PRINT("RELOAD\n");
-        ReloadGameCode(Game, GameLibraryPath, TempGameLibraryPath);
-        Assert(Game);
+        if(difftime(Game->LastLibraryWriteTime, LastWriteTime) != 0)
+        {
+            ReloadGameCode(Game, GameLibraryPath, TempGameLibraryPath);
+            Assert(Game);
+            DEBUG_PRINT("Reloaded game library\n");
+        }
     }
 }
 
@@ -290,6 +293,7 @@ int main(int Argc, char** Args)
     InitializeOpenGL(RenderState, Renderer, &ConfigData, &PlatformState->PermArena);
     
     game_code Game = {};
+    Game.IsValid = false;
     LoadGameCode(Game, GameLibraryPath, TempGameLibraryPath);
     timer_controller TimerController;
     TimerController.TimerCount = 0;
