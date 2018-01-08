@@ -19,11 +19,6 @@ static b32 CopyFile(const char* Src, const char* Dst, b32 Overwrite, b32 Binary 
     FILE* In;
     FILE* Out;
     
-    if(OSXFileExists(Dst) && !Overwrite)
-    {
-        return false;
-    }
-    
     if(Binary)
     {
         In = fopen(Src, "rb");
