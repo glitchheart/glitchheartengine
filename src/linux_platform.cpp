@@ -144,11 +144,11 @@ PLATFORM_ALLOCATE_MEMORY(LinuxAllocateMemory)
     Assert(Block->Block.Used == 0);
     Assert(Block->Block.Prev == 0);
     
-    if(Flags & (PM_UnderflowCheck | PM_OverflowCheck))
-    {
-        i32 Protected = mprotect((u8*)Block + ProtectOffset, PageSize, PROT_NONE);
-        Assert(Protected);
-    }
+    // if(Flags & (PM_UnderflowCheck | PM_OverflowCheck))
+    // {
+    //     i32 Protected = mprotect((u8*)Block + ProtectOffset, PageSize, PROT_NONE);
+    //     Assert(Protected);
+    // }
     
     Block->Block.Size = Size;
     Block->Block.Flags = Flags;
@@ -198,6 +198,7 @@ static void ClearTempMemory()
 
 static void InitPlatform(platform_api& PlatformAPI)
 {
+    PlatformAPI.FileExists = LinuxFileExists;
     PlatformAPI.AllocateMemory = LinuxAllocateMemory;
     PlatformAPI.DeallocateMemory = LinuxDeallocateMemory;
     PlatformAPI.LoadDynamicLibrary = LinuxLoadLibrary;

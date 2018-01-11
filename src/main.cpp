@@ -51,7 +51,7 @@ input_controller InputController;
 
 static void LoadGameCode(game_code& GameCode, char* GameLibraryPath, char* TempGameLibraryPath)
 {
-    if(!CopyFile(GameLibraryPath, TempGameLibraryPath, false)) return;
+    if(!CopyFile(GameLibraryPath, TempGameLibraryPath, true, true)) return;
     
     GameCode.Update = UpdateStub;
     GameCode.LastLibraryWriteTime = GetLastWriteTime(GameLibraryPath);
@@ -265,8 +265,16 @@ int main(int Argc, char** Args)
     LogState = GameMemory.LogState;
     InitLog(LFlag_File | LFlag_Debug, Concat("../log_", "", &PlatformState->PermArena));
     
+#ifdef __APPLE__
     char* GameLibraryPath = "libgame.dylib";
     char* TempGameLibraryPath = "libgame_temp.dylib";
+#elif __linux
+    char* GameLibraryPath = "libgame.so";
+    char* TempGameLibraryPath = "libgame_temp.so";
+#else
+    char* GameLibraryPath = "game.dll";
+    char* TempGameLibraryPath = "game_temp.dll";
+#endif
     
     memory_arena DebugArena = {};
     
