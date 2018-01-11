@@ -4,7 +4,7 @@
 struct memory_arena
 {
     platform_memory_block* CurrentBlock;
-    u64 MinimumBlockSize;
+    u64 MinimumBlockSize = 0;
     
     u64 AllocationFlags;
 };
