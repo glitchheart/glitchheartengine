@@ -51,7 +51,7 @@ input_controller InputController;
 
 static void LoadGameCode(game_code& GameCode, char* GameLibraryPath, char* TempGameLibraryPath)
 {
-    if(!CopyFile(GameLibraryPath, TempGameLibraryPath, true, true)) return;
+    if(!CopyFile(GameLibraryPath, TempGameLibraryPath, false)) return;
     
     GameCode.Update = UpdateStub;
     GameCode.LastLibraryWriteTime = GetLastWriteTime(GameLibraryPath);
