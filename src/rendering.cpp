@@ -173,10 +173,12 @@ static void AddAnimation(renderer& Renderer, spritesheet_animation Animation, i3
     Assert(Renderer.SpritesheetAnimationCount < MAX_SPRITESHEET_ANIMATION_INFOS);
 }
 
-static void LoadShader(const char* FullShaderPath, renderer& Renderer)
+static void LoadShader(const char* FullShaderPath, renderer& Renderer, i32* Handle)
 {
     shader_data* ShaderData = &Renderer.ShaderData[Renderer.ShaderCount];
     ShaderData->Handle = Renderer.ShaderCount++;
+    *Handle = ShaderData->Handle;
+    sprintf(ShaderData->Name, "%s", FullShaderPath);
     ShaderData->VertexShaderContent = 0;
     ShaderData->FragmentShaderContent = 0;
     

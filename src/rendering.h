@@ -414,7 +414,7 @@ struct camera
 #define RENDER_COMMAND_MAX 400
 #define BUFFER_ARRAY_SIZE 400
 #define TEXTURE_ARRAY_SIZE 512
-#define SHADER_ARRAY_SIZE 512
+#define SHADER_ARRAY_SIZE 128
 
 struct texture_data
 {
@@ -428,7 +428,7 @@ struct texture_data
 struct shader_data
 {
     i32 Handle;
-    char* Name;
+    char Name[512];
     char* VertexShaderContent;
     char* FragmentShaderContent;
 };
@@ -465,7 +465,7 @@ struct buffer_data
 #define MAX_CAMERAS 8
 
 #define MAX_RENDER_COMMANDS 1024
-#define MAX_UI_COMMANDS 1024
+#define MAX_UI_COMMANDS 5096 // @Incomplete: This should be defined by the game itself (HARDCODED FOR LEVEL EDITOR RIGHT NOW)
 #define MAX_LIGHT_COMMANDS 1024
 
 struct renderer
