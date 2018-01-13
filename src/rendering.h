@@ -298,6 +298,7 @@ struct render_command
             i32 FontHandle;
             math::rgba Color;
             Alignment Alignment;
+            r32 Scale;
         } Text;
         struct
         {
@@ -462,6 +463,21 @@ struct buffer_data
     i32 ExistingHandle = -1;
 };
 
+struct particle
+{
+    math::v3 Center;
+};
+
+#define MAX_PARTICLES 256
+struct particle_system
+{
+    i32 ParticleTexture;
+    particle Particles[MAX_PARTICLES];
+    i32 ParticleCount;
+    i32 Rate; // Particles per second
+    r32 ParticleSpeed;
+};
+
 #define MAX_CAMERAS 8
 
 #define MAX_RENDER_COMMANDS 1024
@@ -527,6 +543,9 @@ struct renderer
     
     i32 WindowWidth;
     i32 WindowHeight;
+    
+    r32 ScaleX;
+    r32 ScaleY;
     
     math::rgba ClearColor;
     r32 LineWidth;
