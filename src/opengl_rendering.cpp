@@ -1381,7 +1381,7 @@ static void MeasureText(const render_font& Font, const char* Text, float* Width,
 }
 
 //rendering methods
-static void RenderText(render_state& RenderState, const render_font& Font, const math::v4& Color, const char* Text, r32 X, r32 Y,
+static void RenderText(render_state& RenderState, const render_font& Font, const math::v4& Color, const char* Text, r32 X, r32 Y, r32 Scale = 1.0f,
                        Alignment Alignment = Alignment_Left,  b32 AlignCenterY = true) 
 {
     glBindVertexArray(Font.VAO);
@@ -1436,15 +1436,15 @@ static void RenderText(render_state& RenderState, const render_font& Font, const
     
     for(const char *P = Text; *P; P++) 
     { 
-        r32 W = Font.CharacterInfo[*P].BW * RenderState.ScaleX;
-        r32 H = Font.CharacterInfo[*P].BH * RenderState.ScaleY;
+        r32 W = Font.CharacterInfo[*P].BW * RenderState.ScaleX * Scale;
+        r32 H = Font.CharacterInfo[*P].BH * RenderState.ScaleY * Scale;
         
-        r32 X2 =  X + Font.CharacterInfo[*P ].BL * RenderState.ScaleX;
-        r32 Y2 = -Y - Font.CharacterInfo[*P ].BT * RenderState.ScaleY;
+        r32 X2 =  X + Font.CharacterInfo[*P ].BL * RenderState.ScaleX * Scale;
+        r32 Y2 = -Y - Font.CharacterInfo[*P ].BT * RenderState.ScaleY * Scale;
         
         /* Advance the cursor to the start of the next character */
-        X += Font.CharacterInfo[*P].AX * RenderState.ScaleX;
-        Y += Font.CharacterInfo[*P].AY * RenderState.ScaleY;
+        X += Font.CharacterInfo[*P].AX * RenderState.ScaleX * Scale;
+        Y += Font.CharacterInfo[*P].AY * RenderState.ScaleY * Scale;
         
         /* Skip glyphs that have no pixels */
         if(!(i32)Font.CharacterInfo[*P].BW || !(i32)Font.CharacterInfo[*P].BH)
@@ -1539,7 +1539,8 @@ static void RenderText(const render_command& Command, render_state& RenderState)
 {
     render_font RenderFont;
     RenderFont = RenderState.Fonts[Command.Text.FontHandle];
-    RenderText(RenderState, RenderFont, Command.Text.Color, Command.Text.Text, Command.Text.Position.x, Command.Text.Position.y, Command.Text.Alignment);
+    // @Incomplete: Y-centering
+    RenderText(RenderState, RenderFont, Command.Text.Color, Command.Text.Text, Command.Text.Position.x, Command.Text.Position.y, Command.Text.Scale, Command.Text.Alignment);
 }
 
 static void RenderQuad(const render_command& Command, render_state& RenderState, math::m4 Projection, math::m4 View)
@@ -2045,6 +2046,8 @@ static void Render(render_state& RenderState, renderer& Renderer, memory_arena* 
     
     RenderState.ScaleX = 2.0f / RenderState.WindowWidth;
     RenderState.ScaleY = 2.0f / RenderState.WindowHeight;
+    Renderer.ScaleX = RenderState.ScaleX;
+    Renderer.ScaleY = RenderState.ScaleY;
     
     glBindFramebuffer(GL_FRAMEBUFFER, RenderState.FrameBuffer);
     

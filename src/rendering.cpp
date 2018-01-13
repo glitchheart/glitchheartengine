@@ -122,6 +122,12 @@ static void StopAnimation(i32 InfoHandle, renderer& Renderer)
     StopAnimation(Info);
 }
 
+#define HAS_FREEZE_FRAME(InfoHandle) HasFreezeFrame(Renderer, InfoHandle)
+static b32 HasFreezeFrame(renderer& Renderer, i32 InfoHandle)
+{
+    return Renderer.SpritesheetAnimationInfos[InfoHandle].FreezeFrame; 
+}
+
 static void TickAnimations(renderer& Renderer, r64 DeltaTime)
 {
     for(i32 Index = 0; Index < Renderer.SpritesheetAnimationInfoCount; Index++)
@@ -333,7 +339,7 @@ static void PushLine(renderer& Renderer, math::v3 Point1, math::v3 Point2, r32 L
 }
 
 // @Incomplete: We still need to do something with fonts!
-static void PushText(renderer& Renderer, const char* Text, math::v3 Position, i32 FontHandle, math::rgba Color, Alignment Alignment = Alignment_Left, b32 IsUI = true)
+static void PushText(renderer& Renderer, const char* Text, math::v3 Position, r32 Scale, i32 FontHandle, math::rgba Color, Alignment Alignment = Alignment_Left, b32 IsUI = true)
 {
     render_command* RenderCommand = PushNextCommand(Renderer, IsUI);
     
@@ -342,6 +348,10 @@ static void PushText(renderer& Renderer, const char* Text, math::v3 Position, i3
     strcpy(RenderCommand->Text.Text, Text);
     
     RenderCommand->Text.Position = Position;
+    if(Scale == 0.0f)
+        RenderCommand->Text.Scale = 1.0f;
+    else
+        RenderCommand->Text.Scale = Scale;
     //RenderCommand->Text.FontType = FontType;
     RenderCommand->Text.FontHandle = FontHandle;
     RenderCommand->Text.Color = Color;
@@ -687,7 +697,6 @@ static void LoadModel(renderer& Renderer, char* FilePath, model* Model)
     }
 }
 
-
 static void LoadGLIMModel(renderer& Renderer, char* FilePath, model* Model)
 {
     model_header Header = {};
@@ -801,4 +810,15 @@ static void LoadGLIMModel(renderer& Renderer, char* FilePath, model* Model)
     {
         printf("Model file not found: %s", FilePath);
     }
+}
+
+static void AddParticleSystem(renderer& Renderer, math::v3 Position, i32 TextureHandle r32 Rate, r32 Speed, i32* Handle)
+{
+}
+static UpdateParticleSystemPosition(renderer& Renderer, i32 Handle, math::v2 NewPosition)
+{
+}
+
+static void RemoveParticleSystem(renderer& Renderer, i32 Handle)
+{
 }
