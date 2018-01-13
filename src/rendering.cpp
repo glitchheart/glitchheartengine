@@ -812,10 +812,10 @@ static void LoadGLIMModel(renderer& Renderer, char* FilePath, model* Model)
     }
 }
 
-static void AddParticleSystem(renderer& Renderer, math::v3 Position, i32 TextureHandle r32 Rate, r32 Speed, i32* Handle)
+static void AddParticleSystem(renderer& Renderer, math::v3 Position, i32 TextureHandle, r32 Rate, r32 Speed, i32* Handle)
 {
 }
-static UpdateParticleSystemPosition(renderer& Renderer, i32 Handle, math::v2 NewPosition)
+static void UpdateParticleSystemPosition(renderer& Renderer, i32 Handle, math::v2 NewPosition)
 {
 }
 
