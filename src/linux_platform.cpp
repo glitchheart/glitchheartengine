@@ -11,7 +11,7 @@ inline PLATFORM_FILE_EXISTS(LinuxFileExists)
     return (stat(FilePath,&Buffer) == 0);
 }
 
-static b32 CopyFile(const char* Src, const char* Dst, b32 DontOverwrite, b32 Binary = false)
+static b32 CopyFile(const char* Src, const char* Dst, b32 DontOverwrite, b32 Binary = true)
 {
     FILE* In;
     FILE* Out;

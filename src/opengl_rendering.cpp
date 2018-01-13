@@ -93,7 +93,7 @@ static GLuint LoadExtraShader(shader_data& ShaderData, render_state& RenderState
     glShaderSource(Shader->VertexShader, 1, &ShaderData.VertexShaderContent, NULL);
     glCompileShader(Shader->VertexShader);
     
-    if (!ShaderCompilationErrorChecking("", Shader->VertexShader))
+    if (!ShaderCompilationErrorChecking(Concat(ShaderData.Name, ".vert"), Shader->VertexShader))
     {
         Shader->Program = 0;
         return GL_FALSE;
@@ -104,7 +104,7 @@ static GLuint LoadExtraShader(shader_data& ShaderData, render_state& RenderState
     glShaderSource(Shader->FragmentShader, 1, &ShaderData.FragmentShaderContent, NULL);
     glCompileShader(Shader->FragmentShader);
     
-    if (!ShaderCompilationErrorChecking("", Shader->FragmentShader))
+    if (!ShaderCompilationErrorChecking(Concat(ShaderData.Name, ".frag"), Shader->FragmentShader))
     {
         Shader->Program = 0;
         return GL_FALSE;
