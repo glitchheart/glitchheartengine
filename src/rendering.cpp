@@ -76,7 +76,6 @@ static inline void CameraTransform(renderer& Renderer, camera& Camera, math::v3 
         
         Camera.ViewMatrix = math::LookAt(math::v3(Dist, Dist, Dist), Target);
         
-        
         if(!IsIdentity(Orientation))
         {
             Camera.ViewMatrix = ToMatrix(Orientation) * Camera.ViewMatrix;
@@ -91,6 +90,12 @@ static inline void CameraTransform(renderer& Renderer, camera& Camera, math::v3 
 static b32 AnimationIsPlaying(i32 InfoHandle, renderer& Renderer)
 {
     return Renderer.SpritesheetAnimationInfos[InfoHandle].Playing;
+}
+
+#define GET_ANIMATION_FRAME(InfoHandle) CurrentAnimationFrame(InfoHandle, Renderer) 
+static i32 CurrentAnimationFrame(i32 InfoHandle, renderer& Renderer)
+{
+    return Renderer.SpritesheetAnimationInfos[InfoHandle].FrameIndex;
 }
 
 static void PlayAnimation(i32 InfoHandle, renderer& Renderer, b32 Reset = true)
