@@ -277,6 +277,8 @@ struct render_command
     math::v3 Scale;
     math::v3 Rotation;
     math::quat Orientation;
+    b32 WithOrigin;
+    math::v2 Origin;
     
     i32 ShaderHandle;
     shader_attribute* ShaderAttributes;
