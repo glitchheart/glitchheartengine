@@ -279,7 +279,7 @@ struct render_command
     math::quat Orientation;
     b32 WithOrigin;
     math::v2 Origin;
-    
+    math::rgba Color;
     i32 ShaderHandle;
     shader_attribute* ShaderAttributes;
     i32 ShaderAttributeCount;
@@ -291,14 +291,14 @@ struct render_command
             math::v3 Point1;
             math::v3 Point2;
             r32 LineWidth;
-            math::rgba Color;
+            math::rgba Color; // @Cleanup: REMOVE!
         } Line;
         struct
         {
             char Text[256];
             math::v3 Position;
             i32 FontHandle;
-            math::rgba Color;
+            math::rgba Color; // @Cleanup: REMOVE!
             Alignment Alignment;
             r32 Scale;
         } Text;
@@ -309,7 +309,7 @@ struct render_command
         struct
         {
             i32 TextureHandle;
-            math::rgba Color;
+            math::rgba Color; // @Cleanup: REMOVE!
             b32 Outlined;
             r32 LineWidth;
             b32 ForAnimation;
@@ -319,7 +319,7 @@ struct render_command
         } Quad;
         struct
         {
-            math::rgba Color;
+            math::rgba Color; // @Cleanup: REMOVE!
             r32 LineWidth;
         } WireframeCube;
         struct
@@ -483,7 +483,7 @@ struct particle_system
 #define MAX_CAMERAS 8
 
 #define MAX_RENDER_COMMANDS 1024
-#define MAX_UI_COMMANDS 5096 // @Incomplete: This should be defined by the game itself (HARDCODED FOR LEVEL EDITOR RIGHT NOW)
+#define MAX_UI_COMMANDS 1024 // @Incomplete: This should be defined by the game itself (HARDCODED FOR LEVEL EDITOR RIGHT NOW)
 #define MAX_LIGHT_COMMANDS 1024
 
 struct renderer

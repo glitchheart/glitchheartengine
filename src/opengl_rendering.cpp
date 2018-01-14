@@ -1698,7 +1698,7 @@ static void RenderBuffer(const render_command& Command, render_state& RenderStat
     SetMat4Uniform(Shader.Program, "Projection", Projection);
     SetMat4Uniform(Shader.Program, "View", View);
     SetMat4Uniform(Shader.Program, "Model", Model);
-    SetVec4Uniform(Shader.Program, "Color", math::rgba(1.0f, 1.0f, 1.0f, 1.0f));
+    SetVec4Uniform(Shader.Program, "Color", Command.Color);
     
     glDrawArrays(
         GL_TRIANGLES, 0, Buffer.VertexBufferSize / 3);
