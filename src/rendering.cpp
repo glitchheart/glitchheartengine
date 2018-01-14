@@ -479,7 +479,7 @@ static void PushPointLight(renderer& Renderer, math::v3 Position, math::v3 Ambie
     PointLight.Quadratic = Quadratic;
 }
 
-static void PushBuffer(renderer& Renderer, i32 BufferHandle, i32 TextureHandle, math::v3 Rotation = math::v3(), b32 IsUI = false, math::v3 Position = math::v3(), math::v3 Scale = math::v3(1.0f))
+static void PushBuffer(renderer& Renderer, i32 BufferHandle, i32 TextureHandle, math::v3 Rotation = math::v3(), b32 IsUI = false, math::v3 Position = math::v3(), math::v3 Scale = math::v3(1.0f), math::rgba Color = math::rgba(1, 1, 1, 1))
 {
     render_command* RenderCommand = PushNextCommand(Renderer, IsUI);
     
@@ -490,6 +490,7 @@ static void PushBuffer(renderer& Renderer, i32 BufferHandle, i32 TextureHandle, 
     RenderCommand->Position = Position;
     RenderCommand->Scale = Scale;
     RenderCommand->IsUI = IsUI;
+    RenderCommand->Color = Color;
     
     RenderCommand->ShaderHandle = -1;
     RenderCommand->ShaderAttributes = 0;
