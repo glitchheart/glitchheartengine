@@ -17,6 +17,7 @@ struct spritesheet_animation_info
     r64 CurrentTime;
     b32 FreezeFrame;
     i32 AnimationHandle;
+    r32 Speed;
 };
 
 struct spritesheet_animation

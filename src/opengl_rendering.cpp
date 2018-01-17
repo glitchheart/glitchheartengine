@@ -930,7 +930,7 @@ static void InitializeOpenGL(render_state& RenderState, renderer& Renderer, conf
     RenderState.Contrast = ConfigData->Contrast;
     RenderState.Brightness = ConfigData->Brightness;
     
-    auto Str = Concat(Concat(ConfigData->Title, " "), ConfigData->Version); 
+    auto Str = Concat(Concat(ConfigData->Title, " "), ConfigData->Version);printf("width %d height %d\n", ConfigData->ScreenWidth, ConfigData->ScreenHeight); 
     CreateOpenGLWindow(RenderState, ConfigData->Fullscreen, Str, ConfigData->ScreenWidth, ConfigData->ScreenHeight);
     Renderer.WindowMode = RenderState.WindowMode;
     
