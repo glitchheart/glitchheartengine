@@ -331,12 +331,6 @@ int main(int Argc, char** Args)
     
     while (!ShouldCloseWindow(RenderState) && !Renderer.ShouldClose)
     {
-        Renderer.WindowWidth = RenderState.WindowWidth;
-        Renderer.WindowHeight = RenderState.WindowHeight;
-        
-        memcpy(Renderer.Viewport, RenderState.Viewport, sizeof(i32) * 4);
-        
-        
         //calculate deltatime
         CurrentFrame = GetTime();
         DeltaTime = Min(CurrentFrame - LastFrame, 0.1);

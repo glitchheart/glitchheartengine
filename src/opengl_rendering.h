@@ -136,8 +136,12 @@ struct render_state
     GLFWwindow *Window;
     i32 WindowWidth;
     i32 WindowHeight;
+    i32 ScreenWidth;
+    i32 ScreenHeight;
     i32 ScaleFromWidth;
     i32 ScaleFromHeight;
+    i32 DpiScale;
+    
     r32 Contrast;
     r32 Brightness;
     
