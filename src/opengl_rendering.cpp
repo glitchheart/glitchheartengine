@@ -20,6 +20,7 @@ void FramebufferSizeCallback(GLFWwindow *Window, int Width, int Height)
     render_state* RenderState = (render_state*)glfwGetWindowUserPointer(Window);
     glfwSetWindowAspectRatio(Window, 16, 9);
     glViewport(0, 0, Width, Height);
+    
     GLint Viewport[4];
     glGetIntegerv(GL_VIEWPORT, Viewport);
     memcpy(RenderState->Viewport, Viewport, sizeof(GLint) * 4);
@@ -702,8 +703,6 @@ static void RenderSetup(render_state *RenderState, memory_arena* PermArena)
     
     glBindVertexArray(0);
     
-    //
-    
     glGenVertexArrays(1, &RenderState->WireframeCubeVAO);
     glBindVertexArray(RenderState->WireframeCubeVAO);
     glGenBuffers(1, &RenderState->WireframeCubeVBO);
@@ -951,6 +950,11 @@ static void InitializeOpenGL(render_state& RenderState, renderer& Renderer, conf
     
     glfwGetFramebufferSize(RenderState.Window, &RenderState.WindowWidth, &RenderState.WindowHeight);
     glViewport(0, 0, RenderState.WindowWidth, RenderState.WindowHeight);
+    
+    RenderState.ScreenWidth = ConfigData->ScreenWidth;
+    RenderState.ScreenHeight = ConfigData->ScreenHeight;
+    RenderState.DpiScale = RenderState.WindowWidth / RenderState.ScreenWidth;
+    
     glDisable(GL_DITHER);
     glLineWidth(2.0f);
     glEnable(GL_LINE_SMOOTH);
@@ -975,6 +979,17 @@ static void InitializeOpenGL(render_state& RenderState, renderer& Renderer, conf
     glGetIntegerv(GL_VIEWPORT, Viewport);
     
     memcpy(RenderState.Viewport, Viewport, sizeof(GLint) * 4);
+    
+    Renderer.WindowWidth = RenderState.ScreenWidth;
+    Renderer.WindowHeight = RenderState.ScreenHeight;
+    
+    memcpy(Renderer.Viewport, RenderState.Viewport, sizeof(i32) * 4);
+    Renderer.Viewport[0] /= RenderState.DpiScale;
+    Renderer.Viewport[1] /= RenderState.DpiScale;
+    Renderer.Viewport[2] /= RenderState.DpiScale;
+    Renderer.Viewport[3] /= RenderState.DpiScale;
+    
+    printf("Viewport %d %d %d %d\n", Renderer.Viewport[0], Renderer.Viewport[1], Renderer.Viewport[2], Renderer.Viewport[3]);
     
     ControllerPresent();
     
@@ -2051,11 +2066,9 @@ static void Render(render_state& RenderState, renderer& Renderer, memory_arena* 
     auto& Camera = Renderer.Cameras[Renderer.CurrentCameraHandle];
     Camera.ViewportWidth = RenderState.ScaleFromWidth;
     Camera.ViewportHeight = RenderState.ScaleFromHeight;
-    Renderer.ViewportWidth = RenderState.ScaleFromWidth;
-    Renderer.ViewportHeight = RenderState.ScaleFromHeight;
     
-    RenderState.ScaleX = 2.0f / RenderState.WindowWidth;
-    RenderState.ScaleY = 2.0f / RenderState.WindowHeight;
+    RenderState.ScaleX = 2.0f / RenderState.ScreenWidth;
+    RenderState.ScaleY = 2.0f / RenderState.ScreenHeight;
     Renderer.ScaleX = RenderState.ScaleX;
     Renderer.ScaleY = RenderState.ScaleY;
     
