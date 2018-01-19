@@ -1451,14 +1451,14 @@ static void RenderText(render_state& RenderState, const render_font& Font, const
     Y *= RenderState.ScaleY;
     Y -= 1.0f;
     
+    r32 Epsilon = 0.0001f;
+    
     for(const char *P = Text; *P; P++) 
     { 
         r32 W = Font.CharacterInfo[*P].BW * RenderState.ScaleX * Scale;
         r32 H = Font.CharacterInfo[*P].BH * RenderState.ScaleY * Scale;
         
-        r32 ExtraTX = 0.5f / Font.AtlasWidth;
-        
-        r32 X2 =  X + Font.CharacterInfo[*P ].BL * RenderState.ScaleX * Scale;
+        r32 X2 = X + Font.CharacterInfo[*P ].BL * RenderState.ScaleX * Scale;
         r32 Y2 = -Y - Font.CharacterInfo[*P ].BT * RenderState.ScaleY * Scale;
         
         /* Advance the cursor to the start of the next character */
@@ -1469,12 +1469,12 @@ static void RenderText(render_state& RenderState, const render_font& Font, const
         if(!(i32)Font.CharacterInfo[*P].BW || !(i32)Font.CharacterInfo[*P].BH)
             continue;
         
-        Coords[N++] = { X2, -Y2, Font.CharacterInfo[*P].TX, 0 };
-        Coords[N++] = { X2 + W, -Y2, Font.CharacterInfo[*P].TX + ExtraTX + Font.CharacterInfo[*P].BW / Font.AtlasWidth, 0 };
-        Coords[N++] = { X2, -Y2 - H, Font.CharacterInfo[*P].TX + ExtraTX, Font.CharacterInfo[*P].BH / Font.AtlasHeight };
-        Coords[N++] = { X2 + W, -Y2, Font.CharacterInfo[*P].TX + ExtraTX + Font.CharacterInfo[*P].BW / Font.AtlasWidth,  0 };
-        Coords[N++] = { X2, -Y2 - H, Font.CharacterInfo[*P].TX + ExtraTX, Font.CharacterInfo[*P].BH / Font.AtlasHeight };
-        Coords[N++] = { X2 + W, -Y2 - H, Font.CharacterInfo[*P].TX + ExtraTX + Font.CharacterInfo[*P].BW / Font.AtlasWidth, Font.CharacterInfo[*P].BH / Font.AtlasHeight };
+        Coords[N++] = { X2 + Epsilon, -Y2 + Epsilon, (r32)Font.CharacterInfo[*P].TX + Epsilon, Epsilon };
+        Coords[N++] = { X2 + W - Epsilon, -Y2 + Epsilon, (r32)Font.CharacterInfo[*P].TX - Epsilon + (r32)Font.CharacterInfo[*P].BW / (r32)Font.AtlasWidth, Epsilon };
+        Coords[N++] = { X2 + Epsilon, -Y2 - H - Epsilon, (r32)Font.CharacterInfo[*P].TX + Epsilon, (r32)Font.CharacterInfo[*P].BH / (r32)Font.AtlasHeight - Epsilon };
+        Coords[N++] = { X2 + W - Epsilon, -Y2 + Epsilon, (r32)Font.CharacterInfo[*P].TX - Epsilon + (r32)Font.CharacterInfo[*P].BW / (r32)Font.AtlasWidth,  Epsilon };
+        Coords[N++] = { X2 + Epsilon, -Y2 - H - Epsilon, (r32)Font.CharacterInfo[*P].TX + Epsilon, (r32)Font.CharacterInfo[*P].BH / (r32)Font.AtlasHeight - Epsilon };
+        Coords[N++] = { X2 + W - Epsilon, -Y2 - H, (r32)Font.CharacterInfo[*P].TX - Epsilon + Font.CharacterInfo[*P].BW / (r32)Font.AtlasWidth, (r32)Font.CharacterInfo[*P].BH / (r32)Font.AtlasHeight - Epsilon };
     }
     
     glBindBuffer(GL_ARRAY_BUFFER, Font.VBO);
