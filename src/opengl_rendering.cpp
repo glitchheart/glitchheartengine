@@ -250,7 +250,6 @@ static void InitializeFreeTypeFont(char* FontPath, int FontSize, FT_Library Libr
     glBindTexture(GL_TEXTURE_2D, Font->Texture);
     
     glTexImage2D(GL_TEXTURE_2D, 0, GL_R8, (GLsizei)Font->AtlasWidth, (GLsizei)Font->AtlasHeight, 0, GL_RED, GL_UNSIGNED_BYTE, 0);
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     
     /* Clamping to edges is important to prevent artifacts when scaling */
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -258,6 +257,8 @@ static void InitializeFreeTypeFont(char* FontPath, int FontSize, FT_Library Libr
     
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     
     unsigned int X = 0;
     
@@ -1442,13 +1443,8 @@ static void RenderText(render_state& RenderState, const render_font& Font, const
         break;
     }
     
-    X = (r32)(i32)X;
-    Y = (r32)(i32)Y;
-    
-    if((i32)X % 2 != 0)
-        X-= 1.0f;
-    if((i32)Y % 2 != 0)
-        Y -= 1.0f;
+    X = (r32)X;
+    Y = (r32)Y;
     
     X *= RenderState.ScaleX;
     X -= 1.0f;
@@ -1459,6 +1455,8 @@ static void RenderText(render_state& RenderState, const render_font& Font, const
     { 
         r32 W = Font.CharacterInfo[*P].BW * RenderState.ScaleX * Scale;
         r32 H = Font.CharacterInfo[*P].BH * RenderState.ScaleY * Scale;
+        
+        r32 ExtraTX = 0.5f / Font.AtlasWidth;
         
         r32 X2 =  X + Font.CharacterInfo[*P ].BL * RenderState.ScaleX * Scale;
         r32 Y2 = -Y - Font.CharacterInfo[*P ].BT * RenderState.ScaleY * Scale;
@@ -1472,11 +1470,11 @@ static void RenderText(render_state& RenderState, const render_font& Font, const
             continue;
         
         Coords[N++] = { X2, -Y2, Font.CharacterInfo[*P].TX, 0 };
-        Coords[N++] = { X2 + W, -Y2, Font.CharacterInfo[*P].TX + Font.CharacterInfo[*P].BW / Font.AtlasWidth, 0 };
-        Coords[N++] = { X2, -Y2 - H, Font.CharacterInfo[*P].TX, Font.CharacterInfo[*P].BH / Font.AtlasHeight };
-        Coords[N++] = { X2 + W, -Y2, Font.CharacterInfo[*P].TX + Font.CharacterInfo[*P].BW / Font.AtlasWidth,  0 };
-        Coords[N++] = { X2, -Y2 - H, Font.CharacterInfo[*P].TX, Font.CharacterInfo[*P].BH / Font.AtlasHeight };
-        Coords[N++] = { X2 + W, -Y2 - H, Font.CharacterInfo[*P].TX + Font.CharacterInfo[*P].BW / Font.AtlasWidth, Font.CharacterInfo[*P].BH / Font.AtlasHeight };
+        Coords[N++] = { X2 + W, -Y2, Font.CharacterInfo[*P].TX + ExtraTX + Font.CharacterInfo[*P].BW / Font.AtlasWidth, 0 };
+        Coords[N++] = { X2, -Y2 - H, Font.CharacterInfo[*P].TX + ExtraTX, Font.CharacterInfo[*P].BH / Font.AtlasHeight };
+        Coords[N++] = { X2 + W, -Y2, Font.CharacterInfo[*P].TX + ExtraTX + Font.CharacterInfo[*P].BW / Font.AtlasWidth,  0 };
+        Coords[N++] = { X2, -Y2 - H, Font.CharacterInfo[*P].TX + ExtraTX, Font.CharacterInfo[*P].BH / Font.AtlasHeight };
+        Coords[N++] = { X2 + W, -Y2 - H, Font.CharacterInfo[*P].TX + ExtraTX + Font.CharacterInfo[*P].BW / Font.AtlasWidth, Font.CharacterInfo[*P].BH / Font.AtlasHeight };
     }
     
     glBindBuffer(GL_ARRAY_BUFFER, Font.VBO);
