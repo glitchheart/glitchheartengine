@@ -316,6 +316,7 @@ int main(int Argc, char** Args)
     InitAudio_FMOD(&SoundDevice);
     
     sound_commands SoundCommands = {};
+    SoundCommands.SoundArena.MinimumBlockSize = sizeof(sound_effect) * MAX_SOUND_EFFECTS;
     
     if (SoundDevice.IsInitialized)
     {

@@ -94,7 +94,7 @@ static void LoadWavFile(sound_device* SoundDevice, const char *Filename, u32 *So
 
 static inline void ResetCommands(sound_commands* Commands)
 {
-    Clear(&Commands->SoundArena);
+    //Clear(&Commands->SoundArena);
     Commands->SoundCount = 0;
 }
 
