@@ -66,7 +66,6 @@ i32 Channel;
 
 static void PlaySound(const sound_effect& SoundEffect, sound_device* SoundDevice, sound_commands* Commands)
 {
-    printf("Buffer handle %d\n", SoundEffect.Buffer);
     auto Sound = SoundDevice->Sounds[SoundEffect.Buffer];
     FMOD_CHANNEL* Channel;
     auto Result = FMOD_System_PlaySound(SoundDevice->System, Sound, 0, Commands->Paused, &Channel);
@@ -120,7 +119,7 @@ static void PlaySounds(sound_device* SoundDevice, sound_commands* Commands)
                 Sound < Commands->SoundCount;
                 Sound++)
             {
-                sound_effect* SoundEffect =(sound_effect*)&Commands->SoundArena.CurrentBlock->Base[Sound];
+                sound_effect* SoundEffect =(sound_effect*)Commands->SoundArena.CurrentBlock->Base + Sound;
                 
                 PlaySound(*SoundEffect, SoundDevice, Commands);
             }
