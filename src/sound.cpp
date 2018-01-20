@@ -39,6 +39,7 @@ static i32* LoadSounds(sound_commands* Commands, const char* FilePath, memory_ar
 
 static inline void PlaySoundEffect(sound_commands* SoundCommands, i32 BufferHandle, b32 Loop = false, i32 LoopCount = -1, r32 Gain = -1.0f,  r32 Pitch = 1.0f, r32 RollOff = 0.0f)
 {
+    printf("Sound effect handle %d\n", BufferHandle);
     sound_effect* SoundEffect = PushStruct(&SoundCommands->SoundArena, sound_effect);
     SoundCommands->SoundCount++;
     SoundEffect->Buffer = BufferHandle;

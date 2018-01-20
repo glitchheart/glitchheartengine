@@ -360,9 +360,9 @@ int main(int Argc, char** Args)
         Game.Update(DeltaTime, &GameMemory, Renderer, &InputController, &SoundCommands, TimerController);
         
         TickTimers(TimerController, DeltaTime);
+        PlaySounds(&SoundDevice, &SoundCommands);
         
         Render(RenderState, Renderer, &PlatformState->PermArena);
-        PlaySounds(&SoundDevice, &SoundCommands);
         
         SetControllerInvalidKeys();
         SetInvalidKeys();

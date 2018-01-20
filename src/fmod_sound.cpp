@@ -62,8 +62,11 @@ FMOD_RESULT F_CALLBACK ChannelControlCallback(FMOD_CHANNELCONTROL *ChanControl, 
     return FMOD_OK;
 }
 
+i32 Channel;
+
 static void PlaySound(const sound_effect& SoundEffect, sound_device* SoundDevice, sound_commands* Commands)
 {
+    printf("Buffer handle %d\n", SoundEffect.Buffer);
     auto Sound = SoundDevice->Sounds[SoundEffect.Buffer];
     FMOD_CHANNEL* Channel;
     auto Result = FMOD_System_PlaySound(SoundDevice->System, Sound, 0, Commands->Paused, &Channel);
@@ -117,7 +120,6 @@ static void PlaySounds(sound_device* SoundDevice, sound_commands* Commands)
                 Sound < Commands->SoundCount;
                 Sound++)
             {
-                //const sound_effect& SoundEffect = *((sound_effect*)Commands->SoundArena.CurrentBlock->Base + Sound);
                 sound_effect* SoundEffect =(sound_effect*)&Commands->SoundArena.CurrentBlock->Base[Sound];
                 
                 PlaySound(*SoundEffect, SoundDevice, Commands);
@@ -143,7 +145,7 @@ static void InitAudio_FMOD(sound_device* SoundDevice)
         return;
     }
     
-    Result = FMOD_System_Init(System, 512, FMOD_INIT_NORMAL, 0);
+    Result = FMOD_System_Init(System, 1024, FMOD_INIT_NORMAL, 0);
     if(Result != FMOD_OK)
     {
         FMODError(Result);
