@@ -67,22 +67,22 @@ i32 Channel;
 static void PlaySound(const sound_effect& SoundEffect, sound_device* SoundDevice, sound_commands* Commands)
 {
     auto Sound = SoundDevice->Sounds[SoundEffect.Buffer];
-    FMOD_CHANNEL* Channel;
-    auto Result = FMOD_System_PlaySound(SoundDevice->System, Sound, 0, Commands->Paused, &Channel);
-    FMOD_Channel_SetPitch(Channel, SoundEffect.SoundInfo.Pitch);
-    FMOD_Channel_SetVolume(Channel, SoundEffect.SoundInfo.Gain * Commands->SFXVolume);
+    FMOD_CHANNEL* NewChannel;
+    auto Result = FMOD_System_PlaySound(SoundDevice->System, Sound, 0, Commands->Paused, &NewChannel);
+    FMOD_Channel_SetPitch(NewChannel, SoundEffect.SoundInfo.Pitch);
+    FMOD_Channel_SetVolume(NewChannel, SoundEffect.SoundInfo.Gain * Commands->SFXVolume);
     
     r32 Vol;
-    FMOD_Channel_GetVolume(Channel, &Vol);
+    FMOD_Channel_GetVolume(NewChannel, &Vol);
     
     Assert(SoundEffect.SoundInfo.LoopCount >= -1);
     
     auto FMODMode = SoundEffect.SoundInfo.Loop ? FMOD_LOOP_NORMAL : FMOD_LOOP_OFF;
     
-    FMOD_Channel_SetMode(Channel, (FMOD_MODE)(FMOD_DEFAULT | FMODMode));
-    FMOD_Channel_SetLoopCount(Channel, SoundEffect.SoundInfo.LoopCount);
+    FMOD_Channel_SetMode(NewChannel, (FMOD_MODE)(FMOD_DEFAULT | FMODMode));
+    FMOD_Channel_SetLoopCount(NewChannel, SoundEffect.SoundInfo.LoopCount);
     
-    FMOD_Channel_SetChannelGroup(Channel, SoundDevice->MasterGroup);
+    FMOD_Channel_SetChannelGroup(NewChannel, SoundDevice->MasterGroup);
     if(Result != FMOD_OK)
     {
         FMODError(Result);
