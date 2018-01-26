@@ -85,7 +85,7 @@ static void PlaySound(const sound_effect& SoundEffect, sound_device* SoundDevice
     {
         FMODError(Result);
     }
-    FMOD_Channel_SetPaused(NewChannel, false);
+    FMOD_Channel_SetPaused(NewChannel, Commands->Paused);
 }
 
 static inline void ResetCommands(sound_commands* Commands)
