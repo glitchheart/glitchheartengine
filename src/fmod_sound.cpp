@@ -31,8 +31,7 @@ static void LoadSounds(sound_device* SoundDevice, sound_commands* Commands)
 
 static void CleanupSound(sound_device* SoundDevice)
 {
-    (void)SoundDevice;
-    //@Incomplete: Cleanup FMOD
+    FMOD_System_Release(SoundDevice->System);
 }
 
 FMOD_RESULT F_CALLBACK ChannelControlCallback(FMOD_CHANNELCONTROL *ChanControl, FMOD_CHANNELCONTROL_TYPE ControlType, FMOD_CHANNELCONTROL_CALLBACK_TYPE CallbackType, void *CommandData1, void *CommandData2)
@@ -68,7 +67,7 @@ static void PlaySound(const sound_effect& SoundEffect, sound_device* SoundDevice
 {
     auto Sound = SoundDevice->Sounds[SoundEffect.Buffer];
     FMOD_CHANNEL* NewChannel;
-    auto Result = FMOD_System_PlaySound(SoundDevice->System, Sound, 0, Commands->Paused, &NewChannel);
+    auto Result = FMOD_System_PlaySound(SoundDevice->System, Sound, SoundDevice->MasterGroup, true, &NewChannel);
     FMOD_Channel_SetPitch(NewChannel, SoundEffect.SoundInfo.Pitch);
     FMOD_Channel_SetVolume(NewChannel, SoundEffect.SoundInfo.Gain * Commands->SFXVolume);
     
@@ -82,11 +81,11 @@ static void PlaySound(const sound_effect& SoundEffect, sound_device* SoundDevice
     FMOD_Channel_SetMode(NewChannel, (FMOD_MODE)(FMOD_DEFAULT | FMODMode));
     FMOD_Channel_SetLoopCount(NewChannel, SoundEffect.SoundInfo.LoopCount);
     
-    FMOD_Channel_SetChannelGroup(NewChannel, SoundDevice->MasterGroup);
     if(Result != FMOD_OK)
     {
         FMODError(Result);
     }
+    FMOD_Channel_SetPaused(NewChannel, false);
 }
 
 static inline void ResetCommands(sound_commands* Commands)
