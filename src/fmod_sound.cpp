@@ -70,7 +70,7 @@ static void PlaySound(const sound_effect& SoundEffect, sound_device* SoundDevice
     FMOD_CHANNEL* Channel;
     auto Result = FMOD_System_PlaySound(SoundDevice->System, Sound, 0, Commands->Paused, &Channel);
     FMOD_Channel_SetPitch(Channel, SoundEffect.SoundInfo.Pitch);
-    FMOD_Channel_SetVolume(Channel, SoundEffect.SoundInfo.Gain);
+    FMOD_Channel_SetVolume(Channel, SoundEffect.SoundInfo.Gain * Commands->SFXVolume);
     
     r32 Vol;
     FMOD_Channel_GetVolume(Channel, &Vol);
