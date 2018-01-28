@@ -291,6 +291,7 @@ int main(int Argc, char** Args)
     InitKeys();
     render_state RenderState = {};
     renderer Renderer = {};
+    Renderer.PixelsPerUnit = 8;
     
     Renderer.Commands.MinimumBlockSize = sizeof(render_command) * MAX_RENDER_COMMANDS;
     Renderer.UICommands.MinimumBlockSize = sizeof(render_command) * MAX_UI_COMMANDS;

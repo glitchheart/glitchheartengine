@@ -141,6 +141,7 @@ struct render_state
     i32 ScaleFromWidth;
     i32 ScaleFromHeight;
     i32 DpiScale;
+    i32 PixelsPerUnit;
     
     r32 Contrast;
     r32 Brightness;

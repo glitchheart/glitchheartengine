@@ -255,8 +255,8 @@ static void InitializeFreeTypeFont(char* FontPath, int FontSize, FT_Library Libr
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     
@@ -1182,7 +1182,7 @@ void RenderCircle(render_state& RenderState, math::v4 Color, r32 CenterX, r32 Ce
     glDrawArrays(GL_LINE_LOOP, 0, 720);
 }
 
-static void RenderQuad(Render_Mode Mode, render_state& RenderState, math::v4 Color, math::v3 Position, math::v3 Size, math::v3 Rotation, b32 WithOrigin, math::v2 Origin, i32 ShaderHandle, shader_attribute* ShaderAttributes, i32 ShaderAttributeCount, b32 IsUI = true, i32 TextureHandle = 0, b32 ForAnimation = false, math::v2 TextureSize = math::v2(), math::v2i FrameSize = math::v2i(), math::v2 TextureOffset = math::v2(), math::m4 ProjectionMatrix = math::m4(), math::m4 ViewMatrix = math::m4())
+static void RenderQuad(Render_Mode Mode, render_state& RenderState, math::v4 Color, math::v3 Position, b32 Flipped, math::v3 Size, math::v3 Rotation, b32 WithOrigin, math::v2 Origin, i32 ShaderHandle, shader_attribute* ShaderAttributes, i32 ShaderAttributeCount, b32 IsUI = true, i32 TextureHandle = 0, b32 ForAnimation = false, math::v2 TextureSize = math::v2(), math::v2i FrameSize = math::v2i(), math::v2 TextureOffset = math::v2(), math::m4 ProjectionMatrix = math::m4(), math::m4 ViewMatrix = math::m4())
 {
     if(IsUI)
     {
@@ -1190,9 +1190,6 @@ static void RenderQuad(Render_Mode Mode, render_state& RenderState, math::v4 Col
         Position.x -= 1;
         Position.y *= RenderState.ScaleY;
         Position.y -= 1;
-        
-        Size.x *= RenderState.ScaleX;
-        Size.y *= RenderState.ScaleY;
     }
     
     switch(Mode)
@@ -1210,8 +1207,36 @@ static void RenderQuad(Render_Mode Mode, render_state& RenderState, math::v4 Col
                 glBindVertexArray(RenderState.RectVAO);
             }
             
+            math::v2i PixelSize;
+            
             if(TextureHandle > 0)
             {
+                if(ForAnimation)
+                {
+                    PixelSize = FrameSize;
+                    Size = math::v3((Size.x * FrameSize.x) / RenderState.PixelsPerUnit, (Size.y * FrameSize.y) / RenderState.PixelsPerUnit, 0);
+                }
+                else
+                {
+                    if(FrameSize.x != 0 && FrameSize.y != 0)
+                    {
+                        PixelSize = math::v2i(FrameSize.x, FrameSize.y);
+                        if(IsUI)
+                        {
+                            Size = math::v3(Size.x * FrameSize.x, Size.y * FrameSize.y, 0);
+                        }
+                        else
+                        {
+                            Size = math::v3((Size.x * FrameSize.x) / RenderState.PixelsPerUnit, (Size.y * FrameSize.y) / RenderState.PixelsPerUnit, 0);
+                        }
+                    }
+                    else
+                    {
+                        PixelSize = math::v2i(TextureSize.x, TextureSize.y);
+                        Size = math::v3((Size.x * TextureSize.x) / RenderState.PixelsPerUnit, (Size.y * TextureSize.y) / RenderState.PixelsPerUnit, 0);
+                    }
+                }
+                
                 glBindTexture(GL_TEXTURE_2D, (GLuint)TextureHandle);
                 
                 if(ForAnimation || (TextureOffset.X >= 0.0f && TextureOffset.Y >= 0.0f))
@@ -1220,6 +1245,12 @@ static void RenderQuad(Render_Mode Mode, render_state& RenderState, math::v4 Col
                     Shader = RenderState.TextureRectShader;
                 
                 RenderState.BoundTexture = (GLuint)TextureHandle;
+            }
+            
+            if(IsUI)
+            {
+                Size.x *= RenderState.ScaleX;
+                Size.y *= RenderState.ScaleY;
             }
             
             if(RenderState.CurrentExtraShader != -1)
@@ -1235,6 +1266,11 @@ static void RenderQuad(Render_Mode Mode, render_state& RenderState, math::v4 Col
             UseShader(&Shader);
             
             math::m4 Model(1.0f);
+            
+            if(Flipped)
+            {
+                Size.x *= -1;
+            }
             
             Model = math::Scale(Model, Size);
             Model = math::Translate(Model, math::v3(Size.x / -2.0f, Size.y / -Size.y, 0.0f));
@@ -1253,11 +1289,23 @@ static void RenderQuad(Render_Mode Mode, render_state& RenderState, math::v4 Col
             
             if(WithOrigin)
             {
-                Position.x -= Origin.x;
-                Position.y -= Origin.y;
+                if(Flipped)
+                {
+                    Position.x -= (PixelSize.x - Origin.x) / RenderState.PixelsPerUnit;
+                    Position.y -= Origin.y / RenderState.PixelsPerUnit;
+                }
+                else
+                {
+                    Position.x -= Origin.x / RenderState.PixelsPerUnit;
+                    Position.y -= Origin.y / RenderState.PixelsPerUnit;
+                }
+            }
+            else
+            {
+                Position -= Size / 2.0f;
             }
             
-            if(Size.x < 0.0f)
+            if(Flipped)
             {
                 Model = math::Translate(Model, math::v3(-Size.x, 0.0f, 0.0f));
             }
@@ -1343,6 +1391,11 @@ static void RenderQuad(Render_Mode Mode, render_state& RenderState, math::v4 Col
         case Render_Outline:
         {
             math::m4 Model(1.0f);
+            if(IsUI)
+            {
+                Size.x *= RenderState.ScaleX;
+                Size.y *= RenderState.ScaleY;
+            }
             
             Model = math::Scale(Model, Size);
             
@@ -1404,7 +1457,7 @@ static void MeasureText(const render_font& Font, const char* Text, float* Width,
 
 //rendering methods
 static void RenderText(render_state& RenderState, const render_font& Font, const math::v4& Color, const char* Text, r32 X, r32 Y, r32 Scale = 1.0f,
-                       Alignment Alignment = Alignment_Left,  b32 AlignCenterY = true) 
+                       Alignment Alignment = Alignment_Left,  b32 AlignCenterY = false) 
 {
     glBindVertexArray(Font.VAO);
     auto Shader = RenderState.Shaders[Shader_StandardFont];
@@ -1571,6 +1624,7 @@ static void RenderQuad(const render_command& Command, render_state& RenderState,
                    RenderState, 
                    Command.Quad.Color, 
                    Command.Position,
+                   Command.Quad.Flipped,
                    Command.Scale,
                    Command.Rotation,
                    Command.WithOrigin,
@@ -1592,6 +1646,7 @@ static void RenderQuad(const render_command& Command, render_state& RenderState,
                    RenderState, 
                    Command.Quad.Color, 
                    Command.Position,
+                   Command.Quad.Flipped,
                    Command.Scale,
                    Command.Rotation,
                    Command.WithOrigin,
@@ -2067,6 +2122,7 @@ static void Render(render_state& RenderState, renderer& Renderer, memory_arena* 
     
     RenderState.ScaleX = 2.0f / RenderState.ScreenWidth;
     RenderState.ScaleY = 2.0f / RenderState.ScreenHeight;
+    RenderState.PixelsPerUnit = Renderer.PixelsPerUnit;
     Renderer.ScaleX = RenderState.ScaleX;
     Renderer.ScaleY = RenderState.ScaleY;
     

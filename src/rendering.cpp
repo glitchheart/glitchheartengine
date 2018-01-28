@@ -364,7 +364,7 @@ static void PushText(renderer& Renderer, const char* Text, math::v3 Position, r3
     RenderCommand->IsUI = IsUI;
 }
 
-static void PushFilledQuad(renderer& Renderer, math::v3 Position, math::v3 Size, math::v3 Rotation = math::v3(), math::rgba Color = math::rgba(1.0f, 1.0f, 1.0f, 1.0f), i32 TextureHandle = 0, b32 IsUI = true, i32 AnimationInfoHandle = -1, b32 WithOrigin = false, math::v2 Origin = math::v2(0.0f, 0.0f), i32 ShaderHandle = -1, shader_attribute* ShaderAttributes = 0, i32 ShaderAttributeCount = 0, math::v2 TextureOffset = math::v2(-1.0f, -1.0f), math::v2 TextureSize = math::v2(-1.0f, -1.0f), math::v2i FrameSize = math::v2i(-1, -1))
+static void PushFilledQuad(renderer& Renderer, math::v3 Position, b32 Flipped, math::v3 Size, math::v3 Rotation = math::v3(), math::rgba Color = math::rgba(1.0f, 1.0f, 1.0f, 1.0f), i32 TextureHandle = 0, b32 IsUI = true, i32 AnimationInfoHandle = -1, b32 WithOrigin = false, math::v2 Origin = math::v2(0.0f, 0.0f), i32 ShaderHandle = -1, shader_attribute* ShaderAttributes = 0, i32 ShaderAttributeCount = 0, math::v2 TextureOffset = math::v2(-1.0f, -1.0f), math::v2i FrameSize = math::v2i(-1, -1))
 {
     render_command* RenderCommand = PushNextCommand(Renderer, IsUI);
     
@@ -374,6 +374,7 @@ static void PushFilledQuad(renderer& Renderer, math::v3 Position, math::v3 Size,
     RenderCommand->WithOrigin = WithOrigin;
     RenderCommand->Origin = Origin;
     RenderCommand->Scale = Size;
+    RenderCommand->Quad.Flipped = Flipped;
     RenderCommand->Quad.Color = Color;
     RenderCommand->Quad.Outlined = false;
     RenderCommand->Quad.TextureHandle = TextureHandle - 1;
@@ -383,7 +384,7 @@ static void PushFilledQuad(renderer& Renderer, math::v3 Position, math::v3 Size,
         spritesheet_animation_info& Info = Renderer.SpritesheetAnimationInfos[AnimationInfoHandle];
         spritesheet_animation& Animation = Renderer.SpritesheetAnimations[Info.AnimationHandle];
         spritesheet_frame& Frame = Animation.Frames[Info.FrameIndex];
-        RenderCommand->Quad.TextureHandle = Animation.TextureHandle - 1; // @Incomplete: Do we subtract one from this too?
+        RenderCommand->Quad.TextureHandle = Animation.TextureHandle - 1;
         RenderCommand->Quad.TextureSize = math::v2((r32)Renderer.TextureData[RenderCommand->Quad.TextureHandle].Width, (r32)Renderer.TextureData[RenderCommand->Quad.TextureHandle].Height);
         RenderCommand->Quad.FrameSize = math::v2i(Frame.FrameWidth, Frame.FrameHeight);
         RenderCommand->Quad.TextureOffset = math::v2(Frame.X, Frame.Y);
@@ -392,8 +393,12 @@ static void PushFilledQuad(renderer& Renderer, math::v3 Position, math::v3 Size,
     else
     {
         RenderCommand->Quad.TextureOffset = TextureOffset;
-        RenderCommand->Quad.TextureSize = TextureSize;
         RenderCommand->Quad.FrameSize = FrameSize;
+        
+        if(TextureHandle != -1)
+        {
+            RenderCommand->Quad.TextureSize = math::v2((r32)Renderer.TextureData[RenderCommand->Quad.TextureHandle].Width, (r32)Renderer.TextureData[RenderCommand->Quad.TextureHandle].Height);
+        }
     }
     
     RenderCommand->ShaderHandle = ShaderHandle;
