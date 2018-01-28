@@ -268,12 +268,12 @@ int main(int Argc, char** Args)
 #ifdef __APPLE__
     char* GameLibraryPath = "libgame.dylib";
     char* TempGameLibraryPath = "libgame_temp.dylib";
-#elif __linux
-    char* GameLibraryPath = "libgame.so";
-    char* TempGameLibraryPath = "libgame_temp.so";
-#else
+#elif _WIN32
     char* GameLibraryPath = "game.dll";
     char* TempGameLibraryPath = "game_temp.dll";
+#else
+    char* GameLibraryPath = "libgame.so";
+    char* TempGameLibraryPath = "libgame_temp.so";
 #endif
     
     memory_arena DebugArena = {};
