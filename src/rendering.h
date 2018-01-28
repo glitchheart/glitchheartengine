@@ -309,6 +309,7 @@ struct render_command
         struct
         {
             i32 TextureHandle;
+            b32 Flipped;
             math::rgba Color; // @Cleanup: REMOVE!
             b32 Outlined;
             r32 LineWidth;
@@ -493,6 +494,7 @@ struct renderer
     r64 AverageFPS;
     r64 FPSSum;
     u64 CurrentFrame;
+    i32 PixelsPerUnit;
     
     Window_Mode WindowMode;
     
