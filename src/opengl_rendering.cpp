@@ -871,7 +871,8 @@ static void CreateOpenGLWindow(render_state& RenderState, Window_Mode WindowMode
     
     const GLFWvidmode* Mode = glfwGetVideoMode(Monitor);
     RenderState.WindowMode = WindowMode;
-    RenderState.WindowTitle = PushString(&RenderState.Arena, Title);
+    RenderState.WindowTitle = PushString(&RenderState.Arena, strlen(Title) + 1);
+    strcpy(RenderState.WindowTitle, Title);
     
     if(WindowMode == FM_Borderless)
     {
@@ -888,7 +889,7 @@ static void CreateOpenGLWindow(render_state& RenderState, Window_Mode WindowMode
         Monitor = NULL;
     }
     
-    RenderState.Window = glfwCreateWindow(ScreenWidth, ScreenHeight, Title, Monitor, 
+    RenderState.Window = glfwCreateWindow(ScreenWidth, ScreenHeight, RenderState.WindowTitle, Monitor, 
                                           NULL);
     
     //center window on screen (windowed?)
@@ -930,8 +931,9 @@ static void InitializeOpenGL(render_state& RenderState, renderer& Renderer, conf
     RenderState.Contrast = ConfigData->Contrast;
     RenderState.Brightness = ConfigData->Brightness;
     
-    auto Str = Concat(Concat(ConfigData->Title, " "), ConfigData->Version);printf("width %d height %d\n", ConfigData->ScreenWidth, ConfigData->ScreenHeight); 
-    CreateOpenGLWindow(RenderState, ConfigData->Fullscreen, Str, ConfigData->ScreenWidth, ConfigData->ScreenHeight);
+    auto Str = Concat(Concat(ConfigData->Title, " "), ConfigData->Version);
+    
+    CreateOpenGLWindow(RenderState, ConfigData->Fullscreen, ConfigData->Title, ConfigData->ScreenWidth, ConfigData->ScreenHeight);
     Renderer.WindowMode = RenderState.WindowMode;
     
     if (!RenderState.Window)

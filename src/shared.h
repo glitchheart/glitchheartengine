@@ -39,11 +39,11 @@ inline char* Concat(const char *s1, const char *s2, memory_arena* Arena)
     char* result;
     if(Arena)
     {
-        result = PushString(Arena, (u32)(strlen(s1) + strlen(s2)));
+        result = PushString(Arena, (u32)(strlen(s1) + strlen(s2) + 1));
     }
     else
     {
-        result = PushTempString((u32)(strlen(s1) + strlen(s2)));
+        result = PushTempString((u32)(strlen(s1) + strlen(s2) + 1));
     }
     
     strcpy(result, s1);
