@@ -35,7 +35,6 @@ memory_state MemoryState;
 #include "gmap.cpp"
 #include "keycontroller.h"
 
-#include "console.h"
 #include "opengl_rendering.h"
 #include "keycontroller.cpp"
 #include "sound.h"
