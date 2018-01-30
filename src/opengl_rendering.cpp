@@ -1459,7 +1459,7 @@ static void MeasureText(const render_font& Font, const char* Text, float* Width,
 
 //rendering methods
 static void RenderText(render_state& RenderState, const render_font& Font, const math::v4& Color, const char* Text, r32 X, r32 Y, r32 Scale = 1.0f,
-                       Alignment Alignment = Alignment_Left,  b32 AlignCenterY = false) 
+                       Alignment Alignment = Alignment_Left,  b32 AlignCenterY = true) 
 {
     glBindVertexArray(Font.VAO);
     auto Shader = RenderState.Shaders[Shader_StandardFont];
