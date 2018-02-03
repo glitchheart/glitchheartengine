@@ -65,6 +65,8 @@ static r64 GetMaxTimerTime(i32 Handle, timer_controller& TimerController)
 
 static b32 TimerDone(i32 Handle, timer_controller& TimerController)
 {
+    if(Handle < 0 || Handle > TimerController.TimerCount)
+        return true;
     return TimerController.Timers[Handle].CurrentTime >= TimerController.Timers[Handle].TimerMax;
 }
 

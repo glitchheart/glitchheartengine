@@ -1211,6 +1211,8 @@ static void RenderQuad(Render_Mode Mode, render_state& RenderState, math::v4 Col
             
             math::v2i PixelSize;
             
+            math::v3 Scale = Size;
+            
             if(TextureHandle > 0)
             {
                 if(ForAnimation)
@@ -1293,7 +1295,7 @@ static void RenderQuad(Render_Mode Mode, render_state& RenderState, math::v4 Col
             {
                 if(Flipped)
                 {
-                    Position.x -= (PixelSize.x - Origin.x) / RenderState.PixelsPerUnit;
+                    Position.x -= ((PixelSize.x - Origin.x) / RenderState.PixelsPerUnit) * Scale.x;
                     Position.y -= Origin.y / RenderState.PixelsPerUnit;
                 }
                 else
