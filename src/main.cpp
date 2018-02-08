@@ -336,9 +336,10 @@ int main(int Argc, char** Args)
         CurrentFrame = GetTime();
         DeltaTime = Min(CurrentFrame - LastFrame, 0.1);
         LastFrame = CurrentFrame;
-        Renderer.FPS = 1.0/DeltaTime;
+        Renderer.FPS = 1.0 / DeltaTime;
         Renderer.CurrentFrame++;
         Renderer.FPSSum += Renderer.FPS;
+        
         if(Renderer.CurrentFrame == 60)
         {
             Renderer.CurrentFrame = 0;

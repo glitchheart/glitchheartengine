@@ -1237,7 +1237,14 @@ static void RenderQuad(Render_Mode Mode, render_state& RenderState, math::v4 Col
                     else
                     {
                         PixelSize = math::v2i(TextureSize.x, TextureSize.y);
-                        Size = math::v3((Size.x * TextureSize.x) / RenderState.PixelsPerUnit, (Size.y * TextureSize.y) / RenderState.PixelsPerUnit, 0);
+                        if(IsUI)
+                        {
+                            Size = math::v3(Size.x * TextureSize.x, Size.y * TextureSize.y, 0);
+                        }
+                        else
+                        {
+                            Size = math::v3((Size.x * TextureSize.x) / RenderState.PixelsPerUnit, (Size.y * TextureSize.y) / RenderState.PixelsPerUnit, 0);
+                        }
                     }
                 }
                 
@@ -1492,6 +1499,9 @@ static void RenderText(render_state& RenderState, const render_font& Font, const
             r32 Height;
             
             MeasureText(Font, Text, &Width, &Height);
+            
+            Width *= Scale;
+            Height *= Scale;
             
             X -= Width / 2.0f;
             if(AlignCenterY)
