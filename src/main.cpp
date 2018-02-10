@@ -331,6 +331,7 @@ int main(int Argc, char** Args)
     r64 LastFrame = GetTime();
     r64 CurrentFrame = 0.0;
     r64 DeltaTime;
+    Renderer.FrameLock = 0;
     
     while (!ShouldCloseWindow(RenderState) && !Renderer.ShouldClose)
     {
@@ -338,17 +339,7 @@ int main(int Argc, char** Args)
         CurrentFrame = GetTime();
         DeltaTime = Min(CurrentFrame - LastFrame, 0.1);
         LastFrame = CurrentFrame;
-        //Renderer.FPS = 1.0 / DeltaTime;
-        //Renderer.CurrentFrame++;
-        //Renderer.FPSSum += Renderer.FPS;
-        /*
-        if(Renderer.CurrentFrame == 60)
-        {
-            Renderer.CurrentFrame = 0;
-            Renderer.AverageFPS = Renderer.FPSSum / 60.0;
-            Renderer.FPSSum = 0.0;
-        }
-        */
+        
         if(GameMemory.ExitGame)
         {
             DEBUG_PRINT("Quit\n");
