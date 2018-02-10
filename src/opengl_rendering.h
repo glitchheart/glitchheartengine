@@ -148,6 +148,8 @@ struct render_state
     
     char* WindowTitle;
     
+    r64 FrameDelta;
+    
     Window_Mode WindowMode;
     
     GLfloat ScaleX;

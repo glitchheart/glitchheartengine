@@ -291,6 +291,8 @@ int main(int Argc, char** Args)
     render_state RenderState = {};
     renderer Renderer = {};
     Renderer.PixelsPerUnit = 8;
+    Renderer.FrameLock = 0;
+    RenderState.FrameDelta = 0.0;
     
     Renderer.Commands.MinimumBlockSize = sizeof(render_command) * MAX_RENDER_COMMANDS;
     Renderer.UICommands.MinimumBlockSize = sizeof(render_command) * MAX_UI_COMMANDS;
@@ -336,17 +338,17 @@ int main(int Argc, char** Args)
         CurrentFrame = GetTime();
         DeltaTime = Min(CurrentFrame - LastFrame, 0.1);
         LastFrame = CurrentFrame;
-        Renderer.FPS = 1.0 / DeltaTime;
-        Renderer.CurrentFrame++;
-        Renderer.FPSSum += Renderer.FPS;
-        
+        //Renderer.FPS = 1.0 / DeltaTime;
+        //Renderer.CurrentFrame++;
+        //Renderer.FPSSum += Renderer.FPS;
+        /*
         if(Renderer.CurrentFrame == 60)
         {
             Renderer.CurrentFrame = 0;
             Renderer.AverageFPS = Renderer.FPSSum / 60.0;
             Renderer.FPSSum = 0.0;
         }
-        
+        */
         if(GameMemory.ExitGame)
         {
             DEBUG_PRINT("Quit\n");
@@ -364,7 +366,7 @@ int main(int Argc, char** Args)
         TickTimers(TimerController, DeltaTime);
         PlaySounds(&SoundDevice, &SoundCommands);
         
-        Render(RenderState, Renderer, &PlatformState->PermArena);
+        Render(RenderState, Renderer, &PlatformState->PermArena, DeltaTime);
         
         SetControllerInvalidKeys();
         SetInvalidKeys();
