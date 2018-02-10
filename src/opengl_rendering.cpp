@@ -2141,22 +2141,10 @@ static void Render(render_state& RenderState, renderer& Renderer, memory_arena* 
     Renderer.ScaleX = RenderState.ScaleX;
     Renderer.ScaleY = RenderState.ScaleY;
     
-    glBindFramebuffer(GL_FRAMEBUFFER, RenderState.FrameBuffer);
-    
-    glBindTexture(GL_TEXTURE_2D, RenderState.TextureColorBuffer);
-    
-    glEnable(GL_DEPTH_TEST);
-    
-    glDepthFunc(GL_LESS);
-    
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    
-    glClearColor(Renderer.ClearColor.r, Renderer.ClearColor.g, Renderer.ClearColor.b, Renderer.ClearColor.a);
-    
     RegisterBuffers(RenderState, Renderer, PermArena);
     if((Renderer.FrameLock != 0 && RenderState.FrameDelta <= 0.0) || Renderer.FrameLock == 0)
     {
-        Renderer.FPS = 1.0 / DeltaTime;
+        Renderer.FPS = 1.0 / RenderState.TotalDelta;
         Renderer.CurrentFrame++;
         Renderer.FPSSum += Renderer.FPS;
         
@@ -2166,6 +2154,20 @@ static void Render(render_state& RenderState, renderer& Renderer, memory_arena* 
             Renderer.AverageFPS = Renderer.FPSSum / 60.0f;
             Renderer.FPSSum = 0.0;
         }
+        
+        
+        glBindFramebuffer(GL_FRAMEBUFFER, RenderState.FrameBuffer);
+        
+        glBindTexture(GL_TEXTURE_2D, RenderState.TextureColorBuffer);
+        
+        glEnable(GL_DEPTH_TEST);
+        
+        glDepthFunc(GL_LESS);
+        
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        
+        glClearColor(Renderer.ClearColor.r, Renderer.ClearColor.g, Renderer.ClearColor.b, Renderer.ClearColor.a);
+        
         
         RenderCommands(RenderState, Renderer, PermArena);
         
@@ -2210,13 +2212,18 @@ static void Render(render_state& RenderState, renderer& Renderer, memory_arena* 
         
         if(Renderer.FrameLock != 0)
         {
-            Renderer.FPSSum = 0;
+            RenderState.TotalDelta = 0.0;
             RenderState.FrameDelta = 1.0 / Renderer.FrameLock;
+        }
+        else
+        {
+            RenderState.TotalDelta = DeltaTime;
         }
     }
     else
     {
         RenderState.FrameDelta -= DeltaTime;
+        RenderState.TotalDelta += DeltaTime;
         Clear(&Renderer.LightCommands);
         Renderer.LightCommandCount = 0;
         Clear(&Renderer.Commands);

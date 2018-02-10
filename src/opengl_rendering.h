@@ -149,6 +149,7 @@ struct render_state
     char* WindowTitle;
     
     r64 FrameDelta;
+    r64 TotalDelta;
     
     Window_Mode WindowMode;
     
