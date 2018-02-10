@@ -61,8 +61,6 @@ FMOD_RESULT F_CALLBACK ChannelControlCallback(FMOD_CHANNELCONTROL *ChanControl, 
     return FMOD_OK;
 }
 
-i32 Channel;
-
 static void PlaySound(const sound_effect& SoundEffect, sound_device* SoundDevice, sound_commands* Commands)
 {
     auto Sound = SoundDevice->Sounds[SoundEffect.Buffer];

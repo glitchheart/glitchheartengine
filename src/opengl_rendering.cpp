@@ -931,8 +931,6 @@ static void InitializeOpenGL(render_state& RenderState, renderer& Renderer, conf
     RenderState.Contrast = ConfigData->Contrast;
     RenderState.Brightness = ConfigData->Brightness;
     
-    auto Str = Concat(Concat(ConfigData->Title, " "), ConfigData->Version);
-    
     CreateOpenGLWindow(RenderState, ConfigData->Fullscreen, ConfigData->Title, ConfigData->ScreenWidth, ConfigData->ScreenHeight);
     Renderer.WindowMode = RenderState.WindowMode;
     
@@ -2156,7 +2154,7 @@ static void Render(render_state& RenderState, renderer& Renderer, memory_arena* 
     glClearColor(Renderer.ClearColor.r, Renderer.ClearColor.g, Renderer.ClearColor.b, Renderer.ClearColor.a);
     
     RegisterBuffers(RenderState, Renderer, PermArena);
-    if(Renderer.FrameLock != 0 && RenderState.FrameDelta <= 0.0 || Renderer.FrameLock == 0)
+    if((Renderer.FrameLock != 0 && RenderState.FrameDelta <= 0.0) || Renderer.FrameLock == 0)
     {
         Renderer.FPS = 1.0 / DeltaTime;
         Renderer.CurrentFrame++;

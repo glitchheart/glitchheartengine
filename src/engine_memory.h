@@ -198,7 +198,7 @@ static void Clear(memory_arena *Arena)
     }
 }
 
-char* PushString(memory_arena* Arena, u32 Length)
+char* PushString(memory_arena* Arena, size_t Length)
 {
     //@Incomplete: Fix NoClear() bug here. 
     // We don't care about zeroing
