@@ -1793,7 +1793,7 @@ static void LoadFont(render_state& RenderState, char* Path, i32 Size)
 }
 
 
-static void RenderCommands(render_state& RenderState, renderer& Renderer, memory_arena* PermArena)
+static void RegisterBuffers(render_state& RenderState, renderer& Renderer, memory_arena* PermArena)
 {
     for(i32 Index = RenderState.BufferCount; Index < Renderer.BufferCount; Index++)
     {
@@ -1824,7 +1824,10 @@ static void RenderCommands(render_state& RenderState, renderer& Renderer, memory
         }
     }
     Renderer.UpdatedBufferHandleCount = 0;
-    
+}
+
+static void RenderCommands(render_state& RenderState, renderer& Renderer, memory_arena* PermArena)
+{
     for(i32 Index = RenderState.FontCount; Index < Renderer.FontCount; Index++)
     {
         font_data Data = Renderer.Fonts[Index];
@@ -2086,7 +2089,7 @@ static void RenderCommands(render_state& RenderState, renderer& Renderer, memory
     
 }
 
-static void Render(render_state& RenderState, renderer& Renderer, memory_arena* PermArena)
+static void Render(render_state& RenderState, renderer& Renderer, memory_arena* PermArena, r64 DeltaTime)
 {
     if(Renderer.WindowMode != RenderState.WindowMode)
     {
@@ -2152,44 +2155,75 @@ static void Render(render_state& RenderState, renderer& Renderer, memory_arena* 
     
     glClearColor(Renderer.ClearColor.r, Renderer.ClearColor.g, Renderer.ClearColor.b, Renderer.ClearColor.a);
     
-    //RenderGame(GameState);
-    RenderCommands(RenderState, Renderer, PermArena);
-    // Second pass
-    
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    
-    glClearColor(Renderer.ClearColor.r, Renderer.ClearColor.g, Renderer.ClearColor.b, Renderer.ClearColor.a);
-    
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    
-    glBindVertexArray(RenderState.FrameBufferVAO);
-    
-    UseShader(&RenderState.FrameBufferShader);
-    
-    SetFloatUniform(RenderState.FrameBufferShader.Program, "contrast", RenderState.Contrast);
-    SetFloatUniform(RenderState.FrameBufferShader.Program, "brightness", RenderState.Brightness);
-    SetIntUniform(RenderState.FrameBufferShader.Program, "ignoreLight",  true); // @Incomplete: Lighting
-    SetMat4Uniform(RenderState.FrameBufferShader.Program,"P", Camera.ProjectionMatrix);
-    SetMat4Uniform(RenderState.FrameBufferShader.Program,"V", Camera.ViewMatrix);
-    SetVec2Uniform(RenderState.FrameBufferShader.Program, "screenSize", math::v2((r32)RenderState.WindowWidth,(r32)RenderState.WindowHeight));
-    
-    glUniform1i((GLint)RenderState.FrameBufferTex0Loc, 0);
-    
-    glUniform1i((GLint)RenderState.FrameBufferTex1Loc, 1);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, RenderState.TextureColorBuffer);
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, RenderState.LightingTextureColorBuffer);
-    RenderState.BoundTexture = RenderState.LightingTextureColorBuffer;
-    
-    //Enable this if we don't do gamma correction in framebuffer shader
-    //glEnable(GL_FRAMEBUFFER_SRGB);
-    
-    glDrawElements(GL_TRIANGLES, sizeof(RenderState.QuadIndices), GL_UNSIGNED_INT, (void*)0); 
-    
-    glActiveTexture(GL_TEXTURE0);
-    
-    glfwSwapBuffers(RenderState.Window);
+    RegisterBuffers(RenderState, Renderer, PermArena);
+    if(Renderer.FrameLock != 0 && RenderState.FrameDelta <= 0.0 || Renderer.FrameLock == 0)
+    {
+        Renderer.FPS = 1.0 / DeltaTime;
+        Renderer.CurrentFrame++;
+        Renderer.FPSSum += Renderer.FPS;
+        
+        if(Renderer.CurrentFrame == 60)
+        {
+            Renderer.CurrentFrame = 0;
+            Renderer.AverageFPS = Renderer.FPSSum / 60.0f;
+            Renderer.FPSSum = 0.0;
+        }
+        
+        RenderCommands(RenderState, Renderer, PermArena);
+        
+        // Second pass
+        
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        
+        glClearColor(Renderer.ClearColor.r, Renderer.ClearColor.g, Renderer.ClearColor.b, Renderer.ClearColor.a);
+        
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        
+        glBindVertexArray(RenderState.FrameBufferVAO);
+        
+        UseShader(&RenderState.FrameBufferShader);
+        
+        SetFloatUniform(RenderState.FrameBufferShader.Program, "contrast", RenderState.Contrast);
+        SetFloatUniform(RenderState.FrameBufferShader.Program, "brightness", RenderState.Brightness);
+        SetIntUniform(RenderState.FrameBufferShader.Program, "ignoreLight",  true); // @Incomplete: Lighting
+        SetMat4Uniform(RenderState.FrameBufferShader.Program,"P", Camera.ProjectionMatrix);
+        SetMat4Uniform(RenderState.FrameBufferShader.Program,"V", Camera.ViewMatrix);
+        SetVec2Uniform(RenderState.FrameBufferShader.Program, "screenSize", math::v2((r32)RenderState.WindowWidth,(r32)RenderState.WindowHeight));
+        
+        glUniform1i((GLint)RenderState.FrameBufferTex0Loc, 0);
+        
+        glUniform1i((GLint)RenderState.FrameBufferTex1Loc, 1);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, RenderState.TextureColorBuffer);
+        glActiveTexture(GL_TEXTURE1);
+        /*glBindTexture(GL_TEXTURE_2D, RenderState.LightingTextureColorBuffer);
+        RenderState.BoundTexture = RenderState.LightingTextureColorBuffer;
+        */
+        //Enable this if we don't do gamma correction in framebuffer shader
+        //glEnable(GL_FRAMEBUFFER_SRGB);
+        
+        glDrawElements(GL_TRIANGLES, sizeof(RenderState.QuadIndices), GL_UNSIGNED_INT, (void*)0); 
+        
+        glActiveTexture(GL_TEXTURE0);
+        
+        glfwSwapBuffers(RenderState.Window);
+        
+        if(Renderer.FrameLock != 0)
+        {
+            Renderer.FPSSum = 0;
+            RenderState.FrameDelta = 1.0 / Renderer.FrameLock;
+        }
+    }
+    else
+    {
+        RenderState.FrameDelta -= DeltaTime;
+        Clear(&Renderer.LightCommands);
+        Renderer.LightCommandCount = 0;
+        Clear(&Renderer.Commands);
+        Renderer.CommandCount = 0;
+        Clear(&Renderer.UICommands);
+        Renderer.UICommandCount = 0;
+    }
 }

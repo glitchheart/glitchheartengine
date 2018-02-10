@@ -483,8 +483,8 @@ struct particle_system
 
 #define MAX_CAMERAS 8
 
-#define MAX_RENDER_COMMANDS 1024
-#define MAX_UI_COMMANDS 1024 // @Incomplete: This should be defined by the game itself (HARDCODED FOR LEVEL EDITOR RIGHT NOW)
+#define MAX_RENDER_COMMANDS 2048
+#define MAX_UI_COMMANDS 2048 // @Incomplete: This should be defined by the game itself (HARDCODED FOR LEVEL EDITOR RIGHT NOW)
 #define MAX_LIGHT_COMMANDS 1024
 
 struct renderer
@@ -495,6 +495,7 @@ struct renderer
     r64 FPSSum;
     u64 CurrentFrame;
     i32 PixelsPerUnit;
+    i32 FrameLock;
     
     Window_Mode WindowMode;
     
