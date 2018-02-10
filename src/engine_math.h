@@ -789,6 +789,7 @@ namespace math
         };
         i32 E[2];
         v2i(i32 X, i32 Y) : X(X), Y(Y){}
+        v2i(r32 X, r32 Y) : X((i32)X), Y((i32)Y){}
         v2i() : X(0),Y(0) {}
         v2i(i32 I) : X(I), Y(I) {}
         v2i(i32 I[2]) : E{I[0],I[1]} {}
