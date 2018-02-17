@@ -179,12 +179,10 @@ static void RegisterAnimationInfo(i32* InfoHandle, i32 WithAnimationHandle, rend
 }
 
 // The InfoHandle is used to be able to reference the same animation without having to load the animation again. 
-static void AddAnimation(renderer& Renderer, spritesheet_animation Animation, i32* AnimationHandle)
+static void AddAnimation(renderer& Renderer, spritesheet_animation Animation, const char* AnimationName)
 {
-    *AnimationHandle = Renderer.SpritesheetAnimationCount;
-    
+    strcpy(Animation.Name, AnimationName);
     Renderer.SpritesheetAnimations[Renderer.SpritesheetAnimationCount++] = Animation;
-    
     Assert(Renderer.SpritesheetAnimationCount < MAX_SPRITESHEET_ANIMATIONS);
     Assert(Renderer.SpritesheetAnimationCount < MAX_SPRITESHEET_ANIMATION_INFOS);
 }
@@ -210,7 +208,7 @@ static void LoadShader(const char* FullShaderPath, renderer& Renderer, i32* Hand
         rewind(File);
         
         // @Incomplete: Use built-in memory arena
-        ShaderData->VertexShaderContent = (char*) malloc(sizeof(char) * Size);
+        ShaderData->VertexShaderContent = (char*) malloc(sizeof(char) * Size + 1);
         fread(ShaderData->VertexShaderContent, 1, (size_t)Size, File);
         fclose(File);
     }
@@ -228,7 +226,7 @@ static void LoadShader(const char* FullShaderPath, renderer& Renderer, i32* Hand
         rewind(File);
         
         // @Incomplete: Use built-in memory arena
-        ShaderData->FragmentShaderContent = (char*) malloc(sizeof(char) * Size);
+        ShaderData->FragmentShaderContent = (char*) malloc(sizeof(char) * Size + 1);
         fread(ShaderData->FragmentShaderContent, 1, (size_t)Size, File);
         fclose(File);
     }
