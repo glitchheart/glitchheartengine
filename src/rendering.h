@@ -528,6 +528,9 @@ struct renderer
     camera Cameras[MAX_CAMERAS];
     i32 CurrentCameraHandle;
     
+    animation_controller Controllers[64];
+    i32 AnimationControllerCount;
+    
     spritesheet_animation_info SpritesheetAnimationInfos[MAX_SPRITESHEET_ANIMATION_INFOS];
     i32 SpritesheetAnimationInfoCount;
     spritesheet_animation SpritesheetAnimations[MAX_SPRITESHEET_ANIMATIONS];

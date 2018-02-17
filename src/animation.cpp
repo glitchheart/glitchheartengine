@@ -1,240 +1,161 @@
-static void SaveAnimationToFile(game_state* GameState, const animation& Animation, renderer& Renderer)
+static i32 CreateAnimationController(renderer& Renderer)
 {
-    FILE* File;
-    
-    File = fopen(Concat(Concat("../assets/animations/", Animation.Name), ".pownim"), "w");
-    if (File)
-    {
-        texture_data* TextureData = Renderer.TextureMap[Animation.Texture];
-        
-        fprintf(File, "name %s\n", Animation.Name);
-        fprintf(File, "type sprite\n");
-        fprintf(File, "framecount %d\n", Animation.FrameCount);
-        fprintf(File, "framesize %d %d\n", (i32)Animation.FrameSize.x, (i32)Animation.FrameSize.y);
-        fprintf(File, "center %f %f\n", Animation.Center.x, Animation.Center.y);
-        fprintf(File, "loop %d\n", Animation.Loop);
-        fprintf(File, "timeperframe %f\n", Animation.TimePerFrame);
-        fprintf(File, "frames\n");
-        
-        i32 X = (i32)(Animation.FrameOffset.y) * (i32)Animation.FrameSize.x;
-        i32 Y = (i32)(Animation.FrameOffset.y) * (i32)Animation.FrameSize.y;
-        
-        i32 FrameIndex = 0;
-        
-        while (FrameIndex < (i32)Animation.FrameCount)
-        {
-            fprintf(File, "%d %d\n", X, Y);
-            
-            FrameIndex++;
-            
-            if (X + (i32)Animation.FrameSize.x <= TextureData->Width)
-                X += (i32)Animation.FrameSize.x;
-            else
-            {
-                X = 0;
-                Y += (i32)Animation.FrameSize.y;
-            }
-        }
-        
-        fprintf(File, "texture %s\n", Animation.Texture);
-        
-        GameState->AnimationArray[GameState->AnimationIndex] = Animation;
-        GameState->AnimationMap[GameState->AnimationArray[GameState->AnimationIndex].Name] = &GameState->AnimationArray[GameState->AnimationIndex];
-        
-        GameState->AnimationIndex++;
-        
-        fclose(File);
-    }
+    auto& Controller = Renderer.AnimationControllers[Renderer.AnimationControllerCount];
+    Controller.CurrentFrameIndex = 0;
+    Controller.CurrentNode = 0;
+    Controller.CurrentTime = 0.0;
+    Controller.Playing = false;
+    Controller.Speed = 1.0f;
+    Controller.NodeCount = 0;
+    Controller.ParameterCount = 0;
+    return Renderer.AnimationControllerCount++;
 }
 
-static void LoadAnimationFromFile(const char* FilePath, game_state* GameState, renderer& Renderer)
+static void AddAnimationControllerParameter(renderer& Renderer, i32 Controller, const char* ParameterName, b32 InitialValue)
 {
-    animation Animation;
-    
-    FILE* File;
-    File = fopen(FilePath, "r");
-    char LineBuffer[255];
-    
-    Animation.Name = PushString(&GameState->TotalArena, 30);
-    
-    if (File)
-    {
-        //name
-        if (fgets(LineBuffer, 255, File))
-        {
-            sscanf(LineBuffer, "name %s", Animation.Name);
-        }
-        
-        //type
-        if (fgets(LineBuffer, 255, File))
-        {
-            //TODO(Daniel) write this when we have transformation animations
-            //sscanf(LineBuffer, "name %s", Animation.Name);
-        }
-        
-        //framecount
-        if (fgets(LineBuffer, 255, File))
-        {
-            sscanf(LineBuffer, "framecount %d", &Animation.FrameCount);
-        }
-        
-        //framesize
-        if (fgets(LineBuffer, 255, File))
-        {
-            sscanf(LineBuffer, "framesize %f %f", &Animation.FrameSize.x, &Animation.FrameSize.y);
-        }
-        
-        if (fgets(LineBuffer, 255, File))
-        {
-            sscanf(LineBuffer, "center %f %f", &Animation.Center.x, &Animation.Center.y);
-        }
-        
-        //loop
-        if (fgets(LineBuffer, 255, File))
-        {
-            sscanf(LineBuffer, "loop %d", &Animation.Loop);
-        }
-        
-        //timeperframe
-        if (fgets(LineBuffer, 255, File))
-        {
-            sscanf(LineBuffer, "timeperframe %f", &Animation.TimePerFrame);
-        }
-        
-        //frames
-        fgets(LineBuffer, 255, File);
-        
-        Animation.Frames = PushArray(&GameState->TotalArena, Animation.FrameCount, sprite_sheet_frame);
-        
-        for (i32 i = 0; i < Animation.FrameCount; i++)
-        {
-            r32 OffsetX = 0.0f;
-            r32 OffsetY = 0.0f;
-            
-            if (fgets(LineBuffer, 255, File))
-            {
-                sscanf(LineBuffer, "%f %f", &OffsetX, &OffsetY);
-                Animation.Frames[i] = { OffsetX, OffsetY };
-            }
-        }
-        
-        //texturepath
-        if (fgets(LineBuffer, 255, File))
-        {
-            char TextureNameBuffer[255];
-            int Length;
-            
-            sscanf(LineBuffer, "texture %s%n", TextureNameBuffer, &Length);
-            
-            char* TextureName = PushString(&GameState->TotalArena, 70);
-            strcpy(TextureName, TextureNameBuffer);
-            
-            if (strcmp(TextureName, "") != 0 && Renderer.TextureMap[TextureName])
-            {
-                Copy(&GameState->TotalArena, Animation.Texture, TextureName, 70 * sizeof(char), char);
-            }
-            else
-            {
-                DEBUG_PRINT("Texture: '%s' could not be found. Animation '%s' will not be loaded. Please add the missing texture.\n", TextureName, Animation.Name);
-                return;
-            }
-        }
-        
-        GameState->AnimationArray[GameState->AnimationIndex] = Animation;
-        
-        GameState->AnimationMap[GameState->AnimationArray[GameState->AnimationIndex].Name] = &GameState->AnimationArray[GameState->AnimationIndex];
-        
-        GameState->AnimationIndex++;
-        fclose(File);
-    }
-    else
-        DEBUG_PRINT("Animation-file not loaded: '%s'\n", FilePath);
+    auto& Controller = Renderer.AnimationControllers[Controller];
+    auto& Parameter = Controller.Parameters[Controller.ParameterCount++];
+    strcpy(Parameter.Name, ParameterName);
+    Parameter.Value = InitialValue;
 }
 
-static void LoadAnimations(game_state* GameState, renderer& Renderer)
+static void AddAnimationNode(renderer& Renderer, i32 Controller, const char* AnimationName, b32 Loop)
 {
-    animation_Map_Init(&GameState->AnimationMap, HashStringJenkins, 2048);
-    directory_data DirData;
-    Platform.GetAllFilesWithExtension("../assets/animations/", "pownim", &DirData, false);
+    i32 AnimationHandle -1;
     
-    for (i32 FileIndex = 0; FileIndex < DirData.FilesLength; FileIndex++)
+    for(i32 AnimationIndex = 0; AnimationIndex < Renderer.SpritesheetAnimationCount; AnimationIndex++)
     {
-        LoadAnimationFromFile(DirData.FilePaths[FileIndex], GameState, Renderer);
-    }
-}
-
-static inline void PlayAnimation(entity* Entity, char* AnimationName, game_state* GameState)
-{
-    if (!Entity->CurrentAnimation || !Entity->CurrentAnimation->Name || strcmp(Entity->CurrentAnimation->Name, AnimationName) != 0 || !Entity->AnimationInfo.Playing)
-    {
-        if (GameState->AnimationMap[AnimationName])
+        if(strcmp(Renderer.SpritesheetAnimations[AnimationIndex].Name, AnimationName) == 0)
         {
-            Entity->CurrentAnimation = GameState->AnimationMap[AnimationName];
-            Entity->AnimationInfo.Playing = true;
-            Entity->AnimationInfo.FrameIndex = 0;
-            Entity->AnimationInfo.CurrentTime = 0.0;
-        }
-        else
-        {
-            Entity->CurrentAnimation = 0;
-            Entity->AnimationInfo.Playing = false;
-            Entity->AnimationInfo.FrameIndex = 0;
-            Entity->AnimationInfo.CurrentTime = 0.0;
+            AnimationHandle = AnimationIndex;
+            break;
         }
     }
+    
+    Assert(AnimationHandle != -1);
+    
+    auto& Animation = Renderer.SpritesheetAnimations[AnimationHandle];
+    auto& Node = Controller.Nodes[Controller.NodeCount++];
+    strcpy(Node.Name, AnimationName);
+    Node.AnimationHandle = AnimationHandle;
+    Node.FreezeOnLastFrame = FreezeOnLastFrame;
+    Node.Loop = Loop;
+    Node.LinkCount = 0;
 }
 
-static inline void PlayAnimation(object_entity* Object, char* AnimationName, game_state* GameState)
+static i32 AddAnimationNodeLink(renderer& Renderer, const char* Origin, const char* Destination, b32 AfterFinishedAnimation = true)
 {
-    if (!Object->CurrentAnimation || !Object->CurrentAnimation->Name || strcmp(Object->CurrentAnimation->Name, AnimationName) != 0 || !Object->AnimationInfo.Playing)
+    auto& Controller = Renderer.AnimationControllers[Controller];
+    i32 OriginNodeHandle = -1;
+    i32 DestinationNodeHandle = -1;
+    
+    for(i32 NodeIndex = 0; NodeIndex < Controller.NodeCount; NodeIndex++)
     {
-        if (GameState->AnimationMap[AnimationName])
+        if(strcmp(Controller.Node.Name, Origin) == 0)
         {
-            Object->CurrentAnimation = GameState->AnimationMap[AnimationName];
-            Object->AnimationInfo.Playing = true;
-            Object->AnimationInfo.FrameIndex = 0;
-            Object->AnimationInfo.CurrentTime = 0.0;
+            OriginNodeHandle = NodeIndex;
         }
-        else
+        else if(strcmp(Controller.Node.Name, Destination) == 0)
         {
-            Object->CurrentAnimation = 0;
-            Object->AnimationInfo.Playing = false;
-            Object->AnimationInfo.FrameIndex = 0;
-            Object->AnimationInfo.CurrentTime = 0.0;
+            DestinationNodeHandle = NodeIndex;
+        }
+        
+        if(OriginNodeHandle != -1 && DestinationNodeHandle != -1)
+        {
+            break;
         }
     }
+    
+    Assert(OriginNodeHandle != -1 && DestinationNodeHandle != -1);
+    
+    auto& OriginNode = Controller.Nodes[OriginNodeHandle];
+    auto& DestinationNode = Controller.Nodes[DestinationNodeHandle];
+    
+    auto& Link = OriginNode.Links[OriginNode.LinkCount];
+    Link.OriginNode = OriginNodeHandle;
+    Link.DestinatioNode = DestinationNodeHandle;
+    Link.ConditionCount = 0;
+    Link.AfterFinishedAnimation = AfterFinishedAnimation;
+    return OriginNode.LinkCount++;
 }
 
-static inline void StopAnimation(animation_info* Info)
+static void AddAnimationLinkCondition(renderer& Renderer, i32 Controller, i32 Node, i32 Link, const char* ParameterName, b32 ExpectedValue)
 {
-    Info->Playing = false;
-}
-
-static void TickAnimation(animation_info* Info, animation* Animation, r64 DeltaTime)
-{
-    if (Animation)
+    i32 ParameterHandle = -1;
+    
+    for(i32 ParameterIndex = 0; ParameterIndex < Controller.ParameterCount; ParameterIndex++)
     {
-        if (Info->Playing)
+        if(strcmp(ParameterName, Controller.Parameters[ParameterIndex]) == 0)
         {
-            Info->CurrentTime += DeltaTime;
-            if (Info->CurrentTime >= Animation->TimePerFrame)
+            ParameterHandle = ParameterIndex;
+            break;
+        }
+    }
+    
+    Assert(ParameterHandle != -1);
+    auto& NodeLink = Controller.Node[Node].Links[Link];
+    auto& Condition = NodeLink.Conditions[NodeLink.ConditionCount++];
+    Condition.ParameterHandle = ParameterHandle;
+    Condition.ExpectedValue = ExpectedValue;
+}
+
+static void TickAnimationControllers(renderer& Renderer, timer_controller& TimerController, r64 DeltaTime)
+{
+    for(i32 Index = 0; Index < Renderer.AnimationControllerCount; Index++)
+    {
+        auto& AnimationController = Renderer.AnimationControllers[Index];
+        auto& CurrentNode = AnimationController.Nodes[AnimationController.CurrentNode];
+        
+        auto& CurrentAnimation = Renderer.SpritesheetAnimations[CurrentNode.AnimationHandle];
+        i32 LastFrame = CurrentAnimation.FrameCount - 1;
+        
+        b32 ReachedEndOfFrame = AnimationController.CurrentTime >= CurrentAnimation.Frames[LastFrame].Duration;
+        b32 ReachedEnd = CurrentAnimation.FrameCount == AnimationController.CurrentFrameIndex && ReachedEndOfFrame;
+        
+        b32 ChangedNode = false;
+        
+        for(i32 LinkIndex = 0; LinkIndex < CurrentNode.LinkCount; LinkIndex++)
+        {
+            auto& Link = CurrentNode.Links[LinkIndex];
+            
+            // if link is for after the animation has finished we should only check the conditions if we've reached the end of the animation
+            if(!Link.AfterFinishedAnimation || ReachedEnd)
             {
-                Info->FrameIndex++;
-                Info->CurrentTime = 0.0;
+                b32 ConditionsMet = true;
                 
-                if (Info->FrameIndex >= Animation->FrameCount)
+                for(i32 ConditionIndex = 0; ConditionIndex < Link.ConditionCount; ConditionIndex++)
                 {
-                    if (!Info->FreezeFrame)
-                        Info->FrameIndex = 0;
-                    else
-                        Info->FrameIndex = Animation->FrameCount - 1;
+                    auto& Condition = Link.Conditions[ConditionIndex];
+                    ConditionsMet = Condition.ExpectedValue == AnimationController.Parameters[Condition.ParameterHandle];
                     
-                    if (!Animation->Loop)
+                    if(!ConditionsMet)
                     {
-                        StopAnimation(Info);
+                        break;
                     }
+                }
+                
+                if(ConditionsMet)
+                {
+                    AnimationController.CurrentNode = Link.DestinationNode;
+                    ChangedNode = true;
+                    AnimationController.CurrentFrameIndex = 0;
+                    AnimationController.CurrentTime = 0.0;
+                    break;
                 }
             }
         }
+        
+        if(ReachedEnd && CurrentNode.Loop && !ChangedNode)
+        {
+            AnimationController.CurrentFrameIndex = 0;
+            AnimationController.CurrentTime = 0.0;
+        }
+        else if(ReachedEndOfFrame)
+        {
+            AnimationController.CurrentFrameIndex++;
+            AnimationController.CurrentTime = 0.0;
+        }
+        
+        AnimationController.CurrentTime += AnimationController.Speed * DeltaTime;
     }
 }
