@@ -1136,8 +1136,7 @@ static void RenderLine(render_state& RenderState, math::v4 Color, math::v3 Start
     SetMat4Uniform(Shader.Program, "Model", math::m4(1.0f));
     
     SetVec4Uniform(Shader.Program, "Color", Color);
-    SetFloatUniform(Shader.Program, "IsUI", (r32)IsUI);
-    
+    SetIntUniform(Shader.Program, "IsUI", (i32)IsUI);
     
     glDrawArrays(GL_LINES, 0, 6);
     glLineWidth(1.0f);
