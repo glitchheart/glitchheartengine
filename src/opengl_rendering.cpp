@@ -1068,6 +1068,11 @@ static void SetIntUniform(GLuint ShaderHandle, const char* UniformName, i32 Valu
     glUniform1i(glGetUniformLocation(ShaderHandle, UniformName), Value);
 }
 
+static void SetBoolUniform(GLuint ShaderHandle, const char* UniformName, b32 Value)
+{
+    glUniform1i(glGetUniformLocation(ShaderHandle, UniformName), Value);
+}
+
 static void SetVec2Uniform(GLuint ShaderHandle, const char *UniformName, math::v2 Value)
 {
     glUniform2f(glGetUniformLocation(ShaderHandle, UniformName), Value.x, Value.y);
@@ -1114,7 +1119,7 @@ static void RenderLine(render_state& RenderState, math::v4 Color, math::v3 Start
         End.z = 0.0f;
     }
     
-    glLineWidth(LineWidth);
+    glLineWidth((i32)LineWidth);
     glBindBuffer(GL_ARRAY_BUFFER, RenderState.PrimitiveVBO);
     
     GLfloat Points[6] = {Start.x, Start.y, Start.z, End.x, End.y, End.z};
@@ -1131,6 +1136,8 @@ static void RenderLine(render_state& RenderState, math::v4 Color, math::v3 Start
     SetMat4Uniform(Shader.Program, "Model", math::m4(1.0f));
     
     SetVec4Uniform(Shader.Program, "Color", Color);
+    SetFloatUniform(Shader.Program, "IsUI", (r32)IsUI);
+    
     
     glDrawArrays(GL_LINES, 0, 6);
     glLineWidth(1.0f);
