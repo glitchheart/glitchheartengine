@@ -36,6 +36,7 @@ memory_state MemoryState;
 #include "keycontroller.h"
 
 #include "opengl_rendering.h"
+#include "animation.cpp"
 #include "keycontroller.cpp"
 #include "sound.h"
 #include "timers.h"
@@ -298,7 +299,7 @@ int main(int Argc, char** Args)
     Renderer.UICommands.MinimumBlockSize = sizeof(render_command) * MAX_UI_COMMANDS;
     Renderer.LightCommands.MinimumBlockSize = sizeof(render_command) * MAX_LIGHT_COMMANDS;
     Renderer.SpritesheetAnimationCount = 0;
-    Renderer.SpritesheetAnimationInfoCount = 0;
+    Renderer.AnimationControllerCount = 0;
     
     InitializeOpenGL(RenderState, Renderer, &ConfigData, &PlatformState->PermArena);
     
@@ -354,7 +355,9 @@ int main(int Argc, char** Args)
         
         Game.Update(DeltaTime, &GameMemory, Renderer, &InputController, &SoundCommands, TimerController);
         
+        TickAnimationControllers(Renderer, DeltaTime);
         TickTimers(TimerController, DeltaTime);
+        
         PlaySounds(&SoundDevice, &SoundCommands);
         
         Render(RenderState, Renderer, &PlatformState->PermArena, DeltaTime);

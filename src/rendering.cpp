@@ -87,97 +87,6 @@ static inline void CameraTransform(renderer& Renderer, camera& Camera, math::v3 
     }
 }
 
-static b32 AnimationIsPlaying(i32 InfoHandle, renderer& Renderer)
-{
-    return Renderer.SpritesheetAnimationInfos[InfoHandle].Playing;
-}
-
-#define GET_ANIMATION_FRAME(InfoHandle) CurrentAnimationFrame(InfoHandle, Renderer) 
-static i32 CurrentAnimationFrame(i32 InfoHandle, renderer& Renderer)
-{
-    return Renderer.SpritesheetAnimationInfos[InfoHandle].FrameIndex;
-}
-
-static void SetAnimationSpeed(i32 InfoHandle, r32 Speed, renderer& Renderer)
-{
-    Renderer.SpritesheetAnimationInfos[InfoHandle].Speed = Speed;
-}
-
-static void PlayAnimation(i32 InfoHandle, renderer& Renderer, b32 Reset = true)
-{
-    spritesheet_animation_info& Info = Renderer.SpritesheetAnimationInfos[InfoHandle];
-    
-    if(Reset)
-    {
-        Info.CurrentTime = 0.0f;
-        Info.FrameIndex = 0;
-    }
-    
-    Info.Playing = true;
-}
-
-static void StopAnimation(spritesheet_animation_info& Info)
-{
-    Info.Playing = false;
-}
-
-static void StopAnimation(i32 InfoHandle, renderer& Renderer)
-{
-    spritesheet_animation_info& Info = Renderer.SpritesheetAnimationInfos[InfoHandle];
-    StopAnimation(Info);
-}
-
-#define HAS_FREEZE_FRAME(InfoHandle) HasFreezeFrame(Renderer, InfoHandle)
-static b32 HasFreezeFrame(renderer& Renderer, i32 InfoHandle)
-{
-    return Renderer.SpritesheetAnimationInfos[InfoHandle].FreezeFrame; 
-}
-
-static void TickAnimations(renderer& Renderer, r64 DeltaTime)
-{
-    for(i32 Index = 0; Index < Renderer.SpritesheetAnimationInfoCount; Index++)
-    {
-        spritesheet_animation_info& Info = Renderer.SpritesheetAnimationInfos[Index];
-        spritesheet_animation& Animation = Renderer.SpritesheetAnimations[Info.AnimationHandle];
-        
-        if (Info.Playing)
-        {
-            Info.CurrentTime += DeltaTime * Info.Speed; 
-            if (Info.CurrentTime >= Animation.Frames[Info.FrameIndex].Duration)
-            {
-                Info.FrameIndex++;
-                Info.CurrentTime = 0.0;
-                
-                if (Info.FrameIndex >= Animation.FrameCount)
-                {
-                    if (!Info.FreezeFrame)
-                        Info.FrameIndex = 0;
-                    else
-                        Info.FrameIndex = Animation.FrameCount - 1;
-                    
-                    if (!Animation.Loop)
-                    {
-                        StopAnimation(Info);
-                    }
-                }
-            }
-        }
-    }
-}
-
-static void RegisterAnimationInfo(i32* InfoHandle, i32 WithAnimationHandle, renderer& Renderer, b32 FreezeFrame = false)
-{
-    *InfoHandle = Renderer.SpritesheetAnimationInfoCount;
-    spritesheet_animation_info& Info = Renderer.SpritesheetAnimationInfos[Renderer.SpritesheetAnimationInfoCount++];
-    Info.AnimationHandle = WithAnimationHandle;
-    Info.FrameIndex = 0;
-    Info.Playing = true;
-    Info.CurrentTime = 0.0f;
-    Info.FreezeFrame = FreezeFrame;
-    Info.Speed = 1.0f;
-    Assert(Renderer.SpritesheetAnimationCount < MAX_SPRITESHEET_ANIMATION_INFOS);
-}
-
 // The InfoHandle is used to be able to reference the same animation without having to load the animation again. 
 static void AddAnimation(renderer& Renderer, spritesheet_animation Animation, const char* AnimationName)
 {
@@ -362,7 +271,7 @@ static void PushText(renderer& Renderer, const char* Text, math::v3 Position, r3
     RenderCommand->IsUI = IsUI;
 }
 
-static void PushFilledQuad(renderer& Renderer, math::v3 Position, b32 Flipped, math::v3 Size, math::v3 Rotation = math::v3(), math::rgba Color = math::rgba(1.0f, 1.0f, 1.0f, 1.0f), i32 TextureHandle = 0, b32 IsUI = true, i32 AnimationInfoHandle = -1, b32 WithOrigin = false, math::v2 Origin = math::v2(0.0f, 0.0f), i32 ShaderHandle = -1, shader_attribute* ShaderAttributes = 0, i32 ShaderAttributeCount = 0, math::v2 TextureOffset = math::v2(-1.0f, -1.0f), math::v2i FrameSize = math::v2i(0, 0))
+static void PushFilledQuad(renderer& Renderer, math::v3 Position, b32 Flipped, math::v3 Size, math::v3 Rotation = math::v3(), math::rgba Color = math::rgba(1.0f, 1.0f, 1.0f, 1.0f), i32 TextureHandle = 0, b32 IsUI = true, i32 AnimationControllerHandle = -1, b32 WithOrigin = false, math::v2 Origin = math::v2(0.0f, 0.0f), i32 ShaderHandle = -1, shader_attribute* ShaderAttributes = 0, i32 ShaderAttributeCount = 0, math::v2 TextureOffset = math::v2(-1.0f, -1.0f), math::v2i FrameSize = math::v2i(0, 0))
 {
     render_command* RenderCommand = PushNextCommand(Renderer, IsUI);
     
@@ -377,11 +286,11 @@ static void PushFilledQuad(renderer& Renderer, math::v3 Position, b32 Flipped, m
     RenderCommand->Quad.Outlined = false;
     RenderCommand->Quad.TextureHandle = TextureHandle - 1;
     
-    if(AnimationInfoHandle != -1)
+    if(AnimationControllerHandle != -1)
     {
-        spritesheet_animation_info& Info = Renderer.SpritesheetAnimationInfos[AnimationInfoHandle];
-        spritesheet_animation& Animation = Renderer.SpritesheetAnimations[Info.AnimationHandle];
-        spritesheet_frame& Frame = Animation.Frames[Info.FrameIndex];
+        auto& Controller = Renderer.AnimationControllers[AnimationControllerHandle];
+        spritesheet_animation& Animation = Renderer.SpritesheetAnimations[Controller.Nodes[Controller.CurrentNode].AnimationHandle];
+        spritesheet_frame& Frame = Animation.Frames[Controller.CurrentFrameIndex];
         RenderCommand->Quad.TextureHandle = Animation.TextureHandle - 1;
         RenderCommand->Quad.TextureSize = math::v2((r32)Renderer.TextureData[RenderCommand->Quad.TextureHandle].Width, (r32)Renderer.TextureData[RenderCommand->Quad.TextureHandle].Height);
         RenderCommand->Quad.FrameSize = math::v2i(Frame.FrameWidth, Frame.FrameHeight);
