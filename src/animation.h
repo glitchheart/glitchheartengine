@@ -17,6 +17,20 @@ struct animation_link_condition
     b32 ExpectedValue;
 };
 
+#define ANIMATION_CALLBACK(name) void name(void* State, void* Data, renderer& Renderer, sound_commands* SoundController, input_controller* InputController, timer_controller& TimerController)
+
+typedef ANIMATION_CALLBACK(animation_callback);
+
+struct animation_callback_info
+{
+    animation_callback* Callback;
+    i32 Frame;
+    
+    b32 WasCalled;
+    void* State;
+    void* Data;
+};
+
 struct animation_node_link
 {
     i32 OriginNode;
@@ -37,6 +51,9 @@ struct animation_node
     
     animation_node_link Links[8];
     i32 LinkCount;
+    
+    animation_callback_info CallbackInfos[4];
+    i32 CallbackInfoCount;
 };
 
 struct animation_controller
@@ -51,7 +68,7 @@ struct animation_controller
     animation_node Nodes[16];
     i32 NodeCount;
     
-    animation_parameter Parameters[32];
+    animation_parameter Parameters[8];
     i32 ParameterCount;
 };
 
@@ -66,7 +83,7 @@ struct spritesheet_frame
 
 struct spritesheet_animation
 {
-    char* Name;
+    char Name[32];
     i32 TextureHandle;
     i32 FrameCount = 0;
     math::v2 FrameSize;

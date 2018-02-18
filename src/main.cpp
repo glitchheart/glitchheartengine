@@ -295,6 +295,7 @@ int main(int Argc, char** Args)
     Renderer.FrameLock = 0;
     RenderState.FrameDelta = 0.0;
     
+    Renderer.AnimationControllers = PushArray(&Renderer.AnimationArena, 64, animation_controller);
     Renderer.Commands.MinimumBlockSize = sizeof(render_command) * MAX_RENDER_COMMANDS;
     Renderer.UICommands.MinimumBlockSize = sizeof(render_command) * MAX_UI_COMMANDS;
     Renderer.LightCommands.MinimumBlockSize = sizeof(render_command) * MAX_LIGHT_COMMANDS;
@@ -355,7 +356,7 @@ int main(int Argc, char** Args)
         
         Game.Update(DeltaTime, &GameMemory, Renderer, &InputController, &SoundCommands, TimerController);
         
-        TickAnimationControllers(Renderer, DeltaTime);
+        TickAnimationControllers(Renderer, &SoundCommands, &InputController, TimerController, DeltaTime);
         TickTimers(TimerController, DeltaTime);
         
         PlaySounds(&SoundDevice, &SoundCommands);

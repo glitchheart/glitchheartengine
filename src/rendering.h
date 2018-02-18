@@ -483,6 +483,7 @@ struct particle_system
 
 #define MAX_CAMERAS 8
 
+#define MAX_ANIMATION_CONTROLLERS 64
 #define MAX_RENDER_COMMANDS 2048
 #define MAX_UI_COMMANDS 2048 // @Incomplete: This should be defined by the game itself (HARDCODED FOR LEVEL EDITOR RIGHT NOW)
 #define MAX_LIGHT_COMMANDS 1024
@@ -528,7 +529,7 @@ struct renderer
     camera Cameras[MAX_CAMERAS];
     i32 CurrentCameraHandle;
     
-    animation_controller AnimationControllers[64];
+    animation_controller* AnimationControllers;
     i32 AnimationControllerCount;
     
     spritesheet_animation SpritesheetAnimations[MAX_SPRITESHEET_ANIMATIONS];
