@@ -1,3 +1,10 @@
+// QUICK HOW TO GUIDE
+// First create an animation_controller with CreateAnimationController
+// Then add all needed animation_parameters with AddAnimationControllerParameter
+// Then add all animation_nodes with AddAnimationNode
+// Then set the links with AddAnimationNodeLink and you're done setting things up
+// Just remember to set the correct CurrentNode (node to start on) with SetAnimationControllerCurrentNode
+
 static i32 CreateAnimationController(renderer& Renderer)
 {
     auto& Controller = Renderer.AnimationControllers[Renderer.AnimationControllerCount];
@@ -13,15 +20,29 @@ static i32 CreateAnimationController(renderer& Renderer)
 
 static void AddAnimationControllerParameter(renderer& Renderer, i32 Controller, const char* ParameterName, b32 InitialValue)
 {
-    auto& Controller = Renderer.AnimationControllers[Controller];
-    auto& Parameter = Controller.Parameters[Controller.ParameterCount++];
+    auto& AnimationController = Renderer.AnimationControllers[Controller];
+    auto& Parameter = AnimationController.Parameters[AnimationController.ParameterCount++];
     strcpy(Parameter.Name, ParameterName);
     Parameter.Value = InitialValue;
 }
 
-static void AddAnimationNode(renderer& Renderer, i32 Controller, const char* AnimationName, b32 Loop)
+static void SetAnimationControllerParameter(renderer& Renderer, i32 Controller, const char* Parameter, b32 Value)
 {
-    i32 AnimationHandle -1;
+    auto& AnimationController = Renderer.AnimationControllers[Controller];
+    
+    for(i32 Index = 0; Index > AnimationController.ParameterCount; Index++)
+    {
+        if(strcmp(AnimationController.Parameters[Index].Name, Parameter) == 0)
+        {
+            AnimationController.Parameters[Index].Value = Value;
+            break;
+        }
+    }
+}
+
+static i32 AddAnimationNode(renderer& Renderer, i32 Controller, const char* AnimationName, b32 Loop)
+{
+    i32 AnimationHandle = -1;
     
     for(i32 AnimationIndex = 0; AnimationIndex < Renderer.SpritesheetAnimationCount; AnimationIndex++)
     {
@@ -34,28 +55,30 @@ static void AddAnimationNode(renderer& Renderer, i32 Controller, const char* Ani
     
     Assert(AnimationHandle != -1);
     
-    auto& Animation = Renderer.SpritesheetAnimations[AnimationHandle];
-    auto& Node = Controller.Nodes[Controller.NodeCount++];
+    auto AnimationController = Renderer.AnimationControllers[Controller];
+    auto& Node = AnimationController.Nodes[AnimationController.NodeCount];
     strcpy(Node.Name, AnimationName);
     Node.AnimationHandle = AnimationHandle;
-    Node.FreezeOnLastFrame = FreezeOnLastFrame;
     Node.Loop = Loop;
     Node.LinkCount = 0;
+    return AnimationController.NodeCount++;
 }
 
-static i32 AddAnimationNodeLink(renderer& Renderer, const char* Origin, const char* Destination, b32 AfterFinishedAnimation = true)
+static i32 AddAnimationNodeLink(renderer& Renderer, i32 Controller, const char* Origin, const char* Destination, b32 AfterFinishedAnimation = true)
 {
-    auto& Controller = Renderer.AnimationControllers[Controller];
+    Assert(strcmp(Origin, Destination) != 0);
+    
+    auto& AnimationController = Renderer.AnimationControllers[Controller];
     i32 OriginNodeHandle = -1;
     i32 DestinationNodeHandle = -1;
     
-    for(i32 NodeIndex = 0; NodeIndex < Controller.NodeCount; NodeIndex++)
+    for(i32 NodeIndex = 0; NodeIndex < AnimationController.NodeCount; NodeIndex++)
     {
-        if(strcmp(Controller.Node.Name, Origin) == 0)
+        if(strcmp(AnimationController.Nodes[NodeIndex].Name, Origin) == 0)
         {
             OriginNodeHandle = NodeIndex;
         }
-        else if(strcmp(Controller.Node.Name, Destination) == 0)
+        else if(strcmp(AnimationController.Nodes[NodeIndex].Name, Destination) == 0)
         {
             DestinationNodeHandle = NodeIndex;
         }
@@ -68,12 +91,11 @@ static i32 AddAnimationNodeLink(renderer& Renderer, const char* Origin, const ch
     
     Assert(OriginNodeHandle != -1 && DestinationNodeHandle != -1);
     
-    auto& OriginNode = Controller.Nodes[OriginNodeHandle];
-    auto& DestinationNode = Controller.Nodes[DestinationNodeHandle];
+    auto& OriginNode = AnimationController.Nodes[OriginNodeHandle];
     
     auto& Link = OriginNode.Links[OriginNode.LinkCount];
     Link.OriginNode = OriginNodeHandle;
-    Link.DestinatioNode = DestinationNodeHandle;
+    Link.DestinationNode = DestinationNodeHandle;
     Link.ConditionCount = 0;
     Link.AfterFinishedAnimation = AfterFinishedAnimation;
     return OriginNode.LinkCount++;
@@ -81,11 +103,12 @@ static i32 AddAnimationNodeLink(renderer& Renderer, const char* Origin, const ch
 
 static void AddAnimationLinkCondition(renderer& Renderer, i32 Controller, i32 Node, i32 Link, const char* ParameterName, b32 ExpectedValue)
 {
+    auto& AnimationController = Renderer.AnimationControllers[Controller];
     i32 ParameterHandle = -1;
     
-    for(i32 ParameterIndex = 0; ParameterIndex < Controller.ParameterCount; ParameterIndex++)
+    for(i32 ParameterIndex = 0; ParameterIndex < AnimationController.ParameterCount; ParameterIndex++)
     {
-        if(strcmp(ParameterName, Controller.Parameters[ParameterIndex]) == 0)
+        if(strcmp(ParameterName, AnimationController.Parameters[ParameterIndex].Name) == 0)
         {
             ParameterHandle = ParameterIndex;
             break;
@@ -93,69 +116,96 @@ static void AddAnimationLinkCondition(renderer& Renderer, i32 Controller, i32 No
     }
     
     Assert(ParameterHandle != -1);
-    auto& NodeLink = Controller.Node[Node].Links[Link];
+    auto& NodeLink = AnimationController.Nodes[Node].Links[Link];
     auto& Condition = NodeLink.Conditions[NodeLink.ConditionCount++];
     Condition.ParameterHandle = ParameterHandle;
     Condition.ExpectedValue = ExpectedValue;
 }
 
-static void TickAnimationControllers(renderer& Renderer, timer_controller& TimerController, r64 DeltaTime)
+static void TickAnimationControllers(renderer& Renderer, r64 DeltaTime)
 {
     for(i32 Index = 0; Index < Renderer.AnimationControllerCount; Index++)
     {
         auto& AnimationController = Renderer.AnimationControllers[Index];
-        auto& CurrentNode = AnimationController.Nodes[AnimationController.CurrentNode];
         
-        auto& CurrentAnimation = Renderer.SpritesheetAnimations[CurrentNode.AnimationHandle];
-        i32 LastFrame = CurrentAnimation.FrameCount - 1;
-        
-        b32 ReachedEndOfFrame = AnimationController.CurrentTime >= CurrentAnimation.Frames[LastFrame].Duration;
-        b32 ReachedEnd = CurrentAnimation.FrameCount == AnimationController.CurrentFrameIndex && ReachedEndOfFrame;
-        
-        b32 ChangedNode = false;
-        
-        for(i32 LinkIndex = 0; LinkIndex < CurrentNode.LinkCount; LinkIndex++)
+        if(AnimationController.Playing)
         {
-            auto& Link = CurrentNode.Links[LinkIndex];
+            auto& CurrentNode = AnimationController.Nodes[AnimationController.CurrentNode];
             
-            // if link is for after the animation has finished we should only check the conditions if we've reached the end of the animation
-            if(!Link.AfterFinishedAnimation || ReachedEnd)
+            auto& CurrentAnimation = Renderer.SpritesheetAnimations[CurrentNode.AnimationHandle];
+            i32 LastFrame = CurrentAnimation.FrameCount - 1;
+            
+            b32 ReachedEndOfFrame = AnimationController.CurrentTime >= CurrentAnimation.Frames[LastFrame].Duration;
+            b32 ReachedEnd = CurrentAnimation.FrameCount == AnimationController.CurrentFrameIndex && ReachedEndOfFrame;
+            
+            b32 ChangedNode = false;
+            
+            for(i32 LinkIndex = 0; LinkIndex < CurrentNode.LinkCount; LinkIndex++)
             {
-                b32 ConditionsMet = true;
+                auto& Link = CurrentNode.Links[LinkIndex];
                 
-                for(i32 ConditionIndex = 0; ConditionIndex < Link.ConditionCount; ConditionIndex++)
+                // if link is for after the animation has finished we should only check the conditions if we've reached the end of the animation
+                if(!Link.AfterFinishedAnimation || ReachedEnd)
                 {
-                    auto& Condition = Link.Conditions[ConditionIndex];
-                    ConditionsMet = Condition.ExpectedValue == AnimationController.Parameters[Condition.ParameterHandle];
+                    b32 ConditionsMet = true;
                     
-                    if(!ConditionsMet)
+                    for(i32 ConditionIndex = 0; ConditionIndex < Link.ConditionCount; ConditionIndex++)
                     {
+                        auto& Condition = Link.Conditions[ConditionIndex];
+                        ConditionsMet = Condition.ExpectedValue == AnimationController.Parameters[Condition.ParameterHandle].Value;
+                        
+                        if(!ConditionsMet)
+                        {
+                            break;
+                        }
+                    }
+                    
+                    if(ConditionsMet)
+                    {
+                        AnimationController.CurrentNode = Link.DestinationNode;
+                        ChangedNode = true;
+                        AnimationController.CurrentFrameIndex = 0;
+                        AnimationController.CurrentTime = 0.0;
                         break;
                     }
                 }
-                
-                if(ConditionsMet)
-                {
-                    AnimationController.CurrentNode = Link.DestinationNode;
-                    ChangedNode = true;
-                    AnimationController.CurrentFrameIndex = 0;
-                    AnimationController.CurrentTime = 0.0;
-                    break;
-                }
             }
+            
+            if(ReachedEnd && CurrentNode.Loop && !ChangedNode)
+            {
+                AnimationController.CurrentFrameIndex = 0;
+                AnimationController.CurrentTime = 0.0;
+            }
+            else if(ReachedEndOfFrame)
+            {
+                AnimationController.CurrentFrameIndex++;
+                AnimationController.CurrentTime = 0.0;
+            }
+            
+            AnimationController.CurrentTime += AnimationController.Speed * DeltaTime;
         }
-        
-        if(ReachedEnd && CurrentNode.Loop && !ChangedNode)
-        {
-            AnimationController.CurrentFrameIndex = 0;
-            AnimationController.CurrentTime = 0.0;
-        }
-        else if(ReachedEndOfFrame)
-        {
-            AnimationController.CurrentFrameIndex++;
-            AnimationController.CurrentTime = 0.0;
-        }
-        
-        AnimationController.CurrentTime += AnimationController.Speed * DeltaTime;
     }
+}
+
+static void SetAnimationControllerCurrentNode(renderer& Renderer, i32 Controller, const char* NodeName)
+{
+    auto& AnimationController = Renderer.AnimationControllers[Controller];
+    for(i32 NodeIndex = 0; NodeIndex < AnimationController.NodeCount; NodeIndex++)
+    {
+        if(strcmp(AnimationController.Nodes[NodeIndex].Name, NodeName) == 0)
+        {
+            Renderer.AnimationControllers[NodeIndex].CurrentNode = NodeIndex;
+            break;
+        }
+    }
+}
+
+static b32 IsControllerPlaying(renderer& Renderer, i32 Controller)
+{
+    return Renderer.AnimationControllers[Controller].Playing;
+}
+
+static void AnimationControllerSetPlaying(renderer& Renderer, i32 Controller, b32 Playing)
+{
+    Renderer.AnimationControllers[Controller].Playing = Playing;
 }
