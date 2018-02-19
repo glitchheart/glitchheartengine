@@ -105,20 +105,21 @@ static void LoadShader(const char* FullShaderPath, renderer& Renderer, i32* Hand
     ShaderData->VertexShaderContent = 0;
     ShaderData->FragmentShaderContent = 0;
     
-    long Size = 0;
+    u32 Size = 0;
     FILE* File;
     
-    File = fopen(Concat(FullShaderPath, ".vert"), "r");
+    File = fopen(Concat(FullShaderPath, ".vert"), "rb");
     
     if(File)
     {
         fseek(File, 0, SEEK_END);
-        Size = ftell(File);
-        rewind(File);
+        Size = (u32)ftell(File);
+        fseek(File, 0, SEEK_SET);
         
         // @Incomplete: Use built-in memory arena
-        ShaderData->VertexShaderContent = (char*) malloc(sizeof(char) * Size);
+        ShaderData->VertexShaderContent = (char*) malloc(sizeof(char) * Size + 1);
         fread(ShaderData->VertexShaderContent, 1, (size_t)Size, File);
+        ShaderData->VertexShaderContent[Size] = '\0';
         fclose(File);
     }
     else
@@ -126,17 +127,19 @@ static void LoadShader(const char* FullShaderPath, renderer& Renderer, i32* Hand
         printf("Invalid file path: '%s'\n", FullShaderPath);
     }
     
-    File = fopen(Concat(FullShaderPath, ".frag"), "r");
+    File = fopen(Concat(FullShaderPath, ".frag"), "rb");
     
     if(File)
     {
         fseek(File, 0, SEEK_END);
-        Size = ftell(File);
-        rewind(File);
+        Size = (u32)ftell(File);
+        fseek(File, 0, SEEK_SET);
         
         // @Incomplete: Use built-in memory arena
-        ShaderData->FragmentShaderContent = (char*) malloc(sizeof(char) * Size);
+        ShaderData->FragmentShaderContent = (char*) malloc(sizeof(char) * Size + 1);
         fread(ShaderData->FragmentShaderContent, 1, (size_t)Size, File);
+        ShaderData->FragmentShaderContent[Size] = '\0';
+        
         fclose(File);
     }
     else

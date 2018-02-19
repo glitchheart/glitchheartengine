@@ -165,7 +165,6 @@ static void TickAnimationControllers(renderer& Renderer, sound_commands* SoundCo
             auto& CurrentNode = AnimationController.Nodes[AnimationController.CurrentNode];
             
             auto& CurrentAnimation = Renderer.SpritesheetAnimations[CurrentNode.AnimationHandle];
-            i32 LastFrame = CurrentAnimation.FrameCount - 1;
             
             b32 ReachedEndOfFrame = AnimationController.CurrentTime >= CurrentAnimation.Frames[AnimationController.CurrentFrameIndex].Duration;
             b32 ReachedEnd = CurrentAnimation.FrameCount - 1 == AnimationController.CurrentFrameIndex && ReachedEndOfFrame;
