@@ -105,7 +105,7 @@ static void LoadShader(const char* FullShaderPath, renderer& Renderer, i32* Hand
     ShaderData->VertexShaderContent = 0;
     ShaderData->FragmentShaderContent = 0;
     
-    int Size = 0;
+    long Size = 0;
     FILE* File;
     
     File = fopen(Concat(FullShaderPath, ".vert"), "r");
@@ -117,7 +117,7 @@ static void LoadShader(const char* FullShaderPath, renderer& Renderer, i32* Hand
         rewind(File);
         
         // @Incomplete: Use built-in memory arena
-        ShaderData->VertexShaderContent = (char*) malloc(sizeof(char) * Size + 1);
+        ShaderData->VertexShaderContent = (char*) malloc(sizeof(char) * Size);
         fread(ShaderData->VertexShaderContent, 1, (size_t)Size, File);
         fclose(File);
     }
@@ -135,7 +135,7 @@ static void LoadShader(const char* FullShaderPath, renderer& Renderer, i32* Hand
         rewind(File);
         
         // @Incomplete: Use built-in memory arena
-        ShaderData->FragmentShaderContent = (char*) malloc(sizeof(char) * Size + 1);
+        ShaderData->FragmentShaderContent = (char*) malloc(sizeof(char) * Size);
         fread(ShaderData->FragmentShaderContent, 1, (size_t)Size, File);
         fclose(File);
     }
