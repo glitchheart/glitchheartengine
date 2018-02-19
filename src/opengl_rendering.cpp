@@ -1119,7 +1119,7 @@ static void RenderLine(render_state& RenderState, math::v4 Color, math::v3 Start
         End.z = 0.0f;
     }
     
-    glLineWidth((i32)LineWidth);
+    glLineWidth(LineWidth);
     glBindBuffer(GL_ARRAY_BUFFER, RenderState.PrimitiveVBO);
     
     GLfloat Points[6] = {Start.x, Start.y, Start.z, End.x, End.y, End.z};
