@@ -2148,6 +2148,7 @@ static void Render(render_state& RenderState, renderer& Renderer, memory_arena* 
     Renderer.ScaleY = RenderState.ScaleY;
     
     RegisterBuffers(RenderState, Renderer, PermArena);
+    
     if((Renderer.FrameLock != 0 && RenderState.FrameDelta <= 0.0) || Renderer.FrameLock == 0)
     {
         Renderer.FPS = 1.0 / RenderState.TotalDelta;
@@ -2230,6 +2231,7 @@ static void Render(render_state& RenderState, renderer& Renderer, memory_arena* 
     {
         RenderState.FrameDelta -= DeltaTime;
         RenderState.TotalDelta += DeltaTime;
+        
         Clear(&Renderer.LightCommands);
         Renderer.LightCommandCount = 0;
         Clear(&Renderer.Commands);
