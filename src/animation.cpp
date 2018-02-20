@@ -222,6 +222,7 @@ static void TickAnimationControllers(renderer& Renderer, sound_commands* SoundCo
             {
                 AnimationController.CurrentFrameIndex = 0;
                 AnimationController.CurrentTime = 0.0;
+                ResetCallbacks(CurrentNode);
             }
             else if(ReachedEndOfFrame && !ReachedEnd)
             {
