@@ -247,11 +247,11 @@ static inline r32 GetInputY(input_controller* InputController, Stick Stick = Sti
         }
     }
     
-    if (GetKey(Key_W, InputController))
+    if (GetKey(Key_Up, InputController))
     {
         InputY += 1;
     }
-    else if (GetKey(Key_S, InputController))
+    else if (GetKey(Key_Down, InputController))
     {
         InputY += -1;
     }
