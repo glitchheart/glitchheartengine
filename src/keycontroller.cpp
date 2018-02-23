@@ -69,6 +69,9 @@ static inline b32 GetJoystickAxisYDown(input_controller* InputController, b32 Fo
     {
         switch(InputController->ControllerType)
         {
+            case Controller_None:
+            {}
+            break;
             case Controller_Xbox:
             CorrectDirection = InputController->Axes[Axis] > 0;
             break;
@@ -81,6 +84,9 @@ static inline b32 GetJoystickAxisYDown(input_controller* InputController, b32 Fo
     {
         switch(InputController->ControllerType)
         {
+            case Controller_None:
+            {}
+            break;
             case Controller_Xbox:
             CorrectDirection = InputController->Axes[Axis] < 0;
             break;
@@ -96,113 +102,6 @@ static inline b32 GetJoystickAxisYDown(input_controller* InputController, b32 Fo
 static inline b32 GetJoystickKeyDown(Controller_Code Key, input_controller* InputController)
 {
     return InputController->JoystickKeysJustPressed[Key] == Key_JustPressed;
-}
-
-static inline void GetActionButtonsForQueue(input_controller* InputController)
-{
-    b32 ActionQueued = false;
-    
-    if(InputController->ActionRunning)
-    {
-        for(i32 Action = 0; Action < Action_Count; Action++)
-        {
-            if(InputController->ControllerPresent)
-            {
-                if(InputController->ControllerType == Controller_PS4)
-                {
-                    if(GetJoystickKeyDown(InputController->ActionButtonPS4ControllerBindings[Action], InputController))
-                    {
-                        InputController->NextAction = (Action_Button)Action;
-                        InputController->HasQueuedAction = true;
-                        ActionQueued = true;
-                    }
-                }
-                else
-                {
-                    if(GetJoystickKeyDown(InputController->ActionButtonXboxControllerBindings[Action], InputController))
-                    {
-                        InputController->NextAction = (Action_Button)Action;
-                        InputController->HasQueuedAction = true;
-                        ActionQueued = true;
-                    }
-                }
-            }
-            
-            if(!ActionQueued)
-            {
-                if(GetKeyDown(InputController->ActionButtonKeyboardBindings[Action], InputController))
-                {
-                    InputController->NextAction = (Action_Button)Action;
-                    InputController->HasQueuedAction = true;
-                }
-            }
-        }
-    }
-}
-
-static inline void ResetActionButtonQueue(input_controller* InputController)
-{
-    InputController->HasQueuedAction = false;
-}
-
-static inline b32 GetActionButtonDown(Action_Button ActionButton, input_controller* InputController)
-{
-    if(InputController->HasQueuedAction)
-    {
-        if((Action_Button)InputController->NextAction == ActionButton)
-        {
-            InputController->HasQueuedAction = false;
-            return true;
-        }
-        else return false;
-    }
-    else
-    {
-        b32 ButtonDown = false;
-        if(InputController->ControllerPresent)
-        {
-            switch(InputController->ControllerType)
-            {
-                case Controller_Xbox:
-                {
-                    ButtonDown = ButtonDown ||  GetJoystickKeyDown(InputController->ActionButtonXboxControllerBindings[ActionButton], InputController);
-                }
-                break;
-                case Controller_PS4:
-                {
-                    ButtonDown = ButtonDown || GetJoystickKeyDown(InputController->ActionButtonPS4ControllerBindings[ActionButton], InputController);
-                }
-            }
-        }
-        
-        ButtonDown = ButtonDown ||  GetKeyDown(InputController->ActionButtonKeyboardBindings[ActionButton], InputController);
-        
-        return ButtonDown;
-    }
-}
-
-static inline b32 GetActionButton(Action_Button ActionButton, input_controller* InputController)
-{
-    b32 Button = false;
-    if(InputController->ControllerPresent)
-    {
-        switch(InputController->ControllerType)
-        {
-            case Controller_Xbox:
-            {
-                Button = Button || GetJoystickKey(InputController->ActionButtonXboxControllerBindings[ActionButton], InputController);
-            }
-            break;
-            case Controller_PS4:
-            {
-                Button = Button || GetJoystickKey(InputController->ActionButtonPS4ControllerBindings[ActionButton], InputController);
-            }
-        }
-    }
-    
-    Button = Button || GetKey(InputController->ActionButtonKeyboardBindings[ActionButton], InputController);
-    
-    return Button;
 }
 
 static inline r32 GetInputX(input_controller* InputController, Stick Stick = Stick_Left)
@@ -238,6 +137,9 @@ static inline r32 GetInputY(input_controller* InputController, Stick Stick = Sti
     {
         switch(InputController->ControllerType)
         {
+            case Controller_None:
+            {}
+            break;
             case Controller_Xbox:
             InputY = InputController->Axes[Axis]; // Might be another axis index for other controllers
             break;
@@ -269,7 +171,58 @@ static inline r32 GetInputY(input_controller* InputController, Stick Stick = Sti
 #define MOUSE(Key) GetMouseButton(Key, InputController)
 #define MOUSE_DOWN(Key) GetMouseButtonDown(Key, InputController)
 #define MOUSE_UP(Key) GetMouseButtonUp(Key, InputController)
-#define ACTION_DOWN(Action) GetActionButtonDown(Action, InputController)
-#define ACTION(Action) GetActionButton(Action, InputController)
 #define INPUT_X(...) GetInputX(InputController , ##__VA_ARGS__)
 #define INPUT_Y(...) GetInputY(InputController , ##__VA_ARGS__)
+#define CUSTOM_KEY_DOWN(Key) IsCustomKeyDown(InputController, Key)
+#define CUSTOM_KEY(Key) IsCustomKeyPressed(InputController, Key)
+
+// Use this to add key mappings in your game. The CustomKey int is the keys identifier for your game and when checking for key events later this will be used to automatically check with the correct mapped keyboard- or controller-keys
+static void AddCustomMapping(input_controller* InputController, i32 CustomKey, Key_Code KeyboardKey, i32 PS4Key, i32 XboxKey)
+{
+    auto& CustomKeyMapping = InputController->CustomMappings[CustomKey];
+    CustomKeyMapping.KeyboardKey = KeyboardKey;
+    CustomKeyMapping.PS4Key = PS4Key;
+    CustomKeyMapping.XboxKey = XboxKey;
+}
+
+static b32 IsCustomKeyDown(input_controller* InputController, i32 CustomKey)
+{
+    auto& CustomKeyMapping = InputController->CustomMappings[CustomKey];
+    
+    if(InputController->ControllerPresent)
+    {
+        if(InputController->ControllerType == Controller_PS4)
+        {
+            return JOYSTICK_KEY_DOWN(CustomKeyMapping.PS4Key);
+        }
+        else
+        {
+            return JOYSTICK_KEY_DOWN(CustomKeyMapping.XboxKey);
+        }
+    }
+    else
+    {
+        return KEY_DOWN(CustomKeyMapping.KeyboardKey);
+    }
+}
+
+static b32 IsCustomKeyPressed(input_controller* InputController, i32 CustomKey)
+{
+    auto& CustomKeyMapping = InputController->CustomMappings[CustomKey];
+    
+    if(InputController->ControllerPresent)
+    {
+        if(InputController->ControllerType == Controller_PS4)
+        {
+            return JOYSTICK_KEY(CustomKeyMapping.PS4Key);
+        }
+        else
+        {
+            return JOYSTICK_KEY(CustomKeyMapping.XboxKey);
+        }
+    }
+    else
+    {
+        return KEY(CustomKeyMapping.KeyboardKey);
+    }
+}

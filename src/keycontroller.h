@@ -216,7 +216,7 @@ enum Key_Mode
 #define PS4_Home Joystick_13
 #define PS4_TouchPad Joystick_14
 #define PS4_DPadUp Joystick_15
-#define PS4_DPadRigt Joystick_16
+#define PS4_DPadRight Joystick_16
 #define PS4_DPadDown Joystick_LeftTrigger
 #define PS4_DPadLeft Joystick_RightTrigger
 
@@ -246,20 +246,6 @@ using Xbox_Code = i32;
 using PS4_Code = i32;
 using Mouse_Code = i32;
 
-enum Action_Button
-{
-    Action_Attack,
-    Action_Use,
-    Action_Dash,
-    Action_Interact,
-    Action_Checkpoint,
-    Action_Menu,
-    Action_Target,
-    Action_SwitchTarget,
-    Action_Throw,
-    Action_Count
-};
-
 enum Stick
 {
     Stick_Left,
@@ -280,53 +266,21 @@ enum Controller_Axis_Code
 
 enum Controller_Type
 {
+    Controller_None,
     Controller_Xbox,
     Controller_PS4
 };
 
+struct custom_key_mapping
+{
+    Key_Code KeyboardKey;
+    i32 PS4Key;
+    i32 XboxKey;
+};
+
 struct input_controller
 {
-    Key_Code ActionButtonKeyboardBindings[Action_Count] = 
-    {
-        Key_MouseLeft,
-        Key_Space,
-        Key_MouseRight,
-        Key_Q,
-        Key_E,
-        Key_Escape,
-        Key_8,
-        Key_C,
-        Key_U
-    };
-    
-    Xbox_Code ActionButtonXboxControllerBindings[Action_Count] = 
-    {
-        Xbox_RightBumper,
-        Xbox_X,
-        Xbox_B,
-        Xbox_A,
-        Xbox_LeftBumper,
-        Xbox_Start,
-        Xbox_Back,
-        Xbox_Back,
-        Xbox_Back
-    };
-    
-    PS4_Code ActionButtonPS4ControllerBindings[Action_Count] = 
-    {
-        PS4_R1,
-        PS4_Square,
-        PS4_Circle,
-        PS4_Cross,
-        PS4_L1,
-        PS4_Option,
-        PS4_Share,
-        PS4_Share
-    };
-    
-    b32 ActionRunning = false;
-    b32 HasQueuedAction = false;
-    Action_Button NextAction;
+    custom_key_mapping CustomMappings[64];
     
     b32 AnyKeyPressed;
     
@@ -354,8 +308,8 @@ struct input_controller
     
     r32 ControllerDeadzone = 0.2f;
     
-    b32 ControllerPresent;
-    Controller_Type ControllerType;
+    b32 ControllerPresent = false;
+    Controller_Type ControllerType = Controller_None;
     
     char CurrentCharacter;
     b32 DeleteCharacter = false;
