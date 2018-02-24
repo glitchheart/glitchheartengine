@@ -237,8 +237,8 @@ enum Key_Mode
 #define Xbox_14 Joystick_15
 #define Xbox_15 Joystick_16
 #define Xbox_16 Joystick_LeftTrigger
-#define Xbox_LeftTrigger Joystick_RightTrigger
-#define Xbox_RightTrigger 18
+#define Xbox_LeftTrigger Joystick_LeftTrigger
+#define Xbox_RightTrigger Joystick_RightTrigger
 
 using Key_Code = i32;
 using Controller_Code = i32;
