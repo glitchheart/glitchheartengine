@@ -263,7 +263,7 @@ int main(int Argc, char** Args)
     platform_state* PlatformState = BootstrapPushStruct(platform_state, PermArena);
     
     LogState = GameMemory.LogState;
-    InitLog(LFlag_File | LFlag_Debug, Concat("../log_", "", &PlatformState->PermArena));
+    InitLog(LFlag_File, Concat("../log_", "", &PlatformState->PermArena));
     
 #ifdef __APPLE__
     char* GameLibraryPath = "libgame.dylib";

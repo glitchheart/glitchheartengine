@@ -8,6 +8,7 @@
 #define Log(Msg) _Log(__LINE__, __FILE__, Msg)
 static void _Log(i32 LineNum, const char* File, const char* Message)
 {
+    Assert(LogState.LogCount < MAX_LOG_MESSAGES);
     time_t Timer;
     char Buffer[26];
     struct tm* TmInfo;
@@ -16,14 +17,10 @@ static void _Log(i32 LineNum, const char* File, const char* Message)
     TmInfo = localtime(&Timer);
     
     strftime(Buffer, 26, "%Y-%m-%d %H:%M:%S", TmInfo);
-    puts(Buffer);
     
-    char FullMessage[256];
+    LogState.LogBuffer[LogState.LogCount++] = PushTempString(2048);
     
-    sprintf(FullMessage, "[INFO] - %s in file %s on line %d - %s", Buffer, File, LineNum, Message);
-    
-    LogState.LogBuffer[LogState.LogCount++] = PushTempString(FullMessage);
-    memcpy(LogState.LogBuffer[LogState.LogCount - 1], &FullMessage, sizeof(FullMessage));
+    sprintf(LogState.LogBuffer[LogState.LogCount - 1], "[INFO] - %s in file %s on line %d - %s\n", Buffer, File, LineNum, Message);
 }
 
 static void UpdateLog()
@@ -42,8 +39,8 @@ static void UpdateLog()
         {
             DEBUG_PRINT("%s", LogState.LogBuffer[Log]);
         }
-        LogState.LogCount = 0;
     }
+    LogState.LogCount = 0;
 }
 
 static void InitLog(u32 Flags, const char* FilePath = "")

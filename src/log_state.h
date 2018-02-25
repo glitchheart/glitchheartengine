@@ -2,7 +2,7 @@
 #define LOG_STATE_H
 
 
-#define MAX_LOG_MESSAGES 512
+#define MAX_LOG_MESSAGES 2048
 
 
 enum Log_Flags
