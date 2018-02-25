@@ -38,7 +38,7 @@ static void ResetTimers(timer_controller& TimerController)
 static void RegisterTimer(i32* Handle, r64 TimerMax, timer_controller& TimerController)
 {
     *Handle = TimerController.TimerCount++;
-    TimerController.Timers[*Handle].CurrentTime = 0.0f;
+    TimerController.Timers[*Handle].CurrentTime = TimerMax;
     TimerController.Timers[*Handle].TimerMax = TimerMax;
     Assert(TimerController.TimerCount <= TIMER_MAX);
 }
