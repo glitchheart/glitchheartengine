@@ -8,6 +8,7 @@ inline char* Concat(const char *s1, const char *s2, memory_arena* Arena = 0);
 
 #include "platform.h"
 #include "engine_memory.h"
+#include "log_state.h"
 #include "log.h"
 
 #include "gmap.h"
