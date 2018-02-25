@@ -66,6 +66,11 @@ static i32 AddAnimationNode(renderer& Renderer, i32 Controller, const char* Anim
         }
     }
     
+    if(AnimationHandle == -1)
+    {
+        printf("Animation with name: %s not found\n", AnimationName);
+    }
+    
     Assert(AnimationHandle != -1);
     
     auto& AnimationController = Renderer.AnimationControllers[Controller];
