@@ -2220,7 +2220,7 @@ static void Render(render_state& RenderState, renderer& Renderer, memory_arena* 
         if(Renderer.FrameLock != 0)
         {
             RenderState.TotalDelta = 0.0;
-            RenderState.FrameDelta = 1.0 / Renderer.FrameLock;
+            RenderState.FrameDelta += 1.0 / Renderer.FrameLock;
         }
         else
         {
@@ -2229,8 +2229,6 @@ static void Render(render_state& RenderState, renderer& Renderer, memory_arena* 
     }
     else
     {
-        RenderState.FrameDelta -= DeltaTime;
-        RenderState.TotalDelta += DeltaTime;
         
         Clear(&Renderer.LightCommands);
         Renderer.LightCommandCount = 0;
@@ -2239,4 +2237,7 @@ static void Render(render_state& RenderState, renderer& Renderer, memory_arena* 
         Clear(&Renderer.UICommands);
         Renderer.UICommandCount = 0;
     }
+    
+    RenderState.FrameDelta -= DeltaTime;
+    RenderState.TotalDelta += DeltaTime;
 }
