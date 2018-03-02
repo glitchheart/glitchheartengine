@@ -52,7 +52,7 @@ struct animation_node
     animation_node_link Links[8];
     i32 LinkCount;
     
-    animation_callback_info CallbackInfos[4];
+    animation_callback_info CallbackInfos[8];
     i32 CallbackInfoCount;
 };
 
