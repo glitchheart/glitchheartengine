@@ -31,6 +31,17 @@ static inline b32 GetKeyDown(Key_Code Key, input_controller* InputController)
     return InputController->KeysJustPressed[Key] == Key_JustPressed;
 }
 
+
+static inline b32 GetKeyDown(Key_Code Key, input_controller& InputController)
+{
+    if(Key == Key_MouseLeft)
+        return GetMouseButtonDown(Mouse_Left, &InputController);
+    if(Key == Key_MouseRight)
+        return GetMouseButtonDown(Mouse_Right, &InputController);
+    return InputController.KeysJustPressed[Key] == Key_JustPressed;
+}
+
+
 static inline b32 GetKeyUp(Key_Code Key, input_controller* InputController)
 {
     return InputController->KeysUp[Key];
