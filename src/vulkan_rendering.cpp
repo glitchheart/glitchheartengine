@@ -220,8 +220,9 @@ static b32 IsDeviceSuitable(vk_render_state& RenderState)
         SwapchainAdequate = RenderState.SwapchainSupportDetails.FormatCount > 0 && RenderState.SwapchainSupportDetails.PresentModeCount > 0;
     }
     
-    return RenderState.DeviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU &&
-        RenderState.DeviceFeatures.geometryShader && IsQueueFamilyComplete(RenderState.QueueFamilyIndices) && ExtensionsSupported && SwapchainAdequate;
+    // RenderState.DeviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU &&
+    
+    return RenderState.DeviceFeatures.geometryShader && IsQueueFamilyComplete(RenderState.QueueFamilyIndices) && ExtensionsSupported && SwapchainAdequate;
 }
 
 static VkDeviceQueueCreateInfo CreateDeviceQueue(u32 FamilyIndex)

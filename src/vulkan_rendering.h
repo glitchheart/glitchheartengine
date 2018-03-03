@@ -4,10 +4,11 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
-#define VALIDATION_LAYER_SIZE 1
+#define VALIDATION_LAYER_SIZE 2
 const char* ValidationLayers[VALIDATION_LAYER_SIZE] =
 {
-    "VK_LAYER_LUNARG_standard_validation"
+    "VK_LAYER_LUNARG_standard_validation",
+    "VK_LAYER_LUNARG_assistant_layer"
 };
 
 #define DEVICE_EXTENSIONS_SIZE 1
