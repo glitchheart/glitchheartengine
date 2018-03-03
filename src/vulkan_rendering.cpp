@@ -28,6 +28,14 @@ void DestroyDebugReportCallbackEXT(VkInstance Instance, VkDebugReportCallbackEXT
 static void VkCleanup(vk_render_state& RenderState, renderer& Renderer)
 {
     vkDestroySwapchainKHR(RenderState.Device, RenderState.Swapchain, nullptr);
+    
+    for(u32 Index = 0; Index < RenderState.SwapchainImageCount; Index++)
+    {
+        vkDestroyImageView(RenderState.Device, RenderState.SwapchainImageViews[Index], nullptr);
+    }
+    
+    vkDestroyPipelineLayout(RenderState.Device, RenderState.PipelineLayout, nullptr);
+    
     vkDestroyDevice(RenderState.Device, nullptr);
     DestroyDebugReportCallbackEXT(RenderState.Instance, RenderState.Callback, nullptr);
     vkDestroySurfaceKHR(RenderState.Instance, RenderState.Surface, nullptr);
@@ -238,6 +246,262 @@ static VkDeviceQueueCreateInfo CreateDeviceQueue(u32 FamilyIndex)
     return QueueCreateInfo;
 }
 
+static void CreateSwapchain(vk_render_state& RenderState)
+{
+    VkSurfaceFormatKHR SurfaceFormat = ChooseSwapSurfaceFormat(RenderState.SwapchainSupportDetails.Formats, RenderState.SwapchainSupportDetails.FormatCount);
+    
+    VkPresentModeKHR PresentMode = ChooseSwapPresentMode(RenderState.SwapchainSupportDetails.PresentModes, RenderState.SwapchainSupportDetails.PresentModeCount);
+    VkExtent2D Extent = ChooseSwapExtent(RenderState, RenderState.SwapchainSupportDetails.Capabilities);
+    
+    u32 ImageCount = RenderState.SwapchainSupportDetails.Capabilities.minImageCount + 1;
+    if(RenderState.SwapchainSupportDetails.Capabilities.maxImageCount > 0 && ImageCount > RenderState.SwapchainSupportDetails.Capabilities.maxImageCount)
+    {
+        ImageCount = RenderState.SwapchainSupportDetails.Capabilities.maxImageCount;
+    }
+    
+    VkSwapchainCreateInfoKHR SwapchainCreateInfo = {};
+    SwapchainCreateInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+    SwapchainCreateInfo.surface = RenderState.Surface;
+    SwapchainCreateInfo.minImageCount = ImageCount;
+    SwapchainCreateInfo.imageFormat = SurfaceFormat.format;
+    SwapchainCreateInfo.imageColorSpace = SurfaceFormat.colorSpace;
+    SwapchainCreateInfo.imageExtent = Extent;
+    SwapchainCreateInfo.imageArrayLayers = 1;
+    SwapchainCreateInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    
+    u32 QueueFamilyIndices[] = {(u32) RenderState.QueueFamilyIndices.GraphicsFamily, (u32) RenderState.QueueFamilyIndices.PresentFamily};
+    
+    if (RenderState.QueueFamilyIndices.GraphicsFamily != RenderState.QueueFamilyIndices.PresentFamily)
+    {
+        SwapchainCreateInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
+        SwapchainCreateInfo.queueFamilyIndexCount = 2;
+        SwapchainCreateInfo.pQueueFamilyIndices = QueueFamilyIndices;
+    }
+    else
+    {
+        SwapchainCreateInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        SwapchainCreateInfo.queueFamilyIndexCount = 0; // Optional
+        SwapchainCreateInfo.pQueueFamilyIndices = nullptr; // Optional
+    }
+    
+    SwapchainCreateInfo.preTransform = RenderState.SwapchainSupportDetails.Capabilities.currentTransform;
+    SwapchainCreateInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+    SwapchainCreateInfo.presentMode = PresentMode;
+    SwapchainCreateInfo.clipped = VK_TRUE;
+    SwapchainCreateInfo.oldSwapchain = VK_NULL_HANDLE;
+    
+    if (vkCreateSwapchainKHR(RenderState.Device, &SwapchainCreateInfo, nullptr, &RenderState.Swapchain) != VK_SUCCESS) 
+    {
+        printf("Unable to create swapchain\n");
+        glfwTerminate();
+        exit(EXIT_FAILURE);
+    }
+    
+    vkGetSwapchainImagesKHR(RenderState.Device, RenderState.Swapchain, &ImageCount, nullptr);
+    RenderState.SwapchainImages = PushArray(&RenderState.Arena, ImageCount, VkImage);
+    vkGetSwapchainImagesKHR(RenderState.Device, RenderState.Swapchain, &ImageCount, RenderState.SwapchainImages);
+    RenderState.SwapchainImageCount = ImageCount;
+    RenderState.SwapchainImageFormat = SurfaceFormat.format;
+    RenderState.SwapchainExtent = Extent;
+}
+
+static void CreateSwapchainImageViews(vk_render_state& RenderState)
+{
+    RenderState.SwapchainImageViews = PushArray(&RenderState.Arena, RenderState.SwapchainImageCount, VkImageView);
+    
+    for(u32 Index = 0; Index < RenderState.SwapchainImageCount; Index++)
+    {
+        VkImageViewCreateInfo CreateInfo = {};
+        CreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+        CreateInfo.image = RenderState.SwapchainImages[Index];
+        CreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+        CreateInfo.format = RenderState.SwapchainImageFormat;
+        CreateInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+        CreateInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+        CreateInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+        CreateInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+        CreateInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        CreateInfo.subresourceRange.baseMipLevel = 0;
+        CreateInfo.subresourceRange.levelCount = 1;
+        CreateInfo.subresourceRange.baseArrayLayer = 0;
+        CreateInfo.subresourceRange.layerCount = 1;
+        
+        if (vkCreateImageView(RenderState.Device, &CreateInfo, nullptr, &RenderState.SwapchainImageViews[Index]) != VK_SUCCESS)
+        {
+            printf("Failed to create image views\n");
+        }
+    }
+}
+
+static VkBool32 CreateShaderModule(vk_render_state& RenderState, const char* ShaderPath, VkShaderModule& ShaderModule)
+{
+    FILE* ShaderFile = fopen(ShaderPath, "rb");
+    
+    if(ShaderFile)
+    {
+        u32 Size = 0;
+        fseek(ShaderFile, 0, SEEK_END);
+        Size = (u32)ftell(ShaderFile);
+        fseek(ShaderFile, 0, SEEK_SET);
+        
+        u32* Buffer = PushTempSize(Size, u32);
+        fread(Buffer, 1, (size_t)Size, ShaderFile);
+        
+        VkShaderModuleCreateInfo CreateInfo = {};
+        CreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+        CreateInfo.codeSize = Size;
+        CreateInfo.pCode = Buffer;
+        
+        fclose(ShaderFile);
+        
+        if (vkCreateShaderModule(RenderState.Device, &CreateInfo, nullptr, &ShaderModule) != VK_SUCCESS)
+        {
+            printf("Failed to create shader module\n");
+            return VK_FALSE;
+        }
+        
+    }
+    else
+    {
+        printf("The file '%s' could not be opened\n", ShaderPath);
+        return VK_FALSE;
+    }
+    
+    return VK_TRUE;
+}
+
+static void CreateGraphicsPipeline(vk_render_state& RenderState)
+{
+    VkShaderModule VertexShaderModule;
+    VkShaderModule FragmentShaderModule;
+    
+    if(!CreateShaderModule(RenderState, "../engine_assets/shaders/vulkan/vertex.spv", VertexShaderModule))
+    {
+        printf("Could not create vertex shader module\n");
+    }
+    
+    if(!CreateShaderModule(RenderState, "../engine_assets/shaders/vulkan/fragment.spv", FragmentShaderModule))
+    {
+        printf("Could not create vertex shader module\n");
+    }
+    
+    VkPipelineShaderStageCreateInfo VertexShaderStageInfo = {};
+    VertexShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    VertexShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
+    VertexShaderStageInfo.module = VertexShaderModule;
+    VertexShaderStageInfo.pName = "main";
+    
+    VkPipelineShaderStageCreateInfo FragmentShaderStageInfo = {};
+    FragmentShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    FragmentShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+    FragmentShaderStageInfo.module = FragmentShaderModule;
+    FragmentShaderStageInfo.pName = "main";
+    
+    VkPipelineShaderStageCreateInfo ShaderStages[] = { VertexShaderStageInfo, FragmentShaderStageInfo};
+    
+    VkPipelineVertexInputStateCreateInfo VertexInputInfo = {};
+    VertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+    VertexInputInfo.vertexBindingDescriptionCount = 0;
+    VertexInputInfo.pVertexBindingDescriptions = nullptr;
+    VertexInputInfo.vertexAttributeDescriptionCount = 0;
+    VertexInputInfo.pVertexAttributeDescriptions = nullptr;
+    
+    VkPipelineInputAssemblyStateCreateInfo InputAssembly = {};
+    InputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+    InputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+    InputAssembly.primitiveRestartEnable = VK_FALSE;
+    
+    VkViewport Viewport = {};
+    Viewport.x = 0.0f;
+    Viewport.y = 0.0f;
+    Viewport.width = (r32) RenderState.SwapchainExtent.width;
+    Viewport.height = (r32) RenderState.SwapchainExtent.height;
+    Viewport.minDepth = 0.0f;
+    Viewport.maxDepth = 1.0f;
+    
+    VkRect2D Scissor = {};
+    Scissor.offset = {0, 0};
+    Scissor.extent = RenderState.SwapchainExtent;
+    
+    VkPipelineViewportStateCreateInfo ViewportState = {};
+    ViewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+    ViewportState.viewportCount = 1;
+    ViewportState.pViewports = &Viewport;
+    ViewportState.scissorCount = 1;
+    ViewportState.pScissors = &Scissor;
+    
+    VkPipelineRasterizationStateCreateInfo Rasterizer = {};
+    Rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+    Rasterizer.depthClampEnable = VK_FALSE;
+    Rasterizer.rasterizerDiscardEnable = VK_FALSE;
+    Rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
+    Rasterizer.lineWidth = 1.0f;
+    Rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
+    Rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
+    Rasterizer.depthBiasEnable = VK_FALSE;
+    Rasterizer.depthBiasConstantFactor = 0.0f;
+    Rasterizer.depthBiasClamp = 0.0f;
+    Rasterizer.depthBiasSlopeFactor = 0.0f;
+    
+    VkPipelineMultisampleStateCreateInfo Multisampling = {};
+    Multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+    Multisampling.sampleShadingEnable = VK_FALSE;
+    Multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+    Multisampling.minSampleShading = 1.0f;
+    Multisampling.pSampleMask = nullptr;
+    Multisampling.alphaToCoverageEnable = VK_FALSE;
+    Multisampling.alphaToOneEnable = VK_FALSE;
+    
+    VkPipelineColorBlendAttachmentState ColorBlendAttachment = {};
+    ColorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+    ColorBlendAttachment.blendEnable = VK_TRUE;
+    ColorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+    ColorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+    ColorBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD;
+    ColorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
+    ColorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
+    ColorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;
+    
+    VkPipelineColorBlendStateCreateInfo ColorBlending = {};
+    ColorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+    ColorBlending.logicOpEnable = VK_FALSE;
+    ColorBlending.logicOp = VK_LOGIC_OP_COPY;
+    ColorBlending.attachmentCount = 1;
+    ColorBlending.pAttachments = &ColorBlendAttachment;
+    ColorBlending.blendConstants[0] = 0.0f;
+    ColorBlending.blendConstants[1] = 0.0f;
+    ColorBlending.blendConstants[2] = 0.0f;
+    ColorBlending.blendConstants[3] = 0.0f;
+    
+    /*
+    VkDynamicState dynamicStates[] = {
+    VK_DYNAMIC_STATE_VIEWPORT,
+    VK_DYNAMIC_STATE_LINE_WIDTH
+};
+
+VkPipelineDynamicStateCreateInfo dynamicState = {};
+dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+dynamicState.dynamicStateCount = 2;
+dynamicState.pDynamicStates = dynamicStates;
+    */
+    
+    VkPipelineLayoutCreateInfo PipelineLayoutInfo = {};
+    PipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+    PipelineLayoutInfo.setLayoutCount = 0;
+    PipelineLayoutInfo.pSetLayouts = nullptr;
+    PipelineLayoutInfo.pushConstantRangeCount = 0;
+    PipelineLayoutInfo.pPushConstantRanges = 0;
+    
+    if (vkCreatePipelineLayout(RenderState.Device, &PipelineLayoutInfo, nullptr, &RenderState.PipelineLayout) != VK_SUCCESS)
+    {
+        printf("Failed to create pipeline layout");
+        glfwTerminate();
+        exit(EXIT_FAILURE);
+    }
+    
+    vkDestroyShaderModule(RenderState.Device, FragmentShaderModule, nullptr);
+    vkDestroyShaderModule(RenderState.Device, VertexShaderModule, nullptr);
+}
 
 static void InitializeVulkan(vk_render_state& RenderState, renderer& Renderer, config_data& ConfigData)
 {
@@ -409,61 +673,8 @@ static void InitializeVulkan(vk_render_state& RenderState, renderer& Renderer, c
     vkGetDeviceQueue(RenderState.Device, (u32)RenderState.QueueFamilyIndices.GraphicsFamily, 0, &RenderState.GraphicsQueue);
     vkGetDeviceQueue(RenderState.Device, (u32)RenderState.QueueFamilyIndices.PresentFamily, 0, &RenderState.PresentQueue);
     
-    
-    
-    // Create the swap chain
-    VkSurfaceFormatKHR SurfaceFormat = ChooseSwapSurfaceFormat(RenderState.SwapchainSupportDetails.Formats, RenderState.SwapchainSupportDetails.FormatCount);
-    
-    VkPresentModeKHR PresentMode = ChooseSwapPresentMode(RenderState.SwapchainSupportDetails.PresentModes, RenderState.SwapchainSupportDetails.PresentModeCount);
-    VkExtent2D Extent = ChooseSwapExtent(RenderState, RenderState.SwapchainSupportDetails.Capabilities);
-    
-    u32 ImageCount = RenderState.SwapchainSupportDetails.Capabilities.minImageCount + 1;
-    if(RenderState.SwapchainSupportDetails.Capabilities.maxImageCount > 0 && ImageCount > RenderState.SwapchainSupportDetails.Capabilities.maxImageCount)
-    {
-        ImageCount = RenderState.SwapchainSupportDetails.Capabilities.maxImageCount;
-    }
-    
-    VkSwapchainCreateInfoKHR SwapchainCreateInfo = {};
-    SwapchainCreateInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-    SwapchainCreateInfo.surface = RenderState.Surface;
-    SwapchainCreateInfo.minImageCount = ImageCount;
-    SwapchainCreateInfo.imageFormat = SurfaceFormat.format;
-    SwapchainCreateInfo.imageColorSpace = SurfaceFormat.colorSpace;
-    SwapchainCreateInfo.imageExtent = Extent;
-    SwapchainCreateInfo.imageArrayLayers = 1;
-    SwapchainCreateInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-    
-    u32 QueueFamilyIndices[] = {(u32) RenderState.QueueFamilyIndices.GraphicsFamily, (u32) RenderState.QueueFamilyIndices.PresentFamily};
-    
-    if (RenderState.QueueFamilyIndices.GraphicsFamily != RenderState.QueueFamilyIndices.PresentFamily) {
-        SwapchainCreateInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
-        SwapchainCreateInfo.queueFamilyIndexCount = 2;
-        SwapchainCreateInfo.pQueueFamilyIndices = QueueFamilyIndices;
-    } else {
-        SwapchainCreateInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
-        SwapchainCreateInfo.queueFamilyIndexCount = 0; // Optional
-        SwapchainCreateInfo.pQueueFamilyIndices = nullptr; // Optional
-    }
-    
-    SwapchainCreateInfo.preTransform = RenderState.SwapchainSupportDetails.Capabilities.currentTransform;
-    SwapchainCreateInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-    SwapchainCreateInfo.presentMode = PresentMode;
-    SwapchainCreateInfo.clipped = VK_TRUE;
-    SwapchainCreateInfo.oldSwapchain = VK_NULL_HANDLE;
-    
-    if (vkCreateSwapchainKHR(RenderState.Device, &SwapchainCreateInfo, nullptr, &RenderState.Swapchain) != VK_SUCCESS) 
-    {
-        printf("Unable to create swapchain\n");
-        glfwTerminate();
-        exit(EXIT_FAILURE);
-    }
-    
-    vkGetSwapchainImagesKHR(RenderState.Device, RenderState.Swapchain, &ImageCount, nullptr);
-    RenderState.SwapchainImages = PushArray(&RenderState.Arena, ImageCount, VkImage);
-    vkGetSwapchainImagesKHR(RenderState.Device, RenderState.Swapchain, &ImageCount, RenderState.SwapchainImages);
-    RenderState.SwapchainImageCount = ImageCount;
-    RenderState.SwapchainImageFormat = SurfaceFormat.format;
-    RenderState.SwapchainExtent = Extent;
+    CreateSwapchain(RenderState);
+    CreateSwapchainImageViews(RenderState);
 }
 
 static void ToggleCursor(vk_render_state& RenderState)
@@ -489,5 +700,3 @@ static void VkRender(vk_render_state& RenderState, renderer& Renderer)
     
     VkCleanup(RenderState, Renderer);
 }
-
-

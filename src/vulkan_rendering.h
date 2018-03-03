@@ -60,14 +60,16 @@ struct vk_render_state
     queue_family_indices QueueFamilyIndices;
     
     VkImage* SwapchainImages;
+    VkImageView* SwapchainImageViews;
     u32 SwapchainImageCount;
     
     VkFormat SwapchainImageFormat;
     VkExtent2D SwapchainExtent;
     
+    VkPipelineLayout PipelineLayout;
+    
     b32 HideCursor;
     b32 EnableValidationLayers;
-    
     
     memory_arena Arena;
 };

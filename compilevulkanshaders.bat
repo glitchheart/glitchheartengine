@@ -1,0 +1,2 @@
+%VULKAN_SDK%/Bin/glslangValidator.exe -V engine_assets/shaders/vulkan/vertex.vert -o engine_assets/shaders/vulkan/vertex.spv
+%VULKAN_SDK%/Bin/glslangValidator.exe -V engine_assets/shaders/vulkan/fragment.frag -o engine_assets/shaders/vulkan/fragment.spv
