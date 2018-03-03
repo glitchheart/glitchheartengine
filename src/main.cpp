@@ -13,7 +13,6 @@
 #include <sys/types.h>  
 #include <sys/stat.h>  
 #include <fcntl.h>
-#include <GLFW/glfw3.h>
 #include "time.h"
 
 #include "main.h"
@@ -34,7 +33,7 @@ memory_state MemoryState;
 
 #include "gmap.cpp"
 #include "keycontroller.h"
-
+#include "vulkan_rendering.h"
 #include "opengl_rendering.h"
 #include "animation.cpp"
 #include "keycontroller.cpp"
@@ -48,6 +47,7 @@ input_controller InputController;
 
 #include "keys_glfw.h"
 #include "opengl_rendering.cpp"
+#include "vulkan_rendering.cpp"
 
 static void LoadGameCode(game_code& GameCode, char* GameLibraryPath, char* TempGameLibraryPath)
 {
@@ -301,6 +301,10 @@ int main(int Argc, char** Args)
     Renderer.LightCommands.MinimumBlockSize = sizeof(render_command) * MAX_LIGHT_COMMANDS;
     Renderer.SpritesheetAnimationCount = 0;
     Renderer.AnimationControllerCount = 0;
+    
+    vk_render_state VkRenderState;
+    InitializeVulkan(VkRenderState, Renderer, ConfigData);
+    VkRender(VkRenderState, Renderer);
     
     InitializeOpenGL(RenderState, Renderer, &ConfigData, &PlatformState->PermArena);
     
