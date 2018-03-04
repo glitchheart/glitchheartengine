@@ -194,6 +194,20 @@ inline void LoadConfig(const char* FilePath, config_data* ConfigData, memory_are
             {
                 sscanf(LineBuffer, "version %s", ConfigData->Version);
             }
+            else if(StartsWith(LineBuffer, "graphics_api"))
+            {
+                char APIString[32];
+                sscanf(LineBuffer, "graphics_api %s", APIString);
+                
+                if(strcmp(APIString, "opengl") == 0)
+                {
+                    ConfigData->GraphicsAPI = Graphics_OpenGl;
+                }
+                else if(strcmp(APIString, "vulkan") == 0)
+                {
+                    ConfigData->GraphicsAPI = Graphics_Vulkan;
+                }
+            }
             else if(StartsWith(LineBuffer, "screen_width"))
             {
                 sscanf(LineBuffer, "screen_width %d", &ConfigData->ScreenWidth);
@@ -302,11 +316,16 @@ int main(int Argc, char** Args)
     Renderer.SpritesheetAnimationCount = 0;
     Renderer.AnimationControllerCount = 0;
     
-    vk_render_state VkRenderState;
-    InitializeVulkan(VkRenderState, Renderer, ConfigData);
-    VkRender(VkRenderState, Renderer);
-    
-    InitializeOpenGL(RenderState, Renderer, &ConfigData, &PlatformState->PermArena);
+    if(ConfigData.GraphicsAPI == Graphics_Vulkan)
+    {
+        vk_render_state VkRenderState;
+        InitializeVulkan(VkRenderState, Renderer, ConfigData);
+        VkRender(VkRenderState, Renderer);
+    }
+    else if(ConfigData.GraphicsAPI == Graphics_OpenGl)
+    {
+        InitializeOpenGL(RenderState, Renderer, &ConfigData, &PlatformState->PermArena);
+    }
     
     game_code Game = {};
     Game.IsValid = false;

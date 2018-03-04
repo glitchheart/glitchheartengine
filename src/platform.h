@@ -100,11 +100,18 @@ enum Window_Mode
     FM_Borderless = 2
 };
 
+enum Graphics_API
+{
+    Graphics_OpenGl,
+    Graphics_Vulkan
+};
+
 struct config_data
 {
     char* Title;
     char* Version;
     char* StartingLevelFilePath;
+    Graphics_API GraphicsAPI;
     i32 ScreenWidth;
     i32 ScreenHeight;
     i32 ScaleFromWidth;
