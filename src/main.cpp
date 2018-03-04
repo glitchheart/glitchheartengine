@@ -33,7 +33,9 @@ memory_state MemoryState;
 
 #include "gmap.cpp"
 #include "keycontroller.h"
+#if __LINUX || _WIN32
 #include "vulkan_rendering.h"
+#endif
 #include "opengl_rendering.h"
 #include "animation.cpp"
 #include "keycontroller.cpp"
@@ -47,7 +49,9 @@ input_controller InputController;
 
 #include "keys_glfw.h"
 #include "opengl_rendering.cpp"
+#if __LINUX || _WIN32
 #include "vulkan_rendering.cpp"
+#endif
 
 static void LoadGameCode(game_code& GameCode, char* GameLibraryPath, char* TempGameLibraryPath)
 {
@@ -152,6 +156,8 @@ inline void LoadConfig(const char* FilePath, config_data* ConfigData, memory_are
     File = fopen(FilePath, "r");
     char LineBuffer[255];
     
+    *ConfigData = {};
+
     ConfigData->Title = PushString(PermArena, 40);
     ConfigData->Version = PushString(PermArena, 40);
     
@@ -304,6 +310,7 @@ int main(int Argc, char** Args)
     
     InitKeys();
     render_state RenderState = {};
+    RenderState.Arena = {};
     renderer Renderer = {};
     Renderer.PixelsPerUnit = 8;
     Renderer.FrameLock = 0;
@@ -318,9 +325,11 @@ int main(int Argc, char** Args)
     
     if(ConfigData.GraphicsAPI == Graphics_Vulkan)
     {
+        #if __LINUX || _WIN32
         vk_render_state VkRenderState;
         InitializeVulkan(VkRenderState, Renderer, ConfigData);
         VkRender(VkRenderState, Renderer);
+        #endif
     }
     else if(ConfigData.GraphicsAPI == Graphics_OpenGl)
     {
