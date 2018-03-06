@@ -63,10 +63,20 @@ struct vk_render_state
     VkImageView* SwapchainImageViews;
     u32 SwapchainImageCount;
     
+    VkFramebuffer* SwapchainFramebuffers;
+    
+    VkCommandPool CommandPool;
+    VkCommandBuffer* CommandBuffers;
+    
     VkFormat SwapchainImageFormat;
     VkExtent2D SwapchainExtent;
     
+    VkPipeline GraphicsPipeline;
+    VkRenderPass RenderPass;
     VkPipelineLayout PipelineLayout;
+    
+    VkSemaphore ImageAvailableSemaphore;
+    VkSemaphore RenderFinishedSemaphore;
     
     b32 HideCursor;
     b32 EnableValidationLayers;
