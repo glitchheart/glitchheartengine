@@ -27,14 +27,23 @@ void DestroyDebugReportCallbackEXT(VkInstance Instance, VkDebugReportCallbackEXT
 
 static void VkCleanup(vk_render_state& RenderState, renderer& Renderer)
 {
+    vkDestroySemaphore(RenderState.Device, RenderState.RenderFinishedSemaphore, nullptr);
+    vkDestroySemaphore(RenderState.Device, RenderState.ImageAvailableSemaphore, nullptr);
+    vkDestroyCommandPool(RenderState.Device, RenderState.CommandPool, nullptr);
     vkDestroySwapchainKHR(RenderState.Device, RenderState.Swapchain, nullptr);
+    
+    for (u32 Index = 0; Index < RenderState.SwapchainImageCount; Index++) {
+        vkDestroyFramebuffer(RenderState.Device, RenderState.SwapchainFramebuffers[Index], nullptr);
+    }
     
     for(u32 Index = 0; Index < RenderState.SwapchainImageCount; Index++)
     {
         vkDestroyImageView(RenderState.Device, RenderState.SwapchainImageViews[Index], nullptr);
     }
     
+    vkDestroyPipeline(RenderState.Device, RenderState.GraphicsPipeline, nullptr);
     vkDestroyPipelineLayout(RenderState.Device, RenderState.PipelineLayout, nullptr);
+    vkDestroyRenderPass(RenderState.Device, RenderState.RenderPass, nullptr);
     
     vkDestroyDevice(RenderState.Device, nullptr);
     DestroyDebugReportCallbackEXT(RenderState.Instance, RenderState.Callback, nullptr);
@@ -499,8 +508,181 @@ dynamicState.pDynamicStates = dynamicStates;
         exit(EXIT_FAILURE);
     }
     
+    VkGraphicsPipelineCreateInfo PipelineInfo = {};
+    PipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+    PipelineInfo.stageCount = 2;
+    PipelineInfo.pStages = ShaderStages;
+    
+    PipelineInfo.pVertexInputState = &VertexInputInfo;
+    PipelineInfo.pInputAssemblyState = &InputAssembly;
+    PipelineInfo.pViewportState = &ViewportState;
+    PipelineInfo.pRasterizationState = &Rasterizer;
+    PipelineInfo.pMultisampleState = &Multisampling;
+    PipelineInfo.pDepthStencilState = nullptr;
+    PipelineInfo.pColorBlendState = &ColorBlending;
+    PipelineInfo.pDynamicState = nullptr;
+    PipelineInfo.renderPass = RenderState.RenderPass;
+    PipelineInfo.subpass = 0;
+    PipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
+    PipelineInfo.basePipelineIndex = -1;
+    PipelineInfo.layout = RenderState.PipelineLayout;
+    
+    if (vkCreateGraphicsPipelines(RenderState.Device, VK_NULL_HANDLE, 1, &PipelineInfo, nullptr, &RenderState.GraphicsPipeline) != VK_SUCCESS) {
+        printf("failed to create graphics pipeline\n");
+    }
+    
     vkDestroyShaderModule(RenderState.Device, FragmentShaderModule, nullptr);
     vkDestroyShaderModule(RenderState.Device, VertexShaderModule, nullptr);
+}
+
+static void CreateRenderPass(vk_render_state& RenderState)
+{
+    VkAttachmentDescription ColorAttachment = {};
+    ColorAttachment.format = RenderState.SwapchainImageFormat;
+    ColorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+    ColorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    ColorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    ColorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    ColorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    ColorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    ColorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+    
+    VkAttachmentReference ColorAttachmentRef = {};
+    ColorAttachmentRef.attachment = 0;
+    ColorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    
+    VkSubpassDescription Subpass = {};
+    Subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    Subpass.colorAttachmentCount = 1;
+    Subpass.pColorAttachments = &ColorAttachmentRef;
+    
+    VkSubpassDependency Dependency = {};
+    Dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+    Dependency.dstSubpass = 0;
+    Dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    Dependency.srcAccessMask = 0;
+    Dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    Dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    
+    VkRenderPassCreateInfo RenderPassInfo = {};
+    RenderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+    RenderPassInfo.attachmentCount = 1;
+    RenderPassInfo.pAttachments = &ColorAttachment;
+    RenderPassInfo.subpassCount = 1;
+    RenderPassInfo.pSubpasses = &Subpass;
+    RenderPassInfo.dependencyCount = 1;
+    RenderPassInfo.pDependencies = &Dependency;
+    
+    if (vkCreateRenderPass(RenderState.Device, &RenderPassInfo, nullptr, &RenderState.RenderPass) != VK_SUCCESS) 
+    {
+        printf("failed to create render pass\n");
+    }
+}
+
+static void CreateFramebuffers(vk_render_state& RenderState)
+{
+    RenderState.SwapchainFramebuffers = PushArray(&RenderState.Arena, RenderState.SwapchainImageCount, VkFramebuffer);
+    
+    for(size_t Index = 0; Index < RenderState.SwapchainImageCount; Index++) 
+    {
+        VkImageView Attachments[] = 
+        {
+            RenderState.SwapchainImageViews[Index]
+        };
+        
+        VkFramebufferCreateInfo FramebufferInfo = {};
+        FramebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+        FramebufferInfo.renderPass = RenderState.RenderPass;
+        FramebufferInfo.attachmentCount = 1;
+        FramebufferInfo.pAttachments = Attachments;
+        FramebufferInfo.width = RenderState.SwapchainExtent.width;
+        FramebufferInfo.height = RenderState.SwapchainExtent.height;
+        FramebufferInfo.layers = 1;
+        
+        if(vkCreateFramebuffer(RenderState.Device, &FramebufferInfo, nullptr, &RenderState.SwapchainFramebuffers[Index]) != VK_SUCCESS) 
+        {
+            printf("failed to create framebuffer\n");
+        }
+    }
+}
+
+static void CreateCommandPool(vk_render_state& RenderState)
+{
+    VkCommandPoolCreateInfo PoolInfo = {};
+    PoolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+    PoolInfo.queueFamilyIndex = (u32)RenderState.QueueFamilyIndices.GraphicsFamily;
+    PoolInfo.flags = 0;
+    
+    if (vkCreateCommandPool(RenderState.Device, &PoolInfo, nullptr, &RenderState.CommandPool) != VK_SUCCESS) 
+    {
+        printf("failed to create command pool\n");
+    }
+}
+
+static void CreateCommandBuffers(vk_render_state& RenderState)
+{
+    auto CommandBufferCount = RenderState.SwapchainImageCount;
+    RenderState.CommandBuffers = PushArray(&RenderState.Arena, CommandBufferCount, VkCommandBuffer);
+    
+    VkCommandBufferAllocateInfo AllocInfo = {};
+    AllocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    AllocInfo.commandPool = RenderState.CommandPool;
+    AllocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    AllocInfo.commandBufferCount = (uint32_t) CommandBufferCount;
+    
+    if (vkAllocateCommandBuffers(RenderState.Device, &AllocInfo, RenderState.CommandBuffers) != VK_SUCCESS) 
+    {
+        printf("failed to allocate command buffers\n");
+    }
+    
+    for(size_t Index = 0; Index < CommandBufferCount; Index++) 
+    {
+        VkCommandBufferBeginInfo BeginInfo = {};
+        BeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+        BeginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
+        BeginInfo.pInheritanceInfo = nullptr; // Optional
+        
+        vkBeginCommandBuffer(RenderState.CommandBuffers[Index], &BeginInfo);
+        
+        
+        VkRenderPassBeginInfo RenderPassInfo = {};
+        RenderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+        RenderPassInfo.renderPass = RenderState.RenderPass;
+        RenderPassInfo.framebuffer = RenderState.SwapchainFramebuffers[Index];
+        
+        RenderPassInfo.renderArea.offset = {0, 0};
+        RenderPassInfo.renderArea.extent = RenderState.SwapchainExtent;
+        
+        VkClearValue ClearColor = {0.0f, 0.0f, 0.0f, 1.0f};
+        RenderPassInfo.clearValueCount = 1;
+        RenderPassInfo.pClearValues = &ClearColor;
+        
+        vkCmdBeginRenderPass(RenderState.CommandBuffers[Index], &RenderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+        
+        vkCmdBindPipeline(RenderState.CommandBuffers[Index], VK_PIPELINE_BIND_POINT_GRAPHICS, RenderState.GraphicsPipeline);
+        
+        vkCmdDraw(RenderState.CommandBuffers[Index], 3, 1, 0, 0);
+        
+        vkCmdEndRenderPass(RenderState.CommandBuffers[Index]);
+        
+        if (vkEndCommandBuffer(RenderState.CommandBuffers[Index]) != VK_SUCCESS) 
+        {
+            printf("failed to record command buffer\n");
+        }
+    }
+    
+}
+
+static void CreateSemaphores(vk_render_state& RenderState)
+{
+    VkSemaphoreCreateInfo SemaphoreInfo = {};
+    SemaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+    
+    if (vkCreateSemaphore(RenderState.Device, &SemaphoreInfo, nullptr, &RenderState.ImageAvailableSemaphore) != VK_SUCCESS ||
+        vkCreateSemaphore(RenderState.Device, &SemaphoreInfo, nullptr, &RenderState.RenderFinishedSemaphore) != VK_SUCCESS) 
+    {
+        printf("failed to create semaphores\n");
+    }
 }
 
 static void InitializeVulkan(vk_render_state& RenderState, renderer& Renderer, config_data& ConfigData)
@@ -675,6 +857,12 @@ static void InitializeVulkan(vk_render_state& RenderState, renderer& Renderer, c
     
     CreateSwapchain(RenderState);
     CreateSwapchainImageViews(RenderState);
+    CreateRenderPass(RenderState);
+    CreateGraphicsPipeline(RenderState);
+    CreateFramebuffers(RenderState);
+    CreateCommandPool(RenderState);
+    CreateCommandBuffers(RenderState);
+    CreateSemaphores(RenderState);
 }
 
 static void ToggleCursor(vk_render_state& RenderState)
@@ -691,12 +879,59 @@ static void ToggleCursor(vk_render_state& RenderState)
     }
 }
 
+static void DrawFrame(vk_render_state& RenderState)
+{
+    u32 ImageIndex;
+    
+    vkQueueWaitIdle(RenderState.PresentQueue);
+    
+    vkAcquireNextImageKHR(RenderState.Device, RenderState.Swapchain, ULONG_MAX, RenderState.ImageAvailableSemaphore, VK_NULL_HANDLE, &ImageIndex);
+    
+    VkSubmitInfo SubmitInfo = {};
+    SubmitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    
+    VkSemaphore WaitSemaphores[] = {RenderState.ImageAvailableSemaphore};
+    VkPipelineStageFlags WaitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
+    SubmitInfo.waitSemaphoreCount = 1;
+    SubmitInfo.pWaitSemaphores = WaitSemaphores;
+    SubmitInfo.pWaitDstStageMask = WaitStages;
+    
+    SubmitInfo.commandBufferCount = 1;
+    SubmitInfo.pCommandBuffers = &RenderState.CommandBuffers[ImageIndex];
+    
+    VkSemaphore SignalSemaphores[] = {RenderState.RenderFinishedSemaphore};
+    SubmitInfo.signalSemaphoreCount = 1;
+    SubmitInfo.pSignalSemaphores = SignalSemaphores;
+    
+    if (vkQueueSubmit(RenderState.GraphicsQueue, 1, &SubmitInfo, VK_NULL_HANDLE) != VK_SUCCESS)
+    {
+        printf("failed to submit draw command buffer\n");
+    }
+    
+    VkPresentInfoKHR PresentInfo = {};
+    PresentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+    
+    PresentInfo.waitSemaphoreCount = 1;
+    PresentInfo.pWaitSemaphores = SignalSemaphores;
+    
+    VkSwapchainKHR Swapchains[] = {RenderState.Swapchain};
+    PresentInfo.swapchainCount = 1;
+    PresentInfo.pSwapchains = Swapchains;
+    PresentInfo.pImageIndices = &ImageIndex;
+    PresentInfo.pResults = nullptr;
+    
+    vkQueuePresentKHR(RenderState.PresentQueue, &PresentInfo);
+}
+
 static void VkRender(vk_render_state& RenderState, renderer& Renderer)
 {
     while(!glfwWindowShouldClose(RenderState.Window))
     {
         glfwPollEvents();
+        DrawFrame(RenderState);
     }
+    
+    vkDeviceWaitIdle(RenderState.Device);
     
     VkCleanup(RenderState, Renderer);
 }

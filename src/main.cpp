@@ -33,7 +33,7 @@ memory_state MemoryState;
 
 #include "gmap.cpp"
 #include "keycontroller.h"
-#if __LINUX || _WIN32
+#if __linux || _WIN32
 #include "vulkan_rendering.h"
 #endif
 #include "opengl_rendering.h"
@@ -49,7 +49,7 @@ input_controller InputController;
 
 #include "keys_glfw.h"
 #include "opengl_rendering.cpp"
-#if __LINUX || _WIN32
+#if __linux || _WIN32
 #include "vulkan_rendering.cpp"
 #endif
 
