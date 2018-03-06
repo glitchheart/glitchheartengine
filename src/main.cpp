@@ -157,7 +157,7 @@ inline void LoadConfig(const char* FilePath, config_data* ConfigData, memory_are
     char LineBuffer[255];
     
     *ConfigData = {};
-
+    
     ConfigData->Title = PushString(PermArena, 40);
     ConfigData->Version = PushString(PermArena, 40);
     
@@ -173,7 +173,7 @@ inline void LoadConfig(const char* FilePath, config_data* ConfigData, memory_are
                 
                 b32 AfterTitle = false;
                 
-                for(i32 BufferIndex = 0; BufferIndex < (i32)strlen(LineBuffer); BufferIndex++)
+                for(i32 BufferIndex = 0; BufferIndex < (i32)strlen(LineBuffer) + 1; BufferIndex++)
                 {
                     if(AfterTitle)
                     {
@@ -193,6 +193,7 @@ inline void LoadConfig(const char* FilePath, config_data* ConfigData, memory_are
                         AfterTitle = true;
                     }
                 }
+                TitleBuffer[Index] = '\0';
                 
                 sprintf(ConfigData->Title, "%s", TitleBuffer);
             }
@@ -325,11 +326,11 @@ int main(int Argc, char** Args)
     
     if(ConfigData.GraphicsAPI == Graphics_Vulkan)
     {
-        #if __LINUX || _WIN32
+#if __LINUX || _WIN32
         vk_render_state VkRenderState;
         InitializeVulkan(VkRenderState, Renderer, ConfigData);
         VkRender(VkRenderState, Renderer);
-        #endif
+#endif
     }
     else if(ConfigData.GraphicsAPI == Graphics_OpenGl)
     {
