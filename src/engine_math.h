@@ -1748,15 +1748,15 @@ namespace math
     
     void PrintMatrix(m4 In)
     {
-        DEBUG_PRINT("%f %f %f %f\n", In[0][0],In[0][1],In[0][2],In[0][3]);
-        DEBUG_PRINT("%f %f %f %f\n", In[1][0],In[1][1],In[1][2],In[1][3]);
-        DEBUG_PRINT("%f %f %f %f\n", In[2][0],In[2][1],In[2][2],In[2][3]);
-        DEBUG_PRINT("%f %f %f %f\n", In[3][0],In[3][1],In[3][2],In[3][3]);
+        Debug("%f %f %f %f\n", In[0][0],In[0][1],In[0][2],In[0][3]);
+        Debug("%f %f %f %f\n", In[1][0],In[1][1],In[1][2],In[1][3]);
+        Debug("%f %f %f %f\n", In[2][0],In[2][1],In[2][2],In[2][3]);
+        Debug("%f %f %f %f\n", In[3][0],In[3][1],In[3][2],In[3][3]);
     }
     
     void PrintQuat(quat Q)
     {
-        DEBUG_PRINT("(%f, %f, %f, %f)\n", Q.x, Q.y, Q.z, Q.w);
+        Debug("(%f, %f, %f, %f)\n", Q.x, Q.y, Q.z, Q.w);
     }
     
     inline v4 operator*(const v4& V, const m4& M)

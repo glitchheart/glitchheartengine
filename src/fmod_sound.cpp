@@ -1,6 +1,6 @@
 static void FMODError(FMOD_RESULT Err)
 {
-    DEBUG_PRINT("FMOD Error! (%d) %s\n", Err, FMOD_ErrorString(Err));
+    Debug("FMOD Error! (%d) %s\n", Err, FMOD_ErrorString(Err));
 }
 
 static void LoadSound(const char* FilePath, sound_device* SoundDevice)
@@ -123,7 +123,7 @@ static void PlaySounds(sound_device* SoundDevice, sound_commands* Commands)
         }
         if(FMOD_System_Update(SoundDevice->System) != FMOD_OK)
         {
-            DEBUG_PRINT("FMOD Failed updating\n");
+            Debug("FMOD Failed updating\n");
         }
         ResetCommands(Commands);
     }
@@ -151,7 +151,7 @@ static void InitAudio_FMOD(sound_device* SoundDevice)
     FMOD_System_GetVersion(System, &Version);
     if(Version < FMOD_VERSION)
     {
-        DEBUG_PRINT("Version error\n");
+        Debug("Version error\n");
     }
     
     SoundDevice->System = System;

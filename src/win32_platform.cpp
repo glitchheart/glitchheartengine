@@ -165,7 +165,7 @@ inline PLATFORM_GET_ALL_FILES_WITH_EXTENSION(Win32FindFilesWithExtensions)
     }
     else
     {
-        DEBUG_PRINT("No files with extension %s found in %s\n", Extension, DirectoryPath);
+        Debug("No files with extension %s found in %s\n", Extension, DirectoryPath);
         return;
     }
     
@@ -194,7 +194,7 @@ inline PLATFORM_GET_ALL_FILES_WITH_EXTENSION(Win32FindFilesWithExtensions)
     }
     else
     {
-        DEBUG_PRINT("No files with extension %s found in %s\n", Extension, DirectoryPath);
+        Debug("No files with extension %s found in %s\n", Extension, DirectoryPath);
         return;
     }
 }
@@ -297,7 +297,7 @@ inline PLATFORM_SAVE_FILE_WITH_DIALOG(Win32SaveFileWithDialog)
         {
             auto OFlags = Flags & PM_Append ? _O_APPEND : 0;
             auto FDFlags = Flags & PM_Append ? "a" : "w";
-            DEBUG_PRINT("Flags: %d\n", OFlags);
+            Debug("Flags: %d\n", OFlags);
             Result.File = _fdopen(_open_osfhandle((imm)Hf, OFlags), FDFlags);
             strcpy(Result.Path, Ofn.lpstrFile);
             if(Extension)
@@ -307,7 +307,7 @@ inline PLATFORM_SAVE_FILE_WITH_DIALOG(Win32SaveFileWithDialog)
         }
         else
         {
-            DEBUG_PRINT("Open file for saving failed with error: %ld\n", Err);
+            Debug("Open file for saving failed with error: %ld\n", Err);
         }
     }
     return Result;
