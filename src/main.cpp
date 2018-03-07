@@ -69,7 +69,7 @@ static void LoadGameCode(game_code& GameCode, char* GameLibraryPath, char* TempG
     
     if (!GameCode.IsValid)
     {
-        DEBUG_PRINT("Invalid game code\n");
+        Debug("Invalid game code\n");
         GameCode.Update = UpdateStub;
     }
 }
@@ -104,7 +104,7 @@ static void ReloadLibraries(game_code *Game, char* GameLibraryPath, char* TempGa
         {
             ReloadGameCode(Game, GameLibraryPath, TempGameLibraryPath);
             Assert(Game);
-            DEBUG_PRINT("Reloaded game library\n");
+            Debug("Reloaded game library\n");
         }
     }
 }
@@ -377,7 +377,7 @@ int main(int Argc, char** Args)
         
         if(GameMemory.ExitGame)
         {
-            DEBUG_PRINT("Quit\n");
+            Debug("Quit\n");
             glfwSetWindowShouldClose(RenderState.Window, GLFW_TRUE);
         }
         

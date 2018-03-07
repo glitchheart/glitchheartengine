@@ -8,24 +8,18 @@
 #define COMMA_IF_PARENS(...) ,
 
 #if GLITCH_DEBUG
-#define DEBUG_PRINT(format, ...) printf(format , ## __VA_ARGS__)
+#define Debug(format, ...) printf(format , ## __VA_ARGS__)
 #else
-#define DEBUG_PRINT(format, ...)
-#endif
-
-#if GLITCH_DEBUG
-#define DEBUG_PRINT_V3(vec, ...) printf(## __VA_ARGS__ "" "(%f, %f, %f)\n", vec.x, vec.y, vec.z)
-#else
-#define DEBUG_PRINT_V3(vec, ...)
+#define Debug(format, ...)
 #endif
 
 #if GLITCH_DEBUG
 #ifdef _WIN32
-#define Assert(Expression) if(!(Expression)) {DEBUG_PRINT("Assertion failed in: %s on line %d\n",__FILE__,__LINE__); __debugbreak();}
+#define Assert(Expression) if(!(Expression)) {Debug("Assertion failed in: %s on line %d\n",__FILE__,__LINE__); __debugbreak();}
 #elif __linux
-#define Assert(Expression) if(!(Expression)) {DEBUG_PRINT("Assertion failed in: %s on line %d\n",__FILE__,__LINE__); abort();}
+#define Assert(Expression) if(!(Expression)) {Debug("Assertion failed in: %s on line %d\n",__FILE__,__LINE__); abort();}
 #elif __APPLE__
-#define Assert(Expression) if(!(Expression)) {DEBUG_PRINT("Assertion failed in: %s on line %d\n",__FILE__,__LINE__); abort();}
+#define Assert(Expression) if(!(Expression)) {Debug("Assertion failed in: %s on line %d\n",__FILE__,__LINE__); abort();}
 #endif
 #else
 #define Assert(Expression)

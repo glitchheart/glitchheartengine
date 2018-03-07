@@ -1,6 +1,6 @@
 static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugReportFlagsEXT Flags, VkDebugReportObjectTypeEXT ObjType, u64 Obj, size_t Location, i32 Code, const char* LayerPrefix, const char* Msg, void* UserData)
 {
-    DEBUG_PRINT("%s\n", Msg);
+    Debug("%s\n", Msg);
     return VK_FALSE;
 }
 
@@ -301,7 +301,7 @@ static void CreateSwapchain(vk_render_state& RenderState)
     
     if (vkCreateSwapchainKHR(RenderState.Device, &SwapchainCreateInfo, nullptr, &RenderState.Swapchain) != VK_SUCCESS) 
     {
-        printf("Unable to create swapchain\n");
+        Debug("Unable to create swapchain\n");
         glfwTerminate();
         exit(EXIT_FAILURE);
     }
@@ -337,7 +337,7 @@ static void CreateSwapchainImageViews(vk_render_state& RenderState)
         
         if (vkCreateImageView(RenderState.Device, &CreateInfo, nullptr, &RenderState.SwapchainImageViews[Index]) != VK_SUCCESS)
         {
-            printf("Failed to create image views\n");
+            Debug("Failed to create image views\n");
         }
     }
 }
@@ -365,14 +365,14 @@ static VkBool32 CreateShaderModule(vk_render_state& RenderState, const char* Sha
         
         if (vkCreateShaderModule(RenderState.Device, &CreateInfo, nullptr, &ShaderModule) != VK_SUCCESS)
         {
-            printf("Failed to create shader module\n");
+            Debug("Failed to create shader module\n");
             return VK_FALSE;
         }
         
     }
     else
     {
-        printf("The file '%s' could not be opened\n", ShaderPath);
+        Debug("The file '%s' could not be opened\n", ShaderPath);
         return VK_FALSE;
     }
     
@@ -386,12 +386,12 @@ static void CreateGraphicsPipeline(vk_render_state& RenderState)
     
     if(!CreateShaderModule(RenderState, "../engine_assets/shaders/vulkan/vertex.spv", VertexShaderModule))
     {
-        printf("Could not create vertex shader module\n");
+        Debug("Could not create vertex shader module\n");
     }
     
     if(!CreateShaderModule(RenderState, "../engine_assets/shaders/vulkan/fragment.spv", FragmentShaderModule))
     {
-        printf("Could not create vertex shader module\n");
+        Debug("Could not create vertex shader module\n");
     }
     
     VkPipelineShaderStageCreateInfo VertexShaderStageInfo = {};
@@ -503,7 +503,7 @@ dynamicState.pDynamicStates = dynamicStates;
     
     if (vkCreatePipelineLayout(RenderState.Device, &PipelineLayoutInfo, nullptr, &RenderState.PipelineLayout) != VK_SUCCESS)
     {
-        printf("Failed to create pipeline layout");
+        Debug("Failed to create pipeline layout");
         glfwTerminate();
         exit(EXIT_FAILURE);
     }
@@ -528,7 +528,7 @@ dynamicState.pDynamicStates = dynamicStates;
     PipelineInfo.layout = RenderState.PipelineLayout;
     
     if (vkCreateGraphicsPipelines(RenderState.Device, VK_NULL_HANDLE, 1, &PipelineInfo, nullptr, &RenderState.GraphicsPipeline) != VK_SUCCESS) {
-        printf("failed to create graphics pipeline\n");
+        Debug("failed to create graphics pipeline\n");
     }
     
     vkDestroyShaderModule(RenderState.Device, FragmentShaderModule, nullptr);
@@ -575,7 +575,7 @@ static void CreateRenderPass(vk_render_state& RenderState)
     
     if (vkCreateRenderPass(RenderState.Device, &RenderPassInfo, nullptr, &RenderState.RenderPass) != VK_SUCCESS) 
     {
-        printf("failed to create render pass\n");
+        Debug("failed to create render pass\n");
     }
 }
 
@@ -601,7 +601,7 @@ static void CreateFramebuffers(vk_render_state& RenderState)
         
         if(vkCreateFramebuffer(RenderState.Device, &FramebufferInfo, nullptr, &RenderState.SwapchainFramebuffers[Index]) != VK_SUCCESS) 
         {
-            printf("failed to create framebuffer\n");
+            Debug("failed to create framebuffer\n");
         }
     }
 }
@@ -615,7 +615,7 @@ static void CreateCommandPool(vk_render_state& RenderState)
     
     if (vkCreateCommandPool(RenderState.Device, &PoolInfo, nullptr, &RenderState.CommandPool) != VK_SUCCESS) 
     {
-        printf("failed to create command pool\n");
+        Debug("failed to create command pool\n");
     }
 }
 
@@ -632,7 +632,7 @@ static void CreateCommandBuffers(vk_render_state& RenderState)
     
     if (vkAllocateCommandBuffers(RenderState.Device, &AllocInfo, RenderState.CommandBuffers) != VK_SUCCESS) 
     {
-        printf("failed to allocate command buffers\n");
+        Debug("failed to allocate command buffers\n");
     }
     
     for(size_t Index = 0; Index < CommandBufferCount; Index++) 
@@ -667,7 +667,7 @@ static void CreateCommandBuffers(vk_render_state& RenderState)
         
         if (vkEndCommandBuffer(RenderState.CommandBuffers[Index]) != VK_SUCCESS) 
         {
-            printf("failed to record command buffer\n");
+            Debug("failed to record command buffer\n");
         }
     }
     
@@ -681,7 +681,7 @@ static void CreateSemaphores(vk_render_state& RenderState)
     if (vkCreateSemaphore(RenderState.Device, &SemaphoreInfo, nullptr, &RenderState.ImageAvailableSemaphore) != VK_SUCCESS ||
         vkCreateSemaphore(RenderState.Device, &SemaphoreInfo, nullptr, &RenderState.RenderFinishedSemaphore) != VK_SUCCESS) 
     {
-        printf("failed to create semaphores\n");
+        Debug("failed to create semaphores\n");
     }
 }
 
@@ -704,7 +704,7 @@ static void InitializeVulkan(vk_render_state& RenderState, renderer& Renderer, c
     /*u32 ExtensionCount = 0;
     vkEnumerateInstanceExtensionProperties(nullptr, &ExtensionCount, nullptr);
     
-    printf("Extensions supported: %d\n", ExtensionCount);
+    Debug("Extensions supported: %d\n", ExtensionCount);
     */
     
     RenderState.WindowWidth = ConfigData.ScreenWidth;
@@ -730,7 +730,7 @@ static void InitializeVulkan(vk_render_state& RenderState, renderer& Renderer, c
     
     if(RenderState.EnableValidationLayers && !CheckValidationLayerSupport())
     {
-        printf("No validation layers are supported\n");
+        Debug("No validation layers are supported\n");
         
         glfwTerminate();
         exit(EXIT_FAILURE);
@@ -761,7 +761,7 @@ static void InitializeVulkan(vk_render_state& RenderState, renderer& Renderer, c
     
     if(vkCreateInstance(&CreateInfo, nullptr, &RenderState.Instance) != VK_SUCCESS)
     {
-        printf("Could not create VkInstance\n");
+        Debug("Could not create VkInstance\n");
         VkCleanup(RenderState, Renderer);
         exit(EXIT_FAILURE);
     }
@@ -774,13 +774,13 @@ static void InitializeVulkan(vk_render_state& RenderState, renderer& Renderer, c
     
     if(CreateDebugReportCallbackEXT(RenderState.Instance, &DebugCreateInfo, nullptr, &RenderState.Callback) != VK_SUCCESS)
     {
-        DEBUG_PRINT("Failed to set up debug callback\n");
+        Debug("Failed to set up debug callback\n");
     }
 #endif
     
     if(glfwCreateWindowSurface(RenderState.Instance, RenderState.Window, nullptr, &RenderState.Surface) != VK_SUCCESS)
     {
-        printf("Unable to create window surface\n");
+        Debug("Unable to create window surface\n");
         glfwTerminate();
         exit(EXIT_FAILURE);
     }
@@ -790,7 +790,7 @@ static void InitializeVulkan(vk_render_state& RenderState, renderer& Renderer, c
     
     if(DeviceCount == 0)
     {
-        printf("No physical devices found\n");
+        Debug("No physical devices found\n");
         glfwTerminate();
         exit(EXIT_FAILURE);
     }
@@ -810,7 +810,7 @@ static void InitializeVulkan(vk_render_state& RenderState, renderer& Renderer, c
     
     if(!IsDeviceSuitable(RenderState))
     {
-        printf("Device is not suitable");
+        Debug("Device is not suitable");
         glfwTerminate();
         exit(EXIT_FAILURE);
     }
@@ -847,7 +847,7 @@ static void InitializeVulkan(vk_render_state& RenderState, renderer& Renderer, c
     
     if(vkCreateDevice(RenderState.PhysicalDevice, &DeviceCreateInfo, nullptr, &RenderState.Device) != VK_SUCCESS)
     {
-        printf("Unable to create physical device\n");
+        Debug("Unable to create physical device\n");
         glfwTerminate();
         exit(EXIT_FAILURE);
     }
@@ -905,7 +905,7 @@ static void DrawFrame(vk_render_state& RenderState)
     
     if (vkQueueSubmit(RenderState.GraphicsQueue, 1, &SubmitInfo, VK_NULL_HANDLE) != VK_SUCCESS)
     {
-        printf("failed to submit draw command buffer\n");
+        Debug("failed to submit draw command buffer\n");
     }
     
     VkPresentInfoKHR PresentInfo = {};

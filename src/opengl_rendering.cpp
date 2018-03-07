@@ -78,8 +78,8 @@ static GLint ShaderCompilationErrorChecking(const char* ShaderName, GLuint Shade
         
         glGetShaderInfoLog(Shader, MaxLength, &MaxLength, ErrorLog);
         
-        DEBUG_PRINT("SHADER Compilation error - %s\n", ShaderName);
-        DEBUG_PRINT("%s", ErrorLog);
+        Debug("SHADER Compilation error - %s\n", ShaderName);
+        Debug("%s", ErrorLog);
         
         glDeleteShader(Shader); // Don't leak the shader.
     }
@@ -476,7 +476,7 @@ static void RenderSetup(render_state *RenderState, memory_arena* PermArena)
     glBindTexture(GL_TEXTURE_2D, 0);
     
     if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-        DEBUG_PRINT("ERROR::FRAMEBUFFER:: Framebuffer is not complete!");
+        Debug("ERROR::FRAMEBUFFER:: Framebuffer is not complete!");
     
     GLuint DepthBuffer;
     glGenRenderbuffers(1, &DepthBuffer);
@@ -502,7 +502,7 @@ static void RenderSetup(render_state *RenderState, memory_arena* PermArena)
     glBindTexture(GL_TEXTURE_2D, 0);
     
     if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-        DEBUG_PRINT("ERROR::FRAMEBUFFER:: Framebuffer is not complete!");
+        Debug("ERROR::FRAMEBUFFER:: Framebuffer is not complete!");
     
     // FrameBuffer VAO
     glGenVertexArrays(1, &RenderState->FrameBufferVAO);
@@ -965,9 +965,9 @@ static void InitializeOpenGL(render_state& RenderState, renderer& Renderer, conf
     
     glDepthFunc(GL_LESS);
     
-    DEBUG_PRINT("%s\n", glGetString(GL_VERSION));
-    DEBUG_PRINT("Shading language supported: %s\n", glGetString(GL_SHADING_LANGUAGE_VERSION));
-    DEBUG_PRINT("Glad Version: %d.%d\n", GLVersion.major, GLVersion.minor);
+    Debug("%s\n", glGetString(GL_VERSION));
+    Debug("Shading language supported: %s\n", glGetString(GL_SHADING_LANGUAGE_VERSION));
+    Debug("Glad Version: %d.%d\n", GLVersion.major, GLVersion.minor);
     
     glfwSetWindowUserPointer(RenderState.Window, &RenderState);
     glfwSetKeyCallback(RenderState.Window, KeyCallback);
@@ -1044,14 +1044,14 @@ static void ReloadAssets(render_state& RenderState, asset_manager* AssetManager,
     {
         if(AssetManager->DirtyVertexShaderIndices[i] == 1)
         {
-            DEBUG_PRINT("Reloading vertex shader type: %s\n", ShaderEnumToStr((Shader_Type)i));
+            Debug("Reloading vertex shader type: %s\n", ShaderEnumToStr((Shader_Type)i));
             ReloadVertexShader((Shader_Type)i, &RenderState, PermArena);
             AssetManager->DirtyVertexShaderIndices[i] = 0;
         }
         
         if(AssetManager->DirtyFragmentShaderIndices[i] == 1)
         {
-            DEBUG_PRINT("Reloading fragment shader type: %s\n", ShaderEnumToStr((Shader_Type)i));
+            Debug("Reloading fragment shader type: %s\n", ShaderEnumToStr((Shader_Type)i));
             ReloadFragmentShader((Shader_Type)i, &RenderState, PermArena);
             AssetManager->DirtyFragmentShaderIndices[i] = 0;
         }
