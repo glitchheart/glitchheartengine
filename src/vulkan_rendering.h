@@ -1,7 +1,13 @@
 #ifndef VULKAN_RENDERING_H
 #define VULKAN_RENDERING_H
 
+// @Incomplete: This is a temporary ifdef, until we understand how to include/install on OSX the vulkan sdk correctly
+#ifndef __APPLE__
 #define GLFW_INCLUDE_VULKAN
+#else
+#define _GLFW_VULKAN_STATIC
+#include "vulkan/vulkan.h"
+#endif
 #include <GLFW/glfw3.h>
 
 #define VALIDATION_LAYER_SIZE 2

@@ -33,9 +33,7 @@ memory_state MemoryState;
 
 #include "gmap.cpp"
 #include "keycontroller.h"
-#if __linux || _WIN32
 #include "vulkan_rendering.h"
-#endif
 #include "opengl_rendering.h"
 #include "animation.cpp"
 #include "keycontroller.cpp"
@@ -49,9 +47,7 @@ input_controller InputController;
 
 #include "keys_glfw.h"
 #include "opengl_rendering.cpp"
-#if __linux || _WIN32
 #include "vulkan_rendering.cpp"
-#endif
 
 static void LoadGameCode(game_code& GameCode, char* GameLibraryPath, char* TempGameLibraryPath)
 {
