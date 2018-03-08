@@ -31,7 +31,7 @@ memory_state MemoryState;
 #include "osx_platform.cpp"
 #endif
 
-//#define GL_DEBUG
+//,#define GL_DEBUG
 
 #ifdef GL_DEBUG
 GLuint DebugAttrib(u32 Program, char* Str, char* File, int Line)
