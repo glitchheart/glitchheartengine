@@ -15,6 +15,23 @@ static void ShowMouseCursor(render_state& RenderState, b32 Show)
     }
 }
 
+void MessageCallback(GLenum Source,
+                     GLenum Type,
+                     GLuint Id,
+                     GLenum Severity,
+                     GLsizei Length,
+                     const GLchar* Message,
+                     const void* UserParam)
+{
+    (void)UserParam; // Silence unused warning
+    if(Type == GL_DEBUG_TYPE_ERROR)
+    {
+        Debug("GL CALLBACK: %s type = 0x%x, severity = 0x%x, message = %s, source = %x, id = %ud, length %ud= \n",
+              (Type == GL_DEBUG_TYPE_ERROR ? "** GL ERROR **" : ""),
+              Type, Severity, Message, Source, Id, Length);
+    }
+}
+
 void FramebufferSizeCallback(GLFWwindow *Window, int Width, int Height)
 {
     render_state* RenderState = (render_state*)glfwGetWindowUserPointer(Window);
@@ -574,7 +591,7 @@ static void RenderSetup(render_state *RenderState, memory_arena* PermArena)
     glBindVertexArray(0);
     
     //error sprite
-    glGenVertexArrays(1, &RenderState->SpriteErrorVAO);
+    /*glGenVertexArrays(1, &RenderState->SpriteErrorVAO);
     glBindVertexArray(RenderState->SpriteErrorVAO);
     glGenBuffers(1, &RenderState->SpriteQuadVBO);
     glBindBuffer(GL_ARRAY_BUFFER, RenderState->SpriteQuadVBO);
@@ -591,9 +608,9 @@ static void RenderSetup(render_state *RenderState, memory_arena* PermArena)
     glEnableVertexAttribArray(TexcoordLocation);
     glVertexAttribPointer(TexcoordLocation, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *)(2 * sizeof(float)));
     glBindVertexArray(0);
-    
+    */
     //ui sprite
-    glGenVertexArrays(1, &RenderState->UISpriteVAO);
+    /*glGenVertexArrays(1, &RenderState->UISpriteVAO);
     glBindVertexArray(RenderState->UISpriteVAO);
     glGenBuffers(1, &RenderState->SpriteQuadVBO);
     glBindBuffer(GL_ARRAY_BUFFER, RenderState->SpriteQuadVBO);
@@ -631,7 +648,7 @@ static void RenderSetup(render_state *RenderState, memory_arena* PermArena)
     glEnableVertexAttribArray(TexcoordLocation);
     glVertexAttribPointer(TexcoordLocation, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *)(2 * sizeof(float)));
     glBindVertexArray(0);
-    
+    */
     //tile
     glGenVertexArrays(1, &RenderState->TileVAO);
     glBindVertexArray(RenderState->TileVAO);
@@ -826,7 +843,6 @@ static GLuint LoadTexture(texture_data& Data, texture* Texture)
 { 
     GLuint TextureHandle;
     
-    glEnable(GL_TEXTURE_2D);
     glGenTextures(1, &TextureHandle);
     glBindTexture(GL_TEXTURE_2D, TextureHandle);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -951,6 +967,10 @@ static void InitializeOpenGL(render_state& RenderState, renderer& Renderer, conf
     
     glfwGetFramebufferSize(RenderState.Window, &RenderState.WindowWidth, &RenderState.WindowHeight);
     glViewport(0, 0, RenderState.WindowWidth, RenderState.WindowHeight);
+    
+    // Enable debug output
+    glEnable(GL_DEBUG_OUTPUT);
+    glDebugMessageCallback((GLDEBUGPROC) MessageCallback, 0);
     
     RenderState.ScreenWidth = ConfigData->ScreenWidth;
     RenderState.ScreenHeight = ConfigData->ScreenHeight;
@@ -1119,6 +1139,52 @@ static void RenderLine(render_state& RenderState, math::v4 Color, math::v3 Start
         End.z = 0.0f;
     }
     
+    auto& Shader = RenderState.PassthroughShader;
+    UseShader(&Shader);
+    
+    glBindVertexArray(RenderState.PrimitiveVAO);
+    
+    glEnableVertexAttribArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, RenderState.PrimitiveVBO);
+    auto Width = 0.02f * LineWidth;
+    
+    auto Normal =  math::v3(Width/2.0f, 0.0f, Width/2.0f);
+    
+    auto V1 = Start - Normal;
+    auto V2 = Start + Normal;
+    auto V3 = End - Normal;
+    auto V4 = End + Normal;
+    
+    GLfloat Points[18] = {V1.x, V1.y, V1.z, V2.x, V2.y, V2.z, V3.x, V3.y, V3.z, V3.x, V3.y, V3.z, V2.x, V2.y, V2.z, V4.x, V4.y, V4.z};
+    glBufferData(GL_ARRAY_BUFFER, 18 * sizeof(GLfloat), &Points[0], GL_DYNAMIC_DRAW);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (void*)0);
+    
+    auto M = math::m4(1.0f);
+    
+    SetMat4Uniform(Shader.Program, "M", M);
+    SetMat4Uniform(Shader.Program, "V", ViewMatrix);
+    SetMat4Uniform(Shader.Program, "P", ProjectionMatrix);
+    SetVec4Uniform(Shader.Program, "c", Color);
+    
+    glDrawArrays(GL_TRIANGLES, 0, 18);
+}
+/*
+static void RenderLine(render_state& RenderState, math::v4 Color, math::v3 Start, math::v3 End, math::m4 ProjectionMatrix = math::m4(), math::m4 ViewMatrix = math::m4(), r32 LineWidth = 1.0f, b32 IsUI = false)
+{
+    if(IsUI)
+    {
+        Start.x *= RenderState.ScaleX;
+        Start.x -= 1;
+        Start.y *= RenderState.ScaleY;
+        Start.y -= 1;
+        End.x *= RenderState.ScaleX;
+        End.x -= 1;
+        End.y *= RenderState.ScaleY;
+        End.y -= 1;
+        Start.z = 0.0f;
+        End.z = 0.0f;
+    }
+    
     glLineWidth(LineWidth);
     glBindBuffer(GL_ARRAY_BUFFER, RenderState.PrimitiveVBO);
     
@@ -1141,7 +1207,7 @@ static void RenderLine(render_state& RenderState, math::v4 Color, math::v3 Start
     glDrawArrays(GL_LINES, 0, 6);
     glLineWidth(1.0f);
 }
-
+*/
 // NOTE(Niels): Possible future use but buggy
 void RenderCircle(render_state& RenderState, math::v4 Color, r32 CenterX, r32 CenterY, r32 Radius, b32 IsUI = true, math::m4 ProjectionMatrix = math::m4(), math::m4 ViewMatrix = math::m4())
 {
@@ -1622,7 +1688,7 @@ RenderText(RenderState, RenderState.Fonts[0], Color, &Console->HistoryBuffer[Ind
 
 static void RenderLine(const render_command& Command, render_state& RenderState, math::m4 Projection, math::m4 View)
 {
-    RenderLine(RenderState, Command.Line.Color, Command.Line.Point1, Command.Line.Point2, Projection, View, Command.Line.LineWidth);
+    RenderLine(RenderState, Command.Line.Color, Command.Line.Point1, Command.Line.Point2, Projection, View, Command.Line.LineWidth, Command.IsUI);
 }
 
 static void RenderText(const render_command& Command, render_state& RenderState)
