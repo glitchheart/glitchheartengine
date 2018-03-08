@@ -32,7 +32,6 @@
 #define Static_Assert(Expression)
 #endif
 
-
 #define Min(A,B) ((A < B) ? (A) : (B))
 #define Max(A,B) ((A > B) ? (A) : (B))
 #define Abs(x) ((x) < 0 ? -(x) : (x))
@@ -86,6 +85,8 @@ char* ToString(texture_data* Data);
 #include "log_state.h"
 #include "engine_math.h"
 #include "modelformat.h"
+
+
 
 enum Window_Mode
 {
