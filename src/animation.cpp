@@ -181,12 +181,13 @@ static void TickAnimationControllers(renderer& Renderer, sound_commands* SoundCo
             {
                 auto& CallbackInfo = CurrentNode.CallbackInfos[CallbackIndex];
                 
-                if(!CallbackInfo.WasCalled && (CallbackInfo.Frame != -1 && CallbackInfo.Frame == AnimationController.CurrentFrameIndex || ReachedEnd))
+                if(!CallbackInfo.WasCalled && (CallbackInfo.Frame != -1 && CallbackInfo.Frame == AnimationController.CurrentFrameIndex || CallbackInfo.Frame == -1 && ReachedEnd))
                 {
                     if(CallbackInfo.Callback)
                     {
                         CallbackInfo.Callback(CallbackInfo.State, CallbackInfo.Data, Renderer, SoundCommands, InputController, TimerController);
                         CallbackInfo.WasCalled = true;
+                        //Debug("Frame for callback %d %s\n", CallbackInfo.Frame, CurrentNode.Name);
                     }
                 }
             }
@@ -231,9 +232,9 @@ static void TickAnimationControllers(renderer& Renderer, sound_commands* SoundCo
             }
             else if(ReachedEndOfFrame && !ReachedEnd)
             {
-                // @Bug: Somehow we keep incrementing the frame index in some weird cases. Not sure when though...
                 AnimationController.CurrentFrameIndex++;
                 AnimationController.CurrentTime = 0.0;
+                ResetCallbacks(CurrentNode);
             }
             
             AnimationController.CurrentTime += AnimationController.Speed * DeltaTime;
