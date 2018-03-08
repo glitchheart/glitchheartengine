@@ -172,7 +172,7 @@ static void TickAnimationControllers(renderer& Renderer, sound_commands* SoundCo
             auto& CurrentAnimation = Renderer.SpritesheetAnimations[CurrentNode.AnimationHandle];
             
             b32 ReachedEndOfFrame = AnimationController.CurrentTime >= CurrentAnimation.Frames[AnimationController.CurrentFrameIndex].Duration;
-            b32 ReachedEnd = CurrentAnimation.FrameCount - 1 == AnimationController.CurrentFrameIndex && ReachedEndOfFrame;
+            b32 ReachedEnd = CurrentAnimation.FrameCount - 1 <= AnimationController.CurrentFrameIndex && ReachedEndOfFrame;
             
             b32 ChangedNode = false;
             
@@ -231,6 +231,7 @@ static void TickAnimationControllers(renderer& Renderer, sound_commands* SoundCo
             }
             else if(ReachedEndOfFrame && !ReachedEnd)
             {
+                // @Bug: Somehow we keep incrementing the frame index in some weird cases. Not sure when though...
                 AnimationController.CurrentFrameIndex++;
                 AnimationController.CurrentTime = 0.0;
             }
