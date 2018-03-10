@@ -29,7 +29,8 @@ const static struct
     SHADERPAIR(FrameBuffer),
     SHADERPAIR(LightSource),
     SHADERPAIR(SimpleModel),
-    SHADERPAIR(Passthrough)
+    SHADERPAIR(Passthrough),
+    SHADERPAIR(Line)
 };
 
 char* ShaderEnumToStr(Shader_Type Shader)
@@ -60,7 +61,8 @@ static char* ShaderPaths[Shader_Count] =
     "../engine_assets/shaders/framebuffershader",
     "../engine_assets/shaders/lightsourceshader",
     "../engine_assets/shaders/simple_model_shader",
-    "../engine_assets/shaders/passthroughshader"
+    "../engine_assets/shaders/passthroughshader",
+    "../engine_assets/shaders/lineshader"
 };
 
 
@@ -225,6 +227,9 @@ struct render_state
     GLuint UIErrorVAO;
     GLuint PassthroughVAO;
     
+    GLuint LineVBO;
+    GLuint LineVAO;
+    
     //tiles
     GLfloat TileQuadVertices[16] =
     {
@@ -320,6 +325,7 @@ struct render_state
             shader LightSourceShader;
             shader SimpleModelShader;
             shader PassthroughShader;
+            shader LineShader;
         };
     };
     

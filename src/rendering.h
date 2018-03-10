@@ -96,6 +96,7 @@ enum Shader_Type
     Shader_LightSource,
     Shader_SimpleModel,
     Shader_Passthrough,
+    Shader_Line,
     
     Shader_Count
 };

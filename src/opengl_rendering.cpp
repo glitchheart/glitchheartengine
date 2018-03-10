@@ -776,14 +776,24 @@ static void RenderSetup(render_state *RenderState, memory_arena* PermArena)
     glBindVertexArray(0);
     
     // Lines
-    glGenVertexArrays(1, &RenderState->PrimitiveVAO);
-    glBindVertexArray(RenderState->PrimitiveVAO);
-    glGenBuffers(1, &RenderState->PrimitiveVBO);
-    glBindBuffer(GL_ARRAY_BUFFER, RenderState->PrimitiveVBO);
+    LoadShader(ShaderPaths[Shader_Line], &RenderState->LineShader, PermArena);
+    glGenVertexArrays(1, &RenderState->LineVAO);
+    glBindVertexArray(RenderState->LineVAO);
+    glGenBuffers(1, &RenderState->LineVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, RenderState->LineVBO);
     
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), 0);
     glBindVertexArray(0);
+    
+    /*glGenVertexArrays(1, &RenderState->PrimitiveVAO);
+        glBindVertexArray(RenderState->PrimitiveVAO);
+        glGenBuffers(1, &RenderState->PrimitiveVBO);
+        glBindBuffer(GL_ARRAY_BUFFER, RenderState->PrimitiveVBO);
+        
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), 0);
+        glBindVertexArray(0);
+        */
+    
     
     // Passthrough
     LoadShader(ShaderPaths[Shader_Passthrough], &RenderState->PassthroughShader, PermArena);
@@ -1162,35 +1172,52 @@ static void RenderLine(render_state& RenderState, math::v4 Color, math::v3 Start
         End.z = 0.0f;
     }
     
-    auto& Shader = RenderState.PassthroughShader;
+    auto& Shader = RenderState.LineShader;
     UseShader(&Shader);
     
-    glBindVertexArray(RenderState.PrimitiveVAO);
+    glBindVertexArray(RenderState.LineVAO);
     
     glEnableVertexAttribArray(0);
-    glBindBuffer(GL_ARRAY_BUFFER, RenderState.PrimitiveVBO);
+    
+    glEnableVertexAttribArray(1);
+    
+    glEnableVertexAttribArray(2);
+    
+    
+    glBindBuffer(GL_ARRAY_BUFFER, RenderState.LineVBO);
     auto Width = 0.02f * LineWidth;
     
-    auto Normal =  math::v3(Width/2.0f, 0.0f, Width/2.0f);
+    // ONLY FOR 2D!!!
+    auto DX = End.x - Start.x;
+    auto DY = End.y - Start.y;
+    auto Normal =  math::v2(-DY, DX);
     
-    auto V1 = Start - Normal;
-    auto V2 = Start + Normal;
-    auto V3 = End - Normal;
-    auto V4 = End + Normal;
+    // Double vertices
+    // 1.0f and -1.0f are Miters
     
-    GLfloat Points[18] = {V1.x, V1.y, V1.z, V2.x, V2.y, V2.z, V3.x, V3.y, V3.z, V3.x, V3.y, V3.z, V2.x, V2.y, V2.z, V4.x, V4.y, V4.z};
-    glBufferData(GL_ARRAY_BUFFER, 18 * sizeof(GLfloat), &Points[0], GL_DYNAMIC_DRAW);
+    GLfloat Points[24] = {
+        Start.x, Start.y, Start.z, Normal.x, Normal.y, 1.0f,
+        Start.x, Start.y, Start.z, Normal.x, Normal.y, -1.0f,
+        End.x, End.y, End.z, Normal.x, Normal.y, 1.0f,
+        End.x, End.y, End.z, Normal.x, Normal.y, -1.0f};
+    
+    
+    glBufferData(GL_ARRAY_BUFFER, 12 * sizeof(GLfloat), &Points[0], GL_DYNAMIC_DRAW);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (void*)0);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(GLfloat), (void*)0);
+    glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, 1 * sizeof(GLfloat), (void*)0);
     
     auto M = math::m4(1.0f);
     
-    SetMat4Uniform(Shader.Program, "M", M);
-    SetMat4Uniform(Shader.Program, "V", ViewMatrix);
-    SetMat4Uniform(Shader.Program, "P", ProjectionMatrix);
-    SetVec4Uniform(Shader.Program, "c", Color);
+    SetMat4Uniform(Shader.Program, "Model", M);
+    SetMat4Uniform(Shader.Program, "View", ViewMatrix);
+    SetMat4Uniform(Shader.Program, "Projection", ProjectionMatrix);
+    SetVec4Uniform(Shader.Program, "Color", Color);
+    SetFloatUniform(Shader.Program, "thickness", LineWidth);
     
-    glDrawArrays(GL_TRIANGLES, 0, 18);
+    glDrawArrays(GL_TRIANGLES, 0, 24);
 }
+
 /*
 static void RenderLine(render_state& RenderState, math::v4 Color, math::v3 Start, math::v3 End, math::m4 ProjectionMatrix = math::m4(), math::m4 ViewMatrix = math::m4(), r32 LineWidth = 1.0f, b32 IsUI = false)
 {
