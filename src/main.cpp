@@ -31,25 +31,6 @@ memory_state MemoryState;
 #include "osx_platform.cpp"
 #endif
 
-//,#define GL_DEBUG
-
-#ifdef GL_DEBUG
-GLuint DebugAttrib(u32 Program, char* Str, char* File, int Line)
-{
-    Debug("FIle: %s, Line: %d\n", File, Line);
-    return glGetAttribLocation(Program, Str);
-}
-
-void DebugAttribArray(u32 Location, char* File, int Line)
-{
-    Debug("FIle: %s, Line: %d\n", File, Line);
-    glEnableVertexAttribArray(Location);
-}
-
-#define glEnableVertexAttribArray(Loc) DebugAttribArray(Loc, __FILE__, __LINE__)
-#define glGetAttribLocation(Shader, Str) DebugAttrib(Shader, Str, __FILE__, __LINE__)
-#endif
-
 #include "gmap.cpp"
 #include "keycontroller.h"
 #include "vulkan_rendering.h"

@@ -1,3 +1,26 @@
+
+//#define GL_DEBUG
+
+#ifdef GL_DEBUG
+GLuint DebugAttrib(u32 Program, char* Str, char* File, int Line)
+{
+    Debug("File: %s, Line: %d\n", File, Line);
+    return (GLuint)glGetAttribLocation(Program, Str);
+}
+
+void DebugAttribArray(u32 Location, char* File, int Line)
+{
+    Debug("File: %s, Line: %d\n", File, Line);
+    glEnableVertexAttribArray(Location);
+}
+
+
+// Macro redefinition, but used for debug
+#define glEnableVertexAttribArray(Loc) DebugAttribArray(Loc, __FILE__, __LINE__)
+#define glGetAttribLocation(Shader, Str) DebugAttrib(Shader, Str, __FILE__, __LINE__)
+#endif
+
+
 static void ErrorCallback(int Error, const char *Description)
 {
     fprintf(stderr, "Error: %d - %s\n", Error, Description);
