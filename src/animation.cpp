@@ -208,10 +208,12 @@ static void TickAnimationControllers(renderer& Renderer, sound_commands* SoundCo
                         
                         if(!ConditionsMet)
                         {
+                            Link.ConditionMet = ConditionsMet;
                             break;
                         }
                     }
                     
+                    Link.ConditionMet = ConditionsMet;
                     if(ConditionsMet)
                     {
                         AnimationController.CurrentNode = Link.DestinationNode;
@@ -221,6 +223,7 @@ static void TickAnimationControllers(renderer& Renderer, sound_commands* SoundCo
                         ResetCallbacks(CurrentNode);
                         break;
                     }
+                    
                 }
             } 
             
