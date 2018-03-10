@@ -782,6 +782,10 @@ static void RenderSetup(render_state *RenderState, memory_arena* PermArena)
     glGenBuffers(1, &RenderState->LineVBO);
     glBindBuffer(GL_ARRAY_BUFFER, RenderState->LineVBO);
     
+    glGenBuffers(1, &RenderState->LineEBO);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, RenderState->LineEBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint) * LINE_INDICES, RenderState->LineIndices, GL_STATIC_DRAW);
+    
     glBindVertexArray(0);
     
     /*glGenVertexArrays(1, &RenderState->PrimitiveVAO);
@@ -1156,6 +1160,8 @@ void SetFloatArrayUniform(GLuint ShaderHandle, const char *UniformName, r32* Val
     glUniform1fv(glGetUniformLocation(ShaderHandle, UniformName), (GLsizei)Length, (GLfloat*)&Value[0]);
 }
 
+#define BUFFER_OFFSET(i) ((char *)NULL + (i))
+
 static void RenderLine(render_state& RenderState, math::v4 Color, math::v3 Start, math::v3 End, math::m4 ProjectionMatrix = math::m4(), math::m4 ViewMatrix = math::m4(), r32 LineWidth = 1.0f, b32 IsUI = false)
 {
     if(IsUI)
@@ -1176,46 +1182,47 @@ static void RenderLine(render_state& RenderState, math::v4 Color, math::v3 Start
     UseShader(&Shader);
     
     glBindVertexArray(RenderState.LineVAO);
-    
-    glEnableVertexAttribArray(0);
-    
-    glEnableVertexAttribArray(1);
-    
-    glEnableVertexAttribArray(2);
-    
-    
     glBindBuffer(GL_ARRAY_BUFFER, RenderState.LineVBO);
-    auto Width = 0.02f * LineWidth;
+    
+    auto Width = 0.005f * LineWidth;
     
     // ONLY FOR 2D!!!
     auto DX = End.x - Start.x;
     auto DY = End.y - Start.y;
-    auto Normal =  math::v2(-DY, DX);
+    auto Normal =  math::Normalize(math::v2(-DY, DX));
     
     // Double vertices
     // 1.0f and -1.0f are Miters
     
+    
     GLfloat Points[24] = {
-        Start.x, Start.y, Start.z, Normal.x, Normal.y, 1.0f,
         Start.x, Start.y, Start.z, Normal.x, Normal.y, -1.0f,
-        End.x, End.y, End.z, Normal.x, Normal.y, 1.0f,
-        End.x, End.y, End.z, Normal.x, Normal.y, -1.0f};
+        Start.x, Start.y, Start.z, Normal.x, Normal.y, 1.0f,
+        End.x, End.y, End.z, Normal.x, Normal.y, -1.0f,
+        End.x, End.y, End.z, Normal.x, Normal.y, 1.0f};
     
+    glBufferData(GL_ARRAY_BUFFER, 24 * sizeof(GLfloat), &Points[0], GL_DYNAMIC_DRAW);
     
-    glBufferData(GL_ARRAY_BUFFER, 12 * sizeof(GLfloat), &Points[0], GL_DYNAMIC_DRAW);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (void*)0);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(GLfloat), (void*)0);
-    glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, 1 * sizeof(GLfloat), (void*)0);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (void*)0); // pos
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (void*)(3 * sizeof(GLfloat))); // normals
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (void*)(5 * sizeof(GLfloat))); // miter
     
     auto M = math::m4(1.0f);
     
-    SetMat4Uniform(Shader.Program, "Model", M);
-    SetMat4Uniform(Shader.Program, "View", ViewMatrix);
-    SetMat4Uniform(Shader.Program, "Projection", ProjectionMatrix);
-    SetVec4Uniform(Shader.Program, "Color", Color);
-    SetFloatUniform(Shader.Program, "thickness", LineWidth);
+    SetMat4Uniform(Shader.Program, "model", M);
+    SetMat4Uniform(Shader.Program, "view", ViewMatrix);
+    SetMat4Uniform(Shader.Program, "projection", ProjectionMatrix);
+    SetVec4Uniform(Shader.Program, "color", Color);
+    SetFloatUniform(Shader.Program, "thickness", Width);
+    SetIntUniform(Shader.Program, "isUI", IsUI);
     
-    glDrawArrays(GL_TRIANGLES, 0, 24);
+    //glDrawArrays(GL_TRIANGLES, 0, 4);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, RenderState.LineEBO);
+    glDrawElements(GL_TRIANGLES, LINE_INDICES, GL_UNSIGNED_INT, BUFFER_OFFSET(0));
+    glBindVertexArray(0);
 }
 
 /*
@@ -1516,7 +1523,7 @@ static void RenderQuad(Render_Mode Mode, render_state& RenderState, math::v4 Col
                 }
             }
             
-            glDrawElements(GL_TRIANGLES, sizeof(RenderState.QuadIndices), GL_UNSIGNED_INT, (void*)0);
+            glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)0);
         }
         break;
         case Render_Outline:

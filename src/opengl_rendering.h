@@ -229,6 +229,15 @@ struct render_state
     
     GLuint LineVBO;
     GLuint LineVAO;
+    GLuint LineEBO;
+    
+#define LINE_INDICES 6
+    
+    GLuint LineIndices[LINE_INDICES] = 
+    {
+        0, 1, 2,
+        1, 2, 3
+    };
     
     //tiles
     GLfloat TileQuadVertices[16] =

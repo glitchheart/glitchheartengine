@@ -39,6 +39,8 @@ struct animation_node_link
     b32 AfterFinishedAnimation;
     animation_link_condition Conditions[CONDITION_ARRAY_SIZE];
     i32 ConditionCount;
+    
+    b32 ConditionMet;
 };
 
 struct animation_node
