@@ -253,7 +253,7 @@ static void PushLine(renderer& Renderer, math::v3 Point1, math::v3 Point2, r32 L
     RenderCommand->IsUI = IsUI;
 }
 
-// @Incomplete: We still need to do something with fonts!
+#define PUSH_TEXT(Text, Position, Color, FontHandle) PushText(Renderer, Text, Position, 1.0f, FontHandle, Color)
 static void PushText(renderer& Renderer, const char* Text, math::v3 Position, r32 Scale, i32 FontHandle, math::rgba Color, Alignment Alignment = Alignment_Left, b32 IsUI = true)
 {
     render_command* RenderCommand = PushNextCommand(Renderer, IsUI);
