@@ -289,6 +289,9 @@ static void InitializeFreeTypeFont(char* FontPath, int FontSize, FT_Library Libr
     glGenTextures(1, &Font->Texture);
     glBindTexture(GL_TEXTURE_2D, Font->Texture);
     
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    
     glTexImage2D(GL_TEXTURE_2D, 0, GL_R8, (GLsizei)Font->AtlasWidth, (GLsizei)Font->AtlasHeight, 0, GL_RED, GL_UNSIGNED_BYTE, 0);
     
     /* Clamping to edges is important to prevent artifacts when scaling */
@@ -1375,7 +1378,10 @@ static void RenderQuad(Render_Mode Mode, render_state& RenderState, math::v4 Col
                     }
                 }
                 
-                glBindTexture(GL_TEXTURE_2D, (GLuint)TextureHandle);
+                if(RenderState.BoundTexture != TextureHandle)
+                {
+                    glBindTexture(GL_TEXTURE_2D, (GLuint)TextureHandle);
+                }
                 
                 if(ForAnimation || (TextureOffset.X >= 0.0f && TextureOffset.Y >= 0.0f))
                     Shader = RenderState.SpritesheetShader;
@@ -1704,44 +1710,6 @@ static void RenderWireframeCube(const render_command& Command, render_state& Ren
     glLineWidth(1.0f);
     glBindVertexArray(0);
 }
-
-//@Deprecated: Uses old-style rendering
-/*
-void RenderConsole(render_state& RenderState, console* Console)
-{
-glBindVertexArray(RenderState.RectVAO);
-
-r32 PercentAnimated = 1.0f + 1.0f - (r32)Console->CurrentTime / (r32)Console->TimeToAnimate;
-
-//draw upper part
-RenderQuad(Render_Fill, RenderState, math::v4(0.0f, 0.4f, 0.3f, 0.6f), math::v3(0.0f, (r32)RenderState.WindowHeight * 0.77f * PercentAnimated, 0.0f), math::v3((r32)RenderState.WindowWidth, (r32)RenderState.WindowHeight * 0.23f, 0.0f), math::v3(), -1, 0, 0);
-
-//draw lower bar
-RenderQuad(Render_Fill, RenderState, math::v4(0.0f, 0.2f, 0.2f, 0.6f), math::v3(0.0f, (r32)RenderState.WindowHeight * 0.77f * PercentAnimated, 0.0f), math::v3((r32)RenderState.WindowWidth, 0.0f, 0.0f), math::v3(), -1, 0L, 0);  
-
-GLfloat TimeValue = (r32)glfwGetTime();
-GLfloat AlphaValue = (r32)((sin(TimeValue * 4) / 2) + 0.5f);
-r32 Width;
-r32 Height;
-MeasureText(RenderState.Fonts[0], &Console->Buffer[0], &Width, &Height);
-
-//draw cursor
-RenderQuad(Render_Fill, RenderState, math::v4(AlphaValue, 1, AlphaValue, 1), math::v3(5 / 1920.0f * (r32)RenderState.WindowWidth + Width, RenderState.WindowHeight * 0.77f * PercentAnimated, 0.0f), math::v3(10, 20, 0.0f), math::v3(), -1, 0, 0);
-
-RenderText(RenderState, RenderState.Fonts[0], math::v4(0, 0.8, 0, 1),  &Console->Buffer[0],  5 / 1920.0f * (r32)RenderState.WindowWidth, (r32)RenderState.WindowHeight * 0.775f * PercentAnimated);
-
-math::v4 Color;
-
-for(i32 Index = 0; Index < HISTORY_BUFFER_LINES; Index++)
-{
-if(Index % 2 != 0)
-Color = math::v4(0, 1, 0, 1);
-else
-Color = math::v4(1, 1, 1, 1);
-
-RenderText(RenderState, RenderState.Fonts[0], Color, &Console->HistoryBuffer[Index][0], 5 / 1920.0f * (r32)RenderState.WindowWidth, (r32)RenderState.WindowHeight * 0.78f * PercentAnimated + (Index + 1) * 20 * PercentAnimated);
-}
-}*/
 
 static void RenderLine(const render_command& Command, render_state& RenderState, math::m4 Projection, math::m4 View)
 {
@@ -2285,7 +2253,6 @@ static void Render(render_state& RenderState, renderer& Renderer, memory_arena* 
             Renderer.FPSSum = 0.0;
         }
         
-        
         glBindFramebuffer(GL_FRAMEBUFFER, RenderState.FrameBuffer);
         
         glBindTexture(GL_TEXTURE_2D, RenderState.TextureColorBuffer);
@@ -2298,9 +2265,10 @@ static void Render(render_state& RenderState, renderer& Renderer, memory_arena* 
         
         glClearColor(Renderer.ClearColor.r, Renderer.ClearColor.g, Renderer.ClearColor.b, Renderer.ClearColor.a);
         
-        
         RenderCommands(RenderState, Renderer, PermArena);
+        RenderState.BoundTexture = -1; 
         
+        // We have to reset the bound texture to nothing, since we're about to bind other textures
         // Second pass
         
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
