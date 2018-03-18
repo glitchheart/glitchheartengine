@@ -1,9 +1,9 @@
 #ifndef MAIN_H
 #define MAIN_H
 
-struct memory_block
+struct MemoryBlock
 {
-    platform_memory_block block;
+    PlatformMemoryBlock block;
     u64 pad[3];
 };
 
@@ -27,7 +27,7 @@ struct GameCode
 struct MemoryState
 {
     // Will this work thoooo (apparently yes!)
-    platform_memory_block* blocks[MAX_TEMP_BLOCKS];
+    PlatformMemoryBlock* blocks[MAX_TEMP_BLOCKS];
     i32 temp_count;
     u64 temp_size_allocated;
     

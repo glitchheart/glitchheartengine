@@ -19,7 +19,6 @@ struct Timer
     r64 current_time;
     r64 timer_max;
     char* name;
-    b32 delete; // Not used yet, but will be used for array sorting and array cleanup
 };
 
 struct TimerController
@@ -31,64 +30,64 @@ struct TimerController
 
 static void reset_timers(TimerController& timer_controller)
 {
-    timer_controller.Paused = false;
-    timer_controller.TimerCount = 0;
+    timer_controller.paused = false;
+    timer_controller.timer_count = 0;
 }
 
 static void register_timer(i32* handle, r64 timer_max, TimerController& timer_controller)
 {
-    *handle = TimerController.TimerCount++;
-    TimerController.Timers[*handle].CurrentTime = timer_max;
-    TimerController.Timers[*handle].TimerMax = timer_max;
-    Assert(TimerController.TimerCount <= TIMER_MAX);
+    *handle = timer_controller.timer_count++;
+    timer_controller.timers[*handle].current_time = timer_max;
+    timer_controller.timers[*handle].timer_max = timer_max;
+    Assert(timer_controller.timer_count <= TIMER_MAX);
 }
 
 static void start_timer(i32 handle, TimerController& timer_controller)
 {
-    timer_controller.Timers[handle].CurrentTime = 0.0f;
+    timer_controller.timers[handle].current_time = 0.0f;
 }
 
 static void stop_timer(i32 handle, TimerController& timer_controller)
 {
-    timer_controller.Timers[handle].CurrentTime = timer_controller.Timers[handle].TimerMax;
+    timer_controller.timers[handle].current_time = timer_controller.timers[handle].timer_max;
 }
 
 static r64 get_current_timer_time(i32 handle, TimerController& timer_controller)
 {
-    return timer_controller.Timers[handle].CurrentTime;
+    return timer_controller.timers[handle].current_time;
 }
 
 static r64 get_max_timer_time(i32 handle, TimerController& timer_controller)
 {
-    return timer_controller.Timers[handle].TimerMax;
+    return timer_controller.timers[handle].timer_max;
 }
 
 static b32 timer_done(i32 handle, TimerController& timer_controller)
 {
-    if(handle < 0 || handle > timer_controller.TimerCount)
+    if(handle < 0 || handle > timer_controller.timer_count)
         return true;
-    return timer_controller.Timers[handle].CurrentTime >= timer_controller.Timers[handle].TimerMax;
+    return timer_controller.timers[handle].current_time >= timer_controller.timers[handle].timer_max;
 }
 
 static void tick_timers(TimerController& timer_controller, r64 delta_time)
 {
-    if(!timer_controller.Paused)
+    if(!timer_controller.paused)
     {
-        for(i32 index = 0; index < timer_controller.TimerCount; index++)
+        for(i32 index = 0; index < timer_controller.timer_count; index++)
         {
-            timer_controller.Timers[index].CurrentTime += delta_time;
+            timer_controller.timers[index].current_time += delta_time;
         }
     }
 }
 
 static void pause_timers(TimerController& timer_controller)
 {
-    timer_controller.Paused = true;
+    timer_controller.paused = true;
 }
 
 static void resume_timers(TimerController& timer_controller)
 {
-    timer_controller.Paused = false;
+    timer_controller.paused = false;
 }
 
 #endif

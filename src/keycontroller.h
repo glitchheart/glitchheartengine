@@ -40,9 +40,9 @@ DPAD LEFT 17
 
 enum KeyMode
 {
-    Key_NotPressed,
-    Key_JustPressed,
-    Key_Invalid
+    KEY_NOT_PRESSED,
+    KEY_JUST_PRESSED,
+    KEY_INVALID
 };
 
 #define NUM_KEYS 124
@@ -240,41 +240,41 @@ enum KeyMode
 #define Xbox_LeftTrigger Joystick_LeftTrigger
 #define Xbox_RightTrigger Joystick_RightTrigger
 
-using Key_Code = i32;
-using Controller_Code = i32;
-using Xbox_Code = i32;
-using PS4_Code = i32;
-using Mouse_Code = i32;
+using KeyCode = i32;
+using ControllerCode = i32;
+using XboxCode = i32;
+using PS4Code = i32;
+using MouseCode = i32;
 
 enum Stick
 {
-    Stick_Left,
-    Stick_Right
+    STICK_LEFT,
+    STICK_RIGHT
 };
 
 enum ControllerAxisCode
 {
-    Axis_1, // Left stick X (PS4 W10)
-    Axis_2, // Left stick Y (PS4 W10)
-    Axis_3, // Right stick X (PS4 W10)
-    Axis_4, // Right stick Y (PS4 W10)
-    Axis_5, // Left trigger (PS4 W10)
-    Axis_6  // Right trigger (PS4 W10)
+    AXIS_1, // Left stick X (PS4 W10)
+    AXIS_2, // Left stick Y (PS4 W10)
+    AXIS_3, // Right stick X (PS4 W10)
+    AXIS_4, // Right stick Y (PS4 W10)
+    AXIS_5, // Left trigger (PS4 W10)
+    AXIS_6  // Right trigger (PS4 W10)
 };
 
 #define NUM_AXES 6
 
 enum ControllerType
 {
-    Controller_None,
-    Controller_Xbox,
-    Controller_PS4
+    CONTROLLER_NONE,
+    CONTROLLER_XBOX,
+    CONTROLLER_PS4
 };
 
 struct CustomKeyMapping
 {
-    Key_Code keyboard_key;
-    i32 p_s4_key;
+    KeyCode keyboard_key;
+    i32 ps4_key;
     i32 xbox_key;
 };
 
@@ -309,7 +309,7 @@ struct InputController
     r32 controller_deadzone = 0.2f;
     
     b32 controller_present = false;
-    ControllerType controller_type = Controller_None;
+    ControllerType controller_type = CONTROLLER_NONE;
     
     char current_character;
     b32 delete_character = false;

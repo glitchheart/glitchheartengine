@@ -9,10 +9,10 @@ struct AssetManager
     MemoryArena arena;
     
     //shaders
-    b32 dirty_vertex_shader_indices[Shader_Count]; //set to 1 if they should be reloaded
-    b32 dirty_fragment_shader_indices[Shader_Count];
-    time_t vertex_shader_times[Shader_Count];
-    time_t fragment_shader_times[Shader_Count];
+    b32 dirty_vertex_shader_indices[SHADER_COUNT]; //set to 1 if they should be reloaded
+    b32 dirty_fragment_shader_indices[SHADER_COUNT];
+    time_t vertex_shader_times[SHADER_COUNT];
+    time_t fragment_shader_times[SHADER_COUNT];
     
     //textures
     char* tileset_texture_path;
@@ -24,7 +24,7 @@ struct AssetManager
     u32 dirty_game_lib;
 };
 
-static GLchar* load_shader_from_file(const char* path, MemoryArena* Arena)
+static GLchar* load_shader_from_file(const char* path, MemoryArena* arena)
 {
     GLchar *source = {};
     
@@ -34,13 +34,13 @@ static GLchar* load_shader_from_file(const char* path, MemoryArena* Arena)
     if(file)
     {
         fseek(file, 0, SEEK_END);
-        u32 Size = (u32)ftell(file);
+        u32 size = (u32)ftell(file);
         fseek(file, 0, SEEK_SET);
         
-        source = PushSize(Arena, Size + 1, GLchar);
+        source = push_size(arena, size + 1, GLchar);
         
-        fread(source, Size, 1, file); 
-        source[Size] = '\0';
+        fread(source, size, 1, file); 
+        source[size] = '\0';
         
         fclose(file);
     }
@@ -59,51 +59,52 @@ static void check_dirty(const char* file_path, time_t last_time, b32* dirty_id, 
     struct stat sb;
     stat(file_path, &sb);
     
-    time_t time = sb.st_mtime;
+    time_t time_new = sb.st_mtime;
     
-    if (last_time != 0 && last_time < time)
+    if (last_time != 0 && last_time < time_new)
     {
         *dirty_id = 1;
     }
-    *time = time;
+    
+    *time = time_new;
 }
 
 static void startup_file_time_checks(AssetManager* asset_manager, char* lib_path)
 {
-    if(!asset_manager->IsInitialized)
+    if(!asset_manager->is_initialized)
     {
-        asset_manager->TilesetTexturePath = "../assets/textures/tiles.png";
-        asset_manager->LibPaths[0] = push_string(&asset_manager->Arena, lib_path);
-        asset_manager->IsInitialized = true;
+        asset_manager->tileset_texture_path = "../assets/textures/tiles.png";
+        asset_manager->lib_paths[0] = push_string(&asset_manager->arena, lib_path);
+        asset_manager->is_initialized = true;
     }
     
-    for (int i = 0; i < Shader_Count; i++) 
+    for (int i = 0; i < SHADER_COUNT; i++) 
     {
         struct stat sb1;
-        auto concated_vertex_shader_string = concat(ShaderPaths[i], ".vert");
+        auto concated_vertex_shader_string = concat(shader_paths[i], ".vert");
         stat(concated_vertex_shader_string, &sb1);
-        asset_manager->VertexShaderTimes[i] =  sb1.st_mtime;
+        asset_manager->vertex_shader_times[i] =  sb1.st_mtime;
         
         struct stat sb2;
-        auto concated_fragment_shader_string = concat(ShaderPaths[i], ".frag");
+        auto concated_fragment_shader_string = concat(shader_paths[i], ".frag");
         stat(concated_fragment_shader_string, &sb2);
-        asset_manager->FragmentShaderTimes[i] =  sb2.st_mtime;
+        asset_manager->fragment_shader_times[i] =  sb2.st_mtime;
     }
 }
 
 static void listen_to_file_changes(AssetManager* asset_manager)
 {
-    asset_manager->ListenForChanges = true;
+    asset_manager->listen_for_changes = true;
     
-    if(asset_manager->ListenForChanges) 
+    if(asset_manager->listen_for_changes) 
     {
-        for (int i = 0; i < Shader_Count; i++)
+        for (int i = 0; i < SHADER_COUNT; i++)
         {
-            char* vertex_path = concat(ShaderPaths[i], ".vert");
-            char* fragment_path = concat(ShaderPaths[i], ".frag");
+            char* vertex_path = concat(shader_paths[i], ".vert");
+            char* fragment_path = concat(shader_paths[i], ".frag");
             
-            check_dirty(vertex_path, asset_manager->VertexShaderTimes[i], &asset_manager->DirtyVertexShaderIndices[i], &asset_manager->VertexShaderTimes[i]);
-            check_dirty(fragment_path, asset_manager->FragmentShaderTimes[i], &asset_manager->DirtyFragmentShaderIndices[i], &asset_manager->FragmentShaderTimes[i]);
+            check_dirty(vertex_path, asset_manager->vertex_shader_times[i], &asset_manager->dirty_vertex_shader_indices[i], &asset_manager->vertex_shader_times[i]);
+            check_dirty(fragment_path, asset_manager->fragment_shader_times[i], &asset_manager->dirty_fragment_shader_indices[i], &asset_manager->fragment_shader_times[i]);
             
         }
     }

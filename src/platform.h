@@ -15,38 +15,38 @@
 
 #if GLITCH_DEBUG
 #ifdef _WIN32
-#define Assert(Expression) if(!(Expression)) {Debug("Assertion failed in: %s on line %d\n",__FILE__,__LINE__); __debugbreak();}
+#define Assert(expression) if(!(expression)) {Debug("Assertion failed in: %s on line %d\n",__FILE__,__LINE__); __debugbreak();}
 #elif __linux
-#define Assert(Expression) if(!(Expression)) {Debug("Assertion failed in: %s on line %d\n",__FILE__,__LINE__); abort();}
+#define Assert(expression) if(!(expression)) {Debug("Assertion failed in: %s on line %d\n",__FILE__,__LINE__); abort();}
 #elif __APPLE__
-#define Assert(Expression) if(!(Expression)) {Debug("Assertion failed in: %s on line %d\n",__FILE__,__LINE__); abort();}
+#define Assert(expression) if(!(expression)) {Debug("Assertion failed in: %s on line %d\n",__FILE__,__LINE__); abort();}
 #endif
 #else
-#define Assert(Expression)
+#define Assert(expression)
 #endif
 
 
 #if GLITCH_DEBUG
-#define Static_Assert(Expression)  int i = 1/(i32)Expression
+#define Static_Assert(expression)  int i = 1/(i32)expression
 #else
-#define Static_Assert(Expression)
+#define Static_Assert(expression)
 #endif
 
 #define Min(A,B) ((A < B) ? (A) : (B))
 #define Max(A,B) ((A > B) ? (A) : (B))
 #define Abs(x) ((x) < 0 ? -(x) : (x))
 
-#define Kilobytes(Value) ((Value)*1024LL)
-#define Megabytes(Value) (Kilobytes(Value)*1024LL)
-#define Gigabytes(Value) (Megabytes(Value)*1024LL)
-#define Terabytes(Value) (Gigabytes(Value)*1024LL)
+#define Kilobytes(value) ((value)*1024LL)
+#define Megabytes(value) (Kilobytes(value)*1024LL)
+#define Gigabytes(value) (Megabytes(value)*1024LL)
+#define Terabytes(value) (Gigabytes(value)*1024LL)
 
-#define AlignPow2(Value, Alignment) ((Value + ((Alignment) - 1)) & ~((Alignment) - 1))
+#define align_pow2(value, alignment) ((value + ((alignment) - 1)) & ~((alignment) - 1))
 
 #define PI 3.141592653589793f
 #define DEGREE_IN_RADIANS 0.0174532925f
 
-#define OffsetOf(type, Member) (umm)&(((type *)0)->Member)
+#define offset_of(type, member) (umm)&(((type *)0)->member)
 
 #include <cstdio>
 
@@ -78,7 +78,7 @@ struct TextureData;
 inline char* to_string(i32 i);
 inline char* to_string(r64 r);
 inline char* to_string(r32 r);
-char* to_string(texture_data* Data);
+char* to_string(TextureData* data);
 
 #include "log_state.h"
 #include "engine_math.h"
@@ -88,15 +88,15 @@ char* to_string(texture_data* Data);
 
 enum WindowMode
 {
-    FM_Windowed = 0,
-    FM_Full = 1,
-    FM_Borderless = 2
+    FM_WINDOWED = 0,
+    FM_FULL = 1,
+    FM_BORDERLESS = 2
 };
 
 enum GraphicsApi
 {
-    Graphics_OpenGl,
-    Graphics_Vulkan
+    GRAPHICS_OPEN_GL,
+    GRAPHICS_VULKAN
 };
 
 struct ConfigData
@@ -119,7 +119,7 @@ struct ConfigData
     b32 skip_splash_screen;
 };
 
-struct directory_data
+struct DirectoryData
 {
     char** file_paths;
     char** file_names;
@@ -128,60 +128,60 @@ struct directory_data
 
 enum PlatformMemoryBlockFlags
 {
-    PM_OverflowCheck =  (1 << 0),
-    PM_UnderflowCheck = (1 << 1),
-    PM_Temporary =      (1 << 2)
+    PM_OVERFLOW_CHECK =  (1 << 0),
+    PM_UNDERFLOW_CHECK = (1 << 1),
+    PM_TEMPORARY =      (1 << 2)
 };
 
-struct platform_memory_block
+struct PlatformMemoryBlock
 {
     u64 flags;
     u64 size;
     u8* base;
     umm used;
-    platform_memory_block* prev;
+    PlatformMemoryBlock* prev;
 };
 
 enum PlatformFileFlags
 {
-    PM_Append = (1 << 0)
+    PM_APPEND = (1 << 0)
 };
 
-struct platform_file
+struct PlatformFile
 {
     FILE* file;
     char path[260];
     char extension[16];
 };
 
-#define PLATFORM_GET_ALL_FILES_WITH_EXTENSION(name) void name(const char* DirectoryPath, const char* Extension, directory_data* DirectoryData, b32 WithSubDirectories)
+#define PLATFORM_GET_ALL_FILES_WITH_EXTENSION(name) void name(const char* directory_path, const char* extension, DirectoryData* directory_data, b32 with_sub_directories)
 typedef PLATFORM_GET_ALL_FILES_WITH_EXTENSION(platform_get_all_files_with_extension);
 
-#define PLATFORM_FILE_EXISTS(name) b32 name(const char* FilePath)
+#define PLATFORM_FILE_EXISTS(name) b32 name(const char* file_path)
 typedef PLATFORM_FILE_EXISTS(platform_file_exists);
 
-#define PLATFORM_ALLOCATE_MEMORY(name) platform_memory_block* name(umm Size, u64 Flags)
+#define PLATFORM_ALLOCATE_MEMORY(name) PlatformMemoryBlock* name(umm size, u64 flags)
 typedef PLATFORM_ALLOCATE_MEMORY(platform_allocate_memory);
 
-#define PLATFORM_DEALLOCATE_MEMORY(name) void name(platform_memory_block* Block)
+#define PLATFORM_DEALLOCATE_MEMORY(name) void name(PlatformMemoryBlock* block)
 typedef PLATFORM_DEALLOCATE_MEMORY(platform_deallocate_memory);
 
-#define PLATFORM_OPEN_FILE_WITH_DIALOG(name) platform_file name(char* Extension)
+#define PLATFORM_OPEN_FILE_WITH_DIALOG(name) PlatformFile name(char* extension)
 typedef PLATFORM_OPEN_FILE_WITH_DIALOG(platform_open_file_with_dialog);
 
-#define PLATFORM_SAVE_FILE_WITH_DIALOG(name) platform_file name(char* Extension, u64 Flags)
+#define PLATFORM_SAVE_FILE_WITH_DIALOG(name) PlatformFile name(char* extension, u64 flags)
 typedef PLATFORM_SAVE_FILE_WITH_DIALOG(platform_save_file_with_dialog);
 
 #define PLATFORM_GET_TIME_OF_DAY(name) u32 name()
 typedef PLATFORM_GET_TIME_OF_DAY(platform_get_time_of_day);
 
-#define PLATFORM_LOAD_LIBRARY(name) void* name(const char* Path)
+#define PLATFORM_LOAD_LIBRARY(name) void* name(const char* path)
 typedef PLATFORM_LOAD_LIBRARY(platform_load_library);
 
-#define PLATFORM_FREE_LIBRARY(name) void name(void* Library)
+#define PLATFORM_FREE_LIBRARY(name) void name(void* library)
 typedef PLATFORM_FREE_LIBRARY(platform_free_library);
 
-#define PLATFORM_LOAD_SYMBOL(name) void* name(void* Library, const char* Symbol)
+#define PLATFORM_LOAD_SYMBOL(name) void* name(void* library, const char* symbol)
 typedef PLATFORM_LOAD_SYMBOL(platform_load_symbol);
 
 struct PlatformApi
@@ -197,11 +197,11 @@ struct PlatformApi
     platform_free_library* free_dynamic_library;
     platform_load_symbol* load_symbol;
 };
-extern PlatformApi Platform;
+extern PlatformApi platform;
 
 struct DebugState;
 
-struct game_memory
+struct GameMemory
 {
     b32 is_initialized;
     b32 should_reload;
@@ -226,7 +226,7 @@ struct RenderState;
 struct Renderer;
 struct TimerController;
 
-#define UPDATE(name)void name(r64 DeltaTime, game_memory* GameMemory, renderer& Renderer, input_controller* InputController, sound_commands* SoundCommands, timer_controller& TimerController)
+#define UPDATE(name)void name(r64 delta_time, GameMemory* game_memory, Renderer& renderer, InputController* input_controller , SoundCommands* sound_commands , TimerController& timer_controller)
 typedef UPDATE(update);
 UPDATE(UpdateStub)
 {

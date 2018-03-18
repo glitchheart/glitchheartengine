@@ -7,8 +7,8 @@
 
 enum LogFlags
 {
-    LFlag_File = (1 << 0),
-    LFlag_Debug = (2 << 0)
+    L_FLAG_FILE = (1 << 0),
+    L_FLAG_DEBUG = (2 << 0)
 };
 
 struct LogState
@@ -33,7 +33,7 @@ struct LogState
     
 };
 
-extern LogState LogState;
+extern LogState log_state;
 
 #endif
 

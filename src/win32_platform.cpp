@@ -2,332 +2,332 @@
 #include "Commdlg.h"
 #include <windows.h>
 
-time_t FileTimeToTimeT(const FILETIME& FT)
+time_t file_time_to_time_t(const FILETIME& ft)
 {
-    ULARGE_INTEGER Ull;
-    Ull.LowPart = FT.dwLowDateTime;
-    Ull.HighPart = FT.dwHighDateTime;
+    ULARGE_INTEGER ull;
+    ull.LowPart = ft.dwLowDateTime;
+    ull.HighPart = ft.dwHighDateTime;
     
-    return (time_t)(Ull.QuadPart / 10000000ULL - 11644473600ULL);
+    return (time_t)(ull.QuadPart / 10000000ULL - 11644473600ULL);
 }
 
-static time_t GetLastWriteTime(const char* FilePath)
+static time_t get_last_write_time(const char* file_path)
 {
-    FILETIME LastWriteTime = {};
+    FILETIME last_write_time = {};
     
-    WIN32_FIND_DATA FindData;
-    HANDLE FindHandle = FindFirstFileA(FilePath, &FindData);
+    WIN32_FIND_DATA find_data;
+    HANDLE find_handle = FindFirstFileA(file_path, &find_data);
     
-    if(FindHandle != INVALID_HANDLE_VALUE)
+    if(find_handle != INVALID_HANDLE_VALUE)
     {
-        LastWriteTime = FindData.ftLastWriteTime;
-        FindClose(FindHandle);
+        last_write_time = find_data.ftLastWriteTime;
+        FindClose(find_handle);
     }
     
-    return FileTimeToTimeT(LastWriteTime);
+    return file_time_to_time_t(last_write_time);
 }
 
-PLATFORM_LOAD_LIBRARY(Win32LoadLibrary)
+PLATFORM_LOAD_LIBRARY(win32_load_library)
 {
-    return LoadLibraryA(Path);
+    return LoadLibraryA(path);
 }
 
-PLATFORM_FREE_LIBRARY(Win32FreeLibrary)
+PLATFORM_FREE_LIBRARY(win32_free_library)
 {
-    FreeLibrary((HMODULE)Library);
+    FreeLibrary((HMODULE)library);
 }
 
-PLATFORM_LOAD_SYMBOL(Win32LoadSymbol)
+PLATFORM_LOAD_SYMBOL(win32_load_symbol)
 {
-    return GetProcAddress((HMODULE)Library, Symbol);
+    return GetProcAddress((HMODULE)library, symbol);
 }
 
-PLATFORM_ALLOCATE_MEMORY(Win32AllocateMemory)
+PLATFORM_ALLOCATE_MEMORY(win32_allocate_memory)
 {
-    Assert(sizeof(memory_block) == 64);
+    Assert(sizeof(MemoryBlock) == 64);
     
-    umm PageSize = 4096; //TODO: Not really always correct?
-    umm TotalSize = Size + sizeof(memory_block);
-    umm BaseOffset = sizeof(memory_block);
-    umm ProtectOffset = 0;
+    umm page_size = 4096; //TODO: Not really always correct?
+    umm total_size = Size + sizeof(MemoryBlock);
+    umm base_offset = sizeof(MemoryBlock);
+    umm protect_offset = 0;
     
     if(Flags & PM_UnderflowCheck)
     {
-        TotalSize = Size + 2 * PageSize;
-        BaseOffset = 2 * PageSize;
-        ProtectOffset = PageSize;
+        total_size = Size + 2 * page_size;
+        base_offset = 2 * page_size;
+        protect_offset = page_size;
     }
     
     if(Flags & PM_OverflowCheck)
     {
-        umm SizeRoundedUp = AlignPow2(Size, PageSize);
-        TotalSize = SizeRoundedUp + 2 * PageSize;
-        BaseOffset = PageSize + SizeRoundedUp - Size;
-        ProtectOffset = PageSize + SizeRoundedUp;
+        umm size_rounded_up = AlignPow2(Size, page_size);
+        total_size = size_rounded_up + 2 * page_size;
+        base_offset = page_size + size_rounded_up - Size;
+        protect_offset = page_size + size_rounded_up;
     }
     
-    memory_block* Block  = (memory_block*)VirtualAlloc(0, TotalSize, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+    MemoryBlock* block  = (MemoryBlock*)VirtualAlloc(0, total_size, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
     
-    Assert(Block);
-    Block->Block.Base = (u8*)Block + BaseOffset;
-    Assert(Block->Block.Used == 0);
-    Assert(Block->Block.Prev == 0);
+    Assert(block);
+    block->block.base = (u8*)block + base_offset;
+    Assert(block->block.used == 0);
+    Assert(block->block.prev == 0);
     
     if(Flags & (PM_UnderflowCheck | PM_OverflowCheck))
     {
-        DWORD OldProtect = 0;
-        BOOL Protected = VirtualProtect((u8*)Block + ProtectOffset, PageSize, PAGE_NOACCESS, &OldProtect);
-        Assert(Protected);
+        DWORD old_protect = 0;
+        BOOL is_protected = VirtualProtect((u8*)block + protect_offset, page_size, PAGE_NOACCESS, &OldProtect);
+        Assert(is_protected);
     }
     
-    Block->Block.Size = Size;
-    Block->Block.Flags = Flags;
+    block->block.size = size;
+    block->block.flags = flags;
     
-    platform_memory_block* PlatBlock = &Block->Block;
+    PlatformMemoryBlock* plat_block = &block->block;
     
     if(Flags & PM_Temporary)
     {
-        Assert((MemoryState.TempCount + 1) < MAX_TEMP_BLOCKS);
-        MemoryState.TempSizeAllocated += TotalSize;
-        MemoryState.Blocks[MemoryState.TempCount++] = PlatBlock;
+        Assert((memory_state.temp_count + 1) < MAX_TEMP_BLOCKS);
+        memory_state.temp_size_allocated += total_size;
+        memory_state.blocks[memory_state.TempCount++] = plat_block;
     }
     else
     {
-        MemoryState.PermanentBlocks++;
-        MemoryState.PermanentSizeAllocated += TotalSize;
+        memory_state.permanent_blocks++;
+        memory_state.permanent_size_allocated += total_size;
     }
     
-    return PlatBlock;
+    return plat_block;
 }
 
-PLATFORM_DEALLOCATE_MEMORY(Win32DeallocateMemory)
+PLATFORM_DEALLOCATE_MEMORY(win32_deallocate_memory)
 {
-    if(Block)
+    if(block)
     {
-        if((Block->Flags & PM_Temporary) == 0)
+        if((block->flags & PM_Temporary) == 0)
         {
-            MemoryState.PermanentBlocks--;
-            MemoryState.PermanentSizeAllocated -= (Block->Size + sizeof(memory_block));
+            memory_state.permanent_blocks--;
+            memory_state.permanent_size_allocated -= (block->size + sizeof(MemoryBlock));
         }
         
-        memory_block *NewBlock =  ((memory_block*)Block);
-        VirtualFree(NewBlock, 0, MEM_RELEASE);
+        MemoryBlock *new_block =  ((MemoryBlock*)Bblock);
+        VirtualFree(new_block, 0, MEM_RELEASE);
     }
 }
 
-static void ClearTempMemory()
+static void clear_temp_memory()
 {
-    for(i32 Temp = 0; Temp < MemoryState.TempCount; Temp++)
+    for(i32 temp = 0; temp < memory_state.temp_count; temp++)
     {
-        Win32DeallocateMemory(MemoryState.Blocks[Temp]);
+        win32_deallocate_memory(memory_state.blocks[temp]);
     }
     
-    MemoryState.TempCount = 0;
-    MemoryState.TempSizeAllocated = 0;
+    memory_state.temp_count = 0;
+    memory_state.temp_size_allocated = 0;
 }
 
-
-inline PLATFORM_GET_ALL_FILES_WITH_EXTENSION(Win32FindFilesWithExtensions)
+inline PLATFORM_GET_ALL_FILES_WITH_EXTENSION(win32_find_files_with_extensions)
 {
-    if(DirectoryData->FilesLength == 0)
+    if(directory_data->files_length == 0)
     {
-        DirectoryData->FileNames = PushTempArray(512, char*);
-        DirectoryData->FilePaths = PushTempArray(512, char*);
+        directory_data->file_names = push_temp_array(512, char*);
+        directory_data->filepaths = push_temp_array(512, char*);
     }
     
-    WIN32_FIND_DATA FindFile;
-    HANDLE hFind = NULL;
+    WIN32_FIND_DATA find_file;
+    HANDLE h_find = NULL;
     
     char Path[2048];
     
     //Process directories
-    sprintf(Path, "%s*", DirectoryPath);
-    hFind = FindFirstFile(Path, &FindFile);
-    if(hFind != INVALID_HANDLE_VALUE)
+    sprintf(path, "%s*", directory_path);
+    h_find = FindFirstFile(path, &find_file);
+    if(h_find != INVALID_HANDLE_VALUE)
     {
         do
         {
-            if(FindFile.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+            if(find_file.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
             {
-                if(strcmp(FindFile.cFileName, ".") != 0
-                   && strcmp(FindFile.cFileName, "..") != 0)
+                if(strcmp(find_file.cFileName, ".") != 0
+                   && strcmp(find_file.cFileName, "..") != 0)
                 {
-                    char SubPath[2048];
-                    sprintf(SubPath, "%s%s/", DirectoryPath, FindFile.cFileName);
-                    Win32FindFilesWithExtensions(SubPath, Extension, DirectoryData, WithSubDirectories);
+                    char sub_path[2048];
+                    sprintf(sub_path, "%s%s/", directory_path, find_file.cFileName);
+                    win32_find_files_with_extensions(sub_path, extension, directory_data, with_sub_directories);
                 }
                 
             }
         }
         
-        while(FindNextFile(hFind, &FindFile));
-        FindClose(hFind);
+        while(FindNextFile(h_find, &find_file));
+        FindClose(h_find);
     }
     else
     {
-        Debug("No files with extension %s found in %s\n", Extension, DirectoryPath);
+        Debug("No files with extension %s found in %s\n", extension, directory_path);
         return;
     }
     
     //Process files
-    sprintf(Path, "%s*.%s", DirectoryPath, Extension);
-    hFind = FindFirstFile(Path, &FindFile);
-    if(hFind != INVALID_HANDLE_VALUE)
+    sprintf(Path, "%s*.%s", directory_path, extension);
+    h_find = FindFirstFile(Path, &find_file);
+    if(h_find != INVALID_HANDLE_VALUE)
     {
         do
         {
-            if(!(FindFile.dwFileAttributes &FILE_ATTRIBUTE_DIRECTORY))
+            if(!(find_file.dwFileAttributes &FILE_ATTRIBUTE_DIRECTORY))
             {
-                if(strcmp(FindFile.cFileName, ".") != 0
-                   && strcmp(FindFile.cFileName, "..") != 0)
+                if(strcmp(find_file.cFileName, ".") != 0
+                   && strcmp(find_file.cFileName, "..") != 0)
                 {
-                    char* ConcatStr = Concat(DirectoryPath, FindFile.cFileName);
-                    char* FileName = strtok(FindFile.cFileName, ".");
+                    char* concat_str = concat(directory_path, find_file.cFileName);
+                    char* file_name = strtok(find_file.cFileName, ".");
                     
-                    DirectoryData->FilePaths[DirectoryData->FilesLength] = PushTempString(ConcatStr);
-                    DirectoryData->FileNames[DirectoryData->FilesLength] = PushTempString(FileName);
-                    DirectoryData->FilesLength++;
+                    directory_data->file_paths[directory_data->files_length] = push_temp_string(concat_str);
+                    directory_data->file_names[directory_data->files_length] = push_temp_string(file_name);
+                    directory_data->files_length++;
                 }
             }
-        } while (FindNextFile(hFind, &FindFile));
-        FindClose(hFind);
+        } while (FindNextFile(h_find, &find_file));
+        FindClose(h_find);
     }
     else
     {
-        Debug("No files with extension %s found in %s\n", Extension, DirectoryPath);
+        Debug("No files with extension %s found in %s\n", extension, directory_path);
         return;
     }
 }
 
 
-inline PLATFORM_FILE_EXISTS(Win32FileExists)
+inline PLATFORM_FILE_EXISTS(win32_file_exists)
 {
-    struct stat Buffer;
-    return (stat(FilePath,&Buffer) == 0);
+    struct stat buffer;
+    return (stat(file_path,&buffer) == 0);
 }
 
-inline PLATFORM_OPEN_FILE_WITH_DIALOG(Win32OpenFileWithDialog)
+inline PLATFORM_OPEN_FILE_WITH_DIALOG(win32_open_file_with_dialog)
 {
-    OPENFILENAME Ofn;
-    char SzFile[260];
-    platform_file Result = {};
+    OPENFILENAME ofn;
+    char sz_file[260];
+    PlatformFile result = {};
     
-    HANDLE Hf;
+    HANDLE hf;
     
-    ZeroMemory(&Ofn, sizeof(Ofn));
-    Ofn.lStructSize = sizeof(Ofn);
-    Ofn.hwndOwner = 0;
-    Ofn.lpstrFile = SzFile;
-    Ofn.lpstrFile[0] = '\0';
-    Ofn.nMaxFile = sizeof(SzFile);
-    if(Extension)
+    zero_memory(&ofn, sizeof(ofn));
+    ofn.lStructSize = sizeof(ofn);
+    ofn.hwndOwner = 0;
+    ofn.lpstrFile = sz_file;
+    ofn.lpstrFile[0] = '\0';
+    ofn.nMaxFile = sizeof(sz_file);
+    if(extension)
     {
-        Ofn.lpstrFilter = Concat(Extension, "\0*.*\0");
+        ofn.lpstrFilter = concat(extension, "\0*.*\0");
     }
     else
     {
-        Ofn.lpstrFilter = "All\0*.*\0";
+        ofn.lpstrFilter = "All\0*.*\0";
     }
     
-    Ofn.nFilterIndex = 1;
-    Ofn.lpstrFileTitle = NULL;
-    Ofn.nMaxFileTitle = 0;
-    Ofn.lpstrInitialDir = NULL;
-    Ofn.Flags = OFN_NOCHANGEDIR;
+    ofn.nFilterIndex = 1;
+    ofn.lpstrFileTitle = NULL;
+    ofn.nMaxFileTitle = 0;
+    ofn.lpstrInitialDir = NULL;
+    ofn.Flags = OFN_NOCHANGEDIR;
     
-    if(GetOpenFileName(&Ofn) == TRUE)
+    if(GetOpenFileName(&ofn) == TRUE)
     {
-        Hf = CreateFile(Ofn.lpstrFile, GENERIC_READ, 0, (LPSECURITY_ATTRIBUTES)NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, (HANDLE)NULL);
+        hf = CreateFile(ofn.lpstrFile, GENERIC_READ, 0, (LPSECURITY_ATTRIBUTES)NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, (HANDLE)NULL);
         
-        if(Hf != INVALID_HANDLE_VALUE)
+        if(hf != INVALID_HANDLE_VALUE)
         {
-            Result.File = _fdopen(_open_osfhandle((imm)Hf, 0), "r");
-            strcpy(Result.Path, Ofn.lpstrFile);
-            char* P = PushTempString(Result.Path);
-            auto Tok = StrSep(&P, ".");
-            Tok = StrSep(&P, ".");
-            strcpy(Result.Extension, Tok);
+            result.file = _fdopen(_open_osfhandle((imm)hf, 0), "r");
+            strcpy(result.path, ofn.lpstrFile);
+            char* p = push_temp_string(result.path);
+            auto tok = str_sep(&p, ".");
+            tok = str_sep(&p, ".");
+            strcpy(result.extension, tok);
         }
     }
-    return Result;
+    return result;
 }
 
 
-inline PLATFORM_SAVE_FILE_WITH_DIALOG(Win32SaveFileWithDialog)
+inline PLATFORM_SAVE_FILE_WITH_DIALOG(win32_save_file_with_dialog)
 {
-    OPENFILENAME Ofn;
-    char SzFile[260];
-    platform_file Result = {};
+    OPENFILENAME ofn;
+    char sz_file[260];
+    PlatformFile result = {};
     
-    HANDLE Hf;
+    HANDLE hf;
     
-    ZeroMemory(&Ofn, sizeof(Ofn));
-    Ofn.lStructSize = sizeof(Ofn);
-    Ofn.hwndOwner = 0;
-    Ofn.lpstrFile = SzFile;
-    Ofn.lpstrFile[0] = '\0';
-    Ofn.nMaxFile = sizeof(SzFile);
-    if(Extension)
+    zero_memory(&ofn, sizeof(ofn));
+    ofn.lStructSize = sizeof(ofn);
+    ofn.hwndOwner = 0;
+    ofn.lpstrFile = sz_file;
+    ofn.lpstrFile[0] = '\0';
+    ofn.nMaxFile = sizeof(sz_file);
+    if(extension)
     {
-        Ofn.lpstrFilter = Concat(Extension, "\0*.*\0");
+        ofn.lpstrFilter = concat(extension, "\0*.*\0");
     }
     else
     {
-        Ofn.lpstrFilter = "All\0*.*\0";
+        ofn.lpstrFilter = "All\0*.*\0";
     }
     
-    Ofn.nFilterIndex = 1;
-    Ofn.lpstrFileTitle = NULL;
-    Ofn.nMaxFileTitle = 0;
-    Ofn.lpstrInitialDir = NULL;
-    Ofn.Flags = OFN_SHOWHELP | OFN_OVERWRITEPROMPT |OFN_NOCHANGEDIR ;
+    ofn.nFilterIndex = 1;
+    ofn.lpstrFileTitle = NULL;
+    ofn.nMaxFileTitle = 0;
+    ofn.lpstrInitialDir = NULL;
+    ofn.Flags = OFN_SHOWHELP | OFN_OVERWRITEPROMPT |OFN_NOCHANGEDIR ;
     
-    if(GetSaveFileName(&Ofn) == TRUE)
+    if(GetSaveFileName(&ofn) == TRUE)
     {
-        if(Extension && !strstr(Ofn.lpstrFile, Extension))
+        if(extension && !strstr(ofn.lpstrFile, extension))
         {
-            Hf = CreateFile(Concat(Concat(Ofn.lpstrFile, "."), Extension), GENERIC_READ | GENERIC_WRITE, 0, (LPSECURITY_ATTRIBUTES)NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, (HANDLE)NULL);
+            hf = CreateFile(concat(concat(ofn.lpstrFile, "."), extension), GENERIC_READ | GENERIC_WRITE, 0, (LPSECURITY_ATTRIBUTES)NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, (HANDLE)NULL);
         }
         else
         {
-            Hf = CreateFile(Ofn.lpstrFile, GENERIC_READ | GENERIC_WRITE, 0, (LPSECURITY_ATTRIBUTES)NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, (HANDLE)NULL);
+            hf = CreateFile(ofn.lpstrFile, GENERIC_READ | GENERIC_WRITE, 0, (LPSECURITY_ATTRIBUTES)NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, (HANDLE)NULL);
         }
-        auto Err = GetLastError();
-        if(Hf != INVALID_HANDLE_VALUE)
+        
+        auto err = GetLastError();
+        if(hf != INVALID_HANDLE_VALUE)
         {
-            auto OFlags = Flags & PM_Append ? _O_APPEND : 0;
-            auto FDFlags = Flags & PM_Append ? "a" : "w";
-            Debug("Flags: %d\n", OFlags);
-            Result.File = _fdopen(_open_osfhandle((imm)Hf, OFlags), FDFlags);
-            strcpy(Result.Path, Ofn.lpstrFile);
-            if(Extension)
+            auto o_flags = flags & PM_APPEND ? _O_APPEND : 0;
+            auto fd_flags = flags & PM_APPEND ? "a" : "w";
+            Debug("Flags: %d\n", o_flags);
+            result.file = _fdopen(_open_osfhandle((imm)hf, o_flags), fd_flags);
+            strcpy(result.path, ofn.lpstrFile);
+            if(extension)
             {
-                strcpy(Result.Extension, Extension);
+                strcpy(result.extension, extension);
             }
         }
         else
         {
-            Debug("Open file for saving failed with error: %ld\n", Err);
+            Debug("Open file for saving failed with error: %ld\n", err);
         }
     }
-    return Result;
+    return result;
 }
 
 
-inline PLATFORM_GET_TIME_OF_DAY(Win32GetTimeOfDay)
+inline PLATFORM_GET_TIME_OF_DAY(win32_get_time_of_day)
 {
     
 }
 
-static void InitPlatform(platform_api& PlatformAPI)
+static void InitPlatform(PlatformApi& platform_api)
 {
-    PlatformAPI.GetAllFilesWithExtension = Win32FindFilesWithExtensions;
-    PlatformAPI.FileExists = Win32FileExists;
-    PlatformAPI.AllocateMemory = Win32AllocateMemory;
-    PlatformAPI.DeallocateMemory = Win32DeallocateMemory;
-    PlatformAPI.OpenFileWithDialog = Win32OpenFileWithDialog;
-    PlatformAPI.SaveFileWithDialog = Win32SaveFileWithDialog;
-    PlatformAPI.LoadSymbol = Win32LoadSymbol;
-    PlatformAPI.FreeDynamicLibrary = Win32FreeLibrary;
-    PlatformAPI.LoadDynamicLibrary = Win32LoadLibrary;
+    platform_api.GetAllFilesWithExtension = win32_find_files_with_extensions;
+    platform_api.FileExists = win32_file_exists;
+    platform_api.AllocateMemory = win32_allocate_memory;
+    platform_api.DeallocateMemory = win32_deallocate_memory;
+    platform_api.OpenFileWithDialog = win32_open_file_with_dialog;
+    platform_api.SaveFileWithDialog = win32_save_file_with_dialog;
+    platform_api.LoadSymbol = win32_load_symbol;
+    platform_api.FreeDynamicLibrary = win32_free_library;
+    platform_api.LoadDynamicLibrary = win32_load_library;
 }

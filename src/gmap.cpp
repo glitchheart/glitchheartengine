@@ -90,10 +90,10 @@ inline u64 hash_int_keys(u64 size, i32 key)
 
 void* allocate_memory(size_t size)
 {
-    return Platform.AllocateMemory(size, PM_UnderflowCheck | PM_OverflowCheck);
+    return platform.allocate_memory(size, PM_UNDERFLOW_CHECK | PM_OVERFLOW_CHECK);
 }
 
 void deallocate_memory(void* block)
 {
-    return Platform.DeallocateMemory((platform_memory_block*)block);
+    return platform.deallocate_memory((PlatformMemoryBlock*)block);
 }
