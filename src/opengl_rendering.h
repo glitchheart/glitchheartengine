@@ -7,46 +7,46 @@
 
 #define PIXELS_PER_UNIT 32
 
-#define SHADERPAIR(name) {Shader_ ## name, "Shader_" "" #name}
+#define SHADERPAIR(name) {SHADER_ ## name, "Shader_" "" #name}
 
 const static struct
 {
-    Shader_Type val;
+    ShaderType val;
     char* str;
     
-} ShaderConversion [] =
+} shader_conversion [] =
 {
-    SHADERPAIR(Texture),
-    SHADERPAIR(Tile),
-    SHADERPAIR(Rect),
-    SHADERPAIR(TextureRect),
-    SHADERPAIR(StandardFont),
-    SHADERPAIR(Spritesheet),
-    SHADERPAIR(Wireframe),
-    SHADERPAIR(UISprite),
-    SHADERPAIR(ErrorSprite),
-    SHADERPAIR(ErrorUI),
-    SHADERPAIR(FrameBuffer),
-    SHADERPAIR(LightSource),
-    SHADERPAIR(SimpleModel),
-    SHADERPAIR(Passthrough),
-    SHADERPAIR(Line)
+    SHADERPAIR(TEXTURE),
+    SHADERPAIR(TILE),
+    SHADERPAIR(RECT),
+    SHADERPAIR(TEXTURE_RECT),
+    SHADERPAIR(STANDARD_FONT),
+    SHADERPAIR(SPRITESHEET),
+    SHADERPAIR(WIREFRAME),
+    SHADERPAIR(UI_SPRITE),
+    SHADERPAIR(ERROR_SPRITE),
+    SHADERPAIR(ERROR_UI),
+    SHADERPAIR(FRAME_BUFFER),
+    SHADERPAIR(LIGHT_SOURCE),
+    SHADERPAIR(SIMPLE_MODEL),
+    SHADERPAIR(PASS_THROUGH),
+    SHADERPAIR(LINE)
 };
 
-char* ShaderEnumToStr(Shader_Type shader)
+char* shader_enum_to_str(ShaderType shader)
 {
-    for(i32 index = 0; index < Shader_Count; index++)
+    for(i32 index = 0; index < SHADER_COUNT; index++)
     {
-        if(shader == ShaderConversion[index].Val)
+        if(shader == shader_conversion[index].val)
         {
-            return ShaderConversion[index].Str;
+            return shader_conversion[index].str;
         }
     }
     Assert(false);
     return 0;
 }
 
-static char* ShaderPaths[Shader_Count] =
+static char* shader_paths[SHADER_COUNT] =
 {
     "../engine_assets/shaders/textureshader",
     "../engine_assets/shaders/tileshader",
@@ -68,7 +68,7 @@ static char* ShaderPaths[Shader_Count] =
 
 enum RenderMode
 {
-    Render_Fill, Render_Outline
+    RENDER_FILL, RENDER_OUTLINE
 };
 
 struct Entity;
@@ -98,8 +98,8 @@ struct RenderFont
     u32 atlas_width;
     u32 atlas_height;
     GLfloat glyph_width;
-    math::v4 color = math::v4(1, 1, 1, 1);
-    math::v4 alpha_color = math::v4(1, 1, 1, 1);
+    math::Vec4 color = math::Vec4(1, 1, 1, 1);
+    math::Vec4 alpha_color = math::Vec4(1, 1, 1, 1);
     
     struct CharacterInfo 
     {
@@ -116,7 +116,7 @@ struct RenderFont
     } character_info[255];
 };
 
-struct point
+struct Point
 {
     GLfloat x;
     GLfloat y;
@@ -317,7 +317,7 @@ struct RenderState
     
     union 
     {
-        Shader shaders[Shader_Count];
+        Shader shaders[SHADER_COUNT];
         struct
         {
             Shader texture_shader;

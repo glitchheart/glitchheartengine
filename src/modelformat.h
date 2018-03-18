@@ -26,7 +26,7 @@ struct ModelData
     long material_chunk_size;
     long bone_chunk_size;
     
-    math::m4 global_inverse_transform;
+    math::Mat4 global_inverse_transform;
 };
 
 struct BoneHeader

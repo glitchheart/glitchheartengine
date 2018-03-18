@@ -5,10 +5,10 @@
 #include "unistd.h"
 #include "dlfcn.h"
 
-inline PLATFORM_FILE_EXISTS(LinuxFileExists)
+inline PLATFORM_FILE_EXISTS(linux_file_exists)
 {
     struct stat buffer;
-    return (stat(FilePath,&buffer) == 0);
+    return (stat(file_path,&buffer) == 0);
 }
 
 static b32 copy_file(const char* src, const char* dst, b32 dont_overwrite, b32 binary = true)
@@ -16,7 +16,7 @@ static b32 copy_file(const char* src, const char* dst, b32 dont_overwrite, b32 b
     FILE* in;
     FILE* out;
     
-    if(LinuxFileExists(dst) && dont_overwrite)
+    if(linux_file_exists(dst) && dont_overwrite)
     {
         return false;
     }
@@ -95,53 +95,52 @@ static time_t get_last_write_time(const char* file_path)
 }
 
 // @Incomplete:(Niels): Flags?
-PLATFORM_LOAD_LIBRARY(LinuxLoadLibrary)
+PLATFORM_LOAD_LIBRARY(linux_load_library)
 {
-    return dlopen(Path, RTLD_LAZY);
+    return dlopen(path, RTLD_LAZY);
 }
 
-PLATFORM_FREE_LIBRARY(LinuxFreeLibrary)
+PLATFORM_FREE_LIBRARY(linux_free_library)
 {
-    dlclose(Library);
+    dlclose(library);
 }
 
-PLATFORM_LOAD_SYMBOL(LinuxLoadSymbol)
+PLATFORM_LOAD_SYMBOL(linux_load_symbol)
 {
-    return dlsym(Library, Symbol);
+    return dlsym(library, symbol);
 }
 
-
-PLATFORM_ALLOCATE_MEMORY(LinuxAllocateMemory)
+PLATFORM_ALLOCATE_MEMORY(linux_allocate_memory)
 {
-    Assert(sizeof(memory_block) == 64);
+    Assert(sizeof(MemoryBlock) == 64);
     
-    umm PageSize = 4096; //TODO: Not really always correct?
-    umm total_size = Size + sizeof(memory_block);
-    umm base_offset = sizeof(memory_block);
+    umm page_size = 4096; //TODO: Not really always correct?
+    umm total_size = size + sizeof(MemoryBlock);
+    umm base_offset = sizeof(MemoryBlock);
     umm protect_offset = 0;
     
-    if(Flags & PM_UnderflowCheck)
+    if(flags & PM_UNDERFLOW_CHECK)
     {
-        total_size = Size + 2 * PageSize;
-        base_offset = 2 * PageSize;
-        protect_offset = PageSize;
+        total_size = size + 2 * page_size;
+        base_offset = 2 * page_size;
+        protect_offset = page_size;
     }
     
-    if(Flags & PM_OverflowCheck)
+    if(flags & PM_OVERFLOW_CHECK)
     {
-        umm size_rounded_up = AlignPow2(Size, PageSize);
-        total_size = size_rounded_up + 2 * PageSize;
-        base_offset = PageSize + size_rounded_up - Size;
-        protect_offset = PageSize + size_rounded_up;
+        umm size_rounded_up = align_pow2(size, page_size);
+        total_size = size_rounded_up + 2 * page_size;
+        base_offset = page_size + size_rounded_up - size;
+        protect_offset = page_size + size_rounded_up;
     }
     
-    memory_block* Block = (memory_block*)malloc(total_size);
-    memset(Block, 0, total_size);
+    MemoryBlock* block = (MemoryBlock*)malloc(total_size);
+    memset(block, 0, total_size);
     
-    Assert(Block);
-    Block->Block.Base = (u8*)Block + base_offset;
-    Assert(Block->Block.Used == 0);
-    Assert(Block->Block.Prev == 0);
+    Assert(block);
+    block->block.base = (u8*)block + base_offset;
+    Assert(block->block.used == 0);
+    Assert(block->block.prev == 0);
     
     // if(Flags & (PM_UnderflowCheck | PM_OverflowCheck))
     // {
@@ -149,58 +148,58 @@ PLATFORM_ALLOCATE_MEMORY(LinuxAllocateMemory)
     //     Assert(Protected);
     // }
     
-    Block->Block.Size = Size;
-    Block->Block.Flags = Flags;
+    block->block.size = size;
+    block->block.flags = flags;
     
-    platform_memory_block* plat_block = &Block->Block;
+    PlatformMemoryBlock* plat_block = &block->block;
     
-    if(Flags & PM_Temporary)
+    if(flags & PM_TEMPORARY)
     {
-        Assert((MemoryState.TempCount + 1) < MAX_TEMP_BLOCKS);
-        MemoryState.TempSizeAllocated += total_size;
-        MemoryState.Blocks[MemoryState.TempCount++] = plat_block;
+        Assert((memory_state.temp_count + 1) < MAX_TEMP_BLOCKS);
+        memory_state.temp_size_allocated += total_size;
+        memory_state.blocks[memory_state.temp_count++] = plat_block;
     }
     else
     {
-        MemoryState.PermanentBlocks++;
-        MemoryState.PermanentSizeAllocated += total_size;
+        memory_state.permanent_blocks++;
+        memory_state.permanent_size_allocated += total_size;
     }
     
     return plat_block;
 }
 
-PLATFORM_DEALLOCATE_MEMORY(LinuxDeallocateMemory)
+PLATFORM_DEALLOCATE_MEMORY(linux_deallocate_memory)
 {
-    if(Block)
+    if(block)
     {
-        if((Block->Flags & PM_Temporary) == 0)
+        if((block->flags & PM_TEMPORARY) == 0)
         {
-            MemoryState.PermanentBlocks--;
-            MemoryState.PermanentSizeAllocated -= (Block->Size + sizeof(memory_block));
+            memory_state.permanent_blocks--;
+            memory_state.permanent_size_allocated -= (block->size + sizeof(MemoryBlock));
         }
         
-        memory_block *new_block =  ((memory_block*)Block);
+        MemoryBlock *new_block =  ((MemoryBlock*)block);
         free(new_block);
     }
 }
 
 static void clear_temp_memory()
 {
-    for(i32 temp = 0; temp < MemoryState.TempCount; temp++)
+    for(i32 temp = 0; temp < memory_state.temp_count; temp++)
     {
-        LinuxDeallocateMemory(MemoryState.Blocks[temp]);
+        linux_deallocate_memory(memory_state.blocks[temp]);
     }
     
-    MemoryState.TempCount = 0;
-    MemoryState.TempSizeAllocated = 0;
+    memory_state.temp_count = 0;
+    memory_state.temp_size_allocated = 0;
 }
 
 static void init_platform(PlatformApi& platform_api)
 {
-    platform_api.FileExists = LinuxFileExists;
-    platform_api.AllocateMemory = LinuxAllocateMemory;
-    platform_api.DeallocateMemory = LinuxDeallocateMemory;
-    platform_api.LoadDynamicLibrary = LinuxLoadLibrary;
-    platform_api.FreeDynamicLibrary = LinuxFreeLibrary;
-    platform_api.LoadSymbol = LinuxLoadSymbol;
+    platform_api.file_exists = linux_file_exists;
+    platform_api.allocate_memory = linux_allocate_memory;
+    platform_api.deallocate_memory = linux_deallocate_memory;
+    platform_api.load_dynamic_library = linux_load_library;
+    platform_api.free_dynamic_library = linux_free_library;
+    platform_api.load_symbol = linux_load_symbol;
 }

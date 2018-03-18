@@ -23,7 +23,7 @@ struct SoundCommands
     MemoryArena sound_arena;
     i32 sound_count;
     
-    directory_data sounds_to_load;
+    DirectoryData sounds_to_load;
     b32 load_sounds;
     
     i32 sounds;

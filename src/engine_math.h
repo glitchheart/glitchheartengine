@@ -157,7 +157,7 @@ namespace math
         return Max(Minimum, Min(Value,Maximum));
     }
     
-    union v2
+    union Vec2
     {
         struct
         {
@@ -170,74 +170,74 @@ namespace math
             r32 v;
         };
         r32 e[2];
-        v2(r32 x, r32 y) : x(x), y(y){}
-        v2() : x(0.0f), y(0.0f) {}
-        v2(r32 i) : e{i,i} {}
-        v2(r32 i[2]) : e{i[0],i[1]} {}
-        v2(const v2& o) = default;
-        v2(i32 x, i32 y) : x((r32)x), y((r32)y) {}
-        v2(r64 x, r64 y) : x((r32)x), y((r32)y) {}
-        v2(r32 x, r64 y) : x(x), y((r32)y) {}
-        v2(r32 x, i32 y) : x(x), y((r32)y) {}
-        v2(i32 x, r32 y) : x((r32)x), y(y) {}
-        v2(i32 x, r64 y) : x((r32)x), y((r32)y) {}
-        v2(r64 x, i32 y) : x((r32)x), y((r32)y) {}
-        v2(r64 x, r32 y) : x((r32)x), y(y) {}
+        Vec2(r32 x, r32 y) : x(x), y(y){}
+        Vec2() : x(0.0f), y(0.0f) {}
+        Vec2(r32 i) : e{i,i} {}
+        Vec2(r32 i[2]) : e{i[0],i[1]} {}
+        Vec2(const Vec2& o) = default;
+        Vec2(i32 x, i32 y) : x((r32)x), y((r32)y) {}
+        Vec2(r64 x, r64 y) : x((r32)x), y((r32)y) {}
+        Vec2(r32 x, r64 y) : x(x), y((r32)y) {}
+        Vec2(r32 x, i32 y) : x(x), y((r32)y) {}
+        Vec2(i32 x, r32 y) : x((r32)x), y(y) {}
+        Vec2(i32 x, r64 y) : x((r32)x), y((r32)y) {}
+        Vec2(r64 x, i32 y) : x((r32)x), y((r32)y) {}
+        Vec2(r64 x, r32 y) : x((r32)x), y(y) {}
         
-        v2& operator=(const v2& v) = default;
+        Vec2& operator=(const Vec2& v) = default;
         
         r32 operator[](i32 i)
         {
             return this->e[i];
         }
         
-        inline v2 operator* (v2 o)
+        inline Vec2 operator* (Vec2 o)
         {
-            v2 result(*this);
+            Vec2 result(*this);
             result.x *= o.x;
             result.y *= o.y;
             return result;
         }
         
-        inline v2 operator+ (v2 o)
+        inline Vec2 operator+ (Vec2 o)
         {
-            v2 result(*this);
+            Vec2 result(*this);
             result.x += o.x;
             result.y += o.y;
             return result;
         }
         
-        inline void operator*= (v2 o)
+        inline void operator*= (Vec2 o)
         {
             this->x *= o.x;
             this->y *= o.y;
         }
         
-        inline void operator+= (v2 o)
+        inline void operator+= (Vec2 o)
         {
             this->x += o.x;
             this->y += o.y;
         }
         
-        inline v2 operator+ (r32 s)
+        inline Vec2 operator+ (r32 s)
         {
-            v2 result(*this);
+            Vec2 result(*this);
             result.x += s;
             result.y += s;
             return result;
         }
         
-        inline v2 operator* (r32 s)
+        inline Vec2 operator* (r32 s)
         {
-            v2 result(*this);
+            Vec2 result(*this);
             result.x *= s;
             result.y *= s;
             return result;
         }
         
-        inline v2 operator/ (r32 s)
+        inline Vec2 operator/ (r32 s)
         {
-            v2 result(*this);
+            Vec2 result(*this);
             result.x /= s;
             result.y /= s;
             return result;
@@ -267,50 +267,50 @@ namespace math
             this->y -= s;
         }
         
-        inline v2 operator- (v2 o)
+        inline Vec2 operator- (Vec2 o)
         {
-            v2 result(*this);
+            Vec2 result(*this);
             result.x -= o.x;
             result.y -= o.y;
             return result;
         }
         
-        inline void operator-= (v2 o)
+        inline void operator-= (Vec2 o)
         {
             this->x -= o.x;
             this->y -= o.y;
         }
         
-        inline v2 operator- (r32 s)
+        inline Vec2 operator- (r32 s)
         {
-            v2 result(*this);
+            Vec2 result(*this);
             result.x -= s;
             result.y -= s;
             return result;
         }
         
-        inline v2 operator/ (v2 o)
+        inline Vec2 operator/ (Vec2 o)
         {
-            v2 result(*this);
+            Vec2 result(*this);
             result.x /= o.x;
             result.y /= o.y;
             return result;
         }
         
-        inline void operator/= (v2 o)
+        inline void operator/= (Vec2 o)
         {
             this->x /= o.x;
             this->y /= o.y;
         }
     };
     
-    union v3
+    union Vec3
     {
         struct 
         {
             union
             {
-                v2 xy;
+                Vec2 xy;
                 struct
                 {
                     r32 x, y;
@@ -324,7 +324,7 @@ namespace math
         {
             union
             {
-                v2 rg;
+                Vec2 rg;
                 struct
                 {
                     r32 r, g;
@@ -335,99 +335,99 @@ namespace math
         };
         
         r32 e[3];
-        v3(r32 x, r32 y, r32 z) : x(x), y(y), z(z) {}
-        v3() : x(0.0f), y(0.0f), z(0.0f) {}
-        v3(r32 i) : e{i,i,i} {}
-        v3(r32 i[3]) : e{i[0],i[1], i[2]} {}
-        v3(const v3& o) : e{o.x, o.y, o.z} {}
-        v3(r64 x, r64 y, r64 z) : x((r32)x), y((r32)y), z((r32)z) {}
-        v3(r64 x, i32 y, r64 z) : x((r32)x), y((r32)y), z((r32)z) {}
-        v3(i32 x, i32 y, i32 z) : x((r32)x), y((r32)y), z((r32)z) {}
-        v3(i32 x, r32 y, i32 z) : x((r32)x), y(y), z((r32)z) {}
-        v3(r64 x, r64 y, i32 z) : x((r32)x), y((r32)y), z((r32)z) {}
-        v3(r32 x, r32 y, i32 z) : x(x), y(y), z((r32)z) {}
-        v3(r32 x, i32 y, i32 z) : x(x), y((r32)y), z((r32)z) {}
-        v3(i32 x, i32 y, r32 z) : x((r32)x), y((r32)y), z(z) {}
-        v3(r32 x, r32 y, r64 z) : x(x), y(y), z((r32)z) {}
-        v3(r32 x, i32 y, r32 z) : x(x), y((r32)y), z(z) {}
-        v3(r64 x, r32 y, r64 z) : x((r32)x), y(y), z((r32)z) {}
-        v3(r64 x, r32 y, r32 z) : x((r32)x), y(y), z(z) {}
-        v3(v2 v, r32 z) : x(v.x), y(v.y), z(z) {}
+        Vec3(r32 x, r32 y, r32 z) : x(x), y(y), z(z) {}
+        Vec3() : x(0.0f), y(0.0f), z(0.0f) {}
+        Vec3(r32 i) : e{i,i,i} {}
+        Vec3(r32 i[3]) : e{i[0],i[1], i[2]} {}
+        Vec3(const Vec3& o) : e{o.x, o.y, o.z} {}
+        Vec3(r64 x, r64 y, r64 z) : x((r32)x), y((r32)y), z((r32)z) {}
+        Vec3(r64 x, i32 y, r64 z) : x((r32)x), y((r32)y), z((r32)z) {}
+        Vec3(i32 x, i32 y, i32 z) : x((r32)x), y((r32)y), z((r32)z) {}
+        Vec3(i32 x, r32 y, i32 z) : x((r32)x), y(y), z((r32)z) {}
+        Vec3(r64 x, r64 y, i32 z) : x((r32)x), y((r32)y), z((r32)z) {}
+        Vec3(r32 x, r32 y, i32 z) : x(x), y(y), z((r32)z) {}
+        Vec3(r32 x, i32 y, i32 z) : x(x), y((r32)y), z((r32)z) {}
+        Vec3(i32 x, i32 y, r32 z) : x((r32)x), y((r32)y), z(z) {}
+        Vec3(r32 x, r32 y, r64 z) : x(x), y(y), z((r32)z) {}
+        Vec3(r32 x, i32 y, r32 z) : x(x), y((r32)y), z(z) {}
+        Vec3(r64 x, r32 y, r64 z) : x((r32)x), y(y), z((r32)z) {}
+        Vec3(r64 x, r32 y, r32 z) : x((r32)x), y(y), z(z) {}
+        Vec3(Vec2 v, r32 z) : x(v.x), y(v.y), z(z) {}
         
-        v3& operator=(const v3& v) = default;
+        Vec3& operator=(const Vec3& v) = default;
         
         r32 operator[](i32 i)
         {
             return this->e[i];
         }
         
-        inline v3 operator= (v2 o)
+        inline Vec3 operator= (Vec2 o)
         {
-            return v3(o.x, o.y, 0);
+            return Vec3(o.x, o.y, 0);
         }
         
-        inline v3 operator-()
+        inline Vec3 operator-()
         {
-            v3 result(1.0f);
+            Vec3 result(1.0f);
             result.x = -this->x;
             result.y = -this->y;
             result.z = -this->z;
             return result;
         }
         
-        inline v3 operator* (v3 o)
+        inline Vec3 operator* (Vec3 o)
         {
-            v3 result(*this);
+            Vec3 result(*this);
             result.x *= o.x;
             result.y *= o.y;
             result.z *= o.z;
             return result;
         }
         
-        inline v3 operator+ (v3 o)
+        inline Vec3 operator+ (Vec3 o)
         {
-            v3 result(*this);
+            Vec3 result(*this);
             result.x += o.x;
             result.y += o.y;
             result.z += o.z;
             return result;
         }
         
-        inline void operator*= (v3 o)
+        inline void operator*= (Vec3 o)
         {
             this->x *= o.x;
             this->y *= o.y;
             this->z *= o.z;
         }
         
-        inline void operator+= (v3 o)
+        inline void operator+= (Vec3 o)
         {
             this->x += o.x;
             this->y += o.y;
             this->z += o.z;
         }
         
-        inline v3 operator+ (r32 s)
+        inline Vec3 operator+ (r32 s)
         {
-            v3 result(*this);
+            Vec3 result(*this);
             result.x += s;
             result.y += s;
             result.z += s;
             return result;
         }
         
-        inline v3 operator* (r32 s)
+        inline Vec3 operator* (r32 s)
         {
-            v3 result(*this);
+            Vec3 result(*this);
             result.x *= s;
             result.y *= s;
             result.z *= s;
             return result;
         }
         
-        inline v3 operator/ (r32 s)
+        inline Vec3 operator/ (r32 s)
         {
-            v3 result(*this);
+            Vec3 result(*this);
             result.x /= s;
             result.y /= s;
             result.z /= s;
@@ -462,41 +462,41 @@ namespace math
             this->z -= s;
         }
         
-        inline v3 operator- (v3 o)
+        inline Vec3 operator- (Vec3 o)
         {
-            v3 result(*this);
+            Vec3 result(*this);
             result.x -= o.x;
             result.y -= o.y;
             result.z -= o.z;
             return result;
         }
         
-        inline void operator-= (v3 o)
+        inline void operator-= (Vec3 o)
         {
             this->x -= o.x;
             this->y -= o.y;
             this->z -= o.z;
         }
         
-        inline v3 operator- (r32 s)
+        inline Vec3 operator- (r32 s)
         {
-            v3 result(*this);
+            Vec3 result(*this);
             result.x -= s;
             result.y -= s;
             result.z -= s;
             return result;
         }
         
-        inline v3 operator/ (v3 o)
+        inline Vec3 operator/ (Vec3 o)
         {
-            v3 result(*this);
+            Vec3 result(*this);
             result.x /= o.x;
             result.y /= o.y;
             result.z /= o.z;
             return result;
         }
         
-        inline void operator/= (v3 o)
+        inline void operator/= (Vec3 o)
         {
             this->x /= o.x;
             this->y /= o.y;
@@ -504,13 +504,13 @@ namespace math
         }
     };
     
-    union v4
+    union Vec4
     {
         struct 
         {
             union
             {
-                v3 xyz;
+                Vec3 xyz;
                 struct
                 {
                     r32 x, y, z;
@@ -518,7 +518,7 @@ namespace math
                 struct
                 {
                     
-                    v2 xy;
+                    Vec2 xy;
                 };
             };
             r32 w;
@@ -528,7 +528,7 @@ namespace math
         {
             union
             {
-                v3 rgb;
+                Vec3 rgb;
                 struct
                 {
                     r32 r, g, b;
@@ -538,59 +538,59 @@ namespace math
         };
         r32 e[4];
         
-        v4(r32 x, r32 y, r32 z, r32 w) : x(x), y(y), z(z), w(w) {}
-        v4() : x(0.0f), y(0.0f), z(0.0f), w(0.0f) {}
-        v4(r32 i) : e{i,i,i,i} {}
-        v4(r32 i[4]) : e{i[0], i[1], i[2], i[3]} {}
-        v4(const v4& o) : x(o.x), y(o.y), z(o.z), w(o.w) {}
+        Vec4(r32 x, r32 y, r32 z, r32 w) : x(x), y(y), z(z), w(w) {}
+        Vec4() : x(0.0f), y(0.0f), z(0.0f), w(0.0f) {}
+        Vec4(r32 i) : e{i,i,i,i} {}
+        Vec4(r32 i[4]) : e{i[0], i[1], i[2], i[3]} {}
+        Vec4(const Vec4& o) : x(o.x), y(o.y), z(o.z), w(o.w) {}
         
-        v4(i32 x, i32 y, i32 z, i32 w) : 
+        Vec4(i32 x, i32 y, i32 z, i32 w) : 
         x((r32)x), y((r32)y), z((r32)z), w((r32)w) {}
         
-        v4(r32 x, r32 y, r32 z, i32 w) : 
+        Vec4(r32 x, r32 y, r32 z, i32 w) : 
         x(x), y(y), z(z), w((r32)w) {}
         
-        v4(r64 x, r64 y, r64 z, r64 w) : 
+        Vec4(r64 x, r64 y, r64 z, r64 w) : 
         x((r32)x), y((r32)y), z((r32)z), w((r32)w) {}
         
-        v4(r64 x, r64 y, r64 z, i32 w) : 
+        Vec4(r64 x, r64 y, r64 z, i32 w) : 
         x((r32)x), y((r32)y), z((r32)z), w((r32)w) {}
         
-        v4(r32 x, i32 y, r32 z, i32 w) : 
+        Vec4(r32 x, i32 y, r32 z, i32 w) : 
         x(x), y((r32)y), z(z), w((r32)w) {}
         
-        v4(i32 x, r64 y, i32 z, i32 w) : 
+        Vec4(i32 x, r64 y, i32 z, i32 w) : 
         x((r32)x), y((r32)y), z((r32)z), w((r32)w) {}
         
-        v4(r64 x, i32 y, i32 z, i32 w) : 
+        Vec4(r64 x, i32 y, i32 z, i32 w) : 
         x((r32)x), y((r32)y), z((r32)z), w((r32)w) {}
         
-        v4(i32 x, i32 y, i32 z, r64 w) : 
+        Vec4(i32 x, i32 y, i32 z, r64 w) : 
         x((r32)x), y((r32)y), z((r32)z), w((r32)w) {}
         
-        v4(r32 x, i32 y, i32 z, i32 w) : 
+        Vec4(r32 x, i32 y, i32 z, i32 w) : 
         x(x), y((r32)y), z((r32)z), w((r32)w) {}
         
-        v4(i32 x, i32 y, i32 z, r32 w) : 
+        Vec4(i32 x, i32 y, i32 z, r32 w) : 
         x((r32)x), y((r32)y), z((r32)z), w(w) {}
         
-        v4(r64 x, r64 y, i32 z, r64 w) : 
+        Vec4(r64 x, r64 y, i32 z, r64 w) : 
         x((r32)x), y((r32)y), z((r32)z), w((r32)w) {}
         
-        v4(v3 o, r32 w) : x(o.x), y(o.y), z(o.z), w(w) {}
+        Vec4(Vec3 o, r32 w) : x(o.x), y(o.y), z(o.z), w(w) {}
         
-        v4(v2 v, r32 z, r32 w) : x(v.x), y(v.y), z(z), w(w) {} 
+        Vec4(Vec2 v, r32 z, r32 w) : x(v.x), y(v.y), z(z), w(w) {} 
         
-        v4& operator=(const v4& v) = default;
+        Vec4& operator=(const Vec4& v) = default;
         
         r32 operator[](i32 i)
         {
             return this->e[i];
         }
         
-        inline v4 operator* (v4 o)
+        inline Vec4 operator* (Vec4 o)
         {
-            v4 result(*this);
+            Vec4 result(*this);
             result.x *= o.x;
             result.y *= o.y;
             result.z *= o.z;
@@ -598,9 +598,9 @@ namespace math
             return result;
         }
         
-        inline v4 operator+ (v4 o)
+        inline Vec4 operator+ (Vec4 o)
         {
-            v4 result(*this);
+            Vec4 result(*this);
             result.x += o.x;
             result.y += o.y;
             result.z += o.z;
@@ -608,7 +608,7 @@ namespace math
             return result;
         }
         
-        inline void operator*= (v4 o)
+        inline void operator*= (Vec4 o)
         {
             this->x *= o.x;
             this->y *= o.y;
@@ -616,7 +616,7 @@ namespace math
             this->w *= o.w;
         }
         
-        inline void operator+= (v4 o)
+        inline void operator+= (Vec4 o)
         {
             this->x += o.x;
             this->y += o.y;
@@ -624,9 +624,9 @@ namespace math
             this->w += o.w;
         }
         
-        inline v4 operator+ (r32 s)
+        inline Vec4 operator+ (r32 s)
         {
-            v4 result(*this);
+            Vec4 result(*this);
             result.x += s;
             result.y += s;
             result.z += s;
@@ -634,9 +634,9 @@ namespace math
             return result;
         }
         
-        inline v4 operator* (r32 s)
+        inline Vec4 operator* (r32 s)
         {
-            v4 result(*this);
+            Vec4 result(*this);
             result.x *= s;
             result.y *= s;
             result.z *= s;
@@ -644,9 +644,9 @@ namespace math
             return result;
         }
         
-        inline v4 operator/ (r32 s)
+        inline Vec4 operator/ (r32 s)
         {
-            v4 result(*this);
+            Vec4 result(*this);
             result.x /= s;
             result.y /= s;
             result.z /= s;
@@ -686,9 +686,9 @@ namespace math
             this->w -= s;
         }
         
-        inline v4 operator- (v4 o)
+        inline Vec4 operator- (Vec4 o)
         {
-            v4 result(*this);
+            Vec4 result(*this);
             result.x -= o.x;
             result.y -= o.y;
             result.z -= o.z;
@@ -696,7 +696,7 @@ namespace math
             return result;
         }
         
-        inline void operator-= (v4 o)
+        inline void operator-= (Vec4 o)
         {
             this->x -= o.x;
             this->y -= o.y;
@@ -704,9 +704,9 @@ namespace math
             this->w -= o.w;
         }
         
-        inline v4 operator- (r32 s)
+        inline Vec4 operator- (r32 s)
         {
-            v4 result(*this);
+            Vec4 result(*this);
             result.x -= s;
             result.y -= s;
             result.z -= s;
@@ -714,9 +714,9 @@ namespace math
             return result;
         }
         
-        inline v4 operator/ (v4 o)
+        inline Vec4 operator/ (Vec4 o)
         {
-            v4 result(*this);
+            Vec4 result(*this);
             result.x /= o.x;
             result.y /= o.y;
             result.z /= o.z;
@@ -724,7 +724,7 @@ namespace math
             return result;
         }
         
-        inline void operator/= (v4 o)
+        inline void operator/= (Vec4 o)
         {
             this->x /= o.x;
             this->y /= o.y;
@@ -733,66 +733,66 @@ namespace math
         }
     };
     
-    union v2i
+    union Vec2i
     {
         struct
         {
             i32 x,y;
         };
         i32 e[2];
-        v2i(i32 x, i32 y) : x(x), y(y){}
-        v2i(r32 x, r32 y) : x((i32)x), y((i32)y){}
-        v2i() : x(0),y(0) {}
-        v2i(i32 i) : x(i), y(i) {}
-        v2i(i32 i[2]) : e{i[0],i[1]} {}
+        Vec2i(i32 x, i32 y) : x(x), y(y){}
+        Vec2i(r32 x, r32 y) : x((i32)x), y((i32)y){}
+        Vec2i() : x(0),y(0) {}
+        Vec2i(i32 i) : x(i), y(i) {}
+        Vec2i(i32 i[2]) : e{i[0],i[1]} {}
         
-        inline v2i operator* (v2i o)
+        inline Vec2i operator* (Vec2i o)
         {
-            v2i result(*this);
+            Vec2i result(*this);
             result.x *= o.x;
             result.y *= o.y;
             return result;
         }
         
-        inline v2i operator+ (v2i o)
+        inline Vec2i operator+ (Vec2i o)
         {
-            v2i result(*this);
+            Vec2i result(*this);
             result.x += o.x;
             result.y += o.y;
             return result;
         }
         
-        inline void operator*= (v2i o)
+        inline void operator*= (Vec2i o)
         {
             this->x *= o.x;
             this->y *= o.y;
         }
         
-        inline void operator+= (v2i o)
+        inline void operator+= (Vec2i o)
         {
             this->x += o.x;
             this->y += o.y;
         }
         
-        inline v2i operator+ (i32 s)
+        inline Vec2i operator+ (i32 s)
         {
-            v2i result(*this);
+            Vec2i result(*this);
             result.x += s;
             result.y += s;
             return result;
         }
         
-        inline v2i operator* (i32 s)
+        inline Vec2i operator* (i32 s)
         {
-            v2i result(*this);
+            Vec2i result(*this);
             result.x *= s;
             result.y *= s;
             return result;
         }
         
-        inline v2i operator/ (i32 s)
+        inline Vec2i operator/ (i32 s)
         {
-            v2i result(*this);
+            Vec2i result(*this);
             result.x /= s;
             result.y /= s;
             return result;
@@ -822,109 +822,109 @@ namespace math
             this->y -= s;
         }
         
-        inline v2i operator- (v2i o)
+        inline Vec2i operator- (Vec2i o)
         {
-            v2i result(*this);
+            Vec2i result(*this);
             result.x -= o.x;
             result.y -= o.y;
             return result;
         }
         
-        inline void operator-= (v2i o)
+        inline void operator-= (Vec2i o)
         {
             this->x -= o.x;
             this->y -= o.y;
         }
         
-        inline v2i operator- (i32 s)
+        inline Vec2i operator- (i32 s)
         {
-            v2i result(*this);
+            Vec2i result(*this);
             result.x -= s;
             result.y -= s;
             return result;
         }
         
-        inline v2i operator/ (v2i o)
+        inline Vec2i operator/ (Vec2i o)
         {
-            v2i result(*this);
+            Vec2i result(*this);
             result.x /= o.x;
             result.y /= o.y;
             return result;
         }
         
-        inline void operator/= (v2i o)
+        inline void operator/= (Vec2i o)
         {
             this->x /= o.x;
             this->y /= o.y;
         }
     };
     
-    union v3i
+    union Vec3i
     {
         struct
         {
             i32 x,y,z;
         };
         i32 e[3];
-        v3i(i32 x, i32 y, i32 z) : x(x), y(y), z(z){}
-        v3i() : x(0), y(0), z(0) {}
-        v3i(i32 i) : x(i), y(i), z(i) {}
-        v3i(i32 i[3]) : e{i[0], i[1], i[2]} {}
-        v3i(v3 v) : e{(i32)v.e[0], (i32)v.e[1], (i32)v.e[2]} {}
+        Vec3i(i32 x, i32 y, i32 z) : x(x), y(y), z(z){}
+        Vec3i() : x(0), y(0), z(0) {}
+        Vec3i(i32 i) : x(i), y(i), z(i) {}
+        Vec3i(i32 i[3]) : e{i[0], i[1], i[2]} {}
+        Vec3i(Vec3 v) : e{(i32)v.e[0], (i32)v.e[1], (i32)v.e[2]} {}
         
-        inline v3i operator* (v3i o)
+        inline Vec3i operator* (Vec3i o)
         {
-            v3i result(*this);
+            Vec3i result(*this);
             result.x *= o.x;
             result.y *= o.y;
             result.z *= o.z;
             return result;
         }
         
-        inline v3i operator+ (v3i o)
+        inline Vec3i operator+ (Vec3i o)
         {
-            v3i result(*this);
+            Vec3i result(*this);
             result.x += o.x;
             result.y += o.y;
             result.z += o.z;
             return result;
         }
         
-        inline void operator*= (v3i o)
+        inline void operator*= (Vec3i o)
         {
             this->x *= o.x;
             this->y *= o.y;
             this->z *= o.z;
         }
         
-        inline void operator+= (v3i o)
+        inline void operator+= (Vec3i o)
         {
             this->x += o.x;
             this->y += o.y;
             this->z += o.z;
         }
         
-        inline v3i operator+ (i32 s)
+        inline Vec3i operator+ (i32 s)
         {
-            v3i result(*this);
+            Vec3i result(*this);
             result.x += s;
             result.y += s;
             result.z += s;
             return result;
         }
         
-        inline v3i operator* (i32 s)
+        inline Vec3i operator* (i32 s)
         {
-            v3i result(*this);
+            Vec3i result(*this);
             result.x *= s;
             result.y *= s;
             result.z *= s;
             return result;
         }
         
-        inline v3i operator/ (i32 s)
+        inline Vec3i operator/ (i32 s)
         {
-            v3i result(*this);
+            Vec3i result(*this);
             result.x /= s;
             result.y /= s;
             result.z /= s;
@@ -959,41 +959,41 @@ namespace math
             this->z -= s;
         }
         
-        inline v3i operator- (v3i o)
+        inline Vec3i operator- (Vec3i o)
         {
-            v3i result(*this);
+            Vec3i result(*this);
             result.x -= o.x;
             result.y -= o.y;
             result.z -= o.z;
             return result;
         }
         
-        inline void operator-= (v3i o)
+        inline void operator-= (Vec3i o)
         {
             this->x -= o.x;
             this->y -= o.y;
             this->z -= o.z;
         }
         
-        inline v3i operator- (i32 s)
+        inline Vec3i operator- (i32 s)
         {
-            v3i result(*this);
+            Vec3i result(*this);
             result.x -= s;
             result.y -= s;
             result.z -= s;
             return result;
         }
         
-        inline v3i operator/ (v3i o)
+        inline Vec3i operator/ (Vec3i o)
         {
-            v3i result(*this);
+            Vec3i result(*this);
             result.x /= o.x;
             result.y /= o.y;
             result.z /= o.z;
             return result;
         }
         
-        inline void operator/= (v3i o)
+        inline void operator/= (Vec3i o)
         {
             this->x /= o.x;
             this->y /= o.y;
@@ -1003,21 +1003,21 @@ namespace math
     };
     
     
-    union v4i
+    union Vec4i
     {
         struct
         {
             i32 x, y, z, w;
         };
         i32 e[4];
-        v4i(i32 x, i32 y, i32 z, i32 w) : x(x), y(y), z(z), w(w){}
-        v4i() : x(0), y(0), z(0), w(0) {}
-        v4i(i32 i) : x(i), y(i), z(i), w(i) {}
-        v4i(i32 i[4]) : e{i[0], i[1], i[2], i[3]} {}
+        Vec4i(i32 x, i32 y, i32 z, i32 w) : x(x), y(y), z(z), w(w){}
+        Vec4i() : x(0), y(0), z(0), w(0) {}
+        Vec4i(i32 i) : x(i), y(i), z(i), w(i) {}
+        Vec4i(i32 i[4]) : e{i[0], i[1], i[2], i[3]} {}
         
-        inline v4i operator* (v4i o)
+        inline Vec4i operator* (Vec4i o)
         {
-            v4i result(*this);
+            Vec4i result(*this);
             result.x *= o.x;
             result.y *= o.y;
             result.z *= o.z;
@@ -1025,9 +1025,9 @@ namespace math
             return result;
         }
         
-        inline v4i operator+ (v4i o)
+        inline Vec4i operator+ (Vec4i o)
         {
-            v4i result(*this);
+            Vec4i result(*this);
             result.x += o.x;
             result.y += o.y;
             result.z += o.z;
@@ -1035,7 +1035,7 @@ namespace math
             return result;
         }
         
-        inline void operator*= (v4i o)
+        inline void operator*= (Vec4i o)
         {
             this->x *= o.x;
             this->y *= o.y;
@@ -1043,7 +1043,7 @@ namespace math
             this->w *= o.w;
         }
         
-        inline void operator+= (v4i o)
+        inline void operator+= (Vec4i o)
         {
             this->x += o.x;
             this->y += o.y;
@@ -1051,9 +1051,9 @@ namespace math
             this->w += o.w;
         }
         
-        inline v4i operator+ (i32 s)
+        inline Vec4i operator+ (i32 s)
         {
-            v4i result(*this);
+            Vec4i result(*this);
             result.x += s;
             result.y += s;
             result.z += s;
@@ -1061,9 +1061,9 @@ namespace math
             return result;
         }
         
-        inline v4i operator* (i32 s)
+        inline Vec4i operator* (i32 s)
         {
-            v4i result(*this);
+            Vec4i result(*this);
             result.x *= s;
             result.y *= s;
             result.z *= s;
@@ -1071,9 +1071,9 @@ namespace math
             return result;
         }
         
-        inline v4i operator/ (i32 s)
+        inline Vec4i operator/ (i32 s)
         {
-            v4i result(*this);
+            Vec4i result(*this);
             result.x /= s;
             result.y /= s;
             result.z /= s;
@@ -1113,9 +1113,9 @@ namespace math
             this->w -= s;
         }
         
-        inline v4i operator- (v4i o)
+        inline Vec4i operator- (Vec4i o)
         {
-            v4i result(*this);
+            Vec4i result(*this);
             result.x -= o.x;
             result.y -= o.y;
             result.z -= o.z;
@@ -1123,7 +1123,7 @@ namespace math
             return result;
         }
         
-        inline void operator-= (v4i o)
+        inline void operator-= (Vec4i o)
         {
             this->x -= o.x;
             this->y -= o.y;
@@ -1131,9 +1131,9 @@ namespace math
             this->w -= o.w;
         }
         
-        inline v4i operator- (i32 s)
+        inline Vec4i operator- (i32 s)
         {
-            v4i result(*this);
+            Vec4i result(*this);
             result.x -= s;
             result.y -= s;
             result.z -= s;
@@ -1141,9 +1141,9 @@ namespace math
             return result;
         }
         
-        inline v4i operator/ (v4i o)
+        inline Vec4i operator/ (Vec4i o)
         {
-            v4i result(*this);
+            Vec4i result(*this);
             result.x /= o.x;
             result.y /= o.y;
             result.z /= o.z;
@@ -1151,7 +1151,7 @@ namespace math
             return result;
         }
         
-        inline void operator/= (v4i o)
+        inline void operator/= (Vec4i o)
         {
             this->x /= o.x;
             this->y /= o.y;
@@ -1162,7 +1162,7 @@ namespace math
     };
     
     
-    union m4
+    union Mat4
     {
         struct
         {
@@ -1193,42 +1193,42 @@ namespace math
             return this->v[idx];
         }
         
-        m4() : v{{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0}} {}
-        m4(r32 m11, r32 m12, r32 m13, r32 m14, 
-           r32 m21, r32 m22, r32 m23, r32 m24,
-           r32 m31, r32 m32, r32 m33, r32 m34,
-           r32 m41, r32 m42, r32 m43, r32 m44) : 
+        Mat4() : v{{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0}} {}
+        Mat4(r32 m11, r32 m12, r32 m13, r32 m14, 
+             r32 m21, r32 m22, r32 m23, r32 m24,
+             r32 m31, r32 m32, r32 m33, r32 m34,
+             r32 m41, r32 m42, r32 m43, r32 m44) : 
         m11(m11), m12(m12), m13(m13), m14(m14),
         m21(m21), m22(m22), m23(m23), m24(m24),
         m31(m31), m32(m32), m33(m33), m34(m34),
         m41(m41), m42(m42), m43(m43), m44(m44) {}
         
-        m4(r32 m0[4], r32 m1[4], r32 m2[4], r32 m3[4]) : 
+        Mat4(r32 m0[4], r32 m1[4], r32 m2[4], r32 m3[4]) : 
         m0 {m0[0],m0[1],m0[2],m0[3]}, 
         m1 {m1[0],m1[1],m1[2],m1[3]}, 
         m2 {m2[0],m2[1],m2[2],m2[3]}, 
         m3 {m3[0],m3[1],m3[2],m3[3]} {}
         
-        m4(r32 i[4][4]) : 
+        Mat4(r32 i[4][4]) : 
         v{ {i[0][0],i[0][1],i[0][2],i[0][3]}, 
             {i[1][0],i[1][1],i[1][2],i[1][3]}, 
             {i[2][0],i[2][1],i[2][2],i[2][3]}, 
             {i[3][0],i[3][1],i[3][2],i[3][3]}}
         {}
         
-        m4(r32 i) : v {{i,0,0,0},{0,i,0,0},{0,0,i,0},{0,0,0,i}} {}
+        Mat4(r32 i) : v {{i,0,0,0},{0,i,0,0},{0,0,i,0},{0,0,0,i}} {}
         
-        m4(const m4& o) : v{ {o.v[0][0],o.v[0][1],o.v[0][2],o.v[0][3]}, 
+        Mat4(const Mat4& o) : v{ {o.v[0][0],o.v[0][1],o.v[0][2],o.v[0][3]}, 
             {o.v[1][0],o.v[1][1],o.v[1][2],o.v[1][3]}, 
             {o.v[2][0],o.v[2][1],o.v[2][2],o.v[2][3]}, 
             {o.v[3][0],o.v[3][1],o.v[3][2],o.v[3][3]}} {}
         
         
-        m4& operator=(const m4& m) = default;
+        Mat4& operator=(const Mat4& m) = default;
         
-        m4 operator*(m4 other)
+        Mat4 operator*(Mat4 other)
         {
-            m4 result(*this);
+            Mat4 result(*this);
             for(i32 outer = 0; outer < 4; outer++)
             {
                 for(i32 inner = 0; inner < 4; inner++)
@@ -1245,14 +1245,14 @@ namespace math
         }
         
         // Only __absolute__ convenience: __always__ better to control order yourself
-        void operator *= (m4 other)
+        void operator *= (Mat4 other)
         {
             memcpy(this->v,(other * (*this)).v, sizeof(r32) * 4 * 4);
         }
         
-        inline m4 operator*(r32 s)
+        inline Mat4 operator*(r32 s)
         {
-            m4 result(*this);
+            Mat4 result(*this);
             result.m11 *= s;
             result.m12 *= s;
             result.m13 *= s;
@@ -1274,9 +1274,9 @@ namespace math
         
     };
     
-    inline m4 operator*(r32 s, m4 m)
+    inline Mat4 operator*(r32 s, Mat4 m)
     {
-        m4 result(m);
+        Mat4 result(m);
         result.m11 *= s;
         result.m12 *= s;
         result.m13 *= s;
@@ -1296,7 +1296,7 @@ namespace math
         return result;
     }
     
-    union quat
+    union Quat
     {
         struct
         {
@@ -1304,27 +1304,27 @@ namespace math
         };
         struct
         {
-            v4 axis_angle;
+            Vec4 axis_angle;
         };
         struct
         {
-            v3 axis;
+            Vec3 axis;
             r32 angle;
         };
         
         // Identity quaternion
-        quat() : x(0.0f), y(0.0f), z(0.0f), w(1.0f) {}
-        quat(r32 x, r32 y, r32 z, r32 angle) : Axis(v3(x * (r32)sin(angle / 2.0f), y * (r32)sin(angle / 2.0f), z * (r32)sin(angle / 2.0f))), Angle((r32)cos(angle / 2.0f)) {}
-        quat(v3 axis, r32 angle) : 
-        Axis(v3(axis.x * (r32)sin(angle / 2.0f), axis.y * (r32)sin(angle / 2.0f), axis.z * (r32)sin(angle / 2.0f))),
-        Angle((r32)cos(angle / 2.0f)) {}
-        quat(const quat& o) : Axis(o.axis), Angle(o.angle) {}
+        Quat() : x(0.0f), y(0.0f), z(0.0f), w(1.0f) {}
+        Quat(r32 x, r32 y, r32 z, r32 angle) : axis(Vec3(x * (r32)sin(angle / 2.0f), y * (r32)sin(angle / 2.0f), z * (r32)sin(angle / 2.0f))), angle((r32)cos(angle / 2.0f)) {}
+        Quat(Vec3 axis, r32 angle) : 
+        axis(Vec3(axis.x * (r32)sin(angle / 2.0f), axis.y * (r32)sin(angle / 2.0f), axis.z * (r32)sin(angle / 2.0f))),
+        angle((r32)cos(angle / 2.0f)) {}
+        Quat(const Quat& o) : axis(o.axis), angle(o.angle) {}
         
-        quat& operator=(const quat& q) = default;
+        Quat& operator=(const Quat& q) = default;
         
-        inline quat operator-()
+        inline Quat operator-()
         {
-            quat result(*this);
+            Quat result(*this);
             result.x = -this->x;
             result.y = -this->y;
             result.z = -this->z;
@@ -1332,9 +1332,9 @@ namespace math
             return result;
         }
         
-        inline quat operator+ (quat q)
+        inline Quat operator+ (Quat q)
         {
-            quat result(*this);
+            Quat result(*this);
             result.x += q.x;
             result.y += q.y;
             result.z += q.z;
@@ -1342,7 +1342,7 @@ namespace math
             return result;
         }
         
-        inline void operator+= (quat q)
+        inline void operator+= (Quat q)
         {
             this->x += q.x;
             this->y += q.y;
@@ -1350,9 +1350,9 @@ namespace math
             this->w += q.w;
         }
         
-        inline quat operator- (quat q)
+        inline Quat operator- (Quat q)
         {
-            quat result(*this);
+            Quat result(*this);
             result.x -= q.x;
             result.y -= q.y;
             result.z -= q.z;
@@ -1360,9 +1360,9 @@ namespace math
             return result;
         }
         
-        inline quat operator* (quat q)
+        inline Quat operator* (Quat q)
         {
-            quat result(*this);
+            Quat result(*this);
             result.w = this->w * q.w - (this->x * q.x + this->y * q.y + this->z * q.z);
             result.x = this->w * q.x + this->x * q.w + this->y * q.z - this->z * q.y; 
             result.y = this->w * q.y - this->x * q.z + this->y * q.w + this->z * q.z;
@@ -1370,7 +1370,7 @@ namespace math
             return result;
         }
         
-        inline void operator*= (quat q)
+        inline void operator*= (Quat q)
         {
             auto result = *this * q;
             this->x = result.x;
@@ -1379,9 +1379,9 @@ namespace math
             this->w = result.w;
         }
         
-        inline quat operator* (r32 v)
+        inline Quat operator* (r32 v)
         {
-            quat result(*this);
+            Quat result(*this);
             result.w *= v;
             result.x *= v;
             result.y *= v;
@@ -1389,9 +1389,9 @@ namespace math
             return result;
         }
         
-        inline quat operator/ (r32 v)
+        inline Quat operator/ (r32 v)
         {
-            quat result(*this);
+            Quat result(*this);
             
             result.w /= v;
             result.x /= v;
@@ -1402,98 +1402,98 @@ namespace math
         }
     };
     
-    b32 is_identity(quat q);
-    r32 dot(quat q1, quat q2);
-    r32 dot(v2 v1, v2 v2);
-    r32 dot(v3 v1, v3 v2);
-    r32 dot(v4 v1, v4 v2);
-    i32 dot(v2i v1, v2i v2);
-    i32 dot(v3i v1, v3i v2);
-    r32 distance(v2 v1, v2 v2);
-    r32 distance(v3 v1, v3 v2);
-    r32 distance(v4 v1, v4 v2);
-    i32 distance(v2i v1, v2i v2);
-    i32 distance(v3i v1, v3i v2);
-    r32 distance(v3i v1, v3 v2);
+    b32 is_identity(Quat q);
+    r32 dot(Quat q1, Quat q2);
+    r32 dot(Vec2 v1, Vec2 v2);
+    r32 dot(Vec3 v1, Vec3 v2);
+    r32 dot(Vec4 v1, Vec4 v2);
+    i32 dot(Vec2i v1, Vec2i v2);
+    i32 dot(Vec3i v1, Vec3i v2);
+    r32 distance(Vec2 v1, Vec2 v2);
+    r32 distance(Vec3 v1, Vec3 v2);
+    r32 distance(Vec4 v1, Vec4 v2);
+    i32 distance(Vec2i v1, Vec2i v2);
+    i32 distance(Vec3i v1, Vec3i v2);
+    r32 distance(Vec3i v1, Vec3 v2);
     i32 floor(r32 v);
-    v2 floor(v2 v);
-    v3 floor(v3 v);
+    Vec2 floor(Vec2 v);
+    Vec3 floor(Vec3 v);
     i32 ceil(r32 v);
-    v2 ceil(v2 v);
-    v3 ceil(v3 v);
+    Vec2 ceil(Vec2 v);
+    Vec3 ceil(Vec3 v);
     r32 sin(r32 v);
     r32 cos(r32 v);
-    r32 a_cos(r32 v);
+    r32 acos(r32 v);
     r32 absolute(r32 v);
-    v2 absolute(v2 v);
-    v3 absolute(v3 v);
-    v4 absolute(v4 v);
+    Vec2 absolute(Vec2 v);
+    Vec3 absolute(Vec3 v);
+    Vec4 absolute(Vec4 v);
     i32 round(r32 v);
     r32 square(r32 v);
     r32 sqrt(r32 v);
     r32 pow(r32 v, i32 e);
     r32 sin(r32 v);
     r32 cos(r32 v);
-    r32 length(v2 v);
-    r32 length(v3 v);
-    r32 length(v4 v);
-    v2 normalize(v2 v);
-    v3 normalize(v3 v);
-    v4 normalize(v4 v);
-    quat normalize(quat q);
-    m4 scale(m4 in, v3 scale);
-    m4 translate(m4 in, v3 translate);
-    m4 x_rotate(r32 angle);
-    m4 y_rotate(r32 angle);
-    m4 z_rotate(r32 angle);
-    m4 create_rotation(r32 x_angle, r32 y_angle, r32 z_angle);
+    r32 length(Vec2 v);
+    r32 length(Vec3 v);
+    r32 length(Vec4 v);
+    Vec2 normalize(Vec2 v);
+    Vec3 normalize(Vec3 v);
+    Vec4 normalize(Vec4 v);
+    Quat normalize(Quat q);
+    Mat4 scale(Mat4 in, Vec3 scale);
+    Mat4 translate(Mat4 in, Vec3 translate);
+    Mat4 x_rotate(r32 angle);
+    Mat4 y_rotate(r32 angle);
+    Mat4 z_rotate(r32 angle);
+    Mat4 create_rotation(r32 x_angle, r32 y_angle, r32 z_angle);
     
-    quat rotate(quat in, r32 a, v3 axis);
-    m4 rotate(m4 m, r32 a, v3 axis);
-    quat conjugate(quat q);
-    r32 magnitude(quat q);
-    r32 get_angle_in_radians(quat q);
-    v3 get_axis(quat q);
-    v3 right(m4 m);
-    v3 up(m4 m);
-    v3 forward(m4 m);
-    v3 translation(m4 m);
-    v3 scale(m4 m);
-    v3 project(v3 in, m4 m, m4 p, v4 viewport);
-    v3 cross(v3 a, v3 b);
-    m4 ortho(r32 left, r32 right, r32 bottom, r32 top, r32 near, r32 far);
-    m4 look_at(v3 p, v3 t);
-    m4 perspective(r32 aspect_width_over_height, r32 focal_length, r32 near, r32 far);
-    m4 frustum(r32 bottom, r32 top, r32 left, r32 right,
-               r32 near, r32 far);
-    v3 mult_point_matrix(v3 in, m4 m);
-    v3 un_project(v3 in, m4 model, m4 projection, v4i viewport);
+    Quat rotate(Quat in, r32 a, Vec3 axis);
+    Mat4 rotate(Mat4 m, r32 a, Vec3 axis);
+    Quat conjugate(Quat q);
+    r32 magnitude(Quat q);
+    r32 get_angle_in_radians(Quat q);
+    Vec3 get_axis(Quat q);
+    Vec3 right(Mat4 m);
+    Vec3 up(Mat4 m);
+    Vec3 forward(Mat4 m);
+    Vec3 translation(Mat4 m);
+    Vec3 scale(Mat4 m);
+    Vec3 project(Vec3 in, Mat4 m, Mat4 p, Vec4 viewport);
+    Vec3 cross(Vec3 a, Vec3 b);
+    Mat4 ortho(r32 left, r32 right, r32 bottom, r32 top, r32 near, r32 far);
+    Mat4 look_at(Vec3 p, Vec3 t);
+    Mat4 perspective(r32 aspect_width_over_height, r32 focal_length, r32 near, r32 far);
+    Mat4 frustum(r32 bottom, r32 top, r32 left, r32 right,
+                 r32 near, r32 far);
+    Vec3 mult_point_matrix(Vec3 in, Mat4 m);
+    Vec3 un_project(Vec3 in, Mat4 model, Mat4 projection, Vec4i viewport);
     
     r32 random_float(r32 from, r32 to);
-    v3 cast_ray(r32 mouse_x, r32 mouse_y, r32 width, r32 height, m4 p, m4 v, r32 near);
+    Vec3 cast_ray(r32 mouse_x, r32 mouse_y, r32 width, r32 height, Mat4 p, Mat4 v, r32 near);
     
-    quat slerp(quat q0, quat q1, r32 t);
+    Quat slerp(Quat q0, Quat q1, r32 t);
     r32 lerp(r32 a, r32 t, r32 b);
-    v2 lerp(v2 a, r32 t, v2 b);
-    v3 lerp(v3 a, r32 t, v3 b);
-    v4 lerp(v4 a, r32 t, v4 b);
-    quat lerp(quat q0, quat q1, r32 t);
-    quat nlerp(quat q0, quat q1, r32 t);
-    quat interpolate(quat q0, quat q1, r32 f);
-    m4 transpose(m4 in);
-    m4 to_matrix(quat q);
-    v4 transform(m4& m, const v4& v);
-    r32 determinant(const m4& in);
-    m4 inverse(m4 m);
+    Vec2 lerp(Vec2 a, r32 t, Vec2 b);
+    Vec3 lerp(Vec3 a, r32 t, Vec3 b);
+    Vec4 lerp(Vec4 a, r32 t, Vec4 b);
+    Quat lerp(Quat q0, Quat q1, r32 t);
+    Quat nlerp(Quat q0, Quat q1, r32 t);
+    Quat interpolate(Quat q0, Quat q1, r32 f);
+    Mat4 transpose(Mat4 in);
+    Mat4 to_matrix(Quat q);
+    Vec4 transform(Mat4& m, const Vec4& v);
+    r32 determinant(const Mat4& in);
+    Mat4 inverse(Mat4 m);
     
-    inline b32 is_identity(quat q)
+    inline b32 is_identity(Quat q)
     {
         return q.x == 0.0f && q.y == 0.0f && q.z == 0.0f && q.w == 1.0f;
     }
     
-    inline quat operator* (r32 v, quat q)
+    inline Quat operator* (r32 v, Quat q)
     {
-        quat result(q);
+        Quat result(q);
         result.w *= v;
         result.x *= v;
         result.y *= v;
@@ -1501,20 +1501,20 @@ namespace math
         return result;
     }
     
-    inline r32 dot(quat q1, quat q2)
+    inline r32 dot(Quat q1, Quat q2)
     {
         r32 result;
         result = q1.w * q2.w + q1.x * q2.x + q1.y * q2.y + q1.z * q2.z;
         return result;
     }
     
-    inline quat conjugate(quat q)
+    inline Quat conjugate(Quat q)
     {
-        quat result(-q.Axis, q.w);
+        Quat result(-q.axis, q.w);
         return result;
     }
     
-    inline r32 magnitude(quat q)
+    inline r32 magnitude(Quat q)
     {
         r32 result = 0.0f;
         result = q.w * q.w + q.x * q.x + q.y * q.y + q.z * q.z;
@@ -1522,13 +1522,13 @@ namespace math
         return result;
     }
     
-    inline quat normalize(quat q)
+    inline Quat normalize(Quat q)
     {
         return q / magnitude(q);
     }
     
     //@Incomplete JBlow, CaseyM, ShawnM say don't use this
-    inline quat slerp(quat q0, quat q1, r32 t)
+    inline Quat slerp(Quat q0, Quat q1, r32 t)
     {
         q0 = normalize(q0);
         q1 = normalize(q1);
@@ -1538,7 +1538,7 @@ namespace math
         const r64 dot_threshold = 0.9995;
         if(dot_p > dot_threshold)
         {
-            quat result = q0 + t * (q1 - q0);
+            Quat result = q0 + t * (q1 - q0);
             result = normalize(result);
             return result;
         }
@@ -1550,7 +1550,7 @@ namespace math
         }
         
         clamp(dot_p, -1.0f, 1.0f);
-        auto theta_0 = a_cos(dot_p);
+        auto theta_0 = acos(dot_p);
         auto theta = theta_0 * t;
         
         auto q2 = q1 - q0 * dot_p;
@@ -1561,12 +1561,12 @@ namespace math
         return result;
     }
     
-    inline quat lerp(quat q0, quat q1, r32 t)
+    inline Quat lerp(Quat q0, Quat q1, r32 t)
     {
         return (1.0f - t) * q0 + t * q1;
     }
     
-    inline quat nlerp(quat q0, quat q1, r32 t)
+    inline Quat nlerp(Quat q0, Quat q1, r32 t)
     {
         q0 = normalize(q0);
         q1 = normalize(q1);
@@ -1581,7 +1581,7 @@ namespace math
         return normalize(lerp(q0, q1, t));
     }
     
-    inline quat interpolate(quat q0, quat q1, r32 f)
+    inline Quat interpolate(Quat q0, Quat q1, r32 f)
     {
         r32 cosom = q0.x * q1.x + q0.y * q1.y + q0.z * q1.z + q0.w * q1.w;
         auto end = q1;
@@ -1602,7 +1602,7 @@ namespace math
         {
             // Standard case (slerp)
             r32 omega, sinom;
-            omega = a_cos(cosom); // extract theta from dot product's cos theta
+            omega = acos(cosom); // extract theta from dot product's cos theta
             sinom = sin(omega);
             sclp = sin((1.0f - f) * omega) / sinom;
             sclq = sin(f * omega) / sinom;
@@ -1614,7 +1614,7 @@ namespace math
             sclq = f;
         }
         
-        quat out;
+        Quat out;
         
         out.x = sclp * q0.x + sclq * end.x;
         out.y = sclp * q0.y + sclq * end.y;
@@ -1623,9 +1623,9 @@ namespace math
         return out;
     }
     
-    inline m4 transpose(m4 in)
+    inline Mat4 transpose(Mat4 in)
     {
-        m4 result(in);
+        Mat4 result(in);
         result.m11 = in.m11;
         result.m12 = in.m21;
         result.m13 = in.m31;
@@ -1645,9 +1645,9 @@ namespace math
         return result;
     }
     
-    inline m4 to_matrix(quat q)
+    inline Mat4 to_matrix(Quat q)
     {
-        m4 result(1.0f);
+        Mat4 result(1.0f);
         
         result[0][0] = 1.0f - 2.0f * q.y * q.y - 2.0f * q.z * q.z;
         result[0][1] = 2.0f * q.x * q.y + 2.0f * q.z * q.w;
@@ -1662,9 +1662,9 @@ namespace math
         return result;
     }
     
-    inline v4 transform(m4& m, const v4& v)
+    inline Vec4 transform(Mat4& m, const Vec4& v)
     {
-        v4 r(0.0f);
+        Vec4 r(0.0f);
         
         r.x = v.x * m[0][0] + v.y * m[0][1] + v.z * m[0][2] + v.w * m[0][3];
         r.y = v.x * m[1][0] + v.y * m[1][1] + v.z * m[1][2] + v.w * m[1][3];
@@ -1674,19 +1674,19 @@ namespace math
         return r;
     }
     
-    inline v3 operator*(m4 m, const v3& v)
+    inline Vec3 operator*(Mat4 m, const Vec3& v)
     {
-        v3 r = transform(m,v4(v,1.0f)).xyz;
+        Vec3 r = transform(m,Vec4(v,1.0f)).xyz;
         return r;
     }
     
-    inline v4 operator*(m4 m, const v4& v)
+    inline Vec4 operator*(Mat4 m, const Vec4& v)
     {
-        v4 r = transform(m,v);
+        Vec4 r = transform(m,v);
         return r;
     }
     
-    void print_matrix(m4 In)
+    void print_matrix(Mat4 In)
     {
         Debug("%f %f %f %f\n", In[0][0],In[0][1],In[0][2],In[0][3]);
         Debug("%f %f %f %f\n", In[1][0],In[1][1],In[1][2],In[1][3]);
@@ -1694,31 +1694,31 @@ namespace math
         Debug("%f %f %f %f\n", In[3][0],In[3][1],In[3][2],In[3][3]);
     }
     
-    void print_quat(quat Q)
+    void print_quat(Quat Q)
     {
         Debug("(%f, %f, %f, %f)\n", Q.x, Q.y, Q.z, Q.w);
     }
     
-    inline v4 operator*(const v4& v, const m4& m)
+    inline Vec4 operator*(const Vec4& v, const Mat4& m)
     {
-        v4 result(0.0f);
-        result.x = m.A * v.x + m.B * v.y + m.C * v.z + m.D * v.w;
-        result.y = m.e * v.x + m.F * v.y + m.G * v.z + m.H * v.w;
-        result.z = m.I * v.x + m.J * v.y + m.K * v.z + m.L * v.w;
-        result.w = m.m * v.x + m.N * v.y + m.O * v.z + m.P * v.w;
+        Vec4 result(0.0f);
+        result.x = m.a * v.x + m.b * v.y + m.c * v.z + m.d * v.w;
+        result.y = m.e * v.x + m.f * v.y + m.g * v.z + m.h * v.w;
+        result.z = m.i * v.x + m.j * v.y + m.k * v.z + m.l * v.w;
+        result.w = m.m * v.x + m.n * v.y + m.o * v.z + m.p * v.w;
         return result;
     }
     
-    inline v3 operator*(const v3& v, const m4& m)
+    inline Vec3 operator*(const Vec3& v, const Mat4& m)
     {
-        v3 result(0.0f);
-        result.x = m.A * v.x + m.B * v.y + m.C * v.z + m.D * 1.0f;
-        result.y = m.e * v.x + m.F * v.y + m.G * v.z + m.H * 1.0f;
-        result.z = m.I * v.x + m.J * v.y + m.K * v.z + m.L * 1.0f;
+        Vec3 result(0.0f);
+        result.x = m.a * v.x + m.b * v.y + m.c * v.z + m.d * 1.0f;
+        result.y = m.e * v.x + m.f * v.y + m.g * v.z + m.h * 1.0f;
+        result.z = m.i * v.x + m.j * v.y + m.k * v.z + m.l * 1.0f;
         return result;
     }
     
-    inline r32 determinant(const m4& in)
+    inline r32 determinant(const Mat4& in)
     {
         return in.m11 * in.m22 * in.m33 * in.m44 + in.m11 * in.m23 * in.m34 * in.m42 + in.m11 * in.m24 * in.m32 * in.m43 + 
             in.m12 * in.m21 * in.m34 * in.m43 + in.m12 * in.m23 * in.m31 * in.m44 + in.m12 * in.m24 * in.m33 * in.m41 +
@@ -1737,13 +1737,13 @@ namespace math
     * consistently work! 
     * Link: https://stackoverflow.com/questions/1148309/inverting-a-4x4-matrix
     */
-    inline m4 inverse(m4 m)
+    inline Mat4 inverse(Mat4 m)
     {
-        m4 result(0.0f);
+        Mat4 result(0.0f);
         
-        auto e = m.Q;
+        auto e = m.q;
         
-        result.Q[0] = 
+        result.q[0] = 
             e[5]  *   e[10] * e[15] - 
             e[5]  *   e[11] * e[14] -
             e[9]  *   e[6]  * e[15] +
@@ -1753,7 +1753,7 @@ namespace math
         
         // DONe
         
-        result.Q[4] = 
+        result.q[4] = 
             -e[4] *   e[10] * e[15] +
             e[4]  *   e[11] * e[14] +
             e[8]  *   e[6]  * e[15] -
@@ -1763,7 +1763,7 @@ namespace math
         
         // DONE
         
-        result.Q[8] = 
+        result.q[8] = 
             e[4]  *   e[9]  * e[15] - 
             e[4]  *   e[11] * e[13] -
             e[8]  *   e[5]  * e[15] +
@@ -1772,7 +1772,7 @@ namespace math
             e[12] *   e[7]  * e[9];
         //DONE
         
-        result.Q[12] = 
+        result.q[12] = 
             -e[4] *   e[9]  * e[14] +
             e[4]  *   e[10] * e[13] +
             e[8]  *   e[5]  * e[14] -
@@ -1781,7 +1781,7 @@ namespace math
             e[12] *   e[6]  * e[9];
         //DONE
         
-        result.Q[1] = 
+        result.q[1] = 
             -e[1] *   e[10] * e[15] +
             e[1]  *   e[11] * e[14] +
             e[9]  *   e[2]  * e[15] -
@@ -1790,7 +1790,7 @@ namespace math
             e[13] *   e[3]  * e[10];
         //DONE
         
-        result.Q[5] = 
+        result.q[5] = 
             e[0]  *   e[10] * e[15] - 
             e[0]  *   e[11] * e[14] -
             e[8]  *   e[2]  * e[15] +
@@ -1799,7 +1799,7 @@ namespace math
             e[12] *   e[3]  * e[10];
         //DONE
         
-        result.Q[9] = 
+        result.q[9] = 
             -e[0] *   e[9]  * e[15] + 
             e[0]  *   e[11] * e[13] +
             e[8]  *   e[1]  * e[15] -
@@ -1808,7 +1808,7 @@ namespace math
             e[12] *   e[3]  * e[9];
         //DONE
         
-        result.Q[13] = 
+        result.q[13] = 
             e[0]  *   e[9]  * e[14] - 
             e[0]  *   e[10] * e[13] -
             e[8]  *   e[1]  * e[14] +
@@ -1817,7 +1817,7 @@ namespace math
             e[12] *   e[2]  * e[9];
         //DONE
         
-        result.Q[2] = 
+        result.q[2] = 
             e[1]  *   e[6]  * e[15] - 
             e[1]  *   e[7]  * e[14] -
             e[5]  *   e[2]  * e[15] +
@@ -1826,7 +1826,7 @@ namespace math
             e[13] *   e[3]  * e[6];
         //DONE
         
-        result.Q[6] = 
+        result.q[6] = 
             -e[0] *   e[6]  * e[15] + 
             e[0]  *   e[7]  * e[14] +
             e[4]  *   e[2]  * e[15] -
@@ -1835,7 +1835,7 @@ namespace math
             e[12] *   e[3]  * e[6];
         //DONE
         
-        result.Q[10] = 
+        result.q[10] = 
             e[0]  *   e[5]  * e[15] - 
             e[0]  *   e[7]  * e[13] -
             e[4]  *   e[1]  * e[15] +
@@ -1844,7 +1844,7 @@ namespace math
             e[12] *   e[3]  * e[5];
         //DONE
         
-        result.Q[14] = 
+        result.q[14] = 
             -e[0] *   e[5]  * e[14] +
             e[0]  *   e[6]  * e[13] +
             e[4]  *   e[1]  * e[14] -
@@ -1853,7 +1853,7 @@ namespace math
             e[12] *   e[2]  * e[5];
         //DONE
         
-        result.Q[3] = 
+        result.q[3] = 
             -e[1]  *   e[6]  * e[11] + 
             e[1]   *   e[7]  * e[10] +
             e[5]   *   e[2]  * e[11] -
@@ -1862,7 +1862,7 @@ namespace math
             e[9]   *   e[3]  * e[6];
         //DONE
         
-        result.Q[7] = 
+        result.q[7] = 
             e[0]  *   e[6]  * e[11] - 
             e[0]  *   e[7]  * e[10] -
             e[4]  *   e[2]  * e[11] +
@@ -1871,7 +1871,7 @@ namespace math
             e[8]  *   e[3]  * e[6];
         //DONE
         
-        result.Q[11] =  
+        result.q[11] =  
             -e[0]  *   e[5]  * e[11] +
             e[0]   *   e[7]  * e[9]  +
             e[4]   *   e[1]  * e[11] -
@@ -1880,7 +1880,7 @@ namespace math
             e[8]   *   e[3]  * e[5];
         //DONE
         
-        result.Q[15] = 
+        result.q[15] = 
             e[0]  *   e[5]  * e[10] - 
             e[0]  *   e[6]  * e[9]  -
             e[4]  *   e[1]  * e[10] +
@@ -1896,99 +1896,101 @@ namespace math
         return result;
     }
     
-    inline r32 dot(v2 v1, v2 v2)
+    inline r32 dot(Vec2 v1, Vec2 v2)
     {
         return v1.x * v2.x + v1.y + v2.y;
     }
     
-    inline r32 dot(v3 v1, v3 v2)
+    inline r32 dot(Vec3 v1, Vec3 v2)
     {
         return v1.x * v2.x + v1.y + v2.y + v1.z * v2.z;
     }
     
-    inline r32 dot(v4 v1, v4 v2)
+    inline r32 dot(Vec4 v1, Vec4 v2)
     {
         return v1.x * v2.x + v1.y + v2.y + v1.z * v2.z + v1.w * v2.w;
     }
     
-    inline i32 dot(v2i v1, v2i v2)
+    inline i32 dot(Vec2i v1, Vec2i v2)
     {
         return v1.x * v2.x + v1.y + v2.y;
     }
     
-    inline i32 dot(v3i v1, v3i v2)
+    inline i32 dot(Vec3i v1, Vec3i v2)
     {
         return v1.x * v2.x + v1.y + v2.y + v1.z + v2.z;
     }
     
-    inline r32 distance(v2 v1, v2 v2)
+    inline r32 distance(Vec2 v1, Vec2 v2)
     {
         return sqrt(pow(v1.x - v2.x, 2) + pow(v1.y - v2.y, 2));
     }
     
-    inline r32 distance(v3 v1, v3 v2)
+    inline r32 distance(Vec3 v1, Vec3 v2)
     {
         return sqrt(pow(v1.x - v2.x, 2) + pow(v1.y - v2.y, 2) + pow(v1.z - v2.z, 2));
     }
     
-    inline r32 distance(v4 v1, v4 v2)
+    inline r32 distance(Vec4 v1, Vec4 v2)
     {
         return sqrt(pow(v1.x - v2.x, 2) + pow(v1.y - v2.y, 2) + pow(v1.z - v2.z, 2) + pow(v1.w - v2.w,2));
     }
     
-    inline i32 distance(v2i v1, v2i v2)
+    inline i32 distance(Vec2i v1, Vec2i v2)
     {
         return (i32)(sqrt(pow((r32)v1.x - (r32)v2.x, 2) + pow((r32)v1.y - (r32)v2.y, 2)));
     }
     
-    inline i32 distance(v3i v1, v3i v2)
+    inline i32 distance(Vec3i v1, Vec3i v2)
     {
         return (i32)sqrt(pow((r32)v1.x - v2.x, 2) + pow((r32)v1.y - v2.y, 2) + pow((r32)v1.z - v2.z, 2));
     }
     
-    inline r32 distance(v3i v1, v3 v2)
+    inline r32 distance(Vec3i v1, Vec3 v2)
     {
         return sqrt(pow(v1.x - v2.x, 2) + pow(v1.y - v2.y, 2) + pow(v1.z - v2.z, 2));
     }
     
+    /*
     inline i32 floor(r32 v)
     {
         return (i32)floor(v);
     }
+    */
     
-    inline v2 floor(v2 v)
+    inline Vec2 floor(Vec2 v)
     {
-        v2 result(v);
+        Vec2 result(v);
         result.x = (r32)floor(v.x);
         result.y = (r32)floor(v.y);
         return result;
     }
     
-    inline v3 floor(v3 v)
+    inline Vec3 floor(Vec3 v)
     {
-        v3 result(v);
+        Vec3 result(v);
         result.x = (r32)floor(v.x);
         result.y = (r32)floor(v.y);
         result.z = (r32)floor(v.z);
         return result;
     }
-    
+    /*
     inline i32 ceil(r32 v)
     {
         return (i32)ceil(v);
     }
-    
-    inline v2 ceil(v2 v)
+    */
+    inline Vec2 ceil(Vec2 v)
     {
-        v2 result(v);
+        Vec2 result(v);
         result.x = (r32)ceil(v.x);
         result.y = (r32)ceil(v.y);
         return result;
     }
     
-    inline v3 ceil(v3 v)
+    inline Vec3 ceil(Vec3 v)
     {
-        v3 result(v);
+        Vec3 result(v);
         result.x = (r32)ceil(v.x);
         result.y = (r32)ceil(v.y);
         result.z = (r32)ceil(v.z);
@@ -2014,19 +2016,19 @@ namespace math
         return Abs(v);
     }
     
-    v2 absolute(v2 v)
+    Vec2 absolute(Vec2 v)
     {
-        return math::v2(Abs(v.x), Abs(v.y));
+        return math::Vec2(Abs(v.x), Abs(v.y));
     }
     
-    v3 absolute(v3 v)
+    Vec3 absolute(Vec3 v)
     {
-        return math::v3(Abs(v.x), Abs(v.y), Abs(v.z));
+        return math::Vec3(Abs(v.x), Abs(v.y), Abs(v.z));
     }
     
-    v4 absolute(v4 v)
+    Vec4 absolute(Vec4 v)
     {
-        return math::v4((r32)Abs(v.x), (r32)Abs(v.y), (r32)Abs(v.z), (r32)Abs(v.w));
+        return math::Vec4((r32)Abs(v.x), (r32)Abs(v.y), (r32)Abs(v.z), (r32)Abs(v.w));
     }
     
     inline r32 square(r32 v)
@@ -2036,52 +2038,52 @@ namespace math
     
     inline r32 sqrt(r32 v)
     {
-        return (r32)sqrt(v);
+        return (r32)std::sqrt(v);
     }
     
     inline r32 pow(r32 v, i32 e)
     {
-        return (r32)pow(v, e);
+        return (r32)std::pow(v, e);
     }
     
     inline r32 sin(r32 v)
     {
-        return (r32)sin(v);
+        return (r32)std::sin(v);
     }
     
     inline r32 cos(r32 v)
     {
-        return (r32)cos(v);
+        return (r32)std::cos(v);
     }
     
-    inline r32 a_cos(r32 v)
+    inline r32 acos(r32 v)
     {
-        return (r32)acos(v);
+        return (r32)std::acos(v);
     }
     
-    inline r32 length(v2 v)
+    inline r32 length(Vec2 v)
     {
         return sqrt(pow(v.x,2) + pow(v.y,2));
     }
     
-    inline r32 length(v3 v)
+    inline r32 length(Vec3 v)
     {
         return sqrt(pow(v.x,2) + pow(v.y,2) + pow(v.z,2));
     }
     
-    inline r32 length(v4 v)
+    inline r32 length(Vec4 v)
     {
         return sqrt(pow(v.x,2) + pow(v.y,2) + pow(v.z,2) + pow(v.w,2));
     }
     
-    inline r32 length(quat q)
+    inline r32 length(Quat q)
     {
         return sqrt(pow(q.x, 2) + pow(q.y, 2) + pow(q.z, 2) + pow(q.w, 2));
     }
     
-    inline v2 normalize(v2 v)
+    inline Vec2 normalize(Vec2 v)
     {
-        v2 result(v);
+        Vec2 result(v);
         auto l = length(v);
         if(l == 0.0f)
         {
@@ -2091,9 +2093,9 @@ namespace math
         return result;
     }
     
-    inline v3 normalize(v3 v)
+    inline Vec3 normalize(Vec3 v)
     {
-        v3 result(v);
+        Vec3 result(v);
         auto l = length(v);
         if(l == 0.0f)
         {
@@ -2103,9 +2105,9 @@ namespace math
         return result;
     }
     
-    inline v4 normalize(v4 v)
+    inline Vec4 normalize(Vec4 v)
     {
-        v4 result(v);
+        Vec4 result(v);
         auto l = length(v);
         if(l == 0.0f)
         {
@@ -2115,24 +2117,24 @@ namespace math
         return result;
     }
     
-    inline r32 get_angle_in_radians(quat q)
+    inline r32 get_angle_in_radians(Quat q)
     {
-        return a_cos(q.w) * 2.0f;
+        return acos(q.w) * 2.0f;
     }
     
-    inline v3 get_axis(quat q)
+    inline Vec3 get_axis(Quat q)
     {
         r32 angle = get_angle_in_radians(q);
-        v3 result;
+        Vec3 result;
         result.x = q.x / sin(angle / 2.0f);
         result.y = q.y / sin(angle / 2.0f); 
         result.z = q.z / sin(angle / 2.0f); 
         return result;
     }
     
-    inline m4 scale(m4 in, v3 scale)
+    inline Mat4 scale(Mat4 in, Vec3 scale)
     {
-        m4 result(in);
+        Mat4 result(in);
         result.m11 = scale.x * result.m11;
         result.m22 = scale.y * result.m22;
         result.m33 = scale.z * result.m33;
@@ -2140,80 +2142,80 @@ namespace math
         return result;
     }
     
-    inline m4 translate(m4 in, v3 translate)
+    inline Mat4 translate(Mat4 in, Vec3 translate)
     {
-        m4 result(in);
+        Mat4 result(in);
         result.m14 += translate.x;
         result.m24 += translate.y;
         result.m34 += translate.z;
         return result;
     }
     
-    inline m4 x_rotate(r32 angle)
+    inline Mat4 x_rotate(r32 angle)
     {
         angle *= DEGREE_IN_RADIANS;
         
         r32 c = cos(angle);
         r32 s = sin(angle);
         
-        m4 r(1,0, 0,0,
-             0,c,-s,0,
-             0,s, c,0,
-             0,0, 0,1);
+        Mat4 r(1,0, 0,0,
+               0,c,-s,0,
+               0,s, c,0,
+               0,0, 0,1);
         
         return r;
     }
     
-    inline m4 y_rotate(r32 angle)
+    inline Mat4 y_rotate(r32 angle)
     {
         angle *= DEGREE_IN_RADIANS;
         
         r32 c = cos(angle);
         r32 s = sin(angle);
         
-        m4 r(c, 0,s,0,
-             0, 1,0,0,
-             -s,0,c,0,
-             0, 0,0,1);
+        Mat4 r(c, 0,s,0,
+               0, 1,0,0,
+               -s,0,c,0,
+               0, 0,0,1);
         
         return r;
     }
     
-    inline m4 z_rotate(r32 angle)
+    inline Mat4 z_rotate(r32 angle)
     {
         angle *= DEGREE_IN_RADIANS;
         
         r32 c = cos(angle);
         r32 s = sin(angle);
         
-        m4 r(c,-s,0,0,
-             s,c,0,0,
-             0,0,1,0,
-             0,0,0,1);
+        Mat4 r(c,-s,0,0,
+               s,c,0,0,
+               0,0,1,0,
+               0,0,0,1);
         
         return r;
     }
     
-    inline m4 create_rotation(r32 x_angle, r32 y_angle, r32 z_angle)
+    inline Mat4 create_rotation(r32 x_angle, r32 y_angle, r32 z_angle)
     {
-        m4 result(1.0f);
+        Mat4 result(1.0f);
         result = y_rotate(y_angle) * x_rotate(x_angle) * z_rotate(z_angle) * result;
         return result;
     }
     
-    inline quat rotate(quat in, r32 a, v3 axis)
+    inline Quat rotate(Quat in, r32 a, Vec3 axis)
     {
-        quat result(in);
-        auto q = math::quat(axis.x, axis.y, axis.z, DEGREE_IN_RADIANS * a);
+        Quat result(in);
+        auto q = math::Quat(axis.x, axis.y, axis.z, DEGREE_IN_RADIANS * a);
         result = in * q;
         result = normalize(result);
         return result;
     }
     
     // https://gamedev.stackexchange.com/a/50545
-    inline v3 rotate(v3 in, quat q)
+    inline Vec3 rotate(Vec3 in, Quat q)
     {
-        math::v3 u(q.x, q.y, q.z);
+        math::Vec3 u(q.x, q.y, q.z);
         
         r32 s = q.w;
         
@@ -2223,54 +2225,54 @@ namespace math
         return result;
     }
     
-    inline m4 rotate(m4 m, quat r)
+    inline Mat4 rotate(Mat4 m, Quat r)
     {
-        m4 result(1.0f);
+        Mat4 result(1.0f);
         result = to_matrix(r) * m;
         return result;
     }
     
-    inline v3 right(m4 m)
+    inline Vec3 right(Mat4 m)
     {
-        return normalize(math::v3(m[0][0],
-                                  m[1][0],
-                                  m[2][0]));
+        return normalize(math::Vec3(m[0][0],
+                                    m[1][0],
+                                    m[2][0]));
     }
     
-    inline v3 up(m4 m)
+    inline Vec3 up(Mat4 m)
     {
-        return normalize(math::v3(m[0][1],
-                                  m[1][1],
-                                  m[2][1]));
+        return normalize(math::Vec3(m[0][1],
+                                    m[1][1],
+                                    m[2][1]));
     }
     
-    inline v3 forward(m4 m)
+    inline Vec3 forward(Mat4 m)
     {
-        return normalize(math::v3(m[0][2],
-                                  m[1][2],
-                                  m[2][2]));
+        return normalize(math::Vec3(m[0][2],
+                                    m[1][2],
+                                    m[2][2]));
     }
     
-    inline v3 translation(m4 m)
+    inline Vec3 translation(Mat4 m)
     {
-        return math::v3(m[0][3],
-                        m[1][3],
-                        m[2][3]);
+        return math::Vec3(m[0][3],
+                          m[1][3],
+                          m[2][3]);
     }
     
-    inline v3 scale(m4 m)
+    inline Vec3 scale(Mat4 m)
     {
-        math::v3 result;
+        math::Vec3 result;
         result.x = length(right(m));
         result.y = length(up(m));
         result.z = length(forward(m));
         return result;
     }
     
-    inline v3 project(v3 in, m4 m, m4 p, v4 viewport)
+    inline Vec3 project(Vec3 in, Mat4 m, Mat4 p, Vec4 viewport)
     {
-        v3 result(1.0f);
-        auto tmp = v4(in, 1.0f);
+        Vec3 result(1.0f);
+        auto tmp = Vec4(in, 1.0f);
         tmp = m * tmp;
         tmp = p * tmp;
         tmp /= tmp.w;
@@ -2279,12 +2281,12 @@ namespace math
         tmp.x = tmp.x * viewport.z + viewport.x;
         tmp.y = tmp.y * viewport.w + viewport.y;
         
-        return v3(tmp.x,tmp.y,tmp.z);
+        return Vec3(tmp.x,tmp.y,tmp.z);
     }
     
-    inline v3 cross(v3 a, v3 b)
+    inline Vec3 cross(Vec3 a, Vec3 b)
     {
-        v3 result;
+        Vec3 result;
         
         result.x = a.y*b.z - a.z*b.y;
         result.y = a.z*b.x - a.x*b.z;
@@ -2293,9 +2295,9 @@ namespace math
         return result;
     }
     
-    inline m4 ortho(r32 left, r32 right, r32 bottom, r32 top, r32 near, r32 far)
+    inline Mat4 ortho(r32 left, r32 right, r32 bottom, r32 top, r32 near, r32 far)
     {
-        m4 result(1.0f);
+        Mat4 result(1.0f);
         result.m11 = 2.0f/(right - left);
         result.m22 = 2.0f/(top - bottom);
         result.m33 = (-2.0f)/(far - near);
@@ -2307,14 +2309,14 @@ namespace math
         return result;
     }
     
-    inline m4 look_at(v3 p, v3 t)
+    inline Mat4 look_at(Vec3 p, Vec3 t)
     {
         auto f = normalize(p - t);
-        auto u = v3(0.0f, 1.0f, 0.0f);
+        auto u = Vec3(0.0f, 1.0f, 0.0f);
         auto r = normalize(cross(u, f));
         u = normalize(cross(f, r));
         
-        m4 result(
+        Mat4 result(
             r.x, r.y, r.z, 0,
             u.x, u.y, u.z, 0,
             f.x, f.y, f.z, 0,
@@ -2326,7 +2328,7 @@ namespace math
         return result;
     }
     
-    inline m4 perspective(r32 aspect_width_over_height, r32 focal_length, r32 near, r32 far)
+    inline Mat4 perspective(r32 aspect_width_over_height, r32 focal_length, r32 near, r32 far)
     {
         r32 a = 1.0f;
         r32 b = aspect_width_over_height;
@@ -2338,7 +2340,7 @@ namespace math
         r32 d = (n + f) / (n - f);
         r32 e = (2 * f * n) / (n - f);
         
-        m4 result(
+        Mat4 result(
             a * c, 0.0f,  0.0f, 0.0f,
             0,     b * c, 0.0f, 0.0f,
             0.0f,  0.0f,  d,    e,
@@ -2348,8 +2350,8 @@ namespace math
         return result;
     }
     
-    inline m4 frustum(r32 bottom, r32 top, r32 left, r32 right,
-                      r32 near, r32 far)
+    inline Mat4 frustum(r32 bottom, r32 top, r32 left, r32 right,
+                        r32 near, r32 far)
     {
         
         auto a = 2 * near / (right - left);
@@ -2359,7 +2361,7 @@ namespace math
         auto e = -(far + near) / (far - near);
         auto f = -2 * far * near / (far - near);
         
-        m4 result(
+        Mat4 result(
             a,    0.0f, c,     0.0f,
             0.0f, b,    d,     0.0f,
             0.0f, 0.0f, e,     f,
@@ -2369,9 +2371,9 @@ namespace math
         return result;
     }
     
-    inline v3 mult_point_matrix(v3 in, m4 m)
+    inline Vec3 mult_point_matrix(Vec3 in, Mat4 m)
     {
-        math::v3 result(0.0f);
+        math::Vec3 result(0.0f);
         result.x = in.x * m[0][0] + in.y * m[0][1] + in.z * m[0][2] + m[0][3];
         result.y = in.x * m[1][0] + in.y * m[1][1] + in.z * m[1][2] + m[1][3];
         result.z = in.x * m[2][0] + in.y * m[2][1] + in.z * m[2][2] + m[2][3];
@@ -2388,11 +2390,11 @@ namespace math
     }
     
     
-    inline v3 un_project(v3 in, m4 model, m4 projection, v4i viewport)
+    inline Vec3 un_project(Vec3 in, Mat4 model, Mat4 projection, Vec4i viewport)
     {
         auto inv = inverse(projection * model);
         
-        auto tmp = v4(in,1.0f);
+        auto tmp = Vec4(in,1.0f);
         tmp.x = (tmp.x - viewport.x) / viewport.z;
         tmp.y = (tmp.y - viewport.y) / viewport.w;
         tmp = tmp * 2 - 1;
@@ -2400,7 +2402,7 @@ namespace math
         auto obj = inv * tmp;
         obj /= obj.w;
         
-        return v3(obj.x,obj.y,obj.z);
+        return Vec3(obj.x,obj.y,obj.z);
     }
     
     inline r32 lerp(r32 a, r32 t, r32 b)
@@ -2410,29 +2412,29 @@ namespace math
         return result;
     }
     
-    inline v2 lerp(v2 a, r32 t, v2 b)
+    inline Vec2 lerp(Vec2 a, r32 t, Vec2 b)
     {
         Assert(t <= 1.0f);
-        v2 result(0.0f);
+        Vec2 result(0.0f);
         result.x = lerp(a.x,t,b.x);
         result.y = lerp(a.y,t,b.y);
         return result;
     }
     
-    inline v3 lerp(v3 a, r32 t, v3 b)
+    inline Vec3 lerp(Vec3 a, r32 t, Vec3 b)
     {
         Assert(t <= 1.0f);
-        v3 result(0.0f);
+        Vec3 result(0.0f);
         result.x = lerp(a.x,t,b.x);
         result.y = lerp(a.y,t,b.y);
         result.z = lerp(a.z,t,b.z);
         return result;
     }
     
-    inline v4 lerp(v4 a, r32 t, v4 b)
+    inline Vec4 lerp(Vec4 a, r32 t, Vec4 b)
     {
         Assert(t <= 1.0f);
-        v4 result(0.0f);
+        Vec4 result(0.0f);
         result.x = lerp(a.x,t,b.x);
         result.y = lerp(a.y,t,b.y);
         result.z = lerp(a.z,t,b.z);
@@ -2440,15 +2442,15 @@ namespace math
         return result;
     }
     
-    inline v2 rotate_by_angle(v2 in, r32 angle)
+    inline Vec2 rotate_by_angle(Vec2 in, r32 angle)
     {
-        math::v2 result;
+        math::Vec2 result;
         result.x = in.x * cos(angle) - in.y * sin(angle);
         result.y = in.x * sin(angle) + in.y * cos(angle);
         return result;
     }
     
-    inline r32 angle_from_direction(v2 in)
+    inline r32 angle_from_direction(Vec2 in)
     {
         return (r32)atan2(in.x, in.y);
     }
@@ -2458,13 +2460,6 @@ namespace math
         srand(seed);
     }
     
-    // @Incomplete:(Niels): Doesn't work (I think)
-    inline r32 random_float(r32 from, r32 to)
-    {
-        r32 rand = Min(Max(From, ((r32)rand()/(r32)(RAND_MAx)) * to),to);
-        return rand;
-    }
-    
     inline i32 random_int(i32 from, i32 to)
     {
         return rand() % to + from;
@@ -2472,46 +2467,46 @@ namespace math
     
     struct Ray
     {
-        v3 origin;
-        v3 target;
-        v3 ray;
+        Vec3 origin;
+        Vec3 target;
+        Vec3 ray;
     };
     
-    inline Ray cast_picking_ray(r32 mouse_x, r32 mouse_y, m4 p, m4 v, r32 width, r32 height)
+    inline Ray cast_picking_ray(r32 mouse_x, r32 mouse_y, Mat4 p, Mat4 v, r32 width, r32 height)
     {
         auto mx = (2.0f * mouse_x) / width - 1.0f;
         auto my = 1.0f - (2.0f * mouse_y / height);
         
         // 1.0f is the far plane in NDC
-        auto mouse = inverse(p) * math::v3(mx, my, 1.0f);
+        auto mouse = inverse(p) * math::Vec3(mx, my, 1.0f);
         mouse.z = -1.0f;
         mouse = inverse(v) * mouse;
         
         // -1.0f is the near plane in NDC
-        auto origin = inverse(p) * math::v3(mx, my, -1.0f);
+        auto origin = inverse(p) * math::Vec3(mx, my, -1.0f);
         origin.z = 1.0f;
         origin = inverse(v) * origin;
         
-        auto temp_ray = math::v4(mouse - origin, 0.0f);
+        auto temp_ray = math::Vec4(mouse - origin, 0.0f);
         temp_ray = normalize(temp_ray);
         Ray ray;
-        ray.Origin = origin;
+        ray.origin = origin;
         ray.target = mouse;
-        ray.Ray = temp_ray.xyz;
+        ray.ray = temp_ray.xyz;
         return ray;
     }
     
-    inline Ray cast_ray(v3 origin, v3 target)
+    inline Ray cast_ray(Vec3 origin, Vec3 target)
     {
         Ray ray;
-        ray.Origin = origin;
+        ray.origin = origin;
         ray.target = target;
-        ray.Ray = normalize(math::v4(target - origin, 0.0f)).xyz;
+        ray.ray = normalize(math::Vec4(target - origin, 0.0f)).xyz;
         return ray;
     }
     
-    using rgb = v3;
-    using rgba = v4;
+    using rgb = Vec3;
+    using rgba = Vec4;
 }
 
 #endif
@@ -2525,7 +2520,7 @@ struct Rect
             r32 x;
             r32 y;
         };
-        math::v2 position;
+        math::Vec2 position;
     };
     union
     {
@@ -2534,7 +2529,7 @@ struct Rect
             r32 width;
             r32 height;
         };
-        math::v2 size;
+        math::Vec2 size;
     };
     
     
@@ -2552,7 +2547,7 @@ struct Recti
             i32 x;
             i32 y;
         };
-        math::v2i position;
+        math::Vec2i position;
     };
     union
     {
@@ -2561,7 +2556,7 @@ struct Recti
             i32 width;
             i32 height;
         };
-        math::v2i size;
+        math::Vec2i size;
     };
     
     
@@ -2569,38 +2564,38 @@ struct Recti
     Recti(i32 x, i32 y, i32 width, i32 height) : x(x), y(y), width(width), height(height) {}
 };
 
-inline r32 sign(math::v2 p1, math::v2 p2, math::v2 p3)
+inline r32 sign(math::Vec2 p1, math::Vec2 p2, math::Vec2 p3)
 {
     return (p1.x - p3.x) * (p2.y - p3.y) - (p2.x - p3.x) * (p1.y - p3.y);
 }
 
-inline math::v2 to_cartesian(math::v2 position)
+inline math::Vec2 to_cartesian(math::Vec2 position)
 {
     // @Cleanup: Move these to a global variable or similar
     r32 tile_width_half = 0.5f;
     r32 tile_height_half = 0.25f;
     
-    math::v2 temp_pt;
+    math::Vec2 temp_pt;
     
     temp_pt.x = (position.x / tile_width_half + position.y / tile_height_half) / 2.0f;
     temp_pt.y = (position.y / tile_height_half - position.x / tile_width_half) / 2.0f;
     return temp_pt;
 }
 
-inline math::v2 to_isometric(math::v2 position)
+inline math::Vec2 to_isometric(math::Vec2 position)
 {
     // @Cleanup: Move these to a global variable or similar
     r32 tile_width_half = 0.5f;
     r32 tile_height_half = 0.25f;
     
-    math::v2 temp_pt;
+    math::Vec2 temp_pt;
     temp_pt.x = (position.x - position.y) * tile_width_half;
     temp_pt.y = (position.x + position.y) * tile_height_half;
     //return tempPt;
     return position;
 }
 
-inline b32 point_in_triangle(math::v2 pt, math::v2 v1, math::v2 v2, math::v2 v3)
+inline b32 point_in_triangle(math::Vec2 pt, math::Vec2 v1, math::Vec2 v2, math::Vec2 v3)
 {
     bool b1, b2, b3;
     

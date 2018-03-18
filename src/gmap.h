@@ -3,14 +3,14 @@
 
 #define INIT_SIZE 1024
 
-void* AllocateMemory(size_t size);
-void DeallocateMemory(void* memory);
+void* allocate_memory(size_t size);
+void deallocate_memory(void* memory);
 
-enum Map_Status
+enum MapStatus
 {
-    Not_Found,
-    Exists,
-    Collision
+    NOT_FOUND,
+    EXISTS,
+    COLLISION
 };
 
 /* Generically typed map structure
@@ -25,129 +25,129 @@ enum Map_Status
 */
 #define GENERIC_MAP(NAME, TYPE, KEYTYPE, COMPARE, INVALID, FORMAT, ASSIGN, COPY) \
 \
-using hash_function_ ## NAME = u64(*)(u64 Size, KEYTYPE Key);\
+using hash_function_ ## NAME = u64(*)(u64 Size, KEYTYPE key);\
 \
 struct hashed_pair_## NAME\
 {\
-    KEYTYPE Key;\
-    u64 HashedKey;\
+    KEYTYPE key;\
+    u64 hashed_key;\
     TYPE Val;\
 };\
 \
 struct NAME ## _map;\
 \
-Map_Status Scan(NAME ## _map* Map, u64 HashedKey, KEYTYPE Key);\
+MapStatus Scan(NAME ## _map* map, u64 hashed_key, KEYTYPE key);\
 \
-void Rehash(NAME ## _map* Map);\
+void Rehash(NAME ## _map* map);\
 \
 struct NAME ## _map \
 { \
-    hashed_pair_ ## NAME* HashedPairs;\
-    hashed_pair_ ## NAME* ScanPairs;\
-    i32 KeyCount;\
+    hashed_pair_ ## NAME* hashed_pairs;\
+    hashed_pair_ ## NAME* scan_pairs;\
+    i32 key_count;\
     i32 Count; \
     b32 Initialized = false;\
     hash_function_ ## NAME Hash; \
     \
-    TYPE& operator[](KEYTYPE Key) \
+    TYPE& operator[](KEYTYPE key) \
     { \
         Assert(this->Initialized);\
-        Assert(this->HashedPairs);\
-        Assert(this->ScanPairs);\
-        Assert(COMPARE(INVALID,Key) != 0);\
+        Assert(this->hashed_pairs);\
+        Assert(this->scan_pairs);\
+        Assert(COMPARE(INVALID,key) != 0);\
         Assert(this->Hash);\
-        auto HashV = this->Hash((u64)this->Count, Key);\
-        auto Res = Scan(this,HashV,Key);\
+        auto HashV = this->Hash((u64)this->Count, key);\
+        auto Res = Scan(this,HashV,key);\
         switch(Res)\
         {\
-            case Not_Found:\
+            case NOT_FOUND:\
             {\
-                ASSIGN(this->HashedPairs[HashV].Key,Key);\
-                this->HashedPairs[HashV].HashedKey = HashV;\
-                ASSIGN(this->ScanPairs[KeyCount].Key,Key);\
-                this->ScanPairs[this->KeyCount].HashedKey = HashV;\
-                this->KeyCount++;\
+                ASSIGN(this->hashed_pairs[HashV].key,key);\
+                this->hashed_pairs[HashV].hashed_key = HashV;\
+                ASSIGN(this->scan_pairs[key_count].key,key);\
+                this->scan_pairs[this->key_count].hashed_key = HashV;\
+                this->key_count++;\
             }\
             break;\
-            case Exists:\
+            case EXISTS:\
             {\
             }\
             break;\
-            case Collision:\
+            case COLLISION:\
             {\
                 Rehash(this);\
-                auto NewHash = this->Hash((u64)this->Count, Key);\
-                ASSIGN(this->HashedPairs[NewHash].Key,Key);\
-                this->HashedPairs[NewHash].HashedKey = NewHash;\
-                ASSIGN(this->ScanPairs[KeyCount].Key,Key);\
-                this->ScanPairs[this->KeyCount].HashedKey = NewHash;\
-                this->KeyCount++;\
-                return this->HashedPairs[NewHash].Val;\
+                auto new_hash = this->Hash((u64)this->Count, key);\
+                ASSIGN(this->hashed_pairs[new_hash].key,key);\
+                this->hashed_pairs[new_hash].hashed_key = new_hash;\
+                ASSIGN(this->scan_pairs[key_count].key,key);\
+                this->scan_pairs[this->key_count].hashed_key = new_hash;\
+                this->key_count++;\
+                return this->hashed_pairs[new_hash].Val;\
             }\
             break;\
         }\
-        return this->HashedPairs[HashV].Val;\
+        return this->hashed_pairs[HashV].Val;\
     } \
     \
 }; \
-void NAME ##_Map_Init(NAME ## _map* Map, hash_function_ ## NAME Hash, i32 InitSize = INIT_SIZE) \
+void NAME ##_map_init(NAME ## _map* map, hash_function_ ## NAME Hash, i32 InitSize = INIT_SIZE) \
 { \
-    if(Map->HashedPairs)\
+    if(map->hashed_pairs)\
     {\
-        DeallocateMemory(Map->HashedPairs);\
+        deallocate_memory(map->hashed_pairs);\
     }\
-    if(Map->ScanPairs)\
+    if(map->scan_pairs)\
     {\
-        DeallocateMemory(Map->ScanPairs);\
+        deallocate_memory(map->scan_pairs);\
     }\
-    Map->HashedPairs = (hashed_pair_ ## NAME*)AllocateMemory(InitSize * sizeof(hashed_pair_ ## NAME));\
-    Map->ScanPairs = (hashed_pair_ ## NAME*)AllocateMemory(1024 * sizeof(hashed_pair_ ## NAME));\
-    Map->KeyCount = 0;\
-    Map->Count = InitSize; \
-    Map->Hash = Hash; \
-    Map->Initialized = true;\
+    map->hashed_pairs = (hashed_pair_ ## NAME*)allocate_memory(InitSize * sizeof(hashed_pair_ ## NAME));\
+    map->scan_pairs = (hashed_pair_ ## NAME*)allocate_memory(1024 * sizeof(hashed_pair_ ## NAME));\
+    map->key_count = 0;\
+    map->Count = InitSize; \
+    map->Hash = Hash; \
+    map->Initialized = true;\
 }\
-Map_Status Scan(NAME ## _map* Map, u64 HashedKey, KEYTYPE Key)\
+MapStatus Scan(NAME ## _map* map, u64 hashed_key, KEYTYPE key)\
 {\
-    for(i32 I = 0; I < Map->KeyCount; I++)\
+    for(i32 I = 0; I < map->key_count; I++)\
     {\
-        auto Pair = Map->ScanPairs[I];\
-        Assert(COMPARE(INVALID,Pair.Key) != 0);\
-        if(COMPARE(INVALID,Pair.Key) != 0 && Pair.HashedKey == HashedKey && COMPARE(Pair.Key, Key) != 0)\
+        auto pair = map->scan_pairs[I];\
+        Assert(COMPARE(INVALID,pair.key) != 0);\
+        if(COMPARE(INVALID,pair.key) != 0 && pair.hashed_key == hashed_key && COMPARE(pair.key, key) != 0)\
         {\
-            /* Collision! */\
-            return Collision;\
+            /* COLLISION! */\
+            return COLLISION;\
         }\
-        else if(Pair.HashedKey == HashedKey && COMPARE(Pair.Key,Key) == 0)\
+        else if(pair.hashed_key == hashed_key && COMPARE(pair.key,key) == 0)\
         {\
-            return Exists;\
+            return EXISTS;\
         }\
     }\
-    return Not_Found;\
+    return NOT_FOUND;\
 }\
 \
-void Rehash(NAME ## _map* Map)\
+void Rehash(NAME ## _map* map)\
 {\
-    for(i32 I = 0; I < Map->KeyCount; I++)\
+    for(i32 I = 0; I < map->key_count; I++)\
     {\
-        auto Pair = Map->ScanPairs[I];\
+        auto pair = map->scan_pairs[I];\
         /* If the following does not hold, then we need to add the value anyway, since this is the collision!*/\
-        if(COMPARE(Pair.Key, Map->HashedPairs[Pair.HashedKey].Key) == 0)\
+        if(COMPARE(pair.key, map->hashed_pairs[pair.hashed_key].key) == 0)\
         {\
-            COPY(Map->ScanPairs[I].Val, Map->HashedPairs[Pair.HashedKey].Val, TYPE);\
+            COPY(map->scan_pairs[I].Val, map->hashed_pairs[pair.hashed_key].Val, TYPE);\
         }\
     }\
-    Map->Count = Map->Count * 2;\
-    DeallocateMemory(Map->HashedPairs);\
-    Map->HashedPairs = (hashed_pair_ ## NAME*)AllocateMemory(Map->Count * sizeof(hashed_pair_ ## NAME));\
-    for(i32 I = 0; I < Map->KeyCount; I++)\
+    map->Count = map->Count * 2;\
+    deallocate_memory(map->hashed_pairs);\
+    map->hashed_pairs = (hashed_pair_ ## NAME*)allocate_memory(map->Count * sizeof(hashed_pair_ ## NAME));\
+    for(i32 I = 0; I < map->key_count; I++)\
     {\
-        Assert(COMPARE(INVALID,Map->ScanPairs[I].Key) != 0);\
-        auto NewHash = Map->Hash((u64)Map->Count, Map->ScanPairs[I].Key);\
-        COPY(Map->HashedPairs[NewHash].Val, Map->ScanPairs[I].Val, TYPE);\
-        ASSIGN(Map->HashedPairs[NewHash].Key,Map->ScanPairs[I].Key);\
-        Map->HashedPairs[NewHash].HashedKey = NewHash;\
-        Map->ScanPairs[I].HashedKey = NewHash;\
+        Assert(COMPARE(INVALID,map->scan_pairs[I].key) != 0);\
+        auto new_hash = map->Hash((u64)map->Count, map->scan_pairs[I].key);\
+        COPY(map->hashed_pairs[new_hash].Val, map->scan_pairs[I].Val, TYPE);\
+        ASSIGN(map->hashed_pairs[new_hash].key,map->scan_pairs[I].key);\
+        map->hashed_pairs[new_hash].hashed_key = new_hash;\
+        map->scan_pairs[I].hashed_key = new_hash;\
     }\
 }\
 \
@@ -173,12 +173,12 @@ i32 StrCmp(char* l, char* r)
     }
 }
 
-#define STR_ASSIGN(Dst,Src) Dst = (char*)AllocateMemory(sizeof(char) * (strlen(Src) + 1)); \
+#define STR_ASSIGN(Dst,Src) Dst = (char*)allocate_memory(sizeof(char) * (strlen(Src) + 1)); \
 strcpy(Dst,Src)
 #define INT_ASSIGN(Dst,Src) Dst = Src
 #define VAL_COPY(Dst, Src, TYPE) Dst = Src
 
-#define PTR_COPY(Dst, Src, TYPE) if(Dst) { *Dst = *Src; } else {Dst = (TYPE)AllocateMemory(sizeof(TYPE)); *Dst = *Src;}
+#define PTR_COPY(Dst, Src, TYPE) if(Dst) { *Dst = *Src; } else {Dst = (TYPE)allocate_memory(sizeof(TYPE)); *Dst = *Src;}
 
 GENERIC_MAP(integer, i32, i32, CmpInt, -1, "%d", INT_ASSIGN, VAL_COPY)
 

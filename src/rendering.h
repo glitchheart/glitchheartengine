@@ -62,75 +62,75 @@ struct PointLight
 struct SpotlightData
 {
     i32 num_lights; // GLSL: 16, x64: 4: We need 12 bytes of padding
-    math::v3 padding; // 3 * r32 = 3 * 4 = 12 bytes of padding!
+    math::Vec3 padding; // 3 * r32 = 3 * 4 = 12 bytes of padding!
     Spotlight spotlights[MAX_LIGHTS];
 };
 
 struct DirectionalLightData // GLSL: 96, x64: 68 -> 96 - 68 = 24
 {
     i32 num_lights; // GLSL: 16, x64: 4: We need 12 bytes of padding
-    math::v3 padding; // 3 * r32 = 3 * 4 = 12 bytes of padding!
+    math::Vec3 padding; // 3 * r32 = 3 * 4 = 12 bytes of padding!
     DirectionalLight directional_lights[MAX_LIGHTS];
 };
 
 struct PointLightData
 {
     i32 num_lights; // GLSL: 16, x64: 4: We need 12 bytes of padding
-    math::v3 padding; // 3 * r32 = 3 * 4 = 12 bytes of padding!
+    math::Vec3 padding; // 3 * r32 = 3 * 4 = 12 bytes of padding!
     PointLight point_lights[MAX_LIGHTS];
 };
 
-enum Shader_Type
+enum ShaderType
 {
-    Shader_Texture,
-    Shader_Tile,
-    Shader_Rect,
-    Shader_TextureRect,
-    Shader_StandardFont,
-    Shader_Spritesheet,
-    Shader_Wireframe,
-    Shader_UISprite,
-    Shader_ErrorSprite,
-    Shader_ErrorUI,
-    Shader_FrameBuffer,
-    Shader_LightSource,
-    Shader_SimpleModel,
-    Shader_Passthrough,
-    Shader_Line,
+    SHADER_TEXTURE,
+    SHADER_TILE,
+    SHADER_RECT,
+    SHADER_TEXTURE_RECT,
+    SHADER_STANDARD_FONT,
+    SHADER_SPRITESHEET,
+    SHADER_WIREFRAME,
+    SHADER_UI_SPRITE,
+    SHADER_ERROR_SPRITE,
+    SHADER_ERROR_UI,
+    SHADER_FRAME_BUFFER,
+    SHADER_LIGHT_SOURCE,
+    SHADER_SIMPLE_MODEL,
+    SHADER_PASS_THROUGH,
+    SHADER_LINE,
     
-    Shader_Count
+    SHADER_COUNT
 };
 
 enum RenderCommandType
 {
-    RenderCommand_Line,
-    RenderCommand_Text,
-    RenderCommand_Sprite,
-    RenderCommand_Quad,
+    RENDER_COMMAND_LINE,
+    RENDER_COMMAND_TEXT,
+    RENDER_COMMAND_SPRITE,
+    RENDER_COMMAND_QUAD,
     
-    RenderCommand_Spotlight,
-    RenderCommand_DirectionalLight,
-    RenderCommand_PointLight,
+    RENDER_COMMAND_SPOTLIGHT,
+    RENDER_COMMAND_DIRECTIONAL_LIGHT,
+    RENDER_COMMAND_POINT_LIGHT,
     
-    RenderCommand_Buffer,
-    RenderCommand_Model,
-    RenderCommand_WireframeCube,
-    RenderCommand_ShaderStart,
-    RenderCommand_ShaderEnd,
-    RenderCommand_DepthTest,
-    RenderCommand_Count
+    RENDER_COMMAND_BUFFER,
+    RENDER_COMMAND_MODEL,
+    RENDER_COMMAND_WIREFRAME_CUBE,
+    RENDER_COMMAND_SHADER_START,
+    RENDER_COMMAND_SHADER_END,
+    RENDER_COMMAND_DEPTH_TEST,
+    RENDER_COMMAND_COUNT
 };
 
 enum Alignment
 {
-    Alignment_Left,
-    Alignment_Right,
-    Alignment_Center
+    ALIGNMENT_LEFT,
+    ALIGNMENT_RIGHT,
+    ALIGNMENT_CENTER
 };
 
 struct Shader
 {
-    Shader_Type type;
+    ShaderType type;
     b32 loaded;
     u32 program;
     u32 vertex_shader;
@@ -153,14 +153,14 @@ struct Vec3Keys
 {
     i32 num_keys;
     r32* time_stamps;
-    math::v3* values;
+    math::Vec3* values;
 };
 
 struct QuatKeys
 {
     i32 num_keys;
     r32* time_stamps;
-    math::quat* values;
+    math::Quat* values;
 };
 
 struct BoneChannel
@@ -193,8 +193,8 @@ struct Bone
     u32 children[MAX_CHILDREN];
     i32 child_count;
     
-    math::m4 transformation;
-    math::m4 bone_offset;
+    math::Mat4 transformation;
+    math::Mat4 bone_offset;
 };
 
 struct MeshData
@@ -207,8 +207,8 @@ struct MeshData
 
 enum ModelType
 {
-    Model_Static,
-    Model_Skinned
+    MODEL_STATIC,
+    MODEL_SKINNED
 };
 
 struct Model
@@ -217,9 +217,9 @@ struct Model
     
     i32 buffer_handle;
     
-    math::v3 position;
-    math::v3 scale;
-    math::quat orientation;
+    math::Vec3 position;
+    math::Vec3 scale;
+    math::Quat orientation;
     
     math::rgba color;
     
@@ -234,22 +234,22 @@ struct Model
     
     SkeletalAnimationState animation_state;
     i32 running_animation_index;
-    math::m4* current_poses;
+    math::Mat4* current_poses;
     SkeletalAnimation* animations;
     i32 animation_count;
     
-    math::m4 global_inverse_transform;
+    math::Mat4 global_inverse_transform;
 };
 
 enum ShaderAttributeType
 {
-    Attribute_Float,
-    Attribute_Float2,
-    Attribute_Float3,
-    Attribute_Float4,
-    Attribute_Integer,
-    Attribute_Boolean,
-    Attribute_Matrix4
+    ATTRIBUTE_FLOAT,
+    ATTRIBUTE_FLOAT2,
+    ATTRIBUTE_FLOAT3,
+    ATTRIBUTE_FLOAT4,
+    ATTRIBUTE_INTEGER,
+    ATTRIBUTE_BOOLEAN,
+    ATTRIBUTE_MATRIX4
 };
 
 struct ShaderAttribute
@@ -259,27 +259,27 @@ struct ShaderAttribute
     union
     {
         r32 float_var;
-        math::v2 float2_var;
-        math::v3 float3_var;
-        math::v4 float4_var;
+        math::Vec2 float2_var;
+        math::Vec3 float3_var;
+        math::Vec4 float4_var;
         i32 integer_var;
         b32 boolean_var;
-        math::m4 matrix4_var;
+        math::Mat4 matrix4_var;
     };
 };
 
 struct RenderCommand
 {
     RenderCommandType type;
-    Shader_Type shader_type;
+    ShaderType shader_type;
     b32 is_ui;
     
-    math::v3 position;
-    math::v3 scale;
-    math::v3 rotation;
-    math::quat orientation;
+    math::Vec3 position;
+    math::Vec3 scale;
+    math::Vec3 rotation;
+    math::Quat orientation;
     b32 with_origin;
-    math::v2 origin;
+    math::Vec2 origin;
     math::rgba color;
     i32 shader_handle;
     ShaderAttribute* shader_attributes;
@@ -289,15 +289,15 @@ struct RenderCommand
     {
         struct
         {
-            math::v3 point1;
-            math::v3 point2;
+            math::Vec3 point1;
+            math::Vec3 point2;
             r32 line_width;
             math::rgba color; // @Cleanup: REMOVE!
         } line;
         struct
         {
             char text[256];
-            math::v3 position;
+            math::Vec3 position;
             i32 font_handle;
             math::rgba color; // @Cleanup: REMOVE!
             Alignment alignment;
@@ -315,9 +315,9 @@ struct RenderCommand
             b32 outlined;
             r32 line_width;
             b32 for_animation;
-            math::v2 texture_size;
-            math::v2i frame_size;
-            math::v2 texture_offset;
+            math::Vec2 texture_size;
+            math::Vec2i frame_size;
+            math::Vec2 texture_offset;
         } quad;
         struct
         {
@@ -326,12 +326,12 @@ struct RenderCommand
         } wireframe_cube;
         struct
         {
-            math::v3 direction;
+            math::Vec3 direction;
             r32 cut_off;
             r32 outer_cut_off;
-            math::v3 ambient;
-            math::v3 diffuse;
-            math::v3 specular;
+            math::Vec3 ambient;
+            math::Vec3 diffuse;
+            math::Vec3 specular;
             
             r32 constant;
             r32 linear;
@@ -339,16 +339,16 @@ struct RenderCommand
         } spotlight;
         struct 
         {
-            math::v3 direction;
-            math::v3 ambient;
-            math::v3 diffuse;
-            math::v3 specular;
+            math::Vec3 direction;
+            math::Vec3 ambient;
+            math::Vec3 diffuse;
+            math::Vec3 specular;
         } directional_light;
         struct
         {
-            math::v3 ambient;
-            math::v3 diffuse;
-            math::v3 specular;
+            math::Vec3 ambient;
+            math::Vec3 diffuse;
+            math::Vec3 specular;
             
             r32 constant;
             r32 linear;
@@ -368,7 +368,7 @@ struct RenderCommand
             Material materials[10];
             i32 material_count;
             math::rgba color;
-            math::m4* bone_transforms;
+            math::Mat4* bone_transforms;
             i32 bone_count;
         } model;
         struct
@@ -387,10 +387,10 @@ struct RenderCommand
 
 enum FadingMode
 {
-    Fading_None,
-    Fading_In,
-    Fading_Out,
-    Fading_OutIn
+    FADING_NONE,
+    FADING_IN,
+    FADING_OUT,
+    FADING_OUT_IN
 };
 
 struct Camera
@@ -398,17 +398,17 @@ struct Camera
     i32 viewport_width;
     i32 viewport_height;
     r32 zoom;
-    math::v3 center;
-    math::v3 position;
-    math::quat orientation;
-    math::v3 target;
+    math::Vec3 center;
+    math::Vec3 position;
+    math::Quat orientation;
+    math::Vec3 target;
     
     r32 follow_speed;
-    math::m4 view_matrix;
-    math::m4 projection_matrix;
+    math::Mat4 view_matrix;
+    math::Mat4 projection_matrix;
     
-    FadingMode fading_mode = Fading_None;
-    math::v3 fading_tint;
+    FadingMode fading_mode = FADING_NONE;
+    math::Vec3 fading_tint;
     
     b32 fading_in;
     r32 end_alpha;
@@ -443,11 +443,11 @@ struct UiRenderInfo
     b32 rendered = true;
     
     i32 texture_handle;
-    math::v2 texture_offset;
-    math::v2 frame_size;
+    math::Vec2 texture_offset;
+    math::Vec2 frame_size;
     u32 shader_index;
-    math::v2 size = math::v2(1, 1);
-    math::v4 color = math::v4(1, 1, 1, 1);
+    math::Vec2 size = math::Vec2(1, 1);
+    math::Vec4 color = math::Vec4(1, 1, 1, 1);
 };
 
 GENERIC_MAP(texture_data, texture_data*, char*, StrCmp, NULL, "%s", STR_ASSIGN, PTR_COPY);
@@ -460,16 +460,16 @@ struct BufferData
     i32 index_buffer_count;
     long index_buffer_size;
     b32 has_normals;
-    b32 has_u_vs;
+    b32 has_uvs;
     b32 skinned;
     
-    Shader_Type shader_type;
+    ShaderType shader_type;
     i32 existing_handle = -1;
 };
 
 struct Particle
 {
-    math::v3 center;
+    math::Vec3 center;
 };
 
 #define MAX_PARTICLES 256
@@ -539,7 +539,7 @@ struct Renderer
     union
     {
         i32 viewport[4];
-        math::v4i v;
+        math::Vec4i v;
         struct
         {
             i32 viewport_x;

@@ -78,7 +78,7 @@ struct TextureData;
 char* to_string(texture_data* data)
 {
     char* result = push_temp_string(64);
-    sprintf(result, "{Handle: %d, \n Name: %s, \n Width: %d, \n Height: %d,}", data->Handle, data->Name, data->Width, data->Height);
+    sprintf(result, "{Handle: %d, \n Name: %s, \n Width: %d, \n Height: %d,}", data->handle, data->name, data->width, data->height);
     return result;
 }
 
@@ -124,7 +124,7 @@ inline void handle_error(char const *file, i32 line_num, char const *msg)
     }
 }
 
-inline void get_current_min(math::v3 v1, math::v3 v2, r32 val1, r32 val2, math::v3* out_vec, r32* out_val)
+inline void get_current_min(math::Vec3 v1, math::Vec3 v2, r32 val1, r32 val2, math::Vec3* out_vec, r32* out_val)
 {
     if(val1 < val2)
     {
