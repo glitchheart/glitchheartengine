@@ -10,5 +10,4 @@ pushd build
 
 clang --std=c++14 -Weverything $WIGNORE  -DGLITCH_DEBUG=1 $CommonCompilerFlags -O0 ../src/main.cpp $CommonLinkerFlags
 
-
 popd
