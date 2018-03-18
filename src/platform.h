@@ -48,14 +48,12 @@
 
 #define OffsetOf(type, Member) (umm)&(((type *)0)->Member)
 
-
 #include <cstdio>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb/stb_image.h>
 
 #include <stdint.h>
-
 
 using u8 = uint8_t;
 using u16 = uint16_t;
@@ -211,6 +209,7 @@ struct game_memory
     ConfigData config_data;
     PlatformApi platform_api;
     struct LogState log_state;
+    
     
     struct GameState* game_state;
     
