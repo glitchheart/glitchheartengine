@@ -14,7 +14,7 @@ inline PLATFORM_FILE_EXISTS(OSXFileExists)
 }
 
 
-static b32 CopyFile(const char* Src, const char* Dst, b32 DontOverwrite, b32 Binary = false)
+static b32 copy_file(const char* Src, const char* Dst, b32 DontOverwrite, b32 Binary = false)
 {
     FILE* In;
     FILE* Out;

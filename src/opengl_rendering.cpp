@@ -1381,7 +1381,7 @@ static void render_quad(RenderMode mode, RenderState& render_state, math::Vec4 c
                     }
                 }
                 
-                if(render_state.bound_texture != texture_handle)
+                if(render_state.bound_texture != (GLuint)texture_handle)
                 {
                     glBindTexture(GL_TEXTURE_2D, (GLuint)texture_handle);
                 }
@@ -2269,7 +2269,7 @@ static void render(RenderState& render_state, Renderer& renderer, MemoryArena* p
         glClearColor(renderer.clear_color.r, renderer.clear_color.g, renderer.clear_color.b, renderer.clear_color.a);
         
         render_commands(render_state, renderer, perm_arena);
-        render_state.bound_texture = -1; 
+        render_state.bound_texture = (GLuint)-1; 
         
         // We have to reset the bound texture to nothing, since we're about to bind other textures
         // Second pass

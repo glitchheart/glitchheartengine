@@ -2,6 +2,8 @@
 #include "Commdlg.h"
 #include <windows.h>
 
+#define copy_file(game_library_path, temp_game_library_path, overwrite) CopyFile(game_library_path, temp_game_library_path, overwrite)
+
 time_t file_time_to_time_t(const FILETIME& ft)
 {
     ULARGE_INTEGER ull;
@@ -47,22 +49,22 @@ PLATFORM_ALLOCATE_MEMORY(win32_allocate_memory)
     Assert(sizeof(MemoryBlock) == 64);
     
     umm page_size = 4096; //TODO: Not really always correct?
-    umm total_size = Size + sizeof(MemoryBlock);
+    umm total_size = size + sizeof(MemoryBlock);
     umm base_offset = sizeof(MemoryBlock);
     umm protect_offset = 0;
     
-    if(Flags & PM_UnderflowCheck)
+    if(flags & PM_UNDERFLOW_CHECK)
     {
-        total_size = Size + 2 * page_size;
+        total_size = size + 2 * page_size;
         base_offset = 2 * page_size;
         protect_offset = page_size;
     }
     
-    if(Flags & PM_OverflowCheck)
+    if(flags & PM_OVERFLOW_CHECK)
     {
-        umm size_rounded_up = AlignPow2(Size, page_size);
+        umm size_rounded_up = align_pow2(size, page_size);
         total_size = size_rounded_up + 2 * page_size;
-        base_offset = page_size + size_rounded_up - Size;
+        base_offset = page_size + size_rounded_up - size;
         protect_offset = page_size + size_rounded_up;
     }
     
@@ -73,10 +75,10 @@ PLATFORM_ALLOCATE_MEMORY(win32_allocate_memory)
     Assert(block->block.used == 0);
     Assert(block->block.prev == 0);
     
-    if(Flags & (PM_UnderflowCheck | PM_OverflowCheck))
+    if(flags & (PM_UNDERFLOW_CHECK | PM_OVERFLOW_CHECK))
     {
         DWORD old_protect = 0;
-        BOOL is_protected = VirtualProtect((u8*)block + protect_offset, page_size, PAGE_NOACCESS, &OldProtect);
+        BOOL is_protected = VirtualProtect((u8*)block + protect_offset, page_size, PAGE_NOACCESS, &old_protect);
         Assert(is_protected);
     }
     
@@ -85,11 +87,11 @@ PLATFORM_ALLOCATE_MEMORY(win32_allocate_memory)
     
     PlatformMemoryBlock* plat_block = &block->block;
     
-    if(Flags & PM_Temporary)
+    if(flags & PM_TEMPORARY)
     {
         Assert((memory_state.temp_count + 1) < MAX_TEMP_BLOCKS);
         memory_state.temp_size_allocated += total_size;
-        memory_state.blocks[memory_state.TempCount++] = plat_block;
+        memory_state.blocks[memory_state.temp_count++] = plat_block;
     }
     else
     {
@@ -104,13 +106,13 @@ PLATFORM_DEALLOCATE_MEMORY(win32_deallocate_memory)
 {
     if(block)
     {
-        if((block->flags & PM_Temporary) == 0)
+        if((block->flags & PM_TEMPORARY) == 0)
         {
             memory_state.permanent_blocks--;
             memory_state.permanent_size_allocated -= (block->size + sizeof(MemoryBlock));
         }
         
-        MemoryBlock *new_block =  ((MemoryBlock*)Bblock);
+        MemoryBlock *new_block =  ((MemoryBlock*)block);
         VirtualFree(new_block, 0, MEM_RELEASE);
     }
 }
@@ -131,13 +133,13 @@ inline PLATFORM_GET_ALL_FILES_WITH_EXTENSION(win32_find_files_with_extensions)
     if(directory_data->files_length == 0)
     {
         directory_data->file_names = push_temp_array(512, char*);
-        directory_data->filepaths = push_temp_array(512, char*);
+        directory_data->file_paths = push_temp_array(512, char*);
     }
     
     WIN32_FIND_DATA find_file;
     HANDLE h_find = NULL;
     
-    char Path[2048];
+    char path[2048];
     
     //Process directories
     sprintf(path, "%s*", directory_path);
@@ -169,8 +171,8 @@ inline PLATFORM_GET_ALL_FILES_WITH_EXTENSION(win32_find_files_with_extensions)
     }
     
     //Process files
-    sprintf(Path, "%s*.%s", directory_path, extension);
-    h_find = FindFirstFile(Path, &find_file);
+    sprintf(path, "%s*.%s", directory_path, extension);
+    h_find = FindFirstFile(path, &find_file);
     if(h_find != INVALID_HANDLE_VALUE)
     {
         do
@@ -213,7 +215,7 @@ inline PLATFORM_OPEN_FILE_WITH_DIALOG(win32_open_file_with_dialog)
     
     HANDLE hf;
     
-    zero_memory(&ofn, sizeof(ofn));
+    ZeroMemory(&ofn, sizeof(ofn));
     ofn.lStructSize = sizeof(ofn);
     ofn.hwndOwner = 0;
     ofn.lpstrFile = sz_file;
@@ -260,7 +262,7 @@ inline PLATFORM_SAVE_FILE_WITH_DIALOG(win32_save_file_with_dialog)
     
     HANDLE hf;
     
-    zero_memory(&ofn, sizeof(ofn));
+    ZeroMemory(&ofn, sizeof(ofn));
     ofn.lStructSize = sizeof(ofn);
     ofn.hwndOwner = 0;
     ofn.lpstrFile = sz_file;
@@ -319,15 +321,15 @@ inline PLATFORM_GET_TIME_OF_DAY(win32_get_time_of_day)
     
 }
 
-static void InitPlatform(PlatformApi& platform_api)
+static void init_platform(PlatformApi& platform_api)
 {
-    platform_api.GetAllFilesWithExtension = win32_find_files_with_extensions;
-    platform_api.FileExists = win32_file_exists;
-    platform_api.AllocateMemory = win32_allocate_memory;
-    platform_api.DeallocateMemory = win32_deallocate_memory;
-    platform_api.OpenFileWithDialog = win32_open_file_with_dialog;
-    platform_api.SaveFileWithDialog = win32_save_file_with_dialog;
-    platform_api.LoadSymbol = win32_load_symbol;
-    platform_api.FreeDynamicLibrary = win32_free_library;
-    platform_api.LoadDynamicLibrary = win32_load_library;
+    platform_api.get_all_files_with_extension = win32_find_files_with_extensions;
+    platform_api.file_exists = win32_file_exists;
+    platform_api.allocate_memory = win32_allocate_memory;
+    platform_api.deallocate_memory = win32_deallocate_memory;
+    platform_api.open_file_with_dialog = win32_open_file_with_dialog;
+    platform_api.save_file_with_dialog = win32_save_file_with_dialog;
+    platform_api.load_symbol = win32_load_symbol;
+    platform_api.free_dynamic_library = win32_free_library;
+    platform_api.load_dynamic_library = win32_load_library;
 }
