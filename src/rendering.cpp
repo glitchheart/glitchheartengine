@@ -1,40 +1,40 @@
 #include "animation.h"
 
-enum Camera_Flags
+enum CameraFlags
 {
-    CFlag_Orthographic = (1 << 0),
-    CFlag_Perspective  = (1 << 1),
-    CFlag_NoLookAt     = (1 << 2)
+    C_FLAG_ORTHOGRAPHIC = (1 << 0),
+    C_FLAG_PERSPECTIVE  = (1 << 1),
+    C_FLAG_NO_LOOK_AT     = (1 << 2)
 };
 
-struct camera_params
+struct CameraParams
 {
-    u32 ViewFlags;
+    u32 view_flags;
 };
 
-static camera_params DefaultCameraParams()
+static CameraParams default_camera_params()
 {
-    camera_params Params;
+    CameraParams params;
     Params.ViewFlags = CFlag_Orthographic | CFlag_NoLookAt;
-    return Params;
+    return params;
 }
 
-static camera_params OrthographicCameraParams()
+static CameraParams orthographic_camera_params()
 {
-    camera_params Params;
+    CameraParams params;
     Params.ViewFlags = CFlag_Orthographic;
-    return Params;
+    return params;
 }
 
-static camera_params PerspectiveCameraParams()
+static CameraParams perspective_camera_params()
 {
-    camera_params Params;
+    CameraParams params;
     Params.ViewFlags = CFlag_Perspective;
-    return Params;
+    return params;
 }
 
 // @Incomplete
-static inline void CameraTransform(Renderer& renderer, Camera& camera, math::Vec3 position = math::Vec3(), math::Quat orientatio = math::quat(), math::v3 Target = math::v3(), r32 Zoom = 1.0f, r32 Near = -1.0f, r32 Far = 1.0f, camera_params Params = DefaultCameraParams())
+static inline void camera_transform(renderer& renderer, camera& camera, math::v3 position = math::v3(), math::quat orientation = math::quat(), math::v3 target = math::v3(), r32 zoom = 1.0f, r32 near = -1.0f, r32 far = 1.0f, CameraParams params = default_camera_params())
 {
     Camera.ViewportWidth = Renderer.WindowWidth;
     Camera.ViewportHeight = Renderer.WindowHeight;
@@ -53,7 +53,7 @@ static inline void CameraTransform(Renderer& renderer, Camera& camera, math::Vec
         }
         else if(!(Params.ViewFlags & CFlag_NoLookAt))
         {
-            auto Dist = sqrt(1.0f / 3.0f);
+            auto dist = sqrt(1.0f / 3.0f);
             Camera.ViewMatrix = math::LookAt(math::v3(Dist, Dist, Dist), math::v3(0.0f));
         }
         
@@ -70,7 +70,7 @@ static inline void CameraTransform(Renderer& renderer, Camera& camera, math::Vec
         
         Camera.ViewMatrix = math::m4(1.0f);
         
-        auto Dist = sqrt(1.0f / 3.0f);
+        auto dist = sqrt(1.0f / 3.0f);
         
         Dist = 20.0f;
         
@@ -88,7 +88,7 @@ static inline void CameraTransform(Renderer& renderer, Camera& camera, math::Vec
 }
 
 // The InfoHandle is used to be able to reference the same animation without having to load the animation again. 
-static void AddAnimation(renderer& Renderer, spritesheet_animation Animation, const char* AnimationName)
+static void add_animation(renderer& renderer, spritesheet_animation animation, const char* animation_name)
 {
     strcpy(Animation.Name, AnimationName);
     Renderer.SpritesheetAnimations[Renderer.SpritesheetAnimationCount++] = Animation;
@@ -96,17 +96,17 @@ static void AddAnimation(renderer& Renderer, spritesheet_animation Animation, co
     Assert(Renderer.SpritesheetAnimationCount < MAX_SPRITESHEET_ANIMATION_INFOS);
 }
 
-static void LoadShader(const char* FullShaderPath, renderer& Renderer, i32* Handle)
+static void load_shader(const char* full_shader_path, renderer& renderer, i32* handle)
 {
-    shader_data* ShaderData = &Renderer.ShaderData[Renderer.ShaderCount];
+    shader_data* shader_data = &Renderer.ShaderData[Renderer.ShaderCount];
     ShaderData->Handle = Renderer.ShaderCount++;
     *Handle = ShaderData->Handle;
     sprintf(ShaderData->Name, "%s", FullShaderPath);
     ShaderData->VertexShaderContent = 0;
     ShaderData->FragmentShaderContent = 0;
     
-    u32 Size = 0;
-    FILE* File;
+    u32 size = 0;
+    FILE* file;
     
     File = fopen(Concat(FullShaderPath, ".vert"), "rb");
     
@@ -149,19 +149,19 @@ static void LoadShader(const char* FullShaderPath, renderer& Renderer, i32* Hand
 }
 
 #define GET_TEXTURE_SIZE(Handle) GetTextureSize(Handle, Renderer)
-static math::v2i GetTextureSize(i32 TextureHandle, renderer Renderer)
+static math::v2i get_texture_size(i32 TextureHandle, renderer Renderer)
 {
     if(TextureHandle <= Renderer.TextureCount)
     {
-        texture_data Data = Renderer.TextureData[TextureHandle - 1];
+        texture_data data = Renderer.TextureData[TextureHandle - 1];
         return math::v2i(Data.Width, Data.Height);
     }
     return math::v2i();
 }
 
-static void LoadTexture(const char* FullTexturePath, renderer& Renderer, i32* Handle = 0)
+static void load_texture(const char* full_texture_path, renderer& renderer, i32* handle = 0)
 {
-    texture_data* TextureData = &Renderer.TextureData[Renderer.TextureCount];
+    texture_data* texture_data = &Renderer.TextureData[Renderer.TextureCount];
     
     TextureData->Handle = Renderer.TextureCount++;
     
@@ -176,74 +176,74 @@ static void LoadTexture(const char* FullTexturePath, renderer& Renderer, i32* Ha
         *Handle = TextureData->Handle + 1; // We add one to the handle, since we want 0 to be an invalid handle
 }
 
-static void LoadTextures(renderer& Renderer, const char* Path)
+static void load_textures(renderer& renderer, const char* path)
 {
     texture_data_Map_Init(&Renderer.TextureMap, HashStringJenkins, 64);
     
-    directory_data DirData = {};
+    directory_data dir_data = {};
     Platform.GetAllFilesWithExtension(Path, "png", &DirData, true);
     
-    for (i32 FileIndex = 0; FileIndex < DirData.FilesLength; FileIndex++)
+    for (i32 file_index = 0; FileIndex < DirData.FilesLength; FileIndex++)
     {
         LoadTexture(DirData.FilePaths[FileIndex], Renderer);
     }
 }
 
-static void LoadTextures(renderer& Renderer)
+static void load_textures(renderer& renderer)
 {
     LoadTextures(Renderer, "../assets/textures/");
 }
 
-static render_command* PushNextCommand(renderer& Renderer, b32 IsUI)
+static render_command* push_next_command(renderer& Renderer, b32 IsUI)
 {
     if(IsUI)
     {
         Renderer.UICommandCount++;
-        render_command* Command = PushStruct(&Renderer.UICommands, render_command);
+        render_command* command = PushStruct(&Renderer.UICommands, render_command);
         Command->ShaderHandle = -1;
         return Command;
     }
     else
     {
         Renderer.CommandCount++;
-        render_command* Command = PushStruct(&Renderer.Commands, render_command);
+        render_command* command = PushStruct(&Renderer.Commands, render_command);
         Command->ShaderHandle = -1;
         return Command;
     }
 }
 
-static void EnableDepthTest(renderer& Renderer)
+static void enable_depth_test(renderer& renderer)
 {
-    render_command* RenderCommand = PushNextCommand(Renderer, false);
+    render_command* render_command = PushNextCommand(Renderer, false);
     RenderCommand->Type = RenderCommand_DepthTest;
     RenderCommand->DepthTest.On = true;
 }
 
-static void DisableDepthTest(renderer& Renderer)
+static void disable_depth_test(renderer& renderer)
 {
-    render_command* RenderCommand = PushNextCommand(Renderer, false);
+    render_command* render_command = PushNextCommand(Renderer, false);
     RenderCommand->Type = RenderCommand_DepthTest;
     RenderCommand->DepthTest.On = false;
 }
 
-static void PushShader(renderer& Renderer, i32 ShaderHandle, shader_attribute* Attributes, i32 AttributeCount)
+static void push_shader(renderer& renderer, i32 shader_handle, shader_attribute* attributes, i32 attribute_count)
 {
-    render_command* RenderCommand = PushNextCommand(Renderer, false);
+    render_command* render_command = PushNextCommand(Renderer, false);
     RenderCommand->Type = RenderCommand_ShaderStart;
     RenderCommand->Shader.Handle = ShaderHandle;
     RenderCommand->Shader.Attributes = Attributes;
     RenderCommand->Shader.AttributeCount = AttributeCount;
 }
 
-static void EndShader(renderer& Renderer)
+static void end_shader(renderer& renderer)
 {
-    render_command* RenderCommand = PushNextCommand(Renderer, false);
+    render_command* render_command = PushNextCommand(Renderer, false);
     RenderCommand->Type = RenderCommand_ShaderEnd;
 }
 
-static void PushLine(renderer& Renderer, math::v3 Point1, math::v3 Point2, r32 LineWidth, math::rgba Color, b32 IsUI = false)
+static void push_line(renderer& renderer, math::v3 point1, math::v3 point2, r32 line_width, math::rgba color, b32 is_ui = false)
 {
-    render_command* RenderCommand = PushNextCommand(Renderer, IsUI);
+    render_command* render_command = PushNextCommand(Renderer, IsUI);
     
     RenderCommand->Type = RenderCommand_Line;
     RenderCommand->Line.Point1 = Point1;
@@ -255,9 +255,9 @@ static void PushLine(renderer& Renderer, math::v3 Point1, math::v3 Point2, r32 L
 
 #define PUSH_TEXT(Text, Position, Color, FontHandle) PushText(Renderer, Text, Position, 1.0f, FontHandle, Color)
 #define PUSH_CENTERED_TEXT(Text, Position, Color, FontHandle) PushText(Renderer, Text, Position, 1.0f, FontHandle, Color, Alignment_Center)
-static void PushText(renderer& Renderer, const char* Text, math::v3 Position, r32 Scale, i32 FontHandle, math::rgba Color, Alignment Alignment = Alignment_Left, b32 IsUI = true)
+static void push_text(renderer& renderer, const char* text, math::v3 position, r32 scale, i32 font_handle, math::rgba color, Alignment alignment = Alignment_Left, b32 is_ui = true)
 {
-    render_command* RenderCommand = PushNextCommand(Renderer, IsUI);
+    render_command* render_command = PushNextCommand(Renderer, IsUI);
     
     RenderCommand->Type = RenderCommand_Text;
     
@@ -275,9 +275,9 @@ static void PushText(renderer& Renderer, const char* Text, math::v3 Position, r3
     RenderCommand->IsUI = IsUI;
 }
 
-static void PushFilledQuad(renderer& Renderer, math::v3 Position, b32 Flipped, math::v3 Size, math::v3 Rotation = math::v3(), math::rgba Color = math::rgba(1.0f, 1.0f, 1.0f, 1.0f), i32 TextureHandle = 0, b32 IsUI = true, i32 AnimationControllerHandle = -1, b32 WithOrigin = false, math::v2 Origin = math::v2(0.0f, 0.0f), i32 ShaderHandle = -1, shader_attribute* ShaderAttributes = 0, i32 ShaderAttributeCount = 0, math::v2 TextureOffset = math::v2(-1.0f, -1.0f), math::v2i FrameSize = math::v2i(0, 0))
+static void push_filled_quad(renderer& renderer, math::v3 position, b32 flipped, math::v3 size, math::v3 rotation = math::v3(), math::rgba color = math::rgba(1.0f, 1.0f, 1.0f, 1.0f), i32 texture_handle = 0, b32 is_ui = true, i32 animation_controller_handle = -1, b32 with_origin = false, math::v2 origin = math::v2(0.0f, 0.0f), i32 shader_handle = -1, shader_attribute* shader_attributes = 0, i32 shader_attribute_count = 0, math::v2 texture_offset = math::v2(-1.0f, -1.0f), math::v2i frame_size = math::v2i(0, 0))
 {
-    render_command* RenderCommand = PushNextCommand(Renderer, IsUI);
+    render_command* render_command = PushNextCommand(Renderer, IsUI);
     
     RenderCommand->Type = RenderCommand_Quad;
     RenderCommand->Position = Position;
@@ -292,9 +292,9 @@ static void PushFilledQuad(renderer& Renderer, math::v3 Position, b32 Flipped, m
     
     if(AnimationControllerHandle != -1)
     {
-        auto& Controller = Renderer.AnimationControllers[AnimationControllerHandle];
-        spritesheet_animation& Animation = Renderer.SpritesheetAnimations[Controller.Nodes[Controller.CurrentNode].AnimationHandle];
-        spritesheet_frame& Frame = Animation.Frames[Controller.CurrentFrameIndex];
+        auto& controller = Renderer.AnimationControllers[AnimationControllerHandle];
+        spritesheet_animation& animation = Renderer.SpritesheetAnimations[Controller.Nodes[Controller.CurrentNode].AnimationHandle];
+        spritesheet_frame& frame = Animation.Frames[Controller.CurrentFrameIndex];
         RenderCommand->Quad.TextureHandle = Animation.TextureHandle - 1;
         RenderCommand->Quad.TextureSize = math::v2((r32)Renderer.TextureData[RenderCommand->Quad.TextureHandle].Width, (r32)Renderer.TextureData[RenderCommand->Quad.TextureHandle].Height);
         RenderCommand->Quad.FrameSize = math::v2i(Frame.FrameWidth, Frame.FrameHeight);
@@ -319,9 +319,9 @@ static void PushFilledQuad(renderer& Renderer, math::v3 Position, b32 Flipped, m
     RenderCommand->IsUI = IsUI;
 }
 
-static void PushOutlinedQuad(renderer& Renderer, math::v3 Position,  math::v3 Size, math::v3 Rotation, math::rgba Color, b32 IsUI = false, r32 LineWidth = 1.0f)
+static void push_outlined_quad(renderer& renderer, math::v3 position,  math::v3 size, math::v3 rotation, math::rgba color, b32 is_ui = false, r32 line_width = 1.0f)
 {
-    render_command* RenderCommand = PushNextCommand(Renderer, IsUI);
+    render_command* render_command = PushNextCommand(Renderer, IsUI);
     
     RenderCommand->Type = RenderCommand_Quad;
     RenderCommand->Position = Position;
@@ -334,9 +334,9 @@ static void PushOutlinedQuad(renderer& Renderer, math::v3 Position,  math::v3 Si
     RenderCommand->IsUI = IsUI;
 }
 
-static void PushWireframeCube(renderer& Renderer, math::v3 Position, math::v3 Scale, math::quat Orientation, math::rgba Color, r32 LineWidth)
+static void push_wireframe_cube(renderer& renderer, math::v3 position, math::v3 scale, math::quat orientation, math::rgba color, r32 line_width)
 {
-    render_command* RenderCommand = PushNextCommand(Renderer, false);
+    render_command* render_command = PushNextCommand(Renderer, false);
     
     RenderCommand->Type = RenderCommand_WireframeCube;
     RenderCommand->WireframeCube.Color = Color;
@@ -347,16 +347,16 @@ static void PushWireframeCube(renderer& Renderer, math::v3 Position, math::v3 Sc
     RenderCommand->IsUI = false;
 }
 
-static void PushSpotlight(renderer& Renderer, math::v3 Position, math::v3 Direction, r32 CutOff, r32 OuterCutOff, math::v3 Ambient, math::v3 Diffuse, math::v3 Specular, r32 Constant, r32 Linear, r32 Quadratic)
+static void push_spotlight(renderer& renderer, math::v3 position, math::v3 direction, r32 cut_off, r32 outer_cut_off, math::v3 ambient, math::v3 diffuse, math::v3 specular, r32 constant, r32 linear, r32 quadratic)
 {
-    render_command* RenderCommand = PushStruct(&Renderer.LightCommands, render_command);
+    render_command* render_command = PushStruct(&Renderer.LightCommands, render_command);
     Renderer.LightCommandCount++;
     
     RenderCommand->Type = RenderCommand_Spotlight;
     
     RenderCommand->Position = Position;
     
-    auto& Spotlight = RenderCommand->Spotlight;
+    auto& spotlight = RenderCommand->Spotlight;
     Spotlight.Direction = Direction;
     Spotlight.CutOff = CutOff;
     Spotlight.OuterCutOff = OuterCutOff;
@@ -368,30 +368,30 @@ static void PushSpotlight(renderer& Renderer, math::v3 Position, math::v3 Direct
     Spotlight.Quadratic = Quadratic;
 }
 
-static void PushDirectionalLight(renderer& Renderer, math::v3 Direction, math::v3 Ambient, math::v3 Diffuse, math::v3 Specular)
+static void push_directional_light(renderer& renderer, math::v3 direction, math::v3 ambient, math::v3 diffuse, math::v3 specular)
 {
-    render_command* RenderCommand = PushStruct(&Renderer.LightCommands, render_command);
+    render_command* render_command = PushStruct(&Renderer.LightCommands, render_command);
     Renderer.LightCommandCount++;
     
     RenderCommand->Type = RenderCommand_DirectionalLight;
     
-    auto& DirectionalLight = RenderCommand->DirectionalLight;
+    auto& directional_light = RenderCommand->DirectionalLight;
     DirectionalLight.Direction = Direction;
     DirectionalLight.Ambient = Ambient;
     DirectionalLight.Diffuse = Diffuse;
     DirectionalLight.Specular = Specular;
 }
 
-static void PushPointLight(renderer& Renderer, math::v3 Position, math::v3 Ambient, math::v3 Diffuse, math::v3 Specular, r32 Constant, r32 Linear, r32 Quadratic)
+static void push_point_light(renderer& renderer, math::v3 position, math::v3 ambient, math::v3 diffuse, math::v3 specular, r32 constant, r32 linear, r32 quadratic)
 {
-    render_command* RenderCommand = PushStruct(&Renderer.LightCommands, render_command);
+    render_command* render_command = PushStruct(&Renderer.LightCommands, render_command);
     Renderer.LightCommandCount++;
     
     RenderCommand->Type = RenderCommand_PointLight;
     
     RenderCommand->Position = Position;
     
-    auto& PointLight = RenderCommand->PointLight;
+    auto& point_light = RenderCommand->PointLight;
     PointLight.Ambient = Ambient;
     PointLight.Diffuse = Diffuse;
     PointLight.Specular = Specular;
@@ -400,9 +400,9 @@ static void PushPointLight(renderer& Renderer, math::v3 Position, math::v3 Ambie
     PointLight.Quadratic = Quadratic;
 }
 
-static void PushBuffer(renderer& Renderer, i32 BufferHandle, i32 TextureHandle, math::v3 Rotation = math::v3(), b32 IsUI = false, math::v3 Position = math::v3(), math::v3 Scale = math::v3(1.0f), math::rgba Color = math::rgba(1, 1, 1, 1))
+static void push_buffer(renderer& renderer, i32 buffer_handle, i32 texture_handle, math::v3 rotation = math::v3(), b32 is_ui = false, math::v3 position = math::v3(), math::v3 scale = math::v3(1.0f), math::rgba color = math::rgba(1, 1, 1, 1))
 {
-    render_command* RenderCommand = PushNextCommand(Renderer, IsUI);
+    render_command* render_command = PushNextCommand(Renderer, IsUI);
     
     RenderCommand->Type = RenderCommand_Buffer;
     RenderCommand->Buffer.BufferHandle = BufferHandle;
@@ -418,16 +418,16 @@ static void PushBuffer(renderer& Renderer, i32 BufferHandle, i32 TextureHandle, 
     RenderCommand->ShaderAttributeCount = 0;
 }
 
-static void PushModel(renderer& Renderer, model& Model)
+static void push_model(renderer& renderer, model& model)
 {
-    render_command* RenderCommand = PushNextCommand(Renderer, false);
+    render_command* render_command = PushNextCommand(Renderer, false);
     RenderCommand->Type = RenderCommand_Model;
     RenderCommand->Position = Model.Position;
     RenderCommand->Scale = Model.Scale;
     RenderCommand->Orientation = Model.Orientation;
     RenderCommand->Model.BufferHandle = Model.BufferHandle;
     
-    for(i32 Index = 0; Index < Model.MaterialCount; Index++)
+    for(i32 index = 0; Index < Model.MaterialCount; Index++)
     {
         if(Model.Materials[Index].DiffuseTexture.HasData && Model.Materials[Index].DiffuseTexture.TextureHandle == -1 && strlen(Model.Materials[Index].DiffuseTexture.TextureName) > 0)
         {
@@ -448,7 +448,7 @@ static void PushModel(renderer& Renderer, model& Model)
     {
         RenderCommand->Model.BoneTransforms = PushTempSize(sizeof(math::m4) * Model.BoneCount, math::m4);
         
-        for(i32 Index = 0; Index < Model.BoneCount; Index++)
+        for(i32 index = 0; Index < Model.BoneCount; Index++)
         {
             RenderCommand->Model.BoneTransforms[Index] = Model.CurrentPoses[Index];
         }
@@ -458,9 +458,9 @@ static void PushModel(renderer& Renderer, model& Model)
     RenderCommand->IsUI = false;
 }
 
-static void LoadBuffer(renderer& Renderer, r32* Buffer, i32 BufferSize, i32* BufferHandle, b32 Dynamic = false)
+static void load_buffer(renderer& renderer, r32* buffer, i32 buffer_size, i32* buffer_handle, b32 dynamic = false)
 {
-    buffer_data Data = {};
+    buffer_data data = {};
     Data.VertexBuffer = Buffer;
     Data.VertexBufferSize = BufferSize;
     Data.IndexBufferCount = 0;
@@ -470,9 +470,9 @@ static void LoadBuffer(renderer& Renderer, r32* Buffer, i32 BufferSize, i32* Buf
     *BufferHandle = Renderer.BufferCount++;
 }
 
-static void UpdateBuffer(renderer& Renderer, r32* Buffer, i32 BufferSize, i32 BufferHandle)
+static void update_buffer(renderer& renderer, r32* buffer, i32 buffer_size, i32 buffer_handle)
 {
-    buffer_data Data = {};
+    buffer_data data = {};
     Data.VertexBuffer = Buffer;
     Data.VertexBufferSize = BufferSize;
     Data.IndexBufferCount = 0;
@@ -481,9 +481,9 @@ static void UpdateBuffer(renderer& Renderer, r32* Buffer, i32 BufferSize, i32 Bu
     Renderer.UpdatedBufferHandles[Renderer.UpdatedBufferHandleCount++] = BufferHandle;
 }
 
-static i32 LoadFont(renderer& Renderer, char* Path, i32 Size, char* Name)
+static i32 load_font(renderer& Renderer, char* Path, i32 Size, char* Name)
 {
-    font_data Data = {};
+    font_data data = {};
     Data.Path = PushString(&Renderer.FontArena, Path);
     Data.Size = Size;
     Data.Name = PushString(&Renderer.FontArena, Name);
@@ -492,9 +492,9 @@ static i32 LoadFont(renderer& Renderer, char* Path, i32 Size, char* Name)
     return Renderer.FontCount++;
 }
 
-static void LoadFont(renderer& Renderer, char* Path, i32 Size, i32* Handle)
+static void load_font(renderer& renderer, char* path, i32 size, i32* handle)
 {
-    font_data Data = {};
+    font_data data = {};
     Data.Path = PushString(&Renderer.FontArena, Path);
     Data.Size = Size;
     
@@ -502,17 +502,17 @@ static void LoadFont(renderer& Renderer, char* Path, i32 Size, i32* Handle)
     *Handle = Renderer.FontCount++;
 }
 
-static b32 IsEOF(chunk_format& Format)
+static b32 is_eof(chunk_format& Format)
 {
     return strcmp(Format.Format, "EOF") == 0;
 }
 
-static void LoadModel(renderer& Renderer, char* FilePath, model* Model)
+static void load_model(renderer& renderer, char* file_path, model* model)
 {
     (void)Renderer;
-    model_header Header = {};
+    model_header header = {};
     
-    FILE *File = fopen(FilePath, "rb");
+    FILE *file = fopen(FilePath, "rb");
     if(File)
     {
         fread(&Header,sizeof(model_header), 1, File);
@@ -523,10 +523,10 @@ static void LoadModel(renderer& Renderer, char* FilePath, model* Model)
             return;
         }
         
-        chunk_format Format = {};
+        chunk_format format = {};
         fread(&Format, sizeof(chunk_format), 1, File);
         
-        i32 MeshCount = 0;
+        i32 mesh_count = 0;
         
         while(!IsEOF(Format))
         {
@@ -621,11 +621,11 @@ static void LoadModel(renderer& Renderer, char* FilePath, model* Model)
     }
 }
 
-static void LoadGLIMModel(renderer& Renderer, char* FilePath, model* Model)
+static void load_glim_model(renderer& renderer, char* file_path, model* model)
 {
-    model_header Header = {};
+    model_header header = {};
     
-    FILE *File = fopen(FilePath, "rb");
+    FILE *file = fopen(FilePath, "rb");
     if(File)
     {
         fread(&Header,sizeof(model_header), 1, File);
@@ -636,16 +636,16 @@ static void LoadGLIMModel(renderer& Renderer, char* FilePath, model* Model)
             return;
         }
         
-        model_data ModelData;
+        model_data model_data;
         fread(&ModelData, sizeof(model_data), 1, File);
         fread(Model->Meshes, (size_t)ModelData.MeshChunkSize, 1, File);
         
         Model->Type = (Model_Type)ModelData.ModelType;
         Model->MeshCount = ModelData.NumMeshes;
         
-        r32* VertexBuffer = PushTempSize(ModelData.VertexBufferChunkSize, r32);
+        r32* vertex_buffer = PushTempSize(ModelData.VertexBufferChunkSize, r32);
         fread(VertexBuffer, (size_t)ModelData.VertexBufferChunkSize, 1, File);
-        u32* IndexBuffer = PushTempSize(ModelData.IndexBufferChunkSize, u32);
+        u32* index_buffer = PushTempSize(ModelData.IndexBufferChunkSize, u32);
         fread(IndexBuffer, (size_t)ModelData.IndexBufferChunkSize, 1, File);
         
         Model->MaterialCount = ModelData.NumMaterials;
@@ -662,7 +662,7 @@ static void LoadGLIMModel(renderer& Renderer, char* FilePath, model* Model)
             fread(Model->Bones, (size_t)ModelData.BoneChunkSize, 1, File);
         }
         
-        buffer_data Data = {};
+        buffer_data data = {};
         Data.Skinned = Model->BoneCount > 0;
         CopyTemp(Data.VertexBuffer, VertexBuffer, (size_t)ModelData.VertexBufferChunkSize, r32);
         CopyTemp(Data.IndexBuffer, IndexBuffer, (size_t)ModelData.IndexBufferChunkSize, u32);
@@ -683,29 +683,29 @@ static void LoadGLIMModel(renderer& Renderer, char* FilePath, model* Model)
         Renderer.Buffers[Renderer.BufferCount - 1] = Data;
         
         // Load animations
-        animation_header AHeader;
+        animation_header a_header;
         fread(&AHeader, sizeof(animation_header), 1, File);
         
         Model->AnimationCount = AHeader.NumAnimations;
         Model->Animations = AHeader.NumAnimations > 0 ? PushArray(&Renderer.AnimationArena, AHeader.NumAnimations, skeletal_animation) : 0;
         
-        for(i32 Index = 0; Index < Model->AnimationCount; Index++)
+        for(i32 index = 0; Index < Model->AnimationCount; Index++)
         {
-            animation_channel_header ACHeader;
+            animation_channel_header ac_header;
             fread(&ACHeader, sizeof(animation_channel_header), 1, File);
             
-            skeletal_animation* Animation = &Model->Animations[Index];
+            skeletal_animation* animation = &Model->Animations[Index];
             Animation->Duration = ACHeader.Duration;
             Animation->NumBoneChannels = ACHeader.NumBoneChannels;
             
             Animation->BoneChannels = PushArray(&Renderer.AnimationArena, Animation->NumBoneChannels, bone_channel);
             
-            for(i32 BoneChannelIndex = 0; BoneChannelIndex < Animation->NumBoneChannels; BoneChannelIndex++)
+            for(i32 bone_channel_index = 0; BoneChannelIndex < Animation->NumBoneChannels; BoneChannelIndex++)
             {
-                bone_animation_header BAHeader;
+                bone_animation_header ba_header;
                 fread(&BAHeader, sizeof(bone_animation_header), 1, File);
                 
-                bone_channel* BoneChannel = &Animation->BoneChannels[BoneChannelIndex];
+                bone_channel* bone_channel = &Animation->BoneChannels[BoneChannelIndex];
                 BoneChannel->BoneIndex = BAHeader.BoneIndex;
                 
                 BoneChannel->PositionKeys.NumKeys = BAHeader.NumPositionChannels;
@@ -736,13 +736,13 @@ static void LoadGLIMModel(renderer& Renderer, char* FilePath, model* Model)
     }
 }
 
-static void AddParticleSystem(renderer& Renderer, math::v3 Position, i32 TextureHandle, r32 Rate, r32 Speed, i32* Handle)
+static void add_particle_system(renderer& renderer, math::v3 position, i32 texture_handle, r32 rate, r32 speed, i32* handle)
 {
 }
-static void UpdateParticleSystemPosition(renderer& Renderer, i32 Handle, math::v2 NewPosition)
+static void update_particle_system_position(renderer& renderer, i32 handle, math::v2 new_position)
 {
 }
 
-static void RemoveParticleSystem(renderer& Renderer, i32 Handle)
+static void remove_particle_system(renderer& renderer, i32 handle)
 {
 }
