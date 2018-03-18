@@ -1,98 +1,98 @@
 #ifndef MEMORY_H
 #define MEMORY_H
 
-struct memory_arena
+struct MemoryArena
 {
-    platform_memory_block* CurrentBlock;
-    u64 MinimumBlockSize = 0;
+    platform_memory_block* current_block;
+    u64 minimum_block_size = 0;
     
-    u64 AllocationFlags;
+    u64 allocation_flags;
 };
 
-enum Arena_Flags
+enum ArenaFlags
 {
     AFlag_Zero = (1 << 0)
 };
 
-struct push_params
+struct PushParams
 {
-    u32 Flags;
-    u32 Alignment;
+    u32 flags;
+    u32 alignment;
 };
 
-struct arena_bootstrap_params
+struct ArenaBootstrapParams
 {
-    u64 AllocationFlags;
-    umm MinimumBlockSize;
+    u64 allocation_flags;
+    umm minimum_block_size;
 };
 
-inline arena_bootstrap_params DefaultBootstrapParams()
+inline ArenaBootstrapParams default_bootstrap_params()
 {
-    arena_bootstrap_params Params = {};
-    return Params;
+    ArenaBootstrapParams params = {};
+    return params;
 }
 
-inline push_params DefaultPushParams()
+inline PushParams default_push_params()
 {
-    push_params Params;
-    Params.Flags = AFlag_Zero;
-    Params.Alignment = 4;
-    return Params;
+    PushParams params;
+    params.Flags = AFlag_Zero;
+    params.Alignment = 4;
+    return params;
 }
 
-inline push_params NoClear()
+inline PushParams no_clear()
 {
-    push_params Params;
-    Params.Flags &= ~AFlag_Zero;
-    return Params;
+    PushParams params;
+    params.Flags &= ~AFlag_Zero;
+    return params;
 }
 
 #define ZeroStruct(Instance) ZeroSize(sizeof(Instance), &(Instance)
 #define ZeroArray(Count, Pointer) ZeroSize(Count * sizeof((Pointer[0]), Pointer)
-inline void ZeroSize(umm Size, void *Ptr)
+inline void zero_size(umm size, void *ptr)
 {
-    u8* Byte = (u8*)Ptr;
-    while(Size--)
+    u8* byte = (u8*)ptr;
+    while(size--)
     {
-        *Byte++ = 0;
+        *byte++ = 0;
     }
 }
 
-inline umm GetAlignmentOffset(memory_arena* Arena, umm Alignment)
+inline umm get_alignment_offset(MemoryArena* arena, umm alignment)
 {
-    umm AlignmentOffset = 0;
+    umm alignment_offset = 0;
     
-    umm ResultPointer = (umm)Arena->CurrentBlock->Base + Arena->CurrentBlock->Used;
-    umm AlignmentMask = Alignment - 1;
-    if(ResultPointer & AlignmentMask)
+    umm result_pointer = (umm)arena->CurrentBlock->Base + arena->CurrentBlock->Used;
+    umm alignment_mask = alignment - 1;
+    if(result_pointer & alignment_mask)
     {
-        AlignmentOffset = Alignment - (ResultPointer & AlignmentMask);
+        alignment_offset = alignment - (result_pointer & alignment_mask);
     }
-    return AlignmentOffset;
+    return alignment_offset;
 }
 
-inline umm GetEffectiveSizeFor(memory_arena* Arena, umm SizeInit, push_params Params = DefaultPushParams())
+inline umm get_effective_size_for(MemoryArena* arena, umm size_init, PushParams params = default_push_params())
 {
-    umm Size = SizeInit;
+    umm size = size_init;
     
-    umm AlignmentOffset = GetAlignmentOffset(Arena, Params.Alignment);
+    umm alignment_offset = get_alignment_offset(arena, params.Alignment);
     
-    Size += AlignmentOffset;
-    return Size;
+    size += alignment_offset;
+    return size;
 }
 
 #define PushStruct(Arena, type, ...) (type *)PushSize_(Arena, sizeof(type), ## __VA_ARGS__)
 #define PushArray(Arena, Count, type, ...) (type*)PushSize_(Arena, (Count)*sizeof(type), ## __VA_ARGS__)
 #define PushSize(Arena, Size, type, ...) (type*)PushSize_(Arena, Size, ## __VA_ARGS__)
-void* PushSize_(memory_arena* Arena, umm SizeInit, push_params Params = DefaultPushParams())
+void* PushSize_(MemoryArena* arena, umm SizeInit, PushParams params = default_push_params())
 {
-    void* Result = 0;
+    void* result = 0;
     
     umm Size = 0;
     
     if(Arena->CurrentBlock)
     {
-        Size = GetEffectiveSizeFor(Arena, SizeInit, Params);
+        Size = get_effective_size_for(arena, SizeInit, params);
     }
     
     if(!Arena->CurrentBlock || (Arena->CurrentBlock->Used + Size) > Arena->CurrentBlock->Size)
@@ -109,30 +109,30 @@ void* PushSize_(memory_arena* Arena, umm SizeInit, push_params Params = DefaultP
             Arena->MinimumBlockSize = 1024 * 1024;
         }
         
-        umm BlockSize = Max(Size, Arena->MinimumBlockSize);
+        umm block_size = Max(Size, Arena->MinimumBlockSize);
         
-        platform_memory_block* NewBlock = Platform.AllocateMemory(BlockSize, Arena->AllocationFlags);
+        platform_memory_block* new_block = Platform.AllocateMemory(block_size, Arena->AllocationFlags);
         
-        NewBlock->Prev = Arena->CurrentBlock;
-        Arena->CurrentBlock = NewBlock;
+        new_block->Prev = Arena->CurrentBlock;
+        Arena->CurrentBlock = new_block;
     }
     
     Assert((Arena->CurrentBlock->Used + SizeInit) <= Arena->CurrentBlock->Size);
-    umm AlignmentOffset = GetAlignmentOffset(Arena, Params.Alignment);
-    Result = Arena->CurrentBlock->Base + Arena->CurrentBlock->Used + AlignmentOffset;
+    umm alignment_offset = get_alignment_offset(Arena, Params.Alignment);
+    result = Arena->CurrentBlock->Base + Arena->CurrentBlock->Used + alignment_offset;
     Arena->CurrentBlock->Used += Size;
     
     Assert(Size >= SizeInit);
     
     if(Params.Flags & AFlag_Zero)
     {
-        ZeroSize(SizeInit, Result);
+        zero_size(SizeInit, result);
     }
     
-    return Result;
+    return result;
 }
 
-inline u64 DefaultFlags()
+inline u64 default_flags()
 {
     return PM_OverflowCheck | PM_UnderflowCheck;
 }
@@ -140,140 +140,140 @@ inline u64 DefaultFlags()
 #define PushTempStruct(type, ...) (type *)PushTempSize_(sizeof(type), ## __VA_ARGS__)
 #define PushTempArray(Count, type, ...) (type*)PushTempSize_((Count)*sizeof(type), ## __VA_ARGS__)
 #define PushTempSize(Size, type, ...) (type*)PushTempSize_((umm)Size, ## __VA_ARGS__)
-inline void* PushTempSize_(umm Size, push_params = DefaultPushParams(), u64 Flags = DefaultFlags())
+inline void* PushTempSize_(umm size, PushParams = default_push_params(), u64 flags = default_flags())
 {
-    platform_memory_block* Block = Platform.AllocateMemory(Size, Flags | PM_Temporary);
-    void* Result = Block->Base;
-    return Result;
+    platform_memory_block* block = Platform.AllocateMemory(size, flags | PM_Temporary);
+    void* result = block->Base;
+    return result;
 }
 
-inline char* PushTempString(u32 Length)
+inline char* push_temp_string(u32 length)
 {
-    platform_memory_block* Block = Platform.AllocateMemory(Length + 1, PM_Temporary);
-    char* Result = (char*)Block->Base;
-    Result[Length] = 0;
-    return Result;
+    platform_memory_block* block = Platform.AllocateMemory(length + 1, PM_Temporary);
+    char* result = (char*)block->Base;
+    result[length] = 0;
+    return result;
 }
 
-inline char* PushTempString(char* Source)
+inline char* push_temp_string(char* source)
 {
-    auto Length = strlen(Source);
-    char* Dest = PushTempString((u32)Length);
-    for(u32 CharIndex = 0; CharIndex < Length; CharIndex++)
+    auto length = strlen(source);
+    char* dest = push_temp_string((u32)length);
+    for(u32 char_index = 0; char_index < length; char_index++)
     {
-        Dest[CharIndex] = Source[CharIndex];
+        dest[char_index] = source[char_index];
     }
-    Dest[Length] = 0;
-    return Dest;
+    dest[length] = 0;
+    return dest;
 }
 
-inline char* PushTempString(const char* Source)
+inline char* push_temp_string(const char* source)
 {
-    auto Length = strlen(Source);
-    char* Dest = PushTempString((u32)Length);
-    for(u32 CharIndex = 0; CharIndex < Length; CharIndex++)
+    auto length = strlen(source);
+    char* dest = push_temp_string((u32)length);
+    for(u32 char_index = 0; char_index < length; char_index++)
     {
-        Dest[CharIndex] = Source[CharIndex];
+        dest[char_index] = source[char_index];
     }
-    Dest[Length] = 0;
-    return Dest;
+    dest[length] = 0;
+    return dest;
 }
 
 #define Copy(Arena, Dest, Src, Size, type) Dest = PushSize(Arena, Size, type); memcpy(Dest, Src, Size);
 
 #define CopyTemp(Dest, Src, Size, type) Dest = PushTempSize(Size, type); memcpy(Dest, Src, Size);
 
-inline void FreeLastBlock(memory_arena* Arena)
+inline void free_last_block(MemoryArena* arena)
 {
-    platform_memory_block* Free = Arena->CurrentBlock;
-    Arena->CurrentBlock = Free->Prev;
-    Platform.DeallocateMemory(Free);
+    platform_memory_block* free = arena->CurrentBlock;
+    arena->CurrentBlock = free->Prev;
+    Platform.DeallocateMemory(free);
 }
 
-static void Clear(memory_arena *Arena)
+static void clear(MemoryArena *arena)
 {
-    while(Arena->CurrentBlock)
+    while(arena->CurrentBlock)
     {
-        FreeLastBlock(Arena);
+        free_last_block(arena);
     }
 }
 
-char* PushString(memory_arena* Arena, size_t Length)
+char* push_string(MemoryArena* arena, size_t length)
 {
     //@Incomplete: Fix NoClear() bug here. 
     // We don't care about zeroing
-    auto Result = (char*)PushSize_(Arena, (Length + 1));
-    Result[Length] = 0;
-    return Result;
+    auto result = (char*)PushSize_(arena, (length + 1));
+    result[length] = 0;
+    return result;
 }
 
-char* PushString(memory_arena* Arena, char* Source)
+char* push_string(MemoryArena* arena, char* source)
 {
-    auto Length = strlen(Source);
-    char* Dest = PushString(Arena, (u32)Length);
-    for(u32 CharIndex = 0; CharIndex < Length; CharIndex++)
+    auto length = strlen(source);
+    char* dest = push_string(arena, (u32)length);
+    for(u32 char_index = 0; char_index < length; char_index++)
     {
-        Dest[CharIndex] = Source[CharIndex];
+        dest[char_index] = source[char_index];
     }
-    Dest[Length] = 0;
+    dest[length] = 0;
     
-    return Dest;
+    return dest;
 }
 
-char* PushString(memory_arena* Arena, const char* Source)
+char* push_string(MemoryArena* arena, const char* source)
 {
-    auto Length = strlen(Source);
-    char* Dest = PushString(Arena, (u32)Length);
-    for(u32 CharIndex = 0; CharIndex < Length + 1; CharIndex++)
+    auto length = strlen(source);
+    char* dest = push_string(arena, (u32)length);
+    for(u32 char_index = 0; char_index < length + 1; char_index++)
     {
-        Dest[CharIndex] = Source[CharIndex];
+        dest[char_index] = source[char_index];
     }
-    Dest[Length] = 0;
+    dest[length] = 0;
     
-    return Dest;
+    return dest;
 }
 
-char* PushString(memory_arena* Arena, u32 Length, char* Source)
+char* push_string(MemoryArena* arena, u32 length, char* source)
 {
-    char* Dest = (char*)PushSize_(Arena, Length + 1);
-    for(u32 CharIndex = 0; CharIndex < Length; CharIndex++)
+    char* dest = (char*)PushSize_(arena, length + 1);
+    for(u32 char_index = 0; char_index < length; char_index++)
     {
-        Dest[CharIndex] = Source[CharIndex];
+        dest[char_index] = source[char_index];
     }
-    Dest[Length] = 0;
+    dest[length] = 0;
     
-    return Dest;
+    return dest;
 }
 
-char* PushString(memory_arena* Arena, u32 Length, const char* Source)
+char* push_string(MemoryArena* arena, u32 length, const char* source)
 {
-    char* Dest = (char*)PushSize_(Arena, Length + 1);
-    for(u32 CharIndex = 0; CharIndex < Length; CharIndex++)
+    char* dest = (char*)PushSize_(arena, length + 1);
+    for(u32 char_index = 0; char_index < length; char_index++)
     {
-        Dest[CharIndex] = Source[CharIndex];
+        dest[char_index] = source[char_index];
     }
-    Dest[Length] = 0;
+    dest[length] = 0;
     
-    return Dest;
+    return dest;
 }
 
-char* PushString(memory_arena* Arena, umm Length, char* Source)
+char* push_string(MemoryArena* arena, umm length, char* source)
 {
-    return PushString(Arena, (u32)Length, Source);
+    return push_string(arena, (u32)length, source);
 }
 
 #define BootstrapPushStruct(type, Member, ...) (type*)BootstrapPushSize_(sizeof(type), OffsetOf(type, Member), ## __VA_ARGS__)
-inline void* BootstrapPushSize_(umm StructSize, umm OffsetToArena,
-                                arena_bootstrap_params BootstrapParams = DefaultBootstrapParams(),
-                                push_params Params = DefaultPushParams())
+inline void* bootstrap_push_size(umm struct_size, umm offset_to_arena,
+                                ArenaBootstrapParams bootstrap_params = default_bootstrap_params(),
+                                PushParams params = default_push_params())
 {
-    memory_arena Bootstrap = {};
-    Bootstrap.AllocationFlags = BootstrapParams.AllocationFlags;
-    Bootstrap.MinimumBlockSize = BootstrapParams.MinimumBlockSize;
-    void* Struct = PushSize(&Bootstrap, StructSize, void*, Params);
-    *(memory_arena *)((u8 *)Struct + OffsetToArena) = Bootstrap;
+    MemoryArena bootstrap = {};
+    bootstrap.AllocationFlags = bootstrap_params.AllocationFlags;
+    bootstrap.MinimumBlockSize = bootstrap_params.MinimumBlockSize;
+    void* struct = PushSize(&Bootstrap, StructSize, void*, Params);
+    *(MemoryArena *)((u8 *)struct + OffsetToArena) = Bootstrap;
     
-    return Struct;
+    return struct;
 }
 
 #endif

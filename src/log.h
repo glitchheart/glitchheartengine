@@ -6,36 +6,36 @@
 
 
 #define Log(Msg) _Log(__LINE__, __FILE__, Msg)
-static void _Log(i32 LineNum, const char* File, const char* Message)
+static void log(i32 line_num, const char* file, const char* message)
 {
     Assert(LogState.LogCount < MAX_LOG_MESSAGES);
-    time_t Timer;
-    char Buffer[26];
-    struct tm* TmInfo;
+    time_t timer;
+    char buffer[26];
+    struct tm* tm_info;
     
-    time(&Timer);
-    TmInfo = localtime(&Timer);
+    time(&timer);
+    tm_info = localtime(&timer);
     
-    strftime(Buffer, 26, "%Y-%m-%d %H:%M:%S", TmInfo);
+    strftime(buffer, 26, "%Y-%m-%d %H:%M:%S", tm_info);
     
-    LogState.LogBuffer[LogState.LogCount++] = PushTempString(2048);
+    LogState.LogBuffer[LogState.LogCount++] = push_temp_string(2048);
     
-    sprintf(LogState.LogBuffer[LogState.LogCount - 1], "[INFO] - %s in file %s on line %d - %s\n", Buffer, File, LineNum, Message);
+    sprintf(LogState.LogBuffer[LogState.LogCount - 1], "[INFO] - %s in file %s on line %d - %s\n", buffer, file, line_num, message);
 }
 
-static void UpdateLog()
+static void update_log()
 {
     if(LogState.Flags & LFlag_File)
     {
-        for(i32 Log = 0; Log < LogState.LogCount; Log++)
+        for(i32 log = 0; log < LogState.LogCount; log++)
         {
-            fwrite(LogState.LogBuffer[Log], sizeof(char), strlen(LogState.LogBuffer[Log]), LogState.File.FileHandle);
+            fwrite(LogState.LogBuffer[log], sizeof(char), strlen(LogState.LogBuffer[log]), LogState.File.FileHandle);
         }
     }
     
     if(LogState.Flags & LFlag_Debug)
     {
-        for(i32 Log = 0; Log < LogState.LogCount; Log++)
+        for(i32 log = 0; Log < LogState.LogCount; log++)
         {
             Debug("%s", LogState.LogBuffer[Log]);
         }
@@ -43,20 +43,20 @@ static void UpdateLog()
     LogState.LogCount = 0;
 }
 
-static void InitLog(u32 Flags, const char* FilePath = "")
+static void init_log(u32 flags, const char* file_path = "")
 {
-    if((Flags & LFlag_File) && strlen(FilePath) > 0)
+    if((flags & LFlag_File) && strlen(file_path) > 0)
     {
-        LogState.File.FileHandle = fopen(FilePath, "w");
-        LogState.Flags = Flags;
+        LogState.File.FileHandle = fopen(file_path, "w");
+        LogState.Flags = flags;
     }
 }
 
-static void CloseLog()
+static void close_log()
 {
     if(LogState.Flags & LFlag_File)
     {
-        UpdateLog();
+        update_log();
         fclose(LogState.File.FileHandle);
     }
 }

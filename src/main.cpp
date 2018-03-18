@@ -18,9 +18,9 @@
 #include "main.h"
 
 // Global
-platform_api Platform;
-log_state LogState;
-memory_state MemoryState;
+PlatformApi Platform;
+LogState LogState;
+MemoryState MemoryState;
 // Global
 
 #ifdef _WIN32
@@ -43,244 +43,244 @@ memory_state MemoryState;
 #include "fmod_sound.cpp"
 #include "filehandling.h"
 
-input_controller InputController;
+InputController InputController;
 
 #include "keys_glfw.h"
 #include "opengl_rendering.cpp"
 #include "vulkan_rendering.cpp"
 
-static void LoadGameCode(game_code& GameCode, char* GameLibraryPath, char* TempGameLibraryPath)
+static void load_game_code(GameCode& game_code, char* game_library_path, char* temp_game_library_path)
 {
-    if(!CopyFile(GameLibraryPath, TempGameLibraryPath, false)) return;
+    if(!copy_file(game_library_path, temp_game_library_path, false)) return;
     
-    GameCode.Update = UpdateStub;
-    GameCode.LastLibraryWriteTime = GetLastWriteTime(GameLibraryPath);
-    GameCode.GameCodeLibrary = Platform.LoadDynamicLibrary(TempGameLibraryPath);
+    game_code.Update = UpdateStub;
+    game_code.LastLibraryWriteTime = get_last_write_time(game_library_path);
+    game_code.GameCodeLibrary = Platform.LoadDynamicLibrary(temp_game_library_path);
     
-    if (GameCode.GameCodeLibrary)
+    if (game_code.GameCodeLibrary)
     {
-        GameCode.Update = (update *)Platform.LoadSymbol(GameCode.GameCodeLibrary, "Update");
-        GameCode.IsValid = GameCode.Update != 0;
+        game_code.Update = (update *)Platform.LoadSymbol(game_code.GameCodeLibrary, "Update");
+        game_code.IsValid = game_code.Update != 0;
     }
     
-    if (!GameCode.IsValid)
+    if (!game_code.IsValid)
     {
         Debug("Invalid game code\n");
-        GameCode.Update = UpdateStub;
+        game_code.Update = UpdateStub;
     }
 }
 
-static void UnloadGameCode(game_code *GameCode)
+static void unload_game_code(GameCode *game_code)
 {
-    if (GameCode->GameCodeLibrary)
+    if (game_code->GameCodeLibrary)
     {
-        Platform.FreeDynamicLibrary(GameCode->GameCodeLibrary);
-        GameCode->GameCodeLibrary = 0;
+        Platform.FreeDynamicLibrary(game_code->GameCodeLibrary);
+        game_code->GameCodeLibrary = 0;
     }
     
-    GameCode->IsValid = false;
-    GameCode->Update = UpdateStub;
+    game_code->IsValid = false;
+    game_code->Update = UpdateStub;
 }
 
-static void ReloadGameCode(game_code *GameCode, char* GameLibraryPath, char* TempGameLibraryPath)
+static void reload_game_code(GameCode *game_code, char* game_library_path, char* temp_game_library_path)
 {
-    UnloadGameCode(GameCode);
+    unload_game_code(game_code);
     //Sleep(100);
-    LoadGameCode(*GameCode, GameLibraryPath, TempGameLibraryPath);
+    load_game_code(*game_code, game_library_path, temp_game_library_path);
 }
 
-static void ReloadLibraries(game_code *Game, char* GameLibraryPath, char* TempGameLibraryPath)
+static void reload_libraries(GameCode *Game, char* game_library_path, char* temp_game_library_path)
 {
     // @Bug: Not working on Mac
-    time_t LastWriteTime = GetLastWriteTime(GameLibraryPath);
+    time_t last_write_time = get_last_write_time(game_library_path);
     
-    if(LastWriteTime != 0)
+    if(last_write_time != 0)
     {
-        if(difftime(Game->LastLibraryWriteTime, LastWriteTime) != 0)
+        if(difftime(Game->LastLibraryWriteTime, last_write_time) != 0)
         {
-            ReloadGameCode(Game, GameLibraryPath, TempGameLibraryPath);
+            reload_game_code(Game, game_library_path, temp_game_library_path);
             Assert(Game);
             Debug("Reloaded game library\n");
         }
     }
 }
 
-static void SetInvalidKeys()
+static void set_invalid_keys()
 {
     InputController.AnyKeyPressed = false;
-    for(u32 KeyCode = 0; KeyCode < NUM_KEYS; KeyCode++)
+    for(u32 key_code = 0; key_code < NUM_KEYS; key_code++)
     {
-        if(InputController.KeysJustPressed[KeyCode] == Key_JustPressed)
+        if(InputController.KeysJustPressed[key_code] == Key_JustPressed)
         {
-            InputController.KeysJustPressed[KeyCode] = Key_Invalid;
+            InputController.KeysJustPressed[key_code] = Key_Invalid;
         }
-        InputController.KeysUp[KeyCode] = false;
+        InputController.KeysUp[key_code] = false;
     } 
 }
 
-static void SetControllerInvalidKeys()
+static void set_controller_invalid_keys()
 {
     InputController.AnyKeyPressed = false;
-    for(u32 KeyCode = 0; KeyCode < NUM_JOYSTICK_KEYS; KeyCode++)
+    for(u32 key_code = 0; key_code < NUM_JOYSTICK_KEYS; key_code++)
     {
-        if(InputController.JoystickKeysJustPressed[KeyCode] == Key_JustPressed)
+        if(InputController.JoystickKeysJustPressed[key_code] == Key_JustPressed)
         {
-            InputController.JoystickKeysJustPressed[KeyCode] = Key_Invalid;
+            InputController.JoystickKeysJustPressed[key_code] = Key_Invalid;
         }
     }
 }
 
-static void SetMouseInvalidKeys()
+static void set_mouse_invalid_keys()
 {
     InputController.AnyKeyPressed = false;
-    for(u32 KeyCode = 0; KeyCode < NUM_MOUSE_BUTTONS; KeyCode++)
+    for(u32 key_code = 0; key_code < NUM_MOUSE_BUTTONS; key_code++)
     {
-        if(InputController.MouseButtonJustPressed[KeyCode] == Key_JustPressed)
+        if(InputController.MouseButtonJustPressed[key_code] == Key_JustPressed)
         {
-            InputController.MouseButtonJustPressed[KeyCode] = Key_Invalid;
+            InputController.MouseButtonJustPressed[key_code] = Key_Invalid;
         }
-        InputController.MouseButtonsUp[KeyCode] = false;
+        InputController.MouseButtonsUp[key_code] = false;
     }
     InputController.ScrollX = 0;
     InputController.ScrollY = 0;
 }
 
 
-inline void LoadConfig(const char* FilePath, config_data* ConfigData, memory_arena* PermArena)
+inline void load_config(const char* file_path, ConfigData* config_data, MemoryArena* perm_arena)
 {
-    FILE* File;
-    File = fopen(FilePath, "r");
-    char LineBuffer[255];
+    FILE* file;
+    file = fopen(file_path, "r");
+    char line_buffer[255];
     
-    *ConfigData = {};
+    *config_data = {};
     
-    ConfigData->Title = PushString(PermArena, 40);
-    ConfigData->Version = PushString(PermArena, 40);
+    config_data->Title = push_string(perm_arena, 40);
+    config_data->Version = push_string(perm_arena, 40);
     
-    if(File)
+    if(file)
     {
-        while(fgets(LineBuffer, 255, File))
+        while(fgets(line_buffer, 255, file))
         {
-            if(StartsWith(LineBuffer, "title"))
+            if(starts_with(line_buffer, "title"))
             {
                 // @Speed: This can probably be done much better and efficient
-                i32 Index = 0;
-                char TitleBuffer[50];
+                i32 index = 0;
+                char title_buffer[50];
                 
-                b32 AfterTitle = false;
+                b32 after_title = false;
                 
-                for(i32 BufferIndex = 0; BufferIndex < (i32)strlen(LineBuffer) + 1; BufferIndex++)
+                for(i32 buffer_index = 0; buffer_index < (i32)strlen(line_buffer) + 1; buffer_index++)
                 {
-                    if(AfterTitle)
+                    if(after_title)
                     {
-                        char Character = LineBuffer[BufferIndex];
-                        if(Character == '\n' || Character == '\r')
+                        char character = line_buffer[buffer_index];
+                        if(character == '\n' || character == '\r')
                         {
                             break;
                         }
                         else
                         {
-                            TitleBuffer[Index++] = Character;
+                            title_buffer[index++] = character;
                         }
                     }
                     
-                    if(LineBuffer[BufferIndex] == ' ')
+                    if(line_buffer[buffer_index] == ' ')
                     {
-                        AfterTitle = true;
+                        after_title = true;
                     }
                 }
-                TitleBuffer[Index] = '\0';
+                title_buffer[index] = '\0';
                 
-                sprintf(ConfigData->Title, "%s", TitleBuffer);
+                sprintf(config_data->Title, "%s", title_buffer);
             }
-            else if(StartsWith(LineBuffer, "version"))
+            else if(starts_with(line_buffer, "version"))
             {
-                sscanf(LineBuffer, "version %s", ConfigData->Version);
+                sscanf(line_buffer, "version %s", config_data->Version);
             }
-            else if(StartsWith(LineBuffer, "graphics_api"))
+            else if(starts_with(line_buffer, "graphics_api"))
             {
-                char APIString[32];
-                sscanf(LineBuffer, "graphics_api %s", APIString);
+                char api_string[32];
+                sscanf(line_buffer, "graphics_api %s", api_string);
                 
-                if(strcmp(APIString, "opengl") == 0)
+                if(strcmp(api_string, "opengl") == 0)
                 {
-                    ConfigData->GraphicsAPI = Graphics_OpenGl;
+                    config_data->GraphicsAPI = Graphics_OpenGl;
                 }
-                else if(strcmp(APIString, "vulkan") == 0)
+                else if(strcmp(api_string, "vulkan") == 0)
                 {
-                    ConfigData->GraphicsAPI = Graphics_Vulkan;
+                    config_data->GraphicsAPI = Graphics_Vulkan;
                 }
             }
-            else if(StartsWith(LineBuffer, "screen_width"))
+            else if(starts_with(line_buffer, "screen_width"))
             {
-                sscanf(LineBuffer, "screen_width %d", &ConfigData->ScreenWidth);
+                sscanf(line_buffer, "screen_width %d", &config_data->ScreenWidth);
             }
-            else if(StartsWith(LineBuffer, "screen_height"))
+            else if(starts_with(line_buffer, "screen_height"))
             {
-                sscanf(LineBuffer, "screen_height %d", &ConfigData->ScreenHeight);
+                sscanf(line_buffer, "screen_height %d", &config_data->ScreenHeight);
             }
-            else if(StartsWith(LineBuffer, "scale_from_width"))
+            else if(starts_with(line_buffer, "scale_from_width"))
             {
-                sscanf(LineBuffer, "scale_from_width %d", &ConfigData->ScaleFromWidth);
+                sscanf(line_buffer, "scale_from_width %d", &config_data->ScaleFromWidth);
             }
-            else if(StartsWith(LineBuffer, "scale_from_height"))
+            else if(starts_with(line_buffer, "scale_from_height"))
             {
-                sscanf(LineBuffer, "scale_from_height %d", &ConfigData->ScaleFromHeight);
+                sscanf(line_buffer, "scale_from_height %d", &config_data->ScaleFromHeight);
             }
-            else if(StartsWith(LineBuffer, "contrast"))
+            else if(starts_with(line_buffer, "contrast"))
             {
-                sscanf(LineBuffer, "contrast %f", &ConfigData->Contrast);
+                sscanf(line_buffer, "contrast %f", &config_data->Contrast);
             }
-            else if(StartsWith(LineBuffer, "brightness"))
+            else if(starts_with(line_buffer, "brightness"))
             {
-                sscanf(LineBuffer, "brightness %f", &ConfigData->Brightness);
+                sscanf(line_buffer, "brightness %f", &config_data->Brightness);
             }
-            else if(StartsWith(LineBuffer, "fullscreen"))
+            else if(starts_with(line_buffer, "fullscreen"))
             {
-                sscanf(LineBuffer, "fullscreen %d", &ConfigData->Fullscreen);
+                sscanf(line_buffer, "fullscreen %d", &config_data->Fullscreen);
             } 
-            else if(StartsWith(LineBuffer, "muted"))
+            else if(starts_with(line_buffer, "muted"))
             {
-                sscanf(LineBuffer, "muted %d", &ConfigData->Muted);
+                sscanf(line_buffer, "muted %d", &config_data->Muted);
             }
-            else if(StartsWith(LineBuffer, "sfx_volume"))
+            else if(starts_with(line_buffer, "sfx_volume"))
             {
-                sscanf(LineBuffer, "sfx_volume %f", &ConfigData->SFXVolume);
+                sscanf(line_buffer, "sfx_volume %f", &config_data->SFXVolume);
             }
-            else if(StartsWith(LineBuffer, "music_volume"))
+            else if(starts_with(line_buffer, "music_volume"))
             {
-                sscanf(LineBuffer, "music_volume %f", &ConfigData->MusicVolume);
+                sscanf(line_buffer, "music_volume %f", &config_data->MusicVolume);
             }
-            else if(StartsWith(LineBuffer, "zoom"))
+            else if(starts_with(line_buffer, "zoom"))
             {
-                sscanf(LineBuffer, "zoom %f", &ConfigData->Zoom);
+                sscanf(line_buffer, "zoom %f", &config_data->Zoom);
             }
-            else if(StartsWith(LineBuffer, "skipsplashscreen"))
+            else if(starts_with(line_buffer, "skipsplashscreen"))
             {
-                sscanf(LineBuffer, "skipsplashscreen %d", &ConfigData->SkipSplashScreen);
+                sscanf(line_buffer, "skipsplashscreen %d", &config_data->SkipSplashScreen);
             }
         }
         
-        fclose(File);
+        fclose(file);
     }
 }
 
-int main(int Argc, char** Args)
+int main(int argc, char** args)
 {
-    game_memory GameMemory = {};
+    game_memory game_memory = {};
     
-    GameMemory.ShouldReload = true;
+    game_memory.ShouldReload = true;
     
-    GameMemory.ExitGame = false;
+    game_memory.ExitGame = false;
     
-    InitPlatform(GameMemory.PlatformAPI);
+    init_platform(game_memory.PlatformAPI);
     
-    Platform = GameMemory.PlatformAPI;
+    Platform = game_memory.PlatformAPI;
     
-    platform_state* PlatformState = BootstrapPushStruct(platform_state, PermArena);
+    PlatformState* platform_state = BootstrapPushStruct(platform_state, PermArena);
     
-    LogState = GameMemory.LogState;
-    InitLog(LFlag_File, Concat("../log_", "", &PlatformState->PermArena));
+    LogState = game_memory.LogState;
+    init_log(LFlag_File, concat("../log_", "", &platform_state->PermArena));
     
 #ifdef __APPLE__
     char* GameLibraryPath = "libgame.dylib";
@@ -289,38 +289,38 @@ int main(int Argc, char** Args)
     char* GameLibraryPath = "game.dll";
     char* TempGameLibraryPath = "game_temp.dll";
 #else
-    char* GameLibraryPath = "libgame.so";
-    char* TempGameLibraryPath = "libgame_temp.so";
+    char* game_library_path = "libgame.so";
+    char* temp_game_library_path = "libgame_temp.so";
 #endif
     
-    memory_arena DebugArena = {};
+    MemoryArena debug_arena = {};
     
-    GameMemory.DebugState = PushStruct(&PlatformState->PermArena, debug_state);
+    game_memory.DebugState = PushStruct(&PlatformState->PermArena, debug_state);
     
-    GameMemory.DebugState->DebugMemoryInfo.DebugRect.RectOrigin = math::v2(50, 780);
-    GameMemory.DebugState->DebugMemoryInfo.DebugRect.RectSize = math::v2(300,0);
+    game_memory.DebugState->DebugMemoryInfo.DebugRect.RectOrigin = math::v2(50, 780);
+    game_memory.DebugState->DebugMemoryInfo.DebugRect.RectSize = math::v2(300,0);
     
-    config_data ConfigData;
-    LoadConfig("../.config", &ConfigData, &PlatformState->PermArena);
+    ConfigData config_data;
+    load_config("../.config", &config_data, &platform_state->PermArena);
     
-    GameMemory.ConfigData = ConfigData;
+    game_memory.ConfigData = config_data;
     
-    InitKeys();
-    render_state RenderState = {};
-    RenderState.Arena = {};
-    renderer Renderer = {};
+    init_keys();
+    RenderState render_state = {};
+    render_state.Arena = {};
+    Renderer renderer = {};
     Renderer.PixelsPerUnit = 8;
     Renderer.FrameLock = 0;
-    RenderState.FrameDelta = 0.0;
+    render_state.FrameDelta = 0.0;
     
     Renderer.AnimationControllers = PushArray(&Renderer.AnimationArena, 64, animation_controller);
-    Renderer.Commands.MinimumBlockSize = sizeof(render_command) * MAX_RENDER_COMMANDS;
-    Renderer.UICommands.MinimumBlockSize = sizeof(render_command) * MAX_UI_COMMANDS;
-    Renderer.LightCommands.MinimumBlockSize = sizeof(render_command) * MAX_LIGHT_COMMANDS;
+    Renderer.Commands.MinimumBlockSize = sizeof(RenderCommand) * MAX_RENDER_COMMANDS;
+    Renderer.UICommands.MinimumBlockSize = sizeof(RenderCommand) * MAX_UI_COMMANDS;
+    Renderer.LightCommands.MinimumBlockSize = sizeof(RenderCommand) * MAX_LIGHT_COMMANDS;
     Renderer.SpritesheetAnimationCount = 0;
     Renderer.AnimationControllerCount = 0;
     
-    if(ConfigData.GraphicsAPI == Graphics_Vulkan)
+    if(config_data.GraphicsAPI == Graphics_Vulkan)
     {
 #if __LINUX || _WIN32
         vk_render_state VkRenderState;
@@ -328,93 +328,93 @@ int main(int Argc, char** Args)
         VkRender(VkRenderState, Renderer);
 #endif
     }
-    else if(ConfigData.GraphicsAPI == Graphics_OpenGl)
+    else if(config_data.GraphicsAPI == Graphics_OpenGl)
     {
-        InitializeOpenGL(RenderState, Renderer, &ConfigData, &PlatformState->PermArena);
+        initialize_open_gl(render_state, Renderer, &config_data, &platform_state->PermArena);
     }
     
-    game_code Game = {};
-    Game.IsValid = false;
-    LoadGameCode(Game, GameLibraryPath, TempGameLibraryPath);
-    timer_controller TimerController;
-    TimerController.TimerCount = 0;
+    GameCode game = {};
+    game.IsValid = false;
+    load_game_code(game, game_library_path, temp_game_library_path);
+    TimerController timer_controller;
+    timer_controller.TimerCount = 0;
     
     //setup asset reloading
-    asset_manager AssetManager = {};
-    StartupFileTimeChecks(&AssetManager, GameLibraryPath);
+    AssetManager asset_manager = {};
+    startup_file_time_checks(&asset_manager, game_library_path);
     
-    u32 FrameCounterForAssetCheck = 0;
+    u32 frame_counter_for_asset_check = 0;
     
-    sound_device SoundDevice = {};
-    InitAudio_FMOD(&SoundDevice);
+    SoundDevice sound_device = {};
+    init_audio_fmod(&sound_device);
     
-    sound_commands SoundCommands = {};
-    SoundCommands.SoundArena.MinimumBlockSize = sizeof(sound_effect) * MAX_SOUND_EFFECTS;
+    SoundCommands sound_commands = {};
+    sound_commands.SoundArena.MinimumBlockSize = sizeof(SoundEffect) * MAX_SOUND_EFFECTS;
     
-    if (SoundDevice.IsInitialized)
+    if (sound_device.IsInitialized)
     {
-        ResetCommands(&SoundCommands);
-        SoundCommands.SFXVolume = ConfigData.SFXVolume;
-        SoundCommands.MusicVolume = ConfigData.MusicVolume;
-        SoundCommands.Muted = ConfigData.Muted;
+        reset_commands(&sound_commands);
+        sound_commands.SFXVolume = config_data.SFXVolume;
+        sound_commands.MusicVolume = config_data.MusicVolume;
+        sound_commands.Muted = config_data.Muted;
     }
     
-    r64 LastFrame = GetTime();
-    r64 CurrentFrame = 0.0;
-    r64 DeltaTime;
+    r64 last_frame = get_time();
+    r64 current_frame = 0.0;
+    r64 delta_time;
     Renderer.FrameLock = 0;
     
-    while (!ShouldCloseWindow(RenderState) && !Renderer.ShouldClose)
+    while (!should_close_window(render_state) && !Renderer.ShouldClose)
     {
         //calculate deltatime
-        CurrentFrame = GetTime();
-        DeltaTime = Min(CurrentFrame - LastFrame, 0.1);
+        CurrentFrame = get_time();
+        delta_time = Min(CurrentFrame - LastFrame, 0.1);
         LastFrame = CurrentFrame;
         
-        if(GameMemory.ExitGame)
+        if(game_memory.ExitGame)
         {
             Debug("Quit\n");
-            glfwSetWindowShouldClose(RenderState.Window, GLFW_TRUE);
+            glfwSetWindowShouldClose(render_state.Window, GLFW_TRUE);
         }
         
-        ShowMouseCursor(RenderState, Renderer.ShowMouseCursor);
+        show_mouse_cursor(render_state, Renderer.ShowMouseCursor);
         
-        ReloadAssets(RenderState, &AssetManager, &PlatformState->PermArena);
+        reload_assets(render_state, &asset_manager, &platform_state->PermArena);
         
-        ReloadLibraries(&Game, GameLibraryPath, TempGameLibraryPath);
+        reload_libraries(&game, game_library_path, temp_game_library_path);
         
-        Game.Update(DeltaTime, &GameMemory, Renderer, &InputController, &SoundCommands, TimerController);
+        game.Update(delta_time, &game_memory, Renderer, &InputController, &sound_commands, timer_controller);
         
-        TickAnimationControllers(Renderer, &SoundCommands, &InputController, TimerController, DeltaTime);
-        TickTimers(TimerController, DeltaTime);
+        tick_animation_controllers(Renderer, &sound_commands, &InputController, timer_controller, delta_time);
+        tick_timers(timer_controller, delta_time);
         
-        PlaySounds(&SoundDevice, &SoundCommands);
+        play_sounds(&sound_device, &sound_commands);
         
-        Render(RenderState, Renderer, &PlatformState->PermArena, DeltaTime);
+        render(render_state, Renderer, &platform_state->PermArena, delta_time);
         
-        SetControllerInvalidKeys();
-        SetInvalidKeys();
-        SetMouseInvalidKeys();
+        set_controller_invalid_keys();
+        set_invalid_keys();
+        set_mouse_invalid_keys();
         
-        PollEvents();
+        poll_events();
         
-        if(ControllerPresent())
+        if(controller_present())
         {
-            ControllerKeys(GLFW_JOYSTICK_1);
+            controller_keys(GLFW_JOYSTICK_1);
         }
         
-        FrameCounterForAssetCheck++;
-        if(FrameCounterForAssetCheck == 10)
+        frame_counter_for_asset_check++;
+        if(frame_counter_for_asset_check == 10)
         {
-            ListenToFileChanges(&AssetManager);
-            FrameCounterForAssetCheck = 0;
+            listen_to_file_changes(&asset_manager);
+            frame_counter_for_asset_check = 0;
         }
         
-        UpdateLog();
-        ClearTempMemory();
+        update_log();
+        clear_temp_memory();
     }
     
-    CloseLog();
-    CleanupSound(&SoundDevice);
-    CloseWindow(RenderState);
+    close_log();
+    cleanup_sound(&sound_device);
+    close_window(render_state);
 }

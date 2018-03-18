@@ -14,10 +14,14 @@ CheckOptions=""{CheckOptions: [{key: readability-identifier-naming.ClassCase, va
 pushd build
 
 
-clang-tidy -checks='-*,readability-identifier-naming' \
+clang-tidy -checks='-*,readability-identifier-naming' -fix -fix-errors \
 -config="{CheckOptions: [ {key: readability-identifier-naming.StructCase, value: CamelCase}, \
 {key: readability-identifier-naming.FunctionCase, value: lower_case}, \
-{key: readability-identifier-naming.LocalVariableCase, value: lower_case}]}" \
+{key: readability-identifier-naming.LocalVariableCase, value: lower_case}, \
+{key: readability-identifier-naming.EnumCase, value: CamelCase},\
+{key: readability-identifier-naming.MemberCase, value: lower_case},\
+{key: readability-identifier-naming.PublicMemberCase, value: lower_case}, \
+{key: readability-identifier-naming.ParameterCase, value: lower_case}]}" \
 -header-filter=.* ../src/main.cpp -- -std=c++14 -fno-delayed-template-parsing -isystem ../libs -isystem ../libs/glad/include -isystem ../libs/fmod/include -isystem $VULKAN_SDK/include -isystem ../libs/FreeType/include -DGLITCH_DEBUG=1
 
 

@@ -5,35 +5,35 @@
 #define MAX_LOG_MESSAGES 2048
 
 
-enum Log_Flags
+enum LogFlags
 {
     LFlag_File = (1 << 0),
     LFlag_Debug = (2 << 0)
 };
 
-struct log_state
+struct LogState
 {
-    char* LogBuffer[MAX_LOG_MESSAGES];
-    i32 LogCount;
+    char* log_buffer[MAX_LOG_MESSAGES];
+    i32 log_count;
     
-    u32 Flags;
+    u32 flags;
     
     union
     {
         struct
         {
-            char* FilePath;
-            FILE* FileHandle;
-        } File;
+            char* file_path;
+            FILE* file_handle;
+        } file;
         struct
         {
             
-        } PrintLogging;
+        } print_logging;
     };
     
 };
 
-extern log_state LogState;
+extern LogState LogState;
 
 #endif
 

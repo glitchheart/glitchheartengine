@@ -10,74 +10,74 @@
 #define MAX_SPRITESHEET_ANIMATIONS 128
 #define MAX_SPRITESHEET_ANIMATION_INFOS 256
 
-struct font_data
+struct FontData
 {
-    char* Path;
-    i32 Size;
-    char* Name;
+    char* path;
+    i32 size;
+    char* name;
 };
 
-struct spotlight
+struct Spotlight
 {
-    r32 Position[4];
-    r32 Direction[4];
+    r32 position[4];
+    r32 direction[4];
     
-    r32 CutOff;
-    r32 OuterCutOff;
-    r32 P; // Padding
-    r32 P1; // Padding
+    r32 cut_off;
+    r32 outer_cut_off;
+    r32 p; // Padding
+    r32 p1; // Padding
     
-    r32 Ambient[4];
-    r32 Diffuse[4];
-    r32 Specular[4];
+    r32 ambient[4];
+    r32 diffuse[4];
+    r32 specular[4];
     
-    r32 Constant;
-    r32 Linear;
-    r32 Quadratic;
-    r32 P3; // Padding
+    r32 constant;
+    r32 linear;
+    r32 quadratic;
+    r32 p3; // Padding
 };
 
-struct directional_light
+struct DirectionalLight
 {
-    r32 Direction[4];
-    r32 Ambient[4];
-    r32 Diffuse[4];
-    r32 Specular[4];
+    r32 direction[4];
+    r32 ambient[4];
+    r32 diffuse[4];
+    r32 specular[4];
 };
 
-struct point_light
+struct PointLight
 {
-    r32 Position[4];
+    r32 position[4];
     
-    r32 Constant;
-    r32 Linear;
-    r32 Quadratic;
-    r32 Padding;
+    r32 constant;
+    r32 linear;
+    r32 quadratic;
+    r32 padding;
     
-    r32 Ambient[4];
-    r32 Diffuse[4];
-    r32 Specular[4];
+    r32 ambient[4];
+    r32 diffuse[4];
+    r32 specular[4];
 };
 
-struct spotlight_data
+struct SpotlightData
 {
-    i32 NumLights; // GLSL: 16, x64: 4: We need 12 bytes of padding
-    math::v3 Padding; // 3 * r32 = 3 * 4 = 12 bytes of padding!
-    spotlight Spotlights[MAX_LIGHTS];
+    i32 num_lights; // GLSL: 16, x64: 4: We need 12 bytes of padding
+    math::v3 padding; // 3 * r32 = 3 * 4 = 12 bytes of padding!
+    Spotlight spotlights[MAX_LIGHTS];
 };
 
-struct directional_light_data // GLSL: 96, x64: 68 -> 96 - 68 = 24
+struct DirectionalLightData // GLSL: 96, x64: 68 -> 96 - 68 = 24
 {
-    i32 NumLights; // GLSL: 16, x64: 4: We need 12 bytes of padding
-    math::v3 Padding; // 3 * r32 = 3 * 4 = 12 bytes of padding!
-    directional_light DirectionalLights[MAX_LIGHTS];
+    i32 num_lights; // GLSL: 16, x64: 4: We need 12 bytes of padding
+    math::v3 padding; // 3 * r32 = 3 * 4 = 12 bytes of padding!
+    DirectionalLight directional_lights[MAX_LIGHTS];
 };
 
-struct point_light_data
+struct PointLightData
 {
-    i32 NumLights; // GLSL: 16, x64: 4: We need 12 bytes of padding
-    math::v3 Padding; // 3 * r32 = 3 * 4 = 12 bytes of padding!
-    point_light PointLights[MAX_LIGHTS];
+    i32 num_lights; // GLSL: 16, x64: 4: We need 12 bytes of padding
+    math::v3 padding; // 3 * r32 = 3 * 4 = 12 bytes of padding!
+    PointLight point_lights[MAX_LIGHTS];
 };
 
 enum Shader_Type
@@ -101,7 +101,7 @@ enum Shader_Type
     Shader_Count
 };
 
-enum Render_Command_Type
+enum RenderCommandType
 {
     RenderCommand_Line,
     RenderCommand_Text,
@@ -128,120 +128,120 @@ enum Alignment
     Alignment_Center
 };
 
-struct shader
+struct Shader
 {
-    Shader_Type Type;
-    b32 Loaded;
-    u32 Program;
-    u32 VertexShader;
-    u32 FragmentShader;
+    Shader_Type type;
+    b32 loaded;
+    u32 program;
+    u32 vertex_shader;
+    u32 fragment_shader;
 };
 
-struct texture_info
+struct TextureInfo
 {
-    b32 HasData;
-    char TextureName[50];
-    i32 TextureHandle;
+    b32 has_data;
+    char texture_name[50];
+    i32 texture_handle;
 };
 
-struct material
+struct Material
 {
-    texture_info DiffuseTexture;
+    TextureInfo diffuse_texture;
 };
 
-struct vec3_keys
+struct Vec3Keys
 {
-    i32 NumKeys;
-    r32* TimeStamps;
-    math::v3* Values;
+    i32 num_keys;
+    r32* time_stamps;
+    math::v3* values;
 };
 
-struct quat_keys
+struct QuatKeys
 {
-    i32 NumKeys;
-    r32* TimeStamps;
-    math::quat* Values;
+    i32 num_keys;
+    r32* time_stamps;
+    math::quat* values;
 };
 
-struct bone_channel
+struct BoneChannel
 {
-    i32 BoneIndex;
-    vec3_keys PositionKeys;
-    quat_keys RotationKeys;
-    vec3_keys ScalingKeys;
+    i32 bone_index;
+    Vec3Keys position_keys;
+    QuatKeys rotation_keys;
+    Vec3Keys scaling_keys;
 };
 
-struct skeletal_animation
+struct SkeletalAnimation
 {
-    char* Name;
-    r32 Duration;
-    i32 NumBoneChannels;
-    bone_channel* BoneChannels;
+    char* name;
+    r32 duration;
+    i32 num_bone_channels;
+    BoneChannel* bone_channels;
 };
 
-struct skeletal_animation_state
+struct SkeletalAnimationState
 {
-    b32 Playing;
-    b32 Loop;
-    r32 CurrentTime;
+    b32 playing;
+    b32 loop;
+    r32 current_time;
 };
 
-struct bone
+struct Bone
 {
-    char Name[30];
-    i32 ParentId;
-    u32 Children[MAX_CHILDREN];
-    i32 ChildCount;
+    char name[30];
+    i32 parent_id;
+    u32 children[MAX_CHILDREN];
+    i32 child_count;
     
-    math::m4 Transformation;
-    math::m4 BoneOffset;
+    math::m4 transformation;
+    math::m4 bone_offset;
 };
 
-struct mesh_data
+struct MeshData
 {
-    i32 BaseVertex;
-    i32 BaseIndex;
-    i32 MaterialIndex;
-    i32 NumIndices;
+    i32 base_vertex;
+    i32 base_index;
+    i32 material_index;
+    i32 num_indices;
 };
 
-enum Model_Type
+enum ModelType
 {
     Model_Static,
     Model_Skinned
 };
 
-struct model
+struct Model
 {
-    Model_Type Type;
+    ModelType type;
     
-    i32 BufferHandle;
+    i32 buffer_handle;
     
-    math::v3 Position;
-    math::v3 Scale;
-    math::quat Orientation;
+    math::v3 position;
+    math::v3 scale;
+    math::quat orientation;
     
-    math::rgba Color;
+    math::rgba color;
     
-    material Materials[10];
-    i32 MaterialCount;
+    Material materials[10];
+    i32 material_count;
     
-    mesh_data Meshes[MAX_MESHES];
-    i32 MeshCount;
+    MeshData meshes[MAX_MESHES];
+    i32 mesh_count;
     
-    bone* Bones;
-    i32 BoneCount;
+    Bone* bones;
+    i32 bone_count;
     
-    skeletal_animation_state AnimationState;
-    i32 RunningAnimationIndex;
-    math::m4* CurrentPoses;
-    skeletal_animation* Animations;
-    i32 AnimationCount;
+    SkeletalAnimationState animation_state;
+    i32 running_animation_index;
+    math::m4* current_poses;
+    SkeletalAnimation* animations;
+    i32 animation_count;
     
-    math::m4 GlobalInverseTransform;
+    math::m4 global_inverse_transform;
 };
 
-enum Shader_Attribute_Type
+enum ShaderAttributeType
 {
     Attribute_Float,
     Attribute_Float2,
@@ -252,140 +252,140 @@ enum Shader_Attribute_Type
     Attribute_Matrix4
 };
 
-struct shader_attribute
+struct ShaderAttribute
 {
-    Shader_Attribute_Type Type;
-    char* Name;
+    ShaderAttributeType type;
+    char* name;
     union
     {
-        r32 FloatVar;
-        math::v2 Float2Var;
-        math::v3 Float3Var;
-        math::v4 Float4Var;
-        i32 IntegerVar;
-        b32 BooleanVar;
-        math::m4 Matrix4Var;
+        r32 float_var;
+        math::v2 float2_var;
+        math::v3 float3_var;
+        math::v4 float4_var;
+        i32 integer_var;
+        b32 boolean_var;
+        math::m4 matrix4_var;
     };
 };
 
-struct render_command
+struct RenderCommand
 {
-    Render_Command_Type Type;
-    Shader_Type ShaderType;
-    b32 IsUI;
+    RenderCommandType type;
+    Shader_Type shader_type;
+    b32 is_ui;
     
-    math::v3 Position;
-    math::v3 Scale;
-    math::v3 Rotation;
-    math::quat Orientation;
-    b32 WithOrigin;
-    math::v2 Origin;
-    math::rgba Color;
-    i32 ShaderHandle;
-    shader_attribute* ShaderAttributes;
-    i32 ShaderAttributeCount;
+    math::v3 position;
+    math::v3 scale;
+    math::v3 rotation;
+    math::quat orientation;
+    b32 with_origin;
+    math::v2 origin;
+    math::rgba color;
+    i32 shader_handle;
+    ShaderAttribute* shader_attributes;
+    i32 shader_attribute_count;
     
     union
     {
         struct
         {
-            math::v3 Point1;
-            math::v3 Point2;
-            r32 LineWidth;
-            math::rgba Color; // @Cleanup: REMOVE!
-        } Line;
+            math::v3 point1;
+            math::v3 point2;
+            r32 line_width;
+            math::rgba color; // @Cleanup: REMOVE!
+        } line;
         struct
         {
-            char Text[256];
-            math::v3 Position;
-            i32 FontHandle;
-            math::rgba Color; // @Cleanup: REMOVE!
-            Alignment Alignment;
-            r32 Scale;
-        } Text;
+            char text[256];
+            math::v3 position;
+            i32 font_handle;
+            math::rgba color; // @Cleanup: REMOVE!
+            Alignment alignment;
+            r32 scale;
+        } text;
         struct
         {
-            math::rgba Color;
-        } Sprite;
+            math::rgba color;
+        } sprite;
         struct
         {
-            i32 TextureHandle;
-            b32 Flipped;
-            math::rgba Color; // @Cleanup: REMOVE!
-            b32 Outlined;
-            r32 LineWidth;
-            b32 ForAnimation;
-            math::v2 TextureSize;
-            math::v2i FrameSize;
-            math::v2 TextureOffset;
-        } Quad;
+            i32 texture_handle;
+            b32 flipped;
+            math::rgba color; // @Cleanup: REMOVE!
+            b32 outlined;
+            r32 line_width;
+            b32 for_animation;
+            math::v2 texture_size;
+            math::v2i frame_size;
+            math::v2 texture_offset;
+        } quad;
         struct
         {
-            math::rgba Color; // @Cleanup: REMOVE!
-            r32 LineWidth;
-        } WireframeCube;
+            math::rgba color; // @Cleanup: REMOVE!
+            r32 line_width;
+        } wireframe_cube;
         struct
         {
-            math::v3 Direction;
-            r32 CutOff;
-            r32 OuterCutOff;
-            math::v3 Ambient;
-            math::v3 Diffuse;
-            math::v3 Specular;
+            math::v3 direction;
+            r32 cut_off;
+            r32 outer_cut_off;
+            math::v3 ambient;
+            math::v3 diffuse;
+            math::v3 specular;
             
-            r32 Constant;
-            r32 Linear;
-            r32 Quadratic;
-        } Spotlight;
+            r32 constant;
+            r32 linear;
+            r32 quadratic;
+        } spotlight;
         struct 
         {
-            math::v3 Direction;
-            math::v3 Ambient;
-            math::v3 Diffuse;
-            math::v3 Specular;
-        } DirectionalLight;
+            math::v3 direction;
+            math::v3 ambient;
+            math::v3 diffuse;
+            math::v3 specular;
+        } directional_light;
         struct
         {
-            math::v3 Ambient;
-            math::v3 Diffuse;
-            math::v3 Specular;
+            math::v3 ambient;
+            math::v3 diffuse;
+            math::v3 specular;
             
-            r32 Constant;
-            r32 Linear;
-            r32 Quadratic;
-        } PointLight;
+            r32 constant;
+            r32 linear;
+            r32 quadratic;
+        } point_light;
         struct
         {
-            i32 BufferHandle;
-            i32 TextureHandle;
-        } Buffer;
+            i32 buffer_handle;
+            i32 texture_handle;
+        } buffer;
         struct
         {
-            Model_Type Type;
-            i32 BufferHandle;
-            mesh_data Meshes[MAX_MESHES];
-            i32 MeshCount;
-            material Materials[10];
-            i32 MaterialCount;
-            math::rgba Color;
-            math::m4* BoneTransforms;
-            i32 BoneCount;
-        } Model;
+            ModelType type;
+            i32 buffer_handle;
+            MeshData meshes[MAX_MESHES];
+            i32 mesh_count;
+            Material materials[10];
+            i32 material_count;
+            math::rgba color;
+            math::m4* bone_transforms;
+            i32 bone_count;
+        } model;
         struct
         {
-            i32 Handle;
-            shader_attribute* Attributes;
-            i32 AttributeCount;
-        } Shader;
+            i32 handle;
+            ShaderAttribute* attributes;
+            i32 attribute_count;
+        } shader;
         struct
         {
-            b32 On;
-        } DepthTest;
+            b32 on;
+        } depth_test;
     };
-    render_command() {}
+    RenderCommand() {}
 };
 
-enum Fading_Mode
+enum FadingMode
 {
     Fading_None,
     Fading_In,
@@ -393,27 +393,27 @@ enum Fading_Mode
     Fading_OutIn
 };
 
-struct camera
+struct Camera
 {
-    i32 ViewportWidth;
-    i32 ViewportHeight;
-    r32 Zoom;
-    math::v3 Center;
-    math::v3 Position;
-    math::quat Orientation;
-    math::v3 Target;
+    i32 viewport_width;
+    i32 viewport_height;
+    r32 zoom;
+    math::v3 center;
+    math::v3 position;
+    math::quat orientation;
+    math::v3 target;
     
-    r32 FollowSpeed;
-    math::m4 ViewMatrix;
-    math::m4 ProjectionMatrix;
+    r32 follow_speed;
+    math::m4 view_matrix;
+    math::m4 projection_matrix;
     
-    Fading_Mode FadingMode = Fading_None;
-    math::v3 FadingTint;
+    FadingMode fading_mode = Fading_None;
+    math::v3 fading_tint;
     
-    b32 FadingIn;
-    r32 EndAlpha;
-    r32 FadingAlpha = 0.0f;
-    r32 FadingSpeed;
+    b32 fading_in;
+    r32 end_alpha;
+    r32 fading_alpha = 0.0f;
+    r32 fading_speed;
 };
 
 #define RENDER_COMMAND_MAX 400
@@ -423,63 +423,63 @@ struct camera
 
 struct texture_data
 {
-    i32 Handle;
-    char* Name;
-    i32 Width;
-    i32 Height;
-    unsigned char* ImageData;
+    i32 handle;
+    char* name;
+    i32 width;
+    i32 height;
+    unsigned char* image_data;
 };
 
-struct shader_data
+struct ShaderData
 {
-    i32 Handle;
-    char Name[512];
-    char* VertexShaderContent;
-    char* FragmentShaderContent;
+    i32 handle;
+    char name[512];
+    char* vertex_shader_content;
+    char* fragment_shader_content;
 };
 
-struct ui_render_info
+struct UiRenderInfo
 {
-    b32 Rendered = true;
+    b32 rendered = true;
     
-    i32 TextureHandle;
-    math::v2 TextureOffset;
-    math::v2 FrameSize;
-    u32 ShaderIndex;
-    math::v2 Size = math::v2(1, 1);
-    math::v4 Color = math::v4(1, 1, 1, 1);
+    i32 texture_handle;
+    math::v2 texture_offset;
+    math::v2 frame_size;
+    u32 shader_index;
+    math::v2 size = math::v2(1, 1);
+    math::v4 color = math::v4(1, 1, 1, 1);
 };
 
 GENERIC_MAP(texture_data, texture_data*, char*, StrCmp, NULL, "%s", STR_ASSIGN, PTR_COPY);
 
-struct buffer_data
+struct BufferData
 {
-    r32* VertexBuffer;
-    long VertexBufferSize;
-    u32* IndexBuffer;
-    i32 IndexBufferCount;
-    long IndexBufferSize;
-    b32 HasNormals;
-    b32 HasUVs;
-    b32 Skinned;
+    r32* vertex_buffer;
+    long vertex_buffer_size;
+    u32* index_buffer;
+    i32 index_buffer_count;
+    long index_buffer_size;
+    b32 has_normals;
+    b32 has_u_vs;
+    b32 skinned;
     
-    Shader_Type ShaderType;
-    i32 ExistingHandle = -1;
+    Shader_Type shader_type;
+    i32 existing_handle = -1;
 };
 
-struct particle
+struct Particle
 {
-    math::v3 Center;
+    math::v3 center;
 };
 
 #define MAX_PARTICLES 256
-struct particle_system
+struct ParticleSystem
 {
-    i32 ParticleTexture;
-    particle Particles[MAX_PARTICLES];
-    i32 ParticleCount;
-    i32 Rate; // Particles per second
-    r32 ParticleSpeed;
+    i32 particle_texture;
+    Particle particles[MAX_PARTICLES];
+    i32 particle_count;
+    i32 rate; // Particles per second
+    r32 particle_speed;
 };
 
 #define MAX_CAMERAS 8
@@ -489,83 +489,83 @@ struct particle_system
 #define MAX_UI_COMMANDS 2048 // @Incomplete: This should be defined by the game itself (HARDCODED FOR LEVEL EDITOR RIGHT NOW)
 #define MAX_LIGHT_COMMANDS 1024
 
-struct renderer
+struct Renderer
 {
-    b32 ShouldClose;
-    r64 FPS;
-    r64 AverageFPS;
-    r64 FPSSum;
-    u64 CurrentFrame;
-    i32 PixelsPerUnit;
-    i32 FrameLock;
+    b32 should_close;
+    r64 fps;
+    r64 average_fps;
+    r64 fps_sum;
+    u64 current_frame;
+    i32 pixels_per_unit;
+    i32 frame_lock;
     
-    Window_Mode WindowMode;
+    WindowMode window_mode;
     
-    memory_arena Commands;
-    i32 CommandCount;
+    MemoryArena commands;
+    i32 command_count;
     
-    memory_arena UICommands;
-    i32 UICommandCount;
+    MemoryArena ui_commands;
+    i32 ui_command_count;
     
-    memory_arena LightCommands;
-    i32 LightCommandCount;
+    MemoryArena light_commands;
+    i32 light_command_count;
     
-    buffer_data Buffers[BUFFER_ARRAY_SIZE];
-    i32 BufferHandles[BUFFER_ARRAY_SIZE];
-    i32 BufferCount;
+    BufferData buffers[BUFFER_ARRAY_SIZE];
+    i32 buffer_handles[BUFFER_ARRAY_SIZE];
+    i32 buffer_count;
     
-    i32 UpdatedBufferHandles[BUFFER_ARRAY_SIZE];
-    i32 UpdatedBufferHandleCount;
+    i32 updated_buffer_handles[BUFFER_ARRAY_SIZE];
+    i32 updated_buffer_handle_count;
     
-    texture_data TextureData[TEXTURE_ARRAY_SIZE];
-    i32 TextureCount;
+    texture_data texture_data[TEXTURE_ARRAY_SIZE];
+    i32 texture_count;
     
-    i32 TextureHandles[TEXTURE_ARRAY_SIZE];
+    i32 texture_handles[TEXTURE_ARRAY_SIZE];
     
-    texture_data_map TextureMap;
+    texture_data_map texture_map;
     
-    shader_data ShaderData[SHADER_ARRAY_SIZE];
-    i32 ShaderCount;
+    ShaderData shader_data[SHADER_ARRAY_SIZE];
+    i32 shader_count;
     
-    camera Cameras[MAX_CAMERAS];
-    i32 CurrentCameraHandle;
+    Camera cameras[MAX_CAMERAS];
+    i32 current_camera_handle;
     
-    animation_controller* AnimationControllers;
-    i32 AnimationControllerCount;
+    AnimationController* animation_controllers;
+    i32 animation_controller_count;
     
-    spritesheet_animation SpritesheetAnimations[MAX_SPRITESHEET_ANIMATIONS];
-    i32 SpritesheetAnimationCount;
+    SpritesheetAnimation spritesheet_animations[MAX_SPRITESHEET_ANIMATIONS];
+    i32 spritesheet_animation_count;
     
     union
     {
-        i32 Viewport[4];
-        math::v4i V;
+        i32 viewport[4];
+        math::v4i v;
         struct
         {
-            i32 ViewportX;
-            i32 ViewportY;
-            i32 ViewportWidth;
-            i32 ViewportHeight;
+            i32 viewport_x;
+            i32 viewport_y;
+            i32 viewport_width;
+            i32 viewport_height;
         };
     };
     
-    i32 WindowWidth;
-    i32 WindowHeight;
+    i32 window_width;
+    i32 window_height;
     
-    r32 ScaleX;
-    r32 ScaleY;
+    r32 scale_x;
+    r32 scale_y;
     
-    math::rgba ClearColor;
-    r32 LineWidth;
+    math::rgba clear_color;
+    r32 line_width;
     
-    b32 ShowMouseCursor;
+    b32 show_mouse_cursor;
     
-    font_data Fonts[64];
-    i32 FontCount;
+    FontData fonts[64];
+    i32 font_count;
     
-    memory_arena TextureArena;
-    memory_arena AnimationArena;
-    memory_arena FontArena;
+    MemoryArena texture_arena;
+    MemoryArena animation_arena;
+    MemoryArena font_arena;
 };
 
 #endif

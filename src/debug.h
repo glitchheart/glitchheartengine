@@ -3,12 +3,12 @@
 
 #if GLITCH_DEBUG
 
-struct debug_rect
+struct DebugRect
 {
-    math::v2 RectOrigin;
-    math::v2 RectSize;
+    math::v2 rect_origin;
+    math::v2 rect_size;
     
-    b32 Selected;
+    b32 selected;
 };
 
 enum DebugType
@@ -18,81 +18,81 @@ enum DebugType
     DB_U64
 };
 
-struct debug_value
+struct DebugValue
 {
-    DebugType Type;
-    char* Format;
+    DebugType type;
+    char* format;
     
     union
     {
         struct
         {
-            r32 Value;
-        } Float;
+            r32 value;
+        } float;
         struct
         {
-            i32 Value;
-        } Int;
+            i32 value;
+        } int;
         struct
         {
-            u64 Value;
-        } U64;
+            u64 value;
+        } u64;
     };
 };
 
-struct debug_info
+struct DebugInfo
 {
-    char* Header;
-    debug_value DebugValues[16];
-    i32 DebugValueCount;
+    char* header;
+    DebugValue debug_values[16];
+    i32 debug_value_count;
 };
 
-struct debug_memory_info
+struct DebugMemoryInfo
 {
-    debug_rect DebugRect;
-    debug_info DebugInfo[16];
-    i32 DebugInfoCount;
+    DebugRect debug_rect;
+    DebugInfo debug_info[16];
+    i32 debug_info_count;
 };
 
-struct debug_state
+struct DebugState
 {
-    debug_memory_info DebugMemoryInfo;
-    b32 DebugMemory;
+    DebugMemoryInfo debug_memory_info;
+    b32 debug_memory;
 };
 
-struct memory_arena;
+struct MemoryArena;
 
-inline void AddDebugValue(memory_arena* DebugArena, debug_info* DebugInfo, const char* Description, i32 Value)
+inline void add_debug_value(MemoryArena* debug_arena, DebugInfo* debug_info, const char* description, i32 value)
 {
-    debug_value DebugValue = {};
-    DebugValue.Type = DB_Int;
-    char* Format = Concat("\t", Concat(Description, ": %d", DebugArena), DebugArena);
-    DebugValue.Format = PushString(DebugArena, (u32)strlen(Format));
-    strcpy(DebugValue.Format, Format);
-    DebugValue.Int.Value = Value;
-    DebugInfo->DebugValues[DebugInfo->DebugValueCount++] = DebugValue;
+    DebugValue debug_value = {};
+    debug_value.Type = DB_Int;
+    char* format = concat("\t", concat(description, ": %d", debug_arena), debug_arena);
+    debug_value.Format = push_string(debug_arena, (u32)strlen(format));
+    strcpy(debug_value.Format, format);
+    debug_value.Int.Value = value;
+    debug_info->DebugValues[debug_info->DebugValueCount++] = debug_value;
 }
 
-inline void AddDebugValue(memory_arena* DebugArena, debug_info* DebugInfo, char* Description, u64 Value)
+inline void add_debug_value(MemoryArena* debug_arena, DebugInfo* debug_info, char* description, u64 value)
 {
-    debug_value DebugValue = {};
-    DebugValue.Type = DB_U64;
-    char* Format = Concat("\t", Concat(Description, ": %llu", DebugArena), DebugArena);
-    DebugValue.Format = PushString(DebugArena, (u32)strlen(Format));
-    strcpy(DebugValue.Format, Format);
-    DebugValue.U64.Value = Value;
-    DebugInfo->DebugValues[DebugInfo->DebugValueCount++] = DebugValue;
+    DebugValue debug_value = {};
+    debug_value.Type = DB_U64;
+    char* format = concat("\t", concat(description, ": %llu", debug_arena), debug_arena);
+    debug_value.Format = push_string(debug_arena, (u32)strlen(format));
+    strcpy(debug_value.Format, format);
+    debug_value.U64.Value = value;
+    debug_info->DebugValues[debug_info->DebugValueCount++] = debug_value;
 }
 
-inline void AddDebugValue(memory_arena* DebugArena, debug_info* DebugInfo, char* Description, r32 Value)
+inline void add_debug_value(MemoryArena* debug_arena, DebugInfo* debug_info, char* description, r32 value)
 {
-    debug_value DebugValue = {};
-    DebugValue.Type = DB_Float;
-    char* Format = Concat("\t", Concat(Description, ": %f", DebugArena), DebugArena);
-    DebugValue.Format = PushString(DebugArena, (u32)strlen(Format));
-    strcpy(DebugValue.Format, Format);
-    DebugValue.Float.Value = Value;
-    DebugInfo->DebugValues[DebugInfo->DebugValueCount++] = DebugValue;
+    DebugValue debug_value = {};
+    debug_value.Type = DB_Float;
+    char* format = concat("\t", concat(description, ": %f", debug_arena), debug_arena);
+    debug_value.Format = push_string(debug_arena, (u32)strlen(format));
+    strcpy(debug_value.Format, format);
+    debug_value.Float.Value = value;
+    debug_info->DebugValues[debug_info->DebugValueCount++] = debug_value;
 }
 
 #endif

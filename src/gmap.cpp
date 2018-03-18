@@ -2,71 +2,71 @@
 // Needs a relatively high count to work with zero collisions..
 // Is this to be expected? Or can we find a better hash function
 // or possibly find another solution?
-inline u64 HashString(u64 Size, char* Key)
+inline u64 hash_string(u64 size, char* key)
 {
-    u64 Hash = 5381;
-    char* K = Key;
-    u64 C;
+    u64 hash = 5381;
+    char* k = key;
+    u64 c;
     
-    while ((C = (u64)*K++))
-        Hash = ((Hash << 5) + Hash) + C; /* hash * 33 + c */
+    while ((c = (u64)*k++))
+        hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
     
-    return Hash & (Size - 1);
+    return hash & (size - 1);
 }
 
 // Jenkins one at a time hash
 // NOTE(niels): https://en.wikipedia.org/wiki/Jenkins_hash_function
-inline u64 HashStringJenkins(u64 Size, char* Key) 
+inline u64 hash_string_jenkins(u64 size, char* key) 
 {
-    char* K = Key;
-    u64 Length = (u64)strlen(K);
-    u64 I = 0;
-    u64 Hash = 0;
-    while (I != Length) {
-        Hash += K[I++];
-        Hash += Hash << 10;
-        Hash ^= Hash >> 6;
+    char* k = key;
+    u64 length = (u64)strlen(k);
+    u64 i = 0;
+    u64 hash = 0;
+    while (i != length) {
+        hash += k[i++];
+        hash += hash << 10;
+        hash ^= hash >> 6;
     }
-    Hash += Hash << 3;
-    Hash ^= Hash >> 11;
-    Hash += Hash << 15;
-    return Hash & (Size - 1);
+    hash += hash << 3;
+    hash ^= hash >> 11;
+    hash += hash << 15;
+    return hash & (size - 1);
 }
 
 // Use folding on a string, summed 4 bytes at a time
-inline u64 SFold(u64 M, char* S) {
-    i32 IntLength = (i32)strlen(S) / 4;
-    u64 Sum = 0;
-    for(i32 J = 0; J < IntLength; J++) 
+inline u64 s_fold(u64 m, char* s) {
+    i32 int_length = (i32)strlen(s) / 4;
+    u64 sum = 0;
+    for(i32 j = 0; j < int_length; j++) 
     {
-        char C[32];
-        memcpy(C, &S[J * 4], (u64)(J * 4) + 4);
+        char c[32];
+        memcpy(c, &s[j * 4], (u64)(j * 4) + 4);
         
-        u64 Mult = 1;
-        for(size_t K = 0; K < strlen(C); K++) {
-            Sum += C[K] * Mult;
-            Mult *= 256;
+        u64 mult = 1;
+        for(size_t k = 0; k < strlen(c); k++) {
+            sum += c[k] * mult;
+            mult *= 256;
         }
     }
     
-    char C[32];
-    memcpy(C,&S[IntLength * 4], strlen(S) - 1);
-    u64 Mult = 1;
-    for(size_t K = 0; K < strlen(C); K++) 
+    char c[32];
+    memcpy(c,&s[int_length * 4], strlen(s) - 1);
+    u64 mult = 1;
+    for(size_t k = 0; k < strlen(c); k++) 
     {
-        Sum += C[K] * Mult;
-        Mult *= 256;
+        sum += c[k] * mult;
+        mult *= 256;
     }
     
-    return(Sum & (M - 1));
+    return(sum & (m - 1));
 }
 
-inline u64 HashInt(u64 Size, i32 Key) {
-    u64 K = (u64)((i32)Key);
-    K = ((K >> 16) ^ K) * 0x45d9f3b;
-    K = ((K >> 16) ^ K) * 0x45d9f3b;
-    K = (K >> 16) ^ K;
-    return K % (Size - 1);
+inline u64 hash_int(u64 size, i32 key) {
+    u64 k = (u64)((i32)key);
+    k = ((k >> 16) ^ k) * 0x45d9f3b;
+    k = ((k >> 16) ^ k) * 0x45d9f3b;
+    k = (k >> 16) ^ k;
+    return k % (size - 1);
 }
 
 /*
@@ -82,18 +82,18 @@ u32 HashInt(u32 Size, const void* A)
     return K & (Size - 1);
 }*/
 
-inline u64 HashIntKeys(u64 Size, i32 Key)
+inline u64 hash_int_keys(u64 size, i32 key)
 {
-    u64 K = (u64)((i32)(Key));
-    return K % ((u32)Size - 1);
+    u64 k = (u64)((i32)(key));
+    return k % ((u32)size - 1);
 }
 
-void* AllocateMemory(size_t Size)
+void* allocate_memory(size_t size)
 {
-    return Platform.AllocateMemory(Size, PM_UnderflowCheck | PM_OverflowCheck);
+    return Platform.AllocateMemory(size, PM_UnderflowCheck | PM_OverflowCheck);
 }
 
-void DeallocateMemory(void* Block)
+void deallocate_memory(void* block)
 {
-    return Platform.DeallocateMemory((platform_memory_block*)Block);
+    return Platform.DeallocateMemory((platform_memory_block*)block);
 }

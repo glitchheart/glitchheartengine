@@ -1,8 +1,8 @@
 #ifndef SHARED_H
 #define SHARED_H
 
-struct memory_arena;
-inline char* Concat(const char *s1, const char *s2, memory_arena* Arena = 0);
+struct MemoryArena;
+inline char* concat(const char *s1, const char *s2, MemoryArena* arena = 0);
 
 #include "types.h"
 
@@ -16,35 +16,35 @@ inline char* Concat(const char *s1, const char *s2, memory_arena* Arena = 0);
 #include "animation.h"
 #include "rendering.h"
 
-inline char* StrSep(char** S, const char* Delim)
+inline char* str_sep(char** s, const char* delim)
 {
-    char* Start = *S;
-    char* P;
+    char* start = *s;
+    char* p;
     
-    P = (Start != NULL) ? strpbrk(Start, Delim) : NULL;
+    p = (start != NULL) ? strpbrk(start, delim) : NULL;
     
-    if(P == NULL)
+    if(p == NULL)
     {
-        *S = NULL;
+        *s = NULL;
     }
     else
     {
-        *P = '\0';
-        *S = P + 1;
+        *p = '\0';
+        *s = p + 1;
     }
-    return Start;
+    return start;
 }
 
-inline char* Concat(const char *s1, const char *s2, memory_arena* Arena)
+inline char* concat(const char *s1, const char *s2, MemoryArena* arena)
 {
     char* result;
-    if(Arena)
+    if(arena)
     {
-        result = PushString(Arena, (u32)(strlen(s1) + strlen(s2) + 1));
+        result = push_string(arena, (u32)(strlen(s1) + strlen(s2) + 1));
     }
     else
     {
-        result = PushTempString((u32)(strlen(s1) + strlen(s2) + 1));
+        result = push_temp_string((u32)(strlen(s1) + strlen(s2) + 1));
     }
     
     strcpy(result, s1);
@@ -52,88 +52,88 @@ inline char* Concat(const char *s1, const char *s2, memory_arena* Arena)
     return result;
 }
 
-inline char* ToString(i32 I)
+inline char* to_string(i32 i)
 {
-    char* V = PushTempString(64);
-    sprintf(V, "%d", I);
-    return V;
+    char* v = push_temp_string(64);
+    sprintf(v, "%d", i);
+    return v;
 }
 
-inline char* ToString(r64 R)
+inline char* to_string(r64 r)
 {
-    char* Result = PushTempString(64);
-    sprintf(Result, "%lf", R);
-    return Result;
+    char* result = push_temp_string(64);
+    sprintf(result, "%lf", r);
+    return result;
 }
 
-inline char* ToString(r32 R)
+inline char* to_string(r32 r)
 {
-    char* Result = PushTempString(64);
-    sprintf(Result, "%f", R);
-    return Result;
+    char* result = push_temp_string(64);
+    sprintf(result, "%f", r);
+    return result;
 }
 
-struct texture_data;
+struct TextureData;
 
-char* ToString(texture_data* Data)
+char* to_string(texture_data* data)
 {
-    char* Result = PushTempString(64);
-    sprintf(Result, "{Handle: %d, \n Name: %s, \n Width: %d, \n Height: %d,}", Data->Handle, Data->Name, Data->Width, Data->Height);
-    return Result;
+    char* result = push_temp_string(64);
+    sprintf(result, "{Handle: %d, \n Name: %s, \n Width: %d, \n Height: %d,}", data->Handle, data->Name, data->Width, data->Height);
+    return result;
 }
 
-inline b32 StartsWith(const char *A, const char *B)
+inline b32 starts_with(const char *a, const char *b)
 {
-    if(strncmp(A, B, strlen(B)) == 0) return 1;
+    if(strncmp(a, b, strlen(b)) == 0) return 1;
     return 0;
 }
 
-inline char* GetFileNameFromPath(char* Path, char* Extension = 0)
+inline char* get_file_name_from_path(char* path, char* extension = 0)
 {
-    const char* CompareString = ".";
-    if(Extension)
+    const char* compare_string = ".";
+    if(extension)
     {
-        CompareString = Concat(".", Extension);
+        compare_string = concat(".", extension);
     }
     
-    char* P = PushTempString(Path);
-    auto Tok = StrSep(&P, ".");
-    Tok = StrSep(&Tok, "/");
-    while(Tok)
+    char* p = push_temp_string(path);
+    auto tok = str_sep(&p, ".");
+    tok = str_sep(&tok, "/");
+    while(tok)
     {
         
-        if(strstr(Tok, CompareString))
+        if(strstr(tok, compare_string))
         {
-            Tok = StrSep(&Tok, ".");
-            return Tok;
+            tok = str_sep(&tok, ".");
+            return tok;
         }
         else 
         {
-            Tok = StrSep(&Path, "/");
+            tok = str_sep(&path, "/");
         }
     }
     return 0;
 }
 
-inline void HandleError(char const *File, i32 LineNum, char const *msg)
+inline void handle_error(char const *file, i32 line_num, char const *msg)
 {
-    if(File)
+    if(file)
     {
-        fprintf(stderr, "Error on in file %s on line %d\n", File, LineNum);
+        fprintf(stderr, "Error on in file %s on line %d\n", file, line_num);
         fprintf(stderr, "%s\n", msg);
     }
 }
 
-inline void GetCurrentMin(math::v3 V1, math::v3 V2, r32 Val1, r32 Val2, math::v3* OutVec, r32* OutVal)
+inline void get_current_min(math::v3 v1, math::v3 v2, r32 val1, r32 val2, math::v3* out_vec, r32* out_val)
 {
-    if(Val1 < Val2)
+    if(val1 < val2)
     {
-        *OutVec = V1;
-        *OutVal = Val1;
+        *out_vec = v1;
+        *out_val = val1;
         return;
     }
-    *OutVec = V2;
-    *OutVal = Val2;
+    *out_vec = v2;
+    *out_val = val2;
 }
 
 #endif

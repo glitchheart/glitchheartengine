@@ -1,42 +1,42 @@
-static void FMODError(FMOD_RESULT Err)
+static void fmod_error(FMOD_RESULT Err)
 {
     Debug("FMOD Error! (%d) %s\n", Err, FMOD_ErrorString(Err));
 }
 
-static void LoadSound(const char* FilePath, sound_device* SoundDevice)
+static void load_sound(const char* file_path, SoundDevice* sound_device)
 {
     //@Incomplete: Find out the exact parameters for a sound
-    auto Result = FMOD_System_CreateSound(SoundDevice->System, FilePath, FMOD_DEFAULT, 0, &SoundDevice->Sounds[SoundDevice->SoundCount++]);
-    if(Result != FMOD_OK)
+    auto result = FMOD_System_CreateSound(sound_device->System, file_path, FMOD_DEFAULT, 0, &sound_device->Sounds[sound_device->SoundCount++]);
+    if(result != FMOD_OK)
     {
-        FMODError(Result);
+        fmod_error(result);
     }
 }
 
-static void LoadSounds(sound_device* SoundDevice, sound_commands* Commands)
+static void load_sounds(SoundDevice* sound_device, SoundCommands* commands)
 {
-    if(Commands->LoadSounds)
+    if(commands->LoadSounds)
     {
-        auto DirData = Commands->SoundsToLoad;
+        auto dir_data = commands->SoundsToLoad;
         
-        for(i32 FileIndex = 0; FileIndex < DirData.FilesLength; FileIndex++)
+        for(i32 file_index = 0; file_index < dir_data.FilesLength; file_index++)
         {
-            LoadSound(DirData.FilePaths[FileIndex], SoundDevice);
+            load_sound(dir_data.FilePaths[file_index], sound_device);
         }
-        Commands->LoadSounds = false;
-        Commands->SoundsToLoad.FilesLength = 0;
+        commands->LoadSounds = false;
+        commands->SoundsToLoad.FilesLength = 0;
     }
 }
 
 
-static void CleanupSound(sound_device* SoundDevice)
+static void cleanup_sound(SoundDevice* sound_device)
 {
-    FMOD_System_Release(SoundDevice->System);
+    FMOD_System_Release(sound_device->System);
 }
 
-FMOD_RESULT F_CALLBACK ChannelControlCallback(FMOD_CHANNELCONTROL *ChanControl, FMOD_CHANNELCONTROL_TYPE ControlType, FMOD_CHANNELCONTROL_CALLBACK_TYPE CallbackType, void *CommandData1, void *CommandData2)
+FMOD_RESULT F_CALLBACK channel_control_callback(FMOD_CHANNELCONTROL *chan_control, FMOD_CHANNELCONTROL_TYPE control_type, FMOD_CHANNELCONTROL_CALLBACK_TYPE callback_type, void *command_data1, void *command_data2)
 {
-    switch(CallbackType)
+    switch(callback_type)
     {
         case FMOD_CHANNELCONTROL_CALLBACK_END:
         {
@@ -61,106 +61,106 @@ FMOD_RESULT F_CALLBACK ChannelControlCallback(FMOD_CHANNELCONTROL *ChanControl, 
     return FMOD_OK;
 }
 
-static void PlaySound(const sound_effect& SoundEffect, sound_device* SoundDevice, sound_commands* Commands)
+static void play_sound(const sound_effect& sound_effect, SoundDevice* sound_device, SoundCommands* commands)
 {
-    auto Sound = SoundDevice->Sounds[SoundEffect.Buffer];
-    FMOD_CHANNEL* NewChannel;
-    auto Result = FMOD_System_PlaySound(SoundDevice->System, Sound, SoundDevice->MasterGroup, true, &NewChannel);
-    FMOD_Channel_SetPitch(NewChannel, SoundEffect.SoundInfo.Pitch);
-    FMOD_Channel_SetVolume(NewChannel, SoundEffect.SoundInfo.Gain * Commands->SFXVolume);
+    auto sound = SoundDevice->Sounds[SoundEffect.Buffer];
+    FMOD_CHANNEL* new_channel;
+    auto result = FMOD_System_PlaySound(SoundDevice->System, sound, SoundDevice->MasterGroup, true, &new_channel);
+    FMOD_Channel_SetPitch(new_channel, SoundEffect.SoundInfo.Pitch);
+    FMOD_Channel_SetVolume(new_channel, SoundEffect.SoundInfo.Gain * Commands->SFXVolume);
     
-    r32 Vol;
-    FMOD_Channel_GetVolume(NewChannel, &Vol);
+    r32 vol;
+    FMOD_Channel_GetVolume(new_channel, &vol);
     
     Assert(SoundEffect.SoundInfo.LoopCount >= -1);
     
-    auto FMODMode = SoundEffect.SoundInfo.Loop ? FMOD_LOOP_NORMAL : FMOD_LOOP_OFF;
+    auto fmod_mode = SoundEffect.SoundInfo.Loop ? FMOD_LOOP_NORMAL : FMOD_LOOP_OFF;
     
-    FMOD_Channel_SetMode(NewChannel, (FMOD_MODE)(FMOD_DEFAULT | FMODMode));
-    FMOD_Channel_SetLoopCount(NewChannel, SoundEffect.SoundInfo.LoopCount);
+    FMOD_Channel_SetMode(new_channel, (FMOD_MODE)(FMOD_DEFAULT | fmod_mode));
+    FMOD_Channel_SetLoopCount(new_channel, SoundEffect.SoundInfo.LoopCount);
     
-    if(Result != FMOD_OK)
+    if(result != FMOD_OK)
     {
-        FMODError(Result);
+        fmod_error(result);
     }
-    FMOD_Channel_SetPaused(NewChannel, Commands->Paused);
+    FMOD_Channel_SetPaused(new_channel, commands->Paused);
 }
 
-static inline void ResetCommands(sound_commands* Commands)
+static inline void reset_commands(SoundCommands* commands)
 {
-    Commands->SoundCount = 0;
-    Clear(&Commands->SoundArena);
+    commands->SoundCount = 0;
+    clear(&commands->SoundArena);
 }
 
-static void PlaySounds(sound_device* SoundDevice, sound_commands* Commands)
+static void play_sounds(SoundDevice* sound_device, SoundCommands* commands)
 {
-    if(SoundDevice && Commands && SoundDevice->System)
+    if(sound_device && commands && sound_device->System)
     {
-        LoadSounds(SoundDevice, Commands);
+        load_sounds(sound_device, commands);
         
-        FMOD_System_GetMasterChannelGroup(SoundDevice->System, &SoundDevice->MasterGroup);
+        FMOD_System_GetMasterChannelGroup(sound_device->System, &sound_device->MasterGroup);
         
-        FMOD_ChannelGroup_SetVolume(SoundDevice->MasterGroup, Commands->SFXVolume);
-        FMOD_ChannelGroup_SetMute(SoundDevice->MasterGroup, Commands->Muted);
-        FMOD_ChannelGroup_SetPaused(SoundDevice->MasterGroup, Commands->Paused);
+        FMOD_ChannelGroup_SetVolume(sound_device->MasterGroup, commands->SFXVolume);
+        FMOD_ChannelGroup_SetMute(sound_device->MasterGroup, commands->Muted);
+        FMOD_ChannelGroup_SetPaused(sound_device->MasterGroup, commands->Paused);
         
-        if(Commands->Stopped)
+        if(commands->Stopped)
         {
-            FMOD_ChannelGroup_Stop(SoundDevice->MasterGroup);
-            ResetCommands(Commands);
+            FMOD_ChannelGroup_Stop(sound_device->MasterGroup);
+            reset_commands(commands);
         }
         
-        if(!Commands->Muted && !Commands->Paused && !Commands->Stopped)
+        if(!commands->Muted && !commands->Paused && !commands->Stopped)
         {
-            for(i32 Sound = 0;
-                Sound < Commands->SoundCount;
-                Sound++)
+            for(i32 sound = 0;
+                sound < commands->SoundCount;
+                sound++)
             {
-                sound_effect* SoundEffect =(sound_effect*)Commands->SoundArena.CurrentBlock->Base + Sound;
+                SoundEffect* sound_effect =(SoundEffect*)commands->SoundArena.CurrentBlock->Base + sound;
                 
-                PlaySound(*SoundEffect, SoundDevice, Commands);
+                play_sound(*sound_effect, SoundDevice, Commands);
             }
         }
-        if(FMOD_System_Update(SoundDevice->System) != FMOD_OK)
+        if(FMOD_System_Update(sound_device->System) != FMOD_OK)
         {
             Debug("FMOD Failed updating\n");
         }
-        ResetCommands(Commands);
+        reset_commands(commands);
     }
 }
 
-static void InitAudio_FMOD(sound_device* SoundDevice)
+static void init_audio_fmod(SoundDevice* sound_device)
 {
-    FMOD_RESULT Result;
-    FMOD_SYSTEM* System;
-    Result = FMOD_System_Create(&System);
+    FMOD_RESULT result;
+    FMOD_SYSTEM* system;
+    result = FMOD_System_Create(&system);
     
-    if(Result != FMOD_OK)
+    if(result != FMOD_OK)
     {
-        FMODError(Result);
+        fmod_error(result);
         return;
     }
     
-    Result = FMOD_System_Init(System, 1024, FMOD_INIT_NORMAL, 0);
-    if(Result != FMOD_OK)
+    result = FMOD_System_Init(system, 1024, FMOD_INIT_NORMAL, 0);
+    if(result != FMOD_OK)
     {
-        FMODError(Result);
+        fmod_error(result);
     }
     
-    u32 Version;
-    FMOD_System_GetVersion(System, &Version);
-    if(Version < FMOD_VERSION)
+    u32 version;
+    FMOD_System_GetVersion(system, &version);
+    if(version < FMOD_VERSION)
     {
         Debug("Version error\n");
     }
     
-    SoundDevice->System = System;
-    SoundDevice->IsInitialized = true;
+    sound_device->System = system;
+    sound_device->IsInitialized = true;
     
-    Result = FMOD_System_GetMasterChannelGroup(SoundDevice->System, &SoundDevice->MasterGroup);
-    if(Result != FMOD_OK)
+    result = FMOD_System_GetMasterChannelGroup(sound_device->System, &sound_device->MasterGroup);
+    if(result != FMOD_OK)
     {
-        FMODError(Result);
+        fmod_error(result);
         return;
     }
 }

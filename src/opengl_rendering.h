@@ -11,8 +11,8 @@
 
 const static struct
 {
-    Shader_Type Val;
-    char* Str;
+    Shader_Type val;
+    char* str;
     
 } ShaderConversion [] =
 {
@@ -33,13 +33,13 @@ const static struct
     SHADERPAIR(Line)
 };
 
-char* ShaderEnumToStr(Shader_Type Shader)
+char* ShaderEnumToStr(Shader_Type shader)
 {
-    for(i32 Index = 0; Index < Shader_Count; Index++)
+    for(i32 index = 0; index < Shader_Count; index++)
     {
-        if(Shader == ShaderConversion[Index].Val)
+        if(shader == ShaderConversion[index].Val)
         {
-            return ShaderConversion[Index].Str;
+            return ShaderConversion[index].Str;
         }
     }
     Assert(false);
@@ -66,136 +66,136 @@ static char* ShaderPaths[Shader_Count] =
 };
 
 
-enum Render_Mode
+enum RenderMode
 {
     Render_Fill, Render_Outline
 };
 
-struct entity;
-struct object_entity;
+struct Entity;
+struct ObjectEntity;
 
-struct texture 
+struct Texture 
 {
-    GLuint TextureHandle;
+    GLuint texture_handle;
 };
 
 #define TILESHEET_MAX 10
 
-struct tilesheet
+struct Tilesheet
 {
-    char* Name;
-    texture Texture;
-    i32 TileWidth;
-    i32 TileHeight;
+    char* name;
+    Texture texture;
+    i32 tile_width;
+    i32 tile_height;
 };
 
-struct render_font
+struct RenderFont
 {
-    FT_Face Face;
-    GLuint VAO;
-    GLuint VBO;
-    GLuint Texture;
-    u32 AtlasWidth;
-    u32 AtlasHeight;
-    GLfloat GlyphWidth;
-    math::v4 Color = math::v4(1, 1, 1, 1);
-    math::v4 AlphaColor = math::v4(1, 1, 1, 1);
+    FT_Face face;
+    GLuint vao;
+    GLuint vbo;
+    GLuint texture;
+    u32 atlas_width;
+    u32 atlas_height;
+    GLfloat glyph_width;
+    math::v4 color = math::v4(1, 1, 1, 1);
+    math::v4 alpha_color = math::v4(1, 1, 1, 1);
     
-    struct character_info 
+    struct CharacterInfo 
     {
-        r32 AX; // advance.x
-        r32 AY; // advance.y
+        r32 ax; // advance.x
+        r32 ay; // advance.y
         
-        r32 BW; // bitmap.width;
-        r32 BH; // bitmap.rows;
+        r32 bw; // bitmap.width;
+        r32 bh; // bitmap.rows;
         
-        r32 BL; // bitmap_left;
-        r32 BT; // bitmap_top;
+        r32 bl; // bitmap_left;
+        r32 bt; // bitmap_top;
         
-        r32 TX;
-    } CharacterInfo[255];
+        r32 tx;
+    } character_info[255];
 };
 
 struct point
 {
-    GLfloat X;
-    GLfloat Y;
-    GLfloat S;
-    GLfloat T;
+    GLfloat x;
+    GLfloat y;
+    GLfloat s;
+    GLfloat t;
 };
 
-struct buffer
+struct Buffer
 {
-    GLuint VAO;
-    GLuint VBO;
-    GLuint IBO;
-    GLint VertexBufferSize;
-    GLint IndexBufferSize;
-    GLint IndexBufferCount;
+    GLuint vao;
+    GLuint vbo;
+    GLuint ibo;
+    GLint vertex_buffer_size;
+    GLint index_buffer_size;
+    GLint index_buffer_count;
 };
 
-struct render_state
+struct RenderState
 {
-    GLFWwindow *Window;
-    i32 WindowWidth;
-    i32 WindowHeight;
-    i32 ScreenWidth;
-    i32 ScreenHeight;
-    i32 ScaleFromWidth;
-    i32 ScaleFromHeight;
-    i32 DpiScale;
-    i32 PixelsPerUnit;
+    GLFWwindow *window;
+    i32 window_width;
+    i32 window_height;
+    i32 screen_width;
+    i32 screen_height;
+    i32 scale_from_width;
+    i32 scale_from_height;
+    i32 dpi_scale;
+    i32 pixels_per_unit;
     
-    r32 Contrast;
-    r32 Brightness;
+    r32 contrast;
+    r32 brightness;
     
-    char* WindowTitle;
+    char* window_title;
     
-    r64 FrameDelta;
-    r64 TotalDelta;
+    r64 frame_delta;
+    r64 total_delta;
     
-    Window_Mode WindowMode;
+    WindowMode window_mode;
     
-    GLfloat ScaleX;
-    GLfloat ScaleY;
-    GLint Viewport[4];
-    r64 DeltaTime;
+    GLfloat scale_x;
+    GLfloat scale_y;
+    GLint viewport[4];
+    r64 delta_time;
     
-    b32 ShouldClose;
-    r64 FPS;
+    b32 should_close;
+    r64 fps;
     
-    GLuint OriginalFrameBufferVAO;
-    GLuint OriginalFrameBufferVBO;
-    GLuint OriginalFrameBuffer;
+    GLuint original_frame_buffer_vao;
+    GLuint original_frame_buffer_vbo;
+    GLuint original_frame_buffer;
     
-    GLuint FrameBufferVAO;
-    GLuint FrameBufferVBO;
-    GLuint FrameBuffer;
-    GLuint FrameBufferTex0Loc;
-    GLuint FrameBufferTex1Loc;
-    GLuint TextureColorBuffer;
+    GLuint frame_buffer_vao;
+    GLuint frame_buffer_vbo;
+    GLuint frame_buffer;
+    GLuint frame_buffer_tex0_loc;
+    GLuint frame_buffer_tex1_loc;
+    GLuint texture_color_buffer;
     
     // Lighting data
-    spotlight_data SpotlightData;
-    directional_light_data DirectionalLightData;
-    point_light_data PointLightData;
+    SpotlightData spotlight_data;
+    DirectionalLightData directional_light_data;
+    PointLightData point_light_data;
     
-    GLuint SpotlightUBO;
-    GLuint DirectionalLightUBO;
-    GLuint PointLightUBO;
+    GLuint spotlight_ubo;
+    GLuint directional_light_ubo;
+    GLuint point_light_ubo;
     
     // Lighting map
-    GLuint LightingFrameBuffer;
-    GLuint LightingTextureColorBuffer;
+    GLuint lighting_frame_buffer;
+    GLuint lighting_texture_color_buffer;
     
-    size_t SpriteQuadVerticesSize = 16 * sizeof(GLfloat);
-    size_t TileQuadVerticesSize = 16 * sizeof(GLfloat);
-    size_t NormalQuadVerticesSize = 8 * sizeof(GLfloat);
-    size_t WireframeQuadVerticesSize = 8 * sizeof(GLfloat);
-    GLuint BoundVertexBuffer;
-    GLuint BoundTexture;
+    size_t sprite_quad_vertices_size = 16 * sizeof(GLfloat);
+    size_t tile_quad_vertices_size = 16 * sizeof(GLfloat);
+    size_t normal_quad_vertices_size = 8 * sizeof(GLfloat);
+    size_t wireframe_quad_vertices_size = 8 * sizeof(GLfloat);
+    GLuint bound_vertex_buffer;
+    GLuint bound_texture;
     
-    GLfloat FrameBufferVertices[16] =
+    GLfloat frame_buffer_vertices[16] =
     {
         -1.0f, 1.0f, 0, 1.0f,
         1.0f, 1.0f, 1.0f, 1.0f,
@@ -203,7 +203,7 @@ struct render_state
         -1.0f, -1.0f, 0, 0.0f
     };
     
-    GLfloat SpriteQuadVertices[16] =
+    GLfloat sprite_quad_vertices[16] =
     { //pos        //texcoords
         0.0f, 1.0f, 0, 0.0f,
         1.0f, 1.0f, 1.0f,  0.0f,
@@ -211,36 +211,36 @@ struct render_state
         0.0f, 0.0f, 0,  1.0f
     };
     
-    GLuint QuadIndices[6] =
+    GLuint quad_indices[6] =
     {
         0, 1, 2, 0, 2, 3
     };
     
-    GLuint SpriteVAO;
-    GLuint SpriteQuadVBO;
-    GLuint QuadIndexBuffer;
+    GLuint sprite_vao;
+    GLuint sprite_quad_vbo;
+    GLuint quad_index_buffer;
     
-    GLuint UISpriteVAO;
-    GLuint SpriteSheetVAO;
+    GLuint ui_sprite_vao;
+    GLuint sprite_sheet_vao;
     
-    GLuint SpriteErrorVAO;
-    GLuint UIErrorVAO;
-    GLuint PassthroughVAO;
+    GLuint sprite_error_vao;
+    GLuint ui_error_vao;
+    GLuint passthrough_vao;
     
-    GLuint LineVBO;
-    GLuint LineVAO;
-    GLuint LineEBO;
+    GLuint line_vbo;
+    GLuint line_vao;
+    GLuint line_ebo;
     
 #define LINE_INDICES 6
     
-    GLuint LineIndices[LINE_INDICES] = 
+    GLuint line_indices[LINE_INDICES] = 
     {
         0, 1, 2,
         1, 2, 3
     };
     
     //tiles
-    GLfloat TileQuadVertices[16] =
+    GLfloat tile_quad_vertices[16] =
     {
         //pos        //texcoords
         0.0f, 1.0f, 0.125f, 1.0f,
@@ -249,10 +249,10 @@ struct render_state
         0.0f, 0.0f, 0.125f, 0.125f
     };
     
-    GLuint TileVAO;
-    GLuint TileQuadVBO;
+    GLuint tile_vao;
+    GLuint tile_quad_vbo;
     
-    GLfloat NormalQuadVertices[8] =
+    GLfloat normal_quad_vertices[8] =
     {
         0.0f, 1.0f,
         1.0f, 1.0f,
@@ -260,10 +260,10 @@ struct render_state
         0.0f, 0.0f
     };
     
-    GLuint PrimitiveVAO;
-    GLuint PrimitiveVBO;
+    GLuint primitive_vao;
+    GLuint primitive_vbo;
     
-    GLfloat WireframeQuadVertices[10] =
+    GLfloat wireframe_quad_vertices[10] =
     {
         0.0f, 1.0f,
         1.0f, 1.0f,
@@ -271,7 +271,7 @@ struct render_state
         0.0f, 0.0f
     };
     
-    GLfloat WireframeCubeVertices[32] =
+    GLfloat wireframe_cube_vertices[32] =
     {
         -0.5, -0.5, -0.5, 1.0,
         0.5, -0.5, -0.5, 1.0,
@@ -284,15 +284,15 @@ struct render_state
     };
     
 #define CUBE_INDICES 16
-    GLuint WireframeCubeIndices[CUBE_INDICES] = 
+    GLuint wireframe_cube_indices[CUBE_INDICES] = 
     {
         0, 1, 2, 3,
         4, 5, 6, 7,
         0, 4, 1, 5, 2, 6, 3, 7
     };
-    GLuint CubeIndexBuffer;
+    GLuint cube_index_buffer;
     
-    GLfloat IsometricQuadVertices[8] =
+    GLfloat isometric_quad_vertices[8] =
     {
         0.5f, 1.0f,
         1.0f, 0.5f,
@@ -300,63 +300,63 @@ struct render_state
         0.0f, 0.5f
     };
     
-    GLuint WireframeVAO;
-    GLuint WireframeQuadVBO;
-    GLuint WireframeCubeVAO;
-    GLuint WireframeCubeVBO;
+    GLuint wireframe_vao;
+    GLuint wireframe_quad_vbo;
+    GLuint wireframe_cube_vao;
+    GLuint wireframe_cube_vbo;
     
-    GLuint IsometricVAO;
-    GLuint IsometricQuadVBO;
+    GLuint isometric_vao;
+    GLuint isometric_quad_vbo;
     
-    buffer Buffers[BUFFER_ARRAY_SIZE];
-    i32 BufferCount;
+    Buffer buffers[BUFFER_ARRAY_SIZE];
+    i32 buffer_count;
     
-    GLuint RectVAO;
-    GLuint TextureRectVAO;
-    GLuint NormalQuadVBO;
+    GLuint rect_vao;
+    GLuint texture_rect_vao;
+    GLuint normal_quad_vbo;
     
     union 
     {
-        shader Shaders[Shader_Count];
+        Shader shaders[Shader_Count];
         struct
         {
-            shader TextureShader;
-            shader TileShader;
-            shader RectShader;
-            shader TextureRectShader;
-            shader StandardFontShader;
-            shader SpritesheetShader;
-            shader WireframeShader;
-            shader UISpriteShader;
-            shader ErrorShaderSprite;
-            shader ErrorShaderUI;
-            shader FrameBufferShader;
-            shader LightSourceShader;
-            shader SimpleModelShader;
-            shader PassthroughShader;
-            shader LineShader;
+            Shader texture_shader;
+            Shader tile_shader;
+            Shader rect_shader;
+            Shader texture_rect_shader;
+            Shader standard_font_shader;
+            Shader spritesheet_shader;
+            Shader wireframe_shader;
+            Shader ui_sprite_shader;
+            Shader error_shader_sprite;
+            Shader error_shader_ui;
+            Shader frame_buffer_shader;
+            Shader light_source_shader;
+            Shader simple_model_shader;
+            Shader passthrough_shader;
+            Shader line_shader;
         };
     };
     
-    shader ExtraShaders[150];
-    i32 ExtraShaderIndex;
+    Shader extra_shaders[150];
+    i32 extra_shader_index;
     
-    i32 CurrentExtraShader;
-    shader_attribute* ShaderAttributes;
-    i32 ShaderAttributeCount;
+    i32 current_extra_shader;
+    ShaderAttribute* shader_attributes;
+    i32 shader_attribute_count;
     
-    texture TextureArray[150];
-    i32 TextureIndex;
+    Texture texture_array[150];
+    i32 texture_index;
     
     //freetype
-    FT_Library FTLibrary;
+    FT_Library ft_library;
     
-    render_font Fonts[64];
-    i32 FontCount;
+    RenderFont fonts[64];
+    i32 font_count;
     
-    render_state() {}
+    RenderState() {}
     
-    memory_arena Arena;
+    MemoryArena arena;
 };
 
 #endif

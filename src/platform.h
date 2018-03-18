@@ -75,12 +75,12 @@ using umm = uintptr_t; // Casey uses this for sizes (why?)
 using imm = intptr_t;
 
 
-struct texture_data;
+struct TextureData;
 
-inline char* ToString(i32 I);
-inline char* ToString(r64 R);
-inline char* ToString(r32 R);
-char* ToString(texture_data* Data);
+inline char* to_string(i32 i);
+inline char* to_string(r64 r);
+inline char* to_string(r32 r);
+char* to_string(texture_data* Data);
 
 #include "log_state.h"
 #include "engine_math.h"
@@ -88,47 +88,47 @@ char* ToString(texture_data* Data);
 
 
 
-enum Window_Mode
+enum WindowMode
 {
     FM_Windowed = 0,
     FM_Full = 1,
     FM_Borderless = 2
 };
 
-enum Graphics_API
+enum GraphicsApi
 {
     Graphics_OpenGl,
     Graphics_Vulkan
 };
 
-struct config_data
+struct ConfigData
 {
-    char* Title;
-    char* Version;
-    char* StartingLevelFilePath;
-    Graphics_API GraphicsAPI;
-    i32 ScreenWidth;
-    i32 ScreenHeight;
-    i32 ScaleFromWidth;
-    i32 ScaleFromHeight;
-    Window_Mode Fullscreen;
-    r32 Contrast;
-    r32 Brightness;
-    b32 Muted;
-    r32 SFXVolume;
-    r32 MusicVolume;
-    r32 Zoom;
-    b32 SkipSplashScreen;
+    char* title;
+    char* version;
+    char* starting_level_file_path;
+    GraphicsApi graphics_api;
+    i32 screen_width;
+    i32 screen_height;
+    i32 scale_from_width;
+    i32 scale_from_height;
+    WindowMode fullscreen;
+    r32 contrast;
+    r32 brightness;
+    b32 muted;
+    r32 sfx_volume;
+    r32 music_volume;
+    r32 zoom;
+    b32 skip_splash_screen;
 };
 
 struct directory_data
 {
-    char** FilePaths;
-    char** FileNames;
-    i32 FilesLength = 0;
+    char** file_paths;
+    char** file_names;
+    i32 files_length = 0;
 };
 
-enum platform_memory_block_flags
+enum PlatformMemoryBlockFlags
 {
     PM_OverflowCheck =  (1 << 0),
     PM_UnderflowCheck = (1 << 1),
@@ -137,23 +137,23 @@ enum platform_memory_block_flags
 
 struct platform_memory_block
 {
-    u64 Flags;
-    u64 Size;
-    u8* Base;
-    umm Used;
-    platform_memory_block* Prev;
+    u64 flags;
+    u64 size;
+    u8* base;
+    umm used;
+    platform_memory_block* prev;
 };
 
-enum platform_file_flags
+enum PlatformFileFlags
 {
     PM_Append = (1 << 0)
 };
 
 struct platform_file
 {
-    FILE* File;
-    char Path[260];
-    char Extension[16];
+    FILE* file;
+    char path[260];
+    char extension[16];
 };
 
 #define PLATFORM_GET_ALL_FILES_WITH_EXTENSION(name) void name(const char* DirectoryPath, const char* Extension, directory_data* DirectoryData, b32 WithSubDirectories)
@@ -186,46 +186,46 @@ typedef PLATFORM_FREE_LIBRARY(platform_free_library);
 #define PLATFORM_LOAD_SYMBOL(name) void* name(void* Library, const char* Symbol)
 typedef PLATFORM_LOAD_SYMBOL(platform_load_symbol);
 
-struct platform_api
+struct PlatformApi
 {
-    platform_get_all_files_with_extension *GetAllFilesWithExtension;
-    platform_file_exists *FileExists;
-    platform_allocate_memory *AllocateMemory;
-    platform_deallocate_memory *DeallocateMemory;
-    platform_open_file_with_dialog* OpenFileWithDialog;
-    platform_save_file_with_dialog* SaveFileWithDialog;
-    platform_get_time_of_day* GetTimeOfDay;
-    platform_load_library* LoadDynamicLibrary;
-    platform_free_library* FreeDynamicLibrary;
-    platform_load_symbol* LoadSymbol;
+    platform_get_all_files_with_extension *get_all_files_with_extension;
+    platform_file_exists *file_exists;
+    platform_allocate_memory *allocate_memory;
+    platform_deallocate_memory *deallocate_memory;
+    platform_open_file_with_dialog* open_file_with_dialog;
+    platform_save_file_with_dialog* save_file_with_dialog;
+    platform_get_time_of_day* get_time_of_day;
+    platform_load_library* load_dynamic_library;
+    platform_free_library* free_dynamic_library;
+    platform_load_symbol* load_symbol;
 };
-extern platform_api Platform;
+extern PlatformApi Platform;
 
-struct debug_state;
+struct DebugState;
 
 struct game_memory
 {
-    b32 IsInitialized;
-    b32 ShouldReload;
-    b32 ExitGame;
-    config_data ConfigData;
-    platform_api PlatformAPI;
-    log_state LogState;
+    b32 is_initialized;
+    b32 should_reload;
+    b32 exit_game;
+    ConfigData config_data;
+    PlatformApi platform_api;
+    struct LogState log_state;
     
-    struct game_state* GameState;
+    struct GameState* game_state;
     
 #if GLITCH_DEBUG
-    debug_state* DebugState;
+    DebugState* debug_state;
 #endif
     
 };
 
-struct input_controller;
-struct sound_commands;
-struct render_state;
+struct InputController;
+struct SoundCommands;
+struct RenderState;
 
-struct renderer;
-struct timer_controller;
+struct Renderer;
+struct TimerController;
 
 #define UPDATE(name)void name(r64 DeltaTime, game_memory* GameMemory, renderer& Renderer, input_controller* InputController, sound_commands* SoundCommands, timer_controller& TimerController)
 typedef UPDATE(update);

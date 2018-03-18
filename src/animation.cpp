@@ -8,108 +8,108 @@
 #define LINK_ANIMATION_END true
 #define LINK_ALL_FRAMES false
 
-static i32 CreateAnimationController(renderer& Renderer, b32 Playing = false)
+static i32 create_animation_controller(Renderer& renderer, b32 playing = false)
 {
-    auto& Controller = Renderer.AnimationControllers[Renderer.AnimationControllerCount];
-    Controller.CurrentFrameIndex = 0;
-    Controller.CurrentNode = 0;
-    Controller.CurrentTime = 0.0;
-    Controller.Playing = Playing;
-    Controller.Speed = 1.0f;
-    Controller.NodeCount = 0;
-    Controller.ParameterCount = 0;
-    return Renderer.AnimationControllerCount++;
+    auto& controller = renderer.AnimationControllers[renderer.AnimationControllerCount];
+    controller.CurrentFrameIndex = 0;
+    controller.CurrentNode = 0;
+    controller.CurrentTime = 0.0;
+    controller.Playing = playing;
+    controller.Speed = 1.0f;
+    controller.NodeCount = 0;
+    controller.ParameterCount = 0;
+    return renderer.AnimationControllerCount++;
 }
 
-static void ClearAnimationControllers(renderer& Renderer)
+static void clear_animation_controllers(Renderer& renderer)
 {
-    Renderer.AnimationControllerCount = 0;
+    renderer.AnimationControllerCount = 0;
 }
 
-static void AnimationControllerSetPlaying(renderer& Renderer, i32 Controller, b32 Playing)
+static void animation_controller_set_playing(Renderer& renderer, i32 controller, b32 playing)
 {
-    Renderer.AnimationControllers[Controller].Playing = Playing;
+    renderer.AnimationControllers[controller].Playing = playing;
 }
 
-static void AddAnimationControllerParameter(renderer& Renderer, i32 Controller, const char* ParameterName, b32 InitialValue)
+static void add_animation_controller_parameter(Renderer& renderer, i32 controller, const char* parameter_name, b32 initial_value)
 {
-    auto& AnimationController = Renderer.AnimationControllers[Controller];
-    auto& Parameter = AnimationController.Parameters[AnimationController.ParameterCount++];
-    strcpy(Parameter.Name, ParameterName);
-    Parameter.Value = InitialValue;
+    auto& animation_controller = renderer.AnimationControllers[controller];
+    auto& parameter = animation_controller.Parameters[animation_controller.ParameterCount++];
+    strcpy(parameter.Name, parameter_name);
+    parameter.Value = initial_value;
 }
 
-static void SetAnimationControllerParameter(renderer& Renderer, i32 Controller, const char* Parameter, b32 Value)
+static void set_animation_controller_parameter(Renderer& renderer, i32 controller, const char* parameter, b32 value)
 {
-    auto& AnimationController = Renderer.AnimationControllers[Controller];
+    auto& animation_controller = renderer.AnimationControllers[controller];
     
-    for(i32 Index = 0; Index < AnimationController.ParameterCount; Index++)
+    for(i32 index = 0; index < animation_controller.ParameterCount; index++)
     {
-        if(strcmp(AnimationController.Parameters[Index].Name, Parameter) == 0)
+        if(strcmp(animation_controller.Parameters[index].Name, parameter) == 0)
         {
-            AnimationController.Parameters[Index].Value = Value;
+            animation_controller.Parameters[index].Value = value;
             break;
         }
     }
 }
 
-static i32 AddAnimationNode(renderer& Renderer, i32 Controller, const char* AnimationName, b32 Loop)
+static i32 add_animation_node(Renderer& renderer, i32 controller, const char* animation_name, b32 loop)
 {
     i32 AnimationHandle = -1;
     
-    for(i32 AnimationIndex = 0; AnimationIndex < Renderer.SpritesheetAnimationCount; AnimationIndex++)
+    for(i32 animation_index = 0; animation_index < renderer.SpritesheetAnimationCount; animation_index++)
     {
-        if(strcmp(Renderer.SpritesheetAnimations[AnimationIndex].Name, AnimationName) == 0)
+        if(strcmp(renderer.SpritesheetAnimations[animation_index].Name, animation_name) == 0)
         {
-            AnimationHandle = AnimationIndex;
+            AnimationHandle = animation_index;
             break;
         }
     }
     
     if(AnimationHandle == -1)
     {
-        printf("Animation with name: %s not found\n", AnimationName);
+        printf("Animation with name: %s not found\n", animation_name);
     }
     
     Assert(AnimationHandle != -1);
     
-    auto& AnimationController = Renderer.AnimationControllers[Controller];
-    auto& Node = AnimationController.Nodes[AnimationController.NodeCount];
-    strcpy(Node.Name, AnimationName);
-    Node.AnimationHandle = AnimationHandle;
-    Node.Loop = Loop;
-    Node.LinkCount = 0;
-    Node.CallbackInfoCount = 0;
-    return AnimationController.NodeCount++;
+    auto& animation_controller = renderer.AnimationControllers[controller];
+    auto& node = animation_controller.Nodes[animation_controller.NodeCount];
+    strcpy(node.Name, animation_name);
+    node.AnimationHandle = AnimationHandle;
+    node.Loop = loop;
+    node.LinkCount = 0;
+    node.CallbackInfoCount = 0;
+    return animation_controller.NodeCount++;
 }
 
-static void AddCallbackToAnimationNode(renderer& Renderer, i32 Controller, i32 NodeHandle, void* State, void* Data, animation_callback* Callback, i32 CallbackFrame = -1)
+static void add_callback_to_animation_node(Renderer& renderer, i32 controller, i32 node_handle, void* state, void* data, animation_callback* callback, i32 callback_frame = -1)
 {
-    auto& Node = Renderer.AnimationControllers[Controller].Nodes[NodeHandle];
-    auto& CallbackInfo = Node.CallbackInfos[Node.CallbackInfoCount++];
-    CallbackInfo.Callback = Callback;
-    CallbackInfo.State = State;
-    CallbackInfo.Data = Data;
-    CallbackInfo.Frame = CallbackFrame;
+    auto& node = renderer.AnimationControllers[controller].Nodes[node_handle];
+    auto& callback_info = node.CallbackInfos[node.CallbackInfoCount++];
+    callback_info.Callback = callback;
+    callback_info.State = state;
+    callback_info.Data = data;
+    callback_info.Frame = callback_frame;
 }
 
-static i32 AddAnimationNodeLink(renderer& Renderer, i32 Controller, const char* Origin, const char* Destination, b32 AfterFinishedAnimation = true)
+static i32 add_animation_node_link(Renderer& renderer, i32 controller, const char* Origin, const char* Destination, b32 after_finished_animation = true)
 {
     Assert(strcmp(Origin, Destination) != 0);
     
-    auto& AnimationController = Renderer.AnimationControllers[Controller];
+    auto& animation_controller = renderer.AnimationControllers[controller];
     i32 OriginNodeHandle = -1;
     i32 DestinationNodeHandle = -1;
     
-    for(i32 NodeIndex = 0; NodeIndex < AnimationController.NodeCount; NodeIndex++)
+    for(i32 node_index = 0; node_index < animation_controller.NodeCount; node_index++)
     {
-        if(strcmp(AnimationController.Nodes[NodeIndex].Name, Origin) == 0)
+        if(strcmp(animation_controller.Nodes[node_index].Name, Origin) == 0)
         {
-            OriginNodeHandle = NodeIndex;
+            OriginNodeHandle = node_index;
         }
-        else if(strcmp(AnimationController.Nodes[NodeIndex].Name, Destination) == 0)
+        else if(strcmp(animation_controller.Nodes[node_index].Name, Destination) == 0)
         {
-            DestinationNodeHandle = NodeIndex;
+            DestinationNodeHandle = node_index;
         }
         
         if(OriginNodeHandle != -1 && DestinationNodeHandle != -1)
@@ -120,145 +120,145 @@ static i32 AddAnimationNodeLink(renderer& Renderer, i32 Controller, const char* 
     
     Assert(OriginNodeHandle != -1 && DestinationNodeHandle != -1);
     
-    auto& OriginNode = AnimationController.Nodes[OriginNodeHandle];
+    auto& origin_node = animation_controller.Nodes[OriginNodeHandle];
     
-    auto& Link = OriginNode.Links[OriginNode.LinkCount];
-    Link.OriginNode = OriginNodeHandle;
-    Link.DestinationNode = DestinationNodeHandle;
-    Link.ConditionCount = 0;
-    Link.AfterFinishedAnimation = AfterFinishedAnimation;
-    return OriginNode.LinkCount++;
+    auto& link = origin_node.Links[origin_node.LinkCount];
+    link.OriginNode = OriginNodeHandle;
+    link.DestinationNode = DestinationNodeHandle;
+    link.ConditionCount = 0;
+    link.AfterFinishedAnimation = after_finished_animation;
+    return origin_node.LinkCount++;
 }
 
-static void AddAnimationLinkCondition(renderer& Renderer, i32 Controller, i32 Node, i32 Link, const char* ParameterName, b32 ExpectedValue)
+static void add_animation_link_condition(Renderer& renderer, i32 controller, i32 node, i32 link, const char* parameter_name, b32 expected_value)
 {
-    auto& AnimationController = Renderer.AnimationControllers[Controller];
+    auto& animation_controller = renderer.AnimationControllers[controller];
     i32 ParameterHandle = -1;
     
-    for(i32 ParameterIndex = 0; ParameterIndex < AnimationController.ParameterCount; ParameterIndex++)
+    for(i32 parameter_index = 0; parameter_index < animation_controller.ParameterCount; parameter_index++)
     {
-        if(strcmp(ParameterName, AnimationController.Parameters[ParameterIndex].Name) == 0)
+        if(strcmp(parameter_name, animation_controller.Parameters[parameter_index].Name) == 0)
         {
-            ParameterHandle = ParameterIndex;
+            ParameterHandle = parameter_index;
             break;
         }
     }
     
     Assert(ParameterHandle != -1);
-    auto& NodeLink = AnimationController.Nodes[Node].Links[Link];
-    auto& Condition = NodeLink.Conditions[NodeLink.ConditionCount++];
-    Condition.ParameterHandle = ParameterHandle;
-    Condition.ExpectedValue = ExpectedValue;
+    auto& node_link = animation_controller.Nodes[node].Links[link];
+    auto& condition = node_link.Conditions[node_link.ConditionCount++];
+    condition.ParameterHandle = ParameterHandle;
+    condition.ExpectedValue = expected_value;
 }
 
-static void ResetCallbacks(animation_node& Node)
+static void reset_callbacks(AnimationNode& node)
 {
-    for(i32 CallbackIndex = 0; CallbackIndex < Node.CallbackInfoCount; CallbackIndex++)
+    for(i32 callback_index = 0; callback_index < node.CallbackInfoCount; callback_index++)
     {
-        Node.CallbackInfos[CallbackIndex].WasCalled = false;
+        node.CallbackInfos[callback_index].WasCalled = false;
     }
 }
 
-static void TickAnimationControllers(renderer& Renderer, sound_commands* SoundCommands, input_controller* InputController, timer_controller& TimerController,  r64 DeltaTime)
+static void tick_animation_controllers(Renderer& renderer, sound_commands* sound_commands, InputController* input_controller, timer_controller& timer_controller,  r64 delta_time)
 {
-    for(i32 Index = 0; Index < Renderer.AnimationControllerCount; Index++)
+    for(i32 index = 0; index < renderer.AnimationControllerCount; index++)
     {
-        auto& AnimationController = Renderer.AnimationControllers[Index];
+        auto& animation_controller = renderer.AnimationControllers[index];
         
-        if(AnimationController.Playing)
+        if(animation_controller.Playing)
         {
-            auto& CurrentNode = AnimationController.Nodes[AnimationController.CurrentNode];
+            auto& current_node = animation_controller.Nodes[animation_controller.CurrentNode];
             
-            auto& CurrentAnimation = Renderer.SpritesheetAnimations[CurrentNode.AnimationHandle];
+            auto& current_animation = renderer.SpritesheetAnimations[current_node.AnimationHandle];
             
-            b32 ReachedEndOfFrame = AnimationController.CurrentTime >= CurrentAnimation.Frames[AnimationController.CurrentFrameIndex].Duration;
-            b32 ReachedEnd = CurrentAnimation.FrameCount - 1 <= AnimationController.CurrentFrameIndex && ReachedEndOfFrame;
+            b32 reached_end_of_frame = animation_controller.CurrentTime >= current_animation.Frames[animation_controller.CurrentFrameIndex].Duration;
+            b32 reached_end = current_animation.FrameCount - 1 <= animation_controller.CurrentFrameIndex && reached_end_of_frame;
             
-            b32 ChangedNode = false;
+            b32 changed_node = false;
             
             // Check for callbacks
-            for(i32 CallbackIndex = 0; CallbackIndex < CurrentNode.CallbackInfoCount; CallbackIndex++)
+            for(i32 callback_index = 0; callback_index < current_node.CallbackInfoCount; callback_index++)
             {
-                auto& CallbackInfo = CurrentNode.CallbackInfos[CallbackIndex];
+                auto& callback_info = current_node.CallbackInfos[callback_index];
                 
-                if(!CallbackInfo.WasCalled && (CallbackInfo.Frame != -1 && CallbackInfo.Frame == AnimationController.CurrentFrameIndex || CallbackInfo.Frame == -1 && ReachedEnd))
+                if(!callback_info.WasCalled && (callback_info.Frame != -1 && callback_info.Frame == animation_controller.CurrentFrameIndex || callback_info.Frame == -1 && reached_end))
                 {
-                    if(CallbackInfo.Callback)
+                    if(callback_info.Callback)
                     {
-                        CallbackInfo.Callback(CallbackInfo.State, CallbackInfo.Data, Renderer, SoundCommands, InputController, TimerController);
-                        CallbackInfo.WasCalled = true;
+                        callback_info.Callback(callback_info.State, callback_info.Data, Renderer, SoundCommands, InputController, TimerController);
+                        callback_info.WasCalled = true;
                         //Debug("Frame for callback %d %s\n", CallbackInfo.Frame, CurrentNode.Name);
                     }
                 }
             }
             
-            for(i32 LinkIndex = 0; LinkIndex < CurrentNode.LinkCount; LinkIndex++)
+            for(i32 link_index = 0; link_index < current_node.LinkCount; link_index++)
             {
-                auto& Link = CurrentNode.Links[LinkIndex];
+                auto& link = current_node.Links[link_index];
                 
                 // if link is for after the animation has finished we should only check the conditions if we've reached the end of the animation
-                if(!Link.AfterFinishedAnimation || ReachedEnd)
+                if(!link.AfterFinishedAnimation || reached_end)
                 {
-                    b32 ConditionsMet = true;
+                    b32 conditions_met = true;
                     
-                    for(i32 ConditionIndex = 0; ConditionIndex < Link.ConditionCount; ConditionIndex++)
+                    for(i32 condition_index = 0; condition_index < link.ConditionCount; condition_index++)
                     {
-                        auto& Condition = Link.Conditions[ConditionIndex];
-                        ConditionsMet = Condition.ExpectedValue == AnimationController.Parameters[Condition.ParameterHandle].Value;
+                        auto& condition = link.Conditions[condition_index];
+                        conditions_met = condition.ExpectedValue == animation_controller.Parameters[condition.ParameterHandle].Value;
                         
-                        if(!ConditionsMet)
+                        if(!conditions_met)
                         {
-                            Link.ConditionMet = ConditionsMet;
+                            link.ConditionMet = conditions_met;
                             break;
                         }
                     }
                     
-                    Link.ConditionMet = ConditionsMet;
-                    if(ConditionsMet)
+                    link.ConditionMet = conditions_met;
+                    if(conditions_met)
                     {
-                        AnimationController.CurrentNode = Link.DestinationNode;
-                        ChangedNode = true;
-                        AnimationController.CurrentFrameIndex = 0;
-                        AnimationController.CurrentTime = 0.0;
-                        ResetCallbacks(CurrentNode);
+                        animation_controller.CurrentNode = link.DestinationNode;
+                        changed_node = true;
+                        animation_controller.CurrentFrameIndex = 0;
+                        animation_controller.CurrentTime = 0.0;
+                        reset_callbacks(current_node);
                         break;
                     }
                     
                 }
             } 
             
-            if(ReachedEnd && CurrentNode.Loop && !ChangedNode)
+            if(reached_end && current_node.Loop && !changed_node)
             {
-                AnimationController.CurrentFrameIndex = 0;
-                AnimationController.CurrentTime = 0.0;
-                ResetCallbacks(CurrentNode);
+                animation_controller.CurrentFrameIndex = 0;
+                animation_controller.CurrentTime = 0.0;
+                reset_callbacks(current_node);
             }
-            else if(ReachedEndOfFrame && !ReachedEnd)
+            else if(reached_end_of_frame && !reached_end)
             {
-                AnimationController.CurrentFrameIndex++;
-                AnimationController.CurrentTime = 0.0;
-                ResetCallbacks(CurrentNode);
+                animation_controller.CurrentFrameIndex++;
+                animation_controller.CurrentTime = 0.0;
+                reset_callbacks(current_node);
             }
             
-            AnimationController.CurrentTime += AnimationController.Speed * DeltaTime;
+            animation_controller.CurrentTime += animation_controller.Speed * delta_time;
         }
     }
 }
 
-static void SetAnimationControllerCurrentNode(renderer& Renderer, i32 Controller, const char* NodeName)
+static void set_animation_controller_current_node(Renderer& renderer, i32 controller, const char* node_name)
 {
-    auto& AnimationController = Renderer.AnimationControllers[Controller];
-    for(i32 NodeIndex = 0; NodeIndex < AnimationController.NodeCount; NodeIndex++)
+    auto& animation_controller = renderer.AnimationControllers[controller];
+    for(i32 node_index = 0; node_index < animation_controller.NodeCount; node_index++)
     {
-        if(strcmp(AnimationController.Nodes[NodeIndex].Name, NodeName) == 0)
+        if(strcmp(animation_controller.Nodes[node_index].Name, node_name) == 0)
         {
-            Renderer.AnimationControllers[NodeIndex].CurrentNode = NodeIndex;
+            renderer.AnimationControllers[node_index].CurrentNode = node_index;
             break;
         }
     }
 }
 
-static b32 IsControllerPlaying(renderer& Renderer, i32 Controller)
+static b32 is_controller_playing(Renderer& renderer, i32 controller)
 {
-    return Renderer.AnimationControllers[Controller].Playing;
+    return renderer.AnimationControllers[controller].Playing;
 }

@@ -3,8 +3,8 @@
 
 #define INIT_SIZE 1024
 
-void* AllocateMemory(size_t Size);
-void DeallocateMemory(void* Memory);
+void* AllocateMemory(size_t size);
+void DeallocateMemory(void* memory);
 
 enum Map_Status
 {
@@ -152,20 +152,20 @@ void Rehash(NAME ## _map* Map)\
 }\
 \
 
-i32 CmpInt(i32 I1, i32 I2)
+i32 CmpInt(i32 i1, i32 i2)
 {
-    if(I1 < I2)
+    if(i1 < i2)
         return -1;
-    if(I1 > I2)
+    if(i1 > i2)
         return 1;
     return 0;
 }
 
-i32 StrCmp(char* L, char* R)
+i32 StrCmp(char* l, char* r)
 {
-    if(L && R)
+    if(l && r)
     {
-        return strcmp(L,R);
+        return strcmp(l,r);
     }
     else
     {
