@@ -1,9 +1,9 @@
 #ifndef KEYS_GLFW_H
 #define KEYS_GLFW_H
 
-void InitKeyMappings()
+void init_key_mappings()
 {
-    integer_Map_Init(&InputController.KeyMappings,HashIntKeys, GLFW_KEY_LAST);
+    integer_Map_Init(&InputController.KeyMappings,hash_int_keys, GLFW_KEY_LAST);
     InputController.KeyMappings[GLFW_KEY_APOSTROPHE] = Key_Apostrophe;
     InputController.KeyMappings[GLFW_KEY_COMMA] = Key_Comma;
     InputController.KeyMappings[GLFW_KEY_MINUS] = Key_Minus;
@@ -127,9 +127,9 @@ void InitKeyMappings()
     InputController.KeyMappings[GLFW_KEY_DELETE] = Key_Delete;
 }
 
-void InitMouseButtonMappings()
+void init_mouse_button_mappings()
 {
-    integer_Map_Init(&InputController.MouseButtonMappings,HashIntKeys,7);
+    integer_Map_Init(&InputController.MouseButtonMappings,hash_int_keys,7);
     InputController.MouseButtonMappings[GLFW_MOUSE_BUTTON_LEFT] = Mouse_Left;
     InputController.MouseButtonMappings[GLFW_MOUSE_BUTTON_RIGHT] = Mouse_Right;
     InputController.MouseButtonMappings[GLFW_MOUSE_BUTTON_MIDDLE] = Mouse_Middle;
@@ -139,9 +139,9 @@ void InitMouseButtonMappings()
 #define GLFW_JOYSTICK_17 16
 #define GLFW_JOYSTICK_18 17
 
-void InitControllerMappings()
+void init_controller_mappings()
 {
-    integer_Map_Init(&InputController.ControllerMappings, HashInt, 257);
+    integer_Map_Init(&InputController.ControllerMappings, hash_int, 257);
     InputController.ControllerMappings[GLFW_JOYSTICK_1] = Joystick_1;
     InputController.ControllerMappings[GLFW_JOYSTICK_2] = Joystick_2;
     InputController.ControllerMappings[GLFW_JOYSTICK_3] = Joystick_3;
@@ -162,99 +162,99 @@ void InitControllerMappings()
     InputController.ControllerMappings[GLFW_JOYSTICK_18] = Joystick_RightTrigger;
 }
 
-void InitKeys()
+void init_keys()
 {
-    InitKeyMappings();
-    InitMouseButtonMappings();
-    InitControllerMappings();
+    init_key_mappings();
+    init_mouse_button_mappings();
+    init_controller_mappings();
 }
 
-static b32 ControllerPresent()
+static b32 controller_present()
 {
-    int Present = glfwJoystickPresent(GLFW_JOYSTICK_1); 
+    int present = glfwJoystickPresent(GLFW_JOYSTICK_1); 
     
-    if(Present)
+    if(present)
     {
         InputController.ControllerPresent = true;
-        const char* Name = glfwGetJoystickName(GLFW_JOYSTICK_1);
+        const char* name = glfwGetJoystickName(GLFW_JOYSTICK_1);
         
-        if(strstr(Name, "Xbox") != 0)
+        if(strstr(name, "Xbox") != 0)
         {
             InputController.ControllerType = Controller_Xbox;
         }
-        else if(strstr(Name, "PS4") != 0 || strstr(Name, "Wireless") != 0)
+        else if(strstr(name, "PS4") != 0 || strstr(name, "Wireless") != 0)
         {
             InputController.ControllerType = Controller_PS4;
         }
     }
     
-    InputController.ControllerPresent = Present;
-    return Present;
+    InputController.ControllerPresent = present;
+    return present;
 }
 
-static void ControllerKeyCallback(int Key, int Action)
+static void controller_key_callback(int key, int action)
 {
-    if (Action == GLFW_PRESS)
+    if (action == GLFW_PRESS)
     {
         InputController.AnyKeyPressed = true;
-        if (InputController.JoystickKeysJustPressed[InputController.ControllerMappings[Key]] == Key_NotPressed)
+        if (InputController.JoystickKeysJustPressed[InputController.ControllerMappings[key]] == Key_NotPressed)
         {
-            InputController.JoystickKeysJustPressed[InputController.ControllerMappings[Key]] = Key_JustPressed;
+            InputController.JoystickKeysJustPressed[InputController.ControllerMappings[key]] = Key_JustPressed;
         }
-        else if(InputController.JoystickKeysJustPressed[InputController.ControllerMappings[Key]] == Key_JustPressed)
+        else if(InputController.JoystickKeysJustPressed[InputController.ControllerMappings[key]] == Key_JustPressed)
         {
             // NOTE(niels): Do we ever even get in here???
-            InputController.JoystickKeysJustPressed[InputController.ControllerMappings[Key]] = Key_Invalid;
+            InputController.JoystickKeysJustPressed[InputController.ControllerMappings[key]] = Key_Invalid;
             
         }
-        InputController.JoystickKeysDown[InputController.ControllerMappings[Key]] = true;
+        InputController.JoystickKeysDown[InputController.ControllerMappings[key]] = true;
     }
-    else if (Action == GLFW_RELEASE)
+    else if (action == GLFW_RELEASE)
     {
-        InputController.JoystickKeysJustPressed[InputController.ControllerMappings[Key]] = Key_NotPressed;
-        InputController.JoystickKeysDown[InputController.ControllerMappings[Key]] = false;
+        InputController.JoystickKeysJustPressed[InputController.ControllerMappings[key]] = Key_NotPressed;
+        InputController.JoystickKeysDown[InputController.ControllerMappings[key]] = false;
     }
 }
 
-static void ControllerKeys(i32 Joystick)
+static void controller_keys(i32 joystick)
 {
-    i32 Count;
-    const unsigned char* ButtonState = glfwGetJoystickButtons(Joystick, &Count);
+    i32 count;
+    const unsigned char* button_state = glfwGetJoystickButtons(joystick, &count);
     
-    for(i32 I = 0; I < Count; I++)
+    for(i32 i = 0; i < count; i++)
     {
-        ControllerKeyCallback(I, ButtonState[I]);
+        controller_key_callback(i, button_state[i]);
     }
     
-    const float* Axes = glfwGetJoystickAxes(GLFW_JOYSTICK_1, &Count);
+    const float* axes = glfwGetJoystickAxes(GLFW_JOYSTICK_1, &count);
     
-    for(int Index = 0; Index < NUM_AXES; Index++)
+    for(int index = 0; index < NUM_AXES; index++)
     {
         InputController.Axes[Index] = Axes[Index];
         
         if(Index == 5 && InputController.ControllerType == Controller_Xbox)
         {
-            r32 LTAxis = Axes[4];
-            r32 RTAxis = Axes[5];
+            r32 lt_axis = axes[4];
+            r32 rt_axis = axes[5];
             
-            InputController.JoystickKeysDown[Joystick_LeftTrigger] = LTAxis > 0;
+            InputController.JoystickKeysDown[Joystick_LeftTrigger] = lt_axis > 0;
             
-            if(LTAxis > 0  && InputController.JoystickKeysJustPressed[Joystick_LeftTrigger] != Key_Invalid)
+            if(lt_axis > 0  && InputController.JoystickKeysJustPressed[Joystick_LeftTrigger] != Key_Invalid)
             {
                 InputController.JoystickKeysJustPressed[Joystick_LeftTrigger] = Key_JustPressed;
             }
-            else if(LTAxis <= 0)
+            else if(lt_axis <= 0)
             {
                 InputController.JoystickKeysJustPressed[Joystick_LeftTrigger] = Key_NotPressed;
             }
             
-            InputController.JoystickKeysDown[Joystick_RightTrigger] = RTAxis > 0;
+            InputController.JoystickKeysDown[Joystick_RightTrigger] = rt_axis > 0;
             
-            if(RTAxis > 0 && InputController.JoystickKeysJustPressed[Joystick_RightTrigger] != Key_Invalid)
+            if(rt_axis > 0 && InputController.JoystickKeysJustPressed[Joystick_RightTrigger] != Key_Invalid)
             {
                 InputController.JoystickKeysJustPressed[Joystick_RightTrigger] = Key_JustPressed;
             }
-            else if(RTAxis <= 0)
+            else if(rt_axis <= 0)
             {
                 InputController.JoystickKeysJustPressed[Joystick_RightTrigger] = Key_NotPressed;
             }
@@ -278,67 +278,67 @@ static void ControllerKeys(i32 Joystick)
     }
 }
 
-static void CursorPositionCallback(GLFWwindow *Window, double XPos, double YPos)
+static void cursor_position_callback(GLFWwindow *window, double x_pos, double y_pos)
 {
-    InputController.MouseX = XPos;
-    InputController.MouseY = YPos;
+    InputController.MouseX = x_pos;
+    InputController.MouseY = y_pos;
 }
 
-void ScrollCallback(GLFWwindow* Window, double XOffset, double YOffset)
+void scroll_callback(GLFWwindow* window, double x_offset, double y_offset)
 {
-    InputController.ScrollX = XOffset;
-    InputController.ScrollY = YOffset;
+    InputController.ScrollX = x_offset;
+    InputController.ScrollY = y_offset;
 }
 
-static void KeyCallback(GLFWwindow *Window, int Key, int Scancode, int Action, int Mods)
+static void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods)
 {
-    if (Action == GLFW_PRESS && Key >= 0)
+    if (action == GLFW_PRESS && key >= 0)
     {
         InputController.AnyKeyPressed = true;
-        if (InputController.KeysJustPressed[InputController.KeyMappings[Key]] == Key_NotPressed)
+        if (InputController.KeysJustPressed[InputController.KeyMappings[key]] == Key_NotPressed)
         {
-            InputController.KeysJustPressed[InputController.KeyMappings[Key]] = Key_JustPressed;
+            InputController.KeysJustPressed[InputController.KeyMappings[key]] = Key_JustPressed;
         }
         
-        InputController.KeysDown[InputController.KeyMappings[Key]] = true;
+        InputController.KeysDown[InputController.KeyMappings[key]] = true;
     }
-    else if (Action == GLFW_RELEASE && Key >= 0)
+    else if (action == GLFW_RELEASE && key >= 0)
     {
-        InputController.KeysUp[InputController.KeyMappings[Key]] = true;
-        InputController.KeysJustPressed[InputController.KeyMappings[Key]] = Key_NotPressed;
+        InputController.KeysUp[InputController.KeyMappings[key]] = true;
+        InputController.KeysJustPressed[InputController.KeyMappings[key]] = Key_NotPressed;
         
-        InputController.KeysDown[InputController.KeyMappings[Key]] = false;
+        InputController.KeysDown[InputController.KeyMappings[key]] = false;
     }
 }
 
-static void MouseButtonCallback(GLFWwindow *Window, int Button, int Action, int Mods)
+static void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
 {
-    if (Action == GLFW_PRESS)
+    if (action == GLFW_PRESS)
     {
         InputController.AnyKeyPressed = true;
-        if (InputController.MouseButtonJustPressed[InputController.MouseButtonMappings[Button]] == Key_NotPressed)
+        if (InputController.MouseButtonJustPressed[InputController.MouseButtonMappings[button]] == Key_NotPressed)
         {
-            InputController.MouseButtonJustPressed[InputController.MouseButtonMappings[Button]] = Key_JustPressed;
+            InputController.MouseButtonJustPressed[InputController.MouseButtonMappings[button]] = Key_JustPressed;
         }
-        else if (InputController.MouseButtonJustPressed[InputController.MouseButtonMappings[Button]] == Key_JustPressed)
+        else if (InputController.MouseButtonJustPressed[InputController.MouseButtonMappings[button]] == Key_JustPressed)
         {
             // NOTE(niels): Do we ever even get in here???
-            InputController.MouseButtonJustPressed[InputController.MouseButtonMappings[Button]] = Key_Invalid;
+            InputController.MouseButtonJustPressed[InputController.MouseButtonMappings[button]] = Key_Invalid;
         }
         
-        InputController.MouseButtonDown[InputController.MouseButtonMappings[Button]] = true;
+        InputController.MouseButtonDown[InputController.MouseButtonMappings[button]] = true;
     }
-    else if (Action == GLFW_RELEASE)
+    else if (action == GLFW_RELEASE)
     {
-        InputController.MouseButtonsUp[InputController.MouseButtonMappings[Button]] = true;
-        InputController.MouseButtonJustPressed[InputController.MouseButtonMappings[Button]] = Key_NotPressed;
-        InputController.MouseButtonDown[InputController.MouseButtonMappings[Button]] = false;
+        InputController.MouseButtonsUp[InputController.MouseButtonMappings[button]] = true;
+        InputController.MouseButtonJustPressed[InputController.MouseButtonMappings[button]] = Key_NotPressed;
+        InputController.MouseButtonDown[InputController.MouseButtonMappings[button]] = false;
     }
 }
 
-void CharacterCallback(GLFWwindow *Window, unsigned int Codepoint)
+void character_callback(GLFWwindow *window, unsigned int codepoint)
 {
-    InputController.CurrentCharacter = (char)Codepoint;
+    InputController.CurrentCharacter = (char)codepoint;
 }
 
 #endif

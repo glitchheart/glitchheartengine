@@ -38,7 +38,7 @@ DPAD LEFT 17
  SHARE 8
 */
 
-enum Key_Mode
+enum KeyMode
 {
     Key_NotPressed,
     Key_JustPressed,
@@ -252,7 +252,7 @@ enum Stick
     Stick_Right
 };
 
-enum Controller_Axis_Code
+enum ControllerAxisCode
 {
     Axis_1, // Left stick X (PS4 W10)
     Axis_2, // Left stick Y (PS4 W10)
@@ -264,59 +264,59 @@ enum Controller_Axis_Code
 
 #define NUM_AXES 6
 
-enum Controller_Type
+enum ControllerType
 {
     Controller_None,
     Controller_Xbox,
     Controller_PS4
 };
 
-struct custom_key_mapping
+struct CustomKeyMapping
 {
-    Key_Code KeyboardKey;
-    i32 PS4Key;
-    i32 XboxKey;
+    Key_Code keyboard_key;
+    i32 p_s4_key;
+    i32 xbox_key;
 };
 
-struct input_controller
+struct InputController
 {
-    custom_key_mapping CustomMappings[64];
+    CustomKeyMapping custom_mappings[64];
     
-    b32 AnyKeyPressed;
+    b32 any_key_pressed;
     
-    b32 KeysDown[NUM_KEYS];
-    b32 KeysUp[NUM_KEYS];
-    Key_Mode KeysJustPressed[NUM_KEYS];
+    b32 keys_down[NUM_KEYS];
+    b32 keys_up[NUM_KEYS];
+    KeyMode keys_just_pressed[NUM_KEYS];
     
-    b32 MouseButtonDown[NUM_MOUSE_BUTTONS];
-    b32 MouseButtonsUp[NUM_MOUSE_BUTTONS];
-    Key_Mode MouseButtonJustPressed[NUM_MOUSE_BUTTONS];
+    b32 mouse_button_down[NUM_MOUSE_BUTTONS];
+    b32 mouse_buttons_up[NUM_MOUSE_BUTTONS];
+    KeyMode mouse_button_just_pressed[NUM_MOUSE_BUTTONS];
     
     
-    b32 JoystickKeysDown[NUM_JOYSTICK_KEYS];
-    Key_Mode JoystickKeysJustPressed[NUM_JOYSTICK_KEYS];
+    b32 joystick_keys_down[NUM_JOYSTICK_KEYS];
+    KeyMode joystick_keys_just_pressed[NUM_JOYSTICK_KEYS];
     
-    r32 Axes[NUM_AXES];
+    r32 axes[NUM_AXES];
     
-    r32 AxesUsedZone = 0.4f;
-    Key_Mode AxesJustPressed[NUM_AXES];
+    r32 axes_used_zone = 0.4f;
+    KeyMode axes_just_pressed[NUM_AXES];
     
-    r64 MouseX;
-    r64 MouseY;
-    r64 ScrollX;
-    r64 ScrollY;
+    r64 mouse_x;
+    r64 mouse_y;
+    r64 scroll_x;
+    r64 scroll_y;
     
-    r32 ControllerDeadzone = 0.2f;
+    r32 controller_deadzone = 0.2f;
     
-    b32 ControllerPresent = false;
-    Controller_Type ControllerType = Controller_None;
+    b32 controller_present = false;
+    ControllerType controller_type = Controller_None;
     
-    char CurrentCharacter;
-    b32 DeleteCharacter = false;
+    char current_character;
+    b32 delete_character = false;
     
-    integer_map KeyMappings;
-    integer_map MouseButtonMappings;
-    integer_map ControllerMappings;
+    integer_map key_mappings;
+    integer_map mouse_button_mappings;
+    integer_map controller_mappings;
     
 };
 

@@ -1,109 +1,109 @@
 #ifndef FILEHANDLING_H
 #define FILEHANDLING_H
 
-struct asset_manager
+struct AssetManager
 {
-    b32 IsInitialized;
-    b32 ListenForChanges;
+    b32 is_initialized;
+    b32 listen_for_changes;
     
-    memory_arena Arena;
+    MemoryArena arena;
     
     //shaders
-    b32 DirtyVertexShaderIndices[Shader_Count]; //set to 1 if they should be reloaded
-    b32 DirtyFragmentShaderIndices[Shader_Count];
-    time_t VertexShaderTimes[Shader_Count];
-    time_t FragmentShaderTimes[Shader_Count];
+    b32 dirty_vertex_shader_indices[Shader_Count]; //set to 1 if they should be reloaded
+    b32 dirty_fragment_shader_indices[Shader_Count];
+    time_t vertex_shader_times[Shader_Count];
+    time_t fragment_shader_times[Shader_Count];
     
     //textures
-    char* TilesetTexturePath;
-    b32 DirtyTileset;
-    time_t TilesetTime;
+    char* tileset_texture_path;
+    b32 dirty_tileset;
+    time_t tileset_time;
     
     //libs
-    char* LibPaths[1];
-    u32 DirtyGameLib;
+    char* lib_paths[1];
+    u32 dirty_game_lib;
 };
 
-static GLchar* LoadShaderFromFile(const char* Path, memory_arena* Arena)
+static GLchar* load_shader_from_file(const char* path, MemoryArena* Arena)
 {
-    GLchar *Source = {};
+    GLchar *source = {};
     
-    FILE *File;
-    File = fopen(Path, "rb");
+    FILE *file;
+    file = fopen(path, "rb");
     
-    if(File)
+    if(file)
     {
-        fseek(File, 0, SEEK_END);
-        u32 Size = (u32)ftell(File);
-        fseek(File, 0, SEEK_SET);
+        fseek(file, 0, SEEK_END);
+        u32 Size = (u32)ftell(file);
+        fseek(file, 0, SEEK_SET);
         
-        Source = PushSize(Arena, Size + 1, GLchar);
+        source = PushSize(Arena, Size + 1, GLchar);
         
-        fread(Source, Size, 1, File); 
-        Source[Size] = '\0';
+        fread(source, Size, 1, file); 
+        source[Size] = '\0';
         
-        fclose(File);
+        fclose(file);
     }
     else
     {
-        fprintf(stderr, "Could not read file %s. File does not exist.\n",Path);
+        fprintf(stderr, "Could not read file %s. File does not exist.\n",path);
     }
     
-    return Source;
+    return source;
 }
 
 
 
-static void CheckDirty(const char* FilePath, time_t LastTime, b32* DirtyId, time_t* Time)
+static void check_dirty(const char* file_path, time_t last_time, b32* dirty_id, time_t* time)
 {
     struct stat sb;
-    stat(FilePath, &sb);
+    stat(file_path, &sb);
     
     time_t time = sb.st_mtime;
     
-    if (LastTime != 0 && LastTime < time)
+    if (last_time != 0 && last_time < time)
     {
-        *DirtyId = 1;
+        *dirty_id = 1;
     }
-    *Time = time;
+    *time = time;
 }
 
-static void StartupFileTimeChecks(asset_manager* AssetManager, char* LibPath)
+static void startup_file_time_checks(AssetManager* asset_manager, char* lib_path)
 {
-    if(!AssetManager->IsInitialized)
+    if(!asset_manager->IsInitialized)
     {
-        AssetManager->TilesetTexturePath = "../assets/textures/tiles.png";
-        AssetManager->LibPaths[0] = PushString(&AssetManager->Arena, LibPath);
-        AssetManager->IsInitialized = true;
+        asset_manager->TilesetTexturePath = "../assets/textures/tiles.png";
+        asset_manager->LibPaths[0] = push_string(&asset_manager->Arena, lib_path);
+        asset_manager->IsInitialized = true;
     }
     
     for (int i = 0; i < Shader_Count; i++) 
     {
         struct stat sb1;
-        auto ConcatedVertexShaderString = Concat(ShaderPaths[i], ".vert");
-        stat(ConcatedVertexShaderString, &sb1);
-        AssetManager->VertexShaderTimes[i] =  sb1.st_mtime;
+        auto concated_vertex_shader_string = concat(ShaderPaths[i], ".vert");
+        stat(concated_vertex_shader_string, &sb1);
+        asset_manager->VertexShaderTimes[i] =  sb1.st_mtime;
         
         struct stat sb2;
-        auto ConcatedFragmentShaderString = Concat(ShaderPaths[i], ".frag");
-        stat(ConcatedFragmentShaderString, &sb2);
-        AssetManager->FragmentShaderTimes[i] =  sb2.st_mtime;
+        auto concated_fragment_shader_string = concat(ShaderPaths[i], ".frag");
+        stat(concated_fragment_shader_string, &sb2);
+        asset_manager->FragmentShaderTimes[i] =  sb2.st_mtime;
     }
 }
 
-static void ListenToFileChanges(asset_manager* AssetManager)
+static void listen_to_file_changes(AssetManager* asset_manager)
 {
-    AssetManager->ListenForChanges = true;
+    asset_manager->ListenForChanges = true;
     
-    if(AssetManager->ListenForChanges) 
+    if(asset_manager->ListenForChanges) 
     {
         for (int i = 0; i < Shader_Count; i++)
         {
-            char* VertexPath = Concat(ShaderPaths[i], ".vert");
-            char* FragmentPath = Concat(ShaderPaths[i], ".frag");
+            char* vertex_path = concat(ShaderPaths[i], ".vert");
+            char* fragment_path = concat(ShaderPaths[i], ".frag");
             
-            CheckDirty(VertexPath, AssetManager->VertexShaderTimes[i], &AssetManager->DirtyVertexShaderIndices[i], &AssetManager->VertexShaderTimes[i]);
-            CheckDirty(FragmentPath, AssetManager->FragmentShaderTimes[i], &AssetManager->DirtyFragmentShaderIndices[i], &AssetManager->FragmentShaderTimes[i]);
+            check_dirty(vertex_path, asset_manager->VertexShaderTimes[i], &asset_manager->DirtyVertexShaderIndices[i], &asset_manager->VertexShaderTimes[i]);
+            check_dirty(fragment_path, asset_manager->FragmentShaderTimes[i], &asset_manager->DirtyFragmentShaderIndices[i], &asset_manager->FragmentShaderTimes[i]);
             
         }
     }

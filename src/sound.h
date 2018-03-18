@@ -3,36 +3,36 @@
 
 #define MAX_SOUND_EFFECTS 400
 
-struct sound_info
+struct SoundInfo
 {
-    r32 Pitch;
-    r32 Gain;
-    r32 Rolloff;
-    b32 Loop;
-    i32 LoopCount;
+    r32 pitch;
+    r32 gain;
+    r32 rolloff;
+    b32 loop;
+    i32 loop_count;
 };
 
-struct sound_effect
+struct SoundEffect
 {
-    i32 Buffer;
-    sound_info SoundInfo;
+    i32 buffer;
+    SoundInfo sound_info;
 };
 
-struct sound_commands
+struct SoundCommands
 {
-    memory_arena SoundArena;
-    i32 SoundCount;
+    MemoryArena sound_arena;
+    i32 sound_count;
     
-    directory_data SoundsToLoad;
-    b32 LoadSounds;
+    directory_data sounds_to_load;
+    b32 load_sounds;
     
-    i32 Sounds;
+    i32 sounds;
     
-    r32 SFXVolume;
-    r32 MusicVolume;
-    b32 Muted;
-    b32 Paused;
-    b32 Stopped;
+    r32 sfx_volume;
+    r32 music_volume;
+    b32 muted;
+    b32 paused;
+    b32 stopped;
 };
 
 #endif

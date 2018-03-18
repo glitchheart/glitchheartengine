@@ -23,71 +23,71 @@ const char* DeviceExtensions[DEVICE_EXTENSIONS_SIZE] =
     VK_KHR_SWAPCHAIN_EXTENSION_NAME
 };
 
-struct queue_family_indices
+struct QueueFamilyIndices
 {
-    i32 GraphicsFamily;
-    i32 PresentFamily;
+    i32 graphics_family;
+    i32 present_family;
 };
 
 #define PRESENT_MODES 4
 #define SURFACE_FORMATS 32
 
-struct swapchain_support_details
+struct SwapchainSupportDetails
 {
-    VkSurfaceCapabilitiesKHR Capabilities;
-    VkSurfaceFormatKHR Formats[SURFACE_FORMATS];
-    i32 FormatCount;
+    VkSurfaceCapabilitiesKHR capabilities;
+    VkSurfaceFormatKHR formats[SURFACE_FORMATS];
+    i32 format_count;
     
-    VkPresentModeKHR PresentModes[PRESENT_MODES];
-    i32 PresentModeCount;
+    VkPresentModeKHR present_modes[PRESENT_MODES];
+    i32 present_mode_count;
 };
 
-struct vk_render_state
+struct VkRenderState
 {
-    GLFWwindow* Window;
+    GLFWwindow* window;
     
-    i32 WindowWidth;
-    i32 WindowHeight;
+    i32 window_width;
+    i32 window_height;
     
-    VkInstance Instance;
-    VkDebugReportCallbackEXT Callback;
-    VkPhysicalDevice PhysicalDevice;
-    VkPhysicalDeviceFeatures DeviceFeatures;
-    VkPhysicalDeviceProperties DeviceProperties;
+    VkInstance instance;
+    VkDebugReportCallbackEXT callback;
+    VkPhysicalDevice physical_device;
+    VkPhysicalDeviceFeatures device_features;
+    VkPhysicalDeviceProperties device_properties;
     
-    VkDevice Device;
-    VkQueue GraphicsQueue;
-    VkQueue PresentQueue;
+    VkDevice device;
+    VkQueue graphics_queue;
+    VkQueue present_queue;
     
-    VkSurfaceKHR Surface;
-    VkSwapchainKHR Swapchain;
+    VkSurfaceKHR surface;
+    VkSwapchainKHR swapchain;
     
-    swapchain_support_details SwapchainSupportDetails;
-    queue_family_indices QueueFamilyIndices;
+    SwapchainSupportDetails swapchain_support_details;
+    QueueFamilyIndices queue_family_indices;
     
-    VkImage* SwapchainImages;
-    VkImageView* SwapchainImageViews;
-    u32 SwapchainImageCount;
+    VkImage* swapchain_images;
+    VkImageView* swapchain_image_views;
+    u32 swapchain_image_count;
     
-    VkFramebuffer* SwapchainFramebuffers;
+    VkFramebuffer* swapchain_framebuffers;
     
-    VkCommandPool CommandPool;
-    VkCommandBuffer* CommandBuffers;
+    VkCommandPool command_pool;
+    VkCommandBuffer* command_buffers;
     
-    VkFormat SwapchainImageFormat;
-    VkExtent2D SwapchainExtent;
+    VkFormat swapchain_image_format;
+    VkExtent2D swapchain_extent;
     
-    VkPipeline GraphicsPipeline;
-    VkRenderPass RenderPass;
-    VkPipelineLayout PipelineLayout;
+    VkPipeline graphics_pipeline;
+    VkRenderPass render_pass;
+    VkPipelineLayout pipeline_layout;
     
-    VkSemaphore ImageAvailableSemaphore;
-    VkSemaphore RenderFinishedSemaphore;
+    VkSemaphore image_available_semaphore;
+    VkSemaphore render_finished_semaphore;
     
-    b32 HideCursor;
-    b32 EnableValidationLayers;
+    b32 hide_cursor;
+    b32 enable_validation_layers;
     
-    memory_arena Arena;
+    MemoryArena arena;
 };
 
 #endif

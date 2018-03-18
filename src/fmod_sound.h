@@ -3,17 +3,17 @@
 #define SOUNDS 64
 
 
-struct sound_device
+struct SoundDevice
 {
-    b32 IsInitialized;
+    b32 is_initialized;
     
-    FMOD_SYSTEM* System;
-    FMOD_SOUND* Sounds[SOUNDS];
-    i32 SoundCount;
+    FMOD_SYSTEM* system;
+    FMOD_SOUND* sounds[SOUNDS];
+    i32 sound_count;
     
-    r32 SFXVolume;
-    r32 MusicVolume;
+    r32 sfx_volume;
+    r32 music_volume;
     
-    FMOD_CHANNELGROUP* ChannelGroups;
-    FMOD_CHANNELGROUP* MasterGroup;
+    FMOD_CHANNELGROUP* channel_groups;
+    FMOD_CHANNELGROUP* master_group;
 };

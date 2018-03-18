@@ -3,36 +3,36 @@
 
 struct memory_block
 {
-    platform_memory_block Block;
-    u64 Pad[3];
+    platform_memory_block block;
+    u64 pad[3];
 };
 
-struct platform_state
+struct PlatformState
 {
-    memory_arena PermArena;
+    MemoryArena perm_arena;
 };
 
-struct game_code
+struct GameCode
 {
-    void* GameCodeLibrary;
-    time_t LastLibraryWriteTime;
+    void* game_code_library;
+    time_t last_library_write_time;
     
-    update *Update;
+    update *update;
     
-    b32 IsValid;
+    b32 is_valid;
 };
 
 #define MAX_TEMP_BLOCKS 4096
 
-struct memory_state
+struct MemoryState
 {
     // Will this work thoooo (apparently yes!)
-    platform_memory_block* Blocks[MAX_TEMP_BLOCKS];
-    i32 TempCount;
-    u64 TempSizeAllocated;
+    platform_memory_block* blocks[MAX_TEMP_BLOCKS];
+    i32 temp_count;
+    u64 temp_size_allocated;
     
-    i32 PermanentBlocks;
-    u64 PermanentSizeAllocated;
+    i32 permanent_blocks;
+    u64 permanent_size_allocated;
 };
 
 #endif

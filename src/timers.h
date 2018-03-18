@@ -14,81 +14,81 @@
 #define PAUSE_TIMERS() PauseTimers(TimerController)
 #define RESUME_TIMERS() ResumeTimers(TimerController)
 
-struct timer
+struct Timer
 {
-    r64 CurrentTime;
-    r64 TimerMax;
-    char* Name;
-    b32 Delete; // Not used yet, but will be used for array sorting and array cleanup
+    r64 current_time;
+    r64 timer_max;
+    char* name;
+    b32 delete; // Not used yet, but will be used for array sorting and array cleanup
 };
 
-struct timer_controller
+struct TimerController
 {
-    b32 Paused;
-    timer Timers[TIMER_MAX];
-    i32 TimerCount;
+    b32 paused;
+    Timer timers[TIMER_MAX];
+    i32 timer_count;
 };
 
-static void ResetTimers(timer_controller& TimerController)
+static void reset_timers(TimerController& timer_controller)
 {
-    TimerController.Paused = false;
-    TimerController.TimerCount = 0;
+    timer_controller.Paused = false;
+    timer_controller.TimerCount = 0;
 }
 
-static void RegisterTimer(i32* Handle, r64 TimerMax, timer_controller& TimerController)
+static void register_timer(i32* handle, r64 timer_max, TimerController& timer_controller)
 {
-    *Handle = TimerController.TimerCount++;
-    TimerController.Timers[*Handle].CurrentTime = TimerMax;
-    TimerController.Timers[*Handle].TimerMax = TimerMax;
+    *handle = TimerController.TimerCount++;
+    TimerController.Timers[*handle].CurrentTime = timer_max;
+    TimerController.Timers[*handle].TimerMax = timer_max;
     Assert(TimerController.TimerCount <= TIMER_MAX);
 }
 
-static void StartTimer(i32 Handle, timer_controller& TimerController)
+static void start_timer(i32 handle, TimerController& timer_controller)
 {
-    TimerController.Timers[Handle].CurrentTime = 0.0f;
+    timer_controller.Timers[handle].CurrentTime = 0.0f;
 }
 
-static void StopTimer(i32 Handle, timer_controller& TimerController)
+static void stop_timer(i32 handle, TimerController& timer_controller)
 {
-    TimerController.Timers[Handle].CurrentTime = TimerController.Timers[Handle].TimerMax;
+    timer_controller.Timers[handle].CurrentTime = timer_controller.Timers[handle].TimerMax;
 }
 
-static r64 GetCurrentTimerTime(i32 Handle, timer_controller& TimerController)
+static r64 get_current_timer_time(i32 handle, TimerController& timer_controller)
 {
-    return TimerController.Timers[Handle].CurrentTime;
+    return timer_controller.Timers[handle].CurrentTime;
 }
 
-static r64 GetMaxTimerTime(i32 Handle, timer_controller& TimerController)
+static r64 get_max_timer_time(i32 handle, TimerController& timer_controller)
 {
-    return TimerController.Timers[Handle].TimerMax;
+    return timer_controller.Timers[handle].TimerMax;
 }
 
-static b32 TimerDone(i32 Handle, timer_controller& TimerController)
+static b32 timer_done(i32 handle, TimerController& timer_controller)
 {
-    if(Handle < 0 || Handle > TimerController.TimerCount)
+    if(handle < 0 || handle > timer_controller.TimerCount)
         return true;
-    return TimerController.Timers[Handle].CurrentTime >= TimerController.Timers[Handle].TimerMax;
+    return timer_controller.Timers[handle].CurrentTime >= timer_controller.Timers[handle].TimerMax;
 }
 
-static void TickTimers(timer_controller& TimerController, r64 DeltaTime)
+static void tick_timers(TimerController& timer_controller, r64 delta_time)
 {
-    if(!TimerController.Paused)
+    if(!timer_controller.Paused)
     {
-        for(i32 Index = 0; Index < TimerController.TimerCount; Index++)
+        for(i32 index = 0; index < timer_controller.TimerCount; index++)
         {
-            TimerController.Timers[Index].CurrentTime += DeltaTime;
+            timer_controller.Timers[index].CurrentTime += delta_time;
         }
     }
 }
 
-static void PauseTimers(timer_controller& TimerController)
+static void pause_timers(TimerController& timer_controller)
 {
-    TimerController.Paused = true;
+    timer_controller.Paused = true;
 }
 
-static void ResumeTimers(timer_controller& TimerController)
+static void resume_timers(TimerController& timer_controller)
 {
-    TimerController.Paused = false;
+    timer_controller.Paused = false;
 }
 
 #endif

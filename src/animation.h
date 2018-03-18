@@ -5,93 +5,93 @@
 #define CONDITION_ARRAY_SIZE 8
 #define ANIMATION_NODE_SIZE 16
 
-struct animation_parameter
+struct AnimationParameter
 {
-    char Name[PARAMETER_NAME_LENGTH];
-    b32 Value;
+    char name[PARAMETER_NAME_LENGTH];
+    b32 value;
 };
 
-struct animation_link_condition
+struct AnimationLinkCondition
 {
-    i32 ParameterHandle;
-    b32 ExpectedValue;
+    i32 parameter_handle;
+    b32 expected_value;
 };
 
 #define ANIMATION_CALLBACK(name) void name(void* State, void* Data, renderer& Renderer, sound_commands* SoundCommands, input_controller* InputController, timer_controller& TimerController)
 
 typedef ANIMATION_CALLBACK(animation_callback);
 
-struct animation_callback_info
+struct AnimationCallbackInfo
 {
-    animation_callback* Callback;
-    i32 Frame;
+    animation_callback* callback;
+    i32 frame;
     
-    b32 WasCalled;
-    void* State;
-    void* Data;
+    b32 was_called;
+    void* state;
+    void* data;
 };
 
-struct animation_node_link
+struct AnimationNodeLink
 {
-    i32 OriginNode;
-    i32 DestinationNode;
+    i32 origin_node;
+    i32 destination_node;
     
-    b32 AfterFinishedAnimation;
-    animation_link_condition Conditions[CONDITION_ARRAY_SIZE];
-    i32 ConditionCount;
+    b32 after_finished_animation;
+    AnimationLinkCondition conditions[CONDITION_ARRAY_SIZE];
+    i32 condition_count;
     
-    b32 ConditionMet;
+    b32 condition_met;
 };
 
-struct animation_node
+struct AnimationNode
 {
-    char Name[32];
-    i32 AnimationHandle;
+    char name[32];
+    i32 animation_handle;
     
-    b32 Loop;
-    b32 FreezeOnLastFrame;
+    b32 loop;
+    b32 freeze_on_last_frame;
     
-    animation_node_link Links[8];
-    i32 LinkCount;
+    AnimationNodeLink links[8];
+    i32 link_count;
     
-    animation_callback_info CallbackInfos[8];
-    i32 CallbackInfoCount;
+    AnimationCallbackInfo callback_infos[8];
+    i32 callback_info_count;
 };
 
-struct animation_controller
+struct AnimationController
 {
-    i32 CurrentFrameIndex;
-    r64 CurrentTime;
-    b32 Playing;
+    i32 current_frame_index;
+    r64 current_time;
+    b32 playing;
     
-    r32 Speed;
+    r32 speed;
     
-    i32 CurrentNode;
-    animation_node Nodes[16];
-    i32 NodeCount;
+    i32 current_node;
+    AnimationNode nodes[16];
+    i32 node_count;
     
-    animation_parameter Parameters[8];
-    i32 ParameterCount;
+    AnimationParameter parameters[8];
+    i32 parameter_count;
 };
 
-struct spritesheet_frame
+struct SpritesheetFrame
 {
-    r64 Duration;
-    r32 X;
-    r32 Y;
-    i32 FrameWidth;
-    i32 FrameHeight;
+    r64 duration;
+    r32 x;
+    r32 y;
+    i32 frame_width;
+    i32 frame_height;
 };
 
-struct spritesheet_animation
+struct SpritesheetAnimation
 {
-    char Name[32];
-    i32 TextureHandle;
-    i32 FrameCount = 0;
-    math::v2 FrameSize;
+    char name[32];
+    i32 texture_handle;
+    i32 frame_count = 0;
+    math::v2 frame_size;
     
-    math::v2 FrameOffset;
-    spritesheet_frame* Frames;
+    math::v2 frame_offset;
+    SpritesheetFrame* frames;
 };
 
 #endif

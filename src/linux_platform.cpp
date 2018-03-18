@@ -7,89 +7,89 @@
 
 inline PLATFORM_FILE_EXISTS(LinuxFileExists)
 {
-    struct stat Buffer;
-    return (stat(FilePath,&Buffer) == 0);
+    struct stat buffer;
+    return (stat(FilePath,&buffer) == 0);
 }
 
-static b32 CopyFile(const char* Src, const char* Dst, b32 DontOverwrite, b32 Binary = true)
+static b32 copy_file(const char* src, const char* dst, b32 dont_overwrite, b32 binary = true)
 {
-    FILE* In;
-    FILE* Out;
+    FILE* in;
+    FILE* out;
     
-    if(LinuxFileExists(Dst) && DontOverwrite)
+    if(LinuxFileExists(dst) && dont_overwrite)
     {
         return false;
     }
     
-    if(Binary)
+    if(binary)
     {
-        In = fopen(Src, "rb");
+        in = fopen(src, "rb");
     }
     else
     {
-        In = fopen(Src, "r");
+        in = fopen(src, "r");
     }
     
-    if(In == NULL)
+    if(in == NULL)
     {
         printf("Failed in\n");
-        printf("Src: %s\n", Src);
-        printf("Dst: %s\n", Dst);
+        printf("Src: %s\n", src);
+        printf("Dst: %s\n", dst);
         return false;
     }
     
-    if(Binary)
+    if(binary)
     {
-        Out = fopen(Dst, "wb");
+        out = fopen(dst, "wb");
     }
     else
     {
-        Out = fopen(Dst, "w");
+        out = fopen(dst, "w");
     }
     
-    if(Out == NULL)
+    if(out == NULL)
     {
-        fclose(In);
+        fclose(in);
         printf("Failed out\n");
         return false;
     }
     
-    size_t N,M;
-    unsigned char Buff[8192];
+    size_t n,m;
+    unsigned char buff[8192];
     do
     {
-        N = fread(Buff, 1, sizeof(Buff), In);
-        if(N)
+        n = fread(buff, 1, sizeof(buff), in);
+        if(n)
         {
-            M = fwrite(Buff, 1, N, Out);
+            m = fwrite(buff, 1, n, out);
         }
         else
         {
-            M = 0;
+            m = 0;
         }
-    } while ((N > 0) && (N == M));
-    if(M)
+    } while ((n > 0) && (n == m));
+    if(m)
     {
         printf("COPY\n");
     }
     
-    fclose(Out);
-    fclose(In);
+    fclose(out);
+    fclose(in);
     
-    if(Binary)
+    if(binary)
     {
-        system(Concat("chmod +xr ", Dst));
+        system(concat("chmod +xr ", dst));
     }
     return true;
 }
 
-static time_t GetLastWriteTime(const char* FilePath)
+static time_t get_last_write_time(const char* file_path)
 {
-    struct stat Result;
-    if(stat(FilePath, &Result) == 0)
+    struct stat result;
+    if(stat(file_path, &result) == 0)
     {
-        auto ModTime = Result.st_mtime;
-        return ModTime;
+        auto mod_time = result.st_mtime;
+        return mod_time;
     }
     return 0;
 }
@@ -116,30 +116,30 @@ PLATFORM_ALLOCATE_MEMORY(LinuxAllocateMemory)
     Assert(sizeof(memory_block) == 64);
     
     umm PageSize = 4096; //TODO: Not really always correct?
-    umm TotalSize = Size + sizeof(memory_block);
-    umm BaseOffset = sizeof(memory_block);
-    umm ProtectOffset = 0;
+    umm total_size = Size + sizeof(memory_block);
+    umm base_offset = sizeof(memory_block);
+    umm protect_offset = 0;
     
     if(Flags & PM_UnderflowCheck)
     {
-        TotalSize = Size + 2 * PageSize;
-        BaseOffset = 2 * PageSize;
-        ProtectOffset = PageSize;
+        total_size = Size + 2 * PageSize;
+        base_offset = 2 * PageSize;
+        protect_offset = PageSize;
     }
     
     if(Flags & PM_OverflowCheck)
     {
-        umm SizeRoundedUp = AlignPow2(Size, PageSize);
-        TotalSize = SizeRoundedUp + 2 * PageSize;
-        BaseOffset = PageSize + SizeRoundedUp - Size;
-        ProtectOffset = PageSize + SizeRoundedUp;
+        umm size_rounded_up = AlignPow2(Size, PageSize);
+        total_size = size_rounded_up + 2 * PageSize;
+        base_offset = PageSize + size_rounded_up - Size;
+        protect_offset = PageSize + size_rounded_up;
     }
     
-    memory_block* Block = (memory_block*)malloc(TotalSize);
-    memset(Block, 0, TotalSize);
+    memory_block* Block = (memory_block*)malloc(total_size);
+    memset(Block, 0, total_size);
     
     Assert(Block);
-    Block->Block.Base = (u8*)Block + BaseOffset;
+    Block->Block.Base = (u8*)Block + base_offset;
     Assert(Block->Block.Used == 0);
     Assert(Block->Block.Prev == 0);
     
@@ -152,21 +152,21 @@ PLATFORM_ALLOCATE_MEMORY(LinuxAllocateMemory)
     Block->Block.Size = Size;
     Block->Block.Flags = Flags;
     
-    platform_memory_block* PlatBlock = &Block->Block;
+    platform_memory_block* plat_block = &Block->Block;
     
     if(Flags & PM_Temporary)
     {
         Assert((MemoryState.TempCount + 1) < MAX_TEMP_BLOCKS);
-        MemoryState.TempSizeAllocated += TotalSize;
-        MemoryState.Blocks[MemoryState.TempCount++] = PlatBlock;
+        MemoryState.TempSizeAllocated += total_size;
+        MemoryState.Blocks[MemoryState.TempCount++] = plat_block;
     }
     else
     {
         MemoryState.PermanentBlocks++;
-        MemoryState.PermanentSizeAllocated += TotalSize;
+        MemoryState.PermanentSizeAllocated += total_size;
     }
     
-    return PlatBlock;
+    return plat_block;
 }
 
 PLATFORM_DEALLOCATE_MEMORY(LinuxDeallocateMemory)
@@ -179,28 +179,28 @@ PLATFORM_DEALLOCATE_MEMORY(LinuxDeallocateMemory)
             MemoryState.PermanentSizeAllocated -= (Block->Size + sizeof(memory_block));
         }
         
-        memory_block *NewBlock =  ((memory_block*)Block);
-        free(NewBlock);
+        memory_block *new_block =  ((memory_block*)Block);
+        free(new_block);
     }
 }
 
-static void ClearTempMemory()
+static void clear_temp_memory()
 {
-    for(i32 Temp = 0; Temp < MemoryState.TempCount; Temp++)
+    for(i32 temp = 0; temp < MemoryState.TempCount; temp++)
     {
-        LinuxDeallocateMemory(MemoryState.Blocks[Temp]);
+        LinuxDeallocateMemory(MemoryState.Blocks[temp]);
     }
     
     MemoryState.TempCount = 0;
     MemoryState.TempSizeAllocated = 0;
 }
 
-static void InitPlatform(platform_api& PlatformAPI)
+static void init_platform(PlatformApi& platform_api)
 {
-    PlatformAPI.FileExists = LinuxFileExists;
-    PlatformAPI.AllocateMemory = LinuxAllocateMemory;
-    PlatformAPI.DeallocateMemory = LinuxDeallocateMemory;
-    PlatformAPI.LoadDynamicLibrary = LinuxLoadLibrary;
-    PlatformAPI.FreeDynamicLibrary = LinuxFreeLibrary;
-    PlatformAPI.LoadSymbol = LinuxLoadSymbol;
+    platform_api.FileExists = LinuxFileExists;
+    platform_api.AllocateMemory = LinuxAllocateMemory;
+    platform_api.DeallocateMemory = LinuxDeallocateMemory;
+    platform_api.LoadDynamicLibrary = LinuxLoadLibrary;
+    platform_api.FreeDynamicLibrary = LinuxFreeLibrary;
+    platform_api.LoadSymbol = LinuxLoadSymbol;
 }

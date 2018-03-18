@@ -1,88 +1,88 @@
 #ifndef MODEL_FORMAT_H
 #define MODEL_FORMAT_H
 
-struct model_header
+struct ModelHeader
 {
-    char Format[4]; // M O D L ?
-    char Version[4];
+    char format[4]; // M O D L ?
+    char version[4];
 };
 
-struct model_data
+struct ModelData
 {
-    i32 ModelType;
+    i32 model_type;
     
-    i32 NumMeshes;
-    i32 NumVertices;
-    i32 NumIndices;
-    i32 NumBones;
-    i32 NumMaterials;
+    i32 num_meshes;
+    i32 num_vertices;
+    i32 num_indices;
+    i32 num_bones;
+    i32 num_materials;
     
-    b32 HasNormals;
-    b32 HasUVs;
+    b32 has_normals;
+    b32 has_u_vs;
     
-    long MeshChunkSize;
-    long VertexBufferChunkSize;
-    long IndexBufferChunkSize;
-    long MaterialChunkSize;
-    long BoneChunkSize;
+    long mesh_chunk_size;
+    long vertex_buffer_chunk_size;
+    long index_buffer_chunk_size;
+    long material_chunk_size;
+    long bone_chunk_size;
     
-    math::m4 GlobalInverseTransform;
+    math::m4 global_inverse_transform;
 };
 
-struct bone_header
+struct BoneHeader
 {
-    long NumBones;
-    long BoneChunkSize;
+    long num_bones;
+    long bone_chunk_size;
 };
 
-struct animation_header
+struct AnimationHeader
 {
-    i32 NumAnimations;
+    i32 num_animations;
 };
 
-struct animation_channel_header
+struct AnimationChannelHeader
 {
-    r32 Duration;
-    i32 NumBoneChannels;
+    r32 duration;
+    i32 num_bone_channels;
 };
 
-struct bone_animation_header
+struct BoneAnimationHeader
 {
-    i32 BoneIndex;
-    i32 NumPositionChannels;
-    i32 NumRotationChannels;
-    i32 NumScalingChannels;
+    i32 bone_index;
+    i32 num_position_channels;
+    i32 num_rotation_channels;
+    i32 num_scaling_channels;
 };
 
-struct mesh_header
+struct MeshHeader
 {
-    long NumVertices;
-    long VertexChunkSize;
-    long NumNormals;
-    long NumUVs;
-    long NormalsChunkSize;
-    long NumFaces;
-    long FacesChunkSize;
-    bool HasTexture;
-    char TextureFile[100];
+    long num_vertices;
+    long vertex_chunk_size;
+    long num_normals;
+    long num_u_vs;
+    long normals_chunk_size;
+    long num_faces;
+    long faces_chunk_size;
+    bool has_texture;
+    char texture_file[100];
 };
 
-struct vertex_attribute
+struct VertexAttribute
 {
-    i32 Position;
-    long Type;
-    long Stride;
-    long Offset;
+    i32 position;
+    long type;
+    long stride;
+    long offset;
 };
 
-struct mesh_data_info
+struct MeshDataInfo
 {
-    long IndexBufferTarget; // If it's GL_UNSIGNED_SHORT etc.
-    i32 IndexCount;
-    long IndexBufferByteLength;
-    long VertexBufferByteLength;
+    long index_buffer_target; // If it's GL_UNSIGNED_SHORT etc.
+    i32 index_count;
+    long index_buffer_byte_length;
+    long vertex_buffer_byte_length;
     
-    b32 HasSkin;
+    b32 has_skin;
     //i32 VertexAttributeCount;
     // @Incomplete: Skinning and animation
     
@@ -90,9 +90,9 @@ struct mesh_data_info
     //char TextureName[100];
 };
 
-struct chunk_format
+struct ChunkFormat
 {
-    char Format[4]; // M E S H / E O F / B O N E / A N I M
+    char format[4]; // M E S H / E O F / B O N E / A N I M
 };
 
 #endif
