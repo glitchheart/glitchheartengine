@@ -34,7 +34,7 @@ static camera_params PerspectiveCameraParams()
 }
 
 // @Incomplete
-static inline void CameraTransform(renderer& Renderer, camera& Camera, math::v3 Position = math::v3(), math::quat Orientation = math::quat(), math::v3 Target = math::v3(), r32 Zoom = 1.0f, r32 Near = -1.0f, r32 Far = 1.0f, camera_params Params = DefaultCameraParams())
+static inline void CameraTransform(Renderer& renderer, Camera& camera, math::Vec3 position = math::Vec3(), math::Quat orientatio = math::quat(), math::v3 Target = math::v3(), r32 Zoom = 1.0f, r32 Near = -1.0f, r32 Far = 1.0f, camera_params Params = DefaultCameraParams())
 {
     Camera.ViewportWidth = Renderer.WindowWidth;
     Camera.ViewportHeight = Renderer.WindowHeight;

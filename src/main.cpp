@@ -323,9 +323,9 @@ int main(int argc, char** args)
     if(config_data.graphics_api == GRAPHICS_VULKAN)
     {
 #if __LINUX || _WIN32
-        vk_render_state vk_render_state;
+        VkRenderState vk_render_state;
         initialize_vulkan(vk_render_state, renderer, config_data);
-        VkRender(vk_render_state, renderer);
+        vk_render(vk_render_state, renderer);
 #endif
     }
     else if(config_data.graphics_api == GRAPHICS_OPEN_GL)
