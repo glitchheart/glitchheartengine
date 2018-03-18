@@ -1014,7 +1014,10 @@ static void InitializeOpenGL(render_state& RenderState, renderer& Renderer, conf
     
     RenderState.ScreenWidth = ConfigData->ScreenWidth;
     RenderState.ScreenHeight = ConfigData->ScreenHeight;
-    RenderState.DpiScale = RenderState.WindowWidth / RenderState.ScreenWidth;
+    if(RenderState.ScreenWidth != 0)
+    {
+        RenderState.DpiScale = RenderState.WindowWidth / RenderState.ScreenWidth;
+    }
     
     glDisable(GL_DITHER);
     glLineWidth(2.0f);
