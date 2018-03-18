@@ -1,748 +1,634 @@
 #include "animation.h"
 
-enum Camera_Flags
+enum CameraFlags
 {
-    CFlag_Orthographic = (1 << 0),
-    CFlag_Perspective  = (1 << 1),
-    CFlag_NoLookAt     = (1 << 2)
+    C_FLAG_ORTHOGRAPHIC = (1 << 0),
+    C_FLAG_PERSPECTIVE  = (1 << 1),
+    C_FLAG_NO_LOOK_AT     = (1 << 2)
 };
 
-struct camera_params
+struct CameraParams
 {
-    u32 ViewFlags;
+    u32 view_flags;
 };
 
-static camera_params DefaultCameraParams()
+static CameraParams default_camera_params()
 {
-    camera_params Params;
-    Params.ViewFlags = CFlag_Orthographic | CFlag_NoLookAt;
-    return Params;
+    CameraParams params;
+    params.view_flags = C_FLAG_ORTHOGRAPHIC | C_FLAG_NO_LOOK_AT;
+    return params;
 }
 
-static camera_params OrthographicCameraParams()
+static CameraParams orthographic_camera_params()
 {
-    camera_params Params;
-    Params.ViewFlags = CFlag_Orthographic;
-    return Params;
+    CameraParams params;
+    params.view_flags = C_FLAG_ORTHOGRAPHIC;
+    return params;
 }
 
-static camera_params PerspectiveCameraParams()
+static CameraParams perspective_camera_params()
 {
-    camera_params Params;
-    Params.ViewFlags = CFlag_Perspective;
-    return Params;
+    CameraParams params;
+    params.view_flags = C_FLAG_PERSPECTIVE;
+    return params;
 }
 
 // @Incomplete
-static inline void CameraTransform(Renderer& renderer, Camera& camera, math::Vec3 position = math::Vec3(), math::Quat orientatio = math::quat(), math::v3 Target = math::v3(), r32 Zoom = 1.0f, r32 Near = -1.0f, r32 Far = 1.0f, camera_params Params = DefaultCameraParams())
+static inline void camera_transform(Renderer& renderer, Camera& camera, math::Vec3 position = math::Vec3(), math::Quat orientation = math::Quat(), math::Vec3 target = math::Vec3(), r32 zoom = 1.0f, r32 near = -1.0f, r32 far = 1.0f, CameraParams params = default_camera_params())
 {
-    Camera.ViewportWidth = Renderer.WindowWidth;
-    Camera.ViewportHeight = Renderer.WindowHeight;
-    if(Params.ViewFlags & CFlag_Orthographic)
+    camera.viewport_width = renderer.window_width;
+    camera.viewport_height = renderer.window_height;
+    if(params.view_flags & C_FLAG_ORTHOGRAPHIC)
     {
-        Camera.ProjectionMatrix = math::Ortho(0.0f, Renderer.Viewport[2] / Zoom, 0.0f, Renderer.Viewport[3] / Zoom, Near, Far);
-        Camera.ViewMatrix = math::m4(1.0f);
+        camera.projection_matrix = math::ortho(0.0f, renderer.viewport[2] / zoom, 0.0f, renderer.viewport[3] / zoom, near, far);
+        camera.view_matrix = math::Mat4(1.0f);
         
-        Camera.Position = Position;
-        Camera.Orientation = Orientation;
-        Camera.Target = Target;
+        camera.position = position;
+        camera.orientation = orientation;
+        camera.target = target;
         
-        if(!IsIdentity(Orientation))
+        if(!is_identity(orientation))
         {
-            Camera.ViewMatrix = ToMatrix(Orientation) * Camera.ViewMatrix;
+            camera.view_matrix = to_matrix(orientation) * camera.view_matrix;
         }
-        else if(!(Params.ViewFlags & CFlag_NoLookAt))
+        else if(!(params.view_flags & C_FLAG_NO_LOOK_AT))
         {
-            auto Dist = sqrt(1.0f / 3.0f);
-            Camera.ViewMatrix = math::LookAt(math::v3(Dist, Dist, Dist), math::v3(0.0f));
+            auto dist = sqrt(1.0f / 3.0f);
+            camera.view_matrix = math::look_at(math::Vec3(dist, dist, dist), math::Vec3(0.0f));
         }
         
-        Camera.ViewMatrix = math::Translate(Camera.ViewMatrix, math::v3(-Position.x, -Position.y, Position.z));
+        camera.view_matrix = math::translate(camera.view_matrix, math::Vec3(-position.x, -position.y, position.z));
         
-        //Camera.ViewMatrix = math::Translate(Camera.ViewMatrix, Position);
-        Camera.ViewMatrix = math::Translate(Camera.ViewMatrix, math::v3(Renderer.Viewport[2] / Zoom / 2, Renderer.Viewport[3] / Zoom / 2, 0.0f));
+        //camera.view_matrix = math::Translate(camera.view_matrix, position);
+        camera.view_matrix = math::translate(camera.view_matrix, math::Vec3(renderer.viewport[2] / zoom / 2, renderer.viewport[3] / zoom / 2, 0.0f));
         
         
     }
-    else if(Params.ViewFlags & CFlag_Perspective)
+    else if(params.view_flags & C_FLAG_PERSPECTIVE)
     {
-        Camera.ProjectionMatrix = math::Perspective((r32)Renderer.Viewport[2] / (r32)Renderer.Viewport[3], 0.60f, 0.1f, 100.0f);
+        camera.projection_matrix = math::perspective((r32)renderer.viewport[2] / (r32)renderer.viewport[3], 0.60f, 0.1f, 100.0f);
         
-        Camera.ViewMatrix = math::m4(1.0f);
+        camera.view_matrix = math::Mat4(1.0f);
         
-        auto Dist = sqrt(1.0f / 3.0f);
+        auto dist = sqrt(1.0f / 3.0f);
         
-        Dist = 20.0f;
+        dist = 20.0f;
         
-        Camera.ViewMatrix = math::LookAt(math::v3(Dist, Dist, Dist), Target);
+        camera.view_matrix = math::look_at(math::Vec3(dist, dist, dist), target);
         
-        if(!IsIdentity(Orientation))
+        if(!is_identity(orientation))
         {
-            Camera.ViewMatrix = ToMatrix(Orientation) * Camera.ViewMatrix;
+            camera.view_matrix = to_matrix(orientation) * camera.view_matrix;
         }
         
-        Camera.Position = Position;
-        Camera.Orientation = Orientation;
-        Camera.Target = Target;
+        camera.position = position;
+        camera.orientation = orientation;
+        camera.target = target;
     }
 }
 
 // The InfoHandle is used to be able to reference the same animation without having to load the animation again. 
-static void AddAnimation(renderer& Renderer, spritesheet_animation Animation, const char* AnimationName)
+static void add_animation(Renderer& renderer, SpritesheetAnimation animation, const char* animation_name)
 {
-    strcpy(Animation.Name, AnimationName);
-    Renderer.SpritesheetAnimations[Renderer.SpritesheetAnimationCount++] = Animation;
-    Assert(Renderer.SpritesheetAnimationCount < MAX_SPRITESHEET_ANIMATIONS);
-    Assert(Renderer.SpritesheetAnimationCount < MAX_SPRITESHEET_ANIMATION_INFOS);
+    strcpy(animation.name, animation_name);
+    renderer.spritesheet_animations[renderer.spritesheet_animation_count++] = animation;
+    Assert(renderer.spritesheet_animation_count < MAX_SPRITESHEET_ANIMATIONS);
 }
 
-static void LoadShader(const char* FullShaderPath, renderer& Renderer, i32* Handle)
+static void load_shader(const char* full_shader_path, Renderer& renderer, i32* handle)
 {
-    shader_data* ShaderData = &Renderer.ShaderData[Renderer.ShaderCount];
-    ShaderData->Handle = Renderer.ShaderCount++;
-    *Handle = ShaderData->Handle;
-    sprintf(ShaderData->Name, "%s", FullShaderPath);
-    ShaderData->VertexShaderContent = 0;
-    ShaderData->FragmentShaderContent = 0;
+    ShaderData* shader_data = &renderer.shader_data[renderer.shader_count];
+    shader_data->handle = renderer.shader_count++;
+    *handle = shader_data->handle;
+    sprintf(shader_data->name, "%s", full_shader_path);
+    shader_data->vertex_shader_content = 0;
+    shader_data->fragment_shader_content = 0;
     
-    u32 Size = 0;
-    FILE* File;
+    u32 size = 0;
+    FILE* file;
     
-    File = fopen(Concat(FullShaderPath, ".vert"), "rb");
+    file = fopen(concat(full_shader_path, ".vert"), "rb");
     
-    if(File)
+    if(file)
     {
-        fseek(File, 0, SEEK_END);
-        Size = (u32)ftell(File);
-        fseek(File, 0, SEEK_SET);
+        fseek(file, 0, SEEK_END);
+        size = (u32)ftell(file);
+        fseek(file, 0, SEEK_SET);
         
         // @Incomplete: Use built-in memory arena
-        ShaderData->VertexShaderContent = (char*) malloc(sizeof(char) * Size + 1);
-        fread(ShaderData->VertexShaderContent, 1, (size_t)Size, File);
-        ShaderData->VertexShaderContent[Size] = '\0';
-        fclose(File);
+        shader_data->vertex_shader_content = (char*) malloc(sizeof(char) * size + 1);
+        fread(shader_data->vertex_shader_content, 1, (size_t)size, file);
+        shader_data->vertex_shader_content[size] = '\0';
+        fclose(file);
     }
     else
     {
-        printf("Invalid file path: '%s'\n", FullShaderPath);
+        printf("Invalid file path: '%s'\n", full_shader_path);
     }
     
-    File = fopen(Concat(FullShaderPath, ".frag"), "rb");
+    file = fopen(concat(full_shader_path, ".frag"), "rb");
     
-    if(File)
+    if(file)
     {
-        fseek(File, 0, SEEK_END);
-        Size = (u32)ftell(File);
-        fseek(File, 0, SEEK_SET);
+        fseek(file, 0, SEEK_END);
+        size = (u32)ftell(file);
+        fseek(file, 0, SEEK_SET);
         
         // @Incomplete: Use built-in memory arena
-        ShaderData->FragmentShaderContent = (char*) malloc(sizeof(char) * Size + 1);
-        fread(ShaderData->FragmentShaderContent, 1, (size_t)Size, File);
-        ShaderData->FragmentShaderContent[Size] = '\0';
+        shader_data->fragment_shader_content = (char*) malloc(sizeof(char) * size + 1);
+        fread(shader_data->fragment_shader_content, 1, (size_t)size, file);
+        shader_data->fragment_shader_content[size] = '\0';
         
-        fclose(File);
+        fclose(file);
     }
     else
     {
-        printf("Invalid file path: '%s'\n", FullShaderPath);
+        printf("Invalid file path: '%s'\n", full_shader_path);
     }
 }
 
-#define GET_TEXTURE_SIZE(Handle) GetTextureSize(Handle, Renderer)
-static math::v2i GetTextureSize(i32 TextureHandle, renderer Renderer)
+#define get_texture_size(handle) texture_size(handle, renderer)
+static math::Vec2i texture_size(i32 texture_handle, Renderer& renderer)
 {
-    if(TextureHandle <= Renderer.TextureCount)
+    if(texture_handle <= renderer.texture_count)
     {
-        texture_data Data = Renderer.TextureData[TextureHandle - 1];
-        return math::v2i(Data.Width, Data.Height);
+        texture_data data = renderer.texture_data[texture_handle - 1];
+        return math::Vec2i(data.width, data.height);
     }
-    return math::v2i();
+    return math::Vec2i();
 }
 
-static void LoadTexture(const char* FullTexturePath, renderer& Renderer, i32* Handle = 0)
+static void load_texture(const char* full_texture_path, Renderer& renderer, i32* handle = 0)
 {
-    texture_data* TextureData = &Renderer.TextureData[Renderer.TextureCount];
+    texture_data* texture_data = &renderer.texture_data[renderer.texture_count];
     
-    TextureData->Handle = Renderer.TextureCount++;
+    texture_data->handle = renderer.texture_count++;
     
-    TextureData->ImageData = stbi_load(FullTexturePath, &TextureData->Width, &TextureData->Height, 0, STBI_rgb_alpha);
+    texture_data->image_data = stbi_load(full_texture_path, &texture_data->width, &texture_data->height, 0, STBI_rgb_alpha);
     
-    if(!TextureData->ImageData)
+    if(!texture_data->image_data)
     {
-        printf("Texture cold not be loaded: %s\n", FullTexturePath);
+        printf("Texture cold not be loaded: %s\n", full_texture_path);
     }
     
-    if(Handle)
-        *Handle = TextureData->Handle + 1; // We add one to the handle, since we want 0 to be an invalid handle
+    if(handle)
+        *handle = texture_data->handle + 1; // We add one to the handle, since we want 0 to be an invalid handle
 }
 
-static void LoadTextures(renderer& Renderer, const char* Path)
+static void load_textures(Renderer& renderer, const char* path)
 {
-    texture_data_Map_Init(&Renderer.TextureMap, HashStringJenkins, 64);
+    texture_data_map_init(&renderer.texture_map, hash_string_jenkins, 64);
     
-    directory_data DirData = {};
-    Platform.GetAllFilesWithExtension(Path, "png", &DirData, true);
+    DirectoryData dir_data = {};
+    platform.get_all_files_with_extension(path, "png", &dir_data, true);
     
-    for (i32 FileIndex = 0; FileIndex < DirData.FilesLength; FileIndex++)
+    for (i32 file_index = 0; file_index < dir_data.files_length; file_index++)
     {
-        LoadTexture(DirData.FilePaths[FileIndex], Renderer);
-    }
-}
-
-static void LoadTextures(renderer& Renderer)
-{
-    LoadTextures(Renderer, "../assets/textures/");
-}
-
-static render_command* PushNextCommand(renderer& Renderer, b32 IsUI)
-{
-    if(IsUI)
-    {
-        Renderer.UICommandCount++;
-        render_command* Command = PushStruct(&Renderer.UICommands, render_command);
-        Command->ShaderHandle = -1;
-        return Command;
-    }
-    else
-    {
-        Renderer.CommandCount++;
-        render_command* Command = PushStruct(&Renderer.Commands, render_command);
-        Command->ShaderHandle = -1;
-        return Command;
+        load_texture(dir_data.file_paths[file_index], renderer);
     }
 }
 
-static void EnableDepthTest(renderer& Renderer)
+static void load_textures(Renderer& renderer)
 {
-    render_command* RenderCommand = PushNextCommand(Renderer, false);
-    RenderCommand->Type = RenderCommand_DepthTest;
-    RenderCommand->DepthTest.On = true;
+    load_textures(renderer, "../assets/textures/");
 }
 
-static void DisableDepthTest(renderer& Renderer)
+static RenderCommand* push_next_command(Renderer& renderer, b32 is_ui)
 {
-    render_command* RenderCommand = PushNextCommand(Renderer, false);
-    RenderCommand->Type = RenderCommand_DepthTest;
-    RenderCommand->DepthTest.On = false;
-}
-
-static void PushShader(renderer& Renderer, i32 ShaderHandle, shader_attribute* Attributes, i32 AttributeCount)
-{
-    render_command* RenderCommand = PushNextCommand(Renderer, false);
-    RenderCommand->Type = RenderCommand_ShaderStart;
-    RenderCommand->Shader.Handle = ShaderHandle;
-    RenderCommand->Shader.Attributes = Attributes;
-    RenderCommand->Shader.AttributeCount = AttributeCount;
-}
-
-static void EndShader(renderer& Renderer)
-{
-    render_command* RenderCommand = PushNextCommand(Renderer, false);
-    RenderCommand->Type = RenderCommand_ShaderEnd;
-}
-
-static void PushLine(renderer& Renderer, math::v3 Point1, math::v3 Point2, r32 LineWidth, math::rgba Color, b32 IsUI = false)
-{
-    render_command* RenderCommand = PushNextCommand(Renderer, IsUI);
-    
-    RenderCommand->Type = RenderCommand_Line;
-    RenderCommand->Line.Point1 = Point1;
-    RenderCommand->Line.Point2 = Point2;
-    RenderCommand->Line.LineWidth = LineWidth;
-    RenderCommand->Line.Color = Color;
-    RenderCommand->IsUI = IsUI;
-}
-
-#define PUSH_TEXT(Text, Position, Color, FontHandle) PushText(Renderer, Text, Position, 1.0f, FontHandle, Color)
-#define PUSH_CENTERED_TEXT(Text, Position, Color, FontHandle) PushText(Renderer, Text, Position, 1.0f, FontHandle, Color, Alignment_Center)
-static void PushText(renderer& Renderer, const char* Text, math::v3 Position, r32 Scale, i32 FontHandle, math::rgba Color, Alignment Alignment = Alignment_Left, b32 IsUI = true)
-{
-    render_command* RenderCommand = PushNextCommand(Renderer, IsUI);
-    
-    RenderCommand->Type = RenderCommand_Text;
-    
-    strcpy(RenderCommand->Text.Text, Text);
-    
-    RenderCommand->Text.Position = Position;
-    if(Scale == 0.0f)
-        RenderCommand->Text.Scale = 1.0f;
-    else
-        RenderCommand->Text.Scale = Scale;
-    //RenderCommand->Text.FontType = FontType;
-    RenderCommand->Text.FontHandle = FontHandle;
-    RenderCommand->Text.Color = Color;
-    RenderCommand->Text.Alignment = Alignment;
-    RenderCommand->IsUI = IsUI;
-}
-
-static void PushFilledQuad(renderer& Renderer, math::v3 Position, b32 Flipped, math::v3 Size, math::v3 Rotation = math::v3(), math::rgba Color = math::rgba(1.0f, 1.0f, 1.0f, 1.0f), i32 TextureHandle = 0, b32 IsUI = true, i32 AnimationControllerHandle = -1, b32 WithOrigin = false, math::v2 Origin = math::v2(0.0f, 0.0f), i32 ShaderHandle = -1, shader_attribute* ShaderAttributes = 0, i32 ShaderAttributeCount = 0, math::v2 TextureOffset = math::v2(-1.0f, -1.0f), math::v2i FrameSize = math::v2i(0, 0))
-{
-    render_command* RenderCommand = PushNextCommand(Renderer, IsUI);
-    
-    RenderCommand->Type = RenderCommand_Quad;
-    RenderCommand->Position = Position;
-    RenderCommand->Rotation = Rotation;
-    RenderCommand->WithOrigin = WithOrigin;
-    RenderCommand->Origin = Origin;
-    RenderCommand->Scale = Size;
-    RenderCommand->Quad.Flipped = Flipped;
-    RenderCommand->Quad.Color = Color;
-    RenderCommand->Quad.Outlined = false;
-    RenderCommand->Quad.TextureHandle = TextureHandle - 1;
-    
-    if(AnimationControllerHandle != -1)
+    if(is_ui)
     {
-        auto& Controller = Renderer.AnimationControllers[AnimationControllerHandle];
-        spritesheet_animation& Animation = Renderer.SpritesheetAnimations[Controller.Nodes[Controller.CurrentNode].AnimationHandle];
-        spritesheet_frame& Frame = Animation.Frames[Controller.CurrentFrameIndex];
-        RenderCommand->Quad.TextureHandle = Animation.TextureHandle - 1;
-        RenderCommand->Quad.TextureSize = math::v2((r32)Renderer.TextureData[RenderCommand->Quad.TextureHandle].Width, (r32)Renderer.TextureData[RenderCommand->Quad.TextureHandle].Height);
-        RenderCommand->Quad.FrameSize = math::v2i(Frame.FrameWidth, Frame.FrameHeight);
-        RenderCommand->Quad.TextureOffset = math::v2(Frame.X, Frame.Y);
-        RenderCommand->Quad.ForAnimation = true;
+        renderer.ui_command_count++;
+        RenderCommand* command = push_struct(&renderer.ui_commands, RenderCommand);
+        command->shader_handle = -1;
+        return command;
     }
     else
     {
-        RenderCommand->Quad.TextureOffset = TextureOffset;
-        RenderCommand->Quad.FrameSize = FrameSize;
+        renderer.command_count++;
+        RenderCommand* command = push_struct(&renderer.commands, RenderCommand);
+        command->shader_handle = -1;
+        return command;
+    }
+}
+
+static void enable_depth_test(Renderer& renderer)
+{
+    RenderCommand* render_command = push_next_command(renderer, false);
+    render_command->type = RENDER_COMMAND_DEPTH_TEST;
+    render_command->depth_test.on = true;
+}
+
+static void disable_depth_test(Renderer& renderer)
+{
+    RenderCommand* render_command = push_next_command(renderer, false);
+    render_command->type = RENDER_COMMAND_DEPTH_TEST;
+    render_command->depth_test.on = false;
+}
+
+static void push_shader(Renderer& renderer, i32 shader_handle, ShaderAttribute* attributes, i32 attribute_count)
+{
+    RenderCommand* render_command = push_next_command(renderer, false);
+    render_command->type = RENDER_COMMAND_SHADER_START;
+    render_command->shader.handle = shader_handle;
+    render_command->shader.attributes = attributes;
+    render_command->shader.attribute_count = attribute_count;
+}
+
+static void end_shader(Renderer& renderer)
+{
+    RenderCommand* render_command = push_next_command(renderer, false);
+    render_command->type = RENDER_COMMAND_SHADER_END;
+}
+
+static void push_line(Renderer& renderer, math::Vec3 point1, math::Vec3 point2, r32 line_width, math::rgba color, b32 is_ui = false)
+{
+    RenderCommand* render_command = push_next_command(renderer, is_ui);
+    
+    render_command->type = RENDER_COMMAND_LINE;
+    render_command->line.point1 = point1;
+    render_command->line.point2 = point2;
+    render_command->line.line_width = line_width;
+    render_command->line.color = color;
+    render_command->is_ui = is_ui;
+}
+
+#define PUSH_TEXT(text, position, color, font_handle) push_text(renderer, text, position, 1.0f, font_handle, color)
+#define PUSH_CENTERED_TEXT(text, position, color, font_handle) push_text(renderer, text, position, 1.0f, font_handle, color, ALIGNMENT_CENTER)
+static void push_text(Renderer& renderer, const char* text, math::Vec3 position, r32 scale, i32 font_handle, math::rgba color, Alignment alignment = ALIGNMENT_LEFT, b32 is_ui = true)
+{
+    RenderCommand* render_command = push_next_command(renderer, is_ui);
+    
+    render_command->type = RENDER_COMMAND_TEXT;
+    
+    strcpy(render_command->text.text, text);
+    
+    render_command->text.position = position;
+    if(scale == 0.0f)
+        render_command->text.scale = 1.0f;
+    else
+        render_command->text.scale = scale;
+    //render_command->Text.FontType = FontType;
+    render_command->text.font_handle = font_handle;
+    render_command->text.color = color;
+    render_command->text.alignment = alignment;
+    render_command->is_ui = is_ui;
+}
+
+static void push_filled_quad(Renderer& renderer, math::Vec3 position, b32 flipped, math::Vec3 size, math::Vec3 rotation = math::Vec3(), math::rgba color = math::rgba(1.0f, 1.0f, 1.0f, 1.0f), i32 texture_handle = 0, b32 is_ui = true, i32 animation_controller_handle = -1, b32 with_origin = false, math::Vec2 origin = math::Vec2(0.0f, 0.0f), i32 shader_handle = -1, ShaderAttribute* shader_attributes = 0, i32 shader_attribute_count = 0, math::Vec2 texture_offset = math::Vec2(-1.0f, -1.0f), math::Vec2i frame_size = math::Vec2i(0, 0))
+{
+    RenderCommand* render_command = push_next_command(renderer, is_ui);
+    
+    render_command->type = RENDER_COMMAND_QUAD;
+    render_command->position = position;
+    render_command->rotation = rotation;
+    render_command->with_origin = with_origin;
+    render_command->origin = origin;
+    render_command->scale = size;
+    render_command->quad.flipped = flipped;
+    render_command->quad.color = color;
+    render_command->quad.outlined = false;
+    render_command->quad.texture_handle = texture_handle - 1;
+    
+    if(animation_controller_handle != -1)
+    {
+        auto& controller = renderer.animation_controllers[animation_controller_handle];
+        SpritesheetAnimation& animation = renderer.spritesheet_animations[controller.nodes[controller.current_node].animation_handle];
+        SpritesheetFrame& frame = animation.frames[controller.current_frame_index];
+        render_command->quad.texture_handle = animation.texture_handle - 1;
+        render_command->quad.texture_size = math::Vec2((r32)renderer.texture_data[render_command->quad.texture_handle].width, (r32)renderer.texture_data[render_command->quad.texture_handle].height);
+        render_command->quad.frame_size = math::Vec2i(frame.frame_width, frame.frame_height);
+        render_command->quad.texture_offset = math::Vec2(frame.x, frame.y);
+        render_command->quad.for_animation = true;
+    }
+    else
+    {
+        render_command->quad.texture_offset = texture_offset;
+        render_command->quad.frame_size = frame_size;
         
-        if(TextureHandle != -1)
+        if(texture_handle != -1)
         {
-            RenderCommand->Quad.TextureSize = math::v2((r32)Renderer.TextureData[RenderCommand->Quad.TextureHandle].Width, (r32)Renderer.TextureData[RenderCommand->Quad.TextureHandle].Height);
+            render_command->quad.texture_size = math::Vec2((r32)renderer.texture_data[render_command->quad.texture_handle].width, (r32)renderer.texture_data[render_command->quad.texture_handle].height);
         }
     }
     
-    RenderCommand->ShaderHandle = ShaderHandle;
-    RenderCommand->ShaderAttributes = ShaderAttributes;
-    RenderCommand->ShaderAttributeCount = ShaderAttributeCount;
+    render_command->shader_handle = shader_handle;
+    render_command->shader_attributes = shader_attributes;
+    render_command->shader_attribute_count = shader_attribute_count;
     
-    RenderCommand->IsUI = IsUI;
+    render_command->is_ui = is_ui;
 }
 
-static void PushOutlinedQuad(renderer& Renderer, math::v3 Position,  math::v3 Size, math::v3 Rotation, math::rgba Color, b32 IsUI = false, r32 LineWidth = 1.0f)
+static void push_outlined_quad(Renderer& renderer, math::Vec3 position,  math::Vec3 size, math::Vec3 rotation, math::rgba color, b32 is_ui = false, r32 line_width = 1.0f)
 {
-    render_command* RenderCommand = PushNextCommand(Renderer, IsUI);
+    RenderCommand* render_command = push_next_command(renderer, is_ui);
     
-    RenderCommand->Type = RenderCommand_Quad;
-    RenderCommand->Position = Position;
-    RenderCommand->Rotation = Rotation;
-    RenderCommand->Scale = Size;
-    RenderCommand->Quad.Color = Color;
-    RenderCommand->Quad.Outlined = true;
-    RenderCommand->Quad.TextureHandle = 0;
-    RenderCommand->Quad.LineWidth = LineWidth;
-    RenderCommand->IsUI = IsUI;
+    render_command->type = RENDER_COMMAND_QUAD;
+    render_command->position = position;
+    render_command->rotation = rotation;
+    render_command->scale = size;
+    render_command->quad.color = color;
+    render_command->quad.outlined = true;
+    render_command->quad.texture_handle = 0;
+    render_command->quad.line_width = line_width;
+    render_command->is_ui = is_ui;
 }
 
-static void PushWireframeCube(renderer& Renderer, math::v3 Position, math::v3 Scale, math::quat Orientation, math::rgba Color, r32 LineWidth)
+static void push_wireframe_cube(Renderer& renderer, math::Vec3 position, math::Vec3 scale, math::Quat orientation, math::rgba color, r32 line_width)
 {
-    render_command* RenderCommand = PushNextCommand(Renderer, false);
+    RenderCommand* render_command = push_next_command(renderer, false);
     
-    RenderCommand->Type = RenderCommand_WireframeCube;
-    RenderCommand->WireframeCube.Color = Color;
-    RenderCommand->WireframeCube.LineWidth = LineWidth;
-    RenderCommand->Position = Position;
-    RenderCommand->Scale = Scale;
-    RenderCommand->Orientation = Orientation;
-    RenderCommand->IsUI = false;
+    render_command->type = RENDER_COMMAND_WIREFRAME_CUBE;
+    render_command->wireframe_cube.color = color;
+    render_command->wireframe_cube.line_width = line_width;
+    render_command->position = position;
+    render_command->scale = scale;
+    render_command->orientation = orientation;
+    render_command->is_ui = false;
 }
 
-static void PushSpotlight(renderer& Renderer, math::v3 Position, math::v3 Direction, r32 CutOff, r32 OuterCutOff, math::v3 Ambient, math::v3 Diffuse, math::v3 Specular, r32 Constant, r32 Linear, r32 Quadratic)
+static void push_spotlight(Renderer& renderer, math::Vec3 position, math::Vec3 direction, r32 cut_off, r32 outer_cut_off, math::Vec3 ambient, math::Vec3 diffuse, math::Vec3 specular, r32 constant, r32 linear, r32 quadratic)
 {
-    render_command* RenderCommand = PushStruct(&Renderer.LightCommands, render_command);
-    Renderer.LightCommandCount++;
+    RenderCommand* render_command = push_struct(&renderer.light_commands, RenderCommand);
+    renderer.light_command_count++;
     
-    RenderCommand->Type = RenderCommand_Spotlight;
+    render_command->type = RENDER_COMMAND_SPOTLIGHT;
     
-    RenderCommand->Position = Position;
+    render_command->position = position;
     
-    auto& Spotlight = RenderCommand->Spotlight;
-    Spotlight.Direction = Direction;
-    Spotlight.CutOff = CutOff;
-    Spotlight.OuterCutOff = OuterCutOff;
-    Spotlight.Ambient = Ambient;
-    Spotlight.Diffuse = Diffuse;
-    Spotlight.Specular = Specular;
-    Spotlight.Constant = Constant;
-    Spotlight.Linear = Linear;
-    Spotlight.Quadratic = Quadratic;
+    auto& spotlight = render_command->spotlight;
+    spotlight.direction = direction;
+    spotlight.cut_off = cut_off;
+    spotlight.outer_cut_off = outer_cut_off;
+    spotlight.ambient = ambient;
+    spotlight.diffuse = diffuse;
+    spotlight.specular = specular;
+    spotlight.constant = constant;
+    spotlight.linear = linear;
+    spotlight.quadratic = quadratic;
 }
 
-static void PushDirectionalLight(renderer& Renderer, math::v3 Direction, math::v3 Ambient, math::v3 Diffuse, math::v3 Specular)
+static void push_directional_light(Renderer& renderer, math::Vec3 direction, math::Vec3 ambient, math::Vec3 diffuse, math::Vec3 specular)
 {
-    render_command* RenderCommand = PushStruct(&Renderer.LightCommands, render_command);
-    Renderer.LightCommandCount++;
+    RenderCommand* render_command = push_struct(&renderer.light_commands, RenderCommand);
+    renderer.light_command_count++;
     
-    RenderCommand->Type = RenderCommand_DirectionalLight;
+    render_command->type = RENDER_COMMAND_DIRECTIONAL_LIGHT;
     
-    auto& DirectionalLight = RenderCommand->DirectionalLight;
-    DirectionalLight.Direction = Direction;
-    DirectionalLight.Ambient = Ambient;
-    DirectionalLight.Diffuse = Diffuse;
-    DirectionalLight.Specular = Specular;
+    auto& directional_light = render_command->directional_light;
+    directional_light.direction = direction;
+    directional_light.ambient = ambient;
+    directional_light.diffuse = diffuse;
+    directional_light.specular = specular;
 }
 
-static void PushPointLight(renderer& Renderer, math::v3 Position, math::v3 Ambient, math::v3 Diffuse, math::v3 Specular, r32 Constant, r32 Linear, r32 Quadratic)
+static void push_point_light(Renderer& renderer, math::Vec3 position, math::Vec3 ambient, math::Vec3 diffuse, math::Vec3 specular, r32 constant, r32 linear, r32 quadratic)
 {
-    render_command* RenderCommand = PushStruct(&Renderer.LightCommands, render_command);
-    Renderer.LightCommandCount++;
+    RenderCommand* render_command = push_struct(&renderer.light_commands, RenderCommand);
+    renderer.light_command_count++;
     
-    RenderCommand->Type = RenderCommand_PointLight;
+    render_command->type = RENDER_COMMAND_POINT_LIGHT;
     
-    RenderCommand->Position = Position;
+    render_command->position = position;
     
-    auto& PointLight = RenderCommand->PointLight;
-    PointLight.Ambient = Ambient;
-    PointLight.Diffuse = Diffuse;
-    PointLight.Specular = Specular;
-    PointLight.Constant = Constant;
-    PointLight.Linear = Linear;
-    PointLight.Quadratic = Quadratic;
+    auto& point_light = render_command->point_light;
+    point_light.ambient = ambient;
+    point_light.diffuse = diffuse;
+    point_light.specular = specular;
+    point_light.constant = constant;
+    point_light.linear = linear;
+    point_light.quadratic = quadratic;
 }
 
-static void PushBuffer(renderer& Renderer, i32 BufferHandle, i32 TextureHandle, math::v3 Rotation = math::v3(), b32 IsUI = false, math::v3 Position = math::v3(), math::v3 Scale = math::v3(1.0f), math::rgba Color = math::rgba(1, 1, 1, 1))
+static void push_buffer(Renderer& renderer, i32 buffer_handle, i32 texture_handle, math::Vec3 rotation = math::Vec3(), b32 is_ui = false, math::Vec3 position = math::Vec3(), math::Vec3 scale = math::Vec3(1.0f), math::rgba color = math::rgba(1, 1, 1, 1))
 {
-    render_command* RenderCommand = PushNextCommand(Renderer, IsUI);
+    RenderCommand* render_command = push_next_command(renderer, is_ui);
     
-    RenderCommand->Type = RenderCommand_Buffer;
-    RenderCommand->Buffer.BufferHandle = BufferHandle;
-    RenderCommand->Buffer.TextureHandle = TextureHandle - 1;
-    RenderCommand->Rotation = Rotation;
-    RenderCommand->Position = Position;
-    RenderCommand->Scale = Scale;
-    RenderCommand->IsUI = IsUI;
-    RenderCommand->Color = Color;
+    render_command->type = RENDER_COMMAND_BUFFER;
+    render_command->buffer.buffer_handle = buffer_handle;
+    render_command->buffer.texture_handle = texture_handle - 1;
+    render_command->rotation = rotation;
+    render_command->position = position;
+    render_command->scale = scale;
+    render_command->is_ui = is_ui;
+    render_command->color = color;
     
-    RenderCommand->ShaderHandle = -1;
-    RenderCommand->ShaderAttributes = 0;
-    RenderCommand->ShaderAttributeCount = 0;
+    render_command->shader_handle = -1;
+    render_command->shader_attributes = 0;
+    render_command->shader_attribute_count = 0;
 }
 
-static void PushModel(renderer& Renderer, model& Model)
+static void push_model(Renderer& renderer, Model& model)
 {
-    render_command* RenderCommand = PushNextCommand(Renderer, false);
-    RenderCommand->Type = RenderCommand_Model;
-    RenderCommand->Position = Model.Position;
-    RenderCommand->Scale = Model.Scale;
-    RenderCommand->Orientation = Model.Orientation;
-    RenderCommand->Model.BufferHandle = Model.BufferHandle;
+    RenderCommand* render_command = push_next_command(renderer, false);
+    render_command->type = RENDER_COMMAND_MODEL;
+    render_command->position = model.position;
+    render_command->scale = model.scale;
+    render_command->orientation = model.orientation;
+    render_command->model.buffer_handle = model.buffer_handle;
     
-    for(i32 Index = 0; Index < Model.MaterialCount; Index++)
+    for(i32 index = 0; index < model.material_count; index++)
     {
-        if(Model.Materials[Index].DiffuseTexture.HasData && Model.Materials[Index].DiffuseTexture.TextureHandle == -1 && strlen(Model.Materials[Index].DiffuseTexture.TextureName) > 0)
+        if(model.materials[index].diffuse_texture.has_data && model.materials[index].diffuse_texture.texture_handle == -1 && strlen(model.materials[index].diffuse_texture.texture_name) > 0)
         {
-            Model.Materials[Index].DiffuseTexture.TextureHandle = Renderer.TextureMap[Model.Materials[Index].DiffuseTexture.TextureName]->Handle;
+            model.materials[index].diffuse_texture.texture_handle = renderer.texture_map[model.materials[index].diffuse_texture.texture_name]->handle;
         }
     }
     
-    memcpy(&RenderCommand->Model.Meshes, Model.Meshes, sizeof(Model.Meshes));
-    memcpy(&RenderCommand->Model.Materials, Model.Materials, sizeof(Model.Materials));
+    memcpy(&render_command->model.meshes, model.meshes, sizeof(model.meshes));
+    memcpy(&render_command->model.materials, model.materials, sizeof(model.materials));
     
     // @Incomplete: Check if the texture handle has been set for the materials
-    RenderCommand->Model.Type = Model.Type;
-    RenderCommand->Model.MeshCount = Model.MeshCount;
-    RenderCommand->Model.MaterialCount = Model.MaterialCount;
-    RenderCommand->Model.BoneCount = Model.BoneCount;
+    render_command->model.type = model.type;
+    render_command->model.mesh_count = model.mesh_count;
+    render_command->model.material_count = model.material_count;
+    render_command->model.bone_count = model.bone_count;
     
-    if(Model.Type == Model_Skinned)
+    if(model.type == MODEL_SKINNED)
     {
-        RenderCommand->Model.BoneTransforms = PushTempSize(sizeof(math::m4) * Model.BoneCount, math::m4);
+        render_command->model.bone_transforms = push_temp_size(sizeof(math::Mat4) * model.bone_count, math::Mat4);
         
-        for(i32 Index = 0; Index < Model.BoneCount; Index++)
+        for(i32 index = 0; index < model.bone_count; index++)
         {
-            RenderCommand->Model.BoneTransforms[Index] = Model.CurrentPoses[Index];
+            render_command->model.bone_transforms[index] = model.current_poses[index];
         }
     }
     
-    RenderCommand->Model.Color = math::rgba(1.0f, 1.0f, 1.0f, 1.0f);
-    RenderCommand->IsUI = false;
+    render_command->model.color = math::rgba(1.0f, 1.0f, 1.0f, 1.0f);
+    render_command->is_ui = false;
 }
 
-static void LoadBuffer(renderer& Renderer, r32* Buffer, i32 BufferSize, i32* BufferHandle, b32 Dynamic = false)
+static void load_buffer(Renderer& renderer, r32* buffer, i32 buffer_size, i32* buffer_handle, b32 dynamic = false)
 {
-    buffer_data Data = {};
-    Data.VertexBuffer = Buffer;
-    Data.VertexBufferSize = BufferSize;
-    Data.IndexBufferCount = 0;
+    BufferData data = {};
+    data.vertex_buffer = buffer;
+    data.vertex_buffer_size = buffer_size;
+    data.index_buffer_count = 0;
     
-    Renderer.Buffers[Renderer.BufferCount] = Data;
+    renderer.buffers[renderer.buffer_count] = data;
     
-    *BufferHandle = Renderer.BufferCount++;
+    *buffer_handle = renderer.buffer_count++;
 }
 
-static void UpdateBuffer(renderer& Renderer, r32* Buffer, i32 BufferSize, i32 BufferHandle)
+static void update_buffer(Renderer& renderer, r32* buffer, i32 buffer_size, i32 buffer_handle)
 {
-    buffer_data Data = {};
-    Data.VertexBuffer = Buffer;
-    Data.VertexBufferSize = BufferSize;
-    Data.IndexBufferCount = 0;
-    Data.ExistingHandle = BufferHandle;
-    Renderer.Buffers[BufferHandle] = Data;
-    Renderer.UpdatedBufferHandles[Renderer.UpdatedBufferHandleCount++] = BufferHandle;
+    BufferData data = {};
+    data.vertex_buffer = buffer;
+    data.vertex_buffer_size = buffer_size;
+    data.index_buffer_count = 0;
+    data.existing_handle = buffer_handle;
+    renderer.buffers[buffer_handle] = data;
+    renderer.updated_buffer_handles[renderer.updated_buffer_handle_count++] = buffer_handle;
 }
 
-static i32 LoadFont(renderer& Renderer, char* Path, i32 Size, char* Name)
+static i32 load_font(Renderer& renderer, char* path, i32 size, char* name)
 {
-    font_data Data = {};
-    Data.Path = PushString(&Renderer.FontArena, Path);
-    Data.Size = Size;
-    Data.Name = PushString(&Renderer.FontArena, Name);
+    FontData data = {};
+    data.path = push_string(&renderer.font_arena, path);
+    data.size = size;
+    data.name = push_string(&renderer.font_arena, name);
     
-    Renderer.Fonts[Renderer.FontCount] = Data;
-    return Renderer.FontCount++;
+    renderer.fonts[renderer.font_count] = data;
+    return renderer.font_count++;
 }
 
-static void LoadFont(renderer& Renderer, char* Path, i32 Size, i32* Handle)
+static void load_font(Renderer& renderer, char* path, i32 size, i32* handle)
 {
-    font_data Data = {};
-    Data.Path = PushString(&Renderer.FontArena, Path);
-    Data.Size = Size;
+    FontData data = {};
+    data.path = push_string(&renderer.font_arena, path);
+    data.size = size;
     
-    Renderer.Fonts[Renderer.FontCount] = Data;
-    *Handle = Renderer.FontCount++;
+    renderer.fonts[renderer.font_count] = data;
+    *handle = renderer.font_count++;
 }
 
-static b32 IsEOF(chunk_format& Format)
+static b32 is_eof(ChunkFormat& format)
 {
-    return strcmp(Format.Format, "EOF") == 0;
+    return strcmp(format.format, "EOF") == 0;
 }
 
-static void LoadModel(renderer& Renderer, char* FilePath, model* Model)
+static void load_glim_model(Renderer& renderer, char* file_path, Model* model)
 {
-    (void)Renderer;
-    model_header Header = {};
+    ModelHeader header = {};
     
-    FILE *File = fopen(FilePath, "rb");
-    if(File)
+    FILE *file = fopen(file_path, "rb");
+    if(file)
     {
-        fread(&Header,sizeof(model_header), 1, File);
+        fread(&header, sizeof(ModelHeader), 1, file);
         
-        if(strcmp(Header.Version, "1.4") != 0)
+        if(strcmp(header.version, "1.6") != 0)
         {
-            ERR("Wrong file version. Expected version 1.4");
+            // @Incomplete: Missing
+            //err("Wrong file version. Expected version 1.6");
             return;
         }
         
-        chunk_format Format = {};
-        fread(&Format, sizeof(chunk_format), 1, File);
+        ModelData model_data;
+        fread(&model_data, sizeof(ModelData), 1, file);
+        fread(model->meshes, (size_t)model_data.mesh_chunk_size, 1, file);
         
-        i32 MeshCount = 0;
+        model->type = (ModelType)model_data.model_type;
+        model->mesh_count = model_data.num_meshes;
         
-        while(!IsEOF(Format))
+        r32* vertex_buffer = push_temp_size(model_data.vertex_buffer_chunk_size, r32);
+        fread(vertex_buffer, (size_t)model_data.vertex_buffer_chunk_size, 1, file);
+        u32* index_buffer = push_temp_size(model_data.index_buffer_chunk_size, u32);
+        fread(index_buffer, (size_t)model_data.index_buffer_chunk_size, 1, file);
+        
+        model->material_count = model_data.num_materials;
+        if(model_data.num_materials > 0)
+            fread(&model->materials, (size_t)model_data.material_chunk_size, 1, file);
+        
+        model->global_inverse_transform = model_data.global_inverse_transform;
+        
+        model->bone_count = model_data.num_bones;
+        if(model_data.num_bones > 0)
         {
-            if(Format.Format[0] == 'M' &&
-               Format.Format[1] == 'E' &&
-               Format.Format[2] == 'S' &&
-               Format.Format[3] == 'H')
-            {
-                /*buffer_data Data = {};
-                
-                mesh_data_info MeshInfo;
-                
-                fread(&MeshInfo, sizeof(mesh_data_info), 1, File);
-                
-                u32* IndexBuffer = PushTempSize(MeshInfo.IndexBufferByteLength, unsigned short);
-                fread(IndexBuffer, MeshInfo.IndexBufferByteLength, 1, File);
-                CopyTemp(Data.IndexBuffer, IndexBuffer, MeshInfo.IndexBufferByteLength, u32);
-                
-                r32* VertexBuffer = PushTempSize(MeshInfo.VertexBufferByteLength, r32);
-                fread(VertexBuffer, MeshInfo.VertexBufferByteLength, 1, File);
-                CopyTemp(Data.VertexBuffer, VertexBuffer, MeshInfo.VertexBufferByteLength, r32);
-                
-                // @Incomplete: Do we really always have normals and uvs?????
-                Data.HasNormals = true;
-                Data.HasUVs = true;
-                
-                Data.VertexBufferSize = MeshInfo.VertexBufferByteLength;
-                Data.IndexBufferSize = MeshInfo.IndexBufferByteLength;
-                Data.IndexBufferCount = MeshInfo.IndexCount;
-                
-                Model->Meshes[MeshCount].BufferHandle = Renderer.BufferCount++;
-                
-                // @Incomplete: IMPORTANT
-                // @Incomplete: IMPORTANT
-                // @Incomplete: IMPORTANT
-                // @Incomplete: IMPORTANT
-                // @Incomplete: IMPORTANT
-                // @Incomplete: IMPORTANT
-                Model->Meshes[MeshCount].Material.HasTexture = false;
-                
-                //if(Model->Meshes[MeshCount].Material.HasTexture)
-                //Model->Meshes[MeshCount].Material.TextureHandle = Renderer.TextureMap[MHeader.TextureFile]->Handle;
-                
-                Model->Meshes[MeshCount].Material.Color = math::rgba(1, 1, 1, 1);
-                MeshCount++;
-                
-                Assert(MeshCount <= MAX_MESHES);
-                
-                Renderer.Buffers[Renderer.BufferCount - 1] = Data;
-                }
-                else if(Format.Format[0] == 'S' &&
-                Format.Format[1] == 'K' &&
-                Format.Format[2] == 'I' &&
-                Format.Format[3] == 'N')
-                {
-                
-                }
-                else if(Format.Format[0] == 'A' &&
-                Format.Format[1] == 'N' &&
-                Format.Format[2] == 'I' &&
-                Format.Format[3] == 'M')
-                {
-                
-                /*animation_header AHeader;
-                fread(&AHeader, sizeof(animation_header), 1, File);
-                
-                animation_cycle AnimationCycle;
-                AnimationCycle.NumFrames = AHeader.NumFrames;
-                AnimationCycle.TotalTime = AHeader.TotalTime;
-                AnimationCycle.Frames = PushArray(&Renderer.AnimationArena, AnimationCycle.NumFrames, animation_frame);
-                
-                fread(AnimationCycle.Frames, sizeof(animation_frame) * AnimationCycle.NumFrames, 1, File);
-                
-                Renderer.AnimationCycles[Renderer.AnimationCycleCount++] = AnimationCycle;*/
-            }
-            else
-            {
-                ERR("Malformed model file");
-                break;
-            }
-            fread(&Format, sizeof(chunk_format), 1, File);
+            model->bones = push_array(&renderer.animation_arena, model_data.num_bones, Bone);
+            model->current_poses = push_array(&renderer.animation_arena, model_data.num_bones, math::Mat4);
+            fread(model->bones, (size_t)model_data.bone_chunk_size, 1, file);
         }
         
-        Model->MeshCount = MeshCount;
-        printf("Mesh count %d\n", MeshCount);
+        BufferData data = {};
+        data.skinned = model->bone_count > 0;
+        copy_temp(data.vertex_buffer, vertex_buffer, (size_t)model_data.vertex_buffer_chunk_size, r32);
+        copy_temp(data.index_buffer, index_buffer, (size_t)model_data.index_buffer_chunk_size, u32);
         
-        fclose(File);
-    }
-    else
-    {
-        printf("Model file not found: %s", FilePath);
-    }
-}
-
-static void LoadGLIMModel(renderer& Renderer, char* FilePath, model* Model)
-{
-    model_header Header = {};
-    
-    FILE *File = fopen(FilePath, "rb");
-    if(File)
-    {
-        fread(&Header,sizeof(model_header), 1, File);
+        data.has_normals = model_data.has_normals;
+        data.has_uvs = model_data.has_uvs;
         
-        if(strcmp(Header.Version, "1.6") != 0)
-        {
-            ERR("Wrong file version. Expected version 1.6");
-            return;
-        }
+        data.vertex_buffer_size = model_data.vertex_buffer_chunk_size;
+        data.index_buffer_size = model_data.index_buffer_chunk_size;
+        data.index_buffer_count = model_data.num_indices;
         
-        model_data ModelData;
-        fread(&ModelData, sizeof(model_data), 1, File);
-        fread(Model->Meshes, (size_t)ModelData.MeshChunkSize, 1, File);
+        model->buffer_handle = renderer.buffer_count++;
         
-        Model->Type = (Model_Type)ModelData.ModelType;
-        Model->MeshCount = ModelData.NumMeshes;
+        model->animation_state.playing = false;
+        model->animation_state.loop = false;
+        model->animation_state.current_time = 0.0f;
         
-        r32* VertexBuffer = PushTempSize(ModelData.VertexBufferChunkSize, r32);
-        fread(VertexBuffer, (size_t)ModelData.VertexBufferChunkSize, 1, File);
-        u32* IndexBuffer = PushTempSize(ModelData.IndexBufferChunkSize, u32);
-        fread(IndexBuffer, (size_t)ModelData.IndexBufferChunkSize, 1, File);
-        
-        Model->MaterialCount = ModelData.NumMaterials;
-        if(ModelData.NumMaterials > 0)
-            fread(&Model->Materials, (size_t)ModelData.MaterialChunkSize, 1, File);
-        
-        Model->GlobalInverseTransform = ModelData.GlobalInverseTransform;
-        
-        Model->BoneCount = ModelData.NumBones;
-        if(ModelData.NumBones > 0)
-        {
-            Model->Bones = PushArray(&Renderer.AnimationArena, ModelData.NumBones, bone);
-            Model->CurrentPoses = PushArray(&Renderer.AnimationArena, ModelData.NumBones, math::m4);
-            fread(Model->Bones, (size_t)ModelData.BoneChunkSize, 1, File);
-        }
-        
-        buffer_data Data = {};
-        Data.Skinned = Model->BoneCount > 0;
-        CopyTemp(Data.VertexBuffer, VertexBuffer, (size_t)ModelData.VertexBufferChunkSize, r32);
-        CopyTemp(Data.IndexBuffer, IndexBuffer, (size_t)ModelData.IndexBufferChunkSize, u32);
-        
-        Data.HasNormals = ModelData.HasNormals;
-        Data.HasUVs = ModelData.HasUVs;
-        
-        Data.VertexBufferSize = ModelData.VertexBufferChunkSize;
-        Data.IndexBufferSize = ModelData.IndexBufferChunkSize;
-        Data.IndexBufferCount = ModelData.NumIndices;
-        
-        Model->BufferHandle = Renderer.BufferCount++;
-        
-        Model->AnimationState.Playing = false;
-        Model->AnimationState.Loop = false;
-        Model->AnimationState.CurrentTime = 0.0f;
-        
-        Renderer.Buffers[Renderer.BufferCount - 1] = Data;
+        renderer.buffers[renderer.buffer_count - 1] = data;
         
         // Load animations
-        animation_header AHeader;
-        fread(&AHeader, sizeof(animation_header), 1, File);
+        AnimationHeader a_header;
+        fread(&a_header, sizeof(AnimationHeader), 1, file);
         
-        Model->AnimationCount = AHeader.NumAnimations;
-        Model->Animations = AHeader.NumAnimations > 0 ? PushArray(&Renderer.AnimationArena, AHeader.NumAnimations, skeletal_animation) : 0;
+        model->animation_count = a_header.num_animations;
+        model->animations = a_header.num_animations > 0 ? push_array(&renderer.animation_arena, a_header.num_animations, SkeletalAnimation) : 0;
         
-        for(i32 Index = 0; Index < Model->AnimationCount; Index++)
+        for(i32 index = 0; index < model->animation_count; index++)
         {
-            animation_channel_header ACHeader;
-            fread(&ACHeader, sizeof(animation_channel_header), 1, File);
+            AnimationChannelHeader ac_header;
+            fread(&ac_header, sizeof(AnimationChannelHeader), 1, file);
             
-            skeletal_animation* Animation = &Model->Animations[Index];
-            Animation->Duration = ACHeader.Duration;
-            Animation->NumBoneChannels = ACHeader.NumBoneChannels;
+            SkeletalAnimation* animation = &model->animations[index];
+            animation->duration = ac_header.duration;
+            animation->num_bone_channels = ac_header.num_bone_channels;
             
-            Animation->BoneChannels = PushArray(&Renderer.AnimationArena, Animation->NumBoneChannels, bone_channel);
+            animation->bone_channels = push_array(&renderer.animation_arena, animation->num_bone_channels, BoneChannel);
             
-            for(i32 BoneChannelIndex = 0; BoneChannelIndex < Animation->NumBoneChannels; BoneChannelIndex++)
+            for(i32 bone_channel_index = 0; bone_channel_index < animation->num_bone_channels; bone_channel_index++)
             {
-                bone_animation_header BAHeader;
-                fread(&BAHeader, sizeof(bone_animation_header), 1, File);
+                BoneAnimationHeader ba_header;
+                fread(&ba_header, sizeof(BoneAnimationHeader), 1, file);
                 
-                bone_channel* BoneChannel = &Animation->BoneChannels[BoneChannelIndex];
-                BoneChannel->BoneIndex = BAHeader.BoneIndex;
+                BoneChannel* bone_channel = &animation->bone_channels[bone_channel_index];
+                bone_channel->bone_index = ba_header.bone_index;
                 
-                BoneChannel->PositionKeys.NumKeys = BAHeader.NumPositionChannels;
-                BoneChannel->PositionKeys.TimeStamps = PushArray(&Renderer.AnimationArena, BoneChannel->PositionKeys.NumKeys, r32);
-                BoneChannel->PositionKeys.Values = PushArray(&Renderer.AnimationArena, BoneChannel->PositionKeys.NumKeys, math::v3);
-                fread(BoneChannel->PositionKeys.TimeStamps, sizeof(r32) * BoneChannel->PositionKeys.NumKeys, 1, File);
-                fread(BoneChannel->PositionKeys.Values, sizeof(math::v3) * BoneChannel->PositionKeys.NumKeys, 1, File);
+                bone_channel->position_keys.num_keys = ba_header.num_position_channels;
+                bone_channel->position_keys.time_stamps = push_array(&renderer.animation_arena, bone_channel->position_keys.num_keys, r32);
+                bone_channel->position_keys.values = push_array(&renderer.animation_arena, bone_channel->position_keys.num_keys, math::Vec3);
+                fread(bone_channel->position_keys.time_stamps, sizeof(r32) * bone_channel->position_keys.num_keys, 1, file);
+                fread(bone_channel->position_keys.values, sizeof(math::Vec3) * bone_channel->position_keys.num_keys, 1, file);
                 
-                BoneChannel->RotationKeys.NumKeys = BAHeader.NumRotationChannels;
-                BoneChannel->RotationKeys.TimeStamps = PushArray(&Renderer.AnimationArena, BoneChannel->RotationKeys.NumKeys, r32);
-                BoneChannel->RotationKeys.Values = PushArray(&Renderer.AnimationArena, BoneChannel->RotationKeys.NumKeys, math::quat);
-                fread(BoneChannel->RotationKeys.TimeStamps, sizeof(r32) * BoneChannel->RotationKeys.NumKeys, 1, File);
-                fread(BoneChannel->RotationKeys.Values, sizeof(math::quat) * BoneChannel->RotationKeys.NumKeys, 1, File);
+                bone_channel->rotation_keys.num_keys = ba_header.num_rotation_channels;
+                bone_channel->rotation_keys.time_stamps = push_array(&renderer.animation_arena, bone_channel->rotation_keys.num_keys, r32);
+                bone_channel->rotation_keys.values = push_array(&renderer.animation_arena, bone_channel->rotation_keys.num_keys, math::Quat);
+                fread(bone_channel->rotation_keys.time_stamps, sizeof(r32) * bone_channel->rotation_keys.num_keys, 1, file);
+                fread(bone_channel->rotation_keys.values, sizeof(math::Quat) * bone_channel->rotation_keys.num_keys, 1, file);
                 
-                BoneChannel->ScalingKeys.NumKeys = BAHeader.NumScalingChannels;
-                BoneChannel->ScalingKeys.TimeStamps = PushArray(&Renderer.AnimationArena, BoneChannel->ScalingKeys.NumKeys, r32);
-                BoneChannel->ScalingKeys.Values = PushArray(&Renderer.AnimationArena, BoneChannel->ScalingKeys.NumKeys, math::v3);
-                fread(BoneChannel->ScalingKeys.TimeStamps, sizeof(r32) * BoneChannel->ScalingKeys.NumKeys, 1, File);
-                fread(BoneChannel->ScalingKeys.Values, sizeof(math::v3) * BoneChannel->ScalingKeys.NumKeys, 1, File);
+                bone_channel->scaling_keys.num_keys = ba_header.num_scaling_channels;
+                bone_channel->scaling_keys.time_stamps = push_array(&renderer.animation_arena, bone_channel->scaling_keys.num_keys, r32);
+                bone_channel->scaling_keys.values = push_array(&renderer.animation_arena, bone_channel->scaling_keys.num_keys, math::Vec3);
+                fread(bone_channel->scaling_keys.time_stamps, sizeof(r32) * bone_channel->scaling_keys.num_keys, 1, file);
+                fread(bone_channel->scaling_keys.values, sizeof(math::Vec3) * bone_channel->scaling_keys.num_keys, 1, file);
             }
         }
         
-        fclose(File);
+        fclose(file);
     }
     else
     {
-        printf("Model file not found: %s", FilePath);
+        printf("Model file not found: %s", file_path);
     }
 }
 
-static void AddParticleSystem(renderer& Renderer, math::v3 Position, i32 TextureHandle, r32 Rate, r32 Speed, i32* Handle)
+static void add_particle_system(Renderer& renderer, math::Vec3 position, i32 texture_handle, r32 rate, r32 speed, i32* handle)
 {
 }
-static void UpdateParticleSystemPosition(renderer& Renderer, i32 Handle, math::v2 NewPosition)
+static void update_particle_system_position(Renderer& renderer, i32 handle, math::Vec2 new_position)
 {
 }
 
-static void RemoveParticleSystem(renderer& Renderer, i32 Handle)
+static void remove_particle_system(Renderer& renderer, i32 handle)
 {
 }

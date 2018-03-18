@@ -18,7 +18,7 @@ struct ModelData
     i32 num_materials;
     
     b32 has_normals;
-    b32 has_u_vs;
+    b32 has_uvs;
     
     long mesh_chunk_size;
     long vertex_buffer_chunk_size;

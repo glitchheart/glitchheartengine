@@ -1929,7 +1929,6 @@ static void render_commands(RenderState& render_state, Renderer& renderer, Memor
     for(i32 index = render_state.font_count; index < renderer.font_count; index++)
     {
         FontData data = renderer.fonts[index];
-        
         load_font(render_state, data.path, data.size);
     }
     
@@ -1938,7 +1937,7 @@ static void render_commands(RenderState& render_state, Renderer& renderer, Memor
     
     for(i32 index = 0; index < renderer.light_command_count; index++)
     {
-        const RenderCommand& command =*((RenderCommand*)renderer.light_commands.current_block->base + index);
+        const RenderCommand& command = *((RenderCommand*)renderer.light_commands.current_block->base + index);
         
         switch(command.type)
         {

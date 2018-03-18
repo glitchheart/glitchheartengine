@@ -7,7 +7,7 @@ struct SoundInfo
 {
     r32 pitch;
     r32 gain;
-    r32 rolloff;
+    r32 roll_off;
     b32 loop;
     i32 loop_count;
 };
