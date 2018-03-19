@@ -4,15 +4,15 @@
 #define TIMER_MAX 1024
 #endif
 
-#define REGISTER_TIMER(HandlePtr, TimerMax) RegisterTimer(HandlePtr, TimerMax, TimerController)
-#define START_TIMER(Handle) StartTimer(Handle, TimerController)
-#define STOP_TIMER(Handle) StopTimer(Handle, TimerController)
-#define TIMER_DONE(Handle) TimerDone(Handle, TimerController)
-#define CURRENT_TIME(Handle) GetCurrentTimerTime(Handle, TimerController)
-#define MAX_TIME(Handle) GetMaxTimerTime(Handle, TimerController)
-#define RESET_TIMERS() ResetTimers(TimerController)
-#define PAUSE_TIMERS() PauseTimers(TimerController)
-#define RESUME_TIMERS() ResumeTimers(TimerController)
+#define REGISTER_TIMER(HandlePtr, TimerMax) register_timer(HandlePtr, TimerMax, timer_controller)
+#define START_TIMER(Handle) start_timer(Handle, timer_controller)
+#define STOP_TIMER(Handle) stop_timer(Handle, timer_controller)
+#define TIMER_DONE(Handle) timer_done(Handle, timer_controller)
+#define CURRENT_TIME(Handle) get_current_timer_time(Handle, timer_controller)
+#define MAX_TIME(Handle) get_max_timer_time(Handle, timer_controller)
+#define RESET_TIMERS() reset_timers(timer_controller)
+#define PAUSE_TIMERS() pause_timers(timer_controller)
+#define RESUME_TIMERS() resume_timers(timer_controller)
 
 struct Timer
 {
