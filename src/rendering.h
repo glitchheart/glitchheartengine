@@ -221,7 +221,7 @@ struct Model
     math::Vec3 scale;
     math::Quat orientation;
     
-    math::rgba color;
+    math::Rgba color;
     
     Material materials[10];
     i32 material_count;
@@ -280,7 +280,7 @@ struct RenderCommand
     math::Quat orientation;
     b32 with_origin;
     math::Vec2 origin;
-    math::rgba color;
+    math::Rgba color;
     i32 shader_handle;
     ShaderAttribute* shader_attributes;
     i32 shader_attribute_count;
@@ -292,26 +292,26 @@ struct RenderCommand
             math::Vec3 point1;
             math::Vec3 point2;
             r32 line_width;
-            math::rgba color; // @Cleanup: REMOVE!
+            math::Rgba color; // @Cleanup: REMOVE!
         } line;
         struct
         {
             char text[256];
             math::Vec3 position;
             i32 font_handle;
-            math::rgba color; // @Cleanup: REMOVE!
+            math::Rgba color; // @Cleanup: REMOVE!
             Alignment alignment;
             r32 scale;
         } text;
         struct
         {
-            math::rgba color;
+            math::Rgba color;
         } sprite;
         struct
         {
             i32 texture_handle;
             b32 flipped;
-            math::rgba color; // @Cleanup: REMOVE!
+            math::Rgba color; // @Cleanup: REMOVE!
             b32 outlined;
             r32 line_width;
             b32 for_animation;
@@ -321,7 +321,7 @@ struct RenderCommand
         } quad;
         struct
         {
-            math::rgba color; // @Cleanup: REMOVE!
+            math::Rgba color; // @Cleanup: REMOVE!
             r32 line_width;
         } wireframe_cube;
         struct
@@ -367,7 +367,7 @@ struct RenderCommand
             i32 mesh_count;
             Material materials[10];
             i32 material_count;
-            math::rgba color;
+            math::Rgba color;
             math::Mat4* bone_transforms;
             i32 bone_count;
         } model;
@@ -555,7 +555,7 @@ struct Renderer
     r32 scale_x;
     r32 scale_y;
     
-    math::rgba clear_color;
+    math::Rgba clear_color;
     r32 line_width;
     
     b32 show_mouse_cursor;
