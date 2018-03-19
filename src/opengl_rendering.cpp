@@ -1827,7 +1827,7 @@ static void render_model(const RenderCommand& command, RenderState& render_state
         set_mat4_uniform(shader.program, "projection", projection);
         set_mat4_uniform(shader.program, "view", view);
         set_mat4_uniform(shader.program, "model", model);
-        set_vec4_uniform(shader.program, "color", math::rgba(1.0f, 1.0f, 1.0f, 1.0f));
+        set_vec4_uniform(shader.program, "color", math::Rgba(1.0f, 1.0f, 1.0f, 1.0f));
         set_int_uniform(shader.program, "hasUVs", material.diffuse_texture.has_data);
         
         glDrawElements(GL_TRIANGLES, buffer.index_buffer_count, GL_UNSIGNED_INT, (void*)0);
@@ -2035,7 +2035,7 @@ static void render_commands(RenderState& render_state, Renderer& renderer, Memor
         }
     }
     
-    update_lighting_data(render_state);
+    //update_lighting_data(render_state);
     renderer.light_command_count = 0;
     render_state.spotlight_data.num_lights = 0;
     render_state.directional_light_data.num_lights = 0;
@@ -2268,7 +2268,7 @@ static void render(RenderState& render_state, Renderer& renderer, MemoryArena* p
         glClearColor(renderer.clear_color.r, renderer.clear_color.g, renderer.clear_color.b, renderer.clear_color.a);
         
         render_commands(render_state, renderer, perm_arena);
-        render_state.bound_texture = (GLuint)-1; 
+        render_state.bound_texture = 0; 
         
         // We have to reset the bound texture to nothing, since we're about to bind other textures
         // Second pass
@@ -2327,7 +2327,7 @@ static void render(RenderState& render_state, Renderer& renderer, MemoryArena* p
         renderer.light_command_count = 0;
         clear(&renderer.commands);
         renderer.command_count = 0;
-        clear(&renderer.commands);
+        clear(&renderer.ui_commands);
         renderer.ui_command_count = 0;
     }
     

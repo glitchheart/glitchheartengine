@@ -2505,8 +2505,14 @@ namespace math
         return ray;
     }
     
-    using rgb = Vec3;
-    using rgba = Vec4;
+    using Rgb = Vec3;
+    using Rgba = Vec4;
+    
+#define COLOR_RED math::Rgba(1, 0, 0, 1)
+#define COLOR_GREEN math::Rgba(0, 1, 0, 1)
+#define COLOR_BLUE math::Rgba(0, 0, 1, 1)
+#define COLOR_BLACK math::Rgba(0, 0, 0, 1)
+#define COLOR_WHITE math::Rgba(1, 1, 1, 1)
 }
 
 #endif

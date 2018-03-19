@@ -240,7 +240,7 @@ static void end_shader(Renderer& renderer)
     render_command->type = RENDER_COMMAND_SHADER_END;
 }
 
-static void push_line(Renderer& renderer, math::Vec3 point1, math::Vec3 point2, r32 line_width, math::rgba color, b32 is_ui = false)
+static void push_line(Renderer& renderer, math::Vec3 point1, math::Vec3 point2, r32 line_width, math::Rgba color, b32 is_ui = false)
 {
     RenderCommand* render_command = push_next_command(renderer, is_ui);
     
@@ -254,7 +254,7 @@ static void push_line(Renderer& renderer, math::Vec3 point1, math::Vec3 point2, 
 
 #define PUSH_TEXT(text, position, color, font_handle) push_text(renderer, text, position, 1.0f, font_handle, color)
 #define PUSH_CENTERED_TEXT(text, position, color, font_handle) push_text(renderer, text, position, 1.0f, font_handle, color, ALIGNMENT_CENTER)
-static void push_text(Renderer& renderer, const char* text, math::Vec3 position, r32 scale, i32 font_handle, math::rgba color, Alignment alignment = ALIGNMENT_LEFT, b32 is_ui = true)
+static void push_text(Renderer& renderer, const char* text, math::Vec3 position, r32 scale, i32 font_handle, math::Rgba color, Alignment alignment = ALIGNMENT_LEFT, b32 is_ui = true)
 {
     RenderCommand* render_command = push_next_command(renderer, is_ui);
     
@@ -274,7 +274,7 @@ static void push_text(Renderer& renderer, const char* text, math::Vec3 position,
     render_command->is_ui = is_ui;
 }
 
-static void push_filled_quad(Renderer& renderer, math::Vec3 position, b32 flipped, math::Vec3 size, math::Vec3 rotation = math::Vec3(), math::rgba color = math::rgba(1.0f, 1.0f, 1.0f, 1.0f), i32 texture_handle = 0, b32 is_ui = true, i32 animation_controller_handle = -1, b32 with_origin = false, math::Vec2 origin = math::Vec2(0.0f, 0.0f), i32 shader_handle = -1, ShaderAttribute* shader_attributes = 0, i32 shader_attribute_count = 0, math::Vec2 texture_offset = math::Vec2(-1.0f, -1.0f), math::Vec2i frame_size = math::Vec2i(0, 0))
+static void push_filled_quad(Renderer& renderer, math::Vec3 position, b32 flipped, math::Vec3 size, math::Vec3 rotation = math::Vec3(), math::Rgba color = math::Rgba(1.0f, 1.0f, 1.0f, 1.0f), i32 texture_handle = 0, b32 is_ui = true, i32 animation_controller_handle = -1, b32 with_origin = false, math::Vec2 origin = math::Vec2(0.0f, 0.0f), i32 shader_handle = -1, ShaderAttribute* shader_attributes = 0, i32 shader_attribute_count = 0, math::Vec2 texture_offset = math::Vec2(-1.0f, -1.0f), math::Vec2i frame_size = math::Vec2i(0, 0))
 {
     RenderCommand* render_command = push_next_command(renderer, is_ui);
     
@@ -318,7 +318,7 @@ static void push_filled_quad(Renderer& renderer, math::Vec3 position, b32 flippe
     render_command->is_ui = is_ui;
 }
 
-static void push_outlined_quad(Renderer& renderer, math::Vec3 position,  math::Vec3 size, math::Vec3 rotation, math::rgba color, b32 is_ui = false, r32 line_width = 1.0f)
+static void push_outlined_quad(Renderer& renderer, math::Vec3 position,  math::Vec3 size, math::Vec3 rotation, math::Rgba color, b32 is_ui = false, r32 line_width = 1.0f)
 {
     RenderCommand* render_command = push_next_command(renderer, is_ui);
     
@@ -333,7 +333,7 @@ static void push_outlined_quad(Renderer& renderer, math::Vec3 position,  math::V
     render_command->is_ui = is_ui;
 }
 
-static void push_wireframe_cube(Renderer& renderer, math::Vec3 position, math::Vec3 scale, math::Quat orientation, math::rgba color, r32 line_width)
+static void push_wireframe_cube(Renderer& renderer, math::Vec3 position, math::Vec3 scale, math::Quat orientation, math::Rgba color, r32 line_width)
 {
     RenderCommand* render_command = push_next_command(renderer, false);
     
@@ -399,7 +399,7 @@ static void push_point_light(Renderer& renderer, math::Vec3 position, math::Vec3
     point_light.quadratic = quadratic;
 }
 
-static void push_buffer(Renderer& renderer, i32 buffer_handle, i32 texture_handle, math::Vec3 rotation = math::Vec3(), b32 is_ui = false, math::Vec3 position = math::Vec3(), math::Vec3 scale = math::Vec3(1.0f), math::rgba color = math::rgba(1, 1, 1, 1))
+static void push_buffer(Renderer& renderer, i32 buffer_handle, i32 texture_handle, math::Vec3 rotation = math::Vec3(), b32 is_ui = false, math::Vec3 position = math::Vec3(), math::Vec3 scale = math::Vec3(1.0f), math::Rgba color = math::Rgba(1, 1, 1, 1))
 {
     RenderCommand* render_command = push_next_command(renderer, is_ui);
     
@@ -453,7 +453,7 @@ static void push_model(Renderer& renderer, Model& model)
         }
     }
     
-    render_command->model.color = math::rgba(1.0f, 1.0f, 1.0f, 1.0f);
+    render_command->model.color = math::Rgba(1.0f, 1.0f, 1.0f, 1.0f);
     render_command->is_ui = false;
 }
 
