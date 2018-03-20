@@ -1951,12 +1951,12 @@ namespace math
         return sqrt(pow(v1.x - v2.x, 2) + pow(v1.y - v2.y, 2) + pow(v1.z - v2.z, 2));
     }
     
-    /*
+    
     inline i32 floor(r32 v)
     {
-        return (i32)floor(v);
+        return (i32)std::floor(v);
     }
-    */
+    
     
     inline Vec2 floor(Vec2 v)
     {
@@ -1974,12 +1974,12 @@ namespace math
         result.z = (r32)floor(v.z);
         return result;
     }
-    /*
+    
     inline i32 ceil(r32 v)
     {
-        return (i32)ceil(v);
+        return (i32)std::ceil(v);
     }
-    */
+    
     inline Vec2 ceil(Vec2 v)
     {
         Vec2 result(v);
