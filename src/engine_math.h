@@ -2465,6 +2465,11 @@ namespace math
         return rand() % to + from;
     }
     
+    inline r32 random_float(r32 from, r32 to)
+    {
+        return (rand() / (float)RAND_MAX * to) + from;
+    }
+    
     struct Ray
     {
         Vec3 origin;
