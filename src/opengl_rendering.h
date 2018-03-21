@@ -4,6 +4,10 @@
 #include <GLFW/glfw3.h>
 #include <ft2build.h>
 #include FT_FREETYPE_H
+#define STB_TRUETYPE_IMPLEMENTATION 
+#pragma warning(disable : 4365) // integer conversion warning
+#pragma warning(disable : 4459) // variable shadowing of platform in stb_truetype
+#include "stb/stb_truetype.h"
 
 #define PIXELS_PER_UNIT 32
 
@@ -87,6 +91,14 @@ struct Tilesheet
     Texture texture;
     i32 tile_width;
     i32 tile_height;
+};
+
+struct Font
+{
+    stbtt_bakedchar char_data[96];
+    GLuint vao;
+    GLuint vbo;
+    GLuint texture;
 };
 
 struct RenderFont
@@ -351,6 +363,7 @@ struct RenderState
     //freetype
     FT_Library ft_library;
     
+    Font stb_fonts[32];
     RenderFont fonts[64];
     i32 font_count;
     

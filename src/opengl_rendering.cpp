@@ -251,6 +251,31 @@ static void use_shader(Shader *shader)
     glUseProgram(shader->program);
 }
 
+static void stb_init_font(char *file_path, Font* render_font)
+{
+    unsigned char* temp_bitmap = push_temp_array(1<<20, unsigned char);
+    unsigned char buffer[128];
+    stbtt_bakedchar cdata[96];
+    
+    fread(buffer, 1, 1<<20, fopen(file_path, "rb"));
+    stbtt_BakeFontBitmap(buffer, 0, 32.0, temp_bitmap, 512, 512, 32, 96, cdata);
+    
+    glGenTextures(1, &render_font->texture);
+    glBindTexture(GL_TEXTURE_2D, render_font->texture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, 512,512, 0, GL_ALPHA, GL_UNSIGNED_BYTE, temp_bitmap);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    
+    glGenVertexArrays(1, &render_font->vao);
+    glBindVertexArray(render_font->vao);
+    
+    glGenBuffers(1, &render_font->vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, render_font->vbo);
+    
+    glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, 0);
+    glEnableVertexAttribArray(0);
+    glBindVertexArray(0);
+}
+
 static void initialize_free_type_font(char* font_path, int font_size, FT_Library library, RenderFont* font)
 {
     if(FT_New_Face(library, font_path, 0, &font->face)) 
@@ -792,14 +817,14 @@ static void render_setup(RenderState *render_state, MemoryArena* perm_arena)
     glBindVertexArray(0);
     
     /*glGenVertexArrays(1, &RenderState->Primitivevao);
-        glBindVertexArray(RenderState->Primitivevao);
-        glGenBuffers(1, &RenderState->Primitivevbo);
-        glBindBuffer(GL_ARRAY_BUFFER, RenderState->Primitivevbo);
-        
-        glEnableVertexAttribArray(0);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), 0);
-        glBindVertexArray(0);
-        */
+    glBindVertexArray(RenderState->Primitivevao);
+    glGenBuffers(1, &RenderState->Primitivevbo);
+    glBindBuffer(GL_ARRAY_BUFFER, RenderState->Primitivevbo);
+    
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), 0);
+    glBindVertexArray(0);
+    */
     
     
     // Passthrough
@@ -1234,41 +1259,41 @@ static void render_line(RenderState& render_state, math::Vec4 color, math::Vec3 
 /*
 static void RenderLine(render_state& RenderState, math::Vec4 Color, math::Vec3 Start, math::Vec3 End, math::m4 projection_matrix = math::m4(), math::m4 view_matrix = math::m4(), r32 LineWidth = 1.0f, b32 IsUI = false)
 {
-    if(IsUI)
-    {
-        Start.x *= RenderState.scale_x;
-        Start.x -= 1;
-        Start.y *= RenderState.scale_y;
-        Start.y -= 1;
-        End.x *= RenderState.scale_x;
-        End.x -= 1;
-        End.y *= RenderState.scale_y;
-        End.y -= 1;
-        Start.z = 0.0f;
-        End.z = 0.0f;
-    }
-    
-    glLineWidth(LineWidth);
-    glBindBuffer(GL_ARRAY_BUFFER, RenderState.Primitivevbo);
-    
-    GLfloat Points[6] = {Start.x, Start.y, Start.z, End.x, End.y, End.z};
-    glBufferData(GL_ARRAY_BUFFER, 6 * sizeof(GLfloat), &Points[0], GL_DYNAMIC_DRAW);
-    
-    glBindVertexArray(RenderState.Primitivevao);
-    
-    auto& Shader = RenderState.PassthroughShader;
-    UseShader(&Shader);
-    
-    SetMat4Uniform(Shader.program, "Projection", projection_matrix);
-    SetMat4Uniform(Shader.program, "View", view_matrix);
-    
-    SetMat4Uniform(Shader.program, "Model", math::m4(1.0f));
-    
-    SetVec4Uniform(Shader.program, "Color", Color);
-    SetIntUniform(Shader.program, "IsUI", (i32)IsUI);
-    
-    glDrawArrays(GL_LINES, 0, 6);
-    glLineWidth(1.0f);
+if(IsUI)
+{
+Start.x *= RenderState.scale_x;
+Start.x -= 1;
+Start.y *= RenderState.scale_y;
+Start.y -= 1;
+End.x *= RenderState.scale_x;
+End.x -= 1;
+End.y *= RenderState.scale_y;
+End.y -= 1;
+Start.z = 0.0f;
+End.z = 0.0f;
+}
+
+glLineWidth(LineWidth);
+glBindBuffer(GL_ARRAY_BUFFER, RenderState.Primitivevbo);
+
+GLfloat Points[6] = {Start.x, Start.y, Start.z, End.x, End.y, End.z};
+glBufferData(GL_ARRAY_BUFFER, 6 * sizeof(GLfloat), &Points[0], GL_DYNAMIC_DRAW);
+
+glBindVertexArray(RenderState.Primitivevao);
+
+auto& Shader = RenderState.PassthroughShader;
+UseShader(&Shader);
+
+SetMat4Uniform(Shader.program, "Projection", projection_matrix);
+SetMat4Uniform(Shader.program, "View", view_matrix);
+
+SetMat4Uniform(Shader.program, "Model", math::m4(1.0f));
+
+SetVec4Uniform(Shader.program, "Color", Color);
+SetIntUniform(Shader.program, "IsUI", (i32)IsUI);
+
+glDrawArrays(GL_LINES, 0, 6);
+glLineWidth(1.0f);
 }
 */
 // NOTE(Niels): Possible future use but buggy
@@ -1603,7 +1628,7 @@ static void measure_text(const RenderFont& font, const char* text, float* width,
 }
 
 //rendering methods
-static void render_text(RenderState& render_state, const RenderFont& font, const math::Vec4& color, const char* text, r32 x, r32 y, r32 scale = 1.0f,
+static void render_text(RenderState& render_state, const Font& font, const math::Vec4& color, const char* text, r32 x, r32 y, r32 scale = 1.0f,
                         Alignment alignment = ALIGNMENT_LEFT,  b32 align_center_y = true) 
 {
     glBindVertexArray(font.vao);
@@ -1611,7 +1636,7 @@ static void render_text(RenderState& render_state, const RenderFont& font, const
     use_shader(&shader);
     
     set_vec4_uniform(shader.program, "color", color);
-    set_vec4_uniform(shader.program, "alphaColor", font.alpha_color);
+    set_vec4_uniform(shader.program, "alphaColor", math::Rgba(0, 0, 0, 0));
     
     if (render_state.bound_texture != font.texture) //never bind the same texture if it's already bound
     {
@@ -1619,11 +1644,13 @@ static void render_text(RenderState& render_state, const RenderFont& font, const
         render_state.bound_texture = font.texture;
     }
     
+    /*
+    
+    */
+    
     Point* coords = push_temp_array(6 * strlen(text), Point);
     
-    int n = 0;
-    
-    switch(alignment)
+    /*switch(alignment)
     {
         case ALIGNMENT_LEFT:
         break;
@@ -1645,7 +1672,7 @@ static void render_text(RenderState& render_state, const RenderFont& font, const
         }
         break;
     }
-    
+    */
     x = (r32)x;
     y = (r32)y;
     
@@ -1654,30 +1681,21 @@ static void render_text(RenderState& render_state, const RenderFont& font, const
     y *= render_state.scale_y;
     y -= 1.0f;
     
-    r32 epsilon = 0.0001f;
+    //r32 epsilon = 0.0001f;
+    
+    int n = 0;
     
     for(const char *p = text; *p; p++) 
     { 
-        r32 w = font.character_info[*p].bw * render_state.scale_x * scale;
-        r32 h = font.character_info[*p].bh * render_state.scale_y * scale;
-        
-        r32 x2 = x + font.character_info[*p ].bl* render_state.scale_x * scale;
-        r32 y2 = -y - font.character_info[*p ].bt* render_state.scale_y * scale;
-        
-        /* Advance the cursor to the start of the next character */
-        x+= font.character_info[*p].ax * render_state.scale_x * scale;
-        y+= font.character_info[*p].ay* render_state.scale_y * scale;
-        
-        /* Skip glyphs that have no pixels */
-        if(!(i32)font.character_info[*p].bw || !(i32)font.character_info[*p].bh)
-            continue;
-        
-        coords[n++] = { x2 + epsilon, -y2 + epsilon, (r32)font.character_info[*p].tx + epsilon, epsilon };
-        coords[n++] = { x2 + w - epsilon, -y2 + epsilon, (r32)font.character_info[*p].tx - epsilon + (r32)font.character_info[*p].bw / (r32)font.atlas_width, epsilon };
-        coords[n++] = { x2 + epsilon, -y2 - h - epsilon, (r32)font.character_info[*p].tx + epsilon, (r32)font.character_info[*p].bh / (r32)font.atlas_height - epsilon };
-        coords[n++] = { x2 + w - epsilon, -y2 + epsilon, (r32)font.character_info[*p].tx - epsilon + (r32)font.character_info[*p].bw / (r32)font.atlas_width,  epsilon };
-        coords[n++] = { x2 + epsilon, -y2 - h - epsilon, (r32)font.character_info[*p].tx + epsilon, (r32)font.character_info[*p].bh / (r32)font.atlas_height - epsilon };
-        coords[n++] = { x2 + w - epsilon, -y2 - h, (r32)font.character_info[*p].tx - epsilon + font.character_info[*p].bw / (r32)font.atlas_width, (r32)font.character_info[*p].bh / (r32)font.atlas_height - epsilon };
+        if (*p >= 32 && *p < 128) {
+            printf("damn boy");
+            stbtt_aligned_quad q;
+            stbtt_GetBakedQuad(font.char_data, 512,512, *text-32, &x,&y,&q,1);//1=opengl & d3d10+,0=d3d9
+            coords[n++] = { q.x0, q.y0, q.s0, q.t1 };
+            coords[n++] = { q.x1, q.y0, q.s1, q.t1 };
+            coords[n++] = { q.x1, q.y1, q.s1, q.t0 };
+            coords[n++] = { q.x0, q.y1, q.s0, q.t0 };
+        }
     }
     
     glBindBuffer(GL_ARRAY_BUFFER, font.vbo);
@@ -1723,8 +1741,9 @@ static void render_text(const RenderCommand& command, RenderState& render_state)
 {
     RenderFont render_font;
     render_font = render_state.fonts[command.text.font_handle];
+    Font font = render_state.stb_fonts[command.text.font_handle];
     // @Incomplete: Y-centering
-    render_text(render_state, render_font, command.text.color, command.text.text, command.text.position.x, command.text.position.y, command.text.scale, command.text.alignment);
+    render_text(render_state, font, command.text.color, command.text.text, command.text.position.x, command.text.position.y, command.text.scale, command.text.alignment);
 }
 
 static void render_quad(const RenderCommand& command, RenderState& render_state, math::Mat4 projection, math::Mat4 view)
@@ -1887,7 +1906,7 @@ static void render_buffer(const RenderCommand& command, RenderState& render_stat
 
 static void load_font(RenderState& render_state, char* path, i32 size)
 {
-    initialize_free_type_font(path, size, render_state.ft_library, &render_state.fonts[render_state.font_count++]);
+    stb_init_font(path, &render_state.stb_fonts[render_state.font_count++]);
 }
 
 
