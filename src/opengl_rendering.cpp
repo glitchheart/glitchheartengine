@@ -27,7 +27,7 @@ static void error_callback(int error, const char *description)
 
 static void show_mouse_cursor(RenderState& render_state, b32 show)
 {
-    if(show)
+    if (show)
     {
         glfwSetInputMode(render_state.window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
     }
@@ -46,7 +46,7 @@ void message_callback(GLenum Source,
                       const void* user_param)
 {
     (void)user_param; // Silence unused warning
-    if(Type == GL_DEBUG_TYPE_ERROR)
+    if (Type == GL_DEBUG_TYPE_ERROR)
     {
         Debug("GL CALLBACK: %s type = 0x%x, severity = 0x%x, message = %s, source = %x, id = %ud, length %ud= \n",
               (Type == GL_DEBUG_TYPE_ERROR ? "** GL ERROR **" : ""),
@@ -100,7 +100,7 @@ static void close_window(RenderState& render_state)
 
 static b32 should_close_window(RenderState& render_state)
 {
-    return glfwWindowShouldClose(render_state.window); 
+    return glfwWindowShouldClose(render_state.window);
 }
 
 static GLint shader_compilation_error_checking(const char* shader_name, GLuint shader)
@@ -165,7 +165,7 @@ static GLuint load_shader(const char* file_path, Shader *shd, MemoryArena* perm_
     char* vertex_string = concat(file_path, ".vert");
     GLchar *vertex_text = load_shader_from_file(vertex_string, perm_arena);
     
-    if(vertex_text)
+    if (vertex_text)
     {
         glShaderSource(shd->vertex_shader, 1, &vertex_text, NULL);
         glCompileShader(shd->vertex_shader);
@@ -205,7 +205,7 @@ static GLuint load_vertex_shader(const char* file_path, Shader *shd, MemoryArena
     shd->program = glCreateProgram();
     
     shd->vertex_shader = glCreateShader(GL_VERTEX_SHADER);
-    char* vertex_string = concat(file_path,".vert");
+    char* vertex_string = concat(file_path, ".vert");
     GLchar *vertex_text = load_shader_from_file(vertex_string, perm_arena);
     glShaderSource(shd->vertex_shader, 1, &vertex_text, NULL);
     glCompileShader(shd->vertex_shader);
@@ -229,7 +229,7 @@ static GLuint load_fragment_shader(const char* file_path, Shader *shd, MemoryAre
     shd->program = glCreateProgram();
     
     shd->fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
-    char* fragment_string = concat(file_path,".frag");
+    char* fragment_string = concat(file_path, ".frag");
     GLchar *fragment_text = load_shader_from_file(fragment_string, perm_arena);
     glShaderSource(shd->fragment_shader, 1, &fragment_text, NULL);
     glCompileShader(shd->fragment_shader);
@@ -251,41 +251,16 @@ static void use_shader(Shader *shader)
     glUseProgram(shader->program);
 }
 
-static void stb_init_font(char *file_path, Font* render_font)
-{
-    unsigned char* temp_bitmap = push_temp_array(1<<20, unsigned char);
-    unsigned char buffer[128];
-    stbtt_bakedchar cdata[96];
-    
-    fread(buffer, 1, 1<<20, fopen(file_path, "rb"));
-    stbtt_BakeFontBitmap(buffer, 0, 32.0, temp_bitmap, 512, 512, 32, 96, cdata);
-    
-    glGenTextures(1, &render_font->texture);
-    glBindTexture(GL_TEXTURE_2D, render_font->texture);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, 512,512, 0, GL_ALPHA, GL_UNSIGNED_BYTE, temp_bitmap);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    
-    glGenVertexArrays(1, &render_font->vao);
-    glBindVertexArray(render_font->vao);
-    
-    glGenBuffers(1, &render_font->vbo);
-    glBindBuffer(GL_ARRAY_BUFFER, render_font->vbo);
-    
-    glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, 0);
-    glEnableVertexAttribArray(0);
-    glBindVertexArray(0);
-}
-
 static void initialize_free_type_font(char* font_path, int font_size, FT_Library library, RenderFont* font)
 {
-    if(FT_New_Face(library, font_path, 0, &font->face)) 
+    if (FT_New_Face(library, font_path, 0, &font->face))
     {
         fprintf(stderr, "Could not open font\n");
     }
     
     FT_Set_Pixel_Sizes(font->face, 0, (FT_UInt)font_size);
     
-    FT_Select_Charmap(font->face , ft_encoding_unicode);
+    FT_Select_Charmap(font->face, ft_encoding_unicode);
     
     //Find the atlas width and height
     FT_GlyphSlot G = font->face->glyph;
@@ -293,9 +268,9 @@ static void initialize_free_type_font(char* font_path, int font_size, FT_Library
     unsigned int w = 0;
     unsigned int H = 0;
     
-    for(int i = 0; i < 255; i++)
+    for (int i = 0; i < 255; i++)
     {
-        if(FT_Load_Char(font->face, (FT_ULong)i, FT_LOAD_RENDER))
+        if (FT_Load_Char(font->face, (FT_ULong)i, FT_LOAD_RENDER))
         {
             fprintf(stderr, "Loading character %c failed!\n", i);
             continue;
@@ -329,9 +304,9 @@ static void initialize_free_type_font(char* font_path, int font_size, FT_Library
     
     unsigned int x = 0;
     
-    for(int i = 0; i < 255; i++) 
+    for (int i = 0; i < 255; i++)
     {
-        if(FT_Load_Char(font->face, (FT_ULong)i, FT_LOAD_RENDER))
+        if (FT_Load_Char(font->face, (FT_ULong)i, FT_LOAD_RENDER))
             continue;
         
         glTexSubImage2D(GL_TEXTURE_2D, 0, (GLsizei)x, 0, (GLsizei)G->bitmap.width, (GLsizei)G->bitmap.rows, GL_RED, GL_UNSIGNED_BYTE, G->bitmap.buffer);
@@ -368,12 +343,12 @@ static void register_buffers(RenderState& render_state, GLfloat* vertex_buffer, 
     buffer->vertex_buffer_size = (GLint)vertex_buffer_size;
     buffer->index_buffer_count = (GLint)index_buffer_count;
     
-    if(buffer->vao == 0)
+    if (buffer->vao == 0)
         glGenVertexArrays(1, &buffer->vao);
     
     glBindVertexArray(buffer->vao);
     
-    if(buffer->vbo == 0)
+    if (buffer->vbo == 0)
         glGenBuffers(1, &buffer->vbo);
     
     glBindBuffer(GL_ARRAY_BUFFER, buffer->vbo);
@@ -381,7 +356,7 @@ static void register_buffers(RenderState& render_state, GLfloat* vertex_buffer, 
     
     i32 bone_info_size = skinned ? 8 : 0;
     
-    if(has_normals && has_uvs)
+    if (has_normals && has_uvs)
     {
         glEnableVertexAttribArray(0);
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, (GLsizei)((8 + bone_info_size) * sizeof(GLfloat)), 0);
@@ -400,7 +375,7 @@ static void register_buffers(RenderState& render_state, GLfloat* vertex_buffer, 
         glEnableVertexAttribArray(4);
         glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, (GLsizei)((8 + bone_info_size) * sizeof(GLfloat)), (void*)(12 * sizeof(GLfloat)));
     }
-    else if(has_normals)
+    else if (has_normals)
     {
         glEnableVertexAttribArray(0);
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, (GLsizei)((6 + bone_info_size) * sizeof(GLfloat)), 0);
@@ -420,7 +395,7 @@ static void register_buffers(RenderState& render_state, GLfloat* vertex_buffer, 
         glEnableVertexAttribArray(4);
         glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, (GLsizei)((8 + bone_info_size) * sizeof(GLfloat)), (void*)(11 * sizeof(GLfloat)));
     }
-    else if(has_uvs)
+    else if (has_uvs)
     {
         glEnableVertexAttribArray(0);
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, (GLsizei)((5 + bone_info_size) * sizeof(GLfloat)), 0);
@@ -462,7 +437,7 @@ static void register_buffers(RenderState& render_state, GLfloat* vertex_buffer, 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer->ibo);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, index_buffer_size, index_buffer, GL_STATIC_DRAW);
     
-    if(buffer_handle == -1)
+    if (buffer_handle == -1)
         render_state.buffer_count++;
     
     glBindVertexArray(0);
@@ -474,20 +449,20 @@ static void register_vertex_buffer(RenderState& render_state, GLfloat* buffer_da
     
     buffer->vertex_buffer_size = size;
     buffer->index_buffer_size = 0;
-    buffer->ibo= 0;
+    buffer->ibo = 0;
     
-    if(buffer->vao == 0)
+    if (buffer->vao == 0)
         glGenVertexArrays(1, &buffer->vao);
     
     glBindVertexArray(buffer->vao);
     
-    if(buffer->vbo == 0)
+    if (buffer->vbo == 0)
         glGenBuffers(1, &buffer->vbo);
     
     glBindBuffer(GL_ARRAY_BUFFER, buffer->vbo);
     glBufferData(GL_ARRAY_BUFFER, (GLsizei)(sizeof(GLfloat) * size), buffer_data, GL_STATIC_DRAW);
     
-    if(!render_state.shaders[shader_type].loaded)
+    if (!render_state.shaders[shader_type].loaded)
     {
         load_shader(shader_paths[shader_type], &render_state.shaders[shader_type], perm_arena);
     }
@@ -504,20 +479,20 @@ static void register_vertex_buffer(RenderState& render_state, GLfloat* buffer_da
     
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     
-    if(buffer_handle == -1)
+    if (buffer_handle == -1)
         render_state.buffer_count++;
 }
 
 static void render_setup(RenderState *render_state, MemoryArena* perm_arena)
 {
     // @Cleanup: Not sure if a fallback is a good way of dealing with this
-    if(render_state->scale_from_width == 0 || render_state->scale_from_height == 0)
+    if (render_state->scale_from_width == 0 || render_state->scale_from_height == 0)
     {
         render_state->scale_from_width = render_state->window_width;
         render_state->scale_from_height = render_state->window_height;
     }
     
-    if(FT_Init_FreeType(&render_state->ft_library)) 
+    if (FT_Init_FreeType(&render_state->ft_library))
     {
         fprintf(stderr, "Could not init freetype library\n");
     }
@@ -542,7 +517,7 @@ static void render_setup(RenderState *render_state, MemoryArena* perm_arena)
     
     glBindTexture(GL_TEXTURE_2D, 0);
     
-    if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
         Debug("ERROR::FRAMEBUFFER:: Framebuffer is not complete!");
     
     GLuint depth_buffer;
@@ -568,7 +543,7 @@ static void render_setup(RenderState *render_state, MemoryArena* perm_arena)
     
     glBindTexture(GL_TEXTURE_2D, 0);
     
-    if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
         Debug("ERROR::FRAMEBUFFER:: Framebuffer is not complete!");
     
     // FrameBuffer vao
@@ -643,63 +618,63 @@ static void render_setup(RenderState *render_state, MemoryArena* perm_arena)
     
     //error sprite
     /*glGenVertexArrays(1, &RenderState->SpriteErrorvao);
-    glBindVertexArray(RenderState->SpriteErrorvao);
-    glGenBuffers(1, &RenderState->SpriteQuadvbo);
-    glBindBuffer(GL_ARRAY_BUFFER, RenderState->SpriteQuadvbo);
-    glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)RenderState->SpriteQuadVerticesSize, RenderState->SpriteQuadVertices, GL_STATIC_DRAW);
-    
-    RenderState->ErrorShaderSprite.Type = Shader_ErrorSprite;
-    LoadShader(ShaderPaths[Shader_ErrorSprite], &RenderState->ErrorShaderSprite, PermArena);
-    
-    PositionLocation = (GLuint)glGetAttribLocation(RenderState->ErrorShaderSprite.program, "pos");
-    TexcoordLocation = (GLuint)glGetAttribLocation(RenderState->ErrorShaderSprite.program, "texcoord");
-    
-    glEnableVertexAttribArray(PositionLocation);
-    glVertexAttribPointer(PositionLocation, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
-    glEnableVertexAttribArray(TexcoordLocation);
-    glVertexAttribPointer(TexcoordLocation, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *)(2 * sizeof(float)));
-    glBindVertexArray(0);
-    */
+ glBindVertexArray(RenderState->SpriteErrorvao);
+ glGenBuffers(1, &RenderState->SpriteQuadvbo);
+ glBindBuffer(GL_ARRAY_BUFFER, RenderState->SpriteQuadvbo);
+ glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)RenderState->SpriteQuadVerticesSize, RenderState->SpriteQuadVertices, GL_STATIC_DRAW);
+ 
+ RenderState->ErrorShaderSprite.Type = Shader_ErrorSprite;
+ LoadShader(ShaderPaths[Shader_ErrorSprite], &RenderState->ErrorShaderSprite, PermArena);
+ 
+ PositionLocation = (GLuint)glGetAttribLocation(RenderState->ErrorShaderSprite.program, "pos");
+ TexcoordLocation = (GLuint)glGetAttribLocation(RenderState->ErrorShaderSprite.program, "texcoord");
+ 
+ glEnableVertexAttribArray(PositionLocation);
+ glVertexAttribPointer(PositionLocation, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
+ glEnableVertexAttribArray(TexcoordLocation);
+ glVertexAttribPointer(TexcoordLocation, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *)(2 * sizeof(float)));
+ glBindVertexArray(0);
+ */
     //ui sprite
     /*glGenVertexArrays(1, &RenderState->UISpritevao);
-    glBindVertexArray(RenderState->UISpritevao);
-    glGenBuffers(1, &RenderState->SpriteQuadvbo);
-    glBindBuffer(GL_ARRAY_BUFFER, RenderState->SpriteQuadvbo);
-    glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)RenderState->SpriteQuadVerticesSize, RenderState->SpriteQuadVertices, GL_STATIC_DRAW);
-    
-    RenderState->UISpriteShader.Type = Shader_UISprite;
-    LoadShader(ShaderPaths[Shader_UISprite], &RenderState->UISpriteShader, PermArena);
-    
-    PositionLocation = (GLuint)glGetAttribLocation(RenderState->UISpriteShader.program, "pos");
-    TexcoordLocation = (GLuint)glGetAttribLocation(RenderState->UISpriteShader.program, "texcoord");
-    
-    glEnableVertexAttribArray(PositionLocation);
-    glVertexAttribPointer(PositionLocation, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
-    glEnableVertexAttribArray(TexcoordLocation);
-    glVertexAttribPointer(TexcoordLocation, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *)(2 * sizeof(float)));
-    glBindVertexArray(0);
-    
-    //ui error shader
-    glGenVertexArrays(1, &RenderState->UIErrorvao);
-    glBindVertexArray(RenderState->UIErrorvao);
-    glGenBuffers(1, &RenderState->SpriteQuadvbo);
-    glBindBuffer(GL_ARRAY_BUFFER, RenderState->SpriteQuadvbo);
-    glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)RenderState->SpriteQuadVerticesSize, RenderState->SpriteQuadVertices, GL_STATIC_DRAW);
-    glBindVertexArray(0);
-    
-    //error shader
-    RenderState->ErrorShaderUI.Type = Shader_ErrorUI;
-    LoadShader(ShaderPaths[Shader_ErrorUI], &RenderState->ErrorShaderUI, PermArena);
-    
-    PositionLocation = (GLuint)glGetAttribLocation(RenderState->ErrorShaderUI.program, "pos");
-    TexcoordLocation = (GLuint)glGetAttribLocation(RenderState->ErrorShaderUI.program, "texcoord");
-    
-    glEnableVertexAttribArray(PositionLocation);
-    glVertexAttribPointer(PositionLocation, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
-    glEnableVertexAttribArray(TexcoordLocation);
-    glVertexAttribPointer(TexcoordLocation, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *)(2 * sizeof(float)));
-    glBindVertexArray(0);
-    */
+ glBindVertexArray(RenderState->UISpritevao);
+ glGenBuffers(1, &RenderState->SpriteQuadvbo);
+ glBindBuffer(GL_ARRAY_BUFFER, RenderState->SpriteQuadvbo);
+ glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)RenderState->SpriteQuadVerticesSize, RenderState->SpriteQuadVertices, GL_STATIC_DRAW);
+ 
+ RenderState->UISpriteShader.Type = Shader_UISprite;
+ LoadShader(ShaderPaths[Shader_UISprite], &RenderState->UISpriteShader, PermArena);
+ 
+ PositionLocation = (GLuint)glGetAttribLocation(RenderState->UISpriteShader.program, "pos");
+ TexcoordLocation = (GLuint)glGetAttribLocation(RenderState->UISpriteShader.program, "texcoord");
+ 
+ glEnableVertexAttribArray(PositionLocation);
+ glVertexAttribPointer(PositionLocation, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
+ glEnableVertexAttribArray(TexcoordLocation);
+ glVertexAttribPointer(TexcoordLocation, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *)(2 * sizeof(float)));
+ glBindVertexArray(0);
+ 
+ //ui error shader
+ glGenVertexArrays(1, &RenderState->UIErrorvao);
+ glBindVertexArray(RenderState->UIErrorvao);
+ glGenBuffers(1, &RenderState->SpriteQuadvbo);
+ glBindBuffer(GL_ARRAY_BUFFER, RenderState->SpriteQuadvbo);
+ glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)RenderState->SpriteQuadVerticesSize, RenderState->SpriteQuadVertices, GL_STATIC_DRAW);
+ glBindVertexArray(0);
+ 
+ //error shader
+ RenderState->ErrorShaderUI.Type = Shader_ErrorUI;
+ LoadShader(ShaderPaths[Shader_ErrorUI], &RenderState->ErrorShaderUI, PermArena);
+ 
+ PositionLocation = (GLuint)glGetAttribLocation(RenderState->ErrorShaderUI.program, "pos");
+ TexcoordLocation = (GLuint)glGetAttribLocation(RenderState->ErrorShaderUI.program, "texcoord");
+ 
+ glEnableVertexAttribArray(PositionLocation);
+ glVertexAttribPointer(PositionLocation, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
+ glEnableVertexAttribArray(TexcoordLocation);
+ glVertexAttribPointer(TexcoordLocation, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *)(2 * sizeof(float)));
+ glBindVertexArray(0);
+ */
     //tile
     glGenVertexArrays(1, &render_state->tile_vao);
     glBindVertexArray(render_state->tile_vao);
@@ -817,14 +792,14 @@ static void render_setup(RenderState *render_state, MemoryArena* perm_arena)
     glBindVertexArray(0);
     
     /*glGenVertexArrays(1, &RenderState->Primitivevao);
-    glBindVertexArray(RenderState->Primitivevao);
-    glGenBuffers(1, &RenderState->Primitivevbo);
-    glBindBuffer(GL_ARRAY_BUFFER, RenderState->Primitivevbo);
-    
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), 0);
-    glBindVertexArray(0);
-    */
+ glBindVertexArray(RenderState->Primitivevao);
+ glGenBuffers(1, &RenderState->Primitivevbo);
+ glBindBuffer(GL_ARRAY_BUFFER, RenderState->Primitivevbo);
+ 
+ glEnableVertexAttribArray(0);
+ glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), 0);
+ glBindVertexArray(0);
+ */
     
     
     // Passthrough
@@ -880,7 +855,7 @@ static void update_lighting_data(const RenderState& render_state)
 {
     glBindBuffer(GL_UNIFORM_BUFFER, render_state.spotlight_ubo);
     GLvoid* p = glMapBuffer(GL_UNIFORM_BUFFER, GL_WRITE_ONLY);
-    if(p)
+    if (p)
     {
         memcpy(p, &render_state.spotlight_data, sizeof(SpotlightData));
     }
@@ -889,7 +864,7 @@ static void update_lighting_data(const RenderState& render_state)
     
     glBindBuffer(GL_UNIFORM_BUFFER, render_state.directional_light_ubo);
     p = glMapBuffer(GL_UNIFORM_BUFFER, GL_WRITE_ONLY);
-    if(p)
+    if (p)
     {
         memcpy(p, &render_state.directional_light_data, sizeof(DirectionalLightData));
     }
@@ -897,7 +872,7 @@ static void update_lighting_data(const RenderState& render_state)
     
     glBindBuffer(GL_UNIFORM_BUFFER, render_state.point_light_ubo);
     p = glMapBuffer(GL_UNIFORM_BUFFER, GL_WRITE_ONLY);
-    if(p)
+    if (p)
     {
         memcpy(p, &render_state.point_light_data, sizeof(PointLightData));
     }
@@ -905,7 +880,7 @@ static void update_lighting_data(const RenderState& render_state)
 }
 
 static GLuint load_texture(texture_data& data, Texture* texture)
-{ 
+{
     GLuint texture_handle;
     
     glGenTextures(1, &texture_handle);
@@ -920,7 +895,7 @@ static GLuint load_texture(texture_data& data, Texture* texture)
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, data.width, data.height, 0, GL_RGBA,
-                 GL_UNSIGNED_BYTE, (GLvoid*) data.image_data);
+                 GL_UNSIGNED_BYTE, (GLvoid*)data.image_data);
     
     texture->texture_handle = texture_handle;
     stbi_image_free(data.image_data);
@@ -930,7 +905,7 @@ static GLuint load_texture(texture_data& data, Texture* texture)
 
 static void load_textures(RenderState& render_state, Renderer& renderer)
 {
-    for(i32 index = render_state.texture_index; index < renderer.texture_count; index++)
+    for (i32 index = render_state.texture_index; index < renderer.texture_count; index++)
     {
         load_texture(renderer.texture_data[index], &render_state.texture_array[render_state.texture_index++]);
     }
@@ -938,7 +913,7 @@ static void load_textures(RenderState& render_state, Renderer& renderer)
 
 static void load_extra_shaders(RenderState& render_state, Renderer& renderer)
 {
-    for(i32 index = render_state.extra_shader_index; index < renderer.shader_count; index++)
+    for (i32 index = render_state.extra_shader_index; index < renderer.shader_count; index++)
     {
         load_extra_shader(renderer.shader_data[index], render_state);
     }
@@ -955,7 +930,7 @@ static void create_open_gl_window(RenderState& render_state, WindowMode window_m
     render_state.window_title = push_string(&render_state.arena, strlen(title) + 1);
     strcpy(render_state.window_title, title);
     
-    if(window_mode == FM_BORDERLESS)
+    if (window_mode == FM_BORDERLESS)
     {
         glfwWindowHint(GLFW_RED_BITS, mode->redBits);
         glfwWindowHint(GLFW_GREEN_BITS, mode->greenBits);
@@ -965,17 +940,17 @@ static void create_open_gl_window(RenderState& render_state, WindowMode window_m
         screen_height = mode->height;
     }
     
-    if(window_mode == FM_WINDOWED)
+    if (window_mode == FM_WINDOWED)
     {
         monitor = NULL;
     }
     
-    render_state.window = glfwCreateWindow(screen_width, screen_height, render_state.window_title, monitor, 
+    render_state.window = glfwCreateWindow(screen_width, screen_height, render_state.window_title, monitor,
                                            NULL);
     
     //center window on screen (windowed?)
     
-    if(window_mode == FM_WINDOWED)
+    if (window_mode == FM_WINDOWED)
     {
         int frame_buffer_width, frame_buffer_height;
         
@@ -984,7 +959,7 @@ static void create_open_gl_window(RenderState& render_state, WindowMode window_m
     }
 }
 
-static void initialize_open_gl(RenderState& render_state, Renderer& renderer, ConfigData* config_data, MemoryArena* perm_arena)
+static void initialize_opengl(RenderState& render_state, Renderer& renderer, ConfigData* config_data, MemoryArena* perm_arena)
 {
     if (!glfwInit())
         exit(EXIT_FAILURE);
@@ -1035,11 +1010,11 @@ static void initialize_open_gl(RenderState& render_state, Renderer& renderer, Co
     
     // Enable debug output
     glEnable(GL_DEBUG_OUTPUT);
-    glDebugMessageCallback((GLDEBUGPROC) message_callback, 0);
+    glDebugMessageCallback((GLDEBUGPROC)message_callback, 0);
     
     render_state.screen_width = config_data->screen_width;
     render_state.screen_height = config_data->screen_height;
-    if(render_state.screen_width != 0)
+    if (render_state.screen_width != 0)
     {
         render_state.dpi_scale = render_state.window_width / render_state.screen_width;
     }
@@ -1128,16 +1103,16 @@ static void reload_fragment_shader(ShaderType type, RenderState* render_state, M
 
 static void reload_assets(RenderState& render_state, AssetManager* asset_manager, MemoryArena* perm_arena)
 {
-    for(int i = 0; i < SHADER_COUNT; i++)
+    for (int i = 0; i < SHADER_COUNT; i++)
     {
-        if(asset_manager->dirty_vertex_shader_indices[i] == 1)
+        if (asset_manager->dirty_vertex_shader_indices[i] == 1)
         {
             Debug("Reloading vertex shader type: %s\n", shader_enum_to_str((ShaderType)i));
             reload_vertex_shader((ShaderType)i, &render_state, perm_arena);
             asset_manager->dirty_vertex_shader_indices[i] = 0;
         }
         
-        if(asset_manager->dirty_fragment_shader_indices[i] == 1)
+        if (asset_manager->dirty_fragment_shader_indices[i] == 1)
         {
             Debug("Reloading fragment shader type: %s\n", shader_enum_to_str((ShaderType)i));
             reload_fragment_shader((ShaderType)i, &render_state, perm_arena);
@@ -1195,7 +1170,7 @@ void set_float_array_uniform(GLuint shader_handle, const char *uniform_name, r32
 
 static void render_line(RenderState& render_state, math::Vec4 color, math::Vec3 start, math::Vec3 end, math::Mat4 projection_matrix = math::Mat4(), math::Mat4 view_matrix = math::Mat4(), r32 line_width = 1.0f, b32 is_ui = false)
 {
-    if(is_ui)
+    if (is_ui)
     {
         start.x *= render_state.scale_x;
         start.x -= 1;
@@ -1220,7 +1195,7 @@ static void render_line(RenderState& render_state, math::Vec4 color, math::Vec3 
     // ONLY FOR 2D!!!
     auto dx = end.x - start.x;
     auto dy = end.y - start.y;
-    auto normal =  math::normalize(math::Vec2(-dy, dx));
+    auto normal = math::normalize(math::Vec2(-dy, dx));
     
     // Double vertices
     // 1.0f and -1.0f are Miters
@@ -1230,7 +1205,7 @@ static void render_line(RenderState& render_state, math::Vec4 color, math::Vec3 
         start.x, start.y, start.z, normal.x, normal.y, -1.0f,
         start.x, start.y, start.z, normal.x, normal.y, 1.0f,
         end.x, end.y, end.z, normal.x, normal.y, -1.0f,
-        end.x, end.y, end.z, normal.x, normal.y, 1.0f};
+        end.x, end.y, end.z, normal.x, normal.y, 1.0f };
     
     glBufferData(GL_ARRAY_BUFFER, 24 * sizeof(GLfloat), &points[0], GL_DYNAMIC_DRAW);
     
@@ -1299,7 +1274,7 @@ glLineWidth(1.0f);
 // NOTE(Niels): Possible future use but buggy
 void render_circle(RenderState& render_state, math::Vec4 color, r32 center_x, r32 center_y, r32 radius, b32 is_ui = true, math::Mat4 projection_matrix = math::Mat4(), math::Mat4 view_matrix = math::Mat4())
 {
-    if(is_ui)
+    if (is_ui)
     {
         center_x *= render_state.scale_x;
         center_x -= 1;
@@ -1314,7 +1289,7 @@ void render_circle(RenderState& render_state, math::Vec4 color, r32 center_x, r3
     
     i32 point_index = 0;
     
-    for(i32 index = 0; index < 360; index++)
+    for (i32 index = 0; index < 360; index++)
     {
         r32 radians = (index * PI) / 180.0f;
         points[point_index++] = math::cos(radians * radius);
@@ -1329,7 +1304,7 @@ void render_circle(RenderState& render_state, math::Vec4 color, r32 center_x, r3
     //draw upper part
     math::Mat4 model(1.0f);
     
-    if(!is_ui)
+    if (!is_ui)
     {
         set_mat4_uniform(shader.program, "Projection", projection_matrix);
         set_mat4_uniform(shader.program, "View", view_matrix);
@@ -1344,7 +1319,7 @@ void render_circle(RenderState& render_state, math::Vec4 color, r32 center_x, r3
 
 static void render_quad(RenderMode mode, RenderState& render_state, math::Vec4 color, math::Vec3 position, b32 flipped, math::Vec3 size, math::Vec3 rotation, b32 with_origin, math::Vec2 origin, i32 shader_handle, ShaderAttribute* shader_attributes, i32 shader_attribute_count, b32 is_ui = true, i32 texture_handle = 0, b32 for_animation = false, math::Vec2 texture_size = math::Vec2(), math::Vec2i frame_size = math::Vec2i(), math::Vec2 texture_offset = math::Vec2(), math::Mat4 projection_matrix = math::Mat4(), math::Mat4 view_matrix = math::Mat4())
 {
-    if(is_ui)
+    if (is_ui)
     {
         position.x *= render_state.scale_x;
         position.x -= 1;
@@ -1352,13 +1327,13 @@ static void render_quad(RenderMode mode, RenderState& render_state, math::Vec4 c
         position.y -= 1;
     }
     
-    switch(mode)
+    switch (mode)
     {
         case RENDER_FILL:
         {
             auto shader = render_state.rect_shader;
             
-            if(texture_handle > 0)
+            if (texture_handle > 0)
             {
                 glBindVertexArray(render_state.texture_rect_vao);
             }
@@ -1371,19 +1346,19 @@ static void render_quad(RenderMode mode, RenderState& render_state, math::Vec4 c
             
             math::Vec3 scale = size;
             
-            if(texture_handle > 0)
+            if (texture_handle > 0)
             {
-                if(for_animation)
+                if (for_animation)
                 {
                     pixel_size = frame_size;
                     size = math::Vec3((size.x * frame_size.x) / render_state.pixels_per_unit, (size.y * frame_size.y) / render_state.pixels_per_unit, 0);
                 }
                 else
                 {
-                    if(frame_size.x != 0 && frame_size.y != 0)
+                    if (frame_size.x != 0 && frame_size.y != 0)
                     {
                         pixel_size = math::Vec2i(frame_size.x, frame_size.y);
-                        if(is_ui)
+                        if (is_ui)
                         {
                             size = math::Vec3(size.x * frame_size.x, size.y * frame_size.y, 0);
                         }
@@ -1395,7 +1370,7 @@ static void render_quad(RenderMode mode, RenderState& render_state, math::Vec4 c
                     else
                     {
                         pixel_size = math::Vec2i(texture_size.x, texture_size.y);
-                        if(is_ui)
+                        if (is_ui)
                         {
                             size = math::Vec3(size.x * texture_size.x, size.y * texture_size.y, 0);
                         }
@@ -1406,12 +1381,12 @@ static void render_quad(RenderMode mode, RenderState& render_state, math::Vec4 c
                     }
                 }
                 
-                if(render_state.bound_texture != (GLuint)texture_handle)
+                if (render_state.bound_texture != (GLuint)texture_handle)
                 {
                     glBindTexture(GL_TEXTURE_2D, (GLuint)texture_handle);
                 }
                 
-                if(for_animation || (texture_offset.x >= 0.0f && texture_offset.y >= 0.0f))
+                if (for_animation || (texture_offset.x >= 0.0f && texture_offset.y >= 0.0f))
                     shader = render_state.spritesheet_shader;
                 else
                     shader = render_state.texture_rect_shader;
@@ -1419,18 +1394,18 @@ static void render_quad(RenderMode mode, RenderState& render_state, math::Vec4 c
                 render_state.bound_texture = (GLuint)texture_handle;
             }
             
-            if(is_ui)
+            if (is_ui)
             {
                 size.x *= render_state.scale_x;
                 size.y *= render_state.scale_y;
             }
             
-            if(render_state.current_extra_shader != -1)
+            if (render_state.current_extra_shader != -1)
             {
                 shader = render_state.extra_shaders[render_state.current_extra_shader];
             }
             
-            if(shader_handle != -1)
+            if (shader_handle != -1)
             {
                 shader = render_state.extra_shaders[shader_handle];
             }
@@ -1439,7 +1414,7 @@ static void render_quad(RenderMode mode, RenderState& render_state, math::Vec4 c
             
             math::Mat4 model(1.0f);
             
-            if(flipped)
+            if (flipped)
             {
                 size.x *= -1;
             }
@@ -1459,9 +1434,9 @@ static void render_quad(RenderMode mode, RenderState& render_state, math::Vec4 c
             model = to_matrix(orientation) * model;
             model = math::translate(model, math::Vec3(size.x / 2.0f, size.y / size.y, 0.0f));
             
-            if(with_origin)
+            if (with_origin)
             {
-                if(flipped)
+                if (flipped)
                 {
                     position.x -= ((pixel_size.x - origin.x) / render_state.pixels_per_unit) * scale.x;
                     position.y -= origin.y / render_state.pixels_per_unit;
@@ -1477,14 +1452,14 @@ static void render_quad(RenderMode mode, RenderState& render_state, math::Vec4 c
                 position -= size / 2.0f;
             }
             
-            if(flipped)
+            if (flipped)
             {
                 model = math::translate(model, math::Vec3(-size.x, 0.0f, 0.0f));
             }
             
             model = math::translate(model, position);
             
-            if(!is_ui)
+            if (!is_ui)
             {
                 set_mat4_uniform(shader.program, "Projection", projection_matrix);
                 set_mat4_uniform(shader.program, "View", view_matrix);
@@ -1494,29 +1469,29 @@ static void render_quad(RenderMode mode, RenderState& render_state, math::Vec4 c
             set_mat4_uniform(shader.program, "M", model);
             set_vec4_uniform(shader.program, "color", color);
             
-            if(texture_offset.x >= 0.0f && texture_offset.y >= 0.0f)
+            if (texture_offset.x >= 0.0f && texture_offset.y >= 0.0f)
             {
                 set_vec2_uniform(shader.program, "textureOffset", texture_offset);
                 set_vec2_uniform(shader.program, "textureSize", texture_size);
                 set_vec2_uniform(shader.program, "frameSize", math::Vec2((r32)frame_size.x, (r32)frame_size.y));
             }
             
-            if(for_animation)
+            if (for_animation)
             {
                 
                 set_vec2_uniform(shader.program, "textureSize", texture_size);
                 set_vec2_uniform(shader.program, "frameSize", math::Vec2((r32)frame_size.x, (r32)frame_size.y));
             }
             
-            if(render_state.current_extra_shader != -1 || shader_handle != -1)
+            if (render_state.current_extra_shader != -1 || shader_handle != -1)
             {
                 //shader_attribute* Attributes = ShaderHandle != -1 ? ShaderAttributes : RenderState.ShaderAttributes;
                 i32 attribute_count = shader_handle != -1 ? shader_attribute_count : render_state.shader_attribute_count;
                 
-                for(i32 index = 0; index < attribute_count; index++)
+                for (i32 index = 0; index < attribute_count; index++)
                 {
                     ShaderAttribute& attribute = shader_attributes[index];
-                    switch(attribute.type)
+                    switch (attribute.type)
                     {
                         case ATTRIBUTE_FLOAT:
                         {
@@ -1563,7 +1538,7 @@ static void render_quad(RenderMode mode, RenderState& render_state, math::Vec4 c
         case RENDER_OUTLINE:
         {
             math::Mat4 model(1.0f);
-            if(is_ui)
+            if (is_ui)
             {
                 size.x *= render_state.scale_x;
                 size.y *= render_state.scale_y;
@@ -1588,7 +1563,7 @@ static void render_quad(RenderMode mode, RenderState& render_state, math::Vec4 c
             auto shader = render_state.rect_shader;
             use_shader(&shader);
             
-            if(!is_ui)
+            if (!is_ui)
             {
                 set_mat4_uniform(shader.program, "Projection", projection_matrix);
                 set_mat4_uniform(shader.program, "View", view_matrix);
@@ -1608,7 +1583,7 @@ static void measure_text(const RenderFont& font, const char* text, float* width,
 {
     size_t count;
     
-    if (!text) 
+    if (!text)
     {
         return;
     }
@@ -1616,11 +1591,11 @@ static void measure_text(const RenderFont& font, const char* text, float* width,
     *width = 0.0f;
     *height = 0.0f;
     
-    for(count = 0; count < strlen(text); ++count) 
+    for (count = 0; count < strlen(text); ++count)
     {
         *width += font.character_info[text[count]].ax;
         
-        if(*height < font.character_info[text[count]].bh) 
+        if (*height < font.character_info[text[count]].bh)
         {
             *height = font.character_info[text[count]].bh;
         }
@@ -1628,15 +1603,15 @@ static void measure_text(const RenderFont& font, const char* text, float* width,
 }
 
 //rendering methods
-static void render_text(RenderState& render_state, const Font& font, const math::Vec4& color, const char* text, r32 x, r32 y, r32 scale = 1.0f,
-                        Alignment alignment = ALIGNMENT_LEFT,  b32 align_center_y = true) 
+static void render_text(RenderState& render_state, const RenderFont& font, const math::Vec4& color, const char* text, r32 x, r32 y, r32 scale = 1.0f,
+                        Alignment alignment = ALIGNMENT_LEFT, b32 align_center_y = true)
 {
     glBindVertexArray(font.vao);
     auto shader = render_state.shaders[SHADER_STANDARD_FONT];
     use_shader(&shader);
     
     set_vec4_uniform(shader.program, "color", color);
-    set_vec4_uniform(shader.program, "alphaColor", math::Rgba(0, 0, 0, 0));
+    set_vec4_uniform(shader.program, "alphaColor", font.alpha_color);
     
     if (render_state.bound_texture != font.texture) //never bind the same texture if it's already bound
     {
@@ -1644,13 +1619,11 @@ static void render_text(RenderState& render_state, const Font& font, const math:
         render_state.bound_texture = font.texture;
     }
     
-    /*
-    
-    */
-    
     Point* coords = push_temp_array(6 * strlen(text), Point);
     
-    /*switch(alignment)
+    int n = 0;
+    
+    switch (alignment)
     {
         case ALIGNMENT_LEFT:
         break;
@@ -1667,12 +1640,12 @@ static void render_text(RenderState& render_state, const Font& font, const math:
             height *= scale;
             
             x -= width / 2.0f;
-            if(align_center_y)
+            if (align_center_y)
                 y -= height / 2.0f;
         }
         break;
     }
-    */
+    
     x = (r32)x;
     y = (r32)y;
     
@@ -1681,21 +1654,30 @@ static void render_text(RenderState& render_state, const Font& font, const math:
     y *= render_state.scale_y;
     y -= 1.0f;
     
-    //r32 epsilon = 0.0001f;
+    r32 epsilon = 0.0001f;
     
-    int n = 0;
-    
-    for(const char *p = text; *p; p++) 
-    { 
-        if (*p >= 32 && *p < 128) {
-            printf("damn boy");
-            stbtt_aligned_quad q;
-            stbtt_GetBakedQuad(font.char_data, 512,512, *text-32, &x,&y,&q,1);//1=opengl & d3d10+,0=d3d9
-            coords[n++] = { q.x0, q.y0, q.s0, q.t1 };
-            coords[n++] = { q.x1, q.y0, q.s1, q.t1 };
-            coords[n++] = { q.x1, q.y1, q.s1, q.t0 };
-            coords[n++] = { q.x0, q.y1, q.s0, q.t0 };
-        }
+    for (const char *p = text; *p; p++)
+    {
+        r32 w = font.character_info[*p].bw * render_state.scale_x * scale;
+        r32 h = font.character_info[*p].bh * render_state.scale_y * scale;
+        
+        r32 x2 = x + font.character_info[*p].bl* render_state.scale_x * scale;
+        r32 y2 = -y - font.character_info[*p].bt* render_state.scale_y * scale;
+        
+        /* Advance the cursor to the start of the next character */
+        x += font.character_info[*p].ax * render_state.scale_x * scale;
+        y += font.character_info[*p].ay* render_state.scale_y * scale;
+        
+        /* Skip glyphs that have no pixels */
+        if (!(i32)font.character_info[*p].bw || !(i32)font.character_info[*p].bh)
+            continue;
+        
+        coords[n++] = { x2 + epsilon, -y2 + epsilon, (r32)font.character_info[*p].tx + epsilon, epsilon };
+        coords[n++] = { x2 + w - epsilon, -y2 + epsilon, (r32)font.character_info[*p].tx - epsilon + (r32)font.character_info[*p].bw / (r32)font.atlas_width, epsilon };
+        coords[n++] = { x2 + epsilon, -y2 - h - epsilon, (r32)font.character_info[*p].tx + epsilon, (r32)font.character_info[*p].bh / (r32)font.atlas_height - epsilon };
+        coords[n++] = { x2 + w - epsilon, -y2 + epsilon, (r32)font.character_info[*p].tx - epsilon + (r32)font.character_info[*p].bw / (r32)font.atlas_width,  epsilon };
+        coords[n++] = { x2 + epsilon, -y2 - h - epsilon, (r32)font.character_info[*p].tx + epsilon, (r32)font.character_info[*p].bh / (r32)font.atlas_height - epsilon };
+        coords[n++] = { x2 + w - epsilon, -y2 - h, (r32)font.character_info[*p].tx - epsilon + font.character_info[*p].bw / (r32)font.atlas_width, (r32)font.character_info[*p].bh / (r32)font.atlas_height - epsilon };
     }
     
     glBindBuffer(GL_ARRAY_BUFFER, font.vbo);
@@ -1741,19 +1723,18 @@ static void render_text(const RenderCommand& command, RenderState& render_state)
 {
     RenderFont render_font;
     render_font = render_state.fonts[command.text.font_handle];
-    Font font = render_state.stb_fonts[command.text.font_handle];
     // @Incomplete: Y-centering
-    render_text(render_state, font, command.text.color, command.text.text, command.text.position.x, command.text.position.y, command.text.scale, command.text.alignment);
+    render_text(render_state, render_font, command.text.color, command.text.text, command.text.position.x, command.text.position.y, command.text.scale, command.text.alignment);
 }
 
 static void render_quad(const RenderCommand& command, RenderState& render_state, math::Mat4 projection, math::Mat4 view)
 {
-    if(command.is_ui)
+    if (command.is_ui)
     {
         auto handle = command.quad.texture_handle != -1 ? render_state.texture_array[command.quad.texture_handle].texture_handle : 0;
-        render_quad(command.quad.outlined ? RENDER_OUTLINE : RENDER_FILL, 
-                    render_state, 
-                    command.quad.color, 
+        render_quad(command.quad.outlined ? RENDER_OUTLINE : RENDER_FILL,
+                    render_state,
+                    command.quad.color,
                     command.position,
                     command.quad.flipped,
                     command.scale,
@@ -1773,9 +1754,9 @@ static void render_quad(const RenderCommand& command, RenderState& render_state,
     else
     {
         auto handle = command.quad.texture_handle != -1 ? render_state.texture_array[command.quad.texture_handle].texture_handle : 0;
-        render_quad(command.quad.outlined ? RENDER_OUTLINE : RENDER_FILL, 
-                    render_state, 
-                    command.quad.color, 
+        render_quad(command.quad.outlined ? RENDER_OUTLINE : RENDER_FILL,
+                    render_state,
+                    command.quad.color,
                     command.position,
                     command.quad.flipped,
                     command.scale,
@@ -1791,7 +1772,7 @@ static void render_quad(const RenderCommand& command, RenderState& render_state,
                     command.quad.texture_size,
                     command.quad.frame_size,
                     command.quad.texture_offset,
-                    projection, 
+                    projection,
                     view);
     }
 }
@@ -1801,15 +1782,15 @@ static void render_model(const RenderCommand& command, RenderState& render_state
     Buffer buffer = render_state.buffers[command.model.buffer_handle];
     glBindVertexArray(buffer.vao);
     
-    for(i32 mesh_index = 0; mesh_index < command.model.mesh_count; mesh_index++)
+    for (i32 mesh_index = 0; mesh_index < command.model.mesh_count; mesh_index++)
     {
         MeshData mesh_data = command.model.meshes[mesh_index];
         Material material = command.model.materials[mesh_data.material_index];
         
-        if(material.diffuse_texture.has_data)
+        if (material.diffuse_texture.has_data)
         {
             Texture texture = render_state.texture_array[material.diffuse_texture.texture_handle];
-            if(render_state.bound_texture != texture.texture_handle)
+            if (render_state.bound_texture != texture.texture_handle)
             {
                 glBindTexture(GL_TEXTURE_2D, texture.texture_handle);
                 render_state.bound_texture = texture.texture_handle;
@@ -1818,12 +1799,12 @@ static void render_model(const RenderCommand& command, RenderState& render_state
         
         Shader shader = {};
         
-        if(command.model.type == MODEL_SKINNED)
+        if (command.model.type == MODEL_SKINNED)
         {
             shader = render_state.simple_model_shader;
             use_shader(&shader);
             
-            for(i32 index = 0; index < command.model.bone_count; index++)
+            for (i32 index = 0; index < command.model.bone_count; index++)
             {
                 char s_buffer[20];
                 sprintf(s_buffer, "bones[%d]", index);
@@ -1870,7 +1851,7 @@ static void render_buffer(const RenderCommand& command, RenderState& render_stat
     math::Vec3 position = command.position;
     math::Vec3 size = command.scale;
     
-    if(command.is_ui)
+    if (command.is_ui)
     {
         position.x *= render_state.scale_x;
         position.x -= 1;
@@ -1906,17 +1887,17 @@ static void render_buffer(const RenderCommand& command, RenderState& render_stat
 
 static void load_font(RenderState& render_state, char* path, i32 size)
 {
-    stb_init_font(path, &render_state.stb_fonts[render_state.font_count++]);
+    initialize_free_type_font(path, size, render_state.ft_library, &render_state.fonts[render_state.font_count++]);
 }
 
 
 static void register_buffers(RenderState& render_state, Renderer& renderer, MemoryArena* perm_arena)
 {
-    for(i32 index = render_state.buffer_count; index < renderer.buffer_count; index++)
+    for (i32 index = render_state.buffer_count; index < renderer.buffer_count; index++)
     {
         BufferData data = renderer.buffers[index];
         
-        if(data.index_buffer_count == 0)
+        if (data.index_buffer_count == 0)
         {
             register_vertex_buffer(render_state, data.vertex_buffer, (i32)data.vertex_buffer_size, data.shader_type, perm_arena, data.existing_handle);
         }
@@ -1927,10 +1908,10 @@ static void register_buffers(RenderState& render_state, Renderer& renderer, Memo
         }
     }
     
-    for(i32 index = 0; index < renderer.updated_buffer_handle_count; index++)
+    for (i32 index = 0; index < renderer.updated_buffer_handle_count; index++)
     {
         BufferData data = renderer.buffers[renderer.updated_buffer_handles[index]];
-        if(data.index_buffer_count == 0)
+        if (data.index_buffer_count == 0)
         {
             register_vertex_buffer(render_state, data.vertex_buffer, (i32)data.vertex_buffer_size, data.shader_type, perm_arena, data.existing_handle);
         }
@@ -1945,7 +1926,7 @@ static void register_buffers(RenderState& render_state, Renderer& renderer, Memo
 
 static void render_commands(RenderState& render_state, Renderer& renderer, MemoryArena* perm_arena)
 {
-    for(i32 index = render_state.font_count; index < renderer.font_count; index++)
+    for (i32 index = render_state.font_count; index < renderer.font_count; index++)
     {
         FontData data = renderer.fonts[index];
         load_font(render_state, data.path, data.size);
@@ -1954,11 +1935,11 @@ static void render_commands(RenderState& render_state, Renderer& renderer, Memor
     auto& camera = renderer.cameras[renderer.current_camera_handle];
     auto& v = camera.view_matrix;
     
-    for(i32 index = 0; index < renderer.light_command_count; index++)
+    for (i32 index = 0; index < renderer.light_command_count; index++)
     {
         const RenderCommand& command = *((RenderCommand*)renderer.light_commands.current_block->base + index);
         
-        switch(command.type)
+        switch (command.type)
         {
             case RENDER_COMMAND_SPOTLIGHT:
             {
@@ -2062,11 +2043,11 @@ static void render_commands(RenderState& render_state, Renderer& renderer, Memor
     clear(&renderer.light_commands);
     
     glEnable(GL_DEPTH_TEST);
-    for(i32 index = 0; index < renderer.command_count; index++)
+    for (i32 index = 0; index < renderer.command_count; index++)
     {
         const RenderCommand& command = *((RenderCommand*)renderer.commands.current_block->base + index);
         
-        switch(command.type)
+        switch (command.type)
         {
             case RENDER_COMMAND_LINE:
             {
@@ -2106,7 +2087,7 @@ static void render_commands(RenderState& render_state, Renderer& renderer, Memor
             break;
             case RENDER_COMMAND_DEPTH_TEST:
             {
-                if(command.depth_test.on)
+                if (command.depth_test.on)
                 {
                     glEnable(GL_DEPTH_TEST);
                 }
@@ -2140,11 +2121,11 @@ static void render_commands(RenderState& render_state, Renderer& renderer, Memor
     
     glDisable(GL_DEPTH_TEST);
     
-    for(i32 index = 0; index < renderer.ui_command_count; index++)
+    for (i32 index = 0; index < renderer.ui_command_count; index++)
     {
         const RenderCommand& command = *((RenderCommand*)renderer.ui_commands.current_block->base + index);
         
-        switch(command.type)
+        switch (command.type)
         {
             case RENDER_COMMAND_LINE:
             {
@@ -2207,7 +2188,7 @@ static void render_commands(RenderState& render_state, Renderer& renderer, Memor
 
 static void render(RenderState& render_state, Renderer& renderer, MemoryArena* perm_arena, r64 delta_time)
 {
-    if(renderer.window_mode != render_state.window_mode)
+    if (renderer.window_mode != render_state.window_mode)
     {
         glfwDestroyWindow(render_state.window);
         create_open_gl_window(render_state, renderer.window_mode, render_state.window_title, render_state.window_width, render_state.window_height);
@@ -2261,13 +2242,13 @@ static void render(RenderState& render_state, Renderer& renderer, MemoryArena* p
     
     register_buffers(render_state, renderer, perm_arena);
     
-    if((renderer.frame_lock != 0 && render_state.frame_delta <= 0.0) || renderer.frame_lock == 0)
+    if ((renderer.frame_lock != 0 && render_state.frame_delta <= 0.0) || renderer.frame_lock == 0)
     {
         renderer.fps = 1.0 / render_state.total_delta;
         renderer.current_frame++;
         renderer.fps_sum += renderer.fps;
         
-        if(renderer.current_frame == 60)
+        if (renderer.current_frame == 60)
         {
             renderer.current_frame = 0;
             renderer.average_fps = renderer.fps_sum / 60.0f;
@@ -2287,7 +2268,7 @@ static void render(RenderState& render_state, Renderer& renderer, MemoryArena* p
         glClearColor(renderer.clear_color.r, renderer.clear_color.g, renderer.clear_color.b, renderer.clear_color.a);
         
         render_commands(render_state, renderer, perm_arena);
-        render_state.bound_texture = 0; 
+        render_state.bound_texture = 0;
         
         // We have to reset the bound texture to nothing, since we're about to bind other textures
         // Second pass
@@ -2306,10 +2287,10 @@ static void render(RenderState& render_state, Renderer& renderer, MemoryArena* p
         
         set_float_uniform(render_state.frame_buffer_shader.program, "contrast", render_state.contrast);
         set_float_uniform(render_state.frame_buffer_shader.program, "brightness", render_state.brightness);
-        set_int_uniform(render_state.frame_buffer_shader.program, "ignoreLight",  true); // @Incomplete: Lighting
-        set_mat4_uniform(render_state.frame_buffer_shader.program,"P", camera.projection_matrix);
-        set_mat4_uniform(render_state.frame_buffer_shader.program,"V", camera.view_matrix);
-        set_vec2_uniform(render_state.frame_buffer_shader.program, "screenSize", math::Vec2((r32)render_state.window_width,(r32)render_state.window_height));
+        set_int_uniform(render_state.frame_buffer_shader.program, "ignoreLight", true); // @Incomplete: Lighting
+        set_mat4_uniform(render_state.frame_buffer_shader.program, "P", camera.projection_matrix);
+        set_mat4_uniform(render_state.frame_buffer_shader.program, "V", camera.view_matrix);
+        set_vec2_uniform(render_state.frame_buffer_shader.program, "screenSize", math::Vec2((r32)render_state.window_width, (r32)render_state.window_height));
         
         glUniform1i((GLint)render_state.frame_buffer_tex0_loc, 0);
         
@@ -2318,18 +2299,18 @@ static void render(RenderState& render_state, Renderer& renderer, MemoryArena* p
         glBindTexture(GL_TEXTURE_2D, render_state.texture_color_buffer);
         glActiveTexture(GL_TEXTURE1);
         /*glBindTexture(GL_TEXTURE_2D, RenderState.LightingTextureColorBuffer);
-        RenderState.BoundTexture = RenderState.LightingTextureColorBuffer;
-        */
+  RenderState.BoundTexture = RenderState.LightingTextureColorBuffer;
+  */
         //Enable this if we don't do gamma correction in frame_buffer shader
         //glEnable(GL_FRAMEBUFFER_SRGB);
         
-        glDrawElements(GL_TRIANGLES, sizeof(render_state.quad_indices), GL_UNSIGNED_INT, (void*)0); 
+        glDrawElements(GL_TRIANGLES, sizeof(render_state.quad_indices), GL_UNSIGNED_INT, (void*)0);
         
         glActiveTexture(GL_TEXTURE0);
         
         glfwSwapBuffers(render_state.window);
         
-        if(renderer.frame_lock != 0)
+        if (renderer.frame_lock != 0)
         {
             render_state.total_delta = 0.0;
             render_state.frame_delta += 1.0 / renderer.frame_lock;

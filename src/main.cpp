@@ -330,7 +330,7 @@ int main(int argc, char** args)
     }
     else if(config_data.graphics_api == GRAPHICS_OPEN_GL)
     {
-        initialize_open_gl(render_state, renderer, &config_data, &platform_state->perm_arena);
+        initialize_opengl(render_state, renderer, &config_data, &platform_state->perm_arena);
     }
     
     GameCode game = {};
