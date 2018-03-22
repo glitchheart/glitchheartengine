@@ -99,7 +99,7 @@ static void load_shader(const char* full_shader_path, Renderer& renderer, i32* h
 {
     ShaderData* shader_data = &renderer.shader_data[renderer.shader_count];
     shader_data->handle = renderer.shader_count++;
-    *handle = shader_data->handle;
+    *handle = shader_data->handle + 1;
     sprintf(shader_data->name, "%s", full_shader_path);
     shader_data->vertex_shader_content = 0;
     shader_data->fragment_shader_content = 0;
@@ -274,7 +274,7 @@ static void push_text(Renderer& renderer, const char* text, math::Vec3 position,
     render_command->is_ui = is_ui;
 }
 
-static void push_filled_quad(Renderer& renderer, math::Vec3 position, b32 flipped, math::Vec3 size, math::Vec3 rotation = math::Vec3(), math::Rgba color = math::Rgba(1.0f, 1.0f, 1.0f, 1.0f), i32 texture_handle = 0, b32 is_ui = true, i32 animation_controller_handle = -1, b32 with_origin = false, math::Vec2 origin = math::Vec2(0.0f, 0.0f), i32 shader_handle = -1, ShaderAttribute* shader_attributes = 0, i32 shader_attribute_count = 0, math::Vec2 texture_offset = math::Vec2(-1.0f, -1.0f), math::Vec2i frame_size = math::Vec2i(0, 0))
+static void push_filled_quad(Renderer& renderer, math::Vec3 position, b32 flipped, math::Vec3 size, math::Vec3 rotation = math::Vec3(), math::Rgba color = math::Rgba(1.0f, 1.0f, 1.0f, 1.0f), i32 texture_handle = 0, b32 is_ui = true, i32 animation_controller_handle = 0, b32 with_origin = false, math::Vec2 origin = math::Vec2(0.0f, 0.0f), i32 shader_handle = 0, ShaderAttribute* shader_attributes = 0, i32 shader_attribute_count = 0, math::Vec2 texture_offset = math::Vec2(-1.0f, -1.0f), math::Vec2i frame_size = math::Vec2i(0, 0))
 {
     RenderCommand* render_command = push_next_command(renderer, is_ui);
     
@@ -289,9 +289,9 @@ static void push_filled_quad(Renderer& renderer, math::Vec3 position, b32 flippe
     render_command->quad.outlined = false;
     render_command->quad.texture_handle = texture_handle - 1;
     
-    if(animation_controller_handle != -1)
+    if(animation_controller_handle != 0)
     {
-        auto& controller = renderer.animation_controllers[animation_controller_handle];
+        auto& controller = renderer.animation_controllers[animation_controller_handle - 1];
         SpritesheetAnimation& animation = renderer.spritesheet_animations[controller.nodes[controller.current_node].animation_handle];
         SpritesheetFrame& frame = animation.frames[controller.current_frame_index];
         render_command->quad.texture_handle = animation.texture_handle - 1;
@@ -305,20 +305,25 @@ static void push_filled_quad(Renderer& renderer, math::Vec3 position, b32 flippe
         render_command->quad.texture_offset = texture_offset;
         render_command->quad.frame_size = frame_size;
         
-        if(texture_handle != -1)
+        if(texture_handle != 0)
         {
             render_command->quad.texture_size = math::Vec2((r32)renderer.texture_data[render_command->quad.texture_handle].width, (r32)renderer.texture_data[render_command->quad.texture_handle].height);
         }
     }
     
-    render_command->shader_handle = shader_handle;
+    render_command->shader_handle = shader_handle - 1;
     render_command->shader_attributes = shader_attributes;
     render_command->shader_attribute_count = shader_attribute_count;
     
     render_command->is_ui = is_ui;
 }
 
-static void push_filled_quad_not_centered(Renderer& renderer, math::Vec3 position, b32 flipped, math::Vec3 size, math::Vec3 rotation = math::Vec3(), math::Rgba color = math::Rgba(1.0f, 1.0f, 1.0f, 1.0f), i32 texture_handle = 0, b32 is_ui = true, i32 animation_controller_handle = -1, i32 shader_handle = -1, ShaderAttribute* shader_attributes = 0, i32 shader_attribute_count = 0, math::Vec2 texture_offset = math::Vec2(-1.0f, -1.0f), math::Vec2i frame_size = math::Vec2i(0, 0))
+static void push_filled_quad(Renderer& renderer, QuadInfo quad_info)
+{
+    push_filled_quad(renderer, quad_info.transform_info.position, quad_info.flipped, quad_info.transform_info.scale, quad_info.transform_info.rotation, quad_info.render_info.color, quad_info.texture_info.texture_handle, quad_info.render_info.is_ui, quad_info.animation_controller_handle, quad_info.render_info.with_origin, quad_info.render_info.origin, quad_info.shader_info.shader_handle, quad_info.shader_info.shader_attributes, quad_info.shader_info.shader_attribute_count, quad_info.texture_info.texture_offset, quad_info.texture_info.frame_size);
+}
+
+static void push_filled_quad_not_centered(Renderer& renderer, math::Vec3 position, b32 flipped, math::Vec3 size, math::Vec3 rotation = math::Vec3(), math::Rgba color = math::Rgba(1.0f, 1.0f, 1.0f, 1.0f), i32 texture_handle = 0, b32 is_ui = true, i32 animation_controller_handle = 0, i32 shader_handle = 0, ShaderAttribute* shader_attributes = 0, i32 shader_attribute_count = 0, math::Vec2 texture_offset = math::Vec2(-1.0f, -1.0f), math::Vec2i frame_size = math::Vec2i(0, 0))
 {
     push_filled_quad(renderer, position, flipped, size, rotation, color, texture_handle, is_ui, animation_controller_handle, true, math::Vec2(), shader_handle, shader_attributes, shader_attribute_count, texture_offset, frame_size); 
 }

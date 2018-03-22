@@ -155,6 +155,21 @@ inline char* push_temp_string(u32 length)
     return result;
 }
 
+inline void push_temp_string(char** dst_buffer, const char* format, ...)
+{
+    va_list args;
+    va_start(args, format);
+    int len = vsnprintf(0, 0, format, args);
+    va_end(args);
+    
+    *dst_buffer = push_temp_string((u32)len);
+    va_start(args, format);
+    vsprintf(*dst_buffer, format, args);
+    va_end(args);
+    
+    (*dst_buffer)[len] = '\0';
+}
+
 inline char* push_temp_string(char* source)
 {
     auto length = strlen(source);
