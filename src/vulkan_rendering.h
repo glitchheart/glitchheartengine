@@ -11,14 +11,14 @@
 #include <GLFW/glfw3.h>
 
 #define VALIDATION_LAYER_SIZE 2
-const char* validation_layers[VALIDATION_LAYER_SIZE] =
+static const char* validation_layers[VALIDATION_LAYER_SIZE] =
 {
     "VK_LAYER_LUNARG_standard_validation",
     "VK_LAYER_LUNARG_assistant_layer"
 };
 
 #define DEVICE_EXTENSIONS_SIZE 1
-const char* device_extensions[DEVICE_EXTENSIONS_SIZE] = 
+static const char* device_extensions[DEVICE_EXTENSIONS_SIZE] = 
 {
     VK_KHR_SWAPCHAIN_EXTENSION_NAME
 };
