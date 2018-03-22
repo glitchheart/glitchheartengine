@@ -222,6 +222,22 @@ char* push_string(MemoryArena* arena, size_t length)
     return result;
 }
 
+
+inline void push_string(MemoryArena* arena, char** dst_buffer, const char* format, ...)
+{
+    va_list args;
+    va_start(args, format);
+    int len = vsnprintf(0, 0, format, args);
+    va_end(args);
+    
+    *dst_buffer = push_string(arena, (u32)len);
+    va_start(args, format);
+    vsprintf(*dst_buffer, format, args);
+    va_end(args);
+    
+    (*dst_buffer)[len] = '\0';
+}
+
 char* push_string(MemoryArena* arena, char* source)
 {
     auto length = strlen(source);

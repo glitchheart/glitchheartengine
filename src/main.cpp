@@ -1,5 +1,3 @@
-#define DEBUG
-
 #include "shared.h"
 
 #if GLITCH_DEBUG
@@ -20,7 +18,7 @@
 // Global
 PlatformApi platform;
 struct LogState log_state;
-MemoryState memory_state;
+static MemoryState memory_state;
 // Global
 
 #ifdef _WIN32
@@ -43,7 +41,7 @@ MemoryState memory_state;
 #include "fmod_sound.cpp"
 #include "filehandling.h"
 
-InputController input_controller;
+static InputController input_controller;
 
 #include "keys_glfw.h"
 #include "opengl_rendering.cpp"
@@ -295,7 +293,7 @@ int main(int argc, char** args)
     
     MemoryArena debug_arena = {};
     
-    game_memory.debug_state = push_struct(&platform_state->perm_arena, DebugState);
+    game_memory.debug_state = push_struct(&debug_arena, DebugState);
     
     game_memory.debug_state->debug_memory_info.debug_rect.rect_origin = math::Vec2(50, 780);
     game_memory.debug_state->debug_memory_info.debug_rect.rect_size = math::Vec2(300,0);
@@ -322,7 +320,7 @@ int main(int argc, char** args)
     
     if(config_data.graphics_api == GRAPHICS_VULKAN)
     {
-#if __LINUX || _WIN32
+#if __linux || _WIN32
         VkRenderState vk_render_state;
         initialize_vulkan(vk_render_state, renderer, config_data);
         vk_render(vk_render_state, renderer);

@@ -181,7 +181,7 @@ static void tick_animation_controllers(Renderer& renderer, SoundCommands* sound_
             {
                 auto& callback_info = current_node.callback_infos[callback_index];
                 
-                if(!callback_info.was_called && (callback_info.frame != -1 && callback_info.frame == animation_controller.current_frame_index || callback_info.frame == -1 && reached_end))
+                if(!callback_info.was_called && ((callback_info.frame != -1 && callback_info.frame == animation_controller.current_frame_index) || (callback_info.frame == -1 && reached_end)))
                 {
                     if(callback_info.callback)
                     {

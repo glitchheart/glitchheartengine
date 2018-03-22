@@ -309,6 +309,17 @@ struct QuadInfo
     i32 animation_controller_handle;
 };
 
+struct TextInfo
+{
+    math::Vec3 position;
+    RenderInfo render_info;
+    
+    i32 font_handle;
+    Alignment alignment;
+    char* text;
+    r32 scale;
+};
+
 struct RenderCommand
 {
     RenderCommandType type;
