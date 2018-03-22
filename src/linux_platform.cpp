@@ -134,7 +134,10 @@ PLATFORM_ALLOCATE_MEMORY(linux_allocate_memory)
         protect_offset = page_size + size_rounded_up;
     }
     
-    MemoryBlock* block = (MemoryBlock*)malloc(total_size);
+    //MemoryBlock* block = (MemoryBlock*)malloc(total_size);
+    MemoryBlock* block = (MemoryBlock*)mmap(0, total_size,
+                                            PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANON,
+                                            -1, 0);
     memset(block, 0, total_size);
     
     Assert(block);
@@ -179,7 +182,8 @@ PLATFORM_DEALLOCATE_MEMORY(linux_deallocate_memory)
         }
         
         MemoryBlock *new_block =  ((MemoryBlock*)block);
-        free(new_block);
+        munmap(new_block, block->size + sizeof(MemoryBlock));
+        //free(new_block);
     }
 }
 
