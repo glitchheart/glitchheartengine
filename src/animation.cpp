@@ -18,7 +18,7 @@ static i32 create_animation_controller(Renderer& renderer, b32 playing = false)
     controller.speed = 1.0f;
     controller.node_count = 0;
     controller.parameter_count = 0;
-    return renderer.animation_controller_count++;
+    return (renderer.animation_controller_count++) + 1;
 }
 
 static void clear_animation_controllers(Renderer& renderer)

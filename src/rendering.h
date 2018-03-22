@@ -268,6 +268,47 @@ struct ShaderAttribute
     };
 };
 
+struct TransformInfo
+{ 
+    math::Vec3 position;
+    math::Vec3 scale;
+    math::Vec3 rotation;
+};
+
+struct ShaderInfo
+{
+    i32 shader_handle;
+    ShaderAttribute* shader_attributes;
+    i32 shader_attribute_count;
+};
+
+struct RenderInfo
+{
+    b32 is_ui;
+    
+    b32 with_origin;
+    math::Vec2 origin;
+    math::Rgba color;
+};
+
+struct QuadTextureInfo
+{
+    i32 texture_handle;
+    math::Vec2i frame_size;
+    math::Vec2 texture_offset;
+};
+
+struct QuadInfo
+{
+    TransformInfo transform_info;
+    ShaderInfo shader_info;
+    RenderInfo render_info;
+    QuadTextureInfo texture_info;
+    
+    b32 flipped;
+    i32 animation_controller_handle;
+};
+
 struct RenderCommand
 {
     RenderCommandType type;
