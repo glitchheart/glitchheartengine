@@ -318,6 +318,11 @@ static void push_filled_quad(Renderer& renderer, math::Vec3 position, b32 flippe
     render_command->is_ui = is_ui;
 }
 
+static void push_filled_quad_not_centered(Renderer& renderer, math::Vec3 position, b32 flipped, math::Vec3 size, math::Vec3 rotation = math::Vec3(), math::Rgba color = math::Rgba(1.0f, 1.0f, 1.0f, 1.0f), i32 texture_handle = 0, b32 is_ui = true, i32 animation_controller_handle = -1, i32 shader_handle = -1, ShaderAttribute* shader_attributes = 0, i32 shader_attribute_count = 0, math::Vec2 texture_offset = math::Vec2(-1.0f, -1.0f), math::Vec2i frame_size = math::Vec2i(0, 0))
+{
+    push_filled_quad(renderer, position, flipped, size, rotation, color, texture_handle, is_ui, animation_controller_handle, true, math::Vec2(), shader_handle, shader_attributes, shader_attribute_count, texture_offset, frame_size); 
+}
+
 static void push_outlined_quad(Renderer& renderer, math::Vec3 position,  math::Vec3 size, math::Vec3 rotation, math::Rgba color, b32 is_ui = false, r32 line_width = 1.0f)
 {
     RenderCommand* render_command = push_next_command(renderer, is_ui);
