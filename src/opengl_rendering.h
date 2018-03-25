@@ -5,6 +5,13 @@
 #include <ft2build.h>
 #include FT_FREETYPE_H
 
+#define STB_TRUETYPE_IMPLEMENTATION
+#pragma warning(push)
+#pragma warning(disable : 4365) // int conversions
+#pragma warning(disable : 4459)
+#include "stb/stb_truetype.h"
+#pragma warning(pop)
+
 #define PIXELS_PER_UNIT 32
 
 #define SHADERPAIR(name) {SHADER_ ## name, "Shader_" "" #name}
@@ -89,6 +96,15 @@ struct Tilesheet
     i32 tile_height;
 };
 
+// stb_truetype
+struct TrueTypeFont
+{
+    // @Incomplete: 96 is not always enough!
+    stbtt_bakedchar char_data[96];
+    GLuint texture;
+};
+
+// FreeType
 struct RenderFont
 {
     FT_Face face;
@@ -351,6 +367,7 @@ struct RenderState
     //freetype
     FT_Library ft_library;
     
+    TrueTypeFont true_type_fonts[64];
     RenderFont fonts[64];
     i32 font_count;
     
