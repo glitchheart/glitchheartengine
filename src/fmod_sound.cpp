@@ -1,6 +1,7 @@
-static void fmod_error(FMOD_RESULT err)
+#define FMOD_DEBUG(err) fmod_error(err, __LINE__, __FILE__)
+static void fmod_error(FMOD_RESULT err, int line, const char* file)
 {
-    Debug("FMOD Error! (%d) %s\n", err, FMOD_ErrorString(err));
+    Debug("FMOD Error! (%d) %s in file %s on line %d\n", err, FMOD_ErrorString(err), file, line);
 }
 
 static void load_sound(const char* file_path, SoundDevice* sound_device)
@@ -9,7 +10,7 @@ static void load_sound(const char* file_path, SoundDevice* sound_device)
     auto result = FMOD_System_CreateSound(sound_device->system, file_path, FMOD_DEFAULT, 0, &sound_device->sounds[sound_device->sound_count++]);
     if(result != FMOD_OK)
     {
-        fmod_error(result);
+        FMOD_DEBUG(result);
     }
 }
 
@@ -27,7 +28,6 @@ static void load_sounds(SoundDevice* sound_device, SoundCommands* commands)
         commands->sounds_to_load.files_length = 0;
     }
 }
-
 
 static void cleanup_sound(SoundDevice* sound_device)
 {
@@ -61,6 +61,55 @@ FMOD_RESULT F_CALLBACK channel_control_callback(FMOD_CHANNELCONTROL *chan_contro
     return FMOD_OK;
 }
 
+static void play_audio_source(AudioSource& audio_source, SoundDevice* sound_device, SoundCommands* commands)
+{
+    auto sound = sound_device->sounds[audio_source.buffer_handle];
+    FMOD_RESULT result = FMOD_OK;
+    
+    b32 is_playing;
+    FMOD_Channel_IsPlaying(sound_device->channels[audio_source.handle], &is_playing);
+    
+    auto channel = sound_device->channels[audio_source.handle];
+    
+    if(!is_playing && audio_source.play)
+    {
+        Debug("Sound: %d\n", audio_source.buffer_handle);
+        result =FMOD_System_PlaySound(sound_device->system, sound, sound_device->master_group, true, &sound_device->channels[audio_source.handle]);
+        audio_source.play = false;
+    }
+    else if(is_playing && audio_source.play)
+    {
+        u32 position; FMOD_Channel_GetPosition(sound_device->channels[audio_source.handle], &position, FMOD_TIMEUNIT_MS);
+        
+        FMOD_Channel_Stop(sound_device->channels[audio_source.handle]);
+        result =FMOD_System_PlaySound(sound_device->system, sound, sound_device->master_group, commands->paused, &sound_device->channels[audio_source.handle]);
+        
+        FMOD_Channel_SetPosition(sound_device->channels[audio_source.handle], position, FMOD_TIMEUNIT_MS);
+        audio_source.play = false;
+    }
+    
+    
+    FMOD_Channel_SetPitch(channel, audio_source.sound_info.pitch);
+    FMOD_Channel_SetVolume(channel, audio_source.muted ? 0.0f : audio_source.sound_info.gain * commands->sfx_volume);
+    
+    r32 vol;
+    FMOD_Channel_GetVolume(channel, &vol);
+    
+    Assert(audio_source.sound_info.loop_count >= -1);
+    
+    auto fmod_mode = audio_source.sound_info.loop ? FMOD_LOOP_NORMAL : FMOD_LOOP_OFF;
+    
+    FMOD_Channel_SetMode(channel, (FMOD_MODE)(FMOD_DEFAULT | fmod_mode));
+    FMOD_Channel_SetLoopCount(channel, audio_source.sound_info.loop_count);
+    
+    if(result != FMOD_OK)
+    {
+        FMOD_DEBUG(result);
+    }
+    
+    FMOD_Channel_SetPaused(channel, commands->paused || audio_source.paused);
+}
+
 static void play_sound(const SoundEffect& sound_effect, SoundDevice* sound_device, SoundCommands* commands)
 {
     auto sound = sound_device->sounds[sound_effect.buffer];
@@ -81,7 +130,7 @@ static void play_sound(const SoundEffect& sound_effect, SoundDevice* sound_devic
     
     if(result != FMOD_OK)
     {
-        fmod_error(result);
+        FMOD_DEBUG(result);
     }
     FMOD_Channel_SetPaused(new_channel, commands->paused);
 }
@@ -121,6 +170,13 @@ static void play_sounds(SoundDevice* sound_device, SoundCommands* commands)
                 play_sound(*sound_effect, sound_device, commands);
             }
         }
+        
+        for(i32 source = 0;
+            source < commands->audio_source_count; source++)
+        {
+            play_audio_source(commands->audio_sources[source], sound_device, commands);
+        }
+        
         if(FMOD_System_Update(sound_device->system) != FMOD_OK)
         {
             Debug("FMOD Failed updating\n");
@@ -137,14 +193,14 @@ static void init_audio_fmod(SoundDevice* sound_device)
     
     if(result != FMOD_OK)
     {
-        fmod_error(result);
+        FMOD_DEBUG(result);
         return;
     }
     
     result = FMOD_System_Init(system, 1024, FMOD_INIT_NORMAL, 0);
     if(result != FMOD_OK)
     {
-        fmod_error(result);
+        FMOD_DEBUG(result);
     }
     
     u32 version;
@@ -160,7 +216,7 @@ static void init_audio_fmod(SoundDevice* sound_device)
     result = FMOD_System_GetMasterChannelGroup(sound_device->system, &sound_device->master_group);
     if(result != FMOD_OK)
     {
-        fmod_error(result);
+        FMOD_DEBUG(result);
         return;
     }
 }

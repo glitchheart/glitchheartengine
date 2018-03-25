@@ -1,0 +1,77 @@
+<?xml version="1.0"?>
+<analyzerinfo checksum="2295633883">
+  <FileInfo check="CheckUnusedFunctions">
+    <functiondecl functionName="CheckSATCollision" lineNumber="6"/>
+    <functiondecl functionName="PushCollisionVolume" lineNumber="232"/>
+    <functiondecl functionName="AABBMin" lineNumber="260"/>
+    <functiondecl functionName="AABBMax" lineNumber="265"/>
+    <functiondecl functionName="AABBSize" lineNumber="270"/>
+    <functiondecl functionName="MinkowskiDifference" lineNumber="275"/>
+    <functiondecl functionName="ClosestPointsOnBoundsToPoint" lineNumber="294"/>
+    <functiondecl functionName="GetRayIntersectionFractionOfFirstRay" lineNumber="318"/>
+    <functiondecl functionName="GetRayIntersectionFraction" lineNumber="347"/>
+    <functioncall functionName="AABBMax"/>
+    <functioncall functionName="AABBMin"/>
+    <functioncall functionName="AABBSize"/>
+    <functioncall functionName="AO"/>
+    <functioncall functionName="AX"/>
+    <functioncall functionName="AY"/>
+    <functioncall functionName="AZ"/>
+    <functioncall functionName="Abs"/>
+    <functioncall functionName="Absolute"/>
+    <functioncall functionName="BO"/>
+    <functioncall functionName="BX"/>
+    <functioncall functionName="BY"/>
+    <functioncall functionName="BZ"/>
+    <functioncall functionName="Center"/>
+    <functioncall functionName="Coll"/>
+    <functioncall functionName="Color"/>
+    <functioncall functionName="Cross"/>
+    <functioncall functionName="DB"/>
+    <functioncall functionName="DEBUG_PRINT"/>
+    <functioncall functionName="DEBUG_PRINT_V3"/>
+    <functioncall functionName="Denominator"/>
+    <functioncall functionName="Direction"/>
+    <functioncall functionName="Dot"/>
+    <functioncall functionName="DrawAxes"/>
+    <functioncall functionName="DrawExtents"/>
+    <functioncall functionName="End"/>
+    <functioncall functionName="Extents"/>
+    <functioncall functionName="Forward"/>
+    <functioncall functionName="GetCurrentMin"/>
+    <functioncall functionName="GetRayIntersectionFractionOfFirstRay"/>
+    <functioncall functionName="HB"/>
+    <functioncall functionName="LHS"/>
+    <functioncall functionName="Max"/>
+    <functioncall functionName="MinVal"/>
+    <functioncall functionName="MinVec"/>
+    <functioncall functionName="Normalize"/>
+    <functioncall functionName="Orientation"/>
+    <functioncall functionName="Origin"/>
+    <functioncall functionName="OriginA"/>
+    <functioncall functionName="OriginB"/>
+    <functioncall functionName="Other"/>
+    <functioncall functionName="Out"/>
+    <functioncall functionName="PA"/>
+    <functioncall functionName="PushLine"/>
+    <functioncall functionName="PushWireframeCube"/>
+    <functioncall functionName="R"/>
+    <functioncall functionName="Renderer"/>
+    <functioncall functionName="Right"/>
+    <functioncall functionName="S"/>
+    <functioncall functionName="Size"/>
+    <functioncall functionName="T"/>
+    <functioncall functionName="ToMatrix"/>
+    <functioncall functionName="Up"/>
+    <functioncall functionName="WB"/>
+    <functioncall functionName="X"/>
+    <functioncall functionName="false"/>
+    <functioncall functionName="if"/>
+    <functioncall functionName="rgba"/>
+    <functioncall functionName="true"/>
+    <functioncall functionName="v3"/>
+    <functioncall functionName="x"/>
+    <functioncall functionName="y"/>
+    <functioncall functionName="z"/>
+  </FileInfo>
+</analyzerinfo>

@@ -1,0 +1,816 @@
+<?xml version="1.0"?>
+<analyzerinfo checksum="1207853150">
+  <FileInfo check="CheckUnusedFunctions">
+    <functiondecl functionName="ErrorCallback" lineNumber="24"/>
+    <functiondecl functionName="ShowMouseCursor" lineNumber="29"/>
+    <functiondecl functionName="MessageCallback" lineNumber="41"/>
+    <functiondecl functionName="FramebufferSizeCallback" lineNumber="58"/>
+    <functiondecl functionName="GetTime" lineNumber="84"/>
+    <functiondecl functionName="PollEvents" lineNumber="89"/>
+    <functiondecl functionName="ShouldCloseWindow" lineNumber="102"/>
+    <functiondecl functionName="ShaderCompilationErrorChecking" lineNumber="107"/>
+    <functiondecl functionName="LoadExtraShader" lineNumber="129"/>
+    <functiondecl functionName="LoadShader" lineNumber="163"/>
+    <functiondecl functionName="LoadVertexShader" lineNumber="204"/>
+    <functiondecl functionName="LoadFragmentShader" lineNumber="228"/>
+    <functiondecl functionName="UseShader" lineNumber="250"/>
+    <functiondecl functionName="InitializeFreeTypeFont" lineNumber="255"/>
+    <functiondecl functionName="RegisterBuffers" lineNumber="340"/>
+    <functiondecl functionName="RegisterVertexBuffer" lineNumber="447"/>
+    <functiondecl functionName="RenderSetup" lineNumber="487"/>
+    <functiondecl functionName="UpdateLightingData" lineNumber="854"/>
+    <functiondecl functionName="LoadTexture" lineNumber="882"/>
+    <functiondecl functionName="LoadTextures" lineNumber="906"/>
+    <functiondecl functionName="LoadExtraShaders" lineNumber="914"/>
+    <functiondecl functionName="CreateOpenGLWindow" lineNumber="922"/>
+    <functiondecl functionName="InitializeOpenGL" lineNumber="962"/>
+    <functiondecl functionName="ReloadVertexShader" lineNumber="1064"/>
+    <functiondecl functionName="ReloadFragmentShader" lineNumber="1071"/>
+    <functiondecl functionName="ReloadAssets" lineNumber="1104"/>
+    <functiondecl functionName="SetFloatUniform" lineNumber="1124"/>
+    <functiondecl functionName="SetIntUniform" lineNumber="1129"/>
+    <functiondecl functionName="SetBoolUniform" lineNumber="1134"/>
+    <functiondecl functionName="SetVec2Uniform" lineNumber="1139"/>
+    <functiondecl functionName="SetVec3Uniform" lineNumber="1144"/>
+    <functiondecl functionName="SetVec4Uniform" lineNumber="1149"/>
+    <functiondecl functionName="SetMat4Uniform" lineNumber="1154"/>
+    <functiondecl functionName="SetVec4ArrayUniform" lineNumber="1159"/>
+    <functiondecl functionName="SetFloatArrayUniform" lineNumber="1164"/>
+    <functiondecl functionName="RenderLine" lineNumber="1171"/>
+    <functiondecl functionName="RenderCircle" lineNumber="1275"/>
+    <functiondecl functionName="RenderQuad" lineNumber="1320"/>
+    <functiondecl functionName="MeasureText" lineNumber="1582"/>
+    <functiondecl functionName="RenderText" lineNumber="1606"/>
+    <functiondecl functionName="RenderWireframeCube" lineNumber="1691"/>
+    <functiondecl functionName="RenderLine" lineNumber="1717"/>
+    <functiondecl functionName="RenderText" lineNumber="1722"/>
+    <functiondecl functionName="RenderQuad" lineNumber="1730"/>
+    <functiondecl functionName="RenderModel" lineNumber="1780"/>
+    <functiondecl functionName="RenderBuffer" lineNumber="1838"/>
+    <functiondecl functionName="LoadFont" lineNumber="1888"/>
+    <functiondecl functionName="RegisterBuffers" lineNumber="1894"/>
+    <functiondecl functionName="RenderCommands" lineNumber="1927"/>
+    <functiondecl functionName="Render" lineNumber="2190"/>
+    <functiondecl functionName="DebugAttrib" lineNumber="5"/>
+    <functiondecl functionName="DebugAttribArray" lineNumber="11"/>
+    <functiondecl functionName="ErrorCallback" lineNumber="24"/>
+    <functiondecl functionName="ShowMouseCursor" lineNumber="29"/>
+    <functiondecl functionName="MessageCallback" lineNumber="41"/>
+    <functiondecl functionName="FramebufferSizeCallback" lineNumber="58"/>
+    <functiondecl functionName="GetTime" lineNumber="84"/>
+    <functiondecl functionName="PollEvents" lineNumber="89"/>
+    <functiondecl functionName="ShouldCloseWindow" lineNumber="102"/>
+    <functiondecl functionName="ShaderCompilationErrorChecking" lineNumber="107"/>
+    <functiondecl functionName="LoadExtraShader" lineNumber="129"/>
+    <functiondecl functionName="LoadShader" lineNumber="163"/>
+    <functiondecl functionName="LoadVertexShader" lineNumber="204"/>
+    <functiondecl functionName="LoadFragmentShader" lineNumber="228"/>
+    <functiondecl functionName="UseShader" lineNumber="250"/>
+    <functiondecl functionName="InitializeFreeTypeFont" lineNumber="255"/>
+    <functiondecl functionName="RegisterBuffers" lineNumber="340"/>
+    <functiondecl functionName="RegisterVertexBuffer" lineNumber="447"/>
+    <functiondecl functionName="RenderSetup" lineNumber="487"/>
+    <functiondecl functionName="UpdateLightingData" lineNumber="854"/>
+    <functiondecl functionName="LoadTexture" lineNumber="882"/>
+    <functiondecl functionName="LoadTextures" lineNumber="906"/>
+    <functiondecl functionName="LoadExtraShaders" lineNumber="914"/>
+    <functiondecl functionName="CreateOpenGLWindow" lineNumber="922"/>
+    <functiondecl functionName="InitializeOpenGL" lineNumber="962"/>
+    <functiondecl functionName="ReloadVertexShader" lineNumber="1064"/>
+    <functiondecl functionName="ReloadFragmentShader" lineNumber="1071"/>
+    <functiondecl functionName="ReloadAssets" lineNumber="1104"/>
+    <functiondecl functionName="SetFloatUniform" lineNumber="1124"/>
+    <functiondecl functionName="SetIntUniform" lineNumber="1129"/>
+    <functiondecl functionName="SetBoolUniform" lineNumber="1134"/>
+    <functiondecl functionName="SetVec2Uniform" lineNumber="1139"/>
+    <functiondecl functionName="SetVec3Uniform" lineNumber="1144"/>
+    <functiondecl functionName="SetVec4Uniform" lineNumber="1149"/>
+    <functiondecl functionName="SetMat4Uniform" lineNumber="1154"/>
+    <functiondecl functionName="SetVec4ArrayUniform" lineNumber="1159"/>
+    <functiondecl functionName="SetFloatArrayUniform" lineNumber="1164"/>
+    <functiondecl functionName="RenderLine" lineNumber="1171"/>
+    <functiondecl functionName="RenderCircle" lineNumber="1275"/>
+    <functiondecl functionName="RenderQuad" lineNumber="1320"/>
+    <functiondecl functionName="MeasureText" lineNumber="1582"/>
+    <functiondecl functionName="RenderText" lineNumber="1606"/>
+    <functiondecl functionName="RenderWireframeCube" lineNumber="1691"/>
+    <functiondecl functionName="RenderLine" lineNumber="1717"/>
+    <functiondecl functionName="RenderText" lineNumber="1722"/>
+    <functiondecl functionName="RenderQuad" lineNumber="1730"/>
+    <functiondecl functionName="RenderModel" lineNumber="1780"/>
+    <functiondecl functionName="RenderBuffer" lineNumber="1838"/>
+    <functiondecl functionName="LoadFont" lineNumber="1888"/>
+    <functiondecl functionName="RegisterBuffers" lineNumber="1894"/>
+    <functiondecl functionName="RenderCommands" lineNumber="1927"/>
+    <functiondecl functionName="Render" lineNumber="2190"/>
+    <functiondecl functionName="ErrorCallback" lineNumber="24"/>
+    <functiondecl functionName="ShowMouseCursor" lineNumber="29"/>
+    <functiondecl functionName="MessageCallback" lineNumber="41"/>
+    <functiondecl functionName="FramebufferSizeCallback" lineNumber="58"/>
+    <functiondecl functionName="GetTime" lineNumber="84"/>
+    <functiondecl functionName="PollEvents" lineNumber="89"/>
+    <functiondecl functionName="ShouldCloseWindow" lineNumber="102"/>
+    <functiondecl functionName="ShaderCompilationErrorChecking" lineNumber="107"/>
+    <functiondecl functionName="LoadExtraShader" lineNumber="129"/>
+    <functiondecl functionName="LoadShader" lineNumber="163"/>
+    <functiondecl functionName="LoadVertexShader" lineNumber="204"/>
+    <functiondecl functionName="LoadFragmentShader" lineNumber="228"/>
+    <functiondecl functionName="UseShader" lineNumber="250"/>
+    <functiondecl functionName="InitializeFreeTypeFont" lineNumber="255"/>
+    <functiondecl functionName="RegisterBuffers" lineNumber="340"/>
+    <functiondecl functionName="RegisterVertexBuffer" lineNumber="447"/>
+    <functiondecl functionName="RenderSetup" lineNumber="487"/>
+    <functiondecl functionName="UpdateLightingData" lineNumber="854"/>
+    <functiondecl functionName="LoadTexture" lineNumber="882"/>
+    <functiondecl functionName="LoadTextures" lineNumber="906"/>
+    <functiondecl functionName="LoadExtraShaders" lineNumber="914"/>
+    <functiondecl functionName="CreateOpenGLWindow" lineNumber="922"/>
+    <functiondecl functionName="InitializeOpenGL" lineNumber="962"/>
+    <functiondecl functionName="ReloadVertexShader" lineNumber="1064"/>
+    <functiondecl functionName="ReloadFragmentShader" lineNumber="1071"/>
+    <functiondecl functionName="ReloadAssets" lineNumber="1104"/>
+    <functiondecl functionName="SetFloatUniform" lineNumber="1124"/>
+    <functiondecl functionName="SetIntUniform" lineNumber="1129"/>
+    <functiondecl functionName="SetBoolUniform" lineNumber="1134"/>
+    <functiondecl functionName="SetVec2Uniform" lineNumber="1139"/>
+    <functiondecl functionName="SetVec3Uniform" lineNumber="1144"/>
+    <functiondecl functionName="SetVec4Uniform" lineNumber="1149"/>
+    <functiondecl functionName="SetMat4Uniform" lineNumber="1154"/>
+    <functiondecl functionName="SetVec4ArrayUniform" lineNumber="1159"/>
+    <functiondecl functionName="SetFloatArrayUniform" lineNumber="1164"/>
+    <functiondecl functionName="RenderLine" lineNumber="1171"/>
+    <functiondecl functionName="RenderCircle" lineNumber="1275"/>
+    <functiondecl functionName="RenderQuad" lineNumber="1320"/>
+    <functiondecl functionName="MeasureText" lineNumber="1582"/>
+    <functiondecl functionName="RenderText" lineNumber="1606"/>
+    <functiondecl functionName="RenderWireframeCube" lineNumber="1691"/>
+    <functiondecl functionName="RenderLine" lineNumber="1717"/>
+    <functiondecl functionName="RenderText" lineNumber="1722"/>
+    <functiondecl functionName="RenderQuad" lineNumber="1730"/>
+    <functiondecl functionName="RenderModel" lineNumber="1780"/>
+    <functiondecl functionName="RenderBuffer" lineNumber="1838"/>
+    <functiondecl functionName="LoadFont" lineNumber="1888"/>
+    <functiondecl functionName="RegisterBuffers" lineNumber="1894"/>
+    <functiondecl functionName="RenderCommands" lineNumber="1927"/>
+    <functiondecl functionName="Render" lineNumber="2190"/>
+    <functiondecl functionName="ErrorCallback" lineNumber="24"/>
+    <functiondecl functionName="ShowMouseCursor" lineNumber="29"/>
+    <functiondecl functionName="MessageCallback" lineNumber="41"/>
+    <functiondecl functionName="FramebufferSizeCallback" lineNumber="58"/>
+    <functiondecl functionName="GetTime" lineNumber="84"/>
+    <functiondecl functionName="PollEvents" lineNumber="89"/>
+    <functiondecl functionName="ShouldCloseWindow" lineNumber="102"/>
+    <functiondecl functionName="ShaderCompilationErrorChecking" lineNumber="107"/>
+    <functiondecl functionName="LoadExtraShader" lineNumber="129"/>
+    <functiondecl functionName="LoadShader" lineNumber="163"/>
+    <functiondecl functionName="LoadVertexShader" lineNumber="204"/>
+    <functiondecl functionName="LoadFragmentShader" lineNumber="228"/>
+    <functiondecl functionName="UseShader" lineNumber="250"/>
+    <functiondecl functionName="InitializeFreeTypeFont" lineNumber="255"/>
+    <functiondecl functionName="RegisterBuffers" lineNumber="340"/>
+    <functiondecl functionName="RegisterVertexBuffer" lineNumber="447"/>
+    <functiondecl functionName="RenderSetup" lineNumber="487"/>
+    <functiondecl functionName="UpdateLightingData" lineNumber="854"/>
+    <functiondecl functionName="LoadTexture" lineNumber="882"/>
+    <functiondecl functionName="LoadTextures" lineNumber="906"/>
+    <functiondecl functionName="LoadExtraShaders" lineNumber="914"/>
+    <functiondecl functionName="CreateOpenGLWindow" lineNumber="922"/>
+    <functiondecl functionName="InitializeOpenGL" lineNumber="962"/>
+    <functiondecl functionName="ReloadVertexShader" lineNumber="1064"/>
+    <functiondecl functionName="ReloadFragmentShader" lineNumber="1071"/>
+    <functiondecl functionName="ReloadAssets" lineNumber="1104"/>
+    <functiondecl functionName="SetFloatUniform" lineNumber="1124"/>
+    <functiondecl functionName="SetIntUniform" lineNumber="1129"/>
+    <functiondecl functionName="SetBoolUniform" lineNumber="1134"/>
+    <functiondecl functionName="SetVec2Uniform" lineNumber="1139"/>
+    <functiondecl functionName="SetVec3Uniform" lineNumber="1144"/>
+    <functiondecl functionName="SetVec4Uniform" lineNumber="1149"/>
+    <functiondecl functionName="SetMat4Uniform" lineNumber="1154"/>
+    <functiondecl functionName="SetVec4ArrayUniform" lineNumber="1159"/>
+    <functiondecl functionName="SetFloatArrayUniform" lineNumber="1164"/>
+    <functiondecl functionName="RenderLine" lineNumber="1171"/>
+    <functiondecl functionName="RenderCircle" lineNumber="1275"/>
+    <functiondecl functionName="RenderQuad" lineNumber="1320"/>
+    <functiondecl functionName="MeasureText" lineNumber="1582"/>
+    <functiondecl functionName="RenderText" lineNumber="1606"/>
+    <functiondecl functionName="RenderWireframeCube" lineNumber="1691"/>
+    <functiondecl functionName="RenderLine" lineNumber="1717"/>
+    <functiondecl functionName="RenderText" lineNumber="1722"/>
+    <functiondecl functionName="RenderQuad" lineNumber="1730"/>
+    <functiondecl functionName="RenderModel" lineNumber="1780"/>
+    <functiondecl functionName="RenderBuffer" lineNumber="1838"/>
+    <functiondecl functionName="LoadFont" lineNumber="1888"/>
+    <functiondecl functionName="RegisterBuffers" lineNumber="1894"/>
+    <functiondecl functionName="RenderCommands" lineNumber="1927"/>
+    <functiondecl functionName="Render" lineNumber="2190"/>
+    <functiondecl functionName="ErrorCallback" lineNumber="24"/>
+    <functiondecl functionName="ShowMouseCursor" lineNumber="29"/>
+    <functiondecl functionName="MessageCallback" lineNumber="41"/>
+    <functiondecl functionName="FramebufferSizeCallback" lineNumber="58"/>
+    <functiondecl functionName="GetTime" lineNumber="84"/>
+    <functiondecl functionName="PollEvents" lineNumber="89"/>
+    <functiondecl functionName="ShouldCloseWindow" lineNumber="102"/>
+    <functiondecl functionName="ShaderCompilationErrorChecking" lineNumber="107"/>
+    <functiondecl functionName="LoadExtraShader" lineNumber="129"/>
+    <functiondecl functionName="LoadShader" lineNumber="163"/>
+    <functiondecl functionName="LoadVertexShader" lineNumber="204"/>
+    <functiondecl functionName="LoadFragmentShader" lineNumber="228"/>
+    <functiondecl functionName="UseShader" lineNumber="250"/>
+    <functiondecl functionName="InitializeFreeTypeFont" lineNumber="255"/>
+    <functiondecl functionName="RegisterBuffers" lineNumber="340"/>
+    <functiondecl functionName="RegisterVertexBuffer" lineNumber="447"/>
+    <functiondecl functionName="RenderSetup" lineNumber="487"/>
+    <functiondecl functionName="UpdateLightingData" lineNumber="854"/>
+    <functiondecl functionName="LoadTexture" lineNumber="882"/>
+    <functiondecl functionName="LoadTextures" lineNumber="906"/>
+    <functiondecl functionName="LoadExtraShaders" lineNumber="914"/>
+    <functiondecl functionName="CreateOpenGLWindow" lineNumber="922"/>
+    <functiondecl functionName="InitializeOpenGL" lineNumber="962"/>
+    <functiondecl functionName="ReloadVertexShader" lineNumber="1064"/>
+    <functiondecl functionName="ReloadFragmentShader" lineNumber="1071"/>
+    <functiondecl functionName="ReloadAssets" lineNumber="1104"/>
+    <functiondecl functionName="SetFloatUniform" lineNumber="1124"/>
+    <functiondecl functionName="SetIntUniform" lineNumber="1129"/>
+    <functiondecl functionName="SetBoolUniform" lineNumber="1134"/>
+    <functiondecl functionName="SetVec2Uniform" lineNumber="1139"/>
+    <functiondecl functionName="SetVec3Uniform" lineNumber="1144"/>
+    <functiondecl functionName="SetVec4Uniform" lineNumber="1149"/>
+    <functiondecl functionName="SetMat4Uniform" lineNumber="1154"/>
+    <functiondecl functionName="SetVec4ArrayUniform" lineNumber="1159"/>
+    <functiondecl functionName="SetFloatArrayUniform" lineNumber="1164"/>
+    <functiondecl functionName="RenderLine" lineNumber="1171"/>
+    <functiondecl functionName="RenderCircle" lineNumber="1275"/>
+    <functiondecl functionName="RenderQuad" lineNumber="1320"/>
+    <functiondecl functionName="MeasureText" lineNumber="1582"/>
+    <functiondecl functionName="RenderText" lineNumber="1606"/>
+    <functiondecl functionName="RenderWireframeCube" lineNumber="1691"/>
+    <functiondecl functionName="RenderLine" lineNumber="1717"/>
+    <functiondecl functionName="RenderText" lineNumber="1722"/>
+    <functiondecl functionName="RenderQuad" lineNumber="1730"/>
+    <functiondecl functionName="RenderModel" lineNumber="1780"/>
+    <functiondecl functionName="RenderBuffer" lineNumber="1838"/>
+    <functiondecl functionName="LoadFont" lineNumber="1888"/>
+    <functiondecl functionName="RegisterBuffers" lineNumber="1894"/>
+    <functiondecl functionName="RenderCommands" lineNumber="1927"/>
+    <functiondecl functionName="Render" lineNumber="2190"/>
+    <functioncall functionName="AX"/>
+    <functioncall functionName="AlignCenterY"/>
+    <functioncall functionName="Alignment"/>
+    <functioncall functionName="Alignment_Left"/>
+    <functioncall functionName="AlphaColor"/>
+    <functioncall functionName="Arena"/>
+    <functioncall functionName="AtlasHeight"/>
+    <functioncall functionName="AtlasWidth"/>
+    <functioncall functionName="AttributeCount"/>
+    <functioncall functionName="Attributes"/>
+    <functioncall functionName="BH"/>
+    <functioncall functionName="BlockIndex"/>
+    <functioncall functionName="BoneCount"/>
+    <functioncall functionName="BoneInfoSize"/>
+    <functioncall functionName="BooleanVar"/>
+    <functioncall functionName="Brightness"/>
+    <functioncall functionName="BufferCount"/>
+    <functioncall functionName="BufferData"/>
+    <functioncall functionName="BufferHandle"/>
+    <functioncall functionName="CharacterCallback"/>
+    <functioncall functionName="Clear"/>
+    <functioncall functionName="Color"/>
+    <functioncall functionName="Command"/>
+    <functioncall functionName="CommandCount"/>
+    <functioncall functionName="Commands"/>
+    <functioncall functionName="Concat"/>
+    <functioncall functionName="Constant"/>
+    <functioncall functionName="Contrast"/>
+    <functioncall functionName="ControllerPresent"/>
+    <functioncall functionName="Coords"/>
+    <functioncall functionName="Cos"/>
+    <functioncall functionName="Count"/>
+    <functioncall functionName="CreateOpenGLWindow"/>
+    <functioncall functionName="CubeIndexBuffer"/>
+    <functioncall functionName="CurrentCameraHandle"/>
+    <functioncall functionName="CurrentExtraShader"/>
+    <functioncall functionName="CursorPositionCallback"/>
+    <functioncall functionName="CutOff"/>
+    <functioncall functionName="DX"/>
+    <functioncall functionName="DY"/>
+    <functioncall functionName="Debug"/>
+    <functioncall functionName="DebugAttrib"/>
+    <functioncall functionName="DebugAttribArray"/>
+    <functioncall functionName="DeltaTime"/>
+    <functioncall functionName="DepthBuffer"/>
+    <functioncall functionName="Description"/>
+    <functioncall functionName="DirectionalLightData"/>
+    <functioncall functionName="DirectionalLightUBO"/>
+    <functioncall functionName="DpiScale"/>
+    <functioncall functionName="EXIT_FAILURE"/>
+    <functioncall functionName="EXIT_SUCCESS"/>
+    <functioncall functionName="Epsilon"/>
+    <functioncall functionName="Error"/>
+    <functioncall functionName="ErrorCallback"/>
+    <functioncall functionName="ErrorLog"/>
+    <functioncall functionName="ExistingHandle"/>
+    <functioncall functionName="ExtraShaderIndex"/>
+    <functioncall functionName="FPS"/>
+    <functioncall functionName="FTLibrary"/>
+    <functioncall functionName="FT_Init_FreeType"/>
+    <functioncall functionName="FT_LOAD_RENDER"/>
+    <functioncall functionName="FT_Load_Char"/>
+    <functioncall functionName="FT_New_Face"/>
+    <functioncall functionName="FT_Select_Charmap"/>
+    <functioncall functionName="FT_Set_Pixel_Sizes"/>
+    <functioncall functionName="FT_UInt"/>
+    <functioncall functionName="FT_ULong"/>
+    <functioncall functionName="Face"/>
+    <functioncall functionName="File"/>
+    <functioncall functionName="FilePath"/>
+    <functioncall functionName="Flipped"/>
+    <functioncall functionName="Float2Var"/>
+    <functioncall functionName="Float3Var"/>
+    <functioncall functionName="Float4Var"/>
+    <functioncall functionName="FloatVar"/>
+    <functioncall functionName="Font"/>
+    <functioncall functionName="FontCount"/>
+    <functioncall functionName="FontHandle"/>
+    <functioncall functionName="FontPath"/>
+    <functioncall functionName="FontSize"/>
+    <functioncall functionName="ForAnimation"/>
+    <functioncall functionName="FragmentShader"/>
+    <functioncall functionName="FragmentShaderContent"/>
+    <functioncall functionName="FragmentString"/>
+    <functioncall functionName="FragmentText"/>
+    <functioncall functionName="FrameBuffer"/>
+    <functioncall functionName="FrameBufferHeight"/>
+    <functioncall functionName="FrameBufferShader"/>
+    <functioncall functionName="FrameBufferTex0Loc"/>
+    <functioncall functionName="FrameBufferTex1Loc"/>
+    <functioncall functionName="FrameBufferVAO"/>
+    <functioncall functionName="FrameBufferVBO"/>
+    <functioncall functionName="FrameBufferVertices"/>
+    <functioncall functionName="FrameBufferWidth"/>
+    <functioncall functionName="FrameLock"/>
+    <functioncall functionName="FrameSize"/>
+    <functioncall functionName="FramebufferSizeCallback"/>
+    <functioncall functionName="Fullscreen"/>
+    <functioncall functionName="GLADloadproc"/>
+    <functioncall functionName="GLDEBUGPROC"/>
+    <functioncall functionName="GLFW_BLUE_BITS"/>
+    <functioncall functionName="GLFW_CONTEXT_VERSION_MAJOR"/>
+    <functioncall functionName="GLFW_CONTEXT_VERSION_MINOR"/>
+    <functioncall functionName="GLFW_CURSOR"/>
+    <functioncall functionName="GLFW_CURSOR_HIDDEN"/>
+    <functioncall functionName="GLFW_CURSOR_NORMAL"/>
+    <functioncall functionName="GLFW_GREEN_BITS"/>
+    <functioncall functionName="GLFW_OPENGL_CORE_PROFILE"/>
+    <functioncall functionName="GLFW_OPENGL_FORWARD_COMPAT"/>
+    <functioncall functionName="GLFW_OPENGL_PROFILE"/>
+    <functioncall functionName="GLFW_RED_BITS"/>
+    <functioncall functionName="GLFW_REFRESH_RATE"/>
+    <functioncall functionName="GL_ARRAY_BUFFER"/>
+    <functioncall functionName="GL_BLEND"/>
+    <functioncall functionName="GL_CLAMP_TO_EDGE"/>
+    <functioncall functionName="GL_COLOR_ATTACHMENT0"/>
+    <functioncall functionName="GL_COMPILE_STATUS"/>
+    <functioncall functionName="GL_CULL_FACE"/>
+    <functioncall functionName="GL_DEBUG_OUTPUT"/>
+    <functioncall functionName="GL_DEPTH_ATTACHMENT"/>
+    <functioncall functionName="GL_DEPTH_BUFFER_BIT"/>
+    <functioncall functionName="GL_DEPTH_COMPONENT"/>
+    <functioncall functionName="GL_DEPTH_TEST"/>
+    <functioncall functionName="GL_DITHER"/>
+    <functioncall functionName="GL_DYNAMIC_DRAW"/>
+    <functioncall functionName="GL_ELEMENT_ARRAY_BUFFER"/>
+    <functioncall functionName="GL_FALSE"/>
+    <functioncall functionName="GL_FLOAT"/>
+    <functioncall functionName="GL_FRAGMENT_SHADER"/>
+    <functioncall functionName="GL_FRAMEBUFFER"/>
+    <functioncall functionName="GL_INFO_LOG_LENGTH"/>
+    <functioncall functionName="GL_LESS"/>
+    <functioncall functionName="GL_LINEAR"/>
+    <functioncall functionName="GL_LINES"/>
+    <functioncall functionName="GL_LINE_LOOP"/>
+    <functioncall functionName="GL_LINE_SMOOTH"/>
+    <functioncall functionName="GL_NEAREST"/>
+    <functioncall functionName="GL_ONE_MINUS_SRC_ALPHA"/>
+    <functioncall functionName="GL_R8"/>
+    <functioncall functionName="GL_RED"/>
+    <functioncall functionName="GL_RENDERBUFFER"/>
+    <functioncall functionName="GL_REPEAT"/>
+    <functioncall functionName="GL_RGB"/>
+    <functioncall functionName="GL_RGBA"/>
+    <functioncall functionName="GL_SHADING_LANGUAGE_VERSION"/>
+    <functioncall functionName="GL_SRC_ALPHA"/>
+    <functioncall functionName="GL_STATIC_DRAW"/>
+    <functioncall functionName="GL_TEXTURE0"/>
+    <functioncall functionName="GL_TEXTURE1"/>
+    <functioncall functionName="GL_TEXTURE_2D"/>
+    <functioncall functionName="GL_TEXTURE_MAG_FILTER"/>
+    <functioncall functionName="GL_TEXTURE_MIN_FILTER"/>
+    <functioncall functionName="GL_TEXTURE_WRAP_S"/>
+    <functioncall functionName="GL_TEXTURE_WRAP_T"/>
+    <functioncall functionName="GL_TRIANGLES"/>
+    <functioncall functionName="GL_TRUE"/>
+    <functioncall functionName="GL_UNIFORM_BUFFER"/>
+    <functioncall functionName="GL_UNPACK_ALIGNMENT"/>
+    <functioncall functionName="GL_UNSIGNED_BYTE"/>
+    <functioncall functionName="GL_UNSIGNED_INT"/>
+    <functioncall functionName="GL_VERSION"/>
+    <functioncall functionName="GL_VERTEX_SHADER"/>
+    <functioncall functionName="GL_VIEWPORT"/>
+    <functioncall functionName="GL_WRITE_ONLY"/>
+    <functioncall functionName="GLchar"/>
+    <functioncall functionName="GLfloat"/>
+    <functioncall functionName="GLint"/>
+    <functioncall functionName="GLsizei"/>
+    <functioncall functionName="GLsizeiptr"/>
+    <functioncall functionName="GLuint"/>
+    <functioncall functionName="H"/>
+    <functioncall functionName="Handle"/>
+    <functioncall functionName="HasData"/>
+    <functioncall functionName="HasNormals"/>
+    <functioncall functionName="HasUVs"/>
+    <functioncall functionName="Height"/>
+    <functioncall functionName="I"/>
+    <functioncall functionName="IBO"/>
+    <functioncall functionName="Id"/>
+    <functioncall functionName="ImageData"/>
+    <functioncall functionName="Index"/>
+    <functioncall functionName="IndexBuffer"/>
+    <functioncall functionName="IndexBufferCount"/>
+    <functioncall functionName="IndexBufferSize"/>
+    <functioncall functionName="InitializeFreeTypeFont"/>
+    <functioncall functionName="IntegerVar"/>
+    <functioncall functionName="Inverse"/>
+    <functioncall functionName="IsCompiled"/>
+    <functioncall functionName="IsUI"/>
+    <functioncall functionName="IsometricQuadVBO"/>
+    <functioncall functionName="IsometricQuadVertices"/>
+    <functioncall functionName="IsometricVAO"/>
+    <functioncall functionName="KeyCallback"/>
+    <functioncall functionName="LINE_INDICES"/>
+    <functioncall functionName="Length"/>
+    <functioncall functionName="Library"/>
+    <functioncall functionName="LightCommandCount"/>
+    <functioncall functionName="LightCommands"/>
+    <functioncall functionName="LightSourceShader"/>
+    <functioncall functionName="LightingFrameBuffer"/>
+    <functioncall functionName="LightingTextureColorBuffer"/>
+    <functioncall functionName="Line"/>
+    <functioncall functionName="LineEBO"/>
+    <functioncall functionName="LineIndices"/>
+    <functioncall functionName="LineShader"/>
+    <functioncall functionName="LineVAO"/>
+    <functioncall functionName="LineVBO"/>
+    <functioncall functionName="LineWidth"/>
+    <functioncall functionName="Linear"/>
+    <functioncall functionName="LoadExtraShader"/>
+    <functioncall functionName="LoadExtraShaders"/>
+    <functioncall functionName="LoadFont"/>
+    <functioncall functionName="LoadFragmentShader"/>
+    <functioncall functionName="LoadShader"/>
+    <functioncall functionName="LoadShaderFromFile"/>
+    <functioncall functionName="LoadTexture"/>
+    <functioncall functionName="LoadTextures"/>
+    <functioncall functionName="LoadVertexShader"/>
+    <functioncall functionName="Loaded"/>
+    <functioncall functionName="Location"/>
+    <functioncall functionName="M"/>
+    <functioncall functionName="MaterialIndex"/>
+    <functioncall functionName="Matrix4Var"/>
+    <functioncall functionName="Max"/>
+    <functioncall functionName="MaxLength"/>
+    <functioncall functionName="MeasureText"/>
+    <functioncall functionName="MeshCount"/>
+    <functioncall functionName="MeshIndex"/>
+    <functioncall functionName="Message"/>
+    <functioncall functionName="MessageCallback"/>
+    <functioncall functionName="Mode"/>
+    <functioncall functionName="Model"/>
+    <functioncall functionName="Monitor"/>
+    <functioncall functionName="MouseButtonCallback"/>
+    <functioncall functionName="N"/>
+    <functioncall functionName="NULL"/>
+    <functioncall functionName="Name"/>
+    <functioncall functionName="NormalMatrix"/>
+    <functioncall functionName="NormalQuadVBO"/>
+    <functioncall functionName="NormalQuadVertices"/>
+    <functioncall functionName="NormalQuadVerticesSize"/>
+    <functioncall functionName="Normalize"/>
+    <functioncall functionName="On"/>
+    <functioncall functionName="Orientation"/>
+    <functioncall functionName="Origin"/>
+    <functioncall functionName="OuterCutOff"/>
+    <functioncall functionName="P"/>
+    <functioncall functionName="PassthroughShader"/>
+    <functioncall functionName="PassthroughVAO"/>
+    <functioncall functionName="Path"/>
+    <functioncall functionName="PermArena"/>
+    <functioncall functionName="PixelsPerUnit"/>
+    <functioncall functionName="Point1"/>
+    <functioncall functionName="Point2"/>
+    <functioncall functionName="PointLightData"/>
+    <functioncall functionName="PointLightUBO"/>
+    <functioncall functionName="PosLoc"/>
+    <functioncall functionName="Position"/>
+    <functioncall functionName="PositionLocation"/>
+    <functioncall functionName="PositionLocation2"/>
+    <functioncall functionName="PositionLocation3"/>
+    <functioncall functionName="PrimitiveVBO"/>
+    <functioncall functionName="Program"/>
+    <functioncall functionName="Projection"/>
+    <functioncall functionName="ProjectionMatrix"/>
+    <functioncall functionName="PushString"/>
+    <functioncall functionName="PushTempArray"/>
+    <functioncall functionName="PushTempSize"/>
+    <functioncall functionName="QuadIndexBuffer"/>
+    <functioncall functionName="QuadIndices"/>
+    <functioncall functionName="Quadratic"/>
+    <functioncall functionName="RectShader"/>
+    <functioncall functionName="RectVAO"/>
+    <functioncall functionName="RegisterBuffers"/>
+    <functioncall functionName="RegisterVertexBuffer"/>
+    <functioncall functionName="ReloadFragmentShader"/>
+    <functioncall functionName="ReloadVertexShader"/>
+    <functioncall functionName="RenderBuffer"/>
+    <functioncall functionName="RenderCommands"/>
+    <functioncall functionName="RenderFont"/>
+    <functioncall functionName="RenderLine"/>
+    <functioncall functionName="RenderModel"/>
+    <functioncall functionName="RenderQuad"/>
+    <functioncall functionName="RenderSetup"/>
+    <functioncall functionName="RenderState"/>
+    <functioncall functionName="RenderText"/>
+    <functioncall functionName="RenderWireframeCube"/>
+    <functioncall functionName="Render_Fill"/>
+    <functioncall functionName="Render_Outline"/>
+    <functioncall functionName="Renderer"/>
+    <functioncall functionName="Rotate"/>
+    <functioncall functionName="Rotation"/>
+    <functioncall functionName="SBuffer"/>
+    <functioncall functionName="Scale"/>
+    <functioncall functionName="ScaleFromHeight"/>
+    <functioncall functionName="ScaleFromWidth"/>
+    <functioncall functionName="ScaleX"/>
+    <functioncall functionName="ScaleY"/>
+    <functioncall functionName="ScreenHeight"/>
+    <functioncall functionName="ScreenWidth"/>
+    <functioncall functionName="ScrollCallback"/>
+    <functioncall functionName="SetFloatUniform"/>
+    <functioncall functionName="SetIntUniform"/>
+    <functioncall functionName="SetMat4Uniform"/>
+    <functioncall functionName="SetVec2Uniform"/>
+    <functioncall functionName="SetVec3Uniform"/>
+    <functioncall functionName="SetVec4Uniform"/>
+    <functioncall functionName="Severity"/>
+    <functioncall functionName="Shader"/>
+    <functioncall functionName="ShaderAttributeCount"/>
+    <functioncall functionName="ShaderAttributes"/>
+    <functioncall functionName="ShaderCompilationErrorChecking"/>
+    <functioncall functionName="ShaderCount"/>
+    <functioncall functionName="ShaderEnumToStr"/>
+    <functioncall functionName="ShaderHandle"/>
+    <functioncall functionName="ShaderName"/>
+    <functioncall functionName="ShaderType"/>
+    <functioncall functionName="Shader_FrameBuffer"/>
+    <functioncall functionName="Shader_LightSource"/>
+    <functioncall functionName="Shader_Line"/>
+    <functioncall functionName="Shader_Passthrough"/>
+    <functioncall functionName="Shader_Rect"/>
+    <functioncall functionName="Shader_SimpleModel"/>
+    <functioncall functionName="Shader_Spritesheet"/>
+    <functioncall functionName="Shader_StandardFont"/>
+    <functioncall functionName="Shader_Texture"/>
+    <functioncall functionName="Shader_TextureRect"/>
+    <functioncall functionName="Shader_Tile"/>
+    <functioncall functionName="Shader_Type"/>
+    <functioncall functionName="Shader_Wireframe"/>
+    <functioncall functionName="Show"/>
+    <functioncall functionName="SimpleModelShader"/>
+    <functioncall functionName="Sin"/>
+    <functioncall functionName="Size"/>
+    <functioncall functionName="Skinned"/>
+    <functioncall functionName="Source"/>
+    <functioncall functionName="SpotlightData"/>
+    <functioncall functionName="SpotlightUBO"/>
+    <functioncall functionName="SpriteQuadVBO"/>
+    <functioncall functionName="SpriteQuadVertices"/>
+    <functioncall functionName="SpriteQuadVerticesSize"/>
+    <functioncall functionName="SpriteSheetVAO"/>
+    <functioncall functionName="SpriteVAO"/>
+    <functioncall functionName="SpritesheetShader"/>
+    <functioncall functionName="StandardFontShader"/>
+    <functioncall functionName="Str"/>
+    <functioncall functionName="TexLoc"/>
+    <functioncall functionName="TexcoordLocation"/>
+    <functioncall functionName="TexcoordLocation2"/>
+    <functioncall functionName="Text"/>
+    <functioncall functionName="Texture"/>
+    <functioncall functionName="TextureColorBuffer"/>
+    <functioncall functionName="TextureCount"/>
+    <functioncall functionName="TextureHandle"/>
+    <functioncall functionName="TextureIndex"/>
+    <functioncall functionName="TextureOffset"/>
+    <functioncall functionName="TextureRectShader"/>
+    <functioncall functionName="TextureRectVAO"/>
+    <functioncall functionName="TextureShader"/>
+    <functioncall functionName="TextureSize"/>
+    <functioncall functionName="TileQuadVBO"/>
+    <functioncall functionName="TileQuadVertices"/>
+    <functioncall functionName="TileQuadVerticesSize"/>
+    <functioncall functionName="TileShader"/>
+    <functioncall functionName="TileVAO"/>
+    <functioncall functionName="Title"/>
+    <functioncall functionName="ToMatrix"/>
+    <functioncall functionName="TotalDelta"/>
+    <functioncall functionName="Translate"/>
+    <functioncall functionName="Transpose"/>
+    <functioncall functionName="Type"/>
+    <functioncall functionName="UICommandCount"/>
+    <functioncall functionName="UICommands"/>
+    <functioncall functionName="UniformName"/>
+    <functioncall functionName="UpdateLightingData"/>
+    <functioncall functionName="UpdatedBufferHandleCount"/>
+    <functioncall functionName="UseShader"/>
+    <functioncall functionName="UserParam"/>
+    <functioncall functionName="VAO"/>
+    <functioncall functionName="VBO"/>
+    <functioncall functionName="Value"/>
+    <functioncall functionName="VertexBuffer"/>
+    <functioncall functionName="VertexBufferSize"/>
+    <functioncall functionName="VertexShader"/>
+    <functioncall functionName="VertexShaderContent"/>
+    <functioncall functionName="VertexString"/>
+    <functioncall functionName="VertexText"/>
+    <functioncall functionName="View"/>
+    <functioncall functionName="ViewMatrix"/>
+    <functioncall functionName="Viewport"/>
+    <functioncall functionName="W"/>
+    <functioncall functionName="Width"/>
+    <functioncall functionName="Window"/>
+    <functioncall functionName="WindowHeight"/>
+    <functioncall functionName="WindowMode"/>
+    <functioncall functionName="WindowTitle"/>
+    <functioncall functionName="WindowWidth"/>
+    <functioncall functionName="WireframeCubeIndices"/>
+    <functioncall functionName="WireframeCubeVAO"/>
+    <functioncall functionName="WireframeCubeVBO"/>
+    <functioncall functionName="WireframeCubeVertices"/>
+    <functioncall functionName="WireframeQuadVBO"/>
+    <functioncall functionName="WireframeQuadVertices"/>
+    <functioncall functionName="WireframeQuadVerticesSize"/>
+    <functioncall functionName="WireframeShader"/>
+    <functioncall functionName="WireframeVAO"/>
+    <functioncall functionName="WithOrigin"/>
+    <functioncall functionName="X"/>
+    <functioncall functionName="XAxis"/>
+    <functioncall functionName="Y"/>
+    <functioncall functionName="YAxis"/>
+    <functioncall functionName="ZAxis"/>
+    <functioncall functionName="a"/>
+    <functioncall functionName="b"/>
+    <functioncall functionName="bitmap_left"/>
+    <functioncall functionName="bitmap_top"/>
+    <functioncall functionName="blueBits"/>
+    <functioncall functionName="break"/>
+    <functioncall functionName="buffer"/>
+    <functioncall functionName="continue"/>
+    <functioncall functionName="default"/>
+    <functioncall functionName="directional_light_data"/>
+    <functioncall functionName="exit"/>
+    <functioncall functionName="false"/>
+    <functioncall functionName="float"/>
+    <functioncall functionName="for"/>
+    <functioncall functionName="fprintf"/>
+    <functioncall functionName="ft_encoding_unicode"/>
+    <functioncall functionName="g"/>
+    <functioncall functionName="glActiveTexture"/>
+    <functioncall functionName="glAttachShader"/>
+    <functioncall functionName="glBindBuffer"/>
+    <functioncall functionName="glBindBufferBase"/>
+    <functioncall functionName="glBindFramebuffer"/>
+    <functioncall functionName="glBindRenderbuffer"/>
+    <functioncall functionName="glBindTexture"/>
+    <functioncall functionName="glBindVertexArray"/>
+    <functioncall functionName="glBlendFunc"/>
+    <functioncall functionName="glBufferData"/>
+    <functioncall functionName="glCheckFramebufferStatus"/>
+    <functioncall functionName="glClear"/>
+    <functioncall functionName="glClearColor"/>
+    <functioncall functionName="glCompileShader"/>
+    <functioncall functionName="glCreateProgram"/>
+    <functioncall functionName="glCreateShader"/>
+    <functioncall functionName="glDebugMessageCallback"/>
+    <functioncall functionName="glDeleteProgram"/>
+    <functioncall functionName="glDeleteShader"/>
+    <functioncall functionName="glDepthFunc"/>
+    <functioncall functionName="glDisable"/>
+    <functioncall functionName="glDrawArrays"/>
+    <functioncall functionName="glDrawElements"/>
+    <functioncall functionName="glEnable"/>
+    <functioncall functionName="glEnableVertexAttribArray"/>
+    <functioncall functionName="glFramebufferRenderbuffer"/>
+    <functioncall functionName="glFramebufferTexture2D"/>
+    <functioncall functionName="glGenBuffers"/>
+    <functioncall functionName="glGenFramebuffers"/>
+    <functioncall functionName="glGenRenderbuffers"/>
+    <functioncall functionName="glGenTextures"/>
+    <functioncall functionName="glGenVertexArrays"/>
+    <functioncall functionName="glGetAttribLocation"/>
+    <functioncall functionName="glGetIntegerv"/>
+    <functioncall functionName="glGetShaderInfoLog"/>
+    <functioncall functionName="glGetShaderiv"/>
+    <functioncall functionName="glGetString"/>
+    <functioncall functionName="glGetUniformBlockIndex"/>
+    <functioncall functionName="glGetUniformLocation"/>
+    <functioncall functionName="glLineWidth"/>
+    <functioncall functionName="glLinkProgram"/>
+    <functioncall functionName="glMapBuffer"/>
+    <functioncall functionName="glPixelStorei"/>
+    <functioncall functionName="glRenderbufferStorage"/>
+    <functioncall functionName="glShaderSource"/>
+    <functioncall functionName="glTexImage2D"/>
+    <functioncall functionName="glTexParameteri"/>
+    <functioncall functionName="glTexSubImage2D"/>
+    <functioncall functionName="glUniform1f"/>
+    <functioncall functionName="glUniform1fv"/>
+    <functioncall functionName="glUniform1i"/>
+    <functioncall functionName="glUniform2f"/>
+    <functioncall functionName="glUniform3f"/>
+    <functioncall functionName="glUniform4f"/>
+    <functioncall functionName="glUniform4fv"/>
+    <functioncall functionName="glUniformBlockBinding"/>
+    <functioncall functionName="glUniformMatrix4fv"/>
+    <functioncall functionName="glUnmapBuffer"/>
+    <functioncall functionName="glUseProgram"/>
+    <functioncall functionName="glVertexAttribPointer"/>
+    <functioncall functionName="glViewport"/>
+    <functioncall functionName="gladLoadGLLoader"/>
+    <functioncall functionName="glfwCreateWindow"/>
+    <functioncall functionName="glfwDestroyWindow"/>
+    <functioncall functionName="glfwGetFramebufferSize"/>
+    <functioncall functionName="glfwGetPrimaryMonitor"/>
+    <functioncall functionName="glfwGetProcAddress"/>
+    <functioncall functionName="glfwGetTime"/>
+    <functioncall functionName="glfwGetVideoMode"/>
+    <functioncall functionName="glfwGetWindowUserPointer"/>
+    <functioncall functionName="glfwInit"/>
+    <functioncall functionName="glfwMakeContextCurrent"/>
+    <functioncall functionName="glfwPollEvents"/>
+    <functioncall functionName="glfwSetCharCallback"/>
+    <functioncall functionName="glfwSetCursorPosCallback"/>
+    <functioncall functionName="glfwSetErrorCallback"/>
+    <functioncall functionName="glfwSetFramebufferSizeCallback"/>
+    <functioncall functionName="glfwSetInputMode"/>
+    <functioncall functionName="glfwSetKeyCallback"/>
+    <functioncall functionName="glfwSetMouseButtonCallback"/>
+    <functioncall functionName="glfwSetScrollCallback"/>
+    <functioncall functionName="glfwSetWindowAspectRatio"/>
+    <functioncall functionName="glfwSetWindowPos"/>
+    <functioncall functionName="glfwSetWindowUserPointer"/>
+    <functioncall functionName="glfwSwapBuffers"/>
+    <functioncall functionName="glfwSwapInterval"/>
+    <functioncall functionName="glfwTerminate"/>
+    <functioncall functionName="glfwWindowHint"/>
+    <functioncall functionName="glfwWindowShouldClose"/>
+    <functioncall functionName="glyph"/>
+    <functioncall functionName="greenBits"/>
+    <functioncall functionName="height"/>
+    <functioncall functionName="i"/>
+    <functioncall functionName="i32"/>
+    <functioncall functionName="if"/>
+    <functioncall functionName="m4"/>
+    <functioncall functionName="major"/>
+    <functioncall functionName="memcpy"/>
+    <functioncall functionName="minor"/>
+    <functioncall functionName="noreturn"/>
+    <functioncall functionName="point"/>
+    <functioncall functionName="point_light_data"/>
+    <functioncall functionName="printf"/>
+    <functioncall functionName="quat"/>
+    <functioncall functionName="r"/>
+    <functioncall functionName="r32"/>
+    <functioncall functionName="redBits"/>
+    <functioncall functionName="refreshRate"/>
+    <functioncall functionName="return"/>
+    <functioncall functionName="rgba"/>
+    <functioncall functionName="rows"/>
+    <functioncall functionName="sizeof"/>
+    <functioncall functionName="spotlight_data"/>
+    <functioncall functionName="sprintf"/>
+    <functioncall functionName="stbi_image_free"/>
+    <functioncall functionName="stderr"/>
+    <functioncall functionName="strcpy"/>
+    <functioncall functionName="strlen"/>
+    <functioncall functionName="switch"/>
+    <functioncall functionName="true"/>
+    <functioncall functionName="v2"/>
+    <functioncall functionName="v2i"/>
+    <functioncall functionName="v3"/>
+    <functioncall functionName="v4"/>
+    <functioncall functionName="void"/>
+    <functioncall functionName="w"/>
+    <functioncall functionName="width"/>
+    <functioncall functionName="x"/>
+    <functioncall functionName="y"/>
+    <functioncall functionName="z"/>
+  </FileInfo>
+</analyzerinfo>

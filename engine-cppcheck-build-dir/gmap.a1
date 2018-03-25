@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<analyzerinfo checksum="4248580009">
+  <FileInfo check="CheckUnusedFunctions">
+    <functiondecl functionName="HashString" lineNumber="5"/>
+    <functiondecl functionName="HashStringJenkins" lineNumber="19"/>
+    <functiondecl functionName="SFold" lineNumber="37"/>
+    <functiondecl functionName="HashInt" lineNumber="64"/>
+    <functiondecl functionName="HashIntKeys" lineNumber="85"/>
+    <functiondecl functionName="AllocateMemory" lineNumber="91"/>
+    <functiondecl functionName="DeallocateMemory" lineNumber="96"/>
+    <functioncall functionName="AllocateMemory"/>
+    <functioncall functionName="Block"/>
+    <functioncall functionName="C"/>
+    <functioncall functionName="DeallocateMemory"/>
+    <functioncall functionName="Hash"/>
+    <functioncall functionName="K"/>
+    <functioncall functionName="Key"/>
+    <functioncall functionName="PM_OverflowCheck"/>
+    <functioncall functionName="S"/>
+    <functioncall functionName="Size"/>
+    <functioncall functionName="for"/>
+    <functioncall functionName="i32"/>
+    <functioncall functionName="memcpy"/>
+    <functioncall functionName="return"/>
+    <functioncall functionName="strlen"/>
+    <functioncall functionName="u32"/>
+    <functioncall functionName="u64"/>
+    <functioncall functionName="while"/>
+  </FileInfo>
+</analyzerinfo>

@@ -1,0 +1,89 @@
+<?xml version="1.0"?>
+<analyzerinfo checksum="2708218197">
+  <FileInfo check="CheckUnusedFunctions">
+    <functiondecl functionName="AStarComputeHCost" lineNumber="3"/>
+    <functiondecl functionName="IsClosed" lineNumber="10"/>
+    <functiondecl functionName="GetOpen" lineNumber="23"/>
+    <functiondecl functionName="HandleNeighbour" lineNumber="35"/>
+    <functiondecl functionName="ReconstructPath" lineNumber="79"/>
+    <functiondecl functionName="GetAStarPath" lineNumber="142"/>
+    <functiondecl functionName="AStar" lineNumber="157"/>
+    <functiondecl functionName="FindPath" lineNumber="267"/>
+    <functiondecl functionName="FollowPath" lineNumber="284"/>
+    <functioncall functionName="AStar"/>
+    <functioncall functionName="AStarComputeHCost"/>
+    <functioncall functionName="AStarCooldownTimer"/>
+    <functioncall functionName="AStarPath"/>
+    <functioncall functionName="AStarPathLength"/>
+    <functioncall functionName="AStarWorkingData"/>
+    <functioncall functionName="Abs"/>
+    <functioncall functionName="Assert"/>
+    <functioncall functionName="ClosedIndex"/>
+    <functioncall functionName="ClosedSet"/>
+    <functioncall functionName="ClosedSetCount"/>
+    <functioncall functionName="Cost"/>
+    <functioncall functionName="Current"/>
+    <functioncall functionName="Data"/>
+    <functioncall functionName="Distance"/>
+    <functioncall functionName="Dx"/>
+    <functioncall functionName="Dz"/>
+    <functioncall functionName="Entity"/>
+    <functioncall functionName="EntityPosition"/>
+    <functioncall functionName="FCost"/>
+    <functioncall functionName="FollowDirection"/>
+    <functioncall functionName="GCost"/>
+    <functioncall functionName="GameState"/>
+    <functioncall functionName="GetAStarPath"/>
+    <functioncall functionName="GetOpen"/>
+    <functioncall functionName="HCost"/>
+    <functioncall functionName="HandleNeighbour"/>
+    <functioncall functionName="Index"/>
+    <functioncall functionName="IsClosed"/>
+    <functioncall functionName="IsSolid"/>
+    <functioncall functionName="LastNode"/>
+    <functioncall functionName="Length"/>
+    <functioncall functionName="Min"/>
+    <functioncall functionName="NeighbourNode"/>
+    <functioncall functionName="NewGCost"/>
+    <functioncall functionName="Normalize"/>
+    <functioncall functionName="OpenIndex"/>
+    <functioncall functionName="OpenSet"/>
+    <functioncall functionName="OpenSetCount"/>
+    <functioncall functionName="ParentIndex"/>
+    <functioncall functionName="PathIndex"/>
+    <functioncall functionName="PathNode"/>
+    <functioncall functionName="Position"/>
+    <functioncall functionName="ReconstructPath"/>
+    <functioncall functionName="Scale"/>
+    <functioncall functionName="StartNode"/>
+    <functioncall functionName="StartPos"/>
+    <functioncall functionName="StartPosition"/>
+    <functioncall functionName="StartTimer"/>
+    <functioncall functionName="StartX"/>
+    <functioncall functionName="StartZ"/>
+    <functioncall functionName="TargetNode"/>
+    <functioncall functionName="TargetPosition"/>
+    <functioncall functionName="TargetX"/>
+    <functioncall functionName="TargetZ"/>
+    <functioncall functionName="TimerDone"/>
+    <functioncall functionName="WalkingSpeed"/>
+    <functioncall functionName="WorkingIndex"/>
+    <functioncall functionName="WorkingList"/>
+    <functioncall functionName="WorkingListCount"/>
+    <functioncall functionName="WorkingListIndex"/>
+    <functioncall functionName="X"/>
+    <functioncall functionName="Z"/>
+    <functioncall functionName="abs"/>
+    <functioncall functionName="continue"/>
+    <functioncall functionName="floor"/>
+    <functioncall functionName="for"/>
+    <functioncall functionName="i32"/>
+    <functioncall functionName="if"/>
+    <functioncall functionName="return"/>
+    <functioncall functionName="v3"/>
+    <functioncall functionName="while"/>
+    <functioncall functionName="x"/>
+    <functioncall functionName="y"/>
+    <functioncall functionName="z"/>
+  </FileInfo>
+</analyzerinfo>
