@@ -1885,9 +1885,27 @@ static void render_buffer(const RenderCommand& command, RenderState& render_stat
     glBindVertexArray(0);
 }
 
+void stbtt_initfont(RenderState &render_state, char *path, i32 size)
+{
+    TrueTypeFont &font = render_state.true_type_fonts[render_state.font_count++];
+    
+    unsigned char *ttf_buffer = push_temp_array((1<<20), unsigned char);
+    unsigned char *temp_bitmap = push_temp_array(512 * 512, unsigned char);
+    fread(ttf_buffer, 1, 1<<20, fopen(path, "rb"));
+    stbtt_BakeFontBitmap(ttf_buffer, 0, (r32)size, temp_bitmap, 512, 512, 32, 96, font.char_data);
+    
+    glGenTextures(1, &font.texture);
+    glBindTexture(GL_TEXTURE_2D, font.texture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, 512, 512, 0, GL_RED, GL_UNSIGNED_BYTE, temp_bitmap);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    //render_state.fonts[render_state.font_count - 1].texture = font.texture;
+}
+
 static void load_font(RenderState& render_state, char* path, i32 size)
 {
     initialize_free_type_font(path, size, render_state.ft_library, &render_state.fonts[render_state.font_count++]);
+    //stbtt_initfont(render_state, path, size);
 }
 
 
@@ -2299,8 +2317,8 @@ static void render(RenderState& render_state, Renderer& renderer, MemoryArena* p
         glBindTexture(GL_TEXTURE_2D, render_state.texture_color_buffer);
         glActiveTexture(GL_TEXTURE1);
         /*glBindTexture(GL_TEXTURE_2D, RenderState.LightingTextureColorBuffer);
-  RenderState.BoundTexture = RenderState.LightingTextureColorBuffer;
-  */
+        RenderState.BoundTexture = RenderState.LightingTextureColorBuffer;
+        */
         //Enable this if we don't do gamma correction in frame_buffer shader
         //glEnable(GL_FRAMEBUFFER_SRGB);
         
