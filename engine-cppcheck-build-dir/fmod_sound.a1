@@ -1,0 +1,79 @@
+<?xml version="1.0"?>
+<analyzerinfo checksum="1522838954">
+  <FileInfo check="CheckUnusedFunctions">
+    <functiondecl functionName="FMODError" lineNumber="1"/>
+    <functiondecl functionName="LoadSound" lineNumber="6"/>
+    <functiondecl functionName="LoadSounds" lineNumber="16"/>
+    <functiondecl functionName="CleanupSound" lineNumber="32"/>
+    <functiondecl functionName="ChannelControlCallback" lineNumber="37"/>
+    <functiondecl functionName="PlaySound" lineNumber="64"/>
+    <functiondecl functionName="ResetCommands" lineNumber="89"/>
+    <functiondecl functionName="PlaySounds" lineNumber="95"/>
+    <functiondecl functionName="InitAudio_FMOD" lineNumber="132"/>
+    <functioncall functionName="Assert"/>
+    <functioncall functionName="Buffer"/>
+    <functioncall functionName="CallbackType"/>
+    <functioncall functionName="Clear"/>
+    <functioncall functionName="Commands"/>
+    <functioncall functionName="Debug"/>
+    <functioncall functionName="Err"/>
+    <functioncall functionName="FMODError"/>
+    <functioncall functionName="FMODMode"/>
+    <functioncall functionName="FMOD_ChannelGroup_SetMute"/>
+    <functioncall functionName="FMOD_ChannelGroup_SetPaused"/>
+    <functioncall functionName="FMOD_ChannelGroup_SetVolume"/>
+    <functioncall functionName="FMOD_ChannelGroup_Stop"/>
+    <functioncall functionName="FMOD_Channel_GetVolume"/>
+    <functioncall functionName="FMOD_Channel_SetLoopCount"/>
+    <functioncall functionName="FMOD_Channel_SetMode"/>
+    <functioncall functionName="FMOD_Channel_SetPaused"/>
+    <functioncall functionName="FMOD_Channel_SetPitch"/>
+    <functioncall functionName="FMOD_Channel_SetVolume"/>
+    <functioncall functionName="FMOD_DEFAULT"/>
+    <functioncall functionName="FMOD_ErrorString"/>
+    <functioncall functionName="FMOD_INIT_NORMAL"/>
+    <functioncall functionName="FMOD_LOOP_NORMAL"/>
+    <functioncall functionName="FMOD_LOOP_OFF"/>
+    <functioncall functionName="FMOD_MODE"/>
+    <functioncall functionName="FMOD_System_Create"/>
+    <functioncall functionName="FMOD_System_CreateSound"/>
+    <functioncall functionName="FMOD_System_GetMasterChannelGroup"/>
+    <functioncall functionName="FMOD_System_GetVersion"/>
+    <functioncall functionName="FMOD_System_Init"/>
+    <functioncall functionName="FMOD_System_PlaySound"/>
+    <functioncall functionName="FMOD_System_Release"/>
+    <functioncall functionName="FMOD_System_Update"/>
+    <functioncall functionName="FileIndex"/>
+    <functioncall functionName="FilePath"/>
+    <functioncall functionName="FilesLength"/>
+    <functioncall functionName="LoadSound"/>
+    <functioncall functionName="LoadSounds"/>
+    <functioncall functionName="LoopCount"/>
+    <functioncall functionName="MasterGroup"/>
+    <functioncall functionName="Muted"/>
+    <functioncall functionName="NewChannel"/>
+    <functioncall functionName="Paused"/>
+    <functioncall functionName="Pitch"/>
+    <functioncall functionName="PlaySound"/>
+    <functioncall functionName="ResetCommands"/>
+    <functioncall functionName="Result"/>
+    <functioncall functionName="SFXVolume"/>
+    <functioncall functionName="Sound"/>
+    <functioncall functionName="SoundArena"/>
+    <functioncall functionName="SoundCount"/>
+    <functioncall functionName="SoundDevice"/>
+    <functioncall functionName="SoundsToLoad"/>
+    <functioncall functionName="Stopped"/>
+    <functioncall functionName="System"/>
+    <functioncall functionName="Version"/>
+    <functioncall functionName="Vol"/>
+    <functioncall functionName="break"/>
+    <functioncall functionName="default"/>
+    <functioncall functionName="false"/>
+    <functioncall functionName="for"/>
+    <functioncall functionName="if"/>
+    <functioncall functionName="return"/>
+    <functioncall functionName="switch"/>
+    <functioncall functionName="true"/>
+  </FileInfo>
+</analyzerinfo>

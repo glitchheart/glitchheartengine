@@ -1,0 +1,78 @@
+<?xml version="1.0"?>
+<analyzerinfo checksum="2360636383">
+  <FileInfo check="CheckUnusedFunctions">
+    <functiondecl functionName="CreateAnimationController" lineNumber="11"/>
+    <functiondecl functionName="ClearAnimationControllers" lineNumber="24"/>
+    <functiondecl functionName="AnimationControllerSetPlaying" lineNumber="29"/>
+    <functiondecl functionName="AddAnimationControllerParameter" lineNumber="34"/>
+    <functiondecl functionName="SetAnimationControllerParameter" lineNumber="42"/>
+    <functiondecl functionName="AddAnimationNode" lineNumber="56"/>
+    <functiondecl functionName="AddCallbackToAnimationNode" lineNumber="86"/>
+    <functiondecl functionName="AddAnimationNodeLink" lineNumber="96"/>
+    <functiondecl functionName="AddAnimationLinkCondition" lineNumber="133"/>
+    <functiondecl functionName="ResetCallbacks" lineNumber="154"/>
+    <functiondecl functionName="TickAnimationControllers" lineNumber="162"/>
+    <functiondecl functionName="SetAnimationControllerCurrentNode" lineNumber="248"/>
+    <functiondecl functionName="IsControllerPlaying" lineNumber="261"/>
+    <functioncall functionName="AfterFinishedAnimation"/>
+    <functioncall functionName="AnimationControllerCount"/>
+    <functioncall functionName="AnimationHandle"/>
+    <functioncall functionName="AnimationIndex"/>
+    <functioncall functionName="AnimationName"/>
+    <functioncall functionName="Assert"/>
+    <functioncall functionName="Callback"/>
+    <functioncall functionName="CallbackFrame"/>
+    <functioncall functionName="CallbackIndex"/>
+    <functioncall functionName="CallbackInfoCount"/>
+    <functioncall functionName="ChangedNode"/>
+    <functioncall functionName="ConditionCount"/>
+    <functioncall functionName="ConditionIndex"/>
+    <functioncall functionName="ConditionsMet"/>
+    <functioncall functionName="Controller"/>
+    <functioncall functionName="CurrentFrameIndex"/>
+    <functioncall functionName="CurrentNode"/>
+    <functioncall functionName="Data"/>
+    <functioncall functionName="Destination"/>
+    <functioncall functionName="DestinationNode"/>
+    <functioncall functionName="DestinationNodeHandle"/>
+    <functioncall functionName="Duration"/>
+    <functioncall functionName="ExpectedValue"/>
+    <functioncall functionName="Index"/>
+    <functioncall functionName="InitialValue"/>
+    <functioncall functionName="InputController"/>
+    <functioncall functionName="Link"/>
+    <functioncall functionName="LinkCount"/>
+    <functioncall functionName="LinkIndex"/>
+    <functioncall functionName="Loop"/>
+    <functioncall functionName="Name"/>
+    <functioncall functionName="Node"/>
+    <functioncall functionName="NodeCount"/>
+    <functioncall functionName="NodeHandle"/>
+    <functioncall functionName="NodeIndex"/>
+    <functioncall functionName="NodeName"/>
+    <functioncall functionName="Origin"/>
+    <functioncall functionName="OriginNodeHandle"/>
+    <functioncall functionName="Parameter"/>
+    <functioncall functionName="ParameterCount"/>
+    <functioncall functionName="ParameterHandle"/>
+    <functioncall functionName="ParameterIndex"/>
+    <functioncall functionName="ParameterName"/>
+    <functioncall functionName="Playing"/>
+    <functioncall functionName="ReachedEnd"/>
+    <functioncall functionName="Renderer"/>
+    <functioncall functionName="ResetCallbacks"/>
+    <functioncall functionName="SoundCommands"/>
+    <functioncall functionName="SpritesheetAnimationCount"/>
+    <functioncall functionName="State"/>
+    <functioncall functionName="TimerController"/>
+    <functioncall functionName="Value"/>
+    <functioncall functionName="break"/>
+    <functioncall functionName="false"/>
+    <functioncall functionName="for"/>
+    <functioncall functionName="if"/>
+    <functioncall functionName="printf"/>
+    <functioncall functionName="strcmp"/>
+    <functioncall functionName="strcpy"/>
+    <functioncall functionName="true"/>
+  </FileInfo>
+</analyzerinfo>

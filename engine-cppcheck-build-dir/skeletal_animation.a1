@@ -1,0 +1,89 @@
+<?xml version="1.0"?>
+<analyzerinfo checksum="1850254152">
+  <FileInfo check="CheckUnusedFunctions">
+    <functiondecl functionName="FindAnimationPosition" lineNumber="1"/>
+    <functiondecl functionName="FindAnimationScaling" lineNumber="14"/>
+    <functiondecl functionName="FindAnimationRotation" lineNumber="27"/>
+    <functiondecl functionName="CalculateInterpolatedPosition" lineNumber="40"/>
+    <functiondecl functionName="CalculateInterpolatedScaling" lineNumber="69"/>
+    <functiondecl functionName="CalculateInterpolatedRotation" lineNumber="98"/>
+    <functiondecl functionName="FindBoneChannel" lineNumber="127"/>
+    <functiondecl functionName="CalculateThroughBones" lineNumber="140"/>
+    <functiondecl functionName="CalculateBoneTransformsForAnimation" lineNumber="176"/>
+    <functiondecl functionName="PlayAnimation" lineNumber="193"/>
+    <functiondecl functionName="PlayAnimation" lineNumber="200"/>
+    <functiondecl functionName="TickAnimation" lineNumber="212"/>
+    <functioncall functionName="Abs"/>
+    <functioncall functionName="Animation"/>
+    <functioncall functionName="AnimationCount"/>
+    <functioncall functionName="AnimationIndex"/>
+    <functioncall functionName="AnimationName"/>
+    <functioncall functionName="AnimationTime"/>
+    <functioncall functionName="Assert"/>
+    <functioncall functionName="BoneChannel"/>
+    <functioncall functionName="BoneCount"/>
+    <functioncall functionName="BoneIndex"/>
+    <functioncall functionName="BoneOffset"/>
+    <functioncall functionName="Bones"/>
+    <functioncall functionName="CalculateBoneTransformsForAnimation"/>
+    <functioncall functionName="CalculateInterpolatedPosition"/>
+    <functioncall functionName="CalculateInterpolatedRotation"/>
+    <functioncall functionName="CalculateInterpolatedScaling"/>
+    <functioncall functionName="CalculateThroughBones"/>
+    <functioncall functionName="ChannelIndex"/>
+    <functioncall functionName="ChildCount"/>
+    <functioncall functionName="ChildIndex"/>
+    <functioncall functionName="CurrentPoses"/>
+    <functioncall functionName="CurrentTime"/>
+    <functioncall functionName="DeltaTime"/>
+    <functioncall functionName="Duration"/>
+    <functioncall functionName="End"/>
+    <functioncall functionName="Factor"/>
+    <functioncall functionName="FindAnimationPosition"/>
+    <functioncall functionName="FindAnimationRotation"/>
+    <functioncall functionName="FindBoneChannel"/>
+    <functioncall functionName="GlobalInverseTransform"/>
+    <functioncall functionName="GlobalTransform"/>
+    <functioncall functionName="Identity"/>
+    <functioncall functionName="Index"/>
+    <functioncall functionName="Loop"/>
+    <functioncall functionName="Model"/>
+    <functioncall functionName="Name"/>
+    <functioncall functionName="NextIndex"/>
+    <functioncall functionName="NextPositionIndex"/>
+    <functioncall functionName="Nlerp"/>
+    <functioncall functionName="NumBoneChannels"/>
+    <functioncall functionName="NumBones"/>
+    <functioncall functionName="NumKeys"/>
+    <functioncall functionName="PlayAnimation"/>
+    <functioncall functionName="Playing"/>
+    <functioncall functionName="PositionIndex"/>
+    <functioncall functionName="PositionKeys"/>
+    <functioncall functionName="PushTempSize"/>
+    <functioncall functionName="RootIndex"/>
+    <functioncall functionName="Rotation"/>
+    <functioncall functionName="RotationKeys"/>
+    <functioncall functionName="RunningAnimationIndex"/>
+    <functioncall functionName="Scale"/>
+    <functioncall functionName="Scaling"/>
+    <functioncall functionName="ScalingKeys"/>
+    <functioncall functionName="ScalingMatrix"/>
+    <functioncall functionName="Start"/>
+    <functioncall functionName="ToMatrix"/>
+    <functioncall functionName="Transformation"/>
+    <functioncall functionName="Transforms"/>
+    <functioncall functionName="Translate"/>
+    <functioncall functionName="Translation"/>
+    <functioncall functionName="TranslationMatrix"/>
+    <functioncall functionName="break"/>
+    <functioncall functionName="false"/>
+    <functioncall functionName="for"/>
+    <functioncall functionName="if"/>
+    <functioncall functionName="m4"/>
+    <functioncall functionName="r32"/>
+    <functioncall functionName="return"/>
+    <functioncall functionName="sizeof"/>
+    <functioncall functionName="strcmp"/>
+    <functioncall functionName="true"/>
+  </FileInfo>
+</analyzerinfo>

@@ -1,0 +1,7 @@
+[18.03.2018]
+1521385844718
+cppcheck-error:5
+cppcheck-warning:25
+cppcheck-style:101
+cppcheck-performance:73
+cppcheck-portability:0

@@ -1,0 +1,78 @@
+<?xml version="1.0"?>
+<analyzerinfo checksum="3500182779">
+  <FileInfo check="CheckUnusedFunctions">
+    <functiondecl functionName="PLATFORM_FILE_EXISTS" lineNumber="10"/>
+    <functiondecl functionName="CopyFile" lineNumber="17"/>
+    <functiondecl functionName="GetLastWriteTime" lineNumber="84"/>
+    <functiondecl functionName="PLATFORM_LOAD_LIBRARY" lineNumber="96"/>
+    <functiondecl functionName="PLATFORM_FREE_LIBRARY" lineNumber="101"/>
+    <functiondecl functionName="PLATFORM_LOAD_SYMBOL" lineNumber="106"/>
+    <functiondecl functionName="PLATFORM_ALLOCATE_MEMORY" lineNumber="112"/>
+    <functiondecl functionName="PLATFORM_DEALLOCATE_MEMORY" lineNumber="172"/>
+    <functiondecl functionName="ClearTempMemory" lineNumber="187"/>
+    <functiondecl functionName="InitPlatform" lineNumber="198"/>
+    <functioncall functionName="AlignPow2"/>
+    <functioncall functionName="Assert"/>
+    <functioncall functionName="BaseOffset"/>
+    <functioncall functionName="Binary"/>
+    <functioncall functionName="Block"/>
+    <functioncall functionName="Buff"/>
+    <functioncall functionName="Buffer"/>
+    <functioncall functionName="Concat"/>
+    <functioncall functionName="Dst"/>
+    <functioncall functionName="FilePath"/>
+    <functioncall functionName="Flags"/>
+    <functioncall functionName="In"/>
+    <functioncall functionName="Library"/>
+    <functioncall functionName="M"/>
+    <functioncall functionName="N"/>
+    <functioncall functionName="NewBlock"/>
+    <functioncall functionName="OSXAllocateMemory"/>
+    <functioncall functionName="OSXDeallocateMemory"/>
+    <functioncall functionName="OSXFileExists"/>
+    <functioncall functionName="OSXFreeLibrary"/>
+    <functioncall functionName="OSXLoadLibrary"/>
+    <functioncall functionName="OSXLoadSymbol"/>
+    <functioncall functionName="Out"/>
+    <functioncall functionName="PLATFORM_ALLOCATE_MEMORY"/>
+    <functioncall functionName="PLATFORM_DEALLOCATE_MEMORY"/>
+    <functioncall functionName="PLATFORM_FREE_LIBRARY"/>
+    <functioncall functionName="PLATFORM_LOAD_LIBRARY"/>
+    <functioncall functionName="PLATFORM_LOAD_SYMBOL"/>
+    <functioncall functionName="PageSize"/>
+    <functioncall functionName="Path"/>
+    <functioncall functionName="PlatBlock"/>
+    <functioncall functionName="RTLD_LAZY"/>
+    <functioncall functionName="Result"/>
+    <functioncall functionName="Size"/>
+    <functioncall functionName="SizeRoundedUp"/>
+    <functioncall functionName="Src"/>
+    <functioncall functionName="Symbol"/>
+    <functioncall functionName="Temp"/>
+    <functioncall functionName="TempCount"/>
+    <functioncall functionName="TotalSize"/>
+    <functioncall functionName="_SC_PAGE_SIZE"/>
+    <functioncall functionName="dlclose"/>
+    <functioncall functionName="dlopen"/>
+    <functioncall functionName="dlsym"/>
+    <functioncall functionName="false"/>
+    <functioncall functionName="fclose"/>
+    <functioncall functionName="fopen"/>
+    <functioncall functionName="for"/>
+    <functioncall functionName="fread"/>
+    <functioncall functionName="free"/>
+    <functioncall functionName="fwrite"/>
+    <functioncall functionName="if"/>
+    <functioncall functionName="malloc"/>
+    <functioncall functionName="memory_block"/>
+    <functioncall functionName="memset"/>
+    <functioncall functionName="printf"/>
+    <functioncall functionName="return"/>
+    <functioncall functionName="sizeof"/>
+    <functioncall functionName="st_mtime"/>
+    <functioncall functionName="stat"/>
+    <functioncall functionName="sysconf"/>
+    <functioncall functionName="system"/>
+    <functioncall functionName="while"/>
+  </FileInfo>
+</analyzerinfo>

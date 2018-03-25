@@ -1,0 +1,45 @@
+<?xml version="1.0"?>
+<analyzerinfo checksum="2914898105">
+  <FileInfo check="Bounds checking">
+    <ArraySize array="GameCppIncludes" size="5"/>
+    <ArraySize array="GameHeaderIncludes" size="5"/>
+    <ArraySize array="GameStateFields" size="2"/>
+  </FileInfo>
+  <FileInfo check="Bounds checking">
+    <ArraySize array="GameCppIncludes" size="5"/>
+    <ArraySize array="GameHeaderIncludes" size="5"/>
+    <ArraySize array="GameStateFields" size="2"/>
+  </FileInfo>
+  <FileInfo check="Bounds checking">
+    <ArraySize array="GameCppIncludes" size="5"/>
+    <ArraySize array="GameHeaderIncludes" size="5"/>
+    <ArraySize array="GameStateFields" size="2"/>
+  </FileInfo>
+  <FileInfo check="Bounds checking">
+    <ArraySize array="GameCppIncludes" size="5"/>
+    <ArraySize array="GameHeaderIncludes" size="5"/>
+    <ArraySize array="GameStateFields" size="2"/>
+  </FileInfo>
+  <FileInfo check="CheckUnusedFunctions">
+    <functiondecl functionName="RunGlitch" lineNumber="11"/>
+    <functiondecl functionName="RunGlitch" lineNumber="11"/>
+    <functiondecl functionName="RunGlitch" lineNumber="11"/>
+    <functiondecl functionName="RunGlitch" lineNumber="11"/>
+    <functioncall functionName="HMODULE"/>
+    <functioncall functionName="WithEngine"/>
+    <functioncall functionName="double"/>
+    <functioncall functionName="float"/>
+    <functioncall functionName="i32"/>
+    <functioncall functionName="if"/>
+    <functioncall functionName="int16_t"/>
+    <functioncall functionName="int32_t"/>
+    <functioncall functionName="int64_t"/>
+    <functioncall functionName="int8_t"/>
+    <functioncall functionName="printf"/>
+    <functioncall functionName="system"/>
+    <functioncall functionName="uint16_t"/>
+    <functioncall functionName="uint32_t"/>
+    <functioncall functionName="uint64_t"/>
+    <functioncall functionName="uint8_t"/>
+  </FileInfo>
+</analyzerinfo>
