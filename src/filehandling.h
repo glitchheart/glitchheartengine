@@ -69,8 +69,9 @@ static void check_dirty(const char* file_path, time_t last_time, b32* dirty_id, 
     *time = time_new;
 }
 
-static void startup_file_time_checks(AssetManager* asset_manager, char* lib_path)
+static void startup_file_time_checks(MemoryArena* arena, AssetManager* asset_manager, char* lib_path)
 {
+    auto temp_mem = begin_temporary_memory(arena);
     if(!asset_manager->is_initialized)
     {
         asset_manager->tileset_texture_path = "../assets/textures/tiles.png";
@@ -81,18 +82,19 @@ static void startup_file_time_checks(AssetManager* asset_manager, char* lib_path
     for (int i = 0; i < SHADER_COUNT; i++) 
     {
         struct stat sb1;
-        auto concated_vertex_shader_string = concat(shader_paths[i], ".vert");
+        auto concated_vertex_shader_string = concat(shader_paths[i], ".vert", arena);
         stat(concated_vertex_shader_string, &sb1);
         asset_manager->vertex_shader_times[i] =  sb1.st_mtime;
         
         struct stat sb2;
-        auto concated_fragment_shader_string = concat(shader_paths[i], ".frag");
+        auto concated_fragment_shader_string = concat(shader_paths[i], ".frag", arena);
         stat(concated_fragment_shader_string, &sb2);
         asset_manager->fragment_shader_times[i] =  sb2.st_mtime;
     }
+    end_temporary_memory(temp_mem);
 }
 
-static void listen_to_file_changes(AssetManager* asset_manager)
+static void listen_to_file_changes(MemoryArena* arena, AssetManager* asset_manager)
 {
     asset_manager->listen_for_changes = true;
     
@@ -100,8 +102,8 @@ static void listen_to_file_changes(AssetManager* asset_manager)
     {
         for (int i = 0; i < SHADER_COUNT; i++)
         {
-            char* vertex_path = concat(shader_paths[i], ".vert");
-            char* fragment_path = concat(shader_paths[i], ".frag");
+            char* vertex_path = concat(shader_paths[i], ".vert", arena);
+            char* fragment_path = concat(shader_paths[i], ".frag", arena);
             
             check_dirty(vertex_path, asset_manager->vertex_shader_times[i], &asset_manager->dirty_vertex_shader_indices[i], &asset_manager->vertex_shader_times[i]);
             check_dirty(fragment_path, asset_manager->fragment_shader_times[i], &asset_manager->dirty_fragment_shader_indices[i], &asset_manager->fragment_shader_times[i]);

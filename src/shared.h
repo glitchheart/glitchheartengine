@@ -2,12 +2,12 @@
 #define SHARED_H
 
 struct MemoryArena;
-inline char* concat(const char *s1, const char *s2, MemoryArena* arena = 0);
 
 #include "types.h"
 
 #include "platform.h"
 #include "engine_memory.h"
+
 #include "log_state.h"
 #include "log.h"
 
@@ -37,14 +37,10 @@ inline char* str_sep(char** s, const char* delim)
 
 inline char* concat(const char *s1, const char *s2, MemoryArena* arena)
 {
-    char* result;
+    char* result = nullptr;
     if(arena)
     {
         result = push_string(arena, (u32)(strlen(s1) + strlen(s2) + 1));
-    }
-    else
-    {
-        result = push_temp_string((u32)(strlen(s1) + strlen(s2) + 1));
     }
     
     strcpy(result, s1);
@@ -52,35 +48,7 @@ inline char* concat(const char *s1, const char *s2, MemoryArena* arena)
     return result;
 }
 
-inline char* to_string(i32 i)
-{
-    char* v = push_temp_string(64);
-    sprintf(v, "%d", i);
-    return v;
-}
-
-inline char* to_string(r64 r)
-{
-    char* result = push_temp_string(64);
-    sprintf(result, "%lf", r);
-    return result;
-}
-
-inline char* to_string(r32 r)
-{
-    char* result = push_temp_string(64);
-    sprintf(result, "%f", r);
-    return result;
-}
-
 struct TextureData;
-
-char* to_string(texture_data* data)
-{
-    char* result = push_temp_string(64);
-    sprintf(result, "{Handle: %d, \n Name: %s, \n Width: %d, \n Height: %d,}", data->handle, data->name, data->width, data->height);
-    return result;
-}
 
 inline b32 starts_with(const char *a, const char *b)
 {
@@ -88,15 +56,16 @@ inline b32 starts_with(const char *a, const char *b)
     return 0;
 }
 
-inline char* get_file_name_from_path(char* path, char* extension = 0)
+inline char* get_file_name_from_path(char* path, MemoryArena* arena, char* extension = 0)
 {
+    auto temp_mem = begin_temporary_memory(arena);
     const char* compare_string = ".";
     if(extension)
     {
-        compare_string = concat(".", extension);
+        compare_string = concat(".", extension, arena);
     }
     
-    char* p = push_temp_string(path);
+    char* p = push_string(arena, path);
     auto tok = str_sep(&p, ".");
     tok = str_sep(&tok, "/");
     while(tok)
@@ -112,6 +81,7 @@ inline char* get_file_name_from_path(char* path, char* extension = 0)
             tok = str_sep(&path, "/");
         }
     }
+    end_temporary_memory(temp_mem);
     return 0;
 }
 

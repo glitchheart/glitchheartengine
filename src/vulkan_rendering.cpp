@@ -53,12 +53,13 @@ static void vk_cleanup(VkRenderState& render_state, Renderer& renderer)
     glfwTerminate();
 }
 
-static b32 check_validation_layer_support()
+static b32 check_validation_layer_support(MemoryArena* temp_arena)
 {
+    auto temp_mem = begin_temporary_memory(temp_arena);
     u32 layer_count;
     vkEnumerateInstanceLayerProperties(&layer_count, nullptr);
     
-    VkLayerProperties* available_layers = push_temp_array(layer_count, VkLayerProperties);
+    VkLayerProperties* available_layers = push_array(temp_arena, layer_count, VkLayerProperties);
     vkEnumerateInstanceLayerProperties(&layer_count, available_layers);
     
     for(i32 index = 0; index < VALIDATION_LAYER_SIZE; index++)
@@ -80,6 +81,7 @@ static b32 check_validation_layer_support()
         }
     }
     
+    end_temporary_memory(temp_mem);
     return true;
 }
 
@@ -88,8 +90,9 @@ b32 is_queue_family_complete(QueueFamilyIndices& indices)
     return indices.graphics_family >= 0 && indices.present_family >= 0;
 }
 
-QueueFamilyIndices find_queue_families(VkSurfaceKHR surface, VkPhysicalDevice device)
+QueueFamilyIndices find_queue_families(MemoryArena* temp_arena, VkSurfaceKHR surface, VkPhysicalDevice device)
 {
+    auto temp_mem = begin_temporary_memory(temp_arena);
     QueueFamilyIndices indices;
     indices.graphics_family = -1;
     indices.present_family = -1;
@@ -97,7 +100,7 @@ QueueFamilyIndices find_queue_families(VkSurfaceKHR surface, VkPhysicalDevice de
     u32 queue_family_count = 0;
     vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_family_count, nullptr);
     
-    VkQueueFamilyProperties* queue_families = push_temp_array(queue_family_count, VkQueueFamilyProperties);
+    VkQueueFamilyProperties* queue_families = push_array(temp_arena, queue_family_count, VkQueueFamilyProperties);
     vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_family_count, queue_families);
     
     for(u32 index = 0; index < queue_family_count; index++)
@@ -122,6 +125,7 @@ QueueFamilyIndices find_queue_families(VkSurfaceKHR surface, VkPhysicalDevice de
         }
     }
     
+    end_temporary_memory(temp_mem);
     return indices;
 }
 
@@ -205,12 +209,13 @@ VkExtent2D choose_swap_extent(VkRenderState& render_state, VkSurfaceCapabilities
     return ActualExtent;
 }
 
-static b32 check_device_extension_support(VkPhysicalDevice device)
+static b32 check_device_extension_support(MemoryArena* arena, VkPhysicalDevice device)
 {
+    auto temp_mem = begin_temporary_memory(arena);
     u32 extension_count = 0;
     vkEnumerateDeviceExtensionProperties(device, nullptr, &extension_count, nullptr);
     
-    VkExtensionProperties* extension_properties = push_temp_array(extension_count, VkExtensionProperties);
+    VkExtensionProperties* extension_properties = push_array(arena, extension_count, VkExtensionProperties);
     vkEnumerateDeviceExtensionProperties(device, nullptr, &extension_count, extension_properties);
     
     i32 extension_size = 0;
@@ -223,12 +228,13 @@ static b32 check_device_extension_support(VkPhysicalDevice device)
         }
     }
     
+    end_temporary_memory(temp_mem);
     return extension_size == DEVICE_EXTENSIONS_SIZE;
 }
 
 static b32 is_device_suitable(VkRenderState& render_state)
 {
-    auto extensions_supported = check_device_extension_support(render_state.physical_device);
+    auto extensions_supported = check_device_extension_support(&render_state.arena, render_state.physical_device);
     
     bool swapchain_adequate = false;
     if(extensions_supported)
@@ -353,7 +359,8 @@ static VkBool32 create_shader_module(VkRenderState& render_state, const char* Sh
         size = (u32)ftell(shader_file);
         fseek(shader_file, 0, SEEK_SET);
         
-        u32* buffer = push_temp_size(size, u32);
+        auto temp_mem = begin_temporary_memory(&render_state.arena);
+        u32* buffer = push_size(&render_state.arena, size, u32);
         fread(buffer, 1, (size_t)size, shader_file);
         
         VkShaderModuleCreateInfo create_info = {};
@@ -363,12 +370,14 @@ static VkBool32 create_shader_module(VkRenderState& render_state, const char* Sh
         
         fclose(shader_file);
         
+        
         if (vkCreateShaderModule(render_state.device, &create_info, nullptr, &shader_module) != VK_SUCCESS)
         {
             Debug("Failed to create shader module\n");
+            end_temporary_memory(temp_mem);
             return VK_FALSE;
         }
-        
+        end_temporary_memory(temp_mem);
     }
     else
     {
@@ -727,7 +736,7 @@ static void initialize_vulkan(VkRenderState& render_state, Renderer& renderer, C
     render_state.EnableValidationLayers = false;
 #endif
     
-    if(render_state.enable_validation_layers && !check_validation_layer_support())
+    if(render_state.enable_validation_layers && !check_validation_layer_support(&render_state.arena))
     {
         Debug("No validation layers are supported\n");
         
@@ -741,7 +750,9 @@ static void initialize_vulkan(VkRenderState& render_state, Renderer& renderer, C
     const char** glfw_extensions;
     glfw_extensions = glfwGetRequiredInstanceExtensions(&glfw_extension_count);
     
-    auto extensions = push_temp_array(glfw_extension_count + 1, const char*);
+    auto temp_mem = begin_temporary_memory(&render_state.arena);
+    
+    auto extensions = push_array(&render_state.arena, glfw_extension_count + 1, const char*);
     for(u32 index = 0; index < glfw_extension_count; index++)
     {
         extensions[index] = glfw_extensions[index];
@@ -764,6 +775,8 @@ static void initialize_vulkan(VkRenderState& render_state, Renderer& renderer, C
         vk_cleanup(render_state, renderer);
         exit(EXIT_FAILURE);
     }
+    
+    end_temporary_memory(temp_mem);
     
 #if GLITCH_DEBUG
     VkDebugReportCallbackCreateInfoEXT debug_create_info = {};
@@ -796,7 +809,7 @@ static void initialize_vulkan(VkRenderState& render_state, Renderer& renderer, C
     
     render_state.physical_device = VK_NULL_HANDLE;
     
-    VkPhysicalDevice* devices = push_temp_array(device_count, VkPhysicalDevice);
+    VkPhysicalDevice* devices = push_array(&render_state.arena, device_count, VkPhysicalDevice);
     vkEnumeratePhysicalDevices(render_state.instance, &device_count, devices);
     
     // @Incomplete:(Niels): Find "most" suitable device (integrated/dedicated)
@@ -805,7 +818,7 @@ static void initialize_vulkan(VkRenderState& render_state, Renderer& renderer, C
     vkGetPhysicalDeviceProperties(render_state.physical_device, &render_state.device_properties);
     vkGetPhysicalDeviceFeatures(render_state.physical_device, &render_state.device_features);
     
-    render_state.queue_family_indices = find_queue_families(render_state.surface, render_state.physical_device);
+    render_state.queue_family_indices = find_queue_families(&render_state.arena, render_state.surface, render_state.physical_device);
     
     if(!is_device_suitable(render_state))
     {
@@ -814,7 +827,8 @@ static void initialize_vulkan(VkRenderState& render_state, Renderer& renderer, C
         exit(EXIT_FAILURE);
     }
     
-    VkDeviceQueueCreateInfo* queue_create_infos = push_temp_array(2, VkDeviceQueueCreateInfo);
+    auto queue_temp_mem = begin_temporary_memory(&render_state.arena);
+    VkDeviceQueueCreateInfo* queue_create_infos = push_array(&render_state.arena, 2, VkDeviceQueueCreateInfo);
     queue_create_infos[0] = create_device_queue((u32)render_state.queue_family_indices.graphics_family);
     queue_create_infos[1] = create_device_queue((u32)render_state.queue_family_indices.present_family);
     
@@ -862,6 +876,7 @@ static void initialize_vulkan(VkRenderState& render_state, Renderer& renderer, C
     create_command_pool(render_state);
     create_command_buffers(render_state);
     create_semaphores(render_state);
+    end_temporary_memory(queue_temp_mem);
 }
 
 static void toggle_cursor(VkRenderState& render_state)

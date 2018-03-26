@@ -1,21 +1,15 @@
-static void load_sound(SoundCommands* commands, char* file_path, i32* handle)
+static void load_sound(SoundCommands* commands, char* file_path, i32* handle, MemoryArena* arena)
 {
-    if(commands->sounds_to_load.files_length == 0)
-    {
-        commands->sounds_to_load.file_names = push_temp_array(512, char*);
-        commands->sounds_to_load.file_paths = push_temp_array(512, char*);
-    }
-    
     char path[255];
     strcpy(path, file_path);
-    auto file_name = get_file_name_from_path(path, "wav");
+    auto file_name = get_file_name_from_path(path, arena, "wav");
     
     if(handle)
         *handle = commands->sounds++;
     
     commands->load_sounds = true;
-    commands->sounds_to_load.file_paths[commands->sounds_to_load.files_length] = push_temp_string(file_path);
-    commands->sounds_to_load.file_names[commands->sounds_to_load.files_length] = push_temp_string(file_name);
+    strcpy(commands->sounds_to_load.file_paths[commands->sounds_to_load.files_length], file_path);
+    strcpy(commands->sounds_to_load.file_names[commands->sounds_to_load.files_length], file_name);
     
     commands->sounds_to_load.files_length++;
 }

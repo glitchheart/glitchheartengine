@@ -17,7 +17,7 @@
 
 // Global
 PlatformApi platform;
-struct LogState log_state;
+struct LogState* log_state;
 static MemoryState memory_state;
 // Global
 
@@ -269,6 +269,10 @@ int main(int argc, char** args)
     
     game_memory.should_reload = true;
     
+    MemoryArena game_temp_arena = {};
+    
+    game_memory.temp_arena = &game_temp_arena;
+    
     game_memory.exit_game = false;
     
     init_platform(game_memory.platform_api);
@@ -276,6 +280,7 @@ int main(int argc, char** args)
     platform = game_memory.platform_api;
     
     PlatformState* platform_state = bootstrap_push_struct(PlatformState, perm_arena);
+    game_memory.log_state = push_struct(&platform_state->perm_arena, LogState);
     
     log_state = game_memory.log_state;
     init_log(L_FLAG_FILE, concat("../log_", "", &platform_state->perm_arena));
@@ -339,7 +344,7 @@ int main(int argc, char** args)
     
     //setup asset reloading
     AssetManager asset_manager = {};
-    startup_file_time_checks(&asset_manager, game_library_path);
+    startup_file_time_checks(&platform_state->perm_arena, &asset_manager, game_library_path);
     
     u32 frame_counter_for_asset_check = 0;
     
@@ -381,6 +386,7 @@ int main(int argc, char** args)
         
         reload_libraries(&game, game_library_path, temp_game_library_path);
         
+        auto game_temp_mem = begin_temporary_memory(game_memory.temp_arena);
         game.update(delta_time, &game_memory, renderer, &input_controller, &sound_commands, timer_controller);
         
         tick_animation_controllers(renderer, &sound_commands, &input_controller, timer_controller, delta_time);
@@ -404,12 +410,13 @@ int main(int argc, char** args)
         frame_counter_for_asset_check++;
         if(frame_counter_for_asset_check == 10)
         {
-            listen_to_file_changes(&asset_manager);
+            listen_to_file_changes(&platform_state->perm_arena, &asset_manager);
             frame_counter_for_asset_check = 0;
         }
         
         update_log();
         clear_temp_memory();
+        end_temporary_memory(game_temp_mem);
     }
     
     close_log();

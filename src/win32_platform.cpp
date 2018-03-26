@@ -130,12 +130,6 @@ static void clear_temp_memory()
 
 inline PLATFORM_GET_ALL_FILES_WITH_EXTENSION(win32_find_files_with_extensions)
 {
-    if(directory_data->files_length == 0)
-    {
-        directory_data->file_names = push_temp_array(512, char*);
-        directory_data->file_paths = push_temp_array(512, char*);
-    }
-    
     WIN32_FIND_DATA find_file;
     HANDLE h_find = NULL;
     
@@ -155,7 +149,7 @@ inline PLATFORM_GET_ALL_FILES_WITH_EXTENSION(win32_find_files_with_extensions)
                 {
                     char sub_path[2048];
                     sprintf(sub_path, "%s%s/", directory_path, find_file.cFileName);
-                    win32_find_files_with_extensions(sub_path, extension, directory_data, with_sub_directories);
+                    win32_find_files_with_extensions(arena, sub_path, extension, directory_data, with_sub_directories);
                 }
                 
             }
@@ -175,6 +169,7 @@ inline PLATFORM_GET_ALL_FILES_WITH_EXTENSION(win32_find_files_with_extensions)
     h_find = FindFirstFile(path, &find_file);
     if(h_find != INVALID_HANDLE_VALUE)
     {
+        auto temp_mem = begin_temporary_memory(arena);
         do
         {
             if(!(find_file.dwFileAttributes &FILE_ATTRIBUTE_DIRECTORY))
@@ -182,16 +177,17 @@ inline PLATFORM_GET_ALL_FILES_WITH_EXTENSION(win32_find_files_with_extensions)
                 if(strcmp(find_file.cFileName, ".") != 0
                    && strcmp(find_file.cFileName, "..") != 0)
                 {
-                    char* concat_str = concat(directory_path, find_file.cFileName);
+                    char* concat_str = concat(directory_path, find_file.cFileName, arena);
                     char* file_name = strtok(find_file.cFileName, ".");
                     
-                    directory_data->file_paths[directory_data->files_length] = push_temp_string(concat_str);
-                    directory_data->file_names[directory_data->files_length] = push_temp_string(file_name);
+                    strcpy(directory_data->file_paths[directory_data->files_length], concat_str);
+                    strcpy(directory_data->file_names[directory_data->files_length], file_name);
                     directory_data->files_length++;
                 }
             }
         } while (FindNextFile(h_find, &find_file));
         FindClose(h_find);
+        end_temporary_memory(temp_mem);
     }
     else
     {
@@ -209,6 +205,7 @@ inline PLATFORM_FILE_EXISTS(win32_file_exists)
 
 inline PLATFORM_OPEN_FILE_WITH_DIALOG(win32_open_file_with_dialog)
 {
+    auto temp_mem = begin_temporary_memory(arena);
     OPENFILENAME ofn;
     char sz_file[260];
     PlatformFile result = {};
@@ -223,7 +220,7 @@ inline PLATFORM_OPEN_FILE_WITH_DIALOG(win32_open_file_with_dialog)
     ofn.nMaxFile = sizeof(sz_file);
     if(extension)
     {
-        ofn.lpstrFilter = concat(extension, "\0*.*\0");
+        ofn.lpstrFilter = concat(extension, "\0*.*\0", arena);
     }
     else
     {
@@ -244,18 +241,20 @@ inline PLATFORM_OPEN_FILE_WITH_DIALOG(win32_open_file_with_dialog)
         {
             result.file = _fdopen(_open_osfhandle((imm)hf, 0), "r");
             strcpy(result.path, ofn.lpstrFile);
-            char* p = push_temp_string(result.path);
+            char* p = push_string(arena, result.path);
             auto tok = str_sep(&p, ".");
             tok = str_sep(&p, ".");
             strcpy(result.extension, tok);
         }
     }
+    end_temporary_memory(temp_mem);
     return result;
 }
 
 
 inline PLATFORM_SAVE_FILE_WITH_DIALOG(win32_save_file_with_dialog)
 {
+    auto temp_mem = begin_temporary_memory(arena);
     OPENFILENAME ofn;
     char sz_file[260];
     PlatformFile result = {};
@@ -270,7 +269,7 @@ inline PLATFORM_SAVE_FILE_WITH_DIALOG(win32_save_file_with_dialog)
     ofn.nMaxFile = sizeof(sz_file);
     if(extension)
     {
-        ofn.lpstrFilter = concat(extension, "\0*.*\0");
+        ofn.lpstrFilter = concat(extension, "\0*.*\0", arena);
     }
     else
     {
@@ -287,7 +286,7 @@ inline PLATFORM_SAVE_FILE_WITH_DIALOG(win32_save_file_with_dialog)
     {
         if(extension && !strstr(ofn.lpstrFile, extension))
         {
-            hf = CreateFile(concat(concat(ofn.lpstrFile, "."), extension), GENERIC_READ | GENERIC_WRITE, 0, (LPSECURITY_ATTRIBUTES)NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, (HANDLE)NULL);
+            hf = CreateFile(concat(concat(ofn.lpstrFile, ".", arena), extension, arena), GENERIC_READ | GENERIC_WRITE, 0, (LPSECURITY_ATTRIBUTES)NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, (HANDLE)NULL);
         }
         else
         {
@@ -312,6 +311,7 @@ inline PLATFORM_SAVE_FILE_WITH_DIALOG(win32_save_file_with_dialog)
             Debug("Open file for saving failed with error: %ld\n", err);
         }
     }
+    end_temporary_memory(temp_mem);
     return result;
 }
 

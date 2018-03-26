@@ -7,6 +7,14 @@ struct MemoryArena
     u64 minimum_block_size = 0;
     
     u64 allocation_flags;
+    i32 temp_count;
+};
+
+struct TemporaryMemory
+{
+    MemoryArena* arena;
+    PlatformMemoryBlock* block;
+    umm used;
 };
 
 enum ArenaFlags
@@ -83,7 +91,7 @@ inline umm get_effective_size_for(MemoryArena* arena, umm size_init, PushParams 
 
 #define push_struct(arena, type, ...) (type *)push_size_(arena, sizeof(type), ## __VA_ARGS__)
 #define push_array(arena, count, type, ...) (type*)push_size_(arena, (count)*sizeof(type), ## __VA_ARGS__)
-#define push_size(arena, size, type, ...) (type*)push_size_(arena, size, ## __VA_ARGS__)
+#define push_size(arena, size, type, ...) (type*)push_size_(arena, (umm)size, ## __VA_ARGS__)
 void* push_size_(MemoryArena* arena, umm size_init, PushParams params = default_push_params())
 {
     void* result = 0;
@@ -137,6 +145,46 @@ inline u64 default_flags()
     return PM_OVERFLOW_CHECK | PM_UNDERFLOW_CHECK;
 }
 
+inline TemporaryMemory begin_temporary_memory(MemoryArena* arena)
+{
+    TemporaryMemory result = {};
+    
+    result.arena = arena;
+    result.block = arena->current_block;
+    result.used = arena->current_block ? arena->current_block->used : 0;
+    
+    ++arena->temp_count;
+    
+    return result;
+}
+
+
+inline void free_last_block(MemoryArena* arena)
+{
+    PlatformMemoryBlock* free = arena->current_block;
+    arena->current_block = free->prev;
+    platform.deallocate_memory(free);
+}
+
+inline void end_temporary_memory(TemporaryMemory temp_mem)
+{
+    MemoryArena* arena = temp_mem.arena;
+    while(arena->current_block != temp_mem.block)
+    {
+        free_last_block(arena);
+    }
+    
+    if(arena->current_block)
+    {
+        Assert(arena->current_block->used >= temp_mem.used);
+        arena->current_block->used = temp_mem.used;
+        Assert(arena->temp_count > 0);
+    }
+    
+    --arena->temp_count;
+}
+
+/*
 #define push_temp_struct(type, ...) (type *)push_temp_size_(sizeof(type), ## __VA_ARGS__)
 #define push_temp_array(Count, type, ...) (type*)push_temp_size_((Count)*sizeof(type), ## __VA_ARGS__)
 #define push_temp_size(size, type, ...) (type*)push_temp_size_((umm)size, ## __VA_ARGS__)
@@ -192,18 +240,11 @@ inline char* push_temp_string(const char* source)
     }
     dest[length] = 0;
     return dest;
-}
+}*/
 
 #define copy(arena, dest, src, size, type) dest = push_size(arena, size, type); memcpy(dest, src, size);
 
 #define copy_temp(dest, src, size, type) dest = push_temp_size(size, type); memcpy(dest, src, size);
-
-inline void free_last_block(MemoryArena* arena)
-{
-    PlatformMemoryBlock* free = arena->current_block;
-    arena->current_block = free->prev;
-    platform.deallocate_memory(free);
-}
 
 static void clear(MemoryArena *arena)
 {
