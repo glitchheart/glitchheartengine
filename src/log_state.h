@@ -1,9 +1,7 @@
 #ifndef LOG_STATE_H
 #define LOG_STATE_H
 
-
 #define MAX_LOG_MESSAGES 2048
-
 
 enum LogFlags
 {
@@ -30,10 +28,10 @@ struct LogState
             
         } print_logging;
     };
-    
+    MemoryArena arena;
 };
 
-extern LogState log_state;
+extern LogState* log_state;
 
 #endif
 

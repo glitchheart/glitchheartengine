@@ -95,7 +95,7 @@ static void add_animation(Renderer& renderer, SpritesheetAnimation animation, co
     Assert(renderer.spritesheet_animation_count < MAX_SPRITESHEET_ANIMATIONS);
 }
 
-static void load_shader(const char* full_shader_path, Renderer& renderer, i32* handle)
+static void load_shader(MemoryArena* arena, const char* full_shader_path, Renderer& renderer, i32* handle)
 {
     ShaderData* shader_data = &renderer.shader_data[renderer.shader_count];
     shader_data->handle = renderer.shader_count++;
@@ -107,7 +107,8 @@ static void load_shader(const char* full_shader_path, Renderer& renderer, i32* h
     u32 size = 0;
     FILE* file;
     
-    file = fopen(concat(full_shader_path, ".vert"), "rb");
+    auto temp_mem = begin_temporary_memory(arena);
+    file = fopen(concat(full_shader_path, ".vert", arena), "rb");
     
     if(file)
     {
@@ -126,7 +127,7 @@ static void load_shader(const char* full_shader_path, Renderer& renderer, i32* h
         printf("Invalid file path: '%s'\n", full_shader_path);
     }
     
-    file = fopen(concat(full_shader_path, ".frag"), "rb");
+    file = fopen(concat(full_shader_path, ".frag", arena), "rb");
     
     if(file)
     {
@@ -145,6 +146,7 @@ static void load_shader(const char* full_shader_path, Renderer& renderer, i32* h
     {
         printf("Invalid file path: '%s'\n", full_shader_path);
     }
+    end_temporary_memory(temp_mem);
 }
 
 #define get_texture_size(handle) texture_size(handle, renderer)
@@ -175,12 +177,12 @@ static void load_texture(const char* full_texture_path, Renderer& renderer, i32*
         *handle = texture_data->handle + 1; // We add one to the handle, since we want 0 to be an invalid handle
 }
 
-static void load_textures(Renderer& renderer, const char* path)
+static void load_textures(Renderer& renderer, const char* path, MemoryArena* arena)
 {
     texture_data_map_init(&renderer.texture_map, hash_string_jenkins, 64);
     
     DirectoryData dir_data = {};
-    platform.get_all_files_with_extension(path, "png", &dir_data, true);
+    platform.get_all_files_with_extension(arena, path, "png", &dir_data, true);
     
     for (i32 file_index = 0; file_index < dir_data.files_length; file_index++)
     {
@@ -188,9 +190,9 @@ static void load_textures(Renderer& renderer, const char* path)
     }
 }
 
-static void load_textures(Renderer& renderer)
+static void load_textures(Renderer& renderer, MemoryArena* arena)
 {
-    load_textures(renderer, "../assets/textures/");
+    load_textures(renderer, "../assets/textures/", arena);
 }
 
 static RenderCommand* push_next_command(Renderer& renderer, b32 is_ui)
@@ -432,7 +434,7 @@ static void push_buffer(Renderer& renderer, i32 buffer_handle, i32 texture_handl
     render_command->shader_attribute_count = 0;
 }
 
-static void push_model(Renderer& renderer, Model& model)
+static void push_model(Renderer& renderer, Model& model, MemoryArena* arena)
 {
     RenderCommand* render_command = push_next_command(renderer, false);
     render_command->type = RENDER_COMMAND_MODEL;
@@ -460,7 +462,7 @@ static void push_model(Renderer& renderer, Model& model)
     
     if(model.type == MODEL_SKINNED)
     {
-        render_command->model.bone_transforms = push_temp_size(sizeof(math::Mat4) * model.bone_count, math::Mat4);
+        render_command->model.bone_transforms = push_size(arena, sizeof(math::Mat4) * model.bone_count, math::Mat4);
         
         for(i32 index = 0; index < model.bone_count; index++)
         {
@@ -521,9 +523,11 @@ static b32 is_eof(ChunkFormat& format)
     return strcmp(format.format, "EOF") == 0;
 }
 
-static void load_glim_model(Renderer& renderer, char* file_path, Model* model)
+static void load_glim_model(Renderer& renderer, char* file_path, Model* model, MemoryArena* arena)
 {
-    ModelHeader header = {};
+    // NOTE(Niels): Not implemented yet
+    Assert(false);
+    /*ModelHeader header = {};
     
     FILE *file = fopen(file_path, "rb");
     if(file)
@@ -552,7 +556,7 @@ static void load_glim_model(Renderer& renderer, char* file_path, Model* model)
         model->material_count = model_data.num_materials;
         if(model_data.num_materials > 0)
             fread(&model->materials, (size_t)model_data.material_chunk_size, 1, file);
-        
+            
         model->global_inverse_transform = model_data.global_inverse_transform;
         
         model->bone_count = model_data.num_bones;
@@ -634,7 +638,7 @@ static void load_glim_model(Renderer& renderer, char* file_path, Model* model)
     else
     {
         printf("Model file not found: %s", file_path);
-    }
+    }*/
 }
 
 static void add_particle_system(Renderer& renderer, math::Vec3 position, i32 texture_handle, r32 rate, r32 speed, i32* handle)

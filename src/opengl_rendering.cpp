@@ -103,17 +103,18 @@ static b32 should_close_window(RenderState& render_state)
     return glfwWindowShouldClose(render_state.window);
 }
 
-static GLint shader_compilation_error_checking(const char* shader_name, GLuint shader)
+static GLint shader_compilation_error_checking(MemoryArena* arena,const char* shader_name, GLuint shader)
 {
     GLint is_compiled = 0;
     glGetShaderiv(shader, GL_COMPILE_STATUS, &is_compiled);
     if (!is_compiled)
     {
+        auto temp_mem = begin_temporary_memory(arena);
         GLint max_length = 0;
         glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &max_length);
         
         // The maxLength includes the NULL character
-        GLchar* error_log = push_temp_size(max_length, GLchar);
+        GLchar* error_log = push_size(arena, max_length, GLchar);
         
         glGetShaderInfoLog(shader, max_length, &max_length, error_log);
         
@@ -121,11 +122,12 @@ static GLint shader_compilation_error_checking(const char* shader_name, GLuint s
         Debug("%s", error_log);
         
         glDeleteShader(shader); // Don't leak the shader.
+        end_temporary_memory(temp_mem);
     }
     return is_compiled;
 }
 
-static GLuint load_extra_shader(ShaderData& shader_data, RenderState& render_state)
+static GLuint load_extra_shader(MemoryArena* arena, ShaderData& shader_data, RenderState& render_state)
 {
     // @Incomplete: vertexAttribPointers?
     Shader* shader = &render_state.extra_shaders[render_state.extra_shader_index++];
@@ -133,7 +135,7 @@ static GLuint load_extra_shader(ShaderData& shader_data, RenderState& render_sta
     glShaderSource(shader->vertex_shader, 1, &shader_data.vertex_shader_content, NULL);
     glCompileShader(shader->vertex_shader);
     
-    if (!shader_compilation_error_checking(concat(shader_data.name, ".vert"), shader->vertex_shader))
+    if (!shader_compilation_error_checking(arena, concat(shader_data.name, ".vert", arena), shader->vertex_shader))
     {
         shader->program = 0;
         return GL_FALSE;
@@ -144,7 +146,7 @@ static GLuint load_extra_shader(ShaderData& shader_data, RenderState& render_sta
     glShaderSource(shader->fragment_shader, 1, &shader_data.fragment_shader_content, NULL);
     glCompileShader(shader->fragment_shader);
     
-    if (!shader_compilation_error_checking(concat(shader_data.name, ".frag"), shader->fragment_shader))
+    if (!shader_compilation_error_checking(arena, concat(shader_data.name, ".frag", arena), shader->fragment_shader))
     {
         shader->program = 0;
         return GL_FALSE;
@@ -161,8 +163,9 @@ static GLuint load_extra_shader(ShaderData& shader_data, RenderState& render_sta
 
 static GLuint load_shader(const char* file_path, Shader *shd, MemoryArena* perm_arena)
 {
+    auto temp_mem = begin_temporary_memory(perm_arena);
     shd->vertex_shader = glCreateShader(GL_VERTEX_SHADER);
-    char* vertex_string = concat(file_path, ".vert");
+    char* vertex_string = concat(file_path, ".vert", perm_arena);
     GLchar *vertex_text = load_shader_from_file(vertex_string, perm_arena);
     
     if (vertex_text)
@@ -170,21 +173,23 @@ static GLuint load_shader(const char* file_path, Shader *shd, MemoryArena* perm_
         glShaderSource(shd->vertex_shader, 1, &vertex_text, NULL);
         glCompileShader(shd->vertex_shader);
         
-        if (!shader_compilation_error_checking(file_path, shd->vertex_shader))
+        if (!shader_compilation_error_checking(perm_arena, file_path, shd->vertex_shader))
         {
+            end_temporary_memory(temp_mem);
             shd->program = 0;
             return GL_FALSE;
         }
         
         shd->fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
-        char* fragment_string = concat(file_path, ".frag");
+        char* fragment_string = concat(file_path, ".frag", perm_arena);
         GLchar *fragment_text = load_shader_from_file(fragment_string, perm_arena);
         
         glShaderSource(shd->fragment_shader, 1, &fragment_text, NULL);
         glCompileShader(shd->fragment_shader);
         
-        if (!shader_compilation_error_checking(file_path, shd->fragment_shader))
+        if (!shader_compilation_error_checking(perm_arena, file_path, shd->fragment_shader))
         {
+            end_temporary_memory(temp_mem);
             shd->program = 0;
             return GL_FALSE;
         }
@@ -195,23 +200,27 @@ static GLuint load_shader(const char* file_path, Shader *shd, MemoryArena* perm_
         glAttachShader(shd->program, shd->fragment_shader);
         glLinkProgram(shd->program);
         
+        end_temporary_memory(temp_mem);
         return GL_TRUE;
     }
+    end_temporary_memory(temp_mem);
     return GL_FALSE;
 }
 
 static GLuint load_vertex_shader(const char* file_path, Shader *shd, MemoryArena* perm_arena)
 {
+    auto temp_mem = begin_temporary_memory(perm_arena);
     shd->program = glCreateProgram();
     
     shd->vertex_shader = glCreateShader(GL_VERTEX_SHADER);
-    char* vertex_string = concat(file_path, ".vert");
+    char* vertex_string = concat(file_path, ".vert", perm_arena);
     GLchar *vertex_text = load_shader_from_file(vertex_string, perm_arena);
     glShaderSource(shd->vertex_shader, 1, &vertex_text, NULL);
     glCompileShader(shd->vertex_shader);
     
-    if (!shader_compilation_error_checking(file_path, shd->vertex_shader))
+    if (!shader_compilation_error_checking(perm_arena, file_path, shd->vertex_shader))
     {
+        end_temporary_memory(temp_mem);
         shd->program = 0;
         return GL_FALSE;
     }
@@ -221,20 +230,26 @@ static GLuint load_vertex_shader(const char* file_path, Shader *shd, MemoryArena
     
     glLinkProgram(shd->program);
     
+    end_temporary_memory(temp_mem);
     return GL_TRUE;
 }
 
 static GLuint load_fragment_shader(const char* file_path, Shader *shd, MemoryArena* perm_arena)
 {
     shd->program = glCreateProgram();
-    
     shd->fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
-    char* fragment_string = concat(file_path, ".frag");
+    
+    auto temp_mem = begin_temporary_memory(perm_arena);
+    char* fragment_string = concat(file_path, ".frag", perm_arena);
+    
     GLchar *fragment_text = load_shader_from_file(fragment_string, perm_arena);
     glShaderSource(shd->fragment_shader, 1, &fragment_text, NULL);
+    end_temporary_memory(temp_mem);
+    
     glCompileShader(shd->fragment_shader);
     
-    if (!shader_compilation_error_checking(file_path, shd->fragment_shader))
+    
+    if (!shader_compilation_error_checking(perm_arena, file_path, shd->fragment_shader))
     {
         shd->program = 0;
         return GL_FALSE;
@@ -915,7 +930,7 @@ static void load_extra_shaders(RenderState& render_state, Renderer& renderer)
 {
     for (i32 index = render_state.extra_shader_index; index < renderer.shader_count; index++)
     {
-        load_extra_shader(renderer.shader_data[index], render_state);
+        load_extra_shader(&render_state.arena, renderer.shader_data[index], render_state);
     }
 }
 
@@ -1619,7 +1634,8 @@ static void render_text(RenderState& render_state, const RenderFont& font, const
         render_state.bound_texture = font.texture;
     }
     
-    Point* coords = push_temp_array(6 * strlen(text), Point);
+    auto temp_mem = begin_temporary_memory(&render_state.arena);
+    Point* coords = push_array(&render_state.arena, 6 * strlen(text), Point);
     
     int n = 0;
     
@@ -1686,6 +1702,7 @@ static void render_text(RenderState& render_state, const RenderFont& font, const
     
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
+    end_temporary_memory(temp_mem);
 }
 
 static void render_wireframe_cube(const RenderCommand& command, RenderState& render_state, math::Mat4 projection = math::Mat4(1.0f), math::Mat4 view = math::Mat4(1.0f))
@@ -1887,10 +1904,11 @@ static void render_buffer(const RenderCommand& command, RenderState& render_stat
 
 void stbtt_initfont(RenderState &render_state, char *path, i32 size)
 {
+    auto temp_mem = begin_temporary_memory(&render_state.arena);
     TrueTypeFont &font = render_state.true_type_fonts[render_state.font_count++];
     
-    unsigned char *ttf_buffer = push_temp_array((1<<20), unsigned char);
-    unsigned char *temp_bitmap = push_temp_array(512 * 512, unsigned char);
+    unsigned char *ttf_buffer = push_array(&render_state.arena, (1<<20), unsigned char);
+    unsigned char *temp_bitmap = push_array(&render_state.arena, 512 * 512, unsigned char);
     fread(ttf_buffer, 1, 1<<20, fopen(path, "rb"));
     stbtt_BakeFontBitmap(ttf_buffer, 0, (r32)size, temp_bitmap, 512, 512, 32, 96, font.char_data);
     
@@ -1900,6 +1918,7 @@ void stbtt_initfont(RenderState &render_state, char *path, i32 size)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     //render_state.fonts[render_state.font_count - 1].texture = font.texture;
+    end_temporary_memory(temp_mem);
 }
 
 static void load_font(RenderState& render_state, char* path, i32 size)

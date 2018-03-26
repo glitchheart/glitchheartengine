@@ -72,7 +72,6 @@ using r64 = double;
 using umm = uintptr_t; // Casey uses this for sizes (why?)
 using imm = intptr_t;
 
-
 struct TextureData;
 
 inline char* to_string(i32 i);
@@ -80,7 +79,7 @@ inline char* to_string(r64 r);
 inline char* to_string(r32 r);
 char* to_string(TextureData* data);
 
-#include "log_state.h"
+//#include "log_state.h"
 #include "engine_math.h"
 #include "modelformat.h"
 
@@ -121,8 +120,8 @@ struct ConfigData
 
 struct DirectoryData
 {
-    char** file_paths;
-    char** file_names;
+    char* file_paths[512];
+    char* file_names[512];
     i32 files_length = 0;
 };
 
@@ -154,7 +153,7 @@ struct PlatformFile
     char extension[16];
 };
 
-#define PLATFORM_GET_ALL_FILES_WITH_EXTENSION(name) void name(const char* directory_path, const char* extension, DirectoryData* directory_data, b32 with_sub_directories)
+#define PLATFORM_GET_ALL_FILES_WITH_EXTENSION(name) void name(MemoryArena* arena, const char* directory_path, const char* extension, DirectoryData* directory_data, b32 with_sub_directories)
 typedef PLATFORM_GET_ALL_FILES_WITH_EXTENSION(platform_get_all_files_with_extension);
 
 #define PLATFORM_FILE_EXISTS(name) b32 name(const char* file_path)
@@ -166,10 +165,10 @@ typedef PLATFORM_ALLOCATE_MEMORY(platform_allocate_memory);
 #define PLATFORM_DEALLOCATE_MEMORY(name) void name(PlatformMemoryBlock* block)
 typedef PLATFORM_DEALLOCATE_MEMORY(platform_deallocate_memory);
 
-#define PLATFORM_OPEN_FILE_WITH_DIALOG(name) PlatformFile name(char* extension)
+#define PLATFORM_OPEN_FILE_WITH_DIALOG(name) PlatformFile name(MemoryArena* arena, char* extension)
 typedef PLATFORM_OPEN_FILE_WITH_DIALOG(platform_open_file_with_dialog);
 
-#define PLATFORM_SAVE_FILE_WITH_DIALOG(name) PlatformFile name(char* extension, u64 flags)
+#define PLATFORM_SAVE_FILE_WITH_DIALOG(name) PlatformFile name(MemoryArena* arena, char* extension, u64 flags)
 typedef PLATFORM_SAVE_FILE_WITH_DIALOG(platform_save_file_with_dialog);
 
 #define PLATFORM_GET_TIME_OF_DAY(name) u32 name()
@@ -199,6 +198,7 @@ struct PlatformApi
 };
 extern PlatformApi platform;
 
+struct MemoryArena;
 struct DebugState;
 
 struct GameMemory
@@ -208,8 +208,8 @@ struct GameMemory
     b32 exit_game;
     ConfigData config_data;
     PlatformApi platform_api;
-    struct LogState log_state;
-    
+    struct LogState* log_state;
+    struct MemoryArena* temp_arena;
     
     struct GameState* game_state;
     
