@@ -99,9 +99,16 @@ struct Tilesheet
 // stb_truetype
 struct TrueTypeFont
 {
-    // @Incomplete: 96 is not always enough!
-    stbtt_bakedchar char_data[96];
+    // @Incomplete: Size is not always correct!
+    stbtt_packedchar char_data['~' - ' '];
     GLuint texture;
+    i32 first_char;
+    i32 char_count;
+    r32 size;
+    i32 atlas_width;
+    i32 atlas_height;
+    u32 oversample_x;
+    u32 oversample_y;
 };
 
 // FreeType

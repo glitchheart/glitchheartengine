@@ -1906,19 +1906,39 @@ void stbtt_initfont(RenderState &render_state, char *path, i32 size)
 {
     auto temp_mem = begin_temporary_memory(&render_state.arena);
     TrueTypeFont &font = render_state.true_type_fonts[render_state.font_count++];
+    font.atlas_width = 1024;
+    font.atlas_height = 1024;
+    font.oversample_x = 2;
+    font.oversample_y = 2;
+    font.first_char = ' ';
+    font.char_count = '~' - ' ';
+    font.size = 40;
     
     unsigned char *ttf_buffer = push_array(&render_state.arena, (1<<20), unsigned char);
     unsigned char *temp_bitmap = push_array(&render_state.arena, 512 * 512, unsigned char);
     fread(ttf_buffer, 1, 1<<20, fopen(path, "rb"));
-    stbtt_BakeFontBitmap(ttf_buffer, 0, (r32)size, temp_bitmap, 512, 512, 32, 96, font.char_data);
+    
+    stbtt_pack_context context;
+    if (!stbtt_PackBegin(&context, temp_bitmap, font.atlas_width, font.atlas_height, 0, 1, 0))
+        printf("Failed to initialize font");
+    
+    stbtt_PackSetOversampling(&context, font.oversample_x, font.oversample_y);
+    if (!stbtt_PackFontRange(&context, ttf_buffer, 0, font.size, font.first_char, font.char_count, font.char_data))
+        printf("Failed to pack font");
+    
+    stbtt_PackEnd(&context);
     
     glGenTextures(1, &font.texture);
     glBindTexture(GL_TEXTURE_2D, font.texture);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, 512, 512, 0, GL_RED, GL_UNSIGNED_BYTE, temp_bitmap);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    //render_state.fonts[render_state.font_count - 1].texture = font.texture;
-    end_temporary_memory(temp_mem);
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, font.atlas_width, font.atlas_height, 0, GL_RED, GL_UNSIGNED_BYTE, temp_bitmap);
+    printf("Font handle %d\n", font.texture);
+    // @Note(Daniel): Find out why this isn't enabled
+    //glHint(GL_GENERATE_MIPMAP_HINT, GL_NICEST);
+    glGenerateMipmap(GL_TEXTURE_2D);
+    
+    render_state.fonts[render_state.font_count - 1].texture = font.texture;
+    end_temporary_memory(temp_mem);    
 }
 
 static void load_font(RenderState& render_state, char* path, i32 size)
