@@ -98,10 +98,12 @@ static void listen_to_file_changes(MemoryArena* arena, AssetManager* asset_manag
 {
     asset_manager->listen_for_changes = true;
     
+    auto temp_mem = begin_temporary_memory(arena);
     if(asset_manager->listen_for_changes) 
     {
         for (int i = 0; i < SHADER_COUNT; i++)
         {
+            
             char* vertex_path = concat(shader_paths[i], ".vert", arena);
             char* fragment_path = concat(shader_paths[i], ".frag", arena);
             
@@ -110,6 +112,7 @@ static void listen_to_file_changes(MemoryArena* arena, AssetManager* asset_manag
             
         }
     }
+    end_temporary_memory(temp_mem);
 }
 
 #endif
