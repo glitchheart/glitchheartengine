@@ -415,7 +415,6 @@ int main(int argc, char** args)
         }
         
         update_log();
-        //clear_temp_memory();
         end_temporary_memory(game_temp_mem);
     }
     

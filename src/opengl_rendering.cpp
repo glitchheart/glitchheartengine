@@ -631,65 +631,6 @@ static void render_setup(RenderState *render_state, MemoryArena* perm_arena)
     glVertexAttribPointer(texcoord_location, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *)(2 * sizeof(float)));
     glBindVertexArray(0);
     
-    //error sprite
-    /*glGenVertexArrays(1, &RenderState->SpriteErrorvao);
- glBindVertexArray(RenderState->SpriteErrorvao);
- glGenBuffers(1, &RenderState->SpriteQuadvbo);
- glBindBuffer(GL_ARRAY_BUFFER, RenderState->SpriteQuadvbo);
- glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)RenderState->SpriteQuadVerticesSize, RenderState->SpriteQuadVertices, GL_STATIC_DRAW);
- 
- RenderState->ErrorShaderSprite.Type = Shader_ErrorSprite;
- LoadShader(ShaderPaths[Shader_ErrorSprite], &RenderState->ErrorShaderSprite, PermArena);
- 
- PositionLocation = (GLuint)glGetAttribLocation(RenderState->ErrorShaderSprite.program, "pos");
- TexcoordLocation = (GLuint)glGetAttribLocation(RenderState->ErrorShaderSprite.program, "texcoord");
- 
- glEnableVertexAttribArray(PositionLocation);
- glVertexAttribPointer(PositionLocation, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
- glEnableVertexAttribArray(TexcoordLocation);
- glVertexAttribPointer(TexcoordLocation, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *)(2 * sizeof(float)));
- glBindVertexArray(0);
- */
-    //ui sprite
-    /*glGenVertexArrays(1, &RenderState->UISpritevao);
- glBindVertexArray(RenderState->UISpritevao);
- glGenBuffers(1, &RenderState->SpriteQuadvbo);
- glBindBuffer(GL_ARRAY_BUFFER, RenderState->SpriteQuadvbo);
- glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)RenderState->SpriteQuadVerticesSize, RenderState->SpriteQuadVertices, GL_STATIC_DRAW);
- 
- RenderState->UISpriteShader.Type = Shader_UISprite;
- LoadShader(ShaderPaths[Shader_UISprite], &RenderState->UISpriteShader, PermArena);
- 
- PositionLocation = (GLuint)glGetAttribLocation(RenderState->UISpriteShader.program, "pos");
- TexcoordLocation = (GLuint)glGetAttribLocation(RenderState->UISpriteShader.program, "texcoord");
- 
- glEnableVertexAttribArray(PositionLocation);
- glVertexAttribPointer(PositionLocation, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
- glEnableVertexAttribArray(TexcoordLocation);
- glVertexAttribPointer(TexcoordLocation, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *)(2 * sizeof(float)));
- glBindVertexArray(0);
- 
- //ui error shader
- glGenVertexArrays(1, &RenderState->UIErrorvao);
- glBindVertexArray(RenderState->UIErrorvao);
- glGenBuffers(1, &RenderState->SpriteQuadvbo);
- glBindBuffer(GL_ARRAY_BUFFER, RenderState->SpriteQuadvbo);
- glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)RenderState->SpriteQuadVerticesSize, RenderState->SpriteQuadVertices, GL_STATIC_DRAW);
- glBindVertexArray(0);
- 
- //error shader
- RenderState->ErrorShaderUI.Type = Shader_ErrorUI;
- LoadShader(ShaderPaths[Shader_ErrorUI], &RenderState->ErrorShaderUI, PermArena);
- 
- PositionLocation = (GLuint)glGetAttribLocation(RenderState->ErrorShaderUI.program, "pos");
- TexcoordLocation = (GLuint)glGetAttribLocation(RenderState->ErrorShaderUI.program, "texcoord");
- 
- glEnableVertexAttribArray(PositionLocation);
- glVertexAttribPointer(PositionLocation, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
- glEnableVertexAttribArray(TexcoordLocation);
- glVertexAttribPointer(TexcoordLocation, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *)(2 * sizeof(float)));
- glBindVertexArray(0);
- */
     //tile
     glGenVertexArrays(1, &render_state->tile_vao);
     glBindVertexArray(render_state->tile_vao);
@@ -806,15 +747,15 @@ static void render_setup(RenderState *render_state, MemoryArena* perm_arena)
     
     glBindVertexArray(0);
     
-    /*glGenVertexArrays(1, &RenderState->Primitivevao);
- glBindVertexArray(RenderState->Primitivevao);
- glGenBuffers(1, &RenderState->Primitivevbo);
- glBindBuffer(GL_ARRAY_BUFFER, RenderState->Primitivevbo);
- 
- glEnableVertexAttribArray(0);
- glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), 0);
- glBindVertexArray(0);
- */
+    //glGenVertexArrays(1, &RenderState->Primitivevao);
+    //glBindVertexArray(RenderState->Primitivevao);
+    //glGenBuffers(1, &RenderState->Primitivevbo);
+    //glBindBuffer(GL_ARRAY_BUFFER, RenderState->Primitivevbo);
+    
+    //glEnableVertexAttribArray(0);
+    //glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), 0);
+    //glBindVertexArray(0);
+    
     
     
     // Passthrough
