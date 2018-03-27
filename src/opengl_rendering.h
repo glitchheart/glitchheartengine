@@ -101,7 +101,6 @@ struct TrueTypeFont
 {
     // @Incomplete: Size is not always correct!
     stbtt_packedchar char_data['~' - ' '];
-    GLuint texture;
     i32 first_char;
     i32 char_count;
     r32 size;
@@ -109,6 +108,10 @@ struct TrueTypeFont
     i32 atlas_height;
     u32 oversample_x;
     u32 oversample_y;
+    
+    GLuint texture;
+    GLuint vao;
+    GLuint vbo;
 };
 
 // FreeType
