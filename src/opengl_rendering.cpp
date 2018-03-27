@@ -1905,7 +1905,7 @@ static void render_buffer(const RenderCommand& command, RenderState& render_stat
 void stbtt_initfont(RenderState &render_state, char *path, i32 size)
 {
     auto temp_mem = begin_temporary_memory(&render_state.arena);
-    TrueTypeFont &font = render_state.true_type_fonts[render_state.font_count++];
+    TrueTypeFont &font = render_state.true_type_fonts[render_state.font_count];
     font.atlas_width = 1024;
     font.atlas_height = 1024;
     font.oversample_x = 2;
