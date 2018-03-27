@@ -1558,6 +1558,62 @@ static void measure_text(const RenderFont& font, const char* text, float* width,
     }
 }
 
+static void render_text_new(RenderState &render_state, const TrueTypeFont &font, const math::Vec4& color, const char* text, r32 x, r32 y, math::Mat4 view_matrix, math::Mat4 projection_matrix, r32 scale = 1.0f,
+                            Alignment alignment = ALIGNMENT_LEFT, b32 align_center_y = true)
+{
+    glBindVertexArray(font.vao);
+    auto shader = render_state.shaders[SHADER_STANDARD_FONT];
+    use_shader(&shader);
+    
+    set_vec4_uniform(shader.program, "color", color);
+    set_vec4_uniform(shader.program, "alphaColor", math::Rgba(1, 1, 1, 1));
+    set_mat4_uniform(shader.program, "projectionMatrix", projection_matrix);
+    
+    glBindTexture(GL_TEXTURE_2D, font.texture);
+    render_state.bound_texture = font.texture;
+    
+    auto temp_mem = begin_temporary_memory(&render_state.arena);
+    
+    struct CharacterData
+    {
+        r32 x;
+        r32 y;
+        r32 t0;
+        r32 t1;
+    };
+    
+    CharacterData* coords = push_array(&render_state.arena, 6 * strlen(text), CharacterData);
+    
+    i32 n = 0;
+    
+    for(const char* c = text; *c; c++)
+    {
+        stbtt_aligned_quad quad;
+        
+        stbtt_GetPackedQuad(font.char_data, font.atlas_width, font.atlas_height,
+                            *c - font.first_char, &x, &y, &quad, 1);
+        r32 x_min = quad.x0;
+        r32 x_max = quad.x1;
+        r32 y_min = quad.y0;
+        r32 y_max = quad.y1;
+        
+        coords[n++] = { x_min, y_min, quad.s0, quad.t1 };
+        coords[n++] = { x_min, y_max, quad.s0, quad.t0 };
+        coords[n++] = { x_max, y_max, quad.s1, quad.t0 };
+        coords[n++] = { x_max, y_min, quad.s1, quad.t1 };
+        coords[n++] = { x_min, y_min, quad.s0, quad.t1 };
+        coords[n++] = { x_max, y_max, quad.s1, quad.t0 };
+    }
+    
+    glBindBuffer(GL_ARRAY_BUFFER, font.vbo);
+    glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)(6 * strlen(text) * sizeof(CharacterData)), coords, GL_DYNAMIC_DRAW);
+    glDrawArrays(GL_TRIANGLES, 0, n);
+    
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
+    end_temporary_memory(temp_mem);
+}
+
 //rendering methods
 static void render_text(RenderState& render_state, const RenderFont& font, const math::Vec4& color, const char* text, r32 x, r32 y, r32 scale = 1.0f,
                         Alignment alignment = ALIGNMENT_LEFT, b32 align_center_y = true)
@@ -1677,12 +1733,13 @@ static void render_line(const RenderCommand& command, RenderState& render_state,
     render_line(render_state, command.line.color, command.line.point1, command.line.point2, projection, view, command.line.line_width, command.is_ui);
 }
 
-static void render_text(const RenderCommand& command, RenderState& render_state)
+static void render_text(const RenderCommand& command, RenderState& render_state, math::Mat4 view_matrix, math::Mat4 projection_matrix)
 {
     RenderFont render_font;
     render_font = render_state.fonts[command.text.font_handle];
     // @Incomplete: Y-centering
-    render_text(render_state, render_font, command.text.color, command.text.text, command.text.position.x, command.text.position.y, command.text.scale, command.text.alignment);
+    //render_text(render_state, render_font, command.text.color, command.text.text, command.text.position.x, command.text.position.y, command.text.scale, command.text.alignment);
+    render_text_new(render_state, render_state.true_type_fonts[command.text.font_handle], command.text.color, command.text.text, command.text.position.x, command.text.position.y, view_matrix, projection_matrix, command.text.scale, command.text.alignment);
 }
 
 static void render_quad(const RenderCommand& command, RenderState& render_state, math::Mat4 projection, math::Mat4 view)
@@ -1846,7 +1903,8 @@ static void render_buffer(const RenderCommand& command, RenderState& render_stat
 void stbtt_initfont(RenderState &render_state, char *path, i32 size)
 {
     auto temp_mem = begin_temporary_memory(&render_state.arena);
-    TrueTypeFont &font = render_state.true_type_fonts[render_state.font_count];
+    
+    TrueTypeFont &font = render_state.true_type_fonts[render_state.font_count++];
     font.atlas_width = 1024;
     font.atlas_height = 1024;
     font.oversample_x = 2;
@@ -1856,7 +1914,8 @@ void stbtt_initfont(RenderState &render_state, char *path, i32 size)
     font.size = 40;
     
     unsigned char *ttf_buffer = push_array(&render_state.arena, (1<<20), unsigned char);
-    unsigned char *temp_bitmap = push_array(&render_state.arena, 512 * 512, unsigned char);
+    unsigned char *temp_bitmap = push_array(&render_state.arena, 1024 * 1024, unsigned char);
+    
     fread(ttf_buffer, 1, 1<<20, fopen(path, "rb"));
     
     stbtt_pack_context context;
@@ -1871,21 +1930,36 @@ void stbtt_initfont(RenderState &render_state, char *path, i32 size)
     
     glGenTextures(1, &font.texture);
     glBindTexture(GL_TEXTURE_2D, font.texture);
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, font.atlas_width, font.atlas_height, 0, GL_RED, GL_UNSIGNED_BYTE, temp_bitmap);
-    printf("Font handle %d\n", font.texture);
-    // @Note(Daniel): Find out why this isn't enabled
-    //glHint(GL_GENERATE_MIPMAP_HINT, GL_NICEST);
-    glGenerateMipmap(GL_TEXTURE_2D);
     
-    render_state.fonts[render_state.font_count - 1].texture = font.texture;
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, (GLsizei)font.atlas_width, (GLsizei)font.atlas_height, 0, GL_RED, GL_UNSIGNED_BYTE, temp_bitmap);
+    
+    /* Clamping to edges is important to prevent artifacts when scaling */
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    
+    glGenVertexArrays(1, &font.vao);
+    glBindVertexArray(font.vao);
+    
+    glGenBuffers(1, &font.vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, font.vbo);
+    
+    glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, 0);
+    glEnableVertexAttribArray(0);
+    glBindVertexArray(0);
+    
     end_temporary_memory(temp_mem);    
 }
 
 static void load_font(RenderState& render_state, char* path, i32 size)
 {
-    initialize_free_type_font(path, size, render_state.ft_library, &render_state.fonts[render_state.font_count++]);
-    //stbtt_initfont(render_state, path, size);
+    //initialize_free_type_font(path, size, render_state.ft_library, &render_state.fonts[render_state.font_count++]);
+    stbtt_initfont(render_state, path, size);
 }
 
 
@@ -2054,7 +2128,7 @@ static void render_commands(RenderState& render_state, Renderer& renderer, Memor
             break;
             case RENDER_COMMAND_TEXT:
             {
-                render_text(command, render_state);
+                render_text(command, render_state, camera.view_matrix, camera.projection_matrix);
             }
             break;
             case RENDER_COMMAND_QUAD:
@@ -2132,7 +2206,7 @@ static void render_commands(RenderState& render_state, Renderer& renderer, Memor
             break;
             case RENDER_COMMAND_TEXT:
             {
-                render_text(command, render_state);
+                render_text(command, render_state, camera.view_matrix, camera.projection_matrix);
             }
             break;
             case RENDER_COMMAND_QUAD:

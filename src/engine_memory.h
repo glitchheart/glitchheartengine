@@ -158,7 +158,6 @@ inline TemporaryMemory begin_temporary_memory(MemoryArena* arena)
     return result;
 }
 
-
 inline void free_last_block(MemoryArena* arena)
 {
     PlatformMemoryBlock* free = arena->current_block;
