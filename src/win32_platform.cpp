@@ -2,6 +2,13 @@
 #include "Commdlg.h"
 #include <windows.h>
 
+using PlatformHandle = HANDLE;
+
+struct PlatformFile
+{
+    PlatformHandle handle;
+};
+
 #define copy_file(game_library_path, temp_game_library_path, overwrite, arena) CopyFile(game_library_path, temp_game_library_path, overwrite)
 
 time_t file_time_to_time_t(const FILETIME& ft)
@@ -87,17 +94,9 @@ PLATFORM_ALLOCATE_MEMORY(win32_allocate_memory)
     
     PlatformMemoryBlock* plat_block = &block->block;
     
-    if(flags & PM_TEMPORARY)
-    {
-        Assert((memory_state.temp_count + 1) < MAX_TEMP_BLOCKS);
-        memory_state.temp_size_allocated += total_size;
-        memory_state.blocks[memory_state.temp_count++] = plat_block;
-    }
-    else
-    {
-        memory_state.permanent_blocks++;
-        memory_state.permanent_size_allocated += total_size;
-    }
+    memory_state.blocks++;
+    memory_state.size_allocated += total_size;
+    
     
     return plat_block;
 }
@@ -106,26 +105,13 @@ PLATFORM_DEALLOCATE_MEMORY(win32_deallocate_memory)
 {
     if(block)
     {
-        if((block->flags & PM_TEMPORARY) == 0)
-        {
-            memory_state.permanent_blocks--;
-            memory_state.permanent_size_allocated -= (block->size + sizeof(MemoryBlock));
-        }
+        memory_state.blocks--;
+        memory_state.size_allocated -= (block->size + sizeof(MemoryBlock));
+        
         
         MemoryBlock *new_block =  ((MemoryBlock*)block);
         VirtualFree(new_block, 0, MEM_RELEASE);
     }
-}
-
-static void clear_temp_memory()
-{
-    for(i32 temp = 0; temp < memory_state.temp_count; temp++)
-    {
-        win32_deallocate_memory(memory_state.blocks[temp]);
-    }
-    
-    memory_state.temp_count = 0;
-    memory_state.temp_size_allocated = 0;
 }
 
 inline PLATFORM_GET_ALL_FILES_WITH_EXTENSION(win32_find_files_with_extensions)
@@ -203,6 +189,7 @@ inline PLATFORM_FILE_EXISTS(win32_file_exists)
     return (stat(file_path,&buffer) == 0);
 }
 
+/*
 inline PLATFORM_OPEN_FILE_WITH_DIALOG(win32_open_file_with_dialog)
 {
     auto temp_mem = begin_temporary_memory(arena);
@@ -250,8 +237,9 @@ inline PLATFORM_OPEN_FILE_WITH_DIALOG(win32_open_file_with_dialog)
     end_temporary_memory(temp_mem);
     return result;
 }
+*/
 
-
+/*
 inline PLATFORM_SAVE_FILE_WITH_DIALOG(win32_save_file_with_dialog)
 {
     auto temp_mem = begin_temporary_memory(arena);
@@ -314,11 +302,67 @@ inline PLATFORM_SAVE_FILE_WITH_DIALOG(win32_save_file_with_dialog)
     end_temporary_memory(temp_mem);
     return result;
 }
-
+*/
 
 inline PLATFORM_GET_TIME_OF_DAY(win32_get_time_of_day)
 {
     
+}
+
+static PLATFORM_OPEN_FILE(win32_open_file)
+{
+    PlatformFile result = {};
+    result.handle = nullptr;
+    
+    auto read = (open_flags & POF_READ) ? GENERIC_READ : 0;
+    auto write = (open_flags & POF_WRITE) ? GENERIC_WRITE : 0;
+    auto flags = read | write;
+    
+    result.handle = CreateFile(path, (DWORD)flags, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
+    
+    return(result);
+}
+
+static PLATFORM_CLOSE_FILE(win32_close_file)
+{
+    CloseHandle(file.handle);
+}
+
+static PLATFORM_WRITE_FILE(win32_write_file)
+{
+    WriteFile(file.handle, src, (DWORD)(size_bytes * size), 0, 0);
+}
+
+static PLATFORM_READ_FILE(win32_read_file)
+{
+    ReadFile(file.handle, dst, DWORD(size_bytes * size), 0, 0);
+}
+
+static PLATFORM_SEEK_FILE(win32_seek_file)
+{
+    switch(seek_options)
+    {
+        case SO_END:
+        {
+            SetFilePointer(file.handle, offset, 0, FILE_END);
+        }
+        break;
+        case SO_CUR:
+        {
+            SetFilePointer(file.handle, offset, 0, FILE_CURRENT);
+        }
+        break;
+        case SO_SET:
+        {
+            SetFilePointer(file.handle, offset, 0, FILE_BEGIN);
+        }
+        break;
+    }
+}
+
+static PLATFORM_TELL_FILE(win32_tell_file)
+{
+    return (i32)SetFilePointer(file.handle, 0, 0, FILE_CURRENT);
 }
 
 static void init_platform(PlatformApi& platform_api)
@@ -327,9 +371,15 @@ static void init_platform(PlatformApi& platform_api)
     platform_api.file_exists = win32_file_exists;
     platform_api.allocate_memory = win32_allocate_memory;
     platform_api.deallocate_memory = win32_deallocate_memory;
-    platform_api.open_file_with_dialog = win32_open_file_with_dialog;
-    platform_api.save_file_with_dialog = win32_save_file_with_dialog;
+    //platform_api.open_file_with_dialog = win32_open_file_with_dialog;
+    //platform_api.save_file_with_dialog = win32_save_file_with_dialog;
     platform_api.load_symbol = win32_load_symbol;
     platform_api.free_dynamic_library = win32_free_library;
     platform_api.load_dynamic_library = win32_load_library;
+    platform_api.open_file = win32_open_file;
+    platform_api.read_file = win32_read_file;
+    platform_api.write_file = win32_write_file;
+    platform_api.close_file = win32_close_file;
+    platform_api.seek_file = win32_seek_file;
+    platform_api.tell_file = win32_tell_file;
 }

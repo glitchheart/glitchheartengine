@@ -5,6 +5,14 @@
 #include "unistd.h"
 #include "dlfcn.h"
 
+using PlatformHandle = i32;
+
+struct PlatformFile
+{
+    PlatformHandle handle;
+};
+
+
 inline PLATFORM_FILE_EXISTS(linux_file_exists)
 {
     struct stat buffer;
@@ -79,7 +87,7 @@ static b32 copy_file(const char* src, const char* dst, b32 dont_overwrite, Memor
     if(binary)
     {
         auto temp_mem = begin_temporary_memory(arena);
-//        system(concat("chmod +xr ", dst, arena));
+        //        system(concat("chmod +xr ", dst, arena));
         end_temporary_memory(temp_mem);
     }
     return true;
@@ -157,17 +165,9 @@ PLATFORM_ALLOCATE_MEMORY(linux_allocate_memory)
     
     PlatformMemoryBlock* plat_block = &block->block;
     
-    if(flags & PM_TEMPORARY)
-    {
-        Assert((memory_state.temp_count + 1) < MAX_TEMP_BLOCKS);
-        memory_state.temp_size_allocated += total_size;
-        memory_state.blocks[memory_state.temp_count++] = plat_block;
-    }
-    else
-    {
-        memory_state.permanent_blocks++;
-        memory_state.permanent_size_allocated += total_size;
-    }
+    memory_state.blocks++;
+    memory_state.size_allocated += total_size;
+    
     
     return plat_block;
 }
@@ -176,27 +176,13 @@ PLATFORM_DEALLOCATE_MEMORY(linux_deallocate_memory)
 {
     if(block)
     {
-        if((block->flags & PM_TEMPORARY) == 0)
-        {
-            memory_state.permanent_blocks--;
-            memory_state.permanent_size_allocated -= (block->size + sizeof(MemoryBlock));
-        }
+        memory_state.blocks--;
+        memory_state.size_allocated -= (block->size + sizeof(MemoryBlock));
+        
         
         MemoryBlock *new_block =  ((MemoryBlock*)block);
         munmap(new_block, block->size + sizeof(MemoryBlock));
-        //free(new_block);
     }
-}
-
-static void clear_temp_memory()
-{
-    for(i32 temp = 0; temp < memory_state.temp_count; temp++)
-    {
-        linux_deallocate_memory(memory_state.blocks[temp]);
-    }
-    
-    memory_state.temp_count = 0;
-    memory_state.temp_size_allocated = 0;
 }
 
 static void init_platform(PlatformApi& platform_api)

@@ -74,16 +74,8 @@ using imm = intptr_t;
 
 struct TextureData;
 
-inline char* to_string(i32 i);
-inline char* to_string(r64 r);
-inline char* to_string(r32 r);
-char* to_string(TextureData* data);
-
-//#include "log_state.h"
 #include "engine_math.h"
 #include "modelformat.h"
-
-
 
 enum WindowMode
 {
@@ -118,10 +110,12 @@ struct ConfigData
     b32 skip_splash_screen;
 };
 
+#define MAX_FILE_PATHS 512
+#define MAX_FILE_NAMES 512
 struct DirectoryData
 {
-    char* file_paths[512];
-    char* file_names[512];
+    char* file_paths[MAX_FILE_PATHS];
+    char* file_names[MAX_FILE_NAMES];
     i32 files_length = 0;
 };
 
@@ -146,11 +140,19 @@ enum PlatformFileFlags
     PM_APPEND = (1 << 0)
 };
 
-struct PlatformFile
+struct PlatformFile;
+
+enum FileOpenFlags
 {
-    FILE* file;
-    char path[260];
-    char extension[16];
+    POF_READ = (1 << 0),
+    POF_WRITE = (1 << 1)
+};
+
+enum SeekOptions
+{
+    SO_SET,
+    SO_CUR,
+    SO_END
 };
 
 #define PLATFORM_GET_ALL_FILES_WITH_EXTENSION(name) void name(MemoryArena* arena, const char* directory_path, const char* extension, DirectoryData* directory_data, b32 with_sub_directories)
@@ -183,6 +185,24 @@ typedef PLATFORM_FREE_LIBRARY(platform_free_library);
 #define PLATFORM_LOAD_SYMBOL(name) void* name(void* library, const char* symbol)
 typedef PLATFORM_LOAD_SYMBOL(platform_load_symbol);
 
+#define PLATFORM_OPEN_FILE(name) PlatformFile name(const char* path, u32 open_flags)
+typedef PLATFORM_OPEN_FILE(platform_open_file);
+
+#define PLATFORM_CLOSE_FILE(name) void name(PlatformFile& file)
+typedef PLATFORM_CLOSE_FILE(platform_close_file);
+
+#define PLATFORM_WRITE_FILE(name) void name(const void* src, i32 size, i32 size_bytes, PlatformFile& file)
+typedef PLATFORM_WRITE_FILE(platform_write_file);
+
+#define PLATFORM_READ_FILE(name) void name(void* dst, i32 size, i32 size_bytes, PlatformFile& file)
+typedef PLATFORM_READ_FILE(platform_read_file);
+
+#define PLATFORM_SEEK_FILE(name) void name(PlatformFile& file, i32 offset, SeekOptions seek_options)
+typedef PLATFORM_SEEK_FILE(platform_seek_file);
+
+#define PLATFORM_TELL_FILE(name) i32 name(PlatformFile& file)
+typedef PLATFORM_TELL_FILE(platform_tell_file);
+
 struct PlatformApi
 {
     platform_get_all_files_with_extension *get_all_files_with_extension;
@@ -195,6 +215,12 @@ struct PlatformApi
     platform_load_library* load_dynamic_library;
     platform_free_library* free_dynamic_library;
     platform_load_symbol* load_symbol;
+    platform_open_file* open_file;
+    platform_close_file* close_file;
+    platform_write_file* write_file;
+    platform_read_file* read_file;
+    platform_seek_file* seek_file;
+    platform_tell_file* tell_file;
 };
 extern PlatformApi platform;
 
