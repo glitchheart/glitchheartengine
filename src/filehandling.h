@@ -28,21 +28,20 @@ static GLchar* load_shader_from_file(const char* path, MemoryArena* arena)
 {
     GLchar *source = {};
     
-    FILE *file;
-    file = fopen(path, "rb");
+    PlatformFile f = platform.open_file(path, POF_READ);
     
-    if(file)
+    if(f.handle)
     {
-        fseek(file, 0, SEEK_END);
-        u32 size = (u32)ftell(file);
-        fseek(file, 0, SEEK_SET);
+        platform.seek_file(f, 0, SO_END);
+        i32 size = platform.tell_file(f);
+        platform.seek_file(f, 0, SO_SET);
         
         source = push_size(arena, size + 1, GLchar);
         
-        fread(source, size, 1, file); 
+        platform.read_file(source, size, 1, f); 
         source[size] = '\0';
         
-        fclose(file);
+        platform.close_file(f);
     }
     else
     {
