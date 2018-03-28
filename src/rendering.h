@@ -123,9 +123,10 @@ enum RenderCommandType
 
 enum Alignment
 {
-    ALIGNMENT_LEFT,
-    ALIGNMENT_RIGHT,
-    ALIGNMENT_CENTER
+    ALIGNMENT_LEFT = (1 << 0),
+    ALIGNMENT_RIGHT = (1 << 1),
+    ALIGNMENT_CENTER_X = (1 << 2),
+    ALIGNMENT_CENTER_Y = (1 << 4)
 };
 
 struct Shader
@@ -315,7 +316,7 @@ struct TextInfo
     RenderInfo render_info;
     
     i32 font_handle;
-    Alignment alignment;
+    u64 alignment_flags;
     char* text;
     r32 scale;
 };
@@ -352,7 +353,7 @@ struct RenderCommand
             math::Vec3 position;
             i32 font_handle;
             math::Rgba color; // @Cleanup: REMOVE!
-            Alignment alignment;
+            u64 alignment_flags;
             r32 scale;
         } text;
         struct

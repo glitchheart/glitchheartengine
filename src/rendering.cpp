@@ -255,8 +255,8 @@ static void push_line(Renderer& renderer, math::Vec3 point1, math::Vec3 point2, 
 }
 
 #define PUSH_TEXT(text, position, color, font_handle) push_text(renderer, text, position, 1.0f, font_handle, color)
-#define PUSH_CENTERED_TEXT(text, position, color, font_handle) push_text(renderer, text, position, 1.0f, font_handle, color, ALIGNMENT_CENTER)
-static void push_text(Renderer& renderer, const char* text, math::Vec3 position, r32 scale, i32 font_handle, math::Rgba color, Alignment alignment = ALIGNMENT_LEFT, b32 is_ui = true)
+#define PUSH_CENTERED_TEXT(text, position, color, font_handle) push_text(renderer, text, position, 1.0f, font_handle, color, ALIGNMENT_CENTER_X | ALIGNMENT_CENTER_Y)
+static void push_text(Renderer& renderer, const char* text, math::Vec3 position, r32 scale, i32 font_handle, math::Rgba color, u64 alignment_flags = ALIGNMENT_LEFT, b32 is_ui = true)
 {
     RenderCommand* render_command = push_next_command(renderer, is_ui);
     
@@ -272,13 +272,13 @@ static void push_text(Renderer& renderer, const char* text, math::Vec3 position,
     //render_command->Text.FontType = FontType;
     render_command->text.font_handle = font_handle;
     render_command->text.color = color;
-    render_command->text.alignment = alignment;
+    render_command->text.alignment_flags = alignment_flags;
     render_command->is_ui = is_ui;
 }
 
 static void push_text(Renderer& renderer, TextInfo text_info)
 {
-    push_text(renderer, text_info.text, text_info.position, text_info.scale, text_info.font_handle, text_info.render_info.color, text_info.alignment, text_info.render_info.is_ui);
+    push_text(renderer, text_info.text, text_info.position, text_info.scale, text_info.font_handle, text_info.render_info.color, text_info.alignment_flags, text_info.render_info.is_ui);
 }
 
 static void push_filled_quad(Renderer& renderer, math::Vec3 position, b32 flipped, math::Vec3 size, math::Vec3 rotation = math::Vec3(), math::Rgba color = math::Rgba(1.0f, 1.0f, 1.0f, 1.0f), i32 texture_handle = 0, b32 is_ui = true, i32 animation_controller_handle = 0, b32 with_origin = false, math::Vec2 origin = math::Vec2(0.0f, 0.0f), i32 shader_handle = 0, ShaderAttribute* shader_attributes = 0, i32 shader_attribute_count = 0, math::Vec2 texture_offset = math::Vec2(-1.0f, -1.0f), math::Vec2i frame_size = math::Vec2i(0, 0))
