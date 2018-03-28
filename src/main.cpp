@@ -47,9 +47,9 @@ static InputController input_controller;
 #include "opengl_rendering.cpp"
 #include "vulkan_rendering.cpp"
 
-static void load_game_code(GameCode& game_code, char* game_library_path, char* temp_game_library_path)
+static void load_game_code(GameCode& game_code, char* game_library_path, char* temp_game_library_path, MemoryArena* arena = nullptr)
 {
-    if(!copy_file(game_library_path, temp_game_library_path, false)) return;
+    if(!copy_file(game_library_path, temp_game_library_path, false, arena)) return;
     
     game_code.update = UpdateStub;
     game_code.last_library_write_time = get_last_write_time(game_library_path);
@@ -80,14 +80,14 @@ static void unload_game_code(GameCode *game_code)
     game_code->update = UpdateStub;
 }
 
-static void reload_game_code(GameCode *game_code, char* game_library_path, char* temp_game_library_path)
+static void reload_game_code(GameCode *game_code, char* game_library_path, char* temp_game_library_path, MemoryArena* arena = nullptr)
 {
     unload_game_code(game_code);
     //Sleep(100);
-    load_game_code(*game_code, game_library_path, temp_game_library_path);
+    load_game_code(*game_code, game_library_path, temp_game_library_path, arena);
 }
 
-static void reload_libraries(GameCode *Game, char* game_library_path, char* temp_game_library_path)
+static void reload_libraries(GameCode *Game, char* game_library_path, char* temp_game_library_path, MemoryArena* arena = nullptr)
 {
     // @Bug: Not working on Mac
     time_t last_write_time = get_last_write_time(game_library_path);
@@ -96,7 +96,7 @@ static void reload_libraries(GameCode *Game, char* game_library_path, char* temp
     {
         if(difftime(Game->last_library_write_time, last_write_time) != 0)
         {
-            reload_game_code(Game, game_library_path, temp_game_library_path);
+            reload_game_code(Game, game_library_path, temp_game_library_path, arena);
             Assert(Game);
             Debug("Reloaded game library\n");
         }
@@ -338,7 +338,7 @@ int main(int argc, char** args)
     
     GameCode game = {};
     game.is_valid = false;
-    load_game_code(game, game_library_path, temp_game_library_path);
+    load_game_code(game, game_library_path, temp_game_library_path, &platform_state->perm_arena);
     TimerController timer_controller;
     timer_controller.timer_count = 0;
     
@@ -384,7 +384,7 @@ int main(int argc, char** args)
         
         reload_assets(render_state, &asset_manager, &platform_state->perm_arena);
         
-        reload_libraries(&game, game_library_path, temp_game_library_path);
+        reload_libraries(&game, game_library_path, temp_game_library_path, &platform_state->perm_arena);
         
         auto game_temp_mem = begin_temporary_memory(game_memory.temp_arena);
         game.update(delta_time, &game_memory, renderer, &input_controller, &sound_commands, timer_controller);

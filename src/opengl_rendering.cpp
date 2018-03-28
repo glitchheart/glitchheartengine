@@ -910,8 +910,8 @@ static void create_open_gl_window(RenderState& render_state, WindowMode window_m
     {
         int frame_buffer_width, frame_buffer_height;
         
-        glfwGetFramebufferSize(render_state.window, &frame_buffer_width, &frame_buffer_height);
-        glfwSetWindowPos(render_state.window, mode->width / 2 - width / 2, mode->height / 2 - height / 2);
+        glfwGetFramebufferSize(render_state.window, &frame_buffer_width, &frame_buffer_height);        
+        glfwSetWindowPos(render_state.window, mode->width / 2 - width / 2, mode->height / 2 - height / 2);        
     }
 }
 
