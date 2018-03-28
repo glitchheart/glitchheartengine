@@ -266,91 +266,6 @@ static void use_shader(Shader *shader)
     glUseProgram(shader->program);
 }
 
-static void initialize_free_type_font(char* font_path, int font_size, FT_Library library, RenderFont* font)
-{
-    if (FT_New_Face(library, font_path, 0, &font->face))
-    {
-        fprintf(stderr, "Could not open font\n");
-    }
-    
-    FT_Set_Pixel_Sizes(font->face, 0, (FT_UInt)font_size);
-    
-    FT_Select_Charmap(font->face, ft_encoding_unicode);
-    
-    //Find the atlas width and height
-    FT_GlyphSlot G = font->face->glyph;
-    
-    unsigned int w = 0;
-    unsigned int H = 0;
-    
-    for (int i = 0; i < 255; i++)
-    {
-        if (FT_Load_Char(font->face, (FT_ULong)i, FT_LOAD_RENDER))
-        {
-            fprintf(stderr, "Loading character %c failed!\n", i);
-            continue;
-        }
-        
-        w += G->bitmap.width;
-        H = Max(H, G->bitmap.rows);
-    }
-    
-    font->atlas_width = w;
-    font->atlas_height = H;
-    font->glyph_width = (GLfloat)G->bitmap.width;
-    
-    glActiveTexture(GL_TEXTURE0);
-    glGenTextures(1, &font->texture);
-    glBindTexture(GL_TEXTURE_2D, font->texture);
-    
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_R8, (GLsizei)font->atlas_width, (GLsizei)font->atlas_height, 0, GL_RED, GL_UNSIGNED_BYTE, 0);
-    
-    /* Clamping to edges is important to prevent artifacts when scaling */
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-    
-    unsigned int x = 0;
-    
-    for (int i = 0; i < 255; i++)
-    {
-        if (FT_Load_Char(font->face, (FT_ULong)i, FT_LOAD_RENDER))
-            continue;
-        
-        glTexSubImage2D(GL_TEXTURE_2D, 0, (GLsizei)x, 0, (GLsizei)G->bitmap.width, (GLsizei)G->bitmap.rows, GL_RED, GL_UNSIGNED_BYTE, G->bitmap.buffer);
-        
-        font->character_info[i].ax = (r32)(G->advance.x >> 6);
-        font->character_info[i].ay = (r32)(G->advance.y >> 6);
-        
-        font->character_info[i].bw = (r32)G->bitmap.width;
-        font->character_info[i].bh = (r32)G->bitmap.rows;
-        
-        font->character_info[i].bl = (r32)G->bitmap_left;
-        font->character_info[i].bt = (r32)G->bitmap_top;
-        
-        font->character_info[i].tx = (r32)x / font->atlas_width;
-        
-        x += G->bitmap.width;
-    }
-    
-    glGenVertexArrays(1, &font->vao);
-    glBindVertexArray(font->vao);
-    
-    glGenBuffers(1, &font->vbo);
-    glBindBuffer(GL_ARRAY_BUFFER, font->vbo);
-    
-    glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, 0);
-    glEnableVertexAttribArray(0);
-    glBindVertexArray(0);
-}
-
 static void register_buffers(RenderState& render_state, GLfloat* vertex_buffer, long vertex_buffer_size, GLuint* index_buffer, i32 index_buffer_count, long index_buffer_size, b32 has_normals, b32 has_uvs, b32 skinned, i32 buffer_handle = -1)
 {
     Buffer* buffer = &render_state.buffers[buffer_handle == -1 ? render_state.buffer_count : buffer_handle];
@@ -505,11 +420,6 @@ static void render_setup(RenderState *render_state, MemoryArena* perm_arena)
     {
         render_state->scale_from_width = render_state->window_width;
         render_state->scale_from_height = render_state->window_height;
-    }
-    
-    if (FT_Init_FreeType(&render_state->ft_library))
-    {
-        fprintf(stderr, "Could not init freetype library\n");
     }
     
     render_state->font_count = 0;
@@ -1535,28 +1445,6 @@ static void render_quad(RenderMode mode, RenderState& render_state, math::Vec4 c
     glBindVertexArray(0);
 }
 
-static void measure_text(const RenderFont& font, const char* text, float* width, float* height)
-{
-    size_t count;
-    
-    if (!text)
-    {
-        return;
-    }
-    
-    *width = 0.0f;
-    *height = 0.0f;
-    
-    for (count = 0; count < strlen(text); ++count)
-    {
-        *width += font.character_info[text[count]].ax;
-        
-        if (*height < font.character_info[text[count]].bh)
-        {
-            *height = font.character_info[text[count]].bh;
-        }
-    }
-}
 
 static r32 get_text_width(const char *text, TrueTypeFont &font)
 {
@@ -1576,8 +1464,9 @@ static r32 get_text_width(const char *text, TrueTypeFont &font)
     return width;
 }
 
-static void render_text_new(RenderState &render_state, TrueTypeFont &font, const math::Vec4& color, const char* text, r32 x, r32 y, math::Mat4 view_matrix, math::Mat4 projection_matrix, r32 scale = 1.0f,
-                            Alignment alignment = ALIGNMENT_LEFT, b32 align_center_y = true)
+//rendering methods
+static void render_text(RenderState &render_state, TrueTypeFont &font, const math::Vec4& color, const char* text, r32 x, r32 y, math::Mat4 view_matrix, math::Mat4 projection_matrix, r32 scale = 1.0f,
+                        Alignment alignment = ALIGNMENT_LEFT, b32 align_center_y = true)
 {
     glBindVertexArray(font.vao);
     auto shader = render_state.shaders[SHADER_STANDARD_FONT];
@@ -1591,14 +1480,6 @@ static void render_text_new(RenderState &render_state, TrueTypeFont &font, const
     render_state.bound_texture = font.texture;
     
     auto temp_mem = begin_temporary_memory(&render_state.arena);
-    
-    struct CharacterData
-    {
-        r32 x;
-        r32 y;
-        r32 t0;
-        r32 t1;
-    };
     
     CharacterData* coords = push_array(&render_state.arena, 6 * strlen(text), CharacterData);
     
@@ -1643,94 +1524,6 @@ static void render_text_new(RenderState &render_state, TrueTypeFont &font, const
     end_temporary_memory(temp_mem);
 }
 
-//rendering methods
-static void render_text(RenderState& render_state, const RenderFont& font, const math::Vec4& color, const char* text, r32 x, r32 y, r32 scale = 1.0f,
-                        Alignment alignment = ALIGNMENT_LEFT, b32 align_center_y = true)
-{
-    glBindVertexArray(font.vao);
-    auto shader = render_state.shaders[SHADER_STANDARD_FONT];
-    use_shader(&shader);
-    
-    set_vec4_uniform(shader.program, "color", color);
-    set_vec4_uniform(shader.program, "alphaColor", font.alpha_color);
-    
-    if (render_state.bound_texture != font.texture) //never bind the same texture if it's already bound
-    {
-        glBindTexture(GL_TEXTURE_2D, font.texture);
-        render_state.bound_texture = font.texture;
-    }
-    
-    auto temp_mem = begin_temporary_memory(&render_state.arena);
-    Point* coords = push_array(&render_state.arena, 6 * strlen(text), Point);
-    
-    int n = 0;
-    
-    switch (alignment)
-    {
-        case ALIGNMENT_LEFT:
-        break;
-        case ALIGNMENT_RIGHT:
-        break;
-        case ALIGNMENT_CENTER:
-        {
-            r32 width;
-            r32 height;
-            
-            measure_text(font, text, &width, &height);
-            
-            width *= scale;
-            height *= scale;
-            
-            x -= width / 2.0f;
-            if (align_center_y)
-                y -= height / 2.0f;
-        }
-        break;
-    }
-    
-    x = (r32)x;
-    y = (r32)y;
-    
-    x *= render_state.scale_x;
-    x -= 1.0f;
-    y *= render_state.scale_y;
-    y -= 1.0f;
-    
-    r32 epsilon = 0.0001f;
-    
-    for (const char *p = text; *p; p++)
-    {
-        r32 w = font.character_info[*p].bw * render_state.scale_x * scale;
-        r32 h = font.character_info[*p].bh * render_state.scale_y * scale;
-        
-        r32 x2 = x + font.character_info[*p].bl* render_state.scale_x * scale;
-        r32 y2 = -y - font.character_info[*p].bt* render_state.scale_y * scale;
-        
-        /* Advance the cursor to the start of the next character */
-        x += font.character_info[*p].ax * render_state.scale_x * scale;
-        y += font.character_info[*p].ay* render_state.scale_y * scale;
-        
-        /* Skip glyphs that have no pixels */
-        if (!(i32)font.character_info[*p].bw || !(i32)font.character_info[*p].bh)
-            continue;
-        
-        coords[n++] = { x2 + epsilon, -y2 + epsilon, (r32)font.character_info[*p].tx + epsilon, epsilon };
-        coords[n++] = { x2 + w - epsilon, -y2 + epsilon, (r32)font.character_info[*p].tx - epsilon + (r32)font.character_info[*p].bw / (r32)font.atlas_width, epsilon };
-        coords[n++] = { x2 + epsilon, -y2 - h - epsilon, (r32)font.character_info[*p].tx + epsilon, (r32)font.character_info[*p].bh / (r32)font.atlas_height - epsilon };
-        coords[n++] = { x2 + w - epsilon, -y2 + epsilon, (r32)font.character_info[*p].tx - epsilon + (r32)font.character_info[*p].bw / (r32)font.atlas_width,  epsilon };
-        coords[n++] = { x2 + epsilon, -y2 - h - epsilon, (r32)font.character_info[*p].tx + epsilon, (r32)font.character_info[*p].bh / (r32)font.atlas_height - epsilon };
-        coords[n++] = { x2 + w - epsilon, -y2 - h, (r32)font.character_info[*p].tx - epsilon + font.character_info[*p].bw / (r32)font.atlas_width, (r32)font.character_info[*p].bh / (r32)font.atlas_height - epsilon };
-    }
-    
-    glBindBuffer(GL_ARRAY_BUFFER, font.vbo);
-    glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)(6 * strlen(text) * sizeof(Point)), coords, GL_DYNAMIC_DRAW);
-    glDrawArrays(GL_TRIANGLES, 0, n);
-    
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindVertexArray(0);
-    end_temporary_memory(temp_mem);
-}
-
 static void render_wireframe_cube(const RenderCommand& command, RenderState& render_state, math::Mat4 projection = math::Mat4(1.0f), math::Mat4 view = math::Mat4(1.0f))
 {
     glBindVertexArray(render_state.wireframe_cube_vao);
@@ -1764,11 +1557,9 @@ static void render_line(const RenderCommand& command, RenderState& render_state,
 
 static void render_text(const RenderCommand& command, RenderState& render_state, math::Mat4 view_matrix, math::Mat4 projection_matrix)
 {
-    RenderFont render_font;
-    render_font = render_state.fonts[command.text.font_handle];
-    // @Incomplete: Y-centering
-    //render_text(render_state, render_font, command.text.color, command.text.text, command.text.position.x, command.text.position.y, command.text.scale, command.text.alignment);
-    render_text_new(render_state, render_state.true_type_fonts[command.text.font_handle], command.text.color, command.text.text, command.text.position.x, command.text.position.y, view_matrix, projection_matrix, command.text.scale, command.text.alignment);
+    TrueTypeFont font = font = render_state.true_type_fonts[command.text.font_handle];
+    
+    render_text(render_state, font, command.text.color, command.text.text, command.text.position.x, command.text.position.y, view_matrix, projection_matrix, command.text.scale, command.text.alignment);
 }
 
 static void render_quad(const RenderCommand& command, RenderState& render_state, math::Mat4 projection, math::Mat4 view)

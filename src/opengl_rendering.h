@@ -2,8 +2,6 @@
 #define OPENGL_H
 
 #include <GLFW/glfw3.h>
-#include <ft2build.h>
-#include FT_FREETYPE_H
 
 #define STB_TRUETYPE_IMPLEMENTATION
 #pragma warning(push)
@@ -118,40 +116,12 @@ struct TrueTypeFont
     GLuint vbo;
 };
 
-// FreeType
-struct RenderFont
+struct CharacterData
 {
-    FT_Face face;
-    GLuint vao;
-    GLuint vbo;
-    GLuint texture;
-    u32 atlas_width;
-    u32 atlas_height;
-    GLfloat glyph_width;
-    math::Vec4 color = math::Vec4(1, 1, 1, 1);
-    math::Vec4 alpha_color = math::Vec4(1, 1, 1, 1);
-    
-    struct CharacterInfo 
-    {
-        r32 ax; // advance.x
-        r32 ay; // advance.y
-        
-        r32 bw; // bitmap.width;
-        r32 bh; // bitmap.rows;
-        
-        r32 bl; // bitmap_left;
-        r32 bt; // bitmap_top;
-        
-        r32 tx;
-    } character_info[255];
-};
-
-struct Point
-{
-    GLfloat x;
-    GLfloat y;
-    GLfloat s;
-    GLfloat t;
+    r32 x;
+    r32 y;
+    r32 tx;
+    r32 ty;
 };
 
 struct Buffer
@@ -378,11 +348,7 @@ struct RenderState
     Texture texture_array[150];
     i32 texture_index;
     
-    //freetype
-    FT_Library ft_library;
-    
     TrueTypeFont true_type_fonts[64];
-    RenderFont fonts[64];
     i32 font_count;
     
     RenderState() {}
