@@ -22,17 +22,10 @@ struct GameCode
     b32 is_valid;
 };
 
-#define MAX_TEMP_BLOCKS 4096
-
 struct MemoryState
 {
-    // Will this work thoooo (apparently yes!)
-    PlatformMemoryBlock* blocks[MAX_TEMP_BLOCKS];
-    i32 temp_count;
-    u64 temp_size_allocated;
-    
-    i32 permanent_blocks;
-    u64 permanent_size_allocated;
+    i32 blocks;
+    u64 size_allocated;
 };
 
 #endif

@@ -76,7 +76,7 @@ static void unload_game_code(GameCode *game_code)
         game_code->game_code_library = 0;
     }
     
-    game_code->is_valid = false;
+    game_code->is_valid = false;    
     game_code->update = UpdateStub;
 }
 
@@ -102,47 +102,6 @@ static void reload_libraries(GameCode *Game, char* game_library_path, char* temp
         }
     }
 }
-
-static void set_invalid_keys()
-{
-    input_controller.any_key_pressed = false;
-    for(u32 key_code = 0; key_code < NUM_KEYS; key_code++)
-    {
-        if(input_controller.keys_just_pressed[key_code] == KEY_JUST_PRESSED)
-        {
-            input_controller.keys_just_pressed[key_code] = KEY_INVALID;
-        }
-        input_controller.keys_up[key_code] = false;
-    } 
-}
-
-static void set_controller_invalid_keys()
-{
-    input_controller.any_key_pressed = false;
-    for(u32 key_code = 0; key_code < NUM_JOYSTICK_KEYS; key_code++)
-    {
-        if(input_controller.joystick_keys_just_pressed[key_code] == KEY_JUST_PRESSED)
-        {
-            input_controller.joystick_keys_just_pressed[key_code] = KEY_INVALID;
-        }
-    }
-}
-
-static void set_mouse_invalid_keys()
-{
-    input_controller.any_key_pressed = false;
-    for(u32 key_code = 0; key_code < NUM_MOUSE_BUTTONS; key_code++)
-    {
-        if(input_controller.mouse_button_just_pressed[key_code] == KEY_JUST_PRESSED)
-        {
-            input_controller.mouse_button_just_pressed[key_code] = KEY_INVALID;
-        }
-        input_controller.mouse_buttons_up[key_code] = false;
-    }
-    input_controller.scroll_x = 0;
-    input_controller.scroll_y = 0;
-}
-
 
 inline void load_config(const char* file_path, ConfigData* config_data, MemoryArena* perm_arena)
 {
