@@ -910,8 +910,8 @@ static void create_open_gl_window(RenderState& render_state, WindowMode window_m
     {
         int frame_buffer_width, frame_buffer_height;
         
-        glfwGetFramebufferSize(render_state.window, &frame_buffer_width, &frame_buffer_height);        
-        glfwSetWindowPos(render_state.window, mode->width / 2 - width / 2, mode->height / 2 - height / 2);        
+        glfwGetFramebufferSize(render_state.window, &frame_buffer_width, &frame_buffer_height);
+        glfwSetWindowPos(render_state.window, mode->width / 2 - width / 2, mode->height / 2 - height / 2);
     }
 }
 
@@ -1558,7 +1558,25 @@ static void measure_text(const RenderFont& font, const char* text, float* width,
     }
 }
 
-static void render_text_new(RenderState &render_state, const TrueTypeFont &font, const math::Vec4& color, const char* text, r32 x, r32 y, math::Mat4 view_matrix, math::Mat4 projection_matrix, r32 scale = 1.0f,
+static r32 get_text_width(const char *text, TrueTypeFont &font)
+{
+    r32 width = 0.0f;
+    r32 placeholder_y = 0.0f;
+    
+    for(u32 i = 0; i < strlen(text); i++)
+    {
+        stbtt_aligned_quad quad;
+        stbtt_GetPackedQuad(font.char_data, font.atlas_width, font.atlas_height,
+                            text[i]- font.first_char, &width, &placeholder_y, &quad, 1);
+        
+        i32 kerning = stbtt_GetCodepointKernAdvance(&font.info, text[i] - font.first_char, text[i + 1] - font.first_char);
+        width += (r32)kerning * font.scale;
+    }
+    
+    return width;
+}
+
+static void render_text_new(RenderState &render_state, TrueTypeFont &font, const math::Vec4& color, const char* text, r32 x, r32 y, math::Mat4 view_matrix, math::Mat4 projection_matrix, r32 scale = 1.0f,
                             Alignment alignment = ALIGNMENT_LEFT, b32 align_center_y = true)
 {
     glBindVertexArray(font.vao);
@@ -1586,23 +1604,34 @@ static void render_text_new(RenderState &render_state, const TrueTypeFont &font,
     
     i32 n = 0;
     
-    for(const char* c = text; *c; c++)
+    if(alignment == ALIGNMENT_CENTER)
+    {
+        x -= get_text_width(text, font) / 2.0f;
+    }
+    
+    // first we have to reverse the initial y to support stb_truetype where y+ is down
+    y = render_state.window_height - y;
+    
+    for(u32 i = 0; i < strlen(text); i++)
     {
         stbtt_aligned_quad quad;
-        
         stbtt_GetPackedQuad(font.char_data, font.atlas_width, font.atlas_height,
-                            *c - font.first_char, &x, &y, &quad, 1);
+                            text[i]- font.first_char, &x, &y, &quad, 1);
+        
         r32 x_min = quad.x0;
         r32 x_max = quad.x1;
-        r32 y_min = quad.y0;
-        r32 y_max = quad.y1;
+        r32 y_min = render_state.window_height - quad.y0;//(quad.y0 + font.baseline);
+        r32 y_max = render_state.window_height - quad.y1;//(quad.y1 + font.baseline);
         
-        coords[n++] = { x_min, y_min, quad.s0, quad.t1 };
-        coords[n++] = { x_min, y_max, quad.s0, quad.t0 };
-        coords[n++] = { x_max, y_max, quad.s1, quad.t0 };
-        coords[n++] = { x_max, y_min, quad.s1, quad.t1 };
-        coords[n++] = { x_min, y_min, quad.s0, quad.t1 };
-        coords[n++] = { x_max, y_max, quad.s1, quad.t0 };
+        coords[n++] = { x_max, y_max, quad.s1, quad.t1 };
+        coords[n++] = { x_max, y_min, quad.s1, quad.t0 };
+        coords[n++] = { x_min, y_min, quad.s0, quad.t0 };
+        coords[n++] = { x_min, y_max, quad.s0, quad.t1 };
+        coords[n++] = { x_max, y_max, quad.s1, quad.t1 };
+        coords[n++] = { x_min, y_min, quad.s0, quad.t0 };
+        
+        i32 kerning = stbtt_GetCodepointKernAdvance(&font.info, text[i] - font.first_char, text[i + 1] - font.first_char);
+        x += (r32)kerning * font.scale;
     }
     
     glBindBuffer(GL_ARRAY_BUFFER, font.vbo);
@@ -1877,7 +1906,6 @@ static void render_buffer(const RenderCommand& command, RenderState& render_stat
         size.y *= render_state.scale_y;
     }
     
-    
     auto shader = render_state.tile_shader;
     use_shader(&shader);
     
@@ -1900,30 +1928,36 @@ static void render_buffer(const RenderCommand& command, RenderState& render_stat
     glBindVertexArray(0);
 }
 
-void stbtt_initfont(RenderState &render_state, char *path, i32 size)
+void stbtt_load_font(RenderState &render_state, char *path, i32 size)
 {
-    auto temp_mem = begin_temporary_memory(&render_state.arena);
-    
     TrueTypeFont &font = render_state.true_type_fonts[render_state.font_count++];
     font.atlas_width = 1024;
     font.atlas_height = 1024;
-    font.oversample_x = 2;
-    font.oversample_y = 2;
+    font.oversample_x = 1;
+    font.oversample_y = 1;
     font.first_char = ' ';
     font.char_count = '~' - ' ';
-    font.size = 40;
+    font.size = size;
     
     unsigned char *ttf_buffer = push_array(&render_state.arena, (1<<20), unsigned char);
+    
+    auto temp_memory = begin_temporary_memory(&render_state.arena);
+    
     unsigned char *temp_bitmap = push_array(&render_state.arena, 1024 * 1024, unsigned char);
     
     fread(ttf_buffer, 1, 1<<20, fopen(path, "rb"));
+    
+    stbtt_InitFont(&font.info, ttf_buffer, 0); 
+    font.scale = stbtt_ScaleForPixelHeight(&font.info, 15);
+    stbtt_GetFontVMetrics(&font.info, &font.ascent, 0, 0);
+    font.baseline = (i32)(font.ascent * font.scale);
     
     stbtt_pack_context context;
     if (!stbtt_PackBegin(&context, temp_bitmap, font.atlas_width, font.atlas_height, 0, 1, 0))
         printf("Failed to initialize font");
     
     stbtt_PackSetOversampling(&context, font.oversample_x, font.oversample_y);
-    if (!stbtt_PackFontRange(&context, ttf_buffer, 0, font.size, font.first_char, font.char_count, font.char_data))
+    if (!stbtt_PackFontRange(&context, ttf_buffer, (i32)font.scale, (r32)font.size, font.first_char, font.char_count, font.char_data))
         printf("Failed to pack font");
     
     stbtt_PackEnd(&context);
@@ -1953,13 +1987,13 @@ void stbtt_initfont(RenderState &render_state, char *path, i32 size)
     glEnableVertexAttribArray(0);
     glBindVertexArray(0);
     
-    end_temporary_memory(temp_mem);    
+    end_temporary_memory(temp_memory);
 }
 
 static void load_font(RenderState& render_state, char* path, i32 size)
 {
     //initialize_free_type_font(path, size, render_state.ft_library, &render_state.fonts[render_state.font_count++]);
-    stbtt_initfont(render_state, path, size);
+    stbtt_load_font(render_state, path, size);
 }
 
 

@@ -99,11 +99,15 @@ struct Tilesheet
 // stb_truetype
 struct TrueTypeFont
 {
+    stbtt_fontinfo info;
+    i32 ascent;
+    r32 scale;
+    i32 baseline;
     // @Incomplete: Size is not always correct!
     stbtt_packedchar char_data['~' - ' '];
     i32 first_char;
     i32 char_count;
-    r32 size;
+    i32 size;
     i32 atlas_width;
     i32 atlas_height;
     u32 oversample_x;

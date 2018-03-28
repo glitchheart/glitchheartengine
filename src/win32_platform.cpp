@@ -200,7 +200,7 @@ inline PLATFORM_GET_ALL_FILES_WITH_EXTENSION(win32_find_files_with_extensions)
 inline PLATFORM_FILE_EXISTS(win32_file_exists)
 {
     struct stat buffer;
-    return (stat(file_path,&buffer) == 0);
+    return (stat(file_path, &buffer) == 0);
 }
 
 inline PLATFORM_OPEN_FILE_WITH_DIALOG(win32_open_file_with_dialog)
