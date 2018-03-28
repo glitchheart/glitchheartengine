@@ -11,7 +11,7 @@ inline PLATFORM_FILE_EXISTS(linux_file_exists)
     return (stat(file_path,&buffer) == 0);
 }
 
-static b32 copy_file(const char* src, const char* dst, b32 dont_overwrite, b32 binary = true)
+static b32 copy_file(const char* src, const char* dst, b32 dont_overwrite, MemoryArena* arena = nullptr, b32 binary = true)
 {
     FILE* in;
     FILE* out;
@@ -78,7 +78,9 @@ static b32 copy_file(const char* src, const char* dst, b32 dont_overwrite, b32 b
     
     if(binary)
     {
-        system(concat("chmod +xr ", dst));
+        auto temp_mem = begin_temporary_memory(arena);
+//        system(concat("chmod +xr ", dst, arena));
+        end_temporary_memory(temp_mem);
     }
     return true;
 }
