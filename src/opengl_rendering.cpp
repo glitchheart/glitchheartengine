@@ -1446,27 +1446,45 @@ static void render_quad(RenderMode mode, RenderState& render_state, math::Vec4 c
 }
 
 
-static r32 get_text_width(const char *text, TrueTypeFont &font)
+static math::Vec2 get_text_size(const char *text, TrueTypeFont &font, u64 alignment_flags)
 {
-    r32 width = 0.0f;
-    r32 placeholder_y = 0.0f;
+    math::Vec2 size;
+    r32 placeholder_y = 0.0;
+    
+    b32 should_set_width = (b32)(alignment_flags & ALIGNMENT_CENTER_X);
+    b32 should_set_height = (b32)(alignment_flags & ALIGNMENT_CENTER_Y);
     
     for(u32 i = 0; i < strlen(text); i++)
     {
         stbtt_aligned_quad quad;
         stbtt_GetPackedQuad(font.char_data, font.atlas_width, font.atlas_height,
-                            text[i]- font.first_char, &width, &placeholder_y, &quad, 1);
+                            text[i]- font.first_char, &size.x, &placeholder_y, &quad, 1);
+        
+        if(quad.y1 - quad.y0 > size.y)
+        {
+            size.y = quad.y1 - quad.y0;
+        }
         
         i32 kerning = stbtt_GetCodepointKernAdvance(&font.info, text[i] - font.first_char, text[i + 1] - font.first_char);
-        width += (r32)kerning * font.scale;
+        size.x += (r32)kerning * font.scale;
     }
     
-    return width;
+    if(!should_set_width)
+    {
+        size.x = 0.0f;
+    }
+    
+    if(!should_set_height)
+    {
+        size.y = 0.0f;
+    }
+    
+    return size;
 }
 
 //rendering methods
 static void render_text(RenderState &render_state, TrueTypeFont &font, const math::Vec4& color, const char* text, r32 x, r32 y, math::Mat4 view_matrix, math::Mat4 projection_matrix, r32 scale = 1.0f,
-                        Alignment alignment = ALIGNMENT_LEFT, b32 align_center_y = true)
+                        u64 alignment_flags = ALIGNMENT_LEFT, b32 align_center_y = true)
 {
     glBindVertexArray(font.vao);
     auto shader = render_state.shaders[SHADER_STANDARD_FONT];
@@ -1476,8 +1494,11 @@ static void render_text(RenderState &render_state, TrueTypeFont &font, const mat
     set_vec4_uniform(shader.program, "alphaColor", math::Rgba(1, 1, 1, 1));
     set_mat4_uniform(shader.program, "projectionMatrix", projection_matrix);
     
-    glBindTexture(GL_TEXTURE_2D, font.texture);
-    render_state.bound_texture = font.texture;
+    if(render_state.bound_texture != font.texture)
+    {
+        glBindTexture(GL_TEXTURE_2D, font.texture);
+        render_state.bound_texture = font.texture;
+    }
     
     auto temp_mem = begin_temporary_memory(&render_state.arena);
     
@@ -1485,9 +1506,12 @@ static void render_text(RenderState &render_state, TrueTypeFont &font, const mat
     
     i32 n = 0;
     
-    if(alignment == ALIGNMENT_CENTER)
+    // @Speed: The call to get_text_size() will loop throught the text, which means we'll loop through it twice per render-call
+    if((alignment_flags & ALIGNMENT_CENTER_X) || alignment_flags & ALIGNMENT_CENTER_Y)
     {
-        x -= get_text_width(text, font) / 2.0f;
+        math::Vec2 text_size = get_text_size(text, font, alignment_flags);
+        x -= text_size.x / 2.0f;
+        y -= text_size.y / 2.0f;
     }
     
     // first we have to reverse the initial y to support stb_truetype where y+ is down
@@ -1559,7 +1583,7 @@ static void render_text(const RenderCommand& command, RenderState& render_state,
 {
     TrueTypeFont font = font = render_state.true_type_fonts[command.text.font_handle];
     
-    render_text(render_state, font, command.text.color, command.text.text, command.text.position.x, command.text.position.y, view_matrix, projection_matrix, command.text.scale, command.text.alignment);
+    render_text(render_state, font, command.text.color, command.text.text, command.text.position.x, command.text.position.y, view_matrix, projection_matrix, command.text.scale, command.text.alignment_flags);
 }
 
 static void render_quad(const RenderCommand& command, RenderState& render_state, math::Mat4 projection, math::Mat4 view)
