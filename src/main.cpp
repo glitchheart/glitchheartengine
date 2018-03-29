@@ -63,7 +63,7 @@ static void load_game_code(GameCode& game_code, char* game_library_path, char* t
     
     if (game_code.game_code_library)
     {
-        game_code.update = (Update *)platform.load_symbol(game_code.game_code_library, "Update");
+        game_code.update = (Update *)platform.load_symbol(game_code.game_code_library, "update");
         game_code.is_valid = game_code.update != 0;
     }
     
