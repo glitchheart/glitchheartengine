@@ -203,6 +203,12 @@ typedef PLATFORM_SEEK_FILE(platform_seek_file);
 #define PLATFORM_TELL_FILE(name) i32 name(PlatformFile& file)
 typedef PLATFORM_TELL_FILE(platform_tell_file);
 
+#define PLATFORM_READ_LINE_FILE(name) char *name(char* dst, i32 buf_size, PlatformFile& file)
+typedef PLATFORM_READ_LINE_FILE(platform_read_line_file);
+
+#define PLATFORM_PRINT_FILE(name) i32 name(PlatformFile& file, const char* format, ...)
+typedef PLATFORM_PRINT_FILE(platform_print_file);
+
 struct PlatformApi
 {
     platform_get_all_files_with_extension *get_all_files_with_extension;
@@ -221,11 +227,19 @@ struct PlatformApi
     platform_read_file* read_file;
     platform_seek_file* seek_file;
     platform_tell_file* tell_file;
+    platform_read_line_file* read_line_file;
+    platform_print_file* print_file;
 };
+
 extern PlatformApi platform;
 
 struct MemoryArena;
 struct DebugState;
+struct InputController;
+struct SoundCommands;
+struct RenderState;
+struct Renderer;
+struct TimerController;
 
 struct GameMemory
 {
@@ -242,15 +256,7 @@ struct GameMemory
 #if GLITCH_DEBUG
     DebugState* debug_state;
 #endif
-    
 };
-
-struct InputController;
-struct SoundCommands;
-struct RenderState;
-
-struct Renderer;
-struct TimerController;
 
 #define UPDATE(name)void name(r64 delta_time, GameMemory* game_memory, Renderer& renderer, InputController* input_controller , SoundCommands* sound_commands , TimerController& timer_controller)
 typedef UPDATE(update);

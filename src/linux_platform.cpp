@@ -253,6 +253,16 @@ static PLATFORM_TELL_FILE(linux_tell_file)
     return (i32)lseek(file.handle, 0, SEEK_CUR);
 }
 
+static PLATFORM_READ_LINE_FILE(linux_read_line_file)
+{
+    
+}
+
+static PLATFORM_PRINT_FILE(linux_print_file)
+{
+    
+}
+
 
 static void init_platform(PlatformApi& platform_api)
 {
