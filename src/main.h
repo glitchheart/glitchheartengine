@@ -17,7 +17,7 @@ struct GameCode
     void* game_code_library;
     time_t last_library_write_time;
     
-    update *update;
+    Update *update;
     
     b32 is_valid;
 };
