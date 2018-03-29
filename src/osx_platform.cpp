@@ -7,201 +7,261 @@
 #include "dlfcn.h"
 #include <mach/error.h>
 
-inline PLATFORM_FILE_EXISTS(OSXFileExists)
+using PlatformHandle = i32;
+
+struct PlatformFile
 {
-    struct stat Buffer;
-    return (stat(FilePath,&Buffer) == 0);
+    PlatformHandle handle;
+};
+
+inline PLATFORM_FILE_EXISTS(osx_file_exists)
+{
+    struct stat buffer;
+    return (stat(file_path,&buffer) == 0);
 }
 
-
-static b32 copy_file(const char* Src, const char* Dst, b32 DontOverwrite, b32 Binary = false)
+static b32 copy_file(const char* src, const char* dst, b32 dont_overwrite, MemoryArena* arena = nullptr, b32 binary = false)
 {
-    FILE* In;
-    FILE* Out;
+    FILE* in;
+    FILE* out;
     
-    if(Binary)
+    if(binary)
     {
-        In = fopen(Src, "rb");
+        in = fopen(src, "rb");
     }
     else
     {
-        In = fopen(Src, "r");
+        in = fopen(src, "r");
     }
     
-    if(In == NULL)
+    if(in == NULL)
     {
         printf("Failed in\n");
-        printf("Src: %s\n", Src);
-        printf("Dst: %s\n", Dst);
+        printf("Src: %s\n", src);
+        printf("Dst: %s\n", dst);
         return false;
     }
     
-    if(Binary)
+    if(binary)
     {
-        Out = fopen(Dst, "wb");
+        out = fopen(dst, "wb");
     }
     else
     {
-        Out = fopen(Dst, "w");
+        out = fopen(dst, "w");
     }
     
-    if(Out == NULL)
+    if(out == NULL)
     {
-        fclose(In);
+        fclose(in);
         printf("Failed out\n");
         return false;
     }
     
-    size_t N,M;
-    unsigned char Buff[8192];
+    size_t n, m;
+    unsigned char buff[8192];
     do
     {
-        N = fread(Buff, 1, sizeof(Buff), In);
-        if(N)
+        n= fread(buff, 1, sizeof(buff), in);
+        if(n)
         {
-            M = fwrite(Buff, 1, N, Out);
+            m = fwrite(buff, 1, n, out);
         }
         else
         {
-            M = 0;
+            n = 0;
         }
-    } while ((N > 0) && (N == M));
-    if(M)
+    }
+    while ((n > 0) && (n == m));
+    if(m)
     {
         printf("COPY\n");
     }
     
-    fclose(Out);
-    fclose(In);
+    fclose(out);
+    fclose(in);
     
-    if(Binary)
+    if(binary)
     {
-        system(Concat("chmod +xr ", Dst));
+        system(concat("chmod +xr ", dst, arena));
     }
     return true;
 }
 
-static time_t GetLastWriteTime(const char* FilePath)
+static time_t get_last_write_time(const char* file_path)
 {
-    struct stat Result;
-    if(stat(FilePath, &Result) == 0)
+    struct stat result;
+    if(stat(file_path, &result) == 0)
     {
-        auto ModTime = Result.st_mtime;
-        return ModTime;
+        auto mod_time = result.st_mtime;
+        return mod_time;
     }
     return 0;
 }
 
 // @Incomplete:(Niels): Flags?
-PLATFORM_LOAD_LIBRARY(OSXLoadLibrary)
+PLATFORM_LOAD_LIBRARY(osx_load_library)
 {
-    return dlopen(Path, RTLD_LAZY);
+    return dlopen(path, RTLD_LAZY);
 }
 
-PLATFORM_FREE_LIBRARY(OSXFreeLibrary)
+PLATFORM_FREE_LIBRARY(osx_free_library)
 {
-    dlclose(Library);
+    dlclose(library);
 }
 
-PLATFORM_LOAD_SYMBOL(OSXLoadSymbol)
+PLATFORM_LOAD_SYMBOL(osx_load_symbol)
 {
-    return dlsym(Library, Symbol);
+    return dlsym(library, symbol);
 }
 
 
-PLATFORM_ALLOCATE_MEMORY(OSXAllocateMemory)
+PLATFORM_ALLOCATE_MEMORY(osx_allocate_memory)
 {
-    Assert(sizeof(memory_block) == 64);
+    Assert(sizeof(MemoryBlock) == 64);
     
-    umm PageSize = sysconf(_SC_PAGE_SIZE);
-    umm TotalSize = Size + sizeof(memory_block);
-    umm BaseOffset = sizeof(memory_block);
-    umm ProtectOffset = 0;
+    umm page_size = sysconf(_SC_PAGE_SIZE);
+    umm total_size = size + sizeof(MemoryBlock);
+    umm base_offset = sizeof(MemoryBlock);
+    umm protect_offset = 0;
     
-    if(Flags & PM_UnderflowCheck)
+    if(flags & PM_UNDERFLOW_CHECK)
     {
-        TotalSize = Size + 2 * PageSize;
-        BaseOffset = 2 * PageSize;
-        ProtectOffset = PageSize;
+        total_size = size + 2 * page_size;
+        base_offset = 2 * page_size;
+        protect_offset = page_size;
     }
     
-    if(Flags & PM_OverflowCheck)
+    if(flags & PM_OVERFLOW_CHECK)
     {
-        umm SizeRoundedUp = AlignPow2(Size, PageSize);
-        TotalSize = SizeRoundedUp + 2 * PageSize;
-        BaseOffset = PageSize + SizeRoundedUp - Size;
-        ProtectOffset = PageSize + SizeRoundedUp;
+        umm size_rounded_up = align_pow2(size, page_size);
+        total_size = size_rounded_up + 2 * page_size;
+        base_offset = page_size + size_rounded_up - size;
+        protect_offset = page_size + size_rounded_up;
     }
     
-    memory_block* Block = (memory_block*)malloc(TotalSize);
-    memset(Block, 0, TotalSize);
+    MemoryBlock* block = (MemoryBlock*)malloc(total_size);
+    memset(block, 0, total_size);
     
-    Assert(Block);
-    Block->Block.Base = (u8*)Block + BaseOffset;
-    Assert(Block->Block.Used == 0);
-    Assert(Block->Block.Prev == 0);
+    Assert(block);
+    block->block.base = (u8*)block + base_offset;
+    Assert(block->block.used == 0);
+    Assert(block->block.prev == 0);
     
-    //if(Flags & (PM_UnderflowCheck | PM_OverflowCheck))
+    //if(flags & (PM_UNDERFLOW_CHECK | PM_OVERFLOW_CHECK))
     //{
-    //i32 Protected = mprotect((u8*)Block + ProtectOffset, PageSize, PROT_NONE);
+    //i32 Protected = mprotect((u8*)Block + protect_offset, page_size, PROT_NONE);
     //printf("Last error: %d\n", Protected);
     //printf("Error %d\n", errno);
     //Assert(Protected == 0);
     //}
     
-    Block->Block.Size = Size;
-    Block->Block.Flags = Flags;
+    block->block.size = size;
+    block->block.flags = flags;
     
-    platform_memory_block* PlatBlock = &Block->Block;
+    PlatformMemoryBlock* plat_block = &block->block;
     
-    if(Flags & PM_Temporary)
+    memory_state.blocks++;
+    memory_state.size_allocated += total_size;
+    
+    return plat_block;
+}
+
+PLATFORM_DEALLOCATE_MEMORY(osx_deallocate_memory)
+{
+    if(block)
     {
-        Assert((MemoryState.TempCount + 1) < MAX_TEMP_BLOCKS);
-        MemoryState.TempSizeAllocated += TotalSize;
-        MemoryState.Blocks[MemoryState.TempCount++] = PlatBlock;
+        if((block->flags & PM_TEMPORARY) == 0)
+        {
+            memory_state.blocks--;
+            memory_state.size_allocated -= (block->size + sizeof(MemoryBlock));
+        }
+        
+        MemoryBlock *new_block =  ((MemoryBlock*)block);
+        free(new_block);
+    }
+}
+
+static PLATFORM_OPEN_FILE(osx_open_file)
+{
+    PlatformFile result = {};
+    result.handle = -1;
+    
+    auto flags = 0;
+    
+    if((open_flags & (POF_READ | POF_WRITE)) == (POF_READ | POF_WRITE))
+    {
+        flags = O_RDWR;
+    }
+    else if(open_flags & POF_WRITE)
+    {
+        flags = O_WRONLY;
     }
     else
     {
-        MemoryState.PermanentBlocks++;
-        MemoryState.PermanentSizeAllocated += TotalSize;
+        flags = O_RDONLY;
     }
     
-    return PlatBlock;
+    result.handle = open(path, flags);
+    
+    return(result);
 }
 
-PLATFORM_DEALLOCATE_MEMORY(OSXDeallocateMemory)
+static PLATFORM_CLOSE_FILE(osx_close_file)
 {
-    if(Block)
+    close(file.handle);
+}
+
+static PLATFORM_WRITE_FILE(osx_write_file)
+{
+    write(file.handle, src, size_bytes * size);
+}
+
+static PLATFORM_READ_FILE(osx_read_file)
+{
+    read(file.handle, dst, size_bytes * size);
+}
+
+static PLATFORM_SEEK_FILE(osx_seek_file)
+{
+    switch(seek_options)
     {
-        if((Block->Flags & PM_Temporary) == 0)
+        case SO_END:
         {
-            MemoryState.PermanentBlocks--;
-            MemoryState.PermanentSizeAllocated -= (Block->Size + sizeof(memory_block));
+            lseek(file.handle, offset, SEEK_END);
         }
-        
-        memory_block *NewBlock =  ((memory_block*)Block);
-        free(NewBlock);
+        break;
+        case SO_CUR:
+        {
+            lseek(file.handle, offset, SEEK_CUR);
+        }
+        break;
+        case SO_SET:
+        {
+            lseek(file.handle, offset, SEEK_SET);
+        }
+        break;
     }
 }
 
-static void ClearTempMemory()
+static PLATFORM_TELL_FILE(osx_tell_file)
 {
-    for(i32 Temp = 0; Temp < MemoryState.TempCount; Temp++)
-    {
-        OSXDeallocateMemory(MemoryState.Blocks[Temp]);
-    }
-    
-    MemoryState.TempCount = 0;
-    MemoryState.TempSizeAllocated = 0;
+    return (i32)lseek(file.handle, 0, SEEK_CUR);
 }
 
-static void InitPlatform(platform_api& PlatformAPI)
+static void init_platform(PlatformApi& platform_api)
 {
-    PlatformAPI.AllocateMemory = OSXAllocateMemory;
-    PlatformAPI.DeallocateMemory = OSXDeallocateMemory;
-    PlatformAPI.LoadDynamicLibrary = OSXLoadLibrary;
-    PlatformAPI.FreeDynamicLibrary = OSXFreeLibrary;
-    PlatformAPI.LoadSymbol = OSXLoadSymbol;
+    platform_api.allocate_memory = osx_allocate_memory;
+    platform_api.deallocate_memory = osx_deallocate_memory;
+    platform_api.load_dynamic_library = osx_load_library;
+    platform_api.free_dynamic_library = osx_free_library;
+    platform_api.load_symbol = osx_load_symbol;
+    platform_api.open_file = osx_open_file;
+    platform_api.read_file = osx_read_file;
+    platform_api.write_file = osx_write_file;
+    platform_api.close_file = osx_close_file;
+    platform_api.seek_file = osx_seek_file;
+    platform_api.tell_file = osx_tell_file;
 }
 
 
