@@ -4,11 +4,16 @@
 #include <GLFW/glfw3.h>
 
 #define STB_TRUETYPE_IMPLEMENTATION
+#ifdef _WIN32
 #pragma warning(push)
 #pragma warning(disable : 4365) // int conversions
 #pragma warning(disable : 4459)
+#endif
 #include "stb/stb_truetype.h"
+
+#ifdef _WIN32
 #pragma warning(pop)
+#endif
 
 #define PIXELS_PER_UNIT 32
 
