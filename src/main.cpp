@@ -31,7 +31,10 @@ static MemoryState memory_state;
 
 #include "gmap.cpp"
 #include "keycontroller.h"
+
+#if defined(__linux) || defined(_WIN32)
 #include "vulkan_rendering.h"
+#endif
 #include "opengl_rendering.h"
 #include "animation.cpp"
 #include "keycontroller.cpp"
@@ -45,7 +48,10 @@ static InputController input_controller;
 
 #include "keys_glfw.h"
 #include "opengl_rendering.cpp"
+
+#if defined(__linux) || defined(_WIN32)
 #include "vulkan_rendering.cpp"
+#endif
 
 static void load_game_code(GameCode& game_code, char* game_library_path, char* temp_game_library_path, MemoryArena* arena = nullptr)
 {
@@ -284,7 +290,8 @@ int main(int argc, char** args)
     
     if(config_data.graphics_api == GRAPHICS_VULKAN)
     {
-#if __linux || _WIN32
+        
+#if defined(__linux) || defined(_WIN32)
         VkRenderState vk_render_state;
         initialize_vulkan(vk_render_state, renderer, config_data);
         vk_render(vk_render_state, renderer);
