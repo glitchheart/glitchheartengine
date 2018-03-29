@@ -28,7 +28,6 @@ static void MoveRect(renderer& Renderer, debug_rect* DebugRect, input_controller
         DebugRect->RectOrigin.x += (r32)X - CurrentX - (Width / 2.0f);
         DebugRect->RectOrigin.y += (r32)Y - CurrentY + (Height / 2.0f);
     }
-    
 }
 
 static void PushMemoryDebug(renderer& Renderer, debug_memory_info* DebugMemoryInfo, input_controller* InputController)

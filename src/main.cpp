@@ -57,20 +57,20 @@ static void load_game_code(GameCode& game_code, char* game_library_path, char* t
 {
     if(!copy_file(game_library_path, temp_game_library_path, false, arena)) return;
     
-    game_code.update = UpdateStub;
+    game_code.update = update_stub;
     game_code.last_library_write_time = get_last_write_time(game_library_path);
     game_code.game_code_library = platform.load_dynamic_library(temp_game_library_path);
     
     if (game_code.game_code_library)
     {
-        game_code.update = (update *)platform.load_symbol(game_code.game_code_library, "Update");
+        game_code.update = (Update *)platform.load_symbol(game_code.game_code_library, "Update");
         game_code.is_valid = game_code.update != 0;
     }
     
     if (!game_code.is_valid)
     {
         Debug("Invalid game code\n");
-        game_code.update = UpdateStub;
+        game_code.update = update_stub;
     }
 }
 
@@ -83,7 +83,7 @@ static void unload_game_code(GameCode *game_code)
     }
     
     game_code->is_valid = false;    
-    game_code->update = UpdateStub;
+    game_code->update = update_stub;
 }
 
 static void reload_game_code(GameCode *game_code, char* game_library_path, char* temp_game_library_path, MemoryArena* arena = nullptr)
