@@ -185,6 +185,75 @@ PLATFORM_DEALLOCATE_MEMORY(linux_deallocate_memory)
     }
 }
 
+
+static PLATFORM_OPEN_FILE(linux_open_file)
+{
+    PlatformFile result = {};
+    result.handle = -1;
+    
+    auto flags = 0;
+    
+    if((open_flags & (POF_READ | POF_WRITE)) == (POF_READ | POF_WRITE))
+    {
+        flags = O_RDWR;
+    }
+    else if(open_flags & POF_WRITE)
+    {
+        flags = O_WRONLY;
+    }
+    else
+    {
+        flags = O_RDONLY;
+    }
+    
+    result.handle = open(path, flags);
+    
+    return(result);
+}
+
+static PLATFORM_CLOSE_FILE(linux_close_file)
+{
+    close(file.handle);
+}
+
+static PLATFORM_WRITE_FILE(linux_write_file)
+{
+    write(file.handle, src, size_bytes * size);
+}
+
+static PLATFORM_READ_FILE(linux_read_file)
+{
+    read(file.handle, dst, size_bytes * size);
+}
+
+static PLATFORM_SEEK_FILE(linux_seek_file)
+{
+    switch(seek_options)
+    {
+        case SO_END:
+        {
+            lseek(file.handle, offset, SEEK_END);
+        }
+        break;
+        case SO_CUR:
+        {
+            lseek(file.handle, offset, SEEK_CUR);
+        }
+        break;
+        case SO_SET:
+        {
+            lseek(file.handle, offset, SEEK_SET);
+        }
+        break;
+    }
+}
+
+static PLATFORM_TELL_FILE(linux_tell_file)
+{
+    return (i32)lseek(file.handle, 0, SEEK_CUR);
+}
+
+
 static void init_platform(PlatformApi& platform_api)
 {
     platform_api.file_exists = linux_file_exists;
@@ -193,4 +262,10 @@ static void init_platform(PlatformApi& platform_api)
     platform_api.load_dynamic_library = linux_load_library;
     platform_api.free_dynamic_library = linux_free_library;
     platform_api.load_symbol = linux_load_symbol;
+    platform_api.open_file = linux_open_file;
+    platform_api.read_file = linux_read_file;
+    platform_api.write_file = linux_write_file;
+    platform_api.close_file = linux_close_file;
+    platform_api.seek_file = linux_seek_file;
+    platform_api.tell_file = linux_tell_file;
 }
