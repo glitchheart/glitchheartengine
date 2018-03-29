@@ -259,8 +259,8 @@ struct GameMemory
 };
 
 #define UPDATE(name)void name(r64 delta_time, GameMemory* game_memory, Renderer& renderer, InputController* input_controller , SoundCommands* sound_commands , TimerController& timer_controller)
-typedef UPDATE(update);
-UPDATE(UpdateStub)
+typedef UPDATE(Update);
+UPDATE(update_stub)
 {
 }
 
