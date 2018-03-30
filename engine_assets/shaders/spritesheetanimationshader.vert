@@ -19,7 +19,7 @@ void main()
 	Texcoord = vec2(1.0 / textureSize.x * textureOffset.x + texcoord.x / (textureSize.x / frameSize.x), 1.0 / textureSize.y * textureOffset.y + texcoord.y / (textureSize.y / frameSize.y));
 
 	if(isUI == 1.0)
-		gl_Position = M * vec4(pos.xy, 0.0, 1.0);
+		gl_Position = Projection * M * vec4(pos.xy, 0.0, 1.0);
 	else
     	gl_Position = Projection * View * M * vec4(pos.xyz, 1.0);
 }

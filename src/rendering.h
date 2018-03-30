@@ -2,7 +2,7 @@
 #define RENDERING_H
 
 #define PIXELS_PER_UNIT 32
-#define MAX_MESHES 60
+#define MAX_MESHES 64
 
 #define MAX_LIGHTS 150
 #define MAX_BONES 50
@@ -82,6 +82,7 @@ struct PointLightData
 
 enum ShaderType
 {
+    SHADER_MESH,
     SHADER_TEXTURE,
     SHADER_TILE,
     SHADER_RECT,
@@ -114,6 +115,7 @@ enum RenderCommandType
     
     RENDER_COMMAND_BUFFER,
     RENDER_COMMAND_MODEL,
+    RENDER_COMMAND_MESH,
     RENDER_COMMAND_WIREFRAME_CUBE,
     RENDER_COMMAND_SHADER_START,
     RENDER_COMMAND_SHADER_END,
@@ -136,6 +138,82 @@ struct Shader
     u32 program;
     u32 vertex_shader;
     u32 fragment_shader;
+};
+
+struct VertexInfo
+{
+    math::Vec3 position;
+    math::Vec2 uv;
+    math::Vec3 normal;
+    math::Rgba color;
+};
+
+r32 cube_vertices[] =
+{
+    // front
+    -1.0, -1.0,  0.0,
+    0.0, -1.0,  0.0,
+    0.0,  0.0,  0.0,
+    -1.0,  0.0,  0.0,
+    // back
+    -1.0, -1.0, -1.0,
+    0.0, -1.0, -1.0,
+    0.0,  0.0, -1.0,
+    -1.0,  0.0, -1.0,
+};
+
+u16 cube_indices[] = {
+    // front
+    0, 1, 2,
+    2, 3, 0,
+    // right
+    1, 5, 6,
+    6, 2, 1,
+    // back
+    7, 6, 5,
+    5, 4, 7,
+    // left
+    4, 0, 3,
+    3, 7, 4,
+    // bottom
+    4, 5, 1,
+    1, 0, 4,
+    // top
+    3, 2, 6,
+    6, 7, 3,
+};
+
+struct Vertex
+{
+    
+    math::Vec3 position;
+    math::Vec2 uv;
+    math::Vec3 normal;
+    math::Rgba color;
+};
+
+struct Face
+{
+    u16 indices[3];
+    math::Vec3 normal;
+};
+
+enum RenderMaterialType
+{
+    RM_INVALID,
+    RM_COLOR,
+    RM_TEXTURED
+};
+
+struct Mesh
+{
+    i32 buffer_handle;
+    
+    Vertex* vertices;
+    i32 vertex_count;
+    
+    Face* faces;
+    i32 face_count;
 };
 
 struct TextureInfo
@@ -283,6 +361,26 @@ struct ShaderInfo
     i32 shader_attribute_count;
 };
 
+struct RenderMaterial
+{
+    ShaderInfo shader;
+    math::Rgba color;
+    
+    RenderMaterialType type;
+    
+    union
+    {
+        i32 diffuse_texture;
+    };
+};
+
+struct MeshInfo
+{
+    i32 mesh_handle;
+    TransformInfo transform;
+    RenderMaterial material;
+};
+
 struct RenderInfo
 {
     b32 is_ui;
@@ -334,6 +432,7 @@ struct RenderCommand
     b32 with_origin;
     math::Vec2 origin;
     math::Rgba color;
+    
     i32 shader_handle;
     ShaderAttribute* shader_attributes;
     i32 shader_attribute_count;
@@ -426,10 +525,10 @@ struct RenderCommand
         } model;
         struct
         {
-            i32 handle;
-            ShaderAttribute* attributes;
-            i32 attribute_count;
-        } shader;
+            i32 buffer_handle;
+            RenderMaterialType material_type;
+            i32 diffuse_texture;
+        } mesh;
         struct
         {
             b32 on;
@@ -491,7 +590,7 @@ struct ShaderData
     char* fragment_shader_content;
 };
 
-struct UiRenderInfo
+struct UIRenderInfo
 {
     b32 rendered = true;
     
@@ -508,10 +607,10 @@ GENERIC_MAP(texture_data, texture_data*, char*, StrCmp, NULL, "%s", STR_ASSIGN, 
 struct BufferData
 {
     r32* vertex_buffer;
-    long vertex_buffer_size;
-    u32* index_buffer;
+    i32 vertex_buffer_size;
+    u16* index_buffer;
     i32 index_buffer_count;
-    long index_buffer_size;
+    i32 index_buffer_size;
     b32 has_normals;
     b32 has_uvs;
     b32 skinned;
@@ -570,6 +669,9 @@ struct Renderer
     i32 updated_buffer_handles[BUFFER_ARRAY_SIZE];
     i32 updated_buffer_handle_count;
     
+    Mesh meshes[MAX_MESHES];
+    i32 mesh_count;
+    
     texture_data texture_data[TEXTURE_ARRAY_SIZE];
     i32 texture_count;
     
@@ -580,6 +682,7 @@ struct Renderer
     ShaderData shader_data[SHADER_ARRAY_SIZE];
     i32 shader_count;
     
+    math::Mat4 ui_projection_matrix;
     Camera cameras[MAX_CAMERAS];
     i32 current_camera_handle;
     
@@ -616,6 +719,7 @@ struct Renderer
     FontData fonts[64];
     i32 font_count;
     
+    MemoryArena mesh_arena;
     MemoryArena texture_arena;
     MemoryArena animation_arena;
     MemoryArena font_arena;

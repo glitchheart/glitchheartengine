@@ -26,6 +26,7 @@ const static struct
     
 } shader_conversion [] =
 {
+    SHADERPAIR(MESH),
     SHADERPAIR(TEXTURE),
     SHADERPAIR(TILE),
     SHADERPAIR(RECT),
@@ -58,6 +59,7 @@ char* shader_enum_to_str(ShaderType shader)
 
 static char* shader_paths[SHADER_COUNT] =
 {
+    "../engine_assets/shaders/meshshader",
     "../engine_assets/shaders/textureshader",
     "../engine_assets/shaders/tileshader",
     "../engine_assets/shaders/rectshader",
@@ -293,7 +295,8 @@ struct RenderState
     {
         0, 1, 2, 3,
         4, 5, 6, 7,
-        0, 4, 1, 5, 2, 6, 3, 7
+        0, 4, 1, 5,
+        2, 6, 3, 7
     };
     GLuint cube_index_buffer;
     
@@ -325,6 +328,7 @@ struct RenderState
         Shader shaders[SHADER_COUNT];
         struct
         {
+            Shader mesh_shader;
             Shader texture_shader;
             Shader tile_shader;
             Shader rect_shader;

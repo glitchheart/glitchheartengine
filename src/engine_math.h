@@ -1,5 +1,5 @@
-#ifndef MAtH_H
-#define MAtH_H
+#ifndef MATH_H
+#define MATH_H
 
 #include <cmath>
 
@@ -1185,6 +1185,13 @@ namespace math
             r32 m2[4];
             r32 m3[4];
         };
+        struct
+        {
+            Vec4 v1;
+            Vec4 v2;
+            Vec4 v3;
+            Vec4 v4;
+        };
         r32 v[4][4];
         r32 q[16];
         
@@ -2142,13 +2149,14 @@ namespace math
         return result;
     }
     
-    inline Mat4 translate(Mat4 in, Vec3 translate)
+    inline Mat4 translate(Mat4 in, Vec3 translation)
     {
-        Mat4 result(in);
-        result.m14 += translate.x;
-        result.m24 += translate.y;
-        result.m34 += translate.z;
-        return result;
+        Mat4 result(1.0f);
+        
+        result[0][3] += translation.x;
+        result[1][3] += translation.y;
+        result[2][3] += translation.z;
+        return(result * in);
     }
     
     inline Mat4 x_rotate(r32 angle)
@@ -2309,29 +2317,29 @@ namespace math
         return result;
     }
     
-    inline Mat4 look_at(Vec3 p, Vec3 t)
+    inline Mat4 look_at(Vec3 eye, Vec3 target)
     {
-        auto f = normalize(p - t);
-        auto u = Vec3(0.0f, 1.0f, 0.0f);
-        auto r = normalize(cross(u, f));
-        u = normalize(cross(f, r));
+        Vec3 forward = normalize(target - eye);
+        Vec3 right = normalize(cross(Vec3(0, 1, 0), forward));
+        Vec3 up = cross(forward, right);
         
-        Mat4 result(
-            r.x, r.y, r.z, 0,
-            u.x, u.y, u.z, 0,
-            f.x, f.y, f.z, 0,
-            0,   0,   0,   1
-            );
+        Mat4 result(right.x,    right.y,     right.z,    0,
+                    up.x,       up.y,        up.z,       0,
+                    -forward.x, -forward.y,  -forward.z, 0,
+                    0,          0,           0,          1);
         
-        result = translate(result, -p);
+        auto translation = result * Vec4(-eye, 1.0f);
+        result[0][3] = translation.x;
+        result[1][3] = translation.y;
+        result[2][3] = translation.z;
         
-        return result;
+        return(result);
     }
     
-    inline Mat4 perspective(r32 aspect_width_over_height, r32 focal_length, r32 near, r32 far)
+    inline Mat4 perspective(r32 aspect, r32 focal_length, r32 near, r32 far)
     {
         r32 a = 1.0f;
-        r32 b = aspect_width_over_height;
+        r32 b = aspect;
         r32 c = focal_length;
         
         r32 n = near;
@@ -2340,35 +2348,15 @@ namespace math
         r32 d = (n + f) / (n - f);
         r32 e = (2 * f * n) / (n - f);
         
-        Mat4 result(
-            a * c, 0.0f,  0.0f, 0.0f,
-            0,     b * c, 0.0f, 0.0f,
-            0.0f,  0.0f,  d,    e,
-            0.0f,  0.0f, -1.0f, 0.0f
-            );
+        Mat4 result =
+        {
+            a * c,    0,  0,  0,
+            0,  b * c,  0,  0,
+            0,    0,  d,  e,
+            0,    0, -1,  0
+        };
         
-        return result;
-    }
-    
-    inline Mat4 frustum(r32 bottom, r32 top, r32 left, r32 right,
-                        r32 near, r32 far)
-    {
-        
-        auto a = 2 * near / (right - left);
-        auto b = 2 * near / (top - bottom);
-        auto c = (right + left) / (right - left);
-        auto d = (top + bottom) / (top - bottom);
-        auto e = -(far + near) / (far - near);
-        auto f = -2 * far * near / (far - near);
-        
-        Mat4 result(
-            a,    0.0f, c,     0.0f,
-            0.0f, b,    d,     0.0f,
-            0.0f, 0.0f, e,     f,
-            0.0f, 0.0f, -1.0f, 0.0f
-            );
-        
-        return result;
+        return(result);
     }
     
     inline Vec3 mult_point_matrix(Vec3 in, Mat4 m)

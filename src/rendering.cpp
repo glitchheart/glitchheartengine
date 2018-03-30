@@ -66,7 +66,7 @@ static inline void camera_transform(Renderer& renderer, Camera& camera, math::Ve
     }
     else if(params.view_flags & C_FLAG_PERSPECTIVE)
     {
-        camera.projection_matrix = math::perspective((r32)renderer.viewport[2] / (r32)renderer.viewport[3], 0.60f, 0.1f, 100.0f);
+        camera.projection_matrix = math::perspective((r32)renderer.viewport[2] / (r32)renderer.viewport[3], 0.60f, 0.2f, 100.0f);
         
         camera.view_matrix = math::Mat4(1.0f);
         
@@ -225,21 +225,6 @@ static void disable_depth_test(Renderer& renderer)
     RenderCommand* render_command = push_next_command(renderer, false);
     render_command->type = RENDER_COMMAND_DEPTH_TEST;
     render_command->depth_test.on = false;
-}
-
-static void push_shader(Renderer& renderer, i32 shader_handle, ShaderAttribute* attributes, i32 attribute_count)
-{
-    RenderCommand* render_command = push_next_command(renderer, false);
-    render_command->type = RENDER_COMMAND_SHADER_START;
-    render_command->shader.handle = shader_handle;
-    render_command->shader.attributes = attributes;
-    render_command->shader.attribute_count = attribute_count;
-}
-
-static void end_shader(Renderer& renderer)
-{
-    RenderCommand* render_command = push_next_command(renderer, false);
-    render_command->type = RENDER_COMMAND_SHADER_END;
 }
 
 static void push_line(Renderer& renderer, math::Vec3 point1, math::Vec3 point2, r32 line_width, math::Rgba color, b32 is_ui = false)
@@ -434,6 +419,97 @@ static void push_buffer(Renderer& renderer, i32 buffer_handle, i32 texture_handl
     render_command->shader_attribute_count = 0;
 }
 
+static void generate_vertex_buffer(r32* vertex_buffer, Vertex* vertices, i32 vertex_count)
+{
+    i32 vertex_data_count = 3;
+    
+    for(i32 i = 0; i < vertex_count; i++)
+    {
+        i32 base_index = i * vertex_data_count;
+        Vertex vertex = vertices[i];
+        vertex_buffer[base_index] = vertex.position.x;
+        vertex_buffer[base_index + 1] = vertex.position.y;
+        vertex_buffer[base_index + 2] = vertex.position.z;
+    }
+}
+
+static void generate_index_buffer(u16* index_buffer, Face* faces, i32 face_count)
+{
+    i32 face_data_count = 3;
+    
+    for(i32 i = 0; i < face_count; i++)
+    {
+        i32 base_index = i * face_data_count;
+        Face face = faces[i];
+        index_buffer[base_index] = face.indices[0];
+        index_buffer[base_index + 1] = face.indices[1];
+        index_buffer[base_index + 2] = face.indices[2];
+    }
+}
+
+static void create_buffers_from_mesh(Renderer &renderer, Mesh &mesh, u64 vertex_data_flags)
+{
+    BufferData data = {};
+    
+    data.vertex_buffer_size = mesh.vertex_count * 3 * (i32)sizeof(r32);
+    data.vertex_buffer = push_size(&renderer.mesh_arena, data.vertex_buffer_size, r32);
+    generate_vertex_buffer(data.vertex_buffer, mesh.vertices, mesh.vertex_count);
+    
+    i32 index_count = mesh.face_count * 3;
+    data.index_buffer_size = index_count * (i32)sizeof(u16);
+    data.index_buffer_count = index_count;
+    data.index_buffer = push_size(&renderer.mesh_arena, data.index_buffer_size, u16);
+    generate_index_buffer(data.index_buffer, mesh.faces, mesh.face_count);
+    
+    renderer.buffers[renderer.buffer_count] = data;
+    mesh.buffer_handle = renderer.buffer_count++;
+}
+
+static void create_cube(Renderer &renderer, i32 *mesh_handle)
+{
+    Mesh &mesh = renderer.meshes[renderer.mesh_count++];
+    mesh = {};
+    mesh.vertices = push_array(&renderer.mesh_arena, sizeof(cube_vertices) / sizeof(r32) / 3, Vertex);
+    mesh.faces = push_array(&renderer.mesh_arena, sizeof(cube_indices) / sizeof(u16) / 3, Face);
+    
+    mesh.vertex_count = sizeof(cube_vertices) / sizeof(r32) / 3;
+    
+    for(i32 i = 0; i < mesh.vertex_count; i++)
+    {
+        Vertex &vertex = mesh.vertices[i];
+        vertex.position = math::Vec3(cube_vertices[i * 3], cube_vertices[i * 3 + 1], cube_vertices[i * 3 + 2]);
+    }
+    
+    mesh.face_count = sizeof(cube_indices) / sizeof(u16) / 3;
+    
+    for(i32 i = 0; i < mesh.face_count; i++)
+    {
+        Face &face = mesh.faces[i];
+        face.indices[0] = cube_indices[i * 3];
+        face.indices[1] = cube_indices[i * 3 + 1];
+        face.indices[2] = cube_indices[i * 3 + 2];
+    }
+    
+    *mesh_handle = renderer.mesh_count - 1;
+    
+    create_buffers_from_mesh(renderer, mesh, 0);
+}
+
+static void push_mesh(Renderer &renderer, MeshInfo mesh_info)
+{
+    RenderCommand *render_command = push_next_command(renderer, false);
+    render_command->type = RENDER_COMMAND_MESH;
+    render_command->position = mesh_info.transform.position;
+    render_command->scale = mesh_info.transform.scale;
+    render_command->rotation = mesh_info.transform.rotation;
+    
+    Mesh &mesh = renderer.meshes[mesh_info.mesh_handle];
+    render_command->mesh.buffer_handle = mesh.buffer_handle;
+    render_command->mesh.material_type = mesh_info.material.type;
+    render_command->mesh.diffuse_texture = mesh_info.material.diffuse_texture;
+    render_command->color = mesh_info.material.color;
+}
+
 static void push_model(Renderer& renderer, Model& model, MemoryArena* arena)
 {
     RenderCommand* render_command = push_next_command(renderer, false);
@@ -477,6 +553,8 @@ static void push_model(Renderer& renderer, Model& model, MemoryArena* arena)
 static void load_buffer(Renderer& renderer, r32* buffer, i32 buffer_size, i32* buffer_handle, b32 dynamic = false)
 {
     BufferData data = {};
+    data.has_normals = false;
+    data.has_uvs = false;
     data.vertex_buffer = buffer;
     data.vertex_buffer_size = buffer_size;
     data.index_buffer_count = 0;
