@@ -356,7 +356,7 @@ namespace math
         
         Vec3& operator=(const Vec3& v) = default;
         
-        r32 operator[](i32 i)
+        r32& operator[](i32 i)
         {
             return this->e[i];
         }
@@ -2467,11 +2467,11 @@ namespace math
     
     struct BoundingBox
     {
-        math::Vec3 min;
-        math::Vec3 max;
+        Vec3 min;
+        Vec3 max;
     };
     
-    inline b32 aabb_ray_interesection(BoundingBox b, Ray r)
+    inline b32 aabb_ray_intersection(Ray r, BoundingBox b)
     {
         math::Vec3 lb = b.min;
         math::Vec3 rt = b.max;
@@ -2511,14 +2511,79 @@ namespace math
         return true;
     }
     
+    inline b32 new_aabb_ray_intersection(Ray ray, BoundingBox b)
+    {
+        auto ray_dir = ray.ray;
+        auto ray_origin = ray.origin;
+        
+        auto temp = 0.0f;
+        auto tx_min = (b.min.x - ray_origin.x) / ray_dir.x;
+        auto tx_max = (b.max.x - ray_origin.x) / ray_dir.x;
+        
+        if(tx_max < tx_min)
+        {
+            temp = tx_max;
+            tx_max = tx_min;
+            tx_min = temp;
+        }
+        
+        auto ty_min = (b.min.y - ray_origin.y) / ray_dir.y;
+        auto ty_max = (b.max.y - ray_origin.y) / ray_dir.y;
+        
+        if(ty_max < ty_min)
+        {
+            temp = ty_max;
+            ty_max = ty_min;
+            ty_min = temp;
+        }
+        
+        auto tz_min = (b.min.z - ray_origin.z) / ray_dir.z;
+        auto tz_max = (b.max.z - ray_origin.z) / ray_dir.z;
+        
+        if(tz_max < tz_min)
+        {
+            temp = tz_max;
+            tz_max = tz_min;
+            tz_min = temp;
+        }
+        
+        auto t_min = (tx_min > ty_min) ? tx_min : ty_min;
+        auto t_max = (tx_max < ty_max) ? tx_max : ty_max;
+        
+        if(tx_min > ty_max || ty_min > tx_max) return false;
+        if(t_min > tz_max || tz_min > t_max) return false;
+        if(tz_min > t_min) t_min = tz_min;
+        if(tz_max < t_max) t_max = tz_max;
+        
+        return true;
+    }
+    
+    inline Ray raycast_from_mouse_coordinates(r32 mouse_x, r32 mouse_y, Mat4 p, Mat4 v, r32 width, r32 height)
+    {
+        Ray ray;
+        r32 x = 1.0f - (2.0f * mouse_x) / width;
+        r32 y = (2.0f * mouse_y / height) - 1.0f;
+        r32 z = 1.0f;
+        Vec3 ray_nds = Vec3(x, y, z);
+        Vec4 ray_clip = Vec4(ray_nds.xy, 1.0, 1.0f);
+        Vec4 ray_eye = inverse(p) * ray_clip;
+        ray_eye = Vec4(ray_eye.xy, 1.0f, 0.0f);
+        Vec3 ray_world = (v * ray_eye).xyz;
+        ray_world = normalize(ray_world);
+        
+        //printf("Ray world %f %f %f\n", ray_world.x, ray_world.y, ray_world.z);
+        ray.ray = ray_world;
+        return(ray);
+    }
+    
     inline Ray cast_picking_ray(r32 mouse_x, r32 mouse_y, Mat4 p, Mat4 v, r32 width, r32 height)
     {
-        auto mx = (2.0f * mouse_x) / width - 1.0f;
+        auto mx = 1.0f - (2.0f * mouse_x) / width;
         auto my = 1.0f - (2.0f * mouse_y / height);
         
         // 1.0f is the far plane in NDC
         auto mouse = inverse(p) * math::Vec3(mx, my, 1.0f);
-        mouse.z = -1.0f;
+        mouse.z = 1.0f;
         mouse = inverse(v) * mouse;
         
         // -1.0f is the near plane in NDC
@@ -2532,7 +2597,10 @@ namespace math
         ray.origin = origin;
         ray.target = mouse;
         ray.ray = temp_ray.xyz;
-        return ray;
+        //printf("%f %f %f\n", ray.origin.x, ray.origin.y, ray.origin.z);
+        
+        ray.ray = raycast_from_mouse_coordinates(mouse_x, mouse_y, p, v, width, height).ray;
+        return(ray);
     }
     
     inline Ray cast_ray(Vec3 origin, Vec3 target)
