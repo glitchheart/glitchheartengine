@@ -266,12 +266,12 @@ static void use_shader(Shader *shader)
     glUseProgram(shader->program);
 }
 
-static void register_buffers(RenderState& render_state, GLfloat* vertex_buffer, long vertex_buffer_size, GLuint* index_buffer, i32 index_buffer_count, long index_buffer_size, b32 has_normals, b32 has_uvs, b32 skinned, i32 buffer_handle = -1)
+static void register_buffers(RenderState& render_state, GLfloat* vertex_buffer, i32 vertex_buffer_size, GLushort* index_buffer, i32 index_buffer_count, i32 index_buffer_size, b32 has_normals, b32 has_uvs, b32 skinned, i32 buffer_handle = -1)
 {
     Buffer* buffer = &render_state.buffers[buffer_handle == -1 ? render_state.buffer_count : buffer_handle];
     
-    buffer->vertex_buffer_size = (GLint)vertex_buffer_size;
-    buffer->index_buffer_count = (GLint)index_buffer_count;
+    buffer->vertex_buffer_size = vertex_buffer_size;
+    buffer->index_buffer_count = index_buffer_count;
     
     if (buffer->vao == 0)
         glGenVertexArrays(1, &buffer->vao);
@@ -345,7 +345,7 @@ static void register_buffers(RenderState& render_state, GLfloat* vertex_buffer, 
         glEnableVertexAttribArray(4);
         glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, (GLsizei)((8 + bone_info_size) * sizeof(GLfloat)), (void*)(10 * sizeof(GLfloat)));
     }
-    else
+    else if(skinned)
     {
         glEnableVertexAttribArray(0);
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, (GLsizei)(3 + bone_info_size * sizeof(GLfloat)), 0);
@@ -361,6 +361,11 @@ static void register_buffers(RenderState& render_state, GLfloat* vertex_buffer, 
         // Weights
         glEnableVertexAttribArray(3);
         glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, (GLsizei)((8 + bone_info_size) * sizeof(GLfloat)), (void*)(8 * sizeof(GLfloat)));
+    }
+    else
+    {
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, (GLsizei)(3 * sizeof(GLfloat)), 0);
     }
     
     glGenBuffers(1, &buffer->ibo);
@@ -625,8 +630,6 @@ static void render_setup(RenderState *render_state, MemoryArena* perm_arena)
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint) * CUBE_INDICES, render_state->wireframe_cube_indices, GL_STATIC_DRAW);
     glBindVertexArray(0);
     
-    //
-    
     glGenVertexArrays(1, &render_state->isometric_vao);
     glBindVertexArray(render_state->isometric_vao);
     glGenBuffers(1, &render_state->isometric_quad_vbo);
@@ -715,6 +718,8 @@ static void render_setup(RenderState *render_state, MemoryArena* perm_arena)
     block_index = glGetUniformBlockIndex(render_state->simple_model_shader.program, "pointLights");
     glUniformBlockBinding(render_state->simple_model_shader.program, block_index, 2);
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
+    
+    load_shader(shader_paths[SHADER_MESH], &render_state->mesh_shader, perm_arena);
 }
 
 static void update_lighting_data(const RenderState& render_state)
@@ -1185,14 +1190,6 @@ void render_circle(RenderState& render_state, math::Vec4 color, r32 center_x, r3
 
 static void render_quad(RenderMode mode, RenderState& render_state, math::Vec4 color, math::Vec3 position, b32 flipped, math::Vec3 size, math::Vec3 rotation, b32 with_origin, math::Vec2 origin, i32 shader_handle, ShaderAttribute* shader_attributes, i32 shader_attribute_count, b32 is_ui = true, i32 texture_handle = 0, b32 for_animation = false, math::Vec2 texture_size = math::Vec2(), math::Vec2i frame_size = math::Vec2i(), math::Vec2 texture_offset = math::Vec2(), math::Mat4 projection_matrix = math::Mat4(), math::Mat4 view_matrix = math::Mat4())
 {
-    if (is_ui)
-    {
-        position.x *= render_state.scale_x;
-        position.x -= 1;
-        position.y *= render_state.scale_y;
-        position.y -= 1;
-    }
-    
     switch (mode)
     {
         case RENDER_FILL:
@@ -1224,26 +1221,12 @@ static void render_quad(RenderMode mode, RenderState& render_state, math::Vec4 c
                     if (frame_size.x != 0 && frame_size.y != 0)
                     {
                         pixel_size = math::Vec2i(frame_size.x, frame_size.y);
-                        if (is_ui)
-                        {
-                            size = math::Vec3(size.x * frame_size.x, size.y * frame_size.y, 0);
-                        }
-                        else
-                        {
-                            size = math::Vec3((size.x * frame_size.x) / render_state.pixels_per_unit, (size.y * frame_size.y) / render_state.pixels_per_unit, 0);
-                        }
+                        size = math::Vec3((size.x * frame_size.x) / render_state.pixels_per_unit, (size.y * frame_size.y) / render_state.pixels_per_unit, 0);
                     }
                     else
                     {
                         pixel_size = math::Vec2i(texture_size.x, texture_size.y);
-                        if (is_ui)
-                        {
-                            size = math::Vec3(size.x * texture_size.x, size.y * texture_size.y, 0);
-                        }
-                        else
-                        {
-                            size = math::Vec3((size.x * texture_size.x) / render_state.pixels_per_unit, (size.y * texture_size.y) / render_state.pixels_per_unit, 0);
-                        }
+                        size = math::Vec3((size.x * texture_size.x) / render_state.pixels_per_unit, (size.y * texture_size.y) / render_state.pixels_per_unit, 0);
                     }
                 }
                 
@@ -1258,12 +1241,6 @@ static void render_quad(RenderMode mode, RenderState& render_state, math::Vec4 c
                     shader = render_state.texture_rect_shader;
                 
                 render_state.bound_texture = (GLuint)texture_handle;
-            }
-            
-            if (is_ui)
-            {
-                size.x *= render_state.scale_x;
-                size.y *= render_state.scale_y;
             }
             
             if (render_state.current_extra_shader != -1)
@@ -1286,7 +1263,7 @@ static void render_quad(RenderMode mode, RenderState& render_state, math::Vec4 c
             }
             
             model = math::scale(model, size);
-            model = math::translate(model, math::Vec3(size.x / -2.0f, size.y / -size.y, 0.0f));
+            model = math::translate(model, math::Vec3(size.x / -2.0f, -1.0f, 0.0f));
             
             auto x_axis = rotation.x > 0.0f ? 1.0f : 0.0f;
             auto y_axis = rotation.y > 0.0f ? 1.0f : 0.0f;
@@ -1298,7 +1275,7 @@ static void render_quad(RenderMode mode, RenderState& render_state, math::Vec4 c
             orientation = math::rotate(orientation, rotation.z, math::Vec3(0.0f, 0.0f, z_axis));
             
             model = to_matrix(orientation) * model;
-            model = math::translate(model, math::Vec3(size.x / 2.0f, size.y / size.y, 0.0f));
+            model = math::translate(model, math::Vec3(size.x / 2.0f, 1.0f, 0.0f));
             
             if (with_origin)
             {
@@ -1325,9 +1302,10 @@ static void render_quad(RenderMode mode, RenderState& render_state, math::Vec4 c
             
             model = math::translate(model, position);
             
+            set_mat4_uniform(shader.program, "Projection", projection_matrix);
+            
             if (!is_ui)
             {
-                set_mat4_uniform(shader.program, "Projection", projection_matrix);
                 set_mat4_uniform(shader.program, "View", view_matrix);
             }
             
@@ -1344,7 +1322,6 @@ static void render_quad(RenderMode mode, RenderState& render_state, math::Vec4 c
             
             if (for_animation)
             {
-                
                 set_vec2_uniform(shader.program, "textureSize", texture_size);
                 set_vec2_uniform(shader.program, "frameSize", math::Vec2((r32)frame_size.x, (r32)frame_size.y));
             }
@@ -1608,7 +1585,8 @@ static void render_quad(const RenderCommand& command, RenderState& render_state,
                     command.quad.for_animation,
                     command.quad.texture_size,
                     command.quad.frame_size,
-                    command.quad.texture_offset);
+                    command.quad.texture_offset,
+                    projection);
     }
     else
     {
@@ -1692,6 +1670,42 @@ static void render_model(const RenderCommand& command, RenderState& render_state
         glDrawElements(GL_TRIANGLES, buffer.index_buffer_count, GL_UNSIGNED_INT, (void*)0);
         glBindVertexArray(0);
     }
+}
+
+static void render_mesh(const RenderCommand &render_command, RenderState &render_state, math::Mat4 projection_matrix, math::Mat4 view_matrix)
+{
+    Buffer buffer = render_state.buffers[render_command.mesh.buffer_handle];
+    glBindVertexArray(buffer.vao);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer.ibo);
+    
+    auto shader = render_state.mesh_shader;
+    use_shader(&shader);
+    
+    math::Mat4 model_matrix(1.0f);
+    model_matrix = math::scale(model_matrix, render_command.scale);
+    
+    /*
+    math::Vec3 rotation = render_command.rotation;
+    auto x_axis = rotation.x > 0.0f ? 1.0f : 0.0f;
+    auto y_axis = rotation.y > 0.0f ? 1.0f : 0.0f;
+    auto z_axis = rotation.z > 0.0f ? 1.0f : 0.0f;
+    
+    auto orientation = math::Quat();
+    orientation = math::rotate(orientation, rotation.x, math::Vec3(x_axis, 0.0f, 0.0f));
+    orientation = math::rotate(orientation, rotation.y, math::Vec3(0.0f, y_axis, 0.0f));
+    orientation = math::rotate(orientation, rotation.z, math::Vec3(0.0f, 0.0f, z_axis));
+    
+    model_matrix = to_matrix(orientation) * model_matrix;
+    */
+    
+    model_matrix = math::translate(model_matrix, render_command.position);
+    
+    set_mat4_uniform(shader.program, "projectionMatrix", projection_matrix);
+    set_mat4_uniform(shader.program, "viewMatrix", view_matrix);
+    set_mat4_uniform(shader.program, "modelMatrix", model_matrix);
+    set_vec4_uniform(shader.program, "color", render_command.color);
+    
+    glDrawElements(GL_TRIANGLES, buffer.index_buffer_count, GL_UNSIGNED_SHORT, (void*)0);
 }
 
 static void render_buffer(const RenderCommand& command, RenderState& render_state, math::Mat4 projection, math::Mat4 view)
@@ -1996,6 +2010,12 @@ static void render_commands(RenderState& render_state, Renderer& renderer, Memor
                 
             }
             break;
+            case RENDER_COMMAND_MESH:
+            {
+                render_mesh(command, render_state, camera.projection_matrix, camera.view_matrix);
+                
+            }
+            break;
             case RENDER_COMMAND_BUFFER:
             {
                 render_buffer(command, render_state, camera.projection_matrix, camera.view_matrix);
@@ -2016,20 +2036,6 @@ static void render_commands(RenderState& render_state, Renderer& renderer, Memor
                 {
                     glDisable(GL_DEPTH_TEST);
                 }
-            }
-            break;
-            case RENDER_COMMAND_SHADER_START:
-            {
-                render_state.current_extra_shader = command.shader.handle;
-                render_state.shader_attributes = command.shader.attributes;
-                render_state.shader_attribute_count = command.shader.attribute_count;
-            }
-            break;
-            case RENDER_COMMAND_SHADER_END:
-            {
-                render_state.current_extra_shader = -1;
-                render_state.shader_attributes = 0;
-                render_state.shader_attribute_count = 0;
             }
             break;
             default:
@@ -2055,12 +2061,12 @@ static void render_commands(RenderState& render_state, Renderer& renderer, Memor
             break;
             case RENDER_COMMAND_TEXT:
             {
-                render_text(command, render_state, camera.view_matrix, camera.projection_matrix);
+                render_text(command, render_state, camera.view_matrix, renderer.ui_projection_matrix);
             }
             break;
             case RENDER_COMMAND_QUAD:
             {
-                render_quad(command, render_state, camera.projection_matrix, camera.view_matrix);
+                render_quad(command, render_state, renderer.ui_projection_matrix, camera.view_matrix);
             }
             break;
             case RENDER_COMMAND_SPRITE:
@@ -2081,20 +2087,6 @@ static void render_commands(RenderState& render_state, Renderer& renderer, Memor
             case RENDER_COMMAND_DEPTH_TEST:
             {
                 // @Incomplete: Do we need depth test commands for UI stuff?
-            }
-            break;
-            case RENDER_COMMAND_SHADER_START:
-            {
-                render_state.current_extra_shader = command.shader.handle;
-                render_state.shader_attributes = command.shader.attributes;
-                render_state.shader_attribute_count = command.shader.attribute_count;
-            }
-            break;
-            case RENDER_COMMAND_SHADER_END:
-            {
-                render_state.current_extra_shader = -1;
-                render_state.shader_attributes = 0;
-                render_state.shader_attribute_count = 0;
             }
             break;
             default:
@@ -2160,7 +2152,7 @@ static void render(RenderState& render_state, Renderer& renderer, MemoryArena* p
     render_state.pixels_per_unit = renderer.pixels_per_unit;
     renderer.scale_x = render_state.scale_x;
     renderer.scale_y = render_state.scale_y;
-    
+    renderer.ui_projection_matrix = math::ortho(0.0f, (r32)renderer.window_width, 0.0f, (r32)renderer.window_height, -1.0f, 1.0f);
     register_buffers(render_state, renderer, perm_arena);
     
     if ((renderer.frame_lock != 0 && render_state.frame_delta <= 0.0) || renderer.frame_lock == 0)
