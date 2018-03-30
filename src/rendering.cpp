@@ -421,7 +421,7 @@ static void push_buffer(Renderer& renderer, i32 buffer_handle, i32 texture_handl
 
 static void generate_vertex_buffer(r32* vertex_buffer, Vertex* vertices, i32 vertex_count)
 {
-    i32 vertex_data_count = 3;
+    i32 vertex_data_count = 6;
     
     for(i32 i = 0; i < vertex_count; i++)
     {
@@ -430,6 +430,9 @@ static void generate_vertex_buffer(r32* vertex_buffer, Vertex* vertices, i32 ver
         vertex_buffer[base_index] = vertex.position.x;
         vertex_buffer[base_index + 1] = vertex.position.y;
         vertex_buffer[base_index + 2] = vertex.position.z;
+        vertex_buffer[base_index + 3] = vertex.normal.x;
+        vertex_buffer[base_index + 4] = vertex.normal.y;
+        vertex_buffer[base_index + 5] = vertex.normal.z;
     }
 }
 
@@ -450,8 +453,9 @@ static void generate_index_buffer(u16* index_buffer, Face* faces, i32 face_count
 static void create_buffers_from_mesh(Renderer &renderer, Mesh &mesh, u64 vertex_data_flags)
 {
     BufferData data = {};
-    
-    data.vertex_buffer_size = mesh.vertex_count * 3 * (i32)sizeof(r32);
+    data.has_normals = true;
+    i32 vertex_size = 6;
+    data.vertex_buffer_size = mesh.vertex_count * vertex_size * (i32)sizeof(r32);
     data.vertex_buffer = push_size(&renderer.mesh_arena, data.vertex_buffer_size, r32);
     generate_vertex_buffer(data.vertex_buffer, mesh.vertices, mesh.vertex_count);
     
@@ -463,6 +467,17 @@ static void create_buffers_from_mesh(Renderer &renderer, Mesh &mesh, u64 vertex_
     
     renderer.buffers[renderer.buffer_count] = data;
     mesh.buffer_handle = renderer.buffer_count++;
+}
+
+static math::Vec3 compute_face_normal(Face f, Vertex *vertices)
+{
+    // Newell's Method
+    // https://www.khronos.org/opengl/wiki/Calculating_a_Surface_Normal
+    math::Vec3 normal = math::Vec3(0.0f);
+    math::Vec3 u = (vertices[f.indices[1]].position - vertices[f.indices[0]].position);
+    math::Vec3 v = (vertices[f.indices[2]].position - vertices[f.indices[0]].position);
+    
+    return math::normalize(math::cross(u, v));
 }
 
 static void create_cube(Renderer &renderer, i32 *mesh_handle)
@@ -478,6 +493,7 @@ static void create_cube(Renderer &renderer, i32 *mesh_handle)
     {
         Vertex &vertex = mesh.vertices[i];
         vertex.position = math::Vec3(cube_vertices[i * 3], cube_vertices[i * 3 + 1], cube_vertices[i * 3 + 2]);
+        vertex.normal = math::Vec3(cube_normals[i * 3], cube_normals[i * 3 + 1], cube_normals[i * 3 + 2]);
     }
     
     mesh.face_count = sizeof(cube_indices) / sizeof(u16) / 3;
@@ -485,6 +501,12 @@ static void create_cube(Renderer &renderer, i32 *mesh_handle)
     for(i32 i = 0; i < mesh.face_count; i++)
     {
         Face &face = mesh.faces[i];
+        
+        /*auto normal = compute_face_normal(face, mesh.vertices);
+        mesh.vertices[face.indices[i * 3]].normal = normal;
+        mesh.vertices[face.indices[i * 3 + 1]].normal = normal;
+        mesh.vertices[face.indices[i * 3 + 2]].normal = normal;
+        */
         face.indices[0] = cube_indices[i * 3];
         face.indices[1] = cube_indices[i * 3 + 1];
         face.indices[2] = cube_indices[i * 3 + 2];

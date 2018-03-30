@@ -286,91 +286,102 @@ static void register_buffers(RenderState& render_state, GLfloat* vertex_buffer, 
     
     i32 bone_info_size = skinned ? 8 : 0;
     
-    if (has_normals && has_uvs)
+    if(skinned)
     {
-        glEnableVertexAttribArray(0);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, (GLsizei)((8 + bone_info_size) * sizeof(GLfloat)), 0);
-        
-        glEnableVertexAttribArray(1);
-        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, (GLsizei)((8 + bone_info_size) * sizeof(GLfloat)), (void*)(3 * sizeof(GLfloat)));
-        
-        glEnableVertexAttribArray(2);
-        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, (GLsizei)((8 + bone_info_size) * sizeof(GLfloat)), (void*)(6 * sizeof(GLfloat)));
-        
-        // Bone indices
-        glEnableVertexAttribArray(3);
-        glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, (GLsizei)((8 + bone_info_size) * sizeof(GLfloat)), (void*)(8 * sizeof(GLfloat)));
-        
-        // Weights
-        glEnableVertexAttribArray(4);
-        glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, (GLsizei)((8 + bone_info_size) * sizeof(GLfloat)), (void*)(12 * sizeof(GLfloat)));
+        if (has_normals && has_uvs)
+        {
+            glEnableVertexAttribArray(0);
+            glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, (GLsizei)((8 + bone_info_size) * sizeof(GLfloat)), 0);
+            
+            glEnableVertexAttribArray(1);
+            glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, (GLsizei)((8 + bone_info_size) * sizeof(GLfloat)), (void*)(3 * sizeof(GLfloat)));
+            
+            glEnableVertexAttribArray(2);
+            glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, (GLsizei)((8 + bone_info_size) * sizeof(GLfloat)), (void*)(6 * sizeof(GLfloat)));
+            
+            // Bone indices
+            glEnableVertexAttribArray(3);
+            glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, (GLsizei)((8 + bone_info_size) * sizeof(GLfloat)), (void*)(8 * sizeof(GLfloat)));
+            
+            // Weights
+            glEnableVertexAttribArray(4);
+            glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, (GLsizei)((8 + bone_info_size) * sizeof(GLfloat)), (void*)(12 * sizeof(GLfloat)));
+        }
+        else if (has_normals)
+        {
+            glEnableVertexAttribArray(0);
+            glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, (GLsizei)((6 + bone_info_size) * sizeof(GLfloat)), 0);
+            
+            glEnableVertexAttribArray(1);
+            glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, (GLsizei)((6 + bone_info_size) * sizeof(GLfloat)), (void*)(3 * sizeof(GLfloat)));
+            
+            // Bone count
+            glEnableVertexAttribArray(2);
+            glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, (GLsizei)((8 + bone_info_size) * sizeof(GLfloat)), (void*)(6 * sizeof(GLfloat)));
+            
+            // Bone indices
+            glEnableVertexAttribArray(3);
+            glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, (GLsizei)((8 + bone_info_size) * sizeof(GLfloat)), (void*)(7 * sizeof(GLfloat)));
+            
+            // Weights
+            glEnableVertexAttribArray(4);
+            glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, (GLsizei)((8 + bone_info_size) * sizeof(GLfloat)), (void*)(11 * sizeof(GLfloat)));
+        }
+        else if (has_uvs)
+        {
+            glEnableVertexAttribArray(0);
+            glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, (GLsizei)((5 + bone_info_size) * sizeof(GLfloat)), 0);
+            
+            glEnableVertexAttribArray(1);
+            glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, (GLsizei)((5 + bone_info_size) * sizeof(GLfloat)), (void*)(3 * sizeof(GLfloat)));
+            
+            // Bone count
+            glEnableVertexAttribArray(2);
+            glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, (GLsizei)((8 + bone_info_size) * sizeof(GLfloat)), (void*)(5 * sizeof(GLfloat)));
+            
+            // Bone indices
+            glEnableVertexAttribArray(3);
+            glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, (GLsizei)((8 + bone_info_size) * sizeof(GLfloat)), (void*)(6 * sizeof(GLfloat)));
+            
+            // Weights
+            glEnableVertexAttribArray(4);
+            glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, (GLsizei)((8 + bone_info_size) * sizeof(GLfloat)), (void*)(10 * sizeof(GLfloat)));
+        }
+        else
+        {
+            glEnableVertexAttribArray(0);
+            glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, (GLsizei)(3 + bone_info_size * sizeof(GLfloat)), 0);
+            
+            // Bone count
+            glEnableVertexAttribArray(1);
+            glVertexAttribPointer(1, 1, GL_FLOAT, GL_FALSE, (GLsizei)((8 + bone_info_size) * sizeof(GLfloat)), (void*)(3 * sizeof(GLfloat)));
+            
+            // Bone indices
+            glEnableVertexAttribArray(2);
+            glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, (GLsizei)((8 + bone_info_size) * sizeof(GLfloat)), (void*)(4 * sizeof(GLfloat)));
+            
+            // Weights
+            glEnableVertexAttribArray(3);
+            glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, (GLsizei)((8 + bone_info_size) * sizeof(GLfloat)), (void*)(8 * sizeof(GLfloat)));
+        }
     }
-    else if (has_normals)
-    {
-        glEnableVertexAttribArray(0);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, (GLsizei)((6 + bone_info_size) * sizeof(GLfloat)), 0);
-        
-        glEnableVertexAttribArray(1);
-        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, (GLsizei)((6 + bone_info_size) * sizeof(GLfloat)), (void*)(3 * sizeof(GLfloat)));
-        
-        // Bone count
-        glEnableVertexAttribArray(2);
-        glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, (GLsizei)((8 + bone_info_size) * sizeof(GLfloat)), (void*)(6 * sizeof(GLfloat)));
-        
-        // Bone indices
-        glEnableVertexAttribArray(3);
-        glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, (GLsizei)((8 + bone_info_size) * sizeof(GLfloat)), (void*)(7 * sizeof(GLfloat)));
-        
-        // Weights
-        glEnableVertexAttribArray(4);
-        glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, (GLsizei)((8 + bone_info_size) * sizeof(GLfloat)), (void*)(11 * sizeof(GLfloat)));
-    }
-    else if (has_uvs)
-    {
-        glEnableVertexAttribArray(0);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, (GLsizei)((5 + bone_info_size) * sizeof(GLfloat)), 0);
-        
-        glEnableVertexAttribArray(1);
-        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, (GLsizei)((5 + bone_info_size) * sizeof(GLfloat)), (void*)(3 * sizeof(GLfloat)));
-        
-        // Bone count
-        glEnableVertexAttribArray(2);
-        glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, (GLsizei)((8 + bone_info_size) * sizeof(GLfloat)), (void*)(5 * sizeof(GLfloat)));
-        
-        // Bone indices
-        glEnableVertexAttribArray(3);
-        glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, (GLsizei)((8 + bone_info_size) * sizeof(GLfloat)), (void*)(6 * sizeof(GLfloat)));
-        
-        // Weights
-        glEnableVertexAttribArray(4);
-        glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, (GLsizei)((8 + bone_info_size) * sizeof(GLfloat)), (void*)(10 * sizeof(GLfloat)));
-    }
-    else if(skinned)
-    {
-        glEnableVertexAttribArray(0);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, (GLsizei)(3 + bone_info_size * sizeof(GLfloat)), 0);
-        
-        // Bone count
-        glEnableVertexAttribArray(1);
-        glVertexAttribPointer(1, 1, GL_FLOAT, GL_FALSE, (GLsizei)((8 + bone_info_size) * sizeof(GLfloat)), (void*)(3 * sizeof(GLfloat)));
-        
-        // Bone indices
-        glEnableVertexAttribArray(2);
-        glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, (GLsizei)((8 + bone_info_size) * sizeof(GLfloat)), (void*)(4 * sizeof(GLfloat)));
-        
-        // Weights
-        glEnableVertexAttribArray(3);
-        glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, (GLsizei)((8 + bone_info_size) * sizeof(GLfloat)), (void*)(8 * sizeof(GLfloat)));
-    }
+    
     else
     {
         glEnableVertexAttribArray(0);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, (GLsizei)(3 * sizeof(GLfloat)), 0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, (GLsizei)(6 * sizeof(GLfloat)), 0);
+        
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, (GLsizei)(6 * sizeof(GLfloat)), (void*)(3 * sizeof(GLfloat)));
     }
     
-    glGenBuffers(1, &buffer->ibo);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer->ibo);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, index_buffer_size, index_buffer, GL_STATIC_DRAW);
+    if(buffer->index_buffer_count > 0)
+    {
+        printf("DAMN!\n");
+        glGenBuffers(1, &buffer->ibo);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer->ibo);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, index_buffer_size, index_buffer, GL_STATIC_DRAW);
+    }
     
     if (buffer_handle == -1)
         render_state.buffer_count++;
@@ -1704,8 +1715,21 @@ static void render_mesh(const RenderCommand &render_command, RenderState &render
     set_mat4_uniform(shader.program, "viewMatrix", view_matrix);
     set_mat4_uniform(shader.program, "modelMatrix", model_matrix);
     set_vec4_uniform(shader.program, "color", render_command.color);
+    set_vec3_uniform(shader.program, "lightPosWorld", math::Vec3(20, 20, 2));
+    set_vec3_uniform(shader.program, "diffuseColor", math::Vec3(1, 1, 1));
+    set_vec3_uniform(shader.program, "lightColor", math::Vec3(0.5f, 0.5f, 1.0f));
+    set_vec3_uniform(shader.program, "specularColor", math::Vec3(1, 1, 1));
+    set_float_uniform(shader.program, "lightPower", 1000.0f);
     
-    glDrawElements(GL_TRIANGLES, buffer.index_buffer_count, GL_UNSIGNED_SHORT, (void*)0);
+    if(buffer.index_buffer_count == 0)
+    {
+        glDrawArrays(
+            GL_TRIANGLES, 0, buffer.vertex_buffer_size / 3);
+    }
+    else
+    {
+        glDrawElements(GL_TRIANGLES, buffer.index_buffer_count, GL_UNSIGNED_SHORT, (void*)0);
+    }
 }
 
 static void render_buffer(const RenderCommand& command, RenderState& render_state, math::Mat4 projection, math::Mat4 view)
