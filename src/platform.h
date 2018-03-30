@@ -156,76 +156,90 @@ enum SeekOptions
 };
 
 #define PLATFORM_GET_ALL_FILES_WITH_EXTENSION(name) void name(MemoryArena* arena, const char* directory_path, const char* extension, DirectoryData* directory_data, b32 with_sub_directories)
-typedef PLATFORM_GET_ALL_FILES_WITH_EXTENSION(platform_get_all_files_with_extension);
+typedef PLATFORM_GET_ALL_FILES_WITH_EXTENSION(PlatformGetAllFilesWithExtension);
 
 #define PLATFORM_FILE_EXISTS(name) b32 name(const char* file_path)
-typedef PLATFORM_FILE_EXISTS(platform_file_exists);
+typedef PLATFORM_FILE_EXISTS(PlatformFileExists);
 
 #define PLATFORM_ALLOCATE_MEMORY(name) PlatformMemoryBlock* name(umm size, u64 flags)
-typedef PLATFORM_ALLOCATE_MEMORY(platform_allocate_memory);
+typedef PLATFORM_ALLOCATE_MEMORY(PlatformAllocateMemory);
 
 #define PLATFORM_DEALLOCATE_MEMORY(name) void name(PlatformMemoryBlock* block)
-typedef PLATFORM_DEALLOCATE_MEMORY(platform_deallocate_memory);
+typedef PLATFORM_DEALLOCATE_MEMORY(PlatformDeallocateMemory);
 
 #define PLATFORM_OPEN_FILE_WITH_DIALOG(name) PlatformFile name(MemoryArena* arena, char* extension)
-typedef PLATFORM_OPEN_FILE_WITH_DIALOG(platform_open_file_with_dialog);
+typedef PLATFORM_OPEN_FILE_WITH_DIALOG(PlatformOpenFileWithDialog);
 
 #define PLATFORM_SAVE_FILE_WITH_DIALOG(name) PlatformFile name(MemoryArena* arena, char* extension, u64 flags)
-typedef PLATFORM_SAVE_FILE_WITH_DIALOG(platform_save_file_with_dialog);
+typedef PLATFORM_SAVE_FILE_WITH_DIALOG(PlatformSaveFileWithDialog);
 
 #define PLATFORM_GET_TIME_OF_DAY(name) u32 name()
-typedef PLATFORM_GET_TIME_OF_DAY(platform_get_time_of_day);
+typedef PLATFORM_GET_TIME_OF_DAY(PlatformGetTimeOfDay);
 
 #define PLATFORM_LOAD_LIBRARY(name) void* name(const char* path)
-typedef PLATFORM_LOAD_LIBRARY(platform_load_library);
+typedef PLATFORM_LOAD_LIBRARY(PlatformLoadLibrary);
 
 #define PLATFORM_FREE_LIBRARY(name) void name(void* library)
-typedef PLATFORM_FREE_LIBRARY(platform_free_library);
+typedef PLATFORM_FREE_LIBRARY(PlatformFreeLibrary);
 
 #define PLATFORM_LOAD_SYMBOL(name) void* name(void* library, const char* symbol)
-typedef PLATFORM_LOAD_SYMBOL(platform_load_symbol);
+typedef PLATFORM_LOAD_SYMBOL(PlatformLoadSymbol);
 
 #define PLATFORM_OPEN_FILE(name) PlatformFile name(const char* path, u32 open_flags)
-typedef PLATFORM_OPEN_FILE(platform_open_file);
+typedef PLATFORM_OPEN_FILE(PlatformOpenFile);
 
 #define PLATFORM_CLOSE_FILE(name) void name(PlatformFile& file)
-typedef PLATFORM_CLOSE_FILE(platform_close_file);
+typedef PLATFORM_CLOSE_FILE(PlatformCloseFile);
 
 #define PLATFORM_WRITE_FILE(name) void name(const void* src, i32 size, i32 size_bytes, PlatformFile& file)
-typedef PLATFORM_WRITE_FILE(platform_write_file);
+typedef PLATFORM_WRITE_FILE(PlatformWriteFile);
 
 #define PLATFORM_READ_FILE(name) void name(void* dst, i32 size, i32 size_bytes, PlatformFile& file)
-typedef PLATFORM_READ_FILE(platform_read_file);
+typedef PLATFORM_READ_FILE(PlatformReadFile);
 
 #define PLATFORM_SEEK_FILE(name) void name(PlatformFile& file, i32 offset, SeekOptions seek_options)
-typedef PLATFORM_SEEK_FILE(platform_seek_file);
+typedef PLATFORM_SEEK_FILE(PlatformSeekFile);
 
 #define PLATFORM_TELL_FILE(name) i32 name(PlatformFile& file)
-typedef PLATFORM_TELL_FILE(platform_tell_file);
+typedef PLATFORM_TELL_FILE(PlatformTellFile);
+
+#define PLATFORM_READ_LINE_FILE(name) char *name(char* dst, i32 buf_size, PlatformFile& file)
+typedef PLATFORM_READ_LINE_FILE(PlatformReadLineFile);
+
+#define PLATFORM_PRINT_FILE(name) i32 name(PlatformFile& file, const char* format, ...)
+typedef PLATFORM_PRINT_FILE(PlatformPrintFile);
 
 struct PlatformApi
 {
-    platform_get_all_files_with_extension *get_all_files_with_extension;
-    platform_file_exists *file_exists;
-    platform_allocate_memory *allocate_memory;
-    platform_deallocate_memory *deallocate_memory;
-    platform_open_file_with_dialog* open_file_with_dialog;
-    platform_save_file_with_dialog* save_file_with_dialog;
-    platform_get_time_of_day* get_time_of_day;
-    platform_load_library* load_dynamic_library;
-    platform_free_library* free_dynamic_library;
-    platform_load_symbol* load_symbol;
-    platform_open_file* open_file;
-    platform_close_file* close_file;
-    platform_write_file* write_file;
-    platform_read_file* read_file;
-    platform_seek_file* seek_file;
-    platform_tell_file* tell_file;
+    PlatformGetAllFilesWithExtension *get_all_files_with_extension;
+    PlatformFileExists *file_exists;
+    PlatformAllocateMemory *allocate_memory;
+    PlatformDeallocateMemory *deallocate_memory;
+    PlatformOpenFileWithDialog *open_file_with_dialog;
+    PlatformSaveFileWithDialog *save_file_with_dialog;
+    PlatformGetTimeOfDay *get_time_of_day;
+    PlatformLoadLibrary *load_dynamic_library;
+    PlatformFreeLibrary *free_dynamic_library;
+    PlatformLoadSymbol *load_symbol;
+    PlatformOpenFile *open_file;
+    PlatformCloseFile *close_file;
+    PlatformWriteFile *write_file;
+    PlatformReadFile *read_file;
+    PlatformSeekFile *seek_file;
+    PlatformTellFile *tell_file;
+    PlatformReadLineFile *read_line_file;
+    PlatformPrintFile *print_file;
 };
+
 extern PlatformApi platform;
 
 struct MemoryArena;
 struct DebugState;
+struct InputController;
+struct SoundCommands;
+struct RenderState;
+struct Renderer;
+struct TimerController;
 
 struct GameMemory
 {
@@ -242,15 +256,7 @@ struct GameMemory
 #if GLITCH_DEBUG
     DebugState* debug_state;
 #endif
-    
 };
-
-struct InputController;
-struct SoundCommands;
-struct RenderState;
-
-struct Renderer;
-struct TimerController;
 
 #define UPDATE(name)void name(r64 delta_time, GameMemory* game_memory, Renderer& renderer, InputController* input_controller , SoundCommands* sound_commands , TimerController& timer_controller)
 typedef UPDATE(Update);
