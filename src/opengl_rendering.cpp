@@ -1715,11 +1715,11 @@ static void render_mesh(const RenderCommand &render_command, RenderState &render
     set_mat4_uniform(shader.program, "viewMatrix", view_matrix);
     set_mat4_uniform(shader.program, "modelMatrix", model_matrix);
     set_vec4_uniform(shader.program, "color", render_command.color);
-    set_vec3_uniform(shader.program, "lightPosWorld", math::Vec3(20, 20, 2));
+    set_vec3_uniform(shader.program, "lightPosWorld", math::Vec3(0, 20, -10));
     set_vec3_uniform(shader.program, "diffuseColor", math::Vec3(1, 1, 1));
-    set_vec3_uniform(shader.program, "lightColor", math::Vec3(0.5f, 0.5f, 1.0f));
+    set_vec3_uniform(shader.program, "lightColor", math::Vec3(1.0f, 1.0f, 1.0f));
     set_vec3_uniform(shader.program, "specularColor", math::Vec3(1, 1, 1));
-    set_float_uniform(shader.program, "lightPower", 1000.0f);
+    set_float_uniform(shader.program, "lightPower", 550.0f);
     
     if(buffer.index_buffer_count == 0)
     {

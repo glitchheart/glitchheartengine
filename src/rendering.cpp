@@ -477,7 +477,7 @@ static math::Vec3 compute_face_normal(Face f, Vertex *vertices)
     math::Vec3 u = (vertices[f.indices[1]].position - vertices[f.indices[0]].position);
     math::Vec3 v = (vertices[f.indices[2]].position - vertices[f.indices[0]].position);
     
-    return math::normalize(math::cross(u, v));
+    return math::cross(u, v);
 }
 
 static void create_cube(Renderer &renderer, i32 *mesh_handle)
@@ -502,11 +502,6 @@ static void create_cube(Renderer &renderer, i32 *mesh_handle)
     {
         Face &face = mesh.faces[i];
         
-        /*auto normal = compute_face_normal(face, mesh.vertices);
-        mesh.vertices[face.indices[i * 3]].normal = normal;
-        mesh.vertices[face.indices[i * 3 + 1]].normal = normal;
-        mesh.vertices[face.indices[i * 3 + 2]].normal = normal;
-        */
         face.indices[0] = cube_indices[i * 3];
         face.indices[1] = cube_indices[i * 3 + 1];
         face.indices[2] = cube_indices[i * 3 + 2];
