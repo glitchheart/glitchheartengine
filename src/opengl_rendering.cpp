@@ -377,7 +377,6 @@ static void register_buffers(RenderState& render_state, GLfloat* vertex_buffer, 
     
     if(buffer->index_buffer_count > 0)
     {
-        printf("DAMN!\n");
         glGenBuffers(1, &buffer->ibo);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer->ibo);
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, index_buffer_size, index_buffer, GL_STATIC_DRAW);
