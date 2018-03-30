@@ -2465,6 +2465,52 @@ namespace math
         Vec3 ray;
     };
     
+    struct BoundingBox
+    {
+        math::Vec3 min;
+        math::Vec3 max;
+    };
+    
+    inline b32 aabb_ray_interesection(BoundingBox b, Ray r)
+    {
+        math::Vec3 lb = b.min;
+        math::Vec3 rt = b.max;
+        // r.dir is unit direction vector of ray
+        math::Vec3 dirfrac;
+        dirfrac.x = 1.0f / r.ray.x;
+        dirfrac.y = 1.0f / r.ray.y;
+        dirfrac.z = 1.0f / r.ray.z;
+        
+        // lb is the corner of AABB with minimal coordinates - left bottom, rt is maximal corner
+        // r.org is origin of ray
+        r32 t1 = (lb.x - r.origin.x) * dirfrac.x;
+        r32 t2 = (rt.x - r.origin.x) * dirfrac.x;
+        r32 t3 = (lb.y - r.origin.y) * dirfrac.y;
+        r32 t4 = (rt.y - r.origin.y) * dirfrac.y;
+        r32 t5 = (lb.z - r.origin.z) * dirfrac.z;
+        r32 t6 = (rt.z - r.origin.z) * dirfrac.z;
+        
+        float tmin = Max(Max(Min(t1, t2), Min(t3, t4)), Min(t5, t6));
+        float tmax = Min(Min(Max(t1, t2), Max(t3, t4)), Max(t5, t6));
+        
+        // if tmax < 0, ray (line) is intersecting AABB, but the whole AABB is behind us
+        if (tmax < 0)
+        {
+            //t = tmax;
+            return false;
+        }
+        
+        // if tmin > tmax, ray doesn't intersect AABB
+        if (tmin > tmax)
+        {
+            //t = tmax;
+            return false;
+        }
+        
+        //t = tmin;
+        return true;
+    }
+    
     inline Ray cast_picking_ray(r32 mouse_x, r32 mouse_y, Mat4 p, Mat4 v, r32 width, r32 height)
     {
         auto mx = (2.0f * mouse_x) / width - 1.0f;
@@ -2562,6 +2608,8 @@ struct Recti
     Recti() {}
     Recti(i32 x, i32 y, i32 width, i32 height) : x(x), y(y), width(width), height(height) {}
 };
+
+
 
 inline r32 sign(math::Vec2 p1, math::Vec2 p2, math::Vec2 p3)
 {
