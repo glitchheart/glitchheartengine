@@ -54,6 +54,12 @@ void message_callback(GLenum Source,
     }
 }
 
+static void vertex_attrib_pointer(GLuint loc, i32 count, GLenum type, u32 stride, void* offset)
+{
+    glEnableVertexAttribArray(loc);
+    glVertexAttribPointer(loc, count, type, GL_FALSE, (GLsizei)stride, offset);
+}
+
 void frame_buffer_size_callback(GLFWwindow *window, int width, int height)
 {
     RenderState* render_state = (RenderState*)glfwGetWindowUserPointer(window);
@@ -468,10 +474,8 @@ static void create_framebuffer(RenderState& render_state, Framebuffer& framebuff
     auto pos_loc = (GLuint)glGetAttribLocation(shader.program, "pos");
     auto tex_loc = (GLuint)glGetAttribLocation(shader.program, "texcoord");
     
-    glEnableVertexAttribArray(pos_loc);
-    glVertexAttribPointer(pos_loc, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
-    glEnableVertexAttribArray(tex_loc);
-    glVertexAttribPointer(tex_loc, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *)(2 * sizeof(float)));
+    vertex_attrib_pointer(pos_loc, 2, GL_FLOAT, 4 * sizeof(float), 0);
+    vertex_attrib_pointer(tex_loc, 2, GL_FLOAT, 4 * sizeof(float), (void*)(2 * sizeof(float)));
     
     render_state.framebuffer.tex0_loc = (GLuint)glGetUniformLocation(shader.program, "tex");
     
@@ -1683,11 +1687,6 @@ static void render_commands(RenderState& render_state, Renderer& renderer, Memor
                 render_quad(command, render_state, camera.projection_matrix, camera.view_matrix);
             }
             break;
-            case RENDER_COMMAND_SPRITE:
-            {
-                //RenderSprite(Command, render_state, Renderer, Camera.projection_matrix, Camera.view_matrix);
-            }
-            break;
             case RENDER_COMMAND_MODEL:
             {
                 render_model(command, render_state, camera.projection_matrix, camera.view_matrix);
@@ -1746,11 +1745,6 @@ static void render_commands(RenderState& render_state, Renderer& renderer, Memor
             case RENDER_COMMAND_QUAD:
             {
                 render_quad(command, render_state, renderer.ui_projection_matrix, camera.view_matrix);
-            }
-            break;
-            case RENDER_COMMAND_SPRITE:
-            {
-                //RenderSprite(Command, render_state, Renderer, Camera.projection_matrix, Camera.view_matrix);
             }
             break;
             case RENDER_COMMAND_MODEL:
