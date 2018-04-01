@@ -347,4 +347,46 @@ inline void* bootstrap_push_size_(umm struct_size, umm offset_to_arena,
     return new_struct;
 }
 
+// Stretchy buffer
+struct BufHdr
+{
+    size_t len;
+    size_t cap;
+    char buf[1];
+};
+
+#define MAX(x, y) ((x) >= (y) ? (x) : (y))
+#define buf__hdr(b) ((BufHdr *)((char *)(b) - offsetof(BufHdr, buf)))
+
+#define buf_len(b) ((b) ? buf__hdr(b)->len : 0)
+#define buf_cap(b) ((b) ? buf__hdr(b)->cap : 0)
+#define buf_end(b) ((b) + buf_len(b))
+#define buf_sizeof(b) ((b) ? buf_len(b)*sizeof(*b) : 0)
+
+#define buf_free(b) ((b) ? (free(buf__hdr(b)), (b) = NULL) : 0)
+#define buf_fit(b, n) ((n) <= buf_cap(b) ? 0 : ((b) = (decltype(b))buf__grow((b), (n), sizeof(*(b)))))
+#define buf_push(b, ...) (buf_fit(b, 1 + buf_len(b)), (b)[buf__hdr(b)->len++] = (__VA_ARGS__))
+
+void *buf__grow(const void *buf, size_t new_len, size_t elem_size)
+{
+    assert(buf_cap(buf) <= (SIZE_MAX - 1)/2);
+    size_t new_cap = MAX(16, MAX(1 + 2*buf_cap(buf), new_len));
+    assert(new_len <= new_cap);
+    assert(new_cap <= (SIZE_MAX - offsetof(BufHdr, buf)) / elem_size);
+    size_t new_size = offsetof(BufHdr, buf) + new_cap * elem_size;
+    BufHdr *new_hdr;
+    
+    if (buf)
+    {
+        new_hdr = (BufHdr *)realloc(buf__hdr(buf), new_size);
+    }
+    else
+    {
+        new_hdr = (BufHdr *)malloc(new_size);
+        new_hdr->len = 0;
+    }   
+    new_hdr->cap = new_cap;
+    return new_hdr->buf;
+}
+
 #endif

@@ -318,6 +318,7 @@ int main(int argc, char** args)
     init_audio_fmod(&sound_device);
     
     SoundCommands sound_commands = {};
+    sound_commands.sounds_to_load = {};
     sound_commands.sound_arena.minimum_block_size = sizeof(SoundEffect) * MAX_SOUND_EFFECTS;
     
     if (sound_device.is_initialized)

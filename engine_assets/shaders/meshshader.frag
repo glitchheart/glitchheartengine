@@ -31,5 +31,6 @@ void main()
 	float distance = length(lightPosWorld - posWorld);
 	vec3 ambientColor = vec3(0.1, 0.1, 0.1);
 	color.rgb = ambientColor + c.rgb * lightPower * lightColor * cosTheta / (distance*distance) + specularColor * lightColor * pow(cosAlpha, 5) / (distance*distance);
-	color.a = 1.0;
+	
+	color.a = c.a;
 }

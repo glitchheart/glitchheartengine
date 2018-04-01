@@ -110,12 +110,12 @@ struct ConfigData
     b32 skip_splash_screen;
 };
 
-#define MAX_FILE_PATHS 512
-#define MAX_FILE_NAMES 512
+#define MAX_FILE_PATHS 128
+#define MAX_FILE_NAMES 128
 struct DirectoryData
 {
-    char* file_paths[MAX_FILE_PATHS];
-    char* file_names[MAX_FILE_NAMES];
+    char file_paths[256][MAX_FILE_PATHS];
+    char file_names[256][MAX_FILE_NAMES];
     i32 files_length = 0;
 };
 
