@@ -428,11 +428,8 @@ static void register_vertex_buffer(RenderState& render_state, GLfloat* buffer_da
         render_state.buffer_count++;
 }
 
-static void create_framebuffer(RenderState& render_state, Framebuffer& framebuffer, i32 width, i32 height, Shader& shader, MemoryArena* perm_arena, r32* vertices, u32 vertices_size, u32* indices, u32 indices_size)
+static void create_color_attachment(Framebuffer &framebuffer, i32 width, i32 height, b32 multisampled)
 {
-    glGenFramebuffers(1, &framebuffer.buffer_handle);
-    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer.buffer_handle);
-    
     glGenTextures(1, &framebuffer.tex_color_buffer_handle);
     glBindTexture(GL_TEXTURE_2D, framebuffer.tex_color_buffer_handle);
     
@@ -441,6 +438,14 @@ static void create_framebuffer(RenderState& render_state, Framebuffer& framebuff
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, framebuffer.tex_color_buffer_handle, NULL);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+}
+
+static void create_framebuffer(RenderState& render_state, Framebuffer& framebuffer, i32 width, i32 height, Shader& shader, MemoryArena* perm_arena, r32* vertices, u32 vertices_size, u32* indices, u32 indices_size)
+{
+    glGenFramebuffers(1, &framebuffer.buffer_handle);
+    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer.buffer_handle);
+    
+    create_color_attachment(framebuffer, width, height, true);
     
     glBindTexture(GL_TEXTURE_2D, 0);
     
