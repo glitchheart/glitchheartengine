@@ -69,11 +69,11 @@ void frame_buffer_size_callback(GLFWwindow *window, int width, int height)
     
     // Change resolution of frame_buffer texture
     //@Incomplete: This should be done with lower resolutions and just be upscaled maybe? We need fixed resolutions
-    glBindTexture(GL_TEXTURE_2D, render_state->texture_color_buffer);
+    glBindTexture(GL_TEXTURE_2D, render_state->framebuffer.tex_color_buffer_handle);
     glTexImage2D(
         GL_TEXTURE_2D, 0, GL_RGB, (GLsizei)render_state->scale_from_width, (GLsizei)render_state->scale_from_height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
     glFramebufferTexture2D(
-        GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, render_state->texture_color_buffer, 0);
+        GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, render_state->framebuffer.tex_color_buffer_handle, 0);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     
@@ -428,6 +428,60 @@ static void register_vertex_buffer(RenderState& render_state, GLfloat* buffer_da
         render_state.buffer_count++;
 }
 
+static void create_framebuffer(RenderState& render_state, Framebuffer& framebuffer, i32 width, i32 height, Shader& shader, MemoryArena* perm_arena, r32* vertices, u32 vertices_size, u32* indices, u32 indices_size)
+{
+    glGenFramebuffers(1, &framebuffer.buffer_handle);
+    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer.buffer_handle);
+    
+    glGenTextures(1, &framebuffer.tex_color_buffer_handle);
+    glBindTexture(GL_TEXTURE_2D, framebuffer.tex_color_buffer_handle);
+    
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+    
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, framebuffer.tex_color_buffer_handle, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    
+    glBindTexture(GL_TEXTURE_2D, 0);
+    
+    if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+    {
+        Debug("Error: Framebuffer incomplete\n");
+    }
+    
+    glGenRenderbuffers(1, &framebuffer.depth_buffer_handle);
+    glBindRenderbuffer(GL_RENDERBUFFER, framebuffer.depth_buffer_handle);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, width, height);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, framebuffer.depth_buffer_handle);
+    
+    // FrameBuffer vao
+    glGenVertexArrays(1, &framebuffer.vao);
+    glBindVertexArray(framebuffer.vao);
+    glGenBuffers(1, &framebuffer.vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, framebuffer.vbo);
+    glBufferData(GL_ARRAY_BUFFER, vertices_size, vertices, GL_DYNAMIC_DRAW);
+    
+    shader.type = SHADER_FRAME_BUFFER;
+    
+    load_shader(shader_paths[SHADER_FRAME_BUFFER], &shader, perm_arena);
+    
+    auto pos_loc = (GLuint)glGetAttribLocation(shader.program, "pos");
+    auto tex_loc = (GLuint)glGetAttribLocation(shader.program, "texcoord");
+    
+    glEnableVertexAttribArray(pos_loc);
+    glVertexAttribPointer(pos_loc, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
+    glEnableVertexAttribArray(tex_loc);
+    glVertexAttribPointer(tex_loc, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *)(2 * sizeof(float)));
+    
+    render_state.frame_buffer_tex0_loc = (GLuint)glGetUniformLocation(shader.program, "tex");
+    
+    glGenBuffers(1, &framebuffer.ebo);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, framebuffer.ebo);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices_size, indices, GL_STATIC_DRAW);
+    
+    glBindVertexArray(0);
+}
+
 static void render_setup(RenderState *render_state, MemoryArena* perm_arena)
 {
     // @Cleanup: Not sure if a fallback is a good way of dealing with this
@@ -439,142 +493,13 @@ static void render_setup(RenderState *render_state, MemoryArena* perm_arena)
     
     render_state->font_count = 0;
     
-    // Framebuffer 1
-    glGenFramebuffers(1, &render_state->frame_buffer);
-    glBindFramebuffer(GL_FRAMEBUFFER, render_state->frame_buffer);
+    create_framebuffer(*render_state, render_state->framebuffer, render_state->scale_from_width, render_state->scale_from_height, render_state->frame_buffer_shader, perm_arena, render_state->frame_buffer_vertices,
+                       render_state->sprite_quad_vertices_size,render_state->quad_indices, sizeof(render_state->quad_indices));
     
-    glGenTextures(1, &render_state->texture_color_buffer);
-    glBindTexture(GL_TEXTURE_2D, render_state->texture_color_buffer);
-    
-    glTexImage2D(
-        GL_TEXTURE_2D, 0, GL_RGB, render_state->scale_from_width, render_state->scale_from_height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL
-        );
-    glFramebufferTexture2D(
-        GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, render_state->texture_color_buffer, 0
-        );
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    
-    glBindTexture(GL_TEXTURE_2D, 0);
-    
-    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-        Debug("ERROR::FRAMEBUFFER:: Framebuffer is not complete!");
-    
-    GLuint depth_buffer;
-    glGenRenderbuffers(1, &depth_buffer);
-    glBindRenderbuffer(GL_RENDERBUFFER, depth_buffer);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, render_state->scale_from_width, render_state->scale_from_height);
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depth_buffer);
-    
-    glGenFramebuffers(1, &render_state->lighting_frame_buffer);
-    glBindFramebuffer(GL_FRAMEBUFFER, render_state->lighting_frame_buffer);
-    
-    glGenTextures(1, &render_state->lighting_texture_color_buffer);
-    glBindTexture(GL_TEXTURE_2D, render_state->lighting_texture_color_buffer);
-    
-    glTexImage2D(
-        GL_TEXTURE_2D, 0, GL_RGB, render_state->scale_from_width, render_state->scale_from_height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL
-        );
-    glFramebufferTexture2D(
-        GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, render_state->lighting_texture_color_buffer, 0);
-    
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    
-    glBindTexture(GL_TEXTURE_2D, 0);
-    
-    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-        Debug("ERROR::FRAMEBUFFER:: Framebuffer is not complete!");
-    
-    // FrameBuffer vao
-    glGenVertexArrays(1, &render_state->frame_buffer_vao);
-    glBindVertexArray(render_state->frame_buffer_vao);
-    glGenBuffers(1, &render_state->frame_buffer_vbo);
-    glBindBuffer(GL_ARRAY_BUFFER, render_state->frame_buffer_vbo);
-    glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)render_state->sprite_quad_vertices_size, render_state->frame_buffer_vertices, GL_DYNAMIC_DRAW);
-    
-    render_state->frame_buffer_shader.type = SHADER_FRAME_BUFFER;
-    
-    load_shader(shader_paths[SHADER_FRAME_BUFFER], &render_state->frame_buffer_shader, perm_arena);
-    
-    auto pos_loc = (GLuint)glGetAttribLocation(render_state->frame_buffer_shader.program, "pos");
-    auto tex_loc = (GLuint)glGetAttribLocation(render_state->frame_buffer_shader.program, "texcoord");
-    
-    glEnableVertexAttribArray(pos_loc);
-    glVertexAttribPointer(pos_loc, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
-    glEnableVertexAttribArray(tex_loc);
-    glVertexAttribPointer(tex_loc, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *)(2 * sizeof(float)));
-    
-    
-    render_state->frame_buffer_tex0_loc = (GLuint)glGetUniformLocation(render_state->frame_buffer_shader.program, "tex");
-    render_state->frame_buffer_tex1_loc = (GLuint)glGetUniformLocation(render_state->frame_buffer_shader.program, "lightingTex");
-    
+    //Quad EBO
     glGenBuffers(1, &render_state->quad_index_buffer);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, render_state->quad_index_buffer);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(render_state->quad_indices), render_state->quad_indices, GL_STATIC_DRAW);
-    
-    glBindVertexArray(0);
-    
-    //Sprite
-    glGenVertexArrays(1, &render_state->sprite_vao);
-    glBindVertexArray(render_state->sprite_vao);
-    glGenBuffers(1, &render_state->sprite_quad_vbo);
-    glBindBuffer(GL_ARRAY_BUFFER, render_state->sprite_quad_vbo);
-    glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)render_state->sprite_quad_vertices_size, render_state->sprite_quad_vertices, GL_STATIC_DRAW);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, render_state->quad_index_buffer);
-    
-    render_state->texture_shader.type = SHADER_TEXTURE;
-    load_shader(shader_paths[SHADER_TEXTURE], &render_state->texture_shader, perm_arena);
-    
-    auto position_location = (GLuint)glGetAttribLocation(render_state->texture_shader.program, "pos");
-    auto texcoord_location = (GLuint)glGetAttribLocation(render_state->texture_shader.program, "texcoord");
-    
-    glEnableVertexAttribArray(position_location);
-    glVertexAttribPointer(position_location, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), 0);
-    glEnableVertexAttribArray(texcoord_location);
-    glVertexAttribPointer(texcoord_location, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *)(3 * sizeof(float)));
-    glBindVertexArray(0);
-    
-    //Animation
-    //Sprite
-    glGenVertexArrays(1, &render_state->sprite_sheet_vao);
-    glBindVertexArray(render_state->sprite_sheet_vao);
-    glGenBuffers(1, &render_state->sprite_quad_vbo);
-    glBindBuffer(GL_ARRAY_BUFFER, render_state->sprite_quad_vbo);
-    glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)render_state->sprite_quad_vertices_size, render_state->sprite_quad_vertices, GL_STATIC_DRAW);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, render_state->quad_index_buffer);
-    
-    render_state->texture_shader.type = SHADER_SPRITESHEET;
-    load_shader(shader_paths[SHADER_SPRITESHEET], &render_state->spritesheet_shader, perm_arena);
-    
-    position_location = (GLuint)glGetAttribLocation(render_state->spritesheet_shader.program, "pos");
-    texcoord_location = (GLuint)glGetAttribLocation(render_state->spritesheet_shader.program, "texcoord");
-    
-    glEnableVertexAttribArray(position_location);
-    glVertexAttribPointer(position_location, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
-    glEnableVertexAttribArray(texcoord_location);
-    glVertexAttribPointer(texcoord_location, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *)(2 * sizeof(float)));
-    glBindVertexArray(0);
-    
-    //tile
-    glGenVertexArrays(1, &render_state->tile_vao);
-    glBindVertexArray(render_state->tile_vao);
-    glGenBuffers(1, &render_state->tile_quad_vbo);
-    glBindBuffer(GL_ARRAY_BUFFER, render_state->tile_quad_vbo);
-    glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)render_state->tile_quad_vertices_size, render_state->tile_quad_vertices, GL_STATIC_DRAW);
-    
-    render_state->tile_shader.type = SHADER_TILE;
-    load_shader(shader_paths[SHADER_TILE], &render_state->tile_shader, perm_arena);
-    render_state->tile_shader.loaded = true;
-    
-    auto position_location2 = (GLuint)glGetAttribLocation(render_state->tile_shader.program, "pos");
-    auto texcoord_location2 = (GLuint)glGetAttribLocation(render_state->tile_shader.program, "texcoord");
-    
-    glEnableVertexAttribArray(position_location2);
-    glVertexAttribPointer(position_location2, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
-    glEnableVertexAttribArray(texcoord_location2);
-    glVertexAttribPointer(texcoord_location2, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *)(2 * sizeof(float)));
-    glBindVertexArray(0);
     
     //console
     glGenVertexArrays(1, &render_state->rect_vao);
@@ -602,8 +527,8 @@ static void render_setup(RenderState *render_state, MemoryArena* perm_arena)
     render_state->texture_rect_shader.type = SHADER_TEXTURE_RECT;
     load_shader(shader_paths[SHADER_TEXTURE_RECT], &render_state->texture_rect_shader, perm_arena);
     
-    position_location2 = (GLuint)glGetAttribLocation(render_state->texture_rect_shader.program, "pos");
-    texcoord_location2 = (GLuint)glGetAttribLocation(render_state->texture_rect_shader.program, "texcoord");
+    auto position_location2 = (GLuint)glGetAttribLocation(render_state->texture_rect_shader.program, "pos");
+    auto texcoord_location2 = (GLuint)glGetAttribLocation(render_state->texture_rect_shader.program, "texcoord");
     
     glEnableVertexAttribArray(position_location2);
     glVertexAttribPointer(position_location2, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
@@ -628,35 +553,6 @@ static void render_setup(RenderState *render_state, MemoryArena* perm_arena)
     
     glBindVertexArray(0);
     
-    glGenVertexArrays(1, &render_state->wireframe_cube_vao);
-    glBindVertexArray(render_state->wireframe_cube_vao);
-    glGenBuffers(1, &render_state->wireframe_cube_vbo);
-    glBindBuffer(GL_ARRAY_BUFFER, render_state->wireframe_cube_vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 32, render_state->wireframe_cube_vertices, GL_STATIC_DRAW);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, 0);
-    glGenBuffers(1, &render_state->cube_index_buffer);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, render_state->cube_index_buffer);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint) * CUBE_INDICES, render_state->wireframe_cube_indices, GL_STATIC_DRAW);
-    glBindVertexArray(0);
-    
-    glGenVertexArrays(1, &render_state->isometric_vao);
-    glBindVertexArray(render_state->isometric_vao);
-    glGenBuffers(1, &render_state->isometric_quad_vbo);
-    glBindBuffer(GL_ARRAY_BUFFER, render_state->isometric_quad_vbo);
-    glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)render_state->wireframe_quad_vertices_size, render_state->isometric_quad_vertices, GL_DYNAMIC_DRAW);
-    
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, render_state->quad_index_buffer);
-    
-    render_state->rect_shader.type = SHADER_WIREFRAME;
-    load_shader(shader_paths[SHADER_WIREFRAME], &render_state->wireframe_shader, perm_arena);
-    
-    position_location3 = (GLuint)glGetAttribLocation(render_state->wireframe_shader.program, "pos");
-    glEnableVertexAttribArray(position_location3);
-    glVertexAttribPointer(position_location3, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), 0);
-    
-    glBindVertexArray(0);
-    
     // Lines
     load_shader(shader_paths[SHADER_LINE], &render_state->line_shader, perm_arena);
     glGenVertexArrays(1, &render_state->line_vao);
@@ -669,17 +565,6 @@ static void render_setup(RenderState *render_state, MemoryArena* perm_arena)
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint) * LINE_INDICES, render_state->line_indices, GL_STATIC_DRAW);
     
     glBindVertexArray(0);
-    
-    //glGenVertexArrays(1, &RenderState->Primitivevao);
-    //glBindVertexArray(RenderState->Primitivevao);
-    //glGenBuffers(1, &RenderState->Primitivevbo);
-    //glBindBuffer(GL_ARRAY_BUFFER, RenderState->Primitivevbo);
-    
-    //glEnableVertexAttribArray(0);
-    //glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), 0);
-    //glBindVertexArray(0);
-    
-    
     
     // Passthrough
     load_shader(shader_paths[SHADER_PASS_THROUGH], &render_state->passthrough_shader, perm_arena);
@@ -1535,32 +1420,6 @@ static void render_text(RenderState &render_state, TrueTypeFont &font, const mat
     end_temporary_memory(temp_mem);
 }
 
-static void render_wireframe_cube(const RenderCommand& command, RenderState& render_state, math::Mat4 projection = math::Mat4(1.0f), math::Mat4 view = math::Mat4(1.0f))
-{
-    glBindVertexArray(render_state.wireframe_cube_vao);
-    
-    glLineWidth(command.wireframe_cube.line_width);
-    auto shader = render_state.passthrough_shader;
-    use_shader(&shader);
-    
-    math::Mat4 model = math::Mat4(1.0f);
-    model = math::scale(model, command.scale);
-    model = math::rotate(model, command.orientation);
-    model = math::translate(model, command.position);
-    
-    set_mat4_uniform(shader.program, "Model", model);
-    set_mat4_uniform(shader.program, "Projection", projection);
-    set_mat4_uniform(shader.program, "View", view);
-    set_vec4_uniform(shader.program, "Color", command.wireframe_cube.color);
-    
-    glDrawElements(GL_LINE_LOOP, 4, GL_UNSIGNED_INT, 0);
-    glDrawElements(GL_LINE_LOOP, 4, GL_UNSIGNED_INT, (GLvoid*)(4 * sizeof(GLuint)));
-    glDrawElements(GL_LINES, 8, GL_UNSIGNED_INT, (GLvoid*)(8 * sizeof(GLuint)));
-    
-    glLineWidth(1.0f);
-    glBindVertexArray(0);
-}
-
 static void render_line(const RenderCommand& command, RenderState& render_state, math::Mat4 projection, math::Mat4 view)
 {
     render_line(render_state, command.line.color, command.line.point1, command.line.point2, projection, view, command.line.line_width, command.is_ui);
@@ -2044,11 +1903,6 @@ static void render_commands(RenderState& render_state, Renderer& renderer, Memor
                 render_buffer(command, render_state, camera.projection_matrix, camera.view_matrix);
             }
             break;
-            case RENDER_COMMAND_WIREFRAME_CUBE:
-            {
-                render_wireframe_cube(command, render_state, camera.projection_matrix, camera.view_matrix);
-            }
-            break;
             case RENDER_COMMAND_DEPTH_TEST:
             {
                 if (command.depth_test.on)
@@ -2191,9 +2045,9 @@ static void render(RenderState& render_state, Renderer& renderer, MemoryArena* p
             renderer.fps_sum = 0.0;
         }
         
-        glBindFramebuffer(GL_FRAMEBUFFER, render_state.frame_buffer);
+        glBindFramebuffer(GL_FRAMEBUFFER, render_state.framebuffer.buffer_handle);
         
-        glBindTexture(GL_TEXTURE_2D, render_state.texture_color_buffer);
+        glBindTexture(GL_TEXTURE_2D, render_state.framebuffer.tex_color_buffer_handle);
         
         glEnable(GL_DEPTH_TEST);
         
@@ -2217,28 +2071,14 @@ static void render(RenderState& render_state, Renderer& renderer, MemoryArena* p
         
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         
-        glBindVertexArray(render_state.frame_buffer_vao);
+        glBindVertexArray(render_state.framebuffer.vao);
         
         use_shader(&render_state.frame_buffer_shader);
         
-        set_float_uniform(render_state.frame_buffer_shader.program, "contrast", render_state.contrast);
-        set_float_uniform(render_state.frame_buffer_shader.program, "brightness", render_state.brightness);
-        set_int_uniform(render_state.frame_buffer_shader.program, "ignoreLight", true); // @Incomplete: Lighting
-        set_mat4_uniform(render_state.frame_buffer_shader.program, "P", camera.projection_matrix);
-        set_mat4_uniform(render_state.frame_buffer_shader.program, "V", camera.view_matrix);
-        set_vec2_uniform(render_state.frame_buffer_shader.program, "screenSize", math::Vec2((r32)render_state.window_width, (r32)render_state.window_height));
-        
         glUniform1i((GLint)render_state.frame_buffer_tex0_loc, 0);
         
-        glUniform1i((GLint)render_state.frame_buffer_tex1_loc, 1);
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, render_state.texture_color_buffer);
-        glActiveTexture(GL_TEXTURE1);
-        /*glBindTexture(GL_TEXTURE_2D, RenderState.LightingTextureColorBuffer);
-        RenderState.BoundTexture = RenderState.LightingTextureColorBuffer;
-        */
-        //Enable this if we don't do gamma correction in frame_buffer shader
-        //glEnable(GL_FRAMEBUFFER_SRGB);
+        glBindTexture(GL_TEXTURE_2D, render_state.framebuffer.tex_color_buffer_handle);
         
         glDrawElements(GL_TRIANGLES, sizeof(render_state.quad_indices), GL_UNSIGNED_INT, (void*)0);
         
