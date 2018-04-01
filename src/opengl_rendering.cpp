@@ -414,8 +414,8 @@ static void register_vertex_buffer(RenderState& render_state, GLfloat* buffer_da
     else
         use_shader(&render_state.shaders[shader_type]);
     
-    auto position_location = (GLuint)glGetAttribLocation(render_state.tile_shader.program, "pos");
-    auto texcoord_location = (GLuint)glGetAttribLocation(render_state.tile_shader.program, "texcoord");
+    auto position_location = (GLuint)glGetAttribLocation(render_state.texture_quad_shader.program, "pos");
+    auto texcoord_location = (GLuint)glGetAttribLocation(render_state.texture_quad_shader.program, "texcoord");
     
     glEnableVertexAttribArray(position_location);
     glVertexAttribPointer(position_location, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
@@ -473,11 +473,71 @@ static void create_framebuffer(RenderState& render_state, Framebuffer& framebuff
     glEnableVertexAttribArray(tex_loc);
     glVertexAttribPointer(tex_loc, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *)(2 * sizeof(float)));
     
-    render_state.frame_buffer_tex0_loc = (GLuint)glGetUniformLocation(shader.program, "tex");
+    render_state.framebuffer.tex0_loc = (GLuint)glGetUniformLocation(shader.program, "tex");
     
     glGenBuffers(1, &framebuffer.ebo);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, framebuffer.ebo);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices_size, indices, GL_STATIC_DRAW);
+    
+    glBindVertexArray(0);
+}
+
+static void setup_quad(RenderState& render_state, MemoryArena* perm_arena)
+{
+    //Quad EBO
+    glGenBuffers(1, &render_state.quad_index_buffer);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, render_state.quad_index_buffer);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(render_state.quad_indices), render_state.quad_indices, GL_STATIC_DRAW);
+    
+    //Quad VBO/VAO
+    glGenVertexArrays(1, &render_state.quad_vao);
+    glBindVertexArray(render_state.quad_vao);
+    glGenBuffers(1, &render_state.quad_vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, render_state.quad_vbo);
+    glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)render_state.quad_vertices_size, render_state.quad_vertices, GL_DYNAMIC_DRAW);
+    
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, render_state.quad_index_buffer);
+    
+    render_state.quad_shader.type = SHADER_QUAD;
+    load_shader(shader_paths[SHADER_QUAD], &render_state.quad_shader, perm_arena);
+    
+    auto position_location3 = (GLuint)glGetAttribLocation(render_state.quad_shader.program, "pos");
+    glEnableVertexAttribArray(position_location3);
+    glVertexAttribPointer(position_location3, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), 0);
+    
+    glBindVertexArray(0);
+    
+    glGenVertexArrays(1, &render_state.texture_quad_vao);
+    glBindVertexArray(render_state.texture_quad_vao);
+    glGenBuffers(1, &render_state.texture_quad_vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, render_state.texture_quad_vbo);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, render_state.quad_index_buffer);
+    
+    render_state.texture_quad_shader.type = SHADER_TEXTURE_QUAD;
+    load_shader(shader_paths[SHADER_TEXTURE_QUAD], &render_state.texture_quad_shader, perm_arena);
+    
+    auto position_location2 = (GLuint)glGetAttribLocation(render_state.texture_quad_shader.program, "pos");
+    auto texcoord_location2 = (GLuint)glGetAttribLocation(render_state.texture_quad_shader.program, "texcoord");
+    
+    glEnableVertexAttribArray(position_location2);
+    glVertexAttribPointer(position_location2, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
+    glEnableVertexAttribArray(texcoord_location2);
+    glVertexAttribPointer(texcoord_location2, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *)(2 * sizeof(float)));
+    
+    glBindVertexArray(0);
+}
+
+static void setup_lines(RenderState& render_state, MemoryArena* perm_arena)
+{
+    load_shader(shader_paths[SHADER_LINE], &render_state.line_shader, perm_arena);
+    glGenVertexArrays(1, &render_state.line_vao);
+    glBindVertexArray(render_state.line_vao);
+    glGenBuffers(1, &render_state.line_vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, render_state.line_vbo);
+    
+    glGenBuffers(1, &render_state.line_ebo);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, render_state.line_ebo);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint) * LINE_INDICES, render_state.line_indices, GL_STATIC_DRAW);
     
     glBindVertexArray(0);
 }
@@ -493,156 +553,17 @@ static void render_setup(RenderState *render_state, MemoryArena* perm_arena)
     
     render_state->font_count = 0;
     
-    create_framebuffer(*render_state, render_state->framebuffer, render_state->scale_from_width, render_state->scale_from_height, render_state->frame_buffer_shader, perm_arena, render_state->frame_buffer_vertices,
-                       render_state->sprite_quad_vertices_size,render_state->quad_indices, sizeof(render_state->quad_indices));
+    create_framebuffer(*render_state, render_state->framebuffer, render_state->scale_from_width, render_state->scale_from_height, render_state->frame_buffer_shader, perm_arena, render_state->framebuffer_quad_vertices,
+                       render_state->framebuffer_quad_vertices_size,render_state->quad_indices, sizeof(render_state->quad_indices));
     
-    //Quad EBO
-    glGenBuffers(1, &render_state->quad_index_buffer);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, render_state->quad_index_buffer);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(render_state->quad_indices), render_state->quad_indices, GL_STATIC_DRAW);
-    
-    //console
-    glGenVertexArrays(1, &render_state->rect_vao);
-    glBindVertexArray(render_state->rect_vao);
-    glGenBuffers(1, &render_state->normal_quad_vbo);
-    glBindBuffer(GL_ARRAY_BUFFER, render_state->normal_quad_vbo);
-    glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)render_state->normal_quad_vertices_size, render_state->normal_quad_vertices, GL_DYNAMIC_DRAW);
-    
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, render_state->quad_index_buffer);
-    
-    render_state->rect_shader.type = SHADER_RECT;
-    load_shader(shader_paths[SHADER_RECT], &render_state->rect_shader, perm_arena);
-    
-    auto position_location3 = (GLuint)glGetAttribLocation(render_state->rect_shader.program, "pos");
-    glEnableVertexAttribArray(position_location3);
-    glVertexAttribPointer(position_location3, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), 0);
-    
-    glBindVertexArray(0);
-    
-    glGenVertexArrays(1, &render_state->texture_rect_vao);
-    glBindVertexArray(render_state->texture_rect_vao);
-    glBindBuffer(GL_ARRAY_BUFFER, render_state->sprite_quad_vbo);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, render_state->quad_index_buffer);
-    
-    render_state->texture_rect_shader.type = SHADER_TEXTURE_RECT;
-    load_shader(shader_paths[SHADER_TEXTURE_RECT], &render_state->texture_rect_shader, perm_arena);
-    
-    auto position_location2 = (GLuint)glGetAttribLocation(render_state->texture_rect_shader.program, "pos");
-    auto texcoord_location2 = (GLuint)glGetAttribLocation(render_state->texture_rect_shader.program, "texcoord");
-    
-    glEnableVertexAttribArray(position_location2);
-    glVertexAttribPointer(position_location2, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
-    glEnableVertexAttribArray(texcoord_location2);
-    glVertexAttribPointer(texcoord_location2, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *)(2 * sizeof(float)));
-    
-    glBindVertexArray(0);
-    
-    //wireframe
-    glGenVertexArrays(1, &render_state->wireframe_vao);
-    glBindVertexArray(render_state->wireframe_vao);
-    glGenBuffers(1, &render_state->wireframe_quad_vbo);
-    glBindBuffer(GL_ARRAY_BUFFER, render_state->wireframe_quad_vbo);
-    glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)render_state->wireframe_quad_vertices_size, render_state->wireframe_quad_vertices, GL_DYNAMIC_DRAW);
-    
-    render_state->rect_shader.type = SHADER_WIREFRAME;
-    load_shader(shader_paths[SHADER_WIREFRAME], &render_state->wireframe_shader, perm_arena);
-    
-    position_location3 = (GLuint)glGetAttribLocation(render_state->wireframe_shader.program, "pos");
-    glEnableVertexAttribArray(position_location3);
-    glVertexAttribPointer(position_location3, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), 0);
-    
-    glBindVertexArray(0);
-    
-    // Lines
-    load_shader(shader_paths[SHADER_LINE], &render_state->line_shader, perm_arena);
-    glGenVertexArrays(1, &render_state->line_vao);
-    glBindVertexArray(render_state->line_vao);
-    glGenBuffers(1, &render_state->line_vbo);
-    glBindBuffer(GL_ARRAY_BUFFER, render_state->line_vbo);
-    
-    glGenBuffers(1, &render_state->line_ebo);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, render_state->line_ebo);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint) * LINE_INDICES, render_state->line_indices, GL_STATIC_DRAW);
-    
-    glBindVertexArray(0);
-    
-    // Passthrough
-    load_shader(shader_paths[SHADER_PASS_THROUGH], &render_state->passthrough_shader, perm_arena);
-    glGenVertexArrays(1, &render_state->passthrough_vao);
-    glBindVertexArray(render_state->passthrough_vao);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(r32), 0);
-    glBindVertexArray(0);
+    setup_quad(*render_state, perm_arena);
+    setup_lines(*render_state, perm_arena);
     
     //font
     render_state->standard_font_shader.type = SHADER_STANDARD_FONT;
     load_shader(shader_paths[SHADER_STANDARD_FONT], &render_state->standard_font_shader, perm_arena);
     
-    // Light sources
-    render_state->light_source_shader.type = SHADER_LIGHT_SOURCE;
-    load_shader(shader_paths[SHADER_LIGHT_SOURCE], &render_state->light_source_shader, perm_arena);
-    
-    render_state->simple_model_shader.type = SHADER_SIMPLE_MODEL;
-    load_shader(shader_paths[SHADER_SIMPLE_MODEL], &render_state->simple_model_shader, perm_arena);
-    
-    render_state->spotlight_data.num_lights = 0;
-    glGenBuffers(1, &render_state->spotlight_ubo);
-    glBindBufferBase(GL_UNIFORM_BUFFER, 0, render_state->spotlight_ubo);
-    glBufferData(GL_UNIFORM_BUFFER, sizeof(SpotlightData), &render_state->spotlight_data, GL_DYNAMIC_DRAW);
-    
-    u32 block_index = glGetUniformBlockIndex(render_state->simple_model_shader.program, "spotlights");
-    
-    glUniformBlockBinding(render_state->simple_model_shader.program, block_index, 0);
-    glBindBuffer(GL_UNIFORM_BUFFER, 0);
-    
-    render_state->directional_light_data.num_lights = 0;
-    glGenBuffers(1, &render_state->directional_light_ubo);
-    glBindBufferBase(GL_UNIFORM_BUFFER, 1, render_state->directional_light_ubo);
-    glBufferData(GL_UNIFORM_BUFFER, sizeof(DirectionalLightData), &render_state->directional_light_data, GL_DYNAMIC_DRAW);
-    
-    block_index = glGetUniformBlockIndex(render_state->simple_model_shader.program, "directionalLights");
-    glUniformBlockBinding(render_state->simple_model_shader.program, block_index, 1);
-    glBindBuffer(GL_UNIFORM_BUFFER, 0);
-    
-    
-    render_state->point_light_data.num_lights = 0;
-    glGenBuffers(1, &render_state->point_light_ubo);
-    glBindBufferBase(GL_UNIFORM_BUFFER, 2, render_state->point_light_ubo);
-    glBufferData(GL_UNIFORM_BUFFER, sizeof(PointLightData), &render_state->point_light_data, GL_DYNAMIC_DRAW);
-    
-    block_index = glGetUniformBlockIndex(render_state->simple_model_shader.program, "pointLights");
-    glUniformBlockBinding(render_state->simple_model_shader.program, block_index, 2);
-    glBindBuffer(GL_UNIFORM_BUFFER, 0);
-    
     load_shader(shader_paths[SHADER_MESH], &render_state->mesh_shader, perm_arena);
-}
-
-static void update_lighting_data(const RenderState& render_state)
-{
-    glBindBuffer(GL_UNIFORM_BUFFER, render_state.spotlight_ubo);
-    GLvoid* p = glMapBuffer(GL_UNIFORM_BUFFER, GL_WRITE_ONLY);
-    if (p)
-    {
-        memcpy(p, &render_state.spotlight_data, sizeof(SpotlightData));
-    }
-    glUnmapBuffer(GL_UNIFORM_BUFFER);
-    
-    
-    glBindBuffer(GL_UNIFORM_BUFFER, render_state.directional_light_ubo);
-    p = glMapBuffer(GL_UNIFORM_BUFFER, GL_WRITE_ONLY);
-    if (p)
-    {
-        memcpy(p, &render_state.directional_light_data, sizeof(DirectionalLightData));
-    }
-    glUnmapBuffer(GL_UNIFORM_BUFFER);
-    
-    glBindBuffer(GL_UNIFORM_BUFFER, render_state.point_light_ubo);
-    p = glMapBuffer(GL_UNIFORM_BUFFER, GL_WRITE_ONLY);
-    if (p)
-    {
-        memcpy(p, &render_state.point_light_data, sizeof(PointLightData));
-    }
-    glUnmapBuffer(GL_UNIFORM_BUFFER);
 }
 
 static GLuint load_texture(texture_data& data, Texture* texture)
@@ -991,96 +912,9 @@ static void render_line(RenderState& render_state, math::Vec4 color, math::Vec3 
     set_float_uniform(shader.program, "thickness", width);
     set_int_uniform(shader.program, "isUI", is_ui);
     
-    //glDrawArrays(GL_TRIANGLES, 0, 4);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, render_state.line_ebo);
     glDrawElements(GL_TRIANGLES, LINE_INDICES, GL_UNSIGNED_INT, BUFFER_OFFSET(0));
     glBindVertexArray(0);
-}
-
-/*
-static void RenderLine(render_state& RenderState, math::Vec4 Color, math::Vec3 Start, math::Vec3 End, math::m4 projection_matrix = math::m4(), math::m4 view_matrix = math::m4(), r32 LineWidth = 1.0f, b32 IsUI = false)
-{
-if(IsUI)
-{
-Start.x *= RenderState.scale_x;
-Start.x -= 1;
-Start.y *= RenderState.scale_y;
-Start.y -= 1;
-End.x *= RenderState.scale_x;
-End.x -= 1;
-End.y *= RenderState.scale_y;
-End.y -= 1;
-Start.z = 0.0f;
-End.z = 0.0f;
-}
-
-glLineWidth(LineWidth);
-glBindBuffer(GL_ARRAY_BUFFER, RenderState.Primitivevbo);
-
-GLfloat Points[6] = {Start.x, Start.y, Start.z, End.x, End.y, End.z};
-glBufferData(GL_ARRAY_BUFFER, 6 * sizeof(GLfloat), &Points[0], GL_DYNAMIC_DRAW);
-
-glBindVertexArray(RenderState.Primitivevao);
-
-auto& Shader = RenderState.PassthroughShader;
-UseShader(&Shader);
-
-SetMat4Uniform(Shader.program, "Projection", projection_matrix);
-SetMat4Uniform(Shader.program, "View", view_matrix);
-
-SetMat4Uniform(Shader.program, "Model", math::m4(1.0f));
-
-SetVec4Uniform(Shader.program, "Color", Color);
-SetIntUniform(Shader.program, "IsUI", (i32)IsUI);
-
-glDrawArrays(GL_LINES, 0, 6);
-glLineWidth(1.0f);
-}
-*/
-// NOTE(Niels): Possible future use but buggy
-void render_circle(RenderState& render_state, math::Vec4 color, r32 center_x, r32 center_y, r32 radius, b32 is_ui = true, math::Mat4 projection_matrix = math::Mat4(), math::Mat4 view_matrix = math::Mat4())
-{
-    if (is_ui)
-    {
-        center_x *= render_state.scale_x;
-        center_x -= 1;
-        center_y *= render_state.scale_y;
-        center_y -= 1;
-        radius *= render_state.scale_x;
-    }
-    
-    glBindBuffer(GL_ARRAY_BUFFER, render_state.primitive_vbo);
-    
-    GLfloat points[720];
-    
-    i32 point_index = 0;
-    
-    for (i32 index = 0; index < 360; index++)
-    {
-        r32 radians = (index * PI) / 180.0f;
-        points[point_index++] = math::cos(radians * radius);
-        points[point_index++] = math::sin(radians * radius);
-    }
-    
-    glBufferData(GL_ARRAY_BUFFER, 720 * sizeof(GLfloat), &points[0], GL_DYNAMIC_DRAW);
-    
-    auto& shader = render_state.rect_shader;
-    use_shader(&shader);
-    
-    //draw upper part
-    math::Mat4 model(1.0f);
-    
-    if (!is_ui)
-    {
-        set_mat4_uniform(shader.program, "Projection", projection_matrix);
-        set_mat4_uniform(shader.program, "View", view_matrix);
-    }
-    
-    set_float_uniform(shader.program, "isUI", (r32)is_ui);
-    set_mat4_uniform(shader.program, "M", model);
-    set_vec4_uniform(shader.program, "color", color);
-    
-    glDrawArrays(GL_LINE_LOOP, 0, 720);
 }
 
 static void render_quad(RenderMode mode, RenderState& render_state, math::Vec4 color, math::Vec3 position, b32 flipped, math::Vec3 size, math::Vec3 rotation, b32 with_origin, math::Vec2 origin, i32 shader_handle, ShaderAttribute* shader_attributes, i32 shader_attribute_count, b32 is_ui = true, i32 texture_handle = 0, b32 for_animation = false, math::Vec2 texture_size = math::Vec2(), math::Vec2i frame_size = math::Vec2i(), math::Vec2 texture_offset = math::Vec2(), math::Mat4 projection_matrix = math::Mat4(), math::Mat4 view_matrix = math::Mat4())
@@ -1089,15 +923,15 @@ static void render_quad(RenderMode mode, RenderState& render_state, math::Vec4 c
     {
         case RENDER_FILL:
         {
-            auto shader = render_state.rect_shader;
+            auto shader = render_state.quad_shader;
             
             if (texture_handle > 0)
             {
-                glBindVertexArray(render_state.texture_rect_vao);
+                glBindVertexArray(render_state.texture_quad_vao);
             }
             else
             {
-                glBindVertexArray(render_state.rect_vao);
+                glBindVertexArray(render_state.quad_vao);
             }
             
             math::Vec2i pixel_size;
@@ -1133,7 +967,7 @@ static void render_quad(RenderMode mode, RenderState& render_state, math::Vec4 c
                 if (for_animation || (texture_offset.x >= 0.0f && texture_offset.y >= 0.0f))
                     shader = render_state.spritesheet_shader;
                 else
-                    shader = render_state.texture_rect_shader;
+                    shader = render_state.texture_quad_shader;
                 
                 render_state.bound_texture = (GLuint)texture_handle;
             }
@@ -1276,11 +1110,6 @@ static void render_quad(RenderMode mode, RenderState& render_state, math::Vec4 c
         case RENDER_OUTLINE:
         {
             math::Mat4 model(1.0f);
-            if (is_ui)
-            {
-                size.x *= render_state.scale_x;
-                size.y *= render_state.scale_y;
-            }
             
             model = math::scale(model, size);
             
@@ -1296,16 +1125,16 @@ static void render_quad(RenderMode mode, RenderState& render_state, math::Vec4 c
             model = math::to_matrix(orientation) * model;
             model = math::translate(model, position);
             
-            glBindVertexArray(render_state.wireframe_vao);
+            glBindVertexArray(render_state.quad_vao);
             
-            auto shader = render_state.rect_shader;
+            auto shader = render_state.quad_shader;
             use_shader(&shader);
             
             if (!is_ui)
             {
-                set_mat4_uniform(shader.program, "Projection", projection_matrix);
                 set_mat4_uniform(shader.program, "View", view_matrix);
             }
+            
             set_float_uniform(shader.program, "isUI", (r32)is_ui);
             set_mat4_uniform(shader.program, "M", model);
             set_vec4_uniform(shader.program, "color", color);
@@ -1316,7 +1145,6 @@ static void render_quad(RenderMode mode, RenderState& render_state, math::Vec4 c
     }
     glBindVertexArray(0);
 }
-
 
 static math::Vec2 get_text_size(const char *text, TrueTypeFont &font, u64 alignment_flags)
 {
@@ -1617,7 +1445,7 @@ static void render_buffer(const RenderCommand& command, RenderState& render_stat
         size.y *= render_state.scale_y;
     }
     
-    auto shader = render_state.tile_shader;
+    auto shader = render_state.texture_quad_shader;
     use_shader(&shader);
     
     math::Mat4 model(1.0f);
@@ -2075,7 +1903,7 @@ static void render(RenderState& render_state, Renderer& renderer, MemoryArena* p
         
         use_shader(&render_state.frame_buffer_shader);
         
-        glUniform1i((GLint)render_state.frame_buffer_tex0_loc, 0);
+        glUniform1i((GLint)render_state.framebuffer.tex0_loc, 0);
         
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, render_state.framebuffer.tex_color_buffer_handle);
