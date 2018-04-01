@@ -765,32 +765,6 @@ static void reload_fragment_shader(ShaderType type, RenderState* render_state, M
     glDeleteProgram(render_state->shaders[type].program);
     glDeleteShader(render_state->shaders[type].fragment_shader);
     load_fragment_shader(shader_paths[type], &render_state->shaders[type], perm_arena);
-    
-    render_state->spotlight_data.num_lights = 0;
-    glBindBufferBase(GL_UNIFORM_BUFFER, 0, render_state->spotlight_ubo);
-    glBufferData(GL_UNIFORM_BUFFER, sizeof(SpotlightData), &render_state->spotlight_data, GL_DYNAMIC_DRAW);
-    
-    u32 block_index = glGetUniformBlockIndex(render_state->simple_model_shader.program, "spotlights");
-    
-    glUniformBlockBinding(render_state->simple_model_shader.program, block_index, 0);
-    glBindBuffer(GL_UNIFORM_BUFFER, 0);
-    
-    render_state->directional_light_data.num_lights = 0;
-    glBindBufferBase(GL_UNIFORM_BUFFER, 1, render_state->directional_light_ubo);
-    glBufferData(GL_UNIFORM_BUFFER, sizeof(DirectionalLightData), &render_state->directional_light_data, GL_DYNAMIC_DRAW);
-    
-    block_index = glGetUniformBlockIndex(render_state->simple_model_shader.program, "directionalLights");
-    glUniformBlockBinding(render_state->simple_model_shader.program, block_index, 1);
-    glBindBuffer(GL_UNIFORM_BUFFER, 0);
-    
-    
-    render_state->point_light_data.num_lights = 0;
-    glBindBufferBase(GL_UNIFORM_BUFFER, 2, render_state->point_light_ubo);
-    glBufferData(GL_UNIFORM_BUFFER, sizeof(PointLightData), &render_state->point_light_data, GL_DYNAMIC_DRAW);
-    
-    block_index = glGetUniformBlockIndex(render_state->simple_model_shader.program, "pointLights");
-    glUniformBlockBinding(render_state->simple_model_shader.program, block_index, 2);
-    glBindBuffer(GL_UNIFORM_BUFFER, 0);
 }
 
 static void reload_assets(RenderState& render_state, AssetManager* asset_manager, MemoryArena* perm_arena)
