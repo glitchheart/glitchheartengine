@@ -434,31 +434,58 @@ static void register_vertex_buffer(RenderState& render_state, GLfloat* buffer_da
         render_state.buffer_count++;
 }
 
+static void create_framebuffer_color_attachment(Framebuffer &framebuffer, i32 width, i32 height, b32 multisampled)
+{
+    if(multisampled)
+    {
+        glGenRenderbuffers(1, &framebuffer.tex_color_buffer_handle);
+        glBindRenderbuffer(GL_RENDERBUFFER, framebuffer.tex_color_buffer_handle);
+        glRenderbufferStorageMultisample(GL_RENDERBUFFER, 4, GL_RGBA8, width, height);
+        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER,
+                                  framebuffer.tex_color_buffer_handle);
+    }
+    else
+    {
+        glGenTextures(1, &framebuffer.tex_color_buffer_handle);
+        glBindTexture(GL_TEXTURE_2D, framebuffer.tex_color_buffer_handle);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, framebuffer.tex_color_buffer_handle, NULL);
+        
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    }
+}
+
+static void create_framebuffer_render_buffer_attachment(Framebuffer &framebuffer, i32 width, i32 height, b32 multisampled)
+{
+    glGenRenderbuffers(1, &framebuffer.depth_buffer_handle);
+    glBindRenderbuffer(GL_RENDERBUFFER, framebuffer.depth_buffer_handle);
+    
+    if(multisampled)
+    {
+        glRenderbufferStorageMultisample(GL_RENDERBUFFER, 4, GL_DEPTH_COMPONENT, width, height);
+    }
+    else
+    {
+        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, width, height);
+    }
+    
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, framebuffer.depth_buffer_handle);
+}
+
 static void create_framebuffer(RenderState& render_state, Framebuffer& framebuffer, i32 width, i32 height, Shader& shader, MemoryArena* perm_arena, r32* vertices, u32 vertices_size, u32* indices, u32 indices_size)
 {
     glGenFramebuffers(1, &framebuffer.buffer_handle);
     glBindFramebuffer(GL_FRAMEBUFFER, framebuffer.buffer_handle);
+    glDrawBuffer(GL_COLOR_ATTACHMENT0);
     
-    glGenTextures(1, &framebuffer.tex_color_buffer_handle);
-    glBindTexture(GL_TEXTURE_2D, framebuffer.tex_color_buffer_handle);
-    
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-    
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, framebuffer.tex_color_buffer_handle, NULL);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    
-    glBindTexture(GL_TEXTURE_2D, 0);
+    create_framebuffer_color_attachment(framebuffer, width, height, true);
+    create_framebuffer_render_buffer_attachment(framebuffer, width, height, true);
     
     if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
     {
         Debug("Error: Framebuffer incomplete\n");
     }
-    
-    glGenRenderbuffers(1, &framebuffer.depth_buffer_handle);
-    glBindRenderbuffer(GL_RENDERBUFFER, framebuffer.depth_buffer_handle);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, width, height);
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, framebuffer.depth_buffer_handle);
     
     // FrameBuffer vao
     glGenVertexArrays(1, &framebuffer.vao);
@@ -1841,9 +1868,9 @@ static void render(RenderState& render_state, Renderer& renderer, MemoryArena* p
             renderer.fps_sum = 0.0;
         }
         
-        glBindFramebuffer(GL_FRAMEBUFFER, render_state.framebuffer.buffer_handle);
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, render_state.framebuffer.buffer_handle);
         
-        glBindTexture(GL_TEXTURE_2D, render_state.framebuffer.tex_color_buffer_handle);
+        //glBindTexture(GL_TEXTURE_2D, render_state.framebuffer.tex_color_buffer_handle);
         
         glEnable(GL_DEPTH_TEST);
         
@@ -1859,26 +1886,14 @@ static void render(RenderState& render_state, Renderer& renderer, MemoryArena* p
         // We have to reset the bound texture to nothing, since we're about to bind other textures
         // Second pass
         
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, render_state.framebuffer.buffer_handle);
+        glDrawBuffer(GL_BACK);
         
-        glClearColor(renderer.clear_color.r, renderer.clear_color.g, renderer.clear_color.b, renderer.clear_color.a);
-        
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        
-        glBindVertexArray(render_state.framebuffer.vao);
-        
-        use_shader(&render_state.frame_buffer_shader);
-        
-        glUniform1i((GLint)render_state.framebuffer.tex0_loc, 0);
-        
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, render_state.framebuffer.tex_color_buffer_handle);
-        
-        glDrawElements(GL_TRIANGLES, sizeof(render_state.quad_indices), GL_UNSIGNED_INT, (void*)0);
-        
-        glActiveTexture(GL_TEXTURE0);
+        i32 width = renderer.window_width;
+        i32 height = renderer.window_height;
+        glBlitFramebuffer(0, 0, width, height, 0, 0, width, height, 
+                          GL_COLOR_BUFFER_BIT, GL_NEAREST);
         
         glfwSwapBuffers(render_state.window);
         
