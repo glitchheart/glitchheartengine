@@ -123,6 +123,8 @@ struct Framebuffer
     GLuint vao;
     GLuint vbo;
     GLuint ebo;
+    
+    b32 multisampled;
 };
 
 struct RenderState
