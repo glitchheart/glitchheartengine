@@ -335,19 +335,6 @@ static void push_outlined_quad(Renderer& renderer, math::Vec3 position,  math::V
     render_command->is_ui = is_ui;
 }
 
-static void push_wireframe_cube(Renderer& renderer, math::Vec3 position, math::Vec3 scale, math::Quat orientation, math::Rgba color, r32 line_width)
-{
-    RenderCommand* render_command = push_next_command(renderer, false);
-    
-    render_command->type = RENDER_COMMAND_WIREFRAME_CUBE;
-    render_command->wireframe_cube.color = color;
-    render_command->wireframe_cube.line_width = line_width;
-    render_command->position = position;
-    render_command->scale = scale;
-    render_command->orientation = orientation;
-    render_command->is_ui = false;
-}
-
 static void push_spotlight(Renderer& renderer, math::Vec3 position, math::Vec3 direction, r32 cut_off, r32 outer_cut_off, math::Vec3 ambient, math::Vec3 diffuse, math::Vec3 specular, r32 constant, r32 linear, r32 quadratic)
 {
     RenderCommand* render_command = push_struct(&renderer.light_commands, RenderCommand);

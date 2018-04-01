@@ -27,7 +27,6 @@ const static struct
 } shader_conversion [] =
 {
     SHADERPAIR(MESH),
-    SHADERPAIR(TEXTURE),
     SHADERPAIR(TILE),
     SHADERPAIR(RECT),
     SHADERPAIR(TEXTURE_RECT),
@@ -60,7 +59,6 @@ char* shader_enum_to_str(ShaderType shader)
 static char* shader_paths[SHADER_COUNT] =
 {
     "../engine_assets/shaders/meshshader",
-    "../engine_assets/shaders/textureshader",
     "../engine_assets/shaders/tileshader",
     "../engine_assets/shaders/rectshader",
     "../engine_assets/shaders/texturerectshader",
@@ -83,22 +81,9 @@ enum RenderMode
     RENDER_FILL, RENDER_OUTLINE
 };
 
-struct Entity;
-struct ObjectEntity;
-
 struct Texture 
 {
     GLuint texture_handle;
-};
-
-#define TILESHEET_MAX 10
-
-struct Tilesheet
-{
-    char* name;
-    Texture texture;
-    i32 tile_width;
-    i32 tile_height;
 };
 
 // stb_truetype
@@ -139,6 +124,16 @@ struct Buffer
     GLint vertex_buffer_size;
     GLint index_buffer_size;
     GLint index_buffer_count;
+};
+
+struct Framebuffer
+{
+    GLuint buffer_handle;
+    GLuint tex_color_buffer_handle;
+    GLuint depth_buffer_handle;
+    GLuint vao;
+    GLuint vbo;
+    GLuint ebo;
 };
 
 struct RenderState
@@ -182,6 +177,8 @@ struct RenderState
     GLuint frame_buffer_tex1_loc;
     GLuint texture_color_buffer;
     
+    Framebuffer framebuffer;
+    
     // Lighting data
     SpotlightData spotlight_data;
     DirectionalLightData directional_light_data;
@@ -191,12 +188,7 @@ struct RenderState
     GLuint directional_light_ubo;
     GLuint point_light_ubo;
     
-    // Lighting map
-    GLuint lighting_frame_buffer;
-    GLuint lighting_texture_color_buffer;
-    
     size_t sprite_quad_vertices_size = 16 * sizeof(GLfloat);
-    size_t tile_quad_vertices_size = 16 * sizeof(GLfloat);
     size_t normal_quad_vertices_size = 8 * sizeof(GLfloat);
     size_t wireframe_quad_vertices_size = 8 * sizeof(GLfloat);
     GLuint bound_vertex_buffer;
@@ -246,16 +238,6 @@ struct RenderState
         1, 2, 3
     };
     
-    //tiles
-    GLfloat tile_quad_vertices[16] =
-    {
-        //pos        //texcoords
-        0.0f, 1.0f, 0.125f, 1.0f,
-        1.0f, 1.0f, 1.0f, 1.0f,
-        1.0f, 0.0f, 1.0f, 0.125f,
-        0.0f, 0.0f, 0.125f, 0.125f
-    };
-    
     GLuint tile_vao;
     GLuint tile_quad_vbo;
     
@@ -278,43 +260,10 @@ struct RenderState
         0.0f, 0.0f
     };
     
-    GLfloat wireframe_cube_vertices[32] =
-    {
-        -0.5, -0.5, -0.5, 1.0,
-        0.5, -0.5, -0.5, 1.0,
-        0.5,  0.5, -0.5, 1.0,
-        -0.5,  0.5, -0.5, 1.0,
-        -0.5, -0.5,  0.5, 1.0,
-        0.5, -0.5,  0.5, 1.0,
-        0.5,  0.5,  0.5, 1.0,
-        -0.5,  0.5,  0.5, 1.0,
-    };
-    
-#define CUBE_INDICES 16
-    GLuint wireframe_cube_indices[CUBE_INDICES] = 
-    {
-        0, 1, 2, 3,
-        4, 5, 6, 7,
-        0, 4, 1, 5,
-        2, 6, 3, 7
-    };
     GLuint cube_index_buffer;
-    
-    GLfloat isometric_quad_vertices[8] =
-    {
-        0.5f, 1.0f,
-        1.0f, 0.5f,
-        0.5f, 0.0f,
-        0.0f, 0.5f
-    };
     
     GLuint wireframe_vao;
     GLuint wireframe_quad_vbo;
-    GLuint wireframe_cube_vao;
-    GLuint wireframe_cube_vbo;
-    
-    GLuint isometric_vao;
-    GLuint isometric_quad_vbo;
     
     Buffer buffers[BUFFER_ARRAY_SIZE];
     i32 buffer_count;
@@ -329,7 +278,6 @@ struct RenderState
         struct
         {
             Shader mesh_shader;
-            Shader texture_shader;
             Shader tile_shader;
             Shader rect_shader;
             Shader texture_rect_shader;

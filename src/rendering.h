@@ -83,7 +83,6 @@ struct PointLightData
 enum ShaderType
 {
     SHADER_MESH,
-    SHADER_TEXTURE,
     SHADER_TILE,
     SHADER_RECT,
     SHADER_TEXTURE_RECT,
@@ -116,7 +115,6 @@ enum RenderCommandType
     RENDER_COMMAND_BUFFER,
     RENDER_COMMAND_MODEL,
     RENDER_COMMAND_MESH,
-    RENDER_COMMAND_WIREFRAME_CUBE,
     RENDER_COMMAND_SHADER_START,
     RENDER_COMMAND_SHADER_END,
     RENDER_COMMAND_DEPTH_TEST,
@@ -537,11 +535,6 @@ struct RenderCommand
             math::Vec2i frame_size;
             math::Vec2 texture_offset;
         } quad;
-        struct
-        {
-            math::Rgba color; // @Cleanup: REMOVE!
-            r32 line_width;
-        } wireframe_cube;
         struct
         {
             math::Vec3 direction;
