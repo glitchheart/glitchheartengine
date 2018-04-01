@@ -428,13 +428,14 @@ static void register_vertex_buffer(RenderState& render_state, GLfloat* buffer_da
         render_state.buffer_count++;
 }
 
-static void create_framebuffer_color_attachment(Framebuffer &framebuffer, i32 width, i32 height, b32 multisampled)
+static void create_framebuffer_color_attachment(Framebuffer &framebuffer, i32 width, i32 height, b32 multisampled, i32 samples)
 {
+    framebuffer.multisampled = multisampled;
     if(multisampled)
     {
         glGenRenderbuffers(1, &framebuffer.tex_color_buffer_handle);
         glBindRenderbuffer(GL_RENDERBUFFER, framebuffer.tex_color_buffer_handle);
-        glRenderbufferStorageMultisample(GL_RENDERBUFFER, 4, GL_RGBA8, width, height);
+        glRenderbufferStorageMultisample(GL_RENDERBUFFER, samples, GL_RGBA8, width, height);
         glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER,
                                   framebuffer.tex_color_buffer_handle);
     }
@@ -450,14 +451,14 @@ static void create_framebuffer_color_attachment(Framebuffer &framebuffer, i32 wi
     }
 }
 
-static void create_framebuffer_render_buffer_attachment(Framebuffer &framebuffer, i32 width, i32 height, b32 multisampled)
+static void create_framebuffer_render_buffer_attachment(Framebuffer &framebuffer, i32 width, i32 height, b32 multisampled, i32 samples)
 {
     glGenRenderbuffers(1, &framebuffer.depth_buffer_handle);
     glBindRenderbuffer(GL_RENDERBUFFER, framebuffer.depth_buffer_handle);
     
     if(multisampled)
     {
-        glRenderbufferStorageMultisample(GL_RENDERBUFFER, 4, GL_DEPTH_COMPONENT, width, height);
+        glRenderbufferStorageMultisample(GL_RENDERBUFFER, samples, GL_DEPTH_COMPONENT, width, height);
     }
     else
     {
@@ -467,14 +468,14 @@ static void create_framebuffer_render_buffer_attachment(Framebuffer &framebuffer
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, framebuffer.depth_buffer_handle);
 }
 
-static void create_framebuffer(RenderState& render_state, Framebuffer& framebuffer, i32 width, i32 height, Shader& shader, MemoryArena* perm_arena, r32* vertices, u32 vertices_size, u32* indices, u32 indices_size)
+static void create_framebuffer(RenderState& render_state, Framebuffer& framebuffer, i32 width, i32 height, Shader& shader, MemoryArena* perm_arena, r32* vertices, u32 vertices_size, u32* indices, u32 indices_size, b32 multisampled, i32 samples = 0)
 {
     glGenFramebuffers(1, &framebuffer.buffer_handle);
     glBindFramebuffer(GL_FRAMEBUFFER, framebuffer.buffer_handle);
     glDrawBuffer(GL_COLOR_ATTACHMENT0);
     
-    create_framebuffer_color_attachment(framebuffer, width, height, true);
-    create_framebuffer_render_buffer_attachment(framebuffer, width, height, true);
+    create_framebuffer_color_attachment(framebuffer, width, height, true, samples);
+    create_framebuffer_render_buffer_attachment(framebuffer, width, height, true, samples);
     
     if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
     {
@@ -581,7 +582,7 @@ static void render_setup(RenderState *render_state, MemoryArena* perm_arena)
     render_state->font_count = 0;
     
     create_framebuffer(*render_state, render_state->framebuffer, render_state->scale_from_width, render_state->scale_from_height, render_state->frame_buffer_shader, perm_arena, render_state->framebuffer_quad_vertices,
-                       render_state->framebuffer_quad_vertices_size,render_state->quad_indices, sizeof(render_state->quad_indices));
+                       render_state->framebuffer_quad_vertices_size,render_state->quad_indices, sizeof(render_state->quad_indices), true, 4);
     
     setup_quad(*render_state, perm_arena);
     setup_lines(*render_state, perm_arena);
