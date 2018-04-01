@@ -27,17 +27,11 @@ const static struct
 } shader_conversion [] =
 {
     SHADERPAIR(MESH),
-    SHADERPAIR(TILE),
-    SHADERPAIR(RECT),
-    SHADERPAIR(TEXTURE_RECT),
+    SHADERPAIR(QUAD),
+    SHADERPAIR(TEXTURE_QUAD),
     SHADERPAIR(STANDARD_FONT),
     SHADERPAIR(SPRITESHEET),
-    SHADERPAIR(WIREFRAME),
-    SHADERPAIR(UI_SPRITE),
-    SHADERPAIR(ERROR_SPRITE),
-    SHADERPAIR(ERROR_UI),
     SHADERPAIR(FRAME_BUFFER),
-    SHADERPAIR(LIGHT_SOURCE),
     SHADERPAIR(SIMPLE_MODEL),
     SHADERPAIR(PASS_THROUGH),
     SHADERPAIR(LINE)
@@ -59,17 +53,11 @@ char* shader_enum_to_str(ShaderType shader)
 static char* shader_paths[SHADER_COUNT] =
 {
     "../engine_assets/shaders/meshshader",
-    "../engine_assets/shaders/tileshader",
-    "../engine_assets/shaders/rectshader",
-    "../engine_assets/shaders/texturerectshader",
+    "../engine_assets/shaders/quadshader",
+    "../engine_assets/shaders/texturequadshader",
     "../engine_assets/shaders/standardfontshader",
     "../engine_assets/shaders/spritesheetanimationshader",
-    "../engine_assets/shaders/wireframeshader",
-    "../engine_assets/shaders/spriteuishader",
-    "../engine_assets/shaders/errorshadersprite",
-    "../engine_assets/shaders/errorshaderui",
     "../engine_assets/shaders/framebuffershader",
-    "../engine_assets/shaders/lightsourceshader",
     "../engine_assets/shaders/simple_model_shader",
     "../engine_assets/shaders/passthroughshader",
     "../engine_assets/shaders/lineshader"
@@ -129,6 +117,7 @@ struct Buffer
 struct Framebuffer
 {
     GLuint buffer_handle;
+    GLuint tex0_loc;
     GLuint tex_color_buffer_handle;
     GLuint depth_buffer_handle;
     GLuint vao;
@@ -166,17 +155,6 @@ struct RenderState
     b32 should_close;
     r64 fps;
     
-    GLuint original_frame_buffer_vao;
-    GLuint original_frame_buffer_vbo;
-    GLuint original_frame_buffer;
-    
-    GLuint frame_buffer_vao;
-    GLuint frame_buffer_vbo;
-    GLuint frame_buffer;
-    GLuint frame_buffer_tex0_loc;
-    GLuint frame_buffer_tex1_loc;
-    GLuint texture_color_buffer;
-    
     Framebuffer framebuffer;
     
     // Lighting data
@@ -184,17 +162,13 @@ struct RenderState
     DirectionalLightData directional_light_data;
     PointLightData point_light_data;
     
-    GLuint spotlight_ubo;
-    GLuint directional_light_ubo;
-    GLuint point_light_ubo;
-    
-    size_t sprite_quad_vertices_size = 16 * sizeof(GLfloat);
-    size_t normal_quad_vertices_size = 8 * sizeof(GLfloat);
-    size_t wireframe_quad_vertices_size = 8 * sizeof(GLfloat);
+    size_t framebuffer_quad_vertices_size = 16 * sizeof(GLfloat);
+    size_t texture_quad_vertices_size = 16 * sizeof(GLfloat);
+    size_t quad_vertices_size = 8 * sizeof(GLfloat);
     GLuint bound_vertex_buffer;
     GLuint bound_texture;
     
-    GLfloat frame_buffer_vertices[16] =
+    GLfloat framebuffer_quad_vertices[16] =
     {
         -1.0f, 1.0f, 0, 1.0f,
         1.0f, 1.0f, 1.0f, 1.0f,
@@ -202,12 +176,12 @@ struct RenderState
         -1.0f, -1.0f, 0, 0.0f
     };
     
-    GLfloat sprite_quad_vertices[16] =
-    { //pos        //texcoords
-        0.0f, 1.0f, 0, 0.0f,
-        1.0f, 1.0f, 1.0f,  0.0f,
-        1.0f, 0.0f, 1.0f,  1.0f,
-        0.0f, 0.0f, 0,  1.0f
+    GLfloat quad_vertices[8] =
+    {
+        0.0f, 1.0f,
+        1.0f, 1.0f,
+        1.0f, 0.0f,
+        0.0f, 0.0f
     };
     
     GLuint quad_indices[6] =
@@ -215,16 +189,8 @@ struct RenderState
         0, 1, 2, 0, 2, 3
     };
     
-    GLuint sprite_vao;
-    GLuint sprite_quad_vbo;
+    GLuint texture_quad_vbo;
     GLuint quad_index_buffer;
-    
-    GLuint ui_sprite_vao;
-    GLuint sprite_sheet_vao;
-    
-    GLuint sprite_error_vao;
-    GLuint ui_error_vao;
-    GLuint passthrough_vao;
     
     GLuint line_vbo;
     GLuint line_vao;
@@ -238,39 +204,12 @@ struct RenderState
         1, 2, 3
     };
     
-    GLuint tile_vao;
-    GLuint tile_quad_vbo;
-    
-    GLfloat normal_quad_vertices[8] =
-    {
-        0.0f, 1.0f,
-        1.0f, 1.0f,
-        1.0f, 0.0f,
-        0.0f, 0.0f
-    };
-    
-    GLuint primitive_vao;
-    GLuint primitive_vbo;
-    
-    GLfloat wireframe_quad_vertices[10] =
-    {
-        0.0f, 1.0f,
-        1.0f, 1.0f,
-        1.0f, 0.0f,
-        0.0f, 0.0f
-    };
-    
-    GLuint cube_index_buffer;
-    
-    GLuint wireframe_vao;
-    GLuint wireframe_quad_vbo;
-    
     Buffer buffers[BUFFER_ARRAY_SIZE];
     i32 buffer_count;
     
-    GLuint rect_vao;
-    GLuint texture_rect_vao;
-    GLuint normal_quad_vbo;
+    GLuint quad_vao;
+    GLuint texture_quad_vao;
+    GLuint quad_vbo;
     
     union 
     {
@@ -278,17 +217,11 @@ struct RenderState
         struct
         {
             Shader mesh_shader;
-            Shader tile_shader;
-            Shader rect_shader;
-            Shader texture_rect_shader;
+            Shader quad_shader;
+            Shader texture_quad_shader;
             Shader standard_font_shader;
             Shader spritesheet_shader;
-            Shader wireframe_shader;
-            Shader ui_sprite_shader;
-            Shader error_shader_sprite;
-            Shader error_shader_ui;
             Shader frame_buffer_shader;
-            Shader light_source_shader;
             Shader simple_model_shader;
             Shader passthrough_shader;
             Shader line_shader;
