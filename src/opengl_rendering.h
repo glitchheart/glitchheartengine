@@ -164,9 +164,9 @@ struct RenderState
     DirectionalLightData directional_light_data;
     PointLightData point_light_data;
     
-    size_t framebuffer_quad_vertices_size = 16 * sizeof(GLfloat);
-    size_t texture_quad_vertices_size = 16 * sizeof(GLfloat);
-    size_t quad_vertices_size = 8 * sizeof(GLfloat);
+    u32 framebuffer_quad_vertices_size = 16 * sizeof(GLfloat);
+    u32 texture_quad_vertices_size = 16 * sizeof(GLfloat);
+    u32 quad_vertices_size = 8 * sizeof(GLfloat);
     GLuint bound_vertex_buffer;
     GLuint bound_texture;
     
