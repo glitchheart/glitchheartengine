@@ -2395,14 +2395,13 @@ namespace math
     
     inline r32 lerp(r32 a, r32 t, r32 b)
     {
-        Assert(t <= 1.0f);
         r32 result = (1.0f - t) * a + t * b;
         return result;
     }
     
     inline Vec2 lerp(Vec2 a, r32 t, Vec2 b)
     {
-        Assert(t <= 1.0f);
+        //Assert(t <= 1.0f);
         Vec2 result(0.0f);
         result.x = lerp(a.x,t,b.x);
         result.y = lerp(a.y,t,b.y);
@@ -2411,7 +2410,7 @@ namespace math
     
     inline Vec3 lerp(Vec3 a, r32 t, Vec3 b)
     {
-        Assert(t <= 1.0f);
+        //Assert(t <= 1.0f);
         Vec3 result(0.0f);
         result.x = lerp(a.x,t,b.x);
         result.y = lerp(a.y,t,b.y);
@@ -2421,7 +2420,7 @@ namespace math
     
     inline Vec4 lerp(Vec4 a, r32 t, Vec4 b)
     {
-        Assert(t <= 1.0f);
+        //Assert(t <= 1.0f);
         Vec4 result(0.0f);
         result.x = lerp(a.x,t,b.x);
         result.y = lerp(a.y,t,b.y);
