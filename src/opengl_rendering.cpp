@@ -19,7 +19,6 @@ void debug_attrib_array(u32 location, char* file, int line)
 #define glGetAttribLocation(shader, str) debug_attrib(shader, str, __FILE__, __LINE__)
 #endif
 
-
 static void error_callback(int error, const char *description)
 {
     fprintf(stderr, "Error: %d - %s\n", error, description);
@@ -253,6 +252,8 @@ static GLuint load_vertex_shader(const char* file_path, Shader *shd, MemoryArena
         return GL_FALSE;
     }
     
+    glAttachShader(shd->program, shd->geometry_shader);
+    
     glAttachShader(shd->program, shd->vertex_shader);
     glAttachShader(shd->program, shd->fragment_shader);
     
@@ -282,10 +283,42 @@ static GLuint load_fragment_shader(const char* file_path, Shader *shd, MemoryAre
         shd->program = 0;
         return GL_FALSE;
     }
+    
+    glAttachShader(shd->program, shd->geometry_shader);
     glAttachShader(shd->program, shd->vertex_shader);
     glAttachShader(shd->program, shd->fragment_shader);
     glLinkProgram(shd->program);
     
+    return GL_TRUE;
+}
+
+static GLuint load_geometry_shader(const char* file_path, Shader* shd, MemoryArena* perm_arena)
+{
+    shd->program = glCreateProgram();
+    shd->geometry_shader = glCreateShader(GL_GEOMETRY_SHADER);
+    
+    auto temp_mem = begin_temporary_memory(perm_arena);
+    char* geometry_string = concat(file_path, ".geom", perm_arena);
+    
+    GLchar* geometry_text = load_shader_from_file(geometry_string, perm_arena);
+    glShaderSource(shd->geometry_shader, 1, &geometry_text, NULL);
+    end_temporary_memory(temp_mem);
+    
+    glCompileShader(shd->geometry_shader);
+    
+    if(!shader_compilation_error_checking(perm_arena, file_path, shd->geometry_shader))
+    {
+        shd->program = 0;
+        return GL_FALSE;
+    }
+    
+    glAttachShader(shd->program, shd->geometry_shader);
+    glAttachShader(shd->program, shd->vertex_shader);
+    glAttachShader(shd->program, shd->fragment_shader);
+    
+    glLinkProgram(shd->program);
+    
+    end_temporary_memory(temp_mem);
     return GL_TRUE;
 }
 
@@ -798,6 +831,13 @@ static void reload_fragment_shader(ShaderType type, RenderState* render_state, M
     load_fragment_shader(shader_paths[type], &render_state->shaders[type], perm_arena);
 }
 
+static void reload_geometry_shader(ShaderType type, RenderState* render_state, MemoryArena* perm_arena)
+{
+    glDeleteProgram(render_state->shaders[type].program);
+    glDeleteShader(render_state->shaders[type].geometry_shader);
+    load_geometry_shader(shader_paths[type], &render_state->shaders[type], perm_arena);
+}
+
 static void reload_assets(RenderState& render_state, AssetManager* asset_manager, MemoryArena* perm_arena)
 {
     for (int i = 0; i < SHADER_COUNT; i++)
@@ -814,6 +854,13 @@ static void reload_assets(RenderState& render_state, AssetManager* asset_manager
             Debug("Reloading fragment shader type: %s\n", shader_enum_to_str((ShaderType)i));
             reload_fragment_shader((ShaderType)i, &render_state, perm_arena);
             asset_manager->dirty_fragment_shader_indices[i] = 0;
+        }
+        
+        if (asset_manager->dirty_geometry_shader_indices[i] == 1)
+        {
+            Debug("Reloading geometry shader type: %s\n", shader_enum_to_str((ShaderType)i));
+            reload_geometry_shader((ShaderType)i, &render_state, perm_arena);
+            asset_manager->dirty_geometry_shader_indices[i] = 0;
         }
     }
 }
@@ -1389,7 +1436,6 @@ static void render_mesh(const RenderCommand &render_command, RenderState &render
     math::Mat4 model_matrix(1.0f);
     model_matrix = math::scale(model_matrix, render_command.scale);
     
-    /*
     math::Vec3 rotation = render_command.rotation;
     auto x_axis = rotation.x > 0.0f ? 1.0f : 0.0f;
     auto y_axis = rotation.y > 0.0f ? 1.0f : 0.0f;
@@ -1401,7 +1447,7 @@ static void render_mesh(const RenderCommand &render_command, RenderState &render
     orientation = math::rotate(orientation, rotation.z, math::Vec3(0.0f, 0.0f, z_axis));
     
     model_matrix = to_matrix(orientation) * model_matrix;
-    */
+    
     
     model_matrix = math::translate(model_matrix, render_command.position);
     

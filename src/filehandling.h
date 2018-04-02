@@ -11,13 +11,10 @@ struct AssetManager
     //shaders
     b32 dirty_vertex_shader_indices[SHADER_COUNT]; //set to 1 if they should be reloaded
     b32 dirty_fragment_shader_indices[SHADER_COUNT];
+    b32 dirty_geometry_shader_indices[SHADER_COUNT];
     time_t vertex_shader_times[SHADER_COUNT];
     time_t fragment_shader_times[SHADER_COUNT];
-    
-    //textures
-    char* tileset_texture_path;
-    b32 dirty_tileset;
-    time_t tileset_time;
+    time_t geometry_shader_times[SHADER_COUNT];
     
     //libs
     char* lib_paths[1];
@@ -74,12 +71,6 @@ static void check_dirty(const char* file_path, time_t last_time, b32* dirty_id, 
 static void startup_file_time_checks(MemoryArena* arena, AssetManager* asset_manager, char* lib_path)
 {
     auto temp_mem = begin_temporary_memory(arena);
-    if(!asset_manager->is_initialized)
-    {
-        asset_manager->tileset_texture_path = "../assets/textures/tiles.png";
-        asset_manager->lib_paths[0] = push_string(&asset_manager->arena, lib_path);
-        asset_manager->is_initialized = true;
-    }
     
     for (int i = 0; i < SHADER_COUNT; i++) 
     {
@@ -92,6 +83,11 @@ static void startup_file_time_checks(MemoryArena* arena, AssetManager* asset_man
         auto concated_fragment_shader_string = concat(shader_paths[i], ".frag", arena);
         stat(concated_fragment_shader_string, &sb2);
         asset_manager->fragment_shader_times[i] =  sb2.st_mtime;
+        
+        struct stat sb3;
+        auto concated_geometry_shader_string = concat(shader_paths[i], ".geom", arena);
+        stat(concated_geometry_shader_string, &sb3);
+        asset_manager->geometry_shader_times[i] =  sb3.st_mtime;
     }
     end_temporary_memory(temp_mem);
 }
@@ -108,9 +104,11 @@ static void listen_to_file_changes(MemoryArena* arena, AssetManager* asset_manag
             
             char* vertex_path = concat(shader_paths[i], ".vert", arena);
             char* fragment_path = concat(shader_paths[i], ".frag", arena);
+            char* geometry_path = concat(shader_paths[i], ".geom", arena);
             
             check_dirty(vertex_path, asset_manager->vertex_shader_times[i], &asset_manager->dirty_vertex_shader_indices[i], &asset_manager->vertex_shader_times[i]);
             check_dirty(fragment_path, asset_manager->fragment_shader_times[i], &asset_manager->dirty_fragment_shader_indices[i], &asset_manager->fragment_shader_times[i]);
+            check_dirty(geometry_path, asset_manager->geometry_shader_times[i], &asset_manager->dirty_geometry_shader_indices[i], &asset_manager->geometry_shader_times[i]);
             
         }
     }
