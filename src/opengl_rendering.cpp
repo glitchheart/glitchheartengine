@@ -200,7 +200,29 @@ static GLuint load_shader(const char* file_path, Shader *shd, MemoryArena* perm_
             return GL_FALSE;
         }
         
+        shd->geometry_shader = glCreateShader(GL_GEOMETRY_SHADER);
+        char* geometry_string = concat(file_path, ".geom", perm_arena);
+        GLchar* geometry_text = load_shader_from_file(geometry_string, perm_arena);
+        
+        if(geometry_text)
+        {
+            glShaderSource(shd->geometry_shader, 1, &geometry_text, NULL);
+            glCompileShader(shd->geometry_shader);
+            
+            if(!shader_compilation_error_checking(perm_arena, file_path, shd->geometry_shader))
+            {
+                end_temporary_memory(temp_mem);
+                shd->program = 0;
+                return GL_FALSE;
+            }
+        }
+        
         shd->program = glCreateProgram();
+        
+        if(geometry_text)
+        {
+            glAttachShader(shd->program, shd->geometry_shader);
+        }
         
         glAttachShader(shd->program, shd->vertex_shader);
         glAttachShader(shd->program, shd->fragment_shader);
@@ -664,7 +686,7 @@ static void initialize_opengl(RenderState& render_state, Renderer& renderer, Con
     //@Incomplete: Figure something out here. Ask for compatible version etc
 #ifdef _WIN32
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
 #elif __linux
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
@@ -684,8 +706,17 @@ static void initialize_opengl(RenderState& render_state, Renderer& renderer, Con
     
     if (!render_state.window)
     {
-        glfwTerminate();
-        exit(EXIT_FAILURE);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+        
+        create_open_gl_window(render_state, config_data->fullscreen, config_data->title, config_data->screen_width, config_data->screen_height);
+        renderer.window_mode = render_state.window_mode;
+        
+        if(!render_state.window)
+        {
+            glfwTerminate();
+            exit(EXIT_FAILURE);
+        }
     }
     
     glfwSetInputMode(render_state.window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
@@ -1382,6 +1413,7 @@ static void render_mesh(const RenderCommand &render_command, RenderState &render
     set_vec3_uniform(shader.program, "diffuseColor", math::Vec3(1, 1, 1));
     set_vec3_uniform(shader.program, "lightColor", math::Vec3(1.0f, 1.0f, 1.0f));
     set_vec3_uniform(shader.program, "specularColor", math::Vec3(1, 1, 1));
+    set_bool_uniform(shader.program, "drawWireframe", render_command.mesh.draw_wireframe);
     set_float_uniform(shader.program, "lightPower", 550.0f);
     
     if(buffer.index_buffer_count == 0)

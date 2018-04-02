@@ -25,6 +25,7 @@
 #define Assert(expression)
 #endif
 
+#define UNUSED(var) (void)var
 
 #if GLITCH_DEBUG
 #define Static_Assert(expression)  int i = 1/(i32)expression
