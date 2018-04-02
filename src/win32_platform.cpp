@@ -365,6 +365,21 @@ static PLATFORM_TELL_FILE(win32_tell_file)
     return (i32)SetFilePointer(file.handle, 0, 0, FILE_CURRENT);
 }
 
+static PLATFORM_READ_LINE_FILE(win32_read_line_file)
+{
+    
+}
+
+static PLATFORM_PRINT_FILE(win32_print_file)
+{
+    va_list args;
+    va_start(args, format);
+    auto len = vsnprintf(nullptr, 0, format, args);
+    UNUSED(len);
+    
+    va_end(args);
+}
+
 static void init_platform(PlatformApi& platform_api)
 {
     platform_api.get_all_files_with_extension = win32_find_files_with_extensions;

@@ -36,6 +36,9 @@ static GLchar* load_shader_from_file(const char* path, MemoryArena* arena)
         i32 size = platform.tell_file(f);
         platform.seek_file(f, 0, SO_SET);
         
+        if(size == -1)
+            return source;
+        
         source = push_size(arena, size + 1, GLchar);
         
         platform.read_file(source, size, 1, f); 

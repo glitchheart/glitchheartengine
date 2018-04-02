@@ -129,6 +129,7 @@ struct Shader
     u32 program;
     u32 vertex_shader;
     u32 fragment_shader;
+    u32 geometry_shader; // Optional
 };
 
 struct VertexInfo
@@ -434,6 +435,8 @@ struct RenderMaterial
 struct MeshInfo
 {
     i32 mesh_handle;
+    
+    b32 draw_wireframe;
     TransformInfo transform;
     RenderMaterial material;
 };
@@ -580,6 +583,7 @@ struct RenderCommand
             i32 buffer_handle;
             RenderMaterialType material_type;
             i32 diffuse_texture;
+            b32 draw_wireframe;
         } mesh;
         struct
         {
