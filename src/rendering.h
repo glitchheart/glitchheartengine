@@ -495,6 +495,7 @@ struct MeshInfo
     RenderMaterial material;
     
     WireframeType wireframe_type;
+    math::Rgba wireframe_color;
 };
 
 struct RenderInfo
@@ -640,6 +641,7 @@ struct RenderCommand
             RenderMaterialType material_type;
             i32 diffuse_texture;
             WireframeType wireframe_type;
+            math::Rgba wireframe_color;
         } mesh;
         struct
         {

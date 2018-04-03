@@ -542,7 +542,7 @@ static void push_mesh(Renderer &renderer, MeshInfo mesh_info)
     render_command->scale = mesh_info.transform.scale;
     render_command->rotation = mesh_info.transform.rotation;
     render_command->mesh.wireframe_type = mesh_info.wireframe_type;
-    
+    render_command->mesh.wireframe_color = mesh_info.wireframe_color;
     Mesh &mesh = renderer.meshes[mesh_info.mesh_handle];
     render_command->mesh.buffer_handle = mesh.buffer_handle;
     render_command->mesh.material_type = mesh_info.material.type;

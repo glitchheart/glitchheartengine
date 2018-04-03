@@ -21,6 +21,7 @@ uniform vec3 specularColor;
 uniform float alpha;
 uniform bool drawWireframe;
 uniform bool drawMesh;
+uniform vec4 wireframeColor;
 
 void main()
 {
@@ -62,7 +63,7 @@ void main()
         }
         else
         {
-            color = vec4(mix(vec4(1.0), color, edgeFactor));
+            color = vec4(mix(wireframeColor, color, edgeFactor));
         }
         
     }
