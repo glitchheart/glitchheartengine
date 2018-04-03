@@ -2676,7 +2676,10 @@ struct Recti
     Recti(i32 x, i32 y, i32 width, i32 height) : x(x), y(y), width(width), height(height) {}
 };
 
-
+inline b32 point_inside_rect(math::Vec2i point, Recti rect)
+{
+    return point.x >= rect.x && rect.y >= rect.y && point.x < rect.x + rect.width && point.y < rect.y + rect.height;
+}
 
 inline r32 sign(math::Vec2 p1, math::Vec2 p2, math::Vec2 p3)
 {
