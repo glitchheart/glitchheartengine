@@ -1470,12 +1470,14 @@ static void render_mesh(const RenderCommand &render_command, RenderState &render
         break;
         case WT_WITH_MESH:
         {
+            set_vec4_uniform(shader.program, "wireframeColor", render_command.mesh.wireframe_color);
             set_bool_uniform(shader.program, "drawWireframe", true);
             set_bool_uniform(shader.program, "drawMesh", true);
         }
         break;
         case WT_WITHOUT_MESH:
         {
+            set_vec4_uniform(shader.program, "wireframeColor", render_command.mesh.wireframe_color);
             set_bool_uniform(shader.program, "drawWireframe", true);
             set_bool_uniform(shader.program, "drawMesh", false);
         }
