@@ -541,7 +541,7 @@ static void push_mesh(Renderer &renderer, MeshInfo mesh_info)
     render_command->position = mesh_info.transform.position;
     render_command->scale = mesh_info.transform.scale;
     render_command->rotation = mesh_info.transform.rotation;
-    render_command->mesh.draw_wireframe = mesh_info.draw_wireframe;
+    render_command->mesh.wireframe_type = mesh_info.wireframe_type;
     
     Mesh &mesh = renderer.meshes[mesh_info.mesh_handle];
     render_command->mesh.buffer_handle = mesh.buffer_handle;

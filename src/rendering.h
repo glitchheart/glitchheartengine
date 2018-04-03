@@ -480,13 +480,21 @@ struct RenderMaterial
     };
 };
 
+enum WireframeType
+{
+    WT_NONE,
+    WT_WITH_MESH,
+    WT_WITHOUT_MESH
+};
+
 struct MeshInfo
 {
     i32 mesh_handle;
     
-    b32 draw_wireframe;
     TransformInfo transform;
     RenderMaterial material;
+    
+    WireframeType wireframe_type;
 };
 
 struct RenderInfo
@@ -631,7 +639,7 @@ struct RenderCommand
             i32 buffer_handle;
             RenderMaterialType material_type;
             i32 diffuse_texture;
-            b32 draw_wireframe;
+            WireframeType wireframe_type;
         } mesh;
         struct
         {
