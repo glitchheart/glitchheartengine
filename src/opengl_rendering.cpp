@@ -1459,7 +1459,29 @@ static void render_mesh(const RenderCommand &render_command, RenderState &render
     set_vec3_uniform(shader.program, "diffuseColor", math::Vec3(1, 1, 1));
     set_vec3_uniform(shader.program, "lightColor", math::Vec3(1.0f, 1.0f, 1.0f));
     set_vec3_uniform(shader.program, "specularColor", math::Vec3(1, 1, 1));
-    set_bool_uniform(shader.program, "drawWireframe", render_command.mesh.draw_wireframe);
+    
+    switch(render_command.mesh.wireframe_type)
+    {
+        case WT_NONE:
+        {
+            set_bool_uniform(shader.program, "drawWireframe", false);
+            set_bool_uniform(shader.program, "drawMesh", true);
+        }
+        break;
+        case WT_WITH_MESH:
+        {
+            set_bool_uniform(shader.program, "drawWireframe", true);
+            set_bool_uniform(shader.program, "drawMesh", true);
+        }
+        break;
+        case WT_WITHOUT_MESH:
+        {
+            set_bool_uniform(shader.program, "drawWireframe", true);
+            set_bool_uniform(shader.program, "drawMesh", false);
+        }
+        break;
+    }
+    
     set_float_uniform(shader.program, "lightPower", 550.0f);
     
     if(buffer.index_buffer_count == 0)

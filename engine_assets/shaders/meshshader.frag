@@ -20,26 +20,12 @@ uniform float lightPower;
 uniform vec3 specularColor;
 uniform float alpha;
 uniform bool drawWireframe;
+uniform bool drawMesh;
 
 void main()
 {
-    if(drawWireframe)
-    {
-        vec3 d = fwidth(fs_in.wireframeDist);
-        
-        vec3 a3 = smoothstep(vec3(0.0), d * 2.5, fs_in.wireframeDist);
-        float edgeFactor = min(min(a3.x, a3.y), a3.z);
-        
-        if(edgeFactor == 1.0)
-        {
-            discard;
-        }
-        else
-        {
-            color = vec4(mix(vec4(0.0, 1.0, 0.0, 1.0), vec4(0.0), edgeFactor));
-        }
-    }
-    else
+    
+    if(drawMesh)
     {
         vec3 n = normalize(fs_in.normal);
         
@@ -58,8 +44,26 @@ void main()
         
         color.a = fs_in.color.a;
     }
+    else
+    {
+        color = vec4(0.0, 0.0, 0.0, 0.0);
+    }
     
-    
-    
-    
+    if(drawWireframe)
+    {
+        vec3 d = fwidth(fs_in.wireframeDist);
+        
+        vec3 a3 = smoothstep(vec3(0.0), d * 2.5, fs_in.wireframeDist);
+        float edgeFactor = min(min(a3.x, a3.y), a3.z);
+        
+        if(!drawMesh && edgeFactor == 1.0)
+        {
+            discard;
+        }
+        else
+        {
+            color = vec4(mix(vec4(1.0), color, edgeFactor));
+        }
+        
+    }
 }
