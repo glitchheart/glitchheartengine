@@ -5,6 +5,7 @@ layout (triangle_strip, max_vertices = 3) out;
 in VS_OUT
 {
 	vec4 color;
+	vec4 shadowCoord;
 	vec3 normal;
 	vec3 posWorld;
 	vec3 eyeView;
@@ -14,6 +15,7 @@ in VS_OUT
 out GS_OUT
 {
 	vec4 color;
+	vec4 shadowCoord;
 	vec3 normal;
 	vec3 posWorld;
 	vec3 eyeView;
@@ -28,6 +30,7 @@ void main() {
 	{
 		gl_Position = gl_in[i].gl_Position;
 		gs_out.color = gs_in[i].color;
+		gs_out.shadowCoord = gs_in[i].shadowCoord;
 		gs_out.normal = gs_in[i].normal;
 		gs_out.posWorld = gs_in[i].posWorld;
 		gs_out.eyeView = gs_in[i].eyeView;

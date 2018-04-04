@@ -2317,9 +2317,8 @@ namespace math
         return result;
     }
     
-    inline Mat4 look_at(Vec3 eye, Vec3 target)
+    inline Mat4 look_at(Vec3 forward, Vec3 eye)
     {
-        Vec3 forward = normalize(target - eye);
         Vec3 right = normalize(cross(Vec3(0, 1, 0), forward));
         Vec3 up = cross(forward, right);
         
@@ -2334,6 +2333,12 @@ namespace math
         result[2][3] = translation.z;
         
         return(result);
+    }
+    
+    inline Mat4 look_at_with_target(Vec3 eye, Vec3 target)
+    {
+        Vec3 forward = normalize(target - eye);
+        return look_at(forward, eye);
     }
     
     inline Mat4 perspective(r32 aspect, r32 focal_length, r32 near, r32 far)
