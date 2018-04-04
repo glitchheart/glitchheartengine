@@ -6,13 +6,19 @@ layout(location = 1) in vec3 vertexNormal;
 uniform mat4 modelMatrix;
 uniform mat4 viewMatrix;
 uniform mat4 projectionMatrix;
+
+uniform mat4 depthBiasMatrix;
+uniform mat4 depthModelMatrix;
+uniform mat4 depthViewMatrix;
+uniform mat4 depthProjectionMatrix;
+
 uniform vec3 lightPosWorld;
 uniform vec4 color;
-
 
 out VS_OUT
 {
 	vec4 color;
+	vec4 shadowCoord;
 	vec3 normal;
 	vec3 posWorld;
 	vec3 eyeView;
@@ -22,6 +28,11 @@ out VS_OUT
 void main()
 {
 	gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(position, 1);
+
+	// Shadow mapping
+	mat4 depthMVP = depthProjectionMatrix * depthViewMatrix * depthModelMatrix;
+	mat4 depthBiasMVP = depthBiasMatrix * depthMVP;
+	vs_out.shadowCoord = depthBiasMVP * vec4(position, 1);
 
 	vs_out.posWorld  = (modelMatrix * vec4(position, 1)).xyz;
 

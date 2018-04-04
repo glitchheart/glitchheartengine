@@ -3,6 +3,7 @@
 in GS_OUT
 {
     vec4 color;
+	vec4 shadowCoord;
     vec3 normal;
     vec3 posWorld;
     vec3 eyeView;
@@ -23,9 +24,10 @@ uniform bool drawWireframe;
 uniform bool drawMesh;
 uniform vec4 wireframeColor;
 
+uniform sampler2DShadow shadowMap;
+
 void main()
 {
-    
     if(drawMesh)
     {
         vec3 n = normalize(fs_in.normal);
@@ -42,7 +44,11 @@ void main()
         float distance = length(lightPosWorld - fs_in.posWorld);
         vec3 ambientColor = vec3(0.1, 0.1, 0.1);
         color.rgb = ambientColor + fs_in.color.rgb * lightPower * lightColor * cosTheta / (distance*distance) + specularColor * lightColor * pow(cosAlpha, 5) / (distance*distance);
-        
+	
+		// find the visibility from the shadow map
+		float visibility = texture(shadowMap, vec3(fs_in.shadowCoord.xy, (fs_in.shadowCoord.z) / fs_in.shadowCoord.w));
+        //color *= visibility;
+		
         color.a = fs_in.color.a;
     }
     else

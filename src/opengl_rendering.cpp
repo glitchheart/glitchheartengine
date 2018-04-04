@@ -199,12 +199,12 @@ static GLuint load_shader(const char* file_path, Shader *shd, MemoryArena* perm_
             return GL_FALSE;
         }
         
-        shd->geometry_shader = glCreateShader(GL_GEOMETRY_SHADER);
         char* geometry_string = concat(file_path, ".geom", perm_arena);
         GLchar* geometry_text = load_shader_from_file(geometry_string, perm_arena);
         
         if(geometry_text)
         {
+            shd->geometry_shader = glCreateShader(GL_GEOMETRY_SHADER);
             glShaderSource(shd->geometry_shader, 1, &geometry_text, NULL);
             glCompileShader(shd->geometry_shader);
             
@@ -505,6 +505,33 @@ static void create_framebuffer_render_buffer_attachment(Framebuffer &framebuffer
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, framebuffer.depth_buffer_handle);
 }
 
+// @Incomplete: We should probably have a good way to link one or multiple light sources to this
+static void create_shadow_map(Framebuffer& framebuffer, Shader shader, i32 width, i32 height)
+{
+    glGenFramebuffers(1, &framebuffer.buffer_handle);
+    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer.buffer_handle);
+    
+    glGenTextures(1, &framebuffer.shadow_map_handle);glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, framebuffer.shadow_map_handle);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, framebuffer.shadow_map_handle, 0);
+    
+    glDrawBuffer(GL_NONE);
+    
+    // FrameBuffer vao
+    glGenVertexArrays(1, &framebuffer.vao);
+    glBindVertexArray(framebuffer.vao);
+    
+    use_shader(&shader);
+    
+    glBindVertexArray(0);
+}
+
 static void create_framebuffer(RenderState& render_state, Framebuffer& framebuffer, i32 width, i32 height, Shader& shader, MemoryArena* perm_arena, r32* vertices, u32 vertices_size, u32* indices, u32 indices_size, b32 multisampled, i32 samples = 0)
 {
     glGenFramebuffers(1, &framebuffer.buffer_handle);
@@ -528,6 +555,7 @@ static void create_framebuffer(RenderState& render_state, Framebuffer& framebuff
     
     shader.type = SHADER_FRAME_BUFFER;
     
+    // @Incomplete: This should not be loaded more than once!
     load_shader(shader_paths[SHADER_FRAME_BUFFER], &shader, perm_arena);
     
     auto pos_loc = (GLuint)glGetAttribLocation(shader.program, "pos");
@@ -616,13 +644,19 @@ static void render_setup(RenderState *render_state, MemoryArena* perm_arena)
     create_framebuffer(*render_state, render_state->framebuffer, render_state->scale_from_width, render_state->scale_from_height, render_state->frame_buffer_shader, perm_arena, render_state->framebuffer_quad_vertices,
                        render_state->framebuffer_quad_vertices_size,render_state->quad_indices, sizeof(render_state->quad_indices), true, 4);
     
+    render_state->depth_shader.type = SHADER_DEPTH;
+    
+    load_shader(shader_paths[SHADER_DEPTH], &render_state->depth_shader, perm_arena);
+    
+    create_shadow_map(render_state->shadow_map_buffer, render_state->depth_shader, render_state->scale_from_width, render_state->scale_from_height);
+    
     setup_quad(*render_state, perm_arena);
     setup_lines(*render_state, perm_arena);
     
     //font
     render_state->standard_font_shader.type = SHADER_STANDARD_FONT;
     load_shader(shader_paths[SHADER_STANDARD_FONT], &render_state->standard_font_shader, perm_arena);
-    
+    render_state->mesh_shader.type = SHADER_MESH;
     load_shader(shader_paths[SHADER_MESH], &render_state->mesh_shader, perm_arena);
 }
 
@@ -815,6 +849,18 @@ static void initialize_opengl(RenderState& render_state, Renderer& renderer, Con
     
     renderer.should_close = false;
     render_setup(&render_state, perm_arena);
+    
+    // @Incomplete: This is hardcoded uglinesssssssss
+    // Create matrices for light
+    renderer.shadow_map_matrices.depth_model_matrix = math::Mat4(1.0f);
+    renderer.shadow_map_matrices.depth_projection_matrix = math::ortho(-10, 10, -10, 10, -10, 20);
+    renderer.shadow_map_matrices.depth_view_matrix = math::look_at_with_target(math::Vec3(0.5f, 2.0f, 2.0f), math::Vec3(0, 0, 0));
+    renderer.shadow_map_matrices.depth_bias_matrix = math::Mat4(
+        0.5, 0.0, 0.0, 0.0,
+        0.0, 0.5, 0.0, 0.0,
+        0.0, 0.0, 0.5, 0.0,
+        0.5, 0.5, 0.5, 1.0);
+    
 }
 
 static void reload_vertex_shader(ShaderType type, RenderState* render_state, MemoryArena* perm_arena)
@@ -1424,14 +1470,23 @@ static void render_model(const RenderCommand& command, RenderState& render_state
     }
 }
 
-static void render_mesh(const RenderCommand &render_command, RenderState &render_state, math::Mat4 projection_matrix, math::Mat4 view_matrix)
+static void render_mesh(const RenderCommand &render_command, RenderState &render_state, math::Mat4 projection_matrix, math::Mat4 view_matrix, b32 for_shadow_map, ShadowMapMatrices *shadow_map_matrices = 0)
 {
     Buffer buffer = render_state.buffers[render_command.mesh.buffer_handle];
     glBindVertexArray(buffer.vao);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer.ibo);
+    glBindBuffer(GL_ARRAY_BUFFER, buffer.vbo);
+    Shader shader = render_state.mesh_shader;
     
-    auto shader = render_state.mesh_shader;
-    use_shader(&shader);
+    if(for_shadow_map)
+    {
+        shader = render_state.depth_shader;
+        use_shader(&shader);
+        vertex_attrib_pointer(0, 3, GL_FLOAT,(6 * sizeof(GLfloat)), 0);
+        vertex_attrib_pointer(1, 3, GL_FLOAT, (6 * sizeof(GLfloat)), (void*)(3 * sizeof(GLfloat)));
+    }
+    else
+        use_shader(&shader);
     
     math::Mat4 model_matrix(1.0f);
     model_matrix = math::scale(model_matrix, render_command.scale);
@@ -1448,44 +1503,58 @@ static void render_mesh(const RenderCommand &render_command, RenderState &render
     
     model_matrix = to_matrix(orientation) * model_matrix;
     
-    
     model_matrix = math::translate(model_matrix, render_command.position);
     
     set_mat4_uniform(shader.program, "projectionMatrix", projection_matrix);
     set_mat4_uniform(shader.program, "viewMatrix", view_matrix);
     set_mat4_uniform(shader.program, "modelMatrix", model_matrix);
-    set_vec4_uniform(shader.program, "color", render_command.color);
-    set_vec3_uniform(shader.program, "lightPosWorld", math::Vec3(0, 20, -10));
-    set_vec3_uniform(shader.program, "diffuseColor", math::Vec3(1, 1, 1));
-    set_vec3_uniform(shader.program, "lightColor", math::Vec3(1.0f, 1.0f, 1.0f));
-    set_vec3_uniform(shader.program, "specularColor", math::Vec3(1, 1, 1));
     
-    switch(render_command.mesh.wireframe_type)
+    if(!for_shadow_map)
     {
-        case WT_NONE:
+        // When rendering with a shadow map
+        glBindTexture(GL_TEXTURE_2D, render_state.shadow_map_buffer.shadow_map_handle);
+        
+        set_mat4_uniform(shader.program, "depthModelMatrix", shadow_map_matrices->depth_model_matrix);
+        set_mat4_uniform(shader.program, "depthBiasMatrix", shadow_map_matrices->depth_bias_matrix);
+        set_mat4_uniform(shader.program, "depthViewMatrix", shadow_map_matrices->depth_view_matrix);
+        set_mat4_uniform(shader.program, "depthProjectionMatrix", shadow_map_matrices->depth_projection_matrix);
+        
+        set_vec4_uniform(shader.program, "color", render_command.color);
+        set_vec3_uniform(shader.program, "lightPosWorld", math::Vec3(0, 20, -10));
+        set_vec3_uniform(shader.program, "diffuseColor", math::Vec3(1, 1, 1));
+        set_vec3_uniform(shader.program, "lightColor", math::Vec3(1.0f, 1.0f, 1.0f));
+        set_vec3_uniform(shader.program, "specularColor", math::Vec3(1, 1, 1));
+        
+        switch(render_command.mesh.wireframe_type)
         {
-            set_bool_uniform(shader.program, "drawWireframe", false);
-            set_bool_uniform(shader.program, "drawMesh", true);
+            case WT_NONE:
+            {
+                set_bool_uniform(shader.program, "drawWireframe", false);
+                set_bool_uniform(shader.program, "drawMesh", true);
+            }
+            break;
+            case WT_WITH_MESH:
+            {
+                set_vec4_uniform(shader.program, "wireframeColor", render_command.mesh.wireframe_color);
+                set_bool_uniform(shader.program, "drawWireframe", true);
+                set_bool_uniform(shader.program, "drawMesh", true);
+            }
+            break;
+            case WT_WITHOUT_MESH:
+            {
+                set_vec4_uniform(shader.program, "wireframeColor", render_command.mesh.wireframe_color);
+                set_bool_uniform(shader.program, "drawWireframe", true);
+                set_bool_uniform(shader.program, "drawMesh", false);
+            }
+            break;
         }
-        break;
-        case WT_WITH_MESH:
-        {
-            set_vec4_uniform(shader.program, "wireframeColor", render_command.mesh.wireframe_color);
-            set_bool_uniform(shader.program, "drawWireframe", true);
-            set_bool_uniform(shader.program, "drawMesh", true);
-        }
-        break;
-        case WT_WITHOUT_MESH:
-        {
-            set_vec4_uniform(shader.program, "wireframeColor", render_command.mesh.wireframe_color);
-            set_bool_uniform(shader.program, "drawWireframe", true);
-            set_bool_uniform(shader.program, "drawMesh", false);
-        }
-        break;
+        
+        set_float_uniform(shader.program, "lightPower", 550.0f);
     }
     
-    set_float_uniform(shader.program, "lightPower", 550.0f);
-    
+    // @Incomplete: We want this to be without anything but the vertex positions.
+    // The depth shader shouldn't assume a buffer with anything else in it, so we
+    // have to find a way to do this efficiently.
     if(buffer.index_buffer_count == 0)
     {
         glDrawArrays(
@@ -1647,7 +1716,34 @@ static void register_buffers(RenderState& render_state, Renderer& renderer, Memo
     renderer.updated_buffer_handle_count = 0;
 }
 
-static void render_commands(RenderState& render_state, Renderer& renderer, MemoryArena* perm_arena)
+static void render_shadows(RenderState &render_state, Renderer &renderer, Framebuffer &framebuffer)
+{
+    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer.buffer_handle);
+    
+    glEnable(GL_DEPTH_TEST);
+    
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    
+    for (i32 index = 0; index < renderer.command_count; index++)
+    {
+        const RenderCommand& command = *((RenderCommand*)renderer.commands.current_block->base + index);
+        
+        switch (command.type)
+        {
+            case RENDER_COMMAND_MESH:
+            {
+                render_mesh(command, render_state, renderer.cameras[0].projection_matrix, renderer.cameras[0].view_matrix, true);
+                
+            }
+            break;
+            default:
+            break;
+        }
+    }
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+static void render_commands(RenderState &render_state, Renderer &renderer)
 {
     for (i32 index = render_state.font_count; index < renderer.font_count; index++)
     {
@@ -1766,6 +1862,7 @@ static void render_commands(RenderState& render_state, Renderer& renderer, Memor
     clear(&renderer.light_commands);
     
     glEnable(GL_DEPTH_TEST);
+    
     for (i32 index = 0; index < renderer.command_count; index++)
     {
         const RenderCommand& command = *((RenderCommand*)renderer.commands.current_block->base + index);
@@ -1795,7 +1892,7 @@ static void render_commands(RenderState& render_state, Renderer& renderer, Memor
             break;
             case RENDER_COMMAND_MESH:
             {
-                render_mesh(command, render_state, camera.projection_matrix, camera.view_matrix);
+                render_mesh(command, render_state, camera.projection_matrix, camera.view_matrix, false, &renderer.shadow_map_matrices);
                 
             }
             break;
@@ -1941,6 +2038,8 @@ static void render(RenderState& render_state, Renderer& renderer, MemoryArena* p
             renderer.fps_sum = 0.0;
         }
         
+        render_shadows(render_state, renderer, render_state.shadow_map_buffer);
+        
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, render_state.framebuffer.buffer_handle);
         
         //glBindTexture(GL_TEXTURE_2D, render_state.framebuffer.tex_color_buffer_handle);
@@ -1953,7 +2052,7 @@ static void render(RenderState& render_state, Renderer& renderer, MemoryArena* p
         
         glClearColor(renderer.clear_color.r, renderer.clear_color.g, renderer.clear_color.b, renderer.clear_color.a);
         
-        render_commands(render_state, renderer, perm_arena);
+        render_commands(render_state, renderer);
         render_state.bound_texture = 0;
         
         // We have to reset the bound texture to nothing, since we're about to bind other textures
@@ -1982,7 +2081,6 @@ static void render(RenderState& render_state, Renderer& renderer, MemoryArena* p
     }
     else
     {
-        
         clear(&renderer.light_commands);
         renderer.light_command_count = 0;
         clear(&renderer.commands);

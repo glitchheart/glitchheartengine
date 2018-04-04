@@ -83,6 +83,7 @@ struct PointLightData
 enum ShaderType
 {
     SHADER_MESH,
+    SHADER_DEPTH,
     SHADER_QUAD,
     SHADER_TEXTURE_QUAD,
     SHADER_STANDARD_FONT,
@@ -496,6 +497,9 @@ struct MeshInfo
     
     WireframeType wireframe_type;
     math::Rgba wireframe_color;
+    
+    u32 render_passes[8];
+    i32 render_pass_count;
 };
 
 struct RenderInfo
@@ -755,6 +759,14 @@ struct ParticleSystem
 #define MAX_UI_COMMANDS 2048 // @Incomplete: This should be defined by the game itself (HARDCODED FOR LEVEL EDITOR RIGHT NOW)
 #define MAX_LIGHT_COMMANDS 1024
 
+struct ShadowMapMatrices
+{
+    math::Mat4 depth_projection_matrix;
+    math::Mat4 depth_model_matrix;
+    math::Mat4 depth_view_matrix;
+    math::Mat4 depth_bias_matrix;
+};
+
 struct Renderer
 {
     b32 should_close;
@@ -795,6 +807,9 @@ struct Renderer
     
     ShaderData shader_data[SHADER_ARRAY_SIZE];
     i32 shader_count;
+    
+    // Shadow map
+    ShadowMapMatrices shadow_map_matrices;
     
     math::Mat4 ui_projection_matrix;
     Camera cameras[MAX_CAMERAS];

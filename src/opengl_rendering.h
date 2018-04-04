@@ -27,6 +27,7 @@ const static struct
 } shader_conversion [] =
 {
     SHADERPAIR(MESH),
+    SHADERPAIR(DEPTH),
     SHADERPAIR(QUAD),
     SHADERPAIR(TEXTURE_QUAD),
     SHADERPAIR(STANDARD_FONT),
@@ -53,6 +54,7 @@ char* shader_enum_to_str(ShaderType shader)
 static char* shader_paths[SHADER_COUNT] =
 {
     "../engine_assets/shaders/meshshader",
+    "../engine_assets/shaders/depthshader",
     "../engine_assets/shaders/quadshader",
     "../engine_assets/shaders/texturequadshader",
     "../engine_assets/shaders/standardfontshader",
@@ -125,6 +127,9 @@ struct Framebuffer
     GLuint ebo;
     
     b32 multisampled;
+    
+    b32 has_shadow_map;
+    GLuint shadow_map_handle;
 };
 
 struct RenderState
@@ -158,7 +163,7 @@ struct RenderState
     r64 fps;
     
     Framebuffer framebuffer;
-    
+    Framebuffer shadow_map_buffer;
     // Lighting data
     SpotlightData spotlight_data;
     DirectionalLightData directional_light_data;
@@ -219,6 +224,7 @@ struct RenderState
         struct
         {
             Shader mesh_shader;
+            Shader depth_shader;
             Shader quad_shader;
             Shader texture_quad_shader;
             Shader standard_font_shader;
