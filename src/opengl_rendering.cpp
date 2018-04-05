@@ -4,13 +4,13 @@
 #ifdef GL_DEBUG
 GLuint debug_attrib(u32 program, char* str, char* file, int line)
 {
-    Debug("File: %s, Line: %d\n", file, line);
+    debug("File: %s, Line: %d\n", file, line);
     return (GLuint)glGetAttribLocation(program, str);
 }
 
 void debug_attrib_array(u32 location, char* file, int line)
 {
-    Debug("File: %s, Line: %d\n", file, line);
+    debug("File: %s, Line: %d\n", file, line);
     glEnableVertexAttribArray(location);
 }
 
@@ -47,7 +47,7 @@ void message_callback(GLenum Source,
     (void)user_param; // Silence unused warning
     if (Type == GL_DEBUG_TYPE_ERROR)
     {
-        Debug("GL CALLBACK: %s type = 0x%x, severity = 0x%x, message = %s, source = %x, id = %ud, length %ud= \n",
+        debug("GL CALLBACK: %s type = 0x%x, severity = 0x%x, message = %s, source = %x, id = %ud, length %ud= \n",
               (Type == GL_DEBUG_TYPE_ERROR ? "** GL ERROR **" : ""),
               Type, Severity, Message, Source, Id, Length);
     }
@@ -123,8 +123,8 @@ static GLint shader_compilation_error_checking(MemoryArena* arena,const char* sh
         
         glGetShaderInfoLog(shader, max_length, &max_length, error_log);
         
-        Debug("SHADER Compilation error - %s\n", shader_name);
-        Debug("%s", error_log);
+        debug("SHADER Compilation error - %s\n", shader_name);
+        debug("%s", error_log);
         
         glDeleteShader(shader); // Don't leak the shader.
         end_temporary_memory(temp_mem);
@@ -543,7 +543,7 @@ static void create_framebuffer(RenderState& render_state, Framebuffer& framebuff
     
     if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
     {
-        Debug("Error: Framebuffer incomplete\n");
+        debug("Error: Framebuffer incomplete\n");
     }
     
     // FrameBuffer vao
@@ -818,9 +818,9 @@ static void initialize_opengl(RenderState& render_state, Renderer& renderer, Con
     
     glDepthFunc(GL_LESS);
     
-    Debug("%s\n", glGetString(GL_VERSION));
-    Debug("Shading language supported: %s\n", glGetString(GL_SHADING_LANGUAGE_VERSION));
-    Debug("Glad Version: %d.%d\n", GLVersion.major, GLVersion.minor);
+    debug("%s\n", glGetString(GL_VERSION));
+    debug("Shading language supported: %s\n", glGetString(GL_SHADING_LANGUAGE_VERSION));
+    debug("Glad Version: %d.%d\n", GLVersion.major, GLVersion.minor);
     
     glfwSetWindowUserPointer(render_state.window, &render_state);
     glfwSetKeyCallback(render_state.window, key_callback);
@@ -890,21 +890,21 @@ static void reload_assets(RenderState& render_state, AssetManager* asset_manager
     {
         if (asset_manager->dirty_vertex_shader_indices[i] == 1)
         {
-            Debug("Reloading vertex shader type: %s\n", shader_enum_to_str((ShaderType)i));
+            debug("Reloading vertex shader type: %s\n", shader_enum_to_str((ShaderType)i));
             reload_vertex_shader((ShaderType)i, &render_state, perm_arena);
             asset_manager->dirty_vertex_shader_indices[i] = 0;
         }
         
         if (asset_manager->dirty_fragment_shader_indices[i] == 1)
         {
-            Debug("Reloading fragment shader type: %s\n", shader_enum_to_str((ShaderType)i));
+            debug("Reloading fragment shader type: %s\n", shader_enum_to_str((ShaderType)i));
             reload_fragment_shader((ShaderType)i, &render_state, perm_arena);
             asset_manager->dirty_fragment_shader_indices[i] = 0;
         }
         
         if (asset_manager->dirty_geometry_shader_indices[i] == 1)
         {
-            Debug("Reloading geometry shader type: %s\n", shader_enum_to_str((ShaderType)i));
+            debug("Reloading geometry shader type: %s\n", shader_enum_to_str((ShaderType)i));
             reload_geometry_shader((ShaderType)i, &render_state, perm_arena);
             asset_manager->dirty_geometry_shader_indices[i] = 0;
         }

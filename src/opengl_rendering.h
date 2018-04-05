@@ -34,7 +34,6 @@ const static struct
     SHADERPAIR(SPRITESHEET),
     SHADERPAIR(FRAME_BUFFER),
     SHADERPAIR(SIMPLE_MODEL),
-    SHADERPAIR(PASS_THROUGH),
     SHADERPAIR(LINE)
 };
 
@@ -47,7 +46,7 @@ char* shader_enum_to_str(ShaderType shader)
             return shader_conversion[index].str;
         }
     }
-    Assert(false);
+    assert(false);
     return 0;
 }
 
@@ -61,7 +60,6 @@ static char* shader_paths[SHADER_COUNT] =
     "../engine_assets/shaders/spritesheetanimationshader",
     "../engine_assets/shaders/framebuffershader",
     "../engine_assets/shaders/simple_model_shader",
-    "../engine_assets/shaders/passthroughshader",
     "../engine_assets/shaders/lineshader"
 };
 
@@ -231,7 +229,6 @@ struct RenderState
             Shader spritesheet_shader;
             Shader frame_buffer_shader;
             Shader simple_model_shader;
-            Shader passthrough_shader;
             Shader line_shader;
         };
     };

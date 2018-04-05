@@ -1,6 +1,6 @@
 static VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT obj_type, u64 obj, size_t location, i32 code, const char* layer_prefix, const char* Msg, void* user_data)
 {
-    Debug("%s\n", Msg);
+    debug("%s\n", Msg);
     return VK_FALSE;
 }
 
@@ -203,8 +203,8 @@ VkExtent2D choose_swap_extent(VkRenderState& render_state, VkSurfaceCapabilities
     
     VkExtent2D ActualExtent = {(u32)render_state.window_width, (u32)render_state.window_height};
     
-    ActualExtent.width = Max(Capabilities.minImageExtent.width, Min(Capabilities.maxImageExtent.width, ActualExtent.width));
-    ActualExtent.height = Max(Capabilities.minImageExtent.height, Min(Capabilities.maxImageExtent.height, ActualExtent.height));
+    ActualExtent.width = MAX(Capabilities.minImageExtent.width, MIN(Capabilities.maxImageExtent.width, ActualExtent.width));
+    ActualExtent.height = MAX(Capabilities.minImageExtent.height, MIN(Capabilities.maxImageExtent.height, ActualExtent.height));
     
     return ActualExtent;
 }
@@ -307,7 +307,7 @@ static void create_swapchain(VkRenderState& render_state)
     
     if (vkCreateSwapchainKHR(render_state.device, &swapchain_create_info, nullptr, &render_state.swapchain) != VK_SUCCESS) 
     {
-        Debug("Unable to create swapchain\n");
+        debug("Unable to create swapchain\n");
         glfwTerminate();
         exit(EXIT_FAILURE);
     }
@@ -343,7 +343,7 @@ static void create_swapchain_image_views(VkRenderState& render_state)
         
         if (vkCreateImageView(render_state.device, &create_info, nullptr, &render_state.swapchain_image_views[index]) != VK_SUCCESS)
         {
-            Debug("Failed to create image views\n");
+            debug("Failed to create image views\n");
         }
     }
 }
@@ -373,7 +373,7 @@ static VkBool32 create_shader_module(VkRenderState& render_state, const char* Sh
         
         if (vkCreateShaderModule(render_state.device, &create_info, nullptr, &shader_module) != VK_SUCCESS)
         {
-            Debug("Failed to create shader module\n");
+            debug("Failed to create shader module\n");
             end_temporary_memory(temp_mem);
             return VK_FALSE;
         }
@@ -381,7 +381,7 @@ static VkBool32 create_shader_module(VkRenderState& render_state, const char* Sh
     }
     else
     {
-        Debug("The file '%s' could not be opened\n", ShaderPath);
+        debug("The file '%s' could not be opened\n", ShaderPath);
         return VK_FALSE;
     }
     
@@ -395,12 +395,12 @@ static void create_graphics_pipeline(VkRenderState& render_state)
     
     if(!create_shader_module(render_state, "../engine_assets/shaders/vulkan/vertex.spv", vertex_shader_module))
     {
-        Debug("Could not create vertex shader module\n");
+        debug("Could not create vertex shader module\n");
     }
     
     if(!create_shader_module(render_state, "../engine_assets/shaders/vulkan/fragment.spv", fragment_shader_module))
     {
-        Debug("Could not create vertex shader module\n");
+        debug("Could not create vertex shader module\n");
     }
     
     VkPipelineShaderStageCreateInfo vertex_shader_stage_info = {};
@@ -512,7 +512,7 @@ dynamicState.pDynamicStates = dynamicStates;
     
     if (vkCreatePipelineLayout(render_state.device, &pipeline_layout_info, nullptr, &render_state.pipeline_layout) != VK_SUCCESS)
     {
-        Debug("Failed to create pipeline layout");
+        debug("Failed to create pipeline layout");
         glfwTerminate();
         exit(EXIT_FAILURE);
     }
@@ -537,7 +537,7 @@ dynamicState.pDynamicStates = dynamicStates;
     pipeline_info.layout = render_state.pipeline_layout;
     
     if (vkCreateGraphicsPipelines(render_state.device, VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &render_state.graphics_pipeline) != VK_SUCCESS) {
-        Debug("failed to create graphics pipeline\n");
+        debug("failed to create graphics pipeline\n");
     }
     
     vkDestroyShaderModule(render_state.device, fragment_shader_module, nullptr);
@@ -584,7 +584,7 @@ static void create_render_pass(VkRenderState& render_state)
     
     if (vkCreateRenderPass(render_state.device, &render_pass_info, nullptr, &render_state.render_pass) != VK_SUCCESS) 
     {
-        Debug("failed to create render pass\n");
+        debug("failed to create render pass\n");
     }
 }
 
@@ -610,7 +610,7 @@ static void create_framebuffers(VkRenderState& render_state)
         
         if(vkCreateFramebuffer(render_state.device, &framebuffer_info, nullptr, &render_state.swapchain_framebuffers[index]) != VK_SUCCESS) 
         {
-            Debug("failed to create framebuffer\n");
+            debug("failed to create framebuffer\n");
         }
     }
 }
@@ -624,7 +624,7 @@ static void create_command_pool(VkRenderState& render_state)
     
     if (vkCreateCommandPool(render_state.device, &pool_info, nullptr, &render_state.command_pool) != VK_SUCCESS) 
     {
-        Debug("failed to create command pool\n");
+        debug("failed to create command pool\n");
     }
 }
 
@@ -641,7 +641,7 @@ static void create_command_buffers(VkRenderState& render_state)
     
     if (vkAllocateCommandBuffers(render_state.device, &alloc_info, render_state.command_buffers) != VK_SUCCESS) 
     {
-        Debug("failed to allocate command buffers\n");
+        debug("failed to allocate command buffers\n");
     }
     
     for(size_t index = 0; index < command_buffer_count; index++) 
@@ -675,7 +675,7 @@ static void create_command_buffers(VkRenderState& render_state)
         
         if (vkEndCommandBuffer(render_state.command_buffers[index]) != VK_SUCCESS) 
         {
-            Debug("failed to record command buffer\n");
+            debug("failed to record command buffer\n");
         }
     }
     
@@ -689,7 +689,7 @@ static void create_semaphores(VkRenderState& render_state)
     if (vkCreateSemaphore(render_state.device, &semaphore_info, nullptr, &render_state.image_available_semaphore) != VK_SUCCESS ||
         vkCreateSemaphore(render_state.device, &semaphore_info, nullptr, &render_state.render_finished_semaphore) != VK_SUCCESS) 
     {
-        Debug("failed to create semaphores\n");
+        debug("failed to create semaphores\n");
     }
 }
 
@@ -712,7 +712,7 @@ static void initialize_vulkan(VkRenderState& render_state, Renderer& renderer, C
     /*u32 ExtensionCount = 0;
     vkEnumerateInstanceExtensionProperties(nullptr, &ExtensionCount, nullptr);
     
-    Debug("Extensions supported: %d\n", ExtensionCount);
+    debug("Extensions supported: %d\n", ExtensionCount);
     */
     
     render_state.window_width = config_data.screen_width;
@@ -738,7 +738,7 @@ static void initialize_vulkan(VkRenderState& render_state, Renderer& renderer, C
     
     if(render_state.enable_validation_layers && !check_validation_layer_support(&render_state.arena))
     {
-        Debug("No validation layers are supported\n");
+        debug("No validation layers are supported\n");
         
         glfwTerminate();
         exit(EXIT_FAILURE);
@@ -771,7 +771,7 @@ static void initialize_vulkan(VkRenderState& render_state, Renderer& renderer, C
     
     if(vkCreateInstance(&create_info, nullptr, &render_state.instance) != VK_SUCCESS)
     {
-        Debug("Could not create VkInstance\n");
+        debug("Could not create VkInstance\n");
         vk_cleanup(render_state, renderer);
         exit(EXIT_FAILURE);
     }
@@ -786,13 +786,13 @@ static void initialize_vulkan(VkRenderState& render_state, Renderer& renderer, C
     
     if(create_debug_report_callback_ext(render_state.instance, &debug_create_info, nullptr, &render_state.callback) != VK_SUCCESS)
     {
-        Debug("Failed to set up debug callback\n");
+        debug("Failed to set up debug callback\n");
     }
 #endif
     
     if(glfwCreateWindowSurface(render_state.instance, render_state.window, nullptr, &render_state.surface) != VK_SUCCESS)
     {
-        Debug("Unable to create window surface\n");
+        debug("Unable to create window surface\n");
         glfwTerminate();
         exit(EXIT_FAILURE);
     }
@@ -802,7 +802,7 @@ static void initialize_vulkan(VkRenderState& render_state, Renderer& renderer, C
     
     if(device_count == 0)
     {
-        Debug("No physical devices found\n");
+        debug("No physical devices found\n");
         glfwTerminate();
         exit(EXIT_FAILURE);
     }
@@ -822,7 +822,7 @@ static void initialize_vulkan(VkRenderState& render_state, Renderer& renderer, C
     
     if(!is_device_suitable(render_state))
     {
-        Debug("Device is not suitable");
+        debug("Device is not suitable");
         glfwTerminate();
         exit(EXIT_FAILURE);
     }
@@ -860,7 +860,7 @@ static void initialize_vulkan(VkRenderState& render_state, Renderer& renderer, C
     
     if(vkCreateDevice(render_state.physical_device, &device_create_info, nullptr, &render_state.device) != VK_SUCCESS)
     {
-        Debug("Unable to create physical device\n");
+        debug("Unable to create physical device\n");
         glfwTerminate();
         exit(EXIT_FAILURE);
     }
@@ -919,7 +919,7 @@ static void draw_frame(VkRenderState& render_state)
     
     if (vkQueueSubmit(render_state.graphics_queue, 1, &submit_info, VK_NULL_HANDLE) != VK_SUCCESS)
     {
-        Debug("failed to submit draw command buffer\n");
+        debug("failed to submit draw command buffer\n");
     }
     
     VkPresentInfoKHR present_info = {};

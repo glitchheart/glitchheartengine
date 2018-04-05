@@ -69,7 +69,7 @@ static void load_game_code(GameCode& game_code, char* game_library_path, char* t
     
     if (!game_code.is_valid)
     {
-        Debug("Invalid game code\n");
+        debug("Invalid game code\n");
         game_code.update = update_stub;
     }
 }
@@ -103,8 +103,8 @@ static void reload_libraries(GameCode *Game, char* game_library_path, char* temp
         if(difftime(Game->last_library_write_time, last_write_time) != 0)
         {
             reload_game_code(Game, game_library_path, temp_game_library_path, arena);
-            Assert(Game);
-            Debug("Reloaded game library\n");
+            assert(Game);
+            debug("Reloaded game library\n");
         }
     }
 }
@@ -334,16 +334,18 @@ int main(int argc, char** args)
     r64 delta_time;
     renderer.frame_lock = 0;
     
+    map_test();
+    
     while (!should_close_window(render_state) && !renderer.should_close)
     {
         //calculate deltatime
         current_frame = get_time();
-        delta_time = Min(current_frame - last_frame, 0.1);
+        delta_time = MIN(current_frame - last_frame, 0.1);
         last_frame = current_frame;
         
         if(game_memory.exit_game)
         {
-            Debug("Quit\n");
+            debug("Quit\n");
             glfwSetWindowShouldClose(render_state.window, GLFW_TRUE);
         }
         

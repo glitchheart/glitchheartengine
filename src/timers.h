@@ -39,7 +39,7 @@ static void register_timer(i32* handle, r64 timer_max, TimerController& timer_co
     *handle = timer_controller.timer_count++;
     timer_controller.timers[*handle].current_time = timer_max;
     timer_controller.timers[*handle].timer_max = timer_max;
-    Assert(timer_controller.timer_count <= TIMER_MAX);
+    assert(timer_controller.timer_count <= TIMER_MAX);
 }
 
 static void start_timer(i32 handle, TimerController& timer_controller)

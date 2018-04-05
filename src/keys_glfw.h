@@ -260,7 +260,7 @@ static void controller_keys(i32 joystick)
             }
         }
         
-        if(Abs(axes[index]) > input_controller.axes_used_zone)
+        if(ABS(axes[index]) > input_controller.axes_used_zone)
         {
             if(input_controller.axes_just_pressed[index] == KEY_JUST_PRESSED)
             {
@@ -271,7 +271,7 @@ static void controller_keys(i32 joystick)
                 input_controller.axes_just_pressed[index] = KEY_JUST_PRESSED;
             }
         }
-        else if(Abs(axes[index]) <= input_controller.controller_deadzone)
+        else if(ABS(axes[index]) <= input_controller.controller_deadzone)
         {
             input_controller.axes_just_pressed[index] = KEY_NOT_PRESSED;
         }
