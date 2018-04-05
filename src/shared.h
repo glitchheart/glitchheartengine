@@ -16,6 +16,8 @@ struct MemoryArena;
 #include "animation.h"
 #include "rendering.h"
 
+#include "map.h"
+
 inline char* str_sep(char** s, const char* delim)
 {
     char* start = *s;

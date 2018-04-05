@@ -122,7 +122,7 @@ PLATFORM_LOAD_SYMBOL(linux_load_symbol)
 
 PLATFORM_ALLOCATE_MEMORY(linux_allocate_memory)
 {
-    Assert(sizeof(MemoryBlock) == 64);
+    assert(sizeof(MemoryBlock) == 64);
     
     umm page_size = 4096; //TODO: Not really always correct?
     umm total_size = size + sizeof(MemoryBlock);
@@ -149,15 +149,15 @@ PLATFORM_ALLOCATE_MEMORY(linux_allocate_memory)
                                             -1, 0);
     memset(block, 0, total_size);
     
-    Assert(block);
+    assert(block);
     block->block.base = (u8*)block + base_offset;
-    Assert(block->block.used == 0);
-    Assert(block->block.prev == 0);
+    assert(block->block.used == 0);
+    assert(block->block.prev == 0);
     
     // if(Flags & (PM_UnderflowCheck | PM_OverflowCheck))
     // {
     //     i32 Protected = mprotect((u8*)Block + ProtectOffset, PageSize, PROT_NONE);
-    //     Assert(Protected);
+    //     assert(Protected);
     // }
     
     block->block.size = size;

@@ -1,7 +1,7 @@
 #define FMOD_DEBUG(err) fmod_error(err, __LINE__, __FILE__)
 static void fmod_error(FMOD_RESULT err, int line, const char* file)
 {
-    Debug("FMOD Error! (%d) %s in file %s on line %d\n", err, FMOD_ErrorString(err), file, line);
+    debug("FMOD Error! (%d) %s in file %s on line %d\n", err, FMOD_ErrorString(err), file, line);
 }
 
 static void load_sound(const char* file_path, SoundDevice* sound_device)
@@ -73,7 +73,7 @@ static void play_audio_source(AudioSource& audio_source, SoundDevice* sound_devi
     
     if(!is_playing && audio_source.play)
     {
-        Debug("Sound: %d\n", audio_source.buffer_handle);
+        debug("Sound: %d\n", audio_source.buffer_handle);
         result =FMOD_System_PlaySound(sound_device->system, sound, sound_device->master_group, true, &sound_device->channels[audio_source.handle]);
         audio_source.play = false;
     }
@@ -95,7 +95,7 @@ static void play_audio_source(AudioSource& audio_source, SoundDevice* sound_devi
     r32 vol;
     FMOD_Channel_GetVolume(channel, &vol);
     
-    Assert(audio_source.sound_info.loop_count >= -1);
+    assert(audio_source.sound_info.loop_count >= -1);
     
     auto fmod_mode = audio_source.sound_info.loop ? FMOD_LOOP_NORMAL : FMOD_LOOP_OFF;
     
@@ -121,7 +121,7 @@ static void play_sound(const SoundEffect& sound_effect, SoundDevice* sound_devic
     r32 vol;
     FMOD_Channel_GetVolume(new_channel, &vol);
     
-    Assert(sound_effect.sound_info.loop_count >= -1);
+    assert(sound_effect.sound_info.loop_count >= -1);
     
     auto fmod_mode = sound_effect.sound_info.loop ? FMOD_LOOP_NORMAL : FMOD_LOOP_OFF;
     
@@ -179,7 +179,7 @@ static void play_sounds(SoundDevice* sound_device, SoundCommands* commands)
         
         if(FMOD_System_Update(sound_device->system) != FMOD_OK)
         {
-            Debug("FMOD Failed updating\n");
+            debug("FMOD Failed updating\n");
         }
         reset_commands(commands);
     }
@@ -207,7 +207,7 @@ static void init_audio_fmod(SoundDevice* sound_device)
     FMOD_System_GetVersion(system, &version);
     if(version < FMOD_VERSION)
     {
-        Debug("Version error\n");
+        debug("Version error\n");
     }
     
     sound_device->system = system;

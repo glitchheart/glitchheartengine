@@ -117,7 +117,7 @@ void* push_size_(MemoryArena* arena, umm size_init, PushParams params = default_
             arena->minimum_block_size = 1024 * 1024;
         }
         
-        umm block_size = Max(size, arena->minimum_block_size);
+        umm block_size = MAX(size, arena->minimum_block_size);
         
         PlatformMemoryBlock* new_block = platform.allocate_memory(block_size, arena->allocation_flags);
         
@@ -125,12 +125,12 @@ void* push_size_(MemoryArena* arena, umm size_init, PushParams params = default_
         arena->current_block = new_block;
     }
     
-    Assert((arena->current_block->used + size_init) <= arena->current_block->size);
+    assert((arena->current_block->used + size_init) <= arena->current_block->size);
     umm alignment_offset = get_alignment_offset(arena, params.alignment);
     result = arena->current_block->base + arena->current_block->used + alignment_offset;
     arena->current_block->used += size;
     
-    Assert(size >= size_init);
+    assert(size >= size_init);
     
     if(params.flags & A_FLAG_ZERO)
     {
@@ -175,71 +175,13 @@ inline void end_temporary_memory(TemporaryMemory temp_mem)
     
     if(arena->current_block)
     {
-        Assert(arena->current_block->used >= temp_mem.used);
+        assert(arena->current_block->used >= temp_mem.used);
         arena->current_block->used = temp_mem.used;
-        Assert(arena->temp_count > 0);
+        assert(arena->temp_count > 0);
     }
     
     --arena->temp_count;
 }
-
-/*
-#define push_temp_struct(type, ...) (type *)push_temp_size_(sizeof(type), ## __VA_ARGS__)
-#define push_temp_array(Count, type, ...) (type*)push_temp_size_((Count)*sizeof(type), ## __VA_ARGS__)
-#define push_temp_size(size, type, ...) (type*)push_temp_size_((umm)size, ## __VA_ARGS__)
-inline void* push_temp_size_(umm size, PushParams = default_push_params(), u64 flags = default_flags())
-{
-    PlatformMemoryBlock* block = platform.allocate_memory(size, flags | PM_TEMPORARY);
-    void* result = block->base;
-    return result;
-}
-
-inline char* push_temp_string(u32 length)
-{
-    PlatformMemoryBlock* block = platform.allocate_memory(length + 1, PM_TEMPORARY);
-    char* result = (char*)block->base;
-    result[length] = 0;
-    return result;
-}
-
-inline void push_temp_string(char** dst_buffer, const char* format, ...)
-{
-    va_list args;
-    va_start(args, format);
-    int len = vsnprintf(0, 0, format, args);
-    va_end(args);
-    
-    *dst_buffer = push_temp_string((u32)len);
-    va_start(args, format);
-    vsprintf(*dst_buffer, format, args);
-    va_end(args);
-    
-    (*dst_buffer)[len] = '\0';
-}
-
-inline char* push_temp_string(char* source)
-{
-    auto length = strlen(source);
-    char* dest = push_temp_string((u32)length);
-    for(u32 char_index = 0; char_index < length; char_index++)
-    {
-        dest[char_index] = source[char_index];
-    }
-    dest[length] = 0;
-    return dest;
-}
-
-inline char* push_temp_string(const char* source)
-{
-    auto length = strlen(source);
-    char* dest = push_temp_string((u32)length);
-    for(u32 char_index = 0; char_index < length; char_index++)
-    {
-        dest[char_index] = source[char_index];
-    }
-    dest[length] = 0;
-    return dest;
-}*/
 
 #define copy(arena, dest, src, size, type) dest = push_size(arena, size, type); memcpy(dest, src, size);
 
@@ -355,7 +297,6 @@ struct BufHdr
     char buf[1];
 };
 
-#define MAX(x, y) ((x) >= (y) ? (x) : (y))
 #define buf__hdr(b) ((BufHdr *)((char *)(b) - offsetof(BufHdr, buf)))
 
 #define buf_len(b) ((b) ? buf__hdr(b)->len : 0)
