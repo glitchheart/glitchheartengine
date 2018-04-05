@@ -43,6 +43,8 @@ float calculateShadow(vec4 fragPosLightSpace, vec3 n, vec3 lDir)
 	float shadow = 0.0;
 	vec2 texelSize = 1.0 / textureSize(shadowMap, 0);
 	
+	// percentage-closer filtering
+	// sampling surrounding texels to get smooter shadows
 	for(int x = -1; x <= 1; ++x)
 	{
     	for(int y = -1; y <= 1; ++y)
@@ -51,6 +53,8 @@ float calculateShadow(vec4 fragPosLightSpace, vec3 n, vec3 lDir)
         	shadow += currentDepth - bias > pcfDepth ? 1.0 : 0.0;        
     	}    
 	}
+
+	// average
 	shadow /= 9.0;
 	
 	return shadow;
