@@ -143,18 +143,18 @@ namespace math
     
     inline i32 clamp(i32 Minimum, i32 Value, i32 Maximum)
     {
-        i32 result = Max(Minimum, Min(Value,Maximum));
+        i32 result = MAX(Minimum, MIN(Value,Maximum));
         return result;
     }
     
     inline r32 clamp(r32 Minimum, r32 Value, r32 Maximum)
     {
-        return Max(Minimum, Min(Value,Maximum));
+        return MAX(Minimum, MIN(Value,Maximum));
     }
     
     inline r64 clamp(r64 Minimum, r64 Value, r64 Maximum)
     {
-        return Max(Minimum, Min(Value,Maximum));
+        return MAX(Minimum, MIN(Value,Maximum));
     }
     
     union Vec2
@@ -1570,7 +1570,7 @@ namespace math
     
     inline Quat lerp(Quat q0, Quat q1, r32 t)
     {
-        return (1.0f - t) * q0 + t * q1;
+        return (1.0f - MIN(1.0f,t)) * q0 + t * q1;
     }
     
     inline Quat nlerp(Quat q0, Quat q1, r32 t)
@@ -1695,15 +1695,15 @@ namespace math
     
     void print_matrix(Mat4 In)
     {
-        Debug("%f %f %f %f\n", In[0][0],In[0][1],In[0][2],In[0][3]);
-        Debug("%f %f %f %f\n", In[1][0],In[1][1],In[1][2],In[1][3]);
-        Debug("%f %f %f %f\n", In[2][0],In[2][1],In[2][2],In[2][3]);
-        Debug("%f %f %f %f\n", In[3][0],In[3][1],In[3][2],In[3][3]);
+        debug("%f %f %f %f\n", In[0][0],In[0][1],In[0][2],In[0][3]);
+        debug("%f %f %f %f\n", In[1][0],In[1][1],In[1][2],In[1][3]);
+        debug("%f %f %f %f\n", In[2][0],In[2][1],In[2][2],In[2][3]);
+        debug("%f %f %f %f\n", In[3][0],In[3][1],In[3][2],In[3][3]);
     }
     
     void print_quat(Quat Q)
     {
-        Debug("(%f, %f, %f, %f)\n", Q.x, Q.y, Q.z, Q.w);
+        debug("(%f, %f, %f, %f)\n", Q.x, Q.y, Q.z, Q.w);
     }
     
     inline Vec4 operator*(const Vec4& v, const Mat4& m)
@@ -2020,22 +2020,22 @@ namespace math
     
     r32 absolute(r32 v)
     {
-        return Abs(v);
+        return ABS(v);
     }
     
     Vec2 absolute(Vec2 v)
     {
-        return math::Vec2(Abs(v.x), Abs(v.y));
+        return math::Vec2(ABS(v.x), ABS(v.y));
     }
     
     Vec3 absolute(Vec3 v)
     {
-        return math::Vec3(Abs(v.x), Abs(v.y), Abs(v.z));
+        return math::Vec3(ABS(v.x), ABS(v.y), ABS(v.z));
     }
     
     Vec4 absolute(Vec4 v)
     {
-        return math::Vec4((r32)Abs(v.x), (r32)Abs(v.y), (r32)Abs(v.z), (r32)Abs(v.w));
+        return math::Vec4((r32)ABS(v.x), (r32)ABS(v.y), (r32)ABS(v.z), (r32)ABS(v.w));
     }
     
     inline r32 square(r32 v)
@@ -2378,10 +2378,8 @@ namespace math
             result.y /= w;
             result.z /= w;
         }
-        
         return result;
     }
-    
     
     inline Vec3 un_project(Vec3 in, Mat4 model, Mat4 projection, Vec4i viewport)
     {
@@ -2400,7 +2398,7 @@ namespace math
     
     inline r32 lerp(r32 a, r32 t, r32 b)
     {
-        r32 result = (1.0f - t) * a + t * b;
+        r32 result = (1.0f - MIN(1.0f, t)) * a + t * b;
         return result;
     }
     
@@ -2494,8 +2492,8 @@ namespace math
         r32 t5 = (lb.z - r.origin.z) * dirfrac.z;
         r32 t6 = (rt.z - r.origin.z) * dirfrac.z;
         
-        float tmin = Max(Max(Min(t1, t2), Min(t3, t4)), Min(t5, t6));
-        float tmax = Min(Min(Max(t1, t2), Max(t3, t4)), Max(t5, t6));
+        float tmin = MAX(MAX(MIN(t1, t2), MIN(t3, t4)), MIN(t5, t6));
+        float tmax = MIN(MIN(MAX(t1, t2), MAX(t3, t4)), MAX(t5, t6));
         
         // if tmax < 0, ray (line) is intersecting AABB, but the whole AABB is behind us
         if (tmax < 0)

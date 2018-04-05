@@ -71,7 +71,7 @@ static i32 add_animation_node(Renderer& renderer, i32 controller, const char* an
         printf("Animation with name: %s not found\n", animation_name);
     }
     
-    Assert(AnimationHandle != -1);
+    assert(AnimationHandle != -1);
     
     auto& animation_controller = renderer.animation_controllers[controller];
     auto& node = animation_controller.nodes[animation_controller.node_count];
@@ -95,7 +95,7 @@ static void add_callback_to_animation_node(Renderer& renderer, i32 controller, i
 
 static i32 add_animation_node_link(Renderer& renderer, i32 controller, const char* Origin, const char* Destination, b32 after_finished_animation = true)
 {
-    Assert(strcmp(Origin, Destination) != 0);
+    assert(strcmp(Origin, Destination) != 0);
     
     auto& animation_controller = renderer.animation_controllers[controller];
     i32 OriginNodeHandle = -1;
@@ -118,7 +118,7 @@ static i32 add_animation_node_link(Renderer& renderer, i32 controller, const cha
         }
     }
     
-    Assert(OriginNodeHandle != -1 && DestinationNodeHandle != -1);
+    assert(OriginNodeHandle != -1 && DestinationNodeHandle != -1);
     
     auto& origin_node = animation_controller.nodes[OriginNodeHandle];
     
@@ -144,7 +144,7 @@ static void add_animation_link_condition(Renderer& renderer, i32 controller, i32
         }
     }
     
-    Assert(ParameterHandle != -1);
+    assert(ParameterHandle != -1);
     auto& node_link = animation_controller.nodes[node].links[link];
     auto& condition = node_link.conditions[node_link.condition_count++];
     condition.parameter_handle = ParameterHandle;

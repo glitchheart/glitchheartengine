@@ -8,21 +8,21 @@
 #define COMMA_IF_PARENS(...) ,
 
 #if GLITCH_DEBUG
-#define Debug(format, ...) printf(format , ## __VA_ARGS__)
+#define debug(format, ...) printf(format , ## __VA_ARGS__)
 #else
-#define Debug(format, ...)
+#define debug(format, ...)
 #endif
 
 #if GLITCH_DEBUG
 #ifdef _WIN32
-#define Assert(expression) if(!(expression)) {Debug("Assertion failed in: %s on line %d\n",__FILE__,__LINE__); __debugbreak();}
+#define assert(expression) if(!(expression)) {debug("Assertion failed in: %s on line %d\n",__FILE__,__LINE__); __debugbreak();}
 #elif __linux
-#define Assert(expression) if(!(expression)) {Debug("Assertion failed in: %s on line %d\n",__FILE__,__LINE__); abort();}
+#define assert(expression) if(!(expression)) {debug("Assertion failed in: %s on line %d\n",__FILE__,__LINE__); abort();}
 #elif __APPLE__
-#define Assert(expression) if(!(expression)) {Debug("Assertion failed in: %s on line %d\n",__FILE__,__LINE__); abort();}
+#define assert(expression) if(!(expression)) {debug("Assertion failed in: %s on line %d\n",__FILE__,__LINE__); abort();}
 #endif
 #else
-#define Assert(expression)
+#define assert(expression)
 #endif
 
 #define UNUSED(var) (void)var
@@ -33,9 +33,9 @@
 #define Static_Assert(expression)
 #endif
 
-#define Min(A,B) ((A < B) ? (A) : (B))
-#define Max(A,B) ((A > B) ? (A) : (B))
-#define Abs(x) ((x) < 0 ? -(x) : (x))
+#define MIN(A,B) ((A <= B) ? (A) : (B))
+#define MAX(A,B) ((A >= B) ? (A) : (B))
+#define ABS(x) ((x) < 0 ? -(x) : (x))
 
 #define Kilobytes(value) ((value)*1024LL)
 #define Megabytes(value) (Kilobytes(value)*1024LL)

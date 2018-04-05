@@ -92,7 +92,7 @@ static void add_animation(Renderer& renderer, SpritesheetAnimation animation, co
 {
     strcpy(animation.name, animation_name);
     renderer.spritesheet_animations[renderer.spritesheet_animation_count++] = animation;
-    Assert(renderer.spritesheet_animation_count < MAX_SPRITESHEET_ANIMATIONS);
+    assert(renderer.spritesheet_animation_count < MAX_SPRITESHEET_ANIMATIONS);
 }
 
 static void load_shader(MemoryArena* arena, const char* full_shader_path, Renderer& renderer, i32* handle)
@@ -644,7 +644,7 @@ static b32 is_eof(ChunkFormat& format)
 static void load_glim_model(Renderer& renderer, char* file_path, Model* model, MemoryArena* arena)
 {
     // NOTE(Niels): Not implemented yet
-    Assert(false);
+    assert(false);
     /*ModelHeader header = {};
     
     FILE *file = fopen(file_path, "rb");

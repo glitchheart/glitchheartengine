@@ -121,7 +121,7 @@ static inline r32 get_input_x(InputController* input_controller, Stick stick = S
     
     r32 input_x = 0.0f;
     
-    if(Abs(input_controller->axes[axis]) > input_controller->controller_deadzone)
+    if(ABS(input_controller->axes[axis]) > input_controller->controller_deadzone)
         input_x = input_controller->axes[axis]; 
     
     if (get_key(Key_Left, input_controller))
@@ -144,7 +144,7 @@ static inline r32 get_input_y(InputController* input_controller, Stick stick = S
     
     r32 input_y = 0.0f;
     
-    if(Abs(input_controller->axes[axis]) > input_controller->controller_deadzone)
+    if(ABS(input_controller->axes[axis]) > input_controller->controller_deadzone)
     {
         switch(input_controller->controller_type)
         {
