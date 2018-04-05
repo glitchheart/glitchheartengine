@@ -8,7 +8,7 @@
 #define Log(Msg) _Log(__LINE__, __FILE__, Msg)
 static void log(MemoryArena* memory_arena, i32 line_num, const char* file, const char* message)
 {
-    Assert(log_state->log_count < MAX_LOG_MESSAGES);
+    assert(log_state->log_count < MAX_LOG_MESSAGES);
     time_t timer;
     char buffer[26];
     struct tm* tm_info;
@@ -37,7 +37,7 @@ static void update_log()
     {
         for(i32 log = 0; log < log_state->log_count; log++)
         {
-            Debug("%s", log_state->log_buffer[log]);
+            debug("%s", log_state->log_buffer[log]);
         }
     }
     clear(&log_state->arena);

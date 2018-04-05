@@ -51,11 +51,6 @@ struct NAME ## _map \
     \
     TYPE& operator[](KEYTYPE key) \
     { \
-        Assert(this->Initialized);\
-        Assert(this->hashed_pairs);\
-        Assert(this->scan_pairs);\
-        Assert(COMPARE(INVALID,key) != 0);\
-        Assert(this->Hash);\
         auto HashV = this->Hash((u64)this->Count, key);\
         auto Res = Scan(this,HashV,key);\
         switch(Res)\
@@ -112,7 +107,7 @@ MapStatus Scan(NAME ## _map* map, u64 hashed_key, KEYTYPE key)\
     for(i32 I = 0; I < map->key_count; I++)\
     {\
         auto pair = map->scan_pairs[I];\
-        Assert(COMPARE(INVALID,pair.key) != 0);\
+        assert(COMPARE(INVALID,pair.key) != 0);\
         if(COMPARE(INVALID,pair.key) != 0 && pair.hashed_key == hashed_key && COMPARE(pair.key, key) != 0)\
         {\
             /* COLLISION! */\
@@ -142,7 +137,7 @@ void Rehash(NAME ## _map* map)\
     map->hashed_pairs = (hashed_pair_ ## NAME*)allocate_memory(map->Count * sizeof(hashed_pair_ ## NAME));\
     for(i32 I = 0; I < map->key_count; I++)\
     {\
-        Assert(COMPARE(INVALID,map->scan_pairs[I].key) != 0);\
+        assert(COMPARE(INVALID,map->scan_pairs[I].key) != 0);\
         auto new_hash = map->Hash((u64)map->Count, map->scan_pairs[I].key);\
         COPY(map->hashed_pairs[new_hash].Val, map->scan_pairs[I].Val, TYPE);\
         ASSIGN(map->hashed_pairs[new_hash].key,map->scan_pairs[I].key);\
