@@ -1,4 +1,3 @@
-
 //#define GL_DEBUG
 
 #ifdef GL_DEBUG
@@ -508,20 +507,32 @@ static void create_framebuffer_render_buffer_attachment(Framebuffer &framebuffer
 // @Incomplete: We should probably have a good way to link one or multiple light sources to this
 static void create_shadow_map(Framebuffer& framebuffer, Shader shader, i32 width, i32 height)
 {
+    framebuffer.shadow_map.width = width;
+    framebuffer.shadow_map.height = height;
+    
     glGenFramebuffers(1, &framebuffer.buffer_handle);
     glBindFramebuffer(GL_FRAMEBUFFER, framebuffer.buffer_handle);
     
     glGenTextures(1, &framebuffer.shadow_map_handle);
     glBindTexture(GL_TEXTURE_2D, framebuffer.shadow_map_handle);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
+    
+    // Prevent shadows outside of the shadow map
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+    float borderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+    glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor); 
     
     glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, framebuffer.shadow_map_handle, 0);
     glDrawBuffer(GL_NONE);
     glReadBuffer(GL_NONE);
+    
+    if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+    {
+        debug("Error: Framebuffer incomplete\n");
+    }
     
     glBindFramebuffer(GL_FRAMEBUFFER, 0);  
 }
@@ -642,7 +653,7 @@ static void render_setup(RenderState *render_state, MemoryArena* perm_arena)
     
     load_shader(shader_paths[SHADER_DEPTH], &render_state->depth_shader, perm_arena);
     
-    create_shadow_map(render_state->shadow_map_buffer, render_state->depth_shader, 1024, 1024);
+    create_shadow_map(render_state->shadow_map_buffer, render_state->depth_shader, 2048, 2048);
     
     setup_quad(*render_state, perm_arena);
     setup_lines(*render_state, perm_arena);
@@ -847,8 +858,8 @@ static void initialize_opengl(RenderState& render_state, Renderer& renderer, Con
     // @Incomplete: This is hardcoded uglinesssssssss
     // Create matrices for light
     renderer.shadow_map_matrices.depth_model_matrix = math::Mat4(1.0f);
-    renderer.shadow_map_matrices.depth_projection_matrix = math::ortho(-50, 50, -50, 50, -50, 50);
-    renderer.shadow_map_matrices.depth_view_matrix = math::look_at_with_target(math::Vec3(2.0f, 2.0f, 20.0f), math::Vec3(0, 0, 0));
+    renderer.shadow_map_matrices.depth_projection_matrix = math::ortho(-10, 10, -10, 10, 1, 20.5f);
+    renderer.shadow_map_matrices.depth_view_matrix = math::look_at_with_target(math::Vec3(-2.0f, 4.0f, -1.0f), math::Vec3(0, 0, 0));
     renderer.shadow_map_matrices.depth_bias_matrix = math::Mat4(
         0.5, 0.0, 0.0, 0.0,
         0.0, 0.5, 0.0, 0.0,
@@ -1505,8 +1516,7 @@ static void render_mesh(const RenderCommand &render_command, RenderState &render
     
     if(!for_shadow_map)
     {
-        // When rendering with a shadow map
-        
+        glBindTexture(GL_TEXTURE_2D, render_state.shadow_map_buffer.shadow_map_handle);
         set_mat4_uniform(shader.program, "depthModelMatrix", shadow_map_matrices->depth_model_matrix);
         set_mat4_uniform(shader.program, "depthBiasMatrix", shadow_map_matrices->depth_bias_matrix);
         set_mat4_uniform(shader.program, "depthViewMatrix", shadow_map_matrices->depth_view_matrix);
@@ -1711,14 +1721,12 @@ static void register_buffers(RenderState& render_state, Renderer& renderer, Memo
 
 static void render_shadows(RenderState &render_state, Renderer &renderer, Framebuffer &framebuffer)
 {
-    glViewport(0, 0, 1024, 1024);
+    glCullFace(GL_FRONT); // KILL PETER PAN!
+    glViewport(0, 0, framebuffer.shadow_map.width, framebuffer.shadow_map.height);
     glBindFramebuffer(GL_FRAMEBUFFER, framebuffer.buffer_handle);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, render_state.shadow_map_buffer.shadow_map_handle);
-    
-    glEnable(GL_DEPTH_TEST);
     glClear(GL_DEPTH_BUFFER_BIT);
     
+    glEnable(GL_DEPTH_TEST);
     for (i32 index = 0; index < renderer.command_count; index++)
     {
         const RenderCommand& command = *((RenderCommand*)renderer.commands.current_block->base + index);
@@ -1728,14 +1736,15 @@ static void render_shadows(RenderState &render_state, Renderer &renderer, Frameb
             case RENDER_COMMAND_MESH:
             {
                 render_mesh(command, render_state, renderer.shadow_map_matrices.depth_projection_matrix, renderer.shadow_map_matrices.depth_view_matrix, true);
-                
             }
             break;
             default:
             break;
         }
     }
+    
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glCullFace(GL_BACK);
 }
 
 static void render_commands(RenderState &render_state, Renderer &renderer)
@@ -1887,6 +1896,7 @@ static void render_commands(RenderState &render_state, Renderer &renderer)
             break;
             case RENDER_COMMAND_MESH:
             {
+                //render_mesh(command, render_state, renderer.shadow_map_matrices.depth_projection_matrix, renderer.shadow_map_matrices.depth_view_matrix, false, &renderer.shadow_map_matrices);
                 render_mesh(command, render_state, camera.projection_matrix, camera.view_matrix, false, &renderer.shadow_map_matrices);
                 
             }

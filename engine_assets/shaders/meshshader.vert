@@ -29,12 +29,12 @@ void main()
 {
 	gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(position, 1);
 
+	vs_out.posWorld  = (modelMatrix * vec4(position, 1)).xyz;
+
 	// Shadow mapping
 	mat4 depthMVP = depthProjectionMatrix * depthViewMatrix * depthModelMatrix;
-	mat4 depthBiasMVP = depthBiasMatrix * depthMVP;
-	vs_out.shadowCoord = depthBiasMVP * vec4(position, 1);
-
-	vs_out.posWorld  = (modelMatrix * vec4(position, 1)).xyz;
+	mat4 depthBiasMVP = depthMVP;
+	vs_out.shadowCoord = depthBiasMVP * vec4(vs_out.posWorld.xyz, 1);
 
 	vec3 viewPos = (viewMatrix * modelMatrix * vec4(position, 1)).xyz;
 	vs_out.eyeView = vec3(0, 0, 0) - viewPos;
