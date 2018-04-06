@@ -114,6 +114,39 @@ PLATFORM_DEALLOCATE_MEMORY(win32_deallocate_memory)
     }
 }
 
+PLATFORM_GET_ALL_DIRECTORIES(win32_get_all_directories)
+{
+    char **dir_buf = nullptr;
+    
+    WIN32_FIND_DATA find_file;
+    HANDLE h_find = NULL;
+    
+    h_find = FindFirstFile(path, &find_file);
+    
+    if(h_find != INVALID_HANDLE_VALUE)
+    {
+        do
+        {
+            if(strcmp(find_file.cFileName, ".") != 0
+               && strcmp(find_file.cFileName, "..") != 0 &&
+               find_file.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+            {
+                char *dir_name = (char *)malloc(strlen(find_file.cFileName) + 1);
+                strcpy(dir_name, find_file.cFileName);
+                buf_push(dir_buf, dir_name);
+            }
+        }
+        
+        while(FindNextFile(h_find, &find_file));
+        FindClose(h_find);
+    }
+    else
+    {
+        debug("No directories found at %s\n", path);
+    }
+    return dir_buf;
+}
+
 inline PLATFORM_GET_ALL_FILES_WITH_EXTENSION(win32_find_files_with_extensions)
 {
     WIN32_FIND_DATA find_file;
@@ -124,6 +157,7 @@ inline PLATFORM_GET_ALL_FILES_WITH_EXTENSION(win32_find_files_with_extensions)
     //Process directories
     sprintf(path, "%s*", directory_path);
     h_find = FindFirstFile(path, &find_file);
+    
     if(h_find != INVALID_HANDLE_VALUE)
     {
         do
@@ -158,7 +192,7 @@ inline PLATFORM_GET_ALL_FILES_WITH_EXTENSION(win32_find_files_with_extensions)
         auto temp_mem = begin_temporary_memory(arena);
         do
         {
-            if(!(find_file.dwFileAttributes &FILE_ATTRIBUTE_DIRECTORY))
+            if(!(find_file.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
             {
                 if(strcmp(find_file.cFileName, ".") != 0
                    && strcmp(find_file.cFileName, "..") != 0)
@@ -383,6 +417,7 @@ static PLATFORM_PRINT_FILE(win32_print_file)
 static void init_platform(PlatformApi& platform_api)
 {
     platform_api.get_all_files_with_extension = win32_find_files_with_extensions;
+    platform_api.get_all_directories = win32_get_all_directories;
     platform_api.file_exists = win32_file_exists;
     platform_api.allocate_memory = win32_allocate_memory;
     platform_api.deallocate_memory = win32_deallocate_memory;
