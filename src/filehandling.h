@@ -51,8 +51,6 @@ static GLchar* load_shader_from_file(const char* path, MemoryArena* arena)
     return source;
 }
 
-
-
 static void check_dirty(const char* file_path, time_t last_time, b32* dirty_id, time_t* time)
 {
     struct stat sb;
