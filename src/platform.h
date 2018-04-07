@@ -159,6 +159,9 @@ enum SeekOptions
 #define PLATFORM_GET_ALL_FILES_WITH_EXTENSION(name) void name(MemoryArena* arena, const char* directory_path, const char* extension, DirectoryData* directory_data, b32 with_sub_directories)
 typedef PLATFORM_GET_ALL_FILES_WITH_EXTENSION(PlatformGetAllFilesWithExtension);
 
+#define PLATFORM_GET_ALL_DIRECTORIES(name) char ** name(const char* path)
+typedef PLATFORM_GET_ALL_DIRECTORIES(PlatformGetAllDirectories);
+
 #define PLATFORM_FILE_EXISTS(name) b32 name(const char* file_path)
 typedef PLATFORM_FILE_EXISTS(PlatformFileExists);
 
@@ -213,6 +216,7 @@ typedef PLATFORM_PRINT_FILE(PlatformPrintFile);
 struct PlatformApi
 {
     PlatformGetAllFilesWithExtension *get_all_files_with_extension;
+    PlatformGetAllDirectories *get_all_directories;
     PlatformFileExists *file_exists;
     PlatformAllocateMemory *allocate_memory;
     PlatformDeallocateMemory *deallocate_memory;

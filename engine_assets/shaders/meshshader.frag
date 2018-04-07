@@ -24,31 +24,68 @@ uniform bool drawWireframe;
 uniform bool drawMesh;
 uniform vec4 wireframeColor;
 
-uniform sampler2DShadow shadowMap;
+uniform sampler2D shadowMap;
+
+float calculateShadow(vec4 fragPosLightSpace, vec3 n, vec3 lDir)
+{
+	vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
+	
+	// if we're outside the far plane
+	if(projCoords.z > 1.0)
+		return 0.0;
+
+	projCoords = projCoords * 0.5 + 0.5;
+	float closestDepth = texture(shadowMap, projCoords.xy).r;
+	float currentDepth = projCoords.z;
+	
+	float bias = max(0.05 * (1.0 - dot(n, lDir)), 0.005);
+
+	float shadow = 0.0;
+	vec2 texelSize = 1.0 / textureSize(shadowMap, 0);
+	
+	// percentage-closer filtering
+	// sampling surrounding texels to get smooter shadows
+	for(int x = -1; x <= 1; ++x)
+	{
+    	for(int y = -1; y <= 1; ++y)
+    	{
+        	float pcfDepth = texture(shadowMap, projCoords.xy + vec2(x, y) * 			   	texelSize).r; 
+        	shadow += currentDepth - bias > pcfDepth ? 1.0 : 0.0;        
+    	}    
+	}
+
+	// average
+	shadow /= 9.0;
+	
+	return shadow;
+}
 
 void main()
 {
     if(drawMesh)
     {
-        vec3 n = normalize(fs_in.normal);
-        
-        vec3 l = normalize(fs_in.lightDir);
-        
-        vec3 E = normalize(fs_in.eyeView);
-        
-        vec3 R = reflect(-l,n);
-        
-        float cosAlpha = clamp(dot(E, R), 0, 1);
-        
-        float cosTheta = clamp( dot(n, l), 0, 1);
-        float distance = length(lightPosWorld - fs_in.posWorld);
-        vec3 ambientColor = vec3(0.1, 0.1, 0.1);
-        color.rgb = ambientColor + fs_in.color.rgb  * lightPower * lightColor * cosTheta / (distance*distance) + specularColor * lightColor * pow(cosAlpha, 5) / (distance*distance);
+		vec3 col =  diffuseColor;
+		vec3 normal = normalize(fs_in.normal);
 		
-        color.a = fs_in.color.a;
-
-		float visibility = texture(shadowMap, vec3(fs_in.shadowCoord.xy, (fs_in.shadowCoord.z) / fs_in.shadowCoord.w));
-		color = vec4(visibility, visibility, visibility, 1.0f);
+		// ambient
+		vec3 ambient = 0.15 * col;
+		
+		// diffuse	
+		vec3 lightDir = normalize(fs_in.lightDir);
+		float diff = max(dot(lightDir, normal), 0.0f);
+		vec3 diffuse = diff * lightColor;		
+		
+		// specular
+		vec3 viewDir = normalize(fs_in.eyeView);
+		float spec = 0.0;
+		vec3 halfwayDir = normalize(lightDir + viewDir);
+		spec = pow(max(dot(normal, halfwayDir), 0.0), 64.0f);
+		vec3 specular = spec * lightColor;
+		
+		// shadows
+		float shadow = calculateShadow(fs_in.shadowCoord, normal, lightDir);		
+		vec3 lighting = (ambient + (1.0 - shadow) * (diffuse + specular)) * col;		
+		color = vec4(lighting, 1.0f) * fs_in.color;		
     }
     else
     {

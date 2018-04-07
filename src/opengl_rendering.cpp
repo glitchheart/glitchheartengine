@@ -1,4 +1,3 @@
-
 //#define GL_DEBUG
 
 #ifdef GL_DEBUG
@@ -322,9 +321,9 @@ static GLuint load_geometry_shader(const char* file_path, Shader* shd, MemoryAre
     return GL_TRUE;
 }
 
-static void use_shader(Shader *shader)
+static void use_shader(const Shader shader)
 {
-    glUseProgram(shader->program);
+    glUseProgram(shader.program);
 }
 
 static void register_buffers(RenderState& render_state, GLfloat* vertex_buffer, i32 vertex_buffer_size, GLushort* index_buffer, i32 index_buffer_count, i32 index_buffer_size, b32 has_normals, b32 has_uvs, b32 skinned, i32 buffer_handle = -1)
@@ -451,7 +450,7 @@ static void register_vertex_buffer(RenderState& render_state, GLfloat* buffer_da
         load_shader(shader_paths[shader_type], &render_state.shaders[shader_type], perm_arena);
     }
     else
-        use_shader(&render_state.shaders[shader_type]);
+        use_shader(render_state.shaders[shader_type]);
     
     auto position_location = (GLuint)glGetAttribLocation(render_state.texture_quad_shader.program, "pos");
     auto texcoord_location = (GLuint)glGetAttribLocation(render_state.texture_quad_shader.program, "texcoord");
@@ -508,20 +507,32 @@ static void create_framebuffer_render_buffer_attachment(Framebuffer &framebuffer
 // @Incomplete: We should probably have a good way to link one or multiple light sources to this
 static void create_shadow_map(Framebuffer& framebuffer, Shader shader, i32 width, i32 height)
 {
+    framebuffer.shadow_map.width = width;
+    framebuffer.shadow_map.height = height;
+    
     glGenFramebuffers(1, &framebuffer.buffer_handle);
     glBindFramebuffer(GL_FRAMEBUFFER, framebuffer.buffer_handle);
     
     glGenTextures(1, &framebuffer.shadow_map_handle);
     glBindTexture(GL_TEXTURE_2D, framebuffer.shadow_map_handle);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
+    
+    // Prevent shadows outside of the shadow map
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+    float borderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+    glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor); 
     
     glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, framebuffer.shadow_map_handle, 0);
     glDrawBuffer(GL_NONE);
     glReadBuffer(GL_NONE);
+    
+    if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+    {
+        debug("Error: Framebuffer incomplete\n");
+    }
     
     glBindFramebuffer(GL_FRAMEBUFFER, 0);  
 }
@@ -642,7 +653,7 @@ static void render_setup(RenderState *render_state, MemoryArena* perm_arena)
     
     load_shader(shader_paths[SHADER_DEPTH], &render_state->depth_shader, perm_arena);
     
-    create_shadow_map(render_state->shadow_map_buffer, render_state->depth_shader, 1024, 1024);
+    create_shadow_map(render_state->shadow_map_buffer, render_state->depth_shader, 2048, 2048);
     
     setup_quad(*render_state, perm_arena);
     setup_lines(*render_state, perm_arena);
@@ -847,8 +858,8 @@ static void initialize_opengl(RenderState& render_state, Renderer& renderer, Con
     // @Incomplete: This is hardcoded uglinesssssssss
     // Create matrices for light
     renderer.shadow_map_matrices.depth_model_matrix = math::Mat4(1.0f);
-    renderer.shadow_map_matrices.depth_projection_matrix = math::ortho(-50, 50, -50, 50, -50, 50);
-    renderer.shadow_map_matrices.depth_view_matrix = math::look_at_with_target(math::Vec3(2.0f, 2.0f, 20.0f), math::Vec3(0, 0, 0));
+    renderer.shadow_map_matrices.depth_projection_matrix = math::ortho(-10, 10, -10, 10, 1, 20.5f);
+    renderer.shadow_map_matrices.depth_view_matrix = math::look_at_with_target(math::Vec3(-2.0f, 4.0f, -1.0f), math::Vec3(0, 0, 0));
     renderer.shadow_map_matrices.depth_bias_matrix = math::Mat4(
         0.5, 0.0, 0.0, 0.0,
         0.0, 0.5, 0.0, 0.0,
@@ -969,7 +980,7 @@ static void render_line(RenderState& render_state, math::Vec4 color, math::Vec3 
     }
     
     auto& shader = render_state.line_shader;
-    use_shader(&shader);
+    use_shader(shader);
     
     glBindVertexArray(render_state.line_vao);
     glBindBuffer(GL_ARRAY_BUFFER, render_state.line_vbo);
@@ -1077,7 +1088,7 @@ static void render_quad(RenderMode mode, RenderState& render_state, math::Vec4 c
                 shader = render_state.extra_shaders[shader_handle];
             }
             
-            use_shader(&shader);
+            use_shader(shader);
             
             math::Mat4 model(1.0f);
             
@@ -1223,7 +1234,7 @@ static void render_quad(RenderMode mode, RenderState& render_state, math::Vec4 c
             glBindVertexArray(render_state.quad_vao);
             
             auto shader = render_state.quad_shader;
-            use_shader(&shader);
+            use_shader(shader);
             
             if (!is_ui)
             {
@@ -1283,7 +1294,7 @@ static void render_text(RenderState &render_state, TrueTypeFont &font, const mat
 {
     glBindVertexArray(font.vao);
     auto shader = render_state.shaders[SHADER_STANDARD_FONT];
-    use_shader(&shader);
+    use_shader(shader);
     
     set_vec4_uniform(shader.program, "color", color);
     set_vec4_uniform(shader.program, "alphaColor", math::Rgba(1, 1, 1, 1));
@@ -1431,7 +1442,7 @@ static void render_model(const RenderCommand& command, RenderState& render_state
         if (command.model.type == MODEL_SKINNED)
         {
             shader = render_state.simple_model_shader;
-            use_shader(&shader);
+            use_shader(shader);
             
             for (i32 index = 0; index < command.model.bone_count; index++)
             {
@@ -1464,6 +1475,75 @@ static void render_model(const RenderCommand& command, RenderState& render_state
     }
 }
 
+static void prepare_shader(const Shader shader, ShaderAttribute *attributes, i32 shader_attribute_count)
+{
+    use_shader(shader);
+    
+    for (i32 index = 0; index < shader_attribute_count; index++)
+    {
+        ShaderAttribute& attribute = attributes[index];
+        switch (attribute.type)
+        {
+            case ATTRIBUTE_FLOAT:
+            {
+                set_float_uniform(shader.program, attribute.name, attribute.float_var);
+            }
+            break;
+            case ATTRIBUTE_FLOAT2:
+            {
+                set_vec2_uniform(shader.program, attribute.name, attribute.float2_var);
+            }
+            break;
+            case ATTRIBUTE_FLOAT3:
+            {
+                set_vec3_uniform(shader.program, attribute.name, attribute.float3_var);
+            }
+            break;
+            case ATTRIBUTE_FLOAT4:
+            {
+                set_vec4_uniform(shader.program, attribute.name, attribute.float4_var);
+            }
+            break;
+            case ATTRIBUTE_INTEGER:
+            {
+                set_int_uniform(shader.program, attribute.name, attribute.integer_var);
+            }
+            break;
+            case ATTRIBUTE_BOOLEAN:
+            {
+                set_int_uniform(shader.program, attribute.name, attribute.boolean_var);
+            }
+            break;
+            case ATTRIBUTE_MATRIX4:
+            {
+                set_mat4_uniform(shader.program, attribute.name, attribute.matrix4_var);
+            }
+            break;
+        }
+    }
+}
+
+static void render_mesh(const RenderCommand &render_command, RenderState &render_state)
+{
+    Buffer buffer = render_state.buffers[render_command.mesh.buffer_handle];
+    glBindVertexArray(buffer.vao);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer.ibo);
+    glBindBuffer(GL_ARRAY_BUFFER, buffer.vbo);
+    
+    // @Incomplete: We want this to be without anything but the vertex positions.
+    // The depth shader shouldn't assume a buffer with anything else in it, so we
+    // have to find a way to do this efficiently.
+    if(buffer.index_buffer_count == 0)
+    {
+        glDrawArrays(
+            GL_TRIANGLES, 0, buffer.vertex_buffer_size / 3);
+    }
+    else
+    {
+        glDrawElements(GL_TRIANGLES, buffer.index_buffer_count, GL_UNSIGNED_SHORT, (void*)0);
+    }
+}
+
 static void render_mesh(const RenderCommand &render_command, RenderState &render_state, math::Mat4 projection_matrix, math::Mat4 view_matrix, b32 for_shadow_map, ShadowMapMatrices *shadow_map_matrices = 0)
 {
     Buffer buffer = render_state.buffers[render_command.mesh.buffer_handle];
@@ -1475,12 +1555,12 @@ static void render_mesh(const RenderCommand &render_command, RenderState &render
     if(for_shadow_map)
     {
         shader = render_state.depth_shader;
-        use_shader(&shader);
+        use_shader(shader);
         vertex_attrib_pointer(0, 3, GL_FLOAT,(6 * sizeof(GLfloat)), 0);
         vertex_attrib_pointer(1, 3, GL_FLOAT, (6 * sizeof(GLfloat)), (void*)(3 * sizeof(GLfloat)));
     }
     else
-        use_shader(&shader);
+        use_shader(shader);
     
     math::Mat4 model_matrix(1.0f);
     model_matrix = math::scale(model_matrix, render_command.scale);
@@ -1505,8 +1585,7 @@ static void render_mesh(const RenderCommand &render_command, RenderState &render
     
     if(!for_shadow_map)
     {
-        // When rendering with a shadow map
-        
+        glBindTexture(GL_TEXTURE_2D, render_state.shadow_map_buffer.shadow_map_handle);
         set_mat4_uniform(shader.program, "depthModelMatrix", shadow_map_matrices->depth_model_matrix);
         set_mat4_uniform(shader.program, "depthBiasMatrix", shadow_map_matrices->depth_bias_matrix);
         set_mat4_uniform(shader.program, "depthViewMatrix", shadow_map_matrices->depth_view_matrix);
@@ -1587,7 +1666,7 @@ static void render_buffer(const RenderCommand& command, RenderState& render_stat
     }
     
     auto shader = render_state.texture_quad_shader;
-    use_shader(&shader);
+    use_shader(shader);
     
     math::Mat4 model(1.0f);
     model = math::scale(model, size);
@@ -1711,14 +1790,12 @@ static void register_buffers(RenderState& render_state, Renderer& renderer, Memo
 
 static void render_shadows(RenderState &render_state, Renderer &renderer, Framebuffer &framebuffer)
 {
-    glViewport(0, 0, 1024, 1024);
+    glCullFace(GL_FRONT); // KILL PETER PAN!
+    glViewport(0, 0, framebuffer.shadow_map.width, framebuffer.shadow_map.height);
     glBindFramebuffer(GL_FRAMEBUFFER, framebuffer.buffer_handle);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, render_state.shadow_map_buffer.shadow_map_handle);
-    
-    glEnable(GL_DEPTH_TEST);
     glClear(GL_DEPTH_BUFFER_BIT);
     
+    glEnable(GL_DEPTH_TEST);
     for (i32 index = 0; index < renderer.command_count; index++)
     {
         const RenderCommand& command = *((RenderCommand*)renderer.commands.current_block->base + index);
@@ -1728,14 +1805,15 @@ static void render_shadows(RenderState &render_state, Renderer &renderer, Frameb
             case RENDER_COMMAND_MESH:
             {
                 render_mesh(command, render_state, renderer.shadow_map_matrices.depth_projection_matrix, renderer.shadow_map_matrices.depth_view_matrix, true);
-                
             }
             break;
             default:
             break;
         }
     }
+    
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glCullFace(GL_BACK);
 }
 
 static void render_commands(RenderState &render_state, Renderer &renderer)
@@ -1887,6 +1965,7 @@ static void render_commands(RenderState &render_state, Renderer &renderer)
             break;
             case RENDER_COMMAND_MESH:
             {
+                //render_mesh(command, render_state, renderer.shadow_map_matrices.depth_projection_matrix, renderer.shadow_map_matrices.depth_view_matrix, false, &renderer.shadow_map_matrices);
                 render_mesh(command, render_state, camera.projection_matrix, camera.view_matrix, false, &renderer.shadow_map_matrices);
                 
             }
