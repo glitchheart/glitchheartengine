@@ -147,9 +147,22 @@ void map_test()
 {
     Map map = {0};
     map_init(&map, str_hash);
+<<<<<<< HEAD
     map_put(&map, "peep", "poop");
     auto res = map_get(&map, "peep");
     debug("%s\n", res);
+=======
+    enum {N = 1024};
+    for(size_t i = 1; i < N; i++)
+    {
+        map_put(&map, "boob", (i + 1));
+    }
+    
+    //i32* val = (i32*)map["boob"];
+    //i32* val = (i32*)map_get(&map, "boob");
+    //assert(val == (i32*)N);
+    
+>>>>>>> e82047dec4119f914e9e87d393ad371db7cbaead
 }
 
 #endif

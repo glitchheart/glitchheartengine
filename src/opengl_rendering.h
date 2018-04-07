@@ -127,6 +127,13 @@ struct Framebuffer
     b32 multisampled;
     
     b32 has_shadow_map;
+    
+    struct
+    {
+        i32 width;
+        i32 height;
+    } shadow_map;
+    
     GLuint shadow_map_handle;
 };
 
