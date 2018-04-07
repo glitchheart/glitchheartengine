@@ -17,20 +17,7 @@ struct Map
     size_t len;
     size_t cap;
     HashFunction* hash_function;
-    
-    
-    void* operator[](void* key)
-    {
-        return map__get(this, key);
-    }
-    
-    
-    void* operator[](char* key)
-    {
-        return map__get(this, (void*)key);
-    }
 };
-
 
 HASH_FUNCTION(uint64_hash) 
 {
@@ -38,6 +25,14 @@ HASH_FUNCTION(uint64_hash)
     x *= 0xff51afd7ed558ccdul;
     x ^= x >> 32;
     return x;
+}
+
+HASH_FUNCTION(int_hash) {
+    u64 k = (u64)((intptr_t)key) + 1;
+    k = ((k >> 16) ^ k) * 0x45d9f3b;
+    k = ((k >> 16) ^ k) * 0x45d9f3b;
+    k = (k >> 16) ^ k;
+    return k;
 }
 
 HASH_FUNCTION(ptr_hash)
@@ -90,7 +85,6 @@ void* map__get(Map* map, void* key)
         }
         i++;
     }
-    return NULL;
 }
 
 void map__put(Map* map, void* key, void* val);
@@ -121,8 +115,8 @@ void map_grow(Map* map, size_t new_cap)
 void map__put(Map* map, void* key, void* val)
 {
     assert(map->hash_function);
-    assert(key);
-    assert(val);
+    //assert(key);
+    //assert(val);
     if(2 * map->len >= map->cap)
     {
         map_grow(map, 2 * map->cap);
@@ -153,16 +147,9 @@ void map_test()
 {
     Map map = {0};
     map_init(&map, str_hash);
-    enum {N = 1024};
-    for(size_t i = 1; i < N; i++)
-    {
-        map_put(&map, "boob", (i + 1));
-    }
-    
-    i32* val = (i32*)map["boob"];
-    //i32* val = (i32*)map_get(&map, "boob");
-    assert(val == (i32*)N);
-    
+    map_put(&map, "peep", "poop");
+    auto res = map_get(&map, "peep");
+    debug("%s\n", res);
 }
 
 #endif
