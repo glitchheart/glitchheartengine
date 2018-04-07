@@ -4,6 +4,9 @@
 #define HASH_FUNCTION(name) uint64_t name(void* key)
 typedef HASH_FUNCTION(HashFunction);
 
+#define KEY_COMPARE_FUNCTION(name) b32 name(void* val_1, void* val_2)
+typedef KEY_COMPARE_FUNCTION(KeyCompareFunction);
+
 struct Map;
 
 
@@ -17,7 +20,18 @@ struct Map
     size_t len;
     size_t cap;
     HashFunction* hash_function;
+    KeyCompareFunction* key_compare_function;
 };
+
+KEY_COMPARE_FUNCTION(str_cmp)
+{
+    return strcmp((char*)val_1, (char*)val_2) == 0;
+}
+
+KEY_COMPARE_FUNCTION(ptr_cmp)
+{
+    return val_1 == val_2;
+}
 
 HASH_FUNCTION(uint64_hash) 
 {
@@ -56,9 +70,10 @@ HASH_FUNCTION(str_hash)
 
 #define IS_POW2(x) (((x) != 0) && ((x) & ((x)-1)) == 0)
 
-void map_init(Map* map, HashFunction* hash_function)
+void map_init(Map* map, HashFunction* hash_function, KeyCompareFunction key_compare_function = ptr_cmp)
 {
     map->hash_function = hash_function;
+    map->key_compare_function = key_compare_function;
     assert(map->hash_function);
 }
 
@@ -75,7 +90,7 @@ void* map__get(Map* map, void* key)
     for(;;)
     {
         i &= map->cap - 1;
-        if(map->keys[i] == key)
+        if(map->key_compare_function(map->keys[i], key))
         {
             return map->vals[i];
         }
@@ -98,6 +113,7 @@ void map_grow(Map* map, size_t new_cap)
     new_map.vals = (void**)malloc(new_cap * sizeof(void*));
     new_map.cap = new_cap;
     new_map.hash_function = map->hash_function;
+    new_map.key_compare_function = map->key_compare_function;
     
     for(size_t i = 0; i < map->cap; i++)
     {
@@ -134,7 +150,7 @@ void map__put(Map* map, void* key, void* val)
             map->vals[i] = val;
             return;
         }
-        else if(map->keys[i] == key)
+        else if(map->key_compare_function(map->keys[i], key))
         {
             map->vals[i] = val;
             return;
@@ -145,24 +161,18 @@ void map__put(Map* map, void* key, void* val)
 
 void map_test()
 {
-    Map map = {0};
-    map_init(&map, str_hash);
-<<<<<<< HEAD
-    map_put(&map, "peep", "poop");
-    auto res = map_get(&map, "peep");
+    Map str_map = {0};
+    map_init(&str_map, str_hash, str_cmp);
+    map_put(&str_map, "peep", "poop");
+    auto res = map_get(&str_map, "peep");
     debug("%s\n", res);
-=======
-    enum {N = 1024};
-    for(size_t i = 1; i < N; i++)
-    {
-        map_put(&map, "boob", (i + 1));
-    }
     
-    //i32* val = (i32*)map["boob"];
-    //i32* val = (i32*)map_get(&map, "boob");
-    //assert(val == (i32*)N);
+    Map int_map = {0};
+    map_init(&int_map, str_hash, str_cmp);
+    map_put(&int_map, "peep", 5);
+    auto i_res = map_get(&int_map, "peep");
+    debug("%d\n", i_res);
     
->>>>>>> e82047dec4119f914e9e87d393ad371db7cbaead
 }
 
 #endif
