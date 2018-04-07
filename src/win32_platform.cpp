@@ -53,7 +53,7 @@ PLATFORM_LOAD_SYMBOL(win32_load_symbol)
 
 PLATFORM_ALLOCATE_MEMORY(win32_allocate_memory)
 {
-    Assert(sizeof(MemoryBlock) == 64);
+    assert(sizeof(MemoryBlock) == 64);
     
     umm page_size = 4096; //TODO: Not really always correct?
     umm total_size = size + sizeof(MemoryBlock);
@@ -77,16 +77,16 @@ PLATFORM_ALLOCATE_MEMORY(win32_allocate_memory)
     
     MemoryBlock* block  = (MemoryBlock*)VirtualAlloc(0, total_size, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
     
-    Assert(block);
+    assert(block);
     block->block.base = (u8*)block + base_offset;
-    Assert(block->block.used == 0);
-    Assert(block->block.prev == 0);
+    assert(block->block.used == 0);
+    assert(block->block.prev == 0);
     
     if(flags & (PM_UNDERFLOW_CHECK | PM_OVERFLOW_CHECK))
     {
         DWORD old_protect = 0;
         BOOL is_protected = VirtualProtect((u8*)block + protect_offset, page_size, PAGE_NOACCESS, &old_protect);
-        Assert(is_protected);
+        assert(is_protected);
     }
     
     block->block.size = size;
@@ -146,7 +146,7 @@ inline PLATFORM_GET_ALL_FILES_WITH_EXTENSION(win32_find_files_with_extensions)
     }
     else
     {
-        Debug("No files with extension %s found in %s\n", extension, directory_path);
+        debug("No files with extension %s found in %s\n", extension, directory_path);
         return;
     }
     
@@ -177,7 +177,7 @@ inline PLATFORM_GET_ALL_FILES_WITH_EXTENSION(win32_find_files_with_extensions)
     }
     else
     {
-        Debug("No files with extension %s found in %s\n", extension, directory_path);
+        debug("No files with extension %s found in %s\n", extension, directory_path);
         return;
     }
 }
