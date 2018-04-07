@@ -165,13 +165,13 @@ void map_test()
     map_init(&str_map, str_hash, str_cmp);
     map_put(&str_map, "peep", "poop");
     auto res = map_get(&str_map, "peep");
-    debug("%s\n", res);
+    UNUSED(res);
     
     Map int_map = {0};
     map_init(&int_map, str_hash, str_cmp);
     map_put(&int_map, "peep", 5);
     auto i_res = map_get(&int_map, "peep");
-    debug("%d\n", i_res);
+    UNUSED(i_res);
     
 }
 
