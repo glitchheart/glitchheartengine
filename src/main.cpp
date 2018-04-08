@@ -335,6 +335,8 @@ int main(int argc, char** args)
     r64 delta_time;
     renderer.frame_lock = 0;
     
+    component_test();
+    
     while (!should_close_window(render_state) && !renderer.should_close)
     {
         //calculate deltatime
