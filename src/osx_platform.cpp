@@ -6,6 +6,8 @@
 #include "unistd.h"
 #include "dlfcn.h"
 #include <mach/error.h>
+#include <dirent.h>
+#include <sys/stat.h>
 
 using PlatformHandle = i32;
 
@@ -118,7 +120,7 @@ PLATFORM_LOAD_SYMBOL(osx_load_symbol)
 
 PLATFORM_ALLOCATE_MEMORY(osx_allocate_memory)
 {
-    Assert(sizeof(MemoryBlock) == 64);
+    assert(sizeof(MemoryBlock) == 64);
     
     umm page_size = sysconf(_SC_PAGE_SIZE);
     umm total_size = size + sizeof(MemoryBlock);
@@ -143,17 +145,17 @@ PLATFORM_ALLOCATE_MEMORY(osx_allocate_memory)
     MemoryBlock* block = (MemoryBlock*)malloc(total_size);
     memset(block, 0, total_size);
     
-    Assert(block);
+    assert(block);
     block->block.base = (u8*)block + base_offset;
-    Assert(block->block.used == 0);
-    Assert(block->block.prev == 0);
+    assert(block->block.used == 0);
+    assert(block->block.prev == 0);
     
     //if(flags & (PM_UNDERFLOW_CHECK | PM_OVERFLOW_CHECK))
     //{
     //i32 Protected = mprotect((u8*)Block + protect_offset, page_size, PROT_NONE);
     //printf("Last error: %d\n", Protected);
     //printf("Error %d\n", errno);
-    //Assert(Protected == 0);
+    //assert(Protected == 0);
     //}
     
     block->block.size = size;
@@ -249,8 +251,40 @@ static PLATFORM_TELL_FILE(osx_tell_file)
     return (i32)lseek(file.handle, 0, SEEK_CUR);
 }
 
+PLATFORM_GET_ALL_DIRECTORIES(osx_get_all_directories)
+{
+    char ** dir_buf = nullptr;
+    struct dirent *de;  // Pointer for directory entry
+ 
+    // opendir() returns a pointer of DIR type. 
+    DIR *dr = opendir(path);
+ 
+    if (dr == NULL)  // opendir returns NULL if couldn't open directory
+    {
+        printf("Could not open current directory" );
+        return nullptr;
+    }
+ 
+    // Refer http://pubs.opengroup.org/onlinepubs/7990989775/xsh/readdir.html
+    // for readdir()
+    while ((de = readdir(dr)) != NULL)
+    {
+        if(de->d_type & DT_DIR)
+        {
+            char *dir_name = (char *)malloc(strlen(de->d_name) + 1);
+            strcpy(dir_name, de->d_name);
+            buf_push(dir_buf, dir_name);
+        }
+    }
+ 
+    closedir(dr);    
+    
+    return dir_buf;
+}
+
 static void init_platform(PlatformApi& platform_api)
 {
+    platform_api.get_all_directories = osx_get_all_directories;
     platform_api.allocate_memory = osx_allocate_memory;
     platform_api.deallocate_memory = osx_deallocate_memory;
     platform_api.load_dynamic_library = osx_load_library;
