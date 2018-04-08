@@ -40,6 +40,7 @@ static MemoryState memory_state;
 #include "keycontroller.cpp"
 #include "sound.h"
 #include "timers.h"
+#include "components.h"
 #include "fmod_sound.h"
 #include "fmod_sound.cpp"
 #include "filehandling.h"
