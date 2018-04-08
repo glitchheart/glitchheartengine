@@ -308,6 +308,7 @@ struct BufHdr
 #define buf_fit(b, n) ((n) <= buf_cap(b) ? 0 : ((b) = (decltype(b))buf__grow((b), (n), sizeof(*(b)))))
 #define buf_push(b, ...) (buf_fit(b, 1 + buf_len(b)), (b)[buf__hdr(b)->len++] = (__VA_ARGS__))
 
+
 void *buf__grow(const void *buf, size_t new_len, size_t elem_size)
 {
     assert(buf_cap(buf) <= (SIZE_MAX - 1)/2);

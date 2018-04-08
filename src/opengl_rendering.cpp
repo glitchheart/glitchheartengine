@@ -1416,7 +1416,7 @@ static void render_quad(const RenderCommand& command, RenderState& render_state,
                     view);
     }
 }
-
+/*
 static void render_model(const RenderCommand& command, RenderState& render_state, math::Mat4 projection, math::Mat4 view)
 {
     Buffer buffer = render_state.buffers[command.model.buffer_handle];
@@ -1474,7 +1474,7 @@ static void render_model(const RenderCommand& command, RenderState& render_state
         glBindVertexArray(0);
     }
 }
-
+*/
 static void prepare_shader(const Shader shader, ShaderAttribute *attributes, i32 shader_attribute_count)
 {
     use_shader(shader);
@@ -1959,7 +1959,7 @@ static void render_commands(RenderState &render_state, Renderer &renderer)
             break;
             case RENDER_COMMAND_MODEL:
             {
-                render_model(command, render_state, camera.projection_matrix, camera.view_matrix);
+                //render_model(command, render_state, camera.projection_matrix, camera.view_matrix);
                 
             }
             break;
@@ -2020,7 +2020,7 @@ static void render_commands(RenderState &render_state, Renderer &renderer)
             break;
             case RENDER_COMMAND_MODEL:
             {
-                render_model(command, render_state, camera.projection_matrix, camera.view_matrix);
+                //render_model(command, render_state, camera.projection_matrix, camera.view_matrix);
             }
             break;
             case RENDER_COMMAND_BUFFER:

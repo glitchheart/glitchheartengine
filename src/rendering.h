@@ -329,11 +329,6 @@ struct TextureInfo
     i32 texture_handle;
 };
 
-struct Material
-{
-    TextureInfo diffuse_texture;
-};
-
 struct Vec3Keys
 {
     i32 num_keys;
@@ -396,34 +391,11 @@ enum ModelType
     MODEL_SKINNED
 };
 
-struct Model
-{
-    ModelType type;
-    
-    i32 buffer_handle;
-    
+struct TransformInfo
+{ 
     math::Vec3 position;
     math::Vec3 scale;
-    math::Quat orientation;
-    
-    math::Rgba color;
-    
-    Material materials[10];
-    i32 material_count;
-    
-    MeshData meshes[MAX_MESHES];
-    i32 mesh_count;
-    
-    Bone* bones;
-    i32 bone_count;
-    
-    SkeletalAnimationState animation_state;
-    i32 running_animation_index;
-    math::Mat4* current_poses;
-    SkeletalAnimation* animations;
-    i32 animation_count;
-    
-    math::Mat4 global_inverse_transform;
+    math::Vec3 rotation;
 };
 
 enum ShaderAttributeType
@@ -440,7 +412,7 @@ enum ShaderAttributeType
 struct ShaderAttribute
 {
     ShaderAttributeType type;
-    char* name;
+    char name[32];
     union
     {
         r32 float_var;
@@ -451,13 +423,6 @@ struct ShaderAttribute
         b32 boolean_var;
         math::Mat4 matrix4_var;
     };
-};
-
-struct TransformInfo
-{ 
-    math::Vec3 position;
-    math::Vec3 scale;
-    math::Vec3 rotation;
 };
 
 struct ShaderInfo
@@ -480,6 +445,36 @@ struct RenderMaterial
     };
 };
 
+struct Model
+{
+    ModelType type;
+    
+    i32 buffer_handle;
+    
+    math::Vec3 position;
+    math::Vec3 scale;
+    math::Quat orientation;
+    
+    math::Rgba color;
+    
+    RenderMaterial materials[10];
+    i32 material_count;
+    
+    MeshData meshes[MAX_MESHES];
+    i32 mesh_count;
+    
+    Bone* bones;
+    i32 bone_count;
+    
+    SkeletalAnimationState animation_state;
+    i32 running_animation_index;
+    math::Mat4* current_poses;
+    SkeletalAnimation* animations;
+    i32 animation_count;
+    
+    math::Mat4 global_inverse_transform;
+};
+
 enum WireframeType
 {
     WT_NONE,
@@ -496,9 +491,6 @@ struct MeshInfo
     
     WireframeType wireframe_type;
     math::Rgba wireframe_color;
-    
-    u32 render_passes[8];
-    i32 render_pass_count;
 };
 
 struct RenderInfo
@@ -632,7 +624,7 @@ struct RenderCommand
             i32 buffer_handle;
             MeshData meshes[MAX_MESHES];
             i32 mesh_count;
-            Material materials[10];
+            RenderMaterial materials[10];
             i32 material_count;
             math::Rgba color;
             math::Mat4* bone_transforms;
