@@ -646,7 +646,7 @@ static void render_setup(RenderState *render_state, MemoryArena* perm_arena)
     
     render_state->font_count = 0;
     
-    create_framebuffer(*render_state, render_state->framebuffer, render_state->scale_from_width, render_state->scale_from_height, render_state->frame_buffer_shader, perm_arena, render_state->framebuffer_quad_vertices,
+    create_framebuffer(*render_state, render_state->framebuffer, render_state->screen_width, render_state->screen_height, render_state->frame_buffer_shader, perm_arena, render_state->framebuffer_quad_vertices,
                        render_state->framebuffer_quad_vertices_size,render_state->quad_indices, sizeof(render_state->quad_indices), true, 4);
     
     render_state->depth_shader.type = SHADER_DEPTH;
@@ -803,9 +803,11 @@ static void initialize_opengl(RenderState& render_state, Renderer& renderer, Con
     glfwGetFramebufferSize(render_state.window, &render_state.window_width, &render_state.window_height);
     glViewport(0, 0, render_state.window_width, render_state.window_height);
     
-    // Enable debug output
+    #if !defined(__APPLE__)
+    Enable debug output
     glEnable(GL_DEBUG_OUTPUT);
     glDebugMessageCallback((GLDEBUGPROC)message_callback, 0);
+    #endif
     
     render_state.screen_width = config_data->screen_width;
     render_state.screen_height = config_data->screen_height;
