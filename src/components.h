@@ -64,6 +64,17 @@ enum ComponentType
     CP_MAX
 };
 
+const ComponentTypeFlags type_to_flag[] =
+{
+    CPF_TRANSFORM,
+    CPF_ANIMATION,
+    CPF_SPRITE_RENDERER,
+    CPF_MESH_RENDERER,
+    CPF_BOX_COLLIDER,
+    CPF_BOX_COLLIDER_2D,
+    CPF_LIGHTING
+};
+
 struct EntityComponentMapping
 {
     i32 component_handles[CP_MAX];
@@ -104,15 +115,24 @@ b32 has_queried_components(ComponentController &controller, i32 entity, u64 comp
     return (b32)(controller.entity_components[entity] & component_flags);
 }
 
-#define add_component(entity, enum_type, type)\
-&((type(*))(controller.components[type].components)[controller.entity_mappings[entity].component_handles[type]]);\
+#define add_component(entity_handle, enum_type, type, ptr)\
+controller.entity_components[entity_handle] |= type_to_flag[enum_type];\
+controller.entity_mappings[entity_handle].component_handles[enum_type] = controller.components[enum_type].count;\
+ptr = &((type(*))\
+(controller.components[enum_type].components))\
+[controller.entity_mappings[entity_handle].component_handles[enum_type]];\
 
 #define get_component(entity, enum_type, type)\
 &((type(*))(controller.components[type].components)[controller.entity_mappings[entity].component_handles[type]]);\
 
 ComponentList *get_all_components(ComponentController &controller, ComponentType type)
 {
+    TransformComponent *transform = 0;
+    add_component(0, CP_TRANSFORM, TransformComponent, transform);
     return &controller.components[type];
 }
+
+void __sort_components(ComponentController &controller)
+{}
 
 #endif
