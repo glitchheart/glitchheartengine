@@ -549,7 +549,7 @@ static void push_mesh(Renderer &renderer, MeshInfo mesh_info)
     render_command->mesh.diffuse_texture = mesh_info.material.diffuse_texture;
     render_command->color = mesh_info.material.color;
 }
-
+/*
 static void push_model(Renderer& renderer, Model& model, MemoryArena* arena)
 {
     RenderCommand* render_command = push_next_command(renderer, false);
@@ -589,7 +589,7 @@ static void push_model(Renderer& renderer, Model& model, MemoryArena* arena)
     render_command->model.color = math::Rgba(1.0f, 1.0f, 1.0f, 1.0f);
     render_command->is_ui = false;
 }
-
+*/
 static void load_buffer(Renderer& renderer, r32* buffer, i32 buffer_size, i32* buffer_handle, b32 dynamic = false)
 {
     BufferData data = {};

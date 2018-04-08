@@ -64,6 +64,14 @@ enum ComponentType
     CP_MAX
 };
 
+#define TransformComponent() CP_TRANSFORM
+#define AnimationComponent() CP_ANIMATION
+#define SpriteRendererComponent() CP_SPRITE_RENDERER
+#define MeshRendererComponent() CP_MESH_RENDERER
+#define BoxColliderComponent() CP_BOX_COLLIDER
+#define BoxCollider2DComponent() CP_BOX_COLLIDER_2D
+#define LightingComponent() CP_LIGHTING
+
 const ComponentTypeFlags type_to_flag[] =
 {
     CPF_TRANSFORM,
@@ -115,20 +123,45 @@ b32 has_queried_components(ComponentController &controller, i32 entity, u64 comp
     return (b32)(controller.entity_components[entity] & component_flags);
 }
 
-#define add_component(entity_handle, enum_type, type, ptr)\
-controller.entity_components[entity_handle] |= type_to_flag[enum_type];\
-controller.entity_mappings[entity_handle].component_handles[enum_type] = controller.components[enum_type].count;\
-ptr = &((type(*))\
-(controller.components[enum_type].components))\
-[controller.entity_mappings[entity_handle].component_handles[enum_type]];\
+#define get_component(controller, entity, type) (type*)get__component(controller, entity, type(), sizeof(type))
+void* get__component(ComponentController &controller, i32 entity, ComponentType type, size_t size_bytes)
+{
+    i32 handle = controller.entity_mappings[entity].component_handles[type];
+    return (&controller.components[type].components) + (handle * size_bytes);
+}
 
-#define get_component(entity, enum_type, type)\
-&((type(*))(controller.components[type].components)[controller.entity_mappings[entity].component_handles[type]]);\
+#define add_component(controller, entity, type) (type*)add__component(controller, entity, type(), sizeof(type))
+void* add__component(ComponentController &controller, i32 entity, ComponentType type, size_t size_bytes)
+{
+    controller.entity_components[entity] |= type_to_flag[type];
+    controller.entity_mappings[entity].component_handles[type] = controller.components[type].count++;
+    i32 handle = controller.entity_mappings[entity].component_handles[type];
+    return (&controller.components[type].components) + (handle * size_bytes);
+}
+
+void component_test()
+{
+    ComponentController controller = {0};
+    
+    controller.entity_components = (u64*)malloc(sizeof(u64) * CP_MAX);
+    controller.entity_mappings = (EntityComponentMapping*)malloc(sizeof(EntityComponentMapping));
+    
+    controller.transform_components.components = malloc(sizeof(TransformComponent));
+    
+    TransformComponent *added_t_comp = add_component(controller, 0, TransformComponent);
+    added_t_comp->position = math::Vec3(1.0f, 5.0f, 300.0f);
+    added_t_comp->rotation = math::Vec3(45.0f, 0.0f, 0.0f);
+    
+    TransformComponent *t_comp = get_component(controller, 0, TransformComponent);
+    debug("Position: %f %f %f\n", t_comp->position.x, t_comp->position.y, t_comp->position.z);
+    debug("Rotation: %f %f %f\n", t_comp->rotation.x, t_comp->rotation.y, t_comp->rotation.z);
+    debug("Position: %f %f %f\n", added_t_comp->position.x, added_t_comp->position.y, added_t_comp->position.z);
+    debug("Rotation: %f %f %f\n", added_t_comp->rotation.x, added_t_comp->rotation.y, added_t_comp->rotation.z);
+}
 
 ComponentList *get_all_components(ComponentController &controller, ComponentType type)
 {
-    TransformComponent *transform = 0;
-    add_component(0, CP_TRANSFORM, TransformComponent, transform);
+    add_component(controller, 0, TransformComponent);
     return &controller.components[type];
 }
 
