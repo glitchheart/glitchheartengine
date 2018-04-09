@@ -121,7 +121,11 @@ PLATFORM_GET_ALL_DIRECTORIES(win32_get_all_directories)
     WIN32_FIND_DATA find_file;
     HANDLE h_find = NULL;
     
-    h_find = FindFirstFile(path, &find_file);
+    // Workaround on Windows, since Windows needs the * to search for all files and OSX + Linux don't
+    char combined_path[256];
+    sprintf(combined_path, "%s*", path);
+    
+    h_find = FindFirstFile(combined_path, &find_file);
     
     if(h_find != INVALID_HANDLE_VALUE)
     {
