@@ -102,7 +102,7 @@ struct ComponentController
     
     union
     {
-        ComponentList components[CP_MAX];
+        ComponentList components[4];
         struct
         {
             ComponentList transform_components;
@@ -156,35 +156,36 @@ void component_test()
     controller.entity_mappings = (EntityComponentMapping*)malloc(sizeof(EntityComponentMapping) * num_entities);
     
     controller.transform_components.components = malloc(sizeof(TransformComponent) * num_entities);
+    controller.transform_components.count = 0;
     
     TransformComponent *added_t_comp = add_component(controller, 0, TransformComponent);
     added_t_comp->position = math::Vec3(1.0f, 5.0f, 300.0f);
     added_t_comp->rotation = math::Vec3(45.0f, 0.0f, 0.0f);
-
+    
     added_t_comp = add_component(controller, 1, TransformComponent);
     added_t_comp->position = math::Vec3(1.0f, 5.0f, 300.0f);
     added_t_comp->rotation = math::Vec3(45.0f, 0.0f, 0.0f);
-
+    
     // added_t_comp = add_component(controller, 2, TransformComponent);
     // added_t_comp->position = math::Vec3(1.0f, 5.0f, 300.0f);
     // added_t_comp->rotation = math::Vec3(45.0f, 0.0f, 0.0f);
-
+    
     //ComponentList *transforms = get_all_components(controller, CP_TRANSFORM);
-
+    
     // printf("Count %d/n", transforms->count);
     // for(i32 i = 0; i < transforms->count; i++)
     // {
     //     TransformComponent *transform = ((TransformComponent**)(transforms->components))[i];
     //     debug("Position: %f %f %f\n", transform->position.x, transform->position.y, transform->position.z);
     // }
-
+    
     TransformComponent *t_comp = get_component(controller, 0, TransformComponent);
     debug("Position: %f %f %f\n", t_comp->position.x, t_comp->position.y, t_comp->position.z);
     debug("Rotation: %f %f %f\n", t_comp->rotation.x, t_comp->rotation.y, t_comp->rotation.z);
     debug("Position: %f %f %f\n", added_t_comp->position.x, added_t_comp->position.y, added_t_comp->position.z);
     debug("Rotation: %f %f %f\n", added_t_comp->rotation.x, added_t_comp->rotation.y, added_t_comp->rotation.z);
-
-
+    
+    
 }
 
 #endif
