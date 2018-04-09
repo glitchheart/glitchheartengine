@@ -77,7 +77,7 @@ static b32 copy_file(const char* src, const char* dst, b32 dont_overwrite, Memor
     while ((n > 0) && (n == m));
     if(m)
     {
-        printf("COPY\n");
+        printf("Copy\n");
     }
     
     fclose(out);
