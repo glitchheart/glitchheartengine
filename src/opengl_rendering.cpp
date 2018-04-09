@@ -2076,7 +2076,7 @@ static void render(RenderState& render_state, Renderer& renderer, MemoryArena* p
     camera.viewport_width = render_state.window_width;
     camera.viewport_height = render_state.window_height;
 
-    renderer.ui_projection_matrix = math::ortho(0.0f, (r32)renderer.window_width / 2, 0.0f, (r32)renderer.window_height / 2, -1.0f, 1.0f);
+    renderer.ui_projection_matrix = math::ortho(0.0f, (r32)renderer.window_width, 0.0f, (r32)renderer.window_height, -1.0f, 1.0f);
     
     register_buffers(render_state, renderer, perm_arena);
     
