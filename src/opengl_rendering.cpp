@@ -791,11 +791,11 @@ static void initialize_opengl(RenderState& render_state, Renderer& renderer, Con
     glfwGetFramebufferSize(render_state.window, &render_state.window_width, &render_state.window_height);
     glViewport(0, 0, render_state.window_width, render_state.window_height);
     
-    #if !defined(__APPLE__)
-    Enable debug output
+#if !defined(__APPLE__)
+    //Enable debug output
     glEnable(GL_DEBUG_OUTPUT);
     glDebugMessageCallback((GLDEBUGPROC)message_callback, 0);
-    #endif
+#endif
     
     glDisable(GL_DITHER);
     glLineWidth(2.0f);
@@ -2060,22 +2060,22 @@ static void render(RenderState& render_state, Renderer& renderer, MemoryArena* p
     render_state.shader_attribute_count = 0;
     
     auto& camera = renderer.cameras[renderer.current_camera_handle];
-
     
-
+    
+    
     render_state.scale_x = 2.0f / render_state.window_width;
     render_state.scale_y = 2.0f / render_state.window_height;
-
+    
     renderer.scale_x = render_state.scale_x;
     renderer.scale_y = render_state.scale_y;
-
+    
     render_state.pixels_per_unit = renderer.pixels_per_unit;
-
+    
     renderer.window_width = render_state.window_width;
     renderer.window_height = render_state.window_height;
     camera.viewport_width = render_state.window_width;
     camera.viewport_height = render_state.window_height;
-
+    
     renderer.ui_projection_matrix = math::ortho(0.0f, (r32)renderer.window_width, 0.0f, (r32)renderer.window_height, -1.0f, 1.0f);
     register_buffers(render_state, renderer, perm_arena);
     
