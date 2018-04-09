@@ -162,7 +162,7 @@ typedef PLATFORM_GET_ALL_FILES_WITH_EXTENSION(PlatformGetAllFilesWithExtension);
 #define PLATFORM_GET_ALL_DIRECTORIES(name) char ** name(const char* path)
 typedef PLATFORM_GET_ALL_DIRECTORIES(PlatformGetAllDirectories);
 
-#define PLATFORM_FILE_EXISTS(name) b32 name(const char* file_path)
+#define PLATFORM_FILE_EXISTS(name) b32 name(const char *file_path)
 typedef PLATFORM_FILE_EXISTS(PlatformFileExists);
 
 #define PLATFORM_ALLOCATE_MEMORY(name) PlatformMemoryBlock* name(umm size, u64 flags)
@@ -180,7 +180,7 @@ typedef PLATFORM_SAVE_FILE_WITH_DIALOG(PlatformSaveFileWithDialog);
 #define PLATFORM_GET_TIME_OF_DAY(name) u32 name()
 typedef PLATFORM_GET_TIME_OF_DAY(PlatformGetTimeOfDay);
 
-#define PLATFORM_LOAD_LIBRARY(name) void* name(const char* path)
+#define PLATFORM_LOAD_LIBRARY(name) void* name(const char *path)
 typedef PLATFORM_LOAD_LIBRARY(PlatformLoadLibrary);
 
 #define PLATFORM_FREE_LIBRARY(name) void name(void* library)

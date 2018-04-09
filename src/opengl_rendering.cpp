@@ -70,18 +70,6 @@ void frame_buffer_size_callback(GLFWwindow *window, int width, int height)
     
     render_state->window_width = width;
     render_state->window_height = height;
-    
-    // Change resolution of frame_buffer texture
-    //@Incomplete: This should be done with lower resolutions and just be upscaled maybe? We need fixed resolutions
-    glBindTexture(GL_TEXTURE_2D, render_state->framebuffer.tex_color_buffer_handle);
-    glTexImage2D(
-        GL_TEXTURE_2D, 0, GL_RGB, (GLsizei)render_state->scale_from_width, (GLsizei)render_state->scale_from_height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-    glFramebufferTexture2D(
-        GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, render_state->framebuffer.tex_color_buffer_handle, 0);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    
-    glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 inline static r64 get_time()
@@ -646,7 +634,7 @@ static void render_setup(RenderState *render_state, MemoryArena* perm_arena)
     
     render_state->font_count = 0;
     
-    create_framebuffer(*render_state, render_state->framebuffer, render_state->screen_width, render_state->screen_height, render_state->frame_buffer_shader, perm_arena, render_state->framebuffer_quad_vertices,
+    create_framebuffer(*render_state, render_state->framebuffer, render_state->window_width, render_state->window_height, render_state->frame_buffer_shader, perm_arena, render_state->framebuffer_quad_vertices,
                        render_state->framebuffer_quad_vertices_size,render_state->quad_indices, sizeof(render_state->quad_indices), true, 4);
     
     render_state->depth_shader.type = SHADER_DEPTH;
@@ -809,13 +797,6 @@ static void initialize_opengl(RenderState& render_state, Renderer& renderer, Con
     glDebugMessageCallback((GLDEBUGPROC)message_callback, 0);
     #endif
     
-    render_state.screen_width = config_data->screen_width;
-    render_state.screen_height = config_data->screen_height;
-    if (render_state.screen_width != 0)
-    {
-        render_state.dpi_scale = render_state.window_width / render_state.screen_width;
-    }
-    
     glDisable(GL_DITHER);
     glLineWidth(2.0f);
     glEnable(GL_LINE_SMOOTH);
@@ -840,17 +821,7 @@ static void initialize_opengl(RenderState& render_state, Renderer& renderer, Con
     glGetIntegerv(GL_VIEWPORT, viewport);
     
     memcpy(render_state.viewport, viewport, sizeof(GLint) * 4);
-    
-    renderer.window_width = render_state.screen_width;
-    renderer.window_height = render_state.screen_height;
-    
     memcpy(renderer.viewport, render_state.viewport, sizeof(i32) * 4);
-    renderer.viewport[0] /= render_state.dpi_scale;
-    renderer.viewport[1] /= render_state.dpi_scale;
-    renderer.viewport[2] /= render_state.dpi_scale;
-    renderer.viewport[3] /= render_state.dpi_scale;
-    
-    printf("Viewport %d %d %d %d\n", renderer.viewport[0], renderer.viewport[1], renderer.viewport[2], renderer.viewport[3]);
     
     controller_present();
     
@@ -2083,21 +2054,28 @@ static void render(RenderState& render_state, Renderer& renderer, MemoryArena* p
     }
     
     load_extra_shaders(render_state, renderer);
-    
     load_textures(render_state, renderer);
     
     render_state.current_extra_shader = -1;
     render_state.shader_attribute_count = 0;
     
     auto& camera = renderer.cameras[renderer.current_camera_handle];
-    camera.viewport_width = render_state.scale_from_width;
-    camera.viewport_height = render_state.scale_from_height;
+
     
-    render_state.scale_x = 2.0f / render_state.screen_width;
-    render_state.scale_y = 2.0f / render_state.screen_height;
-    render_state.pixels_per_unit = renderer.pixels_per_unit;
+
+    render_state.scale_x = 2.0f / render_state.window_width;
+    render_state.scale_y = 2.0f / render_state.window_height;
+
     renderer.scale_x = render_state.scale_x;
     renderer.scale_y = render_state.scale_y;
+
+    render_state.pixels_per_unit = renderer.pixels_per_unit;
+
+    renderer.window_width = render_state.window_width;
+    renderer.window_height = render_state.window_height;
+    camera.viewport_width = render_state.window_width;
+    camera.viewport_height = render_state.window_height;
+
     renderer.ui_projection_matrix = math::ortho(0.0f, (r32)renderer.window_width, 0.0f, (r32)renderer.window_height, -1.0f, 1.0f);
     register_buffers(render_state, renderer, perm_arena);
     

@@ -251,22 +251,56 @@ static PLATFORM_TELL_FILE(osx_tell_file)
     return (i32)lseek(file.handle, 0, SEEK_CUR);
 }
 
+// This should be made 
+PLATFORM_GET_ALL_FILES_WITH_EXTENSION(osx_get_all_files_with_extension)
+{
+    struct dirent *de;
+ 
+    DIR *dr = opendir(directory_path);
+ 
+    if (dr == NULL)
+    {
+        printf("Could not open current directory" );
+    }
+ 
+    while ((de = readdir(dr)) != NULL)
+    {
+        if(de->d_type == DT_REG)
+        {
+            const char *ext = strrchr(de->d_name,'.');
+
+            if((ext) && (ext != de->d_name))
+            {
+               if(strcmp((++ext), extension) == 0)
+               {
+                    printf("%s\n", de->d_name);
+                    char* concat_str = concat(directory_path, de->d_name, arena);
+                    char* file_name = strtok(de->d_name, ".");
+                    
+                    strcpy(directory_data->file_paths[directory_data->files_length], concat_str);
+                    strcpy(directory_data->file_names[directory_data->files_length], file_name);
+                    directory_data->files_length++;
+               }
+            }
+        }
+    }
+        
+    closedir(dr);    
+}
+
 PLATFORM_GET_ALL_DIRECTORIES(osx_get_all_directories)
 {
     char ** dir_buf = nullptr;
-    struct dirent *de;  // Pointer for directory entry
+    struct dirent *de;
  
-    // opendir() returns a pointer of DIR type. 
     DIR *dr = opendir(path);
  
-    if (dr == NULL)  // opendir returns NULL if couldn't open directory
+    if (dr == NULL)
     {
         printf("Could not open current directory" );
         return nullptr;
     }
  
-    // Refer http://pubs.opengroup.org/onlinepubs/7990989775/xsh/readdir.html
-    // for readdir()
     while ((de = readdir(dr)) != NULL)
     {
         if(de->d_type & DT_DIR)
@@ -284,6 +318,7 @@ PLATFORM_GET_ALL_DIRECTORIES(osx_get_all_directories)
 
 static void init_platform(PlatformApi& platform_api)
 {
+    platform_api.get_all_files_with_extension = osx_get_all_files_with_extension;
     platform_api.get_all_directories = osx_get_all_directories;
     platform_api.allocate_memory = osx_allocate_memory;
     platform_api.deallocate_memory = osx_deallocate_memory;
