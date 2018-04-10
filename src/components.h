@@ -136,7 +136,7 @@ void* add__component(ComponentController &controller, i32 entity, ComponentType 
     controller.entity_components[entity] |= type_to_flag[type];
     controller.entity_mappings[entity].component_handles[type] = controller.components[type].count++;
     i32 handle = controller.entity_mappings[entity].component_handles[type];
-    return (&controller.components[type].components) + (handle * size_bytes);
+    return ((char *)controller.components[type].components) + (handle * size_bytes);
 }
 
 ComponentList *get_all_components(ComponentController &controller, ComponentType type)
