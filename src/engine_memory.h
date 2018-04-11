@@ -90,8 +90,8 @@ inline umm get_effective_size_for(MemoryArena* arena, umm size_init, PushParams 
 }
 
 #define push_struct(arena, type, ...) (type *)push_size_(arena, sizeof(type), ## __VA_ARGS__)
-#define push_array(arena, count, type, ...) (type*)push_size_(arena, (count)*sizeof(type), ## __VA_ARGS__)
-#define push_size(arena, size, type, ...) (type*)push_size_(arena, (umm)size, ## __VA_ARGS__)
+#define push_array(arena, count, type, ...) (type *)push_size_(arena, (count)*sizeof(type), ## __VA_ARGS__)
+#define push_size(arena, size, type, ...) (type *)push_size_(arena, (umm)size, ## __VA_ARGS__)
 void* push_size_(MemoryArena* arena, umm size_init, PushParams params = default_push_params())
 {
     void* result = 0;
