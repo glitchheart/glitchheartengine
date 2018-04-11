@@ -147,99 +147,100 @@ struct Entity
 
 b32 has_queried_components(ComponentController &controller, i32 entity, u64 component_flags)
 {
-    return (b32)(controller.entity_components[entity] & component_flags);
+    return (b32)((controller.entity_components[entity] & component_flags) == component_flags);
 }
 
 // @Note(Daniel): The count parameter is necessary since the va_args macro won't work with a ref parameter before the arguments
 ComponentGroup begin_component_group_block(ComponentController &controller, i32 count, ...)
 {
     ComponentGroup group = {};
-
+    
     group.temp_memory = begin_temporary_memory(&controller.buffer_arena);
-
+    
     va_list args;
     va_start(args, count);
-
+    
     u64 flags = 0;
-    char *** buffers = nullptr;
+    void * buffers[2];
+    buffers[0] = nullptr;
+    buffers[1] = nullptr;
+    
     ComponentType *types = nullptr;
-
+    
     for (int i = 0; i < count; ++i)
     {
         auto component_type = va_arg(args, ComponentType);
-        size_t size = 0;
         auto flag = type_to_flag[component_type];
-        printf("Flag %d\n", flag);
         flags |= flag;
         buf_push(types, component_type);
-        buf_push(buffers, 0);
     }
-
+    
     va_end(args);
-
-    printf("Up flags %d\n", flags);
-
+    
     group.buffer_count = count;
     group.num_indices = 0;
     group.component_lists = push_array(group.temp_memory.arena, group.buffer_count, ComponentList);
-
+    
     for(i32 entity_handle = 0; entity_handle < controller.entity_count; entity_handle++)
     {
         if(has_queried_components(controller, entity_handle, flags))
         {
             group.num_indices++;
             
-            for(i32 type_index = 0; type_index < buf_len(types); type_index++)
+            for(i32 type_index = 0; type_index < (i32)buf_len(types); type_index++)
             {
-                switch(types[type_index])
+                auto type = types[type_index];
+                
+                switch(type)
                 {
                     case CP_TRANSFORM:
                     {
                         auto type_buffer = (TransformComponent*)buffers[type_index];
-                        buf_push(type_buffer, ((TransformComponent*)controller.transform_components.components)[entity_handle]);
+                        buf_push(type_buffer, ((TransformComponent*)controller.transform_components.components)[controller.entity_mappings[entity_handle].component_handles[type]]);
+                        printf("Damn\n");
                     }
                     break;
                     case CP_ANIMATION:
                     {
                         auto type_buffer = (AnimationComponent*)buffers[type_index];
-                        buf_push(type_buffer, ((AnimationComponent*)controller.animation_components.components)[entity_handle]);
+                        buf_push(type_buffer, ((AnimationComponent*)controller.animation_components.components)[controller.entity_mappings[entity_handle].component_handles[type]]);
                     }
                     break;
                     case CP_SPRITE_RENDERER:
                     {
                         auto type_buffer = (SpriteRendererComponent*)buffers[type_index];
-                        buf_push(type_buffer, ((SpriteRendererComponent*)controller.sprite_renderer_components.components)[entity_handle]);
+                        buf_push(type_buffer, ((SpriteRendererComponent*)controller.sprite_renderer_components.components)[controller.entity_mappings[entity_handle].component_handles[type]]);
                     }
                     break;
                     case CP_MESH_RENDERER:
                     {
                         auto type_buffer = (MeshRendererComponent*)buffers[type_index];
-                        buf_push(type_buffer, ((MeshRendererComponent*)controller.mesh_renderer_components.components)[entity_handle]);
+                        buf_push(type_buffer, ((MeshRendererComponent*)controller.mesh_renderer_components.components)[controller.entity_mappings[entity_handle].component_handles[type]]);
                     }
                     break;
                     case CP_BOX_COLLIDER:
                     {
                         auto type_buffer = (BoxColliderComponent*)buffers[type_index];
-                        buf_push(type_buffer, ((BoxColliderComponent*)controller.box_collider_components.components)[entity_handle]);
+                        buf_push(type_buffer, ((BoxColliderComponent*)controller.box_collider_components.components)[controller.entity_mappings[entity_handle].component_handles[type]]);
                     }
                     break;
                     case CP_BOX_COLLIDER_2D:
                     {
                         auto type_buffer = (BoxCollider2DComponent*)buffers[type_index];
-                        buf_push(type_buffer, ((BoxCollider2DComponent*)controller.box_collider_2D_components.components)[entity_handle]);
+                        buf_push(type_buffer, ((BoxCollider2DComponent*)controller.box_collider_2D_components.components)[controller.entity_mappings[entity_handle].component_handles[type]]);
                     }
                     break;
                     case CP_LIGHTING:
                     {
                         auto type_buffer = (LightingComponent*)buffers[type_index];
-                        buf_push(type_buffer, ((LightingComponent*)controller.lighting_components.components)[entity_handle]);
+                        buf_push(type_buffer, ((LightingComponent*)controller.lighting_components.components)[controller.entity_mappings[entity_handle].component_handles[type]]);
                     }
                     break;
                 }
             }
         }
     }
-
+    
     for(i32 type_index = 0; type_index < group.buffer_count; type_index++)
     {
         size_t size =  buf_len(buffers[type_index]) * type_to_size[types[type_index]];
@@ -247,10 +248,9 @@ ComponentGroup begin_component_group_block(ComponentController &controller, i32 
         memcpy(group.component_lists[type_index].components, buffers[type_index], size);
         buf_free(buffers[type_index]);
     }
-
+    
     buf_free(types);
-
-
+    
     return(group);
 }
 
@@ -293,9 +293,9 @@ void component_test()
     controller.entity_components[0] = 0;
     controller.entity_components[1] = 0;
     controller.entity_components[2] = 0;
-
+    
     controller.entity_mappings = (EntityComponentMapping*)malloc(sizeof(EntityComponentMapping) * num_entities);
-
+    
     controller.transform_components.components = malloc(sizeof(TransformComponent) * num_entities);
     controller.mesh_renderer_components.components = malloc(sizeof(MeshRendererComponent) * num_entities);
     controller.transform_components.count = 0;
@@ -308,19 +308,19 @@ void component_test()
     added_t_comp->position = math::Vec3(1.0f, 5.0f, 300.0f);
     added_t_comp->rotation = math::Vec3(45.0f, 0.0f, 0.0f);
     MeshRendererComponent *added_mesh_comp = add_component(controller, 0, MeshRendererComponent);
-
+    
     auto group_block = begin_component_group_block(controller, 2, CP_TRANSFORM, CP_MESH_RENDERER);
     
     printf("Indices %d\n", group_block.num_indices);
-
+    
     for(i32 index = 0; index < group_block.num_indices; index++)
     {
         auto transform = ((TransformComponent *)group_block.component_lists[0].components)[index];
         auto mesh_renderer = ((MeshRendererComponent *)group_block.component_lists[1].components)[index];
-
+        
         debug("Position: %f %f %f\n", transform.position.x, transform.position.y, transform.position.z);
     }
-
+    
     end_component_group_block(group_block);
     
     // added_t_comp = add_component(controller, 2, TransformComponent);
