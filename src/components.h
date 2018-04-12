@@ -150,8 +150,23 @@ b32 has_queried_components(ComponentController &controller, i32 entity, u64 comp
     return (b32)((controller.entity_components[entity] & component_flags) == component_flags);
 }
 
+#define IS_MSVC _MSC_VER && !__INTEL_COMPILER
+
+#if IS_MSVC
+#define MSVC_HACK(FUNC, ARGS) FUNC ARGS
+#define APPLY(FUNC, ...) MSVC_HACK(FUNC, (__VA_ARGS__))
+#define VA_LENGTH(...) APPLY(VA_LENGTH_, 0, ## __VA_ARGS__, 20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0)
+#else
+#define VA_LENGTH(...) VA_LENGTH_(0, ## __VA_ARGS__, 20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0)
+#endif
+
+#define VA_LENGTH_(_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, _12, _13, _14, _15, _16, _17, _18, _19, _20, N, ...) N
+
+#define ExecVF(Func, controller, ...) Func(controller, VA_LENGTH(__VA_ARGS__), __VA_ARGS__)
+
 // @Note(Daniel): The count parameter is necessary since the va_args macro won't work with a ref parameter before the arguments
-ComponentGroup begin_component_group_block(ComponentController &controller, i32 count, ...)
+#define begin_component_group_block(controller, ...) ExecVF(_begin_component_group_block, controller, __VA_ARGS__)
+ComponentGroup _begin_component_group_block(ComponentController &controller, i32 count, ...)
 {
     ComponentGroup group = {};
     
@@ -309,7 +324,7 @@ void component_test()
     added_t_comp->rotation = math::Vec3(45.0f, 0.0f, 0.0f);
     MeshRendererComponent *added_mesh_comp = add_component(controller, 0, MeshRendererComponent);
     
-    auto group_block = begin_component_group_block(controller, 2, CP_TRANSFORM, CP_MESH_RENDERER);
+    auto group_block = begin_component_group_block(controller, CP_TRANSFORM, CP_MESH_RENDERER);
     
     printf("Indices %d\n", group_block.num_indices);
     
