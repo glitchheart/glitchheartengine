@@ -335,7 +335,7 @@ int main(int argc, char** args)
     r64 delta_time;
     renderer.frame_lock = 0;
     
-    component_test();
+    //component_test();
     
     while (!should_close_window(render_state) && !renderer.should_close)
     {
@@ -355,7 +355,7 @@ int main(int argc, char** args)
         reload_assets(render_state, &asset_manager, &platform_state->perm_arena);
         
         reload_libraries(&game, game_library_path, temp_game_library_path, &platform_state->perm_arena);
-
+        
         auto game_temp_mem = begin_temporary_memory(game_memory.temp_arena);
         game.update(delta_time, &game_memory, renderer, &input_controller, &sound_commands, timer_controller);
         
