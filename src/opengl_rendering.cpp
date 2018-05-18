@@ -58,20 +58,6 @@ static void vertex_attrib_pointer(GLuint loc, i32 count, GLenum type, u32 stride
     glVertexAttribPointer(loc, count, type, GL_FALSE, (GLsizei)stride, offset);
 }
 
-void frame_buffer_size_callback(GLFWwindow *window, int width, int height)
-{
-    RenderState* render_state = (RenderState*)glfwGetWindowUserPointer(window);
-    glfwSetWindowAspectRatio(window, 16, 9);
-    glViewport(0, 0, width, height);
-    
-    GLint viewport[4];
-    glGetIntegerv(GL_VIEWPORT, viewport);
-    memcpy(render_state->viewport, viewport, sizeof(GLint) * 4);
-    
-    render_state->window_width = width;
-    render_state->window_height = height;
-}
-
 inline static r64 get_time()
 {
     return glfwGetTime();
@@ -457,6 +443,11 @@ static void create_framebuffer_color_attachment(Framebuffer &framebuffer, i32 wi
     framebuffer.multisampled = multisampled;
     if(multisampled)
     {
+        if(framebuffer.tex_color_buffer_handle != 0)
+        {
+            glDeleteRenderbuffers(1, &framebuffer.tex_color_buffer_handle);
+        }
+        
         glGenRenderbuffers(1, &framebuffer.tex_color_buffer_handle);
         glBindRenderbuffer(GL_RENDERBUFFER, framebuffer.tex_color_buffer_handle);
         glRenderbufferStorageMultisample(GL_RENDERBUFFER, samples, GL_RGBA8, width, height);
@@ -465,6 +456,12 @@ static void create_framebuffer_color_attachment(Framebuffer &framebuffer, i32 wi
     }
     else
     {
+        // @Incomplete: There might be todo here
+        if(framebuffer.tex_color_buffer_handle != 0)
+        {
+            glDeleteRenderbuffers(1, &framebuffer.tex_color_buffer_handle);
+        }
+        
         glGenTextures(1, &framebuffer.tex_color_buffer_handle);
         glBindTexture(GL_TEXTURE_2D, framebuffer.tex_color_buffer_handle);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
@@ -477,6 +474,11 @@ static void create_framebuffer_color_attachment(Framebuffer &framebuffer, i32 wi
 
 static void create_framebuffer_render_buffer_attachment(Framebuffer &framebuffer, i32 width, i32 height, b32 multisampled, i32 samples)
 {
+    if(framebuffer.depth_buffer_handle != 0)
+    {
+        glDeleteRenderbuffers(1, &framebuffer.depth_buffer_handle);
+    }
+    
     glGenRenderbuffers(1, &framebuffer.depth_buffer_handle);
     glBindRenderbuffer(GL_RENDERBUFFER, framebuffer.depth_buffer_handle);
     
@@ -527,7 +529,11 @@ static void create_shadow_map(Framebuffer& framebuffer, Shader shader, i32 width
 
 static void create_framebuffer(RenderState& render_state, Framebuffer& framebuffer, i32 width, i32 height, Shader& shader, MemoryArena* perm_arena, r32* vertices, u32 vertices_size, u32* indices, u32 indices_size, b32 multisampled, i32 samples = 0)
 {
-    glGenFramebuffers(1, &framebuffer.buffer_handle);
+    if(framebuffer.buffer_handle != 0)
+    {
+        glGenFramebuffers(1, &framebuffer.buffer_handle);
+    }
+    
     glBindFramebuffer(GL_FRAMEBUFFER, framebuffer.buffer_handle);
     glDrawBuffer(GL_COLOR_ATTACHMENT0);
     
@@ -564,6 +570,23 @@ static void create_framebuffer(RenderState& render_state, Framebuffer& framebuff
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices_size, indices, GL_STATIC_DRAW);
     
     glBindVertexArray(0);
+}
+
+void frame_buffer_size_callback(GLFWwindow *window, int width, int height)
+{
+    RenderState* render_state = (RenderState*)glfwGetWindowUserPointer(window);
+    glfwSetWindowAspectRatio(window, 16, 9);
+    glViewport(0, 0, width, height);
+    
+    GLint viewport[4];
+    glGetIntegerv(GL_VIEWPORT, viewport);
+    memcpy(render_state->viewport, viewport, sizeof(GLint) * 4);
+    
+    render_state->window_width = width;
+    render_state->window_height = height;
+    
+    create_framebuffer(*render_state, render_state->framebuffer, render_state->window_width, render_state->window_height, render_state->frame_buffer_shader, render_state->perm_arena, render_state->framebuffer_quad_vertices,
+                       render_state->framebuffer_quad_vertices_size,render_state->quad_indices, sizeof(render_state->quad_indices), true, 4);
 }
 
 static void setup_quad(RenderState& render_state, MemoryArena* perm_arena)
@@ -633,8 +656,9 @@ static void render_setup(RenderState *render_state, MemoryArena* perm_arena)
     }
     
     render_state->font_count = 0;
+    render_state->perm_arena = perm_arena;
     
-    create_framebuffer(*render_state, render_state->framebuffer, render_state->window_width, render_state->window_height, render_state->frame_buffer_shader, perm_arena, render_state->framebuffer_quad_vertices,
+    create_framebuffer(*render_state, render_state->framebuffer, render_state->window_width, render_state->window_height, render_state->frame_buffer_shader, render_state->perm_arena, render_state->framebuffer_quad_vertices,
                        render_state->framebuffer_quad_vertices_size,render_state->quad_indices, sizeof(render_state->quad_indices), true, 4);
     
     render_state->depth_shader.type = SHADER_DEPTH;
@@ -2075,7 +2099,7 @@ static void render(RenderState& render_state, Renderer& renderer, MemoryArena* p
     renderer.window_height = render_state.window_height;
     camera.viewport_width = render_state.window_width;
     camera.viewport_height = render_state.window_height;
-
+    
     renderer.ui_projection_matrix = math::ortho(0.0f, (r32)renderer.window_width, 0.0f, (r32)renderer.window_height, -1.0f, 1.0f);
     
     register_buffers(render_state, renderer, perm_arena);
