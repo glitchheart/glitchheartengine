@@ -2,6 +2,7 @@
 
 layout(location = 0) in vec3 position;
 layout(location = 1) in vec3 vertexNormal;
+layout(location = 2) in vec2 uv;
 
 uniform mat4 modelMatrix;
 uniform mat4 viewMatrix;
@@ -20,6 +21,7 @@ out VS_OUT
 	vec4 color;
 	vec4 shadowCoord;
 	vec3 normal;
+	vec2 uv;
 	vec3 posWorld;
 	vec3 eyeView;
 	vec3 lightDir;
@@ -43,5 +45,6 @@ void main()
 	vs_out.lightDir = lightPosView + vs_out.eyeView;
 
 	vs_out.normal = mat3(transpose(inverse(viewMatrix * modelMatrix))) * vertexNormal;
+	vs_out.uv = uv;
 	vs_out.color = color;
 }

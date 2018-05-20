@@ -415,11 +415,11 @@ static void register_buffers(RenderState& render_state, GLfloat* vertex_buffer, 
             vertex_attrib_pointer(3, 4, GL_FLOAT, ((8 + bone_info_size) * sizeof(GLfloat)), (void*)(8 * sizeof(GLfloat)));
         }
     }
-    
     else
     {
-        vertex_attrib_pointer(0, 3, GL_FLOAT,(6 * sizeof(GLfloat)), 0);
-        vertex_attrib_pointer(1, 3, GL_FLOAT, (6 * sizeof(GLfloat)), (void*)(3 * sizeof(GLfloat)));
+        vertex_attrib_pointer(0, 3, GL_FLOAT, (8 * sizeof(GLfloat)), 0);
+        vertex_attrib_pointer(1, 3, GL_FLOAT, (8 * sizeof(GLfloat)), (void*)(3 * sizeof(GLfloat)));
+        vertex_attrib_pointer(2, 2, GL_FLOAT, (8 * sizeof(GLfloat)), (void*)(6 * sizeof(GLfloat)));
     }
     
     if(buffer->index_buffer_count > 0)
@@ -1576,7 +1576,7 @@ static void render_mesh(const RenderCommand &render_command, RenderState &render
     }
 }
 
-static void render_mesh(const RenderCommand &render_command, RenderState &render_state, math::Mat4 projection_matrix, math::Mat4 view_matrix, b32 for_shadow_map, ShadowMapMatrices *shadow_map_matrices = 0)
+static void render_mesh(const RenderCommand &render_command, Renderer &renderer, RenderState &render_state, math::Mat4 projection_matrix, math::Mat4 view_matrix, b32 for_shadow_map, ShadowMapMatrices *shadow_map_matrices = 0)
 {
     Buffer buffer = render_state.buffers[render_command.mesh.buffer_handle];
     glBindVertexArray(buffer.vao);
@@ -1588,11 +1588,15 @@ static void render_mesh(const RenderCommand &render_command, RenderState &render
     {
         shader = render_state.depth_shader;
         use_shader(shader);
-        vertex_attrib_pointer(0, 3, GL_FLOAT,(6 * sizeof(GLfloat)), 0);
-        vertex_attrib_pointer(1, 3, GL_FLOAT, (6 * sizeof(GLfloat)), (void*)(3 * sizeof(GLfloat)));
     }
     else
+    {
         use_shader(shader);
+    }
+    
+    vertex_attrib_pointer(0, 3, GL_FLOAT,(8 * sizeof(GLfloat)), 0);
+    vertex_attrib_pointer(1, 3, GL_FLOAT, (8 * sizeof(GLfloat)), (void*)(3 * sizeof(GLfloat)));
+    vertex_attrib_pointer(2, 2, GL_FLOAT, (8 * sizeof(GLfloat)), (void*)(6 * sizeof(GLfloat)));
     
     math::Mat4 model_matrix(1.0f);
     model_matrix = math::scale(model_matrix, render_command.scale);
@@ -1615,12 +1619,19 @@ static void render_mesh(const RenderCommand &render_command, RenderState &render
     set_mat4_uniform(shader.program, "viewMatrix", view_matrix);
     set_mat4_uniform(shader.program, "modelMatrix", model_matrix);
     
-    glActiveTexture(GL_TEXTURE0);
-    glActiveTexture(GL_TEXTURE1);
-    
     if(!for_shadow_map)
     {
+        if(render_command.mesh.diffuse_texture != 0)
+        {
+            auto texture = render_state.texture_array[renderer.texture_data[render_command.mesh.diffuse_texture - 1].handle];
+            
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, texture.texture_handle);
+            glActiveTexture(GL_TEXTURE1);
+        }
+        
         glBindTexture(GL_TEXTURE_2D, render_state.shadow_map_buffer.shadow_map_handle);
+        
         set_mat4_uniform(shader.program, "depthModelMatrix", shadow_map_matrices->depth_model_matrix);
         set_mat4_uniform(shader.program, "depthBiasMatrix", shadow_map_matrices->depth_bias_matrix);
         set_mat4_uniform(shader.program, "depthViewMatrix", shadow_map_matrices->depth_view_matrix);
@@ -1671,6 +1682,8 @@ static void render_mesh(const RenderCommand &render_command, RenderState &render
     {
         glDrawElements(GL_TRIANGLES, buffer.index_buffer_count, GL_UNSIGNED_SHORT, (void*)0);
     }
+    
+    glActiveTexture(GL_TEXTURE0);
 }
 
 static void render_buffer(const RenderCommand& command, RenderState& render_state, math::Mat4 projection, math::Mat4 view)
@@ -1825,7 +1838,7 @@ static void register_buffers(RenderState& render_state, Renderer& renderer, Memo
 
 static void render_shadows(RenderState &render_state, Renderer &renderer, Framebuffer &framebuffer)
 {
-    //glCullFace(GL_FRONT); // KILL PETER PAN!
+    glCullFace(GL_FRONT); // KILL PETER PAN!
     glViewport(0, 0, framebuffer.shadow_map.width, framebuffer.shadow_map.height);
     glBindFramebuffer(GL_FRAMEBUFFER, framebuffer.buffer_handle);
     glClear(GL_DEPTH_BUFFER_BIT);
@@ -1839,7 +1852,7 @@ static void render_shadows(RenderState &render_state, Renderer &renderer, Frameb
         {
             case RENDER_COMMAND_MESH:
             {
-                render_mesh(command, render_state, renderer.shadow_map_matrices.depth_projection_matrix, renderer.shadow_map_matrices.depth_view_matrix, true);
+                render_mesh(command, renderer, render_state, renderer.shadow_map_matrices.depth_projection_matrix, renderer.shadow_map_matrices.depth_view_matrix, true);
             }
             break;
             default:
@@ -2000,8 +2013,7 @@ static void render_commands(RenderState &render_state, Renderer &renderer)
             break;
             case RENDER_COMMAND_MESH:
             {
-                //render_mesh(command, render_state, renderer.shadow_map_matrices.depth_projection_matrix, renderer.shadow_map_matrices.depth_view_matrix, false, &renderer.shadow_map_matrices);
-                render_mesh(command, render_state, camera.projection_matrix, camera.view_matrix, false, &renderer.shadow_map_matrices);
+                render_mesh(command, renderer, render_state, camera.projection_matrix, camera.view_matrix, false, &renderer.shadow_map_matrices);
                 
             }
             break;
