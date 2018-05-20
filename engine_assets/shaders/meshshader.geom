@@ -34,6 +34,7 @@ void main() {
 		gs_out.color = gs_in[i].color;
 		gs_out.shadowCoord = gs_in[i].shadowCoord;
 		gs_out.normal = gs_in[i].normal;
+		gs_out.uv = gs_in[i].uv;
 		gs_out.posWorld = gs_in[i].posWorld;
 		gs_out.eyeView = gs_in[i].eyeView;
 		gs_out.lightDir = gs_in[i].lightDir;

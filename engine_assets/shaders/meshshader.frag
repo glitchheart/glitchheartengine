@@ -24,8 +24,9 @@ uniform float alpha;
 uniform bool drawWireframe;
 uniform bool drawMesh;
 uniform vec4 wireframeColor;
+uniform bool hasTexture;
 
-//uniform sampler2D texture;
+uniform sampler2D diffuseTexture;
 uniform sampler2D shadowMap;
 
 float calculateShadow(vec4 fragPosLightSpace, vec3 n, vec3 lDir)
@@ -86,8 +87,16 @@ void main()
 		
 		// shadows
 		float shadow = calculateShadow(fs_in.shadowCoord, normal, lightDir);		
-		vec3 lighting = (ambient + (1.0 - shadow) * (diffuse + specular)) * col;		
-		color = vec4(lighting, 1.0f) * fs_in.color;		
+		vec3 lighting = (ambient + (1.0 - shadow) * (diffuse + specular)) * col;
+		
+		if(hasTexture) {
+			if(texture2D(diffuseTexture, fs_in.uv).a == 0.0)
+				discard;
+			else
+				color = vec4(lighting, 1.0f) * texture2D(diffuseTexture, fs_in.uv) * fs_in.color;		
+		} else {
+			color = vec4(lighting, 1.0f) * fs_in.color;		
+		}
     }
     else
     {
@@ -109,6 +118,5 @@ void main()
         {
             color = vec4(mix(wireframeColor, color, edgeFactor));
         }
-        
     }
 }

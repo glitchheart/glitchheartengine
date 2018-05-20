@@ -1621,15 +1621,22 @@ static void render_mesh(const RenderCommand &render_command, Renderer &renderer,
     
     if(!for_shadow_map)
     {
+        glUniform1i(glGetUniformLocation(shader.program, "diffuseTexture"), 0);
+        glUniform1i(glGetUniformLocation(shader.program, "shadowMap"),  1);
+        
         if(render_command.mesh.diffuse_texture != 0)
         {
             auto texture = render_state.texture_array[renderer.texture_data[render_command.mesh.diffuse_texture - 1].handle];
             
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, texture.texture_handle);
-            glActiveTexture(GL_TEXTURE1);
+            
+            set_bool_uniform(shader.program, "hasTexture", true);
         }
+        else
+            set_bool_uniform(shader.program, "hasTexture", false);
         
+        glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, render_state.shadow_map_buffer.shadow_map_handle);
         
         set_mat4_uniform(shader.program, "depthModelMatrix", shadow_map_matrices->depth_model_matrix);
@@ -1844,6 +1851,7 @@ static void render_shadows(RenderState &render_state, Renderer &renderer, Frameb
     glClear(GL_DEPTH_BUFFER_BIT);
     
     glEnable(GL_DEPTH_TEST);
+    
     for (i32 index = 0; index < renderer.command_count; index++)
     {
         const RenderCommand& command = *((RenderCommand*)renderer.commands.current_block->base + index);
@@ -1852,7 +1860,10 @@ static void render_shadows(RenderState &render_state, Renderer &renderer, Frameb
         {
             case RENDER_COMMAND_MESH:
             {
-                render_mesh(command, renderer, render_state, renderer.shadow_map_matrices.depth_projection_matrix, renderer.shadow_map_matrices.depth_view_matrix, true);
+                if(command.cast_shadows)
+                {
+                    render_mesh(command, renderer, render_state, renderer.shadow_map_matrices.depth_projection_matrix, renderer.shadow_map_matrices.depth_view_matrix, true);
+                }
             }
             break;
             default:

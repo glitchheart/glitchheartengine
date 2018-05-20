@@ -158,21 +158,21 @@ u16 plane_indices[] =
 
 r32 plane_normals[] =
 {
-    0.0f, -1.0f,  0.0f,
-    0.0f, -1.0f,  0.0f,
-    0.0f, -1.0f,  0.0f,
-    0.0f, -1.0f,  0.0f,
-    0.0f, -1.0f,  0.0f,
-    0.0f, -1.0f,  0.0f
+    0.0f, 1.0f,  0.0f,
+    0.0f, 1.0f,  0.0f,
+    0.0f, 1.0f,  0.0f,
+    0.0f, 1.0f,  0.0f,
+    0.0f, 1.0f,  0.0f,
+    0.0f, 1.0f,  0.0f
 };
 
 r32 plane_uvs[] =
 {
     0.0f, 0.0f,
     1.0f, 0.0f,
-    1.0f, 0.0f,
-    1.0f, 0.0f, 
-    0.0f, 0.0f, 
+    1.0f, 1.0f,
+    1.0f, 1.0f, 
+    0.0f, 1.0f, 
     0.0f, 0.0f
 };
 
@@ -527,6 +527,8 @@ struct MeshInfo
     
     WireframeType wireframe_type;
     math::Rgba wireframe_color;
+    
+    b32 cast_shadows;
 };
 
 struct RenderInfo
@@ -584,6 +586,8 @@ struct RenderCommand
     i32 shader_handle;
     ShaderAttribute* shader_attributes;
     i32 shader_attribute_count;
+    
+    b32 cast_shadows;
     
     union
     {
