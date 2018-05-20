@@ -35,20 +35,55 @@ static void show_mouse_cursor(RenderState& render_state, b32 show)
     }
 }
 
-void message_callback(GLenum Source,
-                      GLenum Type,
-                      GLuint Id,
-                      GLenum Severity,
-                      GLsizei Length,
-                      const GLchar* Message,
+void message_callback(GLenum source,
+                      GLenum type,
+                      GLuint id,
+                      GLenum severity,
+                      GLsizei length,
+                      const GLchar* message,
                       const void* user_param)
 {
     (void)user_param; // Silence unused warning
-    if (Type == GL_DEBUG_TYPE_ERROR)
+    
+    char *src_str;
+    
+    if (type == GL_DEBUG_TYPE_ERROR)
     {
-        debug("GL CALLBACK: %s type = 0x%x, severity = 0x%x, message = %s, source = %x, id = %ud, length %ud= \n",
-              (Type == GL_DEBUG_TYPE_ERROR ? "** GL ERROR **" : ""),
-              Type, Severity, Message, Source, Id, Length);
+        switch(source)
+        {
+            case GL_DEBUG_SOURCE_API:
+            src_str = "API";
+            break;
+            
+            case GL_DEBUG_SOURCE_WINDOW_SYSTEM:
+            src_str = "WINDOW SYSTEM";
+            break;
+            
+            case GL_DEBUG_SOURCE_SHADER_COMPILER:
+            src_str = "SHADER COMPILER";
+            break;
+            
+            case GL_DEBUG_SOURCE_THIRD_PARTY:
+            src_str = "THIRD PARTY";
+            break;
+            
+            case GL_DEBUG_SOURCE_APPLICATION:
+            src_str = "APPLICATION";
+            break;
+            
+            case GL_DEBUG_SOURCE_OTHER:
+            src_str = "UNKNOWN";
+            break;
+            
+            default:
+            src_str = "UNKNOWN";
+            break;
+        }
+        
+        debug("GL CALLBACK: %s type = 0x%x, severity = 0x%x, message = %s, source = %s, id = %ud, length %ud= \n",
+              (type == GL_DEBUG_TYPE_ERROR ? "** GL ERROR **" : ""),
+              type, severity, message, src_str, id, length);
+        
     }
 }
 
@@ -529,7 +564,7 @@ static void create_shadow_map(Framebuffer& framebuffer, Shader shader, i32 width
 
 static void create_framebuffer(RenderState& render_state, Framebuffer& framebuffer, i32 width, i32 height, Shader& shader, MemoryArena* perm_arena, r32* vertices, u32 vertices_size, u32* indices, u32 indices_size, b32 multisampled, i32 samples = 0)
 {
-    if(framebuffer.buffer_handle != 0)
+    if(framebuffer.buffer_handle == 0)
     {
         glGenFramebuffers(1, &framebuffer.buffer_handle);
     }
@@ -1787,7 +1822,7 @@ static void register_buffers(RenderState& render_state, Renderer& renderer, Memo
 
 static void render_shadows(RenderState &render_state, Renderer &renderer, Framebuffer &framebuffer)
 {
-    glCullFace(GL_FRONT); // KILL PETER PAN!
+    //glCullFace(GL_FRONT); // KILL PETER PAN!
     glViewport(0, 0, framebuffer.shadow_map.width, framebuffer.shadow_map.height);
     glBindFramebuffer(GL_FRAMEBUFFER, framebuffer.buffer_handle);
     glClear(GL_DEPTH_BUFFER_BIT);
