@@ -2120,8 +2120,6 @@ static void render(RenderState& render_state, Renderer& renderer, MemoryArena* p
     
     auto& camera = renderer.cameras[renderer.current_camera_handle];
     
-    
-    
     render_state.scale_x = 2.0f / render_state.window_width;
     render_state.scale_y = 2.0f / render_state.window_height;
     
