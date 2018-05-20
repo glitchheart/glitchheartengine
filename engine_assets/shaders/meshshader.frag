@@ -24,6 +24,7 @@ uniform bool drawWireframe;
 uniform bool drawMesh;
 uniform vec4 wireframeColor;
 
+uniform sampler2D texture;
 uniform sampler2D shadowMap;
 
 float calculateShadow(vec4 fragPosLightSpace, vec3 n, vec3 lDir)

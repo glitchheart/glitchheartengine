@@ -534,6 +534,38 @@ static void create_cube(Renderer &renderer, i32 *mesh_handle)
     create_buffers_from_mesh(renderer, mesh, 0);
 }
 
+static void create_plane(Renderer &renderer, i32 *mesh_handle)
+{
+    Mesh &mesh = renderer.meshes[renderer.mesh_count++];
+    mesh = {};
+    mesh.vertices = push_array(&renderer.mesh_arena, sizeof(plane_vertices) / sizeof(r32) / 3, Vertex);
+    mesh.faces = push_array(&renderer.mesh_arena, sizeof(plane_indices) / sizeof(u16) / 3, Face);
+    
+    mesh.vertex_count = sizeof(plane_vertices) / sizeof(r32) / 3;
+    
+    for(i32 i = 0; i < mesh.vertex_count; i++)
+    {
+        Vertex &vertex = mesh.vertices[i];
+        vertex.position = math::Vec3(plane_vertices[i * 3], plane_vertices[i * 3 + 1], plane_vertices[i * 3 + 2]);
+        vertex.normal = math::Vec3(plane_normals[i * 3], plane_normals[i * 3 + 1], plane_normals[i * 3 + 2]);
+    }
+    
+    mesh.face_count = sizeof(plane_indices) / sizeof(u16) / 3;
+    
+    for(i32 i = 0; i < mesh.face_count; i++)
+    {
+        Face &face = mesh.faces[i];
+        
+        face.indices[0] = plane_indices[i * 3];
+        face.indices[1] = plane_indices[i * 3 + 1];
+        face.indices[2] = plane_indices[i * 3 + 2];
+    }
+    
+    *mesh_handle = renderer.mesh_count - 1;
+    
+    create_buffers_from_mesh(renderer, mesh, 0);
+}
+
 static void push_mesh(Renderer &renderer, MeshInfo mesh_info)
 {
     RenderCommand *render_command = push_next_command(renderer, false);

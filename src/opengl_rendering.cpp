@@ -1615,6 +1615,9 @@ static void render_mesh(const RenderCommand &render_command, RenderState &render
     set_mat4_uniform(shader.program, "viewMatrix", view_matrix);
     set_mat4_uniform(shader.program, "modelMatrix", model_matrix);
     
+    glActiveTexture(GL_TEXTURE0);
+    glActiveTexture(GL_TEXTURE1);
+    
     if(!for_shadow_map)
     {
         glBindTexture(GL_TEXTURE_2D, render_state.shadow_map_buffer.shadow_map_handle);
