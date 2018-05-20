@@ -7,6 +7,7 @@ in VS_OUT
 	vec4 color;
 	vec4 shadowCoord;
 	vec3 normal;
+	vec2 uv;
 	vec3 posWorld;
 	vec3 eyeView;
 	vec3 lightDir;
@@ -17,6 +18,7 @@ out GS_OUT
 	vec4 color;
 	vec4 shadowCoord;
 	vec3 normal;
+	vec2 uv;
 	vec3 posWorld;
 	vec3 eyeView;
 	vec3 lightDir;

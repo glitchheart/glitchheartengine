@@ -406,9 +406,9 @@ static void push_buffer(Renderer& renderer, i32 buffer_handle, i32 texture_handl
     render_command->shader_attribute_count = 0;
 }
 
-static void generate_vertex_buffer(r32* vertex_buffer, Vertex* vertices, i32 vertex_count)
+static void generate_vertex_buffer(r32* vertex_buffer, Vertex* vertices, i32 vertex_count, i32 vertex_size, b32 has_normals, b32 has_uvs)
 {
-    i32 vertex_data_count = 6;
+    i32 vertex_data_count = vertex_size;
     
     for(i32 i = 0; i < vertex_count; i++)
     {
@@ -417,9 +417,19 @@ static void generate_vertex_buffer(r32* vertex_buffer, Vertex* vertices, i32 ver
         vertex_buffer[base_index] = vertex.position.x;
         vertex_buffer[base_index + 1] = vertex.position.y;
         vertex_buffer[base_index + 2] = vertex.position.z;
-        vertex_buffer[base_index + 3] = vertex.normal.x;
-        vertex_buffer[base_index + 4] = vertex.normal.y;
-        vertex_buffer[base_index + 5] = vertex.normal.z;
+        
+        if(has_normals)
+        {
+            vertex_buffer[base_index + 3] = vertex.normal.x;
+            vertex_buffer[base_index + 4] = vertex.normal.y;
+            vertex_buffer[base_index + 5] = vertex.normal.z;
+        }
+        
+        if(has_uvs)
+        {
+            vertex_buffer[base_index + 6] = vertex.uv.x;
+            vertex_buffer[base_index + 7] = vertex.uv.y;
+        }
     }
 }
 
@@ -437,14 +447,27 @@ static void generate_index_buffer(u16* index_buffer, Face* faces, i32 face_count
     }
 }
 
-static void create_buffers_from_mesh(Renderer &renderer, Mesh &mesh, u64 vertex_data_flags)
+static void create_buffers_from_mesh(Renderer &renderer, Mesh &mesh, u64 vertex_data_flags, b32 has_normals, b32 has_uvs)
 {
+    i32 vertex_size = 3;
+    
     BufferData data = {};
-    data.has_normals = true;
-    i32 vertex_size = 6;
+    
+    if(has_normals)
+    {
+        data.has_normals = true;
+        vertex_size += 3;
+    }
+    
+    if(has_uvs)
+    {
+        data.has_uvs = true;
+        vertex_size += 2;
+    }
+    
     data.vertex_buffer_size = mesh.vertex_count * vertex_size * (i32)sizeof(r32);
     data.vertex_buffer = push_size(&renderer.mesh_arena, data.vertex_buffer_size, r32);
-    generate_vertex_buffer(data.vertex_buffer, mesh.vertices, mesh.vertex_count);
+    generate_vertex_buffer(data.vertex_buffer, mesh.vertices, mesh.vertex_count, vertex_size, has_normals, has_uvs);
     
     i32 index_count = mesh.face_count * 3;
     data.index_buffer_size = index_count * (i32)sizeof(u16);
@@ -499,7 +522,7 @@ static void create_tetrahedron(Renderer &renderer, i32 *mesh_handle)
     
     *mesh_handle = renderer.mesh_count - 1;
     
-    create_buffers_from_mesh(renderer, mesh, 0);
+    create_buffers_from_mesh(renderer, mesh, 0, true, false);
 }
 
 static void create_cube(Renderer &renderer, i32 *mesh_handle)
@@ -531,7 +554,7 @@ static void create_cube(Renderer &renderer, i32 *mesh_handle)
     
     *mesh_handle = renderer.mesh_count - 1;
     
-    create_buffers_from_mesh(renderer, mesh, 0);
+    create_buffers_from_mesh(renderer, mesh, 0, true, true);
 }
 
 static void create_plane(Renderer &renderer, i32 *mesh_handle)
@@ -548,6 +571,7 @@ static void create_plane(Renderer &renderer, i32 *mesh_handle)
         Vertex &vertex = mesh.vertices[i];
         vertex.position = math::Vec3(plane_vertices[i * 3], plane_vertices[i * 3 + 1], plane_vertices[i * 3 + 2]);
         vertex.normal = math::Vec3(plane_normals[i * 3], plane_normals[i * 3 + 1], plane_normals[i * 3 + 2]);
+        vertex.uv = math::Vec2(plane_uvs[i * 2], plane_uvs[i * 2 + 1]);
     }
     
     mesh.face_count = sizeof(plane_indices) / sizeof(u16) / 3;
@@ -563,7 +587,7 @@ static void create_plane(Renderer &renderer, i32 *mesh_handle)
     
     *mesh_handle = renderer.mesh_count - 1;
     
-    create_buffers_from_mesh(renderer, mesh, 0);
+    create_buffers_from_mesh(renderer, mesh, 0, true, true);
 }
 
 static void push_mesh(Renderer &renderer, MeshInfo mesh_info)

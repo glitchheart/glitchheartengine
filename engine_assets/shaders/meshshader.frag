@@ -5,7 +5,8 @@ in GS_OUT
     vec4 color;
 	vec4 shadowCoord;
     vec3 normal;
-    vec3 posWorld;
+    vec2 uv;
+	vec3 posWorld;
     vec3 eyeView;
     vec3 lightDir;
     
@@ -24,7 +25,7 @@ uniform bool drawWireframe;
 uniform bool drawMesh;
 uniform vec4 wireframeColor;
 
-uniform sampler2D texture;
+//uniform sampler2D texture;
 uniform sampler2D shadowMap;
 
 float calculateShadow(vec4 fragPosLightSpace, vec3 n, vec3 lDir)
@@ -45,7 +46,7 @@ float calculateShadow(vec4 fragPosLightSpace, vec3 n, vec3 lDir)
 	vec2 texelSize = 1.0 / textureSize(shadowMap, 0);
 	
 	// percentage-closer filtering
-	// sampling surrounding texels to get smooter shadows
+	// sampling surrounding texels to get smoother shadows
 	for(int x = -1; x <= 1; ++x)
 	{
     	for(int y = -1; y <= 1; ++y)
