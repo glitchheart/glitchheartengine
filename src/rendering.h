@@ -140,6 +140,32 @@ struct VertexInfo
     math::Rgba color;
 };
 
+r32 plane_vertices[] =
+{
+    0.0f, 0.0f, 0.0f,
+    1.0f, 0.0f, 0.0f,
+    1.0f, 0.0f,  1.0f,  
+    1.0f, 0.0f,  1.0f,  
+    0.0f, 0.0f,  1.0f, 
+    0.0f, 0.0f, 0.0f
+};
+
+u16 plane_indices[] = 
+{
+    0, 1, 2,
+    3, 4, 5
+};
+
+r32 plane_normals[] =
+{
+    0.0f, -1.0f,  0.0f,
+    0.0f, -1.0f,  0.0f,
+    0.0f, -1.0f,  0.0f,
+    0.0f, -1.0f,  0.0f,
+    0.0f, -1.0f,  0.0f,
+    0.0f, -1.0f,  0.0f
+};
+
 r32 cube_normals[] =
 {
     0.0f,  0.0f, -1.0f,
