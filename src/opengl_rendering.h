@@ -196,12 +196,21 @@ struct RenderState
         0.0f, 0.0f
     };
     
+    GLfloat texture_quad_vertices[16] =
+    {
+        0.0f, 1.0f, 0.0f, 1.0f,
+        1.0f, 1.0f, 1.0f, 1.0f,
+        1.0f, 0.0f, 1.0f, 0.0f,
+        0.0f, 0.0f, 0.0f, 0.0f
+    };
+    
     GLuint quad_indices[6] =
     {
         0, 1, 2, 0, 2, 3
     };
     
     GLuint texture_quad_vbo;
+    GLuint texture_quad_index_buffer;
     GLuint quad_index_buffer;
     
     GLuint line_vbo;
