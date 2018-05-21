@@ -652,6 +652,7 @@ static void setup_quad(RenderState& render_state, MemoryArena* perm_arena)
     glBindVertexArray(render_state.texture_quad_vao);
     glGenBuffers(1, &render_state.texture_quad_vbo);
     glBindBuffer(GL_ARRAY_BUFFER, render_state.texture_quad_vbo);
+    glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)render_state.quad_vertices_size, render_state.quad_vertices, GL_DYNAMIC_DRAW);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, render_state.quad_index_buffer);
     
     render_state.texture_quad_shader.type = SHADER_TEXTURE_QUAD;
