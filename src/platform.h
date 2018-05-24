@@ -101,7 +101,7 @@ struct ConfigData
     i32 screen_height;
     i32 scale_from_width;
     i32 scale_from_height;
-    WindowMode fullscreen;
+    WindowMode window_mode;
     r32 contrast;
     r32 brightness;
     b32 muted;

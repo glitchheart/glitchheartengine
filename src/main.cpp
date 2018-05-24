@@ -199,9 +199,9 @@ inline void load_config(const char* file_path, ConfigData* config_data, MemoryAr
             {
                 sscanf(line_buffer, "brightness %f", &config_data->brightness);
             }
-            else if(starts_with(line_buffer, "fullscreen"))
+            else if(starts_with(line_buffer, "window_mode"))
             {
-                sscanf(line_buffer, "fullscreen %d", &config_data->fullscreen);
+                sscanf(line_buffer, "window_mode %d", &config_data->window_mode);
             } 
             else if(starts_with(line_buffer, "muted"))
             {
