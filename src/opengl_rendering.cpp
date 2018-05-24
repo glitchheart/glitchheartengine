@@ -823,7 +823,7 @@ static void initialize_opengl(RenderState& render_state, Renderer& renderer, Con
     render_state.contrast = config_data->contrast;
     render_state.brightness = config_data->brightness;
     
-    create_open_gl_window(render_state, config_data->fullscreen, config_data->title, config_data->screen_width, config_data->screen_height);
+    create_open_gl_window(render_state, config_data->window_mode, config_data->title, config_data->screen_width, config_data->screen_height);
     renderer.window_mode = render_state.window_mode;
     
     if (!render_state.window)
@@ -831,7 +831,7 @@ static void initialize_opengl(RenderState& render_state, Renderer& renderer, Con
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
         
-        create_open_gl_window(render_state, config_data->fullscreen, config_data->title, config_data->screen_width, config_data->screen_height);
+        create_open_gl_window(render_state, config_data->window_mode, config_data->title, config_data->screen_width, config_data->screen_height);
         renderer.window_mode = render_state.window_mode;
         
         if(!render_state.window)
@@ -2100,7 +2100,7 @@ static void render_commands(RenderState &render_state, Renderer &renderer)
     }
     
     renderer.ui_command_count = 0;
-    clear(&renderer.commands);
+    clear(&renderer.ui_commands);
     
 }
 
