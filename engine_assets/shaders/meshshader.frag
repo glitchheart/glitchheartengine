@@ -90,10 +90,10 @@ void main()
 		vec3 lighting = (ambient + (1.0 - shadow) * (diffuse + specular)) * col;
 		
 		if(hasTexture) {
-			if(texture2D(diffuseTexture, fs_in.uv).a == 0.0)
+			if(texture(diffuseTexture, fs_in.uv).a == 0.0)
 				discard;
 			else
-				color = vec4(lighting, 1.0f) * texture2D(diffuseTexture, fs_in.uv) * fs_in.color;		
+				color = vec4(lighting, 1.0f) * texture(diffuseTexture, fs_in.uv) * fs_in.color;		
 		} else {
 			color = vec4(lighting, 1.0f) * fs_in.color;		
 		}
