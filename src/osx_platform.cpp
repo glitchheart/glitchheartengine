@@ -254,35 +254,35 @@ static PLATFORM_TELL_FILE(osx_tell_file)
 PLATFORM_GET_ALL_FILES_WITH_EXTENSION(osx_get_all_files_with_extension)
 {
     struct dirent *de;
- 
+    
     DIR *dr = opendir(directory_path);
- 
+    
     if (dr == NULL)
     {
         printf("Could not open current directory" );
     }
- 
+    
     while ((de = readdir(dr)) != NULL)
     {
         if(de->d_type == DT_REG)
         {
             const char *ext = strrchr(de->d_name,'.');
-
+            
             if((ext) && (ext != de->d_name))
             {
-               if(strcmp((++ext), extension) == 0)
-               {
+                if(strcmp((++ext), extension) == 0)
+                {
                     char* concat_str = concat(directory_path, de->d_name, arena);
                     char* file_name = strtok(de->d_name, ".");
                     
                     strcpy(directory_data->file_paths[directory_data->files_length], concat_str);
                     strcpy(directory_data->file_names[directory_data->files_length], file_name);
                     directory_data->files_length++;
-               }
+                }
             }
         }
     }
-        
+    
     closedir(dr);    
 }
 
@@ -290,28 +290,28 @@ PLATFORM_GET_ALL_DIRECTORIES(osx_get_all_directories)
 {
     char ** dir_buf = nullptr;
     struct dirent *de;
- 
+    
     DIR *dr = opendir(path);
- 
+    
     if (dr == NULL)
     {
         printf("Could not open current directory" );
         return nullptr;
     }
- 
+    
     while ((de = readdir(dr)) != NULL)
     {
         if(de->d_type & DT_DIR)
         {
             if (strcmp(de->d_name, ".") == 0 || strcmp(de->d_name, "..") == 0)
                 continue;
-
+            
             char *dir_name = (char *)malloc(strlen(de->d_name) + 1);
             strcpy(dir_name, de->d_name);
             buf_push(dir_buf, dir_name);
         }
     }
- 
+    
     closedir(dr);    
     
     return dir_buf;

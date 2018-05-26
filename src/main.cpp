@@ -73,6 +73,7 @@ static void load_game_code(GameCode& game_code, char* game_library_path, char* t
     if (!game_code.is_valid)
     {
         debug("Invalid game code\n");
+        
         game_code.update = update_stub;
     }
 }
@@ -248,7 +249,7 @@ int main(int argc, char** args)
     
     PlatformState* platform_state = bootstrap_push_struct(PlatformState, perm_arena);
     game_memory.log_state = push_struct(&platform_state->perm_arena, LogState);
-
+    
 #if !_WIN32
     // If we're on an UNIX system we have to check if the executable was run from the terminal or not.
     // If the executable was double-clicked, we have to change the current directory for relative paths to work as expected
@@ -256,7 +257,7 @@ int main(int argc, char** args)
     if(!starts_with(relative_path, "./"))
     {
         i32 last_index = -1;
-
+        
         for(i32 index = 0; index <= strlen(relative_path); index++)
         {
             char c = relative_path[index];
@@ -265,7 +266,7 @@ int main(int argc, char** args)
                 last_index = index;
             }
         }
-
+        
         if(last_index != -1)
         {
             size_t relative_path_length = strlen(relative_path);
