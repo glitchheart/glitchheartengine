@@ -22,7 +22,7 @@ inline PLATFORM_FILE_EXISTS(osx_file_exists)
     return (stat(file_path,&buffer) == 0);
 }
 
-static b32 copy_file(const char* src, const char* dst, b32 dont_overwrite, MemoryArena* arena = nullptr, b32 binary = false)
+static b32 copy_file(const char* src, const char* dst, b32 dont_overwrite, MemoryArena* arena = nullptr, b32 binary = true)
 {
     FILE* in;
     FILE* out;
@@ -64,7 +64,7 @@ static b32 copy_file(const char* src, const char* dst, b32 dont_overwrite, Memor
     unsigned char buff[8192];
     do
     {
-        n= fread(buff, 1, sizeof(buff), in);
+        n = fread(buff, 1, sizeof(buff), in);
         if(n)
         {
             m = fwrite(buff, 1, n, out);
@@ -77,7 +77,7 @@ static b32 copy_file(const char* src, const char* dst, b32 dont_overwrite, Memor
     while ((n > 0) && (n == m));
     if(m)
     {
-        printf("Copy\n");
+        //printf("Copy\n");
     }
     
     fclose(out);
@@ -101,10 +101,9 @@ static time_t get_last_write_time(const char* file_path)
     return 0;
 }
 
-// @Incomplete:(Niels): Flags?
 PLATFORM_LOAD_LIBRARY(osx_load_library)
 {
-    return dlopen(path, RTLD_LAZY);
+    return dlopen(path, RTLD_NOW);
 }
 
 PLATFORM_FREE_LIBRARY(osx_free_library)
