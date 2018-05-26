@@ -273,7 +273,6 @@ PLATFORM_GET_ALL_FILES_WITH_EXTENSION(osx_get_all_files_with_extension)
             {
                if(strcmp((++ext), extension) == 0)
                {
-                    printf("%s\n", de->d_name);
                     char* concat_str = concat(directory_path, de->d_name, arena);
                     char* file_name = strtok(de->d_name, ".");
                     
@@ -305,6 +304,9 @@ PLATFORM_GET_ALL_DIRECTORIES(osx_get_all_directories)
     {
         if(de->d_type & DT_DIR)
         {
+            if (strcmp(de->d_name, ".") == 0 || strcmp(de->d_name, "..") == 0)
+                continue;
+
             char *dir_name = (char *)malloc(strlen(de->d_name) + 1);
             strcpy(dir_name, de->d_name);
             buf_push(dir_buf, dir_name);
