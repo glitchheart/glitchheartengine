@@ -230,13 +230,12 @@ inline void load_config(const char* file_path, ConfigData* config_data, MemoryAr
 }
 
 int main(int argc, char** args)
-{
+{    
     GameMemory game_memory = {};
     
     game_memory.should_reload = true;
     
     MemoryArena game_temp_arena = {};
-    
     game_memory.temp_arena = &game_temp_arena;
     
     game_memory.exit_game = false;
@@ -247,6 +246,38 @@ int main(int argc, char** args)
     
     PlatformState* platform_state = bootstrap_push_struct(PlatformState, perm_arena);
     game_memory.log_state = push_struct(&platform_state->perm_arena, LogState);
+
+#if !_WIN32
+    // If we're on an UNIX system we have to check if the executable was run from the terminal or not.
+    // If the executable was double-clicked, we have to change the current directory for relative paths to work as expected
+    char *relative_path = args[0];
+    if(!starts_with(relative_path, "./"))
+    {
+        i32 last_index = -1;
+
+        for(i32 index = 0; index <= strlen(relative_path); index++)
+        {
+            char c = relative_path[index];
+            if(c == '/')
+            {
+                last_index = index;
+            }
+        }
+
+        if(last_index != -1)
+        {
+            size_t relative_path_length = strlen(relative_path);
+            size_t diff = strlen(relative_path) - last_index;
+            size_t new_path_length = strlen(relative_path) - diff + 1;
+            
+            auto temp_memory = begin_temporary_memory(game_memory.temp_arena);
+            char * new_dir = push_string(temp_memory.arena, new_path_length);
+            strncpy(new_dir, relative_path, new_path_length);
+            chdir(new_dir);
+            end_temporary_memory(temp_memory);
+        }
+    }
+#endif
     
     log_state = game_memory.log_state;
     init_log(L_FLAG_FILE, concat("../log_", "", &platform_state->perm_arena));
@@ -341,7 +372,7 @@ int main(int argc, char** args)
     {
         //calculate deltatime
         current_frame = get_time();
-        delta_time = MIN(current_frame - last_frame, 0.1);
+        delta_time = MIN(current_frame - last_frame, 1.0 / 60.0);
         last_frame = current_frame;
         
         if(game_memory.exit_game)
