@@ -67,6 +67,8 @@ static void load_game_code(GameCode& game_code, char* game_library_path, char* t
         game_code.update = (Update *)platform.load_symbol(game_code.game_code_library, "update");
         game_code.is_valid = game_code.update != 0;
     }
+    else
+        debug("The game library file could not be loaded\n");
     
     if (!game_code.is_valid)
     {
