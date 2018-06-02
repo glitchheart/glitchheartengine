@@ -848,7 +848,7 @@ static void initialize_opengl(RenderState& render_state, Renderer& renderer, Con
     glfwMakeContextCurrent(render_state.window);
     gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
     
-    glfwSwapInterval(0);
+    glfwSwapInterval(1);
     
     glfwGetFramebufferSize(render_state.window, &render_state.window_width, &render_state.window_height);
     glViewport(0, 0, render_state.window_width, render_state.window_height);
@@ -2115,7 +2115,7 @@ static void render(RenderState& render_state, Renderer& renderer, MemoryArena* p
         
         glfwMakeContextCurrent(render_state.window);
         
-        glfwSwapInterval(0);
+        glfwSwapInterval(1);
         
         glfwGetFramebufferSize(render_state.window, &render_state.window_width, &render_state.window_height);
         glViewport(0, 0, render_state.window_width, render_state.window_height);
