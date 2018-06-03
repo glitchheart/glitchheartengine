@@ -700,122 +700,74 @@ static b32 is_eof(ChunkFormat& format)
     return strcmp(format.format, "EOF") == 0;
 }
 
-static void load_glim_model(Renderer& renderer, char* file_path, Model* model, MemoryArena* arena)
+static void load_obj(Renderer &renderer, char *file_path, i32 *mesh_handle)
 {
-    // NOTE(Niels): Not implemented yet
-    assert(false);
-    /*ModelHeader header = {};
+    FILE *file = fopen(file_path, "r");
     
-    FILE *file = fopen(file_path, "rb");
+    Vertex *vertices = nullptr;
+    Face *faces = nullptr;
+    
+    i32 vert_index = 0;
+    i32 normal_index = 0;
+    i32 uv_index = 0;
+    
     if(file)
     {
-        fread(&header, sizeof(ModelHeader), 1, file);
+        char buffer[256];
         
-        if(strcmp(header.version, "1.6") != 0)
+        while((fgets(buffer, sizeof(buffer), file) != NULL))
         {
-            // @Incomplete: Missing
-            //err("Wrong file version. Expected version 1.6");
-            return;
-        }
-        
-        ModelData model_data;
-        fread(&model_data, sizeof(ModelData), 1, file);
-        fread(model->meshes, (size_t)model_data.mesh_chunk_size, 1, file);
-        
-        model->type = (ModelType)model_data.model_type;
-        model->mesh_count = model_data.num_meshes;
-        
-        r32* vertex_buffer = push_temp_size(model_data.vertex_buffer_chunk_size, r32);
-        fread(vertex_buffer, (size_t)model_data.vertex_buffer_chunk_size, 1, file);
-        u32* index_buffer = push_temp_size(model_data.index_buffer_chunk_size, u32);
-        fread(index_buffer, (size_t)model_data.index_buffer_chunk_size, 1, file);
-        
-        model->material_count = model_data.num_materials;
-        if(model_data.num_materials > 0)
-            fread(&model->materials, (size_t)model_data.material_chunk_size, 1, file);
-            
-        model->global_inverse_transform = model_data.global_inverse_transform;
-        
-        model->bone_count = model_data.num_bones;
-        if(model_data.num_bones > 0)
-        {
-            model->bones = push_array(&renderer.animation_arena, model_data.num_bones, Bone);
-            model->current_poses = push_array(&renderer.animation_arena, model_data.num_bones, math::Mat4);
-            fread(model->bones, (size_t)model_data.bone_chunk_size, 1, file);
-        }
-        
-        BufferData data = {};
-        data.skinned = model->bone_count > 0;
-        copy_temp(data.vertex_buffer, vertex_buffer, (size_t)model_data.vertex_buffer_chunk_size, r32);
-        copy_temp(data.index_buffer, index_buffer, (size_t)model_data.index_buffer_chunk_size, u32);
-        
-        data.has_normals = model_data.has_normals;
-        data.has_uvs = model_data.has_uvs;
-        
-        data.vertex_buffer_size = model_data.vertex_buffer_chunk_size;
-        data.index_buffer_size = model_data.index_buffer_chunk_size;
-        data.index_buffer_count = model_data.num_indices;
-        
-        model->buffer_handle = renderer.buffer_count++;
-        
-        model->animation_state.playing = false;
-        model->animation_state.loop = false;
-        model->animation_state.current_time = 0.0f;
-        
-        renderer.buffers[renderer.buffer_count - 1] = data;
-        
-        // Load animations
-        AnimationHeader a_header;
-        fread(&a_header, sizeof(AnimationHeader), 1, file);
-        
-        model->animation_count = a_header.num_animations;
-        model->animations = a_header.num_animations > 0 ? push_array(&renderer.animation_arena, a_header.num_animations, SkeletalAnimation) : 0;
-        
-        for(i32 index = 0; index < model->animation_count; index++)
-        {
-            AnimationChannelHeader ac_header;
-            fread(&ac_header, sizeof(AnimationChannelHeader), 1, file);
-            
-            SkeletalAnimation* animation = &model->animations[index];
-            animation->duration = ac_header.duration;
-            animation->num_bone_channels = ac_header.num_bone_channels;
-            
-            animation->bone_channels = push_array(&renderer.animation_arena, animation->num_bone_channels, BoneChannel);
-            
-            for(i32 bone_channel_index = 0; bone_channel_index < animation->num_bone_channels; bone_channel_index++)
+            if(starts_with(buffer, "g")) // we're starting with new geometry
             {
-                BoneAnimationHeader ba_header;
-                fread(&ba_header, sizeof(BoneAnimationHeader), 1, file);
+            }
+            else if(starts_with(buffer, "v ")) // vertex
+            {
+                Vertex vertex = {};
+                sscanf(buffer, "v %f %f %f", &vertex.position.x, &vertex.position.y, &vertex.position.z);
+                buf_push(vertices, vertex);
+                vert_index++;
+            }
+            else if(starts_with(buffer, "vn")) // vertex normal
+            {
+                Vertex &vertex = vertices[uv_index];
+                sscanf(buffer, "vn %f %f %f", &vertex.normal.x, &vertex.normal.y, &vertex.normal.z);
+                uv_index++;
+            }
+            else if(starts_with(buffer, "vt")) // vertex uv
+            {
+            }
+            else if(starts_with(buffer, "f")) // face
+            {
+                Face face = {};
+                i32 dummy_arg = 0;
+                sscanf(buffer, "f %d/%d/%d %d/%d/%d %d/%d/%d", &face.indices[0], &dummy_arg, &dummy_arg, &face.indices[1], &dummy_arg, &dummy_arg, &face.indices[2], &dummy_arg, &dummy_arg);
                 
-                BoneChannel* bone_channel = &animation->bone_channels[bone_channel_index];
-                bone_channel->bone_index = ba_header.bone_index;
+                // The obj-format was made by geniuses and therefore the indices are not 0-indexed. Such wow.
+                face.indices[0] -= 1;
+                face.indices[1] -= 1;
+                face.indices[2] -= 1;
                 
-                bone_channel->position_keys.num_keys = ba_header.num_position_channels;
-                bone_channel->position_keys.time_stamps = push_array(&renderer.animation_arena, bone_channel->position_keys.num_keys, r32);
-                bone_channel->position_keys.values = push_array(&renderer.animation_arena, bone_channel->position_keys.num_keys, math::Vec3);
-                fread(bone_channel->position_keys.time_stamps, sizeof(r32) * bone_channel->position_keys.num_keys, 1, file);
-                fread(bone_channel->position_keys.values, sizeof(math::Vec3) * bone_channel->position_keys.num_keys, 1, file);
-                
-                bone_channel->rotation_keys.num_keys = ba_header.num_rotation_channels;
-                bone_channel->rotation_keys.time_stamps = push_array(&renderer.animation_arena, bone_channel->rotation_keys.num_keys, r32);
-                bone_channel->rotation_keys.values = push_array(&renderer.animation_arena, bone_channel->rotation_keys.num_keys, math::Quat);
-                fread(bone_channel->rotation_keys.time_stamps, sizeof(r32) * bone_channel->rotation_keys.num_keys, 1, file);
-                fread(bone_channel->rotation_keys.values, sizeof(math::Quat) * bone_channel->rotation_keys.num_keys, 1, file);
-                
-                bone_channel->scaling_keys.num_keys = ba_header.num_scaling_channels;
-                bone_channel->scaling_keys.time_stamps = push_array(&renderer.animation_arena, bone_channel->scaling_keys.num_keys, r32);
-                bone_channel->scaling_keys.values = push_array(&renderer.animation_arena, bone_channel->scaling_keys.num_keys, math::Vec3);
-                fread(bone_channel->scaling_keys.time_stamps, sizeof(r32) * bone_channel->scaling_keys.num_keys, 1, file);
-                fread(bone_channel->scaling_keys.values, sizeof(math::Vec3) * bone_channel->scaling_keys.num_keys, 1, file);
+                buf_push(faces, face);
             }
         }
-        
         fclose(file);
     }
-    else
-    {
-        printf("Model file not found: %s", file_path);
-    }*/
+    
+    Mesh &mesh = renderer.meshes[renderer.mesh_count++];
+    mesh = {};
+    
+    mesh.vertices = push_array(&renderer.mesh_arena, buf_len(vertices), Vertex);
+    mesh.faces = push_array(&renderer.mesh_arena, buf_len(faces), Face);
+    mesh.vertex_count = (i32)buf_len(vertices);
+    mesh.face_count = (i32)buf_len(faces);
+    
+    memcpy(mesh.vertices, vertices, mesh.vertex_count * sizeof(Vertex));
+    memcpy(mesh.faces, faces, mesh.face_count * sizeof(Face));
+    buf_free(vertices);
+    buf_free(faces);
+    
+    *mesh_handle = renderer.mesh_count - 1;
+    create_buffers_from_mesh(renderer, mesh, 0, true, true);
 }
 
 static void add_particle_system(Renderer& renderer, math::Vec3 position, i32 texture_handle, r32 rate, r32 speed, i32* handle)

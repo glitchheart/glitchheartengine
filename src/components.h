@@ -251,6 +251,8 @@ ComponentGroup _begin_component_group_block(ComponentController &controller, i32
                         buf_push(type_buffer, ((LightingComponent*)controller.lighting_components.components)[controller.entity_mappings[entity_handle].component_handles[type]]);
                     }
                     break;
+                    default:
+                    break;
                 }
             }
         }
@@ -322,7 +324,7 @@ void component_test()
     added_t_comp = add_component(controller, 1, TransformComponent);
     added_t_comp->position = math::Vec3(1.0f, 5.0f, 300.0f);
     added_t_comp->rotation = math::Vec3(45.0f, 0.0f, 0.0f);
-    MeshRendererComponent *added_mesh_comp = add_component(controller, 0, MeshRendererComponent);
+    //MeshRendererComponent *added_mesh_comp = add_component(controller, 0, MeshRendererComponent);
     
     auto group_block = begin_component_group_block(controller, CP_TRANSFORM, CP_MESH_RENDERER);
     
