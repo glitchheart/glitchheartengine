@@ -327,7 +327,6 @@ r32 tetrahedron_normals[] =
 
 struct Vertex
 {
-    
     math::Vec3 position;
     math::Vec2 uv;
     math::Vec3 normal;
