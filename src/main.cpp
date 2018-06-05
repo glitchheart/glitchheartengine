@@ -44,6 +44,7 @@ static MemoryState memory_state;
 #include "fmod_sound.h"
 #include "fmod_sound.cpp"
 #include "filehandling.h"
+#include "dlfcn.h"
 
 static InputController input_controller;
 
@@ -73,7 +74,15 @@ static void load_game_code(GameCode& game_code, char* game_library_path, char* t
     if (!game_code.is_valid)
     {
         debug("Invalid game code\n");
-        
+
+        // ONLY UNIX
+        char *err_str;
+        err_str = dlerror();
+        if(err_str)
+        {
+            debug(err_str);
+        }
+
         game_code.update = update_stub;
     }
 }
@@ -375,7 +384,7 @@ int main(int argc, char** args)
     {
         //calculate deltatime
         current_frame = get_time();
-        delta_time = MIN(current_frame - last_frame, 1.0 / 60.0);
+        delta_time = MIN(current_frame - last_frame, 1.0 / 30.0);
         last_frame = current_frame;
         
         if(game_memory.exit_game)
