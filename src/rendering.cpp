@@ -739,8 +739,8 @@ static void load_obj(Renderer &renderer, char *file_path, i32 *mesh_handle)
             else if(starts_with(buffer, "f")) // face
             {
                 Face face = {};
-                i32 dummy_arg = 0;
-                sscanf(buffer, "f %d/%d/%d %d/%d/%d %d/%d/%d", &face.indices[0], &dummy_arg, &dummy_arg, &face.indices[1], &dummy_arg, &dummy_arg, &face.indices[2], &dummy_arg, &dummy_arg);
+                i16 dummy_arg = 0;
+                sscanf(buffer, "f %hd/%hd/%hd %hd/%hd/%hd %hd/%hd/%hd", &face.indices[0], &dummy_arg, &dummy_arg, &face.indices[1], &dummy_arg, &dummy_arg, &face.indices[2], &dummy_arg, &dummy_arg);
                 
                 // The obj-format was made by geniuses and therefore the indices are not 0-indexed. Such wow.
                 face.indices[0] -= 1;

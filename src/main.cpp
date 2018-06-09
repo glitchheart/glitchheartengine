@@ -44,7 +44,11 @@ static MemoryState memory_state;
 #include "fmod_sound.h"
 #include "fmod_sound.cpp"
 #include "filehandling.h"
+
+#if defined(__linux) || defined(__APPLE__)
 #include "dlfcn.h"
+#include "linux_platform.cpp"
+#endif
 
 static InputController input_controller;
 
@@ -74,15 +78,17 @@ static void load_game_code(GameCode& game_code, char* game_library_path, char* t
     if (!game_code.is_valid)
     {
         debug("Invalid game code\n");
-
+        
         // ONLY UNIX
+#if defined(__linux) || defined(__APPLE__)
         char *err_str;
         err_str = dlerror();
         if(err_str)
         {
             debug(err_str);
         }
-
+#endif
+        
         game_code.update = update_stub;
     }
 }
