@@ -713,6 +713,9 @@ static void render_setup(RenderState *render_state, MemoryArena* perm_arena)
     load_shader(shader_paths[SHADER_STANDARD_FONT], &render_state->standard_font_shader, perm_arena);
     render_state->mesh_shader.type = SHADER_MESH;
     load_shader(shader_paths[SHADER_MESH], &render_state->mesh_shader, perm_arena);
+    
+    render_state->total_delta = 0.0f;
+    render_state->frame_delta = 0.0f;
 }
 
 static GLuint load_texture(texture_data& data, Texture* texture)
@@ -1454,60 +1457,60 @@ static void render_quad(const RenderCommand& command, RenderState& render_state,
 /*
 static void render_model(const RenderCommand& command, RenderState& render_state, math::Mat4 projection, math::Mat4 view)
 {
-    Buffer buffer = render_state.buffers[command.model.buffer_handle];
-    glBindVertexArray(buffer.vao);
-    
-    for (i32 mesh_index = 0; mesh_index < command.model.mesh_count; mesh_index++)
-    {
-        MeshData mesh_data = command.model.meshes[mesh_index];
-        Material material = command.model.materials[mesh_data.material_index];
-        
-        if (material.diffuse_texture.has_data)
-        {
-            Texture texture = render_state.texture_array[material.diffuse_texture.texture_handle];
-            if (render_state.bound_texture != texture.texture_handle)
-            {
-                glBindTexture(GL_TEXTURE_2D, texture.texture_handle);
-                render_state.bound_texture = texture.texture_handle;
-            }
-        }
-        
-        Shader shader = {};
-        
-        if (command.model.type == MODEL_SKINNED)
-        {
-            shader = render_state.simple_model_shader;
-            use_shader(shader);
-            
-            for (i32 index = 0; index < command.model.bone_count; index++)
-            {
-                char s_buffer[20];
-                sprintf(s_buffer, "bones[%d]", index);
-                set_mat4_uniform(shader.program, s_buffer, command.model.bone_transforms[index]);
-            }
-        }
-        else
-        {
-            // @Incomplete: We need a shader that isn't using the bone data
-        }
-        
-        math::Mat4 model(1.0f);
-        model = math::scale(model, command.scale);
-        model = math::rotate(model, command.orientation);
-        model = math::translate(model, command.position);
-        
-        math::Mat4 normal_matrix = math::transpose(math::inverse(view * model));
-        
-        set_mat4_uniform(shader.program, "normalMatrix", normal_matrix);
-        set_mat4_uniform(shader.program, "projection", projection);
-        set_mat4_uniform(shader.program, "view", view);
-        set_mat4_uniform(shader.program, "model", model);
-        set_vec4_uniform(shader.program, "color", math::Rgba(1.0f, 1.0f, 1.0f, 1.0f));
-        set_int_uniform(shader.program, "hasUVs", material.diffuse_texture.has_data);
-        
-        glDrawElements(GL_TRIANGLES, buffer.index_buffer_count, GL_UNSIGNED_INT, (void*)0);
-        glBindVertexArray(0);
-    }
+Buffer buffer = render_state.buffers[command.model.buffer_handle];
+glBindVertexArray(buffer.vao);
+
+for (i32 mesh_index = 0; mesh_index < command.model.mesh_count; mesh_index++)
+{
+MeshData mesh_data = command.model.meshes[mesh_index];
+Material material = command.model.materials[mesh_data.material_index];
+
+if (material.diffuse_texture.has_data)
+{
+Texture texture = render_state.texture_array[material.diffuse_texture.texture_handle];
+if (render_state.bound_texture != texture.texture_handle)
+{
+glBindTexture(GL_TEXTURE_2D, texture.texture_handle);
+render_state.bound_texture = texture.texture_handle;
+}
+}
+
+Shader shader = {};
+
+if (command.model.type == MODEL_SKINNED)
+{
+shader = render_state.simple_model_shader;
+use_shader(shader);
+
+for (i32 index = 0; index < command.model.bone_count; index++)
+{
+char s_buffer[20];
+sprintf(s_buffer, "bones[%d]", index);
+set_mat4_uniform(shader.program, s_buffer, command.model.bone_transforms[index]);
+}
+}
+else
+{
+// @Incomplete: We need a shader that isn't using the bone data
+}
+
+math::Mat4 model(1.0f);
+model = math::scale(model, command.scale);
+model = math::rotate(model, command.orientation);
+model = math::translate(model, command.position);
+
+math::Mat4 normal_matrix = math::transpose(math::inverse(view * model));
+
+set_mat4_uniform(shader.program, "normalMatrix", normal_matrix);
+set_mat4_uniform(shader.program, "projection", projection);
+set_mat4_uniform(shader.program, "view", view);
+set_mat4_uniform(shader.program, "model", model);
+set_vec4_uniform(shader.program, "color", math::Rgba(1.0f, 1.0f, 1.0f, 1.0f));
+set_int_uniform(shader.program, "hasUVs", material.diffuse_texture.has_data);
+
+glDrawElements(GL_TRIANGLES, buffer.index_buffer_count, GL_UNSIGNED_INT, (void*)0);
+glBindVertexArray(0);
+}
 }
 */
 static void prepare_shader(const Shader shader, ShaderAttribute *attributes, i32 shader_attribute_count)
@@ -2118,7 +2121,6 @@ static void render(RenderState& render_state, Renderer& renderer, MemoryArena* p
         glfwSwapInterval(1);
         
         glfwGetFramebufferSize(render_state.window, &render_state.window_width, &render_state.window_height);
-        glViewport(0, 0, render_state.window_width, render_state.window_height);
         glDisable(GL_DITHER);
         glLineWidth(2.0f);
         glEnable(GL_LINE_SMOOTH);
