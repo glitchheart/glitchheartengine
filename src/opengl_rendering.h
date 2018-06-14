@@ -190,18 +190,18 @@ struct RenderState
     
     GLfloat quad_vertices[8] =
     {
-        0.0f, 1.0f,
-        1.0f, 1.0f,
+        0.0f, 0.0f,
         1.0f, 0.0f,
-        0.0f, 0.0f
+        1.0f, 1.0f,
+        0.0f, 1.0f
     };
     
     GLfloat texture_quad_vertices[16] =
     {
-        0.0f, 1.0f, 0.0f, 1.0f,
-        1.0f, 1.0f, 1.0f, 1.0f,
-        1.0f, 0.0f, 1.0f, 0.0f,
-        0.0f, 0.0f, 0.0f, 0.0f
+        0.0f, 1.0f, 0.0f, 0.0f,
+        1.0f, 1.0f, 1.0f, 0.0f,
+        1.0f, 0.0f, 1.0f, 1.0f,
+        0.0f, 0.0f, 0.0f, 1.0f
     };
     
     GLuint quad_indices[6] =

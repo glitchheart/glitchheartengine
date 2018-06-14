@@ -2159,6 +2159,8 @@ static void render(RenderState& render_state, Renderer& renderer, MemoryArena* p
     
     render_state.pixels_per_unit = renderer.pixels_per_unit;
     
+    b32 should_render = renderer.window_width != 0;
+    
     renderer.window_width = render_state.window_width;
     renderer.window_height = render_state.window_height;
     camera.viewport_width = render_state.window_width;
@@ -2168,69 +2170,72 @@ static void render(RenderState& render_state, Renderer& renderer, MemoryArena* p
     
     register_buffers(render_state, renderer, perm_arena);
     
-    if ((renderer.frame_lock != 0 && render_state.frame_delta <= 0.0) || renderer.frame_lock == 0)
+    if(should_render)
     {
-        renderer.fps = 1.0 / render_state.total_delta;
-        renderer.current_frame++;
-        renderer.fps_sum += renderer.fps;
-        
-        if (renderer.current_frame == 60)
+        if ((renderer.frame_lock != 0 && render_state.frame_delta <= 0.0) || renderer.frame_lock == 0)
         {
-            renderer.current_frame = 0;
-            renderer.average_fps = renderer.fps_sum / 60.0f;
-            renderer.fps_sum = 0.0;
-        }
-        
-        render_shadows(render_state, renderer, render_state.shadow_map_buffer);
-        
-        glViewport(0, 0, renderer.window_width, renderer.window_height);
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, render_state.framebuffer.buffer_handle);
-        
-        glEnable(GL_DEPTH_TEST);
-        
-        glDepthFunc(GL_LESS);
-        
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        
-        glClearColor(renderer.clear_color.r, renderer.clear_color.g, renderer.clear_color.b, renderer.clear_color.a);
-        
-        render_commands(render_state, renderer);
-        render_state.bound_texture = 0;
-        
-        // We have to reset the bound texture to nothing, since we're about to bind other textures
-        // Second pass
-        
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-        glBindFramebuffer(GL_READ_FRAMEBUFFER, render_state.framebuffer.buffer_handle);
-        glDrawBuffer(GL_BACK);
-        
-        i32 width = renderer.window_width;
-        i32 height = renderer.window_height;
-        glBlitFramebuffer(0, 0, width, height, 0, 0, width, height, 
-                          GL_COLOR_BUFFER_BIT, GL_NEAREST);
-        
-        glfwSwapBuffers(render_state.window);
-        
-        if (renderer.frame_lock != 0)
-        {
-            render_state.total_delta = 0.0;
-            render_state.frame_delta += 1.0 / renderer.frame_lock;
+            renderer.fps = 1.0 / render_state.total_delta;
+            renderer.current_frame++;
+            renderer.fps_sum += renderer.fps;
+            
+            if (renderer.current_frame == 60)
+            {
+                renderer.current_frame = 0;
+                renderer.average_fps = renderer.fps_sum / 60.0f;
+                renderer.fps_sum = 0.0;
+            }
+            
+            render_shadows(render_state, renderer, render_state.shadow_map_buffer);
+            
+            glViewport(0, 0, renderer.window_width, renderer.window_height);
+            glBindFramebuffer(GL_DRAW_FRAMEBUFFER, render_state.framebuffer.buffer_handle);
+            
+            glEnable(GL_DEPTH_TEST);
+            
+            glDepthFunc(GL_LESS);
+            
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            
+            glClearColor(renderer.clear_color.r, renderer.clear_color.g, renderer.clear_color.b, renderer.clear_color.a);
+            
+            render_commands(render_state, renderer);
+            render_state.bound_texture = 0;
+            
+            // We have to reset the bound texture to nothing, since we're about to bind other textures
+            // Second pass
+            
+            glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+            glBindFramebuffer(GL_READ_FRAMEBUFFER, render_state.framebuffer.buffer_handle);
+            glDrawBuffer(GL_BACK);
+            
+            i32 width = renderer.window_width;
+            i32 height = renderer.window_height;
+            glBlitFramebuffer(0, 0, width, height, 0, 0, width, height, 
+                              GL_COLOR_BUFFER_BIT, GL_NEAREST);
+            
+            glfwSwapBuffers(render_state.window);
+            
+            if (renderer.frame_lock != 0)
+            {
+                render_state.total_delta = 0.0;
+                render_state.frame_delta += 1.0 / renderer.frame_lock;
+            }
+            else
+            {
+                render_state.total_delta = delta_time;
+            }
         }
         else
         {
-            render_state.total_delta = delta_time;
+            clear(&renderer.light_commands);
+            renderer.light_command_count = 0;
+            clear(&renderer.commands);
+            renderer.command_count = 0;
+            clear(&renderer.ui_commands);
+            renderer.ui_command_count = 0;
         }
+        
+        render_state.frame_delta -= delta_time;
+        render_state.total_delta += delta_time;
     }
-    else
-    {
-        clear(&renderer.light_commands);
-        renderer.light_command_count = 0;
-        clear(&renderer.commands);
-        renderer.command_count = 0;
-        clear(&renderer.ui_commands);
-        renderer.ui_command_count = 0;
-    }
-    
-    render_state.frame_delta -= delta_time;
-    render_state.total_delta += delta_time;
 }
