@@ -33,7 +33,7 @@ static MemoryState memory_state;
 #include "keycontroller.h"
 
 #if defined(__linux) || defined(_WIN32)
-#include "vulkan_rendering.h"
+//#include "vulkan_rendering.h"
 #endif
 #include "opengl_rendering.h"
 #include "animation.cpp"
@@ -56,7 +56,7 @@ static InputController input_controller;
 #include "opengl_rendering.cpp"
 
 #if defined(__linux) || defined(_WIN32)
-#include "vulkan_rendering.cpp"
+//#include "vulkan_rendering.cpp"
 #endif
 
 static void load_game_code(GameCode& game_code, char* game_library_path, char* temp_game_library_path, MemoryArena* arena = nullptr)
@@ -342,9 +342,9 @@ int main(int argc, char** args)
     {
         
 #if defined(__linux) || defined(_WIN32)
-        VkRenderState vk_render_state;
-        initialize_vulkan(vk_render_state, renderer, config_data);
-        vk_render(vk_render_state, renderer);
+        //VkRenderState vk_render_state;
+        //initialize_vulkan(vk_render_state, renderer, config_data);
+        //vk_render(vk_render_state, renderer);
 #endif
     }
     else if(config_data.graphics_api == GRAPHICS_OPEN_GL)
