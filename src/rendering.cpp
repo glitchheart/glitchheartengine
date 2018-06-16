@@ -607,6 +607,25 @@ static void push_mesh(Renderer &renderer, MeshInfo mesh_info)
     render_command->cast_shadows = mesh_info.cast_shadows;
 }
 
+static void push_mesh_instanced(Renderer &renderer, MeshInfo mesh_info, math::Vec3 *offsets, i32 offset_count)
+{
+    RenderCommand *render_command = push_next_command(renderer, false);
+    render_command->type = RENDER_COMMAND_MESH_INSTANCED;
+    render_command->position = mesh_info.transform.position;
+    render_command->scale = mesh_info.transform.scale;
+    render_command->rotation = mesh_info.transform.rotation;
+    render_command->mesh_instanced.wireframe_type = mesh_info.wireframe_type;
+    render_command->mesh_instanced.wireframe_color = mesh_info.wireframe_color;
+    Mesh &mesh = renderer.meshes[mesh_info.mesh_handle];
+    render_command->mesh_instanced.buffer_handle = mesh.buffer_handle;
+    render_command->mesh_instanced.material_type = mesh_info.material.type;
+    render_command->mesh_instanced.diffuse_texture = mesh_info.material.diffuse_texture;
+    render_command->color = mesh_info.material.color;
+    render_command->mesh_instanced.offsets = offsets;
+    render_command->mesh_instanced.offset_count = offset_count;
+    render_command->cast_shadows = mesh_info.cast_shadows;
+}
+
 /*
 static void push_model(Renderer& renderer, Model& model, MemoryArena* arena)
 {

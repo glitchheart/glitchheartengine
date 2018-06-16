@@ -83,7 +83,9 @@ struct PointLightData
 enum ShaderType
 {
     SHADER_MESH,
+    SHADER_MESH_INSTANCED,
     SHADER_DEPTH,
+    SHADER_DEPTH_INSTANCED,
     SHADER_QUAD,
     SHADER_TEXTURE_QUAD,
     SHADER_STANDARD_FONT,
@@ -108,6 +110,7 @@ enum RenderCommandType
     RENDER_COMMAND_BUFFER,
     RENDER_COMMAND_MODEL,
     RENDER_COMMAND_MESH,
+    RENDER_COMMAND_MESH_INSTANCED,
     RENDER_COMMAND_SHADER_START,
     RENDER_COMMAND_SHADER_END,
     RENDER_COMMAND_DEPTH_TEST,
@@ -677,6 +680,16 @@ struct RenderCommand
             WireframeType wireframe_type;
             math::Rgba wireframe_color;
         } mesh;
+        struct
+        {
+            i32 buffer_handle;
+            RenderMaterialType material_type;
+            i32 diffuse_texture;
+            WireframeType wireframe_type;
+            math::Rgba wireframe_color;
+            math::Vec3 *offsets;
+            i32 offset_count;
+        } mesh_instanced;
         struct
         {
             b32 on;
