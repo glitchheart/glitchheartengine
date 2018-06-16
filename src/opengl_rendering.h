@@ -27,7 +27,9 @@ const static struct
 } shader_conversion [] =
 {
     SHADERPAIR(MESH),
+    SHADERPAIR(MESH_INSTANCED),
     SHADERPAIR(DEPTH),
+    SHADERPAIR(DEPTH_INSTANCED),
     SHADERPAIR(QUAD),
     SHADERPAIR(TEXTURE_QUAD),
     SHADERPAIR(STANDARD_FONT),
@@ -53,7 +55,9 @@ char* shader_enum_to_str(ShaderType shader)
 static char* shader_paths[SHADER_COUNT] =
 {
     "../engine_assets/shaders/meshshader",
+    "../engine_assets/shaders/meshshaderinstanced",
     "../engine_assets/shaders/depthshader",
+    "../engine_assets/shaders/depthshaderinstanced",
     "../engine_assets/shaders/quadshader",
     "../engine_assets/shaders/texturequadshader",
     "../engine_assets/shaders/standardfontshader",
@@ -238,7 +242,9 @@ struct RenderState
         struct
         {
             Shader mesh_shader;
+            Shader mesh_instanced_shader;
             Shader depth_shader;
+            Shader depth_instanced_shader;
             Shader quad_shader;
             Shader texture_quad_shader;
             Shader standard_font_shader;

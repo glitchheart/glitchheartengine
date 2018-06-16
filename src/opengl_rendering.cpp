@@ -530,7 +530,7 @@ static void create_framebuffer_render_buffer_attachment(Framebuffer &framebuffer
 }
 
 // @Incomplete: We should probably have a good way to link one or multiple light sources to this
-static void create_shadow_map(Framebuffer& framebuffer, Shader shader, i32 width, i32 height)
+static void create_shadow_map(Framebuffer& framebuffer,  i32 width, i32 height)
 {
     framebuffer.shadow_map.width = width;
     framebuffer.shadow_map.height = height;
@@ -700,10 +700,12 @@ static void render_setup(RenderState *render_state, MemoryArena* perm_arena)
                        render_state->framebuffer_quad_vertices_size,render_state->quad_indices, sizeof(render_state->quad_indices), true, 4);
     
     render_state->depth_shader.type = SHADER_DEPTH;
+    render_state->depth_instanced_shader.type = SHADER_DEPTH_INSTANCED;
     
     load_shader(shader_paths[SHADER_DEPTH], &render_state->depth_shader, perm_arena);
+    load_shader(shader_paths[SHADER_DEPTH_INSTANCED], &render_state->depth_instanced_shader, perm_arena);
     
-    create_shadow_map(render_state->shadow_map_buffer, render_state->depth_shader, 2048, 2048);
+    create_shadow_map(render_state->shadow_map_buffer, 2048, 2048);
     
     setup_quad(*render_state, perm_arena);
     setup_lines(*render_state, perm_arena);
@@ -711,8 +713,12 @@ static void render_setup(RenderState *render_state, MemoryArena* perm_arena)
     //font
     render_state->standard_font_shader.type = SHADER_STANDARD_FONT;
     load_shader(shader_paths[SHADER_STANDARD_FONT], &render_state->standard_font_shader, perm_arena);
+    
     render_state->mesh_shader.type = SHADER_MESH;
     load_shader(shader_paths[SHADER_MESH], &render_state->mesh_shader, perm_arena);
+    
+    render_state->mesh_instanced_shader.type = SHADER_MESH_INSTANCED;
+    load_shader(shader_paths[SHADER_MESH_INSTANCED], &render_state->mesh_instanced_shader, perm_arena);
     
     render_state->total_delta = 0.0f;
     render_state->frame_delta = 0.0f;
@@ -1699,6 +1705,120 @@ static void render_mesh(const RenderCommand &render_command, Renderer &renderer,
     glActiveTexture(GL_TEXTURE0);
 }
 
+
+static void render_mesh_instanced(const RenderCommand &render_command, Renderer &renderer, RenderState &render_state, math::Mat4 projection_matrix, math::Mat4 view_matrix, b32 for_shadow_map, ShadowMapMatrices *shadow_map_matrices = 0)
+{
+    Buffer buffer = render_state.buffers[render_command.mesh.buffer_handle];
+    glBindVertexArray(buffer.vao);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer.ibo);
+    glBindBuffer(GL_ARRAY_BUFFER, buffer.vbo);
+    Shader shader = render_state.mesh_instanced_shader;
+    
+    if(for_shadow_map)
+    {
+        shader = render_state.depth_instanced_shader;
+        use_shader(shader);
+    }
+    else
+    {
+        use_shader(shader);
+    }
+    
+    vertex_attrib_pointer(0, 3, GL_FLOAT,(8 * sizeof(GLfloat)), 0);
+    vertex_attrib_pointer(1, 3, GL_FLOAT, (8 * sizeof(GLfloat)), (void*)(3 * sizeof(GLfloat)));
+    vertex_attrib_pointer(2, 2, GL_FLOAT, (8 * sizeof(GLfloat)), (void*)(6 * sizeof(GLfloat)));
+    
+    math::Mat4 model_matrix(1.0f);
+    model_matrix = math::scale(model_matrix, render_command.scale);
+    
+    math::Vec3 rotation = render_command.rotation;
+    auto x_axis = rotation.x > 0.0f ? 1.0f : 0.0f;
+    auto y_axis = rotation.y > 0.0f ? 1.0f : 0.0f;
+    auto z_axis = rotation.z > 0.0f ? 1.0f : 0.0f;
+    
+    auto orientation = math::Quat();
+    orientation = math::rotate(orientation, rotation.x, math::Vec3(x_axis, 0.0f, 0.0f));
+    orientation = math::rotate(orientation, rotation.y, math::Vec3(0.0f, y_axis, 0.0f));
+    orientation = math::rotate(orientation, rotation.z, math::Vec3(0.0f, 0.0f, z_axis));
+    
+    model_matrix = to_matrix(orientation) * model_matrix;
+    
+    model_matrix = math::translate(model_matrix, render_command.position);
+    
+    set_mat4_uniform(shader.program, "projectionMatrix", projection_matrix);
+    set_mat4_uniform(shader.program, "viewMatrix", view_matrix);
+    set_mat4_uniform(shader.program, "modelMatrix", model_matrix);
+    
+    char char_buffer[32];
+    for(i32 index = 0; index < render_command.mesh_instanced.offset_count; index++)
+    {
+        sprintf(char_buffer, "offsets[%d]", index);
+        set_vec3_uniform(shader.program, char_buffer, render_command.mesh_instanced.offsets[index]);
+    }
+    
+    if(!for_shadow_map)
+    {
+        glUniform1i(glGetUniformLocation(shader.program, "diffuseTexture"), 0);
+        glUniform1i(glGetUniformLocation(shader.program, "shadowMap"),  1);
+        
+        if(render_command.mesh.diffuse_texture != 0)
+        {
+            auto texture = render_state.texture_array[renderer.texture_data[render_command.mesh.diffuse_texture - 1].handle];
+            
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, texture.texture_handle);
+            
+            set_bool_uniform(shader.program, "hasTexture", true);
+        }
+        else
+            set_bool_uniform(shader.program, "hasTexture", false);
+        
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, render_state.shadow_map_buffer.shadow_map_handle);
+        
+        set_mat4_uniform(shader.program, "depthModelMatrix", shadow_map_matrices->depth_model_matrix);
+        set_mat4_uniform(shader.program, "depthBiasMatrix", shadow_map_matrices->depth_bias_matrix);
+        set_mat4_uniform(shader.program, "depthViewMatrix", shadow_map_matrices->depth_view_matrix);
+        set_mat4_uniform(shader.program, "depthProjectionMatrix", shadow_map_matrices->depth_projection_matrix);
+        
+        set_vec4_uniform(shader.program, "color", render_command.color);
+        set_vec3_uniform(shader.program, "lightPosWorld", math::Vec3(0, 20, -10));
+        set_vec3_uniform(shader.program, "diffuseColor", math::Vec3(1, 1, 1));
+        set_vec3_uniform(shader.program, "lightColor", math::Vec3(1.0f, 1.0f, 1.0f));
+        set_vec3_uniform(shader.program, "specularColor", math::Vec3(1, 1, 1));
+        
+        switch(render_command.mesh.wireframe_type)
+        {
+            case WT_NONE:
+            {
+                set_bool_uniform(shader.program, "drawWireframe", false);
+                set_bool_uniform(shader.program, "drawMesh", true);
+            }
+            break;
+            case WT_WITH_MESH:
+            {
+                set_vec4_uniform(shader.program, "wireframeColor", render_command.mesh.wireframe_color);
+                set_bool_uniform(shader.program, "drawWireframe", true);
+                set_bool_uniform(shader.program, "drawMesh", true);
+            }
+            break;
+            case WT_WITHOUT_MESH:
+            {
+                set_vec4_uniform(shader.program, "wireframeColor", render_command.mesh.wireframe_color);
+                set_bool_uniform(shader.program, "drawWireframe", true);
+                set_bool_uniform(shader.program, "drawMesh", false);
+            }
+            break;
+        }
+        
+        set_float_uniform(shader.program, "lightPower", 550.0f);
+    }
+    
+    glDrawElementsInstanced(GL_TRIANGLES, buffer.index_buffer_count, GL_UNSIGNED_SHORT, (void*)0, render_command.mesh_instanced.offset_count);
+    
+    glActiveTexture(GL_TEXTURE0);
+}
+
 static void render_buffer(const RenderCommand& command, RenderState& render_state, math::Mat4 projection, math::Mat4 view)
 {
     Buffer buffer = render_state.buffers[command.buffer.buffer_handle];
@@ -1872,6 +1992,14 @@ static void render_shadows(RenderState &render_state, Renderer &renderer, Frameb
                 }
             }
             break;
+            case RENDER_COMMAND_MESH_INSTANCED:
+            {
+                if(command.cast_shadows)
+                {
+                    render_mesh_instanced(command, renderer, render_state, renderer.shadow_map_matrices.depth_projection_matrix, renderer.shadow_map_matrices.depth_view_matrix, true);
+                }
+            }
+            break;
             default:
             break;
         }
@@ -2031,6 +2159,12 @@ static void render_commands(RenderState &render_state, Renderer &renderer)
             case RENDER_COMMAND_MESH:
             {
                 render_mesh(command, renderer, render_state, camera.projection_matrix, camera.view_matrix, false, &renderer.shadow_map_matrices);
+                
+            }
+            break;
+            case RENDER_COMMAND_MESH_INSTANCED:
+            {
+                render_mesh_instanced(command, renderer, render_state, camera.projection_matrix, camera.view_matrix, false, &renderer.shadow_map_matrices);
                 
             }
             break;
