@@ -326,6 +326,7 @@ static void init_platform(PlatformApi& platform_api)
     platform_api.load_dynamic_library = osx_load_library;
     platform_api.free_dynamic_library = osx_free_library;
     platform_api.load_symbol = osx_load_symbol;
+    platform_api.file_exists = osx_file_exists;
     platform_api.open_file = osx_open_file;
     platform_api.read_file = osx_read_file;
     platform_api.write_file = osx_write_file;
