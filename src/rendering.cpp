@@ -525,7 +525,7 @@ static void create_tetrahedron(Renderer &renderer, i32 *mesh_handle)
     create_buffers_from_mesh(renderer, mesh, 0, true, false);
 }
 
-static void create_cube(Renderer &renderer, i32 *mesh_handle)
+static void create_cube(Renderer &renderer, i32 *mesh_handle, b32 with_instancing = false, i32 *instance_buffer_handle = 0)
 {
     Mesh &mesh = renderer.meshes[renderer.mesh_count++];
     mesh = {};
@@ -555,6 +555,14 @@ static void create_cube(Renderer &renderer, i32 *mesh_handle)
     *mesh_handle = renderer.mesh_count - 1;
     
     create_buffers_from_mesh(renderer, mesh, 0, true, true);
+    
+    if(with_instancing)
+    {
+        BufferData data = {};
+        data.for_instancing = true;
+        renderer.buffers[renderer.buffer_count] = data;
+        *instance_buffer_handle = renderer.buffer_count++;
+    }
 }
 
 static void create_plane(Renderer &renderer, i32 *mesh_handle)
@@ -621,6 +629,7 @@ static void push_mesh_instanced(Renderer &renderer, MeshInfo mesh_info, math::Ve
     render_command->mesh_instanced.material_type = mesh_info.material.type;
     render_command->mesh_instanced.diffuse_texture = mesh_info.material.diffuse_texture;
     render_command->color = mesh_info.material.color;
+    render_command->mesh_instanced.instance_buffer_handle = mesh_info.instance_buffer_handle;
     render_command->mesh_instanced.offsets = offsets;
     render_command->mesh_instanced.offset_count = offset_count;
     render_command->cast_shadows = mesh_info.cast_shadows;

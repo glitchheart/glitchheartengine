@@ -435,6 +435,17 @@ static void register_buffers(RenderState& render_state, GLfloat* vertex_buffer, 
     glBindVertexArray(0);
 }
 
+static void register_instance_buffer(RenderState &render_state)
+{
+    Buffer* buffer = &render_state.buffers[render_state.buffer_count];
+    render_state.buffer_count++;
+    
+    glGenBuffers(1, &buffer->vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, buffer->vbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(math::Vec3) * 900, nullptr, GL_DYNAMIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+
 static void register_vertex_buffer(RenderState& render_state, GLfloat* buffer_data, i32 size, ShaderType shader_type, MemoryArena* perm_arena, i32 buffer_handle = -1)
 {
     Buffer* buffer = &render_state.buffers[buffer_handle == -1 ? render_state.buffer_count : buffer_handle];
@@ -860,10 +871,10 @@ static void initialize_opengl(RenderState& render_state, Renderer& renderer, Con
     
     glfwGetFramebufferSize(render_state.window, &render_state.window_width, &render_state.window_height);
     glViewport(0, 0, render_state.window_width, render_state.window_height);
-
+    
     i32 max;
     glGetIntegerv(GL_MAX_VERTEX_UNIFORM_VECTORS, &max);
-
+    
     printf("MAX %d\n", max);
     
 #if !defined(__APPLE__)
@@ -1712,7 +1723,8 @@ static void render_mesh(const RenderCommand &render_command, Renderer &renderer,
 
 static void render_mesh_instanced(const RenderCommand &render_command, Renderer &renderer, RenderState &render_state, math::Mat4 projection_matrix, math::Mat4 view_matrix, b32 for_shadow_map, ShadowMapMatrices *shadow_map_matrices = 0)
 {
-    Buffer buffer = render_state.buffers[render_command.mesh.buffer_handle];
+    Buffer buffer = render_state.buffers[render_command.mesh_instanced.buffer_handle];
+    Buffer instance_buffer = render_state.buffers[render_command.mesh_instanced.instance_buffer_handle];
     glBindVertexArray(buffer.vao);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer.ibo);
     glBindBuffer(GL_ARRAY_BUFFER, buffer.vbo);
@@ -1728,9 +1740,20 @@ static void render_mesh_instanced(const RenderCommand &render_command, Renderer 
         use_shader(shader);
     }
     
+    glEnableVertexAttribArray(0);
     vertex_attrib_pointer(0, 3, GL_FLOAT,(8 * sizeof(GLfloat)), 0);
+    
+    glEnableVertexAttribArray(1);
     vertex_attrib_pointer(1, 3, GL_FLOAT, (8 * sizeof(GLfloat)), (void*)(3 * sizeof(GLfloat)));
+    
+    glEnableVertexAttribArray(2);
     vertex_attrib_pointer(2, 2, GL_FLOAT, (8 * sizeof(GLfloat)), (void*)(6 * sizeof(GLfloat)));
+    
+    glEnableVertexAttribArray(3);
+    glBindBuffer(GL_ARRAY_BUFFER, instance_buffer.vbo);glBufferData(GL_ARRAY_BUFFER, sizeof(math::Vec3) * 900, render_command.mesh_instanced.offsets, GL_DYNAMIC_DRAW);
+    
+    glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+    glVertexAttribDivisor(3, 1);
     
     math::Mat4 model_matrix(1.0f);
     model_matrix = math::scale(model_matrix, render_command.scale);
@@ -1752,13 +1775,6 @@ static void render_mesh_instanced(const RenderCommand &render_command, Renderer 
     set_mat4_uniform(shader.program, "projectionMatrix", projection_matrix);
     set_mat4_uniform(shader.program, "viewMatrix", view_matrix);
     set_mat4_uniform(shader.program, "modelMatrix", model_matrix);
-    
-    char char_buffer[32];
-    for(i32 index = 0; index < render_command.mesh_instanced.offset_count; index++)
-    {
-        sprintf(char_buffer, "offsets[%d]", index);
-        set_vec3_uniform(shader.program, char_buffer, render_command.mesh_instanced.offsets[index]);
-    }
     
     if(!for_shadow_map)
     {
@@ -1946,7 +1962,11 @@ static void register_buffers(RenderState& render_state, Renderer& renderer, Memo
     {
         BufferData data = renderer.buffers[index];
         
-        if (data.index_buffer_count == 0)
+        if(data.for_instancing)
+        {
+            register_instance_buffer(render_state);
+        }
+        else if (data.index_buffer_count == 0)
         {
             register_vertex_buffer(render_state, data.vertex_buffer, (i32)data.vertex_buffer_size, data.shader_type, perm_arena, data.existing_handle);
         }
