@@ -47,7 +47,6 @@ static MemoryState memory_state;
 
 #if defined(__linux) || defined(__APPLE__)
 #include "dlfcn.h"
-#include "linux_platform.cpp"
 #endif
 
 static InputController input_controller;

@@ -16,7 +16,7 @@ uniform mat4 depthProjectionMatrix;
 uniform vec3 lightPosWorld;
 uniform vec4 color;
 
-uniform vec3 offsets[900];
+uniform vec3 offsets[300];
 
 out VS_OUT
 {

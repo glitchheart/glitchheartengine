@@ -834,7 +834,6 @@ static void initialize_opengl(RenderState& render_state, Renderer& renderer, Con
     
     create_open_gl_window(render_state, config_data->window_mode, config_data->title, config_data->screen_width, config_data->screen_height);
     renderer.window_mode = render_state.window_mode;
-    
     if (!render_state.window)
     {
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -861,6 +860,11 @@ static void initialize_opengl(RenderState& render_state, Renderer& renderer, Con
     
     glfwGetFramebufferSize(render_state.window, &render_state.window_width, &render_state.window_height);
     glViewport(0, 0, render_state.window_width, render_state.window_height);
+
+    i32 max;
+    glGetIntegerv(GL_MAX_VERTEX_UNIFORM_VECTORS, &max);
+
+    printf("MAX %d\n", max);
     
 #if !defined(__APPLE__)
     //Enable debug output

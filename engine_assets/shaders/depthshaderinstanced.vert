@@ -7,7 +7,7 @@ uniform mat4 modelMatrix;
 uniform mat4 viewMatrix;
 uniform mat4 projectionMatrix;
 
-uniform vec3 offsets[900];
+uniform vec3 offsets[300];
 
 void main()
 {
