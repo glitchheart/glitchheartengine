@@ -1,18 +1,18 @@
 #version 330 core
 
 layout(location = 0) in vec3 position;
-layout(location = 0) in vec3 normal;
+layout(location = 1) in vec3 normal;
+layout(location = 2) in vec2 uv;
+layout(location = 3) in vec3 offset;
 
 uniform mat4 modelMatrix;
 uniform mat4 viewMatrix;
 uniform mat4 projectionMatrix;
 
-uniform vec3 offsets[300];
+uniform vec3 offsets[900];
 
 void main()
 {
-	vec3 offset = offsets[gl_InstanceID];
-	
 	mat4 translate;
 	translate[0] = vec4(1.0, 0.0, 0.0, 0.0);
 	translate[1] = vec4(0.0, 1.0, 0.0, 0);

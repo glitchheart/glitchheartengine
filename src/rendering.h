@@ -523,7 +523,7 @@ enum WireframeType
 struct MeshInfo
 {
     i32 mesh_handle;
-    
+    i32 instance_buffer_handle;
     TransformInfo transform;
     RenderMaterial material;
     
@@ -683,6 +683,7 @@ struct RenderCommand
         struct
         {
             i32 buffer_handle;
+            i32 instance_buffer_handle;
             RenderMaterialType material_type;
             i32 diffuse_texture;
             WireframeType wireframe_type;
@@ -778,6 +779,8 @@ struct BufferData
     
     ShaderType shader_type;
     i32 existing_handle = -1;
+    
+    b32 for_instancing;
 };
 
 struct Particle
