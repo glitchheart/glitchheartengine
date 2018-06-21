@@ -412,7 +412,7 @@ static void generate_vertex_buffer(r32* vertex_buffer, Vertex* vertices, i32 ver
     
     for(i32 i = 0; i < vertex_count; i++)
     {
-        i32 increment_by = 0;
+        i32 increment_by = 1;
         i32 base_index = i * vertex_data_count;
         Vertex vertex = vertices[i];
         vertex_buffer[base_index] = vertex.position.x;
@@ -737,8 +737,13 @@ static void load_obj(Renderer &renderer, char *file_path, i32 *mesh_handle)
     b32 with_uvs = false;
     b32 with_normals = false;
     
-    Vertex *vertices = nullptr;
+    math::Vec3 *positions = nullptr;
+    math::Vec3 *normals = nullptr;
+    math::Vec2 *uvs = nullptr;
+    
     Face *faces = nullptr;
+    
+    Vertex *vertices = nullptr;
     
     i32 vert_index = 0;
     i32 normal_index = 0;
@@ -755,14 +760,19 @@ static void load_obj(Renderer &renderer, char *file_path, i32 *mesh_handle)
             }
             else if(starts_with(buffer, "v ")) // vertex
             {
-                Vertex vertex = {};
-                sscanf(buffer, "v %f %f %f", &vertex.position.x, &vertex.position.y, &vertex.position.z);
-                buf_push(vertices, vertex);
+                math::Vec3 position(0.0f);
+                sscanf(buffer, "v %f %f %f", &position.x, &position.y, &position.z);
+                buf_push(positions, position);
                 vert_index++;
             }
             else if(starts_with(buffer, "vn")) // vertex normal
             {
                 with_normals = true;
+                math::Vec3 normal(0.0f);
+                sscanf(buffer, "vn %f %f %f", &normal.x, &normal.y, &normal.z);
+                buf_push(normals, normal);
+                normal_index++;
+                
                 Vertex &vertex = vertices[normal_index];
                 sscanf(buffer, "vn %f %f %f", &vertex.normal.x, &vertex.normal.y, &vertex.normal.z);
                 normal_index++;
