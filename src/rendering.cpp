@@ -771,6 +771,8 @@ static void load_obj(Renderer &renderer, char *file_path, i32 *mesh_handle, b32 
     
     Face *faces = nullptr;
     
+    Vertex *vertices = nullptr;
+    
     i32 vert_index = 0;
     i32 normal_index = 0;
     i32 uv_index = 0;
@@ -786,9 +788,9 @@ static void load_obj(Renderer &renderer, char *file_path, i32 *mesh_handle, b32 
             }
             else if(starts_with(buffer, "v ")) // vertex
             {
-                Vertex vertex = {};
-                sscanf(buffer, "v %f %f %f", &vertex.position.x, &vertex.position.y, &vertex.position.z);
-                buf_push(vertices, vertex);
+                math::Vec3 position(0.0f);
+                sscanf(buffer, "v %f %f %f", &position.x, &position.y, &position.z);
+                buf_push(positions, position);
                 vert_index++;
             }
             else if(starts_with(buffer, "vn")) // vertex normal
