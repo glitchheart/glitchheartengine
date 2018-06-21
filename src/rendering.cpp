@@ -412,7 +412,7 @@ static void generate_vertex_buffer(r32* vertex_buffer, Vertex* vertices, i32 ver
     
     for(i32 i = 0; i < vertex_count; i++)
     {
-        i32 increment_by = 0;
+        i32 increment_by = 1;
         i32 base_index = i * vertex_data_count;
         Vertex vertex = vertices[i];
         vertex_buffer[base_index] = vertex.position.x;
@@ -730,7 +730,33 @@ static b32 is_eof(ChunkFormat& format)
     return strcmp(format.format, "EOF") == 0;
 }
 
-static void load_obj(Renderer &renderer, char *file_path, i32 *mesh_handle)
+static b32 vertex_equals(Vertex &v1, Vertex &v2)
+{
+    return v1.position.x == v2.position.x && v1.position.y == v2.position.y && v1.position.z == v2.position.z && v1.uv.x == v2.uv.x && v1.uv.y == v2.uv.y && v1.normal.x == v2.normal.x && v1.normal.y == v2.normal.y && v1.normal.z == v2.normal.z;
+}
+
+static i32 check_for_identical_vertex(Vertex &vertex, math::Vec2 uv, math::Vec3 normal, Vertex *final_vertices, b32* should_add)
+{
+    i32 current_size = buf_len(final_vertices);
+    vertex.uv = uv;
+    vertex.normal = normal;
+    
+    for(i32 index = 0; index < current_size; index++)
+    {
+        Vertex &existing = final_vertices[index];
+        
+        if(vertex_equals(existing, vertex))
+        {
+            return index;
+        }
+    }
+    
+    *should_add = true;
+    
+    return current_size + 1;
+}
+
+static void load_obj(Renderer &renderer, char *file_path, i32 *mesh_handle, b32 with_instancing = false, i32 *instance_buffer_handle = 0)
 {
     FILE *file = fopen(file_path, "r");
     
@@ -738,6 +764,11 @@ static void load_obj(Renderer &renderer, char *file_path, i32 *mesh_handle)
     b32 with_normals = false;
     
     Vertex *vertices = nullptr;
+    math::Vec3 *normals = nullptr;
+    math::Vec2 *uvs = nullptr;
+    
+    Vertex *final_vertices = nullptr;
+    
     Face *faces = nullptr;
     
     i32 vert_index = 0;
@@ -763,27 +794,64 @@ static void load_obj(Renderer &renderer, char *file_path, i32 *mesh_handle)
             else if(starts_with(buffer, "vn")) // vertex normal
             {
                 with_normals = true;
-                Vertex &vertex = vertices[normal_index];
-                sscanf(buffer, "vn %f %f %f", &vertex.normal.x, &vertex.normal.y, &vertex.normal.z);
+                math::Vec3 normal(0.0f);
+                sscanf(buffer, "vn %f %f %f", &normal.x, &normal.y, &normal.z);
+                buf_push(normals, normal);
                 normal_index++;
             }
             else if(starts_with(buffer, "vt")) // vertex uv
             {
                 with_uvs = true;
-                Vertex &vertex = vertices[uv_index];
-                sscanf(buffer, "vt %f %f", &vertex.uv.x, &vertex.uv.y);
+                math::Vec2 uv(0.0f);
+                sscanf(buffer, "vt %f %f", &uv.x, &uv.y);
+                buf_push(uvs, uv);
                 uv_index++;
             }
             else if(starts_with(buffer, "f")) // face
             {
                 Face face = {};
-                i16 dummy_arg = 0;
-                sscanf(buffer, "f %hd/%hd/%hd %hd/%hd/%hd %hd/%hd/%hd", &face.indices[0], &dummy_arg, &dummy_arg, &face.indices[1], &dummy_arg, &dummy_arg, &face.indices[2], &dummy_arg, &dummy_arg);
+                math::Vec3i normal_indices = {};
+                math::Vec3i uv_indices = {};
+                
+                sscanf(buffer, "f %hd/%d/%hd %hd/%hd/%hd %hd/%hd/%hd", &face.indices[0], &uv_indices.x, &normal_indices.x, &face.indices[1], &uv_indices.y, &normal_indices.y, &face.indices[2], &uv_indices.z, &normal_indices.z);
                 
                 // The obj-format was made by geniuses and therefore the indices are not 0-indexed. Such wow.
                 face.indices[0] -= 1;
                 face.indices[1] -= 1;
                 face.indices[2] -= 1;
+                
+                b32 should_add = false;
+                Vertex v1 = vertices[face.indices[0]];
+                math::Vec2 uv1 = uvs[uv_indices.x - 1];
+                math::Vec3 n1 = normals[normal_indices.x - 1];
+                face.indices[0] = check_for_identical_vertex(v1, uv1, n1, final_vertices, &should_add);
+                
+                if(should_add)
+                {
+                    buf_push(final_vertices, v1);
+                }
+                
+                should_add = false;
+                Vertex &v2 = vertices[face.indices[1]];
+                math::Vec2 uv2 = uvs[uv_indices.y - 1];
+                math::Vec3 n2 = normals[normal_indices.y - 1];
+                face.indices[1] = check_for_identical_vertex(v2, uv2, n2, final_vertices, &should_add);
+                
+                if(should_add)
+                {
+                    buf_push(final_vertices, v2);
+                }
+                
+                should_add = false;
+                Vertex &v3 = vertices[face.indices[2]];
+                math::Vec2 uv3 = uvs[uv_indices.z - 1];
+                math::Vec3 n3 = normals[normal_indices.z - 1];
+                face.indices[2] = check_for_identical_vertex(v3, uv3, n3, final_vertices, &should_add);
+                
+                if(should_add)
+                {
+                    buf_push(final_vertices, v3);
+                }
                 
                 buf_push(faces, face);
             }
@@ -794,18 +862,30 @@ static void load_obj(Renderer &renderer, char *file_path, i32 *mesh_handle)
     Mesh &mesh = renderer.meshes[renderer.mesh_count++];
     mesh = {};
     
-    mesh.vertices = push_array(&renderer.mesh_arena, buf_len(vertices), Vertex);
+    mesh.vertices = push_array(&renderer.mesh_arena, buf_len(final_vertices), Vertex);
     mesh.faces = push_array(&renderer.mesh_arena, buf_len(faces), Face);
-    mesh.vertex_count = (i32)buf_len(vertices);
+    mesh.vertex_count = (i32)buf_len(final_vertices);
     mesh.face_count = (i32)buf_len(faces);
     
-    memcpy(mesh.vertices, vertices, mesh.vertex_count * sizeof(Vertex));
+    memcpy(mesh.vertices, final_vertices, mesh.vertex_count * sizeof(Vertex));
     memcpy(mesh.faces, faces, mesh.face_count * sizeof(Face));
+    
+    buf_free(final_vertices);
     buf_free(vertices);
+    buf_free(normals);
+    buf_free(uvs);
     buf_free(faces);
     
     *mesh_handle = renderer.mesh_count - 1;
     create_buffers_from_mesh(renderer, mesh, 0, true, true);
+    
+    if(with_instancing)
+    {
+        BufferData data = {};
+        data.for_instancing = true;
+        renderer.buffers[renderer.buffer_count] = data;
+        *instance_buffer_handle = renderer.buffer_count++;
+    }
 }
 
 static void add_particle_system(Renderer& renderer, math::Vec3 position, i32 texture_handle, r32 rate, r32 speed, i32* handle)
