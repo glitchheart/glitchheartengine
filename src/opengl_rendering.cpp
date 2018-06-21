@@ -917,7 +917,7 @@ static void initialize_opengl(RenderState& render_state, Renderer& renderer, Con
     // @Incomplete: This is hardcoded uglinesssssssss
     // Create matrices for light
     renderer.shadow_map_matrices.depth_model_matrix = math::Mat4(1.0f);
-    renderer.shadow_map_matrices.depth_projection_matrix = math::ortho(-10, 10, -10, 10, 1, 20.5f);
+    renderer.shadow_map_matrices.depth_projection_matrix = math::ortho(-20, 20, -20, 20, 1, 50.0f);
     renderer.shadow_map_matrices.depth_view_matrix = math::look_at_with_target(math::Vec3(-2.0f, 4.0f, -1.0f), math::Vec3(0, 0, 0));
     renderer.shadow_map_matrices.depth_bias_matrix = math::Mat4(
         0.5, 0.0, 0.0, 0.0,
@@ -1781,9 +1781,9 @@ static void render_mesh_instanced(const RenderCommand &render_command, Renderer 
         glUniform1i(glGetUniformLocation(shader.program, "diffuseTexture"), 0);
         glUniform1i(glGetUniformLocation(shader.program, "shadowMap"),  1);
         
-        if(render_command.mesh.diffuse_texture != 0)
+        if(render_command.mesh_instanced.diffuse_texture != 0)
         {
-            auto texture = render_state.texture_array[renderer.texture_data[render_command.mesh.diffuse_texture - 1].handle];
+            auto texture = render_state.texture_array[renderer.texture_data[render_command.mesh_instanced.diffuse_texture - 1].handle];
             
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, texture.texture_handle);

@@ -412,23 +412,24 @@ static void generate_vertex_buffer(r32* vertex_buffer, Vertex* vertices, i32 ver
     
     for(i32 i = 0; i < vertex_count; i++)
     {
+        i32 increment_by = 0;
         i32 base_index = i * vertex_data_count;
         Vertex vertex = vertices[i];
         vertex_buffer[base_index] = vertex.position.x;
-        vertex_buffer[base_index + 1] = vertex.position.y;
-        vertex_buffer[base_index + 2] = vertex.position.z;
+        vertex_buffer[base_index + increment_by++] = vertex.position.y;
+        vertex_buffer[base_index + increment_by++] = vertex.position.z;
         
         if(has_normals)
         {
-            vertex_buffer[base_index + 3] = vertex.normal.x;
-            vertex_buffer[base_index + 4] = vertex.normal.y;
-            vertex_buffer[base_index + 5] = vertex.normal.z;
+            vertex_buffer[base_index + increment_by++] = vertex.normal.x;
+            vertex_buffer[base_index + increment_by++] = vertex.normal.y;
+            vertex_buffer[base_index + increment_by++] = vertex.normal.z;
         }
         
         if(has_uvs)
         {
-            vertex_buffer[base_index + 6] = vertex.uv.x;
-            vertex_buffer[base_index + 7] = vertex.uv.y;
+            vertex_buffer[base_index + increment_by++] = vertex.uv.x;
+            vertex_buffer[base_index + increment_by++] = vertex.uv.y;
         }
     }
 }
@@ -539,6 +540,7 @@ static void create_cube(Renderer &renderer, i32 *mesh_handle, b32 with_instancin
         Vertex &vertex = mesh.vertices[i];
         vertex.position = math::Vec3(cube_vertices[i * 3], cube_vertices[i * 3 + 1], cube_vertices[i * 3 + 2]);
         vertex.normal = math::Vec3(cube_normals[i * 3], cube_normals[i * 3 + 1], cube_normals[i * 3 + 2]);
+        vertex.uv = math::Vec2(cube_uvs[i * 2], cube_uvs[i * 2 + 1]);
     }
     
     mesh.face_count = sizeof(cube_indices) / sizeof(u16) / 3;
@@ -732,6 +734,9 @@ static void load_obj(Renderer &renderer, char *file_path, i32 *mesh_handle)
 {
     FILE *file = fopen(file_path, "r");
     
+    b32 with_uvs = false;
+    b32 with_normals = false;
+    
     Vertex *vertices = nullptr;
     Face *faces = nullptr;
     
@@ -757,12 +762,17 @@ static void load_obj(Renderer &renderer, char *file_path, i32 *mesh_handle)
             }
             else if(starts_with(buffer, "vn")) // vertex normal
             {
-                Vertex &vertex = vertices[uv_index];
+                with_normals = true;
+                Vertex &vertex = vertices[normal_index];
                 sscanf(buffer, "vn %f %f %f", &vertex.normal.x, &vertex.normal.y, &vertex.normal.z);
-                uv_index++;
+                normal_index++;
             }
             else if(starts_with(buffer, "vt")) // vertex uv
             {
+                with_uvs = true;
+                Vertex &vertex = vertices[uv_index];
+                sscanf(buffer, "vt %f %f", &vertex.uv.x, &vertex.uv.y);
+                uv_index++;
             }
             else if(starts_with(buffer, "f")) // face
             {
