@@ -9,8 +9,6 @@ uniform mat4 modelMatrix;
 uniform mat4 viewMatrix;
 uniform mat4 projectionMatrix;
 
-uniform vec3 offsets[900];
-
 void main()
 {
 	mat4 translate;

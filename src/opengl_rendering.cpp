@@ -1750,7 +1750,8 @@ static void render_mesh_instanced(const RenderCommand &render_command, Renderer 
     vertex_attrib_pointer(2, 2, GL_FLOAT, (8 * sizeof(GLfloat)), (void*)(6 * sizeof(GLfloat)));
     
     glEnableVertexAttribArray(3);
-    glBindBuffer(GL_ARRAY_BUFFER, instance_buffer.vbo);glBufferData(GL_ARRAY_BUFFER, sizeof(math::Vec3) * 900, render_command.mesh_instanced.offsets, GL_DYNAMIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, instance_buffer.vbo);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(math::Vec3) * 900, render_command.mesh_instanced.offsets);
     
     glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
     glVertexAttribDivisor(3, 1);
