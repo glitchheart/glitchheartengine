@@ -89,12 +89,15 @@ void main()
 		float shadow = calculateShadow(fs_in.shadowCoord, normal, lightDir);		
 		vec3 lighting = (ambient + (1.0 - shadow) * (diffuse + specular)) * col;
 		
-		if(hasTexture) {
+		if(hasTexture)
+		{
 			if(texture(diffuseTexture, fs_in.uv).a == 0.0)
 				discard;
 			else
 				color = vec4(lighting, 1.0f) * texture(diffuseTexture, fs_in.uv) * fs_in.color;		
-		} else {
+		}
+		else
+		{
 			color = vec4(lighting, 1.0f) * fs_in.color;		
 		}
     }
