@@ -780,8 +780,15 @@ struct Camera
 #define TEXTURE_ARRAY_SIZE 512
 #define SHADER_ARRAY_SIZE 128
 
-struct texture_data
+enum TextureFiltering
 {
+    LINEAR,
+    NEAREST
+};
+
+struct TextureData
+{
+    TextureFiltering filtering;
     i32 handle;
     char* name;
     i32 width;
@@ -809,7 +816,7 @@ struct UIRenderInfo
     math::Vec4 color = math::Vec4(1, 1, 1, 1);
 };
 
-GENERIC_MAP(texture_data, texture_data*, char*, StrCmp, NULL, "%s", STR_ASSIGN, PTR_COPY);
+GENERIC_MAP(TextureData, TextureData*, char*, StrCmp, NULL, "%s", STR_ASSIGN, PTR_COPY);
 
 struct BufferData
 {
@@ -889,12 +896,12 @@ struct Renderer
     Mesh meshes[MAX_MESHES];
     i32 mesh_count;
     
-    texture_data texture_data[TEXTURE_ARRAY_SIZE];
+    TextureData texture_data[TEXTURE_ARRAY_SIZE];
     i32 texture_count;
     
     i32 texture_handles[TEXTURE_ARRAY_SIZE];
     
-    texture_data_map texture_map;
+    TextureData_map texture_map;
     
     ShaderData shader_data[SHADER_ARRAY_SIZE];
     i32 shader_count;

@@ -735,7 +735,7 @@ static void render_setup(RenderState *render_state, MemoryArena* perm_arena)
     render_state->frame_delta = 0.0f;
 }
 
-static GLuint load_texture(texture_data& data, Texture* texture)
+static GLuint load_texture(TextureData& data, Texture* texture)
 {
     GLuint texture_handle;
     
@@ -743,8 +743,17 @@ static GLuint load_texture(texture_data& data, Texture* texture)
     glBindTexture(GL_TEXTURE_2D, texture_handle);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    
+    if(data.filtering == LINEAR)
+    {
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    }
+    else if(data.filtering == NEAREST)
+    {
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    }
     
     //enable alpha for textures
     glEnable(GL_BLEND);
@@ -1803,7 +1812,7 @@ static void render_mesh_instanced(const RenderCommand &render_command, Renderer 
         set_mat4_uniform(shader.program, "depthProjectionMatrix", shadow_map_matrices->depth_projection_matrix);
         
         set_vec4_uniform(shader.program, "color", render_command.color);
-        set_vec3_uniform(shader.program, "lightPosWorld", math::Vec3(0, 20, -10));
+        set_vec3_uniform(shader.program, "lightPosWorld", math::Vec3(10, 30, -20));
         set_vec3_uniform(shader.program, "diffuseColor", math::Vec3(1, 1, 1));
         set_vec3_uniform(shader.program, "lightColor", math::Vec3(1.0f, 1.0f, 1.0f));
         set_vec3_uniform(shader.program, "specularColor", math::Vec3(1, 1, 1));
