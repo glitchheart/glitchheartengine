@@ -154,16 +154,16 @@ static math::Vec2i texture_size(i32 texture_handle, Renderer& renderer)
 {
     if(texture_handle <= renderer.texture_count)
     {
-        texture_data data = renderer.texture_data[texture_handle - 1];
+        TextureData data = renderer.texture_data[texture_handle - 1];
         return math::Vec2i(data.width, data.height);
     }
     return math::Vec2i();
 }
 
-static void load_texture(const char* full_texture_path, Renderer& renderer, i32* handle = 0)
+static void load_texture(const char* full_texture_path, Renderer& renderer, TextureFiltering filtering, i32* handle = 0)
 {
-    texture_data* texture_data = &renderer.texture_data[renderer.texture_count];
-    
+    TextureData* texture_data = &renderer.texture_data[renderer.texture_count];
+    texture_data->filtering = filtering;
     texture_data->handle = renderer.texture_count++;
     
     texture_data->image_data = stbi_load(full_texture_path, &texture_data->width, &texture_data->height, 0, STBI_rgb_alpha);
@@ -179,14 +179,14 @@ static void load_texture(const char* full_texture_path, Renderer& renderer, i32*
 
 static void load_textures(Renderer& renderer, const char* path, MemoryArena* arena)
 {
-    texture_data_map_init(&renderer.texture_map, hash_string_jenkins, 64);
+    TextureData_map_init(&renderer.texture_map, hash_string_jenkins, 64);
     
     DirectoryData dir_data = {};
     platform.get_all_files_with_extension(arena, path, "png", &dir_data, true);
     
     for (i32 file_index = 0; file_index < dir_data.files_length; file_index++)
     {
-        load_texture(dir_data.file_paths[file_index], renderer);
+        load_texture(dir_data.file_paths[file_index], renderer, LINEAR);
     }
 }
 
@@ -733,6 +733,7 @@ static b32 is_eof(ChunkFormat& format)
 static b32 vertex_equals(Vertex &v1, Vertex &v2)
 {
     return v1.position.x == v2.position.x && v1.position.y == v2.position.y && v1.position.z == v2.position.z && v1.uv.x == v2.uv.x && v1.uv.y == v2.uv.y && v1.normal.x == v2.normal.x && v1.normal.y == v2.normal.y && v1.normal.z == v2.normal.z;
+    
 }
 
 static i32 check_for_identical_vertex(Vertex &vertex, math::Vec2 uv, math::Vec3 normal, Vertex *final_vertices, b32* should_add)
@@ -813,7 +814,19 @@ static void load_obj(Renderer &renderer, char *file_path, i32 *mesh_handle, b32 
                 math::Vec3i normal_indices = {};
                 math::Vec3i uv_indices = {};
                 
-                sscanf(buffer, "f %hd/%d/%d %hd/%d/%d %hd/%d/%d", &face.indices[0], &uv_indices.x, &normal_indices.x, &face.indices[1], &uv_indices.y, &normal_indices.y, &face.indices[2], &uv_indices.z, &normal_indices.z);
+                if(with_uvs && with_normals)
+                {
+                    sscanf(buffer, "f %hd/%d/%d %hd/%d/%d %hd/%d/%d", &face.indices[0], &uv_indices.x, &normal_indices.x, &face.indices[1], &uv_indices.y, &normal_indices.y, &face.indices[2], &uv_indices.z, &normal_indices.z);
+                }
+                else if(with_uvs)
+                {
+                    sscanf(buffer, "f %hd/%d %hd/%d %hd/%d", &face.indices[0], &uv_indices.x, &face.indices[1], &uv_indices.y, &face.indices[2], &uv_indices.z);
+                }
+                
+                else if(with_normals)
+                {
+                    sscanf(buffer, "f %hd//%d %hd//%d %hd//%d", &face.indices[0], &normal_indices.x, &face.indices[1], &normal_indices.y, &face.indices[2], &normal_indices.z);
+                }
                 
                 // The obj-format was made by geniuses and therefore the indices are not 0-indexed. Such wow.
                 face.indices[0] -= 1;
@@ -822,8 +835,19 @@ static void load_obj(Renderer &renderer, char *file_path, i32 *mesh_handle, b32 
                 
                 b32 should_add = false;
                 Vertex v1 = vertices[face.indices[0]];
-                math::Vec2 uv1 = uvs[uv_indices.x - 1];
-                math::Vec3 n1 = normals[normal_indices.x - 1];
+                math::Vec2 uv1(0.0f);
+                math::Vec3 n1(0.0f);
+                
+                if(with_uvs)
+                {
+                    uv1 = uvs[uv_indices.x - 1];
+                }
+                
+                if(with_normals)
+                {
+                    n1 = normals[normal_indices.x - 1];
+                }
+                
                 face.indices[0] = (u16)check_for_identical_vertex(v1, uv1, n1, final_vertices, &should_add);
                 
                 if(should_add)
@@ -833,8 +857,19 @@ static void load_obj(Renderer &renderer, char *file_path, i32 *mesh_handle, b32 
                 
                 should_add = false;
                 Vertex &v2 = vertices[face.indices[1]];
-                math::Vec2 uv2 = uvs[uv_indices.y - 1];
-                math::Vec3 n2 = normals[normal_indices.y - 1];
+                math::Vec2 uv2(0.0f);
+                math::Vec3 n2(0.0f);
+                
+                if(with_uvs)
+                {
+                    uv2 = uvs[uv_indices.y - 1];
+                }
+                
+                if(with_normals)
+                {
+                    n2 = normals[normal_indices.y - 1];
+                }
+                
                 face.indices[1] = (u16)check_for_identical_vertex(v2, uv2, n2, final_vertices, &should_add);
                 
                 if(should_add)
@@ -844,9 +879,21 @@ static void load_obj(Renderer &renderer, char *file_path, i32 *mesh_handle, b32 
                 
                 should_add = false;
                 Vertex &v3 = vertices[face.indices[2]];
-                math::Vec2 uv3 = uvs[uv_indices.z - 1];
-                math::Vec3 n3 = normals[normal_indices.z - 1];
-                face.indices[2] = (u16)check_for_identical_vertex(v3, uv3, n3, final_vertices, &should_add);
+                
+                math::Vec2 uv3(0.0f);
+                math::Vec3 n3(0.0f);
+                
+                if(with_uvs)
+                {
+                    uv3 = uvs[uv_indices.z - 1];
+                }
+                
+                if(with_normals)
+                {
+                    n3 = normals[normal_indices.z - 1];
+                }
+                
+                face.indices[2] = (u16)check_for_identical_vertex(v3, uv3, n3, final_vertices,  &should_add);
                 
                 if(should_add)
                 {
