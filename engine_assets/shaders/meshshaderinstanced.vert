@@ -56,4 +56,3 @@ void main()
 	vs_out.uv = uv;
 	vs_out.color = color;
 }
-

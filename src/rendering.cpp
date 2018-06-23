@@ -737,23 +737,23 @@ static b32 vertex_equals(Vertex &v1, Vertex &v2)
 
 static i32 check_for_identical_vertex(Vertex &vertex, math::Vec2 uv, math::Vec3 normal, Vertex *final_vertices, b32* should_add)
 {
-    i32 current_size = buf_len(final_vertices);
+    size_t current_size = buf_len(final_vertices);
     vertex.uv = uv;
     vertex.normal = normal;
     
-    for(i32 index = 0; index < current_size; index++)
+    for(size_t index = 0; index < current_size; index++)
     {
         Vertex &existing = final_vertices[index];
         
         if(vertex_equals(existing, vertex))
         {
-            return index;
+            return (i32)index;
         }
     }
     
     *should_add = true;
     
-    return current_size + 1;
+    return (i32)current_size;
 }
 
 static void load_obj(Renderer &renderer, char *file_path, i32 *mesh_handle, b32 with_instancing = false, i32 *instance_buffer_handle = 0)
@@ -813,7 +813,7 @@ static void load_obj(Renderer &renderer, char *file_path, i32 *mesh_handle, b32 
                 math::Vec3i normal_indices = {};
                 math::Vec3i uv_indices = {};
                 
-                sscanf(buffer, "f %hd/%d/%hd %hd/%hd/%hd %hd/%hd/%hd", &face.indices[0], &uv_indices.x, &normal_indices.x, &face.indices[1], &uv_indices.y, &normal_indices.y, &face.indices[2], &uv_indices.z, &normal_indices.z);
+                sscanf(buffer, "f %hd/%d/%d %hd/%d/%d %hd/%d/%d", &face.indices[0], &uv_indices.x, &normal_indices.x, &face.indices[1], &uv_indices.y, &normal_indices.y, &face.indices[2], &uv_indices.z, &normal_indices.z);
                 
                 // The obj-format was made by geniuses and therefore the indices are not 0-indexed. Such wow.
                 face.indices[0] -= 1;
@@ -824,7 +824,7 @@ static void load_obj(Renderer &renderer, char *file_path, i32 *mesh_handle, b32 
                 Vertex v1 = vertices[face.indices[0]];
                 math::Vec2 uv1 = uvs[uv_indices.x - 1];
                 math::Vec3 n1 = normals[normal_indices.x - 1];
-                face.indices[0] = check_for_identical_vertex(v1, uv1, n1, final_vertices, &should_add);
+                face.indices[0] = (u16)check_for_identical_vertex(v1, uv1, n1, final_vertices, &should_add);
                 
                 if(should_add)
                 {
@@ -835,7 +835,7 @@ static void load_obj(Renderer &renderer, char *file_path, i32 *mesh_handle, b32 
                 Vertex &v2 = vertices[face.indices[1]];
                 math::Vec2 uv2 = uvs[uv_indices.y - 1];
                 math::Vec3 n2 = normals[normal_indices.y - 1];
-                face.indices[1] = check_for_identical_vertex(v2, uv2, n2, final_vertices, &should_add);
+                face.indices[1] = (u16)check_for_identical_vertex(v2, uv2, n2, final_vertices, &should_add);
                 
                 if(should_add)
                 {
@@ -846,7 +846,7 @@ static void load_obj(Renderer &renderer, char *file_path, i32 *mesh_handle, b32 
                 Vertex &v3 = vertices[face.indices[2]];
                 math::Vec2 uv3 = uvs[uv_indices.z - 1];
                 math::Vec3 n3 = normals[normal_indices.z - 1];
-                face.indices[2] = check_for_identical_vertex(v3, uv3, n3, final_vertices, &should_add);
+                face.indices[2] = (u16)check_for_identical_vertex(v3, uv3, n3, final_vertices, &should_add);
                 
                 if(should_add)
                 {

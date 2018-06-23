@@ -1808,7 +1808,7 @@ static void render_mesh_instanced(const RenderCommand &render_command, Renderer 
         set_vec3_uniform(shader.program, "lightColor", math::Vec3(1.0f, 1.0f, 1.0f));
         set_vec3_uniform(shader.program, "specularColor", math::Vec3(1, 1, 1));
         
-        switch(render_command.mesh.wireframe_type)
+        switch(render_command.mesh_instanced.wireframe_type)
         {
             case WT_NONE:
             {
@@ -1818,14 +1818,14 @@ static void render_mesh_instanced(const RenderCommand &render_command, Renderer 
             break;
             case WT_WITH_MESH:
             {
-                set_vec4_uniform(shader.program, "wireframeColor", render_command.mesh.wireframe_color);
+                set_vec4_uniform(shader.program, "wireframeColor", render_command.mesh_instanced.wireframe_color);
                 set_bool_uniform(shader.program, "drawWireframe", true);
                 set_bool_uniform(shader.program, "drawMesh", true);
             }
             break;
             case WT_WITHOUT_MESH:
             {
-                set_vec4_uniform(shader.program, "wireframeColor", render_command.mesh.wireframe_color);
+                set_vec4_uniform(shader.program, "wireframeColor", render_command.mesh_instanced.wireframe_color);
                 set_bool_uniform(shader.program, "drawWireframe", true);
                 set_bool_uniform(shader.program, "drawMesh", false);
             }
