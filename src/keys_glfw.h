@@ -141,6 +141,7 @@ void init_mouse_button_mappings()
 
 void init_controller_mappings()
 {
+    printf("YES/n");
     map_init(&input_controller.controller_mappings, int_hash);
     map_put(&input_controller.controller_mappings, GLFW_JOYSTICK_1, Joystick_1);
     map_put(&input_controller.controller_mappings, GLFW_JOYSTICK_2, Joystick_2);
@@ -293,7 +294,7 @@ void scroll_callback(GLFWwindow* window, double x_offset, double y_offset)
 
 static void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods)
 {
-    i32 key_mapped = (i32)(imm)map_get(&input_controller.key_mappings, key);
+    i32 key_mapped = (i32)(umm)map_get(&input_controller.key_mappings, key);
     if (action == GLFW_PRESS && key >= 0)
     {
         input_controller.any_key_pressed = true;
