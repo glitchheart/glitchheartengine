@@ -3,6 +3,7 @@
 
 #define PIXELS_PER_UNIT 32
 #define MAX_MESHES 64
+#define MAX_PARTICLE_SYSTEM 64
 
 #define MAX_LIGHTS 150
 #define MAX_BONES 50
@@ -93,7 +94,7 @@ enum ShaderType
     SHADER_FRAME_BUFFER,
     SHADER_SIMPLE_MODEL,
     SHADER_LINE,
-    
+    SHADER_PARTICLES,
     SHADER_COUNT
 };
 
@@ -114,6 +115,7 @@ enum RenderCommandType
     RENDER_COMMAND_SHADER_START,
     RENDER_COMMAND_SHADER_END,
     RENDER_COMMAND_DEPTH_TEST,
+    RENDER_COMMAND_PARTICLES,
     RENDER_COMMAND_COUNT
 };
 
@@ -578,6 +580,19 @@ struct MeshInfo
     b32 cast_shadows;
 };
 
+struct ParticleSystemInfo
+{
+    i32 system_handle;
+    i32 offset_buffer_handle;
+    i32 color_buffer_handle;
+    TransformInfo transform;
+    RenderMaterial material;
+    
+    i32 particle_count;
+    math::Vec3 *offsets;
+    math::Vec4 *colors;
+};
+
 struct RenderInfo
 {
     b32 is_ui;
@@ -740,6 +755,18 @@ struct RenderCommand
         {
             b32 on;
         } depth_test;
+        struct
+        {
+            i32 buffer_handle;
+            i32 offset_buffer_handle;
+            i32 color_buffer_handle;
+            RenderMaterialType material_type;
+            i32 diffuse_texture;
+            
+            i32 particle_count;
+            math::Vec3 *offsets;
+            math::Vec4 *colors;
+        } particles;
     };
     RenderCommand() {}
 };
@@ -835,21 +862,6 @@ struct BufferData
     b32 for_instancing;
 };
 
-struct Particle
-{
-    math::Vec3 center;
-};
-
-#define MAX_PARTICLES 256
-struct ParticleSystem
-{
-    i32 particle_texture;
-    Particle particles[MAX_PARTICLES];
-    i32 particle_count;
-    i32 rate; // Particles per second
-    r32 particle_speed;
-};
-
 #define MAX_CAMERAS 8
 
 #define MAX_ANIMATION_CONTROLLERS 64
@@ -895,6 +907,9 @@ struct Renderer
     
     Mesh meshes[MAX_MESHES];
     i32 mesh_count;
+    
+    ParticleSystemInfo particle_systems[MAX_PARTICLE_SYSTEM];
+    i32 particle_system_count;
     
     TextureData texture_data[TEXTURE_ARRAY_SIZE];
     i32 texture_count;

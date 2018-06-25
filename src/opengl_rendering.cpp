@@ -440,6 +440,7 @@ static void register_instance_buffer(RenderState &render_state)
     Buffer* buffer = &render_state.buffers[render_state.buffer_count];
     render_state.buffer_count++;
     
+    // @Incomplete: Particles
     glGenBuffers(1, &buffer->vbo);
     glBindBuffer(GL_ARRAY_BUFFER, buffer->vbo);
     glBufferData(GL_ARRAY_BUFFER, sizeof(math::Vec3) * 900, nullptr, GL_DYNAMIC_DRAW);
@@ -1844,6 +1845,76 @@ static void render_mesh_instanced(const RenderCommand &render_command, Renderer 
     glActiveTexture(GL_TEXTURE0);
 }
 
+static void render_particles(const RenderCommand &render_command, Renderer &renderer, RenderState &render_state, math::Mat4 projection_matrix, math::Mat4 view_matrix)
+{
+    Buffer offset_buffer = render_state.buffers[render_command.particles.offset_buffer_handle];
+    Buffer color_buffer = render_state.buffers[render_command.particles.color_buffer_handle];
+    
+    glBindVertexArray(render_state.texture_quad_vao);
+    glBindBuffer(GL_ARRAY_BUFFER, render_state.texture_quad_vbo);
+    Shader shader = render_state.particle_shader;
+    
+    use_shader(shader);
+    
+    glEnableVertexAttribArray(0);
+    vertex_attrib_pointer(0, 3, GL_FLOAT,(5 * sizeof(GLfloat)), 0);
+    
+    glEnableVertexAttribArray(1);
+    vertex_attrib_pointer(1, 2, GL_FLOAT, (5 * sizeof(GLfloat)), (void*)(3 * sizeof(GLfloat)));
+    
+    glEnableVertexAttribArray(2);
+    glBindBuffer(GL_ARRAY_BUFFER, offset_buffer.vbo);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(math::Vec3) * render_command.particles.particle_count, render_command.particles.offsets);
+    vertex_attrib_pointer(2, 3, GL_FLOAT, (3 * sizeof(GLfloat)), (void*)(0 * sizeof(GLfloat)));
+    
+    glEnableVertexAttribArray(3);
+    glBindBuffer(GL_ARRAY_BUFFER, color_buffer.vbo);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(math::Vec4) * render_command.particles.particle_count, render_command.particles.colors);
+    vertex_attrib_pointer(3, 4, GL_FLOAT, (4 * sizeof(GLfloat)), (void*)(0 * sizeof(GLfloat)));
+    
+    glVertexAttribDivisor(0, 0);
+    glVertexAttribDivisor(1, 0);
+    glVertexAttribDivisor(2, 1);
+    glVertexAttribDivisor(3, 1);
+    
+    math::Mat4 model_matrix(1.0f);
+    model_matrix = math::scale(model_matrix, render_command.scale);
+    
+    math::Vec3 rotation = render_command.rotation;
+    auto x_axis = rotation.x > 0.0f ? 1.0f : 0.0f;
+    auto y_axis = rotation.y > 0.0f ? 1.0f : 0.0f;
+    auto z_axis = rotation.z > 0.0f ? 1.0f : 0.0f;
+    
+    auto orientation = math::Quat();
+    orientation = math::rotate(orientation, rotation.x, math::Vec3(x_axis, 0.0f, 0.0f));
+    orientation = math::rotate(orientation, rotation.y, math::Vec3(0.0f, y_axis, 0.0f));
+    orientation = math::rotate(orientation, rotation.z, math::Vec3(0.0f, 0.0f, z_axis));
+    
+    model_matrix = to_matrix(orientation) * model_matrix;
+    
+    model_matrix = math::translate(model_matrix, render_command.position);
+    
+    set_mat4_uniform(shader.program, "projectionMatrix", projection_matrix);
+    set_mat4_uniform(shader.program, "viewMatrix", view_matrix);
+    set_mat4_uniform(shader.program, "modelMatrix", model_matrix);
+    
+    /*
+    if(render_command.mesh_instanced.diffuse_texture != 0)
+    {
+        auto texture = render_state.texture_array[renderer.texture_data[render_command.mesh_instanced.diffuse_texture - 1].handle];
+        
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, texture.texture_handle);
+        
+        set_bool_uniform(shader.program, "hasTexture", true);
+    }
+    else
+        set_bool_uniform(shader.program, "hasTexture", false);
+    */
+    
+    glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)0, render_command.particles.particle_count);
+}
+
 static void render_buffer(const RenderCommand& command, RenderState& render_state, math::Mat4 projection, math::Mat4 view)
 {
     Buffer buffer = render_state.buffers[command.buffer.buffer_handle];
@@ -2189,6 +2260,11 @@ static void render_commands(RenderState &render_state, Renderer &renderer)
             {
                 render_mesh(command, renderer, render_state, camera.projection_matrix, camera.view_matrix, false, &renderer.shadow_map_matrices);
                 
+            }
+            break;
+            case RENDER_COMMAND_PARTICLES:
+            {
+                render_particles(command, renderer, render_state, camera.projection_matrix, camera.view_matrix);
             }
             break;
             case RENDER_COMMAND_MESH_INSTANCED:

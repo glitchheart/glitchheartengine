@@ -1,15 +1,14 @@
 #version 330 core
 
 layout(location = 0) in vec3 position;
-layout(location = 2) in vec2 uv;
+layout(location = 1) in vec2 uv;
 
-layout(location = 3) in vec3 offset;
+layout(location = 2) in vec3 offset;
+layout(location = 3) in vec4 color;
 
 uniform mat4 modelMatrix;
 uniform mat4 viewMatrix;
 uniform mat4 projectionMatrix;
-
-uniform vec4 color;
 
 out fs_color;
 
@@ -26,4 +25,3 @@ void main()
 	fs_uv = uv;
 	fs_color = color;
 }
-
