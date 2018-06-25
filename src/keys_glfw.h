@@ -141,7 +141,6 @@ void init_mouse_button_mappings()
 
 void init_controller_mappings()
 {
-    printf("YES/n");
     map_init(&input_controller.controller_mappings, int_hash);
     map_put(&input_controller.controller_mappings, GLFW_JOYSTICK_1, Joystick_1);
     map_put(&input_controller.controller_mappings, GLFW_JOYSTICK_2, Joystick_2);

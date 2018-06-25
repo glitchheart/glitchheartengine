@@ -881,11 +881,6 @@ static void initialize_opengl(RenderState& render_state, Renderer& renderer, Con
     glfwGetFramebufferSize(render_state.window, &render_state.window_width, &render_state.window_height);
     glViewport(0, 0, render_state.window_width, render_state.window_height);
     
-    i32 max;
-    glGetIntegerv(GL_MAX_VERTEX_UNIFORM_VECTORS, &max);
-    
-    printf("MAX %d\n", max);
-    
 #if !defined(__APPLE__)
     //Enable debug output
     glEnable(GL_DEBUG_OUTPUT);
