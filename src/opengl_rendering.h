@@ -36,7 +36,8 @@ const static struct
     SHADERPAIR(SPRITESHEET),
     SHADERPAIR(FRAME_BUFFER),
     SHADERPAIR(SIMPLE_MODEL),
-    SHADERPAIR(LINE)
+    SHADERPAIR(LINE),
+    SHADERPAIR(PARTICLES)
 };
 
 char* shader_enum_to_str(ShaderType shader)
@@ -64,7 +65,8 @@ static char* shader_paths[SHADER_COUNT] =
     "../engine_assets/shaders/spritesheetanimationshader",
     "../engine_assets/shaders/framebuffershader",
     "../engine_assets/shaders/simple_model_shader",
-    "../engine_assets/shaders/lineshader"
+    "../engine_assets/shaders/lineshader",
+    "../engine_assets/shaders/particleshader"
 };
 
 
@@ -252,6 +254,7 @@ struct RenderState
             Shader frame_buffer_shader;
             Shader simple_model_shader;
             Shader line_shader;
+            Shader particle_shader;
         };
     };
     

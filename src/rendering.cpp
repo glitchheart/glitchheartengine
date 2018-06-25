@@ -637,6 +637,23 @@ static void push_mesh_instanced(Renderer &renderer, MeshInfo mesh_info, math::Ve
     render_command->cast_shadows = mesh_info.cast_shadows;
 }
 
+static void push_particle_system(Renderer &renderer, ParticleSystemInfo particle_info)
+{
+    RenderCommand *render_command = push_next_command(renderer, false);
+    render_command->type = RENDER_COMMAND_PARTICLES;
+    render_command->position = particle_info.transform.position;
+    //render_command->rotation = mesh_info.transform.rotation;
+    
+    // @Incomplete
+    //render_command->particles.buffer_handle = particle_info.buffer_handle;
+    //render_command->particles.material.diffuse_texture = 0; // @Incomplete
+    render_command->particles.offset_buffer_handle = particle_info.offset_buffer_handle;
+    render_command->particles.color_buffer_handle = particle_info.color_buffer_handle;
+    render_command->particles.particle_count = particle_info.particle_count;
+    render_command->particles.offsets = particle_info.offsets;
+    render_command->particles.colors = particle_info.colors;
+}
+
 /*
 static void push_model(Renderer& renderer, Model& model, MemoryArena* arena)
 {
@@ -755,6 +772,19 @@ static i32 check_for_identical_vertex(Vertex &vertex, math::Vec2 uv, math::Vec3 
     *should_add = true;
     
     return (i32)current_size;
+}
+
+static void create_particle_system(Renderer &renderer, ParticleSystemInfo *system_info)
+{
+    BufferData offset_data = {};
+    offset_data.for_instancing = true;
+    renderer.buffers[renderer.buffer_count] = offset_data;
+    system_info->offset_buffer_handle = renderer.buffer_count++;
+    
+    BufferData color_data = {};
+    color_data.for_instancing = true;
+    renderer.buffers[renderer.buffer_count] = color_data;
+    system_info->color_buffer_handle = renderer.buffer_count++;
 }
 
 static void load_obj(Renderer &renderer, char *file_path, i32 *mesh_handle, b32 with_instancing = false, i32 *instance_buffer_handle = 0)
