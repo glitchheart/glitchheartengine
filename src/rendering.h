@@ -580,15 +580,33 @@ struct MeshInfo
     b32 cast_shadows;
 };
 
+struct Particle
+{
+    math::Vec3 position;
+    math::Vec3 speed;
+    math::Rgba color;
+    r32 size;
+    r32 life;
+};
+
 struct ParticleSystemInfo
 {
     i32 system_handle;
+    
+    math::Vec3 direction;
+    r32 life_time;
+    i32 particles_per_second;
+    
     i32 offset_buffer_handle;
     i32 color_buffer_handle;
     TransformInfo transform;
     RenderMaterial material;
     
+    Particle *particles;
     i32 particle_count;
+    i32 last_used_particle;
+    i32 max_particles;
+    
     math::Vec3 *offsets;
     math::Vec4 *colors;
 };
@@ -860,6 +878,7 @@ struct BufferData
     i32 existing_handle = -1;
     
     b32 for_instancing;
+	size_t instance_buffer_size;
 };
 
 #define MAX_CAMERAS 8

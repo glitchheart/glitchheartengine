@@ -561,6 +561,7 @@ static void create_cube(Renderer &renderer, i32 *mesh_handle, b32 with_instancin
     if(with_instancing)
     {
         BufferData data = {};
+        data.instance_buffer_size = sizeof(math::Vec3) * 900;
         data.for_instancing = true;
         renderer.buffers[renderer.buffer_count] = data;
         *instance_buffer_handle = renderer.buffer_count++;
@@ -637,9 +638,11 @@ static void push_mesh_instanced(Renderer &renderer, MeshInfo mesh_info, math::Ve
     render_command->cast_shadows = mesh_info.cast_shadows;
 }
 
-static void push_particle_system(Renderer &renderer, ParticleSystemInfo particle_info)
+static void push_particle_system(Renderer &renderer, i32 particle_system_handle)
 {
+    ParticleSystemInfo &particle_info = renderer.particle_systems[particle_system_handle];
     RenderCommand *render_command = push_next_command(renderer, false);
+    
     render_command->type = RENDER_COMMAND_PARTICLES;
     render_command->position = particle_info.transform.position;
     //render_command->rotation = mesh_info.transform.rotation;
@@ -774,17 +777,31 @@ static i32 check_for_identical_vertex(Vertex &vertex, math::Vec2 uv, math::Vec3 
     return (i32)current_size;
 }
 
-static void create_particle_system(Renderer &renderer, ParticleSystemInfo *system_info)
+static void create_particle_system(Renderer &renderer, i32 *handle, r64 life_time, i32 particles_per_second, i32 max_particles, MemoryArena *memory_arena)
 {
+    ParticleSystemInfo &system_info = renderer.particle_systems[renderer.particle_system_count++];
+    
+    system_info.life_time = life_time;
+    system_info.particles_per_second = 1000; //particles_per_second;
+    system_info.max_particles = max_particles;
+    system_info.particle_count = 0;
+    system_info.last_used_particle = 0;
+    system_info.particles = push_array(memory_arena, system_info.max_particles, Particle);
+    system_info.offsets = push_array(memory_arena, system_info.max_particles, math::Vec3);
+    system_info.colors = push_array(memory_arena, system_info.max_particles, math::Vec4);
+    
     BufferData offset_data = {};
     offset_data.for_instancing = true;
+    offset_data.instance_buffer_size = sizeof(math::Vec3) * system_info.max_particles;
     renderer.buffers[renderer.buffer_count] = offset_data;
-    system_info->offset_buffer_handle = renderer.buffer_count++;
+    system_info.offset_buffer_handle = renderer.buffer_count++;
     
     BufferData color_data = {};
     color_data.for_instancing = true;
+    color_data.instance_buffer_size = sizeof(math::Vec4) * system_info.max_particles;
     renderer.buffers[renderer.buffer_count] = color_data;
-    system_info->color_buffer_handle = renderer.buffer_count++;
+    system_info.color_buffer_handle = renderer.buffer_count++;
+    *handle = renderer.particle_system_count - 1;
 }
 
 static void load_obj(Renderer &renderer, char *file_path, i32 *mesh_handle, b32 with_instancing = false, i32 *instance_buffer_handle = 0)
@@ -959,19 +976,9 @@ static void load_obj(Renderer &renderer, char *file_path, i32 *mesh_handle, b32 
     if(with_instancing)
     {
         BufferData data = {};
+        data.instance_buffer_size = sizeof(math::Vec3) * 900;
         data.for_instancing = true;
         renderer.buffers[renderer.buffer_count] = data;
         *instance_buffer_handle = renderer.buffer_count++;
     }
-}
-
-static void add_particle_system(Renderer& renderer, math::Vec3 position, i32 texture_handle, r32 rate, r32 speed, i32* handle)
-{
-}
-static void update_particle_system_position(Renderer& renderer, i32 handle, math::Vec2 new_position)
-{
-}
-
-static void remove_particle_system(Renderer& renderer, i32 handle)
-{
 }

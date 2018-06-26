@@ -435,7 +435,7 @@ static void register_buffers(RenderState& render_state, GLfloat* vertex_buffer, 
     glBindVertexArray(0);
 }
 
-static void register_instance_buffer(RenderState &render_state)
+static void register_instance_buffer(RenderState &render_state, BufferData &buffer_data)
 {
     Buffer* buffer = &render_state.buffers[render_state.buffer_count];
     render_state.buffer_count++;
@@ -443,7 +443,7 @@ static void register_instance_buffer(RenderState &render_state)
     // @Incomplete: Particles
     glGenBuffers(1, &buffer->vbo);
     glBindBuffer(GL_ARRAY_BUFFER, buffer->vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(math::Vec3) * 900, nullptr, GL_DYNAMIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, buffer_data.instance_buffer_size, nullptr, GL_DYNAMIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
@@ -681,6 +681,32 @@ static void setup_quad(RenderState& render_state, MemoryArena* perm_arena)
     glBindVertexArray(0);
 }
 
+
+static void setup_billboard(RenderState& render_state, MemoryArena* perm_arena)
+{
+    //Quad EBO
+    glGenBuffers(1, &render_state.billboard_ibo);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, render_state.billboard_ibo);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(render_state.quad_indices), render_state.quad_indices, GL_STATIC_DRAW);
+    
+    //Quad VBO/VAO
+    glGenVertexArrays(1, &render_state.billboard_vao);
+    glBindVertexArray(render_state.billboard_vao);
+    glGenBuffers(1, &render_state.billboard_vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, render_state.billboard_vbo);
+    glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)render_state.billboard_vertices_size, render_state.billboard_vertices, GL_DYNAMIC_DRAW);
+    
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, render_state.billboard_ibo);
+    
+    render_state.quad_shader.type = SHADER_QUAD;
+    load_shader(shader_paths[SHADER_QUAD], &render_state.quad_shader, perm_arena);
+    
+    auto position_location = (GLuint)glGetAttribLocation(render_state.quad_shader.program, "pos");
+    vertex_attrib_pointer(position_location, 3, GL_FLOAT,  3 * sizeof(float), 0);
+    
+    glBindVertexArray(0);
+}
+
 static void setup_lines(RenderState& render_state, MemoryArena* perm_arena)
 {
     load_shader(shader_paths[SHADER_LINE], &render_state.line_shader, perm_arena);
@@ -719,6 +745,7 @@ static void render_setup(RenderState *render_state, MemoryArena* perm_arena)
     
     create_shadow_map(render_state->shadow_map_buffer, 1024, 1024);
     
+    setup_billboard(*render_state, perm_arena);
     setup_quad(*render_state, perm_arena);
     setup_lines(*render_state, perm_arena);
     
@@ -731,6 +758,9 @@ static void render_setup(RenderState *render_state, MemoryArena* perm_arena)
     
     render_state->mesh_instanced_shader.type = SHADER_MESH_INSTANCED;
     load_shader(shader_paths[SHADER_MESH_INSTANCED], &render_state->mesh_instanced_shader, perm_arena);
+    
+	render_state->mesh_shader.type = SHADER_PARTICLES;
+	load_shader(shader_paths[SHADER_PARTICLES], &render_state->particle_shader, perm_arena);
     
     render_state->total_delta = 0.0f;
     render_state->frame_delta = 0.0f;
@@ -1850,8 +1880,8 @@ static void render_particles(const RenderCommand &render_command, Renderer &rend
     Buffer offset_buffer = render_state.buffers[render_command.particles.offset_buffer_handle];
     Buffer color_buffer = render_state.buffers[render_command.particles.color_buffer_handle];
     
-    glBindVertexArray(render_state.texture_quad_vao);
-    glBindBuffer(GL_ARRAY_BUFFER, render_state.texture_quad_vbo);
+    glBindVertexArray(render_state.billboard_vao);
+    glBindBuffer(GL_ARRAY_BUFFER, render_state.billboard_vbo);
     Shader shader = render_state.particle_shader;
     
     use_shader(shader);
@@ -1877,39 +1907,24 @@ static void render_particles(const RenderCommand &render_command, Renderer &rend
     glVertexAttribDivisor(2, 1);
     glVertexAttribDivisor(3, 1);
     
-    math::Mat4 model_matrix(1.0f);
-    model_matrix = math::scale(model_matrix, render_command.scale);
-    
-    math::Vec3 rotation = render_command.rotation;
-    auto x_axis = rotation.x > 0.0f ? 1.0f : 0.0f;
-    auto y_axis = rotation.y > 0.0f ? 1.0f : 0.0f;
-    auto z_axis = rotation.z > 0.0f ? 1.0f : 0.0f;
-    
-    auto orientation = math::Quat();
-    orientation = math::rotate(orientation, rotation.x, math::Vec3(x_axis, 0.0f, 0.0f));
-    orientation = math::rotate(orientation, rotation.y, math::Vec3(0.0f, y_axis, 0.0f));
-    orientation = math::rotate(orientation, rotation.z, math::Vec3(0.0f, 0.0f, z_axis));
-    
-    model_matrix = to_matrix(orientation) * model_matrix;
-    
-    model_matrix = math::translate(model_matrix, render_command.position);
-    
     set_mat4_uniform(shader.program, "projectionMatrix", projection_matrix);
     set_mat4_uniform(shader.program, "viewMatrix", view_matrix);
-    set_mat4_uniform(shader.program, "modelMatrix", model_matrix);
+    
+    set_vec3_uniform(shader.program, "cameraRight", math::Vec3(view_matrix[0][0], view_matrix[1][0], view_matrix[2][0]));
+    set_vec3_uniform(shader.program, "cameraUp", math::Vec3(view_matrix[0][1], view_matrix[1][1], view_matrix[2][1]));
     
     /*
     if(render_command.mesh_instanced.diffuse_texture != 0)
     {
-        auto texture = render_state.texture_array[renderer.texture_data[render_command.mesh_instanced.diffuse_texture - 1].handle];
-        
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, texture.texture_handle);
-        
-        set_bool_uniform(shader.program, "hasTexture", true);
+    auto texture = render_state.texture_array[renderer.texture_data[render_command.mesh_instanced.diffuse_texture - 1].handle];
+    
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, texture.texture_handle);
+    
+    set_bool_uniform(shader.program, "hasTexture", true);
     }
     else
-        set_bool_uniform(shader.program, "hasTexture", false);
+    set_bool_uniform(shader.program, "hasTexture", false);
     */
     
     glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)0, render_command.particles.particle_count);
@@ -2040,7 +2055,7 @@ static void register_buffers(RenderState& render_state, Renderer& renderer, Memo
         
         if(data.for_instancing)
         {
-            register_instance_buffer(render_state);
+            register_instance_buffer(render_state, data);
         }
         else if (data.index_buffer_count == 0)
         {
