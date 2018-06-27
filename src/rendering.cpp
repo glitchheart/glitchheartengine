@@ -652,9 +652,12 @@ static void push_particle_system(Renderer &renderer, i32 particle_system_handle)
     //render_command->particles.material.diffuse_texture = 0; // @Incomplete
     render_command->particles.offset_buffer_handle = particle_info.offset_buffer_handle;
     render_command->particles.color_buffer_handle = particle_info.color_buffer_handle;
+    render_command->particles.size_buffer_handle = particle_info.size_buffer_handle;
     render_command->particles.particle_count = particle_info.particle_count;
     render_command->particles.offsets = particle_info.offsets;
     render_command->particles.colors = particle_info.colors;
+    render_command->particles.sizes = particle_info.sizes;
+    render_command->particles.diffuse_texture = particle_info.texture_handle;
 }
 
 /*
@@ -777,7 +780,7 @@ static i32 check_for_identical_vertex(Vertex &vertex, math::Vec2 uv, math::Vec3 
     return (i32)current_size;
 }
 
-static void create_particle_system(Renderer &renderer, i32 *handle, r64 life_time, i32 particles_per_second, i32 max_particles, MemoryArena *memory_arena)
+static void create_particle_system(Renderer &renderer, i32 *handle, r64 life_time, i32 particles_per_second, i32 max_particles, i32 texture_handle, MemoryArena *memory_arena)
 {
     ParticleSystemInfo &system_info = renderer.particle_systems[renderer.particle_system_count++];
     
@@ -789,6 +792,8 @@ static void create_particle_system(Renderer &renderer, i32 *handle, r64 life_tim
     system_info.particles = push_array(memory_arena, system_info.max_particles, Particle);
     system_info.offsets = push_array(memory_arena, system_info.max_particles, math::Vec3);
     system_info.colors = push_array(memory_arena, system_info.max_particles, math::Vec4);
+    system_info.sizes = push_array(memory_arena, system_info.max_particles, r32);
+    system_info.texture_handle = texture_handle;
     
     BufferData offset_data = {};
     offset_data.for_instancing = true;
@@ -801,6 +806,13 @@ static void create_particle_system(Renderer &renderer, i32 *handle, r64 life_tim
     color_data.instance_buffer_size = sizeof(math::Vec4) * system_info.max_particles;
     renderer.buffers[renderer.buffer_count] = color_data;
     system_info.color_buffer_handle = renderer.buffer_count++;
+    
+    BufferData size_data = {};
+    size_data.for_instancing = true;
+    size_data.instance_buffer_size = sizeof(r32) * system_info.max_particles;
+    renderer.buffers[renderer.buffer_count] = size_data;
+    system_info.size_buffer_handle = renderer.buffer_count++;
+    
     *handle = renderer.particle_system_count - 1;
 }
 

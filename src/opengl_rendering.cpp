@@ -759,8 +759,8 @@ static void render_setup(RenderState *render_state, MemoryArena* perm_arena)
     render_state->mesh_instanced_shader.type = SHADER_MESH_INSTANCED;
     load_shader(shader_paths[SHADER_MESH_INSTANCED], &render_state->mesh_instanced_shader, perm_arena);
     
-	render_state->mesh_shader.type = SHADER_PARTICLES;
-	load_shader(shader_paths[SHADER_PARTICLES], &render_state->particle_shader, perm_arena);
+    render_state->mesh_shader.type = SHADER_PARTICLES;
+    load_shader(shader_paths[SHADER_PARTICLES], &render_state->particle_shader, perm_arena);
     
     render_state->total_delta = 0.0f;
     render_state->frame_delta = 0.0f;
@@ -1879,6 +1879,7 @@ static void render_particles(const RenderCommand &render_command, Renderer &rend
 {
     Buffer offset_buffer = render_state.buffers[render_command.particles.offset_buffer_handle];
     Buffer color_buffer = render_state.buffers[render_command.particles.color_buffer_handle];
+    Buffer size_buffer = render_state.buffers[render_command.particles.size_buffer_handle];
     
     glBindVertexArray(render_state.billboard_vao);
     glBindBuffer(GL_ARRAY_BUFFER, render_state.billboard_vbo);
@@ -1902,10 +1903,17 @@ static void render_particles(const RenderCommand &render_command, Renderer &rend
     glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(math::Vec4) * render_command.particles.particle_count, render_command.particles.colors);
     vertex_attrib_pointer(3, 4, GL_FLOAT, (4 * sizeof(GLfloat)), (void*)(0 * sizeof(GLfloat)));
     
+    glEnableVertexAttribArray(4);
+    glBindBuffer(GL_ARRAY_BUFFER, size_buffer.vbo);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(GLfloat) * render_command.particles.particle_count, render_command.particles.sizes);
+    vertex_attrib_pointer(4, 1, GL_FLOAT, sizeof(GLfloat), (void*)(0 * sizeof(GLfloat)));
+    
+    
     glVertexAttribDivisor(0, 0);
     glVertexAttribDivisor(1, 0);
     glVertexAttribDivisor(2, 1);
     glVertexAttribDivisor(3, 1);
+    glVertexAttribDivisor(4, 1);
     
     set_mat4_uniform(shader.program, "projectionMatrix", projection_matrix);
     set_mat4_uniform(shader.program, "viewMatrix", view_matrix);
@@ -1913,19 +1921,18 @@ static void render_particles(const RenderCommand &render_command, Renderer &rend
     set_vec3_uniform(shader.program, "cameraRight", math::Vec3(view_matrix[0][0], view_matrix[1][0], view_matrix[2][0]));
     set_vec3_uniform(shader.program, "cameraUp", math::Vec3(view_matrix[0][1], view_matrix[1][1], view_matrix[2][1]));
     
-    /*
-    if(render_command.mesh_instanced.diffuse_texture != 0)
+    // Check for texture
+    if(render_command.particles.diffuse_texture != 0)
     {
-    auto texture = render_state.texture_array[renderer.texture_data[render_command.mesh_instanced.diffuse_texture - 1].handle];
-    
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, texture.texture_handle);
-    
-    set_bool_uniform(shader.program, "hasTexture", true);
+        auto texture = render_state.texture_array[renderer.texture_data[render_command.particles.diffuse_texture - 1].handle];
+        
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, texture.texture_handle);
+        
+        set_bool_uniform(shader.program, "withTexture", true);
     }
     else
-    set_bool_uniform(shader.program, "hasTexture", false);
-    */
+        set_bool_uniform(shader.program, "withTexture", false);
     
     glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)0, render_command.particles.particle_count);
 }
