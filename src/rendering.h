@@ -599,6 +599,7 @@ struct ParticleSystemInfo
     
     i32 offset_buffer_handle;
     i32 color_buffer_handle;
+    i32 size_buffer_handle;
     TransformInfo transform;
     RenderMaterial material;
     
@@ -609,6 +610,9 @@ struct ParticleSystemInfo
     
     math::Vec3 *offsets;
     math::Vec4 *colors;
+    r32 *sizes;
+    
+    i32 texture_handle;
 };
 
 struct RenderInfo
@@ -778,12 +782,15 @@ struct RenderCommand
             i32 buffer_handle;
             i32 offset_buffer_handle;
             i32 color_buffer_handle;
+            i32 size_buffer_handle;
             RenderMaterialType material_type;
             i32 diffuse_texture;
             
             i32 particle_count;
             math::Vec3 *offsets;
             math::Vec4 *colors;
+            r32 *sizes;
+            i32 texture_handle;
         } particles;
     };
     RenderCommand() {}
@@ -878,7 +885,7 @@ struct BufferData
     i32 existing_handle = -1;
     
     b32 for_instancing;
-	size_t instance_buffer_size;
+    size_t instance_buffer_size;
 };
 
 #define MAX_CAMERAS 8

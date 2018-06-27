@@ -5,6 +5,7 @@ layout(location = 1) in vec2 uv;
 
 layout(location = 2) in vec3 offset;
 layout(location = 3) in vec4 color;
+layout(location = 4) in float size;
 
 uniform mat4 viewMatrix;
 uniform mat4 projectionMatrix;
@@ -19,8 +20,8 @@ void main()
 
 	vec3 vertexPositionWorld = 
 		offset
-		+ cameraRight * position.x * 0.1
-		+ cameraUp * position.y * 0.1;
+		+ cameraRight * position.x * size
+		+ cameraUp * position.y * size;
 
 	gl_Position = projectionMatrix * viewMatrix * vec4(vertexPositionWorld, 1.0);
 
