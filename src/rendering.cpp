@@ -780,12 +780,51 @@ static i32 check_for_identical_vertex(Vertex &vertex, math::Vec2 uv, math::Vec3 
     return (i32)current_size;
 }
 
-static void create_particle_system(Renderer &renderer, i32 *handle, r64 life_time, i32 particles_per_second, i32 max_particles, i32 texture_handle, MemoryArena *memory_arena)
+static ParticleSystemInfo & get_particle_system_info(i32 handle, Renderer& renderer)
+{
+    if(handle >= 0 && handle < renderer.particle_system_count)
+    {
+        return renderer.particle_systems[handle];
+    }
+}
+
+static void start_particle_system(ParticleSystemInfo &system, b32 one_shot = false)
+{
+    system.one_shot = one_shot;
+    system.running = true;
+	system.emitting = true;
+	system.total_emitted = 0;
+	system.particle_count = 0;
+    
+    for(i32 index = 0; index < system.max_particles; index++)
+    {
+        system.particles[index].life = 0.0f;
+    }
+}
+
+static void start_particle_system(i32 handle, Renderer &renderer, b32 one_shot = false)
+{
+    ParticleSystemInfo &system = renderer.particle_systems[handle];
+    start_particle_system(system, one_shot);
+}
+
+static void stop_particle_system(i32 handle, Renderer &renderer)
+{
+    ParticleSystemInfo &system = renderer.particle_systems[handle];
+    system.running = false;
+}
+
+static void create_particle_system(Renderer &renderer, i32 *handle, r32 size, math::Rgba color, r64 life_time, r32 speed_multiplier, r32 spread, i32 particles_per_second, i32 max_particles, i32 texture_handle, MemoryArena *memory_arena)
 {
     ParticleSystemInfo &system_info = renderer.particle_systems[renderer.particle_system_count++];
-    
+    system_info.running = false;
+    system_info.one_shot = false;
+    system_info.color = color;
+    system_info.size = size;
     system_info.life_time = life_time;
-    system_info.particles_per_second = 1000; //particles_per_second;
+    system_info.speed_multiplier = speed_multiplier;
+    system_info.spread = spread;
+    system_info.particles_per_second = particles_per_second;
     system_info.max_particles = max_particles;
     system_info.particle_count = 0;
     system_info.last_used_particle = 0;

@@ -16,7 +16,7 @@ void main()
 		if(color.a == 0.0)
 			discard;
 		else
-	    	outColor = color; 
+	    	outColor = color * fs_color; 
 	}
 	else
 	{

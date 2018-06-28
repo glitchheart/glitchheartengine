@@ -586,16 +586,23 @@ struct Particle
     math::Vec3 speed;
     math::Rgba color;
     r32 size;
-    r32 life;
+    r64 life;
 };
 
 struct ParticleSystemInfo
 {
     i32 system_handle;
     
+    b32 running;
+    b32 one_shot;
+    b32 emitting;
     math::Vec3 direction;
-    r32 life_time;
+    r32 spread;
+    r32 size;
+    math::Rgba color;
+    r64 life_time;
     i32 particles_per_second;
+    r32 speed_multiplier;
     
     i32 offset_buffer_handle;
     i32 color_buffer_handle;
@@ -605,7 +612,8 @@ struct ParticleSystemInfo
     
     Particle *particles;
     i32 particle_count;
-    i32 last_used_particle;
+	i32 total_emitted;
+	i32 last_used_particle;
     i32 max_particles;
     
     math::Vec3 *offsets;
