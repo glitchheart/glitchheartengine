@@ -821,6 +821,7 @@ static void create_particle_system(Renderer &renderer, i32 *handle, r32 size, ma
     system_info.one_shot = false;
     system_info.color = color;
     system_info.size = size;
+    system_info.direction = math::Vec3(0.0f, 1.0f, 0.0f);
     system_info.life_time = life_time;
     system_info.speed_multiplier = speed_multiplier;
     system_info.spread = spread;
