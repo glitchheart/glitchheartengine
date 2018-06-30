@@ -366,16 +366,14 @@ int main(int argc, char** args)
     SoundDevice sound_device = {};
     init_audio_fmod(&sound_device);
     
-    SoundCommands sound_commands = {};
-    sound_commands.sounds_to_load = {};
-    sound_commands.sound_arena.minimum_block_size = sizeof(SoundEffect) * MAX_SOUND_EFFECTS;
+    SoundSystem sound_system = {};
+    sound_system.sound_commands.minimum_block_size = sizeof(SoundCommand) * MAX_SOUND_COMMANDS;
     
     if (sound_device.is_initialized)
     {
-        reset_commands(&sound_commands);
-        sound_commands.sfx_volume = config_data.sfx_volume;
-        sound_commands.music_volume = config_data.music_volume;
-        sound_commands.muted = config_data.muted;
+        sound_system.sfx_volume = config_data.sfx_volume;
+        sound_system.music_volume = config_data.music_volume;
+        sound_system.muted = config_data.muted;
     }
     
     r64 last_frame = get_time();
@@ -405,12 +403,12 @@ int main(int argc, char** args)
         reload_libraries(&game, game_library_path, temp_game_library_path, &platform_state->perm_arena);
         
         auto game_temp_mem = begin_temporary_memory(game_memory.temp_arena);
-        game.update(delta_time, &game_memory, renderer, &input_controller, &sound_commands, timer_controller);
+        game.update(delta_time, &game_memory, renderer, &input_controller, &sound_system, timer_controller);
         
-        tick_animation_controllers(renderer, &sound_commands, &input_controller, timer_controller, delta_time);
+        tick_animation_controllers(renderer, &sound_system, &input_controller, timer_controller, delta_time);
         tick_timers(timer_controller, delta_time);
         
-        play_sounds(&sound_device, &sound_commands);
+        update_sound_commands(&sound_device, &sound_system);
         
         render(render_state, renderer, &platform_state->perm_arena, delta_time);
         

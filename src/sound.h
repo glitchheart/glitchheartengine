@@ -1,9 +1,12 @@
 #ifndef SOUND_H
 #define SOUND_H
 
-#define MAX_SOUND_EFFECTS 400
+#define MAX_SOUNDS 400
 #define MAX_AUDIO_SOURCES 64
+#define MAX_CHANNEL_GROUPS 64
+#define MAX_SOUND_COMMANDS 1024
 
+/*
 struct SoundInfo
 {
     r32 pitch;
@@ -49,5 +52,88 @@ struct SoundCommands
     b32 paused;
     b32 stopped;
 };
+*/
+
+
+struct SoundHandle
+{
+    i32 handle;
+};
+
+struct AudioSourceHandle
+{
+    i32 handle;
+};
+
+struct AudioSource
+{
+    AudioSourceHandle handle;
+    SoundHandle sound_handle;
+    b32 loop;
+    u32 position_ms;
+    
+    // Add all the stuff that FMOD at least supports
+};
+
+struct ChannelGroup
+{
+    // Empty for now. May need stuff later
+};
+
+enum SoundCommandType
+{
+    SC_PLAY_AUDIO_SOURCE,
+    SC_STOP_AUDIO_SOURCE,
+    SC_LOAD_SOUND,
+    SC_ONE_SHOT
+};
+
+struct SoundCommand
+{
+    SoundCommandType type;
+    
+    union
+    {
+        struct
+        {
+            AudioSourceHandle handle;
+        } play_audio_source;
+        struct
+        {
+            AudioSourceHandle handle;
+        } stop_audio_source;
+        struct
+        {
+            char file_path[255];
+        } load_sound;
+        struct
+        {
+            SoundHandle handle;
+        } one_shot;
+    };
+};
+
+struct SoundSystem
+{
+    SoundHandle sounds[MAX_SOUNDS];
+    i32 sound_count;
+    
+    AudioSource audio_sources[MAX_AUDIO_SOURCES];
+    i32 audio_source_count;
+    
+    // For later. Doesn't really matter much for now
+    ChannelGroup channel_groups[MAX_CHANNEL_GROUPS];
+    i32 channel_group_count;
+    
+    MemoryArena sound_commands;
+    i32 command_count;
+    
+    b32 paused;
+    b32 muted;
+    
+    r32 sfx_volume;
+    r32 music_volume;
+};
+
 
 #endif
