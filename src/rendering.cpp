@@ -780,21 +780,22 @@ static i32 check_for_identical_vertex(Vertex &vertex, math::Vec2 uv, math::Vec3 
     return (i32)current_size;
 }
 
-static ParticleSystemInfo & get_particle_system_info(i32 handle, Renderer& renderer)
+static ParticleSystemInfo * get_particle_system_info(i32 handle, Renderer& renderer)
 {
     if(handle >= 0 && handle < renderer.particle_system_count)
     {
-        return renderer.particle_systems[handle];
+        return &renderer.particle_systems[handle];
     }
+    return 0;
 }
 
 static void start_particle_system(ParticleSystemInfo &system, b32 one_shot = false)
 {
     system.one_shot = one_shot;
     system.running = true;
-	system.emitting = true;
-	system.total_emitted = 0;
-	system.particle_count = 0;
+    system.emitting = true;
+    system.total_emitted = 0;
+    system.particle_count = 0;
     
     for(i32 index = 0; index < system.max_particles; index++)
     {
