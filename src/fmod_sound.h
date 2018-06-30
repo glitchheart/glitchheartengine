@@ -1,8 +1,10 @@
 #ifndef FMOD_SOUND_H
 #define FMOD_SOUND_H
 
-#define SOUNDS 64
-#define CHANNELS 64
+#define SOUNDS 128
+#define CHANNELS 128
+
+#define TIME_UNIT FMOD_TIMEUNIT_MS
 
 struct SoundDevice
 {

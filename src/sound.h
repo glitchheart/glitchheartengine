@@ -65,14 +65,26 @@ struct AudioSourceHandle
     i32 handle;
 };
 
+enum LoopType
+{
+    LOOP_OFF,
+    LOOP_NORMAL,
+    LOOP_BIDI
+};
+
 struct AudioSource
 {
     AudioSourceHandle handle;
     SoundHandle sound_handle;
-    b32 loop;
-    u32 position_ms;
     
     // Add all the stuff that FMOD at least supports
+    
+    // Assume endless loop for now (loop count later)
+    LoopType loop_type;
+    u32 position_ms;
+    
+    b32 paused;
+    r32 volume;
 };
 
 struct ChannelGroup
@@ -109,6 +121,7 @@ struct SoundCommand
         struct
         {
             SoundHandle handle;
+            r32 volume;
         } one_shot;
     };
 };
