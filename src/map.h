@@ -110,7 +110,7 @@ void map_grow(Map* map, size_t new_cap)
     new_cap = MAX(16, new_cap);
     Map new_map = {};
     new_map.keys = (void**)calloc(new_cap, sizeof(void*));
-    new_map.vals = (void**)malloc(new_cap * sizeof(void*));
+    new_map.vals = (void**)calloc(new_cap, sizeof(void*));
     new_map.cap = new_cap;
     new_map.hash_function = map->hash_function;
     new_map.key_compare_function = map->key_compare_function;
