@@ -241,7 +241,7 @@ extern PlatformApi platform;
 struct MemoryArena;
 struct DebugState;
 struct InputController;
-struct SoundCommands;
+struct SoundSystem;
 struct RenderState;
 struct Renderer;
 struct TimerController;
@@ -263,7 +263,7 @@ struct GameMemory
 #endif
 };
 
-#define UPDATE(name)void name(r64 delta_time, GameMemory* game_memory, Renderer& renderer, InputController* input_controller , SoundCommands* sound_commands , TimerController& timer_controller)
+#define UPDATE(name)void name(r64 delta_time, GameMemory* game_memory, Renderer& renderer, InputController* input_controller, SoundSystem* sound_system, TimerController& timer_controller)
 typedef UPDATE(Update);
 UPDATE(update_stub)
 {

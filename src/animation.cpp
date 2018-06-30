@@ -159,7 +159,7 @@ static void reset_callbacks(AnimationNode& node)
     }
 }
 
-static void tick_animation_controllers(Renderer& renderer, SoundCommands* sound_commands, InputController* input_controller, TimerController& timer_controller,  r64 delta_time)
+static void tick_animation_controllers(Renderer& renderer, SoundSystem* sound_system, InputController* input_controller, TimerController& timer_controller,  r64 delta_time)
 {
     for(i32 index = 0; index < renderer.animation_controller_count; index++)
     {
@@ -185,7 +185,7 @@ static void tick_animation_controllers(Renderer& renderer, SoundCommands* sound_
                 {
                     if(callback_info.callback)
                     {
-                        callback_info.callback(callback_info.state, callback_info.data, renderer, sound_commands, input_controller, timer_controller);
+                        callback_info.callback(callback_info.state, callback_info.data, renderer, sound_system, input_controller, timer_controller);
                         callback_info.was_called = true;
                         //Debug("Frame for callback %d %s\n", CallbackInfo.Frame, CurrentNode.Name);
                     }
