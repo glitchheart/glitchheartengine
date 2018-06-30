@@ -66,98 +66,75 @@ static inline void play_sound_effect(SoundCommands* sound_commands, i32 buffer_h
 */
 
 
-static SoundCommand *push_next_command(SoundSystem &system)
+static SoundCommand *push_next_command(SoundSystem *system)
 {
-    assert(system.command_count + 1 < MAX_SOUND_COMMANDS);
-    system.command_count++;
-    return push_struct(&system.sound_commands, SoundCommand);
+    assert(system->command_count + 1 < MAX_SOUND_COMMANDS);
+    system->command_count++;
+    return push_struct(&system->sound_commands, SoundCommand);
 }
 
-static void create_audio_source(SoundSystem &system, AudioSourceHandle *as_handle, SoundHandle sound_handle, b32 loop = false, unsigned int position_ms = 0)
+static void create_audio_source(SoundSystem *system, AudioSourceHandle *as_handle, SoundHandle sound_handle, LoopType loop_type = LOOP_OFF, r32 volume = 1.0f, b32 paused = false, unsigned int position_ms = 0)
 {
-    assert(system.audio_source_count + 1 < MAX_AUDIO_SOURCES);
-    as_handle->handle = system.audio_source_count + 1;
-    AudioSource &newSource = system.audio_sources[system.audio_source_count++];
-    newSource.handle.handle = as_handle->handle;
-    newSource.sound_handle = sound_handle;
-    newSource.loop = loop;
-    newSource.position_ms = position_ms;
+    assert(system->audio_source_count + 1 < MAX_AUDIO_SOURCES);
+    as_handle->handle = system->audio_source_count + 1;
+    AudioSource &new_source = system->audio_sources[system->audio_source_count++];
+    new_source.handle.handle = as_handle->handle;
+    new_source.sound_handle = sound_handle;
+    new_source.loop_type = loop_type;
+    new_source.position_ms = position_ms;
+    new_source.volume = volume;
+    new_source.paused = paused;
 }
 
 // Figure something out with destroy... Do we actually need it?
 // Could just manually reuse audio sources or something
-static void destroy_audio_source(SoundSystem &system, AudioSourceHandle as_handle)
+static void destroy_audio_source(SoundSystem *system, AudioSourceHandle as_handle)
 {
     
 }
 
-static void load_sound(SoundSystem &system, const char *file_path, SoundHandle *handle)
+static void load_sound(SoundSystem *system, const char *file_path, SoundHandle *handle)
 {
-    assert(system.sound_count + 1 < MAX_SOUNDS);
-    handle->handle = system.sound_count++ + 1;
+    assert(system->sound_count + 1 < MAX_SOUNDS);
+    handle->handle = system->sound_count++ + 1;
     SoundCommand *command = push_next_command(system);
     command->type = SC_LOAD_SOUND;
     strcpy(command->load_sound.file_path, file_path);
 }
 
-static void play_one_shot_sound(SoundSystem &system, SoundHandle handle)
+static void play_one_shot_sound(SoundSystem *system, SoundHandle handle, r32 volume = 1.0f)
 {
-    assert(handle.handle != 0 && handle.handle - 1 < system.sound_count);
+    assert(handle.handle != 0 && handle.handle - 1 < system->sound_count);
     
     SoundCommand *command = push_next_command(system);
     command->type = SC_ONE_SHOT;
     command->one_shot.handle = handle;
+    command->one_shot.volume = volume;
 }
 
-static void play_audio_source(SoundSystem &system, AudioSourceHandle as_handle)
+static void play_audio_source(SoundSystem *system, AudioSourceHandle as_handle)
 {
-    assert(as_handle.handle != 0 && as_handle.handle - 1 < system.audio_source_count);
+    assert(as_handle.handle != 0 && as_handle.handle - 1 < system->audio_source_count);
     
-    AudioSource &as = system.audio_sources[as_handle.handle - 1];
+    AudioSource &as = system->audio_sources[as_handle.handle - 1];
     
     SoundCommand *command = push_next_command(system);
     command->type = SC_PLAY_AUDIO_SOURCE;
     command->play_audio_source.handle = as_handle;
 }
 
-static void stop_audio_source(SoundSystem &system, AudioSourceHandle as_handle)
+static void stop_audio_source(SoundSystem *system, AudioSourceHandle as_handle)
 {
-    assert(as_handle.handle != 0 && as_handle.handle - 1 < system.audio_source_count);
+    assert(as_handle.handle != 0 && as_handle.handle - 1 < system->audio_source_count);
     
     SoundCommand *command = push_next_command(system);
     command->type = SC_STOP_AUDIO_SOURCE;
     command->play_audio_source.handle = as_handle;
 }
 
-static AudioSource *get_audio_source(SoundSystem &system, AudioSourceHandle as_handle)
+static AudioSource *get_audio_source(SoundSystem *system, AudioSourceHandle as_handle)
 {
-    assert(as_handle.handle != 0 && as_handle.handle - 1 < system.audio_source_count);
+    assert(as_handle.handle != 0 && as_handle.handle - 1 < system->audio_source_count);
     
-    return &system.audio_sources[as_handle.handle - 1];
-}
-
-static void sound_test()
-{
-    SoundSystem system = {};
-    system.sound_commands.minimum_block_size = sizeof(SoundCommand) * MAX_SOUND_COMMANDS;
-    
-    SoundHandle sound_handle;
-    // Loads the wav file into memory and returns a buffer handle
-    load_sound(system, "sound.wav", &sound_handle);
-    
-    AudioSourceHandle as_handle;
-    // Creates an empty audio source (maybe pass in a sound handle
-    create_audio_source(system, &as_handle, sound_handle);
-    
-    AudioSource *as = get_audio_source(system, as_handle);
-    as->sound_handle = sound_handle;
-    as->loop = false;
-    
-    play_audio_source(system, as_handle);
-    //play_audio_source(as);
-    
-    stop_audio_source(system, as_handle);
-    //stop_audio_source(as);
-    
-    play_one_shot_sound(system, sound_handle);
+    return &system->audio_sources[as_handle.handle - 1];
 }
