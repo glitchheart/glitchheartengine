@@ -31,6 +31,18 @@ FMOD_RESULT F_CALLBACK channel_control_callback(FMOD_CHANNELCONTROL *chan_contro
             {
                 as->channel_attributes.position_ms = 0;
             }
+            
+            SoundDevice *device;
+            FMOD_Channel_GetUserData((FMOD_CHANNEL*)chan_control, (void**)&device);
+            
+            if(device)
+            {
+                device->one_shot_point_count--;
+                if(device->one_shot_point_count == 0)
+                {
+                    clear(&device->one_shot_arena);
+                }
+            }
         }
         break;
         case FMOD_CHANNELCONTROL_CALLBACK_VIRTUALVOICE:
@@ -52,7 +64,7 @@ FMOD_RESULT F_CALLBACK channel_control_callback(FMOD_CHANNELCONTROL *chan_contro
     return FMOD_OK;
 }
 
-static void set_channel_attributes(FMOD_CHANNEL *channel, ChannelAttributes attributes, SoundSystem *system, SoundDevice *device, i32 handle = 0, MemoryArena temp_arena)
+static void set_channel_attributes(FMOD_CHANNEL *channel, ChannelAttributes attributes, SoundSystem *system, SoundDevice *device, i32 handle = 0)
 {
     auto mode = FMOD_DEFAULT;
     
@@ -128,7 +140,7 @@ static void set_channel_attributes(FMOD_CHANNEL *channel, ChannelAttributes attr
                 }
                 else
                 {
-                    
+                    rolloff_points = push_array(&device->one_shot_arena, attributes.att_3d.custom_rolloff.roll_off_point_count, FMOD_VECTOR);
                 }
                 
                 auto points = attributes.att_3d.custom_rolloff.roll_off_points;
@@ -216,6 +228,8 @@ static void play_sound(SoundCommand *command, SoundDevice *device, SoundSystem *
 {
     auto sound = device->sounds[command->one_shot.handle.handle - 1];
     
+    device->one_shot_point_count++;
+    
     FMOD_RESULT result = FMOD_OK;
     
     FMOD_CHANNEL *channel;
@@ -229,7 +243,7 @@ static void play_sound(SoundCommand *command, SoundDevice *device, SoundSystem *
     }
     
     FMOD_Channel_SetCallback(channel, channel_control_callback);
-    FMOD_Channel_SetUserData();
+    FMOD_Channel_SetUserData(channel, (void**)&device);
     
     FMOD_Channel_SetPaused(channel, false);
 }
@@ -237,7 +251,7 @@ static void play_sound(SoundCommand *command, SoundDevice *device, SoundSystem *
 
 static void stop_audio_source(AudioSource &audio_source, SoundDevice* sound_device, SoundSystem *system)
 {
-    auto channel = sound_device->channels[audio_source.handle.handle];
+    auto channel = sound_device->channels[audio_source.handle.handle - 1];
     
     FMOD_Channel_SetVolume(channel, 0.0f);
     
@@ -288,7 +302,7 @@ static void update_sound_commands(SoundDevice *device, SoundSystem *system, r64 
         
         if(FMOD_System_Update(device->system) != FMOD_OK)
         {
-            debug("FMOA failed updating\n");
+            debug("FMOD failed updating\n");
         }
         
         auto delta_ms = (i32)(delta_time * 1000);

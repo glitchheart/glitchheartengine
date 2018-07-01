@@ -19,7 +19,6 @@ static ChannelAttributes get_default_channel_attributes()
     attributes.att_3d.cone.inside_angle = 360.0f;
     attributes.att_3d.cone.outside_angle = 360.0f;
     attributes.att_3d.cone.outside_volume = 1.0f;
-    attributes.att_3d.custom_rolloff.roll_off_points = nullptr;
     attributes.att_3d.custom_rolloff.roll_off_point_count = 0;
     attributes.att_3d.distance_filter.custom = false;
     attributes.att_3d.distance_filter.custom_level = 1.0f;
@@ -38,9 +37,7 @@ static ChannelAttributes get_default_channel_attributes()
     attributes.loop.count = 0;
     attributes.loop.loop_points.start = 0;
     attributes.loop.loop_points.end = 0;
-    attributes.mix_levels.input.levels = nullptr;
     attributes.mix_levels.input.level_count = 0;
-    attributes.mix_levels.output.levels = nullptr;
     attributes.mix_levels.output.level_count = 0;
     attributes.reverb.instance = 0;
     attributes.reverb.wet = 1.0f;
