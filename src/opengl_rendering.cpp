@@ -743,7 +743,7 @@ static void render_setup(RenderState *render_state, MemoryArena* perm_arena)
     load_shader(shader_paths[SHADER_DEPTH], &render_state->depth_shader, perm_arena);
     load_shader(shader_paths[SHADER_DEPTH_INSTANCED], &render_state->depth_instanced_shader, perm_arena);
     
-    create_shadow_map(render_state->shadow_map_buffer, 1024, 1024);
+    create_shadow_map(render_state->shadow_map_buffer, 2048, 2048);
     
     setup_billboard(*render_state, perm_arena);
     setup_quad(*render_state, perm_arena);
@@ -1838,7 +1838,7 @@ static void render_mesh_instanced(const RenderCommand &render_command, Renderer 
         set_mat4_uniform(shader.program, "depthProjectionMatrix", shadow_map_matrices->depth_projection_matrix);
         
         set_vec4_uniform(shader.program, "color", render_command.color);
-        set_vec3_uniform(shader.program, "lightPosWorld", math::Vec3(10, 30, -20));
+        set_vec3_uniform(shader.program, "lightPosWorld", math::Vec3(0, 20, -10));
         set_vec3_uniform(shader.program, "diffuseColor", math::Vec3(1, 1, 1));
         set_vec3_uniform(shader.program, "lightColor", math::Vec3(1.0f, 1.0f, 1.0f));
         set_vec3_uniform(shader.program, "specularColor", math::Vec3(1, 1, 1));
