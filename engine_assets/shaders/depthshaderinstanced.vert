@@ -17,5 +17,5 @@ void main()
 	translate[2] = vec4(0.0, 0.0, 1.0, 0);
 	translate[3] = vec4(offset[0], offset[1], offset[2], 1.0);
 	
-	gl_Position = projectionMatrix * viewMatrix * modelMatrix * translate * vec4(position, 1);
+	gl_Position = projectionMatrix * viewMatrix * translate * modelMatrix * vec4(position, 1);
 }

@@ -37,22 +37,22 @@ void main()
 	translate[2] = vec4(0.0, 0.0, 1.0, 0);
 	translate[3] = vec4(offset[0], offset[1], offset[2], 1.0);
 	
-	gl_Position = projectionMatrix * viewMatrix * modelMatrix * translate * vec4(position, 1);
+	gl_Position = projectionMatrix * viewMatrix * translate * modelMatrix * vec4(position, 1);
 
-	vs_out.posWorld  = (modelMatrix * translate * vec4(position, 1)).xyz;
+	vs_out.posWorld  = (translate * modelMatrix * vec4(position, 1)).xyz;
 
 	// Shadow mapping
 	mat4 depthMVP = depthProjectionMatrix * depthViewMatrix * depthModelMatrix;
 	mat4 depthBiasMVP = depthMVP;
 	vs_out.shadowCoord = depthBiasMVP * vec4(vs_out.posWorld.xyz, 1);
 
-	vec3 viewPos = (viewMatrix * modelMatrix * translate * vec4(position, 1)).xyz;
+	vec3 viewPos = (viewMatrix * translate * modelMatrix * vec4(position, 1)).xyz;
 	vs_out.eyeView = vec3(0, 0, 0) - viewPos;
 
 	vec3 lightPosView = (viewMatrix * vec4(lightPosWorld, 1)).xyz;
 	vs_out.lightDir = lightPosView + vs_out.eyeView;
 
-	vs_out.normal = mat3(transpose(inverse(viewMatrix * modelMatrix * translate))) * vertexNormal;
+	vs_out.normal = mat3(transpose(inverse(viewMatrix * translate * modelMatrix))) * vertexNormal;
 	vs_out.uv = uv;
 	vs_out.color = color;
 }
