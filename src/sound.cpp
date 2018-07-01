@@ -1,70 +1,52 @@
-/*static void load_sound(SoundCommands* commands, char* file_path, i32* handle, MemoryArena* arena)
+
+static ChannelAttributes get_default_channel_attributes()
 {
-    char path[255];
-    strcpy(path, file_path);
-    auto file_name = get_file_name_from_path(path, arena, "wav");
+    ChannelAttributes attributes = {};
+    attributes.volume = 1.0f;
+    attributes.position_ms = 0;
+    attributes.pan_level = 0.0f;
+    attributes.pitch = 1.0f;
     
-    if(handle)
-        *handle = commands->sounds++;
-        
-    commands->load_sounds = true;
-    strcpy(commands->sounds_to_load.file_paths[commands->sounds_to_load.files_length], file_path);
-    strcpy(commands->sounds_to_load.file_names[commands->sounds_to_load.files_length], file_name);
+    // Maybe not set frequency. Just use sound default and mix outside of engine?
+    //attributes.frequency = ;
+    attributes.low_pass_gain = 1.0f;
+    attributes.ramp = false;
+    attributes.channel_space = CS_2D;
     
-    commands->sounds_to_load.files_length++;
-}
-
-// Call this function once to register audio source at init time
-static void register_audio_source(SoundCommands* sound_commands, AudioSource& audio_source)
-{
-    audio_source.handle = sound_commands->audio_source_count++ + 1;
-    sound_commands->audio_sources[audio_source.handle].sound_info = audio_source.sound_info;
-    sound_commands->audio_sources[audio_source.handle].buffer_handle = audio_source.buffer_handle;
-}
-
-static inline void push_audio_source(SoundCommands* sound_commands, AudioSource& audio_source)
-{
-    if(audio_source.handle - 1 == -1)
-    {
-        register_audio_source(sound_commands, audio_source);
-    }
+    attributes.att_3d.pos = math::Vec3(0.0f);
+    attributes.att_3d.vel = math::Vec3(0.0f);
+    attributes.att_3d.cone.orientation = math::Vec3(0.0f);
+    attributes.att_3d.cone.inside_angle = 360.0f;
+    attributes.att_3d.cone.outside_angle = 360.0f;
+    attributes.att_3d.cone.outside_volume = 1.0f;
+    attributes.att_3d.custom_rolloff.roll_off_points = nullptr;
+    attributes.att_3d.custom_rolloff.roll_off_point_count = 0;
+    attributes.att_3d.distance_filter.custom = false;
+    attributes.att_3d.distance_filter.custom_level = 1.0f;
+    attributes.att_3d.distance_filter.center_freq = 1500.0f;
+    attributes.att_3d.doppler_level = 1.0f;
+    attributes.att_3d.level_3d = 1.0f;
+    attributes.att_3d.min_distance = 1.0f;
+    attributes.att_3d.max_distance = 10000.0f;
+    attributes.att_3d.occlusion.direct = 0.0f;
+    attributes.att_3d.occlusion.reverb = 0.0f;
+    attributes.att_3d.spread_angle = 0.0f;
+    attributes.att_3d.rolloff_mode = RM_INVERSE;
+    attributes.att_3d.relative_space_mode = RSM_WORLDRELATIVE;
     
-    auto& source = sound_commands->audio_sources[audio_source.handle - 1];
-    source.sound_info = audio_source.sound_info;
-    source.buffer_handle = audio_source.buffer_handle;
-    source.muted = audio_source.muted;
-    source.paused = audio_source.paused;
-    source.play = true;
+    attributes.loop.type = LOOP_OFF;
+    attributes.loop.count = 0;
+    attributes.loop.loop_points.start = 0;
+    attributes.loop.loop_points.end = 0;
+    attributes.mix_levels.input.levels = nullptr;
+    attributes.mix_levels.input.level_count = 0;
+    attributes.mix_levels.output.levels = nullptr;
+    attributes.mix_levels.output.level_count = 0;
+    attributes.reverb.instance = 0;
+    attributes.reverb.wet = 1.0f;
+    
+    return attributes;
 }
-
-static void update_audio_source(SoundCommands* sound_commands, AudioSource& audio_source)
-{
-    if(audio_source.handle - 1 == -1)
-    {
-        register_audio_source(sound_commands, audio_source);
-    }
-    sound_commands->audio_sources[audio_source.handle - 1] = audio_source;
-    auto& source = sound_commands->audio_sources[audio_source.handle - 1];
-    source.sound_info = audio_source.sound_info;
-    source.buffer_handle = audio_source.buffer_handle;
-    source.muted = audio_source.muted;
-    source.paused = audio_source.paused;
-    source.play = true;
-}
-
-static inline void play_sound_effect(SoundCommands* sound_commands, i32 buffer_handle, r32 gain = -1.0f,  r32 pitch = 1.0f, r32 roll_off = 0.0f)
-{
-    SoundEffect* sound_effect = push_struct(&sound_commands->sound_arena, SoundEffect);
-    sound_commands->sound_count++;
-    sound_effect->buffer = buffer_handle;
-    sound_effect->sound_info.pitch = pitch;
-    sound_effect->sound_info.roll_off = roll_off;
-    sound_effect->sound_info.gain = gain > -1.0f ? gain : sound_commands->sfx_volume;
-}
-
-#define PLAY_SOUND(sound_handle,...) play_sound_effect(sound_commands, sound_handle, ##__VA_ARGS__)
-*/
-
 
 static SoundCommand *push_next_command(SoundSystem *system)
 {
@@ -73,16 +55,16 @@ static SoundCommand *push_next_command(SoundSystem *system)
     return push_struct(&system->sound_commands, SoundCommand);
 }
 
-static void create_audio_source(SoundSystem *system, AudioSourceHandle *as_handle, SoundHandle sound_handle, LoopType loop_type = LOOP_OFF, r32 volume = 1.0f, b32 paused = false, unsigned int position_ms = 0)
+static void create_audio_source(SoundSystem *system, AudioSourceHandle *as_handle, SoundHandle sound_handle, b32 paused = false, b32 muted = false)
 {
     assert(system->audio_source_count + 1 < MAX_AUDIO_SOURCES);
     as_handle->handle = system->audio_source_count + 1;
     AudioSource &new_source = system->audio_sources[system->audio_source_count++];
     new_source.handle.handle = as_handle->handle;
     new_source.sound_handle = sound_handle;
-    new_source.loop_type = loop_type;
-    new_source.position_ms = position_ms;
-    new_source.volume = volume;
+    new_source.channel_attributes = get_default_channel_attributes();
+    
+    new_source.muted = muted;
     new_source.paused = paused;
 }
 
@@ -102,14 +84,14 @@ static void load_sound(SoundSystem *system, const char *file_path, SoundHandle *
     strcpy(command->load_sound.file_path, file_path);
 }
 
-static void play_one_shot_sound(SoundSystem *system, SoundHandle handle, r32 volume = 1.0f)
+static void play_one_shot_sound(SoundSystem *system, SoundHandle handle, ChannelAttributes channel_attributes = get_default_channel_attributes())
 {
     assert(handle.handle != 0 && handle.handle - 1 < system->sound_count);
     
     SoundCommand *command = push_next_command(system);
     command->type = SC_ONE_SHOT;
     command->one_shot.handle = handle;
-    command->one_shot.volume = volume;
+    command->one_shot.channel_attributes = channel_attributes;
 }
 
 static void play_audio_source(SoundSystem *system, AudioSourceHandle as_handle)

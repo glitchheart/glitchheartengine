@@ -6,55 +6,6 @@
 #define MAX_CHANNEL_GROUPS 64
 #define MAX_SOUND_COMMANDS 1024
 
-/*
-struct SoundInfo
-{
-    r32 pitch;
-    r32 gain;
-    r32 roll_off;
-    b32 loop;
-    i32 loop_count;
-};
-
-struct SoundEffect
-{
-    i32 buffer;
-    SoundInfo sound_info;
-};
-
-struct AudioSource
-{
-    i32 handle;
-    SoundInfo sound_info;
-    i32 buffer_handle;
-    
-    b32 muted;
-    b32 paused;
-    b32 play;
-};
-
-struct SoundCommands
-{
-    MemoryArena sound_arena;
-    i32 sound_count;
-    
-    AudioSource audio_sources[MAX_AUDIO_SOURCES];
-    i32 audio_source_count;
-    
-    DirectoryData sounds_to_load;
-    b32 load_sounds;
-    
-    i32 sounds;
-    
-    r32 sfx_volume;
-    r32 music_volume;
-    b32 muted;
-    b32 paused;
-    b32 stopped;
-};
-*/
-
-
 struct SoundHandle
 {
     i32 handle;
@@ -72,32 +23,130 @@ enum LoopType
     LOOP_BIDI
 };
 
-struct AudioSource
-{
-    AudioSourceHandle handle;
-    SoundHandle sound_handle;
-    
-    // Add all the stuff that FMOD at least supports
-    
-    // Assume endless loop for now (loop count later)
-    LoopType loop_type;
-    u32 position_ms;
-    
-    b32 paused;
-    r32 volume;
-};
-
-struct ChannelGroup
-{
-    // Empty for now. May need stuff later
-};
-
 enum SoundCommandType
 {
     SC_PLAY_AUDIO_SOURCE,
     SC_STOP_AUDIO_SOURCE,
     SC_LOAD_SOUND,
     SC_ONE_SHOT
+};
+
+enum RolloffMode
+{
+    RM_INVERSE,
+    RM_LINEAR,
+    RM_LINEARSQUARE,
+    RM_CUSTOM
+};
+
+enum RelativeSpaceMode
+{
+    RSM_HEADRELATIVE,
+    RSM_WORLDRELATIVE
+};
+
+enum ChannelSpace
+{
+    CS_2D,
+    CS_3D
+};
+
+struct ChannelAttributes
+{
+    r32 volume;
+    u32 position_ms;
+    
+    r32 pan_level;
+    r32 pitch;
+    r32 frequency;
+    r32 low_pass_gain;
+    b32 ramp;
+    
+    ChannelSpace channel_space;
+    
+    struct
+    {
+        math::Vec3 pos;
+        math::Vec3 vel;
+        
+        struct
+        {
+            math::Vec3 orientation;
+            r32 inside_angle;
+            r32 outside_angle;
+            r32 outside_volume;
+        } cone;
+        struct
+        {
+            math::Vec3 roll_off_points[32];
+            i32 roll_off_point_count;
+        } custom_rolloff;
+        struct
+        {
+            b32 custom;
+            r32 custom_level;
+            r32 center_freq;
+        } distance_filter;
+        r32 doppler_level;
+        r32 level_3d;
+        r32 min_distance;
+        r32 max_distance;
+        struct
+        {
+            r32 direct;
+            r32 reverb;
+        } occlusion;
+        r32 spread_angle;
+        RolloffMode rolloff_mode;
+        RelativeSpaceMode relative_space_mode;
+    } att_3d;
+    
+    struct
+    {
+        LoopType type;
+        i32 count;
+        struct
+        {
+            u32 start;
+            u32 end;
+        } loop_points;
+    } loop;
+    
+    struct
+    {
+        struct
+        {
+            r32 levels[32];
+            i32 level_count;
+        } input;
+        struct
+        {
+            r32 levels[32];
+            i32 level_count;
+        } output;
+    } mix_levels;
+    struct
+    {
+        i32 instance;
+        r32 wet;
+    } reverb;
+    
+};
+
+struct AudioSource
+{
+    AudioSourceHandle handle;
+    SoundHandle sound_handle;
+    
+    ChannelAttributes channel_attributes;
+    
+    b32 paused;
+    b32 muted;
+};
+
+struct ChannelGroup
+{
+    // Empty for now. May need stuff later
 };
 
 struct SoundCommand
@@ -121,13 +170,15 @@ struct SoundCommand
         struct
         {
             SoundHandle handle;
-            r32 volume;
+            ChannelAttributes channel_attributes;
         } one_shot;
     };
 };
 
 struct SoundSystem
 {
+    MemoryArena arena;
+    
     SoundHandle sounds[MAX_SOUNDS];
     i32 sound_count;
     

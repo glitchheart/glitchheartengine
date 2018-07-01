@@ -408,7 +408,7 @@ int main(int argc, char** args)
         tick_animation_controllers(renderer, &sound_system, &input_controller, timer_controller, delta_time);
         tick_timers(timer_controller, delta_time);
         
-        update_sound_commands(&sound_device, &sound_system);
+        update_sound_commands(&sound_device, &sound_system, delta_time);
         
         render(render_state, renderer, &platform_state->perm_arena, delta_time);
         

@@ -22,6 +22,8 @@ struct SoundDevice
     
     FMOD_CHANNELGROUP* channel_groups;
     FMOD_CHANNELGROUP* master_group;
+    
+    FMOD_VECTOR *rolloff_points[CHANNELS];
 };
 
 #endif
