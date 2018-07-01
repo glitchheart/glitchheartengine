@@ -24,6 +24,9 @@ struct SoundDevice
     FMOD_CHANNELGROUP* master_group;
     
     FMOD_VECTOR *rolloff_points[CHANNELS];
+    
+    MemoryArena one_shot_arena;
+    i32 one_shot_point_count;
 };
 
 #endif
