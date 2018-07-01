@@ -83,7 +83,7 @@ void main()
 		float spec = 0.0;
 		vec3 halfwayDir = normalize(lightDir + viewDir);
 		spec = pow(max(dot(normal, halfwayDir), 0.0), 64.0f);
-		vec3 specular = spec * lightColor;
+		vec3 specular = vec3(0, 0, 0);//spec * lightColor;
 		
 		// shadows
 		float shadow = calculateShadow(fs_in.shadowCoord, normal, lightDir);		
