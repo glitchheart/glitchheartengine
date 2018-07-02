@@ -578,6 +578,7 @@ struct MeshInfo
     math::Rgba wireframe_color;
     
     b32 cast_shadows;
+    b32 receives_shadows;
 };
 
 struct Particle
@@ -680,6 +681,7 @@ struct RenderCommand
     i32 shader_attribute_count;
     
     b32 cast_shadows;
+    b32 receives_shadows;
     
     union
     {
