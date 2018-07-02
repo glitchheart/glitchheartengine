@@ -1701,6 +1701,8 @@ static void render_mesh(const RenderCommand &render_command, Renderer &renderer,
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, render_state.shadow_map_buffer.shadow_map_handle);
         
+        set_bool_uniform(shader.program, "receivesShadows", render_command.receives_shadows);
+        
         set_mat4_uniform(shader.program, "depthModelMatrix", shadow_map_matrices->depth_model_matrix);
         set_mat4_uniform(shader.program, "depthBiasMatrix", shadow_map_matrices->depth_bias_matrix);
         set_mat4_uniform(shader.program, "depthViewMatrix", shadow_map_matrices->depth_view_matrix);
@@ -1832,6 +1834,7 @@ static void render_mesh_instanced(const RenderCommand &render_command, Renderer 
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, render_state.shadow_map_buffer.shadow_map_handle);
         
+        set_bool_uniform(shader.program, "receivesShadows", render_command.receives_shadows);
         set_mat4_uniform(shader.program, "depthModelMatrix", shadow_map_matrices->depth_model_matrix);
         set_mat4_uniform(shader.program, "depthBiasMatrix", shadow_map_matrices->depth_bias_matrix);
         set_mat4_uniform(shader.program, "depthViewMatrix", shadow_map_matrices->depth_view_matrix);

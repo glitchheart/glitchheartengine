@@ -25,6 +25,7 @@ uniform bool drawWireframe;
 uniform bool drawMesh;
 uniform vec4 wireframeColor;
 uniform bool hasTexture;
+uniform bool receivesShadows;
 
 uniform sampler2D diffuseTexture;
 uniform sampler2D shadowMap;
@@ -86,8 +87,17 @@ void main()
 		vec3 specular = spec * lightColor;
 		
 		// shadows
-		float shadow = calculateShadow(fs_in.shadowCoord, normal, lightDir);		
-		vec3 lighting = (ambient + (1.0 - shadow) * (diffuse + specular)) * col;
+		float shadow = calculateShadow(fs_in.shadowCoord, normal, lightDir);
+		
+		vec3 lighting;
+		if(receivesShadows)
+		{
+			lighting = (ambient + (1.0 - shadow) * (diffuse + specular)) * col;
+		}
+		else
+		{
+			lighting = vec3(1, 1, 1); //(ambient + 1.0 * (diffuse + specular)) * col;
+		}
 		
 		if(hasTexture) {
 			if(texture(diffuseTexture, fs_in.uv).a == 0.0)
