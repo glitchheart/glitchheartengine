@@ -27,8 +27,11 @@ enum SoundCommandType
 {
     SC_PLAY_AUDIO_SOURCE,
     SC_STOP_AUDIO_SOURCE,
+    SC_PAUSE_AUDIO_SOURCE,
+    SC_UNPAUSE_AUDIO_SOURCE,
     SC_LOAD_SOUND,
-    SC_ONE_SHOT
+    SC_ONE_SHOT,
+    SC_AUDIO_SOURCE_POSITION
 };
 
 enum RolloffMode
@@ -163,6 +166,14 @@ struct SoundCommand
         {
             AudioSourceHandle handle;
         } stop_audio_source;
+        struct 
+        {
+            AudioSourceHandle handle;
+        } pause_audio_source;
+        struct 
+        {
+            AudioSourceHandle handle;
+        } unpause_audio_source;
         struct
         {
             char file_path[255];
@@ -172,6 +183,11 @@ struct SoundCommand
             SoundHandle handle;
             ChannelAttributes channel_attributes;
         } one_shot;
+        struct
+        {
+            AudioSourceHandle handle;
+            u32 new_position_ms;
+        } set_position;
     };
 };
 
