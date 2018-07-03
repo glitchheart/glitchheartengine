@@ -637,7 +637,7 @@ static void push_mesh_instanced(Renderer &renderer, MeshInfo mesh_info, math::Ve
     render_command->mesh_instanced.offsets = offsets;
     render_command->mesh_instanced.offset_count = offset_count;
     render_command->cast_shadows = mesh_info.cast_shadows;
-	render_command->receives_shadows = mesh_info.receives_shadows;
+    render_command->receives_shadows = mesh_info.receives_shadows;
 }
 
 static void push_particle_system(Renderer &renderer, i32 particle_system_handle)

@@ -184,8 +184,8 @@ static void set_channel_attributes(FMOD_CHANNEL *channel, ChannelAttributes attr
     }
     
     FMOD_Channel_SetReverbProperties(channel, attributes.reverb.instance, attributes.reverb.wet);
-    //FMOD_Channel_SetMode(channel, (FMOD_MODE)mode);
-    FMOD_Channel_SetMode(channel, FMOD_LOOP_NORMAL);
+    FMOD_Channel_SetMode(channel, (FMOD_MODE)mode);
+    //FMOD_Channel_SetMode(channel, FMOD_LOOP_NORMAL);
     
     r32 vol;
     FMOD_Channel_GetVolume(channel, &vol);
