@@ -25,6 +25,9 @@ struct SoundDevice
     
     FMOD_VECTOR *rolloff_points[CHANNELS];
     
+    b32 paused_channels[CHANNELS];
+    u32 channel_positions[CHANNELS];
+    
     MemoryArena one_shot_arena;
     i32 one_shot_point_count;
 };

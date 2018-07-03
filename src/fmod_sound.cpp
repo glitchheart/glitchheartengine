@@ -74,12 +74,13 @@ static void set_channel_attributes(FMOD_CHANNEL *channel, ChannelAttributes attr
         case LOOP_NORMAL:
         {
             mode |= FMOD_LOOP_NORMAL;
-            
+            debug("Loop count: %d, type: %d\n", attributes.loop.count, attributes.loop.type);
             // @Incomplete: -1 is default, add loop_count later!
             FMOD_Channel_SetLoopCount(channel, attributes.loop.count);
             
             if(attributes.loop.loop_points.start != 0 || attributes.loop.loop_points.end != 0)
             {
+                
                 FMOD_Channel_SetLoopPoints(channel, attributes.loop.loop_points.start, TIME_UNIT, attributes.loop.loop_points.end, TIME_UNIT);
             }
         }
@@ -183,7 +184,8 @@ static void set_channel_attributes(FMOD_CHANNEL *channel, ChannelAttributes attr
     }
     
     FMOD_Channel_SetReverbProperties(channel, attributes.reverb.instance, attributes.reverb.wet);
-    FMOD_Channel_SetMode(channel, (FMOD_MODE)mode);
+    //FMOD_Channel_SetMode(channel, (FMOD_MODE)mode);
+    FMOD_Channel_SetMode(channel, FMOD_LOOP_NORMAL);
     
     r32 vol;
     FMOD_Channel_GetVolume(channel, &vol);
@@ -258,6 +260,25 @@ static void stop_audio_source(AudioSource &audio_source, SoundDevice* sound_devi
     FMOD_Channel_Stop(channel);
 }
 
+static void pause_audio_source(AudioSource &audio_source, SoundDevice* sound_device, SoundSystem *system, b32 paused)
+{
+    auto channel = sound_device->channels[audio_source.handle.handle - 1];
+    
+    audio_source.paused = paused;
+    sound_device->paused_channels[audio_source.handle.handle - 1] = paused;
+    FMOD_Channel_SetPaused(channel, paused);
+}
+
+static void set_position_audio_source(SoundCommand *command, AudioSource &audio_source, SoundDevice *sound_device, SoundSystem *system)
+{
+    auto channel = sound_device->channels[audio_source.handle.handle - 1];
+    
+    audio_source.channel_attributes.position_ms = command->set_position.new_position_ms;
+    sound_device->channel_positions[audio_source.handle.handle - 1] = command->set_position.new_position_ms;
+    FMOD_Channel_SetPosition(channel, command->set_position.new_position_ms, TIME_UNIT);
+}
+
+
 static void update_sound_commands(SoundDevice *device, SoundSystem *system, r64 delta_time)
 {
     if(device->system)
@@ -287,6 +308,18 @@ static void update_sound_commands(SoundDevice *device, SoundSystem *system, r64 
                     stop_audio_source(audio_source, device, system);
                 }
                 break;
+                case SC_PAUSE_AUDIO_SOURCE:
+                {
+                    auto &audio_source = system->audio_sources[command->play_audio_source.handle.handle - 1];
+                    pause_audio_source(audio_source, device, system, true);
+                }
+                break;
+                case SC_UNPAUSE_AUDIO_SOURCE:
+                {
+                    auto &audio_source = system->audio_sources[command->play_audio_source.handle.handle - 1];
+                    pause_audio_source(audio_source, device, system, false);
+                }
+                break;
                 case SC_LOAD_SOUND:
                 {
                     load_sound(command->load_sound.file_path, device);
@@ -297,35 +330,18 @@ static void update_sound_commands(SoundDevice *device, SoundSystem *system, r64 
                     play_sound(command, device, system);
                 }
                 break;
+                case SC_AUDIO_SOURCE_POSITION:
+                {
+                    auto &audio_source = system->audio_sources[command->play_audio_source.handle.handle - 1];
+                    set_position_audio_source(command, audio_source, device, system);
+                }
+                break;
             }
         }
         
         if(FMOD_System_Update(device->system) != FMOD_OK)
         {
             debug("FMOD failed updating\n");
-        }
-        
-        auto delta_ms = (i32)(delta_time * 1000);
-        
-        for(i32 i = 0; i < system->audio_source_count; i++)
-        {
-            auto &as = system->audio_sources[i];
-            auto channel = device->channels[as.handle.handle - 1];
-            
-            b32 is_playing = 0;
-            FMOD_Channel_IsPlaying(channel, &is_playing);
-            
-            if(is_playing)
-            {
-                u32 cur_pos;
-                FMOD_Channel_GetPosition(channel, &cur_pos, TIME_UNIT);
-                
-                if(ABS(((i32)(cur_pos)) - (i32)((i32)as.channel_attributes.position_ms + delta_ms)) > delta_ms)
-                {
-                    FMOD_Channel_SetPosition(channel, as.channel_attributes.position_ms, TIME_UNIT);
-                }
-                FMOD_Channel_GetPosition(channel, &as.channel_attributes.position_ms, TIME_UNIT);
-            }
         }
         
         clear(&system->sound_commands);

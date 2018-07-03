@@ -34,7 +34,7 @@ static ChannelAttributes get_default_channel_attributes()
     attributes.att_3d.relative_space_mode = RSM_WORLDRELATIVE;
     
     attributes.loop.type = LOOP_OFF;
-    attributes.loop.count = 0;
+    attributes.loop.count = -1;
     attributes.loop.loop_points.start = 0;
     attributes.loop.loop_points.end = 0;
     attributes.mix_levels.input.level_count = 0;
@@ -108,7 +108,35 @@ static void stop_audio_source(SoundSystem *system, AudioSourceHandle as_handle)
     
     SoundCommand *command = push_next_command(system);
     command->type = SC_STOP_AUDIO_SOURCE;
-    command->play_audio_source.handle = as_handle;
+    command->stop_audio_source.handle = as_handle;
+}
+
+static void pause_audio_source(SoundSystem *system, AudioSourceHandle as_handle)
+{
+    assert(as_handle.handle != 0 && as_handle.handle - 1 < system->audio_source_count);
+    
+    SoundCommand *command = push_next_command(system);
+    command->type = SC_PAUSE_AUDIO_SOURCE;
+    command->pause_audio_source.handle = as_handle;
+}
+
+static void unpause_audio_source(SoundSystem *system, AudioSourceHandle as_handle)
+{
+    assert(as_handle.handle != 0 && as_handle.handle - 1 < system->audio_source_count);
+    
+    SoundCommand *command = push_next_command(system);
+    command->type = SC_UNPAUSE_AUDIO_SOURCE;
+    command->pause_audio_source.handle = as_handle;
+}
+
+static void set_position_audio_source(SoundSystem *system, AudioSourceHandle as_handle, u32 position_ms)
+{
+    assert(as_handle.handle != 0 && as_handle.handle - 1 < system->audio_source_count);
+    
+    SoundCommand *command = push_next_command(system);
+    command->type = SC_AUDIO_SOURCE_POSITION;
+    command->set_position.handle = as_handle;
+    command->set_position.new_position_ms = position_ms;
 }
 
 static AudioSource *get_audio_source(SoundSystem *system, AudioSourceHandle as_handle)
