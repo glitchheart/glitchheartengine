@@ -837,7 +837,6 @@ struct Camera
     r32 fading_speed;
 };
 
-#define RENDER_COMMAND_MAX 400
 #define BUFFER_ARRAY_SIZE 400
 #define TEXTURE_ARRAY_SIZE 512
 #define SHADER_ARRAY_SIZE 128
@@ -877,8 +876,6 @@ struct UIRenderInfo
     math::Vec2 size = math::Vec2(1, 1);
     math::Vec4 color = math::Vec4(1, 1, 1, 1);
 };
-
-GENERIC_MAP(TextureData, TextureData*, char*, StrCmp, NULL, "%s", STR_ASSIGN, PTR_COPY);
 
 struct BufferData
 {
@@ -951,8 +948,6 @@ struct Renderer
     i32 texture_count;
     
     i32 texture_handles[TEXTURE_ARRAY_SIZE];
-    
-    TextureData_map texture_map;
     
     ShaderData shader_data[SHADER_ARRAY_SIZE];
     i32 shader_count;

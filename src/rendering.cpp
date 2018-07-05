@@ -177,24 +177,6 @@ static void load_texture(const char* full_texture_path, Renderer& renderer, Text
         *handle = texture_data->handle + 1; // We add one to the handle, since we want 0 to be an invalid handle
 }
 
-static void load_textures(Renderer& renderer, const char* path, MemoryArena* arena)
-{
-    TextureData_map_init(&renderer.texture_map, hash_string_jenkins, 64);
-    
-    DirectoryData dir_data = {};
-    platform.get_all_files_with_extension(arena, path, "png", &dir_data, true);
-    
-    for (i32 file_index = 0; file_index < dir_data.files_length; file_index++)
-    {
-        load_texture(dir_data.file_paths[file_index], renderer, LINEAR);
-    }
-}
-
-static void load_textures(Renderer& renderer, MemoryArena* arena)
-{
-    load_textures(renderer, "../assets/textures/", arena);
-}
-
 static RenderCommand* push_next_command(Renderer& renderer, b32 is_ui)
 {
     if(is_ui)
@@ -244,6 +226,8 @@ static void push_line(Renderer& renderer, math::Vec3 point1, math::Vec3 point2, 
 static void push_text(Renderer& renderer, const char* text, math::Vec3 position, r32 scale, i32 font_handle, math::Rgba color, u64 alignment_flags = ALIGNMENT_LEFT, b32 is_ui = true)
 {
     RenderCommand* render_command = push_next_command(renderer, is_ui);
+    
+    assert(font_handle < renderer.font_count);
     
     render_command->type = RENDER_COMMAND_TEXT;
     

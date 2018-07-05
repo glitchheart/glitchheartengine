@@ -11,8 +11,6 @@ struct MemoryArena;
 #include "log_state.h"
 #include "log.h"
 
-#include "gmap.h"
-
 #include "animation.h"
 #include "rendering.h"
 
