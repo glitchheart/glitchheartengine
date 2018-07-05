@@ -2,8 +2,6 @@
 #define LOG_H
 
 #include "time.h"
-#include "stdio.h"
-
 
 #define Log(Msg) _Log(__LINE__, __FILE__, Msg)
 static void log(MemoryArena* memory_arena, i32 line_num, const char* file, const char* message)

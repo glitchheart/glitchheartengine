@@ -17,14 +17,14 @@ out vec4 fs_color;
 
 void main()
 {
-
+    
 	vec3 vertexPositionWorld = 
 		offset
 		+ cameraRight * position.x * size
 		+ cameraUp * position.y * size;
-
+    
 	gl_Position = projectionMatrix * viewMatrix * vec4(vertexPositionWorld, 1.0);
-
+    
 	fs_uv = uv;
 	fs_color = color;
 }

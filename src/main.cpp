@@ -29,7 +29,6 @@ static MemoryState memory_state;
 #include "osx_platform.cpp"
 #endif
 
-#include "gmap.cpp"
 #include "keycontroller.h"
 
 #if defined(__linux) || defined(_WIN32)
