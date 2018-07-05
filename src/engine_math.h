@@ -3,144 +3,8 @@
 
 #include <cmath>
 
-//#define GLM
-#ifdef GLM
-#include <glm/gtc/matrix_transform.hpp>
 namespace math
 {
-    using v2 = glm::vec2;
-    using v3 = glm::vec3;
-    using v4 = glm::vec4;
-    using m4 = glm::mat4;
-    using v2i = glm::i32vec2;
-    using v3i = glm::i32vec3;
-    using rgb = v3;
-    using rgba = v4;
-    
-    r32 Dot(v2 v1, v2 v2)
-    {
-        return glm::dot(v1,v2);
-    }
-    
-    r32 Dot(v3 v1, v3 v2)
-    {
-        return glm::dot(v1,v2);
-    }
-    
-    r32 Dot(v4 v1, v4 v2)
-    {
-        return glm::dot(v1,v2);
-    }
-    
-    r32 Distance(v2 v1, v2 v2)
-    {
-        return glm::distance(v1,v2);
-    }
-    
-    m4 translate(m4 M, v3 V)
-    {
-        return glm::translate(M,V);
-    }
-    
-    m4 Rotate(m4 M, r32 Angle, v3 V)
-    {
-        return glm::rotate(M, Angle, V);
-    }
-    
-    m4 Inverse(m4 M)
-    {
-        return glm::inverse(M);
-    }
-    
-    m4 transpose(m4 M)
-    {
-        return glm::transpose(M);
-    }
-    
-    v3 Project(v3 V, m4 M, m4 P, v4 Vp)
-    {
-        return glm::project(V,M,P,Vp);
-    }
-    
-    v3 UnProject(v3 V, m4 M, m4 P, v4 Vp)
-    {
-        return glm::unProject(V,M,P,Vp);
-    }
-    
-    m4 Scale(m4 M, v3 S)
-    {
-        return glm::scale(M,S);
-    }
-    
-    m4 Ortho(r32 L, r32 R, r32 B, r32 t, r32 N, r32 F)
-    {
-        return glm::ortho(L,R,B,t,N,F);
-    }
-    
-    v2 Normalize(v2 V)
-    {
-        return glm::normalize(V);
-    }
-    
-    v3 Normalize(v3 V)
-    {
-        return glm::normalize(V);
-    }
-    
-    v4 Normalize(v4 V)
-    {
-        return glm::normalize(V);
-    }
-    
-    inline i32 Round(r32 V)
-    {
-        return glm::round(V);
-    }
-    
-    r32 Floor(r32 V)
-    {
-        return glm::floor(V);
-    }
-    
-    v2 Floor(v2 V)
-    {
-        return glm::floor(V);
-    }
-    
-    v3 Floor(v3 V)
-    {
-        return glm::floor(V);
-    }
-    
-    r32 Ceil(r32 V)
-    {
-        return glm::ceil(V);
-    }
-    
-    v2 Ceil(v2 V)
-    {
-        return glm::ceil(V);
-    }
-    
-    r32 Length(v2 V)
-    {
-        return glm::length(V);
-    }
-    
-    r32 Length(v3 V)
-    {
-        return glm::length(V);
-    }
-    
-    r32 Length(v4 V)
-    {
-        return glm::length(V);
-    }
-}
-#else
-namespace math
-{
-    
     inline i32 clamp(i32 Minimum, i32 Value, i32 Maximum)
     {
         i32 result = MAX(Minimum, MIN(Value,Maximum));
@@ -2624,7 +2488,6 @@ namespace math
 #define COLOR_WHITE math::Rgba(1, 1, 1, 1)
 }
 
-#endif
 
 struct Rect
 {

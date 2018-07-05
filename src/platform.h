@@ -3,7 +3,7 @@
 
 #define NUM_ENTITIES 100
 
-#define ArrayCount(Array) (sizeof(Array) / sizeof(Array[0])) 
+#define array_count(array) (sizeof(array) / sizeof(array[0])) 
 
 #define COMMA_IF_PARENS(...) ,
 
@@ -28,19 +28,19 @@
 #define UNUSED(var) (void)var
 
 #if GLITCH_DEBUG
-#define Static_Assert(expression)  int i = 1/(i32)expression
+#define assert_static(expression)  int i = 1/(i32)expression
 #else
-#define Static_Assert(expression)
+#define assert_static(expression)
 #endif
 
 #define MIN(A,B) ((A <= B) ? (A) : (B))
 #define MAX(A,B) ((A >= B) ? (A) : (B))
 #define ABS(x) ((x) < 0 ? -(x) : (x))
 
-#define Kilobytes(value) ((value)*1024LL)
-#define Megabytes(value) (Kilobytes(value)*1024LL)
-#define Gigabytes(value) (Megabytes(value)*1024LL)
-#define Terabytes(value) (Gigabytes(value)*1024LL)
+#define kilo_bytes(value) ((value)*1024LL)
+#define mega_bytes(value) (kily_bytes(value)*1024LL)
+#define giga_bytes(value) (mega_bytes(value)*1024LL)
+#define tera_bytes(value) (giga_bytes(value)*1024LL)
 
 #define align_pow2(value, alignment) ((value + ((alignment) - 1)) & ~((alignment) - 1))
 
@@ -48,8 +48,6 @@
 #define DEGREE_IN_RADIANS 0.0174532925f
 
 #define offset_of(type, member) (umm)&(((type *)0)->member)
-
-#include <cstdio>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb/stb_image.h>
