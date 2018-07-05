@@ -901,9 +901,9 @@ struct BufferData
 #define MAX_CAMERAS 8
 
 #define MAX_ANIMATION_CONTROLLERS 64
-#define MAX_RENDER_COMMANDS 2048
-#define MAX_UI_COMMANDS 2048 // @Incomplete: This should be defined by the game itself (HARDCODED FOR LEVEL EDITOR RIGHT NOW)
-#define MAX_LIGHT_COMMANDS 1024
+#define MAX_RENDER_COMMANDS 128
+#define MAX_UI_COMMANDS 128 // @Incomplete: This should be defined by the game itself (HARDCODED FOR LEVEL EDITOR RIGHT NOW)
+#define MAX_LIGHT_COMMANDS 128
 
 struct ShadowMapMatrices
 {
