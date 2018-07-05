@@ -613,8 +613,8 @@ struct ParticleSystemInfo
     
     Particle *particles;
     i32 particle_count;
-	i32 total_emitted;
-	i32 last_used_particle;
+    i32 total_emitted;
+    i32 last_used_particle;
     i32 max_particles;
     
     math::Vec3 *offsets;
