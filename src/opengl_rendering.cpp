@@ -759,7 +759,7 @@ static void render_setup(RenderState *render_state, MemoryArena* perm_arena)
     render_state->mesh_instanced_shader.type = SHADER_MESH_INSTANCED;
     load_shader(shader_paths[SHADER_MESH_INSTANCED], &render_state->mesh_instanced_shader, perm_arena);
     
-    render_state->mesh_shader.type = SHADER_PARTICLES;
+    render_state->particle_shader.type = SHADER_PARTICLES;
     load_shader(shader_paths[SHADER_PARTICLES], &render_state->particle_shader, perm_arena);
     
     render_state->total_delta = 0.0f;
@@ -1919,7 +1919,6 @@ static void render_particles(const RenderCommand &render_command, Renderer &rend
     glBindBuffer(GL_ARRAY_BUFFER, size_buffer.vbo);
     glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizei)sizeof(math::Vec2) * render_command.particles.particle_count, render_command.particles.sizes);
     vertex_attrib_pointer(4, 2, GL_FLOAT, 2 * sizeof(GLfloat), (void*)(0 * sizeof(GLfloat)));
-    
     
     glVertexAttribDivisor(0, 0);
     glVertexAttribDivisor(1, 0);
