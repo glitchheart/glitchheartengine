@@ -801,11 +801,14 @@ static void stop_particle_system(i32 handle, Renderer &renderer)
     system.running = false;
 }
 
-static void create_particle_system(Renderer &renderer, i32 *handle, r32 size, math::Rgba color, r64 life_time, r32 speed_multiplier, r32 spread, i32 particles_per_second, i32 max_particles, i32 texture_handle, MemoryArena *memory_arena)
+static void create_particle_system(Renderer &renderer, i32 *handle, math::Vec2 size, math::Rgba color, r64 life_time, r32 speed_multiplier, r32 spread, i32 particles_per_second, i32 max_particles, i32 texture_handle, MemoryArena *memory_arena)
 {
+    debug("total: %d\n", (i32)((r64)particles_per_second * life_time));
+    assert((i32)(particles_per_second * life_time) <= max_particles);
     ParticleSystemInfo &system_info = renderer.particle_systems[renderer.particle_system_count++];
     system_info.running = false;
     system_info.one_shot = false;
+    system_info.particle_space = PS_WORLD;
     system_info.color = color;
     system_info.size = size;
     system_info.direction = math::Vec3(0.0f, 1.0f, 0.0f);
@@ -819,8 +822,12 @@ static void create_particle_system(Renderer &renderer, i32 *handle, r32 size, ma
     system_info.particles = push_array(memory_arena, system_info.max_particles, Particle);
     system_info.offsets = push_array(memory_arena, system_info.max_particles, math::Vec3);
     system_info.colors = push_array(memory_arena, system_info.max_particles, math::Vec4);
-    system_info.sizes = push_array(memory_arena, system_info.max_particles, r32);
+    system_info.sizes = push_array(memory_arena, system_info.max_particles, math::Vec2);
     system_info.texture_handle = texture_handle;
+    system_info.color_over_lifetime.start = color;
+    system_info.color_over_lifetime.end = color;
+    system_info.size_over_lifetime.start = size;
+    system_info.size_over_lifetime.start = size;
     
     BufferData offset_data = {};
     offset_data.for_instancing = true;

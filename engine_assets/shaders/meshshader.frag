@@ -37,13 +37,13 @@ float calculateShadow(vec4 fragPosLightSpace, vec3 n, vec3 lDir)
 	// if we're outside the far plane
 	if(projCoords.z > 1.0)
 		return 0.0;
-
+    
 	projCoords = projCoords * 0.5 + 0.5;
 	float closestDepth = texture(shadowMap, projCoords.xy).r;
 	float currentDepth = projCoords.z;
 	
 	float bias = max(0.05 * (1.0 - dot(n, lDir)), 0.005);
-
+    
 	float shadow = 0.0;
 	vec2 texelSize = 1.0 / textureSize(shadowMap, 0);
 	
@@ -57,7 +57,7 @@ float calculateShadow(vec4 fragPosLightSpace, vec3 n, vec3 lDir)
         	shadow += currentDepth - bias > pcfDepth ? 1.0 : 0.0;        
     	}    
 	}
-
+    
 	// average
 	shadow /= 9.0;
 	

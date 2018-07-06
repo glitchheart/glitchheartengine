@@ -586,8 +586,20 @@ struct Particle
     math::Vec3 position;
     math::Vec3 speed;
     math::Rgba color;
-    r32 size;
+    math::Vec2 size;
+    math::Vec3 relative_position;
     r64 life;
+};
+
+struct ParticleSystemHandle
+{
+    i32 handle;
+};
+
+enum ParticleSpace
+{
+    PS_WORLD,
+    PS_OBJECT
 };
 
 struct ParticleSystemInfo
@@ -597,13 +609,26 @@ struct ParticleSystemInfo
     b32 running;
     b32 one_shot;
     b32 emitting;
+    ParticleSpace particle_space;
     math::Vec3 direction;
     r32 spread;
-    r32 size;
+    math::Vec2 size;
     math::Rgba color;
     r64 life_time;
     i32 particles_per_second;
     r32 speed_multiplier;
+    
+    struct
+    {
+        math::Rgba start;
+        math::Rgba end;
+    } color_over_lifetime;
+    
+    struct 
+    {
+        math::Vec2 start;
+        math::Vec2 end;
+    } size_over_lifetime;
     
     i32 offset_buffer_handle;
     i32 color_buffer_handle;
@@ -619,7 +644,7 @@ struct ParticleSystemInfo
     
     math::Vec3 *offsets;
     math::Vec4 *colors;
-    r32 *sizes;
+    math::Vec2 *sizes;
     
     i32 texture_handle;
 };
@@ -799,7 +824,7 @@ struct RenderCommand
             i32 particle_count;
             math::Vec3 *offsets;
             math::Vec4 *colors;
-            r32 *sizes;
+            math::Vec2 *sizes;
             i32 texture_handle;
         } particles;
     };
