@@ -835,6 +835,12 @@ static void create_particle_system(Renderer &renderer, i32 *handle, math::Vec2 s
     system_info.color_over_lifetime.value_count = 0;
     system_info.size_over_lifetime.value_count = 0;
     system_info.speed_over_lifetime.value_count = 0;
+    system_info.color_over_lifetime.values = nullptr;
+    system_info.size_over_lifetime.values = nullptr;
+    system_info.speed_over_lifetime.values = nullptr;
+    system_info.color_over_lifetime.keys = nullptr;
+    system_info.size_over_lifetime.keys = nullptr;
+    system_info.speed_over_lifetime.keys = nullptr;
     
     BufferData offset_data = {};
     offset_data.for_instancing = true;
@@ -857,8 +863,14 @@ static void create_particle_system(Renderer &renderer, i32 *handle, math::Vec2 s
     *handle = renderer.particle_system_count - 1;
 }
 
-static void add_color_key(ParticleSystemInfo &particle_system, r32 key_time, math::Rgba value)
+static void add_color_key(MemoryArena *memory_arena, ParticleSystemInfo &particle_system, r64 key_time, math::Rgba value)
 {
+    if(particle_system.color_over_lifetime.value_count == 0)
+    {
+        particle_system.color_over_lifetime.values = push_array(memory_arena, MAX_LIFETIME_VALUES, math::Rgba);
+        particle_system.color_over_lifetime.keys = push_array(memory_arena, MAX_LIFETIME_VALUES, r64);
+    }
+    
     assert(particle_system.color_over_lifetime.value_count + 1 < MAX_LIFETIME_VALUES);
     auto &values = particle_system.color_over_lifetime.values;
     auto &keys = particle_system.color_over_lifetime.keys;
@@ -868,8 +880,14 @@ static void add_color_key(ParticleSystemInfo &particle_system, r32 key_time, mat
     particle_system.color_over_lifetime.value_count++;
 }
 
-static void add_size_key(ParticleSystemInfo &particle_system, r32 key_time, math::Vec2 value)
+static void add_size_key(MemoryArena *memory_arena, ParticleSystemInfo &particle_system, r64 key_time, math::Vec2 value)
 {
+    if(particle_system.size_over_lifetime.value_count == 0)
+    {
+        particle_system.size_over_lifetime.values = push_array(memory_arena, MAX_LIFETIME_VALUES, math::Vec2);
+        particle_system.size_over_lifetime.keys = push_array(memory_arena, MAX_LIFETIME_VALUES, r64);
+    }
+    
     assert(particle_system.size_over_lifetime.value_count + 1 < MAX_LIFETIME_VALUES);
     auto &values = particle_system.size_over_lifetime.values;
     auto &keys = particle_system.size_over_lifetime.keys;
@@ -879,8 +897,14 @@ static void add_size_key(ParticleSystemInfo &particle_system, r32 key_time, math
     particle_system.size_over_lifetime.value_count++;
 }
 
-static void add_speed_key(ParticleSystemInfo &particle_system, r32 key_time, r32 value)
+static void add_speed_key(MemoryArena *memory_arena, ParticleSystemInfo &particle_system, r64 key_time, r32 value)
 {
+    if(particle_system.speed_over_lifetime.value_count == 0)
+    {
+        particle_system.speed_over_lifetime.values = push_array(memory_arena, MAX_LIFETIME_VALUES, r32);
+        particle_system.speed_over_lifetime.keys = push_array(memory_arena, MAX_LIFETIME_VALUES, r64);
+    }
+    
     assert(particle_system.speed_over_lifetime.value_count + 1 < MAX_LIFETIME_VALUES);
     auto &values = particle_system.speed_over_lifetime.values;
     auto &keys = particle_system.speed_over_lifetime.keys;
@@ -888,16 +912,6 @@ static void add_speed_key(ParticleSystemInfo &particle_system, r32 key_time, r32
     values[particle_system.speed_over_lifetime.value_count] = value;
     keys[particle_system.speed_over_lifetime.value_count] = key_time;
     particle_system.speed_over_lifetime.value_count++;
-}
-
-static void add_size_key(ParticleSystemInfo &particle_system, r32 key_time, math::Rgba value)
-{
-    auto &values = particle_system.color_over_lifetime.values;
-    auto &keys = particle_system.color_over_lifetime.keys;
-    
-    values[particle_system.color_over_lifetime.value_count] = value;
-    keys[particle_system.color_over_lifetime.value_count] = key_time;
-    particle_system.color_over_lifetime.value_count++;
 }
 
 static void load_obj(Renderer &renderer, char *file_path, MeshInfo &mesh_info, b32 with_instancing = false)

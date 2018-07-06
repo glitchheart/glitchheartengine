@@ -626,22 +626,22 @@ struct ParticleSystemInfo
     
     struct
     {
-        math::Rgba values[MAX_LIFETIME_VALUES];
-        r64 keys[MAX_LIFETIME_VALUES];
+        math::Rgba *values;
+        r64 *keys;
         i32 value_count;
     } color_over_lifetime;
     
     struct 
     {
-        math::Vec2 values[MAX_LIFETIME_VALUES];
-        r64 keys[MAX_LIFETIME_VALUES];
+        math::Vec2 *values;
+        r64 *keys;
         i32 value_count;
     } size_over_lifetime;
     
     struct
     {
-        r32 values[MAX_LIFETIME_VALUES];
-        r64 keys[MAX_LIFETIME_VALUES];
+        r32 *values;
+        r64 *keys;
         i32 value_count;
     } speed_over_lifetime;
     
@@ -1038,6 +1038,7 @@ struct Renderer
     MemoryArena texture_arena;
     MemoryArena animation_arena;
     MemoryArena font_arena;
+    MemoryArena particle_arena;
 };
 
 #endif
