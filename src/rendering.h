@@ -589,6 +589,7 @@ struct Particle
     math::Rgba color;
     math::Vec2 size;
     math::Vec3 relative_position;
+    r32 relative_size;
     i32 speed_over_lifetime_index;
     i32 color_over_lifetime_index;
     i32 size_over_lifetime_index;
