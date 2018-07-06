@@ -5,6 +5,7 @@ layout(location = 1) in vec3 vertexNormal;
 layout(location = 2) in vec2 uv;
 
 layout(location = 3) in vec3 offset;
+layout(location = 4) in vec4 color;
 
 uniform mat4 modelMatrix;
 uniform mat4 viewMatrix;
@@ -16,7 +17,6 @@ uniform mat4 depthViewMatrix;
 uniform mat4 depthProjectionMatrix;
 
 uniform vec3 lightPosWorld;
-uniform vec4 color;
 
 out VS_OUT
 {
