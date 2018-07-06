@@ -510,7 +510,7 @@ static void create_tetrahedron(Renderer &renderer, i32 *mesh_handle)
     create_buffers_from_mesh(renderer, mesh, 0, true, false);
 }
 
-static void create_cube(Renderer &renderer, i32 *mesh_handle, b32 with_instancing = false, i32 *instance_buffer_handle = 0)
+static void create_cube(Renderer &renderer, MeshInfo &mesh_info, b32 with_instancing = false)
 {
     Mesh &mesh = renderer.meshes[renderer.mesh_count++];
     mesh = {};
@@ -538,17 +538,24 @@ static void create_cube(Renderer &renderer, i32 *mesh_handle, b32 with_instancin
         face.indices[2] = cube_indices[i * 3 + 2];
     }
     
-    *mesh_handle = renderer.mesh_count - 1;
+    mesh_info.mesh_handle = renderer.mesh_count - 1;
     
     create_buffers_from_mesh(renderer, mesh, 0, true, true);
     
+    
     if(with_instancing)
     {
-        BufferData data = {};
-        data.instance_buffer_size = sizeof(math::Vec3) * 900;
-        data.for_instancing = true;
-        renderer.buffers[renderer.buffer_count] = data;
-        *instance_buffer_handle = renderer.buffer_count++;
+        BufferData offset_data = {};
+        offset_data.instance_buffer_size = sizeof(math::Vec3) * 900;
+        offset_data.for_instancing = true;
+        renderer.buffers[renderer.buffer_count] = offset_data;
+        mesh_info.instance_offset_buffer_handle = renderer.buffer_count++;
+        
+        BufferData color_data = {};
+        color_data.instance_buffer_size = sizeof(math::Rgba) * 900;
+        color_data.for_instancing = true;
+        renderer.buffers[renderer.buffer_count] = color_data;
+        mesh_info.instance_color_buffer_handle = renderer.buffer_count++;
     }
 }
 
@@ -603,7 +610,7 @@ static void push_mesh(Renderer &renderer, MeshInfo mesh_info)
     render_command->receives_shadows = mesh_info.receives_shadows;
 }
 
-static void push_mesh_instanced(Renderer &renderer, MeshInfo mesh_info, math::Vec3 *offsets, i32 offset_count)
+static void push_mesh_instanced(Renderer &renderer, MeshInfo mesh_info, math::Vec3 *offsets, math::Rgba *colors, i32 offset_count)
 {
     RenderCommand *render_command = push_next_command(renderer, false);
     render_command->type = RENDER_COMMAND_MESH_INSTANCED;
@@ -617,9 +624,11 @@ static void push_mesh_instanced(Renderer &renderer, MeshInfo mesh_info, math::Ve
     render_command->mesh_instanced.material_type = mesh_info.material.type;
     render_command->mesh_instanced.diffuse_texture = mesh_info.material.diffuse_texture;
     render_command->color = mesh_info.material.color;
-    render_command->mesh_instanced.instance_buffer_handle = mesh_info.instance_buffer_handle;
+    render_command->mesh_instanced.instance_offset_buffer_handle = mesh_info.instance_offset_buffer_handle;
+    render_command->mesh_instanced.instance_color_buffer_handle = mesh_info.instance_color_buffer_handle;
     render_command->mesh_instanced.offsets = offsets;
-    render_command->mesh_instanced.offset_count = offset_count;
+    render_command->mesh_instanced.colors = colors;
+    render_command->mesh_instanced.offset_count = offset_count; // @Incomplete: Rename this to instance_count?
     render_command->cast_shadows = mesh_info.cast_shadows;
     render_command->receives_shadows = mesh_info.receives_shadows;
 }
@@ -891,7 +900,7 @@ static void add_size_key(ParticleSystemInfo &particle_system, r32 key_time, math
     particle_system.color_over_lifetime.value_count++;
 }
 
-static void load_obj(Renderer &renderer, char *file_path, i32 *mesh_handle, b32 with_instancing = false, i32 *instance_buffer_handle = 0)
+static void load_obj(Renderer &renderer, char *file_path, MeshInfo &mesh_info, b32 with_instancing = false)
 {
     FILE *file = fopen(file_path, "r");
     
@@ -1057,15 +1066,21 @@ static void load_obj(Renderer &renderer, char *file_path, i32 *mesh_handle, b32 
     buf_free(uvs);
     buf_free(faces);
     
-    *mesh_handle = renderer.mesh_count - 1;
+    mesh_info.mesh_handle = renderer.mesh_count - 1;
     create_buffers_from_mesh(renderer, mesh, 0, true, true);
     
     if(with_instancing)
     {
-        BufferData data = {};
-        data.instance_buffer_size = sizeof(math::Vec3) * 900;
-        data.for_instancing = true;
-        renderer.buffers[renderer.buffer_count] = data;
-        *instance_buffer_handle = renderer.buffer_count++;
+        BufferData offset_data = {};
+        offset_data.instance_buffer_size = sizeof(math::Vec3) * 900;
+        offset_data.for_instancing = true;
+        renderer.buffers[renderer.buffer_count] = offset_data;
+        mesh_info.instance_offset_buffer_handle = renderer.buffer_count++;
+        
+        BufferData color_data = {};
+        color_data.instance_buffer_size = sizeof(math::Rgba) * 900;
+        color_data.for_instancing = true;
+        renderer.buffers[renderer.buffer_count] = color_data;
+        mesh_info.instance_color_buffer_handle = renderer.buffer_count++;
     }
 }
