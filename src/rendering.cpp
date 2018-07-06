@@ -633,9 +633,8 @@ static void push_mesh_instanced(Renderer &renderer, MeshInfo mesh_info, math::Ve
     render_command->receives_shadows = mesh_info.receives_shadows;
 }
 
-static void push_particle_system(Renderer &renderer, i32 particle_system_handle)
+static void push_particle_system(Renderer &renderer, ParticleSystemInfo &particle_info)
 {
-    ParticleSystemInfo &particle_info = renderer.particle_systems[particle_system_handle];
     RenderCommand *render_command = push_next_command(renderer, false);
     
     render_command->type = RENDER_COMMAND_PARTICLES;
@@ -653,6 +652,12 @@ static void push_particle_system(Renderer &renderer, i32 particle_system_handle)
     render_command->particles.colors = particle_info.colors;
     render_command->particles.sizes = particle_info.sizes;
     render_command->particles.diffuse_texture = particle_info.texture_handle;
+}
+
+static void push_particle_system(Renderer &renderer, i32 particle_system_handle)
+{
+    ParticleSystemInfo &particle_info = renderer.particle_systems[particle_system_handle];
+    push_particle_system(renderer, particle_info);
 }
 
 /*
@@ -812,7 +817,7 @@ static void stop_particle_system(i32 handle, Renderer &renderer)
 
 static void create_particle_system(Renderer &renderer, i32 *handle, math::Vec2 size, math::Rgba color, r64 life_time, r32 speed_multiplier, r32 spread, i32 particles_per_second, i32 max_particles, i32 texture_handle, MemoryArena *memory_arena)
 {
-    assert((i32)(particles_per_second * life_time) <= max_particles);
+    //assert((i32)(particles_per_second * life_time) <= max_particles);
     ParticleSystemInfo &system_info = renderer.particle_systems[renderer.particle_system_count++];
     system_info.running = false;
     system_info.one_shot = false;
@@ -827,10 +832,15 @@ static void create_particle_system(Renderer &renderer, i32 *handle, math::Vec2 s
     system_info.max_particles = max_particles;
     system_info.particle_count = 0;
     system_info.last_used_particle = 0;
+    
     system_info.particles = push_array(memory_arena, system_info.max_particles, Particle);
+    
     system_info.offsets = push_array(memory_arena, system_info.max_particles, math::Vec3);
+    
     system_info.colors = push_array(memory_arena, system_info.max_particles, math::Vec4);
+    
     system_info.sizes = push_array(memory_arena, system_info.max_particles, math::Vec2);
+    
     system_info.texture_handle = texture_handle;
     system_info.color_over_lifetime.value_count = 0;
     system_info.size_over_lifetime.value_count = 0;
@@ -856,7 +866,7 @@ static void create_particle_system(Renderer &renderer, i32 *handle, math::Vec2 s
     
     BufferData size_data = {};
     size_data.for_instancing = true;
-    size_data.instance_buffer_size = sizeof(r32) * system_info.max_particles;
+    size_data.instance_buffer_size = sizeof(math::Vec2) * system_info.max_particles;
     renderer.buffers[renderer.buffer_count] = size_data;
     system_info.size_buffer_handle = renderer.buffer_count++;
     
