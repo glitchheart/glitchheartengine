@@ -803,7 +803,6 @@ static void stop_particle_system(i32 handle, Renderer &renderer)
 
 static void create_particle_system(Renderer &renderer, i32 *handle, math::Vec2 size, math::Rgba color, r64 life_time, r32 speed_multiplier, r32 spread, i32 particles_per_second, i32 max_particles, i32 texture_handle, MemoryArena *memory_arena)
 {
-    debug("total: %d\n", (i32)((r64)particles_per_second * life_time));
     assert((i32)(particles_per_second * life_time) <= max_particles);
     ParticleSystemInfo &system_info = renderer.particle_systems[renderer.particle_system_count++];
     system_info.running = false;
@@ -824,10 +823,9 @@ static void create_particle_system(Renderer &renderer, i32 *handle, math::Vec2 s
     system_info.colors = push_array(memory_arena, system_info.max_particles, math::Vec4);
     system_info.sizes = push_array(memory_arena, system_info.max_particles, math::Vec2);
     system_info.texture_handle = texture_handle;
-    system_info.color_over_lifetime.start = color;
-    system_info.color_over_lifetime.end = color;
-    system_info.size_over_lifetime.start = size;
-    system_info.size_over_lifetime.start = size;
+    system_info.color_over_lifetime.value_count = 0;
+    system_info.size_over_lifetime.value_count = 0;
+    system_info.speed_over_lifetime.value_count = 0;
     
     BufferData offset_data = {};
     offset_data.for_instancing = true;
@@ -848,6 +846,49 @@ static void create_particle_system(Renderer &renderer, i32 *handle, math::Vec2 s
     system_info.size_buffer_handle = renderer.buffer_count++;
     
     *handle = renderer.particle_system_count - 1;
+}
+
+static void add_color_key(ParticleSystemInfo &particle_system, r32 key_time, math::Rgba value)
+{
+    assert(particle_system.color_over_lifetime.value_count + 1 < MAX_LIFETIME_VALUES);
+    auto &values = particle_system.color_over_lifetime.values;
+    auto &keys = particle_system.color_over_lifetime.keys;
+    
+    values[particle_system.color_over_lifetime.value_count] = value;
+    keys[particle_system.color_over_lifetime.value_count] = key_time;
+    particle_system.color_over_lifetime.value_count++;
+}
+
+static void add_size_key(ParticleSystemInfo &particle_system, r32 key_time, math::Vec2 value)
+{
+    assert(particle_system.size_over_lifetime.value_count + 1 < MAX_LIFETIME_VALUES);
+    auto &values = particle_system.size_over_lifetime.values;
+    auto &keys = particle_system.size_over_lifetime.keys;
+    
+    values[particle_system.size_over_lifetime.value_count] = value;
+    keys[particle_system.size_over_lifetime.value_count] = key_time;
+    particle_system.size_over_lifetime.value_count++;
+}
+
+static void add_speed_key(ParticleSystemInfo &particle_system, r32 key_time, r32 value)
+{
+    assert(particle_system.speed_over_lifetime.value_count + 1 < MAX_LIFETIME_VALUES);
+    auto &values = particle_system.speed_over_lifetime.values;
+    auto &keys = particle_system.speed_over_lifetime.keys;
+    
+    values[particle_system.speed_over_lifetime.value_count] = value;
+    keys[particle_system.speed_over_lifetime.value_count] = key_time;
+    particle_system.speed_over_lifetime.value_count++;
+}
+
+static void add_size_key(ParticleSystemInfo &particle_system, r32 key_time, math::Rgba value)
+{
+    auto &values = particle_system.color_over_lifetime.values;
+    auto &keys = particle_system.color_over_lifetime.keys;
+    
+    values[particle_system.color_over_lifetime.value_count] = value;
+    keys[particle_system.color_over_lifetime.value_count] = key_time;
+    particle_system.color_over_lifetime.value_count++;
 }
 
 static void load_obj(Renderer &renderer, char *file_path, i32 *mesh_handle, b32 with_instancing = false, i32 *instance_buffer_handle = 0)
