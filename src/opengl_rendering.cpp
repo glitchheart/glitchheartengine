@@ -443,7 +443,7 @@ static void register_instance_buffer(RenderState &render_state, BufferData &buff
     // @Incomplete: Particles
     glGenBuffers(1, &buffer->vbo);
     glBindBuffer(GL_ARRAY_BUFFER, buffer->vbo);
-    glBufferData(GL_ARRAY_BUFFER, buffer_data.instance_buffer_size, nullptr, GL_DYNAMIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)buffer_data.instance_buffer_size, nullptr, GL_DYNAMIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
@@ -1899,18 +1899,18 @@ static void render_particles(const RenderCommand &render_command, Renderer &rend
     
     glEnableVertexAttribArray(2);
     glBindBuffer(GL_ARRAY_BUFFER, offset_buffer.vbo);
-    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(math::Vec3) * render_command.particles.particle_count, render_command.particles.offsets);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizei)sizeof(math::Vec3) * render_command.particles.particle_count, render_command.particles.offsets);
     vertex_attrib_pointer(2, 3, GL_FLOAT, (3 * sizeof(GLfloat)), (void*)(0 * sizeof(GLfloat)));
     
     glEnableVertexAttribArray(3);
     glBindBuffer(GL_ARRAY_BUFFER, color_buffer.vbo);
-    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(math::Vec4) * render_command.particles.particle_count, render_command.particles.colors);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizei)sizeof(math::Vec4) * render_command.particles.particle_count, render_command.particles.colors);
     vertex_attrib_pointer(3, 4, GL_FLOAT, (4 * sizeof(GLfloat)), (void*)(0 * sizeof(GLfloat)));
     
     glEnableVertexAttribArray(4);
     glBindBuffer(GL_ARRAY_BUFFER, size_buffer.vbo);
-    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(GLfloat) * render_command.particles.particle_count, render_command.particles.sizes);
-    vertex_attrib_pointer(4, 1, GL_FLOAT, sizeof(GLfloat), (void*)(0 * sizeof(GLfloat)));
+    glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizei)sizeof(math::Vec2) * render_command.particles.particle_count, render_command.particles.sizes);
+    vertex_attrib_pointer(4, 2, GL_FLOAT, 2 * sizeof(GLfloat), (void*)(0 * sizeof(GLfloat)));
     
     
     glVertexAttribDivisor(0, 0);
