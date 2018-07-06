@@ -879,9 +879,9 @@ struct Camera
     r32 fading_speed;
 };
 
-#define BUFFER_ARRAY_SIZE 400
-#define TEXTURE_ARRAY_SIZE 512
-#define SHADER_ARRAY_SIZE 128
+#define BUFFER_ARRAY_SIZE 128
+#define TEXTURE_ARRAY_SIZE 64
+#define SHADER_ARRAY_SIZE 16
 
 enum TextureFiltering
 {
