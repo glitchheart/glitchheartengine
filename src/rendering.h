@@ -584,10 +584,13 @@ struct MeshInfo
 struct Particle
 {
     math::Vec3 position;
-    math::Vec3 speed;
+    math::Vec3 direction;
     math::Rgba color;
     math::Vec2 size;
     math::Vec3 relative_position;
+    i32 speed_over_lifetime_index;
+    i32 color_over_lifetime_index;
+    i32 size_over_lifetime_index;
     r64 life;
 };
 
@@ -601,6 +604,8 @@ enum ParticleSpace
     PS_WORLD,
     PS_OBJECT
 };
+
+#define MAX_LIFETIME_VALUES 16
 
 struct ParticleSystemInfo
 {
@@ -620,15 +625,24 @@ struct ParticleSystemInfo
     
     struct
     {
-        math::Rgba start;
-        math::Rgba end;
+        math::Rgba values[MAX_LIFETIME_VALUES];
+        r64 keys[MAX_LIFETIME_VALUES];
+        i32 value_count;
     } color_over_lifetime;
     
     struct 
     {
-        math::Vec2 start;
-        math::Vec2 end;
+        math::Vec2 values[MAX_LIFETIME_VALUES];
+        r64 keys[MAX_LIFETIME_VALUES];
+        i32 value_count;
     } size_over_lifetime;
+    
+    struct
+    {
+        r32 values[MAX_LIFETIME_VALUES];
+        r64 keys[MAX_LIFETIME_VALUES];
+        i32 value_count;
+    } speed_over_lifetime;
     
     i32 offset_buffer_handle;
     i32 color_buffer_handle;
