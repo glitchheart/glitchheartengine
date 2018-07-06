@@ -952,7 +952,7 @@ static void initialize_opengl(RenderState& render_state, Renderer& renderer, Con
     // @Incomplete: This is hardcoded uglinesssssssss
     // Create matrices for light
     renderer.shadow_map_matrices.depth_model_matrix = math::Mat4(1.0f);
-    renderer.shadow_map_matrices.depth_projection_matrix = math::ortho(-20, 20, -20, 20, 1, 50.0f);
+    renderer.shadow_map_matrices.depth_projection_matrix = math::ortho(-10, 10, -10, 10, 1, 50.0f);
     renderer.shadow_map_matrices.depth_view_matrix = math::look_at_with_target(math::Vec3(-2.0f, 4.0f, -1.0f), math::Vec3(0, 0, 0));
     renderer.shadow_map_matrices.depth_bias_matrix = math::Mat4(
         0.5, 0.0, 0.0, 0.0,
@@ -1762,7 +1762,9 @@ static void render_mesh(const RenderCommand &render_command, Renderer &renderer,
 static void render_mesh_instanced(const RenderCommand &render_command, Renderer &renderer, RenderState &render_state, math::Mat4 projection_matrix, math::Mat4 view_matrix, b32 for_shadow_map, ShadowMapMatrices *shadow_map_matrices = 0)
 {
     Buffer buffer = render_state.buffers[render_command.mesh_instanced.buffer_handle];
-    Buffer instance_buffer = render_state.buffers[render_command.mesh_instanced.instance_buffer_handle];
+    Buffer offset_instance_buffer = render_state.buffers[render_command.mesh_instanced.instance_offset_buffer_handle];
+    Buffer color_instance_buffer = render_state.buffers[render_command.mesh_instanced.instance_color_buffer_handle];
+    
     glBindVertexArray(buffer.vao);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer.ibo);
     glBindBuffer(GL_ARRAY_BUFFER, buffer.vbo);
@@ -1788,11 +1790,18 @@ static void render_mesh_instanced(const RenderCommand &render_command, Renderer 
     vertex_attrib_pointer(2, 2, GL_FLOAT, (8 * sizeof(GLfloat)), (void*)(6 * sizeof(GLfloat)));
     
     glEnableVertexAttribArray(3);
-    glBindBuffer(GL_ARRAY_BUFFER, instance_buffer.vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, offset_instance_buffer.vbo);
     glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(math::Vec3) * 900, render_command.mesh_instanced.offsets);
     
     glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
     glVertexAttribDivisor(3, 1);
+    
+    glEnableVertexAttribArray(4);
+    glBindBuffer(GL_ARRAY_BUFFER, color_instance_buffer.vbo);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(math::Rgba) * 900, render_command.mesh_instanced.colors);
+    
+    glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, 0, (void*)0);
+    glVertexAttribDivisor(4, 1);
     
     math::Mat4 model_matrix(1.0f);
     model_matrix = math::scale(model_matrix, render_command.scale);
@@ -1841,7 +1850,6 @@ static void render_mesh_instanced(const RenderCommand &render_command, Renderer 
         set_mat4_uniform(shader.program, "depthViewMatrix", shadow_map_matrices->depth_view_matrix);
         set_mat4_uniform(shader.program, "depthProjectionMatrix", shadow_map_matrices->depth_projection_matrix);
         
-        set_vec4_uniform(shader.program, "color", render_command.color);
         set_vec3_uniform(shader.program, "lightPosWorld", math::Vec3(0, 20, -10));
         set_vec3_uniform(shader.program, "diffuseColor", math::Vec3(1, 1, 1));
         set_vec3_uniform(shader.program, "lightColor", math::Vec3(1.0f, 1.0f, 1.0f));

@@ -570,7 +570,8 @@ enum WireframeType
 struct MeshInfo
 {
     i32 mesh_handle;
-    i32 instance_buffer_handle;
+    i32 instance_offset_buffer_handle;
+    i32 instance_color_buffer_handle;
     TransformInfo transform;
     RenderMaterial material;
     
@@ -814,12 +815,14 @@ struct RenderCommand
         struct
         {
             i32 buffer_handle;
-            i32 instance_buffer_handle;
+            i32 instance_offset_buffer_handle;
+            i32 instance_color_buffer_handle;
             RenderMaterialType material_type;
             i32 diffuse_texture;
             WireframeType wireframe_type;
             math::Rgba wireframe_color;
             math::Vec3 *offsets;
+            math::Rgba *colors;
             i32 offset_count;
         } mesh_instanced;
         struct
