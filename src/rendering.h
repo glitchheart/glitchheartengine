@@ -594,6 +594,8 @@ struct Particle
     i32 color_over_lifetime_index;
     i32 size_over_lifetime_index;
     r64 life;
+    
+    r32 camera_distance;
 };
 
 struct ParticleSystemHandle
