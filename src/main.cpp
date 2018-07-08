@@ -34,6 +34,7 @@ static MemoryState memory_state;
 #if defined(__linux) || defined(_WIN32)
 //#include "vulkan_rendering.h"
 #endif
+#include "particles.cpp"
 #include "opengl_rendering.h"
 #include "animation.cpp"
 #include "keycontroller.cpp"
@@ -401,6 +402,7 @@ int main(int argc, char** args)
         
         auto game_temp_mem = begin_temporary_memory(game_memory.temp_arena);
         game.update(delta_time, &game_memory, renderer, &input_controller, &sound_system, timer_controller);
+        update_particle_systems(renderer, delta_time);
         
         tick_animation_controllers(renderer, &sound_system, &input_controller, timer_controller, delta_time);
         tick_timers(timer_controller, delta_time);
