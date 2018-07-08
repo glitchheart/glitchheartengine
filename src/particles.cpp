@@ -194,7 +194,7 @@ void update_particles(Renderer &renderer, ParticleSystemInfo &particle_system, r
     } 
 }
 
-void merge(i32 *work, i32 size, i32 left, i32 mid, math::Vec3 *offsets, math::Vec2 *sizes, math::Rgba *colors, math::Vec3 camera_position)
+void merge(math::Vec3 *work_offsets, math::Vec2 *work_sizes, math::Rgba *work_colors, i32 size, i32 left, i32 mid, math::Vec3 *offsets, math::Vec2 *sizes, math::Rgba *colors, math::Vec3 camera_position)
 {
     i32 right = mid + mid - left;
     if (right > size)
@@ -209,37 +209,55 @@ void merge(i32 *work, i32 size, i32 left, i32 mid, math::Vec3 *offsets, math::Ve
         auto i_dist = math::length(offsets[i] - camera_position);  
         auto j_dist = math::length(offsets[j] - camera_position);  
         if (i_dist > j_dist)
-            work[k++] = i++;
+        {
+            work_offsets[k++] = offsets[i++];
+            work_sizes[k++] = sizes[i++];
+            work_colors[k++] = colors[i++];
+        }
         else
-            work[k++] = j++;
+        {
+            work_offsets[k++] = offsets[j++];
+            work_sizes[k++] = sizes[j++];
+            work_colors[k++] = colors[j++];
+        }
+        
     }
     
     while (i < mid)
-        work[k++] = i++;
+    {
+        work_offsets[k++] = offsets[i++];
+        work_sizes[k++] = sizes[i++];
+        work_colors[k++] = colors[i++];
+    }
     
     while (j < right)
-        work[k++] = j++;
+    {
+        work_offsets[k++] = offsets[j++];
+        work_sizes[k++] = sizes[j++];
+        work_colors[k++] = colors[j++];
+    }
     
     for (i = left; i < right; ++i)
     {
-        offsets[i] = offsets[work[i]];
-        sizes[i] = sizes[work[i]];
-        colors[i] = colors[work[i]];
+        offsets[i] = work_offsets[i];
+        sizes[i] = work_sizes[i];
+        colors[i] = work_colors[i];
     }
-    
 }
 
 void sort(math::Vec3 camera_position, math::Vec3 *offsets, math::Vec2 *sizes, math::Rgba *colors, i32 n, MemoryArena *arena)
 {
     i32 subsize, left, mid;
     auto temp_mem = begin_temporary_memory(arena);
-    i32 *work = push_array(arena, n, i32);
+    math::Vec3 *work_offsets = push_array(arena, n, math::Vec3);
+    math::Vec2 *work_sizes = push_array(arena, n, math::Vec2);
+    math::Rgba *work_colors = push_array(arena, n, math::Rgba);
     
     for (subsize = 1; subsize < n; subsize *= 2)
     {
         for (left = 0, mid = subsize; mid < n; left = mid + subsize, mid = left + subsize)
         {
-            merge(work, n, left, mid, offsets, sizes, colors, camera_position);
+            merge(work_offsets, work_sizes, work_colors, n, left, mid, offsets, sizes, colors, camera_position);
         }
     }
     
