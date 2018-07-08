@@ -1893,6 +1893,7 @@ static void render_particles(const RenderCommand &render_command, Renderer &rend
     {
         glBlendFunc(GL_SRC_ALPHA, GL_ONE);
     }
+    glDepthMask(GL_FALSE);
     
     Buffer offset_buffer = render_state.buffers[render_command.particles.offset_buffer_handle];
     Buffer color_buffer = render_state.buffers[render_command.particles.color_buffer_handle];
@@ -1951,6 +1952,7 @@ static void render_particles(const RenderCommand &render_command, Renderer &rend
         set_bool_uniform(shader.program, "withTexture", false);
     
     glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)0, render_command.particles.particle_count);
+    glDepthMask(GL_TRUE);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
 

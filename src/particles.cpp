@@ -50,7 +50,7 @@ i32 find_unused_particle(ParticleSystemInfo &particle_system)
         }
     }
     
-    return 0;
+    return -1;
 }
 
 void update_particles(Renderer &renderer, ParticleSystemInfo &particle_system, r64 delta_time)
@@ -141,6 +141,7 @@ void update_particles(Renderer &renderer, ParticleSystemInfo &particle_system, r
                 if(size_index < size_value_count)
                 {
                     auto start_time = particle_system.size_over_lifetime.keys[size_index - 1] * particle_system.attributes.life_time;
+                    
                     auto end_time = particle_system.size_over_lifetime.keys[size_index] * particle_system.attributes.life_time;
                     
                     auto time_spent = start_time + (particle_system.attributes.life_time - p.life);
@@ -176,20 +177,10 @@ void update_particles(Renderer &renderer, ParticleSystemInfo &particle_system, r
                 p.relative_position = particle_system.transform.position;
             }
             
-            // @Incomplete: For sorting
-            auto camera_position = renderer.cameras[renderer.current_camera_handle].position;
-            p.camera_distance =
-                math::length(particle_system.offsets[particle_system.particle_count] - camera_position);  
-            
             particle_system.colors[particle_system.particle_count] = p.color;
             particle_system.sizes[particle_system.particle_count] = p.size;
             p.life -= delta_time;
             particle_system.particle_count++;
-        }
-        else
-        {
-            // Particles that just died will be put at the end of the buffer in SortParticles();
-            p.camera_distance = -1.0f;
         }
     } 
 }
@@ -305,6 +296,10 @@ void update_particle_systems(Renderer &renderer, r64 delta_time)
                 for (i32 i = 0; i < new_particles; i++)
                 {
                     i32 particle_index = find_unused_particle(particle_system);
+                    if(particle_index == -1)
+                    {
+                        break;
+                    }
                     particle_system.particles[particle_index].life = particle_system.attributes.life_time;
                     particle_system.particles[particle_index].position = math::Vec3(0, 0, 0);
                     
@@ -329,7 +324,7 @@ void update_particle_systems(Renderer &renderer, r64 delta_time)
             update_particles(renderer, particle_system, delta_time);
             
             auto camera_position = renderer.cameras[renderer.current_camera_handle].position;
-            //sort(camera_position, particle_system.offsets, particle_system.sizes, particle_system.colors, particle_system.particle_count, &renderer.particle_arena);
+            sort(camera_position, particle_system.offsets, particle_system.sizes, particle_system.colors, particle_system.particle_count, &renderer.particle_arena);
             
             push_particle_system(renderer, particle_system);
         }   
