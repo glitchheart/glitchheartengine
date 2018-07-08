@@ -210,31 +210,39 @@ void merge(math::Vec3 *work_offsets, math::Vec2 *work_sizes, math::Rgba *work_co
         auto j_dist = math::length(offsets[j] - camera_position);  
         if (i_dist > j_dist)
         {
-            work_offsets[k++] = offsets[i++];
-            work_sizes[k++] = sizes[i++];
-            work_colors[k++] = colors[i++];
+            work_offsets[k] = offsets[i];
+            work_sizes[k] = sizes[i];
+            work_colors[k] = colors[i];
+            k++;
+            i++;
         }
         else
         {
-            work_offsets[k++] = offsets[j++];
-            work_sizes[k++] = sizes[j++];
-            work_colors[k++] = colors[j++];
+            work_offsets[k] = offsets[j];
+            work_sizes[k] = sizes[j];
+            work_colors[k] = colors[j];
+            k++;
+            j++;
         }
         
     }
     
     while (i < mid)
     {
-        work_offsets[k++] = offsets[i++];
-        work_sizes[k++] = sizes[i++];
-        work_colors[k++] = colors[i++];
+        work_offsets[k] = offsets[i];
+        work_sizes[k] = sizes[i];
+        work_colors[k] = colors[i];
+        k++;
+        i++;
     }
     
     while (j < right)
     {
-        work_offsets[k++] = offsets[j++];
-        work_sizes[k++] = sizes[j++];
-        work_colors[k++] = colors[j++];
+        work_offsets[k] = offsets[j];
+        work_sizes[k] = sizes[j];
+        work_colors[k] = colors[j];
+        k++;
+        j++;
     }
     
     for (i = left; i < right; ++i)
