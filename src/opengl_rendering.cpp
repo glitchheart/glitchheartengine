@@ -1889,6 +1889,11 @@ static void render_mesh_instanced(const RenderCommand &render_command, Renderer 
 
 static void render_particles(const RenderCommand &render_command, Renderer &renderer, RenderState &render_state, math::Mat4 projection_matrix, math::Mat4 view_matrix)
 {
+    if(render_command.particles.blend_mode == CBM_ONE)
+    {
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+    }
+    
     Buffer offset_buffer = render_state.buffers[render_command.particles.offset_buffer_handle];
     Buffer color_buffer = render_state.buffers[render_command.particles.color_buffer_handle];
     Buffer size_buffer = render_state.buffers[render_command.particles.size_buffer_handle];
@@ -1946,6 +1951,7 @@ static void render_particles(const RenderCommand &render_command, Renderer &rend
         set_bool_uniform(shader.program, "withTexture", false);
     
     glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)0, render_command.particles.particle_count);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
 
 static void render_buffer(const RenderCommand& command, RenderState& render_state, math::Mat4 projection, math::Mat4 view)
@@ -2303,7 +2309,6 @@ static void render_commands(RenderState &render_state, Renderer &renderer)
             case RENDER_COMMAND_MESH_INSTANCED:
             {
                 render_mesh_instanced(command, renderer, render_state, camera.projection_matrix, camera.view_matrix, false, &renderer.shadow_map_matrices);
-                
             }
             break;
             case RENDER_COMMAND_BUFFER:

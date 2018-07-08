@@ -582,6 +582,27 @@ struct MeshInfo
     b32 receives_shadows;
 };
 
+
+enum ParticleSpace
+{
+    PS_WORLD,
+    PS_OBJECT
+};
+
+struct ParticleSystemAttributes
+{
+    b32 one_shot;
+    ParticleSpace particle_space;
+    math::Rgba color;
+    math::Vec2 size;
+    math::Vec3 direction;
+    r64 life_time;
+    r32 speed_multiplier;
+    r32 spread;
+    i32 particles_per_second;
+    i32 texture_handle;
+};
+
 struct Particle
 {
     math::Vec3 position;
@@ -596,6 +617,7 @@ struct Particle
     r64 life;
     
     r32 camera_distance;
+    i32 texture_handle;
 };
 
 struct ParticleSystemHandle
@@ -603,29 +625,13 @@ struct ParticleSystemHandle
     i32 handle;
 };
 
-enum ParticleSpace
-{
-    PS_WORLD,
-    PS_OBJECT
-};
-
 #define MAX_LIFETIME_VALUES 16
 
 struct ParticleSystemInfo
 {
-    i32 system_handle;
-    
     b32 running;
-    b32 one_shot;
     b32 emitting;
-    ParticleSpace particle_space;
-    math::Vec3 direction;
-    r32 spread;
-    math::Vec2 size;
-    math::Rgba color;
-    r64 life_time;
-    i32 particles_per_second;
-    r32 speed_multiplier;
+    ParticleSystemAttributes attributes;
     
     struct
     {
@@ -663,8 +669,6 @@ struct ParticleSystemInfo
     math::Vec3 *offsets;
     math::Vec4 *colors;
     math::Vec2 *sizes;
-    
-    i32 texture_handle;
 };
 
 struct RenderInfo
@@ -703,6 +707,12 @@ struct TextInfo
     u64 alignment_flags;
     char* text;
     r32 scale;
+};
+
+enum CommandBlendMode
+{
+    CBM_ONE,
+    CBM_ONE_MINUS_SRC_ALPHA
 };
 
 struct RenderCommand
@@ -846,6 +856,8 @@ struct RenderCommand
             math::Vec4 *colors;
             math::Vec2 *sizes;
             i32 texture_handle;
+            
+            CommandBlendMode blend_mode;
         } particles;
     };
     RenderCommand() {}
