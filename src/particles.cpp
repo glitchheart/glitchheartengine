@@ -78,9 +78,12 @@ void update_particles(Renderer &renderer, ParticleSystemInfo &particle_system, r
                     auto start_time = particle_system.speed_over_lifetime.keys[speed_index - 1] * particle_system.attributes.life_time;
                     auto end_time = particle_system.speed_over_lifetime.keys[speed_index] * particle_system.attributes.life_time;
                     
-                    auto time_spent = start_time + (particle_system.attributes.life_time - p.life);
+                    auto time_spent = particle_system.attributes.life_time - p.life;
                     
-                    auto t_speed = time_spent / end_time;                      
+                    auto diff = end_time - start_time;
+                    auto in_this_index = time_spent - start_time;
+                    
+                    auto t_speed = MIN(1.0, in_this_index / diff);                      
                     
                     auto start_speed = particle_system.speed_over_lifetime.values[speed_index - 1];
                     auto end_speed = particle_system.speed_over_lifetime.values[speed_index];
@@ -111,9 +114,12 @@ void update_particles(Renderer &renderer, ParticleSystemInfo &particle_system, r
                     auto start_time = particle_system.color_over_lifetime.keys[color_index - 1] * particle_system.attributes.life_time;
                     auto end_time = particle_system.color_over_lifetime.keys[color_index] * particle_system.attributes.life_time;
                     
-                    auto time_spent = start_time + (particle_system.attributes.life_time - p.life);
+                    auto time_spent = particle_system.attributes.life_time - p.life;
                     
-                    auto t_color = time_spent / end_time;                      
+                    auto diff = end_time - start_time;
+                    auto in_this_index = time_spent - start_time;
+                    
+                    auto t_color = MIN(1.0, in_this_index / diff);                      
                     
                     auto start_color = particle_system.color_over_lifetime.values[color_index - 1];
                     auto end_color = particle_system.color_over_lifetime.values[color_index];
@@ -141,12 +147,14 @@ void update_particles(Renderer &renderer, ParticleSystemInfo &particle_system, r
                 if(size_index < size_value_count)
                 {
                     auto start_time = particle_system.size_over_lifetime.keys[size_index - 1] * particle_system.attributes.life_time;
-                    
                     auto end_time = particle_system.size_over_lifetime.keys[size_index] * particle_system.attributes.life_time;
                     
-                    auto time_spent = start_time + (particle_system.attributes.life_time - p.life);
+                    auto time_spent = particle_system.attributes.life_time - p.life;
                     
-                    auto t_size = time_spent / end_time;                      
+                    auto diff = end_time - start_time;
+                    auto in_this_index = time_spent - start_time;
+                    
+                    auto t_size = MIN(1.0, in_this_index / diff);                      
                     
                     auto start_size = particle_system.size_over_lifetime.values[size_index - 1];
                     auto end_size = particle_system.size_over_lifetime.values[size_index];
@@ -312,9 +320,21 @@ void update_particle_systems(Renderer &renderer, r64 delta_time)
                     particle_system.particles[particle_index].direction = math::normalize(particle_system.attributes.direction + random_dir * particle_system.attributes.spread);
                     particle_system.particles[particle_index].color = particle_system.attributes.color;
                     particle_system.particles[particle_index].size = particle_system.attributes.size;
-                    particle_system.particles[particle_index].speed_over_lifetime_index = 1;
-                    particle_system.particles[particle_index].color_over_lifetime_index = 1;
-                    particle_system.particles[particle_index].size_over_lifetime_index = 1;
+                    
+                    if(particle_system.size_over_lifetime.value_count > 0)
+                    {
+                        particle_system.particles[particle_index].size_over_lifetime_index = 1;
+                    }
+                    
+                    if(particle_system.color_over_lifetime.value_count > 0)
+                    {
+                        particle_system.particles[particle_index].color_over_lifetime_index = 1;
+                    }
+                    
+                    if(particle_system.speed_over_lifetime.value_count > 0)
+                    {
+                        particle_system.particles[particle_index].speed_over_lifetime_index = 1;
+                    }
                     
                     if(particle_system.attributes.one_shot)
                         particle_system.total_emitted++;
