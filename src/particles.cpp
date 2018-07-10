@@ -102,7 +102,7 @@ void update_particles(Renderer &renderer, ParticleSystemInfo &particle_system, r
             }
             else
             {
-                p.position += p.direction * particle_system.attributes.speed_multiplier * (r32)delta_time;				
+                p.position += p.direction * particle_system.attributes.start_speed * (r32)delta_time;				
             }                
             
             if(color_value_count > 0)
@@ -137,7 +137,7 @@ void update_particles(Renderer &renderer, ParticleSystemInfo &particle_system, r
             }
             else
             {
-                p.color = particle_system.attributes.color;				
+                p.color = particle_system.attributes.start_color;				
             }
             
             if(size_value_count > 0)
@@ -172,7 +172,7 @@ void update_particles(Renderer &renderer, ParticleSystemInfo &particle_system, r
             }
             else
             {
-                p.size = particle_system.attributes.size;				
+                p.size = particle_system.attributes.start_size;				
             }
             
             if(particle_system.attributes.particle_space == PS_WORLD && !start)
@@ -271,6 +271,42 @@ void sort(math::Vec3 camera_position, math::Vec3 *offsets, math::Vec2 *sizes, ma
     end_temporary_memory(temp_mem);
 }
 
+void emit_particle(ParticleSystemInfo &particle_system)
+{
+    i32 particle_index = find_unused_particle(particle_system);
+    if(particle_index == -1)
+    {
+        return;
+    }
+    particle_system.particles[particle_index].life = particle_system.attributes.life_time;
+    particle_system.particles[particle_index].position = math::Vec3(0, 0, 0);
+    
+    math::Vec3 random_dir = math::Vec3(
+        (rand() % 2000 - 1000.0f) / 1000.0f,
+        (rand() % 2000 - 1000.0f) / 1000.0f,
+        (rand() % 2000 - 1000.0f) / 1000.0f
+        );
+    
+    particle_system.particles[particle_index].direction = math::normalize(particle_system.attributes.direction + random_dir * particle_system.attributes.spread);
+    particle_system.particles[particle_index].color = particle_system.attributes.start_color;
+    particle_system.particles[particle_index].size = particle_system.attributes.start_size;
+    
+    if(particle_system.size_over_lifetime.value_count > 0)
+    {
+        particle_system.particles[particle_index].size_over_lifetime_index = 1;
+    }
+    
+    if(particle_system.color_over_lifetime.value_count > 0)
+    {
+        particle_system.particles[particle_index].color_over_lifetime_index = 1;
+    }
+    
+    if(particle_system.speed_over_lifetime.value_count > 0)
+    {
+        particle_system.particles[particle_index].speed_over_lifetime_index = 1;
+    }
+}
+
 void update_particle_systems(Renderer &renderer, r64 delta_time)
 {
     for(i32 particle_system_index = 0; particle_system_index < renderer.particle_system_count; particle_system_index++)
@@ -281,9 +317,38 @@ void update_particle_systems(Renderer &renderer, r64 delta_time)
         {
             if (particle_system.emitting)
             {
-                auto per_second = (r64)particle_system.attributes.particles_per_second * delta_time;
-                
                 i32 new_particles;
+                
+                i32 burst_particles = 0;
+                
+                auto value_count = particle_system.attributes.emission_module.burst_over_lifetime.value_count;
+                if(value_count > 0)
+                {
+                    auto burst_index  = particle_system.attributes.emission_module.burst_over_lifetime.current_index;
+                    
+                    if(burst_index < value_count)
+                    {
+                        auto &current_burst = particle_system.attributes.emission_module.burst_over_lifetime.values[burst_index];
+                        
+                        auto target_time = current_burst.repeat_interval;
+                        
+                        particle_system.current_emission_time += delta_time;
+                        
+                        if(particle_system.current_emission_time >= target_time)
+                        {
+                            burst_particles = current_burst.count;
+                            
+                            if(current_burst.cycle_count > 0 && particle_system.attributes.emission_module.burst_over_lifetime.current_index >= current_burst.cycle_count)
+                            {
+                                particle_system.attributes.emission_module.burst_over_lifetime.current_index++;
+                            }
+                            
+                            particle_system.current_emission_time = 0.0;
+                        }
+                    }
+                }
+                
+                auto per_second = (r64)particle_system.attributes.particles_per_second * delta_time;
                 
                 if(per_second < 1.0 && per_second > 0.0)
                 {
@@ -301,43 +366,18 @@ void update_particle_systems(Renderer &renderer, r64 delta_time)
                     particle_system.emitting = false;
                 }
                 
+                
                 for (i32 i = 0; i < new_particles; i++)
                 {
-                    i32 particle_index = find_unused_particle(particle_system);
-                    if(particle_index == -1)
-                    {
-                        break;
-                    }
-                    particle_system.particles[particle_index].life = particle_system.attributes.life_time;
-                    particle_system.particles[particle_index].position = math::Vec3(0, 0, 0);
-                    
-                    math::Vec3 random_dir = math::Vec3(
-                        (rand() % 2000 - 1000.0f) / 1000.0f,
-                        (rand() % 2000 - 1000.0f) / 1000.0f,
-                        (rand() % 2000 - 1000.0f) / 1000.0f
-                        );
-                    
-                    particle_system.particles[particle_index].direction = math::normalize(particle_system.attributes.direction + random_dir * particle_system.attributes.spread);
-                    particle_system.particles[particle_index].color = particle_system.attributes.color;
-                    particle_system.particles[particle_index].size = particle_system.attributes.size;
-                    
-                    if(particle_system.size_over_lifetime.value_count > 0)
-                    {
-                        particle_system.particles[particle_index].size_over_lifetime_index = 1;
-                    }
-                    
-                    if(particle_system.color_over_lifetime.value_count > 0)
-                    {
-                        particle_system.particles[particle_index].color_over_lifetime_index = 1;
-                    }
-                    
-                    if(particle_system.speed_over_lifetime.value_count > 0)
-                    {
-                        particle_system.particles[particle_index].speed_over_lifetime_index = 1;
-                    }
+                    emit_particle(particle_system);
                     
                     if(particle_system.attributes.one_shot)
                         particle_system.total_emitted++;
+                }
+                
+                for (i32 i = 0; i < burst_particles; i++)
+                {
+                    emit_particle(particle_system);
                 }
             }
             
