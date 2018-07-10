@@ -589,18 +589,59 @@ enum ParticleSpace
     PS_OBJECT
 };
 
+enum StartSizeType
+{
+    SST_CONSTANT,
+    SST_BETWEEN_TWO_CONSTANTS
+};
+
+struct Burst
+{
+    i32 count;
+    i32 cycle_count;
+    i32 max_count;
+    i32 min_count;
+    r64 repeat_interval;
+};
+
+enum EmissionType
+{
+    ET_OVER_TIME,
+    ET_OVER_DISTANCE
+};
+
+struct EmissionModule
+{
+    EmissionType type;
+    
+    struct
+    {
+        Burst *values;
+        i32 value_count;
+        i32 current_index;
+    } burst_over_lifetime;
+    
+    r32 rate_over_distance;
+};
+
 struct ParticleSystemAttributes
 {
     b32 one_shot;
     ParticleSpace particle_space;
-    math::Rgba color;
-    math::Vec2 size;
+    
+    math::Rgba start_color;
+    
+    StartSizeType start_size_type;
+    math::Vec2 start_size;
+    
     math::Vec3 direction;
     r64 life_time;
-    r32 speed_multiplier;
+    r32 start_speed;
     r32 spread;
     i32 particles_per_second;
     i32 texture_handle;
+    
+    EmissionModule emission_module;
 };
 
 struct Particle
@@ -669,6 +710,8 @@ struct ParticleSystemInfo
     math::Vec3 *offsets;
     math::Vec4 *colors;
     math::Vec2 *sizes;
+    
+    r64 current_emission_time;
 };
 
 struct RenderInfo
