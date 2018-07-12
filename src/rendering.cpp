@@ -194,24 +194,27 @@ static RenderCommand* push_next_command(Renderer& renderer, b32 is_ui)
     }
 }
 
-static void push_new_resolution(Renderer &renderer, i32 new_width, i32 new_height)
+static void set_new_resolution(Renderer &renderer, i32 new_width, i32 new_height)
 {
-    RenderCommand* render_command = push_next_command(renderer, false);
-    render_command->type = RENDER_COMMAND_CHANGE_RESOLUTION;
-    render_command->resolution.new_width = new_width;
-    render_command->resolution.new_height = new_height;
+    renderer.window_width = new_width;
+    renderer.window_height = new_height;
 }
 
-static void push_new_resolution(Renderer &renderer, Resolution new_resolution)
+static void set_new_resolution(Renderer &renderer, Resolution new_resolution)
 {
-    push_new_resolution(renderer, new_resolution.width, new_resolution.height);
+    set_new_resolution(renderer, new_resolution.width, new_resolution.height);
 }
 
-static void push_new_window_mode(Renderer &renderer, WindowMode new_window_mode)
+static void set_new_resolution(Renderer &renderer, i32 resolution_index)
 {
-    RenderCommand* render_command = push_next_command(renderer, false);
-    render_command->type = RENDER_COMMAND_CHANGE_WINDOW_MODE;
-    render_command->window_mode.new_window_mode = new_window_mode;
+    auto new_resolution = renderer.available_resolutions[resolution_index];
+    renderer.current_resolution_index = resolution_index;
+    set_new_resolution(renderer, new_resolution.width, new_resolution.height);
+}
+
+static void set_new_window_mode(Renderer &renderer, WindowMode new_window_mode)
+{
+    renderer.window_mode = new_window_mode;
 }
 
 static void enable_depth_test(Renderer& renderer)
