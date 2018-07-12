@@ -207,6 +207,12 @@ static void push_new_resolution(Renderer &renderer, Resolution new_resolution)
     push_new_resolution(renderer, new_resolution.width, new_resolution.height);
 }
 
+static void push_new_window_mode(Renderer &renderer, WindowMode new_window_mode)
+{
+    RenderCommand* render_command = push_next_command(renderer, false);
+    render_command->type = RENDER_COMMAND_CHANGE_WINDOW_MODE;
+    render_command->window_mode.new_window_mode = new_window_mode;
+}
 
 static void enable_depth_test(Renderer& renderer)
 {
