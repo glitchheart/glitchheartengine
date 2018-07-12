@@ -153,6 +153,8 @@ struct RenderState
     i32 dpi_scale;
     i32 pixels_per_unit;
     
+    
+    
     r32 contrast;
     r32 brightness;
     
@@ -242,7 +244,7 @@ struct RenderState
         1, 2, 3
     };
     
-    Buffer buffers[MAX_CUSTOM_BUFFERS];
+    Buffer *buffers;
     i32 buffer_count;
     
     GLuint quad_vao;

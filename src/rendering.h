@@ -109,6 +109,9 @@ enum RenderCommandType
     RENDER_COMMAND_SHADER_END,
     RENDER_COMMAND_DEPTH_TEST,
     RENDER_COMMAND_PARTICLES,
+    
+    RENDER_COMMAND_CHANGE_RESOLUTION,
+    
     RENDER_COMMAND_COUNT
 };
 
@@ -895,6 +898,11 @@ struct RenderCommand
             
             CommandBlendMode blend_mode;
         } particles;
+        struct
+        {
+            i32 new_width;
+            i32 new_height;
+        } resolution;
     };
     RenderCommand() {}
 };
@@ -929,10 +937,6 @@ struct Camera
     r32 fading_alpha = 0.0f;
     r32 fading_speed;
 };
-
-#define MAX_CUSTOM_BUFFERS 128
-#define MAX_TEXTURES 64
-#define MAX_SHADERS 16
 
 enum TextureFiltering
 {
@@ -990,17 +994,18 @@ struct BufferData
 
 #define MAX_CAMERAS 8
 
-#define MAX_ANIMATION_CONTROLLERS 64
-#define MAX_RENDER_COMMANDS 128
-#define MAX_UI_COMMANDS 128 // @Incomplete: This should be defined by the game itself (HARDCODED FOR LEVEL EDITOR RIGHT NOW)
-#define MAX_LIGHT_COMMANDS 128
-
 struct ShadowMapMatrices
 {
     math::Mat4 depth_projection_matrix;
     math::Mat4 depth_model_matrix;
     math::Mat4 depth_view_matrix;
     math::Mat4 depth_bias_matrix;
+};
+
+struct Resolution
+{
+    i32 width;
+    i32 height;
 };
 
 struct Renderer
@@ -1024,11 +1029,10 @@ struct Renderer
     MemoryArena light_commands;
     i32 light_command_count;
     
-    BufferData buffers[MAX_CUSTOM_BUFFERS];
-    i32 buffer_handles[MAX_CUSTOM_BUFFERS];
+    BufferData *buffers;
     i32 buffer_count;
     
-    i32 updated_buffer_handles[MAX_CUSTOM_BUFFERS];
+    i32 *updated_buffer_handles;
     i32 updated_buffer_handle_count;
     
     Mesh *meshes;
@@ -1037,12 +1041,10 @@ struct Renderer
     ParticleSystemInfo *particle_systems;
     i32 particle_system_count;
     
-    TextureData texture_data[MAX_TEXTURES];
+    TextureData *texture_data;
     i32 texture_count;
     
-    i32 texture_handles[MAX_TEXTURES];
-    
-    ShaderData shader_data[MAX_SHADERS];
+    ShaderData* shader_data;
     i32 shader_count;
     
     // Shadow map
@@ -1071,8 +1073,19 @@ struct Renderer
         };
     };
     
-    i32 window_width;
-    i32 window_height;
+    union
+    {
+        Resolution resolution;
+        struct
+        {
+            i32 window_width;
+            i32 window_height;
+        };
+    };
+    
+    Resolution *available_resolutions;
+    i32 available_resolutions_count;
+    i32 current_resolution_index;
     
     r32 scale_x;
     r32 scale_y;
@@ -1090,6 +1103,8 @@ struct Renderer
     MemoryArena animation_arena;
     MemoryArena font_arena;
     MemoryArena particle_arena;
+    MemoryArena buffer_arena;
+    MemoryArena shader_arena;
 };
 
 #endif
