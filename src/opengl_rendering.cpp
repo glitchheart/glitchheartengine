@@ -1021,7 +1021,17 @@ static void initialize_opengl(RenderState& render_state, Renderer& renderer, r32
               auto r_1 = (Resolution*)a;
               auto r_2 = (Resolution*)b;
               
+              auto width_diff = r_1->width - r_2->width;
+              auto height_diff = r_1->height - r_2->height;
+              
+              if(width_diff == 0)
+              {
+              return height_diff;
+              }
+              else
+              {
               return (r_1->width - r_2->width);
+              }
               });
     }
 }
