@@ -190,6 +190,26 @@ inline void load_config(const char* file_path, ConfigData* config_data, MemoryAr
     }
 }
 
+static void init_renderer(Renderer &renderer)
+{
+    renderer.pixels_per_unit = global_pixels_per_unit;
+    renderer.frame_lock = 0;
+    
+    renderer.particle_systems = push_array(&renderer. particle_arena, global_max_particle_systems, ParticleSystemInfo);
+    renderer.animation_controllers = push_array(&renderer.animation_arena, 64, AnimationController);
+    renderer.spritesheet_animations = push_array(&renderer.animation_arena, global_max_spritesheet_animations, SpritesheetAnimation);
+    renderer.commands.minimum_block_size = sizeof(RenderCommand) * global_max_render_commands;
+    renderer.ui_commands.minimum_block_size = sizeof(RenderCommand) * global_max_ui_commands;
+    renderer.light_commands.minimum_block_size = sizeof(RenderCommand) * global_max_light_commands;
+    renderer.buffers = push_array(&renderer.buffer_arena, global_max_custom_buffers, BufferData);
+    renderer.updated_buffer_handles = push_array(&renderer.buffer_arena, global_max_custom_buffers, i32);
+    renderer.texture_data = push_array(&renderer.texture_arena, global_max_textures, TextureData);
+    renderer.spritesheet_animation_count = 0;
+    renderer.animation_controller_count = 0;
+    renderer.meshes = push_array(&renderer.mesh_arena, global_max_meshes, Mesh);
+    renderer.shader_data = push_array(&renderer.shader_arena, global_max_shaders, ShaderData);
+}
+
 int main(int argc, char** args)
 {    
     GameMemory game_memory = {};
@@ -268,21 +288,12 @@ int main(int argc, char** args)
     
     init_keys();
     RenderState render_state = {};
-    render_state.arena = {};
-    Renderer renderer = {};
-    renderer.pixels_per_unit = global_pixels_per_unit;
-    renderer.frame_lock = 0;
     render_state.frame_delta = 0.0;
     
-    renderer.particle_systems = push_array(&renderer. particle_arena, global_max_particle_systems, ParticleSystemInfo);
-    renderer.animation_controllers = push_array(&renderer.animation_arena, 64, AnimationController);
-    renderer.spritesheet_animations = push_array(&renderer.animation_arena, global_max_spritesheet_animations, SpritesheetAnimation);
-    renderer.commands.minimum_block_size = sizeof(RenderCommand) * MAX_RENDER_COMMANDS;
-    renderer.ui_commands.minimum_block_size = sizeof(RenderCommand) * MAX_UI_COMMANDS;
-    renderer.light_commands.minimum_block_size = sizeof(RenderCommand) * MAX_LIGHT_COMMANDS;
-    renderer.spritesheet_animation_count = 0;
-    renderer.animation_controller_count = 0;
-    renderer.meshes = push_array(&renderer.mesh_arena, global_max_meshes, Mesh);
+    render_state.arena = {};
+    Renderer renderer = {};
+    
+    init_renderer(renderer);
     
     if(global_graphics_api == GRAPHICS_VULKAN)
     {

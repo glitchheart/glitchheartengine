@@ -764,6 +764,14 @@ static void render_setup(RenderState *render_state, MemoryArena* perm_arena)
     
     render_state->total_delta = 0.0f;
     render_state->frame_delta = 0.0f;
+    
+    if(!render_state->buffers)
+    {
+        render_state->buffers = push_array(render_state->perm_arena, global_max_custom_buffers, Buffer);
+    }
+    
+    
+    
 }
 
 static GLuint load_texture(TextureData& data, Texture* texture)
@@ -841,8 +849,15 @@ static void create_open_gl_window(RenderState& render_state, WindowMode window_m
         monitor = NULL;
     }
     
+    auto old_window = render_state.window;
+    
     render_state.window = glfwCreateWindow(screen_width, screen_height, render_state.window_title, monitor,
-                                           NULL);
+                                           render_state.window);
+    
+    if(old_window)
+    {
+        glfwDestroyWindow(old_window);
+    }
     
     //center window on screen (windowed?)
     
@@ -855,15 +870,12 @@ static void create_open_gl_window(RenderState& render_state, WindowMode window_m
     }
 }
 
-static void initialize_opengl(RenderState& render_state, Renderer& renderer, ConfigData* config_data, MemoryArena* perm_arena)
+static void initialize_opengl(RenderState& render_state, Renderer& renderer, r32 contrast, r32 brightness, WindowMode window_mode, i32 screen_width, i32 screen_height, MemoryArena* perm_arena)
 {
     if (!glfwInit())
         exit(EXIT_FAILURE);
     
     glfwSetErrorCallback(error_callback);
-    
-    render_state.scale_from_width = config_data->scale_from_width;
-    render_state.scale_from_height = config_data->scale_from_height;
     
     //@Incomplete: Figure something out here. Ask for compatible version etc
 #ifdef _WIN32
@@ -880,17 +892,17 @@ static void initialize_opengl(RenderState& render_state, Renderer& renderer, Con
     
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     
-    render_state.contrast = config_data->contrast;
-    render_state.brightness = config_data->brightness;
+    render_state.contrast = contrast;
+    render_state.brightness = brightness;
     
-    create_open_gl_window(render_state, config_data->window_mode, global_title, config_data->screen_width, config_data->screen_height);
+    create_open_gl_window(render_state, window_mode, global_title, screen_width, screen_height);
     renderer.window_mode = render_state.window_mode;
     if (!render_state.window)
     {
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
         
-        create_open_gl_window(render_state, config_data->window_mode, global_title, config_data->screen_width, config_data->screen_height);
+        create_open_gl_window(render_state, window_mode, global_title, screen_width, screen_height);
         renderer.window_mode = render_state.window_mode;
         
         if(!render_state.window)
@@ -960,6 +972,57 @@ static void initialize_opengl(RenderState& render_state, Renderer& renderer, Con
         0.0, 0.0, 0.5, 0.0,
         0.5, 0.5, 0.5, 1.0);
     
+    GLFWmonitor* monitor = glfwGetPrimaryMonitor();
+    
+    i32 video_mode_count;
+    auto video_modes = glfwGetVideoModes(monitor, &video_mode_count);
+    
+    if(!renderer.available_resolutions)
+    {
+        
+        renderer.available_resolutions = push_array(render_state.perm_arena, video_mode_count, Resolution);
+        
+        for(i32 video_mode_index = 0; video_mode_index < video_mode_count; video_mode_index++)
+        {
+            auto vm = video_modes[video_mode_index];
+            
+            auto skip = false;
+            
+            for(i32 i = 0; i < renderer.available_resolutions_count; i++)
+            {
+                if(renderer.available_resolutions[i].width == vm.width && renderer.available_resolutions[i].height == vm.height)
+                {
+                    skip = true;
+                }
+            }
+            
+            if(!skip)
+            {
+                renderer.available_resolutions[renderer.available_resolutions_count++] = {vm.width, vm.height};
+                
+                if(render_state.window_width == vm.width && render_state.window_height == vm.height)
+                {
+                    renderer.current_resolution_index = renderer.available_resolutions_count;
+                    renderer.resolution = {vm.width, vm.height};
+                }
+            }
+        }
+        
+        // @Incomplete: Replace with own sort? Don't like using qsort here :(
+        qsort(renderer.available_resolutions, (size_t)renderer.available_resolutions_count, sizeof(Resolution), [](const void* a, const void* b){
+              
+              auto r_1 = (Resolution*)a;
+              auto r_2 = (Resolution*)b;
+              
+              return (r_1->width - r_2->width);
+              });
+    }
+}
+
+
+static void initialize_opengl(RenderState& render_state, Renderer& renderer, ConfigData* config_data, MemoryArena* perm_arena)
+{
+    initialize_opengl(render_state, renderer, config_data->contrast, config_data->brightness, config_data->window_mode, config_data->screen_width, config_data->screen_height, perm_arena);
 }
 
 static void reload_vertex_shader(ShaderType type, RenderState* render_state, MemoryArena* perm_arena)
@@ -1620,6 +1683,11 @@ static void prepare_shader(const Shader shader, ShaderAttribute *attributes, i32
 
 static void render_mesh(const RenderCommand &render_command, RenderState &render_state)
 {
+    if(!render_state.buffers)
+    {
+        render_state.buffers = push_array(render_state.perm_arena, global_max_custom_buffers, Buffer);
+    }
+    
     Buffer buffer = render_state.buffers[render_command.mesh.buffer_handle];
     glBindVertexArray(buffer.vao);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer.ibo);
@@ -2344,6 +2412,16 @@ static void render_commands(RenderState &render_state, Renderer &renderer)
                 else
                 {
                     glDisable(GL_DEPTH_TEST);
+                }
+            }
+            break;
+            case RENDER_COMMAND_CHANGE_RESOLUTION:
+            {
+                if(command.resolution.new_width != render_state.window_width || command.resolution.new_height != render_state.window_height)
+                {
+                    render_state.window_width = command.resolution.new_width;
+                    render_state.window_height = command.resolution.new_height;
+                    initialize_opengl(render_state, renderer, render_state.contrast, render_state.brightness, render_state.window_mode, render_state.window_width, render_state.window_height, render_state.perm_arena);
                 }
             }
             break;

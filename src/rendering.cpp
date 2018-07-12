@@ -36,8 +36,8 @@ static CameraParams perspective_camera_params()
 // @Incomplete
 static inline void camera_transform(Renderer& renderer, Camera& camera, math::Vec3 position = math::Vec3(), math::Quat orientation = math::Quat(), math::Vec3 target = math::Vec3(), r32 zoom = 1.0f, r32 near = -1.0f, r32 far = 1.0f, CameraParams params = default_camera_params())
 {
-    camera.viewport_width = renderer.window_width;
-    camera.viewport_height = renderer.window_height;
+    camera.viewport_width = renderer.resolution.width;
+    camera.viewport_height = renderer.resolution.height;
     if(params.view_flags & C_FLAG_ORTHOGRAPHIC)
     {
         camera.projection_matrix = math::ortho(0.0f, renderer.viewport[2] / zoom, 0.0f, renderer.viewport[3] / zoom, near, far);
@@ -193,6 +193,20 @@ static RenderCommand* push_next_command(Renderer& renderer, b32 is_ui)
         return command;
     }
 }
+
+static void push_new_resolution(Renderer &renderer, i32 new_width, i32 new_height)
+{
+    RenderCommand* render_command = push_next_command(renderer, false);
+    render_command->type = RENDER_COMMAND_CHANGE_RESOLUTION;
+    render_command->resolution.new_width = new_width;
+    render_command->resolution.new_height = new_height;
+}
+
+static void push_new_resolution(Renderer &renderer, Resolution new_resolution)
+{
+    push_new_resolution(renderer, new_resolution.width, new_resolution.height);
+}
+
 
 static void enable_depth_test(Renderer& renderer)
 {
@@ -635,42 +649,42 @@ static void push_mesh_instanced(Renderer &renderer, MeshInfo mesh_info, math::Ve
 /*
 static void push_model(Renderer& renderer, Model& model, MemoryArena* arena)
 {
-    RenderCommand* render_command = push_next_command(renderer, false);
-    render_command->type = RENDER_COMMAND_MODEL;
-    render_command->position = model.position;
-    render_command->scale = model.scale;
-    render_command->orientation = model.orientation;
-    render_command->model.buffer_handle = model.buffer_handle;
-    
-    for(i32 index = 0; index < model.material_count; index++)
-    {
-        if(model.materials[index].diffuse_texture.has_data && model.materials[index].diffuse_texture.texture_handle == -1 && strlen(model.materials[index].diffuse_texture.texture_name) > 0)
-        {
-            model.materials[index].diffuse_texture.texture_handle = renderer.texture_map[model.materials[index].diffuse_texture.texture_name]->handle;
-        }
-    }
-    
-    memcpy(&render_command->model.meshes, model.meshes, sizeof(model.meshes));
-    memcpy(&render_command->model.materials, model.materials, sizeof(model.materials));
-    
-    // @Incomplete: Check if the texture handle has been set for the materials
-    render_command->model.type = model.type;
-    render_command->model.mesh_count = model.mesh_count;
-    render_command->model.material_count = model.material_count;
-    render_command->model.bone_count = model.bone_count;
-    
-    if(model.type == MODEL_SKINNED)
-    {
-        render_command->model.bone_transforms = push_size(arena, sizeof(math::Mat4) * model.bone_count, math::Mat4);
-        
-        for(i32 index = 0; index < model.bone_count; index++)
-        {
-            render_command->model.bone_transforms[index] = model.current_poses[index];
-        }
-    }
-    
-    render_command->model.color = math::Rgba(1.0f, 1.0f, 1.0f, 1.0f);
-    render_command->is_ui = false;
+RenderCommand* render_command = push_next_command(renderer, false);
+render_command->type = RENDER_COMMAND_MODEL;
+render_command->position = model.position;
+render_command->scale = model.scale;
+render_command->orientation = model.orientation;
+render_command->model.buffer_handle = model.buffer_handle;
+
+for(i32 index = 0; index < model.material_count; index++)
+{
+if(model.materials[index].diffuse_texture.has_data && model.materials[index].diffuse_texture.texture_handle == -1 && strlen(model.materials[index].diffuse_texture.texture_name) > 0)
+{
+model.materials[index].diffuse_texture.texture_handle = renderer.texture_map[model.materials[index].diffuse_texture.texture_name]->handle;
+}
+}
+
+memcpy(&render_command->model.meshes, model.meshes, sizeof(model.meshes));
+memcpy(&render_command->model.materials, model.materials, sizeof(model.materials));
+
+// @Incomplete: Check if the texture handle has been set for the materials
+render_command->model.type = model.type;
+render_command->model.mesh_count = model.mesh_count;
+render_command->model.material_count = model.material_count;
+render_command->model.bone_count = model.bone_count;
+
+if(model.type == MODEL_SKINNED)
+{
+render_command->model.bone_transforms = push_size(arena, sizeof(math::Mat4) * model.bone_count, math::Mat4);
+
+for(i32 index = 0; index < model.bone_count; index++)
+{
+render_command->model.bone_transforms[index] = model.current_poses[index];
+}
+}
+
+render_command->model.color = math::Rgba(1.0f, 1.0f, 1.0f, 1.0f);
+render_command->is_ui = false;
 }
 */
 
