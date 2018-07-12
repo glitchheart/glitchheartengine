@@ -624,7 +624,7 @@ static void create_framebuffer(RenderState& render_state, Framebuffer& framebuff
 void frame_buffer_size_callback(GLFWwindow *window, int width, int height)
 {
     RenderState* render_state = (RenderState*)glfwGetWindowUserPointer(window);
-    glfwSetWindowAspectRatio(window, 16, 9);
+    
     glViewport(0, 0, width, height);
     
     GLint viewport[4];
@@ -833,6 +833,7 @@ static void create_open_gl_window(RenderState& render_state, WindowMode window_m
     render_state.window_mode = window_mode;
     render_state.window_title = push_string(&render_state.string_arena, strlen(title) + 1);
     strcpy(render_state.window_title, title);
+    glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
     
     if (window_mode == FM_BORDERLESS)
     {
@@ -921,7 +922,7 @@ static void initialize_opengl(RenderState& render_state, Renderer& renderer, r32
     glfwSetInputMode(render_state.window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
     
     glfwSetFramebufferSizeCallback(render_state.window, frame_buffer_size_callback);
-    glfwSetWindowSizeCallback(render_state.window, frame_buffer_size_callback);
+    //glfwSetWindowSizeCallback(render_state.window, frame_buffer_size_callback);
     
     glfwMakeContextCurrent(render_state.window);
     gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
