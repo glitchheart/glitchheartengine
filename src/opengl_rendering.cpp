@@ -731,6 +731,7 @@ static void render_setup(RenderState *render_state, MemoryArena* perm_arena)
         render_state->scale_from_height = render_state->window_height;
     }
     
+    
     render_state->font_count = 0;
     render_state->perm_arena = perm_arena;
     
@@ -769,9 +770,6 @@ static void render_setup(RenderState *render_state, MemoryArena* perm_arena)
     {
         render_state->buffers = push_array(render_state->perm_arena, global_max_custom_buffers, Buffer);
     }
-    
-    
-    
 }
 
 static GLuint load_texture(TextureData& data, Texture* texture)
@@ -819,7 +817,7 @@ static void load_extra_shaders(RenderState& render_state, Renderer& renderer)
 {
     for (i32 index = render_state.extra_shader_index; index < renderer.shader_count; index++)
     {
-        load_extra_shader(&render_state.arena, renderer.shader_data[index], render_state);
+        load_extra_shader(&render_state.shader_arena, renderer.shader_data[index], render_state);
     }
 }
 
@@ -831,7 +829,7 @@ static void create_open_gl_window(RenderState& render_state, WindowMode window_m
     
     const GLFWvidmode* mode = glfwGetVideoMode(monitor);
     render_state.window_mode = window_mode;
-    render_state.window_title = push_string(&render_state.arena, strlen(title) + 1);
+    render_state.window_title = push_string(&render_state.string_arena, strlen(title) + 1);
     strcpy(render_state.window_title, title);
     
     if (window_mode == FM_BORDERLESS)
@@ -872,8 +870,14 @@ static void create_open_gl_window(RenderState& render_state, WindowMode window_m
 
 static void initialize_opengl(RenderState& render_state, Renderer& renderer, r32 contrast, r32 brightness, WindowMode window_mode, i32 screen_width, i32 screen_height, MemoryArena* perm_arena)
 {
-    if (!glfwInit())
-        exit(EXIT_FAILURE);
+    if(!render_state.window)
+    {
+        if (!glfwInit())
+            exit(EXIT_FAILURE);
+    }
+    
+    
+    render_state.framebuffer.buffer_handle = 0;
     
     glfwSetErrorCallback(error_callback);
     
@@ -1023,6 +1027,18 @@ static void initialize_opengl(RenderState& render_state, Renderer& renderer, r32
 static void initialize_opengl(RenderState& render_state, Renderer& renderer, ConfigData* config_data, MemoryArena* perm_arena)
 {
     initialize_opengl(render_state, renderer, config_data->contrast, config_data->brightness, config_data->window_mode, config_data->screen_width, config_data->screen_height, perm_arena);
+}
+
+static void delete_shaders(RenderState &render_state)
+{
+    for(i32 i = 0; i < SHADER_COUNT; i++)
+    {
+        auto type = (ShaderType)i;
+        glDeleteProgram(render_state.shaders[type].program);
+        glDeleteShader(render_state.shaders[type].geometry_shader);
+        glDeleteShader(render_state.shaders[type].vertex_shader);
+        glDeleteShader(render_state.shaders[type].fragment_shader);
+    }
 }
 
 static void reload_vertex_shader(ShaderType type, RenderState* render_state, MemoryArena* perm_arena)
@@ -1463,9 +1479,9 @@ static void render_text(RenderState &render_state, TrueTypeFont &font, const mat
         render_state.bound_texture = font.texture;
     }
     
-    auto temp_mem = begin_temporary_memory(&render_state.arena);
+    auto temp_mem = begin_temporary_memory(&render_state.font_arena);
     
-    CharacterData* coords = push_array(&render_state.arena, 6 * strlen(text), CharacterData);
+    CharacterData* coords = push_array(&render_state.font_arena, 6 * strlen(text), CharacterData);
     
     i32 n = 0;
     
@@ -2084,11 +2100,11 @@ void stbtt_load_font(RenderState &render_state, char *path, i32 size)
     font.char_count = '~' - ' ';
     font.size = size;
     
-    unsigned char *ttf_buffer = push_array(&render_state.arena, (1<<20), unsigned char);
+    unsigned char *ttf_buffer = push_array(&render_state.font_arena, (1<<20), unsigned char);
     
-    auto temp_memory = begin_temporary_memory(&render_state.arena);
+    auto temp_memory = begin_temporary_memory(&render_state.font_arena);
     
-    unsigned char *temp_bitmap = push_array(&render_state.arena, 1024 * 1024, unsigned char);
+    unsigned char *temp_bitmap = push_array(&render_state.font_arena, 1024 * 1024, unsigned char);
     
     fread(ttf_buffer, 1, 1<<20, fopen(path, "rb"));
     
@@ -2368,7 +2384,7 @@ static void render_commands(RenderState &render_state, Renderer &renderer)
             break;
             case RENDER_COMMAND_TEXT:
             {
-                render_text(command, render_state, camera.view_matrix, camera.projection_matrix);
+                //render_text(command, render_state, camera.view_matrix, camera.projection_matrix);
             }
             break;
             case RENDER_COMMAND_QUAD:
@@ -2421,7 +2437,16 @@ static void render_commands(RenderState &render_state, Renderer &renderer)
                 {
                     render_state.window_width = command.resolution.new_width;
                     render_state.window_height = command.resolution.new_height;
+                    delete_shaders(render_state);
                     initialize_opengl(render_state, renderer, render_state.contrast, render_state.brightness, render_state.window_mode, render_state.window_width, render_state.window_height, render_state.perm_arena);
+                    clear(&render_state.font_arena);
+                    
+                    for (i32 index = 0; index < renderer.font_count; index++)
+                    {
+                        FontData data = renderer.fonts[index];
+                        load_font(render_state, data.path, data.size);
+                    }
+                    
                 }
             }
             break;
@@ -2448,7 +2473,7 @@ static void render_commands(RenderState &render_state, Renderer &renderer)
             break;
             case RENDER_COMMAND_TEXT:
             {
-                render_text(command, render_state, camera.view_matrix, renderer.ui_projection_matrix);
+                //render_text(command, render_state, camera.view_matrix, renderer.ui_projection_matrix);
             }
             break;
             case RENDER_COMMAND_QUAD:

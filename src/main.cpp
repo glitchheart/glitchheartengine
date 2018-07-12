@@ -290,7 +290,9 @@ int main(int argc, char** args)
     RenderState render_state = {};
     render_state.frame_delta = 0.0;
     
-    render_state.arena = {};
+    render_state.font_arena = {};
+    render_state.shader_arena = {};
+    render_state.string_arena = {};
     Renderer renderer = {};
     
     init_renderer(renderer);
