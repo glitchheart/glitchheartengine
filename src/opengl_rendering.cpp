@@ -2384,7 +2384,7 @@ static void render_commands(RenderState &render_state, Renderer &renderer)
             break;
             case RENDER_COMMAND_TEXT:
             {
-                //render_text(command, render_state, camera.view_matrix, camera.projection_matrix);
+                render_text(command, render_state, camera.view_matrix, camera.projection_matrix);
             }
             break;
             case RENDER_COMMAND_QUAD:
@@ -2473,7 +2473,7 @@ static void render_commands(RenderState &render_state, Renderer &renderer)
             break;
             case RENDER_COMMAND_TEXT:
             {
-                //render_text(command, render_state, camera.view_matrix, renderer.ui_projection_matrix);
+                render_text(command, render_state, camera.view_matrix, renderer.ui_projection_matrix);
             }
             break;
             case RENDER_COMMAND_QUAD:
