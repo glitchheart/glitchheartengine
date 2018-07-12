@@ -287,7 +287,9 @@ struct RenderState
     RenderState() {}
     
     MemoryArena* perm_arena; // TODO: Make this into a framebuffer arena maybe?
-    MemoryArena arena;
+    MemoryArena font_arena;
+    MemoryArena shader_arena;
+    MemoryArena string_arena;
 };
 
 #endif
