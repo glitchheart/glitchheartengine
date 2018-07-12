@@ -873,15 +873,16 @@ static void create_open_gl_window(RenderState& render_state, WindowMode window_m
 
 static void initialize_opengl(RenderState& render_state, Renderer& renderer, r32 contrast, r32 brightness, WindowMode window_mode, i32 screen_width, i32 screen_height, MemoryArena* perm_arena)
 {
-    if(!render_state.window)
+    auto recreate_window = render_state.window != nullptr;;
+
+    if(!recreate_window)
     {
         if (!glfwInit())
             exit(EXIT_FAILURE);
     }
     
-    
     render_state.framebuffer.buffer_handle = 0;
-    
+
     glfwSetErrorCallback(error_callback);
     
     //@Incomplete: Figure something out here. Ask for compatible version etc
@@ -925,6 +926,7 @@ static void initialize_opengl(RenderState& render_state, Renderer& renderer, r32
     //glfwSetWindowSizeCallback(render_state.window, frame_buffer_size_callback);
     
     glfwMakeContextCurrent(render_state.window);
+
     gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
     
     glfwSwapInterval(1);
@@ -967,18 +969,22 @@ static void initialize_opengl(RenderState& render_state, Renderer& renderer, r32
     controller_present();
     
     renderer.should_close = false;
+
     render_setup(&render_state, perm_arena);
     
-    // @Incomplete: This is hardcoded uglinesssssssss
-    // Create matrices for light
-    renderer.shadow_map_matrices.depth_model_matrix = math::Mat4(1.0f);
-    renderer.shadow_map_matrices.depth_projection_matrix = math::ortho(-10, 10, -10, 10, 1, 50.0f);
-    renderer.shadow_map_matrices.depth_view_matrix = math::look_at_with_target(math::Vec3(-2.0f, 4.0f, -1.0f), math::Vec3(0, 0, 0));
-    renderer.shadow_map_matrices.depth_bias_matrix = math::Mat4(
-        0.5, 0.0, 0.0, 0.0,
-        0.0, 0.5, 0.0, 0.0,
-        0.0, 0.0, 0.5, 0.0,
-        0.5, 0.5, 0.5, 1.0);
+    if(!recreate_window)
+    {
+        // @Incomplete: This is hardcoded uglinesssssssss
+        // Create matrices for light
+        renderer.shadow_map_matrices.depth_model_matrix = math::Mat4(1.0f);
+        renderer.shadow_map_matrices.depth_projection_matrix = math::ortho(-10, 10, -10, 10, 1, 50.0f);
+        renderer.shadow_map_matrices.depth_view_matrix = math::look_at_with_target(math::Vec3(-2.0f, 4.0f, -1.0f), math::Vec3(0, 0, 0));
+        renderer.shadow_map_matrices.depth_bias_matrix = math::Mat4(
+            0.5, 0.0, 0.0, 0.0,
+            0.0, 0.5, 0.0, 0.0,
+            0.0, 0.0, 0.5, 0.0,
+            0.5, 0.5, 0.5, 1.0);
+    }
     
     GLFWmonitor* monitor = glfwGetPrimaryMonitor();
     
@@ -987,7 +993,6 @@ static void initialize_opengl(RenderState& render_state, Renderer& renderer, r32
     
     if(!renderer.available_resolutions)
     {
-        
         renderer.available_resolutions = push_array(render_state.perm_arena, video_mode_count, Resolution);
         
         for(i32 video_mode_index = 0; video_mode_index < video_mode_count; video_mode_index++)
@@ -2445,48 +2450,6 @@ static void render_commands(RenderState &render_state, Renderer &renderer)
                 }
             }
             break;
-            case RENDER_COMMAND_CHANGE_RESOLUTION:
-            {
-                if(command.resolution.new_width != render_state.window_width || command.resolution.new_height != render_state.window_height)
-                {
-                    render_state.window_width = command.resolution.new_width;
-                    render_state.window_height = command.resolution.new_height;
-                    glfwSetWindowSize(render_state.window, render_state.window_width, render_state.window_height);
-                    /*delete_shaders(render_state);
-                    initialize_opengl(render_state, renderer, render_state.contrast, render_state.brightness, render_state.window_mode, render_state.window_width, render_state.window_height, render_state.perm_arena);
-                    clear(&render_state.font_arena);
-                    
-                    for (i32 index = 0; index < renderer.font_count; index++)
-                    {
-                        FontData data = renderer.fonts[index];
-                        load_font(render_state, data.path, data.size);
-                    }*/
-                    
-                }
-            }
-            break;
-            case RENDER_COMMAND_CHANGE_WINDOW_MODE:
-            {
-                switch(command.window_mode.new_window_mode)
-                {
-                    case FM_WINDOWED:
-                    {
-                    }
-                    break;
-                    case FM_FULL:
-                    {
-                        auto monitor = glfwGetPrimaryMonitor();
-                        const GLFWvidmode* mode = glfwGetVideoMode(monitor);
-                        glfwSetWindowMonitor(render_state.window, monitor, 0, 0, mode->width, mode->height, mode->refreshRate);
-                    }
-                    break;
-                    case FM_BORDERLESS:
-                    {
-                    }
-                    break;
-                }
-            }
-            break;
             default:
             break;
         }
@@ -2540,45 +2503,35 @@ static void render_commands(RenderState &render_state, Renderer &renderer)
     
     renderer.ui_command_count = 0;
     clear(&renderer.ui_commands);
+
+    if (renderer.window_width != render_state.window_width || renderer.window_height != render_state.window_height)
+    {
+        render_state.window_width = renderer.window_width;
+        render_state.window_height = renderer.window_height;
+
+        if(renderer.window_mode != render_state.window_mode || renderer.window_mode == FM_FULL)
+        {
+            delete_shaders(render_state);
+            initialize_opengl(render_state, renderer, render_state.contrast, render_state.brightness, render_state.window_mode, render_state.window_width, render_state.window_height, render_state.perm_arena);
+            clear(&render_state.font_arena);
+
+            for (i32 index = 0; index < renderer.font_count; index++)
+            {
+                FontData data = renderer.fonts[index];
+                load_font(render_state, data.path, data.size);
+            }
+        }
+        else
+        {
+            glfwSetWindowSize(render_state.window, render_state.window_width, render_state.window_height);
+        }
+
+    }
     
 }
 
 static void render(RenderState& render_state, Renderer& renderer, MemoryArena* perm_arena, r64 delta_time)
-{
-    if (renderer.window_mode != render_state.window_mode)
-    {
-        glfwDestroyWindow(render_state.window);
-        create_open_gl_window(render_state, renderer.window_mode, render_state.window_title, render_state.window_width, render_state.window_height);
-        glfwSetInputMode(render_state.window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
-        glfwSetFramebufferSizeCallback(render_state.window, frame_buffer_size_callback);
-        
-        glfwMakeContextCurrent(render_state.window);
-        
-        glfwSwapInterval(1);
-        
-        glfwGetFramebufferSize(render_state.window, &render_state.window_width, &render_state.window_height);
-        glDisable(GL_DITHER);
-        glLineWidth(2.0f);
-        glEnable(GL_LINE_SMOOTH);
-        
-        glDisable(GL_CULL_FACE);
-        glEnable(GL_DEPTH_TEST);
-        
-        glDepthFunc(GL_LESS);
-        
-        glfwSetWindowUserPointer(render_state.window, &render_state);
-        glfwSetKeyCallback(render_state.window, key_callback);
-        glfwSetCharCallback(render_state.window, character_callback);
-        glfwSetCursorPosCallback(render_state.window, cursor_position_callback);
-        glfwSetMouseButtonCallback(render_state.window, mouse_button_callback);
-        glfwSetScrollCallback(render_state.window, scroll_callback);
-        
-        GLint viewport[4];
-        glGetIntegerv(GL_VIEWPORT, viewport);
-        
-        memcpy(render_state.viewport, viewport, sizeof(GLint) * 4);
-    }
-    
+{   
     load_extra_shaders(render_state, renderer);
     load_textures(render_state, renderer);
     
@@ -2597,8 +2550,8 @@ static void render(RenderState& render_state, Renderer& renderer, MemoryArena* p
     
     b32 should_render = renderer.window_width != 0;
     
-    renderer.window_width = render_state.window_width;
-    renderer.window_height = render_state.window_height;
+    //renderer.window_width = render_state.window_width;
+    //renderer.window_height = render_state.window_height;
     camera.viewport_width = render_state.window_width;
     camera.viewport_height = render_state.window_height;
     

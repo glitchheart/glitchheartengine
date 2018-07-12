@@ -110,9 +110,6 @@ enum RenderCommandType
     RENDER_COMMAND_DEPTH_TEST,
     RENDER_COMMAND_PARTICLES,
     
-    RENDER_COMMAND_CHANGE_RESOLUTION,
-    RENDER_COMMAND_CHANGE_WINDOW_MODE,
-    
     RENDER_COMMAND_COUNT
 };
 
@@ -899,15 +896,6 @@ struct RenderCommand
             
             CommandBlendMode blend_mode;
         } particles;
-        struct
-        {
-            i32 new_width;
-            i32 new_height;
-        } resolution;
-        struct
-        {
-            WindowMode new_window_mode;
-        } window_mode;
     };
     RenderCommand() {}
 };
