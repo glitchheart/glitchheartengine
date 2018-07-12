@@ -153,6 +153,7 @@ struct RenderState
     i32 dpi_scale;
     i32 pixels_per_unit;
     
+    b32 paused;
     
     
     r32 contrast;

@@ -35,6 +35,55 @@ static void show_mouse_cursor(RenderState& render_state, b32 show)
     }
 }
 
+#define error_gl() _error_gl(__LINE__, __FILE__)
+void _error_gl(i32 line, const char* file)
+{
+    auto err = glGetError();
+    switch(err)
+    {
+        case GL_INVALID_ENUM:
+        {
+            debug("OpenGL Error: GL_INVALID_ENUM on line %d in file %s\n", line, file);
+        }
+        break;
+        case GL_INVALID_VALUE:
+        {
+            debug("OpenGL Error: GL_INVALID_VALUE on line %d in file %s\n", line, file);
+        }
+        break;
+        case GL_INVALID_OPERATION:
+        {
+            debug("OpenGL Error: GL_INVALID_OPERATION on line %d in file %s\n", line, file);
+        }
+        break;
+        case GL_STACK_OVERFLOW:
+        {
+            debug("OpenGL Error: GL_STACK_OVERFLOW on line %d in file %s\n", line, file);
+        }
+        break;
+        case GL_OUT_OF_MEMORY:
+        {
+            debug("OpenGL Error: GL_OUT_OF_MEMORY on line %d in file %s\n", line, file);
+        }
+        break;
+        case GL_INVALID_FRAMEBUFFER_OPERATION:
+        {
+            debug("OpenGL Error: GL_INVALID_FRAMEBUFFER_OPERATION on line %d in file %s\n", line, file);
+        }
+        break;
+        case GL_CONTEXT_LOST:
+        {
+            debug("OpenGL Error: GL_CONTEXT_LOST on line %d in file %s\n", line, file);
+        }
+        break;
+        case GL_TABLE_TOO_LARGE:
+        {
+            debug("OpenGL Error: GL_TABLE_TOO_LARGE on line %d in file %s\n", line, file);
+        }
+        break;
+    }
+}
+
 void message_callback(GLenum source,
                       GLenum type,
                       GLuint id,
@@ -571,6 +620,7 @@ static void create_shadow_map(Framebuffer& framebuffer,  i32 width, i32 height)
         debug("Error: Framebuffer incomplete\n");
     }
     
+    
     glBindFramebuffer(GL_FRAMEBUFFER, 0);  
 }
 
@@ -592,7 +642,7 @@ static void create_framebuffer(RenderState& render_state, Framebuffer& framebuff
         debug("Error: Framebuffer incomplete\n");
     }
     
-    debug("Error: %d\n", glGetError());
+    error_gl();
     
     // FrameBuffer vao
     glGenVertexArrays(1, &framebuffer.vao);
@@ -621,6 +671,21 @@ static void create_framebuffer(RenderState& render_state, Framebuffer& framebuff
     glBindVertexArray(0);
 }
 
+void window_iconify_callback(GLFWwindow *window, i32 iconified)
+{
+    RenderState* render_state = (RenderState*)glfwGetWindowUserPointer(window);
+    
+    debug("iconiffff\n");
+    if(iconified)
+    {
+        render_state->paused = true;
+    }
+    else
+    {
+        render_state->paused = false;
+    }
+}
+
 void frame_buffer_size_callback(GLFWwindow *window, int width, int height)
 {
     RenderState* render_state = (RenderState*)glfwGetWindowUserPointer(window);
@@ -636,6 +701,12 @@ void frame_buffer_size_callback(GLFWwindow *window, int width, int height)
     
     create_framebuffer(*render_state, render_state->framebuffer, render_state->window_width, render_state->window_height, render_state->frame_buffer_shader, render_state->perm_arena, render_state->framebuffer_quad_vertices,
                        render_state->framebuffer_quad_vertices_size,render_state->quad_indices, sizeof(render_state->quad_indices), true, 4);
+    
+    GLFWmonitor* monitor = glfwGetPrimaryMonitor();
+    
+    const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+    
+    glfwSetWindowPos(render_state->window, mode->width / 2 - width / 2, mode->height / 2 - height / 2);
 }
 
 static void setup_quad(RenderState& render_state, MemoryArena* perm_arena)
@@ -854,6 +925,7 @@ static void create_open_gl_window(RenderState& render_state, WindowMode window_m
     
     render_state.window = glfwCreateWindow(screen_width, screen_height, render_state.window_title, monitor,
                                            render_state.window);
+    render_state.framebuffer.buffer_handle = 0;
     
     if(old_window)
     {
@@ -867,14 +939,14 @@ static void create_open_gl_window(RenderState& render_state, WindowMode window_m
         int frame_buffer_width, frame_buffer_height;
         
         glfwGetFramebufferSize(render_state.window, &frame_buffer_width, &frame_buffer_height);
-        glfwSetWindowPos(render_state.window, mode->width / 2 - width / 2, mode->height / 2 - height / 2);
+        glfwSetWindowPos(render_state.window, mode->width / 2 - frame_buffer_width / 2, mode->height / 2 - frame_buffer_height / 2);
     }
 }
 
 static void initialize_opengl(RenderState& render_state, Renderer& renderer, r32 contrast, r32 brightness, WindowMode window_mode, i32 screen_width, i32 screen_height, MemoryArena* perm_arena)
 {
     auto recreate_window = render_state.window != nullptr;;
-
+    
     if(!recreate_window)
     {
         if (!glfwInit())
@@ -882,7 +954,8 @@ static void initialize_opengl(RenderState& render_state, Renderer& renderer, r32
     }
     
     render_state.framebuffer.buffer_handle = 0;
-
+    render_state.paused = false;
+    
     glfwSetErrorCallback(error_callback);
     
     //@Incomplete: Figure something out here. Ask for compatible version etc
@@ -923,10 +996,10 @@ static void initialize_opengl(RenderState& render_state, Renderer& renderer, r32
     glfwSetInputMode(render_state.window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
     
     glfwSetFramebufferSizeCallback(render_state.window, frame_buffer_size_callback);
-    //glfwSetWindowSizeCallback(render_state.window, frame_buffer_size_callback);
+    glfwSetWindowIconifyCallback(render_state.window, window_iconify_callback);
     
     glfwMakeContextCurrent(render_state.window);
-
+    
     gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
     
     glfwSwapInterval(1);
@@ -969,7 +1042,7 @@ static void initialize_opengl(RenderState& render_state, Renderer& renderer, r32
     controller_present();
     
     renderer.should_close = false;
-
+    
     render_setup(&render_state, perm_arena);
     
     if(!recreate_window)
@@ -985,6 +1058,8 @@ static void initialize_opengl(RenderState& render_state, Renderer& renderer, r32
             0.0, 0.0, 0.5, 0.0,
             0.5, 0.5, 0.5, 1.0);
     }
+    
+    render_state.paused = false;
     
     GLFWmonitor* monitor = glfwGetPrimaryMonitor();
     
@@ -1015,7 +1090,7 @@ static void initialize_opengl(RenderState& render_state, Renderer& renderer, r32
                 
                 if(render_state.window_width == vm.width && render_state.window_height == vm.height)
                 {
-                    renderer.current_resolution_index = renderer.available_resolutions_count;
+                    renderer.current_resolution_index = renderer.available_resolutions_count - 1;
                     renderer.resolution = {vm.width, vm.height};
                 }
             }
@@ -2503,18 +2578,36 @@ static void render_commands(RenderState &render_state, Renderer &renderer)
     
     renderer.ui_command_count = 0;
     clear(&renderer.ui_commands);
+    
+    
+}
 
-    if (renderer.window_width != render_state.window_width || renderer.window_height != render_state.window_height)
+static void render(RenderState& render_state, Renderer& renderer, MemoryArena* perm_arena, r64 delta_time)
+{   
+    if(render_state.paused)
+    {
+        clear(&renderer.commands);
+        renderer.command_count = 0;
+        clear(&renderer.ui_commands);
+        renderer.ui_command_count = 0;
+        clear(&renderer.light_commands);
+        renderer.light_command_count = 0;
+        return;
+    }
+    
+    if (renderer.window_width != render_state.window_width || renderer.window_height != render_state.window_height || renderer.window_mode != render_state.window_mode)
     {
         render_state.window_width = renderer.window_width;
         render_state.window_height = renderer.window_height;
-
-        if(renderer.window_mode != render_state.window_mode || renderer.window_mode == FM_FULL)
+        
+        if(renderer.window_mode != render_state.window_mode)
         {
             delete_shaders(render_state);
-            initialize_opengl(render_state, renderer, render_state.contrast, render_state.brightness, render_state.window_mode, render_state.window_width, render_state.window_height, render_state.perm_arena);
+            
+            initialize_opengl(render_state, renderer, render_state.contrast, render_state.brightness, renderer.window_mode, render_state.window_width, render_state.window_height, render_state.perm_arena);
+            
             clear(&render_state.font_arena);
-
+            
             for (i32 index = 0; index < renderer.font_count; index++)
             {
                 FontData data = renderer.fonts[index];
@@ -2525,13 +2618,8 @@ static void render_commands(RenderState &render_state, Renderer &renderer)
         {
             glfwSetWindowSize(render_state.window, render_state.window_width, render_state.window_height);
         }
-
     }
     
-}
-
-static void render(RenderState& render_state, Renderer& renderer, MemoryArena* perm_arena, r64 delta_time)
-{   
     load_extra_shaders(render_state, renderer);
     load_textures(render_state, renderer);
     
@@ -2550,8 +2638,8 @@ static void render(RenderState& render_state, Renderer& renderer, MemoryArena* p
     
     b32 should_render = renderer.window_width != 0;
     
-    //renderer.window_width = render_state.window_width;
-    //renderer.window_height = render_state.window_height;
+    renderer.window_width = render_state.window_width;
+    renderer.window_height = render_state.window_height;
     camera.viewport_width = render_state.window_width;
     camera.viewport_height = render_state.window_height;
     
