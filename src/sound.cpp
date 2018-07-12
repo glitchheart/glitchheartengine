@@ -47,14 +47,14 @@ static ChannelAttributes get_default_channel_attributes()
 
 static SoundCommand *push_next_command(SoundSystem *system)
 {
-    assert(system->command_count + 1 < MAX_SOUND_COMMANDS);
+    assert(system->command_count + 1 < global_max_sound_commands);
     system->command_count++;
     return push_struct(&system->sound_commands, SoundCommand);
 }
 
 static void create_audio_source(SoundSystem *system, AudioSourceHandle *as_handle, SoundHandle sound_handle, b32 paused = false, b32 muted = false)
 {
-    assert(system->audio_source_count + 1 < MAX_AUDIO_SOURCES);
+    assert(system->audio_source_count + 1 < global_max_audio_sources);
     as_handle->handle = system->audio_source_count + 1;
     AudioSource &new_source = system->audio_sources[system->audio_source_count++];
     new_source.handle.handle = as_handle->handle;
@@ -74,7 +74,7 @@ static void destroy_audio_source(SoundSystem *system, AudioSourceHandle as_handl
 
 static void load_sound(SoundSystem *system, const char *file_path, SoundHandle *handle)
 {
-    assert(system->sound_count + 1 < MAX_SOUNDS);
+    assert(system->sound_count + 1 < global_max_sounds);
     handle->handle = system->sound_count++ + 1;
     SoundCommand *command = push_next_command(system);
     command->type = SC_LOAD_SOUND;

@@ -7,6 +7,7 @@ struct MemoryArena;
 
 #include "platform.h"
 #include "engine_memory.h"
+#include "init_globals.h"
 
 #include "log_state.h"
 #include "log.h"
