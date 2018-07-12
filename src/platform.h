@@ -1,8 +1,6 @@
 #ifndef PLATFORM_H
 #define PLATFORM_H
 
-#define NUM_ENTITIES 100
-
 #define array_count(array) (sizeof(array) / sizeof(array[0])) 
 
 #define COMMA_IF_PARENS(...) ,
@@ -15,15 +13,17 @@
 
 #if GLITCH_DEBUG
 #ifdef _WIN32
-#define assert(expression) if(!(expression)) {debug("Assertion failed in: %s on line %d\n",__FILE__,__LINE__); __debugbreak();}
+#define assert(expression, ...) if(!(expression)) {debug("Assertion failed in: %s on line %d\n with message: %s\n",__FILE__,__LINE__ , ## __VA_ARGS__); __debugbreak();}
 #elif __linux
-#define assert(expression) if(!(expression)) {debug("Assertion failed in: %s on line %d\n",__FILE__,__LINE__); abort();}
+#define assert(expression, ...) if(!(expression)) {debug("Assertion failed in: %s on line %d\n with message: %s\n",__FILE__,__LINE__ , ## __VA_ARGS__); abort();}
 #elif __APPLE__
-#define assert(expression) if(!(expression)) {debug("Assertion failed in: %s on line %d\n",__FILE__,__LINE__); abort();}
+#define assert(expression, ...) if(!(expression)) {debug("Assertion failed in: %s on line %d\n with message: %s\n",__FILE__,__LINE__ , ## __VA_ARGS__); abort();}
 #endif
 #else
-#define assert(expression)
+#define assert(expression, ...)
 #endif
+
+#define not_implemented() assert(false, "This feature has not yet been implemented")
 
 #define UNUSED(var) (void)var
 
@@ -89,12 +89,15 @@ enum GraphicsApi
     GRAPHICS_VULKAN
 };
 
+enum SoundSpace
+{
+    SOUND_2D,
+    SOUND_3D
+};
+
 struct ConfigData
 {
-    char* title;
-    char* version;
     char* starting_level_file_path;
-    GraphicsApi graphics_api;
     i32 screen_width;
     i32 screen_height;
     i32 scale_from_width;
@@ -105,7 +108,6 @@ struct ConfigData
     b32 muted;
     r32 sfx_volume;
     r32 music_volume;
-    r32 zoom;
     b32 skip_splash_screen;
 };
 

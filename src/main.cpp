@@ -135,64 +135,12 @@ inline void load_config(const char* file_path, ConfigData* config_data, MemoryAr
     
     *config_data = {};
     
-    config_data->title = push_string(perm_arena, 40);
-    config_data->version = push_string(perm_arena, 40);
     
     if(file)
     {
         while(fgets(line_buffer, 255, file))
         {
-            if(starts_with(line_buffer, "title"))
-            {
-                // @Speed: This can probably be done much better and efficient
-                i32 index = 0;
-                char title_buffer[50];
-                
-                b32 after_title = false;
-                
-                for(i32 buffer_index = 0; buffer_index < (i32)strlen(line_buffer) + 1; buffer_index++)
-                {
-                    if(after_title)
-                    {
-                        char character = line_buffer[buffer_index];
-                        if(character == '\n' || character == '\r')
-                        {
-                            break;
-                        }
-                        else
-                        {
-                            title_buffer[index++] = character;
-                        }
-                    }
-                    
-                    if(line_buffer[buffer_index] == ' ')
-                    {
-                        after_title = true;
-                    }
-                }
-                title_buffer[index] = '\0';
-                
-                sprintf(config_data->title, "%s", title_buffer);
-            }
-            else if(starts_with(line_buffer, "version"))
-            {
-                sscanf(line_buffer, "version %s", config_data->version);
-            }
-            else if(starts_with(line_buffer, "graphics_api"))
-            {
-                char api_string[32];
-                sscanf(line_buffer, "graphics_api %s", api_string);
-                
-                if(strcmp(api_string, "opengl") == 0)
-                {
-                    config_data->graphics_api = GRAPHICS_OPEN_GL;
-                }
-                else if(strcmp(api_string, "vulkan") == 0)
-                {
-                    config_data->graphics_api = GRAPHICS_VULKAN;
-                }
-            }
-            else if(starts_with(line_buffer, "screen_width"))
+            if(starts_with(line_buffer, "screen_width"))
             {
                 sscanf(line_buffer, "screen_width %d", &config_data->screen_width);
             }
@@ -231,10 +179,6 @@ inline void load_config(const char* file_path, ConfigData* config_data, MemoryAr
             else if(starts_with(line_buffer, "music_volume"))
             {
                 sscanf(line_buffer, "music_volume %f", &config_data->music_volume);
-            }
-            else if(starts_with(line_buffer, "zoom"))
-            {
-                sscanf(line_buffer, "zoom %f", &config_data->zoom);
             }
             else if(starts_with(line_buffer, "skipsplashscreen"))
             {
@@ -326,18 +270,21 @@ int main(int argc, char** args)
     RenderState render_state = {};
     render_state.arena = {};
     Renderer renderer = {};
-    renderer.pixels_per_unit = 8;
+    renderer.pixels_per_unit = global_pixels_per_unit;
     renderer.frame_lock = 0;
     render_state.frame_delta = 0.0;
     
+    renderer.particle_systems = push_array(&renderer. particle_arena, global_max_particle_systems, ParticleSystemInfo);
     renderer.animation_controllers = push_array(&renderer.animation_arena, 64, AnimationController);
+    renderer.spritesheet_animations = push_array(&renderer.animation_arena, global_max_spritesheet_animations, SpritesheetAnimation);
     renderer.commands.minimum_block_size = sizeof(RenderCommand) * MAX_RENDER_COMMANDS;
     renderer.ui_commands.minimum_block_size = sizeof(RenderCommand) * MAX_UI_COMMANDS;
     renderer.light_commands.minimum_block_size = sizeof(RenderCommand) * MAX_LIGHT_COMMANDS;
     renderer.spritesheet_animation_count = 0;
     renderer.animation_controller_count = 0;
+    renderer.meshes = push_array(&renderer.mesh_arena, global_max_meshes, Mesh);
     
-    if(config_data.graphics_api == GRAPHICS_VULKAN)
+    if(global_graphics_api == GRAPHICS_VULKAN)
     {
         
 #if defined(__linux) || defined(_WIN32)
@@ -346,7 +293,7 @@ int main(int argc, char** args)
         //vk_render(vk_render_state, renderer);
 #endif
     }
-    else if(config_data.graphics_api == GRAPHICS_OPEN_GL)
+    else if(global_graphics_api == GRAPHICS_OPEN_GL)
     {
         initialize_opengl(render_state, renderer, &config_data, &platform_state->perm_arena);
     }
@@ -367,7 +314,10 @@ int main(int argc, char** args)
     init_audio_fmod(&sound_device);
     
     SoundSystem sound_system = {};
-    sound_system.sound_commands.minimum_block_size = sizeof(SoundCommand) * MAX_SOUND_COMMANDS;
+    sound_system.sound_commands.minimum_block_size = sizeof(SoundCommand) * global_max_sound_commands;
+    sound_system.sounds = push_array(&sound_system.arena, global_max_sounds, SoundHandle);
+    sound_system.audio_sources = push_array(&sound_system.arena, global_max_audio_sources, AudioSource);
+    sound_system.channel_groups = push_array(&sound_system.arena, global_max_channel_groups, ChannelGroup);
     
     if (sound_device.is_initialized)
     {

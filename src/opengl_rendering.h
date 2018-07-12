@@ -15,8 +15,6 @@
 #pragma warning(pop)
 #endif
 
-#define PIXELS_PER_UNIT 32
-
 #define SHADERPAIR(name) {SHADER_ ## name, "Shader_" "" #name}
 
 const static struct
@@ -244,7 +242,7 @@ struct RenderState
         1, 2, 3
     };
     
-    Buffer buffers[BUFFER_ARRAY_SIZE];
+    Buffer buffers[MAX_CUSTOM_BUFFERS];
     i32 buffer_count;
     
     GLuint quad_vao;

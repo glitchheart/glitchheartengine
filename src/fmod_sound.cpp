@@ -4,6 +4,15 @@ static void fmod_error(FMOD_RESULT err, int line, const char* file)
     debug("FMOD Error! (%d) %s in file %s on line %d\n", err, FMOD_ErrorString(err), file, line);
 }
 
+void fmod_error_check(FMOD_RESULT result)
+{
+    if (result != FMOD_OK)
+    {
+        FMOD_DEBUG(result);
+        exit(EXIT_FAILURE);
+    }
+}
+
 static void load_sound(const char* file_path, SoundDevice* sound_device)
 {
     //@Incomplete: Find out the exact parameters for a sound
@@ -195,6 +204,7 @@ static void set_channel_attributes(FMOD_CHANNEL *channel, ChannelAttributes attr
 
 static void play_audio_source(AudioSource& audio_source, SoundDevice* sound_device, SoundSystem* system)
 {
+    assert(sound_device->sounds && audio_source.sound_handle.handle - 1 < sound_device->sound_count);
     auto sound = sound_device->sounds[audio_source.sound_handle.handle - 1];
     auto &channel_attributes = audio_source.channel_attributes;
     auto as_handle = audio_source.handle.handle;
@@ -355,17 +365,19 @@ static void init_audio_fmod(SoundDevice* sound_device)
     FMOD_SYSTEM* system;
     result = FMOD_System_Create(&system);
     
-    if(result != FMOD_OK)
+    fmod_error_check(result);
+    
+    i32 num_drivers = 0;
+    FMOD_System_GetNumDrivers(system, &num_drivers);
+    
+    if(num_drivers == 0)
     {
-        FMOD_DEBUG(result);
-        return;
+        result = FMOD_System_SetOutput(system, FMOD_OUTPUTTYPE_NOSOUND);
+        fmod_error_check(result);
     }
     
-    result = FMOD_System_Init(system, 1024, FMOD_INIT_NORMAL, 0);
-    if(result != FMOD_OK)
-    {
-        FMOD_DEBUG(result);
-    }
+    result = FMOD_System_Init(system, global_max_channels, FMOD_INIT_NORMAL, 0);
+    fmod_error_check(result);
     
     u32 version;
     FMOD_System_GetVersion(system, &version);
@@ -378,10 +390,12 @@ static void init_audio_fmod(SoundDevice* sound_device)
     sound_device->is_initialized = true;
     
     result = FMOD_System_GetMasterChannelGroup(sound_device->system, &sound_device->master_group);
-    if(result != FMOD_OK)
-    {
-        FMOD_DEBUG(result);
-        return;
-    }
+    fmod_error_check(result);
+    
+    sound_device->rolloff_points = push_array(&sound_device->total_arena, global_max_channels, FMOD_VECTOR*);
+    sound_device->paused_channels = push_array(&sound_device->total_arena, global_max_channels, b32);
+    sound_device->channel_positions = push_array(&sound_device->total_arena, global_max_channels, u32);
+    sound_device->channels = push_array(&sound_device->total_arena, global_max_channels, FMOD_CHANNEL*);
+    sound_device->sounds = push_array(&sound_device->total_arena, global_max_sounds, FMOD_SOUND*);
 }
 

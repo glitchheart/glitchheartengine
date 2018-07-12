@@ -883,14 +883,14 @@ static void initialize_opengl(RenderState& render_state, Renderer& renderer, Con
     render_state.contrast = config_data->contrast;
     render_state.brightness = config_data->brightness;
     
-    create_open_gl_window(render_state, config_data->window_mode, config_data->title, config_data->screen_width, config_data->screen_height);
+    create_open_gl_window(render_state, config_data->window_mode, global_title, config_data->screen_width, config_data->screen_height);
     renderer.window_mode = render_state.window_mode;
     if (!render_state.window)
     {
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
         
-        create_open_gl_window(render_state, config_data->window_mode, config_data->title, config_data->screen_width, config_data->screen_height);
+        create_open_gl_window(render_state, config_data->window_mode, global_title, config_data->screen_width, config_data->screen_height);
         renderer.window_mode = render_state.window_mode;
         
         if(!render_state.window)
@@ -2169,6 +2169,11 @@ static void render_commands(RenderState &render_state, Renderer &renderer)
         {
             case RENDER_COMMAND_SPOTLIGHT:
             {
+                if(!render_state.spotlight_data.spotlights)
+                {
+                    render_state.spotlight_data.spotlights = push_array(render_state.perm_arena, global_max_lights, Spotlight);
+                }
+                
                 Spotlight& spotlight = render_state.spotlight_data.spotlights[render_state.spotlight_data.num_lights++];
                 
                 auto pos = v * math::Vec4(command.position, 1.0f);
@@ -2207,6 +2212,11 @@ static void render_commands(RenderState &render_state, Renderer &renderer)
             break;
             case RENDER_COMMAND_DIRECTIONAL_LIGHT:
             {
+                if(!render_state.directional_light_data.directional_lights)
+                {
+                    render_state.directional_light_data.directional_lights = push_array(render_state.perm_arena, global_max_lights, DirectionalLight);
+                }
+                
                 DirectionalLight& directional_light = render_state.directional_light_data.directional_lights[render_state.directional_light_data.num_lights++];
                 
                 directional_light.direction[0] = command.directional_light.direction.x;
@@ -2230,7 +2240,14 @@ static void render_commands(RenderState &render_state, Renderer &renderer)
             break;
             case RENDER_COMMAND_POINT_LIGHT:
             {
-                PointLight& point_light = render_state.point_light_data.point_lights[render_state.point_light_data.num_lights++];
+                if(!render_state.point_light_data.point_lights)
+                {
+                    render_state.point_light_data.point_lights = push_array(render_state.perm_arena, global_max_lights, PointLight);
+                }
+                
+                
+                PointLight& point_light =
+                    render_state.point_light_data.point_lights[render_state.point_light_data.num_lights++];
                 
                 auto pos = v * math::Vec4(command.position, 1.0f);
                 

@@ -1,15 +1,8 @@
 #ifndef RENDERING_H
 #define RENDERING_H
 
-#define PIXELS_PER_UNIT 32
-#define MAX_MESHES 64
-#define MAX_PARTICLE_SYSTEM 64
-
-#define MAX_LIGHTS 150
 #define MAX_BONES 50
 #define MAX_CHILDREN 30
-#define MAX_SPRITESHEET_ANIMATIONS 128
-#define MAX_SPRITESHEET_ANIMATION_INFOS 256
 
 struct FontData
 {
@@ -64,21 +57,21 @@ struct SpotlightData
 {
     i32 num_lights; // GLSL: 16, x64: 4: We need 12 bytes of padding
     math::Vec3 padding; // 3 * r32 = 3 * 4 = 12 bytes of padding!
-    Spotlight spotlights[MAX_LIGHTS];
+    Spotlight *spotlights;
 };
 
 struct DirectionalLightData // GLSL: 96, x64: 68 -> 96 - 68 = 24
 {
     i32 num_lights; // GLSL: 16, x64: 4: We need 12 bytes of padding
     math::Vec3 padding; // 3 * r32 = 3 * 4 = 12 bytes of padding!
-    DirectionalLight directional_lights[MAX_LIGHTS];
+    DirectionalLight *directional_lights;
 };
 
 struct PointLightData
 {
     i32 num_lights; // GLSL: 16, x64: 4: We need 12 bytes of padding
     math::Vec3 padding; // 3 * r32 = 3 * 4 = 12 bytes of padding!
-    PointLight point_lights[MAX_LIGHTS];
+    PointLight *point_lights;
 };
 
 enum ShaderType
@@ -545,7 +538,7 @@ struct Model
     RenderMaterial materials[10];
     i32 material_count;
     
-    MeshData meshes[MAX_MESHES];
+    MeshData *meshes;
     i32 mesh_count;
     
     Bone* bones;
@@ -852,7 +845,7 @@ struct RenderCommand
         {
             ModelType type;
             i32 buffer_handle;
-            MeshData meshes[MAX_MESHES];
+            MeshData *meshes;
             i32 mesh_count;
             RenderMaterial materials[10];
             i32 material_count;
@@ -937,9 +930,9 @@ struct Camera
     r32 fading_speed;
 };
 
-#define BUFFER_ARRAY_SIZE 128
-#define TEXTURE_ARRAY_SIZE 64
-#define SHADER_ARRAY_SIZE 16
+#define MAX_CUSTOM_BUFFERS 128
+#define MAX_TEXTURES 64
+#define MAX_SHADERS 16
 
 enum TextureFiltering
 {
@@ -1031,25 +1024,25 @@ struct Renderer
     MemoryArena light_commands;
     i32 light_command_count;
     
-    BufferData buffers[BUFFER_ARRAY_SIZE];
-    i32 buffer_handles[BUFFER_ARRAY_SIZE];
+    BufferData buffers[MAX_CUSTOM_BUFFERS];
+    i32 buffer_handles[MAX_CUSTOM_BUFFERS];
     i32 buffer_count;
     
-    i32 updated_buffer_handles[BUFFER_ARRAY_SIZE];
+    i32 updated_buffer_handles[MAX_CUSTOM_BUFFERS];
     i32 updated_buffer_handle_count;
     
-    Mesh meshes[MAX_MESHES];
+    Mesh *meshes;
     i32 mesh_count;
     
-    ParticleSystemInfo particle_systems[MAX_PARTICLE_SYSTEM];
+    ParticleSystemInfo *particle_systems;
     i32 particle_system_count;
     
-    TextureData texture_data[TEXTURE_ARRAY_SIZE];
+    TextureData texture_data[MAX_TEXTURES];
     i32 texture_count;
     
-    i32 texture_handles[TEXTURE_ARRAY_SIZE];
+    i32 texture_handles[MAX_TEXTURES];
     
-    ShaderData shader_data[SHADER_ARRAY_SIZE];
+    ShaderData shader_data[MAX_SHADERS];
     i32 shader_count;
     
     // Shadow map
@@ -1062,7 +1055,7 @@ struct Renderer
     AnimationController* animation_controllers;
     i32 animation_controller_count;
     
-    SpritesheetAnimation spritesheet_animations[MAX_SPRITESHEET_ANIMATIONS];
+    SpritesheetAnimation *spritesheet_animations;
     i32 spritesheet_animation_count;
     
     union

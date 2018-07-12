@@ -92,7 +92,6 @@ static void add_animation(Renderer& renderer, SpritesheetAnimation animation, co
 {
     strcpy(animation.name, animation_name);
     renderer.spritesheet_animations[renderer.spritesheet_animation_count++] = animation;
-    assert(renderer.spritesheet_animation_count < MAX_SPRITESHEET_ANIMATIONS);
 }
 
 static void load_shader(MemoryArena* arena, const char* full_shader_path, Renderer& renderer, i32* handle)

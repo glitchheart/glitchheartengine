@@ -1,11 +1,6 @@
 #ifndef SOUND_H
 #define SOUND_H
 
-#define MAX_SOUNDS 400
-#define MAX_AUDIO_SOURCES 64
-#define MAX_CHANNEL_GROUPS 64
-#define MAX_SOUND_COMMANDS 1024
-
 struct SoundHandle
 {
     i32 handle;
@@ -195,14 +190,14 @@ struct SoundSystem
 {
     MemoryArena arena;
     
-    SoundHandle sounds[MAX_SOUNDS];
+    SoundHandle *sounds;
     i32 sound_count;
     
-    AudioSource audio_sources[MAX_AUDIO_SOURCES];
+    AudioSource *audio_sources;
     i32 audio_source_count;
     
     // For later. Doesn't really matter much for now
-    ChannelGroup channel_groups[MAX_CHANNEL_GROUPS];
+    ChannelGroup *channel_groups;
     i32 channel_group_count;
     
     MemoryArena sound_commands;
