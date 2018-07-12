@@ -592,6 +592,8 @@ static void create_framebuffer(RenderState& render_state, Framebuffer& framebuff
         debug("Error: Framebuffer incomplete\n");
     }
     
+    debug("Error: %d\n", glGetError());
+    
     // FrameBuffer vao
     glGenVertexArrays(1, &framebuffer.vao);
     glBindVertexArray(framebuffer.vao);
@@ -919,6 +921,7 @@ static void initialize_opengl(RenderState& render_state, Renderer& renderer, r32
     glfwSetInputMode(render_state.window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
     
     glfwSetFramebufferSizeCallback(render_state.window, frame_buffer_size_callback);
+    glfwSetWindowSizeCallback(render_state.window, frame_buffer_size_callback);
     
     glfwMakeContextCurrent(render_state.window);
     gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
@@ -2437,7 +2440,8 @@ static void render_commands(RenderState &render_state, Renderer &renderer)
                 {
                     render_state.window_width = command.resolution.new_width;
                     render_state.window_height = command.resolution.new_height;
-                    delete_shaders(render_state);
+                    glfwSetWindowSize(render_state.window, render_state.window_width, render_state.window_height);
+                    /*delete_shaders(render_state);
                     initialize_opengl(render_state, renderer, render_state.contrast, render_state.brightness, render_state.window_mode, render_state.window_width, render_state.window_height, render_state.perm_arena);
                     clear(&render_state.font_arena);
                     
@@ -2445,8 +2449,30 @@ static void render_commands(RenderState &render_state, Renderer &renderer)
                     {
                         FontData data = renderer.fonts[index];
                         load_font(render_state, data.path, data.size);
-                    }
+                    }*/
                     
+                }
+            }
+            break;
+            case RENDER_COMMAND_CHANGE_WINDOW_MODE:
+            {
+                switch(command.window_mode.new_window_mode)
+                {
+                    case FM_WINDOWED:
+                    {
+                    }
+                    break;
+                    case FM_FULL:
+                    {
+                        auto monitor = glfwGetPrimaryMonitor();
+                        const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+                        glfwSetWindowMonitor(render_state.window, monitor, 0, 0, mode->width, mode->height, mode->refreshRate);
+                    }
+                    break;
+                    case FM_BORDERLESS:
+                    {
+                    }
+                    break;
                 }
             }
             break;
