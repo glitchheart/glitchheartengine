@@ -1932,7 +1932,7 @@ namespace math
         return (r32)std::acos(v);
     }
     
-    inline i32 multiple_of_number(i32 mul, i32 n)
+    inline i32 multiple_of_number(i32 n, i32 mul)
     {
         return mul * (ceil(((r32)n / (r32)mul)));
     }
