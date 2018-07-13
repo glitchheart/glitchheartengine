@@ -18,7 +18,7 @@ static void start_particle_system(ParticleSystemInfo &system, b32 one_shot = fal
     
     for(i32 index = 0; index < system.max_particles; index++)
     {
-        system.particles[index].life = 0.0f;
+        system.particles.life[index] = 0.0f;
     }
 }
 
@@ -71,9 +71,21 @@ static void create_particle_system(Renderer &renderer, ParticleSystemHandle &han
     
     system_info.particle_count = 0;
     system_info.last_used_particle = 0;
-    system_info.max_particles = max_particles;
     
-    system_info.particles = push_array(memory_arena, system_info.max_particles, Particle);
+    //@Note: For SIMD
+    system_info.max_particles = math::multiple_of_number(max_particles, 4);
+    
+    system_info.unused_particles = push_array(memory_arena, system_info.max_particles, i32);
+    system_info.particles.position = push_array(memory_arena, system_info.max_particles, math::Vec3);
+    system_info.particles.direction = push_array(memory_arena, system_info.max_particles, math::Vec3);
+    system_info.particles.color = push_array(memory_arena, system_info.max_particles, math::Rgba);
+    system_info.particles.size = push_array(memory_arena, system_info.max_particles, math::Vec2);
+    system_info.particles.relative_position = push_array(memory_arena, system_info.max_particles, math::Vec3);
+    system_info.particles.speed_over_lifetime_index = push_array(memory_arena, system_info.max_particles, i32);
+    system_info.particles.color_over_lifetime_index = push_array(memory_arena, system_info.max_particles, i32);
+    system_info.particles.size_over_lifetime_index = push_array(memory_arena, system_info.max_particles, i32);
+    system_info.particles.life = push_array(memory_arena, system_info.max_particles, r64);
+    system_info.particles.texture_handle = push_array(memory_arena, system_info.max_particles, i32);
     
     system_info.offsets = push_array(memory_arena, system_info.max_particles, math::Vec3);
     

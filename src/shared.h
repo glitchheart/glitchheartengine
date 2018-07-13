@@ -14,6 +14,7 @@ struct MemoryArena;
 
 #include "animation.h"
 #include "rendering.h"
+#include "particles.h"
 
 #include "map.h"
 

@@ -1932,6 +1932,11 @@ namespace math
         return (r32)std::acos(v);
     }
     
+    inline i32 multiple_of_number(i32 mul, i32 n)
+    {
+        return mul * (ceil(((r32)n / (r32)mul)));
+    }
+    
     inline r32 length(Vec2 v)
     {
         return sqrt(pow(v.x,2) + pow(v.y,2));

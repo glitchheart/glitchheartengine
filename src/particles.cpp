@@ -29,25 +29,26 @@ static void push_particle_system(Renderer &renderer, i32 particle_system_handle)
     push_particle_system(renderer, particle_info);
 }
 
-// @Move: Move the particle system functions into an engine file instead
-i32 find_unused_particle(ParticleSystemInfo &particle_system)
-{    
-    for(i32 i = particle_system.last_used_particle; i < particle_system.max_particles; i++)
+void find_unused_particles(ParticleSystemInfo &particle_system)
+{
+    auto &unused_particles = particle_system.unused_particles;
+    particle_system.unused_particle_count = 0;
+    
+    for(i32 particle_index = 0; particle_index < particle_system.max_particles; particle_index++)
     {
-        if(particle_system.particles[i].life <= 0)
+        if(particle_system.particles.life[particle_index] <= 0)
         {
-            particle_system.last_used_particle = i;
-            return i;
+            unused_particles[particle_system.unused_particle_count++] = particle_index;
         }
     }
     
-    for(int i = 0; i < particle_system.last_used_particle; i++)
+}
+
+i32 find_unused_particle(ParticleSystemInfo &particle_system)
+{    
+    if(particle_system.unused_particle_count > 0)
     {
-        if(particle_system.particles[i].life <= 0)
-        {
-            particle_system.last_used_particle = i;
-            return i;
-        }
+        return particle_system.unused_particles[particle_system.unused_particle_count-- - 1];
     }
     
     return -1;
@@ -59,11 +60,11 @@ void update_particles(Renderer &renderer, ParticleSystemInfo &particle_system, r
     
     for(i32 i = 0; i < particle_system.max_particles; i++)
     {
-        Particle& p = particle_system.particles[i];
+        r64 &life = particle_system.particles.life[i];
         
-        auto start = p.life > particle_system.attributes.life_time - 0.001 && p.life < particle_system.attributes.life_time + 0.001;
+        auto start = life > particle_system.attributes.life_time - 0.001 && life < particle_system.attributes.life_time + 0.001;
         
-        if(p.life > 0.0f)
+        if(life > 0.0f)
         {
             auto speed_value_count = particle_system.speed_over_lifetime.value_count;
             auto color_value_count = particle_system.color_over_lifetime.value_count;
@@ -71,14 +72,14 @@ void update_particles(Renderer &renderer, ParticleSystemInfo &particle_system, r
             
             if(speed_value_count > 0)
             {
-                auto speed_index = p.speed_over_lifetime_index;
+                auto speed_index = particle_system.particles.speed_over_lifetime_index[i];
                 
                 if(speed_index < speed_value_count)
                 {
                     auto start_time = particle_system.speed_over_lifetime.keys[speed_index - 1] * particle_system.attributes.life_time;
                     auto end_time = particle_system.speed_over_lifetime.keys[speed_index] * particle_system.attributes.life_time;
                     
-                    auto time_spent = particle_system.attributes.life_time - p.life;
+                    auto time_spent = particle_system.attributes.life_time - life;
                     
                     auto diff = end_time - start_time;
                     auto in_this_index = time_spent - start_time;
@@ -88,33 +89,33 @@ void update_particles(Renderer &renderer, ParticleSystemInfo &particle_system, r
                     auto start_speed = particle_system.speed_over_lifetime.values[speed_index - 1];
                     auto end_speed = particle_system.speed_over_lifetime.values[speed_index];
                     
-                    p.position += p.direction * math::lerp((r32)start_speed, (r32)t_speed, (r32)end_speed) * (r32)delta_time;
+                    particle_system.particles.position[i] += particle_system.particles.direction[i] * math::lerp((r32)start_speed, (r32)t_speed, (r32)end_speed) * (r32)delta_time;
                     
                     if(time_spent >= end_time)
                     {
-                        p.speed_over_lifetime_index++;
+                        particle_system.particles.speed_over_lifetime_index[i]++;
                     }
                 }
                 else
                 {
-                    p.position += p.direction * particle_system.speed_over_lifetime.values[p.speed_over_lifetime_index - 1] * (r32)delta_time;				
+                    particle_system.particles.position[i] += particle_system.particles.direction[i] * particle_system.speed_over_lifetime.values[particle_system.particles.speed_over_lifetime_index[i] - 1] * (r32)delta_time;				
                 }
             }
             else
             {
-                p.position += p.direction * particle_system.attributes.start_speed * (r32)delta_time;				
+                particle_system.particles.position[i] += particle_system.particles.direction[i] * particle_system.attributes.start_speed * (r32)delta_time;				
             }                
             
             if(color_value_count > 0)
             {
-                auto color_index = p.color_over_lifetime_index;
+                auto color_index = particle_system.particles.color_over_lifetime_index[i];
                 
                 if(color_index < color_value_count)
                 {
                     auto start_time = particle_system.color_over_lifetime.keys[color_index - 1] * particle_system.attributes.life_time;
                     auto end_time = particle_system.color_over_lifetime.keys[color_index] * particle_system.attributes.life_time;
                     
-                    auto time_spent = particle_system.attributes.life_time - p.life;
+                    auto time_spent = particle_system.attributes.life_time - life;
                     
                     auto diff = end_time - start_time;
                     auto in_this_index = time_spent - start_time;
@@ -123,33 +124,33 @@ void update_particles(Renderer &renderer, ParticleSystemInfo &particle_system, r
                     
                     auto start_color = particle_system.color_over_lifetime.values[color_index - 1];
                     auto end_color = particle_system.color_over_lifetime.values[color_index];
-                    p.color = math::lerp(start_color, (r32)t_color, end_color);
+                    particle_system.particles.color[i] = math::lerp(start_color, (r32)t_color, end_color);
                     
                     if(time_spent >= end_time)
                     {
-                        p.color_over_lifetime_index++;
+                        particle_system.particles.color_over_lifetime_index[i]++;
                     }
                 }
                 else
                 {
-                    p.color = particle_system.color_over_lifetime.values[color_index - 1];
+                    particle_system.particles.color[i] = particle_system.color_over_lifetime.values[color_index - 1];
                 }
             }
             else
             {
-                p.color = particle_system.attributes.start_color;				
+                particle_system.particles.color[i] = particle_system.attributes.start_color;				
             }
             
             if(size_value_count > 0)
             {
-                auto size_index = p.size_over_lifetime_index;
+                auto size_index = particle_system.particles.size_over_lifetime_index[i];
                 
                 if(size_index < size_value_count)
                 {
                     auto start_time = particle_system.size_over_lifetime.keys[size_index - 1] * particle_system.attributes.life_time;
                     auto end_time = particle_system.size_over_lifetime.keys[size_index] * particle_system.attributes.life_time;
                     
-                    auto time_spent = particle_system.attributes.life_time - p.life;
+                    auto time_spent = particle_system.attributes.life_time - life;
                     
                     auto diff = end_time - start_time;
                     auto in_this_index = time_spent - start_time;
@@ -158,36 +159,36 @@ void update_particles(Renderer &renderer, ParticleSystemInfo &particle_system, r
                     
                     auto start_size = particle_system.size_over_lifetime.values[size_index - 1];
                     auto end_size = particle_system.size_over_lifetime.values[size_index];
-                    p.size = math::lerp(start_size, (r32)t_size, end_size);
+                    particle_system.particles.size[i] = math::lerp(start_size, (r32)t_size, end_size);
                     
                     if(time_spent >= end_time)
                     {
-                        p.size_over_lifetime_index++;
+                        particle_system.particles.size_over_lifetime_index[i]++;
                     }
                 }
                 else
                 {
-                    p.size = particle_system.size_over_lifetime.values[size_index - 1];
+                    particle_system.particles.size[i] = particle_system.size_over_lifetime.values[size_index - 1];
                 }
             }
             else
             {
-                p.size = particle_system.attributes.start_size;				
+                particle_system.particles.size[i] = particle_system.attributes.start_size;				
             }
             
             if(particle_system.attributes.particle_space == PS_WORLD && !start)
             {
-                particle_system.offsets[particle_system.particle_count] = p.position + p.relative_position;
+                particle_system.offsets[particle_system.particle_count] = particle_system.particles.position[i] + particle_system.particles.relative_position[i];
             }
             else
             {
-                particle_system.offsets[particle_system.particle_count] = p.position + particle_system.transform.position;
-                p.relative_position = particle_system.transform.position;
+                particle_system.offsets[particle_system.particle_count] = particle_system.particles.position[i] + particle_system.transform.position;
+                particle_system.particles.relative_position[i] = particle_system.transform.position;
             }
             
-            particle_system.colors[particle_system.particle_count] = p.color;
-            particle_system.sizes[particle_system.particle_count] = p.size;
-            p.life -= delta_time;
+            particle_system.colors[particle_system.particle_count] = particle_system.particles.color[i];
+            particle_system.sizes[particle_system.particle_count] = particle_system.particles.size[i];
+            particle_system.particles.life[i] -= delta_time;
             particle_system.particle_count++;
         }
     } 
@@ -273,37 +274,40 @@ void sort(math::Vec3 camera_position, math::Vec3 *offsets, math::Vec2 *sizes, ma
 
 void emit_particle(ParticleSystemInfo &particle_system)
 {
-    i32 particle_index = find_unused_particle(particle_system);
-    if(particle_index == -1)
+    for(i32 i = 0; i < 4; i++)
     {
-        return;
-    }
-    particle_system.particles[particle_index].life = particle_system.attributes.life_time;
-    particle_system.particles[particle_index].position = math::Vec3(0, 0, 0);
-    
-    math::Vec3 random_dir = math::Vec3(
-        (rand() % 2000 - 1000.0f) / 1000.0f,
-        (rand() % 2000 - 1000.0f) / 1000.0f,
-        (rand() % 2000 - 1000.0f) / 1000.0f
-        );
-    
-    particle_system.particles[particle_index].direction = math::normalize(particle_system.attributes.direction + random_dir * particle_system.attributes.spread);
-    particle_system.particles[particle_index].color = particle_system.attributes.start_color;
-    particle_system.particles[particle_index].size = particle_system.attributes.start_size;
-    
-    if(particle_system.size_over_lifetime.value_count > 0)
-    {
-        particle_system.particles[particle_index].size_over_lifetime_index = 1;
-    }
-    
-    if(particle_system.color_over_lifetime.value_count > 0)
-    {
-        particle_system.particles[particle_index].color_over_lifetime_index = 1;
-    }
-    
-    if(particle_system.speed_over_lifetime.value_count > 0)
-    {
-        particle_system.particles[particle_index].speed_over_lifetime_index = 1;
+        i32 particle_index = find_unused_particle(particle_system);
+        if(particle_index == -1)
+        {
+            return;
+        }
+        particle_system.particles.life[particle_index] = particle_system.attributes.life_time;
+        particle_system.particles.position[particle_index] = math::Vec3(0, 0, 0);
+        
+        math::Vec3 random_dir = math::Vec3(
+            (rand() % 2000 - 1000.0f) / 1000.0f,
+            (rand() % 2000 - 1000.0f) / 1000.0f,
+            (rand() % 2000 - 1000.0f) / 1000.0f
+            );
+        
+        particle_system.particles.direction[particle_index] = math::normalize(particle_system.attributes.direction + random_dir * particle_system.attributes.spread);
+        particle_system.particles.color[particle_index] = particle_system.attributes.start_color;
+        particle_system.particles.size[particle_index] = particle_system.attributes.start_size;
+        
+        if(particle_system.size_over_lifetime.value_count > 0)
+        {
+            particle_system.particles.size_over_lifetime_index[particle_index] = 1;
+        }
+        
+        if(particle_system.color_over_lifetime.value_count > 0)
+        {
+            particle_system.particles.color_over_lifetime_index[particle_index] = 1;
+        }
+        
+        if(particle_system.speed_over_lifetime.value_count > 0)
+        {
+            particle_system.particles.speed_over_lifetime_index[particle_index] = 1;
+        }
     }
 }
 
@@ -317,6 +321,7 @@ void update_particle_systems(Renderer &renderer, r64 delta_time)
         {
             if (particle_system.emitting)
             {
+                find_unused_particles(particle_system);
                 i32 new_particles;
                 
                 i32 burst_particles = 0;
@@ -366,16 +371,18 @@ void update_particle_systems(Renderer &renderer, r64 delta_time)
                     particle_system.emitting = false;
                 }
                 
+                new_particles = math::multiple_of_number(new_particles, 4);
+                burst_particles = math::multiple_of_number(burst_particles, 4);
                 
-                for (i32 i = 0; i < new_particles; i++)
+                for (i32 i = 0; i < new_particles / 4; i++)
                 {
                     emit_particle(particle_system);
                     
                     if(particle_system.attributes.one_shot)
-                        particle_system.total_emitted++;
+                        particle_system.total_emitted += 4;
                 }
                 
-                for (i32 i = 0; i < burst_particles; i++)
+                for (i32 i = 0; i < burst_particles / 4; i++)
                 {
                     emit_particle(particle_system);
                 }
