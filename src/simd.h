@@ -1,13 +1,29 @@
 #ifndef SIMD_H
 #define SIMD_H
 
-
-using S_i32 = __m128i;
-
+union S_i32
+{
+    S_i32(i32 _p) 
+    {
+        p = _mm_set1_epi32(_p);
+    }
+    
+    S_i32(i32 _a, i32 _b, i32 _c, i32 _d)
+    {
+        p = _mm_set_epi32(_a, _b, _c, _d);
+    }
+    
+    __m128i p;
+    i32 e[4];
+};
 
 S_i32 operator+ (S_i32 a, S_i32 b)
 {
-    return _mm_add_epi32(a, b);
+    S_i32 res(0);
+    
+    res.p = _mm_add_epi32(a.p, b.p);
+    
+    return res;
 }
 
 S_i32 operator+= (S_i32 a, S_i32 b)
@@ -17,7 +33,11 @@ S_i32 operator+= (S_i32 a, S_i32 b)
 
 S_i32 operator- (S_i32 a, S_i32 b)
 {
-    return _mm_sub_epi32(a, b);
+    S_i32 res(0);
+    
+    res.p = _mm_sub_epi32(a.p, b.p);
+    
+    return res;
 }
 
 S_i32 operator-= (S_i32 a, S_i32 b)
@@ -27,7 +47,11 @@ S_i32 operator-= (S_i32 a, S_i32 b)
 
 S_i32 operator* (S_i32 a, S_i32 b)
 {
-    return _mm_mul_epi32(a, b);
+    S_i32 res(0);
+    
+    res.p = _mm_mul_epi32(a.p, b.p);
+    
+    return res;
 }
 
 S_i32 operator*= (S_i32 a, S_i32 b)
@@ -38,49 +62,124 @@ S_i32 operator*= (S_i32 a, S_i32 b)
 S_i32 operator/ (S_i32 a, S_i32 b)
 {
     assert(false);
-    return {};
+    return S_i32(0);
 }
 
 S_i32 operator/= (S_i32 a, S_i32 b)
 {
     assert(false);
-    return {};
+    return S_i32(0);
 }
 
-using S_r32 = __m128;
+b32 operator<(S_i32 a, S_i32 b)
+{
+    return false;
+}
+
+b32 operator>(S_i32 a, S_i32 b)
+{
+    return false;
+}
+
+union S_r32
+{
+    S_r32(r32 _p) 
+    {
+        p = _mm_set1_ps(_p);
+    }
+    
+    S_r32(r32 _a, r32 _b, r32 _c, r32 _d)
+    {
+        p = _mm_set_ps(_a, _b, _c, _d);
+    }
+    
+    __m128 p;
+    r32 e[4];
+    
+};
 
 S_r32 operator+ (S_r32 a, S_r32 b)
 {
-    return _mm_add_ps(a, b);
+    S_r32 res(0.0f);
+    
+    res.p = _mm_add_ps(a.p, b.p);
+    
+    return res;
 }
 
 S_r32 operator- (S_r32 a, S_r32 b)
 {
-    return _mm_sub_ps(a, b);
+    S_r32 res(0.0f);
+    
+    res.p = _mm_sub_ps(a.p, b.p);
+    
+    return res;
 }
 
 S_r32 operator* (S_r32 a, S_r32 b)
 {
-    return _mm_mul_ps(a, b);
+    S_r32 res(0.0f);
+    
+    res.p = _mm_mul_ps(a.p, b.p);
+    
+    return res;
 }
 
 S_r32 operator/ (S_r32 a, S_r32 b)
 {
-    return _mm_div_ps(a, b);
+    S_r32 res(0.0f);
+    
+    res.p = _mm_div_ps(a.p, b.p);
+    
+    return res;
 }
 
 // Used to store 4 doubles in one SIMD constructions
 union S_r64
 {
-    __m128d upper_bits;
-    __m128d lower_bits;
+    struct
+    {
+        union
+        {
+            __m128d upper_bits;
+            r64 u_e[2];
+        };
+        union
+        {
+            __m128d lower_bits;
+            r64 l_e[2];
+        };
+    };
     
     S_r64(r64 v)
     {
         upper_bits = _mm_set1_pd(v);
         lower_bits = _mm_set1_pd(v);
     }
+    
+    S_r64(r64 v1, r64 v2, r64 v3, r64 v4)
+    {
+        upper_bits = _mm_set_pd(v1, v2);
+        lower_bits = _mm_set_pd(v3, v4);
+    }
+    
+    S_r64& operator=(const S_r64& v)
+    {
+        upper_bits = _mm_set_pd(v.u_e[0], v.u_e[1]);
+        lower_bits = _mm_set_pd(v.l_e[2], v.l_e[3]);
+        
+        return *this;
+    }
+    
+    S_r64& operator=(const r64& v)
+    {
+        upper_bits = _mm_set_pd(v, v);
+        lower_bits = _mm_set_pd(v, v);
+        
+        return *this;
+    }
 };
+
 
 S_r64 operator+ (S_r64 a, S_r64 b)
 {
@@ -149,28 +248,34 @@ union S_Vec2
     
     S_Vec2(r32 _x, r32 _y)
     {
-        x = _mm_set1_ps(_x);
-        y = _mm_set1_ps(_y);
+        x = S_r32(_x);
+        y = S_r32(_y);
     }
     
     S_Vec2(r32 v)
     {
-        x = _mm_set1_ps(v);
-        y = _mm_set1_ps(v);
+        x = S_r32(v);
+        y = S_r32(v);
     }
     
     S_Vec2(math::Vec2 vec)
     {
-        x = _mm_set1_ps(vec.x);
-        y = _mm_set1_ps(vec.y);
+        x = S_r32(vec.x);
+        y = S_r32(vec.y);
+    }
+    
+    S_Vec2(math::Vec2 v1, math::Vec2 v2, math::Vec2 v3, math::Vec2 v4)
+    {
+        x = S_r32(v1.x, v2.x, v3.x, v4.x);
+        y = S_r32(v1.y, v2.y, v3.y, v4.y);
     }
     
     S_Vec2 operator+(S_Vec2& v)
     {
         S_Vec2 res(0.0f);
         
-        res.x = _mm_add_ps(x, v.x);
-        res.y = _mm_add_ps(y, v.y);
+        res.x = x + v.x;
+        res.y = y + v.y;
         
         return res;
     }
@@ -179,8 +284,8 @@ union S_Vec2
     {
         S_Vec2 res(0.0f);
         
-        res.x = _mm_add_ps(x, v);
-        res.y = _mm_add_ps(y, v);
+        res.x = x + v;
+        res.y = y + v;
         
         return res;
     }
@@ -189,10 +294,10 @@ union S_Vec2
     {
         S_Vec2 res(0.0f);
         
-        S_r32 _v = _mm_set1_ps(v);
+        S_r32 _v = S_r32(v);
         
-        res.x = _mm_add_ps(x, _v);
-        res.y = _mm_add_ps(y, _v);
+        res.x = x + _v;
+        res.y = y + _v;
         
         return res;
     }
@@ -201,8 +306,8 @@ union S_Vec2
     {
         S_Vec2 res(0.0f);
         
-        res.x = _mm_sub_ps(x, v.x);
-        res.y = _mm_sub_ps(y, v.y);
+        res.x = x - v.x;
+        res.y = y - v.y;
         
         return res;
     }
@@ -211,8 +316,8 @@ union S_Vec2
     {
         S_Vec2 res(0.0f);
         
-        res.x = _mm_sub_ps(x, v);
-        res.y = _mm_sub_ps(y, v);
+        res.x = x - v;
+        res.y = y - v;
         
         return res;
     }
@@ -221,21 +326,20 @@ union S_Vec2
     {
         S_Vec2 res(0.0f);
         
-        S_r32 _v = _mm_set1_ps(v);
+        S_r32 _v = S_r32(v);
         
-        res.x = _mm_sub_ps(x, _v);
-        res.y = _mm_sub_ps(y, _v);
+        res.x = x - _v;
+        res.y = y - _v;
         
         return res;
     }
-    
     
     S_Vec2 operator*(S_Vec2& v)
     {
         S_Vec2 res(0.0f);
         
-        res.x = _mm_mul_ps(x, v.x);
-        res.y = _mm_mul_ps(y, v.y);
+        res.x = x * v.x;
+        res.y = y * v.y;
         
         return res;
     }
@@ -244,8 +348,8 @@ union S_Vec2
     {
         S_Vec2 res(0.0f);
         
-        res.x = _mm_mul_ps(x, v);
-        res.y = _mm_mul_ps(y, v);
+        res.x = x * v;
+        res.y = y * v;
         
         return res;
     }
@@ -254,10 +358,10 @@ union S_Vec2
     {
         S_Vec2 res(0.0f);
         
-        S_r32 _v = _mm_set1_ps(v);
+        S_r32 _v = S_r32(v);
         
-        res.x = _mm_mul_ps(x, _v);
-        res.y = _mm_mul_ps(y, _v);
+        res.x = x * _v;
+        res.y = y * _v;
         
         return res;
     }
@@ -266,8 +370,8 @@ union S_Vec2
     {
         S_Vec2 res(0.0f);
         
-        res.x = _mm_div_ps(x, v.x);
-        res.y = _mm_div_ps(y, v.y);
+        res.x = x / v.x;
+        res.y = y / v.y;
         
         return res;
     }
@@ -276,8 +380,8 @@ union S_Vec2
     {
         S_Vec2 res(0.0f);
         
-        res.x = _mm_div_ps(x, v);
-        res.y = _mm_div_ps(y, v);
+        res.x = x / v;
+        res.y = y / v;
         
         return res;
     }
@@ -286,10 +390,10 @@ union S_Vec2
     {
         S_Vec2 res(0.0f);
         
-        S_r32 _v = _mm_set1_ps(v);
+        S_r32 _v = S_r32(v);
         
-        res.x = _mm_div_ps(x, _v);
-        res.y = _mm_div_ps(y, _v);
+        res.x = x / _v;
+        res.y = y / _v;
         
         return res;
     }
@@ -303,32 +407,39 @@ union S_Vec3
     
     S_Vec3(r32 _x, r32 _y, r32 _z)
     {
-        x = _mm_set1_ps(_x);
-        y = _mm_set1_ps(_y);
-        z = _mm_set1_ps(_z);
+        x = S_r32(_x);
+        y = S_r32(_y);
+        z = S_r32(_z);
     }
     
     S_Vec3(r32 v)
     {
-        x = _mm_set1_ps(v);
-        y = _mm_set1_ps(v);
-        z = _mm_set1_ps(v);
+        x = S_r32(v);
+        y = S_r32(v);
+        z = S_r32(v);
     }
     
     S_Vec3(math::Vec3 vec)
     {
-        x = _mm_set1_ps(vec.x);
-        y = _mm_set1_ps(vec.y);
-        z = _mm_set1_ps(vec.z);
+        x = S_r32(vec.x);
+        y = S_r32(vec.y);
+        z = S_r32(vec.z);
+    }
+    
+    S_Vec3(math::Vec3 v1, math::Vec3 v2, math::Vec3 v3, math::Vec3 v4)
+    {
+        x = S_r32(v1.x, v2.x, v3.x, v4.x);
+        y = S_r32(v1.y, v2.y, v3.y, v4.y);
+        z = S_r32(v1.z, v2.z, v3.z, v4.z);
     }
     
     S_Vec3 operator+(S_Vec3& v)
     {
         S_Vec3 res(0.0f);
         
-        res.x = _mm_add_ps(x, v.x);
-        res.y = _mm_add_ps(y, v.y);
-        res.z = _mm_add_ps(z, v.z);
+        res.x = x + v.x;
+        res.y = y + v.y;
+        res.z = z + v.z;
         
         return res;
     }
@@ -337,9 +448,9 @@ union S_Vec3
     {
         S_Vec3 res(0.0f);
         
-        res.x = _mm_add_ps(x, a);
-        res.y = _mm_add_ps(y, a);
-        res.z = _mm_add_ps(z, a);
+        res.x = x + a;
+        res.y = y + a;
+        res.z = z + a;
         
         return res;
     }
@@ -348,35 +459,33 @@ union S_Vec3
     {
         S_Vec3 res(0.0f);
         
-        S_r32 _a = _mm_set1_ps(a);
+        S_r32 _a = S_r32(a);
         
-        res.x = _mm_add_ps(x, _a);
-        res.y = _mm_add_ps(y, _a);
-        res.z = _mm_add_ps(z, _a);
+        res.x = x + _a;
+        res.y = y + _a;
+        res.z = z + _a;
         
         return res;
     }
-    
     
     S_Vec3 operator-(S_Vec3& a)
     {
         S_Vec3 res(0.0f);
         
-        res.x = _mm_sub_ps(x, a.x);
-        res.y = _mm_sub_ps(y, a.y);
-        res.z = _mm_sub_ps(z, a.z);
+        res.x = x - a.x;
+        res.y = y - a.y;
+        res.z = z - a.z;
         
         return res;
     }
-    
     
     S_Vec3 operator-(S_r32 a)
     {
         S_Vec3 res(0.0f);
         
-        res.x = _mm_sub_ps(x, a);
-        res.y = _mm_sub_ps(y, a);
-        res.z = _mm_sub_ps(z, a);
+        res.x = x - a;
+        res.y = y - a;
+        res.z = z - a;
         
         return res;
     }
@@ -385,11 +494,11 @@ union S_Vec3
     {
         S_Vec3 res(0.0f);
         
-        S_r32 _a = _mm_set1_ps(a);
+        S_r32 _a = S_r32(a);
         
-        res.x = _mm_sub_ps(x, _a);
-        res.y = _mm_sub_ps(y, _a);
-        res.z = _mm_sub_ps(z, _a);
+        res.x = x - _a;
+        res.y = y - _a;
+        res.z = z - _a;
         
         return res;
     }
@@ -399,9 +508,10 @@ union S_Vec3
     {
         S_Vec3 res(0.0f);
         
-        res.x = _mm_mul_ps(x, a.x);
-        res.y = _mm_mul_ps(y, a.y);
-        res.z = _mm_mul_ps(z, a.z);
+        
+        res.x = x - a.x;
+        res.y = y - a.y;
+        res.z = z - a.z;
         
         return res;
     }
@@ -410,9 +520,9 @@ union S_Vec3
     {
         S_Vec3 res(0.0f);
         
-        res.x = _mm_mul_ps(x, a);
-        res.y = _mm_mul_ps(y, a);
-        res.z = _mm_mul_ps(z, a);
+        res.x = x * a;
+        res.y = y * a;
+        res.z = z * a;
         
         return res;
     }
@@ -422,11 +532,11 @@ union S_Vec3
     {
         S_Vec3 res(0.0f);
         
-        S_r32 _a = _mm_set1_ps(a);
+        S_r32 _a = S_r32(a);
         
-        res.x = _mm_mul_ps(x, _a);
-        res.y = _mm_mul_ps(y, _a);
-        res.z = _mm_mul_ps(z, _a);
+        res.x = x * _a;
+        res.y = y * _a;
+        res.z = z * _a;
         
         return res;
     }
@@ -435,9 +545,9 @@ union S_Vec3
     {
         S_Vec3 res(0.0f);
         
-        res.x = _mm_div_ps(x, a.x);
-        res.y = _mm_div_ps(y, a.y);
-        res.z = _mm_div_ps(z, a.z);
+        res.x = x / a.x;
+        res.y = y / a.y;
+        res.z = z / a.z;
         
         return res;
     }
@@ -446,9 +556,9 @@ union S_Vec3
     {
         S_Vec3 res(0.0f);
         
-        res.x = _mm_div_ps(x, a);
-        res.y = _mm_div_ps(y, a);
-        res.z = _mm_div_ps(z, a);
+        res.x = x / a;
+        res.y = y / a;
+        res.z = z / a;
         
         return res;
     }
@@ -457,11 +567,11 @@ union S_Vec3
     {
         S_Vec3 res(0.0f);
         
-        S_r32 _a = _mm_set1_ps(a);
+        S_r32 _a = S_r32(a);
         
-        res.x = _mm_div_ps(x, _a);
-        res.y = _mm_div_ps(y, _a);
-        res.z = _mm_div_ps(z, _a);
+        res.x = x / _a;
+        res.y = y / _a;
+        res.z = z / _a;
         
         return res;
     }
@@ -496,36 +606,45 @@ union S_Vec4
     
     S_Vec4(r32 _x, r32 _y, r32 _z, r32 _w)
     {
-        x = _mm_set1_ps(_x);
-        y = _mm_set1_ps(_y);
-        z = _mm_set1_ps(_z);
-        w = _mm_set1_ps(_w);
+        x = S_r32(_x);
+        y = S_r32(_y);
+        z = S_r32(_z);
+        w = S_r32(_w);
     }
     
     S_Vec4(r32 v)
     {
-        x = _mm_set1_ps(v);
-        y = _mm_set1_ps(v);
-        z = _mm_set1_ps(v);
-        w = _mm_set1_ps(v);
+        x = S_r32(v);
+        y = S_r32(v);
+        z = S_r32(v);
+        w = S_r32(v);
     }
     
     S_Vec4(math::Vec4 vec)
     {
-        x = _mm_set1_ps(vec.x);
-        y = _mm_set1_ps(vec.y);
-        z = _mm_set1_ps(vec.z);
-        w = _mm_set1_ps(vec.w);
+        x = S_r32(vec.x);
+        y = S_r32(vec.y);
+        z = S_r32(vec.z);
+        w = S_r32(vec.z);
     }
+    
+    S_Vec4(math::Vec4 v1, math::Vec4 v2, math::Vec4 v3, math::Vec4 v4)
+    {
+        x = S_r32(v1.x, v2.x, v3.x, v4.x);
+        y = S_r32(v1.y, v2.y, v3.y, v4.y);
+        z = S_r32(v1.z, v2.z, v3.z, v4.z);
+        w = S_r32(v1.w, v2.w, v3.w, v4.w);
+    }
+    
     
     S_Vec4 operator+(S_Vec4& v)
     {
         S_Vec4 res(0.0f);
         
-        res.x = _mm_add_ps(x, v.x);
-        res.y = _mm_add_ps(y, v.y);
-        res.z = _mm_add_ps(z, v.z);
-        res.w = _mm_add_ps(w, v.w);
+        res.x = x + v.x;
+        res.y = x + v.y;
+        res.z = x + v.z;
+        res.w = x + v.w;
         
         return res;
     }
@@ -534,10 +653,10 @@ union S_Vec4
     {
         S_Vec4 res(0.0f);
         
-        res.x = _mm_add_ps(x, v);
-        res.y = _mm_add_ps(y, v);
-        res.z = _mm_add_ps(z, v);
-        res.w = _mm_add_ps(w, v);
+        res.x = x + v;
+        res.y = x + v;
+        res.z = x + v;
+        res.w = x + v;
         
         return res;
     }
@@ -546,12 +665,12 @@ union S_Vec4
     {
         S_Vec4 res(0.0f);
         
-        S_r32 _v = _mm_set1_ps(v);
+        S_r32 _v = S_r32(v);
         
-        res.x = _mm_add_ps(x, _v);
-        res.y = _mm_add_ps(y, _v);
-        res.z = _mm_add_ps(z, _v);
-        res.w = _mm_add_ps(w, _v);
+        res.x = x + _v;
+        res.y = x + _v;
+        res.z = x + _v;
+        res.w = x + _v;
         
         return res;
     }
@@ -561,10 +680,10 @@ union S_Vec4
     {
         S_Vec4 res(0.0f);
         
-        res.x = _mm_sub_ps(x, v.x);
-        res.y = _mm_sub_ps(y, v.y);
-        res.z = _mm_sub_ps(z, v.z);
-        res.w = _mm_sub_ps(w, v.w);
+        res.x = x - v.x;
+        res.y = x - v.y;
+        res.z = x - v.z;
+        res.w = x - v.w;
         
         return res;
     }
@@ -573,10 +692,10 @@ union S_Vec4
     {
         S_Vec4 res(0.0f);
         
-        res.x = _mm_sub_ps(x, v);
-        res.y = _mm_sub_ps(y, v);
-        res.z = _mm_sub_ps(z, v);
-        res.w = _mm_sub_ps(w, v);
+        res.x = x - v;
+        res.y = x - v;
+        res.z = x - v;
+        res.w = x - v;
         
         return res;
     }
@@ -585,12 +704,12 @@ union S_Vec4
     {
         S_Vec4 res(0.0f);
         
-        S_r32 _v = _mm_set1_ps(v);
+        S_r32 _v = S_r32(v);
         
-        res.x = _mm_sub_ps(x, _v);
-        res.y = _mm_sub_ps(y, _v);
-        res.z = _mm_sub_ps(z, _v);
-        res.w = _mm_sub_ps(w, _v);
+        res.x = x - _v;
+        res.y = x - _v;
+        res.z = x - _v;
+        res.w = x - _v;
         
         return res;
     }
@@ -599,10 +718,10 @@ union S_Vec4
     {
         S_Vec4 res(0.0f);
         
-        res.x = _mm_mul_ps(x, v.x);
-        res.y = _mm_mul_ps(y, v.y);
-        res.z = _mm_mul_ps(z, v.z);
-        res.w = _mm_mul_ps(w, v.w);
+        res.x = x * v.x;
+        res.y = x * v.y;
+        res.z = x * v.z;
+        res.w = x * v.w;
         
         return res;
     }
@@ -611,10 +730,10 @@ union S_Vec4
     {
         S_Vec4 res(0.0f);
         
-        res.x = _mm_mul_ps(x, v);
-        res.y = _mm_mul_ps(y, v);
-        res.z = _mm_mul_ps(z, v);
-        res.w = _mm_mul_ps(w, v);
+        res.x = x * v;
+        res.y = x * v;
+        res.z = x * v;
+        res.w = x * v;
         
         return res;
     }
@@ -623,12 +742,12 @@ union S_Vec4
     {
         S_Vec4 res(0.0f);
         
-        S_r32 _v = _mm_set1_ps(v);
+        S_r32 _v = S_r32(v);
         
-        res.x = _mm_mul_ps(x, _v);
-        res.y = _mm_mul_ps(y, _v);
-        res.z = _mm_mul_ps(z, _v);
-        res.w = _mm_mul_ps(w, _v);
+        res.x = x * _v;
+        res.y = x * _v;
+        res.z = x * _v;
+        res.w = x * _v;
         
         return res;
     }
@@ -637,10 +756,10 @@ union S_Vec4
     {
         S_Vec4 res(0.0f);
         
-        res.x = _mm_div_ps(x, v.x);
-        res.y = _mm_div_ps(y, v.y);
-        res.z = _mm_div_ps(z, v.z);
-        res.w = _mm_div_ps(w, v.w);
+        res.x = x / v.x;
+        res.y = x / v.y;
+        res.z = x / v.z;
+        res.w = x / v.w;
         
         return res;
     }
@@ -649,10 +768,10 @@ union S_Vec4
     {
         S_Vec4 res(0.0f);
         
-        res.x = _mm_div_ps(x, v);
-        res.y = _mm_div_ps(y, v);
-        res.z = _mm_div_ps(z, v);
-        res.w = _mm_div_ps(w, v);
+        res.x = x / v;
+        res.y = x / v;
+        res.z = x / v;
+        res.w = x / v;
         
         return res;
     }
@@ -661,19 +780,47 @@ union S_Vec4
     {
         S_Vec4 res(0.0f);
         
-        S_r32 _v = _mm_set1_ps(v);
+        S_r32 _v = S_r32(v);
         
-        res.x = _mm_div_ps(x, _v);
-        res.y = _mm_div_ps(y, _v);
-        res.z = _mm_div_ps(z, _v);
-        res.w = _mm_div_ps(w, _v);
+        res.x = x / _v;
+        res.y = x / _v;
+        res.z = x / _v;
+        res.w = x / _v;
         
         return res;
     }
 };
 
+b32 all_zero(S_r32 v)
+{
+    return false;
+}
+
+b32 any_nz(S_r64 v)
+{
+    v.upper_bits = _mm_set1_pd(5.0);
+    
+    __m128d upper_cmp = _mm_cmp_pd(v.upper_bits, _mm_setzero_pd(), _CMP_EQ_OQ);
+    __m128d lower_cmp = _mm_cmp_pd(v.lower_bits, _mm_setzero_pd(), _CMP_EQ_OQ);
+    
+    upper_cmp = _mm_cmp_pd(upper_cmp, _mm_setzero_pd(), _CMP_NLT_US);
+    auto i_upper = _mm_srl_epi32(_mm_castpd_si128(upper_cmp), _mm_set1_epi32(31));
+    
+    i_upper = _mm_srl_epi32(_mm_castpd_si128(upper_cmp), _mm_set1_epi32(31));
+    i_upper = _mm_xor_si128(i_upper, _mm_set1_epi32(1));
+    
+    
+    lower_cmp = _mm_cmp_pd(lower_cmp, _mm_setzero_pd(), _CMP_NLT_US);
+    auto i_lower = _mm_srl_epi32(_mm_castpd_si128(lower_cmp), _mm_set1_epi32(31));
+    
+    i_lower = _mm_srl_epi32(_mm_castpd_si128(lower_cmp), _mm_set1_epi32(31));
+    i_lower = _mm_xor_si128(i_lower, _mm_set1_epi32(1));
+    
+    i32 upper_mask = (_mm_movemask_epi8(i_upper));
+    i32 lower_mask = (_mm_movemask_epi8(i_lower));
+    return upper_mask != 0xff && lower_mask != 0xff;
+}
+
 using S_Rgba = S_Vec4;
 
-
 #endif
-

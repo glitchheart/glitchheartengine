@@ -16,7 +16,7 @@ static void start_particle_system(ParticleSystemInfo &system, b32 one_shot = fal
     system.total_emitted = 0;
     system.particle_count = 0;
     
-    for(i32 index = 0; index < system.max_particles; index++)
+    for(i32 index = 0; index < system.max_particles / 4; index++)
     {
         system.particles.life[index] = 0.0f;
     }
@@ -84,7 +84,7 @@ static void create_particle_system(Renderer &renderer, ParticleSystemHandle &han
     system_info.particles.speed_over_lifetime_index = push_array(memory_arena, system_info.max_particles, i32);
     system_info.particles.color_over_lifetime_index = push_array(memory_arena, system_info.max_particles, i32);
     system_info.particles.size_over_lifetime_index = push_array(memory_arena, system_info.max_particles, i32);
-    system_info.particles.life = push_array(memory_arena, system_info.max_particles, r64);
+    system_info.particles.life = push_array(memory_arena, system_info.max_particles / 4, S_r64);
     system_info.particles.texture_handle = push_array(memory_arena, system_info.max_particles, i32);
     
     system_info.offsets = push_array(memory_arena, system_info.max_particles, math::Vec3);

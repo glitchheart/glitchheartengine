@@ -36,7 +36,7 @@ void find_unused_particles(ParticleSystemInfo &particle_system)
     
     for(i32 particle_index = 0; particle_index < particle_system.max_particles; particle_index++)
     {
-        if(particle_system.particles.life[particle_index] <= 0)
+        if(particle_system.particles.life[particle_index].u_e[0] <= 0 && particle_system.particles.life[particle_index].u_e[1] <= 0 && particle_system.particles.life[particle_index].l_e[0] <= 0 && particle_system.particles.life[particle_index].l_e[1] <= 0)
         {
             unused_particles[particle_system.unused_particle_count++] = particle_index;
         }
@@ -58,140 +58,149 @@ void update_particles(Renderer &renderer, ParticleSystemInfo &particle_system, r
 {
     particle_system.particle_count = 0;
     
-    for(i32 i = 0; i < particle_system.max_particles; i++)
+    for(i32 main_index = 0; main_index < particle_system.max_particles / 4; main_index++)
     {
-        r64 &life = particle_system.particles.life[i];
+        auto life_non_zero = any_nz(particle_system.particles.life[main_index]);
         
-        auto start = life > particle_system.attributes.life_time - 0.001 && life < particle_system.attributes.life_time + 0.001;
+        auto life = particle_system.particles.life[main_index].l_e[0];
         
-        if(life > 0.0f)
+        for(i32 sub_index = 0; sub_index < 4; sub_index++)
         {
-            auto speed_value_count = particle_system.speed_over_lifetime.value_count;
-            auto color_value_count = particle_system.color_over_lifetime.value_count;
-            auto size_value_count = particle_system.size_over_lifetime.value_count;               
+            i32 i = main_index * 4 + sub_index;
             
-            if(speed_value_count > 0)
+            auto start = life > particle_system.attributes.life_time - 0.001 && life < particle_system.attributes.life_time + 0.001;
+            
+            if(life_non_zero)
             {
-                auto speed_index = particle_system.particles.speed_over_lifetime_index[i];
+                auto speed_value_count = particle_system.speed_over_lifetime.value_count;
+                auto color_value_count = particle_system.color_over_lifetime.value_count;
+                auto size_value_count = particle_system.size_over_lifetime.value_count;               
                 
-                if(speed_index < speed_value_count)
+                if(speed_value_count > 0)
                 {
-                    auto start_time = particle_system.speed_over_lifetime.keys[speed_index - 1] * particle_system.attributes.life_time;
-                    auto end_time = particle_system.speed_over_lifetime.keys[speed_index] * particle_system.attributes.life_time;
+                    auto speed_index = particle_system.particles.speed_over_lifetime_index[i];
                     
-                    auto time_spent = particle_system.attributes.life_time - life;
-                    
-                    auto diff = end_time - start_time;
-                    auto in_this_index = time_spent - start_time;
-                    
-                    auto t_speed = MIN(1.0, in_this_index / diff);                      
-                    
-                    auto start_speed = particle_system.speed_over_lifetime.values[speed_index - 1];
-                    auto end_speed = particle_system.speed_over_lifetime.values[speed_index];
-                    
-                    particle_system.particles.position[i] += particle_system.particles.direction[i] * math::lerp((r32)start_speed, (r32)t_speed, (r32)end_speed) * (r32)delta_time;
-                    
-                    if(time_spent >= end_time)
+                    if(speed_index < speed_value_count)
                     {
-                        particle_system.particles.speed_over_lifetime_index[i]++;
+                        auto start_time = particle_system.speed_over_lifetime.keys[speed_index - 1] * particle_system.attributes.life_time;
+                        auto end_time = particle_system.speed_over_lifetime.keys[speed_index] * particle_system.attributes.life_time;
+                        
+                        auto time_spent = particle_system.attributes.life_time - life;
+                        
+                        auto diff = end_time - start_time;
+                        auto in_this_index = time_spent - start_time;
+                        
+                        auto t_speed = MIN(1.0, in_this_index / diff);                      
+                        
+                        auto start_speed = particle_system.speed_over_lifetime.values[speed_index - 1];
+                        auto end_speed = particle_system.speed_over_lifetime.values[speed_index];
+                        
+                        particle_system.particles.position[i] += particle_system.particles.direction[i] * math::lerp((r32)start_speed, (r32)t_speed, (r32)end_speed) * (r32)delta_time;
+                        
+                        if(time_spent >= end_time)
+                        {
+                            particle_system.particles.speed_over_lifetime_index[i]++;
+                        }
+                    }
+                    else
+                    {
+                        particle_system.particles.position[i] += particle_system.particles.direction[i] * particle_system.speed_over_lifetime.values[particle_system.particles.speed_over_lifetime_index[i] - 1] * (r32)delta_time;				
                     }
                 }
                 else
                 {
-                    particle_system.particles.position[i] += particle_system.particles.direction[i] * particle_system.speed_over_lifetime.values[particle_system.particles.speed_over_lifetime_index[i] - 1] * (r32)delta_time;				
-                }
-            }
-            else
-            {
-                particle_system.particles.position[i] += particle_system.particles.direction[i] * particle_system.attributes.start_speed * (r32)delta_time;				
-            }                
-            
-            if(color_value_count > 0)
-            {
-                auto color_index = particle_system.particles.color_over_lifetime_index[i];
+                    particle_system.particles.position[i] += particle_system.particles.direction[i] * particle_system.attributes.start_speed * (r32)delta_time;				
+                }                
                 
-                if(color_index < color_value_count)
+                if(color_value_count > 0)
                 {
-                    auto start_time = particle_system.color_over_lifetime.keys[color_index - 1] * particle_system.attributes.life_time;
-                    auto end_time = particle_system.color_over_lifetime.keys[color_index] * particle_system.attributes.life_time;
+                    auto color_index = particle_system.particles.color_over_lifetime_index[i];
                     
-                    auto time_spent = particle_system.attributes.life_time - life;
-                    
-                    auto diff = end_time - start_time;
-                    auto in_this_index = time_spent - start_time;
-                    
-                    auto t_color = MIN(1.0, in_this_index / diff);                      
-                    
-                    auto start_color = particle_system.color_over_lifetime.values[color_index - 1];
-                    auto end_color = particle_system.color_over_lifetime.values[color_index];
-                    particle_system.particles.color[i] = math::lerp(start_color, (r32)t_color, end_color);
-                    
-                    if(time_spent >= end_time)
+                    if(color_index < color_value_count)
                     {
-                        particle_system.particles.color_over_lifetime_index[i]++;
+                        auto start_time = particle_system.color_over_lifetime.keys[color_index - 1] * particle_system.attributes.life_time;
+                        auto end_time = particle_system.color_over_lifetime.keys[color_index] * particle_system.attributes.life_time;
+                        
+                        auto time_spent = particle_system.attributes.life_time - life;
+                        
+                        auto diff = end_time - start_time;
+                        auto in_this_index = time_spent - start_time;
+                        
+                        auto t_color = MIN(1.0, in_this_index / diff);                      
+                        
+                        auto start_color = particle_system.color_over_lifetime.values[color_index - 1];
+                        auto end_color = particle_system.color_over_lifetime.values[color_index];
+                        particle_system.particles.color[i] = math::lerp(start_color, (r32)t_color, end_color);
+                        
+                        if(time_spent >= end_time)
+                        {
+                            particle_system.particles.color_over_lifetime_index[i]++;
+                        }
+                    }
+                    else
+                    {
+                        particle_system.particles.color[i] = particle_system.color_over_lifetime.values[color_index - 1];
                     }
                 }
                 else
                 {
-                    particle_system.particles.color[i] = particle_system.color_over_lifetime.values[color_index - 1];
+                    particle_system.particles.color[i] = particle_system.attributes.start_color;				
                 }
-            }
-            else
-            {
-                particle_system.particles.color[i] = particle_system.attributes.start_color;				
-            }
-            
-            if(size_value_count > 0)
-            {
-                auto size_index = particle_system.particles.size_over_lifetime_index[i];
                 
-                if(size_index < size_value_count)
+                if(size_value_count > 0)
                 {
-                    auto start_time = particle_system.size_over_lifetime.keys[size_index - 1] * particle_system.attributes.life_time;
-                    auto end_time = particle_system.size_over_lifetime.keys[size_index] * particle_system.attributes.life_time;
+                    auto size_index = particle_system.particles.size_over_lifetime_index[i];
                     
-                    auto time_spent = particle_system.attributes.life_time - life;
-                    
-                    auto diff = end_time - start_time;
-                    auto in_this_index = time_spent - start_time;
-                    
-                    auto t_size = MIN(1.0, in_this_index / diff);                      
-                    
-                    auto start_size = particle_system.size_over_lifetime.values[size_index - 1];
-                    auto end_size = particle_system.size_over_lifetime.values[size_index];
-                    particle_system.particles.size[i] = math::lerp(start_size, (r32)t_size, end_size);
-                    
-                    if(time_spent >= end_time)
+                    if(size_index < size_value_count)
                     {
-                        particle_system.particles.size_over_lifetime_index[i]++;
+                        auto start_time = particle_system.size_over_lifetime.keys[size_index - 1] * particle_system.attributes.life_time;
+                        auto end_time = particle_system.size_over_lifetime.keys[size_index] * particle_system.attributes.life_time;
+                        
+                        auto time_spent = particle_system.attributes.life_time - life;
+                        
+                        auto diff = end_time - start_time;
+                        auto in_this_index = time_spent - start_time;
+                        
+                        auto t_size = MIN(1.0, in_this_index / diff);                      
+                        
+                        auto start_size = particle_system.size_over_lifetime.values[size_index - 1];
+                        auto end_size = particle_system.size_over_lifetime.values[size_index];
+                        particle_system.particles.size[i] = math::lerp(start_size, (r32)t_size, end_size);
+                        
+                        if(time_spent >= end_time)
+                        {
+                            particle_system.particles.size_over_lifetime_index[i]++;
+                        }
+                    }
+                    else
+                    {
+                        particle_system.particles.size[i] = particle_system.size_over_lifetime.values[size_index - 1];
                     }
                 }
                 else
                 {
-                    particle_system.particles.size[i] = particle_system.size_over_lifetime.values[size_index - 1];
+                    particle_system.particles.size[i] = particle_system.attributes.start_size;				
                 }
-            }
-            else
-            {
-                particle_system.particles.size[i] = particle_system.attributes.start_size;				
+                
+                if(particle_system.attributes.particle_space == PS_WORLD && !start)
+                {
+                    particle_system.offsets[particle_system.particle_count] = particle_system.particles.position[i] + particle_system.particles.relative_position[i];
+                }
+                else
+                {
+                    particle_system.offsets[particle_system.particle_count] = particle_system.particles.position[i] + particle_system.transform.position;
+                    particle_system.particles.relative_position[i] = particle_system.transform.position;
+                }
+                
+                particle_system.colors[particle_system.particle_count] = particle_system.particles.color[i];
+                particle_system.sizes[particle_system.particle_count] = particle_system.particles.size[i];
+                //particle_system.particles.life[i] -= delta_time;
+                particle_system.particle_count++;
             }
             
-            if(particle_system.attributes.particle_space == PS_WORLD && !start)
-            {
-                particle_system.offsets[particle_system.particle_count] = particle_system.particles.position[i] + particle_system.particles.relative_position[i];
-            }
-            else
-            {
-                particle_system.offsets[particle_system.particle_count] = particle_system.particles.position[i] + particle_system.transform.position;
-                particle_system.particles.relative_position[i] = particle_system.transform.position;
-            }
-            
-            particle_system.colors[particle_system.particle_count] = particle_system.particles.color[i];
-            particle_system.sizes[particle_system.particle_count] = particle_system.particles.size[i];
             particle_system.particles.life[i] -= delta_time;
-            particle_system.particle_count++;
         }
-    } 
+    }
 }
 
 void merge(math::Vec3 *work_offsets, math::Vec2 *work_sizes, math::Rgba *work_colors, i32 size, i32 left, i32 mid, math::Vec3 *offsets, math::Vec2 *sizes, math::Rgba *colors, math::Vec3 camera_position)
@@ -274,14 +283,17 @@ void sort(math::Vec3 camera_position, math::Vec3 *offsets, math::Vec2 *sizes, ma
 
 void emit_particle(ParticleSystemInfo &particle_system)
 {
+    i32 particle_index = find_unused_particle(particle_system);
+    
+    particle_system.particles.life[particle_index / 4] = particle_system.attributes.life_time;
     for(i32 i = 0; i < 4; i++)
     {
-        i32 particle_index = find_unused_particle(particle_system);
+        
         if(particle_index == -1)
         {
             return;
         }
-        particle_system.particles.life[particle_index] = particle_system.attributes.life_time;
+        
         particle_system.particles.position[particle_index] = math::Vec3(0, 0, 0);
         
         math::Vec3 random_dir = math::Vec3(

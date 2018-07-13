@@ -90,7 +90,7 @@ struct Particles
     i32 *speed_over_lifetime_index;
     i32 *color_over_lifetime_index;
     i32 *size_over_lifetime_index;
-    r64 *life;
+    S_r64 *life;
     
     i32 *texture_handle;
 };
