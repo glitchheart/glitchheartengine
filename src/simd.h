@@ -4,6 +4,7 @@
 #ifdef __APPLE__
 #include "smmintrin.h"
 #include "immintrin.h"
+#include "emmintrin.h"
 #endif
 
 union S_i32
@@ -352,10 +353,10 @@ union S_r64
 
 b32 any_nz(S_r64 v)
 {
-    __m128d upper_vcmp = _mm_cmp_pd(_mm_setzero_pd(), v.upper_bits.p, _CMP_LT_OQ);
+    __m128d upper_vcmp = _mm_cmpeq_pd(_mm_setzero_pd(), v.upper_bits.p);
     i32 upper_cmp = _mm_movemask_pd(upper_vcmp);
     
-    __m128d lower_vcmp = _mm_cmp_pd(_mm_setzero_pd(), v.lower_bits.p, _CMP_LT_OQ);
+    __m128d lower_vcmp = _mm_cmpeq_pd(_mm_setzero_pd(), v.lower_bits.p);
     i32 lower_cmp = _mm_movemask_pd(lower_vcmp);
     
     return lower_cmp != 0 || upper_cmp != 0;
