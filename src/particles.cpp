@@ -34,9 +34,9 @@ void find_unused_particles(ParticleSystemInfo &particle_system)
     auto &unused_particles = particle_system.unused_particles;
     particle_system.unused_particle_count = 0;
     
-    for(i32 particle_index = 0; particle_index < particle_system.max_particles; particle_index++)
+    for(i32 particle_index = 0; particle_index < particle_system.max_particles / 4; particle_index++)
     {
-        if(particle_system.particles.life[particle_index].u_e[0] <= 0 && particle_system.particles.life[particle_index].u_e[1] <= 0 && particle_system.particles.life[particle_index].l_e[0] <= 0 && particle_system.particles.life[particle_index].l_e[1] <= 0)
+        if(!any_nz(particle_system.particles.life[particle_index]))
         {
             unused_particles[particle_system.unused_particle_count++] = particle_index;
         }
@@ -64,14 +64,14 @@ void update_particles(Renderer &renderer, ParticleSystemInfo &particle_system, r
         
         auto life = particle_system.particles.life[main_index].l_e[0];
         
-        for(i32 sub_index = 0; sub_index < 4; sub_index++)
+        if(life_non_zero)
         {
-            i32 i = main_index * 4 + sub_index;
-            
-            auto start = life > particle_system.attributes.life_time - 0.001 && life < particle_system.attributes.life_time + 0.001;
-            
-            if(life_non_zero)
+            for(i32 sub_index = 0; sub_index < 4; sub_index++)
             {
+                i32 i = main_index * 4 + sub_index;
+                
+                auto start = life > particle_system.attributes.life_time - 0.001 && life < particle_system.attributes.life_time + 0.001;
+                
                 auto speed_value_count = particle_system.speed_over_lifetime.value_count;
                 auto color_value_count = particle_system.color_over_lifetime.value_count;
                 auto size_value_count = particle_system.size_over_lifetime.value_count;               
@@ -196,9 +196,11 @@ void update_particles(Renderer &renderer, ParticleSystemInfo &particle_system, r
                 particle_system.sizes[particle_system.particle_count] = particle_system.particles.size[i];
                 //particle_system.particles.life[i] -= delta_time;
                 particle_system.particle_count++;
+                
             }
             
-            particle_system.particles.life[i] -= delta_time;
+            particle_system.particles.life[main_index] -= delta_time;
+            int x = 0;
         }
     }
 }
@@ -283,12 +285,17 @@ void sort(math::Vec3 camera_position, math::Vec3 *offsets, math::Vec2 *sizes, ma
 
 void emit_particle(ParticleSystemInfo &particle_system)
 {
-    i32 particle_index = find_unused_particle(particle_system);
+    i32 original_index = find_unused_particle(particle_system);
     
-    particle_system.particles.life[particle_index / 4] = particle_system.attributes.life_time;
+    if(original_index == -1)
+    {
+        return;
+    }
+    
+    particle_system.particles.life[original_index] = particle_system.attributes.life_time;
     for(i32 i = 0; i < 4; i++)
     {
-        
+        auto particle_index = original_index * 4 + i;
         if(particle_index == -1)
         {
             return;
