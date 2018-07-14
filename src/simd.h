@@ -233,42 +233,29 @@ union S_h64
 // Used to store 4 doubles in one SIMD constructions
 union S_r64
 {
-    union
-    {
-        S_h64 upper_bits;
-        r64 u_e[2];
-    };
-    
-    union
-    {
-        S_h64 lower_bits;
-        r64 l_e[2];
-    };
+    __m256d p;
+    r64 e[4];
     
     S_r64(r64 v)
     {
-        upper_bits = S_h64(v);
-        lower_bits = S_h64(v);
+        p = _mm256_set1_pd(v);
     }
     
     S_r64(r64 v1, r64 v2, r64 v3, r64 v4)
     {
-        upper_bits = S_h64(v1, v2);
-        lower_bits = S_h64(v3, v4);
+        p = _mm256_set_pd(v1, v2, v3, v4);
     }
     
     S_r64& operator=(const S_r64& v)
     {
-        upper_bits = S_h64(v.u_e[0], v.u_e[1]);
-        lower_bits = S_h64(v.l_e[2], v.l_e[3]);
+        p = _mm256_set_pd(v.e[0], v.e[1], v.e[2], v.e[3]);
         
         return *this;
     }
     
     S_r64& operator=(const r64& v)
     {
-        upper_bits = S_h64(v, v);
-        lower_bits = S_h64(v, v);
+        p = _mm256_set1_pd(v);
         
         return *this;
     }
@@ -277,16 +264,14 @@ union S_r64
     {
         S_r64 res(0.0);
         
-        res.upper_bits = upper_bits + b.upper_bits;
-        res.lower_bits = lower_bits + b.lower_bits;
+        res.p = _mm256_add_pd(p, b.p);
         
         return res;
     }
     
     S_r64& operator+= (S_r64 b)
     {
-        upper_bits += b.upper_bits;
-        lower_bits += b.lower_bits;
+        p = _mm256_add_pd(p, b.p);
         
         return *this;
     }
@@ -295,16 +280,15 @@ union S_r64
     {
         S_r64 res(0.0);
         
-        res.upper_bits = upper_bits - b.upper_bits;
-        res.lower_bits = lower_bits - b.lower_bits;
+        res.p = _mm256_sub_pd(p, b.p);
         
         return res;
     }
     
     S_r64 operator-= (S_r64 b)
     {
-        upper_bits -= b.upper_bits;
-        lower_bits -= b.lower_bits;
+        p = _mm256_sub_pd(p, b.p);
+        
         return *this;
     }
     
@@ -312,16 +296,15 @@ union S_r64
     {
         S_r64 res(0.0);
         
-        res.upper_bits = upper_bits * b.upper_bits;
-        res.lower_bits = lower_bits * b.lower_bits;
+        res.p = _mm256_mul_pd(p, b.p);
         
         return res;
     }
     
     S_r64& operator*= (S_r64 b)
     {
-        upper_bits *= b.upper_bits;
-        lower_bits *= b.lower_bits;
+        p = _mm256_mul_pd(p, b.p);
+        
         return *this;
     }
     
@@ -329,16 +312,14 @@ union S_r64
     {
         S_r64 res(0.0);
         
-        res.upper_bits = upper_bits * b.upper_bits;
-        res.lower_bits = lower_bits * b.lower_bits;
+        res.p = _mm256_div_pd(p, b.p);
         
         return res;
     }
     
     S_r64& operator/= (S_r64 b)
     {
-        upper_bits /= b.upper_bits;
-        lower_bits /= b.lower_bits;
+        p = _mm256_div_pd(p, b.p);
         return *this;
     }
 };
@@ -901,13 +882,10 @@ b32 all_zero(S_r32 v)
 
 b32 any_nz(S_r64 v)
 {
-    __m128d upper_vcmp = _mm_cmp_pd(_mm_setzero_pd(), v.upper_bits.p, _CMP_LT_OQ);
-    i32 upper_cmp = _mm_movemask_pd(upper_vcmp);
+    __m256d vcmp = _mm256_cmp_pd(_mm256_setzero_pd(), v.p, _CMP_LT_OQ);
+    i32 cmp = _mm256_movemask_pd(vcmp);
     
-    __m128d lower_vcmp = _mm_cmp_pd(_mm_setzero_pd(), v.lower_bits.p, _CMP_LT_OQ);
-    i32 lower_cmp = _mm_movemask_pd(lower_vcmp);
-    
-    return lower_cmp != 0 || upper_cmp != 0;
+    return cmp != 0;
 }
 
 using S_Rgba = S_Vec4;
