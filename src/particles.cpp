@@ -62,7 +62,7 @@ void update_particles(Renderer &renderer, ParticleSystemInfo &particle_system, r
     {
         auto life_non_zero = any_nz(particle_system.particles.life[main_index]);
         
-        auto life = particle_system.particles.life[main_index].l_e[0];
+        auto life = particle_system.particles.life[main_index].e[0];
         
         if(life_non_zero)
         {
@@ -200,7 +200,6 @@ void update_particles(Renderer &renderer, ParticleSystemInfo &particle_system, r
             }
             
             particle_system.particles.life[main_index] -= delta_time;
-            int x = 0;
         }
     }
 }
