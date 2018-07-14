@@ -240,16 +240,18 @@ union S_h64
 // Used to store 4 doubles in one SIMD constructions
 union S_r64
 {
-    union
-    {
-        S_h64 upper_bits;
-        r64 u_e[2];
-    };
     
     union
     {
-        S_h64 lower_bits;
-        r64 l_e[2];
+        union
+        {
+            S_h64 upper_bits;
+        };
+        union
+        {
+            S_h64 lower_bits;
+        };
+        r64 e[4];
     };
     
     S_r64(r64 v)
@@ -266,8 +268,8 @@ union S_r64
     
     S_r64& operator=(const S_r64& v)
     {
-        upper_bits = S_h64(v.u_e[0], v.u_e[1]);
-        lower_bits = S_h64(v.l_e[2], v.l_e[3]);
+        upper_bits = S_h64(v.e[0], v.e[1]);
+        lower_bits = S_h64(v.e[2], v.e[3]);
         
         return *this;
     }
