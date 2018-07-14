@@ -617,7 +617,8 @@ static void create_shadow_map(Framebuffer& framebuffer,  i32 width, i32 height)
     
     if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
     {
-        debug("Error: Framebuffer incomplete\n");
+        debug("Error: Shadow map incomplete\n");
+        error_gl();
     }
     
     
@@ -630,6 +631,8 @@ static void create_framebuffer(RenderState& render_state, Framebuffer& framebuff
     {
         glGenFramebuffers(1, &framebuffer.buffer_handle);
     }
+    else
+        debug("buffer not zero\n");
     
     glBindFramebuffer(GL_FRAMEBUFFER, framebuffer.buffer_handle);
     glDrawBuffer(GL_COLOR_ATTACHMENT0);
@@ -640,9 +643,8 @@ static void create_framebuffer(RenderState& render_state, Framebuffer& framebuff
     if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
     {
         debug("Error: Framebuffer incomplete\n");
+        error_gl();
     }
-    
-    error_gl();
     
     // FrameBuffer vao
     glGenVertexArrays(1, &framebuffer.vao);
@@ -688,25 +690,28 @@ void window_iconify_callback(GLFWwindow *window, i32 iconified)
 
 void frame_buffer_size_callback(GLFWwindow *window, int width, int height)
 {
-    RenderState* render_state = (RenderState*)glfwGetWindowUserPointer(window);
-    
-    glViewport(0, 0, width, height);
-    
-    GLint viewport[4];
-    glGetIntegerv(GL_VIEWPORT, viewport);
-    memcpy(render_state->viewport, viewport, sizeof(GLint) * 4);
-    
-    render_state->window_width = width;
-    render_state->window_height = height;
-    
-    create_framebuffer(*render_state, render_state->framebuffer, render_state->window_width, render_state->window_height, render_state->frame_buffer_shader, render_state->perm_arena, render_state->framebuffer_quad_vertices,
-                       render_state->framebuffer_quad_vertices_size,render_state->quad_indices, sizeof(render_state->quad_indices), true, 4);
-    
-    GLFWmonitor* monitor = glfwGetPrimaryMonitor();
-    
-    const GLFWvidmode* mode = glfwGetVideoMode(monitor);
-    
-    glfwSetWindowPos(render_state->window, mode->width / 2 - width / 2, mode->height / 2 - height / 2);
+    if(width != 0 && height != 0)
+    {
+        RenderState* render_state = (RenderState*)glfwGetWindowUserPointer(window);
+        
+        glViewport(0, 0, width, height);
+        
+        GLint viewport[4];
+        glGetIntegerv(GL_VIEWPORT, viewport);
+        memcpy(render_state->viewport, viewport, sizeof(GLint) * 4);
+        
+        render_state->window_width = width;
+        render_state->window_height = height;
+        
+        create_framebuffer(*render_state, render_state->framebuffer, render_state->window_width, render_state->window_height, render_state->frame_buffer_shader, render_state->perm_arena, render_state->framebuffer_quad_vertices,
+                        render_state->framebuffer_quad_vertices_size,render_state->quad_indices, sizeof(render_state->quad_indices), true, 4);
+        
+        GLFWmonitor* monitor = glfwGetPrimaryMonitor();
+        
+        const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+        
+        glfwSetWindowPos(render_state->window, mode->width / 2 - width / 2, mode->height / 2 - height / 2);
+    }
 }
 
 static void setup_quad(RenderState& render_state, MemoryArena* perm_arena)
@@ -797,14 +802,6 @@ static void setup_lines(RenderState& render_state, MemoryArena* perm_arena)
 
 static void render_setup(RenderState *render_state, MemoryArena* perm_arena)
 {
-    // @Cleanup: Not sure if a fallback is a good way of dealing with this
-    if (render_state->scale_from_width == 0 || render_state->scale_from_height == 0)
-    {
-        render_state->scale_from_width = render_state->window_width;
-        render_state->scale_from_height = render_state->window_height;
-    }
-    
-    
     render_state->font_count = 0;
     render_state->perm_arena = perm_arena;
     
@@ -978,6 +975,8 @@ static void initialize_opengl(RenderState& render_state, Renderer& renderer, r32
     
     create_open_gl_window(render_state, window_mode, global_title, screen_width, screen_height);
     renderer.window_mode = render_state.window_mode;
+    renderer.window_width = screen_width;
+    renderer.window_height = screen_height;
     if (!render_state.window)
     {
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -1097,8 +1096,8 @@ static void initialize_opengl(RenderState& render_state, Renderer& renderer, r32
         }
         
         // @Incomplete: Replace with own sort? Don't like using qsort here :(
-        qsort(renderer.available_resolutions, (size_t)renderer.available_resolutions_count, sizeof(Resolution), [](const void* a, const void* b){
-              
+        qsort(renderer.available_resolutions, (size_t)renderer.available_resolutions_count, sizeof(Resolution), [](const void* a, const void* b)
+        {
               auto r_1 = (Resolution*)a;
               auto r_2 = (Resolution*)b;
               
@@ -1107,11 +1106,11 @@ static void initialize_opengl(RenderState& render_state, Renderer& renderer, r32
               
               if(width_diff == 0)
               {
-              return height_diff;
+                return height_diff;
               }
               else
               {
-              return (r_1->width - r_2->width);
+                return (r_1->width - r_2->width);
               }
               });
     }
@@ -2595,31 +2594,6 @@ static void render(RenderState& render_state, Renderer& renderer, MemoryArena* p
         return;
     }
     
-    if (renderer.window_width != render_state.window_width || renderer.window_height != render_state.window_height || renderer.window_mode != render_state.window_mode)
-    {
-        render_state.window_width = renderer.window_width;
-        render_state.window_height = renderer.window_height;
-        
-        if(renderer.window_mode != render_state.window_mode)
-        {
-            delete_shaders(render_state);
-            
-            initialize_opengl(render_state, renderer, render_state.contrast, render_state.brightness, renderer.window_mode, render_state.window_width, render_state.window_height, render_state.perm_arena);
-            
-            clear(&render_state.font_arena);
-            
-            for (i32 index = 0; index < renderer.font_count; index++)
-            {
-                FontData data = renderer.fonts[index];
-                load_font(render_state, data.path, data.size);
-            }
-        }
-        else
-        {
-            glfwSetWindowSize(render_state.window, render_state.window_width, render_state.window_height);
-        }
-    }
-    
     load_extra_shaders(render_state, renderer);
     load_textures(render_state, renderer);
     
@@ -2640,6 +2614,7 @@ static void render(RenderState& render_state, Renderer& renderer, MemoryArena* p
     
     renderer.window_width = render_state.window_width;
     renderer.window_height = render_state.window_height;
+    
     camera.viewport_width = render_state.window_width;
     camera.viewport_height = render_state.window_height;
     

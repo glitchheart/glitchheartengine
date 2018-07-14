@@ -348,7 +348,7 @@ int main(int argc, char** args)
     {
         //calculate deltatime
         current_frame = get_time();
-        delta_time = MIN(current_frame - last_frame, 1.0 / 30.0);
+        delta_time = MIN(current_frame - last_frame, 1.0 / 20.0);
         last_frame = current_frame;
         
         if(game_memory.exit_game)
