@@ -134,112 +134,215 @@ S_r32 operator/ (S_r32 a, S_r32 b)
     return res;
 }
 
-// Used to store 4 doubles in one SIMD constructions
-union S_r64
+union S_h64
 {
     struct
     {
         union
         {
-            __m128d upper_bits;
-            r64 u_e[2];
+            __m128d p;
+            r64 e[2];
         };
-        union
-        {
-            __m128d lower_bits;
-            r64 l_e[2];
-        };
+    };
+    
+    S_h64(r64 _p) 
+    {
+        p = _mm_set1_pd(_p);
+    }
+    
+    S_h64(r64 _a, r64 _b)
+    {
+        p = _mm_set_pd(_a, _b);
+    }
+    
+    S_h64& operator=(const r64& v)
+    {
+        p = _mm_set1_pd(v);
+        
+        return *this;
+    }
+    
+    S_h64& operator=(const S_h64& v)
+    {
+        p = v.p;
+        
+        return *this;
+    }
+    
+    S_h64 operator+ (S_h64 b)
+    {
+        S_h64 res(0.0f);
+        
+        res.p = _mm_add_pd(p, b.p);
+        
+        return res;
+    }
+    
+    inline S_h64& operator+=(S_h64 b)
+    {
+        this->p = _mm_add_pd(p, b.p);
+        return *this;
+    }
+    
+    S_h64 operator- (S_h64 b)
+    {
+        S_h64 res(0.0f);
+        
+        res.p = _mm_sub_pd(p, b.p);
+        
+        return res;
+    }
+    
+    inline S_h64& operator-=(S_h64 b)
+    {
+        this->p = _mm_sub_pd(p, b.p);
+        return *this;
+    }
+    
+    S_h64 operator* (S_h64 b)
+    {
+        S_h64 res(0.0f);
+        
+        res.p = _mm_mul_pd(p, b.p);
+        
+        return res;
+    }
+    
+    inline S_h64& operator*=(S_h64 b)
+    {
+        this->p = _mm_mul_pd(p, b.p);
+        return *this;
+    }
+    
+    S_h64 operator/ (S_h64 b)
+    {
+        S_h64 res(0.0f);
+        
+        res.p = _mm_div_pd(p, b.p);
+        
+        return res;
+    }
+    
+    inline S_h64& operator/=(S_h64 b)
+    {
+        this->p = _mm_div_pd(p, b.p);
+        return *this;
+    }
+};
+
+// Used to store 4 doubles in one SIMD constructions
+union S_r64
+{
+    union
+    {
+        S_h64 upper_bits;
+        r64 u_e[2];
+    };
+    
+    union
+    {
+        S_h64 lower_bits;
+        r64 l_e[2];
     };
     
     S_r64(r64 v)
     {
-        upper_bits = _mm_set1_pd(v);
-        lower_bits = _mm_set1_pd(v);
+        upper_bits = S_h64(v);
+        lower_bits = S_h64(v);
     }
     
     S_r64(r64 v1, r64 v2, r64 v3, r64 v4)
     {
-        upper_bits = _mm_set_pd(v1, v2);
-        lower_bits = _mm_set_pd(v3, v4);
+        upper_bits = S_h64(v1, v2);
+        lower_bits = S_h64(v3, v4);
     }
     
     S_r64& operator=(const S_r64& v)
     {
-        upper_bits = _mm_set_pd(v.u_e[0], v.u_e[1]);
-        lower_bits = _mm_set_pd(v.l_e[2], v.l_e[3]);
+        upper_bits = S_h64(v.u_e[0], v.u_e[1]);
+        lower_bits = S_h64(v.l_e[2], v.l_e[3]);
         
         return *this;
     }
     
     S_r64& operator=(const r64& v)
     {
-        upper_bits = _mm_set_pd(v, v);
-        lower_bits = _mm_set_pd(v, v);
+        upper_bits = S_h64(v, v);
+        lower_bits = S_h64(v, v);
         
+        return *this;
+    }
+    
+    S_r64 operator+ (S_r64 b)
+    {
+        S_r64 res(0.0);
+        
+        res.upper_bits = upper_bits + b.upper_bits;
+        res.lower_bits = lower_bits + b.lower_bits;
+        
+        return res;
+    }
+    
+    S_r64& operator+= (S_r64 b)
+    {
+        upper_bits += b.upper_bits;
+        lower_bits += b.lower_bits;
+        
+        return *this;
+    }
+    
+    S_r64 operator- (S_r64 b)
+    {
+        S_r64 res(0.0);
+        
+        res.upper_bits = upper_bits - b.upper_bits;
+        res.lower_bits = lower_bits - b.lower_bits;
+        
+        return res;
+    }
+    
+    S_r64 operator-= (S_r64 b)
+    {
+        upper_bits -= b.upper_bits;
+        lower_bits -= b.lower_bits;
+        return *this;
+    }
+    
+    S_r64 operator* (S_r64 b)
+    {
+        S_r64 res(0.0);
+        
+        res.upper_bits = upper_bits * b.upper_bits;
+        res.lower_bits = lower_bits * b.lower_bits;
+        
+        return res;
+    }
+    
+    S_r64& operator*= (S_r64 b)
+    {
+        upper_bits *= b.upper_bits;
+        lower_bits *= b.lower_bits;
+        return *this;
+    }
+    
+    S_r64 operator/ (S_r64 b)
+    {
+        S_r64 res(0.0);
+        
+        res.upper_bits = upper_bits * b.upper_bits;
+        res.lower_bits = lower_bits * b.lower_bits;
+        
+        return res;
+    }
+    
+    S_r64& operator/= (S_r64 b)
+    {
+        upper_bits /= b.upper_bits;
+        lower_bits /= b.lower_bits;
         return *this;
     }
 };
 
-
-S_r64 operator+ (S_r64 a, S_r64 b)
-{
-    S_r64 res(0.0);
-    
-    res.upper_bits = _mm_add_pd(a.upper_bits, b.upper_bits);
-    res.lower_bits = _mm_add_pd(a.lower_bits, b.lower_bits);
-    
-    return res;
-}
-
-S_r64 operator+= (S_r64 a, S_r64 b)
-{
-    return a + b;
-}
-
-S_r64 operator- (S_r64 a, S_r64 b)
-{
-    S_r64 res(0.0);
-    
-    res.upper_bits = _mm_sub_pd(a.upper_bits, b.upper_bits);
-    res.lower_bits = _mm_sub_pd(a.lower_bits, b.lower_bits);
-    
-    return res;
-}
-
-S_r64 operator-= (S_r64 a, S_r64 b)
-{
-    return a - b;
-}
-
-S_r64 operator* (S_r64 a, S_r64 b)
-{
-    S_r64 res(0.0);
-    
-    res.upper_bits = _mm_mul_pd(a.upper_bits, b.upper_bits);
-    res.lower_bits = _mm_mul_pd(a.lower_bits, b.lower_bits);
-    
-    return res;
-}
-
-S_r64 operator*= (S_r64 a, S_r64 b)
-{
-    return a * b;
-}
-
-S_r64 operator/ (S_r64 a, S_r64 b)
-{
-    S_r64 res(0.0);
-    
-    res.upper_bits = _mm_div_pd(a.upper_bits, b.upper_bits);
-    res.lower_bits = _mm_div_pd(a.lower_bits, b.lower_bits);
-    
-    return res;
-}
-
-S_r64 operator/= (S_r64 a, S_r64 b)
-{
-    return a / b;
-}
 
 union S_Vec2
 {
@@ -798,27 +901,13 @@ b32 all_zero(S_r32 v)
 
 b32 any_nz(S_r64 v)
 {
-    v.upper_bits = _mm_set1_pd(5.0);
+    __m128d upper_vcmp = _mm_cmp_pd(_mm_setzero_pd(), v.upper_bits.p, _CMP_LT_OQ);
+    i32 upper_cmp = _mm_movemask_pd(upper_vcmp);
     
-    __m128d upper_cmp = _mm_cmp_pd(v.upper_bits, _mm_setzero_pd(), _CMP_EQ_OQ);
-    __m128d lower_cmp = _mm_cmp_pd(v.lower_bits, _mm_setzero_pd(), _CMP_EQ_OQ);
+    __m128d lower_vcmp = _mm_cmp_pd(_mm_setzero_pd(), v.lower_bits.p, _CMP_LT_OQ);
+    i32 lower_cmp = _mm_movemask_pd(lower_vcmp);
     
-    upper_cmp = _mm_cmp_pd(upper_cmp, _mm_setzero_pd(), _CMP_NLT_US);
-    auto i_upper = _mm_srl_epi32(_mm_castpd_si128(upper_cmp), _mm_set1_epi32(31));
-    
-    i_upper = _mm_srl_epi32(_mm_castpd_si128(upper_cmp), _mm_set1_epi32(31));
-    i_upper = _mm_xor_si128(i_upper, _mm_set1_epi32(1));
-    
-    
-    lower_cmp = _mm_cmp_pd(lower_cmp, _mm_setzero_pd(), _CMP_NLT_US);
-    auto i_lower = _mm_srl_epi32(_mm_castpd_si128(lower_cmp), _mm_set1_epi32(31));
-    
-    i_lower = _mm_srl_epi32(_mm_castpd_si128(lower_cmp), _mm_set1_epi32(31));
-    i_lower = _mm_xor_si128(i_lower, _mm_set1_epi32(1));
-    
-    i32 upper_mask = (_mm_movemask_epi8(i_upper));
-    i32 lower_mask = (_mm_movemask_epi8(i_lower));
-    return upper_mask != 0xff && lower_mask != 0xff;
+    return lower_cmp != 0 || upper_cmp != 0;
 }
 
 using S_Rgba = S_Vec4;
