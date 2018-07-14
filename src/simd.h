@@ -230,6 +230,134 @@ union S_h64
     }
 };
 
+#ifdef __APPLE__
+// Used to store 4 doubles in one SIMD constructions
+union S_r64
+{
+    union
+    {
+        S_h64 upper_bits;
+        r64 u_e[2];
+    };
+    
+    union
+    {
+        S_h64 lower_bits;
+        r64 l_e[2];
+    };
+    
+    S_r64(r64 v)
+    {
+        upper_bits = S_h64(v);
+        lower_bits = S_h64(v);
+    }
+    
+    S_r64(r64 v1, r64 v2, r64 v3, r64 v4)
+    {
+        upper_bits = S_h64(v1, v2);
+        lower_bits = S_h64(v3, v4);
+    }
+    
+    S_r64& operator=(const S_r64& v)
+    {
+        upper_bits = S_h64(v.u_e[0], v.u_e[1]);
+        lower_bits = S_h64(v.l_e[2], v.l_e[3]);
+        
+        return *this;
+    }
+    
+    S_r64& operator=(const r64& v)
+    {
+        upper_bits = S_h64(v, v);
+        lower_bits = S_h64(v, v);
+        
+        return *this;
+    }
+    
+    S_r64 operator+ (S_r64 b)
+    {
+        S_r64 res(0.0);
+        
+        res.upper_bits = upper_bits + b.upper_bits;
+        res.lower_bits = lower_bits + b.lower_bits;
+        
+        return res;
+    }
+    
+    S_r64& operator+= (S_r64 b)
+    {
+        upper_bits += b.upper_bits;
+        lower_bits += b.lower_bits;
+        
+        return *this;
+    }
+    
+    S_r64 operator- (S_r64 b)
+    {
+        S_r64 res(0.0);
+        
+        res.upper_bits = upper_bits - b.upper_bits;
+        res.lower_bits = lower_bits - b.lower_bits;
+        
+        return res;
+    }
+    
+    S_r64 operator-= (S_r64 b)
+    {
+        upper_bits -= b.upper_bits;
+        lower_bits -= b.lower_bits;
+        return *this;
+    }
+    
+    S_r64 operator* (S_r64 b)
+    {
+        S_r64 res(0.0);
+        
+        res.upper_bits = upper_bits * b.upper_bits;
+        res.lower_bits = lower_bits * b.lower_bits;
+        
+        return res;
+    }
+    
+    S_r64& operator*= (S_r64 b)
+    {
+        upper_bits *= b.upper_bits;
+        lower_bits *= b.lower_bits;
+        return *this;
+    }
+    
+    S_r64 operator/ (S_r64 b)
+    {
+        S_r64 res(0.0);
+        
+        res.upper_bits = upper_bits * b.upper_bits;
+        res.lower_bits = lower_bits * b.lower_bits;
+        
+        return res;
+    }
+    
+    S_r64& operator/= (S_r64 b)
+    {
+        upper_bits /= b.upper_bits;
+        lower_bits /= b.lower_bits;
+        return *this;
+    }
+};
+
+
+b32 any_nz(S_r64 v)
+{
+    __m128d upper_vcmp = _mm_cmp_pd(_mm_setzero_pd(), v.upper_bits.p, _CMP_LT_OQ);
+    i32 upper_cmp = _mm_movemask_pd(upper_vcmp);
+    
+    __m128d lower_vcmp = _mm_cmp_pd(_mm_setzero_pd(), v.lower_bits.p, _CMP_LT_OQ);
+    i32 lower_cmp = _mm_movemask_pd(lower_vcmp);
+    
+    return lower_cmp != 0 || upper_cmp != 0;
+}
+
+
+#else
 // Used to store 4 doubles in one SIMD constructions
 union S_r64
 {
@@ -324,6 +452,16 @@ union S_r64
     }
 };
 
+
+b32 any_nz(S_r64 v)
+{
+    __m256d vcmp = _mm256_cmp_pd(_mm256_setzero_pd(), v.p, _CMP_LT_OQ);
+    i32 cmp = _mm256_movemask_pd(vcmp);
+    
+    return cmp != 0;
+}
+
+#endif
 
 union S_Vec2
 {
@@ -878,14 +1016,6 @@ union S_Vec4
 b32 all_zero(S_r32 v)
 {
     return false;
-}
-
-b32 any_nz(S_r64 v)
-{
-    __m256d vcmp = _mm256_cmp_pd(_mm256_setzero_pd(), v.p, _CMP_LT_OQ);
-    i32 cmp = _mm256_movemask_pd(vcmp);
-    
-    return cmp != 0;
 }
 
 using S_Rgba = S_Vec4;
