@@ -1,6 +1,11 @@
 #ifndef SIMD_H
 #define SIMD_H
 
+#ifdef __APPLE__
+#include "smmintrin.h"
+#include "immintrin.h"
+#endif
+
 union S_i32
 {
     S_i32(i32 _p) 
