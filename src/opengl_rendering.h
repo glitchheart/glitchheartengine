@@ -146,10 +146,6 @@ struct RenderState
     GLFWwindow *window;
     i32 window_width;
     i32 window_height;
-    i32 screen_width;
-    i32 screen_height;
-    i32 scale_from_width;
-    i32 scale_from_height;
     i32 dpi_scale;
     i32 pixels_per_unit;
     
