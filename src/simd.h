@@ -87,6 +87,17 @@ b32 operator>(S_i32 a, S_i32 b)
     return false;
 }
 
+void operator++(S_i32& a, i32 i)
+{
+    
+}
+
+void operator--(S_i32& a, i32 i)
+{
+    
+}
+
+
 union S_r32
 {
     S_r32(r32 _p) 
@@ -97,6 +108,13 @@ union S_r32
     S_r32(r32 _a, r32 _b, r32 _c, r32 _d)
     {
         p = _mm_set_ps(_a, _b, _c, _d);
+    }
+    
+    
+    S_r32(__m128 v)
+    {
+        float*_v = (float*)&v;
+        p = _mm_set_ps(_v[0], _v[1], _v[2], _v[3]);
     }
     
     __m128 p;
@@ -331,8 +349,8 @@ union S_r64
     {
         S_r64 res(0.0);
         
-        res.upper_bits = upper_bits * b.upper_bits;
-        res.lower_bits = lower_bits * b.lower_bits;
+        res.upper_bits = upper_bits / b.upper_bits;
+        res.lower_bits = lower_bits / b.lower_bits;
         
         return res;
     }
@@ -359,7 +377,6 @@ b32 any_nz(S_r64 v)
 
 
 #else
-// Used to store 4 doubles in one SIMD constructions
 union S_r64
 {
     __m256d p;
@@ -373,6 +390,12 @@ union S_r64
     S_r64(r64 v1, r64 v2, r64 v3, r64 v4)
     {
         p = _mm256_set_pd(v1, v2, v3, v4);
+    }
+    
+    S_r64(__m256d v)
+    {
+        double *_v = (double*)&v;
+        p = _mm256_set_pd(_v[0], _v[1], _v[2], _v[3]);
     }
     
     S_r64& operator=(const S_r64& v)
@@ -430,6 +453,24 @@ union S_r64
         return res;
     }
     
+    S_r64 operator* (r32 b)
+    {
+        S_r64 res(0.0);
+        
+        res.p = _mm256_mul_pd(p, _mm256_set1_pd(b));
+        
+        return res;
+    }
+    
+    S_r64 operator* (r64 b)
+    {
+        S_r64 res(0.0);
+        
+        res.p = _mm256_mul_pd(p, _mm256_set1_pd(b));
+        
+        return res;
+    }
+    
     S_r64& operator*= (S_r64 b)
     {
         p = _mm256_mul_pd(p, b.p);
@@ -451,8 +492,132 @@ union S_r64
         p = _mm256_div_pd(p, b.p);
         return *this;
     }
+    
+    
 };
 
+S_r32 operator+(S_r32 a, S_r64 b)
+{
+    S_r32 res(0.0f);
+    
+    double *_v = (double*)&b.p;
+    
+    res = a + S_r32((float)_v[0], (float)_v[1], (float)_v[2], (float)_v[3]);
+    
+    return res;
+}
+
+S_r32 operator+(S_r64 a, S_r32 b)
+{
+    S_r32 res(0.0f);
+    
+    double *_v = (double*)&b.p;
+    
+    res = a + S_r32((float)_v[0], (float)_v[1], (float)_v[2], (float)_v[3]);
+    
+    return res;
+}
+
+
+S_r32 operator*(S_r32 a, S_r64 b)
+{
+    S_r32 res(0.0f);
+    
+    double *_v = (double*)&b.p;
+    
+    res = a * S_r32((float)_v[0], (float)_v[1], (float)_v[2], (float)_v[3]);
+    
+    return res;
+}
+
+S_r32 operator*(S_r64 a, S_r32 b)
+{
+    S_r32 res(0.0f);
+    
+    double *_v = (double*)&b.p;
+    
+    res = a * S_r32((float)_v[0], (float)_v[1], (float)_v[2], (float)_v[3]);
+    
+    return res;
+}
+
+S_r32 operator/(S_r32 a, S_r64 b)
+{
+    S_r32 res(0.0f);
+    
+    double *_v = (double*)&b.p;
+    
+    res = a / S_r32((float)_v[0], (float)_v[1], (float)_v[2], (float)_v[3]);
+    
+    return res;
+}
+
+S_r32 operator/(S_r64 a, S_r32 b)
+{
+    S_r32 res(0.0f);
+    
+    double *_v = (double*)&b.p;
+    
+    res = a / S_r32((float)_v[0], (float)_v[1], (float)_v[2], (float)_v[3]);
+    
+    return res;
+}
+
+r64 operator-(r64 left, S_r64 right)
+{
+    return left - right.e[0];
+}
+
+r32 operator-(r32 left, S_r64 right)
+{
+    return left - (r32)right.e[0];
+}
+
+S_r64 simd_min(S_r64 left, S_r64 right)
+{
+    __m256d min = _mm256_min_pd(left.p, right.p);
+    return S_r64(min);
+}
+
+S_r64 simd_min(r64 left, S_r64 right)
+{
+    __m256d min = _mm256_min_pd(_mm256_set1_pd(left), right.p);
+    return S_r64(min);
+}
+
+S_r32 simd_min(r32 left, S_r32 right)
+{
+    __m128 min = _mm_min_ps(_mm_set1_ps(left), right.p);
+    return S_r32(min);
+}
+
+b32 equal_epsilon(S_r64 v, r64 cmp, r64 epsilon)
+{
+    __m256d vcmp_me = _mm256_cmp_pd(_mm256_set1_pd(cmp - epsilon), v.p, _CMP_LT_OQ);
+    __m256d vcmp_pe = _mm256_cmp_pd(_mm256_set1_pd(cmp + epsilon), v.p, _CMP_GT_OQ);
+    
+    i32 cmp_me = _mm256_movemask_pd(vcmp_me);
+    i32 cmp_pe = _mm256_movemask_pd(vcmp_pe);
+    
+    return cmp_me != 0 && cmp_pe != 0;
+}
+
+b32 any_lt(S_i32 v, i32 val)
+{
+    __m128i vcmp = _mm_cmplt_epi32(v.p, _mm_set1_epi32(val));
+    i32 cmp = _mm_movemask_epi8(vcmp);
+    
+    return cmp != 0;
+}
+
+b32 any_lt(S_r64 v, S_r64 val)
+{
+    __m256d vcmp_lt = _mm256_cmp_pd(v.p, val.p, _CMP_LT_OQ);
+    
+    i32 cmp_lt = _mm256_movemask_pd(vcmp_lt);
+    
+    return cmp_lt != 0;
+}
 
 b32 any_nz(S_r64 v)
 {
@@ -621,6 +786,17 @@ union S_Vec2
         return res;
     }
 };
+
+math::Vec2 to_vec2(S_Vec2 vec, i32 index)
+{
+    assert(index >= 0 && index <= 3);
+    math::Vec2 res(0.0f);
+    
+    res.x = vec.x.e[index];
+    res.y = vec.y.e[index];
+    
+    return res;
+}
 
 union S_Vec3
 {
@@ -1020,5 +1196,65 @@ b32 all_zero(S_r32 v)
 }
 
 using S_Rgba = S_Vec4;
+
+// Extra math
+
+namespace math
+{
+    S_r32 lerp(S_r32 a, S_r64 t, S_r32 b)
+    {
+        S_r32 res(0.0f);
+        
+        S_r64 min = simd_min(1.0, t);
+        S_r32 inverse_min = 1.0f - min;
+        S_r32 a_times_inverse = inverse_min * a;
+        
+        res = a_times_inverse + (t * b);
+        return res;
+    }
+    
+    S_r64 lerp(S_r64 a, S_r64 t, S_r64 b)
+    {
+        S_r64 res(0.0);
+        
+        S_r64 min = simd_min(1.0, t);
+        S_r64 inverse_min = 1.0 - min;
+        S_r64 a_times_inverse = inverse_min * a;
+        
+        res = a_times_inverse + (t * b);
+        return res;
+    }
+    
+    S_Vec2 lerp(S_Vec2 a, S_r64 t, S_Vec2 b)
+    {
+        S_Vec2 res(0.0f);
+        res.x = lerp(a.x, t, b.x);
+        res.y = lerp(a.y, t, b.y);
+        
+        return res;
+    }
+    
+    S_Vec3 lerp(S_Vec3 a, S_r64 t, S_Vec3 b)
+    {
+        S_Vec3 res(0.0f);
+        res.x = lerp(a.x, t, b.x);
+        res.y = lerp(a.y, t, b.y);
+        res.z = lerp(a.z, t, b.z);
+        
+        return res;
+    }
+    
+    S_Vec4 lerp(S_Vec4 a, S_r64 t, S_Vec4 b)
+    {
+        S_Vec4 res(0.0f);
+        res.x = lerp(a.x, t, b.x);
+        res.y = lerp(a.y, t, b.y);
+        res.z = lerp(a.z, t, b.z);
+        res.w = lerp(a.w, t, b.w);
+        
+        return res;
+    }
+}
+
 
 #endif

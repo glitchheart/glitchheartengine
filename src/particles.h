@@ -84,12 +84,15 @@ struct Particles
     math::Vec3 *position;
     math::Vec3 *direction;
     math::Rgba *color;
-    math::Vec2 *size;
+    
+    S_Vec2 *size;
+    //math::Vec2 *size;
     math::Vec3 *relative_position;
     r32 *relative_size;
     i32 *speed_over_lifetime_index;
     i32 *color_over_lifetime_index;
-    i32 *size_over_lifetime_index;
+    S_i32 *size_over_lifetime_index;
+    //i32 *size_over_lifetime_index;
     S_r64 *life;
     
     i32 *texture_handle;
