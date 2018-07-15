@@ -1576,6 +1576,11 @@ namespace math
         
         return res;
     }
+    
+    r32 sqrt(r32 val)
+    {
+        return _mm_cvtss_f32(_mm_sqrt_ss(_mm_set_ss(val)));
+    }
 }
 
 math::Vec2 to_vec2(S_Vec2 vec, i32 index)

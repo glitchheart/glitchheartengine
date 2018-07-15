@@ -1907,10 +1907,10 @@ namespace math
         return v * v;
     }
     
-    inline r32 sqrt(r32 v)
+    /*inline r32 sqrt(r32 v)
     {
         return (r32)std::sqrt(v);
-    }
+    }*/
     
     inline r32 pow(r32 v, i32 e)
     {
