@@ -704,7 +704,7 @@ void frame_buffer_size_callback(GLFWwindow *window, int width, int height)
         render_state->window_height = height;
         
         create_framebuffer(*render_state, render_state->framebuffer, render_state->window_width, render_state->window_height, render_state->frame_buffer_shader, render_state->perm_arena, render_state->framebuffer_quad_vertices,
-                        render_state->framebuffer_quad_vertices_size,render_state->quad_indices, sizeof(render_state->quad_indices), true, 4);
+                           render_state->framebuffer_quad_vertices_size,render_state->quad_indices, sizeof(render_state->quad_indices), true, 4);
         
         GLFWmonitor* monitor = glfwGetPrimaryMonitor();
         
@@ -977,6 +977,7 @@ static void initialize_opengl(RenderState& render_state, Renderer& renderer, r32
     renderer.window_mode = render_state.window_mode;
     renderer.window_width = screen_width;
     renderer.window_height = screen_height;
+    
     if (!render_state.window)
     {
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -1097,7 +1098,7 @@ static void initialize_opengl(RenderState& render_state, Renderer& renderer, r32
         
         // @Incomplete: Replace with own sort? Don't like using qsort here :(
         qsort(renderer.available_resolutions, (size_t)renderer.available_resolutions_count, sizeof(Resolution), [](const void* a, const void* b)
-        {
+              {
               auto r_1 = (Resolution*)a;
               auto r_2 = (Resolution*)b;
               
@@ -1106,11 +1107,11 @@ static void initialize_opengl(RenderState& render_state, Renderer& renderer, r32
               
               if(width_diff == 0)
               {
-                return height_diff;
+              return height_diff;
               }
               else
               {
-                return (r_1->width - r_2->width);
+              return (r_1->width - r_2->width);
               }
               });
     }
@@ -2594,6 +2595,31 @@ static void render(RenderState& render_state, Renderer& renderer, MemoryArena* p
         return;
     }
     
+    if (renderer.window_width != render_state.window_width || renderer.window_height != render_state.window_height || renderer.window_mode != render_state.window_mode)
+    {
+        render_state.window_width = renderer.window_width;
+        render_state.window_height = renderer.window_height;
+        
+        if(renderer.window_mode != render_state.window_mode)
+        {
+            delete_shaders(render_state);
+            
+            initialize_opengl(render_state, renderer, render_state.contrast, render_state.brightness, renderer.window_mode, render_state.window_width, render_state.window_height, render_state.perm_arena);
+            
+            clear(&render_state.font_arena);
+            
+            for (i32 index = 0; index < renderer.font_count; index++)
+            {
+                FontData data = renderer.fonts[index];
+                load_font(render_state, data.path, data.size);
+            }
+        }
+        else
+        {
+            glfwSetWindowSize(render_state.window, render_state.window_width, render_state.window_height);
+        }
+    }
+    
     load_extra_shaders(render_state, renderer);
     load_textures(render_state, renderer);
     
@@ -2611,9 +2637,6 @@ static void render(RenderState& render_state, Renderer& renderer, MemoryArena* p
     render_state.pixels_per_unit = renderer.pixels_per_unit;
     
     b32 should_render = renderer.window_width != 0;
-    
-    renderer.window_width = render_state.window_width;
-    renderer.window_height = render_state.window_height;
     
     camera.viewport_width = render_state.window_width;
     camera.viewport_height = render_state.window_height;
