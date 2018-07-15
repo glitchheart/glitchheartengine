@@ -339,19 +339,23 @@ int main(int argc, char** args)
         sound_system.muted = config_data.muted;
     }
     
-    u32 target_fps = 60;
-    
+    i32 refresh_rate = render_state.refresh_rate;
+    u32 target_fps = refresh_rate;
+    r32 expected_frames_per_update = 1.0f;
+
+    r64 last_second_check = get_time();
+    i32 frames = 0;
+    i32 fps = 0;
+    r32 seconds_per_frame = expected_frames_per_update / target_fps;
+
     r64 last_frame = get_time();
-    r64 current_frame = 0.0;
+   // r64 current_frame = 0.0;
     r64 delta_time;
     renderer.frame_lock = 0;
     
     while (!should_close_window(render_state) && !renderer.should_close)
     {
-        //calculate deltatime
-        current_frame = get_time();
-        delta_time = current_frame - last_frame;
-        last_frame = current_frame;
+        delta_time = seconds_per_frame;
         
         if(game_memory.exit_game)
         {
@@ -399,17 +403,31 @@ int main(int argc, char** args)
         
         r64 seconds_elapsed_for_frame = work_seconds_elapsed;
         
-        if(seconds_elapsed_for_frame < (1.0 / (r32)target_fps))
+        if(seconds_elapsed_for_frame < seconds_per_frame)
         {
-            while(seconds_elapsed_for_frame < (1.0 / (r32)target_fps))
+            Sleep((seconds_per_frame - seconds_elapsed_for_frame) * 1000.0f);
+            while(seconds_elapsed_for_frame < seconds_per_frame)
             {
                 seconds_elapsed_for_frame = get_time() - last_frame;
             }
         }
         else
         {
-            printf("Missed a frame!\n");
+            debug("Missed a frame!\n");
         }
+        
+        swap_buffers(render_state);
+        
+        frames++;
+        r64 end_counter = get_time();
+        if(end_counter - last_second_check >= 1.0)
+        {
+            last_second_check = end_counter;
+            renderer.fps = frames;
+            frames = 0;
+        }
+
+        last_frame = end_counter;
         
         end_temporary_memory(game_temp_mem);
     }

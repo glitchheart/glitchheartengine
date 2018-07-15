@@ -903,6 +903,8 @@ static void create_open_gl_window(RenderState& render_state, WindowMode window_m
     strcpy(render_state.window_title, title);
     glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
     
+    render_state.refresh_rate = mode->refreshRate;
+
     if (window_mode == FM_BORDERLESS)
     {
         glfwWindowHint(GLFW_RED_BITS, mode->redBits);
@@ -912,6 +914,8 @@ static void create_open_gl_window(RenderState& render_state, WindowMode window_m
         screen_width = mode->width;
         screen_height = mode->height;
     }
+
+    printf("refresh rate %d\n", mode->refreshRate);
     
     if (window_mode == FM_WINDOWED)
     {
@@ -2582,6 +2586,11 @@ static void render_commands(RenderState &render_state, Renderer &renderer)
     
 }
 
+static void swap_buffers(RenderState &render_state)
+{
+    glfwSwapBuffers(render_state.window);
+}
+
 static void render(RenderState& render_state, Renderer& renderer, MemoryArena* perm_arena, r64 delta_time)
 {   
     if(render_state.paused)
@@ -2647,19 +2656,6 @@ static void render(RenderState& render_state, Renderer& renderer, MemoryArena* p
     
     if(should_render)
     {
-        //if ((renderer.frame_lock != 0 && render_state.frame_delta <= 0.0) || renderer.frame_lock == 0)
-        //{
-        renderer.fps = 1.0 / render_state.total_delta;
-        renderer.current_frame++;
-        renderer.fps_sum += renderer.fps;
-        
-        if (renderer.current_frame == 60)
-        {
-            renderer.current_frame = 0;
-            renderer.average_fps = renderer.fps_sum / 60.0f;
-            renderer.fps_sum = 0.0;
-        }
-        
         render_shadows(render_state, renderer, render_state.shadow_map_buffer);
         
         glViewport(0, 0, renderer.window_width, renderer.window_height);
@@ -2688,7 +2684,6 @@ static void render(RenderState& render_state, Renderer& renderer, MemoryArena* p
         glBlitFramebuffer(0, 0, width, height, 0, 0, width, height, 
                           GL_COLOR_BUFFER_BIT, GL_NEAREST);
         
-        glfwSwapBuffers(render_state.window);
         
         if (renderer.frame_lock != 0)
         {

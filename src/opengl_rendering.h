@@ -148,6 +148,8 @@ struct RenderState
     i32 window_height;
     i32 dpi_scale;
     i32 pixels_per_unit;
+
+    i32 refresh_rate;
     
     b32 paused;
     
