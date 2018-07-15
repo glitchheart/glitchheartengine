@@ -74,18 +74,23 @@ static void create_particle_system(Renderer &renderer, ParticleSystemHandle &han
     
     //@Note: For SIMD
     system_info.max_particles = math::multiple_of_number(max_particles, 4);
+    auto max_over_four = system_info.max_particles / 4;
     
     system_info.unused_particles = push_array(memory_arena, system_info.max_particles, i32);
-    system_info.particles.position = push_array(memory_arena, system_info.max_particles, math::Vec3);
-    system_info.particles.direction = push_array(memory_arena, system_info.max_particles, math::Vec3);
-    system_info.particles.color = push_array(memory_arena, system_info.max_particles, math::Rgba);
-    system_info.particles.size = push_array(memory_arena, system_info.max_particles, math::Vec2);
-    system_info.particles.relative_position = push_array(memory_arena, system_info.max_particles, math::Vec3);
-    system_info.particles.speed_over_lifetime_index = push_array(memory_arena, system_info.max_particles, i32);
-    system_info.particles.color_over_lifetime_index = push_array(memory_arena, system_info.max_particles, i32);
-    system_info.particles.size_over_lifetime_index = push_array(memory_arena, system_info.max_particles, i32);
-    system_info.particles.life = push_array(memory_arena, system_info.max_particles / 4, S_r64);
+    
+    system_info.particles.position = push_array(memory_arena, max_over_four, S_Vec3);
+    system_info.particles.direction = push_array(memory_arena, max_over_four, S_Vec3);
+    system_info.particles.color = push_array(memory_arena, max_over_four, S_Rgba);
+    
+    system_info.particles.size = push_array(memory_arena, max_over_four, S_Vec2);
+    system_info.particles.relative_position = push_array(memory_arena, max_over_four, S_Vec3);
+    
+    system_info.particles.life = push_array(memory_arena, max_over_four, S_r64);
     system_info.particles.texture_handle = push_array(memory_arena, system_info.max_particles, i32);
+    
+    //system_info.particles.direction = push_array(memory_arena, system_info.max_particles, math::Vec3);
+    //system_info.particles.color = push_array(memory_arena, system_info.max_particles, math::Rgba);
+    //system_info.particles.size = push_array(memory_arena, system_info.max_particles, math::Vec2);
     
     system_info.offsets = push_array(memory_arena, system_info.max_particles, math::Vec3);
     
