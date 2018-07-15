@@ -339,6 +339,8 @@ int main(int argc, char** args)
         sound_system.muted = config_data.muted;
     }
     
+    u32 target_fps = 60;
+    
     r64 last_frame = get_time();
     r64 current_frame = 0.0;
     r64 delta_time;
@@ -348,7 +350,7 @@ int main(int argc, char** args)
     {
         //calculate deltatime
         current_frame = get_time();
-        delta_time = MIN(current_frame - last_frame, 1.0 / 20.0);
+        delta_time = current_frame - last_frame;
         last_frame = current_frame;
         
         if(game_memory.exit_game)
@@ -369,9 +371,7 @@ int main(int argc, char** args)
         
         tick_animation_controllers(renderer, &sound_system, &input_controller, timer_controller, delta_time);
         tick_timers(timer_controller, delta_time);
-        
         update_sound_commands(&sound_device, &sound_system, delta_time);
-        
         render(render_state, renderer, &platform_state->perm_arena, delta_time);
         
         set_controller_invalid_keys();
@@ -393,6 +393,24 @@ int main(int argc, char** args)
         }
         
         update_log();
+        
+        r64 work_time = get_time();
+        r64 work_seconds_elapsed = work_time - last_frame;
+        
+        r64 seconds_elapsed_for_frame = work_seconds_elapsed;
+        
+        if(seconds_elapsed_for_frame < (1.0 / (r32)target_fps))
+        {
+            while(seconds_elapsed_for_frame < (1.0 / (r32)target_fps))
+            {
+                seconds_elapsed_for_frame = get_time() - last_frame;
+            }
+        }
+        else
+        {
+            printf("Missed a frame!\n");
+        }
+        
         end_temporary_memory(game_temp_mem);
     }
     
