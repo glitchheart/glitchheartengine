@@ -300,7 +300,7 @@ union S_h64
     }
 };
 
-#if defined(__APPLE__)
+#if defined(__APPLE__) || defined(_WIN32_)
 // Used to store 4 doubles in one SIMD constructions
 union S_r64
 {
@@ -1624,7 +1624,7 @@ math::Vec4 to_vec4(S_Vec4 vec, i32 index)
 // We have alignment in MemoryArenas
 
 
-_push_size_simd(MemoryArena *arena, umm size_init, u32 alignment)
+void _push_size_simd(MemoryArena *arena, umm size_init, u32 alignment)
 {
     
 }
