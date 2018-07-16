@@ -206,28 +206,87 @@ void update_particles(Renderer &renderer, ParticleSystemInfo &particle_system, r
                 particle_system.particles.position[main_index] += particle_system.particles.direction[main_index] * particle_system.attributes.start_speed * (r32)delta_time;				
             }                
             
-            for(i32 sub_index = 0; sub_index < 4; sub_index++)
+            
+            
+            S_Vec3 final_pos(0.0f);
+            
+            if(particle_system.attributes.particle_space == PS_WORLD && !start)
             {
-                auto cur_pos = to_vec3(particle_system.particles.position[main_index], sub_index);
-                auto relative_pos = to_vec3(particle_system.particles.relative_position[main_index], sub_index);
-                
-                if(particle_system.attributes.particle_space == PS_WORLD && !start)
-                {
-                    particle_system.offsets[particle_system.particle_count] = cur_pos + relative_pos;
-                }
-                else
-                {
-                    particle_system.offsets[particle_system.particle_count] = cur_pos + particle_system.transform.position;
-                    particle_system.particles.relative_position[main_index] = particle_system.transform.position;
-                }
-                
-                auto cur_col = to_vec4(particle_system.particles.color[main_index], sub_index);
-                
-                particle_system.colors[particle_system.particle_count] = cur_col;
-                particle_system.sizes[particle_system.particle_count] = to_vec2(particle_system.particles.size[main_index], sub_index);
-                particle_system.particle_count++;
-                
+                final_pos = particle_system.particles.position[main_index] + particle_system.particles.relative_position[main_index];
             }
+            else
+            {
+                final_pos = particle_system.particles.position[main_index] + particle_system.transform.position;
+                particle_system.particles.relative_position[main_index] = particle_system.transform.position;
+            }
+            
+            auto color = particle_system.particles.color[main_index];
+            auto size = particle_system.particles.size[main_index];
+            
+            float p1[4], p2[4], p3[4], p4[4];
+            float s1[4], s2[4], s3[4], s4[4];
+            float c1[4], c2[4], c3[4], c4[4];
+            
+            s_vec2_to_float4(size, s1, s2, s3, s4);
+            s_vec3_to_float4(final_pos, p1, p2, p3, p4);
+            s_vec4_to_float4(color, c1, c2, c3, c4);
+            
+            particle_system.offsets[particle_system.particle_count].x = p1[0];
+            particle_system.offsets[particle_system.particle_count].y = p1[1];
+            particle_system.offsets[particle_system.particle_count].z = p1[2];
+            
+            
+            particle_system.colors[particle_system.particle_count].r = c1[0];
+            particle_system.colors[particle_system.particle_count].g = c1[1];
+            particle_system.colors[particle_system.particle_count].b = c1[2];
+            particle_system.colors[particle_system.particle_count].a = c1[3];
+            
+            particle_system.sizes[particle_system.particle_count].x = s1[0];
+            particle_system.sizes[particle_system.particle_count].y = s1[1];
+            
+            particle_system.particle_count++;
+            
+            particle_system.offsets[particle_system.particle_count].x = p2[0];
+            particle_system.offsets[particle_system.particle_count].y = p2[1];
+            particle_system.offsets[particle_system.particle_count].z = p2[2];
+            
+            particle_system.colors[particle_system.particle_count].r = c2[0];
+            particle_system.colors[particle_system.particle_count].g = c2[1];
+            particle_system.colors[particle_system.particle_count].b = c2[2];
+            particle_system.colors[particle_system.particle_count].a = c2[3];
+            
+            particle_system.sizes[particle_system.particle_count].x = s2[0];
+            particle_system.sizes[particle_system.particle_count].y = s2[1];
+            
+            particle_system.particle_count++;
+            
+            particle_system.offsets[particle_system.particle_count].x = p3[0];
+            particle_system.offsets[particle_system.particle_count].y = p3[1];
+            particle_system.offsets[particle_system.particle_count].z = p3[2];
+            
+            particle_system.colors[particle_system.particle_count].r = c3[0];
+            particle_system.colors[particle_system.particle_count].g = c3[1];
+            particle_system.colors[particle_system.particle_count].b = c3[2];
+            particle_system.colors[particle_system.particle_count].a = c3[3];
+            
+            particle_system.sizes[particle_system.particle_count].x = s3[0];
+            particle_system.sizes[particle_system.particle_count].y = s3[1];
+            
+            particle_system.particle_count++;
+            
+            particle_system.offsets[particle_system.particle_count].x = p4[0];
+            particle_system.offsets[particle_system.particle_count].y = p4[1];
+            particle_system.offsets[particle_system.particle_count].z = p4[2];
+            
+            particle_system.colors[particle_system.particle_count].r = c4[0];
+            particle_system.colors[particle_system.particle_count].g = c4[1];
+            particle_system.colors[particle_system.particle_count].b = c4[2];
+            particle_system.colors[particle_system.particle_count].a = c4[3];
+            
+            particle_system.sizes[particle_system.particle_count].x = s4[0];
+            particle_system.sizes[particle_system.particle_count].y = s4[1];
+            
+            particle_system.particle_count++;
             
             particle_system.particles.life[main_index] -= delta_time;
         }

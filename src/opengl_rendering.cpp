@@ -805,7 +805,7 @@ static void render_setup(RenderState *render_state, MemoryArena* perm_arena)
     render_state->perm_arena = perm_arena;
     
     glfwGetFramebufferSize(render_state->window, &render_state->framebuffer_width, &render_state->framebuffer_height);
-
+    
     create_framebuffer(*render_state, render_state->framebuffer, render_state->framebuffer_width, render_state->framebuffer_height, render_state->frame_buffer_shader, render_state->perm_arena, render_state->framebuffer_quad_vertices,
                        render_state->framebuffer_quad_vertices_size,render_state->quad_indices, sizeof(render_state->quad_indices), true, 4);
     
