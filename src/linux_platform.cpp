@@ -3,6 +3,7 @@
 #include <sys/sendfile.h>
 #include <sys/mman.h>
 #include "unistd.h"
+#include <dirent.h>
 #include "dlfcn.h"
 
 using PlatformHandle = i32;
@@ -147,7 +148,7 @@ PLATFORM_ALLOCATE_MEMORY(linux_allocate_memory)
     MemoryBlock* block = (MemoryBlock*)mmap(0, total_size,
                                             PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANON,
                                             -1, 0);
-    memset(block, 0, total_size);
+    //memset(block, 0, total_size);
     
     assert(block);
     block->block.base = (u8*)block + base_offset;
@@ -255,14 +256,46 @@ static PLATFORM_TELL_FILE(linux_tell_file)
 
 static PLATFORM_READ_LINE_FILE(linux_read_line_file)
 {
-    
+    assert(false);
+    return nullptr;
 }
 
 static PLATFORM_PRINT_FILE(linux_print_file)
 {
-    
+    assert(false);
+    return -1;
 }
 
+PLATFORM_GET_ALL_DIRECTORIES(linux_get_all_directories)
+{
+    char ** dir_buf = nullptr;
+    struct dirent *de;
+    
+    DIR *dr = opendir(path);
+    
+    if (dr == NULL)
+    {
+        printf("Could not open current directory" );
+        return nullptr;
+    }
+    
+    while ((de = readdir(dr)) != NULL)
+    {
+        if(de->d_type & DT_DIR)
+        {
+            if (strcmp(de->d_name, ".") == 0 || strcmp(de->d_name, "..") == 0)
+                continue;
+            
+            char *dir_name = (char *)malloc(strlen(de->d_name) + 1);
+            strcpy(dir_name, de->d_name);
+            buf_push(dir_buf, dir_name);
+        }
+    }
+    
+    closedir(dr);    
+    
+    return dir_buf;
+}
 
 static void init_platform(PlatformApi& platform_api)
 {
@@ -278,4 +311,5 @@ static void init_platform(PlatformApi& platform_api)
     platform_api.close_file = linux_close_file;
     platform_api.seek_file = linux_seek_file;
     platform_api.tell_file = linux_tell_file;
+    platform_api.get_all_directories = linux_get_all_directories;
 }

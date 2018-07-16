@@ -1,7 +1,7 @@
 #ifndef DEBUG_H
 #define DEBUG_H
 
-#if GLITCH_DEBUG
+#if DEBUG
 
 struct DebugRect
 {

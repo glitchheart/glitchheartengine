@@ -88,8 +88,6 @@ S_Rgba get_color_by_time(ParticleSystemInfo &particle_system, S_r64 time_spent)
         auto next_key = keys[key + 1] * particle_system.attributes.life_time;
         if(any_lt_eq(S_r64(current_key), time_spent) && any_lt_eq(time_spent, next_key))
         {
-            auto diff = time_spent - current_key;
-            
             S_Rgba start_color = S_Rgba(values[key]);
             S_Rgba end_color = S_Rgba(values[key + 1]);
             
@@ -122,8 +120,6 @@ S_Vec2 get_size_by_time(ParticleSystemInfo &particle_system, S_r64 time_spent)
         auto current_key = keys[key] * particle_system.attributes.life_time;auto next_key = keys[key + 1] * particle_system.attributes.life_time;
         if(any_lt_eq(S_r64(current_key), time_spent) && any_lt_eq(time_spent, next_key))
         {
-            auto diff = time_spent - current_key;
-            
             S_Vec2 start_size = S_Vec2(values[key]);
             S_Vec2 end_size = S_Vec2(values[key + 1]);
             
@@ -157,8 +153,6 @@ S_r32 get_speed_by_time(ParticleSystemInfo &particle_system, S_r64 time_spent)
         auto next_key = keys[key + 1] * particle_system.attributes.life_time;
         if(any_lt_eq(S_r64(current_key), time_spent) && any_lt_eq(time_spent, next_key))
         {
-            auto diff = time_spent - current_key;
-            
             S_r32 start_speed = S_r32(values[key]);
             S_r32 end_speed = S_r32(values[key + 1]);
             

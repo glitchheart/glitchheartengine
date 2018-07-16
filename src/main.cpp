@@ -1,6 +1,6 @@
 #include "shared.h"
 
-#if GLITCH_DEBUG
+#if DEBUG
 #include "debug.h"
 #endif
 
@@ -40,7 +40,6 @@ static MemoryState memory_state;
 #include "keycontroller.cpp"
 #include "sound.h"
 #include "timers.h"
-#include "components.h"
 #include "fmod_sound.h"
 #include "fmod_sound.cpp"
 #include "filehandling.h"
@@ -228,7 +227,7 @@ int main(int argc, char** args)
     PlatformState* platform_state = bootstrap_push_struct(PlatformState, perm_arena);
     game_memory.log_state = push_struct(&platform_state->perm_arena, LogState);
     
-#if !_WIN32
+#if !defined(_WIN32)
     // If we're on an UNIX system we have to check if the executable was run from the terminal or not.
     // If the executable was double-clicked, we have to change the current directory for relative paths to work as expected
     char *relative_path = args[0];
@@ -236,7 +235,7 @@ int main(int argc, char** args)
     {
         i32 last_index = -1;
         
-        for(i32 index = 0; index <= strlen(relative_path); index++)
+        for(i32 index = 0; index <= (i32)strlen(relative_path); index++)
         {
             char c = relative_path[index];
             if(c == '/')
@@ -247,7 +246,6 @@ int main(int argc, char** args)
         
         if(last_index != -1)
         {
-            size_t relative_path_length = strlen(relative_path);
             size_t diff = strlen(relative_path) - last_index;
             size_t new_path_length = strlen(relative_path) - diff + 1;
             
@@ -263,10 +261,10 @@ int main(int argc, char** args)
     log_state = game_memory.log_state;
     init_log(L_FLAG_FILE, concat("../log_", "", &platform_state->perm_arena));
     
-#ifdef __APPLE__
+#if defined(__APPLE__)
     char* game_library_path = "libgame.dylib";
     char* temp_game_library_path = "libgame_temp.dylib";
-#elif _WIN32
+#elif defined(_WIN32)
     char* game_library_path = "game.dll";
     char* temp_game_library_path = "game_temp.dll";
 #else

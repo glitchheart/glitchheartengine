@@ -180,7 +180,7 @@ static void set_channel_attributes(FMOD_CHANNEL *channel, ChannelAttributes attr
     FMOD_Channel_SetLowPassGain(channel, attributes.low_pass_gain);
     FMOD_Channel_SetVolumeRamp(channel, attributes.ramp);
     
-    if(attributes.mix_levels.input.levels && attributes.mix_levels.output.levels)
+    if(attributes.mix_levels.input.level_count > 0 && attributes.mix_levels.output.level_count > 0)
     {
         FMOD_Channel_SetMixLevelsInput(channel, attributes.mix_levels.input.levels, attributes.mix_levels.input.level_count);
         

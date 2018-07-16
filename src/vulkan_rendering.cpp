@@ -730,7 +730,7 @@ static void initialize_vulkan(VkRenderState& render_state, Renderer& renderer, C
     create_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
     create_info.pApplicationInfo = &app_info;
     
-#if GLITCH_DEBUG
+#if DEBUG
     render_state.enable_validation_layers = true;
 #else
     render_state.EnableValidationLayers = false;
@@ -778,7 +778,7 @@ static void initialize_vulkan(VkRenderState& render_state, Renderer& renderer, C
     
     end_temporary_memory(temp_mem);
     
-#if GLITCH_DEBUG
+#if DEBUG
     VkDebugReportCallbackCreateInfoEXT debug_create_info = {};
     debug_create_info.sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT;
     debug_create_info.flags = VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT;
