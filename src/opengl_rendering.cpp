@@ -695,15 +695,14 @@ void frame_buffer_size_callback(GLFWwindow *window, int width, int height)
         RenderState* render_state = (RenderState*)glfwGetWindowUserPointer(window);
         
         glViewport(0, 0, width, height);
+        render_state->framebuffer_width = width;
+        render_state->framebuffer_height = height;
         
         GLint viewport[4];
         glGetIntegerv(GL_VIEWPORT, viewport);
         memcpy(render_state->viewport, viewport, sizeof(GLint) * 4);
         
-        render_state->window_width = width;
-        render_state->window_height = height;
-        
-        create_framebuffer(*render_state, render_state->framebuffer, render_state->window_width, render_state->window_height, render_state->frame_buffer_shader, render_state->perm_arena, render_state->framebuffer_quad_vertices,
+        create_framebuffer(*render_state, render_state->framebuffer, width, height, render_state->frame_buffer_shader, render_state->perm_arena, render_state->framebuffer_quad_vertices,
                            render_state->framebuffer_quad_vertices_size,render_state->quad_indices, sizeof(render_state->quad_indices), true, 4);
         
         GLFWmonitor* monitor = glfwGetPrimaryMonitor();
@@ -805,7 +804,9 @@ static void render_setup(RenderState *render_state, MemoryArena* perm_arena)
     render_state->font_count = 0;
     render_state->perm_arena = perm_arena;
     
-    create_framebuffer(*render_state, render_state->framebuffer, render_state->window_width, render_state->window_height, render_state->frame_buffer_shader, render_state->perm_arena, render_state->framebuffer_quad_vertices,
+    glfwGetFramebufferSize(render_state->window, &render_state->framebuffer_width, &render_state->framebuffer_height);
+
+    create_framebuffer(*render_state, render_state->framebuffer, render_state->framebuffer_width, render_state->framebuffer_height, render_state->frame_buffer_shader, render_state->perm_arena, render_state->framebuffer_quad_vertices,
                        render_state->framebuffer_quad_vertices_size,render_state->quad_indices, sizeof(render_state->quad_indices), true, 4);
     
     render_state->depth_shader.type = SHADER_DEPTH;
@@ -903,6 +904,8 @@ static void create_open_gl_window(RenderState& render_state, WindowMode window_m
     strcpy(render_state.window_title, title);
     glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
     
+    render_state.refresh_rate = mode->refreshRate;
+    
     if (window_mode == FM_BORDERLESS)
     {
         glfwWindowHint(GLFW_RED_BITS, mode->redBits);
@@ -912,6 +915,8 @@ static void create_open_gl_window(RenderState& render_state, WindowMode window_m
         screen_width = mode->width;
         screen_height = mode->height;
     }
+    
+    printf("refresh rate %d\n", mode->refreshRate);
     
     if (window_mode == FM_WINDOWED)
     {
@@ -1004,8 +1009,8 @@ static void initialize_opengl(RenderState& render_state, Renderer& renderer, r32
     
     glfwSwapInterval(1);
     
-    glfwGetFramebufferSize(render_state.window, &render_state.window_width, &render_state.window_height);
-    glViewport(0, 0, render_state.window_width, render_state.window_height);
+    glfwGetFramebufferSize(render_state.window, &render_state.framebuffer_width, &render_state.framebuffer_height);
+    glViewport(0, 0, render_state.framebuffer_width, render_state.framebuffer_height);
     
 #if !defined(__APPLE__)
     //Enable debug output
@@ -2582,6 +2587,11 @@ static void render_commands(RenderState &render_state, Renderer &renderer)
     
 }
 
+static void swap_buffers(RenderState &render_state)
+{
+    glfwSwapBuffers(render_state.window);
+}
+
 static void render(RenderState& render_state, Renderer& renderer, MemoryArena* perm_arena, r64 delta_time)
 {   
     if(render_state.paused)
@@ -2628,8 +2638,8 @@ static void render(RenderState& render_state, Renderer& renderer, MemoryArena* p
     
     auto& camera = renderer.cameras[renderer.current_camera_handle];
     
-    render_state.scale_x = 2.0f / render_state.window_width;
-    render_state.scale_y = 2.0f / render_state.window_height;
+    render_state.scale_x = 2.0f / render_state.framebuffer_width;
+    render_state.scale_y = 2.0f / render_state.framebuffer_height;
     
     renderer.scale_x = render_state.scale_x;
     renderer.scale_y = render_state.scale_y;
@@ -2638,8 +2648,8 @@ static void render(RenderState& render_state, Renderer& renderer, MemoryArena* p
     
     b32 should_render = renderer.window_width != 0;
     
-    camera.viewport_width = render_state.window_width;
-    camera.viewport_height = render_state.window_height;
+    camera.viewport_width = render_state.framebuffer_width;
+    camera.viewport_height = render_state.framebuffer_height;
     
     renderer.ui_projection_matrix = math::ortho(0.0f, (r32)renderer.window_width, 0.0f, (r32)renderer.window_height, -1.0f, 1.0f);
     
@@ -2647,68 +2657,54 @@ static void render(RenderState& render_state, Renderer& renderer, MemoryArena* p
     
     if(should_render)
     {
-        if ((renderer.frame_lock != 0 && render_state.frame_delta <= 0.0) || renderer.frame_lock == 0)
+        render_shadows(render_state, renderer, render_state.shadow_map_buffer);
+        
+        glViewport(0, 0, render_state.framebuffer_width, render_state.framebuffer_height);
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, render_state.framebuffer.buffer_handle);
+        
+        glEnable(GL_DEPTH_TEST);
+        
+        glDepthFunc(GL_LESS);
+        
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        
+        glClearColor(renderer.clear_color.r, renderer.clear_color.g, renderer.clear_color.b, renderer.clear_color.a);
+        
+        render_commands(render_state, renderer);
+        render_state.bound_texture = 0;
+        
+        // We have to reset the bound texture to nothing, since we're about to bind other textures
+        // Second pass
+        
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, render_state.framebuffer.buffer_handle);
+        glDrawBuffer(GL_BACK);
+        
+        i32 width = render_state.framebuffer_width;
+        i32 height = render_state.framebuffer_height;
+        glBlitFramebuffer(0, 0, width, height, 0, 0, width, height, 
+                          GL_COLOR_BUFFER_BIT, GL_NEAREST);
+        
+        
+        if (renderer.frame_lock != 0)
         {
-            renderer.fps = 1.0 / render_state.total_delta;
-            renderer.current_frame++;
-            renderer.fps_sum += renderer.fps;
-            
-            if (renderer.current_frame == 60)
-            {
-                renderer.current_frame = 0;
-                renderer.average_fps = renderer.fps_sum / 60.0f;
-                renderer.fps_sum = 0.0;
-            }
-            
-            render_shadows(render_state, renderer, render_state.shadow_map_buffer);
-            
-            glViewport(0, 0, renderer.window_width, renderer.window_height);
-            glBindFramebuffer(GL_DRAW_FRAMEBUFFER, render_state.framebuffer.buffer_handle);
-            
-            glEnable(GL_DEPTH_TEST);
-            
-            glDepthFunc(GL_LESS);
-            
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-            
-            glClearColor(renderer.clear_color.r, renderer.clear_color.g, renderer.clear_color.b, renderer.clear_color.a);
-            
-            render_commands(render_state, renderer);
-            render_state.bound_texture = 0;
-            
-            // We have to reset the bound texture to nothing, since we're about to bind other textures
-            // Second pass
-            
-            glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-            glBindFramebuffer(GL_READ_FRAMEBUFFER, render_state.framebuffer.buffer_handle);
-            glDrawBuffer(GL_BACK);
-            
-            i32 width = renderer.window_width;
-            i32 height = renderer.window_height;
-            glBlitFramebuffer(0, 0, width, height, 0, 0, width, height, 
-                              GL_COLOR_BUFFER_BIT, GL_NEAREST);
-            
-            glfwSwapBuffers(render_state.window);
-            
-            if (renderer.frame_lock != 0)
-            {
-                render_state.total_delta = 0.0;
-                render_state.frame_delta += 1.0 / renderer.frame_lock;
-            }
-            else
-            {
-                render_state.total_delta = delta_time;
-            }
+            render_state.total_delta = 0.0;
+            render_state.frame_delta += 1.0 / renderer.frame_lock;
         }
         else
         {
-            clear(&renderer.light_commands);
-            renderer.light_command_count = 0;
-            clear(&renderer.commands);
-            renderer.command_count = 0;
-            clear(&renderer.ui_commands);
-            renderer.ui_command_count = 0;
+            render_state.total_delta = delta_time;
         }
+        //}
+        //else
+        //{
+        clear(&renderer.light_commands);
+        renderer.light_command_count = 0;
+        clear(&renderer.commands);
+        renderer.command_count = 0;
+        clear(&renderer.ui_commands);
+        renderer.ui_command_count = 0;
+        //}
         
         render_state.frame_delta -= delta_time;
         render_state.total_delta += delta_time;

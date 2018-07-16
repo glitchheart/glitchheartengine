@@ -337,18 +337,21 @@ int main(int argc, char** args)
         sound_system.muted = config_data.muted;
     }
     
+    i32 refresh_rate = render_state.refresh_rate;
+    u32 target_fps = refresh_rate;
+    r32 expected_frames_per_update = 1.0f;
+    
+    r64 last_second_check = get_time();
+    i32 frames = 0;
+    i32 fps = 0;
+    r32 seconds_per_frame = expected_frames_per_update / target_fps;
+    
     r64 last_frame = get_time();
-    r64 current_frame = 0.0;
     r64 delta_time;
     renderer.frame_lock = 0;
     
     while (!should_close_window(render_state) && !renderer.should_close)
     {
-        //calculate deltatime
-        current_frame = get_time();
-        delta_time = MIN(current_frame - last_frame, 1.0 / 20.0);
-        last_frame = current_frame;
-        
         if(game_memory.exit_game)
         {
             debug("Quit\n");
@@ -367,9 +370,7 @@ int main(int argc, char** args)
         
         tick_animation_controllers(renderer, &sound_system, &input_controller, timer_controller, delta_time);
         tick_timers(timer_controller, delta_time);
-        
         update_sound_commands(&sound_device, &sound_system, delta_time);
-        
         render(render_state, renderer, &platform_state->perm_arena, delta_time);
         
         set_controller_invalid_keys();
@@ -391,6 +392,20 @@ int main(int argc, char** args)
         }
         
         update_log();
+        
+        swap_buffers(render_state);
+        
+        frames++;
+        r64 end_counter = get_time();
+        if(end_counter - last_second_check >= 1.0)
+        {
+            last_second_check = end_counter;
+            renderer.fps = frames;
+            frames = 0;
+        }
+        delta_time = get_time() - last_frame;
+        last_frame = end_counter;
+        
         end_temporary_memory(game_temp_mem);
     }
     
