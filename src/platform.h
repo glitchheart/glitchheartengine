@@ -181,10 +181,10 @@ typedef PLATFORM_SAVE_FILE_WITH_DIALOG(PlatformSaveFileWithDialog);
 #define PLATFORM_GET_TIME_OF_DAY(name) u32 name()
 typedef PLATFORM_GET_TIME_OF_DAY(PlatformGetTimeOfDay);
 
-#define PLATFORM_SLEEP(name) void name(r64 ms)
+#define PLATFORM_SLEEP(name) void name(u32 ms)
 typedef PLATFORM_SLEEP(PlatformSleep);
 
-#define PLATFORM_SLEEP_IS_GRANULAR(name) b32 name(r64 ms)
+#define PLATFORM_SLEEP_IS_GRANULAR(name) b32 name(u32 ms)
 typedef PLATFORM_SLEEP_IS_GRANULAR(PlatformSleepIsGranular);
 
 #define PLATFORM_LOAD_LIBRARY(name) void* name(const char *path)

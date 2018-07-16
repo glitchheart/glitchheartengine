@@ -337,17 +337,16 @@ int main(int argc, char** args)
         sound_system.muted = config_data.muted;
     }
     
-    i32 refresh_rate = render_state.refresh_rate;
-    u32 target_fps = refresh_rate;
-    r32 expected_frames_per_update = 1.0f;
-    
     r64 last_second_check = get_time();
     i32 frames = 0;
-    i32 fps = 0;
-    r32 seconds_per_frame = expected_frames_per_update / target_fps;
+    
+    //i32 refresh_rate = render_state.refresh_rate;
+    //u32 target_fps = (u32)refresh_rate;
+    //r32 expected_frames_per_update = 1.0f;
+    //r32 seconds_per_frame = expected_frames_per_update / target_fps;
     
     r64 last_frame = get_time();
-    r64 delta_time;
+    r64 delta_time = 0.0;
     renderer.frame_lock = 0;
     
     while (!should_close_window(render_state) && !renderer.should_close)
