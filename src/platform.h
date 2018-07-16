@@ -74,7 +74,7 @@ using imm = intptr_t;
 struct TextureData;
 
 #include "engine_math.h"
-#include "simd.h"
+
 #include "modelformat.h"
 
 enum WindowMode

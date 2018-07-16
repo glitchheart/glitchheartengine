@@ -300,7 +300,7 @@ union S_h64
     }
 };
 
-#if defined(__APPLE__)
+#if defined(__APPLE__) || defined(_WIN32)
 // Used to store 4 doubles in one SIMD constructions
 union S_r64
 {
@@ -850,6 +850,7 @@ union S_Vec2
         S_r32 x;
         S_r32 y;
     };
+    __m128d e[8];
     
     S_Vec2(r32 _x, r32 _y)
     {
@@ -1028,6 +1029,7 @@ union S_Vec3
         S_r32 y;
         S_r32 z;
     };
+    __m128d e[12];
     
     S_Vec3(r32 _x, r32 _y, r32 _z)
     {
@@ -1284,6 +1286,7 @@ union S_Vec4
             S_r32 a;
         };
     };
+    __m128d e[16];
     
     S_Vec4(r32 _x, r32 _y, r32 _z, r32 _w)
     {
@@ -1619,14 +1622,87 @@ math::Vec4 to_vec4(S_Vec4 vec, i32 index)
     return res;
 }
 
+void s_vec3_to_float4(S_Vec3 v, float* f1, float* f2, float* f3, float* f4)
+{
+    __m128 x_mm_0 = _mm_load_ps((float*)&v.x);
+    __m128 x_mm_1 = _mm_load_ps((float*)&v.y);
+    __m128 x_mm_2 = _mm_load_ps((float*)&v.z);
+    __m128 x_mm_3 = _mm_set1_ps(1.0f);
+    
+    __m128 x_mm_4 = _mm_unpacklo_ps(x_mm_0, x_mm_1);
+    __m128 x_mm_6 = _mm_unpackhi_ps(x_mm_0, x_mm_1);
+    __m128 x_mm_5 = _mm_unpacklo_ps(x_mm_2, x_mm_3);
+    __m128 x_mm_7 = _mm_unpackhi_ps(x_mm_2, x_mm_3);
+    
+    x_mm_0 = _mm_shuffle_ps(x_mm_4, x_mm_5, _MM_SHUFFLE(1, 0, 1, 0));
+    x_mm_1 = _mm_shuffle_ps(x_mm_4, x_mm_5, _MM_SHUFFLE(3, 2, 3, 2));
+    x_mm_2 = _mm_shuffle_ps(x_mm_6, x_mm_7, _MM_SHUFFLE(1, 0, 1, 0));
+    x_mm_3 = _mm_shuffle_ps(x_mm_6, x_mm_7, _MM_SHUFFLE(3, 2, 3, 2));
+    
+    _mm_store_ps(f1, x_mm_0);
+    _mm_store_ps(f2, x_mm_1);
+    _mm_store_ps(f3, x_mm_2);
+    _mm_store_ps(f4, x_mm_3);
+}
+
+void s_vec2_to_float4(S_Vec2 v, float* f1, float* f2, float* f3, float* f4)
+{
+    __m128 x_mm_0 = _mm_load_ps((float*)&v.x);
+    __m128 x_mm_1 = _mm_load_ps((float*)&v.y);
+    __m128 x_mm_2 = _mm_set1_ps(1.0f);
+    __m128 x_mm_3 = _mm_set1_ps(1.0f);
+    
+    __m128 x_mm_4 = _mm_unpacklo_ps(x_mm_0, x_mm_1);
+    __m128 x_mm_6 = _mm_unpackhi_ps(x_mm_0, x_mm_1);
+    __m128 x_mm_5 = _mm_unpacklo_ps(x_mm_2, x_mm_3);
+    __m128 x_mm_7 = _mm_unpackhi_ps(x_mm_2, x_mm_3);
+    
+    x_mm_0 = _mm_shuffle_ps(x_mm_4, x_mm_5, _MM_SHUFFLE(1, 0, 1, 0));
+    x_mm_1 = _mm_shuffle_ps(x_mm_4, x_mm_5, _MM_SHUFFLE(3, 2, 3, 2));
+    x_mm_2 = _mm_shuffle_ps(x_mm_6, x_mm_7, _MM_SHUFFLE(1, 0, 1, 0));
+    x_mm_3 = _mm_shuffle_ps(x_mm_6, x_mm_7, _MM_SHUFFLE(3, 2, 3, 2));
+    
+    _mm_store_ps(f1, x_mm_0);
+    _mm_store_ps(f2, x_mm_1);
+    _mm_store_ps(f3, x_mm_2);
+    _mm_store_ps(f4, x_mm_3);
+}
+
+void s_vec4_to_float4(S_Vec4 v, float* f1, float* f2, float* f3, float* f4)
+{
+    __m128 x_mm_0 = _mm_load_ps((float*)&v.r);
+    __m128 x_mm_1 = _mm_load_ps((float*)&v.g);
+    __m128 x_mm_2 = _mm_load_ps((float*)&v.b);
+    __m128 x_mm_3 = _mm_load_ps((float*)&v.a);
+    
+    __m128 x_mm_4 = _mm_unpacklo_ps(x_mm_0, x_mm_1);
+    __m128 x_mm_6 = _mm_unpackhi_ps(x_mm_0, x_mm_1);
+    __m128 x_mm_5 = _mm_unpacklo_ps(x_mm_2, x_mm_3);
+    __m128 x_mm_7 = _mm_unpackhi_ps(x_mm_2, x_mm_3);
+    
+    x_mm_0 = _mm_shuffle_ps(x_mm_4, x_mm_5, _MM_SHUFFLE(1, 0, 1, 0));
+    x_mm_1 = _mm_shuffle_ps(x_mm_4, x_mm_5, _MM_SHUFFLE(3, 2, 3, 2));
+    x_mm_2 = _mm_shuffle_ps(x_mm_6, x_mm_7, _MM_SHUFFLE(1, 0, 1, 0));
+    x_mm_3 = _mm_shuffle_ps(x_mm_6, x_mm_7, _MM_SHUFFLE(3, 2, 3, 2));
+    
+    _mm_store_ps(f1, x_mm_0);
+    _mm_store_ps(f2, x_mm_1);
+    _mm_store_ps(f3, x_mm_2);
+    _mm_store_ps(f4, x_mm_3);
+}
+
 // Memory stuff for SIMD
 // Generally using _mm_malloc and _mm_free is good, since it makes it possible to pass in alignment parameters
 // We have alignment in MemoryArenas
 
+#define member_size(type, member) sizeof(((type *)0)->member)
 
-void _push_size_simd(MemoryArena *arena, umm size_init, u32 alignment)
+#define push_array_simd(arena, count, type) (type *)_push_size_simd(arena, (count) * sizeof(type), (member_size(type, e[0])))
+#define push_size_simd(arena, type) (type*)_push_size_simd(arena, sizeof(type), (member_size(type, e[0])))
+void* _push_size_simd(MemoryArena *arena, umm size_init, u32 alignment)
 {
     
+    return push_size_(arena, size_init, default_with_alignment(alignment));
 }
 
 
