@@ -1595,6 +1595,11 @@ namespace math
         
         return res;
     }
+    
+    r32 sqrt(r32 val)
+    {
+        return _mm_cvtss_f32(_mm_sqrt_ss(_mm_set_ss(val)));
+    }
 }
 
 math::Vec2 to_vec2(S_Vec2 vec, i32 index)
@@ -1633,6 +1638,8 @@ math::Vec4 to_vec4(S_Vec4 vec, i32 index)
     return res;
 }
 
-
+// Memory stuff for SIMD
+// Generally using _mm_malloc and _mm_free is good, since it makes it possible to pass in alignment parameters
+// We have alignment in MemoryArenas 
 
 #endif
