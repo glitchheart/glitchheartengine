@@ -349,17 +349,11 @@ int main(int argc, char** args)
     r32 seconds_per_frame = expected_frames_per_update / target_fps;
     
     r64 last_frame = get_time();
-    // r64 current_frame = 0.0;
     r64 delta_time;
     renderer.frame_lock = 0;
     
-    u32 desired_scheduler_ms = 1;
-    b32 sleep_is_granular = platform.sleep_is_granular(desired_scheduler_ms);
-    
     while (!should_close_window(render_state) && !renderer.should_close)
     {
-        //delta_time = seconds_per_frame;
-        
         if(game_memory.exit_game)
         {
             debug("Quit\n");
@@ -400,11 +394,6 @@ int main(int argc, char** args)
         }
         
         update_log();
-        
-        r64 work_time = get_time();
-        r64 work_seconds_elapsed = work_time - last_frame;
-        
-        r64 seconds_elapsed_for_frame = work_seconds_elapsed;
         
         swap_buffers(render_state);
         
