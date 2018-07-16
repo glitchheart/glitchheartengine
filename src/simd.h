@@ -307,7 +307,7 @@ union S_h64
     }
 };
 
-#if defined(__APPLE__)
+#if defined(__APPLE__) || defined(__linux)
 // Used to store 4 doubles in one SIMD constructions
 union S_r64
 {
