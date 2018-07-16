@@ -1,6 +1,7 @@
 #include "io.h"
 #include "Commdlg.h"
 #include <windows.h>
+#include <timeapi.h>
 
 using PlatformHandle = HANDLE;
 
@@ -99,6 +100,17 @@ PLATFORM_ALLOCATE_MEMORY(win32_allocate_memory)
     
     
     return plat_block;
+}
+
+PLATFORM_SLEEP_IS_GRANULAR(win32_sleep_is_granular)
+{
+    b32 result = timeBeginPeriod(ms) == TIMERR_NOERROR; 
+    return(result);
+}
+
+PLATFORM_SLEEP(win32_sleep)
+{
+    Sleep(ms);
 }
 
 PLATFORM_DEALLOCATE_MEMORY(win32_deallocate_memory)
@@ -436,4 +448,6 @@ static void init_platform(PlatformApi& platform_api)
     platform_api.close_file = win32_close_file;
     platform_api.seek_file = win32_seek_file;
     platform_api.tell_file = win32_tell_file;
+    platform_api.sleep = win32_sleep;
+    platform_api.sleep_is_granular = win32_sleep_is_granular;
 }

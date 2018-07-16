@@ -181,6 +181,12 @@ typedef PLATFORM_SAVE_FILE_WITH_DIALOG(PlatformSaveFileWithDialog);
 #define PLATFORM_GET_TIME_OF_DAY(name) u32 name()
 typedef PLATFORM_GET_TIME_OF_DAY(PlatformGetTimeOfDay);
 
+#define PLATFORM_SLEEP(name) void name(r64 ms)
+typedef PLATFORM_SLEEP(PlatformSleep);
+
+#define PLATFORM_SLEEP_IS_GRANULAR(name) b32 name(r64 ms)
+typedef PLATFORM_SLEEP_IS_GRANULAR(PlatformSleepIsGranular);
+
 #define PLATFORM_LOAD_LIBRARY(name) void* name(const char *path)
 typedef PLATFORM_LOAD_LIBRARY(PlatformLoadLibrary);
 
@@ -224,6 +230,8 @@ struct PlatformApi
     PlatformOpenFileWithDialog *open_file_with_dialog;
     PlatformSaveFileWithDialog *save_file_with_dialog;
     PlatformGetTimeOfDay *get_time_of_day;
+    PlatformSleep *sleep;
+    PlatformSleepIsGranular *sleep_is_granular;
     PlatformLoadLibrary *load_dynamic_library;
     PlatformFreeLibrary *free_dynamic_library;
     PlatformLoadSymbol *load_symbol;
