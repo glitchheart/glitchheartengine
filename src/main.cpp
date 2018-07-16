@@ -342,20 +342,23 @@ int main(int argc, char** args)
     i32 refresh_rate = render_state.refresh_rate;
     u32 target_fps = refresh_rate;
     r32 expected_frames_per_update = 1.0f;
-
+    
     r64 last_second_check = get_time();
     i32 frames = 0;
     i32 fps = 0;
     r32 seconds_per_frame = expected_frames_per_update / target_fps;
-
+    
     r64 last_frame = get_time();
-   // r64 current_frame = 0.0;
+    // r64 current_frame = 0.0;
     r64 delta_time;
     renderer.frame_lock = 0;
     
+    u32 desired_scheduler_ms = 1;
+    b32 sleep_is_granular = platform.sleep_is_granular(desired_scheduler_ms);
+    
     while (!should_close_window(render_state) && !renderer.should_close)
     {
-        delta_time = seconds_per_frame;
+        //delta_time = seconds_per_frame;
         
         if(game_memory.exit_game)
         {
@@ -403,19 +406,6 @@ int main(int argc, char** args)
         
         r64 seconds_elapsed_for_frame = work_seconds_elapsed;
         
-        if(seconds_elapsed_for_frame < seconds_per_frame)
-        {
-            Sleep((seconds_per_frame - seconds_elapsed_for_frame) * 1000.0f);
-            while(seconds_elapsed_for_frame < seconds_per_frame)
-            {
-                seconds_elapsed_for_frame = get_time() - last_frame;
-            }
-        }
-        else
-        {
-            debug("Missed a frame!\n");
-        }
-        
         swap_buffers(render_state);
         
         frames++;
@@ -426,7 +416,7 @@ int main(int argc, char** args)
             renderer.fps = frames;
             frames = 0;
         }
-
+        delta_time = get_time() - last_frame;
         last_frame = end_counter;
         
         end_temporary_memory(game_temp_mem);
