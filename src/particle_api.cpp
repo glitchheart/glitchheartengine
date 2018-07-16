@@ -76,12 +76,6 @@ static void create_particle_system(Renderer &renderer, ParticleSystemHandle &han
     system_info.max_particles = math::multiple_of_number(max_particles, 4);
     auto max_over_four = system_info.max_particles / 4;
 
-    auto test = push_array(memory_arena, 4, math::Vec3);
-    test[0] = math::Vec3(0.0f);
-
-    S_r64 peep(0.0);
-    peep = 0.0;
-
     system_info.unused_particles = push_array(memory_arena, system_info.max_particles, i32);
     
     system_info.particles.position = push_array(memory_arena, max_over_four, S_Vec3, default_with_alignment(16));
