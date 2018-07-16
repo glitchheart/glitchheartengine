@@ -146,8 +146,12 @@ struct RenderState
     GLFWwindow *window;
     i32 window_width;
     i32 window_height;
+    i32 framebuffer_width;
+    i32 framebuffer_height;
     i32 dpi_scale;
     i32 pixels_per_unit;
+
+    i32 refresh_rate;
     
     b32 paused;
     
