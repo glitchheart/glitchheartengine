@@ -904,7 +904,7 @@ static void create_open_gl_window(RenderState& render_state, WindowMode window_m
     glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
     
     render_state.refresh_rate = mode->refreshRate;
-
+    
     if (window_mode == FM_BORDERLESS)
     {
         glfwWindowHint(GLFW_RED_BITS, mode->redBits);
@@ -914,7 +914,7 @@ static void create_open_gl_window(RenderState& render_state, WindowMode window_m
         screen_width = mode->width;
         screen_height = mode->height;
     }
-
+    
     printf("refresh rate %d\n", mode->refreshRate);
     
     if (window_mode == FM_WINDOWED)
@@ -1006,7 +1006,7 @@ static void initialize_opengl(RenderState& render_state, Renderer& renderer, r32
     
     gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
     
-    glfwSwapInterval(0);
+    glfwSwapInterval(1);
     
     glfwGetFramebufferSize(render_state.window, &render_state.window_width, &render_state.window_height);
     glViewport(0, 0, render_state.window_width, render_state.window_height);
