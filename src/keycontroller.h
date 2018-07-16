@@ -175,29 +175,29 @@ enum KeyMode
 
 #define NUM_MOUSE_BUTTONS 3
 
-#define Mouse_Left 1
-#define Mouse_Right 2
-#define Mouse_Middle 3
+#define Mouse_Left 0
+#define Mouse_Right 1
+#define Mouse_Middle 2
 
 
-#define Joystick_1 1
-#define Joystick_2 2
-#define Joystick_3 3
-#define Joystick_4 4
-#define Joystick_5 5
-#define Joystick_6 6
-#define Joystick_7 7
-#define Joystick_8 8
-#define Joystick_9 9
-#define Joystick_10 10
-#define Joystick_11 11
-#define Joystick_12 12
-#define Joystick_13 13
-#define Joystick_14 14
-#define Joystick_15 15
-#define Joystick_16 16
-#define Joystick_LeftTrigger 17
-#define Joystick_RightTrigger 18
+#define Joystick_1 0
+#define Joystick_2 1
+#define Joystick_3 2
+#define Joystick_4 3
+#define Joystick_5 4
+#define Joystick_6 5
+#define Joystick_7 6
+#define Joystick_8 7
+#define Joystick_9 8
+#define Joystick_10 9
+#define Joystick_11 10
+#define Joystick_12 11
+#define Joystick_13 12
+#define Joystick_14 13
+#define Joystick_15 14
+#define Joystick_16 15
+#define Joystick_LeftTrigger 16
+#define Joystick_RightTrigger 17
 
 #define NUM_JOYSTICK_KEYS 18
 

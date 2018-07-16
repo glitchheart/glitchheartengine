@@ -150,9 +150,9 @@ b32 has_queried_components(ComponentController &controller, i32 entity, u64 comp
     return (b32)((controller.entity_components[entity] & component_flags) == component_flags);
 }
 
-#define IS_MSVC _MSC_VER && !__INTEL_COMPILER
+#define IS_MSVC (defined(_MSC_VER) && !defined(__INTEL_COMPILER))
 
-#if IS_MSVC
+#if (defined(_MSC_VER) && !defined(__INTEL_COMPILER))
 #define MSVC_HACK(FUNC, ARGS) FUNC ARGS
 #define APPLY(FUNC, ...) MSVC_HACK(FUNC, (__VA_ARGS__))
 #define VA_LENGTH(...) APPLY(VA_LENGTH_, 0, ## __VA_ARGS__, 20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0)

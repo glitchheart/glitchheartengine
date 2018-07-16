@@ -1,7 +1,7 @@
 #ifndef SIMD_H
 #define SIMD_H
 
-#ifdef __APPLE__
+#if defined(__APPLE__) || defined(__linux)
 #include "smmintrin.h"
 #include "immintrin.h"
 #include "emmintrin.h"
@@ -112,6 +112,8 @@ union S_r32
     __m128 p;
     r32 e[4];
     
+    S_r32(const S_r32& v) = default;
+
     S_r32(r32 _p) 
     {
         p = _mm_set1_ps(_p);
@@ -210,6 +212,9 @@ union S_h64
         };
     };
     
+    S_h64(const S_h64& v) = default;
+
+
     S_h64(r64 _p) 
     {
         p = _mm_set1_pd(_p);
@@ -234,7 +239,9 @@ union S_h64
     
     S_h64& operator=(const S_h64& v)
     {
-        p = v.p;
+        r64 v1 = v.e[0];
+        r64 v2 = v.e[1];
+        p = _mm_set_pd(v1, v2);
         
         return *this;
     }
@@ -311,6 +318,8 @@ union S_r64
     };
     r64 e[4];
     
+    S_r64(const S_r64& o) = default;
+
     S_r64(r64 v)
     {
         upper_bits = S_h64(v);
@@ -339,8 +348,8 @@ union S_r64
     
     S_r64& operator=(const r64& v)
     {
-        upper_bits = S_h64(v, v);
-        lower_bits = S_h64(v, v);
+        upper_bits = v;
+        lower_bits = v;
         
         return *this;
     }
@@ -566,7 +575,7 @@ b32 any_lt_eq(S_r64 v, S_r64 val)
     i32 cmp_eq_up = _mm_movemask_pd(vcmp_eq_up);
     i32 cmp_eq_lo = _mm_movemask_pd(vcmp_eq_lo);
     
-    return cmp_lt_up != 0 || cmp_eq_up != 0 && cmp_lt_lo != 0 || cmp_eq_lo != 0;
+    return cmp_lt_up != 0 || cmp_eq_up != 0 || cmp_lt_lo != 0 || cmp_eq_lo != 0;
 }
 
 b32 any_nz(S_r64 v)
@@ -587,6 +596,11 @@ union S_r64
     __m256d p;
     r64 e[4];
     
+    S_r64(const S_r64& v)
+    {
+        p = _mm256_set_pd(v.e[0], v.e[1], v.e[2], v.e[3]);
+    }
+
     S_r64(r64 v)
     {
         p = _mm256_set1_pd(v);
@@ -610,9 +624,9 @@ union S_r64
         return *this;
     }
     
-    S_r64& operator=(const r64& v)
+    S_r64& operator=(const r64 v)
     {
-        p = _mm256_set1_pd(v);
+        this->p = _mm256_set1_pd(v);
         
         return *this;
     }
@@ -851,6 +865,8 @@ union S_Vec2
         S_r32 y;
     };
     
+    S_Vec2(const S_Vec2& v) = default;
+
     S_Vec2(r32 _x, r32 _y)
     {
         x = S_r32(_x);
@@ -1028,6 +1044,8 @@ union S_Vec3
         S_r32 y;
         S_r32 z;
     };
+
+    S_Vec3(const S_Vec3& v) = default;    
     
     S_Vec3(r32 _x, r32 _y, r32 _z)
     {
@@ -1285,6 +1303,9 @@ union S_Vec4
         };
     };
     
+    S_Vec4(const S_Vec4& v) = default;
+
+
     S_Vec4(r32 _x, r32 _y, r32 _z, r32 _w)
     {
         x = S_r32(_x);
@@ -1553,8 +1574,6 @@ namespace math
         res.y = lerp(a.y, t, b.y);
         res.z = lerp(a.z, t, b.z);
         res.w = lerp(a.w, t, b.w);
-        
-        auto v = math::Vec4(res.r.e[0], res.r.e[1], res.r.e[2], res.r.e[3]);
         
         return res;
     }

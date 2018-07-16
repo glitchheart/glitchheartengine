@@ -1629,7 +1629,7 @@ static void render_line(const RenderCommand& command, RenderState& render_state,
 static void render_text(const RenderCommand& command, RenderState& render_state, math::Mat4 view_matrix, math::Mat4 projection_matrix)
 {
     assert(command.text.font_handle < render_state.font_count);
-    TrueTypeFont font = font = render_state.true_type_fonts[command.text.font_handle];
+    TrueTypeFont font = render_state.true_type_fonts[command.text.font_handle];
     
     render_text(render_state, font, command.text.color, command.text.text, command.text.position.x, command.text.position.y, view_matrix, projection_matrix, command.text.scale, command.text.alignment_flags);
 }

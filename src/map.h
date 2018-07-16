@@ -161,13 +161,13 @@ void map__put(Map* map, void* key, void* val)
 
 void map_test()
 {
-    Map str_map = {0};
+    Map str_map = {};
     map_init(&str_map, str_hash, str_cmp);
     map_put(&str_map, "peep", "poop");
     auto res = map_get(&str_map, "peep");
     UNUSED(res);
     
-    Map int_map = {0};
+    Map int_map = {};
     map_init(&int_map, str_hash, str_cmp);
     map_put(&int_map, "peep", 5);
     auto i_res = map_get(&int_map, "peep");

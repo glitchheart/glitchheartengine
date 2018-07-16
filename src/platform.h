@@ -5,13 +5,13 @@
 
 #define COMMA_IF_PARENS(...) ,
 
-#if GLITCH_DEBUG
+#if DEBUG
 #define debug(format, ...) printf(format , ## __VA_ARGS__)
 #else
 #define debug(format, ...)
 #endif
 
-#if GLITCH_DEBUG
+#if DEBUG
 #ifdef _WIN32
 #define assert(expression, ...) if(!(expression)) {debug("Assertion failed in: %s on line %d\n with message: %s\n",__FILE__,__LINE__ , ## __VA_ARGS__); __debugbreak();}
 #elif __linux
@@ -27,7 +27,7 @@
 
 #define UNUSED(var) (void)var
 
-#if GLITCH_DEBUG
+#if DEBUG
 #define assert_static(expression)  int i = 1/(i32)expression
 #else
 #define assert_static(expression)
@@ -259,7 +259,7 @@ struct GameMemory
     
     struct GameState* game_state;
     
-#if GLITCH_DEBUG
+#if DEBUG
     DebugState* debug_state;
 #endif
 };
