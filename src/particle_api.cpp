@@ -78,14 +78,14 @@ static void create_particle_system(Renderer &renderer, ParticleSystemHandle &han
     
     system_info.unused_particles = push_array(memory_arena, system_info.max_particles, i32);
     
-    system_info.particles.position = push_array(memory_arena, max_over_four, S_Vec3);
-    system_info.particles.direction = push_array(memory_arena, max_over_four, S_Vec3);
-    system_info.particles.color = push_array(memory_arena, max_over_four, S_Rgba);
+    system_info.particles.position = push_array(memory_arena, max_over_four, S_Vec3, default_with_alignment(16));
+    system_info.particles.direction = push_array(memory_arena, max_over_four, S_Vec3, default_with_alignment(16));
+    system_info.particles.color = push_array(memory_arena, max_over_four, S_Rgba, default_with_alignment(16));
     
-    system_info.particles.size = push_array(memory_arena, max_over_four, S_Vec2);
-    system_info.particles.relative_position = push_array(memory_arena, max_over_four, S_Vec3);
+    system_info.particles.size = push_array(memory_arena, max_over_four, S_Vec2, default_with_alignment(16));
+    system_info.particles.relative_position = push_array(memory_arena, max_over_four, S_Vec3, default_with_alignment(16));
     
-    system_info.particles.life = push_array(memory_arena, max_over_four, S_r64);
+    system_info.particles.life = push_array(memory_arena, max_over_four, S_r64, default_with_alignment(16));
     system_info.particles.texture_handle = push_array(memory_arena, system_info.max_particles, i32);
     
     //system_info.particles.direction = push_array(memory_arena, system_info.max_particles, math::Vec3);
