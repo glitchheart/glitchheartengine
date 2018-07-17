@@ -41,7 +41,6 @@ void find_unused_particles(ParticleSystemInfo &particle_system)
             unused_particles[particle_system.unused_particle_count++] = particle_index;
         }
     }
-    
 }
 
 i32 find_unused_particle(ParticleSystemInfo &particle_system)
