@@ -259,7 +259,7 @@ int main(int argc, char** args)
 #endif
     
     log_state = game_memory.log_state;
-    init_log(L_FLAG_FILE, concat("../log_", "", &platform_state->perm_arena));
+    init_log(L_FLAG_FILE, "../log.txt");
     
 #if defined(__APPLE__)
     char* game_library_path = "libgame.dylib";
