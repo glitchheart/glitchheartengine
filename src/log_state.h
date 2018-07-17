@@ -1,6 +1,7 @@
 #ifndef LOG_STATE_H
 #define LOG_STATE_H
 
+// @Robustness: This might be too few messages?
 #define MAX_LOG_MESSAGES 2048
 
 enum LogFlags

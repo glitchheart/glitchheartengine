@@ -129,15 +129,9 @@ void message_callback(GLenum source,
             break;
         }
         
-        debug("GL CALLBACK: %s type = 0x%x, severity = 0x%x, message = %s, source = %s, id = %ud, length %ud= \n",
-              (type == GL_DEBUG_TYPE_ERROR ? "** GL ERROR **" : ""),
-              type, severity, message, src_str, id, length);
-        
-        char buffer[256];
-        sprintf(buffer, "OpenGl error: %s type = 0x%x, severity = 0x%x, message = %s, source = %s, id = %ud, length %ud= \n",
-                (type == GL_DEBUG_TYPE_ERROR ? "** GL ERROR **" : ""),
-                type, severity, message, src_str, id, length);
-        LOG_ERROR(buffer);
+        log_error("OpenGl error: %s type = 0x%x, severity = 0x%x, message = %s, source = %s, id = %ud, length %ud= \n",
+                  (type == GL_DEBUG_TYPE_ERROR ? "** GL ERROR **" : ""),
+                  type, severity, message, src_str, id, length);
     }
 }
 
@@ -1979,14 +1973,14 @@ static void render_mesh_instanced(const RenderCommand &render_command, Renderer 
     
     glEnableVertexAttribArray(3);
     glBindBuffer(GL_ARRAY_BUFFER, offset_instance_buffer.vbo);
-    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(math::Vec3) * 900, render_command.mesh_instanced.offsets);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(math::Vec3) * render_command.mesh_instanced.offset_count, render_command.mesh_instanced.offsets);
     
     glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
     glVertexAttribDivisor(3, 1);
     
     glEnableVertexAttribArray(4);
     glBindBuffer(GL_ARRAY_BUFFER, color_instance_buffer.vbo);
-    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(math::Rgba) * 900, render_command.mesh_instanced.colors);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(math::Rgba) * render_command.mesh_instanced.offset_count, render_command.mesh_instanced.colors);
     
     glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, 0, (void*)0);
     glVertexAttribDivisor(4, 1);

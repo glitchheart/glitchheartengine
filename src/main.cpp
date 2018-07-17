@@ -349,8 +349,6 @@ int main(int argc, char** args)
     r64 delta_time = 0.0;
     renderer.frame_lock = 0;
     
-    LOG_ERROR("This is a formatted string: %s\n", "TEST");
-    
     while (!should_close_window(render_state) && !renderer.should_close)
     {
         if(game_memory.exit_game)
