@@ -1,5 +1,5 @@
-static const char *global_title = "alter alpha 0.1.1";
-static const char *global_version = "v0.1.1"; 
+static const char *global_title = "alter alpha 0.1.2";
+static const char *global_version = "v0.1.2"; 
 static const GraphicsApi global_graphics_api = GRAPHICS_OPEN_GL;
 static const i32 global_pixels_per_unit = 8;
 static const i32 global_max_meshes = 64;
