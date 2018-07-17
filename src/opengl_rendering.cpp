@@ -133,6 +133,11 @@ void message_callback(GLenum source,
               (type == GL_DEBUG_TYPE_ERROR ? "** GL ERROR **" : ""),
               type, severity, message, src_str, id, length);
         
+        char buffer[256];
+        sprintf(buffer, "OpenGl error: %s type = 0x%x, severity = 0x%x, message = %s, source = %s, id = %ud, length %ud= \n",
+                (type == GL_DEBUG_TYPE_ERROR ? "** GL ERROR **" : ""),
+                type, severity, message, src_str, id, length);
+        LOG_ERROR(buffer);
     }
 }
 
