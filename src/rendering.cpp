@@ -568,13 +568,13 @@ static void create_cube(Renderer &renderer, MeshInfo &mesh_info, b32 with_instan
     if(with_instancing)
     {
         BufferData offset_data = {};
-        offset_data.instance_buffer_size = sizeof(math::Vec3) * 900;
+        offset_data.instance_buffer_size = sizeof(math::Vec3) * 1024; // @Incomplete
         offset_data.for_instancing = true;
         renderer.buffers[renderer.buffer_count] = offset_data;
         mesh_info.instance_offset_buffer_handle = renderer.buffer_count++;
         
         BufferData color_data = {};
-        color_data.instance_buffer_size = sizeof(math::Rgba) * 900;
+        color_data.instance_buffer_size = sizeof(math::Rgba) * 1024; // @Incomplete
         color_data.for_instancing = true;
         renderer.buffers[renderer.buffer_count] = color_data;
         mesh_info.instance_color_buffer_handle = renderer.buffer_count++;
@@ -947,13 +947,13 @@ static void load_obj(Renderer &renderer, char *file_path, MeshInfo &mesh_info, b
     if(with_instancing)
     {
         BufferData offset_data = {};
-        offset_data.instance_buffer_size = sizeof(math::Vec3) * 900;
+        offset_data.instance_buffer_size = sizeof(math::Vec3) * 1024; // @Incomplete
         offset_data.for_instancing = true;
         renderer.buffers[renderer.buffer_count] = offset_data;
         mesh_info.instance_offset_buffer_handle = renderer.buffer_count++;
         
         BufferData color_data = {};
-        color_data.instance_buffer_size = sizeof(math::Rgba) * 900;
+        color_data.instance_buffer_size = sizeof(math::Rgba) * 1024; // @Incomplete
         color_data.for_instancing = true;
         renderer.buffers[renderer.buffer_count] = color_data;
         mesh_info.instance_color_buffer_handle = renderer.buffer_count++;

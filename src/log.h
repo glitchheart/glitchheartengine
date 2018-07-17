@@ -3,9 +3,24 @@
 
 #include "time.h"
 
-#define Log(Msg) _Log(__LINE__, __FILE__, Msg)
-static void log(MemoryArena* memory_arena, i32 line_num, const char* file, const char* message)
+#define log(Msg, ...) _log(LOG_INFO, __LINE__, __FILE__, Msg, __VA_ARGS__)
+#define log_error(Msg, ...) _log(LOG_ERROR, __LINE__, __FILE__, Msg, __VA_ARGS__)
+
+enum LogType
 {
+    LOG_INFO,
+    LOG_ERROR
+};
+
+static void _log(LogType log_type, i32 line_num, const char* file, const char* message, ...)
+{
+    char message_buffer[256];
+    va_list args;
+    va_start(args, message);
+    vsprintf(message_buffer, message, args); // @Robustness: This could lead to buffer overflow. vsnprintf should be safer?
+    perror(message_buffer);
+    va_end(args);
+    
     assert(log_state->log_count < MAX_LOG_MESSAGES);
     time_t timer;
     char buffer[26];
@@ -18,7 +33,16 @@ static void log(MemoryArena* memory_arena, i32 line_num, const char* file, const
     
     log_state->log_buffer[log_state->log_count++] = push_string(&log_state->arena, 2048);
     
-    sprintf(log_state->log_buffer[log_state->log_count - 1], "[INFO] - %s in file %s on line %d - %s\n", buffer, file, line_num, message);
+    char *type_name = nullptr;
+    if(log_type == LOG_INFO)
+    {
+        type_name = "INFO";
+    }
+    else if(log_type == LOG_ERROR)
+    {
+        type_name = "ERROR";
+    }
+    sprintf(log_state->log_buffer[log_state->log_count - 1], "[%s] - %s file: %s line: %d - %s\n", type_name, buffer, file, line_num, message_buffer);
 }
 
 static void update_log()
@@ -35,11 +59,11 @@ static void update_log()
     {
         for(i32 log = 0; log < log_state->log_count; log++)
         {
-            debug("%s", log_state->log_buffer[log]);
+            printf("%s", log_state->log_buffer[log]);
         }
     }
     clear(&log_state->arena);
-    log_state->log_count= 0;
+    log_state->log_count = 0;
 }
 
 static void init_log(u32 flags, const char* file_path = "")
