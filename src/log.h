@@ -69,7 +69,8 @@ static void init_log(u32 flags, const char* file_path = "")
 {
     if((flags & L_FLAG_FILE) && strlen(file_path) > 0)
     {
-        log_state->file.file_handle = fopen(file_path, "w");
+        log_state->file.file_handle = fopen(file_path, "a+");
+        fwrite("\n[NEW SESSION]\n", sizeof(char), strlen("\n[NEW SESSION]\n"), log_state->file.file_handle);
         log_state->flags = flags;
     }
 }
