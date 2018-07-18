@@ -50,7 +50,6 @@ static void _log(LogType log_type, i32 line_num, const char* file, const char* m
         type_name = "ERROR";
     }
     sprintf(log_state->log_buffer[log_state->log_count - 1], "[%s] - %s file: %s line: %d - %s\n", type_name, buffer, file, line_num, message_buffer);
-    printf("%s", log_state->log_buffer[log_state->log_count - 1]);
 }
 
 static void update_log()
