@@ -134,7 +134,6 @@ inline void load_config(const char* file_path, ConfigData* config_data, MemoryAr
     
     *config_data = {};
     
-    
     if(file)
     {
         while(fgets(line_buffer, 255, file))
@@ -259,7 +258,7 @@ int main(int argc, char** args)
 #endif
     
     log_state = game_memory.log_state;
-    init_log(L_FLAG_FILE, "../log.txt");
+    init_log(L_FLAG_FILE | L_FLAG_DEBUG, "../log.txt");
     
 #if defined(__APPLE__)
     char* game_library_path = "libgame.dylib";
@@ -306,11 +305,13 @@ int main(int argc, char** args)
     }
     else if(global_graphics_api == GRAPHICS_OPEN_GL)
     {
+        log("Initializing OpenGl");
         initialize_opengl(render_state, renderer, &config_data, &platform_state->perm_arena);
     }
     
     GameCode game = {};
     game.is_valid = false;
+    log("Loading game code");
     load_game_code(game, game_library_path, temp_game_library_path, &platform_state->perm_arena);
     TimerController timer_controller;
     timer_controller.timer_count = 0;
@@ -322,6 +323,8 @@ int main(int argc, char** args)
     u32 frame_counter_for_asset_check = 0;
     
     SoundDevice sound_device = {};
+    
+    debug_log("Initializing FMOD");
     init_audio_fmod(&sound_device);
     
     SoundSystem sound_system = {};
