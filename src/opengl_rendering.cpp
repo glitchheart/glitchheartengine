@@ -179,8 +179,8 @@ static GLint shader_compilation_error_checking(MemoryArena* arena,const char* sh
         
         glGetShaderInfoLog(shader, max_length, &max_length, error_log);
         
-        debug("SHADER Compilation error - %s\n", shader_name);
-        debug("%s", error_log);
+        log_error("SHADER Compilation error - %s\n", shader_name);
+        log_error("%s", error_log);
         
         glDeleteShader(shader); // Don't leak the shader.
         end_temporary_memory(temp_mem);
@@ -203,8 +203,8 @@ static GLint shader_link_error_checking(MemoryArena* arena, const char* program_
         
         glGetProgramInfoLog(program, max_length, &max_length, error_log);
         
-        debug("SHADER Linking error - %s\n", program_name);
-        debug("%s", error_log);
+        log_error("SHADER Linking error - %s\n", program_name);
+        log_error("%s", error_log);
         
         glDeleteProgram(program); // Don't leak the program.
         end_temporary_memory(temp_mem);
@@ -260,6 +260,7 @@ static GLuint load_shader(const char* file_path, Shader *shd, MemoryArena* perm_
         
         if (!shader_compilation_error_checking(perm_arena, file_path, shd->vertex_shader))
         {
+            log_error("failed compilation of vertex shader: %s", file_path);
             end_temporary_memory(temp_mem);
             shd->program = 0;
             return GL_FALSE;
@@ -274,6 +275,7 @@ static GLuint load_shader(const char* file_path, Shader *shd, MemoryArena* perm_
         
         if (!shader_compilation_error_checking(perm_arena, file_path, shd->fragment_shader))
         {
+            log_error("failed compilation of fragment shader: %s", file_path);
             end_temporary_memory(temp_mem);
             shd->program = 0;
             return GL_FALSE;
@@ -290,6 +292,7 @@ static GLuint load_shader(const char* file_path, Shader *shd, MemoryArena* perm_
             
             if(!shader_compilation_error_checking(perm_arena, file_path, shd->geometry_shader))
             {
+                log_error("failed compilation of geometry shader: %s", file_path);
                 end_temporary_memory(temp_mem);
                 shd->program = 0;
                 return GL_FALSE;
@@ -327,6 +330,7 @@ static GLuint load_vertex_shader(const char* file_path, Shader *shd, MemoryArena
     
     if (!shader_compilation_error_checking(perm_arena, file_path, shd->vertex_shader))
     {
+        log_error("failed compilation of vertex shader: %s", file_path);
         end_temporary_memory(temp_mem);
         shd->program = 0;
         return GL_FALSE;
@@ -360,6 +364,8 @@ static GLuint load_fragment_shader(const char* file_path, Shader *shd, MemoryAre
     
     if (!shader_compilation_error_checking(perm_arena, file_path, shd->fragment_shader))
     {
+        log_error("failed compilation of fragment shader: %s", file_path);
+        end_temporary_memory(temp_mem);
         shd->program = 0;
         return GL_FALSE;
     }
@@ -388,6 +394,8 @@ static GLuint load_geometry_shader(const char* file_path, Shader* shd, MemoryAre
     
     if(!shader_compilation_error_checking(perm_arena, file_path, shd->geometry_shader))
     {
+        log_error("failed compilation of geometry shader: %s", file_path);
+        end_temporary_memory(temp_mem);
         shd->program = 0;
         return GL_FALSE;
     }
@@ -656,9 +664,8 @@ static void create_framebuffer(RenderState& render_state, Framebuffer& framebuff
     }
     else
     {
-        debug("buffer not zero\n");
+        log_error("buffer not zero\n");
     }
-    
     
     glBindFramebuffer(GL_FRAMEBUFFER, framebuffer.buffer_handle);
     glDrawBuffer(GL_COLOR_ATTACHMENT0);
@@ -668,7 +675,7 @@ static void create_framebuffer(RenderState& render_state, Framebuffer& framebuff
     
     if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
     {
-        debug("Error: Framebuffer incomplete\n");
+        log_error("Error: Framebuffer incomplete\n");
         error_gl();
     }
     
@@ -703,7 +710,6 @@ void window_iconify_callback(GLFWwindow *window, i32 iconified)
 {
     RenderState* render_state = (RenderState*)glfwGetWindowUserPointer(window);
     
-    debug("iconiffff\n");
     if(iconified)
     {
         render_state->paused = true;
@@ -847,6 +853,7 @@ static void render_setup(RenderState *render_state, MemoryArena* perm_arena)
     setup_quad(*render_state, perm_arena);
     setup_lines(*render_state, perm_arena);
     
+    
     //font
     render_state->standard_font_shader.type = SHADER_STANDARD_FONT;
     load_shader(shader_paths[SHADER_STANDARD_FONT], &render_state->standard_font_shader, perm_arena);
@@ -973,12 +980,16 @@ static void create_open_gl_window(RenderState& render_state, WindowMode window_m
 
 static void initialize_opengl(RenderState& render_state, Renderer& renderer, r32 contrast, r32 brightness, WindowMode window_mode, i32 screen_width, i32 screen_height, MemoryArena* perm_arena)
 {
-    auto recreate_window = render_state.window != nullptr;;
+    auto recreate_window = render_state.window != nullptr;
     
     if(!recreate_window)
     {
         if (!glfwInit())
+        {
+            log_error("Could not initialize glfw");
             exit(EXIT_FAILURE);
+        }
+        
     }
     
     render_state.framebuffer.buffer_handle = 0;
@@ -1019,6 +1030,7 @@ static void initialize_opengl(RenderState& render_state, Renderer& renderer, r32
         
         if(!render_state.window)
         {
+            log_error("Could not create window");
             glfwTerminate();
             exit(EXIT_FAILURE);
         }
@@ -1053,9 +1065,9 @@ static void initialize_opengl(RenderState& render_state, Renderer& renderer, r32
     
     glDepthFunc(GL_LESS);
     
-    debug("%s\n", glGetString(GL_VERSION));
-    debug("Shading language supported: %s\n", glGetString(GL_SHADING_LANGUAGE_VERSION));
-    debug("Glad Version: %d.%d\n", GLVersion.major, GLVersion.minor);
+    log("%s\n", glGetString(GL_VERSION));
+    log("Shading language supported: %s\n", glGetString(GL_SHADING_LANGUAGE_VERSION));
+    log("Glad Version: %d.%d\n", GLVersion.major, GLVersion.minor);
     
     glfwSetWindowUserPointer(render_state.window, &render_state);
     glfwSetKeyCallback(render_state.window, key_callback);

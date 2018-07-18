@@ -370,7 +370,6 @@ static PLATFORM_OPEN_FILE(win32_open_file)
     auto flags = read | write;
     
     result.handle = CreateFile(path, (DWORD)flags, 0, 0, (DWORD)open, FILE_ATTRIBUTE_NORMAL, 0);
-    //result.handle = CreateFile(path, (DWORD)flags, 0, 0, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
     
     if(!result.handle)
     {
@@ -378,43 +377,59 @@ static PLATFORM_OPEN_FILE(win32_open_file)
         log_error("Couldn't open file: %d\n", err);
     }
     
-    
-    
     return(result);
 }
 
 static PLATFORM_CLOSE_FILE(win32_close_file)
 {
-    CloseHandle(file.handle);
+    auto result = CloseHandle(file.handle);
+    if(!result)
+    {
+        auto err = GetLastError();
+        log_error("Couldn't close file: %d\n", err);
+    }
 }
 
 static PLATFORM_WRITE_FILE(win32_write_file)
 {
-    WriteFile(file.handle, src, (DWORD)(size_bytes * size), 0, 0);
+    DWORD bytes_read;
+    auto result = WriteFile(file.handle, src, (DWORD)(size_bytes * size), &bytes_read, 0);
+    if(!result)
+    {
+        auto err = GetLastError();
+        log_error("Couldn't write file: %d\n", err);
+    }
 }
 
 static PLATFORM_READ_FILE(win32_read_file)
 {
-    ReadFile(file.handle, dst, DWORD(size_bytes * size), 0, 0);
+    DWORD bytes_read;
+    auto result = ReadFile(file.handle, dst, DWORD(size_bytes * size), &bytes_read, 0);
+    if(!result)
+    {
+        auto err = GetLastError();
+        log_error("Couldn't read file: %d\n", err);
+    }
 }
 
 static PLATFORM_SEEK_FILE(win32_seek_file)
 {
+    DWORD result = 0;
     switch(seek_options)
     {
         case SO_END:
         {
-            SetFilePointer(file.handle, offset, 0, FILE_END);
+            result = SetFilePointer(file.handle, offset, 0, FILE_END);
         }
         break;
         case SO_CUR:
         {
-            SetFilePointer(file.handle, offset, 0, FILE_CURRENT);
+            result = SetFilePointer(file.handle, offset, 0, FILE_CURRENT);
         }
         break;
         case SO_SET:
         {
-            SetFilePointer(file.handle, offset, 0, FILE_BEGIN);
+            result = SetFilePointer(file.handle, offset, 0, FILE_BEGIN);
         }
         break;
     }
@@ -422,7 +437,8 @@ static PLATFORM_SEEK_FILE(win32_seek_file)
 
 static PLATFORM_TELL_FILE(win32_tell_file)
 {
-    return (i32)SetFilePointer(file.handle, 0, 0, FILE_CURRENT);
+    auto result = SetFilePointer(file.handle, 0, 0, FILE_CURRENT);
+    return (i32)result;
 }
 
 static PLATFORM_READ_LINE_FILE(win32_read_line_file)
