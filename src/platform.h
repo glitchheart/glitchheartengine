@@ -101,15 +101,12 @@ struct ConfigData
     char* starting_level_file_path;
     i32 screen_width;
     i32 screen_height;
-    i32 scale_from_width;
-    i32 scale_from_height;
     WindowMode window_mode;
     r32 contrast;
     r32 brightness;
     b32 muted;
     r32 sfx_volume;
     r32 music_volume;
-    b32 skip_splash_screen;
 };
 
 #define MAX_FILE_PATHS 128

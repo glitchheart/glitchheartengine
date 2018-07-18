@@ -2591,7 +2591,7 @@ static void swap_buffers(RenderState &render_state)
     glfwSwapBuffers(render_state.window);
 }
 
-static void render(RenderState& render_state, Renderer& renderer, MemoryArena* perm_arena, r64 delta_time)
+static void render(RenderState& render_state, Renderer& renderer, MemoryArena* perm_arena, r64 delta_time, b32 *save_config)
 {   
     if(render_state.paused)
     {
@@ -2608,6 +2608,8 @@ static void render(RenderState& render_state, Renderer& renderer, MemoryArena* p
     {
         render_state.window_width = renderer.window_width;
         render_state.window_height = renderer.window_height;
+        
+        *save_config = true;
         
         if(renderer.window_mode != render_state.window_mode)
         {

@@ -369,6 +369,7 @@ static PLATFORM_OPEN_FILE(win32_open_file)
     auto flags = read | write;
     
     result.handle = CreateFile(path, (DWORD)flags, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
+    //result.handle = CreateFile(path, (DWORD)flags, 0, 0, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
     
     return(result);
 }
@@ -424,24 +425,33 @@ static PLATFORM_PRINT_FILE(win32_print_file)
 {
     va_list args;
     va_start(args, format);
-    auto len = vsnprintf(nullptr, 0, format, args);
-    UNUSED(len);
+    size_t len = (size_t)vsnprintf(nullptr, 0, format, args);
+    
+    char* buf = (char*)malloc(len + 1);
+    vsnprintf(buf, len + 1, format, args);
+    buf[len] = 0;
+    auto result = WriteFile(file.handle, buf, (DWORD)(len + 1), 0, 0);
     
     va_end(args);
+    
+    if(!result)
+    {
+        auto err = GetLastError();
+        log_error("Couldn't write '%s' to file with error %d", format, err);
+    }
+    
+    return result;
 }
 
 static void init_platform(PlatformApi& platform_api)
 {
     platform_api.get_all_files_with_extension = win32_find_files_with_extensions;
-    platform_api.get_all_directories = win32_get_all_directories;
     platform_api.file_exists = win32_file_exists;
     platform_api.allocate_memory = win32_allocate_memory;
     platform_api.deallocate_memory = win32_deallocate_memory;
-    //platform_api.open_file_with_dialog = win32_open_file_with_dialog;
-    //platform_api.save_file_with_dialog = win32_save_file_with_dialog;
-    platform_api.load_symbol = win32_load_symbol;
     platform_api.free_dynamic_library = win32_free_library;
     platform_api.load_dynamic_library = win32_load_library;
+    platform_api.load_symbol = win32_load_symbol;
     platform_api.open_file = win32_open_file;
     platform_api.read_file = win32_read_file;
     platform_api.write_file = win32_write_file;
@@ -450,4 +460,6 @@ static void init_platform(PlatformApi& platform_api)
     platform_api.tell_file = win32_tell_file;
     platform_api.sleep = win32_sleep;
     platform_api.sleep_is_granular = win32_sleep_is_granular;
+    platform_api.print_file = win32_print_file;
+    platform_api.get_all_directories = win32_get_all_directories;
 }

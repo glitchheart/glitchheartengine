@@ -262,8 +262,13 @@ static PLATFORM_READ_LINE_FILE(linux_read_line_file)
 
 static PLATFORM_PRINT_FILE(linux_print_file)
 {
-    assert(false);
-    return -1;
+    va_list args;
+    va_start(args, format);
+    fprintf(format, args);
+    va_end(args);
+    
+    UNUSED(len);
+    return 0;
 }
 
 PLATFORM_GET_ALL_DIRECTORIES(linux_get_all_directories)
@@ -311,5 +316,6 @@ static void init_platform(PlatformApi& platform_api)
     platform_api.close_file = linux_close_file;
     platform_api.seek_file = linux_seek_file;
     platform_api.tell_file = linux_tell_file;
+    platform_api.print_file = linux_print_file;
     platform_api.get_all_directories = linux_get_all_directories;
 }
