@@ -39,13 +39,14 @@ static GLchar* load_shader_from_file(const char* path, MemoryArena* arena)
         source = push_size(arena, size + 1, GLchar);
         
         platform.read_file(source, size, 1, f); 
+        
         source[size] = '\0';
         
         platform.close_file(f);
     }
     else
     {
-        fprintf(stderr, "Could not read file %s. File does not exist.\n",path);
+        log_error( "Could not read file %s. File does not exist.\n", path);
     }
     
     return source;
