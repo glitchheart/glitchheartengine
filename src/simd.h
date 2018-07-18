@@ -36,7 +36,7 @@ union S_i32
     }
 };
 
-S_i32 operator+ (S_i32 a, S_i32 b)
+inline S_i32 operator+ (S_i32 a, S_i32 b)
 {
     S_i32 res(0);
     
@@ -46,7 +46,7 @@ S_i32 operator+ (S_i32 a, S_i32 b)
 }
 
 
-S_i32 operator- (S_i32 a, S_i32 b)
+inline S_i32 operator- (S_i32 a, S_i32 b)
 {
     S_i32 res(0);
     
@@ -55,12 +55,12 @@ S_i32 operator- (S_i32 a, S_i32 b)
     return res;
 }
 
-S_i32 operator-= (S_i32 a, S_i32 b)
+inline S_i32 operator-= (S_i32 a, S_i32 b)
 {
     return a - b;
 }
 
-S_i32 operator* (S_i32 a, S_i32 b)
+inline S_i32 operator* (S_i32 a, S_i32 b)
 {
     S_i32 res(0);
     
@@ -69,43 +69,42 @@ S_i32 operator* (S_i32 a, S_i32 b)
     return res;
 }
 
-S_i32 operator*= (S_i32 a, S_i32 b)
+inline S_i32 operator*= (S_i32 a, S_i32 b)
 {
     return a * b;
 }
 
-S_i32 operator/ (S_i32 a, S_i32 b)
+inline S_i32 operator/ (S_i32 a, S_i32 b)
 {
     assert(false);
     return S_i32(0);
 }
 
-S_i32 operator/= (S_i32 a, S_i32 b)
+inline S_i32 operator/= (S_i32 a, S_i32 b)
 {
     assert(false);
     return S_i32(0);
 }
 
-b32 operator<(S_i32 a, S_i32 b)
+inline b32 operator<(S_i32 a, S_i32 b)
 {
     return false;
 }
 
-b32 operator>(S_i32 a, S_i32 b)
+inline b32 operator>(S_i32 a, S_i32 b)
 {
     return false;
 }
 
-void operator++(S_i32& a, i32 i)
+inline void operator++(S_i32& a, i32 i)
 {
     
 }
 
-void operator--(S_i32& a, i32 i)
+inline void operator--(S_i32& a, i32 i)
 {
     
 }
-
 
 union S_r32
 {
@@ -125,27 +124,26 @@ union S_r32
     
     S_r32(__m128 v)
     {
-        float*_v = (float*)&v;
-        p = _mm_set_ps(_v[0], _v[1], _v[2], _v[3]);
+        p = v;
     }
     
-    S_r32& operator=(const r32& v)
+    inline S_r32& operator=(const r32& v)
     {
         p = _mm_set1_ps(v);
         
         return *this;
     }
     
-    S_r32& operator=(const S_r32& v)
+    inline S_r32& operator=(const S_r32& v)
     {
-        p = _mm_set_ps(v.e[0], v.e[1], v.e[2], v.e[3]);
+        p = v.p;
         
         return *this;
     }
     
 };
 
-S_r32 operator+ (S_r32 a, S_r32 b)
+inline S_r32 operator+ (S_r32 a, S_r32 b)
 {
     S_r32 res(0.0f);
     
@@ -154,7 +152,7 @@ S_r32 operator+ (S_r32 a, S_r32 b)
     return res;
 }
 
-S_r32 operator+ (S_r32 a, r32 b)
+inline S_r32 operator+ (S_r32 a, r32 b)
 {
     S_r32 res(0.0f);
     
@@ -163,7 +161,7 @@ S_r32 operator+ (S_r32 a, r32 b)
     return res;
 }
 
-S_r32 operator+ (r32 a, S_r32 b)
+inline S_r32 operator+ (r32 a, S_r32 b)
 {
     S_r32 res(0.0f);
     
@@ -172,7 +170,7 @@ S_r32 operator+ (r32 a, S_r32 b)
     return res;
 }
 
-S_r32 operator- (S_r32 a, S_r32 b)
+inline S_r32 operator- (S_r32 a, S_r32 b)
 {
     S_r32 res(0.0f);
     
@@ -181,7 +179,7 @@ S_r32 operator- (S_r32 a, S_r32 b)
     return res;
 }
 
-S_r32 operator* (S_r32 a, S_r32 b)
+inline S_r32 operator* (S_r32 a, S_r32 b)
 {
     S_r32 res(0.0f);
     
@@ -190,7 +188,7 @@ S_r32 operator* (S_r32 a, S_r32 b)
     return res;
 }
 
-S_r32 operator/ (S_r32 a, S_r32 b)
+inline S_r32 operator/ (S_r32 a, S_r32 b)
 {
     S_r32 res(0.0f);
     
@@ -217,7 +215,7 @@ union S_h64
     
     S_h64(__m128d _p) 
     {
-        p = _mm_set1_pd(*(double*)&_p);
+        p = _p;
     }
     
     S_h64(r64 _a, r64 _b)
@@ -225,21 +223,21 @@ union S_h64
         p = _mm_set_pd(_a, _b);
     }
     
-    S_h64& operator=(const r64& v)
+    inline S_h64& operator=(const r64& v)
     {
         p = _mm_set1_pd(v);
         
         return *this;
     }
     
-    S_h64& operator=(const S_h64& v)
+    inline S_h64& operator=(const S_h64& v)
     {
         p = v.p;
         
         return *this;
     }
     
-    S_h64 operator+ (S_h64 b)
+    inline S_h64 operator+ (S_h64 b)
     {
         S_h64 res(0.0f);
         
@@ -254,7 +252,7 @@ union S_h64
         return *this;
     }
     
-    S_h64 operator- (S_h64 b)
+    inline S_h64 operator- (S_h64 b)
     {
         S_h64 res(0.0f);
         
@@ -269,7 +267,7 @@ union S_h64
         return *this;
     }
     
-    S_h64 operator* (S_h64 b)
+    inline S_h64 operator* (S_h64 b)
     {
         S_h64 res(0.0f);
         
@@ -284,7 +282,7 @@ union S_h64
         return *this;
     }
     
-    S_h64 operator/ (S_h64 b)
+    inline S_h64 operator/ (S_h64 b)
     {
         S_h64 res(0.0f);
         
@@ -329,7 +327,7 @@ union S_r64
         lower_bits = S_h64(lower);
     }
     
-    S_r64& operator=(const S_r64& v)
+    inline S_r64& operator=(const S_r64& v)
     {
         upper_bits = S_h64(v.e[0], v.e[1]);
         lower_bits = S_h64(v.e[2], v.e[3]);
@@ -337,7 +335,7 @@ union S_r64
         return *this;
     }
     
-    S_r64& operator=(const r64& v)
+    inline S_r64& operator=(const r64& v)
     {
         upper_bits = S_h64(v, v);
         lower_bits = S_h64(v, v);
@@ -345,7 +343,7 @@ union S_r64
         return *this;
     }
     
-    S_r64 operator+ (S_r64 b)
+    inline S_r64 operator+ (S_r64 b)
     {
         S_r64 res(0.0);
         
@@ -355,7 +353,7 @@ union S_r64
         return res;
     }
     
-    S_r64& operator+= (S_r64 b)
+    inline S_r64& operator+= (S_r64 b)
     {
         upper_bits += b.upper_bits;
         lower_bits += b.lower_bits;
@@ -363,7 +361,7 @@ union S_r64
         return *this;
     }
     
-    S_r64 operator- (S_r64 b)
+    inline S_r64 operator- (S_r64 b)
     {
         S_r64 res(0.0);
         
@@ -373,14 +371,14 @@ union S_r64
         return res;
     }
     
-    S_r64 operator-= (S_r64 b)
+    inline S_r64 operator-= (S_r64 b)
     {
         upper_bits -= b.upper_bits;
         lower_bits -= b.lower_bits;
         return *this;
     }
     
-    S_r64 operator* (S_r64 b)
+    inline S_r64 operator* (S_r64 b)
     {
         S_r64 res(0.0);
         
@@ -390,14 +388,14 @@ union S_r64
         return res;
     }
     
-    S_r64& operator*= (S_r64 b)
+    inline S_r64& operator*= (S_r64 b)
     {
         upper_bits *= b.upper_bits;
         lower_bits *= b.lower_bits;
         return *this;
     }
     
-    S_r64 operator/ (S_r64 b)
+    inline S_r64 operator/ (S_r64 b)
     {
         S_r64 res(0.0);
         
@@ -407,7 +405,7 @@ union S_r64
         return res;
     }
     
-    S_r64& operator/= (S_r64 b)
+    inline S_r64& operator/= (S_r64 b)
     {
         upper_bits /= b.upper_bits;
         lower_bits /= b.lower_bits;
@@ -416,7 +414,7 @@ union S_r64
 };
 
 
-S_r32 operator+(S_r32 a, S_r64 b)
+inline S_r32 operator+(S_r32 a, S_r64 b)
 {
     S_r32 res(0.0f);
     
@@ -428,7 +426,7 @@ S_r32 operator+(S_r32 a, S_r64 b)
     return res;
 }
 
-S_r32 operator+(S_r64 a, S_r32 b)
+inline S_r32 operator+(S_r64 a, S_r32 b)
 {
     S_r32 res(0.0f);
     
@@ -440,8 +438,7 @@ S_r32 operator+(S_r64 a, S_r32 b)
     return res;
 }
 
-
-S_r32 operator*(S_r32 a, S_r64 b)
+inline S_r32 operator*(S_r32 a, S_r64 b)
 {
     S_r32 res(0.0f);
     
@@ -453,7 +450,7 @@ S_r32 operator*(S_r32 a, S_r64 b)
     return res;
 }
 
-S_r32 operator*(S_r64 a, S_r32 b)
+inline S_r32 operator*(S_r64 a, S_r32 b)
 {
     S_r32 res(0.0f);
     
@@ -465,7 +462,7 @@ S_r32 operator*(S_r64 a, S_r32 b)
     return res;
 }
 
-S_r32 operator/(S_r32 a, S_r64 b)
+inline S_r32 operator/(S_r32 a, S_r64 b)
 {
     S_r32 res(0.0f);
     
@@ -477,7 +474,7 @@ S_r32 operator/(S_r32 a, S_r64 b)
     return res;
 }
 
-S_r32 operator/(S_r64 a, S_r32 b)
+inline S_r32 operator/(S_r64 a, S_r32 b)
 {
     S_r32 res(0.0f);
     
@@ -489,7 +486,7 @@ S_r32 operator/(S_r64 a, S_r32 b)
     return res;
 }
 
-r64 operator-(r64 left, S_r64 right)
+inline r64 operator-(r64 left, S_r64 right)
 {
     return left - right.e[0];
 }
@@ -499,27 +496,27 @@ r32 operator-(r32 left, S_r64 right)
     return left - (r32)right.e[0];
 }
 
-S_r64 simd_min(S_r64 left, S_r64 right)
+inline S_r64 simd_min(S_r64 left, S_r64 right)
 {
     __m128d min_upper = _mm_min_pd(left.upper_bits.p, right.upper_bits.p);
     __m128d min_lower = _mm_min_pd(left.lower_bits.p, right.lower_bits.p);
     return S_r64(min_upper, min_lower);
 }
 
-S_r64 simd_min(r64 left, S_r64 right)
+inline S_r64 simd_min(r64 left, S_r64 right)
 {
     __m128d min_upper = _mm_min_pd(_mm_set1_pd(left), right.upper_bits.p);
     __m128d min_lower = _mm_min_pd(_mm_set1_pd(left), right.lower_bits.p);
     return S_r64(min_upper, min_lower);
 }
 
-S_r32 simd_min(r32 left, S_r32 right)
+inline S_r32 simd_min(r32 left, S_r32 right)
 {
     __m128 min = _mm_min_ps(_mm_set1_ps(left), right.p);
     return S_r32(min);
 }
 
-b32 equal_epsilon(S_r64 v, r64 cmp, r64 epsilon)
+inline b32 equal_epsilon(S_r64 v, r64 cmp, r64 epsilon)
 {
     __m128d vcmp_me_up = _mm_cmplt_pd(_mm_set1_pd(cmp - epsilon), v.upper_bits.p);
     __m128d vcmp_pe_up = _mm_cmpgt_pd(_mm_set1_pd(cmp + epsilon), v.upper_bits.p);
@@ -534,7 +531,7 @@ b32 equal_epsilon(S_r64 v, r64 cmp, r64 epsilon)
     return cmp_me_up != 0 && cmp_pe_up != 0 && cmp_me_lo != 0 && cmp_pe_lo != 0;
 }
 
-b32 any_lt(S_i32 v, i32 val)
+inline b32 any_lt(S_i32 v, i32 val)
 {
     __m128i vcmp = _mm_cmplt_epi32(v.p, _mm_set1_epi32(val));
     i32 cmp = _mm_movemask_epi8(vcmp);
@@ -542,7 +539,7 @@ b32 any_lt(S_i32 v, i32 val)
     return cmp != 0;
 }
 
-b32 any_lt(S_r64 v, S_r64 val)
+inline b32 any_lt(S_r64 v, S_r64 val)
 {
     __m128d vcmp_lt_up = _mm_cmplt_pd(v.upper_bits.p, val.upper_bits.p);
     __m128d vcmp_lt_lo = _mm_cmplt_pd(v.lower_bits.p, val.lower_bits.p);
@@ -553,7 +550,7 @@ b32 any_lt(S_r64 v, S_r64 val)
     return cmp_lt_up != 0 && cmp_lt_lo != 0;
 }
 
-b32 any_lt_eq(S_r64 v, S_r64 val)
+inline b32 any_lt_eq(S_r64 v, S_r64 val)
 {
     __m128d vcmp_lt_up = _mm_cmplt_pd(v.upper_bits.p, val.upper_bits.p);
     __m128d vcmp_lt_lo = _mm_cmplt_pd(v.lower_bits.p, val.lower_bits.p);
@@ -569,7 +566,7 @@ b32 any_lt_eq(S_r64 v, S_r64 val)
     return cmp_lt_up != 0 || cmp_eq_up != 0 && cmp_lt_lo != 0 || cmp_eq_lo != 0;
 }
 
-b32 any_nz(S_r64 v)
+inline b32 any_nz(S_r64 v)
 {
     __m128d upper_vcmp = _mm_cmplt_pd(_mm_setzero_pd(), v.upper_bits.p);
     i32 upper_cmp = _mm_movemask_pd(upper_vcmp);
@@ -579,7 +576,6 @@ b32 any_nz(S_r64 v)
     
     return lower_cmp != 0 || upper_cmp != 0;
 }
-
 
 #else
 union S_r64
@@ -603,21 +599,21 @@ union S_r64
         p = _mm256_set_pd(_v[0], _v[1], _v[2], _v[3]);
     }
     
-    S_r64& operator=(const S_r64& v)
+    inline S_r64& operator=(const S_r64& v)
     {
         p = _mm256_set_pd(v.e[0], v.e[1], v.e[2], v.e[3]);
         
         return *this;
     }
     
-    S_r64& operator=(const r64& v)
+    inline S_r64& operator=(const r64& v)
     {
         p = _mm256_set1_pd(v);
         
         return *this;
     }
     
-    S_r64 operator+ (S_r64 b)
+    inline S_r64 operator+ (S_r64 b)
     {
         S_r64 res(0.0);
         
@@ -626,14 +622,14 @@ union S_r64
         return res;
     }
     
-    S_r64& operator+= (S_r64 b)
+    inline S_r64& operator+= (S_r64 b)
     {
         p = _mm256_add_pd(p, b.p);
         
         return *this;
     }
     
-    S_r64 operator- (S_r64 b)
+    inline S_r64 operator- (S_r64 b)
     {
         S_r64 res(0.0);
         
@@ -642,14 +638,14 @@ union S_r64
         return res;
     }
     
-    S_r64 operator-= (S_r64 b)
+    inline S_r64 operator-= (S_r64 b)
     {
         p = _mm256_sub_pd(p, b.p);
         
         return *this;
     }
     
-    S_r64 operator* (S_r64 b)
+    inline S_r64 operator* (S_r64 b)
     {
         S_r64 res(0.0);
         
@@ -658,7 +654,7 @@ union S_r64
         return res;
     }
     
-    S_r64 operator* (r32 b)
+    inline S_r64 operator* (r32 b)
     {
         S_r64 res(0.0);
         
@@ -667,7 +663,7 @@ union S_r64
         return res;
     }
     
-    S_r64 operator* (r64 b)
+    inline S_r64 operator* (r64 b)
     {
         S_r64 res(0.0);
         
@@ -676,14 +672,14 @@ union S_r64
         return res;
     }
     
-    S_r64& operator*= (S_r64 b)
+    inline S_r64& operator*= (S_r64 b)
     {
         p = _mm256_mul_pd(p, b.p);
         
         return *this;
     }
     
-    S_r64 operator/ (S_r64 b)
+    inline S_r64 operator/ (S_r64 b)
     {
         S_r64 res(0.0);
         
@@ -692,7 +688,7 @@ union S_r64
         return res;
     }
     
-    S_r64& operator/= (S_r64 b)
+    inline S_r64& operator/= (S_r64 b)
     {
         p = _mm256_div_pd(p, b.p);
         return *this;
@@ -701,7 +697,7 @@ union S_r64
     
 };
 
-S_r32 operator+(S_r32 a, S_r64 b)
+inline S_r32 operator+(S_r32 a, S_r64 b)
 {
     S_r32 res(0.0f);
     
@@ -712,7 +708,7 @@ S_r32 operator+(S_r32 a, S_r64 b)
     return res;
 }
 
-S_r32 operator+(S_r64 a, S_r32 b)
+inline S_r32 operator+(S_r64 a, S_r32 b)
 {
     S_r32 res(0.0f);
     
@@ -723,8 +719,7 @@ S_r32 operator+(S_r64 a, S_r32 b)
     return res;
 }
 
-
-S_r32 operator*(S_r32 a, S_r64 b)
+inline S_r32 operator*(S_r32 a, S_r64 b)
 {
     S_r32 res(0.0f);
     
@@ -735,7 +730,7 @@ S_r32 operator*(S_r32 a, S_r64 b)
     return res;
 }
 
-S_r32 operator*(S_r64 a, S_r32 b)
+inline S_r32 operator*(S_r64 a, S_r32 b)
 {
     S_r32 res(0.0f);
     
@@ -746,7 +741,7 @@ S_r32 operator*(S_r64 a, S_r32 b)
     return res;
 }
 
-S_r32 operator/(S_r32 a, S_r64 b)
+inline S_r32 operator/(S_r32 a, S_r64 b)
 {
     S_r32 res(0.0f);
     
@@ -757,7 +752,7 @@ S_r32 operator/(S_r32 a, S_r64 b)
     return res;
 }
 
-S_r32 operator/(S_r64 a, S_r32 b)
+inline S_r32 operator/(S_r64 a, S_r32 b)
 {
     S_r32 res(0.0f);
     
@@ -768,35 +763,35 @@ S_r32 operator/(S_r64 a, S_r32 b)
     return res;
 }
 
-r64 operator-(r64 left, S_r64 right)
+inline r64 operator-(r64 left, S_r64 right)
 {
     return left - right.e[0];
 }
 
-r32 operator-(r32 left, S_r64 right)
+inline r32 operator-(r32 left, S_r64 right)
 {
     return left - (r32)right.e[0];
 }
 
-S_r64 simd_min(S_r64 left, S_r64 right)
+inline S_r64 simd_min(S_r64 left, S_r64 right)
 {
     __m256d min = _mm256_min_pd(left.p, right.p);
     return S_r64(min);
 }
 
-S_r64 simd_min(r64 left, S_r64 right)
+inline S_r64 simd_min(r64 left, S_r64 right)
 {
     __m256d min = _mm256_min_pd(_mm256_set1_pd(left), right.p);
     return S_r64(min);
 }
 
-S_r32 simd_min(r32 left, S_r32 right)
+inline S_r32 simd_min(r32 left, S_r32 right)
 {
     __m128 min = _mm_min_ps(_mm_set1_ps(left), right.p);
     return S_r32(min);
 }
 
-b32 equal_epsilon(S_r64 v, r64 cmp, r64 epsilon)
+inline b32 equal_epsilon(S_r64 v, r64 cmp, r64 epsilon)
 {
     __m256d vcmp_me = _mm256_cmp_pd(_mm256_set1_pd(cmp - epsilon), v.p, _CMP_LT_OQ);
     __m256d vcmp_pe = _mm256_cmp_pd(_mm256_set1_pd(cmp + epsilon), v.p, _CMP_GT_OQ);
@@ -807,7 +802,7 @@ b32 equal_epsilon(S_r64 v, r64 cmp, r64 epsilon)
     return cmp_me != 0 && cmp_pe != 0;
 }
 
-b32 any_lt(S_i32 v, i32 val)
+inline b32 any_lt(S_i32 v, i32 val)
 {
     __m128i vcmp = _mm_cmplt_epi32(v.p, _mm_set1_epi32(val));
     i32 cmp = _mm_movemask_epi8(vcmp);
@@ -815,7 +810,7 @@ b32 any_lt(S_i32 v, i32 val)
     return cmp != 0;
 }
 
-b32 any_lt(S_r64 v, S_r64 val)
+inline b32 any_lt(S_r64 v, S_r64 val)
 {
     __m256d vcmp_lt = _mm256_cmp_pd(v.p, val.p, _CMP_LT_OQ);
     i32 cmp_lt = _mm256_movemask_pd(vcmp_lt);
@@ -823,7 +818,7 @@ b32 any_lt(S_r64 v, S_r64 val)
     return cmp_lt != 0;
 }
 
-b32 any_lt_eq(S_r64 v, S_r64 val)
+inline b32 any_lt_eq(S_r64 v, S_r64 val)
 {
     __m256d vcmp_lt = _mm256_cmp_pd(v.p, val.p, _CMP_LT_OQ);
     i32 cmp_lt = _mm256_movemask_pd(vcmp_lt);
@@ -833,7 +828,7 @@ b32 any_lt_eq(S_r64 v, S_r64 val)
     return cmp_lt != 0 || cmp_eq != 0;
 }
 
-b32 any_nz(S_r64 v)
+inline b32 any_nz(S_r64 v)
 {
     __m256d vcmp = _mm256_cmp_pd(_mm256_setzero_pd(), v.p, _CMP_LT_OQ);
     i32 cmp = _mm256_movemask_pd(vcmp);
@@ -876,7 +871,7 @@ union S_Vec2
         y = S_r32(v1.y, v2.y, v3.y, v4.y);
     }
     
-    S_Vec2& operator=(const math::Vec2& v)
+    inline S_Vec2& operator=(const math::Vec2& v)
     {
         x = v.x;
         y = v.y;
@@ -884,7 +879,7 @@ union S_Vec2
         return *this;
     }
     
-    S_Vec2& operator=(const S_Vec2& v)
+    inline S_Vec2& operator=(const S_Vec2& v)
     {
         x = v.x;
         y = v.y;
@@ -892,7 +887,7 @@ union S_Vec2
         return *this;
     }
     
-    S_Vec2 operator+(S_Vec2& v)
+    inline S_Vec2 operator+(S_Vec2& v)
     {
         S_Vec2 res(0.0f);
         
@@ -902,7 +897,7 @@ union S_Vec2
         return res;
     }
     
-    S_Vec2 operator+(S_r32 v)
+    inline S_Vec2 operator+(S_r32 v)
     {
         S_Vec2 res(0.0f);
         
@@ -912,7 +907,7 @@ union S_Vec2
         return res;
     }
     
-    S_Vec2 operator+(r32 v)
+    inline S_Vec2 operator+(r32 v)
     {
         S_Vec2 res(0.0f);
         
@@ -924,7 +919,7 @@ union S_Vec2
         return res;
     }
     
-    S_Vec2 operator-(S_Vec2& v)
+    inline S_Vec2 operator-(S_Vec2& v)
     {
         S_Vec2 res(0.0f);
         
@@ -934,7 +929,7 @@ union S_Vec2
         return res;
     }
     
-    S_Vec2 operator-(S_r32 v)
+    inline S_Vec2 operator-(S_r32 v)
     {
         S_Vec2 res(0.0f);
         
@@ -944,7 +939,7 @@ union S_Vec2
         return res;
     }
     
-    S_Vec2 operator-(r32 v)
+    inline S_Vec2 operator-(r32 v)
     {
         S_Vec2 res(0.0f);
         
@@ -956,7 +951,7 @@ union S_Vec2
         return res;
     }
     
-    S_Vec2 operator*(S_Vec2& v)
+    inline S_Vec2 operator*(S_Vec2& v)
     {
         S_Vec2 res(0.0f);
         
@@ -966,7 +961,7 @@ union S_Vec2
         return res;
     }
     
-    S_Vec2 operator*(S_r32 v)
+    inline S_Vec2 operator*(S_r32 v)
     {
         S_Vec2 res(0.0f);
         
@@ -976,7 +971,7 @@ union S_Vec2
         return res;
     }
     
-    S_Vec2 operator*(r32 v)
+    inline S_Vec2 operator*(r32 v)
     {
         S_Vec2 res(0.0f);
         
@@ -988,7 +983,7 @@ union S_Vec2
         return res;
     }
     
-    S_Vec2 operator/(S_Vec2& v)
+    inline S_Vec2 operator/(S_Vec2& v)
     {
         S_Vec2 res(0.0f);
         
@@ -998,7 +993,7 @@ union S_Vec2
         return res;
     }
     
-    S_Vec2 operator/(S_r32 v)
+    inline S_Vec2 operator/(S_r32 v)
     {
         S_Vec2 res(0.0f);
         
@@ -1008,7 +1003,7 @@ union S_Vec2
         return res;
     }
     
-    S_Vec2 operator/(r32 v)
+    inline S_Vec2 operator/(r32 v)
     {
         S_Vec2 res(0.0f);
         
@@ -1059,7 +1054,7 @@ union S_Vec3
         z = S_r32(v1.z, v2.z, v3.z, v4.z);
     }
     
-    S_Vec3& operator=(const S_Vec3& v)
+    inline S_Vec3& operator=(const S_Vec3& v)
     {
         x = v.x;
         y = v.y;
@@ -1068,7 +1063,7 @@ union S_Vec3
         return *this;
     }
     
-    S_Vec3 operator+(S_Vec3& v)
+    inline S_Vec3 operator+(S_Vec3& v)
     {
         S_Vec3 res(0.0f);
         
@@ -1079,7 +1074,7 @@ union S_Vec3
         return res;
     }
     
-    S_Vec3 operator+(S_r32 a)
+    inline S_Vec3 operator+(S_r32 a)
     {
         S_Vec3 res(0.0f);
         
@@ -1090,7 +1085,7 @@ union S_Vec3
         return res;
     }
     
-    S_Vec3 operator+(r32 a)
+    inline S_Vec3 operator+(r32 a)
     {
         S_Vec3 res(0.0f);
         
@@ -1103,7 +1098,7 @@ union S_Vec3
         return res;
     }
     
-    S_Vec3 operator+(math::Vec3 b)
+    inline S_Vec3 operator+(math::Vec3 b)
     {
         S_Vec3 res(0.0f);
         
@@ -1114,7 +1109,7 @@ union S_Vec3
         return res;
     }
     
-    S_Vec3& operator+= (S_Vec3 b)
+    inline S_Vec3& operator+= (S_Vec3 b)
     {
         x = x + b.x;
         y = y + b.y;
@@ -1123,7 +1118,7 @@ union S_Vec3
         return *this;
     }
     
-    S_Vec3 operator-(S_Vec3& a)
+    inline S_Vec3 operator-(S_Vec3& a)
     {
         S_Vec3 res(0.0f);
         
@@ -1134,7 +1129,7 @@ union S_Vec3
         return res;
     }
     
-    S_Vec3 operator-(S_r32 a)
+    inline S_Vec3 operator-(S_r32 a)
     {
         S_Vec3 res(0.0f);
         
@@ -1145,7 +1140,7 @@ union S_Vec3
         return res;
     }
     
-    S_Vec3 operator-(r32 a)
+    inline S_Vec3 operator-(r32 a)
     {
         S_Vec3 res(0.0f);
         
@@ -1158,8 +1153,7 @@ union S_Vec3
         return res;
     }
     
-    
-    S_Vec3 operator*(S_Vec3& a)
+    inline S_Vec3 operator*(S_Vec3& a)
     {
         S_Vec3 res(0.0f);
         
@@ -1171,7 +1165,7 @@ union S_Vec3
         return res;
     }
     
-    S_Vec3 operator*(S_r32 a)
+    inline S_Vec3 operator*(S_r32 a)
     {
         S_Vec3 res(0.0f);
         
@@ -1182,8 +1176,7 @@ union S_Vec3
         return res;
     }
     
-    
-    S_Vec3 operator*(r32 a)
+    inline S_Vec3 operator*(r32 a)
     {
         S_Vec3 res(0.0f);
         
@@ -1196,7 +1189,7 @@ union S_Vec3
         return res;
     }
     
-    S_Vec3 operator*(r64 a)
+    inline S_Vec3 operator*(r64 a)
     {
         S_Vec3 res(0.0f);
         
@@ -1209,7 +1202,7 @@ union S_Vec3
         return res;
     }
     
-    S_Vec3 operator/(S_Vec3& a)
+    inline S_Vec3 operator/(S_Vec3& a)
     {
         S_Vec3 res(0.0f);
         
@@ -1220,7 +1213,7 @@ union S_Vec3
         return res;
     }
     
-    S_Vec3 operator/(S_r32 a)
+    inline S_Vec3 operator/(S_r32 a)
     {
         S_Vec3 res(0.0f);
         
@@ -1231,7 +1224,7 @@ union S_Vec3
         return res;
     }
     
-    S_Vec3 operator/(r32 a)
+    inline S_Vec3 operator/(r32 a)
     {
         S_Vec3 res(0.0f);
         
@@ -1245,7 +1238,7 @@ union S_Vec3
     }
 };
 
-S_Vec3 operator+(math::Vec3 a, S_Vec3 b)
+inline S_Vec3 operator+(math::Vec3 a, S_Vec3 b)
 {
     S_Vec3 res(0.0f);
     
@@ -1255,8 +1248,6 @@ S_Vec3 operator+(math::Vec3 a, S_Vec3 b)
     
     return res;
 }
-
-
 
 union S_Vec4
 {
@@ -1320,7 +1311,7 @@ union S_Vec4
         w = S_r32(v1.w, v2.w, v3.w, v4.w);
     }
     
-    S_Vec4& operator=(const S_Vec4& v)
+    inline S_Vec4& operator=(const S_Vec4& v)
     {
         x = v.x;
         y = v.y;
@@ -1330,7 +1321,7 @@ union S_Vec4
         return *this;
     }
     
-    S_Vec4 operator+(S_Vec4& v)
+    inline S_Vec4 operator+(S_Vec4& v)
     {
         S_Vec4 res(0.0f);
         
@@ -1342,7 +1333,7 @@ union S_Vec4
         return res;
     }
     
-    S_Vec4 operator+(S_r32 v)
+    inline S_Vec4 operator+(S_r32 v)
     {
         S_Vec4 res(0.0f);
         
@@ -1354,7 +1345,7 @@ union S_Vec4
         return res;
     }
     
-    S_Vec4 operator+(r32 v)
+    inline S_Vec4 operator+(r32 v)
     {
         S_Vec4 res(0.0f);
         
@@ -1368,8 +1359,7 @@ union S_Vec4
         return res;
     }
     
-    
-    S_Vec4 operator-(S_Vec4& v)
+    inline S_Vec4 operator-(S_Vec4& v)
     {
         S_Vec4 res(0.0f);
         
@@ -1381,7 +1371,7 @@ union S_Vec4
         return res;
     }
     
-    S_Vec4 operator-(S_r32 v)
+    inline S_Vec4 operator-(S_r32 v)
     {
         S_Vec4 res(0.0f);
         
@@ -1393,7 +1383,7 @@ union S_Vec4
         return res;
     }
     
-    S_Vec4 operator-(r32 v)
+    inline S_Vec4 operator-(r32 v)
     {
         S_Vec4 res(0.0f);
         
@@ -1407,7 +1397,7 @@ union S_Vec4
         return res;
     }
     
-    S_Vec4 operator*(S_Vec4& v)
+    inline S_Vec4 operator*(S_Vec4& v)
     {
         S_Vec4 res(0.0f);
         
@@ -1419,7 +1409,7 @@ union S_Vec4
         return res;
     }
     
-    S_Vec4 operator*(S_r32 v)
+    inline S_Vec4 operator*(S_r32 v)
     {
         S_Vec4 res(0.0f);
         
@@ -1431,7 +1421,7 @@ union S_Vec4
         return res;
     }
     
-    S_Vec4 operator*(r32 v)
+    inline S_Vec4 operator*(r32 v)
     {
         S_Vec4 res(0.0f);
         
@@ -1445,7 +1435,7 @@ union S_Vec4
         return res;
     }
     
-    S_Vec4 operator/(S_Vec4& v)
+    inline S_Vec4 operator/(S_Vec4& v)
     {
         S_Vec4 res(0.0f);
         
@@ -1457,7 +1447,7 @@ union S_Vec4
         return res;
     }
     
-    S_Vec4 operator/(S_r32 v)
+    inline S_Vec4 operator/(S_r32 v)
     {
         S_Vec4 res(0.0f);
         
@@ -1469,7 +1459,7 @@ union S_Vec4
         return res;
     }
     
-    S_Vec4 operator/(r32 v)
+    inline S_Vec4 operator/(r32 v)
     {
         S_Vec4 res(0.0f);
         
@@ -1484,7 +1474,7 @@ union S_Vec4
     }
 };
 
-b32 all_zero(S_r32 v)
+inline b32 all_zero(S_r32 v)
 {
     return false;
 }
@@ -1493,7 +1483,7 @@ using S_Rgba = S_Vec4;
 
 // Extra math
 
-S_Vec3 random_direction()
+inline S_Vec3 random_direction()
 {
     S_Vec3 result(0.0f);
     
@@ -1506,7 +1496,7 @@ S_Vec3 random_direction()
 
 namespace math
 {
-    S_r32 lerp(S_r32 a, S_r64 t, S_r32 b)
+    inline S_r32 lerp(S_r32 a, S_r64 t, S_r32 b)
     {
         S_r32 res(0.0f);
         
@@ -1518,7 +1508,7 @@ namespace math
         return res;
     }
     
-    S_r64 lerp(S_r64 a, S_r64 t, S_r64 b)
+    inline S_r64 lerp(S_r64 a, S_r64 t, S_r64 b)
     {
         S_r64 res(0.0);
         
@@ -1530,7 +1520,7 @@ namespace math
         return res;
     }
     
-    S_Vec2 lerp(S_Vec2 a, S_r64 t, S_Vec2 b)
+    inline S_Vec2 lerp(S_Vec2 a, S_r64 t, S_Vec2 b)
     {
         S_Vec2 res(0.0f);
         res.x = lerp(a.x, t, b.x);
@@ -1539,7 +1529,7 @@ namespace math
         return res;
     }
     
-    S_Vec3 lerp(S_Vec3 a, S_r64 t, S_Vec3 b)
+    inline S_Vec3 lerp(S_Vec3 a, S_r64 t, S_Vec3 b)
     {
         S_Vec3 res(0.0f);
         res.x = lerp(a.x, t, b.x);
@@ -1549,7 +1539,7 @@ namespace math
         return res;
     }
     
-    S_Vec4 lerp(S_Vec4 a, S_r64 t, S_Vec4 b)
+    inline S_Vec4 lerp(S_Vec4 a, S_r64 t, S_Vec4 b)
     {
         S_Vec4 res(0.0f);
         res.x = lerp(a.x, t, b.x);
@@ -1562,12 +1552,12 @@ namespace math
         return res;
     }
     
-    S_r32 r_sqrt(S_r32 v)
+    inline S_r32 r_sqrt(S_r32 v)
     {
         return _mm_rsqrt_ps(v.p);
     }
     
-    S_Vec3 normalize(S_Vec3 v)
+    inline S_Vec3 normalize(S_Vec3 v)
     {
         auto rec_sqrt = r_sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
         
@@ -1580,13 +1570,13 @@ namespace math
         return res;
     }
     
-    r32 sqrt(r32 val)
+    inline r32 sqrt(r32 val)
     {
         return _mm_cvtss_f32(_mm_sqrt_ss(_mm_set_ss(val)));
     }
 }
 
-math::Vec2 to_vec2(S_Vec2 vec, i32 index)
+inline math::Vec2 to_vec2(S_Vec2 vec, i32 index)
 {
     assert(index >= 0 && index <= 3);
     math::Vec2 res(0.0f);
@@ -1597,7 +1587,7 @@ math::Vec2 to_vec2(S_Vec2 vec, i32 index)
     return res;
 }
 
-math::Vec3 to_vec3(S_Vec3 vec, i32 index)
+inline math::Vec3 to_vec3(S_Vec3 vec, i32 index)
 {
     assert(index >= 0 && index <= 3);
     math::Vec3 res(0.0f);
@@ -1609,7 +1599,7 @@ math::Vec3 to_vec3(S_Vec3 vec, i32 index)
     return res;
 }
 
-math::Vec4 to_vec4(S_Vec4 vec, i32 index)
+inline math::Vec4 to_vec4(S_Vec4 vec, i32 index)
 {
     assert(index >= 0 && index <= 3);
     math::Vec4 res(0.0f);
@@ -1622,7 +1612,7 @@ math::Vec4 to_vec4(S_Vec4 vec, i32 index)
     return res;
 }
 
-void s_vec3_to_float4(S_Vec3 v, float* f1, float* f2, float* f3, float* f4)
+inline void s_vec3_to_float4(S_Vec3 v, float* f1, float* f2, float* f3, float* f4)
 {
     __m128 x_mm_0 = _mm_load_ps((float*)&v.x);
     __m128 x_mm_1 = _mm_load_ps((float*)&v.y);
@@ -1645,7 +1635,7 @@ void s_vec3_to_float4(S_Vec3 v, float* f1, float* f2, float* f3, float* f4)
     _mm_store_ps(f4, x_mm_3);
 }
 
-void s_vec2_to_float4(S_Vec2 v, float* f1, float* f2, float* f3, float* f4)
+inline void s_vec2_to_float4(S_Vec2 v, float* f1, float* f2, float* f3, float* f4)
 {
     __m128 x_mm_0 = _mm_load_ps((float*)&v.x);
     __m128 x_mm_1 = _mm_load_ps((float*)&v.y);
@@ -1668,7 +1658,7 @@ void s_vec2_to_float4(S_Vec2 v, float* f1, float* f2, float* f3, float* f4)
     _mm_store_ps(f4, x_mm_3);
 }
 
-void s_vec4_to_float4(S_Vec4 v, float* f1, float* f2, float* f3, float* f4)
+inline void s_vec4_to_float4(S_Vec4 v, float* f1, float* f2, float* f3, float* f4)
 {
     __m128 x_mm_0 = _mm_load_ps((float*)&v.r);
     __m128 x_mm_1 = _mm_load_ps((float*)&v.g);
@@ -1699,9 +1689,8 @@ void s_vec4_to_float4(S_Vec4 v, float* f1, float* f2, float* f3, float* f4)
 
 #define push_array_simd(arena, count, type) (type *)_push_size_simd(arena, (count) * sizeof(type), (member_size(type, e[0])))
 #define push_size_simd(arena, type) (type*)_push_size_simd(arena, sizeof(type), (member_size(type, e[0])))
-void* _push_size_simd(MemoryArena *arena, umm size_init, u32 alignment)
+inline void* _push_size_simd(MemoryArena *arena, umm size_init, u32 alignment)
 {
-    
     return push_size_(arena, size_init, default_with_alignment(alignment));
 }
 

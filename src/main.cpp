@@ -126,6 +126,43 @@ static void reload_libraries(GameCode *Game, char* game_library_path, char* temp
     }
 }
 
+inline void save_config(const char* file_path, RenderState &render_state, SoundDevice &sound_device, ConfigData &old_config_data)
+{
+    /*PlatformFile file;
+    file = platform.open_file(file_path, POF_WRITE);
+    
+    i32 result;
+    
+    result = platform.print_file(file, "screen_width %d\n", render_state.window_width);
+    result = platform.print_file(file, "screen_height %d\n", render_state.window_height);
+    result = platform.print_file(file, "window_mode %d\n", render_state.window_mode);
+    result = platform.print_file(file, "muted %d\n", sound_device.muted);
+    result = platform.print_file(file, "sfx_volume %.2f\n", sound_device.sfx_volume);
+    result = platform.print_file(file, "music_volume %.2f\n", sound_device.music_volume);*/
+    
+    FILE* file = fopen(file_path, "w");
+    
+    if(file)
+    {
+        fprintf(file, "screen_width %d\n", render_state.window_width);
+        fprintf(file, "screen_height %d\n", render_state.window_height);
+        fprintf(file, "window_mode %d\n", render_state.window_mode);
+        fprintf(file, "muted %d\n", sound_device.muted);
+        fprintf(file, "sfx_volume %.2f\n", sound_device.sfx_volume);
+        fprintf(file, "music_volume %.2f\n", sound_device.music_volume);
+        fclose(file);
+    }
+    
+    old_config_data.screen_width = render_state.window_width;
+    old_config_data.screen_height = render_state.window_height;
+    old_config_data.window_mode = render_state.window_mode;
+    old_config_data.muted = sound_device.muted;
+    old_config_data.sfx_volume = sound_device.sfx_volume;
+    old_config_data.music_volume = sound_device.music_volume;
+    
+    //platform.close_file(file);
+}
+
 inline void load_config(const char* file_path, ConfigData* config_data, MemoryArena* perm_arena)
 {
     FILE* file;
@@ -145,14 +182,6 @@ inline void load_config(const char* file_path, ConfigData* config_data, MemoryAr
             else if(starts_with(line_buffer, "screen_height"))
             {
                 sscanf(line_buffer, "screen_height %d", &config_data->screen_height);
-            }
-            else if(starts_with(line_buffer, "scale_from_width"))
-            {
-                sscanf(line_buffer, "scale_from_width %d", &config_data->scale_from_width);
-            }
-            else if(starts_with(line_buffer, "scale_from_height"))
-            {
-                sscanf(line_buffer, "scale_from_height %d", &config_data->scale_from_height);
             }
             else if(starts_with(line_buffer, "contrast"))
             {
@@ -177,10 +206,6 @@ inline void load_config(const char* file_path, ConfigData* config_data, MemoryAr
             else if(starts_with(line_buffer, "music_volume"))
             {
                 sscanf(line_buffer, "music_volume %f", &config_data->music_volume);
-            }
-            else if(starts_with(line_buffer, "skipsplashscreen"))
-            {
-                sscanf(line_buffer, "skipsplashscreen %d", &config_data->skip_splash_screen);
             }
         }
         
@@ -323,8 +348,11 @@ int main(int argc, char** args)
     u32 frame_counter_for_asset_check = 0;
     
     SoundDevice sound_device = {};
-    
     debug_log("Initializing FMOD");
+    
+    sound_device.sfx_volume = config_data.sfx_volume;
+    sound_device.music_volume = config_data.music_volume;
+    sound_device.muted = config_data.muted;
     init_audio_fmod(&sound_device);
     
     SoundSystem sound_system = {};
@@ -352,6 +380,8 @@ int main(int argc, char** args)
     r64 delta_time = 0.0;
     renderer.frame_lock = 0;
     
+    b32 do_save_config = false;
+    
     while (!should_close_window(render_state) && !renderer.should_close)
     {
         if(game_memory.exit_game)
@@ -372,8 +402,15 @@ int main(int argc, char** args)
         
         tick_animation_controllers(renderer, &sound_system, &input_controller, timer_controller, delta_time);
         tick_timers(timer_controller, delta_time);
-        update_sound_commands(&sound_device, &sound_system, delta_time);
-        render(render_state, renderer, &platform_state->perm_arena, delta_time);
+        update_sound_commands(&sound_device, &sound_system, delta_time, &do_save_config);
+        
+        render(render_state, renderer, &platform_state->perm_arena, delta_time, &do_save_config);
+        
+        if(do_save_config)
+        {
+            save_config("../.config", render_state, sound_device, config_data);
+        }
+        do_save_config = false;
         
         set_controller_invalid_keys();
         set_invalid_keys();
@@ -405,6 +442,7 @@ int main(int argc, char** args)
             renderer.fps = frames;
             frames = 0;
         }
+        
         delta_time = get_time() - last_frame;
         last_frame = end_counter;
         
