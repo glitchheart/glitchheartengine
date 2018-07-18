@@ -289,7 +289,7 @@ static void set_position_audio_source(SoundCommand *command, AudioSource &audio_
 }
 
 
-static void update_sound_commands(SoundDevice *device, SoundSystem *system, r64 delta_time)
+static void update_sound_commands(SoundDevice *device, SoundSystem *system, r64 delta_time, b32 *save_config)
 {
     if(device->system)
     {
@@ -298,6 +298,13 @@ static void update_sound_commands(SoundDevice *device, SoundSystem *system, r64 
         FMOD_ChannelGroup_SetVolume(device->master_group, system->sfx_volume);
         FMOD_ChannelGroup_SetMute(device->master_group, system->muted);
         FMOD_ChannelGroup_SetPaused(device->master_group, system->paused);
+        
+        if(system->sfx_volume != device->sfx_volume || system->music_volume != device->music_volume)
+        {
+            device->sfx_volume = system->sfx_volume;
+            device->music_volume = system->music_volume;
+            *save_config = true;
+        }
         
         
         for(i32 i = 0; i < system->command_count; i++)

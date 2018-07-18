@@ -1292,6 +1292,7 @@ namespace math
     i32 ceil(r32 v);
     Vec2 ceil(Vec2 v);
     Vec3 ceil(Vec3 v);
+    r32 ceilf(r32 v);
     r32 sin(r32 v);
     r32 cos(r32 v);
     r32 acos(r32 v);
@@ -1849,6 +1850,11 @@ namespace math
     inline i32 ceil(r32 v)
     {
         return (i32)std::ceil(v);
+    }
+    
+    inline r32 ceilf(r32 v)
+    {
+        return std::ceil(v);
     }
     
     inline Vec2 ceil(Vec2 v)
