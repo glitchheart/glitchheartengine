@@ -16,6 +16,7 @@ struct SoundDevice
     
     r32 sfx_volume;
     r32 music_volume;
+    b32 muted;
     
     FMOD_CHANNELGROUP* channel_groups;
     FMOD_CHANNELGROUP* master_group;
