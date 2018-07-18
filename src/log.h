@@ -3,6 +3,14 @@
 
 #include "time.h"
 
+#if DEBUG
+#define debug_log(Msg, ...) log(Msg, __VA_ARGS__)
+#define debug_log_error(Msg, ...) log_error(Msg, __VA_ARGS__)
+#else
+#define debug_log(Msg, ...)
+#define debug_log_error(Msg, ...)
+#endif
+
 #define log(Msg, ...) _log(LOG_INFO, __LINE__, __FILE__, Msg, __VA_ARGS__)
 #define log_error(Msg, ...) _log(LOG_ERROR, __LINE__, __FILE__, Msg, __VA_ARGS__)
 
@@ -42,6 +50,7 @@ static void _log(LogType log_type, i32 line_num, const char* file, const char* m
         type_name = "ERROR";
     }
     sprintf(log_state->log_buffer[log_state->log_count - 1], "[%s] - %s file: %s line: %d - %s\n", type_name, buffer, file, line_num, message_buffer);
+    printf("%s", log_state->log_buffer[log_state->log_count - 1]);
 }
 
 static void update_log()
