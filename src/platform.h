@@ -144,7 +144,10 @@ struct PlatformFile;
 enum FileOpenFlags
 {
     POF_READ = (1 << 0),
-    POF_WRITE = (1 << 1)
+    POF_WRITE = (1 << 1),
+    POF_CREATE_ALWAYS = (1 << 2),
+    POF_OPEN_EXISTING = (1 << 3),
+    POF_OPEN_ALWAYS = (1 << 4)
 };
 
 enum SeekOptions

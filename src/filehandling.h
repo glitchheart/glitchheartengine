@@ -25,7 +25,7 @@ static GLchar* load_shader_from_file(const char* path, MemoryArena* arena)
 {
     GLchar *source = {};
     
-    PlatformFile f = platform.open_file(path, POF_READ);
+    PlatformFile f = platform.open_file(path, POF_READ | POF_OPEN_EXISTING);
     
     if(f.handle)
     {

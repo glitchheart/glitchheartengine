@@ -188,6 +188,30 @@ static GLint shader_compilation_error_checking(MemoryArena* arena,const char* sh
     return is_compiled;
 }
 
+static GLint shader_link_error_checking(MemoryArena* arena, const char* program_name, GLuint program)
+{
+    GLint is_linked = 0;
+    glGetProgramiv(program, GL_LINK_STATUS, &is_linked);
+    if (!is_linked)
+    {
+        auto temp_mem = begin_temporary_memory(arena);
+        GLint max_length = 0;
+        glGetProgramiv(program, GL_INFO_LOG_LENGTH, &max_length);
+        
+        // The maxLength includes the NULL character
+        GLchar* error_log = push_size(arena, max_length, GLchar);
+        
+        glGetProgramInfoLog(program, max_length, &max_length, error_log);
+        
+        debug("SHADER Linking error - %s\n", program_name);
+        debug("%s", error_log);
+        
+        glDeleteProgram(program); // Don't leak the program.
+        end_temporary_memory(temp_mem);
+    }
+    return is_linked;
+}
+
 static GLuint load_extra_shader(MemoryArena* arena, ShaderData& shader_data, RenderState& render_state)
 {
     // @Incomplete: vertexAttribPointers?
@@ -231,7 +255,7 @@ static GLuint load_shader(const char* file_path, Shader *shd, MemoryArena* perm_
     
     if (vertex_text)
     {
-        glShaderSource(shd->vertex_shader, 1, &vertex_text, NULL);
+        glShaderSource(shd->vertex_shader, 1, (const GLchar**)&vertex_text, NULL);
         glCompileShader(shd->vertex_shader);
         
         if (!shader_compilation_error_checking(perm_arena, file_path, shd->vertex_shader))
@@ -245,7 +269,7 @@ static GLuint load_shader(const char* file_path, Shader *shd, MemoryArena* perm_
         char* fragment_string = concat(file_path, ".frag", perm_arena);
         GLchar *fragment_text = load_shader_from_file(fragment_string, perm_arena);
         
-        glShaderSource(shd->fragment_shader, 1, &fragment_text, NULL);
+        glShaderSource(shd->fragment_shader, 1, (const GLchar**)&fragment_text, NULL);
         glCompileShader(shd->fragment_shader);
         
         if (!shader_compilation_error_checking(perm_arena, file_path, shd->fragment_shader))

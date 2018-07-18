@@ -366,10 +366,19 @@ static PLATFORM_OPEN_FILE(win32_open_file)
     
     auto read = (open_flags & POF_READ) ? GENERIC_READ : 0;
     auto write = (open_flags & POF_WRITE) ? GENERIC_WRITE : 0;
+    auto open = (open_flags & POF_CREATE_ALWAYS) ? CREATE_ALWAYS : (open_flags & POF_OPEN_EXISTING ? OPEN_EXISTING : (open_flags & POF_OPEN_ALWAYS ? OPEN_ALWAYS : 0));
     auto flags = read | write;
     
-    result.handle = CreateFile(path, (DWORD)flags, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
+    result.handle = CreateFile(path, (DWORD)flags, 0, 0, (DWORD)open, FILE_ATTRIBUTE_NORMAL, 0);
     //result.handle = CreateFile(path, (DWORD)flags, 0, 0, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
+    
+    if(!result.handle)
+    {
+        auto err = GetLastError();
+        log_error("Couldn't open file: %d\n", err);
+    }
+    
+    
     
     return(result);
 }
