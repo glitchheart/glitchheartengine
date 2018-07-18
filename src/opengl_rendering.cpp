@@ -43,42 +43,42 @@ void _error_gl(i32 line, const char* file)
     {
         case GL_INVALID_ENUM:
         {
-            debug("OpenGL Error: GL_INVALID_ENUM on line %d in file %s\n", line, file);
+            log_error("OpenGL Error: GL_INVALID_ENUM on line %d in file %s\n", line, file);
         }
         break;
         case GL_INVALID_VALUE:
         {
-            debug("OpenGL Error: GL_INVALID_VALUE on line %d in file %s\n", line, file);
+            log_error("OpenGL Error: GL_INVALID_VALUE on line %d in file %s\n", line, file);
         }
         break;
         case GL_INVALID_OPERATION:
         {
-            debug("OpenGL Error: GL_INVALID_OPERATION on line %d in file %s\n", line, file);
+            log_error("OpenGL Error: GL_INVALID_OPERATION on line %d in file %s\n", line, file);
         }
         break;
         case GL_STACK_OVERFLOW:
         {
-            debug("OpenGL Error: GL_STACK_OVERFLOW on line %d in file %s\n", line, file);
+            log_error("OpenGL Error: GL_STACK_OVERFLOW on line %d in file %s\n", line, file);
         }
         break;
         case GL_OUT_OF_MEMORY:
         {
-            debug("OpenGL Error: GL_OUT_OF_MEMORY on line %d in file %s\n", line, file);
+            log_error("OpenGL Error: GL_OUT_OF_MEMORY on line %d in file %s\n", line, file);
         }
         break;
         case GL_INVALID_FRAMEBUFFER_OPERATION:
         {
-            debug("OpenGL Error: GL_INVALID_FRAMEBUFFER_OPERATION on line %d in file %s\n", line, file);
+            log_error("OpenGL Error: GL_INVALID_FRAMEBUFFER_OPERATION on line %d in file %s\n", line, file);
         }
         break;
         case GL_CONTEXT_LOST:
         {
-            debug("OpenGL Error: GL_CONTEXT_LOST on line %d in file %s\n", line, file);
+            log_error("OpenGL Error: GL_CONTEXT_LOST on line %d in file %s\n", line, file);
         }
         break;
         case GL_TABLE_TOO_LARGE:
         {
-            debug("OpenGL Error: GL_TABLE_TOO_LARGE on line %d in file %s\n", line, file);
+            log_error("OpenGL Error: GL_TABLE_TOO_LARGE on line %d in file %s\n", line, file);
         }
         break;
     }
@@ -655,7 +655,10 @@ static void create_framebuffer(RenderState& render_state, Framebuffer& framebuff
         glGenFramebuffers(1, &framebuffer.buffer_handle);
     }
     else
+    {
         debug("buffer not zero\n");
+    }
+    
     
     glBindFramebuffer(GL_FRAMEBUFFER, framebuffer.buffer_handle);
     glDrawBuffer(GL_COLOR_ATTACHMENT0);
@@ -1116,9 +1119,10 @@ static void initialize_opengl(RenderState& render_state, Renderer& renderer, r32
             {
                 renderer.available_resolutions[renderer.available_resolutions_count++] = {vm.width, vm.height};
                 
-                if(render_state.window_width == vm.width && render_state.window_height == vm.height)
+                if(renderer.window_width == vm.width && renderer.window_height == vm.height)
                 {
                     renderer.current_resolution_index = renderer.available_resolutions_count - 1;
+                    auto res = renderer.available_resolutions[renderer.current_resolution_index];
                     renderer.resolution = {vm.width, vm.height};
                 }
             }
