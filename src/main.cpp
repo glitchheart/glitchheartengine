@@ -231,6 +231,7 @@ static void init_renderer(Renderer &renderer)
     renderer.animation_controller_count = 0;
     renderer.meshes = push_array(&renderer.mesh_arena, global_max_meshes, Mesh);
     renderer.shader_data = push_array(&renderer.shader_arena, global_max_shaders, ShaderData);
+    renderer.fonts = push_array(&renderer.font_arena, global_max_fonts, FontData);
 }
 
 int main(int argc, char** args)
