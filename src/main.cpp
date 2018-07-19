@@ -107,6 +107,7 @@ static void reload_game_code(GameCode *game_code, char* game_library_path, char*
 {
     unload_game_code(game_code);
     //Sleep(100);
+    
     load_game_code(*game_code, game_library_path, temp_game_library_path, arena);
 }
 
@@ -233,7 +234,11 @@ static void init_renderer(Renderer &renderer)
     renderer.shader_data = push_array(&renderer.shader_arena, global_max_shaders, ShaderData);
 }
 
-int main(int argc, char** args)
+#if __WIN32
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
+#else
+int main()
+#endif
 {    
     GameMemory game_memory = {};
     

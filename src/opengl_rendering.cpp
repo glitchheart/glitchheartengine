@@ -639,6 +639,7 @@ static void create_shadow_map(Framebuffer& framebuffer,  i32 width, i32 height)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+    
     float borderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
     glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor); 
     
@@ -652,7 +653,6 @@ static void create_shadow_map(Framebuffer& framebuffer,  i32 width, i32 height)
         error_gl();
     }
     
-    
     glBindFramebuffer(GL_FRAMEBUFFER, 0);  
 }
 
@@ -661,10 +661,6 @@ static void create_framebuffer(RenderState& render_state, Framebuffer& framebuff
     if(framebuffer.buffer_handle == 0)
     {
         glGenFramebuffers(1, &framebuffer.buffer_handle);
-    }
-    else
-    {
-        log_error("buffer not zero\n");
     }
     
     glBindFramebuffer(GL_FRAMEBUFFER, framebuffer.buffer_handle);
