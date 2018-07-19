@@ -10,6 +10,7 @@
 
 static i32 create_animation_controller(Renderer& renderer, b32 playing = false)
 {
+    assert(renderer.animation_controller_count + 1 < global_max_animation_controllers);
     auto& controller = renderer.animation_controllers[renderer.animation_controller_count];
     controller.current_frame_index = 0;
     controller.current_node = 0;
@@ -34,6 +35,7 @@ static void animation_controller_set_playing(Renderer& renderer, i32 controller,
 static void add_animation_controller_parameter(Renderer& renderer, i32 controller, const char* parameter_name, b32 initial_value)
 {
     auto& animation_controller = renderer.animation_controllers[controller];
+    assert(animation_controller.parameter_count + 1 < MAX_ANIMATION_PARAMETERS);
     auto& parameter = animation_controller.parameters[animation_controller.parameter_count++];
     strcpy(parameter.name, parameter_name);
     parameter.value = initial_value;
@@ -74,6 +76,7 @@ static i32 add_animation_node(Renderer& renderer, i32 controller, const char* an
     assert(AnimationHandle != -1);
     
     auto& animation_controller = renderer.animation_controllers[controller];
+    assert(animation_controller.node_count + 1 < MAX_ANIMATION_NODES);
     auto& node = animation_controller.nodes[animation_controller.node_count];
     strcpy(node.name, animation_name);
     node.animation_handle = AnimationHandle;
@@ -86,6 +89,7 @@ static i32 add_animation_node(Renderer& renderer, i32 controller, const char* an
 static void add_callback_to_animation_node(Renderer& renderer, i32 controller, i32 node_handle, void* state, void* data, animation_callback* callback, i32 callback_frame = -1)
 {
     auto& node = renderer.animation_controllers[controller].nodes[node_handle];
+    assert(node.callback_info_count + 1 < MAX_ANIMATION_CALLBACKS);
     auto& callback_info = node.callback_infos[node.callback_info_count++];
     callback_info.callback = callback;
     callback_info.state = state;
@@ -121,7 +125,7 @@ static i32 add_animation_node_link(Renderer& renderer, i32 controller, const cha
     assert(OriginNodeHandle != -1 && DestinationNodeHandle != -1);
     
     auto& origin_node = animation_controller.nodes[OriginNodeHandle];
-    
+    assert(origin_node.link_count + 1 < MAX_ANIMATION_LINKS);
     auto& link = origin_node.links[origin_node.link_count];
     link.origin_node = OriginNodeHandle;
     link.destination_node = DestinationNodeHandle;
@@ -146,6 +150,7 @@ static void add_animation_link_condition(Renderer& renderer, i32 controller, i32
     
     assert(ParameterHandle != -1);
     auto& node_link = animation_controller.nodes[node].links[link];
+    assert(node_link.condition_count + 1 < CONDITION_ARRAY_SIZE);
     auto& condition = node_link.conditions[node_link.condition_count++];
     condition.parameter_handle = ParameterHandle;
     condition.expected_value = expected_value;

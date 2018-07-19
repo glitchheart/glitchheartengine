@@ -15,6 +15,7 @@ void fmod_error_check(FMOD_RESULT result)
 
 static void load_sound(const char* file_path, SoundDevice* sound_device)
 {
+    assert(sound_device->sound_count + 1 < global_max_sounds);
     //@Incomplete: Find out the exact parameters for a sound
     auto result = FMOD_System_CreateSound(sound_device->system, file_path, FMOD_DEFAULT, 0, &sound_device->sounds[sound_device->sound_count++]);
     if(result != FMOD_OK)
