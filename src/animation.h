@@ -43,6 +43,9 @@ struct AnimationNodeLink
     b32 condition_met;
 };
 
+#define MAX_ANIMATION_LINKS 8
+#define MAX_ANIMATION_CALLBACKS 8
+
 struct AnimationNode
 {
     char name[32];
@@ -51,12 +54,15 @@ struct AnimationNode
     b32 loop;
     b32 freeze_on_last_frame;
     
-    AnimationNodeLink links[8];
+    AnimationNodeLink links[MAX_ANIMATION_LINKS];
     i32 link_count;
     
-    AnimationCallbackInfo callback_infos[8];
+    AnimationCallbackInfo callback_infos[MAX_ANIMATION_CALLBACKS];
     i32 callback_info_count;
 };
+
+#define MAX_ANIMATION_NODES 16
+#define MAX_ANIMATION_PARAMETERS 8
 
 struct AnimationController
 {
@@ -67,10 +73,10 @@ struct AnimationController
     r32 speed;
     
     i32 current_node;
-    AnimationNode nodes[16];
+    AnimationNode nodes[MAX_ANIMATION_NODES];
     i32 node_count;
     
-    AnimationParameter parameters[8];
+    AnimationParameter parameters[MAX_ANIMATION_PARAMETERS];
     i32 parameter_count;
 };
 
