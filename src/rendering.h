@@ -958,7 +958,7 @@ struct Renderer
     
     b32 show_mouse_cursor;
     
-    FontData fonts[64];
+    FontData *fonts;
     i32 font_count;
     
     MemoryArena mesh_arena;
