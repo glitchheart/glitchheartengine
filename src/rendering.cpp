@@ -180,6 +180,7 @@ static RenderCommand* push_next_command(Renderer& renderer, b32 is_ui)
 {
     if(is_ui)
     {
+        assert(renderer.ui_command_count + 1 < global_max_ui_commands);
         renderer.ui_command_count++;
         RenderCommand* command = push_struct(&renderer.ui_commands, RenderCommand);
         command->shader_handle = -1;
@@ -187,6 +188,7 @@ static RenderCommand* push_next_command(Renderer& renderer, b32 is_ui)
     }
     else
     {
+        assert(renderer.command_count + 1 < global_max_render_commands);
         renderer.command_count++;
         RenderCommand* command = push_struct(&renderer.commands, RenderCommand);
         command->shader_handle = -1;
@@ -456,6 +458,7 @@ static void generate_index_buffer(u16* index_buffer, Face* faces, i32 face_count
 
 static void create_buffers_from_mesh(Renderer &renderer, Mesh &mesh, u64 vertex_data_flags, b32 has_normals, b32 has_uvs)
 {
+    assert(renderer.buffer_count + 1 < global_max_custom_buffers);
     i32 vertex_size = 3;
     
     BufferData data = {};
@@ -499,6 +502,7 @@ static math::Vec3 compute_face_normal(Face f, Vertex *vertices)
 
 static void create_tetrahedron(Renderer &renderer, i32 *mesh_handle)
 {
+    assert(renderer.mesh_count + 1 < global_max_meshes);
     Mesh &mesh = renderer.meshes[renderer.mesh_count++];
     mesh = {};
     mesh.vertices = push_array(&renderer.mesh_arena, sizeof(tetrahedron_vertices) / sizeof(r32) / 3, Vertex);
@@ -534,6 +538,7 @@ static void create_tetrahedron(Renderer &renderer, i32 *mesh_handle)
 
 static void create_cube(Renderer &renderer, MeshInfo &mesh_info, b32 with_instancing = false)
 {
+    assert(renderer.mesh_count + 1 < global_max_meshes);
     Mesh &mesh = renderer.meshes[renderer.mesh_count++];
     mesh = {};
     mesh.vertices = push_array(&renderer.mesh_arena, sizeof(cube_vertices) / sizeof(r32) / 3, Vertex);
@@ -567,6 +572,7 @@ static void create_cube(Renderer &renderer, MeshInfo &mesh_info, b32 with_instan
     
     if(with_instancing)
     {
+        assert(renderer.buffer_count + 2 < global_max_custom_buffers);
         BufferData offset_data = {};
         offset_data.instance_buffer_size = sizeof(math::Vec3) * 1024; // @Incomplete
         offset_data.for_instancing = true;
@@ -583,6 +589,7 @@ static void create_cube(Renderer &renderer, MeshInfo &mesh_info, b32 with_instan
 
 static void create_plane(Renderer &renderer, i32 *mesh_handle)
 {
+    assert(renderer.mesh_count + 1 < global_max_meshes);
     Mesh &mesh = renderer.meshes[renderer.mesh_count++];
     mesh = {};
     mesh.vertices = push_array(&renderer.mesh_arena, sizeof(plane_vertices) / sizeof(r32) / 3, Vertex);
@@ -699,6 +706,7 @@ render_command->is_ui = false;
 
 static void load_buffer(Renderer& renderer, r32* buffer, i32 buffer_size, i32* buffer_handle, b32 dynamic = false)
 {
+    assert(renderer.buffer_count + 1 < global_max_custom_buffers);
     BufferData data = {};
     data.has_normals = false;
     data.has_uvs = false;
@@ -724,6 +732,7 @@ static void update_buffer(Renderer& renderer, r32* buffer, i32 buffer_size, i32 
 
 static i32 load_font(Renderer& renderer, char* path, i32 size, char* name)
 {
+    assert(renderer.font_count + 1 < global_max_fonts);
     FontData data = {};
     data.path = push_string(&renderer.font_arena, path);
     data.size = size;
@@ -735,6 +744,7 @@ static i32 load_font(Renderer& renderer, char* path, i32 size, char* name)
 
 static void load_font(Renderer& renderer, char* path, i32 size, i32* handle)
 {
+    assert(renderer.font_count + 1 < global_max_fonts);
     FontData data = {};
     data.path = push_string(&renderer.font_arena, path);
     data.size = size;
@@ -924,6 +934,7 @@ static void load_obj(Renderer &renderer, char *file_path, MeshInfo &mesh_info, b
         fclose(file);
     }
     
+    assert(renderer.mesh_count + 1 < global_max_meshes);
     Mesh &mesh = renderer.meshes[renderer.mesh_count++];
     mesh = {};
     
@@ -946,6 +957,7 @@ static void load_obj(Renderer &renderer, char *file_path, MeshInfo &mesh_info, b
     
     if(with_instancing)
     {
+        assert(renderer.buffer_count + 2 < global_max_custom_buffers);
         BufferData offset_data = {};
         offset_data.instance_buffer_size = sizeof(math::Vec3) * 1024; // @Incomplete
         offset_data.for_instancing = true;
