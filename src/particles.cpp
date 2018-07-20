@@ -38,7 +38,14 @@ void find_unused_particles(ParticleSystemInfo &particle_system)
     {
         if(!any_nz(particle_system.particles.life[particle_index]))
         {
-            unused_particles[particle_system.unused_particle_count++] = particle_index;
+            if(particle_system.attributes.life_time == 0.0 && any_lt(particle_system.particles.life[particle_index], 0.0))
+            {
+                continue;
+            }
+            else
+            {
+                unused_particles[particle_system.unused_particle_count++] = particle_index;
+            }
         }
     }
 }
@@ -205,8 +212,6 @@ void update_particles(Renderer &renderer, ParticleSystemInfo &particle_system, r
                 particle_system.particles.position[main_index] += particle_system.particles.direction[main_index] * particle_system.attributes.start_speed * (r32)delta_time;				
             }                
             
-            
-            
             S_Vec3 final_pos(0.0f);
             
             if(particle_system.attributes.particle_space == PS_WORLD && !start)
@@ -288,6 +293,11 @@ void update_particles(Renderer &renderer, ParticleSystemInfo &particle_system, r
             particle_system.particle_count++;
             
             particle_system.particles.life[main_index] -= delta_time;
+            
+            if(any_lt_eq(particle_system.particles.life[main_index], 0.0))
+            {
+                
+            }
         }
     }
 }

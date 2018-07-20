@@ -926,7 +926,7 @@ static void load_extra_shaders(RenderState& render_state, Renderer& renderer)
     }
 }
 
-static void create_open_gl_window(RenderState& render_state, WindowMode window_mode, const char* title, i32 width, i32 height)
+static const GLFWvidmode* create_open_gl_window(RenderState& render_state, WindowMode window_mode, const char* title, i32 width, i32 height)
 {
     GLFWmonitor* monitor = glfwGetPrimaryMonitor();
     i32 screen_width = width;
@@ -977,6 +977,8 @@ static void create_open_gl_window(RenderState& render_state, WindowMode window_m
         glfwGetFramebufferSize(render_state.window, &frame_buffer_width, &frame_buffer_height);
         glfwSetWindowPos(render_state.window, mode->width / 2 - frame_buffer_width / 2, mode->height / 2 - frame_buffer_height / 2);
     }
+    
+    return monitor ? mode : nullptr;
 }
 
 static void initialize_opengl(RenderState& render_state, Renderer& renderer, r32 contrast, r32 brightness, WindowMode window_mode, i32 screen_width, i32 screen_height, MemoryArena *perm_arena)
@@ -1016,10 +1018,19 @@ static void initialize_opengl(RenderState& render_state, Renderer& renderer, r32
     render_state.contrast = contrast;
     render_state.brightness = brightness;
     
-    create_open_gl_window(render_state, window_mode, global_title, screen_width, screen_height);
+    auto mode = create_open_gl_window(render_state, window_mode, global_title, screen_width, screen_height);
     renderer.window_mode = render_state.window_mode;
-    renderer.window_width = screen_width;
-    renderer.window_height = screen_height;
+    
+    if(mode)
+    {
+        renderer.window_width = mode->width;
+        renderer.window_height = mode->height;
+    }
+    else
+    {
+        renderer.window_width = screen_width;
+        renderer.window_height = screen_height;
+    }
     
     if (!render_state.window)
     {
@@ -1159,6 +1170,18 @@ static void initialize_opengl(RenderState& render_state, Renderer& renderer, r32
               return (r_1->width - r_2->width);
               }
               });
+    }
+    else
+    {
+        for(i32 res_index = 0; res_index < renderer.available_resolutions_count; res_index++)
+        {
+            auto resolution = renderer.available_resolutions[res_index];
+            if(renderer.window_width == resolution.width && renderer.window_height == resolution.height)
+            {
+                renderer.current_resolution_index = res_index;
+                break;
+            }
+        }
     }
 }
 
@@ -1962,7 +1985,7 @@ static void render_mesh(const RenderCommand &render_command, Renderer &renderer,
             break;
         }
         
-        set_float_uniform(shader.program, "lightPower", 550.0f);
+        set_float_uniform(shader.program, "lightPower", 1.0f);
     }
     
     // @Incomplete: We want this to be without anything but the vertex positions.
@@ -2102,7 +2125,7 @@ static void render_mesh_instanced(const RenderCommand &render_command, Renderer 
             break;
         }
         
-        set_float_uniform(shader.program, "lightPower", 550.0f);
+        set_float_uniform(shader.program, "lightPower", 1.0f);
     }
     
     glDrawElementsInstanced(GL_TRIANGLES, buffer.index_buffer_count, GL_UNSIGNED_SHORT, (void*)0, render_command.mesh_instanced.offset_count);
@@ -2623,8 +2646,6 @@ static void render_commands(RenderState &render_state, Renderer &renderer)
     
     renderer.ui_command_count = 0;
     clear(&renderer.ui_commands);
-    
-    
 }
 
 static void swap_buffers(RenderState &render_state)

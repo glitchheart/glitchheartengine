@@ -550,6 +550,17 @@ inline b32 any_lt(S_r64 v, S_r64 val)
     return cmp_lt_up != 0 && cmp_lt_lo != 0;
 }
 
+inline b32 any_lt(S_r64 v, r64 val)
+{
+    __m128d vcmp_lt_up = _mm_cmplt_pd(v.upper_bits.p, _mm_set1_pd(val));
+    __m128d vcmp_lt_lo = _mm_cmplt_pd(v.lower_bits.p, _mm_set1_pd(val));
+    
+    i32 cmp_lt_up = _mm_movemask_pd(vcmp_lt_up);
+    i32 cmp_lt_lo = _mm_movemask_pd(vcmp_lt_lo);
+    
+    return cmp_lt_up != 0 && cmp_lt_lo != 0;
+}
+
 inline b32 any_lt_eq(S_r64 v, S_r64 val)
 {
     __m128d vcmp_lt_up = _mm_cmplt_pd(v.upper_bits.p, val.upper_bits.p);
@@ -565,6 +576,23 @@ inline b32 any_lt_eq(S_r64 v, S_r64 val)
     
     return cmp_lt_up != 0 || cmp_eq_up != 0 && cmp_lt_lo != 0 || cmp_eq_lo != 0;
 }
+
+inline b32 any_lt_eq(S_r64 v, r64 val)
+{
+    __m128d vcmp_lt_up = _mm_cmplt_pd(v.upper_bits.p, _mm_set1_pd(val));
+    __m128d vcmp_lt_lo = _mm_cmplt_pd(v.lower_bits.p, _mm_set1_pd(val));
+    
+    __m128d vcmp_eq_up = _mm_cmpeq_pd(v.upper_bits.p, _mm_set1_pd(val));
+    __m128d vcmp_eq_lo = _mm_cmpeq_pd(v.lower_bits.p, _mm_set1_pd(val));
+    
+    i32 cmp_lt_up = _mm_movemask_pd(vcmp_lt_up);
+    i32 cmp_lt_lo = _mm_movemask_pd(vcmp_lt_lo);
+    i32 cmp_eq_up = _mm_movemask_pd(vcmp_eq_up);
+    i32 cmp_eq_lo = _mm_movemask_pd(vcmp_eq_lo);
+    
+    return cmp_lt_up != 0 || cmp_eq_up != 0 && cmp_lt_lo != 0 || cmp_eq_lo != 0;
+}
+
 
 inline b32 any_nz(S_r64 v)
 {
@@ -818,6 +846,15 @@ inline b32 any_lt(S_r64 v, S_r64 val)
     return cmp_lt != 0;
 }
 
+inline b32 any_lt(S_r64 v, r64 val)
+{
+    __m256d vcmp = _mm256_cmp_pd(v.p, _mm_set1_pd(val), _CMP_LT_OQ);
+    
+    i32 cmp_lt = _mm256_movemask_pd(vcmp);
+    
+    return cmp_lt != 0;
+}
+
 inline b32 any_lt_eq(S_r64 v, S_r64 val)
 {
     __m256d vcmp_lt = _mm256_cmp_pd(v.p, val.p, _CMP_LT_OQ);
@@ -827,6 +864,17 @@ inline b32 any_lt_eq(S_r64 v, S_r64 val)
     
     return cmp_lt != 0 || cmp_eq != 0;
 }
+
+inline b32 any_lt_eq(S_r64 v, r64 val)
+{
+    __m256d vcmp_lt = _mm256_cmp_pd(v.p, _mm256_set1_pd(val), _CMP_LT_OQ);
+    i32 cmp_lt = _mm256_movemask_pd(vcmp_lt);
+    __m256d vcmp_eq = _mm256_cmp_pd(v.p, mm256_set1_pd(val), _CMP_EQ_OQ);
+    i32 cmp_eq = _mm256_movemask_pd(vcmp_eq);
+    
+    return cmp_lt != 0 || cmp_eq != 0;
+}
+
 
 inline b32 any_nz(S_r64 v)
 {
