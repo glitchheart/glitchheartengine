@@ -77,6 +77,13 @@ static void create_particle_system(Renderer &renderer, ParticleSystemHandle &han
     auto max_over_four = system_info.max_particles / 4;
     
     system_info.unused_particles = push_array(memory_arena, system_info.max_particles, i32);
+    system_info.alive_particles = push_array(memory_arena, system_info.max_particles, i32);
+    system_info.next_alive_particles = push_array(memory_arena, system_info.max_particles, i32);
+    system_info.dead_particles = push_array(memory_arena, system_info.max_particles, i32);
+    
+    system_info.alive_particle_count = 0;
+    system_info.next_alive_particle_count = 0;
+    system_info.dead_particle_count = 0;
     
     system_info.particles.position = push_array_simd(memory_arena, max_over_four, S_Vec3);
     system_info.particles.direction = push_array_simd(memory_arena, max_over_four, S_Vec3);

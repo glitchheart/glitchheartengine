@@ -138,6 +138,16 @@ struct ParticleSystemInfo
     i32 *unused_particles;
     i32 unused_particle_count;
     
+    i32 *alive_particles;
+    i32 alive_particle_count;
+    
+    i32 *next_alive_particles;
+    i32 next_alive_particle_count;
+    
+    i32 *dead_particles;
+    i32 dead_particle_count;
+    
+    
     i32 particle_count;
     i32 total_emitted;
     i32 last_used_particle;
