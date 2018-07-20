@@ -150,7 +150,7 @@ struct RenderState
     i32 framebuffer_height;
     i32 dpi_scale;
     i32 pixels_per_unit;
-
+    
     i32 refresh_rate;
     
     b32 paused;
@@ -288,9 +288,10 @@ struct RenderState
     RenderState() {}
     
     MemoryArena* perm_arena; // TODO: Make this into a framebuffer arena maybe?
+    MemoryArena framebuffer_arena;
     MemoryArena font_arena;
-    MemoryArena shader_arena;
     MemoryArena string_arena;
+    //MemoryArena perm_arena;
 };
 
 #endif

@@ -321,7 +321,6 @@ int main()
     render_state.frame_delta = 0.0;
     
     render_state.font_arena = {};
-    render_state.shader_arena = {};
     render_state.string_arena = {};
     Renderer renderer = {};
     
@@ -412,7 +411,7 @@ int main()
         tick_timers(timer_controller, delta_time);
         update_sound_commands(&sound_device, &sound_system, delta_time, &do_save_config);
         
-        render(render_state, renderer, &platform_state->perm_arena, delta_time, &do_save_config);
+        render(render_state, renderer, delta_time, &do_save_config);
         
         if(do_save_config)
         {
