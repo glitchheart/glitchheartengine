@@ -169,7 +169,7 @@ static void load_texture(const char* full_texture_path, Renderer& renderer, Text
     
     if(!texture_data->image_data)
     {
-        printf("Texture cold not be loaded: %s\n", full_texture_path);
+        printf("Texture could not be loaded: %s\n", full_texture_path);
     }
     
     if(handle)

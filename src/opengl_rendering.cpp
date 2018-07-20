@@ -220,8 +220,10 @@ static GLuint load_extra_shader(MemoryArena* arena, ShaderData& shader_data, Ren
     glShaderSource(shader->vertex_shader, 1, &shader_data.vertex_shader_content, NULL);
     glCompileShader(shader->vertex_shader);
     
+    auto temp_mem = begin_temporary_memory(arena);
     if (!shader_compilation_error_checking(arena, concat(shader_data.name, ".vert", arena), shader->vertex_shader))
     {
+        end_temporary_memory(temp_mem);
         shader->program = 0;
         return GL_FALSE;
     }
@@ -233,6 +235,7 @@ static GLuint load_extra_shader(MemoryArena* arena, ShaderData& shader_data, Ren
     
     if (!shader_compilation_error_checking(arena, concat(shader_data.name, ".frag", arena), shader->fragment_shader))
     {
+        end_temporary_memory(temp_mem);
         shader->program = 0;
         return GL_FALSE;
     }
@@ -242,23 +245,24 @@ static GLuint load_extra_shader(MemoryArena* arena, ShaderData& shader_data, Ren
     glAttachShader(shader->program, shader->vertex_shader);
     glAttachShader(shader->program, shader->fragment_shader);
     glLinkProgram(shader->program);
+    end_temporary_memory(temp_mem);
     
     return GL_TRUE;
 }
 
-static GLuint load_shader(const char* file_path, Shader *shd, MemoryArena* perm_arena)
+static GLuint load_shader(const char* file_path, Shader *shd, MemoryArena *arena)
 {
-    auto temp_mem = begin_temporary_memory(perm_arena);
+    auto temp_mem = begin_temporary_memory(arena);
     shd->vertex_shader = glCreateShader(GL_VERTEX_SHADER);
-    char* vertex_string = concat(file_path, ".vert", perm_arena);
-    GLchar *vertex_text = load_shader_from_file(vertex_string, perm_arena);
+    char* vertex_string = concat(file_path, ".vert", arena);
+    GLchar *vertex_text = load_shader_from_file(vertex_string, arena);
     
     if (vertex_text)
     {
         glShaderSource(shd->vertex_shader, 1, (const GLchar**)&vertex_text, NULL);
         glCompileShader(shd->vertex_shader);
         
-        if (!shader_compilation_error_checking(perm_arena, file_path, shd->vertex_shader))
+        if (!shader_compilation_error_checking(arena, file_path, shd->vertex_shader))
         {
             log_error("failed compilation of vertex shader: %s", file_path);
             end_temporary_memory(temp_mem);
@@ -267,13 +271,13 @@ static GLuint load_shader(const char* file_path, Shader *shd, MemoryArena* perm_
         }
         
         shd->fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
-        char* fragment_string = concat(file_path, ".frag", perm_arena);
-        GLchar *fragment_text = load_shader_from_file(fragment_string, perm_arena);
+        char* fragment_string = concat(file_path, ".frag", arena);
+        GLchar *fragment_text = load_shader_from_file(fragment_string, arena);
         
         glShaderSource(shd->fragment_shader, 1, (const GLchar**)&fragment_text, NULL);
         glCompileShader(shd->fragment_shader);
         
-        if (!shader_compilation_error_checking(perm_arena, file_path, shd->fragment_shader))
+        if (!shader_compilation_error_checking(arena, file_path, shd->fragment_shader))
         {
             log_error("failed compilation of fragment shader: %s", file_path);
             end_temporary_memory(temp_mem);
@@ -281,8 +285,8 @@ static GLuint load_shader(const char* file_path, Shader *shd, MemoryArena* perm_
             return GL_FALSE;
         }
         
-        char* geometry_string = concat(file_path, ".geom", perm_arena);
-        GLchar* geometry_text = load_shader_from_file(geometry_string, perm_arena);
+        char* geometry_string = concat(file_path, ".geom", arena);
+        GLchar* geometry_text = load_shader_from_file(geometry_string, arena);
         
         if(geometry_text)
         {
@@ -290,7 +294,7 @@ static GLuint load_shader(const char* file_path, Shader *shd, MemoryArena* perm_
             glShaderSource(shd->geometry_shader, 1, &geometry_text, NULL);
             glCompileShader(shd->geometry_shader);
             
-            if(!shader_compilation_error_checking(perm_arena, file_path, shd->geometry_shader))
+            if(!shader_compilation_error_checking(arena, file_path, shd->geometry_shader))
             {
                 log_error("failed compilation of geometry shader: %s", file_path);
                 end_temporary_memory(temp_mem);
@@ -317,18 +321,18 @@ static GLuint load_shader(const char* file_path, Shader *shd, MemoryArena* perm_
     return GL_FALSE;
 }
 
-static GLuint load_vertex_shader(const char* file_path, Shader *shd, MemoryArena* perm_arena)
+static GLuint load_vertex_shader(const char* file_path, Shader *shd, MemoryArena* arena)
 {
-    auto temp_mem = begin_temporary_memory(perm_arena);
+    auto temp_mem = begin_temporary_memory(arena);
     shd->program = glCreateProgram();
     
     shd->vertex_shader = glCreateShader(GL_VERTEX_SHADER);
-    char* vertex_string = concat(file_path, ".vert", perm_arena);
-    GLchar *vertex_text = load_shader_from_file(vertex_string, perm_arena);
+    char* vertex_string = concat(file_path, ".vert", arena);
+    GLchar *vertex_text = load_shader_from_file(vertex_string, arena);
     glShaderSource(shd->vertex_shader, 1, &vertex_text, NULL);
     glCompileShader(shd->vertex_shader);
     
-    if (!shader_compilation_error_checking(perm_arena, file_path, shd->vertex_shader))
+    if (!shader_compilation_error_checking(arena, file_path, shd->vertex_shader))
     {
         log_error("failed compilation of vertex shader: %s", file_path);
         end_temporary_memory(temp_mem);
@@ -347,22 +351,22 @@ static GLuint load_vertex_shader(const char* file_path, Shader *shd, MemoryArena
     return GL_TRUE;
 }
 
-static GLuint load_fragment_shader(const char* file_path, Shader *shd, MemoryArena* perm_arena)
+static GLuint load_fragment_shader(const char* file_path, Shader *shd, MemoryArena* arena)
 {
     shd->program = glCreateProgram();
     shd->fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
     
-    auto temp_mem = begin_temporary_memory(perm_arena);
-    char* fragment_string = concat(file_path, ".frag", perm_arena);
+    auto temp_mem = begin_temporary_memory(arena);
+    char* fragment_string = concat(file_path, ".frag", arena);
     
-    GLchar *fragment_text = load_shader_from_file(fragment_string, perm_arena);
+    GLchar *fragment_text = load_shader_from_file(fragment_string, arena);
     glShaderSource(shd->fragment_shader, 1, &fragment_text, NULL);
     end_temporary_memory(temp_mem);
     
     glCompileShader(shd->fragment_shader);
     
     
-    if (!shader_compilation_error_checking(perm_arena, file_path, shd->fragment_shader))
+    if (!shader_compilation_error_checking(arena, file_path, shd->fragment_shader))
     {
         log_error("failed compilation of fragment shader: %s", file_path);
         end_temporary_memory(temp_mem);
@@ -378,21 +382,21 @@ static GLuint load_fragment_shader(const char* file_path, Shader *shd, MemoryAre
     return GL_TRUE;
 }
 
-static GLuint load_geometry_shader(const char* file_path, Shader* shd, MemoryArena* perm_arena)
+static GLuint load_geometry_shader(const char* file_path, Shader* shd, MemoryArena* arena)
 {
     shd->program = glCreateProgram();
     shd->geometry_shader = glCreateShader(GL_GEOMETRY_SHADER);
     
-    auto temp_mem = begin_temporary_memory(perm_arena);
-    char* geometry_string = concat(file_path, ".geom", perm_arena);
+    auto temp_mem = begin_temporary_memory(arena);
+    char* geometry_string = concat(file_path, ".geom", arena);
     
-    GLchar* geometry_text = load_shader_from_file(geometry_string, perm_arena);
+    GLchar* geometry_text = load_shader_from_file(geometry_string, arena);
     glShaderSource(shd->geometry_shader, 1, &geometry_text, NULL);
     end_temporary_memory(temp_mem);
     
     glCompileShader(shd->geometry_shader);
     
-    if(!shader_compilation_error_checking(perm_arena, file_path, shd->geometry_shader))
+    if(!shader_compilation_error_checking(arena, file_path, shd->geometry_shader))
     {
         log_error("failed compilation of geometry shader: %s", file_path);
         end_temporary_memory(temp_mem);
@@ -656,7 +660,7 @@ static void create_shadow_map(Framebuffer& framebuffer,  i32 width, i32 height)
     glBindFramebuffer(GL_FRAMEBUFFER, 0);  
 }
 
-static void create_framebuffer(RenderState& render_state, Framebuffer& framebuffer, i32 width, i32 height, Shader& shader, MemoryArena* perm_arena, r32* vertices, u32 vertices_size, u32* indices, u32 indices_size, b32 multisampled, i32 samples = 0)
+static void create_framebuffer(RenderState& render_state, Framebuffer& framebuffer, i32 width, i32 height, Shader& shader, MemoryArena* arena, r32* vertices, u32 vertices_size, u32* indices, u32 indices_size, b32 multisampled, i32 samples = 0)
 {
     if(framebuffer.buffer_handle == 0)
     {
@@ -685,7 +689,7 @@ static void create_framebuffer(RenderState& render_state, Framebuffer& framebuff
     shader.type = SHADER_FRAME_BUFFER;
     
     // @Incomplete: This should not be loaded more than once!
-    load_shader(shader_paths[SHADER_FRAME_BUFFER], &shader, perm_arena);
+    load_shader(shader_paths[SHADER_FRAME_BUFFER], &shader, render_state.perm_arena);
     
     auto pos_loc = (GLuint)glGetAttribLocation(shader.program, "pos");
     auto tex_loc = (GLuint)glGetAttribLocation(shader.program, "texcoord");
@@ -730,7 +734,7 @@ void frame_buffer_size_callback(GLFWwindow *window, int width, int height)
         glGetIntegerv(GL_VIEWPORT, viewport);
         memcpy(render_state->viewport, viewport, sizeof(GLint) * 4);
         
-        create_framebuffer(*render_state, render_state->framebuffer, width, height, render_state->frame_buffer_shader, render_state->perm_arena, render_state->framebuffer_quad_vertices,
+        create_framebuffer(*render_state, render_state->framebuffer, width, height, render_state->frame_buffer_shader, &render_state->framebuffer_arena, render_state->framebuffer_quad_vertices,
                            render_state->framebuffer_quad_vertices_size,render_state->quad_indices, sizeof(render_state->quad_indices), true, 4);
         
         GLFWmonitor* monitor = glfwGetPrimaryMonitor();
@@ -741,7 +745,7 @@ void frame_buffer_size_callback(GLFWwindow *window, int width, int height)
     }
 }
 
-static void setup_quad(RenderState& render_state, MemoryArena* perm_arena)
+static void setup_quad(RenderState& render_state, MemoryArena* arena)
 {
     //Quad EBO
     glGenBuffers(1, &render_state.quad_index_buffer);
@@ -758,7 +762,7 @@ static void setup_quad(RenderState& render_state, MemoryArena* perm_arena)
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, render_state.quad_index_buffer);
     
     render_state.quad_shader.type = SHADER_QUAD;
-    load_shader(shader_paths[SHADER_QUAD], &render_state.quad_shader, perm_arena);
+    load_shader(shader_paths[SHADER_QUAD], &render_state.quad_shader, arena);
     
     auto position_location3 = (GLuint)glGetAttribLocation(render_state.quad_shader.program, "pos");
     vertex_attrib_pointer(position_location3, 2, GL_FLOAT,  2 * sizeof(float), 0);
@@ -775,7 +779,7 @@ static void setup_quad(RenderState& render_state, MemoryArena* perm_arena)
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(render_state.quad_indices), render_state.quad_indices, GL_STATIC_DRAW);
     
     render_state.texture_quad_shader.type = SHADER_TEXTURE_QUAD;
-    load_shader(shader_paths[SHADER_TEXTURE_QUAD], &render_state.texture_quad_shader, perm_arena);
+    load_shader(shader_paths[SHADER_TEXTURE_QUAD], &render_state.texture_quad_shader, arena);
     
     auto position_location2 = (GLuint)glGetAttribLocation(render_state.texture_quad_shader.program, "pos");
     auto texcoord_location2 = (GLuint)glGetAttribLocation(render_state.texture_quad_shader.program, "texcoord");
@@ -787,7 +791,7 @@ static void setup_quad(RenderState& render_state, MemoryArena* perm_arena)
 }
 
 
-static void setup_billboard(RenderState& render_state, MemoryArena* perm_arena)
+static void setup_billboard(RenderState& render_state, MemoryArena* arena)
 {
     //Quad EBO
     glGenBuffers(1, &render_state.billboard_ibo);
@@ -804,7 +808,7 @@ static void setup_billboard(RenderState& render_state, MemoryArena* perm_arena)
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, render_state.billboard_ibo);
     
     render_state.quad_shader.type = SHADER_QUAD;
-    load_shader(shader_paths[SHADER_QUAD], &render_state.quad_shader, perm_arena);
+    load_shader(shader_paths[SHADER_QUAD], &render_state.quad_shader, arena);
     
     auto position_location = (GLuint)glGetAttribLocation(render_state.quad_shader.program, "pos");
     vertex_attrib_pointer(position_location, 3, GL_FLOAT,  3 * sizeof(float), 0);
@@ -812,9 +816,9 @@ static void setup_billboard(RenderState& render_state, MemoryArena* perm_arena)
     glBindVertexArray(0);
 }
 
-static void setup_lines(RenderState& render_state, MemoryArena* perm_arena)
+static void setup_lines(RenderState& render_state, MemoryArena* arena)
 {
-    load_shader(shader_paths[SHADER_LINE], &render_state.line_shader, perm_arena);
+    load_shader(shader_paths[SHADER_LINE], &render_state.line_shader, arena);
     glGenVertexArrays(1, &render_state.line_vao);
     glBindVertexArray(render_state.line_vao);
     glGenBuffers(1, &render_state.line_vbo);
@@ -827,41 +831,41 @@ static void setup_lines(RenderState& render_state, MemoryArena* perm_arena)
     glBindVertexArray(0);
 }
 
-static void render_setup(RenderState *render_state, MemoryArena* perm_arena)
+static void render_setup(RenderState *render_state, MemoryArena *perm_arena)
 {
     render_state->font_count = 0;
     render_state->perm_arena = perm_arena;
     
     glfwGetFramebufferSize(render_state->window, &render_state->framebuffer_width, &render_state->framebuffer_height);
     
-    create_framebuffer(*render_state, render_state->framebuffer, render_state->framebuffer_width, render_state->framebuffer_height, render_state->frame_buffer_shader, render_state->perm_arena, render_state->framebuffer_quad_vertices,
+    create_framebuffer(*render_state, render_state->framebuffer, render_state->framebuffer_width, render_state->framebuffer_height, render_state->frame_buffer_shader, &render_state->framebuffer_arena, render_state->framebuffer_quad_vertices,
                        render_state->framebuffer_quad_vertices_size,render_state->quad_indices, sizeof(render_state->quad_indices), true, 4);
     
     render_state->depth_shader.type = SHADER_DEPTH;
     render_state->depth_instanced_shader.type = SHADER_DEPTH_INSTANCED;
     
-    load_shader(shader_paths[SHADER_DEPTH], &render_state->depth_shader, perm_arena);
-    load_shader(shader_paths[SHADER_DEPTH_INSTANCED], &render_state->depth_instanced_shader, perm_arena);
+    load_shader(shader_paths[SHADER_DEPTH], &render_state->depth_shader, render_state->perm_arena);
+    load_shader(shader_paths[SHADER_DEPTH_INSTANCED], &render_state->depth_instanced_shader, render_state->perm_arena);
     
     create_shadow_map(render_state->shadow_map_buffer, 2048, 2048);
     
-    setup_billboard(*render_state, perm_arena);
-    setup_quad(*render_state, perm_arena);
-    setup_lines(*render_state, perm_arena);
+    setup_billboard(*render_state, render_state->perm_arena);
+    setup_quad(*render_state, render_state->perm_arena);
+    setup_lines(*render_state, render_state->perm_arena);
     
     
     //font
     render_state->standard_font_shader.type = SHADER_STANDARD_FONT;
-    load_shader(shader_paths[SHADER_STANDARD_FONT], &render_state->standard_font_shader, perm_arena);
+    load_shader(shader_paths[SHADER_STANDARD_FONT], &render_state->standard_font_shader, render_state->perm_arena);
     
     render_state->mesh_shader.type = SHADER_MESH;
-    load_shader(shader_paths[SHADER_MESH], &render_state->mesh_shader, perm_arena);
+    load_shader(shader_paths[SHADER_MESH], &render_state->mesh_shader, render_state->perm_arena);
     
     render_state->mesh_instanced_shader.type = SHADER_MESH_INSTANCED;
-    load_shader(shader_paths[SHADER_MESH_INSTANCED], &render_state->mesh_instanced_shader, perm_arena);
+    load_shader(shader_paths[SHADER_MESH_INSTANCED], &render_state->mesh_instanced_shader, render_state->perm_arena);
     
     render_state->particle_shader.type = SHADER_PARTICLES;
-    load_shader(shader_paths[SHADER_PARTICLES], &render_state->particle_shader, perm_arena);
+    load_shader(shader_paths[SHADER_PARTICLES], &render_state->particle_shader, render_state->perm_arena);
     
     render_state->total_delta = 0.0f;
     render_state->frame_delta = 0.0f;
@@ -901,6 +905,7 @@ static GLuint load_texture(TextureData& data, Texture* texture)
     
     texture->texture_handle = texture_handle;
     stbi_image_free(data.image_data);
+    data.image_data = nullptr;
     
     return GL_TRUE;
 }
@@ -917,7 +922,7 @@ static void load_extra_shaders(RenderState& render_state, Renderer& renderer)
 {
     for (i32 index = render_state.extra_shader_index; index < renderer.shader_count; index++)
     {
-        load_extra_shader(&render_state.shader_arena, renderer.shader_data[index], render_state);
+        load_extra_shader(render_state.perm_arena, renderer.shader_data[index], render_state);
     }
 }
 
@@ -974,7 +979,7 @@ static void create_open_gl_window(RenderState& render_state, WindowMode window_m
     }
 }
 
-static void initialize_opengl(RenderState& render_state, Renderer& renderer, r32 contrast, r32 brightness, WindowMode window_mode, i32 screen_width, i32 screen_height, MemoryArena* perm_arena)
+static void initialize_opengl(RenderState& render_state, Renderer& renderer, r32 contrast, r32 brightness, WindowMode window_mode, i32 screen_width, i32 screen_height, MemoryArena *perm_arena)
 {
     auto recreate_window = render_state.window != nullptr;
     
@@ -1158,7 +1163,7 @@ static void initialize_opengl(RenderState& render_state, Renderer& renderer, r32
 }
 
 
-static void initialize_opengl(RenderState& render_state, Renderer& renderer, ConfigData* config_data, MemoryArena* perm_arena)
+static void initialize_opengl(RenderState& render_state, Renderer& renderer, ConfigData* config_data, MemoryArena *perm_arena)
 {
     initialize_opengl(render_state, renderer, config_data->contrast, config_data->brightness, config_data->window_mode, config_data->screen_width, config_data->screen_height, perm_arena);
 }
@@ -1175,49 +1180,49 @@ static void delete_shaders(RenderState &render_state)
     }
 }
 
-static void reload_vertex_shader(ShaderType type, RenderState* render_state, MemoryArena* perm_arena)
+static void reload_vertex_shader(ShaderType type, RenderState* render_state, MemoryArena *arena)
 {
     glDeleteProgram(render_state->shaders[type].program);
     glDeleteShader(render_state->shaders[type].vertex_shader);
-    load_vertex_shader(shader_paths[type], &render_state->shaders[type], perm_arena);
+    load_vertex_shader(shader_paths[type], &render_state->shaders[type], arena);
 }
 
-static void reload_fragment_shader(ShaderType type, RenderState* render_state, MemoryArena* perm_arena)
+static void reload_fragment_shader(ShaderType type, RenderState* render_state, MemoryArena *arena)
 {
     glDeleteProgram(render_state->shaders[type].program);
     glDeleteShader(render_state->shaders[type].fragment_shader);
-    load_fragment_shader(shader_paths[type], &render_state->shaders[type], perm_arena);
+    load_fragment_shader(shader_paths[type], &render_state->shaders[type], arena);
 }
 
-static void reload_geometry_shader(ShaderType type, RenderState* render_state, MemoryArena* perm_arena)
+static void reload_geometry_shader(ShaderType type, RenderState* render_state, MemoryArena *arena)
 {
     glDeleteProgram(render_state->shaders[type].program);
     glDeleteShader(render_state->shaders[type].geometry_shader);
-    load_geometry_shader(shader_paths[type], &render_state->shaders[type], perm_arena);
+    load_geometry_shader(shader_paths[type], &render_state->shaders[type], arena);
 }
 
-static void reload_assets(RenderState& render_state, AssetManager* asset_manager, MemoryArena* perm_arena)
+static void reload_assets(RenderState& render_state, AssetManager* asset_manager, MemoryArena *arena)
 {
     for (int i = 0; i < SHADER_COUNT; i++)
     {
         if (asset_manager->dirty_vertex_shader_indices[i] == 1)
         {
             debug("Reloading vertex shader type: %s\n", shader_enum_to_str((ShaderType)i));
-            reload_vertex_shader((ShaderType)i, &render_state, perm_arena);
+            reload_vertex_shader((ShaderType)i, &render_state, arena);
             asset_manager->dirty_vertex_shader_indices[i] = 0;
         }
         
         if (asset_manager->dirty_fragment_shader_indices[i] == 1)
         {
             debug("Reloading fragment shader type: %s\n", shader_enum_to_str((ShaderType)i));
-            reload_fragment_shader((ShaderType)i, &render_state, perm_arena);
+            reload_fragment_shader((ShaderType)i, &render_state, arena);
             asset_manager->dirty_fragment_shader_indices[i] = 0;
         }
         
         if (asset_manager->dirty_geometry_shader_indices[i] == 1)
         {
             debug("Reloading geometry shader type: %s\n", shader_enum_to_str((ShaderType)i));
-            reload_geometry_shader((ShaderType)i, &render_state, perm_arena);
+            reload_geometry_shader((ShaderType)i, &render_state, arena);
             asset_manager->dirty_geometry_shader_indices[i] = 0;
         }
     }
@@ -2009,14 +2014,14 @@ static void render_mesh_instanced(const RenderCommand &render_command, Renderer 
     
     glEnableVertexAttribArray(3);
     glBindBuffer(GL_ARRAY_BUFFER, offset_instance_buffer.vbo);
-    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(math::Vec3) * render_command.mesh_instanced.offset_count, render_command.mesh_instanced.offsets);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizeiptr)(sizeof(math::Vec3) * render_command.mesh_instanced.offset_count), render_command.mesh_instanced.offsets);
     
     glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
     glVertexAttribDivisor(3, 1);
     
     glEnableVertexAttribArray(4);
     glBindBuffer(GL_ARRAY_BUFFER, color_instance_buffer.vbo);
-    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(math::Rgba) * render_command.mesh_instanced.offset_count, render_command.mesh_instanced.colors);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizeiptr)(sizeof(math::Rgba) * render_command.mesh_instanced.offset_count), render_command.mesh_instanced.colors);
     
     glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, 0, (void*)0);
     glVertexAttribDivisor(4, 1);
@@ -2291,7 +2296,7 @@ static void load_font(RenderState& render_state, char* path, i32 size)
 }
 
 
-static void register_buffers(RenderState& render_state, Renderer& renderer, MemoryArena* perm_arena)
+static void register_buffers(RenderState& render_state, Renderer& renderer)
 {
     for (i32 index = render_state.buffer_count; index < renderer.buffer_count; index++)
     {
@@ -2303,7 +2308,7 @@ static void register_buffers(RenderState& render_state, Renderer& renderer, Memo
         }
         else if (data.index_buffer_count == 0)
         {
-            register_vertex_buffer(render_state, data.vertex_buffer, (i32)data.vertex_buffer_size, data.shader_type, perm_arena, data.existing_handle);
+            register_vertex_buffer(render_state, data.vertex_buffer, (i32)data.vertex_buffer_size, data.shader_type, render_state.perm_arena, data.existing_handle);
         }
         else
         {
@@ -2317,7 +2322,7 @@ static void register_buffers(RenderState& render_state, Renderer& renderer, Memo
         BufferData data = renderer.buffers[renderer.updated_buffer_handles[index]];
         if (data.index_buffer_count == 0)
         {
-            register_vertex_buffer(render_state, data.vertex_buffer, (i32)data.vertex_buffer_size, data.shader_type, perm_arena, data.existing_handle);
+            register_vertex_buffer(render_state, data.vertex_buffer, (i32)data.vertex_buffer_size, data.shader_type, render_state.perm_arena, data.existing_handle);
         }
         else
         {
@@ -2627,7 +2632,7 @@ static void swap_buffers(RenderState &render_state)
     glfwSwapBuffers(render_state.window);
 }
 
-static void render(RenderState& render_state, Renderer& renderer, MemoryArena* perm_arena, r64 delta_time, b32 *save_config)
+static void render(RenderState& render_state, Renderer& renderer, r64 delta_time, b32 *save_config)
 {   
     if(render_state.paused)
     {
@@ -2690,7 +2695,7 @@ static void render(RenderState& render_state, Renderer& renderer, MemoryArena* p
     
     renderer.ui_projection_matrix = math::ortho(0.0f, (r32)renderer.window_width, 0.0f, (r32)renderer.window_height, -1.0f, 1.0f);
     
-    register_buffers(render_state, renderer, perm_arena);
+    register_buffers(render_state, renderer);
     
     if(should_render)
     {
