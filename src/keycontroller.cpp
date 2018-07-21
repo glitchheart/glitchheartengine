@@ -64,7 +64,6 @@ static inline b32 get_joystick_axis_x_down(InputController* input_controller, b3
     }
     else
     {
-        
         correct_direction = input_controller->axes[axis] > 0;
     }
     
@@ -177,7 +176,7 @@ static inline r32 get_input_y(InputController* input_controller, Stick stick = S
 #define KEY_UP(Key) get_key_up(Key, input_controller)
 #define JOYSTICK_KEY(Key) get_joystick_key(Key, input_controller)
 #define JOYSTICK_KEY_DOWN(Key) get_joystick_key_down(Key, input_controller)
-#define JOYSTICK_AXIS_X_DOWN(...) get_joystick_axis_x_down(input_controller ,##__VA_ARGS__)
+#define JOYSTICK_AXIS_X_DOWN(Left,...) get_joystick_axis_x_down(input_controller, Left, ##__VA_ARGS__)
 #define JOYSTICK_AXIS_Y_DOWN(Up, ...) get_joystick_axis_y_down(input_controller,Up , ##__VA_ARGS__)
 #define MOUSE(Key) get_mouse_button(Key, input_controller)
 #define MOUSE_DOWN(Key) get_mouse_button_down(Key, input_controller)
@@ -191,49 +190,70 @@ static inline r32 get_input_y(InputController* input_controller, Stick stick = S
 static void add_custom_mapping(InputController* input_controller, i32 custom_key, KeyCode keyboard_key, i32 ps4_key, i32 xbox_key)
 {
     auto& custom_key_mapping = input_controller->custom_mappings[custom_key];
-    custom_key_mapping.keyboard_key = keyboard_key;
-    custom_key_mapping.ps4_key = ps4_key;
-    custom_key_mapping.xbox_key = xbox_key;
+    custom_key_mapping.keyboard_key[custom_key_mapping.keyboard_key_count++] = keyboard_key;
+    custom_key_mapping.ps4_key[custom_key_mapping.ps4_key_count++] = ps4_key;
+    custom_key_mapping.xbox_key[custom_key_mapping.xbox_key_count++] = xbox_key;
 }
 
 static b32 is_custom_key_down(InputController* input_controller, i32 custom_key)
 {
     auto& custom_key_mapping = input_controller->custom_mappings[custom_key];
     
-    if(input_controller->controller_present)
-    {
-        if(input_controller->controller_type == CONTROLLER_PS4)
-        {
-            return JOYSTICK_KEY_DOWN(custom_key_mapping.ps4_key);
-        }
-        else
-        {
-            return JOYSTICK_KEY_DOWN(custom_key_mapping.xbox_key);
-        }
-    }
-    else
-    {
-        return KEY_DOWN(custom_key_mapping.keyboard_key);
-    }
-}
-
-static b32 is_custom_key_pressed(InputController* input_controller, i32 custom_key)
-{
-    auto& custom_key_mapping = input_controller->custom_mappings[custom_key];
+    b32 result = false;
     
     if(input_controller->controller_present)
     {
         if(input_controller->controller_type == CONTROLLER_PS4)
         {
-            return JOYSTICK_KEY(custom_key_mapping.ps4_key);
+            
+            for(i32 ps4_key = 0; ps4_key < custom_key_mapping.ps4_key_count; ps4_key++)
+            {
+                result |= JOYSTICK_KEY_DOWN(custom_key_mapping.ps4_key[ps4_key]);
+            }
         }
         else
         {
-            return JOYSTICK_KEY(custom_key_mapping.xbox_key);
+            b32 result = false;
+            for(i32 xbox_key = 0; xbox_key < custom_key_mapping.xbox_key_count; xbox_key++)
+            {
+                result |= JOYSTICK_KEY_DOWN(custom_key_mapping.xbox_key[xbox_key]);
+            }
+            return result;
         }
     }
-    else
+    for(i32 keyboard_key = 0; keyboard_key < custom_key_mapping.keyboard_key_count; keyboard_key++)
     {
-        return KEY(custom_key_mapping.keyboard_key);
+        result |= KEY_DOWN(custom_key_mapping.keyboard_key[keyboard_key]);
     }
+    return result;
+    
+}
+
+static b32 is_custom_key_pressed(InputController* input_controller, i32 custom_key)
+{
+    auto& custom_key_mapping = input_controller->custom_mappings[custom_key];
+    b32 result = false;
+    
+    if(input_controller->controller_present)
+    {
+        if(input_controller->controller_type == CONTROLLER_PS4)
+        {
+            for(i32 ps4_key = 0; ps4_key < custom_key_mapping.ps4_key_count; ps4_key++)
+            {
+                result |= JOYSTICK_KEY(custom_key_mapping.ps4_key[ps4_key]);
+            }
+        }
+        else
+        {
+            for(i32 xbox_key = 0; xbox_key < custom_key_mapping.xbox_key_count; xbox_key++)
+            {
+                result |= JOYSTICK_KEY(custom_key_mapping.xbox_key[xbox_key]);
+            }
+        }
+    }
+    for(i32 keyboard_key = 0; keyboard_key < custom_key_mapping.keyboard_key_count; keyboard_key++)
+    {
+        result |= KEY(custom_key_mapping.keyboard_key[keyboard_key]);
+    }
+    return result;
 }
