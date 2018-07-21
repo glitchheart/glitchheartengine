@@ -205,7 +205,6 @@ static b32 is_custom_key_down(InputController* input_controller, i32 custom_key)
     {
         if(input_controller->controller_type == CONTROLLER_PS4)
         {
-            
             for(i32 ps4_key = 0; ps4_key < custom_key_mapping.ps4_key_count; ps4_key++)
             {
                 result |= JOYSTICK_KEY_DOWN(custom_key_mapping.ps4_key[ps4_key]);
@@ -221,6 +220,7 @@ static b32 is_custom_key_down(InputController* input_controller, i32 custom_key)
             return result;
         }
     }
+    
     for(i32 keyboard_key = 0; keyboard_key < custom_key_mapping.keyboard_key_count; keyboard_key++)
     {
         result |= KEY_DOWN(custom_key_mapping.keyboard_key[keyboard_key]);
@@ -251,6 +251,7 @@ static b32 is_custom_key_pressed(InputController* input_controller, i32 custom_k
             }
         }
     }
+    
     for(i32 keyboard_key = 0; keyboard_key < custom_key_mapping.keyboard_key_count; keyboard_key++)
     {
         result |= KEY(custom_key_mapping.keyboard_key[keyboard_key]);
