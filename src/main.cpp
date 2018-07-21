@@ -184,7 +184,7 @@ inline void load_config(const char* file_path, ConfigData* config_data, MemoryAr
             if(starts_with(line_buffer, "title"))
             {
                 auto title = &line_buffer[6];
-                sprintf(config_data->title, "%s", title);
+                snprintf(config_data->title, strlen(title),"%s", title);
             }
             else if(starts_with(line_buffer, "version"))
             {
