@@ -98,7 +98,8 @@ enum SoundSpace
 
 struct ConfigData
 {
-    char* starting_level_file_path;
+    char *title;
+    char *version;
     i32 screen_width;
     i32 screen_height;
     WindowMode window_mode;

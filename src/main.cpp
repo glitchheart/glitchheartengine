@@ -145,6 +145,8 @@ inline void save_config(const char* file_path, RenderState &render_state, SoundD
     
     if(file)
     {
+        fprintf(file, "title %s\n", old_config_data.title);
+        fprintf(file, "version %s\n", old_config_data.version);
         fprintf(file, "screen_width %d\n", render_state.window_width);
         fprintf(file, "screen_height %d\n", render_state.window_height);
         fprintf(file, "window_mode %d\n", render_state.window_mode);
@@ -172,11 +174,23 @@ inline void load_config(const char* file_path, ConfigData* config_data, MemoryAr
     
     *config_data = {};
     
+    config_data->title = push_string(perm_arena, 40);
+    config_data->version = push_string(perm_arena, 40);
+    
     if(file)
     {
         while(fgets(line_buffer, 255, file))
         {
-            if(starts_with(line_buffer, "screen_width"))
+            if(starts_with(line_buffer, "title"))
+            {
+                auto title = &line_buffer[6];
+                sprintf(config_data->title, "%s", title);
+            }
+            else if(starts_with(line_buffer, "version"))
+            {
+                sscanf(line_buffer, "version %s", config_data->version);
+            }
+            else if(starts_with(line_buffer, "screen_width"))
             {
                 sscanf(line_buffer, "screen_width %d", &config_data->screen_width);
             }
