@@ -981,7 +981,7 @@ static const GLFWvidmode* create_open_gl_window(RenderState& render_state, Windo
     return monitor ? mode : nullptr;
 }
 
-static void initialize_opengl(RenderState& render_state, Renderer& renderer, r32 contrast, r32 brightness, WindowMode window_mode, i32 screen_width, i32 screen_height, MemoryArena *perm_arena)
+static void initialize_opengl(RenderState& render_state, Renderer& renderer, r32 contrast, r32 brightness, WindowMode window_mode, i32 screen_width, i32 screen_height, const char* title, MemoryArena *perm_arena)
 {
     auto recreate_window = render_state.window != nullptr;
     
@@ -1018,7 +1018,7 @@ static void initialize_opengl(RenderState& render_state, Renderer& renderer, r32
     render_state.contrast = contrast;
     render_state.brightness = brightness;
     
-    auto mode = create_open_gl_window(render_state, window_mode, global_title, screen_width, screen_height);
+    auto mode = create_open_gl_window(render_state, window_mode, title, screen_width, screen_height);
     renderer.window_mode = render_state.window_mode;
     
     if(mode)
@@ -1037,7 +1037,7 @@ static void initialize_opengl(RenderState& render_state, Renderer& renderer, r32
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
         
-        create_open_gl_window(render_state, window_mode, global_title, screen_width, screen_height);
+        create_open_gl_window(render_state, window_mode, title, screen_width, screen_height);
         renderer.window_mode = render_state.window_mode;
         
         if(!render_state.window)
@@ -1188,7 +1188,7 @@ static void initialize_opengl(RenderState& render_state, Renderer& renderer, r32
 
 static void initialize_opengl(RenderState& render_state, Renderer& renderer, ConfigData* config_data, MemoryArena *perm_arena)
 {
-    initialize_opengl(render_state, renderer, config_data->contrast, config_data->brightness, config_data->window_mode, config_data->screen_width, config_data->screen_height, perm_arena);
+    initialize_opengl(render_state, renderer, config_data->contrast, config_data->brightness, config_data->window_mode, config_data->screen_width, config_data->screen_height, config_data->title, perm_arena);
 }
 
 static void delete_shaders(RenderState &render_state)
@@ -2677,7 +2677,7 @@ static void render(RenderState& render_state, Renderer& renderer, r64 delta_time
         {
             delete_shaders(render_state);
             
-            initialize_opengl(render_state, renderer, render_state.contrast, render_state.brightness, renderer.window_mode, render_state.window_width, render_state.window_height, render_state.perm_arena);
+            initialize_opengl(render_state, renderer, render_state.contrast, render_state.brightness, renderer.window_mode, render_state.window_width, render_state.window_height, render_state.window_title, render_state.perm_arena);
             
             clear(&render_state.font_arena);
             
