@@ -273,9 +273,14 @@ enum ControllerType
 
 struct CustomKeyMapping
 {
-    KeyCode keyboard_key;
-    i32 ps4_key;
-    i32 xbox_key;
+    KeyCode keyboard_key[4];
+    i32 keyboard_key_count;
+    
+    PS4Code ps4_key[4];
+    i32 ps4_key_count;
+    
+    XboxCode xbox_key[4];
+    i32 xbox_key_count;
 };
 
 struct InputController
