@@ -2315,6 +2315,11 @@ namespace math
         return result;
     }
     
+    inline r32 angle_from_direction(Vec2i in)
+    {
+        return (r32)atan2((r32)in.x, (r32)in.y);
+    }
+    
     inline r32 angle_from_direction(Vec2 in)
     {
         return (r32)atan2(in.x, in.y);
