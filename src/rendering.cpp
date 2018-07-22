@@ -165,7 +165,22 @@ static void load_texture(const char* full_texture_path, Renderer& renderer, Text
     texture_data->filtering = filtering;
     texture_data->handle = renderer.texture_count++;
     
-    texture_data->image_data = stbi_load(full_texture_path, &texture_data->width, &texture_data->height, 0, STBI_rgb_alpha);
+    PlatformFile png_file = platform.open_file(full_texture_path, POF_READ | POF_OPEN_EXISTING | POF_IGNORE_ERROR);
+    
+    if(png_file.handle)
+    {
+        platform.seek_file(png_file, 0, SO_END);
+        auto size = platform.tell_file(png_file);
+        platform.seek_file(png_file, 0, SO_SET);
+        
+        auto temp_mem = begin_temporary_memory(&renderer.texture_arena);
+        auto tex_data = push_size(&renderer.texture_arena, size + 1, stbi_uc);
+        platform.read_file(tex_data, size, 1, png_file);
+        
+        texture_data->image_data = stbi_load_from_memory(tex_data, size, &texture_data->width, &texture_data->height, 0, STBI_rgb_alpha);
+        platform.close_file(png_file);
+        end_temporary_memory(temp_mem);
+    }
     
     if(!texture_data->image_data)
     {

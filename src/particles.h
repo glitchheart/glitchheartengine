@@ -147,6 +147,7 @@ struct ParticleSystemInfo
     i32 *dead_particles;
     i32 dead_particle_count;
     
+    b32 use_next;
     
     i32 particle_count;
     i32 total_emitted;

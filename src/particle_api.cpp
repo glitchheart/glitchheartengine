@@ -80,6 +80,7 @@ static void create_particle_system(Renderer &renderer, ParticleSystemHandle &han
     system_info.alive_particles = push_array(memory_arena, system_info.max_particles, i32);
     system_info.next_alive_particles = push_array(memory_arena, system_info.max_particles, i32);
     system_info.dead_particles = push_array(memory_arena, system_info.max_particles, i32);
+    system_info.use_next = false;
     
     system_info.alive_particle_count = 0;
     system_info.next_alive_particle_count = 0;
