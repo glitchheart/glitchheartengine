@@ -6,13 +6,10 @@
 #include <dirent.h>
 #include "dlfcn.h"
 
-using PlatformHandle = i32;
-
-struct PlatformFile
+struct PlatformHandle
 {
-    PlatformHandle handle;
+    i32 handle;
 };
-
 
 inline PLATFORM_FILE_EXISTS(linux_file_exists)
 {

@@ -3,11 +3,9 @@
 #include <windows.h>
 #include <timeapi.h>
 
-using PlatformHandle = HANDLE;
-
-struct PlatformFile
+struct PlatformHandle
 {
-    PlatformHandle handle;
+    HANDLE handle;
 };
 
 #define copy_file(game_library_path, temp_game_library_path, overwrite, arena) CopyFile(game_library_path, temp_game_library_path, overwrite)
@@ -354,6 +352,18 @@ inline PLATFORM_SAVE_FILE_WITH_DIALOG(win32_save_file_with_dialog)
 }
 */
 
+inline i32 Win32ToFileDescriptor(HANDLE h, u32 open_flags)
+{
+    auto read = (open_flags & POF_READ) ? _O_RDONLY : 0;
+    read = (open_flags & POF_WRITE) ? _O_APPEND | read : read;
+    return MAX(0, _open_osfhandle((intptr_t)h, read));
+}
+
+inline HANDLE FileDescriptorToWin32(i32 i)
+{
+    return (HANDLE)_get_osfhandle(i);
+}
+
 inline PLATFORM_GET_TIME_OF_DAY(win32_get_time_of_day)
 {
     
@@ -362,27 +372,29 @@ inline PLATFORM_GET_TIME_OF_DAY(win32_get_time_of_day)
 static PLATFORM_OPEN_FILE(win32_open_file)
 {
     PlatformFile result = {};
-    result.handle = nullptr;
+    result.handle = 0;
     
     auto read = (open_flags & POF_READ) ? GENERIC_READ : 0;
     auto write = (open_flags & POF_WRITE) ? GENERIC_WRITE : 0;
     auto open = (open_flags & POF_CREATE_ALWAYS) ? CREATE_ALWAYS : (open_flags & POF_OPEN_EXISTING ? OPEN_EXISTING : (open_flags & POF_OPEN_ALWAYS ? OPEN_ALWAYS : 0));
     auto flags = read | write;
     
-    result.handle = CreateFile(path, (DWORD)flags, 0, 0, (DWORD)open, FILE_ATTRIBUTE_NORMAL, 0);
+    auto file = CreateFile(path, (DWORD)flags, 0, 0, (DWORD)open, FILE_ATTRIBUTE_NORMAL, 0);
     
-    if(!result.handle)
+    if(file == INVALID_HANDLE_VALUE && open_flags & POF_IGNORE_ERROR)
     {
         auto err = GetLastError();
-        log_error("Couldn't open file: %d\n", err);
+        log_error("Could not open file: %d\n", err);
     }
+    
+    result.handle = Win32ToFileDescriptor(file, open_flags);
     
     return(result);
 }
 
 static PLATFORM_CLOSE_FILE(win32_close_file)
 {
-    auto result = CloseHandle(file.handle);
+    auto result = CloseHandle(FileDescriptorToWin32(file.handle));
     if(!result)
     {
         auto err = GetLastError();
@@ -393,7 +405,7 @@ static PLATFORM_CLOSE_FILE(win32_close_file)
 static PLATFORM_WRITE_FILE(win32_write_file)
 {
     DWORD bytes_read;
-    auto result = WriteFile(file.handle, src, (DWORD)(size_bytes * size), &bytes_read, 0);
+    auto result = WriteFile(FileDescriptorToWin32(file.handle), src, (DWORD)(size_bytes * size), &bytes_read, 0);
     if(!result)
     {
         auto err = GetLastError();
@@ -404,7 +416,7 @@ static PLATFORM_WRITE_FILE(win32_write_file)
 static PLATFORM_READ_FILE(win32_read_file)
 {
     DWORD bytes_read;
-    auto result = ReadFile(file.handle, dst, DWORD(size_bytes * size), &bytes_read, 0);
+    auto result = ReadFile(FileDescriptorToWin32(file.handle), dst, DWORD(size_bytes * size), &bytes_read, 0);
     if(!result)
     {
         auto err = GetLastError();
@@ -419,17 +431,17 @@ static PLATFORM_SEEK_FILE(win32_seek_file)
     {
         case SO_END:
         {
-            result = SetFilePointer(file.handle, offset, 0, FILE_END);
+            result = SetFilePointer(FileDescriptorToWin32(file.handle), offset, 0, FILE_END);
         }
         break;
         case SO_CUR:
         {
-            result = SetFilePointer(file.handle, offset, 0, FILE_CURRENT);
+            result = SetFilePointer(FileDescriptorToWin32(file.handle), offset, 0, FILE_CURRENT);
         }
         break;
         case SO_SET:
         {
-            result = SetFilePointer(file.handle, offset, 0, FILE_BEGIN);
+            result = SetFilePointer(FileDescriptorToWin32(file.handle), offset, 0, FILE_BEGIN);
         }
         break;
     }
@@ -437,7 +449,7 @@ static PLATFORM_SEEK_FILE(win32_seek_file)
 
 static PLATFORM_TELL_FILE(win32_tell_file)
 {
-    auto result = SetFilePointer(file.handle, 0, 0, FILE_CURRENT);
+    auto result = SetFilePointer(FileDescriptorToWin32(file.handle), 0, 0, FILE_CURRENT);
     return (i32)result;
 }
 
@@ -455,7 +467,7 @@ static PLATFORM_PRINT_FILE(win32_print_file)
     char* buf = (char*)malloc(len + 1);
     vsnprintf(buf, len + 1, format, args);
     buf[len] = 0;
-    auto result = WriteFile(file.handle, buf, (DWORD)(len + 1), 0, 0);
+    auto result = WriteFile(FileDescriptorToWin32(file.handle), buf, (DWORD)(len + 1), 0, 0);
     
     va_end(args);
     

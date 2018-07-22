@@ -9,11 +9,9 @@
 #include <dirent.h>
 #include <sys/stat.h>
 
-using PlatformHandle = i32;
-
-struct PlatformFile
+struct PlatformHandle
 {
-    PlatformHandle handle;
+    i32 handle;
 };
 
 inline PLATFORM_FILE_EXISTS(osx_file_exists)

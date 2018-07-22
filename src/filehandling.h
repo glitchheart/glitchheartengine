@@ -21,7 +21,9 @@ struct AssetManager
     u32 dirty_game_lib;
 };
 
-static GLchar* load_shader_from_file(const char* path, MemoryArena* arena)
+#define IGNORE_ERROR true
+
+static GLchar* load_shader_from_file(const char* path, MemoryArena* arena, b32 ignore_error = false)
 {
     GLchar *source = {};
     
@@ -44,7 +46,7 @@ static GLchar* load_shader_from_file(const char* path, MemoryArena* arena)
         
         platform.close_file(f);
     }
-    else
+    else if(!ignore_error)
     {
         log_error( "Could not read file %s. File does not exist.\n", path);
     }

@@ -286,7 +286,7 @@ static GLuint load_shader(const char* file_path, Shader *shd, MemoryArena *arena
         }
         
         char* geometry_string = concat(file_path, ".geom", arena);
-        GLchar* geometry_text = load_shader_from_file(geometry_string, arena);
+        GLchar* geometry_text = load_shader_from_file(geometry_string, arena, IGNORE_ERROR);
         
         if(geometry_text)
         {

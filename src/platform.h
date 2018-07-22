@@ -140,7 +140,10 @@ enum PlatformFileFlags
     PM_APPEND = (1 << 0)
 };
 
-struct PlatformFile;
+struct PlatformFile
+{
+    i32 handle;
+};
 
 enum FileOpenFlags
 {
@@ -148,7 +151,8 @@ enum FileOpenFlags
     POF_WRITE = (1 << 1),
     POF_CREATE_ALWAYS = (1 << 2),
     POF_OPEN_EXISTING = (1 << 3),
-    POF_OPEN_ALWAYS = (1 << 4)
+    POF_OPEN_ALWAYS = (1 << 4),
+    POF_IGNORE_ERROR = (1 << 5)
 };
 
 enum SeekOptions
