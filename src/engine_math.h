@@ -2504,7 +2504,6 @@ namespace math
 #define COLOR_WHITE math::Rgba(1, 1, 1, 1)
 }
 
-
 struct Rect
 {
     union
@@ -2557,6 +2556,12 @@ struct Recti
     Recti() {}
     Recti(i32 x, i32 y, i32 width, i32 height) : x(x), y(y), width(width), height(height) {}
 };
+
+inline b32 rects_overlap(Rect rect1, Rect rect2)
+{
+    return rect1.x < rect2.x + rect2.width && rect1.x + rect1.width > rect2.x &&
+        rect1.y + rect1.height > rect2.y && rect1.y < rect2.y + rect2.height;
+}
 
 inline b32 point_inside_rect(math::Vec2i point, Recti rect)
 {

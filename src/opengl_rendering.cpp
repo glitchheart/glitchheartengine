@@ -43,42 +43,42 @@ void _error_gl(i32 line, const char* file)
     {
         case GL_INVALID_ENUM:
         {
-            log_error("OpenGL Error: GL_INVALID_ENUM on line %d in file %s\n", line, file);
+            log_error("OpenGL Error: GL_INVALID_ENUM on line %d in file %s", line, file);
         }
         break;
         case GL_INVALID_VALUE:
         {
-            log_error("OpenGL Error: GL_INVALID_VALUE on line %d in file %s\n", line, file);
+            log_error("OpenGL Error: GL_INVALID_VALUE on line %d in file %s", line, file);
         }
         break;
         case GL_INVALID_OPERATION:
         {
-            log_error("OpenGL Error: GL_INVALID_OPERATION on line %d in file %s\n", line, file);
+            log_error("OpenGL Error: GL_INVALID_OPERATION on line %d in file %s", line, file);
         }
         break;
         case GL_STACK_OVERFLOW:
         {
-            log_error("OpenGL Error: GL_STACK_OVERFLOW on line %d in file %s\n", line, file);
+            log_error("OpenGL Error: GL_STACK_OVERFLOW on line %d in file %s", line, file);
         }
         break;
         case GL_OUT_OF_MEMORY:
         {
-            log_error("OpenGL Error: GL_OUT_OF_MEMORY on line %d in file %s\n", line, file);
+            log_error("OpenGL Error: GL_OUT_OF_MEMORY on line %d in file %s", line, file);
         }
         break;
         case GL_INVALID_FRAMEBUFFER_OPERATION:
         {
-            log_error("OpenGL Error: GL_INVALID_FRAMEBUFFER_OPERATION on line %d in file %s\n", line, file);
+            log_error("OpenGL Error: GL_INVALID_FRAMEBUFFER_OPERATION on line %d in file %s", line, file);
         }
         break;
         case GL_CONTEXT_LOST:
         {
-            log_error("OpenGL Error: GL_CONTEXT_LOST on line %d in file %s\n", line, file);
+            log_error("OpenGL Error: GL_CONTEXT_LOST on line %d in file %sx", line, file);
         }
         break;
         case GL_TABLE_TOO_LARGE:
         {
-            log_error("OpenGL Error: GL_TABLE_TOO_LARGE on line %d in file %s\n", line, file);
+            log_error("OpenGL Error: GL_TABLE_TOO_LARGE on line %d in file %s", line, file);
         }
         break;
     }
@@ -129,7 +129,7 @@ void message_callback(GLenum source,
             break;
         }
         
-        log_error("OpenGl error: %s type = 0x%x, severity = 0x%x, message = %s, source = %s, id = %ud, length %ud= \n",
+        log_error("OpenGl error: %s type = 0x%x, severity = 0x%x, message = %s, source = %s, id = %ud, length %ud=",
                   (type == GL_DEBUG_TYPE_ERROR ? "** GL ERROR **" : ""),
                   type, severity, message, src_str, id, length);
     }
@@ -179,7 +179,7 @@ static GLint shader_compilation_error_checking(MemoryArena* arena,const char* sh
         
         glGetShaderInfoLog(shader, max_length, &max_length, error_log);
         
-        log_error("SHADER Compilation error - %s\n", shader_name);
+        log_error("SHADER Compilation error - %s", shader_name);
         log_error("%s", error_log);
         
         glDeleteShader(shader); // Don't leak the shader.
@@ -203,7 +203,7 @@ static GLint shader_link_error_checking(MemoryArena* arena, const char* program_
         
         glGetProgramInfoLog(program, max_length, &max_length, error_log);
         
-        log_error("SHADER Linking error - %s\n", program_name);
+        log_error("SHADER Linking error - %s", program_name);
         log_error("%s", error_log);
         
         glDeleteProgram(program); // Don't leak the program.
@@ -675,7 +675,7 @@ static void create_framebuffer(RenderState& render_state, Framebuffer& framebuff
     
     if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
     {
-        log_error("Error: Framebuffer incomplete\n");
+        log_error("Error: Framebuffer incomplete");
         error_gl();
     }
     
@@ -1077,9 +1077,9 @@ static void initialize_opengl(RenderState& render_state, Renderer& renderer, r32
     
     glDepthFunc(GL_LESS);
     
-    log("%s\n", glGetString(GL_VERSION));
-    log("Shading language supported: %s\n", glGetString(GL_SHADING_LANGUAGE_VERSION));
-    log("Glad Version: %d.%d\n", GLVersion.major, GLVersion.minor);
+    log("%s", glGetString(GL_VERSION));
+    log("Shading language supported: %s", glGetString(GL_SHADING_LANGUAGE_VERSION));
+    log("Glad Version: %d.%d", GLVersion.major, GLVersion.minor);
     
     glfwSetWindowUserPointer(render_state.window, &render_state);
     glfwSetKeyCallback(render_state.window, key_callback);
