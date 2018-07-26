@@ -249,7 +249,7 @@ static void init_renderer(Renderer &renderer)
     renderer.fonts = push_array(&renderer.font_arena, global_max_fonts, FontData);
 }
 
-#if __WIN32
+#if defined(_WIN32)
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 #else
 int main()
@@ -269,6 +269,7 @@ int main()
     platform = game_memory.platform_api;
     
     PlatformState* platform_state = bootstrap_push_struct(PlatformState, perm_arena);
+    
     game_memory.log_state = push_struct(&platform_state->perm_arena, LogState);
     
 #if !defined(_WIN32)
@@ -305,6 +306,7 @@ int main()
     log_state = game_memory.log_state;
     init_log(L_FLAG_FILE | L_FLAG_DEBUG, "../log.txt");
     
+    
 #if defined(__APPLE__)
     char* game_library_path = "libgame.dylib";
     char* temp_game_library_path = "libgame_temp.dylib";
@@ -339,7 +341,6 @@ int main()
     Renderer renderer = {};
     
     init_renderer(renderer);
-    
     if(global_graphics_api == GRAPHICS_VULKAN)
     {
         
