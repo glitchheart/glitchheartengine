@@ -938,6 +938,12 @@ static const GLFWvidmode* create_open_gl_window(RenderState& render_state, Windo
     strcpy(render_state.window_title, title);
     glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
     
+    
+    int widthMM, heightMM;
+    glfwGetMonitorPhysicalSize(glfwGetPrimaryMonitor(), &widthMM, &heightMM);
+    render_state.screen_dpi = mode->width / (widthMM / 25.4);
+    debug_log("dpi: %f\n", render_state.screen_dpi);
+    
     render_state.refresh_rate = mode->refreshRate;
     
     if (window_mode == FM_BORDERLESS)
@@ -950,7 +956,7 @@ static const GLFWvidmode* create_open_gl_window(RenderState& render_state, Windo
         screen_height = mode->height;
     }
     
-    printf("refresh rate %d\n", mode->refreshRate);
+    debug_log("refresh rate %d\n", mode->refreshRate);
     
     if (window_mode == FM_WINDOWED)
     {
@@ -1021,7 +1027,7 @@ static void initialize_opengl(RenderState& render_state, Renderer& renderer, r32
     auto mode = create_open_gl_window(render_state, window_mode, title, screen_width, screen_height);
     renderer.window_mode = render_state.window_mode;
     
-    if(mode)
+    if(mode && renderer.window_mode == FM_BORDERLESS)
     {
         renderer.window_width = mode->width;
         renderer.window_height = mode->height;
@@ -2254,19 +2260,21 @@ static void render_buffer(const RenderCommand& command, RenderState& render_stat
 void stbtt_load_font(RenderState &render_state, char *path, i32 size)
 {
     TrueTypeFont &font = render_state.true_type_fonts[render_state.font_count++];
-    font.atlas_width = 1024;
-    font.atlas_height = 1024;
+    
     font.oversample_x = 1;
     font.oversample_y = 1;
     font.first_char = ' ';
     font.char_count = '~' - ' ';
-    font.size = size;
+    auto density_factor = render_state.screen_dpi / 160.0f;
+    font.size = size * density_factor;
+    font.atlas_width = 1024;
+    font.atlas_height = 1024;
     
     unsigned char *ttf_buffer = push_array(&render_state.font_arena, (1<<20), unsigned char);
     
     auto temp_memory = begin_temporary_memory(&render_state.font_arena);
     
-    unsigned char *temp_bitmap = push_array(&render_state.font_arena, 1024 * 1024, unsigned char);
+    unsigned char *temp_bitmap = push_array(&render_state.font_arena, font.atlas_width * font.atlas_height, unsigned char);
     
     fread(ttf_buffer, 1, 1<<20, fopen(path, "rb"));
     
@@ -2668,9 +2676,10 @@ static void render(RenderState& render_state, Renderer& renderer, r64 delta_time
     
     if (renderer.window_width != render_state.window_width || renderer.window_height != render_state.window_height || renderer.window_mode != render_state.window_mode)
     {
+        debug("d: %d x %d\n", render_state.window_width, render_state.window_height);
         render_state.window_width = renderer.window_width;
         render_state.window_height = renderer.window_height;
-        
+        debug("d: %d x %d\n", render_state.window_width, render_state.window_height);
         *save_config = true;
         
         if(renderer.window_mode != render_state.window_mode)

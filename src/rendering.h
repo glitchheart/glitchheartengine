@@ -11,6 +11,7 @@ struct FontData
     char* name;
 };
 
+// @Cleanup: Clean up lighting code
 struct Spotlight
 {
     r32 position[4];
@@ -73,7 +74,9 @@ struct PointLightData
     math::Vec3 padding; // 3 * r32 = 3 * 4 = 12 bytes of padding!
     PointLight *point_lights;
 };
+// @Cleanup END
 
+// @
 enum ShaderType
 {
     SHADER_MESH,

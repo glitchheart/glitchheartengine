@@ -155,6 +155,7 @@ struct RenderState
     
     b32 paused;
     
+    r64 screen_dpi;
     
     r32 contrast;
     r32 brightness;
