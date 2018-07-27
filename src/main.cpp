@@ -249,7 +249,7 @@ static void init_renderer(Renderer &renderer)
     renderer.fonts = push_array(&renderer.font_arena, global_max_fonts, FontData);
 }
 
-#if defined(_WIN32)
+#if defined(_WIN32) && !defined(DEBUG)
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 #else
 int main()

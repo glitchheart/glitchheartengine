@@ -13,11 +13,11 @@
 
 #if DEBUG
 #ifdef _WIN32
-#define assert(expression, ...) if(!(expression)) {debug("Assertion failed in: %s on line %d\n with message: %s\n",__FILE__,__LINE__ , ## __VA_ARGS__); __debugbreak();}
+#define assert_(expression, ...) if(!(expression)) {debug("Assertion failed\nFile: %s \n Line: %d \n Expression: %s \n Message: %s \n", __FILE__, __LINE__, #expression, ## __VA_ARGS__); __debugbreak();}
 #elif __linux
-#define assert(expression, ...) if(!(expression)) {debug("Assertion failed in: %s on line %d\n with message: %s\n",__FILE__,__LINE__ , ## __VA_ARGS__); abort();}
+#define assert(expression, ...) if(!(expression)) {debug("Assertion failed \n File: %s \n Line: %d \n Expression: %s \n Message: %s \n", __FILE__, __LINE__, #expression, ## __VA_ARGS__); abort();}
 #elif __APPLE__
-#define assert(expression, ...) if(!(expression)) {debug("Assertion failed in: %s on line %d\n with message: %s\n",__FILE__,__LINE__ , ## __VA_ARGS__); abort();}
+#define assert(expression, ...) if(!(expression)) {debug("Assertion failed \n File: %s \n Line: %d \n Expression: %s \n Message: %s \n", __FILE__, __LINE__, #expression, ## __VA_ARGS__); abort();}
 #endif
 #else
 #define assert(expression, ...)
