@@ -2265,8 +2265,8 @@ void stbtt_load_font(RenderState &render_state, char *path, i32 size)
     font.oversample_y = 1;
     font.first_char = ' ';
     font.char_count = '~' - ' ';
-    auto density_factor = render_state.screen_dpi / 160.0f;
-    font.size = size * density_factor;
+    auto density_factor = 160.0f / render_state.screen_dpi;
+    font.size = size / density_factor;
     font.atlas_width = 1024;
     font.atlas_height = 1024;
     
