@@ -954,6 +954,10 @@ static const GLFWvidmode* create_open_gl_window(RenderState& render_state, Windo
     
     if (window_mode == FM_WINDOWED)
     {
+        glfwWindowHint(GLFW_RED_BITS, mode->redBits);
+        glfwWindowHint(GLFW_GREEN_BITS, mode->greenBits);
+        glfwWindowHint(GLFW_BLUE_BITS, mode->blueBits);
+        glfwWindowHint(GLFW_REFRESH_RATE, mode->refreshRate);
         monitor = NULL;
     }
     
@@ -2689,11 +2693,13 @@ static void render(RenderState& render_state, Renderer& renderer, r64 delta_time
                     }
                 }
             }
-            else if(FM_BORDERLESS)
+            else if(renderer.window_mode == FM_BORDERLESS)
             {
-                glfwSetWindowMonitor(render_state.window, nullptr, 0, 0, mode->width, mode->height, 0);
+                glfwSetWindowMonitor(render_state.window, glfwGetPrimaryMonitor(), 0, 0, mode->width, mode->height, 0);
                 renderer.window_width = mode->width;
                 renderer.window_height = mode->height;
+                
+                
                 for(i32 res_index = 0; res_index < renderer.available_resolutions_count; res_index++)
                 {
                     auto res = renderer.available_resolutions[res_index];
@@ -2703,13 +2709,22 @@ static void render(RenderState& render_state, Renderer& renderer, r64 delta_time
                         break;
                     }
                 }
-                //glfwSetWindowSize(render_state.window, render_state.window_width, render_state.window_height);
             }
             
             else
             {
                 glfwSetWindowMonitor(render_state.window, nullptr, mode->width / 2 - renderer.window_width / 2, mode->height / 2 - renderer.window_height / 2, renderer.window_width, renderer.window_height, 0);
                 glfwSetWindowSize(render_state.window, render_state.window_width, render_state.window_height);
+                
+                for(i32 res_index = 0; res_index < renderer.available_resolutions_count; res_index++)
+                {
+                    auto res = renderer.available_resolutions[res_index];
+                    if(res.width == renderer.window_width && res.height == renderer.window_height)
+                    {
+                        renderer.current_resolution_index = res_index;
+                        break;
+                    }
+                }
             }
             
             render_state.window_mode = renderer.window_mode;

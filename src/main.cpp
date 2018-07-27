@@ -249,7 +249,7 @@ static void init_renderer(Renderer &renderer)
     renderer.fonts = push_array(&renderer.font_arena, global_max_fonts, FontData);
 }
 
-#if defined(_WIN32)
+#if defined(_WIN32) && !defined(DEBUG)
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 #else
 int main()
@@ -341,7 +341,7 @@ int main()
     Renderer renderer = {};
     
     init_renderer(renderer);
-    if(global_graphics_api == GRAPHICS_VULKAN)
+    if constexpr(global_graphics_api == GRAPHICS_VULKAN)
     {
         
 #if defined(__linux) || defined(_WIN32)
@@ -350,7 +350,7 @@ int main()
         //vk_render(vk_render_state, renderer);
 #endif
     }
-    else if(global_graphics_api == GRAPHICS_OPEN_GL)
+    else if constexpr(global_graphics_api == GRAPHICS_OPEN_GL)
     {
         log("Initializing OpenGl");
         initialize_opengl(render_state, renderer, &config_data, &platform_state->perm_arena);
