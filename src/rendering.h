@@ -999,7 +999,7 @@ r32 from_ui(i32 scale, r32 coord)
 
 i32 to_ui(i32 scale, r32 coord)
 {
-    return (i32)(((r32)coord / (r32)scale) * (r32)UI_COORD_DIMENSION);
+    return (i32)((coord / (r32)scale) * (r32)UI_COORD_DIMENSION);
 }
 
 
