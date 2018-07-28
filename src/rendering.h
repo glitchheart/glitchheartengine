@@ -4,6 +4,8 @@
 #define MAX_BONES 50
 #define MAX_CHILDREN 30
 
+#define UI_COORD_DIMENSION 1000
+
 struct FontData
 {
     char* path;
@@ -972,5 +974,33 @@ struct Renderer
     MemoryArena buffer_arena;
     MemoryArena shader_arena;
 };
+
+math::Vec3 to_ui(Resolution resolution, math::Vec2i coord)
+{
+    math::Vec3 res;
+    res.x = ((r32)coord.x / (r32)resolution.width) * UI_COORD_DIMENSION;
+    res.y = ((r32)coord.y / (r32)resolution.height) * UI_COORD_DIMENSION;
+    res.z = 0.0f;
+    return res;
+}
+
+math::Vec2i from_ui(Resolution resolution, math::Vec3 coord)
+{
+    math::Vec2i res;
+    res.x = (i32)(((r32)coord.x / (r32)UI_COORD_DIMENSION) * resolution.width);
+    res.y = (i32)(((r32)coord.y / (r32)UI_COORD_DIMENSION) * resolution.height);
+    return res;
+}
+
+r32 from_ui(i32 scale, r32 coord)
+{
+    return ((r32)coord / (r32)UI_COORD_DIMENSION) * (r32)scale;
+}
+
+i32 to_ui(i32 scale, r32 coord)
+{
+    return (i32)(((r32)coord / (r32)scale) * (r32)UI_COORD_DIMENSION);
+}
+
 
 #endif
