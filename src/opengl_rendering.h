@@ -98,6 +98,12 @@ struct TrueTypeFont
     GLuint texture;
     GLuint vao;
     GLuint vbo;
+    
+    struct
+    {
+        i32 width;
+        i32 height;
+    } resolution_loaded_for;
 };
 
 struct CharacterData
@@ -149,6 +155,7 @@ struct RenderState
     i32 framebuffer_width;
     i32 framebuffer_height;
     i32 dpi_scale;
+    r32 density_factor;
     i32 pixels_per_unit;
     
     i32 refresh_rate;
