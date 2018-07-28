@@ -1702,13 +1702,10 @@ static void render_quad(RenderMode mode, RenderState& render_state, math::Vec4 c
     glBindVertexArray(0);
 }
 
-static math::Vec2 get_text_size(const char *text, TrueTypeFont &font, u64 alignment_flags)
+static math::Vec2 get_text_size(const char *text, TrueTypeFont &font)
 {
     math::Vec2 size;
     r32 placeholder_y = 0.0;
-    
-    b32 should_set_width = (b32)(alignment_flags & ALIGNMENT_CENTER_X);
-    b32 should_set_height = (b32)(alignment_flags & ALIGNMENT_CENTER_Y);
     
     for(u32 i = 0; i < strlen(text); i++)
     {
@@ -1723,16 +1720,6 @@ static math::Vec2 get_text_size(const char *text, TrueTypeFont &font, u64 alignm
         
         i32 kerning = stbtt_GetCodepointKernAdvance(&font.info, text[i] - font.first_char, text[i + 1] - font.first_char);
         size.x += (r32)kerning * font.scale;
-    }
-    
-    if(!should_set_width)
-    {
-        size.x = 0.0f;
-    }
-    
-    if(!should_set_height)
-    {
-        size.y = 0.0f;
     }
     
     return size;
@@ -1763,12 +1750,29 @@ static void render_text(RenderState &render_state, TrueTypeFont &font, const mat
     i32 n = 0;
     
     // @Speed: The call to get_text_size() will loop throught the text, which means we'll loop through it twice per render-call
-    if((alignment_flags & ALIGNMENT_CENTER_X) || alignment_flags & ALIGNMENT_CENTER_Y)
+    math::Vec2 text_size = get_text_size(text, font);
+    if(alignment_flags & ALIGNMENT_CENTER_X)
     {
-        math::Vec2 text_size = get_text_size(text, font, alignment_flags);
         x -= text_size.x / 2.0f;
+    }
+    else if(alignment_flags & ALIGNMENT_RIGHT)
+    {
+        x -= text_size.x;
+    }
+    
+    if(alignment_flags & ALIGNMENT_CENTER_Y)
+    {
         y -= text_size.y / 2.0f;
     }
+    else if(alignment_flags & ALIGNMENT_TOP)
+    {
+        y -= text_size.y;
+    }
+    else if(alignment_flags & ALIGNMENT_BOTTOM)
+    {
+        y += text_size.y;
+    }
+    
     
     // first we have to reverse the initial y to support stb_truetype where y+ is down
     y = render_state.window_height - y;
