@@ -689,6 +689,12 @@ static void create_cube(Renderer &renderer, MeshInfo &mesh_info, b32 with_instan
         color_data.for_instancing = true;
         renderer.buffers[renderer.buffer_count] = color_data;
         mesh_info.instance_color_buffer_handle = renderer.buffer_count++;
+        
+        BufferData rotation_data = {};
+        rotation_data.instance_buffer_size = sizeof(math::Vec3) * 1024; // @Incomplete
+        rotation_data.for_instancing = true;
+        renderer.buffers[renderer.buffer_count] = rotation_data;
+        mesh_info.instance_rotation_buffer_handle = renderer.buffer_count++;
     }
 }
 
@@ -744,7 +750,7 @@ static void push_mesh(Renderer &renderer, MeshInfo mesh_info)
     render_command->receives_shadows = mesh_info.receives_shadows;
 }
 
-static void push_mesh_instanced(Renderer &renderer, MeshInfo mesh_info, math::Vec3 *offsets, math::Rgba *colors, i32 offset_count)
+static void push_mesh_instanced(Renderer &renderer, MeshInfo mesh_info, math::Vec3 *offsets, math::Rgba *colors, math::Vec3 *rotations, i32 offset_count)
 {
     RenderCommand *render_command = push_next_command(renderer, false);
     render_command->type = RENDER_COMMAND_MESH_INSTANCED;
@@ -760,8 +766,10 @@ static void push_mesh_instanced(Renderer &renderer, MeshInfo mesh_info, math::Ve
     render_command->color = mesh_info.material.color;
     render_command->mesh_instanced.instance_offset_buffer_handle = mesh_info.instance_offset_buffer_handle;
     render_command->mesh_instanced.instance_color_buffer_handle = mesh_info.instance_color_buffer_handle;
+    render_command->mesh_instanced.instance_rotation_buffer_handle = mesh_info.instance_rotation_buffer_handle;
     render_command->mesh_instanced.offsets = offsets;
     render_command->mesh_instanced.colors = colors;
+    render_command->mesh_instanced.rotations = rotations;
     render_command->mesh_instanced.offset_count = offset_count; // @Incomplete: Rename this to instance_count?
     render_command->cast_shadows = mesh_info.cast_shadows;
     render_command->receives_shadows = mesh_info.receives_shadows;
@@ -1074,6 +1082,12 @@ static void load_obj(Renderer &renderer, char *file_path, MeshInfo &mesh_info, b
         color_data.for_instancing = true;
         renderer.buffers[renderer.buffer_count] = color_data;
         mesh_info.instance_color_buffer_handle = renderer.buffer_count++;
+        
+        BufferData rotation_data = {};
+        rotation_data.instance_buffer_size = sizeof(math::Vec3) * 1024; // @Incomplete
+        rotation_data.for_instancing = true;
+        renderer.buffers[renderer.buffer_count] = rotation_data;
+        mesh_info.instance_rotation_buffer_handle = renderer.buffer_count++;
     }
 }
 
