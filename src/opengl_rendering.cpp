@@ -942,7 +942,7 @@ static const GLFWvidmode* create_open_gl_window(RenderState& render_state, Windo
     int widthMM, heightMM;
     glfwGetMonitorPhysicalSize(glfwGetPrimaryMonitor(), &widthMM, &heightMM);
     render_state.screen_dpi = mode->width / (widthMM / 25.4);
-    debug_log("dpi: %f\n", render_state.screen_dpi);
+    debug_log("dpi: %f", render_state.screen_dpi);
     
     render_state.refresh_rate = mode->refreshRate;
     
@@ -956,7 +956,7 @@ static const GLFWvidmode* create_open_gl_window(RenderState& render_state, Windo
         screen_height = mode->height;
     }
     
-    debug_log("refresh rate %d\n", mode->refreshRate);
+    debug_log("refresh rate %d", mode->refreshRate);
     
     if (window_mode == FM_WINDOWED)
     {
