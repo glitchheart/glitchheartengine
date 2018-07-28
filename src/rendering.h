@@ -123,7 +123,9 @@ enum Alignment
     ALIGNMENT_LEFT = (1 << 0),
     ALIGNMENT_RIGHT = (1 << 1),
     ALIGNMENT_CENTER_X = (1 << 2),
-    ALIGNMENT_CENTER_Y = (1 << 4)
+    ALIGNMENT_CENTER_Y = (1 << 3),
+    ALIGNMENT_TOP = (1 << 4),
+    ALIGNMENT_BOTTOM = (1 << 5)
 };
 
 struct Shader
