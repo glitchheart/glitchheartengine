@@ -1874,7 +1874,6 @@ namespace math
         return result;
     }
     
-    
     inline i32 round(r32 v)
     {
         r32 half_ceil = ((r32)ceil(v))/2.0f;
