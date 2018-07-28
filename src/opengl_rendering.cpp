@@ -670,8 +670,8 @@ static void create_framebuffer(RenderState& render_state, Framebuffer& framebuff
     glBindFramebuffer(GL_FRAMEBUFFER, framebuffer.buffer_handle);
     glDrawBuffer(GL_COLOR_ATTACHMENT0);
     
-    create_framebuffer_color_attachment(framebuffer, width, height, true, samples);
-    create_framebuffer_render_buffer_attachment(framebuffer, width, height, true, samples);
+    create_framebuffer_color_attachment(framebuffer, width, height, multisampled, samples);
+    create_framebuffer_render_buffer_attachment(framebuffer, width, height, multisampled, samples);
     
     if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
     {
