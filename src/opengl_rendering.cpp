@@ -2041,14 +2041,11 @@ static void render_mesh(const RenderCommand &render_command, Renderer &renderer,
     model_matrix = math::scale(model_matrix, render_command.scale);
     
     math::Vec3 rotation = render_command.rotation;
-    auto x_axis = rotation.x > 0.0f ? 1.0f : 0.0f;
-    auto y_axis = rotation.y > 0.0f ? 1.0f : 0.0f;
-    auto z_axis = rotation.z > 0.0f ? 1.0f : 0.0f;
     
     auto orientation = math::Quat();
-    orientation = math::rotate(orientation, rotation.x, math::Vec3(x_axis, 0.0f, 0.0f));
-    orientation = math::rotate(orientation, rotation.y, math::Vec3(0.0f, y_axis, 0.0f));
-    orientation = math::rotate(orientation, rotation.z, math::Vec3(0.0f, 0.0f, z_axis));
+    orientation = math::rotate(orientation, rotation.x, math::Vec3(1.0f, 0.0f, 0.0f));
+    orientation = math::rotate(orientation, rotation.y, math::Vec3(0.0f, 1.0f, 0.0f));
+    orientation = math::rotate(orientation, rotation.z, math::Vec3(0.0f, 0.0f, 1.0f));
     
     model_matrix = to_matrix(orientation) * model_matrix;
     
@@ -2140,6 +2137,7 @@ static void render_mesh_instanced(const RenderCommand &render_command, Renderer 
     Buffer buffer = render_state.buffers[render_command.mesh_instanced.buffer_handle];
     Buffer offset_instance_buffer = render_state.buffers[render_command.mesh_instanced.instance_offset_buffer_handle];
     Buffer color_instance_buffer = render_state.buffers[render_command.mesh_instanced.instance_color_buffer_handle];
+    Buffer rotation_instance_buffer = render_state.buffers[render_command.mesh_instanced.instance_rotation_buffer_handle];
     
     glBindVertexArray(buffer.vao);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer.ibo);
@@ -2178,6 +2176,13 @@ static void render_mesh_instanced(const RenderCommand &render_command, Renderer 
     
     glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, 0, (void*)0);
     glVertexAttribDivisor(4, 1);
+    
+    glEnableVertexAttribArray(5);
+    glBindBuffer(GL_ARRAY_BUFFER, rotation_instance_buffer.vbo);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizeiptr)(sizeof(math::Vec3) * render_command.mesh_instanced.offset_count), render_command.mesh_instanced.rotations);
+    
+    glVertexAttribPointer(5, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+    glVertexAttribDivisor(5, 1);
     
     math::Mat4 model_matrix(1.0f);
     model_matrix = math::scale(model_matrix, render_command.scale);

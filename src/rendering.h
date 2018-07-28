@@ -146,12 +146,12 @@ struct VertexInfo
 
 r32 plane_vertices[] =
 {
-    0.0f, 0.0f, 0.0f,
-    1.0f, 0.0f, 0.0f,
-    1.0f, 0.0f,  1.0f,  
-    1.0f, 0.0f,  1.0f,  
-    0.0f, 0.0f,  1.0f, 
-    0.0f, 0.0f, 0.0f
+    -0.5f, 0.0f, -0.5f,
+    0.5f, 0.0f, -0.5f,
+    0.5f, 0.0f,  0.5f,  
+    0.5f, 0.0f,  0.5f,  
+    -0.5f, 0.0f,  0.5f, 
+    -0.5f, 0.0f, -0.5f
 };
 
 u16 plane_indices[] = 
@@ -571,6 +571,8 @@ struct MeshInfo
     i32 mesh_handle;
     i32 instance_offset_buffer_handle;
     i32 instance_color_buffer_handle;
+    i32 instance_rotation_buffer_handle;
+    
     TransformInfo transform;
     RenderMaterial material;
     
@@ -740,12 +742,15 @@ struct RenderCommand
             i32 buffer_handle;
             i32 instance_offset_buffer_handle;
             i32 instance_color_buffer_handle;
+            i32 instance_rotation_buffer_handle;
+            
             RenderMaterialType material_type;
             i32 diffuse_texture;
             WireframeType wireframe_type;
             math::Rgba wireframe_color;
             math::Vec3 *offsets;
             math::Rgba *colors;
+            math::Vec3 *rotations;
             i32 offset_count;
         } mesh_instanced;
         struct
