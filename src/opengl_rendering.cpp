@@ -946,7 +946,7 @@ void stbtt_load_font(RenderState &render_state, char *path, i32 size, i32 index 
     font->oversample_y = 1;
     font->first_char = ' ';
     font->char_count = '~' - ' ';
-    font->size = size / render_state.density_factor;
+    font->size = size;// / render_state.density_factor;
     
     font->size = from_ui(render_state.window_height, font->size);
     
