@@ -341,7 +341,7 @@ int main()
     Renderer renderer = {};
     
     init_renderer(renderer);
-    if(global_graphics_api == GRAPHICS_VULKAN)
+    if constexpr(global_graphics_api == GRAPHICS_VULKAN)
     {
         
 #if defined(__linux) || defined(_WIN32)
@@ -350,7 +350,7 @@ int main()
         //vk_render(vk_render_state, renderer);
 #endif
     }
-    else if(global_graphics_api == GRAPHICS_OPEN_GL)
+    else if constexpr(global_graphics_api == GRAPHICS_OPEN_GL)
     {
         log("Initializing OpenGl");
         initialize_opengl(render_state, renderer, &config_data, &platform_state->perm_arena);

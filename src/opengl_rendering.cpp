@@ -926,6 +926,111 @@ static void load_extra_shaders(RenderState& render_state, Renderer& renderer)
     }
 }
 
+
+void stbtt_load_font(RenderState &render_state, char *path, i32 size, i32 index = -1)
+{
+    TrueTypeFont *font = nullptr;
+    if(index == -1)
+    {
+        font = &render_state.true_type_fonts[render_state.font_count++];
+    }
+    else
+    {
+        font = &render_state.true_type_fonts[index];
+    }
+    
+    font->resolution_loaded_for.width = render_state.window_width;
+    font->resolution_loaded_for.height = render_state.window_height;
+    
+    font->oversample_x = 1;
+    font->oversample_y = 1;
+    font->first_char = ' ';
+    font->char_count = '~' - ' ';
+    font->size = size / render_state.density_factor;
+    
+    font->size = from_ui(render_state.window_height, font->size);
+    
+    auto count_per_line = math::ceil(math::sqrt(font->char_count));
+    font->atlas_width = math::multiple_of_number(font->size * count_per_line, 4);
+    font->atlas_height = math::multiple_of_number(font->size * count_per_line, 4);
+    
+    unsigned char *ttf_buffer = push_array(&render_state.font_arena, (1<<20), unsigned char);
+    
+    auto temp_memory = begin_temporary_memory(&render_state.font_arena);
+    
+    unsigned char *temp_bitmap = push_array(&render_state.font_arena, font->atlas_width * font->atlas_height, unsigned char);
+    
+    fread(ttf_buffer, 1, 1<<20, fopen(path, "rb"));
+    
+    stbtt_InitFont(&font->info, ttf_buffer, 0); 
+    font->scale = stbtt_ScaleForPixelHeight(&font->info, 20);
+    stbtt_GetFontVMetrics(&font->info, &font->ascent, 0, 0);
+    font->baseline = (i32)(font->ascent * font->scale);
+    
+    stbtt_pack_context context;
+    if (!stbtt_PackBegin(&context, temp_bitmap, font->atlas_width, font->atlas_height, 0, 1, 0))
+        printf("Failed to initialize font");
+    
+    stbtt_PackSetOversampling(&context, font->oversample_x, font->oversample_y);
+    if (!stbtt_PackFontRange(&context, ttf_buffer, 0
+                             , (r32)font->size, font->first_char, font->char_count, font->char_data))
+        printf("Failed to pack font");
+    
+#if DEBUG
+    char buf[64];
+    sprintf(buf, "%d_%d_", render_state.font_count - 1, size);
+    
+    //stbi_write_bmp(concat(buf, ".bmp", &render_state.font_arena), font->atlas_width, font->atlas_height, 1,temp_bitmap);
+#endif
+    
+    stbtt_PackEnd(&context);
+    
+    if(!font->texture)
+    {
+        glGenTextures(1, &font->texture);
+    }
+    
+    glBindTexture(GL_TEXTURE_2D, font->texture);
+    
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, (GLsizei)font->atlas_width, (GLsizei)font->atlas_height, 0, GL_RED, GL_UNSIGNED_BYTE, temp_bitmap);
+    
+    /* Clamping to edges is important to prevent artifacts when scaling */
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    
+    if(!font->vao)
+    {
+        glGenVertexArrays(1, &font->vao);
+    }
+    
+    glBindVertexArray(font->vao);
+    
+    if(!font->vbo)
+    {
+        glGenBuffers(1, &font->vbo);
+    }
+    
+    glBindBuffer(GL_ARRAY_BUFFER, font->vbo);
+    
+    vertex_attrib_pointer(0, 4, GL_FLOAT, 0, 0);
+    glBindVertexArray(0);
+    
+    end_temporary_memory(temp_memory);
+}
+
+static void load_font(RenderState& render_state, char* path, i32 size, i32 index = -1)
+{
+    //initialize_free_type_font(path, size, render_state.ft_library, &render_state.fonts[render_state.font_count++]);
+    stbtt_load_font(render_state, path, size, index);
+}
+
+
 static const GLFWvidmode* create_open_gl_window(RenderState& render_state, WindowMode window_mode, const char* title, i32 width, i32 height)
 {
     GLFWmonitor* monitor = glfwGetPrimaryMonitor();
@@ -942,7 +1047,7 @@ static const GLFWvidmode* create_open_gl_window(RenderState& render_state, Windo
     int widthMM, heightMM;
     glfwGetMonitorPhysicalSize(glfwGetPrimaryMonitor(), &widthMM, &heightMM);
     render_state.screen_dpi = mode->width / (widthMM / 25.4);
-    debug_log("dpi: %f", render_state.screen_dpi);
+    render_state.density_factor = 160.0f / (r32)render_state.screen_dpi;
     
     render_state.refresh_rate = mode->refreshRate;
     
@@ -960,6 +1065,10 @@ static const GLFWvidmode* create_open_gl_window(RenderState& render_state, Windo
     
     if (window_mode == FM_WINDOWED)
     {
+        glfwWindowHint(GLFW_RED_BITS, mode->redBits);
+        glfwWindowHint(GLFW_GREEN_BITS, mode->greenBits);
+        glfwWindowHint(GLFW_BLUE_BITS, mode->blueBits);
+        glfwWindowHint(GLFW_REFRESH_RATE, mode->refreshRate);
         monitor = NULL;
     }
     
@@ -1700,10 +1809,25 @@ static void render_line(const RenderCommand& command, RenderState& render_state,
     render_line(render_state, command.line.color, command.line.point1, command.line.point2, projection, view, command.line.line_width, command.is_ui);
 }
 
-static void render_text(const RenderCommand& command, RenderState& render_state, math::Mat4 view_matrix, math::Mat4 projection_matrix)
+static void render_text(const RenderCommand& command, RenderState& render_state, Renderer& renderer, math::Mat4 view_matrix, math::Mat4 projection_matrix)
 {
     assert(command.text.font_handle < render_state.font_count);
     TrueTypeFont font = render_state.true_type_fonts[command.text.font_handle];
+    
+    if(font.resolution_loaded_for.width != render_state.window_width || font.resolution_loaded_for.height != render_state.window_height)
+    {
+        FontData data = renderer.fonts[command.text.font_handle];
+        
+        if(font.resolution_loaded_for.width == 0 && font.resolution_loaded_for.height == 0)
+        {
+            load_font(render_state, data.path, data.size, -1);
+        }
+        else
+        {
+            load_font(render_state, data.path, data.size, command.text.font_handle);
+        }
+        
+    }
     
     render_text(render_state, font, command.text.color, command.text.text, command.text.position.x, command.text.position.y, view_matrix, projection_matrix, command.text.scale, command.text.alignment_flags);
 }
@@ -2257,75 +2381,6 @@ static void render_buffer(const RenderCommand& command, RenderState& render_stat
     glBindVertexArray(0);
 }
 
-void stbtt_load_font(RenderState &render_state, char *path, i32 size)
-{
-    TrueTypeFont &font = render_state.true_type_fonts[render_state.font_count++];
-    
-    font.oversample_x = 1;
-    font.oversample_y = 1;
-    font.first_char = ' ';
-    font.char_count = '~' - ' ';
-    auto density_factor = 160.0f / render_state.screen_dpi;
-    font.size = size / density_factor;
-    font.atlas_width = 1024;
-    font.atlas_height = 1024;
-    
-    unsigned char *ttf_buffer = push_array(&render_state.font_arena, (1<<20), unsigned char);
-    
-    auto temp_memory = begin_temporary_memory(&render_state.font_arena);
-    
-    unsigned char *temp_bitmap = push_array(&render_state.font_arena, font.atlas_width * font.atlas_height, unsigned char);
-    
-    fread(ttf_buffer, 1, 1<<20, fopen(path, "rb"));
-    
-    stbtt_InitFont(&font.info, ttf_buffer, 0); 
-    font.scale = stbtt_ScaleForPixelHeight(&font.info, 15);
-    stbtt_GetFontVMetrics(&font.info, &font.ascent, 0, 0);
-    font.baseline = (i32)(font.ascent * font.scale);
-    
-    stbtt_pack_context context;
-    if (!stbtt_PackBegin(&context, temp_bitmap, font.atlas_width, font.atlas_height, 0, 1, 0))
-        printf("Failed to initialize font");
-    
-    stbtt_PackSetOversampling(&context, font.oversample_x, font.oversample_y);
-    if (!stbtt_PackFontRange(&context, ttf_buffer, (i32)font.scale, (r32)font.size, font.first_char, font.char_count, font.char_data))
-        printf("Failed to pack font");
-    
-    stbtt_PackEnd(&context);
-    
-    glGenTextures(1, &font.texture);
-    glBindTexture(GL_TEXTURE_2D, font.texture);
-    
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, (GLsizei)font.atlas_width, (GLsizei)font.atlas_height, 0, GL_RED, GL_UNSIGNED_BYTE, temp_bitmap);
-    
-    /* Clamping to edges is important to prevent artifacts when scaling */
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    
-    glGenVertexArrays(1, &font.vao);
-    glBindVertexArray(font.vao);
-    
-    glGenBuffers(1, &font.vbo);
-    glBindBuffer(GL_ARRAY_BUFFER, font.vbo);
-    
-    vertex_attrib_pointer(0, 4, GL_FLOAT, 0, 0);
-    glBindVertexArray(0);
-    
-    end_temporary_memory(temp_memory);
-}
-
-static void load_font(RenderState& render_state, char* path, i32 size)
-{
-    //initialize_free_type_font(path, size, render_state.ft_library, &render_state.fonts[render_state.font_count++]);
-    stbtt_load_font(render_state, path, size);
-}
-
 
 static void register_buffers(RenderState& render_state, Renderer& renderer)
 {
@@ -2554,7 +2609,7 @@ static void render_commands(RenderState &render_state, Renderer &renderer)
             break;
             case RENDER_COMMAND_TEXT:
             {
-                render_text(command, render_state, camera.view_matrix, camera.projection_matrix);
+                render_text(command, render_state, renderer, camera.view_matrix, camera.projection_matrix);
             }
             break;
             case RENDER_COMMAND_QUAD:
@@ -2624,7 +2679,7 @@ static void render_commands(RenderState &render_state, Renderer &renderer)
             break;
             case RENDER_COMMAND_TEXT:
             {
-                render_text(command, render_state, camera.view_matrix, renderer.ui_projection_matrix);
+                render_text(command, render_state, renderer, camera.view_matrix, renderer.ui_projection_matrix);
             }
             break;
             case RENDER_COMMAND_QUAD:
@@ -2676,10 +2731,8 @@ static void render(RenderState& render_state, Renderer& renderer, r64 delta_time
     
     if (renderer.window_width != render_state.window_width || renderer.window_height != render_state.window_height || renderer.window_mode != render_state.window_mode)
     {
-        debug("d: %d x %d\n", render_state.window_width, render_state.window_height);
         render_state.window_width = renderer.window_width;
         render_state.window_height = renderer.window_height;
-        debug("d: %d x %d\n", render_state.window_width, render_state.window_height);
         *save_config = true;
         
         if(renderer.window_mode != render_state.window_mode)
@@ -2698,11 +2751,13 @@ static void render(RenderState& render_state, Renderer& renderer, r64 delta_time
                     }
                 }
             }
-            else if(FM_BORDERLESS)
+            else if(renderer.window_mode == FM_BORDERLESS)
             {
-                glfwSetWindowMonitor(render_state.window, nullptr, 0, 0, mode->width, mode->height, 0);
+                glfwSetWindowMonitor(render_state.window, glfwGetPrimaryMonitor(), 0, 0, mode->width, mode->height, 0);
                 renderer.window_width = mode->width;
                 renderer.window_height = mode->height;
+                
+                
                 for(i32 res_index = 0; res_index < renderer.available_resolutions_count; res_index++)
                 {
                     auto res = renderer.available_resolutions[res_index];
@@ -2712,13 +2767,22 @@ static void render(RenderState& render_state, Renderer& renderer, r64 delta_time
                         break;
                     }
                 }
-                //glfwSetWindowSize(render_state.window, render_state.window_width, render_state.window_height);
             }
             
             else
             {
                 glfwSetWindowMonitor(render_state.window, nullptr, mode->width / 2 - renderer.window_width / 2, mode->height / 2 - renderer.window_height / 2, renderer.window_width, renderer.window_height, 0);
                 glfwSetWindowSize(render_state.window, render_state.window_width, render_state.window_height);
+                
+                for(i32 res_index = 0; res_index < renderer.available_resolutions_count; res_index++)
+                {
+                    auto res = renderer.available_resolutions[res_index];
+                    if(res.width == renderer.window_width && res.height == renderer.window_height)
+                    {
+                        renderer.current_resolution_index = res_index;
+                        break;
+                    }
+                }
             }
             
             render_state.window_mode = renderer.window_mode;
