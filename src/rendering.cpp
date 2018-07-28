@@ -260,7 +260,7 @@ static void push_line(Renderer& renderer, math::Vec3 point1, math::Vec3 point2, 
     render_command->is_ui = is_ui;
 }
 
-#define PUSH_UI_TEXT(text, position, color, font_handle) push_ui_text(renderer, text, position, font_handle, color)
+#define PUSH_UI_TEXT(text, position, color, font_handle, ...) push_ui_text(renderer, text, position, font_handle, color, __VA_ARGS__)
 #define PUSH_CENTERED_UI_TEXT(text, position, color, font_handle) push_ui_text(renderer, text, position, font_handle, color, ALIGNMENT_CENTER_X | ALIGNMENT_CENTER_Y)
 static void push_ui_text(Renderer &renderer, const char* text, math::Vec2i position, i32 font_handle, math::Rgba color, u64 alignment_flags = ALIGNMENT_LEFT)
 {
@@ -378,11 +378,11 @@ static void push_filled_ui_quad_not_centered(Renderer& renderer, math::Vec2i pos
     pos.y = ((r32)position.y / (r32)UI_COORD_DIMENSION) * renderer.window_height;
     pos.z = 0.0f;
     
-    r32 ratio = (r32)size.x / (r32)size.y;
+    r32 ratio = (r32)size.y / (r32)size.x;
     
     math::Vec3 scaled_size;
     scaled_size.x = ((r32)size.x / (r32)UI_COORD_DIMENSION) * renderer.window_width;
-    scaled_size.y = scaled_size.x / ratio;
+    scaled_size.y = scaled_size.x * ratio;
     scaled_size.z = 0.0f;
     
     push_filled_quad_not_centered(renderer, pos, flipped, scaled_size, rotation, color, texture_handle, true, animation_controller_handle, shader_handle, shader_attributes, shader_attribute_count, texture_offset, frame_size);
@@ -396,11 +396,11 @@ static void push_filled_ui_quad(Renderer& renderer, math::Vec2i position, b32 fl
     pos.y = ((r32)position.y / (r32)UI_COORD_DIMENSION) * renderer.window_height;
     pos.z = 0.0f;
     
-    r32 ratio = (r32)size.x / (r32)size.y;
+    r32 ratio = (r32)size.y / (r32)size.x;
     
     math::Vec3 scaled_size;
     scaled_size.x = ((r32)size.x / (r32)UI_COORD_DIMENSION) * renderer.window_width;
-    scaled_size.y = scaled_size.x / ratio;
+    scaled_size.y = scaled_size.x * ratio;
     scaled_size.z = 0.0f;
     
     push_filled_quad(renderer, pos, flipped, scaled_size, rotation, color, texture_handle, true, animation_controller_handle, with_origin, origin, shader_handle, shader_attributes, shader_attribute_count, texture_offset, frame_size);
