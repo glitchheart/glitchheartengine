@@ -942,7 +942,7 @@ static const GLFWvidmode* create_open_gl_window(RenderState& render_state, Windo
     int widthMM, heightMM;
     glfwGetMonitorPhysicalSize(glfwGetPrimaryMonitor(), &widthMM, &heightMM);
     render_state.screen_dpi = mode->width / (widthMM / 25.4);
-    debug_log("dpi: %f\n", render_state.screen_dpi);
+    render_state.density_factor = 160.0f / (r32)render_state.screen_dpi;
     
     render_state.refresh_rate = mode->refreshRate;
     
@@ -2269,10 +2269,13 @@ void stbtt_load_font(RenderState &render_state, char *path, i32 size)
     font.oversample_y = 1;
     font.first_char = ' ';
     font.char_count = '~' - ' ';
-    auto density_factor = 160.0f / render_state.screen_dpi;
-    font.size = size / density_factor;
-    font.atlas_width = 1024;
-    font.atlas_height = 1024;
+    font.size = size / render_state.density_factor;
+    
+    font.size = from_ui(render_state.window_height, font.size);
+    
+    auto count_per_line = math::ceil(math::sqrt(font.char_count));
+    font.atlas_width = math::multiple_of_number(font.size * count_per_line, 4);
+    font.atlas_height = math::multiple_of_number(font.size * count_per_line, 4);
     
     unsigned char *ttf_buffer = push_array(&render_state.font_arena, (1<<20), unsigned char);
     
@@ -2283,7 +2286,7 @@ void stbtt_load_font(RenderState &render_state, char *path, i32 size)
     fread(ttf_buffer, 1, 1<<20, fopen(path, "rb"));
     
     stbtt_InitFont(&font.info, ttf_buffer, 0); 
-    font.scale = stbtt_ScaleForPixelHeight(&font.info, 15);
+    font.scale = stbtt_ScaleForPixelHeight(&font.info, 20);
     stbtt_GetFontVMetrics(&font.info, &font.ascent, 0, 0);
     font.baseline = (i32)(font.ascent * font.scale);
     
@@ -2292,8 +2295,16 @@ void stbtt_load_font(RenderState &render_state, char *path, i32 size)
         printf("Failed to initialize font");
     
     stbtt_PackSetOversampling(&context, font.oversample_x, font.oversample_y);
-    if (!stbtt_PackFontRange(&context, ttf_buffer, (i32)font.scale, (r32)font.size, font.first_char, font.char_count, font.char_data))
+    if (!stbtt_PackFontRange(&context, ttf_buffer, 0
+                             , (r32)font.size, font.first_char, font.char_count, font.char_data))
         printf("Failed to pack font");
+    
+#if DEBUG
+    char buf[64];
+    sprintf(buf, "%d_%d_", render_state.font_count - 1, size);
+    
+    //stbi_write_bmp(concat(buf, ".bmp", &render_state.font_arena), font.atlas_width, font.atlas_height, 1,temp_bitmap);
+#endif
     
     stbtt_PackEnd(&context);
     
@@ -2680,10 +2691,8 @@ static void render(RenderState& render_state, Renderer& renderer, r64 delta_time
     
     if (renderer.window_width != render_state.window_width || renderer.window_height != render_state.window_height || renderer.window_mode != render_state.window_mode)
     {
-        debug("d: %d x %d\n", render_state.window_width, render_state.window_height);
         render_state.window_width = renderer.window_width;
         render_state.window_height = renderer.window_height;
-        debug("d: %d x %d\n", render_state.window_width, render_state.window_height);
         *save_config = true;
         
         if(renderer.window_mode != render_state.window_mode)

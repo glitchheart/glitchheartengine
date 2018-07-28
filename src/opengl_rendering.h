@@ -149,6 +149,7 @@ struct RenderState
     i32 framebuffer_width;
     i32 framebuffer_height;
     i32 dpi_scale;
+    r32 density_factor;
     i32 pixels_per_unit;
     
     i32 refresh_rate;

@@ -260,6 +260,34 @@ static void push_line(Renderer& renderer, math::Vec3 point1, math::Vec3 point2, 
     render_command->is_ui = is_ui;
 }
 
+#define PUSH_UI_TEXT(text, position, color, font_handle) push_ui_text(renderer, text, position, font_handle, color)
+#define PUSH_CENTERED_UI_TEXT(text, position, color, font_handle) push_ui_text(renderer, text, position, font_handle, color, ALIGNMENT_CENTER_X | ALIGNMENT_CENTER_Y)
+static void push_ui_text(Renderer &renderer, const char* text, math::Vec2i position, i32 font_handle, math::Rgba color, u64 alignment_flags = ALIGNMENT_LEFT)
+{
+    RenderCommand* render_command = push_next_command(renderer, true);
+    
+    assert(font_handle < renderer.font_count);
+    
+    render_command->type = RENDER_COMMAND_TEXT;
+    strcpy(render_command->text.text, text);
+    
+    math::Vec3 pos;
+    pos.x = ((r32)position.x / (r32)UI_COORD_DIMENSION) * renderer.window_width;
+    pos.y = ((r32)position.y / (r32)UI_COORD_DIMENSION) * renderer.window_height;
+    pos.z = 0.0f;
+    
+    /*if(scale == 0.0f)
+        render_command->text.scale = 1.0f;
+    else
+        render_command->text.scale = scale;*/
+    
+    render_command->text.position = pos;
+    render_command->text.font_handle = font_handle;
+    render_command->text.color = color;
+    render_command->text.alignment_flags = alignment_flags;
+    render_command->is_ui = true;
+}
+
 #define PUSH_TEXT(text, position, color, font_handle) push_text(renderer, text, position, 1.0f, font_handle, color)
 #define PUSH_CENTERED_TEXT(text, position, color, font_handle) push_text(renderer, text, position, 1.0f, font_handle, color, ALIGNMENT_CENTER_X | ALIGNMENT_CENTER_Y)
 static void push_text(Renderer& renderer, const char* text, math::Vec3 position, r32 scale, i32 font_handle, math::Rgba color, u64 alignment_flags = ALIGNMENT_LEFT, b32 is_ui = true)
@@ -277,7 +305,7 @@ static void push_text(Renderer& renderer, const char* text, math::Vec3 position,
         render_command->text.scale = 1.0f;
     else
         render_command->text.scale = scale;
-    //render_command->Text.FontType = FontType;
+    
     render_command->text.font_handle = font_handle;
     render_command->text.color = color;
     render_command->text.alignment_flags = alignment_flags;
@@ -343,6 +371,42 @@ static void push_filled_quad_not_centered(Renderer& renderer, math::Vec3 positio
     push_filled_quad(renderer, position, flipped, size, rotation, color, texture_handle, is_ui, animation_controller_handle, true, math::Vec2(), shader_handle, shader_attributes, shader_attribute_count, texture_offset, frame_size); 
 }
 
+static void push_filled_ui_quad_not_centered(Renderer& renderer, math::Vec2i position, b32 flipped, math::Vec2 size, math::Vec3 rotation = math::Vec3(), math::Rgba color = math::Rgba(1.0f, 1.0f, 1.0f, 1.0f), i32 texture_handle = 0, i32 animation_controller_handle = 0, i32 shader_handle = 0, ShaderAttribute* shader_attributes = 0, i32 shader_attribute_count = 0, math::Vec2 texture_offset = math::Vec2(-1.0f, -1.0f), math::Vec2i frame_size = math::Vec2i(0, 0))
+{
+    math::Vec3 pos;
+    pos.x = ((r32)position.x / (r32)UI_COORD_DIMENSION) * renderer.window_width;
+    pos.y = ((r32)position.y / (r32)UI_COORD_DIMENSION) * renderer.window_height;
+    pos.z = 0.0f;
+    
+    r32 ratio = (r32)size.x / (r32)size.y;
+    
+    math::Vec3 scaled_size;
+    scaled_size.x = ((r32)size.x / (r32)UI_COORD_DIMENSION) * renderer.window_width;
+    scaled_size.y = scaled_size.x / ratio;
+    scaled_size.z = 0.0f;
+    
+    push_filled_quad_not_centered(renderer, pos, flipped, scaled_size, rotation, color, texture_handle, true, animation_controller_handle, shader_handle, shader_attributes, shader_attribute_count, texture_offset, frame_size);
+}
+
+
+static void push_filled_ui_quad(Renderer& renderer, math::Vec2i position, b32 flipped, math::Vec2 size, math::Vec3 rotation = math::Vec3(), math::Rgba color = math::Rgba(1.0f, 1.0f, 1.0f, 1.0f), i32 texture_handle = 0, i32 animation_controller_handle = 0, b32 with_origin = false, math::Vec2 origin = math::Vec2(0.0f, 0.0f), i32 shader_handle = 0, ShaderAttribute* shader_attributes = 0, i32 shader_attribute_count = 0, math::Vec2 texture_offset = math::Vec2(-1.0f, -1.0f), math::Vec2i frame_size = math::Vec2i(0, 0))
+{
+    math::Vec3 pos;
+    pos.x = ((r32)position.x / (r32)UI_COORD_DIMENSION) * renderer.window_width;
+    pos.y = ((r32)position.y / (r32)UI_COORD_DIMENSION) * renderer.window_height;
+    pos.z = 0.0f;
+    
+    r32 ratio = (r32)size.x / (r32)size.y;
+    
+    math::Vec3 scaled_size;
+    scaled_size.x = ((r32)size.x / (r32)UI_COORD_DIMENSION) * renderer.window_width;
+    scaled_size.y = scaled_size.x / ratio;
+    scaled_size.z = 0.0f;
+    
+    push_filled_quad(renderer, pos, flipped, scaled_size, rotation, color, texture_handle, true, animation_controller_handle, with_origin, origin, shader_handle, shader_attributes, shader_attribute_count, texture_offset, frame_size);
+}
+
+
 static void push_outlined_quad(Renderer& renderer, math::Vec3 position,  math::Vec3 size, math::Vec3 rotation, math::Rgba color, b32 is_ui = false, r32 line_width = 1.0f)
 {
     RenderCommand* render_command = push_next_command(renderer, is_ui);
@@ -351,6 +415,32 @@ static void push_outlined_quad(Renderer& renderer, math::Vec3 position,  math::V
     render_command->position = position;
     render_command->rotation = rotation;
     render_command->scale = size;
+    render_command->quad.color = color;
+    render_command->quad.outlined = true;
+    render_command->quad.texture_handle = 0;
+    render_command->quad.line_width = line_width;
+    render_command->is_ui = is_ui;
+}
+
+static void push_outlined_ui_quad(Renderer& renderer, math::Vec2i position,  math::Vec2i size, math::Vec3 rotation, math::Rgba color, b32 is_ui = false, r32 line_width = 1.0f)
+{
+    RenderCommand* render_command = push_next_command(renderer, is_ui);
+    
+    math::Vec3 pos;
+    pos.x = ((r32)position.x / (r32)UI_COORD_DIMENSION) * renderer.window_width;
+    pos.y = ((r32)position.y / (r32)UI_COORD_DIMENSION) * renderer.window_height;
+    pos.z = 0.0f;
+    
+    math::Vec3 scaled_size;
+    scaled_size.x = ((r32)size.x / (r32)UI_COORD_DIMENSION) * renderer.window_width;
+    scaled_size.y = ((r32)size.y / (r32)UI_COORD_DIMENSION) * renderer.window_height;
+    scaled_size.z = 0.0f;
+    
+    
+    render_command->type = RENDER_COMMAND_QUAD;
+    render_command->position = pos;
+    render_command->rotation = rotation;
+    render_command->scale = scaled_size;
     render_command->quad.color = color;
     render_command->quad.outlined = true;
     render_command->quad.texture_handle = 0;
