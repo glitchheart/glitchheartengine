@@ -98,6 +98,12 @@ struct TrueTypeFont
     GLuint texture;
     GLuint vao;
     GLuint vbo;
+    
+    struct
+    {
+        i32 width;
+        i32 height;
+    } resolution_loaded_for;
 };
 
 struct CharacterData
