@@ -1061,7 +1061,7 @@ static const GLFWvidmode* create_open_gl_window(RenderState& render_state, Windo
         screen_height = mode->height;
     }
     
-    debug_log("refresh rate %d\n", mode->refreshRate);
+    debug_log("refresh rate %d", mode->refreshRate);
     
     if (window_mode == FM_WINDOWED)
     {
