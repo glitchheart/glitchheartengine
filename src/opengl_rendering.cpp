@@ -1220,7 +1220,7 @@ static void initialize_opengl(RenderState& render_state, Renderer& renderer, r32
         // @Incomplete: This is hardcoded uglinesssssssss
         // Create matrices for light
         renderer.shadow_map_matrices.depth_model_matrix = math::Mat4(1.0f);
-        renderer.shadow_map_matrices.depth_projection_matrix = math::ortho(-10, 10, -10, 10, 1, 50.0f);
+        renderer.shadow_map_matrices.depth_projection_matrix = math::ortho(-20, 20, -20, 20, 1, 50.0f);
         renderer.shadow_map_matrices.depth_view_matrix = math::look_at_with_target(math::Vec3(-2.0f, 4.0f, -1.0f), math::Vec3(0, 0, 0));
         renderer.shadow_map_matrices.depth_bias_matrix = math::Mat4(
             0.5, 0.0, 0.0, 0.0,
