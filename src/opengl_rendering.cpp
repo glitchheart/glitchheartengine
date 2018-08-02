@@ -1096,7 +1096,7 @@ static const GLFWvidmode* create_open_gl_window(RenderState& render_state, Windo
     return monitor ? mode : nullptr;
 }
 
-static void initialize_opengl(RenderState& render_state, Renderer& renderer, r32 contrast, r32 brightness, WindowMode window_mode, i32 screen_width, i32 screen_height, const char* title, MemoryArena *perm_arena)
+static void initialize_opengl(RenderState& render_state, Renderer& renderer, r32 contrast, r32 brightness, WindowMode window_mode, i32 screen_width, i32 screen_height, const char* title, MemoryArena *perm_arena, b32 *do_save_config)
 {
     auto recreate_window = render_state.window != nullptr;
     
@@ -1132,6 +1132,14 @@ static void initialize_opengl(RenderState& render_state, Renderer& renderer, r32
     
     render_state.contrast = contrast;
     render_state.brightness = brightness;
+    
+    if(screen_width == 0 || screen_height == 0)
+    {
+        const GLFWvidmode* original_mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
+        screen_height = original_mode->width;
+        screen_width = original_mode->height;
+        *do_save_config = true;
+    }
     
     auto mode = create_open_gl_window(render_state, window_mode, title, screen_width, screen_height);
     renderer.window_mode = render_state.window_mode;
@@ -1301,9 +1309,9 @@ static void initialize_opengl(RenderState& render_state, Renderer& renderer, r32
 }
 
 
-static void initialize_opengl(RenderState& render_state, Renderer& renderer, ConfigData* config_data, MemoryArena *perm_arena)
+static void initialize_opengl(RenderState& render_state, Renderer& renderer, ConfigData* config_data, MemoryArena *perm_arena, b32 *do_save_config)
 {
-    initialize_opengl(render_state, renderer, config_data->contrast, config_data->brightness, config_data->window_mode, config_data->screen_width, config_data->screen_height, config_data->title, perm_arena);
+    initialize_opengl(render_state, renderer, config_data->contrast, config_data->brightness, config_data->window_mode, config_data->screen_width, config_data->screen_height, config_data->title, perm_arena, do_save_config);
 }
 
 static void delete_shaders(RenderState &render_state)

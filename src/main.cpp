@@ -127,43 +127,56 @@ static void reload_libraries(GameCode *Game, char* game_library_path, char* temp
     }
 }
 
-inline void save_config(const char* file_path, RenderState &render_state, SoundDevice &sound_device, ConfigData &old_config_data)
+inline void save_config(const char* file_path, ConfigData &old_config_data, RenderState* render_state = nullptr, SoundDevice *sound_device = nullptr)
 {
-    /*PlatformFile file;
-    file = platform.open_file(file_path, POF_WRITE);
-    
-    i32 result;
-    
-    result = platform.print_file(file, "screen_width %d\n", render_state.window_width);
-    result = platform.print_file(file, "screen_height %d\n", render_state.window_height);
-    result = platform.print_file(file, "window_mode %d\n", render_state.window_mode);
-    result = platform.print_file(file, "muted %d\n", sound_device.muted);
-    result = platform.print_file(file, "sfx_volume %.2f\n", sound_device.sfx_volume);
-    result = platform.print_file(file, "music_volume %.2f\n", sound_device.music_volume);*/
-    
     FILE* file = fopen(file_path, "w");
     
     if(file)
     {
         fprintf(file, "title %s\n", old_config_data.title);
         fprintf(file, "version %s\n", old_config_data.version);
-        fprintf(file, "screen_width %d\n", render_state.window_width);
-        fprintf(file, "screen_height %d\n", render_state.window_height);
-        fprintf(file, "window_mode %d\n", render_state.window_mode);
-        fprintf(file, "muted %d\n", sound_device.muted);
-        fprintf(file, "sfx_volume %.2f\n", sound_device.sfx_volume);
-        fprintf(file, "music_volume %.2f\n", sound_device.music_volume);
+        
+        i32 width = 0;
+        i32 height = 0;
+        WindowMode window_mode = FM_BORDERLESS;
+        
+        if(render_state)
+        {
+            width = render_state->window_width;
+            height = render_state->window_height;
+            window_mode = render_state->window_mode;
+        }
+        
+        
+        fprintf(file, "screen_width %d\n", width);
+        fprintf(file, "screen_height %d\n", height);
+        fprintf(file, "window_mode %d\n", window_mode);
+        
+        b32 muted = false;
+        r32 sfx_vol = 1.0f;
+        r32 music_vol = 1.0f;
+        
+        if(sound_device)
+        {
+            muted = sound_device->muted;
+            sfx_vol = sound_device->sfx_volume;
+            music_vol = sound_device->music_volume;
+        }
+        
+        fprintf(file, "muted %d\n", muted);
+        fprintf(file, "sfx_volume %.2f\n", sfx_vol);
+        fprintf(file, "music_volume %.2f\n", music_vol);
+        
         fclose(file);
+        
+        
+        old_config_data.screen_width = width;
+        old_config_data.screen_height = height;
+        old_config_data.window_mode = window_mode;
+        old_config_data.muted = muted;
+        old_config_data.sfx_volume = sfx_vol;
+        old_config_data.music_volume = music_vol;
     }
-    
-    old_config_data.screen_width = render_state.window_width;
-    old_config_data.screen_height = render_state.window_height;
-    old_config_data.window_mode = render_state.window_mode;
-    old_config_data.muted = sound_device.muted;
-    old_config_data.sfx_volume = sound_device.sfx_volume;
-    old_config_data.music_volume = sound_device.music_volume;
-    
-    //platform.close_file(file);
 }
 
 inline void load_config(const char* file_path, ConfigData* config_data, MemoryArena* perm_arena)
@@ -174,10 +187,21 @@ inline void load_config(const char* file_path, ConfigData* config_data, MemoryAr
     
     *config_data = {};
     
-    config_data->title = push_string(perm_arena, 40);
-    config_data->version = push_string(perm_arena, 40);
-    
-    if(file)
+    if(!file)
+    {
+        auto title = "Untitled Glitchheart Project";
+        snprintf(config_data->title, strlen(title) + 1, "%s", title);
+        auto version = "v0.0";
+        snprintf(config_data->version, strlen(version) + 1, "%s", version);
+        config_data->screen_width = 0;
+        config_data->screen_height = 0;
+        config_data->muted = false;
+        config_data->sfx_volume = 1.0f;
+        config_data->music_volume = 1.0f;
+        
+        save_config(file_path, *config_data);
+    }
+    else
     {
         while(fgets(line_buffer, 255, file))
         {
@@ -223,7 +247,6 @@ inline void load_config(const char* file_path, ConfigData* config_data, MemoryAr
                 sscanf(line_buffer, "music_volume %f", &config_data->music_volume);
             }
         }
-        
         fclose(file);
     }
 }
@@ -340,6 +363,8 @@ int main()
     render_state.string_arena = {};
     Renderer renderer = {};
     
+    b32 do_save_config = false;
+    
     init_renderer(renderer);
     if constexpr(global_graphics_api == GRAPHICS_VULKAN)
     {
@@ -353,7 +378,7 @@ int main()
     else if constexpr(global_graphics_api == GRAPHICS_OPEN_GL)
     {
         log("Initializing OpenGl");
-        initialize_opengl(render_state, renderer, &config_data, &platform_state->perm_arena);
+        initialize_opengl(render_state, renderer, &config_data, &platform_state->perm_arena, &do_save_config);
     }
     
     GameCode game = {};
@@ -402,8 +427,6 @@ int main()
     r64 delta_time = 0.0;
     renderer.frame_lock = 0;
     
-    b32 do_save_config = false;
-    
     while (!should_close_window(render_state) && !renderer.should_close)
     {
         if(game_memory.exit_game)
@@ -430,7 +453,7 @@ int main()
         
         if(do_save_config)
         {
-            save_config("../.config", render_state, sound_device, config_data);
+            save_config("../.config", config_data, &render_state, &sound_device);
         }
         do_save_config = false;
         
