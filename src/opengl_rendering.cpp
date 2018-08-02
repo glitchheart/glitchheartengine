@@ -948,9 +948,9 @@ void stbtt_load_font(RenderState &render_state, char *path, i32 size, i32 index 
     font->char_count = '~' - ' ';
     font->size = size;
     
-    font->size = from_ui(render_state.window_height, font->size);
+    font->size = (i32)from_ui(render_state.window_height, (r32)font->size);
     
-    auto count_per_line = math::ceil(math::sqrt(font->char_count));
+    i32 count_per_line = (i32)math::ceil(math::sqrt(font->char_count));
     font->atlas_width = math::multiple_of_number(font->size * count_per_line, 4);
     font->atlas_height = math::multiple_of_number(font->size * count_per_line, 4);
     
