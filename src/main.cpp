@@ -343,7 +343,6 @@ int main()
     init_renderer(renderer);
     if constexpr(global_graphics_api == GRAPHICS_VULKAN)
     {
-        
 #if defined(__linux) || defined(_WIN32)
         //VkRenderState vk_render_state;
         //initialize_vulkan(vk_render_state, renderer, config_data);
