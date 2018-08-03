@@ -948,9 +948,9 @@ void stbtt_load_font(RenderState &render_state, char *path, i32 size, i32 index 
     font->char_count = '~' - ' ';
     font->size = size;
     
-    font->size = from_ui(render_state.window_height, font->size);
+    font->size = (i32)from_ui(render_state.window_height, (r32)font->size);
     
-    auto count_per_line = math::ceil(math::sqrt(font->char_count));
+    i32 count_per_line = (i32)math::ceil(math::sqrt(font->char_count));
     font->atlas_width = math::multiple_of_number(font->size * count_per_line, 4);
     font->atlas_height = math::multiple_of_number(font->size * count_per_line, 4);
     
@@ -1055,7 +1055,7 @@ static const GLFWvidmode* create_open_gl_window(RenderState& render_state, Windo
         screen_height = mode->height;
     }
     
-    debug_log("refresh rate %d\n", mode->refreshRate);
+    debug_log("refresh rate %d", mode->refreshRate);
     
     if (window_mode == FM_WINDOWED)
     {
@@ -1090,7 +1090,7 @@ static const GLFWvidmode* create_open_gl_window(RenderState& render_state, Windo
     return monitor ? mode : nullptr;
 }
 
-static void initialize_opengl(RenderState& render_state, Renderer& renderer, r32 contrast, r32 brightness, WindowMode window_mode, i32 screen_width, i32 screen_height, const char* title, MemoryArena *perm_arena)
+static void initialize_opengl(RenderState& render_state, Renderer& renderer, r32 contrast, r32 brightness, WindowMode window_mode, i32 screen_width, i32 screen_height, const char* title, MemoryArena *perm_arena, b32 *do_save_config)
 {
     auto recreate_window = render_state.window != nullptr;
     
@@ -1126,6 +1126,14 @@ static void initialize_opengl(RenderState& render_state, Renderer& renderer, r32
     
     render_state.contrast = contrast;
     render_state.brightness = brightness;
+    
+    if(screen_width == 0 || screen_height == 0)
+    {
+        const GLFWvidmode* original_mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
+        screen_height = original_mode->width;
+        screen_width = original_mode->height;
+        *do_save_config = true;
+    }
     
     auto mode = create_open_gl_window(render_state, window_mode, title, screen_width, screen_height);
     renderer.window_mode = render_state.window_mode;
@@ -1214,7 +1222,7 @@ static void initialize_opengl(RenderState& render_state, Renderer& renderer, r32
         // @Incomplete: This is hardcoded uglinesssssssss
         // Create matrices for light
         renderer.shadow_map_matrices.depth_model_matrix = math::Mat4(1.0f);
-        renderer.shadow_map_matrices.depth_projection_matrix = math::ortho(-10, 10, -10, 10, 1, 50.0f);
+        renderer.shadow_map_matrices.depth_projection_matrix = math::ortho(-20, 20, -20, 20, 1, 50.0f);
         renderer.shadow_map_matrices.depth_view_matrix = math::look_at_with_target(math::Vec3(-2.0f, 4.0f, -1.0f), math::Vec3(0, 0, 0));
         renderer.shadow_map_matrices.depth_bias_matrix = math::Mat4(
             0.5, 0.0, 0.0, 0.0,
@@ -1295,9 +1303,9 @@ static void initialize_opengl(RenderState& render_state, Renderer& renderer, r32
 }
 
 
-static void initialize_opengl(RenderState& render_state, Renderer& renderer, ConfigData* config_data, MemoryArena *perm_arena)
+static void initialize_opengl(RenderState& render_state, Renderer& renderer, ConfigData* config_data, MemoryArena *perm_arena, b32 *do_save_config)
 {
-    initialize_opengl(render_state, renderer, config_data->contrast, config_data->brightness, config_data->window_mode, config_data->screen_width, config_data->screen_height, config_data->title, perm_arena);
+    initialize_opengl(render_state, renderer, config_data->contrast, config_data->brightness, config_data->window_mode, config_data->screen_width, config_data->screen_height, config_data->title, perm_arena, do_save_config);
 }
 
 static void delete_shaders(RenderState &render_state)
