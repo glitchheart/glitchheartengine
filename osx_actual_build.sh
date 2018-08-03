@@ -7,6 +7,6 @@ CommonLinkerFlags="../libs/glad/osx/glad.o -L/usr/local/lib -L../libs/glfw/osx/ 
 
 pushd build
 
-clang --std=c++14 -Weverything $WIGNORE -DGLITCH_DEBUG=1 $CommonCompilerFlags -g -O0 ../src/main.cpp $CommonLinkerFlags
+clang --std=c++17 -Weverything $WIGNORE -DDEBUG=1 -DGLITCH_DEBUG=1 $CommonCompilerFlags -g -O0 ../src/main.cpp $CommonLinkerFlags
 
 popd
