@@ -275,7 +275,7 @@ static void init_renderer(Renderer &renderer)
 #if defined(_WIN32) && !defined(DEBUG)
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 #else
-int main()
+int main(int argc, char **args)
 #endif
 {    
     GameMemory game_memory = {};
