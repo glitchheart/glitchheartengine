@@ -997,29 +997,23 @@ void stbtt_load_font(RenderState &render_state, char *path, i32 size, i32 index 
     
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, (GLsizei)font->atlas_width, (GLsizei)font->atlas_height, 0, GL_RED, GL_UNSIGNED_BYTE, temp_bitmap);
     
-    /* Clamping to edges is important to prevent artifacts when scaling */
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    
-    if(!font->vao)
+    if(!font->vao || !font->vbo)
     {
+        /* Clamping to edges is important to prevent artifacts when scaling */
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        
         glGenVertexArrays(1, &font->vao);
-    }
-    
-    glBindVertexArray(font->vao);
-    
-    if(!font->vbo)
-    {
+        glBindVertexArray(font->vao);
         glGenBuffers(1, &font->vbo);
+        glBindBuffer(GL_ARRAY_BUFFER, font->vbo);
+        vertex_attrib_pointer(0, 4, GL_FLOAT, 0, 0);
+        glBindVertexArray(0);
     }
-    
-    glBindBuffer(GL_ARRAY_BUFFER, font->vbo);
-    
-    vertex_attrib_pointer(0, 4, GL_FLOAT, 0, 0);
-    glBindVertexArray(0);
     
     end_temporary_memory(temp_memory);
 }
