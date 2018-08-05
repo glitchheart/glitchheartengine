@@ -764,6 +764,9 @@ static void setup_quad(RenderState& render_state, MemoryArena* arena)
     render_state.quad_shader.type = SHADER_QUAD;
     load_shader(shader_paths[SHADER_QUAD], &render_state.quad_shader, arena);
     
+    render_state.rounded_quad_shader.type = SHADER_ROUNDED_QUAD;
+    load_shader(shader_paths[SHADER_ROUNDED_QUAD], &render_state.rounded_quad_shader, arena);
+    
     auto position_location3 = (GLuint)glGetAttribLocation(render_state.quad_shader.program, "pos");
     vertex_attrib_pointer(position_location3, 2, GL_FLOAT,  2 * sizeof(float), 0);
     
@@ -1513,7 +1516,7 @@ static void render_quad(RenderMode mode, RenderState& render_state, math::Vec4 c
                     else
                     {
                         pixel_size = math::Vec2i(texture_size.x, texture_size.y);
-                        size = math::Vec3((size.x * texture_size.x) / render_state.pixels_per_unit, (size.y * texture_size.y) / render_state.pixels_per_unit, 0);
+                        size = math::Vec3((size.x), (size.y), 0);
                     }
                 }
                 
