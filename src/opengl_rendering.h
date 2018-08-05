@@ -35,7 +35,8 @@ const static struct
     SHADERPAIR(FRAME_BUFFER),
     SHADERPAIR(SIMPLE_MODEL),
     SHADERPAIR(LINE),
-    SHADERPAIR(PARTICLES)
+    SHADERPAIR(PARTICLES),
+    SHADERPAIR(ROUNDED_QUAD)
 };
 
 char* shader_enum_to_str(ShaderType shader)
@@ -64,7 +65,8 @@ static char* shader_paths[SHADER_COUNT] =
     "../engine_assets/shaders/framebuffershader",
     "../engine_assets/shaders/simple_model_shader",
     "../engine_assets/shaders/lineshader",
-    "../engine_assets/shaders/particleshader"
+    "../engine_assets/shaders/particleshader",
+    "../engine_assets/shaders/roundedquadshader"
 };
 
 
@@ -277,6 +279,7 @@ struct RenderState
             Shader simple_model_shader;
             Shader line_shader;
             Shader particle_shader;
+            Shader rounded_quad_shader;
         };
     };
     
