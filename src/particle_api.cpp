@@ -34,6 +34,12 @@ static void stop_particle_system(ParticleSystemHandle handle, Renderer &renderer
     system.running = false;
 }
 
+static b32 particle_system_is_running(ParticleSystemHandle handle, Renderer &renderer)
+{
+    ParticleSystemInfo &system = renderer.particle_systems[handle.handle];
+    return(system.running);
+}
+
 static void set_rate_over_distanace(ParticleSystemInfo &particle_system, r32 rate_over_distance)
 {
     particle_system.attributes.emission_module.rate_over_distance = rate_over_distance;
