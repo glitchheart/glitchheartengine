@@ -174,6 +174,8 @@ void update_particles(Renderer &renderer, ParticleSystemInfo &particle_system, r
 {
     particle_system.particle_count = 0;
     
+    b32 all_zero = true;
+    
     for(i32 main_index = 0; main_index < particle_system.max_particles / 4; main_index++)
     {
         auto life_non_zero = any_nz(particle_system.particles.life[main_index]);
@@ -185,6 +187,8 @@ void update_particles(Renderer &renderer, ParticleSystemInfo &particle_system, r
         
         if(life_non_zero)
         {
+            all_zero = false;
+            
             auto speed_value_count = particle_system.speed_over_lifetime.value_count;
             auto color_value_count = particle_system.color_over_lifetime.value_count;
             auto size_value_count = particle_system.size_over_lifetime.value_count;               
@@ -299,6 +303,12 @@ void update_particles(Renderer &renderer, ParticleSystemInfo &particle_system, r
                 
             }
         }
+    }
+    
+    // if all particles are dead and the system is one-shot we should stop the particle_system
+    if(all_zero && particle_system.attributes.one_shot)
+    {
+        particle_system.running = false;
     }
 }
 
