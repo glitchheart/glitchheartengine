@@ -66,7 +66,7 @@ static char* shader_paths[SHADER_COUNT] =
     "../engine_assets/shaders/simple_model_shader",
     "../engine_assets/shaders/lineshader",
     "../engine_assets/shaders/particleshader",
-    "../engine_assets/shaders/roundedquadshader"
+    "../engine_assets/shaders/roundedquadshader",
 };
 
 
@@ -193,6 +193,7 @@ struct RenderState
     
     u32 framebuffer_quad_vertices_size = 16 * sizeof(GLfloat);
     u32 texture_quad_vertices_size = 16 * sizeof(GLfloat);
+    u32 rounded_quad_vertices_size = 16 * sizeof(GLfloat);
     u32 quad_vertices_size = 8 * sizeof(GLfloat);
     u32 billboard_vertices_size = 20 * sizeof(GLfloat);
     GLuint bound_vertex_buffer;
@@ -230,6 +231,14 @@ struct RenderState
         0.0f, 0.0f, 0.0f, 1.0f
     };
     
+    GLfloat rounded_quad_vertices[16] =
+    {
+        0.0f, 1.0f, 0.0f, 0.0f,
+        1.0f, 1.0f, 1.0f, 0.0f,
+        1.0f, 0.0f, 1.0f, 1.0f,
+        0.0f, 0.0f, 0.0f, 1.0f
+    };
+    
     GLuint quad_indices[6] =
     {
         0, 1, 2, 0, 2, 3
@@ -237,6 +246,10 @@ struct RenderState
     
     GLuint texture_quad_vbo;
     GLuint texture_quad_index_buffer;
+    
+    GLuint rounded_quad_vao;
+    GLuint rounded_quad_vbo;
+    GLuint rounded_quad_index_buffer;
     GLuint quad_index_buffer;
     
     GLuint billboard_vao;

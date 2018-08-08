@@ -4,6 +4,7 @@ uniform mat4 View;
 uniform mat4 M;
 uniform float isUI;
 uniform vec4 color;
+
 in vec2 pos;
 out vec4 c;
 
