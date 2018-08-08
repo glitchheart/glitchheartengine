@@ -609,6 +609,7 @@ struct QuadInfo
     RenderInfo render_info;
     QuadTextureInfo texture_info;
     
+    b32 rounded;
     b32 flipped;
     i32 animation_controller_handle;
 };
@@ -677,6 +678,7 @@ struct RenderCommand
         {
             i32 texture_handle;
             b32 flipped;
+            b32 rounded;
             math::Rgba color; // @Cleanup: REMOVE!
             b32 outlined;
             r32 line_width;
