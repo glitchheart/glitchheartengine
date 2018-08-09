@@ -1,6 +1,7 @@
 namespace scene
 {
-    
+    // Creates and returns a new "Scene". The "inital_entity_array_size" specifies the max entity count of the "Scene".
+    // @Incomplete: We need to make sure that we can grow in size if we need more than what we allocated at any point in time.
     static Scene create_scene(Renderer renderer, i32 initial_entity_array_size = 1024)
     {
         Scene scene = {};
@@ -14,6 +15,7 @@ namespace scene
         return(scene);
     }
     
+    // Zeroes all counts and frees all memory allocated for the "Scene"
     static void free_scene(Scene& scene)
     {
         scene.entity_count = 0;
@@ -25,6 +27,7 @@ namespace scene
         free(scene.render_components);
     }
     
+    // Returns a new valid "EntityHandle". "comp_flags" Specifies the components that the entity should contain.
     static EntityHandle register_entity(u64 comp_flags, Scene &scene)
     {
         EntityHandle handle = { scene.entity_count++ };
@@ -43,23 +46,25 @@ namespace scene
         return(handle);
     }
     
+    // Returns a direct pointer to the TransformComponent of the specified entity
     static TransformComponent* get_transform_comp(EntityHandle handle, Scene &scene)
     {
         Entity entity = scene.entities[handle.handle];
         
         assert(entity.comp_flags & COMP_TRANSFORM);
         
-        TransformComponent comp = scene.transform_components[entity.transform_handle];
+        TransformComponent* comp = &scene.transform_components[entity.transform_handle.handle];
         return(comp);
     }
-    
+
+    // Returns a direct pointer to the RenderComponent of the specified entity
     static RenderComponent* get_render_comp(EntityHandle handle, Scene &scene)
     {
         Entity entity = scene.entities[handle.handle];
         
         assert(entity.comp_flags & COMP_RENDER);
         
-        RenderComponent comp = scene.render_components[entity.render_handle];
+        RenderComponent* comp = &scene.render_components[entity.render_handle.handle];
         return(comp);
     }
 }

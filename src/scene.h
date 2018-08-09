@@ -43,7 +43,7 @@ namespace scene
     
     struct TransformComponent
     {
-        math::Vec2 position;
+        math::Vec3 position;
         math::Vec3 scale;
         math::Vec3 rotation;
     };
