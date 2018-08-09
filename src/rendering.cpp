@@ -374,6 +374,12 @@ static void push_filled_quad_not_centered(Renderer& renderer, math::Vec3 positio
 
 static void push_filled_ui_quad_not_centered(Renderer& renderer, math::Vec2i position, b32 flipped, math::Vec2 size, math::Vec3 rotation = math::Vec3(), math::Rgba color = math::Rgba(1.0f, 1.0f, 1.0f, 1.0f), i32 texture_handle = 0, b32 rounded = false, i32 animation_controller_handle = 0, i32 shader_handle = 0, ShaderAttribute* shader_attributes = 0, i32 shader_attribute_count = 0, math::Vec2 texture_offset = math::Vec2(-1.0f, -1.0f), math::Vec2i frame_size = math::Vec2i(0, 0))
 {
+    
+    r32 width_ratio = (r32)renderer.ui_reference_resolution.width / (r32)renderer.window_width;
+    r32 height_ratio = (r32)renderer.ui_reference_resolution.height / (r32)renderer.window_height;
+    
+    r32 scale = width_ratio / height_ratio;
+    
     math::Vec3 pos;
     pos.x = ((r32)position.x / (r32)UI_COORD_DIMENSION) * renderer.window_width;
     pos.y = ((r32)position.y / (r32)UI_COORD_DIMENSION) * renderer.window_height;
@@ -382,16 +388,20 @@ static void push_filled_ui_quad_not_centered(Renderer& renderer, math::Vec2i pos
     r32 ratio = (r32)size.y / (r32)size.x;
     
     math::Vec3 scaled_size;
-    scaled_size.x = ((r32)size.x / (r32)UI_COORD_DIMENSION) * renderer.window_width;
+    scaled_size.x = ((r32)size.x / (r32)UI_COORD_DIMENSION) * (r32)renderer.window_width;
     scaled_size.y = scaled_size.x * ratio;
     scaled_size.z = 0.0f;
     
     push_filled_quad_not_centered(renderer, pos, flipped, scaled_size, rotation, color, texture_handle, true, rounded, animation_controller_handle, shader_handle, shader_attributes, shader_attribute_count, texture_offset, frame_size);
 }
 
-
 static void push_filled_ui_quad(Renderer& renderer, math::Vec2i position, b32 flipped, math::Vec2 size, math::Vec3 rotation = math::Vec3(), math::Rgba color = math::Rgba(1.0f, 1.0f, 1.0f, 1.0f), i32 texture_handle = 0, b32 rounded = false, i32 animation_controller_handle = 0, b32 with_origin = false, math::Vec2 origin = math::Vec2(0.0f, 0.0f), i32 shader_handle = 0, ShaderAttribute* shader_attributes = 0, i32 shader_attribute_count = 0, math::Vec2 texture_offset = math::Vec2(-1.0f, -1.0f), math::Vec2i frame_size = math::Vec2i(0, 0))
 {
+    r32 width_ratio = (r32)renderer.ui_reference_resolution.width / (r32)renderer.window_width;
+    r32 height_ratio = (r32)renderer.ui_reference_resolution.height / (r32)renderer.window_height;
+    
+    r32 scale = width_ratio / height_ratio;
+    
     math::Vec3 pos;
     pos.x = ((r32)position.x / (r32)UI_COORD_DIMENSION) * renderer.window_width;
     pos.y = ((r32)position.y / (r32)UI_COORD_DIMENSION) * renderer.window_height;
@@ -400,7 +410,7 @@ static void push_filled_ui_quad(Renderer& renderer, math::Vec2i position, b32 fl
     r32 ratio = (r32)size.y / (r32)size.x;
     
     math::Vec3 scaled_size;
-    scaled_size.x = ((r32)size.x / (r32)UI_COORD_DIMENSION) * renderer.window_width;
+    scaled_size.x = ((r32)size.x / (r32)UI_COORD_DIMENSION) * (r32)renderer.window_width;
     scaled_size.y = scaled_size.x * ratio;
     scaled_size.z = 0.0f;
     
@@ -422,6 +432,105 @@ static void push_outlined_quad(Renderer& renderer, math::Vec3 position,  math::V
     render_command->quad.line_width = line_width;
     render_command->is_ui = is_ui;
 }
+
+static math::Vec2 get_relative_size(Renderer& renderer, math::Vec2 size, b32 centered)
+{
+    r32 ratio = (r32)size.y / (r32)size.x;
+    
+    math::Vec2 scaled_size;
+    scaled_size.x = ((r32)size.x / (r32)UI_COORD_DIMENSION) * (r32)renderer.window_width;
+    scaled_size.y = scaled_size.x * ratio;
+    
+    return scaled_size;
+}
+
+static RelativeUIQuadInfo get_relative_info(Renderer& renderer, math::Vec2i position, math::Vec2 relative_size, math::Vec2 size, RelativeFlag relative, b32 centered)
+{
+    r32 width_ratio = (r32)renderer.ui_reference_resolution.width / (r32)renderer.window_width;
+    r32 height_ratio = (r32)renderer.ui_reference_resolution.height / (r32)renderer.window_height;
+    
+    r32 scale = width_ratio / height_ratio;
+    
+    math::Vec3 pos;
+    pos.x = ((r32)position.x / (r32)UI_COORD_DIMENSION) * renderer.window_width;
+    pos.y = ((r32)position.y / (r32)UI_COORD_DIMENSION) * renderer.window_height;
+    pos.z = 0.0f;
+    
+    r32 relative_ratio = (r32)relative_size.y / (r32)relative_size.x;
+    
+    math::Vec3 scaled_size;
+    scaled_size.x = ((r32)relative_size.x / (r32)UI_COORD_DIMENSION) * (r32)renderer.window_width;
+    scaled_size.y = scaled_size.x * relative_ratio;
+    scaled_size.z = 0.0f;
+    
+    math::Vec3 relative_pos = math::Vec3(pos.x, pos.y, 0.0f);
+    
+    r32 ratio = (r32)size.y / (r32)size.x;
+    
+    math::Vec3 new_size;
+    new_size.x = ((r32)size.x / (r32)UI_COORD_DIMENSION) * (r32)renderer.window_width;
+    new_size.y = new_size.x * ratio;
+    new_size.z = 0.0f;
+    
+    r32 factor_relative = centered ? 2.0f : 1.0f;
+    
+    switch(relative)
+    {
+        case RELATIVE_TOP:
+        {
+            r32 add = centered ? new_size.y / 2.0f : 0.0f;
+            relative_pos.y += (i32)scaled_size.y / factor_relative + add;
+        }
+        break;
+        case RELATIVE_LEFT:
+        {
+            r32 add = centered ? new_size.x / 2.0f : 0.0f;
+            relative_pos.x -= (i32)scaled_size.x / factor_relative + add;
+        }
+        break;
+        case RELATIVE_RIGHT:
+        {
+            r32 add = centered ? new_size.x / 2.0f : 0.0f;
+            relative_pos.x += (i32)scaled_size.x / factor_relative + add;
+        }
+        break;
+        case RELATIVE_BOTTOM:
+        {
+            r32 add = centered ? new_size.y / 2.0f : 0.0f;
+            relative_pos.y -= (i32)scaled_size.y / factor_relative + add;
+        }
+        break;
+    }
+    
+    pos.x = ((r32)position.x / (r32)UI_COORD_DIMENSION) * renderer.window_width;
+    pos.y = ((r32)position.y / (r32)UI_COORD_DIMENSION) * renderer.window_height;
+    
+    math::Vec2i ui_position = math::Vec2i(0, 0);
+    ui_position.x = (i32)((relative_pos.x / (r32)renderer.window_width) * (r32)UI_COORD_DIMENSION);
+    ui_position.y = (i32)((relative_pos.y / (r32)renderer.window_height) * (r32)UI_COORD_DIMENSION);
+    
+    return {math::Vec2i(relative_pos.x, relative_pos.y), math::Vec2(new_size.x, new_size.y), ui_position};
+}
+
+static RelativeUIQuadInfo push_filled_ui_quad_relative_not_centered(Renderer& renderer, math::Vec2i position, math::Vec2 relative_size, b32 flipped, math::Vec2 size, math::Vec3 rotation = math::Vec3(), math::Rgba color = math::Rgba(1.0f, 1.0f, 1.0f, 1.0f), RelativeFlag relative = RELATIVE_TOP, i32 texture_handle = 0, b32 rounded = false, i32 animation_controller_handle = 0, b32 with_origin = false, math::Vec2 origin = math::Vec2(0.0f, 0.0f), i32 shader_handle = 0, ShaderAttribute* shader_attributes = 0, i32 shader_attribute_count = 0, math::Vec2 texture_offset = math::Vec2(-1.0f, -1.0f), math::Vec2i frame_size = math::Vec2i(0, 0))
+{
+    RelativeUIQuadInfo info = get_relative_info(renderer, position, relative_size, size, relative, false);
+    
+    push_filled_quad_not_centered(renderer, math::Vec3(info.position.x, info.position.y, 0.0f), flipped, math::Vec3(info.scale.x, info.scale.y, 0.0f), rotation, color, texture_handle, true, rounded,  animation_controller_handle, shader_handle, shader_attributes, shader_attribute_count, texture_offset, frame_size);
+    
+    return info;
+}
+
+
+static RelativeUIQuadInfo push_filled_ui_quad_relative(Renderer& renderer, math::Vec2i position, math::Vec2 relative_size, b32 flipped, math::Vec2 size, math::Vec3 rotation = math::Vec3(), math::Rgba color = math::Rgba(1.0f, 1.0f, 1.0f, 1.0f), RelativeFlag relative = RELATIVE_TOP, i32 texture_handle = 0, b32 rounded = false, i32 animation_controller_handle = 0, b32 with_origin = false, math::Vec2 origin = math::Vec2(0.0f, 0.0f), i32 shader_handle = 0, ShaderAttribute* shader_attributes = 0, i32 shader_attribute_count = 0, math::Vec2 texture_offset = math::Vec2(-1.0f, -1.0f), math::Vec2i frame_size = math::Vec2i(0, 0))
+{
+    RelativeUIQuadInfo info = get_relative_info(renderer, position, relative_size, size, relative, true);
+    
+    push_filled_quad(renderer, math::Vec3(info.position.x, info.position.y, 0.0f), flipped, math::Vec3(info.scale.x, info.scale.y, 0.0f), rotation, color, texture_handle, true, rounded,  animation_controller_handle, with_origin, origin, shader_handle, shader_attributes, shader_attribute_count, texture_offset, frame_size);
+    
+    return info;
+}
+
 
 static void push_outlined_ui_quad(Renderer& renderer, math::Vec2i position,  math::Vec2i size, math::Vec3 rotation, math::Rgba color, b32 is_ui = false, r32 line_width = 1.0f)
 {

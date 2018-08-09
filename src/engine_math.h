@@ -5,20 +5,20 @@
 
 namespace math
 {
-    inline i32 clamp(i32 Minimum, i32 Value, i32 Maximum)
+    inline i32 clamp(i32 minimum, i32 value, i32 maximum)
     {
-        i32 result = MAX(Minimum, MIN(Value,Maximum));
+        i32 result = MAX(minimum, MIN(value,maximum));
         return result;
     }
     
-    inline r32 clamp(r32 Minimum, r32 Value, r32 Maximum)
+    inline r32 clamp(r32 minimum, r32 value, r32 maximum)
     {
-        return MAX(Minimum, MIN(Value,Maximum));
+        return MAX(minimum, MIN(value,maximum));
     }
     
-    inline r64 clamp(r64 Minimum, r64 Value, r64 Maximum)
+    inline r64 clamp(r64 minimum, r64 value, r64 maximum)
     {
-        return MAX(Minimum, MIN(Value,Maximum));
+        return MAX(minimum, MIN(value,maximum));
     }
     
     union Vec2

@@ -945,53 +945,57 @@ static void load_extra_shaders(RenderState& render_state, Renderer& renderer)
 }
 
 
-void stbtt_load_font(RenderState &render_state, char *path, i32 size, i32 index = -1)
+void stbtt_load_font(RenderState &render_state, Renderer& renderer, char *path, i32 size, i32 index = -1)
 {
-    TrueTypeFont *font = nullptr;
+    GLFontBuffer *font = nullptr;
+    TrueTypeFontInfo *font_info = nullptr;
     if(index == -1)
     {
-        font = &render_state.true_type_fonts[render_state.font_count++];
+        font = &render_state.gl_fonts[render_state.font_count++];
+        font_info = &renderer.tt_font_infos[renderer.tt_font_count++];
     }
     else
     {
-        font = &render_state.true_type_fonts[index];
+        font = &render_state.gl_fonts[index];
+        font_info = &renderer.tt_font_infos[index];
     }
     
     font->resolution_loaded_for.width = render_state.window_width;
     font->resolution_loaded_for.height = render_state.window_height;
     
-    font->oversample_x = 1;
-    font->oversample_y = 1;
-    font->first_char = ' ';
-    font->char_count = '~' - ' ';
-    font->size = size;
     
-    font->size = (i32)from_ui(render_state.window_height, (r32)font->size);
+    font_info->oversample_x = 1;
+    font_info->oversample_y = 1;
+    font_info->first_char = ' ';
+    font_info->char_count = '~' - ' ';
+    font_info->size = size;
     
-    i32 count_per_line = (i32)math::ceil(math::sqrt(font->char_count));
-    font->atlas_width = math::multiple_of_number(font->size * count_per_line, 4);
-    font->atlas_height = math::multiple_of_number(font->size * count_per_line, 4);
+    font_info->size = (i32)from_ui(renderer, renderer.window_height, (r32)font_info->size);
+    
+    i32 count_per_line = (i32)math::ceil(math::sqrt((r32)font_info->char_count));
+    font_info->atlas_width = math::multiple_of_number(font_info->size * count_per_line, 4);
+    font_info->atlas_height = math::multiple_of_number(font_info->size * count_per_line, 4);
     
     unsigned char *ttf_buffer = push_array(&render_state.font_arena, (1<<20), unsigned char);
     
     auto temp_memory = begin_temporary_memory(&render_state.font_arena);
     
-    unsigned char *temp_bitmap = push_array(&render_state.font_arena, font->atlas_width * font->atlas_height, unsigned char);
+    unsigned char *temp_bitmap = push_array(&render_state.font_arena, font_info->atlas_width * font_info->atlas_height, unsigned char);
     
     fread(ttf_buffer, 1, 1<<20, fopen(path, "rb"));
     
-    stbtt_InitFont(&font->info, ttf_buffer, 0); 
-    font->scale = stbtt_ScaleForPixelHeight(&font->info, 20);
-    stbtt_GetFontVMetrics(&font->info, &font->ascent, 0, 0);
-    font->baseline = (i32)(font->ascent * font->scale);
+    stbtt_InitFont(&font_info->info, ttf_buffer, 0); 
+    font_info->scale = stbtt_ScaleForPixelHeight(&font_info->info, 20);
+    stbtt_GetFontVMetrics(&font_info->info, &font_info->ascent, 0, 0);
+    font_info->baseline = (i32)(font_info->ascent * font_info->scale);
     
     stbtt_pack_context context;
-    if (!stbtt_PackBegin(&context, temp_bitmap, font->atlas_width, font->atlas_height, 0, 1, 0))
+    if (!stbtt_PackBegin(&context, temp_bitmap, font_info->atlas_width, font_info->atlas_height, 0, 1, 0))
         printf("Failed to initialize font");
     
-    stbtt_PackSetOversampling(&context, font->oversample_x, font->oversample_y);
+    stbtt_PackSetOversampling(&context, font_info->oversample_x, font_info->oversample_y);
     if (!stbtt_PackFontRange(&context, ttf_buffer, 0
-                             , (r32)font->size, font->first_char, font->char_count, font->char_data))
+                             , (r32)font_info->size, font_info->first_char, font_info->char_count, font_info->char_data))
         printf("Failed to pack font");
     
 #if DEBUG
@@ -1013,7 +1017,7 @@ void stbtt_load_font(RenderState &render_state, char *path, i32 size, i32 index 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, (GLsizei)font->atlas_width, (GLsizei)font->atlas_height, 0, GL_RED, GL_UNSIGNED_BYTE, temp_bitmap);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, (GLsizei)font_info->atlas_width, (GLsizei)font_info->atlas_height, 0, GL_RED, GL_UNSIGNED_BYTE, temp_bitmap);
     
     
     if(!font->vao || !font->vbo)
@@ -1036,10 +1040,9 @@ void stbtt_load_font(RenderState &render_state, char *path, i32 size, i32 index 
     end_temporary_memory(temp_memory);
 }
 
-static void load_font(RenderState& render_state, char* path, i32 size, i32 index = -1)
+static void load_font(RenderState& render_state, Renderer& renderer, char* path, i32 size, i32 index = -1)
 {
-    //initialize_free_type_font(path, size, render_state.ft_library, &render_state.fonts[render_state.font_count++]);
-    stbtt_load_font(render_state, path, size, index);
+    stbtt_load_font(render_state, renderer, path, size, index);
 }
 
 
@@ -1250,6 +1253,8 @@ static void initialize_opengl(RenderState& render_state, Renderer& renderer, r32
     }
     
     render_state.paused = false;
+    
+    renderer.ui_reference_resolution = {1920, 1080};
     
     GLFWmonitor* monitor = glfwGetPrimaryMonitor();
     
@@ -1768,31 +1773,8 @@ static void render_quad(RenderMode mode, RenderState& render_state, math::Vec4 c
     glBindVertexArray(0);
 }
 
-static math::Vec2 get_text_size(const char *text, TrueTypeFont &font)
-{
-    math::Vec2 size;
-    r32 placeholder_y = 0.0;
-    
-    for(u32 i = 0; i < strlen(text); i++)
-    {
-        stbtt_aligned_quad quad;
-        stbtt_GetPackedQuad(font.char_data, font.atlas_width, font.atlas_height,
-                            text[i]- font.first_char, &size.x, &placeholder_y, &quad, 1);
-        
-        if(quad.y1 - quad.y0 > size.y)
-        {
-            size.y = quad.y1 - quad.y0;
-        }
-        
-        i32 kerning = stbtt_GetCodepointKernAdvance(&font.info, text[i] - font.first_char, text[i + 1] - font.first_char);
-        size.x += (r32)kerning * font.scale;
-    }
-    
-    return size;
-}
-
 //rendering methods
-static void render_text(RenderState &render_state, TrueTypeFont &font, const math::Vec4& color, const char* text, r32 x, r32 y, math::Mat4 view_matrix, math::Mat4 projection_matrix, r32 scale = 1.0f,
+static void render_text(RenderState &render_state, GLFontBuffer &font, TrueTypeFontInfo& font_info, const math::Vec4& color, const char* text, r32 x, r32 y, math::Mat4 view_matrix, math::Mat4 projection_matrix, r32 scale = 1.0f,
                         u64 alignment_flags = ALIGNMENT_LEFT, b32 align_center_y = true)
 {
     glBindVertexArray(font.vao);
@@ -1816,7 +1798,7 @@ static void render_text(RenderState &render_state, TrueTypeFont &font, const mat
     i32 n = 0;
     
     // @Speed: The call to get_text_size() will loop throught the text, which means we'll loop through it twice per render-call
-    math::Vec2 text_size = get_text_size(text, font);
+    math::Vec2 text_size = get_text_size(text, font_info);
     if(alignment_flags & ALIGNMENT_CENTER_X)
     {
         x -= text_size.x / 2.0f;
@@ -1846,8 +1828,8 @@ static void render_text(RenderState &render_state, TrueTypeFont &font, const mat
     for(u32 i = 0; i < strlen(text); i++)
     {
         stbtt_aligned_quad quad;
-        stbtt_GetPackedQuad(font.char_data, font.atlas_width, font.atlas_height,
-                            text[i]- font.first_char, &x, &y, &quad, 1);
+        stbtt_GetPackedQuad(font_info.char_data, font_info.atlas_width, font_info.atlas_height,
+                            text[i]- font_info.first_char, &x, &y, &quad, 1);
         
         r32 x_min = quad.x0;
         r32 x_max = quad.x1;
@@ -1861,8 +1843,8 @@ static void render_text(RenderState &render_state, TrueTypeFont &font, const mat
         coords[n++] = { x_max, y_max, quad.s1, quad.t1 };
         coords[n++] = { x_min, y_min, quad.s0, quad.t0 };
         
-        i32 kerning = stbtt_GetCodepointKernAdvance(&font.info, text[i] - font.first_char, text[i + 1] - font.first_char);
-        x += (r32)kerning * font.scale;
+        i32 kerning = stbtt_GetCodepointKernAdvance(&font_info.info, text[i] - font_info.first_char, text[i + 1] - font_info.first_char);
+        x += (r32)kerning * font_info.scale;
     }
     
     glBindBuffer(GL_ARRAY_BUFFER, font.vbo);
@@ -1882,7 +1864,7 @@ static void render_line(const RenderCommand& command, RenderState& render_state,
 static void render_text(const RenderCommand& command, RenderState& render_state, Renderer& renderer, math::Mat4 view_matrix, math::Mat4 projection_matrix)
 {
     assert(command.text.font_handle < render_state.font_count);
-    TrueTypeFont font = render_state.true_type_fonts[command.text.font_handle];
+    GLFontBuffer font = render_state.gl_fonts[command.text.font_handle];
     
     if(font.resolution_loaded_for.width != render_state.window_width || font.resolution_loaded_for.height != render_state.window_height)
     {
@@ -1890,16 +1872,16 @@ static void render_text(const RenderCommand& command, RenderState& render_state,
         
         if(font.resolution_loaded_for.width == 0 && font.resolution_loaded_for.height == 0)
         {
-            load_font(render_state, data.path, data.size, -1);
+            load_font(render_state, renderer, data.path, data.size, -1);
         }
         else
         {
-            load_font(render_state, data.path, data.size, command.text.font_handle);
+            load_font(render_state, renderer, data.path, data.size, command.text.font_handle);
         }
         
     }
     
-    render_text(render_state, font, command.text.color, command.text.text, command.text.position.x, command.text.position.y, view_matrix, projection_matrix, command.text.scale, command.text.alignment_flags);
+    render_text(render_state, font, renderer.tt_font_infos[command.text.font_handle], command.text.color, command.text.text, command.text.position.x, command.text.position.y, view_matrix, projection_matrix, command.text.scale, command.text.alignment_flags);
 }
 
 static void render_quad(const RenderCommand& command, RenderState& render_state, math::Mat4 projection, math::Mat4 view)
@@ -2541,7 +2523,7 @@ static void render_commands(RenderState &render_state, Renderer &renderer)
     for (i32 index = render_state.font_count; index < renderer.font_count; index++)
     {
         FontData data = renderer.fonts[index];
-        load_font(render_state, data.path, data.size);
+        load_font(render_state, renderer, data.path, data.size);
     }
     
     auto& camera = renderer.cameras[renderer.current_camera_handle];
