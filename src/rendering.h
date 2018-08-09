@@ -534,33 +534,41 @@ struct RenderMaterial
 
 struct Model
 {
-    ModelType type;
-    
-    i32 buffer_handle;
-    
-    math::Vec3 position;
-    math::Vec3 scale;
-    math::Quat orientation;
-    
-    math::Rgba color;
-    
-    RenderMaterial materials[10];
-    i32 material_count;
-    
-    MeshData *meshes;
-    i32 mesh_count;
-    
-    Bone* bones;
-    i32 bone_count;
-    
-    SkeletalAnimationState animation_state;
-    i32 running_animation_index;
-    math::Mat4* current_poses;
-    SkeletalAnimation* animations;
-    i32 animation_count;
-    
-    math::Mat4 global_inverse_transform;
+    i32 model_handle;
+    i32 instance_offset_buffer_handle;
+    i32 instance_color_buffer_handle;
+    i32 instance_rotation_buffer_handle;
 };
+
+// struct Model
+// {
+//     ModelType type;
+    
+//     i32 buffer_handle;
+    
+//     math::Vec3 position;
+//     math::Vec3 scale;
+//     math::Quat orientation;
+    
+//     math::Rgba color;
+    
+//     RenderMaterial materials[10];
+//     i32 material_count;
+    
+//     MeshData *meshes;
+//     i32 mesh_count;
+    
+//     Bone* bones;
+//     i32 bone_count;
+    
+//     SkeletalAnimationState animation_state;
+//     i32 running_animation_index;
+//     math::Mat4* current_poses;
+//     SkeletalAnimation* animations;
+//     i32 animation_count;
+    
+//     math::Mat4 global_inverse_transform;
+// };
 
 enum WireframeType
 {
@@ -915,6 +923,8 @@ struct Renderer
     
     Mesh *meshes;
     i32 mesh_count;
+
+    Model model;
     
     ParticleSystemInfo *particle_systems;
     i32 particle_system_count;
