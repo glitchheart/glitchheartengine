@@ -6,6 +6,37 @@
 
 #define UI_COORD_DIMENSION 1000
 
+
+#define STB_TRUETYPE_IMPLEMENTATION
+#ifdef _WIN32
+#pragma warning(push)
+#pragma warning(disable : 4365) // int conversions
+#pragma warning(disable : 4459)
+#endif
+#include "stb/stb_truetype.h"
+
+#ifdef _WIN32
+#pragma warning(pop)
+#endif
+
+
+struct TrueTypeFontInfo
+{
+    i32 ascent;
+    r32 scale;
+    i32 baseline;
+    i32 first_char;
+    i32 char_count;
+    i32 size;
+    i32 atlas_width;
+    i32 atlas_height;
+    u32 oversample_x;
+    u32 oversample_y;
+    
+    stbtt_fontinfo info;
+    stbtt_packedchar char_data['~' - ' '];
+};
+
 struct FontData
 {
     char* path;
@@ -119,6 +150,14 @@ enum RenderCommandType
     RENDER_COMMAND_COUNT
 };
 
+enum RelativeFlag
+{
+    RELATIVE_TOP,
+    RELATIVE_LEFT,
+    RELATIVE_RIGHT,
+    RELATIVE_BOTTOM
+};
+
 enum Alignment
 {
     ALIGNMENT_LEFT = (1 << 0),
@@ -145,6 +184,13 @@ struct VertexInfo
     math::Vec2 uv;
     math::Vec3 normal;
     math::Rgba color;
+};
+
+struct RelativeUIQuadInfo
+{
+    math::Vec2i position;
+    math::Vec2 scale;
+    math::Vec2i ui_position;
 };
 
 r32 plane_vertices[] =
@@ -965,6 +1011,8 @@ struct Renderer
     i32 available_resolutions_count;
     i32 current_resolution_index;
     
+    Resolution ui_reference_resolution;
+    
     r32 scale_x;
     r32 scale_y;
     
@@ -976,6 +1024,9 @@ struct Renderer
     FontData *fonts;
     i32 font_count;
     
+    TrueTypeFontInfo *tt_font_infos;
+    i32 tt_font_count;
+    
     MemoryArena mesh_arena;
     MemoryArena texture_arena;
     MemoryArena animation_arena;
@@ -985,31 +1036,63 @@ struct Renderer
     MemoryArena shader_arena;
 };
 
-math::Vec3 to_ui(Resolution resolution, math::Vec2i coord)
+math::Vec3 to_ui(Renderer& renderer, math::Vec2i coord)
 {
+    r32 aspect = (r32)renderer.window_width / (r32)renderer.window_height;
+    UNUSED(aspect);
     math::Vec3 res;
-    res.x = ((r32)coord.x / (r32)resolution.width) * UI_COORD_DIMENSION;
-    res.y = ((r32)coord.y / (r32)resolution.height) * UI_COORD_DIMENSION;
+    res.x = ((r32)coord.x / (r32)renderer.window_width) * UI_COORD_DIMENSION;
+    res.y = ((r32)coord.y / (r32)renderer.window_height) * UI_COORD_DIMENSION;
     res.z = 0.0f;
     return res;
 }
 
-math::Vec2i from_ui(Resolution resolution, math::Vec3 coord)
+math::Vec2i from_ui(Renderer& renderer, math::Vec3 coord)
 {
+    r32 aspect = (r32)renderer.window_width / (r32)renderer.window_height;
+    UNUSED(aspect);
     math::Vec2i res;
-    res.x = (i32)(((r32)coord.x / (r32)UI_COORD_DIMENSION) * resolution.width);
-    res.y = (i32)(((r32)coord.y / (r32)UI_COORD_DIMENSION) * resolution.height);
+    res.x = (i32)(((r32)coord.x / (r32)UI_COORD_DIMENSION) * renderer.window_width);
+    res.y = (i32)(((r32)coord.y / (r32)UI_COORD_DIMENSION) * renderer.window_height);
     return res;
 }
 
-r32 from_ui(i32 scale, r32 coord)
+r32 from_ui(Renderer& renderer, i32 scale, r32 coord)
 {
+    r32 aspect = (r32)renderer.window_width / (r32)renderer.window_height;
+    UNUSED(aspect);
     return ((r32)coord / (r32)UI_COORD_DIMENSION) * (r32)scale;
 }
 
-i32 to_ui(i32 scale, r32 coord)
+i32 to_ui(Renderer& renderer, i32 scale, r32 coord)
 {
-    return (i32)((coord / (r32)scale) * (r32)UI_COORD_DIMENSION);
+    r32 aspect = (r32)renderer.window_width / (r32)renderer.window_height;
+    UNUSED(aspect);
+    return (i32)((coord / scale) * (r32)UI_COORD_DIMENSION);
+}
+
+
+static math::Vec2 get_text_size(const char *text, TrueTypeFontInfo &font)
+{
+    math::Vec2 size;
+    r32 placeholder_y = 0.0;
+    
+    for(u32 i = 0; i < strlen(text); i++)
+    {
+        stbtt_aligned_quad quad;
+        stbtt_GetPackedQuad(font.char_data, font.atlas_width, font.atlas_height,
+                            text[i]- font.first_char, &size.x, &placeholder_y, &quad, 1);
+        
+        if(quad.y1 - quad.y0 > size.y)
+        {
+            size.y = quad.y1 - quad.y0;
+        }
+        
+        i32 kerning = stbtt_GetCodepointKernAdvance(&font.info, text[i] - font.first_char, text[i + 1] - font.first_char);
+        size.x += (r32)kerning * font.scale;
+    }
+    
+    return size;
 }
 
 
