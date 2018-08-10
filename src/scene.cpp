@@ -32,6 +32,7 @@ namespace scene
     {
         EntityHandle handle = { scene.entity_count++ };
         Entity &entity = scene.entities[handle.handle];
+        entity.comp_flags = comp_flags;
         
         if(comp_flags & COMP_TRANSFORM)
         {
@@ -56,7 +57,7 @@ namespace scene
         TransformComponent* comp = &scene.transform_components[entity.transform_handle.handle];
         return(comp);
     }
-
+    
     // Returns a direct pointer to the RenderComponent of the specified entity
     static RenderComponent* get_render_comp(EntityHandle handle, Scene &scene)
     {

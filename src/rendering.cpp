@@ -699,6 +699,67 @@ static void create_cube(Renderer &renderer, MeshInfo &mesh_info, b32 with_instan
     }
 }
 
+static void create_cube(Renderer &renderer, i32 mesh_handle, b32 with_instancing = false)
+{
+    assert(renderer.mesh_count + 1 < global_max_meshes);
+    Mesh &mesh = renderer.meshes[renderer.mesh_count++];
+    mesh = {};
+    mesh.vertices = push_array(&renderer.mesh_arena, sizeof(cube_vertices) / sizeof(r32) / 3, Vertex);
+    mesh.faces = push_array(&renderer.mesh_arena, sizeof(cube_indices) / sizeof(u16) / 3, Face);
+    
+    mesh.vertex_count = sizeof(cube_vertices) / sizeof(r32) / 3;
+    
+    for(i32 i = 0; i < mesh.vertex_count; i++)
+    {
+        Vertex &vertex = mesh.vertices[i];
+        vertex.position = math::Vec3(cube_vertices[i * 3], cube_vertices[i * 3 + 1], cube_vertices[i * 3 + 2]);
+        vertex.normal = math::Vec3(cube_normals[i * 3], cube_normals[i * 3 + 1], cube_normals[i * 3 + 2]);
+        vertex.uv = math::Vec2(cube_uvs[i * 2], cube_uvs[i * 2 + 1]);
+    }
+    
+    mesh.face_count = sizeof(cube_indices) / sizeof(u16) / 3;
+    
+    for(i32 i = 0; i < mesh.face_count; i++)
+    {
+        Face &face = mesh.faces[i];
+        
+        face.indices[0] = cube_indices[i * 3];
+        face.indices[1] = cube_indices[i * 3 + 1];
+        face.indices[2] = cube_indices[i * 3 + 2];
+    }
+    
+    mesh_info.mesh_handle = renderer.mesh_count - 1;
+    
+    create_buffers_from_mesh(renderer, mesh, 0, true, true);
+    
+    
+    if(with_instancing)
+    {
+        assert(renderer.buffer_count + 2 < global_max_custom_buffers);
+        BufferData offset_data = {};
+        offset_data.instance_buffer_size = sizeof(math::Vec3) * 1024; 
+        
+        // @Incomplete
+        offset_data.for_instancing = true;
+        renderer.buffers[renderer.buffer_count] = offset_data;
+        mesh_info.instance_offset_buffer_handle = renderer.buffer_count++;
+        
+        BufferData color_data = {};
+        color_data.instance_buffer_size = sizeof(math::Rgba) * 1024; 
+        
+        // @Incomplete
+        color_data.for_instancing = true;
+        renderer.buffers[renderer.buffer_count] = color_data;
+        mesh_info.instance_color_buffer_handle = renderer.buffer_count++;
+        
+        BufferData rotation_data = {};
+        rotation_data.instance_buffer_size = sizeof(math::Vec3) * 1024; // @Incomplete
+        rotation_data.for_instancing = true;
+        renderer.buffers[renderer.buffer_count] = rotation_data;
+        mesh_info.instance_rotation_buffer_handle = renderer.buffer_count++;
+    }
+}
+
 static void create_plane(Renderer &renderer, i32 *mesh_handle)
 {
     assert(renderer.mesh_count + 1 < global_max_meshes);
@@ -1073,7 +1134,9 @@ static void load_obj(Renderer &renderer, char *file_path, MeshInfo &mesh_info, b
     {
         assert(renderer.buffer_count + 2 < global_max_custom_buffers);
         BufferData offset_data = {};
-        offset_data.instance_buffer_size = sizeof(math::Vec3) * 1024; // @Incomplete
+        offset_data.instance_buffer_size = sizeof(math::Vec3) * 1024;
+        
+        // @Incomplete
         offset_data.for_instancing = true;
         renderer.buffers[renderer.buffer_count] = offset_data;
         mesh_info.instance_offset_buffer_handle = renderer.buffer_count++;
@@ -1085,10 +1148,67 @@ static void load_obj(Renderer &renderer, char *file_path, MeshInfo &mesh_info, b
         mesh_info.instance_color_buffer_handle = renderer.buffer_count++;
         
         BufferData rotation_data = {};
-        rotation_data.instance_buffer_size = sizeof(math::Vec3) * 1024; // @Incomplete
+        rotation_data.instance_buffer_size = sizeof(math::Vec3) * 1024; 
+        
+        // @Incomplete
         rotation_data.for_instancing = true;
         renderer.buffers[renderer.buffer_count] = rotation_data;
         mesh_info.instance_rotation_buffer_handle = renderer.buffer_count++;
     }
 }
 
+static void load_assets(char *model_path, char *texture_path, char *material_path, Renderer &renderer)
+{
+    char line[256];
+    FILE *file = fopen(model_path, "r");
+    
+    if(file)
+    {
+        while(fgets(line, 256, file))
+        {
+            i32 index = 0;
+            char type[32];
+            char file_name[32];
+            sscanf(line, "%d %s %s", &index, &type, &file_name);
+            
+            Model model = {};
+            
+            if(starts_with(type, "prim")) // primitive
+            {
+                if(starts_with(file_name, "cube"))
+                {
+                    //create_cube(renderer, game_state->play_state.beam_mesh, true);
+                }
+                else if(starts_with(file_name, "plane"))
+                {
+                    create_plane(renderer, &model.mesh_handle);
+                }
+                
+            }
+            else if(starts_with(type, "obj")) // load an obj-file
+            {
+                load_obj();
+            }
+            
+            renderer.models[renderer.model_count++] = model;
+        }
+        fclose(file);
+    }
+    
+    file = fopen(texture_path, "r");
+    if(file)
+    {
+        fclose(file);
+    }
+    
+    file = fopen(material_path, "r");
+    if(file)
+    {
+        fclose(file);
+    }
+}
+
+static void push_scene_for_rendering(scene::Scene &scene)
+{
+    // @Incomplete: Build the render commands!
+}

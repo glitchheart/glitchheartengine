@@ -53,6 +53,13 @@ namespace scene
         b32 active;
         ModelHandle model_handle;
         MaterialHandle material_handle;
+        
+        // @Incomplete: Not sure about these
+        WireframeType wireframe_type;
+        math::Rgba wireframe_color;
+        
+        b32 cast_shadows;
+        b32 receives_shadows;
     };
     
     struct Scene
