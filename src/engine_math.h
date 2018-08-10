@@ -609,6 +609,7 @@ namespace math
         Vec2i() : x(0),y(0) {}
         Vec2i(i32 i) : x(i), y(i) {}
         Vec2i(i32 i[2]) : e{i[0],i[1]} {}
+        Vec2i(Vec2 v) : x((i32)v.x), y((i32)v.y) {}
         
         inline Vec2i operator* (Vec2i o)
         {
@@ -878,6 +879,7 @@ namespace math
         Vec4i() : x(0), y(0), z(0), w(0) {}
         Vec4i(i32 i) : x(i), y(i), z(i), w(i) {}
         Vec4i(i32 i[4]) : e{i[0], i[1], i[2], i[3]} {}
+        Vec4i(Vec4 v) : x((i32)v.x), y((i32)v.y), z((i32)v.z), w((i32)v.w) {}
         
         inline Vec4i operator* (Vec4i o)
         {
