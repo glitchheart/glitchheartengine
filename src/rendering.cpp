@@ -317,7 +317,7 @@ static void push_text(Renderer& renderer, TextInfo text_info)
     push_text(renderer, text_info.text, text_info.position, text_info.scale, text_info.font_handle, text_info.render_info.color, text_info.alignment_flags, text_info.render_info.is_ui);
 }
 
-static void push_filled_quad(Renderer& renderer, math::Vec3 position, b32 flipped, math::Vec3 size, math::Vec3 rotation = math::Vec3(), math::Rgba color = math::Rgba(1.0f, 1.0f, 1.0f, 1.0f), i32 texture_handle = 0, b32 is_ui = true, r32 border_width = 0.0f, b32 rounded = false, i32 animation_controller_handle = 0, b32 with_origin = false, math::Vec2 origin = math::Vec2(0.0f, 0.0f), i32 shader_handle = 0, ShaderAttribute* shader_attributes = 0, i32 shader_attribute_count = 0, math::Vec2 texture_offset = math::Vec2(-1.0f, -1.0f), math::Vec2i frame_size = math::Vec2i(0, 0))
+static void push_filled_quad(Renderer& renderer, math::Vec3 position, b32 flipped, math::Vec3 size, math::Vec3 rotation = math::Vec3(), math::Rgba color = math::Rgba(1.0f, 1.0f, 1.0f, 1.0f), i32 texture_handle = 0, b32 is_ui = true, r32 border_width = 0.0f, math::Rgba border_color = math::Rgba(1.0f), b32 rounded = false, i32 animation_controller_handle = 0, b32 with_origin = false, math::Vec2 origin = math::Vec2(0.0f, 0.0f), i32 shader_handle = 0, ShaderAttribute* shader_attributes = 0, i32 shader_attribute_count = 0, math::Vec2 texture_offset = math::Vec2(-1.0f, -1.0f), math::Vec2i frame_size = math::Vec2i(0, 0))
 {
     RenderCommand* render_command = push_next_command(renderer, is_ui);
     
@@ -333,6 +333,7 @@ static void push_filled_quad(Renderer& renderer, math::Vec3 position, b32 flippe
     render_command->quad.texture_handle = texture_handle - 1;
     render_command->quad.rounded = rounded;
     render_command->quad.border_width = border_width;
+    render_command->quad.border_color = border_color;
     
     if(animation_controller_handle != 0)
     {
@@ -365,15 +366,15 @@ static void push_filled_quad(Renderer& renderer, math::Vec3 position, b32 flippe
 
 static void push_filled_quad(Renderer& renderer, QuadInfo quad_info)
 {
-    push_filled_quad(renderer, quad_info.transform_info.position, quad_info.flipped, quad_info.transform_info.scale, quad_info.transform_info.rotation, quad_info.render_info.color, quad_info.texture_info.texture_handle, quad_info.render_info.is_ui, quad_info.border_width, quad_info.rounded, quad_info.animation_controller_handle, quad_info.render_info.with_origin, quad_info.render_info.origin, quad_info.shader_info.shader_handle, quad_info.shader_info.shader_attributes, quad_info.shader_info.shader_attribute_count, quad_info.texture_info.texture_offset, quad_info.texture_info.frame_size);
+    push_filled_quad(renderer, quad_info.transform_info.position, quad_info.flipped, quad_info.transform_info.scale, quad_info.transform_info.rotation, quad_info.render_info.color, quad_info.texture_info.texture_handle, quad_info.render_info.is_ui, quad_info.border_width, quad_info.border_color, quad_info.rounded, quad_info.animation_controller_handle, quad_info.render_info.with_origin, quad_info.render_info.origin, quad_info.shader_info.shader_handle, quad_info.shader_info.shader_attributes, quad_info.shader_info.shader_attribute_count, quad_info.texture_info.texture_offset, quad_info.texture_info.frame_size);
 }
 
-static void push_filled_quad_not_centered(Renderer& renderer, math::Vec3 position, b32 flipped, math::Vec3 size, math::Vec3 rotation = math::Vec3(), math::Rgba color = math::Rgba(1.0f, 1.0f, 1.0f, 1.0f), i32 texture_handle = 0, b32 is_ui = true, r32 border_width = 0.0f, b32 rounded = false, i32 animation_controller_handle = 0, i32 shader_handle = 0, ShaderAttribute* shader_attributes = 0, i32 shader_attribute_count = 0, math::Vec2 texture_offset = math::Vec2(-1.0f, -1.0f), math::Vec2i frame_size = math::Vec2i(0, 0))
+static void push_filled_quad_not_centered(Renderer& renderer, math::Vec3 position, b32 flipped, math::Vec3 size, math::Vec3 rotation = math::Vec3(), math::Rgba color = math::Rgba(1.0f, 1.0f, 1.0f, 1.0f), i32 texture_handle = 0, b32 is_ui = true, r32 border_width = 0.0f, math::Rgba border_color = math::Rgba(1.0f), b32 rounded = false, i32 animation_controller_handle = 0, i32 shader_handle = 0, ShaderAttribute* shader_attributes = 0, i32 shader_attribute_count = 0, math::Vec2 texture_offset = math::Vec2(-1.0f, -1.0f), math::Vec2i frame_size = math::Vec2i(0, 0))
 {
-    push_filled_quad(renderer, position, flipped, size, rotation, color, texture_handle, is_ui, border_width, rounded, animation_controller_handle, true, math::Vec2(0.0f), shader_handle, shader_attributes, shader_attribute_count, texture_offset, frame_size); 
+    push_filled_quad(renderer, position, flipped, size, rotation, color, texture_handle, is_ui, border_width, border_color, rounded, animation_controller_handle, true, math::Vec2(0.0f), shader_handle, shader_attributes, shader_attribute_count, texture_offset, frame_size); 
 }
 
-static void push_filled_ui_quad_not_centered(Renderer& renderer, math::Vec2i position, b32 flipped, math::Vec2 size, math::Vec3 rotation = math::Vec3(), math::Rgba color = math::Rgba(1.0f, 1.0f, 1.0f, 1.0f), i32 texture_handle = 0, b32 rounded = false, r32 border_width = 0.0f, i32 animation_controller_handle = 0, i32 shader_handle = 0, ShaderAttribute* shader_attributes = 0, i32 shader_attribute_count = 0, math::Vec2 texture_offset = math::Vec2(-1.0f, -1.0f), math::Vec2i frame_size = math::Vec2i(0, 0))
+static void push_filled_ui_quad_not_centered(Renderer& renderer, math::Vec2i position, b32 flipped, math::Vec2 size, math::Vec3 rotation = math::Vec3(), math::Rgba color = math::Rgba(1.0f, 1.0f, 1.0f, 1.0f), i32 texture_handle = 0, b32 rounded = false, r32 border_width = 0.0f, math::Rgba border_color = math::Rgba(1.0f), i32 animation_controller_handle = 0, i32 shader_handle = 0, ShaderAttribute* shader_attributes = 0, i32 shader_attribute_count = 0, math::Vec2 texture_offset = math::Vec2(-1.0f, -1.0f), math::Vec2i frame_size = math::Vec2i(0, 0))
 {
     
     r32 width_ratio = (r32)renderer.ui_reference_resolution.width / (r32)renderer.window_width;
@@ -393,10 +394,10 @@ static void push_filled_ui_quad_not_centered(Renderer& renderer, math::Vec2i pos
     scaled_size.y = scaled_size.x * ratio;
     scaled_size.z = 0.0f;
     
-    push_filled_quad_not_centered(renderer, pos, flipped, scaled_size, rotation, color, texture_handle, true, border_width, rounded, animation_controller_handle, shader_handle, shader_attributes, shader_attribute_count, texture_offset, frame_size);
+    push_filled_quad_not_centered(renderer, pos, flipped, scaled_size, rotation, color, texture_handle, true, border_width, border_color, rounded, animation_controller_handle, shader_handle, shader_attributes, shader_attribute_count, texture_offset, frame_size);
 }
 
-static void push_filled_ui_quad(Renderer& renderer, math::Vec2i position, b32 flipped, math::Vec2 size, math::Vec3 rotation = math::Vec3(), math::Rgba color = math::Rgba(1.0f, 1.0f, 1.0f, 1.0f), i32 texture_handle = 0, r32 border_width = 0.0f, b32 rounded = false, i32 animation_controller_handle = 0, b32 with_origin = false, math::Vec2 origin = math::Vec2(0.0f, 0.0f), i32 shader_handle = 0, ShaderAttribute* shader_attributes = 0, i32 shader_attribute_count = 0, math::Vec2 texture_offset = math::Vec2(-1.0f, -1.0f), math::Vec2i frame_size = math::Vec2i(0, 0))
+static void push_filled_ui_quad(Renderer& renderer, math::Vec2i position, b32 flipped, math::Vec2 size, math::Vec3 rotation = math::Vec3(), math::Rgba color = math::Rgba(1.0f, 1.0f, 1.0f, 1.0f), i32 texture_handle = 0, r32 border_width = 0.0f, math::Rgba border_color = math::Rgba(1.0f), b32 rounded = false, i32 animation_controller_handle = 0, b32 with_origin = false, math::Vec2 origin = math::Vec2(0.0f, 0.0f), i32 shader_handle = 0, ShaderAttribute* shader_attributes = 0, i32 shader_attribute_count = 0, math::Vec2 texture_offset = math::Vec2(-1.0f, -1.0f), math::Vec2i frame_size = math::Vec2i(0, 0))
 {
     r32 width_ratio = (r32)renderer.ui_reference_resolution.width / (r32)renderer.window_width;
     r32 height_ratio = (r32)renderer.ui_reference_resolution.height / (r32)renderer.window_height;
@@ -415,7 +416,7 @@ static void push_filled_ui_quad(Renderer& renderer, math::Vec2i position, b32 fl
     scaled_size.y = scaled_size.x * ratio;
     scaled_size.z = 0.0f;
     
-    push_filled_quad(renderer, pos, flipped, scaled_size, rotation, color, texture_handle, true, border_width, rounded,  animation_controller_handle, with_origin, origin, shader_handle, shader_attributes, shader_attribute_count, texture_offset, frame_size);
+    push_filled_quad(renderer, pos, flipped, scaled_size, rotation, color, texture_handle, true, border_width, border_color, rounded,  animation_controller_handle, with_origin, origin, shader_handle, shader_attributes, shader_attribute_count, texture_offset, frame_size);
 }
 
 
@@ -513,21 +514,24 @@ static RelativeUIQuadInfo get_relative_info(Renderer& renderer, math::Vec2i posi
     return {math::Vec2i(relative_pos.x, relative_pos.y), math::Vec2(new_size.x, new_size.y), ui_position};
 }
 
-static RelativeUIQuadInfo push_filled_ui_quad_relative_not_centered(Renderer& renderer, math::Vec2i position, math::Vec2 relative_size, b32 flipped, math::Vec2 size, math::Vec3 rotation = math::Vec3(), math::Rgba color = math::Rgba(1.0f, 1.0f, 1.0f, 1.0f), RelativeFlag relative = RELATIVE_TOP, i32 texture_handle = 0, r32 border_width = 0.0f, b32 rounded = false, i32 animation_controller_handle = 0, i32 shader_handle = 0, ShaderAttribute* shader_attributes = 0, i32 shader_attribute_count = 0, math::Vec2 texture_offset = math::Vec2(-1.0f, -1.0f), math::Vec2i frame_size = math::Vec2i(0, 0))
+static RelativeUIQuadInfo push_filled_ui_quad_relative_not_centered(Renderer& renderer, math::Vec2i position, math::Vec2 relative_size, b32 flipped, math::Vec2 size, math::Vec3 rotation = math::Vec3(), math::Rgba color = math::Rgba(1.0f, 1.0f, 1.0f, 1.0f), RelativeFlag relative = RELATIVE_TOP, i32 texture_handle = 0, r32 border_width = 0.0f,
+                                                                    math::Rgba border_color = math::Rgba(1.0f),
+                                                                    b32 rounded = false, i32 animation_controller_handle = 0, i32 shader_handle = 0, ShaderAttribute* shader_attributes = 0, i32 shader_attribute_count = 0, math::Vec2 texture_offset = math::Vec2(-1.0f, -1.0f), math::Vec2i frame_size = math::Vec2i(0, 0))
 {
     RelativeUIQuadInfo info = get_relative_info(renderer, position, relative_size, size, relative, false);
     
-    push_filled_quad_not_centered(renderer, math::Vec3(info.position.x, info.position.y, 0.0f), flipped, math::Vec3(info.scale.x, info.scale.y, 0.0f), rotation, color, texture_handle, true, border_width, rounded, animation_controller_handle, shader_handle, shader_attributes, shader_attribute_count, texture_offset, frame_size);
+    push_filled_quad_not_centered(renderer, math::Vec3(info.position.x, info.position.y, 0.0f), flipped, math::Vec3(info.scale.x, info.scale.y, 0.0f), rotation, color, texture_handle, true, border_width, border_color, rounded, animation_controller_handle, shader_handle, shader_attributes, shader_attribute_count, texture_offset, frame_size);
     
     return info;
 }
 
 
-static RelativeUIQuadInfo push_filled_ui_quad_relative(Renderer& renderer, math::Vec2i position, math::Vec2 relative_size, b32 flipped, math::Vec2 size, math::Vec3 rotation = math::Vec3(), math::Rgba color = math::Rgba(1.0f, 1.0f, 1.0f, 1.0f), RelativeFlag relative = RELATIVE_TOP, i32 texture_handle = 0, r32 border_width = 0.0f, b32 rounded = false, i32 animation_controller_handle = 0, b32 with_origin = false, math::Vec2 origin = math::Vec2(0.0f, 0.0f), i32 shader_handle = 0, ShaderAttribute* shader_attributes = 0, i32 shader_attribute_count = 0, math::Vec2 texture_offset = math::Vec2(-1.0f, -1.0f), math::Vec2i frame_size = math::Vec2i(0, 0))
+static RelativeUIQuadInfo push_filled_ui_quad_relative(Renderer& renderer, math::Vec2i position, math::Vec2 relative_size, b32 flipped, math::Vec2 size, math::Vec3 rotation = math::Vec3(), math::Rgba color = math::Rgba(1.0f, 1.0f, 1.0f, 1.0f), RelativeFlag relative = RELATIVE_TOP, i32 texture_handle = 0, r32 border_width = 0.0f,
+                                                       math::Rgba border_color = math::Rgba(1.0f), b32 rounded = false, i32 animation_controller_handle = 0, b32 with_origin = false, math::Vec2 origin = math::Vec2(0.0f, 0.0f), i32 shader_handle = 0, ShaderAttribute* shader_attributes = 0, i32 shader_attribute_count = 0, math::Vec2 texture_offset = math::Vec2(-1.0f, -1.0f), math::Vec2i frame_size = math::Vec2i(0, 0))
 {
     RelativeUIQuadInfo info = get_relative_info(renderer, position, relative_size, size, relative, true, origin);
     
-    push_filled_quad(renderer, math::Vec3(info.position.x, info.position.y, 0.0f), flipped, math::Vec3(info.scale.x, info.scale.y, 0.0f), rotation, color, texture_handle, true, border_width, rounded,  animation_controller_handle, with_origin, math::Vec2(0.0f), shader_handle, shader_attributes, shader_attribute_count, texture_offset, frame_size);
+    push_filled_quad(renderer, math::Vec3(info.position.x, info.position.y, 0.0f), flipped, math::Vec3(info.scale.x, info.scale.y, 0.0f), rotation, color, texture_handle, true, border_width, border_color, rounded,  animation_controller_handle, with_origin, math::Vec2(0.0f), shader_handle, shader_attributes, shader_attribute_count, texture_offset, frame_size);
     
     return info;
 }
