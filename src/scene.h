@@ -8,7 +8,7 @@ namespace scene
         i32 handle;
     };
     
-    struct ModelHandle
+    struct MeshHandle
     {
         i32 handle;
     };
@@ -51,7 +51,7 @@ namespace scene
     struct RenderComponent
     {
         b32 active;
-        ModelHandle model_handle;
+        MeshHandle mesh_handle;
         MaterialHandle material_handle;
         
         // @Incomplete: Not sure about these

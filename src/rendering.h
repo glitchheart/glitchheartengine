@@ -407,6 +407,10 @@ struct Mesh
     
     Face* faces;
     i32 face_count;
+    
+    i32 instance_offset_buffer_handle;
+    i32 instance_color_buffer_handle;
+    i32 instance_rotation_buffer_handle;
 };
 
 struct TextureInfo
@@ -527,14 +531,6 @@ struct RenderMaterial
     RenderMaterialType type;
     
     i32 diffuse_texture;
-};
-
-struct Model
-{
-    i32 mesh_handle; // @Incomplete: we will need multiple meshes at some point
-    i32 instance_offset_buffer_handle;
-    i32 instance_color_buffer_handle;
-    i32 instance_rotation_buffer_handle;
 };
 
 enum WireframeType
@@ -888,8 +884,6 @@ struct Renderer
     i32 *updated_buffer_handles;
     i32 updated_buffer_handle_count;
     
-    Model *models;
-    i32 model_count;
     RenderMaterial *materials;
     i32 material_count;
     
