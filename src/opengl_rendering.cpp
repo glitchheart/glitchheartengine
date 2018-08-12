@@ -966,7 +966,6 @@ void stbtt_load_font(RenderState &render_state, Renderer& renderer, char *path, 
     font->resolution_loaded_for.width = render_state.window_width;
     font->resolution_loaded_for.height = render_state.window_height;
     
-    
     font_info->oversample_x = 1;
     font_info->oversample_y = 1;
     font_info->first_char = ' ';
@@ -988,7 +987,7 @@ void stbtt_load_font(RenderState &render_state, Renderer& renderer, char *path, 
     fread(ttf_buffer, 1, 1<<20, fopen(path, "rb"));
     
     stbtt_InitFont(&font_info->info, ttf_buffer, 0); 
-    font_info->scale = stbtt_ScaleForPixelHeight(&font_info->info, 20);
+    font_info->scale = stbtt_ScaleForPixelHeight(&font_info->info, 15);
     stbtt_GetFontVMetrics(&font_info->info, &font_info->ascent, 0, 0);
     font_info->baseline = (i32)(font_info->ascent * font_info->scale);
     
