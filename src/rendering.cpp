@@ -699,7 +699,7 @@ static void create_cube(Renderer &renderer, MeshInfo &mesh_info, b32 with_instan
     }
 }
 
-static void create_cube(Renderer &renderer, i32 mesh_handle, b32 with_instancing = false)
+static void create_cube(Renderer &renderer)
 {
     assert(renderer.mesh_count + 1 < global_max_meshes);
     Mesh &mesh = renderer.meshes[renderer.mesh_count++];
@@ -728,36 +728,28 @@ static void create_cube(Renderer &renderer, i32 mesh_handle, b32 with_instancing
         face.indices[2] = cube_indices[i * 3 + 2];
     }
     
-    mesh_info.mesh_handle = renderer.mesh_count - 1;
-    
     create_buffers_from_mesh(renderer, mesh, 0, true, true);
     
+    assert(renderer.buffer_count + 2 < global_max_custom_buffers);
+    BufferData offset_data = {};
+    offset_data.instance_buffer_size = sizeof(math::Vec3) * 1024; 
     
-    if(with_instancing)
-    {
-        assert(renderer.buffer_count + 2 < global_max_custom_buffers);
-        BufferData offset_data = {};
-        offset_data.instance_buffer_size = sizeof(math::Vec3) * 1024; 
-        
-        // @Incomplete
-        offset_data.for_instancing = true;
-        renderer.buffers[renderer.buffer_count] = offset_data;
-        mesh_info.instance_offset_buffer_handle = renderer.buffer_count++;
-        
-        BufferData color_data = {};
-        color_data.instance_buffer_size = sizeof(math::Rgba) * 1024; 
-        
-        // @Incomplete
-        color_data.for_instancing = true;
-        renderer.buffers[renderer.buffer_count] = color_data;
-        mesh_info.instance_color_buffer_handle = renderer.buffer_count++;
-        
-        BufferData rotation_data = {};
-        rotation_data.instance_buffer_size = sizeof(math::Vec3) * 1024; // @Incomplete
-        rotation_data.for_instancing = true;
-        renderer.buffers[renderer.buffer_count] = rotation_data;
-        mesh_info.instance_rotation_buffer_handle = renderer.buffer_count++;
-    }
+    offset_data.for_instancing = true;
+    renderer.buffers[renderer.buffer_count] = offset_data;
+    mesh.instance_offset_buffer_handle = renderer.buffer_count++;
+    
+    BufferData color_data = {};
+    color_data.instance_buffer_size = sizeof(math::Rgba) * 1024; 
+    
+    color_data.for_instancing = true;
+    renderer.buffers[renderer.buffer_count] = color_data;
+    mesh.instance_color_buffer_handle = renderer.buffer_count++;
+    
+    BufferData rotation_data = {};
+    rotation_data.instance_buffer_size = sizeof(math::Vec3) * 1024;
+    rotation_data.for_instancing = true;
+    renderer.buffers[renderer.buffer_count] = rotation_data;
+    mesh.instance_rotation_buffer_handle = renderer.buffer_count++;
 }
 
 static void create_plane(Renderer &renderer, i32 *mesh_handle)
@@ -792,6 +784,86 @@ static void create_plane(Renderer &renderer, i32 *mesh_handle)
     *mesh_handle = renderer.mesh_count - 1;
     
     create_buffers_from_mesh(renderer, mesh, 0, true, true);
+    
+    
+    create_buffers_from_mesh(renderer, mesh, 0, true, true);
+    
+    assert(renderer.buffer_count + 2 < global_max_custom_buffers);
+    BufferData offset_data = {};
+    offset_data.instance_buffer_size = sizeof(math::Vec3) * 1024; 
+    
+    offset_data.for_instancing = true;
+    renderer.buffers[renderer.buffer_count] = offset_data;
+    mesh.instance_offset_buffer_handle = renderer.buffer_count++;
+    
+    BufferData color_data = {};
+    color_data.instance_buffer_size = sizeof(math::Rgba) * 1024; 
+    
+    color_data.for_instancing = true;
+    renderer.buffers[renderer.buffer_count] = color_data;
+    mesh.instance_color_buffer_handle = renderer.buffer_count++;
+    
+    BufferData rotation_data = {};
+    rotation_data.instance_buffer_size = sizeof(math::Vec3) * 1024;
+    rotation_data.for_instancing = true;
+    renderer.buffers[renderer.buffer_count] = rotation_data;
+    mesh.instance_rotation_buffer_handle = renderer.buffer_count++;
+}
+
+static void create_plane(Renderer &renderer)
+{
+    assert(renderer.mesh_count + 1 < global_max_meshes);
+    Mesh &mesh = renderer.meshes[renderer.mesh_count++];
+    mesh = {};
+    mesh.vertices = push_array(&renderer.mesh_arena, sizeof(plane_vertices) / sizeof(r32) / 3, Vertex);
+    mesh.faces = push_array(&renderer.mesh_arena, sizeof(plane_indices) / sizeof(u16) / 3, Face);
+    
+    mesh.vertex_count = sizeof(plane_vertices) / sizeof(r32) / 3;
+    
+    for(i32 i = 0; i < mesh.vertex_count; i++)
+    {
+        Vertex &vertex = mesh.vertices[i];
+        vertex.position = math::Vec3(plane_vertices[i * 3], plane_vertices[i * 3 + 1], plane_vertices[i * 3 + 2]);
+        vertex.normal = math::Vec3(plane_normals[i * 3], plane_normals[i * 3 + 1], plane_normals[i * 3 + 2]);
+        vertex.uv = math::Vec2(plane_uvs[i * 2], plane_uvs[i * 2 + 1]);
+    }
+    
+    mesh.face_count = sizeof(plane_indices) / sizeof(u16) / 3;
+    
+    for(i32 i = 0; i < mesh.face_count; i++)
+    {
+        Face &face = mesh.faces[i];
+        
+        face.indices[0] = plane_indices[i * 3];
+        face.indices[1] = plane_indices[i * 3 + 1];
+        face.indices[2] = plane_indices[i * 3 + 2];
+    }
+    
+    create_buffers_from_mesh(renderer, mesh, 0, true, true);
+    
+    
+    create_buffers_from_mesh(renderer, mesh, 0, true, true);
+    
+    assert(renderer.buffer_count + 2 < global_max_custom_buffers);
+    BufferData offset_data = {};
+    offset_data.instance_buffer_size = sizeof(math::Vec3) * 1024; 
+    
+    offset_data.for_instancing = true;
+    renderer.buffers[renderer.buffer_count] = offset_data;
+    mesh.instance_offset_buffer_handle = renderer.buffer_count++;
+    
+    BufferData color_data = {};
+    color_data.instance_buffer_size = sizeof(math::Rgba) * 1024; 
+    
+    color_data.for_instancing = true;
+    renderer.buffers[renderer.buffer_count] = color_data;
+    mesh.instance_color_buffer_handle = renderer.buffer_count++;
+    
+    BufferData rotation_data = {};
+    rotation_data.instance_buffer_size = sizeof(math::Vec3) * 1024;
+    rotation_data.for_instancing = true;
+    renderer.buffers[renderer.buffer_count] = rotation_data;
+    mesh.instance_rotation_buffer_handle = renderer.buffer_count++;
 }
 
 static void push_mesh(Renderer &renderer, MeshInfo mesh_info)
@@ -958,6 +1030,199 @@ static i32 check_for_identical_vertex(Vertex &vertex, math::Vec2 uv, math::Vec3 
     *should_add = true;
     
     return (i32)current_size;
+}
+
+static void load_obj(Renderer &renderer, char *file_path)
+{
+    FILE *file = fopen(file_path, "r");
+    
+    b32 with_uvs = false;
+    b32 with_normals = false;
+    
+    Vertex *vertices = nullptr;
+    math::Vec3 *normals = nullptr;
+    math::Vec2 *uvs = nullptr;
+    
+    Vertex *final_vertices = nullptr;
+    
+    Face *faces = nullptr;
+    
+    i32 vert_index = 0;
+    i32 normal_index = 0;
+    i32 uv_index = 0;
+    
+    if(file)
+    {
+        char buffer[256];
+        
+        while((fgets(buffer, sizeof(buffer), file) != NULL))
+        {
+            if(starts_with(buffer, "g")) // we're starting with new geometry
+            {
+            }
+            else if(starts_with(buffer, "v ")) // vertex
+            {
+                Vertex vertex = {};
+                sscanf(buffer, "v %f %f %f", &vertex.position.x, &vertex.position.y, &vertex.position.z);
+                buf_push(vertices, vertex);
+                vert_index++;
+            }
+            else if(starts_with(buffer, "vn")) // vertex normal
+            {
+                with_normals = true;
+                math::Vec3 normal(0.0f);
+                sscanf(buffer, "vn %f %f %f", &normal.x, &normal.y, &normal.z);
+                buf_push(normals, normal);
+                normal_index++;
+            }
+            else if(starts_with(buffer, "vt")) // vertex uv
+            {
+                with_uvs = true;
+                math::Vec2 uv(0.0f);
+                sscanf(buffer, "vt %f %f", &uv.x, &uv.y);
+                buf_push(uvs, uv);
+                uv_index++;
+            }
+            else if(starts_with(buffer, "f")) // face
+            {
+                Face face = {};
+                math::Vec3i normal_indices = {};
+                math::Vec3i uv_indices = {};
+                
+                if(with_uvs && with_normals)
+                {
+                    sscanf(buffer, "f %hd/%d/%d %hd/%d/%d %hd/%d/%d", &face.indices[0], &uv_indices.x, &normal_indices.x, &face.indices[1], &uv_indices.y, &normal_indices.y, &face.indices[2], &uv_indices.z, &normal_indices.z);
+                }
+                else if(with_uvs)
+                {
+                    sscanf(buffer, "f %hd/%d %hd/%d %hd/%d", &face.indices[0], &uv_indices.x, &face.indices[1], &uv_indices.y, &face.indices[2], &uv_indices.z);
+                }
+                
+                else if(with_normals)
+                {
+                    sscanf(buffer, "f %hd//%d %hd//%d %hd//%d", &face.indices[0], &normal_indices.x, &face.indices[1], &normal_indices.y, &face.indices[2], &normal_indices.z);
+                }
+                
+                // The obj-format was made by geniuses and therefore the indices are not 0-indexed. Such wow.
+                face.indices[0] -= 1;
+                face.indices[1] -= 1;
+                face.indices[2] -= 1;
+                
+                b32 should_add = false;
+                Vertex v1 = vertices[face.indices[0]];
+                math::Vec2 uv1(0.0f);
+                math::Vec3 n1(0.0f);
+                
+                if(with_uvs)
+                {
+                    uv1 = uvs[uv_indices.x - 1];
+                }
+                
+                if(with_normals)
+                {
+                    n1 = normals[normal_indices.x - 1];
+                }
+                
+                face.indices[0] = (u16)check_for_identical_vertex(v1, uv1, n1, final_vertices, &should_add);
+                
+                if(should_add)
+                {
+                    buf_push(final_vertices, v1);
+                }
+                
+                should_add = false;
+                Vertex &v2 = vertices[face.indices[1]];
+                math::Vec2 uv2(0.0f);
+                math::Vec3 n2(0.0f);
+                
+                if(with_uvs)
+                {
+                    uv2 = uvs[uv_indices.y - 1];
+                }
+                
+                if(with_normals)
+                {
+                    n2 = normals[normal_indices.y - 1];
+                }
+                
+                face.indices[1] = (u16)check_for_identical_vertex(v2, uv2, n2, final_vertices, &should_add);
+                
+                if(should_add)
+                {
+                    buf_push(final_vertices, v2);
+                }
+                
+                should_add = false;
+                Vertex &v3 = vertices[face.indices[2]];
+                
+                math::Vec2 uv3(0.0f);
+                math::Vec3 n3(0.0f);
+                
+                if(with_uvs)
+                {
+                    uv3 = uvs[uv_indices.z - 1];
+                }
+                
+                if(with_normals)
+                {
+                    n3 = normals[normal_indices.z - 1];
+                }
+                
+                face.indices[2] = (u16)check_for_identical_vertex(v3, uv3, n3, final_vertices,  &should_add);
+                
+                if(should_add)
+                {
+                    buf_push(final_vertices, v3);
+                }
+                
+                buf_push(faces, face);
+            }
+        }
+        fclose(file);
+    }
+    
+    assert(renderer.mesh_count + 1 < global_max_meshes);
+    Mesh &mesh = renderer.meshes[renderer.mesh_count++];
+    mesh = {};
+    
+    mesh.vertices = push_array(&renderer.mesh_arena, buf_len(final_vertices), Vertex);
+    mesh.faces = push_array(&renderer.mesh_arena, buf_len(faces), Face);
+    mesh.vertex_count = (i32)buf_len(final_vertices);
+    mesh.face_count = (i32)buf_len(faces);
+    
+    memcpy(mesh.vertices, final_vertices, mesh.vertex_count * sizeof(Vertex));
+    memcpy(mesh.faces, faces, mesh.face_count * sizeof(Face));
+    
+    buf_free(final_vertices);
+    buf_free(vertices);
+    buf_free(normals);
+    buf_free(uvs);
+    buf_free(faces);
+    
+    create_buffers_from_mesh(renderer, mesh, 0, true, true);
+    
+    assert(renderer.buffer_count + 2 < global_max_custom_buffers);
+    BufferData offset_data = {};
+    offset_data.instance_buffer_size = sizeof(math::Vec3) * 1024;
+    
+    // @Incomplete
+    offset_data.for_instancing = true;
+    renderer.buffers[renderer.buffer_count] = offset_data;
+    mesh.instance_offset_buffer_handle = renderer.buffer_count++;
+    
+    BufferData color_data = {};
+    color_data.instance_buffer_size = sizeof(math::Rgba) * 1024; // @Incomplete
+    color_data.for_instancing = true;
+    renderer.buffers[renderer.buffer_count] = color_data;
+    mesh.instance_color_buffer_handle = renderer.buffer_count++;
+    
+    BufferData rotation_data = {};
+    rotation_data.instance_buffer_size = sizeof(math::Vec3) * 1024; 
+    
+    // @Incomplete
+    rotation_data.for_instancing = true;
+    renderer.buffers[renderer.buffer_count] = rotation_data;
+    mesh.instance_rotation_buffer_handle = renderer.buffer_count++;
 }
 
 static void load_obj(Renderer &renderer, char *file_path, MeshInfo &mesh_info, b32 with_instancing = false)
@@ -1171,26 +1436,23 @@ static void load_assets(char *model_path, char *texture_path, char *material_pat
             char file_name[32];
             sscanf(line, "%d %s %s", &index, &type, &file_name);
             
-            Model model = {};
-            
             if(starts_with(type, "prim")) // primitive
             {
                 if(starts_with(file_name, "cube"))
                 {
-                    //create_cube(renderer, game_state->play_state.beam_mesh, true);
+                    create_cube(renderer);
                 }
                 else if(starts_with(file_name, "plane"))
                 {
-                    create_plane(renderer, &model.mesh_handle);
+                    create_plane(renderer);
                 }
-                
             }
             else if(starts_with(type, "obj")) // load an obj-file
             {
-                load_obj();
+                auto temp_memory = begin_temporary_memory(&renderer.mesh_arena);
+                load_obj(renderer, concat("../assets/models/", file_name, temp_memory.arena));
+                end_temporary_memory(temp_memory);
             }
-            
-            renderer.models[renderer.model_count++] = model;
         }
         fclose(file);
     }
@@ -1198,17 +1460,61 @@ static void load_assets(char *model_path, char *texture_path, char *material_pat
     file = fopen(texture_path, "r");
     if(file)
     {
+        while(fgets(line, 256, file))
+        {
+            i32 index = 0;
+            char file_path[128];
+            sscanf(line, "%d %s", &index, &file_path);
+            
+            auto temp_memory = begin_temporary_memory(&renderer.mesh_arena);
+            load_texture(concat("../assets/textures/", file_path, temp_memory.arena), renderer, LINEAR);
+            end_temporary_memory(temp_memory);
+        }
         fclose(file);
     }
     
     file = fopen(material_path, "r");
     if(file)
     {
+        while(fgets(line, 256, file))
+        {
+            RenderMaterial material = {};
+            material.type = RM_TEXTURED;
+            i32 index = 0;
+            sscanf(line, "%d tex %d col %f %f %f %f", &index, &material.diffuse_texture, &material.color.r, &material.color.g, &material.color.b, &material.color.a);
+            material.diffuse_texture++;
+            renderer.materials[renderer.material_count++] = material;
+        }
         fclose(file);
     }
 }
 
-static void push_scene_for_rendering(scene::Scene &scene)
+static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer)
 {
-    // @Incomplete: Build the render commands!
+    for(i32 ent_index = 0; ent_index < scene.entity_count; ent_index++)
+    {
+        const scene::Entity &ent = scene.entities[ent_index];
+        if(ent.comp_flags & scene::COMP_RENDER)
+        {
+            scene::TransformComponent &transform = scene.transform_components[ent.transform_handle.handle];
+            scene::RenderComponent &render = scene.render_components[ent.render_handle.handle];
+            RenderMaterial material = renderer.materials[render.material_handle.handle];
+            
+            RenderCommand *render_command = push_next_command(renderer, false);
+            render_command->type = RENDER_COMMAND_MESH;
+            render_command->position = transform.position;
+            render_command->scale = transform.scale;
+            render_command->rotation = transform.rotation;
+            //render_command->mesh.wireframe_type = mesh_info.wireframe_type;
+            //render_command->mesh.wireframe_color = mesh_info.wireframe_color;
+            Mesh &mesh = renderer.meshes[2];
+            render_command->mesh.buffer_handle = mesh.buffer_handle;
+            render_command->mesh.material_type = material.type;
+            render_command->mesh.wireframe_type = WT_NONE;
+            render_command->mesh.diffuse_texture = material.diffuse_texture;
+            render_command->color = material.color;
+            render_command->cast_shadows = true; // @Incomplete
+            render_command->receives_shadows = true; // @Incomplete
+        }
+    }
 }

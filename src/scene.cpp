@@ -16,15 +16,18 @@ namespace scene
     }
     
     // Zeroes all counts and frees all memory allocated for the "Scene"
-    static void free_scene(Scene& scene)
-    {
-        scene.entity_count = 0;
-        scene.transform_component_count = 0;
-        scene.render_component_count = 0;
-        
-        free(scene.entities);
-        free(scene.transform_components);
-        free(scene.render_components);
+	static void free_scene(Scene& scene)
+	{
+		if (scene.entity_count > 0)
+		{
+			scene.entity_count = 0;
+			scene.transform_component_count = 0;
+			scene.render_component_count = 0;
+
+			free(scene.entities);
+			free(scene.transform_components);
+			free(scene.render_components);
+		}
     }
     
     // Returns a new valid "EntityHandle". "comp_flags" Specifies the components that the entity should contain.
