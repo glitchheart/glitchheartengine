@@ -21,6 +21,7 @@ namespace math
         return MAX(minimum, MIN(value,maximum));
     }
     
+    
     union Vec2
     {
         struct
@@ -2308,6 +2309,38 @@ namespace math
         return result;
     }
     
+    
+    inline Vec2 clamp(Vec2 minimum, Vec2 value, Vec2 maximum)
+    {
+        return Vec2(clamp(minimum.x, value.x, maximum.x), clamp(minimum.y, value.y, maximum.y));
+    }
+    
+    inline Vec3 clamp(Vec3 minimum, Vec3 value, Vec3 maximum)
+    {
+        return Vec3(clamp(minimum.x, value.x, maximum.x), clamp(minimum.y, value.y, maximum.y), clamp(minimum.z, value.z, maximum.z));
+    }
+    
+    inline Vec4 clamp(Vec4 minimum, Vec4 value, Vec4 maximum)
+    {
+        return Vec4(clamp(minimum.x, value.x, maximum.x), clamp(minimum.y, value.y, maximum.y), clamp(minimum.z, value.z, maximum.z), clamp(minimum.w, value.w, maximum.w));
+    }
+    
+    inline Vec2i clamp(Vec2i minimum, Vec2i value, Vec2i maximum)
+    {
+        return Vec2i(clamp(minimum.x, value.x, maximum.x), clamp(minimum.y, value.y, maximum.y));
+    }
+    
+    inline Vec3i clamp(Vec3i minimum, Vec3i value, Vec3i maximum)
+    {
+        return Vec3i(clamp(minimum.x, value.x, maximum.x), clamp(minimum.y, value.y, maximum.y), clamp(minimum.z, value.z, maximum.z));
+    }
+    
+    inline Vec4i clamp(Vec4i minimum, Vec4i value, Vec4i maximum)
+    {
+        return Vec4i(clamp(minimum.x, value.x, maximum.x), clamp(minimum.y, value.y, maximum.y), clamp(minimum.z, value.z, maximum.z), clamp(minimum.w, value.w, maximum.w));
+    }
+    
+    
     inline Vec2 rotate_by_angle(Vec2 in, r32 angle)
     {
         math::Vec2 result;
@@ -2573,6 +2606,8 @@ inline r32 sign(math::Vec2 p1, math::Vec2 p2, math::Vec2 p3)
 {
     return (p1.x - p3.x) * (p2.y - p3.y) - (p2.x - p3.x) * (p1.y - p3.y);
 }
+
+
 
 inline math::Vec2 to_cartesian(math::Vec2 position)
 {
