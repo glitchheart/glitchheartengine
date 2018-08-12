@@ -1501,7 +1501,7 @@ static void render_line(RenderState& render_state, math::Vec4 color, math::Vec3 
     glBindVertexArray(0);
 }
 
-static void render_quad(RenderMode mode, RenderState& render_state, math::Vec4 color, math::Vec3 position, b32 flipped, math::Vec3 size, math::Vec3 rotation, b32 with_origin, math::Vec2 origin, i32 shader_handle, ShaderAttribute* shader_attributes, i32 shader_attribute_count, b32 is_ui = true, i32 texture_handle = 0, r32 border_width = 0.0f, b32 rounded = false, b32 for_animation = false, math::Vec2 texture_size = math::Vec2(), math::Vec2i frame_size = math::Vec2i(), math::Vec2 texture_offset = math::Vec2(), math::Mat4 projection_matrix = math::Mat4(), math::Mat4 view_matrix = math::Mat4())
+static void render_quad(RenderMode mode, RenderState& render_state, math::Vec4 color, math::Vec3 position, b32 flipped, math::Vec3 size, math::Vec3 rotation, b32 with_origin, math::Vec2 origin, i32 shader_handle, ShaderAttribute* shader_attributes, i32 shader_attribute_count, b32 is_ui = true, i32 texture_handle = 0, r32 border_width = 0.0f, math::Rgba border_color = math::Rgba(1.0f), b32 rounded = false, b32 for_animation = false, math::Vec2 texture_size = math::Vec2(), math::Vec2i frame_size = math::Vec2i(), math::Vec2 texture_offset = math::Vec2(), math::Mat4 projection_matrix = math::Mat4(), math::Mat4 view_matrix = math::Mat4())
 {
     switch (mode)
     {
@@ -1640,7 +1640,10 @@ static void render_quad(RenderMode mode, RenderState& render_state, math::Vec4 c
             {
                 set_float_uniform(shader.program, "aspect",
                                   size.x / size.y);
+                set_vec2_uniform(shader.program, "scale",
+                                 math::Vec2(scale.x, scale.y));
                 set_float_uniform(shader.program, "border_width", border_width);
+                set_vec4_uniform(shader.program, "border_color", border_color);
             }
             
             set_float_uniform(shader.program, "isUI", (r32)is_ui);
@@ -1915,6 +1918,7 @@ static void render_quad(const RenderCommand& command, RenderState& render_state,
                     command.is_ui,
                     (i32)handle,
                     command.quad.border_width,
+                    command.quad.border_color,
                     command.quad.rounded,
                     command.quad.for_animation,
                     command.quad.texture_size,
@@ -1940,6 +1944,7 @@ static void render_quad(const RenderCommand& command, RenderState& render_state,
                     command.is_ui,
                     (i32)handle,
                     command.quad.border_width,
+                    command.quad.border_color,
                     command.quad.rounded,
                     command.quad.for_animation,
                     command.quad.texture_size,
