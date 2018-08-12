@@ -6,6 +6,9 @@
 
 #define UI_COORD_DIMENSION 1000
 
+#define PRIMITIVE_CUBE 0
+#define PRIMITIVE_PLANE 1
+
 struct FontData
 {
     char* path;
@@ -411,6 +414,13 @@ struct Mesh
     i32 instance_offset_buffer_handle;
     i32 instance_color_buffer_handle;
     i32 instance_rotation_buffer_handle;
+};
+
+struct InstancingPair
+{
+    i32 mesh_handle;
+    i32 material_handle;
+    i32 count;
 };
 
 struct TextureInfo
@@ -957,6 +967,8 @@ struct Renderer
     MemoryArena particle_arena;
     MemoryArena buffer_arena;
     MemoryArena shader_arena;
+    
+    MemoryArena temp_arena;
 };
 
 math::Vec3 to_ui(Resolution resolution, math::Vec2i coord)

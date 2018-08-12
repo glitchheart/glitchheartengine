@@ -1,6 +1,6 @@
 static constexpr GraphicsApi global_graphics_api = GRAPHICS_OPEN_GL;
 static constexpr i32 global_pixels_per_unit = 8;
-static constexpr i32 global_max_meshes = 64;
+static constexpr i32 global_max_meshes = 128;
 static constexpr i32 global_max_fonts = 64;
 static constexpr i32 global_max_particle_systems = 64;
 static constexpr i32 global_max_lights = 32;
@@ -16,6 +16,6 @@ static constexpr i32 global_max_audio_sources = 32;
 static constexpr i32 global_max_channel_groups = 0;
 static constexpr i32 global_max_sound_commands = 128;
 static constexpr i32 global_max_custom_buffers = 128;
-static constexpr i32 global_max_textures = 64;
+static constexpr i32 global_max_textures = 128;
 static constexpr i32 global_max_materials = 128;
 static constexpr i32 global_max_shaders = 16;

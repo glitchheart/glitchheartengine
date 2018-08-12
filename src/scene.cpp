@@ -9,25 +9,32 @@ namespace scene
         scene.transform_component_count = 0;
         scene.render_component_count = 0;
         scene.entities = (Entity*)malloc(sizeof(EntityHandle) * initial_entity_array_size);
+        scene.active_entities = (b32*)malloc(sizeof(b32) * initial_entity_array_size);
         scene.transform_components = (TransformComponent*)malloc(sizeof(TransformComponent) * initial_entity_array_size);
         scene.render_components = (RenderComponent*)malloc(sizeof(RenderComponent) * initial_entity_array_size);
         scene.byte_size = (sizeof(EntityHandle) + sizeof(TransformComponent) + sizeof(RenderComponent)) * initial_entity_array_size;
+        
+        for(i32 index = 0; index < initial_entity_array_size; index++)
+        {
+            scene.active_entities[index] = true;
+        }
+        
         return(scene);
     }
     
     // Zeroes all counts and frees all memory allocated for the "Scene"
-	static void free_scene(Scene& scene)
-	{
-		if (scene.entity_count > 0)
-		{
-			scene.entity_count = 0;
-			scene.transform_component_count = 0;
-			scene.render_component_count = 0;
-
-			free(scene.entities);
-			free(scene.transform_components);
-			free(scene.render_components);
-		}
+    static void free_scene(Scene& scene)
+    {
+        if (scene.entity_count > 0)
+        {
+            scene.entity_count = 0;
+            scene.transform_component_count = 0;
+            scene.render_component_count = 0;
+            
+            free(scene.entities);
+            free(scene.transform_components);
+            free(scene.render_components);
+        }
     }
     
     // Returns a new valid "EntityHandle". "comp_flags" Specifies the components that the entity should contain.
@@ -45,9 +52,17 @@ namespace scene
         if(comp_flags & COMP_RENDER)
         {
             entity.render_handle = { scene.render_component_count++ };
+            scene::RenderComponent &comp = scene.render_components[entity.render_handle.handle];
+            comp.receives_shadows = true;
+            comp.cast_shadows = false;
         }
         
         return(handle);
+    }
+    
+    static void set_active(EntityHandle handle, b32 active, Scene &scene)
+    {
+        scene.active_entities[handle.handle] = active;
     }
     
     // Returns a direct pointer to the TransformComponent of the specified entity

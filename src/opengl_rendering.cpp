@@ -2061,32 +2061,6 @@ static void prepare_shader(const Shader shader, ShaderAttribute *attributes, i32
     }
 }
 
-static void render_mesh(const RenderCommand &render_command, RenderState &render_state)
-{
-    if(!render_state.buffers)
-    {
-        render_state.buffers = push_array(render_state.perm_arena, global_max_custom_buffers, Buffer);
-    }
-    
-    Buffer buffer = render_state.buffers[render_command.mesh.buffer_handle];
-    glBindVertexArray(buffer.vao);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer.ibo);
-    glBindBuffer(GL_ARRAY_BUFFER, buffer.vbo);
-    
-    // @Incomplete: We want this to be without anything but the vertex positions.
-    // The depth shader shouldn't assume a buffer with anything else in it, so we
-    // have to find a way to do this efficiently.
-    if(buffer.index_buffer_count == 0)
-    {
-        glDrawArrays(
-            GL_TRIANGLES, 0, buffer.vertex_buffer_size / 3);
-    }
-    else
-    {
-        glDrawElements(GL_TRIANGLES, buffer.index_buffer_count, GL_UNSIGNED_SHORT, (void*)0);
-    }
-}
-
 static void render_mesh(const RenderCommand &render_command, Renderer &renderer, RenderState &render_state, math::Mat4 projection_matrix, math::Mat4 view_matrix, b32 for_shadow_map, ShadowMapMatrices *shadow_map_matrices = 0)
 {
     Buffer buffer = render_state.buffers[render_command.mesh.buffer_handle];
