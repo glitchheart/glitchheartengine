@@ -655,6 +655,7 @@ struct QuadInfo
     RenderInfo render_info;
     QuadTextureInfo texture_info;
     
+    r32 border_width;
     b32 rounded;
     b32 flipped;
     i32 animation_controller_handle;
@@ -732,6 +733,7 @@ struct RenderCommand
             math::Vec2 texture_size;
             math::Vec2i frame_size;
             math::Vec2 texture_offset;
+            r32 border_width;
         } quad;
         struct
         {

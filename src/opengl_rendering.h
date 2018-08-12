@@ -168,7 +168,7 @@ struct RenderState
     u32 framebuffer_quad_vertices_size = 16 * sizeof(GLfloat);
     u32 texture_quad_vertices_size = 16 * sizeof(GLfloat);
     u32 rounded_quad_vertices_size = 16 * sizeof(GLfloat);
-    u32 quad_vertices_size = 8 * sizeof(GLfloat);
+    u32 quad_vertices_size = 16 * sizeof(GLfloat);
     u32 billboard_vertices_size = 20 * sizeof(GLfloat);
     GLuint bound_vertex_buffer;
     GLuint bound_texture;
@@ -181,12 +181,12 @@ struct RenderState
         -1.0f, -1.0f, 0, 0.0f
     };
     
-    GLfloat quad_vertices[8] =
+    GLfloat quad_vertices[16] =
     {
-        0.0f, 0.0f,
-        1.0f, 0.0f,
-        1.0f, 1.0f,
-        0.0f, 1.0f
+        0.0f, 0.0f, 0.0f, 1.0f,
+        1.0f, 0.0f, 1.0f, 0.0f,
+        1.0f, 1.0f, 1.0f, 0.0f,
+        0.0f, 1.0f, 0.0f, 0.0f
     };
     
     GLfloat billboard_vertices[20] =

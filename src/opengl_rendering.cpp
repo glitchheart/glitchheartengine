@@ -765,7 +765,10 @@ static void setup_quad(RenderState& render_state, MemoryArena* arena)
     load_shader(shader_paths[SHADER_QUAD], &render_state.quad_shader, arena);
     
     auto position_location3 = (GLuint)glGetAttribLocation(render_state.quad_shader.program, "pos");
-    vertex_attrib_pointer(position_location3, 2, GL_FLOAT,  2 * sizeof(float), 0);
+    auto texcoord_location3 = (GLuint)glGetAttribLocation(render_state.quad_shader.program, "t_uv");
+    
+    vertex_attrib_pointer(position_location3, 2, GL_FLOAT, 4 * sizeof(float), 0);
+    vertex_attrib_pointer(texcoord_location3, 2, GL_FLOAT, 4 * sizeof(float), (void *)(2 * sizeof(float)));
     
     glBindVertexArray(0);
     
@@ -1498,7 +1501,7 @@ static void render_line(RenderState& render_state, math::Vec4 color, math::Vec3 
     glBindVertexArray(0);
 }
 
-static void render_quad(RenderMode mode, RenderState& render_state, math::Vec4 color, math::Vec3 position, b32 flipped, math::Vec3 size, math::Vec3 rotation, b32 with_origin, math::Vec2 origin, i32 shader_handle, ShaderAttribute* shader_attributes, i32 shader_attribute_count, b32 is_ui = true, i32 texture_handle = 0, b32 rounded = false, b32 for_animation = false, math::Vec2 texture_size = math::Vec2(), math::Vec2i frame_size = math::Vec2i(), math::Vec2 texture_offset = math::Vec2(), math::Mat4 projection_matrix = math::Mat4(), math::Mat4 view_matrix = math::Mat4())
+static void render_quad(RenderMode mode, RenderState& render_state, math::Vec4 color, math::Vec3 position, b32 flipped, math::Vec3 size, math::Vec3 rotation, b32 with_origin, math::Vec2 origin, i32 shader_handle, ShaderAttribute* shader_attributes, i32 shader_attribute_count, b32 is_ui = true, i32 texture_handle = 0, r32 border_width = 0.0f, b32 rounded = false, b32 for_animation = false, math::Vec2 texture_size = math::Vec2(), math::Vec2i frame_size = math::Vec2i(), math::Vec2 texture_offset = math::Vec2(), math::Mat4 projection_matrix = math::Mat4(), math::Mat4 view_matrix = math::Mat4())
 {
     switch (mode)
     {
@@ -1513,6 +1516,7 @@ static void render_quad(RenderMode mode, RenderState& render_state, math::Vec4 c
             else
             {
                 shader = render_state.quad_shader;
+                
             }
             
             if (texture_handle > 0)
@@ -1604,13 +1608,13 @@ static void render_quad(RenderMode mode, RenderState& render_state, math::Vec4 c
             {
                 if (flipped)
                 {
-                    position.x -= ((pixel_size.x - origin.x) / render_state.pixels_per_unit) * scale.x;
-                    position.y -= origin.y / render_state.pixels_per_unit;
+                    position.x -= ((pixel_size.x - origin.x)) * scale.x;
+                    position.y -= origin.y;
                 }
                 else
                 {
-                    position.x -= origin.x / render_state.pixels_per_unit;
-                    position.y -= origin.y / render_state.pixels_per_unit;
+                    position.x -= origin.x;
+                    position.y -= origin.y;
                 }
             }
             else
@@ -1630,6 +1634,13 @@ static void render_quad(RenderMode mode, RenderState& render_state, math::Vec4 c
             if (!is_ui)
             {
                 set_mat4_uniform(shader.program, "View", view_matrix);
+            }
+            
+            if(shader.program == render_state.quad_shader.program)
+            {
+                set_float_uniform(shader.program, "aspect",
+                                  size.x / size.y);
+                set_float_uniform(shader.program, "border_width", border_width);
             }
             
             set_float_uniform(shader.program, "isUI", (r32)is_ui);
@@ -1903,6 +1914,7 @@ static void render_quad(const RenderCommand& command, RenderState& render_state,
                     command.shader_attribute_count,
                     command.is_ui,
                     (i32)handle,
+                    command.quad.border_width,
                     command.quad.rounded,
                     command.quad.for_animation,
                     command.quad.texture_size,
@@ -1927,6 +1939,7 @@ static void render_quad(const RenderCommand& command, RenderState& render_state,
                     command.shader_attribute_count,
                     command.is_ui,
                     (i32)handle,
+                    command.quad.border_width,
                     command.quad.rounded,
                     command.quad.for_animation,
                     command.quad.texture_size,
