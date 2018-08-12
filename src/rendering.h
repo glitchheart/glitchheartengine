@@ -1085,7 +1085,7 @@ static math::Vec2 get_text_size(const char *text, TrueTypeFontInfo &font)
     {
         stbtt_aligned_quad quad;
         stbtt_GetPackedQuad(font.char_data, font.atlas_width, font.atlas_height,
-                            text[i]- font.first_char, &size.x, &placeholder_y, &quad, 1);
+                            text[i] - font.first_char, &size.x, &placeholder_y, &quad, 1);
         
         if(quad.y1 - quad.y0 > size.y)
         {
