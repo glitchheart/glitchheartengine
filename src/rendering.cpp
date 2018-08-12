@@ -1449,7 +1449,7 @@ static void load_assets(char *model_path, char *texture_path, char *material_pat
             }
             else if(starts_with(type, "obj")) // load an obj-file
             {
-                auto temp_memory = begin_temporary_memory(&renderer.mesh_arena);
+                auto temp_memory = begin_temporary_memory(&renderer.temp_arena);
                 load_obj(renderer, concat("../assets/models/", file_name, temp_memory.arena));
                 end_temporary_memory(temp_memory);
             }
@@ -1466,7 +1466,7 @@ static void load_assets(char *model_path, char *texture_path, char *material_pat
             char file_path[128];
             sscanf(line, "%d %s", &index, &file_path);
             
-            auto temp_memory = begin_temporary_memory(&renderer.mesh_arena);
+            auto temp_memory = begin_temporary_memory(&renderer.temp_arena);
             load_texture(concat("../assets/textures/", file_path, temp_memory.arena), renderer, LINEAR);
             end_temporary_memory(temp_memory);
         }
@@ -1481,7 +1481,8 @@ static void load_assets(char *model_path, char *texture_path, char *material_pat
             RenderMaterial material = {};
             material.type = RM_TEXTURED;
             i32 index = 0;
-            sscanf(line, "%d tex %d col %f %f %f %f", &index, &material.diffuse_texture, &material.color.r, &material.color.g, &material.color.b, &material.color.a);
+            sscanf(line, "%d tex %d col %f %f %f %f", &index, &material.diffuse_texture, &material.color.r, 
+                   &material.color.g, &material.color.b, &material.color.a);
             material.diffuse_texture++;
             renderer.materials[renderer.material_count++] = material;
         }
@@ -1489,32 +1490,70 @@ static void load_assets(char *model_path, char *texture_path, char *material_pat
     }
 }
 
-static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer)
+static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer, math::Vec3 *positions, math::Vec3 *rotations, math::Rgba *colors)
 {
+    InstancingPair instancing_pairs[128];
+    i32 pair_count = 0;
+    
+    for(i32 i = 0; i < 128; i++)
+    {
+        instancing_pairs[i].count = 0;
+    }
+    
     for(i32 ent_index = 0; ent_index < scene.entity_count; ent_index++)
     {
         const scene::Entity &ent = scene.entities[ent_index];
-        if(ent.comp_flags & scene::COMP_RENDER)
+        
+        if(scene.active_entities[ent_index])
         {
-            scene::TransformComponent &transform = scene.transform_components[ent.transform_handle.handle];
-            scene::RenderComponent &render = scene.render_components[ent.render_handle.handle];
-            RenderMaterial material = renderer.materials[render.material_handle.handle];
-            
-            RenderCommand *render_command = push_next_command(renderer, false);
-            render_command->type = RENDER_COMMAND_MESH;
-            render_command->position = transform.position;
-            render_command->scale = transform.scale;
-            render_command->rotation = transform.rotation;
-            //render_command->mesh.wireframe_type = mesh_info.wireframe_type;
-            //render_command->mesh.wireframe_color = mesh_info.wireframe_color;
-            Mesh &mesh = renderer.meshes[2];
-            render_command->mesh.buffer_handle = mesh.buffer_handle;
-            render_command->mesh.material_type = material.type;
-            render_command->mesh.wireframe_type = WT_NONE;
-            render_command->mesh.diffuse_texture = material.diffuse_texture;
-            render_command->color = material.color;
-            render_command->cast_shadows = true; // @Incomplete
-            render_command->receives_shadows = true; // @Incomplete
+            if(ent.comp_flags & scene::COMP_RENDER)
+            {
+                scene::TransformComponent &transform = scene.transform_components[ent.transform_handle.handle];
+                scene::RenderComponent &render = scene.render_components[ent.render_handle.handle];
+                
+                RenderMaterial material = renderer.materials[render.material_handle.handle];
+                
+                // Instancing stuff
+                i32 pair_index = -1;
+                for(i32 i = 0; i < pair_count; i++)
+                {
+                    if(instancing_pairs[i].mesh_handle == render.mesh_handle.handle && instancing_pairs[i].material_handle == render.material_handle.handle)
+                    {
+                        pair_index = i;
+                        break;
+                    }
+                }
+                
+                if(pair_index == -1)
+                {
+                    pair_index = pair_count++;
+					instancing_pairs[pair_index].mesh_handle = render.mesh_handle.handle;
+					instancing_pairs[pair_index].material_handle = render.material_handle.handle;
+
+                }
+                
+                InstancingPair &pair = instancing_pairs[pair_index];
+
+                positions[pair_index * 100 + pair.count] = transform.position;
+                rotations[pair_index * 100 + pair.count] = transform.rotation;
+                colors[pair_index * 100 + pair.count] = material.color;
+                pair.count++;
+            }
         }
+    }
+    
+    for(i32 pair_index = 0; pair_index < pair_count; pair_index++)
+    {
+        InstancingPair pair = instancing_pairs[pair_index];
+        RenderMaterial material = renderer.materials[pair.material_handle];
+        MeshInfo mesh_info = {};
+		mesh_info.transform.scale = math::Vec3(1, 1, 1);
+		Mesh &mesh = renderer.meshes[pair.mesh_handle];
+		mesh_info.instance_offset_buffer_handle = mesh.instance_offset_buffer_handle;
+		mesh_info.instance_rotation_buffer_handle = mesh.instance_rotation_buffer_handle;
+		mesh_info.instance_color_buffer_handle = mesh.instance_color_buffer_handle;
+        mesh_info.material = material;
+        mesh_info.mesh_handle = pair.mesh_handle;
+        push_mesh_instanced(renderer, mesh_info, &positions[pair_index * 100], &colors[pair_index * 100], &rotations[pair_index * 100], pair.count);
     }
 }

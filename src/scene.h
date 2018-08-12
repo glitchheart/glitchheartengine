@@ -50,7 +50,6 @@ namespace scene
     
     struct RenderComponent
     {
-        b32 active;
         MeshHandle mesh_handle;
         MaterialHandle material_handle;
         
@@ -65,6 +64,7 @@ namespace scene
     struct Scene
     {
         Entity *entities;
+        b32 *active_entities;
         i32 entity_count;
         
         TransformComponent *transform_components;
