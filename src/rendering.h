@@ -3,6 +3,7 @@
 
 #define MAX_BONES 50
 #define MAX_CHILDREN 30
+#define MAX_INSTANCING_PAIRS 128
 
 #define UI_COORD_DIMENSION 1000
 
@@ -414,13 +415,15 @@ struct Mesh
     i32 instance_offset_buffer_handle;
     i32 instance_color_buffer_handle;
     i32 instance_rotation_buffer_handle;
+    i32 instance_scale_buffer_handle;
 };
 
-struct InstancingPair
+struct InstancedRenderCommand
 {
     i32 mesh_handle;
     i32 material_handle;
     i32 count;
+    math::Vec3 scale;
 };
 
 struct TextureInfo
@@ -556,6 +559,7 @@ struct MeshInfo
     i32 instance_offset_buffer_handle;
     i32 instance_color_buffer_handle;
     i32 instance_rotation_buffer_handle;
+    i32 instance_scale_buffer_handle;
     
     TransformInfo transform;
     RenderMaterial material;
@@ -729,6 +733,7 @@ struct RenderCommand
             i32 instance_offset_buffer_handle;
             i32 instance_color_buffer_handle;
             i32 instance_rotation_buffer_handle;
+            i32 instance_scale_buffer_handle;
             
             RenderMaterialType material_type;
             i32 diffuse_texture;
@@ -737,6 +742,7 @@ struct RenderCommand
             math::Vec3 *offsets;
             math::Rgba *colors;
             math::Vec3 *rotations;
+            math::Vec3 *scalings;
             i32 offset_count;
         } mesh_instanced;
         struct

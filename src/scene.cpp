@@ -17,6 +17,9 @@ namespace scene
         for(i32 index = 0; index < initial_entity_array_size; index++)
         {
             scene.active_entities[index] = true;
+            scene.transform_components[index].position = math::Vec3(0, 0, 0);
+            scene.transform_components[index].scale = math::Vec3(1, 1, 1);
+            scene.transform_components[index].rotation = math::Vec3(0, 0, 0);
         }
         
         return(scene);

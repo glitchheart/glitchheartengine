@@ -696,6 +696,14 @@ static void create_cube(Renderer &renderer, MeshInfo &mesh_info, b32 with_instan
         rotation_data.for_instancing = true;
         renderer.buffers[renderer.buffer_count] = rotation_data;
         mesh_info.instance_rotation_buffer_handle = renderer.buffer_count++;
+        
+        BufferData scale_data = {};
+        scale_data.instance_buffer_size = sizeof(math::Vec3) * 1024; 
+        
+        // @Incomplete
+        scale_data.for_instancing = true;
+        renderer.buffers[renderer.buffer_count] = scale_data;
+        mesh.instance_scale_buffer_handle = renderer.buffer_count++;
     }
 }
 
@@ -750,6 +758,14 @@ static void create_cube(Renderer &renderer)
     rotation_data.for_instancing = true;
     renderer.buffers[renderer.buffer_count] = rotation_data;
     mesh.instance_rotation_buffer_handle = renderer.buffer_count++;
+    
+    BufferData scale_data = {};
+    scale_data.instance_buffer_size = sizeof(math::Vec3) * 1024; 
+    
+    // @Incomplete
+    scale_data.for_instancing = true;
+    renderer.buffers[renderer.buffer_count] = scale_data;
+    mesh.instance_scale_buffer_handle = renderer.buffer_count++;
 }
 
 static void create_plane(Renderer &renderer, i32 *mesh_handle)
@@ -808,6 +824,14 @@ static void create_plane(Renderer &renderer, i32 *mesh_handle)
     rotation_data.for_instancing = true;
     renderer.buffers[renderer.buffer_count] = rotation_data;
     mesh.instance_rotation_buffer_handle = renderer.buffer_count++;
+    
+    BufferData scale_data = {};
+    scale_data.instance_buffer_size = sizeof(math::Vec3) * 1024; 
+    
+    // @Incomplete
+    scale_data.for_instancing = true;
+    renderer.buffers[renderer.buffer_count] = scale_data;
+    mesh.instance_scale_buffer_handle = renderer.buffer_count++;
 }
 
 static void create_plane(Renderer &renderer)
@@ -864,6 +888,14 @@ static void create_plane(Renderer &renderer)
     rotation_data.for_instancing = true;
     renderer.buffers[renderer.buffer_count] = rotation_data;
     mesh.instance_rotation_buffer_handle = renderer.buffer_count++;
+    
+    BufferData scale_data = {};
+    scale_data.instance_buffer_size = sizeof(math::Vec3) * 1024; 
+    
+    // @Incomplete
+    scale_data.for_instancing = true;
+    renderer.buffers[renderer.buffer_count] = scale_data;
+    mesh.instance_scale_buffer_handle = renderer.buffer_count++;
 }
 
 static void push_mesh(Renderer &renderer, MeshInfo mesh_info)
@@ -884,7 +916,7 @@ static void push_mesh(Renderer &renderer, MeshInfo mesh_info)
     render_command->receives_shadows = mesh_info.receives_shadows;
 }
 
-static void push_mesh_instanced(Renderer &renderer, MeshInfo mesh_info, math::Vec3 *offsets, math::Rgba *colors, math::Vec3 *rotations, i32 offset_count)
+static void push_mesh_instanced(Renderer &renderer, MeshInfo mesh_info, math::Vec3 *offsets, math::Rgba *colors, math::Vec3 *rotations, math::Vec3 *scalings, i32 offset_count)
 {
     RenderCommand *render_command = push_next_command(renderer, false);
     render_command->type = RENDER_COMMAND_MESH_INSTANCED;
@@ -901,9 +933,11 @@ static void push_mesh_instanced(Renderer &renderer, MeshInfo mesh_info, math::Ve
     render_command->mesh_instanced.instance_offset_buffer_handle = mesh_info.instance_offset_buffer_handle;
     render_command->mesh_instanced.instance_color_buffer_handle = mesh_info.instance_color_buffer_handle;
     render_command->mesh_instanced.instance_rotation_buffer_handle = mesh_info.instance_rotation_buffer_handle;
+    render_command->mesh_instanced.instance_scale_buffer_handle = mesh_info.instance_scale_buffer_handle;
     render_command->mesh_instanced.offsets = offsets;
     render_command->mesh_instanced.colors = colors;
     render_command->mesh_instanced.rotations = rotations;
+    render_command->mesh_instanced.scalings = scalings;
     render_command->mesh_instanced.offset_count = offset_count; // @Incomplete: Rename this to instance_count?
     render_command->cast_shadows = mesh_info.cast_shadows;
     render_command->receives_shadows = mesh_info.receives_shadows;
@@ -1223,6 +1257,14 @@ static void load_obj(Renderer &renderer, char *file_path)
     rotation_data.for_instancing = true;
     renderer.buffers[renderer.buffer_count] = rotation_data;
     mesh.instance_rotation_buffer_handle = renderer.buffer_count++;
+    
+    BufferData scale_data = {};
+    scale_data.instance_buffer_size = sizeof(math::Vec3) * 1024; 
+    
+    // @Incomplete
+    scale_data.for_instancing = true;
+    renderer.buffers[renderer.buffer_count] = scale_data;
+    mesh.instance_scale_buffer_handle = renderer.buffer_count++;
 }
 
 static void load_obj(Renderer &renderer, char *file_path, MeshInfo &mesh_info, b32 with_instancing = false)
@@ -1419,6 +1461,14 @@ static void load_obj(Renderer &renderer, char *file_path, MeshInfo &mesh_info, b
         rotation_data.for_instancing = true;
         renderer.buffers[renderer.buffer_count] = rotation_data;
         mesh_info.instance_rotation_buffer_handle = renderer.buffer_count++;
+        
+        BufferData scale_data = {};
+        scale_data.instance_buffer_size = sizeof(math::Vec3) * 1024; 
+        
+        // @Incomplete
+        scale_data.for_instancing = true;
+        renderer.buffers[renderer.buffer_count] = scale_data;
+        mesh.instance_scale_buffer_handle = renderer.buffer_count++;
     }
 }
 
@@ -1490,14 +1540,14 @@ static void load_assets(char *model_path, char *texture_path, char *material_pat
     }
 }
 
-static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer, math::Vec3 *positions, math::Vec3 *rotations, math::Rgba *colors)
+static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer, math::Vec3 *positions, math::Vec3 *rotations, math::Vec3 *scalings, math::Rgba *colors)
 {
-    InstancingPair instancing_pairs[128];
-    i32 pair_count = 0;
+    InstancedRenderCommand instanced_commands[MAX_INSTANCING_PAIRS];
+    i32 command_count = 0;
     
     for(i32 i = 0; i < 128; i++)
     {
-        instancing_pairs[i].count = 0;
+        instanced_commands[i].count = 0;
     }
     
     for(i32 ent_index = 0; ent_index < scene.entity_count; ent_index++)
@@ -1514,46 +1564,50 @@ static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer, ma
                 RenderMaterial material = renderer.materials[render.material_handle.handle];
                 
                 // Instancing stuff
-                i32 pair_index = -1;
-                for(i32 i = 0; i < pair_count; i++)
+                i32 command_index = -1;
+                for(i32 i = 0; i < command_count; i++)
                 {
-                    if(instancing_pairs[i].mesh_handle == render.mesh_handle.handle && instancing_pairs[i].material_handle == render.material_handle.handle)
+                    if(instanced_commands[i].mesh_handle == render.mesh_handle.handle && instanced_commands[i].material_handle == render.material_handle.handle)
                     {
-                        pair_index = i;
+                        command_index = i;
                         break;
                     }
                 }
                 
-                if(pair_index == -1)
+                if(command_index == -1)
                 {
-                    pair_index = pair_count++;
-					instancing_pairs[pair_index].mesh_handle = render.mesh_handle.handle;
-					instancing_pairs[pair_index].material_handle = render.material_handle.handle;
-
+                    command_index = command_count++;
+                    instanced_commands[command_index].mesh_handle = render.mesh_handle.handle;
+                    instanced_commands[command_index].material_handle = render.material_handle.handle;
+                    instanced_commands[command_index].scale = math::Vec3(1, 1, 1);
                 }
                 
-                InstancingPair &pair = instancing_pairs[pair_index];
-
-                positions[pair_index * 100 + pair.count] = transform.position;
-                rotations[pair_index * 100 + pair.count] = transform.rotation;
-                colors[pair_index * 100 + pair.count] = material.color;
-                pair.count++;
+                InstancedRenderCommand &command = instanced_commands[command_index];
+                
+                positions[command_index * 100 + command.count] = transform.position;
+                rotations[command_index * 100 + command.count] = transform.rotation;
+                scalings[command_index * 100 + command.count] = transform.scale;
+                colors[command_index * 100 + command.count] = material.color;
+                command.count++;
             }
         }
     }
     
-    for(i32 pair_index = 0; pair_index < pair_count; pair_index++)
+    for(i32 command_index = 0; command_index < command_count; command_index++)
     {
-        InstancingPair pair = instancing_pairs[pair_index];
-        RenderMaterial material = renderer.materials[pair.material_handle];
+        InstancedRenderCommand command = instanced_commands[command_index];
+        RenderMaterial material = renderer.materials[command.material_handle];
         MeshInfo mesh_info = {};
-		mesh_info.transform.scale = math::Vec3(1, 1, 1);
-		Mesh &mesh = renderer.meshes[pair.mesh_handle];
-		mesh_info.instance_offset_buffer_handle = mesh.instance_offset_buffer_handle;
-		mesh_info.instance_rotation_buffer_handle = mesh.instance_rotation_buffer_handle;
-		mesh_info.instance_color_buffer_handle = mesh.instance_color_buffer_handle;
+        mesh_info.transform.scale = command.scale;
+        Mesh &mesh = renderer.meshes[command.mesh_handle];
+        mesh_info.instance_offset_buffer_handle = mesh.instance_offset_buffer_handle;
+        mesh_info.instance_rotation_buffer_handle = mesh.instance_rotation_buffer_handle;
+        mesh_info.instance_color_buffer_handle = mesh.instance_color_buffer_handle;
+        mesh_info.instance_scale_buffer_handle = mesh.instance_scale_buffer_handle;
         mesh_info.material = material;
-        mesh_info.mesh_handle = pair.mesh_handle;
-        push_mesh_instanced(renderer, mesh_info, &positions[pair_index * 100], &colors[pair_index * 100], &rotations[pair_index * 100], pair.count);
+        mesh_info.mesh_handle = command.mesh_handle;
+        mesh_info.receives_shadows = true;
+        mesh_info.cast_shadows = true;
+        push_mesh_instanced(renderer, mesh_info, &positions[command_index * 100], &colors[command_index * 100], &rotations[command_index * 100], &scalings[command_index * 100], command.count);
     }
 }
