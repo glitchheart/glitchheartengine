@@ -20,6 +20,8 @@ namespace scene
             scene.transform_components[index].position = math::Vec3(0, 0, 0);
             scene.transform_components[index].scale = math::Vec3(1, 1, 1);
             scene.transform_components[index].rotation = math::Vec3(0, 0, 0);
+            scene.render_components[index].use_color = false;
+            scene.render_components[index].color = COLOR_WHITE;
         }
         
         return(scene);

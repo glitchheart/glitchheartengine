@@ -1587,7 +1587,10 @@ static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer, ma
                 positions[command_index * 100 + command.count] = transform.position;
                 rotations[command_index * 100 + command.count] = transform.rotation;
                 scalings[command_index * 100 + command.count] = transform.scale;
-                colors[command_index * 100 + command.count] = material.color;
+                if(render.use_color)
+                    colors[command_index * 100 + command.count] = render.color;
+                else
+                    colors[command_index * 100 + command.count] = material.color;
                 command.count++;
             }
         }
