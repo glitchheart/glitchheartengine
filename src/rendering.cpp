@@ -248,6 +248,13 @@ static void disable_depth_test(Renderer& renderer)
     render_command->depth_test.on = false;
 }
 
+static void set_cursor(Renderer& renderer, CursorType type)
+{
+    RenderCommand* render_command = push_next_command(renderer, false);
+    render_command->type = RENDER_COMMAND_CURSOR;
+    render_command->cursor.type = type;
+}
+
 static void push_line(Renderer& renderer, math::Vec3 point1, math::Vec3 point2, r32 line_width, math::Rgba color, b32 is_ui = false)
 {
     RenderCommand* render_command = push_next_command(renderer, is_ui);

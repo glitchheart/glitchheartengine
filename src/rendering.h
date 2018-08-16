@@ -146,6 +146,7 @@ enum RenderCommandType
     RENDER_COMMAND_SHADER_END,
     RENDER_COMMAND_DEPTH_TEST,
     RENDER_COMMAND_PARTICLES,
+    RENDER_COMMAND_CURSOR,
     
     RENDER_COMMAND_COUNT
 };
@@ -679,6 +680,16 @@ enum CommandBlendMode
     CBM_ONE_MINUS_SRC_ALPHA
 };
 
+enum CursorType
+{
+    CURSOR_ARROW,
+    CURSOR_CROSSHAIR,
+    CURSOR_HAND,
+    CURSOR_HRESIZE,
+    CURSOR_IBEAM,
+    CURSOR_VRESIZE
+};
+
 struct RenderCommand
 {
     RenderCommandType type;
@@ -812,6 +823,10 @@ struct RenderCommand
         {
             b32 on;
         } depth_test;
+        struct
+        {
+            CursorType type;
+        } cursor;
         struct
         {
             i32 buffer_handle;
@@ -1108,12 +1123,12 @@ struct TextLengthInfo
 
 // Gets an array of text widths for each character
 // Remember to free
-static TextLengthInfo get_char_widths_scaled(Renderer& renderer, const char* text, TrueTypeFontInfo &font)
+static TextLengthInfo get_char_widths_scaled(Renderer& renderer, const char* text, TrueTypeFontInfo &font, MemoryArena* arena)
 {
     TextLengthInfo info = {};
     
     info.length = strlen(text);
-    info.widths = (r32*)calloc(info.length, sizeof(r32));
+    info.widths = push_array(arena, info.length, r32);//(r32*)calloc(info.length, sizeof(r32));
     
     r32 placeholder_y = 0.0f;
     
