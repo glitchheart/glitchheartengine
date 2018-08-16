@@ -852,6 +852,16 @@ static void setup_lines(RenderState& render_state, MemoryArena* arena)
     glBindVertexArray(0);
 }
 
+static void create_standard_cursors(RenderState& render_state)
+{
+    render_state.cursors[CURSOR_ARROW] = glfwCreateStandardCursor(GLFW_ARROW_CURSOR);
+    render_state.cursors[CURSOR_IBEAM] = glfwCreateStandardCursor(GLFW_IBEAM_CURSOR);
+    render_state.cursors[CURSOR_CROSSHAIR] = glfwCreateStandardCursor(GLFW_CROSSHAIR_CURSOR);
+    render_state.cursors[CURSOR_HAND] = glfwCreateStandardCursor(GLFW_HAND_CURSOR);
+    render_state.cursors[CURSOR_HRESIZE] = glfwCreateStandardCursor(GLFW_HRESIZE_CURSOR);
+    render_state.cursors[CURSOR_VRESIZE] = glfwCreateStandardCursor(GLFW_VRESIZE_CURSOR);
+}
+
 static void render_setup(RenderState *render_state, MemoryArena *perm_arena)
 {
     render_state->font_count = 0;
@@ -1255,6 +1265,8 @@ static void initialize_opengl(RenderState& render_state, Renderer& renderer, r32
     }
     
     render_state.paused = false;
+    
+    create_standard_cursors(render_state);
     
     renderer.ui_reference_resolution = {1920, 1080};
     
@@ -2730,6 +2742,11 @@ static void render_commands(RenderState &render_state, Renderer &renderer)
                 {
                     glDisable(GL_DEPTH_TEST);
                 }
+            }
+            break;
+            case RENDER_COMMAND_CURSOR:
+            {
+                glfwSetCursor(render_state.window, render_state.cursors[command.cursor.type]);
             }
             break;
             default:

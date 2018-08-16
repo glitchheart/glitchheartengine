@@ -283,6 +283,8 @@ struct RenderState
     GLFontBuffer gl_fonts[64];
     i32 font_count;
     
+    GLFWcursor* cursors[6];
+    
     RenderState() {}
     
     MemoryArena* perm_arena; // TODO: Make this into a framebuffer arena maybe?
