@@ -1113,7 +1113,7 @@ static TextLengthInfo get_char_widths_scaled(Renderer& renderer, const char* tex
     TextLengthInfo info = {};
     
     info.length = strlen(text);
-    info.widths = (r32*)malloc(sizeof(r32) * info.length);
+    info.widths = (r32*)calloc(info.length, sizeof(r32));
     
     r32 placeholder_y = 0.0f;
     
