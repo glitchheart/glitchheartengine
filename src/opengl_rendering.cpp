@@ -1102,7 +1102,7 @@ static const GLFWvidmode* create_open_gl_window(RenderState& render_state, Windo
         int frame_buffer_width, frame_buffer_height;
         
         glfwGetFramebufferSize(render_state.window, &frame_buffer_width, &frame_buffer_height);
-        glfwSetWindowPos(render_state.window, mode->width / 2 - frame_buffer_width / 2, mode->height / 2 - frame_buffer_height / 2);
+        glfwSetWindowPos(render_state.window, mode->width / 2 - screen_width / 2, mode->height / 2 - screen_height / 2);
     }
     
     return monitor ? mode : nullptr;
