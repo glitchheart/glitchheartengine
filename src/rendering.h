@@ -1099,5 +1099,40 @@ static math::Vec2 get_text_size(const char *text, TrueTypeFontInfo &font)
     return size;
 }
 
+struct TextLengthInfo
+{
+    size_t length;
+    
+    r32* widths;
+};
+
+// Gets an array of text widths for each character
+// Remember to free
+static TextLengthInfo get_char_widths_scaled(Renderer& renderer, const char* text, TrueTypeFontInfo &font)
+{
+    TextLengthInfo info = {};
+    
+    info.length = strlen(text);
+    info.widths = (r32*)malloc(sizeof(r32) * info.length);
+    
+    r32 placeholder_y = 0.0f;
+    
+    for(size_t i = 0; i < info.length; i++)
+    {
+        stbtt_aligned_quad quad;
+        stbtt_GetPackedQuad(font.char_data, font.atlas_width, font.atlas_height,
+                            text[i] - font.first_char, &info.widths[i], &placeholder_y, &quad, 1);
+        
+        
+        i32 kerning = stbtt_GetCodepointKernAdvance(&font.info, text[i] - font.first_char, text[i + 1] - font.first_char);
+        
+        info.widths[i] += (r32)kerning * font.scale;
+        
+        info.widths[i] = ((r32)info.widths[i] / (r32)renderer.window_width) * UI_COORD_DIMENSION;
+    }
+    
+    return info;
+}
+
 
 #endif
