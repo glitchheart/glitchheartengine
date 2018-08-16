@@ -357,6 +357,7 @@ static void set_invalid_keys()
         }
         input_controller.keys_up[key_code] = false;
     } 
+    input_controller.current_character = 0x0;
 }
 
 static void set_controller_invalid_keys()
