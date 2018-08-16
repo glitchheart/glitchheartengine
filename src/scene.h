@@ -13,11 +13,6 @@ namespace scene
         i32 handle;
     };
     
-    struct MaterialHandle
-    {
-        i32 handle;
-    };
-    
     struct TransformComponentHandle
     {
         i32 handle;
@@ -52,9 +47,7 @@ namespace scene
     {
         MeshHandle mesh_handle;
         MaterialHandle material_handle;
-        
-        b32 use_color;
-        math::Rgba color;
+        MaterialHandle original_material_handle;
         
         b32 cast_shadows;
         b32 receives_shadows;
@@ -71,6 +64,9 @@ namespace scene
         
         RenderComponent *render_components;
         i32 render_component_count;
+
+        RenderMaterial *material_instances;
+        i32 material_count;
         
         size_t byte_size;
     };

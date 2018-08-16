@@ -422,8 +422,12 @@ struct InstancedRenderCommand
 {
     i32 mesh_handle;
     i32 material_handle;
+    i32 original_material_handle;
     i32 count;
     math::Vec3 scale;
+
+    b32 receives_shadows;
+    b32 cast_shadows;
 };
 
 struct TextureInfo
@@ -536,8 +540,14 @@ struct ShaderInfo
     i32 shader_attribute_count;
 };
 
+struct MaterialHandle
+{
+    i32 handle;
+};
+
 struct RenderMaterial
 {
+    MaterialHandle source_handle;
     ShaderInfo shader;
     math::Rgba color;
     

@@ -2272,7 +2272,7 @@ namespace math
     
     inline r32 lerp(r32 a, r32 t, r32 b)
     {
-        r32 result = (1.0f - MIN(1.0f, t)) * a + t * b;
+        r32 result = (1.0f - t) * a + t * b;
         return result;
     }
     

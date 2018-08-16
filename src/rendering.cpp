@@ -1534,6 +1534,7 @@ static void load_assets(char *model_path, char *texture_path, char *material_pat
             sscanf(line, "%d tex %d col %f %f %f %f", &index, &material.diffuse_texture, &material.color.r, 
                    &material.color.g, &material.color.b, &material.color.a);
             material.diffuse_texture++;
+            material.source_handle = { renderer.material_count };
             renderer.materials[renderer.material_count++] = material;
         }
         fclose(file);
@@ -1561,13 +1562,13 @@ static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer, ma
                 scene::TransformComponent &transform = scene.transform_components[ent.transform_handle.handle];
                 scene::RenderComponent &render = scene.render_components[ent.render_handle.handle];
                 
-                RenderMaterial material = renderer.materials[render.material_handle.handle];
+                RenderMaterial material = scene.material_instances[render.material_handle.handle];
                 
                 // Instancing stuff
                 i32 command_index = -1;
                 for(i32 i = 0; i < command_count; i++)
                 {
-                    if(instanced_commands[i].mesh_handle == render.mesh_handle.handle && instanced_commands[i].material_handle == render.material_handle.handle)
+                    if(instanced_commands[i].mesh_handle == render.mesh_handle.handle && instanced_commands[i].original_material_handle == material.source_handle.handle)
                     {
                         command_index = i;
                         break;
@@ -1579,7 +1580,10 @@ static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer, ma
                     command_index = command_count++;
                     instanced_commands[command_index].mesh_handle = render.mesh_handle.handle;
                     instanced_commands[command_index].material_handle = render.material_handle.handle;
+                    instanced_commands[command_index].original_material_handle = material.source_handle.handle;
                     instanced_commands[command_index].scale = math::Vec3(1, 1, 1);
+                    instanced_commands[command_index].receives_shadows = render.receives_shadows;
+                    instanced_commands[command_index].cast_shadows = render.cast_shadows;
                 }
                 
                 InstancedRenderCommand &command = instanced_commands[command_index];
@@ -1587,10 +1591,7 @@ static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer, ma
                 positions[command_index * 100 + command.count] = transform.position;
                 rotations[command_index * 100 + command.count] = transform.rotation;
                 scalings[command_index * 100 + command.count] = transform.scale;
-                if(render.use_color)
-                    colors[command_index * 100 + command.count] = render.color;
-                else
-                    colors[command_index * 100 + command.count] = material.color;
+                colors[command_index * 100 + command.count] = material.color;
                 command.count++;
             }
         }
@@ -1599,7 +1600,7 @@ static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer, ma
     for(i32 command_index = 0; command_index < command_count; command_index++)
     {
         InstancedRenderCommand command = instanced_commands[command_index];
-        RenderMaterial material = renderer.materials[command.material_handle];
+        RenderMaterial material = scene.material_instances[command.material_handle];
         MeshInfo mesh_info = {};
         mesh_info.transform.scale = command.scale;
         Mesh &mesh = renderer.meshes[command.mesh_handle];
@@ -1609,8 +1610,8 @@ static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer, ma
         mesh_info.instance_scale_buffer_handle = mesh.instance_scale_buffer_handle;
         mesh_info.material = material;
         mesh_info.mesh_handle = command.mesh_handle;
-        mesh_info.receives_shadows = true;
-        mesh_info.cast_shadows = true;
+        mesh_info.receives_shadows = command.receives_shadows;
+        mesh_info.cast_shadows = command.cast_shadows;
         push_mesh_instanced(renderer, mesh_info, &positions[command_index * 100], &colors[command_index * 100], &rotations[command_index * 100], &scalings[command_index * 100], command.count);
     }
 }
