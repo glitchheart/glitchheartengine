@@ -1102,7 +1102,7 @@ static const GLFWvidmode* create_open_gl_window(RenderState& render_state, Windo
         int frame_buffer_width, frame_buffer_height;
         
         glfwGetFramebufferSize(render_state.window, &frame_buffer_width, &frame_buffer_height);
-        glfwSetWindowPos(render_state.window, mode->width / 2 - frame_buffer_width / 2, mode->height / 2 - frame_buffer_height / 2);
+        glfwSetWindowPos(render_state.window, mode->width / 2 - screen_width / 2, mode->height / 2 - screen_height / 2);
     }
     
     return monitor ? mode : nullptr;
@@ -2061,32 +2061,6 @@ static void prepare_shader(const Shader shader, ShaderAttribute *attributes, i32
     }
 }
 
-static void render_mesh(const RenderCommand &render_command, RenderState &render_state)
-{
-    if(!render_state.buffers)
-    {
-        render_state.buffers = push_array(render_state.perm_arena, global_max_custom_buffers, Buffer);
-    }
-    
-    Buffer buffer = render_state.buffers[render_command.mesh.buffer_handle];
-    glBindVertexArray(buffer.vao);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer.ibo);
-    glBindBuffer(GL_ARRAY_BUFFER, buffer.vbo);
-    
-    // @Incomplete: We want this to be without anything but the vertex positions.
-    // The depth shader shouldn't assume a buffer with anything else in it, so we
-    // have to find a way to do this efficiently.
-    if(buffer.index_buffer_count == 0)
-    {
-        glDrawArrays(
-            GL_TRIANGLES, 0, buffer.vertex_buffer_size / 3);
-    }
-    else
-    {
-        glDrawElements(GL_TRIANGLES, buffer.index_buffer_count, GL_UNSIGNED_SHORT, (void*)0);
-    }
-}
-
 static void render_mesh(const RenderCommand &render_command, Renderer &renderer, RenderState &render_state, math::Mat4 projection_matrix, math::Mat4 view_matrix, b32 for_shadow_map, ShadowMapMatrices *shadow_map_matrices = 0)
 {
     Buffer buffer = render_state.buffers[render_command.mesh.buffer_handle];
@@ -2210,6 +2184,7 @@ static void render_mesh_instanced(const RenderCommand &render_command, Renderer 
     Buffer offset_instance_buffer = render_state.buffers[render_command.mesh_instanced.instance_offset_buffer_handle];
     Buffer color_instance_buffer = render_state.buffers[render_command.mesh_instanced.instance_color_buffer_handle];
     Buffer rotation_instance_buffer = render_state.buffers[render_command.mesh_instanced.instance_rotation_buffer_handle];
+    Buffer scale_instance_buffer = render_state.buffers[render_command.mesh_instanced.instance_scale_buffer_handle];
     
     glBindVertexArray(buffer.vao);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer.ibo);
@@ -2235,6 +2210,7 @@ static void render_mesh_instanced(const RenderCommand &render_command, Renderer 
     glEnableVertexAttribArray(2);
     vertex_attrib_pointer(2, 2, GL_FLOAT, (8 * sizeof(GLfloat)), (void*)(6 * sizeof(GLfloat)));
     
+    // offset
     glEnableVertexAttribArray(3);
     glBindBuffer(GL_ARRAY_BUFFER, offset_instance_buffer.vbo);
     glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizeiptr)(sizeof(math::Vec3) * render_command.mesh_instanced.offset_count), render_command.mesh_instanced.offsets);
@@ -2242,6 +2218,7 @@ static void render_mesh_instanced(const RenderCommand &render_command, Renderer 
     glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
     glVertexAttribDivisor(3, 1);
     
+    // color
     glEnableVertexAttribArray(4);
     glBindBuffer(GL_ARRAY_BUFFER, color_instance_buffer.vbo);
     glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizeiptr)(sizeof(math::Rgba) * render_command.mesh_instanced.offset_count), render_command.mesh_instanced.colors);
@@ -2249,12 +2226,21 @@ static void render_mesh_instanced(const RenderCommand &render_command, Renderer 
     glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, 0, (void*)0);
     glVertexAttribDivisor(4, 1);
     
+    // rotation
     glEnableVertexAttribArray(5);
     glBindBuffer(GL_ARRAY_BUFFER, rotation_instance_buffer.vbo);
     glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizeiptr)(sizeof(math::Vec3) * render_command.mesh_instanced.offset_count), render_command.mesh_instanced.rotations);
     
     glVertexAttribPointer(5, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
     glVertexAttribDivisor(5, 1);
+    
+    // scale
+    glEnableVertexAttribArray(6);
+    glBindBuffer(GL_ARRAY_BUFFER, scale_instance_buffer.vbo);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizeiptr)(sizeof(math::Vec3) * render_command.mesh_instanced.offset_count), render_command.mesh_instanced.scalings);
+    
+    glVertexAttribPointer(6, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+    glVertexAttribDivisor(6, 1);
     
     math::Mat4 model_matrix(1.0f);
     model_matrix = math::scale(model_matrix, render_command.scale);
