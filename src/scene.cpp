@@ -38,6 +38,8 @@ namespace scene
             free(scene.entities);
             free(scene.transform_components);
             free(scene.render_components);
+            free(scene.active_entities);
+            free(scene.material_instances);
         }
     }
     
@@ -92,14 +94,14 @@ namespace scene
         RenderComponent* comp = &scene.render_components[entity.render_handle.handle];
         return(comp);
     }
-
+    
     // TODO RenderMaterial should know it's original handle...
     static MaterialHandle create_material(MaterialHandle material_to_copy, Scene &scene, Renderer &renderer)
     {
         scene.material_instances[scene.material_count] = renderer.materials[material_to_copy.handle];
         return { scene.material_count++ };
     }
-
+    
     static RenderMaterial & get_material(EntityHandle handle, Scene &scene)
     {
         Entity &entity = scene.entities[handle.handle];
