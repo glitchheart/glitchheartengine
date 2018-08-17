@@ -3,8 +3,12 @@
 
 #define MAX_BONES 50
 #define MAX_CHILDREN 30
+#define MAX_INSTANCING_PAIRS 128
 
 #define UI_COORD_DIMENSION 1000
+
+#define PRIMITIVE_CUBE 0
+#define PRIMITIVE_PLANE 1
 
 struct FontData
 {
@@ -407,6 +411,23 @@ struct Mesh
     
     Face* faces;
     i32 face_count;
+    
+    i32 instance_offset_buffer_handle;
+    i32 instance_color_buffer_handle;
+    i32 instance_rotation_buffer_handle;
+    i32 instance_scale_buffer_handle;
+};
+
+struct InstancedRenderCommand
+{
+    i32 mesh_handle;
+    i32 material_handle;
+    i32 original_material_handle;
+    i32 count;
+    math::Vec3 scale;
+
+    b32 receives_shadows;
+    b32 cast_shadows;
 };
 
 struct TextureInfo
@@ -519,47 +540,20 @@ struct ShaderInfo
     i32 shader_attribute_count;
 };
 
+struct MaterialHandle
+{
+    i32 handle;
+};
+
 struct RenderMaterial
 {
+    MaterialHandle source_handle;
     ShaderInfo shader;
     math::Rgba color;
     
     RenderMaterialType type;
     
-    union
-    {
-        i32 diffuse_texture;
-    };
-};
-
-struct Model
-{
-    ModelType type;
-    
-    i32 buffer_handle;
-    
-    math::Vec3 position;
-    math::Vec3 scale;
-    math::Quat orientation;
-    
-    math::Rgba color;
-    
-    RenderMaterial materials[10];
-    i32 material_count;
-    
-    MeshData *meshes;
-    i32 mesh_count;
-    
-    Bone* bones;
-    i32 bone_count;
-    
-    SkeletalAnimationState animation_state;
-    i32 running_animation_index;
-    math::Mat4* current_poses;
-    SkeletalAnimation* animations;
-    i32 animation_count;
-    
-    math::Mat4 global_inverse_transform;
+    i32 diffuse_texture;
 };
 
 enum WireframeType
@@ -575,6 +569,7 @@ struct MeshInfo
     i32 instance_offset_buffer_handle;
     i32 instance_color_buffer_handle;
     i32 instance_rotation_buffer_handle;
+    i32 instance_scale_buffer_handle;
     
     TransformInfo transform;
     RenderMaterial material;
@@ -748,6 +743,7 @@ struct RenderCommand
             i32 instance_offset_buffer_handle;
             i32 instance_color_buffer_handle;
             i32 instance_rotation_buffer_handle;
+            i32 instance_scale_buffer_handle;
             
             RenderMaterialType material_type;
             i32 diffuse_texture;
@@ -756,6 +752,7 @@ struct RenderCommand
             math::Vec3 *offsets;
             math::Rgba *colors;
             math::Vec3 *rotations;
+            math::Vec3 *scalings;
             i32 offset_count;
         } mesh_instanced;
         struct
@@ -913,6 +910,9 @@ struct Renderer
     i32 *updated_buffer_handles;
     i32 updated_buffer_handle_count;
     
+    RenderMaterial *materials;
+    i32 material_count;
+    
     Mesh *meshes;
     i32 mesh_count;
     
@@ -983,6 +983,8 @@ struct Renderer
     MemoryArena particle_arena;
     MemoryArena buffer_arena;
     MemoryArena shader_arena;
+    
+    MemoryArena temp_arena;
 };
 
 math::Vec3 to_ui(Resolution resolution, math::Vec2i coord)
