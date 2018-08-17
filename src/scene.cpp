@@ -61,7 +61,7 @@ namespace scene
             scene::RenderComponent &comp = scene.render_components[entity.render_handle.handle];
             comp.material_handle = { entity.render_handle.handle };
             comp.receives_shadows = true;
-            comp.cast_shadows = false;
+            comp.cast_shadows = true;
         }
         
         return(handle);
