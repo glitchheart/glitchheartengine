@@ -39,6 +39,7 @@ namespace scene
             scene.entity_count = 0;
             scene.transform_component_count = 0;
             scene.render_component_count = 0;
+            scene.current_internal_handle = 0;
             
             free(scene.entities);
             free(scene._internal_handles);
@@ -46,15 +47,6 @@ namespace scene
             free(scene.transform_components);
             free(scene.render_components);
             free(scene.material_instances);
-            
-            for(i32 index = 0; index < scene.max_entity_count; index++)
-            {
-                scene._internal_handles[index] = -1;
-                scene.active_entities[index] = true;
-                scene.transform_components[index].position = math::Vec3(0, 0, 0);
-                scene.transform_components[index].scale = math::Vec3(1, 1, 1);
-                scene.transform_components[index].rotation = math::Vec3(0, 0, 0);
-            }
         }
     }
     
@@ -108,6 +100,7 @@ namespace scene
             entity.render_handle = { scene.render_component_count++ };
             scene::RenderComponent &comp = scene.render_components[entity.render_handle.handle];
             comp.material_handle = { entity.render_handle.handle };
+			comp.mesh_handle = { -1 };
             comp.receives_shadows = true;
             comp.cast_shadows = true;
         }
@@ -211,7 +204,14 @@ namespace scene
     
     static void set_active(EntityHandle handle, b32 active, Scene &scene)
     {
-        scene.active_entities[handle.handle - 1] = active;
+        if(handle.handle > 0)
+        {
+            i32 internal_handle = scene._internal_handles[handle.handle - 1];
+            if(internal_handle > -1)
+            {
+                scene.active_entities[internal_handle] = active;
+            }
+        }
     }
     
     // Returns a direct pointer to the TransformComponent of the specified entity
