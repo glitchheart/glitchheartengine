@@ -1672,31 +1672,12 @@ static void render_quad(RenderMode mode, RenderState& render_state, math::Vec4 c
             
             if(rounded)
             {
-                
-                static r32 radius = 0.08f;
-                
-                if(get_key(Key_F4, &input_controller))
-                {
-                    radius -= 0.001;
-                }
-                else if(get_key(Key_F5, &input_controller))
-                {
-                    radius += 0.001;
-                }
-                
-                if(radius >= 1.0f)
-                {
-                    radius = 1.0f;
-                }
-                if(radius < 0.0f)
-                {
-                    radius = 0.0f;
-                }
+                r32 radius = 0.08f;
                 
                 glBindTexture(GL_TEXTURE_2D, 0);
                 set_vec2_uniform(shader.program, "dimension", math::Vec2((r32)render_state.window_width, (r32)render_state.window_height));
                 set_vec2_uniform(shader.program, "size", math::Vec2(scale.x, scale.y));
-                set_vec2_uniform(shader.program, "position", math::Vec2(position.x, position.y));
+                set_vec3_uniform(shader.program, "position", position);
                 set_float_uniform(shader.program, "radius", radius);
                 set_float_uniform(shader.program, "border", 0.98f);
             }
@@ -1800,7 +1781,7 @@ static void render_quad(RenderMode mode, RenderState& render_state, math::Vec4 c
 
 //rendering methods
 static void render_text(RenderState &render_state, GLFontBuffer &font, TrueTypeFontInfo& font_info, const math::Vec4& color, const char* text, r32 x, r32 y, math::Mat4 view_matrix, math::Mat4 projection_matrix, r32 scale = 1.0f,
-                        u64 alignment_flags = ALIGNMENT_LEFT, b32 align_center_y = true)
+                        u64 alignment_flags = ALIGNMENT_LEFT, b32 align_center_y = true, i32 z = 0)
 {
     glBindVertexArray(font.vao);
     auto shader = render_state.shaders[SHADER_STANDARD_FONT];
@@ -1809,6 +1790,7 @@ static void render_text(RenderState &render_state, GLFontBuffer &font, TrueTypeF
     set_vec4_uniform(shader.program, "color", color);
     set_vec4_uniform(shader.program, "alphaColor", math::Rgba(1, 1, 1, 1));
     set_mat4_uniform(shader.program, "projectionMatrix", projection_matrix);
+    set_float_uniform(shader.program, "z", (r32)z);
     
     if(render_state.bound_texture != font.texture)
     {
@@ -1906,7 +1888,7 @@ static void render_text(const RenderCommand& command, RenderState& render_state,
         
     }
     
-    render_text(render_state, font, renderer.tt_font_infos[command.text.font_handle], command.text.color, command.text.text, command.text.position.x, command.text.position.y, view_matrix, projection_matrix, command.text.scale, command.text.alignment_flags);
+    render_text(render_state, font, renderer.tt_font_infos[command.text.font_handle], command.text.color, command.text.text, command.text.position.x, command.text.position.y, view_matrix, projection_matrix, command.text.scale, command.text.alignment_flags, true, command.text.z_layer);
 }
 
 static void render_quad(const RenderCommand& command, RenderState& render_state, math::Mat4 projection, math::Mat4 view)
@@ -2743,7 +2725,7 @@ static void render_commands(RenderState &render_state, Renderer &renderer)
     renderer.command_count = 0;
     clear(&renderer.commands);
     
-    glDisable(GL_DEPTH_TEST);
+    //glDisable(GL_DEPTH_TEST);
     
     for (i32 index = 0; index < renderer.ui_command_count; index++)
     {
@@ -2753,7 +2735,7 @@ static void render_commands(RenderState &render_state, Renderer &renderer)
         {
             case RENDER_COMMAND_LINE:
             {
-                render_line(command, render_state, camera.projection_matrix, camera.view_matrix);
+                render_line(command, render_state, renderer.ui_projection_matrix, camera.view_matrix);
             }
             break;
             case RENDER_COMMAND_TEXT:
@@ -2893,7 +2875,7 @@ static void render(RenderState& render_state, Renderer& renderer, r64 delta_time
     camera.viewport_width = render_state.framebuffer_width;
     camera.viewport_height = render_state.framebuffer_height;
     
-    renderer.ui_projection_matrix = math::ortho(0.0f, (r32)renderer.window_width, 0.0f, (r32)renderer.window_height, -1.0f, 1.0f);
+    renderer.ui_projection_matrix = math::ortho(0.0f, (r32)renderer.window_width, 0.0f, (r32)renderer.window_height, -500.0f, 500.0f);
     
     register_buffers(render_state, renderer);
     

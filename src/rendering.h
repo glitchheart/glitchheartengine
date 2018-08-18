@@ -471,7 +471,7 @@ struct InstancedRenderCommand
     i32 original_material_handle;
     i32 count;
     math::Vec3 scale;
-
+    
     b32 receives_shadows;
     b32 cast_shadows;
 };
@@ -722,6 +722,7 @@ struct RenderCommand
             math::Rgba color; // @Cleanup: REMOVE!
             u64 alignment_flags;
             r32 scale;
+            i32 z_layer;
         } text;
         struct
         {
