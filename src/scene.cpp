@@ -47,7 +47,7 @@ namespace scene
             free(scene.render_components);
             free(scene.material_instances);
             
-            for(i32 index = 0; index < initial_entity_array_size; index++)
+            for(i32 index = 0; index < scene.max_entity_count; index++)
             {
                 scene._internal_handles[index] = -1;
                 scene.active_entities[index] = true;
@@ -215,46 +215,40 @@ namespace scene
     }
     
     // Returns a direct pointer to the TransformComponent of the specified entity
-    static TransformComponent* get_transform_comp(EntityHandle handle, Scene &scene)
+    static TransformComponent& get_transform_comp(EntityHandle handle, Scene &scene)
     {
         i32 internal_handle = scene._internal_handles[handle.handle - 1];
-        
-        if(internal_handle == -1)
-            return nullptr;
+        assert(internal_handle > -1);
         
         Entity entity = scene.entities[internal_handle];
         
         assert(entity.comp_flags & COMP_TRANSFORM);
         
-        TransformComponent* comp = &scene.transform_components[entity.transform_handle.handle];
+        TransformComponent& comp = scene.transform_components[entity.transform_handle.handle];
         return(comp);
     }
     
     // @Note(Daniel): Should we really return a pointer here? A reference might suffice, since we don't ever use the null-value for anything....
     // Returns a direct pointer to the RenderComponent of the specified entity
-    static RenderComponent* get_render_comp(EntityHandle handle, Scene &scene)
+    static RenderComponent& get_render_comp(EntityHandle handle, Scene &scene)
     {
         i32 internal_handle = scene._internal_handles[handle.handle - 1];
-        
-        if(internal_handle == -1)
-            return nullptr;
-        
+        assert(internal_handle != -1);
         Entity entity = scene.entities[internal_handle];
         
         assert(entity.comp_flags & COMP_RENDER);
         
-        RenderComponent* comp = &scene.render_components[entity.render_handle.handle];
+        RenderComponent& comp = scene.render_components[entity.render_handle.handle];
         return(comp);
     }
     
-    // TODO RenderMaterial should know it's original handle...
     static MaterialHandle create_material(MaterialHandle material_to_copy, Scene &scene, Renderer &renderer)
     {
         scene.material_instances[scene.material_count] = renderer.materials[material_to_copy.handle];
         return { scene.material_count++ };
     }
     
-    static RenderMaterial & get_material(EntityHandle handle, Scene &scene)
+    static RenderMaterial& get_material(EntityHandle handle, Scene &scene)
     {
         i32 internal_handle = scene._internal_handles[handle.handle - 1];
         assert(internal_handle != -1);
