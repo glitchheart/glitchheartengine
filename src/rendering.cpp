@@ -1588,11 +1588,13 @@ static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer, ma
                 
                 InstancedRenderCommand &command = instanced_commands[command_index];
                 
-                positions[command_index * 100 + command.count] = transform.position;
-                rotations[command_index * 100 + command.count] = transform.rotation;
-                scalings[command_index * 100 + command.count] = transform.scale;
-                colors[command_index * 100 + command.count] = material.color;
+                positions[command_index * 1024 + command.count] = transform.position;
+                rotations[command_index * 1024 + command.count] = transform.rotation * DEGREE_IN_RADIANS;
+                scalings[command_index * 1024 + command.count] = transform.scale;
+                colors[command_index * 1024 + command.count] = material.color;
                 command.count++;
+                
+                assert(command_index < MAX_INSTANCING_PAIRS);
             }
         }
     }
@@ -1612,6 +1614,6 @@ static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer, ma
         mesh_info.mesh_handle = command.mesh_handle;
         mesh_info.receives_shadows = command.receives_shadows;
         mesh_info.cast_shadows = command.cast_shadows;
-        push_mesh_instanced(renderer, mesh_info, &positions[command_index * 100], &colors[command_index * 100], &rotations[command_index * 100], &scalings[command_index * 100], command.count);
+        push_mesh_instanced(renderer, mesh_info, &positions[command_index * 1024], &colors[command_index * 1024], &rotations[command_index * 1024], &scalings[command_index * 1024], command.count);
     }
 }
