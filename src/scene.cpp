@@ -12,6 +12,7 @@ namespace scene
         scene.current_internal_handle = 0;
         scene.transform_component_count = 0;
         scene.render_component_count = 0;
+		scene.material_count = 0;
         scene.entities = (Entity*)malloc(sizeof(EntityHandle) * initial_entity_array_size);
         scene._internal_handles = (i32*)malloc(sizeof(i32) * initial_entity_array_size);
         scene.active_entities = (b32*)malloc(sizeof(b32) * initial_entity_array_size);
@@ -39,7 +40,8 @@ namespace scene
             scene.entity_count = 0;
             scene.transform_component_count = 0;
             scene.render_component_count = 0;
-            scene.current_internal_handle = 0;
+			scene.material_count = 0;
+			scene.current_internal_handle = 0;
             
             free(scene.entities);
             free(scene._internal_handles);
