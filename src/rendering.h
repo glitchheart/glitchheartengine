@@ -5,7 +5,7 @@
 #define MAX_CHILDREN 30
 #define MAX_INSTANCING_PAIRS 128
 
-#define UI_COORD_DIMENSION 1000
+#define UI_COORD_DIMENSION 1000.0f
 
 
 #define STB_TRUETYPE_IMPLEMENTATION
@@ -192,9 +192,9 @@ struct VertexInfo
 
 struct RelativeUIQuadInfo
 {
-    math::Vec2i position;
+    math::Vec2 position;
     math::Vec2 scale;
-    math::Vec2i ui_position;
+    math::Vec2 ui_position;
 };
 
 r32 plane_vertices[] =
@@ -1057,7 +1057,7 @@ struct Renderer
     MemoryArena temp_arena;
 };
 
-math::Vec3 to_ui(Renderer& renderer, math::Vec2i coord)
+math::Vec3 to_ui(Renderer& renderer, math::Vec2 coord)
 {
     r32 aspect = (r32)renderer.window_width / (r32)renderer.window_height;
     UNUSED(aspect);
@@ -1068,13 +1068,13 @@ math::Vec3 to_ui(Renderer& renderer, math::Vec2i coord)
     return res;
 }
 
-math::Vec2i from_ui(Renderer& renderer, math::Vec3 coord)
+math::Vec2 from_ui(Renderer& renderer, math::Vec3 coord)
 {
     r32 aspect = (r32)renderer.window_width / (r32)renderer.window_height;
     UNUSED(aspect);
-    math::Vec2i res;
-    res.x = (i32)(((r32)coord.x / (r32)UI_COORD_DIMENSION) * renderer.window_width);
-    res.y = (i32)(((r32)coord.y / (r32)UI_COORD_DIMENSION) * renderer.window_height);
+    math::Vec2 res;
+    res.x = (((r32)coord.x / (r32)UI_COORD_DIMENSION) * renderer.window_width);
+    res.y = (((r32)coord.y / (r32)UI_COORD_DIMENSION) * renderer.window_height);
     return res;
 }
 
@@ -1085,11 +1085,11 @@ r32 from_ui(Renderer& renderer, i32 scale, r32 coord)
     return ((r32)coord / (r32)UI_COORD_DIMENSION) * (r32)scale;
 }
 
-i32 to_ui(Renderer& renderer, i32 scale, r32 coord)
+r32 to_ui(Renderer& renderer, i32 scale, r32 coord)
 {
     r32 aspect = (r32)renderer.window_width / (r32)renderer.window_height;
     UNUSED(aspect);
-    return (i32)((coord / scale) * (r32)UI_COORD_DIMENSION);
+    return (coord / scale) * (r32)UI_COORD_DIMENSION;
 }
 
 
@@ -1114,6 +1114,18 @@ static math::Vec2 get_text_size(const char *text, TrueTypeFontInfo &font)
     }
     
     return size;
+}
+
+static math::Vec2 get_text_size_scaled(Renderer& renderer, const char* text, TrueTypeFontInfo& font)
+{
+    math::Vec2 font_size = get_text_size(text, font);
+    math::Vec2 result;
+    
+    r32 ratio = font_size.y / font_size.x;
+    result.x = (font_size.x / (r32)renderer.window_width) * UI_COORD_DIMENSION;
+    result.y = font_size.x * ratio;
+    
+    return result;
 }
 
 struct TextLengthInfo
