@@ -19,6 +19,17 @@ struct MemoryArena;
 
 #include "map.h"
 
+
+#include "rendering.h"
+#include "sound.h"
+#include "keycontroller.h"
+
+#define RGB_FLOAT(integer) 1.0f / 255.0f * integer
+#define RGB_VEC4(r, g, b) math::Rgba(RGB_FLOAT(r), RGB_FLOAT(g), RGB_FLOAT(b), 1.0f)
+#define HEX_TO_RGB(hex) math::Rgba(((hex >> 16) & 0xFF) / 255.0f, ((hex >> 8) & 0xFF) / 255.0f, ((hex) & 0xFF) / 255.0f, 1.0f)
+
+#define INVERT_RGB(rgb) RGB_VEC4(255 - rgb.r, 255 - rgb.g, 255 - rgb.b)
+
 inline char* str_sep(char** s, const char* delim)
 {
     char* start = *s;
