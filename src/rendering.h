@@ -655,6 +655,8 @@ struct QuadInfo
     b32 rounded;
     b32 flipped;
     i32 animation_controller_handle;
+    b32 clip;
+    math::Rect clip_rect;
 };
 
 struct TextInfo
@@ -704,6 +706,9 @@ struct RenderCommand
     
     b32 cast_shadows;
     b32 receives_shadows;
+    
+    b32 clip;
+    math::Rect clip_rect;
     
     union
     {
