@@ -592,7 +592,7 @@ static RelativeUIQuadInfo push_filled_ui_quad_relative_not_centered(Renderer& re
     scaled_clip_rect.width = (clip_rect.width / UI_COORD_DIMENSION) * (r32)renderer.window_width;
     scaled_clip_rect.height = scaled_clip_rect.width * clip_ratio;
     
-    push_filled_quad_not_centered(renderer, math::Vec3(info.position.x, info.position.y, z_layer), flipped, math::Vec3(info.scale.x, info.scale.y, 0.0f), rotation, color, texture_handle, true, border_width, border_color, rounded, clip, clip_rect, animation_controller_handle, shader_handle, shader_attributes, shader_attribute_count, texture_offset, frame_size);
+    push_filled_quad_not_centered(renderer, math::Vec3(info.position.x, info.position.y, z_layer), flipped, math::Vec3(info.scale.x, info.scale.y, 0.0f), rotation, color, texture_handle, true, border_width, border_color, rounded, clip, scaled_clip_rect, animation_controller_handle, shader_handle, shader_attributes, shader_attribute_count, texture_offset, frame_size);
     
     return info;
 }
