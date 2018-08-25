@@ -307,6 +307,8 @@ struct InputController
     
     r64 mouse_x;
     r64 mouse_y;
+    r64 mouse_x_delta;
+    r64 mouse_y_delta;
     r64 scroll_x;
     r64 scroll_y;
     
