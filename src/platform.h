@@ -117,8 +117,8 @@ struct ConfigData
 #define MAX_FILE_NAMES 128
 struct DirectoryData
 {
-    char file_paths[256][MAX_FILE_PATHS];
-    char file_names[256][MAX_FILE_NAMES];
+    char **file_paths;
+    char **file_names;
     i32 files_length = 0;
 };
 
