@@ -196,8 +196,7 @@ static RenderCommand* push_next_command(Renderer& renderer, b32 is_ui)
     if(is_ui)
     {
         assert(renderer.ui_command_count + 1 < global_max_ui_commands);
-        renderer.ui_command_count++;
-        RenderCommand* command = push_struct(&renderer.ui_commands, RenderCommand);
+        RenderCommand* command = &renderer.ui_commands[renderer.ui_command_count++];
         command->shader_handle = -1;
         return command;
     }
@@ -205,7 +204,7 @@ static RenderCommand* push_next_command(Renderer& renderer, b32 is_ui)
     {
         assert(renderer.command_count + 1 < global_max_render_commands);
         renderer.command_count++;
-        RenderCommand* command = push_struct(&renderer.commands, RenderCommand);
+        RenderCommand* command = &renderer.commands[renderer.command_count++];
         command->shader_handle = -1;
         return command;
     }

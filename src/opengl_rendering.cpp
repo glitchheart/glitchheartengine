@@ -1192,7 +1192,7 @@ static void initialize_opengl(RenderState& render_state, Renderer& renderer, r32
     
     gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
     
-    glfwSwapInterval(1);
+    glfwSwapInterval(0);
     
     glfwGetFramebufferSize(render_state.window, &render_state.framebuffer_width, &render_state.framebuffer_height);
     glViewport(0, 0, render_state.framebuffer_width, render_state.framebuffer_height);
@@ -2493,7 +2493,7 @@ static void render_shadows(RenderState &render_state, Renderer &renderer, Frameb
     
     for (i32 index = 0; index < renderer.command_count; index++)
     {
-        const RenderCommand& command = *((RenderCommand*)renderer.commands.current_block->base + index);
+        const RenderCommand& command = renderer.commands[index];
         
         switch (command.type)
         {
@@ -2661,7 +2661,7 @@ static void render_commands(RenderState &render_state, Renderer &renderer)
     
     for (i32 index = 0; index < renderer.command_count; index++)
     {
-        const RenderCommand& command = *((RenderCommand*)renderer.commands.current_block->base + index);
+        const RenderCommand& command = renderer.commands[index];
         
         switch (command.type)
         {
@@ -2725,13 +2725,13 @@ static void render_commands(RenderState &render_state, Renderer &renderer)
     }
     
     renderer.command_count = 0;
-    clear(&renderer.commands);
+    //clear(&renderer.commands);
     
     glDisable(GL_DEPTH_TEST);
     
     for (i32 index = 0; index < renderer.ui_command_count; index++)
     {
-        const RenderCommand& command = *((RenderCommand*)renderer.ui_commands.current_block->base + index);
+        const RenderCommand& command = renderer.ui_commands[index];
         
         switch (command.type)
         {
@@ -2771,7 +2771,7 @@ static void render_commands(RenderState &render_state, Renderer &renderer)
     }
     
     renderer.ui_command_count = 0;
-    clear(&renderer.ui_commands);
+    //clear(&renderer.ui_commands);
 }
 
 static void swap_buffers(RenderState &render_state)
@@ -2783,11 +2783,11 @@ static void render(RenderState& render_state, Renderer& renderer, r64 delta_time
 {   
     if(render_state.paused)
     {
-        clear(&renderer.commands);
+        //clear(&renderer.commands);
         renderer.command_count = 0;
-        clear(&renderer.ui_commands);
+        //clear(&renderer.ui_commands);
         renderer.ui_command_count = 0;
-        clear(&renderer.light_commands);
+        //clear(&renderer.light_commands);
         renderer.light_command_count = 0;
         return;
     }
@@ -2921,16 +2921,10 @@ static void render(RenderState& render_state, Renderer& renderer, r64 delta_time
         {
             render_state.total_delta = delta_time;
         }
-        //}
-        //else
-        //{
-        clear(&renderer.light_commands);
+        
         renderer.light_command_count = 0;
-        clear(&renderer.commands);
         renderer.command_count = 0;
-        clear(&renderer.ui_commands);
         renderer.ui_command_count = 0;
-        //}
         
         render_state.frame_delta -= delta_time;
         render_state.total_delta += delta_time;

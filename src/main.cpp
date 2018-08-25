@@ -259,8 +259,8 @@ static void init_renderer(Renderer &renderer)
     renderer.particle_systems = push_array(&renderer. particle_arena, global_max_particle_systems, ParticleSystemInfo);
     renderer.animation_controllers = push_array(&renderer.animation_arena, 64, AnimationController);
     renderer.spritesheet_animations = push_array(&renderer.animation_arena, global_max_spritesheet_animations, SpritesheetAnimation);
-    renderer.commands.minimum_block_size = sizeof(RenderCommand) * global_max_render_commands;
-    renderer.ui_commands.minimum_block_size = sizeof(RenderCommand) * global_max_ui_commands;
+    renderer.commands = push_array(&renderer.command_arena, global_max_render_commands, RenderCommand);
+    renderer.ui_commands = push_array(&renderer.command_arena, global_max_ui_commands, RenderCommand);
     renderer.light_commands.minimum_block_size = sizeof(RenderCommand) * global_max_light_commands;
     renderer.buffers = push_array(&renderer.buffer_arena, global_max_custom_buffers, BufferData);
     renderer.updated_buffer_handles = push_array(&renderer.buffer_arena, global_max_custom_buffers, i32);

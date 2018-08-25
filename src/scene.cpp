@@ -219,7 +219,8 @@ namespace scene
     // Returns a direct pointer to the TransformComponent of the specified entity
     static TransformComponent& get_transform_comp(EntityHandle handle, Scene &scene)
     {
-        i32 internal_handle = scene._internal_handles[handle.handle - 1];
+		assert(handle.handle != 0);
+		i32 internal_handle = scene._internal_handles[handle.handle - 1];
         assert(internal_handle > -1);
         
         Entity entity = scene.entities[internal_handle];
@@ -234,7 +235,8 @@ namespace scene
     // Returns a direct pointer to the RenderComponent of the specified entity
     static RenderComponent& get_render_comp(EntityHandle handle, Scene &scene)
     {
-        i32 internal_handle = scene._internal_handles[handle.handle - 1];
+		assert(handle.handle != 0);
+		i32 internal_handle = scene._internal_handles[handle.handle - 1];
         assert(internal_handle != -1);
         Entity entity = scene.entities[internal_handle];
         
