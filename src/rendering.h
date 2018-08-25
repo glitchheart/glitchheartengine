@@ -895,11 +895,13 @@ struct Renderer
     
     WindowMode window_mode;
     
-    MemoryArena commands;
+    RenderCommand *commands;
     i32 command_count;
     
-    MemoryArena ui_commands;
+    RenderCommand *ui_commands;
     i32 ui_command_count;
+
+	MemoryArena command_arena;
     
     MemoryArena light_commands;
     i32 light_command_count;
