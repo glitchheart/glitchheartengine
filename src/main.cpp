@@ -360,7 +360,9 @@ int main(int argc, char **args)
     
     init_keys();
     RenderState render_state = {};
-    render_state.window = nullptr;
+    render_state.buffer_count = 0;
+    render_state.dpi_scale = 0.0f;
+    render_state.window = 0;
     render_state.frame_delta = 0.0;
     
     render_state.font_arena = {};
@@ -464,7 +466,7 @@ int main(int argc, char **args)
         set_invalid_keys();
         set_mouse_invalid_keys();
         
-        poll_events();
+        //poll_events();
         
         if(controller_present())
         {

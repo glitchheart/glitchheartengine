@@ -1101,8 +1101,8 @@ static const GLFWvidmode* create_open_gl_window(RenderState& render_state, Windo
     
     auto old_window = render_state.window;
     
-    render_state.window = glfwCreateWindow(screen_width, screen_height, render_state.window_title, monitor,
-                                           render_state.window);
+    render_state.window = glfwCreateWindow(screen_width, screen_height, "SHIT BOU", monitor,
+                                           old_window);
     render_state.framebuffer.buffer_handle = 0;
     
     if(old_window)
@@ -1207,7 +1207,7 @@ static void initialize_opengl(RenderState& render_state, Renderer& renderer, r32
     
     gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
     
-    glfwSwapInterval(0);
+    glfwSwapInterval(1);
     
     glfwGetFramebufferSize(render_state.window, &render_state.framebuffer_width, &render_state.framebuffer_height);
     glViewport(0, 0, render_state.framebuffer_width, render_state.framebuffer_height);
