@@ -466,7 +466,7 @@ int main(int argc, char **args)
         set_invalid_keys();
         set_mouse_invalid_keys();
         
-        //poll_events();
+        poll_events();
         
         if(controller_present())
         {
