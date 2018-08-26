@@ -360,6 +360,7 @@ int main(int argc, char **args)
     
     init_keys();
     RenderState render_state = {};
+    render_state.window = nullptr;
     render_state.frame_delta = 0.0;
     
     render_state.font_arena = {};
