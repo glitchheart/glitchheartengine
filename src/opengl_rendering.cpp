@@ -1058,7 +1058,6 @@ static void load_font(RenderState& render_state, Renderer& renderer, char* path,
     stbtt_load_font(render_state, renderer, path, size, index);
 }
 
-
 static const GLFWvidmode* create_open_gl_window(RenderState& render_state, WindowMode window_mode, const char* title, i32 width, i32 height)
 {
     GLFWmonitor* monitor = glfwGetPrimaryMonitor();
@@ -1070,7 +1069,6 @@ static const GLFWvidmode* create_open_gl_window(RenderState& render_state, Windo
     render_state.window_title = push_string(&render_state.string_arena, strlen(title) + 1);
     strcpy(render_state.window_title, title);
     glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
-    
     
     int widthMM, heightMM;
     glfwGetMonitorPhysicalSize(glfwGetPrimaryMonitor(), &widthMM, &heightMM);
@@ -1309,22 +1307,22 @@ static void initialize_opengl(RenderState& render_state, Renderer& renderer, r32
         
         // @Incomplete: Replace with own sort? Don't like using qsort here :(
         qsort(renderer.available_resolutions, (size_t)renderer.available_resolutions_count, sizeof(Resolution), [](const void* a, const void* b)
-              {
-              auto r_1 = (Resolution*)a;
-              auto r_2 = (Resolution*)b;
-              
-              auto width_diff = r_1->width - r_2->width;
-              auto height_diff = r_1->height - r_2->height;
-              
-              if(width_diff == 0)
-              {
-              return height_diff;
-              }
-              else
-              {
-              return (r_1->width - r_2->width);
-              }
-              });
+        {
+            auto r_1 = (Resolution*)a;
+            auto r_2 = (Resolution*)b;
+            
+            auto width_diff = r_1->width - r_2->width;
+            auto height_diff = r_1->height - r_2->height;
+            
+            if(width_diff == 0)
+            {
+                return height_diff;
+            }
+            else
+            {
+                return (r_1->width - r_2->width);
+            }
+        });
     }
     else
     {
