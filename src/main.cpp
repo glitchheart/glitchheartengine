@@ -360,6 +360,8 @@ int main(int argc, char **args)
     
     init_keys();
     RenderState render_state = {};
+    render_state.framebuffer = {};
+    render_state.should_close = false;
     render_state.buffer_count = 0;
     render_state.dpi_scale = 0.0f;
     render_state.window = 0;

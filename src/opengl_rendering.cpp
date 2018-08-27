@@ -422,7 +422,7 @@ static void use_shader(const Shader shader)
 static void register_buffers(RenderState& render_state, GLfloat* vertex_buffer, i32 vertex_buffer_size, GLushort* index_buffer, i32 index_buffer_count, i32 index_buffer_size, b32 has_normals, b32 has_uvs, b32 skinned, i32 buffer_handle = -1)
 {
     Buffer* buffer = &render_state.buffers[buffer_handle == -1 ? render_state.buffer_count : buffer_handle];
-    
+    *buffer = {};
     buffer->vertex_buffer_size = vertex_buffer_size;
     buffer->index_buffer_count = index_buffer_count;
     
@@ -522,6 +522,7 @@ static void register_buffers(RenderState& render_state, GLfloat* vertex_buffer, 
 static void register_instance_buffer(RenderState &render_state, BufferData &buffer_data)
 {
     Buffer* buffer = &render_state.buffers[render_state.buffer_count];
+    *buffer = {};
     render_state.buffer_count++;
     
     // @Incomplete: Particles
@@ -534,7 +535,7 @@ static void register_instance_buffer(RenderState &render_state, BufferData &buff
 static void register_vertex_buffer(RenderState& render_state, GLfloat* buffer_data, i32 size, ShaderType shader_type, MemoryArena* perm_arena, i32 buffer_handle = -1)
 {
     Buffer* buffer = &render_state.buffers[buffer_handle == -1 ? render_state.buffer_count : buffer_handle];
-    
+    *buffer = {};
     buffer->vertex_buffer_size = size;
     buffer->index_buffer_size = 0;
     buffer->ibo = 0;
@@ -1101,8 +1102,8 @@ static const GLFWvidmode* create_open_gl_window(RenderState& render_state, Windo
     
     auto old_window = render_state.window;
     
-    render_state.window = glfwCreateWindow(screen_width, screen_height, "SHIT BOU", monitor,
-                                           old_window);
+    render_state.window = glfwCreateWindow(screen_width, screen_height,  render_state.window_title, monitor,
+                                           0);
     render_state.framebuffer.buffer_handle = 0;
     
     if(old_window)
@@ -2455,7 +2456,6 @@ static void register_buffers(RenderState& render_state, Renderer& renderer)
         else
         {
             register_buffers(render_state, data.vertex_buffer, data.vertex_buffer_size, data.index_buffer, data.index_buffer_count, data.index_buffer_size, data.has_normals, data.has_uvs, data.skinned, data.existing_handle);
-            
         }
     }
     
