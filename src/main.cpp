@@ -363,7 +363,7 @@ int main(int argc, char **args)
     render_state.framebuffer = {};
     render_state.should_close = false;
     render_state.buffer_count = 0;
-    render_state.dpi_scale = 0.0f;
+    render_state.dpi_scale = 0;
     render_state.window = 0;
     render_state.frame_delta = 0.0;
     
