@@ -1051,6 +1051,9 @@ struct Renderer
     TrueTypeFontInfo *tt_font_infos;
     i32 tt_font_count;
     
+    i32 framebuffer_width;
+    i32 framebuffer_height;
+    
     MemoryArena mesh_arena;
     MemoryArena texture_arena;
     MemoryArena animation_arena;
@@ -1062,38 +1065,39 @@ struct Renderer
     MemoryArena temp_arena;
 };
 
+
+static math::Vec2i get_scale(Renderer& renderer)
+{
+    return {renderer.framebuffer_width, renderer.framebuffer_height};
+}
+
+
 math::Vec3 to_ui(Renderer& renderer, math::Vec2 coord)
 {
-    r32 aspect = (r32)renderer.window_width / (r32)renderer.window_height;
-    UNUSED(aspect);
+    math::Vec2i scale = get_scale(renderer);
     math::Vec3 res;
-    res.x = ((r32)coord.x / (r32)renderer.window_width) * UI_COORD_DIMENSION;
-    res.y = ((r32)coord.y / (r32)renderer.window_height) * UI_COORD_DIMENSION;
+    res.x = ((r32)coord.x / (r32)scale.x) * UI_COORD_DIMENSION;
+    res.y = ((r32)coord.y / (r32)scale.y) * UI_COORD_DIMENSION;
     res.z = 0.0f;
     return res;
 }
 
 math::Vec2 from_ui(Renderer& renderer, math::Vec3 coord)
 {
-    r32 aspect = (r32)renderer.window_width / (r32)renderer.window_height;
-    UNUSED(aspect);
+    math::Vec2i scale = get_scale(renderer);
     math::Vec2 res;
-    res.x = (((r32)coord.x / (r32)UI_COORD_DIMENSION) * renderer.window_width);
-    res.y = (((r32)coord.y / (r32)UI_COORD_DIMENSION) * renderer.window_height);
+    res.x = (((r32)coord.x / (r32)UI_COORD_DIMENSION) * scale.x);
+    res.y = (((r32)coord.y / (r32)UI_COORD_DIMENSION) * scale.y);
     return res;
 }
 
 r32 from_ui(Renderer& renderer, i32 scale, r32 coord)
 {
-    r32 aspect = (r32)renderer.window_width / (r32)renderer.window_height;
-    UNUSED(aspect);
     return ((r32)coord / (r32)UI_COORD_DIMENSION) * (r32)scale;
 }
 
 r32 to_ui(Renderer& renderer, i32 scale, r32 coord)
 {
-    r32 aspect = (r32)renderer.window_width / (r32)renderer.window_height;
-    UNUSED(aspect);
     return (coord / scale) * (r32)UI_COORD_DIMENSION;
 }
 

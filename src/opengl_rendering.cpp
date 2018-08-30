@@ -1207,7 +1207,7 @@ static void initialize_opengl(RenderState& render_state, Renderer& renderer, r32
     
     gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
     
-    glfwSwapInterval(1);
+    glfwSwapInterval(0);
     
     glfwGetFramebufferSize(render_state.window, &render_state.framebuffer_width, &render_state.framebuffer_height);
     glViewport(0, 0, render_state.framebuffer_width, render_state.framebuffer_height);
@@ -1267,6 +1267,9 @@ static void initialize_opengl(RenderState& render_state, Renderer& renderer, r32
     render_state.paused = false;
     
     create_standard_cursors(render_state);
+    
+    renderer.framebuffer_width = render_state.framebuffer_width;
+    renderer.framebuffer_height = render_state.framebuffer_height;
     
     renderer.ui_reference_resolution = {1920, 1080};
     
@@ -2893,6 +2896,9 @@ static void render(RenderState& render_state, Renderer& renderer, r64 delta_time
     
     if(should_render)
     {
+        renderer.framebuffer_width = render_state.framebuffer_width;
+        renderer.framebuffer_height = render_state.framebuffer_height;
+        
         render_shadows(render_state, renderer, render_state.shadow_map_buffer);
         
         glViewport(0, 0, render_state.framebuffer_width, render_state.framebuffer_height);
