@@ -1,8 +1,7 @@
-
 static void push_particle_system(Renderer &renderer, ParticleSystemInfo &particle_info, CommandBlendMode blend_mode = CBM_ONE_MINUS_SRC_ALPHA)
 {
     renderer.command_count++;
-    RenderCommand* render_command = push_struct(&renderer.commands, RenderCommand);
+    RenderCommand* render_command = &renderer.commands[renderer.command_count++];
     render_command->shader_handle = -1;
     
     render_command->type = RENDER_COMMAND_PARTICLES;

@@ -3,6 +3,8 @@
 
 namespace scene
 {
+    // @Note(Daniel): Invalid EntityHandles have the value 0.
+    // All handles besides EntityHandles are 0-indexed
     struct EntityHandle
     {
         i32 handle;
@@ -56,6 +58,8 @@ namespace scene
     struct Scene
     {
         Entity *entities;
+        i32 *_internal_handles;
+        i32 current_internal_handle;
         b32 *active_entities;
         i32 entity_count;
         
@@ -64,11 +68,11 @@ namespace scene
         
         RenderComponent *render_components;
         i32 render_component_count;
-
+        
         RenderMaterial *material_instances;
         i32 material_count;
         
-        size_t byte_size;
+        i32 max_entity_count;
     };
 }
 

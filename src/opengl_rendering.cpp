@@ -422,7 +422,7 @@ static void use_shader(const Shader shader)
 static void register_buffers(RenderState& render_state, GLfloat* vertex_buffer, i32 vertex_buffer_size, GLushort* index_buffer, i32 index_buffer_count, i32 index_buffer_size, b32 has_normals, b32 has_uvs, b32 skinned, i32 buffer_handle = -1)
 {
     Buffer* buffer = &render_state.buffers[buffer_handle == -1 ? render_state.buffer_count : buffer_handle];
-    
+    *buffer = {};
     buffer->vertex_buffer_size = vertex_buffer_size;
     buffer->index_buffer_count = index_buffer_count;
     
@@ -522,6 +522,7 @@ static void register_buffers(RenderState& render_state, GLfloat* vertex_buffer, 
 static void register_instance_buffer(RenderState &render_state, BufferData &buffer_data)
 {
     Buffer* buffer = &render_state.buffers[render_state.buffer_count];
+    *buffer = {};
     render_state.buffer_count++;
     
     // @Incomplete: Particles
@@ -534,7 +535,7 @@ static void register_instance_buffer(RenderState &render_state, BufferData &buff
 static void register_vertex_buffer(RenderState& render_state, GLfloat* buffer_data, i32 size, ShaderType shader_type, MemoryArena* perm_arena, i32 buffer_handle = -1)
 {
     Buffer* buffer = &render_state.buffers[buffer_handle == -1 ? render_state.buffer_count : buffer_handle];
-    
+    *buffer = {};
     buffer->vertex_buffer_size = size;
     buffer->index_buffer_size = 0;
     buffer->ibo = 0;
@@ -1057,7 +1058,6 @@ static void load_font(RenderState& render_state, Renderer& renderer, char* path,
     stbtt_load_font(render_state, renderer, path, size, index);
 }
 
-
 static const GLFWvidmode* create_open_gl_window(RenderState& render_state, WindowMode window_mode, const char* title, i32 width, i32 height)
 {
     GLFWmonitor* monitor = glfwGetPrimaryMonitor();
@@ -1069,7 +1069,6 @@ static const GLFWvidmode* create_open_gl_window(RenderState& render_state, Windo
     render_state.window_title = push_string(&render_state.string_arena, strlen(title) + 1);
     strcpy(render_state.window_title, title);
     glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
-    
     
     int widthMM, heightMM;
     glfwGetMonitorPhysicalSize(glfwGetPrimaryMonitor(), &widthMM, &heightMM);
@@ -1101,8 +1100,8 @@ static const GLFWvidmode* create_open_gl_window(RenderState& render_state, Windo
     
     auto old_window = render_state.window;
     
-    render_state.window = glfwCreateWindow(screen_width, screen_height, render_state.window_title, monitor,
-                                           render_state.window);
+    render_state.window = glfwCreateWindow(screen_width, screen_height,  render_state.window_title, monitor,
+                                           0);
     render_state.framebuffer.buffer_handle = 0;
     
     if(old_window)
@@ -1311,22 +1310,22 @@ static void initialize_opengl(RenderState& render_state, Renderer& renderer, r32
         
         // @Incomplete: Replace with own sort? Don't like using qsort here :(
         qsort(renderer.available_resolutions, (size_t)renderer.available_resolutions_count, sizeof(Resolution), [](const void* a, const void* b)
-              {
-              auto r_1 = (Resolution*)a;
-              auto r_2 = (Resolution*)b;
-              
-              auto width_diff = r_1->width - r_2->width;
-              auto height_diff = r_1->height - r_2->height;
-              
-              if(width_diff == 0)
-              {
-              return height_diff;
-              }
-              else
-              {
-              return (r_1->width - r_2->width);
-              }
-              });
+        {
+            auto r_1 = (Resolution*)a;
+            auto r_2 = (Resolution*)b;
+            
+            auto width_diff = r_1->width - r_2->width;
+            auto height_diff = r_1->height - r_2->height;
+            
+            if(width_diff == 0)
+            {
+                return height_diff;
+            }
+            else
+            {
+                return (r_1->width - r_2->width);
+            }
+        });
     }
     else
     {
@@ -2458,7 +2457,6 @@ static void register_buffers(RenderState& render_state, Renderer& renderer)
         else
         {
             register_buffers(render_state, data.vertex_buffer, data.vertex_buffer_size, data.index_buffer, data.index_buffer_count, data.index_buffer_size, data.has_normals, data.has_uvs, data.skinned, data.existing_handle);
-            
         }
     }
     
@@ -2489,7 +2487,7 @@ static void render_shadows(RenderState &render_state, Renderer &renderer, Frameb
     
     for (i32 index = 0; index < renderer.command_count; index++)
     {
-        const RenderCommand& command = *((RenderCommand*)renderer.commands.current_block->base + index);
+        const RenderCommand& command = renderer.commands[index];
         
         switch (command.type)
         {
@@ -2657,7 +2655,7 @@ static void render_commands(RenderState &render_state, Renderer &renderer)
     
     for (i32 index = 0; index < renderer.command_count; index++)
     {
-        const RenderCommand& command = *((RenderCommand*)renderer.commands.current_block->base + index);
+        const RenderCommand& command = renderer.commands[index];
         
         switch (command.type)
         {
@@ -2726,14 +2724,14 @@ static void render_commands(RenderState &render_state, Renderer &renderer)
     }
     
     renderer.command_count = 0;
-    clear(&renderer.commands);
+    //clear(&renderer.commands);
     
     //glDisable(GL_DEPTH_TEST);
     
     
     for (i32 index = 0; index < renderer.ui_command_count; index++)
     {
-        const RenderCommand& command = *((RenderCommand*)renderer.ui_commands.current_block->base + index);
+        const RenderCommand& command = renderer.ui_commands[index];
         
         if(command.clip)
         {
@@ -2784,7 +2782,7 @@ static void render_commands(RenderState &render_state, Renderer &renderer)
     
     
     renderer.ui_command_count = 0;
-    clear(&renderer.ui_commands);
+    //clear(&renderer.ui_commands);
 }
 
 static void swap_buffers(RenderState &render_state)
@@ -2796,11 +2794,11 @@ static void render(RenderState& render_state, Renderer& renderer, r64 delta_time
 {   
     if(render_state.paused)
     {
-        clear(&renderer.commands);
+        //clear(&renderer.commands);
         renderer.command_count = 0;
-        clear(&renderer.ui_commands);
+        //clear(&renderer.ui_commands);
         renderer.ui_command_count = 0;
-        clear(&renderer.light_commands);
+        //clear(&renderer.light_commands);
         renderer.light_command_count = 0;
         return;
     }
@@ -2937,16 +2935,10 @@ static void render(RenderState& render_state, Renderer& renderer, r64 delta_time
         {
             render_state.total_delta = delta_time;
         }
-        //}
-        //else
-        //{
-        clear(&renderer.light_commands);
+        
         renderer.light_command_count = 0;
-        clear(&renderer.commands);
         renderer.command_count = 0;
-        clear(&renderer.ui_commands);
         renderer.ui_command_count = 0;
-        //}
         
         render_state.frame_delta -= delta_time;
         render_state.total_delta += delta_time;
