@@ -274,12 +274,14 @@ static void push_ui_text(Renderer &renderer, const char* text, math::Vec2 positi
     
     assert(font_handle < renderer.font_count);
     
+    math::Vec2i resolution_scale = get_scale(renderer);
+    
     render_command->type = RENDER_COMMAND_TEXT;
     strcpy(render_command->text.text, text);
     
     math::Vec3 pos;
-    pos.x = (position.x / UI_COORD_DIMENSION) * renderer.window_width;
-    pos.y = (position.y / UI_COORD_DIMENSION) * renderer.window_height;
+    pos.x = (position.x / UI_COORD_DIMENSION) * resolution_scale.x;
+    pos.y = (position.y / UI_COORD_DIMENSION) * resolution_scale.y;
     pos.z = 0.0f;
     
     render_command->text.position = pos;
@@ -290,15 +292,15 @@ static void push_ui_text(Renderer &renderer, const char* text, math::Vec2 positi
     render_command->is_ui = true;
     
     
-    math::Vec2i resolution_scale = get_scale(renderer);
+    
     
     math::Rect scaled_clip_rect;
     
-    scaled_clip_rect.x = (clip_rect.x / UI_COORD_DIMENSION) * (r32)renderer.window_width;
-    scaled_clip_rect.y = (clip_rect.y / UI_COORD_DIMENSION) * (r32)renderer.window_height;
+    scaled_clip_rect.x = (clip_rect.x / UI_COORD_DIMENSION) * (r32)resolution_scale.x;
+    scaled_clip_rect.y = (clip_rect.y / UI_COORD_DIMENSION) * (r32)resolution_scale.y;
     
     r32 clip_ratio = clip_rect.height / clip_rect.width;
-    scaled_clip_rect.width = (clip_rect.width / UI_COORD_DIMENSION) * (r32)renderer.window_width;
+    scaled_clip_rect.width = (clip_rect.width / UI_COORD_DIMENSION) * (r32)resolution_scale.x;
     
     if(ui_scaling_flag & UIScalingFlag::KEEP_ASPECT_RATIO)
     {
@@ -693,7 +695,6 @@ static RelativeUIQuadInfo push_filled_ui_quad_relative(Renderer& renderer, math:
     math::Vec2i resolution_scale = get_scale(renderer);
     
     RelativeUIQuadInfo info = get_relative_info(renderer, position, relative_size, size, relative, true, scaling_flags, origin);
-    
     
     math::Rect scaled_clip_rect;
     
