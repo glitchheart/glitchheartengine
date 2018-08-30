@@ -881,6 +881,11 @@ struct Camera
     r32 fading_speed;
 };
 
+enum UIScalingFlag
+{
+    KEEP_ASPECT_RATIO = (1 << 0)
+};
+
 enum TextureFiltering
 {
     LINEAR,
@@ -970,8 +975,8 @@ struct Renderer
     
     RenderCommand *ui_commands;
     i32 ui_command_count;
-
-	MemoryArena command_arena;
+    
+    MemoryArena command_arena;
     
     MemoryArena light_commands;
     i32 light_command_count;
