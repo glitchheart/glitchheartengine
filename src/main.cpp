@@ -138,7 +138,7 @@ inline void save_config(const char* file_path, ConfigData &old_config_data, Rend
         
         i32 width = 0;
         i32 height = 0;
-        WindowMode window_mode = FM_BORDERLESS;
+        WindowMode window_mode = FM_WINDOWED;
         
         if(render_state)
         {
@@ -146,7 +146,6 @@ inline void save_config(const char* file_path, ConfigData &old_config_data, Rend
             height = render_state->window_height;
             window_mode = render_state->window_mode;
         }
-        
         
         fprintf(file, "screen_width %d\n", width);
         fprintf(file, "screen_height %d\n", height);
@@ -189,11 +188,12 @@ inline void load_config(const char* file_path, ConfigData* config_data, MemoryAr
     
     if(!file)
     {
-        auto title = "Untitled Glitchheart Project";
+        auto title = "ALTER";
         snprintf(config_data->title, strlen(title) + 1, "%s", title);
-        auto version = "v0.0";
+        auto version = "v0.1.3";
         snprintf(config_data->version, strlen(version) + 1, "%s", version);
         config_data->screen_width = 0;
+        config_data->window_mode = FM_WINDOWED;
         config_data->screen_height = 0;
         config_data->muted = false;
         config_data->sfx_volume = 1.0f;
@@ -259,8 +259,8 @@ static void init_renderer(Renderer &renderer)
     renderer.particle_systems = push_array(&renderer. particle_arena, global_max_particle_systems, ParticleSystemInfo);
     renderer.animation_controllers = push_array(&renderer.animation_arena, 64, AnimationController);
     renderer.spritesheet_animations = push_array(&renderer.animation_arena, global_max_spritesheet_animations, SpritesheetAnimation);
-    renderer.commands.minimum_block_size = sizeof(RenderCommand) * global_max_render_commands;
-    renderer.ui_commands.minimum_block_size = sizeof(RenderCommand) * global_max_ui_commands;
+    renderer.commands = push_array(&renderer.command_arena, global_max_render_commands, RenderCommand);
+    renderer.ui_commands = push_array(&renderer.command_arena, global_max_ui_commands, RenderCommand);
     renderer.light_commands.minimum_block_size = sizeof(RenderCommand) * global_max_light_commands;
     renderer.buffers = push_array(&renderer.buffer_arena, global_max_custom_buffers, BufferData);
     renderer.updated_buffer_handles = push_array(&renderer.buffer_arena, global_max_custom_buffers, i32);
@@ -360,6 +360,11 @@ int main(int argc, char **args)
     
     init_keys();
     RenderState render_state = {};
+    render_state.framebuffer = {};
+    render_state.should_close = false;
+    render_state.buffer_count = 0;
+    render_state.dpi_scale = 0;
+    render_state.window = 0;
     render_state.frame_delta = 0.0;
     
     render_state.font_arena = {};

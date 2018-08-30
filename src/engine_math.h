@@ -612,6 +612,11 @@ namespace math
         Vec2i(i32 i[2]) : e{i[0],i[1]} {}
         Vec2i(Vec2 v) : x((i32)v.x), y((i32)v.y) {}
         
+        inline b32 operator== (Vec2i o)
+        {
+            return this->x == o.x && this->y == o.y;
+        }
+        
         inline Vec2i operator* (Vec2i o)
         {
             Vec2i result(*this);
