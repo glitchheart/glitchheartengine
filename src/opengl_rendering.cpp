@@ -1875,7 +1875,7 @@ static void render_text(const RenderCommand& command, RenderState& render_state,
     assert(command.text.font_handle < render_state.font_count);
     GLFontBuffer font = render_state.gl_fonts[command.text.font_handle];
     
-    if(font.resolution_loaded_for.width != render_state.window_width || font.resolution_loaded_for.height != render_state.window_height)
+    if(font.resolution_loaded_for.width != render_state.framebuffer_width || font.resolution_loaded_for.height != render_state.framebuffer_height)
     {
         FontData data = renderer.fonts[command.text.font_handle];
         
@@ -2888,7 +2888,7 @@ static void render(RenderState& render_state, Renderer& renderer, r64 delta_time
     camera.viewport_width = render_state.framebuffer_width;
     camera.viewport_height = render_state.framebuffer_height;
     
-    renderer.ui_projection_matrix = math::ortho(0.0f, (r32)renderer.window_width, 0.0f, (r32)renderer.window_height, -500.0f, 500.0f);
+    renderer.ui_projection_matrix = math::ortho(0.0f, (r32)renderer.framebuffer_width, 0.0f, (r32)renderer.framebuffer_height, -500.0f, 500.0f);
     
     register_buffers(render_state, renderer);
     
