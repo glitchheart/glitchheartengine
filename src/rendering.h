@@ -1072,12 +1072,10 @@ struct Renderer
     MemoryArena temp_arena;
 };
 
-
 static math::Vec2i get_scale(Renderer& renderer)
 {
     return {renderer.framebuffer_width, renderer.framebuffer_height};
 }
-
 
 math::Vec3 to_ui(Renderer& renderer, math::Vec2 coord)
 {
