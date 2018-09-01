@@ -267,7 +267,7 @@ static void push_line(Renderer& renderer, math::Vec3 point1, math::Vec3 point2, 
 }
 
 #define PUSH_UI_TEXT(text, position, color, font_handle, ...) push_ui_text(renderer, text, position, font_handle, color, ##__VA_ARGS__)
-#define PUSH_CENTERED_UI_TEXT(text, position, color, font_handle) push_ui_text(renderer, text, position, font_handle, color, ALIGNMENT_CENTER_X | ALIGNMENT_CENTER_Y)
+#define PUSH_CENTERED_UI_TEXT(text, position, color, font_handle, z) push_ui_text(renderer, text, position, font_handle, color, ALIGNMENT_CENTER_X | ALIGNMENT_CENTER_Y, z)
 static void push_ui_text(Renderer &renderer, const char* text, math::Vec2 position, i32 font_handle, math::Rgba color, u64 alignment_flags = ALIGNMENT_LEFT, i32 z = 0, b32 clip = false, math::Rect clip_rect = math::Rect(0, 0, 0, 0), u64 ui_scaling_flag = UIScalingFlag::KEEP_ASPECT_RATIO)
 {
     RenderCommand* render_command = push_next_command(renderer, true);
@@ -290,9 +290,6 @@ static void push_ui_text(Renderer &renderer, const char* text, math::Vec2 positi
     render_command->text.alignment_flags = alignment_flags;
     render_command->text.z_layer = z;
     render_command->is_ui = true;
-    
-    
-    
     
     math::Rect scaled_clip_rect;
     
