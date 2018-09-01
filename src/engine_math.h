@@ -219,6 +219,8 @@ namespace math
         Vec3(r64 x, r32 y, r32 z) : x((r32)x), y(y), z(z) {}
         Vec3(Vec2 v, r32 z) : x(v.x), y(v.y), z(z) {}
         
+        // Vec3(Vec3i v) : x(v.x), y(v.y), z(v.z) {}
+
         Vec3& operator=(const Vec3& v) = default;
         
         r32& operator[](i32 i)
