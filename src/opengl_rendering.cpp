@@ -974,8 +974,8 @@ void stbtt_load_font(RenderState &render_state, Renderer& renderer, char *path, 
         font_info = &renderer.tt_font_infos[index];
     }
     
-    font->resolution_loaded_for.width = render_state.window_width;
-    font->resolution_loaded_for.height = render_state.window_height;
+    font->resolution_loaded_for.width = render_state.framebuffer_width;
+    font->resolution_loaded_for.height = render_state.framebuffer_height;
     
     font_info->oversample_x = 1;
     font_info->oversample_y = 1;
@@ -983,7 +983,7 @@ void stbtt_load_font(RenderState &render_state, Renderer& renderer, char *path, 
     font_info->char_count = '~' - ' ';
     font_info->size = size;
     
-    font_info->size = (i32)from_ui(renderer, renderer.window_height, (r32)font_info->size);
+    font_info->size = (i32)from_ui(renderer, renderer.framebuffer_height, (r32)font_info->size);
     
     i32 count_per_line = (i32)math::ceil(math::sqrt((r32)font_info->char_count));
     font_info->atlas_width = math::multiple_of_number(font_info->size * count_per_line, 4);
@@ -1310,22 +1310,22 @@ static void initialize_opengl(RenderState& render_state, Renderer& renderer, r32
         
         // @Incomplete: Replace with own sort? Don't like using qsort here :(
         qsort(renderer.available_resolutions, (size_t)renderer.available_resolutions_count, sizeof(Resolution), [](const void* a, const void* b)
-        {
-            auto r_1 = (Resolution*)a;
-            auto r_2 = (Resolution*)b;
-            
-            auto width_diff = r_1->width - r_2->width;
-            auto height_diff = r_1->height - r_2->height;
-            
-            if(width_diff == 0)
-            {
-                return height_diff;
-            }
-            else
-            {
-                return (r_1->width - r_2->width);
-            }
-        });
+              {
+              auto r_1 = (Resolution*)a;
+              auto r_2 = (Resolution*)b;
+              
+              auto width_diff = r_1->width - r_2->width;
+              auto height_diff = r_1->height - r_2->height;
+              
+              if(width_diff == 0)
+              {
+              return height_diff;
+              }
+              else
+              {
+              return (r_1->width - r_2->width);
+              }
+              });
     }
     else
     {
