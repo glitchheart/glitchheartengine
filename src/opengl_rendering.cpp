@@ -2794,11 +2794,8 @@ static void render(RenderState& render_state, Renderer& renderer, r64 delta_time
 {   
     if(render_state.paused)
     {
-        //clear(&renderer.commands);
         renderer.command_count = 0;
-        //clear(&renderer.ui_commands);
         renderer.ui_command_count = 0;
-        //clear(&renderer.light_commands);
         renderer.light_command_count = 0;
         return;
     }
@@ -2830,7 +2827,6 @@ static void render(RenderState& render_state, Renderer& renderer, r64 delta_time
                 glfwSetWindowMonitor(render_state.window, glfwGetPrimaryMonitor(), 0, 0, mode->width, mode->height, 0);
                 renderer.window_width = mode->width;
                 renderer.window_height = mode->height;
-                
                 
                 for(i32 res_index = 0; res_index < renderer.available_resolutions_count; res_index++)
                 {
@@ -2888,7 +2884,7 @@ static void render(RenderState& render_state, Renderer& renderer, r64 delta_time
     camera.viewport_width = render_state.framebuffer_width;
     camera.viewport_height = render_state.framebuffer_height;
     
-    renderer.ui_projection_matrix = math::ortho(0.0f, (r32)renderer.window_width, 0.0f, (r32)renderer.window_height, -500.0f, 500.0f);
+    renderer.ui_projection_matrix = math::ortho(0.0f, (r32)renderer.framebuffer_width, 0.0f, (r32)renderer.framebuffer_height, -500.0f, 500.0f);
     
     register_buffers(render_state, renderer);
     
