@@ -883,7 +883,8 @@ struct Camera
 
 enum UIScalingFlag
 {
-    KEEP_ASPECT_RATIO = (1 << 0)
+    KEEP_ASPECT_RATIO = (1 << 0),
+    NO_SCALING = (1 << 1)
 };
 
 enum TextureFiltering
@@ -1132,14 +1133,25 @@ static math::Vec2 get_text_size(const char *text, TrueTypeFontInfo &font)
     return size;
 }
 
-static math::Vec2 get_text_size_scaled(Renderer& renderer, const char* text, TrueTypeFontInfo& font)
+static math::Vec2 get_text_size_scaled(Renderer& renderer, const char* text, TrueTypeFontInfo& font, u64 scaling_flags = UIScalingFlag::KEEP_ASPECT_RATIO)
 {
     math::Vec2 font_size = get_text_size(text, font);
     math::Vec2 result;
     
+    math::Vec2i scale = get_scale(renderer);
+    
     r32 ratio = font_size.y / font_size.x;
-    result.x = (font_size.x / (r32)renderer.window_width) * UI_COORD_DIMENSION;
-    result.y = font_size.x * ratio;
+    result.x = (font_size.x / (r32)scale.x) * UI_COORD_DIMENSION;
+    
+    if(scaling_flags & UIScalingFlag::KEEP_ASPECT_RATIO)
+    {
+        result.y = font_size.x * ratio;
+    }
+    else
+    {
+        result.y = (font_size.y / (r32)scale.y) * UI_COORD_DIMENSION;
+    }
+    
     
     return result;
 }
