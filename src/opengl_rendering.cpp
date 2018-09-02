@@ -983,7 +983,7 @@ void stbtt_load_font(RenderState &render_state, Renderer& renderer, char *path, 
     font_info->char_count = '~' - ' ';
     font_info->size = size;
     
-    font_info->size = (i32)from_ui(renderer, renderer.framebuffer_height, (r32)font_info->size);
+    font_info->size = (i32)from_ui(renderer, render_state.framebuffer_height, (r32)font_info->size);
     
     i32 count_per_line = (i32)math::ceil(math::sqrt((r32)font_info->char_count));
     font_info->atlas_width = math::multiple_of_number(font_info->size * count_per_line, 4);
@@ -1875,7 +1875,7 @@ static void render_text(const RenderCommand& command, RenderState& render_state,
     assert(command.text.font_handle < render_state.font_count);
     GLFontBuffer font = render_state.gl_fonts[command.text.font_handle];
     
-    if(font.resolution_loaded_for.width != render_state.window_width || font.resolution_loaded_for.height != render_state.window_height)
+    if(font.resolution_loaded_for.width != render_state.framebuffer_width || font.resolution_loaded_for.height != render_state.framebuffer_height)
     {
         FontData data = renderer.fonts[command.text.font_handle];
         
