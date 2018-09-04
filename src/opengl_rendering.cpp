@@ -902,10 +902,7 @@ static void render_setup(RenderState *render_state, MemoryArena *perm_arena)
     render_state->total_delta = 0.0f;
     render_state->frame_delta = 0.0f;
     
-    if(!render_state->buffers)
-    {
-        render_state->buffers = push_array(render_state->perm_arena, global_max_custom_buffers, Buffer);
-    }
+    render_state->buffers = push_array(render_state->perm_arena, global_max_custom_buffers, Buffer);
 }
 
 static GLuint load_texture(TextureData& data, Texture* texture)
