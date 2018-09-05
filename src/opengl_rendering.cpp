@@ -902,10 +902,7 @@ static void render_setup(RenderState *render_state, MemoryArena *perm_arena)
     render_state->total_delta = 0.0f;
     render_state->frame_delta = 0.0f;
     
-    if(!render_state->buffers)
-    {
-        render_state->buffers = push_array(render_state->perm_arena, global_max_custom_buffers, Buffer);
-    }
+    render_state->buffers = push_array(render_state->perm_arena, global_max_custom_buffers, Buffer);
 }
 
 static GLuint load_texture(TextureData& data, Texture* texture)
@@ -983,7 +980,7 @@ void stbtt_load_font(RenderState &render_state, Renderer& renderer, char *path, 
     font_info->char_count = '~' - ' ';
     font_info->size = size;
     
-    font_info->size = (i32)from_ui(renderer, renderer.framebuffer_height, (r32)font_info->size);
+    font_info->size = (i32)from_ui(renderer, render_state.framebuffer_height, (r32)font_info->size);
     
     i32 count_per_line = (i32)math::ceil(math::sqrt((r32)font_info->char_count));
     font_info->atlas_width = math::multiple_of_number(font_info->size * count_per_line, 4);
@@ -1206,7 +1203,7 @@ static void initialize_opengl(RenderState& render_state, Renderer& renderer, r32
     
     gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
     
-    glfwSwapInterval(0);
+    glfwSwapInterval(1);
     
     glfwGetFramebufferSize(render_state.window, &render_state.framebuffer_width, &render_state.framebuffer_height);
     glViewport(0, 0, render_state.framebuffer_width, render_state.framebuffer_height);
@@ -1875,7 +1872,7 @@ static void render_text(const RenderCommand& command, RenderState& render_state,
     assert(command.text.font_handle < render_state.font_count);
     GLFontBuffer font = render_state.gl_fonts[command.text.font_handle];
     
-    if(font.resolution_loaded_for.width != render_state.window_width || font.resolution_loaded_for.height != render_state.window_height)
+    if(font.resolution_loaded_for.width != render_state.framebuffer_width || font.resolution_loaded_for.height != render_state.framebuffer_height)
     {
         FontData data = renderer.fonts[command.text.font_handle];
         

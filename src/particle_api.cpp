@@ -34,6 +34,11 @@ static void stop_particle_system(ParticleSystemHandle handle, Renderer &renderer
     system.running = false;
 }
 
+static void remove_all_particle_systems(Renderer &renderer)
+{
+    renderer.particle_system_count = 0;
+}
+
 static b32 particle_system_is_running(ParticleSystemHandle handle, Renderer &renderer)
 {
     ParticleSystemInfo &system = renderer.particle_systems[handle.handle];
