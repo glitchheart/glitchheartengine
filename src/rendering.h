@@ -884,7 +884,9 @@ struct Camera
 enum UIScalingFlag
 {
     KEEP_ASPECT_RATIO = (1 << 0),
-    NO_SCALING = (1 << 1)
+    NO_SCALING = (1 << 1),
+    SCALE_WITH_WIDTH = (1 << 2),
+    SCALE_WITH_HEIGHT = (1 << 3),
 };
 
 enum TextureFiltering
