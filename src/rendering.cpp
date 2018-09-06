@@ -403,7 +403,6 @@ static void push_filled_quad_not_centered(Renderer& renderer, math::Vec3 positio
 static math::Vec2 get_relative_size(Renderer& renderer, math::Vec2 size, u64 scaling_flags = UIScalingFlag::KEEP_ASPECT_RATIO)
 {
     math::Vec2i resolution_scale = get_scale(renderer);
-    r32 ratio = size.y / size.x;
     
     math::Vec2 scaled_size;
     
@@ -423,6 +422,7 @@ static math::Vec2 get_relative_size(Renderer& renderer, math::Vec2 size, u64 sca
         
         if(scaling_flags & UIScalingFlag::KEEP_ASPECT_RATIO)
         {
+            r32 ratio = size.y / size.x;
             scaled_size.y = scaled_size.x * ratio;
         }
         else
