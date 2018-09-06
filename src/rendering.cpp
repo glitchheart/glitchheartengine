@@ -400,6 +400,48 @@ static void push_filled_quad_not_centered(Renderer& renderer, math::Vec3 positio
     push_filled_quad(renderer, position, flipped, size, rotation, color, texture_handle, is_ui, border_width, border_color, rounded, animation_controller_handle, true, math::Vec2(0.0f), clip, clip_rect, shader_handle, shader_attributes, shader_attribute_count, texture_offset, frame_size); 
 }
 
+static math::Vec2 get_relative_size(Renderer& renderer, math::Vec2 size, u64 scaling_flags = UIScalingFlag::KEEP_ASPECT_RATIO)
+{
+    math::Vec2i resolution_scale = get_scale(renderer);
+    r32 ratio = size.y / size.x;
+    
+    math::Vec2 scaled_size;
+    
+    if(scaling_flags & UIScalingFlag::SCALE_WITH_WIDTH)
+    {
+        scaled_size.x = (size.x / UI_COORD_DIMENSION) * (r32)resolution_scale.x;
+        scaled_size.y = (size.y / UI_COORD_DIMENSION) * (r32)resolution_scale.x;
+    }
+    else if(scaling_flags & UIScalingFlag::SCALE_WITH_HEIGHT)
+    {
+        scaled_size.x = (size.x / UI_COORD_DIMENSION) * (r32)resolution_scale.y;
+        scaled_size.y = (size.y / UI_COORD_DIMENSION) * (r32)resolution_scale.y;
+    }
+    else
+    {
+        scaled_size.x = (size.x / UI_COORD_DIMENSION) * (r32)resolution_scale.x;
+        
+        if(scaling_flags & UIScalingFlag::KEEP_ASPECT_RATIO)
+        {
+            scaled_size.y = scaled_size.x * ratio;
+        }
+        else
+        {
+            scaled_size.y = (size.y / UI_COORD_DIMENSION) * (r32)resolution_scale.y;
+        }
+    }
+    
+    return scaled_size;
+}
+
+
+static math::Vec3 get_relative_size_vec3(Renderer& renderer, math::Vec2 size,  u64 scaling_flags = UIScalingFlag::KEEP_ASPECT_RATIO)
+{
+    math::Vec2 res = get_relative_size(renderer, size, scaling_flags);
+    
+    return {res.x, res.y, 0.0f};
+}
+
 static void push_filled_ui_quad_not_centered(Renderer& renderer, math::Vec2 position, b32 flipped, math::Vec2 size, math::Vec3 rotation = math::Vec3(), math::Rgba color = math::Rgba(1.0f, 1.0f, 1.0f, 1.0f), i32 texture_handle = 0, b32 rounded = false, r32 border_width = 0.0f, math::Rgba border_color = math::Rgba(1.0f), i32 animation_controller_handle = 0, i32 z_layer = 0, b32 clip = false,  math::Rect clip_rect = math::Rect(0, 0, 0, 0), u64 ui_scaling_flag = UIScalingFlag::KEEP_ASPECT_RATIO, i32 shader_handle = 0, ShaderAttribute* shader_attributes = 0, i32 shader_attribute_count = 0, math::Vec2 texture_offset = math::Vec2(-1.0f, -1.0f), math::Vec2i frame_size = math::Vec2i(0, 0))
 {
     math::Vec2i resolution_scale = get_scale(renderer);
@@ -409,22 +451,7 @@ static void push_filled_ui_quad_not_centered(Renderer& renderer, math::Vec2 posi
     pos.y = (position.y / UI_COORD_DIMENSION) * resolution_scale.y;
     pos.z = (r32)z_layer;
     
-    math::Vec3 scaled_size;
-    
-    r32 ratio = size.y / size.x;
-    
-    scaled_size.x = (size.x / UI_COORD_DIMENSION) * (r32)resolution_scale.x;
-    
-    if(ui_scaling_flag & UIScalingFlag::KEEP_ASPECT_RATIO)
-    {
-        scaled_size.y = scaled_size.x * ratio;
-    }
-    else
-    {
-        scaled_size.y = (size.y / UI_COORD_DIMENSION) * (r32)resolution_scale.y;
-    }
-    
-    scaled_size.z = 0.0f;
+    math::Vec3 scaled_size = get_relative_size_vec3(renderer, size, ui_scaling_flag);
     
     math::Rect scaled_clip_rect;
     
@@ -455,21 +482,7 @@ static void push_filled_ui_quad(Renderer& renderer, math::Vec2 position, b32 fli
     pos.y = (position.y / UI_COORD_DIMENSION) * (r32)resolution_scale.y;
     pos.z = (r32)z_layer;
     
-    r32 ratio = size.y / size.x;
-    
-    math::Vec3 scaled_size;
-    scaled_size.x = (size.x / UI_COORD_DIMENSION) * (r32)resolution_scale.x;
-    
-    if(ui_scaling_flag & UIScalingFlag::KEEP_ASPECT_RATIO)
-    {
-        scaled_size.y = scaled_size.x * ratio;
-    }
-    else
-    {
-        scaled_size.y = (size.y / UI_COORD_DIMENSION) * (r32)resolution_scale.y;
-    }
-    
-    scaled_size.z = 0.0f;
+    math::Vec3 scaled_size = get_relative_size_vec3(renderer, size, ui_scaling_flag);
     
     math::Rect scaled_clip_rect;
     
@@ -506,34 +519,9 @@ static void push_outlined_quad(Renderer& renderer, math::Vec3 position,  math::V
     render_command->is_ui = is_ui;
 }
 
-static math::Vec2 get_relative_size(Renderer& renderer, math::Vec2 size, b32 centered, u64 scaling_flags = UIScalingFlag::KEEP_ASPECT_RATIO)
-{
-    math::Vec2i resolution_scale = get_scale(renderer);
-    r32 ratio = size.y / size.x;
-    
-    math::Vec2 scaled_size;
-    scaled_size.x = (size.x / UI_COORD_DIMENSION) * (r32)resolution_scale.x;
-    
-    if(scaling_flags & UIScalingFlag::KEEP_ASPECT_RATIO)
-    {
-        scaled_size.y = scaled_size.x * ratio;
-    }
-    else
-    {
-        scaled_size.y = (size.y / UI_COORD_DIMENSION) * (r32)resolution_scale.y;
-    }
-    
-    return scaled_size;
-}
-
 static RelativeUIQuadInfo get_relative_info(Renderer& renderer, math::Vec2 position, math::Vec2 relative_size, math::Vec2 size, RelativeFlag relative, b32 centered, u64 scaling_flags = UIScalingFlag::KEEP_ASPECT_RATIO,  math::Vec2 origin = math::Vec2(0.0f))
 {
     math::Vec2i resolution_scale = get_scale(renderer);
-    
-    r32 width_ratio = (r32)renderer.ui_reference_resolution.width / (r32)resolution_scale.x;
-    r32 height_ratio = (r32)renderer.ui_reference_resolution.height / (r32)resolution_scale.y;
-    
-    r32 scale = width_ratio / height_ratio;
     
     math::Vec3 pos;
     pos.x = (position.x / UI_COORD_DIMENSION) * resolution_scale.x;
@@ -543,38 +531,13 @@ static RelativeUIQuadInfo get_relative_info(Renderer& renderer, math::Vec2 posit
     pos.x -= origin.x;
     pos.y -= origin.y;
     
-    r32 relative_ratio = relative_size.y / relative_size.x;
-    
-    math::Vec3 scaled_size;
-    scaled_size.x = (relative_size.x / UI_COORD_DIMENSION) * (r32)resolution_scale.x;
-    
-    if(scaling_flags & UIScalingFlag::KEEP_ASPECT_RATIO)
-    {
-        scaled_size.y = scaled_size.x * relative_ratio;
-    }
-    else
-    {
-        scaled_size.y = (relative_size.y / UI_COORD_DIMENSION) * (r32)resolution_scale.y;
-    }
-    
-    scaled_size.z = 0.0f;
+    math::Vec3 scaled_size = get_relative_size_vec3(renderer, relative_size, scaling_flags);
     
     math::Vec3 relative_pos = math::Vec3(pos.x, pos.y, 0.0f);
     
     r32 ratio = size.y / size.x;
     
-    math::Vec3 new_size;
-    new_size.x = (size.x / UI_COORD_DIMENSION) * (r32)resolution_scale.x;
-    if(scaling_flags & UIScalingFlag::KEEP_ASPECT_RATIO)
-    {
-        new_size.y = new_size.x * ratio;
-    }
-    else
-    {
-        new_size.y = (size.y / UI_COORD_DIMENSION) * (r32)resolution_scale.y;
-    }
-    
-    new_size.z = 0.0f;
+    math::Vec3 new_size = get_relative_size_vec3(renderer, size, scaling_flags);
     
     r32 factor_x = scaled_size.x / origin.x;
     r32 factor_y = scaled_size.y / origin.y;
@@ -702,7 +665,6 @@ static RelativeUIQuadInfo push_filled_ui_quad_relative(Renderer& renderer, math:
     
     return info;
 }
-
 
 static void push_outlined_ui_quad(Renderer& renderer, math::Vec2i position,  math::Vec2i size, math::Vec3 rotation, math::Rgba color, b32 is_ui = false, r32 line_width = 1.0f)
 {
