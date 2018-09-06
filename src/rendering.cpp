@@ -404,11 +404,6 @@ static void push_filled_ui_quad_not_centered(Renderer& renderer, math::Vec2 posi
 {
     math::Vec2i resolution_scale = get_scale(renderer);
     
-    r32 width_ratio = (r32)renderer.ui_reference_resolution.width / (r32)resolution_scale.x;
-    r32 height_ratio = (r32)renderer.ui_reference_resolution.height / (r32)resolution_scale.y;
-    
-    r32 scale = width_ratio / height_ratio;
-    
     math::Vec3 pos;
     pos.x = (position.x / UI_COORD_DIMENSION) * resolution_scale.x;
     pos.y = (position.y / UI_COORD_DIMENSION) * resolution_scale.y;
@@ -416,53 +411,37 @@ static void push_filled_ui_quad_not_centered(Renderer& renderer, math::Vec2 posi
     
     math::Vec3 scaled_size;
     
-    if((ui_scaling_flag & UIScalingFlag::NO_SCALING) == 0)
+    r32 ratio = size.y / size.x;
+    
+    scaled_size.x = (size.x / UI_COORD_DIMENSION) * (r32)resolution_scale.x;
+    
+    if(ui_scaling_flag & UIScalingFlag::KEEP_ASPECT_RATIO)
     {
-        r32 ratio = size.y / size.x;
-        
-        scaled_size.x = (size.x / UI_COORD_DIMENSION) * (r32)resolution_scale.x;
-        
-        if(ui_scaling_flag & UIScalingFlag::KEEP_ASPECT_RATIO)
-        {
-            scaled_size.y = scaled_size.x * ratio;
-        }
-        else
-        {
-            scaled_size.y = (size.y / UI_COORD_DIMENSION) * (r32)resolution_scale.y;
-        }
-        
-        scaled_size.z = 0.0f;
+        scaled_size.y = scaled_size.x * ratio;
     }
     else
     {
-        scaled_size = math::Vec3(size.x, size.y, 0.0f);
+        scaled_size.y = (size.y / UI_COORD_DIMENSION) * (r32)resolution_scale.y;
     }
+    
+    scaled_size.z = 0.0f;
     
     math::Rect scaled_clip_rect;
     
     scaled_clip_rect.x = (clip_rect.x / UI_COORD_DIMENSION) * (r32)resolution_scale.x;
     scaled_clip_rect.y = (clip_rect.y / UI_COORD_DIMENSION) * (r32)resolution_scale.y;
     
-    if((ui_scaling_flag & UIScalingFlag::NO_SCALING) == 0)
+    r32 clip_ratio = clip_rect.height / clip_rect.width;
+    scaled_clip_rect.width = (clip_rect.width / UI_COORD_DIMENSION) * (r32)resolution_scale.x;
+    
+    if(ui_scaling_flag & UIScalingFlag::KEEP_ASPECT_RATIO)
     {
-        r32 clip_ratio = clip_rect.height / clip_rect.width;
-        scaled_clip_rect.width = (clip_rect.width / UI_COORD_DIMENSION) * (r32)resolution_scale.x;
-        
-        if(ui_scaling_flag & UIScalingFlag::KEEP_ASPECT_RATIO)
-        {
-            scaled_clip_rect.height = scaled_clip_rect.width * clip_ratio;
-        }
-        else
-        {
-            scaled_clip_rect.height = (clip_rect.height / UI_COORD_DIMENSION) * (r32)resolution_scale.y;
-        }
+        scaled_clip_rect.height = scaled_clip_rect.width * clip_ratio;
     }
     else
     {
-        scaled_clip_rect.width = clip_rect.width;
-        scaled_clip_rect.height = clip_rect.height;
+        scaled_clip_rect.height = (clip_rect.height / UI_COORD_DIMENSION) * (r32)resolution_scale.y;
     }
-    
     
     push_filled_quad_not_centered(renderer, pos, flipped, scaled_size, rotation, color, texture_handle, true, border_width, border_color, rounded, clip, scaled_clip_rect, animation_controller_handle, shader_handle, shader_attributes, shader_attribute_count, texture_offset, frame_size);
 }
@@ -471,14 +450,9 @@ static void push_filled_ui_quad(Renderer& renderer, math::Vec2 position, b32 fli
 {
     math::Vec2i resolution_scale = get_scale(renderer);
     
-    r32 width_ratio = (r32)renderer.ui_reference_resolution.width / (r32)resolution_scale.x;
-    r32 height_ratio = (r32)renderer.ui_reference_resolution.height / (r32)resolution_scale.y;
-    
-    r32 scale = width_ratio / height_ratio;
-    
     math::Vec3 pos;
-    pos.x = ((r32)position.x / UI_COORD_DIMENSION) * (r32)resolution_scale.x;
-    pos.y = ((r32)position.y / UI_COORD_DIMENSION) * (r32)resolution_scale.y;
+    pos.x = (position.x / UI_COORD_DIMENSION) * (r32)resolution_scale.x;
+    pos.y = (position.y / UI_COORD_DIMENSION) * (r32)resolution_scale.y;
     pos.z = (r32)z_layer;
     
     r32 ratio = size.y / size.x;
@@ -651,9 +625,6 @@ static RelativeUIQuadInfo get_relative_info(Renderer& renderer, math::Vec2 posit
         }
         break;
     }
-    
-    pos.x = (position.x / UI_COORD_DIMENSION) * resolution_scale.x;
-    pos.y = (position.y / UI_COORD_DIMENSION) * resolution_scale.y;
     
     math::Vec2 ui_position = math::Vec2(0, 0);
     ui_position.x = ((relative_pos.x / (r32)resolution_scale.x) * UI_COORD_DIMENSION);
