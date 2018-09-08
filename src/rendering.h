@@ -1106,9 +1106,8 @@ r32 from_ui(Renderer& renderer, i32 scale, r32 coord)
 
 r32 to_ui(Renderer& renderer, i32 scale, r32 coord)
 {
-    return (coord / scale) * (r32)UI_COORD_DIMENSION;
+    return (coord / (r32)scale) * (r32)UI_COORD_DIMENSION;
 }
-
 
 static math::Vec2 get_text_size(const char *text, TrueTypeFontInfo &font)
 {
@@ -1152,7 +1151,6 @@ static math::Vec2 get_text_size_scaled(Renderer& renderer, const char* text, Tru
         result.y = (font_size.y / (r32)scale.y) * UI_COORD_DIMENSION;
     }
     
-    
     return result;
 }
 
@@ -1180,16 +1178,13 @@ static TextLengthInfo get_char_widths_scaled(Renderer& renderer, const char* tex
         stbtt_GetPackedQuad(font.char_data, font.atlas_width, font.atlas_height,
                             text[i] - font.first_char, &info.widths[i], &placeholder_y, &quad, 1);
         
-        
         i32 kerning = stbtt_GetCodepointKernAdvance(&font.info, text[i] - font.first_char, text[i + 1] - font.first_char);
         
         info.widths[i] += (r32)kerning * font.scale;
-        
         info.widths[i] = ((r32)info.widths[i] / (r32)renderer.window_width) * UI_COORD_DIMENSION;
     }
     
     return info;
 }
-
 
 #endif
