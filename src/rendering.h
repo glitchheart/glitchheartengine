@@ -1106,7 +1106,7 @@ r32 from_ui(Renderer& renderer, i32 scale, r32 coord)
 
 r32 to_ui(Renderer& renderer, i32 scale, r32 coord)
 {
-    return (coord / scale) * (r32)UI_COORD_DIMENSION;
+    return (coord / (r32)scale) * (r32)UI_COORD_DIMENSION;
 }
 
 static math::Vec2 get_text_size(const char *text, TrueTypeFontInfo &font)
