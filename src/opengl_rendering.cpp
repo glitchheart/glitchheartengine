@@ -970,6 +970,9 @@ void stbtt_load_font(RenderState &render_state, Renderer& renderer, char *path, 
         font = &render_state.gl_fonts[index];
         font_info = &renderer.tt_font_infos[index];
     }
+
+    *font = {};
+    *font_info = {};
     
     font->resolution_loaded_for.width = render_state.framebuffer_width;
     font->resolution_loaded_for.height = render_state.framebuffer_height;
