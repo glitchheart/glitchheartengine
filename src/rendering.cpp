@@ -403,7 +403,6 @@ static void push_filled_quad_not_centered(Renderer& renderer, math::Vec3 positio
 static math::Vec2 get_relative_size(Renderer& renderer, math::Vec2 size, u64 scaling_flags = UIScalingFlag::KEEP_ASPECT_RATIO)
 {
     math::Vec2i resolution_scale = get_scale(renderer);
-    r32 ratio = size.y / size.x;
     
     math::Vec2 scaled_size;
     
@@ -423,6 +422,7 @@ static math::Vec2 get_relative_size(Renderer& renderer, math::Vec2 size, u64 sca
         
         if(scaling_flags & UIScalingFlag::KEEP_ASPECT_RATIO)
         {
+            r32 ratio = size.y / size.x;
             scaled_size.y = scaled_size.x * ratio;
         }
         else
@@ -473,6 +473,21 @@ static void push_filled_ui_quad_not_centered(Renderer& renderer, math::Vec2 posi
     push_filled_quad_not_centered(renderer, pos, flipped, scaled_size, rotation, color, texture_handle, true, border_width, border_color, rounded, clip, scaled_clip_rect, animation_controller_handle, shader_handle, shader_attributes, shader_attribute_count, texture_offset, frame_size);
 }
 
+#ifdef DEBUG
+#define push_debug_ui_quad_not_centered(renderer, position, size, clip, clip_rect, ui_scaling_flag) \
+{static r32 rand_r = (r32)(rand() % 255) / 255.0f;\
+    static r32 rand_g = (r32)(rand() % 255) / 255.0f;\
+    static r32 rand_b = (r32)(rand() % 255) / 255.0f;\
+    static math::Rgba color = math::Rgba(rand_r, rand_g, rand_b, 1.0f);\
+    _push_debug_ui_quad_not_centered(renderer, position, size, color, clip, clip_rect, ui_scaling_flag);}
+static void _push_debug_ui_quad_not_centered(Renderer& renderer, math::Vec2 position, math::Vec2 size, math::Rgba color, b32 clip = false, math::Rect clip_rect = math::Rect(0, 0, 0, 0), u64 ui_scaling_flag = UIScalingFlag::KEEP_ASPECT_RATIO)
+{
+    push_filled_ui_quad_not_centered(renderer, position, false, size, math::Vec3(), color, 0, false, 1.0f, COLOR_WHITE, 0, 500, clip, clip_rect, ui_scaling_flag);
+}
+#else
+#define push_debug_ui_quad_not_centered(renderer, position, size, clip, clip_rect, ui_scaling_flag)
+#endif
+
 static void push_filled_ui_quad(Renderer& renderer, math::Vec2 position, b32 flipped, math::Vec2 size, math::Vec3 rotation = math::Vec3(), math::Rgba color = math::Rgba(1.0f, 1.0f, 1.0f, 1.0f), i32 texture_handle = 0, r32 border_width = 0.0f, math::Rgba border_color = math::Rgba(1.0f), b32 rounded = false, i32 animation_controller_handle = 0, b32 with_origin = false, math::Vec2 origin = math::Vec2(0.0f, 0.0f), i32 z_layer = 0, b32 clip = false,  math::Rect clip_rect = math::Rect(0, 0, 0, 0), u64  ui_scaling_flag = UIScalingFlag::KEEP_ASPECT_RATIO, i32 shader_handle = 0, ShaderAttribute* shader_attributes = 0, i32 shader_attribute_count = 0, math::Vec2 texture_offset = math::Vec2(-1.0f, -1.0f), math::Vec2i frame_size = math::Vec2i(0, 0))
 {
     math::Vec2i resolution_scale = get_scale(renderer);
@@ -503,6 +518,22 @@ static void push_filled_ui_quad(Renderer& renderer, math::Vec2 position, b32 fli
     
     push_filled_quad(renderer, pos, flipped, scaled_size, rotation, color, texture_handle, true, border_width, border_color, rounded,  animation_controller_handle, with_origin, origin, clip, scaled_clip_rect, shader_handle, shader_attributes, shader_attribute_count, texture_offset, frame_size);
 }
+
+
+#ifdef DEBUG
+#define push_debug_ui_quad(renderer, position, size, clip, clip_rect, ui_scaling_flag) \
+{static r32 rand_r = (r32)(rand() % 255) / 255.0f;\
+    static r32 rand_g = (r32)(rand() % 255) / 255.0f;\
+    static r32 rand_b = (r32)(rand() % 255) / 255.0f;\
+    static math::Rgba color = math::Rgba(rand_r, rand_g, rand_b, 1.0f);\
+    _push_debug_ui_quad(renderer, position, size, color, clip, clip_rect, ui_scaling_flag);}
+static void _push_debug_ui_quad(Renderer& renderer, math::Vec2 position, math::Vec2 size, math::Rgba color, b32 clip = false, math::Rect clip_rect = math::Rect(0, 0, 0, 0), u64 ui_scaling_flag = UIScalingFlag::KEEP_ASPECT_RATIO)
+{
+    push_filled_ui_quad(renderer, position, false, size, math::Vec3(), color, 0, 1.0f, COLOR_WHITE, false,  0, false, math::Vec2(0.0f), 500, clip, clip_rect, ui_scaling_flag);
+}
+#else
+#define push_debug_ui_quad(renderer, position, size, clip, clip_rect, ui_scaling_flag)
+#endif
 
 static void push_outlined_quad(Renderer& renderer, math::Vec3 position,  math::Vec3 size, math::Vec3 rotation, math::Rgba color, b32 is_ui = false, r32 line_width = 1.0f)
 {
