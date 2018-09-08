@@ -47,7 +47,7 @@
 #define PI 3.141592653589793f
 #define DEGREE_IN_RADIANS 0.0174532925f
 
-#define offset_of(type, member) (umm)&(((type *)0)->member)
+#define offset_of(type, member) (umm)&(((type *)nullptr)->member)
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb/stb_image.h>

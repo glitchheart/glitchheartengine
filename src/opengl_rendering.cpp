@@ -217,7 +217,7 @@ static GLuint load_extra_shader(MemoryArena* arena, ShaderData& shader_data, Ren
     // @Incomplete: vertexAttribPointers?
     Shader* shader = &render_state.extra_shaders[render_state.extra_shader_index++];
     shader->vertex_shader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(shader->vertex_shader, 1, &shader_data.vertex_shader_content, NULL);
+    glShaderSource(shader->vertex_shader, 1, &shader_data.vertex_shader_content, nullptr);
     glCompileShader(shader->vertex_shader);
     
     auto temp_mem = begin_temporary_memory(arena);
@@ -230,7 +230,7 @@ static GLuint load_extra_shader(MemoryArena* arena, ShaderData& shader_data, Ren
     
     shader->fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
     
-    glShaderSource(shader->fragment_shader, 1, &shader_data.fragment_shader_content, NULL);
+    glShaderSource(shader->fragment_shader, 1, &shader_data.fragment_shader_content, nullptr);
     glCompileShader(shader->fragment_shader);
     
     if (!shader_compilation_error_checking(arena, concat(shader_data.name, ".frag", arena), shader->fragment_shader))
@@ -259,7 +259,7 @@ static GLuint load_shader(const char* file_path, Shader *shd, MemoryArena *arena
     
     if (vertex_text)
     {
-        glShaderSource(shd->vertex_shader, 1, (const GLchar**)&vertex_text, NULL);
+        glShaderSource(shd->vertex_shader, 1, (GLchar**)&vertex_text, nullptr);
         glCompileShader(shd->vertex_shader);
         
         if (!shader_compilation_error_checking(arena, file_path, shd->vertex_shader))
@@ -274,7 +274,7 @@ static GLuint load_shader(const char* file_path, Shader *shd, MemoryArena *arena
         char* fragment_string = concat(file_path, ".frag", arena);
         GLchar *fragment_text = load_shader_from_file(fragment_string, arena);
         
-        glShaderSource(shd->fragment_shader, 1, (const GLchar**)&fragment_text, NULL);
+        glShaderSource(shd->fragment_shader, 1, (GLchar**)&fragment_text, nullptr);
         glCompileShader(shd->fragment_shader);
         
         if (!shader_compilation_error_checking(arena, file_path, shd->fragment_shader))
@@ -291,7 +291,7 @@ static GLuint load_shader(const char* file_path, Shader *shd, MemoryArena *arena
         if(geometry_text)
         {
             shd->geometry_shader = glCreateShader(GL_GEOMETRY_SHADER);
-            glShaderSource(shd->geometry_shader, 1, &geometry_text, NULL);
+            glShaderSource(shd->geometry_shader, 1, &geometry_text, nullptr);
             glCompileShader(shd->geometry_shader);
             
             if(!shader_compilation_error_checking(arena, file_path, shd->geometry_shader))
@@ -329,7 +329,7 @@ static GLuint load_vertex_shader(const char* file_path, Shader *shd, MemoryArena
     shd->vertex_shader = glCreateShader(GL_VERTEX_SHADER);
     char* vertex_string = concat(file_path, ".vert", arena);
     GLchar *vertex_text = load_shader_from_file(vertex_string, arena);
-    glShaderSource(shd->vertex_shader, 1, &vertex_text, NULL);
+    glShaderSource(shd->vertex_shader, 1, &vertex_text, nullptr);
     glCompileShader(shd->vertex_shader);
     
     if (!shader_compilation_error_checking(arena, file_path, shd->vertex_shader))
@@ -360,7 +360,7 @@ static GLuint load_fragment_shader(const char* file_path, Shader *shd, MemoryAre
     char* fragment_string = concat(file_path, ".frag", arena);
     
     GLchar *fragment_text = load_shader_from_file(fragment_string, arena);
-    glShaderSource(shd->fragment_shader, 1, &fragment_text, NULL);
+    glShaderSource(shd->fragment_shader, 1, &fragment_text, nullptr);
     end_temporary_memory(temp_mem);
     
     glCompileShader(shd->fragment_shader);
@@ -391,7 +391,7 @@ static GLuint load_geometry_shader(const char* file_path, Shader* shd, MemoryAre
     char* geometry_string = concat(file_path, ".geom", arena);
     
     GLchar* geometry_text = load_shader_from_file(geometry_string, arena);
-    glShaderSource(shd->geometry_shader, 1, &geometry_text, NULL);
+    glShaderSource(shd->geometry_shader, 1, &geometry_text, nullptr);
     end_temporary_memory(temp_mem);
     
     glCompileShader(shd->geometry_shader);
@@ -443,7 +443,7 @@ static void register_buffers(RenderState& render_state, GLfloat* vertex_buffer, 
     {
         if (has_normals && has_uvs)
         {
-            vertex_attrib_pointer(0, 3, GL_FLOAT, ((8 + bone_info_size) * sizeof(GLfloat)), 0);
+            vertex_attrib_pointer(0, 3, GL_FLOAT, ((8 + bone_info_size) * sizeof(GLfloat)), nullptr);
             
             vertex_attrib_pointer(1, 3, GL_FLOAT, ((8 + bone_info_size) * sizeof(GLfloat)), (void*)(3 * sizeof(GLfloat)));
             
@@ -457,7 +457,7 @@ static void register_buffers(RenderState& render_state, GLfloat* vertex_buffer, 
         }
         else if (has_normals)
         {
-            vertex_attrib_pointer(0, 3, GL_FLOAT, ((6 + bone_info_size) * sizeof(GLfloat)), 0);
+            vertex_attrib_pointer(0, 3, GL_FLOAT, ((6 + bone_info_size) * sizeof(GLfloat)), nullptr);
             
             vertex_attrib_pointer(1, 3, GL_FLOAT, ((6 + bone_info_size) * sizeof(GLfloat)), (void*)(3 * sizeof(GLfloat)));
             
@@ -472,7 +472,7 @@ static void register_buffers(RenderState& render_state, GLfloat* vertex_buffer, 
         }
         else if (has_uvs)
         {
-            vertex_attrib_pointer(0, 3, GL_FLOAT, ((5 + bone_info_size) * sizeof(GLfloat)), 0);
+            vertex_attrib_pointer(0, 3, GL_FLOAT, ((5 + bone_info_size) * sizeof(GLfloat)), nullptr);
             
             vertex_attrib_pointer(1, 2, GL_FLOAT, ((5 + bone_info_size) * sizeof(GLfloat)), (void*)(3 * sizeof(GLfloat)));
             
@@ -487,7 +487,7 @@ static void register_buffers(RenderState& render_state, GLfloat* vertex_buffer, 
         }
         else
         {
-            vertex_attrib_pointer(0, 3, GL_FLOAT, (3 + bone_info_size * sizeof(GLfloat)), 0);
+            vertex_attrib_pointer(0, 3, GL_FLOAT, (3 + bone_info_size * sizeof(GLfloat)), nullptr);
             
             // Bone count
             vertex_attrib_pointer(1, 1, GL_FLOAT, ((8 + bone_info_size) * sizeof(GLfloat)), (void*)(3 * sizeof(GLfloat)));
@@ -501,7 +501,7 @@ static void register_buffers(RenderState& render_state, GLfloat* vertex_buffer, 
     }
     else
     {
-        vertex_attrib_pointer(0, 3, GL_FLOAT, (8 * sizeof(GLfloat)), 0);
+        vertex_attrib_pointer(0, 3, GL_FLOAT, (8 * sizeof(GLfloat)), nullptr);
         vertex_attrib_pointer(1, 3, GL_FLOAT, (8 * sizeof(GLfloat)), (void*)(3 * sizeof(GLfloat)));
         vertex_attrib_pointer(2, 2, GL_FLOAT, (8 * sizeof(GLfloat)), (void*)(6 * sizeof(GLfloat)));
     }
@@ -561,7 +561,7 @@ static void register_vertex_buffer(RenderState& render_state, GLfloat* buffer_da
     auto position_location = (GLuint)glGetAttribLocation(render_state.texture_quad_shader.program, "pos");
     auto texcoord_location = (GLuint)glGetAttribLocation(render_state.texture_quad_shader.program, "texcoord");
     
-    vertex_attrib_pointer(position_location, 2, GL_FLOAT, 4 * sizeof(float), 0);
+    vertex_attrib_pointer(position_location, 2, GL_FLOAT, 4 * sizeof(float), nullptr);
     vertex_attrib_pointer(texcoord_location, 2, GL_FLOAT, 4 * sizeof(float), (void *)(2 * sizeof(float)));
     
     glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -596,7 +596,7 @@ static void create_framebuffer_color_attachment(Framebuffer &framebuffer, i32 wi
         
         glGenTextures(1, &framebuffer.tex_color_buffer_handle);
         glBindTexture(GL_TEXTURE_2D, framebuffer.tex_color_buffer_handle);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, framebuffer.tex_color_buffer_handle, NULL);
         
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -637,7 +637,7 @@ static void create_shadow_map(Framebuffer& framebuffer,  i32 width, i32 height)
     
     glGenTextures(1, &framebuffer.shadow_map_handle);
     glBindTexture(GL_TEXTURE_2D, framebuffer.shadow_map_handle);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
     
     // Prevent shadows outside of the shadow map
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -695,7 +695,7 @@ static void create_framebuffer(RenderState& render_state, Framebuffer& framebuff
     auto pos_loc = (GLuint)glGetAttribLocation(shader.program, "pos");
     auto tex_loc = (GLuint)glGetAttribLocation(shader.program, "texcoord");
     
-    vertex_attrib_pointer(pos_loc, 2, GL_FLOAT, 4 * sizeof(float), 0);
+    vertex_attrib_pointer(pos_loc, 2, GL_FLOAT, 4 * sizeof(float), nullptr);
     vertex_attrib_pointer(tex_loc, 2, GL_FLOAT, 4 * sizeof(float), (void*)(2 * sizeof(float)));
     
     render_state.framebuffer.tex0_loc = (GLuint)glGetUniformLocation(shader.program, "tex");
@@ -768,7 +768,7 @@ static void setup_quad(RenderState& render_state, MemoryArena* arena)
     auto position_location3 = (GLuint)glGetAttribLocation(render_state.quad_shader.program, "pos");
     auto texcoord_location3 = (GLuint)glGetAttribLocation(render_state.quad_shader.program, "t_uv");
     
-    vertex_attrib_pointer(position_location3, 2, GL_FLOAT, 4 * sizeof(float), 0);
+    vertex_attrib_pointer(position_location3, 2, GL_FLOAT, 4 * sizeof(float), nullptr);
     vertex_attrib_pointer(texcoord_location3, 2, GL_FLOAT, 4 * sizeof(float), (void *)(2 * sizeof(float)));
     
     glBindVertexArray(0);
@@ -788,7 +788,7 @@ static void setup_quad(RenderState& render_state, MemoryArena* arena)
     auto position_location2 = (GLuint)glGetAttribLocation(render_state.texture_quad_shader.program, "pos");
     auto texcoord_location2 = (GLuint)glGetAttribLocation(render_state.texture_quad_shader.program, "texcoord");
     
-    vertex_attrib_pointer(position_location2, 2, GL_FLOAT, 4 * sizeof(float), 0);
+    vertex_attrib_pointer(position_location2, 2, GL_FLOAT, 4 * sizeof(float), nullptr);
     vertex_attrib_pointer(texcoord_location2, 2, GL_FLOAT, 4 * sizeof(float), (void *)(2 * sizeof(float)));
     
     glBindVertexArray(0);
@@ -806,7 +806,7 @@ static void setup_quad(RenderState& render_state, MemoryArena* arena)
     render_state.rounded_quad_shader.type = SHADER_ROUNDED_QUAD;
     load_shader(shader_paths[SHADER_ROUNDED_QUAD], &render_state.rounded_quad_shader, arena);
     
-    vertex_attrib_pointer(0, 2, GL_FLOAT, 4 * sizeof(float), 0);
+    vertex_attrib_pointer(0, 2, GL_FLOAT, 4 * sizeof(float), nullptr);
     vertex_attrib_pointer(1, 2, GL_FLOAT, 4 * sizeof(float), (void *)(2 * sizeof(float)));
     
     glBindVertexArray(0);
@@ -833,7 +833,7 @@ static void setup_billboard(RenderState& render_state, MemoryArena* arena)
     load_shader(shader_paths[SHADER_QUAD], &render_state.quad_shader, arena);
     
     auto position_location = (GLuint)glGetAttribLocation(render_state.quad_shader.program, "pos");
-    vertex_attrib_pointer(position_location, 3, GL_FLOAT,  3 * sizeof(float), 0);
+    vertex_attrib_pointer(position_location, 3, GL_FLOAT,  3 * sizeof(float), nullptr);
     
     glBindVertexArray(0);
 }
@@ -999,11 +999,11 @@ void stbtt_load_font(RenderState &render_state, Renderer& renderer, char *path, 
     
     stbtt_InitFont(&font_info->info, ttf_buffer, 0); 
     font_info->scale = stbtt_ScaleForPixelHeight(&font_info->info, 15);
-    stbtt_GetFontVMetrics(&font_info->info, &font_info->ascent, 0, 0);
+    stbtt_GetFontVMetrics(&font_info->info, &font_info->ascent, nullptr, nullptr);
     font_info->baseline = (i32)(font_info->ascent * font_info->scale);
     
     stbtt_pack_context context;
-    if (!stbtt_PackBegin(&context, temp_bitmap, font_info->atlas_width, font_info->atlas_height, 0, 1, 0))
+    if (!stbtt_PackBegin(&context, temp_bitmap, font_info->atlas_width, font_info->atlas_height, 0, 1, nullptr))
         printf("Failed to initialize font");
     
     stbtt_PackSetOversampling(&context, font_info->oversample_x, font_info->oversample_y);
@@ -1046,7 +1046,7 @@ void stbtt_load_font(RenderState &render_state, Renderer& renderer, char *path, 
         glBindVertexArray(font->vao);
         glGenBuffers(1, &font->vbo);
         glBindBuffer(GL_ARRAY_BUFFER, font->vbo);
-        vertex_attrib_pointer(0, 4, GL_FLOAT, 0, 0);
+        vertex_attrib_pointer(0, 4, GL_FLOAT, 0, nullptr);
         glBindVertexArray(0);
     }
     
@@ -1095,13 +1095,13 @@ static const GLFWvidmode* create_open_gl_window(RenderState& render_state, Windo
         glfwWindowHint(GLFW_GREEN_BITS, mode->greenBits);
         glfwWindowHint(GLFW_BLUE_BITS, mode->blueBits);
         glfwWindowHint(GLFW_REFRESH_RATE, mode->refreshRate);
-        monitor = NULL;
+        monitor = nullptr;
     }
     
     auto old_window = render_state.window;
     
     render_state.window = glfwCreateWindow(screen_width, screen_height,  render_state.window_title, monitor,
-                                           0);
+                                           nullptr);
     render_state.framebuffer.buffer_handle = 0;
     
     if(old_window)
@@ -1302,7 +1302,7 @@ static void initialize_opengl(RenderState& render_state, Renderer& renderer, r32
                 if(renderer.window_width == vm.width && renderer.window_height == vm.height)
                 {
                     renderer.current_resolution_index = renderer.available_resolutions_count - 1;
-                    auto res = renderer.available_resolutions[renderer.current_resolution_index];
+                    //auto res = renderer.available_resolutions[renderer.current_resolution_index];
                     renderer.resolution = {vm.width, vm.height};
                 }
             }
@@ -1311,8 +1311,8 @@ static void initialize_opengl(RenderState& render_state, Renderer& renderer, r32
         // @Incomplete: Replace with own sort? Don't like using qsort here :(
         qsort(renderer.available_resolutions, (size_t)renderer.available_resolutions_count, sizeof(Resolution), [](const void* a, const void* b)
               {
-              auto r_1 = (Resolution*)a;
-              auto r_2 = (Resolution*)b;
+              auto r_1 = (const Resolution*)a;
+              auto r_2 = (const Resolution*)b;
               
               auto width_diff = r_1->width - r_2->width;
               auto height_diff = r_1->height - r_2->height;
@@ -1496,7 +1496,7 @@ static void render_line(RenderState& render_state, math::Vec4 color, math::Vec3 
     glBufferData(GL_ARRAY_BUFFER, 24 * sizeof(GLfloat), &points[0], GL_DYNAMIC_DRAW);
     
     
-    vertex_attrib_pointer(0, 3, GL_FLOAT, 6 * sizeof(GLfloat), (void*)0); // pos
+    vertex_attrib_pointer(0, 3, GL_FLOAT, 6 * sizeof(GLfloat), (void*)nullptr); // pos
     vertex_attrib_pointer(1, 2, GL_FLOAT, 6 * sizeof(GLfloat), (void*)(3 * sizeof(GLfloat))); // normals
     vertex_attrib_pointer(2, 1, GL_FLOAT, 6 * sizeof(GLfloat), (void*)(5 * sizeof(GLfloat))); // miter
     
@@ -1739,7 +1739,7 @@ static void render_quad(RenderMode mode, RenderState& render_state, math::Vec4 c
                 }
             }
             
-            glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)0);
+            glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)nullptr);
         }
         break;
         case RENDER_OUTLINE:
@@ -2056,7 +2056,7 @@ static void prepare_shader(const Shader shader, ShaderAttribute *attributes, i32
     }
 }
 
-static void render_mesh(const RenderCommand &render_command, Renderer &renderer, RenderState &render_state, math::Mat4 projection_matrix, math::Mat4 view_matrix, b32 for_shadow_map, ShadowMapMatrices *shadow_map_matrices = 0)
+static void render_mesh(const RenderCommand &render_command, Renderer &renderer, RenderState &render_state, math::Mat4 projection_matrix, math::Mat4 view_matrix, b32 for_shadow_map, ShadowMapMatrices *shadow_map_matrices = nullptr)
 {
     Buffer buffer = render_state.buffers[render_command.mesh.buffer_handle];
     glBindVertexArray(buffer.vao);
@@ -2074,7 +2074,7 @@ static void render_mesh(const RenderCommand &render_command, Renderer &renderer,
         use_shader(shader);
     }
     
-    vertex_attrib_pointer(0, 3, GL_FLOAT,(8 * sizeof(GLfloat)), 0);
+    vertex_attrib_pointer(0, 3, GL_FLOAT,(8 * sizeof(GLfloat)), nullptr);
     vertex_attrib_pointer(1, 3, GL_FLOAT, (8 * sizeof(GLfloat)), (void*)(3 * sizeof(GLfloat)));
     vertex_attrib_pointer(2, 2, GL_FLOAT, (8 * sizeof(GLfloat)), (void*)(6 * sizeof(GLfloat)));
     
@@ -2166,14 +2166,14 @@ static void render_mesh(const RenderCommand &render_command, Renderer &renderer,
     }
     else
     {
-        glDrawElements(GL_TRIANGLES, buffer.index_buffer_count, GL_UNSIGNED_SHORT, (void*)0);
+        glDrawElements(GL_TRIANGLES, buffer.index_buffer_count, GL_UNSIGNED_SHORT, (void*)nullptr);
     }
     
     glActiveTexture(GL_TEXTURE0);
 }
 
 
-static void render_mesh_instanced(const RenderCommand &render_command, Renderer &renderer, RenderState &render_state, math::Mat4 projection_matrix, math::Mat4 view_matrix, b32 for_shadow_map, ShadowMapMatrices *shadow_map_matrices = 0)
+static void render_mesh_instanced(const RenderCommand &render_command, Renderer &renderer, RenderState &render_state, math::Mat4 projection_matrix, math::Mat4 view_matrix, b32 for_shadow_map, ShadowMapMatrices *shadow_map_matrices = nullptr)
 {
     Buffer buffer = render_state.buffers[render_command.mesh_instanced.buffer_handle];
     Buffer offset_instance_buffer = render_state.buffers[render_command.mesh_instanced.instance_offset_buffer_handle];
@@ -2197,7 +2197,7 @@ static void render_mesh_instanced(const RenderCommand &render_command, Renderer 
     }
     
     glEnableVertexAttribArray(0);
-    vertex_attrib_pointer(0, 3, GL_FLOAT,(8 * sizeof(GLfloat)), 0);
+    vertex_attrib_pointer(0, 3, GL_FLOAT,(8 * sizeof(GLfloat)), nullptr);
     
     glEnableVertexAttribArray(1);
     vertex_attrib_pointer(1, 3, GL_FLOAT, (8 * sizeof(GLfloat)), (void*)(3 * sizeof(GLfloat)));
@@ -2210,7 +2210,7 @@ static void render_mesh_instanced(const RenderCommand &render_command, Renderer 
     glBindBuffer(GL_ARRAY_BUFFER, offset_instance_buffer.vbo);
     glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizeiptr)(sizeof(math::Vec3) * render_command.mesh_instanced.offset_count), render_command.mesh_instanced.offsets);
     
-    glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+    glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 0, (void*)nullptr);
     glVertexAttribDivisor(3, 1);
     
     // color
@@ -2218,7 +2218,7 @@ static void render_mesh_instanced(const RenderCommand &render_command, Renderer 
     glBindBuffer(GL_ARRAY_BUFFER, color_instance_buffer.vbo);
     glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizeiptr)(sizeof(math::Rgba) * render_command.mesh_instanced.offset_count), render_command.mesh_instanced.colors);
     
-    glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, 0, (void*)0);
+    glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, 0, (void*)nullptr);
     glVertexAttribDivisor(4, 1);
     
     // rotation
@@ -2226,7 +2226,7 @@ static void render_mesh_instanced(const RenderCommand &render_command, Renderer 
     glBindBuffer(GL_ARRAY_BUFFER, rotation_instance_buffer.vbo);
     glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizeiptr)(sizeof(math::Vec3) * render_command.mesh_instanced.offset_count), render_command.mesh_instanced.rotations);
     
-    glVertexAttribPointer(5, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+    glVertexAttribPointer(5, 3, GL_FLOAT, GL_FALSE, 0, (void*)nullptr);
     glVertexAttribDivisor(5, 1);
     
     // scale
@@ -2234,7 +2234,7 @@ static void render_mesh_instanced(const RenderCommand &render_command, Renderer 
     glBindBuffer(GL_ARRAY_BUFFER, scale_instance_buffer.vbo);
     glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizeiptr)(sizeof(math::Vec3) * render_command.mesh_instanced.offset_count), render_command.mesh_instanced.scalings);
     
-    glVertexAttribPointer(6, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+    glVertexAttribPointer(6, 3, GL_FLOAT, GL_FALSE, 0, (void*)nullptr);
     glVertexAttribDivisor(6, 1);
     
     math::Mat4 model_matrix(1.0f);
@@ -2316,7 +2316,7 @@ static void render_mesh_instanced(const RenderCommand &render_command, Renderer 
         set_float_uniform(shader.program, "lightPower", 1.0f);
     }
     
-    glDrawElementsInstanced(GL_TRIANGLES, buffer.index_buffer_count, GL_UNSIGNED_SHORT, (void*)0, render_command.mesh_instanced.offset_count);
+    glDrawElementsInstanced(GL_TRIANGLES, buffer.index_buffer_count, GL_UNSIGNED_SHORT, (void*)nullptr, render_command.mesh_instanced.offset_count);
     
     glActiveTexture(GL_TEXTURE0);
 }
@@ -2340,7 +2340,7 @@ static void render_particles(const RenderCommand &render_command, Renderer &rend
     use_shader(shader);
     
     glEnableVertexAttribArray(0);
-    vertex_attrib_pointer(0, 3, GL_FLOAT,(5 * sizeof(GLfloat)), 0);
+    vertex_attrib_pointer(0, 3, GL_FLOAT,(5 * sizeof(GLfloat)), nullptr);
     
     glEnableVertexAttribArray(1);
     vertex_attrib_pointer(1, 2, GL_FLOAT, (5 * sizeof(GLfloat)), (void*)(3 * sizeof(GLfloat)));
@@ -2385,7 +2385,7 @@ static void render_particles(const RenderCommand &render_command, Renderer &rend
     else
         set_bool_uniform(shader.program, "withTexture", false);
     
-    glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)0, render_command.particles.particle_count);
+    glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)nullptr, render_command.particles.particle_count);
     glDepthMask(GL_TRUE);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
