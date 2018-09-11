@@ -220,7 +220,7 @@ namespace math
         Vec3(Vec2 v, r32 z) : x(v.x), y(v.y), z(z) {}
         
         // Vec3(Vec3i v) : x(v.x), y(v.y), z(v.z) {}
-
+        
         Vec3& operator=(const Vec3& v) = default;
         
         r32& operator[](i32 i)
@@ -2566,11 +2566,11 @@ namespace math
             math::Vec2 size;
         };
         
-        
-        Rect() {}
         Rect(r32 x, r32 y, r32 width, r32 height) : x(x), y(y), width(width), height(height) {}
         Rect(i32 x, i32 y, i32 width, i32 height) : x((r32)x), y((r32)y), width((r32)width),
         height((r32)height) {}
+        Rect(r32 v) : x(v), y(v), width(v), height(v) {}
+        Rect() : Rect(0.0f) {}
     };
     
     struct Recti
