@@ -102,7 +102,7 @@ inline umm get_effective_size_for(MemoryArena* arena, umm size_init, PushParams 
 #define push_size(arena, size, type, ...) (type *)push_size_(arena, (umm)size, ## __VA_ARGS__)
 void* push_size_(MemoryArena* arena, umm size_init, PushParams params = default_push_params())
 {
-    void* result = 0;
+    void* result = nullptr;
     
     umm size = 0;
     
@@ -217,7 +217,7 @@ inline void push_string(MemoryArena* arena, char** dst_buffer, const char* forma
 {
     va_list args;
     va_start(args, format);
-    int len = vsnprintf(0, 0, format, args);
+    int len = vsnprintf(nullptr, 0, format, args);
     va_end(args);
     
     *dst_buffer = push_string(arena, (u32)len);
@@ -313,11 +313,11 @@ struct BufHdr
 #define buf_sizeof(b) ((b) ? buf_len(b)*sizeof(*b) : 0)
 
 #define buf_free(b) ((b) ? (free(buf__hdr(b)), (b) = NULL) : 0)
-#define buf_fit(b, n) ((n) <= buf_cap(b) ? 0 : ((b) = (decltype(b))buf__grow((b), (n), sizeof(*(b)))))
+#define buf_fit(b, n) ((n) <= buf_cap(b) ? nullptr : ((b) = (decltype(b))buf__grow((b), (n), sizeof(*(b)))))
 #define buf_push(b, ...) (buf_fit(b, 1 + buf_len(b)), (b)[buf__hdr(b)->len++] = (__VA_ARGS__))
 
 
-void *buf__grow(const void *buf, size_t new_len, size_t elem_size)
+void *buf__grow(void *buf, size_t new_len, size_t elem_size)
 {
     assert(buf_cap(buf) <= (SIZE_MAX - 1)/2);
     size_t new_cap = MAX(16, MAX(1 + 2*buf_cap(buf), new_len));

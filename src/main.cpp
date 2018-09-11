@@ -68,7 +68,7 @@ static void load_game_code(GameCode& game_code, char* game_library_path, char* t
     if (game_code.game_code_library)
     {
         game_code.update = (Update *)platform.load_symbol(game_code.game_code_library, "update");
-        game_code.is_valid = game_code.update != 0;
+        game_code.is_valid = game_code.update != nullptr;
     }
     else
         debug("The game library file could not be loaded\n");
@@ -83,7 +83,7 @@ static void load_game_code(GameCode& game_code, char* game_library_path, char* t
         err_str = dlerror();
         if(err_str)
         {
-            debug(err_str);
+            debug("%s", err_str);
         }
 #endif
         
@@ -96,7 +96,7 @@ static void unload_game_code(GameCode *game_code)
     if (game_code->game_code_library)
     {
         platform.free_dynamic_library(game_code->game_code_library);
-        game_code->game_code_library = 0;
+        game_code->game_code_library = nullptr;
     }
     
     game_code->is_valid = false;    
@@ -364,7 +364,7 @@ int main(int argc, char **args)
     render_state.should_close = false;
     render_state.buffer_count = 0;
     render_state.dpi_scale = 0;
-    render_state.window = 0;
+    render_state.window = nullptr;
     render_state.frame_delta = 0.0;
     
     render_state.font_arena = {};
