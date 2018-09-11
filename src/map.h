@@ -82,7 +82,7 @@ void* map__get(Map* map, void* key)
     assert(map->hash_function);
     if(map->len == 0)
     {
-        return NULL;
+        return nullptr;
     }
     assert(IS_POW2(map->cap));
     size_t i = (size_t)map->hash_function(key);
@@ -96,7 +96,7 @@ void* map__get(Map* map, void* key)
         }
         else if(!map->keys[i])
         {
-            return NULL;
+            return nullptr;
         }
         i++;
     }

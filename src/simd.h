@@ -574,7 +574,7 @@ inline b32 any_lt_eq(S_r64 v, S_r64 val)
     i32 cmp_eq_up = _mm_movemask_pd(vcmp_eq_up);
     i32 cmp_eq_lo = _mm_movemask_pd(vcmp_eq_lo);
     
-    return cmp_lt_up != 0 || cmp_eq_up != 0 && cmp_lt_lo != 0 || cmp_eq_lo != 0;
+    return cmp_lt_up != 0 || (cmp_eq_up != 0 && cmp_lt_lo != 0) || cmp_eq_lo != 0;
 }
 
 inline b32 any_lt_eq(S_r64 v, r64 val)
@@ -590,7 +590,7 @@ inline b32 any_lt_eq(S_r64 v, r64 val)
     i32 cmp_eq_up = _mm_movemask_pd(vcmp_eq_up);
     i32 cmp_eq_lo = _mm_movemask_pd(vcmp_eq_lo);
     
-    return cmp_lt_up != 0 || cmp_eq_up != 0 && cmp_lt_lo != 0 || cmp_eq_lo != 0;
+    return cmp_lt_up != 0 || (cmp_eq_up != 0 && cmp_lt_lo != 0) || cmp_eq_lo != 0;
 }
 
 
@@ -1741,6 +1741,5 @@ inline void* _push_size_simd(MemoryArena *arena, umm size_init, u32 alignment)
 {
     return push_size_(arena, size_init, default_with_alignment(alignment));
 }
-
 
 #endif

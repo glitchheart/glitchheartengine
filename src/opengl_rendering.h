@@ -37,7 +37,7 @@ char* shader_enum_to_str(ShaderType shader)
         }
     }
     assert(false);
-    return 0;
+    return nullptr;
 }
 
 static char* shader_paths[SHADER_COUNT] =

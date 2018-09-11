@@ -212,7 +212,7 @@ static b32 is_custom_key_down(InputController* input_controller, i32 custom_key)
         }
         else
         {
-            b32 result = false;
+            result = false;
             for(i32 xbox_key = 0; xbox_key < custom_key_mapping.xbox_key_count; xbox_key++)
             {
                 result |= JOYSTICK_KEY_DOWN(custom_key_mapping.xbox_key[xbox_key]);
