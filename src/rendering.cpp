@@ -473,7 +473,7 @@ static void push_filled_ui_quad_not_centered(Renderer& renderer, math::Vec2 posi
     push_filled_quad_not_centered(renderer, pos, flipped, scaled_size, rotation, color, texture_handle, true, border_width, border_color, rounded, clip, scaled_clip_rect, animation_controller_handle, shader_handle, shader_attributes, shader_attribute_count, texture_offset, frame_size);
 }
 
-#ifdef DEBUG
+#if DEBUG
 #define push_debug_ui_quad_not_centered(renderer, position, size, clip, clip_rect, ui_scaling_flag) \
 {static r32 rand_r = (r32)(rand() % 255) / 255.0f;\
     static r32 rand_g = (r32)(rand() % 255) / 255.0f;\
@@ -520,7 +520,7 @@ static void push_filled_ui_quad(Renderer& renderer, math::Vec2 position, b32 fli
 }
 
 
-#ifdef DEBUG
+#if DEBUG
 #define push_debug_ui_quad(renderer, position, size, clip, clip_rect, ui_scaling_flag) \
 {static r32 rand_r = (r32)(rand() % 255) / 255.0f;\
     static r32 rand_g = (r32)(rand() % 255) / 255.0f;\
