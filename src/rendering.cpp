@@ -203,7 +203,6 @@ static RenderCommand* push_next_command(Renderer& renderer, b32 is_ui)
     else
     {
         assert(renderer.command_count + 1 < global_max_render_commands);
-        renderer.command_count++;
         RenderCommand* command = &renderer.commands[renderer.command_count++];
         command->shader_handle = -1;
         return command;
