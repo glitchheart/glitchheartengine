@@ -203,7 +203,6 @@ static RenderCommand* push_next_command(Renderer& renderer, b32 is_ui)
     else
     {
         assert(renderer.command_count + 1 < global_max_render_commands);
-        renderer.command_count++;
         RenderCommand* command = &renderer.commands[renderer.command_count++];
         command->shader_handle = -1;
         return command;
@@ -293,19 +292,22 @@ static void push_ui_text(Renderer &renderer, const char* text, math::Vec2 positi
     
     math::Rect scaled_clip_rect;
     
-    scaled_clip_rect.x = (clip_rect.x / UI_COORD_DIMENSION) * (r32)resolution_scale.x;
-    scaled_clip_rect.y = (clip_rect.y / UI_COORD_DIMENSION) * (r32)resolution_scale.y;
-    
-    r32 clip_ratio = clip_rect.height / clip_rect.width;
-    scaled_clip_rect.width = (clip_rect.width / UI_COORD_DIMENSION) * (r32)resolution_scale.x;
-    
-    if(ui_scaling_flag & UIScalingFlag::KEEP_ASPECT_RATIO)
+    if(clip && clip_rect.height != 0 && clip_rect.width != 0)
     {
-        scaled_clip_rect.height = scaled_clip_rect.width * clip_ratio;
-    }
-    else
-    {
-        scaled_clip_rect.height = (clip_rect.height / UI_COORD_DIMENSION) * (r32)resolution_scale.y;
+        scaled_clip_rect.x = (clip_rect.x / UI_COORD_DIMENSION) * (r32)resolution_scale.x;
+        scaled_clip_rect.y = (clip_rect.y / UI_COORD_DIMENSION) * (r32)resolution_scale.y;
+        
+        r32 clip_ratio = clip_rect.height / clip_rect.width;
+        scaled_clip_rect.width = (clip_rect.width / UI_COORD_DIMENSION) * (r32)resolution_scale.x;
+        
+        if(ui_scaling_flag & UIScalingFlag::KEEP_ASPECT_RATIO)
+        {
+            scaled_clip_rect.height = scaled_clip_rect.width * clip_ratio;
+        }
+        else
+        {
+            scaled_clip_rect.height = (clip_rect.height / UI_COORD_DIMENSION) * (r32)resolution_scale.y;
+        }
     }
     
     render_command->clip = clip;
