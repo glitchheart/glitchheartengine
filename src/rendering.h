@@ -1139,11 +1139,11 @@ static math::Vec2 get_text_size_scaled(Renderer& renderer, const char* text, Tru
     
     math::Vec2i scale = get_scale(renderer);
     
-    r32 ratio = font_size.y / font_size.x;
     result.x = (font_size.x / (r32)scale.x) * UI_COORD_DIMENSION;
     
     if(scaling_flags & UIScalingFlag::KEEP_ASPECT_RATIO)
     {
+        r32 ratio = font_size.y / font_size.x;
         result.y = font_size.x * ratio;
     }
     else
