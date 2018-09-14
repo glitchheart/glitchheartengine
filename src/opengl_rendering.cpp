@@ -970,7 +970,7 @@ void stbtt_load_font(RenderState &render_state, Renderer& renderer, char *path, 
         font = &render_state.gl_fonts[index];
         font_info = &renderer.tt_font_infos[index];
     }
-
+    
     *font = {};
     *font_info = {};
     
@@ -1049,6 +1049,22 @@ void stbtt_load_font(RenderState &render_state, Renderer& renderer, char *path, 
         vertex_attrib_pointer(0, 4, GL_FLOAT, 0, nullptr);
         glBindVertexArray(0);
     }
+    
+    r32 largest_character = 0;
+    
+    for(i32 i = 0; i < font_info->char_count; i++)
+    {
+        char str[2];
+        str[0] = (char)(font_info->first_char + i);
+        str[1] = '\0';
+        math::Vec2 char_size = get_text_size_scaled(renderer, str, *font_info, 0);
+        if(char_size.y > largest_character)
+        {
+            largest_character = char_size.y;
+        }
+    }
+    
+    font_info->largest_character_height = largest_character;
     
     end_temporary_memory(temp_memory);
 }

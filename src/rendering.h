@@ -33,6 +33,7 @@ struct TrueTypeFontInfo
     i32 atlas_height;
     u32 oversample_x;
     u32 oversample_y;
+    r32 largest_character_height;
     
     stbtt_fontinfo info;
     stbtt_packedchar char_data['~' - ' '];
