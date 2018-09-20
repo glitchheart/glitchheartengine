@@ -5,21 +5,22 @@
 
 namespace math
 {
-    inline i32 clamp(i32 Minimum, i32 Value, i32 Maximum)
+    inline i32 clamp(i32 minimum, i32 value, i32 maximum)
     {
-        i32 result = MAX(Minimum, MIN(Value,Maximum));
+        i32 result = MAX(minimum, MIN(value,maximum));
         return result;
     }
     
-    inline r32 clamp(r32 Minimum, r32 Value, r32 Maximum)
+    inline r32 clamp(r32 minimum, r32 value, r32 maximum)
     {
-        return MAX(Minimum, MIN(Value,Maximum));
+        return MAX(minimum, MIN(value,maximum));
     }
     
-    inline r64 clamp(r64 Minimum, r64 Value, r64 Maximum)
+    inline r64 clamp(r64 minimum, r64 value, r64 maximum)
     {
-        return MAX(Minimum, MIN(Value,Maximum));
+        return MAX(minimum, MIN(value,maximum));
     }
+    
     
     union Vec2
     {
@@ -217,6 +218,8 @@ namespace math
         Vec3(r64 x, r32 y, r64 z) : x((r32)x), y(y), z((r32)z) {}
         Vec3(r64 x, r32 y, r32 z) : x((r32)x), y(y), z(z) {}
         Vec3(Vec2 v, r32 z) : x(v.x), y(v.y), z(z) {}
+        
+        // Vec3(Vec3i v) : x(v.x), y(v.y), z(v.z) {}
         
         Vec3& operator=(const Vec3& v) = default;
         
@@ -609,6 +612,12 @@ namespace math
         Vec2i() : x(0),y(0) {}
         Vec2i(i32 i) : x(i), y(i) {}
         Vec2i(i32 i[2]) : e{i[0],i[1]} {}
+        Vec2i(Vec2 v) : x((i32)v.x), y((i32)v.y) {}
+        
+        inline b32 operator== (Vec2i o)
+        {
+            return this->x == o.x && this->y == o.y;
+        }
         
         inline Vec2i operator* (Vec2i o)
         {
@@ -878,6 +887,7 @@ namespace math
         Vec4i() : x(0), y(0), z(0), w(0) {}
         Vec4i(i32 i) : x(i), y(i), z(i), w(i) {}
         Vec4i(i32 i[4]) : e{i[0], i[1], i[2], i[3]} {}
+        Vec4i(Vec4 v) : x((i32)v.x), y((i32)v.y), z((i32)v.z), w((i32)v.w) {}
         
         inline Vec4i operator* (Vec4i o)
         {
@@ -2306,6 +2316,38 @@ namespace math
         return result;
     }
     
+    
+    inline Vec2 clamp(Vec2 minimum, Vec2 value, Vec2 maximum)
+    {
+        return Vec2(clamp(minimum.x, value.x, maximum.x), clamp(minimum.y, value.y, maximum.y));
+    }
+    
+    inline Vec3 clamp(Vec3 minimum, Vec3 value, Vec3 maximum)
+    {
+        return Vec3(clamp(minimum.x, value.x, maximum.x), clamp(minimum.y, value.y, maximum.y), clamp(minimum.z, value.z, maximum.z));
+    }
+    
+    inline Vec4 clamp(Vec4 minimum, Vec4 value, Vec4 maximum)
+    {
+        return Vec4(clamp(minimum.x, value.x, maximum.x), clamp(minimum.y, value.y, maximum.y), clamp(minimum.z, value.z, maximum.z), clamp(minimum.w, value.w, maximum.w));
+    }
+    
+    inline Vec2i clamp(Vec2i minimum, Vec2i value, Vec2i maximum)
+    {
+        return Vec2i(clamp(minimum.x, value.x, maximum.x), clamp(minimum.y, value.y, maximum.y));
+    }
+    
+    inline Vec3i clamp(Vec3i minimum, Vec3i value, Vec3i maximum)
+    {
+        return Vec3i(clamp(minimum.x, value.x, maximum.x), clamp(minimum.y, value.y, maximum.y), clamp(minimum.z, value.z, maximum.z));
+    }
+    
+    inline Vec4i clamp(Vec4i minimum, Vec4i value, Vec4i maximum)
+    {
+        return Vec4i(clamp(minimum.x, value.x, maximum.x), clamp(minimum.y, value.y, maximum.y), clamp(minimum.z, value.z, maximum.z), clamp(minimum.w, value.w, maximum.w));
+    }
+    
+    
     inline Vec2 rotate_by_angle(Vec2 in, r32 angle)
     {
         math::Vec2 result;
@@ -2501,112 +2543,117 @@ namespace math
 #define COLOR_BLUE math::Rgba(0, 0, 1, 1)
 #define COLOR_BLACK math::Rgba(0, 0, 0, 1)
 #define COLOR_WHITE math::Rgba(1, 1, 1, 1)
-}
-
-struct Rect
-{
-    union
-    {
-        struct
-        {
-            r32 x;
-            r32 y;
-        };
-        math::Vec2 position;
-    };
-    union
-    {
-        struct
-        {
-            r32 width;
-            r32 height;
-        };
-        math::Vec2 size;
-    };
     
     
-    Rect() {}
-    Rect(r32 x, r32 y, r32 width, r32 height) : x(x), y(y), width(width), height(height) {}
-    Rect(i32 x, i32 y, i32 width, i32 height) : x((r32)x), y((r32)y), width((r32)width), height((r32)height) {}
-};
-
-struct Recti
-{
-    union
+    struct Rect
     {
-        struct
+        union
         {
-            i32 x;
-            i32 y;
+            struct
+            {
+                r32 x;
+                r32 y;
+            };
+            math::Vec2 position;
         };
-        math::Vec2i position;
-    };
-    union
-    {
-        struct
+        union
         {
-            i32 width;
-            i32 height;
+            struct
+            {
+                r32 width;
+                r32 height;
+            };
+            math::Vec2 size;
         };
-        math::Vec2i size;
+        
+        Rect(r32 x, r32 y, r32 width, r32 height) : x(x), y(y), width(width), height(height) {}
+        Rect(i32 x, i32 y, i32 width, i32 height) : x((r32)x), y((r32)y), width((r32)width),
+        height((r32)height) {}
+        Rect(r32 v) : x(v), y(v), width(v), height(v) {}
+        Rect() : Rect(0.0f) {}
     };
     
+    struct Recti
+    {
+        union
+        {
+            struct
+            {
+                i32 x;
+                i32 y;
+            };
+            math::Vec2i position;
+        };
+        union
+        {
+            struct
+            {
+                i32 width;
+                i32 height;
+            };
+            math::Vec2i size;
+        };
+        
+        
+        Recti() {}
+        Recti(i32 x, i32 y, i32 width, i32 height) : x(x), y(y), width(width), height(height) {}
+    };
     
-    Recti() {}
-    Recti(i32 x, i32 y, i32 width, i32 height) : x(x), y(y), width(width), height(height) {}
-};
-
-inline b32 rects_overlap(Rect rect1, Rect rect2)
-{
-    return rect1.x < rect2.x + rect2.width && rect1.x + rect1.width > rect2.x &&
-        rect1.y + rect1.height > rect2.y && rect1.y < rect2.y + rect2.height;
-}
-
-inline b32 point_inside_rect(math::Vec2i point, Recti rect)
-{
-    return point.x >= rect.x && rect.y >= rect.y && point.x < rect.x + rect.width && point.y < rect.y + rect.height;
-}
-
-inline r32 sign(math::Vec2 p1, math::Vec2 p2, math::Vec2 p3)
-{
-    return (p1.x - p3.x) * (p2.y - p3.y) - (p2.x - p3.x) * (p1.y - p3.y);
-}
-
-inline math::Vec2 to_cartesian(math::Vec2 position)
-{
-    // @Cleanup: Move these to a global variable or similar
-    r32 tile_width_half = 0.5f;
-    r32 tile_height_half = 0.25f;
+    inline b32 rects_overlap(Rect rect1, Rect rect2)
+    {
+        return rect1.x < rect2.x + rect2.width && rect1.x + rect1.width > rect2.x &&
+            rect1.y + rect1.height > rect2.y && rect1.y < rect2.y + rect2.height;
+    }
     
-    math::Vec2 temp_pt;
+    inline b32 point_inside_rect(math::Vec2i point, Recti rect)
+    {
+        return point.x >= rect.x && rect.y >= rect.y && point.x < rect.x + rect.width && point.y < rect.y + rect.height;
+    }
     
-    temp_pt.x = (position.x / tile_width_half + position.y / tile_height_half) / 2.0f;
-    temp_pt.y = (position.y / tile_height_half - position.x / tile_width_half) / 2.0f;
-    return temp_pt;
-}
-
-inline math::Vec2 to_isometric(math::Vec2 position)
-{
-    // @Cleanup: Move these to a global variable or similar
-    r32 tile_width_half = 0.5f;
-    r32 tile_height_half = 0.25f;
+    inline r32 sign(math::Vec2 p1, math::Vec2 p2, math::Vec2 p3)
+    {
+        return (p1.x - p3.x) * (p2.y - p3.y) - (p2.x - p3.x) * (p1.y - p3.y);
+    }
     
-    math::Vec2 temp_pt;
-    temp_pt.x = (position.x - position.y) * tile_width_half;
-    temp_pt.y = (position.x + position.y) * tile_height_half;
-    //return tempPt;
-    return position;
-}
-
-inline b32 point_in_triangle(math::Vec2 pt, math::Vec2 v1, math::Vec2 v2, math::Vec2 v3)
-{
-    bool b1, b2, b3;
     
-    b1 = sign(pt, v1, v2) < 0.0f;
-    b2 = sign(pt, v2, v3) < 0.0f;
-    b3 = sign(pt, v3, v1) < 0.0f;
     
-    return ((b1 == b2) && (b2 == b3));
+    inline math::Vec2 to_cartesian(math::Vec2 position)
+    {
+        // @Cleanup: Move these to a global variable or similar
+        r32 tile_width_half = 0.5f;
+        r32 tile_height_half = 0.25f;
+        
+        math::Vec2 temp_pt;
+        
+        temp_pt.x = (position.x / tile_width_half + position.y / tile_height_half) / 2.0f;
+        temp_pt.y = (position.y / tile_height_half - position.x / tile_width_half) / 2.0f;
+        return temp_pt;
+    }
+    
+    inline math::Vec2 to_isometric(math::Vec2 position)
+    {
+        // @Cleanup: Move these to a global variable or similar
+        r32 tile_width_half = 0.5f;
+        r32 tile_height_half = 0.25f;
+        
+        math::Vec2 temp_pt;
+        temp_pt.x = (position.x - position.y) * tile_width_half;
+        temp_pt.y = (position.x + position.y) * tile_height_half;
+        //return tempPt;
+        return position;
+    }
+    
+    inline b32 point_in_triangle(math::Vec2 pt, math::Vec2 v1, math::Vec2 v2, math::Vec2 v3)
+    {
+        bool b1, b2, b3;
+        
+        b1 = sign(pt, v1, v2) < 0.0f;
+        b2 = sign(pt, v2, v3) < 0.0f;
+        b3 = sign(pt, v3, v1) < 0.0f;
+        
+        return ((b1 == b2) && (b2 == b3));
+    }
+    
 }
 
 #endif

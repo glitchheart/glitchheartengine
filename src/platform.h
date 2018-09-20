@@ -47,7 +47,7 @@
 #define PI 3.141592653589793f
 #define DEGREE_IN_RADIANS 0.0174532925f
 
-#define offset_of(type, member) (umm)&(((type *)0)->member)
+#define offset_of(type, member) (umm)&(((type *)nullptr)->member)
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb/stb_image.h>
@@ -117,8 +117,8 @@ struct ConfigData
 #define MAX_FILE_NAMES 128
 struct DirectoryData
 {
-    char file_paths[256][MAX_FILE_PATHS];
-    char file_names[256][MAX_FILE_NAMES];
+    char **file_paths;
+    char **file_names;
     i32 files_length = 0;
 };
 

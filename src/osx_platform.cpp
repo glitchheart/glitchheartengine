@@ -34,7 +34,7 @@ static b32 copy_file(const char* src, const char* dst, b32 dont_overwrite, Memor
         in = fopen(src, "r");
     }
     
-    if(in == NULL)
+    if(in == nullptr)
     {
         printf("Failed in\n");
         printf("Src: %s\n", src);
@@ -51,14 +51,14 @@ static b32 copy_file(const char* src, const char* dst, b32 dont_overwrite, Memor
         out = fopen(dst, "w");
     }
     
-    if(out == NULL)
+    if(out == nullptr)
     {
         fclose(in);
         printf("Failed out\n");
         return false;
     }
     
-    size_t n, m;
+    size_t n = 0, m = 0;
     unsigned char buff[8192];
     do
     {
@@ -145,7 +145,7 @@ PLATFORM_ALLOCATE_MEMORY(osx_allocate_memory)
     assert(block);
     block->block.base = (u8*)block + base_offset;
     assert(block->block.used == 0);
-    assert(block->block.prev == 0);
+    assert(block->block.prev == nullptr);
     
     //if(flags & (PM_UNDERFLOW_CHECK | PM_OVERFLOW_CHECK))
     //{
@@ -255,12 +255,12 @@ PLATFORM_GET_ALL_FILES_WITH_EXTENSION(osx_get_all_files_with_extension)
     
     DIR *dr = opendir(directory_path);
     
-    if (dr == NULL)
+    if (dr == nullptr)
     {
         printf("Could not open current directory" );
     }
     
-    while ((de = readdir(dr)) != NULL)
+    while((de = readdir(dr)) != nullptr)
     {
         if(de->d_type == DT_REG)
         {
@@ -291,13 +291,13 @@ PLATFORM_GET_ALL_DIRECTORIES(osx_get_all_directories)
     
     DIR *dr = opendir(path);
     
-    if (dr == NULL)
+    if (dr == nullptr)
     {
         printf("Could not open current directory" );
         return nullptr;
     }
     
-    while ((de = readdir(dr)) != NULL)
+    while((de = readdir(dr)) != nullptr)
     {
         if(de->d_type & DT_DIR)
         {
