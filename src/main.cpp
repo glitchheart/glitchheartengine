@@ -68,7 +68,7 @@ static void load_game_code(GameCode& game_code, char* game_library_path, char* t
     if (game_code.game_code_library)
     {
         game_code.update = (Update *)platform.load_symbol(game_code.game_code_library, "update");
-        game_code.is_valid = game_code.update != 0;
+        game_code.is_valid = game_code.update != nullptr;
     }
     else
         debug("The game library file could not be loaded\n");
@@ -83,7 +83,7 @@ static void load_game_code(GameCode& game_code, char* game_library_path, char* t
         err_str = dlerror();
         if(err_str)
         {
-            debug(err_str);
+            debug("%s", err_str);
         }
 #endif
         
@@ -96,7 +96,7 @@ static void unload_game_code(GameCode *game_code)
     if (game_code->game_code_library)
     {
         platform.free_dynamic_library(game_code->game_code_library);
-        game_code->game_code_library = 0;
+        game_code->game_code_library = nullptr;
     }
     
     game_code->is_valid = false;    
@@ -138,7 +138,7 @@ inline void save_config(const char* file_path, ConfigData &old_config_data, Rend
         
         i32 width = 0;
         i32 height = 0;
-        WindowMode window_mode = FM_BORDERLESS;
+        WindowMode window_mode = FM_WINDOWED;
         
         if(render_state)
         {
@@ -146,7 +146,6 @@ inline void save_config(const char* file_path, ConfigData &old_config_data, Rend
             height = render_state->window_height;
             window_mode = render_state->window_mode;
         }
-        
         
         fprintf(file, "screen_width %d\n", width);
         fprintf(file, "screen_height %d\n", height);
@@ -189,11 +188,12 @@ inline void load_config(const char* file_path, ConfigData* config_data, MemoryAr
     
     if(!file)
     {
-        auto title = "Untitled Glitchheart Project";
+        auto title = "ALTER";
         snprintf(config_data->title, strlen(title) + 1, "%s", title);
-        auto version = "v0.0";
+        auto version = "v0.1.3";
         snprintf(config_data->version, strlen(version) + 1, "%s", version);
         config_data->screen_width = 0;
+        config_data->window_mode = FM_WINDOWED;
         config_data->screen_height = 0;
         config_data->muted = false;
         config_data->sfx_volume = 1.0f;
@@ -272,6 +272,7 @@ static void init_renderer(Renderer &renderer)
     renderer.meshes = push_array(&renderer.mesh_arena, global_max_meshes, Mesh);
     renderer.shader_data = push_array(&renderer.shader_arena, global_max_shaders, ShaderData);
     renderer.fonts = push_array(&renderer.font_arena, global_max_fonts, FontData);
+    renderer.tt_font_infos = push_array(&renderer.font_arena, global_max_fonts, TrueTypeFontInfo);
 }
 
 #if defined(_WIN32) && !defined(DEBUG)
@@ -359,6 +360,11 @@ int main(int argc, char **args)
     
     init_keys();
     RenderState render_state = {};
+    render_state.framebuffer = {};
+    render_state.should_close = false;
+    render_state.buffer_count = 0;
+    render_state.dpi_scale = 0;
+    render_state.window = nullptr;
     render_state.frame_delta = 0.0;
     
     render_state.font_arena = {};

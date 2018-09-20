@@ -217,7 +217,7 @@ static GLuint load_extra_shader(MemoryArena* arena, ShaderData& shader_data, Ren
     // @Incomplete: vertexAttribPointers?
     Shader* shader = &render_state.extra_shaders[render_state.extra_shader_index++];
     shader->vertex_shader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(shader->vertex_shader, 1, &shader_data.vertex_shader_content, NULL);
+    glShaderSource(shader->vertex_shader, 1, &shader_data.vertex_shader_content, nullptr);
     glCompileShader(shader->vertex_shader);
     
     auto temp_mem = begin_temporary_memory(arena);
@@ -230,7 +230,7 @@ static GLuint load_extra_shader(MemoryArena* arena, ShaderData& shader_data, Ren
     
     shader->fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
     
-    glShaderSource(shader->fragment_shader, 1, &shader_data.fragment_shader_content, NULL);
+    glShaderSource(shader->fragment_shader, 1, &shader_data.fragment_shader_content, nullptr);
     glCompileShader(shader->fragment_shader);
     
     if (!shader_compilation_error_checking(arena, concat(shader_data.name, ".frag", arena), shader->fragment_shader))
@@ -259,7 +259,7 @@ static GLuint load_shader(const char* file_path, Shader *shd, MemoryArena *arena
     
     if (vertex_text)
     {
-        glShaderSource(shd->vertex_shader, 1, (const GLchar**)&vertex_text, NULL);
+        glShaderSource(shd->vertex_shader, 1, (GLchar**)&vertex_text, nullptr);
         glCompileShader(shd->vertex_shader);
         
         if (!shader_compilation_error_checking(arena, file_path, shd->vertex_shader))
@@ -274,7 +274,7 @@ static GLuint load_shader(const char* file_path, Shader *shd, MemoryArena *arena
         char* fragment_string = concat(file_path, ".frag", arena);
         GLchar *fragment_text = load_shader_from_file(fragment_string, arena);
         
-        glShaderSource(shd->fragment_shader, 1, (const GLchar**)&fragment_text, NULL);
+        glShaderSource(shd->fragment_shader, 1, (GLchar**)&fragment_text, nullptr);
         glCompileShader(shd->fragment_shader);
         
         if (!shader_compilation_error_checking(arena, file_path, shd->fragment_shader))
@@ -291,7 +291,7 @@ static GLuint load_shader(const char* file_path, Shader *shd, MemoryArena *arena
         if(geometry_text)
         {
             shd->geometry_shader = glCreateShader(GL_GEOMETRY_SHADER);
-            glShaderSource(shd->geometry_shader, 1, &geometry_text, NULL);
+            glShaderSource(shd->geometry_shader, 1, &geometry_text, nullptr);
             glCompileShader(shd->geometry_shader);
             
             if(!shader_compilation_error_checking(arena, file_path, shd->geometry_shader))
@@ -329,7 +329,7 @@ static GLuint load_vertex_shader(const char* file_path, Shader *shd, MemoryArena
     shd->vertex_shader = glCreateShader(GL_VERTEX_SHADER);
     char* vertex_string = concat(file_path, ".vert", arena);
     GLchar *vertex_text = load_shader_from_file(vertex_string, arena);
-    glShaderSource(shd->vertex_shader, 1, &vertex_text, NULL);
+    glShaderSource(shd->vertex_shader, 1, &vertex_text, nullptr);
     glCompileShader(shd->vertex_shader);
     
     if (!shader_compilation_error_checking(arena, file_path, shd->vertex_shader))
@@ -360,7 +360,7 @@ static GLuint load_fragment_shader(const char* file_path, Shader *shd, MemoryAre
     char* fragment_string = concat(file_path, ".frag", arena);
     
     GLchar *fragment_text = load_shader_from_file(fragment_string, arena);
-    glShaderSource(shd->fragment_shader, 1, &fragment_text, NULL);
+    glShaderSource(shd->fragment_shader, 1, &fragment_text, nullptr);
     end_temporary_memory(temp_mem);
     
     glCompileShader(shd->fragment_shader);
@@ -391,7 +391,7 @@ static GLuint load_geometry_shader(const char* file_path, Shader* shd, MemoryAre
     char* geometry_string = concat(file_path, ".geom", arena);
     
     GLchar* geometry_text = load_shader_from_file(geometry_string, arena);
-    glShaderSource(shd->geometry_shader, 1, &geometry_text, NULL);
+    glShaderSource(shd->geometry_shader, 1, &geometry_text, nullptr);
     end_temporary_memory(temp_mem);
     
     glCompileShader(shd->geometry_shader);
@@ -422,7 +422,7 @@ static void use_shader(const Shader shader)
 static void register_buffers(RenderState& render_state, GLfloat* vertex_buffer, i32 vertex_buffer_size, GLushort* index_buffer, i32 index_buffer_count, i32 index_buffer_size, b32 has_normals, b32 has_uvs, b32 skinned, i32 buffer_handle = -1)
 {
     Buffer* buffer = &render_state.buffers[buffer_handle == -1 ? render_state.buffer_count : buffer_handle];
-    
+    *buffer = {};
     buffer->vertex_buffer_size = vertex_buffer_size;
     buffer->index_buffer_count = index_buffer_count;
     
@@ -443,7 +443,7 @@ static void register_buffers(RenderState& render_state, GLfloat* vertex_buffer, 
     {
         if (has_normals && has_uvs)
         {
-            vertex_attrib_pointer(0, 3, GL_FLOAT, ((8 + bone_info_size) * sizeof(GLfloat)), 0);
+            vertex_attrib_pointer(0, 3, GL_FLOAT, ((8 + bone_info_size) * sizeof(GLfloat)), nullptr);
             
             vertex_attrib_pointer(1, 3, GL_FLOAT, ((8 + bone_info_size) * sizeof(GLfloat)), (void*)(3 * sizeof(GLfloat)));
             
@@ -457,7 +457,7 @@ static void register_buffers(RenderState& render_state, GLfloat* vertex_buffer, 
         }
         else if (has_normals)
         {
-            vertex_attrib_pointer(0, 3, GL_FLOAT, ((6 + bone_info_size) * sizeof(GLfloat)), 0);
+            vertex_attrib_pointer(0, 3, GL_FLOAT, ((6 + bone_info_size) * sizeof(GLfloat)), nullptr);
             
             vertex_attrib_pointer(1, 3, GL_FLOAT, ((6 + bone_info_size) * sizeof(GLfloat)), (void*)(3 * sizeof(GLfloat)));
             
@@ -472,7 +472,7 @@ static void register_buffers(RenderState& render_state, GLfloat* vertex_buffer, 
         }
         else if (has_uvs)
         {
-            vertex_attrib_pointer(0, 3, GL_FLOAT, ((5 + bone_info_size) * sizeof(GLfloat)), 0);
+            vertex_attrib_pointer(0, 3, GL_FLOAT, ((5 + bone_info_size) * sizeof(GLfloat)), nullptr);
             
             vertex_attrib_pointer(1, 2, GL_FLOAT, ((5 + bone_info_size) * sizeof(GLfloat)), (void*)(3 * sizeof(GLfloat)));
             
@@ -487,7 +487,7 @@ static void register_buffers(RenderState& render_state, GLfloat* vertex_buffer, 
         }
         else
         {
-            vertex_attrib_pointer(0, 3, GL_FLOAT, (3 + bone_info_size * sizeof(GLfloat)), 0);
+            vertex_attrib_pointer(0, 3, GL_FLOAT, (3 + bone_info_size * sizeof(GLfloat)), nullptr);
             
             // Bone count
             vertex_attrib_pointer(1, 1, GL_FLOAT, ((8 + bone_info_size) * sizeof(GLfloat)), (void*)(3 * sizeof(GLfloat)));
@@ -501,7 +501,7 @@ static void register_buffers(RenderState& render_state, GLfloat* vertex_buffer, 
     }
     else
     {
-        vertex_attrib_pointer(0, 3, GL_FLOAT, (8 * sizeof(GLfloat)), 0);
+        vertex_attrib_pointer(0, 3, GL_FLOAT, (8 * sizeof(GLfloat)), nullptr);
         vertex_attrib_pointer(1, 3, GL_FLOAT, (8 * sizeof(GLfloat)), (void*)(3 * sizeof(GLfloat)));
         vertex_attrib_pointer(2, 2, GL_FLOAT, (8 * sizeof(GLfloat)), (void*)(6 * sizeof(GLfloat)));
     }
@@ -522,6 +522,7 @@ static void register_buffers(RenderState& render_state, GLfloat* vertex_buffer, 
 static void register_instance_buffer(RenderState &render_state, BufferData &buffer_data)
 {
     Buffer* buffer = &render_state.buffers[render_state.buffer_count];
+    *buffer = {};
     render_state.buffer_count++;
     
     // @Incomplete: Particles
@@ -534,7 +535,7 @@ static void register_instance_buffer(RenderState &render_state, BufferData &buff
 static void register_vertex_buffer(RenderState& render_state, GLfloat* buffer_data, i32 size, ShaderType shader_type, MemoryArena* perm_arena, i32 buffer_handle = -1)
 {
     Buffer* buffer = &render_state.buffers[buffer_handle == -1 ? render_state.buffer_count : buffer_handle];
-    
+    *buffer = {};
     buffer->vertex_buffer_size = size;
     buffer->index_buffer_size = 0;
     buffer->ibo = 0;
@@ -560,7 +561,7 @@ static void register_vertex_buffer(RenderState& render_state, GLfloat* buffer_da
     auto position_location = (GLuint)glGetAttribLocation(render_state.texture_quad_shader.program, "pos");
     auto texcoord_location = (GLuint)glGetAttribLocation(render_state.texture_quad_shader.program, "texcoord");
     
-    vertex_attrib_pointer(position_location, 2, GL_FLOAT, 4 * sizeof(float), 0);
+    vertex_attrib_pointer(position_location, 2, GL_FLOAT, 4 * sizeof(float), nullptr);
     vertex_attrib_pointer(texcoord_location, 2, GL_FLOAT, 4 * sizeof(float), (void *)(2 * sizeof(float)));
     
     glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -595,7 +596,7 @@ static void create_framebuffer_color_attachment(Framebuffer &framebuffer, i32 wi
         
         glGenTextures(1, &framebuffer.tex_color_buffer_handle);
         glBindTexture(GL_TEXTURE_2D, framebuffer.tex_color_buffer_handle);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, framebuffer.tex_color_buffer_handle, NULL);
         
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -636,7 +637,7 @@ static void create_shadow_map(Framebuffer& framebuffer,  i32 width, i32 height)
     
     glGenTextures(1, &framebuffer.shadow_map_handle);
     glBindTexture(GL_TEXTURE_2D, framebuffer.shadow_map_handle);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
     
     // Prevent shadows outside of the shadow map
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -694,7 +695,7 @@ static void create_framebuffer(RenderState& render_state, Framebuffer& framebuff
     auto pos_loc = (GLuint)glGetAttribLocation(shader.program, "pos");
     auto tex_loc = (GLuint)glGetAttribLocation(shader.program, "texcoord");
     
-    vertex_attrib_pointer(pos_loc, 2, GL_FLOAT, 4 * sizeof(float), 0);
+    vertex_attrib_pointer(pos_loc, 2, GL_FLOAT, 4 * sizeof(float), nullptr);
     vertex_attrib_pointer(tex_loc, 2, GL_FLOAT, 4 * sizeof(float), (void*)(2 * sizeof(float)));
     
     render_state.framebuffer.tex0_loc = (GLuint)glGetUniformLocation(shader.program, "tex");
@@ -765,7 +766,10 @@ static void setup_quad(RenderState& render_state, MemoryArena* arena)
     load_shader(shader_paths[SHADER_QUAD], &render_state.quad_shader, arena);
     
     auto position_location3 = (GLuint)glGetAttribLocation(render_state.quad_shader.program, "pos");
-    vertex_attrib_pointer(position_location3, 2, GL_FLOAT,  2 * sizeof(float), 0);
+    auto texcoord_location3 = (GLuint)glGetAttribLocation(render_state.quad_shader.program, "t_uv");
+    
+    vertex_attrib_pointer(position_location3, 2, GL_FLOAT, 4 * sizeof(float), nullptr);
+    vertex_attrib_pointer(texcoord_location3, 2, GL_FLOAT, 4 * sizeof(float), (void *)(2 * sizeof(float)));
     
     glBindVertexArray(0);
     
@@ -784,7 +788,7 @@ static void setup_quad(RenderState& render_state, MemoryArena* arena)
     auto position_location2 = (GLuint)glGetAttribLocation(render_state.texture_quad_shader.program, "pos");
     auto texcoord_location2 = (GLuint)glGetAttribLocation(render_state.texture_quad_shader.program, "texcoord");
     
-    vertex_attrib_pointer(position_location2, 2, GL_FLOAT, 4 * sizeof(float), 0);
+    vertex_attrib_pointer(position_location2, 2, GL_FLOAT, 4 * sizeof(float), nullptr);
     vertex_attrib_pointer(texcoord_location2, 2, GL_FLOAT, 4 * sizeof(float), (void *)(2 * sizeof(float)));
     
     glBindVertexArray(0);
@@ -802,7 +806,7 @@ static void setup_quad(RenderState& render_state, MemoryArena* arena)
     render_state.rounded_quad_shader.type = SHADER_ROUNDED_QUAD;
     load_shader(shader_paths[SHADER_ROUNDED_QUAD], &render_state.rounded_quad_shader, arena);
     
-    vertex_attrib_pointer(0, 2, GL_FLOAT, 4 * sizeof(float), 0);
+    vertex_attrib_pointer(0, 2, GL_FLOAT, 4 * sizeof(float), nullptr);
     vertex_attrib_pointer(1, 2, GL_FLOAT, 4 * sizeof(float), (void *)(2 * sizeof(float)));
     
     glBindVertexArray(0);
@@ -829,7 +833,7 @@ static void setup_billboard(RenderState& render_state, MemoryArena* arena)
     load_shader(shader_paths[SHADER_QUAD], &render_state.quad_shader, arena);
     
     auto position_location = (GLuint)glGetAttribLocation(render_state.quad_shader.program, "pos");
-    vertex_attrib_pointer(position_location, 3, GL_FLOAT,  3 * sizeof(float), 0);
+    vertex_attrib_pointer(position_location, 3, GL_FLOAT,  3 * sizeof(float), nullptr);
     
     glBindVertexArray(0);
 }
@@ -847,6 +851,16 @@ static void setup_lines(RenderState& render_state, MemoryArena* arena)
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint) * LINE_INDICES, render_state.line_indices, GL_STATIC_DRAW);
     
     glBindVertexArray(0);
+}
+
+static void create_standard_cursors(RenderState& render_state)
+{
+    render_state.cursors[CURSOR_ARROW] = glfwCreateStandardCursor(GLFW_ARROW_CURSOR);
+    render_state.cursors[CURSOR_IBEAM] = glfwCreateStandardCursor(GLFW_IBEAM_CURSOR);
+    render_state.cursors[CURSOR_CROSSHAIR] = glfwCreateStandardCursor(GLFW_CROSSHAIR_CURSOR);
+    render_state.cursors[CURSOR_HAND] = glfwCreateStandardCursor(GLFW_HAND_CURSOR);
+    render_state.cursors[CURSOR_HRESIZE] = glfwCreateStandardCursor(GLFW_HRESIZE_CURSOR);
+    render_state.cursors[CURSOR_VRESIZE] = glfwCreateStandardCursor(GLFW_VRESIZE_CURSOR);
 }
 
 static void render_setup(RenderState *render_state, MemoryArena *perm_arena)
@@ -888,10 +902,7 @@ static void render_setup(RenderState *render_state, MemoryArena *perm_arena)
     render_state->total_delta = 0.0f;
     render_state->frame_delta = 0.0f;
     
-    if(!render_state->buffers)
-    {
-        render_state->buffers = push_array(render_state->perm_arena, global_max_custom_buffers, Buffer);
-    }
+    render_state->buffers = push_array(render_state->perm_arena, global_max_custom_buffers, Buffer);
 }
 
 static GLuint load_texture(TextureData& data, Texture* texture)
@@ -945,53 +956,59 @@ static void load_extra_shaders(RenderState& render_state, Renderer& renderer)
 }
 
 
-void stbtt_load_font(RenderState &render_state, char *path, i32 size, i32 index = -1)
+void stbtt_load_font(RenderState &render_state, Renderer& renderer, char *path, i32 size, i32 index = -1)
 {
-    TrueTypeFont *font = nullptr;
+    GLFontBuffer *font = nullptr;
+    TrueTypeFontInfo *font_info = nullptr;
     if(index == -1)
     {
-        font = &render_state.true_type_fonts[render_state.font_count++];
+        font = &render_state.gl_fonts[render_state.font_count++];
+        font_info = &renderer.tt_font_infos[renderer.tt_font_count++];
     }
     else
     {
-        font = &render_state.true_type_fonts[index];
+        font = &render_state.gl_fonts[index];
+        font_info = &renderer.tt_font_infos[index];
     }
     
-    font->resolution_loaded_for.width = render_state.window_width;
-    font->resolution_loaded_for.height = render_state.window_height;
+    *font = {};
+    *font_info = {};
     
-    font->oversample_x = 1;
-    font->oversample_y = 1;
-    font->first_char = ' ';
-    font->char_count = '~' - ' ';
-    font->size = size;
+    font->resolution_loaded_for.width = render_state.framebuffer_width;
+    font->resolution_loaded_for.height = render_state.framebuffer_height;
     
-    font->size = (i32)from_ui(render_state.window_height, (r32)font->size);
+    font_info->oversample_x = 1;
+    font_info->oversample_y = 1;
+    font_info->first_char = ' ';
+    font_info->char_count = '~' - ' ';
+    font_info->size = size;
     
-    i32 count_per_line = (i32)math::ceil(math::sqrt(font->char_count));
-    font->atlas_width = math::multiple_of_number(font->size * count_per_line, 4);
-    font->atlas_height = math::multiple_of_number(font->size * count_per_line, 4);
+    font_info->size = (i32)from_ui(renderer, render_state.framebuffer_height, (r32)font_info->size);
+    
+    i32 count_per_line = (i32)math::ceil(math::sqrt((r32)font_info->char_count));
+    font_info->atlas_width = math::multiple_of_number(font_info->size * count_per_line, 4);
+    font_info->atlas_height = math::multiple_of_number(font_info->size * count_per_line, 4);
     
     unsigned char *ttf_buffer = push_array(&render_state.font_arena, (1<<20), unsigned char);
     
     auto temp_memory = begin_temporary_memory(&render_state.font_arena);
     
-    unsigned char *temp_bitmap = push_array(&render_state.font_arena, font->atlas_width * font->atlas_height, unsigned char);
+    unsigned char *temp_bitmap = push_array(&render_state.font_arena, font_info->atlas_width * font_info->atlas_height, unsigned char);
     
     fread(ttf_buffer, 1, 1<<20, fopen(path, "rb"));
     
-    stbtt_InitFont(&font->info, ttf_buffer, 0); 
-    font->scale = stbtt_ScaleForPixelHeight(&font->info, 20);
-    stbtt_GetFontVMetrics(&font->info, &font->ascent, 0, 0);
-    font->baseline = (i32)(font->ascent * font->scale);
+    stbtt_InitFont(&font_info->info, ttf_buffer, 0); 
+    font_info->scale = stbtt_ScaleForPixelHeight(&font_info->info, 15);
+    stbtt_GetFontVMetrics(&font_info->info, &font_info->ascent, nullptr, nullptr);
+    font_info->baseline = (i32)(font_info->ascent * font_info->scale);
     
     stbtt_pack_context context;
-    if (!stbtt_PackBegin(&context, temp_bitmap, font->atlas_width, font->atlas_height, 0, 1, 0))
+    if (!stbtt_PackBegin(&context, temp_bitmap, font_info->atlas_width, font_info->atlas_height, 0, 1, nullptr))
         printf("Failed to initialize font");
     
-    stbtt_PackSetOversampling(&context, font->oversample_x, font->oversample_y);
+    stbtt_PackSetOversampling(&context, font_info->oversample_x, font_info->oversample_y);
     if (!stbtt_PackFontRange(&context, ttf_buffer, 0
-                             , (r32)font->size, font->first_char, font->char_count, font->char_data))
+                             , (r32)font_info->size, font_info->first_char, font_info->char_count, font_info->char_data))
         printf("Failed to pack font");
     
 #if DEBUG
@@ -1013,7 +1030,7 @@ void stbtt_load_font(RenderState &render_state, char *path, i32 size, i32 index 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, (GLsizei)font->atlas_width, (GLsizei)font->atlas_height, 0, GL_RED, GL_UNSIGNED_BYTE, temp_bitmap);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, (GLsizei)font_info->atlas_width, (GLsizei)font_info->atlas_height, 0, GL_RED, GL_UNSIGNED_BYTE, temp_bitmap);
     
     
     if(!font->vao || !font->vbo)
@@ -1029,19 +1046,33 @@ void stbtt_load_font(RenderState &render_state, char *path, i32 size, i32 index 
         glBindVertexArray(font->vao);
         glGenBuffers(1, &font->vbo);
         glBindBuffer(GL_ARRAY_BUFFER, font->vbo);
-        vertex_attrib_pointer(0, 4, GL_FLOAT, 0, 0);
+        vertex_attrib_pointer(0, 4, GL_FLOAT, 0, nullptr);
         glBindVertexArray(0);
     }
+    
+    r32 largest_character = 0;
+    
+    for(i32 i = 0; i < font_info->char_count; i++)
+    {
+        char str[2];
+        str[0] = (char)(font_info->first_char + i);
+        str[1] = '\0';
+        math::Vec2 char_size = get_text_size_scaled(renderer, str, *font_info, 0);
+        if(char_size.y > largest_character)
+        {
+            largest_character = char_size.y;
+        }
+    }
+    
+    font_info->largest_character_height = largest_character;
     
     end_temporary_memory(temp_memory);
 }
 
-static void load_font(RenderState& render_state, char* path, i32 size, i32 index = -1)
+static void load_font(RenderState& render_state, Renderer& renderer, char* path, i32 size, i32 index = -1)
 {
-    //initialize_free_type_font(path, size, render_state.ft_library, &render_state.fonts[render_state.font_count++]);
-    stbtt_load_font(render_state, path, size, index);
+    stbtt_load_font(render_state, renderer, path, size, index);
 }
-
 
 static const GLFWvidmode* create_open_gl_window(RenderState& render_state, WindowMode window_mode, const char* title, i32 width, i32 height)
 {
@@ -1054,7 +1085,6 @@ static const GLFWvidmode* create_open_gl_window(RenderState& render_state, Windo
     render_state.window_title = push_string(&render_state.string_arena, strlen(title) + 1);
     strcpy(render_state.window_title, title);
     glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
-    
     
     int widthMM, heightMM;
     glfwGetMonitorPhysicalSize(glfwGetPrimaryMonitor(), &widthMM, &heightMM);
@@ -1081,13 +1111,13 @@ static const GLFWvidmode* create_open_gl_window(RenderState& render_state, Windo
         glfwWindowHint(GLFW_GREEN_BITS, mode->greenBits);
         glfwWindowHint(GLFW_BLUE_BITS, mode->blueBits);
         glfwWindowHint(GLFW_REFRESH_RATE, mode->refreshRate);
-        monitor = NULL;
+        monitor = nullptr;
     }
     
     auto old_window = render_state.window;
     
-    render_state.window = glfwCreateWindow(screen_width, screen_height, render_state.window_title, monitor,
-                                           render_state.window);
+    render_state.window = glfwCreateWindow(screen_width, screen_height,  render_state.window_title, monitor,
+                                           nullptr);
     render_state.framebuffer.buffer_handle = 0;
     
     if(old_window)
@@ -1192,7 +1222,7 @@ static void initialize_opengl(RenderState& render_state, Renderer& renderer, r32
     
     gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
     
-    glfwSwapInterval(0);
+    glfwSwapInterval(1);
     
     glfwGetFramebufferSize(render_state.window, &render_state.framebuffer_width, &render_state.framebuffer_height);
     glViewport(0, 0, render_state.framebuffer_width, render_state.framebuffer_height);
@@ -1251,6 +1281,13 @@ static void initialize_opengl(RenderState& render_state, Renderer& renderer, r32
     
     render_state.paused = false;
     
+    create_standard_cursors(render_state);
+    
+    renderer.framebuffer_width = render_state.framebuffer_width;
+    renderer.framebuffer_height = render_state.framebuffer_height;
+    
+    renderer.ui_reference_resolution = {1920, 1080};
+    
     GLFWmonitor* monitor = glfwGetPrimaryMonitor();
     
     i32 video_mode_count;
@@ -1281,7 +1318,7 @@ static void initialize_opengl(RenderState& render_state, Renderer& renderer, r32
                 if(renderer.window_width == vm.width && renderer.window_height == vm.height)
                 {
                     renderer.current_resolution_index = renderer.available_resolutions_count - 1;
-                    auto res = renderer.available_resolutions[renderer.current_resolution_index];
+                    //auto res = renderer.available_resolutions[renderer.current_resolution_index];
                     renderer.resolution = {vm.width, vm.height};
                 }
             }
@@ -1290,8 +1327,8 @@ static void initialize_opengl(RenderState& render_state, Renderer& renderer, r32
         // @Incomplete: Replace with own sort? Don't like using qsort here :(
         qsort(renderer.available_resolutions, (size_t)renderer.available_resolutions_count, sizeof(Resolution), [](const void* a, const void* b)
               {
-              auto r_1 = (Resolution*)a;
-              auto r_2 = (Resolution*)b;
+              auto r_1 = (const Resolution*)a;
+              auto r_2 = (const Resolution*)b;
               
               auto width_diff = r_1->width - r_2->width;
               auto height_diff = r_1->height - r_2->height;
@@ -1475,7 +1512,7 @@ static void render_line(RenderState& render_state, math::Vec4 color, math::Vec3 
     glBufferData(GL_ARRAY_BUFFER, 24 * sizeof(GLfloat), &points[0], GL_DYNAMIC_DRAW);
     
     
-    vertex_attrib_pointer(0, 3, GL_FLOAT, 6 * sizeof(GLfloat), (void*)0); // pos
+    vertex_attrib_pointer(0, 3, GL_FLOAT, 6 * sizeof(GLfloat), (void*)nullptr); // pos
     vertex_attrib_pointer(1, 2, GL_FLOAT, 6 * sizeof(GLfloat), (void*)(3 * sizeof(GLfloat))); // normals
     vertex_attrib_pointer(2, 1, GL_FLOAT, 6 * sizeof(GLfloat), (void*)(5 * sizeof(GLfloat))); // miter
     
@@ -1493,7 +1530,7 @@ static void render_line(RenderState& render_state, math::Vec4 color, math::Vec3 
     glBindVertexArray(0);
 }
 
-static void render_quad(RenderMode mode, RenderState& render_state, math::Vec4 color, math::Vec3 position, b32 flipped, math::Vec3 size, math::Vec3 rotation, b32 with_origin, math::Vec2 origin, i32 shader_handle, ShaderAttribute* shader_attributes, i32 shader_attribute_count, b32 is_ui = true, i32 texture_handle = 0, b32 rounded = false, b32 for_animation = false, math::Vec2 texture_size = math::Vec2(), math::Vec2i frame_size = math::Vec2i(), math::Vec2 texture_offset = math::Vec2(), math::Mat4 projection_matrix = math::Mat4(), math::Mat4 view_matrix = math::Mat4())
+static void render_quad(RenderMode mode, RenderState& render_state, math::Vec4 color, math::Vec3 position, b32 flipped, math::Vec3 size, math::Vec3 rotation, b32 with_origin, math::Vec2 origin, i32 shader_handle, ShaderAttribute* shader_attributes, i32 shader_attribute_count, b32 is_ui = true, i32 texture_handle = 0, r32 border_width = 0.0f, math::Rgba border_color = math::Rgba(1.0f),  b32 rounded = false, b32 for_animation = false, math::Vec2 texture_size = math::Vec2(), math::Vec2i frame_size = math::Vec2i(), math::Vec2 texture_offset = math::Vec2(), math::Mat4 projection_matrix = math::Mat4(), math::Mat4 view_matrix = math::Mat4())
 {
     switch (mode)
     {
@@ -1508,6 +1545,7 @@ static void render_quad(RenderMode mode, RenderState& render_state, math::Vec4 c
             else
             {
                 shader = render_state.quad_shader;
+                
             }
             
             if (texture_handle > 0)
@@ -1599,13 +1637,13 @@ static void render_quad(RenderMode mode, RenderState& render_state, math::Vec4 c
             {
                 if (flipped)
                 {
-                    position.x -= ((pixel_size.x - origin.x) / render_state.pixels_per_unit) * scale.x;
-                    position.y -= origin.y / render_state.pixels_per_unit;
+                    position.x -= ((pixel_size.x - origin.x)) * scale.x;
+                    position.y -= origin.y;
                 }
                 else
                 {
-                    position.x -= origin.x / render_state.pixels_per_unit;
-                    position.y -= origin.y / render_state.pixels_per_unit;
+                    position.x -= origin.x;
+                    position.y -= origin.y;
                 }
             }
             else
@@ -1627,6 +1665,16 @@ static void render_quad(RenderMode mode, RenderState& render_state, math::Vec4 c
                 set_mat4_uniform(shader.program, "View", view_matrix);
             }
             
+            if(shader.program == render_state.quad_shader.program)
+            {
+                set_float_uniform(shader.program, "aspect",
+                                  size.x / size.y);
+                set_vec2_uniform(shader.program, "scale",
+                                 math::Vec2(scale.x, scale.y));
+                set_float_uniform(shader.program, "border_width", border_width);
+                set_vec4_uniform(shader.program, "border_color", border_color);
+            }
+            
             set_float_uniform(shader.program, "isUI", (r32)is_ui);
             set_mat4_uniform(shader.program, "M", model);
             set_vec4_uniform(shader.program, "color", color);
@@ -1642,31 +1690,12 @@ static void render_quad(RenderMode mode, RenderState& render_state, math::Vec4 c
             
             if(rounded)
             {
-                
-                static r32 radius = 0.08f;
-                
-                if(get_key(Key_F4, &input_controller))
-                {
-                    radius -= 0.001;
-                }
-                else if(get_key(Key_F5, &input_controller))
-                {
-                    radius += 0.001;
-                }
-                
-                if(radius >= 1.0f)
-                {
-                    radius = 1.0f;
-                }
-                if(radius < 0.0f)
-                {
-                    radius = 0.0f;
-                }
+                r32 radius = 0.08f;
                 
                 glBindTexture(GL_TEXTURE_2D, 0);
                 set_vec2_uniform(shader.program, "dimension", math::Vec2((r32)render_state.window_width, (r32)render_state.window_height));
                 set_vec2_uniform(shader.program, "size", math::Vec2(scale.x, scale.y));
-                set_vec2_uniform(shader.program, "position", math::Vec2(position.x, position.y));
+                set_vec3_uniform(shader.program, "position", position);
                 set_float_uniform(shader.program, "radius", radius);
                 set_float_uniform(shader.program, "border", 0.98f);
             }
@@ -1726,7 +1755,7 @@ static void render_quad(RenderMode mode, RenderState& render_state, math::Vec4 c
                 }
             }
             
-            glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)0);
+            glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)nullptr);
         }
         break;
         case RENDER_OUTLINE:
@@ -1768,32 +1797,9 @@ static void render_quad(RenderMode mode, RenderState& render_state, math::Vec4 c
     glBindVertexArray(0);
 }
 
-static math::Vec2 get_text_size(const char *text, TrueTypeFont &font)
-{
-    math::Vec2 size;
-    r32 placeholder_y = 0.0;
-    
-    for(u32 i = 0; i < strlen(text); i++)
-    {
-        stbtt_aligned_quad quad;
-        stbtt_GetPackedQuad(font.char_data, font.atlas_width, font.atlas_height,
-                            text[i]- font.first_char, &size.x, &placeholder_y, &quad, 1);
-        
-        if(quad.y1 - quad.y0 > size.y)
-        {
-            size.y = quad.y1 - quad.y0;
-        }
-        
-        i32 kerning = stbtt_GetCodepointKernAdvance(&font.info, text[i] - font.first_char, text[i + 1] - font.first_char);
-        size.x += (r32)kerning * font.scale;
-    }
-    
-    return size;
-}
-
 //rendering methods
-static void render_text(RenderState &render_state, TrueTypeFont &font, const math::Vec4& color, const char* text, r32 x, r32 y, math::Mat4 view_matrix, math::Mat4 projection_matrix, r32 scale = 1.0f,
-                        u64 alignment_flags = ALIGNMENT_LEFT, b32 align_center_y = true)
+static void render_text(RenderState &render_state, GLFontBuffer &font, TrueTypeFontInfo& font_info, const math::Vec4& color, const char* text, r32 x, r32 y, math::Mat4 view_matrix, math::Mat4 projection_matrix, r32 scale = 1.0f,
+                        u64 alignment_flags = ALIGNMENT_LEFT, b32 align_center_y = true, i32 z = 0)
 {
     glBindVertexArray(font.vao);
     auto shader = render_state.shaders[SHADER_STANDARD_FONT];
@@ -1802,6 +1808,7 @@ static void render_text(RenderState &render_state, TrueTypeFont &font, const mat
     set_vec4_uniform(shader.program, "color", color);
     set_vec4_uniform(shader.program, "alphaColor", math::Rgba(1, 1, 1, 1));
     set_mat4_uniform(shader.program, "projectionMatrix", projection_matrix);
+    set_float_uniform(shader.program, "z", (r32)z);
     
     if(render_state.bound_texture != font.texture)
     {
@@ -1816,7 +1823,7 @@ static void render_text(RenderState &render_state, TrueTypeFont &font, const mat
     i32 n = 0;
     
     // @Speed: The call to get_text_size() will loop throught the text, which means we'll loop through it twice per render-call
-    math::Vec2 text_size = get_text_size(text, font);
+    math::Vec2 text_size = get_text_size(text, font_info);
     if(alignment_flags & ALIGNMENT_CENTER_X)
     {
         x -= text_size.x / 2.0f;
@@ -1846,8 +1853,8 @@ static void render_text(RenderState &render_state, TrueTypeFont &font, const mat
     for(u32 i = 0; i < strlen(text); i++)
     {
         stbtt_aligned_quad quad;
-        stbtt_GetPackedQuad(font.char_data, font.atlas_width, font.atlas_height,
-                            text[i]- font.first_char, &x, &y, &quad, 1);
+        stbtt_GetPackedQuad(font_info.char_data, font_info.atlas_width, font_info.atlas_height,
+                            text[i]- font_info.first_char, &x, &y, &quad, 1);
         
         r32 x_min = quad.x0;
         r32 x_max = quad.x1;
@@ -1861,8 +1868,8 @@ static void render_text(RenderState &render_state, TrueTypeFont &font, const mat
         coords[n++] = { x_max, y_max, quad.s1, quad.t1 };
         coords[n++] = { x_min, y_min, quad.s0, quad.t0 };
         
-        i32 kerning = stbtt_GetCodepointKernAdvance(&font.info, text[i] - font.first_char, text[i + 1] - font.first_char);
-        x += (r32)kerning * font.scale;
+        i32 kerning = stbtt_GetCodepointKernAdvance(&font_info.info, text[i] - font_info.first_char, text[i + 1] - font_info.first_char);
+        x += (r32)kerning * font_info.scale;
     }
     
     glBindBuffer(GL_ARRAY_BUFFER, font.vbo);
@@ -1882,24 +1889,24 @@ static void render_line(const RenderCommand& command, RenderState& render_state,
 static void render_text(const RenderCommand& command, RenderState& render_state, Renderer& renderer, math::Mat4 view_matrix, math::Mat4 projection_matrix)
 {
     assert(command.text.font_handle < render_state.font_count);
-    TrueTypeFont font = render_state.true_type_fonts[command.text.font_handle];
+    GLFontBuffer font = render_state.gl_fonts[command.text.font_handle];
     
-    if(font.resolution_loaded_for.width != render_state.window_width || font.resolution_loaded_for.height != render_state.window_height)
+    if(font.resolution_loaded_for.width != render_state.framebuffer_width || font.resolution_loaded_for.height != render_state.framebuffer_height)
     {
         FontData data = renderer.fonts[command.text.font_handle];
         
         if(font.resolution_loaded_for.width == 0 && font.resolution_loaded_for.height == 0)
         {
-            load_font(render_state, data.path, data.size, -1);
+            load_font(render_state, renderer, data.path, data.size, -1);
         }
         else
         {
-            load_font(render_state, data.path, data.size, command.text.font_handle);
+            load_font(render_state, renderer, data.path, data.size, command.text.font_handle);
         }
         
     }
     
-    render_text(render_state, font, command.text.color, command.text.text, command.text.position.x, command.text.position.y, view_matrix, projection_matrix, command.text.scale, command.text.alignment_flags);
+    render_text(render_state, font, renderer.tt_font_infos[command.text.font_handle], command.text.color, command.text.text, command.text.position.x, command.text.position.y, view_matrix, projection_matrix, command.text.scale, command.text.alignment_flags, true, command.text.z_layer);
 }
 
 static void render_quad(const RenderCommand& command, RenderState& render_state, math::Mat4 projection, math::Mat4 view)
@@ -1921,6 +1928,8 @@ static void render_quad(const RenderCommand& command, RenderState& render_state,
                     command.shader_attribute_count,
                     command.is_ui,
                     (i32)handle,
+                    command.quad.border_width,
+                    command.quad.border_color,
                     command.quad.rounded,
                     command.quad.for_animation,
                     command.quad.texture_size,
@@ -1945,6 +1954,8 @@ static void render_quad(const RenderCommand& command, RenderState& render_state,
                     command.shader_attribute_count,
                     command.is_ui,
                     (i32)handle,
+                    command.quad.border_width,
+                    command.quad.border_color,
                     command.quad.rounded,
                     command.quad.for_animation,
                     command.quad.texture_size,
@@ -2061,7 +2072,7 @@ static void prepare_shader(const Shader shader, ShaderAttribute *attributes, i32
     }
 }
 
-static void render_mesh(const RenderCommand &render_command, Renderer &renderer, RenderState &render_state, math::Mat4 projection_matrix, math::Mat4 view_matrix, b32 for_shadow_map, ShadowMapMatrices *shadow_map_matrices = 0)
+static void render_mesh(const RenderCommand &render_command, Renderer &renderer, RenderState &render_state, math::Mat4 projection_matrix, math::Mat4 view_matrix, b32 for_shadow_map, ShadowMapMatrices *shadow_map_matrices = nullptr)
 {
     Buffer buffer = render_state.buffers[render_command.mesh.buffer_handle];
     glBindVertexArray(buffer.vao);
@@ -2079,7 +2090,7 @@ static void render_mesh(const RenderCommand &render_command, Renderer &renderer,
         use_shader(shader);
     }
     
-    vertex_attrib_pointer(0, 3, GL_FLOAT,(8 * sizeof(GLfloat)), 0);
+    vertex_attrib_pointer(0, 3, GL_FLOAT,(8 * sizeof(GLfloat)), nullptr);
     vertex_attrib_pointer(1, 3, GL_FLOAT, (8 * sizeof(GLfloat)), (void*)(3 * sizeof(GLfloat)));
     vertex_attrib_pointer(2, 2, GL_FLOAT, (8 * sizeof(GLfloat)), (void*)(6 * sizeof(GLfloat)));
     
@@ -2171,14 +2182,14 @@ static void render_mesh(const RenderCommand &render_command, Renderer &renderer,
     }
     else
     {
-        glDrawElements(GL_TRIANGLES, buffer.index_buffer_count, GL_UNSIGNED_SHORT, (void*)0);
+        glDrawElements(GL_TRIANGLES, buffer.index_buffer_count, GL_UNSIGNED_SHORT, (void*)nullptr);
     }
     
     glActiveTexture(GL_TEXTURE0);
 }
 
 
-static void render_mesh_instanced(const RenderCommand &render_command, Renderer &renderer, RenderState &render_state, math::Mat4 projection_matrix, math::Mat4 view_matrix, b32 for_shadow_map, ShadowMapMatrices *shadow_map_matrices = 0)
+static void render_mesh_instanced(const RenderCommand &render_command, Renderer &renderer, RenderState &render_state, math::Mat4 projection_matrix, math::Mat4 view_matrix, b32 for_shadow_map, ShadowMapMatrices *shadow_map_matrices = nullptr)
 {
     Buffer buffer = render_state.buffers[render_command.mesh_instanced.buffer_handle];
     Buffer offset_instance_buffer = render_state.buffers[render_command.mesh_instanced.instance_offset_buffer_handle];
@@ -2202,7 +2213,7 @@ static void render_mesh_instanced(const RenderCommand &render_command, Renderer 
     }
     
     glEnableVertexAttribArray(0);
-    vertex_attrib_pointer(0, 3, GL_FLOAT,(8 * sizeof(GLfloat)), 0);
+    vertex_attrib_pointer(0, 3, GL_FLOAT,(8 * sizeof(GLfloat)), nullptr);
     
     glEnableVertexAttribArray(1);
     vertex_attrib_pointer(1, 3, GL_FLOAT, (8 * sizeof(GLfloat)), (void*)(3 * sizeof(GLfloat)));
@@ -2215,7 +2226,7 @@ static void render_mesh_instanced(const RenderCommand &render_command, Renderer 
     glBindBuffer(GL_ARRAY_BUFFER, offset_instance_buffer.vbo);
     glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizeiptr)(sizeof(math::Vec3) * render_command.mesh_instanced.offset_count), render_command.mesh_instanced.offsets);
     
-    glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+    glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 0, (void*)nullptr);
     glVertexAttribDivisor(3, 1);
     
     // color
@@ -2223,7 +2234,7 @@ static void render_mesh_instanced(const RenderCommand &render_command, Renderer 
     glBindBuffer(GL_ARRAY_BUFFER, color_instance_buffer.vbo);
     glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizeiptr)(sizeof(math::Rgba) * render_command.mesh_instanced.offset_count), render_command.mesh_instanced.colors);
     
-    glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, 0, (void*)0);
+    glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, 0, (void*)nullptr);
     glVertexAttribDivisor(4, 1);
     
     // rotation
@@ -2231,7 +2242,7 @@ static void render_mesh_instanced(const RenderCommand &render_command, Renderer 
     glBindBuffer(GL_ARRAY_BUFFER, rotation_instance_buffer.vbo);
     glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizeiptr)(sizeof(math::Vec3) * render_command.mesh_instanced.offset_count), render_command.mesh_instanced.rotations);
     
-    glVertexAttribPointer(5, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+    glVertexAttribPointer(5, 3, GL_FLOAT, GL_FALSE, 0, (void*)nullptr);
     glVertexAttribDivisor(5, 1);
     
     // scale
@@ -2239,7 +2250,7 @@ static void render_mesh_instanced(const RenderCommand &render_command, Renderer 
     glBindBuffer(GL_ARRAY_BUFFER, scale_instance_buffer.vbo);
     glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizeiptr)(sizeof(math::Vec3) * render_command.mesh_instanced.offset_count), render_command.mesh_instanced.scalings);
     
-    glVertexAttribPointer(6, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+    glVertexAttribPointer(6, 3, GL_FLOAT, GL_FALSE, 0, (void*)nullptr);
     glVertexAttribDivisor(6, 1);
     
     math::Mat4 model_matrix(1.0f);
@@ -2321,7 +2332,7 @@ static void render_mesh_instanced(const RenderCommand &render_command, Renderer 
         set_float_uniform(shader.program, "lightPower", 1.0f);
     }
     
-    glDrawElementsInstanced(GL_TRIANGLES, buffer.index_buffer_count, GL_UNSIGNED_SHORT, (void*)0, render_command.mesh_instanced.offset_count);
+    glDrawElementsInstanced(GL_TRIANGLES, buffer.index_buffer_count, GL_UNSIGNED_SHORT, (void*)nullptr, render_command.mesh_instanced.offset_count);
     
     glActiveTexture(GL_TEXTURE0);
 }
@@ -2345,7 +2356,7 @@ static void render_particles(const RenderCommand &render_command, Renderer &rend
     use_shader(shader);
     
     glEnableVertexAttribArray(0);
-    vertex_attrib_pointer(0, 3, GL_FLOAT,(5 * sizeof(GLfloat)), 0);
+    vertex_attrib_pointer(0, 3, GL_FLOAT,(5 * sizeof(GLfloat)), nullptr);
     
     glEnableVertexAttribArray(1);
     vertex_attrib_pointer(1, 2, GL_FLOAT, (5 * sizeof(GLfloat)), (void*)(3 * sizeof(GLfloat)));
@@ -2390,7 +2401,7 @@ static void render_particles(const RenderCommand &render_command, Renderer &rend
     else
         set_bool_uniform(shader.program, "withTexture", false);
     
-    glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)0, render_command.particles.particle_count);
+    glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)nullptr, render_command.particles.particle_count);
     glDepthMask(GL_TRUE);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
@@ -2462,7 +2473,6 @@ static void register_buffers(RenderState& render_state, Renderer& renderer)
         else
         {
             register_buffers(render_state, data.vertex_buffer, data.vertex_buffer_size, data.index_buffer, data.index_buffer_count, data.index_buffer_size, data.has_normals, data.has_uvs, data.skinned, data.existing_handle);
-            
         }
     }
     
@@ -2527,7 +2537,7 @@ static void render_commands(RenderState &render_state, Renderer &renderer)
     for (i32 index = render_state.font_count; index < renderer.font_count; index++)
     {
         FontData data = renderer.fonts[index];
-        load_font(render_state, data.path, data.size);
+        load_font(render_state, renderer, data.path, data.size);
     }
     
     auto& camera = renderer.cameras[renderer.current_camera_handle];
@@ -2719,6 +2729,11 @@ static void render_commands(RenderState &render_state, Renderer &renderer)
                 }
             }
             break;
+            case RENDER_COMMAND_CURSOR:
+            {
+                glfwSetCursor(render_state.window, render_state.cursors[command.cursor.type]);
+            }
+            break;
             default:
             break;
         }
@@ -2727,17 +2742,26 @@ static void render_commands(RenderState &render_state, Renderer &renderer)
     renderer.command_count = 0;
     //clear(&renderer.commands);
     
-    glDisable(GL_DEPTH_TEST);
+    //glDisable(GL_DEPTH_TEST);
+    
     
     for (i32 index = 0; index < renderer.ui_command_count; index++)
     {
         const RenderCommand& command = renderer.ui_commands[index];
         
+        if(command.clip)
+        {
+            glEnable(GL_SCISSOR_TEST);
+            math::Rect clip_rect = command.clip_rect;
+            
+            glScissor((i32)clip_rect.x, (i32)clip_rect.y, (i32)clip_rect.width, (i32)clip_rect.height);
+        }
+        
         switch (command.type)
         {
             case RENDER_COMMAND_LINE:
             {
-                render_line(command, render_state, camera.projection_matrix, camera.view_matrix);
+                render_line(command, render_state, renderer.ui_projection_matrix, camera.view_matrix);
             }
             break;
             case RENDER_COMMAND_TEXT:
@@ -2768,7 +2792,10 @@ static void render_commands(RenderState &render_state, Renderer &renderer)
             default:
             break;
         }
+        glDisable(GL_SCISSOR_TEST);
     }
+    
+    
     
     renderer.ui_command_count = 0;
     //clear(&renderer.ui_commands);
@@ -2783,11 +2810,8 @@ static void render(RenderState& render_state, Renderer& renderer, r64 delta_time
 {   
     if(render_state.paused)
     {
-        //clear(&renderer.commands);
         renderer.command_count = 0;
-        //clear(&renderer.ui_commands);
         renderer.ui_command_count = 0;
-        //clear(&renderer.light_commands);
         renderer.light_command_count = 0;
         return;
     }
@@ -2819,7 +2843,6 @@ static void render(RenderState& render_state, Renderer& renderer, r64 delta_time
                 glfwSetWindowMonitor(render_state.window, glfwGetPrimaryMonitor(), 0, 0, mode->width, mode->height, 0);
                 renderer.window_width = mode->width;
                 renderer.window_height = mode->height;
-                
                 
                 for(i32 res_index = 0; res_index < renderer.available_resolutions_count; res_index++)
                 {
@@ -2877,12 +2900,15 @@ static void render(RenderState& render_state, Renderer& renderer, r64 delta_time
     camera.viewport_width = render_state.framebuffer_width;
     camera.viewport_height = render_state.framebuffer_height;
     
-    renderer.ui_projection_matrix = math::ortho(0.0f, (r32)renderer.window_width, 0.0f, (r32)renderer.window_height, -1.0f, 1.0f);
+    renderer.ui_projection_matrix = math::ortho(0.0f, (r32)renderer.framebuffer_width, 0.0f, (r32)renderer.framebuffer_height, -500.0f, 500.0f);
     
     register_buffers(render_state, renderer);
     
     if(should_render)
     {
+        renderer.framebuffer_width = render_state.framebuffer_width;
+        renderer.framebuffer_height = render_state.framebuffer_height;
+        
         render_shadows(render_state, renderer, render_state.shadow_map_buffer);
         
         glViewport(0, 0, render_state.framebuffer_width, render_state.framebuffer_height);

@@ -5,8 +5,39 @@
 #define MAX_CHILDREN 30
 #define MAX_INSTANCING_PAIRS 128
 
-#define UI_COORD_DIMENSION 1000
+#define UI_COORD_DIMENSION 1000.0f
 
+
+#define STB_TRUETYPE_IMPLEMENTATION
+#ifdef _WIN32
+#pragma warning(push)
+#pragma warning(disable : 4365) // int conversions
+#pragma warning(disable : 4459)
+#endif
+#include "stb/stb_truetype.h"
+
+#ifdef _WIN32
+#pragma warning(pop)
+#endif
+
+
+struct TrueTypeFontInfo
+{
+    i32 ascent;
+    r32 scale;
+    i32 baseline;
+    i32 first_char;
+    i32 char_count;
+    i32 size;
+    i32 atlas_width;
+    i32 atlas_height;
+    u32 oversample_x;
+    u32 oversample_y;
+    r32 largest_character_height;
+    
+    stbtt_fontinfo info;
+    stbtt_packedchar char_data['~' - ' '];
+};
 #define PRIMITIVE_CUBE 0
 #define PRIMITIVE_PLANE 1
 
@@ -119,8 +150,17 @@ enum RenderCommandType
     RENDER_COMMAND_SHADER_END,
     RENDER_COMMAND_DEPTH_TEST,
     RENDER_COMMAND_PARTICLES,
+    RENDER_COMMAND_CURSOR,
     
     RENDER_COMMAND_COUNT
+};
+
+enum RelativeFlag
+{
+    RELATIVE_TOP,
+    RELATIVE_LEFT,
+    RELATIVE_RIGHT,
+    RELATIVE_BOTTOM
 };
 
 enum Alignment
@@ -149,6 +189,13 @@ struct VertexInfo
     math::Vec2 uv;
     math::Vec3 normal;
     math::Rgba color;
+};
+
+struct RelativeUIQuadInfo
+{
+    math::Vec2 position;
+    math::Vec2 scale;
+    math::Vec2 ui_position;
 };
 
 r32 plane_vertices[] =
@@ -425,7 +472,7 @@ struct InstancedRenderCommand
     i32 original_material_handle;
     i32 count;
     math::Vec3 scale;
-
+    
     b32 receives_shadows;
     b32 cast_shadows;
 };
@@ -604,9 +651,13 @@ struct QuadInfo
     RenderInfo render_info;
     QuadTextureInfo texture_info;
     
+    r32 border_width;
+    math::Rgba border_color;
     b32 rounded;
     b32 flipped;
     i32 animation_controller_handle;
+    b32 clip;
+    math::Rect clip_rect;
 };
 
 struct TextInfo
@@ -624,6 +675,16 @@ enum CommandBlendMode
 {
     CBM_ONE,
     CBM_ONE_MINUS_SRC_ALPHA
+};
+
+enum CursorType
+{
+    CURSOR_ARROW,
+    CURSOR_CROSSHAIR,
+    CURSOR_HAND,
+    CURSOR_HRESIZE,
+    CURSOR_IBEAM,
+    CURSOR_VRESIZE
 };
 
 struct RenderCommand
@@ -647,6 +708,9 @@ struct RenderCommand
     b32 cast_shadows;
     b32 receives_shadows;
     
+    b32 clip;
+    math::Rect clip_rect;
+    
     union
     {
         struct
@@ -664,6 +728,7 @@ struct RenderCommand
             math::Rgba color; // @Cleanup: REMOVE!
             u64 alignment_flags;
             r32 scale;
+            i32 z_layer;
         } text;
         struct
         {
@@ -681,6 +746,8 @@ struct RenderCommand
             math::Vec2 texture_size;
             math::Vec2i frame_size;
             math::Vec2 texture_offset;
+            r32 border_width;
+            math::Rgba border_color;
         } quad;
         struct
         {
@@ -761,6 +828,10 @@ struct RenderCommand
         } depth_test;
         struct
         {
+            CursorType type;
+        } cursor;
+        struct
+        {
             i32 buffer_handle;
             i32 offset_buffer_handle;
             i32 color_buffer_handle;
@@ -809,6 +880,14 @@ struct Camera
     r32 end_alpha;
     r32 fading_alpha = 0.0f;
     r32 fading_speed;
+};
+
+enum UIScalingFlag
+{
+    KEEP_ASPECT_RATIO = (1 << 0),
+    NO_SCALING = (1 << 1),
+    SCALE_WITH_WIDTH = (1 << 2),
+    SCALE_WITH_HEIGHT = (1 << 3),
 };
 
 enum TextureFiltering
@@ -900,8 +979,8 @@ struct Renderer
     
     RenderCommand *ui_commands;
     i32 ui_command_count;
-
-	MemoryArena command_arena;
+    
+    MemoryArena command_arena;
     
     MemoryArena light_commands;
     i32 light_command_count;
@@ -967,6 +1046,8 @@ struct Renderer
     i32 available_resolutions_count;
     i32 current_resolution_index;
     
+    Resolution ui_reference_resolution;
+    
     r32 scale_x;
     r32 scale_y;
     
@@ -977,6 +1058,12 @@ struct Renderer
     
     FontData *fonts;
     i32 font_count;
+    
+    TrueTypeFontInfo *tt_font_infos;
+    i32 tt_font_count;
+    
+    i32 framebuffer_width;
+    i32 framebuffer_height;
     
     MemoryArena mesh_arena;
     MemoryArena texture_arena;
@@ -989,32 +1076,116 @@ struct Renderer
     MemoryArena temp_arena;
 };
 
-math::Vec3 to_ui(Resolution resolution, math::Vec2i coord)
+static math::Vec2i get_scale(Renderer& renderer)
 {
+    return {renderer.framebuffer_width, renderer.framebuffer_height};
+}
+
+math::Vec3 to_ui(Renderer& renderer, math::Vec2 coord)
+{
+    math::Vec2i scale = get_scale(renderer);
     math::Vec3 res;
-    res.x = ((r32)coord.x / (r32)resolution.width) * UI_COORD_DIMENSION;
-    res.y = ((r32)coord.y / (r32)resolution.height) * UI_COORD_DIMENSION;
+    res.x = ((r32)coord.x / (r32)scale.x) * UI_COORD_DIMENSION;
+    res.y = ((r32)coord.y / (r32)scale.y) * UI_COORD_DIMENSION;
     res.z = 0.0f;
     return res;
 }
 
-math::Vec2i from_ui(Resolution resolution, math::Vec3 coord)
+math::Vec2 from_ui(Renderer& renderer, math::Vec3 coord)
 {
-    math::Vec2i res;
-    res.x = (i32)(((r32)coord.x / (r32)UI_COORD_DIMENSION) * resolution.width);
-    res.y = (i32)(((r32)coord.y / (r32)UI_COORD_DIMENSION) * resolution.height);
+    math::Vec2i scale = get_scale(renderer);
+    math::Vec2 res;
+    res.x = (((r32)coord.x / (r32)UI_COORD_DIMENSION) * scale.x);
+    res.y = (((r32)coord.y / (r32)UI_COORD_DIMENSION) * scale.y);
     return res;
 }
 
-r32 from_ui(i32 scale, r32 coord)
+r32 from_ui(Renderer& renderer, i32 scale, r32 coord)
 {
     return ((r32)coord / (r32)UI_COORD_DIMENSION) * (r32)scale;
 }
 
-i32 to_ui(i32 scale, r32 coord)
+r32 to_ui(Renderer& renderer, i32 scale, r32 coord)
 {
-    return (i32)((coord / (r32)scale) * (r32)UI_COORD_DIMENSION);
+    return (coord / (r32)scale) * (r32)UI_COORD_DIMENSION;
 }
 
+static math::Vec2 get_text_size(const char *text, TrueTypeFontInfo &font)
+{
+    math::Vec2 size;
+    r32 placeholder_y = 0.0;
+    
+    for(u32 i = 0; i < strlen(text); i++)
+    {
+        stbtt_aligned_quad quad;
+        stbtt_GetPackedQuad(font.char_data, font.atlas_width, font.atlas_height,
+                            text[i] - font.first_char, &size.x, &placeholder_y, &quad, 1);
+        
+        if(quad.y1 - quad.y0 > size.y)
+        {
+            size.y = quad.y1 - quad.y0;
+        }
+        
+        i32 kerning = stbtt_GetCodepointKernAdvance(&font.info, text[i] - font.first_char, text[i + 1] - font.first_char);
+        size.x += (r32)kerning * font.scale;
+    }
+    
+    return size;
+}
+
+static math::Vec2 get_text_size_scaled(Renderer& renderer, const char* text, TrueTypeFontInfo& font, u64 scaling_flags = UIScalingFlag::KEEP_ASPECT_RATIO)
+{
+    math::Vec2 font_size = get_text_size(text, font);
+    math::Vec2 result;
+    
+    math::Vec2i scale = get_scale(renderer);
+    
+    result.x = (font_size.x / (r32)scale.x) * UI_COORD_DIMENSION;
+    
+    if(scaling_flags & UIScalingFlag::KEEP_ASPECT_RATIO)
+    {
+        r32 ratio = font_size.y / font_size.x;
+        result.y = font_size.x * ratio;
+    }
+    else
+    {
+        result.y = (font_size.y / (r32)scale.y) * UI_COORD_DIMENSION;
+    }
+    
+    return result;
+}
+
+struct TextLengthInfo
+{
+    size_t length;
+    
+    r32* widths;
+};
+
+// Gets an array of text widths for each character
+// Remember to free
+static TextLengthInfo get_char_widths_scaled(Renderer& renderer, const char* text, TrueTypeFontInfo &font, MemoryArena* arena)
+{
+    TextLengthInfo info = {};
+    
+    info.length = strlen(text);
+    info.widths = push_array(arena, info.length, r32);//(r32*)calloc(info.length, sizeof(r32));
+    
+    r32 placeholder_y = 0.0f;
+    
+    for(size_t i = 0; i < info.length; i++)
+    {
+        stbtt_aligned_quad quad;
+        stbtt_GetPackedQuad(font.char_data, font.atlas_width, font.atlas_height,
+                            text[i] - font.first_char, &info.widths[i], &placeholder_y, &quad, 1);
+        
+        i32 kerning = stbtt_GetCodepointKernAdvance(&font.info, text[i] - font.first_char, text[i + 1] - font.first_char);
+        
+        info.widths[i] += (r32)kerning * font.scale;
+        info.widths[i] = ((r32)info.widths[i] / (r32)renderer.window_width) * UI_COORD_DIMENSION;
+    }
+    
+    return info;
+}
 
 #endif

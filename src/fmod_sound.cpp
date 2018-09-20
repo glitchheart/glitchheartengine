@@ -17,7 +17,7 @@ static void load_sound(const char* file_path, SoundDevice* sound_device)
 {
     assert(sound_device->sound_count + 1 < global_max_sounds);
     //@Incomplete: Find out the exact parameters for a sound
-    auto result = FMOD_System_CreateSound(sound_device->system, file_path, FMOD_DEFAULT, 0, &sound_device->sounds[sound_device->sound_count++]);
+    auto result = FMOD_System_CreateSound(sound_device->system, file_path, FMOD_DEFAULT, nullptr, &sound_device->sounds[sound_device->sound_count++]);
     if(result != FMOD_OK)
     {
         FMOD_DEBUG(result);
@@ -384,7 +384,7 @@ static void init_audio_fmod(SoundDevice* sound_device)
         fmod_error_check(result);
     }
     
-    result = FMOD_System_Init(system, global_max_channels, FMOD_INIT_NORMAL, 0);
+    result = FMOD_System_Init(system, global_max_channels, FMOD_INIT_NORMAL, nullptr);
     fmod_error_check(result);
     
     u32 version;

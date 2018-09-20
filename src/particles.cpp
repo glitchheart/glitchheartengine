@@ -22,6 +22,12 @@ static void push_particle_system(Renderer &renderer, ParticleSystemInfo &particl
     render_command->particles.blend_mode = blend_mode;
 }
 
+static void push_particle_system(Renderer &renderer, ParticleSystemHandle handle)
+{
+    ParticleSystemInfo &particle_info = renderer.particle_systems[handle.handle];
+    push_particle_system(renderer, particle_info);
+}
+
 static void push_particle_system(Renderer &renderer, i32 particle_system_handle)
 {
     ParticleSystemInfo &particle_info = renderer.particle_systems[particle_system_handle];

@@ -130,7 +130,7 @@ void init_key_mappings()
 void init_mouse_button_mappings()
 {
     map_init(&input_controller.mouse_button_mappings, int_hash);
-    map_put(&input_controller.mouse_button_mappings, GLFW_MOUSE_BUTTON_LEFT, Mouse_Left);
+    map_put(&input_controller.mouse_button_mappings, GLFW_MOUSE_BUTTON_LEFT, (i32)Mouse_Left);
     map_put(&input_controller.mouse_button_mappings, GLFW_MOUSE_BUTTON_RIGHT, Mouse_Right);
     map_put(&input_controller.mouse_button_mappings, GLFW_MOUSE_BUTTON_MIDDLE, Mouse_Middle);
 }
@@ -142,7 +142,7 @@ void init_mouse_button_mappings()
 void init_controller_mappings()
 {
     map_init(&input_controller.controller_mappings, int_hash);
-    map_put(&input_controller.controller_mappings, GLFW_JOYSTICK_1, Joystick_1);
+    map_put(&input_controller.controller_mappings, GLFW_JOYSTICK_1, (i32)Joystick_1);
     map_put(&input_controller.controller_mappings, GLFW_JOYSTICK_2, Joystick_2);
     map_put(&input_controller.controller_mappings, GLFW_JOYSTICK_3, Joystick_3);
     map_put(&input_controller.controller_mappings, GLFW_JOYSTICK_4, Joystick_4);
@@ -178,11 +178,11 @@ static b32 controller_present()
         input_controller.controller_present = true;
         const char* name = glfwGetJoystickName(GLFW_JOYSTICK_1);
         
-        if(strstr(name, "Xbox") != 0)
+        if(strstr(name, "Xbox") != nullptr)
         {
             input_controller.controller_type = CONTROLLER_XBOX;
         }
-        else if(strstr(name, "PS4") != 0 || strstr(name, "Wireless") != 0)
+        else if(strstr(name, "PS4") != nullptr || strstr(name, "Wireless") != nullptr)
         {
             input_controller.controller_type = CONTROLLER_PS4;
         }
@@ -281,6 +281,8 @@ static void controller_keys(i32 joystick)
 
 static void cursor_position_callback(GLFWwindow *window, double x_pos, double y_pos)
 {
+    input_controller.mouse_x_delta = x_pos - input_controller.mouse_x;
+    input_controller.mouse_y_delta = y_pos - input_controller.mouse_y;
     input_controller.mouse_x = x_pos;
     input_controller.mouse_y = y_pos;
 }
@@ -355,6 +357,7 @@ static void set_invalid_keys()
         }
         input_controller.keys_up[key_code] = false;
     } 
+    input_controller.current_character = 0x0;
 }
 
 static void set_controller_invalid_keys()
@@ -382,6 +385,8 @@ static void set_mouse_invalid_keys()
     }
     input_controller.scroll_x = 0;
     input_controller.scroll_y = 0;
+    input_controller.mouse_x_delta = 0.0;
+    input_controller.mouse_y_delta = 0.0;
 }
 
 
