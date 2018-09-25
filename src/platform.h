@@ -83,8 +83,7 @@ struct TextureData;
 enum WindowMode
 {
     FM_WINDOWED = 0,
-    FM_FULL = 1,
-    FM_BORDERLESS = 2
+    FM_BORDERLESS = 1
 };
 
 enum GraphicsApi
