@@ -2825,20 +2825,7 @@ static void render(RenderState& render_state, Renderer& renderer, r64 delta_time
         if(renderer.window_mode != render_state.window_mode)
         {
             const GLFWvidmode *mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
-            if(renderer.window_mode == FM_FULL)
-            {
-                glfwSetWindowMonitor(render_state.window, glfwGetPrimaryMonitor(), 0, 0, mode->width, mode->height, 0);
-                for(i32 res_index = 0; res_index < renderer.available_resolutions_count; res_index++)
-                {
-                    auto res = renderer.available_resolutions[res_index];
-                    if(res.width == renderer.window_width && res.height == renderer.window_height)
-                    {
-                        renderer.current_resolution_index = res_index;
-                        break;
-                    }
-                }
-            }
-            else if(renderer.window_mode == FM_BORDERLESS)
+            if(renderer.window_mode == FM_BORDERLESS)
             {
                 glfwSetWindowMonitor(render_state.window, glfwGetPrimaryMonitor(), 0, 0, mode->width, mode->height, 0);
                 renderer.window_width = mode->width;
@@ -2854,7 +2841,6 @@ static void render(RenderState& render_state, Renderer& renderer, r64 delta_time
                     }
                 }
             }
-            
             else
             {
                 glfwSetWindowMonitor(render_state.window, nullptr, mode->width / 2 - renderer.window_width / 2, mode->height / 2 - renderer.window_height / 2, renderer.window_width, renderer.window_height, 0);
