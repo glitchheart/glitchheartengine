@@ -227,6 +227,9 @@ typedef PLATFORM_READ_LINE_FILE(PlatformReadLineFile);
 #define PLATFORM_PRINT_FILE(name) i32 name(PlatformFile& file, const char* format, ...)
 typedef PLATFORM_PRINT_FILE(PlatformPrintFile);
 
+#define PLATFORM_CREATE_DIRECTORY(name) b32 name(const char* path)
+typedef PLATFORM_CREATE_DIRECTORY(PlatformCreateDirectory);
+
 struct PlatformApi
 {
     PlatformGetAllFilesWithExtension *get_all_files_with_extension;
@@ -250,6 +253,7 @@ struct PlatformApi
     PlatformTellFile *tell_file;
     PlatformReadLineFile *read_line_file;
     PlatformPrintFile *print_file;
+    PlatformCreateDirectory *create_directory;
 };
 
 extern PlatformApi platform;

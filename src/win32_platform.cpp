@@ -237,6 +237,12 @@ inline PLATFORM_FILE_EXISTS(win32_file_exists)
     return (stat(file_path, &buffer) == 0);
 }
 
+inline PLATFORM_CREATE_DIRECTORY(win32_create_directory)
+{
+    BOOL result = CreateDirectoryA(path, 0);
+    return result;
+}
+
 /*
 inline PLATFORM_OPEN_FILE_WITH_DIALOG(win32_open_file_with_dialog)
 {
@@ -499,4 +505,5 @@ static void init_platform(PlatformApi& platform_api)
     platform_api.sleep_is_granular = win32_sleep_is_granular;
     platform_api.print_file = win32_print_file;
     platform_api.get_all_directories = win32_get_all_directories;
+    platform_api.create_directory =  win32_create_directory;
 }
