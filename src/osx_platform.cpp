@@ -20,6 +20,19 @@ inline PLATFORM_FILE_EXISTS(osx_file_exists)
     return (stat(file_path,&buffer) == 0);
 }
 
+
+inline PLATFORM_CREATE_DIRECTORY(osx_create_directory)
+{
+    i32 result = mkdir(path, S_IRWXU);
+    
+    if(!result)
+    {
+        return false;
+    }
+    
+    return true;
+}
+
 static b32 copy_file(const char* src, const char* dst, b32 dont_overwrite, MemoryArena* arena = nullptr, b32 binary = true)
 {
     FILE* in;
@@ -331,6 +344,7 @@ static void init_platform(PlatformApi& platform_api)
     platform_api.close_file = osx_close_file;
     platform_api.seek_file = osx_seek_file;
     platform_api.tell_file = osx_tell_file;
+    platform_api.create_directory = osx_create_directory;
 }
 
 
