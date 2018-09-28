@@ -376,6 +376,7 @@ static void push_filled_quad(Renderer& renderer, math::Vec3 position, b32 flippe
     }
     else
     {
+        render_command->quad.for_animation = false;
         render_command->quad.texture_offset = texture_offset;
         render_command->quad.frame_size = frame_size;
         
