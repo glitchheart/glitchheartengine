@@ -230,9 +230,46 @@ static void add_size_key(MemoryArena *memory_arena, ParticleSystemInfo &particle
     auto &values = particle_system.size_over_lifetime.values;
     auto &keys = particle_system.size_over_lifetime.keys;
     
-    values[particle_system.size_over_lifetime.value_count] = value;
-    keys[particle_system.size_over_lifetime.value_count] = key_time;
+    b32 replaced = false;
+    
+    for(i32 i = 0; i < particle_system.size_over_lifetime.value_count; i++)
+    {
+        if(keys[i] > key_time)
+        {
+            memmove(&keys[i + 1], &keys[i], sizeof(r64) * (particle_system.size_over_lifetime.value_count - i));
+            memmove(&values[i + 1], &values[i], sizeof(math::Vec2) * (particle_system.size_over_lifetime.value_count - i));
+            keys[i] = key_time;
+            values[i] = value;
+            replaced = true;
+            break;
+        }
+    }
+    
+    if(!replaced)
+    {
+        values[particle_system.size_over_lifetime.value_count] = value;
+        keys[particle_system.size_over_lifetime.value_count] = key_time;
+    }
+    
     particle_system.size_over_lifetime.value_count++;
+}
+
+
+static void remove_size_key(ParticleSystemInfo &particle_system, r64 key_time)
+{
+    auto& values = particle_system.size_over_lifetime.values;
+    auto& keys = particle_system.size_over_lifetime.keys;
+    
+    for(i32 i = 0; i < particle_system.size_over_lifetime.value_count; i++)
+    {
+        if(keys[i] == key_time)
+        {
+            memmove(&keys[i], &keys[i + 1], sizeof(math::Vec2) * (particle_system.size_over_lifetime.value_count - i));
+            memmove(&values[i], &values[i + 1], sizeof(r64) * (particle_system.size_over_lifetime.value_count - i));
+            particle_system.size_over_lifetime.value_count--;
+            break;
+        }
+    }
 }
 
 static void add_speed_key(MemoryArena *memory_arena, ParticleSystemInfo &particle_system, r64 key_time, r32 value)
@@ -247,9 +284,46 @@ static void add_speed_key(MemoryArena *memory_arena, ParticleSystemInfo &particl
     auto &values = particle_system.speed_over_lifetime.values;
     auto &keys = particle_system.speed_over_lifetime.keys;
     
-    values[particle_system.speed_over_lifetime.value_count] = value;
-    keys[particle_system.speed_over_lifetime.value_count] = key_time;
+    b32 replaced = false;
+    
+    for(i32 i = 0; i < particle_system.speed_over_lifetime.value_count; i++)
+    {
+        if(keys[i] > key_time)
+        {
+            memmove(&values[i + 1], &values[i], sizeof(r32) * (particle_system.speed_over_lifetime.value_count - i));
+            memmove(&keys[i + 1], &keys[i], sizeof(r64) * (particle_system.speed_over_lifetime.value_count - i));
+            keys[i] = key_time;
+            values[i] = value;
+            replaced = true;
+            break;
+        }
+    }
+    
+    if(!replaced)
+    {
+        values[particle_system.speed_over_lifetime.value_count] = value;
+        keys[particle_system.speed_over_lifetime.value_count] = key_time;
+    }
+    
+    
     particle_system.speed_over_lifetime.value_count++;
 }
 
+
+static void remove_speed_key(ParticleSystemInfo &particle_system, r64 key_time)
+{
+    auto& values = particle_system.speed_over_lifetime.values;
+    auto& keys = particle_system.speed_over_lifetime.keys;
+    
+    for(i32 i = 0; i < particle_system.speed_over_lifetime.value_count; i++)
+    {
+        if(keys[i] == key_time)
+        {
+            memmove(&keys[i], &keys[i + 1], sizeof(r32) * (particle_system.speed_over_lifetime.value_count - i));
+            memmove(&values[i], &values[i + 1], sizeof(r64) * (particle_system.speed_over_lifetime.value_count - i));
+            particle_system.speed_over_lifetime.value_count--;
+            break;
+        }
+    }
+}
 
