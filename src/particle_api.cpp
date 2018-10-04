@@ -79,6 +79,7 @@ static ParticleSystemAttributes get_default_particle_system_attributes()
 static void _allocate_particle_system(Renderer& renderer, ParticleSystemInfo& system_info, i32 max_particles)
 {
     MemoryArena* memory_arena = &system_info.arena;
+    clear(memory_arena);
     
     //@Note: For SIMD
     system_info.max_particles = math::multiple_of_number(max_particles, 4);
@@ -153,8 +154,6 @@ static void create_particle_system(Renderer &renderer, ParticleSystemHandle &han
     ParticleSystemInfo &system_info = renderer.particle_systems[renderer.particle_system_count++];
     system_info.running = false;
     
-    MemoryArena* memory_arena = &system_info.arena;
-    
     system_info.attributes = get_default_particle_system_attributes();
     
     system_info.particle_count = 0;
@@ -168,10 +167,6 @@ static void create_particle_system(Renderer &renderer, ParticleSystemHandle &han
 static void update_particle_system(Renderer& renderer, ParticleSystemHandle handle, i32 max_particles)
 {
     ParticleSystemInfo &system_info = renderer.particle_systems[handle.handle];
-    
-    MemoryArena* memory_arena = &system_info.arena;
-    clear(memory_arena);
-    
     _allocate_particle_system(renderer, system_info, max_particles);
 }
 
