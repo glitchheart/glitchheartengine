@@ -1173,6 +1173,8 @@ static TextLengthInfo get_char_widths_scaled(Renderer& renderer, const char* tex
     
     r32 placeholder_y = 0.0f;
     
+    math::Vec2i scale = get_scale(renderer);
+    
     for(size_t i = 0; i < info.length; i++)
     {
         stbtt_aligned_quad quad;
@@ -1182,7 +1184,7 @@ static TextLengthInfo get_char_widths_scaled(Renderer& renderer, const char* tex
         i32 kerning = stbtt_GetCodepointKernAdvance(&font.info, text[i] - font.first_char, text[i + 1] - font.first_char);
         
         info.widths[i] += (r32)kerning * font.scale;
-        info.widths[i] = ((r32)info.widths[i] / (r32)renderer.window_width) * UI_COORD_DIMENSION;
+        info.widths[i] = ((r32)info.widths[i] / (r32)scale.x) * UI_COORD_DIMENSION;
     }
     
     return info;
