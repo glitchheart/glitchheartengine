@@ -88,6 +88,8 @@ namespace scene
         i32 material_count;
         
         i32 max_entity_count;
+        
+        Renderer* renderer;
     };
 }
 
