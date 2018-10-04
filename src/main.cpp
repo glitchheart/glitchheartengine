@@ -256,8 +256,18 @@ static void init_renderer(Renderer &renderer)
     renderer.pixels_per_unit = global_pixels_per_unit;
     renderer.frame_lock = 0;
     
-    renderer.particle_systems = push_array(&renderer. particle_arena, global_max_particle_systems, ParticleSystemInfo);
-    renderer.particle_system_count = 0;
+    renderer.particles._max_particle_system_count = global_max_particle_systems;
+    
+    renderer.particles.particle_systems = push_array(&renderer. particle_arena, global_max_particle_systems, ParticleSystemInfo);
+    renderer.particles._internal_handles = push_array(&renderer. particle_arena, global_max_particle_systems, i32);
+    
+    
+    for(i32 index = 0; index < global_max_particle_systems; index++)
+    {
+        renderer.particles._internal_handles[index] = -1;
+    }
+    
+    renderer.particles.particle_system_count = 0;
     renderer.animation_controllers = push_array(&renderer.animation_arena, 64, AnimationController);
     renderer.spritesheet_animations = push_array(&renderer.animation_arena, global_max_spritesheet_animations, SpritesheetAnimation);
     renderer.commands = push_array(&renderer.command_arena, global_max_render_commands, RenderCommand);

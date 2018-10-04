@@ -997,8 +997,16 @@ struct Renderer
     Mesh *meshes;
     i32 mesh_count;
     
-    ParticleSystemInfo *particle_systems;
-    i32 particle_system_count;
+    struct
+    {
+        i32 *_internal_handles;
+        i32 _current_internal_handle;
+        i32 _max_particle_system_count;
+        
+        ParticleSystemInfo *particle_systems;
+        i32 particle_system_count;
+    } particles;
+    
     
     TextureData *texture_data;
     i32 texture_count;
