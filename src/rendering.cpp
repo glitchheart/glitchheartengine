@@ -1841,6 +1841,16 @@ static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer, ma
                 
                 assert(command_index < MAX_INSTANCING_PAIRS);
             }
+            
+            if(ent.comp_flags & scene::COMP_PARTICLES)
+            {
+                if(ent.particle_system_handle.handle != -1)
+                {
+                    scene::ParticleSystemComponent &ps = scene.particle_system_components[ent.particle_system_handle.handle];
+                    
+                    //@Incomplete(Niels): Check if particle system is active then push if it is
+                }
+            }
         }
     }
     
