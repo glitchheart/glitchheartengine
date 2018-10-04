@@ -115,6 +115,9 @@ namespace scene
             scene::ParticleSystemComponent &comp = scene.particle_system_components[entity.particle_system_handle.handle];
             comp.handle.handle = -1;
             
+            //@Incomplete(Niels): Create particle system here with max_particles == 0?
+            // Maybe not, because that would really just be a waste?
+            // Or maybe we have a default max_particles value, that we always use.
         }
         
         return(handle);
