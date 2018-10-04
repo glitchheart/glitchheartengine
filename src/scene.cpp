@@ -151,6 +151,20 @@ namespace scene
         return -1;
     }
     
+    i32 _pack_particle_system_components(Entity &entity, Scene &scene)
+    {
+        if(entity.comp_flags & COMP_PARTICLES)
+        {
+            for(i32 index = entity.particle_system_handle.handle; index < scene.particle_system_component_count - 1; index++)
+            {
+                scene.particle_system_components[index] = scene.particle_system_components[index + 1];
+            }
+            scene.particle_system_component_count--;
+            return entity.particle_system_handle.handle;
+        }
+        return -1;
+    }
+    
     static void unregister_entity(EntityHandle &handle, Scene &scene)
     {
         if(handle.handle == 0)
@@ -178,6 +192,7 @@ namespace scene
             // Pack the components in scene by removing the unregistered entities components and moving the rest to pack the arrays. If the returned handles are -1 the entity didn't have that component set.
             i32 transform_handle = _pack_transform_components(entity, scene);
             i32 render_handle = _pack_render_components(entity, scene);
+            i32 particle_system_handle = _pack_particle_system_components(entity, scene);
             
             // Remember to reset the internal handle to -1 to indicate an unused index
             scene._internal_handles[removed_handle - 1] = -1;
@@ -195,6 +210,11 @@ namespace scene
                 if(scene.entities[index].render_handle.handle > render_handle)
                 {
                     scene.entities[index].render_handle.handle--;
+                }
+                
+                if(scene.entities[index].particle_system_handle.handle > render_handle)
+                {
+                    scene.entities[index].particle_system_handle.handle--;
                 }
                 
                 scene.active_entities[index] = scene.active_entities[index + 1];
@@ -253,6 +273,19 @@ namespace scene
         assert(entity.comp_flags & COMP_RENDER);
         
         RenderComponent& comp = scene.render_components[entity.render_handle.handle];
+        return(comp);
+    }
+    
+    static ParticleSystemComponent& get_particle_system_comp(EntityHandle handle, Scene &scene)
+    {
+        assert(handle.handle != 0);
+        i32 internal_handle = scene._internal_handles[handle.handle - 1];
+        assert(internal_handle != -1);
+        Entity entity = scene.entities[internal_handle];
+        
+        assert(entity.comp_flags & COMP_PARTICLES);
+        
+        ParticleSystemComponent& comp = scene.particle_system_components[entity.particle_system_handle.handle];
         return(comp);
     }
     

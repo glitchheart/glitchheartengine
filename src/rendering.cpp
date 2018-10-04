@@ -265,6 +265,32 @@ static void push_line(Renderer& renderer, math::Vec3 point1, math::Vec3 point2, 
     render_command->is_ui = is_ui;
 }
 
+static math::Rect scale_clip_rect(Renderer& renderer, math::Rect clip_rect, b32 clip = true, u64 ui_scaling_flag = UIScalingFlag::KEEP_ASPECT_RATIO)
+{
+    math::Vec2i resolution_scale = get_scale(renderer);
+    math::Rect scaled_clip_rect;
+    
+    if(clip && clip_rect.height != 0 && clip_rect.width != 0)
+    {
+        scaled_clip_rect.x = (clip_rect.x / UI_COORD_DIMENSION) * (r32)resolution_scale.x;
+        scaled_clip_rect.y = (clip_rect.y / UI_COORD_DIMENSION) * (r32)resolution_scale.y;
+        
+        r32 clip_ratio = clip_rect.height / clip_rect.width;
+        scaled_clip_rect.width = (clip_rect.width / UI_COORD_DIMENSION) * (r32)resolution_scale.x;
+        
+        if(ui_scaling_flag & UIScalingFlag::KEEP_ASPECT_RATIO)
+        {
+            scaled_clip_rect.height = scaled_clip_rect.width * clip_ratio;
+        }
+        else
+        {
+            scaled_clip_rect.height = (clip_rect.height / UI_COORD_DIMENSION) * (r32)resolution_scale.y;
+        }
+    }
+    
+    return scaled_clip_rect;
+}
+
 #define PUSH_UI_TEXT(text, position, color, font_handle, ...) push_ui_text(renderer, text, position, font_handle, color, ##__VA_ARGS__)
 #define PUSH_CENTERED_UI_TEXT(text, position, color, font_handle, z) push_ui_text(renderer, text, position, font_handle, color, ALIGNMENT_CENTER_X | ALIGNMENT_CENTER_Y, z)
 static void push_ui_text(Renderer &renderer, const char* text, math::Vec2 position, i32 font_handle, math::Rgba color, u64 alignment_flags = ALIGNMENT_LEFT, i32 z = 0, b32 clip = false, math::Rect clip_rect = math::Rect(0, 0, 0, 0), u64 ui_scaling_flag = UIScalingFlag::KEEP_ASPECT_RATIO)
@@ -290,25 +316,7 @@ static void push_ui_text(Renderer &renderer, const char* text, math::Vec2 positi
     render_command->text.z_layer = z;
     render_command->is_ui = true;
     
-    math::Rect scaled_clip_rect;
-    
-    if(clip && clip_rect.height != 0 && clip_rect.width != 0)
-    {
-        scaled_clip_rect.x = (clip_rect.x / UI_COORD_DIMENSION) * (r32)resolution_scale.x;
-        scaled_clip_rect.y = (clip_rect.y / UI_COORD_DIMENSION) * (r32)resolution_scale.y;
-        
-        r32 clip_ratio = clip_rect.height / clip_rect.width;
-        scaled_clip_rect.width = (clip_rect.width / UI_COORD_DIMENSION) * (r32)resolution_scale.x;
-        
-        if(ui_scaling_flag & UIScalingFlag::KEEP_ASPECT_RATIO)
-        {
-            scaled_clip_rect.height = scaled_clip_rect.width * clip_ratio;
-        }
-        else
-        {
-            scaled_clip_rect.height = (clip_rect.height / UI_COORD_DIMENSION) * (r32)resolution_scale.y;
-        }
-    }
+    math::Rect scaled_clip_rect = scale_clip_rect(renderer, clip_rect, clip);
     
     render_command->clip = clip;
     render_command->clip_rect = scaled_clip_rect;
@@ -456,22 +464,7 @@ static void push_filled_ui_quad_not_centered(Renderer& renderer, math::Vec2 posi
     
     math::Vec3 scaled_size = get_relative_size_vec3(renderer, size, ui_scaling_flag);
     
-    math::Rect scaled_clip_rect;
-    
-    scaled_clip_rect.x = (clip_rect.x / UI_COORD_DIMENSION) * (r32)resolution_scale.x;
-    scaled_clip_rect.y = (clip_rect.y / UI_COORD_DIMENSION) * (r32)resolution_scale.y;
-    
-    r32 clip_ratio = clip_rect.height / clip_rect.width;
-    scaled_clip_rect.width = (clip_rect.width / UI_COORD_DIMENSION) * (r32)resolution_scale.x;
-    
-    if(ui_scaling_flag & UIScalingFlag::KEEP_ASPECT_RATIO)
-    {
-        scaled_clip_rect.height = scaled_clip_rect.width * clip_ratio;
-    }
-    else
-    {
-        scaled_clip_rect.height = (clip_rect.height / UI_COORD_DIMENSION) * (r32)resolution_scale.y;
-    }
+    math::Rect scaled_clip_rect = scale_clip_rect(renderer, clip_rect, clip, ui_scaling_flag);
     
     push_filled_quad_not_centered(renderer, pos, flipped, scaled_size, rotation, color, texture_handle, true, border_width, border_color, rounded, clip, scaled_clip_rect, animation_controller_handle, shader_handle, shader_attributes, shader_attribute_count, texture_offset, frame_size);
 }
@@ -502,22 +495,7 @@ static void push_filled_ui_quad(Renderer& renderer, math::Vec2 position, b32 fli
     
     math::Vec3 scaled_size = get_relative_size_vec3(renderer, size, ui_scaling_flag);
     
-    math::Rect scaled_clip_rect;
-    
-    scaled_clip_rect.x = (clip_rect.x / UI_COORD_DIMENSION) * (r32)resolution_scale.x;
-    scaled_clip_rect.y = (clip_rect.y / UI_COORD_DIMENSION) * (r32)resolution_scale.y;
-    
-    r32 clip_ratio = clip_rect.height / clip_rect.width;
-    scaled_clip_rect.width = (clip_rect.width / UI_COORD_DIMENSION) * (r32)resolution_scale.x;
-    
-    if(ui_scaling_flag & UIScalingFlag::KEEP_ASPECT_RATIO)
-    {
-        scaled_clip_rect.height = scaled_clip_rect.width * clip_ratio;
-    }
-    else
-    {
-        scaled_clip_rect.height = (clip_rect.height / UI_COORD_DIMENSION) * (r32)resolution_scale.y;
-    }
+    math::Rect scaled_clip_rect = scale_clip_rect(renderer, clip_rect, clip, ui_scaling_flag);
     
     push_filled_quad(renderer, pos, flipped, scaled_size, rotation, color, texture_handle, true, border_width, border_color, rounded,  animation_controller_handle, with_origin, origin, clip, scaled_clip_rect, shader_handle, shader_attributes, shader_attribute_count, texture_offset, frame_size);
 }
@@ -643,22 +621,7 @@ static RelativeUIQuadInfo push_filled_ui_quad_relative_not_centered(Renderer& re
     
     RelativeUIQuadInfo info = get_relative_info(renderer, position, relative_size, size, relative, false, ui_scaling_flag);
     
-    math::Rect scaled_clip_rect;
-    
-    scaled_clip_rect.x = (clip_rect.x / UI_COORD_DIMENSION) * (r32)resolution_scale.x;
-    scaled_clip_rect.y = (clip_rect.y / UI_COORD_DIMENSION) * (r32)resolution_scale.y;
-    
-    r32 clip_ratio = clip_rect.height / clip_rect.width;
-    scaled_clip_rect.width = (clip_rect.width / UI_COORD_DIMENSION) * (r32)resolution_scale.x;
-    
-    if(ui_scaling_flag & UIScalingFlag::KEEP_ASPECT_RATIO)
-    {
-        scaled_clip_rect.height = scaled_clip_rect.width * clip_ratio;
-    }
-    else
-    {
-        scaled_clip_rect.height = (clip_rect.height / UI_COORD_DIMENSION) * (r32)resolution_scale.y;
-    }
+    math::Rect scaled_clip_rect = scale_clip_rect(renderer, clip_rect, clip, ui_scaling_flag);
     
     push_filled_quad_not_centered(renderer, math::Vec3(info.position.x, info.position.y, z_layer), flipped, math::Vec3(info.scale.x, info.scale.y, 0.0f), rotation, color, texture_handle, true, border_width, border_color, rounded, clip, scaled_clip_rect, animation_controller_handle, shader_handle, shader_attributes, shader_attribute_count, texture_offset, frame_size);
     
@@ -678,22 +641,7 @@ static RelativeUIQuadInfo push_filled_ui_quad_relative(Renderer& renderer, math:
     
     RelativeUIQuadInfo info = get_relative_info(renderer, position, relative_size, size, relative, true, scaling_flags, origin);
     
-    math::Rect scaled_clip_rect;
-    
-    scaled_clip_rect.x = (clip_rect.x / UI_COORD_DIMENSION) * (r32)resolution_scale.x;
-    scaled_clip_rect.y = (clip_rect.y / UI_COORD_DIMENSION) * (r32)resolution_scale.y;
-    
-    r32 clip_ratio = clip_rect.height / clip_rect.width;
-    scaled_clip_rect.width = (clip_rect.width / UI_COORD_DIMENSION) * (r32)resolution_scale.x;
-    
-    if(scaling_flags & UIScalingFlag::KEEP_ASPECT_RATIO)
-    {
-        scaled_clip_rect.height = scaled_clip_rect.width * clip_ratio;
-    }
-    else
-    {
-        scaled_clip_rect.height = (clip_rect.height / UI_COORD_DIMENSION) * (r32)resolution_scale.y;
-    }
+    math::Rect scaled_clip_rect = scale_clip_rect(renderer, clip_rect, clip, scaling_flags);
     
     push_filled_quad(renderer, math::Vec3(info.position.x, info.position.y, z_layer), flipped, math::Vec3(info.scale.x, info.scale.y, 0.0f), rotation, color, texture_handle, true, border_width, border_color, rounded,  animation_controller_handle, with_origin, math::Vec2(0.0f), clip, scaled_clip_rect, shader_handle, shader_attributes, shader_attribute_count, texture_offset, frame_size);
     
