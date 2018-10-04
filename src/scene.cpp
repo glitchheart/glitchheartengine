@@ -88,7 +88,7 @@ namespace scene
     
     static RenderComponent& add_render_component(Scene &scene, EntityHandle entity_handle, b32 receives_shadows = true, b32 cast_shadows = true)
     {
-        Entity &entity = scene.entities[scene._internal_handles[new_handle - 1]];
+        Entity &entity = scene.entities[scene._internal_handles[entity_handle.handle - 1]];
         entity.comp_flags |= COMP_RENDER;
         
         entity.render_handle = { scene.render_component_count++ };
@@ -101,24 +101,25 @@ namespace scene
         return(comp);
     }
     
-    static TransformComponent& add_transform_component(Scene &scene, EntityHandle entity_handle, )
+    static TransformComponent& add_transform_component(Scene &scene, EntityHandle entity_handle)
     {
-        Entity &entity = scene.entities[scene._internal_handles[new_handle - 1]];
+        Entity &entity = scene.entities[scene._internal_handles[entity_handle.handle - 1]];
         entity.comp_flags |= COMP_TRANSFORM;
         entity.transform_handle = { scene.transform_component_count++ };
+        scene::TransformComponent &comp = scene.transform_components[entity.transform_handle.handle];
         
         return(comp);
     }
     
     static ParticleSystemComponent& add_particle_system_component(Scene &scene, EntityHandle entity_handle, i32 max_particles = 0)
     {
-        Entity &entity = scene.entities[scene._internal_handles[new_handle - 1]];
+        Entity &entity = scene.entities[scene._internal_handles[entity_handle.handle - 1]];
         entity.comp_flags |= COMP_PARTICLES;
         
         entity.particle_system_handle = {scene.particle_system_component_count++};
         scene::ParticleSystemComponent &comp = scene.particle_system_components[entity.particle_system_handle.handle];
         
-        create_particle_system(*state.renderer, comp.handle, max_particles);
+        comp.handle = create_particle_system(*scene.renderer, max_particles);
         
         return(comp);
     }
@@ -136,20 +137,17 @@ namespace scene
         
         if(comp_flags & COMP_TRANSFORM)
         {
-            add_transform_component(scene, entity);
+            add_transform_component(scene, handle);
         }
         
         if(comp_flags & COMP_RENDER)
         {
-            add_render_component(scene, entity_handle, true, true);
+            add_render_component(scene, handle, true, true);
         }
         
         if(comp_flags & COMP_PARTICLES)
         {
             add_particle_system_component(scene, handle, 0);
-            //@Incomplete(Niels): Create particle system here with max_particles == 0?
-            // Maybe not, because that would really just be a waste?
-            // Or maybe we have a default max_particles value, that we always use.
         }
         
         return(handle);
@@ -190,6 +188,8 @@ namespace scene
     {
         if(entity.comp_flags & COMP_PARTICLES)
         {
+            ParticleSystemHandle ps_handle = scene.particle_system_components[entity.particle_system_handle.handle].handle;
+            remove_particle_system(*scene.renderer, ps_handle);
             for(i32 index = entity.particle_system_handle.handle; index < scene.particle_system_component_count - 1; index++)
             {
                 scene.particle_system_components[index] = scene.particle_system_components[index + 1];
@@ -216,6 +216,7 @@ namespace scene
             scene.entity_count = 0;
             scene.transform_component_count = 0;
             scene.render_component_count = 0;
+            scene.particle_system_component_count = 0;
             scene.current_internal_handle = 0;
         }
         else

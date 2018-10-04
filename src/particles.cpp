@@ -24,14 +24,24 @@ static void push_particle_system(Renderer &renderer, ParticleSystemInfo &particl
 
 static void push_particle_system(Renderer &renderer, ParticleSystemHandle handle)
 {
-    ParticleSystemInfo &particle_info = renderer.particle_systems[handle.handle];
-    push_particle_system(renderer, particle_info);
+    i32 _internal_handle = renderer.particles._internal_handles[handle.handle];
+    
+    if(_internal_handle != -1)
+    {
+        ParticleSystemInfo &particle_info = renderer.particles.particle_systems[_internal_handle];
+        push_particle_system(renderer, particle_info);
+    }
 }
 
 static void push_particle_system(Renderer &renderer, i32 particle_system_handle)
 {
-    ParticleSystemInfo &particle_info = renderer.particle_systems[particle_system_handle];
-    push_particle_system(renderer, particle_info);
+    i32 _internal_handle = renderer.particles._internal_handles[particle_system_handle];
+    
+    if(_internal_handle != -1)
+    {
+        ParticleSystemInfo &particle_info = renderer.particles.particle_systems[_internal_handle];
+        push_particle_system(renderer, particle_info);
+    }
 }
 
 void find_unused_particles(ParticleSystemInfo &particle_system)
@@ -418,9 +428,9 @@ void emit_particle(ParticleSystemInfo &particle_system)
 
 void update_particle_systems(Renderer &renderer, r64 delta_time)
 {
-    for(i32 particle_system_index = 0; particle_system_index < renderer.particle_system_count; particle_system_index++)
+    for(i32 particle_system_index = 0; particle_system_index < renderer.particles.particle_system_count; particle_system_index++)
     {
-        ParticleSystemInfo &particle_system = renderer.particle_systems[particle_system_index];
+        ParticleSystemInfo &particle_system = renderer.particles.particle_systems[particle_system_index];
         
         if (particle_system.running)
         {
