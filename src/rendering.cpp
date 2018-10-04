@@ -1848,7 +1848,14 @@ static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer, ma
                 {
                     scene::ParticleSystemComponent &ps = scene.particle_system_components[ent.particle_system_handle.handle];
                     
+                    if(ent.comp_flags & scene::COMP_TRANSFORM)
+                    {
+                        // Add transform stuff
+                    }
+                    
                     //@Incomplete(Niels): Check if particle system is active then push if it is
+                    
+                    
                 }
             }
         }

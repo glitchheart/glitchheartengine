@@ -4,9 +4,10 @@ namespace scene
 {
     // Creates and returns a new "Scene". The "inital_entity_array_size" specifies the max entity count of the "Scene".
     // @Incomplete: We need to make sure that we can grow in size if we need more than what we allocated at any point in time.
-    static Scene create_scene(Renderer renderer, i32 initial_entity_array_size = 1024)
+    static Scene create_scene(Renderer &renderer, i32 initial_entity_array_size = 1024)
     {
         Scene scene = {};
+        scene.renderer = &renderer;
         scene.max_entity_count = initial_entity_array_size;
         scene.entity_count = 0;
         scene.current_internal_handle = 0;
@@ -41,6 +42,7 @@ namespace scene
             scene.entity_count = 0;
             scene.transform_component_count = 0;
             scene.render_component_count = 0;
+            scene.particle_system_component_count = 0;
             scene.material_count = 0;
             scene.current_internal_handle = 0;
             
@@ -83,6 +85,44 @@ namespace scene
         return -1;
     }
     
+    
+    static RenderComponent& add_render_component(Scene &scene, EntityHandle entity_handle, b32 receives_shadows = true, b32 cast_shadows = true)
+    {
+        Entity &entity = scene.entities[scene._internal_handles[new_handle - 1]];
+        entity.comp_flags |= COMP_RENDER;
+        
+        entity.render_handle = { scene.render_component_count++ };
+        scene::RenderComponent &comp = scene.render_components[entity.render_handle.handle];
+        comp.material_handle = { entity.render_handle.handle };
+        comp.mesh_handle = { -1 };
+        comp.receives_shadows = receives_shadows;
+        comp.cast_shadows = cast_shadows;
+        
+        return(comp);
+    }
+    
+    static TransformComponent& add_transform_component(Scene &scene, EntityHandle entity_handle, )
+    {
+        Entity &entity = scene.entities[scene._internal_handles[new_handle - 1]];
+        entity.comp_flags |= COMP_TRANSFORM;
+        entity.transform_handle = { scene.transform_component_count++ };
+        
+        return(comp);
+    }
+    
+    static ParticleSystemComponent& add_particle_system_component(Scene &scene, EntityHandle entity_handle, i32 max_particles = 0)
+    {
+        Entity &entity = scene.entities[scene._internal_handles[new_handle - 1]];
+        entity.comp_flags |= COMP_PARTICLES;
+        
+        entity.particle_system_handle = {scene.particle_system_component_count++};
+        scene::ParticleSystemComponent &comp = scene.particle_system_components[entity.particle_system_handle.handle];
+        
+        create_particle_system(*state.renderer, comp.handle, max_particles);
+        
+        return(comp);
+    }
+    
     // Returns a new valid "EntityHandle". "comp_flags" Specifies the components that the entity should contain.
     static EntityHandle register_entity(u64 comp_flags, Scene &scene)
     {
@@ -96,25 +136,17 @@ namespace scene
         
         if(comp_flags & COMP_TRANSFORM)
         {
-            entity.transform_handle = { scene.transform_component_count++ };
+            add_transform_component(scene, entity);
         }
         
         if(comp_flags & COMP_RENDER)
         {
-            entity.render_handle = { scene.render_component_count++ };
-            scene::RenderComponent &comp = scene.render_components[entity.render_handle.handle];
-            comp.material_handle = { entity.render_handle.handle };
-            comp.mesh_handle = { -1 };
-            comp.receives_shadows = true;
-            comp.cast_shadows = true;
+            add_render_component(scene, entity_handle, true, true);
         }
         
         if(comp_flags & COMP_PARTICLES)
         {
-            entity.particle_system_handle = {scene.particle_system_component_count};
-            scene::ParticleSystemComponent &comp = scene.particle_system_components[entity.particle_system_handle.handle];
-            comp.handle.handle = -1;
-            
+            add_particle_system_component(scene, handle, 0);
             //@Incomplete(Niels): Create particle system here with max_particles == 0?
             // Maybe not, because that would really just be a waste?
             // Or maybe we have a default max_particles value, that we always use.
