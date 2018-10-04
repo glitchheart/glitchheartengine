@@ -159,6 +159,8 @@ struct ParticleSystemInfo
     math::Vec2 *sizes;
     
     r64 current_emission_time;
+    
+    MemoryArena arena;
 };
 
 #endif

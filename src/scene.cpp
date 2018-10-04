@@ -12,12 +12,13 @@ namespace scene
         scene.current_internal_handle = 0;
         scene.transform_component_count = 0;
         scene.render_component_count = 0;
-		scene.material_count = 0;
+        scene.material_count = 0;
         scene.entities = (Entity*)malloc(sizeof(EntityHandle) * initial_entity_array_size);
         scene._internal_handles = (i32*)malloc(sizeof(i32) * initial_entity_array_size);
         scene.active_entities = (b32*)malloc(sizeof(b32) * initial_entity_array_size);
         scene.transform_components = (TransformComponent*)malloc(sizeof(TransformComponent) * initial_entity_array_size);
         scene.render_components = (RenderComponent*)malloc(sizeof(RenderComponent) * initial_entity_array_size);
+        scene.particle_system_components = (ParticleSystemComponent*)malloc(sizeof(ParticleSystemComponent) * initial_entity_array_size);
         scene.material_instances = (RenderMaterial*)malloc(sizeof(RenderMaterial) * initial_entity_array_size);
         
         for(i32 index = 0; index < initial_entity_array_size; index++)
@@ -40,14 +41,15 @@ namespace scene
             scene.entity_count = 0;
             scene.transform_component_count = 0;
             scene.render_component_count = 0;
-			scene.material_count = 0;
-			scene.current_internal_handle = 0;
+            scene.material_count = 0;
+            scene.current_internal_handle = 0;
             
             free(scene.entities);
             free(scene._internal_handles);
             free(scene.active_entities);
             free(scene.transform_components);
             free(scene.render_components);
+            free(scene.particle_system_components);
             free(scene.material_instances);
         }
     }
@@ -102,9 +104,17 @@ namespace scene
             entity.render_handle = { scene.render_component_count++ };
             scene::RenderComponent &comp = scene.render_components[entity.render_handle.handle];
             comp.material_handle = { entity.render_handle.handle };
-			comp.mesh_handle = { -1 };
+            comp.mesh_handle = { -1 };
             comp.receives_shadows = true;
             comp.cast_shadows = true;
+        }
+        
+        if(comp_flags & COMP_PARTICLES)
+        {
+            entity.particle_system_handle = {scene.particle_system_component_count};
+            scene::ParticleSystemComponent &comp = scene.particle_system_components[entity.particle_system_handle.handle];
+            comp.handle.handle = -1;
+            
         }
         
         return(handle);
@@ -219,8 +229,8 @@ namespace scene
     // Returns a direct pointer to the TransformComponent of the specified entity
     static TransformComponent& get_transform_comp(EntityHandle handle, Scene &scene)
     {
-		assert(handle.handle != 0);
-		i32 internal_handle = scene._internal_handles[handle.handle - 1];
+        assert(handle.handle != 0);
+        i32 internal_handle = scene._internal_handles[handle.handle - 1];
         assert(internal_handle > -1);
         
         Entity entity = scene.entities[internal_handle];
@@ -235,8 +245,8 @@ namespace scene
     // Returns a direct pointer to the RenderComponent of the specified entity
     static RenderComponent& get_render_comp(EntityHandle handle, Scene &scene)
     {
-		assert(handle.handle != 0);
-		i32 internal_handle = scene._internal_handles[handle.handle - 1];
+        assert(handle.handle != 0);
+        i32 internal_handle = scene._internal_handles[handle.handle - 1];
         assert(internal_handle != -1);
         Entity entity = scene.entities[internal_handle];
         

@@ -1,5 +1,5 @@
 
-static ParticleSystemInfo * get_particle_system_info(ParticleSystemHandle handle, Renderer& renderer)
+static ParticleSystemInfo* get_particle_system_info(ParticleSystemHandle handle, Renderer& renderer)
 {
     if(handle.handle >= 0 && handle.handle < renderer.particle_system_count)
     {
@@ -24,12 +24,14 @@ static void start_particle_system(ParticleSystemInfo &system, b32 one_shot = fal
 
 static void start_particle_system(ParticleSystemHandle handle, Renderer &renderer, b32 one_shot = false)
 {
+    assert(handle.handle >= 0 && handle.handle < renderer.particle_system_count);
     ParticleSystemInfo &system = renderer.particle_systems[handle.handle];
     start_particle_system(system, one_shot);
 }
 
 static void stop_particle_system(ParticleSystemHandle handle, Renderer &renderer)
 {
+    assert(handle.handle >= 0 && handle.handle < renderer.particle_system_count);
     ParticleSystemInfo &system = renderer.particle_systems[handle.handle];
     system.running = false;
 }
@@ -41,6 +43,7 @@ static void remove_all_particle_systems(Renderer &renderer)
 
 static b32 particle_system_is_running(ParticleSystemHandle handle, Renderer &renderer)
 {
+    assert(handle.handle >= 0 && handle.handle < renderer.particle_system_count);
     ParticleSystemInfo &system = renderer.particle_systems[handle.handle];
     return(system.running);
 }
@@ -73,15 +76,9 @@ static ParticleSystemAttributes get_default_particle_system_attributes()
     return attributes;
 }
 
-static void create_particle_system(Renderer &renderer, ParticleSystemHandle &handle, i32 max_particles,  MemoryArena *memory_arena)
+static void _allocate_particle_system(Renderer& renderer, ParticleSystemInfo& system_info, i32 max_particles)
 {
-    ParticleSystemInfo &system_info = renderer.particle_systems[renderer.particle_system_count++];
-    system_info.running = false;
-    
-    system_info.attributes = get_default_particle_system_attributes();
-    
-    system_info.particle_count = 0;
-    system_info.last_used_particle = 0;
+    MemoryArena* memory_arena = &system_info.arena;
     
     //@Note: For SIMD
     system_info.max_particles = math::multiple_of_number(max_particles, 4);
@@ -123,25 +120,59 @@ static void create_particle_system(Renderer &renderer, ParticleSystemHandle &han
     system_info.size_over_lifetime.keys = nullptr;
     system_info.speed_over_lifetime.keys = nullptr;
     
-    BufferData offset_data = {};
-    offset_data.for_instancing = true;
-    offset_data.instance_buffer_size = sizeof(math::Vec3) * system_info.max_particles;
-    renderer.buffers[renderer.buffer_count] = offset_data;
-    system_info.offset_buffer_handle = renderer.buffer_count++;
+    if(system_info.offset_buffer_handle == 0)
+    {
+        register_instance_buffer(renderer, sizeof(math::Vec3) * system_info.max_particles, &system_info.offset_buffer_handle);
+    }
+    else
+    {
+        update_instanced_buffer(renderer, sizeof(math::Vec3) * system_info.max_particles, system_info.offset_buffer_handle);
+    }
     
-    BufferData color_data = {};
-    color_data.for_instancing = true;
-    color_data.instance_buffer_size = sizeof(math::Vec4) * system_info.max_particles;
-    renderer.buffers[renderer.buffer_count] = color_data;
-    system_info.color_buffer_handle = renderer.buffer_count++;
+    if(system_info.color_buffer_handle == 0)
+    {
+        register_instance_buffer(renderer, sizeof(math::Vec4) * system_info.max_particles, &system_info.color_buffer_handle);
+    }
+    else
+    {
+        update_instanced_buffer(renderer, sizeof(math::Vec4) * system_info.max_particles, system_info.color_buffer_handle);
+    }
     
-    BufferData size_data = {};
-    size_data.for_instancing = true;
-    size_data.instance_buffer_size = sizeof(math::Vec2) * system_info.max_particles;
-    renderer.buffers[renderer.buffer_count] = size_data;
-    system_info.size_buffer_handle = renderer.buffer_count++;
+    if(system_info.size_buffer_handle == 0)
+    {
+        register_instance_buffer(renderer, sizeof(math::Vec2) * system_info.max_particles, &system_info.size_buffer_handle);
+    }
+    else
+    {
+        update_instanced_buffer(renderer, sizeof(math::Vec3) * system_info.max_particles, system_info.offset_buffer_handle);
+    }
+}
+
+static void create_particle_system(Renderer &renderer, ParticleSystemHandle &handle, i32 max_particles)
+{
+    ParticleSystemInfo &system_info = renderer.particle_systems[renderer.particle_system_count++];
+    system_info.running = false;
+    
+    MemoryArena* memory_arena = &system_info.arena;
+    
+    system_info.attributes = get_default_particle_system_attributes();
+    
+    system_info.particle_count = 0;
+    system_info.last_used_particle = 0;
+    
+    _allocate_particle_system(renderer, system_info, max_particles);
     
     handle.handle = renderer.particle_system_count - 1;
+}
+
+static void update_particle_system(Renderer& renderer, ParticleSystemHandle handle, i32 max_particles)
+{
+    ParticleSystemInfo &system_info = renderer.particle_systems[handle.handle];
+    
+    MemoryArena* memory_arena = &system_info.arena;
+    clear(memory_arena);
+    
+    _allocate_particle_system(renderer, system_info, max_particles);
 }
 
 static void add_burst_over_time_key(MemoryArena *memory_arena, ParticleSystemInfo &particle_system, r64 key_time, i32 count, i32 cycle_count = 0, i32 max_count = 0, i32 min_count = 0)
