@@ -519,17 +519,23 @@ static void register_buffers(RenderState& render_state, GLfloat* vertex_buffer, 
     glBindVertexArray(0);
 }
 
-static void register_instance_buffer(RenderState &render_state, BufferData &buffer_data)
+static void register_instance_buffer(RenderState &render_state, BufferData &buffer_data, i32 buffer_handle = -1)
 {
-    Buffer* buffer = &render_state.buffers[render_state.buffer_count];
+    Buffer* buffer = &render_state.buffers[buffer_handle == -1 ? render_state.buffer_count : buffer_handle];
     *buffer = {};
-    render_state.buffer_count++;
     
     // @Incomplete: Particles
-    glGenBuffers(1, &buffer->vbo);
+    if(buffer->vbo == 0)
+    {
+        glGenBuffers(1, &buffer->vbo);
+    }
+    
     glBindBuffer(GL_ARRAY_BUFFER, buffer->vbo);
     glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)buffer_data.instance_buffer_size, nullptr, GL_DYNAMIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
+    
+    if (buffer_handle == -1)
+        render_state.buffer_count++;
 }
 
 static void register_vertex_buffer(RenderState& render_state, GLfloat* buffer_data, i32 size, ShaderType shader_type, MemoryArena* perm_arena, i32 buffer_handle = -1)
@@ -2479,7 +2485,11 @@ static void register_buffers(RenderState& render_state, Renderer& renderer)
     for (i32 index = 0; index < renderer.updated_buffer_handle_count; index++)
     {
         BufferData data = renderer.buffers[renderer.updated_buffer_handles[index]];
-        if (data.index_buffer_count == 0)
+        if(data.for_instancing)
+        {
+            register_instance_buffer(render_state, data, data.existing_handle);
+        }
+        else if (data.index_buffer_count == 0)
         {
             register_vertex_buffer(render_state, data.vertex_buffer, (i32)data.vertex_buffer_size, data.shader_type, render_state.perm_arena, data.existing_handle);
         }

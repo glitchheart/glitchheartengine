@@ -257,6 +257,7 @@ static void init_renderer(Renderer &renderer)
     renderer.frame_lock = 0;
     
     renderer.particle_systems = push_array(&renderer. particle_arena, global_max_particle_systems, ParticleSystemInfo);
+    renderer.particle_system_count = 0;
     renderer.animation_controllers = push_array(&renderer.animation_arena, 64, AnimationController);
     renderer.spritesheet_animations = push_array(&renderer.animation_arena, global_max_spritesheet_animations, SpritesheetAnimation);
     renderer.commands = push_array(&renderer.command_arena, global_max_render_commands, RenderCommand);

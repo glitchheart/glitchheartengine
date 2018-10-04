@@ -1289,6 +1289,25 @@ static void update_buffer(Renderer& renderer, r32* buffer, i32 buffer_size, i32 
     renderer.updated_buffer_handles[renderer.updated_buffer_handle_count++] = buffer_handle;
 }
 
+static void update_instanced_buffer(Renderer& renderer, size_t buffer_size, i32 buffer_handle)
+{
+    BufferData data = {};
+    data.for_instancing = true;
+    data.instance_buffer_size = buffer_size;
+    data.index_buffer_count = 0;
+    renderer.buffers[buffer_handle] = data;
+}
+
+static void register_instance_buffer(Renderer& renderer, size_t buffer_size, i32* buffer_handle)
+{
+    BufferData data = {};
+    data.for_instancing = true;
+    data.instance_buffer_size = buffer_size;
+    renderer.buffers[renderer.buffer_count] = data;
+    
+    *buffer_handle = renderer.buffer_count++;
+}
+
 static i32 load_font(Renderer& renderer, char* path, i32 size, char* name)
 {
     assert(renderer.font_count + 1 < global_max_fonts);

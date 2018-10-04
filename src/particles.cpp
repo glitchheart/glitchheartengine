@@ -305,7 +305,7 @@ void update_particles(Renderer &renderer, ParticleSystemInfo &particle_system, r
             
             if(any_lt_eq(particle_system.particles.life[main_index], 0.0))
             {
-                
+                //@Incomplete: Are we forgetting to kill particles here??
             }
         }
     }
