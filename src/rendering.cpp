@@ -1851,11 +1851,15 @@ static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer, ma
                     if(ent.comp_flags & scene::COMP_TRANSFORM)
                     {
                         // Add transform stuff
+                        i32 _internal_handle = renderer.particles._internal_handles[ps.handle.handle - 1];
+                        ParticleSystemInfo& system = renderer.particles.particle_systems[_internal_handle];
+                        
+                        scene::TransformComponent &transform = scene.transform_components[ent.transform_handle.handle];
+                        
+                        system.transform.position = transform.position;
+                        system.transform.scale = transform.scale;
+                        system.transform.rotation = transform.rotation;
                     }
-                    
-                    //@Incomplete(Niels): Check if particle system is active then push if it is
-                    
-                    
                 }
             }
         }
