@@ -218,11 +218,6 @@ namespace scene
         
         i32 removed_handle = handle.handle;
         
-        if(removed_handle - 1 == 146)
-        {
-            int x = 0;
-        }
-        
         // Invalidate handle
         handle.handle = 0;
         
@@ -240,10 +235,6 @@ namespace scene
             // Get the handle into the real entity array
             i32 real_handle = scene._internal_handles[removed_handle - 1];
             
-            if(real_handle == -1)
-            {
-                int x = 0;
-            }
             // Can't remove twice...
             assert(real_handle != -1);
             

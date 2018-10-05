@@ -211,6 +211,7 @@ static void remove_particle_system(Renderer& renderer, ParticleSystemHandle &han
         renderer.particles.particle_system_count = 0;
         renderer.particles._current_internal_handle = 0;
         renderer.particles._internal_handles[removed_handle - 1] = -1;
+        renderer.particles.particle_systems[0] = {};
     }
     else
     {
@@ -218,7 +219,12 @@ static void remove_particle_system(Renderer& renderer, ParticleSystemHandle &han
         ParticleSystemInfo& info = renderer.particles.particle_systems[real_handle];
         
         // Swap system infos
+        clear(&renderer.particles.particle_systems[real_handle].arena);
+        
         renderer.particles.particle_systems[real_handle] = renderer.particles.particle_systems[renderer.particles.particle_system_count - 1];
+        
+        clear(&renderer.particles.particle_systems[renderer.particles.particle_system_count - 1].arena);
+        renderer.particles.particle_systems[renderer.particles.particle_system_count - 1] = {};
         
         renderer.particles._internal_handles[removed_handle - 1] = -1;
         
@@ -228,6 +234,7 @@ static void remove_particle_system(Renderer& renderer, ParticleSystemHandle &han
             if(renderer.particles._internal_handles[index] == renderer.particles.particle_system_count - 1)
             {
                 renderer.particles._internal_handles[index] = real_handle;
+                break;
             }
         }
         
