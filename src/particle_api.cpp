@@ -243,11 +243,11 @@ static void update_particle_system(Renderer& renderer, ParticleSystemHandle hand
     _allocate_particle_system(renderer, system_info, max_particles);
 }
 
-static void add_burst_over_time_key(MemoryArena *memory_arena, ParticleSystemInfo &particle_system, r64 key_time, i32 count, i32 cycle_count = 0, i32 max_count = 0, i32 min_count = 0)
+static void add_burst_over_time_key(ParticleSystemInfo &particle_system, r64 key_time, i32 count, i32 cycle_count = 0, i32 max_count = 0, i32 min_count = 0)
 {
     if(particle_system.attributes.emission_module.burst_over_lifetime.value_count == 0)
     {
-        particle_system.attributes.emission_module.burst_over_lifetime.values = push_array(memory_arena, MAX_LIFETIME_VALUES, Burst);
+        particle_system.attributes.emission_module.burst_over_lifetime.values = push_array(&particle_system.arena, MAX_LIFETIME_VALUES, Burst);
     }
     
     assert(particle_system.attributes.emission_module.burst_over_lifetime.value_count + 1 < MAX_LIFETIME_VALUES);
@@ -264,12 +264,12 @@ static void add_burst_over_time_key(MemoryArena *memory_arena, ParticleSystemInf
     particle_system.attributes.emission_module.burst_over_lifetime.value_count++;
 }
 
-static void add_color_key(MemoryArena *memory_arena, ParticleSystemInfo &particle_system, r64 key_time, math::Rgba value)
+static void add_color_key(ParticleSystemInfo &particle_system, r64 key_time, math::Rgba value)
 {
     if(particle_system.color_over_lifetime.value_count == 0)
     {
-        particle_system.color_over_lifetime.values = push_array(memory_arena, MAX_LIFETIME_VALUES, math::Rgba);
-        particle_system.color_over_lifetime.keys = push_array(memory_arena, MAX_LIFETIME_VALUES, r64);
+        particle_system.color_over_lifetime.values = push_array(&particle_system.arena, MAX_LIFETIME_VALUES, math::Rgba);
+        particle_system.color_over_lifetime.keys = push_array(&particle_system.arena, MAX_LIFETIME_VALUES, r64);
     }
     
     assert(particle_system.color_over_lifetime.value_count + 1 < MAX_LIFETIME_VALUES);
@@ -317,12 +317,12 @@ static void remove_color_key(ParticleSystemInfo &particle_system, r64 key_time)
     }
 }
 
-static void add_size_key(MemoryArena *memory_arena, ParticleSystemInfo &particle_system, r64 key_time, math::Vec2 value)
+static void add_size_key(ParticleSystemInfo &particle_system, r64 key_time, math::Vec2 value)
 {
     if(particle_system.size_over_lifetime.value_count == 0)
     {
-        particle_system.size_over_lifetime.values = push_array(memory_arena, MAX_LIFETIME_VALUES, math::Vec2);
-        particle_system.size_over_lifetime.keys = push_array(memory_arena, MAX_LIFETIME_VALUES, r64);
+        particle_system.size_over_lifetime.values = push_array(&particle_system.arena, MAX_LIFETIME_VALUES, math::Vec2);
+        particle_system.size_over_lifetime.keys = push_array(&particle_system.arena, MAX_LIFETIME_VALUES, r64);
     }
     
     assert(particle_system.size_over_lifetime.value_count + 1 < MAX_LIFETIME_VALUES);
@@ -371,12 +371,12 @@ static void remove_size_key(ParticleSystemInfo &particle_system, r64 key_time)
     }
 }
 
-static void add_speed_key(MemoryArena *memory_arena, ParticleSystemInfo &particle_system, r64 key_time, r32 value)
+static void add_speed_key(ParticleSystemInfo &particle_system, r64 key_time, r32 value)
 {
     if(particle_system.speed_over_lifetime.value_count == 0)
     {
-        particle_system.speed_over_lifetime.values = push_array(memory_arena, MAX_LIFETIME_VALUES, r32);
-        particle_system.speed_over_lifetime.keys = push_array(memory_arena, MAX_LIFETIME_VALUES, r64);
+        particle_system.speed_over_lifetime.values = push_array(&particle_system.arena, MAX_LIFETIME_VALUES, r32);
+        particle_system.speed_over_lifetime.keys = push_array(&particle_system.arena, MAX_LIFETIME_VALUES, r64);
     }
     
     assert(particle_system.speed_over_lifetime.value_count + 1 < MAX_LIFETIME_VALUES);

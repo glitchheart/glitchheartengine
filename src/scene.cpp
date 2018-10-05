@@ -42,6 +42,13 @@ namespace scene
             scene.entity_count = 0;
             scene.transform_component_count = 0;
             scene.render_component_count = 0;
+            
+            for(i32 index = 0; index < scene.particle_system_component_count; index++)
+            {
+                ParticleSystemComponent& ps_comp = scene.particle_system_components[index];
+                remove_particle_system(*scene.renderer, ps_comp.handle);
+            }
+            
             scene.particle_system_component_count = 0;
             scene.material_count = 0;
             scene.current_internal_handle = 0;
@@ -111,7 +118,7 @@ namespace scene
         return(comp);
     }
     
-    static ParticleSystemComponent& add_particle_system_component(Scene &scene, EntityHandle entity_handle, i32 max_particles = 0)
+    static ParticleSystemComponent& add_particle_system_component(Scene &scene, EntityHandle entity_handle, ParticleSystemAttributes attributes, i32 max_particles = 0)
     {
         Entity &entity = scene.entities[scene._internal_handles[entity_handle.handle - 1]];
         entity.comp_flags |= COMP_PARTICLES;
@@ -120,6 +127,10 @@ namespace scene
         scene::ParticleSystemComponent &comp = scene.particle_system_components[entity.particle_system_handle.handle];
         
         comp.handle = create_particle_system(*scene.renderer, max_particles);
+        ParticleSystemInfo* info = get_particle_system_info(comp.handle, *scene.renderer);
+        assert(info);
+        
+        info->attributes = attributes;
         
         return(comp);
     }
@@ -147,7 +158,7 @@ namespace scene
         
         if(comp_flags & COMP_PARTICLES)
         {
-            add_particle_system_component(scene, handle, 0);
+            add_particle_system_component(scene, handle, get_default_particle_system_attributes(), 0);
         }
         
         return(handle);
@@ -207,6 +218,11 @@ namespace scene
         
         i32 removed_handle = handle.handle;
         
+        if(removed_handle - 1 == 146)
+        {
+            int x = 0;
+        }
+        
         // Invalidate handle
         handle.handle = 0;
         
@@ -223,6 +239,14 @@ namespace scene
         {
             // Get the handle into the real entity array
             i32 real_handle = scene._internal_handles[removed_handle - 1];
+            
+            if(real_handle == -1)
+            {
+                int x = 0;
+            }
+            // Can't remove twice...
+            assert(real_handle != -1);
+            
             Entity &entity = scene.entities[real_handle];
             
             // Pack the components in scene by removing the unregistered entities components and moving the rest to pack the arrays. If the returned handles are -1 the entity didn't have that component set.
