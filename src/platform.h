@@ -56,6 +56,7 @@
 #include <stb/stb_image_write.h>
 
 #include <stdint.h>
+#include <cctype>
 
 using u8 = uint8_t;
 using u16 = uint16_t;
