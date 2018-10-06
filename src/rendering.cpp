@@ -1187,8 +1187,8 @@ static void push_mesh(Renderer &renderer, MeshInfo mesh_info)
     Mesh &mesh = renderer.meshes[mesh_info.mesh_handle];
     render_command->mesh.buffer_handle = mesh.buffer_handle;
     render_command->mesh.material_type = mesh_info.material.type;
-    render_command->mesh.diffuse_texture = mesh_info.material.diffuse_texture;
-    render_command->color = mesh_info.material.color;
+    render_command->mesh.diffuse_texture = mesh_info.material.diffuse_texture.handle;
+    render_command->color = mesh_info.material.diffuse_color;
     render_command->cast_shadows = mesh_info.cast_shadows;
     render_command->receives_shadows = mesh_info.receives_shadows;
 }
@@ -1205,8 +1205,8 @@ static void push_mesh_instanced(Renderer &renderer, MeshInfo mesh_info, math::Ve
     Mesh &mesh = renderer.meshes[mesh_info.mesh_handle];
     render_command->mesh_instanced.buffer_handle = mesh.buffer_handle;
     render_command->mesh_instanced.material_type = mesh_info.material.type;
-    render_command->mesh_instanced.diffuse_texture = mesh_info.material.diffuse_texture;
-    render_command->color = mesh_info.material.color;
+    render_command->mesh_instanced.diffuse_texture = mesh_info.material.diffuse_texture.handle;
+    render_command->color = mesh_info.material.diffuse_color;
     render_command->mesh_instanced.instance_offset_buffer_handle = mesh_info.instance_offset_buffer_handle;
     render_command->mesh_instanced.instance_color_buffer_handle = mesh_info.instance_color_buffer_handle;
     render_command->mesh_instanced.instance_rotation_buffer_handle = mesh_info.instance_rotation_buffer_handle;
@@ -1362,6 +1362,12 @@ static void load_obj(Renderer &renderer, char *file_path)
     i32 normal_index = 0;
     i32 uv_index = 0;
     
+    // Right now we only support one mtl-file per obj-file
+    // And since we only support one mesh per obj-file at the moment that should be fine.
+    // @Robustness: We have to support more advanced files later... Maybe...
+    b32 has_mtl_file = false;
+    char mtl_file_name[32];
+    
     if(file)
     {
         char buffer[256];
@@ -1370,6 +1376,18 @@ static void load_obj(Renderer &renderer, char *file_path)
         {
             if(starts_with(buffer, "g")) // we're starting with new geometry
             {
+                // @Incomplete: Save the name of the geometry
+            }
+            else if(starts_with(buffer, "mtllib")) // Material file
+            {
+                // Read the material file-name
+                sscanf(buffer, "mtllib %s", mtl_file_name);
+            }
+            else if(starts_with(buffer, "usemtl")) // Used material for geometry
+            {
+                has_mtl_file = true;
+                // Ignored, for now.
+                // This is only relevant when we've got multiple materials
             }
             else if(starts_with(buffer, "v ")) // vertex
             {
@@ -1542,6 +1560,20 @@ static void load_obj(Renderer &renderer, char *file_path)
     scale_data.for_instancing = true;
     renderer.buffers[renderer.buffer_count] = scale_data;
     mesh.instance_scale_buffer_handle = renderer.buffer_count++;
+    
+    // Read the material file
+    
+    FILE* mtl_file = fopen("", "r");
+    
+    if(mtl_file)
+    {
+        char buffer[256];
+        
+        while((fgets(buffer, sizeof(buffer), mtl_file) != NULL))
+        {
+            
+        }
+    }
 }
 
 static void load_obj(Renderer &renderer, char *file_path, MeshInfo &mesh_info, b32 with_instancing = false)
@@ -1808,9 +1840,9 @@ static void load_assets(char *model_path, char *texture_path, char *material_pat
             RenderMaterial material = {};
             material.type = RM_TEXTURED;
             i32 index = 0;
-            sscanf(line, "%d tex %d col %f %f %f %f", &index, &material.diffuse_texture, &material.color.r, 
-                   &material.color.g, &material.color.b, &material.color.a);
-            material.diffuse_texture++;
+            sscanf(line, "%d tex %d col %f %f %f %f", &index, &material.diffuse_texture.handle, &material.diffuse_color.r, 
+                   &material.diffuse_color.g, &material.diffuse_color.b, &material.diffuse_color.a);
+            material.diffuse_texture.handle++;
             material.source_handle = { renderer.material_count };
             renderer.materials[renderer.material_count++] = material;
         }
@@ -1868,7 +1900,7 @@ static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer, ma
                 positions[command_index * 1024 + command.count] = transform.position;
                 rotations[command_index * 1024 + command.count] = transform.rotation * DEGREE_IN_RADIANS;
                 scalings[command_index * 1024 + command.count] = transform.scale;
-                colors[command_index * 1024 + command.count] = material.color;
+                colors[command_index * 1024 + command.count] = material.diffuse_color;
                 command.count++;
                 
                 assert(command_index < MAX_INSTANCING_PAIRS);

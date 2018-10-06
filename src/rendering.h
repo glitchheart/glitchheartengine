@@ -592,15 +592,25 @@ struct MaterialHandle
     i32 handle;
 };
 
+struct TextureHandle
+{
+    i32 handle;
+};
+
 struct RenderMaterial
 {
-    MaterialHandle source_handle;
-    ShaderInfo shader;
-    math::Rgba color;
-    
     RenderMaterialType type;
     
-    i32 diffuse_texture;
+    MaterialHandle source_handle;
+    ShaderInfo shader;
+    
+    math::Rgba ambient_color;
+    math::Rgba diffuse_color;
+    math::Rgba specular_color;
+    
+    TextureHandle ambient_texture;
+    TextureHandle diffuse_texture;
+    TextureHandle specular_texture;
 };
 
 enum WireframeType
