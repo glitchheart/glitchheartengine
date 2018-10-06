@@ -213,7 +213,7 @@ namespace scene
     
     static void unregister_entity(EntityHandle &handle, Scene &scene)
     {
-        if(handle.handle == 0)
+        if(handle.handle == 0 || handle.handle - 1 >= scene.entity_count || scene._internal_handles[handle.handle - 1] == -1)
             return;
         
         i32 removed_handle = handle.handle;
@@ -234,10 +234,6 @@ namespace scene
         {
             // Get the handle into the real entity array
             i32 real_handle = scene._internal_handles[removed_handle - 1];
-            
-            // Can't remove twice...
-            assert(real_handle != -1);
-            
             Entity &entity = scene.entities[real_handle];
             
             // Pack the components in scene by removing the unregistered entities components and moving the rest to pack the arrays. If the returned handles are -1 the entity didn't have that component set.
@@ -277,7 +273,7 @@ namespace scene
             for(i32 internal_index = 0; internal_index < scene.max_entity_count; internal_index++)
             {
                 i32 current_handle = scene._internal_handles[internal_index];
-                if(current_handle > -1 && current_handle > real_handle)
+                if(current_handle > real_handle)
                 {
                     scene._internal_handles[internal_index] = current_handle - 1;
                 }
