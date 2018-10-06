@@ -62,23 +62,6 @@ struct ParticleSystemAttributes
     EmissionModule emission_module;
 };
 
-struct Particle
-{
-    math::Vec3 position;
-    math::Vec3 direction;
-    math::Rgba color;
-    math::Vec2 size;
-    math::Vec3 relative_position;
-    r32 relative_size;
-    i32 speed_over_lifetime_index;
-    i32 color_over_lifetime_index;
-    i32 size_over_lifetime_index;
-    r64 life;
-    
-    
-    i32 texture_handle;
-};
-
 struct Particles
 {
     S_Vec3 *position;
@@ -159,6 +142,8 @@ struct ParticleSystemInfo
     math::Vec2 *sizes;
     
     r64 current_emission_time;
+    
+    MemoryArena arena;
 };
 
 #endif

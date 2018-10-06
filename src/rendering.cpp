@@ -265,6 +265,32 @@ static void push_line(Renderer& renderer, math::Vec3 point1, math::Vec3 point2, 
     render_command->is_ui = is_ui;
 }
 
+static math::Rect scale_clip_rect(Renderer& renderer, math::Rect clip_rect, b32 clip = true, u64 ui_scaling_flag = UIScalingFlag::KEEP_ASPECT_RATIO)
+{
+    math::Vec2i resolution_scale = get_scale(renderer);
+    math::Rect scaled_clip_rect;
+    
+    if(clip && clip_rect.height != 0 && clip_rect.width != 0)
+    {
+        scaled_clip_rect.x = (clip_rect.x / UI_COORD_DIMENSION) * (r32)resolution_scale.x;
+        scaled_clip_rect.y = (clip_rect.y / UI_COORD_DIMENSION) * (r32)resolution_scale.y;
+        
+        r32 clip_ratio = clip_rect.height / clip_rect.width;
+        scaled_clip_rect.width = (clip_rect.width / UI_COORD_DIMENSION) * (r32)resolution_scale.x;
+        
+        if(ui_scaling_flag & UIScalingFlag::KEEP_ASPECT_RATIO)
+        {
+            scaled_clip_rect.height = scaled_clip_rect.width * clip_ratio;
+        }
+        else
+        {
+            scaled_clip_rect.height = (clip_rect.height / UI_COORD_DIMENSION) * (r32)resolution_scale.y;
+        }
+    }
+    
+    return scaled_clip_rect;
+}
+
 #define PUSH_UI_TEXT(text, position, color, font_handle, ...) push_ui_text(renderer, text, position, font_handle, color, ##__VA_ARGS__)
 #define PUSH_CENTERED_UI_TEXT(text, position, color, font_handle, z) push_ui_text(renderer, text, position, font_handle, color, ALIGNMENT_CENTER_X | ALIGNMENT_CENTER_Y, z)
 static void push_ui_text(Renderer &renderer, const char* text, math::Vec2 position, i32 font_handle, math::Rgba color, u64 alignment_flags = ALIGNMENT_LEFT, i32 z = 0, b32 clip = false, math::Rect clip_rect = math::Rect(0, 0, 0, 0), u64 ui_scaling_flag = UIScalingFlag::KEEP_ASPECT_RATIO)
@@ -290,25 +316,7 @@ static void push_ui_text(Renderer &renderer, const char* text, math::Vec2 positi
     render_command->text.z_layer = z;
     render_command->is_ui = true;
     
-    math::Rect scaled_clip_rect;
-    
-    if(clip && clip_rect.height != 0 && clip_rect.width != 0)
-    {
-        scaled_clip_rect.x = (clip_rect.x / UI_COORD_DIMENSION) * (r32)resolution_scale.x;
-        scaled_clip_rect.y = (clip_rect.y / UI_COORD_DIMENSION) * (r32)resolution_scale.y;
-        
-        r32 clip_ratio = clip_rect.height / clip_rect.width;
-        scaled_clip_rect.width = (clip_rect.width / UI_COORD_DIMENSION) * (r32)resolution_scale.x;
-        
-        if(ui_scaling_flag & UIScalingFlag::KEEP_ASPECT_RATIO)
-        {
-            scaled_clip_rect.height = scaled_clip_rect.width * clip_ratio;
-        }
-        else
-        {
-            scaled_clip_rect.height = (clip_rect.height / UI_COORD_DIMENSION) * (r32)resolution_scale.y;
-        }
-    }
+    math::Rect scaled_clip_rect = scale_clip_rect(renderer, clip_rect, clip);
     
     render_command->clip = clip;
     render_command->clip_rect = scaled_clip_rect;
@@ -376,6 +384,7 @@ static void push_filled_quad(Renderer& renderer, math::Vec3 position, b32 flippe
     }
     else
     {
+        render_command->quad.for_animation = false;
         render_command->quad.texture_offset = texture_offset;
         render_command->quad.frame_size = frame_size;
         
@@ -455,22 +464,7 @@ static void push_filled_ui_quad_not_centered(Renderer& renderer, math::Vec2 posi
     
     math::Vec3 scaled_size = get_relative_size_vec3(renderer, size, ui_scaling_flag);
     
-    math::Rect scaled_clip_rect;
-    
-    scaled_clip_rect.x = (clip_rect.x / UI_COORD_DIMENSION) * (r32)resolution_scale.x;
-    scaled_clip_rect.y = (clip_rect.y / UI_COORD_DIMENSION) * (r32)resolution_scale.y;
-    
-    r32 clip_ratio = clip_rect.height / clip_rect.width;
-    scaled_clip_rect.width = (clip_rect.width / UI_COORD_DIMENSION) * (r32)resolution_scale.x;
-    
-    if(ui_scaling_flag & UIScalingFlag::KEEP_ASPECT_RATIO)
-    {
-        scaled_clip_rect.height = scaled_clip_rect.width * clip_ratio;
-    }
-    else
-    {
-        scaled_clip_rect.height = (clip_rect.height / UI_COORD_DIMENSION) * (r32)resolution_scale.y;
-    }
+    math::Rect scaled_clip_rect = scale_clip_rect(renderer, clip_rect, clip, ui_scaling_flag);
     
     push_filled_quad_not_centered(renderer, pos, flipped, scaled_size, rotation, color, texture_handle, true, border_width, border_color, rounded, clip, scaled_clip_rect, animation_controller_handle, shader_handle, shader_attributes, shader_attribute_count, texture_offset, frame_size);
 }
@@ -501,22 +495,7 @@ static void push_filled_ui_quad(Renderer& renderer, math::Vec2 position, b32 fli
     
     math::Vec3 scaled_size = get_relative_size_vec3(renderer, size, ui_scaling_flag);
     
-    math::Rect scaled_clip_rect;
-    
-    scaled_clip_rect.x = (clip_rect.x / UI_COORD_DIMENSION) * (r32)resolution_scale.x;
-    scaled_clip_rect.y = (clip_rect.y / UI_COORD_DIMENSION) * (r32)resolution_scale.y;
-    
-    r32 clip_ratio = clip_rect.height / clip_rect.width;
-    scaled_clip_rect.width = (clip_rect.width / UI_COORD_DIMENSION) * (r32)resolution_scale.x;
-    
-    if(ui_scaling_flag & UIScalingFlag::KEEP_ASPECT_RATIO)
-    {
-        scaled_clip_rect.height = scaled_clip_rect.width * clip_ratio;
-    }
-    else
-    {
-        scaled_clip_rect.height = (clip_rect.height / UI_COORD_DIMENSION) * (r32)resolution_scale.y;
-    }
+    math::Rect scaled_clip_rect = scale_clip_rect(renderer, clip_rect, clip, ui_scaling_flag);
     
     push_filled_quad(renderer, pos, flipped, scaled_size, rotation, color, texture_handle, true, border_width, border_color, rounded,  animation_controller_handle, with_origin, origin, clip, scaled_clip_rect, shader_handle, shader_attributes, shader_attribute_count, texture_offset, frame_size);
 }
@@ -642,22 +621,7 @@ static RelativeUIQuadInfo push_filled_ui_quad_relative_not_centered(Renderer& re
     
     RelativeUIQuadInfo info = get_relative_info(renderer, position, relative_size, size, relative, false, ui_scaling_flag);
     
-    math::Rect scaled_clip_rect;
-    
-    scaled_clip_rect.x = (clip_rect.x / UI_COORD_DIMENSION) * (r32)resolution_scale.x;
-    scaled_clip_rect.y = (clip_rect.y / UI_COORD_DIMENSION) * (r32)resolution_scale.y;
-    
-    r32 clip_ratio = clip_rect.height / clip_rect.width;
-    scaled_clip_rect.width = (clip_rect.width / UI_COORD_DIMENSION) * (r32)resolution_scale.x;
-    
-    if(ui_scaling_flag & UIScalingFlag::KEEP_ASPECT_RATIO)
-    {
-        scaled_clip_rect.height = scaled_clip_rect.width * clip_ratio;
-    }
-    else
-    {
-        scaled_clip_rect.height = (clip_rect.height / UI_COORD_DIMENSION) * (r32)resolution_scale.y;
-    }
+    math::Rect scaled_clip_rect = scale_clip_rect(renderer, clip_rect, clip, ui_scaling_flag);
     
     push_filled_quad_not_centered(renderer, math::Vec3(info.position.x, info.position.y, z_layer), flipped, math::Vec3(info.scale.x, info.scale.y, 0.0f), rotation, color, texture_handle, true, border_width, border_color, rounded, clip, scaled_clip_rect, animation_controller_handle, shader_handle, shader_attributes, shader_attribute_count, texture_offset, frame_size);
     
@@ -677,22 +641,7 @@ static RelativeUIQuadInfo push_filled_ui_quad_relative(Renderer& renderer, math:
     
     RelativeUIQuadInfo info = get_relative_info(renderer, position, relative_size, size, relative, true, scaling_flags, origin);
     
-    math::Rect scaled_clip_rect;
-    
-    scaled_clip_rect.x = (clip_rect.x / UI_COORD_DIMENSION) * (r32)resolution_scale.x;
-    scaled_clip_rect.y = (clip_rect.y / UI_COORD_DIMENSION) * (r32)resolution_scale.y;
-    
-    r32 clip_ratio = clip_rect.height / clip_rect.width;
-    scaled_clip_rect.width = (clip_rect.width / UI_COORD_DIMENSION) * (r32)resolution_scale.x;
-    
-    if(scaling_flags & UIScalingFlag::KEEP_ASPECT_RATIO)
-    {
-        scaled_clip_rect.height = scaled_clip_rect.width * clip_ratio;
-    }
-    else
-    {
-        scaled_clip_rect.height = (clip_rect.height / UI_COORD_DIMENSION) * (r32)resolution_scale.y;
-    }
+    math::Rect scaled_clip_rect = scale_clip_rect(renderer, clip_rect, clip, scaling_flags);
     
     push_filled_quad(renderer, math::Vec3(info.position.x, info.position.y, z_layer), flipped, math::Vec3(info.scale.x, info.scale.y, 0.0f), rotation, color, texture_handle, true, border_width, border_color, rounded,  animation_controller_handle, with_origin, math::Vec2(0.0f), clip, scaled_clip_rect, shader_handle, shader_attributes, shader_attribute_count, texture_offset, frame_size);
     
@@ -1288,6 +1237,25 @@ static void update_buffer(Renderer& renderer, r32* buffer, i32 buffer_size, i32 
     renderer.updated_buffer_handles[renderer.updated_buffer_handle_count++] = buffer_handle;
 }
 
+static void update_instanced_buffer(Renderer& renderer, size_t buffer_size, i32 buffer_handle)
+{
+    BufferData data = {};
+    data.for_instancing = true;
+    data.instance_buffer_size = buffer_size;
+    data.index_buffer_count = 0;
+    renderer.buffers[buffer_handle] = data;
+}
+
+static void register_instance_buffer(Renderer& renderer, size_t buffer_size, i32* buffer_handle)
+{
+    BufferData data = {};
+    data.for_instancing = true;
+    data.instance_buffer_size = buffer_size;
+    renderer.buffers[renderer.buffer_count] = data;
+    
+    *buffer_handle = renderer.buffer_count++;
+}
+
 static i32 load_font(Renderer& renderer, char* path, i32 size, char* name)
 {
     assert(renderer.font_count + 1 < global_max_fonts);
@@ -1872,6 +1840,27 @@ static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer, ma
                 command.count++;
                 
                 assert(command_index < MAX_INSTANCING_PAIRS);
+            }
+            
+            if(ent.comp_flags & scene::COMP_PARTICLES)
+            {
+                if(ent.particle_system_handle.handle != -1)
+                {
+                    scene::ParticleSystemComponent &ps = scene.particle_system_components[ent.particle_system_handle.handle];
+                    
+                    if(ent.comp_flags & scene::COMP_TRANSFORM)
+                    {
+                        // Add transform stuff
+                        i32 _internal_handle = renderer.particles._internal_handles[ps.handle.handle - 1];
+                        ParticleSystemInfo& system = renderer.particles.particle_systems[_internal_handle];
+                        
+                        scene::TransformComponent &transform = scene.transform_components[ent.transform_handle.handle];
+                        
+                        system.transform.position = transform.position;
+                        system.transform.scale = transform.scale;
+                        system.transform.rotation = transform.rotation;
+                    }
+                }
             }
         }
     }
