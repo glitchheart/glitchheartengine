@@ -377,6 +377,7 @@ int main(int argc, char **args)
     render_state.dpi_scale = 0;
     render_state.window = nullptr;
     render_state.frame_delta = 0.0;
+    render_state.extra_shader_index = 0;
     
     render_state.font_arena = {};
     render_state.string_arena = {};
