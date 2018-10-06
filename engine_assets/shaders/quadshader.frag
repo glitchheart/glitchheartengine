@@ -12,19 +12,16 @@ out vec4 outColor;
 
 void main()
 {
-    float maxX = scale.x - border_width;
-    float minX = border_width;
-    float maxY = scale.y - border_width;
-    float minY = border_width;
-    
-    vec2 scaled_uv = uv * scale;
-    
-    bool x = scaled_uv.x < maxX && scaled_uv.x > minX && scaled_uv.y < maxY && scaled_uv.y > minY;
-    
     vec4 result = c;
     
     if(border_width > 0.0)
     {
+        float maxX = scale.x - border_width;
+        float minX = border_width;
+        float maxY = scale.y - border_width;
+        float minY = border_width;
+        vec2 scaled_uv = uv * scale;
+        bool x = scaled_uv.x < maxX && scaled_uv.x > minX && scaled_uv.y < maxY && scaled_uv.y > minY;
         if(x)
         {
             result = c;
