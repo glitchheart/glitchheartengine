@@ -597,7 +597,12 @@ struct TextureHandle
     i32 handle;
 };
 
-struct RenderMaterial
+struct MeshHandle
+{
+    i32 handle;
+};
+
+struct Material
 {
     RenderMaterialType type;
     
@@ -629,7 +634,7 @@ struct MeshInfo
     i32 instance_scale_buffer_handle;
     
     TransformInfo transform;
-    RenderMaterial material;
+    Material material;
     
     WireframeType wireframe_type;
     math::Rgba wireframe_color;
@@ -800,7 +805,7 @@ struct RenderCommand
             i32 buffer_handle;
             MeshData *meshes;
             i32 mesh_count;
-            RenderMaterial materials[10];
+            Material materials[10];
             i32 material_count;
             math::Rgba color;
             math::Mat4* bone_transforms;
@@ -1001,7 +1006,7 @@ struct Renderer
     i32 *updated_buffer_handles;
     i32 updated_buffer_handle_count;
     
-    RenderMaterial *materials;
+    Material *materials;
     i32 material_count;
     
     Mesh *meshes;

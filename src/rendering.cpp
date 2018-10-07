@@ -1,4 +1,5 @@
 #include "animation.h"
+#include <string.h>
 
 enum CameraFlags
 {
@@ -1311,7 +1312,7 @@ static i32 check_for_identical_vertex(Vertex &vertex, math::Vec2 uv, math::Vec3 
     return (i32)current_size;
 }
 
-static void load_obj(Renderer &renderer, char *file_path)
+static void load_obj(Renderer &renderer, char *file_path, MeshHandle *mesh_handle = nullptr, MaterialHandle *material_handle = nullptr)
 {
     FILE *file = fopen(file_path, "r");
     
@@ -1377,6 +1378,7 @@ static void load_obj(Renderer &renderer, char *file_path)
                 with_uvs = true;
                 math::Vec2 uv(0.0f);
                 sscanf(buffer, "vt %f %f", &uv.x, &uv.y);
+                uv.y = 1.0f - uv.y;
                 buf_push(uvs, uv);
                 uv_index++;
             }
@@ -1479,7 +1481,8 @@ static void load_obj(Renderer &renderer, char *file_path)
     }
     
     assert(renderer.mesh_count + 1 < global_max_meshes);
-    Mesh &mesh = renderer.meshes[renderer.mesh_count++];
+    MeshHandle handle =  { renderer.mesh_count++ };
+    Mesh &mesh = renderer.meshes[handle.handle];
     mesh = {};
     
     mesh.vertices = push_array(&renderer.mesh_arena, buf_len(final_vertices), Vertex);
@@ -1529,18 +1532,93 @@ static void load_obj(Renderer &renderer, char *file_path)
     renderer.buffers[renderer.buffer_count] = scale_data;
     mesh.instance_scale_buffer_handle = renderer.buffer_count++;
     
-    // Read the material file
+    if(mesh_handle)
+        *mesh_handle = handle;
     
-    FILE* mtl_file = fopen("", "r");
-    
-    if(mtl_file)
+    if(has_mtl_file)
     {
-        char buffer[256];
-        
-        while((fgets(buffer, sizeof(buffer), mtl_file) != NULL))
+        // Read the material file
+        size_t index = 0;
+        for(size_t i = 0; i < strlen(file_path); i++)
         {
-            
+            if(file_path[i] == '/')
+            {
+                index = i + 1;
+            }
         }
+        
+        char *dir = (char*)malloc(sizeof(char) * index);
+        strncpy(dir, file_path, index);
+        
+        dir[index] = 0;
+        
+        auto temp_block = begin_temporary_memory(&renderer.temp_arena);
+        
+        FILE* mtl_file = fopen(concat(dir, mtl_file_name, &renderer.temp_arena), "r");
+        
+        if(mtl_file)
+        {
+            char buffer[256];
+            
+            Material &material = renderer.materials[renderer.material_count];
+            material.type = RM_TEXTURED;
+            material.source_handle = { renderer.material_count++ };
+            material.diffuse_color = COLOR_WHITE;
+            
+            while((fgets(buffer, sizeof(buffer), mtl_file) != NULL))
+            {
+                if(starts_with(buffer, "newmtl"))
+                {
+                    // @Incomplete: Save name
+                }
+                else if(starts_with(buffer, "illum")) // illumination
+                {
+                }
+                else if(starts_with(buffer, "Ka")) // ambient color
+                {
+                    sscanf(buffer, "Ka %f %f %f", &material.ambient_color.r, &material.ambient_color.g, &material.ambient_color.b);
+                    material.ambient_color.a = 1.0f;
+                }
+                else if(starts_with(buffer, "Kd")) // diffuse color
+                {
+                    sscanf(buffer, "Kd %f %f %f", &material.diffuse_color.r, &material.diffuse_color.g, &material.diffuse_color.b);
+                    material.diffuse_color.a = 1.0f;
+                }
+                else if(starts_with(buffer, "Ks")) // specular color
+                {
+                    sscanf(buffer, "Ks %f %f %f", &material.specular_color.r, &material.specular_color.g, &material.specular_color.b);
+                    material.specular_color.a = 1.0f;
+                }
+                else if(starts_with(buffer, "map_Ka")) // ambient map
+                {
+                    char name[64];
+                    sscanf(buffer, "map_Ka %s", name);
+                    
+                    load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, &material.ambient_texture.handle);
+                }
+                else if(starts_with(buffer, "map_Kd")) // diffuse map
+                {
+                    char name[64];
+                    sscanf(buffer, "map_Kd %s", name);
+                    
+                    load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, &material.diffuse_texture.handle);
+                }
+                else if(starts_with(buffer, "map_Ks")) // specular map
+                {
+                    char name[64];
+                    sscanf(buffer, "map_Ks %s", name);
+                    
+                    load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, &material.specular_texture.handle);
+                }
+            }
+            
+            fclose(mtl_file);
+            
+            if(material_handle)
+                *material_handle = material.source_handle;
+        }
+        
+        end_temporary_memory(temp_block);
     }
 }
 
@@ -1805,7 +1883,7 @@ static void load_assets(char *model_path, char *texture_path, char *material_pat
     {
         while(fgets(line, 256, file))
         {
-            RenderMaterial material = {};
+            Material material = {};
             material.type = RM_TEXTURED;
             i32 index = 0;
             sscanf(line, "%d tex %d col %f %f %f %f", &index, &material.diffuse_texture.handle, &material.diffuse_color.r, 
@@ -1839,7 +1917,7 @@ static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer, ma
                 scene::TransformComponent &transform = scene.transform_components[ent.transform_handle.handle];
                 scene::RenderComponent &render = scene.render_components[ent.render_handle.handle];
                 
-                RenderMaterial material = scene.material_instances[render.material_handle.handle];
+                Material material = scene.material_instances[render.material_handle.handle];
                 
                 // Instancing stuff
                 i32 command_index = -1;
@@ -1900,7 +1978,7 @@ static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer, ma
     for(i32 command_index = 0; command_index < command_count; command_index++)
     {
         InstancedRenderCommand command = instanced_commands[command_index];
-        RenderMaterial material = scene.material_instances[command.material_handle];
+        Material material = scene.material_instances[command.material_handle];
         MeshInfo mesh_info = {};
         mesh_info.transform.scale = command.scale;
         Mesh &mesh = renderer.meshes[command.mesh_handle];
