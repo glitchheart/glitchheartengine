@@ -2,11 +2,33 @@
 
 namespace scene
 {
+    static Scene create_scene(Renderer &renderer, EntityTemplateState &template_state, i32 initial_entity_array_size);
+    static void free_scene(Scene& scene);
+    i32 _unused_entity_handle(Scene &scene);
+    static RenderComponent& add_render_component(Scene &scene, EntityHandle entity_handle, b32 receives_shadows, b32 cast_shadows);
+    static TransformComponent& add_transform_component(Scene &scene, EntityHandle entity_handle);
+    static ParticleSystemComponent& add_particle_system_component(Scene &scene, EntityHandle entity_handle, ParticleSystemAttributes attributes, i32 max_particles);
+    static EntityHandle register_entity(u64 comp_flags, Scene &scene);
+    static EntityTemplate _load_template(const char *path, Scene &scene);
+    static EntityHandle _register_entity_with_template(EntityTemplate &templ, Scene &scene);
+    static EntityHandle register_entity_from_template_file(const char *path, Scene &scene);
+    i32 _pack_transform_components(Entity &entity, Scene &scene);
+    i32 _pack_render_components(Entity &entity, Scene &scene);
+    i32 _pack_particle_system_components(Entity &entity, Scene &scene);
+    static void unregister_entity(EntityHandle &handle, Scene &scene);
+    static void set_active(EntityHandle handle, b32 active, Scene &scene);
+    static TransformComponent& get_transform_comp(EntityHandle handle, Scene &scene);
+    static RenderComponent& get_render_comp(EntityHandle handle, Scene &scene);
+    static ParticleSystemComponent& get_particle_system_comp(EntityHandle handle, Scene &scene);
+    static MaterialHandle create_material(MaterialHandle material_to_copy, Scene &scene);
+    static Material& get_material(EntityHandle handle, Scene &scene);
+    
     // Creates and returns a new "Scene". The "inital_entity_array_size" specifies the max entity count of the "Scene".
     // @Incomplete: We need to make sure that we can grow in size if we need more than what we allocated at any point in time.
-    static Scene create_scene(Renderer &renderer, i32 initial_entity_array_size = 1024)
+    static Scene create_scene(Renderer &renderer, EntityTemplateState &template_state, i32 initial_entity_array_size = 1024)
     {
         Scene scene = {};
+        scene.template_state = &template_state;
         scene.renderer = &renderer;
         scene.max_entity_count = initial_entity_array_size;
         scene.entity_count = 0;
@@ -20,7 +42,7 @@ namespace scene
         scene.transform_components = (TransformComponent*)malloc(sizeof(TransformComponent) * initial_entity_array_size);
         scene.render_components = (RenderComponent*)malloc(sizeof(RenderComponent) * initial_entity_array_size);
         scene.particle_system_components = (ParticleSystemComponent*)malloc(sizeof(ParticleSystemComponent) * initial_entity_array_size);
-        scene.material_instances = (RenderMaterial*)malloc(sizeof(RenderMaterial) * initial_entity_array_size);
+        scene.material_instances = (Material*)malloc(sizeof(Material) * initial_entity_array_size);
         
         for(i32 index = 0; index < initial_entity_array_size; index++)
         {
@@ -92,7 +114,6 @@ namespace scene
         return -1;
     }
     
-    
     static RenderComponent& add_render_component(Scene &scene, EntityHandle entity_handle, b32 receives_shadows = true, b32 cast_shadows = true)
     {
         Entity &entity = scene.entities[scene._internal_handles[entity_handle.handle - 1]];
@@ -162,6 +183,140 @@ namespace scene
         }
         
         return(handle);
+    }
+    
+    static EntityTemplate _load_template(const char *path, Scene &scene)
+    {
+        EntityTemplate templ = {};
+        
+        FILE *file = fopen(path, "r");
+        if(file)
+        {
+            sprintf(templ.file_path, "%s", path);
+            
+            char buffer[256];
+            
+            while(fgets(buffer, 256, file))
+            {
+                if(starts_with(buffer, "-transform"))
+                {
+                    templ.comp_flags |= COMP_TRANSFORM;
+                    templ.transform.position = math::Vec3();
+                    templ.transform.scale = math::Vec3(1, 1, 1);
+                    templ.transform.rotation = math::Vec3(0, 0, 0);
+                    
+                    while(fgets(buffer, 256, file) && !starts_with(buffer, "-"))
+                    {
+                        if(starts_with(buffer, "position"))
+                        {
+                            sscanf(buffer, "position: %f %f %f\n", &templ.transform.position.x, &templ.transform.position.y, &templ.transform.position.z);
+                        }
+                        else if(starts_with(buffer, "scale"))
+                        {
+                            sscanf(buffer, "scale: %f %f %f\n", &templ.transform.scale.x, &templ.transform.scale.y, &templ.transform.scale.z);
+                        }
+                        else if(starts_with(buffer, "rotation"))
+                        {
+                            sscanf(buffer, "rotation: %f %f %f\n", &templ.transform.rotation.x, &templ.transform.rotation.y, &templ.transform.rotation.z);
+                        }
+                    }
+                }
+                else if(starts_with(buffer, "-render"))
+                {
+                    templ.comp_flags |= COMP_RENDER;
+                    
+                    while(fgets(buffer, 256, file) && !starts_with(buffer, "-"))
+                    {
+                        if(starts_with(buffer, "receives shadows"))
+                        {
+                            sscanf(buffer, "receives shadows: %d\n", &templ.render.receives_shadows);
+                        }
+                        else if(starts_with(buffer, "cast shadows"))
+                        {
+                            sscanf(buffer, "cast shadows: %d\n", &templ.render.cast_shadows);
+                        }
+                        else if(starts_with(buffer, "obj"))
+                        {
+                            char obj_file[256];
+                            sscanf(buffer, "obj: %s", obj_file);
+                            
+                            load_obj(*scene.renderer, obj_file, &templ.render.mesh_handle, &templ.render.material_handle);
+                        }
+                    }
+                }
+                else if(starts_with(buffer, "-particle"))
+                {
+                    templ.comp_flags |= COMP_PARTICLES;
+                    while(fgets(buffer, 256, file) && !starts_with(buffer, "-"))
+                    {
+                    }
+                }
+            }
+            
+            fclose(file);
+        }
+        
+        return(templ);
+    }
+    
+    static EntityHandle _register_entity_with_template(EntityTemplate &templ, Scene &scene)
+    {
+        EntityHandle handle = register_entity(templ.comp_flags, scene);
+        
+        if(templ.comp_flags & COMP_TRANSFORM)
+        {
+            TransformComponent &transform = get_transform_comp(handle, scene);
+            transform.position = templ.transform.position;
+            transform.scale = templ.transform.scale;
+            transform.rotation = templ.transform.rotation;
+        }
+        
+        if(templ.comp_flags & COMP_RENDER)
+        {
+            RenderComponent &render = get_render_comp(handle, scene);
+            render.mesh_handle = templ.render.mesh_handle;
+            render.material_handle = create_material(templ.render.material_handle, scene);
+            render.receives_shadows = templ.render.receives_shadows;
+            render.cast_shadows = templ.render.cast_shadows;
+        }
+        
+        if(templ.comp_flags & COMP_PARTICLES)
+        {
+        }
+        
+        return(handle);
+    }
+    
+    static EntityHandle register_entity_from_template_file(const char *path, Scene &scene)
+    {
+        EntityTemplateState *template_state = scene.template_state;
+        
+        EntityTemplate *templ = nullptr;
+        i32 handle = -1;
+        
+        for(i32 i = 0; i < template_state->template_count; i++)
+        {
+            if(strcmp(template_state->templates[i].file_path, path) == 0)
+            {
+                handle = i;
+                break;
+            }
+        }
+        
+        
+        if(handle != -1) // The template was already loaded
+        {
+            templ = &template_state->templates[handle];
+        }
+        else
+        {
+            template_state->templates[template_state->template_count] = _load_template(path, scene);
+            templ = &template_state->templates[template_state->template_count++];
+        }
+        
+        assert(templ);
+        
+        return(_register_entity_with_template(*templ, scene));
     }
     
     i32 _pack_transform_components(Entity &entity, Scene &scene)
@@ -336,13 +491,13 @@ namespace scene
         return(comp);
     }
     
-    static MaterialHandle create_material(MaterialHandle material_to_copy, Scene &scene, Renderer &renderer)
+    static MaterialHandle create_material(MaterialHandle material_to_copy, Scene &scene)
     {
-        scene.material_instances[scene.material_count] = renderer.materials[material_to_copy.handle];
+        scene.material_instances[scene.material_count] = scene.renderer->materials[material_to_copy.handle];
         return { scene.material_count++ };
     }
     
-    static RenderMaterial& get_material(EntityHandle handle, Scene &scene)
+    static Material& get_material(EntityHandle handle, Scene &scene)
     {
         i32 internal_handle = scene._internal_handles[handle.handle - 1];
         assert(internal_handle != -1);

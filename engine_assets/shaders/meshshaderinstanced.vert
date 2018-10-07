@@ -53,7 +53,10 @@ void main()
 	translate[2] = vec4(0.0, 0.0, 1.0, 0);
 	translate[3] = vec4(offset[0], offset[1], offset[2], 1.0);
 	
-	mat4 rotMat = rotationMatrix(vec3(0, 1, 0), rotation.y);	
+	mat4 x_rotMat = rotationMatrix(vec3(1, 0, 0), rotation.x);	
+	mat4 y_rotMat = rotationMatrix(vec3(0, 1, 0), rotation.y);	
+	mat4 z_rotMat = rotationMatrix(vec3(0, 0, 1), rotation.z);
+	mat4 rotMat = x_rotMat * y_rotMat * z_rotMat;	
 
 	mat4 scaling;
 	scaling[0] = vec4(scale.x, 0.0,     0.0,     0.0);

@@ -34,6 +34,8 @@ static MemoryState memory_state;
 #if defined(__linux) || defined(_WIN32)
 //#include "vulkan_rendering.h"
 #endif
+
+#include "scene.h"
 #include "particles.cpp"
 #include "opengl_rendering.h"
 #include "animation.cpp"
@@ -279,7 +281,7 @@ static void init_renderer(Renderer &renderer)
     renderer.spritesheet_animation_count = 0;
     renderer.animation_controller_count = 0;
     renderer.material_count = 0;
-    renderer.materials = push_array(&renderer.mesh_arena, global_max_materials, RenderMaterial);
+    renderer.materials = push_array(&renderer.mesh_arena, global_max_materials, Material);
     renderer.meshes = push_array(&renderer.mesh_arena, global_max_meshes, Mesh);
     renderer.shader_data = push_array(&renderer.shader_arena, global_max_shaders, ShaderData);
     renderer.fonts = push_array(&renderer.font_arena, global_max_fonts, FontData);
@@ -446,6 +448,11 @@ int main(int argc, char **args)
     r64 delta_time = 0.0;
     renderer.frame_lock = 0;
     
+    scene::EntityTemplateState template_state = {};
+    template_state.template_count = 0;
+    
+    template_state.templates = push_array(&platform_state->perm_arena, global_max_entity_templates, scene::EntityTemplate);
+    
     while (!should_close_window(render_state) && !renderer.should_close)
     {
         if(game_memory.exit_game)
@@ -461,7 +468,7 @@ int main(int argc, char **args)
         reload_libraries(&game, game_library_path, temp_game_library_path, &platform_state->perm_arena);
         
         auto game_temp_mem = begin_temporary_memory(game_memory.temp_arena);
-        game.update(delta_time, &game_memory, renderer, &input_controller, &sound_system, timer_controller);
+        game.update(delta_time, &game_memory, renderer, template_state, &input_controller, &sound_system, timer_controller);
         update_particle_systems(renderer, delta_time);
         
         tick_animation_controllers(renderer, &sound_system, &input_controller, timer_controller, delta_time);
