@@ -612,6 +612,7 @@ struct Material
     math::Rgba ambient_color;
     math::Rgba diffuse_color;
     math::Rgba specular_color;
+    r32 specular_exponent;
     
     TextureHandle ambient_texture;
     TextureHandle diffuse_texture;
@@ -816,6 +817,12 @@ struct RenderCommand
             i32 buffer_handle;
             RenderMaterialType material_type;
             i32 diffuse_texture;
+            i32 specular_texture;
+            i32 ambient_texture;
+            math::Rgba diffuse_color;
+            math::Rgba specular_color;
+            math::Rgba ambient_color;
+            r32 specular_exponent;
             WireframeType wireframe_type;
             math::Rgba wireframe_color;
         } mesh;
@@ -829,6 +836,12 @@ struct RenderCommand
             
             RenderMaterialType material_type;
             i32 diffuse_texture;
+            i32 specular_texture;
+            i32 ambient_texture;
+            math::Rgba diffuse_color;
+            math::Rgba specular_color;
+            math::Rgba ambient_color;
+            r32 specular_exponent;
             WireframeType wireframe_type;
             math::Rgba wireframe_color;
             math::Vec3 *offsets;
