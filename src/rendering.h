@@ -151,6 +151,7 @@ enum RenderCommandType
     RENDER_COMMAND_DEPTH_TEST,
     RENDER_COMMAND_PARTICLES,
     RENDER_COMMAND_CURSOR,
+    RENDER_COMMAND_SUN_LIGHT,
     
     RENDER_COMMAND_COUNT
 };
@@ -617,6 +618,7 @@ struct Material
     TextureHandle ambient_texture;
     TextureHandle diffuse_texture;
     TextureHandle specular_texture;
+    TextureHandle specular_intensity_texture;
 };
 
 enum WireframeType
@@ -819,6 +821,7 @@ struct RenderCommand
             i32 diffuse_texture;
             i32 specular_texture;
             i32 ambient_texture;
+            i32 specular_intensity_texture;
             math::Rgba diffuse_color;
             math::Rgba specular_color;
             math::Rgba ambient_color;
@@ -838,6 +841,7 @@ struct RenderCommand
             i32 diffuse_texture;
             i32 specular_texture;
             i32 ambient_texture;
+            i32 specular_intensity_texture;
             math::Rgba diffuse_color;
             math::Rgba specular_color;
             math::Rgba ambient_color;
@@ -875,6 +879,13 @@ struct RenderCommand
             
             CommandBlendMode blend_mode;
         } particles;
+        struct
+        {
+            math::Rgba specular_color;
+            math::Rgba diffuse_color;
+            math::Rgba ambient_color;
+            math::Vec3 position;
+        } sun_light;
     };
     RenderCommand() {}
 };

@@ -1125,6 +1125,16 @@ static void create_plane(Renderer &renderer)
     mesh.instance_scale_buffer_handle = renderer.buffer_count++;
 }
 
+static void push_sun_light(Renderer &renderer, math::Vec3 position, math::Rgba specular_color, math::Rgba diffuse_color, math::Rgba ambient_color)
+{
+    RenderCommand *render_command = push_next_command(renderer, false);
+    render_command->type = RENDER_COMMAND_SUN_LIGHT;
+    render_command->sun_light.position = position;
+    render_command->sun_light.specular_color = specular_color;
+    render_command->sun_light.diffuse_color = diffuse_color;
+    render_command->sun_light.ambient_color = ambient_color;
+}
+
 static void push_mesh(Renderer &renderer, MeshInfo mesh_info)
 {
     RenderCommand *render_command = push_next_command(renderer, false);
@@ -1143,6 +1153,7 @@ static void push_mesh(Renderer &renderer, MeshInfo mesh_info)
     render_command->mesh.diffuse_texture = mesh_info.material.diffuse_texture.handle;
     render_command->mesh.specular_texture = mesh_info.material.specular_texture.handle;
     render_command->mesh.ambient_texture = mesh_info.material.ambient_texture.handle;
+    render_command->mesh_instanced.specular_intensity_texture = mesh_info.material.specular_intensity_texture.handle;
     render_command->mesh_instanced.specular_exponent = mesh_info.material.specular_exponent;
     render_command->mesh_instanced.diffuse_color = mesh_info.material.diffuse_color;
     render_command->mesh_instanced.specular_color = mesh_info.material.specular_color;
@@ -1167,6 +1178,7 @@ static void push_mesh_instanced(Renderer &renderer, MeshInfo mesh_info, math::Ve
     render_command->mesh_instanced.diffuse_texture = mesh_info.material.diffuse_texture.handle;
     render_command->mesh_instanced.specular_texture = mesh_info.material.specular_texture.handle;
     render_command->mesh_instanced.ambient_texture = mesh_info.material.ambient_texture.handle;
+    render_command->mesh_instanced.specular_intensity_texture = mesh_info.material.specular_intensity_texture.handle;
     render_command->color = mesh_info.material.diffuse_color;
     render_command->mesh_instanced.diffuse_color = mesh_info.material.diffuse_color;
     render_command->mesh_instanced.specular_color = mesh_info.material.specular_color;
@@ -1628,6 +1640,13 @@ static void load_obj(Renderer &renderer, char *file_path, MeshHandle *mesh_handl
                     sscanf(buffer, "map_Ks %s", name);
                     
                     load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, &material.specular_texture.handle);
+                }
+                else if(starts_with(buffer, "map_Ns")) // specular intensity map
+                {
+                    char name[64];
+                    sscanf(buffer, "map_Ns %s", name);
+                    
+                    load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, &material.specular_intensity_texture.handle);
                 }
             }
             

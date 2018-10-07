@@ -285,6 +285,14 @@ struct RenderState
     
     GLFWcursor* cursors[6];
     
+    struct
+    {
+        math::Rgba specular_color;
+        math::Rgba diffuse_color;
+        math::Rgba ambient_color;
+        math::Vec3 position;
+    } sun_light;
+    
     RenderState() {}
     
     MemoryArena* perm_arena; // TODO: Make this into a framebuffer arena maybe?
