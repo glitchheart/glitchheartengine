@@ -1137,7 +1137,16 @@ static void push_mesh(Renderer &renderer, MeshInfo mesh_info)
     Mesh &mesh = renderer.meshes[mesh_info.mesh_handle];
     render_command->mesh.buffer_handle = mesh.buffer_handle;
     render_command->mesh.material_type = mesh_info.material.type;
+    render_command->mesh_instanced.diffuse_color = mesh_info.material.diffuse_color;
+    render_command->mesh_instanced.specular_color = mesh_info.material.specular_color;
+    render_command->mesh_instanced.ambient_color = mesh_info.material.ambient_color;
     render_command->mesh.diffuse_texture = mesh_info.material.diffuse_texture.handle;
+    render_command->mesh.specular_texture = mesh_info.material.specular_texture.handle;
+    render_command->mesh.ambient_texture = mesh_info.material.ambient_texture.handle;
+    render_command->mesh_instanced.specular_exponent = mesh_info.material.specular_exponent;
+    render_command->mesh_instanced.diffuse_color = mesh_info.material.diffuse_color;
+    render_command->mesh_instanced.specular_color = mesh_info.material.specular_color;
+    render_command->mesh_instanced.ambient_color = mesh_info.material.ambient_color;
     render_command->color = mesh_info.material.diffuse_color;
     render_command->cast_shadows = mesh_info.cast_shadows;
     render_command->receives_shadows = mesh_info.receives_shadows;
@@ -1156,7 +1165,13 @@ static void push_mesh_instanced(Renderer &renderer, MeshInfo mesh_info, math::Ve
     render_command->mesh_instanced.buffer_handle = mesh.buffer_handle;
     render_command->mesh_instanced.material_type = mesh_info.material.type;
     render_command->mesh_instanced.diffuse_texture = mesh_info.material.diffuse_texture.handle;
+    render_command->mesh_instanced.specular_texture = mesh_info.material.specular_texture.handle;
+    render_command->mesh_instanced.ambient_texture = mesh_info.material.ambient_texture.handle;
     render_command->color = mesh_info.material.diffuse_color;
+    render_command->mesh_instanced.diffuse_color = mesh_info.material.diffuse_color;
+    render_command->mesh_instanced.specular_color = mesh_info.material.specular_color;
+    render_command->mesh_instanced.ambient_color = mesh_info.material.ambient_color;
+    render_command->mesh_instanced.specular_exponent = mesh_info.material.specular_exponent;
     render_command->mesh_instanced.instance_offset_buffer_handle = mesh_info.instance_offset_buffer_handle;
     render_command->mesh_instanced.instance_color_buffer_handle = mesh_info.instance_color_buffer_handle;
     render_command->mesh_instanced.instance_rotation_buffer_handle = mesh_info.instance_rotation_buffer_handle;
@@ -1588,6 +1603,10 @@ static void load_obj(Renderer &renderer, char *file_path, MeshHandle *mesh_handl
                 {
                     sscanf(buffer, "Ks %f %f %f", &material.specular_color.r, &material.specular_color.g, &material.specular_color.b);
                     material.specular_color.a = 1.0f;
+                }
+                else if(starts_with(buffer, "Ns")) // specular exponent
+                {
+                    sscanf(buffer, "Ns %f", &material.specular_exponent);
                 }
                 else if(starts_with(buffer, "map_Ka")) // ambient map
                 {

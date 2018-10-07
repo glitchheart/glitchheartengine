@@ -16,18 +16,31 @@ in GS_OUT
 out vec4 color;
 
 uniform vec3 diffuseColor;
-uniform vec3 lightPosWorld;
-uniform vec3 lightColor;
-uniform float lightPower;
+uniform vec3 ambientColor;
 uniform vec3 specularColor;
-uniform float alpha;
+uniform float specularExponent;
+
+uniform vec3 lightPosWorld;
+uniform float lightPower;
+uniform vec3 lightDiffuse;
+uniform vec3 lightSpecular;
+uniform vec3 lightAmbient;
+// color of light
+uniform vec3 lightColor;
+
+uniform bool hasTexture;
+uniform bool hasSpecular;
+uniform bool hasAmbient;
+
 uniform bool drawWireframe;
 uniform bool drawMesh;
 uniform vec4 wireframeColor;
-uniform bool hasTexture;
+
 uniform bool receivesShadows;
 
 uniform sampler2D diffuseTexture;
+uniform sampler2D specularTexture;
+uniform sampler2D ambientTexture;
 uniform sampler2D shadowMap;
 
 float calculateShadow(vec4 fragPosLightSpace, vec3 n, vec3 lDir)
@@ -68,23 +81,56 @@ void main()
 {
     if(drawMesh)
     {
-        vec3 col =  diffuseColor;
         vec3 normal = normalize(fs_in.normal);
         
-        // ambient
-        vec3 ambient = 0.15 * col;
+        vec3 ambient = vec3(0, 0, 0);
         
-        // diffuse	
+        if(hasAmbient)
+        {
+            ambient = lightAmbient * vec3(texture(ambientTexture, fs_in.uv));
+        }
+        else
+        {
+            ambient = lightAmbient * ambientColor;
+        }
+        
         vec3 lightDir = normalize(fs_in.lightDir);
+        vec3 viewDir = normalize(fs_in.eyeView);
+        vec3 halfwayDir = normalize(lightDir + viewDir);
+        
+        // diffuse
         float diff = max(dot(lightDir, normal), 0.0f);
-        vec3 diffuse = diff * lightColor * lightPower;		
+        
+        vec3 diffuse = vec3(0, 0, 0);
+        if(hasTexture)
+        {
+            if(texture(diffuseTexture, fs_in.uv).a == 0.0f)
+            {
+                discard;
+            }
+            else
+            {
+                diffuse = diff * vec3(texture(diffuseTexture, fs_in.uv)) * lightDiffuse;		
+            }
+        }
+        else
+        {
+            diffuse = diff * diffuseColor * lightDiffuse;
+        }
+        
         
         // specular
-        vec3 viewDir = normalize(fs_in.eyeView);
-        float spec = 0.0;
-        vec3 halfwayDir = normalize(lightDir + viewDir);
-        spec = pow(max(dot(normal, halfwayDir), 0.0), 64.0f);
-        vec3 specular = vec3(0, 0, 0);//spec * lightColor;
+        float spec = pow(max(dot(normal, halfwayDir), 0.0), specularExponent);
+        vec3 specular = vec3(0, 0, 0);
+        
+        if(hasSpecular)
+        {
+            specular = lightSpecular * (spec * vec3(texture(specularTexture, fs_in.uv)));
+        }
+        else
+        {
+            specular = lightSpecular * spec * specularColor;
+        }
         
         // shadows
         float shadow = calculateShadow(fs_in.shadowCoord, normal, lightDir);
@@ -92,22 +138,14 @@ void main()
         vec3 lighting;
         if(receivesShadows)
         {
-            lighting = (ambient + (1.0 - shadow) * (diffuse + specular)) * col;
+            lighting = (ambient + (1.0 - shadow) * (diffuse + specular));
         }
         else
         {
-            lighting = vec3(1, 1, 1);//(ambient + (diffuse + specular)) * col;
+            lighting = vec3(1, 1, 1);
         }
         
-        if(hasTexture)
-        {
-            if(texture(diffuseTexture, fs_in.uv).a == 0.0)
-                discard;
-            else
-                color = vec4(lighting, 1.0f) * texture(diffuseTexture, fs_in.uv) * fs_in.color;		
-        } else {
-            color = vec4(lighting, 1.0f) * fs_in.color;		
-        }
+        color = vec4(lighting, 1.0f) * fs_in.color;		
     }
     else
     {

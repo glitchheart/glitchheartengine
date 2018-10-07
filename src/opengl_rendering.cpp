@@ -2121,9 +2121,11 @@ static void render_mesh(const RenderCommand &render_command, Renderer &renderer,
     if(!for_shadow_map)
     {
         glUniform1i(glGetUniformLocation(shader.program, "diffuseTexture"), 0);
-        glUniform1i(glGetUniformLocation(shader.program, "shadowMap"),  1);
+        glUniform1i(glGetUniformLocation(shader.program, "specularTexture"),  1);
+        glUniform1i(glGetUniformLocation(shader.program, "specularTexture"),  2);
+        glUniform1i(glGetUniformLocation(shader.program, "shadowMap"),  3);
         
-        if(render_command.mesh.diffuse_texture != 0)
+        if(render_command.mesh_instanced.diffuse_texture != 0)
         {
             auto texture = render_state.texture_array[renderer.texture_data[render_command.mesh.diffuse_texture - 1].handle];
             
@@ -2135,21 +2137,55 @@ static void render_mesh(const RenderCommand &render_command, Renderer &renderer,
         else
             set_bool_uniform(shader.program, "hasTexture", false);
         
+        if(render_command.mesh_instanced.specular_texture != 0)
+        {
+            auto texture = render_state.texture_array[renderer.texture_data[render_command.mesh.specular_texture - 1].handle];
+            
+            glActiveTexture(GL_TEXTURE1);
+            glBindTexture(GL_TEXTURE_2D, texture.texture_handle);
+            
+            set_bool_uniform(shader.program, "hasSpecular", true);
+        }
+        else
+        {
+            set_bool_uniform(shader.program, "hasSpecular", false);
+        }
+        
+        if(render_command.mesh_instanced.ambient_texture != 0)
+        {
+            auto texture = render_state.texture_array[renderer.texture_data[render_command.mesh.ambient_texture - 1].handle];
+            
+            glActiveTexture(GL_TEXTURE1);
+            glBindTexture(GL_TEXTURE_2D, texture.texture_handle);
+            
+            set_bool_uniform(shader.program, "hasAmbient", true);
+        }
+        else
+        {
+            set_bool_uniform(shader.program, "hasAmbient", false);
+        }
+        
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, render_state.shadow_map_buffer.shadow_map_handle);
         
-        set_bool_uniform(shader.program, "receivesShadows", render_command.receives_shadows);
         
+        set_bool_uniform(shader.program, "receivesShadows", render_command.receives_shadows);
         set_mat4_uniform(shader.program, "depthModelMatrix", shadow_map_matrices->depth_model_matrix);
         set_mat4_uniform(shader.program, "depthBiasMatrix", shadow_map_matrices->depth_bias_matrix);
         set_mat4_uniform(shader.program, "depthViewMatrix", shadow_map_matrices->depth_view_matrix);
         set_mat4_uniform(shader.program, "depthProjectionMatrix", shadow_map_matrices->depth_projection_matrix);
         
-        set_vec4_uniform(shader.program, "color", render_command.color);
         set_vec3_uniform(shader.program, "lightPosWorld", math::Vec3(0, 20, -10));
-        set_vec3_uniform(shader.program, "diffuseColor", math::Vec3(1, 1, 1));
+        
         set_vec3_uniform(shader.program, "lightColor", math::Vec3(1.0f, 1.0f, 1.0f));
-        set_vec3_uniform(shader.program, "specularColor", math::Vec3(1, 1, 1));
+        set_vec3_uniform(shader.program, "lightSpecular", math::Vec3(1.0f));
+        set_vec3_uniform(shader.program, "lightDiffuse", math::Vec3(1.0f));
+        set_vec3_uniform(shader.program, "lightAmbient", math::Vec3(0.2f));
+        set_vec3_uniform(shader.program, "diffuseColor", render_command.mesh.diffuse_color.xyz);
+        set_vec3_uniform(shader.program, "specularColor", render_command.mesh.specular_color.xyz);
+        set_float_uniform(shader.program, "specularExponent", render_command.mesh.specular_exponent);
+        
+        set_vec3_uniform(shader.program, "ambientColor", render_command.mesh.ambient_color.xyz);
         
         switch(render_command.mesh.wireframe_type)
         {
@@ -2283,7 +2319,9 @@ static void render_mesh_instanced(const RenderCommand &render_command, Renderer 
     if(!for_shadow_map)
     {
         glUniform1i(glGetUniformLocation(shader.program, "diffuseTexture"), 0);
-        glUniform1i(glGetUniformLocation(shader.program, "shadowMap"),  1);
+        glUniform1i(glGetUniformLocation(shader.program, "specularTexture"),  1);
+        glUniform1i(glGetUniformLocation(shader.program, "specularTexture"),  2);
+        glUniform1i(glGetUniformLocation(shader.program, "shadowMap"),  3);
         
         if(render_command.mesh_instanced.diffuse_texture != 0)
         {
@@ -2297,7 +2335,35 @@ static void render_mesh_instanced(const RenderCommand &render_command, Renderer 
         else
             set_bool_uniform(shader.program, "hasTexture", false);
         
-        glActiveTexture(GL_TEXTURE1);
+        if(render_command.mesh_instanced.specular_texture != 0)
+        {
+            auto texture = render_state.texture_array[renderer.texture_data[render_command.mesh_instanced.specular_texture - 1].handle];
+            
+            glActiveTexture(GL_TEXTURE1);
+            glBindTexture(GL_TEXTURE_2D, texture.texture_handle);
+            
+            set_bool_uniform(shader.program, "hasSpecular", true);
+        }
+        else
+        {
+            set_bool_uniform(shader.program, "hasSpecular", false);
+        }
+        
+        if(render_command.mesh_instanced.ambient_texture != 0)
+        {
+            auto texture = render_state.texture_array[renderer.texture_data[render_command.mesh_instanced.ambient_texture - 1].handle];
+            
+            glActiveTexture(GL_TEXTURE1);
+            glBindTexture(GL_TEXTURE_2D, texture.texture_handle);
+            
+            set_bool_uniform(shader.program, "hasAmbient", true);
+        }
+        else
+        {
+            set_bool_uniform(shader.program, "hasAmbient", false);
+        }
+        
+        glActiveTexture(GL_TEXTURE3);
         glBindTexture(GL_TEXTURE_2D, render_state.shadow_map_buffer.shadow_map_handle);
         
         set_bool_uniform(shader.program, "receivesShadows", render_command.receives_shadows);
@@ -2307,9 +2373,16 @@ static void render_mesh_instanced(const RenderCommand &render_command, Renderer 
         set_mat4_uniform(shader.program, "depthProjectionMatrix", shadow_map_matrices->depth_projection_matrix);
         
         set_vec3_uniform(shader.program, "lightPosWorld", math::Vec3(0, 20, -10));
-        set_vec3_uniform(shader.program, "diffuseColor", math::Vec3(1, 1, 1));
+        
         set_vec3_uniform(shader.program, "lightColor", math::Vec3(1.0f, 1.0f, 1.0f));
-        set_vec3_uniform(shader.program, "specularColor", math::Vec3(1, 1, 1));
+        set_vec3_uniform(shader.program, "lightSpecular", math::Vec3(1.0f));
+        set_vec3_uniform(shader.program, "lightDiffuse", math::Vec3(1.0f));
+        set_vec3_uniform(shader.program, "lightAmbient", math::Vec3(0.2f));
+        set_vec3_uniform(shader.program, "diffuseColor", render_command.mesh_instanced.diffuse_color.xyz);
+        set_vec3_uniform(shader.program, "specularColor", render_command.mesh_instanced.specular_color.xyz);
+        set_float_uniform(shader.program, "specularExponent", render_command.mesh_instanced.specular_exponent);
+        
+        set_vec3_uniform(shader.program, "ambientColor", render_command.mesh_instanced.ambient_color.xyz);
         
         switch(render_command.mesh_instanced.wireframe_type)
         {
@@ -2334,8 +2407,6 @@ static void render_mesh_instanced(const RenderCommand &render_command, Renderer 
             }
             break;
         }
-        
-        set_float_uniform(shader.program, "lightPower", 1.0f);
     }
     
     glDrawElementsInstanced(GL_TRIANGLES, buffer.index_buffer_count, GL_UNSIGNED_SHORT, (void*)nullptr, render_command.mesh_instanced.offset_count);
