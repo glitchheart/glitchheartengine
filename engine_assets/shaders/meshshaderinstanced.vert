@@ -46,7 +46,7 @@ mat4 rotationMatrix(vec3 axis, float angle)
 
 void main()
 {
-
+    
 	mat4 translate;
 	translate[0] = vec4(1.0, 0.0, 0.0, 0.0);
 	translate[1] = vec4(0.0, 1.0, 0.0, 0);
@@ -57,28 +57,28 @@ void main()
 	mat4 y_rotMat = rotationMatrix(vec3(0, 1, 0), rotation.y);	
 	mat4 z_rotMat = rotationMatrix(vec3(0, 0, 1), rotation.z);
 	mat4 rotMat = x_rotMat * y_rotMat * z_rotMat;	
-
+    
 	mat4 scaling;
 	scaling[0] = vec4(scale.x, 0.0,     0.0,     0.0);
 	scaling[1] = vec4(0.0,     scale.y, 0.0,     0.0);
 	scaling[2] = vec4(0.0,     0.0,     scale.z, 0.0);
 	scaling[3] = vec4(0.0,     0.0,     0.0,     1.0);
-
+    
 	gl_Position = projectionMatrix * viewMatrix * translate * rotMat * scaling * modelMatrix * vec4(position, 1);
-
+    
 	vs_out.posWorld  = (translate * rotMat * scaling * modelMatrix * vec4(position, 1)).xyz;
-
+    
 	// Shadow mapping
 	mat4 depthMVP = depthProjectionMatrix * depthViewMatrix * depthModelMatrix;
 	mat4 depthBiasMVP = depthMVP;
 	vs_out.shadowCoord = depthBiasMVP * vec4(vs_out.posWorld.xyz, 1);
-
+    
 	vec3 viewPos = (viewMatrix * translate * rotMat * scaling * modelMatrix * vec4(position, 1)).xyz;
 	vs_out.eyeView = vec3(0, 0, 0) - viewPos;
-
+    
 	vec3 lightPosView = (viewMatrix * vec4(lightPosWorld, 1)).xyz;
 	vs_out.lightDir = lightPosView + vs_out.eyeView;
-
+    
 	vs_out.normal = mat3(transpose(inverse(viewMatrix * translate * rotMat * 	scaling * modelMatrix))) * vertexNormal;
 	vs_out.uv = uv;
 	vs_out.color = color;
