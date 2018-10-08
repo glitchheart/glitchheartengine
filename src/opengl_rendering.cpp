@@ -885,7 +885,7 @@ static void render_setup(RenderState *render_state, MemoryArena *perm_arena)
     load_shader(shader_paths[SHADER_DEPTH], &render_state->depth_shader, render_state->perm_arena);
     load_shader(shader_paths[SHADER_DEPTH_INSTANCED], &render_state->depth_instanced_shader, render_state->perm_arena);
     
-    create_shadow_map(render_state->shadow_map_buffer, 2048, 2048);
+    create_shadow_map(render_state->shadow_map_buffer, 1024, 1024);
     
     setup_billboard(*render_state, render_state->perm_arena);
     setup_quad(*render_state, render_state->perm_arena);
