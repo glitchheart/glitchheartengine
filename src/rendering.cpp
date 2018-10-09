@@ -198,6 +198,7 @@ static RenderCommand* push_next_command(Renderer& renderer, b32 is_ui)
     {
         assert(renderer.ui_command_count + 1 < global_max_ui_commands);
         RenderCommand* command = &renderer.ui_commands[renderer.ui_command_count++];
+        *command = {};
         command->shader_handle = -1;
         return command;
     }
@@ -1588,9 +1589,13 @@ static void load_obj(Renderer &renderer, char *file_path, MeshHandle *mesh_handl
             char buffer[256];
             
             Material &material = renderer.materials[renderer.material_count];
+            material = {};
             material.type = RM_TEXTURED;
             material.source_handle = { renderer.material_count++ };
             material.diffuse_color = COLOR_WHITE;
+            material.diffuse_texture = { 0 };
+            material.ambient_texture = { 0 };
+            material.specular_texture = { 0 };
             
             while((fgets(buffer, sizeof(buffer), mtl_file) != NULL))
             {

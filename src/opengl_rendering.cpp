@@ -891,7 +891,6 @@ static void render_setup(RenderState *render_state, MemoryArena *perm_arena)
     setup_quad(*render_state, render_state->perm_arena);
     setup_lines(*render_state, render_state->perm_arena);
     
-    
     //font
     render_state->standard_font_shader.type = SHADER_STANDARD_FONT;
     load_shader(shader_paths[SHADER_STANDARD_FONT], &render_state->standard_font_shader, render_state->perm_arena);
@@ -2122,8 +2121,9 @@ static void render_mesh(const RenderCommand &render_command, Renderer &renderer,
     {
         glUniform1i(glGetUniformLocation(shader.program, "diffuseTexture"), 0);
         glUniform1i(glGetUniformLocation(shader.program, "specularTexture"),  1);
-        glUniform1i(glGetUniformLocation(shader.program, "specularTexture"),  2);
-        glUniform1i(glGetUniformLocation(shader.program, "shadowMap"),  3);
+        glUniform1i(glGetUniformLocation(shader.program, "ambientTexture"),  2);
+        glUniform1i(glGetUniformLocation(shader.program, "specularIntensityTexture"),  3);
+        glUniform1i(glGetUniformLocation(shader.program, "shadowMap"),  4);
         
         if(render_command.mesh_instanced.diffuse_texture != 0)
         {
@@ -2155,7 +2155,7 @@ static void render_mesh(const RenderCommand &render_command, Renderer &renderer,
         {
             auto texture = render_state.texture_array[renderer.texture_data[render_command.mesh.ambient_texture - 1].handle];
             
-            glActiveTexture(GL_TEXTURE1);
+            glActiveTexture(GL_TEXTURE2);
             glBindTexture(GL_TEXTURE_2D, texture.texture_handle);
             
             set_bool_uniform(shader.program, "hasAmbient", true);
@@ -2164,10 +2164,23 @@ static void render_mesh(const RenderCommand &render_command, Renderer &renderer,
         {
             set_bool_uniform(shader.program, "hasAmbient", false);
         }
+
+        glActiveTexture(GL_TEXTURE3);
+        if(render_command.mesh_instanced.specular_intensity_texture != 0)
+        {
+            auto texture = render_state.texture_array[renderer.texture_data[render_command.mesh_instanced.specular_intensity_texture - 1].handle];
+            
+            glBindTexture(GL_TEXTURE_2D, texture.texture_handle);
+            
+            set_bool_uniform(shader.program, "hasSpecularIntensity", true);
+        }
+        else
+        {
+            set_bool_uniform(shader.program, "hasSpecularIntensity", false);
+        }
         
-        glActiveTexture(GL_TEXTURE1);
+        glActiveTexture(GL_TEXTURE4);
         glBindTexture(GL_TEXTURE_2D, render_state.shadow_map_buffer.shadow_map_handle);
-        
         
         set_bool_uniform(shader.program, "receivesShadows", render_command.receives_shadows);
         set_mat4_uniform(shader.program, "depthModelMatrix", shadow_map_matrices->depth_model_matrix);
@@ -2323,6 +2336,7 @@ static void render_mesh_instanced(const RenderCommand &render_command, Renderer 
         glUniform1i(glGetUniformLocation(shader.program, "specularIntensityTexture"),  3);
         glUniform1i(glGetUniformLocation(shader.program, "shadowMap"),  4);
         
+
         if(render_command.mesh_instanced.diffuse_texture != 0)
         {
             auto texture = render_state.texture_array[renderer.texture_data[render_command.mesh_instanced.diffuse_texture - 1].handle];
@@ -2334,7 +2348,7 @@ static void render_mesh_instanced(const RenderCommand &render_command, Renderer 
         }
         else
             set_bool_uniform(shader.program, "hasTexture", false);
-        
+
         if(render_command.mesh_instanced.specular_texture != 0)
         {
             auto texture = render_state.texture_array[renderer.texture_data[render_command.mesh_instanced.specular_texture - 1].handle];
@@ -2348,12 +2362,12 @@ static void render_mesh_instanced(const RenderCommand &render_command, Renderer 
         {
             set_bool_uniform(shader.program, "hasSpecular", false);
         }
-        
+
         if(render_command.mesh_instanced.ambient_texture != 0)
         {
             auto texture = render_state.texture_array[renderer.texture_data[render_command.mesh_instanced.ambient_texture - 1].handle];
             
-            glActiveTexture(GL_TEXTURE1);
+            glActiveTexture(GL_TEXTURE2);
             glBindTexture(GL_TEXTURE_2D, texture.texture_handle);
             
             set_bool_uniform(shader.program, "hasAmbient", true);
@@ -2362,7 +2376,7 @@ static void render_mesh_instanced(const RenderCommand &render_command, Renderer 
         {
             set_bool_uniform(shader.program, "hasAmbient", false);
         }
-        
+
         if(render_command.mesh_instanced.specular_intensity_texture != 0)
         {
             auto texture = render_state.texture_array[renderer.texture_data[render_command.mesh_instanced.specular_intensity_texture - 1].handle];
@@ -2931,12 +2945,15 @@ static void render(RenderState& render_state, Renderer& renderer, r64 delta_time
         render_state.window_height = renderer.window_height;
         *save_config = true;
         
+        
+
         if(renderer.window_mode != render_state.window_mode)
         {
             const GLFWvidmode *mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
             if(renderer.window_mode == FM_BORDERLESS)
             {
                 glfwSetWindowMonitor(render_state.window, glfwGetPrimaryMonitor(), 0, 0, mode->width, mode->height, 0);
+                
                 renderer.window_width = mode->width;
                 renderer.window_height = mode->height;
                 
@@ -3032,7 +3049,6 @@ static void render(RenderState& render_state, Renderer& renderer, r64 delta_time
         glBlitFramebuffer(0, 0, width, height, 0, 0, width, height, 
                           GL_COLOR_BUFFER_BIT, GL_NEAREST);
         
-        
         if (renderer.frame_lock != 0)
         {
             render_state.total_delta = 0.0;
@@ -3050,4 +3066,14 @@ static void render(RenderState& render_state, Renderer& renderer, r64 delta_time
         render_state.frame_delta -= delta_time;
         render_state.total_delta += delta_time;
     }
+}
+
+static void mojave_workaround(RenderState &render_state)
+{
+    // MacOS Mojave workaround
+    i32 x = 0;
+    i32 y = 0;
+    glfwGetWindowPos(render_state.window, &x, &y);
+    glfwSetWindowPos(render_state.window, x + 1, y);
+    glfwSetWindowPos(render_state.window, x - 1, y);
 }
