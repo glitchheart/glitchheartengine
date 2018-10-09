@@ -1170,8 +1170,8 @@ static void initialize_opengl(RenderState& render_state, Renderer& renderer, r32
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
 #elif __APPLE__
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 #endif
     
@@ -2336,7 +2336,6 @@ static void render_mesh_instanced(const RenderCommand &render_command, Renderer 
         glUniform1i(glGetUniformLocation(shader.program, "specularIntensityTexture"),  3);
         glUniform1i(glGetUniformLocation(shader.program, "shadowMap"),  4);
         
-
         if(render_command.mesh_instanced.diffuse_texture != 0)
         {
             auto texture = render_state.texture_array[renderer.texture_data[render_command.mesh_instanced.diffuse_texture - 1].handle];
