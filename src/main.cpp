@@ -452,7 +452,7 @@ int main(int argc, char **args)
     template_state.template_count = 0;
     
     template_state.templates = push_array(&platform_state->perm_arena, global_max_entity_templates, scene::EntityTemplate);
-    
+
     while (!should_close_window(render_state) && !renderer.should_close)
     {
         if(game_memory.exit_game)
@@ -504,7 +504,16 @@ int main(int argc, char **args)
         update_log();
         
         swap_buffers(render_state);
-        
+
+        #if __APPLE__
+        static b32 first_load = true;
+        if(first_load)
+        {
+            mojave_workaround(render_state);
+            first_load = false;
+        }
+        #endif
+
         frames++;
         r64 end_counter = get_time();
         if(end_counter - last_second_check >= 1.0)
