@@ -110,7 +110,7 @@ void main()
             }
             else
             {
-                diffuse = lightDiffuse * diff * vec3(texture(diffuseTexture, fs_in.uv));		
+                diffuse = lightDiffuse * diff * texture(diffuseTexture, fs_in.uv).rgb;		
             }
         }
         else
@@ -134,7 +134,7 @@ void main()
         
         if(hasSpecular)
         {
-            specular = lightSpecular * specularColor * (spec * vec3(texture(specularTexture, fs_in.uv)));
+            specular = lightSpecular * (spec * texture(specularTexture, fs_in.uv).rgb);
         }
         else
         {
