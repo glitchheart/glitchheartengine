@@ -15,6 +15,12 @@ in GS_OUT
 
 out vec4 color;
 
+uniform sampler2D diffuseTexture;
+uniform sampler2D specularTexture;
+uniform sampler2D ambientTexture;
+uniform sampler2D specularIntensityTexture;
+uniform sampler2D shadowMap;
+
 uniform vec3 diffuseColor;
 uniform vec3 ambientColor;
 uniform vec3 specularColor;
@@ -36,12 +42,6 @@ uniform bool drawMesh;
 uniform vec4 wireframeColor;
 
 uniform bool receivesShadows;
-
-uniform sampler2D diffuseTexture;
-uniform sampler2D specularTexture;
-uniform sampler2D ambientTexture;
-uniform sampler2D specularIntensityTexture;
-uniform sampler2D shadowMap;
 
 float calculateShadow(vec4 fragPosLightSpace, vec3 n, vec3 lDir)
 {
