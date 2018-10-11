@@ -94,7 +94,7 @@ namespace scene
         EntityTemplate *templates;
         i32 template_count;
     };
-
+    
     struct Scene
     {
         Entity *entities;
