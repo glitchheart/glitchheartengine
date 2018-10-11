@@ -2191,7 +2191,7 @@ static void render_mesh(const RenderCommand &render_command, Renderer &renderer,
         set_vec3_uniform(shader.program, "lightPosWorld", math::Vec3(0, 20, -10));
         
         set_vec3_uniform(shader.program, "lightSpecular", math::Vec3(1.0f));
-        set_vec3_uniform(shader.program, "lightDiffuse", math::Vec3(0.5f));
+        set_vec3_uniform(shader.program, "lightColor", math::Vec3(1.0f));
         set_vec3_uniform(shader.program, "lightAmbient", math::Vec3(0.2f));
         set_vec3_uniform(shader.program, "diffuseColor", render_command.mesh.diffuse_color.xyz);
         set_vec3_uniform(shader.program, "specularColor", render_command.mesh.specular_color.xyz);

@@ -97,9 +97,23 @@ void main()
         vec3 lightDir = normalize(fs_in.lightDir - fs_in.posWorld);
         vec3 viewDir = normalize(fs_in.eyeView - fs_in.posWorld);
         vec3 halfwayDir = normalize(lightDir + viewDir);
+        float nh = max(0.0f, dot(normal, halfwayDir));
+        
+        float distortion = 0.5f;
+        float power = 1.0f;
+        float scale = 0.5f;
+        vec3 subColor = vec3(1, 1, 1);
+        
+        
+        vec3 albedo = texture(diffuseTexture, fs_in.uv).rgb * diffuseColor;
+        float gloss = texture(diffuseTexture, fs_in.uv).a;
+        vec3 transLightDir = lightDir + normal + distortion;
+        float transDot = pow(max(0.0f, dot(viewDir, -transLightDir)), power) * scale;
+        vec3 transLight = (transDot) * 0.5f * subColor;
+        vec3 transAlbedo = albedo * lightDiffuse * transLight;
         
         // diffuse
-        float diff = max(dot(lightDir, normal), 0.0f);
+        float diff = max(0.0f, dot(normal, lightDir));
         
         vec3 diffuse = vec3(0, 0, 0);
         if(hasTexture)
@@ -110,7 +124,7 @@ void main()
             }
             else
             {
-                diffuse = lightDiffuse * diff * texture(diffuseTexture, fs_in.uv).rgb;		
+                diffuse = albedo * lightDiffuse * diff;		
             }
         }
         else
@@ -122,11 +136,12 @@ void main()
         
         if(hasSpecularIntensity)
         {
-            spec = pow(max(dot(normal, halfwayDir), 0.0), specularExponent * texture(specularIntensityTexture, fs_in.uv).x);
+            spec = pow(nh, specularExponent * texture(specularIntensityTexture, fs_in.uv).x) * gloss;
+            //spec = pow(nh, specularExponent * 128.0f);
         }
         else
         {
-            spec = pow(max(dot(normal, halfwayDir), 0.0), specularExponent);
+            spec = pow(nh, specularExponent * 128.0f) * gloss;
         }
         
         // specular
@@ -134,11 +149,11 @@ void main()
         
         if(hasSpecular)
         {
-            specular = lightSpecular * (spec * texture(specularTexture, fs_in.uv).rgb);
+            specular = lightDiffuse * (spec * texture(specularTexture, fs_in.uv).rgb);
         }
         else
         {
-            specular = lightSpecular * spec * specularColor;
+            specular = lightDiffuse * spec * specularColor;
         }
         
         // shadows
@@ -151,10 +166,11 @@ void main()
         }
         else
         {
-            lighting = (ambient + (diffuse + specular));
+            lighting = (ambient + (fs_in.color.xyz * diffuse + specular));
         }
         
-        color = vec4(lighting, 1.0f);		
+        color.rgb = lighting + transAlbedo;		
+        color.a = 1.0f * texture(specularTexture, fs_in.uv).a * spec;
     }
     else
     {
