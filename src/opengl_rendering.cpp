@@ -2164,7 +2164,7 @@ static void render_mesh(const RenderCommand &render_command, Renderer &renderer,
         {
             set_bool_uniform(shader.program, "hasAmbient", false);
         }
-
+        
         glActiveTexture(GL_TEXTURE3);
         if(render_command.mesh_instanced.specular_intensity_texture != 0)
         {
@@ -2191,7 +2191,7 @@ static void render_mesh(const RenderCommand &render_command, Renderer &renderer,
         set_vec3_uniform(shader.program, "lightPosWorld", math::Vec3(0, 20, -10));
         
         set_vec3_uniform(shader.program, "lightSpecular", math::Vec3(1.0f));
-        set_vec3_uniform(shader.program, "lightDiffuse", math::Vec3(1.0f));
+        set_vec3_uniform(shader.program, "lightDiffuse", math::Vec3(0.5f));
         set_vec3_uniform(shader.program, "lightAmbient", math::Vec3(0.2f));
         set_vec3_uniform(shader.program, "diffuseColor", render_command.mesh.diffuse_color.xyz);
         set_vec3_uniform(shader.program, "specularColor", render_command.mesh.specular_color.xyz);
@@ -2347,7 +2347,7 @@ static void render_mesh_instanced(const RenderCommand &render_command, Renderer 
         }
         else
             set_bool_uniform(shader.program, "hasTexture", false);
-
+        
         if(render_command.mesh_instanced.specular_texture != 0)
         {
             auto texture = render_state.texture_array[renderer.texture_data[render_command.mesh_instanced.specular_texture - 1].handle];
@@ -2361,7 +2361,7 @@ static void render_mesh_instanced(const RenderCommand &render_command, Renderer 
         {
             set_bool_uniform(shader.program, "hasSpecular", false);
         }
-
+        
         if(render_command.mesh_instanced.ambient_texture != 0)
         {
             auto texture = render_state.texture_array[renderer.texture_data[render_command.mesh_instanced.ambient_texture - 1].handle];
@@ -2375,7 +2375,7 @@ static void render_mesh_instanced(const RenderCommand &render_command, Renderer 
         {
             set_bool_uniform(shader.program, "hasAmbient", false);
         }
-
+        
         if(render_command.mesh_instanced.specular_intensity_texture != 0)
         {
             auto texture = render_state.texture_array[renderer.texture_data[render_command.mesh_instanced.specular_intensity_texture - 1].handle];
@@ -2945,7 +2945,7 @@ static void render(RenderState& render_state, Renderer& renderer, r64 delta_time
         *save_config = true;
         
         
-
+        
         if(renderer.window_mode != render_state.window_mode)
         {
             const GLFWvidmode *mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
