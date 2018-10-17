@@ -174,16 +174,6 @@ enum Alignment
     ALIGNMENT_BOTTOM = (1 << 5)
 };
 
-struct Shader
-{
-    ShaderType type;
-    b32 loaded;
-    u32 program;
-    u32 vertex_shader;
-    u32 fragment_shader;
-    u32 geometry_shader; // Optional
-};
-
 struct VertexInfo
 {
     math::Vec3 position;
