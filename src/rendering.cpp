@@ -1319,6 +1319,109 @@ static b32 vertex_equals(Vertex &v1, Vertex &v2)
     
 }
 
+static void load_material(Renderer &renderer, char *file_path, MaterialHandle *material_handle)
+{
+    // @Incomplete: We need a better way to do this!
+    // Find the directory of the file
+    size_t index = 0;
+    for(size_t i = 0; i < strlen(file_path); i++)
+    {
+        if(file_path[i] == '/')
+        {
+            index = i + 1;
+        }
+    }
+    
+    char *dir = (char*)malloc(sizeof(char) * index);
+    strncpy(dir, file_path, index);
+    
+    dir[index] = 0;
+
+    auto temp_block = begin_temporary_memory(&renderer.temp_arena);
+
+    FILE* mtl_file = fopen(file_path, "r");
+    if(mtl_file)
+    {
+        char buffer[256];
+        
+        Material &material = renderer.materials[renderer.material_count];
+        material = {};
+        material.type = RM_TEXTURED;
+        material.source_handle = { renderer.material_count++ };
+        material.diffuse_color = COLOR_WHITE;
+        material.diffuse_texture = { 0 };
+        material.ambient_texture = { 0 };
+        material.specular_texture = { 0 };
+        
+        while((fgets(buffer, sizeof(buffer), mtl_file) != NULL))
+        {
+            if(starts_with(buffer, "newmtl"))
+            {
+                // @Incomplete: Save name
+            }
+            else if(starts_with(buffer, "illum")) // illumination
+            {
+            }
+            else if(starts_with(buffer, "Ka")) // ambient color
+            {
+                sscanf(buffer, "Ka %f %f %f", &material.ambient_color.r, &material.ambient_color.g, &material.ambient_color.b);
+                material.ambient_color.a = 1.0f;
+            }
+            else if(starts_with(buffer, "Kd")) // diffuse color
+            {
+                sscanf(buffer, "Kd %f %f %f", &material.diffuse_color.r, &material.diffuse_color.g, &material.diffuse_color.b);
+                material.diffuse_color.a = 1.0f;
+            }
+            else if(starts_with(buffer, "Ks")) // specular color
+            {
+                sscanf(buffer, "Ks %f %f %f", &material.specular_color.r, &material.specular_color.g, &material.specular_color.b);
+                material.specular_color.a = 1.0f;
+            }
+            else if(starts_with(buffer, "Ns")) // specular exponent
+            {
+                sscanf(buffer, "Ns %f", &material.specular_exponent);
+            }
+            else if(starts_with(buffer, "map_Ka")) // ambient map
+            {
+                char name[64];
+                sscanf(buffer, "map_Ka %s", name);
+                
+                load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, &material.ambient_texture.handle);
+            }
+            else if(starts_with(buffer, "map_Kd")) // diffuse map
+            {
+                char name[64];
+                sscanf(buffer, "map_Kd %s", name);
+                
+                load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, &material.diffuse_texture.handle);
+            }
+            else if(starts_with(buffer, "map_Ks")) // specular map
+            {
+                char name[64];
+                sscanf(buffer, "map_Ks %s", name);
+                
+                load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, &material.specular_texture.handle);
+            }
+            else if(starts_with(buffer, "map_Ns")) // specular intensity map
+            {
+                char name[64];
+                sscanf(buffer, "map_Ns %s", name);
+                
+                load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, &material.specular_intensity_texture.handle);
+            }
+        }
+        
+        fclose(mtl_file);
+
+        if(material_handle)
+            *material_handle = material.source_handle;
+    }
+    else
+        debug("Could not read %s\n", file_path);
+
+    end_temporary_memory(temp_block);
+}
+
 static i32 check_for_identical_vertex(Vertex &vertex, math::Vec2 uv, math::Vec3 normal, Vertex *final_vertices, b32* should_add)
 {
     size_t current_size = buf_len(final_vertices);
@@ -1565,7 +1668,7 @@ static void load_obj(Renderer &renderer, char *file_path, MeshHandle *mesh_handl
     
     if(has_mtl_file)
     {
-        // Read the material file
+        // Find the directory of the file
         size_t index = 0;
         for(size_t i = 0; i < strlen(file_path); i++)
         {
@@ -1581,85 +1684,10 @@ static void load_obj(Renderer &renderer, char *file_path, MeshHandle *mesh_handl
         dir[index] = 0;
         
         auto temp_block = begin_temporary_memory(&renderer.temp_arena);
-        
-        FILE* mtl_file = fopen(concat(dir, mtl_file_name, &renderer.temp_arena), "r");
-        
-        if(mtl_file)
-        {
-            char buffer[256];
-            
-            Material &material = renderer.materials[renderer.material_count];
-            material = {};
-            material.type = RM_TEXTURED;
-            material.source_handle = { renderer.material_count++ };
-            material.diffuse_color = COLOR_WHITE;
-            material.diffuse_texture = { 0 };
-            material.ambient_texture = { 0 };
-            material.specular_texture = { 0 };
-            
-            while((fgets(buffer, sizeof(buffer), mtl_file) != NULL))
-            {
-                if(starts_with(buffer, "newmtl"))
-                {
-                    // @Incomplete: Save name
-                }
-                else if(starts_with(buffer, "illum")) // illumination
-                {
-                }
-                else if(starts_with(buffer, "Ka")) // ambient color
-                {
-                    sscanf(buffer, "Ka %f %f %f", &material.ambient_color.r, &material.ambient_color.g, &material.ambient_color.b);
-                    material.ambient_color.a = 1.0f;
-                }
-                else if(starts_with(buffer, "Kd")) // diffuse color
-                {
-                    sscanf(buffer, "Kd %f %f %f", &material.diffuse_color.r, &material.diffuse_color.g, &material.diffuse_color.b);
-                    material.diffuse_color.a = 1.0f;
-                }
-                else if(starts_with(buffer, "Ks")) // specular color
-                {
-                    sscanf(buffer, "Ks %f %f %f", &material.specular_color.r, &material.specular_color.g, &material.specular_color.b);
-                    material.specular_color.a = 1.0f;
-                }
-                else if(starts_with(buffer, "Ns")) // specular exponent
-                {
-                    sscanf(buffer, "Ns %f", &material.specular_exponent);
-                }
-                else if(starts_with(buffer, "map_Ka")) // ambient map
-                {
-                    char name[64];
-                    sscanf(buffer, "map_Ka %s", name);
-                    
-                    load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, &material.ambient_texture.handle);
-                }
-                else if(starts_with(buffer, "map_Kd")) // diffuse map
-                {
-                    char name[64];
-                    sscanf(buffer, "map_Kd %s", name);
-                    
-                    load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, &material.diffuse_texture.handle);
-                }
-                else if(starts_with(buffer, "map_Ks")) // specular map
-                {
-                    char name[64];
-                    sscanf(buffer, "map_Ks %s", name);
-                    
-                    load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, &material.specular_texture.handle);
-                }
-                else if(starts_with(buffer, "map_Ns")) // specular intensity map
-                {
-                    char name[64];
-                    sscanf(buffer, "map_Ns %s", name);
-                    
-                    load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, &material.specular_intensity_texture.handle);
-                }
-            }
-            
-            fclose(mtl_file);
-            
-            if(material_handle)
-                *material_handle = material.source_handle;
-        }
+        char *material_file_path = concat(dir, mtl_file_name, &renderer.temp_arena);
+
+        if(material_handle)
+            load_material(renderer, material_file_path, material_handle);
         
         end_temporary_memory(temp_block);
     }

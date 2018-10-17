@@ -242,6 +242,15 @@ namespace scene
                             
                             load_obj(*scene.renderer, obj_file, &templ.render.mesh_handle, &templ.render.material_handle);
                         }
+                        else if(starts_with(buffer, "mtl"))
+                        {
+                            if(templ.render.material_handle.handle != 0)
+                                debug("A material file was already loaded for this template file: %s\n", templ.file_path);
+                                
+                            char mtl_file[256];
+                            sscanf(buffer, "mtl: %s", mtl_file);
+                            load_material(*scene.renderer, mtl_file, &templ.render.material_handle);
+                        }
                     }
                 }
                 else if(starts_with(buffer, "-particle"))
