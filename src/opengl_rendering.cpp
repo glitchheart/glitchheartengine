@@ -894,7 +894,12 @@ static void render_setup(RenderState *render_state, MemoryArena *perm_arena)
     //font
     render_state->standard_font_shader.type = SHADER_STANDARD_FONT;
     load_shader(shader_paths[SHADER_STANDARD_FONT], &render_state->standard_font_shader, render_state->perm_arena);
-    
+    auto &shader = render_state->standard_font_shader;
+    shader.uniform_locations.projection_matrix = glGetUniformLocation(shader.program, "projectionMatrix");
+    shader.uniform_locations.diffuse_color = glGetUniformLocation(shader.program, "color");
+    shader.uniform_locations.font.alpha_color = glGetUniformLocation(shader.program, "alphaColor");
+    shader.uniform_locations.font.z = glGetUniformLocation(shader.program, "z");
+
     render_state->mesh_shader.type = SHADER_MESH;
     load_shader(shader_paths[SHADER_MESH], &render_state->mesh_shader, render_state->perm_arena);
     
@@ -1433,6 +1438,11 @@ static void set_float_uniform(GLuint shader_handle, const char* uniform_name, r3
     glUniform1f(glGetUniformLocation(shader_handle, uniform_name), value);
 }
 
+static void set_float_uniform(GLuint shader_handle, GLint uniform_location, r32 value)
+{
+    glUniform1f(uniform_location, value);
+}
+
 static void set_int_uniform(GLuint shader_handle, const char* uniform_name, i32 value)
 {
     glUniform1i(glGetUniformLocation(shader_handle, uniform_name), value);
@@ -1458,9 +1468,19 @@ static void set_vec4_uniform(GLuint shader_handle, const char *uniform_name, mat
     glUniform4f(glGetUniformLocation(shader_handle, uniform_name), value.x, value.y, value.z, value.w);
 }
 
+static void set_vec4_uniform(GLuint shader_handle, GLint uniform_location, math::Vec4 value)
+{
+    glUniform4f(uniform_location, value.x, value.y, value.z, value.w);
+}
+
 static void set_mat4_uniform(GLuint shader_handle, const char *uniform_name, math::Mat4 v)
 {
     glUniformMatrix4fv(glGetUniformLocation(shader_handle, uniform_name), 1, GL_TRUE, &v[0][0]);
+}
+
+static void set_mat4_uniform(GLuint shader_handle, GLint uniform_location, math::Mat4 v)
+{
+    glUniformMatrix4fv(uniform_location, 1, GL_TRUE, &v[0][0]);
 }
 
 void set_vec4_array_uniform(GLuint shader_handle, const char *uniform_name, math::Vec4* value, u32 length)
@@ -1809,11 +1829,13 @@ static void render_text(RenderState &render_state, GLFontBuffer &font, TrueTypeF
     glBindVertexArray(font.vao);
     auto shader = render_state.shaders[SHADER_STANDARD_FONT];
     use_shader(shader);
+
+    auto uniform_locations = shader.uniform_locations;
     
-    set_vec4_uniform(shader.program, "color", color);
-    set_vec4_uniform(shader.program, "alphaColor", math::Rgba(1, 1, 1, 1));
-    set_mat4_uniform(shader.program, "projectionMatrix", projection_matrix);
-    set_float_uniform(shader.program, "z", (r32)z);
+    set_mat4_uniform(shader.program, uniform_locations.projection_matrix, projection_matrix);
+    set_vec4_uniform(shader.program, uniform_locations.diffuse_color, color);
+    set_vec4_uniform(shader.program, uniform_locations.font.alpha_color, math::Rgba(1, 1, 1, 1));
+    set_float_uniform(shader.program, uniform_locations.font.z, (r32)z);
     
     if(render_state.bound_texture != font.texture)
     {
