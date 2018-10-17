@@ -15,27 +15,45 @@ in GS_OUT
 
 out vec4 color;
 
-uniform sampler2D diffuseTexture;
-uniform sampler2D specularTexture;
-uniform sampler2D ambientTexture;
-uniform sampler2D specularIntensityTexture;
-uniform sampler2D shadowMap;
+struct Translucency
+{
+    bool hasTranslucency;
+    float distortion;
+    float power;
+    float scale;
+    vec3 subColor;
+};
 
-uniform vec3 diffuseColor;
-uniform vec3 ambientColor;
-uniform vec3 specularColor;
-uniform float specularExponent;
+struct Material
+{
+    sampler2D diffuseTexture;
+    vec3 diffuseColor;
+    bool hasTexture;
+    
+    sampler2D specularTexture;
+    vec3 specularColor;
+    bool hasSpecular;
+    
+    sampler2D ambientTexture;
+    vec3 ambientColor;
+    bool hasAmbient;
+    
+    sampler2D specularIntensityTexture;
+    float specularExponent;
+    bool hasSpecularIntensity;
+    
+    Translucency translucency;
+};
+
+uniform Material material;
+
+uniform sampler2D shadowMap;
 
 uniform vec3 lightPosWorld;
 uniform float lightPower;
 uniform vec3 lightDiffuse;
 uniform vec3 lightSpecular;
 uniform vec3 lightAmbient;
-
-uniform bool hasTexture;
-uniform bool hasSpecular;
-uniform bool hasAmbient;
-uniform bool hasSpecularIntensity;
 
 uniform bool drawWireframe;
 uniform bool drawMesh;
@@ -77,100 +95,134 @@ float calculateShadow(vec4 fragPosLightSpace, vec3 n, vec3 lDir)
     return shadow;
 }
 
+vec3 computeAmbient()
+{
+    if(material.hasAmbient)
+    {
+        return lightAmbient * material.ambientColor * vec3(texture(material.ambientTexture, fs_in.uv));
+    }
+    else
+    {
+        return lightAmbient * material.ambientColor;
+    }
+}
+
+vec3 computeDiffuse(vec3 albedo, vec3 normal, vec3 lightDir)
+{
+    // diffuse
+    float diff = max(0.0f, dot(normal, lightDir));
+    
+    if(material.hasTexture)
+    {
+        if(texture(material.diffuseTexture, fs_in.uv).a == 0.0f)
+        {
+            discard;
+        }
+        else
+        {
+            return albedo * lightDiffuse * diff;		
+        }
+    }
+    else
+    {
+        return diff * material.diffuseColor * lightDiffuse;
+    }
+}
+
+float computeSpecularValue(vec3 normal, vec3 halfwayDir, float gloss)
+{
+    float nh = max(0.0f, dot(normal, halfwayDir));
+    float spec = 0.0;
+    
+    if(material.hasSpecularIntensity)
+    {
+        spec = pow(nh, material.specularExponent * texture(material.specularIntensityTexture, fs_in.uv).x) * gloss;
+        //spec = pow(nh, specularExponent * 128.0f);
+    }
+    else
+    {
+        spec = pow(nh, material.specularExponent * 128.0f) * gloss;
+    }
+    
+    return spec;
+}
+
+vec3 computeSpecular(float spec, vec3 lightDir, vec3 viewDir, vec3 halfwayDir)
+{
+    if(material.hasSpecular)
+    {
+        return lightDiffuse * (spec * texture(material.specularTexture, fs_in.uv).rgb);
+    }
+    else
+    {
+        return lightDiffuse * spec * material.specularColor;
+    }
+}
+
+vec3 computeTranslucency(float spec, vec3 albedo, vec3 normal, vec3 lightDir, vec3 viewDir)
+{
+    if(!material.translucency.hasTranslucency)
+    {
+        return vec3(0.0f);
+    }
+    
+    vec3 transLightDir = lightDir + normal + material.translucency.distortion;
+    float transDot = pow(max(0.0f, dot(viewDir, -transLightDir)), material.translucency.power) * material.translucency.scale;
+    vec3 transLight = (transDot) * 0.5f * material.translucency.subColor;
+    vec3 transAlbedo = albedo * lightDiffuse * transLight;
+    
+    return transAlbedo;
+}
+
+vec3 computeLight(vec3 normal, vec3 lightDir, vec3 ambient, vec3 diffuse, vec3 specular)
+{
+    // shadows
+    float shadow = calculateShadow(fs_in.shadowCoord, normal, lightDir);
+    
+    vec3 lighting;
+    if(receivesShadows)
+    {
+        return (ambient + (1.0 - shadow) * (diffuse + specular)) * fs_in.color.xyz;
+    }
+    else
+    {
+        return (ambient + (fs_in.color.xyz * diffuse + specular));
+    }
+}
+
 void main()
 {
     if(drawMesh)
     {
         vec3 normal = normalize(fs_in.normal);
         
-        vec3 ambient = vec3(0, 0, 0);
-        
-        if(hasAmbient)
-        {
-            ambient = lightAmbient * ambientColor * vec3(texture(ambientTexture, fs_in.uv));
-        }
-        else
-        {
-            ambient = lightAmbient * ambientColor;
-        }
-        
         vec3 lightDir = normalize(fs_in.lightDir - fs_in.posWorld);
         vec3 viewDir = normalize(fs_in.eyeView - fs_in.posWorld);
         vec3 halfwayDir = normalize(lightDir + viewDir);
-        float nh = max(0.0f, dot(normal, halfwayDir));
         
-        float distortion = 0.5f;
-        float power = 1.0f;
-        float scale = 0.5f;
-        vec3 subColor = vec3(1, 1, 1);
+        vec3 albedo = texture(material.diffuseTexture, fs_in.uv).rgb * material.diffuseColor;
         
+        float gloss = texture(material.diffuseTexture, fs_in.uv).a;
         
-        vec3 albedo = texture(diffuseTexture, fs_in.uv).rgb * diffuseColor;
-        float gloss = texture(diffuseTexture, fs_in.uv).a;
-        vec3 transLightDir = lightDir + normal + distortion;
-        float transDot = pow(max(0.0f, dot(viewDir, -transLightDir)), power) * scale;
-        vec3 transLight = (transDot) * 0.5f * subColor;
-        vec3 transAlbedo = albedo * lightDiffuse * transLight;
+        vec3 ambient = computeAmbient();
+        vec3 diffuse = computeDiffuse(albedo, normal, lightDir);
         
-        // diffuse
-        float diff = max(0.0f, dot(normal, lightDir));
+        float spec = computeSpecularValue(normal, halfwayDir, gloss);
         
-        vec3 diffuse = vec3(0, 0, 0);
-        if(hasTexture)
+        vec3 specular = computeSpecular(spec, lightDir, viewDir, halfwayDir);
+        vec3 translucency = computeTranslucency(spec, albedo, normal, lightDir, viewDir);
+        vec3 lighting = computeLight(normal, lightDir, ambient, diffuse, specular);
+        
+        color.rgb = lighting + translucency;		
+        
+        if(material.translucency.hasTranslucency)
         {
-            if(texture(diffuseTexture, fs_in.uv).a == 0.0f)
-            {
-                discard;
-            }
-            else
-            {
-                diffuse = albedo * lightDiffuse * diff;		
-            }
+            color.a = 1.0f * texture(material.specularTexture, fs_in.uv).a * spec;
         }
         else
         {
-            diffuse = diff * diffuseColor * lightDiffuse;
+            color.a = 1.0f;
         }
-        
-        float spec = 0.0;
-        
-        if(hasSpecularIntensity)
-        {
-            spec = pow(nh, specularExponent * texture(specularIntensityTexture, fs_in.uv).x) * gloss;
-            //spec = pow(nh, specularExponent * 128.0f);
-        }
-        else
-        {
-            spec = pow(nh, specularExponent * 128.0f) * gloss;
-        }
-        
-        // specular
-        vec3 specular = vec3(0, 0, 0);
-        
-        if(hasSpecular)
-        {
-            specular = lightDiffuse * (spec * texture(specularTexture, fs_in.uv).rgb);
-        }
-        else
-        {
-            specular = lightDiffuse * spec * specularColor;
-        }
-        
-        // shadows
-        float shadow = calculateShadow(fs_in.shadowCoord, normal, lightDir);
-        
-        vec3 lighting;
-        if(receivesShadows)
-        {
-            lighting = (ambient + (1.0 - shadow) * (diffuse + specular)) * fs_in.color.xyz;
-        }
-        else
-        {
-            lighting = (ambient + (fs_in.color.xyz * diffuse + specular));
-        }
-        
-        color.rgb = lighting + transAlbedo;		
-        color.a = 1.0f * texture(specularTexture, fs_in.uv).a * spec;
     }
     else
     {
