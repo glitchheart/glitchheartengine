@@ -57,6 +57,34 @@ static char* shader_paths[SHADER_COUNT] =
     "../engine_assets/shaders/roundedquadshader",
 };
 
+struct Shader
+{
+    ShaderType type;
+    b32 loaded;
+    GLuint program;
+    GLuint vertex_shader;
+    GLuint fragment_shader;
+    GLuint geometry_shader; // Optional
+
+    struct
+    {
+        // Matrices
+        GLint projection_matrix;
+
+        // Color
+        GLint diffuse_color;
+        
+        union
+        {
+            struct
+            {
+                GLint alpha_color;
+                GLint z;
+            
+            } font;
+        };
+    } uniform_locations;
+};
 
 enum RenderMode
 {
