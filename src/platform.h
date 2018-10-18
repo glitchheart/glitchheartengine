@@ -136,6 +136,7 @@ struct PlatformMemoryBlock
     u8* base;
     umm used;
     PlatformMemoryBlock* prev;
+    PlatformMemoryBlock* next;
 };
 
 enum PlatformFileFlags

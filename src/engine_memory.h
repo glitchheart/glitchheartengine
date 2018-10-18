@@ -131,6 +131,11 @@ void* push_size_(MemoryArena* arena, umm size_init, PushParams params = default_
         
         new_block->prev = arena->current_block;
         arena->current_block = new_block;
+        
+        if(arena->current_block->prev)
+        {
+            arena->current_block->prev->next = new_block;
+        }
     }
     
     assert((arena->current_block->used + size_init) <= arena->current_block->size);
@@ -201,6 +206,47 @@ static void clear(MemoryArena *arena)
     {
         free_last_block(arena);
     }
+}
+
+static void copy_arena(MemoryArena* src, MemoryArena* dst)
+{
+    PlatformMemoryBlock* cur_src_block = src->current_block;
+    
+    i32 blocks = 0;
+    
+    while(cur_src_block)
+    {
+        blocks++;
+        if(!cur_src_block->prev)
+        {
+            break;
+        }
+        
+        cur_src_block = cur_src_block->prev;
+    }
+    
+    PlatformMemoryBlock* last_dst_block = nullptr;
+    
+    for(i32 i = 0; i < blocks; i++)
+    {
+        dst->current_block = platform.allocate_memory(cur_src_block->size, src->allocation_flags);
+        dst->current_block->flags = cur_src_block->flags;
+        dst->current_block->size = cur_src_block->size;
+        dst->current_block->used = cur_src_block->used;
+        dst->current_block->prev = last_dst_block;
+        memcpy(dst->current_block->base, cur_src_block->base, cur_src_block->used);
+        
+        if(last_dst_block)
+        {
+            last_dst_block->next = dst->current_block;
+        }
+        last_dst_block = dst->current_block;
+        cur_src_block = cur_src_block->next;
+    }
+    
+    dst->allocation_flags = src->allocation_flags;
+    dst->minimum_block_size = src->minimum_block_size;
+    dst->temp_count = src->temp_count;
 }
 
 char* push_string(MemoryArena* arena, size_t length)

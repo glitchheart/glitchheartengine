@@ -57,6 +57,43 @@ static void set_rate_over_distanace(ParticleSystemInfo &particle_system, r32 rat
     particle_system.attributes.emission_module.rate_over_distance = rate_over_distance;
 }
 
+
+EMITTER_FUNC(emit_random_dir)
+{
+    ParticleSpawnInfo info;
+    
+    info.position = S_Vec3(0.0f);
+    info.direction = math::normalize(random_direction());
+    
+    return info;
+}
+
+EMITTER_FUNC(emit_from_square)
+{
+    ParticleSpawnInfo info;
+    
+    S_Vec3 r = random_rect(0.0f, 1.0f);
+    
+    info.position = r;
+    
+    info.direction = math::normalize(random_direction());
+    
+    return info;
+}
+
+EMITTER_FUNC(emit_from_circle)
+{
+    ParticleSpawnInfo info;
+    
+    S_Vec3 r = random_circle(1.0f);
+    
+    info.position = r;
+    
+    info.direction = math::normalize(random_direction());
+    
+    return info;
+}
+
 static ParticleSystemAttributes get_default_particle_system_attributes()
 {
     ParticleSystemAttributes attributes = {};
@@ -76,6 +113,7 @@ static ParticleSystemAttributes get_default_particle_system_attributes()
     attributes.emission_module.burst_over_lifetime.value_count = 0;
     attributes.emission_module.burst_over_lifetime.current_index = 0;
     attributes.emission_module.burst_over_lifetime.values = nullptr;
+    attributes.emission_module.emitter_func = emit_from_circle;
     
     return attributes;
 }
@@ -173,7 +211,6 @@ i32 _find_unused_particle_system(Renderer& renderer)
         }
     }
     
-    debug("All particle systems are in use.");
     assert(false);
     
     return -1;
@@ -211,6 +248,7 @@ static void remove_particle_system(Renderer& renderer, ParticleSystemHandle &han
         renderer.particles.particle_system_count = 0;
         renderer.particles._current_internal_handle = 0;
         renderer.particles._internal_handles[removed_handle - 1] = -1;
+		clear(&renderer.particles.particle_systems[0].arena);
         renderer.particles.particle_systems[0] = {};
     }
     else
@@ -219,9 +257,11 @@ static void remove_particle_system(Renderer& renderer, ParticleSystemHandle &han
         ParticleSystemInfo& info = renderer.particles.particle_systems[real_handle];
         
         // Swap system infos
-        clear(&renderer.particles.particle_systems[real_handle].arena);
-        
+		clear(&renderer.particles.particle_systems[real_handle].arena);
+
         renderer.particles.particle_systems[real_handle] = renderer.particles.particle_systems[renderer.particles.particle_system_count - 1];
+        
+        copy_arena(&renderer.particles.particle_systems[renderer.particles.particle_system_count - 1].arena, &renderer.particles.particle_systems[real_handle].arena);
         
         clear(&renderer.particles.particle_systems[renderer.particles.particle_system_count - 1].arena);
         renderer.particles.particle_systems[renderer.particles.particle_system_count - 1] = {};
