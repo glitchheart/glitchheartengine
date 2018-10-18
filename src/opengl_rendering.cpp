@@ -1837,13 +1837,13 @@ static void render_text(RenderState &render_state, GLFontBuffer &font, TrueTypeF
     set_vec4_uniform(shader.program, uniform_locations.font.alpha_color, math::Rgba(1, 1, 1, 1));
     set_float_uniform(shader.program, uniform_locations.font.z, (r32)z);
     
+    auto temp_mem = begin_temporary_memory(&render_state.font_arena);
+    
     if(render_state.bound_texture != font.texture)
     {
         glBindTexture(GL_TEXTURE_2D, font.texture);
         render_state.bound_texture = font.texture;
     }
-    
-    auto temp_mem = begin_temporary_memory(&render_state.font_arena);
     
     CharacterData* coords = push_array(&render_state.font_arena, 6 * strlen(text), CharacterData);
     
@@ -1905,6 +1905,7 @@ static void render_text(RenderState &render_state, GLFontBuffer &font, TrueTypeF
     
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
+    
     end_temporary_memory(temp_mem);
 }
 

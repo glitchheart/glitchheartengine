@@ -1074,11 +1074,20 @@ union S_Vec3
     };
     __m128d e[12];
     
+    S_Vec3() : S_Vec3(0.0f) {}
+    
     S_Vec3(r32 _x, r32 _y, r32 _z)
     {
         x = S_r32(_x);
         y = S_r32(_y);
         z = S_r32(_z);
+    }
+    
+    S_Vec3(S_Vec2 v)
+    {
+        x = v.x;
+        y = v.y;
+        z = 0.0f;
     }
     
     S_Vec3(r32 v)
@@ -1538,6 +1547,47 @@ inline S_Vec3 random_direction()
     result.x = _mm_set_ps((rand() % 2000 - 1000.0f) / 1000.0f, (rand() % 2000 - 1000.0f) / 1000.0f, (rand() % 2000 - 1000.0f) / 1000.0f, (rand() % 2000 - 1000.0f) / 1000.0f);
     result.y = _mm_set_ps((rand() % 2000 - 1000.0f) / 1000.0f, (rand() % 2000 - 1000.0f) / 1000.0f, (rand() % 2000 - 1000.0f) / 1000.0f, (rand() % 2000 - 1000.0f) / 1000.0f);
     result.z = _mm_set_ps((rand() % 2000 - 1000.0f) / 1000.0f, (rand() % 2000 - 1000.0f) / 1000.0f, (rand() % 2000 - 1000.0f) / 1000.0f, (rand() % 2000 - 1000.0f) / 1000.0f);
+    
+    return result;
+}
+
+inline S_Vec3 random_rect(r32 min, r32 max)
+{
+    S_Vec3 result(0.0f);
+    
+    r32 max_min = max - min;
+    
+    r32 x_val1 = min + rand() / ((RAND_MAX/(max_min)));
+    r32 x_val2 = min + rand() / ((RAND_MAX/(max_min)));
+    r32 x_val3 = min + rand() / ((RAND_MAX/(max_min)));
+    r32 x_val4 = min + rand() / ((RAND_MAX/(max_min)));
+    
+    r32 z_val1 = min + rand() / ((RAND_MAX/(max_min)));
+    r32 z_val2 = min + rand() / ((RAND_MAX/(max_min)));
+    r32 z_val3 = min + rand() / ((RAND_MAX/(max_min)));
+    r32 z_val4 = min + rand() / ((RAND_MAX/(max_min)));
+    
+    result.x = _mm_set_ps(x_val1, x_val2, x_val3, x_val4);
+    result.y = _mm_set1_ps(0.0f);
+    
+    result.z = _mm_set_ps(z_val1, z_val2, z_val3, z_val4);
+    
+    return result;
+}
+
+inline S_Vec3 random_circle(r32 radius)
+{
+    S_Vec3 result(0.0f);
+    
+    math::Vec2 val1 = math::random_in_circle(radius);
+    math::Vec2 val2 = math::random_in_circle(radius);
+    math::Vec2 val3 = math::random_in_circle(radius);
+    math::Vec2 val4 = math::random_in_circle(radius);
+    
+    result.x = _mm_set_ps(val1.x, val2.x, val3.x, val4.x);
+    result.y = _mm_set1_ps(0.0f);
+    
+    result.z = _mm_set_ps(val1.y, val2.y, val3.y, val4.y);
     
     return result;
 }

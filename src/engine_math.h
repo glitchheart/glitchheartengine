@@ -600,6 +600,10 @@ namespace math
         }
     };
     
+    
+    using Rgb = Vec3;
+    using Rgba = Vec4;
+    
     union Vec2i
     {
         struct
@@ -1352,6 +1356,7 @@ namespace math
     Vec3 un_project(Vec3 in, Mat4 model, Mat4 projection, Vec4i viewport);
     
     r32 random_float(r32 from, r32 to);
+    Rgba random_color();
     Vec3 cast_ray(r32 mouse_x, r32 mouse_y, r32 width, r32 height, Mat4 p, Mat4 v, r32 near);
     
     Quat slerp(Quat q0, Quat q1, r32 t);
@@ -2378,7 +2383,32 @@ namespace math
     
     inline r32 random_float(r32 from, r32 to)
     {
-        return (rand() / (float)RAND_MAX * to) + from;
+        return from + rand() / ((RAND_MAX/(to - from)));
+    }
+    
+    inline Rgba random_color()
+    {
+        math::Rgba res;
+        
+        res.a = 1.0f;
+        
+        res.r = random_float(0.0f, 1.0f);
+        res.g = random_float(0.0f, 1.0f);
+        res.b = random_float(0.0f, 1.0f);
+        
+        return res;
+    }
+    
+    inline Vec2 random_in_circle(r32 _radius)
+    {
+        Vec2 result;
+        
+        r32 angle = random_float(0.0f, 360.0f) / DEGREE_IN_RADIANS;
+        r32 radius = random_float(0.0f, _radius);
+        result.x = r32(r32(radius) * cos(angle));
+        result.y = r32(r32(radius) * sin(angle));
+        
+        return result;
     }
     
     struct Ray
@@ -2534,9 +2564,6 @@ namespace math
         ray.ray = normalize(math::Vec4(target - origin, 0.0f)).xyz;
         return ray;
     }
-    
-    using Rgb = Vec3;
-    using Rgba = Vec4;
     
 #define COLOR_RED math::Rgba(1, 0, 0, 1)
 #define COLOR_GREEN math::Rgba(0, 1, 0, 1)

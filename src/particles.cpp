@@ -179,9 +179,12 @@ S_r32 get_speed_by_time(ParticleSystemInfo &particle_system, S_r64 time_spent)
             
             S_r64 t_speed = get_t(time_spent, current_key, next_key);
             
-            return math::lerp(start_speed, t_speed, end_speed);
+            S_r32 res = math::lerp(start_speed, t_speed, end_speed);
+            
+            return res;
         }
     }
+    
     return S_r32(values[value_count - 1]);
 }
 
@@ -257,7 +260,6 @@ void update_particles(Renderer &renderer, ParticleSystemInfo &particle_system, r
             particle_system.offsets[particle_system.particle_count].x = p1[0];
             particle_system.offsets[particle_system.particle_count].y = p1[1];
             particle_system.offsets[particle_system.particle_count].z = p1[2];
-            
             
             particle_system.colors[particle_system.particle_count].r = c1[0];
             particle_system.colors[particle_system.particle_count].g = c1[1];
@@ -417,11 +419,16 @@ void emit_particle(ParticleSystemInfo &particle_system)
     particle_system.particles.life[original_index] = particle_system.attributes.life_time;
     particle_system.particles.size[original_index] = particle_system.attributes.start_size;
     particle_system.particles.color[original_index] = particle_system.attributes.start_color;
-    particle_system.particles.position[original_index] = S_Vec3(0.0f);
     
-    auto random_dir = random_direction();
+    S_Vec3 random_dir;
+    S_Vec3 new_direction;
     
-    auto new_direction = S_Vec3(math::normalize(to_vec3(random_dir, 0)), math::normalize(to_vec3(random_dir, 1)), math::normalize(to_vec3(random_dir, 2)), math::normalize(to_vec3(random_dir, 3)));
+    if(particle_system.attributes.emission_module.emitter_func)
+    {
+        ParticleSpawnInfo spawn_info = particle_system.attributes.emission_module.emitter_func();
+        particle_system.particles.position[original_index] = spawn_info.position;
+        new_direction = spawn_info.direction;
+    }
     
     particle_system.particles.direction[original_index] = math::normalize(particle_system.attributes.direction + new_direction * particle_system.attributes.spread);
 }
@@ -436,6 +443,7 @@ void update_particle_systems(Renderer &renderer, r64 delta_time)
         {
             if (particle_system.emitting)
             {
+                particle_system.time_spent += delta_time;
                 find_unused_particles(particle_system);
                 i32 new_particles;
                 
@@ -468,15 +476,17 @@ void update_particle_systems(Renderer &renderer, r64 delta_time)
                     }
                 }
                 
-                auto per_second = (r64)particle_system.attributes.particles_per_second * delta_time;
+                r32 per_second = (r32)((r64)particle_system.attributes.particles_per_second * delta_time);
                 
-                if(per_second < 1.0 && per_second > 0.0)
+                // @Note(Niels): We need to check if we've spent 1 second if per second is lower than 1.0
+                if(per_second < 1.0f && per_second > 0.0f && particle_system.time_spent >= 1.0)
                 {
+                    particle_system.time_spent = 0.0;
                     new_particles = 1;
                 }
                 else
                 {
-                    new_particles = (i32)per_second;
+                    new_particles = math::round(per_second);
                 }
                 
                 if (particle_system.attributes.one_shot && particle_system.total_emitted + new_particles >= particle_system.max_particles)
@@ -486,18 +496,18 @@ void update_particle_systems(Renderer &renderer, r64 delta_time)
                     particle_system.emitting = false;
                 }
                 
-                new_particles = math::multiple_of_number(new_particles, 4);
-                burst_particles = math::multiple_of_number(burst_particles, 4);
+                i32 simd_new_particles = math::multiple_of_number(new_particles, 4);
+                i32 simd_burst_particles = math::multiple_of_number(burst_particles, 4);
                 
-                for (i32 i = 0; i < new_particles / 4; i++)
+                for (i32 i = 0; i < simd_new_particles / 4; i++)
                 {
                     emit_particle(particle_system);
                     
                     if(particle_system.attributes.one_shot)
-                        particle_system.total_emitted += 4;
+                        particle_system.total_emitted += new_particles;
                 }
                 
-                for (i32 i = 0; i < burst_particles / 4; i++)
+                for (i32 i = 0; i < simd_burst_particles / 4; i++)
                 {
                     emit_particle(particle_system);
                 }
@@ -505,7 +515,7 @@ void update_particle_systems(Renderer &renderer, r64 delta_time)
             
             update_particles(renderer, particle_system, delta_time);
             
-            auto camera_position = renderer.cameras[renderer.current_camera_handle].position;
+            //auto camera_position = renderer.cameras[renderer.current_camera_handle].position;
             //sort(camera_position, particle_system.offsets, particle_system.sizes, particle_system.colors, particle_system.particle_count, &renderer.particle_arena);
             
             push_particle_system(renderer, particle_system);

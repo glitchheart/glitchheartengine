@@ -28,6 +28,15 @@ enum EmissionType
     ET_OVER_DISTANCE
 };
 
+struct ParticleSpawnInfo
+{
+    S_Vec3 position;
+    S_Vec3 direction;
+};
+
+#define EMITTER_FUNC(name) ParticleSpawnInfo name()
+typedef EMITTER_FUNC(EmitterFunc);
+
 struct EmissionModule
 {
     EmissionType type;
@@ -40,6 +49,8 @@ struct EmissionModule
     } burst_over_lifetime;
     
     r32 rate_over_distance;
+    
+    EmitterFunc* emitter_func;
 };
 
 struct ParticleSystemAttributes
@@ -89,6 +100,8 @@ struct ParticleSystemInfo
     b32 running;
     b32 emitting;
     ParticleSystemAttributes attributes;
+    
+    r64 time_spent;
     
     struct
     {
