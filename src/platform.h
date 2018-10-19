@@ -58,6 +58,15 @@
 #include <stdint.h>
 #include <cctype>
 
+#define u16max 65535
+#define i32min ((i32)0x80000000)
+#define i32max ((i32)0x7fffffff)
+#define u32min 0
+#define u32max ((u32)-1)
+#define u64max ((u64)-1)
+#define r32max FLT_MAX
+#define r32min -FLT_MAX
+
 using u8 = uint8_t;
 using u16 = uint16_t;
 using u32 = uint32_t;

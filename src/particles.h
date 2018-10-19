@@ -34,7 +34,7 @@ struct ParticleSpawnInfo
     S_Vec3 direction;
 };
 
-#define EMITTER_FUNC(name) ParticleSpawnInfo name()
+#define EMITTER_FUNC(name) ParticleSpawnInfo name(RandomSeries& series)
 typedef EMITTER_FUNC(EmitterFunc);
 
 struct EmissionModule
@@ -156,6 +156,7 @@ struct ParticleSystemInfo
     
     r64 current_emission_time;
     
+    RandomSeries entropy;
     MemoryArena arena;
 };
 
