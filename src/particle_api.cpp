@@ -85,7 +85,7 @@ EMITTER_FUNC(emit_from_circle)
 {
     ParticleSpawnInfo info;
     
-    S_Vec3 r = random_circle(1.0f);
+    S_Vec3 r = random_circle(series, 1.0f);
     
     info.position = r;
     
@@ -231,6 +231,8 @@ static ParticleSystemHandle create_particle_system(Renderer &renderer, i32 max_p
     system_info.particle_count = 0;
     system_info.last_used_particle = 0;
     
+    system_info.entropy = random_seed(1234);
+    
     _allocate_particle_system(renderer, system_info, max_particles);
     
     return handle;
@@ -258,7 +260,7 @@ static void remove_particle_system(Renderer& renderer, ParticleSystemHandle &han
         
         // Swap system infos
 		clear(&renderer.particles.particle_systems[real_handle].arena);
-
+        
         renderer.particles.particle_systems[real_handle] = renderer.particles.particle_systems[renderer.particles.particle_system_count - 1];
         
         copy_arena(&renderer.particles.particle_systems[renderer.particles.particle_system_count - 1].arena, &renderer.particles.particle_systems[real_handle].arena);

@@ -425,7 +425,7 @@ void emit_particle(ParticleSystemInfo &particle_system)
     
     if(particle_system.attributes.emission_module.emitter_func)
     {
-        ParticleSpawnInfo spawn_info = particle_system.attributes.emission_module.emitter_func();
+        ParticleSpawnInfo spawn_info = particle_system.attributes.emission_module.emitter_func(particle_system.entropy);
         particle_system.particles.position[original_index] = spawn_info.position;
         new_direction = spawn_info.direction;
     }

@@ -2399,18 +2399,6 @@ namespace math
         return res;
     }
     
-    inline Vec2 random_in_circle(r32 _radius)
-    {
-        Vec2 result;
-        
-        r32 angle = random_float(0.0f, 360.0f) / DEGREE_IN_RADIANS;
-        r32 radius = random_float(0.0f, _radius);
-        result.x = r32(r32(radius) * cos(angle));
-        result.y = r32(r32(radius) * sin(angle));
-        
-        return result;
-    }
-    
     struct Ray
     {
         Vec3 origin;

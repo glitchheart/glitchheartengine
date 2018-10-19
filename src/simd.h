@@ -86,22 +86,116 @@ inline S_i32 operator/= (S_i32 a, S_i32 b)
     return S_i32(0);
 }
 
-inline b32 operator<(S_i32 a, S_i32 b)
+
+union S_u32
+{
+    __m128i p;
+    u32 e[4];
+    
+    S_u32()
+    {
+        p = _mm_set1_epi32(0);
+    }
+    
+    S_u32(__m128i _p)
+    {
+        p = _p;
+    }
+    
+    S_u32(u32 _p) 
+    {
+        p = _mm_set1_epi32(*(i32*)&_p);
+    }
+    
+    S_u32(u32 _a, u32 _b, u32 _c, u32 _d)
+    {
+        p = _mm_set_epi32(*(i32*)&_a, 
+                          *(i32*)&_b, 
+                          *(i32*)&_c, 
+                          *(i32*)&_d);
+    }
+    
+    S_u32& operator=(const u32 v)
+    {
+        p = _mm_set1_epi32(*(i32*)&v);
+        
+        return *this;
+    }
+    
+    S_u32& operator+= (S_u32 b)
+    {
+        this->p = _mm_add_epi32(p, b.p);
+        return *this;
+    }
+};
+
+inline S_u32 operator+ (S_u32 a, S_u32 b)
+{
+    S_u32 res(0);
+    
+    res.p = _mm_add_epi32(a.p, b.p);
+    
+    return res;
+}
+
+
+inline S_u32 operator- (S_u32 a, S_u32 b)
+{
+    S_u32 res(0);
+    
+    res.p = _mm_sub_epi32(a.p, b.p);
+    
+    return res;
+}
+
+inline S_u32 operator-= (S_u32 a, S_u32 b)
+{
+    return a - b;
+}
+
+inline S_u32 operator* (S_u32 a, S_u32 b)
+{
+    S_u32 res(0);
+    
+    res.p = _mm_mul_epi32(a.p, b.p);
+    
+    return res;
+}
+
+inline S_u32 operator*= (S_u32 a, S_u32 b)
+{
+    return a * b;
+}
+
+inline S_u32 operator/ (S_u32 a, S_u32 b)
+{
+    assert(false);
+    return S_u32(0);
+}
+
+inline S_u32 operator/= (S_u32 a, S_u32 b)
+{
+    assert(false);
+    return S_u32(0);
+}
+
+
+inline b32 operator<(S_u32 a, S_u32 b)
 {
     return false;
 }
 
-inline b32 operator>(S_i32 a, S_i32 b)
+inline b32 operator>(S_u32 a, S_u32 b)
 {
     return false;
 }
 
-inline void operator++(S_i32& a, i32 i)
+inline void operator++(S_u32& a, i32 i)
 {
     
 }
 
-inline void operator--(S_i32& a, i32 i)
+inline void operator--(S_u32& a, i32 i)
 {
     
 }
@@ -110,6 +204,12 @@ union S_r32
 {
     __m128 p;
     r32 e[4];
+    u32 u[4];
+    
+    S_r32()
+    {
+        p = _mm_set1_ps(0.0f);
+    }
     
     S_r32(r32 _p) 
     {
@@ -119,6 +219,14 @@ union S_r32
     S_r32(r32 _a, r32 _b, r32 _c, r32 _d)
     {
         p = _mm_set_ps(_a, _b, _c, _d);
+    }
+    
+    S_r32(u32 _a, u32 _b, u32 _c, u32 _d)
+    {
+        p = _mm_setr_ps(*(r32*)&_a, 
+                        *(r32*)&_b, 
+                        *(r32*)&_c, 
+                        *(r32*)&_d);
     }
     
     
@@ -298,6 +406,85 @@ union S_h64
     }
 };
 
+
+
+inline S_r32 u32_to_r32(S_u32 a)
+{
+    S_r32 result;
+    
+    result.p = _mm_cvtepi32_ps(a.p);
+    
+    return(result);
+}
+
+inline S_u32 r32_to_u32(S_r32 a)
+{
+    S_u32 result;
+    
+    result.p = _mm_cvtps_epi32(a.p);
+    
+    return(result);
+}
+
+
+inline S_u32
+operator^(S_u32 a, S_u32 b)
+{
+    S_u32 result;
+    
+    result = r32_to_u32(_mm_xor_ps(u32_to_r32(a).p, u32_to_r32(b).p));
+    
+    return(result);
+}
+
+inline S_u32 &
+operator^=(S_u32 &a, S_u32 b)
+{
+    a= a ^ b;
+    
+    return(a);
+}
+
+
+inline S_u32
+operator&(S_u32 a, S_u32 b)
+{
+    S_u32 result;
+    
+    result = r32_to_u32(_mm_and_ps(u32_to_r32(a).p, u32_to_r32(b).p));
+    
+    return(result);
+}
+
+inline S_u32 &
+operator&=(S_u32 &a, S_u32 b)
+{
+    a = a & b;
+    
+    return(a);
+}
+
+
+inline S_u32
+operator|(S_u32 a, S_u32 b)
+{
+    S_u32 result;
+    
+    result = r32_to_u32(_mm_or_ps(u32_to_r32(a).p, u32_to_r32(b).p));
+    
+    return(result);
+}
+
+inline S_u32 &
+operator|=(S_u32 &a, S_u32 b)
+{
+    a = a | b;
+    
+    return(a);
+}
+
+
+
 #if defined(__APPLE__) || defined(_WIN32)
 // Used to store 4 doubles in one SIMD constructions
 union S_r64
@@ -308,6 +495,8 @@ union S_r64
         S_h64 lower_bits;
     };
     r64 e[4];
+    u32 u[4];
+    
     
     S_r64(r64 v)
     {
@@ -413,6 +602,9 @@ union S_r64
     }
 };
 
+#define shift_right_simd(a, imm) S_u32(_mm_srli_epi32(a.p, imm))
+#define shift_left_simd(a, imm) S_u32(_mm_slli_epi32(a.p, imm))
+
 
 inline S_r32 operator+(S_r32 a, S_r64 b)
 {
@@ -490,6 +682,64 @@ inline r64 operator-(r64 left, S_r64 right)
 {
     return left - right.e[0];
 }
+
+
+inline S_r32
+operator^(S_r32 a, S_r32 b)
+{
+    S_r32 result;
+    
+    result.p = _mm_xor_ps(a.p, b.p);
+    
+    return(result);
+}
+
+inline S_r32 &
+operator^=(S_r32 &a, S_r32 b)
+{
+    a= a ^ b;
+    
+    return(a);
+}
+
+
+inline S_r32
+operator&(S_r32 a, S_r32 b)
+{
+    S_r32 result;
+    
+    result.p = _mm_and_ps(a.p, b.p);
+    
+    return(result);
+}
+
+inline S_r32 &
+operator&=(S_r32 &a, S_r32 b)
+{
+    a = a & b;
+    
+    return(a);
+}
+
+
+inline S_r32
+operator|(S_r32 a, S_r32 b)
+{
+    S_r32 result;
+    
+    result.p = _mm_or_ps(a.p, b.p);
+    
+    return(result);
+}
+
+inline S_r32 &
+operator|=(S_r32 &a, S_r32 b)
+{
+    a = a | b;
+    
+    return(a);
+}
+
 
 r32 operator-(r32 left, S_r64 right)
 {
@@ -894,6 +1144,12 @@ union S_Vec2
         S_r32 y;
     };
     __m128d e[8];
+    
+    S_Vec2()
+    {
+        x = S_r32(0.0f);
+        y= S_r32(0.0f);
+    }
     
     S_Vec2(r32 _x, r32 _y)
     {
@@ -1540,58 +1796,6 @@ using S_Rgba = S_Vec4;
 
 // Extra math
 
-inline S_Vec3 random_direction()
-{
-    S_Vec3 result(0.0f);
-    
-    result.x = _mm_set_ps((rand() % 2000 - 1000.0f) / 1000.0f, (rand() % 2000 - 1000.0f) / 1000.0f, (rand() % 2000 - 1000.0f) / 1000.0f, (rand() % 2000 - 1000.0f) / 1000.0f);
-    result.y = _mm_set_ps((rand() % 2000 - 1000.0f) / 1000.0f, (rand() % 2000 - 1000.0f) / 1000.0f, (rand() % 2000 - 1000.0f) / 1000.0f, (rand() % 2000 - 1000.0f) / 1000.0f);
-    result.z = _mm_set_ps((rand() % 2000 - 1000.0f) / 1000.0f, (rand() % 2000 - 1000.0f) / 1000.0f, (rand() % 2000 - 1000.0f) / 1000.0f, (rand() % 2000 - 1000.0f) / 1000.0f);
-    
-    return result;
-}
-
-inline S_Vec3 random_rect(r32 min, r32 max)
-{
-    S_Vec3 result(0.0f);
-    
-    r32 max_min = max - min;
-    
-    r32 x_val1 = min + rand() / ((RAND_MAX/(max_min)));
-    r32 x_val2 = min + rand() / ((RAND_MAX/(max_min)));
-    r32 x_val3 = min + rand() / ((RAND_MAX/(max_min)));
-    r32 x_val4 = min + rand() / ((RAND_MAX/(max_min)));
-    
-    r32 z_val1 = min + rand() / ((RAND_MAX/(max_min)));
-    r32 z_val2 = min + rand() / ((RAND_MAX/(max_min)));
-    r32 z_val3 = min + rand() / ((RAND_MAX/(max_min)));
-    r32 z_val4 = min + rand() / ((RAND_MAX/(max_min)));
-    
-    result.x = _mm_set_ps(x_val1, x_val2, x_val3, x_val4);
-    result.y = _mm_set1_ps(0.0f);
-    
-    result.z = _mm_set_ps(z_val1, z_val2, z_val3, z_val4);
-    
-    return result;
-}
-
-inline S_Vec3 random_circle(r32 radius)
-{
-    S_Vec3 result(0.0f);
-    
-    math::Vec2 val1 = math::random_in_circle(radius);
-    math::Vec2 val2 = math::random_in_circle(radius);
-    math::Vec2 val3 = math::random_in_circle(radius);
-    math::Vec2 val4 = math::random_in_circle(radius);
-    
-    result.x = _mm_set_ps(val1.x, val2.x, val3.x, val4.x);
-    result.y = _mm_set1_ps(0.0f);
-    
-    result.z = _mm_set_ps(val1.y, val2.y, val3.y, val4.y);
-    
-    return result;
-}
-
 namespace math
 {
     inline S_r32 lerp(S_r32 a, S_r64 t, S_r32 b)
@@ -1599,6 +1803,18 @@ namespace math
         S_r32 res(0.0f);
         
         S_r64 min = simd_min(1.0, t);
+        S_r32 inverse_min = 1.0f - min;
+        S_r32 a_times_inverse = inverse_min * a;
+        
+        res = a_times_inverse + (t * b);
+        return res;
+    }
+    
+    inline S_r32 lerp(S_r32 a, S_r32 t, S_r32 b)
+    {
+        S_r32 res(0.0f);
+        
+        S_r32 min = simd_min(1.0, t);
         S_r32 inverse_min = 1.0f - min;
         S_r32 a_times_inverse = inverse_min * a;
         
