@@ -899,7 +899,7 @@ static void render_setup(RenderState *render_state, MemoryArena *perm_arena)
     shader.uniform_locations.diffuse_color = glGetUniformLocation(shader.program, "color");
     shader.uniform_locations.font.alpha_color = glGetUniformLocation(shader.program, "alphaColor");
     shader.uniform_locations.font.z = glGetUniformLocation(shader.program, "z");
-
+    
     render_state->mesh_shader.type = SHADER_MESH;
     load_shader(shader_paths[SHADER_MESH], &render_state->mesh_shader, render_state->perm_arena);
     
@@ -1829,7 +1829,7 @@ static void render_text(RenderState &render_state, GLFontBuffer &font, TrueTypeF
     glBindVertexArray(font.vao);
     auto shader = render_state.shaders[SHADER_STANDARD_FONT];
     use_shader(shader);
-
+    
     auto uniform_locations = shader.uniform_locations;
     
     set_mat4_uniform(shader.program, uniform_locations.projection_matrix, projection_matrix);
@@ -2482,6 +2482,7 @@ static void render_particles(const RenderCommand &render_command, Renderer &rend
     {
         glBlendFunc(GL_SRC_ALPHA, GL_ONE);
     }
+    
     glDepthMask(GL_FALSE);
     
     Buffer offset_buffer = render_state.buffers[render_command.particles.offset_buffer_handle];
