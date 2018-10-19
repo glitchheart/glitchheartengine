@@ -935,11 +935,19 @@ static void create_cube(Renderer &renderer, MeshInfo &mesh_info, b32 with_instan
     }
 }
 
-static void create_cube(Renderer &renderer)
+static void create_cube(Renderer &renderer, MeshHandle *mesh_handle = nullptr)
 {
     assert(renderer.mesh_count + 1 < global_max_meshes);
-    Mesh &mesh = renderer.meshes[renderer.mesh_count++];
+
+    Mesh &mesh = renderer.meshes[renderer.mesh_count];
     mesh = {};
+    
+    // Set the handle
+    if(mesh_handle)
+        *mesh_handle = { renderer.mesh_count };
+    
+    renderer.mesh_count++;
+    
     mesh.vertices = push_array(&renderer.mesh_arena, sizeof(cube_vertices) / sizeof(r32) / 3, Vertex);
     mesh.faces = push_array(&renderer.mesh_arena, sizeof(cube_indices) / sizeof(u16) / 3, Face);
     

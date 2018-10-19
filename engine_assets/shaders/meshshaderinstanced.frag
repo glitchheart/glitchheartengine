@@ -99,11 +99,12 @@ vec3 computeAmbient()
 {
     if(material.hasAmbient)
     {
-        return lightAmbient * material.ambientColor * vec3(texture(material.ambientTexture, fs_in.uv));
+        //return lightAmbient * material.ambientColor * vec3(texture(material.ambientTexture, fs_in.uv));
+        return lightAmbient * material.diffuseColor * vec3(texture(material.ambientTexture, fs_in.uv));
     }
     else
     {
-        return lightAmbient * material.ambientColor;
+        return lightAmbient * material.diffuseColor;
     }
 }
 
