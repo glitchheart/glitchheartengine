@@ -885,7 +885,7 @@ static void render_setup(RenderState *render_state, MemoryArena *perm_arena)
     load_shader(shader_paths[SHADER_DEPTH], &render_state->depth_shader, render_state->perm_arena);
     load_shader(shader_paths[SHADER_DEPTH_INSTANCED], &render_state->depth_instanced_shader, render_state->perm_arena);
     
-    create_shadow_map(render_state->shadow_map_buffer, 1024, 1024);
+    create_shadow_map(render_state->shadow_map_buffer, 2048, 2048);
     
     setup_billboard(*render_state, render_state->perm_arena);
     setup_quad(*render_state, render_state->perm_arena);
@@ -1232,7 +1232,7 @@ static void initialize_opengl(RenderState& render_state, Renderer& renderer, r32
     
     gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
     
-    glfwSwapInterval(1);
+    glfwSwapInterval(2);
     
     glfwGetFramebufferSize(render_state.window, &render_state.framebuffer_width, &render_state.framebuffer_height);
     glViewport(0, 0, render_state.framebuffer_width, render_state.framebuffer_height);
