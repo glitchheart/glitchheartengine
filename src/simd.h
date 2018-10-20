@@ -86,120 +86,6 @@ inline S_i32 operator/= (S_i32 a, S_i32 b)
     return S_i32(0);
 }
 
-
-union S_u32
-{
-    __m128i p;
-    u32 e[4];
-    
-    S_u32()
-    {
-        p = _mm_set1_epi32(0);
-    }
-    
-    S_u32(__m128i _p)
-    {
-        p = _p;
-    }
-    
-    S_u32(u32 _p) 
-    {
-        p = _mm_set1_epi32(*(i32*)&_p);
-    }
-    
-    S_u32(u32 _a, u32 _b, u32 _c, u32 _d)
-    {
-        p = _mm_set_epi32(*(i32*)&_a, 
-                          *(i32*)&_b, 
-                          *(i32*)&_c, 
-                          *(i32*)&_d);
-    }
-    
-    S_u32& operator=(const u32 v)
-    {
-        p = _mm_set1_epi32(*(i32*)&v);
-        
-        return *this;
-    }
-    
-    S_u32& operator+= (S_u32 b)
-    {
-        this->p = _mm_add_epi32(p, b.p);
-        return *this;
-    }
-};
-
-inline S_u32 operator+ (S_u32 a, S_u32 b)
-{
-    S_u32 res(0);
-    
-    res.p = _mm_add_epi32(a.p, b.p);
-    
-    return res;
-}
-
-
-inline S_u32 operator- (S_u32 a, S_u32 b)
-{
-    S_u32 res(0);
-    
-    res.p = _mm_sub_epi32(a.p, b.p);
-    
-    return res;
-}
-
-inline S_u32 operator-= (S_u32 a, S_u32 b)
-{
-    return a - b;
-}
-
-inline S_u32 operator* (S_u32 a, S_u32 b)
-{
-    S_u32 res(0);
-    
-    res.p = _mm_mul_epi32(a.p, b.p);
-    
-    return res;
-}
-
-inline S_u32 operator*= (S_u32 a, S_u32 b)
-{
-    return a * b;
-}
-
-inline S_u32 operator/ (S_u32 a, S_u32 b)
-{
-    assert(false);
-    return S_u32(0);
-}
-
-inline S_u32 operator/= (S_u32 a, S_u32 b)
-{
-    assert(false);
-    return S_u32(0);
-}
-
-
-inline b32 operator<(S_u32 a, S_u32 b)
-{
-    return false;
-}
-
-inline b32 operator>(S_u32 a, S_u32 b)
-{
-    return false;
-}
-
-inline void operator++(S_u32& a, i32 i)
-{
-    
-}
-
-inline void operator--(S_u32& a, i32 i)
-{
-    
-}
-
 union S_r32
 {
     __m128 p;
@@ -249,6 +135,12 @@ union S_r32
         return *this;
     }
     
+    inline S_r32& operator *=(S_r32 v)
+    {
+        p = _mm_mul_ps(p, v.p);
+        
+        return *this;
+    }
 };
 
 inline S_r32 operator+ (S_r32 a, S_r32 b)
@@ -406,8 +298,16 @@ union S_h64
     }
 };
 
+inline S_r32 u32_to_r32(S_r32 a)
+{
+    S_r32 result;
+    
+    result.p = _mm_cvtepi32_ps(_mm_castps_si128(a.p));
+    
+    return(result);
+}
 
-
+/*
 inline S_r32 u32_to_r32(S_u32 a)
 {
     S_r32 result;
@@ -432,7 +332,7 @@ operator^(S_u32 a, S_u32 b)
 {
     S_u32 result;
     
-    result = r32_to_u32(_mm_xor_ps(u32_to_r32(a).p, u32_to_r32(b).p));
+    result = _mm_xor_si128(a.p, b.p);
     
     return(result);
 }
@@ -484,7 +384,7 @@ operator|=(S_u32 &a, S_u32 b)
 }
 
 
-
+*/
 #if defined(__APPLE__) || defined(_WIN32)
 // Used to store 4 doubles in one SIMD constructions
 union S_r64
@@ -602,9 +502,8 @@ union S_r64
     }
 };
 
-#define shift_right_simd(a, imm) S_u32(_mm_srli_epi32(a.p, imm))
-#define shift_left_simd(a, imm) S_u32(_mm_slli_epi32(a.p, imm))
-
+#define shift_right_simd(a, imm) S_r32(_mm_castsi128_ps(_mm_srli_epi32(_mm_castps_si128(a.p), imm)))
+#define shift_left_simd(a, imm) S_r32(_mm_castsi128_ps(_mm_slli_epi32(_mm_castps_si128(a.p), imm)))
 
 inline S_r32 operator+(S_r32 a, S_r64 b)
 {
@@ -732,8 +631,7 @@ operator|(S_r32 a, S_r32 b)
     return(result);
 }
 
-inline S_r32 &
-operator|=(S_r32 &a, S_r32 b)
+inline S_r32& operator|=(S_r32 &a, S_r32 b)
 {
     a = a | b;
     
@@ -1487,6 +1385,13 @@ union S_Vec3
         res.z = z * a;
         
         return res;
+    }
+    
+    inline void operator*=(S_Vec3 b)
+    {
+        x *= b.x;
+        y *= b.y;
+        z *= b.z;
     }
     
     inline S_Vec3 operator*(r32 a)

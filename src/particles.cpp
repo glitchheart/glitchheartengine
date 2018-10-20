@@ -15,9 +15,16 @@ static void push_particle_system(Renderer &renderer, ParticleSystemInfo &particl
     render_command->particles.color_buffer_handle = particle_info.color_buffer_handle;
     render_command->particles.size_buffer_handle = particle_info.size_buffer_handle;
     render_command->particles.particle_count = particle_info.particle_count;
-    render_command->particles.offsets = particle_info.offsets;
-    render_command->particles.colors = particle_info.colors;
-    render_command->particles.sizes = particle_info.sizes;
+    
+    render_command->particles.offsets = (math::Vec3*)malloc(sizeof(math::Vec3) * particle_info.particle_count);
+    render_command->particles.colors = (math::Rgba*)malloc(sizeof(math::Rgba) * particle_info.particle_count);render_command->particles.sizes = (math::Vec2*)malloc(sizeof(math::Vec2) * particle_info.particle_count);
+    
+    memcpy(render_command->particles.offsets, particle_info.offsets, sizeof(math::Vec3) * particle_info.particle_count);
+    
+    memcpy(render_command->particles.colors, particle_info.colors, sizeof(math::Rgba) * particle_info.particle_count);
+    
+    memcpy(render_command->particles.sizes, particle_info.sizes, sizeof(math::Vec2) * particle_info.particle_count);
+    
     render_command->particles.diffuse_texture = particle_info.attributes.texture_handle;
     render_command->particles.blend_mode = blend_mode;
 }
@@ -210,6 +217,10 @@ void update_particles(Renderer &renderer, ParticleSystemInfo &particle_system, r
             auto speed_value_count = particle_system.speed_over_lifetime.value_count;
             auto color_value_count = particle_system.color_over_lifetime.value_count;
             auto size_value_count = particle_system.size_over_lifetime.value_count;               
+            
+            
+            particle_system.particles.direction[main_index] += S_Vec3(math::Vec3(0.0f, -particle_system.attributes.gravity * (r32)delta_time, 0.0f));
+            
             
             if(size_value_count > 0)
             {
@@ -430,7 +441,7 @@ void emit_particle(ParticleSystemInfo &particle_system)
         new_direction = spawn_info.direction;
     }
     
-    particle_system.particles.direction[original_index] = math::normalize(particle_system.attributes.direction + new_direction * particle_system.attributes.spread);
+    particle_system.particles.direction[original_index] = math::normalize((particle_system.attributes.direction + new_direction) * particle_system.attributes.spread);
 }
 
 void update_particle_systems(Renderer &renderer, r64 delta_time)
@@ -502,10 +513,10 @@ void update_particle_systems(Renderer &renderer, r64 delta_time)
                 for (i32 i = 0; i < simd_new_particles / 4; i++)
                 {
                     emit_particle(particle_system);
-                    
-                    if(particle_system.attributes.one_shot)
-                        particle_system.total_emitted += new_particles;
                 }
+                
+                if(particle_system.attributes.one_shot)
+                    particle_system.total_emitted += new_particles;
                 
                 for (i32 i = 0; i < simd_burst_particles / 4; i++)
                 {
