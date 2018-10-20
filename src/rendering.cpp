@@ -1394,14 +1394,20 @@ static void load_material(Renderer &renderer, char *file_path, MaterialHandle *m
                 char name[64];
                 sscanf(buffer, "map_Ka %s", name);
                 
-                load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, &material.ambient_texture.handle);
+                if(name[0] == '.')
+                    load_texture(name, renderer, LINEAR, &material.ambient_texture.handle);
+                else
+                    load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, &material.ambient_texture.handle);
             }
             else if(starts_with(buffer, "map_Kd")) // diffuse map
             {
                 char name[64];
                 sscanf(buffer, "map_Kd %s", name);
                 
-                load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, &material.diffuse_texture.handle);
+                if(name[0] == '.')
+                    load_texture(name, renderer, LINEAR, &material.diffuse_texture.handle);
+                else
+                    load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, &material.diffuse_texture.handle);
             }
             else if(starts_with(buffer, "map_Ks")) // specular map
             {
@@ -1409,13 +1415,21 @@ static void load_material(Renderer &renderer, char *file_path, MaterialHandle *m
                 sscanf(buffer, "map_Ks %s", name);
                 
                 load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, &material.specular_texture.handle);
+                
+                if(name[0] == '.')
+                    load_texture(name, renderer, LINEAR, &material.specular_texture.handle);
+                else
+                    load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, &material.specular_texture.handle);
             }
             else if(starts_with(buffer, "map_Ns")) // specular intensity map
             {
                 char name[64];
                 sscanf(buffer, "map_Ns %s", name);
                 
-                load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, &material.specular_intensity_texture.handle);
+                if(name[0] == '.')
+                    load_texture(name, renderer, LINEAR, &material.specular_intensity_texture.handle);
+                else
+                    load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, &material.specular_intensity_texture.handle);
             }
         }
         

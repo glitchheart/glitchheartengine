@@ -252,7 +252,7 @@ namespace scene
                             }
                             else if(starts_with(prim_type, "plane"))
                             {
-
+                                create_plane(*scene.renderer, &templ.render.mesh_handle.handle);
                             }
                         }
                         else if(starts_with(buffer, "mtl"))
