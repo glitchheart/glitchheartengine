@@ -63,7 +63,7 @@ EMITTER_FUNC(emit_random_dir)
     ParticleSpawnInfo info;
     
     info.position = S_Vec3(0.0f);
-    info.direction = math::normalize(random_direction());
+    info.direction = random_direction(series);
     
     return info;
 }
@@ -72,24 +72,25 @@ EMITTER_FUNC(emit_from_square)
 {
     ParticleSpawnInfo info;
     
-    S_Vec3 r = random_rect(0.0f, 1.0f);
+    S_Vec3 r = random_rect(series, 0.0f, 1.0f);
     
     info.position = r;
     
-    info.direction = math::normalize(random_direction());
+    info.direction = S_Vec3(math::Vec3(0.0f, 1.0f, 0.0f));//random_direction(series);
     
     return info;
 }
 
-EMITTER_FUNC(emit_from_circle)
+EMITTER_FUNC(emit_from_disc)
 {
     ParticleSpawnInfo info;
     
-    S_Vec3 r = random_circle(series, 1.0f);
+    S_Vec3 r = random_disc(series, 1.0f);
     
     info.position = r;
     
-    info.direction = math::normalize(random_direction());
+    info.direction = S_Vec3(math::Vec3(0.0f, 1.0f, 0.0f));//random_direction(series);
+    //info.direction = random_direction(series);
     
     return info;
 }
@@ -113,7 +114,7 @@ static ParticleSystemAttributes get_default_particle_system_attributes()
     attributes.emission_module.burst_over_lifetime.value_count = 0;
     attributes.emission_module.burst_over_lifetime.current_index = 0;
     attributes.emission_module.burst_over_lifetime.values = nullptr;
-    attributes.emission_module.emitter_func = emit_from_circle;
+    attributes.emission_module.emitter_func = emit_from_disc;
     
     return attributes;
 }
@@ -252,6 +253,7 @@ static void remove_particle_system(Renderer& renderer, ParticleSystemHandle &han
         renderer.particles._internal_handles[removed_handle - 1] = -1;
 		clear(&renderer.particles.particle_systems[0].arena);
         renderer.particles.particle_systems[0] = {};
+        renderer.particles.particle_systems[0].running = false;
     }
     else
     {
@@ -267,6 +269,8 @@ static void remove_particle_system(Renderer& renderer, ParticleSystemHandle &han
         
         clear(&renderer.particles.particle_systems[renderer.particles.particle_system_count - 1].arena);
         renderer.particles.particle_systems[renderer.particles.particle_system_count - 1] = {};
+        renderer.particles.particle_systems[renderer.particles.particle_system_count - 1].running = false;
+        
         
         renderer.particles._internal_handles[removed_handle - 1] = -1;
         

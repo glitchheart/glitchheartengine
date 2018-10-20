@@ -69,6 +69,7 @@ struct ParticleSystemAttributes
     r32 spread;
     i32 particles_per_second;
     i32 texture_handle;
+    r32 gravity;
     
     EmissionModule emission_module;
 };

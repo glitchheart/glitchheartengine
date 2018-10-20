@@ -2476,7 +2476,7 @@ static void render_mesh_instanced(const RenderCommand &render_command, Renderer 
     glActiveTexture(GL_TEXTURE0);
 }
 
-static void render_particles(const RenderCommand &render_command, Renderer &renderer, RenderState &render_state, math::Mat4 projection_matrix, math::Mat4 view_matrix)
+static void render_particles(RenderCommand &render_command, Renderer &renderer, RenderState &render_state, math::Mat4 projection_matrix, math::Mat4 view_matrix)
 {
     if(render_command.particles.blend_mode == CBM_ONE)
     {
@@ -2544,6 +2544,13 @@ static void render_particles(const RenderCommand &render_command, Renderer &rend
     glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)nullptr, render_command.particles.particle_count);
     glDepthMask(GL_TRUE);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    
+    free(render_command.particles.offsets);
+    render_command.particles.offsets = nullptr;
+    free(render_command.particles.colors);
+    render_command.particles.colors = nullptr;
+    free(render_command.particles.sizes);
+    render_command.particles.sizes = nullptr;
 }
 
 static void render_buffer(const RenderCommand& command, RenderState& render_state, math::Mat4 projection, math::Mat4 view)
@@ -2815,7 +2822,7 @@ static void render_commands(RenderState &render_state, Renderer &renderer)
     
     for (i32 index = 0; index < renderer.command_count; index++)
     {
-        const RenderCommand& command = renderer.commands[index];
+        RenderCommand& command = renderer.commands[index];
         
         switch (command.type)
         {
