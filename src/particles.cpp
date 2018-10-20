@@ -51,32 +51,11 @@ static void push_particle_system(Renderer &renderer, i32 particle_system_handle)
     }
 }
 
-void find_unused_particles(ParticleSystemInfo &particle_system)
-{
-    auto &unused_particles = particle_system.unused_particles;
-    particle_system.unused_particle_count = 0;
-    
-    for(i32 particle_index = 0; particle_index < particle_system.max_particles / 4; particle_index++)
-    {
-        if(!any_nz(particle_system.particles.life[particle_index]))
-        {
-            if(particle_system.attributes.life_time == 0.0 && any_lt(particle_system.particles.life[particle_index], 0.0))
-            {
-                continue;
-            }
-            else
-            {
-                unused_particles[particle_system.unused_particle_count++] = particle_index;
-            }
-        }
-    }
-}
-
 i32 find_unused_particle(ParticleSystemInfo &particle_system)
-{    
-    if(particle_system.unused_particle_count > 0)
+{   
+    if(particle_system.dead_particle_count > 0)
     {
-        return particle_system.unused_particles[particle_system.unused_particle_count-- - 1];
+        return particle_system.dead_particles[particle_system.dead_particle_count-- - 1];
     }
     
     return -1;
@@ -195,146 +174,163 @@ S_r32 get_speed_by_time(ParticleSystemInfo &particle_system, S_r64 time_spent)
     return S_r32(values[value_count - 1]);
 }
 
-void update_particles(Renderer &renderer, ParticleSystemInfo &particle_system, r64 delta_time)
+// @Note:(Niels): Update the particles that have been emitted in previous and in the current frame
+// Kills particles in case they have life <= 0.0 and adds them to the dead particle buffer
+// Dead particles are used when emitting in the emit procedure.
+// Any particle that is NOT dead, will be written into the alive buffer of the next frame
+// This ensures that we can clear the current frame buffer, and only ever iterate over
+// particles that are actually alive.
+void update_particles(Renderer &renderer, ParticleSystemInfo &particle_system, r64 delta_time, i32 *emitted_buf, i32 *emitted_this_frame, i32* next_frame_buf, i32 *next_frame_count)
 {
     particle_system.particle_count = 0;
     
-    b32 all_zero = true;
-    
-    for(i32 main_index = 0; main_index < particle_system.max_particles / 4; main_index++)
+    for(i32 alive_index = 0; alive_index < *emitted_this_frame; alive_index++)
     {
-        auto life_non_zero = any_nz(particle_system.particles.life[main_index]);
+        i32 main_index = emitted_buf[alive_index];
         
+        // @Incomplete:(Niels): Used to check where to position initial emission
+        // Maybe find a better solution that doesn't require branching on every particle?
         auto start = equal_epsilon(particle_system.particles.life[main_index], particle_system.attributes.life_time, 0.001);
+        
+        particle_system.particles.life[main_index] -= delta_time;
+        
+        // @Note:(Niels): Check for alive state of this particle and kill if dead.
+        // Seems like a necessary branch here, since we do need to know if a particle is dead.
+        // Maybe there is some SIMD magic, that can do this for us (probably not...).
+        if(any_lt_eq(particle_system.particles.life[main_index], 0.0))
+        {
+            particle_system.dead_particles[particle_system.dead_particle_count++] = main_index;
+            continue;
+        }
+        else
+        {
+            next_frame_buf[(*next_frame_count)++] = main_index;
+        }
         
         auto life = particle_system.particles.life[main_index];
         S_r64 time_spent = particle_system.attributes.life_time - life;
         
-        if(life_non_zero)
+        auto speed_value_count = particle_system.speed_over_lifetime.value_count;
+        auto color_value_count = particle_system.color_over_lifetime.value_count;
+        auto size_value_count = particle_system.size_over_lifetime.value_count;               
+        
+        particle_system.particles.direction[main_index] += S_Vec3(math::Vec3(0.0f, -particle_system.attributes.gravity * (r32)delta_time, 0.0f));
+        
+        
+        if(size_value_count > 0)
         {
-            all_zero = false;
-            
-            auto speed_value_count = particle_system.speed_over_lifetime.value_count;
-            auto color_value_count = particle_system.color_over_lifetime.value_count;
-            auto size_value_count = particle_system.size_over_lifetime.value_count;               
-            
-            
-            particle_system.particles.direction[main_index] += S_Vec3(math::Vec3(0.0f, -particle_system.attributes.gravity * (r32)delta_time, 0.0f));
-            
-            
-            if(size_value_count > 0)
-            {
-                particle_system.particles.size[main_index] = get_size_by_time(particle_system, time_spent);
-            }
-            
-            if(color_value_count > 0)
-            {
-                particle_system.particles.color[main_index] = get_color_by_time(particle_system, time_spent);
-            }
-            else
-            {
-                particle_system.particles.color[main_index] = particle_system.attributes.start_color;
-            }
-            
-            if(speed_value_count > 0)
-            {
-                particle_system.particles.position[main_index] += particle_system.particles.direction[main_index] * get_speed_by_time(particle_system, time_spent) * (r32)delta_time;
-            }
-            else
-            {
-                particle_system.particles.position[main_index] += particle_system.particles.direction[main_index] * particle_system.attributes.start_speed * (r32)delta_time;				
-            }                
-            
-            S_Vec3 final_pos(0.0f);
-            
-            if(particle_system.attributes.particle_space == PS_WORLD && !start)
-            {
-                final_pos = particle_system.particles.position[main_index] + particle_system.particles.relative_position[main_index];
-            }
-            else
-            {
-                final_pos = particle_system.particles.position[main_index] + particle_system.transform.position;
-                particle_system.particles.relative_position[main_index] = particle_system.transform.position;
-            }
-            
-            auto color = particle_system.particles.color[main_index];
-            auto size = particle_system.particles.size[main_index];
-            
-            float p1[4], p2[4], p3[4], p4[4];
-            float s1[4], s2[4], s3[4], s4[4];
-            float c1[4], c2[4], c3[4], c4[4];
-            
-            s_vec2_to_float4(size, s1, s2, s3, s4);
-            s_vec3_to_float4(final_pos, p1, p2, p3, p4);
-            s_vec4_to_float4(color, c1, c2, c3, c4);
-            
-            particle_system.offsets[particle_system.particle_count].x = p1[0];
-            particle_system.offsets[particle_system.particle_count].y = p1[1];
-            particle_system.offsets[particle_system.particle_count].z = p1[2];
-            
-            particle_system.colors[particle_system.particle_count].r = c1[0];
-            particle_system.colors[particle_system.particle_count].g = c1[1];
-            particle_system.colors[particle_system.particle_count].b = c1[2];
-            particle_system.colors[particle_system.particle_count].a = c1[3];
-            
-            particle_system.sizes[particle_system.particle_count].x = s1[0];
-            particle_system.sizes[particle_system.particle_count].y = s1[1];
-            
-            particle_system.particle_count++;
-            
-            particle_system.offsets[particle_system.particle_count].x = p2[0];
-            particle_system.offsets[particle_system.particle_count].y = p2[1];
-            particle_system.offsets[particle_system.particle_count].z = p2[2];
-            
-            particle_system.colors[particle_system.particle_count].r = c2[0];
-            particle_system.colors[particle_system.particle_count].g = c2[1];
-            particle_system.colors[particle_system.particle_count].b = c2[2];
-            particle_system.colors[particle_system.particle_count].a = c2[3];
-            
-            particle_system.sizes[particle_system.particle_count].x = s2[0];
-            particle_system.sizes[particle_system.particle_count].y = s2[1];
-            
-            particle_system.particle_count++;
-            
-            particle_system.offsets[particle_system.particle_count].x = p3[0];
-            particle_system.offsets[particle_system.particle_count].y = p3[1];
-            particle_system.offsets[particle_system.particle_count].z = p3[2];
-            
-            particle_system.colors[particle_system.particle_count].r = c3[0];
-            particle_system.colors[particle_system.particle_count].g = c3[1];
-            particle_system.colors[particle_system.particle_count].b = c3[2];
-            particle_system.colors[particle_system.particle_count].a = c3[3];
-            
-            particle_system.sizes[particle_system.particle_count].x = s3[0];
-            particle_system.sizes[particle_system.particle_count].y = s3[1];
-            
-            particle_system.particle_count++;
-            
-            particle_system.offsets[particle_system.particle_count].x = p4[0];
-            particle_system.offsets[particle_system.particle_count].y = p4[1];
-            particle_system.offsets[particle_system.particle_count].z = p4[2];
-            
-            particle_system.colors[particle_system.particle_count].r = c4[0];
-            particle_system.colors[particle_system.particle_count].g = c4[1];
-            particle_system.colors[particle_system.particle_count].b = c4[2];
-            particle_system.colors[particle_system.particle_count].a = c4[3];
-            
-            particle_system.sizes[particle_system.particle_count].x = s4[0];
-            particle_system.sizes[particle_system.particle_count].y = s4[1];
-            
-            particle_system.particle_count++;
-            
-            particle_system.particles.life[main_index] -= delta_time;
-            
-            if(any_lt_eq(particle_system.particles.life[main_index], 0.0))
-            {
-                //@Incomplete: Are we forgetting to kill particles here??
-            }
+            particle_system.particles.size[main_index] = get_size_by_time(particle_system, time_spent);
         }
+        
+        if(color_value_count > 0)
+        {
+            particle_system.particles.color[main_index] = get_color_by_time(particle_system, time_spent);
+        }
+        else
+        {
+            particle_system.particles.color[main_index] = particle_system.attributes.start_color;
+        }
+        
+        if(speed_value_count > 0)
+        {
+            particle_system.particles.position[main_index] += particle_system.particles.direction[main_index] * get_speed_by_time(particle_system, time_spent) * (r32)delta_time;
+        }
+        else
+        {
+            particle_system.particles.position[main_index] += particle_system.particles.direction[main_index] * particle_system.attributes.start_speed * (r32)delta_time;				
+        }                
+        
+        S_Vec3 final_pos(0.0f);
+        
+        if(particle_system.attributes.particle_space == PS_WORLD && !start)
+        {
+            final_pos = particle_system.particles.position[main_index] + particle_system.particles.relative_position[main_index];
+        }
+        else
+        {
+            final_pos = particle_system.particles.position[main_index] + particle_system.transform.position;
+            particle_system.particles.relative_position[main_index] = particle_system.transform.position;
+        }
+        
+        auto color = particle_system.particles.color[main_index];
+        auto size = particle_system.particles.size[main_index];
+        
+        float p1[4], p2[4], p3[4], p4[4];
+        float s1[4], s2[4], s3[4], s4[4];
+        float c1[4], c2[4], c3[4], c4[4];
+        
+        s_vec2_to_float4(size, s1, s2, s3, s4);
+        s_vec3_to_float4(final_pos, p1, p2, p3, p4);
+        s_vec4_to_float4(color, c1, c2, c3, c4);
+        
+        particle_system.offsets[particle_system.particle_count].x = p1[0];
+        particle_system.offsets[particle_system.particle_count].y = p1[1];
+        particle_system.offsets[particle_system.particle_count].z = p1[2];
+        
+        particle_system.colors[particle_system.particle_count].r = c1[0];
+        particle_system.colors[particle_system.particle_count].g = c1[1];
+        particle_system.colors[particle_system.particle_count].b = c1[2];
+        particle_system.colors[particle_system.particle_count].a = c1[3];
+        
+        particle_system.sizes[particle_system.particle_count].x = s1[0];
+        particle_system.sizes[particle_system.particle_count].y = s1[1];
+        
+        particle_system.particle_count++;
+        
+        particle_system.offsets[particle_system.particle_count].x = p2[0];
+        particle_system.offsets[particle_system.particle_count].y = p2[1];
+        particle_system.offsets[particle_system.particle_count].z = p2[2];
+        
+        particle_system.colors[particle_system.particle_count].r = c2[0];
+        particle_system.colors[particle_system.particle_count].g = c2[1];
+        particle_system.colors[particle_system.particle_count].b = c2[2];
+        particle_system.colors[particle_system.particle_count].a = c2[3];
+        
+        particle_system.sizes[particle_system.particle_count].x = s2[0];
+        particle_system.sizes[particle_system.particle_count].y = s2[1];
+        
+        particle_system.particle_count++;
+        
+        particle_system.offsets[particle_system.particle_count].x = p3[0];
+        particle_system.offsets[particle_system.particle_count].y = p3[1];
+        particle_system.offsets[particle_system.particle_count].z = p3[2];
+        
+        particle_system.colors[particle_system.particle_count].r = c3[0];
+        particle_system.colors[particle_system.particle_count].g = c3[1];
+        particle_system.colors[particle_system.particle_count].b = c3[2];
+        particle_system.colors[particle_system.particle_count].a = c3[3];
+        
+        particle_system.sizes[particle_system.particle_count].x = s3[0];
+        particle_system.sizes[particle_system.particle_count].y = s3[1];
+        
+        particle_system.particle_count++;
+        
+        particle_system.offsets[particle_system.particle_count].x = p4[0];
+        particle_system.offsets[particle_system.particle_count].y = p4[1];
+        particle_system.offsets[particle_system.particle_count].z = p4[2];
+        
+        particle_system.colors[particle_system.particle_count].r = c4[0];
+        particle_system.colors[particle_system.particle_count].g = c4[1];
+        particle_system.colors[particle_system.particle_count].b = c4[2];
+        particle_system.colors[particle_system.particle_count].a = c4[3];
+        
+        particle_system.sizes[particle_system.particle_count].x = s4[0];
+        particle_system.sizes[particle_system.particle_count].y = s4[1];
+        
+        particle_system.particle_count++;
+    }
+    
+    if(particle_system.alive0_active)
+    {
+        particle_system.alive1_particle_count = 0;
+    }
+    else
+    {
+        particle_system.alive0_particle_count = 0;
     }
     
     // if all particles are dead and the system is one-shot we should stop the particle_system
-    if(all_zero && particle_system.attributes.one_shot)
+    if(particle_system.dead_particle_count == particle_system.max_particles && particle_system.attributes.one_shot)
     {
         particle_system.running = false;
     }
@@ -418,7 +414,7 @@ void sort(math::Vec3 camera_position, math::Vec3 *offsets, math::Vec2 *sizes, ma
     end_temporary_memory(temp_mem);
 }
 
-void emit_particle(ParticleSystemInfo &particle_system)
+void emit_particle(ParticleSystemInfo &particle_system, i32* alive_buf, i32* count)
 {
     i32 original_index = find_unused_particle(particle_system);
     
@@ -442,6 +438,14 @@ void emit_particle(ParticleSystemInfo &particle_system)
     }
     
     particle_system.particles.direction[original_index] = math::normalize((particle_system.attributes.direction + new_direction) * particle_system.attributes.spread);
+    
+    // @Note:(Niels): The current buffer gets the particle being emitted
+    // It is passed in, so we only need to check once per frame when the system is updated
+    alive_buf[(*count)++] = original_index;
+    
+    // @Note:(Niels): 4 == SIMD? Maybe revisit how we think about particles always in 4's with SIMD...
+    // This seems somewhat dumb.
+    particle_system.particles_emitted_this_frame += 4;
 }
 
 void update_particle_systems(Renderer &renderer, r64 delta_time)
@@ -452,12 +456,35 @@ void update_particle_systems(Renderer &renderer, r64 delta_time)
         
         if (particle_system.running)
         {
+            i32* emitted_alive_buf = nullptr;
+            i32* emitted_alive_count = nullptr;
+            i32* write_buf = nullptr;
+            i32* write_buf_count = nullptr;
+            if(particle_system.alive0_active)
+            {
+                emitted_alive_buf = particle_system.alive0_particles;
+                emitted_alive_count = &particle_system.alive0_particle_count;
+                write_buf = particle_system.alive1_particles;
+                write_buf_count = &particle_system.alive1_particle_count;
+            }
+            else
+            {
+                emitted_alive_buf = particle_system.alive1_particles;
+                emitted_alive_count = &particle_system.alive1_particle_count;
+                write_buf = particle_system.alive0_particles;
+                write_buf_count = &particle_system.alive0_particle_count;
+            }
+            
+            particle_system.alive0_active = !particle_system.alive0_active;
+            
             if (particle_system.emitting)
             {
                 particle_system.time_spent += delta_time;
-                find_unused_particles(particle_system);
+                //find_unused_particles(particle_system);
+                
                 i32 new_particles;
                 
+                // @Note(Niels): Figure out the burst amount if there is any
                 i32 burst_particles = 0;
                 
                 auto value_count = particle_system.attributes.emission_module.burst_over_lifetime.value_count;
@@ -487,6 +514,7 @@ void update_particle_systems(Renderer &renderer, r64 delta_time)
                     }
                 }
                 
+                // @Note(Niels): Start figuring out how many particles we need to emit this frame
                 r32 per_second = (r32)((r64)particle_system.attributes.particles_per_second * delta_time);
                 
                 // @Note(Niels): We need to check if we've spent 1 second if per second is lower than 1.0
@@ -507,24 +535,33 @@ void update_particle_systems(Renderer &renderer, r64 delta_time)
                     particle_system.emitting = false;
                 }
                 
+                // @Incomplete:(Niels): Consider if it is even encessary to have these simd values??
+                // seems kind of dumb...
                 i32 simd_new_particles = math::multiple_of_number(new_particles, 4);
                 i32 simd_burst_particles = math::multiple_of_number(burst_particles, 4);
                 
+                // @Note(Niels): Emit the particles into the current alive buffer
+                // The first time around this buffer is empty, but on any subsequent step
+                // there should already be particles from the previous frame, which were
+                // written into the then next buffer (which is now the alive buffer)
                 for (i32 i = 0; i < simd_new_particles / 4; i++)
                 {
-                    emit_particle(particle_system);
+                    emit_particle(particle_system, emitted_alive_buf, emitted_alive_count);
                 }
                 
+                // @Note(Niels): Same goes for burst
                 if(particle_system.attributes.one_shot)
                     particle_system.total_emitted += new_particles;
                 
                 for (i32 i = 0; i < simd_burst_particles / 4; i++)
                 {
-                    emit_particle(particle_system);
+                    emit_particle(particle_system, emitted_alive_buf, emitted_alive_count);
                 }
             }
             
-            update_particles(renderer, particle_system, delta_time);
+            // @Note:(Niels): We now emit the particles in the emitted alive buf (which may contain particles from previous frames that are still alive), while passing in the next buffer,
+            // which is now our "write" buffer.
+            update_particles(renderer, particle_system, delta_time, emitted_alive_buf, emitted_alive_count, write_buf, write_buf_count);
             
             //auto camera_position = renderer.cameras[renderer.current_camera_handle].position;
             //sort(camera_position, particle_system.offsets, particle_system.sizes, particle_system.colors, particle_system.particle_count, &renderer.particle_arena);

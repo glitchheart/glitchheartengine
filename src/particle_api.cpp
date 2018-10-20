@@ -128,15 +128,21 @@ static void _allocate_particle_system(Renderer& renderer, ParticleSystemInfo& sy
     system_info.max_particles = math::multiple_of_number(max_particles, 4);
     auto max_over_four = system_info.max_particles / 4;
     
-    system_info.unused_particles = push_array(memory_arena, system_info.max_particles, i32);
-    system_info.alive_particles = push_array(memory_arena, system_info.max_particles, i32);
-    system_info.next_alive_particles = push_array(memory_arena, system_info.max_particles, i32);
+    system_info.alive0_particles = push_array(memory_arena, system_info.max_particles, i32);
+    system_info.alive1_particles = push_array(memory_arena, system_info.max_particles, i32);
+    system_info.alive0_active = true;
     system_info.dead_particles = push_array(memory_arena, system_info.max_particles, i32);
+    system_info.dead_particle_count = system_info.max_particles;
+    
+    for(i32 dead_index = 0; dead_index < system_info.max_particles; dead_index++)
+    {
+        system_info.dead_particles[dead_index] = dead_index;
+    }
+    
     system_info.use_next = false;
     
-    system_info.alive_particle_count = 0;
-    system_info.next_alive_particle_count = 0;
-    system_info.dead_particle_count = 0;
+    system_info.alive0_particle_count = 0;
+    system_info.alive1_particle_count = 0;
     
     system_info.particles.position = push_array_simd(memory_arena, max_over_four, S_Vec3);
     system_info.particles.direction = push_array_simd(memory_arena, max_over_four, S_Vec3);

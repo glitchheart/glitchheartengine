@@ -132,14 +132,16 @@ struct ParticleSystemInfo
     Material material;
     
     Particles particles;
-    i32 *unused_particles;
-    i32 unused_particle_count;
     
-    i32 *alive_particles;
-    i32 alive_particle_count;
+    i32 *alive0_particles;
+    i32 alive0_particle_count;
     
-    i32 *next_alive_particles;
-    i32 next_alive_particle_count;
+    i32 *alive1_particles;
+    i32 alive1_particle_count;
+    
+    //@Note(Niels): Pointer to next alive buffer
+    b32 alive0_active;
+    i32 particles_emitted_this_frame;
     
     i32 *dead_particles;
     i32 dead_particle_count;
