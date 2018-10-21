@@ -537,8 +537,6 @@ static void register_instance_buffer(RenderState &render_state, BufferData &buff
         glGenBuffers(1, &buffer->vbo);
     }
     
-	
-    
     glBindBuffer(GL_ARRAY_BUFFER, buffer->vbo);
     glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)buffer_data.instance_buffer_size, nullptr, GL_DYNAMIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -2309,45 +2307,45 @@ static void render_mesh_instanced(const RenderCommand &render_command, Renderer 
     }
     
     glEnableVertexAttribArray(0);
-    vertex_attrib_pointer(0, 3, GL_FLOAT,(8 * sizeof(GLfloat)), nullptr);
+	vertex_attrib_pointer(0, 3, GL_FLOAT,(8 * sizeof(GLfloat)), nullptr);
     
     glEnableVertexAttribArray(1);
-    vertex_attrib_pointer(1, 3, GL_FLOAT, (8 * sizeof(GLfloat)), (void*)(3 * sizeof(GLfloat)));
+	vertex_attrib_pointer(1, 3, GL_FLOAT, (8 * sizeof(GLfloat)), (void*)(3 * sizeof(GLfloat)));
     
     glEnableVertexAttribArray(2);
-    vertex_attrib_pointer(2, 2, GL_FLOAT, (8 * sizeof(GLfloat)), (void*)(6 * sizeof(GLfloat)));
+	vertex_attrib_pointer(2, 2, GL_FLOAT, (8 * sizeof(GLfloat)), (void*)(6 * sizeof(GLfloat)));
     
     // offset
     glEnableVertexAttribArray(3);
-    glBindBuffer(GL_ARRAY_BUFFER, offset_instance_buffer.vbo);
-    glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizeiptr)(sizeof(math::Vec3) * render_command.mesh_instanced.offset_count), render_command.mesh_instanced.offsets);
+	glBindBuffer(GL_ARRAY_BUFFER, offset_instance_buffer.vbo);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizeiptr)(sizeof(math::Vec3) * render_command.mesh_instanced.offset_count), render_command.mesh_instanced.offsets);
     
     glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 0, (void*)nullptr);
-    glVertexAttribDivisor(3, 1);
+	glVertexAttribDivisor(3, 1);
     
     // color
     glEnableVertexAttribArray(4);
-    glBindBuffer(GL_ARRAY_BUFFER, color_instance_buffer.vbo);
-    glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizeiptr)(sizeof(math::Rgba) * render_command.mesh_instanced.offset_count), render_command.mesh_instanced.colors);
+	glBindBuffer(GL_ARRAY_BUFFER, color_instance_buffer.vbo);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizeiptr)(sizeof(math::Rgba) * render_command.mesh_instanced.offset_count), render_command.mesh_instanced.colors);
     
     glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, 0, (void*)nullptr);
-    glVertexAttribDivisor(4, 1);
+	glVertexAttribDivisor(4, 1);
     
     // rotation
     glEnableVertexAttribArray(5);
-    glBindBuffer(GL_ARRAY_BUFFER, rotation_instance_buffer.vbo);
-    glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizeiptr)(sizeof(math::Vec3) * render_command.mesh_instanced.offset_count), render_command.mesh_instanced.rotations);
+	glBindBuffer(GL_ARRAY_BUFFER, rotation_instance_buffer.vbo);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizeiptr)(sizeof(math::Vec3) * render_command.mesh_instanced.offset_count), render_command.mesh_instanced.rotations);
     
     glVertexAttribPointer(5, 3, GL_FLOAT, GL_FALSE, 0, (void*)nullptr);
-    glVertexAttribDivisor(5, 1);
+	glVertexAttribDivisor(5, 1);
     
     // scale
     glEnableVertexAttribArray(6);
-    glBindBuffer(GL_ARRAY_BUFFER, scale_instance_buffer.vbo);
-    glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizeiptr)(sizeof(math::Vec3) * render_command.mesh_instanced.offset_count), render_command.mesh_instanced.scalings);
+	glBindBuffer(GL_ARRAY_BUFFER, scale_instance_buffer.vbo);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizeiptr)(sizeof(math::Vec3) * render_command.mesh_instanced.offset_count), render_command.mesh_instanced.scalings);
     
     glVertexAttribPointer(6, 3, GL_FLOAT, GL_FALSE, 0, (void*)nullptr);
-    glVertexAttribDivisor(6, 1);
+	glVertexAttribDivisor(6, 1);
     
     math::Mat4 model_matrix(1.0f);
     model_matrix = math::scale(model_matrix, render_command.scale);
@@ -2365,10 +2363,11 @@ static void render_mesh_instanced(const RenderCommand &render_command, Renderer 
     model_matrix = to_matrix(orientation) * model_matrix;
     
     model_matrix = math::translate(model_matrix, render_command.position);
+	error_gl();
     
     set_mat4_uniform(shader.program, "projectionMatrix", projection_matrix);
-    set_mat4_uniform(shader.program, "viewMatrix", view_matrix);
-    set_mat4_uniform(shader.program, "modelMatrix", model_matrix);
+	set_mat4_uniform(shader.program, "viewMatrix", view_matrix);
+	set_mat4_uniform(shader.program, "modelMatrix", model_matrix);
     
     if(!for_shadow_map)
     {
@@ -2491,8 +2490,10 @@ static void render_mesh_instanced(const RenderCommand &render_command, Renderer 
     }
     
     glDrawElementsInstanced(GL_TRIANGLES, buffer.index_buffer_count, GL_UNSIGNED_SHORT, (void*)nullptr, render_command.mesh_instanced.offset_count);
-    glActiveTexture(GL_TEXTURE0);
-    glBindVertexArray(0);
+	error_gl();
+	glActiveTexture(GL_TEXTURE0);
+	error_gl();
+	glBindVertexArray(0);
 }
 
 static void render_particles(RenderCommand &render_command, Renderer &renderer, RenderState &render_state, math::Mat4 projection_matrix, math::Mat4 view_matrix)
