@@ -151,6 +151,7 @@ enum RenderCommandType
     RENDER_COMMAND_DEPTH_TEST,
     RENDER_COMMAND_PARTICLES,
     RENDER_COMMAND_CURSOR,
+    RENDER_COMMAND_SUN_LIGHT,
     
     RENDER_COMMAND_COUNT
 };
@@ -173,16 +174,6 @@ enum Alignment
     ALIGNMENT_BOTTOM = (1 << 5)
 };
 
-struct Shader
-{
-    ShaderType type;
-    b32 loaded;
-    u32 program;
-    u32 vertex_shader;
-    u32 fragment_shader;
-    u32 geometry_shader; // Optional
-};
-
 struct VertexInfo
 {
     math::Vec3 position;
@@ -202,7 +193,7 @@ r32 plane_vertices[] =
 {
     -0.5f, 0.0f, -0.5f,
     0.5f, 0.0f, -0.5f,
-    0.5f, 0.0f,  0.5f,  
+    0.5f, 0.0f,  0.5f,
     0.5f, 0.0f,  0.5f,  
     -0.5f, 0.0f,  0.5f, 
     -0.5f, 0.0f, -0.5f
@@ -275,47 +266,47 @@ r32 cube_normals[] =
 };
 
 r32 cube_vertices[] = {
-    0.0f, 0.0f, 0.0f,  
-    1.0f, 0.0f, 0.0f,  
-    1.0f,  1.0f, 0.0f, 
-    1.0f,  1.0f, 0.0f, 
-    0.0f,  1.0f, 0.0f,
-    0.0f, 0.0f, 0.0f,
+    -0.5f, -0.5f, -0.5f,  
+    0.5f, -0.5f, -0.5f,  
+    0.5f,  0.5f, -0.5f, 
+    0.5f,  0.5f, -0.5f, 
+    -0.5f,  0.5f, -0.5f,
+    -0.5f, -0.5f, -0.5f,
     
-    0.0f, 0.0f,  1.0f,
-    1.0f, 0.0f,  1.0f,
-    1.0f,  1.0f,  1.0f,  
-    1.0f,  1.0f,  1.0f, 
-    0.0f,  1.0f,  1.0f,
-    0.0f, 0.0f,  1.0f, 
+    -0.5f, -0.5f,  0.5f,
+    0.5f, -0.5f,  0.5f,
+    0.5f,  0.5f,  0.5f,  
+    0.5f,  0.5f,  0.5f, 
+    -0.5f,  0.5f,  0.5f,
+    -0.5f, -0.5f,  0.5f, 
     
-    0.0f,  1.0f,  1.0f,
-    0.0f,  1.0f, 0.0f,
-    0.0f, 0.0f, 0.0f,
-    0.0f, 0.0f, 0.0f,
-    0.0f, 0.0f,  1.0f,
-    0.0f,  1.0f,  1.0f,
+    -0.5f,  0.5f,  0.5f,
+    -0.5f,  0.5f, -0.5f,
+    -0.5f, -0.5f, -0.5f,
+    -0.5f, -0.5f, -0.5f,
+    -0.5f, -0.5f,  0.5f,
+    -0.5f,  0.5f,  0.5f,
     
-    1.0f,  1.0f,  1.0f, 
-    1.0f,  1.0f, 0.0f,
-    1.0f, 0.0f, 0.0f,
-    1.0f, 0.0f, 0.0f,
-    1.0f, 0.0f,  1.0f,
-    1.0f,  1.0f,  1.0f,
+    0.5f,  0.5f,  0.5f, 
+    0.5f,  0.5f, -0.5f,
+    0.5f, -0.5f, -0.5f,
+    0.5f, -0.5f, -0.5f,
+    0.5f, -0.5f,  0.5f,
+    0.5f,  0.5f,  0.5f,
     
-    0.0f, 0.0f, 0.0f,
-    1.0f, 0.0f, 0.0f,
-    1.0f, 0.0f,  1.0f,  
-    1.0f, 0.0f,  1.0f,  
-    0.0f, 0.0f,  1.0f, 
-    0.0f, 0.0f, 0.0f, 
+    -0.5f, -0.5f, -0.5f,
+    0.5f, -0.5f, -0.5f,
+    0.5f, -0.5f,  0.5f,  
+    0.5f, -0.5f,  0.5f,  
+    -0.5f, -0.5f,  0.5f, 
+    -0.5f, -0.5f, -0.5f, 
     
-    0.0f,  1.0f, 0.0f, 
-    1.0f,  1.0f, 0.0f, 
-    1.0f,  1.0f,  1.0f, 
-    1.0f,  1.0f,  1.0f,  
-    0.0f,  1.0f,  1.0f, 
-    0.0f,  1.0f, 0.0f,  
+    -0.5f,  0.5f, -0.5f, 
+    0.5f,  0.5f, -0.5f, 
+    0.5f,  0.5f,  0.5f, 
+    0.5f,  0.5f,  0.5f,  
+    -0.5f,  0.5f,  0.5f, 
+    -0.5f,  0.5f, -0.5f,  
 };
 
 r32 cube_uvs[] =
@@ -592,15 +583,32 @@ struct MaterialHandle
     i32 handle;
 };
 
-struct RenderMaterial
+struct TextureHandle
 {
-    MaterialHandle source_handle;
-    ShaderInfo shader;
-    math::Rgba color;
-    
+    i32 handle;
+};
+
+struct MeshHandle
+{
+    i32 handle;
+};
+
+struct Material
+{
     RenderMaterialType type;
     
-    i32 diffuse_texture;
+    MaterialHandle source_handle;
+    ShaderInfo shader;
+    
+    math::Rgba ambient_color;
+    math::Rgba diffuse_color;
+    math::Rgba specular_color;
+    r32 specular_exponent;
+    
+    TextureHandle ambient_texture;
+    TextureHandle diffuse_texture;
+    TextureHandle specular_texture;
+    TextureHandle specular_intensity_texture;
 };
 
 enum WireframeType
@@ -619,7 +627,7 @@ struct MeshInfo
     i32 instance_scale_buffer_handle;
     
     TransformInfo transform;
-    RenderMaterial material;
+    Material material;
     
     WireframeType wireframe_type;
     math::Rgba wireframe_color;
@@ -790,7 +798,7 @@ struct RenderCommand
             i32 buffer_handle;
             MeshData *meshes;
             i32 mesh_count;
-            RenderMaterial materials[10];
+            Material materials[10];
             i32 material_count;
             math::Rgba color;
             math::Mat4* bone_transforms;
@@ -801,6 +809,13 @@ struct RenderCommand
             i32 buffer_handle;
             RenderMaterialType material_type;
             i32 diffuse_texture;
+            i32 specular_texture;
+            i32 ambient_texture;
+            i32 specular_intensity_texture;
+            math::Rgba diffuse_color;
+            math::Rgba specular_color;
+            math::Rgba ambient_color;
+            r32 specular_exponent;
             WireframeType wireframe_type;
             math::Rgba wireframe_color;
         } mesh;
@@ -814,6 +829,13 @@ struct RenderCommand
             
             RenderMaterialType material_type;
             i32 diffuse_texture;
+            i32 specular_texture;
+            i32 ambient_texture;
+            i32 specular_intensity_texture;
+            math::Rgba diffuse_color;
+            math::Rgba specular_color;
+            math::Rgba ambient_color;
+            r32 specular_exponent;
             WireframeType wireframe_type;
             math::Rgba wireframe_color;
             math::Vec3 *offsets;
@@ -847,6 +869,13 @@ struct RenderCommand
             
             CommandBlendMode blend_mode;
         } particles;
+        struct
+        {
+            math::Rgba specular_color;
+            math::Rgba diffuse_color;
+            math::Rgba ambient_color;
+            math::Vec3 position;
+        } sun_light;
     };
     RenderCommand() {}
 };
@@ -991,7 +1020,7 @@ struct Renderer
     i32 *updated_buffer_handles;
     i32 updated_buffer_handle_count;
     
-    RenderMaterial *materials;
+    Material *materials;
     i32 material_count;
     
     Mesh *meshes;
