@@ -826,6 +826,7 @@ static BufferData& register_buffer(Renderer& renderer, i32* buffer_handle, b32 d
     
     BufferData& data = renderer.buffers[renderer._internal_buffer_handles[unused_handle - 1]];
     
+    data = {};
     data.has_normals = false;
     data.has_uvs = false;
     data.index_buffer_count = 0;
@@ -841,6 +842,7 @@ static BufferData& update_buffer(Renderer& renderer, r32* buffer, i32 buffer_siz
 {
     BufferData& data = renderer.buffers[renderer._internal_buffer_handles[buffer_handle - 1]];
     
+    data = {};
     data.vertex_buffer = buffer;
     data.vertex_buffer_size = buffer_size;
     data.index_buffer = index_buffer;
@@ -875,6 +877,7 @@ static BufferData& register_instance_buffer(Renderer& renderer, size_t buffer_si
     renderer._internal_buffer_handles[unused_handle - 1] = renderer.buffer_count++;
     
     BufferData& data = renderer.buffers[renderer._internal_buffer_handles[unused_handle - 1]];
+    data = {};
     
     data.for_instancing = true;
     data.instance_buffer_size = buffer_size;
