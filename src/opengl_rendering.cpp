@@ -524,11 +524,20 @@ static void register_instance_buffer(RenderState &render_state, BufferData &buff
     Buffer* buffer = &render_state.buffers[buffer_handle == -1 ? render_state.buffer_count : buffer_handle];
     *buffer = {};
     
+	if (buffer->vao == 0)
+	{
+		glGenVertexArrays(1, &buffer->vao);
+	}
+    
+	glBindVertexArray(buffer->vao);
+    
     // @Incomplete: Particles
     if(buffer->vbo == 0)
     {
         glGenBuffers(1, &buffer->vbo);
     }
+    
+	
     
     glBindBuffer(GL_ARRAY_BUFFER, buffer->vbo);
     glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)buffer_data.instance_buffer_size, nullptr, GL_DYNAMIC_DRAW);
@@ -2102,7 +2111,9 @@ static void prepare_shader(const Shader shader, ShaderAttribute *attributes, i32
 
 static void render_mesh(const RenderCommand &render_command, Renderer &renderer, RenderState &render_state, math::Mat4 projection_matrix, math::Mat4 view_matrix, b32 for_shadow_map, ShadowMapMatrices *shadow_map_matrices = nullptr)
 {
-    Buffer buffer = render_state.buffers[render_command.mesh.buffer_handle];
+    i32 _internal_buffer_handle = renderer._internal_buffer_handles[render_command.mesh_instanced.buffer_handle - 1];
+    
+    Buffer buffer = render_state.buffers[_internal_buffer_handle];
     glBindVertexArray(buffer.vao);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer.ibo);
     glBindBuffer(GL_ARRAY_BUFFER, buffer.vbo);
@@ -2263,16 +2274,24 @@ static void render_mesh(const RenderCommand &render_command, Renderer &renderer,
     }
     
     glActiveTexture(GL_TEXTURE0);
+    
+    glBindVertexArray(0);
 }
-
 
 static void render_mesh_instanced(const RenderCommand &render_command, Renderer &renderer, RenderState &render_state, math::Mat4 projection_matrix, math::Mat4 view_matrix, b32 for_shadow_map, ShadowMapMatrices *shadow_map_matrices = nullptr)
 {
-    Buffer buffer = render_state.buffers[render_command.mesh_instanced.buffer_handle];
-    Buffer offset_instance_buffer = render_state.buffers[render_command.mesh_instanced.instance_offset_buffer_handle];
-    Buffer color_instance_buffer = render_state.buffers[render_command.mesh_instanced.instance_color_buffer_handle];
-    Buffer rotation_instance_buffer = render_state.buffers[render_command.mesh_instanced.instance_rotation_buffer_handle];
-    Buffer scale_instance_buffer = render_state.buffers[render_command.mesh_instanced.instance_scale_buffer_handle];
+    i32 _internal_buffer_handle = renderer._internal_buffer_handles[render_command.mesh_instanced.buffer_handle - 1];
+    
+    i32 _internal_offset_buffer_handle = renderer._internal_buffer_handles[render_command.mesh_instanced.instance_offset_buffer_handle - 1];
+    i32 _internal_color_buffer_handle = renderer._internal_buffer_handles[render_command.mesh_instanced.instance_color_buffer_handle - 1];
+    i32 _internal_rotation_buffer_handle = renderer._internal_buffer_handles[render_command.mesh_instanced.instance_rotation_buffer_handle - 1];
+    i32 _internal_scale_buffer_handle = renderer._internal_buffer_handles[render_command.mesh_instanced.instance_scale_buffer_handle - 1];
+    
+    Buffer buffer = render_state.buffers[_internal_buffer_handle];
+    Buffer offset_instance_buffer = render_state.buffers[_internal_offset_buffer_handle];
+    Buffer color_instance_buffer = render_state.buffers[_internal_color_buffer_handle];
+    Buffer rotation_instance_buffer = render_state.buffers[_internal_rotation_buffer_handle];
+    Buffer scale_instance_buffer = render_state.buffers[_internal_scale_buffer_handle];
     
     glBindVertexArray(buffer.vao);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer.ibo);
@@ -2472,8 +2491,8 @@ static void render_mesh_instanced(const RenderCommand &render_command, Renderer 
     }
     
     glDrawElementsInstanced(GL_TRIANGLES, buffer.index_buffer_count, GL_UNSIGNED_SHORT, (void*)nullptr, render_command.mesh_instanced.offset_count);
-    
     glActiveTexture(GL_TEXTURE0);
+    glBindVertexArray(0);
 }
 
 static void render_particles(RenderCommand &render_command, Renderer &renderer, RenderState &render_state, math::Mat4 projection_matrix, math::Mat4 view_matrix)
@@ -2485,9 +2504,13 @@ static void render_particles(RenderCommand &render_command, Renderer &renderer, 
     
     glDepthMask(GL_FALSE);
     
-    Buffer offset_buffer = render_state.buffers[render_command.particles.offset_buffer_handle];
-    Buffer color_buffer = render_state.buffers[render_command.particles.color_buffer_handle];
-    Buffer size_buffer = render_state.buffers[render_command.particles.size_buffer_handle];
+    i32 _internal_offset_handle = renderer._internal_buffer_handles[render_command.particles.offset_buffer_handle - 1];
+    i32 _internal_color_handle = renderer._internal_buffer_handles[render_command.particles.color_buffer_handle - 1];
+    i32 _internal_size_handle = renderer._internal_buffer_handles[render_command.particles.size_buffer_handle - 1];
+    
+    Buffer offset_buffer = render_state.buffers[_internal_offset_handle];
+    Buffer color_buffer = render_state.buffers[_internal_color_handle];
+    Buffer size_buffer = render_state.buffers[_internal_size_handle];
     
     glBindVertexArray(render_state.billboard_vao);
     glBindBuffer(GL_ARRAY_BUFFER, render_state.billboard_vbo);
@@ -2553,9 +2576,10 @@ static void render_particles(RenderCommand &render_command, Renderer &renderer, 
     render_command.particles.sizes = nullptr;
 }
 
-static void render_buffer(const RenderCommand& command, RenderState& render_state, math::Mat4 projection, math::Mat4 view)
+static void render_buffer(const RenderCommand& command, RenderState& render_state, Renderer& renderer, math::Mat4 projection, math::Mat4 view)
 {
-    Buffer buffer = render_state.buffers[command.buffer.buffer_handle];
+    i32 _internal_handle = renderer._internal_buffer_handles[command.buffer.buffer_handle - 1];
+    Buffer buffer = render_state.buffers[_internal_handle];
     
     glBindVertexArray(buffer.vao);
     u32 texture_handle = command.buffer.texture_handle != -1 ? render_state.texture_array[command.buffer.texture_handle].texture_handle : 0;
@@ -2867,7 +2891,7 @@ static void render_commands(RenderState &render_state, Renderer &renderer)
             break;
             case RENDER_COMMAND_BUFFER:
             {
-                render_buffer(command, render_state, camera.projection_matrix, camera.view_matrix);
+                render_buffer(command, render_state, renderer, camera.projection_matrix, camera.view_matrix);
             }
             break;
             case RENDER_COMMAND_DEPTH_TEST:
@@ -2942,7 +2966,7 @@ static void render_commands(RenderState &render_state, Renderer &renderer)
             break;
             case RENDER_COMMAND_BUFFER:
             {
-                render_buffer(command, render_state, camera.projection_matrix, camera.view_matrix);
+                render_buffer(command, render_state, renderer, camera.projection_matrix, camera.view_matrix);
             }
             break;
             case RENDER_COMMAND_DEPTH_TEST:
