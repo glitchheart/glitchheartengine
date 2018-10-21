@@ -1017,6 +1017,9 @@ struct Renderer
     BufferData *buffers;
     i32 buffer_count;
     
+    i32 *_internal_buffer_handles;
+    i32 _current_internal_buffer_handle;
+    
     i32 *updated_buffer_handles;
     i32 updated_buffer_handle_count;
     

@@ -2607,7 +2607,8 @@ static void register_buffers(RenderState& render_state, Renderer& renderer)
 {
     for (i32 index = render_state.buffer_count; index < renderer.buffer_count; index++)
     {
-        BufferData data = renderer.buffers[index];
+        i32 _internal_handle = renderer._internal_buffer_handles[index - 1];
+        BufferData data = renderer.buffers[_internal_handle];
         
         if(data.for_instancing)
         {
@@ -2625,7 +2626,8 @@ static void register_buffers(RenderState& render_state, Renderer& renderer)
     
     for (i32 index = 0; index < renderer.updated_buffer_handle_count; index++)
     {
-        BufferData data = renderer.buffers[renderer.updated_buffer_handles[index]];
+        i32 _internal_handle = renderer._internal_buffer_handles[renderer.updated_buffer_handles[index] - 1];
+        BufferData data = renderer.buffers[_internal_handle];
         if(data.for_instancing)
         {
             register_instance_buffer(render_state, data, data.existing_handle);
