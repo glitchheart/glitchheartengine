@@ -58,6 +58,7 @@ i32 find_unused_particle(ParticleSystemInfo &particle_system)
         return particle_system.dead_particles[particle_system.dead_particle_count-- - 1];
     }
     
+	assert(false);
     return -1;
 }
 
@@ -327,14 +328,7 @@ void update_particles(Renderer &renderer, ParticleSystemInfo &particle_system, r
         particle_system.particle_count++;
     }
     
-    if(particle_system.alive0_active)
-    {
-        particle_system.alive1_particle_count = 0;
-    }
-    else
-    {
-        particle_system.alive0_particle_count = 0;
-    }
+    *emitted_this_frame = 0;
 }
 
 void merge(math::Vec3 *work_offsets, math::Vec2 *work_sizes, math::Rgba *work_colors, i32 size, i32 left, i32 mid, math::Vec3 *offsets, math::Vec2 *sizes, math::Rgba *colors, math::Vec3 camera_position)
@@ -536,6 +530,8 @@ void update_particle_systems(Renderer &renderer, r64 delta_time)
                 // seems kind of dumb...
                 i32 simd_new_particles = math::multiple_of_number(new_particles, 4);
                 i32 simd_burst_particles = math::multiple_of_number(burst_particles, 4);
+                
+                simd_new_particles = MIN(simd_new_particles, particle_system.dead_particle_count);
                 
                 // @Note(Niels): Emit the particles into the current alive buffer
                 // The first time around this buffer is empty, but on any subsequent step

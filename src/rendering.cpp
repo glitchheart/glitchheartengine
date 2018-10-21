@@ -816,6 +816,9 @@ static i32 _find_unused_handle(Renderer& renderer)
     return -1;
 }
 
+// @Note:(Niels): If you register buffers without the functions below, make sure to handle the internal
+// handles right. If you would rather not, just call these functions and at leas the bugs will be pretty
+// contained...
 static BufferData& register_buffer(Renderer& renderer, i32* buffer_handle, b32 dynamic = false)
 {
     assert(renderer.buffer_count + 1 < global_max_custom_buffers);
@@ -896,11 +899,8 @@ static BufferData& register_instance_buffer(Renderer& renderer, size_t buffer_si
 static void unregister_buffer(Renderer& renderer, i32 buffer_handle)
 {
     assert(renderer.removed_buffer_handles);
-    i32 _internal_handle = renderer._internal_buffer_handles[buffer_handle - 1];
-    
     renderer.removed_buffer_handles[renderer.removed_buffer_handle_count++] = buffer_handle;
 }
-
 
 static void create_buffers_from_mesh(Renderer &renderer, Mesh &mesh, u64 vertex_data_flags, b32 has_normals, b32 has_uvs)
 {
