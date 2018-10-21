@@ -139,14 +139,11 @@ struct ParticleSystemInfo
     i32 *alive1_particles;
     i32 alive1_particle_count;
     
-    //@Note(Niels): Pointer to next alive buffer
     b32 alive0_active;
     i32 particles_emitted_this_frame;
     
     i32 *dead_particles;
     i32 dead_particle_count;
-    
-    b32 use_next;
     
     i32 particle_count;
     i32 total_emitted;
