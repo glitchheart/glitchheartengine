@@ -38,8 +38,6 @@ struct TrueTypeFontInfo
     stbtt_fontinfo info;
     stbtt_packedchar char_data['~' - ' '];
 };
-#define PRIMITIVE_CUBE 0
-#define PRIMITIVE_PLANE 1
 
 struct FontData
 {
