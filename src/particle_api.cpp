@@ -138,8 +138,6 @@ static void _allocate_particle_system(Renderer& renderer, ParticleSystemInfo& sy
         system_info.dead_particles[dead_index] = dead_index;
     }
     
-    system_info.use_next = false;
-    
     system_info.alive0_particle_count = 0;
     system_info.alive1_particle_count = 0;
     
