@@ -266,6 +266,7 @@ static void remove_particle_system(Renderer& renderer, ParticleSystemHandle &han
     {
         i32 real_handle = renderer.particles._internal_handles[removed_handle - 1];
         ParticleSystemInfo& info = renderer.particles.particle_systems[real_handle];
+        
         unregister_buffer(renderer, info.offset_buffer_handle);
         unregister_buffer(renderer, info.size_buffer_handle);
         unregister_buffer(renderer, info.color_buffer_handle);
@@ -279,6 +280,7 @@ static void remove_particle_system(Renderer& renderer, ParticleSystemHandle &han
         
         clear(&renderer.particles.particle_systems[renderer.particles.particle_system_count - 1].arena);
         renderer.particles.particle_systems[renderer.particles.particle_system_count - 1] = {};
+        
         renderer.particles.particle_systems[renderer.particles.particle_system_count - 1].running = false;
         
         renderer.particles._internal_handles[removed_handle - 1] = -1;

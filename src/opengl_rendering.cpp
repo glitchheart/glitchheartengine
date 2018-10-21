@@ -2363,7 +2363,6 @@ static void render_mesh_instanced(const RenderCommand &render_command, Renderer 
     model_matrix = to_matrix(orientation) * model_matrix;
     
     model_matrix = math::translate(model_matrix, render_command.position);
-	error_gl();
     
     set_mat4_uniform(shader.program, "projectionMatrix", projection_matrix);
 	set_mat4_uniform(shader.program, "viewMatrix", view_matrix);
@@ -2490,9 +2489,8 @@ static void render_mesh_instanced(const RenderCommand &render_command, Renderer 
     }
     
     glDrawElementsInstanced(GL_TRIANGLES, buffer.index_buffer_count, GL_UNSIGNED_SHORT, (void*)nullptr, render_command.mesh_instanced.offset_count);
-	error_gl();
+	
 	glActiveTexture(GL_TEXTURE0);
-	error_gl();
 	glBindVertexArray(0);
 }
 
@@ -2508,6 +2506,11 @@ static void render_particles(RenderCommand &render_command, Renderer &renderer, 
     i32 _internal_offset_handle = renderer._internal_buffer_handles[render_command.particles.offset_buffer_handle - 1];
     i32 _internal_color_handle = renderer._internal_buffer_handles[render_command.particles.color_buffer_handle - 1];
     i32 _internal_size_handle = renderer._internal_buffer_handles[render_command.particles.size_buffer_handle - 1];
+    
+    if(_internal_offset_handle == -1 || _internal_color_handle == -1 || _internal_size_handle == -1)
+    {
+        return;
+    }
     
     Buffer offset_buffer = render_state.buffers[_internal_offset_handle];
     Buffer color_buffer = render_state.buffers[_internal_color_handle];
@@ -2643,7 +2646,7 @@ static void unregister_buffers(RenderState& render_state, Renderer& renderer)
         i32 external_handle = renderer.removed_buffer_handles[index];
         i32 removed_buffer_handle = renderer._internal_buffer_handles[external_handle - 1];
         
-        BufferData data = renderer.buffers[index];
+        BufferData& data = renderer.buffers[removed_buffer_handle];
         
         vaos[vao_count++] = render_state.buffers[removed_buffer_handle].vao;
         vbos[vbo_count++] = render_state.buffers[removed_buffer_handle].vbo;
@@ -2655,6 +2658,8 @@ static void unregister_buffers(RenderState& render_state, Renderer& renderer)
             ibos[vbo_count++] = render_state.buffers[removed_buffer_handle].ibo;
             render_state.buffers[removed_buffer_handle].ibo = 0;
         }
+        
+        data = {};
     }
     
     glDeleteBuffers(vbo_count, vbos);
@@ -2671,8 +2676,7 @@ static void unregister_buffers(RenderState& render_state, Renderer& renderer)
         
         renderer.buffers[removed_buffer_handle] = renderer.buffers[renderer.buffer_count - 1];
         renderer._internal_buffer_handles[external_handle - 1] = -1;
-		renderer.buffer_count--;
-
+        
         for(i32 internal_index = 0; internal_index < global_max_custom_buffers; internal_index++)
         {
             if(renderer._internal_buffer_handles[internal_index] == renderer.buffer_count - 1)
@@ -2682,6 +2686,7 @@ static void unregister_buffers(RenderState& render_state, Renderer& renderer)
             }
         }
         
+        renderer.buffer_count--;
     }
     renderer.removed_buffer_handle_count = 0;
 }
