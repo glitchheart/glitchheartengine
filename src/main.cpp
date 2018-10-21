@@ -292,6 +292,7 @@ static void init_renderer(Renderer &renderer)
     {
         renderer._internal_buffer_handles[index] = -1;
     }
+    renderer.removed_buffer_handles = push_array(&renderer.buffer_arena, global_max_custom_buffers, i32);
 }
 
 #if defined(_WIN32) && !defined(DEBUG)

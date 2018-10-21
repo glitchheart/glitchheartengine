@@ -1021,6 +1021,9 @@ struct Renderer
     i32 *updated_buffer_handles;
     i32 updated_buffer_handle_count;
     
+    i32 *removed_buffer_handles;
+    i32 removed_buffer_handle_count;
+    
     Material *materials;
     i32 material_count;
     
