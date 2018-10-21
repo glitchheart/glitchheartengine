@@ -188,9 +188,9 @@ void update_particles(Renderer &renderer, ParticleSystemInfo &particle_system, r
 {
     particle_system.particle_count = 0;
     
-    auto speed_value_count = particle_system.speed_over_lifetime.value_count;
-    auto color_value_count = particle_system.color_over_lifetime.value_count;
-    auto size_value_count = particle_system.size_over_lifetime.value_count;               
+    i32 speed_value_count = particle_system.speed_over_lifetime.value_count;
+    i32 color_value_count = particle_system.color_over_lifetime.value_count;
+    i32 size_value_count = particle_system.size_over_lifetime.value_count;               
     
     for(i32 alive_index = 0; alive_index < *emitted_this_frame; alive_index++)
     {
@@ -221,6 +221,7 @@ void update_particles(Renderer &renderer, ParticleSystemInfo &particle_system, r
         particle_system.particles.direction[main_index] += S_Vec3(math::Vec3(0.0f, -particle_system.attributes.gravity * (r32)delta_time, 0.0f));
         
         
+        // @Note(Niels): This branch will always be true or false for the whole loop so it should be optimized out
         if(size_value_count > 0)
         {
             particle_system.particles.size[main_index] = get_size_by_time(particle_system, time_spent);
