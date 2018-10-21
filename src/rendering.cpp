@@ -1373,14 +1373,20 @@ static void load_material(Renderer &renderer, char *file_path, MaterialHandle *m
                 char name[64];
                 sscanf(buffer, "map_Ka %s", name);
                 
-                load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, &material.ambient_texture.handle);
+                if(name[0] == '.')
+                    load_texture(name, renderer, LINEAR, &material.ambient_texture.handle);
+                else
+                    load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, &material.ambient_texture.handle);
             }
             else if(starts_with(buffer, "map_Kd")) // diffuse map
             {
                 char name[64];
                 sscanf(buffer, "map_Kd %s", name);
                 
-                load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, &material.diffuse_texture.handle);
+                if(name[0] == '.')
+                    load_texture(name, renderer, LINEAR, &material.diffuse_texture.handle);
+                else
+                    load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, &material.diffuse_texture.handle);
             }
             else if(starts_with(buffer, "map_Ks")) // specular map
             {
@@ -1388,13 +1394,21 @@ static void load_material(Renderer &renderer, char *file_path, MaterialHandle *m
                 sscanf(buffer, "map_Ks %s", name);
                 
                 load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, &material.specular_texture.handle);
+                
+                if(name[0] == '.')
+                    load_texture(name, renderer, LINEAR, &material.specular_texture.handle);
+                else
+                    load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, &material.specular_texture.handle);
             }
             else if(starts_with(buffer, "map_Ns")) // specular intensity map
             {
                 char name[64];
                 sscanf(buffer, "map_Ns %s", name);
                 
-                load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, &material.specular_intensity_texture.handle);
+                if(name[0] == '.')
+                    load_texture(name, renderer, LINEAR, &material.specular_intensity_texture.handle);
+                else
+                    load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, &material.specular_intensity_texture.handle);
             }
         }
         
@@ -1838,75 +1852,6 @@ static void load_obj(Renderer &renderer, char *file_path, MeshInfo &mesh_info, b
         register_instance_buffer(renderer, sizeof(math::Vec3) * 1024, &mesh.instance_rotation_buffer_handle);
         
         register_instance_buffer(renderer, sizeof(math::Vec3) * 1024, &mesh.instance_scale_buffer_handle);
-    }
-}
-
-static void load_assets(char *model_path, char *texture_path, char *material_path, Renderer &renderer)
-{
-    char line[256];
-    FILE *file = fopen(model_path, "r");
-    
-    if(file)
-    {
-        while(fgets(line, 256, file))
-        {
-            i32 index = 0;
-            char type[32];
-            char file_name[32];
-            sscanf(line, "%d %s %s", &index, &type, &file_name);
-            
-            if(starts_with(type, "prim")) // primitive
-            {
-                if(starts_with(file_name, "cube"))
-                {
-                    create_cube(renderer);
-                }
-                else if(starts_with(file_name, "plane"))
-                {
-                    create_plane(renderer);
-                }
-            }
-            else if(starts_with(type, "obj")) // load an obj-file
-            {
-                auto temp_memory = begin_temporary_memory(&renderer.temp_arena);
-                load_obj(renderer, concat("../assets/models/", file_name, temp_memory.arena));
-                end_temporary_memory(temp_memory);
-            }
-        }
-        fclose(file);
-    }
-    
-    file = fopen(texture_path, "r");
-    if(file)
-    {
-        while(fgets(line, 256, file))
-        {
-            i32 index = 0;
-            char file_path[128];
-            sscanf(line, "%d %s", &index, &file_path);
-            
-            auto temp_memory = begin_temporary_memory(&renderer.temp_arena);
-            load_texture(concat("../assets/textures/", file_path, temp_memory.arena), renderer, LINEAR);
-            end_temporary_memory(temp_memory);
-        }
-        fclose(file);
-    }
-    
-    file = fopen(material_path, "r");
-    if(file)
-    {
-        while(fgets(line, 256, file))
-        {
-            Material material = {};
-            material.type = RM_TEXTURED;
-            i32 index = 0;
-            sscanf(line, "%d tex %d col %f %f %f %f", &index, &material.diffuse_texture.handle, &material.diffuse_color.r, 
-                   &material.diffuse_color.g, &material.diffuse_color.b, &material.diffuse_color.a);
-            material.diffuse_texture.handle++;
-            material.source_handle = { renderer.material_count };
-            renderer.materials[renderer.material_count++] = material;
-        }
-        fclose(file);
     }
 }
 
