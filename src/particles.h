@@ -115,7 +115,7 @@ struct ParticleSystemInfo
     i32 color_buffer_handle;
     i32 size_buffer_handle;
     TransformInfo transform;
-    RenderMaterial material;
+    Material material;
     
     Particles particles;
     i32 *unused_particles;

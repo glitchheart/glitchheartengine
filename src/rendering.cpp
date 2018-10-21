@@ -1,4 +1,5 @@
 #include "animation.h"
+#include <string.h>
 
 enum CameraFlags
 {
@@ -197,6 +198,7 @@ static RenderCommand* push_next_command(Renderer& renderer, b32 is_ui)
     {
         assert(renderer.ui_command_count + 1 < global_max_ui_commands);
         RenderCommand* command = &renderer.ui_commands[renderer.ui_command_count++];
+        *command = {};
         command->shader_handle = -1;
         return command;
     }
@@ -933,11 +935,19 @@ static void create_cube(Renderer &renderer, MeshInfo &mesh_info, b32 with_instan
     }
 }
 
-static void create_cube(Renderer &renderer)
+static void create_cube(Renderer &renderer, MeshHandle *mesh_handle = nullptr)
 {
     assert(renderer.mesh_count + 1 < global_max_meshes);
-    Mesh &mesh = renderer.meshes[renderer.mesh_count++];
+
+    Mesh &mesh = renderer.meshes[renderer.mesh_count];
     mesh = {};
+    
+    // Set the handle
+    if(mesh_handle)
+        *mesh_handle = { renderer.mesh_count };
+    
+    renderer.mesh_count++;
+    
     mesh.vertices = push_array(&renderer.mesh_arena, sizeof(cube_vertices) / sizeof(r32) / 3, Vertex);
     mesh.faces = push_array(&renderer.mesh_arena, sizeof(cube_indices) / sizeof(u16) / 3, Face);
     
@@ -1124,6 +1134,16 @@ static void create_plane(Renderer &renderer)
     mesh.instance_scale_buffer_handle = renderer.buffer_count++;
 }
 
+static void push_sun_light(Renderer &renderer, math::Vec3 position, math::Rgba specular_color, math::Rgba diffuse_color, math::Rgba ambient_color)
+{
+    RenderCommand *render_command = push_next_command(renderer, false);
+    render_command->type = RENDER_COMMAND_SUN_LIGHT;
+    render_command->sun_light.position = position;
+    render_command->sun_light.specular_color = specular_color;
+    render_command->sun_light.diffuse_color = diffuse_color;
+    render_command->sun_light.ambient_color = ambient_color;
+}
+
 static void push_mesh(Renderer &renderer, MeshInfo mesh_info)
 {
     RenderCommand *render_command = push_next_command(renderer, false);
@@ -1136,8 +1156,18 @@ static void push_mesh(Renderer &renderer, MeshInfo mesh_info)
     Mesh &mesh = renderer.meshes[mesh_info.mesh_handle];
     render_command->mesh.buffer_handle = mesh.buffer_handle;
     render_command->mesh.material_type = mesh_info.material.type;
-    render_command->mesh.diffuse_texture = mesh_info.material.diffuse_texture;
-    render_command->color = mesh_info.material.color;
+    render_command->mesh_instanced.diffuse_color = mesh_info.material.diffuse_color;
+    render_command->mesh_instanced.specular_color = mesh_info.material.specular_color;
+    render_command->mesh_instanced.ambient_color = mesh_info.material.ambient_color;
+    render_command->mesh.diffuse_texture = mesh_info.material.diffuse_texture.handle;
+    render_command->mesh.specular_texture = mesh_info.material.specular_texture.handle;
+    render_command->mesh.ambient_texture = mesh_info.material.ambient_texture.handle;
+    render_command->mesh_instanced.specular_intensity_texture = mesh_info.material.specular_intensity_texture.handle;
+    render_command->mesh_instanced.specular_exponent = mesh_info.material.specular_exponent;
+    render_command->mesh_instanced.diffuse_color = mesh_info.material.diffuse_color;
+    render_command->mesh_instanced.specular_color = mesh_info.material.specular_color;
+    render_command->mesh_instanced.ambient_color = mesh_info.material.ambient_color;
+    render_command->color = mesh_info.material.diffuse_color;
     render_command->cast_shadows = mesh_info.cast_shadows;
     render_command->receives_shadows = mesh_info.receives_shadows;
 }
@@ -1154,8 +1184,15 @@ static void push_mesh_instanced(Renderer &renderer, MeshInfo mesh_info, math::Ve
     Mesh &mesh = renderer.meshes[mesh_info.mesh_handle];
     render_command->mesh_instanced.buffer_handle = mesh.buffer_handle;
     render_command->mesh_instanced.material_type = mesh_info.material.type;
-    render_command->mesh_instanced.diffuse_texture = mesh_info.material.diffuse_texture;
-    render_command->color = mesh_info.material.color;
+    render_command->mesh_instanced.diffuse_texture = mesh_info.material.diffuse_texture.handle;
+    render_command->mesh_instanced.specular_texture = mesh_info.material.specular_texture.handle;
+    render_command->mesh_instanced.ambient_texture = mesh_info.material.ambient_texture.handle;
+    render_command->mesh_instanced.specular_intensity_texture = mesh_info.material.specular_intensity_texture.handle;
+    render_command->color = mesh_info.material.diffuse_color;
+    render_command->mesh_instanced.diffuse_color = mesh_info.material.diffuse_color;
+    render_command->mesh_instanced.specular_color = mesh_info.material.specular_color;
+    render_command->mesh_instanced.ambient_color = mesh_info.material.ambient_color;
+    render_command->mesh_instanced.specular_exponent = mesh_info.material.specular_exponent;
     render_command->mesh_instanced.instance_offset_buffer_handle = mesh_info.instance_offset_buffer_handle;
     render_command->mesh_instanced.instance_color_buffer_handle = mesh_info.instance_color_buffer_handle;
     render_command->mesh_instanced.instance_rotation_buffer_handle = mesh_info.instance_rotation_buffer_handle;
@@ -1290,6 +1327,109 @@ static b32 vertex_equals(Vertex &v1, Vertex &v2)
     
 }
 
+static void load_material(Renderer &renderer, char *file_path, MaterialHandle *material_handle)
+{
+    // @Incomplete: We need a better way to do this!
+    // Find the directory of the file
+    size_t index = 0;
+    for(size_t i = 0; i < strlen(file_path); i++)
+    {
+        if(file_path[i] == '/')
+        {
+            index = i + 1;
+        }
+    }
+    
+    char *dir = (char*)malloc(sizeof(char) * index);
+    strncpy(dir, file_path, index);
+    
+    dir[index] = 0;
+
+    auto temp_block = begin_temporary_memory(&renderer.temp_arena);
+
+    FILE* mtl_file = fopen(file_path, "r");
+    if(mtl_file)
+    {
+        char buffer[256];
+        
+        Material &material = renderer.materials[renderer.material_count];
+        material = {};
+        material.type = RM_TEXTURED;
+        material.source_handle = { renderer.material_count++ };
+        material.diffuse_color = COLOR_WHITE;
+        material.diffuse_texture = { 0 };
+        material.ambient_texture = { 0 };
+        material.specular_texture = { 0 };
+        
+        while((fgets(buffer, sizeof(buffer), mtl_file) != NULL))
+        {
+            if(starts_with(buffer, "newmtl"))
+            {
+                // @Incomplete: Save name
+            }
+            else if(starts_with(buffer, "illum")) // illumination
+            {
+            }
+            else if(starts_with(buffer, "Ka")) // ambient color
+            {
+                sscanf(buffer, "Ka %f %f %f", &material.ambient_color.r, &material.ambient_color.g, &material.ambient_color.b);
+                material.ambient_color.a = 1.0f;
+            }
+            else if(starts_with(buffer, "Kd")) // diffuse color
+            {
+                sscanf(buffer, "Kd %f %f %f", &material.diffuse_color.r, &material.diffuse_color.g, &material.diffuse_color.b);
+                material.diffuse_color.a = 1.0f;
+            }
+            else if(starts_with(buffer, "Ks")) // specular color
+            {
+                sscanf(buffer, "Ks %f %f %f", &material.specular_color.r, &material.specular_color.g, &material.specular_color.b);
+                material.specular_color.a = 1.0f;
+            }
+            else if(starts_with(buffer, "Ns")) // specular exponent
+            {
+                sscanf(buffer, "Ns %f", &material.specular_exponent);
+            }
+            else if(starts_with(buffer, "map_Ka")) // ambient map
+            {
+                char name[64];
+                sscanf(buffer, "map_Ka %s", name);
+                
+                load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, &material.ambient_texture.handle);
+            }
+            else if(starts_with(buffer, "map_Kd")) // diffuse map
+            {
+                char name[64];
+                sscanf(buffer, "map_Kd %s", name);
+                
+                load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, &material.diffuse_texture.handle);
+            }
+            else if(starts_with(buffer, "map_Ks")) // specular map
+            {
+                char name[64];
+                sscanf(buffer, "map_Ks %s", name);
+                
+                load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, &material.specular_texture.handle);
+            }
+            else if(starts_with(buffer, "map_Ns")) // specular intensity map
+            {
+                char name[64];
+                sscanf(buffer, "map_Ns %s", name);
+                
+                load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, &material.specular_intensity_texture.handle);
+            }
+        }
+        
+        fclose(mtl_file);
+
+        if(material_handle)
+            *material_handle = material.source_handle;
+    }
+    else
+        debug("Could not read %s\n", file_path);
+
+    end_temporary_memory(temp_block);
+}
+
 static i32 check_for_identical_vertex(Vertex &vertex, math::Vec2 uv, math::Vec3 normal, Vertex *final_vertices, b32* should_add)
 {
     size_t current_size = buf_len(final_vertices);
@@ -1311,7 +1451,7 @@ static i32 check_for_identical_vertex(Vertex &vertex, math::Vec2 uv, math::Vec3 
     return (i32)current_size;
 }
 
-static void load_obj(Renderer &renderer, char *file_path)
+static void load_obj(Renderer &renderer, char *file_path, MeshHandle *mesh_handle = nullptr, MaterialHandle *material_handle = nullptr)
 {
     FILE *file = fopen(file_path, "r");
     
@@ -1330,6 +1470,12 @@ static void load_obj(Renderer &renderer, char *file_path)
     i32 normal_index = 0;
     i32 uv_index = 0;
     
+    // Right now we only support one mtl-file per obj-file
+    // And since we only support one mesh per obj-file at the moment that should be fine.
+    // @Robustness: We have to support more advanced files later... Maybe...
+    b32 has_mtl_file = false;
+    char mtl_file_name[32];
+    
     if(file)
     {
         char buffer[256];
@@ -1338,6 +1484,18 @@ static void load_obj(Renderer &renderer, char *file_path)
         {
             if(starts_with(buffer, "g")) // we're starting with new geometry
             {
+                // @Incomplete: Save the name of the geometry
+            }
+            else if(starts_with(buffer, "mtllib")) // Material file
+            {
+                // Read the material file-name
+                sscanf(buffer, "mtllib %s", mtl_file_name);
+            }
+            else if(starts_with(buffer, "usemtl")) // Used material for geometry
+            {
+                has_mtl_file = true;
+                // Ignored, for now.
+                // This is only relevant when we've got multiple materials
             }
             else if(starts_with(buffer, "v ")) // vertex
             {
@@ -1359,6 +1517,7 @@ static void load_obj(Renderer &renderer, char *file_path)
                 with_uvs = true;
                 math::Vec2 uv(0.0f);
                 sscanf(buffer, "vt %f %f", &uv.x, &uv.y);
+                uv.y = 1.0f - uv.y;
                 buf_push(uvs, uv);
                 uv_index++;
             }
@@ -1461,7 +1620,8 @@ static void load_obj(Renderer &renderer, char *file_path)
     }
     
     assert(renderer.mesh_count + 1 < global_max_meshes);
-    Mesh &mesh = renderer.meshes[renderer.mesh_count++];
+    MeshHandle handle =  { renderer.mesh_count++ };
+    Mesh &mesh = renderer.meshes[handle.handle];
     mesh = {};
     
     mesh.vertices = push_array(&renderer.mesh_arena, buf_len(final_vertices), Vertex);
@@ -1510,6 +1670,35 @@ static void load_obj(Renderer &renderer, char *file_path)
     scale_data.for_instancing = true;
     renderer.buffers[renderer.buffer_count] = scale_data;
     mesh.instance_scale_buffer_handle = renderer.buffer_count++;
+    
+    if(mesh_handle)
+        *mesh_handle = handle;
+    
+    if(has_mtl_file)
+    {
+        // Find the directory of the file
+        size_t index = 0;
+        for(size_t i = 0; i < strlen(file_path); i++)
+        {
+            if(file_path[i] == '/')
+            {
+                index = i + 1;
+            }
+        }
+        
+        char *dir = (char*)malloc(sizeof(char) * index);
+        strncpy(dir, file_path, index);
+        
+        dir[index] = 0;
+        
+        auto temp_block = begin_temporary_memory(&renderer.temp_arena);
+        char *material_file_path = concat(dir, mtl_file_name, &renderer.temp_arena);
+
+        if(material_handle)
+            load_material(renderer, material_file_path, material_handle);
+        
+        end_temporary_memory(temp_block);
+    }
 }
 
 static void load_obj(Renderer &renderer, char *file_path, MeshInfo &mesh_info, b32 with_instancing = false)
@@ -1773,12 +1962,12 @@ static void load_assets(char *model_path, char *texture_path, char *material_pat
     {
         while(fgets(line, 256, file))
         {
-            RenderMaterial material = {};
+            Material material = {};
             material.type = RM_TEXTURED;
             i32 index = 0;
-            sscanf(line, "%d tex %d col %f %f %f %f", &index, &material.diffuse_texture, &material.color.r, 
-                   &material.color.g, &material.color.b, &material.color.a);
-            material.diffuse_texture++;
+            sscanf(line, "%d tex %d col %f %f %f %f", &index, &material.diffuse_texture.handle, &material.diffuse_color.r, 
+                   &material.diffuse_color.g, &material.diffuse_color.b, &material.diffuse_color.a);
+            material.diffuse_texture.handle++;
             material.source_handle = { renderer.material_count };
             renderer.materials[renderer.material_count++] = material;
         }
@@ -1807,7 +1996,7 @@ static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer, ma
                 scene::TransformComponent &transform = scene.transform_components[ent.transform_handle.handle];
                 scene::RenderComponent &render = scene.render_components[ent.render_handle.handle];
                 
-                RenderMaterial material = scene.material_instances[render.material_handle.handle];
+                Material material = scene.material_instances[render.material_handle.handle];
                 
                 // Instancing stuff
                 i32 command_index = -1;
@@ -1836,7 +2025,7 @@ static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer, ma
                 positions[command_index * 1024 + command.count] = transform.position;
                 rotations[command_index * 1024 + command.count] = transform.rotation * DEGREE_IN_RADIANS;
                 scalings[command_index * 1024 + command.count] = transform.scale;
-                colors[command_index * 1024 + command.count] = material.color;
+                colors[command_index * 1024 + command.count] = material.diffuse_color;
                 command.count++;
                 
                 assert(command_index < MAX_INSTANCING_PAIRS);
@@ -1868,7 +2057,7 @@ static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer, ma
     for(i32 command_index = 0; command_index < command_count; command_index++)
     {
         InstancedRenderCommand command = instanced_commands[command_index];
-        RenderMaterial material = scene.material_instances[command.material_handle];
+        Material material = scene.material_instances[command.material_handle];
         MeshInfo mesh_info = {};
         mesh_info.transform.scale = command.scale;
         Mesh &mesh = renderer.meshes[command.mesh_handle];

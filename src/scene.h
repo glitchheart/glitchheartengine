@@ -10,11 +10,6 @@ namespace scene
         i32 handle;
     };
     
-    struct MeshHandle
-    {
-        i32 handle;
-    };
-    
     struct TransformComponentHandle
     {
         i32 handle;
@@ -67,6 +62,39 @@ namespace scene
         ParticleSystemHandle handle;
     };
     
+    struct EntityTemplate
+    {
+        char file_path[256];
+        u64 comp_flags;
+        
+        struct
+        {
+            math::Vec3 position;
+            math::Vec3 scale;
+            math::Vec3 rotation;
+        } transform;
+        struct
+        {
+            MeshHandle mesh_handle;
+            MaterialHandle material_handle;
+            
+            b32 cast_shadows;
+            b32 receives_shadows;
+        } render;
+        struct
+        {
+            // @Incomplete: We want some more data and not an existing particle system handle for the template
+            ParticleSystemHandle handle;
+        } particle;
+    };
+    
+    // Holds all the currently loaded templates
+    struct EntityTemplateState
+    {
+        EntityTemplate *templates;
+        i32 template_count;
+    };
+    
     struct Scene
     {
         Entity *entities;
@@ -84,11 +112,12 @@ namespace scene
         ParticleSystemComponent *particle_system_components;
         i32 particle_system_component_count;
         
-        RenderMaterial *material_instances;
+        Material *material_instances;
         i32 material_count;
         
         i32 max_entity_count;
         
+        EntityTemplateState *template_state;
         Renderer* renderer;
     };
 }
