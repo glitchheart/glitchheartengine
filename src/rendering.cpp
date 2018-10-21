@@ -1317,6 +1317,8 @@ static void update_instanced_buffer(Renderer& renderer, size_t buffer_size, i32 
 
 static void register_instance_buffer(Renderer& renderer, size_t buffer_size, i32* buffer_handle)
 {
+    assert(renderer.buffer_count + 1 < global_max_custom_buffers);
+    
     i32 unused_handle = _find_unused_handle(renderer) + 1;
     
     renderer._internal_buffer_handles[unused_handle - 1] = renderer.buffer_count++;

@@ -1,4 +1,3 @@
-
 static ParticleSystemInfo* get_particle_system_info(ParticleSystemHandle handle, Renderer& renderer)
 {
     i32 _internal_handle = renderer.particles._internal_handles[handle.handle - 1];
