@@ -938,7 +938,7 @@ static void create_cube(Renderer &renderer, MeshInfo &mesh_info, b32 with_instan
 static void create_cube(Renderer &renderer, MeshHandle *mesh_handle = nullptr)
 {
     assert(renderer.mesh_count + 1 < global_max_meshes);
-
+    
     Mesh &mesh = renderer.meshes[renderer.mesh_count];
     mesh = {};
     
@@ -1248,50 +1248,91 @@ render_command->is_ui = false;
 }
 */
 
+static i32 _find_unused_handle(Renderer& renderer)
+{
+    for(i32 index = renderer._current_internal_buffer_handle; index < global_max_custom_buffers; index++)
+    {
+        if(renderer._internal_buffer_handles[index] == -1)
+        {
+            renderer._current_internal_buffer_handle = index;
+            return index;
+        }
+    }
+    
+    for(i32 index = 0; index < global_max_custom_buffers; index++)
+    {
+        if(renderer._internal_buffer_handles[index] == -1)
+        {
+            renderer._current_internal_buffer_handle = index;
+            return index;
+        }
+    }
+    
+    assert(false);
+    
+    return -1;
+}
+
 static void load_buffer(Renderer& renderer, r32* buffer, i32 buffer_size, i32* buffer_handle, b32 dynamic = false)
 {
     assert(renderer.buffer_count + 1 < global_max_custom_buffers);
-    BufferData data = {};
+    
+    i32 unused_handle = _find_unused_handle(renderer) + 1;
+    
+    renderer._internal_buffer_handles[unused_handle - 1] = renderer.buffer_count++;
+    
+    BufferData& data = renderer.buffers[renderer._internal_buffer_handles[unused_handle - 1]];
+    
     data.has_normals = false;
     data.has_uvs = false;
     data.vertex_buffer = buffer;
     data.vertex_buffer_size = buffer_size;
     data.index_buffer_count = 0;
     
-    renderer.buffers[renderer.buffer_count] = data;
-    
-    *buffer_handle = renderer.buffer_count++;
+    *buffer_handle = unused_handle;
 }
 
 static void update_buffer(Renderer& renderer, r32* buffer, i32 buffer_size, i32 buffer_handle)
 {
-    BufferData data = {};
+    BufferData& data = renderer.buffers[renderer._internal_buffer_handles[buffer_handle - 1]];
+    
     data.vertex_buffer = buffer;
     data.vertex_buffer_size = buffer_size;
     data.index_buffer_count = 0;
     data.existing_handle = buffer_handle;
-    renderer.buffers[buffer_handle] = data;
+    
     renderer.updated_buffer_handles[renderer.updated_buffer_handle_count++] = buffer_handle;
 }
 
 static void update_instanced_buffer(Renderer& renderer, size_t buffer_size, i32 buffer_handle)
 {
-    BufferData data = {};
+    BufferData& data = renderer.buffers[renderer._internal_buffer_handles[buffer_handle - 1]];
+    
     data.for_instancing = true;
     data.instance_buffer_size = buffer_size;
     data.index_buffer_count = 0;
-    renderer.buffers[buffer_handle] = data;
+    
+    renderer.updated_buffer_handles[renderer.updated_buffer_handle_count++] = buffer_handle;
 }
 
 static void register_instance_buffer(Renderer& renderer, size_t buffer_size, i32* buffer_handle)
 {
-    BufferData data = {};
+    i32 unused_handle = _find_unused_handle(renderer) + 1;
+    
+    renderer._internal_buffer_handles[unused_handle - 1] = renderer.buffer_count++;
+    
+    BufferData& data = renderer.buffers[renderer._internal_buffer_handles[unused_handle - 1]];
+    
     data.for_instancing = true;
     data.instance_buffer_size = buffer_size;
-    renderer.buffers[renderer.buffer_count] = data;
     
-    *buffer_handle = renderer.buffer_count++;
+    *buffer_handle = unused_handle;
 }
+
+/*static void unregister_instance_buffer(Renderer& renderer, i32 buffer_handle)
+{
+    renderer.buffers[buffer_handle] = renderer.buffers[renderer.buffer_count - 1];
+}*/
 
 static i32 load_font(Renderer& renderer, char* path, i32 size, char* name)
 {
@@ -1344,9 +1385,9 @@ static void load_material(Renderer &renderer, char *file_path, MaterialHandle *m
     strncpy(dir, file_path, index);
     
     dir[index] = 0;
-
+    
     auto temp_block = begin_temporary_memory(&renderer.temp_arena);
-
+    
     FILE* mtl_file = fopen(file_path, "r");
     if(mtl_file)
     {
@@ -1420,13 +1461,13 @@ static void load_material(Renderer &renderer, char *file_path, MaterialHandle *m
         }
         
         fclose(mtl_file);
-
+        
         if(material_handle)
             *material_handle = material.source_handle;
     }
     else
         debug("Could not read %s\n", file_path);
-
+    
     end_temporary_memory(temp_block);
 }
 
@@ -1693,7 +1734,7 @@ static void load_obj(Renderer &renderer, char *file_path, MeshHandle *mesh_handl
         
         auto temp_block = begin_temporary_memory(&renderer.temp_arena);
         char *material_file_path = concat(dir, mtl_file_name, &renderer.temp_arena);
-
+        
         if(material_handle)
             load_material(renderer, material_file_path, material_handle);
         
