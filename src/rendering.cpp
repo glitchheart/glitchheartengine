@@ -819,6 +819,7 @@ static i32 _find_unused_handle(Renderer& renderer)
 static BufferData& register_buffer(Renderer& renderer, i32* buffer_handle, b32 dynamic = false)
 {
     assert(renderer.buffer_count + 1 < global_max_custom_buffers);
+    assert(renderer._internal_buffer_handles);
     
     i32 unused_handle = _find_unused_handle(renderer) + 1;
     
@@ -889,10 +890,16 @@ static BufferData& register_instance_buffer(Renderer& renderer, size_t buffer_si
     return data;
 }
 
-/*static void unregister_instance_buffer(Renderer& renderer, i32 buffer_handle)
+// @Note:(Niels): This only registers a buffer as removed, which means it will be removed __next__ frame
+// This is due to the fact that we'd rather have an invalid buffer in the renderer for a frame, then
+// pushing a buffer that is invalid on the engine side.
+static void unregister_buffer(Renderer& renderer, i32 buffer_handle)
 {
-    renderer.buffers[buffer_handle] = renderer.buffers[renderer.buffer_count - 1];
-}*/
+    assert(renderer.removed_buffer_handles);
+    i32 _internal_handle = renderer._internal_buffer_handles[buffer_handle - 1];
+    
+    renderer.removed_buffer_handles[renderer.removed_buffer_handle_count++] = buffer_handle;
+}
 
 
 static void create_buffers_from_mesh(Renderer &renderer, Mesh &mesh, u64 vertex_data_flags, b32 has_normals, b32 has_uvs)
@@ -921,11 +928,12 @@ static void create_buffers_from_mesh(Renderer &renderer, Mesh &mesh, u64 vertex_
     i32 index_count = mesh.face_count * 3;
     data.index_buffer_size = index_count * (i32)sizeof(u16);
     data.index_buffer_count = index_count;
+    
+    // @Note:(Niels): How do we make sure that this is cleared if the mesh is removed?
+    // Or will that never happen? Maybe use malloc/free instead? Or maybe at some point 
+    // we really __should__ create a more general purpose allocator ourselves...
     data.index_buffer = push_size(&renderer.mesh_arena, data.index_buffer_size, u16);
     generate_index_buffer(data.index_buffer, mesh.faces, mesh.face_count);
-    
-    //renderer.buffers[renderer.buffer_count] = data;
-    //mesh.buffer_handle = renderer.buffer_count++;
 }
 
 static math::Vec3 compute_face_normal(Face f, Vertex *vertices)
@@ -1224,10 +1232,12 @@ static void push_mesh_instanced(Renderer &renderer, MeshInfo mesh_info, math::Ve
     render_command->mesh_instanced.instance_color_buffer_handle = mesh_info.instance_color_buffer_handle;
     render_command->mesh_instanced.instance_rotation_buffer_handle = mesh_info.instance_rotation_buffer_handle;
     render_command->mesh_instanced.instance_scale_buffer_handle = mesh_info.instance_scale_buffer_handle;
+    
     render_command->mesh_instanced.offsets = offsets;
     render_command->mesh_instanced.colors = colors;
     render_command->mesh_instanced.rotations = rotations;
     render_command->mesh_instanced.scalings = scalings;
+    
     render_command->mesh_instanced.offset_count = offset_count; // @Incomplete: Rename this to instance_count?
     render_command->cast_shadows = mesh_info.cast_shadows;
     render_command->receives_shadows = mesh_info.receives_shadows;

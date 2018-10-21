@@ -38,7 +38,7 @@ static void show_mouse_cursor(RenderState& render_state, b32 show)
 #define error_gl() _error_gl(__LINE__, __FILE__)
 void _error_gl(i32 line, const char* file)
 {
-    auto err = glGetError();
+    GLenum  err = glGetError();
     switch(err)
     {
         case GL_INVALID_ENUM:
@@ -170,7 +170,7 @@ static GLint shader_compilation_error_checking(MemoryArena* arena,const char* sh
     glGetShaderiv(shader, GL_COMPILE_STATUS, &is_compiled);
     if (!is_compiled)
     {
-        auto temp_mem = begin_temporary_memory(arena);
+        TemporaryMemory temp_mem = begin_temporary_memory(arena);
         GLint max_length = 0;
         glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &max_length);
         
@@ -194,7 +194,7 @@ static GLint shader_link_error_checking(MemoryArena* arena, const char* program_
     glGetProgramiv(program, GL_LINK_STATUS, &is_linked);
     if (!is_linked)
     {
-        auto temp_mem = begin_temporary_memory(arena);
+        TemporaryMemory temp_mem = begin_temporary_memory(arena);
         GLint max_length = 0;
         glGetProgramiv(program, GL_INFO_LOG_LENGTH, &max_length);
         
@@ -220,7 +220,7 @@ static GLuint load_extra_shader(MemoryArena* arena, ShaderData& shader_data, Ren
     glShaderSource(shader->vertex_shader, 1, &shader_data.vertex_shader_content, nullptr);
     glCompileShader(shader->vertex_shader);
     
-    auto temp_mem = begin_temporary_memory(arena);
+    TemporaryMemory temp_mem = begin_temporary_memory(arena);
     if (!shader_compilation_error_checking(arena, concat(shader_data.name, ".vert", arena), shader->vertex_shader))
     {
         end_temporary_memory(temp_mem);
@@ -252,7 +252,7 @@ static GLuint load_extra_shader(MemoryArena* arena, ShaderData& shader_data, Ren
 
 static GLuint load_shader(const char* file_path, Shader *shd, MemoryArena *arena)
 {
-    auto temp_mem = begin_temporary_memory(arena);
+    TemporaryMemory temp_mem = begin_temporary_memory(arena);
     shd->vertex_shader = glCreateShader(GL_VERTEX_SHADER);
     char* vertex_string = concat(file_path, ".vert", arena);
     GLchar *vertex_text = load_shader_from_file(vertex_string, arena);
@@ -323,7 +323,7 @@ static GLuint load_shader(const char* file_path, Shader *shd, MemoryArena *arena
 
 static GLuint load_vertex_shader(const char* file_path, Shader *shd, MemoryArena* arena)
 {
-    auto temp_mem = begin_temporary_memory(arena);
+    TemporaryMemory temp_mem = begin_temporary_memory(arena);
     shd->program = glCreateProgram();
     
     shd->vertex_shader = glCreateShader(GL_VERTEX_SHADER);
@@ -356,7 +356,7 @@ static GLuint load_fragment_shader(const char* file_path, Shader *shd, MemoryAre
     shd->program = glCreateProgram();
     shd->fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
     
-    auto temp_mem = begin_temporary_memory(arena);
+    TemporaryMemory temp_mem = begin_temporary_memory(arena);
     char* fragment_string = concat(file_path, ".frag", arena);
     
     GLchar *fragment_text = load_shader_from_file(fragment_string, arena);
@@ -387,7 +387,7 @@ static GLuint load_geometry_shader(const char* file_path, Shader* shd, MemoryAre
     shd->program = glCreateProgram();
     shd->geometry_shader = glCreateShader(GL_GEOMETRY_SHADER);
     
-    auto temp_mem = begin_temporary_memory(arena);
+    TemporaryMemory temp_mem = begin_temporary_memory(arena);
     char* geometry_string = concat(file_path, ".geom", arena);
     
     GLchar* geometry_text = load_shader_from_file(geometry_string, arena);
@@ -571,8 +571,8 @@ static void register_vertex_buffer(RenderState& render_state, GLfloat* buffer_da
     else
         use_shader(render_state.shaders[shader_type]);
     
-    auto position_location = (GLuint)glGetAttribLocation(render_state.texture_quad_shader.program, "pos");
-    auto texcoord_location = (GLuint)glGetAttribLocation(render_state.texture_quad_shader.program, "texcoord");
+    GLuint position_location = (GLuint)glGetAttribLocation(render_state.texture_quad_shader.program, "pos");
+    GLuint texcoord_location = (GLuint)glGetAttribLocation(render_state.texture_quad_shader.program, "texcoord");
     
     vertex_attrib_pointer(position_location, 2, GL_FLOAT, 4 * sizeof(float), nullptr);
     vertex_attrib_pointer(texcoord_location, 2, GL_FLOAT, 4 * sizeof(float), (void *)(2 * sizeof(float)));
@@ -2109,7 +2109,7 @@ static void prepare_shader(const Shader shader, ShaderAttribute *attributes, i32
 
 static void render_mesh(const RenderCommand &render_command, Renderer &renderer, RenderState &render_state, math::Mat4 projection_matrix, math::Mat4 view_matrix, b32 for_shadow_map, ShadowMapMatrices *shadow_map_matrices = nullptr)
 {
-    i32 _internal_buffer_handle = renderer._internal_buffer_handles[render_command.mesh_instanced.buffer_handle - 1];
+    i32 _internal_buffer_handle = renderer._internal_buffer_handles[render_command.mesh.buffer_handle - 1];
     
     Buffer buffer = render_state.buffers[_internal_buffer_handle];
     glBindVertexArray(buffer.vao);
@@ -2157,7 +2157,7 @@ static void render_mesh(const RenderCommand &render_command, Renderer &renderer,
         glUniform1i(glGetUniformLocation(shader.program, "specularIntensityTexture"),  3);
         glUniform1i(glGetUniformLocation(shader.program, "shadowMap"),  4);
         
-        if(render_command.mesh_instanced.diffuse_texture != 0)
+        if(render_command.mesh.diffuse_texture != 0)
         {
             auto texture = render_state.texture_array[renderer.texture_data[render_command.mesh.diffuse_texture - 1].handle];
             
@@ -2169,7 +2169,7 @@ static void render_mesh(const RenderCommand &render_command, Renderer &renderer,
         else
             set_bool_uniform(shader.program, "hasTexture", false);
         
-        if(render_command.mesh_instanced.specular_texture != 0)
+        if(render_command.mesh.specular_texture != 0)
         {
             auto texture = render_state.texture_array[renderer.texture_data[render_command.mesh.specular_texture - 1].handle];
             
@@ -2183,7 +2183,7 @@ static void render_mesh(const RenderCommand &render_command, Renderer &renderer,
             set_bool_uniform(shader.program, "hasSpecular", false);
         }
         
-        if(render_command.mesh_instanced.ambient_texture != 0)
+        if(render_command.mesh.ambient_texture != 0)
         {
             auto texture = render_state.texture_array[renderer.texture_data[render_command.mesh.ambient_texture - 1].handle];
             
@@ -2198,9 +2198,9 @@ static void render_mesh(const RenderCommand &render_command, Renderer &renderer,
         }
         
         glActiveTexture(GL_TEXTURE3);
-        if(render_command.mesh_instanced.specular_intensity_texture != 0)
+        if(render_command.mesh.specular_intensity_texture != 0)
         {
-            auto texture = render_state.texture_array[renderer.texture_data[render_command.mesh_instanced.specular_intensity_texture - 1].handle];
+            auto texture = render_state.texture_array[renderer.texture_data[render_command.mesh.specular_intensity_texture - 1].handle];
             
             glBindTexture(GL_TEXTURE_2D, texture.texture_handle);
             
@@ -2355,7 +2355,7 @@ static void render_mesh_instanced(const RenderCommand &render_command, Renderer 
     auto y_axis = rotation.y > 0.0f ? 1.0f : 0.0f;
     auto z_axis = rotation.z > 0.0f ? 1.0f : 0.0f;
     
-    auto orientation = math::Quat();
+    math::Quat orientation = math::Quat();
     orientation = math::rotate(orientation, rotation.x, math::Vec3(x_axis, 0.0f, 0.0f));
     orientation = math::rotate(orientation, rotation.y, math::Vec3(0.0f, y_axis, 0.0f));
     orientation = math::rotate(orientation, rotation.z, math::Vec3(0.0f, 0.0f, z_axis));
@@ -2627,13 +2627,70 @@ static void render_buffer(const RenderCommand& command, RenderState& render_stat
     glBindVertexArray(0);
 }
 
+static void unregister_buffers(RenderState& render_state, Renderer& renderer)
+{
+    GLuint vbos[global_max_custom_buffers];
+    i32 vbo_count = 0;
+    
+    GLuint ibos[global_max_custom_buffers];
+    i32 ibo_count = 0;
+    
+    GLuint vaos[global_max_custom_buffers];
+    i32 vao_count = 0;
+    
+    for(i32 index = 0; index < renderer.removed_buffer_handle_count; index++)
+    {
+        i32 external_handle = renderer.removed_buffer_handles[index];
+        i32 removed_buffer_handle = renderer._internal_buffer_handles[external_handle - 1];
+        
+        BufferData data = renderer.buffers[index];
+        
+        vaos[vao_count++] = render_state.buffers[removed_buffer_handle].vao;
+        vbos[vbo_count++] = render_state.buffers[removed_buffer_handle].vbo;
+        render_state.buffers[removed_buffer_handle].vao = 0;
+        render_state.buffers[removed_buffer_handle].vbo = 0;
+        
+        if(data.index_buffer_size != 0)
+        {
+            ibos[vbo_count++] = render_state.buffers[removed_buffer_handle].ibo;
+            render_state.buffers[removed_buffer_handle].ibo = 0;
+        }
+    }
+    
+    glDeleteBuffers(vbo_count, vbos);
+    glDeleteVertexArrays(vao_count, vaos);
+    glDeleteBuffers(ibo_count, ibos);
+    
+    for(i32 index = 0; index < renderer.removed_buffer_handle_count; index++)
+    {
+        i32 external_handle = renderer.removed_buffer_handles[index];
+        i32 removed_buffer_handle = renderer._internal_buffer_handles[external_handle - 1];
+        
+        render_state.buffers[removed_buffer_handle] = render_state.buffers[render_state.buffer_count - 1];
+        render_state.buffer_count--;
+        
+        renderer.buffers[removed_buffer_handle] = renderer.buffers[renderer.buffer_count - 1];
+        renderer._internal_buffer_handles[external_handle - 1] = -1;
+		renderer.buffer_count--;
+
+        for(i32 internal_index = 0; internal_index < global_max_custom_buffers; internal_index++)
+        {
+            if(renderer._internal_buffer_handles[internal_index] == renderer.buffer_count - 1)
+            {
+                renderer._internal_buffer_handles[internal_index] = removed_buffer_handle;
+                break;
+            }
+        }
+        
+    }
+    renderer.removed_buffer_handle_count = 0;
+}
 
 static void register_buffers(RenderState& render_state, Renderer& renderer)
 {
     for (i32 index = render_state.buffer_count; index < renderer.buffer_count; index++)
     {
-        i32 _internal_handle = renderer._internal_buffer_handles[index - 1];
-        BufferData data = renderer.buffers[_internal_handle];
+        BufferData data = renderer.buffers[index];
         
         if(data.for_instancing)
         {
@@ -2651,8 +2708,11 @@ static void register_buffers(RenderState& render_state, Renderer& renderer)
     
     for (i32 index = 0; index < renderer.updated_buffer_handle_count; index++)
     {
-        i32 _internal_handle = renderer._internal_buffer_handles[renderer.updated_buffer_handles[index] - 1];
-        BufferData data = renderer.buffers[_internal_handle];
+        // @Note:(Niels): Get the internal handle for the updated buffer that we have set
+        i32 external_handle = renderer.updated_buffer_handles[index];
+        i32 updated_buffer_handle = renderer._internal_buffer_handles[external_handle - 1];
+        
+        BufferData data = renderer.buffers[updated_buffer_handle];
         if(data.for_instancing)
         {
             register_instance_buffer(render_state, data, data.existing_handle);
@@ -2667,7 +2727,9 @@ static void register_buffers(RenderState& render_state, Renderer& renderer)
             
         }
     }
+    
     renderer.updated_buffer_handle_count = 0;
+    
 }
 
 static void render_shadows(RenderState &render_state, Renderer &renderer, Framebuffer &framebuffer)
@@ -3128,6 +3190,8 @@ static void render(RenderState& render_state, Renderer& renderer, r64 delta_time
         
         render_state.frame_delta -= delta_time;
         render_state.total_delta += delta_time;
+        
+        unregister_buffers(render_state, renderer);
     }
 }
 
