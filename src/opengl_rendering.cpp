@@ -1150,6 +1150,7 @@ static const GLFWvidmode* create_open_gl_window(RenderState& render_state, Windo
 
 static void initialize_opengl(RenderState& render_state, Renderer& renderer, r32 contrast, r32 brightness, WindowMode window_mode, i32 screen_width, i32 screen_height, const char* title, MemoryArena *perm_arena, b32 *do_save_config)
 {
+    render_state.character_buffer = push_array(perm_arena, 256, CharacterData);
     auto recreate_window = render_state.window != nullptr;
     
     if(!recreate_window)
@@ -1845,7 +1846,7 @@ static void render_text(RenderState &render_state, GLFontBuffer &font, TrueTypeF
     
     auto temp_mem = begin_temporary_memory(&render_state.font_arena);
     
-    CharacterData* coords = push_array(&render_state.font_arena, 6 * strlen(text), CharacterData);
+    CharacterData* coords = render_state.character_buffer;
     
     i32 n = 0;
     
@@ -3048,7 +3049,7 @@ static void render(RenderState& render_state, Renderer& renderer, r64 delta_time
         renderer.framebuffer_width = render_state.framebuffer_width;
         renderer.framebuffer_height = render_state.framebuffer_height;
         
-        render_shadows(render_state, renderer, render_state.shadow_map_buffer);
+	render_shadows(render_state, renderer, render_state.shadow_map_buffer);
         
         glViewport(0, 0, render_state.framebuffer_width, render_state.framebuffer_height);
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, render_state.framebuffer.buffer_handle);
@@ -3056,7 +3057,7 @@ static void render(RenderState& render_state, Renderer& renderer, r64 delta_time
         glEnable(GL_DEPTH_TEST);
         
         glDepthFunc(GL_LESS);
-        
+
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
         glClearColor(renderer.clear_color.r, renderer.clear_color.g, renderer.clear_color.b, renderer.clear_color.a);
