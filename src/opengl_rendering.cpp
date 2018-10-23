@@ -1150,7 +1150,7 @@ static const GLFWvidmode* create_open_gl_window(RenderState& render_state, Windo
 
 static void initialize_opengl(RenderState& render_state, Renderer& renderer, r32 contrast, r32 brightness, WindowMode window_mode, i32 screen_width, i32 screen_height, const char* title, MemoryArena *perm_arena, b32 *do_save_config)
 {
-    render_state.character_buffer = push_array(perm_arena, 256, CharacterData);
+    render_state.character_buffer = push_array(perm_arena, 1024, CharacterData);
     auto recreate_window = render_state.window != nullptr;
     
     if(!recreate_window)
@@ -1873,7 +1873,6 @@ static void render_text(RenderState &render_state, GLFontBuffer &font, TrueTypeF
     {
         y += text_size.y;
     }
-    
     
     // first we have to reverse the initial y to support stb_truetype where y+ is down
     y = render_state.window_height - y;
