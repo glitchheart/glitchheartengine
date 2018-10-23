@@ -97,6 +97,7 @@ namespace scene
     
     struct Scene
     {
+		MemoryArena memory_arena;
         Entity *entities;
         i32 *_internal_handles;
         i32 current_internal_handle;
