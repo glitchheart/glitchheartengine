@@ -1339,13 +1339,13 @@ static void load_material(Renderer &renderer, char *file_path, MaterialHandle *m
             index = i + 1;
         }
     }
+
+    auto temp_block = begin_temporary_memory(&renderer.temp_arena);
     
-    char *dir = (char*)malloc(sizeof(char) * index);
+    char *dir = push_string(temp_block.arena, index);
     strncpy(dir, file_path, index);
     
     dir[index] = 0;
-
-    auto temp_block = begin_temporary_memory(&renderer.temp_arena);
 
     FILE* mtl_file = fopen(file_path, "r");
     if(mtl_file)
@@ -1700,13 +1700,14 @@ static void load_obj(Renderer &renderer, char *file_path, MeshHandle *mesh_handl
             }
         }
         
-        char *dir = (char*)malloc(sizeof(char) * index);
+        auto temp_block = begin_temporary_memory(&renderer.temp_arena);
+        
+        char *dir = push_string(temp_block.arena, index);
         strncpy(dir, file_path, index);
         
         dir[index] = 0;
-        
-        auto temp_block = begin_temporary_memory(&renderer.temp_arena);
-        char *material_file_path = concat(dir, mtl_file_name, &renderer.temp_arena);
+
+		char *material_file_path = concat(dir, mtl_file_name, &renderer.temp_arena);
 
         if(material_handle)
             load_material(renderer, material_file_path, material_handle);
