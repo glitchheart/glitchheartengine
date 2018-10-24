@@ -1937,9 +1937,14 @@ static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer, ma
         
         if(scene.active_entities[ent_index])
         {
-            if(ent.comp_flags & scene::COMP_RENDER)
+			scene::TransformComponent &transform = scene.transform_components[ent.transform_handle.handle];
+            // Create a copy of the position, rotation and scale since we don't want the parents transform to change the child's transform. Only when rendering.
+			math::Vec3 position = transform.position;
+			math::Vec3 rotation = transform.rotation;
+			math::Vec3 scale = transform.scale;
+
+			if(ent.comp_flags & scene::COMP_RENDER)
             {
-                scene::TransformComponent &transform = scene.transform_components[ent.transform_handle.handle];
                 scene::RenderComponent &render = scene.render_components[ent.render_handle.handle];
                 
                 Material material = scene.material_instances[render.material_handle.handle];
@@ -1967,10 +1972,18 @@ static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer, ma
                 }
                 
                 InstancedRenderCommand &command = instanced_commands[command_index];
-                
-                positions[command_index * 1024 + command.count] = transform.position;
-                rotations[command_index * 1024 + command.count] = transform.rotation * DEGREE_IN_RADIANS;
-                scalings[command_index * 1024 + command.count] = transform.scale;
+
+				if(IS_COMP_HANDLE_VALID(transform.parent_handle))
+				{
+					scene::TransformComponent &parent_transform = scene.transform_components[transform.parent_handle.handle];
+					position += parent_transform.position;
+					rotation += parent_transform.rotation;
+					scale *= parent_transform.scale;
+				}
+				
+                positions[command_index * 1024 + command.count] = position;
+                rotations[command_index * 1024 + command.count] = rotation * DEGREE_IN_RADIANS;
+                scalings[command_index * 1024 + command.count] = scale;
                 colors[command_index * 1024 + command.count] = material.diffuse_color;
                 command.count++;
                 
@@ -1991,9 +2004,9 @@ static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer, ma
                         
                         scene::TransformComponent &transform = scene.transform_components[ent.transform_handle.handle];
                         
-                        system.transform.position = transform.position;
-                        system.transform.scale = transform.scale;
-                        system.transform.rotation = transform.rotation;
+                        system.transform.position = position;
+                        system.transform.scale = scale;
+                        system.transform.rotation = rotation;
                     }
                 }
             }

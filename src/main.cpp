@@ -411,10 +411,10 @@ int main(int argc, char **args)
     timer_controller.timer_count = 0;
     
     //setup asset reloading
-    AssetManager asset_manager = {};
-    startup_file_time_checks(&platform_state->perm_arena, &asset_manager, game_library_path);
+    //AssetManager asset_manager = {};
+    //startup_file_time_checks(&platform_state->perm_arena, &asset_manager, game_library_path);
     
-    u32 frame_counter_for_asset_check = 0;
+    //u32 frame_counter_for_asset_check = 0;
     
     SoundDevice sound_device = {};
     debug_log("Initializing FMOD");
@@ -464,7 +464,7 @@ int main(int argc, char **args)
         
         show_mouse_cursor(render_state, renderer.show_mouse_cursor);
         
-        reload_assets(render_state, &asset_manager, &platform_state->perm_arena);
+        //reload_assets(render_state, &asset_manager, &platform_state->perm_arena);
         
         reload_libraries(&game, game_library_path, temp_game_library_path, &platform_state->perm_arena);
         
@@ -494,14 +494,14 @@ int main(int argc, char **args)
         {
             controller_keys(GLFW_JOYSTICK_1);
         }
-        
-        frame_counter_for_asset_check++;
-        if(frame_counter_for_asset_check == 10)
-        {
-            listen_to_file_changes(&platform_state->perm_arena, &asset_manager);
-            frame_counter_for_asset_check = 0;
-        }
-        
+
+		// frame_counter_for_asset_check++;
+        // if(frame_counter_for_asset_check == 10)
+        // {
+        //     listen_to_file_changes(&platform_state->perm_arena, &asset_manager);
+        //     frame_counter_for_asset_check = 0;
+        // }
+		
         update_log();
         
         swap_buffers(render_state);

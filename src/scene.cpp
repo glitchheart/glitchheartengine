@@ -53,7 +53,9 @@ namespace scene
             scene.transform_components[index].position = math::Vec3(0, 0, 0);
             scene.transform_components[index].scale = math::Vec3(1, 1, 1);
             scene.transform_components[index].rotation = math::Vec3(0, 0, 0);
-        }
+			scene.transform_components[index].parent_handle = EMPTY_COMP_HANDLE;
+			scene.transform_components[index].child_handle = EMPTY_COMP_HANDLE;
+		}
         
         return(scene);
     }
@@ -199,6 +201,7 @@ namespace scene
                     templ.transform.position = math::Vec3();
                     templ.transform.scale = math::Vec3(1, 1, 1);
                     templ.transform.rotation = math::Vec3(0, 0, 0);
+					templ.transform.child_handle = EMPTY_TEMPLATE_HANDLE;
                     
                     while(fgets(buffer, 256, file) && !starts_with(buffer, "-"))
                     {
@@ -214,6 +217,11 @@ namespace scene
                         {
                             sscanf(buffer, "rotation: %f %f %f\n", &templ.transform.rotation.x, &templ.transform.rotation.y, &templ.transform.rotation.z);
                         }
+						else if(starts_with(buffer, "child_templ"))
+						{
+							// @Incomplete
+							// Child template referenced
+						}
                     }
                 }
                 else if(starts_with(buffer, "-render"))
@@ -275,6 +283,8 @@ namespace scene
         
         return(templ);
     }
+
+#define EMPTY_TRANSFORM { math::Vec3(), math::Vec3(1, 1, 1), math::Vec3(), EMPTY_COMP_HANDLE, EMPTY_COMP_HANDLE };
     
     static EntityHandle _register_entity_with_template(EntityTemplate &templ, Scene &scene)
     {
@@ -286,6 +296,7 @@ namespace scene
             transform.position = templ.transform.position;
             transform.scale = templ.transform.scale;
             transform.rotation = templ.transform.rotation;
+			// @Incomplete: Parent and child handles
         }
         
         if(templ.comp_flags & COMP_RENDER)
