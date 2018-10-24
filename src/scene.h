@@ -1,6 +1,13 @@
 #ifndef SCENE_H
 #define SCENE_H
 
+#define EMPTY_ENTITY_HANDLE {0}
+#define EMPTY_COMP_HANDLE {-1}
+#define EMPTY_TEMPLATE_HANDLE {-1}
+#define IS_ENTITY_HANDLE_VALID(ent_handle) ent_handle.handle != 0
+#define IS_COMP_HANDLE_VALID(comp_handle) comp_handle.handle != -1
+#define IS_TEMPLATE_HANDLE_VALID(comp_handle) comp_handle.handle != -1
+
 namespace scene
 {
     // @Note(Daniel): Invalid EntityHandles have the value 0.
@@ -45,7 +52,10 @@ namespace scene
         math::Vec3 position;
         math::Vec3 scale;
         math::Vec3 rotation;
-    };
+
+		TransformComponentHandle parent_handle;
+		TransformComponentHandle child_handle; // Remember the child's handle to be able to quickly remove the childs parent handle if the parent is removed
+	};
     
     struct RenderComponent
     {
@@ -61,7 +71,12 @@ namespace scene
     {
         ParticleSystemHandle handle;
     };
-    
+
+	struct TemplateHandle
+	{
+		i32 handle;
+	};
+	
     struct EntityTemplate
     {
         char file_path[256];
@@ -71,7 +86,8 @@ namespace scene
         {
             math::Vec3 position;
             math::Vec3 scale;
-            math::Vec3 rotation;
+            math::Vec3 rotation;;
+			TemplateHandle child_handle;
         } transform;
         struct
         {
