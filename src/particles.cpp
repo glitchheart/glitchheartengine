@@ -16,14 +16,9 @@ static void push_particle_system(Renderer &renderer, ParticleSystemInfo &particl
     render_command->particles.size_buffer_handle = particle_info.size_buffer_handle;
     render_command->particles.particle_count = particle_info.particle_count;
     
-    render_command->particles.offsets = (math::Vec3*)malloc(sizeof(math::Vec3) * particle_info.particle_count);
-    render_command->particles.colors = (math::Rgba*)malloc(sizeof(math::Rgba) * particle_info.particle_count);render_command->particles.sizes = (math::Vec2*)malloc(sizeof(math::Vec2) * particle_info.particle_count);
-    
-    memcpy(render_command->particles.offsets, particle_info.offsets, sizeof(math::Vec3) * particle_info.particle_count);
-    
-    memcpy(render_command->particles.colors, particle_info.colors, sizeof(math::Rgba) * particle_info.particle_count);
-    
-    memcpy(render_command->particles.sizes, particle_info.sizes, sizeof(math::Vec2) * particle_info.particle_count);
+    render_command->particles.offsets = particle_info.offsets;
+    render_command->particles.colors = particle_info.colors;
+    render_command->particles.sizes = particle_info.sizes;
     
     render_command->particles.diffuse_texture = particle_info.attributes.texture_handle;
     render_command->particles.blend_mode = blend_mode;

@@ -1239,7 +1239,7 @@ static void initialize_opengl(RenderState& render_state, Renderer& renderer, r32
     
     gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
     
-    glfwSwapInterval(1);
+    glfwSwapInterval(0);
     
     glfwGetFramebufferSize(render_state.window, &render_state.framebuffer_width, &render_state.framebuffer_height);
     glViewport(0, 0, render_state.framebuffer_width, render_state.framebuffer_height);
@@ -2571,13 +2571,6 @@ static void render_particles(RenderCommand &render_command, Renderer &renderer, 
     glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)nullptr, render_command.particles.particle_count);
     glDepthMask(GL_TRUE);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    
-    free(render_command.particles.offsets);
-    render_command.particles.offsets = nullptr;
-    free(render_command.particles.colors);
-    render_command.particles.colors = nullptr;
-    free(render_command.particles.sizes);
-    render_command.particles.sizes = nullptr;
 }
 
 static void render_buffer(const RenderCommand& command, RenderState& render_state, Renderer& renderer, math::Mat4 projection, math::Mat4 view)
