@@ -1909,8 +1909,8 @@ inline void s_vec4_to_float4(S_Vec4 v, float* f1, float* f2, float* f3, float* f
 
 #define member_size(type, member) sizeof(((type *)0)->member)
 
-#define push_array_simd(arena, count, type) (type *)_push_size_simd(arena, (count) * sizeof(type), (member_size(type, e[0])))
-#define push_size_simd(arena, type) (type*)_push_size_simd(arena, sizeof(type), (member_size(type, e[0])))
+#define push_array_simd(arena, count, type) (type *)_push_size_simd(arena, (count) * sizeof(type), (member_size(type, e[0]) * 4))
+#define push_size_simd(arena, type) (type*)_push_size_simd(arena, sizeof(type), (member_size(type, e[0]) * 4))
 inline void* _push_size_simd(MemoryArena *arena, umm size_init, u32 alignment)
 {
     return push_size_(arena, size_init, default_with_alignment(alignment));
