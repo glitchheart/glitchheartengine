@@ -100,11 +100,11 @@ vec3 computeAmbient()
     if(material.hasAmbient)
     {
         //return lightAmbient * material.ambientColor * vec3(texture(material.ambientTexture, fs_in.uv));
-        return lightAmbient * material.diffuseColor * vec3(texture(material.ambientTexture, fs_in.uv));
+        return lightAmbient * fs_in.color.xyz * vec3(texture(material.ambientTexture, fs_in.uv));
     }
     else
     {
-        return lightAmbient * material.diffuseColor;
+        return lightAmbient * fs_in.color.xyz;
     }
 }
 
@@ -126,7 +126,7 @@ vec3 computeDiffuse(vec3 albedo, vec3 normal, vec3 lightDir)
     }
     else
     {
-        return diff * material.diffuseColor * lightDiffuse;
+        return diff * fs_in.color.xyz * lightDiffuse;
     }
 }
 
@@ -178,8 +178,7 @@ vec3 computeTranslucency(float spec, vec3 albedo, vec3 normal, vec3 lightDir, ve
 vec3 computeLight(vec3 normal, vec3 lightDir, vec3 ambient, vec3 diffuse, vec3 specular)
 {
     // shadows
-    float shadow = calculateShadow(fs_in.shadowCoord, normal, lightDir);
-    
+    float shadow = calculateShadow(fs_in.shadowCoord, normal, lightDir);    
     vec3 lighting;
     if(receivesShadows)
     {
@@ -201,7 +200,7 @@ void main()
         vec3 viewDir = normalize(fs_in.eyeView - fs_in.posWorld);
         vec3 halfwayDir = normalize(lightDir + viewDir);
         
-        vec3 albedo = texture(material.diffuseTexture, fs_in.uv).rgb * material.diffuseColor;
+        vec3 albedo = texture(material.diffuseTexture, fs_in.uv).rgb * fs_in.color.xyz;
         
         float gloss = texture(material.diffuseTexture, fs_in.uv).a;
         
