@@ -1191,17 +1191,17 @@ static void push_mesh(Renderer &renderer, MeshInfo mesh_info)
     Mesh &mesh = renderer.meshes[mesh_info.mesh_handle];
     render_command->mesh.buffer_handle = mesh.buffer_handle;
     render_command->mesh.material_type = mesh_info.material.type;
-    render_command->mesh_instanced.diffuse_color = mesh_info.material.diffuse_color;
-    render_command->mesh_instanced.specular_color = mesh_info.material.specular_color;
-    render_command->mesh_instanced.ambient_color = mesh_info.material.ambient_color;
+    render_command->mesh.diffuse_color = mesh_info.material.diffuse_color;
+    render_command->mesh.specular_color = mesh_info.material.specular_color;
+    render_command->mesh.ambient_color = mesh_info.material.ambient_color;
     render_command->mesh.diffuse_texture = mesh_info.material.diffuse_texture.handle;
     render_command->mesh.specular_texture = mesh_info.material.specular_texture.handle;
     render_command->mesh.ambient_texture = mesh_info.material.ambient_texture.handle;
-    render_command->mesh_instanced.specular_intensity_texture = mesh_info.material.specular_intensity_texture.handle;
-    render_command->mesh_instanced.specular_exponent = mesh_info.material.specular_exponent;
-    render_command->mesh_instanced.diffuse_color = mesh_info.material.diffuse_color;
-    render_command->mesh_instanced.specular_color = mesh_info.material.specular_color;
-    render_command->mesh_instanced.ambient_color = mesh_info.material.ambient_color;
+    render_command->mesh.specular_intensity_texture = mesh_info.material.specular_intensity_texture.handle;
+    render_command->mesh.specular_exponent = mesh_info.material.specular_exponent;
+    render_command->mesh.diffuse_color = mesh_info.material.diffuse_color;
+    render_command->mesh.specular_color = mesh_info.material.specular_color;
+    render_command->mesh.ambient_color = mesh_info.material.ambient_color;
     render_command->color = mesh_info.material.diffuse_color;
     render_command->cast_shadows = mesh_info.cast_shadows;
     render_command->receives_shadows = mesh_info.receives_shadows;
@@ -1332,13 +1332,12 @@ static void load_material(Renderer &renderer, char *file_path, MaterialHandle *m
         }
     }
     
-    char *dir = (char*)malloc(sizeof(char) * index);
+    auto temp_block = begin_temporary_memory(&renderer.temp_arena);
+    
+    char *dir = push_string(temp_block.arena, index);
     strncpy(dir, file_path, index);
     
     dir[index] = 0;
-    
-    auto temp_block = begin_temporary_memory(&renderer.temp_arena);
-    
     FILE* mtl_file = fopen(file_path, "r");
     if(mtl_file)
     {
@@ -1670,14 +1669,13 @@ static void load_obj(Renderer &renderer, char *file_path, MeshHandle *mesh_handl
             }
         }
         
-        char *dir = (char*)malloc(sizeof(char) * index);
+        auto temp_block = begin_temporary_memory(&renderer.temp_arena);
+        
+        char *dir = push_string(temp_block.arena, index);
         strncpy(dir, file_path, index);
         
         dir[index] = 0;
-        
-        auto temp_block = begin_temporary_memory(&renderer.temp_arena);
-        char *material_file_path = concat(dir, mtl_file_name, &renderer.temp_arena);
-        
+		char *material_file_path = concat(dir, mtl_file_name, &renderer.temp_arena);
         if(material_handle)
             load_material(renderer, material_file_path, material_handle);
         
@@ -1884,9 +1882,14 @@ static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer, ma
         
         if(scene.active_entities[ent_index])
         {
-            if(ent.comp_flags & scene::COMP_RENDER)
+			scene::TransformComponent &transform = scene.transform_components[ent.transform_handle.handle];
+            // Create a copy of the position, rotation and scale since we don't want the parents transform to change the child's transform. Only when rendering.
+			math::Vec3 position = transform.position;
+			math::Vec3 rotation = transform.rotation;
+			math::Vec3 scale = transform.scale;
+            
+			if(ent.comp_flags & scene::COMP_RENDER)
             {
-                scene::TransformComponent &transform = scene.transform_components[ent.transform_handle.handle];
                 scene::RenderComponent &render = scene.render_components[ent.render_handle.handle];
                 
                 Material material = scene.material_instances[render.material_handle.handle];
@@ -1915,9 +1918,17 @@ static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer, ma
                 
                 InstancedRenderCommand &command = instanced_commands[command_index];
                 
-                positions[command_index * 1024 + command.count] = transform.position;
-                rotations[command_index * 1024 + command.count] = transform.rotation * DEGREE_IN_RADIANS;
-                scalings[command_index * 1024 + command.count] = transform.scale;
+				if(IS_COMP_HANDLE_VALID(transform.parent_handle))
+				{
+					scene::TransformComponent &parent_transform = scene.transform_components[transform.parent_handle.handle];
+					position += parent_transform.position;
+					rotation += parent_transform.rotation;
+					scale *= parent_transform.scale;
+				}
+				
+                positions[command_index * 1024 + command.count] = position;
+                rotations[command_index * 1024 + command.count] = rotation * DEGREE_IN_RADIANS;
+                scalings[command_index * 1024 + command.count] = scale;
                 colors[command_index * 1024 + command.count] = material.diffuse_color;
                 command.count++;
                 
@@ -1938,9 +1949,9 @@ static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer, ma
                         
                         scene::TransformComponent &transform = scene.transform_components[ent.transform_handle.handle];
                         
-                        system.transform.position = transform.position;
-                        system.transform.scale = transform.scale;
-                        system.transform.rotation = transform.rotation;
+                        system.transform.position = position;
+                        system.transform.scale = scale;
+                        system.transform.rotation = rotation;
                     }
                 }
             }

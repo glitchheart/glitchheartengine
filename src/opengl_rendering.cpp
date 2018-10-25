@@ -1157,8 +1157,9 @@ static const GLFWvidmode* create_open_gl_window(RenderState& render_state, Windo
 
 static void initialize_opengl(RenderState& render_state, Renderer& renderer, r32 contrast, r32 brightness, WindowMode window_mode, i32 screen_width, i32 screen_height, const char* title, MemoryArena *perm_arena, b32 *do_save_config)
 {
+    render_state.character_buffer = push_array(perm_arena, 1024, CharacterData);
     auto recreate_window = render_state.window != nullptr;
-    
+	
     if(!recreate_window)
     {
         if (!glfwInit())
@@ -1166,7 +1167,6 @@ static void initialize_opengl(RenderState& render_state, Renderer& renderer, r32
             log_error("Could not initialize glfw");
             exit(EXIT_FAILURE);
         }
-        
     }
     
     render_state.framebuffer.buffer_handle = 0;
@@ -1844,16 +1844,15 @@ static void render_text(RenderState &render_state, GLFontBuffer &font, TrueTypeF
     set_vec4_uniform(shader.program, uniform_locations.font.alpha_color, math::Rgba(1, 1, 1, 1));
     set_float_uniform(shader.program, uniform_locations.font.z, (r32)z);
     
-    auto temp_mem = begin_temporary_memory(&render_state.font_arena);
-    
     if(render_state.bound_texture != font.texture)
     {
         glBindTexture(GL_TEXTURE_2D, font.texture);
         render_state.bound_texture = font.texture;
     }
     
-    CharacterData* coords = push_array(&render_state.font_arena, 6 * strlen(text), CharacterData);
+    auto temp_mem = begin_temporary_memory(&render_state.font_arena);
     
+    CharacterData* coords = render_state.character_buffer;
     i32 n = 0;
     
     // @Speed: The call to get_text_size() will loop throught the text, which means we'll loop through it twice per render-call
@@ -1879,7 +1878,6 @@ static void render_text(RenderState &render_state, GLFontBuffer &font, TrueTypeF
     {
         y += text_size.y;
     }
-    
     
     // first we have to reverse the initial y to support stb_truetype where y+ is down
     y = render_state.window_height - y;
@@ -3144,7 +3142,7 @@ static void render(RenderState& render_state, Renderer& renderer, r64 delta_time
         renderer.framebuffer_width = render_state.framebuffer_width;
         renderer.framebuffer_height = render_state.framebuffer_height;
         
-        render_shadows(render_state, renderer, render_state.shadow_map_buffer);
+	render_shadows(render_state, renderer, render_state.shadow_map_buffer);
         
         glViewport(0, 0, render_state.framebuffer_width, render_state.framebuffer_height);
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, render_state.framebuffer.buffer_handle);
@@ -3152,7 +3150,7 @@ static void render(RenderState& render_state, Renderer& renderer, r64 delta_time
         glEnable(GL_DEPTH_TEST);
         
         glDepthFunc(GL_LESS);
-        
+
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
         glClearColor(renderer.clear_color.r, renderer.clear_color.g, renderer.clear_color.b, renderer.clear_color.a);

@@ -36,13 +36,15 @@ namespace scene
         scene.transform_component_count = 0;
         scene.render_component_count = 0;
         scene.material_count = 0;
-        scene.entities = (Entity*)malloc(sizeof(EntityHandle) * initial_entity_array_size);
-        scene._internal_handles = (i32*)malloc(sizeof(i32) * initial_entity_array_size);
-        scene.active_entities = (b32*)malloc(sizeof(b32) * initial_entity_array_size);
-        scene.transform_components = (TransformComponent*)malloc(sizeof(TransformComponent) * initial_entity_array_size);
-        scene.render_components = (RenderComponent*)malloc(sizeof(RenderComponent) * initial_entity_array_size);
-        scene.particle_system_components = (ParticleSystemComponent*)malloc(sizeof(ParticleSystemComponent) * initial_entity_array_size);
-        scene.material_instances = (Material*)malloc(sizeof(Material) * initial_entity_array_size);
+		
+		auto &memory_arena = scene.memory_arena;
+        scene.entities = push_array(&memory_arena, initial_entity_array_size, Entity);
+        scene._internal_handles = push_array(&memory_arena, initial_entity_array_size, i32);
+        scene.active_entities = push_array(&memory_arena, initial_entity_array_size, b32);
+        scene.transform_components = push_array(&memory_arena, initial_entity_array_size, TransformComponent);
+        scene.render_components = push_array(&memory_arena, initial_entity_array_size, RenderComponent);
+        scene.particle_system_components = push_array(&memory_arena, initial_entity_array_size, ParticleSystemComponent);
+        scene.material_instances = push_array(&memory_arena, initial_entity_array_size, Material);
         
         for(i32 index = 0; index < initial_entity_array_size; index++)
         {
@@ -51,7 +53,9 @@ namespace scene
             scene.transform_components[index].position = math::Vec3(0, 0, 0);
             scene.transform_components[index].scale = math::Vec3(1, 1, 1);
             scene.transform_components[index].rotation = math::Vec3(0, 0, 0);
-        }
+			scene.transform_components[index].parent_handle = EMPTY_COMP_HANDLE;
+			scene.transform_components[index].child_handle = EMPTY_COMP_HANDLE;
+		}
         
         return(scene);
     }
@@ -74,14 +78,7 @@ namespace scene
             scene.particle_system_component_count = 0;
             scene.material_count = 0;
             scene.current_internal_handle = 0;
-            
-            free(scene.entities);
-            free(scene._internal_handles);
-            free(scene.active_entities);
-            free(scene.transform_components);
-            free(scene.render_components);
-            free(scene.particle_system_components);
-            free(scene.material_instances);
+			clear(&scene.memory_arena);
         }
     }
     
@@ -204,6 +201,7 @@ namespace scene
                     templ.transform.position = math::Vec3();
                     templ.transform.scale = math::Vec3(1, 1, 1);
                     templ.transform.rotation = math::Vec3(0, 0, 0);
+					templ.transform.child_handle = EMPTY_TEMPLATE_HANDLE;
                     
                     while(fgets(buffer, 256, file) && !starts_with(buffer, "-"))
                     {
@@ -219,6 +217,11 @@ namespace scene
                         {
                             sscanf(buffer, "rotation: %f %f %f\n", &templ.transform.rotation.x, &templ.transform.rotation.y, &templ.transform.rotation.z);
                         }
+						else if(starts_with(buffer, "child_templ"))
+						{
+							// @Incomplete
+							// Child template referenced
+						}
                     }
                 }
                 else if(starts_with(buffer, "-render"))
@@ -280,6 +283,8 @@ namespace scene
         
         return(templ);
     }
+
+#define EMPTY_TRANSFORM { math::Vec3(), math::Vec3(1, 1, 1), math::Vec3(), EMPTY_COMP_HANDLE, EMPTY_COMP_HANDLE };
     
     static EntityHandle _register_entity_with_template(EntityTemplate &templ, Scene &scene)
     {
@@ -291,6 +296,7 @@ namespace scene
             transform.position = templ.transform.position;
             transform.scale = templ.transform.scale;
             transform.rotation = templ.transform.rotation;
+			// @Incomplete: Parent and child handles
         }
         
         if(templ.comp_flags & COMP_RENDER)
