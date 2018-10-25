@@ -153,6 +153,7 @@ struct Framebuffer
 
 struct RenderState
 {
+    CharacterData *character_buffer;
     GLFWwindow *window;
     i32 window_width;
     i32 window_height;

@@ -6,11 +6,12 @@ static void push_particle_system(Renderer &renderer, ParticleSystemInfo &particl
     
     render_command->type = RENDER_COMMAND_PARTICLES;
     render_command->position = particle_info.transform.position;
+    
+    // @Incomplete:(Niels): 
     //render_command->rotation = mesh_info.transform.rotation;
     
     // @Incomplete
     //render_command->particles.buffer_handle = particle_info.buffer_handle;
-    //render_command->particles.material.diffuse_texture = 0; // @Incomplete
     render_command->particles.offset_buffer_handle = particle_info.offset_buffer_handle;
     render_command->particles.color_buffer_handle = particle_info.color_buffer_handle;
     render_command->particles.size_buffer_handle = particle_info.size_buffer_handle;
@@ -546,6 +547,8 @@ void update_particle_systems(Renderer &renderer, r64 delta_time)
                 {
                     emit_particle(particle_system, emitted_alive_buf, emitted_alive_count);
                 }
+                
+                debug("emitted: %d\n", particle_system.total_emitted);
             }
             
             // @Note:(Niels): We now emit the particles in the emitted alive buf (which may contain particles from previous frames that are still alive), while passing in the next buffer,
@@ -554,9 +557,9 @@ void update_particle_systems(Renderer &renderer, r64 delta_time)
             
             
             // if all particles are dead and the system is one-shot we should stop the particle_system
-            if(particle_system.dead_particle_count == particle_system.max_particles && particle_system.attributes.one_shot)
+            if(particle_system.total_emitted == particle_system.max_particles && particle_system.attributes.one_shot)
             {
-                particle_system.running = false;
+                particle_system.emitting = false;
             }
             
             //auto camera_position = renderer.cameras[renderer.current_camera_handle].position;
