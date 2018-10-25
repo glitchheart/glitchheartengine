@@ -201,7 +201,7 @@ namespace scene
                     templ.transform.position = math::Vec3();
                     templ.transform.scale = math::Vec3(1, 1, 1);
                     templ.transform.rotation = math::Vec3(0, 0, 0);
-					templ.transform.child_handle = EMPTY_TEMPLATE_HANDLE;
+		    templ.transform.child_handle = EMPTY_TEMPLATE_HANDLE;
                     
                     while(fgets(buffer, 256, file) && !starts_with(buffer, "-"))
                     {
@@ -217,11 +217,11 @@ namespace scene
                         {
                             sscanf(buffer, "rotation: %f %f %f\n", &templ.transform.rotation.x, &templ.transform.rotation.y, &templ.transform.rotation.z);
                         }
-						else if(starts_with(buffer, "child_templ"))
-						{
-							// @Incomplete
-							// Child template referenced
-						}
+			else if(starts_with(buffer, "child_templ"))
+			{
+			    // @Incomplete
+			    // Child template referenced
+			}
                     }
                 }
                 else if(starts_with(buffer, "-render"))

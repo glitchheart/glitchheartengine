@@ -1937,13 +1937,14 @@ static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer, ma
         
         if(scene.active_entities[ent_index])
         {
-			scene::TransformComponent &transform = scene.transform_components[ent.transform_handle.handle];
-			// Create a copy of the position, rotation and scale since we don't want the parents transform to change the child's transform. Only when rendering.
-			math::Vec3 position = transform.position;
-			math::Vec3 rotation = transform.rotation;
-			math::Vec3 scale = transform.scale;
+	    scene::TransformComponent &transform = scene.transform_components[ent.transform_handle.handle];
 
-			if(ent.comp_flags & scene::COMP_RENDER)
+	    // Create a copy of the position, rotation and scale since we don't want the parents transform to change the child's transform. Only when rendering.
+	    math::Vec3 position = transform.position;
+	    math::Vec3 rotation = transform.rotation;
+	    math::Vec3 scale = transform.scale;
+
+	    if(ent.comp_flags & scene::COMP_RENDER)
             {
                 scene::RenderComponent &render = scene.render_components[ent.render_handle.handle];
                 
@@ -1973,13 +1974,13 @@ static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer, ma
                 
                 InstancedRenderCommand &command = instanced_commands[command_index];
 
-				if(IS_COMP_HANDLE_VALID(transform.parent_handle))
-				{
-					scene::TransformComponent &parent_transform = scene.transform_components[transform.parent_handle.handle];
-					position += parent_transform.position;
-					rotation += parent_transform.rotation;
-					scale *= parent_transform.scale;
-				}
+		if(IS_COMP_HANDLE_VALID(transform.parent_handle))
+		{
+		    scene::TransformComponent &parent_transform = scene.transform_components[transform.parent_handle.handle];
+		    position += parent_transform.position;
+		    rotation += parent_transform.rotation;
+		    scale *= parent_transform.scale;
+		}
 				
                 positions[command_index * 1024 + command.count] = position;
                 rotations[command_index * 1024 + command.count] = rotation * DEGREE_IN_RADIANS;
