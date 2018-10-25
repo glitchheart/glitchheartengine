@@ -203,6 +203,9 @@ void update_particles(Renderer &renderer, ParticleSystemInfo &particle_system, r
         // Maybe there is some SIMD magic, that can do this for us (probably not...).
         if(any_lt_eq(particle_system.particles.life[main_index], 0.0))
         {
+            static i32 bob = 0;
+            debug("P: %d\n", bob++);
+            debug("Count: %d\n", particle_system.particle_count);
             particle_system.dead_particles[particle_system.dead_particle_count++] = main_index;
             continue;
         }
@@ -326,84 +329,6 @@ void update_particles(Renderer &renderer, ParticleSystemInfo &particle_system, r
     }
     
     *emitted_this_frame = 0;
-}
-
-void merge(math::Vec3 *work_offsets, math::Vec2 *work_sizes, math::Rgba *work_colors, i32 size, i32 left, i32 mid, math::Vec3 *offsets, math::Vec2 *sizes, math::Rgba *colors, math::Vec3 camera_position)
-{
-    i32 right = mid + mid - left;
-    if (right > size)
-        right = size;
-    
-    i32 i = left;
-    i32 j = mid;
-    i32 k = left;
-    
-    while (i < mid && j < right)
-    {
-        auto i_dist = math::length(offsets[i] - camera_position);  
-        auto j_dist = math::length(offsets[j] - camera_position);  
-        if (i_dist > j_dist)
-        {
-            work_offsets[k] = offsets[i];
-            work_sizes[k] = sizes[i];
-            work_colors[k] = colors[i];
-            k++;
-            i++;
-        }
-        else
-        {
-            work_offsets[k] = offsets[j];
-            work_sizes[k] = sizes[j];
-            work_colors[k] = colors[j];
-            k++;
-            j++;
-        }
-        
-    }
-    
-    while (i < mid)
-    {
-        work_offsets[k] = offsets[i];
-        work_sizes[k] = sizes[i];
-        work_colors[k] = colors[i];
-        k++;
-        i++;
-    }
-    
-    while (j < right)
-    {
-        work_offsets[k] = offsets[j];
-        work_sizes[k] = sizes[j];
-        work_colors[k] = colors[j];
-        k++;
-        j++;
-    }
-    
-    for (i = left; i < right; ++i)
-    {
-        offsets[i] = work_offsets[i];
-        sizes[i] = work_sizes[i];
-        colors[i] = work_colors[i];
-    }
-}
-
-void sort(math::Vec3 camera_position, math::Vec3 *offsets, math::Vec2 *sizes, math::Rgba *colors, i32 n, MemoryArena *arena)
-{
-    i32 subsize, left, mid;
-    auto temp_mem = begin_temporary_memory(arena);
-    math::Vec3 *work_offsets = push_array(arena, n, math::Vec3);
-    math::Vec2 *work_sizes = push_array(arena, n, math::Vec2);
-    math::Rgba *work_colors = push_array(arena, n, math::Rgba);
-    
-    for (subsize = 1; subsize < n; subsize *= 2)
-    {
-        for (left = 0, mid = subsize; mid < n; left = mid + subsize, mid = left + subsize)
-        {
-            merge(work_offsets, work_sizes, work_colors, n, left, mid, offsets, sizes, colors, camera_position);
-        }
-    }
-    
-    end_temporary_memory(temp_mem);
 }
 
 void emit_particle(ParticleSystemInfo &particle_system, i32* alive_buf, i32* count)
@@ -551,15 +476,17 @@ void update_particle_systems(Renderer &renderer, r64 delta_time)
                 debug("emitted: %d\n", particle_system.total_emitted);
             }
             
-            // @Note:(Niels): We now emit the particles in the emitted alive buf (which may contain particles from previous frames that are still alive), while passing in the next buffer,
+            // @Note:(Niels): We now update the particles in the emitted alive buf (which may contain particles from previous frames that are still alive), while passing in the next buffer,
             // which is now our "write" buffer.
             update_particles(renderer, particle_system, delta_time, emitted_alive_buf, emitted_alive_count, write_buf, write_buf_count);
             
-            
             // if all particles are dead and the system is one-shot we should stop the particle_system
-            if(particle_system.total_emitted == particle_system.max_particles && particle_system.attributes.one_shot)
+            if(particle_system.attributes.one_shot && particle_system.dead_particle_count == particle_system.max_particles)
             {
-                particle_system.emitting = false;
+                debug("total: %d\n", particle_system.total_emitted);
+                particle_system.running = false;
+                particle_system.alive0_particle_count = 0;
+                particle_system.alive1_particle_count = 0;
             }
             
             //auto camera_position = renderer.cameras[renderer.current_camera_handle].position;
