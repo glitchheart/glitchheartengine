@@ -1938,7 +1938,7 @@ static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer, ma
         if(scene.active_entities[ent_index])
         {
 			scene::TransformComponent &transform = scene.transform_components[ent.transform_handle.handle];
-            // Create a copy of the position, rotation and scale since we don't want the parents transform to change the child's transform. Only when rendering.
+			// Create a copy of the position, rotation and scale since we don't want the parents transform to change the child's transform. Only when rendering.
 			math::Vec3 position = transform.position;
 			math::Vec3 rotation = transform.rotation;
 			math::Vec3 scale = transform.scale;
