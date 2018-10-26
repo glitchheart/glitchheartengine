@@ -8,9 +8,8 @@ static ParticleSystemInfo* get_particle_system_info(ParticleSystemHandle handle,
     return 0;
 }
 
-static void start_particle_system(ParticleSystemInfo &system, b32 one_shot = false)
+static void start_particle_system(ParticleSystemInfo &system)
 {
-    system.attributes.one_shot = one_shot;
     system.running = true;
     system.emitting = true;
     system.total_emitted = 0;
@@ -22,12 +21,12 @@ static void start_particle_system(ParticleSystemInfo &system, b32 one_shot = fal
     }
 }
 
-static void start_particle_system(ParticleSystemHandle handle, Renderer &renderer, b32 one_shot = false)
+static void start_particle_system(ParticleSystemHandle handle, Renderer &renderer)
 {
     i32 _internal_handle = renderer.particles._internal_handles[handle.handle - 1];
     assert(_internal_handle >= 0 && _internal_handle < renderer.particles.particle_system_count);
     ParticleSystemInfo &system = renderer.particles.particle_systems[_internal_handle];
-    start_particle_system(system, one_shot);
+    start_particle_system(system);
 }
 
 static void stop_particle_system(ParticleSystemHandle handle, Renderer &renderer)
