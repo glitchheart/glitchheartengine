@@ -258,16 +258,21 @@ static void init_renderer(Renderer &renderer)
     renderer.pixels_per_unit = global_pixels_per_unit;
     renderer.frame_lock = 0;
     
+    renderer.particles = {};
+    
     renderer.particles._max_particle_system_count = global_max_particle_systems;
     
     renderer.particles.particle_systems = push_array(&renderer. particle_arena, global_max_particle_systems, ParticleSystemInfo);
     renderer.particles._internal_handles = push_array(&renderer. particle_arena, global_max_particle_systems, i32);
-    
+    renderer.particles._tagged_removed = push_array(&renderer. particle_arena, global_max_particle_systems, i32);
+    renderer.particles._tagged_removed_count = 0;
     
     for(i32 index = 0; index < global_max_particle_systems; index++)
     {
         renderer.particles._internal_handles[index] = -1;
     }
+    
+    renderer.particles.entropy = random_seed(1234);
     
     renderer.particles.particle_system_count = 0;
     renderer.animation_controllers = push_array(&renderer.animation_arena, 64, AnimationController);
@@ -304,9 +309,6 @@ int main(int argc, char **args)
     GameMemory game_memory = {};
     
     game_memory.should_reload = true;
-    
-    debug("vec3: %zd\n", sizeof(S_Vec3));
-    debug("r32: %zd\n", sizeof(S_r32));
     
     MemoryArena game_temp_arena = {};
     game_memory.temp_arena = &game_temp_arena;
@@ -504,7 +506,7 @@ int main(int argc, char **args)
         {
             controller_keys(GLFW_JOYSTICK_1);
         }
-
+        
 		// frame_counter_for_asset_check++;
         // if(frame_counter_for_asset_check == 10)
         // {

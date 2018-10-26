@@ -30,8 +30,8 @@ enum EmissionType
 
 struct ParticleSpawnInfo
 {
-    S_Vec3 position;
-    S_Vec3 direction;
+    Vec3_4x position;
+    Vec3_4x direction;
 };
 
 #define EMITTER_FUNC(name) ParticleSpawnInfo name(RandomSeries& series)
@@ -76,15 +76,15 @@ struct ParticleSystemAttributes
 
 struct Particles
 {
-    S_Vec3 *position;
-    S_Vec3 *direction;
-    S_Rgba *color;
-    S_Vec2 *size;
+    Vec3_4x *position;
+    Vec3_4x *direction;
+    Rgba_4x *color;
+    Vec2_4x *size;
     
-    S_Vec3 *relative_position;
+    Vec3_4x *relative_position;
     r32 *relative_size;
     
-    S_r64 *life;
+    r64_4x *life;
     
     i32 *texture_handle;
 };
@@ -156,7 +156,6 @@ struct ParticleSystemInfo
     
     r64 current_emission_time;
     
-    RandomSeries entropy;
     MemoryArena arena;
 };
 

@@ -201,7 +201,7 @@ namespace scene
                     templ.transform.position = math::Vec3();
                     templ.transform.scale = math::Vec3(1, 1, 1);
                     templ.transform.rotation = math::Vec3(0, 0, 0);
-					templ.transform.child_handle = EMPTY_TEMPLATE_HANDLE;
+		    templ.transform.child_handle = EMPTY_TEMPLATE_HANDLE;
                     
                     while(fgets(buffer, 256, file) && !starts_with(buffer, "-"))
                     {
@@ -217,11 +217,11 @@ namespace scene
                         {
                             sscanf(buffer, "rotation: %f %f %f\n", &templ.transform.rotation.x, &templ.transform.rotation.y, &templ.transform.rotation.z);
                         }
-						else if(starts_with(buffer, "child_templ"))
-						{
-							// @Incomplete
-							// Child template referenced
-						}
+			else if(starts_with(buffer, "child_templ"))
+			{
+			    // @Incomplete
+			    // Child template referenced
+			}
                     }
                 }
                 else if(starts_with(buffer, "-render"))
@@ -419,7 +419,7 @@ namespace scene
             i32 real_handle = scene._internal_handles[removed_handle - 1];
             Entity &entity = scene.entities[real_handle];
             
-            // Pack the components in scene by removing the unregistered entities components and moving the rest to pack the arrays. If the returned handles are -1 the entity didn't have that component set.
+            // Pack the components in scene by removing the unregistered entity's components and moving the rest to pack the arrays. If the returned handles are -1 the entity didn't have that component set.
             i32 transform_handle = _pack_transform_components(entity, scene);
             i32 render_handle = _pack_render_components(entity, scene);
             i32 particle_system_handle = _pack_particle_system_components(entity, scene);

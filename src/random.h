@@ -3,7 +3,7 @@
 
 struct RandomSeries
 {
-    S_r32 state;
+    r32_4x state;
 };
 
 inline RandomSeries random_seed(u32 e0 = 78953890,
@@ -13,14 +13,14 @@ inline RandomSeries random_seed(u32 e0 = 78953890,
 {
     RandomSeries series;
     
-    series.state = S_r32(e0, e1, e2, e3);
+    series.state = r32_4x(e0, e1, e2, e3);
     
     return(series);
 }
 
-inline S_r32 random_next_u32_s(RandomSeries& series)
+inline r32_4x random_next_u32_4x(RandomSeries& series)
 {
-    S_r32 result = series.state;
+    r32_4x result = series.state;
     result ^= shift_left_simd(result, 13);
     result ^= shift_right_simd(result, 17);
     result ^= shift_left_simd(result, 5);
@@ -31,7 +31,7 @@ inline S_r32 random_next_u32_s(RandomSeries& series)
 
 inline u32 random_next_u32(RandomSeries& series)
 {
-    u32 result = random_next_u32_s(series).u[0];
+    u32 result = random_next_u32_4x(series).u[0];
     return(result);
 }
 
@@ -49,18 +49,18 @@ inline r32 random_unilateral(RandomSeries& series)
     return(result);
 }
 
-inline S_r32 random_unilateral_s(RandomSeries& series)
+inline r32_4x random_unilateral_4x(RandomSeries& series)
 {
     r32 divisor = 1.0f / (r32)u32max;
-    S_r32 result = u32_to_r32(random_next_u32_s(series)) * S_r32(divisor);
+    r32_4x result = u32_to_r32(random_next_u32_4x(series)) * r32_4x(divisor);
     
     return(result);
 }
 
 
-inline S_r32 random_bilateral_s(RandomSeries& series)
+inline r32_4x random_bilateral_4x(RandomSeries& series)
 {
-    S_r32 result = S_r32(2.0f) * random_unilateral_s(series) - 1.0f;
+    r32_4x result = r32_4x(2.0f) * random_unilateral_4x(series) - 1.0f;
     
     return(result);
 }
@@ -73,20 +73,20 @@ inline r32 random_bilateral(RandomSeries& series)
 }
 
 
-inline S_r32 random_between_s(RandomSeries& series, r32 min, r32 max)
+inline r32_4x random_between_4x(RandomSeries& series, r32 min, r32 max)
 {
-    S_r32 result = min + math::lerp(S_r32(min), random_unilateral_s(series), S_r32(max));
+    r32_4x result = min + math::lerp(r32_4x(min), random_unilateral_4x(series), r32_4x(max));
     return result;
 }
 
-inline S_i32 random_between_s(RandomSeries& series, i32 min, i32 max)
+inline i32_4x random_between_4x(RandomSeries& series, i32 min, i32 max)
 {
-    S_r32 s = random_next_u32_s(series);
+    r32_4x s = random_next_u32_4x(series);
     i32 result_1 = min + i32(s.u[0] % ((max + 1) - min));
     i32 result_2 = min + i32(s.u[1] % ((max + 1) - min));
     i32 result_3 = min + i32(s.u[2] % ((max + 1) - min));
     i32 result_4 = min + i32(s.u[3] % ((max + 1) - min));
-    S_i32 result = S_i32(result_1, result_2, result_3, result_4);
+    i32_4x result = i32_4x(result_1, result_2, result_3, result_4);
     return result;
 }
 
@@ -102,53 +102,54 @@ inline i32 random_between(RandomSeries& series, i32 min, i32 max)
     return result;
 }
 
-inline S_Vec2 random_from_disc(RandomSeries& series, r32 _radius)
+inline Vec2_4x random_from_disc(RandomSeries& series, r32 _radius)
 {
-    S_Vec2 result;
+    Vec2_4x result;
     
-    S_r32 angle = random_between_s(series, 0.0f, 360.0f) * S_r32(DEGREE_IN_RADIANS);
-    S_r32 radius = random_between_s(series, 0.0f, _radius);
-    result.x = (radius * S_r32(cos(angle.e[0]),cos(angle.e[1]), cos(angle.e[2]), cos(angle.e[3])));
-    result.y = (radius * S_r32(sin(angle.e[0]),sin(angle.e[1]), sin(angle.e[2]), sin(angle.e[3])));
+    r32_4x angle = random_between_4x(series, 0.0f, 360.0f) * r32_4x(DEGREE_IN_RADIANS);
+    r32_4x radius = random_between_4x(series, 0.0f, _radius);
+    result.x = (radius * r32_4x(cos(angle.e[0]),cos(angle.e[1]), cos(angle.e[2]), cos(angle.e[3])));
+    result.y = (radius * r32_4x(sin(angle.e[0]),sin(angle.e[1]), sin(angle.e[2]), sin(angle.e[3])));
     
     return result;
 }
 
-inline S_r32 random_unilateral_simd(RandomSeries& series)
+inline r32_4x random_unilateral_4ximd(RandomSeries& series)
 {
-    S_r32 divisor = S_r32(1.0f / (r32)i32max);
-    S_r32 result = divisor * (u32_to_r32(random_next_u32_s(series) & S_r32(i32max)));
+    r32_4x divisor = r32_4x(1.0f / (r32)i32max);
+    // @Note(Niels): Ok to cast to u32 since i32max is always u32max / 2 and never negative (no underflow)
+    r32_4x result = divisor * (u32_to_r32(random_next_u32_4x(series) & r32_4x((u32)i32max)));
     return result;
 }
 
-inline S_Vec3 random_direction(RandomSeries& series)
+inline Vec3_4x random_direction(RandomSeries& series)
 {
-    S_Vec3 result(0.0f);
+    Vec3_4x result(0.0f);
     
-    result.x = random_between_s(series, 0.0f, 1.0f);
-    result.y = random_between_s(series, 0.0f, 1.0f);
-    result.z = random_between_s(series, 0.0f, 1.0f);
+    result.x = random_between_4x(series, 0.0f, 1.0f);
+    result.y = random_between_4x(series, 0.0f, 1.0f);
+    result.z = random_between_4x(series, 0.0f, 1.0f);
     
     return math::normalize(result);
 }
 
-inline S_Vec3 random_rect(RandomSeries& series, r32 min, r32 max)
+inline Vec3_4x random_rect(RandomSeries& series, r32 min, r32 max)
 {
-    S_Vec3 result(0.0f);
+    Vec3_4x result(0.0f);
     
-    result.x = random_between_s(series, min, max);
+    result.x = random_between_4x(series, min, max);
     result.y = _mm_set1_ps(0.0f);
     
-    result.z = random_between_s(series, min, max);
+    result.z = random_between_4x(series, min, max);
     
     return result;
 }
 
-inline S_Vec3 random_disc(RandomSeries& series, r32 radius)
+inline Vec3_4x random_disc(RandomSeries& series, r32 radius)
 {
-    S_Vec3 result(0.0f);
+    Vec3_4x result(0.0f);
     
-    S_Vec2 vec = random_from_disc(series, radius);
+    Vec2_4x vec = random_from_disc(series, radius);
     
     result.x = vec.x;
     result.y = _mm_set1_ps(0.0f);

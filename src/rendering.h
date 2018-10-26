@@ -852,6 +852,7 @@ struct RenderCommand
         } cursor;
         struct
         {
+            i32 handle;
             i32 buffer_handle;
             i32 offset_buffer_handle;
             i32 color_buffer_handle;
@@ -1033,11 +1034,15 @@ struct Renderer
     struct
     {
         i32 *_internal_handles;
+        i32 *_tagged_removed;
+        i32 _tagged_removed_count;
         i32 _current_internal_handle;
         i32 _max_particle_system_count;
         
         ParticleSystemInfo *particle_systems;
         i32 particle_system_count;
+        
+        RandomSeries entropy;
     } particles;
     
     

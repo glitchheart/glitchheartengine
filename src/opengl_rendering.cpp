@@ -2494,6 +2494,14 @@ static void render_mesh_instanced(const RenderCommand &render_command, Renderer 
 
 static void render_particles(RenderCommand &render_command, Renderer &renderer, RenderState &render_state, math::Mat4 projection_matrix, math::Mat4 view_matrix)
 {
+    for(i32 i = 0; i < renderer.particles._tagged_removed_count; i++)
+    {
+        if(renderer.particles._tagged_removed[i] == render_command.particles.handle)
+        {
+            return;
+        }
+    }
+    
     if(render_command.particles.blend_mode == CBM_ONE)
     {
         glBlendFunc(GL_SRC_ALPHA, GL_ONE);
@@ -3039,8 +3047,7 @@ static void render_commands(RenderState &render_state, Renderer &renderer)
         glDisable(GL_SCISSOR_TEST);
     }
     
-    
-    
+    renderer.particles._tagged_removed_count = 0;
     renderer.ui_command_count = 0;
     //clear(&renderer.ui_commands);
 }
@@ -3142,7 +3149,7 @@ static void render(RenderState& render_state, Renderer& renderer, r64 delta_time
         renderer.framebuffer_width = render_state.framebuffer_width;
         renderer.framebuffer_height = render_state.framebuffer_height;
         
-	render_shadows(render_state, renderer, render_state.shadow_map_buffer);
+        render_shadows(render_state, renderer, render_state.shadow_map_buffer);
         
         glViewport(0, 0, render_state.framebuffer_width, render_state.framebuffer_height);
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, render_state.framebuffer.buffer_handle);
@@ -3150,7 +3157,7 @@ static void render(RenderState& render_state, Renderer& renderer, r64 delta_time
         glEnable(GL_DEPTH_TEST);
         
         glDepthFunc(GL_LESS);
-
+        
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
         glClearColor(renderer.clear_color.r, renderer.clear_color.g, renderer.clear_color.b, renderer.clear_color.a);

@@ -61,7 +61,7 @@ EMITTER_FUNC(emit_random_dir)
 {
     ParticleSpawnInfo info;
     
-    info.position = S_Vec3(0.0f);
+    info.position = Vec3_4x(0.0f);
     info.direction = random_direction(series);
     
     return info;
@@ -71,11 +71,11 @@ EMITTER_FUNC(emit_from_square)
 {
     ParticleSpawnInfo info;
     
-    S_Vec3 r = random_rect(series, 0.0f, 1.0f);
+    Vec3_4x r = random_rect(series, 0.0f, 1.0f);
     
     info.position = r;
     
-    info.direction = S_Vec3(math::Vec3(0.0f, 1.0f, 0.0f));//random_direction(series);
+    info.direction = random_direction(series);
     
     return info;
 }
@@ -84,12 +84,11 @@ EMITTER_FUNC(emit_from_disc)
 {
     ParticleSpawnInfo info;
     
-    S_Vec3 r = random_disc(series, 1.0f);
+    Vec3_4x r = random_disc(series, 1.0f);
     
     info.position = r;
     
-    info.direction = S_Vec3(math::Vec3(0.0f, 1.0f, 0.0f));//random_direction(series);
-    //info.direction = random_direction(series);
+    info.direction = random_direction(series);
     
     return info;
 }
@@ -141,14 +140,14 @@ static void _allocate_particle_system(Renderer& renderer, ParticleSystemInfo& sy
     system_info.alive0_particle_count = 0;
     system_info.alive1_particle_count = 0;
     
-    system_info.particles.position = push_array_simd(memory_arena, max_over_four, S_Vec3);
-    system_info.particles.direction = push_array_simd(memory_arena, max_over_four, S_Vec3);
-    system_info.particles.color = push_array_simd(memory_arena, max_over_four, S_Rgba);
+    system_info.particles.position = push_array_simd(memory_arena, max_over_four, Vec3_4x);
+    system_info.particles.direction = push_array_simd(memory_arena, max_over_four, Vec3_4x);
+    system_info.particles.color = push_array_simd(memory_arena, max_over_four, Rgba_4x);
     
-    system_info.particles.size = push_array_simd(memory_arena, max_over_four, S_Vec2);
-    system_info.particles.relative_position = push_array_simd(memory_arena, max_over_four, S_Vec3);
+    system_info.particles.size = push_array_simd(memory_arena, max_over_four, Vec2_4x);
+    system_info.particles.relative_position = push_array_simd(memory_arena, max_over_four, Vec3_4x);
     
-    system_info.particles.life = push_array_simd(memory_arena, max_over_four, S_r64);
+    system_info.particles.life = push_array_simd(memory_arena, max_over_four, r64_4x);
     system_info.particles.texture_handle = push_array(memory_arena, system_info.max_particles, i32);
     
     system_info.offsets = push_array(memory_arena, system_info.max_particles, math::Vec3);
@@ -191,7 +190,7 @@ static void _allocate_particle_system(Renderer& renderer, ParticleSystemInfo& sy
     }
     else
     {
-        update_instanced_buffer(renderer, sizeof(math::Vec3) * system_info.max_particles, system_info.offset_buffer_handle);
+        update_instanced_buffer(renderer, sizeof(math::Vec2) * system_info.max_particles, system_info.size_buffer_handle);
     }
 }
 
@@ -231,11 +230,10 @@ static ParticleSystemHandle create_particle_system(Renderer &renderer, i32 max_p
     system_info.running = false;
     
     system_info.attributes = get_default_particle_system_attributes();
+    system_info.transform = {};
     
     system_info.particle_count = 0;
     system_info.last_used_particle = 0;
-    
-    system_info.entropy = random_seed(1234);
     
     _allocate_particle_system(renderer, system_info, max_particles);
     
@@ -248,6 +246,8 @@ static void remove_particle_system(Renderer& renderer, ParticleSystemHandle &han
         return;
     
     i32 removed_handle = handle.handle;
+    
+    renderer.particles._tagged_removed[renderer.particles._tagged_removed_count++] = removed_handle;
     
     if(renderer.particles.particle_system_count == 1)
     {

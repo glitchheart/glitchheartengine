@@ -1866,6 +1866,56 @@ static void load_obj(Renderer &renderer, char *file_path, MeshInfo &mesh_info, b
     }
 }
 
+static void push_particle_system(Renderer &renderer, ParticleSystemInfo &particle_info, i32 handle,  CommandBlendMode blend_mode = CBM_ONE_MINUS_SRC_ALPHA)
+{
+    renderer.command_count++;
+    RenderCommand* render_command = &renderer.commands[renderer.command_count++];
+    render_command->shader_handle = -1;
+    render_command->particles.handle = handle;
+    
+    render_command->type = RENDER_COMMAND_PARTICLES;
+    render_command->position = particle_info.transform.position;
+    
+    // @Incomplete:(Niels): 
+    //render_command->rotation = mesh_info.transform.rotation;
+    
+    // @Incomplete
+    //render_command->particles.buffer_handle = particle_info.buffer_handle;
+    render_command->particles.offset_buffer_handle = particle_info.offset_buffer_handle;
+    render_command->particles.color_buffer_handle = particle_info.color_buffer_handle;
+    render_command->particles.size_buffer_handle = particle_info.size_buffer_handle;
+    render_command->particles.particle_count = particle_info.particle_count;
+    
+    render_command->particles.offsets = particle_info.offsets;
+    render_command->particles.colors = particle_info.colors;
+    render_command->particles.sizes = particle_info.sizes;
+    
+    render_command->particles.diffuse_texture = particle_info.attributes.texture_handle;
+    render_command->particles.blend_mode = blend_mode;
+}
+
+static void push_particle_system(Renderer &renderer, ParticleSystemHandle handle)
+{
+    i32 _internal_handle = renderer.particles._internal_handles[handle.handle];
+    
+    if(_internal_handle != -1)
+    {
+        ParticleSystemInfo &particle_info = renderer.particles.particle_systems[_internal_handle];
+        push_particle_system(renderer, particle_info, handle.handle);
+    }
+}
+
+static void push_particle_system(Renderer &renderer, i32 particle_system_handle)
+{
+    i32 _internal_handle = renderer.particles._internal_handles[particle_system_handle];
+    
+    if(_internal_handle != -1)
+    {
+        ParticleSystemInfo &particle_info = renderer.particles.particle_systems[_internal_handle];
+        push_particle_system(renderer, particle_info, particle_system_handle);
+    }
+}
+
 static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer, math::Vec3 *positions, math::Vec3 *rotations, math::Vec3 *scalings, math::Rgba *colors)
 {
     InstancedRenderCommand instanced_commands[MAX_INSTANCING_PAIRS];
@@ -1880,15 +1930,16 @@ static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer, ma
     {
         const scene::Entity &ent = scene.entities[ent_index];
         
-        if(scene.active_entities[ent_index])
+        if (scene.active_entities[ent_index])
         {
-			scene::TransformComponent &transform = scene.transform_components[ent.transform_handle.handle];
-            // Create a copy of the position, rotation and scale since we don't want the parents transform to change the child's transform. Only when rendering.
-			math::Vec3 position = transform.position;
-			math::Vec3 rotation = transform.rotation;
-			math::Vec3 scale = transform.scale;
+            scene::TransformComponent &transform = scene.transform_components[ent.transform_handle.handle];
             
-			if(ent.comp_flags & scene::COMP_RENDER)
+            // Create a copy of the position, rotation and scale since we don't want the parents transform to change the child's transform. Only when rendering.
+            math::Vec3 position = transform.position;
+            math::Vec3 rotation = transform.rotation;
+            math::Vec3 scale = transform.scale;
+            
+            if (ent.comp_flags & scene::COMP_RENDER)
             {
                 scene::RenderComponent &render = scene.render_components[ent.render_handle.handle];
                 
@@ -1896,16 +1947,16 @@ static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer, ma
                 
                 // Instancing stuff
                 i32 command_index = -1;
-                for(i32 i = 0; i < command_count; i++)
+                for (i32 i = 0; i < command_count; i++)
                 {
-                    if(instanced_commands[i].mesh_handle == render.mesh_handle.handle && instanced_commands[i].original_material_handle == material.source_handle.handle)
+                    if (instanced_commands[i].mesh_handle == render.mesh_handle.handle && instanced_commands[i].original_material_handle == material.source_handle.handle)
                     {
                         command_index = i;
                         break;
                     }
                 }
                 
-                if(command_index == -1)
+                if (command_index == -1)
                 {
                     command_index = command_count++;
                     instanced_commands[command_index].mesh_handle = render.mesh_handle.handle;
@@ -1918,13 +1969,13 @@ static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer, ma
                 
                 InstancedRenderCommand &command = instanced_commands[command_index];
                 
-				if(IS_COMP_HANDLE_VALID(transform.parent_handle))
-				{
-					scene::TransformComponent &parent_transform = scene.transform_components[transform.parent_handle.handle];
-					position += parent_transform.position;
-					rotation += parent_transform.rotation;
-					scale *= parent_transform.scale;
-				}
+                if(IS_COMP_HANDLE_VALID(transform.parent_handle))
+                {
+                    scene::TransformComponent &parent_transform = scene.transform_components[transform.parent_handle.handle];
+                    position += parent_transform.position;
+                    rotation += parent_transform.rotation;
+                    scale *= parent_transform.scale;
+                }
 				
                 positions[command_index * 1024 + command.count] = position;
                 rotations[command_index * 1024 + command.count] = rotation * DEGREE_IN_RADIANS;
@@ -1941,19 +1992,26 @@ static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer, ma
                 {
                     scene::ParticleSystemComponent &ps = scene.particle_system_components[ent.particle_system_handle.handle];
                     
+                    i32 _internal_handle = renderer.particles._internal_handles[ps.handle.handle - 1];
+                    ParticleSystemInfo& system = renderer.particles.particle_systems[_internal_handle];
+                    
                     if(ent.comp_flags & scene::COMP_TRANSFORM)
                     {
                         // Add transform stuff
-                        i32 _internal_handle = renderer.particles._internal_handles[ps.handle.handle - 1];
-                        ParticleSystemInfo& system = renderer.particles.particle_systems[_internal_handle];
-                        
                         scene::TransformComponent &transform = scene.transform_components[ent.transform_handle.handle];
                         
                         system.transform.position = position;
                         system.transform.scale = scale;
                         system.transform.rotation = rotation;
                     }
+                    
+                    if(system.running)
+                    {
+                        push_particle_system(renderer, system, ps.handle.handle);
+                    }
                 }
+                
+                
             }
         }
     }
