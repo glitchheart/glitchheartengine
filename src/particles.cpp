@@ -1,52 +1,3 @@
-static void push_particle_system(Renderer &renderer, ParticleSystemInfo &particle_info, CommandBlendMode blend_mode = CBM_ONE_MINUS_SRC_ALPHA)
-{
-    renderer.command_count++;
-    RenderCommand* render_command = &renderer.commands[renderer.command_count++];
-    render_command->shader_handle = -1;
-    
-    render_command->type = RENDER_COMMAND_PARTICLES;
-    render_command->position = particle_info.transform.position;
-    
-    // @Incomplete:(Niels): 
-    //render_command->rotation = mesh_info.transform.rotation;
-    
-    // @Incomplete
-    //render_command->particles.buffer_handle = particle_info.buffer_handle;
-    render_command->particles.offset_buffer_handle = particle_info.offset_buffer_handle;
-    render_command->particles.color_buffer_handle = particle_info.color_buffer_handle;
-    render_command->particles.size_buffer_handle = particle_info.size_buffer_handle;
-    render_command->particles.particle_count = particle_info.particle_count;
-    
-    render_command->particles.offsets = particle_info.offsets;
-    render_command->particles.colors = particle_info.colors;
-    render_command->particles.sizes = particle_info.sizes;
-    
-    render_command->particles.diffuse_texture = particle_info.attributes.texture_handle;
-    render_command->particles.blend_mode = blend_mode;
-}
-
-static void push_particle_system(Renderer &renderer, ParticleSystemHandle handle)
-{
-    i32 _internal_handle = renderer.particles._internal_handles[handle.handle];
-    
-    if(_internal_handle != -1)
-    {
-        ParticleSystemInfo &particle_info = renderer.particles.particle_systems[_internal_handle];
-        push_particle_system(renderer, particle_info);
-    }
-}
-
-static void push_particle_system(Renderer &renderer, i32 particle_system_handle)
-{
-    i32 _internal_handle = renderer.particles._internal_handles[particle_system_handle];
-    
-    if(_internal_handle != -1)
-    {
-        ParticleSystemInfo &particle_info = renderer.particles.particle_systems[_internal_handle];
-        push_particle_system(renderer, particle_info);
-    }
-}
-
 i32 find_unused_particle(ParticleSystemInfo &particle_system)
 {   
     if(particle_system.dead_particle_count > 0)
@@ -58,20 +9,20 @@ i32 find_unused_particle(ParticleSystemInfo &particle_system)
     return -1;
 }
 
-S_r64 get_t(S_r64 time_spent, S_r64 start_time, S_r64 end_time)
+r64_4x get_t(r64_4x time_spent, r64_4x start_time, r64_4x end_time)
 {
-    S_r64 diff = end_time - start_time;
-    S_r64 in_this_index = time_spent - start_time;
+    r64_4x diff = end_time - start_time;
+    r64_4x in_this_index = time_spent - start_time;
     
-    S_r64 index_over_diff = in_this_index / diff;
+    r64_4x index_over_diff = in_this_index / diff;
     
-    S_r64 t = simd_min(1.0, index_over_diff);                      
+    r64_4x t = simd_min(1.0, index_over_diff);                      
     
     return t;
 }
 
 // @Incomplete(Niels): Rethink how this is done to be more SIMD like...
-S_Rgba get_color_by_time(ParticleSystemInfo &particle_system, S_r64 time_spent)
+Rgba_4x get_color_by_time(ParticleSystemInfo &particle_system, r64_4x time_spent)
 {
     i32 value_count = particle_system.color_over_lifetime.value_count;
     math::Rgba* values = particle_system.color_over_lifetime.values;
@@ -79,33 +30,33 @@ S_Rgba get_color_by_time(ParticleSystemInfo &particle_system, S_r64 time_spent)
     
     if(equal_epsilon(time_spent, particle_system.attributes.life_time, 0.001))
     {
-        return S_Rgba(values[value_count - 1]);
+        return Rgba_4x(values[value_count - 1]);
     }
     
     for(i32 key = 0; key < value_count; key++)
     {
         if(key + 1 == value_count)
         {
-            return S_Rgba(values[key]);
+            return Rgba_4x(values[key]);
         }
         
         r64 current_key = keys[key] * particle_system.attributes.life_time;
         r64 next_key = keys[key + 1] * particle_system.attributes.life_time;
-        if(any_lt_eq(S_r64(current_key), time_spent) && any_lt_eq(time_spent, next_key))
+        if(any_lt_eq(r64_4x(current_key), time_spent) && any_lt_eq(time_spent, next_key))
         {
-            S_Rgba start_color = S_Rgba(values[key]);
-            S_Rgba end_color = S_Rgba(values[key + 1]);
+            Rgba_4x start_color = Rgba_4x(values[key]);
+            Rgba_4x end_color = Rgba_4x(values[key + 1]);
             
-            S_r64 t_color = get_t(time_spent, current_key, next_key);
+            r64_4x t_color = get_t(time_spent, current_key, next_key);
             
             return math::lerp(start_color, t_color, end_color);
         }
     }
-    return S_Rgba(values[value_count - 1]);
+    return Rgba_4x(values[value_count - 1]);
 }
 
 // @Incomplete(Niels): Rethink how this is done to be more SIMD like...
-S_Vec2 get_size_by_time(ParticleSystemInfo &particle_system, S_r64 time_spent)
+Vec2_4x get_size_by_time(ParticleSystemInfo &particle_system, r64_4x time_spent)
 {
     i32 value_count = particle_system.size_over_lifetime.value_count;
     math::Vec2* values = particle_system.size_over_lifetime.values;
@@ -113,32 +64,32 @@ S_Vec2 get_size_by_time(ParticleSystemInfo &particle_system, S_r64 time_spent)
     
     if(equal_epsilon(time_spent, particle_system.attributes.life_time, 0.001))
     {
-        return S_Vec2(values[value_count - 1]);
+        return Vec2_4x(values[value_count - 1]);
     }
     
     for(i32 key = 0; key < value_count; key++)
     {
         if(key + 1 == value_count)
         {
-            return S_Vec2(values[key]);
+            return Vec2_4x(values[key]);
         }
         
         r64 current_key = keys[key] * particle_system.attributes.life_time;r64  next_key = keys[key + 1] * particle_system.attributes.life_time;
-        if(any_lt_eq(S_r64(current_key), time_spent) && any_lt_eq(time_spent, next_key))
+        if(any_lt_eq(r64_4x(current_key), time_spent) && any_lt_eq(time_spent, next_key))
         {
-            S_Vec2 start_size = S_Vec2(values[key]);
-            S_Vec2 end_size = S_Vec2(values[key + 1]);
+            Vec2_4x start_size = Vec2_4x(values[key]);
+            Vec2_4x end_size = Vec2_4x(values[key + 1]);
             
-            S_r64 t_size = get_t(time_spent, current_key, next_key);
+            r64_4x t_size = get_t(time_spent, current_key, next_key);
             
             return math::lerp(start_size, t_size, end_size);
         }
     }
-    return S_Vec2(values[value_count - 1]);
+    return Vec2_4x(values[value_count - 1]);
 }
 
 // @Incomplete(Niels): Rethink how this is done to be more SIMD like...
-S_r32 get_speed_by_time(ParticleSystemInfo &particle_system, S_r64 time_spent)
+r32_4x get_speed_by_time(ParticleSystemInfo &particle_system, r64_4x time_spent)
 {
     i32 value_count = particle_system.speed_over_lifetime.value_count;
     r32* values = particle_system.speed_over_lifetime.values;
@@ -146,32 +97,32 @@ S_r32 get_speed_by_time(ParticleSystemInfo &particle_system, S_r64 time_spent)
     
     if(equal_epsilon(time_spent, particle_system.attributes.life_time, 0.001))
     {
-        return S_r32(values[value_count - 1]);
+        return r32_4x(values[value_count - 1]);
     }
     
     for(i32 key = 0; key < value_count; key++)
     {
         if(key + 1 == value_count)
         {
-            return S_r32(values[key]);
+            return r32_4x(values[key]);
         }
         
         r64 current_key = keys[key] * particle_system.attributes.life_time;
         r64 next_key = keys[key + 1] * particle_system.attributes.life_time;
-        if(any_lt_eq(S_r64(current_key), time_spent) && any_lt_eq(time_spent, next_key))
+        if(any_lt_eq(r64_4x(current_key), time_spent) && any_lt_eq(time_spent, next_key))
         {
-            S_r32 start_speed = S_r32(values[key]);
-            S_r32 end_speed = S_r32(values[key + 1]);
+            r32_4x start_speed = r32_4x(values[key]);
+            r32_4x end_speed = r32_4x(values[key + 1]);
             
-            S_r64 t_speed = get_t(time_spent, current_key, next_key);
+            r64_4x t_speed = get_t(time_spent, current_key, next_key);
             
-            S_r32 res = math::lerp(start_speed, t_speed, end_speed);
+            r32_4x res = math::lerp(start_speed, t_speed, end_speed);
             
             return res;
         }
     }
     
-    return S_r32(values[value_count - 1]);
+    return r32_4x(values[value_count - 1]);
 }
 
 // @Note:(Niels): Update the particles that have been emitted in previous and in the current frame
@@ -204,8 +155,8 @@ void update_particles(Renderer &renderer, ParticleSystemInfo &particle_system, r
         if(any_lt_eq(particle_system.particles.life[main_index], 0.0))
         {
             static i32 bob = 0;
-            debug("P: %d\n", bob++);
-            debug("Count: %d\n", particle_system.particle_count);
+            //debug("P: %d\n", bob++);
+            //debug("Count: %d\n", particle_system.particle_count);
             particle_system.dead_particles[particle_system.dead_particle_count++] = main_index;
             continue;
         }
@@ -215,12 +166,13 @@ void update_particles(Renderer &renderer, ParticleSystemInfo &particle_system, r
         }
         
         auto life = particle_system.particles.life[main_index];
-        S_r64 time_spent = particle_system.attributes.life_time - life;
+        r64_4x time_spent = particle_system.attributes.life_time - life;
         
-        particle_system.particles.direction[main_index] += S_Vec3(math::Vec3(0.0f, -particle_system.attributes.gravity * (r32)delta_time, 0.0f));
+        particle_system.particles.direction[main_index] += Vec3_4x(math::Vec3(0.0f, -particle_system.attributes.gravity * (r32)delta_time, 0.0f));
         
         
-        // @Note(Niels): This branch will always be true or false for the whole loop so it should be optimized out
+        // @Note(Niels): This branch will always be true or false for the whole loop so it should be optimized out (hopefully) 
+        // We could optimize it specifically by having separate arrays for each of these
         if(size_value_count > 0)
         {
             particle_system.particles.size[main_index] = get_size_by_time(particle_system, time_spent);
@@ -248,7 +200,7 @@ void update_particles(Renderer &renderer, ParticleSystemInfo &particle_system, r
             particle_system.particles.position[main_index] += particle_system.particles.direction[main_index] * particle_system.attributes.start_speed * (r32)delta_time;				
         }                
         
-        S_Vec3 final_pos(0.0f);
+        Vec3_4x final_pos(0.0f);
         
         if(particle_system.attributes.particle_space == PS_WORLD && !start)
         {
@@ -260,16 +212,16 @@ void update_particles(Renderer &renderer, ParticleSystemInfo &particle_system, r
             particle_system.particles.relative_position[main_index] = particle_system.transform.position;
         }
         
-        S_Rgba color = particle_system.particles.color[main_index];
-        S_Vec2 size = particle_system.particles.size[main_index];
+        Rgba_4x color = particle_system.particles.color[main_index];
+        Vec2_4x size = particle_system.particles.size[main_index];
         
         float p1[4], p2[4], p3[4], p4[4];
         float s1[4], s2[4], s3[4], s4[4];
         float c1[4], c2[4], c3[4], c4[4];
         
-        s_vec2_to_float4(size, s1, s2, s3, s4);
-        s_vec3_to_float4(final_pos, p1, p2, p3, p4);
-        s_vec4_to_float4(color, c1, c2, c3, c4);
+        vec2_4x_to_float4(size, s1, s2, s3, s4);
+        vec3_4x_to_float4(final_pos, p1, p2, p3, p4);
+        vec4_4x_to_float4(color, c1, c2, c3, c4);
         
         particle_system.offsets[particle_system.particle_count].x = p1[0];
         particle_system.offsets[particle_system.particle_count].y = p1[1];
@@ -331,7 +283,7 @@ void update_particles(Renderer &renderer, ParticleSystemInfo &particle_system, r
     *emitted_this_frame = 0;
 }
 
-void emit_particle(ParticleSystemInfo &particle_system, i32* alive_buf, i32* count)
+void emit_particle(ParticleSystemInfo &particle_system, i32* alive_buf, i32* count, RandomSeries& entropy)
 {
     i32 original_index = find_unused_particle(particle_system);
     
@@ -341,12 +293,12 @@ void emit_particle(ParticleSystemInfo &particle_system, i32* alive_buf, i32* cou
     particle_system.particles.size[original_index] = particle_system.attributes.start_size;
     particle_system.particles.color[original_index] = particle_system.attributes.start_color;
     
-    S_Vec3 random_dir;
-    S_Vec3 new_direction;
+    Vec3_4x random_dir;
+    Vec3_4x new_direction;
     
     assert(particle_system.attributes.emission_module.emitter_func);
     
-    ParticleSpawnInfo spawn_info = particle_system.attributes.emission_module.emitter_func(particle_system.entropy);
+    ParticleSpawnInfo spawn_info = particle_system.attributes.emission_module.emitter_func(entropy);
     particle_system.particles.position[original_index] = spawn_info.position;
     new_direction = spawn_info.direction;
     
@@ -393,7 +345,6 @@ void update_particle_systems(Renderer &renderer, r64 delta_time)
             if (particle_system.emitting)
             {
                 particle_system.time_spent += delta_time;
-                //find_unused_particles(particle_system);
                 
                 i32 new_particles;
                 
@@ -461,7 +412,7 @@ void update_particle_systems(Renderer &renderer, r64 delta_time)
                 // written into the then next buffer (which is now the alive buffer)
                 for (i32 i = 0; i < simd_new_particles / 4; i++)
                 {
-                    emit_particle(particle_system, emitted_alive_buf, emitted_alive_count);
+                    emit_particle(particle_system, emitted_alive_buf, emitted_alive_count, renderer.particles.entropy);
                 }
                 
                 // @Note(Niels): Same goes for burst
@@ -470,10 +421,8 @@ void update_particle_systems(Renderer &renderer, r64 delta_time)
                 
                 for (i32 i = 0; i < simd_burst_particles / 4; i++)
                 {
-                    emit_particle(particle_system, emitted_alive_buf, emitted_alive_count);
+                    emit_particle(particle_system, emitted_alive_buf, emitted_alive_count, renderer.particles.entropy);
                 }
-                
-                debug("emitted: %d\n", particle_system.total_emitted);
             }
             
             // @Note:(Niels): We now update the particles in the emitted alive buf (which may contain particles from previous frames that are still alive), while passing in the next buffer,
@@ -483,7 +432,6 @@ void update_particle_systems(Renderer &renderer, r64 delta_time)
             // if all particles are dead and the system is one-shot we should stop the particle_system
             if(particle_system.attributes.one_shot && particle_system.dead_particle_count == particle_system.max_particles)
             {
-                debug("total: %d\n", particle_system.total_emitted);
                 particle_system.running = false;
                 particle_system.alive0_particle_count = 0;
                 particle_system.alive1_particle_count = 0;
@@ -492,7 +440,7 @@ void update_particle_systems(Renderer &renderer, r64 delta_time)
             //auto camera_position = renderer.cameras[renderer.current_camera_handle].position;
             //sort(camera_position, particle_system.offsets, particle_system.sizes, particle_system.colors, particle_system.particle_count, &renderer.particle_arena);
             
-            push_particle_system(renderer, particle_system);
+            //push_particle_system(renderer, particle_system);
         }   
     }
 }
