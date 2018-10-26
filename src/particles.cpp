@@ -223,6 +223,8 @@ void update_particles(Renderer &renderer, ParticleSystemInfo &particle_system, r
         vec3_4x_to_float4(final_pos, p1, p2, p3, p4);
         vec4_4x_to_float4(color, c1, c2, c3, c4);
         
+        assert(ABS(p1[0]) - ABS(particle_system.transform.position.x) < 4.0f);
+        
         particle_system.offsets[particle_system.particle_count].x = p1[0];
         particle_system.offsets[particle_system.particle_count].y = p1[1];
         particle_system.offsets[particle_system.particle_count].z = p1[2];
@@ -289,18 +291,15 @@ void emit_particle(ParticleSystemInfo &particle_system, i32* alive_buf, i32* cou
     
     assert(original_index != -1);
     
-    particle_system.particles.life[original_index] = particle_system.attributes.life_time;
-    particle_system.particles.size[original_index] = particle_system.attributes.start_size;
-    particle_system.particles.color[original_index] = particle_system.attributes.start_color;
-    
-    Vec3_4x random_dir;
-    Vec3_4x new_direction;
+    particle_system.particles.life[original_index] = r64_4x(particle_system.attributes.life_time);
+    particle_system.particles.size[original_index] = Vec2_4x(particle_system.attributes.start_size);
+    particle_system.particles.color[original_index] = Rgba_4x(particle_system.attributes.start_color);
     
     assert(particle_system.attributes.emission_module.emitter_func);
     
     ParticleSpawnInfo spawn_info = particle_system.attributes.emission_module.emitter_func(entropy);
     particle_system.particles.position[original_index] = spawn_info.position;
-    new_direction = spawn_info.direction;
+    Vec3_4x new_direction = spawn_info.direction;
     
     particle_system.particles.direction[original_index] = math::normalize((particle_system.attributes.direction + new_direction) * particle_system.attributes.spread);
     
@@ -404,7 +403,7 @@ void update_particle_systems(Renderer &renderer, r64 delta_time)
                 i32 simd_new_particles = math::multiple_of_number(new_particles, 4);
                 i32 simd_burst_particles = math::multiple_of_number(burst_particles, 4);
                 
-                simd_new_particles = MIN(simd_new_particles, particle_system.dead_particle_count);
+                simd_new_particles = MIN(particle_system.max_particles, MIN(simd_new_particles, particle_system.dead_particle_count));
                 
                 // @Note(Niels): Emit the particles into the current alive buffer
                 // The first time around this buffer is empty, but on any subsequent step
@@ -430,7 +429,7 @@ void update_particle_systems(Renderer &renderer, r64 delta_time)
             update_particles(renderer, particle_system, delta_time, emitted_alive_buf, emitted_alive_count, write_buf, write_buf_count);
             
             // if all particles are dead and the system is one-shot we should stop the particle_system
-            if(particle_system.attributes.one_shot && particle_system.dead_particle_count == particle_system.max_particles)
+            if(particle_system.attributes.one_shot && particle_system.total_emitted == particle_system.max_particles)
             {
                 particle_system.running = false;
                 particle_system.alive0_particle_count = 0;
