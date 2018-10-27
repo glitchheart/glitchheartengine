@@ -3,6 +3,8 @@
 #include <windows.h>
 #include <timeapi.h>
 
+#include "win32_threading.cpp"
+
 struct PlatformHandle
 {
     HANDLE handle;

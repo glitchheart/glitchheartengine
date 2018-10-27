@@ -454,6 +454,12 @@ int main(int argc, char **args)
     
     template_state.templates = push_array(&platform_state->perm_arena, global_max_entity_templates, scene::EntityTemplate);
 
+	ThreadState thread_state = {};
+	create_thread(thread_state, NULL);
+	create_thread(thread_state, NULL);
+	create_thread(thread_state, NULL);
+	create_thread(thread_state, NULL);
+	
     while (!should_close_window(render_state) && !renderer.should_close)
     {
         if(game_memory.exit_game)
