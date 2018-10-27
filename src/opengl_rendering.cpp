@@ -2681,9 +2681,6 @@ static void render_commands(RenderState &render_state, Renderer &renderer)
         load_font(render_state, renderer, data.path, data.size);
     }
     
-    auto& camera = renderer.cameras[renderer.current_camera_handle];
-    auto& v = camera.view_matrix;
-    
     for (i32 index = 0; index < renderer.light_command_count; index++)
     {
         const RenderCommand& command = *((RenderCommand*)renderer.light_commands.current_block->base + index);
@@ -2699,7 +2696,7 @@ static void render_commands(RenderState &render_state, Renderer &renderer)
                 
                 Spotlight& spotlight = render_state.spotlight_data.spotlights[render_state.spotlight_data.num_lights++];
                 
-                auto pos = v * math::Vec4(command.position, 1.0f);
+                auto pos = renderer.view_matrix * math::Vec4(command.position, 1.0f);
                 
                 spotlight.position[0] = pos.x;
                 spotlight.position[1] = pos.y;
@@ -2766,13 +2763,12 @@ static void render_commands(RenderState &render_state, Renderer &renderer)
                 if(!render_state.point_light_data.point_lights)
                 {
                     render_state.point_light_data.point_lights = push_array(render_state.perm_arena, global_max_lights, PointLight);
-                }
-                
+                }                
                 
                 PointLight& point_light =
                     render_state.point_light_data.point_lights[render_state.point_light_data.num_lights++];
                 
-                auto pos = v * math::Vec4(command.position, 1.0f);
+                auto pos = renderer.view_matrix * math::Vec4(command.position, 1.0f);
                 
                 point_light.position[0] = pos.x;
                 point_light.position[1] = pos.y;
@@ -2818,44 +2814,44 @@ static void render_commands(RenderState &render_state, Renderer &renderer)
         {
             case RENDER_COMMAND_LINE:
             {
-                render_line(command, render_state, camera.projection_matrix, camera.view_matrix);
+                render_line(command, render_state, renderer.projection_matrix, renderer.view_matrix);
             }
             break;
             case RENDER_COMMAND_TEXT:
             {
-                render_text(command, render_state, renderer, camera.view_matrix, camera.projection_matrix);
+                render_text(command, render_state, renderer, renderer.view_matrix, renderer.projection_matrix);
             }
             break;
             case RENDER_COMMAND_QUAD:
             {
-                render_quad(command, render_state, camera.projection_matrix, camera.view_matrix);
+                render_quad(command, render_state, renderer.projection_matrix, renderer.view_matrix);
             }
             break;
             case RENDER_COMMAND_MODEL:
             {
-                //render_model(command, render_state, camera.projection_matrix, camera.view_matrix);
+                //render_model(command, render_state, renderer.projection_matrix, renderer.view_matrix);
                 
             }
             break;
             case RENDER_COMMAND_MESH:
             {
-                render_mesh(command, renderer, render_state, camera.projection_matrix, camera.view_matrix, false, &renderer.shadow_map_matrices);
+                render_mesh(command, renderer, render_state, renderer.projection_matrix, renderer.view_matrix, false, &renderer.shadow_map_matrices);
                 
             }
             break;
             case RENDER_COMMAND_PARTICLES:
             {
-                render_particles(command, renderer, render_state, camera.projection_matrix, camera.view_matrix);
+                render_particles(command, renderer, render_state, renderer.projection_matrix, renderer.view_matrix);
             }
             break;
             case RENDER_COMMAND_MESH_INSTANCED:
             {
-                render_mesh_instanced(command, renderer, render_state, camera.projection_matrix, camera.view_matrix, false, &renderer.shadow_map_matrices);
+                render_mesh_instanced(command, renderer, render_state, renderer.projection_matrix, renderer.view_matrix, false, &renderer.shadow_map_matrices);
             }
             break;
             case RENDER_COMMAND_BUFFER:
             {
-                render_buffer(command, render_state, camera.projection_matrix, camera.view_matrix);
+                render_buffer(command, render_state, renderer.projection_matrix, renderer.view_matrix);
             }
             break;
             case RENDER_COMMAND_DEPTH_TEST:
@@ -2910,27 +2906,27 @@ static void render_commands(RenderState &render_state, Renderer &renderer)
         {
             case RENDER_COMMAND_LINE:
             {
-                render_line(command, render_state, renderer.ui_projection_matrix, camera.view_matrix);
+                render_line(command, render_state, renderer.ui_projection_matrix, renderer.view_matrix);
             }
             break;
             case RENDER_COMMAND_TEXT:
             {
-                render_text(command, render_state, renderer, camera.view_matrix, renderer.ui_projection_matrix);
+                render_text(command, render_state, renderer, renderer.view_matrix, renderer.ui_projection_matrix);
             }
             break;
             case RENDER_COMMAND_QUAD:
             {
-                render_quad(command, render_state, renderer.ui_projection_matrix, camera.view_matrix);
+                render_quad(command, render_state, renderer.ui_projection_matrix, renderer.view_matrix);
             }
             break;
             case RENDER_COMMAND_MODEL:
             {
-                //render_model(command, render_state, camera.projection_matrix, camera.view_matrix);
+                //render_model(command, render_state, renderer.projection_matrix, renderer.view_matrix);
             }
             break;
             case RENDER_COMMAND_BUFFER:
             {
-                render_buffer(command, render_state, camera.projection_matrix, camera.view_matrix);
+                render_buffer(command, render_state, renderer.projection_matrix, renderer.view_matrix);
             }
             break;
             case RENDER_COMMAND_DEPTH_TEST:
@@ -3023,8 +3019,6 @@ static void render(RenderState& render_state, Renderer& renderer, r64 delta_time
     render_state.current_extra_shader = -1;
     render_state.shader_attribute_count = 0;
     
-    auto& camera = renderer.cameras[renderer.current_camera_handle];
-    
     render_state.scale_x = 2.0f / render_state.framebuffer_width;
     render_state.scale_y = 2.0f / render_state.framebuffer_height;
     
@@ -3034,9 +3028,6 @@ static void render(RenderState& render_state, Renderer& renderer, r64 delta_time
     render_state.pixels_per_unit = renderer.pixels_per_unit;
     
     b32 should_render = renderer.window_width != 0;
-    
-    camera.viewport_width = render_state.framebuffer_width;
-    camera.viewport_height = render_state.framebuffer_height;
     
     renderer.ui_projection_matrix = math::ortho(0.0f, (r32)renderer.framebuffer_width, 0.0f, (r32)renderer.framebuffer_height, -500.0f, 500.0f);
     

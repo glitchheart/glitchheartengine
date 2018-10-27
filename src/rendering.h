@@ -886,29 +886,6 @@ enum FadingMode
     FADING_OUT_IN
 };
 
-struct Camera
-{
-    i32 viewport_width;
-    i32 viewport_height;
-    r32 zoom;
-    math::Vec3 center;
-    math::Vec3 position;
-    math::Quat orientation;
-    math::Vec3 target;
-    
-    r32 follow_speed;
-    math::Mat4 view_matrix;
-    math::Mat4 projection_matrix;
-    
-    FadingMode fading_mode = FADING_NONE;
-    math::Vec3 fading_tint;
-    
-    b32 fading_in;
-    r32 end_alpha;
-    r32 fading_alpha = 0.0f;
-    r32 fading_speed;
-};
-
 enum UIScalingFlag
 {
     KEEP_ASPECT_RATIO = (1 << 0),
@@ -971,8 +948,6 @@ struct BufferData
     size_t instance_buffer_size;
 };
 
-#define MAX_CAMERAS 8
-
 struct ShadowMapMatrices
 {
     math::Mat4 depth_projection_matrix;
@@ -1000,6 +975,9 @@ struct Renderer
     i32 frame_lock;
     
     WindowMode window_mode;
+
+    math::Mat4 view_matrix;
+    math::Mat4 projection_matrix;
     
     RenderCommand *commands;
     i32 command_count;
@@ -1034,7 +1012,6 @@ struct Renderer
         i32 particle_system_count;
     } particles;
     
-    
     TextureData *texture_data;
     i32 texture_count;
     
@@ -1045,7 +1022,6 @@ struct Renderer
     ShadowMapMatrices shadow_map_matrices;
     
     math::Mat4 ui_projection_matrix;
-    Camera cameras[MAX_CAMERAS];
     i32 current_camera_handle;
     
     AnimationController* animation_controllers;
