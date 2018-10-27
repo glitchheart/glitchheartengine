@@ -1,93 +1,6 @@
 #include "animation.h"
 #include <string.h>
 
-enum CameraFlags
-{
-    C_FLAG_ORTHOGRAPHIC = (1 << 0),
-    C_FLAG_PERSPECTIVE  = (1 << 1),
-    C_FLAG_NO_LOOK_AT     = (1 << 2)
-};
-
-struct CameraParams
-{
-    u32 view_flags;
-};
-
-static CameraParams default_camera_params()
-{
-    CameraParams params;
-    params.view_flags = C_FLAG_ORTHOGRAPHIC | C_FLAG_NO_LOOK_AT;
-    return params;
-}
-
-static CameraParams orthographic_camera_params()
-{
-    CameraParams params;
-    params.view_flags = C_FLAG_ORTHOGRAPHIC;
-    return params;
-}
-
-static CameraParams perspective_camera_params()
-{
-    CameraParams params;
-    params.view_flags = C_FLAG_PERSPECTIVE;
-    return params;
-}
-
-// @Incomplete
-static inline void camera_transform(Renderer& renderer, Camera& camera, math::Vec3 position = math::Vec3(), math::Quat orientation = math::Quat(), math::Vec3 target = math::Vec3(), r32 zoom = 1.0f, r32 near = -1.0f, r32 far = 1.0f, CameraParams params = default_camera_params())
-{
-    camera.viewport_width = renderer.resolution.width;
-    camera.viewport_height = renderer.resolution.height;
-    if(params.view_flags & C_FLAG_ORTHOGRAPHIC)
-    {
-        camera.projection_matrix = math::ortho(0.0f, renderer.viewport[2] / zoom, 0.0f, renderer.viewport[3] / zoom, near, far);
-        camera.view_matrix = math::Mat4(1.0f);
-        
-        camera.position = position;
-        camera.orientation = orientation;
-        camera.target = target;
-        
-        if(!is_identity(orientation))
-        {
-            camera.view_matrix = to_matrix(orientation) * camera.view_matrix;
-        }
-        else if(!(params.view_flags & C_FLAG_NO_LOOK_AT))
-        {
-            auto dist = sqrt(1.0f / 3.0f);
-            camera.view_matrix = math::look_at(math::Vec3(dist, dist, dist), math::Vec3(0.0f));
-        }
-        
-        camera.view_matrix = math::translate(camera.view_matrix, math::Vec3(-position.x, -position.y, position.z));
-        
-        //camera.view_matrix = math::Translate(camera.view_matrix, position);
-        camera.view_matrix = math::translate(camera.view_matrix, math::Vec3(renderer.viewport[2] / zoom / 2, renderer.viewport[3] / zoom / 2, 0.0f));
-        
-        
-    }
-    else if(params.view_flags & C_FLAG_PERSPECTIVE)
-    {
-        camera.projection_matrix = math::perspective((r32)renderer.viewport[2] / (r32)renderer.viewport[3], 0.60f, 0.2f, 100.0f);
-        
-        camera.view_matrix = math::Mat4(1.0f);
-        
-        auto dist = sqrt(1.0f / 3.0f);
-        
-        dist = 20.0f;
-        
-        camera.view_matrix = math::look_at(math::Vec3(dist, dist, dist), target);
-        
-        if(!is_identity(orientation))
-        {
-            camera.view_matrix = to_matrix(orientation) * camera.view_matrix;
-        }
-        
-        camera.position = position;
-        camera.orientation = orientation;
-        camera.target = target;
-    }
-}
-
 // The InfoHandle is used to be able to reference the same animation without having to load the animation again. 
 static void add_animation(Renderer& renderer, SpritesheetAnimation animation, const char* animation_name)
 {
@@ -1923,6 +1836,9 @@ static void load_obj(Renderer &renderer, char *file_path, MeshInfo &mesh_info, b
 
 static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer, math::Vec3 *positions, math::Vec3 *rotations, math::Vec3 *scalings, math::Rgba *colors)
 {
+    renderer.view_matrix = scene.camera.view_matrix;
+    renderer.projection_matrix = scene.camera.projection_matrix;
+    
     InstancedRenderCommand instanced_commands[MAX_INSTANCING_PAIRS];
     i32 command_count = 0;
     
