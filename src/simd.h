@@ -1756,11 +1756,11 @@ inline math::Vec4 to_vec4(Vec4_4x vec, i32 index)
     return res;
 }
 
-inline void vec3_4x_to_float4(Vec3_4x v, float* f1, float* f2, float* f3, float* f4)
+inline void vec2_4x_to_float4(Vec2_4x v, float* f1, float* f2, float* f3, float* f4)
 {
     __m128 x_mm_0 = _mm_load_ps((float*)&v.x);
     __m128 x_mm_1 = _mm_load_ps((float*)&v.y);
-    __m128 x_mm_2 = _mm_load_ps((float*)&v.z);
+    __m128 x_mm_2 = _mm_set1_ps(1.0f);
     __m128 x_mm_3 = _mm_set1_ps(1.0f);
     
     __m128 x_mm_4 = _mm_unpacklo_ps(x_mm_0, x_mm_1);
@@ -1779,11 +1779,11 @@ inline void vec3_4x_to_float4(Vec3_4x v, float* f1, float* f2, float* f3, float*
     _mm_store_ps(f4, x_mm_3);
 }
 
-inline void vec2_4x_to_float4(Vec2_4x v, float* f1, float* f2, float* f3, float* f4)
+inline void vec3_4x_to_float4(Vec3_4x v, float* f1, float* f2, float* f3, float* f4)
 {
     __m128 x_mm_0 = _mm_load_ps((float*)&v.x);
     __m128 x_mm_1 = _mm_load_ps((float*)&v.y);
-    __m128 x_mm_2 = _mm_set1_ps(1.0f);
+    __m128 x_mm_2 = _mm_load_ps((float*)&v.z);
     __m128 x_mm_3 = _mm_set1_ps(1.0f);
     
     __m128 x_mm_4 = _mm_unpacklo_ps(x_mm_0, x_mm_1);
@@ -1831,8 +1831,8 @@ inline void vec4_4x_to_float4(Vec4_4x v, float* f1, float* f2, float* f3, float*
 
 #define member_size(type, member) sizeof(((type *)0)->member)
 
-#define push_array_simd(arena, count, type) (type *)_push_size_simd(arena, (count) * sizeof(type), (member_size(type, e[0]) * 4))
-#define push_size_simd(arena, type) (type*)_push_size_simd(arena, sizeof(type), (member_size(type, e[0]) * 4))
+#define push_array_simd(arena, count, type) (type *)_push_size_simd(arena, (count) * sizeof(type), (member_size(type, e[0]) * 2))
+#define push_size_simd(arena, type) (type*)_push_size_simd(arena, sizeof(type), (member_size(type, e[0]) * 2))
 inline void* _push_size_simd(MemoryArena *arena, umm size_init, u32 alignment)
 {
     return push_size_(arena, size_init, default_with_alignment(alignment));
