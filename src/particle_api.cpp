@@ -123,7 +123,7 @@ static void _allocate_particle_system(Renderer& renderer, ParticleSystemInfo& sy
     
     //@Note: For SIMD
     system_info.max_particles = math::multiple_of_number(max_particles, 4);
-    auto max_over_four = system_info.max_particles / 4;
+    i32 max_over_four = system_info.max_particles / 4;
     
     system_info.alive0_particles = push_array(memory_arena, system_info.max_particles, i32);
     system_info.alive1_particles = push_array(memory_arena, system_info.max_particles, i32);

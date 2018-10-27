@@ -2,7 +2,8 @@ i32 find_unused_particle(ParticleSystemInfo &particle_system)
 {   
     if(particle_system.dead_particle_count > 0)
     {
-        return particle_system.dead_particles[particle_system.dead_particle_count-- - 1];
+        particle_system.dead_particle_count--;
+        return particle_system.dead_particles[particle_system.dead_particle_count];
     }
     
 	assert(false);
@@ -154,9 +155,6 @@ void update_particles(Renderer &renderer, ParticleSystemInfo &particle_system, r
         // Maybe there is some SIMD magic, that can do this for us (probably not...).
         if(any_lt_eq(particle_system.particles.life[main_index], 0.0))
         {
-            static i32 bob = 0;
-            //debug("P: %d\n", bob++);
-            //debug("Count: %d\n", particle_system.particle_count);
             particle_system.dead_particles[particle_system.dead_particle_count++] = main_index;
             continue;
         }
@@ -169,7 +167,6 @@ void update_particles(Renderer &renderer, ParticleSystemInfo &particle_system, r
         r64_4x time_spent = particle_system.attributes.life_time - life;
         
         particle_system.particles.direction[main_index] += Vec3_4x(math::Vec3(0.0f, -particle_system.attributes.gravity * (r32)delta_time, 0.0f));
-        
         
         // @Note(Niels): This branch will always be true or false for the whole loop so it should be optimized out (hopefully) 
         // We could optimize it specifically by having separate arrays for each of these
@@ -209,9 +206,11 @@ void update_particles(Renderer &renderer, ParticleSystemInfo &particle_system, r
         else
         {
             final_pos = particle_system.particles.position[main_index] + particle_system.transform.position;
-            particle_system.particles.relative_position[main_index] = particle_system.transform.position;
+            particle_system.particles.relative_position[main_index] = Vec3_4x(particle_system.transform.position);
         }
         
+        // @Note(Niels): Now fill the simd vectors into normal vectors that can be drawn
+        // Could be moved to another function so we don't mix SIMD too much with non-SIMD
         Rgba_4x color = particle_system.particles.color[main_index];
         Vec2_4x size = particle_system.particles.size[main_index];
         
@@ -222,8 +221,6 @@ void update_particles(Renderer &renderer, ParticleSystemInfo &particle_system, r
         vec2_4x_to_float4(size, s1, s2, s3, s4);
         vec3_4x_to_float4(final_pos, p1, p2, p3, p4);
         vec4_4x_to_float4(color, c1, c2, c3, c4);
-        
-        assert(ABS(p1[0]) - ABS(particle_system.transform.position.x) < 4.0f);
         
         particle_system.offsets[particle_system.particle_count].x = p1[0];
         particle_system.offsets[particle_system.particle_count].y = p1[1];
@@ -291,16 +288,20 @@ void emit_particle(ParticleSystemInfo &particle_system, i32* alive_buf, i32* cou
     
     assert(original_index != -1);
     
+    // @Note(Niels): Init particle to the init values saved in the particle system
     particle_system.particles.life[original_index] = r64_4x(particle_system.attributes.life_time);
     particle_system.particles.size[original_index] = Vec2_4x(particle_system.attributes.start_size);
     particle_system.particles.color[original_index] = Rgba_4x(particle_system.attributes.start_color);
+    particle_system.particles.relative_position[original_index] = Vec3_4x(0.0f);
     
     assert(particle_system.attributes.emission_module.emitter_func);
     
+    /// @Note(Niels): Generate emission info based on the emitter function
     ParticleSpawnInfo spawn_info = particle_system.attributes.emission_module.emitter_func(entropy);
     particle_system.particles.position[original_index] = spawn_info.position;
     Vec3_4x new_direction = spawn_info.direction;
     
+    // @Note(Niels): Now compute t he direction based on the direction given in the attributes and the randomly geneerated one
     particle_system.particles.direction[original_index] = math::normalize((particle_system.attributes.direction + new_direction) * particle_system.attributes.spread);
     
     // @Note:(Niels): The current buffer gets the particle being emitted
@@ -312,6 +313,8 @@ void emit_particle(ParticleSystemInfo &particle_system, i32* alive_buf, i32* cou
     particle_system.particles_emitted_this_frame += 4;
 }
 
+// @Note(Niels): The way we update and choose particles is based on the link below
+// https://turanszkij.wordpress.com/2017/11/07/gpu-based-particle-simulation/
 void update_particle_systems(Renderer &renderer, r64 delta_time)
 {
     for(i32 particle_system_index = 0; particle_system_index < renderer.particles.particle_system_count; particle_system_index++)
@@ -320,6 +323,13 @@ void update_particle_systems(Renderer &renderer, r64 delta_time)
         
         if (particle_system.running)
         {
+            // @Note(Niels): We have one buffer that takes the particles from the previous frame
+            // plus the particles that are emitted in the current frame.
+            // The first time the buffer is empty and only contains emitted particles
+            // For any k > 1 where k is the iteration, the buffer works as explained.
+            // The second buffer then gets the particles that are still alive this frame
+            // and this is also the buffer that contains the particles that are drawn in
+            // a frame.
             i32* emitted_alive_buf = nullptr;
             i32* emitted_alive_count = nullptr;
             i32* write_buf = nullptr;
@@ -343,6 +353,7 @@ void update_particle_systems(Renderer &renderer, r64 delta_time)
             
             if (particle_system.emitting)
             {
+                // @Note(Niels): Needed for over-time values
                 particle_system.time_spent += delta_time;
                 
                 i32 new_particles;
@@ -350,6 +361,7 @@ void update_particle_systems(Renderer &renderer, r64 delta_time)
                 // @Note(Niels): Figure out the burst amount if there is any
                 i32 burst_particles = 0;
                 
+                // @Note(Niels): Burst code for burst emission.
                 auto value_count = particle_system.attributes.emission_module.burst_over_lifetime.value_count;
                 if(value_count > 0)
                 {
@@ -386,23 +398,27 @@ void update_particle_systems(Renderer &renderer, r64 delta_time)
                     particle_system.time_spent = 0.0;
                     new_particles = 1;
                 }
-                else
+                else // @Note(Niels): Otherwise just find the round number of particles to emit
                 {
                     new_particles = math::round(per_second);
                 }
                 
+                // @Note(Niels): If we have a one shot particle system we need to check if we have emitted
+                // every particle available. This means that the amount of particles in a one shot system is tightly coupled to the max amount given (should we have two numbers for this?)
                 if (particle_system.attributes.one_shot && particle_system.total_emitted + new_particles >= particle_system.max_particles)
                 {
                     new_particles = particle_system.max_particles - particle_system.total_emitted;
-                    
                     particle_system.emitting = false;
                 }
                 
-                // @Incomplete:(Niels): Consider if it is even encessary to have these simd values??
+                
+                // @Incomplete:(Niels): Consider if it is even necessary to have these simd values??
                 // seems kind of dumb...
+                // @Note(Niels): The reason for this is to get a number as a multiple of 4 because of SIMD emission (we always emit in 4's).
                 i32 simd_new_particles = math::multiple_of_number(new_particles, 4);
                 i32 simd_burst_particles = math::multiple_of_number(burst_particles, 4);
                 
+                // @Note(Niels): Check if the new amount is below the max and below the amount of dead particles.
                 simd_new_particles = MIN(particle_system.max_particles, MIN(simd_new_particles, particle_system.dead_particle_count));
                 
                 // @Note(Niels): Emit the particles into the current alive buffer
@@ -424,22 +440,22 @@ void update_particle_systems(Renderer &renderer, r64 delta_time)
                 }
             }
             
+            if(*emitted_alive_count > particle_system.dead_particle_count)
+            {
+                debug("woops\n");
+            }
+            
             // @Note:(Niels): We now update the particles in the emitted alive buf (which may contain particles from previous frames that are still alive), while passing in the next buffer,
             // which is now our "write" buffer.
             update_particles(renderer, particle_system, delta_time, emitted_alive_buf, emitted_alive_count, write_buf, write_buf_count);
             
-            // if all particles are dead and the system is one-shot we should stop the particle_system
+            // @Note(Niels): if all particles are dead and the system is one-shot we should stop the particle_system
             if(particle_system.attributes.one_shot && particle_system.total_emitted == particle_system.max_particles)
             {
                 particle_system.running = false;
                 particle_system.alive0_particle_count = 0;
                 particle_system.alive1_particle_count = 0;
             }
-            
-            //auto camera_position = renderer.cameras[renderer.current_camera_handle].position;
-            //sort(camera_position, particle_system.offsets, particle_system.sizes, particle_system.colors, particle_system.particle_count, &renderer.particle_arena);
-            
-            //push_particle_system(renderer, particle_system);
         }   
     }
 }
