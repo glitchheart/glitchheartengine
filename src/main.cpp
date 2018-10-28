@@ -454,7 +454,11 @@ int main(int argc, char **args)
     
     template_state.templates = push_array(&platform_state->perm_arena, global_max_entity_templates, scene::EntityTemplate);
 
+	WorkQueue high_priority_queue = {};
+	WorkQueue low_priority_queue = {};
+	
 	ThreadState thread_state = {};
+	
 	create_thread(thread_state, NULL);
 	create_thread(thread_state, NULL);
 	create_thread(thread_state, NULL);
