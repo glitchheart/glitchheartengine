@@ -233,10 +233,14 @@ typedef PLATFORM_PRINT_FILE(PlatformPrintFile);
 #define PLATFORM_CREATE_DIRECTORY(name) b32 name(const char* path)
 typedef PLATFORM_CREATE_DIRECTORY(PlatformCreateDirectory);
 
-#define PLATFORM_ADD_ENTRY(name) void name(WorkQueue *queue, WorkPtr *work_ptr, void *data)
+struct WorkQueue;
+struct WorkQueueEntry;
+typedef void (*WorkCallback)(WorkQueue *queue, void *data);
+
+#define PLATFORM_ADD_ENTRY(name) void name(WorkQueue *queue, WorkCallback work_ptr, void *data)
 typedef PLATFORM_ADD_ENTRY(PlatformAddEntry);
 
-#define PLATFORM_COMPLETE_ALL_WORK(name) void name(WorkQueue *queue, WorkQueueEntry Completed)
+#define PLATFORM_COMPLETE_ALL_WORK(name) void name(WorkQueue *queue)
 typedef PLATFORM_COMPLETE_ALL_WORK(PlatformCompleteAllWork);
 
 struct PlatformApi

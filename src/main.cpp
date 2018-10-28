@@ -253,6 +253,12 @@ inline void load_config(const char* file_path, ConfigData* config_data, MemoryAr
     }
 }
 
+static void DoTestWork(WorkQueue *queue, void *data)
+{
+    char *str = (char*)data;
+    printf("%s\n", str);
+}
+
 static void init_renderer(Renderer &renderer)
 {
     renderer.pixels_per_unit = global_pixels_per_unit;
@@ -291,7 +297,7 @@ static void init_renderer(Renderer &renderer)
 #if defined(_WIN32) && !defined(DEBUG)
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 #else
-int main(int argc, char **args)
+    int main(int argc, char **args)
 #endif
 {    
     GameMemory game_memory = {};
@@ -390,18 +396,18 @@ int main(int argc, char **args)
     
     init_renderer(renderer);
     if constexpr(global_graphics_api == GRAPHICS_VULKAN)
-    {
+		{
 #if defined(__linux) || defined(_WIN32)
-        //VkRenderState vk_render_state;
-        //initialize_vulkan(vk_render_state, renderer, config_data);
-        //vk_render(vk_render_state, renderer);
+		    //VkRenderState vk_render_state;
+		    //initialize_vulkan(vk_render_state, renderer, config_data);
+		    //vk_render(vk_render_state, renderer);
 #endif
-    }
+		}
     else if constexpr(global_graphics_api == GRAPHICS_OPEN_GL)
-    {
-        log("Initializing OpenGl");
-        initialize_opengl(render_state, renderer, &config_data, &platform_state->perm_arena, &do_save_config);
-    }
+		     {
+			 log("Initializing OpenGl");
+			 initialize_opengl(render_state, renderer, &config_data, &platform_state->perm_arena, &do_save_config);
+		     }
     
     GameCode game = {};
     game.is_valid = false;
@@ -454,16 +460,34 @@ int main(int argc, char **args)
     
     template_state.templates = push_array(&platform_state->perm_arena, global_max_entity_templates, scene::EntityTemplate);
 
-	WorkQueue high_priority_queue = {};
-	WorkQueue low_priority_queue = {};
-	
-	ThreadState thread_state = {};
-	
-	create_thread(thread_state, NULL);
-	create_thread(thread_state, NULL);
-	create_thread(thread_state, NULL);
-	create_thread(thread_state, NULL);
-	
+    // Threading
+    ThreadInfo high_thread_infos[6] = {};
+    WorkQueue high_priority_queue = {};
+    make_queue(&high_priority_queue, 6, high_thread_infos);
+    
+    ThreadInfo low_thread_infos[2] = {};
+    WorkQueue low_priority_queue = {};
+    make_queue(&low_priority_queue, 2, low_thread_infos);
+
+    platform.add_entry(&high_priority_queue, DoTestWork, "Hi there 1!");
+    platform.add_entry(&high_priority_queue, DoTestWork, "Hi there 2!");
+    platform.add_entry(&high_priority_queue, DoTestWork, "Hi there 3!");
+    platform.add_entry(&high_priority_queue, DoTestWork, "Hi there 4!");
+    platform.add_entry(&high_priority_queue, DoTestWork, "Hi there 5!");
+    platform.add_entry(&high_priority_queue, DoTestWork, "Hi there 6!");
+    platform.add_entry(&high_priority_queue, DoTestWork, "Hi there 7!");
+    platform.add_entry(&high_priority_queue, DoTestWork, "Hi there 8!");
+    platform.add_entry(&high_priority_queue, DoTestWork, "Hi there 9!");
+    platform.add_entry(&high_priority_queue, DoTestWork, "Hi there 10!");
+    platform.add_entry(&high_priority_queue, DoTestWork, "Hi there 11!");
+    platform.add_entry(&high_priority_queue, DoTestWork, "Hi there 12!");
+    platform.add_entry(&high_priority_queue, DoTestWork, "Hi there 13!");
+    platform.add_entry(&high_priority_queue, DoTestWork, "Hi there 14!");
+    platform.add_entry(&high_priority_queue, DoTestWork, "Hi there 15!");
+    platform.add_entry(&high_priority_queue, DoTestWork, "Hi there 16!");
+
+    platform.complete_all_work(&high_priority_queue);
+    
     while (!should_close_window(render_state) && !renderer.should_close)
     {
         if(game_memory.exit_game)
@@ -505,7 +529,7 @@ int main(int argc, char **args)
             controller_keys(GLFW_JOYSTICK_1);
         }
 
-		// frame_counter_for_asset_check++;
+	// frame_counter_for_asset_check++;
         // if(frame_counter_for_asset_check == 10)
         // {
         //     listen_to_file_changes(&platform_state->perm_arena, &asset_manager);
@@ -516,14 +540,14 @@ int main(int argc, char **args)
         
         swap_buffers(render_state);
 
-        #if __APPLE__
+#if __APPLE__
         static b32 first_load = true;
         if(first_load)
         {
             mojave_workaround(render_state);
             first_load = false;
         }
-        #endif
+#endif
 
         frames++;
         r64 end_counter = get_time();

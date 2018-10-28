@@ -2,6 +2,7 @@
 #include "Commdlg.h"
 #include <windows.h>
 #include <timeapi.h>
+
 #include "win32_threading.cpp"
 
 struct PlatformHandle
@@ -510,7 +511,7 @@ static void init_platform(PlatformApi& platform_api)
     platform_api.get_all_directories = win32_get_all_directories;
     platform_api.create_directory =  win32_create_directory;
 
-	// Threading
-	platform_api.add_entry = win32_add_entry;
-	platform_api.complete_all_work = win32_complete_all_work;
+    // Threading
+    platform_api.add_entry = win32_add_entry;
+    platform_api.complete_all_work = win32_complete_all_work;
 }
