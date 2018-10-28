@@ -3,8 +3,6 @@
 #include <windows.h>
 #include <timeapi.h>
 
-#include "win32_threading.cpp"
-
 struct PlatformHandle
 {
     HANDLE handle;
@@ -457,6 +455,8 @@ static PLATFORM_SEEK_FILE(win32_seek_file)
 
 static PLATFORM_TELL_FILE(win32_tell_file)
 {
+
+
     auto result = SetFilePointer(FileDescriptorToWin32(file.handle), 0, 0, FILE_CURRENT);
     return (i32)result;
 }
@@ -488,6 +488,37 @@ static PLATFORM_PRINT_FILE(win32_print_file)
     return result;
 }
 
+static PLATFORM_RELEASE_SEMAPHORE(win32_release_semaphore)
+{
+    ReleaseSemaphore((HANDLE)semaphore_handle.handle, 1, 0);
+}
+
+static PLATFORM_CREATE_SEMAPHORE(win32_create_semaphore)
+{
+    return { CreateSemaphoreEx(0, initial_count, MAX_THREADS, 0, 0, SEMAPHORE_ALL_ACCESS) };
+}
+
+static PLATFORM_CREATE_THREAD(win32_create_thread)
+{
+    DWORD thread_id;
+    return { CreateThread(0, 0, thread_proc, parameters, (DWORD)creation_flags, &thread_id) };
+}
+
+static PLATFORM_CLOSE_THREAD_HANDLE(win32_close_thread_handle)
+{
+    CloseHandle((HANDLE)thread_handle.handle);
+}
+
+static PLATFORM_WAIT_FOR_SEMAPHORE(win32_wait_for_semaphore)
+{
+    WaitForSingleObjectEx(semaphore_handle.handle, INFINITE, FALSE);
+}
+
+static PLATFORM_INTERLOCKED_INCREMENT(win32_interlocked_increment)
+{
+    InterlockedIncrement((long volatile *)value);
+}
+
 static void init_platform(PlatformApi& platform_api)
 {
     platform_api.get_all_files_with_extension = win32_find_files_with_extensions;
@@ -508,4 +539,11 @@ static void init_platform(PlatformApi& platform_api)
     platform_api.print_file = win32_print_file;
     platform_api.get_all_directories = win32_get_all_directories;
     platform_api.create_directory =  win32_create_directory;
+    
+    platform_api.create_semaphore = win32_create_semaphore;
+    platform_api.release_semaphore = win32_release_semaphore;
+    platform_api.create_thread = win32_create_thread;
+    platform_api.close_thread_handle = win32_close_thread_handle;
+    platform_api.wait_for_semaphore = win32_wait_for_semaphore;
+    platform_api.interlocked_increment = win32_interlocked_increment;
 }

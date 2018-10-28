@@ -113,6 +113,8 @@ struct ConfigData
     r32 music_volume;
 };
 
+// Threading
+
 #define MAX_FILE_PATHS 128
 #define MAX_FILE_NAMES 128
 struct DirectoryData
@@ -231,6 +233,28 @@ typedef PLATFORM_PRINT_FILE(PlatformPrintFile);
 #define PLATFORM_CREATE_DIRECTORY(name) b32 name(const char* path)
 typedef PLATFORM_CREATE_DIRECTORY(PlatformCreateDirectory);
 
+struct ThreadHandle;
+struct SemaphoreHandle;
+typedef unsigned long (*ThreadProc)(void*);
+
+#define PLATFORM_CREATE_THREAD(name) ThreadHandle name(size_t stack_size, ThreadProc thread_proc, void *parameters, u64 creation_flags)
+typedef PLATFORM_CREATE_THREAD(PlatformCreateThread);
+
+#define PLATFORM_CLOSE_THREAD_HANDLE(name) void name(ThreadHandle thread_handle)
+typedef PLATFORM_CLOSE_THREAD_HANDLE(PlatformCloseThreadHandle);
+
+#define PLATFORM_CREATE_SEMAPHORE(name) SemaphoreHandle name(i32 initial_count, i32 maximum_count)
+typedef PLATFORM_CREATE_SEMAPHORE(PlatformCreateSemaphore);
+
+#define PLATFORM_RELEASE_SEMAPHORE(name) void name(SemaphoreHandle semaphore_handle)
+typedef PLATFORM_RELEASE_SEMAPHORE(PlatformReleaseSemaphore);
+
+#define PLATFORM_WAIT_FOR_SEMAPHORE(name) void name(SemaphoreHandle semaphore_handle)
+typedef PLATFORM_WAIT_FOR_SEMAPHORE(PlatformWaitForSemaphore);
+
+#define PLATFORM_INTERLOCKED_INCREMENT(name) void name(i32 value)
+typedef PLATFORM_INTERLOCKED_INCREMENT(PlatformInterlockedIncrement);
+
 struct PlatformApi
 {
     PlatformGetAllFilesWithExtension *get_all_files_with_extension;
@@ -255,6 +279,13 @@ struct PlatformApi
     PlatformReadLineFile *read_line_file;
     PlatformPrintFile *print_file;
     PlatformCreateDirectory *create_directory;
+    
+    PlatformCreateThread *create_thread;
+    PlatformCloseThreadHandle *close_thread_handle;
+    PlatformCreateSemaphore *create_semaphore;
+    PlatformReleaseSemaphore *release_semaphore;
+    PlatformWaitForSemaphore *wait_for_semaphore;
+    PlatformInterlockedIncrement *interlocked_increment;
 };
 
 extern PlatformApi platform;
