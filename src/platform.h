@@ -233,27 +233,11 @@ typedef PLATFORM_PRINT_FILE(PlatformPrintFile);
 #define PLATFORM_CREATE_DIRECTORY(name) b32 name(const char* path)
 typedef PLATFORM_CREATE_DIRECTORY(PlatformCreateDirectory);
 
-struct ThreadHandle;
-struct SemaphoreHandle;
-typedef unsigned long (*ThreadProc)(void*);
+#define PLATFORM_ADD_ENTRY(name) void name(WorkQueue *queue, WorkPtr *work_ptr, void *data)
+typedef PLATFORM_ADD_ENTRY(PlatformAddEntry);
 
-#define PLATFORM_CREATE_THREAD(name) ThreadHandle name(size_t stack_size, ThreadProc thread_proc, void *parameters, u64 creation_flags)
-typedef PLATFORM_CREATE_THREAD(PlatformCreateThread);
-
-#define PLATFORM_CLOSE_THREAD_HANDLE(name) void name(ThreadHandle thread_handle)
-typedef PLATFORM_CLOSE_THREAD_HANDLE(PlatformCloseThreadHandle);
-
-#define PLATFORM_CREATE_SEMAPHORE(name) SemaphoreHandle name(i32 initial_count, i32 maximum_count)
-typedef PLATFORM_CREATE_SEMAPHORE(PlatformCreateSemaphore);
-
-#define PLATFORM_RELEASE_SEMAPHORE(name) void name(SemaphoreHandle semaphore_handle)
-typedef PLATFORM_RELEASE_SEMAPHORE(PlatformReleaseSemaphore);
-
-#define PLATFORM_WAIT_FOR_SEMAPHORE(name) void name(SemaphoreHandle semaphore_handle)
-typedef PLATFORM_WAIT_FOR_SEMAPHORE(PlatformWaitForSemaphore);
-
-#define PLATFORM_INTERLOCKED_INCREMENT(name) void name(i32 value)
-typedef PLATFORM_INTERLOCKED_INCREMENT(PlatformInterlockedIncrement);
+#define PLATFORM_COMPLETE_ALL_WORK(name) void name(WorkQueue *queue, WorkQueueEntry Completed)
+typedef PLATFORM_COMPLETE_ALL_WORK(PlatformCompleteAllWork);
 
 struct PlatformApi
 {
@@ -279,13 +263,9 @@ struct PlatformApi
     PlatformReadLineFile *read_line_file;
     PlatformPrintFile *print_file;
     PlatformCreateDirectory *create_directory;
-    
-    PlatformCreateThread *create_thread;
-    PlatformCloseThreadHandle *close_thread_handle;
-    PlatformCreateSemaphore *create_semaphore;
-    PlatformReleaseSemaphore *release_semaphore;
-    PlatformWaitForSemaphore *wait_for_semaphore;
-    PlatformInterlockedIncrement *interlocked_increment;
+
+	PlatformAddEntry *add_entry;
+	PlatformCompleteAllWork *complete_all_work;
 };
 
 extern PlatformApi platform;
