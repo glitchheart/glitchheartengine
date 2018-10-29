@@ -469,22 +469,22 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     WorkQueue low_priority_queue = {};
     make_queue(&low_priority_queue, 2, low_thread_infos);
 
-    platform.add_entry(&high_priority_queue, DoTestWork, "Hi there 1!");
-    platform.add_entry(&high_priority_queue, DoTestWork, "Hi there 2!");
-    platform.add_entry(&high_priority_queue, DoTestWork, "Hi there 3!");
-    platform.add_entry(&high_priority_queue, DoTestWork, "Hi there 4!");
-    platform.add_entry(&high_priority_queue, DoTestWork, "Hi there 5!");
-    platform.add_entry(&high_priority_queue, DoTestWork, "Hi there 6!");
-    platform.add_entry(&high_priority_queue, DoTestWork, "Hi there 7!");
-    platform.add_entry(&high_priority_queue, DoTestWork, "Hi there 8!");
-    platform.add_entry(&high_priority_queue, DoTestWork, "Hi there 9!");
-    platform.add_entry(&high_priority_queue, DoTestWork, "Hi there 10!");
-    platform.add_entry(&high_priority_queue, DoTestWork, "Hi there 11!");
-    platform.add_entry(&high_priority_queue, DoTestWork, "Hi there 12!");
-    platform.add_entry(&high_priority_queue, DoTestWork, "Hi there 13!");
-    platform.add_entry(&high_priority_queue, DoTestWork, "Hi there 14!");
-    platform.add_entry(&high_priority_queue, DoTestWork, "Hi there 15!");
-    platform.add_entry(&high_priority_queue, DoTestWork, "Hi there 16!");
+    platform.add_entry(&high_priority_queue, DoTestWork, (void*)"Hi there 1!");
+    platform.add_entry(&high_priority_queue, DoTestWork, (void*)"Hi there 2!");
+    platform.add_entry(&high_priority_queue, DoTestWork, (void*)"Hi there 3!");
+    platform.add_entry(&high_priority_queue, DoTestWork, (void*)"Hi there 4!");
+    platform.add_entry(&high_priority_queue, DoTestWork, (void*)"Hi there 5!");
+    platform.add_entry(&high_priority_queue, DoTestWork, (void*)"Hi there 6!");
+    platform.add_entry(&high_priority_queue, DoTestWork, (void*)"Hi there 7!");
+    platform.add_entry(&high_priority_queue, DoTestWork, (void*)"Hi there 8!");
+    platform.add_entry(&high_priority_queue, DoTestWork, (void*)"Hi there 9!");
+    platform.add_entry(&high_priority_queue, DoTestWork, (void*)"Hi there 10!");
+    platform.add_entry(&high_priority_queue, DoTestWork, (void*)"Hi there 11!");
+    platform.add_entry(&high_priority_queue, DoTestWork, (void*)"Hi there 12!");
+    platform.add_entry(&high_priority_queue, DoTestWork, (void*)"Hi there 13!");
+    platform.add_entry(&high_priority_queue, DoTestWork, (void*)"Hi there 14!");
+    platform.add_entry(&high_priority_queue, DoTestWork, (void*)"Hi there 15!");
+    platform.add_entry(&high_priority_queue, DoTestWork, (void*)"Hi there 16!");
 
     platform.complete_all_work(&high_priority_queue);
     
