@@ -16,18 +16,18 @@ static b32 win32_do_next_work_queue_entry(WorkQueue *queue)
     // make sure there is more work!
     if(original_next_entry_to_read != queue->next_entry_to_write)
     {
-	LONG index = InterlockedCompareExchange((LONG volatile *)&queue->next_entry_to_read, (LONG)new_next_entry_to_read, (LONG)original_next_entry_to_read);
+		LONG index = InterlockedCompareExchange((LONG volatile *)&queue->next_entry_to_read, (LONG)new_next_entry_to_read, (LONG)original_next_entry_to_read);
 	
-	if(index == (LONG)original_next_entry_to_read)
-	{
-	    WorkQueueEntry entry = queue->entries[index];
-	    entry.work_ptr(queue, entry.data);
-	    InterlockedIncrement((LONG volatile *)&queue->completion_count);
-	}	
+		if(index == (LONG)original_next_entry_to_read)
+		{
+			WorkQueueEntry entry = queue->entries[index];
+			entry.work_ptr(queue, entry.data);
+			InterlockedIncrement((LONG volatile *)&queue->completion_count);
+		}	
     }
     else
     {
-	should_sleep = true;
+		should_sleep = true;
     }
 
     return(should_sleep);
@@ -41,13 +41,11 @@ static DWORD thread_proc(void *parameters)
 
     for(;;)
     {
-	if(win32_do_next_work_queue_entry(thread_info->queue))
-	{
-	    WaitForSingleObjectEx(thread_info->queue->semaphore_handle, INFINITE, FALSE);
-	}
+		if(win32_do_next_work_queue_entry(thread_info->queue))
+		{
+			WaitForSingleObjectEx(thread_info->queue->semaphore_handle, INFINITE, FALSE);
+		}
     }
-
-//    return 0;
 }
 
 static void make_queue(WorkQueue *queue, LONG thread_count, ThreadInfo *thread_infos)
@@ -94,7 +92,7 @@ static void win32_complete_all_work(WorkQueue *queue)
 {
     while(queue->completion_goal != queue->completion_count)
     {
-	win32_do_next_work_queue_entry(queue);
+		win32_do_next_work_queue_entry(queue);
     }
 
     queue->completion_goal = 0;
