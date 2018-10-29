@@ -78,7 +78,6 @@ using imm = intptr_t;
 struct TextureData;
 
 #include "engine_math.h"
-
 #include "modelformat.h"
 
 enum WindowMode
@@ -112,8 +111,6 @@ struct ConfigData
     r32 sfx_volume;
     r32 music_volume;
 };
-
-// Threading
 
 #define MAX_FILE_PATHS 128
 #define MAX_FILE_NAMES 128
@@ -268,8 +265,8 @@ struct PlatformApi
     PlatformPrintFile *print_file;
     PlatformCreateDirectory *create_directory;
 
-	PlatformAddEntry *add_entry;
-	PlatformCompleteAllWork *complete_all_work;
+    PlatformAddEntry *add_entry;
+    PlatformCompleteAllWork *complete_all_work;
 };
 
 extern PlatformApi platform;
