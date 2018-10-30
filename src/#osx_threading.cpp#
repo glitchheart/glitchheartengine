@@ -13,10 +13,7 @@ typedef void* (*ThreadProc)(void* parameters);
 
 static inline u32 interlocked_compare_exchange(u32 volatile *ptr, u32 next, u32 original)
 {
-    if(OSAtomicCompareAndSwapInt((i32)original, (i32)next, (i32* volatile)ptr))
-        return original;
-    else
-        return next;
+    OSAtomicCompareAndSwapPtrBarrier((void*)original, (void*)next, (void* volatile *)ptr);
 }
 
 static inline void interlocked_increment(u32 volatile *ptr)
