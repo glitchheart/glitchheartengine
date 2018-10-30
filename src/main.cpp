@@ -46,6 +46,8 @@ static MemoryState memory_state;
 #include "fmod_sound.cpp"
 #include "filehandling.h"
 
+#include "curl/curl.h"
+
 #if defined(__linux) || defined(__APPLE__)
 #include "dlfcn.h"
 #endif
@@ -294,6 +296,40 @@ static void init_renderer(Renderer &renderer)
     renderer.tt_font_infos = push_array(&renderer.font_arena, global_max_fonts, TrueTypeFontInfo);
 }
 
+enum class AnalyticsEventType
+{
+ STARTED_SESSION,
+ ENDED_SESSION,
+ STARTED_LEVEL,
+ FINISHED_LEVEL
+};
+
+struct AnalyticsEventData
+{
+    AnalyticsEventType type;
+    i32 level_id;
+};
+
+static void send_analytics_event(WorkQueue *queue, void *data)
+{
+    printf("SEND!\n");
+    CURL *curl_handle = curl_easy_init();
+
+    if(curl_handle)
+    {
+	printf("DAMN!\n");
+	curl_easy_setopt(curl_handle, CURLOPT_URL, "http://www.google-analytics.com/collect");
+	char *user_agent = "Superverse/0.3 (Windows NT 6.2)";
+	char *post_data = "v=1&tid=UA-128027751-1&cid=UUID&sc=start";
+    
+	curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, user_agent);
+	curl_easy_setopt(curl_handle, CURLOPT_POSTFIELDS, post_data);
+
+	curl_easy_perform(curl_handle);
+	curl_easy_cleanup(curl_handle);
+    }
+}
+
 #if defined(_WIN32) && !defined(DEBUG)
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 #else
@@ -465,28 +501,34 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     WorkQueue high_priority_queue = {};
     make_queue(&high_priority_queue, 6, high_thread_infos);
     
-    ThreadInfo low_thread_infos[2] = {};
-    WorkQueue low_priority_queue = {};
-    make_queue(&low_priority_queue, 2, low_thread_infos);
+    // ThreadInfo low_thread_infos[2] = {};
+    // WorkQueue low_priority_queue = {};
+    // make_queue(&low_priority_queue, 2, low_thread_infos);
 
-    platform.add_entry(&high_priority_queue, DoTestWork, (void*)"Hi there 1!");
-    platform.add_entry(&high_priority_queue, DoTestWork, (void*)"Hi there 2!");
-    platform.add_entry(&high_priority_queue, DoTestWork, (void*)"Hi there 3!");
-    platform.add_entry(&high_priority_queue, DoTestWork, (void*)"Hi there 4!");
-    platform.add_entry(&high_priority_queue, DoTestWork, (void*)"Hi there 5!");
-    platform.add_entry(&high_priority_queue, DoTestWork, (void*)"Hi there 6!");
-    platform.add_entry(&high_priority_queue, DoTestWork, (void*)"Hi there 7!");
-    platform.add_entry(&high_priority_queue, DoTestWork, (void*)"Hi there 8!");
-    platform.add_entry(&high_priority_queue, DoTestWork, (void*)"Hi there 9!");
-    platform.add_entry(&high_priority_queue, DoTestWork, (void*)"Hi there 10!");
-    platform.add_entry(&high_priority_queue, DoTestWork, (void*)"Hi there 11!");
-    platform.add_entry(&high_priority_queue, DoTestWork, (void*)"Hi there 12!");
-    platform.add_entry(&high_priority_queue, DoTestWork, (void*)"Hi there 13!");
-    platform.add_entry(&high_priority_queue, DoTestWork, (void*)"Hi there 14!");
-    platform.add_entry(&high_priority_queue, DoTestWork, (void*)"Hi there 15!");
-    platform.add_entry(&high_priority_queue, DoTestWork, (void*)"Hi there 16!");
+    // platform.add_entry(&high_priority_queue, DoTestWork, (void*)"Hi there 1!");
+    // platform.add_entry(&high_priority_queue, DoTestWork, (void*)"Hi there 2!");
+    // platform.add_entry(&high_priority_queue, DoTestWork, (void*)"Hi there 3!");
+    // platform.add_entry(&high_priority_queue, DoTestWork, (void*)"Hi there 4!");
+    // platform.add_entry(&high_priority_queue, DoTestWork, (void*)"Hi there 5!");
+    // platform.add_entry(&high_priority_queue, DoTestWork, (void*)"Hi there 6!");
+    // platform.add_entry(&high_priority_queue, DoTestWork, (void*)"Hi there 7!");
+    // platform.add_entry(&high_priority_queue, DoTestWork, (void*)"Hi there 8!");
+    // platform.add_entry(&high_priority_queue, DoTestWork, (void*)"Hi there 9!");
+    // platform.add_entry(&high_priority_queue, DoTestWork, (void*)"Hi there 10!");
+    // platform.add_entry(&high_priority_queue, DoTestWork, (void*)"Hi there 11!");
+    // platform.add_entry(&high_priority_queue, DoTestWork, (void*)"Hi there 12!");
+    // platform.add_entry(&high_priority_queue, DoTestWork, (void*)"Hi there 13!");
+    // platform.add_entry(&high_priority_queue, DoTestWork, (void*)"Hi there 14!");
+    // platform.add_entry(&high_priority_queue, DoTestWork, (void*)"Hi there 15!");
+    // platform.add_entry(&high_priority_queue, DoTestWork, (void*)"Hi there 16!");
 
-    platform.complete_all_work(&high_priority_queue);
+    //platform.complete_all_work(&high_priority_queue);
+
+    // ANALYTICS
+    
+    //END ANAYLTICS
+
+    platform.add_entry(&high_priority_queue, send_analytics_event, (void*)"DO IT");
     
     while (!should_close_window(render_state) && !renderer.should_close)
     {
