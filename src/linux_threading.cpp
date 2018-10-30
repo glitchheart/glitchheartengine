@@ -1,7 +1,6 @@
-#ifndef OSX_THREADING
-#define OSX_THREADING
+#ifndef LINUX_THREADING
+#define LINUX_THREADING
 
-#include <libkern/OSAtomic.h>
 #include <pthread.h>
 #include <sys/semaphore.h>
 #include <stdatomic.h>
@@ -14,15 +13,17 @@ typedef void* (*ThreadProc)(void* parameters);
 
 static inline u32 interlocked_compare_exchange(u32 volatile *ptr, u32 next, u32 original)
 {
-    if(OSAtomicCompareAndSwapInt((i32)original, (i32)next, (i32* volatile)ptr))
-        return original;
-    else
-        return next;
+    if(atomic_compare_exchange_strong((atomic_int volatile *)ptr, (i32*)&original, (i32)next))
+    {
+	return original;
+    }
+    
+    return next;
 }
 
 static inline void interlocked_increment(u32 volatile *ptr)
 {
-    OSAtomicIncrement32((i32 volatile *)ptr);
+    atomic_fetch_add((atomic_int volatile *)ptr, 1);
 }
 
 static inline void release_semaphore(SemaphoreHandle& semaphore_handle)
