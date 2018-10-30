@@ -7,10 +7,14 @@
 #define WRITE_BARRIER _WriteBarrier(); _mm_sfence()
 
 static inline u32 interlocked_compare_exchang(u32 *ptr, u32 next, u32 original)
-{}
+{
+    InterlockedCompareExchange(ptr, next, original);
+}
 
 static inline void interlocked_increment(u32 *ptr)
-{}
+{
+    InterlockedIncrement((LONG volatile *)ptr);
+}
 
 static inline void release_semaphore(SemaphoreHandle semaphore_handle, i32 count)
 {
