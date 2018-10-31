@@ -52,14 +52,14 @@ static void make_queue(WorkQueue *queue, u32 thread_count, ThreadInfo *thread_in
     queue->next_entry_to_write = 0;
     queue->next_entry_to_read = 0;
 
-    i32 initial_count = 0;
+    u32 initial_count = 0;
     queue->semaphore_handle = create_semaphore(initial_count, thread_count);
 
-    for(long index = 0; index < thread_count; index++)
+    for(u32 index = 0; index < thread_count; index++)
     {
         ThreadInfo *thread_info = &thread_infos[index];
         thread_info->queue = queue;
-	create_thread(thread_proc, (void*)thread_info);
+		create_thread(thread_proc, (void*)thread_info);
     }
 }
 

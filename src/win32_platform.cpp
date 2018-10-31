@@ -512,6 +512,6 @@ static void init_platform(PlatformApi& platform_api)
     platform_api.create_directory =  win32_create_directory;
 
     // Threading
-    platform_api.add_entry = win32_add_entry;
-    platform_api.complete_all_work = win32_complete_all_work;
+    platform_api.add_entry = add_entry;
+    platform_api.complete_all_work = complete_all_work;
 }
