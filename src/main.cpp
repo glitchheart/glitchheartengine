@@ -439,20 +439,20 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     sound_device.sfx_volume = config_data.sfx_volume;
     sound_device.music_volume = config_data.music_volume;
     sound_device.muted = config_data.muted;
-    init_audio_fmod(&sound_device);
+
+    WorkQueue fmod_queue = {};
+    ThreadInfo fmod_thread = {};
+    make_queue(&fmod_queue, 1, &fmod_thread);
+    platform.add_entry(&fmod_queue, init_audio_fmod_thread, &sound_device);
     
     SoundSystem sound_system = {};
     sound_system.sound_commands.minimum_block_size = sizeof(SoundCommand) * global_max_sound_commands;
     sound_system.sounds = push_array(&sound_system.arena, global_max_sounds, SoundHandle);
     sound_system.audio_sources = push_array(&sound_system.arena, global_max_audio_sources, AudioSource);
     sound_system.channel_groups = push_array(&sound_system.arena, global_max_channel_groups, ChannelGroup);
-    
-    if (sound_device.is_initialized)
-    {
-        sound_system.sfx_volume = config_data.sfx_volume;
-        sound_system.music_volume = config_data.music_volume;
-        sound_system.muted = config_data.muted;
-    }
+    sound_system.sfx_volume = config_data.sfx_volume;
+    sound_system.music_volume = config_data.music_volume;
+    sound_system.muted = config_data.muted;
     
     r64 last_second_check = get_time();
     i32 frames = 0;

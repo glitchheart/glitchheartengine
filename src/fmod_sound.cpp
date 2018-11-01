@@ -367,6 +367,7 @@ static void update_sound_commands(SoundDevice *device, SoundSystem *system, r64 
     }
 }
 
+
 static void init_audio_fmod(SoundDevice* sound_device)
 {
     FMOD_RESULT result;
@@ -407,3 +408,8 @@ static void init_audio_fmod(SoundDevice* sound_device)
     sound_device->sounds = push_array(&sound_device->total_arena, global_max_sounds, FMOD_SOUND*);
 }
 
+
+static void init_audio_fmod_thread(WorkQueue *queue, void* data_ptr)
+{
+    init_audio_fmod((SoundDevice*)data_ptr);
+}
