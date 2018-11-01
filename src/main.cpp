@@ -479,7 +479,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     template_state.templates = push_array(&platform_state->perm_arena, global_max_entity_templates, scene::EntityTemplate);
 
 	AnalyticsEventState analytics_state = {};
-	
+
+	curl_global_init(CURL_GLOBAL_ALL);
+	analytics_state.curl_handle = curl_easy_init();
+
 	ThreadInfo analytics_info[1] = {};
 	WorkQueue analytics_queue = {};
 	make_queue(&analytics_queue, 1, analytics_info);
@@ -555,7 +558,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         
         //end_temporary_memory(game_temp_mem);
     }
-    
+
+	curl_easy_cleanup(analytics_state.curl_handle);
     close_log();
     cleanup_sound(&sound_device);
     close_window(render_state);

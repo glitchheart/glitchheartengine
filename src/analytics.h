@@ -6,6 +6,7 @@
 
 enum class AnalyticsEventType
 {
+	SKIPPED_LEVEL,
     STARTED_LEVEL,
     FINISHED_LEVEL
 };
@@ -23,12 +24,13 @@ struct AnalyticsEventData
 	AnalyticsSessionInfo session_info;
 	char user_id[USER_ID_SIZE];
     i32 level_id;
-
+	r64 play_time;
 	AnalyticsEventState *state;
 };
 
 struct AnalyticsEventState
 {
+	void *curl_handle;
 	AnalyticsEventData events[MAX_EVENTS];
 	u32 event_count;
 

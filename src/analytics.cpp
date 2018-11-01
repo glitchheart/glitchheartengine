@@ -8,12 +8,12 @@ size_t write_data(void *buffer, size_t size, size_t nmemb, void *userp)
 void process_analytics_event(WorkQueue *queue, void *data_ptr)
 {
 	AnalyticsEventData *data = (AnalyticsEventData*)data_ptr;
-	
-	CURL *curl_handle = curl_easy_init();
 
+	CURL *curl_handle = data->state->curl_handle;
+	
     if(curl_handle)
     {
-		curl_easy_setopt(curl_handle, CURLOPT_URL, "https://www.google-analytics.com/collect");
+		curl_easy_setopt(curl_handle, CURLOPT_URL, "http://www.google-analytics.com/collect");
 
 		char *tracking_id = "UA-128027751-1";
 		char event_string[256];
@@ -21,15 +21,21 @@ void process_analytics_event(WorkQueue *queue, void *data_ptr)
 		
 		switch(data->type)
 		{
+		case AnalyticsEventType::SKIPPED_LEVEL:
+			type = "event";
+			sprintf(event_string, "ec=level&ea=skipped&el=%d", data->level_id);
+			break;
 		case AnalyticsEventType::STARTED_LEVEL:
 			type = "event";
-			strcpy(event_string, "ec=level&ea=started");
+			sprintf(event_string, "ec=level&ea=started&el=%d", data->level_id);
 			break;
 		case AnalyticsEventType::FINISHED_LEVEL:
 			type = "event";
-			strcpy(event_string, "ec=level&ea=ended");
+			sprintf(event_string, "ec=level&ea=finished&el=%d&cm1=%d&sr=1920x720", data->level_id, (i32)data->play_time);
 			break;
 		}
+
+		printf("%d", data->level_id);
 
 		char post_data_buffer[256];
 		sprintf(post_data_buffer, "v=1&tid=%s&cid=%s&t=%s&%s", tracking_id, data->user_id, type, event_string);
@@ -39,11 +45,12 @@ void process_analytics_event(WorkQueue *queue, void *data_ptr)
 		curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, user_agent);
 		curl_easy_setopt(curl_handle, CURLOPT_POSTFIELDS, post_data_buffer);
 		curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, write_data);
-		curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER , 1);
-		curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST , 2);
-
+		
 		CURLcode res = curl_easy_perform(curl_handle);
-		curl_easy_cleanup(curl_handle);
+		if (res != CURLE_OK)
+		{
+			printf("asdasasd");
+		}
 
 		data->state->not_completed--;
     }
