@@ -13,7 +13,7 @@ void process_analytics_event(WorkQueue *queue, void *data_ptr)
 
     if(curl_handle)
     {
-		curl_easy_setopt(curl_handle, CURLOPT_URL, "http://www.google-analytics.com/collect");
+		curl_easy_setopt(curl_handle, CURLOPT_URL, "https://www.google-analytics.com/collect");
 
 		char *tracking_id = "UA-128027751-1";
 		char event_string[256];
@@ -39,7 +39,9 @@ void process_analytics_event(WorkQueue *queue, void *data_ptr)
 		curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, user_agent);
 		curl_easy_setopt(curl_handle, CURLOPT_POSTFIELDS, post_data_buffer);
 		curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, write_data);
-		
+		curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER , 1);
+		curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST , 2);
+
 		CURLcode res = curl_easy_perform(curl_handle);
 		curl_easy_cleanup(curl_handle);
 
