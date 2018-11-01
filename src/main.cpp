@@ -482,7 +482,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	
 	ThreadInfo analytics_info[1] = {};
 	WorkQueue analytics_queue = {};
-	//make_queue(&analytics_queue, 1, analytics_info);
+	make_queue(&analytics_queue, 1, analytics_info);
 	game_memory.analytics_state = &analytics_state;
 	
     while (!should_close_window(render_state) && !renderer.should_close)
@@ -501,9 +501,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         
         //auto game_temp_mem = begin_temporary_memory(game_memory.temp_arena);
         game.update(delta_time, &game_memory, renderer, template_state, &input_controller, &sound_system, timer_controller);
-        //update_particle_systems(renderer, delta_time);
+        update_particle_systems(renderer, delta_time);
 
-		//process_analytics_events(analytics_state, &analytics_queue);
+		process_analytics_events(analytics_state, &analytics_queue);
 		
         tick_animation_controllers(renderer, &sound_system, &input_controller, timer_controller, delta_time);
         tick_timers(timer_controller, delta_time);
