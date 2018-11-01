@@ -1,6 +1,3 @@
-#ifndef THREADING_CPP
-#define THREADING_CPP
-
 static b32 do_next_work_queue_entry(WorkQueue *queue)
 {
     b32 should_sleep = false;
@@ -84,11 +81,9 @@ static void complete_all_work(WorkQueue *queue)
 {
     while(queue->completion_goal != queue->completion_count)
     {
-	do_next_work_queue_entry(queue);
+		do_next_work_queue_entry(queue);
     }
 
     queue->completion_goal = 0;
     queue->completion_count = 0;
 }
-
-#endif
