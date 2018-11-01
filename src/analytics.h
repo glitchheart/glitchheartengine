@@ -6,37 +6,35 @@
 
 enum class AnalyticsEventType
 {
-	SKIPPED_LEVEL,
+    SKIPPED_LEVEL,
     STARTED_LEVEL,
-    FINISHED_LEVEL
+    FINISHED_LEVEL,
+    SESSION
+	
 };
 
 enum class AnalyticsSessionInfo
 {
-	STARTED,
-	ENDED,
-   	RUNNING
+    STARTED,
+    ENDED,
+    RUNNING
 };
 
 struct AnalyticsEventData
 {
     AnalyticsEventType type;
-	AnalyticsSessionInfo session_info;
-	char user_id[USER_ID_SIZE];
+    AnalyticsSessionInfo session_info;
+    char user_id[USER_ID_SIZE];
     i32 level_id;
-	r64 play_time;
-	AnalyticsEventState *state;
+    i32 world_id;
+    r64 play_time;
+    AnalyticsEventState *state;
 };
 
 struct AnalyticsEventState
 {
-	void *curl_handle;
-	AnalyticsEventData events[MAX_EVENTS];
-	u32 event_count;
-
-	AnalyticsEventData persistent_events[MAX_EVENTS];
-	u32 current_index;
-	u32 not_completed;
+    AnalyticsEventData events[MAX_EVENTS];
+    u32 event_count;
 };
 
 #endif

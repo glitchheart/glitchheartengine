@@ -47,6 +47,7 @@ static MemoryState memory_state;
 #include "filehandling.h"
 
 #include "curl/curl.h"
+#include "GameAnalytics.h"
 #include "analytics.h"
 #include "analytics.cpp"
 
@@ -294,22 +295,14 @@ static void init_renderer(Renderer &renderer)
 
 void process_analytics_events(AnalyticsEventState &analytics_state, WorkQueue *queue)
 {
-	for(u32 i = 0; i < analytics_state.event_count; i++)
-	{
-		analytics_state.persistent_events[analytics_state.current_index] = analytics_state.events[i];
-		AnalyticsEventData *event = &analytics_state.persistent_events[analytics_state.current_index++];
-		event->state = &analytics_state;
-		analytics_state.not_completed++;
-		
-		send_analytics_event(queue, event);
-	}
+    for(u32 i = 0; i < analytics_state.event_count; i++)
+    {
+	AnalyticsEventData *event = &analytics_state.events[i];
+	event->state = &analytics_state;
+	send_analytics_event(queue, event);
+    }
 	
-	analytics_state.event_count = 0;
-
-	if(analytics_state.not_completed == 0)
-	{
-		analytics_state.current_index = 0;
-	}
+    analytics_state.event_count = 0;
 }
 
 #if defined(_WIN32) && !defined(DEBUG)
@@ -478,16 +471,21 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     
     template_state.templates = push_array(&platform_state->perm_arena, global_max_entity_templates, scene::EntityTemplate);
 
-	AnalyticsEventState analytics_state = {};
+    AnalyticsEventState analytics_state = {};
 
-	curl_global_init(CURL_GLOBAL_ALL);
-	analytics_state.curl_handle = curl_easy_init();
+    gameanalytics::GameAnalytics::setEnabledInfoLog(true);
+    gameanalytics::GameAnalytics::setEnabledVerboseLog(true);
+    gameanalytics::GameAnalytics::configureBuild("0.10");
 
-	ThreadInfo analytics_info[1] = {};
-	WorkQueue analytics_queue = {};
-	make_queue(&analytics_queue, 1, analytics_info);
-	game_memory.analytics_state = &analytics_state;
-	
+    gameanalytics::GameAnalytics::initialize("810960034d0191ec4f21a04d73295ec6", "2469ab09d7b00f64d5114071564b2d2d59c900a4");
+
+    ThreadInfo analytics_info[1] = {};
+    WorkQueue analytics_queue = {};
+    make_queue(&analytics_queue, 1, analytics_info);
+    game_memory.analytics_state = &analytics_state;
+
+    r64 start_frame_for_total_time = get_time();
+    
     while (!should_close_window(render_state) && !renderer.should_close)
     {
         if(game_memory.exit_game)
@@ -506,7 +504,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         game.update(delta_time, &game_memory, renderer, template_state, &input_controller, &sound_system, timer_controller);
         update_particle_systems(renderer, delta_time);
 
-		process_analytics_events(analytics_state, &analytics_queue);
+	process_analytics_events(analytics_state, &analytics_queue);
 		
         tick_animation_controllers(renderer, &sound_system, &input_controller, timer_controller, delta_time);
         tick_timers(timer_controller, delta_time);
@@ -559,7 +557,17 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         //end_temporary_memory(game_temp_mem);
     }
 
-	curl_easy_cleanup(analytics_state.curl_handle);
+    
+
+    AnalyticsEventData event = {};
+    event.state = &analytics_state;
+    event.type = AnalyticsEventType::SESSION;
+    event.play_time = get_time() - start_frame_for_total_time;
+    strcpy(event.user_id, "test");
+	
+    send_analytics_event(&analytics_queue, &event);
+			 
+    //curl_easy_cleanup(analytics_state.curl_handle);
     close_log();
     cleanup_sound(&sound_device);
     close_window(render_state);
