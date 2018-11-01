@@ -40,7 +40,7 @@ void process_analytics_event(WorkQueue *queue, void *data_ptr)
 		curl_easy_setopt(curl_handle, CURLOPT_POSTFIELDS, post_data_buffer);
 		curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, write_data);
 		
-		curl_easy_perform(curl_handle);
+		CURLcode res = curl_easy_perform(curl_handle);
 		curl_easy_cleanup(curl_handle);
 
 		data->state->not_completed--;

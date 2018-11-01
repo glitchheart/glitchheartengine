@@ -10,18 +10,18 @@ static b32 do_next_work_queue_entry(WorkQueue *queue)
     // make sure there is more work!
     if(original_next_entry_to_read != queue->next_entry_to_write)
     {
-	u32 index = interlocked_compare_exchange(&queue->next_entry_to_read, new_next_entry_to_read, original_next_entry_to_read);
+		u32 index = interlocked_compare_exchange(&queue->next_entry_to_read, new_next_entry_to_read, original_next_entry_to_read);
 	
-	if(index == original_next_entry_to_read)
-	{
-	    WorkQueueEntry entry = queue->entries[index];
-	    entry.work_ptr(queue, entry.data);
-	    interlocked_increment(&queue->completion_count);
-	}	
+		if(index == original_next_entry_to_read)
+		{
+			WorkQueueEntry entry = queue->entries[index];
+			entry.work_ptr(queue, entry.data);
+			interlocked_increment(&queue->completion_count);
+		}	
     }
     else
     {
-	should_sleep = true;
+		should_sleep = true;
     }
 
     return(should_sleep);
@@ -35,10 +35,10 @@ THREAD_PROC(thread_proc)
 
     for(;;)
     {
-	if(do_next_work_queue_entry(thread_info->queue))
-	{
-	    wait_for_semaphore(thread_info->queue->semaphore_handle);
-	}
+		if(do_next_work_queue_entry(thread_info->queue))
+		{
+			wait_for_semaphore(thread_info->queue->semaphore_handle);
+		}
     }
 }
 

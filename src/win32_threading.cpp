@@ -24,7 +24,7 @@ static inline void release_semaphore(SemaphoreHandle semaphore_handle)
 
 static inline void wait_for_semaphore(SemaphoreHandle semaphore_handle)
 {
-    WaitForSingleObjectEx(semaphore_handle, INFINITE, FALSE);
+    WaitForSingleObjectEx(semaphore_handle, INFINITE, TRUE);
 }
 
 static inline SemaphoreHandle create_semaphore(u32 initial_count, u32 thread_count)
