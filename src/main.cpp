@@ -47,6 +47,8 @@ static MemoryState memory_state;
 #include "filehandling.h"
 
 #include "curl/curl.h"
+#include "analytics.h"
+#include "analytics.cpp"
 
 #if defined(__linux) || defined(__APPLE__)
 #include "dlfcn.h"
@@ -255,12 +257,6 @@ inline void load_config(const char* file_path, ConfigData* config_data, MemoryAr
     }
 }
 
-static void DoTestWork(WorkQueue *queue, void *data)
-{
-    char *str = (char*)data;
-    printf("%s\n", str);
-}
-
 static void init_renderer(Renderer &renderer)
 {
     renderer.pixels_per_unit = global_pixels_per_unit;
@@ -296,38 +292,24 @@ static void init_renderer(Renderer &renderer)
     renderer.tt_font_infos = push_array(&renderer.font_arena, global_max_fonts, TrueTypeFontInfo);
 }
 
-enum class AnalyticsEventType
+void process_analytics_events(AnalyticsEventState &analytics_state, WorkQueue *queue)
 {
- STARTED_SESSION,
- ENDED_SESSION,
- STARTED_LEVEL,
- FINISHED_LEVEL
-};
+	for(u32 i = 0; i < analytics_state.event_count; i++)
+	{
+		analytics_state.persistent_events[analytics_state.current_index] = analytics_state.events[i];
+		AnalyticsEventData *event = &analytics_state.persistent_events[analytics_state.current_index++];
+		event->state = &analytics_state;
+		analytics_state.not_completed++;
+		
+		send_analytics_event(queue, event);
+	}
+	
+	analytics_state.event_count = 0;
 
-struct AnalyticsEventData
-{
-    AnalyticsEventType type;
-    i32 level_id;
-};
-
-static void send_analytics_event(WorkQueue *queue, void *data)
-{
-    printf("SEND!\n");
-    CURL *curl_handle = curl_easy_init();
-
-    if(curl_handle)
-    {
-	printf("DAMN!\n");
-	curl_easy_setopt(curl_handle, CURLOPT_URL, "http://www.google-analytics.com/collect");
-	char *user_agent = "Superverse/0.3 (Windows NT 6.2)";
-	char *post_data = "v=1&tid=UA-128027751-1&cid=UUID&sc=start";
-    
-	curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, user_agent);
-	curl_easy_setopt(curl_handle, CURLOPT_POSTFIELDS, post_data);
-
-	curl_easy_perform(curl_handle);
-	curl_easy_cleanup(curl_handle);
-    }
+	if(analytics_state.not_completed == 0)
+	{
+		analytics_state.current_index = 0;
+	}
 }
 
 #if defined(_WIN32) && !defined(DEBUG)
@@ -398,7 +380,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     char* game_library_path = "libgame.so";
     char* temp_game_library_path = "libgame_temp.so";
 #endif
-    
+	
 #if DEBUG
     MemoryArena debug_arena = {};
     
@@ -432,18 +414,18 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     
     init_renderer(renderer);
     if constexpr(global_graphics_api == GRAPHICS_VULKAN)
-		{
+	{
 #if defined(__linux) || defined(_WIN32)
-		    //VkRenderState vk_render_state;
-		    //initialize_vulkan(vk_render_state, renderer, config_data);
-		    //vk_render(vk_render_state, renderer);
+		//VkRenderState vk_render_state;
+		//initialize_vulkan(vk_render_state, renderer, config_data);
+		//vk_render(vk_render_state, renderer);
 #endif
-		}
+	}
     else if constexpr(global_graphics_api == GRAPHICS_OPEN_GL)
-		     {
-			 log("Initializing OpenGl");
-			 initialize_opengl(render_state, renderer, &config_data, &platform_state->perm_arena, &do_save_config);
-		     }
+	{
+		log("Initializing OpenGl");
+		initialize_opengl(render_state, renderer, &config_data, &platform_state->perm_arena, &do_save_config);
+	}
     
     GameCode game = {};
     game.is_valid = false;
@@ -496,40 +478,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     
     template_state.templates = push_array(&platform_state->perm_arena, global_max_entity_templates, scene::EntityTemplate);
 
-    // Threading
-    ThreadInfo high_thread_infos[6] = {};
-    WorkQueue high_priority_queue = {};
-    make_queue(&high_priority_queue, 6, high_thread_infos);
-    
-    // ThreadInfo low_thread_infos[2] = {};
-    // WorkQueue low_priority_queue = {};
-    // make_queue(&low_priority_queue, 2, low_thread_infos);
-
-    // platform.add_entry(&high_priority_queue, DoTestWork, (void*)"Hi there 1!");
-    // platform.add_entry(&high_priority_queue, DoTestWork, (void*)"Hi there 2!");
-    // platform.add_entry(&high_priority_queue, DoTestWork, (void*)"Hi there 3!");
-    // platform.add_entry(&high_priority_queue, DoTestWork, (void*)"Hi there 4!");
-    // platform.add_entry(&high_priority_queue, DoTestWork, (void*)"Hi there 5!");
-    // platform.add_entry(&high_priority_queue, DoTestWork, (void*)"Hi there 6!");
-    // platform.add_entry(&high_priority_queue, DoTestWork, (void*)"Hi there 7!");
-    // platform.add_entry(&high_priority_queue, DoTestWork, (void*)"Hi there 8!");
-    // platform.add_entry(&high_priority_queue, DoTestWork, (void*)"Hi there 9!");
-    // platform.add_entry(&high_priority_queue, DoTestWork, (void*)"Hi there 10!");
-    // platform.add_entry(&high_priority_queue, DoTestWork, (void*)"Hi there 11!");
-    // platform.add_entry(&high_priority_queue, DoTestWork, (void*)"Hi there 12!");
-    // platform.add_entry(&high_priority_queue, DoTestWork, (void*)"Hi there 13!");
-    // platform.add_entry(&high_priority_queue, DoTestWork, (void*)"Hi there 14!");
-    // platform.add_entry(&high_priority_queue, DoTestWork, (void*)"Hi there 15!");
-    // platform.add_entry(&high_priority_queue, DoTestWork, (void*)"Hi there 16!");
-
-    //platform.complete_all_work(&high_priority_queue);
-
-    // ANALYTICS
-    
-    //END ANAYLTICS
-
-    platform.add_entry(&high_priority_queue, send_analytics_event, (void*)"DO IT");
-    
+	AnalyticsEventState analytics_state = {};
+	
+	ThreadInfo analytics_info[1] = {};
+	WorkQueue analytics_queue = {};
+	//make_queue(&analytics_queue, 1, analytics_info);
+	game_memory.analytics_state = &analytics_state;
+	
     while (!should_close_window(render_state) && !renderer.should_close)
     {
         if(game_memory.exit_game)
@@ -544,10 +499,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         
         reload_libraries(&game, game_library_path, temp_game_library_path, &platform_state->perm_arena);
         
-        auto game_temp_mem = begin_temporary_memory(game_memory.temp_arena);
+        //auto game_temp_mem = begin_temporary_memory(game_memory.temp_arena);
         game.update(delta_time, &game_memory, renderer, template_state, &input_controller, &sound_system, timer_controller);
-        update_particle_systems(renderer, delta_time);
-        
+        //update_particle_systems(renderer, delta_time);
+
+		//process_analytics_events(analytics_state, &analytics_queue);
+		
         tick_animation_controllers(renderer, &sound_system, &input_controller, timer_controller, delta_time);
         tick_timers(timer_controller, delta_time);
         update_sound_commands(&sound_device, &sound_system, delta_time, &do_save_config);
@@ -571,14 +528,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             controller_keys(GLFW_JOYSTICK_1);
         }
 
-	// frame_counter_for_asset_check++;
-        // if(frame_counter_for_asset_check == 10)
-        // {
-        //     listen_to_file_changes(&platform_state->perm_arena, &asset_manager);
-        //     frame_counter_for_asset_check = 0;
-        // }
-		
-        update_log();
+        //update_log();
         
         swap_buffers(render_state);
 
@@ -603,7 +553,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         delta_time = get_time() - last_frame;
         last_frame = end_counter;
         
-        end_temporary_memory(game_temp_mem);
+        //end_temporary_memory(game_temp_mem);
     }
     
     close_log();

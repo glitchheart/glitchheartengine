@@ -294,7 +294,7 @@ struct GameMemory
     PlatformApi platform_api;
     struct LogState* log_state;
     struct MemoryArena* temp_arena;
-    
+    struct AnalyticsEventState *analytics_state;
     struct GameState* game_state;
     
 #if DEBUG
