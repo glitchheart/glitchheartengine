@@ -69,6 +69,7 @@ static void send_analytics_event(WorkQueue *queue, AnalyticsEventData *data)
     switch(data->type)
     {
     case AnalyticsEventType::SKIPPED_LEVEL:
+	// @Incomplete(Niels): Should "skipped" be seen as failed?
 	gameanalytics::GameAnalytics::addProgressionEvent(gameanalytics::EGAProgressionStatus::Fail, world, level, "");
 	break;
     case AnalyticsEventType::STARTED_LEVEL:	
@@ -78,7 +79,6 @@ static void send_analytics_event(WorkQueue *queue, AnalyticsEventData *data)
 	gameanalytics::GameAnalytics::addProgressionEvent(gameanalytics::EGAProgressionStatus::Complete, world, level, "");
 	break;
     case AnalyticsEventType::SESSION:
-	//sprintf(event_string, "ec=session&ea=closed&cm1=%d", (i32)data->play_time);
 	break;
     }
 }
