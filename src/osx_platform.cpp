@@ -8,6 +8,7 @@
 #include <mach/error.h>
 #include <dirent.h>
 #include <sys/stat.h>
+#include "osx_threading.cpp"
 
 struct PlatformHandle
 {
@@ -345,6 +346,10 @@ static void init_platform(PlatformApi& platform_api)
     platform_api.seek_file = osx_seek_file;
     platform_api.tell_file = osx_tell_file;
     platform_api.create_directory = osx_create_directory;
+
+    // Threading
+    platform_api.add_entry = add_entry;
+    platform_api.complete_all_work = complete_all_work;
 }
 
 

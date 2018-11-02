@@ -891,14 +891,25 @@ static void render_setup(RenderState *render_state, MemoryArena *perm_arena)
     setup_quad(*render_state, render_state->perm_arena);
     setup_lines(*render_state, render_state->perm_arena);
     
-    
     //font
     render_state->standard_font_shader.type = SHADER_STANDARD_FONT;
     load_shader(shader_paths[SHADER_STANDARD_FONT], &render_state->standard_font_shader, render_state->perm_arena);
-    
+
+    auto &shader = render_state->standard_font_shader;
+    shader.uniform_locations.projection_matrix = glGetUniformLocation(shader.program, "projectionMatrix");
+    shader.uniform_locations.diffuse_color = glGetUniformLocation(shader.program, "color");
+    shader.uniform_locations.font.alpha_color = glGetUniformLocation(shader.program, "alphaColor");
+    shader.uniform_locations.font.z = glGetUniformLocation(shader.program, "z");
+
     render_state->text_3d_shader.type = SHADER_3D_TEXT;
     load_shader(shader_paths[SHADER_3D_TEXT], &render_state->text_3d_shader, render_state->perm_arena);
     
+    auto &text_3d_shader = render_state->text_3d_shader;
+    text_3d_shader.uniform_locations.projection_matrix = glGetUniformLocation(shader.program, "projectionMatrix");
+    text_3d_shader.uniform_locations.diffuse_color = glGetUniformLocation(shader.program, "color");
+    text_3d_shader.uniform_locations.font.alpha_color = glGetUniformLocation(shader.program, "alphaColor");
+    text_3d_shader.uniform_locations.font.z = glGetUniformLocation(shader.program, "z");
+
     render_state->mesh_shader.type = SHADER_MESH;
     load_shader(shader_paths[SHADER_MESH], &render_state->mesh_shader, render_state->perm_arena);
     
@@ -1149,8 +1160,9 @@ static const GLFWvidmode* create_open_gl_window(RenderState& render_state, Windo
 
 static void initialize_opengl(RenderState& render_state, Renderer& renderer, r32 contrast, r32 brightness, WindowMode window_mode, i32 screen_width, i32 screen_height, const char* title, MemoryArena *perm_arena, b32 *do_save_config)
 {
+    render_state.character_buffer = push_array(perm_arena, 1024, CharacterData);
     auto recreate_window = render_state.window != nullptr;
-    
+	
     if(!recreate_window)
     {
         if (!glfwInit())
@@ -1158,7 +1170,6 @@ static void initialize_opengl(RenderState& render_state, Renderer& renderer, r32
             log_error("Could not initialize glfw");
             exit(EXIT_FAILURE);
         }
-        
     }
     
     render_state.framebuffer.buffer_handle = 0;
@@ -1174,8 +1185,8 @@ static void initialize_opengl(RenderState& render_state, Renderer& renderer, r32
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
 #elif __APPLE__
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 #endif
     
@@ -1437,6 +1448,11 @@ static void set_float_uniform(GLuint shader_handle, const char* uniform_name, r3
     glUniform1f(glGetUniformLocation(shader_handle, uniform_name), value);
 }
 
+static void set_float_uniform(GLuint shader_handle, GLint uniform_location, r32 value)
+{
+    glUniform1f(uniform_location, value);
+}
+
 static void set_int_uniform(GLuint shader_handle, const char* uniform_name, i32 value)
 {
     glUniform1i(glGetUniformLocation(shader_handle, uniform_name), value);
@@ -1462,9 +1478,19 @@ static void set_vec4_uniform(GLuint shader_handle, const char *uniform_name, mat
     glUniform4f(glGetUniformLocation(shader_handle, uniform_name), value.x, value.y, value.z, value.w);
 }
 
+static void set_vec4_uniform(GLuint shader_handle, GLint uniform_location, math::Vec4 value)
+{
+    glUniform4f(uniform_location, value.x, value.y, value.z, value.w);
+}
+
 static void set_mat4_uniform(GLuint shader_handle, const char *uniform_name, math::Mat4 v)
 {
     glUniformMatrix4fv(glGetUniformLocation(shader_handle, uniform_name), 1, GL_TRUE, &v[0][0]);
+}
+
+static void set_mat4_uniform(GLuint shader_handle, GLint uniform_location, math::Mat4 v)
+{
+    glUniformMatrix4fv(uniform_location, 1, GL_TRUE, &v[0][0]);
 }
 
 void set_vec4_array_uniform(GLuint shader_handle, const char *uniform_name, math::Vec4* value, u32 length)
@@ -1813,11 +1839,13 @@ static void render_text(RenderState &render_state, GLFontBuffer &font, TrueTypeF
     glBindVertexArray(font.vao);
     auto shader = render_state.shaders[SHADER_STANDARD_FONT];
     use_shader(shader);
+
+    auto uniform_locations = shader.uniform_locations;
     
-    set_vec4_uniform(shader.program, "color", color);
-    set_vec4_uniform(shader.program, "alphaColor", math::Rgba(1, 1, 1, 1));
-    set_mat4_uniform(shader.program, "projectionMatrix", projection_matrix);
-    set_float_uniform(shader.program, "z", (r32)z);
+    set_mat4_uniform(shader.program, uniform_locations.projection_matrix, projection_matrix);
+    set_vec4_uniform(shader.program, uniform_locations.diffuse_color, color);
+    set_vec4_uniform(shader.program, uniform_locations.font.alpha_color, math::Rgba(1, 1, 1, 1));
+    set_float_uniform(shader.program, uniform_locations.font.z, (r32)z);
     
     if(render_state.bound_texture != font.texture)
     {
@@ -1825,9 +1853,7 @@ static void render_text(RenderState &render_state, GLFontBuffer &font, TrueTypeF
         render_state.bound_texture = font.texture;
     }
     
-    auto temp_mem = begin_temporary_memory(&render_state.font_arena);
-    
-    CharacterData* coords = push_array(&render_state.font_arena, 6 * strlen(text), CharacterData);
+    CharacterData* coords = render_state.character_buffer;
     
     i32 n = 0;
     
@@ -1854,7 +1880,6 @@ static void render_text(RenderState &render_state, GLFontBuffer &font, TrueTypeF
     {
         y += text_size.y;
     }
-    
     
     // first we have to reverse the initial y to support stb_truetype where y+ is down
     y = render_state.window_height - y;
@@ -1887,7 +1912,6 @@ static void render_text(RenderState &render_state, GLFontBuffer &font, TrueTypeF
     
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
-    end_temporary_memory(temp_mem);
 }
 
 static void render_3d_text(RenderState &render_state, GLFontBuffer &font, TrueTypeFontInfo& font_info, const math::Rgba color, const char* text, math::Vec3 position, math::Vec3 rotation, math::Vec3 scale, math::Mat4 view_matrix, math::Mat4 projection_matrix, u64 alignment_flags = ALIGNMENT_LEFT)
@@ -1906,9 +1930,7 @@ static void render_3d_text(RenderState &render_state, GLFontBuffer &font, TrueTy
         render_state.bound_texture = font.texture;
     }
     
-    auto temp_mem = begin_temporary_memory(&render_state.font_arena);
-    
-    CharacterData* coords = push_array(&render_state.font_arena, 6 * strlen(text), CharacterData);
+    CharacterData* coords = render_state.character_buffer;
     
     i32 n = 0;
     
@@ -1989,7 +2011,6 @@ static void render_3d_text(RenderState &render_state, GLFontBuffer &font, TrueTy
     
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
-    end_temporary_memory(temp_mem);
 }
 
 static void render_line(const RenderCommand& command, RenderState& render_state, math::Mat4 projection, math::Mat4 view)
@@ -2250,9 +2271,12 @@ static void render_mesh(const RenderCommand &render_command, Renderer &renderer,
     if(!for_shadow_map)
     {
         glUniform1i(glGetUniformLocation(shader.program, "diffuseTexture"), 0);
-        glUniform1i(glGetUniformLocation(shader.program, "shadowMap"),  1);
+        glUniform1i(glGetUniformLocation(shader.program, "specularTexture"),  1);
+        glUniform1i(glGetUniformLocation(shader.program, "ambientTexture"),  2);
+        glUniform1i(glGetUniformLocation(shader.program, "specularIntensityTexture"),  3);
+        glUniform1i(glGetUniformLocation(shader.program, "shadowMap"),  4);
         
-        if(render_command.mesh.diffuse_texture != 0)
+        if(render_command.mesh_instanced.diffuse_texture != 0)
         {
             auto texture = render_state.texture_array[renderer.texture_data[render_command.mesh.diffuse_texture - 1].handle];
             
@@ -2264,21 +2288,67 @@ static void render_mesh(const RenderCommand &render_command, Renderer &renderer,
         else
             set_bool_uniform(shader.program, "hasTexture", false);
         
-        glActiveTexture(GL_TEXTURE1);
+        if(render_command.mesh_instanced.specular_texture != 0)
+        {
+            auto texture = render_state.texture_array[renderer.texture_data[render_command.mesh.specular_texture - 1].handle];
+            
+            glActiveTexture(GL_TEXTURE1);
+            glBindTexture(GL_TEXTURE_2D, texture.texture_handle);
+            
+            set_bool_uniform(shader.program, "hasSpecular", true);
+        }
+        else
+        {
+            set_bool_uniform(shader.program, "hasSpecular", false);
+        }
+        
+        if(render_command.mesh_instanced.ambient_texture != 0)
+        {
+            auto texture = render_state.texture_array[renderer.texture_data[render_command.mesh.ambient_texture - 1].handle];
+            
+            glActiveTexture(GL_TEXTURE2);
+            glBindTexture(GL_TEXTURE_2D, texture.texture_handle);
+            
+            set_bool_uniform(shader.program, "hasAmbient", true);
+        }
+        else
+        {
+            set_bool_uniform(shader.program, "hasAmbient", false);
+        }
+        
+        glActiveTexture(GL_TEXTURE3);
+        if(render_command.mesh_instanced.specular_intensity_texture != 0)
+        {
+            auto texture = render_state.texture_array[renderer.texture_data[render_command.mesh_instanced.specular_intensity_texture - 1].handle];
+            
+            glBindTexture(GL_TEXTURE_2D, texture.texture_handle);
+            
+            set_bool_uniform(shader.program, "hasSpecularIntensity", true);
+        }
+        else
+        {
+            set_bool_uniform(shader.program, "hasSpecularIntensity", false);
+        }
+        
+        glActiveTexture(GL_TEXTURE4);
         glBindTexture(GL_TEXTURE_2D, render_state.shadow_map_buffer.shadow_map_handle);
         
         set_bool_uniform(shader.program, "receivesShadows", render_command.receives_shadows);
-        
         set_mat4_uniform(shader.program, "depthModelMatrix", shadow_map_matrices->depth_model_matrix);
         set_mat4_uniform(shader.program, "depthBiasMatrix", shadow_map_matrices->depth_bias_matrix);
         set_mat4_uniform(shader.program, "depthViewMatrix", shadow_map_matrices->depth_view_matrix);
         set_mat4_uniform(shader.program, "depthProjectionMatrix", shadow_map_matrices->depth_projection_matrix);
         
-        set_vec4_uniform(shader.program, "color", render_command.color);
         set_vec3_uniform(shader.program, "lightPosWorld", math::Vec3(0, 20, -10));
-        set_vec3_uniform(shader.program, "diffuseColor", math::Vec3(1, 1, 1));
-        set_vec3_uniform(shader.program, "lightColor", math::Vec3(1.0f, 1.0f, 1.0f));
-        set_vec3_uniform(shader.program, "specularColor", math::Vec3(1, 1, 1));
+        
+        set_vec3_uniform(shader.program, "lightSpecular", math::Vec3(1.0f));
+        set_vec3_uniform(shader.program, "lightColor", math::Vec3(1.0f));
+        set_vec3_uniform(shader.program, "lightAmbient", math::Vec3(0.2f));
+        set_vec3_uniform(shader.program, "diffuseColor", render_command.mesh.diffuse_color.xyz);
+        set_vec3_uniform(shader.program, "specularColor", render_command.mesh.specular_color.xyz);
+        set_float_uniform(shader.program, "specularExponent", render_command.mesh.specular_exponent);
+        
+        set_vec3_uniform(shader.program, "ambientColor", render_command.mesh.ambient_color.xyz);
         
         switch(render_command.mesh.wireframe_type)
         {
@@ -2411,8 +2481,11 @@ static void render_mesh_instanced(const RenderCommand &render_command, Renderer 
     
     if(!for_shadow_map)
     {
-        glUniform1i(glGetUniformLocation(shader.program, "diffuseTexture"), 0);
-        glUniform1i(glGetUniformLocation(shader.program, "shadowMap"),  1);
+        glUniform1i(glGetUniformLocation(shader.program, "material.diffuseTexture"), 0);
+        glUniform1i(glGetUniformLocation(shader.program, "material.specularTexture"),  1);
+        glUniform1i(glGetUniformLocation(shader.program, "material.ambientTexture"),  2);
+        glUniform1i(glGetUniformLocation(shader.program, "material.specularIntensityTexture"),  3);
+        glUniform1i(glGetUniformLocation(shader.program, "shadowMap"),  4);
         
         if(render_command.mesh_instanced.diffuse_texture != 0)
         {
@@ -2421,12 +2494,54 @@ static void render_mesh_instanced(const RenderCommand &render_command, Renderer 
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, texture.texture_handle);
             
-            set_bool_uniform(shader.program, "hasTexture", true);
+            set_bool_uniform(shader.program, "material.hasTexture", true);
         }
         else
-            set_bool_uniform(shader.program, "hasTexture", false);
+            set_bool_uniform(shader.program, "material.hasTexture", false);
         
-        glActiveTexture(GL_TEXTURE1);
+        if(render_command.mesh_instanced.specular_texture != 0)
+        {
+            auto texture = render_state.texture_array[renderer.texture_data[render_command.mesh_instanced.specular_texture - 1].handle];
+            
+            glActiveTexture(GL_TEXTURE1);
+            glBindTexture(GL_TEXTURE_2D, texture.texture_handle);
+            
+            set_bool_uniform(shader.program, "material.hasSpecular", true);
+        }
+        else
+        {
+            set_bool_uniform(shader.program, "material.hasSpecular", false);
+        }
+        
+        if(render_command.mesh_instanced.ambient_texture != 0)
+        {
+            auto texture = render_state.texture_array[renderer.texture_data[render_command.mesh_instanced.ambient_texture - 1].handle];
+            
+            glActiveTexture(GL_TEXTURE2);
+            glBindTexture(GL_TEXTURE_2D, texture.texture_handle);
+            
+            set_bool_uniform(shader.program, "material.hasAmbient", true);
+        }
+        else
+        {
+            set_bool_uniform(shader.program, "material.hasAmbient", false);
+        }
+        
+        if(render_command.mesh_instanced.specular_intensity_texture != 0)
+        {
+            auto texture = render_state.texture_array[renderer.texture_data[render_command.mesh_instanced.specular_intensity_texture - 1].handle];
+            
+            glActiveTexture(GL_TEXTURE3);
+            glBindTexture(GL_TEXTURE_2D, texture.texture_handle);
+            
+            set_bool_uniform(shader.program, "material.hasSpecularIntensity", true);
+        }
+        else
+        {
+            set_bool_uniform(shader.program, "material.hasSpecularIntensity", false);
+        }
+        
+        glActiveTexture(GL_TEXTURE4);
         glBindTexture(GL_TEXTURE_2D, render_state.shadow_map_buffer.shadow_map_handle);
         
         set_bool_uniform(shader.program, "receivesShadows", render_command.receives_shadows);
@@ -2435,10 +2550,29 @@ static void render_mesh_instanced(const RenderCommand &render_command, Renderer 
         set_mat4_uniform(shader.program, "depthViewMatrix", shadow_map_matrices->depth_view_matrix);
         set_mat4_uniform(shader.program, "depthProjectionMatrix", shadow_map_matrices->depth_projection_matrix);
         
-        set_vec3_uniform(shader.program, "lightPosWorld", math::Vec3(0, 20, -10));
-        set_vec3_uniform(shader.program, "diffuseColor", math::Vec3(1.0f));
-        set_vec3_uniform(shader.program, "lightColor", math::Vec3(1.0f));
-        set_vec3_uniform(shader.program, "specularColor", math::Vec3(1, 1, 1));
+        set_vec3_uniform(shader.program, "lightPosWorld", render_state.sun_light.position);
+        //set_vec3_uniform(shader.program, "lightPosWorld", math::Vec3(0, 200, -20));
+        
+        set_vec3_uniform(shader.program, "lightColor", math::Vec3(1.0f, 1.0f, 1.0f));
+        //set_vec3_uniform(shader.program, "lightSpecular", math::Vec3(1.0f));
+        //set_vec3_uniform(shader.program, "lightDiffuse", math::Vec3(1.0f));
+        //set_vec3_uniform(shader.program, "lightAmbient", math::Vec3(0.2f));
+        
+        set_vec3_uniform(shader.program, "lightSpecular", render_state.sun_light.specular_color.xyz);
+        set_vec3_uniform(shader.program, "lightDiffuse", render_state.sun_light.diffuse_color.xyz);
+        set_vec3_uniform(shader.program, "lightAmbient", render_state.sun_light.ambient_color.xyz);
+        
+        set_vec3_uniform(shader.program, "material.diffuseColor", render_command.mesh_instanced.diffuse_color.xyz);
+        set_vec3_uniform(shader.program, "material.specularColor", render_command.mesh_instanced.specular_color.xyz);
+        set_float_uniform(shader.program, "material.specularExponent", render_command.mesh_instanced.specular_exponent);
+        
+        set_vec3_uniform(shader.program, "material.ambientColor", render_command.mesh_instanced.ambient_color.xyz);
+        
+        set_bool_uniform(shader.program, "material.translucency.hasTranslucency", false);
+        set_float_uniform(shader.program, "material.translucency.distortion", 0.059f);
+        set_float_uniform(shader.program, "material.translucency.power", 9.8);
+        set_float_uniform(shader.program, "material.translucency.scale", 0.5);
+        set_vec3_uniform(shader.program, "material.translucency.subColor", math::Vec3(1.0f));
         
         switch(render_command.mesh_instanced.wireframe_type)
         {
@@ -2463,8 +2597,6 @@ static void render_mesh_instanced(const RenderCommand &render_command, Renderer 
             }
             break;
         }
-        
-        set_float_uniform(shader.program, "lightPower", 1.0f);
     }
     
     glDrawElementsInstanced(GL_TRIANGLES, buffer.index_buffer_count, GL_UNSIGNED_SHORT, (void*)nullptr, render_command.mesh_instanced.offset_count);
@@ -2679,9 +2811,6 @@ static void render_commands(RenderState &render_state, Renderer &renderer)
         load_font(render_state, renderer, data.path, data.size);
     }
     
-    auto& camera = renderer.cameras[renderer.current_camera_handle];
-    auto& v = camera.view_matrix;
-    
     for (i32 index = 0; index < renderer.light_command_count; index++)
     {
         const RenderCommand& command = *((RenderCommand*)renderer.light_commands.current_block->base + index);
@@ -2697,7 +2826,7 @@ static void render_commands(RenderState &render_state, Renderer &renderer)
                 
                 Spotlight& spotlight = render_state.spotlight_data.spotlights[render_state.spotlight_data.num_lights++];
                 
-                auto pos = v * math::Vec4(command.position, 1.0f);
+                auto pos = renderer.view_matrix * math::Vec4(command.position, 1.0f);
                 
                 spotlight.position[0] = pos.x;
                 spotlight.position[1] = pos.y;
@@ -2764,13 +2893,12 @@ static void render_commands(RenderState &render_state, Renderer &renderer)
                 if(!render_state.point_light_data.point_lights)
                 {
                     render_state.point_light_data.point_lights = push_array(render_state.perm_arena, global_max_lights, PointLight);
-                }
-                
+                }                
                 
                 PointLight& point_light =
                     render_state.point_light_data.point_lights[render_state.point_light_data.num_lights++];
                 
-                auto pos = v * math::Vec4(command.position, 1.0f);
+                auto pos = renderer.view_matrix * math::Vec4(command.position, 1.0f);
                 
                 point_light.position[0] = pos.x;
                 point_light.position[1] = pos.y;
@@ -2816,49 +2944,49 @@ static void render_commands(RenderState &render_state, Renderer &renderer)
         {
             case RENDER_COMMAND_LINE:
             {
-                render_line(command, render_state, camera.projection_matrix, camera.view_matrix);
+                render_line(command, render_state, renderer.projection_matrix, renderer.view_matrix);
             }
             break;
             case RENDER_COMMAND_TEXT:
             {
-                render_text(command, render_state, renderer, camera.view_matrix, camera.projection_matrix);
+                render_text(command, render_state, renderer, renderer.view_matrix, renderer.projection_matrix);
             }
             break;
             case RENDER_COMMAND_3D_TEXT:
             {
-                render_3d_text(command, render_state, renderer, camera.view_matrix, camera.projection_matrix);
+                render_3d_text(command, render_state, renderer, renderer.view_matrix, renderer.projection_matrix);
             }
             break;
             case RENDER_COMMAND_QUAD:
             {
-                render_quad(command, render_state, camera.projection_matrix, camera.view_matrix);
+                render_quad(command, render_state, renderer.projection_matrix, renderer.view_matrix);
             }
             break;
             case RENDER_COMMAND_MODEL:
             {
-                //render_model(command, render_state, camera.projection_matrix, camera.view_matrix);
+                //render_model(command, render_state, renderer.projection_matrix, renderer.view_matrix);
                 
             }
             break;
             case RENDER_COMMAND_MESH:
             {
-                render_mesh(command, renderer, render_state, camera.projection_matrix, camera.view_matrix, false, &renderer.shadow_map_matrices);
+                render_mesh(command, renderer, render_state, renderer.projection_matrix, renderer.view_matrix, false, &renderer.shadow_map_matrices);
                 
             }
             break;
             case RENDER_COMMAND_PARTICLES:
             {
-                render_particles(command, renderer, render_state, camera.projection_matrix, camera.view_matrix);
+                render_particles(command, renderer, render_state, renderer.projection_matrix, renderer.view_matrix);
             }
             break;
             case RENDER_COMMAND_MESH_INSTANCED:
             {
-                render_mesh_instanced(command, renderer, render_state, camera.projection_matrix, camera.view_matrix, false, &renderer.shadow_map_matrices);
+                render_mesh_instanced(command, renderer, render_state, renderer.projection_matrix, renderer.view_matrix, false, &renderer.shadow_map_matrices);
             }
             break;
             case RENDER_COMMAND_BUFFER:
             {
-                render_buffer(command, render_state, camera.projection_matrix, camera.view_matrix);
+                render_buffer(command, render_state, renderer.projection_matrix, renderer.view_matrix);
             }
             break;
             case RENDER_COMMAND_DEPTH_TEST:
@@ -2876,6 +3004,14 @@ static void render_commands(RenderState &render_state, Renderer &renderer)
             case RENDER_COMMAND_CURSOR:
             {
                 glfwSetCursor(render_state.window, render_state.cursors[command.cursor.type]);
+            }
+            break;
+            case RENDER_COMMAND_SUN_LIGHT:
+            {
+                render_state.sun_light.position = command.sun_light.position;
+                render_state.sun_light.specular_color = command.sun_light.specular_color;
+                render_state.sun_light.diffuse_color = command.sun_light.diffuse_color;
+                render_state.sun_light.ambient_color = command.sun_light.ambient_color;
             }
             break;
             default:
@@ -2905,27 +3041,27 @@ static void render_commands(RenderState &render_state, Renderer &renderer)
         {
             case RENDER_COMMAND_LINE:
             {
-                render_line(command, render_state, renderer.ui_projection_matrix, camera.view_matrix);
+                render_line(command, render_state, renderer.ui_projection_matrix, renderer.view_matrix);
             }
             break;
             case RENDER_COMMAND_TEXT:
             {
-                render_text(command, render_state, renderer, camera.view_matrix, renderer.ui_projection_matrix);
+                render_text(command, render_state, renderer, renderer.view_matrix, renderer.ui_projection_matrix);
             }
             break;
             case RENDER_COMMAND_QUAD:
             {
-                render_quad(command, render_state, renderer.ui_projection_matrix, camera.view_matrix);
+                render_quad(command, render_state, renderer.ui_projection_matrix, renderer.view_matrix);
             }
             break;
             case RENDER_COMMAND_MODEL:
             {
-                //render_model(command, render_state, camera.projection_matrix, camera.view_matrix);
+                //render_model(command, render_state, renderer.projection_matrix, renderer.view_matrix);
             }
             break;
             case RENDER_COMMAND_BUFFER:
             {
-                render_buffer(command, render_state, camera.projection_matrix, camera.view_matrix);
+                render_buffer(command, render_state, renderer.projection_matrix, renderer.view_matrix);
             }
             break;
             case RENDER_COMMAND_DEPTH_TEST:
@@ -2966,12 +3102,15 @@ static void render(RenderState& render_state, Renderer& renderer, r64 delta_time
         render_state.window_height = renderer.window_height;
         *save_config = true;
         
+        
+        
         if(renderer.window_mode != render_state.window_mode)
         {
             const GLFWvidmode *mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
             if(renderer.window_mode == FM_BORDERLESS)
             {
                 glfwSetWindowMonitor(render_state.window, glfwGetPrimaryMonitor(), 0, 0, mode->width, mode->height, 0);
+                
                 renderer.window_width = mode->width;
                 renderer.window_height = mode->height;
                 
@@ -3015,8 +3154,6 @@ static void render(RenderState& render_state, Renderer& renderer, r64 delta_time
     render_state.current_extra_shader = -1;
     render_state.shader_attribute_count = 0;
     
-    auto& camera = renderer.cameras[renderer.current_camera_handle];
-    
     render_state.scale_x = 2.0f / render_state.framebuffer_width;
     render_state.scale_y = 2.0f / render_state.framebuffer_height;
     
@@ -3027,9 +3164,6 @@ static void render(RenderState& render_state, Renderer& renderer, r64 delta_time
     
     b32 should_render = renderer.window_width != 0;
     
-    camera.viewport_width = render_state.framebuffer_width;
-    camera.viewport_height = render_state.framebuffer_height;
-    
     renderer.ui_projection_matrix = math::ortho(0.0f, (r32)renderer.framebuffer_width, 0.0f, (r32)renderer.framebuffer_height, -500.0f, 500.0f);
     
     register_buffers(render_state, renderer);
@@ -3039,7 +3173,7 @@ static void render(RenderState& render_state, Renderer& renderer, r64 delta_time
         renderer.framebuffer_width = render_state.framebuffer_width;
         renderer.framebuffer_height = render_state.framebuffer_height;
         
-        render_shadows(render_state, renderer, render_state.shadow_map_buffer);
+	render_shadows(render_state, renderer, render_state.shadow_map_buffer);
         
         glViewport(0, 0, render_state.framebuffer_width, render_state.framebuffer_height);
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, render_state.framebuffer.buffer_handle);
@@ -3047,7 +3181,7 @@ static void render(RenderState& render_state, Renderer& renderer, r64 delta_time
         glEnable(GL_DEPTH_TEST);
         
         glDepthFunc(GL_LESS);
-        
+
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
         glClearColor(renderer.clear_color.r, renderer.clear_color.g, renderer.clear_color.b, renderer.clear_color.a);
@@ -3067,7 +3201,6 @@ static void render(RenderState& render_state, Renderer& renderer, r64 delta_time
         glBlitFramebuffer(0, 0, width, height, 0, 0, width, height, 
                           GL_COLOR_BUFFER_BIT, GL_NEAREST);
         
-        
         if (renderer.frame_lock != 0)
         {
             render_state.total_delta = 0.0;
@@ -3085,4 +3218,14 @@ static void render(RenderState& render_state, Renderer& renderer, r64 delta_time
         render_state.frame_delta -= delta_time;
         render_state.total_delta += delta_time;
     }
+}
+
+static void mojave_workaround(RenderState &render_state)
+{
+    // MacOS Mojave workaround
+    i32 x = 0;
+    i32 y = 0;
+    glfwGetWindowPos(render_state.window, &x, &y);
+    glfwSetWindowPos(render_state.window, x + 1, y);
+    glfwSetWindowPos(render_state.window, x - 1, y);
 }

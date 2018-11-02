@@ -3,6 +3,8 @@
 #include <windows.h>
 #include <timeapi.h>
 
+#include "win32_threading.cpp"
+
 struct PlatformHandle
 {
     HANDLE handle;
@@ -455,6 +457,8 @@ static PLATFORM_SEEK_FILE(win32_seek_file)
 
 static PLATFORM_TELL_FILE(win32_tell_file)
 {
+
+
     auto result = SetFilePointer(FileDescriptorToWin32(file.handle), 0, 0, FILE_CURRENT);
     return (i32)result;
 }
@@ -506,4 +510,8 @@ static void init_platform(PlatformApi& platform_api)
     platform_api.print_file = win32_print_file;
     platform_api.get_all_directories = win32_get_all_directories;
     platform_api.create_directory =  win32_create_directory;
+
+    // Threading
+    platform_api.add_entry = add_entry;
+    platform_api.complete_all_work = complete_all_work;
 }
