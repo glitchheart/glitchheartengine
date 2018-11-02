@@ -1,6 +1,13 @@
 #ifndef SCENE_H
 #define SCENE_H
 
+#define EMPTY_ENTITY_HANDLE {0}
+#define EMPTY_COMP_HANDLE {-1}
+#define EMPTY_TEMPLATE_HANDLE {-1}
+#define IS_ENTITY_HANDLE_VALID(ent_handle) ent_handle.handle != 0
+#define IS_COMP_HANDLE_VALID(comp_handle) comp_handle.handle != -1
+#define IS_TEMPLATE_HANDLE_VALID(comp_handle) comp_handle.handle != -1
+
 namespace scene
 {
     // @Note(Daniel): Invalid EntityHandles have the value 0.
@@ -45,7 +52,10 @@ namespace scene
         math::Vec3 position;
         math::Vec3 scale;
         math::Vec3 rotation;
-    };
+
+		TransformComponentHandle parent_handle;
+		TransformComponentHandle child_handle; // Remember the child's handle to be able to quickly remove the childs parent handle if the parent is removed
+	};
     
     struct RenderComponent
     {
@@ -61,7 +71,12 @@ namespace scene
     {
         ParticleSystemHandle handle;
     };
-    
+
+	struct TemplateHandle
+	{
+		i32 handle;
+	};
+	
     struct EntityTemplate
     {
         char file_path[256];
@@ -71,7 +86,8 @@ namespace scene
         {
             math::Vec3 position;
             math::Vec3 scale;
-            math::Vec3 rotation;
+            math::Vec3 rotation;;
+			TemplateHandle child_handle;
         } transform;
         struct
         {
@@ -94,10 +110,69 @@ namespace scene
         EntityTemplate *templates;
         i32 template_count;
     };
+
+    
+    struct Camera
+    {
+	r32 zoom;
+	math::Vec3 center;
+	math::Vec3 position;
+	math::Quat orientation;
+	math::Vec3 target;
+    
+	r32 follow_speed;
+	math::Mat4 view_matrix;
+	math::Mat4 projection_matrix;
+    
+	FadingMode fading_mode = FADING_NONE;
+	math::Vec3 fading_tint;
+    
+	b32 fading_in;
+	r32 end_alpha;
+	r32 fading_alpha = 0.0f;
+	r32 fading_speed;
+    };
+
+    enum CameraFlags
+    {
+     C_FLAG_ORTHOGRAPHIC = (1 << 0),
+     C_FLAG_PERSPECTIVE  = (1 << 1),
+     C_FLAG_NO_LOOK_AT     = (1 << 2)
+    };
+
+    struct CameraParams
+    {
+	u32 view_flags;
+    };
+
+    static CameraParams default_camera_params()
+    {
+	CameraParams params;
+	params.view_flags = C_FLAG_ORTHOGRAPHIC | C_FLAG_NO_LOOK_AT;
+	return params;
+    }
+
+    static CameraParams orthographic_camera_params()
+    {
+	CameraParams params;
+	params.view_flags = C_FLAG_ORTHOGRAPHIC;
+	return params;
+    }
+
+    static CameraParams perspective_camera_params()
+    {
+	CameraParams params;
+	params.view_flags = C_FLAG_PERSPECTIVE;
+	return params;
+    }
     
     struct Scene
     {
-        Entity *entities;
+	MemoryArena memory_arena;
+
+	Camera camera;
+
+	Entity *entities;
         i32 *_internal_handles;
         i32 current_internal_handle;
         b32 *active_entities;
@@ -121,5 +196,7 @@ namespace scene
         Renderer* renderer;
     };
 }
+
+
 
 #endif
