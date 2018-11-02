@@ -5,6 +5,7 @@
 #include "unistd.h"
 #include <dirent.h>
 #include "dlfcn.h"
+#include "linux_threading.cpp"
 
 struct PlatformHandle
 {
@@ -328,4 +329,9 @@ static void init_platform(PlatformApi& platform_api)
     platform_api.print_file = linux_print_file;
     platform_api.get_all_directories = linux_get_all_directories;
     platform_api.create_directory = linux_create_directory;
+
+    
+    // Threading
+    platform_api.add_entry = add_entry;
+    platform_api.complete_all_work = complete_all_work;
 }

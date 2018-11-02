@@ -38,8 +38,6 @@ struct TrueTypeFontInfo
     stbtt_fontinfo info;
     stbtt_packedchar char_data['~' - ' '];
 };
-#define PRIMITIVE_CUBE 0
-#define PRIMITIVE_PLANE 1
 
 struct FontData
 {
@@ -153,6 +151,7 @@ enum RenderCommandType
     RENDER_COMMAND_DEPTH_TEST,
     RENDER_COMMAND_PARTICLES,
     RENDER_COMMAND_CURSOR,
+    RENDER_COMMAND_SUN_LIGHT,
     
     RENDER_COMMAND_COUNT
 };
@@ -175,16 +174,6 @@ enum Alignment
     ALIGNMENT_BOTTOM = (1 << 5)
 };
 
-struct Shader
-{
-    ShaderType type;
-    b32 loaded;
-    u32 program;
-    u32 vertex_shader;
-    u32 fragment_shader;
-    u32 geometry_shader; // Optional
-};
-
 struct VertexInfo
 {
     math::Vec3 position;
@@ -204,7 +193,7 @@ r32 plane_vertices[] =
 {
     -0.5f, 0.0f, -0.5f,
     0.5f, 0.0f, -0.5f,
-    0.5f, 0.0f,  0.5f,  
+    0.5f, 0.0f,  0.5f,
     0.5f, 0.0f,  0.5f,  
     -0.5f, 0.0f,  0.5f, 
     -0.5f, 0.0f, -0.5f
@@ -277,47 +266,47 @@ r32 cube_normals[] =
 };
 
 r32 cube_vertices[] = {
-    0.0f, 0.0f, 0.0f,  
-    1.0f, 0.0f, 0.0f,  
-    1.0f,  1.0f, 0.0f, 
-    1.0f,  1.0f, 0.0f, 
-    0.0f,  1.0f, 0.0f,
-    0.0f, 0.0f, 0.0f,
+    -0.5f, -0.5f, -0.5f,  
+    0.5f, -0.5f, -0.5f,  
+    0.5f,  0.5f, -0.5f, 
+    0.5f,  0.5f, -0.5f, 
+    -0.5f,  0.5f, -0.5f,
+    -0.5f, -0.5f, -0.5f,
     
-    0.0f, 0.0f,  1.0f,
-    1.0f, 0.0f,  1.0f,
-    1.0f,  1.0f,  1.0f,  
-    1.0f,  1.0f,  1.0f, 
-    0.0f,  1.0f,  1.0f,
-    0.0f, 0.0f,  1.0f, 
+    -0.5f, -0.5f,  0.5f,
+    0.5f, -0.5f,  0.5f,
+    0.5f,  0.5f,  0.5f,  
+    0.5f,  0.5f,  0.5f, 
+    -0.5f,  0.5f,  0.5f,
+    -0.5f, -0.5f,  0.5f, 
     
-    0.0f,  1.0f,  1.0f,
-    0.0f,  1.0f, 0.0f,
-    0.0f, 0.0f, 0.0f,
-    0.0f, 0.0f, 0.0f,
-    0.0f, 0.0f,  1.0f,
-    0.0f,  1.0f,  1.0f,
+    -0.5f,  0.5f,  0.5f,
+    -0.5f,  0.5f, -0.5f,
+    -0.5f, -0.5f, -0.5f,
+    -0.5f, -0.5f, -0.5f,
+    -0.5f, -0.5f,  0.5f,
+    -0.5f,  0.5f,  0.5f,
     
-    1.0f,  1.0f,  1.0f, 
-    1.0f,  1.0f, 0.0f,
-    1.0f, 0.0f, 0.0f,
-    1.0f, 0.0f, 0.0f,
-    1.0f, 0.0f,  1.0f,
-    1.0f,  1.0f,  1.0f,
+    0.5f,  0.5f,  0.5f, 
+    0.5f,  0.5f, -0.5f,
+    0.5f, -0.5f, -0.5f,
+    0.5f, -0.5f, -0.5f,
+    0.5f, -0.5f,  0.5f,
+    0.5f,  0.5f,  0.5f,
     
-    0.0f, 0.0f, 0.0f,
-    1.0f, 0.0f, 0.0f,
-    1.0f, 0.0f,  1.0f,  
-    1.0f, 0.0f,  1.0f,  
-    0.0f, 0.0f,  1.0f, 
-    0.0f, 0.0f, 0.0f, 
+    -0.5f, -0.5f, -0.5f,
+    0.5f, -0.5f, -0.5f,
+    0.5f, -0.5f,  0.5f,  
+    0.5f, -0.5f,  0.5f,  
+    -0.5f, -0.5f,  0.5f, 
+    -0.5f, -0.5f, -0.5f, 
     
-    0.0f,  1.0f, 0.0f, 
-    1.0f,  1.0f, 0.0f, 
-    1.0f,  1.0f,  1.0f, 
-    1.0f,  1.0f,  1.0f,  
-    0.0f,  1.0f,  1.0f, 
-    0.0f,  1.0f, 0.0f,  
+    -0.5f,  0.5f, -0.5f, 
+    0.5f,  0.5f, -0.5f, 
+    0.5f,  0.5f,  0.5f, 
+    0.5f,  0.5f,  0.5f,  
+    -0.5f,  0.5f,  0.5f, 
+    -0.5f,  0.5f, -0.5f,  
 };
 
 r32 cube_uvs[] =
@@ -594,15 +583,32 @@ struct MaterialHandle
     i32 handle;
 };
 
-struct RenderMaterial
+struct TextureHandle
 {
-    MaterialHandle source_handle;
-    ShaderInfo shader;
-    math::Rgba color;
-    
+    i32 handle;
+};
+
+struct MeshHandle
+{
+    i32 handle;
+};
+
+struct Material
+{
     RenderMaterialType type;
     
-    i32 diffuse_texture;
+    MaterialHandle source_handle;
+    ShaderInfo shader;
+    
+    math::Rgba ambient_color;
+    math::Rgba diffuse_color;
+    math::Rgba specular_color;
+    r32 specular_exponent;
+    
+    TextureHandle ambient_texture;
+    TextureHandle diffuse_texture;
+    TextureHandle specular_texture;
+    TextureHandle specular_intensity_texture;
 };
 
 enum WireframeType
@@ -621,7 +627,7 @@ struct MeshInfo
     i32 instance_scale_buffer_handle;
     
     TransformInfo transform;
-    RenderMaterial material;
+    Material material;
     
     WireframeType wireframe_type;
     math::Rgba wireframe_color;
@@ -799,7 +805,7 @@ struct RenderCommand
             i32 buffer_handle;
             MeshData *meshes;
             i32 mesh_count;
-            RenderMaterial materials[10];
+            Material materials[10];
             i32 material_count;
             math::Rgba color;
             math::Mat4* bone_transforms;
@@ -810,6 +816,13 @@ struct RenderCommand
             i32 buffer_handle;
             RenderMaterialType material_type;
             i32 diffuse_texture;
+            i32 specular_texture;
+            i32 ambient_texture;
+            i32 specular_intensity_texture;
+            math::Rgba diffuse_color;
+            math::Rgba specular_color;
+            math::Rgba ambient_color;
+            r32 specular_exponent;
             WireframeType wireframe_type;
             math::Rgba wireframe_color;
         } mesh;
@@ -823,6 +836,13 @@ struct RenderCommand
             
             RenderMaterialType material_type;
             i32 diffuse_texture;
+            i32 specular_texture;
+            i32 ambient_texture;
+            i32 specular_intensity_texture;
+            math::Rgba diffuse_color;
+            math::Rgba specular_color;
+            math::Rgba ambient_color;
+            r32 specular_exponent;
             WireframeType wireframe_type;
             math::Rgba wireframe_color;
             math::Vec3 *offsets;
@@ -856,6 +876,13 @@ struct RenderCommand
             
             CommandBlendMode blend_mode;
         } particles;
+        struct
+        {
+            math::Rgba specular_color;
+            math::Rgba diffuse_color;
+            math::Rgba ambient_color;
+            math::Vec3 position;
+        } sun_light;
     };
     RenderCommand() {}
 };
@@ -866,29 +893,6 @@ enum FadingMode
     FADING_IN,
     FADING_OUT,
     FADING_OUT_IN
-};
-
-struct Camera
-{
-    i32 viewport_width;
-    i32 viewport_height;
-    r32 zoom;
-    math::Vec3 center;
-    math::Vec3 position;
-    math::Quat orientation;
-    math::Vec3 target;
-    
-    r32 follow_speed;
-    math::Mat4 view_matrix;
-    math::Mat4 projection_matrix;
-    
-    FadingMode fading_mode = FADING_NONE;
-    math::Vec3 fading_tint;
-    
-    b32 fading_in;
-    r32 end_alpha;
-    r32 fading_alpha = 0.0f;
-    r32 fading_speed;
 };
 
 enum UIScalingFlag
@@ -953,8 +957,6 @@ struct BufferData
     size_t instance_buffer_size;
 };
 
-#define MAX_CAMERAS 8
-
 struct ShadowMapMatrices
 {
     math::Mat4 depth_projection_matrix;
@@ -982,6 +984,9 @@ struct Renderer
     i32 frame_lock;
     
     WindowMode window_mode;
+
+    math::Mat4 view_matrix;
+    math::Mat4 projection_matrix;
     
     RenderCommand *commands;
     i32 command_count;
@@ -1000,7 +1005,7 @@ struct Renderer
     i32 *updated_buffer_handles;
     i32 updated_buffer_handle_count;
     
-    RenderMaterial *materials;
+    Material *materials;
     i32 material_count;
     
     Mesh *meshes;
@@ -1016,7 +1021,6 @@ struct Renderer
         i32 particle_system_count;
     } particles;
     
-    
     TextureData *texture_data;
     i32 texture_count;
     
@@ -1027,7 +1031,6 @@ struct Renderer
     ShadowMapMatrices shadow_map_matrices;
     
     math::Mat4 ui_projection_matrix;
-    Camera cameras[MAX_CAMERAS];
     i32 current_camera_handle;
     
     AnimationController* animation_controllers;

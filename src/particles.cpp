@@ -505,9 +505,6 @@ void update_particle_systems(Renderer &renderer, r64 delta_time)
             
             update_particles(renderer, particle_system, delta_time);
             
-            auto camera_position = renderer.cameras[renderer.current_camera_handle].position;
-            //sort(camera_position, particle_system.offsets, particle_system.sizes, particle_system.colors, particle_system.particle_count, &renderer.particle_arena);
-            
             push_particle_system(renderer, particle_system);
         }   
     }
