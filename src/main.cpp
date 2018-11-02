@@ -46,6 +46,13 @@ static MemoryState memory_state;
 #include "fmod_sound.cpp"
 #include "filehandling.h"
 
+#include "curl/curl.h"
+
+#include "GameAnalytics.h"
+
+#include "analytics.h"
+#include "analytics.cpp"
+
 #if defined(__linux) || defined(__APPLE__)
 #include "dlfcn.h"
 #endif
@@ -180,6 +187,30 @@ inline void save_config(const char* file_path, ConfigData &old_config_data, Rend
     }
 }
 
+inline void load_version(const char* file_path, char* version)
+{
+    FILE* file;
+    file = fopen(file_path, "r");
+    char line_buffer[255];
+
+    if(file)
+    {
+	while(fgets(line_buffer, 255, file))
+	{
+	    if(starts_with(line_buffer, "version"))
+	    {
+		// @Note(Niels): Format for version is: [type] v#.#.#
+		// Example 1: alpha v0.1.0
+		// Example 2: beta v0.4.3
+		char type_buf[64];
+		char version_buf[64];
+		sscanf(line_buffer, "version %s %s", type_buf, version_buf);
+		snprintf(version, strlen(type_buf) + strlen(version_buf) + 2, "%s %s", type_buf, version_buf);
+	    }
+	}
+    }
+}
+
 inline void load_config(const char* file_path, ConfigData* config_data, MemoryArena* perm_arena)
 {
     FILE* file;
@@ -188,11 +219,13 @@ inline void load_config(const char* file_path, ConfigData* config_data, MemoryAr
     
     *config_data = {};
     
-    if(!file)
+    if(!platform.file_exists(file_path))
     {
-        auto title = "ALTER";
+        auto title = "Altered";
         snprintf(config_data->title, strlen(title) + 1, "%s", title);
-        auto version = "v0.1.3";
+
+        char version[64];
+	load_version("../.version", version);
         snprintf(config_data->version, strlen(version) + 1, "%s", version);
         config_data->screen_width = 0;
         config_data->window_mode = FM_WINDOWED;
@@ -214,7 +247,13 @@ inline void load_config(const char* file_path, ConfigData* config_data, MemoryAr
             }
             else if(starts_with(line_buffer, "version"))
             {
-                sscanf(line_buffer, "version %s", config_data->version);
+		// @Note(Niels): Format for version is: [type] v#.#.#
+		// Example 1: alpha v0.1.0
+		// Example 2: beta v0.4.3
+		char version_buf[64];
+		load_version("../.version", version_buf);
+		
+		snprintf(config_data->version, strlen(version_buf) + 2, "%s", version_buf);
             }
             else if(starts_with(line_buffer, "screen_width"))
             {
@@ -288,10 +327,22 @@ static void init_renderer(Renderer &renderer)
     renderer.tt_font_infos = push_array(&renderer.font_arena, global_max_fonts, TrueTypeFontInfo);
 }
 
+void process_analytics_events(AnalyticsEventState &analytics_state, WorkQueue *queue)
+{
+    for(u32 i = 0; i < analytics_state.event_count; i++)
+    {
+	AnalyticsEventData *event = &analytics_state.events[i];
+	event->state = &analytics_state;
+	send_analytics_event(queue, event);
+    }
+	
+    analytics_state.event_count = 0;
+}
+
 #if defined(_WIN32) && !defined(DEBUG)
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 #else
-int main(int argc, char **args)
+    int main(int argc, char **args)
 #endif
 {    
     GameMemory game_memory = {};
@@ -356,7 +407,7 @@ int main(int argc, char **args)
     char* game_library_path = "libgame.so";
     char* temp_game_library_path = "libgame_temp.so";
 #endif
-    
+	
 #if DEBUG
     MemoryArena debug_arena = {};
     
@@ -390,18 +441,18 @@ int main(int argc, char **args)
     
     init_renderer(renderer);
     if constexpr(global_graphics_api == GRAPHICS_VULKAN)
-    {
+	{
 #if defined(__linux) || defined(_WIN32)
-        //VkRenderState vk_render_state;
-        //initialize_vulkan(vk_render_state, renderer, config_data);
-        //vk_render(vk_render_state, renderer);
+		//VkRenderState vk_render_state;
+		//initialize_vulkan(vk_render_state, renderer, config_data);
+		//vk_render(vk_render_state, renderer);
 #endif
-    }
+	}
     else if constexpr(global_graphics_api == GRAPHICS_OPEN_GL)
-    {
-        log("Initializing OpenGl");
-        initialize_opengl(render_state, renderer, &config_data, &platform_state->perm_arena, &do_save_config);
-    }
+	{
+		log("Initializing OpenGl");
+		initialize_opengl(render_state, renderer, &config_data, &platform_state->perm_arena, &do_save_config);
+	}
     
     GameCode game = {};
     game.is_valid = false;
@@ -411,10 +462,10 @@ int main(int argc, char **args)
     timer_controller.timer_count = 0;
     
     //setup asset reloading
-    AssetManager asset_manager = {};
-    startup_file_time_checks(&platform_state->perm_arena, &asset_manager, game_library_path);
+    //AssetManager asset_manager = {};
+    //startup_file_time_checks(&platform_state->perm_arena, &asset_manager, game_library_path);
     
-    u32 frame_counter_for_asset_check = 0;
+    //u32 frame_counter_for_asset_check = 0;
     
     SoundDevice sound_device = {};
     debug_log("Initializing FMOD");
@@ -422,20 +473,20 @@ int main(int argc, char **args)
     sound_device.sfx_volume = config_data.sfx_volume;
     sound_device.music_volume = config_data.music_volume;
     sound_device.muted = config_data.muted;
-    init_audio_fmod(&sound_device);
+
+    WorkQueue fmod_queue = {};
+    ThreadInfo fmod_thread = {};
+    make_queue(&fmod_queue, 1, &fmod_thread);
+    platform.add_entry(&fmod_queue, init_audio_fmod_thread, &sound_device);
     
     SoundSystem sound_system = {};
     sound_system.sound_commands.minimum_block_size = sizeof(SoundCommand) * global_max_sound_commands;
     sound_system.sounds = push_array(&sound_system.arena, global_max_sounds, SoundHandle);
     sound_system.audio_sources = push_array(&sound_system.arena, global_max_audio_sources, AudioSource);
     sound_system.channel_groups = push_array(&sound_system.arena, global_max_channel_groups, ChannelGroup);
-    
-    if (sound_device.is_initialized)
-    {
-        sound_system.sfx_volume = config_data.sfx_volume;
-        sound_system.music_volume = config_data.music_volume;
-        sound_system.muted = config_data.muted;
-    }
+    sound_system.sfx_volume = config_data.sfx_volume;
+    sound_system.music_volume = config_data.music_volume;
+    sound_system.muted = config_data.muted;
     
     r64 last_second_check = get_time();
     i32 frames = 0;
@@ -454,6 +505,19 @@ int main(int argc, char **args)
     
     template_state.templates = push_array(&platform_state->perm_arena, global_max_entity_templates, scene::EntityTemplate);
 
+    AnalyticsEventState analytics_state = {};
+
+    gameanalytics::GameAnalytics::setEnabledInfoLog(true);
+    gameanalytics::GameAnalytics::configureBuild("alpha 0.10");
+    gameanalytics::GameAnalytics::initialize("810960034d0191ec4f21a04d73295ec6", "2469ab09d7b00f64d5114071564b2d2d59c900a4");
+
+    ThreadInfo analytics_info[1] = {};
+    WorkQueue analytics_queue = {};
+    make_queue(&analytics_queue, 1, analytics_info);
+    game_memory.analytics_state = &analytics_state;
+
+    r64 start_frame_for_total_time = get_time();
+    
     while (!should_close_window(render_state) && !renderer.should_close)
     {
         if(game_memory.exit_game)
@@ -464,14 +528,16 @@ int main(int argc, char **args)
         
         show_mouse_cursor(render_state, renderer.show_mouse_cursor);
         
-        reload_assets(render_state, &asset_manager, &platform_state->perm_arena);
+        //reload_assets(render_state, &asset_manager, &platform_state->perm_arena);
         
         reload_libraries(&game, game_library_path, temp_game_library_path, &platform_state->perm_arena);
         
-        auto game_temp_mem = begin_temporary_memory(game_memory.temp_arena);
+        //auto game_temp_mem = begin_temporary_memory(game_memory.temp_arena);
         game.update(delta_time, &game_memory, renderer, template_state, &input_controller, &sound_system, timer_controller);
         update_particle_systems(renderer, delta_time);
-        
+
+	process_analytics_events(analytics_state, &analytics_queue);
+		
         tick_animation_controllers(renderer, &sound_system, &input_controller, timer_controller, delta_time);
         tick_timers(timer_controller, delta_time);
         update_sound_commands(&sound_device, &sound_system, delta_time, &do_save_config);
@@ -494,26 +560,19 @@ int main(int argc, char **args)
         {
             controller_keys(GLFW_JOYSTICK_1);
         }
-        
-        frame_counter_for_asset_check++;
-        if(frame_counter_for_asset_check == 10)
-        {
-            listen_to_file_changes(&platform_state->perm_arena, &asset_manager);
-            frame_counter_for_asset_check = 0;
-        }
-        
-        update_log();
+
+        //update_log();
         
         swap_buffers(render_state);
 
-        #if __APPLE__
+#if __APPLE__
         static b32 first_load = true;
         if(first_load)
         {
             mojave_workaround(render_state);
             first_load = false;
         }
-        #endif
+#endif
 
         frames++;
         r64 end_counter = get_time();
@@ -527,9 +586,16 @@ int main(int argc, char **args)
         delta_time = get_time() - last_frame;
         last_frame = end_counter;
         
-        end_temporary_memory(game_temp_mem);
     }
-    
+
+    AnalyticsEventData event = {};
+    event.state = &analytics_state;
+    event.type = AnalyticsEventType::SESSION;
+    event.play_time = get_time() - start_frame_for_total_time;
+	
+    send_analytics_event(&analytics_queue, &event);
+			 
+    //curl_easy_cleanup(analytics_state.curl_handle);
     close_log();
     cleanup_sound(&sound_device);
     close_window(render_state);

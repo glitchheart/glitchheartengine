@@ -1150,8 +1150,9 @@ static const GLFWvidmode* create_open_gl_window(RenderState& render_state, Windo
 
 static void initialize_opengl(RenderState& render_state, Renderer& renderer, r32 contrast, r32 brightness, WindowMode window_mode, i32 screen_width, i32 screen_height, const char* title, MemoryArena *perm_arena, b32 *do_save_config)
 {
+    render_state.character_buffer = push_array(perm_arena, 1024, CharacterData);
     auto recreate_window = render_state.window != nullptr;
-    
+	
     if(!recreate_window)
     {
         if (!glfwInit())
@@ -1159,7 +1160,6 @@ static void initialize_opengl(RenderState& render_state, Renderer& renderer, r32
             log_error("Could not initialize glfw");
             exit(EXIT_FAILURE);
         }
-        
     }
     
     render_state.framebuffer.buffer_handle = 0;
@@ -1845,7 +1845,7 @@ static void render_text(RenderState &render_state, GLFontBuffer &font, TrueTypeF
     
     auto temp_mem = begin_temporary_memory(&render_state.font_arena);
     
-    CharacterData* coords = push_array(&render_state.font_arena, 6 * strlen(text), CharacterData);
+    CharacterData* coords = render_state.character_buffer;
     
     i32 n = 0;
     
@@ -1872,7 +1872,6 @@ static void render_text(RenderState &render_state, GLFontBuffer &font, TrueTypeF
     {
         y += text_size.y;
     }
-    
     
     // first we have to reverse the initial y to support stb_truetype where y+ is down
     y = render_state.window_height - y;
@@ -2682,9 +2681,6 @@ static void render_commands(RenderState &render_state, Renderer &renderer)
         load_font(render_state, renderer, data.path, data.size);
     }
     
-    auto& camera = renderer.cameras[renderer.current_camera_handle];
-    auto& v = camera.view_matrix;
-    
     for (i32 index = 0; index < renderer.light_command_count; index++)
     {
         const RenderCommand& command = *((RenderCommand*)renderer.light_commands.current_block->base + index);
@@ -2700,7 +2696,7 @@ static void render_commands(RenderState &render_state, Renderer &renderer)
                 
                 Spotlight& spotlight = render_state.spotlight_data.spotlights[render_state.spotlight_data.num_lights++];
                 
-                auto pos = v * math::Vec4(command.position, 1.0f);
+                auto pos = renderer.view_matrix * math::Vec4(command.position, 1.0f);
                 
                 spotlight.position[0] = pos.x;
                 spotlight.position[1] = pos.y;
@@ -2767,13 +2763,12 @@ static void render_commands(RenderState &render_state, Renderer &renderer)
                 if(!render_state.point_light_data.point_lights)
                 {
                     render_state.point_light_data.point_lights = push_array(render_state.perm_arena, global_max_lights, PointLight);
-                }
-                
+                }                
                 
                 PointLight& point_light =
                     render_state.point_light_data.point_lights[render_state.point_light_data.num_lights++];
                 
-                auto pos = v * math::Vec4(command.position, 1.0f);
+                auto pos = renderer.view_matrix * math::Vec4(command.position, 1.0f);
                 
                 point_light.position[0] = pos.x;
                 point_light.position[1] = pos.y;
@@ -2819,44 +2814,44 @@ static void render_commands(RenderState &render_state, Renderer &renderer)
         {
             case RENDER_COMMAND_LINE:
             {
-                render_line(command, render_state, camera.projection_matrix, camera.view_matrix);
+                render_line(command, render_state, renderer.projection_matrix, renderer.view_matrix);
             }
             break;
             case RENDER_COMMAND_TEXT:
             {
-                render_text(command, render_state, renderer, camera.view_matrix, camera.projection_matrix);
+                render_text(command, render_state, renderer, renderer.view_matrix, renderer.projection_matrix);
             }
             break;
             case RENDER_COMMAND_QUAD:
             {
-                render_quad(command, render_state, camera.projection_matrix, camera.view_matrix);
+                render_quad(command, render_state, renderer.projection_matrix, renderer.view_matrix);
             }
             break;
             case RENDER_COMMAND_MODEL:
             {
-                //render_model(command, render_state, camera.projection_matrix, camera.view_matrix);
+                //render_model(command, render_state, renderer.projection_matrix, renderer.view_matrix);
                 
             }
             break;
             case RENDER_COMMAND_MESH:
             {
-                render_mesh(command, renderer, render_state, camera.projection_matrix, camera.view_matrix, false, &renderer.shadow_map_matrices);
+                render_mesh(command, renderer, render_state, renderer.projection_matrix, renderer.view_matrix, false, &renderer.shadow_map_matrices);
                 
             }
             break;
             case RENDER_COMMAND_PARTICLES:
             {
-                render_particles(command, renderer, render_state, camera.projection_matrix, camera.view_matrix);
+                render_particles(command, renderer, render_state, renderer.projection_matrix, renderer.view_matrix);
             }
             break;
             case RENDER_COMMAND_MESH_INSTANCED:
             {
-                render_mesh_instanced(command, renderer, render_state, camera.projection_matrix, camera.view_matrix, false, &renderer.shadow_map_matrices);
+                render_mesh_instanced(command, renderer, render_state, renderer.projection_matrix, renderer.view_matrix, false, &renderer.shadow_map_matrices);
             }
             break;
             case RENDER_COMMAND_BUFFER:
             {
-                render_buffer(command, render_state, camera.projection_matrix, camera.view_matrix);
+                render_buffer(command, render_state, renderer.projection_matrix, renderer.view_matrix);
             }
             break;
             case RENDER_COMMAND_DEPTH_TEST:
@@ -2911,27 +2906,27 @@ static void render_commands(RenderState &render_state, Renderer &renderer)
         {
             case RENDER_COMMAND_LINE:
             {
-                render_line(command, render_state, renderer.ui_projection_matrix, camera.view_matrix);
+                render_line(command, render_state, renderer.ui_projection_matrix, renderer.view_matrix);
             }
             break;
             case RENDER_COMMAND_TEXT:
             {
-                render_text(command, render_state, renderer, camera.view_matrix, renderer.ui_projection_matrix);
+                render_text(command, render_state, renderer, renderer.view_matrix, renderer.ui_projection_matrix);
             }
             break;
             case RENDER_COMMAND_QUAD:
             {
-                render_quad(command, render_state, renderer.ui_projection_matrix, camera.view_matrix);
+                render_quad(command, render_state, renderer.ui_projection_matrix, renderer.view_matrix);
             }
             break;
             case RENDER_COMMAND_MODEL:
             {
-                //render_model(command, render_state, camera.projection_matrix, camera.view_matrix);
+                //render_model(command, render_state, renderer.projection_matrix, renderer.view_matrix);
             }
             break;
             case RENDER_COMMAND_BUFFER:
             {
-                render_buffer(command, render_state, camera.projection_matrix, camera.view_matrix);
+                render_buffer(command, render_state, renderer.projection_matrix, renderer.view_matrix);
             }
             break;
             case RENDER_COMMAND_DEPTH_TEST:
@@ -3024,8 +3019,6 @@ static void render(RenderState& render_state, Renderer& renderer, r64 delta_time
     render_state.current_extra_shader = -1;
     render_state.shader_attribute_count = 0;
     
-    auto& camera = renderer.cameras[renderer.current_camera_handle];
-    
     render_state.scale_x = 2.0f / render_state.framebuffer_width;
     render_state.scale_y = 2.0f / render_state.framebuffer_height;
     
@@ -3036,9 +3029,6 @@ static void render(RenderState& render_state, Renderer& renderer, r64 delta_time
     
     b32 should_render = renderer.window_width != 0;
     
-    camera.viewport_width = render_state.framebuffer_width;
-    camera.viewport_height = render_state.framebuffer_height;
-    
     renderer.ui_projection_matrix = math::ortho(0.0f, (r32)renderer.framebuffer_width, 0.0f, (r32)renderer.framebuffer_height, -500.0f, 500.0f);
     
     register_buffers(render_state, renderer);
@@ -3048,7 +3038,7 @@ static void render(RenderState& render_state, Renderer& renderer, r64 delta_time
         renderer.framebuffer_width = render_state.framebuffer_width;
         renderer.framebuffer_height = render_state.framebuffer_height;
         
-        render_shadows(render_state, renderer, render_state.shadow_map_buffer);
+	render_shadows(render_state, renderer, render_state.shadow_map_buffer);
         
         glViewport(0, 0, render_state.framebuffer_width, render_state.framebuffer_height);
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, render_state.framebuffer.buffer_handle);
@@ -3056,7 +3046,7 @@ static void render(RenderState& render_state, Renderer& renderer, r64 delta_time
         glEnable(GL_DEPTH_TEST);
         
         glDepthFunc(GL_LESS);
-        
+
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
         glClearColor(renderer.clear_color.r, renderer.clear_color.g, renderer.clear_color.b, renderer.clear_color.a);
