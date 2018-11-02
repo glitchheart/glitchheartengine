@@ -69,10 +69,9 @@ static void send_analytics_event(WorkQueue *queue, AnalyticsEventData *data)
     switch(data->type)
     {
     case AnalyticsEventType::SKIPPED_LEVEL:
-	//sprintf(event_string, "d", data->world_id, data->level_id, (i32)data->play_time);
+	gameanalytics::GameAnalytics::addProgressionEvent(gameanalytics::EGAProgressionStatus::Fail, world, level, "");
 	break;
-    case AnalyticsEventType::STARTED_LEVEL:
-	
+    case AnalyticsEventType::STARTED_LEVEL:	
 	gameanalytics::GameAnalytics::addProgressionEvent(gameanalytics::EGAProgressionStatus::Start, world, level, "");
 	break;
     case AnalyticsEventType::FINISHED_LEVEL:
