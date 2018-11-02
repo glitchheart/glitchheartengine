@@ -187,6 +187,30 @@ inline void save_config(const char* file_path, ConfigData &old_config_data, Rend
     }
 }
 
+inline void load_version(const char* file_path, char* version)
+{
+    FILE* file;
+    file = fopen(file_path, "r");
+    char line_buffer[255];
+
+    if(file)
+    {
+	while(fgets(line_buffer, 255, file))
+	{
+	    if(starts_with(line_buffer, "version"))
+	    {
+		// @Note(Niels): Format for version is: [type] v#.#.#
+		// Example 1: alpha v0.1.0
+		// Example 2: beta v0.4.3
+		char type_buf[64];
+		char version_buf[64];
+		sscanf(line_buffer, "version %s %s", type_buf, version_buf);
+		snprintf(version, strlen(type_buf) + strlen(version_buf) + 2, "%s %s", type_buf, version_buf);
+	    }
+	}
+    }
+}
+
 inline void load_config(const char* file_path, ConfigData* config_data, MemoryArena* perm_arena)
 {
     FILE* file;
@@ -195,11 +219,13 @@ inline void load_config(const char* file_path, ConfigData* config_data, MemoryAr
     
     *config_data = {};
     
-    if(!file)
+    if(!platform.file_exists(file_path))
     {
-        auto title = "ALTER";
+        auto title = "Altered";
         snprintf(config_data->title, strlen(title) + 1, "%s", title);
-        auto version = "v0.1.3";
+
+        char version[64];
+	load_version("../.version", version);
         snprintf(config_data->version, strlen(version) + 1, "%s", version);
         config_data->screen_width = 0;
         config_data->window_mode = FM_WINDOWED;
@@ -221,7 +247,13 @@ inline void load_config(const char* file_path, ConfigData* config_data, MemoryAr
             }
             else if(starts_with(line_buffer, "version"))
             {
-                sscanf(line_buffer, "version %s", config_data->version);
+		// @Note(Niels): Format for version is: [type] v#.#.#
+		// Example 1: alpha v0.1.0
+		// Example 2: beta v0.4.3
+		char version_buf[64];
+		load_version("../.version", version_buf);
+		
+		snprintf(config_data->version, strlen(version_buf) + 2, "%s", version_buf);
             }
             else if(starts_with(line_buffer, "screen_width"))
             {
@@ -476,9 +508,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     AnalyticsEventState analytics_state = {};
 
     gameanalytics::GameAnalytics::setEnabledInfoLog(true);
-    // gameanalytics::GameAnalytics::setEnabledVerboseLog(true);
-    gameanalytics::GameAnalytics::configureBuild("0.10");
-
+    gameanalytics::GameAnalytics::configureBuild("alpha 0.10");
     gameanalytics::GameAnalytics::initialize("810960034d0191ec4f21a04d73295ec6", "2469ab09d7b00f64d5114071564b2d2d59c900a4");
 
     ThreadInfo analytics_info[1] = {};
@@ -556,16 +586,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         delta_time = get_time() - last_frame;
         last_frame = end_counter;
         
-        //end_temporary_memory(game_temp_mem);
     }
-
-    
 
     AnalyticsEventData event = {};
     event.state = &analytics_state;
     event.type = AnalyticsEventType::SESSION;
     event.play_time = get_time() - start_frame_for_total_time;
-    strcpy(event.user_id, "test");
 	
     send_analytics_event(&analytics_queue, &event);
 			 
