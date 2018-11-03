@@ -272,8 +272,6 @@ static void init_renderer(Renderer &renderer)
         renderer.particles._internal_handles[index] = -1;
     }
     
-    renderer.particles.entropy = random_seed(1234);
-    
     renderer.particles.particle_system_count = 0;
     renderer.animation_controllers = push_array(&renderer.animation_arena, 64, AnimationController);
     renderer.spritesheet_animations = push_array(&renderer.animation_arena, global_max_spritesheet_animations, SpritesheetAnimation);

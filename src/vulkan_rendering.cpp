@@ -812,7 +812,7 @@ static void initialize_vulkan(VkRenderState& render_state, Renderer& renderer, C
     VkPhysicalDevice* devices = push_array(&render_state.arena, device_count, VkPhysicalDevice);
     vkEnumeratePhysicalDevices(render_state.instance, &device_count, devices);
     
-    // @Incomplete:(Niels): Find "most" suitable device (integrated/dedicated)
+    // @Incomplete(Niels): Find "most" suitable device (integrated/dedicated)
     render_state.physical_device = devices[0];
     
     vkGetPhysicalDeviceProperties(render_state.physical_device, &render_state.device_properties);

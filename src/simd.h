@@ -19,7 +19,7 @@ union i32_4x
     
     i32_4x(i32 _a, i32 _b, i32 _c, i32 _d)
     {
-        p = _mm_set_epi32(_a, _b, _c, _d);
+        p = _mm_setr_epi32(_a, _b, _c, _d);
     }
     
     i32_4x& operator=(const i32 v)
@@ -104,7 +104,7 @@ union r32_4x
     
     r32_4x(r32 _a, r32 _b, r32 _c, r32 _d)
     {
-        p = _mm_set_ps(_a, _b, _c, _d);
+        p = _mm_setr_ps(_a, _b, _c, _d);
     }
     
     r32_4x(u32 _a, u32 _b, u32 _c, u32 _d)
@@ -115,6 +115,10 @@ union r32_4x
                         *(r32*)&_d);
     }
     
+    r32_4x(u32 _a)
+    {
+        p = _mm_set1_ps(*(float*)&_a);
+    }
     
     r32_4x(__m128 v)
     {
@@ -220,7 +224,7 @@ union h64_4x
     
     h64_4x(r64 _a, r64 _b)
     {
-        p = _mm_set_pd(_a, _b);
+        p = _mm_setr_pd(_a, _b);
     }
     
     inline h64_4x& operator=(const r64& v)
@@ -504,9 +508,7 @@ inline r64 operator-(r64 left, r64_4x right)
     return left - right.e[0];
 }
 
-
-inline r32_4x
-operator^(r32_4x a, r32_4x b)
+inline r32_4x operator^(r32_4x a, r32_4x b)
 {
     r32_4x result;
     
@@ -515,17 +517,14 @@ operator^(r32_4x a, r32_4x b)
     return(result);
 }
 
-inline r32_4x &
-operator^=(r32_4x &a, r32_4x b)
+inline r32_4x & operator^=(r32_4x &a, r32_4x b)
 {
-    a= a ^ b;
+    a = a ^ b;
     
     return(a);
 }
 
-
-inline r32_4x
-operator&(r32_4x a, r32_4x b)
+inline r32_4x operator&(r32_4x a, r32_4x b)
 {
     r32_4x result;
     
@@ -534,17 +533,14 @@ operator&(r32_4x a, r32_4x b)
     return(result);
 }
 
-inline r32_4x &
-operator&=(r32_4x &a, r32_4x b)
+inline r32_4x & operator&=(r32_4x &a, r32_4x b)
 {
     a = a & b;
     
     return(a);
 }
 
-
-inline r32_4x
-operator|(r32_4x a, r32_4x b)
+inline r32_4x operator|(r32_4x a, r32_4x b)
 {
     r32_4x result;
     
@@ -559,7 +555,6 @@ inline r32_4x& operator|=(r32_4x &a, r32_4x b)
     
     return(a);
 }
-
 
 r32 operator-(r32 left, r64_4x right)
 {
@@ -965,6 +960,7 @@ union Vec2_4x
     };
     __m128 p[2];
     r32 e[8];
+    u32 u[8];
     
     Vec2_4x()
     {
@@ -1151,6 +1147,7 @@ union Vec3_4x
     };
     __m128 p[3];
     r32 e[12];
+    u32 u[12];
     
     Vec3_4x() : Vec3_4x(0.0f) {}
     
@@ -1421,6 +1418,7 @@ union Vec4_4x
     };
     __m128 p[4];
     r32 e[16];
+    u32 u[16];
     
     Vec4_4x(r32 _x, r32 _y, r32 _z, r32 _w)
     {

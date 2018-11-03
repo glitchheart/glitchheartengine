@@ -1876,7 +1876,7 @@ static void push_particle_system(Renderer &renderer, ParticleSystemInfo &particl
     render_command->type = RENDER_COMMAND_PARTICLES;
     render_command->position = particle_info.transform.position;
     
-    // @Incomplete:(Niels): 
+    // @Incomplete(Niels): 
     //render_command->rotation = mesh_info.transform.rotation;
     
     // @Incomplete
@@ -1939,6 +1939,8 @@ static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer, ma
             math::Vec3 rotation = transform.rotation;
             math::Vec3 scale = transform.scale;
             
+            i32 command_index = -1;
+            
             if (ent.comp_flags & scene::COMP_RENDER)
             {
                 scene::RenderComponent &render = scene.render_components[ent.render_handle.handle];
@@ -1946,7 +1948,7 @@ static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer, ma
                 Material material = scene.material_instances[render.material_handle.handle];
                 
                 // Instancing stuff
-                i32 command_index = -1;
+                
                 for (i32 i = 0; i < command_count; i++)
                 {
                     if (instanced_commands[i].mesh_handle == render.mesh_handle.handle && instanced_commands[i].original_material_handle == material.source_handle.handle)
@@ -1986,6 +1988,13 @@ static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer, ma
                 assert(command_index < MAX_INSTANCING_PAIRS);
             }
             
+            if(command_index != -1)
+            {
+                InstancedRenderCommand& command = instanced_commands[command_index];
+                command.particle_systems[command.count - 1] = -1;
+                command.has_particles = false;
+            }
+            
             if(ent.comp_flags & scene::COMP_PARTICLES)
             {
                 if(ent.particle_system_handle.handle != -1)
@@ -1995,19 +2004,30 @@ static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer, ma
                     i32 _internal_handle = renderer.particles._internal_handles[ps.handle.handle - 1];
                     ParticleSystemInfo& system = renderer.particles.particle_systems[_internal_handle];
                     
+                    system.transform.position = system.attributes.base_position;
+                    
                     if(ent.comp_flags & scene::COMP_TRANSFORM)
                     {
                         // Add transform stuff
-                        scene::TransformComponent &transform = scene.transform_components[ent.transform_handle.handle];
+                        scene::TransformComponent &transform =  scene.transform_components[ent.transform_handle.handle];
                         
-                        system.transform.position = position;
+                        system.transform.position += position;
                         system.transform.scale = scale;
                         system.transform.rotation = rotation;
                     }
                     
                     if(system.running)
                     {
-                        push_particle_system(renderer, system, ps.handle.handle);
+                        if(command_index != -1)
+                        {
+                            InstancedRenderCommand& command = instanced_commands[command_index];
+                            command.particle_systems[command.count - 1] = ps.handle.handle;
+                            command.has_particles = true;
+                        }
+                        else
+                        {
+                            push_particle_system(renderer, system, ps.handle.handle);
+                        }
                     }
                 }
                 
@@ -2015,6 +2035,8 @@ static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer, ma
             }
         }
     }
+    
+    i32 particle_index = 0;
     
     for(i32 command_index = 0; command_index < command_count; command_index++)
     {
@@ -2032,5 +2054,19 @@ static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer, ma
         mesh_info.receives_shadows = command.receives_shadows;
         mesh_info.cast_shadows = command.cast_shadows;
         push_mesh_instanced(renderer, mesh_info, &positions[command_index * 1024], &colors[command_index * 1024], &rotations[command_index * 1024], &scalings[command_index * 1024], command.count);
+        
+        
+        if(command.has_particles)
+        {
+            for(i32 i = 0; i < command.count; i++)
+            {
+                i32 h = command.particle_systems[i];
+                
+                i32 _internal_handle = renderer.particles._internal_handles[h - 1];
+                ParticleSystemInfo& system = renderer.particles.particle_systems[_internal_handle];
+                
+                push_particle_system(renderer, system, h);
+            }
+        }
     }
 }

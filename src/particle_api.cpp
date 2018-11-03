@@ -61,7 +61,20 @@ EMITTER_FUNC(emit_random_dir)
     ParticleSpawnInfo info;
     
     info.position = Vec3_4x(0.0f);
-    info.direction = random_direction(series);
+    info.direction = random_direction_4x(series);
+    
+    return info;
+}
+
+EMITTER_FUNC(emit_from_2D_square)
+{
+    ParticleSpawnInfo info;
+    
+    Vec3_4x r = random_rect_4x(series, min, max);
+    
+    info.position = r;
+    
+    info.direction = Vec3_4x(0.0f, 1.0f, 0.0f);
     
     return info;
 }
@@ -70,11 +83,11 @@ EMITTER_FUNC(emit_from_square)
 {
     ParticleSpawnInfo info;
     
-    Vec3_4x r = random_rect(series, 0.0f, 1.0f);
+    Vec3_4x r = random_outer_rect_4x(series, min, max, min, max);
     
     info.position = r;
     
-    info.direction = random_direction(series);
+    info.direction = Vec3_4x(0.0f, 1.0f, 0.0f);
     
     return info;
 }
@@ -83,11 +96,24 @@ EMITTER_FUNC(emit_from_disc)
 {
     ParticleSpawnInfo info;
     
-    Vec3_4x r = random_disc(series, 1.0f);
+    Vec3_4x r = random_disc_4x(series, (max - min) / 2.0f);
     
     info.position = r;
     
-    info.direction = random_direction(series);
+    info.direction = Vec3_4x(0.0f, 1.0f, 0.0f);//random_direction_4x(series);
+    
+    return info;
+}
+
+EMITTER_FUNC(emit_from_circle)
+{
+    ParticleSpawnInfo info;
+    
+    Vec3_4x r = random_circle_4x(series, (max - min) / 2.0f);
+    
+    info.position = r;
+    
+    info.direction = Vec3_4x(0.0f, 1.0f, 0.0f);//random_direction_4x(series);
     
     return info;
 }
@@ -111,7 +137,7 @@ static ParticleSystemAttributes get_default_particle_system_attributes()
     attributes.emission_module.burst_over_lifetime.value_count = 0;
     attributes.emission_module.burst_over_lifetime.current_index = 0;
     attributes.emission_module.burst_over_lifetime.values = nullptr;
-    attributes.emission_module.emitter_func = emit_from_disc;
+    attributes.emission_module.emitter_func = emit_from_circle;
     
     return attributes;
 }
@@ -128,10 +154,10 @@ static void _allocate_particle_system(Renderer& renderer, ParticleSystemInfo& sy
     system_info.alive0_particles = push_array(memory_arena, system_info.max_particles, i32);
     system_info.alive1_particles = push_array(memory_arena, system_info.max_particles, i32);
     system_info.alive0_active = true;
-    system_info.dead_particles = push_array(memory_arena, system_info.max_particles, i32);
-    system_info.dead_particle_count = system_info.max_particles;
+    system_info.dead_particle_count = max_over_four;
+    system_info.dead_particles = push_array(memory_arena, system_info.dead_particle_count, i32);
     
-    for(i32 dead_index = 0; dead_index < system_info.max_particles; dead_index++)
+    for(i32 dead_index = 0; dead_index < system_info.dead_particle_count; dead_index++)
     {
         system_info.dead_particles[dead_index] = dead_index;
     }

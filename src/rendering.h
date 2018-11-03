@@ -461,7 +461,9 @@ struct InstancedRenderCommand
     i32 original_material_handle;
     i32 count;
     math::Vec3 scale;
+    i32 particle_systems[256];
     
+    b32 has_particles;
     b32 receives_shadows;
     b32 cast_shadows;
 };
