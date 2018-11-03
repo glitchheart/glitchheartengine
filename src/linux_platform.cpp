@@ -114,7 +114,7 @@ static time_t get_last_write_time(const char* file_path)
     return 0;
 }
 
-// @Incomplete:(Niels): Flags?
+// @Incomplete(Niels): Flags?
 PLATFORM_LOAD_LIBRARY(linux_load_library)
 {
     return dlopen(path, RTLD_LAZY);

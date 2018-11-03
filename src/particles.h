@@ -34,7 +34,7 @@ struct ParticleSpawnInfo
     Vec3_4x direction;
 };
 
-#define EMITTER_FUNC(name) ParticleSpawnInfo name(RandomSeries& series)
+#define EMITTER_FUNC(name) ParticleSpawnInfo name(RandomSeries& series, r32 min, r32 max)
 typedef EMITTER_FUNC(EmitterFunc);
 
 struct EmissionModule
@@ -48,6 +48,8 @@ struct EmissionModule
         i32 current_index;
     } burst_over_lifetime;
     
+    r32 min;
+    r32 max;
     r32 rate_over_distance;
     
     EmitterFunc* emitter_func;
@@ -64,6 +66,7 @@ struct ParticleSystemAttributes
     math::Vec2 start_size;
     
     math::Vec3 direction;
+    math::Vec3 base_position;
     r64 life_time;
     r32 start_speed;
     r32 spread;
@@ -103,6 +106,7 @@ struct ParticleSystemInfo
     ParticleSystemAttributes attributes;
     
     r64 time_spent;
+    r32 particles_cumulative;
     
     struct
     {
@@ -129,6 +133,7 @@ struct ParticleSystemInfo
     i32 color_buffer_handle;
     i32 size_buffer_handle;
     TransformInfo transform;
+    
     Material material;
     
     Particles particles;
