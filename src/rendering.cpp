@@ -464,6 +464,18 @@ static void push_outlined_quad(Renderer& renderer, math::Vec3 position,  math::V
     render_command->is_ui = is_ui;
 }
 
+// @Note Gets info about UI position for rendering things relative to each other
+// We often want to be able to render things next to each other perfectly on different scales
+// This function should help with that
+// Parameters:
+// renderer:      The renderer
+// position:      The position of the original quad
+// relative_size: The size of the original quad
+// size:          The size of the thing you want to render next to the original
+// relative:      The relative flag (top, bottom, left, right)
+// centered:      Whether or not the original quad was centered (need to know this for origin etc.)
+// scaling_flags: How do we scale these UI elements?
+// origin:        The origin
 static RelativeUIQuadInfo get_relative_info(Renderer& renderer, math::Vec2 position, math::Vec2 relative_size, math::Vec2 size, RelativeFlag relative, b32 centered, u64 scaling_flags = UIScalingFlag::KEEP_ASPECT_RATIO,  math::Vec2 origin = math::Vec2(0.0f))
 {
     math::Vec2i resolution_scale = get_scale(renderer);
