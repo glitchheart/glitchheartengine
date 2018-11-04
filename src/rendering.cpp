@@ -206,6 +206,24 @@ static math::Rect scale_clip_rect(Renderer& renderer, math::Rect clip_rect, b32 
     return scaled_clip_rect;
 }
 
+static void push_3d_text(Renderer &renderer, const char* text, math::Vec3 position, i32 font_handle, math::Rgba color = math::Rgba(1.0f), math::Vec3 rotation = math::Vec3(), math::Vec3 scale = math::Vec3(1.0f), u64 alignment_flags = ALIGNMENT_LEFT)
+{
+    RenderCommand* render_command = push_next_command(renderer, false);
+    
+    assert(font_handle < renderer.font_count);
+    
+    render_command->type = RENDER_COMMAND_3D_TEXT;
+    
+    strcpy(render_command->text_3d.text, text);
+    render_command->position = position;
+    render_command->rotation = rotation;
+    render_command->scale = scale;
+    render_command->text_3d.font_handle = font_handle;
+    render_command->text_3d.color = color;
+    render_command->text_3d.alignment_flags = alignment_flags;
+    render_command->is_ui = false;
+}
+
 #define PUSH_UI_TEXT(text, position, color, font_handle, ...) push_ui_text(renderer, text, position, font_handle, color, ##__VA_ARGS__)
 #define PUSH_CENTERED_UI_TEXT(text, position, color, font_handle, z) push_ui_text(renderer, text, position, font_handle, color, ALIGNMENT_CENTER_X | ALIGNMENT_CENTER_Y, z)
 static void push_ui_text(Renderer &renderer, const char* text, math::Vec2 position, i32 font_handle, math::Rgba color, u64 alignment_flags = ALIGNMENT_LEFT, i32 z = 0, b32 clip = false, math::Rect clip_rect = math::Rect(0, 0, 0, 0), u64 ui_scaling_flag = UIScalingFlag::KEEP_ASPECT_RATIO)

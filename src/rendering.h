@@ -121,6 +121,7 @@ enum ShaderType
     SHADER_QUAD,
     SHADER_TEXTURE_QUAD,
     SHADER_STANDARD_FONT,
+    SHADER_3D_TEXT,
     SHADER_SPRITESHEET,
     SHADER_FRAME_BUFFER,
     SHADER_SIMPLE_MODEL,
@@ -134,6 +135,7 @@ enum RenderCommandType
 {
     RENDER_COMMAND_LINE,
     RENDER_COMMAND_TEXT,
+    RENDER_COMMAND_3D_TEXT,
     RENDER_COMMAND_QUAD,
     
     RENDER_COMMAND_SPOTLIGHT,
@@ -736,6 +738,13 @@ struct RenderCommand
             r32 scale;
             i32 z_layer;
         } text;
+        struct
+        {
+            char text[256];
+            i32 font_handle;
+            u64 alignment_flags;
+            math::Rgba color; // @Cleanup: REMOVE!
+        } text_3d;
         struct
         {
             math::Rgba color;

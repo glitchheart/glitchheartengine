@@ -19,6 +19,7 @@ const static struct
     SHADERPAIR(QUAD),
     SHADERPAIR(TEXTURE_QUAD),
     SHADERPAIR(STANDARD_FONT),
+    SHADERPAIR(3D_TEXT),
     SHADERPAIR(SPRITESHEET),
     SHADERPAIR(FRAME_BUFFER),
     SHADERPAIR(SIMPLE_MODEL),
@@ -49,6 +50,7 @@ static char* shader_paths[SHADER_COUNT] =
     "../engine_assets/shaders/quadshader",
     "../engine_assets/shaders/texturequadshader",
     "../engine_assets/shaders/standardfontshader",
+    "../engine_assets/shaders/3dtextshader",
     "../engine_assets/shaders/spritesheetanimationshader",
     "../engine_assets/shaders/framebuffershader",
     "../engine_assets/shaders/simple_model_shader",
@@ -290,6 +292,7 @@ struct RenderState
             Shader quad_shader;
             Shader texture_quad_shader;
             Shader standard_font_shader;
+            Shader text_3d_shader;
             Shader spritesheet_shader;
             Shader frame_buffer_shader;
             Shader simple_model_shader;
