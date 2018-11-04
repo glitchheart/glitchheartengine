@@ -111,7 +111,8 @@ struct PointLightData
 };
 // @Cleanup END
 
-// @
+
+// @Incomplete: Remove the prefix from the values 
 enum ShaderType
 {
     SHADER_MESH,
@@ -131,6 +132,7 @@ enum ShaderType
     SHADER_COUNT
 };
 
+// @Incomplete: Remove the prefix from the values 
 enum RenderCommandType
 {
     RENDER_COMMAND_LINE,
@@ -156,6 +158,7 @@ enum RenderCommandType
     RENDER_COMMAND_COUNT
 };
 
+// @Incomplete: Remove the prefix from the values 
 enum RelativeFlag
 {
     RELATIVE_TOP,
@@ -164,6 +167,7 @@ enum RelativeFlag
     RELATIVE_BOTTOM
 };
 
+// @Incomplete: Remove the prefix from the values 
 enum Alignment
 {
     ALIGNMENT_LEFT = (1 << 0),
@@ -1130,7 +1134,7 @@ r32 to_ui(Renderer& renderer, i32 scale, r32 coord)
     return (coord / (r32)scale) * (r32)UI_COORD_DIMENSION;
 }
 
-static math::Vec2 get_text_size(const char *text, TrueTypeFontInfo &font)
+static math::Vec2 get_text_size(const char *text, TrueTypeFontInfo font)
 {
     math::Vec2 size;
     r32 placeholder_y = 0.0;
@@ -1153,7 +1157,13 @@ static math::Vec2 get_text_size(const char *text, TrueTypeFontInfo &font)
     return size;
 }
 
-static math::Vec2 get_text_size_scaled(Renderer& renderer, const char* text, TrueTypeFontInfo& font, u64 scaling_flags = UIScalingFlag::KEEP_ASPECT_RATIO)
+static TrueTypeFontInfo get_tt_font_info(Renderer& renderer, i32 handle)
+{
+    assert(handle >= 0 && handle < renderer.tt_font_count);
+    return renderer.tt_font_infos[handle];
+}
+
+static math::Vec2 get_text_size_scaled(Renderer& renderer, const char* text, TrueTypeFontInfo font, u64 scaling_flags = UIScalingFlag::KEEP_ASPECT_RATIO)
 {
     math::Vec2 font_size = get_text_size(text, font);
     math::Vec2 result;
