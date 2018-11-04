@@ -224,11 +224,16 @@ inline void load_config(const char* file_path, ConfigData* config_data, MemoryAr
         auto title = "Altered";
         snprintf(config_data->title, strlen(title) + 1, "%s", title);
 
+	// @Note: We read the version from a .version file
         char version[64];
 	load_version("../.version", version);
         snprintf(config_data->version, strlen(version) + 1, "%s", version);
-        config_data->screen_width = 0;
-        config_data->window_mode = FM_WINDOWED;
+
+	// @Note: Default is windowed borderless (aka windowed fullscreen)
+        config_data->window_mode = FM_BORDERLESS;
+
+	// @Note: Setting the dimensions to zero will force the renderer to initialize it properly
+	config_data->screen_width = 0;
         config_data->screen_height = 0;
         config_data->muted = false;
         config_data->sfx_volume = 1.0f;
