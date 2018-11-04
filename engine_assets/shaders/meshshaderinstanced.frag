@@ -177,11 +177,10 @@ vec3 computeTranslucency(float spec, vec3 albedo, vec3 normal, vec3 lightDir, ve
 
 vec3 computeLight(vec3 normal, vec3 lightDir, vec3 ambient, vec3 diffuse, vec3 specular)
 {
-    // shadows
-    float shadow = calculateShadow(fs_in.shadowCoord, normal, lightDir);    
     vec3 lighting;
     if(receivesShadows)
     {
+	float shadow = calculateShadow(fs_in.shadowCoord, normal, lightDir);
         return (ambient + (1.0 - shadow) * (diffuse + specular)) * fs_in.color.xyz;
     }
     else
