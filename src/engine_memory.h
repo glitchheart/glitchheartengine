@@ -196,8 +196,6 @@ inline void end_temporary_memory(TemporaryMemory temp_mem)
     --arena->temp_count;
 }
 
-#define copy(arena, dest, src, size, type) dest = push_size(arena, size, type); memcpy(dest, src, size);
-
 #define copy_temp(dest, src, size, type) dest = push_temp_size(size, type); memcpy(dest, src, size);
 
 static void clear(MemoryArena *arena)

@@ -901,12 +901,23 @@ static void render_setup(RenderState *render_state, MemoryArena *perm_arena)
     //font
     render_state->standard_font_shader.type = SHADER_STANDARD_FONT;
     load_shader(shader_paths[SHADER_STANDARD_FONT], &render_state->standard_font_shader, render_state->perm_arena);
+
     auto &shader = render_state->standard_font_shader;
     shader.uniform_locations.projection_matrix = glGetUniformLocation(shader.program, "projectionMatrix");
     shader.uniform_locations.diffuse_color = glGetUniformLocation(shader.program, "color");
     shader.uniform_locations.font.alpha_color = glGetUniformLocation(shader.program, "alphaColor");
     shader.uniform_locations.font.z = glGetUniformLocation(shader.program, "z");
     
+
+    render_state->text_3d_shader.type = SHADER_3D_TEXT;
+    load_shader(shader_paths[SHADER_3D_TEXT], &render_state->text_3d_shader, render_state->perm_arena);
+    
+    auto &text_3d_shader = render_state->text_3d_shader;
+    text_3d_shader.uniform_locations.projection_matrix = glGetUniformLocation(shader.program, "projectionMatrix");
+    text_3d_shader.uniform_locations.diffuse_color = glGetUniformLocation(shader.program, "color");
+    text_3d_shader.uniform_locations.font.alpha_color = glGetUniformLocation(shader.program, "alphaColor");
+    text_3d_shader.uniform_locations.font.z = glGetUniformLocation(shader.program, "z");
+
     render_state->mesh_shader.type = SHADER_MESH;
     load_shader(shader_paths[SHADER_MESH], &render_state->mesh_shader, render_state->perm_arena);
     
@@ -1112,22 +1123,18 @@ static const GLFWvidmode* create_open_gl_window(RenderState& render_state, Windo
     
     if (window_mode == FM_BORDERLESS)
     {
-        glfwWindowHint(GLFW_RED_BITS, mode->redBits);
-        glfwWindowHint(GLFW_GREEN_BITS, mode->greenBits);
-        glfwWindowHint(GLFW_BLUE_BITS, mode->blueBits);
-        glfwWindowHint(GLFW_REFRESH_RATE, mode->refreshRate);
         screen_width = mode->width;
         screen_height = mode->height;
     }
     
+    glfwWindowHint(GLFW_RED_BITS, mode->redBits);
+    glfwWindowHint(GLFW_GREEN_BITS, mode->greenBits);
+    glfwWindowHint(GLFW_BLUE_BITS, mode->blueBits);
+    glfwWindowHint(GLFW_REFRESH_RATE, mode->refreshRate);
     debug_log("refresh rate %d", mode->refreshRate);
     
     if (window_mode == FM_WINDOWED)
     {
-        glfwWindowHint(GLFW_RED_BITS, mode->redBits);
-        glfwWindowHint(GLFW_GREEN_BITS, mode->greenBits);
-        glfwWindowHint(GLFW_BLUE_BITS, mode->blueBits);
-        glfwWindowHint(GLFW_REFRESH_RATE, mode->refreshRate);
         monitor = nullptr;
     }
     
@@ -1143,7 +1150,6 @@ static const GLFWvidmode* create_open_gl_window(RenderState& render_state, Windo
     }
     
     //center window on screen (windowed?)
-    
     if (window_mode == FM_WINDOWED)
     {
         int frame_buffer_width, frame_buffer_height;
@@ -1182,6 +1188,7 @@ static void initialize_opengl(RenderState& render_state, Renderer& renderer, r32
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
 #elif __APPLE__
+    // @Note: Apple only __really__ supports OpenGL Core 3.3
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
@@ -1216,6 +1223,7 @@ static void initialize_opengl(RenderState& render_state, Renderer& renderer, r32
     
     if (!render_state.window)
     {
+	// @Note: If no window has been created, try and see if 3.3 works
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
         
@@ -1850,8 +1858,6 @@ static void render_text(RenderState &render_state, GLFontBuffer &font, TrueTypeF
         render_state.bound_texture = font.texture;
     }
     
-    auto temp_mem = begin_temporary_memory(&render_state.font_arena);
-    
     CharacterData* coords = render_state.character_buffer;
     i32 n = 0;
     
@@ -1910,8 +1916,105 @@ static void render_text(RenderState &render_state, GLFontBuffer &font, TrueTypeF
     
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
+}
+
+static void render_3d_text(RenderState &render_state, GLFontBuffer &font, TrueTypeFontInfo& font_info, const math::Rgba color, const char* text, math::Vec3 position, math::Vec3 rotation, math::Vec3 scale, math::Mat4 view_matrix, math::Mat4 projection_matrix, u64 alignment_flags = ALIGNMENT_LEFT)
+{
+    glBindVertexArray(font.vao);
+    auto shader = render_state.shaders[SHADER_3D_TEXT];
+    use_shader(shader);
     
-    end_temporary_memory(temp_mem);
+    set_vec4_uniform(shader.program, "color", color);
+    set_mat4_uniform(shader.program, "projectionMatrix", projection_matrix);
+    set_mat4_uniform(shader.program, "viewMatrix", view_matrix);
+    
+    if(render_state.bound_texture != font.texture)
+    {
+        glBindTexture(GL_TEXTURE_2D, font.texture);
+        render_state.bound_texture = font.texture;
+    }
+    
+    CharacterData* coords = render_state.character_buffer;
+    
+    i32 n = 0;
+    
+    r32 x = position.x;
+    r32 y = position.y;
+    
+    // @Speed: The call to get_text_size() will loop through the text, which means we'll loop through it twice per render-call
+    math::Vec2 text_size = get_text_size(text, font_info);
+    if(alignment_flags & ALIGNMENT_CENTER_X)
+    {
+        x -= text_size.x / 2.0f;
+    }
+    else if(alignment_flags & ALIGNMENT_RIGHT)
+    {
+        x -= text_size.x;
+    }
+    
+    if(alignment_flags & ALIGNMENT_CENTER_Y)
+    {
+        y -= text_size.y / 2.0f;
+    }
+    else if(alignment_flags & ALIGNMENT_TOP)
+    {
+        y -= text_size.y;
+    }
+    else if(alignment_flags & ALIGNMENT_BOTTOM)
+    {
+        y += text_size.y;
+    }
+    
+    // first we have to reverse the initial y to support stb_truetype where y+ is down
+    //y = render_state.window_height - y;
+    
+    for(u32 i = 0; i < strlen(text); i++)
+    {
+        stbtt_aligned_quad quad;
+        stbtt_GetPackedQuad(font_info.char_data, font_info.atlas_width, font_info.atlas_height,
+                            text[i] - font_info.first_char, &x, &y, &quad, 1);
+        
+        r32 x_min = quad.x0;
+        r32 x_max = quad.x1;
+        r32 y_min = quad.y0;//(quad.y0 + font.baseline);
+        r32 y_max = quad.y1;//(quad.y1 + font.baseline);
+        
+        coords[n++] = { x_max, y_max, quad.s1, quad.t1 };
+        coords[n++] = { x_max, y_min, quad.s1, quad.t0 };
+        coords[n++] = { x_min, y_min, quad.s0, quad.t0 };
+        coords[n++] = { x_min, y_max, quad.s0, quad.t1 };
+        coords[n++] = { x_max, y_max, quad.s1, quad.t1 };
+        coords[n++] = { x_min, y_min, quad.s0, quad.t0 };
+        
+        i32 kerning = stbtt_GetCodepointKernAdvance(&font_info.info, text[i] - font_info.first_char, text[i + 1] - font_info.first_char);
+        x += (r32)kerning * font_info.scale;
+    }
+    
+    math::Mat4 model(1.0f);
+    
+    model = math::scale(model, scale);
+    
+    auto x_axis = rotation.x > 0.0f ? 1.0f : 0.0f;
+    auto y_axis = rotation.y > 0.0f ? 1.0f : 0.0f;
+    auto z_axis = rotation.z > 0.0f ? 1.0f : 0.0f;
+    
+    auto orientation = math::Quat();
+    orientation = math::rotate(orientation, rotation.x, math::Vec3(x_axis, 0.0f, 0.0f));
+    orientation = math::rotate(orientation, rotation.y, math::Vec3(0.0f, y_axis, 0.0f));
+    orientation = math::rotate(orientation, rotation.z, math::Vec3(0.0f, 0.0f, z_axis));
+    
+    model = to_matrix(orientation) * model;
+    model = math::translate(model, position);
+    
+    set_mat4_uniform(shader.program, "model", model);
+    
+    glBindBuffer(GL_ARRAY_BUFFER, font.vbo);
+    glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)(6 * strlen(text) * sizeof(CharacterData)), coords, GL_DYNAMIC_DRAW);
+    
+    glDrawArrays(GL_TRIANGLES, 0, n);
+    
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
 }
 
 static void render_line(const RenderCommand& command, RenderState& render_state, math::Mat4 projection, math::Mat4 view)
@@ -1941,6 +2044,30 @@ static void render_text(const RenderCommand& command, RenderState& render_state,
     
     render_text(render_state, font, renderer.tt_font_infos[command.text.font_handle], command.text.color, command.text.text, command.text.position.x, command.text.position.y, view_matrix, projection_matrix, command.text.scale, command.text.alignment_flags, true, command.text.z_layer);
 }
+
+static void render_3d_text(const RenderCommand& command, RenderState& render_state, Renderer& renderer, math::Mat4 view_matrix, math::Mat4 projection_matrix)
+{
+    assert(command.text_3d.font_handle < render_state.font_count);
+    GLFontBuffer font = render_state.gl_fonts[command.text_3d.font_handle];
+    
+    if(font.resolution_loaded_for.width != render_state.framebuffer_width || font.resolution_loaded_for.height != render_state.framebuffer_height)
+    {
+        FontData data = renderer.fonts[command.text_3d.font_handle];
+        
+        if(font.resolution_loaded_for.width == 0 && font.resolution_loaded_for.height == 0)
+        {
+            load_font(render_state, renderer, data.path, data.size, -1);
+        }
+        else
+        {
+            load_font(render_state, renderer, data.path, data.size, command.text_3d.font_handle);
+        }
+        
+    }
+    
+    render_3d_text(render_state, font, renderer.tt_font_infos[command.text_3d.font_handle], command.text_3d.color, command.text_3d.text, command.position, command.rotation, command.scale, view_matrix, projection_matrix, command.text_3d.alignment_flags);
+}
+
 
 static void render_quad(const RenderCommand& command, RenderState& render_state, math::Mat4 projection, math::Mat4 view)
 {
@@ -2784,9 +2911,6 @@ static void render_commands(RenderState &render_state, Renderer &renderer)
         load_font(render_state, renderer, data.path, data.size);
     }
     
-    auto& camera = renderer.cameras[renderer.current_camera_handle];
-    auto& v = camera.view_matrix;
-    
     for (i32 index = 0; index < renderer.light_command_count; index++)
     {
         const RenderCommand& command = *((RenderCommand*)renderer.light_commands.current_block->base + index);
@@ -2802,7 +2926,7 @@ static void render_commands(RenderState &render_state, Renderer &renderer)
                 
                 Spotlight& spotlight = render_state.spotlight_data.spotlights[render_state.spotlight_data.num_lights++];
                 
-                auto pos = v * math::Vec4(command.position, 1.0f);
+                auto pos = renderer.view_matrix * math::Vec4(command.position, 1.0f);
                 
                 spotlight.position[0] = pos.x;
                 spotlight.position[1] = pos.y;
@@ -2869,13 +2993,12 @@ static void render_commands(RenderState &render_state, Renderer &renderer)
                 if(!render_state.point_light_data.point_lights)
                 {
                     render_state.point_light_data.point_lights = push_array(render_state.perm_arena, global_max_lights, PointLight);
-                }
-                
+                }                
                 
                 PointLight& point_light =
                     render_state.point_light_data.point_lights[render_state.point_light_data.num_lights++];
                 
-                auto pos = v * math::Vec4(command.position, 1.0f);
+                auto pos = renderer.view_matrix * math::Vec4(command.position, 1.0f);
                 
                 point_light.position[0] = pos.x;
                 point_light.position[1] = pos.y;
@@ -2921,39 +3044,44 @@ static void render_commands(RenderState &render_state, Renderer &renderer)
         {
             case RENDER_COMMAND_LINE:
             {
-                render_line(command, render_state, camera.projection_matrix, camera.view_matrix);
+                render_line(command, render_state, renderer.projection_matrix, renderer.view_matrix);
             }
             break;
             case RENDER_COMMAND_TEXT:
             {
-                render_text(command, render_state, renderer, camera.view_matrix, camera.projection_matrix);
+                render_text(command, render_state, renderer, renderer.view_matrix, renderer.projection_matrix);
+            }
+            break;
+            case RENDER_COMMAND_3D_TEXT:
+            {
+                render_3d_text(command, render_state, renderer, renderer.view_matrix, renderer.projection_matrix);
             }
             break;
             case RENDER_COMMAND_QUAD:
             {
-                render_quad(command, render_state, camera.projection_matrix, camera.view_matrix);
+                render_quad(command, render_state, renderer.projection_matrix, renderer.view_matrix);
             }
             break;
             case RENDER_COMMAND_MODEL:
             {
-                //render_model(command, render_state, camera.projection_matrix, camera.view_matrix);
+                //render_model(command, render_state, renderer.projection_matrix, renderer.view_matrix);
                 
             }
             break;
             case RENDER_COMMAND_MESH:
             {
-                render_mesh(command, renderer, render_state, camera.projection_matrix, camera.view_matrix, false, &renderer.shadow_map_matrices);
+                render_mesh(command, renderer, render_state, renderer.projection_matrix, renderer.view_matrix, false, &renderer.shadow_map_matrices);
                 
             }
             break;
             case RENDER_COMMAND_PARTICLES:
             {
-                render_particles(command, renderer, render_state, camera.projection_matrix, camera.view_matrix);
+                render_particles(command, renderer, render_state, renderer.projection_matrix, renderer.view_matrix);
             }
             break;
             case RENDER_COMMAND_MESH_INSTANCED:
             {
-                render_mesh_instanced(command, renderer, render_state, camera.projection_matrix, camera.view_matrix, false, &renderer.shadow_map_matrices);
+                render_mesh_instanced(command, renderer, render_state, renderer.projection_matrix, renderer.view_matrix, false, &renderer.shadow_map_matrices);
             }
             break;
             case RENDER_COMMAND_BUFFER:
@@ -3013,22 +3141,22 @@ static void render_commands(RenderState &render_state, Renderer &renderer)
         {
             case RENDER_COMMAND_LINE:
             {
-                render_line(command, render_state, renderer.ui_projection_matrix, camera.view_matrix);
+                render_line(command, render_state, renderer.ui_projection_matrix, renderer.view_matrix);
             }
             break;
             case RENDER_COMMAND_TEXT:
             {
-                render_text(command, render_state, renderer, camera.view_matrix, renderer.ui_projection_matrix);
+                render_text(command, render_state, renderer, renderer.view_matrix, renderer.ui_projection_matrix);
             }
             break;
             case RENDER_COMMAND_QUAD:
             {
-                render_quad(command, render_state, renderer.ui_projection_matrix, camera.view_matrix);
+                render_quad(command, render_state, renderer.ui_projection_matrix, renderer.view_matrix);
             }
             break;
             case RENDER_COMMAND_MODEL:
             {
-                //render_model(command, render_state, camera.projection_matrix, camera.view_matrix);
+                //render_model(command, render_state, renderer.projection_matrix, renderer.view_matrix);
             }
             break;
             case RENDER_COMMAND_BUFFER:
@@ -3080,8 +3208,7 @@ static void render(RenderState& render_state, Renderer& renderer, r64 delta_time
             const GLFWvidmode *mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
             if(renderer.window_mode == FM_BORDERLESS)
             {
-                glfwSetWindowMonitor(render_state.window, glfwGetPrimaryMonitor(), 0, 0, mode->width, mode->height, 0);
-                
+                glfwSetWindowMonitor(render_state.window, glfwGetPrimaryMonitor(), 0, 0, mode->width, mode->height, mode->refreshRate);               
                 renderer.window_width = mode->width;
                 renderer.window_height = mode->height;
                 
@@ -3125,8 +3252,6 @@ static void render(RenderState& render_state, Renderer& renderer, r64 delta_time
     render_state.current_extra_shader = -1;
     render_state.shader_attribute_count = 0;
     
-    auto& camera = renderer.cameras[renderer.current_camera_handle];
-    
     render_state.scale_x = 2.0f / render_state.framebuffer_width;
     render_state.scale_y = 2.0f / render_state.framebuffer_height;
     
@@ -3136,9 +3261,6 @@ static void render(RenderState& render_state, Renderer& renderer, r64 delta_time
     render_state.pixels_per_unit = renderer.pixels_per_unit;
     
     b32 should_render = renderer.window_width != 0;
-    
-    camera.viewport_width = render_state.framebuffer_width;
-    camera.viewport_height = render_state.framebuffer_height;
     
     renderer.ui_projection_matrix = math::ortho(0.0f, (r32)renderer.framebuffer_width, 0.0f, (r32)renderer.framebuffer_height, -500.0f, 500.0f);
     

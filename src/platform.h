@@ -87,7 +87,6 @@ using imm = intptr_t;
 struct TextureData;
 
 #include "engine_math.h"
-
 #include "modelformat.h"
 
 enum WindowMode
@@ -118,6 +117,7 @@ struct ConfigData
     r32 contrast;
     r32 brightness;
     b32 muted;
+    r32 master_volume;
     r32 sfx_volume;
     r32 music_volume;
 };
@@ -241,6 +241,16 @@ typedef PLATFORM_PRINT_FILE(PlatformPrintFile);
 #define PLATFORM_CREATE_DIRECTORY(name) b32 name(const char* path)
 typedef PLATFORM_CREATE_DIRECTORY(PlatformCreateDirectory);
 
+struct WorkQueue;
+struct WorkQueueEntry;
+typedef void (*WorkCallback)(WorkQueue *queue, void *data);
+
+#define PLATFORM_ADD_ENTRY(name) void name(WorkQueue *queue, WorkCallback work_ptr, void *data)
+typedef PLATFORM_ADD_ENTRY(PlatformAddEntry);
+
+#define PLATFORM_COMPLETE_ALL_WORK(name) void name(WorkQueue *queue)
+typedef PLATFORM_COMPLETE_ALL_WORK(PlatformCompleteAllWork);
+
 struct PlatformApi
 {
     PlatformGetAllFilesWithExtension *get_all_files_with_extension;
@@ -265,6 +275,9 @@ struct PlatformApi
     PlatformReadLineFile *read_line_file;
     PlatformPrintFile *print_file;
     PlatformCreateDirectory *create_directory;
+
+    PlatformAddEntry *add_entry;
+    PlatformCompleteAllWork *complete_all_work;
 };
 
 extern PlatformApi platform;
@@ -292,7 +305,7 @@ struct GameMemory
     PlatformApi platform_api;
     struct LogState* log_state;
     struct MemoryArena* temp_arena;
-    
+    struct AnalyticsEventState *analytics_state;
     struct GameState* game_state;
     
 #if DEBUG

@@ -13,6 +13,9 @@ out vec4 outColor;
 void main()
 {
     vec4 result = c;
+
+    if(c.a == 0)
+      discard;
     
     if(border_width > 0.0)
     {
