@@ -3086,7 +3086,7 @@ static void render_commands(RenderState &render_state, Renderer &renderer)
             break;
             case RENDER_COMMAND_BUFFER:
             {
-                render_buffer(command, render_state, renderer, camera.projection_matrix, camera.view_matrix);
+                render_buffer(command, render_state, renderer, renderer.projection_matrix, renderer.view_matrix);
             }
             break;
             case RENDER_COMMAND_DEPTH_TEST:
@@ -3161,7 +3161,7 @@ static void render_commands(RenderState &render_state, Renderer &renderer)
             break;
             case RENDER_COMMAND_BUFFER:
             {
-                render_buffer(command, render_state, renderer, camera.projection_matrix, camera.view_matrix);
+                render_buffer(command, render_state, renderer, renderer.projection_matrix, renderer.view_matrix);
             }
             break;
             case RENDER_COMMAND_DEPTH_TEST:
