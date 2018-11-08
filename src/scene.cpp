@@ -261,7 +261,9 @@ namespace scene
                         else if(starts_with(buffer, "mtl"))
                         {
                             if(templ.render.material_handle.handle != 0)
+			    {
                                 debug("A material file was already loaded for this template file: %s\n", templ.file_path);
+			    }
 
                             char mtl_file[256];
                             sscanf(buffer, "mtl: %s", mtl_file);

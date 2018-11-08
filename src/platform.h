@@ -108,6 +108,7 @@ struct ConfigData
     r32 contrast;
     r32 brightness;
     b32 muted;
+    r32 master_volume;
     r32 sfx_volume;
     r32 music_volume;
 };
