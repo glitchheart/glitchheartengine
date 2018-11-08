@@ -296,7 +296,7 @@ namespace scene
             transform.position = templ.transform.position;
             transform.scale = templ.transform.scale;
             transform.rotation = templ.transform.rotation;
-			// @Incomplete: Parent and child handles
+	    // @Incomplete: Parent and child handles
         }
         
         if(templ.comp_flags & COMP_RENDER)
@@ -330,7 +330,6 @@ namespace scene
                 break;
             }
         }
-        
         
         if(handle != -1) // The template was already loaded
         {

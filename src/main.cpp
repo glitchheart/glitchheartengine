@@ -507,7 +507,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
     AnalyticsEventState analytics_state = {};
 
-    gameanalytics::GameAnalytics::setEnabledInfoLog(true);
+    //gameanalytics::GameAnalytics::setEnabledInfoLog(true);
     gameanalytics::GameAnalytics::configureBuild("alpha 0.10");
     gameanalytics::GameAnalytics::initialize("810960034d0191ec4f21a04d73295ec6", "2469ab09d7b00f64d5114071564b2d2d59c900a4");
 
