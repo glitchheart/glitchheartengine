@@ -1115,22 +1115,18 @@ static const GLFWvidmode* create_open_gl_window(RenderState& render_state, Windo
     
     if (window_mode == FM_BORDERLESS)
     {
-        glfwWindowHint(GLFW_RED_BITS, mode->redBits);
-        glfwWindowHint(GLFW_GREEN_BITS, mode->greenBits);
-        glfwWindowHint(GLFW_BLUE_BITS, mode->blueBits);
-        glfwWindowHint(GLFW_REFRESH_RATE, mode->refreshRate);
         screen_width = mode->width;
         screen_height = mode->height;
     }
     
+    glfwWindowHint(GLFW_RED_BITS, mode->redBits);
+    glfwWindowHint(GLFW_GREEN_BITS, mode->greenBits);
+    glfwWindowHint(GLFW_BLUE_BITS, mode->blueBits);
+    glfwWindowHint(GLFW_REFRESH_RATE, mode->refreshRate);
     debug_log("refresh rate %d", mode->refreshRate);
     
     if (window_mode == FM_WINDOWED)
     {
-        glfwWindowHint(GLFW_RED_BITS, mode->redBits);
-        glfwWindowHint(GLFW_GREEN_BITS, mode->greenBits);
-        glfwWindowHint(GLFW_BLUE_BITS, mode->blueBits);
-        glfwWindowHint(GLFW_REFRESH_RATE, mode->refreshRate);
         monitor = nullptr;
     }
     
@@ -1146,7 +1142,6 @@ static const GLFWvidmode* create_open_gl_window(RenderState& render_state, Windo
     }
     
     //center window on screen (windowed?)
-    
     if (window_mode == FM_WINDOWED)
     {
         int frame_buffer_width, frame_buffer_height;
@@ -1185,6 +1180,7 @@ static void initialize_opengl(RenderState& render_state, Renderer& renderer, r32
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
 #elif __APPLE__
+    // @Note: Apple only __really__ supports OpenGL Core 3.3
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
@@ -1219,6 +1215,7 @@ static void initialize_opengl(RenderState& render_state, Renderer& renderer, r32
     
     if (!render_state.window)
     {
+	// @Note: If no window has been created, try and see if 3.3 works
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
         
@@ -3109,8 +3106,7 @@ static void render(RenderState& render_state, Renderer& renderer, r64 delta_time
             const GLFWvidmode *mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
             if(renderer.window_mode == FM_BORDERLESS)
             {
-                glfwSetWindowMonitor(render_state.window, glfwGetPrimaryMonitor(), 0, 0, mode->width, mode->height, 0);
-                
+                glfwSetWindowMonitor(render_state.window, glfwGetPrimaryMonitor(), 0, 0, mode->width, mode->height, mode->refreshRate);               
                 renderer.window_width = mode->width;
                 renderer.window_height = mode->height;
                 
