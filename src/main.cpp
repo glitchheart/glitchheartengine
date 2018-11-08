@@ -145,9 +145,9 @@ inline void save_config(const char* file_path, ConfigData &old_config_data, Rend
         fprintf(file, "title %s\n", old_config_data.title);
         fprintf(file, "version %s\n", old_config_data.version);
         
-        i32 width = 0;
-        i32 height = 0;
-        WindowMode window_mode = FM_WINDOWED;
+        i32 width = old_config_data.screen_width;
+        i32 height = old_config_data.screen_height;
+        WindowMode window_mode = old_config_data.window_mode;
         
         if(render_state)
         {
@@ -163,20 +163,22 @@ inline void save_config(const char* file_path, ConfigData &old_config_data, Rend
         b32 muted = false;
         r32 sfx_vol = 1.0f;
         r32 music_vol = 1.0f;
+	r32 master_vol = 1.0f;
         
         if(sound_device)
         {
             muted = sound_device->muted;
             sfx_vol = sound_device->sfx_volume;
             music_vol = sound_device->music_volume;
+	    master_vol = sound_device->master_volume;
         }
         
         fprintf(file, "muted %d\n", muted);
         fprintf(file, "sfx_volume %.2f\n", sfx_vol);
         fprintf(file, "music_volume %.2f\n", music_vol);
+	fprintf(file, "master_volume %.2f\n", master_vol);
         
         fclose(file);
-        
         
         old_config_data.screen_width = width;
         old_config_data.screen_height = height;
@@ -184,6 +186,7 @@ inline void save_config(const char* file_path, ConfigData &old_config_data, Rend
         old_config_data.muted = muted;
         old_config_data.sfx_volume = sfx_vol;
         old_config_data.music_volume = music_vol;
+	old_config_data.master_volume = master_vol;
     }
 }
 
@@ -238,6 +241,7 @@ inline void load_config(const char* file_path, ConfigData* config_data, MemoryAr
         config_data->muted = false;
         config_data->sfx_volume = 1.0f;
         config_data->music_volume = 1.0f;
+	config_data->master_volume = 1.0f;
         
         save_config(file_path, *config_data);
     }
@@ -291,6 +295,10 @@ inline void load_config(const char* file_path, ConfigData* config_data, MemoryAr
             else if(starts_with(line_buffer, "music_volume"))
             {
                 sscanf(line_buffer, "music_volume %f", &config_data->music_volume);
+            }
+	    else if(starts_with(line_buffer, "master_volume"))
+            {
+                sscanf(line_buffer, "master_volume %f", &config_data->master_volume);
             }
         }
         fclose(file);
@@ -446,18 +454,18 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     
     init_renderer(renderer);
     if constexpr(global_graphics_api == GRAPHICS_VULKAN)
-	{
+		{
 #if defined(__linux) || defined(_WIN32)
-		//VkRenderState vk_render_state;
-		//initialize_vulkan(vk_render_state, renderer, config_data);
-		//vk_render(vk_render_state, renderer);
+		    //VkRenderState vk_render_state;
+		    //initialize_vulkan(vk_render_state, renderer, config_data);
+		    //vk_render(vk_render_state, renderer);
 #endif
-	}
+		}
     else if constexpr(global_graphics_api == GRAPHICS_OPEN_GL)
-	{
-		log("Initializing OpenGl");
-		initialize_opengl(render_state, renderer, &config_data, &platform_state->perm_arena, &do_save_config);
-	}
+		     {
+			 log("Initializing OpenGl");
+			 initialize_opengl(render_state, renderer, &config_data, &platform_state->perm_arena, &do_save_config);
+		     }
     
     GameCode game = {};
     game.is_valid = false;
@@ -477,6 +485,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     
     sound_device.sfx_volume = config_data.sfx_volume;
     sound_device.music_volume = config_data.music_volume;
+    sound_device.master_volume = config_data.master_volume;
     sound_device.muted = config_data.muted;
 
     WorkQueue fmod_queue = {};
@@ -485,12 +494,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     platform.add_entry(&fmod_queue, init_audio_fmod_thread, &sound_device);
     
     SoundSystem sound_system = {};
-    sound_system.sound_commands.minimum_block_size = sizeof(SoundCommand) * global_max_sound_commands;
+    sound_system.commands = push_array(&sound_system.arena, global_max_sound_commands, SoundCommand);
     sound_system.sounds = push_array(&sound_system.arena, global_max_sounds, SoundHandle);
     sound_system.audio_sources = push_array(&sound_system.arena, global_max_audio_sources, AudioSource);
     sound_system.channel_groups = push_array(&sound_system.arena, global_max_channel_groups, ChannelGroup);
     sound_system.sfx_volume = config_data.sfx_volume;
     sound_system.music_volume = config_data.music_volume;
+    sound_system.master_volume = config_data.master_volume;
     sound_system.muted = config_data.muted;
     
     r64 last_second_check = get_time();

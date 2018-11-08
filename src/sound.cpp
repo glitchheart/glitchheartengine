@@ -2,6 +2,7 @@
 static ChannelAttributes get_default_channel_attributes()
 {
     ChannelAttributes attributes = {};
+    attributes.type = ChannelType::SFX;
     attributes.volume = 1.0f;
     attributes.position_ms = 0;
     attributes.pan_level = 0.0f;
@@ -48,8 +49,7 @@ static ChannelAttributes get_default_channel_attributes()
 static SoundCommand *push_next_command(SoundSystem *system)
 {
     assert(system->command_count + 1 < global_max_sound_commands);
-    system->command_count++;
-    return push_struct(&system->sound_commands, SoundCommand);
+    return &system->commands[system->command_count++];
 }
 
 static void create_audio_source(SoundSystem *system, AudioSourceHandle *as_handle, SoundHandle sound_handle, b32 paused = false, b32 muted = false)
@@ -81,6 +81,9 @@ static void load_sound(SoundSystem *system, const char *file_path, SoundHandle *
     strcpy(command->load_sound.file_path, file_path);
 }
 
+// @Note: play a one shot sound defaulted as sfx type
+// If you want to play this one shot as a music type, you need
+// to pass in different channel attributes.
 static void play_one_shot_sound(SoundSystem *system, SoundHandle handle, ChannelAttributes channel_attributes = get_default_channel_attributes())
 {
     assert(handle.handle != 0 && handle.handle - 1 < system->sound_count);
