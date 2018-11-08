@@ -72,14 +72,6 @@ inline r32_4x random_unilateral_4x(RandomSeries& series)
     r32_4x result = divisor * (u32_to_r32(random_next_u32_4x(series) & r32_4x((u32)i32max)));
     return(result);
 }
-/*
-inline r32_4x random_unilateral_4x(RandomSeries& series)
-{
-    r32 divisor = 1.0f / (r32)u32max;
-    r32_4x result = u32_to_r32(random_next_u32_4x(series)) * r32_4x(divisor);
-    
-    return(result);
-}*/
 
 inline r32_4x random_bilateral_4x(RandomSeries& series)
 {
@@ -136,9 +128,9 @@ inline Vec3_4x random_direction_4x(RandomSeries& series)
 {
     Vec3_4x result(0.0f);
     
-    result.x = random_between_4x(series, 0.0f, 1.0f);
-    result.y = random_between_4x(series, 0.0f, 1.0f);
-    result.z = random_between_4x(series, 0.0f, 1.0f);
+    result.x = random_between_4x(series, -1.0f, 1.0f);
+    result.y = random_between_4x(series, -1.0f, 1.0f);
+    result.z = random_between_4x(series, -1.0f, 1.0f);
     
     return math::normalize(result);
 }

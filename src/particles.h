@@ -58,6 +58,10 @@ struct EmissionModule
 struct ParticleSystemAttributes
 {
     b32 one_shot;
+
+    b32 prewarm;
+    b32 prewarmed;
+    
     ParticleSpace particle_space;
     
     math::Rgba start_color;
@@ -103,6 +107,7 @@ struct ParticleSystemInfo
 {
     b32 running;
     b32 emitting;
+
     ParticleSystemAttributes attributes;
     
     r64 time_spent;

@@ -266,6 +266,7 @@ static void init_renderer(Renderer &renderer)
     renderer.particles._internal_handles = push_array(&renderer. particle_arena, global_max_particle_systems, i32);
     renderer.particles._tagged_removed = push_array(&renderer. particle_arena, global_max_particle_systems, i32);
     renderer.particles._tagged_removed_count = 0;
+    renderer.particles.entropy = random_seed(1234);
     
     for(i32 index = 0; index < global_max_particle_systems; index++)
     {

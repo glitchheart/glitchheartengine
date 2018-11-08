@@ -55,7 +55,7 @@ namespace scene
             scene.transform_components[index].rotation = math::Vec3(0, 0, 0);
 			scene.transform_components[index].parent_handle = EMPTY_COMP_HANDLE;
 			scene.transform_components[index].child_handle = EMPTY_COMP_HANDLE;
-		}
+	}
         
         return(scene);
     }

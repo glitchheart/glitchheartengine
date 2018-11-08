@@ -79,6 +79,19 @@ EMITTER_FUNC(emit_from_2D_square)
     return info;
 }
 
+EMITTER_FUNC(emit_from_2D_square_random)
+{
+    ParticleSpawnInfo info;
+    
+    Vec3_4x r = random_rect_4x(series, min, max);
+    
+    info.position = r;
+    
+    info.direction = random_direction_4x(series);
+    
+    return info;
+}
+
 EMITTER_FUNC(emit_from_square)
 {
     ParticleSpawnInfo info;

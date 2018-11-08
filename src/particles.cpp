@@ -324,6 +324,15 @@ void update_particle_systems(Renderer &renderer, r64 delta_time)
         
         if (particle_system.running)
         {
+	    if(particle_system.attributes.prewarm && !particle_system.attributes.prewarmed)
+	    {
+		particle_system.attributes.prewarmed = true;
+		for(i32 i = 0; i < 700; i++)
+		{
+		    update_particle_systems(renderer, delta_time);
+		}
+	    }
+	    
             // @Note(Niels): We have one buffer that takes the particles from the previous frame
             // plus the particles that are emitted in the current frame.
             // The first time the buffer is empty and only contains emitted particles
@@ -391,9 +400,9 @@ void update_particle_systems(Renderer &renderer, r64 delta_time)
                 }
                 
                 // @Note(Niels): Start figuring out how many particles we need to emit this frame
-                r32 per_second = (r32)((r64)particle_system.attributes.particles_per_second * delta_time);
+                r32 per_frame = (r32)((r64)particle_system.attributes.particles_per_second * particle_system.time_spent);
                 
-                particle_system.particles_cumulative += per_second;
+                particle_system.particles_cumulative += per_frame;
                 
                 if(particle_system.particles_cumulative >= 1.0f)
                 {
@@ -402,16 +411,13 @@ void update_particle_systems(Renderer &renderer, r64 delta_time)
                 }
                 else // @Note(Niels): Otherwise just find the round number of particles to emit
                 {
-                    new_particles = math::round(per_second);
+                    new_particles = math::round(per_frame);
                 }
-                
-                // @Note(Niels): We need to check if we've spent 1 second if per second is lower than 1.0
-                if(per_second < 1.0f && per_second > 0.0f && particle_system.time_spent >= 1.0)
-                {
-                    particle_system.time_spent = 0.0;
-                    
-                    
-                }
+
+		if(per_frame >= 1.0f)
+		{
+		    particle_system.time_spent = 0.0;
+		}
                 
                 // @Note(Niels): If we have a one shot particle system we need to check if we have emitted
                 // every particle available. This means that the amount of particles in a one shot system is tightly coupled to the max amount given (should we have two numbers for this?)
@@ -455,7 +461,7 @@ void update_particle_systems(Renderer &renderer, r64 delta_time)
             update_particles(renderer, particle_system, delta_time, emitted_alive_buf, emitted_alive_count, write_buf, write_buf_count);
             
             // @Note(Niels): if all particles are dead and the system is one-shot we should stop the particle_system
-            if(particle_system.attributes.one_shot && particle_system.total_emitted == particle_system.max_particles)
+            if(particle_system.attributes.one_shot && particle_system.total_emitted > 0 && particle_system.alive0_particle_count == 0 && particle_system.alive1_particle_count == 0)
             {
                 particle_system.running = false;
                 particle_system.alive0_particle_count = 0;
