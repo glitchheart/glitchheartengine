@@ -110,11 +110,69 @@ namespace scene
         EntityTemplate *templates;
         i32 template_count;
     };
+
+    
+    struct Camera
+    {
+	r32 zoom;
+	math::Vec3 center;
+	math::Vec3 position;
+	math::Quat orientation;
+	math::Vec3 target;
+    
+	r32 follow_speed;
+	math::Mat4 view_matrix;
+	math::Mat4 projection_matrix;
+    
+	FadingMode fading_mode = FADING_NONE;
+	math::Vec3 fading_tint;
+    
+	b32 fading_in;
+	r32 end_alpha;
+	r32 fading_alpha = 0.0f;
+	r32 fading_speed;
+    };
+
+    enum CameraFlags
+    {
+     C_FLAG_ORTHOGRAPHIC = (1 << 0),
+     C_FLAG_PERSPECTIVE  = (1 << 1),
+     C_FLAG_NO_LOOK_AT     = (1 << 2)
+    };
+
+    struct CameraParams
+    {
+	u32 view_flags;
+    };
+
+    static CameraParams default_camera_params()
+    {
+	CameraParams params;
+	params.view_flags = C_FLAG_ORTHOGRAPHIC | C_FLAG_NO_LOOK_AT;
+	return params;
+    }
+
+    static CameraParams orthographic_camera_params()
+    {
+	CameraParams params;
+	params.view_flags = C_FLAG_ORTHOGRAPHIC;
+	return params;
+    }
+
+    static CameraParams perspective_camera_params()
+    {
+	CameraParams params;
+	params.view_flags = C_FLAG_PERSPECTIVE;
+	return params;
+    }
     
     struct Scene
     {
-		MemoryArena memory_arena;
-        Entity *entities;
+	MemoryArena memory_arena;
+
+	Camera camera;
+
+	Entity *entities;
         i32 *_internal_handles;
         i32 current_internal_handle;
         b32 *active_entities;
@@ -138,5 +196,7 @@ namespace scene
         Renderer* renderer;
     };
 }
+
+
 
 #endif

@@ -111,7 +111,8 @@ struct PointLightData
 };
 // @Cleanup END
 
-// @
+
+// @Incomplete: Remove the prefix from the values 
 enum ShaderType
 {
     SHADER_MESH,
@@ -121,6 +122,7 @@ enum ShaderType
     SHADER_QUAD,
     SHADER_TEXTURE_QUAD,
     SHADER_STANDARD_FONT,
+    SHADER_3D_TEXT,
     SHADER_SPRITESHEET,
     SHADER_FRAME_BUFFER,
     SHADER_SIMPLE_MODEL,
@@ -130,10 +132,12 @@ enum ShaderType
     SHADER_COUNT
 };
 
+// @Incomplete: Remove the prefix from the values 
 enum RenderCommandType
 {
     RENDER_COMMAND_LINE,
     RENDER_COMMAND_TEXT,
+    RENDER_COMMAND_3D_TEXT,
     RENDER_COMMAND_QUAD,
     
     RENDER_COMMAND_SPOTLIGHT,
@@ -154,6 +158,7 @@ enum RenderCommandType
     RENDER_COMMAND_COUNT
 };
 
+// @Incomplete: Remove the prefix from the values 
 enum RelativeFlag
 {
     RELATIVE_TOP,
@@ -162,6 +167,7 @@ enum RelativeFlag
     RELATIVE_BOTTOM
 };
 
+// @Incomplete: Remove the prefix from the values 
 enum Alignment
 {
     ALIGNMENT_LEFT = (1 << 0),
@@ -740,6 +746,13 @@ struct RenderCommand
         } text;
         struct
         {
+            char text[256];
+            i32 font_handle;
+            u64 alignment_flags;
+            math::Rgba color; // @Cleanup: REMOVE!
+        } text_3d;
+        struct
+        {
             math::Rgba color;
         } sprite;
         struct
@@ -889,29 +902,6 @@ enum FadingMode
     FADING_OUT_IN
 };
 
-struct Camera
-{
-    i32 viewport_width;
-    i32 viewport_height;
-    r32 zoom;
-    math::Vec3 center;
-    math::Vec3 position;
-    math::Quat orientation;
-    math::Vec3 target;
-    
-    r32 follow_speed;
-    math::Mat4 view_matrix;
-    math::Mat4 projection_matrix;
-    
-    FadingMode fading_mode = FADING_NONE;
-    math::Vec3 fading_tint;
-    
-    b32 fading_in;
-    r32 end_alpha;
-    r32 fading_alpha = 0.0f;
-    r32 fading_speed;
-};
-
 enum UIScalingFlag
 {
     KEEP_ASPECT_RATIO = (1 << 0),
@@ -974,8 +964,6 @@ struct BufferData
     size_t instance_buffer_size;
 };
 
-#define MAX_CAMERAS 8
-
 struct ShadowMapMatrices
 {
     math::Mat4 depth_projection_matrix;
@@ -1003,6 +991,9 @@ struct Renderer
     i32 frame_lock;
     
     WindowMode window_mode;
+
+    math::Mat4 view_matrix;
+    math::Mat4 projection_matrix;
     
     RenderCommand *commands;
     i32 command_count;
@@ -1047,7 +1038,6 @@ struct Renderer
         RandomSeries entropy;
     } particles;
     
-    
     TextureData *texture_data;
     i32 texture_count;
     
@@ -1058,7 +1048,6 @@ struct Renderer
     ShadowMapMatrices shadow_map_matrices;
     
     math::Mat4 ui_projection_matrix;
-    Camera cameras[MAX_CAMERAS];
     i32 current_camera_handle;
     
     AnimationController* animation_controllers;
@@ -1158,7 +1147,7 @@ r32 to_ui(Renderer& renderer, i32 scale, r32 coord)
     return (coord / (r32)scale) * (r32)UI_COORD_DIMENSION;
 }
 
-static math::Vec2 get_text_size(const char *text, TrueTypeFontInfo &font)
+static math::Vec2 get_text_size(const char *text, TrueTypeFontInfo font)
 {
     math::Vec2 size;
     r32 placeholder_y = 0.0;
@@ -1181,7 +1170,13 @@ static math::Vec2 get_text_size(const char *text, TrueTypeFontInfo &font)
     return size;
 }
 
-static math::Vec2 get_text_size_scaled(Renderer& renderer, const char* text, TrueTypeFontInfo& font, u64 scaling_flags = UIScalingFlag::KEEP_ASPECT_RATIO)
+static TrueTypeFontInfo get_tt_font_info(Renderer& renderer, i32 handle)
+{
+    assert(handle >= 0 && handle < renderer.tt_font_count);
+    return renderer.tt_font_infos[handle];
+}
+
+static math::Vec2 get_text_size_scaled(Renderer& renderer, const char* text, TrueTypeFontInfo font, u64 scaling_flags = UIScalingFlag::KEEP_ASPECT_RATIO)
 {
     math::Vec2 font_size = get_text_size(text, font);
     math::Vec2 result;

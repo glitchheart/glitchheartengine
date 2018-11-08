@@ -1,93 +1,6 @@
 #include "animation.h"
 #include <string.h>
 
-enum CameraFlags
-{
-    C_FLAG_ORTHOGRAPHIC = (1 << 0),
-    C_FLAG_PERSPECTIVE  = (1 << 1),
-    C_FLAG_NO_LOOK_AT     = (1 << 2)
-};
-
-struct CameraParams
-{
-    u32 view_flags;
-};
-
-static CameraParams default_camera_params()
-{
-    CameraParams params;
-    params.view_flags = C_FLAG_ORTHOGRAPHIC | C_FLAG_NO_LOOK_AT;
-    return params;
-}
-
-static CameraParams orthographic_camera_params()
-{
-    CameraParams params;
-    params.view_flags = C_FLAG_ORTHOGRAPHIC;
-    return params;
-}
-
-static CameraParams perspective_camera_params()
-{
-    CameraParams params;
-    params.view_flags = C_FLAG_PERSPECTIVE;
-    return params;
-}
-
-// @Incomplete
-static inline void camera_transform(Renderer& renderer, Camera& camera, math::Vec3 position = math::Vec3(), math::Quat orientation = math::Quat(), math::Vec3 target = math::Vec3(), r32 zoom = 1.0f, r32 near = -1.0f, r32 far = 1.0f, CameraParams params = default_camera_params())
-{
-    camera.viewport_width = renderer.resolution.width;
-    camera.viewport_height = renderer.resolution.height;
-    if(params.view_flags & C_FLAG_ORTHOGRAPHIC)
-    {
-        camera.projection_matrix = math::ortho(0.0f, renderer.viewport[2] / zoom, 0.0f, renderer.viewport[3] / zoom, near, far);
-        camera.view_matrix = math::Mat4(1.0f);
-        
-        camera.position = position;
-        camera.orientation = orientation;
-        camera.target = target;
-        
-        if(!is_identity(orientation))
-        {
-            camera.view_matrix = to_matrix(orientation) * camera.view_matrix;
-        }
-        else if(!(params.view_flags & C_FLAG_NO_LOOK_AT))
-        {
-            auto dist = sqrt(1.0f / 3.0f);
-            camera.view_matrix = math::look_at(math::Vec3(dist, dist, dist), math::Vec3(0.0f));
-        }
-        
-        camera.view_matrix = math::translate(camera.view_matrix, math::Vec3(-position.x, -position.y, position.z));
-        
-        //camera.view_matrix = math::Translate(camera.view_matrix, position);
-        camera.view_matrix = math::translate(camera.view_matrix, math::Vec3(renderer.viewport[2] / zoom / 2, renderer.viewport[3] / zoom / 2, 0.0f));
-        
-        
-    }
-    else if(params.view_flags & C_FLAG_PERSPECTIVE)
-    {
-        camera.projection_matrix = math::perspective((r32)renderer.viewport[2] / (r32)renderer.viewport[3], 0.60f, 0.2f, 100.0f);
-        
-        camera.view_matrix = math::Mat4(1.0f);
-        
-        auto dist = sqrt(1.0f / 3.0f);
-        
-        dist = 20.0f;
-        
-        camera.view_matrix = math::look_at(math::Vec3(dist, dist, dist), target);
-        
-        if(!is_identity(orientation))
-        {
-            camera.view_matrix = to_matrix(orientation) * camera.view_matrix;
-        }
-        
-        camera.position = position;
-        camera.orientation = orientation;
-        camera.target = target;
-    }
-}
-
 // The InfoHandle is used to be able to reference the same animation without having to load the animation again. 
 static void add_animation(Renderer& renderer, SpritesheetAnimation animation, const char* animation_name)
 {
@@ -291,6 +204,24 @@ static math::Rect scale_clip_rect(Renderer& renderer, math::Rect clip_rect, b32 
     }
     
     return scaled_clip_rect;
+}
+
+static void push_3d_text(Renderer &renderer, const char* text, math::Vec3 position, i32 font_handle, math::Rgba color = math::Rgba(1.0f), math::Vec3 rotation = math::Vec3(), math::Vec3 scale = math::Vec3(1.0f), u64 alignment_flags = ALIGNMENT_LEFT)
+{
+    RenderCommand* render_command = push_next_command(renderer, false);
+    
+    assert(font_handle < renderer.font_count);
+    
+    render_command->type = RENDER_COMMAND_3D_TEXT;
+    
+    strcpy(render_command->text_3d.text, text);
+    render_command->position = position;
+    render_command->rotation = rotation;
+    render_command->scale = scale;
+    render_command->text_3d.font_handle = font_handle;
+    render_command->text_3d.color = color;
+    render_command->text_3d.alignment_flags = alignment_flags;
+    render_command->is_ui = false;
 }
 
 #define PUSH_UI_TEXT(text, position, color, font_handle, ...) push_ui_text(renderer, text, position, font_handle, color, ##__VA_ARGS__)
@@ -533,6 +464,18 @@ static void push_outlined_quad(Renderer& renderer, math::Vec3 position,  math::V
     render_command->is_ui = is_ui;
 }
 
+// @Note Gets info about UI position for rendering things relative to each other
+// We often want to be able to render things next to each other perfectly on different scales
+// This function should help with that
+// Parameters:
+// renderer:      The renderer
+// position:      The position of the original quad
+// relative_size: The size of the original quad
+// size:          The size of the thing you want to render next to the original
+// relative:      The relative flag (top, bottom, left, right)
+// centered:      Whether or not the original quad was centered (need to know this for origin etc.)
+// scaling_flags: How do we scale these UI elements?
+// origin:        The origin
 static RelativeUIQuadInfo get_relative_info(Renderer& renderer, math::Vec2 position, math::Vec2 relative_size, math::Vec2 size, RelativeFlag relative, b32 centered, u64 scaling_flags = UIScalingFlag::KEEP_ASPECT_RATIO,  math::Vec2 origin = math::Vec2(0.0f))
 {
     math::Vec2i resolution_scale = get_scale(renderer);
@@ -1918,6 +1861,9 @@ static void push_particle_system(Renderer &renderer, i32 particle_system_handle)
 
 static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer, math::Vec3 *positions, math::Vec3 *rotations, math::Vec3 *scalings, math::Rgba *colors)
 {
+    renderer.view_matrix = scene.camera.view_matrix;
+    renderer.projection_matrix = scene.camera.projection_matrix;
+    
     InstancedRenderCommand instanced_commands[MAX_INSTANCING_PAIRS];
     i32 command_count = 0;
 
