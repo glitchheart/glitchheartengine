@@ -1,7 +1,12 @@
 #ifndef MATH_H
 #define MATH_H
 
+#ifdef __linux
+#include <math.h>
+#else
 #include <cmath>
+#endif
+
 
 namespace math
 {
