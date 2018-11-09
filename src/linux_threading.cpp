@@ -7,7 +7,7 @@
 
 // Define platform-specific functions
 #define SemaphoreHandle sem_t
-#define WRITE_BARRIER OSMemoryBarrier(); _mm_sfence()
+#define WRITE_BARRIER __asm__ __volatile__ ("" ::: "memory"); _mm_sfence()
 #define THREAD_PROC(name) static void* name(void* parameters)
 typedef void* (*ThreadProc)(void* parameters);
 
