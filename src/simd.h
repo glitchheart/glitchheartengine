@@ -92,12 +92,12 @@ union r32_4x
     r32 e[4];
     u32 u[4];
     
-    r32_4x()
+    explicit r32_4x()
     {
         p = _mm_set1_ps(0.0f);
     }
     
-    r32_4x(r32 _p) 
+    explicit r32_4x(r32 _p) 
     {
         p = _mm_set1_ps(_p);
     }
