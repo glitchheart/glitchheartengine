@@ -363,11 +363,11 @@ void process_analytics_events(AnalyticsEventState &analytics_state, WorkQueue *q
     analytics_state.event_count = 0;
 }
 
-#if defined(_WIN32) && !defined(DEBUG)
+//#if defined(_WIN32)
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
-#else
-    int main(int argc, char **args)
-#endif
+//#else
+// int main(int argc, char **args)
+//#endif
 {    
     GameMemory game_memory = {};
     
@@ -544,7 +544,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
     r64 start_frame_for_total_time = get_time();
     
-    while (!should_close_window(render_state) && !renderer.should_close)
+    while(!should_close_window(render_state) && !renderer.should_close)
     {
         if(game_memory.exit_game)
         {
@@ -555,9 +555,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         show_mouse_cursor(render_state, renderer.show_mouse_cursor);
         
         //reload_assets(render_state, &asset_manager, &platform_state->perm_arena);
-        
+//#if DEBUG
         reload_libraries(&game, game_library_path, temp_game_library_path, &platform_state->perm_arena);
-        
+//#endif
         //auto game_temp_mem = begin_temporary_memory(game_memory.temp_arena);
         game.update(delta_time, &game_memory, renderer, template_state, &input_controller, &sound_system, timer_controller);
         update_particle_systems(renderer, delta_time);
