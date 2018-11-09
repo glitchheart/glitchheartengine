@@ -1132,7 +1132,7 @@ static void initialize_opengl(RenderState& render_state, Renderer& renderer, r32
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
 #elif __linux
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
 #elif __APPLE__
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
