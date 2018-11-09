@@ -8,6 +8,7 @@ struct MemoryArena;
 #include "platform.h"
 #include "engine_memory.h"
 #include "simd.h"
+#include "random.h"
 #include "init_globals.h"
 
 #include "log_state.h"
@@ -22,6 +23,7 @@ struct MemoryArena;
 #include "rendering.h"
 #include "sound.h"
 #include "keycontroller.h"
+
 
 #define RGB_FLOAT(integer) 1.0f / 255.0f * integer
 #define RGB_VEC4(r, g, b) math::Rgba(RGB_FLOAT(r), RGB_FLOAT(g), RGB_FLOAT(b), 1.0f)

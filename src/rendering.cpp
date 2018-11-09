@@ -733,12 +733,124 @@ static void generate_index_buffer(u16* index_buffer, Face* faces, i32 face_count
     }
 }
 
+
+static i32 _find_unused_handle(Renderer& renderer)
+{
+    for(i32 index = renderer._current_internal_buffer_handle; index < global_max_custom_buffers; index++)
+    {
+        if(renderer._internal_buffer_handles[index] == -1)
+        {
+            renderer._current_internal_buffer_handle = index;
+            return index;
+        }
+    }
+    
+    for(i32 index = 0; index < global_max_custom_buffers; index++)
+    {
+        if(renderer._internal_buffer_handles[index] == -1)
+        {
+            renderer._current_internal_buffer_handle = index;
+            return index;
+        }
+    }
+    
+    assert(false);
+    
+    return -1;
+}
+
+// @Note:(Niels): If you register buffers without the functions below, make sure to handle the internal
+// handles right. If you would rather not, just call these functions and at leas the bugs will be pretty
+// contained...
+static BufferData& register_buffer(Renderer& renderer, i32* buffer_handle, b32 dynamic = false)
+{
+    assert(renderer.buffer_count + 1 < global_max_custom_buffers);
+    assert(renderer._internal_buffer_handles);
+    
+    i32 unused_handle = _find_unused_handle(renderer) + 1;
+    
+    renderer._internal_buffer_handles[unused_handle - 1] = renderer.buffer_count++;
+    
+    BufferData& data = renderer.buffers[renderer._internal_buffer_handles[unused_handle - 1]];
+    
+    data = {};
+    data.has_normals = false;
+    data.has_uvs = false;
+    data.index_buffer_count = 0;
+    data.index_buffer = nullptr;
+    data.vertex_buffer = nullptr;
+    
+    *buffer_handle = unused_handle;
+    
+    return data;
+}
+
+static BufferData& update_buffer(Renderer& renderer, r32* buffer, i32 buffer_size, u16* index_buffer, i32 index_buffer_size, i32 index_buffer_count, i32 buffer_handle)
+{
+    BufferData& data = renderer.buffers[renderer._internal_buffer_handles[buffer_handle - 1]];
+    
+    data = {};
+    data.vertex_buffer = buffer;
+    data.vertex_buffer_size = buffer_size;
+    data.index_buffer = index_buffer;
+    data.index_buffer_size = index_buffer_size;
+    data.index_buffer_count = index_buffer_count;
+    data.existing_handle = buffer_handle;
+    
+    renderer.updated_buffer_handles[renderer.updated_buffer_handle_count++] = buffer_handle;
+    
+    return data;
+}
+
+static BufferData& update_instanced_buffer(Renderer& renderer, size_t buffer_size, i32 buffer_handle)
+{
+    BufferData& data = renderer.buffers[renderer._internal_buffer_handles[buffer_handle - 1]];
+    
+    data.for_instancing = true;
+    data.instance_buffer_size = buffer_size;
+    data.index_buffer_count = 0;
+    
+    renderer.updated_buffer_handles[renderer.updated_buffer_handle_count++] = buffer_handle;
+    
+    return data;
+}
+
+static BufferData& register_instance_buffer(Renderer& renderer, size_t buffer_size, i32* buffer_handle)
+{
+    assert(renderer.buffer_count + 1 < global_max_custom_buffers);
+    
+    i32 unused_handle = _find_unused_handle(renderer) + 1;
+    
+    renderer._internal_buffer_handles[unused_handle - 1] = renderer.buffer_count++;
+    
+    BufferData& data = renderer.buffers[renderer._internal_buffer_handles[unused_handle - 1]];
+    data = {};
+    
+    data.for_instancing = true;
+    data.instance_buffer_size = buffer_size;
+    data.index_buffer = nullptr;
+    data.vertex_buffer = nullptr;
+    
+    *buffer_handle = unused_handle;
+    
+    return data;
+}
+
+// @Note:(Niels): This only registers a buffer as removed, which means it will be removed __next__ frame
+// This is due to the fact that we'd rather have an invalid buffer in the renderer for a frame, then
+// pushing a buffer that is invalid on the engine side.
+static void unregister_buffer(Renderer& renderer, i32 buffer_handle)
+{
+    assert(renderer.removed_buffer_handles);
+    renderer.removed_buffer_handles[renderer.removed_buffer_handle_count++] = buffer_handle;
+}
+
 static void create_buffers_from_mesh(Renderer &renderer, Mesh &mesh, u64 vertex_data_flags, b32 has_normals, b32 has_uvs)
 {
     assert(renderer.buffer_count + 1 < global_max_custom_buffers);
     i32 vertex_size = 3;
     
-    BufferData data = {};
+    BufferData& data = register_buffer(renderer, &mesh.buffer_handle);
     
     if(has_normals)
     {
@@ -759,11 +871,12 @@ static void create_buffers_from_mesh(Renderer &renderer, Mesh &mesh, u64 vertex_
     i32 index_count = mesh.face_count * 3;
     data.index_buffer_size = index_count * (i32)sizeof(u16);
     data.index_buffer_count = index_count;
+    
+    // @Note:(Niels): How do we make sure that this is cleared if the mesh is removed?
+    // Or will that never happen? Maybe use malloc/free instead? Or maybe at some point 
+    // we really __should__ create a more general purpose allocator ourselves...
     data.index_buffer = push_size(&renderer.mesh_arena, data.index_buffer_size, u16);
     generate_index_buffer(data.index_buffer, mesh.faces, mesh.face_count);
-    
-    renderer.buffers[renderer.buffer_count] = data;
-    mesh.buffer_handle = renderer.buffer_count++;
 }
 
 static math::Vec3 compute_face_normal(Face f, Vertex *vertices)
@@ -846,42 +959,23 @@ static void create_cube(Renderer &renderer, MeshInfo &mesh_info, b32 with_instan
     
     create_buffers_from_mesh(renderer, mesh, 0, true, true);
     
-    
     if(with_instancing)
     {
         assert(renderer.buffer_count + 2 < global_max_custom_buffers);
-        BufferData offset_data = {};
-        offset_data.instance_buffer_size = sizeof(math::Vec3) * 1024; // @Incomplete
-        offset_data.for_instancing = true;
-        renderer.buffers[renderer.buffer_count] = offset_data;
-        mesh_info.instance_offset_buffer_handle = renderer.buffer_count++;
+        register_instance_buffer(renderer, sizeof(math::Vec3) * 1024, &mesh_info.instance_offset_buffer_handle);
         
-        BufferData color_data = {};
-        color_data.instance_buffer_size = sizeof(math::Rgba) * 1024; // @Incomplete
-        color_data.for_instancing = true;
-        renderer.buffers[renderer.buffer_count] = color_data;
-        mesh_info.instance_color_buffer_handle = renderer.buffer_count++;
+        register_instance_buffer(renderer, sizeof(math::Rgba) * 1024, &mesh_info.instance_color_buffer_handle);
         
-        BufferData rotation_data = {};
-        rotation_data.instance_buffer_size = sizeof(math::Vec3) * 1024; // @Incomplete
-        rotation_data.for_instancing = true;
-        renderer.buffers[renderer.buffer_count] = rotation_data;
-        mesh_info.instance_rotation_buffer_handle = renderer.buffer_count++;
+        register_instance_buffer(renderer, sizeof(math::Vec3) * 1024, &mesh_info.instance_rotation_buffer_handle);
         
-        BufferData scale_data = {};
-        scale_data.instance_buffer_size = sizeof(math::Vec3) * 1024; 
-        
-        // @Incomplete
-        scale_data.for_instancing = true;
-        renderer.buffers[renderer.buffer_count] = scale_data;
-        mesh.instance_scale_buffer_handle = renderer.buffer_count++;
+        register_instance_buffer(renderer, sizeof(math::Vec3) * 1024, &mesh_info.instance_scale_buffer_handle);
     }
 }
 
 static void create_cube(Renderer &renderer, MeshHandle *mesh_handle = nullptr)
 {
     assert(renderer.mesh_count + 1 < global_max_meshes);
-
+    
     Mesh &mesh = renderer.meshes[renderer.mesh_count];
     mesh = {};
     
@@ -918,33 +1012,14 @@ static void create_cube(Renderer &renderer, MeshHandle *mesh_handle = nullptr)
     create_buffers_from_mesh(renderer, mesh, 0, true, true);
     
     assert(renderer.buffer_count + 2 < global_max_custom_buffers);
-    BufferData offset_data = {};
-    offset_data.instance_buffer_size = sizeof(math::Vec3) * 1024; 
+    register_instance_buffer(renderer, sizeof(math::Vec3) * 1024, &mesh.instance_offset_buffer_handle);
     
-    offset_data.for_instancing = true;
-    renderer.buffers[renderer.buffer_count] = offset_data;
-    mesh.instance_offset_buffer_handle = renderer.buffer_count++;
+    register_instance_buffer(renderer, sizeof(math::Rgba) * 1024, &mesh.instance_color_buffer_handle);
     
-    BufferData color_data = {};
-    color_data.instance_buffer_size = sizeof(math::Rgba) * 1024; 
+    register_instance_buffer(renderer, sizeof(math::Vec3) * 1024, &mesh.instance_rotation_buffer_handle);
     
-    color_data.for_instancing = true;
-    renderer.buffers[renderer.buffer_count] = color_data;
-    mesh.instance_color_buffer_handle = renderer.buffer_count++;
+    register_instance_buffer(renderer, sizeof(math::Vec3) * 1024, &mesh.instance_scale_buffer_handle);
     
-    BufferData rotation_data = {};
-    rotation_data.instance_buffer_size = sizeof(math::Vec3) * 1024;
-    rotation_data.for_instancing = true;
-    renderer.buffers[renderer.buffer_count] = rotation_data;
-    mesh.instance_rotation_buffer_handle = renderer.buffer_count++;
-    
-    BufferData scale_data = {};
-    scale_data.instance_buffer_size = sizeof(math::Vec3) * 1024; 
-    
-    // @Incomplete
-    scale_data.for_instancing = true;
-    renderer.buffers[renderer.buffer_count] = scale_data;
-    mesh.instance_scale_buffer_handle = renderer.buffer_count++;
 }
 
 static void create_plane(Renderer &renderer, i32 *mesh_handle)
@@ -984,33 +1059,13 @@ static void create_plane(Renderer &renderer, i32 *mesh_handle)
     create_buffers_from_mesh(renderer, mesh, 0, true, true);
     
     assert(renderer.buffer_count + 2 < global_max_custom_buffers);
-    BufferData offset_data = {};
-    offset_data.instance_buffer_size = sizeof(math::Vec3) * 1024; 
+    register_instance_buffer(renderer, sizeof(math::Vec3) * 1024, &mesh.instance_offset_buffer_handle);
     
-    offset_data.for_instancing = true;
-    renderer.buffers[renderer.buffer_count] = offset_data;
-    mesh.instance_offset_buffer_handle = renderer.buffer_count++;
+    register_instance_buffer(renderer, sizeof(math::Rgba) * 1024, &mesh.instance_color_buffer_handle);
     
-    BufferData color_data = {};
-    color_data.instance_buffer_size = sizeof(math::Rgba) * 1024; 
+    register_instance_buffer(renderer, sizeof(math::Vec3) * 1024, &mesh.instance_rotation_buffer_handle);
     
-    color_data.for_instancing = true;
-    renderer.buffers[renderer.buffer_count] = color_data;
-    mesh.instance_color_buffer_handle = renderer.buffer_count++;
-    
-    BufferData rotation_data = {};
-    rotation_data.instance_buffer_size = sizeof(math::Vec3) * 1024;
-    rotation_data.for_instancing = true;
-    renderer.buffers[renderer.buffer_count] = rotation_data;
-    mesh.instance_rotation_buffer_handle = renderer.buffer_count++;
-    
-    BufferData scale_data = {};
-    scale_data.instance_buffer_size = sizeof(math::Vec3) * 1024; 
-    
-    // @Incomplete
-    scale_data.for_instancing = true;
-    renderer.buffers[renderer.buffer_count] = scale_data;
-    mesh.instance_scale_buffer_handle = renderer.buffer_count++;
+    register_instance_buffer(renderer, sizeof(math::Vec3) * 1024, &mesh.instance_scale_buffer_handle);
 }
 
 static void create_plane(Renderer &renderer)
@@ -1048,33 +1103,13 @@ static void create_plane(Renderer &renderer)
     create_buffers_from_mesh(renderer, mesh, 0, true, true);
     
     assert(renderer.buffer_count + 2 < global_max_custom_buffers);
-    BufferData offset_data = {};
-    offset_data.instance_buffer_size = sizeof(math::Vec3) * 1024; 
+    register_instance_buffer(renderer, sizeof(math::Vec3) * 1024, &mesh.instance_offset_buffer_handle);
     
-    offset_data.for_instancing = true;
-    renderer.buffers[renderer.buffer_count] = offset_data;
-    mesh.instance_offset_buffer_handle = renderer.buffer_count++;
+    register_instance_buffer(renderer, sizeof(math::Rgba) * 1024, &mesh.instance_color_buffer_handle);
     
-    BufferData color_data = {};
-    color_data.instance_buffer_size = sizeof(math::Rgba) * 1024; 
+    register_instance_buffer(renderer, sizeof(math::Vec3) * 1024, &mesh.instance_rotation_buffer_handle);
     
-    color_data.for_instancing = true;
-    renderer.buffers[renderer.buffer_count] = color_data;
-    mesh.instance_color_buffer_handle = renderer.buffer_count++;
-    
-    BufferData rotation_data = {};
-    rotation_data.instance_buffer_size = sizeof(math::Vec3) * 1024;
-    rotation_data.for_instancing = true;
-    renderer.buffers[renderer.buffer_count] = rotation_data;
-    mesh.instance_rotation_buffer_handle = renderer.buffer_count++;
-    
-    BufferData scale_data = {};
-    scale_data.instance_buffer_size = sizeof(math::Vec3) * 1024; 
-    
-    // @Incomplete
-    scale_data.for_instancing = true;
-    renderer.buffers[renderer.buffer_count] = scale_data;
-    mesh.instance_scale_buffer_handle = renderer.buffer_count++;
+    register_instance_buffer(renderer, sizeof(math::Vec3) * 1024, &mesh.instance_scale_buffer_handle);
 }
 
 static void push_sun_light(Renderer &renderer, math::Vec3 position, math::Rgba specular_color, math::Rgba diffuse_color, math::Rgba ambient_color)
@@ -1099,17 +1134,17 @@ static void push_mesh(Renderer &renderer, MeshInfo mesh_info)
     Mesh &mesh = renderer.meshes[mesh_info.mesh_handle];
     render_command->mesh.buffer_handle = mesh.buffer_handle;
     render_command->mesh.material_type = mesh_info.material.type;
-    render_command->mesh_instanced.diffuse_color = mesh_info.material.diffuse_color;
-    render_command->mesh_instanced.specular_color = mesh_info.material.specular_color;
-    render_command->mesh_instanced.ambient_color = mesh_info.material.ambient_color;
+    render_command->mesh.diffuse_color = mesh_info.material.diffuse_color;
+    render_command->mesh.specular_color = mesh_info.material.specular_color;
+    render_command->mesh.ambient_color = mesh_info.material.ambient_color;
     render_command->mesh.diffuse_texture = mesh_info.material.diffuse_texture.handle;
     render_command->mesh.specular_texture = mesh_info.material.specular_texture.handle;
     render_command->mesh.ambient_texture = mesh_info.material.ambient_texture.handle;
-    render_command->mesh_instanced.specular_intensity_texture = mesh_info.material.specular_intensity_texture.handle;
-    render_command->mesh_instanced.specular_exponent = mesh_info.material.specular_exponent;
-    render_command->mesh_instanced.diffuse_color = mesh_info.material.diffuse_color;
-    render_command->mesh_instanced.specular_color = mesh_info.material.specular_color;
-    render_command->mesh_instanced.ambient_color = mesh_info.material.ambient_color;
+    render_command->mesh.specular_intensity_texture = mesh_info.material.specular_intensity_texture.handle;
+    render_command->mesh.specular_exponent = mesh_info.material.specular_exponent;
+    render_command->mesh.diffuse_color = mesh_info.material.diffuse_color;
+    render_command->mesh.specular_color = mesh_info.material.specular_color;
+    render_command->mesh.ambient_color = mesh_info.material.ambient_color;
     render_command->color = mesh_info.material.diffuse_color;
     render_command->cast_shadows = mesh_info.cast_shadows;
     render_command->receives_shadows = mesh_info.receives_shadows;
@@ -1140,10 +1175,12 @@ static void push_mesh_instanced(Renderer &renderer, MeshInfo mesh_info, math::Ve
     render_command->mesh_instanced.instance_color_buffer_handle = mesh_info.instance_color_buffer_handle;
     render_command->mesh_instanced.instance_rotation_buffer_handle = mesh_info.instance_rotation_buffer_handle;
     render_command->mesh_instanced.instance_scale_buffer_handle = mesh_info.instance_scale_buffer_handle;
+    
     render_command->mesh_instanced.offsets = offsets;
     render_command->mesh_instanced.colors = colors;
     render_command->mesh_instanced.rotations = rotations;
     render_command->mesh_instanced.scalings = scalings;
+    
     render_command->mesh_instanced.offset_count = offset_count; // @Incomplete: Rename this to instance_count?
     render_command->cast_shadows = mesh_info.cast_shadows;
     render_command->receives_shadows = mesh_info.receives_shadows;
@@ -1191,51 +1228,6 @@ render_command->is_ui = false;
 }
 */
 
-static void load_buffer(Renderer& renderer, r32* buffer, i32 buffer_size, i32* buffer_handle, b32 dynamic = false)
-{
-    assert(renderer.buffer_count + 1 < global_max_custom_buffers);
-    BufferData data = {};
-    data.has_normals = false;
-    data.has_uvs = false;
-    data.vertex_buffer = buffer;
-    data.vertex_buffer_size = buffer_size;
-    data.index_buffer_count = 0;
-    
-    renderer.buffers[renderer.buffer_count] = data;
-    
-    *buffer_handle = renderer.buffer_count++;
-}
-
-static void update_buffer(Renderer& renderer, r32* buffer, i32 buffer_size, i32 buffer_handle)
-{
-    BufferData data = {};
-    data.vertex_buffer = buffer;
-    data.vertex_buffer_size = buffer_size;
-    data.index_buffer_count = 0;
-    data.existing_handle = buffer_handle;
-    renderer.buffers[buffer_handle] = data;
-    renderer.updated_buffer_handles[renderer.updated_buffer_handle_count++] = buffer_handle;
-}
-
-static void update_instanced_buffer(Renderer& renderer, size_t buffer_size, i32 buffer_handle)
-{
-    BufferData data = {};
-    data.for_instancing = true;
-    data.instance_buffer_size = buffer_size;
-    data.index_buffer_count = 0;
-    renderer.buffers[buffer_handle] = data;
-}
-
-static void register_instance_buffer(Renderer& renderer, size_t buffer_size, i32* buffer_handle)
-{
-    BufferData data = {};
-    data.for_instancing = true;
-    data.instance_buffer_size = buffer_size;
-    renderer.buffers[renderer.buffer_count] = data;
-    
-    *buffer_handle = renderer.buffer_count++;
-}
-
 static i32 load_font(Renderer& renderer, char* path, i32 size, char* name)
 {
     assert(renderer.font_count + 1 < global_max_fonts);
@@ -1282,14 +1274,13 @@ static void load_material(Renderer &renderer, char *file_path, MaterialHandle *m
             index = i + 1;
         }
     }
-
+    
     auto temp_block = begin_temporary_memory(&renderer.temp_arena);
     
     char *dir = push_string(temp_block.arena, index);
     strncpy(dir, file_path, index);
     
     dir[index] = 0;
-
     FILE* mtl_file = fopen(file_path, "r");
     if(mtl_file)
     {
@@ -1377,13 +1368,13 @@ static void load_material(Renderer &renderer, char *file_path, MaterialHandle *m
         }
         
         fclose(mtl_file);
-
+        
         if(material_handle)
             *material_handle = material.source_handle;
     }
     else
         debug("Could not read %s\n", file_path);
-
+    
     end_temporary_memory(temp_block);
 }
 
@@ -1598,35 +1589,13 @@ static void load_obj(Renderer &renderer, char *file_path, MeshHandle *mesh_handl
     create_buffers_from_mesh(renderer, mesh, 0, true, true);
     
     assert(renderer.buffer_count + 2 < global_max_custom_buffers);
-    BufferData offset_data = {};
-    offset_data.instance_buffer_size = sizeof(math::Vec3) * 1024;
+    register_instance_buffer(renderer, sizeof(math::Vec3) * 1024, &mesh.instance_offset_buffer_handle);
     
-    // @Incomplete
-    offset_data.for_instancing = true;
-    renderer.buffers[renderer.buffer_count] = offset_data;
-    mesh.instance_offset_buffer_handle = renderer.buffer_count++;
+    register_instance_buffer(renderer, sizeof(math::Rgba) * 1024, &mesh.instance_color_buffer_handle);
     
-    BufferData color_data = {};
-    color_data.instance_buffer_size = sizeof(math::Rgba) * 1024; // @Incomplete
-    color_data.for_instancing = true;
-    renderer.buffers[renderer.buffer_count] = color_data;
-    mesh.instance_color_buffer_handle = renderer.buffer_count++;
+    register_instance_buffer(renderer, sizeof(math::Vec3) * 1024, &mesh.instance_rotation_buffer_handle);
     
-    BufferData rotation_data = {};
-    rotation_data.instance_buffer_size = sizeof(math::Vec3) * 1024; 
-    
-    // @Incomplete
-    rotation_data.for_instancing = true;
-    renderer.buffers[renderer.buffer_count] = rotation_data;
-    mesh.instance_rotation_buffer_handle = renderer.buffer_count++;
-    
-    BufferData scale_data = {};
-    scale_data.instance_buffer_size = sizeof(math::Vec3) * 1024; 
-    
-    // @Incomplete
-    scale_data.for_instancing = true;
-    renderer.buffers[renderer.buffer_count] = scale_data;
-    mesh.instance_scale_buffer_handle = renderer.buffer_count++;
+    register_instance_buffer(renderer, sizeof(math::Vec3) * 1024, &mesh.instance_scale_buffer_handle);
     
     if(mesh_handle)
         *mesh_handle = handle;
@@ -1649,9 +1618,7 @@ static void load_obj(Renderer &renderer, char *file_path, MeshHandle *mesh_handl
         strncpy(dir, file_path, index);
         
         dir[index] = 0;
-
 		char *material_file_path = concat(dir, mtl_file_name, &renderer.temp_arena);
-
         if(material_handle)
             load_material(renderer, material_file_path, material_handle);
         
@@ -1832,35 +1799,63 @@ static void load_obj(Renderer &renderer, char *file_path, MeshInfo &mesh_info, b
     if(with_instancing)
     {
         assert(renderer.buffer_count + 2 < global_max_custom_buffers);
-        BufferData offset_data = {};
-        offset_data.instance_buffer_size = sizeof(math::Vec3) * 1024;
+        register_instance_buffer(renderer, sizeof(math::Vec3) * 1024, &mesh.instance_offset_buffer_handle);
         
-        // @Incomplete
-        offset_data.for_instancing = true;
-        renderer.buffers[renderer.buffer_count] = offset_data;
-        mesh_info.instance_offset_buffer_handle = renderer.buffer_count++;
+        register_instance_buffer(renderer, sizeof(math::Rgba) * 1024, &mesh.instance_color_buffer_handle);
         
-        BufferData color_data = {};
-        color_data.instance_buffer_size = sizeof(math::Rgba) * 1024; // @Incomplete
-        color_data.for_instancing = true;
-        renderer.buffers[renderer.buffer_count] = color_data;
-        mesh_info.instance_color_buffer_handle = renderer.buffer_count++;
+        register_instance_buffer(renderer, sizeof(math::Vec3) * 1024, &mesh.instance_rotation_buffer_handle);
         
-        BufferData rotation_data = {};
-        rotation_data.instance_buffer_size = sizeof(math::Vec3) * 1024; 
-        
-        // @Incomplete
-        rotation_data.for_instancing = true;
-        renderer.buffers[renderer.buffer_count] = rotation_data;
-        mesh_info.instance_rotation_buffer_handle = renderer.buffer_count++;
-        
-        BufferData scale_data = {};
-        scale_data.instance_buffer_size = sizeof(math::Vec3) * 1024; 
-        
-        // @Incomplete
-        scale_data.for_instancing = true;
-        renderer.buffers[renderer.buffer_count] = scale_data;
-        mesh.instance_scale_buffer_handle = renderer.buffer_count++;
+        register_instance_buffer(renderer, sizeof(math::Vec3) * 1024, &mesh.instance_scale_buffer_handle);
+    }
+}
+
+static void push_particle_system(Renderer &renderer, ParticleSystemInfo &particle_info, i32 handle,  CommandBlendMode blend_mode = CBM_ONE_MINUS_SRC_ALPHA)
+{
+    renderer.command_count++;
+    RenderCommand* render_command = &renderer.commands[renderer.command_count++];
+    render_command->shader_handle = -1;
+    render_command->particles.handle = handle;
+    
+    render_command->type = RENDER_COMMAND_PARTICLES;
+    render_command->position = particle_info.transform.position;
+    
+    // @Incomplete(Niels): 
+    //render_command->rotation = mesh_info.transform.rotation;
+    
+    // @Incomplete
+    //render_command->particles.buffer_handle = particle_info.buffer_handle;
+    render_command->particles.offset_buffer_handle = particle_info.offset_buffer_handle;
+    render_command->particles.color_buffer_handle = particle_info.color_buffer_handle;
+    render_command->particles.size_buffer_handle = particle_info.size_buffer_handle;
+    render_command->particles.particle_count = particle_info.particle_count;
+    
+    render_command->particles.offsets = particle_info.offsets;
+    render_command->particles.colors = particle_info.colors;
+    render_command->particles.sizes = particle_info.sizes;
+    
+    render_command->particles.diffuse_texture = particle_info.attributes.texture_handle;
+    render_command->particles.blend_mode = blend_mode;
+}
+
+static void push_particle_system(Renderer &renderer, ParticleSystemHandle handle)
+{
+    i32 _internal_handle = renderer.particles._internal_handles[handle.handle];
+    
+    if(_internal_handle != -1)
+    {
+        ParticleSystemInfo &particle_info = renderer.particles.particle_systems[_internal_handle];
+        push_particle_system(renderer, particle_info, handle.handle);
+    }
+}
+
+static void push_particle_system(Renderer &renderer, i32 particle_system_handle)
+{
+    i32 _internal_handle = renderer.particles._internal_handles[particle_system_handle];
+    
+    if(_internal_handle != -1)
+    {
+        ParticleSystemInfo &particle_info = renderer.particles.particle_systems[_internal_handle];
+        push_particle_system(renderer, particle_info, particle_system_handle);
     }
 }
 
@@ -1871,6 +1866,9 @@ static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer, ma
     
     InstancedRenderCommand instanced_commands[MAX_INSTANCING_PAIRS];
     i32 command_count = 0;
+
+    i32 particles_to_push[64];
+    i32 particles_count = 0;
     
     for(i32 i = 0; i < 128; i++)
     {
@@ -1881,33 +1879,35 @@ static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer, ma
     {
         const scene::Entity &ent = scene.entities[ent_index];
         
-        if(scene.active_entities[ent_index])
+        if (scene.active_entities[ent_index])
         {
-	    scene::TransformComponent &transform = scene.transform_components[ent.transform_handle.handle];
-
-	    // Create a copy of the position, rotation and scale since we don't want the parents transform to change the child's transform. Only when rendering.
-	    math::Vec3 position = transform.position;
-	    math::Vec3 rotation = transform.rotation;
-	    math::Vec3 scale = transform.scale;
-
-	    if(ent.comp_flags & scene::COMP_RENDER)
+            scene::TransformComponent &transform = scene.transform_components[ent.transform_handle.handle];
+            
+            // Create a copy of the position, rotation and scale since we don't want the parents transform to change the child's transform. Only when rendering.
+            math::Vec3 position = transform.position;
+            math::Vec3 rotation = transform.rotation;
+            math::Vec3 scale = transform.scale;
+            
+            i32 command_index = -1;
+            
+            if (ent.comp_flags & scene::COMP_RENDER)
             {
                 scene::RenderComponent &render = scene.render_components[ent.render_handle.handle];
                 
                 Material material = scene.material_instances[render.material_handle.handle];
                 
                 // Instancing stuff
-                i32 command_index = -1;
-                for(i32 i = 0; i < command_count; i++)
+                
+                for (i32 i = 0; i < command_count; i++)
                 {
-                    if(instanced_commands[i].mesh_handle == render.mesh_handle.handle && instanced_commands[i].original_material_handle == material.source_handle.handle)
+                    if (instanced_commands[i].mesh_handle == render.mesh_handle.handle && instanced_commands[i].original_material_handle == material.source_handle.handle)
                     {
                         command_index = i;
                         break;
                     }
                 }
                 
-                if(command_index == -1)
+                if (command_index == -1)
                 {
                     command_index = command_count++;
                     instanced_commands[command_index].mesh_handle = render.mesh_handle.handle;
@@ -1919,14 +1919,14 @@ static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer, ma
                 }
                 
                 InstancedRenderCommand &command = instanced_commands[command_index];
-
-		if(IS_COMP_HANDLE_VALID(transform.parent_handle))
-		{
-		    scene::TransformComponent &parent_transform = scene.transform_components[transform.parent_handle.handle];
-		    position += parent_transform.position;
-		    rotation += parent_transform.rotation;
-		    scale *= parent_transform.scale;
-		}
+                
+                if(IS_COMP_HANDLE_VALID(transform.parent_handle))
+                {
+                    scene::TransformComponent &parent_transform = scene.transform_components[transform.parent_handle.handle];
+                    position += parent_transform.position;
+                    rotation += parent_transform.rotation;
+                    scale *= parent_transform.scale;
+                }
 				
                 positions[command_index * 1024 + command.count] = position;
                 rotations[command_index * 1024 + command.count] = rotation * DEGREE_IN_RADIANS;
@@ -1937,32 +1937,60 @@ static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer, ma
                 assert(command_index < MAX_INSTANCING_PAIRS);
             }
             
+            if(command_index != -1)
+            {
+                InstancedRenderCommand& command = instanced_commands[command_index];
+		command.particle_systems[command.count - 1] = -1;
+                command.has_particles = false;
+            }
+            
             if(ent.comp_flags & scene::COMP_PARTICLES)
             {
                 if(ent.particle_system_handle.handle != -1)
                 {
                     scene::ParticleSystemComponent &ps = scene.particle_system_components[ent.particle_system_handle.handle];
                     
+                    i32 _internal_handle = renderer.particles._internal_handles[ps.handle.handle - 1];
+                    ParticleSystemInfo& system = renderer.particles.particle_systems[_internal_handle];
+                    
+                    system.transform.position = system.attributes.base_position;
+                    
                     if(ent.comp_flags & scene::COMP_TRANSFORM)
                     {
                         // Add transform stuff
-                        i32 _internal_handle = renderer.particles._internal_handles[ps.handle.handle - 1];
-                        ParticleSystemInfo& system = renderer.particles.particle_systems[_internal_handle];
+                        scene::TransformComponent &transform =  scene.transform_components[ent.transform_handle.handle];
                         
-                        scene::TransformComponent &transform = scene.transform_components[ent.transform_handle.handle];
-                        
-                        system.transform.position = position;
+                        system.transform.position += position;
                         system.transform.scale = scale;
                         system.transform.rotation = rotation;
                     }
+
+                    if(system.running)
+                    {
+                        if(command_index != -1)
+                        {
+                            InstancedRenderCommand& command = instanced_commands[command_index];
+                            command.particle_systems[command.count - 1] = ps.handle.handle;
+                            command.has_particles = true;
+                        }
+                        else
+                        {
+			    particles_to_push[particles_count++] = ps.handle.handle;
+                            // push_particle_system(renderer, system, ps.handle.handle); 
+                        }
+                    }
                 }
+                
+                
             }
         }
     }
     
-    for(i32 command_index = 0; command_index < command_count; command_index++)
+    i32 particle_index = 0;
+    
+    for(i32 com_index = 0; com_index < command_count; com_index++)
     {
-        InstancedRenderCommand command = instanced_commands[command_index];
+        InstancedRenderCommand command = instanced_commands[com_index];
         Material material = scene.material_instances[command.material_handle];
         MeshInfo mesh_info = {};
         mesh_info.transform.scale = command.scale;
@@ -1975,6 +2003,24 @@ static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer, ma
         mesh_info.mesh_handle = command.mesh_handle;
         mesh_info.receives_shadows = command.receives_shadows;
         mesh_info.cast_shadows = command.cast_shadows;
-        push_mesh_instanced(renderer, mesh_info, &positions[command_index * 1024], &colors[command_index * 1024], &rotations[command_index * 1024], &scalings[command_index * 1024], command.count);
+        push_mesh_instanced(renderer, mesh_info, &positions[com_index * 1024], &colors[com_index * 1024], &rotations[com_index * 1024], &scalings[com_index * 1024], command.count);
+        
+	for(i32 i = 0; i < command.count; i++)
+	{
+	    i32 h = command.particle_systems[i];
+	    if(h != -1)
+	    {
+		i32 _internal_handle = renderer.particles._internal_handles[h - 1];
+		ParticleSystemInfo& system = renderer.particles.particle_systems[_internal_handle];
+		push_particle_system(renderer, system, h);		    
+	    }
+	}
+    }
+
+    for(i32 i = 0; i < particles_count; i++)
+    {
+	i32 _internal_handle = renderer.particles._internal_handles[particles_to_push[i] - 1];
+	ParticleSystemInfo& system = renderer.particles.particle_systems[_internal_handle];
+	push_particle_system(renderer, system, particles_to_push[i]);
     }
 }

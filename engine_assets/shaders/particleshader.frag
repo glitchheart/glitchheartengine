@@ -16,10 +16,13 @@ void main()
 		if(color.a == 0.0)
 			discard;
 		else
-	    	outColor = color * fs_color; 
+		    	outColor = color * fs_color; 
 	}
 	else
 	{
-	    outColor = fs_color;
+	    if(fs_color.a == 0.0)
+		discard;
+	    else
+		outColor = fs_color;
 	}
 }
