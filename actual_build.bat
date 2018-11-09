@@ -19,8 +19,6 @@ set CommonCompilerFlags=/MD /arch:AVX -std:c++latest -fp:fast -fp:except- -nolog
 set CommonLinkerFlags= Comdlg32.lib Ole32.lib kernel32.lib user32.lib gdi32.lib winmm.lib opengl32.lib shell32.lib Ws2_32.lib Wldap32.lib Crypt32.lib Normaliz.lib Advapi32.lib ..\libs\libcurl\win\libcurl_a.lib ..\libs\glfw\lib-vc2015\glfw3.lib ..\libs\glad\glad.obj ..\libs\fmod\lib\fmod64_vc.lib %AnalyticsDeps%\curl\lib\win64\vc140_x64_release\libcurl.lib %AnalyticsDeps%\openssl\1.0.2h\libs\win64\vc140_x64_release\libeay32.lib %AnalyticsDeps%\openssl\1.0.2h\libs\win64\vc140_x64_release\ssleay32.lib %AnalyticsPath%\win64-vc140-static\Release\GameAnalytics.lib
 set ExtraLinkerFlags=/NODEFAULTLIB:"LIBCMT" -incremental:no -opt:ref /ignore:4099
 
-REM IF %DEBUG% EQU 0 set ExtraLinkerFlags = %ExtraLinkerFlags% /subsystem:windows /entry:mainCRTStartup
-
 IF NOT EXIST build mkdir build
 pushd build
 
