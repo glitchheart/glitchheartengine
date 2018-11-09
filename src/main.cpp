@@ -310,11 +310,15 @@ static void init_renderer(Renderer &renderer)
     renderer.pixels_per_unit = global_pixels_per_unit;
     renderer.frame_lock = 0;
     
+    renderer.particles = {};
+    
     renderer.particles._max_particle_system_count = global_max_particle_systems;
     
     renderer.particles.particle_systems = push_array(&renderer. particle_arena, global_max_particle_systems, ParticleSystemInfo);
     renderer.particles._internal_handles = push_array(&renderer. particle_arena, global_max_particle_systems, i32);
-    
+    renderer.particles._tagged_removed = push_array(&renderer. particle_arena, global_max_particle_systems, i32);
+    renderer.particles._tagged_removed_count = 0;
+    renderer.particles.entropy = random_seed(1234);
     
     for(i32 index = 0; index < global_max_particle_systems; index++)
     {
@@ -338,6 +342,13 @@ static void init_renderer(Renderer &renderer)
     renderer.shader_data = push_array(&renderer.shader_arena, global_max_shaders, ShaderData);
     renderer.fonts = push_array(&renderer.font_arena, global_max_fonts, FontData);
     renderer.tt_font_infos = push_array(&renderer.font_arena, global_max_fonts, TrueTypeFontInfo);
+    renderer._internal_buffer_handles = push_array(&renderer.buffer_arena, global_max_custom_buffers, i32);
+    renderer._current_internal_buffer_handle = 0;
+    for(i32 index = 0; index < global_max_custom_buffers; index++)
+    {
+        renderer._internal_buffer_handles[index] = -1;
+    }
+    renderer.removed_buffer_handles = push_array(&renderer.buffer_arena, global_max_custom_buffers, i32);
 }
 
 void process_analytics_events(AnalyticsEventState &analytics_state, WorkQueue *queue)
@@ -588,6 +599,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             first_load = false;
         }
 #endif
+        
 
         frames++;
         r64 end_counter = get_time();

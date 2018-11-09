@@ -38,7 +38,7 @@ static void show_mouse_cursor(RenderState& render_state, b32 show)
 #define error_gl() _error_gl(__LINE__, __FILE__)
 void _error_gl(i32 line, const char* file)
 {
-    auto err = glGetError();
+    GLenum  err = glGetError();
     switch(err)
     {
         case GL_INVALID_ENUM:
@@ -170,7 +170,7 @@ static GLint shader_compilation_error_checking(MemoryArena* arena,const char* sh
     glGetShaderiv(shader, GL_COMPILE_STATUS, &is_compiled);
     if (!is_compiled)
     {
-        auto temp_mem = begin_temporary_memory(arena);
+        TemporaryMemory temp_mem = begin_temporary_memory(arena);
         GLint max_length = 0;
         glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &max_length);
         
@@ -194,7 +194,7 @@ static GLint shader_link_error_checking(MemoryArena* arena, const char* program_
     glGetProgramiv(program, GL_LINK_STATUS, &is_linked);
     if (!is_linked)
     {
-        auto temp_mem = begin_temporary_memory(arena);
+        TemporaryMemory temp_mem = begin_temporary_memory(arena);
         GLint max_length = 0;
         glGetProgramiv(program, GL_INFO_LOG_LENGTH, &max_length);
         
@@ -220,7 +220,7 @@ static GLuint load_extra_shader(MemoryArena* arena, ShaderData& shader_data, Ren
     glShaderSource(shader->vertex_shader, 1, &shader_data.vertex_shader_content, nullptr);
     glCompileShader(shader->vertex_shader);
     
-    auto temp_mem = begin_temporary_memory(arena);
+    TemporaryMemory temp_mem = begin_temporary_memory(arena);
     if (!shader_compilation_error_checking(arena, concat(shader_data.name, ".vert", arena), shader->vertex_shader))
     {
         end_temporary_memory(temp_mem);
@@ -252,7 +252,7 @@ static GLuint load_extra_shader(MemoryArena* arena, ShaderData& shader_data, Ren
 
 static GLuint load_shader(const char* file_path, Shader *shd, MemoryArena *arena)
 {
-    auto temp_mem = begin_temporary_memory(arena);
+    TemporaryMemory temp_mem = begin_temporary_memory(arena);
     shd->vertex_shader = glCreateShader(GL_VERTEX_SHADER);
     char* vertex_string = concat(file_path, ".vert", arena);
     GLchar *vertex_text = load_shader_from_file(vertex_string, arena);
@@ -323,7 +323,7 @@ static GLuint load_shader(const char* file_path, Shader *shd, MemoryArena *arena
 
 static GLuint load_vertex_shader(const char* file_path, Shader *shd, MemoryArena* arena)
 {
-    auto temp_mem = begin_temporary_memory(arena);
+    TemporaryMemory temp_mem = begin_temporary_memory(arena);
     shd->program = glCreateProgram();
     
     shd->vertex_shader = glCreateShader(GL_VERTEX_SHADER);
@@ -356,7 +356,7 @@ static GLuint load_fragment_shader(const char* file_path, Shader *shd, MemoryAre
     shd->program = glCreateProgram();
     shd->fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
     
-    auto temp_mem = begin_temporary_memory(arena);
+    TemporaryMemory temp_mem = begin_temporary_memory(arena);
     char* fragment_string = concat(file_path, ".frag", arena);
     
     GLchar *fragment_text = load_shader_from_file(fragment_string, arena);
@@ -387,7 +387,7 @@ static GLuint load_geometry_shader(const char* file_path, Shader* shd, MemoryAre
     shd->program = glCreateProgram();
     shd->geometry_shader = glCreateShader(GL_GEOMETRY_SHADER);
     
-    auto temp_mem = begin_temporary_memory(arena);
+    TemporaryMemory temp_mem = begin_temporary_memory(arena);
     char* geometry_string = concat(file_path, ".geom", arena);
     
     GLchar* geometry_text = load_shader_from_file(geometry_string, arena);
@@ -524,6 +524,13 @@ static void register_instance_buffer(RenderState &render_state, BufferData &buff
     Buffer* buffer = &render_state.buffers[buffer_handle == -1 ? render_state.buffer_count : buffer_handle];
     *buffer = {};
     
+	if (buffer->vao == 0)
+	{
+		glGenVertexArrays(1, &buffer->vao);
+	}
+    
+	glBindVertexArray(buffer->vao);
+    
     // @Incomplete: Particles
     if(buffer->vbo == 0)
     {
@@ -564,8 +571,8 @@ static void register_vertex_buffer(RenderState& render_state, GLfloat* buffer_da
     else
         use_shader(render_state.shaders[shader_type]);
     
-    auto position_location = (GLuint)glGetAttribLocation(render_state.texture_quad_shader.program, "pos");
-    auto texcoord_location = (GLuint)glGetAttribLocation(render_state.texture_quad_shader.program, "texcoord");
+    GLuint position_location = (GLuint)glGetAttribLocation(render_state.texture_quad_shader.program, "pos");
+    GLuint texcoord_location = (GLuint)glGetAttribLocation(render_state.texture_quad_shader.program, "texcoord");
     
     vertex_attrib_pointer(position_location, 2, GL_FLOAT, 4 * sizeof(float), nullptr);
     vertex_attrib_pointer(texcoord_location, 2, GL_FLOAT, 4 * sizeof(float), (void *)(2 * sizeof(float)));
@@ -900,6 +907,7 @@ static void render_setup(RenderState *render_state, MemoryArena *perm_arena)
     shader.uniform_locations.diffuse_color = glGetUniformLocation(shader.program, "color");
     shader.uniform_locations.font.alpha_color = glGetUniformLocation(shader.program, "alphaColor");
     shader.uniform_locations.font.z = glGetUniformLocation(shader.program, "z");
+    
 
     render_state->text_3d_shader.type = SHADER_3D_TEXT;
     load_shader(shader_paths[SHADER_3D_TEXT], &render_state->text_3d_shader, render_state->perm_arena);
@@ -1239,7 +1247,7 @@ static void initialize_opengl(RenderState& render_state, Renderer& renderer, r32
     
     gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
     
-    glfwSwapInterval(1);
+    glfwSwapInterval(0);
     
     glfwGetFramebufferSize(render_state.window, &render_state.framebuffer_width, &render_state.framebuffer_height);
     glViewport(0, 0, render_state.framebuffer_width, render_state.framebuffer_height);
@@ -1836,7 +1844,7 @@ static void render_text(RenderState &render_state, GLFontBuffer &font, TrueTypeF
     glBindVertexArray(font.vao);
     auto shader = render_state.shaders[SHADER_STANDARD_FONT];
     use_shader(shader);
-
+    
     auto uniform_locations = shader.uniform_locations;
     
     set_mat4_uniform(shader.program, uniform_locations.projection_matrix, projection_matrix);
@@ -1851,7 +1859,6 @@ static void render_text(RenderState &render_state, GLFontBuffer &font, TrueTypeF
     }
     
     CharacterData* coords = render_state.character_buffer;
-    
     i32 n = 0;
     
     // @Speed: The call to get_text_size() will loop throught the text, which means we'll loop through it twice per render-call
@@ -2227,7 +2234,9 @@ static void prepare_shader(const Shader shader, ShaderAttribute *attributes, i32
 
 static void render_mesh(const RenderCommand &render_command, Renderer &renderer, RenderState &render_state, math::Mat4 projection_matrix, math::Mat4 view_matrix, b32 for_shadow_map, ShadowMapMatrices *shadow_map_matrices = nullptr)
 {
-    Buffer buffer = render_state.buffers[render_command.mesh.buffer_handle];
+    i32 _internal_buffer_handle = renderer._internal_buffer_handles[render_command.mesh.buffer_handle - 1];
+    
+    Buffer buffer = render_state.buffers[_internal_buffer_handle];
     glBindVertexArray(buffer.vao);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer.ibo);
     glBindBuffer(GL_ARRAY_BUFFER, buffer.vbo);
@@ -2273,7 +2282,7 @@ static void render_mesh(const RenderCommand &render_command, Renderer &renderer,
         glUniform1i(glGetUniformLocation(shader.program, "specularIntensityTexture"),  3);
         glUniform1i(glGetUniformLocation(shader.program, "shadowMap"),  4);
         
-        if(render_command.mesh_instanced.diffuse_texture != 0)
+        if(render_command.mesh.diffuse_texture != 0)
         {
             auto texture = render_state.texture_array[renderer.texture_data[render_command.mesh.diffuse_texture - 1].handle];
             
@@ -2285,7 +2294,7 @@ static void render_mesh(const RenderCommand &render_command, Renderer &renderer,
         else
             set_bool_uniform(shader.program, "hasTexture", false);
         
-        if(render_command.mesh_instanced.specular_texture != 0)
+        if(render_command.mesh.specular_texture != 0)
         {
             auto texture = render_state.texture_array[renderer.texture_data[render_command.mesh.specular_texture - 1].handle];
             
@@ -2299,7 +2308,7 @@ static void render_mesh(const RenderCommand &render_command, Renderer &renderer,
             set_bool_uniform(shader.program, "hasSpecular", false);
         }
         
-        if(render_command.mesh_instanced.ambient_texture != 0)
+        if(render_command.mesh.ambient_texture != 0)
         {
             auto texture = render_state.texture_array[renderer.texture_data[render_command.mesh.ambient_texture - 1].handle];
             
@@ -2314,9 +2323,9 @@ static void render_mesh(const RenderCommand &render_command, Renderer &renderer,
         }
         
         glActiveTexture(GL_TEXTURE3);
-        if(render_command.mesh_instanced.specular_intensity_texture != 0)
+        if(render_command.mesh.specular_intensity_texture != 0)
         {
-            auto texture = render_state.texture_array[renderer.texture_data[render_command.mesh_instanced.specular_intensity_texture - 1].handle];
+            auto texture = render_state.texture_array[renderer.texture_data[render_command.mesh.specular_intensity_texture - 1].handle];
             
             glBindTexture(GL_TEXTURE_2D, texture.texture_handle);
             
@@ -2388,16 +2397,24 @@ static void render_mesh(const RenderCommand &render_command, Renderer &renderer,
     }
     
     glActiveTexture(GL_TEXTURE0);
+    
+    glBindVertexArray(0);
 }
-
 
 static void render_mesh_instanced(const RenderCommand &render_command, Renderer &renderer, RenderState &render_state, math::Mat4 projection_matrix, math::Mat4 view_matrix, b32 for_shadow_map, ShadowMapMatrices *shadow_map_matrices = nullptr)
 {
-    Buffer buffer = render_state.buffers[render_command.mesh_instanced.buffer_handle];
-    Buffer offset_instance_buffer = render_state.buffers[render_command.mesh_instanced.instance_offset_buffer_handle];
-    Buffer color_instance_buffer = render_state.buffers[render_command.mesh_instanced.instance_color_buffer_handle];
-    Buffer rotation_instance_buffer = render_state.buffers[render_command.mesh_instanced.instance_rotation_buffer_handle];
-    Buffer scale_instance_buffer = render_state.buffers[render_command.mesh_instanced.instance_scale_buffer_handle];
+    i32 _internal_buffer_handle = renderer._internal_buffer_handles[render_command.mesh_instanced.buffer_handle - 1];
+    
+    i32 _internal_offset_buffer_handle = renderer._internal_buffer_handles[render_command.mesh_instanced.instance_offset_buffer_handle - 1];
+    i32 _internal_color_buffer_handle = renderer._internal_buffer_handles[render_command.mesh_instanced.instance_color_buffer_handle - 1];
+    i32 _internal_rotation_buffer_handle = renderer._internal_buffer_handles[render_command.mesh_instanced.instance_rotation_buffer_handle - 1];
+    i32 _internal_scale_buffer_handle = renderer._internal_buffer_handles[render_command.mesh_instanced.instance_scale_buffer_handle - 1];
+    
+    Buffer buffer = render_state.buffers[_internal_buffer_handle];
+    Buffer offset_instance_buffer = render_state.buffers[_internal_offset_buffer_handle];
+    Buffer color_instance_buffer = render_state.buffers[_internal_color_buffer_handle];
+    Buffer rotation_instance_buffer = render_state.buffers[_internal_rotation_buffer_handle];
+    Buffer scale_instance_buffer = render_state.buffers[_internal_scale_buffer_handle];
     
     glBindVertexArray(buffer.vao);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer.ibo);
@@ -2415,45 +2432,45 @@ static void render_mesh_instanced(const RenderCommand &render_command, Renderer 
     }
     
     glEnableVertexAttribArray(0);
-    vertex_attrib_pointer(0, 3, GL_FLOAT,(8 * sizeof(GLfloat)), nullptr);
+	vertex_attrib_pointer(0, 3, GL_FLOAT,(8 * sizeof(GLfloat)), nullptr);
     
     glEnableVertexAttribArray(1);
-    vertex_attrib_pointer(1, 3, GL_FLOAT, (8 * sizeof(GLfloat)), (void*)(3 * sizeof(GLfloat)));
+	vertex_attrib_pointer(1, 3, GL_FLOAT, (8 * sizeof(GLfloat)), (void*)(3 * sizeof(GLfloat)));
     
     glEnableVertexAttribArray(2);
-    vertex_attrib_pointer(2, 2, GL_FLOAT, (8 * sizeof(GLfloat)), (void*)(6 * sizeof(GLfloat)));
+	vertex_attrib_pointer(2, 2, GL_FLOAT, (8 * sizeof(GLfloat)), (void*)(6 * sizeof(GLfloat)));
     
     // offset
     glEnableVertexAttribArray(3);
-    glBindBuffer(GL_ARRAY_BUFFER, offset_instance_buffer.vbo);
-    glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizeiptr)(sizeof(math::Vec3) * render_command.mesh_instanced.offset_count), render_command.mesh_instanced.offsets);
+	glBindBuffer(GL_ARRAY_BUFFER, offset_instance_buffer.vbo);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizeiptr)(sizeof(math::Vec3) * render_command.mesh_instanced.offset_count), render_command.mesh_instanced.offsets);
     
     glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 0, (void*)nullptr);
-    glVertexAttribDivisor(3, 1);
+	glVertexAttribDivisor(3, 1);
     
     // color
     glEnableVertexAttribArray(4);
-    glBindBuffer(GL_ARRAY_BUFFER, color_instance_buffer.vbo);
-    glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizeiptr)(sizeof(math::Rgba) * render_command.mesh_instanced.offset_count), render_command.mesh_instanced.colors);
+	glBindBuffer(GL_ARRAY_BUFFER, color_instance_buffer.vbo);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizeiptr)(sizeof(math::Rgba) * render_command.mesh_instanced.offset_count), render_command.mesh_instanced.colors);
     
     glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, 0, (void*)nullptr);
-    glVertexAttribDivisor(4, 1);
+	glVertexAttribDivisor(4, 1);
     
     // rotation
     glEnableVertexAttribArray(5);
-    glBindBuffer(GL_ARRAY_BUFFER, rotation_instance_buffer.vbo);
-    glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizeiptr)(sizeof(math::Vec3) * render_command.mesh_instanced.offset_count), render_command.mesh_instanced.rotations);
+	glBindBuffer(GL_ARRAY_BUFFER, rotation_instance_buffer.vbo);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizeiptr)(sizeof(math::Vec3) * render_command.mesh_instanced.offset_count), render_command.mesh_instanced.rotations);
     
     glVertexAttribPointer(5, 3, GL_FLOAT, GL_FALSE, 0, (void*)nullptr);
-    glVertexAttribDivisor(5, 1);
+	glVertexAttribDivisor(5, 1);
     
     // scale
     glEnableVertexAttribArray(6);
-    glBindBuffer(GL_ARRAY_BUFFER, scale_instance_buffer.vbo);
-    glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizeiptr)(sizeof(math::Vec3) * render_command.mesh_instanced.offset_count), render_command.mesh_instanced.scalings);
+	glBindBuffer(GL_ARRAY_BUFFER, scale_instance_buffer.vbo);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizeiptr)(sizeof(math::Vec3) * render_command.mesh_instanced.offset_count), render_command.mesh_instanced.scalings);
     
     glVertexAttribPointer(6, 3, GL_FLOAT, GL_FALSE, 0, (void*)nullptr);
-    glVertexAttribDivisor(6, 1);
+	glVertexAttribDivisor(6, 1);
     
     math::Mat4 model_matrix(1.0f);
     model_matrix = math::scale(model_matrix, render_command.scale);
@@ -2463,7 +2480,7 @@ static void render_mesh_instanced(const RenderCommand &render_command, Renderer 
     auto y_axis = rotation.y > 0.0f ? 1.0f : 0.0f;
     auto z_axis = rotation.z > 0.0f ? 1.0f : 0.0f;
     
-    auto orientation = math::Quat();
+    math::Quat orientation = math::Quat();
     orientation = math::rotate(orientation, rotation.x, math::Vec3(x_axis, 0.0f, 0.0f));
     orientation = math::rotate(orientation, rotation.y, math::Vec3(0.0f, y_axis, 0.0f));
     orientation = math::rotate(orientation, rotation.z, math::Vec3(0.0f, 0.0f, z_axis));
@@ -2473,8 +2490,8 @@ static void render_mesh_instanced(const RenderCommand &render_command, Renderer 
     model_matrix = math::translate(model_matrix, render_command.position);
     
     set_mat4_uniform(shader.program, "projectionMatrix", projection_matrix);
-    set_mat4_uniform(shader.program, "viewMatrix", view_matrix);
-    set_mat4_uniform(shader.program, "modelMatrix", model_matrix);
+	set_mat4_uniform(shader.program, "viewMatrix", view_matrix);
+	set_mat4_uniform(shader.program, "modelMatrix", model_matrix);
     
     if(!for_shadow_map)
     {
@@ -2597,21 +2614,40 @@ static void render_mesh_instanced(const RenderCommand &render_command, Renderer 
     }
     
     glDrawElementsInstanced(GL_TRIANGLES, buffer.index_buffer_count, GL_UNSIGNED_SHORT, (void*)nullptr, render_command.mesh_instanced.offset_count);
-    
-    glActiveTexture(GL_TEXTURE0);
+	
+	glActiveTexture(GL_TEXTURE0);
+	glBindVertexArray(0);
 }
 
-static void render_particles(const RenderCommand &render_command, Renderer &renderer, RenderState &render_state, math::Mat4 projection_matrix, math::Mat4 view_matrix)
+static void render_particles(RenderCommand &render_command, Renderer &renderer, RenderState &render_state, math::Mat4 projection_matrix, math::Mat4 view_matrix)
 {
+    for(i32 i = 0; i < renderer.particles._tagged_removed_count; i++)
+    {
+        if(renderer.particles._tagged_removed[i] == render_command.particles.handle)
+        {
+            return;
+        }
+    }
+    
     if(render_command.particles.blend_mode == CBM_ONE)
     {
         glBlendFunc(GL_SRC_ALPHA, GL_ONE);
     }
+    
     glDepthMask(GL_FALSE);
     
-    Buffer offset_buffer = render_state.buffers[render_command.particles.offset_buffer_handle];
-    Buffer color_buffer = render_state.buffers[render_command.particles.color_buffer_handle];
-    Buffer size_buffer = render_state.buffers[render_command.particles.size_buffer_handle];
+    i32 _internal_offset_handle = renderer._internal_buffer_handles[render_command.particles.offset_buffer_handle - 1];
+    i32 _internal_color_handle = renderer._internal_buffer_handles[render_command.particles.color_buffer_handle - 1];
+    i32 _internal_size_handle = renderer._internal_buffer_handles[render_command.particles.size_buffer_handle - 1];
+    
+    if(_internal_offset_handle == -1 || _internal_color_handle == -1 || _internal_size_handle == -1)
+    {
+        return;
+    }
+    
+    Buffer offset_buffer = render_state.buffers[_internal_offset_handle];
+    Buffer color_buffer = render_state.buffers[_internal_color_handle];
+    Buffer size_buffer = render_state.buffers[_internal_size_handle];
     
     glBindVertexArray(render_state.billboard_vao);
     glBindBuffer(GL_ARRAY_BUFFER, render_state.billboard_vbo);
@@ -2670,9 +2706,10 @@ static void render_particles(const RenderCommand &render_command, Renderer &rend
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
 
-static void render_buffer(const RenderCommand& command, RenderState& render_state, math::Mat4 projection, math::Mat4 view)
+static void render_buffer(const RenderCommand& command, RenderState& render_state, Renderer& renderer, math::Mat4 projection, math::Mat4 view)
 {
-    Buffer buffer = render_state.buffers[command.buffer.buffer_handle];
+    i32 _internal_handle = renderer._internal_buffer_handles[command.buffer.buffer_handle - 1];
+    Buffer buffer = render_state.buffers[_internal_handle];
     
     glBindVertexArray(buffer.vao);
     u32 texture_handle = command.buffer.texture_handle != -1 ? render_state.texture_array[command.buffer.texture_handle].texture_handle : 0;
@@ -2719,6 +2756,66 @@ static void render_buffer(const RenderCommand& command, RenderState& render_stat
     glBindVertexArray(0);
 }
 
+static void unregister_buffers(RenderState& render_state, Renderer& renderer)
+{
+    GLuint vbos[global_max_custom_buffers];
+    i32 vbo_count = 0;
+    
+    GLuint ibos[global_max_custom_buffers];
+    i32 ibo_count = 0;
+    
+    GLuint vaos[global_max_custom_buffers];
+    i32 vao_count = 0;
+    
+    for(i32 index = 0; index < renderer.removed_buffer_handle_count; index++)
+    {
+        i32 external_handle = renderer.removed_buffer_handles[index];
+        i32 removed_buffer_handle = renderer._internal_buffer_handles[external_handle - 1];
+        
+        BufferData& data = renderer.buffers[removed_buffer_handle];
+        
+        vaos[vao_count++] = render_state.buffers[removed_buffer_handle].vao;
+        vbos[vbo_count++] = render_state.buffers[removed_buffer_handle].vbo;
+        render_state.buffers[removed_buffer_handle].vao = 0;
+        render_state.buffers[removed_buffer_handle].vbo = 0;
+        
+        if(data.index_buffer_size != 0)
+        {
+            ibos[vbo_count++] = render_state.buffers[removed_buffer_handle].ibo;
+            render_state.buffers[removed_buffer_handle].ibo = 0;
+        }
+        
+        data = {};
+    }
+    
+    glDeleteBuffers(vbo_count, vbos);
+    glDeleteVertexArrays(vao_count, vaos);
+    glDeleteBuffers(ibo_count, ibos);
+    
+    for(i32 index = 0; index < renderer.removed_buffer_handle_count; index++)
+    {
+        i32 external_handle = renderer.removed_buffer_handles[index];
+        i32 removed_buffer_handle = renderer._internal_buffer_handles[external_handle - 1];
+        
+        render_state.buffers[removed_buffer_handle] = render_state.buffers[render_state.buffer_count - 1];
+        render_state.buffer_count--;
+        
+        renderer.buffers[removed_buffer_handle] = renderer.buffers[renderer.buffer_count - 1];
+        renderer._internal_buffer_handles[external_handle - 1] = -1;
+        
+        for(i32 internal_index = 0; internal_index < global_max_custom_buffers; internal_index++)
+        {
+            if(renderer._internal_buffer_handles[internal_index] == renderer.buffer_count - 1)
+            {
+                renderer._internal_buffer_handles[internal_index] = removed_buffer_handle;
+                break;
+            }
+        }
+        
+        renderer.buffer_count--;
+    }
+    renderer.removed_buffer_handle_count = 0;
+}
 
 static void register_buffers(RenderState& render_state, Renderer& renderer)
 {
@@ -2742,7 +2839,11 @@ static void register_buffers(RenderState& render_state, Renderer& renderer)
     
     for (i32 index = 0; index < renderer.updated_buffer_handle_count; index++)
     {
-        BufferData data = renderer.buffers[renderer.updated_buffer_handles[index]];
+        // @Note:(Niels): Get the internal handle for the updated buffer that we have set
+        i32 external_handle = renderer.updated_buffer_handles[index];
+        i32 updated_buffer_handle = renderer._internal_buffer_handles[external_handle - 1];
+        
+        BufferData data = renderer.buffers[updated_buffer_handle];
         if(data.for_instancing)
         {
             register_instance_buffer(render_state, data, data.existing_handle);
@@ -2757,7 +2858,9 @@ static void register_buffers(RenderState& render_state, Renderer& renderer)
             
         }
     }
+    
     renderer.updated_buffer_handle_count = 0;
+    
 }
 
 static void render_shadows(RenderState &render_state, Renderer &renderer, Framebuffer &framebuffer)
@@ -2935,7 +3038,7 @@ static void render_commands(RenderState &render_state, Renderer &renderer)
     
     for (i32 index = 0; index < renderer.command_count; index++)
     {
-        const RenderCommand& command = renderer.commands[index];
+        RenderCommand& command = renderer.commands[index];
         
         switch (command.type)
         {
@@ -2983,7 +3086,7 @@ static void render_commands(RenderState &render_state, Renderer &renderer)
             break;
             case RENDER_COMMAND_BUFFER:
             {
-                render_buffer(command, render_state, renderer.projection_matrix, renderer.view_matrix);
+                render_buffer(command, render_state, renderer, renderer.projection_matrix, renderer.view_matrix);
             }
             break;
             case RENDER_COMMAND_DEPTH_TEST:
@@ -3058,7 +3161,7 @@ static void render_commands(RenderState &render_state, Renderer &renderer)
             break;
             case RENDER_COMMAND_BUFFER:
             {
-                render_buffer(command, render_state, renderer.projection_matrix, renderer.view_matrix);
+                render_buffer(command, render_state, renderer, renderer.projection_matrix, renderer.view_matrix);
             }
             break;
             case RENDER_COMMAND_DEPTH_TEST:
@@ -3072,8 +3175,7 @@ static void render_commands(RenderState &render_state, Renderer &renderer)
         glDisable(GL_SCISSOR_TEST);
     }
     
-    
-    
+    renderer.particles._tagged_removed_count = 0;
     renderer.ui_command_count = 0;
     //clear(&renderer.ui_commands);
 }
@@ -3169,7 +3271,7 @@ static void render(RenderState& render_state, Renderer& renderer, r64 delta_time
         renderer.framebuffer_width = render_state.framebuffer_width;
         renderer.framebuffer_height = render_state.framebuffer_height;
         
-	render_shadows(render_state, renderer, render_state.shadow_map_buffer);
+        render_shadows(render_state, renderer, render_state.shadow_map_buffer);
         
         glViewport(0, 0, render_state.framebuffer_width, render_state.framebuffer_height);
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, render_state.framebuffer.buffer_handle);
@@ -3177,7 +3279,7 @@ static void render(RenderState& render_state, Renderer& renderer, r64 delta_time
         glEnable(GL_DEPTH_TEST);
         
         glDepthFunc(GL_LESS);
-
+        
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
         glClearColor(renderer.clear_color.r, renderer.clear_color.g, renderer.clear_color.b, renderer.clear_color.a);
@@ -3213,6 +3315,8 @@ static void render(RenderState& render_state, Renderer& renderer, r64 delta_time
         
         render_state.frame_delta -= delta_time;
         render_state.total_delta += delta_time;
+        
+        unregister_buffers(render_state, renderer);
     }
 }
 

@@ -467,7 +467,9 @@ struct InstancedRenderCommand
     i32 original_material_handle;
     i32 count;
     math::Vec3 scale;
+    i32 particle_systems[256];
     
+    b32 has_particles;
     b32 receives_shadows;
     b32 cast_shadows;
 };
@@ -865,6 +867,7 @@ struct RenderCommand
         } cursor;
         struct
         {
+            i32 handle;
             i32 buffer_handle;
             i32 offset_buffer_handle;
             i32 color_buffer_handle;
@@ -1006,8 +1009,14 @@ struct Renderer
     BufferData *buffers;
     i32 buffer_count;
     
+    i32 *_internal_buffer_handles;
+    i32 _current_internal_buffer_handle;
+    
     i32 *updated_buffer_handles;
     i32 updated_buffer_handle_count;
+    
+    i32 *removed_buffer_handles;
+    i32 removed_buffer_handle_count;
     
     Material *materials;
     i32 material_count;
@@ -1018,11 +1027,15 @@ struct Renderer
     struct
     {
         i32 *_internal_handles;
+        i32 *_tagged_removed;
+        i32 _tagged_removed_count;
         i32 _current_internal_handle;
         i32 _max_particle_system_count;
         
         ParticleSystemInfo *particle_systems;
         i32 particle_system_count;
+        
+        RandomSeries entropy;
     } particles;
     
     TextureData *texture_data;

@@ -1,4 +1,3 @@
-
 static ParticleSystemInfo* get_particle_system_info(ParticleSystemHandle handle, Renderer& renderer)
 {
     i32 _internal_handle = renderer.particles._internal_handles[handle.handle - 1];
@@ -9,9 +8,8 @@ static ParticleSystemInfo* get_particle_system_info(ParticleSystemHandle handle,
     return 0;
 }
 
-static void start_particle_system(ParticleSystemInfo &system, b32 one_shot = false)
+static void start_particle_system(ParticleSystemInfo &system)
 {
-    system.attributes.one_shot = one_shot;
     system.running = true;
     system.emitting = true;
     system.total_emitted = 0;
@@ -23,12 +21,12 @@ static void start_particle_system(ParticleSystemInfo &system, b32 one_shot = fal
     }
 }
 
-static void start_particle_system(ParticleSystemHandle handle, Renderer &renderer, b32 one_shot = false)
+static void start_particle_system(ParticleSystemHandle handle, Renderer &renderer)
 {
     i32 _internal_handle = renderer.particles._internal_handles[handle.handle - 1];
     assert(_internal_handle >= 0 && _internal_handle < renderer.particles.particle_system_count);
     ParticleSystemInfo &system = renderer.particles.particle_systems[_internal_handle];
-    start_particle_system(system, one_shot);
+    start_particle_system(system);
 }
 
 static void stop_particle_system(ParticleSystemHandle handle, Renderer &renderer)
@@ -57,6 +55,82 @@ static void set_rate_over_distanace(ParticleSystemInfo &particle_system, r32 rat
     particle_system.attributes.emission_module.rate_over_distance = rate_over_distance;
 }
 
+
+EMITTER_FUNC(emit_random_dir)
+{
+    ParticleSpawnInfo info;
+    
+    info.position = Vec3_4x(0.0f);
+    info.direction = random_direction_4x(series);
+    
+    return info;
+}
+
+EMITTER_FUNC(emit_from_2D_square)
+{
+    ParticleSpawnInfo info;
+    
+    Vec3_4x r = random_rect_4x(series, min, max);
+    
+    info.position = r;
+    
+    info.direction = Vec3_4x(0.0f, 1.0f, 0.0f);
+    
+    return info;
+}
+
+EMITTER_FUNC(emit_from_2D_square_random)
+{
+    ParticleSpawnInfo info;
+    
+    Vec3_4x r = random_rect_4x(series, min, max);
+    
+    info.position = r;
+    
+    info.direction = random_direction_4x(series);
+    
+    return info;
+}
+
+EMITTER_FUNC(emit_from_square)
+{
+    ParticleSpawnInfo info;
+    
+    Vec3_4x r = random_outer_rect_4x(series, min, max, min, max);
+    
+    info.position = r;
+    
+    info.direction = Vec3_4x(0.0f, 1.0f, 0.0f);
+    
+    return info;
+}
+
+EMITTER_FUNC(emit_from_disc)
+{
+    ParticleSpawnInfo info;
+    
+    Vec3_4x r = random_disc_4x(series, (max - min) / 2.0f);
+    
+    info.position = r;
+    
+    info.direction = Vec3_4x(0.0f, 1.0f, 0.0f);//random_direction_4x(series);
+    
+    return info;
+}
+
+EMITTER_FUNC(emit_from_circle)
+{
+    ParticleSpawnInfo info;
+    
+    Vec3_4x r = random_circle_4x(series, (max - min) / 2.0f);
+    
+    info.position = r;
+    
+    info.direction = Vec3_4x(0.0f, 1.0f, 0.0f);//random_direction_4x(series);
+    
+    return info;
+}
+
 static ParticleSystemAttributes get_default_particle_system_attributes()
 {
     ParticleSystemAttributes attributes = {};
@@ -76,6 +150,7 @@ static ParticleSystemAttributes get_default_particle_system_attributes()
     attributes.emission_module.burst_over_lifetime.value_count = 0;
     attributes.emission_module.burst_over_lifetime.current_index = 0;
     attributes.emission_module.burst_over_lifetime.values = nullptr;
+    attributes.emission_module.emitter_func = emit_from_circle;
     
     return attributes;
 }
@@ -87,26 +162,30 @@ static void _allocate_particle_system(Renderer& renderer, ParticleSystemInfo& sy
     
     //@Note: For SIMD
     system_info.max_particles = math::multiple_of_number(max_particles, 4);
-    auto max_over_four = system_info.max_particles / 4;
+    i32 max_over_four = system_info.max_particles / 4;
     
-    system_info.unused_particles = push_array(memory_arena, system_info.max_particles, i32);
-    system_info.alive_particles = push_array(memory_arena, system_info.max_particles, i32);
-    system_info.next_alive_particles = push_array(memory_arena, system_info.max_particles, i32);
-    system_info.dead_particles = push_array(memory_arena, system_info.max_particles, i32);
-    system_info.use_next = false;
+    system_info.alive0_particles = push_array(memory_arena, system_info.max_particles, i32);
+    system_info.alive1_particles = push_array(memory_arena, system_info.max_particles, i32);
+    system_info.alive0_active = true;
+    system_info.dead_particle_count = max_over_four;
+    system_info.dead_particles = push_array(memory_arena, system_info.dead_particle_count, i32);
     
-    system_info.alive_particle_count = 0;
-    system_info.next_alive_particle_count = 0;
-    system_info.dead_particle_count = 0;
+    for(i32 dead_index = 0; dead_index < system_info.dead_particle_count; dead_index++)
+    {
+        system_info.dead_particles[dead_index] = dead_index;
+    }
     
-    system_info.particles.position = push_array_simd(memory_arena, max_over_four, S_Vec3);
-    system_info.particles.direction = push_array_simd(memory_arena, max_over_four, S_Vec3);
-    system_info.particles.color = push_array_simd(memory_arena, max_over_four, S_Rgba);
+    system_info.alive0_particle_count = 0;
+    system_info.alive1_particle_count = 0;
     
-    system_info.particles.size = push_array_simd(memory_arena, max_over_four, S_Vec2);
-    system_info.particles.relative_position = push_array_simd(memory_arena, max_over_four, S_Vec3);
+    system_info.particles.position = push_array_simd(memory_arena, max_over_four, Vec3_4x);
+    system_info.particles.direction = push_array_simd(memory_arena, max_over_four, Vec3_4x);
+    system_info.particles.color = push_array_simd(memory_arena, max_over_four, Rgba_4x);
     
-    system_info.particles.life = push_array_simd(memory_arena, max_over_four, S_r64);
+    system_info.particles.size = push_array_simd(memory_arena, max_over_four, Vec2_4x);
+    system_info.particles.relative_position = push_array_simd(memory_arena, max_over_four, Vec3_4x);
+    
+    system_info.particles.life = push_array_simd(memory_arena, max_over_four, r64_4x);
     system_info.particles.texture_handle = push_array(memory_arena, system_info.max_particles, i32);
     
     system_info.offsets = push_array(memory_arena, system_info.max_particles, math::Vec3);
@@ -149,7 +228,7 @@ static void _allocate_particle_system(Renderer& renderer, ParticleSystemInfo& sy
     }
     else
     {
-        update_instanced_buffer(renderer, sizeof(math::Vec3) * system_info.max_particles, system_info.offset_buffer_handle);
+        update_instanced_buffer(renderer, sizeof(math::Vec2) * system_info.max_particles, system_info.size_buffer_handle);
     }
 }
 
@@ -173,7 +252,6 @@ i32 _find_unused_particle_system(Renderer& renderer)
         }
     }
     
-    debug("All particle systems are in use.");
     assert(false);
     
     return -1;
@@ -190,6 +268,7 @@ static ParticleSystemHandle create_particle_system(Renderer &renderer, i32 max_p
     system_info.running = false;
     
     system_info.attributes = get_default_particle_system_attributes();
+    system_info.transform = {};
     
     system_info.particle_count = 0;
     system_info.last_used_particle = 0;
@@ -206,25 +285,41 @@ static void remove_particle_system(Renderer& renderer, ParticleSystemHandle &han
     
     i32 removed_handle = handle.handle;
     
+    renderer.particles._tagged_removed[renderer.particles._tagged_removed_count++] = removed_handle;
+    
     if(renderer.particles.particle_system_count == 1)
     {
+        unregister_buffer(renderer, renderer.particles.particle_systems[0].offset_buffer_handle);
+        unregister_buffer(renderer, renderer.particles.particle_systems[0].size_buffer_handle);
+        unregister_buffer(renderer, renderer.particles.particle_systems[0].color_buffer_handle);
+        
         renderer.particles.particle_system_count = 0;
         renderer.particles._current_internal_handle = 0;
         renderer.particles._internal_handles[removed_handle - 1] = -1;
+		clear(&renderer.particles.particle_systems[0].arena);
         renderer.particles.particle_systems[0] = {};
+        renderer.particles.particle_systems[0].running = false;
     }
     else
     {
         i32 real_handle = renderer.particles._internal_handles[removed_handle - 1];
         ParticleSystemInfo& info = renderer.particles.particle_systems[real_handle];
         
+        unregister_buffer(renderer, info.offset_buffer_handle);
+        unregister_buffer(renderer, info.size_buffer_handle);
+        unregister_buffer(renderer, info.color_buffer_handle);
+        
         // Swap system infos
-        clear(&renderer.particles.particle_systems[real_handle].arena);
+		clear(&renderer.particles.particle_systems[real_handle].arena);
         
         renderer.particles.particle_systems[real_handle] = renderer.particles.particle_systems[renderer.particles.particle_system_count - 1];
         
+        copy_arena(&renderer.particles.particle_systems[renderer.particles.particle_system_count - 1].arena, &renderer.particles.particle_systems[real_handle].arena);
+        
         clear(&renderer.particles.particle_systems[renderer.particles.particle_system_count - 1].arena);
         renderer.particles.particle_systems[renderer.particles.particle_system_count - 1] = {};
+        
+        renderer.particles.particle_systems[renderer.particles.particle_system_count - 1].running = false;
         
         renderer.particles._internal_handles[removed_handle - 1] = -1;
         
