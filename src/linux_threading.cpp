@@ -13,7 +13,7 @@ typedef void* (*ThreadProc)(void* parameters);
 
 static inline u32 interlocked_compare_exchange(u32 volatile *ptr, u32 next, u32 original)
 {
-    if(atomic_compare_exchange_strong((long volatile *)ptr, (i32*)&original, (i32)next))
+    if(__sync_val_compare_and_swap((long volatile *)ptr, (i32*)&original, (i32)next))
     {
 	return original;
     }
