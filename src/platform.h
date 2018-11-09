@@ -56,7 +56,11 @@
 #include <stb/stb_image_write.h>
 
 #include <stdint.h>
+#ifdef __linux
+#include <ctype.h>
+#else
 #include <cctype>
+#endif
 
 #define u16max 65535
 #define i32min ((i32)0x80000000)
