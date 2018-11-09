@@ -441,7 +441,6 @@ void update_particle_systems(Renderer &renderer, r64 delta_time)
                 // The first time around this buffer is empty, but on any subsequent step
                 // there should already be particles from the previous frame, which were
                 // written into the then next buffer (which is now the alive buffer)
-		printf("Simd new: %d\n", simd_new_particles);
                 for (i32 i = 0; i < simd_new_particles / 4; i++)
                 {
                     emit_particle(particle_system, emitted_alive_buf, emitted_alive_count, renderer.particles.entropy);
