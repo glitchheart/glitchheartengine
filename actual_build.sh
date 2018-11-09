@@ -7,6 +7,6 @@ CommonLinkerFlags=" -L../libs/glad -L/usr/local/lib -L../libs/glfw/libglfw3.a -L
 
 pushd build
 
-clang --std=c++14 -Weverything $WIGNORE -mssse3 -msse4.1 -mavx  -DDEBUG=1 $CommonCompilerFlags -g -O0 ../src/main.cpp $CommonLinkerFlags
+clang --std=c++14 -stdlib=libc++ -Weverything $WIGNORE -mssse3 -msse4.1 -mavx  -DDEBUG=1 $CommonCompilerFlags -g -O0 ../src/main.cpp $CommonLinkerFlags
 
 popd
