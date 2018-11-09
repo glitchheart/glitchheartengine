@@ -272,12 +272,14 @@ static PLATFORM_READ_LINE_FILE(linux_read_line_file)
 
 static PLATFORM_PRINT_FILE(linux_print_file)
 {
-    va_list args;
-    va_start(args, format);
-    fprintf(format, args);
-    va_end(args);
-    
-    UNUSED(len);
+    FILE* f = fdopen(file.handle, "wr");
+    if(f)
+    {
+	va_list args;
+	va_start(args, format);
+	fprintf(f, format, args);
+	va_end(args);
+    }
     return 0;
 }
 

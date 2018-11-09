@@ -1,7 +1,7 @@
 #ifndef SIMD_H
 #define SIMD_H
 
-#ifdef __APPLE__
+#if defined(__APPLE__ ) || defined(__linux)
 #include "smmintrin.h"
 #include "immintrin.h"
 #include "emmintrin.h"
@@ -311,7 +311,7 @@ inline r32_4x u32_to_r32(r32_4x a)
     return(result);
 }
 
-#if defined(__APPLE__) || defined(_WIN32)
+#if defined(__APPLE__) || defined(_WIN32) || defined(__linux)
 // Used to store 4 doubles in one SIMD constructions
 union r64_4x
 {

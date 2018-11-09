@@ -46,7 +46,6 @@ static MemoryState memory_state;
 #include "fmod_sound.cpp"
 #include "filehandling.h"
 
-#include "curl/curl.h"
 
 #include "GameAnalytics.h"
 
