@@ -1886,7 +1886,7 @@ static void render_text(RenderState &render_state, GLFontBuffer &font, TrueTypeF
     }
     
     // first we have to reverse the initial y to support stb_truetype where y+ is down
-    y = render_state.window_height - y;
+    y = render_state.framebuffer_height - y;
     
     for(u32 i = 0; i < strlen(text); i++)
     {
@@ -1896,8 +1896,8 @@ static void render_text(RenderState &render_state, GLFontBuffer &font, TrueTypeF
         
         r32 x_min = quad.x0;
         r32 x_max = quad.x1;
-        r32 y_min = render_state.window_height - quad.y0;//(quad.y0 + font.baseline);
-        r32 y_max = render_state.window_height - quad.y1;//(quad.y1 + font.baseline);
+        r32 y_min = render_state.framebuffer_height - quad.y0;
+        r32 y_max = render_state.framebuffer_height - quad.y1;
         
         coords[n++] = { x_max, y_max, quad.s1, quad.t1 };
         coords[n++] = { x_max, y_min, quad.s1, quad.t0 };
