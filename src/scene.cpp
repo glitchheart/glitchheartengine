@@ -37,7 +37,7 @@ namespace scene
         scene.render_component_count = 0;
         scene.material_count = 0;
 		
-		auto &memory_arena = scene.memory_arena;
+	auto &memory_arena = scene.memory_arena;
         scene.entities = push_array(&memory_arena, initial_entity_array_size, Entity);
         scene._internal_handles = push_array(&memory_arena, initial_entity_array_size, i32);
         scene.active_entities = push_array(&memory_arena, initial_entity_array_size, b32);
@@ -53,8 +53,8 @@ namespace scene
             scene.transform_components[index].position = math::Vec3(0, 0, 0);
             scene.transform_components[index].scale = math::Vec3(1, 1, 1);
             scene.transform_components[index].rotation = math::Vec3(0, 0, 0);
-			scene.transform_components[index].parent_handle = EMPTY_COMP_HANDLE;
-			scene.transform_components[index].child_handle = EMPTY_COMP_HANDLE;
+	    scene.transform_components[index].parent_handle = EMPTY_COMP_HANDLE;
+	    scene.transform_components[index].child_handle = EMPTY_COMP_HANDLE;
 	}
         
         return(scene);
@@ -78,7 +78,7 @@ namespace scene
             scene.particle_system_component_count = 0;
             scene.material_count = 0;
             scene.current_internal_handle = 0;
-			clear(&scene.memory_arena);
+	    clear(&scene.memory_arena);
         }
     }
     

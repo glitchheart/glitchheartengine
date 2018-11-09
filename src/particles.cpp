@@ -414,10 +414,10 @@ void update_particle_systems(Renderer &renderer, r64 delta_time)
                     new_particles = math::round(per_frame);
                 }
 
-		if(per_frame >= 1.0f)
-		{
-		    particle_system.time_spent = 0.0;
-		}
+				if(new_particles >= 1)
+				{
+					particle_system.time_spent = 0.0;
+				}
                 
                 // @Note(Niels): If we have a one shot particle system we need to check if we have emitted
                 // every particle available. This means that the amount of particles in a one shot system is tightly coupled to the max amount given (should we have two numbers for this?)
