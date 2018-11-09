@@ -467,9 +467,11 @@ struct InstancedRenderCommand
     i32 original_material_handle;
     i32 count;
     math::Vec3 scale;
-    i32 particle_systems[256];
-    
+
     b32 has_particles;
+    i32 particle_systems[256];
+    u32 particle_count;
+    
     b32 receives_shadows;
     b32 cast_shadows;
 };
@@ -1154,17 +1156,20 @@ static math::Vec2 get_text_size(const char *text, TrueTypeFontInfo font)
     
     for(u32 i = 0; i < strlen(text); i++)
     {
-        stbtt_aligned_quad quad;
-        stbtt_GetPackedQuad(font.char_data, font.atlas_width, font.atlas_height,
-                            text[i] - font.first_char, &size.x, &placeholder_y, &quad, 1);
+	if(text[i] != '\n' && text[i] != '\r')
+	{
+	    stbtt_aligned_quad quad;
+	    stbtt_GetPackedQuad(font.char_data, font.atlas_width, font.atlas_height,
+				text[i] - font.first_char, &size.x, &placeholder_y, &quad, 1);
         
-        if(quad.y1 - quad.y0 > size.y)
-        {
-            size.y = quad.y1 - quad.y0;
-        }
+	    if(quad.y1 - quad.y0 > size.y)
+	    {
+		size.y = quad.y1 - quad.y0;
+	    }
         
-        i32 kerning = stbtt_GetCodepointKernAdvance(&font.info, text[i] - font.first_char, text[i + 1] - font.first_char);
-        size.x += (r32)kerning * font.scale;
+	    i32 kerning = stbtt_GetCodepointKernAdvance(&font.info, text[i] - font.first_char, text[i + 1] - font.first_char);
+	    size.x += (r32)kerning * font.scale;
+	}
     }
     
     return size;
