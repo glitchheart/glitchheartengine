@@ -3,7 +3,7 @@
 
 #include <pthread.h>
 #include <semaphore.h>
-#include <atomic.h>
+#include <stdatomic>
 
 // Define platform-specific functions
 #define SemaphoreHandle sem_t
