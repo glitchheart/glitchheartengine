@@ -5,6 +5,7 @@
 #include "unistd.h"
 #include <dirent.h>
 #include "dlfcn.h"
+#include "linux_threading.cpp"
 
 struct PlatformHandle
 {
@@ -15,6 +16,18 @@ inline PLATFORM_FILE_EXISTS(linux_file_exists)
 {
     struct stat buffer;
     return (stat(file_path,&buffer) == 0);
+}
+
+inline PLATFORM_CREATE_DIRECTORY(linux_create_directory)
+{
+    i32 result = mkdir(path, S_IRWXU);
+    
+    if(!result)
+    {
+        return false;
+    }
+    
+    return true;
 }
 
 static b32 copy_file(const char* src, const char* dst, b32 dont_overwrite, MemoryArena* arena = nullptr, b32 binary = true)
@@ -317,4 +330,10 @@ static void init_platform(PlatformApi& platform_api)
     platform_api.tell_file = linux_tell_file;
     platform_api.print_file = linux_print_file;
     platform_api.get_all_directories = linux_get_all_directories;
+    platform_api.create_directory = linux_create_directory;
+
+    
+    // Threading
+    platform_api.add_entry = add_entry;
+    platform_api.complete_all_work = complete_all_work;
 }

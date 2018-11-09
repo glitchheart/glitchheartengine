@@ -1,8 +1,7 @@
-
 static void push_particle_system(Renderer &renderer, ParticleSystemInfo &particle_info, CommandBlendMode blend_mode = CBM_ONE_MINUS_SRC_ALPHA)
 {
     renderer.command_count++;
-    RenderCommand* render_command = push_struct(&renderer.commands, RenderCommand);
+    RenderCommand* render_command = &renderer.commands[renderer.command_count++];
     render_command->shader_handle = -1;
     
     render_command->type = RENDER_COMMAND_PARTICLES;
@@ -23,10 +22,26 @@ static void push_particle_system(Renderer &renderer, ParticleSystemInfo &particl
     render_command->particles.blend_mode = blend_mode;
 }
 
+static void push_particle_system(Renderer &renderer, ParticleSystemHandle handle)
+{
+    i32 _internal_handle = renderer.particles._internal_handles[handle.handle];
+    
+    if(_internal_handle != -1)
+    {
+        ParticleSystemInfo &particle_info = renderer.particles.particle_systems[_internal_handle];
+        push_particle_system(renderer, particle_info);
+    }
+}
+
 static void push_particle_system(Renderer &renderer, i32 particle_system_handle)
 {
-    ParticleSystemInfo &particle_info = renderer.particle_systems[particle_system_handle];
-    push_particle_system(renderer, particle_info);
+    i32 _internal_handle = renderer.particles._internal_handles[particle_system_handle];
+    
+    if(_internal_handle != -1)
+    {
+        ParticleSystemInfo &particle_info = renderer.particles.particle_systems[_internal_handle];
+        push_particle_system(renderer, particle_info);
+    }
 }
 
 void find_unused_particles(ParticleSystemInfo &particle_system)
@@ -300,7 +315,7 @@ void update_particles(Renderer &renderer, ParticleSystemInfo &particle_system, r
             
             if(any_lt_eq(particle_system.particles.life[main_index], 0.0))
             {
-                
+                //@Incomplete: Are we forgetting to kill particles here??
             }
         }
     }
@@ -413,9 +428,9 @@ void emit_particle(ParticleSystemInfo &particle_system)
 
 void update_particle_systems(Renderer &renderer, r64 delta_time)
 {
-    for(i32 particle_system_index = 0; particle_system_index < renderer.particle_system_count; particle_system_index++)
+    for(i32 particle_system_index = 0; particle_system_index < renderer.particles.particle_system_count; particle_system_index++)
     {
-        ParticleSystemInfo &particle_system = renderer.particle_systems[particle_system_index];
+        ParticleSystemInfo &particle_system = renderer.particles.particle_systems[particle_system_index];
         
         if (particle_system.running)
         {
@@ -489,9 +504,6 @@ void update_particle_systems(Renderer &renderer, r64 delta_time)
             }
             
             update_particles(renderer, particle_system, delta_time);
-            
-            auto camera_position = renderer.cameras[renderer.current_camera_handle].position;
-            //sort(camera_position, particle_system.offsets, particle_system.sizes, particle_system.colors, particle_system.particle_count, &renderer.particle_arena);
             
             push_particle_system(renderer, particle_system);
         }   

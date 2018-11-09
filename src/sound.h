@@ -11,6 +11,12 @@ struct AudioSourceHandle
     i32 handle;
 };
 
+enum ChannelType
+{
+    MUSIC,
+    SFX
+};
+
 enum LoopType
 {
     LOOP_OFF,
@@ -51,6 +57,7 @@ enum ChannelSpace
 
 struct ChannelAttributes
 {
+    ChannelType type;
     r32 volume;
     u32 position_ms;
     
@@ -200,7 +207,7 @@ struct SoundSystem
     ChannelGroup *channel_groups;
     i32 channel_group_count;
     
-    MemoryArena sound_commands;
+    SoundCommand* commands;
     i32 command_count;
     
     b32 paused;
@@ -208,6 +215,7 @@ struct SoundSystem
     
     r32 sfx_volume;
     r32 music_volume;
+    r32 master_volume;
 };
 
 

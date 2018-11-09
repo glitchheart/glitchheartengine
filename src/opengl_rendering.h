@@ -3,18 +3,6 @@
 
 #include <GLFW/glfw3.h>
 
-#define STB_TRUETYPE_IMPLEMENTATION
-#ifdef _WIN32
-#pragma warning(push)
-#pragma warning(disable : 4365) // int conversions
-#pragma warning(disable : 4459)
-#endif
-#include "stb/stb_truetype.h"
-
-#ifdef _WIN32
-#pragma warning(pop)
-#endif
-
 #define SHADERPAIR(name) {SHADER_ ## name, "Shader_" "" #name}
 
 const static struct
@@ -31,6 +19,7 @@ const static struct
     SHADERPAIR(QUAD),
     SHADERPAIR(TEXTURE_QUAD),
     SHADERPAIR(STANDARD_FONT),
+    SHADERPAIR(3D_TEXT),
     SHADERPAIR(SPRITESHEET),
     SHADERPAIR(FRAME_BUFFER),
     SHADERPAIR(SIMPLE_MODEL),
@@ -49,7 +38,7 @@ char* shader_enum_to_str(ShaderType shader)
         }
     }
     assert(false);
-    return 0;
+    return nullptr;
 }
 
 static char* shader_paths[SHADER_COUNT] =
@@ -61,6 +50,7 @@ static char* shader_paths[SHADER_COUNT] =
     "../engine_assets/shaders/quadshader",
     "../engine_assets/shaders/texturequadshader",
     "../engine_assets/shaders/standardfontshader",
+    "../engine_assets/shaders/3dtextshader",
     "../engine_assets/shaders/spritesheetanimationshader",
     "../engine_assets/shaders/framebuffershader",
     "../engine_assets/shaders/simple_model_shader",
@@ -69,6 +59,34 @@ static char* shader_paths[SHADER_COUNT] =
     "../engine_assets/shaders/roundedquadshader",
 };
 
+struct Shader
+{
+    ShaderType type;
+    b32 loaded;
+    GLuint program;
+    GLuint vertex_shader;
+    GLuint fragment_shader;
+    GLuint geometry_shader; // Optional
+
+    struct
+    {
+        // Matrices
+        GLint projection_matrix;
+
+        // Color
+        GLint diffuse_color;
+        
+        union
+        {
+            struct
+            {
+                GLint alpha_color;
+                GLint z;
+            
+            } font;
+        };
+    } uniform_locations;
+};
 
 enum RenderMode
 {
@@ -81,22 +99,8 @@ struct Texture
 };
 
 // stb_truetype
-struct TrueTypeFont
+struct GLFontBuffer
 {
-    stbtt_fontinfo info;
-    i32 ascent;
-    r32 scale;
-    i32 baseline;
-    // @Incomplete: Size is not always correct!
-    stbtt_packedchar char_data['~' - ' '];
-    i32 first_char;
-    i32 char_count;
-    i32 size;
-    i32 atlas_width;
-    i32 atlas_height;
-    u32 oversample_x;
-    u32 oversample_y;
-    
     GLuint texture;
     GLuint vao;
     GLuint vbo;
@@ -151,6 +155,7 @@ struct Framebuffer
 
 struct RenderState
 {
+    CharacterData *character_buffer;
     GLFWwindow *window;
     i32 window_width;
     i32 window_height;
@@ -194,7 +199,7 @@ struct RenderState
     u32 framebuffer_quad_vertices_size = 16 * sizeof(GLfloat);
     u32 texture_quad_vertices_size = 16 * sizeof(GLfloat);
     u32 rounded_quad_vertices_size = 16 * sizeof(GLfloat);
-    u32 quad_vertices_size = 8 * sizeof(GLfloat);
+    u32 quad_vertices_size = 16 * sizeof(GLfloat);
     u32 billboard_vertices_size = 20 * sizeof(GLfloat);
     GLuint bound_vertex_buffer;
     GLuint bound_texture;
@@ -207,12 +212,12 @@ struct RenderState
         -1.0f, -1.0f, 0, 0.0f
     };
     
-    GLfloat quad_vertices[8] =
+    GLfloat quad_vertices[16] =
     {
-        0.0f, 0.0f,
-        1.0f, 0.0f,
-        1.0f, 1.0f,
-        0.0f, 1.0f
+        0.0f, 0.0f, 0.0f, 1.0f,
+        1.0f, 0.0f, 1.0f, 1.0f,
+        1.0f, 1.0f, 1.0f, 0.0f,
+        0.0f, 1.0f, 0.0f, 0.0f
     };
     
     GLfloat billboard_vertices[20] =
@@ -287,6 +292,7 @@ struct RenderState
             Shader quad_shader;
             Shader texture_quad_shader;
             Shader standard_font_shader;
+            Shader text_3d_shader;
             Shader spritesheet_shader;
             Shader frame_buffer_shader;
             Shader simple_model_shader;
@@ -306,8 +312,18 @@ struct RenderState
     Texture texture_array[150];
     i32 texture_index;
     
-    TrueTypeFont true_type_fonts[64];
+    GLFontBuffer gl_fonts[64];
     i32 font_count;
+    
+    GLFWcursor* cursors[6];
+    
+    struct
+    {
+        math::Rgba specular_color;
+        math::Rgba diffuse_color;
+        math::Rgba ambient_color;
+        math::Vec3 position;
+    } sun_light;
     
     RenderState() {}
     

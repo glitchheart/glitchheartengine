@@ -23,7 +23,7 @@ void main()
 		mat4 projViewModel = projection * view * model;
 
 		vec2 p = position.xy + vec2(normal * thickness/2.0 * miter);
-    	gl_Position = projViewModel * vec4(p, 0.0, 1.0);
+    	gl_Position = projViewModel * vec4(p.x, p.y, position.z, 1.0);
 	}
 
 	c = color;

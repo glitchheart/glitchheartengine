@@ -19,16 +19,26 @@ struct MemoryArena;
 
 #include "map.h"
 
+#include "rendering.h"
+#include "sound.h"
+#include "keycontroller.h"
+
+#define RGB_FLOAT(integer) 1.0f / 255.0f * integer
+#define RGB_VEC4(r, g, b) math::Rgba(RGB_FLOAT(r), RGB_FLOAT(g), RGB_FLOAT(b), 1.0f)
+#define HEX_TO_RGB(hex) math::Rgba(((hex >> 16) & 0xFF) / 255.0f, ((hex >> 8) & 0xFF) / 255.0f, ((hex) & 0xFF) / 255.0f, 1.0f)
+
+#define INVERT_RGB(rgb) RGB_VEC4(255 - rgb.r, 255 - rgb.g, 255 - rgb.b)
+
 inline char* str_sep(char** s, const char* delim)
 {
     char* start = *s;
     char* p;
     
-    p = (start != NULL) ? strpbrk(start, delim) : NULL;
+    p = (start != nullptr) ? strpbrk(start, delim) : nullptr;
     
-    if(p == NULL)
+    if(p == nullptr)
     {
-        *s = NULL;
+        *s = nullptr;
     }
     else
     {
@@ -59,7 +69,7 @@ inline b32 starts_with(const char *a, const char *b)
     return 0;
 }
 
-inline char* get_file_name_from_path(char* path, MemoryArena* arena, char* extension = 0)
+inline char* get_file_name_from_path(char* path, MemoryArena* arena, char* extension = nullptr)
 {
     auto temp_mem = begin_temporary_memory(arena);
     const char* compare_string = ".";
@@ -85,7 +95,7 @@ inline char* get_file_name_from_path(char* path, MemoryArena* arena, char* exten
         }
     }
     end_temporary_memory(temp_mem);
-    return 0;
+    return nullptr;
 }
 
 inline void handle_error(char const *file, i32 line_num, char const *msg)

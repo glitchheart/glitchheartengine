@@ -1,91 +1,5 @@
 #include "animation.h"
-
-enum CameraFlags
-{
-    C_FLAG_ORTHOGRAPHIC = (1 << 0),
-    C_FLAG_PERSPECTIVE  = (1 << 1),
-    C_FLAG_NO_LOOK_AT     = (1 << 2)
-};
-
-struct CameraParams
-{
-    u32 view_flags;
-};
-
-static CameraParams default_camera_params()
-{
-    CameraParams params;
-    params.view_flags = C_FLAG_ORTHOGRAPHIC | C_FLAG_NO_LOOK_AT;
-    return params;
-}
-
-static CameraParams orthographic_camera_params()
-{
-    CameraParams params;
-    params.view_flags = C_FLAG_ORTHOGRAPHIC;
-    return params;
-}
-
-static CameraParams perspective_camera_params()
-{
-    CameraParams params;
-    params.view_flags = C_FLAG_PERSPECTIVE;
-    return params;
-}
-
-// @Incomplete
-static inline void camera_transform(Renderer& renderer, Camera& camera, math::Vec3 position = math::Vec3(), math::Quat orientation = math::Quat(), math::Vec3 target = math::Vec3(), r32 zoom = 1.0f, r32 near = -1.0f, r32 far = 1.0f, CameraParams params = default_camera_params())
-{
-    camera.viewport_width = renderer.resolution.width;
-    camera.viewport_height = renderer.resolution.height;
-    if(params.view_flags & C_FLAG_ORTHOGRAPHIC)
-    {
-        camera.projection_matrix = math::ortho(0.0f, renderer.viewport[2] / zoom, 0.0f, renderer.viewport[3] / zoom, near, far);
-        camera.view_matrix = math::Mat4(1.0f);
-        
-        camera.position = position;
-        camera.orientation = orientation;
-        camera.target = target;
-        
-        if(!is_identity(orientation))
-        {
-            camera.view_matrix = to_matrix(orientation) * camera.view_matrix;
-        }
-        else if(!(params.view_flags & C_FLAG_NO_LOOK_AT))
-        {
-            auto dist = sqrt(1.0f / 3.0f);
-            camera.view_matrix = math::look_at(math::Vec3(dist, dist, dist), math::Vec3(0.0f));
-        }
-        
-        camera.view_matrix = math::translate(camera.view_matrix, math::Vec3(-position.x, -position.y, position.z));
-        
-        //camera.view_matrix = math::Translate(camera.view_matrix, position);
-        camera.view_matrix = math::translate(camera.view_matrix, math::Vec3(renderer.viewport[2] / zoom / 2, renderer.viewport[3] / zoom / 2, 0.0f));
-        
-        
-    }
-    else if(params.view_flags & C_FLAG_PERSPECTIVE)
-    {
-        camera.projection_matrix = math::perspective((r32)renderer.viewport[2] / (r32)renderer.viewport[3], 0.60f, 0.2f, 100.0f);
-        
-        camera.view_matrix = math::Mat4(1.0f);
-        
-        auto dist = sqrt(1.0f / 3.0f);
-        
-        dist = 20.0f;
-        
-        camera.view_matrix = math::look_at(math::Vec3(dist, dist, dist), target);
-        
-        if(!is_identity(orientation))
-        {
-            camera.view_matrix = to_matrix(orientation) * camera.view_matrix;
-        }
-        
-        camera.position = position;
-        camera.orientation = orientation;
-        camera.target = target;
-    }
-}
+#include <string.h>
 
 // The InfoHandle is used to be able to reference the same animation without having to load the animation again. 
 static void add_animation(Renderer& renderer, SpritesheetAnimation animation, const char* animation_name)
@@ -196,16 +110,15 @@ static RenderCommand* push_next_command(Renderer& renderer, b32 is_ui)
     if(is_ui)
     {
         assert(renderer.ui_command_count + 1 < global_max_ui_commands);
-        renderer.ui_command_count++;
-        RenderCommand* command = push_struct(&renderer.ui_commands, RenderCommand);
+        RenderCommand* command = &renderer.ui_commands[renderer.ui_command_count++];
+        *command = {};
         command->shader_handle = -1;
         return command;
     }
     else
     {
         assert(renderer.command_count + 1 < global_max_render_commands);
-        renderer.command_count++;
-        RenderCommand* command = push_struct(&renderer.commands, RenderCommand);
+        RenderCommand* command = &renderer.commands[renderer.command_count++];
         command->shader_handle = -1;
         return command;
     }
@@ -248,6 +161,13 @@ static void disable_depth_test(Renderer& renderer)
     render_command->depth_test.on = false;
 }
 
+static void set_cursor(Renderer& renderer, CursorType type)
+{
+    RenderCommand* render_command = push_next_command(renderer, false);
+    render_command->type = RENDER_COMMAND_CURSOR;
+    render_command->cursor.type = type;
+}
+
 static void push_line(Renderer& renderer, math::Vec3 point1, math::Vec3 point2, r32 line_width, math::Rgba color, b32 is_ui = false)
 {
     RenderCommand* render_command = push_next_command(renderer, is_ui);
@@ -260,32 +180,79 @@ static void push_line(Renderer& renderer, math::Vec3 point1, math::Vec3 point2, 
     render_command->is_ui = is_ui;
 }
 
+static math::Rect scale_clip_rect(Renderer& renderer, math::Rect clip_rect, b32 clip = true, u64 ui_scaling_flag = UIScalingFlag::KEEP_ASPECT_RATIO)
+{
+    math::Vec2i resolution_scale = get_scale(renderer);
+    math::Rect scaled_clip_rect;
+    
+    if(clip && clip_rect.height != 0 && clip_rect.width != 0)
+    {
+        scaled_clip_rect.x = (clip_rect.x / UI_COORD_DIMENSION) * (r32)resolution_scale.x;
+        scaled_clip_rect.y = (clip_rect.y / UI_COORD_DIMENSION) * (r32)resolution_scale.y;
+        
+        r32 clip_ratio = clip_rect.height / clip_rect.width;
+        scaled_clip_rect.width = (clip_rect.width / UI_COORD_DIMENSION) * (r32)resolution_scale.x;
+        
+        if(ui_scaling_flag & UIScalingFlag::KEEP_ASPECT_RATIO)
+        {
+            scaled_clip_rect.height = scaled_clip_rect.width * clip_ratio;
+        }
+        else
+        {
+            scaled_clip_rect.height = (clip_rect.height / UI_COORD_DIMENSION) * (r32)resolution_scale.y;
+        }
+    }
+    
+    return scaled_clip_rect;
+}
+
+static void push_3d_text(Renderer &renderer, const char* text, math::Vec3 position, i32 font_handle, math::Rgba color = math::Rgba(1.0f), math::Vec3 rotation = math::Vec3(), math::Vec3 scale = math::Vec3(1.0f), u64 alignment_flags = ALIGNMENT_LEFT)
+{
+    RenderCommand* render_command = push_next_command(renderer, false);
+    
+    assert(font_handle < renderer.font_count);
+    
+    render_command->type = RENDER_COMMAND_3D_TEXT;
+    
+    strcpy(render_command->text_3d.text, text);
+    render_command->position = position;
+    render_command->rotation = rotation;
+    render_command->scale = scale;
+    render_command->text_3d.font_handle = font_handle;
+    render_command->text_3d.color = color;
+    render_command->text_3d.alignment_flags = alignment_flags;
+    render_command->is_ui = false;
+}
+
 #define PUSH_UI_TEXT(text, position, color, font_handle, ...) push_ui_text(renderer, text, position, font_handle, color, ##__VA_ARGS__)
-#define PUSH_CENTERED_UI_TEXT(text, position, color, font_handle) push_ui_text(renderer, text, position, font_handle, color, ALIGNMENT_CENTER_X | ALIGNMENT_CENTER_Y)
-static void push_ui_text(Renderer &renderer, const char* text, math::Vec2i position, i32 font_handle, math::Rgba color, u64 alignment_flags = ALIGNMENT_LEFT)
+#define PUSH_CENTERED_UI_TEXT(text, position, color, font_handle, z) push_ui_text(renderer, text, position, font_handle, color, ALIGNMENT_CENTER_X | ALIGNMENT_CENTER_Y, z)
+static void push_ui_text(Renderer &renderer, const char* text, math::Vec2 position, i32 font_handle, math::Rgba color, u64 alignment_flags = ALIGNMENT_LEFT, i32 z = 0, b32 clip = false, math::Rect clip_rect = math::Rect(0, 0, 0, 0), u64 ui_scaling_flag = UIScalingFlag::KEEP_ASPECT_RATIO)
 {
     RenderCommand* render_command = push_next_command(renderer, true);
     
     assert(font_handle < renderer.font_count);
     
+    math::Vec2i resolution_scale = get_scale(renderer);
+    
     render_command->type = RENDER_COMMAND_TEXT;
     strcpy(render_command->text.text, text);
     
     math::Vec3 pos;
-    pos.x = ((r32)position.x / (r32)UI_COORD_DIMENSION) * renderer.window_width;
-    pos.y = ((r32)position.y / (r32)UI_COORD_DIMENSION) * renderer.window_height;
+    pos.x = (position.x / UI_COORD_DIMENSION) * resolution_scale.x;
+    pos.y = (position.y / UI_COORD_DIMENSION) * resolution_scale.y;
     pos.z = 0.0f;
-    
-    /*if(scale == 0.0f)
-        render_command->text.scale = 1.0f;
-    else
-        render_command->text.scale = scale;*/
     
     render_command->text.position = pos;
     render_command->text.font_handle = font_handle;
     render_command->text.color = color;
     render_command->text.alignment_flags = alignment_flags;
+    render_command->text.z_layer = z;
     render_command->is_ui = true;
+    
+    math::Rect scaled_clip_rect = scale_clip_rect(renderer, clip_rect, clip);
+    
+    render_command->clip = clip;
+    render_command->clip_rect = scaled_clip_rect;
 }
 
 #define PUSH_TEXT(text, position, color, font_handle) push_text(renderer, text, position, 1.0f, font_handle, color)
@@ -317,7 +284,7 @@ static void push_text(Renderer& renderer, TextInfo text_info)
     push_text(renderer, text_info.text, text_info.position, text_info.scale, text_info.font_handle, text_info.render_info.color, text_info.alignment_flags, text_info.render_info.is_ui);
 }
 
-static void push_filled_quad(Renderer& renderer, math::Vec3 position, b32 flipped, math::Vec3 size, math::Vec3 rotation = math::Vec3(), math::Rgba color = math::Rgba(1.0f, 1.0f, 1.0f, 1.0f), i32 texture_handle = 0, b32 is_ui = true, b32 rounded = false, i32 animation_controller_handle = 0, b32 with_origin = false, math::Vec2 origin = math::Vec2(0.0f, 0.0f), i32 shader_handle = 0, ShaderAttribute* shader_attributes = 0, i32 shader_attribute_count = 0, math::Vec2 texture_offset = math::Vec2(-1.0f, -1.0f), math::Vec2i frame_size = math::Vec2i(0, 0))
+static void push_filled_quad(Renderer& renderer, math::Vec3 position, b32 flipped, math::Vec3 size, math::Vec3 rotation = math::Vec3(), math::Rgba color = math::Rgba(1.0f, 1.0f, 1.0f, 1.0f), i32 texture_handle = 0, b32 is_ui = true, r32 border_width = 0.0f, math::Rgba border_color = math::Rgba(1.0f), b32 rounded = false, i32 animation_controller_handle = 0, b32 with_origin = false, math::Vec2 origin = math::Vec2(0.0f, 0.0f), b32 clip = false, math::Rect clip_rect = math::Rect(0, 0, 0, 0), i32 shader_handle = 0, ShaderAttribute* shader_attributes = 0, i32 shader_attribute_count = 0, math::Vec2 texture_offset = math::Vec2(-1.0f, -1.0f), math::Vec2i frame_size = math::Vec2i(0, 0))
 {
     RenderCommand* render_command = push_next_command(renderer, is_ui);
     
@@ -332,6 +299,10 @@ static void push_filled_quad(Renderer& renderer, math::Vec3 position, b32 flippe
     render_command->quad.outlined = false;
     render_command->quad.texture_handle = texture_handle - 1;
     render_command->quad.rounded = rounded;
+    render_command->quad.border_width = border_width;
+    render_command->quad.border_color = border_color;
+    render_command->clip_rect = clip_rect;
+    render_command->clip = clip;
     
     if(animation_controller_handle != 0)
     {
@@ -346,6 +317,7 @@ static void push_filled_quad(Renderer& renderer, math::Vec3 position, b32 flippe
     }
     else
     {
+        render_command->quad.for_animation = false;
         render_command->quad.texture_offset = texture_offset;
         render_command->quad.frame_size = frame_size;
         
@@ -364,49 +336,118 @@ static void push_filled_quad(Renderer& renderer, math::Vec3 position, b32 flippe
 
 static void push_filled_quad(Renderer& renderer, QuadInfo quad_info)
 {
-    push_filled_quad(renderer, quad_info.transform_info.position, quad_info.flipped, quad_info.transform_info.scale, quad_info.transform_info.rotation, quad_info.render_info.color, quad_info.texture_info.texture_handle, quad_info.render_info.is_ui, quad_info.rounded, quad_info.animation_controller_handle, quad_info.render_info.with_origin, quad_info.render_info.origin, quad_info.shader_info.shader_handle, quad_info.shader_info.shader_attributes, quad_info.shader_info.shader_attribute_count, quad_info.texture_info.texture_offset, quad_info.texture_info.frame_size);
+    push_filled_quad(renderer, quad_info.transform_info.position, quad_info.flipped, quad_info.transform_info.scale, quad_info.transform_info.rotation, quad_info.render_info.color, quad_info.texture_info.texture_handle, quad_info.render_info.is_ui, quad_info.border_width, quad_info.border_color, quad_info.rounded, quad_info.animation_controller_handle, quad_info.render_info.with_origin, quad_info.render_info.origin, quad_info.clip, quad_info.clip_rect, quad_info.shader_info.shader_handle, quad_info.shader_info.shader_attributes, quad_info.shader_info.shader_attribute_count, quad_info.texture_info.texture_offset, quad_info.texture_info.frame_size);
 }
 
-static void push_filled_quad_not_centered(Renderer& renderer, math::Vec3 position, b32 flipped, math::Vec3 size, math::Vec3 rotation = math::Vec3(), math::Rgba color = math::Rgba(1.0f, 1.0f, 1.0f, 1.0f), i32 texture_handle = 0, b32 is_ui = true, b32 rounded = false, i32 animation_controller_handle = 0, i32 shader_handle = 0, ShaderAttribute* shader_attributes = 0, i32 shader_attribute_count = 0, math::Vec2 texture_offset = math::Vec2(-1.0f, -1.0f), math::Vec2i frame_size = math::Vec2i(0, 0))
+static void push_filled_quad_not_centered(Renderer& renderer, math::Vec3 position, b32 flipped, math::Vec3 size, math::Vec3 rotation = math::Vec3(), math::Rgba color = math::Rgba(1.0f, 1.0f, 1.0f, 1.0f), i32 texture_handle = 0, b32 is_ui = true, r32 border_width = 0.0f, math::Rgba border_color = math::Rgba(1.0f), b32 rounded = false, b32 clip = false,  math::Rect clip_rect = math::Rect(0, 0, 0, 0), i32 animation_controller_handle = 0, i32 shader_handle = 0, ShaderAttribute* shader_attributes = 0, i32 shader_attribute_count = 0, math::Vec2 texture_offset = math::Vec2(-1.0f, -1.0f), math::Vec2i frame_size = math::Vec2i(0, 0))
 {
-    push_filled_quad(renderer, position, flipped, size, rotation, color, texture_handle, is_ui, rounded, animation_controller_handle, true, math::Vec2(), shader_handle, shader_attributes, shader_attribute_count, texture_offset, frame_size); 
+    push_filled_quad(renderer, position, flipped, size, rotation, color, texture_handle, is_ui, border_width, border_color, rounded, animation_controller_handle, true, math::Vec2(0.0f), clip, clip_rect, shader_handle, shader_attributes, shader_attribute_count, texture_offset, frame_size); 
 }
 
-static void push_filled_ui_quad_not_centered(Renderer& renderer, math::Vec2i position, b32 flipped, math::Vec2 size, math::Vec3 rotation = math::Vec3(), math::Rgba color = math::Rgba(1.0f, 1.0f, 1.0f, 1.0f), i32 texture_handle = 0, b32 rounded = false, i32 animation_controller_handle = 0, i32 shader_handle = 0, ShaderAttribute* shader_attributes = 0, i32 shader_attribute_count = 0, math::Vec2 texture_offset = math::Vec2(-1.0f, -1.0f), math::Vec2i frame_size = math::Vec2i(0, 0))
+static math::Vec2 get_relative_size(Renderer& renderer, math::Vec2 size, u64 scaling_flags = UIScalingFlag::KEEP_ASPECT_RATIO)
 {
+    math::Vec2i resolution_scale = get_scale(renderer);
+    
+    math::Vec2 scaled_size;
+    
+    if(scaling_flags & UIScalingFlag::SCALE_WITH_WIDTH)
+    {
+        scaled_size.x = (size.x / UI_COORD_DIMENSION) * (r32)resolution_scale.x;
+        scaled_size.y = (size.y / UI_COORD_DIMENSION) * (r32)resolution_scale.x;
+    }
+    else if(scaling_flags & UIScalingFlag::SCALE_WITH_HEIGHT)
+    {
+        scaled_size.x = (size.x / UI_COORD_DIMENSION) * (r32)resolution_scale.y;
+        scaled_size.y = (size.y / UI_COORD_DIMENSION) * (r32)resolution_scale.y;
+    }
+    else
+    {
+        scaled_size.x = (size.x / UI_COORD_DIMENSION) * (r32)resolution_scale.x;
+        
+        if(scaling_flags & UIScalingFlag::KEEP_ASPECT_RATIO)
+        {
+            r32 ratio = size.y / size.x;
+            scaled_size.y = scaled_size.x * ratio;
+        }
+        else
+        {
+            scaled_size.y = (size.y / UI_COORD_DIMENSION) * (r32)resolution_scale.y;
+        }
+    }
+    
+    return scaled_size;
+}
+
+
+static math::Vec3 get_relative_size_vec3(Renderer& renderer, math::Vec2 size,  u64 scaling_flags = UIScalingFlag::KEEP_ASPECT_RATIO)
+{
+    math::Vec2 res = get_relative_size(renderer, size, scaling_flags);
+    
+    return {res.x, res.y, 0.0f};
+}
+
+static void push_filled_ui_quad_not_centered(Renderer& renderer, math::Vec2 position, b32 flipped, math::Vec2 size, math::Vec3 rotation = math::Vec3(), math::Rgba color = math::Rgba(1.0f, 1.0f, 1.0f, 1.0f), i32 texture_handle = 0, b32 rounded = false, r32 border_width = 0.0f, math::Rgba border_color = math::Rgba(1.0f), i32 animation_controller_handle = 0, i32 z_layer = 0, b32 clip = false,  math::Rect clip_rect = math::Rect(0, 0, 0, 0), u64 ui_scaling_flag = UIScalingFlag::KEEP_ASPECT_RATIO, i32 shader_handle = 0, ShaderAttribute* shader_attributes = 0, i32 shader_attribute_count = 0, math::Vec2 texture_offset = math::Vec2(-1.0f, -1.0f), math::Vec2i frame_size = math::Vec2i(0, 0))
+{
+    math::Vec2i resolution_scale = get_scale(renderer);
+    
     math::Vec3 pos;
-    pos.x = ((r32)position.x / (r32)UI_COORD_DIMENSION) * renderer.window_width;
-    pos.y = ((r32)position.y / (r32)UI_COORD_DIMENSION) * renderer.window_height;
-    pos.z = 0.0f;
+    pos.x = (position.x / UI_COORD_DIMENSION) * resolution_scale.x;
+    pos.y = (position.y / UI_COORD_DIMENSION) * resolution_scale.y;
+    pos.z = (r32)z_layer;
     
-    r32 ratio = (r32)size.y / (r32)size.x;
+    math::Vec3 scaled_size = get_relative_size_vec3(renderer, size, ui_scaling_flag);
     
-    math::Vec3 scaled_size;
-    scaled_size.x = ((r32)size.x / (r32)UI_COORD_DIMENSION) * renderer.window_width;
-    scaled_size.y = scaled_size.x * ratio;
-    scaled_size.z = 0.0f;
+    math::Rect scaled_clip_rect = scale_clip_rect(renderer, clip_rect, clip, ui_scaling_flag);
     
-    push_filled_quad_not_centered(renderer, pos, flipped, scaled_size, rotation, color, texture_handle, true, rounded, animation_controller_handle, shader_handle, shader_attributes, shader_attribute_count, texture_offset, frame_size);
+    push_filled_quad_not_centered(renderer, pos, flipped, scaled_size, rotation, color, texture_handle, true, border_width, border_color, rounded, clip, scaled_clip_rect, animation_controller_handle, shader_handle, shader_attributes, shader_attribute_count, texture_offset, frame_size);
 }
 
-
-static void push_filled_ui_quad(Renderer& renderer, math::Vec2i position, b32 flipped, math::Vec2 size, math::Vec3 rotation = math::Vec3(), math::Rgba color = math::Rgba(1.0f, 1.0f, 1.0f, 1.0f), i32 texture_handle = 0, b32 rounded = false, i32 animation_controller_handle = 0, b32 with_origin = false, math::Vec2 origin = math::Vec2(0.0f, 0.0f), i32 shader_handle = 0, ShaderAttribute* shader_attributes = 0, i32 shader_attribute_count = 0, math::Vec2 texture_offset = math::Vec2(-1.0f, -1.0f), math::Vec2i frame_size = math::Vec2i(0, 0))
+#if DEBUG
+#define push_debug_ui_quad_not_centered(renderer, position, size, clip, clip_rect, ui_scaling_flag) \
+{static r32 rand_r = (r32)(rand() % 255) / 255.0f;\
+    static r32 rand_g = (r32)(rand() % 255) / 255.0f;\
+    static r32 rand_b = (r32)(rand() % 255) / 255.0f;\
+    static math::Rgba color = math::Rgba(rand_r, rand_g, rand_b, 1.0f);\
+    _push_debug_ui_quad_not_centered(renderer, position, size, color, clip, clip_rect, ui_scaling_flag);}
+static void _push_debug_ui_quad_not_centered(Renderer& renderer, math::Vec2 position, math::Vec2 size, math::Rgba color, b32 clip = false, math::Rect clip_rect = math::Rect(0, 0, 0, 0), u64 ui_scaling_flag = UIScalingFlag::KEEP_ASPECT_RATIO)
 {
+    push_filled_ui_quad_not_centered(renderer, position, false, size, math::Vec3(), color, 0, false, 1.0f, COLOR_WHITE, 0, 500, clip, clip_rect, ui_scaling_flag);
+}
+#else
+#define push_debug_ui_quad_not_centered(renderer, position, size, clip, clip_rect, ui_scaling_flag)
+#endif
+
+static void push_filled_ui_quad(Renderer& renderer, math::Vec2 position, b32 flipped, math::Vec2 size, math::Vec3 rotation = math::Vec3(), math::Rgba color = math::Rgba(1.0f, 1.0f, 1.0f, 1.0f), i32 texture_handle = 0, r32 border_width = 0.0f, math::Rgba border_color = math::Rgba(1.0f), b32 rounded = false, i32 animation_controller_handle = 0, b32 with_origin = false, math::Vec2 origin = math::Vec2(0.0f, 0.0f), i32 z_layer = 0, b32 clip = false,  math::Rect clip_rect = math::Rect(0, 0, 0, 0), u64  ui_scaling_flag = UIScalingFlag::KEEP_ASPECT_RATIO, i32 shader_handle = 0, ShaderAttribute* shader_attributes = 0, i32 shader_attribute_count = 0, math::Vec2 texture_offset = math::Vec2(-1.0f, -1.0f), math::Vec2i frame_size = math::Vec2i(0, 0))
+{
+    math::Vec2i resolution_scale = get_scale(renderer);
+    
     math::Vec3 pos;
-    pos.x = ((r32)position.x / (r32)UI_COORD_DIMENSION) * renderer.window_width;
-    pos.y = ((r32)position.y / (r32)UI_COORD_DIMENSION) * renderer.window_height;
-    pos.z = 0.0f;
+    pos.x = (position.x / UI_COORD_DIMENSION) * (r32)resolution_scale.x;
+    pos.y = (position.y / UI_COORD_DIMENSION) * (r32)resolution_scale.y;
+    pos.z = (r32)z_layer;
     
-    r32 ratio = (r32)size.y / (r32)size.x;
+    math::Vec3 scaled_size = get_relative_size_vec3(renderer, size, ui_scaling_flag);
     
-    math::Vec3 scaled_size;
-    scaled_size.x = ((r32)size.x / (r32)UI_COORD_DIMENSION) * renderer.window_width;
-    scaled_size.y = scaled_size.x * ratio;
-    scaled_size.z = 0.0f;
+    math::Rect scaled_clip_rect = scale_clip_rect(renderer, clip_rect, clip, ui_scaling_flag);
     
-    push_filled_quad(renderer, pos, flipped, scaled_size, rotation, color, texture_handle, true, rounded,  animation_controller_handle, with_origin, origin, shader_handle, shader_attributes, shader_attribute_count, texture_offset, frame_size);
+    push_filled_quad(renderer, pos, flipped, scaled_size, rotation, color, texture_handle, true, border_width, border_color, rounded,  animation_controller_handle, with_origin, origin, clip, scaled_clip_rect, shader_handle, shader_attributes, shader_attribute_count, texture_offset, frame_size);
 }
 
+
+#if DEBUG
+#define push_debug_ui_quad(renderer, position, size, clip, clip_rect, ui_scaling_flag) \
+{static r32 rand_r = (r32)(rand() % 255) / 255.0f;\
+    static r32 rand_g = (r32)(rand() % 255) / 255.0f;\
+    static r32 rand_b = (r32)(rand() % 255) / 255.0f;\
+    static math::Rgba color = math::Rgba(rand_r, rand_g, rand_b, 1.0f);\
+    _push_debug_ui_quad(renderer, position, size, color, clip, clip_rect, ui_scaling_flag);}
+static void _push_debug_ui_quad(Renderer& renderer, math::Vec2 position, math::Vec2 size, math::Rgba color, b32 clip = false, math::Rect clip_rect = math::Rect(0, 0, 0, 0), u64 ui_scaling_flag = UIScalingFlag::KEEP_ASPECT_RATIO)
+{
+    push_filled_ui_quad(renderer, position, false, size, math::Vec3(), color, 0, 1.0f, COLOR_WHITE, false,  0, false, math::Vec2(0.0f), 500, clip, clip_rect, ui_scaling_flag);
+}
+#else
+#define push_debug_ui_quad(renderer, position, size, clip, clip_rect, ui_scaling_flag)
+#endif
 
 static void push_outlined_quad(Renderer& renderer, math::Vec3 position,  math::Vec3 size, math::Vec3 rotation, math::Rgba color, b32 is_ui = false, r32 line_width = 1.0f)
 {
@@ -423,20 +464,150 @@ static void push_outlined_quad(Renderer& renderer, math::Vec3 position,  math::V
     render_command->is_ui = is_ui;
 }
 
+// @Note Gets info about UI position for rendering things relative to each other
+// We often want to be able to render things next to each other perfectly on different scales
+// This function should help with that
+// Parameters:
+// renderer:      The renderer
+// position:      The position of the original quad
+// relative_size: The size of the original quad
+// size:          The size of the thing you want to render next to the original
+// relative:      The relative flag (top, bottom, left, right)
+// centered:      Whether or not the original quad was centered (need to know this for origin etc.)
+// scaling_flags: How do we scale these UI elements?
+// origin:        The origin
+static RelativeUIQuadInfo get_relative_info(Renderer& renderer, math::Vec2 position, math::Vec2 relative_size, math::Vec2 size, RelativeFlag relative, b32 centered, u64 scaling_flags = UIScalingFlag::KEEP_ASPECT_RATIO,  math::Vec2 origin = math::Vec2(0.0f))
+{
+    math::Vec2i resolution_scale = get_scale(renderer);
+    
+    math::Vec3 pos;
+    pos.x = (position.x / UI_COORD_DIMENSION) * resolution_scale.x;
+    pos.y = (position.y / UI_COORD_DIMENSION) * resolution_scale.y;
+    pos.z = 0.0f;
+    
+    pos.x -= origin.x;
+    pos.y -= origin.y;
+    
+    math::Vec3 scaled_size = get_relative_size_vec3(renderer, relative_size, scaling_flags);
+    
+    math::Vec3 relative_pos = math::Vec3(pos.x, pos.y, 0.0f);
+    
+    r32 ratio = size.y / size.x;
+    
+    math::Vec3 new_size = get_relative_size_vec3(renderer, size, scaling_flags);
+    
+    r32 factor_x = scaled_size.x / origin.x;
+    r32 factor_y = scaled_size.y / origin.y;
+    
+    if(origin.y == 0.0f)
+    {
+        factor_y = 1.0f;
+    }
+    if(origin.x == 0.0f)
+    {
+        factor_x = 1.0f;
+    }
+    
+    switch(relative)
+    {
+        case RELATIVE_TOP:
+        {
+            relative_pos.y += (i32)scaled_size.y / factor_y;
+        }
+        break;
+        case RELATIVE_LEFT:
+        {
+            if(origin.x == 0.0f)
+            {
+                relative_pos.x -= (i32)scaled_size.x / factor_x;
+            }
+            else
+            {
+                relative_pos.x -= (i32)scaled_size.x / factor_x + new_size.x;
+            }
+        }
+        break;
+        case RELATIVE_RIGHT:
+        {
+            if(origin.x == 0.0f)
+            {
+                relative_pos.x += (i32)scaled_size.x / factor_x;
+            }
+            else
+            {
+                relative_pos.x += (i32)scaled_size.x / factor_x + scaled_size.x;
+            }
+        }
+        break;
+        case RELATIVE_BOTTOM:
+        {
+            relative_pos.y -= (i32)scaled_size.y / factor_y - scaled_size.y + new_size.y;
+        }
+        break;
+    }
+    
+    math::Vec2 ui_position = math::Vec2(0, 0);
+    ui_position.x = ((relative_pos.x / (r32)resolution_scale.x) * UI_COORD_DIMENSION);
+    ui_position.y = ((relative_pos.y / (r32)resolution_scale.y) * UI_COORD_DIMENSION);
+    
+    return {math::Vec2(relative_pos.x, relative_pos.y), math::Vec2(new_size.x, new_size.y), ui_position};
+}
+
+static RelativeUIQuadInfo push_filled_ui_quad_relative_not_centered(Renderer& renderer, math::Vec2 position, math::Vec2 relative_size, b32 flipped, math::Vec2 size, math::Vec3 rotation = math::Vec3(), math::Rgba color = math::Rgba(1.0f, 1.0f, 1.0f, 1.0f), RelativeFlag relative = RELATIVE_TOP, i32 texture_handle = 0, r32 border_width = 0.0f,
+                                                                    math::Rgba border_color = math::Rgba(1.0f),
+                                                                    b32 rounded = false, i32 animation_controller_handle = 0,
+                                                                    i32 z_layer = 0,
+                                                                    b32 clip = false,
+                                                                    math::Rect clip_rect = math::Rect(0, 0, 0, 0), 
+                                                                    u64 ui_scaling_flag = UIScalingFlag::KEEP_ASPECT_RATIO,
+                                                                    i32 shader_handle = 0, ShaderAttribute* shader_attributes = 0, i32 shader_attribute_count = 0, math::Vec2 texture_offset = math::Vec2(-1.0f, -1.0f), math::Vec2i frame_size = math::Vec2i(0, 0))
+{
+    math::Vec2i resolution_scale = get_scale(renderer);
+    
+    RelativeUIQuadInfo info = get_relative_info(renderer, position, relative_size, size, relative, false, ui_scaling_flag);
+    
+    math::Rect scaled_clip_rect = scale_clip_rect(renderer, clip_rect, clip, ui_scaling_flag);
+    
+    push_filled_quad_not_centered(renderer, math::Vec3(info.position.x, info.position.y, z_layer), flipped, math::Vec3(info.scale.x, info.scale.y, 0.0f), rotation, color, texture_handle, true, border_width, border_color, rounded, clip, scaled_clip_rect, animation_controller_handle, shader_handle, shader_attributes, shader_attribute_count, texture_offset, frame_size);
+    
+    return info;
+}
+
+
+static RelativeUIQuadInfo push_filled_ui_quad_relative(Renderer& renderer, math::Vec2 position, math::Vec2 relative_size, b32 flipped, math::Vec2 size, math::Vec3 rotation = math::Vec3(), math::Rgba color = math::Rgba(1.0f, 1.0f, 1.0f, 1.0f), RelativeFlag relative = RELATIVE_TOP, i32 texture_handle = 0, r32 border_width = 0.0f,
+                                                       math::Rgba border_color = math::Rgba(1.0f), b32 rounded = false, i32 animation_controller_handle = 0, b32 with_origin = false, math::Vec2 origin = math::Vec2(0.0f, 0.0f),
+                                                       i32 z_layer = 0,
+                                                       b32 clip = false,
+                                                       math::Rect clip_rect = math::Rect(0, 0, 0, 0),
+                                                       u64 scaling_flags = UIScalingFlag::KEEP_ASPECT_RATIO,
+                                                       i32 shader_handle = 0, ShaderAttribute* shader_attributes = 0, i32 shader_attribute_count = 0, math::Vec2 texture_offset = math::Vec2(-1.0f, -1.0f), math::Vec2i frame_size = math::Vec2i(0, 0))
+{
+    math::Vec2i resolution_scale = get_scale(renderer);
+    
+    RelativeUIQuadInfo info = get_relative_info(renderer, position, relative_size, size, relative, true, scaling_flags, origin);
+    
+    math::Rect scaled_clip_rect = scale_clip_rect(renderer, clip_rect, clip, scaling_flags);
+    
+    push_filled_quad(renderer, math::Vec3(info.position.x, info.position.y, z_layer), flipped, math::Vec3(info.scale.x, info.scale.y, 0.0f), rotation, color, texture_handle, true, border_width, border_color, rounded,  animation_controller_handle, with_origin, math::Vec2(0.0f), clip, scaled_clip_rect, shader_handle, shader_attributes, shader_attribute_count, texture_offset, frame_size);
+    
+    return info;
+}
+
 static void push_outlined_ui_quad(Renderer& renderer, math::Vec2i position,  math::Vec2i size, math::Vec3 rotation, math::Rgba color, b32 is_ui = false, r32 line_width = 1.0f)
 {
+    math::Vec2i resolution_scale = get_scale(renderer);
+    
     RenderCommand* render_command = push_next_command(renderer, is_ui);
     
     math::Vec3 pos;
-    pos.x = ((r32)position.x / (r32)UI_COORD_DIMENSION) * renderer.window_width;
-    pos.y = ((r32)position.y / (r32)UI_COORD_DIMENSION) * renderer.window_height;
+    pos.x = (position.x / UI_COORD_DIMENSION) * resolution_scale.x;
+    pos.y = (position.y / UI_COORD_DIMENSION) * resolution_scale.y;
     pos.z = 0.0f;
     
     math::Vec3 scaled_size;
-    scaled_size.x = ((r32)size.x / (r32)UI_COORD_DIMENSION) * renderer.window_width;
-    scaled_size.y = ((r32)size.y / (r32)UI_COORD_DIMENSION) * renderer.window_height;
+    scaled_size.x = (size.x / UI_COORD_DIMENSION) * resolution_scale.x;
+    scaled_size.y = (size.y / UI_COORD_DIMENSION) * resolution_scale.y;
     scaled_size.z = 0.0f;
-    
     
     render_command->type = RENDER_COMMAND_QUAD;
     render_command->position = pos;
@@ -707,11 +878,19 @@ static void create_cube(Renderer &renderer, MeshInfo &mesh_info, b32 with_instan
     }
 }
 
-static void create_cube(Renderer &renderer)
+static void create_cube(Renderer &renderer, MeshHandle *mesh_handle = nullptr)
 {
     assert(renderer.mesh_count + 1 < global_max_meshes);
-    Mesh &mesh = renderer.meshes[renderer.mesh_count++];
+
+    Mesh &mesh = renderer.meshes[renderer.mesh_count];
     mesh = {};
+    
+    // Set the handle
+    if(mesh_handle)
+        *mesh_handle = { renderer.mesh_count };
+    
+    renderer.mesh_count++;
+    
     mesh.vertices = push_array(&renderer.mesh_arena, sizeof(cube_vertices) / sizeof(r32) / 3, Vertex);
     mesh.faces = push_array(&renderer.mesh_arena, sizeof(cube_indices) / sizeof(u16) / 3, Face);
     
@@ -898,6 +1077,16 @@ static void create_plane(Renderer &renderer)
     mesh.instance_scale_buffer_handle = renderer.buffer_count++;
 }
 
+static void push_sun_light(Renderer &renderer, math::Vec3 position, math::Rgba specular_color, math::Rgba diffuse_color, math::Rgba ambient_color)
+{
+    RenderCommand *render_command = push_next_command(renderer, false);
+    render_command->type = RENDER_COMMAND_SUN_LIGHT;
+    render_command->sun_light.position = position;
+    render_command->sun_light.specular_color = specular_color;
+    render_command->sun_light.diffuse_color = diffuse_color;
+    render_command->sun_light.ambient_color = ambient_color;
+}
+
 static void push_mesh(Renderer &renderer, MeshInfo mesh_info)
 {
     RenderCommand *render_command = push_next_command(renderer, false);
@@ -910,8 +1099,18 @@ static void push_mesh(Renderer &renderer, MeshInfo mesh_info)
     Mesh &mesh = renderer.meshes[mesh_info.mesh_handle];
     render_command->mesh.buffer_handle = mesh.buffer_handle;
     render_command->mesh.material_type = mesh_info.material.type;
-    render_command->mesh.diffuse_texture = mesh_info.material.diffuse_texture;
-    render_command->color = mesh_info.material.color;
+    render_command->mesh_instanced.diffuse_color = mesh_info.material.diffuse_color;
+    render_command->mesh_instanced.specular_color = mesh_info.material.specular_color;
+    render_command->mesh_instanced.ambient_color = mesh_info.material.ambient_color;
+    render_command->mesh.diffuse_texture = mesh_info.material.diffuse_texture.handle;
+    render_command->mesh.specular_texture = mesh_info.material.specular_texture.handle;
+    render_command->mesh.ambient_texture = mesh_info.material.ambient_texture.handle;
+    render_command->mesh_instanced.specular_intensity_texture = mesh_info.material.specular_intensity_texture.handle;
+    render_command->mesh_instanced.specular_exponent = mesh_info.material.specular_exponent;
+    render_command->mesh_instanced.diffuse_color = mesh_info.material.diffuse_color;
+    render_command->mesh_instanced.specular_color = mesh_info.material.specular_color;
+    render_command->mesh_instanced.ambient_color = mesh_info.material.ambient_color;
+    render_command->color = mesh_info.material.diffuse_color;
     render_command->cast_shadows = mesh_info.cast_shadows;
     render_command->receives_shadows = mesh_info.receives_shadows;
 }
@@ -928,8 +1127,15 @@ static void push_mesh_instanced(Renderer &renderer, MeshInfo mesh_info, math::Ve
     Mesh &mesh = renderer.meshes[mesh_info.mesh_handle];
     render_command->mesh_instanced.buffer_handle = mesh.buffer_handle;
     render_command->mesh_instanced.material_type = mesh_info.material.type;
-    render_command->mesh_instanced.diffuse_texture = mesh_info.material.diffuse_texture;
-    render_command->color = mesh_info.material.color;
+    render_command->mesh_instanced.diffuse_texture = mesh_info.material.diffuse_texture.handle;
+    render_command->mesh_instanced.specular_texture = mesh_info.material.specular_texture.handle;
+    render_command->mesh_instanced.ambient_texture = mesh_info.material.ambient_texture.handle;
+    render_command->mesh_instanced.specular_intensity_texture = mesh_info.material.specular_intensity_texture.handle;
+    render_command->color = mesh_info.material.diffuse_color;
+    render_command->mesh_instanced.diffuse_color = mesh_info.material.diffuse_color;
+    render_command->mesh_instanced.specular_color = mesh_info.material.specular_color;
+    render_command->mesh_instanced.ambient_color = mesh_info.material.ambient_color;
+    render_command->mesh_instanced.specular_exponent = mesh_info.material.specular_exponent;
     render_command->mesh_instanced.instance_offset_buffer_handle = mesh_info.instance_offset_buffer_handle;
     render_command->mesh_instanced.instance_color_buffer_handle = mesh_info.instance_color_buffer_handle;
     render_command->mesh_instanced.instance_rotation_buffer_handle = mesh_info.instance_rotation_buffer_handle;
@@ -1011,6 +1217,25 @@ static void update_buffer(Renderer& renderer, r32* buffer, i32 buffer_size, i32 
     renderer.updated_buffer_handles[renderer.updated_buffer_handle_count++] = buffer_handle;
 }
 
+static void update_instanced_buffer(Renderer& renderer, size_t buffer_size, i32 buffer_handle)
+{
+    BufferData data = {};
+    data.for_instancing = true;
+    data.instance_buffer_size = buffer_size;
+    data.index_buffer_count = 0;
+    renderer.buffers[buffer_handle] = data;
+}
+
+static void register_instance_buffer(Renderer& renderer, size_t buffer_size, i32* buffer_handle)
+{
+    BufferData data = {};
+    data.for_instancing = true;
+    data.instance_buffer_size = buffer_size;
+    renderer.buffers[renderer.buffer_count] = data;
+    
+    *buffer_handle = renderer.buffer_count++;
+}
+
 static i32 load_font(Renderer& renderer, char* path, i32 size, char* name)
 {
     assert(renderer.font_count + 1 < global_max_fonts);
@@ -1045,6 +1270,123 @@ static b32 vertex_equals(Vertex &v1, Vertex &v2)
     
 }
 
+static void load_material(Renderer &renderer, char *file_path, MaterialHandle *material_handle)
+{
+    // @Incomplete: We need a better way to do this!
+    // Find the directory of the file
+    size_t index = 0;
+    for(size_t i = 0; i < strlen(file_path); i++)
+    {
+        if(file_path[i] == '/')
+        {
+            index = i + 1;
+        }
+    }
+
+    auto temp_block = begin_temporary_memory(&renderer.temp_arena);
+    
+    char *dir = push_string(temp_block.arena, index);
+    strncpy(dir, file_path, index);
+    
+    dir[index] = 0;
+
+    FILE* mtl_file = fopen(file_path, "r");
+    if(mtl_file)
+    {
+        char buffer[256];
+        
+        Material &material = renderer.materials[renderer.material_count];
+        material = {};
+        material.type = RM_TEXTURED;
+        material.source_handle = { renderer.material_count++ };
+        material.diffuse_color = COLOR_WHITE;
+        material.diffuse_texture = { 0 };
+        material.ambient_texture = { 0 };
+        material.specular_texture = { 0 };
+        
+        while((fgets(buffer, sizeof(buffer), mtl_file) != NULL))
+        {
+            if(starts_with(buffer, "newmtl"))
+            {
+                // @Incomplete: Save name
+            }
+            else if(starts_with(buffer, "illum")) // illumination
+            {
+            }
+            else if(starts_with(buffer, "Ka")) // ambient color
+            {
+                sscanf(buffer, "Ka %f %f %f", &material.ambient_color.r, &material.ambient_color.g, &material.ambient_color.b);
+                material.ambient_color.a = 1.0f;
+            }
+            else if(starts_with(buffer, "Kd")) // diffuse color
+            {
+                sscanf(buffer, "Kd %f %f %f", &material.diffuse_color.r, &material.diffuse_color.g, &material.diffuse_color.b);
+                material.diffuse_color.a = 1.0f;
+            }
+            else if(starts_with(buffer, "Ks")) // specular color
+            {
+                sscanf(buffer, "Ks %f %f %f", &material.specular_color.r, &material.specular_color.g, &material.specular_color.b);
+                material.specular_color.a = 1.0f;
+            }
+            else if(starts_with(buffer, "Ns")) // specular exponent
+            {
+                sscanf(buffer, "Ns %f", &material.specular_exponent);
+            }
+            else if(starts_with(buffer, "map_Ka")) // ambient map
+            {
+                char name[64];
+                sscanf(buffer, "map_Ka %s", name);
+                
+                if(name[0] == '.')
+                    load_texture(name, renderer, LINEAR, &material.ambient_texture.handle);
+                else
+                    load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, &material.ambient_texture.handle);
+            }
+            else if(starts_with(buffer, "map_Kd")) // diffuse map
+            {
+                char name[64];
+                sscanf(buffer, "map_Kd %s", name);
+                
+                if(name[0] == '.')
+                    load_texture(name, renderer, LINEAR, &material.diffuse_texture.handle);
+                else
+                    load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, &material.diffuse_texture.handle);
+            }
+            else if(starts_with(buffer, "map_Ks")) // specular map
+            {
+                char name[64];
+                sscanf(buffer, "map_Ks %s", name);
+                
+                load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, &material.specular_texture.handle);
+                
+                if(name[0] == '.')
+                    load_texture(name, renderer, LINEAR, &material.specular_texture.handle);
+                else
+                    load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, &material.specular_texture.handle);
+            }
+            else if(starts_with(buffer, "map_Ns")) // specular intensity map
+            {
+                char name[64];
+                sscanf(buffer, "map_Ns %s", name);
+                
+                if(name[0] == '.')
+                    load_texture(name, renderer, LINEAR, &material.specular_intensity_texture.handle);
+                else
+                    load_texture(concat(dir, name, temp_block.arena), renderer, LINEAR, &material.specular_intensity_texture.handle);
+            }
+        }
+        
+        fclose(mtl_file);
+
+        if(material_handle)
+            *material_handle = material.source_handle;
+    }
+    else
+        debug("Could not read %s\n", file_path);
+
+    end_temporary_memory(temp_block);
+}
+
 static i32 check_for_identical_vertex(Vertex &vertex, math::Vec2 uv, math::Vec3 normal, Vertex *final_vertices, b32* should_add)
 {
     size_t current_size = buf_len(final_vertices);
@@ -1066,7 +1408,7 @@ static i32 check_for_identical_vertex(Vertex &vertex, math::Vec2 uv, math::Vec3 
     return (i32)current_size;
 }
 
-static void load_obj(Renderer &renderer, char *file_path)
+static void load_obj(Renderer &renderer, char *file_path, MeshHandle *mesh_handle = nullptr, MaterialHandle *material_handle = nullptr)
 {
     FILE *file = fopen(file_path, "r");
     
@@ -1085,6 +1427,12 @@ static void load_obj(Renderer &renderer, char *file_path)
     i32 normal_index = 0;
     i32 uv_index = 0;
     
+    // Right now we only support one mtl-file per obj-file
+    // And since we only support one mesh per obj-file at the moment that should be fine.
+    // @Robustness: We have to support more advanced files later... Maybe...
+    b32 has_mtl_file = false;
+    char mtl_file_name[32];
+    
     if(file)
     {
         char buffer[256];
@@ -1093,6 +1441,18 @@ static void load_obj(Renderer &renderer, char *file_path)
         {
             if(starts_with(buffer, "g")) // we're starting with new geometry
             {
+                // @Incomplete: Save the name of the geometry
+            }
+            else if(starts_with(buffer, "mtllib")) // Material file
+            {
+                // Read the material file-name
+                sscanf(buffer, "mtllib %s", mtl_file_name);
+            }
+            else if(starts_with(buffer, "usemtl")) // Used material for geometry
+            {
+                has_mtl_file = true;
+                // Ignored, for now.
+                // This is only relevant when we've got multiple materials
             }
             else if(starts_with(buffer, "v ")) // vertex
             {
@@ -1114,6 +1474,7 @@ static void load_obj(Renderer &renderer, char *file_path)
                 with_uvs = true;
                 math::Vec2 uv(0.0f);
                 sscanf(buffer, "vt %f %f", &uv.x, &uv.y);
+                uv.y = 1.0f - uv.y;
                 buf_push(uvs, uv);
                 uv_index++;
             }
@@ -1216,7 +1577,8 @@ static void load_obj(Renderer &renderer, char *file_path)
     }
     
     assert(renderer.mesh_count + 1 < global_max_meshes);
-    Mesh &mesh = renderer.meshes[renderer.mesh_count++];
+    MeshHandle handle =  { renderer.mesh_count++ };
+    Mesh &mesh = renderer.meshes[handle.handle];
     mesh = {};
     
     mesh.vertices = push_array(&renderer.mesh_arena, buf_len(final_vertices), Vertex);
@@ -1265,6 +1627,36 @@ static void load_obj(Renderer &renderer, char *file_path)
     scale_data.for_instancing = true;
     renderer.buffers[renderer.buffer_count] = scale_data;
     mesh.instance_scale_buffer_handle = renderer.buffer_count++;
+    
+    if(mesh_handle)
+        *mesh_handle = handle;
+    
+    if(has_mtl_file)
+    {
+        // Find the directory of the file
+        size_t index = 0;
+        for(size_t i = 0; i < strlen(file_path); i++)
+        {
+            if(file_path[i] == '/')
+            {
+                index = i + 1;
+            }
+        }
+        
+        auto temp_block = begin_temporary_memory(&renderer.temp_arena);
+        
+        char *dir = push_string(temp_block.arena, index);
+        strncpy(dir, file_path, index);
+        
+        dir[index] = 0;
+
+		char *material_file_path = concat(dir, mtl_file_name, &renderer.temp_arena);
+
+        if(material_handle)
+            load_material(renderer, material_file_path, material_handle);
+        
+        end_temporary_memory(temp_block);
+    }
 }
 
 static void load_obj(Renderer &renderer, char *file_path, MeshInfo &mesh_info, b32 with_instancing = false)
@@ -1472,77 +1864,11 @@ static void load_obj(Renderer &renderer, char *file_path, MeshInfo &mesh_info, b
     }
 }
 
-static void load_assets(char *model_path, char *texture_path, char *material_path, Renderer &renderer)
-{
-    char line[256];
-    FILE *file = fopen(model_path, "r");
-    
-    if(file)
-    {
-        while(fgets(line, 256, file))
-        {
-            i32 index = 0;
-            char type[32];
-            char file_name[32];
-            sscanf(line, "%d %s %s", &index, &type, &file_name);
-            
-            if(starts_with(type, "prim")) // primitive
-            {
-                if(starts_with(file_name, "cube"))
-                {
-                    create_cube(renderer);
-                }
-                else if(starts_with(file_name, "plane"))
-                {
-                    create_plane(renderer);
-                }
-            }
-            else if(starts_with(type, "obj")) // load an obj-file
-            {
-                auto temp_memory = begin_temporary_memory(&renderer.temp_arena);
-                load_obj(renderer, concat("../assets/models/", file_name, temp_memory.arena));
-                end_temporary_memory(temp_memory);
-            }
-        }
-        fclose(file);
-    }
-    
-    file = fopen(texture_path, "r");
-    if(file)
-    {
-        while(fgets(line, 256, file))
-        {
-            i32 index = 0;
-            char file_path[128];
-            sscanf(line, "%d %s", &index, &file_path);
-            
-            auto temp_memory = begin_temporary_memory(&renderer.temp_arena);
-            load_texture(concat("../assets/textures/", file_path, temp_memory.arena), renderer, LINEAR);
-            end_temporary_memory(temp_memory);
-        }
-        fclose(file);
-    }
-    
-    file = fopen(material_path, "r");
-    if(file)
-    {
-        while(fgets(line, 256, file))
-        {
-            RenderMaterial material = {};
-            material.type = RM_TEXTURED;
-            i32 index = 0;
-            sscanf(line, "%d tex %d col %f %f %f %f", &index, &material.diffuse_texture, &material.color.r, 
-                   &material.color.g, &material.color.b, &material.color.a);
-            material.diffuse_texture++;
-            material.source_handle = { renderer.material_count };
-            renderer.materials[renderer.material_count++] = material;
-        }
-        fclose(file);
-    }
-}
-
 static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer, math::Vec3 *positions, math::Vec3 *rotations, math::Vec3 *scalings, math::Rgba *colors)
 {
+    renderer.view_matrix = scene.camera.view_matrix;
+    renderer.projection_matrix = scene.camera.projection_matrix;
+    
     InstancedRenderCommand instanced_commands[MAX_INSTANCING_PAIRS];
     i32 command_count = 0;
     
@@ -1557,12 +1883,18 @@ static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer, ma
         
         if(scene.active_entities[ent_index])
         {
-            if(ent.comp_flags & scene::COMP_RENDER)
+	    scene::TransformComponent &transform = scene.transform_components[ent.transform_handle.handle];
+
+	    // Create a copy of the position, rotation and scale since we don't want the parents transform to change the child's transform. Only when rendering.
+	    math::Vec3 position = transform.position;
+	    math::Vec3 rotation = transform.rotation;
+	    math::Vec3 scale = transform.scale;
+
+	    if(ent.comp_flags & scene::COMP_RENDER)
             {
-                scene::TransformComponent &transform = scene.transform_components[ent.transform_handle.handle];
                 scene::RenderComponent &render = scene.render_components[ent.render_handle.handle];
                 
-                RenderMaterial material = scene.material_instances[render.material_handle.handle];
+                Material material = scene.material_instances[render.material_handle.handle];
                 
                 // Instancing stuff
                 i32 command_index = -1;
@@ -1587,14 +1919,43 @@ static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer, ma
                 }
                 
                 InstancedRenderCommand &command = instanced_commands[command_index];
-                
-                positions[command_index * 1024 + command.count] = transform.position;
-                rotations[command_index * 1024 + command.count] = transform.rotation * DEGREE_IN_RADIANS;
-                scalings[command_index * 1024 + command.count] = transform.scale;
-                colors[command_index * 1024 + command.count] = material.color;
+
+		if(IS_COMP_HANDLE_VALID(transform.parent_handle))
+		{
+		    scene::TransformComponent &parent_transform = scene.transform_components[transform.parent_handle.handle];
+		    position += parent_transform.position;
+		    rotation += parent_transform.rotation;
+		    scale *= parent_transform.scale;
+		}
+				
+                positions[command_index * 1024 + command.count] = position;
+                rotations[command_index * 1024 + command.count] = rotation * DEGREE_IN_RADIANS;
+                scalings[command_index * 1024 + command.count] = scale;
+                colors[command_index * 1024 + command.count] = material.diffuse_color;
                 command.count++;
                 
                 assert(command_index < MAX_INSTANCING_PAIRS);
+            }
+            
+            if(ent.comp_flags & scene::COMP_PARTICLES)
+            {
+                if(ent.particle_system_handle.handle != -1)
+                {
+                    scene::ParticleSystemComponent &ps = scene.particle_system_components[ent.particle_system_handle.handle];
+                    
+                    if(ent.comp_flags & scene::COMP_TRANSFORM)
+                    {
+                        // Add transform stuff
+                        i32 _internal_handle = renderer.particles._internal_handles[ps.handle.handle - 1];
+                        ParticleSystemInfo& system = renderer.particles.particle_systems[_internal_handle];
+                        
+                        scene::TransformComponent &transform = scene.transform_components[ent.transform_handle.handle];
+                        
+                        system.transform.position = position;
+                        system.transform.scale = scale;
+                        system.transform.rotation = rotation;
+                    }
+                }
             }
         }
     }
@@ -1602,7 +1963,7 @@ static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer, ma
     for(i32 command_index = 0; command_index < command_count; command_index++)
     {
         InstancedRenderCommand command = instanced_commands[command_index];
-        RenderMaterial material = scene.material_instances[command.material_handle];
+        Material material = scene.material_instances[command.material_handle];
         MeshInfo mesh_info = {};
         mesh_info.transform.scale = command.scale;
         Mesh &mesh = renderer.meshes[command.mesh_handle];

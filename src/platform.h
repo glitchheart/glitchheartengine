@@ -47,7 +47,7 @@
 #define PI 3.141592653589793f
 #define DEGREE_IN_RADIANS 0.0174532925f
 
-#define offset_of(type, member) (umm)&(((type *)0)->member)
+#define offset_of(type, member) (umm)&(((type *)nullptr)->member)
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb/stb_image.h>
@@ -56,6 +56,7 @@
 #include <stb/stb_image_write.h>
 
 #include <stdint.h>
+#include <cctype>
 
 using u8 = uint8_t;
 using u16 = uint16_t;
@@ -77,14 +78,12 @@ using imm = intptr_t;
 struct TextureData;
 
 #include "engine_math.h"
-
 #include "modelformat.h"
 
 enum WindowMode
 {
     FM_WINDOWED = 0,
-    FM_FULL = 1,
-    FM_BORDERLESS = 2
+    FM_BORDERLESS = 1
 };
 
 enum GraphicsApi
@@ -109,6 +108,7 @@ struct ConfigData
     r32 contrast;
     r32 brightness;
     b32 muted;
+    r32 master_volume;
     r32 sfx_volume;
     r32 music_volume;
 };
@@ -117,8 +117,8 @@ struct ConfigData
 #define MAX_FILE_NAMES 128
 struct DirectoryData
 {
-    char file_paths[256][MAX_FILE_PATHS];
-    char file_names[256][MAX_FILE_NAMES];
+    char **file_paths;
+    char **file_names;
     i32 files_length = 0;
 };
 
@@ -228,6 +228,19 @@ typedef PLATFORM_READ_LINE_FILE(PlatformReadLineFile);
 #define PLATFORM_PRINT_FILE(name) i32 name(PlatformFile& file, const char* format, ...)
 typedef PLATFORM_PRINT_FILE(PlatformPrintFile);
 
+#define PLATFORM_CREATE_DIRECTORY(name) b32 name(const char* path)
+typedef PLATFORM_CREATE_DIRECTORY(PlatformCreateDirectory);
+
+struct WorkQueue;
+struct WorkQueueEntry;
+typedef void (*WorkCallback)(WorkQueue *queue, void *data);
+
+#define PLATFORM_ADD_ENTRY(name) void name(WorkQueue *queue, WorkCallback work_ptr, void *data)
+typedef PLATFORM_ADD_ENTRY(PlatformAddEntry);
+
+#define PLATFORM_COMPLETE_ALL_WORK(name) void name(WorkQueue *queue)
+typedef PLATFORM_COMPLETE_ALL_WORK(PlatformCompleteAllWork);
+
 struct PlatformApi
 {
     PlatformGetAllFilesWithExtension *get_all_files_with_extension;
@@ -251,6 +264,10 @@ struct PlatformApi
     PlatformTellFile *tell_file;
     PlatformReadLineFile *read_line_file;
     PlatformPrintFile *print_file;
+    PlatformCreateDirectory *create_directory;
+
+    PlatformAddEntry *add_entry;
+    PlatformCompleteAllWork *complete_all_work;
 };
 
 extern PlatformApi platform;
@@ -261,6 +278,12 @@ struct InputController;
 struct SoundSystem;
 struct RenderState;
 struct Renderer;
+
+namespace scene
+{
+    struct EntityTemplateState;
+}
+
 struct TimerController;
 
 struct GameMemory
@@ -272,7 +295,7 @@ struct GameMemory
     PlatformApi platform_api;
     struct LogState* log_state;
     struct MemoryArena* temp_arena;
-    
+    struct AnalyticsEventState *analytics_state;
     struct GameState* game_state;
     
 #if DEBUG
@@ -280,7 +303,7 @@ struct GameMemory
 #endif
 };
 
-#define UPDATE(name)void name(r64 delta_time, GameMemory* game_memory, Renderer& renderer, InputController* input_controller, SoundSystem* sound_system, TimerController& timer_controller)
+#define UPDATE(name)void name(r64 delta_time, GameMemory* game_memory, Renderer& renderer, scene::EntityTemplateState &template_state, InputController* input_controller, SoundSystem* sound_system, TimerController& timer_controller)
 typedef UPDATE(Update);
 UPDATE(update_stub)
 {
