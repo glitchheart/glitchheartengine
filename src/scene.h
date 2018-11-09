@@ -87,7 +87,7 @@ namespace scene
             math::Vec3 position;
             math::Vec3 scale;
             math::Vec3 rotation;;
-			TemplateHandle child_handle;
+	    TemplateHandle child_handle;
         } transform;
         struct
         {

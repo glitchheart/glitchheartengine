@@ -310,7 +310,7 @@ static void remove_particle_system(Renderer& renderer, ParticleSystemHandle &han
         unregister_buffer(renderer, info.color_buffer_handle);
         
         // Swap system infos
-		clear(&renderer.particles.particle_systems[real_handle].arena);
+	clear(&renderer.particles.particle_systems[real_handle].arena);
         
         renderer.particles.particle_systems[real_handle] = renderer.particles.particle_systems[renderer.particles.particle_system_count - 1];
         
