@@ -13,7 +13,7 @@ typedef void* (*ThreadProc)(void* parameters);
 
 static inline u32 interlocked_compare_exchange(u32 volatile *ptr, u32 next, u32 original)
 {
-    if(atomic_compare_exchange_strong((atomic_int volatile *)ptr, (i32*)&original, (i32)next))
+    if(atomic_compare_exchange_strong((long volatile *)ptr, (i32*)&original, (i32)next))
     {
 	return original;
     }
@@ -23,7 +23,7 @@ static inline u32 interlocked_compare_exchange(u32 volatile *ptr, u32 next, u32 
 
 static inline void interlocked_increment(u32 volatile *ptr)
 {
-    atomic_fetch_add((atomic_int volatile *)ptr, 1);
+    __sync_fetch_and_add((long volatile *)ptr, 1);
 }
 
 static inline void release_semaphore(SemaphoreHandle& semaphore_handle)
