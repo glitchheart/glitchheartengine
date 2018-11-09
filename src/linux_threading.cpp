@@ -2,7 +2,7 @@
 #define LINUX_THREADING
 
 #include <pthread.h>
-#include <sys/semaphore.h>
+#include <semaphore.h>
 #include <stdatomic.h>
 
 // Define platform-specific functions
