@@ -92,7 +92,7 @@ union r32_4x
     r32 e[4];
     u32 u[4];
     
-    explicit r32_4x()
+    r32_4x()
     {
         p = _mm_set1_ps(0.0f);
     }
@@ -180,6 +180,15 @@ inline r32_4x operator- (r32_4x a, r32_4x b)
     
     res.p = _mm_sub_ps(a.p, b.p);
     
+    return res;
+}
+
+inline r32_4x operator- (r32_4x a, r32 b)
+{
+    r32_4x res(0.0f);
+
+    res.p = _mm_sub_ps(a.p, _mm_set1_ps(b));
+
     return res;
 }
 
@@ -503,11 +512,6 @@ inline r32_4x operator/(r64_4x a, r32_4x b)
     return res;
 }
 
-inline r64 operator-(r64 left, r64_4x right)
-{
-    return left - right.e[0];
-}
-
 inline r32_4x operator^(r32_4x a, r32_4x b)
 {
     r32_4x result;
@@ -554,11 +558,6 @@ inline r32_4x& operator|=(r32_4x &a, r32_4x b)
     a = a | b;
     
     return(a);
-}
-
-r32 operator-(r32 left, r64_4x right)
-{
-    return left - (r32)right.e[0];
 }
 
 inline r64_4x simd_min(r64_4x left, r64_4x right)
@@ -1618,6 +1617,21 @@ union Vec4_4x
 inline b32 all_zero(r32_4x v)
 {
     return false;
+}
+
+r32_4x operator-(r32 left, r32_4x right)
+{
+    return r32_4x(left - right.e[0], left - right.e[1], left - right.e[2], left - right.e[3]);
+}
+
+r32_4x operator-(r32 left, r64_4x right)
+{
+    return r32_4x(left - (r32)right.e[0], left - (r32)right.e[1], left - (r32)right.e[2], left - (r32)right.e[3]);
+}
+
+r64_4x operator-(r64 left, r64_4x right)
+{
+    return r64_4x(left - right.e[0], left - right.e[1], left - right.e[2], left - right.e[3]);
 }
 
 using Rgba_4x = Vec4_4x;
