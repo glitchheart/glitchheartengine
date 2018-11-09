@@ -414,10 +414,10 @@ void update_particle_systems(Renderer &renderer, r64 delta_time)
                     new_particles = math::round(per_frame);
                 }
 
-		if(per_frame >= 1.0f)
-		{
-		    particle_system.time_spent = 0.0;
-		}
+				if(new_particles >= 1)
+				{
+					particle_system.time_spent = 0.0;
+				}
                 
                 // @Note(Niels): If we have a one shot particle system we need to check if we have emitted
                 // every particle available. This means that the amount of particles in a one shot system is tightly coupled to the max amount given (should we have two numbers for this?)
@@ -441,6 +441,7 @@ void update_particle_systems(Renderer &renderer, r64 delta_time)
                 // The first time around this buffer is empty, but on any subsequent step
                 // there should already be particles from the previous frame, which were
                 // written into the then next buffer (which is now the alive buffer)
+		printf("Simd new: %d\n", simd_new_particles);
                 for (i32 i = 0; i < simd_new_particles / 4; i++)
                 {
                     emit_particle(particle_system, emitted_alive_buf, emitted_alive_count, renderer.particles.entropy);

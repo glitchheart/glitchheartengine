@@ -1811,7 +1811,7 @@ static void load_obj(Renderer &renderer, char *file_path, MeshInfo &mesh_info, b
 
 static void push_particle_system(Renderer &renderer, ParticleSystemInfo &particle_info, i32 handle,  CommandBlendMode blend_mode = CBM_ONE_MINUS_SRC_ALPHA)
 {
-    RenderCommand* render_command = &renderer.commands[renderer.command_count++];
+    RenderCommand* render_command = push_next_command(renderer, false);
     render_command->shader_handle = -1;
     render_command->particles.handle = handle;
     
