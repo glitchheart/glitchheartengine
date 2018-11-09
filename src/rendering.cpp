@@ -1811,7 +1811,6 @@ static void load_obj(Renderer &renderer, char *file_path, MeshInfo &mesh_info, b
 
 static void push_particle_system(Renderer &renderer, ParticleSystemInfo &particle_info, i32 handle,  CommandBlendMode blend_mode = CBM_ONE_MINUS_SRC_ALPHA)
 {
-    renderer.command_count++;
     RenderCommand* render_command = &renderer.commands[renderer.command_count++];
     render_command->shader_handle = -1;
     render_command->particles.handle = handle;
@@ -1965,8 +1964,6 @@ static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer, ma
             }
         }
     }
-    
-    i32 particle_index = 0;
     
     for(i32 com_index = 0; com_index < command_count; com_index++)
     {
