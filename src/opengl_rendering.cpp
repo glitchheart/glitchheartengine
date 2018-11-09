@@ -2860,7 +2860,6 @@ static void register_buffers(RenderState& render_state, Renderer& renderer)
     }
     
     renderer.updated_buffer_handle_count = 0;
-    
 }
 
 static void render_shadows(RenderState &render_state, Renderer &renderer, Framebuffer &framebuffer)
