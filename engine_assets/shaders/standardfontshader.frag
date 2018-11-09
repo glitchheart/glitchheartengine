@@ -1,4 +1,3 @@
-
 #version 150
 in vec2 texcoord;
 uniform sampler2D tex;
@@ -7,5 +6,8 @@ out vec4 outColor;
 
 void main() 
 {
-	outColor = vec4(1, 1, 1, texture(tex, texcoord).r) * color;
+	vec4 color = vec4(1, 1, 1, texture(tex, texcoord).r) * color;
+	if(color.a == 0.0f)
+	  discard;
+	outColor = color;
 }
