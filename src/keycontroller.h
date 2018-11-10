@@ -292,6 +292,12 @@ struct CustomKeyMapping
     i32 xbox_key_count;
 };
 
+enum class InputType
+{
+    KEYBOARD_MOUSE,
+    CONTROLLER
+};
+
 struct InputController
 {
     CustomKeyMapping custom_mappings[64];
@@ -320,6 +326,8 @@ struct InputController
     r64 mouse_y_delta;
     r64 scroll_x;
     r64 scroll_y;
+
+    InputType current_input_type;
     
     r32 controller_deadzone = 0.2f;
     
