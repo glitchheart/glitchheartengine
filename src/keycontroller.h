@@ -179,7 +179,6 @@ enum KeyMode
 #define Mouse_Right 1
 #define Mouse_Middle 2
 
-
 #define Joystick_1 0
 #define Joystick_2 1
 #define Joystick_3 2
@@ -220,6 +219,11 @@ enum KeyMode
 #define PS4_DPadDown Joystick_LeftTrigger
 #define PS4_DPadLeft Joystick_RightTrigger
 
+#define PS4_LUp 256
+#define PS4_LDown 257
+#define PS4_LLeft 258
+#define PS4_LRight 259
+
 #define Xbox_A Joystick_1
 #define Xbox_B Joystick_2
 #define Xbox_X Joystick_3
@@ -239,6 +243,11 @@ enum KeyMode
 #define Xbox_16 Joystick_LeftTrigger
 #define Xbox_LeftTrigger Joystick_LeftTrigger
 #define Xbox_RightTrigger Joystick_RightTrigger
+
+#define Xbox_LUp 256
+#define Xbox_LDown 257
+#define Xbox_LLeft 258
+#define Xbox_LRight 259
 
 using KeyCode = i32;
 using ControllerCode = i32;
