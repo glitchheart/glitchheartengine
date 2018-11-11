@@ -196,6 +196,7 @@ struct RenderState
     DirectionalLightData directional_light_data;
     PointLightData point_light_data;
     
+    
     u32 framebuffer_quad_vertices_size = 16 * sizeof(GLfloat);
     u32 texture_quad_vertices_size = 16 * sizeof(GLfloat);
     u32 rounded_quad_vertices_size = 16 * sizeof(GLfloat);

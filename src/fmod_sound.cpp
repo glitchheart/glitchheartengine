@@ -84,7 +84,7 @@ static void set_channel_attributes(FMOD_CHANNEL *channel, ChannelAttributes attr
         case LOOP_NORMAL:
         {
             mode |= FMOD_LOOP_NORMAL;
-            debug("Loop count: %d, type: %d\n", attributes.loop.count, attributes.loop.type);
+            //debug("Loop count: %d, type: %d\n", attributes.loop.count, attributes.loop.type);
             // @Incomplete: -1 is default, add loop_count later!
             FMOD_Channel_SetLoopCount(channel, attributes.loop.count);
             
@@ -251,15 +251,15 @@ static void play_sound(SoundCommand &command, SoundDevice *device, SoundSystem *
     
     FMOD_RESULT result = FMOD_OK;
     
-    FMOD_CHANNEL *channel;
+    FMOD_CHANNEL *channel = nullptr;
 
     if(command.one_shot.channel_attributes.type == ChannelType::SFX)
     {
-	result = FMOD_System_PlaySound(device->system, sound, device->sfx_channel_group, true, &channel);
+        result = FMOD_System_PlaySound(device->system, sound, device->sfx_channel_group, true, &channel);
     }
     else
     {
-	result = FMOD_System_PlaySound(device->system, sound, device->music_channel_group, true, &channel);
+	    result = FMOD_System_PlaySound(device->system, sound, device->music_channel_group, true, &channel);
     }
     
     set_channel_attributes(channel, command.one_shot.channel_attributes, system, device);
@@ -313,14 +313,14 @@ static void update_sound_commands(SoundDevice *device, SoundSystem *system, r64 
         FMOD_ChannelGroup_SetVolume(device->master_group, system->master_volume);
         FMOD_ChannelGroup_SetMute(device->master_group, system->muted);
         FMOD_ChannelGroup_SetPaused(device->master_group, system->paused);
-	FMOD_ChannelGroup_SetVolume(device->music_channel_group, system->music_volume);
-	FMOD_ChannelGroup_SetVolume(device->sfx_channel_group, system->sfx_volume);
+        FMOD_ChannelGroup_SetVolume(device->music_channel_group, system->music_volume);
+        FMOD_ChannelGroup_SetVolume(device->sfx_channel_group, system->sfx_volume);
         
         if(system->sfx_volume != device->sfx_volume || system->music_volume != device->music_volume || system->master_volume != device->master_volume)
         {
             device->sfx_volume = system->sfx_volume;
             device->music_volume = system->music_volume;
-	    device->master_volume = system->master_volume;
+	        device->master_volume = system->master_volume;
             *save_config = true;
         }
         
@@ -373,11 +373,11 @@ static void update_sound_commands(SoundDevice *device, SoundSystem *system, r64 
             }
         }
         
-        if(FMOD_System_Update(device->system) != FMOD_OK)
-        {
-            debug("FMOD failed updating\n");
-        }
-	
+        // if(FMOD_System_Update(device->system) != FMOD_OK)
+        // {
+        //     debug("FMOD failed updating\n");
+        // }
+
         system->command_count = 0;
     }
 }
