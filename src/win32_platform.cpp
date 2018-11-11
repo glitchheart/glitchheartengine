@@ -457,8 +457,6 @@ static PLATFORM_SEEK_FILE(win32_seek_file)
 
 static PLATFORM_TELL_FILE(win32_tell_file)
 {
-
-
     auto result = SetFilePointer(FileDescriptorToWin32(file.handle), 0, 0, FILE_CURRENT);
     return (i32)result;
 }
