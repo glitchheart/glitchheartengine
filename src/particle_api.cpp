@@ -105,6 +105,19 @@ EMITTER_FUNC(emit_from_square)
     return info;
 }
 
+EMITTER_FUNC(emit_from_square_random)
+{
+    ParticleSpawnInfo info;
+    
+    Vec3_4x r = random_outer_rect_4x(series, min, max, min, max);
+    
+    info.position = r;
+    
+    info.direction = random_direction_4x(series);
+    
+    return info;
+}
+
 EMITTER_FUNC(emit_from_disc)
 {
     ParticleSpawnInfo info;
@@ -113,7 +126,7 @@ EMITTER_FUNC(emit_from_disc)
     
     info.position = r;
     
-    info.direction = Vec3_4x(0.0f, 1.0f, 0.0f);//random_direction_4x(series);
+    info.direction = Vec3_4x(0.0f, 1.0f, 0.0f);
     
     return info;
 }
@@ -126,7 +139,33 @@ EMITTER_FUNC(emit_from_circle)
     
     info.position = r;
     
-    info.direction = Vec3_4x(0.0f, 1.0f, 0.0f);//random_direction_4x(series);
+    info.direction = Vec3_4x(0.0f, 1.0f, 0.0f);
+    
+    return info;
+}
+
+EMITTER_FUNC(emit_from_disc_random)
+{
+    ParticleSpawnInfo info;
+    
+    Vec3_4x r = random_disc_4x(series, (max - min) / 2.0f);
+    
+    info.position = r;
+    
+    info.direction = random_direction_4x(series);
+    
+    return info;
+}
+
+EMITTER_FUNC(emit_from_circle_random)
+{
+    ParticleSpawnInfo info;
+    
+    Vec3_4x r = random_circle_4x(series, (max - min) / 2.0f);
+    
+    info.position = r;
+    
+    info.direction = random_direction_4x(series);
     
     return info;
 }

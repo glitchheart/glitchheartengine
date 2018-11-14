@@ -847,6 +847,12 @@ static void setup_billboard(RenderState& render_state, MemoryArena* arena)
     
     auto position_location = (GLuint)glGetAttribLocation(render_state.quad_shader.program, "pos");
     vertex_attrib_pointer(position_location, 3, GL_FLOAT,  3 * sizeof(float), nullptr);
+
+    glEnableVertexAttribArray(0);
+    glEnableVertexAttribArray(1);
+    glEnableVertexAttribArray(2);
+    glEnableVertexAttribArray(3);
+    glEnableVertexAttribArray(4);
     
     glBindVertexArray(0);
 }
@@ -2655,23 +2661,23 @@ static void render_particles(RenderCommand &render_command, Renderer &renderer, 
     
     use_shader(shader);
     
-    glEnableVertexAttribArray(0);
+//    glEnableVertexAttribArray(0);
     vertex_attrib_pointer(0, 3, GL_FLOAT,(5 * sizeof(GLfloat)), nullptr);
     
-    glEnableVertexAttribArray(1);
+//    glEnableVertexAttribArray(1);
     vertex_attrib_pointer(1, 2, GL_FLOAT, (5 * sizeof(GLfloat)), (void*)(3 * sizeof(GLfloat)));
     
-    glEnableVertexAttribArray(2);
+//    glEnableVertexAttribArray(2);
     glBindBuffer(GL_ARRAY_BUFFER, offset_buffer.vbo);
     glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizei)sizeof(math::Vec3) * render_command.particles.particle_count, render_command.particles.offsets);
     vertex_attrib_pointer(2, 3, GL_FLOAT, (3 * sizeof(GLfloat)), (void*)(0 * sizeof(GLfloat)));
     
-    glEnableVertexAttribArray(3);
+//    glEnableVertexAttribArray(3);
     glBindBuffer(GL_ARRAY_BUFFER, color_buffer.vbo);
     glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizei)sizeof(math::Vec4) * render_command.particles.particle_count, render_command.particles.colors);
     vertex_attrib_pointer(3, 4, GL_FLOAT, (4 * sizeof(GLfloat)), (void*)(0 * sizeof(GLfloat)));
     
-    glEnableVertexAttribArray(4);
+//    glEnableVertexAttribArray(4);
     glBindBuffer(GL_ARRAY_BUFFER, size_buffer.vbo);
     glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizei)sizeof(math::Vec2) * render_command.particles.particle_count, render_command.particles.sizes);
     vertex_attrib_pointer(4, 2, GL_FLOAT, 2 * sizeof(GLfloat), (void*)(0 * sizeof(GLfloat)));

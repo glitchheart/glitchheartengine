@@ -1964,6 +1964,13 @@ static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer, ma
             }
         }
     }
+
+    for(i32 i = 0; i < particles_count; i++)
+    {
+	i32 _internal_handle = renderer.particles._internal_handles[particles_to_push[i] - 1];
+	ParticleSystemInfo& system = renderer.particles.particle_systems[_internal_handle];
+	push_particle_system(renderer, system, particles_to_push[i]);
+    }
     
     for(i32 com_index = 0; com_index < command_count; com_index++)
     {
@@ -1983,10 +1990,10 @@ static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer, ma
         push_mesh_instanced(renderer, mesh_info, &positions[com_index * 1024], &colors[com_index * 1024], &rotations[com_index * 1024], &scalings[com_index * 1024], command.count);
     }
 
-    for(i32 i = 0; i < particles_count; i++)
-    {
-	i32 _internal_handle = renderer.particles._internal_handles[particles_to_push[i] - 1];
-	ParticleSystemInfo& system = renderer.particles.particle_systems[_internal_handle];
-	push_particle_system(renderer, system, particles_to_push[i]);
-    }
+    // for(i32 i = 0; i < particles_count; i++)
+    // {
+    // 	i32 _internal_handle = renderer.particles._internal_handles[particles_to_push[i] - 1];
+    // 	ParticleSystemInfo& system = renderer.particles.particle_systems[_internal_handle];
+    // 	push_particle_system(renderer, system, particles_to_push[i]);
+    // }
 }
