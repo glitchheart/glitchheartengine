@@ -363,12 +363,13 @@ void process_analytics_events(AnalyticsEventState &analytics_state, WorkQueue *q
     analytics_state.event_count = 0;
 }
 
-#if defined(_WIN32)
+#if defined(_WIN32) 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 #else
 int main(int argc, char **args)
 #endif
-{    
+{
+    printf("%d\n", 3 / 4);
     GameMemory game_memory = {};
     
     game_memory.should_reload = true;

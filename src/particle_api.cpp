@@ -55,6 +55,15 @@ static void set_rate_over_distanace(ParticleSystemInfo &particle_system, r32 rat
     particle_system.attributes.emission_module.rate_over_distance = rate_over_distance;
 }
 
+EMITTER_FUNC(emit_dir)
+{
+    ParticleSpawnInfo info;
+    
+    info.position = Vec3_4x(0.0f);
+    info.direction = Vec3_4x(0.0f);
+    
+    return info;
+}
 
 EMITTER_FUNC(emit_random_dir)
 {

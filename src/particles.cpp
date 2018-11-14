@@ -301,10 +301,9 @@ void emit_particle(ParticleSystemInfo &particle_system, i32* alive_buf, i32* cou
     particle_system.particles.position[original_index] = spawn_info.position;
     Vec3_4x new_direction = spawn_info.direction;
     
-    // @Note(Niels): Now compute t he direction based on the direction given in the attributes and the randomly geneerated one
+    // @Note(Niels): Now compute the direction based on the direction given in the attributes and the randomly geneerated one
     particle_system.particles.direction[original_index] = math::normalize(particle_system.attributes.direction 
                                                                           + new_direction);
-    
     // @Note:(Niels): The current buffer gets the particle being emitted
     // It is passed in, so we only need to check once per frame when the system is updated
     alive_buf[(*count)++] = original_index;
