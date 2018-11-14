@@ -363,7 +363,7 @@ void process_analytics_events(AnalyticsEventState &analytics_state, WorkQueue *q
     analytics_state.event_count = 0;
 }
 
-#if defined(_WIN32) 
+#if defined(_WIN32) && !defined(DEBUG)
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 #else
 int main(int argc, char **args)
@@ -493,8 +493,11 @@ int main(int argc, char **args)
     //u32 frame_counter_for_asset_check = 0;
     
     SoundDevice sound_device = {};
+    sound_device.system = nullptr;
     debug_log("Initializing FMOD");
     
+    sound_device.channel_count = 0;
+    sound_device.sound_count = 0;
     sound_device.sfx_volume = config_data.sfx_volume;
     sound_device.music_volume = config_data.music_volume;
     sound_device.master_volume = config_data.master_volume;
@@ -506,6 +509,8 @@ int main(int argc, char **args)
     platform.add_entry(&fmod_queue, init_audio_fmod_thread, &sound_device);
     
     SoundSystem sound_system = {};
+    sound_system.command_count = 0;
+    sound_system.sound_count = 0;
     sound_system.commands = push_array(&sound_system.arena, global_max_sound_commands, SoundCommand);
     sound_system.sounds = push_array(&sound_system.arena, global_max_sounds, SoundHandle);
     sound_system.audio_sources = push_array(&sound_system.arena, global_max_audio_sources, AudioSource);
@@ -535,8 +540,9 @@ int main(int argc, char **args)
     AnalyticsEventState analytics_state = {};
 
     //gameanalytics::GameAnalytics::setEnabledInfoLog(true);
-    gameanalytics::GameAnalytics::configureBuild("alpha 0.10");
+    gameanalytics::GameAnalytics::configureBuild("alpha 0.2");
     gameanalytics::GameAnalytics::initialize("810960034d0191ec4f21a04d73295ec6", "2469ab09d7b00f64d5114071564b2d2d59c900a4");
+    gameanalytics::GameAnalytics::startSession();
 
     ThreadInfo analytics_info[1] = {};
     WorkQueue analytics_queue = {};
@@ -563,7 +569,7 @@ int main(int argc, char **args)
         game.update(delta_time, &game_memory, renderer, template_state, &input_controller, &sound_system, timer_controller);
         update_particle_systems(renderer, delta_time);
 
-	process_analytics_events(analytics_state, &analytics_queue);
+	    process_analytics_events(analytics_state, &analytics_queue);
 		
         tick_animation_controllers(renderer, &sound_system, &input_controller, timer_controller, delta_time);
         tick_timers(timer_controller, delta_time);
@@ -621,8 +627,8 @@ int main(int argc, char **args)
     event.type = AnalyticsEventType::SESSION;
     event.play_time = get_time() - start_frame_for_total_time;
 	
-    send_analytics_event(&analytics_queue, &event);
-			 
+    gameanalytics::GameAnalytics::endSession();
+    
     //curl_easy_cleanup(analytics_state.curl_handle);
     close_log();
     cleanup_sound(&sound_device);
