@@ -581,6 +581,26 @@ inline r32_4x simd_min(r32 left, r32_4x right)
     return r32_4x(min);
 }
 
+inline r64_4x simd_max(r64_4x left, r64_4x right)
+{
+    __m128d max_upper = _mm_max_pd(left.upper_bits.p, right.upper_bits.p);
+    __m128d max_lower = _mm_max_pd(left.lower_bits.p, right.lower_bits.p);
+    return r64_4x(max_upper, max_lower);
+}
+
+inline r64_4x simd_max(r64 left, r64_4x right)
+{
+    __m128d max_upper = _mm_max_pd(_mm_set1_pd(left), right.upper_bits.p);
+    __m128d max_lower = _mm_max_pd(_mm_set1_pd(left), right.lower_bits.p);
+    return r64_4x(max_upper, max_lower);
+}
+
+inline r32_4x simd_max(r32 left, r32_4x right)
+{
+    __m128 max = _mm_max_ps(_mm_set1_ps(left), right.p);
+    return r32_4x(max);
+}
+
 inline b32 equal_epsilon(r64_4x v, r64 cmp, r64 epsilon)
 {
     __m128d vcmp_me_up = _mm_cmplt_pd(_mm_set1_pd(cmp - epsilon), v.upper_bits.p);
@@ -669,6 +689,15 @@ inline b32 any_nz(r64_4x v)
     
     return lower_cmp != 0 || upper_cmp != 0;
 }
+
+inline b32 any_nz(r32_4x v)
+{
+    __m128 vcmp = _mm_cmplt_ps(_mm_setzero_ps(), v.p);
+    i32 cmp = _mm_movemask_ps(vcmp);
+    
+    return cmp != 0;
+}
+
 
 #else
 union r64_4x
@@ -882,6 +911,24 @@ inline r32_4x simd_min(r32 left, r32_4x right)
 {
     __m128 min = _mm_min_ps(_mm_set1_ps(left), right.p);
     return r32_4x(min);
+}
+
+inline r32_4x simd_max(r32 left, r32_4x right)
+{
+    __m128 max = _mm_max_ps(_mm_set1_ps(left), right.p);
+    return r32_4x(max);
+}
+
+inline r32_4x simd_max(r64 left, r64_4x right)
+{
+    __m256d max = _mm256_max_ps(_mm256_set1_ps(left), right.p);
+    return r64_4x(max);
+}
+
+inline r32_4x simd_max(r64_4x left, r64_4x right)
+{
+    __m256d max = _mm256_max_ps(left.p, right.p);
+    return r64_4x(max);
 }
 
 inline b32 equal_epsilon(r64_4x v, r64 cmp, r64 epsilon)
@@ -1615,6 +1662,12 @@ union Vec4_4x
     }
 };
 
+
+inline b32 any_nz(Vec3_4x v)
+{
+    return any_nz(v.x) || any_nz(v.y) || any_nz(v.z);
+}
+
 inline b32 all_zero(r32_4x v)
 {
     return false;
@@ -1701,10 +1754,14 @@ namespace math
     
     inline Vec3_4x normalize(Vec3_4x v)
     {
-        auto rec_sqrt = r_sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
-        
-        Vec3_4x res(0.0f);
-        
+	Vec3_4x res(0.0f);
+	if(!any_nz(v))
+	{
+	    return(res);
+	}
+
+	r32_4x rec_sqrt = r_sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
+	
         res.x = rec_sqrt * v.x;
         res.y = rec_sqrt * v.y;
         res.z = rec_sqrt * v.z;
