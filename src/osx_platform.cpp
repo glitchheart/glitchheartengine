@@ -21,7 +21,6 @@ inline PLATFORM_FILE_EXISTS(osx_file_exists)
     return (stat(file_path,&buffer) == 0);
 }
 
-
 inline PLATFORM_CREATE_DIRECTORY(osx_create_directory)
 {
     i32 result = mkdir(path, S_IRWXU);
@@ -131,7 +130,7 @@ PLATFORM_LOAD_SYMBOL(osx_load_symbol)
 
 PLATFORM_ALLOCATE_MEMORY(osx_allocate_memory)
 {
-    assert(sizeof(MemoryBlock) == 64);
+    assert(sizeof(MemoryBlock) == 72);
     
     umm page_size = sysconf(_SC_PAGE_SIZE);
     umm total_size = size + sizeof(MemoryBlock);

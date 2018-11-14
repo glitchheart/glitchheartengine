@@ -329,7 +329,7 @@ void update_particle_systems(Renderer &renderer, r64 delta_time)
 		particle_system.attributes.prewarmed = true;
 		for(i32 i = 0; i < 700; i++)
 		{
-		    update_particle_systems(renderer, delta_time);
+		    //update_particle_systems(renderer, delta_time);
 		}
 	    }
 	    

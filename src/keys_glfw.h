@@ -197,7 +197,9 @@ static void controller_key_callback(int key, int action)
     i32 key_mapped = (i32)(imm)map_get(&input_controller.controller_mappings, key);
     if (action == GLFW_PRESS)
     {
+	input_controller.current_input_type = InputType::CONTROLLER;
         input_controller.any_key_pressed = true;
+	
         if (input_controller.joystick_keys_just_pressed[key_mapped] == KEY_NOT_PRESSED)
         {
             input_controller.joystick_keys_just_pressed[key_mapped] = KEY_JUST_PRESSED;
@@ -242,6 +244,7 @@ static void controller_keys(i32 joystick)
             
             if(lt_axis > 0  && input_controller.joystick_keys_just_pressed[Joystick_LeftTrigger] != KEY_INVALID)
             {
+		input_controller.current_input_type = InputType::CONTROLLER;
                 input_controller.joystick_keys_just_pressed[Joystick_LeftTrigger] = KEY_JUST_PRESSED;
             }
             else if(lt_axis <= 0)
@@ -253,6 +256,7 @@ static void controller_keys(i32 joystick)
             
             if(rt_axis > 0 && input_controller.joystick_keys_just_pressed[Joystick_RightTrigger] != KEY_INVALID)
             {
+		input_controller.current_input_type = InputType::CONTROLLER;
                 input_controller.joystick_keys_just_pressed[Joystick_RightTrigger] = KEY_JUST_PRESSED;
             }
             else if(rt_axis <= 0)
@@ -269,6 +273,7 @@ static void controller_keys(i32 joystick)
             }
             else if(input_controller.axes_just_pressed[index] != KEY_INVALID)
             {
+		input_controller.current_input_type = InputType::CONTROLLER;
                 input_controller.axes_just_pressed[index] = KEY_JUST_PRESSED;
             }
         }
@@ -298,6 +303,8 @@ static void key_callback(GLFWwindow *window, int key, int scancode, int action, 
     i32 key_mapped = (i32)(umm)map_get(&input_controller.key_mappings, key);
     if (action == GLFW_PRESS && key >= 0)
     {
+	input_controller.current_input_type = InputType::KEYBOARD_MOUSE;
+	
         input_controller.any_key_pressed = true;
         if (input_controller.keys_just_pressed[key_mapped] == KEY_NOT_PRESSED)
         {
@@ -320,6 +327,7 @@ static void mouse_button_callback(GLFWwindow *window, int button, int action, in
     i32 button_mapped = (i32)(imm)map_get(&input_controller.mouse_button_mappings, button);
     if (action == GLFW_PRESS)
     {
+	input_controller.current_input_type = InputType::KEYBOARD_MOUSE;
         input_controller.any_key_pressed = true;
         if (input_controller.mouse_button_just_pressed[button_mapped] == KEY_NOT_PRESSED)
         {
