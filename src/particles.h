@@ -142,14 +142,13 @@ struct ParticleSystemInfo
     Material material;
     
     Particles particles;
+    i32* emitted_for_this_index;
     
     i32 *alive0_particles;
     i32 alive0_particle_count;
-    i32 alive0_actual_count;
     
     i32 *alive1_particles;
     i32 alive1_particle_count;
-    i32 alive1_actual_count;
     
     b32 alive0_active;
     
