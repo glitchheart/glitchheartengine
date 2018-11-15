@@ -133,10 +133,9 @@ r32_4x get_speed_by_time(ParticleSystemInfo &particle_system, r64_4x time_spent)
 // Any particle that is NOT dead, will be written into the alive buffer of the next frame
 // This ensures that we can clear the current frame buffer, and only ever iterate over
 // particles that are actually alive.
-void update_particles(Renderer &renderer, ParticleSystemInfo &particle_system, r64 delta_time, i32 *emitted_buf, i32 *emitted_this_frame, i32* emitted_actual_count, i32* next_frame_buf, i32 *next_frame_count, i32* next_actual_count)
+void update_particles(Renderer &renderer, ParticleSystemInfo &particle_system, r64 delta_time, i32 *emitted_buf, i32 *emitted_this_frame, i32* next_frame_buf, i32 *next_frame_count)
 {
 	particle_system.particle_count = 0;
-	*next_actual_count = 0;
 	
 	i32 speed_value_count = particle_system.speed_over_lifetime.value_count;
 	i32 color_value_count = particle_system.color_over_lifetime.value_count;
@@ -144,10 +143,7 @@ void update_particles(Renderer &renderer, ParticleSystemInfo &particle_system, r
 
 	for (i32 alive_index = 0; alive_index < *emitted_this_frame; alive_index++)
 	{
-	    if(*emitted_actual_count < 0)
-	    {
-            break;
-	    }
+        
 		i32 main_index = emitted_buf[alive_index];
 
 		// @Incomplete(Niels): Used to check where to position initial emission
@@ -155,7 +151,6 @@ void update_particles(Renderer &renderer, ParticleSystemInfo &particle_system, r
 		b32 start = equal_epsilon(particle_system.particles.life[main_index], particle_system.attributes.life_time, 0.001);
 		
 		particle_system.particles.life[main_index] -= delta_time;
-		*emitted_actual_count = *emitted_actual_count - 4;
 		
 		// @Note:(Niels): Check for alive state of this particle and kill if dead.
 		// Seems like a necessary branch here, since we do need to know if a particle is dead.
@@ -163,20 +158,11 @@ void update_particles(Renderer &renderer, ParticleSystemInfo &particle_system, r
 		if (any_lt_eq(particle_system.particles.life[main_index], 0.0))
 		{
 			particle_system.dead_particles[particle_system.dead_particle_count++] = main_index;
+            particle_system.emitted_for_this_index[main_index] = 0;
 			continue;
 		}
 		else
 		{
-
-		    if(*emitted_actual_count < 0)
-		    {
-                *next_actual_count = *next_actual_count + (*emitted_actual_count + 4);
-		    }
-		    else
-		    {
-                *next_actual_count = *next_actual_count + 4;
-		    }
-		    
 		    next_frame_buf[(*next_frame_count)++] = main_index;
 		}
 
@@ -239,7 +225,7 @@ void update_particles(Renderer &renderer, ParticleSystemInfo &particle_system, r
 		vec3_4x_to_float4(final_pos, p[0], p[1], p[2], p[3]);
 		vec4_4x_to_float4(color, c[0], c[1], c[2], c[3]);
 
-		for (i32 i = 0; i < 4; i++)
+		for (i32 i = 0; i < particle_system.emitted_for_this_index[main_index]; i++)
 		{
 			particle_system.offsets[particle_system.particle_count].x = p[i][0];
 			particle_system.offsets[particle_system.particle_count].y = p[i][1];
@@ -257,13 +243,11 @@ void update_particles(Renderer &renderer, ParticleSystemInfo &particle_system, r
 		}
 	}
 
-	particle_system.particle_count = *next_actual_count;
 
 	*emitted_this_frame = 0;
-	*emitted_actual_count = 0;
 }
 
-void emit_particle(ParticleSystemInfo &particle_system, i32* alive_buf, i32* count, i32* actual_count, RandomSeries& entropy, i32 emitted_count)
+void emit_particle(ParticleSystemInfo &particle_system, i32* alive_buf, i32* count, RandomSeries& entropy, i32 emitted_count)
 {
 	i32 original_index = find_unused_particle(particle_system);
 
@@ -289,7 +273,7 @@ void emit_particle(ParticleSystemInfo &particle_system, i32* alive_buf, i32* cou
 	// It is passed in, so we only need to check once per frame when the system is updated
 	alive_buf[(*count)++] = original_index;
 
-	*actual_count += emitted_count;
+    particle_system.emitted_for_this_index[original_index] = emitted_count;
 }
 
 // @Note(Niels): The way we update and choose particles is based on the link below
@@ -318,27 +302,21 @@ void update_particle_systems(Renderer &renderer, r64 delta_time)
 			// a frame.
 			i32* emitted_alive_buf = nullptr;
 			i32* emitted_alive_count = nullptr;
-			i32* emitted_actual_count = nullptr;
 			i32* write_buf = nullptr;
 			i32* write_buf_count = nullptr;
-			i32* write_actual_count = nullptr;
 			if (particle_system.alive0_active)
 			{
 				emitted_alive_buf = particle_system.alive0_particles;
 				emitted_alive_count = &particle_system.alive0_particle_count;
-				emitted_actual_count = &particle_system.alive0_actual_count;
 				write_buf = particle_system.alive1_particles;
 				write_buf_count = &particle_system.alive1_particle_count;
-				write_actual_count = &particle_system.alive1_actual_count;
 			}
 			else
 			{
 				emitted_alive_buf = particle_system.alive1_particles;
 				emitted_alive_count = &particle_system.alive1_particle_count;
-				emitted_actual_count = &particle_system.alive1_actual_count;
 				write_buf = particle_system.alive0_particles;
 				write_buf_count = &particle_system.alive0_particle_count;
-				write_actual_count = &particle_system.alive0_actual_count;
 			}
 
 			particle_system.alive0_active = !particle_system.alive0_active;
@@ -433,12 +411,11 @@ void update_particle_systems(Renderer &renderer, r64 delta_time)
 				    new_particles -= 4;
 					if (new_particles < 0)
 					{
-					    debug("spawning: %d\n", 4 + new_particles);
-						emit_particle(particle_system, emitted_alive_buf, emitted_alive_count, emitted_actual_count, renderer.particles.entropy, 4 + new_particles);
+						emit_particle(particle_system, emitted_alive_buf, emitted_alive_count, renderer.particles.entropy, 4 + new_particles);
 					}
 					else
 					{
-						emit_particle(particle_system, emitted_alive_buf, emitted_alive_count, emitted_actual_count, renderer.particles.entropy, 4);
+						emit_particle(particle_system, emitted_alive_buf, emitted_alive_count, renderer.particles.entropy, 4);
 					}
 
 				}
@@ -446,22 +423,20 @@ void update_particle_systems(Renderer &renderer, r64 delta_time)
 				// @Note(Niels): Same goes for burst		
 				for (i32 i = 0; i < simd_burst_particles / 4; i++)
 				{
-					emit_particle(particle_system, emitted_alive_buf, emitted_alive_count, emitted_actual_count, renderer.particles.entropy, 4);
+					emit_particle(particle_system, emitted_alive_buf, emitted_alive_count, renderer.particles.entropy, 4);
 				}
 			}
 
 			// @Note:(Niels): We now update the particles in the emitted alive buf (which may contain particles from previous frames that are still alive), while passing in the next buffer,
 			// which is now our "write" buffer.
-			update_particles(renderer, particle_system, delta_time, emitted_alive_buf, emitted_alive_count, emitted_actual_count, write_buf, write_buf_count, write_actual_count);
+			update_particles(renderer, particle_system, delta_time, emitted_alive_buf, emitted_alive_count, write_buf, write_buf_count);
 
 			// @Note(Niels): if all particles are dead and the system is one-shot we should stop the particle_system
 			if (particle_system.attributes.one_shot && particle_system.total_emitted > 0 && particle_system.alive0_particle_count == 0 && particle_system.alive1_particle_count == 0)
 			{
 				particle_system.running = false;
 				particle_system.alive0_particle_count = 0;
-				particle_system.alive0_actual_count = 0;
 				particle_system.alive1_particle_count = 0;
-				particle_system.alive1_actual_count = 0;
 			}
 		}
 	}

@@ -224,13 +224,16 @@ static void _allocate_particle_system(Renderer& renderer, ParticleSystemInfo& sy
     }
     
     system_info.alive0_particle_count = 0;
-    system_info.alive0_actual_count = 0;
     system_info.alive1_particle_count = 0;
-    system_info.alive1_actual_count = 0;
     
     system_info.particles.position = push_array_simd(memory_arena, max_over_four, Vec3_4x);
     system_info.particles.direction = push_array_simd(memory_arena, max_over_four, Vec3_4x);
     system_info.particles.color = push_array_simd(memory_arena, max_over_four, Rgba_4x);
+    system_info.emitted_for_this_index = push_array(memory_arena, max_over_four, i32);
+    for(i32 i = 0; i < max_over_four; i++)
+    {
+        system_info.emitted_for_this_index[i] = 0;
+    }
     
     system_info.particles.size = push_array_simd(memory_arena, max_over_four, Vec2_4x);
     system_info.particles.relative_position = push_array_simd(memory_arena, max_over_four, Vec3_4x);

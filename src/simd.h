@@ -1039,14 +1039,6 @@ union Vec2_4x
         y = r32_4x(v1.y, v2.y, v3.y, v4.y);
     }
     
-    inline Vec2_4x& operator=(const math::Vec2& v)
-    {
-        x = v.x;
-        y = v.y;
-        
-        return *this;
-    }
-    
     inline Vec2_4x& operator=(const Vec2_4x& v)
     {
         x = v.x;
