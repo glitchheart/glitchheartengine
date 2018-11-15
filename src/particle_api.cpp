@@ -224,7 +224,9 @@ static void _allocate_particle_system(Renderer& renderer, ParticleSystemInfo& sy
     }
     
     system_info.alive0_particle_count = 0;
+    system_info.alive0_actual_count = 0;
     system_info.alive1_particle_count = 0;
+    system_info.alive1_actual_count = 0;
     
     system_info.particles.position = push_array_simd(memory_arena, max_over_four, Vec3_4x);
     system_info.particles.direction = push_array_simd(memory_arena, max_over_four, Vec3_4x);

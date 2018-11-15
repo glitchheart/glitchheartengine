@@ -369,7 +369,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 int main(int argc, char **args)
 #endif
 {
-    printf("%d\n", 3 / 4);
     GameMemory game_memory = {};
     
     game_memory.should_reload = true;
@@ -618,6 +617,7 @@ int main(int argc, char **args)
         }
         
         delta_time = get_time() - last_frame;
+	delta_time = math::clamp(0.0, delta_time, 0.9);
         last_frame = end_counter;
         
     }
