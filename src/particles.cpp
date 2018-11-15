@@ -146,7 +146,7 @@ void update_particles(Renderer &renderer, ParticleSystemInfo &particle_system, r
 	{
 	    if(*emitted_actual_count < 0)
 	    {
-		break;
+            break;
 	    }
 		i32 main_index = emitted_buf[alive_index];
 
@@ -170,11 +170,11 @@ void update_particles(Renderer &renderer, ParticleSystemInfo &particle_system, r
 
 		    if(*emitted_actual_count < 0)
 		    {
-			*next_actual_count = *next_actual_count + (*emitted_actual_count + 4);
+                *next_actual_count = *next_actual_count + (*emitted_actual_count + 4);
 		    }
 		    else
 		    {
-			*next_actual_count = *next_actual_count + 4;
+                *next_actual_count = *next_actual_count + 4;
 		    }
 		    
 		    next_frame_buf[(*next_frame_count)++] = main_index;
@@ -305,8 +305,8 @@ void update_particle_systems(Renderer &renderer, r64 delta_time)
 			if (particle_system.attributes.prewarm && !particle_system.attributes.prewarmed)
 			{
 				particle_system.attributes.prewarmed = true;
-				// @Note: prewarm 4 seconds
-				update_particle_systems(renderer, 4.0);
+				// @Note: prewarm 5 seconds
+				update_particle_systems(renderer, 5.0);
 			}
 
 			// @Note(Niels): We have one buffer that takes the particles from the previous frame
@@ -409,7 +409,6 @@ void update_particle_systems(Renderer &renderer, r64 delta_time)
 					particle_system.emitting = false;
 				}
 
-
 				// @Incomplete(Niels): Consider if it is even necessary to have these simd values??
 				// seems kind of dumb...
 				// @Note(Niels): The reason for this is to get a number as a multiple of 4 because of SIMD emission (we always emit in 4's).
@@ -418,6 +417,7 @@ void update_particle_systems(Renderer &renderer, r64 delta_time)
 
 				// @Note(Niels): Check if the new amount is below the max and below the amount of dead particles.
 				simd_new_particles = MIN(particle_system.max_particles, MIN(simd_new_particles, particle_system.dead_particle_count * 4));
+                new_particles = MIN(particle_system.max_particles, MIN(new_particles, particle_system.dead_particle_count * 4));
 
 				// @Note(Niels): Emit the particles into the current alive buffer
 				// The first time around this buffer is empty, but on any subsequent step
@@ -428,13 +428,12 @@ void update_particle_systems(Renderer &renderer, r64 delta_time)
 				if (particle_system.attributes.one_shot)
 					particle_system.total_emitted += new_particles;
 				
-
 				while (new_particles > 0)
 				{
-					new_particles -= 4;
+				    new_particles -= 4;
 					if (new_particles < 0)
 					{
-//					    debug("spawning: %d\n", 4 + new_particles);
+					    debug("spawning: %d\n", 4 + new_particles);
 						emit_particle(particle_system, emitted_alive_buf, emitted_alive_count, emitted_actual_count, renderer.particles.entropy, 4 + new_particles);
 					}
 					else
@@ -443,11 +442,6 @@ void update_particle_systems(Renderer &renderer, r64 delta_time)
 					}
 
 				}
-
-				// for (i32 i = 0; i < simd_new_particles / 4; i++)
-				// {
-				//     emit_particle(particle_system, emitted_alive_buf, emitted_alive_count, emitted_actual_count, renderer.particles.entropy, 4);
-				// }
 
 				// @Note(Niels): Same goes for burst		
 				for (i32 i = 0; i < simd_burst_particles / 4; i++)

@@ -19,7 +19,7 @@ void main()
 {
     
 	vec3 vertexPositionWorld = 
-		offset
+		(offset - vec3(size.x / 2.0, size.y / 2.0, 0.0))
 		+ cameraRight * position.x * size.x
 		+ cameraUp * position.y * size.y;
     
