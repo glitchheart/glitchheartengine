@@ -34,7 +34,7 @@ struct TrueTypeFontInfo
     u32 oversample_x;
     u32 oversample_y;
     r32 largest_character_height;
-    
+    i32 line_gap;
     stbtt_fontinfo info;
     stbtt_packedchar char_data['~' - ' '];
 };
@@ -1149,10 +1149,66 @@ r32 to_ui(Renderer& renderer, i32 scale, r32 coord)
     return (coord / (r32)scale) * (r32)UI_COORD_DIMENSION;
 }
 
+#define MAX_LINES 16
+
+struct LineData
+{
+    math::Vec2 line_sizes[MAX_LINES];
+    i32 line_count;
+    r32 total_height;
+    r32 line_spacing;
+};
+
+static LineData get_line_size_data(const char *text, TrueTypeFontInfo font)
+{
+    math::Vec2 size;
+    r32 placeholder_y = 0.0;
+    
+    LineData line_data;
+    line_data.total_height = 0.0f;
+    line_data.line_count = 1;
+    line_data.line_spacing = (r32)font.ascent * font.scale;
+    
+    for(u32 i = 0; i < strlen(text); i++)
+    {
+	if(text[i] != '\n' && text[i] != '\r')
+	{
+	    stbtt_aligned_quad quad;
+	    stbtt_GetPackedQuad(font.char_data, font.atlas_width, font.atlas_height,
+				text[i] - font.first_char, &line_data.line_sizes[line_data.line_count - 1].x, &placeholder_y, &quad, 1);
+        
+	    if(quad.y1 - quad.y0 > size.y)
+	    {
+		line_data.line_sizes[line_data.line_count - 1].y = quad.y1 - quad.y0;
+	    }
+        
+	    i32 kerning = stbtt_GetCodepointKernAdvance(&font.info, text[i] - font.first_char, text[i + 1] - font.first_char);
+	    line_data.line_sizes[line_data.line_count - 1].x += (r32)kerning * font.scale;
+	}
+	else
+	{
+	    line_data.line_count++;
+	}
+    }
+
+    for(i32 line = 0; line < line_data.line_count; line++)
+    {
+	line_data.total_height += line_data.line_sizes[line].y;
+    }
+
+    line_data.total_height += (line_data.line_count - 1) * line_data.line_spacing;
+    
+    return line_data;
+}
+
 static math::Vec2 get_text_size(const char *text, TrueTypeFontInfo font)
 {
     math::Vec2 size;
     r32 placeholder_y = 0.0;
+
+    i32 lines = 1;
+
+    r32 current_width = 0.0f;
     
     for(u32 i = 0; i < strlen(text); i++)
     {
@@ -1168,11 +1224,19 @@ static math::Vec2 get_text_size(const char *text, TrueTypeFontInfo font)
 	    }
         
 	    i32 kerning = stbtt_GetCodepointKernAdvance(&font.info, text[i] - font.first_char, text[i + 1] - font.first_char);
-	    size.x += (r32)kerning * font.scale;
+	    current_width += (r32)kerning * font.scale;
+	}
+	else
+	{
+	    if(size.x > current_width)
+		current_width = size.x;
+
+	    size.x = 0.0f;
+	    lines++;
 	}
     }
-    
-    return size;
+
+    return math::Vec2(current_width, size.y * lines + font.size * (lines - 1));
 }
 
 static TrueTypeFontInfo get_tt_font_info(Renderer& renderer, i32 handle)
