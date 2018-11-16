@@ -986,7 +986,7 @@ static void load_extra_shaders(RenderState& render_state, Renderer& renderer)
 
 
 void stbtt_load_font(RenderState &render_state, Renderer& renderer, char *path, i32 size, i32 index = -1)
-{
+ {
     GLFontBuffer *font = nullptr;
     TrueTypeFontInfo *font_info = nullptr;
     if(index == -1)
@@ -1012,7 +1012,7 @@ void stbtt_load_font(RenderState &render_state, Renderer& renderer, char *path, 
     font_info->char_count = '~' - ' ';
     font_info->size = size;
     
-    font_info->size = (i32)from_ui(renderer, render_state.framebuffer_height, (r32)font_info->size);
+    // font_info->size = (i32)from_ui(renderer, render_state.framebuffer_height, (r32)font_info->size);
     
     i32 count_per_line = (i32)math::ceil(math::sqrt((r32)font_info->char_count));
     font_info->atlas_width = math::multiple_of_number(font_info->size * count_per_line, 4);
@@ -1026,9 +1026,9 @@ void stbtt_load_font(RenderState &render_state, Renderer& renderer, char *path, 
     
     fread(ttf_buffer, 1, 1<<20, fopen(path, "rb"));
     
-    stbtt_InitFont(&font_info->info, ttf_buffer, 0); 
+    stbtt_InitFont(&font_info->info, ttf_buffer, 0);
     font_info->scale = stbtt_ScaleForPixelHeight(&font_info->info, 15);
-    stbtt_GetFontVMetrics(&font_info->info, &font_info->ascent, nullptr, &font_info->line_gap);
+    stbtt_GetFontVMetrics(&font_info->info, &font_info->ascent, &font_info->descent, &font_info->line_gap);
     font_info->baseline = (i32)(font_info->ascent * font_info->scale);
     
     stbtt_pack_context context;
@@ -1036,8 +1036,7 @@ void stbtt_load_font(RenderState &render_state, Renderer& renderer, char *path, 
         printf("Failed to initialize font");
     
     stbtt_PackSetOversampling(&context, font_info->oversample_x, font_info->oversample_y);
-    if (!stbtt_PackFontRange(&context, ttf_buffer, 0
-                             , (r32)font_info->size, font_info->first_char, font_info->char_count, font_info->char_data))
+    if (!stbtt_PackFontRange(&context, ttf_buffer, 0, (r32)font_info->size, font_info->first_char, font_info->char_count, font_info->char_data))
         printf("Failed to pack font");
     
 #if DEBUG
@@ -1078,6 +1077,8 @@ void stbtt_load_font(RenderState &render_state, Renderer& renderer, char *path, 
         vertex_attrib_pointer(0, 4, GL_FLOAT, 0, nullptr);
         glBindVertexArray(0);
     }
+
+    font_info->line_height = font_info->size + font_info->line_gap * font_info->scale;
     
     r32 largest_character = 0;
     
@@ -1086,7 +1087,7 @@ void stbtt_load_font(RenderState &render_state, Renderer& renderer, char *path, 
         char str[2];
         str[0] = (char)(font_info->first_char + i);
         str[1] = '\0';
-        math::Vec2 char_size = get_text_size_scaled(renderer, str, *font_info, 0);
+        math::Vec2 char_size = get_text_size(str, *font_info);
         if(char_size.y > largest_character)
         {
             largest_character = char_size.y;
@@ -1895,21 +1896,20 @@ static void render_text(RenderState &render_state, GLFontBuffer &font, TrueTypeF
 
     // @Cleanup: Can we get rid of this?
     y = render_state.framebuffer_height - y;
-    
+
     calculate_current_x_from_line_data(&x, line_data.line_sizes[current_line], alignment_flags);
     
     for(u32 i = 0; i < strlen(text); i++)
     {
 	char c = text[i];
 	
-	if(c == '\n' || c == '\r')
+	if(c == '\n')
 	{
-	    // @Study
-	    // @Incomplete: This is probably not the right way to calculate the line gap
-	    y += line_data.line_sizes[current_line].y + font_info.ascent * font_info.scale;
+	    current_line++;
+	    
+	    y += font_info.line_height;
 	    x = start_x;
 
-	    current_line++;
 	    if(current_line != line_data.line_count)
 		calculate_current_x_from_line_data(&x, line_data.line_sizes[current_line], alignment_flags);
 
@@ -1968,6 +1968,7 @@ static void render_3d_text(RenderState &render_state, GLFontBuffer &font, TrueTy
     r32 y = position.y;
     
     // @Speed: The call to get_text_size() will loop through the text, which means we'll loop through it twice per render-call
+    printf("SHIT\n");
     math::Vec2 text_size = get_text_size(text, font_info);
     if(alignment_flags & ALIGNMENT_CENTER_X)
     {
