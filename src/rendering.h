@@ -24,6 +24,9 @@
 struct TrueTypeFontInfo
 {
     i32 ascent;
+    i32 descent;
+    i32 line_gap;
+    r32 line_height;
     r32 scale;
     i32 baseline;
     i32 first_char;
@@ -34,7 +37,6 @@ struct TrueTypeFontInfo
     u32 oversample_x;
     u32 oversample_y;
     r32 largest_character_height;
-    i32 line_gap;
     stbtt_fontinfo info;
     stbtt_packedchar char_data['~' - ' '];
 };
@@ -1167,7 +1169,8 @@ static LineData get_line_size_data(const char *text, TrueTypeFontInfo font)
     LineData line_data;
     line_data.total_height = 0.0f;
     line_data.line_count = 1;
-    line_data.line_spacing = (r32)font.ascent * font.scale;
+    
+    line_data.line_spacing = (r32)font.size + font.line_gap * font.scale;
     
     for(u32 i = 0; i < strlen(text); i++)
     {
@@ -1191,12 +1194,7 @@ static LineData get_line_size_data(const char *text, TrueTypeFontInfo font)
 	}
     }
 
-    for(i32 line = 0; line < line_data.line_count; line++)
-    {
-	line_data.total_height += line_data.line_sizes[line].y;
-    }
-
-    line_data.total_height += (line_data.line_count - 1) * line_data.line_spacing;
+    line_data.total_height = (line_data.line_count - 1) * line_data.line_spacing;
     
     return line_data;
 }
