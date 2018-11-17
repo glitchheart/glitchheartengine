@@ -255,7 +255,7 @@ static void push_ui_text(Renderer &renderer, const char* text, math::Vec2 positi
     render_command->clip_rect = scaled_clip_rect;
 }
 
-#define PUSH_TEXT(text, position, color, font_handle) push_text(renderer, text, position, 1.0f, font_handle, color)
+#define PUSH_TEXT(text, position, pcolor, font_handle) push_text(renderer, text, position, 1.0f, font_handle, color)
 #define PUSH_CENTERED_TEXT(text, position, color, font_handle) push_text(renderer, text, position, 1.0f, font_handle, color, ALIGNMENT_CENTER_X | ALIGNMENT_CENTER_Y)
 static void push_text(Renderer& renderer, const char* text, math::Vec3 position, r32 scale, i32 font_handle, math::Rgba color, u64 alignment_flags = ALIGNMENT_LEFT, b32 is_ui = true)
 {
@@ -1175,6 +1175,7 @@ static void push_mesh_instanced(Renderer &renderer, MeshInfo mesh_info, math::Ve
     render_command->mesh_instanced.instance_color_buffer_handle = mesh_info.instance_color_buffer_handle;
     render_command->mesh_instanced.instance_rotation_buffer_handle = mesh_info.instance_rotation_buffer_handle;
     render_command->mesh_instanced.instance_scale_buffer_handle = mesh_info.instance_scale_buffer_handle;
+    render_command->mesh_instanced.dissolve = mesh_info.
     
     render_command->mesh_instanced.offsets = offsets;
     render_command->mesh_instanced.colors = colors;
@@ -1294,6 +1295,7 @@ static void load_material(Renderer &renderer, char *file_path, MaterialHandle *m
         material.diffuse_texture = { 0 };
         material.ambient_texture = { 0 };
         material.specular_texture = { 0 };
+	material.dissolve = 1.0f;
         
         while((fgets(buffer, sizeof(buffer), mtl_file) != NULL))
         {
@@ -1323,6 +1325,10 @@ static void load_material(Renderer &renderer, char *file_path, MaterialHandle *m
             {
                 sscanf(buffer, "Ns %f", &material.specular_exponent);
             }
+	    else if(starts_with(buffer, "d"))
+	    {
+		sscanf(buffer, "d %f", &material.dissolve);
+	    }
             else if(starts_with(buffer, "map_Ka")) // ambient map
             {
                 char name[64];
