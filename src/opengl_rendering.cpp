@@ -1012,7 +1012,7 @@ void stbtt_load_font(RenderState &render_state, Renderer& renderer, char *path, 
     font_info->char_count = '~' - ' ';
     font_info->size = size;
     
-    // font_info->size = (i32)from_ui(renderer, render_state.framebuffer_height, (r32)font_info->size);
+    font_info->size = (i32)from_ui(renderer, render_state.framebuffer_height, (r32)font_info->size);
     
     i32 count_per_line = (i32)math::ceil(math::sqrt((r32)font_info->char_count));
     font_info->atlas_width = math::multiple_of_number(font_info->size * count_per_line, 4);
@@ -2616,7 +2616,8 @@ static void render_mesh_instanced(const RenderCommand &render_command, Renderer 
         set_float_uniform(shader.program, "material.translucency.power", 9.8);
         set_float_uniform(shader.program, "material.translucency.scale", 0.5);
         set_vec3_uniform(shader.program, "material.translucency.subColor", math::Vec3(1.0f));
-        
+        set_float_uniform(shader.program, "material.dissolve", render_command.mesh_instanced.dissolve);
+	
         switch(render_command.mesh_instanced.wireframe_type)
         {
             case WT_NONE:

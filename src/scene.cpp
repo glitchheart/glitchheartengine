@@ -248,7 +248,6 @@ namespace scene
                         else if(starts_with(buffer, "prim"))
                         {
                             char *prim_type = buffer + sizeof(char) * 6;
-
                             if(starts_with(prim_type, "cube"))
                             {
                                 create_cube(*scene.renderer, &templ.render.mesh_handle);
