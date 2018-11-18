@@ -37,7 +37,7 @@ namespace scene
         scene.render_component_count = 0;
         scene.material_count = 0;
 		
-	auto &memory_arena = scene.memory_arena;
+        auto &memory_arena = scene.memory_arena;
         scene.entities = push_array(&memory_arena, initial_entity_array_size, Entity);
         scene._internal_handles = push_array(&memory_arena, initial_entity_array_size, i32);
         scene.active_entities = push_array(&memory_arena, initial_entity_array_size, b32);
@@ -53,9 +53,9 @@ namespace scene
             scene.transform_components[index].position = math::Vec3(0, 0, 0);
             scene.transform_components[index].scale = math::Vec3(1, 1, 1);
             scene.transform_components[index].rotation = math::Vec3(0, 0, 0);
-	    scene.transform_components[index].parent_handle = EMPTY_COMP_HANDLE;
-	    scene.transform_components[index].child_handle = EMPTY_COMP_HANDLE;
-	}
+            scene.transform_components[index].parent_handle = EMPTY_COMP_HANDLE;
+            scene.transform_components[index].child_handle = EMPTY_COMP_HANDLE;
+        }
         
         return(scene);
     }
@@ -78,7 +78,7 @@ namespace scene
             scene.particle_system_component_count = 0;
             scene.material_count = 0;
             scene.current_internal_handle = 0;
-	    clear(&scene.memory_arena);
+            clear(&scene.memory_arena);
         }
     }
     
@@ -201,7 +201,7 @@ namespace scene
                     templ.transform.position = math::Vec3();
                     templ.transform.scale = math::Vec3(1, 1, 1);
                     templ.transform.rotation = math::Vec3(0, 0, 0);
-		    templ.transform.child_handle = EMPTY_TEMPLATE_HANDLE;
+                    templ.transform.child_handle = EMPTY_TEMPLATE_HANDLE;
                     
                     while(fgets(buffer, 256, file) && !starts_with(buffer, "-"))
                     {
@@ -217,11 +217,11 @@ namespace scene
                         {
                             sscanf(buffer, "rotation: %f %f %f\n", &templ.transform.rotation.x, &templ.transform.rotation.y, &templ.transform.rotation.z);
                         }
-			else if(starts_with(buffer, "child_templ"))
-			{
-			    // @Incomplete
-			    // Child template referenced
-			}
+                        else if(starts_with(buffer, "child_templ"))
+                        {
+                            // @Incomplete
+                            // Child template referenced
+                        }
                     }
                 }
                 else if(starts_with(buffer, "-render"))
@@ -260,9 +260,9 @@ namespace scene
                         else if(starts_with(buffer, "mtl"))
                         {
                             if(templ.render.material_handle.handle != 0)
-			    {
+                            {
                                 debug("A material file was already loaded for this template file: %s\n", templ.file_path);
-			    }
+                            }
 
                             char mtl_file[256];
                             sscanf(buffer, "mtl: %s", mtl_file);
@@ -270,12 +270,127 @@ namespace scene
                         }
                     }
                 }
-                else if(starts_with(buffer, "-particle"))
+                else if(starts_with(buffer, "-particles"))
                 {
                     templ.comp_flags |= COMP_PARTICLES;
+		    
+                    templ.particles.max_particles = 0;
+                    templ.particles.color_over_lifetime.value_count = 0;
+                    templ.particles.size_over_lifetime.value_count = 0;
+                    templ.particles.speed_over_lifetime.value_count = 0;
+		    
+                    ParticleSystemAttributes attributes = get_default_particle_system_attributes();
+		    
                     while(fgets(buffer, 256, file) && !starts_with(buffer, "-"))
                     {
+                        if(starts_with(buffer, "max_particles"))
+                        {
+                            sscanf(buffer, "max_particles: %d", &templ.particles.max_particles);
+                        }
+                        else if(starts_with(buffer, "started"))
+                        {
+                            sscanf(buffer, "started: %d", &templ.particles.started);
+                        }
+                        else if(starts_with(buffer, "start_size"))
+                        {
+                            sscanf(buffer, "start_size: %f %f", &attributes.start_size.x, &attributes.start_size.y);
+                        }
+                        else if(starts_with(buffer, "start_color"))
+                        {
+                            sscanf(buffer, "start_color: %f %f %f %f", &attributes.start_color.r, &attributes.start_color.g, &attributes.start_color.b, &attributes.start_color.a);
+                        }
+                        else if(starts_with(buffer, "start_speed"))
+                        {
+                            sscanf(buffer, "start_speed: %f", &attributes.start_speed);
+                        }
+                        else if(starts_with(buffer, "life_time"))
+                        {
+                            sscanf(buffer, "life_time: %lf", &attributes.life_time);
+                        }
+                        else if(starts_with(buffer, "per_second"))
+                        {
+                            sscanf(buffer, "per_second: %d", &attributes.particles_per_second);
+                        }
+                        else if(starts_with(buffer, "spread"))
+                        {
+                            sscanf(buffer, "spread: %f", &attributes.spread);
+                        }
+                        else if(starts_with(buffer, "direction"))
+                        {
+                            sscanf(buffer, "direction: %f %f %f", &attributes.direction.x, &attributes.direction.y, &attributes.direction.z);
+                        }
+                        else if(starts_with(buffer, "texture"))
+                        {
+                            char texture_path[128];
+                            sscanf(buffer, "texture: %s", texture_path);
+                            load_texture(texture_path, *scene.renderer, LINEAR, &attributes.texture_handle);
+                        }
+                        else if(starts_with(buffer, "gravity"))
+                        {
+                            sscanf(buffer, "gravity: %f", &attributes.gravity);
+                        }
+                        else if(starts_with(buffer, "emitter_func"))
+                        {
+                            char func_name[32];
+                            sscanf(buffer, "emitter_func: %s", func_name);
+
+                            attributes.emission_module.emitter_func = emit_from_2D_square_random;
+                            if(starts_with(func_name, "2d_square_random"))
+                            {
+                                attributes.emission_module.emitter_func = emit_from_2D_square_random;
+                            }
+                            else
+                            {
+                                // @Incomplete: Add missing functions!!!
+                                // @Incomplete: Add missing functions!!!
+                                // @Incomplete: Add missing functions!!!
+                                // @Incomplete: Add missing functions!!!
+                            }
+                        }
+                        else if(starts_with(buffer, "emission_min"))
+                        {
+                            sscanf(buffer, "emission_min: %f", &attributes.emission_module.min);
+                        }
+                        else if(starts_with(buffer, "emission_max"))
+                        {
+                            sscanf(buffer, "emission_max: %f", &attributes.emission_module.max);
+                        }
+                        else if(starts_with(buffer, "prewarm"))
+                        {
+                            sscanf(buffer, "prewarm: %d", &attributes.prewarm);
+                        }
+                        else if(starts_with(buffer, "one_shot"))
+                        {
+                            sscanf(buffer, "one_shot: %d", &attributes.one_shot);
+                        }
+                        else if(starts_with(buffer, "base_position"))
+                        {
+                            sscanf(buffer, "base_position: %f %f %f", &attributes.base_position.x, &attributes.base_position.y, &attributes.base_position.z);
+                        }
+                        else if(starts_with(buffer, "size_key"))
+                        {
+                            math::Vec2 &value = templ.particles.size_over_lifetime.values[templ.particles.size_over_lifetime.value_count];
+                            r64 &key = templ.particles.size_over_lifetime.keys[templ.particles.size_over_lifetime.value_count];
+                            sscanf(buffer, "size_key: %lf %f %f", &key, &value.x, &value.y);
+                            templ.particles.size_over_lifetime.value_count++;
+                        }
+                        else if(starts_with(buffer, "color_key"))
+                        {
+                            math::Rgba &value = templ.particles.color_over_lifetime.values[templ.particles.color_over_lifetime.value_count];
+                            r64 &key = templ.particles.color_over_lifetime.keys[templ.particles.color_over_lifetime.value_count];
+                            sscanf(buffer, "color_key: %lf %f %f %f %f", &key, &value.r, &value.g, &value.b, &value.a);
+                            templ.particles.color_over_lifetime.value_count++;
+                        }
+                        else if(starts_with(buffer, "speed_key"))
+                        {
+                            r32 &value = templ.particles.speed_over_lifetime.values[templ.particles.speed_over_lifetime.value_count];
+                            r64 &key = templ.particles.speed_over_lifetime.keys[templ.particles.speed_over_lifetime.value_count];
+                            sscanf(buffer, "speed_key: %lf %f", &key, &value);
+                            templ.particles.speed_over_lifetime.value_count++;
+                        }
                     }
+
+                    templ.particles.attributes = attributes;
                 }
             }
             
@@ -297,7 +412,7 @@ namespace scene
             transform.position = templ.transform.position;
             transform.scale = templ.transform.scale;
             transform.rotation = templ.transform.rotation;
-	    // @Incomplete: Parent and child handles
+            // @Incomplete: Parent and child handles
         }
         
         if(templ.comp_flags & COMP_RENDER)
@@ -311,6 +426,33 @@ namespace scene
         
         if(templ.comp_flags & COMP_PARTICLES)
         {
+            scene::ParticleSystemComponent &ps_comp = scene::add_particle_system_component(scene, handle, templ.particles.attributes, templ.particles.max_particles);
+
+            ParticleSystemInfo *ps = get_particle_system_info(ps_comp.handle, *scene.renderer);
+            
+            for(i32 i = 0; i < templ.particles.size_over_lifetime.value_count; i++)
+            {
+                r64 key = templ.particles.size_over_lifetime.keys[i];
+                math::Vec2 value = templ.particles.size_over_lifetime.values[i];
+                add_size_key(*ps, key, value);
+            }
+
+            for(i32 i = 0; i < templ.particles.color_over_lifetime.value_count; i++)
+            {
+                r64 key = templ.particles.color_over_lifetime.keys[i];
+                math::Rgba value = templ.particles.color_over_lifetime.values[i];
+                add_color_key(*ps, key, value);
+            }
+
+            for(i32 i = 0; i < templ.particles.speed_over_lifetime.value_count; i++)
+            {
+                r64 key = templ.particles.speed_over_lifetime.keys[i];
+                r32 value = templ.particles.speed_over_lifetime.values[i];
+                add_speed_key(*ps, key, value);
+            }
+
+            if(templ.particles.started)
+                start_particle_system(ps_comp.handle, *scene.renderer);
         }
         
         return(handle);
