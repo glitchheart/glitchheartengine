@@ -1883,7 +1883,7 @@ static void render_text(RenderState &render_state, GLFontBuffer &font, TrueTypeF
     
     if(alignment_flags & ALIGNMENT_CENTER_Y)
     {
-        y += line_data.total_height / 2.0f;
+        y -= line_data.line_sizes[0].y * 0.5f;
     }
     else if(alignment_flags & ALIGNMENT_TOP)
     {

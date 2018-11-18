@@ -1175,7 +1175,7 @@ static void push_mesh_instanced(Renderer &renderer, MeshInfo mesh_info, math::Ve
     render_command->mesh_instanced.instance_color_buffer_handle = mesh_info.instance_color_buffer_handle;
     render_command->mesh_instanced.instance_rotation_buffer_handle = mesh_info.instance_rotation_buffer_handle;
     render_command->mesh_instanced.instance_scale_buffer_handle = mesh_info.instance_scale_buffer_handle;
-    render_command->mesh_instanced.dissolve = mesh_info.
+    render_command->mesh_instanced.dissolve = mesh_info.material.dissolve;
     
     render_command->mesh_instanced.offsets = offsets;
     render_command->mesh_instanced.colors = colors;

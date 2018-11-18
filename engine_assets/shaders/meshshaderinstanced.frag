@@ -218,11 +218,11 @@ void main()
         
         if(material.translucency.hasTranslucency)
         {
-            color.a = dissolve * texture(material.specularTexture, fs_in.uv).a * spec;
+            color.a = material.dissolve * texture(material.specularTexture, fs_in.uv).a * spec;
         }
         else
         {
-            color.a = dissolve;
+            color.a = material.dissolve;
         }
     }
     else
