@@ -41,6 +41,8 @@ struct Material
     sampler2D specularIntensityTexture;
     float specularExponent;
     bool hasSpecularIntensity;
+
+    float dissolve;
     
     Translucency translucency;
 };
@@ -216,18 +218,18 @@ void main()
         
         if(material.translucency.hasTranslucency)
         {
-            color.a = 1.0f * texture(material.specularTexture, fs_in.uv).a * spec;
+            color.a = material.dissolve * texture(material.specularTexture, fs_in.uv).a * spec;
         }
         else
         {
-            color.a = 1.0f;
+            color.a = material.dissolve;
         }
     }
     else
     {
         color = vec4(0.0, 0.0, 0.0, 0.0);
     }
-    
+
     if(drawWireframe)
     {
         vec3 d = fwidth(fs_in.wireframeDist);

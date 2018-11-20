@@ -2378,7 +2378,7 @@ namespace math
     
     inline i32 random_int(i32 from, i32 to)
     {
-        return rand() % to + from;
+	return rand() & (to + 1 - from) + from;
     }
     
     inline r32 random_float(r32 from, r32 to)
