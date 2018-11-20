@@ -1,3 +1,4 @@
+
 //#define GL_DEBUG
 
 #ifdef GL_DEBUG
@@ -991,7 +992,7 @@ static void load_extra_shaders(RenderState& render_state, Renderer& renderer)
 
 
 void stbtt_load_font(RenderState &render_state, Renderer& renderer, char *path, i32 size, i32 index = -1)
-{
+ {
     GLFontBuffer *font = nullptr;
     TrueTypeFontInfo *font_info = nullptr;
     if(index == -1)
@@ -1017,7 +1018,7 @@ void stbtt_load_font(RenderState &render_state, Renderer& renderer, char *path, 
     font_info->char_count = '~' - ' ';
     font_info->size = size;
     
-    font_info->size = (i32)from_ui(renderer, render_state.framebuffer_height, (r32)font_info->size);
+    // font_info->size = (i32)from_ui(renderer, render_state.framebuffer_height, (r32)font_info->size);
     
     i32 count_per_line = (i32)math::ceil(math::sqrt((r32)font_info->char_count));
     font_info->atlas_width = math::multiple_of_number(font_info->size * count_per_line, 4);
@@ -1031,9 +1032,9 @@ void stbtt_load_font(RenderState &render_state, Renderer& renderer, char *path, 
     
     fread(ttf_buffer, 1, 1<<20, fopen(path, "rb"));
     
-    stbtt_InitFont(&font_info->info, ttf_buffer, 0); 
+    stbtt_InitFont(&font_info->info, ttf_buffer, 0);
     font_info->scale = stbtt_ScaleForPixelHeight(&font_info->info, 15);
-    stbtt_GetFontVMetrics(&font_info->info, &font_info->ascent, nullptr, nullptr);
+    stbtt_GetFontVMetrics(&font_info->info, &font_info->ascent, &font_info->descent, &font_info->line_gap);
     font_info->baseline = (i32)(font_info->ascent * font_info->scale);
     
     stbtt_pack_context context;
@@ -1041,8 +1042,7 @@ void stbtt_load_font(RenderState &render_state, Renderer& renderer, char *path, 
         printf("Failed to initialize font");
     
     stbtt_PackSetOversampling(&context, font_info->oversample_x, font_info->oversample_y);
-    if (!stbtt_PackFontRange(&context, ttf_buffer, 0
-                             , (r32)font_info->size, font_info->first_char, font_info->char_count, font_info->char_data))
+    if (!stbtt_PackFontRange(&context, ttf_buffer, 0, (r32)font_info->size, font_info->first_char, font_info->char_count, font_info->char_data))
         printf("Failed to pack font");
     
 #if DEBUG
@@ -1083,6 +1083,8 @@ void stbtt_load_font(RenderState &render_state, Renderer& renderer, char *path, 
         vertex_attrib_pointer(0, 4, GL_FLOAT, 0, nullptr);
         glBindVertexArray(0);
     }
+
+    font_info->line_height = font_info->size + font_info->line_gap * font_info->scale;
     
     r32 largest_character = 0;
     
@@ -1091,7 +1093,7 @@ void stbtt_load_font(RenderState &render_state, Renderer& renderer, char *path, 
         char str[2];
         str[0] = (char)(font_info->first_char + i);
         str[1] = '\0';
-        math::Vec2 char_size = get_text_size_scaled(renderer, str, *font_info, 0);
+        math::Vec2 char_size = get_text_size(str, *font_info);
         if(char_size.y > largest_character)
         {
             largest_character = char_size.y;
@@ -1843,6 +1845,18 @@ static void render_quad(RenderMode mode, RenderState& render_state, math::Vec4 c
     glBindVertexArray(0);
 }
 
+static void calculate_current_x_from_line_data(r32 *x, math::Vec2 text_size, u64 alignment_flags)
+{
+    if(alignment_flags & ALIGNMENT_CENTER_X)
+    {
+        *x -= text_size.x / 2.0f;
+    }
+    else if(alignment_flags & ALIGNMENT_RIGHT)
+    {
+        *x -= text_size.x;
+    }
+}
+
 //rendering methods
 static void render_text(RenderState &render_state, GLFontBuffer &font, TrueTypeFontInfo& font_info, const math::Vec4& color, const char* text, r32 x, r32 y, math::Mat4 view_matrix, math::Mat4 projection_matrix, r32 scale = 1.0f,
                         u64 alignment_flags = ALIGNMENT_LEFT, b32 align_center_y = true, i32 z = 0)
@@ -1868,34 +1882,46 @@ static void render_text(RenderState &render_state, GLFontBuffer &font, TrueTypeF
     i32 n = 0;
     
     // @Speed: The call to get_text_size() will loop throught the text, which means we'll loop through it twice per render-call
-    math::Vec2 text_size = get_text_size(text, font_info);
-    if(alignment_flags & ALIGNMENT_CENTER_X)
-    {
-        x -= text_size.x / 2.0f;
-    }
-    else if(alignment_flags & ALIGNMENT_RIGHT)
-    {
-        x -= text_size.x;
-    }
+    LineData line_data = get_line_size_data(text, font_info);
+
+    r32 start_x = x;
+    i32 current_line = 0;
     
     if(alignment_flags & ALIGNMENT_CENTER_Y)
     {
-        y -= text_size.y / 2.0f;
+        y += line_data.total_height / 2.0f;
     }
     else if(alignment_flags & ALIGNMENT_TOP)
     {
-        y -= text_size.y;
+        y += line_data.total_height;
     }
     else if(alignment_flags & ALIGNMENT_BOTTOM)
     {
-        y += text_size.y;
+        y -= line_data.total_height;
     }
-    
-    // first we have to reverse the initial y to support stb_truetype where y+ is down
+
+    // @Cleanup: Can we get rid of this?
     y = render_state.framebuffer_height - y;
+
+    calculate_current_x_from_line_data(&x, line_data.line_sizes[current_line], alignment_flags);
     
     for(u32 i = 0; i < strlen(text); i++)
     {
+	char c = text[i];
+	
+	if(c == '\n')
+	{
+	    current_line++;
+	    
+	    y += font_info.line_height;
+	    x = start_x;
+
+	    if(current_line != line_data.line_count)
+		calculate_current_x_from_line_data(&x, line_data.line_sizes[current_line], alignment_flags);
+
+	    continue;
+	}
+	
         stbtt_aligned_quad quad;
         stbtt_GetPackedQuad(font_info.char_data, font_info.atlas_width, font_info.atlas_height,
                             text[i]- font_info.first_char, &x, &y, &quad, 1);
@@ -1948,6 +1974,7 @@ static void render_3d_text(RenderState &render_state, GLFontBuffer &font, TrueTy
     r32 y = position.y;
     
     // @Speed: The call to get_text_size() will loop through the text, which means we'll loop through it twice per render-call
+    printf("SHIT\n");
     math::Vec2 text_size = get_text_size(text, font_info);
     if(alignment_flags & ALIGNMENT_CENTER_X)
     {
@@ -1973,17 +2000,19 @@ static void render_3d_text(RenderState &render_state, GLFontBuffer &font, TrueTy
     
     // first we have to reverse the initial y to support stb_truetype where y+ is down
     //y = render_state.window_height - y;
-    
+
     for(u32 i = 0; i < strlen(text); i++)
     {
+	char c = text[i];
+	
         stbtt_aligned_quad quad;
         stbtt_GetPackedQuad(font_info.char_data, font_info.atlas_width, font_info.atlas_height,
-                            text[i] - font_info.first_char, &x, &y, &quad, 1);
+                            c - font_info.first_char, &x, &y, &quad, 1);
         
         r32 x_min = quad.x0;
         r32 x_max = quad.x1;
-        r32 y_min = quad.y0;//(quad.y0 + font.baseline);
-        r32 y_max = quad.y1;//(quad.y1 + font.baseline);
+        r32 y_min = quad.y0;
+        r32 y_max = quad.y1;
         
         coords[n++] = { x_max, y_max, quad.s1, quad.t1 };
         coords[n++] = { x_max, y_min, quad.s1, quad.t0 };
@@ -1991,8 +2020,8 @@ static void render_3d_text(RenderState &render_state, GLFontBuffer &font, TrueTy
         coords[n++] = { x_min, y_max, quad.s0, quad.t1 };
         coords[n++] = { x_max, y_max, quad.s1, quad.t1 };
         coords[n++] = { x_min, y_min, quad.s0, quad.t0 };
-        
-        i32 kerning = stbtt_GetCodepointKernAdvance(&font_info.info, text[i] - font_info.first_char, text[i + 1] - font_info.first_char);
+
+        i32 kerning = stbtt_GetCodepointKernAdvance(&font_info.info, c - font_info.first_char, text[i + 1] - font_info.first_char);
         x += (r32)kerning * font_info.scale;
     }
     
