@@ -1252,7 +1252,8 @@ static TrueTypeFontInfo get_tt_font_info(Renderer& renderer, i32 handle)
 
 static math::Vec2 get_text_size_scaled(Renderer& renderer, const char* text, TrueTypeFontInfo font, u64 scaling_flags = UIScalingFlag::KEEP_ASPECT_RATIO)
 {
-    math::Vec2 font_size = get_text_size(text, font);
+    LineData line_data = get_line_size_data(text, font);
+    math::Vec2 font_size = line_data.line_sizes[0];
     math::Vec2 result;
     
     math::Vec2i scale = get_scale(renderer);
