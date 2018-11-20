@@ -72,10 +72,10 @@ namespace scene
         ParticleSystemHandle handle;
     };
 
-	struct TemplateHandle
-	{
-		i32 handle;
-	};
+    struct TemplateHandle
+    {
+        i32 handle;
+    };
 	
     struct EntityTemplate
     {
@@ -87,7 +87,7 @@ namespace scene
             math::Vec3 position;
             math::Vec3 scale;
             math::Vec3 rotation;;
-	    TemplateHandle child_handle;
+            TemplateHandle child_handle;
         } transform;
         struct
         {
@@ -99,9 +99,29 @@ namespace scene
         } render;
         struct
         {
-            // @Incomplete: We want some more data and not an existing particle system handle for the template
-            ParticleSystemHandle handle;
-        } particle;
+            ParticleSystemAttributes attributes;
+            i32 max_particles;
+            b32 started;
+            
+            struct
+            {
+                math::Rgba values[32];
+                r64 keys[32];
+                i32 value_count;
+            } color_over_lifetime;
+            struct 
+            {
+                math::Vec2 values[32];
+                r64 keys[32];
+                i32 value_count;
+            } size_over_lifetime;
+            struct
+            {
+                r32 values[32];
+                r64 keys[32];
+                i32 value_count;
+            } speed_over_lifetime;
+        } particles;
     };
     
     // Holds all the currently loaded templates
@@ -114,65 +134,65 @@ namespace scene
     
     struct Camera
     {
-	r32 zoom;
-	math::Vec3 center;
-	math::Vec3 position;
-	math::Quat orientation;
-	math::Vec3 target;
+        r32 zoom;
+        math::Vec3 center;
+        math::Vec3 position;
+        math::Quat orientation;
+        math::Vec3 target;
     
-	r32 follow_speed;
-	math::Mat4 view_matrix;
-	math::Mat4 projection_matrix;
+        r32 follow_speed;
+        math::Mat4 view_matrix;
+        math::Mat4 projection_matrix;
     
-	FadingMode fading_mode = FADING_NONE;
-	math::Vec3 fading_tint;
+        FadingMode fading_mode = FADING_NONE;
+        math::Vec3 fading_tint;
     
-	b32 fading_in;
-	r32 end_alpha;
-	r32 fading_alpha = 0.0f;
-	r32 fading_speed;
+        b32 fading_in;
+        r32 end_alpha;
+        r32 fading_alpha = 0.0f;
+        r32 fading_speed;
     };
 
     enum CameraFlags
     {
-     C_FLAG_ORTHOGRAPHIC = (1 << 0),
-     C_FLAG_PERSPECTIVE  = (1 << 1),
-     C_FLAG_NO_LOOK_AT     = (1 << 2)
+        C_FLAG_ORTHOGRAPHIC = (1 << 0),
+        C_FLAG_PERSPECTIVE  = (1 << 1),
+        C_FLAG_NO_LOOK_AT     = (1 << 2)
     };
 
     struct CameraParams
     {
-	u32 view_flags;
+        u32 view_flags;
     };
 
     static CameraParams default_camera_params()
     {
-	CameraParams params;
-	params.view_flags = C_FLAG_ORTHOGRAPHIC | C_FLAG_NO_LOOK_AT;
-	return params;
+        CameraParams params;
+        params.view_flags = C_FLAG_ORTHOGRAPHIC | C_FLAG_NO_LOOK_AT;
+        return params;
     }
 
     static CameraParams orthographic_camera_params()
     {
-	CameraParams params;
-	params.view_flags = C_FLAG_ORTHOGRAPHIC;
-	return params;
+        CameraParams params;
+        params.view_flags = C_FLAG_ORTHOGRAPHIC;
+        return params;
     }
 
     static CameraParams perspective_camera_params()
     {
-	CameraParams params;
-	params.view_flags = C_FLAG_PERSPECTIVE;
-	return params;
+        CameraParams params;
+        params.view_flags = C_FLAG_PERSPECTIVE;
+        return params;
     }
     
     struct Scene
     {
-	MemoryArena memory_arena;
+        MemoryArena memory_arena;
 
-	Camera camera;
+        Camera camera;
 
-	Entity *entities;
+        Entity *entities;
         i32 *_internal_handles;
         i32 current_internal_handle;
         b32 *active_entities;
