@@ -1832,11 +1832,13 @@ static void push_particle_system(Renderer &renderer, ParticleSystemInfo &particl
     render_command->particles.offset_buffer_handle = particle_info.offset_buffer_handle;
     render_command->particles.color_buffer_handle = particle_info.color_buffer_handle;
     render_command->particles.size_buffer_handle = particle_info.size_buffer_handle;
+    render_command->particles.angle_buffer_handle = particle_info.angle_buffer_handle;
     render_command->particles.particle_count = particle_info.particle_count;
     
     render_command->particles.offsets = particle_info.offsets;
     render_command->particles.colors = particle_info.colors;
     render_command->particles.sizes = particle_info.sizes;
+    render_command->particles.angles = particle_info.angles;
     
     render_command->particles.diffuse_texture = particle_info.attributes.texture_handle;
     render_command->particles.blend_mode = blend_mode;
@@ -1964,19 +1966,19 @@ static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer, ma
 
                     if(system.running)
                     {
-			particles_to_push[particles_count++] = ps.handle.handle;
+                        particles_to_push[particles_count++] = ps.handle.handle;
                     }
                 }
             }
         }
     }
 
-    for(i32 i = 0; i < particles_count; i++)
-    {
-    	i32 _internal_handle = renderer.particles._internal_handles[particles_to_push[i] - 1];
-    	ParticleSystemInfo& system = renderer.particles.particle_systems[_internal_handle];
-    	push_particle_system(renderer, system, particles_to_push[i]);
-    }
+    // for(i32 i = 0; i < particles_count; i++)
+    // {
+    // 	i32 _internal_handle = renderer.particles._internal_handles[particles_to_push[i] - 1];
+    // 	ParticleSystemInfo& system = renderer.particles.particle_systems[_internal_handle];
+    // 	push_particle_system(renderer, system, particles_to_push[i]);
+    // }
     
     for(i32 com_index = 0; com_index < command_count; com_index++)
     {
@@ -1995,11 +1997,11 @@ static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer, ma
         mesh_info.cast_shadows = command.cast_shadows;
         push_mesh_instanced(renderer, mesh_info, &positions[com_index * 1024], &colors[com_index * 1024], &rotations[com_index * 1024], &scalings[com_index * 1024], command.count);
     }
-
-    // for(i32 i = 0; i < particles_count; i++)
-    // {
-    // 	i32 _internal_handle = renderer.particles._internal_handles[particles_to_push[i] - 1];
-    // 	ParticleSystemInfo& system = renderer.particles.particle_systems[_internal_handle];
-    // 	push_particle_system(renderer, system, particles_to_push[i]);
-    // }
+    
+    for(i32 i = 0; i < particles_count; i++)
+    {
+    	i32 _internal_handle = renderer.particles._internal_handles[particles_to_push[i] - 1];
+    	ParticleSystemInfo& system = renderer.particles.particle_systems[_internal_handle];
+    	push_particle_system(renderer, system, particles_to_push[i]);
+    }
 }
