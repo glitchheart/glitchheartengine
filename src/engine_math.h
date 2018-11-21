@@ -2290,7 +2290,36 @@ namespace math
         r32 result = (1.0f - t) * a + t * b;
         return result;
     }
+
+    inline r32 linear_tween(r32 b, r32 t, r32 _c)
+    {
+        r32 c = _c - b;
+        return c * t + b;
+    }
+
+    inline r32 ease_in_quad(r32 b, r32 t, r32 _c)
+    {
+        r32 c = _c - b;
+        return c * t * t + b;
+    }
     
+    inline r32 ease_out_quad(r32 b, r32 t, r32 _c)
+    {
+        r32 c = _c - b;
+        return -c * t * (t - 2) + b;
+    }
+
+    inline r32 ease_in_out_quad(r32 b, r32 t, r32 _c)
+    {
+        r32 c = _c - b;
+        t /= 2.0f;
+        if(t < 1.0f)
+        {
+            return (c / 2.0f) * (t * t) + b;
+        }
+        return -c/2.0f * (((t-2.0f) * (--t)) - 1) + b;
+    }
+
     inline Vec2 lerp(Vec2 a, r32 t, Vec2 b)
     {
         //Assert(t <= 1.0f);
