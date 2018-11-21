@@ -1782,7 +1782,7 @@ namespace math
 
         r32_4x res(0.0f);
 
-        t = t / 2.0f;
+        t = t * 2.0f;
         for(i32 i = 0; i < 4; i++)
         {
             r32 l_t = t.e[i];
@@ -1794,7 +1794,44 @@ namespace math
             }
             else
             {
-                res.e[i] = -l_c/2.0f * (((l_t - 2.0f) * (--l_t)) - 1) + l_b;
+                l_t--;
+                res.e[i] = -l_c / 2.0f * (l_t * (l_t - 2.0f) - 1.0f) + l_b;
+            }
+        }
+    }
+
+    inline r32_4x ease_in_cubic(r32_4x b, r32_4x t, r32_4x _c)
+    {
+        r32_4x c = _c - b;
+        return c * t * t * t+ b;
+    }
+
+    inline r32_4x ease_out_cubic(r32_4x b, r32_4x t, r32_4x _c)
+    {
+        r32_4x c = _c - b;
+        return (-c) * (t * t * t + 2.0f) + b;
+    }
+
+    inline r32_4x ease_in_out_cubic(r32_4x b, r32_4x t, r32_4x _c)
+    {
+        r32_4x c = _c - b;
+
+        r32_4x res(0.0f);
+
+        t = t * 2.0f;
+        for(i32 i = 0; i < 4; i++)
+        {
+            r32 l_t = t.e[i];
+            r32 l_c = _c.e[i];
+            r32 l_b = b.e[i];
+            if(l_t < 1.0)
+            {
+                res.e[i] = (l_c / 2.0f) * (l_t * l_t * l_t) + l_b;
+            }
+            else
+            {
+                l_t -= 2.0f;
+                res.e[i] = l_c / 2.0f * (l_t * l_t * l_t + 2.0f) + l_b;
             }
         }
     }

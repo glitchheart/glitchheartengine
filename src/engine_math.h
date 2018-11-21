@@ -2312,17 +2312,43 @@ namespace math
     inline r32 ease_in_out_quad(r32 b, r32 t, r32 _c)
     {
         r32 c = _c - b;
-        t /= 2.0f;
+        t *= 2.0f;
         if(t < 1.0f)
         {
             return (c / 2.0f) * (t * t) + b;
         }
-        return -c/2.0f * (((t-2.0f) * (--t)) - 1) + b;
+
+        t--;
+        return -c/2.0f * (t *( t - 2.0f) - 1.0f) + b;
+    }
+
+    inline r32 ease_in_cubic(r32 b, r32 t, r32 _c)
+    {
+        r32 c = _c - b;
+        return c * t * t * t + b;
+    }
+
+    inline r32 ease_out_cubic(r32 b, r32 t, r32 _c)
+    {
+        r32 c = _c - b;
+        return -c * (t * t * t + 1.0f) + b;
+    }
+
+    inline r32 ease_in_out_cubic(r32 b, r32 t, r32 _c)
+    {
+        r32 c = _c - b;
+        t *= 2.0f;
+        if(t < 1.0f)
+        {
+            return (c / 2.0f) * (t * t * t) + b;
+        }
+
+        t -= 2;
+        return c/2.0f * (t * t * t + 2.0f) + b;
     }
 
     inline Vec2 lerp(Vec2 a, r32 t, Vec2 b)
     {
-        //Assert(t <= 1.0f);
         Vec2 result(0.0f);
         result.x = lerp(a.x,t,b.x);
         result.y = lerp(a.y,t,b.y);
@@ -2331,7 +2357,6 @@ namespace math
     
     inline Vec3 lerp(Vec3 a, r32 t, Vec3 b)
     {
-        //Assert(t <= 1.0f);
         Vec3 result(0.0f);
         result.x = lerp(a.x,t,b.x);
         result.y = lerp(a.y,t,b.y);
@@ -2341,7 +2366,6 @@ namespace math
     
     inline Vec4 lerp(Vec4 a, r32 t, Vec4 b)
     {
-        //Assert(t <= 1.0f);
         Vec4 result(0.0f);
         result.x = lerp(a.x,t,b.x);
         result.y = lerp(a.y,t,b.y);
@@ -2349,7 +2373,6 @@ namespace math
         result.w = lerp(a.w,t,b.w);
         return result;
     }
-    
     
     inline Vec2 clamp(Vec2 minimum, Vec2 value, Vec2 maximum)
     {
