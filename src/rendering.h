@@ -613,6 +613,7 @@ struct Material
     math::Rgba ambient_color;
     math::Rgba diffuse_color;
     math::Rgba specular_color;
+    r32 dissolve;
     r32 specular_exponent;
     
     TextureHandle ambient_texture;
@@ -852,6 +853,7 @@ struct RenderCommand
             math::Rgba diffuse_color;
             math::Rgba specular_color;
             math::Rgba ambient_color;
+	    r32 dissolve;
             r32 specular_exponent;
             WireframeType wireframe_type;
             math::Rgba wireframe_color;
@@ -1194,7 +1196,12 @@ static LineData get_line_size_data(const char *text, TrueTypeFontInfo font)
 	}
     }
 
-    line_data.total_height = (line_data.line_count - 1) * line_data.line_spacing;
+    if(line_data.line_count == 1)
+    {
+	line_data.total_height = line_data.line_sizes[0].y;
+    }
+    else
+	line_data.total_height = (line_data.line_count - 1) * line_data.line_spacing;
     
     return line_data;
 }
@@ -1234,7 +1241,7 @@ static math::Vec2 get_text_size(const char *text, TrueTypeFontInfo font)
 	}
     }
 
-    return math::Vec2(current_width, size.y * lines + font.size * (lines - 1));
+    return math::Vec2(current_width, size.y * lines * (lines - 1));
 }
 
 static TrueTypeFontInfo get_tt_font_info(Renderer& renderer, i32 handle)
@@ -1245,7 +1252,8 @@ static TrueTypeFontInfo get_tt_font_info(Renderer& renderer, i32 handle)
 
 static math::Vec2 get_text_size_scaled(Renderer& renderer, const char* text, TrueTypeFontInfo font, u64 scaling_flags = UIScalingFlag::KEEP_ASPECT_RATIO)
 {
-    math::Vec2 font_size = get_text_size(text, font);
+    LineData line_data = get_line_size_data(text, font);
+    math::Vec2 font_size = line_data.line_sizes[0];
     math::Vec2 result;
     
     math::Vec2i scale = get_scale(renderer);
