@@ -7,10 +7,10 @@ enum ParticleSpace
     PS_OBJECT
 };
 
-enum StartSizeType
+enum StartParameterType
 {
-    SST_CONSTANT,
-    SST_BETWEEN_TWO_CONSTANTS
+    CONSTANT,
+    RANDOM_BETWEEN_TWO_CONSTANTS
 };
 
 struct Burst
@@ -57,22 +57,75 @@ struct EmissionModule
 
 struct ParticleSystemAttributes
 {
-    b32 one_shot;
+    b32 looping;
+    r64 duration;
 
     b32 prewarm;
-    b32 prewarmed;
-    
+
     ParticleSpace particle_space;
-    
+
     math::Rgba start_color;
     
-    StartSizeType start_size_type;
-    math::Vec2 start_size;
+    StartParameterType start_size_type;
+    union
+    {
+        struct
+        {
+            // @Note: Right now, one value makes more sense than x,y
+            r32 s0;
+            r32 s1;
+        } random_between_two_constants;
+        struct
+        {
+            math::Vec2 start_size;            
+        } constant;
+    } size;
+
+    StartParameterType start_angle_type;
+    union
+    {
+        struct
+        {
+            r32 a0;
+            r32 a1;
+        } random_between_two_constants;
+        struct
+        {
+            r32 start_angle;            
+        } constant;
+    } angle;
     
     math::Vec3 direction;
     math::Vec3 base_position;
-    r64 life_time;
-    r32 start_speed;
+    
+    StartParameterType start_life_time_type;
+    union
+    {
+        struct
+        {
+            r64 l0;
+            r64 l1;
+        } random_between_two_constants;
+        struct
+        {
+            r64 life_time;            
+        } constant;
+    } life;
+
+    StartParameterType start_speed_type;
+    union
+    {
+        struct
+        {
+            r32 s0;
+            r32 s1;
+        } random_between_two_constants;
+        struct
+        {
+            r32 start_speed;            
+        } constant;
+    } speed;
+
     r32 spread;
     i32 particles_per_second;
     i32 texture_handle;
@@ -87,9 +140,15 @@ struct Particles
     Vec3_4x *direction;
     Rgba_4x *color;
     Vec2_4x *size;
+    r32_4x *angle;
     
     Vec3_4x *relative_position;
     r32 *relative_size;
+
+    Vec2_4x* start_size;
+    r32_4x* start_speed;
+    r64_4x* start_life;
+    r32_4x* start_angle;
     
     r64_4x *life;
     
@@ -107,11 +166,20 @@ struct ParticleSystemInfo
 {
     b32 running;
     b32 emitting;
+    b32 prewarmed;
+
+    r64 time_spent;
 
     ParticleSystemAttributes attributes;
     
-    r64 time_spent;
     r32 particles_cumulative;
+
+    struct
+    {
+        r32 *values;
+        r64 *keys;
+        i32 value_count;
+    } angle_over_lifetime;
     
     struct
     {
@@ -137,11 +205,13 @@ struct ParticleSystemInfo
     i32 offset_buffer_handle;
     i32 color_buffer_handle;
     i32 size_buffer_handle;
+    i32 angle_buffer_handle;
     TransformInfo transform;
     
     Material material;
     
     Particles particles;
+    i32* emitted_for_this_index;
     
     i32 *alive0_particles;
     i32 alive0_particle_count;
@@ -150,10 +220,10 @@ struct ParticleSystemInfo
     i32 alive1_particle_count;
     
     b32 alive0_active;
-    i32 particles_emitted_this_frame;
     
     i32 *dead_particles;
     i32 dead_particle_count;
+    i32 last_used_particle_index;
     
     i32 particle_count;
     i32 total_emitted;
@@ -163,6 +233,7 @@ struct ParticleSystemInfo
     math::Vec3 *offsets;
     math::Vec4 *colors;
     math::Vec2 *sizes;
+    r32 *angles;
     
     r64 current_emission_time;
     

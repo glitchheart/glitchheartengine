@@ -82,8 +82,16 @@ inline r32_4x random_bilateral_4x(RandomSeries& series)
 
 inline r32_4x random_between_4x(RandomSeries& series, r32 min, r32 max)
 {
-    r32_4x r = random_unilateral_4x(series);
+    r32_4x r = r32_4x(random_unilateral_4x(series));
     r32_4x result = math::lerp(r32_4x(min), r, r32_4x(max));
+    
+    return(result);
+}
+
+inline r64_4x random_between_4x(RandomSeries& series, r64 min, r64 max)
+{
+    r64_4x r = r64_4x(random_unilateral_4x(series));
+    r64_4x result = math::lerp(r64_4x(min), r, r64_4x(max));
     
     return(result);
 }

@@ -293,7 +293,7 @@ namespace scene
                         }
                         else if(starts_with(buffer, "start_size"))
                         {
-                            sscanf(buffer, "start_size: %f %f", &attributes.start_size.x, &attributes.start_size.y);
+                            sscanf(buffer, "start_size: %f %f", &attributes.size.constant.start_size.x, &attributes.size.constant.start_size.y);
                         }
                         else if(starts_with(buffer, "start_color"))
                         {
@@ -301,11 +301,11 @@ namespace scene
                         }
                         else if(starts_with(buffer, "start_speed"))
                         {
-                            sscanf(buffer, "start_speed: %f", &attributes.start_speed);
+                            sscanf(buffer, "start_speed: %f", &attributes.speed.constant.start_speed);
                         }
                         else if(starts_with(buffer, "life_time"))
                         {
-                            sscanf(buffer, "life_time: %lf", &attributes.life_time);
+                            sscanf(buffer, "life_time: %lf", &attributes.life.constant.life_time);
                         }
                         else if(starts_with(buffer, "per_second"))
                         {
@@ -359,9 +359,13 @@ namespace scene
                         {
                             sscanf(buffer, "prewarm: %d", &attributes.prewarm);
                         }
-                        else if(starts_with(buffer, "one_shot"))
+                        else if(starts_with(buffer, "looping"))
                         {
-                            sscanf(buffer, "one_shot: %d", &attributes.one_shot);
+                            sscanf(buffer, "looping: %d", &attributes.looping);
+                        }
+                        else if(starts_with(buffer, "duration"))
+                        {
+                            sscanf(buffer, "duration: %lf", &attributes.duration);
                         }
                         else if(starts_with(buffer, "base_position"))
                         {
