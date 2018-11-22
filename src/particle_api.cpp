@@ -186,7 +186,7 @@ static ParticleSystemAttributes get_default_particle_system_attributes()
     attributes.duration = 5.0;
     attributes.particle_space = PS_WORLD;
     attributes.start_color = math::Rgba(1.0f);
-    attributes.size.constant.start_size = math::Vec2(1.0f);
+    attributes.size.constant.start_size = 1.0f;
     attributes.start_size_type = StartParameterType::CONSTANT;
     attributes.direction = math::Vec3(0.0f, 1.0f, 0.0f);
     attributes.start_life_time_type = StartParameterType::CONSTANT;
