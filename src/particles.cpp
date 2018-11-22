@@ -36,6 +36,7 @@ Rgba_4x get_color_by_time(ParticleSystemInfo &particle_system, i32 index, r64_4x
     Rgba_4x result = values[value_count - 1];
 
     i32 found_keys[4] = {};
+    i32 found_next_keys[4] = {};
     
     for(i32 i = 0; i < emitted_for_this_index; i++)
     {
@@ -44,19 +45,26 @@ Rgba_4x get_color_by_time(ParticleSystemInfo &particle_system, i32 index, r64_4x
             r64 current_key = keys[key] * start_life.e[i];
             r64 next_key = keys[key + 1] * start_life.e[i];
 
-            if(current_key <= time_spent.e[i] && time_spent.e[i] < next_key)
+	    if(current_key <= time_spent.e[i] && time_spent.e[i] < next_key)
             {
                 found_keys[i] = key;
+		found_next_keys[i] = key + 1;
                 break;
             }
+	    else if(key + 1 == value_count - 1 && time_spent.e[i] >= next_key)
+	    {
+		found_keys[i] = key + 1;
+		found_next_keys[i] = key + 1;
+		break;
+	    }
         }
     }
 
     r64_4x current_keys = r64_4x(keys[found_keys[0]], keys[found_keys[1]], keys[found_keys[2]], keys[found_keys[3]]) * start_life;
-    r64_4x next_keys = r64_4x(keys[found_keys[0] + 1], keys[found_keys[1] + 1], keys[found_keys[2] + 1], keys[found_keys[3] + 1]) * start_life;
+    r64_4x next_keys = r64_4x(keys[found_next_keys[0]], keys[found_next_keys[1]], keys[found_next_keys[2]], keys[found_next_keys[3]]) * start_life;
 
     Rgba_4x start_color = Rgba_4x(values[found_keys[0]], values[found_keys[1]], values[found_keys[2]], values[found_keys[3]]);
-    Rgba_4x end_color = Rgba_4x(values[found_keys[0] + 1], values[found_keys[1] + 1], values[found_keys[2] + 1], values[found_keys[3] + 1]);
+    Rgba_4x end_color = Rgba_4x(values[found_next_keys[0]], values[found_next_keys[1]], values[found_next_keys[2]], values[found_next_keys[3]]);
 
     r64_4x t = get_t(time_spent, current_keys, next_keys);
 
@@ -80,7 +88,8 @@ Vec2_4x get_size_by_time(ParticleSystemInfo &particle_system, i32 index, r64_4x 
     Vec2_4x result = _start_size * values[value_count - 1];
 
     i32 found_keys[4] = {};
-
+    i32 found_next_keys[4] = {};
+    
     for(i32 i = 0; i < emitted_for_this_index; i++)
     {
         for (i32 key = 0; key < value_count; key++)
@@ -88,25 +97,32 @@ Vec2_4x get_size_by_time(ParticleSystemInfo &particle_system, i32 index, r64_4x 
             r64 current_key = keys[key] * start_life.e[i];
             r64 next_key = keys[key + 1] * start_life.e[i];
 
-            if(current_key <= time_spent.e[i] && time_spent.e[i] < next_key)
+	    if(current_key <= time_spent.e[i] && time_spent.e[i] < next_key)
             {
                 found_keys[i] = key;
+		found_next_keys[i] = key + 1;
                 break;
             }
+	    else if(key + 1 == value_count - 1 && time_spent.e[i] >= next_key)
+	    {
+		found_keys[i] = key + 1;
+		found_next_keys[i] = key + 1;
+		break;
+	    }
         }
     }
 
     r64_4x current_keys = r64_4x(keys[found_keys[0]], keys[found_keys[1]], keys[found_keys[2]], keys[found_keys[3]]) * start_life;
-    r64_4x next_keys = r64_4x(keys[found_keys[0] + 1], keys[found_keys[1] + 1], keys[found_keys[2] + 1], keys[found_keys[3] + 1]) * start_life;
+    r64_4x next_keys = r64_4x(keys[found_next_keys[0]], keys[found_next_keys[1]], keys[found_next_keys[2]], keys[found_next_keys[3]]) * start_life;
 
     Vec2_4x start_size = Vec2_4x(values[found_keys[0]], values[found_keys[1]], values[found_keys[2]], values[found_keys[3]]) * _start_size;
-    Vec2_4x end_size = Vec2_4x(values[found_keys[0] + 1], values[found_keys[1] + 1], values[found_keys[2] + 1], values[found_keys[3] + 1]) * _start_size;
-
+    Vec2_4x end_size = Vec2_4x(values[found_next_keys[0]], values[found_next_keys[1]], values[found_next_keys[2]], values[found_next_keys[3]]) * start_size;
+    
     r64_4x t = get_t(time_spent, current_keys, next_keys);
 
     result = math::lerp(start_size, t, end_size);
     
-	return result;
+    return result;
 }
 
 // @Incomplete(Niels): Rethink how this is done to be more SIMD like...
@@ -124,6 +140,7 @@ r32_4x get_speed_by_time(ParticleSystemInfo &particle_system, i32 index, r64_4x 
     r32_4x result = values[value_count - 1];
 
     i32 found_keys[4] = {};
+    i32 found_next_keys[4] = {};
                        
     for(i32 i = 0; i < emitted_for_this_index; i++)
     {
@@ -135,16 +152,23 @@ r32_4x get_speed_by_time(ParticleSystemInfo &particle_system, i32 index, r64_4x 
             if(current_key <= time_spent.e[i] && time_spent.e[i] < next_key)
             {
                 found_keys[i] = key;
+		found_next_keys[i] = key + 1;
                 break;
             }
+	    else if(key + 1 == value_count - 1 && time_spent.e[i] >= next_key)
+	    {
+		found_keys[i] = key + 1;
+		found_next_keys[i] = key + 1;
+		break;
+	    }
         }
-	}
+    }
 
     r64_4x current_keys = r64_4x(keys[found_keys[0]], keys[found_keys[1]], keys[found_keys[2]], keys[found_keys[3]]) * start_life;
-    r64_4x next_keys = r64_4x(keys[found_keys[0] + 1], keys[found_keys[1] + 1], keys[found_keys[2] + 1], keys[found_keys[3] + 1]) * start_life;
+    r64_4x next_keys = r64_4x(keys[found_next_keys[0]], keys[found_next_keys[1]], keys[found_next_keys[2]], keys[found_next_keys[3]]) * start_life;
 
     r32_4x start_speed = r32_4x(values[found_keys[0]], values[found_keys[1]], values[found_keys[2]], values[found_keys[3]]);
-    r32_4x end_speed = r32_4x(values[found_keys[0] + 1], values[found_keys[1] + 1], values[found_keys[2] + 1], values[found_keys[3] + 1]);
+    r32_4x end_speed = r32_4x(values[found_next_keys[0]], values[found_next_keys[1]], values[found_next_keys[2]], values[found_next_keys[3]]);
 
     r64_4x t = get_t(time_spent, current_keys, next_keys);
 
@@ -169,7 +193,8 @@ r32_4x get_angle_by_time(ParticleSystemInfo &particle_system, i32 index, r64_4x 
     r32_4x result = values[value_count - 1];
 
     i32 found_keys[4] = {};
-                       
+    i32 found_next_keys[4] = {};
+
     for(i32 i = 0; i < emitted_for_this_index; i++)
     {
         for (i32 key = 0; key < value_count; key++)
@@ -180,16 +205,23 @@ r32_4x get_angle_by_time(ParticleSystemInfo &particle_system, i32 index, r64_4x 
             if(current_key <= time_spent.e[i] && time_spent.e[i] < next_key)
             {
                 found_keys[i] = key;
+		found_next_keys[i] = key + 1;
                 break;
             }
+	    else if(key + 1 == value_count - 1 && time_spent.e[i] >= next_key)
+	    {
+		found_keys[i] = key + 1;
+		found_next_keys[i] = key + 1;
+		break;
+	    }
         }
     }
 
     r64_4x current_keys = r64_4x(keys[found_keys[0]], keys[found_keys[1]], keys[found_keys[2]], keys[found_keys[3]]) * start_life;
-    r64_4x next_keys = r64_4x(keys[found_keys[0] + 1], keys[found_keys[1] + 1], keys[found_keys[2] + 1], keys[found_keys[3] + 1]) * start_life;
+    r64_4x next_keys = r64_4x(keys[found_next_keys[0]], keys[found_next_keys[1]], keys[found_next_keys[2]], keys[found_next_keys[3]]) * start_life;
 
     r32_4x start_angle = r32_4x(values[found_keys[0]], values[found_keys[1]], values[found_keys[2]], values[found_keys[3]]);
-    r32_4x end_angle = r32_4x(values[found_keys[0] + 1], values[found_keys[1] + 1], values[found_keys[2] + 1], values[found_keys[3] + 1]);
+    r32_4x end_angle = r32_4x(values[found_next_keys[0]], values[found_next_keys[1]], values[found_next_keys[2]], values[found_next_keys[3]]);
 
     r64_4x t = get_t(time_spent, current_keys, next_keys);
 
@@ -226,7 +258,7 @@ void update_particles(Renderer &renderer, ParticleSystemInfo &particle_system, r
             start[i] = particle_system.particles.start_life[main_index].e[i] - 0.001 <= particle_system.particles.life[main_index].e[i]
                 && particle_system.particles.start_life[main_index].e[i] + 0.001 >= particle_system.particles.life[main_index].e[i];
         }
-		
+
 	particle_system.particles.life[main_index] -= delta_time;
 		
 	// @Note:(Niels): Check for alive state of this particle and kill if dead.
@@ -271,7 +303,6 @@ void update_particles(Renderer &renderer, ParticleSystemInfo &particle_system, r
                 particle_system.particles.start_angle[main_index].e[i] = particle_system.particles.start_angle[main_index].e[emitted_for_index - 1];
                 
                 emitted_for_index--;
-                i--;
             }
         }
 
@@ -321,7 +352,8 @@ void update_particles(Renderer &renderer, ParticleSystemInfo &particle_system, r
 
 	if (speed_value_count > 0)
 	{
-	    particle_system.particles.position[main_index] += particle_system.particles.direction[main_index] * get_speed_by_time(particle_system, main_index, time_spent) * (r32)delta_time;
+	    r32_4x speed = get_speed_by_time(particle_system, main_index, time_spent);
+	    particle_system.particles.position[main_index] += particle_system.particles.direction[main_index] * speed * (r32)delta_time;
 	}
 	else
 	{
