@@ -568,7 +568,7 @@ int main(int argc, char **args)
         game.update(delta_time, &game_memory, renderer, template_state, &input_controller, &sound_system, timer_controller);
         update_particle_systems(renderer, delta_time);
 
-	    process_analytics_events(analytics_state, &analytics_queue);
+	process_analytics_events(analytics_state, &analytics_queue);
 		
         tick_animation_controllers(renderer, &sound_system, &input_controller, timer_controller, delta_time);
         tick_timers(timer_controller, delta_time);
