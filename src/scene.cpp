@@ -293,20 +293,47 @@ namespace scene
                         }
                         else if(starts_with(buffer, "start_size"))
                         {
-                            sscanf(buffer, "start_size: %f %f", &attributes.size.constant.start_size.x, &attributes.size.constant.start_size.y);
+			    if(attributes.start_size_type != StartParameterType::RANDOM_BETWEEN_TWO_CONSTANTS)
+			    {
+				sscanf(buffer, "start_size: %f", &attributes.size.constant.start_size);
+				attributes.start_size_type = StartParameterType::CONSTANT;
+			    }
                         }
+			else if(starts_with(buffer, "random_start_size"))
+			{
+			    sscanf(buffer, "random_start_size: %f %f", &attributes.size.random_between_two_constants.s0, &attributes.size.random_between_two_constants.s1);
+			    attributes.start_size_type = StartParameterType::RANDOM_BETWEEN_TWO_CONSTANTS;
+			}
                         else if(starts_with(buffer, "start_color"))
                         {
                             sscanf(buffer, "start_color: %f %f %f %f", &attributes.start_color.r, &attributes.start_color.g, &attributes.start_color.b, &attributes.start_color.a);
                         }
                         else if(starts_with(buffer, "start_speed"))
                         {
-                            sscanf(buffer, "start_speed: %f", &attributes.speed.constant.start_speed);
+			    if(attributes.start_speed_type != StartParameterType::RANDOM_BETWEEN_TWO_CONSTANTS)
+			    {
+				sscanf(buffer, "start_speed: %f", &attributes.speed.constant.start_speed);
+				attributes.start_speed_type = StartParameterType::CONSTANT;
+			    }
                         }
+			else if(starts_with(buffer, "random_start_speed"))
+			{
+			    sscanf(buffer, "random_start_speed: %f %f", &attributes.speed.random_between_two_constants.s0, &attributes.speed.random_between_two_constants.s1);
+			    attributes.start_speed_type = StartParameterType::RANDOM_BETWEEN_TWO_CONSTANTS;
+			}
                         else if(starts_with(buffer, "life_time"))
                         {
-                            sscanf(buffer, "life_time: %lf", &attributes.life.constant.life_time);
+			    if(attributes.start_life_time_type != StartParameterType::RANDOM_BETWEEN_TWO_CONSTANTS)
+			    {
+				sscanf(buffer, "life_time: %lf", &attributes.life.constant.life_time);
+				attributes.start_life_time_type = StartParameterType::CONSTANT;
+			    }
                         }
+			else if(starts_with(buffer, "random_life_time"))
+			{
+			    sscanf(buffer, "random_life_time: %lf %lf", &attributes.life.random_between_two_constants.l0, &attributes.life.random_between_two_constants.l1);
+			    attributes.start_life_time_type = StartParameterType::RANDOM_BETWEEN_TWO_CONSTANTS;
+			}
                         else if(starts_with(buffer, "per_second"))
                         {
                             sscanf(buffer, "per_second: %d", &attributes.particles_per_second);
@@ -334,18 +361,47 @@ namespace scene
                             char func_name[32];
                             sscanf(buffer, "emitter_func: %s", func_name);
 
-                            attributes.emission_module.emitter_func = emit_from_2D_square_random;
+                            attributes.emission_module.emitter_func = emit_random_dir;
                             if(starts_with(func_name, "2d_square_random"))
                             {
                                 attributes.emission_module.emitter_func = emit_from_2D_square_random;
                             }
-                            else
-                            {
-                                // @Incomplete: Add missing functions!!!
-                                // @Incomplete: Add missing functions!!!
-                                // @Incomplete: Add missing functions!!!
-                                // @Incomplete: Add missing functions!!!
-                            }
+			    else if(starts_with(func_name, "2d_square"))
+			    {
+				attributes.emission_module.emitter_func = emit_from_2D_square;
+			    }
+			    else if(starts_with(func_name, "random_dir"))
+			    {
+				attributes.emission_module.emitter_func = emit_random_dir;
+			    }
+			    else if(starts_with(func_name, "dir"))
+			    {
+				attributes.emission_module.emitter_func = emit_dir;
+			    }
+			    else if(starts_with(func_name, "square"))
+			    {
+				attributes.emission_module.emitter_func = emit_from_square;
+			    }
+			    else if(starts_with(func_name, "square_random"))
+			    {
+				attributes.emission_module.emitter_func = emit_from_square_random;
+			    }
+			    else if(starts_with(func_name, "disc"))
+			    {
+				attributes.emission_module.emitter_func = emit_from_disc;
+			    }
+			    else if(starts_with(func_name, "disc_random"))
+			    {
+				attributes.emission_module.emitter_func = emit_from_disc_random;
+			    }
+			    else if(starts_with(func_name, "circle"))
+			    {
+				attributes.emission_module.emitter_func = emit_from_circle;
+			    }
+			    else if(starts_with(func_name, "circle_random"))
+			    {
+				attributes.emission_module.emitter_func = emit_from_circle_random;
+			    }
                         }
                         else if(starts_with(buffer, "emission_min"))
                         {
@@ -380,9 +436,31 @@ namespace scene
                         }
                         else if(starts_with(buffer, "color_key"))
                         {
+			    b32 keep_start_color = false;
+			    for(size_t i = 0; i < strlen(buffer); i++)
+			    {
+				if(buffer[i] == '-')
+				{
+				    keep_start_color = true;
+				    break;
+				}
+			    }
+
                             math::Rgba &value = templ.particles.color_over_lifetime.values[templ.particles.color_over_lifetime.value_count];
                             r64 &key = templ.particles.color_over_lifetime.keys[templ.particles.color_over_lifetime.value_count];
-                            sscanf(buffer, "color_key: %lf %f %f %f %f", &key, &value.r, &value.g, &value.b, &value.a);
+
+			    if(keep_start_color)
+			    {
+				sscanf(buffer, "color_key: %lf - %f", &key, &value.a);
+				value.r = attributes.start_color.r;
+				value.g = attributes.start_color.g;
+				value.b = attributes.start_color.b;
+			    }
+			    else
+			    {
+				sscanf(buffer, "color_key: %lf %f %f %f %f", &key, &value.r, &value.g, &value.b, &value.a);
+			    }
+                            
                             templ.particles.color_over_lifetime.value_count++;
                         }
                         else if(starts_with(buffer, "speed_key"))

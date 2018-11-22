@@ -62,16 +62,7 @@ static void load_shader(MemoryArena* arena, const char* full_shader_path, Render
     end_temporary_memory(temp_mem);
 }
 
-#define get_texture_size(handle) texture_size(handle, renderer)
-static math::Vec2i texture_size(i32 texture_handle, Renderer& renderer)
-{
-    if(texture_handle <= renderer.texture_count)
-    {
-        TextureData data = renderer.texture_data[texture_handle - 1];
-        return math::Vec2i(data.width, data.height);
-    }
-    return math::Vec2i();
-}
+
 
 static void load_texture(const char* full_texture_path, Renderer& renderer, TextureFiltering filtering, i32* handle = 0)
 {

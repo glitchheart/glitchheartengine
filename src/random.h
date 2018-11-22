@@ -149,7 +149,7 @@ inline Vec3_4x random_rect_4x(RandomSeries& series, r32 _min, r32 _max)
     
     r32 min = _min - (_min + _max) / 2.0f;
     r32 max = _max - (_min + _max) / 2.0f;
-    
+
     result.x = random_between_4x(series, min, max);
     result.y = _mm_set1_ps(0.0f);
     
@@ -165,7 +165,7 @@ inline math::Vec3 get_point_on_square(r32 r, r32 a, r32 b, r32 x0, r32 x1, r32 y
     if(r < a)
     {
         result.x = x0;
-        result.z = y0 + a;
+        result.z = y0 + a - r;
     }
     else if(r < a + b)
     {
