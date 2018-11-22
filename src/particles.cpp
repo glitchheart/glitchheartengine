@@ -530,7 +530,6 @@ void update_particle_systems(Renderer &renderer, r64 delta_time)
 	    if (particle_system.attributes.prewarm && !particle_system.prewarmed)
 	    {
 		particle_system.prewarmed = true;
-		// @Note: prewarm 5 seconds
 		update_particle_systems(renderer, particle_system.attributes.duration);
 	    }
 
