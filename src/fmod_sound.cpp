@@ -259,7 +259,11 @@ static void play_sound(SoundCommand &command, SoundDevice *device, SoundSystem *
     }
     else
     {
-	    result = FMOD_System_PlaySound(device->system, sound, device->music_channel_group, true, &channel);
+	result = FMOD_System_PlaySound(device->system, sound, device->music_channel_group, true, &channel);
+
+	// @Note: We set the priority to 0, to make sure that music channels do not get stolen by FMOD
+	//        If we still experience stolen channels, look at global_max_channels in init_globals.h.
+	FMOD_Channel_SetPriority(channel, 0);
     }
     
     set_channel_attributes(channel, command.one_shot.channel_attributes, system, device);
@@ -320,7 +324,7 @@ static void update_sound_commands(SoundDevice *device, SoundSystem *system, r64 
         {
             device->sfx_volume = system->sfx_volume;
             device->music_volume = system->music_volume;
-	        device->master_volume = system->master_volume;
+	    device->master_volume = system->master_volume;
             *save_config = true;
         }
         
@@ -399,7 +403,8 @@ static void init_audio_fmod(SoundDevice* device)
         result = FMOD_System_SetOutput(system, FMOD_OUTPUTTYPE_NOSOUND);
         fmod_error_check(result);
     }
-    
+
+    // @Note: Global max channels should be high enough, so that no channels will ever get stolen during gameplay.
     result = FMOD_System_Init(system, global_max_channels, FMOD_INIT_NORMAL, nullptr);
     fmod_error_check(result);
     
