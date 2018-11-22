@@ -848,6 +848,13 @@ static void setup_billboard(RenderState& render_state, MemoryArena* arena)
     
     auto position_location = (GLuint)glGetAttribLocation(render_state.quad_shader.program, "pos");
     vertex_attrib_pointer(position_location, 3, GL_FLOAT,  3 * sizeof(float), nullptr);
+
+    glEnableVertexAttribArray(0);
+    glEnableVertexAttribArray(1);
+    glEnableVertexAttribArray(2);
+    glEnableVertexAttribArray(3);
+    glEnableVertexAttribArray(4);
+    glEnableVertexAttribArray(5);
     
     glBindVertexArray(0);
 }
@@ -2669,8 +2676,12 @@ static void render_particles(RenderCommand &render_command, Renderer &renderer, 
     i32 _internal_offset_handle = renderer._internal_buffer_handles[render_command.particles.offset_buffer_handle - 1];
     i32 _internal_color_handle = renderer._internal_buffer_handles[render_command.particles.color_buffer_handle - 1];
     i32 _internal_size_handle = renderer._internal_buffer_handles[render_command.particles.size_buffer_handle - 1];
+    i32 _internal_angle_handle = renderer._internal_buffer_handles[render_command.particles.angle_buffer_handle - 1];
     
-    if(_internal_offset_handle == -1 || _internal_color_handle == -1 || _internal_size_handle == -1)
+    if(_internal_offset_handle == -1
+       || _internal_color_handle == -1
+       || _internal_size_handle == -1
+       || _internal_angle_handle == -1)
     {
         return;
     }
@@ -2678,6 +2689,7 @@ static void render_particles(RenderCommand &render_command, Renderer &renderer, 
     Buffer offset_buffer = render_state.buffers[_internal_offset_handle];
     Buffer color_buffer = render_state.buffers[_internal_color_handle];
     Buffer size_buffer = render_state.buffers[_internal_size_handle];
+    Buffer angle_buffer = render_state.buffers[_internal_angle_handle];
     
     glBindVertexArray(render_state.billboard_vao);
     glBindBuffer(GL_ARRAY_BUFFER, render_state.billboard_vbo);
@@ -2685,32 +2697,32 @@ static void render_particles(RenderCommand &render_command, Renderer &renderer, 
     
     use_shader(shader);
     
-    glEnableVertexAttribArray(0);
     vertex_attrib_pointer(0, 3, GL_FLOAT,(5 * sizeof(GLfloat)), nullptr);
     
-    glEnableVertexAttribArray(1);
     vertex_attrib_pointer(1, 2, GL_FLOAT, (5 * sizeof(GLfloat)), (void*)(3 * sizeof(GLfloat)));
     
-    glEnableVertexAttribArray(2);
     glBindBuffer(GL_ARRAY_BUFFER, offset_buffer.vbo);
     glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizei)sizeof(math::Vec3) * render_command.particles.particle_count, render_command.particles.offsets);
     vertex_attrib_pointer(2, 3, GL_FLOAT, (3 * sizeof(GLfloat)), (void*)(0 * sizeof(GLfloat)));
     
-    glEnableVertexAttribArray(3);
     glBindBuffer(GL_ARRAY_BUFFER, color_buffer.vbo);
     glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizei)sizeof(math::Vec4) * render_command.particles.particle_count, render_command.particles.colors);
     vertex_attrib_pointer(3, 4, GL_FLOAT, (4 * sizeof(GLfloat)), (void*)(0 * sizeof(GLfloat)));
     
-    glEnableVertexAttribArray(4);
     glBindBuffer(GL_ARRAY_BUFFER, size_buffer.vbo);
     glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizei)sizeof(math::Vec2) * render_command.particles.particle_count, render_command.particles.sizes);
     vertex_attrib_pointer(4, 2, GL_FLOAT, 2 * sizeof(GLfloat), (void*)(0 * sizeof(GLfloat)));
+
+    glBindBuffer(GL_ARRAY_BUFFER, angle_buffer.vbo);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizei)sizeof(r32) * render_command.particles.particle_count, render_command.particles.angles);
+    vertex_attrib_pointer(5, 1, GL_FLOAT, sizeof(GLfloat), (void*)(0 * sizeof(GLfloat)));
     
     glVertexAttribDivisor(0, 0);
     glVertexAttribDivisor(1, 0);
     glVertexAttribDivisor(2, 1);
     glVertexAttribDivisor(3, 1);
     glVertexAttribDivisor(4, 1);
+    glVertexAttribDivisor(5, 1);
     
     set_mat4_uniform(shader.program, "projectionMatrix", projection_matrix);
     set_mat4_uniform(shader.program, "viewMatrix", view_matrix);

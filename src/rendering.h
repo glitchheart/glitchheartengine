@@ -878,6 +878,7 @@ struct RenderCommand
             i32 offset_buffer_handle;
             i32 color_buffer_handle;
             i32 size_buffer_handle;
+            i32 angle_buffer_handle;
             RenderMaterialType material_type;
             i32 diffuse_texture;
             
@@ -885,6 +886,7 @@ struct RenderCommand
             math::Vec3 *offsets;
             math::Vec4 *colors;
             math::Vec2 *sizes;
+            r32* angles;
             i32 texture_handle;
             
             CommandBlendMode blend_mode;
