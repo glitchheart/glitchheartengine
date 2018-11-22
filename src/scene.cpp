@@ -533,6 +533,13 @@ namespace scene
                 add_speed_key(*ps, key, value);
             }
 
+	    if(templ.comp_flags & COMP_TRANSFORM)
+	    {
+		ps->transform.position = ps->attributes.base_position + templ.transform.position;
+		ps->transform.scale = templ.transform.position;
+		ps->transform.rotation = templ.transform.rotation;
+	    }
+	    
             if(templ.particles.started)
                 start_particle_system(ps_comp.handle, *scene.renderer);
         }
