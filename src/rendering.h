@@ -1208,6 +1208,17 @@ static LineData get_line_size_data(const char *text, TrueTypeFontInfo font)
     return line_data;
 }
 
+#define get_texture_size(handle) texture_size(handle, renderer)
+static math::Vec2i texture_size(i32 texture_handle, Renderer& renderer)
+{
+    if(texture_handle <= renderer.texture_count)
+    {
+        TextureData data = renderer.texture_data[texture_handle - 1];
+        return math::Vec2i(data.width, data.height);
+    }
+    return math::Vec2i();
+}
+
 static math::Vec2 get_text_size(const char *text, TrueTypeFontInfo font)
 {
     math::Vec2 size;

@@ -77,7 +77,7 @@ struct ParticleSystemAttributes
         } random_between_two_constants;
         struct
         {
-            math::Vec2 start_size;            
+            r32 start_size;            
         } constant;
     } size;
 
