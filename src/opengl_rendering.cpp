@@ -1172,104 +1172,104 @@ static const GLFWvidmode* create_open_gl_window(RenderState& render_state, Windo
 
 static void initialize_opengl(RenderState& render_state, Renderer& renderer, r32 contrast, r32 brightness, WindowMode window_mode, i32 screen_width, i32 screen_height, const char* title, MemoryArena *perm_arena, b32 *do_save_config)
 {
-    render_state.character_buffer = push_array(perm_arena, 1024, CharacterData);
-    auto recreate_window = render_state.window != nullptr;
+    render_state.character_buffer = push_array(perm_arena, 4096//                                                                , CharacterData);
+//     auto recreate_window = render_state.window != nullptr;
 	
-    if(!recreate_window)
-    {
-        if (!glfwInit())
-        {
-            log_error("Could not initialize glfw");
-            exit(EXIT_FAILURE);
-        }
-    }
+//     if(!recreate_window)
+//     {
+//         if (!glfwInit())
+//         {
+//             log_error("Could not initialize glfw");
+//             exit(EXIT_FAILURE);
+//         }
+//     }
     
-    render_state.framebuffer.buffer_handle = 0;
-    render_state.paused = false;
+//     render_state.framebuffer.buffer_handle = 0;
+//     render_state.paused = false;
     
-    glfwSetErrorCallback(error_callback);
+//     glfwSetErrorCallback(error_callback);
     
-    //@Incomplete: Figure something out here. Ask for compatible version etc
-#ifdef _WIN32
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
-#elif __linux
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
-#elif __APPLE__
-    // @Note: Apple only __really__ supports OpenGL Core 3.3
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-#endif
+//     //@Incomplete: Figure something out here. Ask for compatible version etc
+// #ifdef _WIN32
+//     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+//     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+// #elif __linux
+//     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+//     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+// #elif __APPLE__
+//     // @Note: Apple only __really__ supports OpenGL Core 3.3
+//     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+//     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+//     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+// #endif
     
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+//     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     
-    render_state.contrast = contrast;
-    render_state.brightness = brightness;
+//     render_state.contrast = contrast;
+//     render_state.brightness = brightness;
     
-    if(screen_width == 0 || screen_height == 0)
-    {
-        const GLFWvidmode* original_mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
-        screen_height = original_mode->width;
-        screen_width = original_mode->height;
-        *do_save_config = true;
-    }
+//     if(screen_width == 0 || screen_height == 0)
+//     {
+//         const GLFWvidmode* original_mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
+//         screen_height = original_mode->width;
+//         screen_width = original_mode->height;
+//         *do_save_config = true;
+//     }
     
-    auto mode = create_open_gl_window(render_state, window_mode, title, screen_width, screen_height);
-    renderer.window_mode = render_state.window_mode;
+//     auto mode = create_open_gl_window(render_state, window_mode, title, screen_width, screen_height);
+//     renderer.window_mode = render_state.window_mode;
     
-    if(mode && renderer.window_mode == FM_BORDERLESS)
-    {
-        renderer.window_width = mode->width;
-        renderer.window_height = mode->height;
-    }
-    else
-    {
-        renderer.window_width = screen_width;
-        renderer.window_height = screen_height;
-    }
+//     if(mode && renderer.window_mode == FM_BORDERLESS)
+//     {
+//         renderer.window_width = mode->width;
+//         renderer.window_height = mode->height;
+//     }
+//     else
+//     {
+//         renderer.window_width = screen_width;
+//         renderer.window_height = screen_height;
+//     }
     
-    if (!render_state.window)
-    {
-	// @Note: If no window has been created, try and see if 3.3 works
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+//     if (!render_state.window)
+//     {
+// 	// @Note: If no window has been created, try and see if 3.3 works
+//         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+//         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
         
-        create_open_gl_window(render_state, window_mode, title, screen_width, screen_height);
-        renderer.window_mode = render_state.window_mode;
+//         create_open_gl_window(render_state, window_mode, title, screen_width, screen_height);
+//         renderer.window_mode = render_state.window_mode;
         
-        if(!render_state.window)
-        {
-            log_error("Could not create window");
-            glfwTerminate();
-            exit(EXIT_FAILURE);
-        }
-    }
+//         if(!render_state.window)
+//         {
+//             log_error("Could not create window");
+//             glfwTerminate();
+//             exit(EXIT_FAILURE);
+//         }
+//     }
     
-    glfwSetInputMode(render_state.window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+//     glfwSetInputMode(render_state.window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
     
-    glfwSetFramebufferSizeCallback(render_state.window, frame_buffer_size_callback);
-    glfwSetWindowIconifyCallback(render_state.window, window_iconify_callback);
+//     glfwSetFramebufferSizeCallback(render_state.window, frame_buffer_size_callback);
+//     glfwSetWindowIconifyCallback(render_state.window, window_iconify_callback);
     
-    glfwMakeContextCurrent(render_state.window);
+//     glfwMakeContextCurrent(render_state.window);
     
-    gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
+//     gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
     
-    glfwSwapInterval(0);
+//     glfwSwapInterval(0);
     
-    glfwGetFramebufferSize(render_state.window, &render_state.framebuffer_width, &render_state.framebuffer_height);
-    glViewport(0, 0, render_state.framebuffer_width, render_state.framebuffer_height);
+//     glfwGetFramebufferSize(render_state.window, &render_state.framebuffer_width, &render_state.framebuffer_height);
+//     glViewport(0, 0, render_state.framebuffer_width, render_state.framebuffer_height);
     
-#if !defined(__APPLE__)
-    //Enable debug output
-    glEnable(GL_DEBUG_OUTPUT);
-    glDebugMessageCallback((GLDEBUGPROC)message_callback, 0);
-#endif
+// #if !defined(__APPLE__)
+//     //Enable debug output
+//     glEnable(GL_DEBUG_OUTPUT);
+//     glDebugMessageCallback((GLDEBUGPROC)message_callback, 0);
+// #endif
     
-    glDisable(GL_DITHER);
-    glLineWidth(2.0f);
-    glEnable(GL_LINE_SMOOTH);
+//     glDisable(GL_DITHER);
+//     glLineWidth(2.0f);
+//     glEnable(GL_LINE_SMOOTH);
     
     glDisable(GL_CULL_FACE);
     glEnable(GL_DEPTH_TEST);
@@ -1862,6 +1862,9 @@ static void calculate_current_x_from_line_data(r32 *x, math::Vec2 text_size, u64
 static void render_text(RenderState &render_state, GLFontBuffer &font, TrueTypeFontInfo& font_info, const math::Vec4& color, const char* text, r32 x, r32 y, math::Mat4 view_matrix, math::Mat4 projection_matrix, r32 scale = 1.0f,
                         u64 alignment_flags = ALIGNMENT_LEFT, b32 align_center_y = true, i32 z = 0)
 {
+    // @Note: To make sure the character buffer is large enough
+    assert(strlen(text) * 6 < 4096);
+    
     glBindVertexArray(font.vao);
     auto shader = render_state.shaders[SHADER_STANDARD_FONT];
     use_shader(shader);
