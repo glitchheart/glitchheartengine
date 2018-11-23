@@ -41,18 +41,6 @@ FMOD_RESULT F_CALLBACK channel_control_callback(FMOD_CHANNELCONTROL *chan_contro
             {
                 as->channel_attributes.position_ms = 0;
             }
-            
-            SoundDevice *device;
-            FMOD_Channel_GetUserData((FMOD_CHANNEL*)chan_control, (void**)&device);
-            
-            if(device)
-            {
-                device->one_shot_point_count--;
-                if(device->one_shot_point_count == 0)
-                {
-                    clear(&device->one_shot_arena);
-                }
-            }
         }
         break;
         case FMOD_CHANNELCONTROL_CALLBACK_VIRTUALVOICE:
@@ -133,39 +121,6 @@ static void set_channel_attributes(FMOD_CHANNEL *channel, ChannelAttributes attr
         
         FMOD_Channel_Set3DConeOrientation(channel, orientation);
         FMOD_Channel_Set3DConeSettings(channel, attributes.att_3d.cone.inside_angle, attributes.att_3d.cone.outside_angle, attributes.att_3d.cone.outside_volume);
-        if(attributes.att_3d.rolloff_mode == RM_CUSTOM)
-        {
-            
-            mode |= FMOD_3D_CUSTOMROLLOFF;
-            
-            if(attributes.att_3d.custom_rolloff.roll_off_point_count > 0)
-            {
-                FMOD_VECTOR *rolloff_points;
-                if(handle != 0)
-                {
-                    if(!device->rolloff_points[handle - 1])
-                    {
-                        device->rolloff_points[handle - 1] = push_array(&system->arena, attributes.att_3d.custom_rolloff.roll_off_point_count, FMOD_VECTOR);
-                    }
-                    rolloff_points = device->rolloff_points[handle - 1];
-                }
-                else
-                {
-                    rolloff_points = push_array(&device->one_shot_arena, attributes.att_3d.custom_rolloff.roll_off_point_count, FMOD_VECTOR);
-                }
-                
-                auto points = attributes.att_3d.custom_rolloff.roll_off_points;
-                
-                for(i32 i = 0; i < attributes.att_3d.custom_rolloff.roll_off_point_count; i++)
-                {
-                    rolloff_points[i].x = points[i].x;
-                    rolloff_points[i].y = points[i].y;
-                    rolloff_points[i].z = points[i].z;
-                }
-                
-                FMOD_Channel_Set3DCustomRolloff(channel, rolloff_points, attributes.att_3d.custom_rolloff.roll_off_point_count);
-            }
-        }
         
         FMOD_Channel_Set3DDistanceFilter(channel, attributes.att_3d.distance_filter.custom, attributes.att_3d.distance_filter.custom_level, attributes.att_3d.distance_filter.center_freq);
         FMOD_Channel_Set3DDopplerLevel(channel, attributes.att_3d.doppler_level);
@@ -247,8 +202,6 @@ static void play_sound(SoundCommand &command, SoundDevice *device, SoundSystem *
 {
     auto sound = device->sounds[command.one_shot.handle.handle - 1];
     
-    device->one_shot_point_count++;
-    
     FMOD_RESULT result = FMOD_OK;
     
     FMOD_CHANNEL *channel = nullptr;
@@ -327,7 +280,7 @@ static void update_sound_commands(SoundDevice *device, SoundSystem *system, r64 
 	    device->master_volume = system->master_volume;
             *save_config = true;
         }
-        
+
         for(i32 i = 0; i < system->command_count; i++)
         {
             SoundCommand& command = system->commands[i];
