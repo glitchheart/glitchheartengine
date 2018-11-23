@@ -17,7 +17,7 @@ IF %ERRORLEVEL% NEQ 0 call %VCVARSALL% x64
 echo %cd%
 set CommonCompilerFlags=/MD /arch:AVX -std:c++latest -fp:fast -fp:except- -nologo %OPT% -Oi -W4 -Gm- -GR- -EHa -FC -Z7 %PRP% %WIGNORED% -DDEBUG=%DEBUG% %GLM% /I..\libs /I%AnalyticsSrcPath%\gameanalytics\ /I..\libs\glfw\include /I..\libs\libcurl\include  /I..\libs\glad\include /I ..\libs\fmod\include /I..\libs\vulkan\Include
 set CommonLinkerFlags= Comdlg32.lib Ole32.lib kernel32.lib user32.lib gdi32.lib winmm.lib opengl32.lib shell32.lib Ws2_32.lib Wldap32.lib Crypt32.lib Normaliz.lib Advapi32.lib ..\libs\libcurl\win\libcurl_a.lib ..\libs\glfw\lib-vc2015\glfw3.lib ..\libs\glad\glad.obj ..\libs\fmod\lib\fmod64_vc.lib %AnalyticsDeps%\curl\lib\win64\vc140_x64_release\libcurl.lib %AnalyticsDeps%\openssl\1.0.2h\libs\win64\vc140_x64_release\libeay32.lib %AnalyticsDeps%\openssl\1.0.2h\libs\win64\vc140_x64_release\ssleay32.lib %AnalyticsPath%\win64-vc140-static\Release\GameAnalytics.lib
-set ExtraLinkerFlags=/NODEFAULTLIB:"LIBCMT" -incremental:no -opt:ref /ignore:4099
+set ExtraLinkerFlags=/NODEFAULTLIB:"LIBCMT" -incremental:no -opt:ref /ignore:4099 /SUBSYSTEM:windows /ENTRY:mainCRTStartup
 
 IF NOT EXIST build mkdir build
 pushd build
