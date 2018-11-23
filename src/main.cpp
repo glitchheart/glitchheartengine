@@ -540,7 +540,7 @@ int main(int argc, char **args)
 
     gameanalytics::GameAnalytics::setEnabledInfoLog(false);
     gameanalytics::GameAnalytics::configureBuild("alpha 0.2");
-    gameanalytics::GameAnalytics::initialize("810960034d0191ec4f21a04d73295ec6", "2469ab09d7b00f64d5114071564b2d2d59c900a4");
+    gameanalytics::GameAnalytics::initialize("3a3552e363e3ca17a17f98d568f25c75", "c34eacd91bcd41a33b37b0e8c978c17ee5c18f53");
     gameanalytics::GameAnalytics::startSession();
 
     ThreadInfo analytics_info[1] = {};
