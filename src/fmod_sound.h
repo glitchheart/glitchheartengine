@@ -30,8 +30,6 @@ struct SoundDevice
     b32 *paused_channels;
     u32 *channel_positions;
     
-    MemoryArena one_shot_arena;
-    i32 one_shot_point_count;
     
     MemoryArena total_arena;
 };
