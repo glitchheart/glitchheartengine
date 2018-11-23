@@ -741,7 +741,7 @@ struct RenderCommand
         } line;
         struct
         {
-            char text[256];
+            char text[512];
             math::Vec3 position;
             i32 font_handle;
             math::Rgba color; // @Cleanup: REMOVE!
@@ -751,7 +751,7 @@ struct RenderCommand
         } text;
         struct
         {
-            char text[256];
+            char text[512];
             i32 font_handle;
             u64 alignment_flags;
             math::Rgba color; // @Cleanup: REMOVE!
