@@ -1894,11 +1894,11 @@ static void render_text(RenderState &render_state, GLFontBuffer &font, TrueTypeF
     }
     else if(alignment_flags & ALIGNMENT_TOP)
     {
-        y += line_data.total_height;
+        //y = line_data.total_height;
     }
     else if(alignment_flags & ALIGNMENT_BOTTOM)
     {
-        y -= line_data.total_height;
+        y += line_data.total_height;
     }
 
     // @Cleanup: Can we get rid of this?
