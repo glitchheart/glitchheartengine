@@ -538,9 +538,12 @@ int main(int argc, char **args)
 
     AnalyticsEventState analytics_state = {};
 
-    gameanalytics::GameAnalytics::setEnabledInfoLog(false);
-    gameanalytics::GameAnalytics::configureBuild("alpha 0.2");
-    gameanalytics::GameAnalytics::initialize("3a3552e363e3ca17a17f98d568f25c75", "c34eacd91bcd41a33b37b0e8c978c17ee5c18f53");
+#define ANALYTICS_GAME_KEY "3a3552e363e3ca17a17f98d568f25c75"
+#define ANALYTICS_SECRET_KEY "c34eacd91bcd41a33b37b0e8c978c17ee5c18f53"
+    
+    gameanalytics::GameAnalytics::setEnabledInfoLog(true);
+    gameanalytics::GameAnalytics::configureBuild("alpha 0.1 - RELEASE");
+    gameanalytics::GameAnalytics::initialize(ANALYTICS_GAME_KEY, ANALYTICS_SECRET_KEY);
     gameanalytics::GameAnalytics::startSession();
 
     ThreadInfo analytics_info[1] = {};
