@@ -142,8 +142,8 @@ inline void save_config(const char* file_path, ConfigData &old_config_data, Rend
     
     if(file)
     {
-        fprintf(file, "title %s\n", old_config_data.title);
-        fprintf(file, "version %s\n", old_config_data.version);
+        // fprintf(file, "title %s\n", old_config_data.title);
+        // fprintf(file, "version %s\n", old_config_data.version);
         
         i32 width = old_config_data.screen_width;
         i32 height = old_config_data.screen_height;
@@ -190,7 +190,7 @@ inline void save_config(const char* file_path, ConfigData &old_config_data, Rend
     }
 }
 
-inline void load_version(const char* file_path, char* version)
+inline void load_version(const char* file_path, char* version, char* title)
 {
     FILE* file;
     file = fopen(file_path, "r");
@@ -210,6 +210,10 @@ inline void load_version(const char* file_path, char* version)
 		sscanf(line_buffer, "version %s %s", type_buf, version_buf);
 		snprintf(version, strlen(type_buf) + strlen(version_buf) + 2, "%s %s", type_buf, version_buf);
 	    }
+	    if(starts_with(line_buffer, "title"))
+	    {
+		sscanf(line_buffer, "title %[^\n]", title);
+	    }
 	}
     }
 }
@@ -224,14 +228,16 @@ inline void load_config(const char* file_path, ConfigData* config_data, MemoryAr
     
     if(!platform.file_exists(file_path))
     {
-        auto title = "Altered";
-        snprintf(config_data->title, strlen(title) + 1, "%s", title);
+        // auto title = "Altered";
+        // snprintf(config_data->title, strlen(title) + 1, "%s", title);
 
 	// @Note: We read the version from a .version file
         char version[64];
-	load_version("../.version", version);
+	char title[128];
+	load_version("../.version", version, title);
         snprintf(config_data->version, strlen(version) + 1, "%s", version);
-
+	snprintf(config_data->title, strlen(title) + 1,"%s", title);
+	
 	// @Note: Default is windowed borderless (aka windowed fullscreen)
         config_data->window_mode = FM_BORDERLESS;
 
@@ -247,24 +253,17 @@ inline void load_config(const char* file_path, ConfigData* config_data, MemoryAr
     }
     else
     {
+	char version_buf[64];
+	char title_buf[128];
+	load_version("../.version", version_buf, title_buf);
+
+	snprintf(config_data->title, strlen(title_buf) + 1,"%s", title_buf);
+	debug("title %s\n", config_data->title);
+	snprintf(config_data->version, strlen(version_buf) + 2, "%s", version_buf);
+	
         while(fgets(line_buffer, 255, file))
         {
-            if(starts_with(line_buffer, "title"))
-            {
-                auto title = &line_buffer[6];
-                snprintf(config_data->title, strlen(title),"%s", title);
-            }
-            else if(starts_with(line_buffer, "version"))
-            {
-		// @Note(Niels): Format for version is: [type] v#.#.#
-		// Example 1: alpha v0.1.0
-		// Example 2: beta v0.4.3
-		char version_buf[64];
-		load_version("../.version", version_buf);
-		
-		snprintf(config_data->version, strlen(version_buf) + 2, "%s", version_buf);
-            }
-            else if(starts_with(line_buffer, "screen_width"))
+	    if(starts_with(line_buffer, "screen_width"))
             {
                 sscanf(line_buffer, "screen_width %d", &config_data->screen_width);
             }
