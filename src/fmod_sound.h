@@ -25,8 +25,6 @@ struct SoundDevice
     FMOD_CHANNELGROUP* music_channel_group;
     FMOD_CHANNELGROUP* master_group;
     
-    FMOD_VECTOR **rolloff_points;
-    
     b32 *paused_channels;
     u32 *channel_positions;
     

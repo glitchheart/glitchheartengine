@@ -72,7 +72,6 @@ static void set_channel_attributes(FMOD_CHANNEL *channel, ChannelAttributes attr
         case LOOP_NORMAL:
         {
             mode |= FMOD_LOOP_NORMAL;
-            //debug("Loop count: %d, type: %d\n", attributes.loop.count, attributes.loop.type);
             // @Incomplete: -1 is default, add loop_count later!
             FMOD_Channel_SetLoopCount(channel, attributes.loop.count);
             
@@ -89,6 +88,10 @@ static void set_channel_attributes(FMOD_CHANNEL *channel, ChannelAttributes attr
         }
         break;
         default:
+	{
+	    FMOD_Channel_SetLoopCount(channel, 0);
+	    FMOD_Channel_SetMode(channel, FMOD_DEFAULT | FMOD_LOOP_OFF);
+	}
         break;
     }
     
@@ -185,8 +188,8 @@ static void play_audio_source(AudioSource& audio_source, SoundDevice* device, So
     
     device->channels[as_handle - 1] = channel;
     
-    FMOD_Channel_SetCallback(channel, channel_control_callback);
-    FMOD_Channel_SetUserData(channel, &audio_source);
+    // FMOD_Channel_SetCallback(channel, channel_control_callback);
+    // FMOD_Channel_SetUserData(channel, &audio_source);
     
     set_channel_attributes(channel, channel_attributes, system, device, as_handle);
     
@@ -226,8 +229,8 @@ static void play_sound(SoundCommand &command, SoundDevice *device, SoundSystem *
         FMOD_DEBUG(result);
     }
     
-    FMOD_Channel_SetCallback(channel, channel_control_callback);
-    FMOD_Channel_SetUserData(channel, (void**)&device);
+    // FMOD_Channel_SetCallback(channel, channel_control_callback);
+    // FMOD_Channel_SetUserData(channel, (void**)&device);
     
     FMOD_Channel_SetPaused(channel, false);
 }
@@ -330,10 +333,10 @@ static void update_sound_commands(SoundDevice *device, SoundSystem *system, r64 
             }
         }
         
-        // if(FMOD_System_Update(device->system) != FMOD_OK)
-        // {
-        //     debug("FMOD failed updating\n");
-        // }
+        if(FMOD_System_Update(device->system) != FMOD_OK)
+        {
+            debug("FMOD failed updating\n");
+        }
 
         system->command_count = 0;
     }
@@ -374,7 +377,6 @@ static void init_audio_fmod(SoundDevice* device)
     result = FMOD_System_GetMasterChannelGroup(device->system, &device->master_group);
     fmod_error_check(result);
     
-    device->rolloff_points = push_array(&device->total_arena, global_max_channels, FMOD_VECTOR*);
     device->paused_channels = push_array(&device->total_arena, global_max_channels, b32);
     device->channel_positions = push_array(&device->total_arena, global_max_channels, u32);
     device->channels = push_array(&device->total_arena, global_max_channels, FMOD_CHANNEL*);
