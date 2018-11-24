@@ -2045,7 +2045,7 @@ inline void vec4_4x_to_float4(Vec4_4x v, float* f1, float* f2, float* f3, float*
 #define push_size_simd(arena, type) (type*)_push_size_simd(arena, sizeof(type), (member_size(type, e[0])))
 inline void* _push_size_simd(MemoryArena *arena, umm size_init, u32 alignment)
 {
-    alignment = math::multiple_of_number(alignment, 16);
+    alignment = math::multiple_of_number_uint(alignment, 16);
     return push_size_(arena, size_init, default_with_alignment(alignment));
 }
 
