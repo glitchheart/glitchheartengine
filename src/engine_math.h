@@ -1956,6 +1956,11 @@ namespace math
     {
         return mul * (ceil(((r32)n / (r32)mul)));
     }
+
+    inline u32 multiple_of_number_uint(u32 n, u32 mul)
+    {
+        return mul * (ceil(((r32)n / (r32)mul)));
+    }
     
     inline r32 length(Vec2 v)
     {
