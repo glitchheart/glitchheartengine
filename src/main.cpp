@@ -1,5 +1,7 @@
 #include "shared.h"
 
+#define ENABLE_ANALYTICS 0
+
 #if DEBUG
 #include "debug.h"
 #endif
@@ -163,20 +165,20 @@ inline void save_config(const char* file_path, ConfigData &old_config_data, Rend
         b32 muted = false;
         r32 sfx_vol = 1.0f;
         r32 music_vol = 1.0f;
-	r32 master_vol = 1.0f;
+        r32 master_vol = 1.0f;
         
         if(sound_device)
         {
             muted = sound_device->muted;
             sfx_vol = sound_device->sfx_volume;
             music_vol = sound_device->music_volume;
-	    master_vol = sound_device->master_volume;
+            master_vol = sound_device->master_volume;
         }
         
         fprintf(file, "muted %d\n", muted);
         fprintf(file, "sfx_volume %.2f\n", sfx_vol);
         fprintf(file, "music_volume %.2f\n", music_vol);
-	fprintf(file, "master_volume %.2f\n", master_vol);
+        fprintf(file, "master_volume %.2f\n", master_vol);
         
         fclose(file);
         
@@ -186,7 +188,7 @@ inline void save_config(const char* file_path, ConfigData &old_config_data, Rend
         old_config_data.muted = muted;
         old_config_data.sfx_volume = sfx_vol;
         old_config_data.music_volume = music_vol;
-	old_config_data.master_volume = master_vol;
+        old_config_data.master_volume = master_vol;
     }
 }
 
@@ -198,23 +200,23 @@ inline void load_version(const char* file_path, char* version, char* title)
 
     if(file)
     {
-	while(fgets(line_buffer, 255, file))
-	{
-	    if(starts_with(line_buffer, "version"))
-	    {
-		// @Note(Niels): Format for version is: [type] v#.#.#
-		// Example 1: alpha v0.1.0
-		// Example 2: beta v0.4.3
-		char type_buf[64];
-		char version_buf[64];
-		sscanf(line_buffer, "version %s %s", type_buf, version_buf);
-		snprintf(version, strlen(type_buf) + strlen(version_buf) + 2, "%s %s", type_buf, version_buf);
-	    }
-	    if(starts_with(line_buffer, "title"))
-	    {
-		sscanf(line_buffer, "title %[^\n]", title);
-	    }
-	}
+        while(fgets(line_buffer, 255, file))
+        {
+            if(starts_with(line_buffer, "version"))
+            {
+                // @Note(Niels): Format for version is: [type] v#.#.#
+                // Example 1: alpha v0.1.0
+                // Example 2: beta v0.4.3
+                char type_buf[64];
+                char version_buf[64];
+                sscanf(line_buffer, "version %s %s", type_buf, version_buf);
+                snprintf(version, strlen(type_buf) + strlen(version_buf) + 2, "%s %s", type_buf, version_buf);
+            }
+            if(starts_with(line_buffer, "title"))
+            {
+                sscanf(line_buffer, "title %[^\n]", title);
+            }
+        }
     }
 }
 
@@ -231,39 +233,39 @@ inline void load_config(const char* file_path, ConfigData* config_data, MemoryAr
         // auto title = "Altered";
         // snprintf(config_data->title, strlen(title) + 1, "%s", title);
 
-	// @Note: We read the version from a .version file
+        // @Note: We read the version from a .version file
         char version[64];
-	char title[128];
-	load_version("../.version", version, title);
+        char title[128];
+        load_version("../.version", version, title);
         snprintf(config_data->version, strlen(version) + 1, "%s", version);
-	snprintf(config_data->title, strlen(title) + 1,"%s", title);
+        snprintf(config_data->title, strlen(title) + 1,"%s", title);
 	
-	// @Note: Default is windowed borderless (aka windowed fullscreen)
+        // @Note: Default is windowed borderless (aka windowed fullscreen)
         config_data->window_mode = FM_BORDERLESS;
 
-	// @Note: Setting the dimensions to zero will force the renderer to initialize it properly
-	config_data->screen_width = 0;
+        // @Note: Setting the dimensions to zero will force the renderer to initialize it properly
+        config_data->screen_width = 0;
         config_data->screen_height = 0;
         config_data->muted = false;
         config_data->sfx_volume = 1.0f;
         config_data->music_volume = 1.0f;
-	config_data->master_volume = 1.0f;
+        config_data->master_volume = 1.0f;
         
         save_config(file_path, *config_data);
     }
     else
     {
-	char version_buf[64];
-	char title_buf[128];
-	load_version("../.version", version_buf, title_buf);
+        char version_buf[64];
+        char title_buf[128];
+        load_version("../.version", version_buf, title_buf);
 
-	snprintf(config_data->title, strlen(title_buf) + 1,"%s", title_buf);
-	debug("title %s\n", config_data->title);
-	snprintf(config_data->version, strlen(version_buf) + 2, "%s", version_buf);
+        snprintf(config_data->title, strlen(title_buf) + 1,"%s", title_buf);
+        debug("title %s\n", config_data->title);
+        snprintf(config_data->version, strlen(version_buf) + 2, "%s", version_buf);
 	
         while(fgets(line_buffer, 255, file))
         {
-	    if(starts_with(line_buffer, "screen_width"))
+            if(starts_with(line_buffer, "screen_width"))
             {
                 sscanf(line_buffer, "screen_width %d", &config_data->screen_width);
             }
@@ -295,7 +297,7 @@ inline void load_config(const char* file_path, ConfigData* config_data, MemoryAr
             {
                 sscanf(line_buffer, "music_volume %f", &config_data->music_volume);
             }
-	    else if(starts_with(line_buffer, "master_volume"))
+            else if(starts_with(line_buffer, "master_volume"))
             {
                 sscanf(line_buffer, "master_volume %f", &config_data->master_volume);
             }
@@ -354,9 +356,9 @@ void process_analytics_events(AnalyticsEventState &analytics_state, WorkQueue *q
 {
     for(u32 i = 0; i < analytics_state.event_count; i++)
     {
-	AnalyticsEventData *event = &analytics_state.events[i];
-	event->state = &analytics_state;
-	send_analytics_event(queue, event);
+        AnalyticsEventData *event = &analytics_state.events[i];
+        event->state = &analytics_state;
+        send_analytics_event(queue, event);
     }
 	
     analytics_state.event_count = 0;
@@ -365,7 +367,7 @@ void process_analytics_events(AnalyticsEventState &analytics_state, WorkQueue *q
 #if defined(_WIN32) && !defined(DEBUG)
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 #else
-int main(int argc, char **args)
+    int main(int argc, char **args)
 #endif
 {
     GameMemory game_memory = {};
@@ -464,18 +466,18 @@ int main(int argc, char **args)
     
     init_renderer(renderer);
     if constexpr(global_graphics_api == GRAPHICS_VULKAN)
-		{
+                {
 #if defined(__linux) || defined(_WIN32)
-		    //VkRenderState vk_render_state;
-		    //initialize_vulkan(vk_render_state, renderer, config_data);
-		    //vk_render(vk_render_state, renderer);
+                    //VkRenderState vk_render_state;
+                    //initialize_vulkan(vk_render_state, renderer, config_data);
+                    //vk_render(vk_render_state, renderer);
 #endif
-		}
+                }
     else if constexpr(global_graphics_api == GRAPHICS_OPEN_GL)
-		     {
-			 log("Initializing OpenGl");
-			 initialize_opengl(render_state, renderer, &config_data, &platform_state->perm_arena, &do_save_config);
-		     }
+                     {
+                         log("Initializing OpenGl");
+                         initialize_opengl(render_state, renderer, &config_data, &platform_state->perm_arena, &do_save_config);
+                     }
     
     GameCode game = {};
     game.is_valid = false;
@@ -539,7 +541,7 @@ int main(int argc, char **args)
 
 #define ANALYTICS_GAME_KEY "3a3552e363e3ca17a17f98d568f25c75"
 #define ANALYTICS_SECRET_KEY "c34eacd91bcd41a33b37b0e8c978c17ee5c18f53"
-    
+#if ENABLE_ANALYTICS
     gameanalytics::GameAnalytics::setEnabledInfoLog(false);
     gameanalytics::GameAnalytics::configureBuild("alpha 0.1");
     gameanalytics::GameAnalytics::initialize(ANALYTICS_GAME_KEY, ANALYTICS_SECRET_KEY);
@@ -549,8 +551,9 @@ int main(int argc, char **args)
     WorkQueue analytics_queue = {};
     make_queue(&analytics_queue, 1, analytics_info);
     game_memory.analytics_state = &analytics_state;
-
-    r64 start_frame_for_total_time = get_time();
+#endif
+    
+    //r64 start_frame_for_total_time = get_time();
     
     while(!should_close_window(render_state) && !renderer.should_close)
     {
@@ -569,9 +572,9 @@ int main(int argc, char **args)
         //auto game_temp_mem = begin_temporary_memory(game_memory.temp_arena);
         game.update(delta_time, &game_memory, renderer, template_state, &input_controller, &sound_system, timer_controller);
         update_particle_systems(renderer, delta_time);
-
-	process_analytics_events(analytics_state, &analytics_queue);
-		
+#if ENABLE_ANALYTICS
+        process_analytics_events(analytics_state, &analytics_queue);
+#endif
         tick_animation_controllers(renderer, &sound_system, &input_controller, timer_controller, delta_time);
         tick_timers(timer_controller, delta_time);
         update_sound_commands(&sound_device, &sound_system, delta_time, &do_save_config);
@@ -619,19 +622,19 @@ int main(int argc, char **args)
         }
         
         delta_time = get_time() - last_frame;
-	delta_time = math::clamp(0.0, delta_time, 0.9);
+        delta_time = math::clamp(0.0, delta_time, 0.9);
         last_frame = end_counter;
         
     }
 
+#if ENABLE_ANALYTICS
     AnalyticsEventData event = {};
     event.state = &analytics_state;
     event.type = AnalyticsEventType::SESSION;
     event.play_time = get_time() - start_frame_for_total_time;
-	
     gameanalytics::GameAnalytics::endSession();
+#endif
     
-    //curl_easy_cleanup(analytics_state.curl_handle);
     close_log();
     cleanup_sound(&sound_device);
     close_window(render_state);
