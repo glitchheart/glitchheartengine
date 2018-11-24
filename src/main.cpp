@@ -1,6 +1,6 @@
 #include "shared.h"
 
-#define ENABLE_ANALYTICS 0
+#define ENABLE_ANALYTICS 1
 
 #if DEBUG
 #include "debug.h"
@@ -551,9 +551,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     WorkQueue analytics_queue = {};
     make_queue(&analytics_queue, 1, analytics_info);
     game_memory.analytics_state = &analytics_state;
+
+    r64 start_frame_for_total_time = get_time();
 #endif
-    
-    //r64 start_frame_for_total_time = get_time();
     
     while(!should_close_window(render_state) && !renderer.should_close)
     {
