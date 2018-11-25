@@ -483,8 +483,6 @@ static RelativeUIQuadInfo get_relative_info(Renderer& renderer, math::Vec2 posit
     
     math::Vec3 relative_pos = math::Vec3(pos.x, pos.y, 0.0f);
     
-    r32 ratio = size.y / size.x;
-    
     math::Vec3 new_size = get_relative_size_vec3(renderer, size, scaling_flags);
     
     r32 factor_x = scaled_size.x / origin.x;
