@@ -196,6 +196,7 @@ struct RenderState
     DirectionalLightData directional_light_data;
     PointLightData point_light_data;
     
+    
     u32 framebuffer_quad_vertices_size = 16 * sizeof(GLfloat);
     u32 texture_quad_vertices_size = 16 * sizeof(GLfloat);
     u32 rounded_quad_vertices_size = 16 * sizeof(GLfloat);
@@ -220,13 +221,22 @@ struct RenderState
         0.0f, 1.0f, 0.0f, 0.0f
     };
     
+    /* GLfloat billboard_vertices[20] = */
+    /* { */
+    /*     0.0f, 1.0f, 0.0f, 0.0f, 0.0f, */
+    /*     1.0f, 1.0f, 0.0f, 1.0f, 0.0f, */
+    /*     1.0f, 0.0f, 0.0f, 1.0f, 1.0f, */
+    /*     0.0f, 0.0f, 0.0f, 0.0f, 1.0f */
+    /* }; */
+
     GLfloat billboard_vertices[20] =
     {
-        0.0f, 1.0f, 0.0f, 0.0f, 0.0f,
-        1.0f, 1.0f, 0.0f, 1.0f, 0.0f,
-        1.0f, 0.0f, 0.0f, 1.0f, 1.0f,
-        0.0f, 0.0f, 0.0f, 0.0f, 1.0f
+        -0.5f, 0.5f, 0.0f, 0.0f, 0.0f,
+        0.5f, 0.5f, 0.0f, 1.0f, 0.0f,
+        0.5f, -0.5f, 0.0f, 1.0f, 1.0f,
+        -0.5f, -0.5f, 0.0f, 0.0f, 1.0f
     };
+
     
     GLfloat texture_quad_vertices[16] =
     {

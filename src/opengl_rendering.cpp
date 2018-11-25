@@ -1,3 +1,4 @@
+
 //#define GL_DEBUG
 
 #ifdef GL_DEBUG
@@ -847,6 +848,13 @@ static void setup_billboard(RenderState& render_state, MemoryArena* arena)
     
     auto position_location = (GLuint)glGetAttribLocation(render_state.quad_shader.program, "pos");
     vertex_attrib_pointer(position_location, 3, GL_FLOAT,  3 * sizeof(float), nullptr);
+
+    glEnableVertexAttribArray(0);
+    glEnableVertexAttribArray(1);
+    glEnableVertexAttribArray(2);
+    glEnableVertexAttribArray(3);
+    glEnableVertexAttribArray(4);
+    glEnableVertexAttribArray(5);
     
     glBindVertexArray(0);
 }
@@ -985,7 +993,7 @@ static void load_extra_shaders(RenderState& render_state, Renderer& renderer)
 
 
 void stbtt_load_font(RenderState &render_state, Renderer& renderer, char *path, i32 size, i32 index = -1)
-{
+ {
     GLFontBuffer *font = nullptr;
     TrueTypeFontInfo *font_info = nullptr;
     if(index == -1)
@@ -1025,9 +1033,9 @@ void stbtt_load_font(RenderState &render_state, Renderer& renderer, char *path, 
     
     fread(ttf_buffer, 1, 1<<20, fopen(path, "rb"));
     
-    stbtt_InitFont(&font_info->info, ttf_buffer, 0); 
+    stbtt_InitFont(&font_info->info, ttf_buffer, 0);
     font_info->scale = stbtt_ScaleForPixelHeight(&font_info->info, 15);
-    stbtt_GetFontVMetrics(&font_info->info, &font_info->ascent, nullptr, nullptr);
+    stbtt_GetFontVMetrics(&font_info->info, &font_info->ascent, &font_info->descent, &font_info->line_gap);
     font_info->baseline = (i32)(font_info->ascent * font_info->scale);
     
     stbtt_pack_context context;
@@ -1035,8 +1043,7 @@ void stbtt_load_font(RenderState &render_state, Renderer& renderer, char *path, 
         printf("Failed to initialize font");
     
     stbtt_PackSetOversampling(&context, font_info->oversample_x, font_info->oversample_y);
-    if (!stbtt_PackFontRange(&context, ttf_buffer, 0
-                             , (r32)font_info->size, font_info->first_char, font_info->char_count, font_info->char_data))
+    if (!stbtt_PackFontRange(&context, ttf_buffer, 0, (r32)font_info->size, font_info->first_char, font_info->char_count, font_info->char_data))
         printf("Failed to pack font");
     
 #if DEBUG
@@ -1077,6 +1084,8 @@ void stbtt_load_font(RenderState &render_state, Renderer& renderer, char *path, 
         vertex_attrib_pointer(0, 4, GL_FLOAT, 0, nullptr);
         glBindVertexArray(0);
     }
+
+    font_info->line_height = font_info->size + font_info->line_gap * font_info->scale;
     
     r32 largest_character = 0;
     
@@ -1085,7 +1094,7 @@ void stbtt_load_font(RenderState &render_state, Renderer& renderer, char *path, 
         char str[2];
         str[0] = (char)(font_info->first_char + i);
         str[1] = '\0';
-        math::Vec2 char_size = get_text_size_scaled(renderer, str, *font_info, 0);
+        math::Vec2 char_size = get_text_size(str, *font_info);
         if(char_size.y > largest_character)
         {
             largest_character = char_size.y;
@@ -1163,7 +1172,7 @@ static const GLFWvidmode* create_open_gl_window(RenderState& render_state, Windo
 
 static void initialize_opengl(RenderState& render_state, Renderer& renderer, r32 contrast, r32 brightness, WindowMode window_mode, i32 screen_width, i32 screen_height, const char* title, MemoryArena *perm_arena, b32 *do_save_config)
 {
-    render_state.character_buffer = push_array(perm_arena, 1024, CharacterData);
+    render_state.character_buffer = push_array(perm_arena, 4096, CharacterData);
     auto recreate_window = render_state.window != nullptr;
 	
     if(!recreate_window)
@@ -1837,10 +1846,25 @@ static void render_quad(RenderMode mode, RenderState& render_state, math::Vec4 c
     glBindVertexArray(0);
 }
 
+static void calculate_current_x_from_line_data(r32 *x, math::Vec2 text_size, u64 alignment_flags)
+{
+    if(alignment_flags & ALIGNMENT_CENTER_X)
+    {
+        *x -= text_size.x / 2.0f;
+    }
+    else if(alignment_flags & ALIGNMENT_RIGHT)
+    {
+        *x -= text_size.x;
+    }
+}
+
 //rendering methods
 static void render_text(RenderState &render_state, GLFontBuffer &font, TrueTypeFontInfo& font_info, const math::Vec4& color, const char* text, r32 x, r32 y, math::Mat4 view_matrix, math::Mat4 projection_matrix, r32 scale = 1.0f,
                         u64 alignment_flags = ALIGNMENT_LEFT, b32 align_center_y = true, i32 z = 0)
 {
+    // @Note: To make sure the character buffer is large enough
+    assert(strlen(text) * 6 < 4096);
+    
     glBindVertexArray(font.vao);
     auto shader = render_state.shaders[SHADER_STANDARD_FONT];
     use_shader(shader);
@@ -1862,42 +1886,54 @@ static void render_text(RenderState &render_state, GLFontBuffer &font, TrueTypeF
     i32 n = 0;
     
     // @Speed: The call to get_text_size() will loop throught the text, which means we'll loop through it twice per render-call
-    math::Vec2 text_size = get_text_size(text, font_info);
-    if(alignment_flags & ALIGNMENT_CENTER_X)
-    {
-        x -= text_size.x / 2.0f;
-    }
-    else if(alignment_flags & ALIGNMENT_RIGHT)
-    {
-        x -= text_size.x;
-    }
+    LineData line_data = get_line_size_data(text, font_info);
+
+    r32 start_x = x;
+    i32 current_line = 0;
     
     if(alignment_flags & ALIGNMENT_CENTER_Y)
     {
-        y -= text_size.y / 2.0f;
+        y -= line_data.line_sizes[0].y * 0.5f;
     }
     else if(alignment_flags & ALIGNMENT_TOP)
     {
-        y -= text_size.y;
+        //y = line_data.total_height;
     }
     else if(alignment_flags & ALIGNMENT_BOTTOM)
     {
-        y += text_size.y;
+        y += line_data.total_height;
     }
-    
-    // first we have to reverse the initial y to support stb_truetype where y+ is down
-    y = render_state.window_height - y;
+
+    // @Cleanup: Can we get rid of this?
+    y = render_state.framebuffer_height - y;
+
+    calculate_current_x_from_line_data(&x, line_data.line_sizes[current_line], alignment_flags);
     
     for(u32 i = 0; i < strlen(text); i++)
     {
+	char c = text[i];
+	
+	if(c == '\n')
+	{
+	    current_line++;
+	    
+	    y += font_info.line_height;
+	    x = start_x;
+
+	    if(current_line != line_data.line_count)
+		calculate_current_x_from_line_data(&x, line_data.line_sizes[current_line], alignment_flags);
+
+	    continue;
+	}
+	
         stbtt_aligned_quad quad;
         stbtt_GetPackedQuad(font_info.char_data, font_info.atlas_width, font_info.atlas_height,
                             text[i]- font_info.first_char, &x, &y, &quad, 1);
         
         r32 x_min = quad.x0;
         r32 x_max = quad.x1;
-        r32 y_min = render_state.window_height - quad.y0;//(quad.y0 + font.baseline);
-        r32 y_max = render_state.window_height - quad.y1;//(quad.y1 + font.baseline);
+        r32 y_min = render_state.framebuffer_height - quad.y0;
+        r32 y_max = render_state.framebuffer_height - quad.y1;
         
         coords[n++] = { x_max, y_max, quad.s1, quad.t1 };
         coords[n++] = { x_max, y_min, quad.s1, quad.t0 };
@@ -1942,6 +1978,7 @@ static void render_3d_text(RenderState &render_state, GLFontBuffer &font, TrueTy
     r32 y = position.y;
     
     // @Speed: The call to get_text_size() will loop through the text, which means we'll loop through it twice per render-call
+    printf("SHIT\n");
     math::Vec2 text_size = get_text_size(text, font_info);
     if(alignment_flags & ALIGNMENT_CENTER_X)
     {
@@ -1967,17 +2004,19 @@ static void render_3d_text(RenderState &render_state, GLFontBuffer &font, TrueTy
     
     // first we have to reverse the initial y to support stb_truetype where y+ is down
     //y = render_state.window_height - y;
-    
+
     for(u32 i = 0; i < strlen(text); i++)
     {
+	char c = text[i];
+	
         stbtt_aligned_quad quad;
         stbtt_GetPackedQuad(font_info.char_data, font_info.atlas_width, font_info.atlas_height,
-                            text[i] - font_info.first_char, &x, &y, &quad, 1);
+                            c - font_info.first_char, &x, &y, &quad, 1);
         
         r32 x_min = quad.x0;
         r32 x_max = quad.x1;
-        r32 y_min = quad.y0;//(quad.y0 + font.baseline);
-        r32 y_max = quad.y1;//(quad.y1 + font.baseline);
+        r32 y_min = quad.y0;
+        r32 y_max = quad.y1;
         
         coords[n++] = { x_max, y_max, quad.s1, quad.t1 };
         coords[n++] = { x_max, y_min, quad.s1, quad.t0 };
@@ -1985,8 +2024,8 @@ static void render_3d_text(RenderState &render_state, GLFontBuffer &font, TrueTy
         coords[n++] = { x_min, y_max, quad.s0, quad.t1 };
         coords[n++] = { x_max, y_max, quad.s1, quad.t1 };
         coords[n++] = { x_min, y_min, quad.s0, quad.t0 };
-        
-        i32 kerning = stbtt_GetCodepointKernAdvance(&font_info.info, text[i] - font_info.first_char, text[i + 1] - font_info.first_char);
+
+        i32 kerning = stbtt_GetCodepointKernAdvance(&font_info.info, c - font_info.first_char, text[i + 1] - font_info.first_char);
         x += (r32)kerning * font_info.scale;
     }
     
@@ -2587,7 +2626,8 @@ static void render_mesh_instanced(const RenderCommand &render_command, Renderer 
         set_float_uniform(shader.program, "material.translucency.power", 9.8);
         set_float_uniform(shader.program, "material.translucency.scale", 0.5);
         set_vec3_uniform(shader.program, "material.translucency.subColor", math::Vec3(1.0f));
-        
+        set_float_uniform(shader.program, "material.dissolve", render_command.mesh_instanced.dissolve);
+	
         switch(render_command.mesh_instanced.wireframe_type)
         {
             case WT_NONE:
@@ -2639,8 +2679,12 @@ static void render_particles(RenderCommand &render_command, Renderer &renderer, 
     i32 _internal_offset_handle = renderer._internal_buffer_handles[render_command.particles.offset_buffer_handle - 1];
     i32 _internal_color_handle = renderer._internal_buffer_handles[render_command.particles.color_buffer_handle - 1];
     i32 _internal_size_handle = renderer._internal_buffer_handles[render_command.particles.size_buffer_handle - 1];
+    i32 _internal_angle_handle = renderer._internal_buffer_handles[render_command.particles.angle_buffer_handle - 1];
     
-    if(_internal_offset_handle == -1 || _internal_color_handle == -1 || _internal_size_handle == -1)
+    if(_internal_offset_handle == -1
+       || _internal_color_handle == -1
+       || _internal_size_handle == -1
+       || _internal_angle_handle == -1)
     {
         return;
     }
@@ -2648,6 +2692,7 @@ static void render_particles(RenderCommand &render_command, Renderer &renderer, 
     Buffer offset_buffer = render_state.buffers[_internal_offset_handle];
     Buffer color_buffer = render_state.buffers[_internal_color_handle];
     Buffer size_buffer = render_state.buffers[_internal_size_handle];
+    Buffer angle_buffer = render_state.buffers[_internal_angle_handle];
     
     glBindVertexArray(render_state.billboard_vao);
     glBindBuffer(GL_ARRAY_BUFFER, render_state.billboard_vbo);
@@ -2655,32 +2700,32 @@ static void render_particles(RenderCommand &render_command, Renderer &renderer, 
     
     use_shader(shader);
     
-    glEnableVertexAttribArray(0);
     vertex_attrib_pointer(0, 3, GL_FLOAT,(5 * sizeof(GLfloat)), nullptr);
     
-    glEnableVertexAttribArray(1);
     vertex_attrib_pointer(1, 2, GL_FLOAT, (5 * sizeof(GLfloat)), (void*)(3 * sizeof(GLfloat)));
     
-    glEnableVertexAttribArray(2);
     glBindBuffer(GL_ARRAY_BUFFER, offset_buffer.vbo);
     glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizei)sizeof(math::Vec3) * render_command.particles.particle_count, render_command.particles.offsets);
     vertex_attrib_pointer(2, 3, GL_FLOAT, (3 * sizeof(GLfloat)), (void*)(0 * sizeof(GLfloat)));
     
-    glEnableVertexAttribArray(3);
     glBindBuffer(GL_ARRAY_BUFFER, color_buffer.vbo);
     glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizei)sizeof(math::Vec4) * render_command.particles.particle_count, render_command.particles.colors);
     vertex_attrib_pointer(3, 4, GL_FLOAT, (4 * sizeof(GLfloat)), (void*)(0 * sizeof(GLfloat)));
     
-    glEnableVertexAttribArray(4);
     glBindBuffer(GL_ARRAY_BUFFER, size_buffer.vbo);
     glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizei)sizeof(math::Vec2) * render_command.particles.particle_count, render_command.particles.sizes);
     vertex_attrib_pointer(4, 2, GL_FLOAT, 2 * sizeof(GLfloat), (void*)(0 * sizeof(GLfloat)));
+
+    glBindBuffer(GL_ARRAY_BUFFER, angle_buffer.vbo);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizei)sizeof(r32) * render_command.particles.particle_count, render_command.particles.angles);
+    vertex_attrib_pointer(5, 1, GL_FLOAT, sizeof(GLfloat), (void*)(0 * sizeof(GLfloat)));
     
     glVertexAttribDivisor(0, 0);
     glVertexAttribDivisor(1, 0);
     glVertexAttribDivisor(2, 1);
     glVertexAttribDivisor(3, 1);
     glVertexAttribDivisor(4, 1);
+    glVertexAttribDivisor(5, 1);
     
     set_mat4_uniform(shader.program, "projectionMatrix", projection_matrix);
     set_mat4_uniform(shader.program, "viewMatrix", view_matrix);
@@ -2860,7 +2905,6 @@ static void register_buffers(RenderState& render_state, Renderer& renderer)
     }
     
     renderer.updated_buffer_handle_count = 0;
-    
 }
 
 static void render_shadows(RenderState &render_state, Renderer &renderer, Framebuffer &framebuffer)

@@ -82,8 +82,16 @@ inline r32_4x random_bilateral_4x(RandomSeries& series)
 
 inline r32_4x random_between_4x(RandomSeries& series, r32 min, r32 max)
 {
-    r32_4x r = random_unilateral_4x(series);
+    r32_4x r = r32_4x(random_unilateral_4x(series));
     r32_4x result = math::lerp(r32_4x(min), r, r32_4x(max));
+    
+    return(result);
+}
+
+inline r64_4x random_between_4x(RandomSeries& series, r64 min, r64 max)
+{
+    r64_4x r = r64_4x(random_unilateral_4x(series));
+    r64_4x result = math::lerp(r64_4x(min), r, r64_4x(max));
     
     return(result);
 }
@@ -141,7 +149,7 @@ inline Vec3_4x random_rect_4x(RandomSeries& series, r32 _min, r32 _max)
     
     r32 min = _min - (_min + _max) / 2.0f;
     r32 max = _max - (_min + _max) / 2.0f;
-    
+
     result.x = random_between_4x(series, min, max);
     result.y = _mm_set1_ps(0.0f);
     
@@ -157,7 +165,7 @@ inline math::Vec3 get_point_on_square(r32 r, r32 a, r32 b, r32 x0, r32 x1, r32 y
     if(r < a)
     {
         result.x = x0;
-        result.z = y0 + a;
+        result.z = y0 + a - r;
     }
     else if(r < a + b)
     {

@@ -24,6 +24,9 @@
 struct TrueTypeFontInfo
 {
     i32 ascent;
+    i32 descent;
+    i32 line_gap;
+    r32 line_height;
     r32 scale;
     i32 baseline;
     i32 first_char;
@@ -34,7 +37,6 @@ struct TrueTypeFontInfo
     u32 oversample_x;
     u32 oversample_y;
     r32 largest_character_height;
-    
     stbtt_fontinfo info;
     stbtt_packedchar char_data['~' - ' '];
 };
@@ -467,9 +469,11 @@ struct InstancedRenderCommand
     i32 original_material_handle;
     i32 count;
     math::Vec3 scale;
-    i32 particle_systems[256];
-    
+
     b32 has_particles;
+    i32 particle_systems[256];
+    u32 particle_count;
+    
     b32 receives_shadows;
     b32 cast_shadows;
 };
@@ -609,6 +613,7 @@ struct Material
     math::Rgba ambient_color;
     math::Rgba diffuse_color;
     math::Rgba specular_color;
+    r32 dissolve;
     r32 specular_exponent;
     
     TextureHandle ambient_texture;
@@ -736,7 +741,7 @@ struct RenderCommand
         } line;
         struct
         {
-            char text[256];
+            char text[512];
             math::Vec3 position;
             i32 font_handle;
             math::Rgba color; // @Cleanup: REMOVE!
@@ -746,7 +751,7 @@ struct RenderCommand
         } text;
         struct
         {
-            char text[256];
+            char text[512];
             i32 font_handle;
             u64 alignment_flags;
             math::Rgba color; // @Cleanup: REMOVE!
@@ -848,6 +853,7 @@ struct RenderCommand
             math::Rgba diffuse_color;
             math::Rgba specular_color;
             math::Rgba ambient_color;
+	    r32 dissolve;
             r32 specular_exponent;
             WireframeType wireframe_type;
             math::Rgba wireframe_color;
@@ -872,6 +878,7 @@ struct RenderCommand
             i32 offset_buffer_handle;
             i32 color_buffer_handle;
             i32 size_buffer_handle;
+            i32 angle_buffer_handle;
             RenderMaterialType material_type;
             i32 diffuse_texture;
             
@@ -879,6 +886,7 @@ struct RenderCommand
             math::Vec3 *offsets;
             math::Vec4 *colors;
             math::Vec2 *sizes;
+            r32* angles;
             i32 texture_handle;
             
             CommandBlendMode blend_mode;
@@ -1147,27 +1155,106 @@ r32 to_ui(Renderer& renderer, i32 scale, r32 coord)
     return (coord / (r32)scale) * (r32)UI_COORD_DIMENSION;
 }
 
-static math::Vec2 get_text_size(const char *text, TrueTypeFontInfo font)
+#define MAX_LINES 16
+
+struct LineData
+{
+    math::Vec2 line_sizes[MAX_LINES];
+    i32 line_count;
+    r32 total_height;
+    r32 line_spacing;
+};
+
+static LineData get_line_size_data(const char *text, TrueTypeFontInfo font)
 {
     math::Vec2 size;
     r32 placeholder_y = 0.0;
     
+    LineData line_data;
+    line_data.total_height = 0.0f;
+    line_data.line_count = 1;
+    
+    line_data.line_spacing = (r32)font.size + font.line_gap * font.scale;
+    
     for(u32 i = 0; i < strlen(text); i++)
     {
-        stbtt_aligned_quad quad;
-        stbtt_GetPackedQuad(font.char_data, font.atlas_width, font.atlas_height,
-                            text[i] - font.first_char, &size.x, &placeholder_y, &quad, 1);
+	if(text[i] != '\n' && text[i] != '\r')
+	{
+	    stbtt_aligned_quad quad;
+	    stbtt_GetPackedQuad(font.char_data, font.atlas_width, font.atlas_height,
+				text[i] - font.first_char, &line_data.line_sizes[line_data.line_count - 1].x, &placeholder_y, &quad, 1);
         
-        if(quad.y1 - quad.y0 > size.y)
-        {
-            size.y = quad.y1 - quad.y0;
-        }
+	    if(quad.y1 - quad.y0 > size.y)
+	    {
+		line_data.line_sizes[line_data.line_count - 1].y = quad.y1 - quad.y0;
+	    }
         
-        i32 kerning = stbtt_GetCodepointKernAdvance(&font.info, text[i] - font.first_char, text[i + 1] - font.first_char);
-        size.x += (r32)kerning * font.scale;
+	    i32 kerning = stbtt_GetCodepointKernAdvance(&font.info, text[i] - font.first_char, text[i + 1] - font.first_char);
+	    line_data.line_sizes[line_data.line_count - 1].x += (r32)kerning * font.scale;
+	}
+	else
+	{
+	    line_data.line_count++;
+	}
     }
+
+    if(line_data.line_count == 1)
+    {
+	line_data.total_height = line_data.line_sizes[0].y;
+    }
+    else
+	line_data.total_height = (line_data.line_count - 1) * line_data.line_spacing;
     
-    return size;
+    return line_data;
+}
+
+#define get_texture_size(handle) texture_size(handle, renderer)
+static math::Vec2i texture_size(i32 texture_handle, Renderer& renderer)
+{
+    if(texture_handle <= renderer.texture_count)
+    {
+        TextureData data = renderer.texture_data[texture_handle - 1];
+        return math::Vec2i(data.width, data.height);
+    }
+    return math::Vec2i();
+}
+
+static math::Vec2 get_text_size(const char *text, TrueTypeFontInfo font)
+{
+    math::Vec2 size;
+    r32 placeholder_y = 0.0;
+
+    i32 lines = 1;
+
+    r32 current_width = 0.0f;
+    
+    for(u32 i = 0; i < strlen(text); i++)
+    {
+	if(text[i] != '\n' && text[i] != '\r')
+	{
+	    stbtt_aligned_quad quad;
+	    stbtt_GetPackedQuad(font.char_data, font.atlas_width, font.atlas_height,
+				text[i] - font.first_char, &size.x, &placeholder_y, &quad, 1);
+        
+	    if(quad.y1 - quad.y0 > size.y)
+	    {
+		size.y = quad.y1 - quad.y0;
+	    }
+        
+	    i32 kerning = stbtt_GetCodepointKernAdvance(&font.info, text[i] - font.first_char, text[i + 1] - font.first_char);
+	    current_width += (r32)kerning * font.scale;
+	}
+	else
+	{
+	    if(size.x > current_width)
+		current_width = size.x;
+
+	    size.x = 0.0f;
+	    lines++;
+	}
+    }
+
+    return math::Vec2(current_width, size.y * lines * (lines - 1));
 }
 
 static TrueTypeFontInfo get_tt_font_info(Renderer& renderer, i32 handle)
@@ -1178,7 +1265,8 @@ static TrueTypeFontInfo get_tt_font_info(Renderer& renderer, i32 handle)
 
 static math::Vec2 get_text_size_scaled(Renderer& renderer, const char* text, TrueTypeFontInfo font, u64 scaling_flags = UIScalingFlag::KEEP_ASPECT_RATIO)
 {
-    math::Vec2 font_size = get_text_size(text, font);
+    LineData line_data = get_line_size_data(text, font);
+    math::Vec2 font_size = line_data.line_sizes[0];
     math::Vec2 result;
     
     math::Vec2i scale = get_scale(renderer);

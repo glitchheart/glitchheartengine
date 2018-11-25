@@ -62,16 +62,7 @@ static void load_shader(MemoryArena* arena, const char* full_shader_path, Render
     end_temporary_memory(temp_mem);
 }
 
-#define get_texture_size(handle) texture_size(handle, renderer)
-static math::Vec2i texture_size(i32 texture_handle, Renderer& renderer)
-{
-    if(texture_handle <= renderer.texture_count)
-    {
-        TextureData data = renderer.texture_data[texture_handle - 1];
-        return math::Vec2i(data.width, data.height);
-    }
-    return math::Vec2i();
-}
+
 
 static void load_texture(const char* full_texture_path, Renderer& renderer, TextureFiltering filtering, i32* handle = 0)
 {
@@ -237,11 +228,11 @@ static void push_ui_text(Renderer &renderer, const char* text, math::Vec2 positi
     render_command->type = RENDER_COMMAND_TEXT;
     strcpy(render_command->text.text, text);
     
-    math::Vec3 pos;
+    math::Vec3 pos; 
     pos.x = (position.x / UI_COORD_DIMENSION) * resolution_scale.x;
     pos.y = (position.y / UI_COORD_DIMENSION) * resolution_scale.y;
     pos.z = 0.0f;
-    
+
     render_command->text.position = pos;
     render_command->text.font_handle = font_handle;
     render_command->text.color = color;
@@ -255,7 +246,7 @@ static void push_ui_text(Renderer &renderer, const char* text, math::Vec2 positi
     render_command->clip_rect = scaled_clip_rect;
 }
 
-#define PUSH_TEXT(text, position, color, font_handle) push_text(renderer, text, position, 1.0f, font_handle, color)
+#define PUSH_TEXT(text, position, pcolor, font_handle) push_text(renderer, text, position, 1.0f, font_handle, color)
 #define PUSH_CENTERED_TEXT(text, position, color, font_handle) push_text(renderer, text, position, 1.0f, font_handle, color, ALIGNMENT_CENTER_X | ALIGNMENT_CENTER_Y)
 static void push_text(Renderer& renderer, const char* text, math::Vec3 position, r32 scale, i32 font_handle, math::Rgba color, u64 alignment_flags = ALIGNMENT_LEFT, b32 is_ui = true)
 {
@@ -1175,6 +1166,7 @@ static void push_mesh_instanced(Renderer &renderer, MeshInfo mesh_info, math::Ve
     render_command->mesh_instanced.instance_color_buffer_handle = mesh_info.instance_color_buffer_handle;
     render_command->mesh_instanced.instance_rotation_buffer_handle = mesh_info.instance_rotation_buffer_handle;
     render_command->mesh_instanced.instance_scale_buffer_handle = mesh_info.instance_scale_buffer_handle;
+    render_command->mesh_instanced.dissolve = mesh_info.material.dissolve;
     
     render_command->mesh_instanced.offsets = offsets;
     render_command->mesh_instanced.colors = colors;
@@ -1294,6 +1286,7 @@ static void load_material(Renderer &renderer, char *file_path, MaterialHandle *m
         material.diffuse_texture = { 0 };
         material.ambient_texture = { 0 };
         material.specular_texture = { 0 };
+	material.dissolve = 1.0f;
         
         while((fgets(buffer, sizeof(buffer), mtl_file) != NULL))
         {
@@ -1323,6 +1316,10 @@ static void load_material(Renderer &renderer, char *file_path, MaterialHandle *m
             {
                 sscanf(buffer, "Ns %f", &material.specular_exponent);
             }
+	    else if(starts_with(buffer, "d"))
+	    {
+		sscanf(buffer, "d %f", &material.dissolve);
+	    }
             else if(starts_with(buffer, "map_Ka")) // ambient map
             {
                 char name[64];
@@ -1811,8 +1808,7 @@ static void load_obj(Renderer &renderer, char *file_path, MeshInfo &mesh_info, b
 
 static void push_particle_system(Renderer &renderer, ParticleSystemInfo &particle_info, i32 handle,  CommandBlendMode blend_mode = CBM_ONE_MINUS_SRC_ALPHA)
 {
-    renderer.command_count++;
-    RenderCommand* render_command = &renderer.commands[renderer.command_count++];
+    RenderCommand* render_command = push_next_command(renderer, false);
     render_command->shader_handle = -1;
     render_command->particles.handle = handle;
     
@@ -1827,11 +1823,13 @@ static void push_particle_system(Renderer &renderer, ParticleSystemInfo &particl
     render_command->particles.offset_buffer_handle = particle_info.offset_buffer_handle;
     render_command->particles.color_buffer_handle = particle_info.color_buffer_handle;
     render_command->particles.size_buffer_handle = particle_info.size_buffer_handle;
+    render_command->particles.angle_buffer_handle = particle_info.angle_buffer_handle;
     render_command->particles.particle_count = particle_info.particle_count;
     
     render_command->particles.offsets = particle_info.offsets;
     render_command->particles.colors = particle_info.colors;
     render_command->particles.sizes = particle_info.sizes;
+    render_command->particles.angles = particle_info.angles;
     
     render_command->particles.diffuse_texture = particle_info.attributes.texture_handle;
     render_command->particles.blend_mode = blend_mode;
@@ -1936,15 +1934,7 @@ static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer, ma
                 
                 assert(command_index < MAX_INSTANCING_PAIRS);
             }
-            
-            if(command_index != -1)
-            {
-                InstancedRenderCommand& command = instanced_commands[command_index];
-		command.particle_systems[command.count - 1] = -1;
-                command.has_particles = false;
-            }
-            
-            if(ent.comp_flags & scene::COMP_PARTICLES)
+            else if(ent.comp_flags & scene::COMP_PARTICLES)
             {
                 if(ent.particle_system_handle.handle != -1)
                 {
@@ -1967,26 +1957,19 @@ static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer, ma
 
                     if(system.running)
                     {
-                        if(command_index != -1)
-                        {
-                            InstancedRenderCommand& command = instanced_commands[command_index];
-                            command.particle_systems[command.count - 1] = ps.handle.handle;
-                            command.has_particles = true;
-                        }
-                        else
-                        {
-			    particles_to_push[particles_count++] = ps.handle.handle;
-                            // push_particle_system(renderer, system, ps.handle.handle); 
-                        }
+                        particles_to_push[particles_count++] = ps.handle.handle;
                     }
                 }
-                
-                
             }
         }
     }
-    
-    i32 particle_index = 0;
+
+    // for(i32 i = 0; i < particles_count; i++)
+    // {
+    // 	i32 _internal_handle = renderer.particles._internal_handles[particles_to_push[i] - 1];
+    // 	ParticleSystemInfo& system = renderer.particles.particle_systems[_internal_handle];
+    // 	push_particle_system(renderer, system, particles_to_push[i]);
+    // }
     
     for(i32 com_index = 0; com_index < command_count; com_index++)
     {
@@ -2004,23 +1987,12 @@ static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer, ma
         mesh_info.receives_shadows = command.receives_shadows;
         mesh_info.cast_shadows = command.cast_shadows;
         push_mesh_instanced(renderer, mesh_info, &positions[com_index * 1024], &colors[com_index * 1024], &rotations[com_index * 1024], &scalings[com_index * 1024], command.count);
-        
-	for(i32 i = 0; i < command.count; i++)
-	{
-	    i32 h = command.particle_systems[i];
-	    if(h != -1)
-	    {
-		i32 _internal_handle = renderer.particles._internal_handles[h - 1];
-		ParticleSystemInfo& system = renderer.particles.particle_systems[_internal_handle];
-		push_particle_system(renderer, system, h);		    
-	    }
-	}
     }
-
+    
     for(i32 i = 0; i < particles_count; i++)
     {
-	i32 _internal_handle = renderer.particles._internal_handles[particles_to_push[i] - 1];
-	ParticleSystemInfo& system = renderer.particles.particle_systems[_internal_handle];
-	push_particle_system(renderer, system, particles_to_push[i]);
+    	i32 _internal_handle = renderer.particles._internal_handles[particles_to_push[i] - 1];
+    	ParticleSystemInfo& system = renderer.particles.particle_systems[_internal_handle];
+    	push_particle_system(renderer, system, particles_to_push[i]);
     }
 }
