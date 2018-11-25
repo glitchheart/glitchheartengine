@@ -41,18 +41,6 @@ FMOD_RESULT F_CALLBACK channel_control_callback(FMOD_CHANNELCONTROL *chan_contro
             {
                 as->channel_attributes.position_ms = 0;
             }
-            
-            SoundDevice *device;
-            FMOD_Channel_GetUserData((FMOD_CHANNEL*)chan_control, (void**)&device);
-            
-            if(device)
-            {
-                device->one_shot_point_count--;
-                if(device->one_shot_point_count == 0)
-                {
-                    clear(&device->one_shot_arena);
-                }
-            }
         }
         break;
         case FMOD_CHANNELCONTROL_CALLBACK_VIRTUALVOICE:
@@ -84,7 +72,6 @@ static void set_channel_attributes(FMOD_CHANNEL *channel, ChannelAttributes attr
         case LOOP_NORMAL:
         {
             mode |= FMOD_LOOP_NORMAL;
-            debug("Loop count: %d, type: %d\n", attributes.loop.count, attributes.loop.type);
             // @Incomplete: -1 is default, add loop_count later!
             FMOD_Channel_SetLoopCount(channel, attributes.loop.count);
             
@@ -101,6 +88,10 @@ static void set_channel_attributes(FMOD_CHANNEL *channel, ChannelAttributes attr
         }
         break;
         default:
+	{
+	    FMOD_Channel_SetLoopCount(channel, 0);
+	    FMOD_Channel_SetMode(channel, FMOD_DEFAULT | FMOD_LOOP_OFF);
+	}
         break;
     }
     
@@ -133,39 +124,6 @@ static void set_channel_attributes(FMOD_CHANNEL *channel, ChannelAttributes attr
         
         FMOD_Channel_Set3DConeOrientation(channel, orientation);
         FMOD_Channel_Set3DConeSettings(channel, attributes.att_3d.cone.inside_angle, attributes.att_3d.cone.outside_angle, attributes.att_3d.cone.outside_volume);
-        if(attributes.att_3d.rolloff_mode == RM_CUSTOM)
-        {
-            
-            mode |= FMOD_3D_CUSTOMROLLOFF;
-            
-            if(attributes.att_3d.custom_rolloff.roll_off_point_count > 0)
-            {
-                FMOD_VECTOR *rolloff_points;
-                if(handle != 0)
-                {
-                    if(!device->rolloff_points[handle - 1])
-                    {
-                        device->rolloff_points[handle - 1] = push_array(&system->arena, attributes.att_3d.custom_rolloff.roll_off_point_count, FMOD_VECTOR);
-                    }
-                    rolloff_points = device->rolloff_points[handle - 1];
-                }
-                else
-                {
-                    rolloff_points = push_array(&device->one_shot_arena, attributes.att_3d.custom_rolloff.roll_off_point_count, FMOD_VECTOR);
-                }
-                
-                auto points = attributes.att_3d.custom_rolloff.roll_off_points;
-                
-                for(i32 i = 0; i < attributes.att_3d.custom_rolloff.roll_off_point_count; i++)
-                {
-                    rolloff_points[i].x = points[i].x;
-                    rolloff_points[i].y = points[i].y;
-                    rolloff_points[i].z = points[i].z;
-                }
-                
-                FMOD_Channel_Set3DCustomRolloff(channel, rolloff_points, attributes.att_3d.custom_rolloff.roll_off_point_count);
-            }
-        }
         
         FMOD_Channel_Set3DDistanceFilter(channel, attributes.att_3d.distance_filter.custom, attributes.att_3d.distance_filter.custom_level, attributes.att_3d.distance_filter.center_freq);
         FMOD_Channel_Set3DDopplerLevel(channel, attributes.att_3d.doppler_level);
@@ -230,8 +188,8 @@ static void play_audio_source(AudioSource& audio_source, SoundDevice* device, So
     
     device->channels[as_handle - 1] = channel;
     
-    FMOD_Channel_SetCallback(channel, channel_control_callback);
-    FMOD_Channel_SetUserData(channel, &audio_source);
+    // FMOD_Channel_SetCallback(channel, channel_control_callback);
+    // FMOD_Channel_SetUserData(channel, &audio_source);
     
     set_channel_attributes(channel, channel_attributes, system, device, as_handle);
     
@@ -247,19 +205,21 @@ static void play_sound(SoundCommand &command, SoundDevice *device, SoundSystem *
 {
     auto sound = device->sounds[command.one_shot.handle.handle - 1];
     
-    device->one_shot_point_count++;
-    
     FMOD_RESULT result = FMOD_OK;
     
-    FMOD_CHANNEL *channel;
+    FMOD_CHANNEL *channel = nullptr;
 
     if(command.one_shot.channel_attributes.type == ChannelType::SFX)
     {
-	result = FMOD_System_PlaySound(device->system, sound, device->sfx_channel_group, true, &channel);
+        result = FMOD_System_PlaySound(device->system, sound, device->sfx_channel_group, true, &channel);
     }
     else
     {
 	result = FMOD_System_PlaySound(device->system, sound, device->music_channel_group, true, &channel);
+
+	// @Note: We set the priority to 0, to make sure that music channels do not get stolen by FMOD
+	//        If we still experience stolen channels, look at global_max_channels in init_globals.h.
+	FMOD_Channel_SetPriority(channel, 0);
     }
     
     set_channel_attributes(channel, command.one_shot.channel_attributes, system, device);
@@ -269,8 +229,8 @@ static void play_sound(SoundCommand &command, SoundDevice *device, SoundSystem *
         FMOD_DEBUG(result);
     }
     
-    FMOD_Channel_SetCallback(channel, channel_control_callback);
-    FMOD_Channel_SetUserData(channel, (void**)&device);
+    // FMOD_Channel_SetCallback(channel, channel_control_callback);
+    // FMOD_Channel_SetUserData(channel, (void**)&device);
     
     FMOD_Channel_SetPaused(channel, false);
 }
@@ -313,8 +273,8 @@ static void update_sound_commands(SoundDevice *device, SoundSystem *system, r64 
         FMOD_ChannelGroup_SetVolume(device->master_group, system->master_volume);
         FMOD_ChannelGroup_SetMute(device->master_group, system->muted);
         FMOD_ChannelGroup_SetPaused(device->master_group, system->paused);
-	FMOD_ChannelGroup_SetVolume(device->music_channel_group, system->music_volume);
-	FMOD_ChannelGroup_SetVolume(device->sfx_channel_group, system->sfx_volume);
+        FMOD_ChannelGroup_SetVolume(device->music_channel_group, system->music_volume);
+        FMOD_ChannelGroup_SetVolume(device->sfx_channel_group, system->sfx_volume);
         
         if(system->sfx_volume != device->sfx_volume || system->music_volume != device->music_volume || system->master_volume != device->master_volume)
         {
@@ -323,7 +283,7 @@ static void update_sound_commands(SoundDevice *device, SoundSystem *system, r64 
 	    device->master_volume = system->master_volume;
             *save_config = true;
         }
-        
+
         for(i32 i = 0; i < system->command_count; i++)
         {
             SoundCommand& command = system->commands[i];
@@ -377,7 +337,7 @@ static void update_sound_commands(SoundDevice *device, SoundSystem *system, r64 
         {
             debug("FMOD failed updating\n");
         }
-	
+
         system->command_count = 0;
     }
 }
@@ -399,7 +359,8 @@ static void init_audio_fmod(SoundDevice* device)
         result = FMOD_System_SetOutput(system, FMOD_OUTPUTTYPE_NOSOUND);
         fmod_error_check(result);
     }
-    
+
+    // @Note: Global max channels should be high enough, so that no channels will ever get stolen during gameplay.
     result = FMOD_System_Init(system, global_max_channels, FMOD_INIT_NORMAL, nullptr);
     fmod_error_check(result);
     
@@ -416,7 +377,6 @@ static void init_audio_fmod(SoundDevice* device)
     result = FMOD_System_GetMasterChannelGroup(device->system, &device->master_group);
     fmod_error_check(result);
     
-    device->rolloff_points = push_array(&device->total_arena, global_max_channels, FMOD_VECTOR*);
     device->paused_channels = push_array(&device->total_arena, global_max_channels, b32);
     device->channel_positions = push_array(&device->total_arena, global_max_channels, u32);
     device->channels = push_array(&device->total_arena, global_max_channels, FMOD_CHANNEL*);

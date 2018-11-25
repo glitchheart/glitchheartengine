@@ -31,14 +31,12 @@ THREAD_PROC(thread_proc)
 {
     ThreadInfo *thread_info = (ThreadInfo*)parameters;
 	
-    printf("Thread started!\n");
-
     for(;;)
     {
-		if(do_next_work_queue_entry(thread_info->queue))
-		{
-			wait_for_semaphore(thread_info->queue->semaphore_handle);
-		}
+	if(do_next_work_queue_entry(thread_info->queue))
+	{
+	    wait_for_semaphore(thread_info->queue->semaphore_handle);
+	}
     }
 }
 

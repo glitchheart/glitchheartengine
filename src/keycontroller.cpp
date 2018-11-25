@@ -31,7 +31,6 @@ static inline b32 get_key_down(KeyCode key, InputController* input_controller)
     return input_controller->keys_just_pressed[key] == KEY_JUST_PRESSED;
 }
 
-
 static inline b32 get_key_down(KeyCode key, InputController& input_controller)
 {
     if(key == Key_MouseLeft)
@@ -40,7 +39,6 @@ static inline b32 get_key_down(KeyCode key, InputController& input_controller)
         return get_mouse_button_down(Mouse_Right, &input_controller);
     return input_controller.keys_just_pressed[key] == KEY_JUST_PRESSED;
 }
-
 
 static inline b32 get_key_up(KeyCode key, InputController* input_controller)
 {
@@ -198,7 +196,7 @@ static void add_custom_mapping(InputController* input_controller, i32 custom_key
 static b32 is_custom_key_down(InputController* input_controller, i32 custom_key)
 {
     auto& custom_key_mapping = input_controller->custom_mappings[custom_key];
-    
+
     b32 result = false;
     
     if(input_controller->controller_present)
@@ -207,7 +205,28 @@ static b32 is_custom_key_down(InputController* input_controller, i32 custom_key)
         {
             for(i32 ps4_key = 0; ps4_key < custom_key_mapping.ps4_key_count; ps4_key++)
             {
-                result |= JOYSTICK_KEY_DOWN(custom_key_mapping.ps4_key[ps4_key]);
+		i32 key = custom_key_mapping.ps4_key[ps4_key];
+		
+		if(key == PS4_LUp)
+		{
+		    result |= JOYSTICK_AXIS_Y_DOWN(true);
+		}
+		else if(key == PS4_LDown)
+		{
+		    result |= JOYSTICK_AXIS_Y_DOWN(false);
+		}
+		else if(key == PS4_LLeft)
+		{
+		    result |= JOYSTICK_AXIS_X_DOWN(true);
+		}
+		else if(key == PS4_LRight)
+		{
+		    result |= JOYSTICK_AXIS_X_DOWN(false);
+		}
+		else
+		{
+		    result |= JOYSTICK_KEY_DOWN(key);
+		}
             }
         }
         else
@@ -215,9 +234,29 @@ static b32 is_custom_key_down(InputController* input_controller, i32 custom_key)
             result = false;
             for(i32 xbox_key = 0; xbox_key < custom_key_mapping.xbox_key_count; xbox_key++)
             {
-                result |= JOYSTICK_KEY_DOWN(custom_key_mapping.xbox_key[xbox_key]);
+		i32 key = custom_key_mapping.xbox_key[xbox_key];
+		
+		if(key == Xbox_LUp)
+		{
+		    result |= JOYSTICK_AXIS_Y_DOWN(true);
+		}
+		else if(key == Xbox_LDown)
+		{
+		    result |= JOYSTICK_AXIS_Y_DOWN(false);
+		}
+		else if(key == Xbox_LLeft)
+		{
+		    result |= JOYSTICK_AXIS_X_DOWN(true);
+		}
+		else if(key == Xbox_LRight)
+		{
+		    result |= JOYSTICK_AXIS_X_DOWN(false);
+		}
+		else
+		{
+		    result |= JOYSTICK_KEY_DOWN(key);
+		}
             }
-            return result;
         }
     }
     
@@ -225,8 +264,8 @@ static b32 is_custom_key_down(InputController* input_controller, i32 custom_key)
     {
         result |= KEY_DOWN(custom_key_mapping.keyboard_key[keyboard_key]);
     }
+
     return result;
-    
 }
 
 static b32 is_custom_key_pressed(InputController* input_controller, i32 custom_key)
@@ -240,14 +279,55 @@ static b32 is_custom_key_pressed(InputController* input_controller, i32 custom_k
         {
             for(i32 ps4_key = 0; ps4_key < custom_key_mapping.ps4_key_count; ps4_key++)
             {
-                result |= JOYSTICK_KEY(custom_key_mapping.ps4_key[ps4_key]);
+		i32 key = custom_key_mapping.ps4_key[ps4_key];
+		if(key == PS4_LUp)
+		{
+		    result |= INPUT_Y() > 0.0f;
+		}
+		else if(key == PS4_LDown)
+		{
+		    result |= INPUT_Y() < 0.0f;
+		}
+		else if(key == PS4_LLeft)
+		{
+		    result |= INPUT_X() < 0.0f;
+		}
+		else if(key == PS4_LRight)
+		{
+		    result |= INPUT_X() > 0.0f;
+		}
+		else
+		{
+		    result |= JOYSTICK_KEY(key);
+		}
             }
         }
         else
         {
             for(i32 xbox_key = 0; xbox_key < custom_key_mapping.xbox_key_count; xbox_key++)
             {
-                result |= JOYSTICK_KEY(custom_key_mapping.xbox_key[xbox_key]);
+		i32 key = custom_key_mapping.xbox_key[xbox_key];
+		
+		if(key == Xbox_LUp)
+		{
+		    result |= INPUT_Y() > 0.0f;
+		}
+		else if(key == Xbox_LDown)
+		{
+		    result |= INPUT_Y() < 0.0f;
+		}
+		else if(key == Xbox_LLeft)
+		{
+		    result |= INPUT_X() < 0.0f;
+		}
+		else if(key == Xbox_LRight)
+		{
+		    result |= INPUT_X() > 0.0f;
+		}
+		else
+		{
+		    result |= JOYSTICK_KEY(key);
+		}
             }
         }
     }

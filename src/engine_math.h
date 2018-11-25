@@ -1961,6 +1961,11 @@ namespace math
     {
         return mul * (ceil(((r32)n / (r32)mul)));
     }
+
+    inline u32 multiple_of_number_uint(u32 n, u32 mul)
+    {
+        return mul * (ceil(((r32)n / (r32)mul)));
+    }
     
     inline r32 length(Vec2 v)
     {
@@ -2295,10 +2300,65 @@ namespace math
         r32 result = (1.0f - t) * a + t * b;
         return result;
     }
+
+    inline r32 linear_tween(r32 b, r32 t, r32 _c)
+    {
+        r32 c = _c - b;
+        return c * t + b;
+    }
+
+    inline r32 ease_in_quad(r32 b, r32 t, r32 _c)
+    {
+        r32 c = _c - b;
+        return c * t * t + b;
+    }
     
+    inline r32 ease_out_quad(r32 b, r32 t, r32 _c)
+    {
+        r32 c = _c - b;
+        return -c * t * (t - 2) + b;
+    }
+
+    inline r32 ease_in_out_quad(r32 b, r32 t, r32 _c)
+    {
+        r32 c = _c - b;
+        t *= 2.0f;
+        if(t < 1.0f)
+        {
+            return (c / 2.0f) * (t * t) + b;
+        }
+
+        t--;
+        return -c/2.0f * (t *( t - 2.0f) - 1.0f) + b;
+    }
+
+    inline r32 ease_in_cubic(r32 b, r32 t, r32 _c)
+    {
+        r32 c = _c - b;
+        return c * t * t * t + b;
+    }
+
+    inline r32 ease_out_cubic(r32 b, r32 t, r32 _c)
+    {
+        r32 c = _c - b;
+        return -c * (t * t * t + 1.0f) + b;
+    }
+
+    inline r32 ease_in_out_cubic(r32 b, r32 t, r32 _c)
+    {
+        r32 c = _c - b;
+        t *= 2.0f;
+        if(t < 1.0f)
+        {
+            return (c / 2.0f) * (t * t * t) + b;
+        }
+
+        t -= 2;
+        return c/2.0f * (t * t * t + 2.0f) + b;
+    }
+
     inline Vec2 lerp(Vec2 a, r32 t, Vec2 b)
     {
-        //Assert(t <= 1.0f);
         Vec2 result(0.0f);
         result.x = lerp(a.x,t,b.x);
         result.y = lerp(a.y,t,b.y);
@@ -2307,7 +2367,6 @@ namespace math
     
     inline Vec3 lerp(Vec3 a, r32 t, Vec3 b)
     {
-        //Assert(t <= 1.0f);
         Vec3 result(0.0f);
         result.x = lerp(a.x,t,b.x);
         result.y = lerp(a.y,t,b.y);
@@ -2317,7 +2376,6 @@ namespace math
     
     inline Vec4 lerp(Vec4 a, r32 t, Vec4 b)
     {
-        //Assert(t <= 1.0f);
         Vec4 result(0.0f);
         result.x = lerp(a.x,t,b.x);
         result.y = lerp(a.y,t,b.y);
@@ -2325,7 +2383,6 @@ namespace math
         result.w = lerp(a.w,t,b.w);
         return result;
     }
-    
     
     inline Vec2 clamp(Vec2 minimum, Vec2 value, Vec2 maximum)
     {
@@ -2383,7 +2440,7 @@ namespace math
     
     inline i32 random_int(i32 from, i32 to)
     {
-        return rand() % to + from;
+	return rand() & (to + 1 - from) + from;
     }
     
     inline r32 random_float(r32 from, r32 to)
