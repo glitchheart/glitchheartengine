@@ -183,7 +183,6 @@ inline r32_4x operator- (r32_4x a, r32_4x b)
     return res;
 }
 
-
 inline r32_4x operator-(r32 a, r32_4x b)
 {
     r32_4x res(a);
@@ -1724,19 +1723,9 @@ inline b32 all_zero(r32_4x v)
     return false;
 }
 
-r32_4x operator-(r32 left, r32_4x right)
-{
-    return r32_4x(left - right.e[0], left - right.e[1], left - right.e[2], left - right.e[3]);
-}
-
 r32_4x operator-(r32 left, r64_4x right)
 {
     return r32_4x(left - (r32)right.e[0], left - (r32)right.e[1], left - (r32)right.e[2], left - (r32)right.e[3]);
-}
-
-r64_4x operator-(r64 left, r64_4x right)
-{
-    return r64_4x(left - right.e[0], left - right.e[1], left - right.e[2], left - right.e[3]);
 }
 
 using Rgba_4x = Vec4_4x;
