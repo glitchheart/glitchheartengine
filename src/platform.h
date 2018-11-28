@@ -310,8 +310,6 @@ struct Core
     r64 delta_time;
 };
 
-extern Core core;
-
 struct GameMemory
 {
     b32 is_initialized;
@@ -334,7 +332,7 @@ struct GameMemory
 
 
 
-#define UPDATE(name) void name(GameMemory* game_memory, Core& engine_core)
+#define UPDATE(name) void name(GameMemory* game_memory)
 
 //#define UPDATE(name)void name(r64 delta_time, GameMemory* game_memory, Renderer& renderer, scene::EntityTemplateState &template_state, InputController* input_controller, SoundSystem* sound_system, TimerController& timer_controller)
 typedef UPDATE(Update);
