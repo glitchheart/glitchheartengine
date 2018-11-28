@@ -567,6 +567,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     core.timer_controller = &timer_controller;
     core.sound_system = &sound_system;
     core.template_state = &template_state;
+    game_memory.core = core;
 
     if(&template_state)
     {
@@ -591,7 +592,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 //#endif
         //auto game_temp_mem = begin_temporary_memory(game_memory.temp_arena);
 
-	game.update(&game_memory, core);
+	    game.update(&game_memory);
         // game.update(delta_time, &game_memory, renderer, template_state, &input_controller, &sound_system, timer_controller);
         update_particle_systems(renderer, delta_time);
 #if ENABLE_ANALYTICS
