@@ -1,7 +1,5 @@
 #include "shared.h"
 
-#define ENABLE_ANALYTICS 1
-
 #if DEBUG
 #include "debug.h"
 #endif
@@ -49,10 +47,12 @@ static MemoryState memory_state;
 #include "filehandling.h"
 
 
+#if ENABLE_ANALYTICS
 #include "GameAnalytics.h"
 
 #include "analytics.h"
 #include "analytics.cpp"
+#endif
 
 #if defined(__linux) || defined(__APPLE__)
 #include "dlfcn.h"
@@ -351,6 +351,7 @@ static void init_renderer(Renderer &renderer)
     renderer.removed_buffer_handles = push_array(&renderer.buffer_arena, global_max_custom_buffers, i32);
 }
 
+#if ENABLE_ANALYTICS
 void process_analytics_events(AnalyticsEventState &analytics_state, WorkQueue *queue)
 {
     for(u32 i = 0; i < analytics_state.event_count; i++)
@@ -362,6 +363,7 @@ void process_analytics_events(AnalyticsEventState &analytics_state, WorkQueue *q
 	
     analytics_state.event_count = 0;
 }
+#endif
 
 #if defined(_WIN32) && !defined(DEBUG)
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
@@ -536,11 +538,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     
     template_state.templates = push_array(&platform_state->perm_arena, global_max_entity_templates, scene::EntityTemplate);
 
-    AnalyticsEventState analytics_state = {};
+
 
 #define ANALYTICS_GAME_KEY "3a3552e363e3ca17a17f98d568f25c75"
 #define ANALYTICS_SECRET_KEY "c34eacd91bcd41a33b37b0e8c978c17ee5c18f53"
 #if ENABLE_ANALYTICS
+    AnalyticsEventState analytics_state = {};
     gameanalytics::GameAnalytics::setEnabledInfoLog(false);
     gameanalytics::GameAnalytics::configureBuild("alpha 0.1");
     gameanalytics::GameAnalytics::initialize(ANALYTICS_GAME_KEY, ANALYTICS_SECRET_KEY);

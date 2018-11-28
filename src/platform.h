@@ -309,7 +309,9 @@ struct GameMemory
     PlatformApi platform_api;
     struct LogState* log_state;
     struct MemoryArena* temp_arena;
+#if ENABLE_ANALYTICS
     struct AnalyticsEventState *analytics_state;
+#endif
     struct GameState* game_state;
     
 #if DEBUG

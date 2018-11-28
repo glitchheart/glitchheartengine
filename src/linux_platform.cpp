@@ -133,7 +133,7 @@ PLATFORM_LOAD_SYMBOL(linux_load_symbol)
 
 PLATFORM_ALLOCATE_MEMORY(linux_allocate_memory)
 {
-    assert(sizeof(MemoryBlock) == 64);
+    assert(sizeof(MemoryBlock) == 72);
     
     umm page_size = 4096; //TODO: Not really always correct?
     umm total_size = size + sizeof(MemoryBlock);
