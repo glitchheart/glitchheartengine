@@ -17,6 +17,7 @@
 
 // Global
 PlatformApi platform;
+Core core;
 struct LogState* log_state;
 static MemoryState memory_state;
 // Global
@@ -386,6 +387,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     init_platform(game_memory.platform_api);
     
     platform = game_memory.platform_api;
+    core = game_memory.core;
     
     PlatformState* platform_state = bootstrap_push_struct(PlatformState, perm_arena);
     
@@ -541,7 +543,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     
     template_state.templates = push_array(&platform_state->perm_arena, global_max_entity_templates, scene::EntityTemplate);
 
-
+    
 
 #define ANALYTICS_GAME_KEY "3a3552e363e3ca17a17f98d568f25c75"
 #define ANALYTICS_SECRET_KEY "c34eacd91bcd41a33b37b0e8c978c17ee5c18f53"
@@ -559,6 +561,18 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
     r64 start_frame_for_total_time = get_time();
 #endif
+
+    core.renderer = &renderer;
+    core.input_controller = &input_controller;
+    core.timer_controller = &timer_controller;
+    core.sound_system = &sound_system;
+    core.template_state = &template_state;
+
+    if(&template_state)
+    {
+	debug("dingy\n");
+    }
+    core.delta_time = delta_time;
     
     while(!should_close_window(render_state) && !renderer.should_close)
     {
@@ -567,7 +581,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             debug_log("Quit\n");
             glfwSetWindowShouldClose(render_state.window, GLFW_TRUE);
         }
-        
+
+	core.delta_time = delta_time;
         show_mouse_cursor(render_state, renderer.show_mouse_cursor);
         
         //reload_assets(render_state, &asset_manager, &platform_state->perm_arena);
@@ -576,7 +591,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 //#endif
         //auto game_temp_mem = begin_temporary_memory(game_memory.temp_arena);
 
-        game.update(delta_time, &game_memory, renderer, template_state, &input_controller, &sound_system, timer_controller);
+	game.update(&game_memory, core);
+        // game.update(delta_time, &game_memory, renderer, template_state, &input_controller, &sound_system, timer_controller);
         update_particle_systems(renderer, delta_time);
 #if ENABLE_ANALYTICS
         process_analytics_events(analytics_state, &analytics_queue);

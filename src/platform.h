@@ -300,6 +300,18 @@ namespace scene
 
 struct TimerController;
 
+struct Core
+{
+    Renderer* renderer;
+    InputController* input_controller;
+    TimerController* timer_controller;
+    SoundSystem* sound_system;
+    scene::EntityTemplateState* template_state;
+    r64 delta_time;
+};
+
+extern Core core;
+
 struct GameMemory
 {
     b32 is_initialized;
@@ -307,6 +319,7 @@ struct GameMemory
     b32 exit_game;
     ConfigData config_data;
     PlatformApi platform_api;
+    Core core;
     struct LogState* log_state;
     struct MemoryArena* temp_arena;
 #if ENABLE_ANALYTICS
@@ -319,7 +332,11 @@ struct GameMemory
 #endif
 };
 
-#define UPDATE(name)void name(r64 delta_time, GameMemory* game_memory, Renderer& renderer, scene::EntityTemplateState &template_state, InputController* input_controller, SoundSystem* sound_system, TimerController& timer_controller)
+
+
+#define UPDATE(name) void name(GameMemory* game_memory, Core& engine_core)
+
+//#define UPDATE(name)void name(r64 delta_time, GameMemory* game_memory, Renderer& renderer, scene::EntityTemplateState &template_state, InputController* input_controller, SoundSystem* sound_system, TimerController& timer_controller)
 typedef UPDATE(Update);
 UPDATE(update_stub)
 {
