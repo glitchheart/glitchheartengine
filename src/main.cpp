@@ -121,20 +121,23 @@ static void reload_game_code(GameCode *game_code, char* game_library_path, char*
     load_game_code(*game_code, game_library_path, temp_game_library_path, arena);
 }
 
-static void reload_libraries(GameCode *Game, char* game_library_path, char* temp_game_library_path, MemoryArena* arena = nullptr)
+static b32 reload_libraries(GameCode *game, char* game_library_path, char* temp_game_library_path, MemoryArena* arena = nullptr)
 {
     // @Bug: Not working on Mac
     time_t last_write_time = get_last_write_time(game_library_path);
     
     if(last_write_time != 0)
     {
-        if(difftime(Game->last_library_write_time, last_write_time) != 0)
+        if(difftime(game->last_library_write_time, last_write_time) != 0)
         {
-            reload_game_code(Game, game_library_path, temp_game_library_path, arena);
-            assert(Game);
-            debug("Reloaded game library\n");
+            reload_game_code(game, game_library_path, temp_game_library_path, arena);
+            assert(game);
+            debug_log("Reloaded game library\n");
+            return true;
         }
     }
+
+    return false;
 }
 
 inline void save_config(const char* file_path, ConfigData &old_config_data, RenderState* render_state = nullptr, SoundDevice *sound_device = nullptr)
@@ -561,7 +564,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     {
         if(game_memory.exit_game)
         {
-            debug("Quit\n");
+            debug_log("Quit\n");
             glfwSetWindowShouldClose(render_state.window, GLFW_TRUE);
         }
         
@@ -572,6 +575,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         reload_libraries(&game, game_library_path, temp_game_library_path, &platform_state->perm_arena);
 //#endif
         //auto game_temp_mem = begin_temporary_memory(game_memory.temp_arena);
+
         game.update(delta_time, &game_memory, renderer, template_state, &input_controller, &sound_system, timer_controller);
         update_particle_systems(renderer, delta_time);
 #if ENABLE_ANALYTICS
@@ -580,9 +584,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         tick_animation_controllers(renderer, &sound_system, &input_controller, timer_controller, delta_time);
         tick_timers(timer_controller, delta_time);
         update_sound_commands(&sound_device, &sound_system, delta_time, &do_save_config);
-        
-        render(render_state, renderer, delta_time, &do_save_config);
-        
+
+        render(render_state, renderer, delta_time, &do_save_config);        
         if(do_save_config)
         {
             save_config("../.config", config_data, &render_state, &sound_device);
@@ -624,9 +627,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         }
         
         delta_time = get_time() - last_frame;
+
+        // @Incomplete: Fix this!
         delta_time = math::clamp(0.0, delta_time, 0.9);
         last_frame = end_counter;
-        
     }
 
 #if ENABLE_ANALYTICS

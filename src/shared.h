@@ -28,7 +28,6 @@ struct MemoryArena;
 
 #include "map.h"
 
-#include "rendering.h"
 #include "sound.h"
 #include "keycontroller.h"
 
