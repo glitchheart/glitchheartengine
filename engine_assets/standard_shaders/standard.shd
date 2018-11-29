@@ -4,7 +4,7 @@
 #include <mvp.shd>
 
 layout(location = 0) in vec3 vertex;
-layout(location = 1) in vec3 normal
+layout(location = 1) in vec3 normal;
 layout(location = 2) in vec2 uv;
 
 out vec2 uv0;
@@ -25,5 +25,5 @@ out vec4 outColor;
 
 void main()
 {
-    outColor = col0 * texture2D(tex0, uv0);
+    outColor = col0;
 }

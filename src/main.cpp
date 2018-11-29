@@ -260,13 +260,11 @@ inline void load_config(const char* file_path, ConfigData* config_data, MemoryAr
     }
     else
     {
-        char version_buf[64];
-        char title_buf[128];
-        load_version("../.version", version_buf, title_buf);
-
-        snprintf(config_data->title, strlen(title_buf) + 1,"%s", title_buf);
-        debug("title %s\n", config_data->title);
-        snprintf(config_data->version, strlen(version_buf) + 2, "%s", version_buf);
+        char version[64];
+        char title[128];
+        load_version("../.version", version, title);
+        snprintf(config_data->version, strlen(version) + 1, "%s", version);
+        snprintf(config_data->title, strlen(title) + 1,"%s", title);
 	
         while(fgets(line_buffer, 255, file))
         {

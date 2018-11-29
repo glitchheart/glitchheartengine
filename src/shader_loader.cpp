@@ -2,8 +2,6 @@ namespace rendering
 {
     
 // @Robustness: New shader stuff
-
-
     static void error(const char* msg, const char* file)
     {
 		debug_log("ERROR: %s in %s", msg, file);
@@ -329,6 +327,7 @@ namespace rendering
     
     static ShaderHandle load_shader(Renderer& renderer, const char* file_path)
     {
+		assert(renderer.render.shader_count + 1 < 64);
 		Shader& shader = renderer.render.shaders[renderer.render.shader_count];
 
 		// @Incomplete: LOAD STUFF
@@ -340,29 +339,29 @@ namespace rendering
 			size_t size = 0;
 			char* source = read_file_into_buffer(&renderer.shader_arena, file, &size);
 	    
-			char *vert_shader = nullptr;
-			char *frag_shader = nullptr;
-	    
+			shader.vert_shader = nullptr;
+			shader.frag_shader = nullptr;
+
+			strncpy(shader.path, file_path, strlen(file_path));
+			
 			for(size_t i = 0; i < size; i++)
 			{
 				if(starts_with(&source[i], "#vert"))
 				{
-					vert_shader = load_shader_text(&renderer.shader_arena, &source[i + strlen("#vert")], shader, file_path, &i);
-//					i += strlen(vert_shader);
+					shader.vert_shader = load_shader_text(&renderer.shader_arena, &source[i + strlen("#vert") + 1], shader, file_path, &i);
 				}
 				else if(starts_with(&source[i], "#frag"))
 				{
-					frag_shader = load_shader_text(&renderer.shader_arena, &source[i + strlen("#frag")], shader, file_path, &i);
-//					i += strlen(frag_shader);
+					shader.frag_shader = load_shader_text(&renderer.shader_arena, &source[i + strlen("#frag") + 1], shader, file_path, &i);
 				}
 			}
 
-			assert(vert_shader && frag_shader);
+			assert(shader.vert_shader && shader.frag_shader);
 
 #if DEBUG
 			FILE* shd = fopen("../out.shd", "w");
-			fwrite(vert_shader, strlen(vert_shader), 1, shd);
-			fwrite(frag_shader, strlen(frag_shader), 1, shd);
+			fwrite(shader.vert_shader, strlen(shader.vert_shader), 1, shd);
+			fwrite(shader.frag_shader, strlen(shader.frag_shader), 1, shd);
 			fclose(shd);
 #endif
 			fclose(file);

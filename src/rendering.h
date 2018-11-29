@@ -1121,14 +1121,14 @@ struct Renderer
 
     struct
     {
-	rendering::Shader shaders[64];
-	i32 shader_count;
+		rendering::Shader shaders[64];
+		i32 shader_count;
 	
-	rendering::Material materials[128];
-	i32 material_count;
+		rendering::Material materials[128];
+		i32 material_count;
 
-	rendering::Material material_instances[128];
-	i32 material_instance_count;
+		rendering::Material material_instances[128];
+		i32 material_instance_count;
 	
     } render;
 };
@@ -1179,7 +1179,7 @@ struct LineData
 
 static LineData get_line_size_data(const char *text, TrueTypeFontInfo font)
 {
-    math::Vec2 size(0.0f);
+    math::Vec2 size;
     r32 placeholder_y = 0.0;
     
     LineData line_data = {};
@@ -1190,32 +1190,32 @@ static LineData get_line_size_data(const char *text, TrueTypeFontInfo font)
     
     for(u32 i = 0; i < strlen(text); i++)
     {
-	if(text[i] != '\n' && text[i] != '\r')
-	{
-	    stbtt_aligned_quad quad;
-	    stbtt_GetPackedQuad(font.char_data, font.atlas_width, font.atlas_height,
-				text[i] - font.first_char, &line_data.line_sizes[line_data.line_count - 1].x, &placeholder_y, &quad, 1);
+		if(text[i] != '\n' && text[i] != '\r')
+		{
+			stbtt_aligned_quad quad;
+			stbtt_GetPackedQuad(font.char_data, font.atlas_width, font.atlas_height,
+								text[i] - font.first_char, &line_data.line_sizes[line_data.line_count - 1].x, &placeholder_y, &quad, 1);
         
-	    if(quad.y1 - quad.y0 > size.y)
-	    {
-		line_data.line_sizes[line_data.line_count - 1].y = quad.y1 - quad.y0;
-	    }
+			if(quad.y1 - quad.y0 > size.y)
+			{
+				line_data.line_sizes[line_data.line_count - 1].y = quad.y1 - quad.y0;
+			}
         
-	    i32 kerning = stbtt_GetCodepointKernAdvance(&font.info, text[i] - font.first_char, text[i + 1] - font.first_char);
-	    line_data.line_sizes[line_data.line_count - 1].x += (r32)kerning * font.scale;
-	}
-	else
-	{
-	    line_data.line_count++;
-	}
+			i32 kerning = stbtt_GetCodepointKernAdvance(&font.info, text[i] - font.first_char, text[i + 1] - font.first_char);
+			line_data.line_sizes[line_data.line_count - 1].x += (r32)kerning * font.scale;
+		}
+		else
+		{
+			line_data.line_count++;
+		}
     }
 
     if(line_data.line_count == 1)
     {
-	line_data.total_height = line_data.line_sizes[0].y;
+		line_data.total_height = line_data.line_sizes[0].y;
     }
     else
-	line_data.total_height = (line_data.line_count - 1) * line_data.line_spacing;
+		line_data.total_height = (line_data.line_count - 1) * line_data.line_spacing;
     
     return line_data;
 }
@@ -1233,7 +1233,7 @@ static math::Vec2i texture_size(i32 texture_handle, Renderer& renderer)
 
 static math::Vec2 get_text_size(const char *text, TrueTypeFontInfo font)
 {
-    math::Vec2 size(0.0f);
+    math::Vec2 size;
     r32 placeholder_y = 0.0;
 
     i32 lines = 1;

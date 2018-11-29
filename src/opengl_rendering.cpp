@@ -130,7 +130,7 @@ void message_callback(GLenum source,
             break;
         }
         
-        log_error("OpenGl error: %s type = 0x%x, severity = 0x%x, message = %s, source = %s, id = %ud, length %ud=",
+        log_error("OpenGL error: %s type = 0x%x, severity = 0x%x, message = %s, source = %s, id = %ud, length %ud=",
                   (type == GL_DEBUG_TYPE_ERROR ? "** GL ERROR **" : ""),
                   type, severity, message, src_str, id, length);
     }
@@ -165,6 +165,42 @@ static b32 should_close_window(RenderState& render_state)
     return glfwWindowShouldClose(render_state.window);
 }
 
+static GLint compile_shader(MemoryArena* arena, const char* shader_name, GLuint shader)
+{
+	glCompileShader(shader);
+	GLint is_compiled = 0;
+	glGetShaderiv(shader, GL_COMPILE_STATUS, &is_compiled);
+	if(!is_compiled)
+	{
+		TemporaryMemory temp_mem = begin_temporary_memory(arena);
+		GLint max_length = 0;
+		glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &max_length);
+
+		GLchar* error_log = nullptr;
+		GLchar error_log_static[512];
+		
+		if(max_length > 512)
+		{
+			error_log = push_size(arena, max_length, GLchar);
+		}
+		else
+		{
+			error_log = error_log_static;
+		}
+
+		glGetShaderInfoLog(shader, max_length, &max_length, error_log);
+
+		log_error("Shader compilation error - %s", shader_name);
+		log_error("%s", error_log);
+
+		glDeleteShader(shader);
+
+		end_temporary_memory(temp_mem);
+	}
+
+	return is_compiled;
+}
+
 static GLint shader_compilation_error_checking(MemoryArena* arena,const char* shader_name, GLuint shader)
 {
     GLint is_compiled = 0;
@@ -175,7 +211,7 @@ static GLint shader_compilation_error_checking(MemoryArena* arena,const char* sh
         GLint max_length = 0;
         glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &max_length);
         
-        // The maxLength includes the NULL character
+        // The max_length includes the NULL character
         GLchar* error_log = push_size(arena, max_length, GLchar);
         
         glGetShaderInfoLog(shader, max_length, &max_length, error_log);
@@ -249,6 +285,42 @@ static GLuint load_extra_shader(MemoryArena* arena, ShaderData& shader_data, Ren
     end_temporary_memory(temp_mem);
     
     return GL_TRUE;
+}
+
+static GLuint load_shader(Renderer& renderer, rendering::Shader& shader)
+{
+	char* vert_shader = shader.vert_shader;
+	GLuint vert_prog = glCreateShader(GL_VERTEX_SHADER);
+
+	// @Incomplete: Think about common preamble stuff like #version 330 core and stuff
+	glShaderSource(vert_prog, 1, (GLchar**)&vert_shader, nullptr);
+
+	if(!compile_shader(&renderer.shader_arena, shader.path, vert_prog))
+	{
+		log_error("Failed compilation of vertex shader: %s", shader.path);
+		vert_prog = 0;
+		return GL_FALSE;
+	}
+	
+	char* frag_shader = shader.frag_shader;
+	GLuint frag_prog = glCreateShader(GL_FRAGMENT_SHADER);
+
+	glShaderSource(frag_prog, 1, (GLchar**)&frag_shader, nullptr);
+
+	if(!compile_shader(&renderer.shader_arena, shader.path, frag_prog))
+	{
+		log_error("Failed compilation of vertex shader: %s", shader.path);
+		frag_prog = 0;
+		return GL_FALSE;
+	}
+
+	GLuint program = glCreateProgram();
+
+	glAttachShader(program, vert_prog);
+	glAttachShader(program, frag_prog);
+	glLinkProgram(program);
+
+	return GL_TRUE;
 }
 
 static GLuint load_shader(const char* file_path, Shader *shd, MemoryArena *arena)
@@ -989,6 +1061,13 @@ static void load_extra_shaders(RenderState& render_state, Renderer& renderer)
     {
         load_extra_shader(render_state.perm_arena, renderer.shader_data[index], render_state);
     }
+
+	for(i32 index = render_state.gl_shader_count; index < renderer.render.shader_count; index++)
+	{
+		load_shader(renderer, renderer.render.shaders[index]);
+	}
+
+	render_state.gl_shader_count = renderer.render.shader_count;
 }
 
 
