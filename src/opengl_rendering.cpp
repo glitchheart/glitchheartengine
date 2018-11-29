@@ -1579,7 +1579,8 @@ static void render_line(RenderState& render_state, math::Vec4 color, math::Vec3 
     glBindVertexArray(0);
 }
 
-static void render_quad(RenderMode mode, RenderState& render_state, math::Vec4 color, math::Vec3 position, b32 flipped, math::Vec3 size, math::Vec3 rotation, b32 with_origin, math::Vec2 origin, i32 shader_handle, ShaderAttribute* shader_attributes, i32 shader_attribute_count, b32 is_ui = true, i32 texture_handle = 0, r32 border_width = 0.0f, math::Rgba border_color = math::Rgba(1.0f),  b32 rounded = false, b32 for_animation = false, math::Vec2 texture_size = math::Vec2(), math::Vec2i frame_size = math::Vec2i(), math::Vec2 texture_offset = math::Vec2(), math::Mat4 projection_matrix = math::Mat4(), math::Mat4 view_matrix = math::Mat4())
+//@Cleanup/@Robustness/@Note/@Incomplete/@Study: Fuck this function
+static void render_quad(RenderMode mode, RenderState& render_state, math::Vec4 color, math::Vec3 position, b32 flipped, math::Vec3 size, math::Vec3 rotation, b32 with_origin, math::Vec2 origin, i32 shader_handle, ShaderAttribute* shader_attributes, i32 shader_attribute_count, b32 is_ui = true, i32 texture_handle = 0, r32 border_width = 0.0f, math::Rgba border_color = math::Rgba(1.0f),  b32 rounded = false, b32 for_animation = false, math::Vec2 texture_size = math::Vec2(0.0f), math::Vec2i frame_size = math::Vec2i(0), math::Vec2 texture_offset = math::Vec2(0.0f), math::Mat4 projection_matrix = math::Mat4(), math::Mat4 view_matrix = math::Mat4())
 {
     switch (mode)
     {

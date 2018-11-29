@@ -609,7 +609,7 @@ struct Material
     
     MaterialHandle source_handle;
     ShaderInfo shader;
-    
+
     math::Rgba ambient_color;
     math::Rgba diffuse_color;
     math::Rgba specular_color;
@@ -899,7 +899,6 @@ struct RenderCommand
             math::Vec3 position;
         } sun_light;
     };
-    RenderCommand() {}
 };
 
 enum FadingMode
@@ -1119,6 +1118,19 @@ struct Renderer
     MemoryArena shader_arena;
     
     MemoryArena temp_arena;
+
+    struct
+    {
+	rendering::Shader shaders[64];
+	i32 shader_count;
+	
+	rendering::Material materials[128];
+	i32 material_count;
+
+	rendering::Material material_instances[128];
+	i32 material_instance_count;
+	
+    } render;
 };
 
 static math::Vec2i get_scale(Renderer& renderer)
@@ -1139,7 +1151,7 @@ math::Vec3 to_ui(Renderer& renderer, math::Vec2 coord)
 math::Vec2 from_ui(Renderer& renderer, math::Vec3 coord)
 {
     math::Vec2i scale = get_scale(renderer);
-    math::Vec2 res;
+    math::Vec2 res(0.0f);
     res.x = (((r32)coord.x / (r32)UI_COORD_DIMENSION) * scale.x);
     res.y = (((r32)coord.y / (r32)UI_COORD_DIMENSION) * scale.y);
     return res;
@@ -1167,10 +1179,10 @@ struct LineData
 
 static LineData get_line_size_data(const char *text, TrueTypeFontInfo font)
 {
-    math::Vec2 size;
+    math::Vec2 size(0.0f);
     r32 placeholder_y = 0.0;
     
-    LineData line_data;
+    LineData line_data = {};
     line_data.total_height = 0.0f;
     line_data.line_count = 1;
     
@@ -1221,7 +1233,7 @@ static math::Vec2i texture_size(i32 texture_handle, Renderer& renderer)
 
 static math::Vec2 get_text_size(const char *text, TrueTypeFontInfo font)
 {
-    math::Vec2 size;
+    math::Vec2 size(0.0f);
     r32 placeholder_y = 0.0;
 
     i32 lines = 1;
@@ -1267,7 +1279,7 @@ static math::Vec2 get_text_size_scaled(Renderer& renderer, const char* text, Tru
 {
     LineData line_data = get_line_size_data(text, font);
     math::Vec2 font_size = line_data.line_sizes[0];
-    math::Vec2 result;
+    math::Vec2 result(0.0f);
     
     math::Vec2i scale = get_scale(renderer);
     

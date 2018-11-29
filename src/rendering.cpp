@@ -1139,6 +1139,11 @@ static void push_mesh(Renderer &renderer, MeshInfo mesh_info)
     render_command->receives_shadows = mesh_info.receives_shadows;
 }
 
+static void push_mesh(Renderer& renderer, MeshHandle mesh_handle)
+{
+    
+}
+
 static void push_mesh_instanced(Renderer &renderer, MeshInfo mesh_info, math::Vec3 *offsets, math::Rgba *colors, math::Vec3 *rotations, math::Vec3 *scalings, i32 offset_count)
 {
     RenderCommand *render_command = push_next_command(renderer, false);
@@ -1962,6 +1967,7 @@ static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer, ma
         }
     }
 
+    //@Cleanup: Figure out particle rendering order
     // for(i32 i = 0; i < particles_count; i++)
     // {
     // 	i32 _internal_handle = renderer.particles._internal_handles[particles_to_push[i] - 1];
