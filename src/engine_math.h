@@ -36,7 +36,7 @@ namespace math
 	r32 e[2];
         
     Vec2(r32 x, r32 y) : x(x), y(y) {}
-    	Vec2() {}
+	Vec2() : x(0.0f), y(0.0f) {}
         Vec2(r32 i) : e{i,i} {}
         Vec2(r32 i[2]) : e{i[0],i[1]} {}
         Vec2(const Vec2& o) = default;

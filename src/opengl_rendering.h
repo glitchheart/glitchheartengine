@@ -59,6 +59,11 @@ static char* shader_paths[SHADER_COUNT] =
     "../engine_assets/shaders/roundedquadshader",
 };
 
+struct ShaderGL
+{
+	GLuint program;
+};
+
 struct Shader
 {
     ShaderType type;
@@ -314,10 +319,13 @@ struct RenderState
     
     Shader extra_shaders[150];
     i32 extra_shader_index;
-    
+
     i32 current_extra_shader;
     ShaderAttribute* shader_attributes;
     i32 shader_attribute_count;
+
+	ShaderGL gl_shaders[64];
+	i32 gl_shader_count;
     
     Texture texture_array[150];
     i32 texture_index;

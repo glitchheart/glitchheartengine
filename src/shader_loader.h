@@ -110,6 +110,11 @@ namespace rendering
 		UniformMapping mapped_uniforms[UniformMappingType::MAX];
 		i32 mapped_uniform_count;
 
+		char* vert_shader;
+		char* frag_shader;
+
+		char path[256];
+		
 		Shader () {}
     };
 
