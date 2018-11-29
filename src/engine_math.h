@@ -20,23 +20,23 @@ namespace math
     {
         return MAX(minimum, MIN(value,maximum));
     }
-    
-    
+
     union Vec2
     {
-        struct
-        {
-            r32 x;
-            r32 y;
-        };
-        struct
-        {
-            r32 u;
-            r32 v;
-        };
-        r32 e[2];
-        Vec2(r32 x, r32 y) : x(x), y(y){}
-        Vec2() : x(0.0f), y(0.0f) {}
+	struct
+	{
+	    r32 x;
+	    r32 y;
+	};
+	struct
+	{
+	    r32 u;
+	    r32 v;
+	};
+	r32 e[2];
+        
+    Vec2(r32 x, r32 y) : x(x), y(y) {}
+    	Vec2() {}
         Vec2(r32 i) : e{i,i} {}
         Vec2(r32 i[2]) : e{i[0],i[1]} {}
         Vec2(const Vec2& o) = default;
@@ -182,8 +182,6 @@ namespace math
                 };
             };
             r32 z;
-            
-            
         };
         struct 
         {
@@ -195,7 +193,6 @@ namespace math
                     r32 r, g;
                 };
             };
-            
             r32 b;
         };
         
@@ -218,8 +215,6 @@ namespace math
         Vec3(r64 x, r32 y, r64 z) : x((r32)x), y(y), z((r32)z) {}
         Vec3(r64 x, r32 y, r32 z) : x((r32)x), y(y), z(z) {}
         Vec3(Vec2 v, r32 z) : x(v.x), y(v.y), z(z) {}
-        
-        // Vec3(Vec3i v) : x(v.x), y(v.y), z(v.z) {}
         
         Vec3& operator=(const Vec3& v) = default;
         
@@ -2412,7 +2407,7 @@ namespace math
     
     inline Vec2 rotate_by_angle(Vec2 in, r32 angle)
     {
-        math::Vec2 result;
+        math::Vec2 result(0.0f);
         result.x = in.x * cos(angle) - in.y * sin(angle);
         result.y = in.x * sin(angle) + in.y * cos(angle);
         return result;
@@ -2695,7 +2690,7 @@ namespace math
         r32 tile_width_half = 0.5f;
         r32 tile_height_half = 0.25f;
         
-        math::Vec2 temp_pt;
+        math::Vec2 temp_pt(0.0f);
         
         temp_pt.x = (position.x / tile_width_half + position.y / tile_height_half) / 2.0f;
         temp_pt.y = (position.y / tile_height_half - position.x / tile_width_half) / 2.0f;
@@ -2708,7 +2703,7 @@ namespace math
         r32 tile_width_half = 0.5f;
         r32 tile_height_half = 0.25f;
         
-        math::Vec2 temp_pt;
+        math::Vec2 temp_pt(0.0f);
         temp_pt.x = (position.x - position.y) * tile_width_half;
         temp_pt.y = (position.x + position.y) * tile_height_half;
         //return tempPt;

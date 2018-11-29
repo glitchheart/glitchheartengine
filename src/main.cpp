@@ -55,6 +55,8 @@ static MemoryState memory_state;
 #include "analytics.h"
 #include "analytics.cpp"
 
+#include "shader_loader.cpp"
+
 #if defined(__linux) || defined(__APPLE__)
 #include "dlfcn.h"
 #endif
