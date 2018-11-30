@@ -1121,15 +1121,26 @@ struct Renderer
 
     struct
     {
-		rendering::Shader shaders[64];
+		rendering::Shader shaders[32];
 		i32 shader_count;
 	
-		rendering::Material materials[128];
+		rendering::Material materials[64];
 		i32 material_count;
 
-		rendering::Material material_instances[128];
+		rendering::Material material_instances[64];
 		i32 material_instance_count;
-	
+		
+		rendering::RegisterBufferInfo *buffers;
+		i32 buffer_count;
+    
+		i32 *_internal_buffer_handles;
+		i32 _current_internal_buffer_handle;
+
+		i32 *updated_buffer_handles;
+		i32 updated_buffer_handle_count;
+    
+		i32 *removed_buffer_handles;
+		i32 removed_buffer_handle_count;
     } render;
 };
 
@@ -1138,7 +1149,7 @@ static math::Vec2i get_scale(Renderer& renderer)
     return {renderer.framebuffer_width, renderer.framebuffer_height};
 }
 
-math::Vec3 to_ui(Renderer& renderer, math::Vec2 coord)
+static math::Vec3 to_ui(Renderer& renderer, math::Vec2 coord)
 {
     math::Vec2i scale = get_scale(renderer);
     math::Vec3 res;

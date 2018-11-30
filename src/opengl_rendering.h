@@ -62,6 +62,9 @@ static char* shader_paths[SHADER_COUNT] =
 struct ShaderGL
 {
 	GLuint program;
+	
+	GLuint vert_program;
+	GLuint frag_program;
 };
 
 struct Shader
@@ -290,6 +293,9 @@ struct RenderState
     
     Buffer *buffers;
     i32 buffer_count;
+
+	Buffer *gl_buffers;
+	i32 gl_buffer_count;
     
     GLuint quad_vao;
     GLuint texture_quad_vao;
@@ -324,7 +330,7 @@ struct RenderState
     ShaderAttribute* shader_attributes;
     i32 shader_attribute_count;
 
-	ShaderGL gl_shaders[64];
+	ShaderGL gl_shaders[32];
 	i32 gl_shader_count;
     
     Texture texture_array[150];

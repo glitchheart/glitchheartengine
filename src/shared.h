@@ -3,6 +3,8 @@
 
 struct MemoryArena;
 
+#define HANDLE(name) struct name ## Handle { i32 handle; };
+
 #include "types.h"
 
 #include "platform.h"

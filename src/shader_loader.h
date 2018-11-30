@@ -57,13 +57,17 @@ namespace rendering
 
     enum UniformMappingType
     {
+		NONE,
 		DIFFUSE_TEX,
 		DIFFUSE_COLOR,
 		SPECULAR_TEX,
 		SPECULAR_COLOR,
 		SPECULAR_INTENSITY,
+		SPECULAR_INTENSITY_TEX,
 		AMBIENT_COLOR,
 		AMBIENT_TEX,
+
+		DISSOLVE,
 	
 		SHADOW_MAP,
 		MODEL,
@@ -72,18 +76,17 @@ namespace rendering
 
 		MAX
     };
-
-    struct UniformMapping
-    {
-		UniformMappingType type;
-		i32 index;
-    };
-
     
     struct Uniform
     {
+		UniformMappingType mapping_type;
 		ValueType type;
 		char name[32];
+    };
+
+	struct UniformValue
+	{
+		Uniform uniform;
 		union
 		{
 			r32 float_val = 0.0f;
@@ -96,8 +99,8 @@ namespace rendering
 			TextureHandle texture;
 		};
 
-		Uniform () {}
-    };
+		UniformValue () {}
+	};
     
     struct Shader
     {
@@ -106,9 +109,6 @@ namespace rendering
 
 		Uniform uniforms[32];
 		i32 uniform_count;
-
-		UniformMapping mapped_uniforms[UniformMappingType::MAX];
-		i32 mapped_uniform_count;
 
 		char* vert_shader;
 		char* frag_shader;
@@ -121,7 +121,53 @@ namespace rendering
     struct Material
     {
 		ShaderHandle shader;
+
+		UniformValue uniform_values[32];
+		i32 uniform_value_count;
+
+		Material () {}
     };
+
+	HANDLE(Buffer);
+	
+	struct BufferData
+	{
+		r32* vertex_buffer;
+		i32 vertex_buffer_size;
+		u16* index_buffer;
+		i32 index_buffer_count;
+		i32 index_buffer_size;
+	};
+
+	enum BufferUsage
+	{
+		DYNAMIC,
+		STATIC,
+		STREAM
+	};
+	
+	struct RegisterBufferInfo
+	{
+		VertexAttribute vertex_attributes[16];
+		i32 vertex_attribute_count;
+
+		u32 stride;
+
+		BufferUsage usage;
+		
+		BufferData data;
+
+		RegisterBufferInfo(const RegisterBufferInfo& other)
+			{
+				memcpy(vertex_attributes, other.vertex_attributes, sizeof(VertexAttribute) * other.vertex_attribute_count);
+				vertex_attribute_count = other.vertex_attribute_count;
+				stride = other.stride;
+				usage = other.usage;
+				data = other.data;
+			}
+
+		RegisterBufferInfo() {}
+	};
 
     struct Transform
     {
@@ -132,9 +178,10 @@ namespace rendering
     
     struct RenderCommand
     {
-		MaterialHandle material;
-		ShaderHandle shader;
+		MaterialInstanceHandle material;
 		Transform transform;
+
+		BufferHandle buffer;
     };
 }
 

@@ -201,6 +201,39 @@ static GLint compile_shader(MemoryArena* arena, const char* shader_name, GLuint 
 	return is_compiled;
 }
 
+static GLint link_program(MemoryArena* arena, const char* program_name, GLuint program)
+{
+	GLint is_linked = 0;
+
+	glLinkProgram(program);
+	glGetProgramiv(program, GL_LINK_STATUS, &is_linked);
+	
+	if(!is_linked)
+	{
+		TemporaryMemory temp_mem = begin_temporary_memory(arena);
+		GLint max_length = 0;
+		glGetProgramiv(program, GL_INFO_LOG_LENGTH, &max_length);
+
+		GLchar* error_log = nullptr;
+		GLchar error_log_static[512];
+		
+		if(max_length > 512)
+		{
+			error_log = push_size(arena, max_length, GLchar);
+		}
+		else
+		{
+			error_log = error_log_static;
+		}
+
+		glGetProgramInfoLog(program, max_length, &max_length, error_log);
+
+		log_error("Program linking error - %s", program_name);
+		log_error("%s", error_log);
+	}
+	return is_linked;
+}
+
 static GLint shader_compilation_error_checking(MemoryArena* arena,const char* shader_name, GLuint shader)
 {
     GLint is_compiled = 0;
@@ -287,39 +320,47 @@ static GLuint load_extra_shader(MemoryArena* arena, ShaderData& shader_data, Ren
     return GL_TRUE;
 }
 
-static GLuint load_shader(Renderer& renderer, rendering::Shader& shader)
+static GLuint load_shader(Renderer& renderer, rendering::Shader& shader, ShaderGL& gl_shader)
 {
 	char* vert_shader = shader.vert_shader;
-	GLuint vert_prog = glCreateShader(GL_VERTEX_SHADER);
+	gl_shader.vert_program = glCreateShader(GL_VERTEX_SHADER);
 
 	// @Incomplete: Think about common preamble stuff like #version 330 core and stuff
-	glShaderSource(vert_prog, 1, (GLchar**)&vert_shader, nullptr);
+	glShaderSource(gl_shader.vert_program, 1, (GLchar**)&vert_shader, nullptr);
 
-	if(!compile_shader(&renderer.shader_arena, shader.path, vert_prog))
+	if(!compile_shader(&renderer.shader_arena, shader.path, gl_shader.vert_program))
 	{
 		log_error("Failed compilation of vertex shader: %s", shader.path);
-		vert_prog = 0;
+		gl_shader.vert_program = 0;
 		return GL_FALSE;
 	}
 	
 	char* frag_shader = shader.frag_shader;
-	GLuint frag_prog = glCreateShader(GL_FRAGMENT_SHADER);
+	gl_shader.frag_program = glCreateShader(GL_FRAGMENT_SHADER);
 
-	glShaderSource(frag_prog, 1, (GLchar**)&frag_shader, nullptr);
+	glShaderSource(gl_shader.frag_program, 1, (GLchar**)&frag_shader, nullptr);
 
-	if(!compile_shader(&renderer.shader_arena, shader.path, frag_prog))
+	if(!compile_shader(&renderer.shader_arena, shader.path, gl_shader.frag_program))
 	{
 		log_error("Failed compilation of vertex shader: %s", shader.path);
-		frag_prog = 0;
+		gl_shader.frag_program = 0;
 		return GL_FALSE;
 	}
 
-	GLuint program = glCreateProgram();
+	gl_shader.program = glCreateProgram();
 
-	glAttachShader(program, vert_prog);
-	glAttachShader(program, frag_prog);
-	glLinkProgram(program);
+	glAttachShader(gl_shader.program, gl_shader.vert_program);
+	glAttachShader(gl_shader.program, gl_shader.frag_program);
 
+	if(!link_program(&renderer.shader_arena, shader.path, gl_shader.program))
+	{
+		log_error("Failed linking of program: %s", shader.path);
+		gl_shader.program = 0;
+		gl_shader.frag_program = 0;
+		gl_shader.vert_program = 0;
+		return GL_FALSE;
+	}
+	
 	return GL_TRUE;
 }
 
@@ -1062,14 +1103,15 @@ static void load_extra_shaders(RenderState& render_state, Renderer& renderer)
         load_extra_shader(render_state.perm_arena, renderer.shader_data[index], render_state);
     }
 
+	// @Note: Load the "new" shader system shaders
 	for(i32 index = render_state.gl_shader_count; index < renderer.render.shader_count; index++)
 	{
-		load_shader(renderer, renderer.render.shaders[index]);
+		load_shader(renderer, renderer.render.shaders[index], render_state.gl_shaders[index]);
 	}
 
+	// @Note: Even if loading a shader fails, we don't want to continue to compile it
 	render_state.gl_shader_count = renderer.render.shader_count;
 }
-
 
 void stbtt_load_font(RenderState &render_state, Renderer& renderer, char *path, i32 size, i32 index = -1)
  {
@@ -1594,6 +1636,12 @@ void set_vec4_array_uniform(GLuint shader_handle, const char *uniform_name, math
 void set_float_array_uniform(GLuint shader_handle, const char *uniform_name, r32* value, u32 length)
 {
     glUniform1fv(glGetUniformLocation(shader_handle, uniform_name), (GLsizei)length, (GLfloat*)&value[0]);
+}
+
+static void set_texture_uniform(GLuint shader_handle, GLuint texture, i32 index)
+{
+	glActiveTexture(GL_TEXTURE0 + index);
+    glBindTexture(GL_TEXTURE_2D, texture);
 }
 
 #define BUFFER_OFFSET(i) ((char *)NULL + (i))
@@ -2985,6 +3033,261 @@ static void register_buffers(RenderState& render_state, Renderer& renderer)
     }
     
     renderer.updated_buffer_handle_count = 0;
+}
+
+static void register_buffer(Buffer& buffer, rendering::RegisterBufferInfo info)
+{
+	glGenVertexArrays(1, &buffer.vao);
+	glBindVertexArray(buffer.vao);
+
+	glGenBuffers(1, &buffer.vbo);
+	
+	glBindBuffer(GL_ARRAY_BUFFER, buffer.vbo);
+
+	GLenum usage = GL_DYNAMIC_DRAW;
+
+	// @Incomplete: Copy/Read?
+	switch(info.usage)
+	{
+	case rendering::BufferUsage::DYNAMIC:
+		usage = GL_DYNAMIC_DRAW;
+		break;
+	case rendering::BufferUsage::STATIC:
+		usage = GL_STATIC_DRAW;
+		break;
+	case rendering::BufferUsage::STREAM:
+		usage = GL_STREAM_DRAW;
+		break;
+	}
+	
+	glBufferData(GL_ARRAY_BUFFER, info.data.vertex_buffer_size, info.data.vertex_buffer, usage);
+
+	size_t offset = 0;
+	
+	for(i32 i = 0; i < info.vertex_attribute_count; i++)
+	{
+		rendering::VertexAttribute& attrib = info.vertex_attributes[i];
+
+		GLenum type = GL_FLOAT;
+		i32 count = 1;
+		size_t type_size = 0;
+		
+		switch(attrib.type)
+		{
+		case rendering::ValueType::FLOAT:
+		{
+			type = GL_FLOAT;
+			count = 1;
+			type_size = 1 * sizeof(GLfloat);
+		}
+		break;
+		case rendering::ValueType::FLOAT2:
+		{
+			type = GL_FLOAT;
+			count = 2;
+			type_size = 2 * sizeof(GLfloat);
+		}
+		break;
+		case rendering::ValueType::FLOAT3:
+		{
+			type = GL_FLOAT;
+			count = 3;
+			type_size = 3 * sizeof(GLfloat);
+		}
+		break;
+		case rendering::ValueType::FLOAT4:
+		{
+			type = GL_FLOAT;
+			count = 4;
+			type_size = 4 * sizeof(GLfloat);
+		}
+		break;
+		case rendering::ValueType::INTEGER:
+		{
+			type = GL_INT;
+			count = 1;
+			type_size = 1 * sizeof(GLint);
+		}
+		break;
+		case rendering::ValueType::BOOL:
+		{
+			type = GL_INT;
+			count = 1;
+			type_size = 1 * sizeof(GLint);
+		}
+		break;
+		case rendering::ValueType::MAT4:
+		{
+			type = GL_FLOAT;
+			count = 16;
+			type_size = 16 * sizeof(GLfloat);
+		}
+		break;
+		case rendering::ValueType::TEXTURE:
+		case rendering::ValueType::INVALID:
+		{
+			assert(false);
+		}
+		break;
+		}
+
+		vertex_attrib_pointer(i, count, type, info.stride, (void*)offset);
+
+		offset += type_size;
+	}
+
+	if(info.data.index_buffer_count > 0)
+	{
+		glGenBuffers(1, &buffer.ibo);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer.ibo);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, info.data.index_buffer_size, info.data.index_buffer, usage);
+	}
+
+	glBindVertexArray(0);
+}
+
+//@Cleanup: Remove new
+static void register_new_buffers(RenderState& render_state, Renderer& renderer)
+{
+	for(i32 index = render_state.gl_buffer_count; index < renderer.render.buffer_count; index++)
+	{
+		rendering::RegisterBufferInfo& info = renderer.render.buffers[index];
+		Buffer& gl_buffer = render_state.gl_buffers[index];
+		register_buffer(gl_buffer, info);
+	}
+
+	render_state.gl_buffer_count = renderer.render.buffer_count;
+}
+
+static void set_uniform(RenderState& render_state, Renderer& renderer, GLuint program, rendering::UniformValue& uniform_value, i32 *texture_count = nullptr)
+{
+	switch(uniform_value.uniform.type)
+	{
+	case rendering::ValueType::FLOAT:
+	{
+		set_float_uniform(program, uniform_value.uniform.name, uniform_value.float_val);
+	}
+	break;
+	case rendering::ValueType::FLOAT2:
+	{
+		set_vec2_uniform(program, uniform_value.uniform.name, uniform_value.float2_val);
+	}
+	break;
+	case rendering::ValueType::FLOAT3:
+	{
+		set_vec3_uniform(program, uniform_value.uniform.name, uniform_value.float3_val);
+	}
+	break;
+	case rendering::ValueType::FLOAT4:
+	{
+		set_vec4_uniform(program, uniform_value.uniform.name, uniform_value.float4_val);
+	}
+	break;
+	case rendering::ValueType::INTEGER:
+	{
+		set_int_uniform(program, uniform_value.uniform.name, uniform_value.integer_val);
+	}
+	break;
+	case rendering::ValueType::BOOL:
+	{
+		set_bool_uniform(program, uniform_value.uniform.name, uniform_value.boolean_val);
+	}
+	break;
+	case rendering::ValueType::MAT4:
+	{
+		set_mat4_uniform(program, uniform_value.uniform.name, uniform_value.mat4_val);
+	}
+	break;
+	case rendering::ValueType::TEXTURE:
+	{
+		Texture texture = render_state.texture_array[renderer.texture_data[uniform_value.texture.handle - 1].handle];
+		set_texture_uniform(program, texture.texture_handle, *texture_count);
+		(*texture_count)++;
+	}
+	break;
+	case rendering::ValueType::INVALID:
+		assert(false);
+	break;
+	}
+}
+
+static void render_buffer(rendering::RenderCommand& command, RenderState& render_state, Renderer& renderer, math::Mat4 view_matrix, math::Mat4 projection_matrix)
+{
+	Buffer& buffer = render_state.gl_buffers[command.buffer.handle];
+	
+	glBindVertexArray(buffer.vao);
+
+	rendering::Material& material = renderer.render.material_instances[command.material.handle];
+	ShaderGL& gl_shader = render_state.gl_shaders[material.shader.handle];
+
+	glUseProgram(gl_shader.program);
+
+	i32 texture_count = 0;
+	
+	for(i32 i = 0; i < material.uniform_value_count; i++)
+	{
+		rendering::UniformValue& uniform_value = material.uniform_values[i];
+		rendering::Uniform& uniform = uniform_value.uniform;
+
+		switch(uniform.mapping_type)
+		{
+		case rendering::UniformMappingType::NONE:
+		case rendering::UniformMappingType::DIFFUSE_TEX:
+		case rendering::UniformMappingType::DIFFUSE_COLOR:
+		case rendering::UniformMappingType::SPECULAR_TEX:
+		case rendering::UniformMappingType::SPECULAR_COLOR:
+		case rendering::UniformMappingType::AMBIENT_COLOR:
+		case rendering::UniformMappingType::AMBIENT_TEX:
+		case rendering::UniformMappingType::SHADOW_MAP:
+		{
+			set_uniform(render_state, renderer, gl_shader.program, uniform_value, &texture_count);
+		}
+		break;
+		case rendering::UniformMappingType::MODEL:
+		{
+			rendering::Transform transform = command.transform;		
+			math::Mat4 model_matrix(1.0f);
+			model_matrix = math::scale(model_matrix, transform.scale);
+    
+			math::Vec3 rotation = transform.rotation;
+			auto x_axis = rotation.x > 0.0f ? 1.0f : 0.0f;
+			auto y_axis = rotation.y > 0.0f ? 1.0f : 0.0f;
+			auto z_axis = rotation.z > 0.0f ? 1.0f : 0.0f;
+    
+			math::Quat orientation = math::Quat();
+			orientation = math::rotate(orientation, rotation.x, math::Vec3(x_axis, 0.0f, 0.0f));
+			orientation = math::rotate(orientation, rotation.y, math::Vec3(0.0f, y_axis, 0.0f));
+			orientation = math::rotate(orientation, rotation.z, math::Vec3(0.0f, 0.0f, z_axis));
+    
+			model_matrix = to_matrix(orientation) * model_matrix;
+    
+			model_matrix = math::translate(model_matrix, transform.position);
+
+			set_mat4_uniform(gl_shader.program, uniform_value.uniform.name, model_matrix);
+		}
+		break;
+		case rendering::UniformMappingType::VIEW:
+		{
+			set_mat4_uniform(gl_shader.program, uniform_value.uniform.name, view_matrix);
+		}
+		break;
+		case rendering::UniformMappingType::PROJECTION:
+		{
+			set_mat4_uniform(gl_shader.program, uniform_value.uniform.name, projection_matrix);
+		}
+		break;
+		}
+	}
+
+	if(buffer.ibo)
+	{
+		glDrawElements(GL_TRIANGLES, buffer.index_buffer_count, GL_UNSIGNED_SHORT, (void*)nullptr);
+	}
+	else
+	{
+		glDrawArrays(
+            GL_TRIANGLES, 0, buffer.vertex_buffer_size / 3);
+	}
 }
 
 static void render_shadows(RenderState &render_state, Renderer &renderer, Framebuffer &framebuffer)
