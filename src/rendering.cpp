@@ -749,7 +749,7 @@ static i32 _find_unused_handle(Renderer& renderer)
 }
 
 // @Note:(Niels): If you register buffers without the functions below, make sure to handle the internal
-// handles right. If you would rather not, just call these functions and at leas the bugs will be pretty
+// handles right. If you would rather not, just call these functions and at least the bugs will be pretty
 // contained...
 static BufferData& register_buffer(Renderer& renderer, i32* buffer_handle, b32 dynamic = false)
 {
@@ -861,7 +861,7 @@ static void create_buffers_from_mesh(Renderer &renderer, Mesh &mesh, u64 vertex_
     data.index_buffer_size = index_count * (i32)sizeof(u16);
     data.index_buffer_count = index_count;
     
-    // @Note:(Niels): How do we make sure that this is cleared if the mesh is removed?
+    // @Robustness:(Niels): How do we make sure that this is cleared if the mesh is removed?
     // Or will that never happen? Maybe use malloc/free instead? Or maybe at some point 
     // we really __should__ create a more general purpose allocator ourselves...
     data.index_buffer = push_size(&renderer.mesh_arena, data.index_buffer_size, u16);
@@ -1319,10 +1319,10 @@ static void load_material(Renderer &renderer, char *file_path, MaterialHandle *m
             {
                 sscanf(buffer, "Ns %f", &material.specular_exponent);
             }
-	    else if(starts_with(buffer, "d"))
-	    {
-		sscanf(buffer, "d %f", &material.dissolve);
-	    }
+			else if(starts_with(buffer, "d"))
+			{
+				sscanf(buffer, "d %f", &material.dissolve);
+			}
             else if(starts_with(buffer, "map_Ka")) // ambient map
             {
                 char name[64];
