@@ -1,6 +1,6 @@
 #include "shared.h"
 
-#define ENABLE_ANALYTICS 0
+#define ENABLE_ANALYTICS 1
 
 #if DEBUG
 #include "debug.h"
