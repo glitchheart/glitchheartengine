@@ -1,5 +1,6 @@
 @echo off
 
+set EXECUTABLE_NAME="altered"
 set WERROR=
 set DEBUG=0
 set GLM=
@@ -28,6 +29,6 @@ REM 64-bit build
 del *.pdb > NUL 2> NUL
 
 echo Compilation started on: %time%
-cl %CommonCompilerFlags% ..\src\main.cpp -Femain /DCURL_STATICLIB /link %ExtraLinkerFlags% %CommonLinkerFlags% %Console%
+cl %CommonCompilerFlags% ..\src\main.cpp /Fealtered /DCURL_STATICLIB /link %ExtraLinkerFlags% %CommonLinkerFlags% %Console%
 echo Compilation finished on: %time%
 popd
