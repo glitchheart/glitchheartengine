@@ -1,8 +1,8 @@
 #!/bin/bash
 
 EXECUTABLE_NAME=altered
-DEBUG=-DDEBUG=0
-OPT=-O3
+DEBUG=-DDEBUG=1
+OPT=-O0
 
 WIGNORE="-Wno-reserved-id-macro -Wno-deprecated -Wno-format-nonliteral -Wno-int-to-void-pointer-cast -Wno-undef -Wno-missing-variable-declarations -Wno-nested-anon-types -Wno-variadic-macros -Wno-old-style-cast -Wno-sign-conversion -Wno-cast-align -Wno-gnu-anonymous-struct -Wno-c++98-compat -Wno-padded -Wdocumentation -Wdocumentation-unknown-command -Wno-double-promotion -Wno-c++98-compat-pedantic -Wno-missing-prototypes -Wno-float-equal -Wno-unused-parameter  -Wno-gnu-zero-variadic-macro-arguments -Wno-writable-strings -Wno-global-constructors -Wno-switch-enum -Wno-char-subscripts -Wno-unused-function"
 
