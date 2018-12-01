@@ -1978,7 +1978,6 @@ static void render_3d_text(RenderState &render_state, GLFontBuffer &font, TrueTy
     r32 y = position.y;
     
     // @Speed: The call to get_text_size() will loop through the text, which means we'll loop through it twice per render-call
-    printf("SHIT\n");
     math::Vec2 text_size = get_text_size(text, font_info);
     if(alignment_flags & ALIGNMENT_CENTER_X)
     {
