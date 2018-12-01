@@ -1,11 +1,11 @@
 @echo off
 
 set WERROR=
-set DEBUG=1
+set DEBUG=0
 set GLM=
 set PRP=
 set WIGNORED=-wd5039 -wd4201 -wd4505 -wd4100 -wd4996 -wd4456 -wd4582 -wd4587 -wd4820 -wd4061 -wd4710 -wd4191 -wd4623 -wd4625 -wd5026 -wd4668 -wd4312 -wd5045 -wd4577 -wd4711 -wd4514
-set OPT=-Od
+set OPT=-O2
 set ASM=/FA
 set AnalyticsPath=..\libs\gameanalytics
 set AnalyticsSrcPath=%AnalyticsPath%\source
