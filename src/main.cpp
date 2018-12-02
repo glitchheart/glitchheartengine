@@ -114,10 +114,25 @@ static void unload_game_code(GameCode *game_code)
     game_code->update = update_stub;
 }
 
+static void sleep_ms(i32 ms)
+{
+#ifdef _WIN32
+    Sleep(ms);
+#elif _POSIX_C_SOURCE > 199309L
+    struct timespec ts;
+    ts.tv_sec = ms / 1000;
+    ts.tv_nsec = (ms % 1000) * 1000000;
+    nanosleep(&ts, NULL);
+#else
+    usleep(ms * 1000);
+#endif
+}
+
 static void reload_game_code(GameCode *game_code, char *game_library_path, char *temp_game_library_path, MemoryArena *arena = nullptr)
 {
     unload_game_code(game_code);
-    //Sleep(100);
+
+    sleep_ms(100);
 
     load_game_code(*game_code, game_library_path, temp_game_library_path, arena);
 }
