@@ -2622,8 +2622,8 @@ static void render_mesh_instanced(const RenderCommand &render_command, Renderer 
         
         set_bool_uniform(shader.program, "material.translucency.hasTranslucency", false);
         set_float_uniform(shader.program, "material.translucency.distortion", 0.059f);
-        set_float_uniform(shader.program, "material.translucency.power", 9.8);
-        set_float_uniform(shader.program, "material.translucency.scale", 0.5);
+        set_float_uniform(shader.program, "material.translucency.power", 9.8f);
+        set_float_uniform(shader.program, "material.translucency.scale", 0.5f);
         set_vec3_uniform(shader.program, "material.translucency.subColor", math::Vec3(1.0f));
         set_float_uniform(shader.program, "material.dissolve", render_command.mesh_instanced.dissolve);
 	

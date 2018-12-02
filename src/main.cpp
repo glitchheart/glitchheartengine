@@ -542,9 +542,10 @@ int main(int argc, char **args)
 
     template_state.templates = push_array(&platform_state->perm_arena, global_max_entity_templates, scene::EntityTemplate);
 
+
+#if ENABLE_ANALYTICS
 #define ANALYTICS_GAME_KEY "3a3552e363e3ca17a17f98d568f25c75"
 #define ANALYTICS_SECRET_KEY "c34eacd91bcd41a33b37b0e8c978c17ee5c18f53"
-#if ENABLE_ANALYTICS
     AnalyticsEventState analytics_state = {};
     gameanalytics::GameAnalytics::setEnabledInfoLog(false);
     gameanalytics::GameAnalytics::configureBuild("alpha 0.1");
@@ -616,7 +617,7 @@ int main(int argc, char **args)
 
         swap_buffers(render_state);
 
-#if __APPLE__
+#if defined(__APPLE__)
         static b32 first_load = true;
         if (first_load)
         {
