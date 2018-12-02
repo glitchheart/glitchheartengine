@@ -3372,6 +3372,8 @@ static void render_shadows(RenderState &render_state, Renderer &renderer, Frameb
 
 static void render_new_commands(RenderState &render_state, Renderer &renderer)
 {
+    glEnable(GL_DEPTH_TEST);
+    
     for(i32 i = 0; i < renderer.render.render_command_count; i++)
     {
         rendering::RenderCommand &command = renderer.render.render_commands[i];
