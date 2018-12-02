@@ -564,13 +564,9 @@ int main(int argc, char **args)
     core.timer_controller = &timer_controller;
     core.sound_system = &sound_system;
     core.template_state = &template_state;
+    core.delta_time = delta_time;
     game_memory.core = core;
 
-    if (&template_state)
-    {
-        debug("dingy\n");
-    }
-    core.delta_time = delta_time;
 
     while (!should_close_window(render_state) && !renderer.should_close)
     {
@@ -579,8 +575,7 @@ int main(int argc, char **args)
             debug_log("Quit\n");
             glfwSetWindowShouldClose(render_state.window, GLFW_TRUE);
         }
-
-        core.delta_time = delta_time;
+        
         show_mouse_cursor(render_state, renderer.show_mouse_cursor);
 
         //reload_assets(render_state, &asset_manager, &platform_state->perm_arena);
@@ -643,6 +638,8 @@ int main(int argc, char **args)
 
         // @Incomplete: Fix this!
         delta_time = math::clamp(0.0, delta_time, 0.9);
+        game_memory.core.delta_time = delta_time;
+        debug("delta: %f\n", game_memory.core.delta_time);
         last_frame = end_counter;
     }
 
