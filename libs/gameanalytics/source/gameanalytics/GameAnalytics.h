@@ -10,7 +10,7 @@
 #pragma comment(lib, "gdi32.lib")
 #endif
 
-#include <string>
+#include <string.h>
 #include <vector>
 #include <memory>
 #if USE_TIZEN || GA_SHARED_LIB

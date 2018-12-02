@@ -1,3 +1,128 @@
+EMITTER_FUNC(emit_dir)
+{
+    ParticleSpawnInfo info;
+    
+    info.position = Vec3_4x(0.0f);
+    info.direction = Vec3_4x(0.0f);
+    
+    return info;
+}
+
+EMITTER_FUNC(emit_random_dir)
+{
+    ParticleSpawnInfo info;
+    
+    info.position = Vec3_4x(0.0f);
+    info.direction = random_direction_4x(series);
+    
+    return info;
+}
+
+EMITTER_FUNC(emit_from_2D_square)
+{
+    ParticleSpawnInfo info;
+    
+    Vec3_4x r = random_rect_4x(series, min, max);
+    
+    info.position = r;
+    
+    info.direction = Vec3_4x(0.0f, 1.0f, 0.0f);
+    
+    return info;
+}
+
+EMITTER_FUNC(emit_from_2D_square_random)
+{
+    ParticleSpawnInfo info;
+    
+    Vec3_4x r = random_rect_4x(series, min, max);
+    
+    info.position = r;
+    
+    info.direction = random_direction_4x(series);
+    
+    return info;
+}
+
+EMITTER_FUNC(emit_from_square)
+{
+    ParticleSpawnInfo info;
+    
+    Vec3_4x r = random_outer_rect_4x(series, min, max, min, max);
+    
+    info.position = r;
+    
+    info.direction = Vec3_4x(0.0f, 1.0f, 0.0f);
+    
+    return info;
+}
+
+EMITTER_FUNC(emit_from_square_random)
+{
+    ParticleSpawnInfo info;
+    
+    Vec3_4x r = random_outer_rect_4x(series, min, max, min, max);
+    
+    info.position = r;
+    
+    info.direction = random_direction_4x(series);
+    
+    return info;
+}
+
+EMITTER_FUNC(emit_from_disc)
+{
+    ParticleSpawnInfo info;
+    
+    Vec3_4x r = random_disc_4x(series, (max - min) / 2.0f);
+    
+    info.position = r;
+    
+    info.direction = Vec3_4x(0.0f, 1.0f, 0.0f);
+    
+    return info;
+}
+
+EMITTER_FUNC(emit_from_circle)
+{
+    ParticleSpawnInfo info;
+    
+    Vec3_4x r = random_circle_4x(series, (max - min) / 2.0f);
+    
+    info.position = r;
+    
+    info.direction = Vec3_4x(0.0f, 1.0f, 0.0f);
+    
+    return info;
+}
+
+EMITTER_FUNC(emit_from_disc_random)
+{
+    ParticleSpawnInfo info;
+    
+    Vec3_4x r = random_disc_4x(series, (max - min) / 2.0f);
+    
+    info.position = r;
+    
+    info.direction = random_direction_4x(series);
+    
+    return info;
+}
+
+EMITTER_FUNC(emit_from_circle_random)
+{
+    ParticleSpawnInfo info;
+    
+    Vec3_4x r = random_circle_4x(series, (max - min) / 2.0f);
+    
+    info.position = r;
+    
+    info.direction = random_direction_4x(series);
+    
+    return info;
+}
+
+
 i32 find_unused_particle(ParticleSystemInfo &particle_system)
 {
 	if (particle_system.dead_particle_count > 0)
@@ -500,10 +625,74 @@ void emit_particle(Renderer& renderer, ParticleSystemInfo &particle_system, i32*
 	//    particle_system.particles.color[original_index] = Rgba_4x(particle_system.attributes.start_color);
 	particle_system.particles.relative_position[original_index] = Vec3_4x(0.0f);
 
-	assert(particle_system.attributes.emission_module.emitter_func);
-
+    ParticleSpawnInfo spawn_info = {};
+    
+    switch(particle_system.attributes.emission_module.emitter_func_type)
+    {
+    case EmissionFuncType::DIRECTION:
+    {
+        spawn_info = emit_dir(entropy, particle_system.attributes.emission_module.min
+                              , particle_system.attributes.emission_module.max);
+    }
+    break;
+    case EmissionFuncType::RANDOM_DIRECTION:
+    {
+        spawn_info = emit_random_dir(entropy, particle_system.attributes.emission_module.min
+                                     , particle_system.attributes.emission_module.max);
+    }
+    break;
+    case EmissionFuncType::SQUARE_2D:
+    {
+        spawn_info = emit_from_2D_square(entropy, particle_system.attributes.emission_module.min
+                                         , particle_system.attributes.emission_module.max);
+    }
+    break;
+    case EmissionFuncType::SQUARE_2D_RANDOM:
+    {
+        spawn_info = emit_from_2D_square_random(entropy, particle_system.attributes.emission_module.min
+                                         , particle_system.attributes.emission_module.max);
+    }
+    break;
+    case EmissionFuncType::SQUARE:
+    {
+        spawn_info = emit_from_square(entropy, particle_system.attributes.emission_module.min
+                                         , particle_system.attributes.emission_module.max);
+    }
+    break;
+    case EmissionFuncType::SQUARE_RANDOM:
+    {
+        spawn_info = emit_from_square_random(entropy, particle_system.attributes.emission_module.min
+                                         , particle_system.attributes.emission_module.max);
+    }
+    break;
+    case EmissionFuncType::DISC:
+    {
+        spawn_info = emit_from_disc(entropy, particle_system.attributes.emission_module.min
+                                         , particle_system.attributes.emission_module.max);
+    }
+    break;
+    case EmissionFuncType::DISC_RANDOM:
+    {
+        spawn_info = emit_from_disc_random(entropy, particle_system.attributes.emission_module.min
+                                         , particle_system.attributes.emission_module.max);
+    }
+    break;
+    case EmissionFuncType::CIRCLE:
+    {
+        spawn_info = emit_from_circle(entropy, particle_system.attributes.emission_module.min
+                                         , particle_system.attributes.emission_module.max);
+    }
+    break;
+    case EmissionFuncType::CIRCLE_RANDOM:
+    {
+        spawn_info = emit_from_circle_random(entropy, particle_system.attributes.emission_module.min
+                                         , particle_system.attributes.emission_module.max);
+    }
+    break;
+    }
+    
 	/// @Note(Niels): Generate emission info based on the emitter function
-	ParticleSpawnInfo spawn_info = particle_system.attributes.emission_module.emitter_func(entropy, particle_system.attributes.emission_module.min, particle_system.attributes.emission_module.max);
+
 	particle_system.particles.position[original_index] = spawn_info.position;
 	Vec3_4x new_direction = spawn_info.direction;
 

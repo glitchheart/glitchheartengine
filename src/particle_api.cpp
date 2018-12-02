@@ -55,129 +55,6 @@ static void set_rate_over_distanace(ParticleSystemInfo &particle_system, r32 rat
     particle_system.attributes.emission_module.rate_over_distance = rate_over_distance;
 }
 
-EMITTER_FUNC(emit_dir)
-{
-    ParticleSpawnInfo info;
-    
-    info.position = Vec3_4x(0.0f);
-    info.direction = Vec3_4x(0.0f);
-    
-    return info;
-}
-
-EMITTER_FUNC(emit_random_dir)
-{
-    ParticleSpawnInfo info;
-    
-    info.position = Vec3_4x(0.0f);
-    info.direction = random_direction_4x(series);
-    
-    return info;
-}
-
-EMITTER_FUNC(emit_from_2D_square)
-{
-    ParticleSpawnInfo info;
-    
-    Vec3_4x r = random_rect_4x(series, min, max);
-    
-    info.position = r;
-    
-    info.direction = Vec3_4x(0.0f, 1.0f, 0.0f);
-    
-    return info;
-}
-
-EMITTER_FUNC(emit_from_2D_square_random)
-{
-    ParticleSpawnInfo info;
-    
-    Vec3_4x r = random_rect_4x(series, min, max);
-    
-    info.position = r;
-    
-    info.direction = random_direction_4x(series);
-    
-    return info;
-}
-
-EMITTER_FUNC(emit_from_square)
-{
-    ParticleSpawnInfo info;
-    
-    Vec3_4x r = random_outer_rect_4x(series, min, max, min, max);
-    
-    info.position = r;
-    
-    info.direction = Vec3_4x(0.0f, 1.0f, 0.0f);
-    
-    return info;
-}
-
-EMITTER_FUNC(emit_from_square_random)
-{
-    ParticleSpawnInfo info;
-    
-    Vec3_4x r = random_outer_rect_4x(series, min, max, min, max);
-    
-    info.position = r;
-    
-    info.direction = random_direction_4x(series);
-    
-    return info;
-}
-
-EMITTER_FUNC(emit_from_disc)
-{
-    ParticleSpawnInfo info;
-    
-    Vec3_4x r = random_disc_4x(series, (max - min) / 2.0f);
-    
-    info.position = r;
-    
-    info.direction = Vec3_4x(0.0f, 1.0f, 0.0f);
-    
-    return info;
-}
-
-EMITTER_FUNC(emit_from_circle)
-{
-    ParticleSpawnInfo info;
-    
-    Vec3_4x r = random_circle_4x(series, (max - min) / 2.0f);
-    
-    info.position = r;
-    
-    info.direction = Vec3_4x(0.0f, 1.0f, 0.0f);
-    
-    return info;
-}
-
-EMITTER_FUNC(emit_from_disc_random)
-{
-    ParticleSpawnInfo info;
-    
-    Vec3_4x r = random_disc_4x(series, (max - min) / 2.0f);
-    
-    info.position = r;
-    
-    info.direction = random_direction_4x(series);
-    
-    return info;
-}
-
-EMITTER_FUNC(emit_from_circle_random)
-{
-    ParticleSpawnInfo info;
-    
-    Vec3_4x r = random_circle_4x(series, (max - min) / 2.0f);
-    
-    info.position = r;
-    
-    info.direction = random_direction_4x(series);
-    
-    return info;
-}
 
 static ParticleSystemAttributes get_default_particle_system_attributes()
 {
@@ -201,7 +78,7 @@ static ParticleSystemAttributes get_default_particle_system_attributes()
     attributes.emission_module.burst_over_lifetime.value_count = 0;
     attributes.emission_module.burst_over_lifetime.current_index = 0;
     attributes.emission_module.burst_over_lifetime.values = nullptr;
-    attributes.emission_module.emitter_func = emit_from_circle;
+    attributes.emission_module.emitter_func_type = EmissionFuncType::CIRCLE;
     
     return attributes;
 }

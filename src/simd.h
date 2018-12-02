@@ -1,7 +1,7 @@
 #ifndef SIMD_H
 #define SIMD_H
 
-#ifdef __APPLE__
+#if defined(__APPLE__ ) || defined(__linux)
 #include "smmintrin.h"
 #include "immintrin.h"
 #include "emmintrin.h"
@@ -325,7 +325,7 @@ inline r32_4x u32_to_r32(r32_4x a)
     return(result);
 }
 
-#if defined(__APPLE__) || defined(_WIN32)
+#if defined(__APPLE__) || defined(_WIN32) || defined(__linux)
 // Used to store 4 doubles in one SIMD constructions
 union r64_4x
 {
@@ -577,11 +577,6 @@ inline r32_4x& operator|=(r32_4x &a, r32_4x b)
     a = a | b;
     
     return(a);
-}
-
-r32 operator-(r32 left, r64_4x right)
-{
-    return left - (r32)right.e[0];
 }
 
 inline r64_4x simd_min(r64_4x left, r64_4x right)
@@ -906,16 +901,6 @@ inline r32_4x operator/(r64_4x a, r32_4x b)
     res = r32_4x((float)_v[0], (float)_v[1], (float)_v[2], (float)_v[3]) / b;
     
     return res;
-}
-
-inline r64 operator-(r64 left, r64_4x right)
-{
-    return left - right.e[0];
-}
-
-inline r32 operator-(r32 left, r64_4x right)
-{
-    return left - (r32)right.e[0];
 }
 
 inline r64_4x simd_min(r64_4x left, r64_4x right)
@@ -1728,6 +1713,11 @@ inline b32 all_zero(r32_4x v)
     return false;
 }
 
+r32_4x operator-(r32 left, r64_4x right)
+{
+    return r32_4x(left - (r32)right.e[0], left - (r32)right.e[1], left - (r32)right.e[2], left - (r32)right.e[3]);
+}
+
 using Rgba_4x = Vec4_4x;
 
 // Extra math
@@ -1779,25 +1769,33 @@ namespace math
     inline r32_4x ease_in_out_quad(r32_4x b, r32_4x t, r32_4x _c)
     {
         r32_4x c = _c - b;
+        
+        r32_4x res_lt(0.0f);
+        r32_4x res_else(0.0f);
 
         r32_4x res(0.0f);
-
+        
         t = t * 2.0f;
+
+        res_lt = (c / 2.0f) * (t * t) + b;
+
+        r32_4x t_else = t - 1.0f;
+        res_else = ((-c) / 2.0f) * (t_else * (t_else - 2.0f) - 1.0f) + b;
+        
         for(i32 i = 0; i < 4; i++)
         {
             r32 l_t = t.e[i];
-            r32 l_c = _c.e[i];
-            r32 l_b = b.e[i];
             if(l_t < 1.0)
             {
-                res.e[i] = (l_c / 2.0f) * (l_t * l_t) + l_b;
+                res.e[i] = res_lt.e[i];
             }
             else
             {
-                l_t--;
-                res.e[i] = -l_c / 2.0f * (l_t * (l_t - 2.0f) - 1.0f) + l_b;
+                res.e[i] = res_else.e[i];
             }
         }
+
+        return res;
     }
 
     inline r32_4x ease_in_cubic(r32_4x b, r32_4x t, r32_4x _c)
@@ -1817,23 +1815,31 @@ namespace math
         r32_4x c = _c - b;
 
         r32_4x res(0.0f);
+        r32_4x res_lt(0.0f);
+        r32_4x res_else(0.0f);
 
         t = t * 2.0f;
+
+        res_lt = (c / 2.0f) * (t * t * t) + b;
+
+        r32_4x t_else = t - 2.0f;
+        
+        res_else = (c / 2.0f) * (t_else * t_else * t_else + 2.0f) + b;
+        
         for(i32 i = 0; i < 4; i++)
         {
             r32 l_t = t.e[i];
-            r32 l_c = _c.e[i];
-            r32 l_b = b.e[i];
             if(l_t < 1.0)
             {
-                res.e[i] = (l_c / 2.0f) * (l_t * l_t * l_t) + l_b;
+                res.e[i] = res_lt.e[i];
             }
             else
             {
-                l_t -= 2.0f;
-                res.e[i] = l_c / 2.0f * (l_t * l_t * l_t + 2.0f) + l_b;
+                res.e[i] = res_else.e[i];
             }
         }
+
+        return res;
     }
     
     inline r64_4x lerp(r64_4x a, r64_4x t, r64_4x b)
