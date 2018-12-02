@@ -56,7 +56,11 @@
 #include <stb/stb_image_write.h>
 
 #include <stdint.h>
+#ifdef __linux
+#include <ctype.h>
+#else
 #include <cctype>
+#endif
 
 #define u16max 65535
 #define i32min ((i32)0x80000000)
@@ -296,6 +300,17 @@ namespace scene
 
 struct TimerController;
 
+struct Core
+{
+    Renderer* renderer;
+    InputController* input_controller;
+    TimerController* timer_controller;
+    SoundSystem* sound_system;
+    scene::EntityTemplateState* template_state;
+    r64 delta_time;
+    r64 current_time;
+};
+
 struct GameMemory
 {
     b32 is_initialized;
@@ -303,9 +318,12 @@ struct GameMemory
     b32 exit_game;
     ConfigData config_data;
     PlatformApi platform_api;
+    Core core;
     struct LogState* log_state;
     struct MemoryArena* temp_arena;
+#if ENABLE_ANALYTICS
     struct AnalyticsEventState *analytics_state;
+#endif
     struct GameState* game_state;
     
 #if DEBUG
@@ -313,7 +331,8 @@ struct GameMemory
 #endif
 };
 
-#define UPDATE(name)void name(r64 delta_time, r64 current_time, GameMemory* game_memory, Renderer& renderer, scene::EntityTemplateState &template_state, InputController* input_controller, SoundSystem* sound_system, TimerController& timer_controller)
+#define UPDATE(name) void name(GameMemory* game_memory)
+
 typedef UPDATE(Update);
 UPDATE(update_stub)
 {

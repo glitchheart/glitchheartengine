@@ -5,6 +5,12 @@ struct MemoryArena;
 
 #define HANDLE(name) struct name ## Handle { i32 handle; };
 
+#ifndef __linux
+#define ENABLE_ANALYTICS 1
+#else
+#define ENABLE_ANALYTICS 0
+#endif
+
 #include "types.h"
 
 #include "platform.h"
