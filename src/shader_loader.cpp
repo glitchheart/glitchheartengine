@@ -363,8 +363,6 @@ namespace rendering
 
     static void load_shader(Renderer &renderer, Shader &shader)
     {
-		// @Incomplete: LOAD STUFF
-	
 		FILE* file = fopen(shader.path, "r");
 
 		if(file)

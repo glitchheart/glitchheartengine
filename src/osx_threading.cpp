@@ -3,8 +3,10 @@
 
 #include <libkern/OSAtomic.h>
 #include <pthread.h>
+#include <semaphore.h>
 
 // Define platform-specific functions
+#define SemaphoreHandle sem_t
 #define WRITE_BARRIER OSMemoryBarrier(); _mm_sfence()
 #define THREAD_PROC(name) static void* name(void* parameters)
 typedef void* (*ThreadProc)(void* parameters);

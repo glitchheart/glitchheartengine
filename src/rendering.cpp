@@ -1992,6 +1992,7 @@ static void push_scene_for_rendering(scene::Scene &scene, Renderer &renderer, ma
     for(i32 com_index = 0; com_index < command_count; com_index++)
     {
 		QueuedRenderCommand &render_command = queued_commands[com_index];
+        
 		if(render_command.type == QueuedRenderCommandType::NORMAL)
 		{
 			rendering::push_buffer(renderer, render_command.normal.buffer_handle, render_command.normal.material_handle, render_command.normal.transform);

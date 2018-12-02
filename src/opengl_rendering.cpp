@@ -392,7 +392,7 @@ static void reload_shaders(RenderState &render_state, Renderer &renderer)
             delete_shader_program(gl_shader);
             rendering::load_shader(renderer, shader);
             load_shader(renderer, shader, gl_shader);
-            debug("Reloaded shader: %s", shader.path);
+            printf("Reloaded shader: %s", shader.path);
         }
     }
 }
@@ -3372,7 +3372,7 @@ static void render_shadows(RenderState &render_state, Renderer &renderer, Frameb
 
 static void render_new_commands(RenderState &render_state, Renderer &renderer)
 {
-    glEnable(GL_DEPTH_TEST);
+    //glEnable(GL_DEPTH_TEST);
     
     for(i32 i = 0; i < renderer.render.render_command_count; i++)
     {
@@ -3381,6 +3381,64 @@ static void render_new_commands(RenderState &render_state, Renderer &renderer)
     }
 
     renderer.render.render_command_count = 0;
+}
+
+static void render_ui_commands(RenderState &render_state, Renderer &renderer)
+{
+    
+    
+    for (i32 index = 0; index < renderer.ui_command_count; index++)
+    {
+        const RenderCommand& command = renderer.ui_commands[index];
+        
+        if(command.clip)
+        {
+            glEnable(GL_SCISSOR_TEST);
+            math::Rect clip_rect = command.clip_rect;
+            
+            glScissor((i32)clip_rect.x, (i32)clip_rect.y, (i32)clip_rect.width, (i32)clip_rect.height);
+        }
+        
+        switch (command.type)
+        {
+            case RENDER_COMMAND_LINE:
+            {
+                render_line(command, render_state, renderer.ui_projection_matrix, renderer.view_matrix);
+            }
+            break;
+            case RENDER_COMMAND_TEXT:
+            {
+                render_text(command, render_state, renderer, renderer.view_matrix, renderer.ui_projection_matrix);
+            }
+            break;
+            case RENDER_COMMAND_QUAD:
+            {
+                render_quad(command, render_state, renderer.ui_projection_matrix, renderer.view_matrix);
+            }
+            break;
+            case RENDER_COMMAND_MODEL:
+            {
+                //render_model(command, render_state, renderer.projection_matrix, renderer.view_matrix);
+            }
+            break;
+            case RENDER_COMMAND_BUFFER:
+            {
+                render_buffer(command, render_state, renderer, renderer.projection_matrix, renderer.view_matrix);
+            }
+            break;
+            case RENDER_COMMAND_DEPTH_TEST:
+            {
+                // @Incomplete: Do we need depth test commands for UI stuff?
+            }
+            break;
+            default:
+            break;
+        }
+        glDisable(GL_SCISSOR_TEST);
+    }
+    
+    renderer.particles._tagged_removed_count = 0;
+    renderer.ui_command_count = 0;   
 }
 
 static void render_commands(RenderState &render_state, Renderer &renderer)
@@ -3604,59 +3662,6 @@ static void render_commands(RenderState &render_state, Renderer &renderer)
     
     //glDisable(GL_DEPTH_TEST);
     
-    
-    for (i32 index = 0; index < renderer.ui_command_count; index++)
-    {
-        const RenderCommand& command = renderer.ui_commands[index];
-        
-        if(command.clip)
-        {
-            glEnable(GL_SCISSOR_TEST);
-            math::Rect clip_rect = command.clip_rect;
-            
-            glScissor((i32)clip_rect.x, (i32)clip_rect.y, (i32)clip_rect.width, (i32)clip_rect.height);
-        }
-        
-        switch (command.type)
-        {
-            case RENDER_COMMAND_LINE:
-            {
-                render_line(command, render_state, renderer.ui_projection_matrix, renderer.view_matrix);
-            }
-            break;
-            case RENDER_COMMAND_TEXT:
-            {
-                render_text(command, render_state, renderer, renderer.view_matrix, renderer.ui_projection_matrix);
-            }
-            break;
-            case RENDER_COMMAND_QUAD:
-            {
-                render_quad(command, render_state, renderer.ui_projection_matrix, renderer.view_matrix);
-            }
-            break;
-            case RENDER_COMMAND_MODEL:
-            {
-                //render_model(command, render_state, renderer.projection_matrix, renderer.view_matrix);
-            }
-            break;
-            case RENDER_COMMAND_BUFFER:
-            {
-                render_buffer(command, render_state, renderer, renderer.projection_matrix, renderer.view_matrix);
-            }
-            break;
-            case RENDER_COMMAND_DEPTH_TEST:
-            {
-                // @Incomplete: Do we need depth test commands for UI stuff?
-            }
-            break;
-            default:
-            break;
-        }
-        glDisable(GL_SCISSOR_TEST);
-    }
-    
-    renderer.particles._tagged_removed_count = 0;
-    renderer.ui_command_count = 0;
     //clear(&renderer.ui_commands);
 }
 
@@ -3766,6 +3771,7 @@ static void render(RenderState& render_state, Renderer& renderer, r64 delta_time
         
         render_commands(render_state, renderer);
         render_new_commands(render_state, renderer);
+        render_ui_commands(render_state, renderer);
         
         render_state.bound_texture = 0;
         
